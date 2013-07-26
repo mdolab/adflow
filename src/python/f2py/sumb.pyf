@@ -56,6 +56,24 @@ python module sumb
        subroutine liftdistribution
        end subroutine liftdistribution
 
+       subroutine addparaslice(slicename,pt,direction) ! in :test:liftDistribution.F90
+         character*(*) intent(in) :: slicename
+         real(kind=realtype) dimension(3),intent(in) :: pt
+         real(kind=realtype) dimension(3),intent(in) :: direction
+       end subroutine addparaslice
+
+       subroutine addabsslice(slicename,pt,direction) ! in :test:liftDistribution.F90
+         character*(*) intent(in) :: slicename
+         real(kind=realtype) dimension(3),intent(in) :: pt
+         real(kind=realtype) dimension(3),intent(in) :: direction
+       end subroutine addabsslice
+
+       subroutine addliftdistribution(nsegments,dir_vec,distname) ! in :test:liftDistribution.F90
+         integer(kind=inttype) intent(in) :: nsegments
+         real(kind=realtype) dimension(3) :: dir_vec
+         character*(*) intent(in) :: distname
+       end subroutine addliftdistribution
+       
        subroutine dummyreadparamfile ! in :sumb:../../inputParam/readParamFile.f90
        end subroutine dummyreadparamfile
        

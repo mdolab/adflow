@@ -644,8 +644,11 @@ class SUMB(AeroSolver):
         # Info for flowCases
         self.curFlowCase = None
         self.flowCases = {}
-
+        
         self.update_time = 0.0
+        self.nSlice = 0
+        self.nLiftDist = 0
+
         # Set default values --- actual options will be set when
         # aero_solver is initialized
         self.sumb.setdefaultvalues()
@@ -876,6 +879,111 @@ name is unavailable.'%(flowCase), comm=self.comm)
 
         return
 
+    def addLiftDistribution(self, nSegments, direction,
+                            group_name=None, description=''):
+        '''
+        Add a lift distribution to the surface output. 
+        nSegments: Number of slices to use for the distribution. Typically 150-250 is sufficient
+        direction: str, one of 'x', 'y', or 'z'. Auto bases the direction
+                   on the liftDir given in aeroproblem. 
+        group_name: The family (as defined in pyWarp) to use for the lift distribution
+        description: An additional string that can be used to destingush between 
+                     multiple lift distributions in the output
+        '''
+        direction=direction.lower()
+        if direction not in ['x','y','z']:
+            mpiPrint(' Error: \'direction\' must be one of \'x\', \
+\'y\', \'z\'', comm=self.comm)
+            group_tag = '%s: '%group_name
+            return
+        else:
+            group_tag = ''
+        # end if
+
+        if group_name is not None:
+            mpiPrint(' Error: lift distributions by group is not yet supported')
+            return
+        # end if
+
+        if direction == 'x':
+            dir_vec = [1.0, 0.0, 0.0]
+        elif direction == 'y':
+            dir_vec = [0.0, 1.0, 0.0]
+        else:
+            dir_vec = [0.0, 0.0, 1.0]
+        # end if
+        
+        distName = 'LiftDist_%2.2d %s: %s normal'%(self.nLiftDist + 1, group_tag, direction)
+        self.nLiftDist += 1
+
+        self.sumb.addliftdistribution(nSegments, dir_vec, distName)
+
+    def addSlices(self, direction, positions, sliceType='relative', group_name=None):
+        '''
+        Add parametric slice positions. Slices are taken of the wing
+        at time addParaSlices() is called and the parametric positions
+        of the intersections on the surface mesh are stored. On
+        subsequent output, the position of the slice moves as the mesh
+        moves/deforms. This effectively tracks the same location on
+        the wing.
+        
+        direction: one of 'x', 'y', 'z' 
+        positions: scalar or list or array: List of slice positions 
+        sliceType: One of 'relative' or 'absolute'
+        group_name: The family (as defined in pyWarp) to use for the slices
+        '''
+
+        if group_name is not None:
+            mpiPrint(' Error: slices by group is not yet supported')
+            group_tag = '%s: '%group_name
+            return
+        else:
+            group_tag = ''
+        # end if
+
+        direction = direction.lower()
+        if direction not in ['x','y','z']:
+            mpiPrint(' Error: \'direction\' must be one of \'x\', \
+\'y\', \'z\'', comm=self.comm)
+            return
+        # end if
+
+        sliceType = sliceType.lower()
+        if sliceType not in ['relative', 'absolute']:
+            mpiPrint(' Error: \'sliceType\' must be \'relative\' or \
+\'absolute\'', comm=self.comm)
+            return
+        # end if
+
+        positions = numpy.atleast_1d(positions)
+        N = len(positions)
+        tmp = numpy.zeros((N, 3))
+        if direction == 'x':
+            tmp[:, 0] = positions
+            dir_vec = [1.0, 0.0, 0.0]
+        elif direction == 'y':
+            tmp[:, 1] = positions
+            dir_vec = [0.0, 1.0, 0.0]
+        elif direction == 'z':
+            tmp[:, 2] == 'z'
+            dir_vec = [0.0, 0.0, 1.0]
+        # end if
+ 
+        for i in xrange(len(positions)):
+            # It is important to ensure each slice get a unique
+            # name...so we will number sequentially from pythhon
+            j = self.nSlice + i + 1
+            if sliceType == 'relative':
+                sliceName = 'Slice_%4.4d %s Para Init %s=%7.3f'%(j, group_tag, direction, positions[i])
+                self.sumb.addparaslice(sliceName, tmp[i], dir_vec)
+            else:
+                sliceName = 'Slice_%4.4d %s Absolute %s=%7.3f'%(j, group_tag, direction, positions[i])
+                self.sumb.addabsslice(sliceName, tmp[i], dir_vec)
+            # end if
+        # end for
+        self.nSlice += N
+        return
+        
     def _setInflowAngle(self, aero_problem):
         '''
         Set the alpha and beta fromthe desiggn variables
