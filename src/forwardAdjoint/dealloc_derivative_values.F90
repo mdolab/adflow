@@ -90,7 +90,10 @@ subroutine dealloc_derivative_values(nn, level)
         deallocate(flowDomsd(nn,1,sps)%BCData(mm)%rface, stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
 
-        deallocate(flowDomsd(nn,1,sps)%BCData(mm)%F, stat=ierr)
+        deallocate(flowDomsd(nn,1,sps)%BCData(mm)%Fp, stat=ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+
+        deallocate(flowDomsd(nn,1,sps)%BCData(mm)%Fv, stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
 
         deallocate(flowDomsd(nn,1,sps)%BCData(mm)%M, stat=ierr)

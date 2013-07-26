@@ -52,7 +52,7 @@ subroutine preprocessingADjoint
   endif
 
   ! Create two (empty) Vectors for getdFdx(T)Vec operations
-  call getForceSize(nDimS,ncell, nTS)
+  call getForceSize(nDimS,ncell)
   nDimS = nDimS * 3 *nTimeIntervalsSpectral! Multiply by 3 for each
                                            ! dof on each point
 

@@ -47,6 +47,7 @@ FILES_TO_COMPLEXIFY = outputMod.f90\
 		 describeScheme.f90\
 		 gridFileNamesWrite.f90\
 		 isoSurfNames.f90\
+		 liftDistribution.F90\
 		 marchingCubesData.F90\
 		 numberOfSurfSolVariables.f90\
 		 numberOfVolSolVariables.f90\

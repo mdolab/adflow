@@ -46,10 +46,15 @@ subroutine setDiffSizes
   ISIZE2OFDrfDrfbcdata_m = 0
   ISIZE3OFDrfDrfbcdata_m = 0
 
-  ! bcdata%f
-  ISIZE1OFDrfDrfbcdata_f = 0
-  ISIZE2OFDrfDrfbcdata_f = 0
-  ISIZE3OFDrfDrfbcdata_f = 0
+  ! bcdata%fp
+  ISIZE1OFDrfDrfbcdata_fp = 0
+  ISIZE2OFDrfDrfbcdata_fp = 0
+  ISIZE3OFDrfDrfbcdata_fp = 0
+
+  ! bcdata%fv
+  ISIZE1OFDrfDrfbcdata_fv = 0
+  ISIZE2OFDrfDrfbcdata_fv = 0
+  ISIZE3OFDrfDrfbcdata_fv = 0
 
   ! viscsubface%tau
   ISIZE1OFDrfDrfviscsubface_tau = 0

@@ -65,8 +65,6 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   ! zero out the winf first
-   winf = zero
    ! Compute the velocity squared based on MachCoef;
    ! needed for the initialization of the turbulent energy,
    ! especially for moving geometries.

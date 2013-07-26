@@ -21,9 +21,7 @@ subroutine getAreas(areas, pts, npts, sps_in, axis)
   real(kind=realType) :: da, fact, fact2
 
   areas = zero
-
-  ! Convert to fortran numbering
-  sps = sps_in+ 1
+  sps = sps_in
 
   ! Compute the local forces (or tractions). Take the scaling
   ! factor into account to obtain the forces in SI-units,
@@ -136,9 +134,7 @@ subroutine getAreaSensitivity(darea, pts, npts, sps_in, axis)
   real(kind=realType) :: fact, fact2, da
 
   darea = zero
-
-  ! Convert to fortran numbering
-  sps = sps_in+ 1
+  sps = sps_in
 
   ! Compute the local forces (or tractions). Take the scaling
   ! factor into account to obtain the forces in SI-units,
