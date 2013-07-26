@@ -25,6 +25,7 @@ module liftDistributionData
      ! CLp, CLv, CDp, CDv : Coefficients of pressure and viscous lift and drag
      ! chord: chord of section
 
+     character(len=maxStringLen) :: sliceName
      integer(kind=intType) :: nNodes
      integer(kind=intType), dimension(:,:), pointer :: ind
      real(kind=realType), dimension(:, :), pointer :: w
@@ -32,6 +33,22 @@ module liftDistributionData
      real(kind=realType) :: chord
 
   end type slice
+
+  type liftDist
+     ! nSegments: Number of nodes to use for distribution
+     ! dir_ind: Index of direction..1 for x, 2 for y, 3 for z
+     ! dir: Slice direction
+     ! distName: Name of lift distribution
+     ! slices: The list of slices this distribution will use
+     ! delta: The current delta spacing for the distribution
+     ! slicePoints: The list of points where the slices are taken
+     character(len=maxStringLen) :: distName
+     integer(kind=intType) :: nSegments, dir_ind
+     real(kind=realType) :: dir(3)
+     type(slice), dimension(:), allocatable :: slices
+     real(kind=realType) :: delta
+     real(kind=realType), dimension(:,:), allocatable :: slicePts
+  end type liftDist
 
   ! Data used to define the global reduced FE surface mesh and data
   ! used to produce 
@@ -84,5 +101,15 @@ module liftDistributionData
   real(kind=realType),   allocatable, dimension(:)    :: dualAreas, fc
   logical :: liftDistInitialized = .False.
   integer(kind=intType) :: msCon1(16, 5), msCon2(4, 2)
+
+  ! Data for the user supplied slices:
+  integer(kind=intType), parameter :: nSliceMax=10000
+  integer(kind=intType) :: nParaSlices, nAbsSlices
+  type(slice), dimension(nSliceMax) :: paraSlices, absSlices
+
+  ! Data for the user supplied lift distributions
+  integer(kind=intType), parameter :: nLiftDistMax=100
+  integer(kind=intType) :: nLiftDists
+  type(liftDist), dimension(nLiftDistMax), target :: liftDists
 
 end module liftDistributionData
