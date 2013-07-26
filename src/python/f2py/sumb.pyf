@@ -65,9 +65,10 @@ python module sumb
          real(kind=realtype) dimension(3),intent(in) :: direction
        end subroutine addabsslice
 
-       subroutine addliftdistribution(nsegments,dir_vec,distname) ! in :test:liftDistribution.F90
+       subroutine addliftdistribution(nsegments,dir_vec,dir_ind, distname) ! in :test:liftDistribution.F90
          integer(kind=inttype) intent(in) :: nsegments
-         real(kind=realtype) dimension(3) :: dir_vec
+         real(kind=realtype) dimension(3), intent(in) :: dir_vec
+         integer(kind=inttype), intent(in) :: dir_ind
          character*(*) intent(in) :: distname
        end subroutine addliftdistribution
        

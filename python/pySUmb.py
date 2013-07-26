@@ -907,16 +907,19 @@ name is unavailable.'%(flowCase), comm=self.comm)
 
         if direction == 'x':
             dir_vec = [1.0, 0.0, 0.0]
+            dir_ind = 1
         elif direction == 'y':
             dir_vec = [0.0, 1.0, 0.0]
+            dir_ind = 2
         else:
             dir_vec = [0.0, 0.0, 1.0]
+            dir_ind = 3
         # end if
         
         distName = 'LiftDist_%2.2d %s: %s normal'%(self.nLiftDist + 1, group_tag, direction)
         self.nLiftDist += 1
 
-        self.sumb.addliftdistribution(nSegments, dir_vec, distName)
+        self.sumb.addliftdistribution(nSegments, dir_vec, dir_ind, distName)
 
     def addSlices(self, direction, positions, sliceType='relative', group_name=None):
         '''
