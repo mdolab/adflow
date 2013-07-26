@@ -1,4 +1,4 @@
-subroutine addLiftDistribution(nSegments, dir_vec, distName)
+subroutine addLiftDistribution(nSegments, dir_vec, dir_ind, distName)
   !
   !      ******************************************************************
   !      *                                                                *
@@ -17,12 +17,13 @@ subroutine addLiftDistribution(nSegments, dir_vec, distName)
   character*(*), intent(in) :: distName
   integer(kind=intType), intent(in) :: nSegments
   real(kind=realType), dimension(3) :: dir_vec
+  integer(kind=intType), intent(in) :: dir_ind
 
   nLiftDists = nLiftDists + 1
   liftDists(nLIftDists)%nSegments = nSegments
   liftDists(nLiftDists)%dir = dir_vec
   liftDists(nLiftDists)%distName = distName
-  liftDists(nLIftDists)%dir_ind = maxloc(dir_vec,1)
+  liftDists(nLIftDists)%dir_ind = dir_ind
   
 end subroutine addLiftDistribution
 
