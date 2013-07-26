@@ -1273,7 +1273,7 @@ name is unavailable.'%(flowCase), comm=self.comm)
             surfname = base + '_surf.cgns'
 
             if self.getOption('numberSolutions'):
-                counter = self.flowCases[self.flowCaseName]['callCounter']
+                counter = self.flowCases[self.curFlowCase]['callCounter']
                 volname = base + '_c%3.3d_vol.cgns'%(counter)
                 surfname = base + '_c%3.3d_surf.cgns'%(counter)
             #end if
@@ -1365,13 +1365,23 @@ name is unavailable.'%(flowCase), comm=self.comm)
 
         return self.mesh.getSurfaceCoordinates(group_name)
 
-    def setSurfaceCoordinates(self, group_name, coordinates):
+    def setSurfaceCoordinates(self, group_name, coordinates, flowCase=None):
         ''' 
         See MultiBlockMesh.py for more info
         '''
 
         self._update_geom_info = True
         self.mesh.setSurfaceCoordinates(group_name, coordinates)
+        
+        if flowCase is None:
+            for case in self.flowCases.keys():
+                self.flowCases[case]['surfMesh'] = \
+                    coordinates.copy()
+            # end for
+        else:
+            self.flowCases[flowCase]['surfMesh'] = \
+                coordinates.copy()
+        # end if
 
         return 
 
