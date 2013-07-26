@@ -11,7 +11,7 @@ subroutine getNPatches(nPatches)
   integer(kind=intType),intent(out) :: nPatches
 
   ! Working Variables
-  integer(kind=intType) :: nn, mm, cgb
+  integer(kind=intType) :: nn, mm
 
   nPatches = 0_intType
 
@@ -52,7 +52,7 @@ subroutine getPatchName(iPatch, patchName)
         if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic .or.&
              BCType(mm) == NSWallIsothermal) then
            cgb = flowDoms(nn,1,1)%cgnsBlockID
-           if (patchCount == iPatch) then
+           if (patchCount + 1 == iPatch) then
               patchName = cgnsDoms(cgb)%bocoInfo(cgnsSubface(mm))%wallBCName
            end if
            patchCount = patchCount + 1
@@ -76,17 +76,16 @@ subroutine getPatchSize(iPatch, patchSize)
   integer(kind=intType), intent(out) :: patchSize(2)
 
   ! Working
-  integer(kind=intType) :: nn, mm, patchCount, cgb, iBeg, iEnd, jBeg, jEnd
+  integer(kind=intType) :: nn, mm, patchCount, iBeg, iEnd, jBeg, jEnd
 
-  patchCount = 1
+  patchCount = 0
   domains: do nn=1,nDom
      call setPointers(nn,1_intType,1_intType)
 
      bocos: do mm=1,nBocos
         if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic .or.&
              BCType(mm) == NSWallIsothermal) then
-           cgb = flowDoms(nn,1,1)%cgnsBlockID
-           if (patchCount == iPatch) then
+           if (patchCount + 1 == iPatch) then
               jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
               iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
               patchSize(1) = (iEnd - iBeg + 1)
