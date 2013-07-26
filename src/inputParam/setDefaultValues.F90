@@ -283,7 +283,7 @@
        liftDirSpecified = .false. ! Lift direction not specified.
 
        ReynoldsLength = one
-       tempFreestream = 288.15_realType
+       tempFreestream = 218.9_realType
        gammaConstant  = 1.4_realType
        RGasDim        = 287.87_realType
 
