@@ -1,5 +1,10 @@
 subroutine verifyForces(pts,npts,nTS)
 
+
+
+! --------------------------------------- DEPRECATED! WILL NOT RUN! ----------------------
+
+
   ! This routine does three thing:
   ! 1. Check that getForces and computeForcesAdj give the same results
   ! 2. Check that dFdw matrix is correct

@@ -225,9 +225,9 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
               fz = pm1*ss(i,j,3)
 
               ! Store Force data on face
-              BCData(nn)%F(i,j,1) = fx
-              BCData(nn)%F(i,j,2) = fy
-              BCData(nn)%F(i,j,3) = fz
+              BCData(nn)%Fp(i,j,1) = fx
+              BCData(nn)%Fp(i,j,2) = fy
+              BCData(nn)%Fp(i,j,3) = fz
 
               ! Scatter a quarter of the area to each node:
               qA = fourth*sqrt(ss(i, j, 1)**2 + ss(i, j, 2)**2 + ss(i, j, 3)**2)
@@ -317,9 +317,9 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
                  cFv(3) = cFv(3) + fz
 
                  ! Store Force data on face
-                 BCData(nn)%F(i,j,1) = BCData(nn)%F(i,j,1) + fx
-                 BCData(nn)%F(i,j,2) = BCData(nn)%F(i,j,2) + fy
-                 BCData(nn)%F(i,j,3) = BCData(nn)%F(i,j,3) + fz
+                 BCData(nn)%Fv(i,j,1) = fx
+                 BCData(nn)%Fv(i,j,2) = fy
+                 BCData(nn)%Fv(i,j,3) = fz
 
                  mx = yc*fz - zc*fy
                  my = zc*fx - xc*fz
@@ -370,6 +370,10 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
 
               enddo
            enddo
+
+        else
+           ! Zero the viscous force contribution
+           BCData(nn)%Fv = zero
         endif visForce
 
         ! We have to inverse the nodal areas

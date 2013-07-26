@@ -75,20 +75,17 @@
    &    omegafourxrot, coscoeffourxrot, sincoeffourxrot, t)
    sinx = SIN(phi)
    cosx = COS(phi)
-   !print *,'phix',phi
    ! Idem for the y-axis.
    phi = RIGIDROTANGLE(degreepolyrot, coefpolyrot, degreefouryrot, &
    &    omegafouryrot, coscoeffouryrot, sincoeffouryrot, t)
    siny = SIN(phi)
    cosy = COS(phi)
-   !print *,'phiY',phi
    ! Idem for the z-axis.
    phi = RIGIDROTANGLE(degreepolzrot, coefpolzrot, degreefourzrot, &
    &    omegafourzrot, coscoeffourzrot, sincoeffourzrot, t)
    sinz = SIN(phi)
    cosz = COS(phi)
    CALL DEBUG_TGT_CALL('DERIVATIVERIGIDROTANGLE', .TRUE., .FALSE.)
-   !print *,'phiz',phi
    ! Compute the time derivative of the rotation angles around the
    ! x-axis, y-axis and z-axis.
    dphixd = DERIVATIVERIGIDROTANGLE_T(degreepolxrot, coefpolxrot, &
@@ -96,19 +93,16 @@
    &    dphix)
    CALL DEBUG_TGT_EXIT()
    CALL DEBUG_TGT_CALL('DERIVATIVERIGIDROTANGLE', .TRUE., .FALSE.)
-   !print *,'dphix',dphix
    dphiyd = DERIVATIVERIGIDROTANGLE_T(degreepolyrot, coefpolyrot, &
    &    degreefouryrot, omegafouryrot, coscoeffouryrot, sincoeffouryrot, t, &
    &    dphiy)
    CALL DEBUG_TGT_EXIT()
    CALL DEBUG_TGT_CALL('DERIVATIVERIGIDROTANGLE', .TRUE., .FALSE.)
-   !print *,'dphiy',dphiy
    dphizd = DERIVATIVERIGIDROTANGLE_T(degreepolzrot, coefpolzrot, &
    &    degreefourzrot, omegafourzrot, coscoeffourzrot, sincoeffourzrot, t, &
    &    dphiz)
    CALL DEBUG_TGT_EXIT()
    dmd = 0.0_8
-   !print *,'dphiz',dphiz
    ! Compute the time derivative of the rotation matrix applied to
    ! the coordinates at t == 0.
    ! Part 1. Derivative of the z-rotation matrix multiplied by the

@@ -305,7 +305,8 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
                                    ! This real node has been peturbed
                                    do fmDim = 1,3
                                       call VecSetValues(FMx(fmDim), 1, ind, &
-                                           bcDatad(mm)%F(i,j,fmDim), &
+                                           bcDatad(mm)%Fp(i, j, fmDim)+ &
+                                           bcDatad(mm)%Fv(i, j, fmDim), &
                                            ADD_VALUES, ierr) 
                                       call EChk(ierr, __FILE__, __LINE__)
 
@@ -318,8 +319,9 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
                                       ! all the info we need for dFcdx
                                       fRow = BCData(mm)%FMCellIndex(i,j)*3 + fmDim - 1
                                       
-                                      call MatSetValues(dFcdx, 1, fRow, &
-                                          1, ind, bcData(mm)%F(i, j, fmDim), &
+                                      call MatSetValues(dFcdx, 1, fRow, 1, ind, &
+                                           bcDatad(mm)%Fp(i, j, fmDim) + &
+                                           bcDatad(mm)%Fv(i, j, fmDim), &
                                           ADD_VALUES, ierr)
                                       call EChk(ierr, __FILE__, __LINE__)
                                    end do

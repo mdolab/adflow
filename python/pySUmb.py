@@ -756,7 +756,7 @@ class SUMB(AeroSolver):
             self.sumb.getpatchname(i, tmp)
             patchnames.append(
                 ''.join([tmp[j] for j in range(256)]).lower().strip())
-            patchsizes.append(self.sumb.getpatchsize(i))
+            patchsizes.append(self.sumb.getpatchsize(i+1))
         # end for
  
         conn = self.getForceConnectivity()
@@ -1525,18 +1525,23 @@ name is unavailable.'%(flowCase), comm=self.comm)
 
         return 
 
-    def getForces(self, group_name=None, cfd_force_pts=None, TS=0,
+    def getForces(self, group_name=None, TS=0, pressure=True, viscous=True, 
                   flowCase=None):
-        ''' Return the forces on this processor. Use
-        cfd_force_pts to compute the forces if given
+        ''' Return the forces on this processor.
         '''
         self.setFlowCase(flowCase, True, 'getForces')
-        if cfd_force_pts is None:
-            cfd_force_pts = self.getForcePoints(TS)
-        # end if
-        
-        if len(cfd_force_pts) > 0:
-            forces = self.sumb.getforces(cfd_force_pts.T, TS).T
+        [npts, ncell] = self.sumb.getforcesize()
+
+        if npts > 0:
+            forcesp, forcesv = self.sumb.getforces(npts, TS+1)
+            forcesp = forcesp.T
+            forcesv = forcesv.T
+
+            forces = numpy.zeros_like(forcesp)
+            if pressure:
+                forces += forcesp
+            if viscous:
+                forces += forcesv
         else:
             forces = numpy.zeros((0,3),self.dtype)
         # end if
@@ -1549,30 +1554,18 @@ name is unavailable.'%(flowCase), comm=self.comm)
     def getForcePoints(self, TS=0, flowCase=None):
         self.setFlowCase(flowCase, True, 'getForcePoints')
 
-        [npts, ncell, nTS] = self.sumb.getforcesize()
-        pts = numpy.zeros((nTS, npts, 3),self.dtype)
-        self.sumb.getforcepoints(pts.T)
+        [npts, ncell] = self.sumb.getforcesize()
+        pts = numpy.zeros((npts, 3),self.dtype)
+        self.sumb.getforcepoints(pts.T, TS+1)
         
-        return pts[TS]
+        return pts
 
     def getForceConnectivity(self):
-        conn_size = self.sumb.getforceconnectivitysize()
-        conn =  numpy.zeros((conn_size, 4), dtype='intc')
+        [npts, ncells] = self.sumb.getforcesize()
+        conn =  numpy.zeros((ncells, 4), dtype='intc')
         self.sumb.getforceconnectivity(numpy.ravel(conn))
 
         return conn
-
-    def verifyForces(self, cfd_force_pts=None):
-
-        # Adjoint must be initialized for force verification
-
-        if cfd_force_pts is None:
-            cfd_force_pts = self.getForcePoints()
-        # end if
-
-        self.sumb.verifyforces(cfd_force_pts.T)
-
-        return
 
     def verifyBendingPartial(self):
         self.sumb.verifybendingderivatives()
@@ -2116,9 +2109,11 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         # Note: Computeobjective partials MUST be called with the full
         # force pt list.
         if forcePoints is None:
-            [npts, ncells, nTS] = self.sumb.getforcesize()
+            [npts, ncells] = self.sumb.getforcesize()
+            nTS  = self.sumb.inputtimespectral.ntimeintervalsspectral
             forcePoints = numpy.zeros((nTS, npts, 3),self.dtype)
-            self.sumb.getforcepoints(forcePoints.T)
+            for i in xrange(nTS):
+                self.sumb.getforcepoints(forcePoints[i].T,i+1)
         # end if
 
         if aeroObj:
@@ -2344,7 +2339,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         
         return SUmbsolution
 
-    def computeArea(self, axis, group_name=None, cfd_force_pts=None, TS=0, flowCase=None):
+    def computeArea(self, axis, group_name=None, TS=0, flowCase=None):
         """
         Compute the projected area of the surface mesh
 
@@ -2359,11 +2354,10 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             Area: The resulting area  
             """
         self.setFlowCase(flowCase)
-        if cfd_force_pts is None:
-            cfd_force_pts = self.getForcePoints(TS)
-        # end if
+
+        cfd_force_pts = self.getForcePoints(TS)
         if len(cfd_force_pts) > 0:
-            areas = self.sumb.getareas(cfd_force_pts.T, TS, axis).T
+            areas = self.sumb.getareas(cfd_force_pts.T, TS+1, axis).T
         else:
             areas = numpy.zeros((0,3), self.dtype)
         # end if
@@ -2377,8 +2371,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         
         return area
 
-    def computeAreaSensitivity(self, axis, group_name=None, 
-                               cfd_force_pts=None, TS=0, flowCase=None):
+    def computeAreaSensitivity(self, axis, group_name=None, TS=0, flowCase=None):
         """ 
         Compute the projected area of the surface mesh
 
@@ -2393,11 +2386,10 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             Area: The resulting area    
             """
         self.setFlowCase(flowCase)
-        if cfd_force_pts is None:
-            cfd_force_pts = self.getForcePoints(TS)
-        # end if
+        cfd_force_pts = self.getForcePoints(TS)
+
         if len(cfd_force_pts) > 0:
-            da = self.sumb.getareasensitivity(cfd_force_pts.T, TS, axis).T
+            da = self.sumb.getareasensitivity(cfd_force_pts.T, TS+1, axis).T
         else:
             da = numpy.zeros((0,3), self.dtype)
         # end if

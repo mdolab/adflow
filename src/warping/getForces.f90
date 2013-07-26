@@ -28,7 +28,7 @@ subroutine getNPatches(nPatches)
 end subroutine getNPatches
 
 subroutine getPatchName(iPatch, patchName) 
-  ! Get names one at a time since f2py can't do arrays of strings
+  ! Get names one at a time since f2py can't do arrays of strings (nicely)
   use BCTypes
   use blockPointers
   use cgnsGrid
@@ -62,7 +62,7 @@ subroutine getPatchName(iPatch, patchName)
 end subroutine getPatchName
 
 subroutine getPatchSize(iPatch, patchSize)
-  ! Get names one at a time since f2py can't do arrays of strings
+  ! Get size of one patach
   use BCTypes
   use blockPointers
   use cgnsGrid
@@ -78,7 +78,7 @@ subroutine getPatchSize(iPatch, patchSize)
   ! Working
   integer(kind=intType) :: nn, mm, patchCount, cgb, iBeg, iEnd, jBeg, jEnd
 
-  patchCount = 0
+  patchCount = 1
   domains: do nn=1,nDom
      call setPointers(nn,1_intType,1_intType)
 
@@ -98,7 +98,7 @@ subroutine getPatchSize(iPatch, patchSize)
   end do domains
 end subroutine getPatchSize
 
-subroutine getForceSize(size, sizeCell, nTS)
+subroutine getForceSize(size, sizeCell)
   ! Compute the number of points that will be returned from getForces
   ! or getForcePoints
   use BCTypes
@@ -106,13 +106,13 @@ subroutine getForceSize(size, sizeCell, nTS)
   use inputTimeSpectral
   implicit none
 
-  integer(kind=intType),intent(out) :: size, sizeCell, nTS
+  integer(kind=intType),intent(out) :: size, sizeCell
   integer(kind=intType) :: nn,mm
   integer(kind=intType) :: iBeg,iEnd,jBeg,jEnd
 
   size = 0_intType
   sizeCell = 0_intType
-  nTS = nTimeIntervalsSpectral
+ 
   domains: do nn=1,nDom
      call setPointers(nn,1_intType,1_intType)
      bocos: do mm=1,nBocos
@@ -127,36 +127,6 @@ subroutine getForceSize(size, sizeCell, nTS)
      end do bocos
   end do domains
 end subroutine getForceSize
-
-subroutine getForceConnectivitySize(size)
-  ! Compute the number of cellss that will be returned from
-  ! getForceConnectivity
-  use BCTypes
-  use blockPointers
-  use inputTimeSpectral
-  implicit none
-  
-  ! Input/Output
-  integer(kind=intType), intent(out) :: size
-
-  ! Working
-  integer(kind=intType) :: nn, mm
-  integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd
-
-  size = 0_intType
-  domains: do nn=1,nDom
-     call setPointers(nn,1_intType,1_intType)
-     bocos: do mm=1,nBocos
-        if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic .or.&
-             BCType(mm) == NSWallIsothermal) then
-
-           jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
-           iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
-           size = size + (iEnd - iBeg)*(jEnd - jBeg)
-        end if
-     end do bocos
-  end do domains
-end subroutine getForceConnectivitySize
 
 subroutine getForceConnectivity(conn, ncell)
   ! Return the connectivity list for the each of the patches
@@ -206,7 +176,71 @@ subroutine getForceConnectivity(conn, ncell)
   end do domains
 end subroutine getForceConnectivity
 
-subroutine getForces(forces, pts, npts, sps_in)
+subroutine getForcePoints(points, npts, sps_in)
+
+  use BCTypes
+  use blockPointers
+  use inputTimeSpectral
+  implicit none
+  !
+  !      Local variables.
+  !
+  integer(kind=intType), intent(in) :: npts,sps_in
+  real(kind=realType), intent(inout) :: points(3,npts)
+  integer :: ierr
+
+  integer(kind=intType) :: mm, nn, i, j, ii,sps
+  integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd
+
+  !      ******************************************************************
+  !      *                                                                *
+  !      * Begin execution                                                *
+  !      *                                                                *
+  !      ******************************************************************
+
+  sps = sps_in
+
+  ii = 0 
+  domains: do nn=1,nDom
+     call setPointers(nn, 1_intType, sps)
+     
+     ! Loop over the number of boundary subfaces of this block.
+     bocos: do mm=1,nBocos
+        
+        if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic .or.&
+             BCType(mm) == NSWallIsothermal) then
+           
+           ! NODE Based
+           jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
+           iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
+           
+           do j=jBeg, jEnd ! This is a node loop
+              do i=iBeg, iEnd ! This is a node loop
+                 ii = ii +1
+                 select case(BCFaceID(mm))
+                    
+                 case(imin)
+                    points(:,ii) = x(1,i,j,:)
+                 case(imax)
+                    points(:,ii) = x(il,i,j,:)
+                 case(jmin) 
+                    points(:,ii) = x(i,1,j,:)
+                 case(jmax) 
+                    points(:,ii) = x(i,jl,j,:)
+                 case(kmin) 
+                    points(:,ii) = x(i,j,1,:)
+                 case(kmax) 
+                    points(:,ii) = x(i,j,kl,:)
+                 end select    
+              end do
+           end do
+        end if
+     end do bocos
+  end do domains
+  
+end subroutine getForcePoints
+
+subroutine getForces(forcesP, forcesV, npts, sps_in)
 
   use BCTypes
   use blockPointers
@@ -219,43 +253,27 @@ subroutine getForces(forces, pts, npts, sps_in)
   !      Local variables.
   !
   integer(kind=intType), intent(in) :: npts, sps_in
-  real(kind=realType), intent(in)  :: pts(3,npts)
-  real(kind=realType), intent(out) :: forces(3,npts)
+  real(kind=realType), intent(out) :: forcesP(3,npts), forcesV(3, nPts)
 
   integer :: ierr
   real(kind=realType) :: area(npts) ! Dual area's
-
   integer(kind=intType) :: mm, nn, i, j, ipt, ii, jj,sps
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd
-  real(kind=realType) :: scaleDim, fact, fact2, pp, fx,fy,fz
-
-  real(kind=realType), dimension(:,:),   pointer :: pp2, pp1
   real(kind=realType) :: sss(3),v2(3),v1(3), qa
   integer(kind=intType) :: lower_left,lower_right,upper_left,upper_right
-  logical :: viscousSubFace
-  real(kind=realType) :: tauXx, tauYy, tauZz
-  real(kind=realType) :: tauXy, tauXz, tauYz
   real(kind=realType) :: cFp(3), cFv(3), cMp(3), cMv(3), yplusmax, qf(3)
+
   !      ******************************************************************
   !      *                                                                *
   !      * Begin execution                                                *
   !      *                                                                *
   !      ******************************************************************
 
-  ! Compute the scaling factor to create the correct dimensional
-  ! force in newton. As the coordinates are already in meters,
-  ! this scaling factor is pRef.
-
-  scaleDim = pRef/pInf
-  forces = zero
+  forcesp = zero
+  forcesv = zero
   area = zero
+  sps = sps_in
 
-  ! Convert to fortran numbering
-  sps = sps_in+ 1
-
-  ! Compute the local forces (or tractions). Take the scaling
-  ! factor into account to obtain the forces in SI-units,
-  ! i.e. Newton.
   ii = 0 
   domains: do nn=1,nDom
      call setPointers(nn,1_intType,sps)
@@ -281,13 +299,22 @@ subroutine getForces(forces, pts, npts, sps_in)
                  upper_left  = lower_right + iend - ibeg + 1
                  upper_right = upper_left + 1
 
-                 ! Assign the quarter of the forces to each node
-                 qf = bcData(mm)%F(i, j, :)*fourth
+                 ! Assign the quarter of the pressure forces to each node
+                 qf = bcData(mm)%Fp(i, j, :) * fourth
 
-                 forces(:, lower_left)  = forces(:, lower_left)  + qf
-                 forces(:, lower_right) = forces(:, lower_right) + qf
-                 forces(:, upper_left)  = forces(:, upper_left)  + qf
-                 forces(:, upper_right) = forces(:, upper_right) + qf
+                 forcesp(:, lower_left)  = forcesp(:, lower_left)  + qf
+                 forcesp(:, lower_right) = forcesp(:, lower_right) + qf
+                 forcesp(:, upper_left)  = forcesp(:, upper_left)  + qf
+                 forcesp(:, upper_right) = forcesp(:, upper_right) + qf
+
+                 ! Assign the quarter of the viscous forces to each node
+                 qf = bcData(mm)%Fv(i, j, :) * fourth
+
+                 forcesv(:, lower_left)  = forcesv(:, lower_left)  + qf
+                 forcesv(:, lower_right) = forcesv(:, lower_right) + qf
+                 forcesv(:, upper_left)  = forcesv(:, upper_left)  + qf
+                 forcesv(:, upper_right) = forcesv(:, upper_right) + qf
+
               end do
            end do
            
@@ -295,7 +322,8 @@ subroutine getForces(forces, pts, npts, sps_in)
               jj = 1
               do j=jBeg-1, jEnd ! This is a NODE loop
                  do i=iBeg-1, iEnd ! This is a NODE loop 
-                    forces(:, ii + jj) = forces(:, ii + jj) * bcData(mm)%oArea(i, j)
+                    forcesp(:, ii + jj) = forcesp(:, ii + jj) * bcData(mm)%oArea(i, j)
+                    forcesv(:, ii + jj) = forcesv(:, ii + jj) * bcData(mm)%oArea(i, j)
                     jj = jj + 1
                  end do
               end do
@@ -310,68 +338,3 @@ subroutine getForces(forces, pts, npts, sps_in)
      end do bocos
   end do domains
 end subroutine getForces
-
-subroutine getForcePoints(points,npts,nTS)
-
-  use BCTypes
-  use blockPointers
-  use inputTimeSpectral
-  implicit none
-  !
-  !      Local variables.
-  !
-  integer(kind=intType), intent(in) :: npts,nTS
-  real(kind=realType), intent(inout) :: points(3,npts,nTS)
-  integer :: ierr
-
-  integer(kind=intType) :: mm, nn, i, j, ii,sps
-  integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd
-
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
-
-  do sps = 1,nTimeIntervalsSpectral
-     ii = 0 
-     domains: do nn=1,nDom
-        call setPointers(nn,1_intType,sps)
-
-        ! Loop over the number of boundary subfaces of this block.
-        bocos: do mm=1,nBocos
-
-           if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic .or.&
-                BCType(mm) == NSWallIsothermal) then
-
-              ! NODE Based
-              jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
-              iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
-
-              do j=jBeg, jEnd ! This is a node loop
-                 do i=iBeg, iEnd ! This is a node loop
-                    ii = ii +1
-                    select case(BCFaceID(mm))
-
-                    case(imin)
-                       points(:,ii,sps) = x(1,i,j,:)
-                    case(imax)
-                       points(:,ii,sps) = x(il,i,j,:)
-                    case(jmin) 
-                       points(:,ii,sps) = x(i,1,j,:)
-                    case(jmax) 
-                       points(:,ii,sps) = x(i,jl,j,:)
-                    case(kmin) 
-                       points(:,ii,sps) = x(i,j,1,:)
-                    case(kmax) 
-                       points(:,ii,sps) = x(i,j,kl,:)
-                    end select
-                 end do
-              end do
-           end if
-        end do bocos
-     end do domains
-  enddo
-end subroutine getForcePoints
-
-

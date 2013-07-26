@@ -39,7 +39,7 @@ SUMB_COMMON_FILE = $(SUMB_DIR)/SUmb_Common.mk
 SRC = ..
 
 # Dependent output variables (separator: white space, default: all)
-TAPENADE_OUTVARS = "flowdoms%dw  Force Moment Lift Drag cForce cMoment CL CD BCData%F BCData%M costFuncMat flowdoms%w flowdoms%x"
+TAPENADE_OUTVARS = "flowdoms%dw  Force Moment Lift Drag cForce cMoment CL CD BCData%Fp BCData%Fv BCData%M costFuncMat flowdoms%w flowdoms%x"
 
 # Independent input variables (separator: white space, default: all)
 TAPENADE_VARS = "flowdoms%w flowdoms%x alpha beta mach machgrid machcoef lengthref pointref surfaceref"

@@ -2,12 +2,13 @@
    !  Tapenade 3.7 (r4786) - 21 Feb 2013 15:53
    !
    !  Differentiation of forcesandmoments in forward (tangent) mode (with options debugTangent i4 dr8 r8):
-   !   variations   of useful results: *(*bcdata.f) *(*bcdata.m) cfp
-   !                cfv cmp cmv
+   !   variations   of useful results: *(*bcdata.fp) *(*bcdata.fv)
+   !                *(*bcdata.m) cfp cfv cmp cmv
    !   with respect to varying inputs: *p *x *si *sj *sk *(*viscsubface.tau)
    !                pinf pref lengthref surfaceref machcoef pointref
    !   Plus diff mem management of: p:in x:in si:in sj:in sk:in viscsubface:in
-   !                *viscsubface.tau:in bcdata:in *bcdata.f:in *bcdata.m:in
+   !                *viscsubface.tau:in bcdata:in *bcdata.fp:in *bcdata.fv:in
+   !                *bcdata.m:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -52,9 +53,12 @@
    !  Hint: ISIZE3OFDrfDrfbcdata_m should be the size of dimension 3 of array **bcdata%m
    !  Hint: ISIZE2OFDrfDrfbcdata_m should be the size of dimension 2 of array **bcdata%m
    !  Hint: ISIZE1OFDrfDrfbcdata_m should be the size of dimension 1 of array **bcdata%m
-   !  Hint: ISIZE3OFDrfDrfbcdata_f should be the size of dimension 3 of array **bcdata%f
-   !  Hint: ISIZE2OFDrfDrfbcdata_f should be the size of dimension 2 of array **bcdata%f
-   !  Hint: ISIZE1OFDrfDrfbcdata_f should be the size of dimension 1 of array **bcdata%f
+   !  Hint: ISIZE3OFDrfDrfbcdata_fv should be the size of dimension 3 of array **bcdata%fv
+   !  Hint: ISIZE2OFDrfDrfbcdata_fv should be the size of dimension 2 of array **bcdata%fv
+   !  Hint: ISIZE1OFDrfDrfbcdata_fv should be the size of dimension 1 of array **bcdata%fv
+   !  Hint: ISIZE3OFDrfDrfbcdata_fp should be the size of dimension 3 of array **bcdata%fp
+   !  Hint: ISIZE2OFDrfDrfbcdata_fp should be the size of dimension 2 of array **bcdata%fp
+   !  Hint: ISIZE1OFDrfDrfbcdata_fp should be the size of dimension 1 of array **bcdata%fp
    IMPLICIT NONE
    !
    !      ******************************************************************
@@ -102,7 +106,7 @@
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ss, xx
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ssd, xxd
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: norm
-   REAL(kind=realtype) :: mx, my, mz
+   REAL(kind=realtype) :: mx, my, mz, qa
    REAL(kind=realtype) :: mxd, myd, mzd
    LOGICAL :: viscoussubface
    REAL(kind=realtype) :: arg1
@@ -187,7 +191,10 @@
    cmv(3) = zero
    yplusmax = zero
    DO ii1=1,ISIZE1OFDrfbcdata
-   bcdatad(ii1)%f = 0.0_8
+   bcdatad(ii1)%fp = 0.0_8
+   END DO
+   DO ii1=1,ISIZE1OFDrfbcdata
+   bcdatad(ii1)%fv = 0.0_8
    END DO
    DO ii1=1,ISIZE1OFDrfbcdata
    bcdatad(ii1)%m = 0.0_8
@@ -299,6 +306,21 @@
    rlv1 => rlv(1:, je, 1:)
    END IF
    CASE (kmin) 
+   !===========================================================
+   pp2d => pd(1:, 1:, 2)
+   pp2 => p(1:, 1:, 2)
+   pp1d => pd(1:, 1:, 1)
+   pp1 => p(1:, 1:, 1)
+   rho2 => w(1:, 1:, 2, irho)
+   rho1 => w(1:, 1:, 1, irho)
+   ssd => skd(:, :, 1, :)
+   ss => sk(:, :, 1, :)
+   xxd => xd(:, :, 1, :)
+   xx => x(:, :, 1, :)
+   fact = -one
+   IF (equations .EQ. ransequations) THEN
+   dd2wall => d2wall(:, :, 2)
+   END IF
    IF (.TRUE. .AND. DEBUG_TGT_HERE('middle', .FALSE.)) THEN
    CALL DEBUG_TGT_REAL8ARRAY('p', p, pd, ISIZE1OFDrfp*&
    &                              ISIZE2OFDrfp*ISIZE3OFDrfp)
@@ -318,10 +340,16 @@
    &                                ISIZE3OFDrfDrfviscsubface_tau)
    END DO
    DO ii1=1,ISIZE1OFDrfbcdata
-   CALL DEBUG_TGT_REAL8ARRAY('bcdata', bcdata(ii1)%f, bcdatad(&
-   &                                ii1)%f, ISIZE1OFDrfDrfbcdata_f*&
-   &                                ISIZE2OFDrfDrfbcdata_f*&
-   &                                ISIZE3OFDrfDrfbcdata_f)
+   CALL DEBUG_TGT_REAL8ARRAY('bcdata', bcdata(ii1)%fp, bcdatad(&
+   &                                ii1)%fp, ISIZE1OFDrfDrfbcdata_fp*&
+   &                                ISIZE2OFDrfDrfbcdata_fp*&
+   &                                ISIZE3OFDrfDrfbcdata_fp)
+   END DO
+   DO ii1=1,ISIZE1OFDrfbcdata
+   CALL DEBUG_TGT_REAL8ARRAY('bcdata', bcdata(ii1)%fv, bcdatad(&
+   &                                ii1)%fv, ISIZE1OFDrfDrfbcdata_fv*&
+   &                                ISIZE2OFDrfDrfbcdata_fv*&
+   &                                ISIZE3OFDrfDrfbcdata_fv)
    END DO
    DO ii1=1,ISIZE1OFDrfbcdata
    CALL DEBUG_TGT_REAL8ARRAY('bcdata', bcdata(ii1)%m, bcdatad(&
@@ -340,21 +368,6 @@
    CALL DEBUG_TGT_REAL8ARRAY('refpoint', refpoint, refpointd, 3)
    CALL DEBUG_TGT_REAL8('scaledim', scaledim, scaledimd)
    CALL DEBUG_TGT_DISPLAY('middle')
-   END IF
-   !===========================================================
-   pp2d => pd(1:, 1:, 2)
-   pp2 => p(1:, 1:, 2)
-   pp1d => pd(1:, 1:, 1)
-   pp1 => p(1:, 1:, 1)
-   rho2 => w(1:, 1:, 2, irho)
-   rho1 => w(1:, 1:, 1, irho)
-   ssd => skd(:, :, 1, :)
-   ss => sk(:, :, 1, :)
-   xxd => xd(:, :, 1, :)
-   xx => x(:, :, 1, :)
-   fact = -one
-   IF (equations .EQ. ransequations) THEN
-   dd2wall => d2wall(:, :, 2)
    END IF
    IF (viscoussubface) THEN
    rlv2 => rlv(1:, 1:, 2)
@@ -386,6 +399,7 @@
    ! cell range, because the latter may include the halo's in i
    ! and j-direction. The offset +1 is there, because inBeg and
    ! jnBeg refer to nodal ranges and not to cell ranges.
+   bcdata(nn)%oarea(:, :) = zero
    DO j=bcdata(nn)%jnbeg+1,bcdata(nn)%jnend
    DO i=bcdata(nn)%inbeg+1,bcdata(nn)%inend
    ! Compute the average pressure minus 1 and the coordinates
@@ -418,12 +432,20 @@
    fzd = pm1d*ss(i, j, 3) + pm1*ssd(i, j, 3)
    fz = pm1*ss(i, j, 3)
    ! Store Force data on face
-   bcdatad(nn)%f(i, j, 1) = fxd
-   bcdata(nn)%f(i, j, 1) = fx
-   bcdatad(nn)%f(i, j, 2) = fyd
-   bcdata(nn)%f(i, j, 2) = fy
-   bcdatad(nn)%f(i, j, 3) = fzd
-   bcdata(nn)%f(i, j, 3) = fz
+   bcdatad(nn)%fp(i, j, 1) = fxd
+   bcdata(nn)%fp(i, j, 1) = fx
+   bcdatad(nn)%fp(i, j, 2) = fyd
+   bcdata(nn)%fp(i, j, 2) = fy
+   bcdatad(nn)%fp(i, j, 3) = fzd
+   bcdata(nn)%fp(i, j, 3) = fz
+   ! Scatter a quarter of the area to each node:
+   arg1 = ss(i, j, 1)**2 + ss(i, j, 2)**2 + ss(i, j, 3)**2
+   result1 = SQRT(arg1)
+   qa = fourth*result1
+   bcdata(nn)%oarea(i-1, j-1) = bcdata(nn)%oarea(i-1, j-1) + qa
+   bcdata(nn)%oarea(i, j-1) = bcdata(nn)%oarea(i, j-1) + qa
+   bcdata(nn)%oarea(i-1, j) = bcdata(nn)%oarea(i-1, j) + qa
+   bcdata(nn)%oarea(i, j) = bcdata(nn)%oarea(i, j) + qa
    ! Update the inviscid force and moment coefficients.
    cfpd(1) = cfpd(1) + fxd
    cfp(1) = cfp(1) + fx
@@ -527,12 +549,12 @@
    cfvd(3) = cfvd(3) + fzd
    cfv(3) = cfv(3) + fz
    ! Store Force data on face
-   bcdatad(nn)%f(i, j, 1) = bcdatad(nn)%f(i, j, 1) + fxd
-   bcdata(nn)%f(i, j, 1) = bcdata(nn)%f(i, j, 1) + fx
-   bcdatad(nn)%f(i, j, 2) = bcdatad(nn)%f(i, j, 2) + fyd
-   bcdata(nn)%f(i, j, 2) = bcdata(nn)%f(i, j, 2) + fy
-   bcdatad(nn)%f(i, j, 3) = bcdatad(nn)%f(i, j, 3) + fzd
-   bcdata(nn)%f(i, j, 3) = bcdata(nn)%f(i, j, 3) + fz
+   bcdatad(nn)%fv(i, j, 1) = fxd
+   bcdata(nn)%fv(i, j, 1) = fx
+   bcdatad(nn)%fv(i, j, 2) = fyd
+   bcdata(nn)%fv(i, j, 2) = fy
+   bcdatad(nn)%fv(i, j, 3) = fzd
+   bcdata(nn)%fv(i, j, 3) = fz
    mxd = ycd*fz + yc*fzd - zcd*fy - zc*fyd
    mx = yc*fz - zc*fy
    myd = zcd*fx + zc*fxd - xcd*fz - xc*fzd
@@ -585,7 +607,17 @@
    END IF
    END DO
    END DO
+   ELSE
+   ! Zero the viscous force contribution
+   bcdatad(nn)%fv = 0.0_8
+   bcdata(nn)%fv = zero
    END IF
+   ! We have to inverse the nodal areas
+   DO j=bcdata(nn)%jnbeg,bcdata(nn)%jnend
+   DO i=bcdata(nn)%inbeg,bcdata(nn)%inend
+   bcdata(nn)%oarea(i, j) = one/bcdata(nn)%oarea(i, j)
+   END DO
+   END DO
    END IF
    END DO bocos
    ! Currently the coefficients only contain the surface integral
@@ -626,9 +658,16 @@
    cmv(3) = cmv(3)*fact
    IF (.TRUE. .AND. DEBUG_TGT_HERE('exit', .FALSE.)) THEN
    DO ii1=1,ISIZE1OFDrfbcdata
-   CALL DEBUG_TGT_REAL8ARRAY('bcdata', bcdata(ii1)%f, bcdatad(ii1)%f&
-   &                          , ISIZE1OFDrfDrfbcdata_f*&
-   &                          ISIZE2OFDrfDrfbcdata_f*ISIZE3OFDrfDrfbcdata_f)
+   CALL DEBUG_TGT_REAL8ARRAY('bcdata', bcdata(ii1)%fp, bcdatad(ii1)%&
+   &                          fp, ISIZE1OFDrfDrfbcdata_fp*&
+   &                          ISIZE2OFDrfDrfbcdata_fp*&
+   &                          ISIZE3OFDrfDrfbcdata_fp)
+   END DO
+   DO ii1=1,ISIZE1OFDrfbcdata
+   CALL DEBUG_TGT_REAL8ARRAY('bcdata', bcdata(ii1)%fv, bcdatad(ii1)%&
+   &                          fv, ISIZE1OFDrfDrfbcdata_fv*&
+   &                          ISIZE2OFDrfDrfbcdata_fv*&
+   &                          ISIZE3OFDrfDrfbcdata_fv)
    END DO
    DO ii1=1,ISIZE1OFDrfbcdata
    CALL DEBUG_TGT_REAL8ARRAY('bcdata', bcdata(ii1)%m, bcdatad(ii1)%m&

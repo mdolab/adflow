@@ -54,6 +54,7 @@ FF90_OBJECTS_3 = NKsolverVars.o\
 		 block.o\
 		 IOModule.o\
 		 costFunctions.o\
+		 liftDistributionData.o\
 
 FF90_OBJECTS_4 = ADjointVars.o\
 		 ADjointPETSc.o\
@@ -82,6 +83,7 @@ FILES_TO_COMPLEXIFY =  precision.F90\
 		 bleedFlows.f90\
 		 constants.F90\
 		 coolingModelLevel0.f90\
+		 liftDistributionData.F90\
 		 killSignals.f90\
 		 communication.f90\
 		 NKsolverVars.F90\

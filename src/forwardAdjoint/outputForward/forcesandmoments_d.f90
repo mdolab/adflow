@@ -2,12 +2,13 @@
    !  Tapenade 3.7 (r4786) - 21 Feb 2013 15:53
    !
    !  Differentiation of forcesandmoments in forward (tangent) mode (with options i4 dr8 r8):
-   !   variations   of useful results: *(*bcdata.f) *(*bcdata.m) cfp
-   !                cfv cmp cmv
+   !   variations   of useful results: *(*bcdata.fp) *(*bcdata.fv)
+   !                *(*bcdata.m) cfp cfv cmp cmv
    !   with respect to varying inputs: *p *x *si *sj *sk *(*viscsubface.tau)
    !                pinf pref lengthref surfaceref machcoef pointref
    !   Plus diff mem management of: p:in x:in si:in sj:in sk:in viscsubface:in
-   !                *viscsubface.tau:in bcdata:in *bcdata.f:in *bcdata.m:in
+   !                *viscsubface.tau:in bcdata:in *bcdata.fp:in *bcdata.fv:in
+   !                *bcdata.m:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -73,7 +74,7 @@
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ss, xx
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ssd, xxd
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: norm
-   REAL(kind=realtype) :: mx, my, mz
+   REAL(kind=realtype) :: mx, my, mz, qa
    REAL(kind=realtype) :: mxd, myd, mzd
    LOGICAL :: viscoussubface
    REAL(kind=realtype) :: arg1
@@ -130,7 +131,10 @@
    cmv(3) = zero
    yplusmax = zero
    DO ii1=1,ISIZE1OFDrfbcdata
-   bcdatad(ii1)%f = 0.0_8
+   bcdatad(ii1)%fp = 0.0_8
+   END DO
+   DO ii1=1,ISIZE1OFDrfbcdata
+   bcdatad(ii1)%fv = 0.0_8
    END DO
    DO ii1=1,ISIZE1OFDrfbcdata
    bcdatad(ii1)%m = 0.0_8
@@ -287,6 +291,7 @@
    ! cell range, because the latter may include the halo's in i
    ! and j-direction. The offset +1 is there, because inBeg and
    ! jnBeg refer to nodal ranges and not to cell ranges.
+   bcdata(nn)%oarea(:, :) = zero
    DO j=bcdata(nn)%jnbeg+1,bcdata(nn)%jnend
    DO i=bcdata(nn)%inbeg+1,bcdata(nn)%inend
    ! Compute the average pressure minus 1 and the coordinates
@@ -319,12 +324,20 @@
    fzd = pm1d*ss(i, j, 3) + pm1*ssd(i, j, 3)
    fz = pm1*ss(i, j, 3)
    ! Store Force data on face
-   bcdatad(nn)%f(i, j, 1) = fxd
-   bcdata(nn)%f(i, j, 1) = fx
-   bcdatad(nn)%f(i, j, 2) = fyd
-   bcdata(nn)%f(i, j, 2) = fy
-   bcdatad(nn)%f(i, j, 3) = fzd
-   bcdata(nn)%f(i, j, 3) = fz
+   bcdatad(nn)%fp(i, j, 1) = fxd
+   bcdata(nn)%fp(i, j, 1) = fx
+   bcdatad(nn)%fp(i, j, 2) = fyd
+   bcdata(nn)%fp(i, j, 2) = fy
+   bcdatad(nn)%fp(i, j, 3) = fzd
+   bcdata(nn)%fp(i, j, 3) = fz
+   ! Scatter a quarter of the area to each node:
+   arg1 = ss(i, j, 1)**2 + ss(i, j, 2)**2 + ss(i, j, 3)**2
+   result1 = SQRT(arg1)
+   qa = fourth*result1
+   bcdata(nn)%oarea(i-1, j-1) = bcdata(nn)%oarea(i-1, j-1) + qa
+   bcdata(nn)%oarea(i, j-1) = bcdata(nn)%oarea(i, j-1) + qa
+   bcdata(nn)%oarea(i-1, j) = bcdata(nn)%oarea(i-1, j) + qa
+   bcdata(nn)%oarea(i, j) = bcdata(nn)%oarea(i, j) + qa
    ! Update the inviscid force and moment coefficients.
    cfpd(1) = cfpd(1) + fxd
    cfp(1) = cfp(1) + fx
@@ -428,12 +441,12 @@
    cfvd(3) = cfvd(3) + fzd
    cfv(3) = cfv(3) + fz
    ! Store Force data on face
-   bcdatad(nn)%f(i, j, 1) = bcdatad(nn)%f(i, j, 1) + fxd
-   bcdata(nn)%f(i, j, 1) = bcdata(nn)%f(i, j, 1) + fx
-   bcdatad(nn)%f(i, j, 2) = bcdatad(nn)%f(i, j, 2) + fyd
-   bcdata(nn)%f(i, j, 2) = bcdata(nn)%f(i, j, 2) + fy
-   bcdatad(nn)%f(i, j, 3) = bcdatad(nn)%f(i, j, 3) + fzd
-   bcdata(nn)%f(i, j, 3) = bcdata(nn)%f(i, j, 3) + fz
+   bcdatad(nn)%fv(i, j, 1) = fxd
+   bcdata(nn)%fv(i, j, 1) = fx
+   bcdatad(nn)%fv(i, j, 2) = fyd
+   bcdata(nn)%fv(i, j, 2) = fy
+   bcdatad(nn)%fv(i, j, 3) = fzd
+   bcdata(nn)%fv(i, j, 3) = fz
    mxd = ycd*fz + yc*fzd - zcd*fy - zc*fyd
    mx = yc*fz - zc*fy
    myd = zcd*fx + zc*fxd - xcd*fz - xc*fzd
@@ -486,7 +499,17 @@
    END IF
    END DO
    END DO
+   ELSE
+   ! Zero the viscous force contribution
+   bcdatad(nn)%fv = 0.0_8
+   bcdata(nn)%fv = zero
    END IF
+   ! We have to inverse the nodal areas
+   DO j=bcdata(nn)%jnbeg,bcdata(nn)%jnend
+   DO i=bcdata(nn)%inbeg,bcdata(nn)%inend
+   bcdata(nn)%oarea(i, j) = one/bcdata(nn)%oarea(i, j)
+   END DO
+   END DO
    END IF
    END DO bocos
    ! Currently the coefficients only contain the surface integral
