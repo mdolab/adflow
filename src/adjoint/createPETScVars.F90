@@ -181,6 +181,8 @@ subroutine createPETScVars
   nnzOffDiag  = 4 ! This should be enough...might get a couple of mallocs
   call myMatCreate(dFndFc, 1, nDimPt, nDimCell, nnzDiagonal, nnzOffDiag, &
        __FILE__, __LINE__)
+
+
   deallocate(nnzDiagonal, nnzOffDiag)
 
   ! Get a right hand and left hand vec. We need both:
@@ -360,8 +362,8 @@ subroutine myMatCreate(matrix, blockSize, m, n, nnzDiagonal, nnzOffDiag, &
   Mat matrix
   integer(kind=intType), intent(in) :: blockSize, m, n
   integer(kind=intType), intent(in), dimension(*) :: nnzDiagonal, nnzOffDiag
-  character*(*) :: file, line
-  integer(kind=intType) :: ierr
+  character*(*) :: file
+  integer(kind=intType) :: ierr, line
   if (blockSize > 1) then
      if (PETSC_VERSION_MINOR <  3) then
         call MatCreateMPIBAIJ(SUMB_COMM_WORLD, blockSize, &
@@ -395,5 +397,9 @@ subroutine myMatCreate(matrix, blockSize, m, n, nnzDiagonal, nnzOffDiag, &
 
   call MatSetOption(matrix, MAT_ROW_ORIENTED, PETSC_FALSE, ierr)
   call EChk(ierr, __FILE__, __LINE__)
+
+  call MatSetOption(matrix, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
 
 end subroutine myMatCreate
