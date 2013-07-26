@@ -32,6 +32,7 @@
        use blockPointers
        use cgnsNames
        use extraOutput
+       use liftDistributionData
 
        implicit none
 !
@@ -238,6 +239,32 @@
           end if
        end if testIsoSurafce
        
+       testwriteLiftDists: if(nLiftDists > 0) then
+
+          allocate (cgnsLiftDistBases(nSurfSolToWrite), stat=ierr)
+          testRootProc3: if (myID == 0) then
+             
+             ! Loop over the number of surface solution files
+
+             solLoop4: do nn=1,nSurfSolToWrite
+                
+                ! Create the new base
+                cgnsInd = fileIDs(nn)
+                call cg_base_write_f(cgnsInd, "LiftDistributions", 2, 2, &
+                     cgnsLiftDistBases(nn), ierr)
+                if (ierr /= CG_OK) &
+                     call terminate("WriteCGNSSurfaceSol", &
+                     "Something wrong when calling cg_base_write_f for &
+                     liftDistribution")
+             end do solLoop4
+          end if testRootProc3
+
+          do nn=1,nSurfSolToWrite
+             call writeLiftDistributions(nn)
+          end do
+
+          deallocate(cgnsLiftDistBases, stat=ierr)
+       end if testwriteLiftDists
 
        ! ! Next we will process any slices that the user has
        ! ! defined. Again, these will be placed in a new base
