@@ -756,7 +756,7 @@ class SUMB(AeroSolver):
         patchsizes = []
         for i in xrange(npatch):
             tmp = numpy.zeros(256,'c')
-            self.sumb.getpatchname(i, tmp)
+            self.sumb.getpatchname(i+1, tmp)
             patchnames.append(
                 ''.join([tmp[j] for j in range(256)]).lower().strip())
             patchsizes.append(self.sumb.getpatchsize(i+1))
@@ -1801,7 +1801,12 @@ name is unavailable.'%(flowCase), comm=self.comm)
             # end if
                 
             # Create coupling matrix struct whether we need it or not
-            self.sumb.setupcouplingmatrixstruct(self.getForcePoints().T)
+            [npts, ncells] = self.sumb.getforcesize()
+            nTS  = self.sumb.inputtimespectral.ntimeintervalsspectral
+            forcePoints = numpy.zeros((nTS, npts, 3),self.dtype)
+            for i in xrange(nTS):
+                self.sumb.getforcepoints(forcePoints[i].T,i+1)
+            self.sumb.setupcouplingmatrixstruct(forcePoints.T)
             
             # Setup the KSP object
             self.sumb.setuppetscksp()

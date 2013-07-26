@@ -37,7 +37,7 @@ subroutine liftDistribution
   real(kind=realType), parameter :: tol=1e-8
   type(liftDist), pointer :: d
   integer(kind=intType) :: i, iDist
-  call initializeLiftDistribution
+  call initializeLiftDistributionData
   call liftDistGatherForcesAndNodes(1)
 
   if (myid == 0) then 
