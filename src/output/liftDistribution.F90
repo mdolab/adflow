@@ -1,3 +1,31 @@
+subroutine addLiftDistribution(nSegments, dir_vec, distName)
+  !
+  !      ******************************************************************
+  !      *                                                                *
+  !      * This subroutine is intended to be called from python.          *
+  !      *                                                                *
+  !      * This routine will add the description of a lift distribution   *
+  !      *                                                                *
+  !      ******************************************************************
+  
+  use communication
+  use liftDistributionData
+
+  implicit none
+
+  ! Input parameters
+  character*(*), intent(in) :: distName
+  integer(kind=intType), intent(in) :: nSegments
+  real(kind=realType), dimension(3) :: dir_vec
+
+  nLiftDists = nLiftDists + 1
+  liftDists(nLIftDists)%nSegments = nSegments
+  liftDists(nLiftDists)%dir = dir_vec
+  liftDists(nLiftDists)%distName = distName
+  liftDists(nLIftDists)%dir_ind = maxloc(dir_vec,1)
+  
+end subroutine addLiftDistribution
+
 subroutine liftDistribution
 
   use constants
@@ -5,15 +33,10 @@ subroutine liftDistribution
   use liftDistributionData
   implicit none
 
-  
-  type(slice), dimension(:), allocatable :: liftSlices
-  real(kind=realType), dimension(3) :: pt, dir, xmin, xmax
-  real(kind=realType) :: delta, Ltot
-  integer(kind=intType) :: nSlice, i
+  real(kind=realType), dimension(3) :: xmin, xmax
   real(kind=realType), parameter :: tol=1e-8
-  real(kind=realType), dimension(:,:), allocatable :: slicePts
-  character(len=maxCGNSNameLen) :: fileName
-
+  type(liftDist), pointer :: d
+  integer(kind=intType) :: i, iDist
   call initializeLiftDistribution
   call liftDistGatherForcesAndNodes(1)
 
@@ -25,65 +48,112 @@ subroutine liftDistribution
         xmax(i) = maxval(uniqueNodes(i,:))
      end do
      
-     ! Now get the slices
-     nSlice = 250
-     allocate(liftSlices(nSlice), slicePts(3, nSlice))
-     
-     ! Create the slices
-     dir= (/zero, zero, one/)
-     delta = (xMax(3) - xMin(3))/dble((nSlice - 1))
-     do i=1,nSlice
-        if (i == 1) then
-           slicePts(:, i) = (/zero, zero, xmin(3) + (i-1)*delta + tol/)
-        else if(i == nSlice) then
-           slicePts(:, i) = (/zero, zero, xmin(3) + (i-1)*delta - tol/)
-        else
-           slicePts(:, i) = (/zero, zero, xmin(3) + (i-1)*delta      /)
-        end if
+     do iDist=1,nLiftDists
+        d => liftDists(iDist)
+        d%delta = (xMax(d%dir_ind) - xMin(d%dir_ind))/dble((d%nSegments - 1))
+        allocate(d%slicePts(3, d%nSegments))
+        allocate(d%slices(d%nSegments))
+        d%slicePts = zero
+        do i=1,d%nSegments
+           if (i == 1) then
+              d%slicePts(d%dir_ind, i) = d%slicePts(d%dir_ind, i) + (i-1)*d%delta + tol
+           else if (i == d%nSegments) then 
+              d%slicePts(d%dir_ind, i) = d%slicePts(d%dir_ind, i) + (i-1)*d%delta -tol
+           else
+              d%slicePts(d%dir_ind, i) = d%slicePts(d%dir_ind, i) + (i-1)*d%delta 
+           end if
 
-        call createSlice(liftSlices(i), slicePts(:, i), dir)
-        call integrateSlice(liftSlices(i))
-     end do
+           call createSlice(d%slices(i), d%slicePts(:, i), d%dir)
+           call integrateSlice(d%slices(i))
+        end do
 
-     open (unit=7, file="liftdrag.dat")
-     write (7,*) "Title = ""Lift Dist """
-     write (7,*) "Variables = ""Z"" ""Lift"" ""Drag"" ""CL"" ""CD"""
-     write (7,*) "Zone T=""Lift Dist"""
-     write (7,*) "I= ",nSlice
-     write (7,*) "DATAPACKING=POINT"
-15   format (E E E)
-     do i=1,nSlice
-        write(7,15) slicePts(3, i), &
-             liftSlices(i)%pL + liftSlices(i)%vL, &
-             liftSlices(i)%pD + liftSlices(i)%vD, &
-             liftSlices(i)%CLp + liftSlices(i)%CLv, &
-             liftSlices(i)%CDp + liftSlices(i)%cDv             
-     end do
-     close(7)
+        open (unit=7, file="liftdrag.dat")
+        write (7,*) "Title = ""Lift Dist """
+        write (7,*) "Variables = ""Z"" ""Lift"" ""Drag"" ""CL"" ""CD"""
+        write (7,*) "Zone T=""Lift Dist"""
+        write (7,*) "I= ",d%nSegments
+        write (7,*) "DATAPACKING=POINT"
+15      format (E18.10, E18.10, E18.10, E18.10, E18.10)
+        do i=1,d%nSegments
+           write(7,15) d%slicePts(d%dir_ind, i), &
+                d%slices(i)%pL + d%slices(i)%vL, &
+                d%slices(i)%pD + d%slices(i)%vD, &
+                d%slices(i)%CLp + d%slices(i)%CLv, &
+                d%slices(i)%CDp + d%slices(i)%cDv             
+        end do
+        close(7)
 
-     ! Check the lift computed with the slice method:
-     Ltot = zero
-     do i=1,nSlice-1
-        Ltot = Ltot + delta*half*(liftSlices(i)%pL + liftSlices(i+1)%pL)
+        ! Destroy the lift slices:
+        do i=1,d%nSegments
+           call destroySlice(d%slices(i))
+        end do
+        
+        ! Deallocate slice list and point list
+        deallocate(d%slices, d%slicePts)
+        
      end do
-     
-     ! Destroy the lift slices:
-     do i=1,nSlice
-! 11      format(A,I3.3,A)
-!         write(fileName, 11), "slice_",i,".dat"
-!        call writeSliceTecplot(liftSlices(i), fileName)
-        call destroySlice(liftSlices(i))
-     end do
-
-     ! Deallocate slice list and point list
-     deallocate(liftSlices, slicePts)
-    
   end if
-  call destroyLiftDistribution
 
 end subroutine liftDistribution
 
-subroutine initializeLiftDistribution
+subroutine addParaSlice(sliceName, pt, direction)
+  !
+  !      ******************************************************************
+  !      *                                                                *
+  !      * This subroutine is intended to be called from python.          *
+  !      *                                                                *
+  !      * This routine will add a parametric slice to the list of user   *
+  !      * supplied slices.                                               *
+  !      *                                                                *
+  !      ******************************************************************
+  use communication
+  use liftDistributionData
+
+  implicit none
+
+  ! Input parameters
+  character*(*), intent(in) :: sliceName
+  real(kind=realType), dimension(3), intent(in) :: pt, direction
+
+  call initializeLiftDistributionData
+
+  if (myid == 0) then
+     nParaSlices = nParaSlices + 1
+     call createSlice(paraSlices(nParaSlices), pt, direction)
+     paraSlices(nParaSlices)%sliceName = sliceName
+  end if
+end subroutine addParaSlice
+
+subroutine addAbsSlice(sliceName, pt, direction)
+  !
+  !      ******************************************************************
+  !      *                                                                *
+  !      * This subroutine is intended to be called from python.          *
+  !      *                                                                *
+  !      * This routine will add an absolute slice to the list of user    *
+  !      * supplied slices.                                               *
+  !      *                                                                *
+  !      ******************************************************************
+  use communication
+  use liftDistributionData
+  
+  implicit none
+
+  ! Input parameters
+  character*(*), intent(in) :: sliceName
+  real(kind=realType), dimension(3), intent(in) :: pt, direction
+
+  call initializeLiftDistributionData
+
+  if (myid == 0) then
+     nAbsSlices = nAbsSlices + 1
+     call createSlice(absSlices(nAbsSlices), pt, direction)
+     absSlices(nAbsSlices)%sliceName = sliceName
+  end if
+  
+end subroutine addAbsSlice
+
+subroutine initializeLiftDistributionData
   !
   !      ******************************************************************
   !      *                                                                *
@@ -267,9 +337,9 @@ subroutine initializeLiftDistribution
      liftDistInitialized = .True. 
   end if
 
-end subroutine initializeLiftDistribution
+end subroutine initializeLiftDistributionData
 
-subroutine destroyLiftDistribution
+subroutine destroyLiftDistributionData
   !
   !      ******************************************************************
   !      *                                                                *
@@ -306,7 +376,7 @@ subroutine destroyLiftDistribution
      liftDistInitialized = .False.
   end if
 
-end subroutine destroyLiftDistribution
+end subroutine destroyLiftDistributionData
 
 subroutine liftDistGatherForcesAndNodes(sps)
   !
@@ -407,26 +477,6 @@ subroutine liftDistGatherForcesAndNodes(sps)
         uniqueTractionsP(:, i) = uniquetractionsP(:, i) / dualAreas(i)
         uniqueTractionsV(:, i) = uniquetractionsV(:, i) / dualAreas(i)
      end do
-
-  !    ! Dump out a tecplot file to check everything is ok:
-!      open (unit=7, file = "test.dat")
-!      write (7,*) "Title = ""Lift Dist Test"""
-!      write (7,*) "Variables = ""X"" ""Y"" ""Z"" ""Tx"" ""Ty"" ""Tz"" ""A"""
-!      write (7,*) "Zone T=""FE Mesh"""
-!      write (7,*) "Nodes = ", nUnique, " Elements= ", nCellsTotal, " ZONETYPE=FEQUADRILATERAL"
-!      write (7,*) "DATAPACKING=POINT"
-! 11   format (E E E E E E)
-!      do i=1,nUnique
-!         write(7,11) uniqueNodes(1, i), uniqueNodes(2, i), uniqueNodes(3, i),& 
-!              uniqueTractionsP(1, i), uniqueTractionsP(2, i), uniqueTractionsP(3, i), &
-!              dualAreas(i)
-!      end do
-
-! 12   format(5I 5I 5I 5I)
-!      do i=1,nCellsTotal
-!         write(7, 12) allCells(1, i), allCells(2, i), allCells(3, i), allCells(4, i)
-!      end do
-!      close(7)
   end if
 
 end subroutine liftDistGatherForcesAndNodes
@@ -454,9 +504,9 @@ subroutine createSlice(slc, pt, dir)
   integer(kind=intType) :: patchIndices(4), indexSquare, jj, kk, icon, iCoor, num1, num2
   real(kind=realType) :: f(4), d, ovrdnom
   logical :: logic1
-    interface
-       subroutine reallocateReal2(realArray, newSize1, newSize2, &
-            oldSize1, oldSize2, alwaysFreeMem)
+  interface
+     subroutine reallocateReal2(realArray, newSize1, newSize2, &
+          oldSize1, oldSize2, alwaysFreeMem)
        use precision
        implicit none
        real(kind=realType), dimension(:,:), pointer :: realArray
@@ -464,7 +514,7 @@ subroutine createSlice(slc, pt, dir)
             oldSize1, oldSize2
        logical, intent(in) :: alwaysFreeMem
      end subroutine reallocateReal2
-
+     
      subroutine reallocateInteger2(intArray, newSize1, newSize2, &
           oldSize1, oldSize2, alwaysFreeMem)
        use precision
@@ -577,8 +627,6 @@ subroutine destroySlice(slc)
 
 end subroutine destroySlice
 
-
-
 subroutine integrateSlice(slc) 
   !
   !      ******************************************************************
@@ -673,9 +721,6 @@ subroutine integrateSlice(slc)
 
 end subroutine integrateSlice
   
-
-
-
 subroutine writeSliceTecplot(slc, fileName)
 
   use liftDistributionData
@@ -690,7 +735,7 @@ subroutine writeSliceTecplot(slc, fileName)
   write (7,*) "Zone T=""FE Mesh"""
   write (7,*) "Nodes = ", slc%nNodes, " Elements= ", slc%nNodes/2, " ZONETYPE=FELINESEG"
   write (7,*) "DATAPACKING=POINT"
-13 format (E E E)
+13 format (E16.10, E16.10, E16.10)
   do i=1,slc%nNodes
      write(7,13) &
           slc%w(1,i)*uniqueNodes(1, slc%ind(1,i)) + slc%w(2,i)*uniqueNodes(1, slc%ind(2, i)), &
@@ -701,7 +746,7 @@ subroutine writeSliceTecplot(slc, fileName)
           ! slc%w(1,i)*uniqueTractionsP(3, slc%ind(1,i)) + slc%w(2,i)*uniqueTractionsP(3, slc%ind(2, i))
   end do
           
-14 format(5I 5I)
+14 format(I5, I5)
   do i=1, slc%nNodes/2
      write(7, 14) 2*i-1, 2*i
   end do
