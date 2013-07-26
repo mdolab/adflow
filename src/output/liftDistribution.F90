@@ -26,19 +26,28 @@ subroutine addLiftDistribution(nSegments, dir_vec, distName)
   
 end subroutine addLiftDistribution
 
-subroutine liftDistribution
+subroutine writeLiftDistributions(sps)
 
   use constants
   use communication
   use liftDistributionData
+  use outputMod
+  use su_cgns
   implicit none
+
+  ! Input parameters
+  integer(kind=intType), intent(in) :: sps
 
   real(kind=realType), dimension(3) :: xmin, xmax
   real(kind=realType), parameter :: tol=1e-8
   type(liftDist), pointer :: d
-  integer(kind=intType) :: i, iDist
+  integer(kind=intType) :: i, iDist, sizes(6)
+  integer(kind=intType) :: cgnsInd, cgnsSol, cgnsBase, cgnsZone, ierr, coordID, fieldID, solID
+  real(kind=realType), dimension(:,:), allocatable :: CoorX, CoorY, CoorZ
+  real(kind=realType), dimension(:, :, :), allocatable :: values
+
   call initializeLiftDistributionData
-  call liftDistGatherForcesAndNodes(1)
+  call liftDistGatherForcesAndNodes(sps)
 
   if (myid == 0) then 
 
@@ -67,21 +76,82 @@ subroutine liftDistribution
            call integrateSlice(d%slices(i))
         end do
 
-        open (unit=7, file="liftdrag.dat")
-        write (7,*) "Title = ""Lift Dist """
-        write (7,*) "Variables = ""Z"" ""Lift"" ""Drag"" ""CL"" ""CD"""
-        write (7,*) "Zone T=""Lift Dist"""
-        write (7,*) "I= ",d%nSegments
-        write (7,*) "DATAPACKING=POINT"
-15      format (E18.10, E18.10, E18.10, E18.10, E18.10)
+        cgnsInd  = fileIDs(sps)
+        cgnsBase = cgnsLiftDistBases(sps)
+        sizes(1) = d%nSegments
+        sizes(2) = 2
+        sizes(3) = d%nSegments-1
+        sizes(4) = 2-1
+        sizes(5) = 0
+        sizes(6) = 0
+
+        call cg_zone_write_f(cgnsInd, cgnsBase, d%distName, sizes, &
+             Structured, cgnsZone, ierr)
+        if (ierr .eq. CG_ERROR) call cg_error_exit_f
+
+        call cg_sol_write_f(cgnsInd, cgnsBase, cgnsZone, &
+             "data", Vertex, solID, ierr)
+        if (ierr .eq. CG_ERROR) call cg_error_exit_f
+
+        allocate(CoorX(d%nSegments, 2), CoorY(d%nSegments, 2), CoorZ(d%nSegments, 2))
+          
+        coorX = zero
+        coorY = zero
+        coorZ = zero
+
+        if (d%dir_ind == 1) then! X slices
+           coorX(:, 1) = d%slicePts(1, :)
+           coorX(:, 2) = d%slicePts(1, :)
+           coorY(:, 2) = one
+        else if (d%dir_ind == 2) then ! Y slices
+           coorY(:, 1) = d%slicePts(2, :)
+           coorY(:, 2) = d%slicePts(2, :)
+           coorZ(:, 2) = one
+        else if (d%dir_ind == 3) then ! Z slices
+           coorZ(:, 1) = d%slicePts(3, :)
+           coorZ(:, 2) = d%slicePts(3, :)
+           coorX(:, 2) = one
+        end if
+        
+        ! Write each set of grid coords
+        call cg_coord_write_f(cgnsInd, cgnsBase, cgnsZone, realDouble, &
+             'CoordinateX', coorX, coordID, ierr)
+        if (ierr .eq. CG_ERROR) call cg_error_exit_f
+        
+        call cg_coord_write_f(cgnsInd, cgnsBase, cgnsZone, realDouble, &
+             'CoordinateY', coorY, coordID, ierr)
+        if (ierr .eq. CG_ERROR) call cg_error_exit_f
+        
+        call cg_coord_write_f(cgnsInd, cgnsBase, cgnsZone, realDouble, &
+             'CoordinateZ', coorZ, coordID, ierr)
+        if (ierr .eq. CG_ERROR) call cg_error_exit_f
+
+        ! We currently have 4 values
+        allocate(values(d%nSegments, 2, 4))
+        
         do i=1,d%nSegments
-           write(7,15) d%slicePts(d%dir_ind, i), &
-                d%slices(i)%pL + d%slices(i)%vL, &
-                d%slices(i)%pD + d%slices(i)%vD, &
-                d%slices(i)%CLp + d%slices(i)%CLv, &
-                d%slices(i)%CDp + d%slices(i)%cDv             
+           values(i, :, 1) = d%slices(i)%pL
+           values(i, :, 2) = d%slices(i)%pD
+           values(i, :, 3) = d%slices(i)%Clp
+           values(i, :, 4) = d%slices(i)%Cdp
         end do
-        close(7)
+
+        ! Write the 4 of them:
+        call cg_field_write_f(cgnsInd, cgnsBase, cgnsZone, solID, realDouble, &
+             "Lift", values(:, :, 1), fieldID, ierr)
+        if (ierr .eq. CG_ERROR) call cg_error_exit_f
+
+        call cg_field_write_f(cgnsInd, cgnsBase, cgnsZone, solID, realDouble, &
+             "Drag", values(:, :, 2), fieldID, ierr)
+        if (ierr .eq. CG_ERROR) call cg_error_exit_f
+
+        call cg_field_write_f(cgnsInd, cgnsBase, cgnsZone, solID, realDouble, &
+             "Cl", values(:, :, 3), fieldID, ierr)
+        if (ierr .eq. CG_ERROR) call cg_error_exit_f
+
+        call cg_field_write_f(cgnsInd, cgnsBase, cgnsZone, solID, realDouble, &
+             "Cd", values(:, :, 4), fieldID, ierr)
+        if (ierr .eq. CG_ERROR) call cg_error_exit_f
 
         ! Destroy the lift slices:
         do i=1,d%nSegments
@@ -90,11 +160,14 @@ subroutine liftDistribution
         
         ! Deallocate slice list and point list
         deallocate(d%slices, d%slicePts)
+
+        ! Destroy temp variables
+        deallocate(CoorX, CoorY, CoorZ, values)
         
      end do
   end if
 
-end subroutine liftDistribution
+end subroutine writeLiftDistributions
 
 subroutine addParaSlice(sliceName, pt, direction)
   !
@@ -721,35 +794,35 @@ subroutine integrateSlice(slc)
 
 end subroutine integrateSlice
   
-subroutine writeSliceTecplot(slc, fileName)
+! subroutine writeSliceTecplot(slc, fileName)
 
-  use liftDistributionData
-  implicit none
+!   use liftDistributionData
+!   implicit none
 
-  character*(*), intent(in) :: fileName
-  type(slice), intent(in) :: slc
-  integer(kind=intType) :: i 
-  open (unit=7, file=fileName)
-  write (7,*) "Title = ""Lift Dist Test"""
-  write (7,*) "Variables = ""X"" ""Y"" ""Z"""! ""Tx"" ""Ty"" ""Tz"""
-  write (7,*) "Zone T=""FE Mesh"""
-  write (7,*) "Nodes = ", slc%nNodes, " Elements= ", slc%nNodes/2, " ZONETYPE=FELINESEG"
-  write (7,*) "DATAPACKING=POINT"
-13 format (E16.10, E16.10, E16.10)
-  do i=1,slc%nNodes
-     write(7,13) &
-          slc%w(1,i)*uniqueNodes(1, slc%ind(1,i)) + slc%w(2,i)*uniqueNodes(1, slc%ind(2, i)), &
-          slc%w(1,i)*uniqueNodes(2, slc%ind(1,i)) + slc%w(2,i)*uniqueNodes(2, slc%ind(2, i)), &
-          slc%w(1,i)*uniqueNodes(3, slc%ind(1,i)) + slc%w(2,i)*uniqueNodes(3, slc%ind(2, i))!, &
-          ! slc%w(1,i)*uniqueTractionsP(1, slc%ind(1,i)) + slc%w(2,i)*uniqueTractionsP(1, slc%ind(2, i)), &
-          ! slc%w(1,i)*uniqueTractionsP(2, slc%ind(1,i)) + slc%w(2,i)*uniqueTractionsP(2, slc%ind(2, i)), &
-          ! slc%w(1,i)*uniqueTractionsP(3, slc%ind(1,i)) + slc%w(2,i)*uniqueTractionsP(3, slc%ind(2, i))
-  end do
+!   character*(*), intent(in) :: fileName
+!   type(slice), intent(in) :: slc
+!   integer(kind=intType) :: i 
+!   open (unit=7, file=fileName)
+!   write (7,*) "Title = ""Lift Dist Test"""
+!   write (7,*) "Variables = ""X"" ""Y"" ""Z"""! ""Tx"" ""Ty"" ""Tz"""
+!   write (7,*) "Zone T=""FE Mesh"""
+!   write (7,*) "Nodes = ", slc%nNodes, " Elements= ", slc%nNodes/2, " ZONETYPE=FELINESEG"
+!   write (7,*) "DATAPACKING=POINT"
+! 13 format (E16.10, E16.10, E16.10)
+!   do i=1,slc%nNodes
+!      write(7,13) &
+!           slc%w(1,i)*uniqueNodes(1, slc%ind(1,i)) + slc%w(2,i)*uniqueNodes(1, slc%ind(2, i)), &
+!           slc%w(1,i)*uniqueNodes(2, slc%ind(1,i)) + slc%w(2,i)*uniqueNodes(2, slc%ind(2, i)), &
+!           slc%w(1,i)*uniqueNodes(3, slc%ind(1,i)) + slc%w(2,i)*uniqueNodes(3, slc%ind(2, i))!, &
+!           ! slc%w(1,i)*uniqueTractionsP(1, slc%ind(1,i)) + slc%w(2,i)*uniqueTractionsP(1, slc%ind(2, i)), &
+!           ! slc%w(1,i)*uniqueTractionsP(2, slc%ind(1,i)) + slc%w(2,i)*uniqueTractionsP(2, slc%ind(2, i)), &
+!           ! slc%w(1,i)*uniqueTractionsP(3, slc%ind(1,i)) + slc%w(2,i)*uniqueTractionsP(3, slc%ind(2, i))
+!   end do
           
-14 format(I5, I5)
-  do i=1, slc%nNodes/2
-     write(7, 14) 2*i-1, 2*i
-  end do
-  close(7)
+! 14 format(I5, I5)
+!   do i=1, slc%nNodes/2
+!      write(7, 14) 2*i-1, 2*i
+!   end do
+!   close(7)
 
-end subroutine writeSliceTecplot
+! end subroutine writeSliceTecplot
