@@ -271,7 +271,7 @@ subroutine setGlobalCellsAndNodes(level)
   ! Now we will do indexing for FM. 
   
   ! First get the number of points on each proc and communicate
-  call getForceSize(npts, ncells, nTS)
+  call getForceSize(npts, ncells)
 
   allocate(nNodesProc(nProc), cumNodesProc(0:nProc))
   allocate(nCellsProc(nProc), cumCellsProc(0:nProc))
