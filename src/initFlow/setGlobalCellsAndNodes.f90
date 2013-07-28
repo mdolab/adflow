@@ -54,7 +54,7 @@ subroutine setGlobalCellsAndNodes(level)
   logical :: commPressure, commViscous, commGamma
   integer(kind=intType), dimension(nProc) :: nNodes, nCells, nCellOffset, nNodeOffset
   integer(kind=intType), dimension(nDom) :: nCellBLockOffset,nNodeBLockOffset
-  integer(kind=intType) :: npts, nts
+  integer(kind=intType) :: npts
   integer(kind=intType), dimension(:), allocatable :: nNodesProc, cumNodesProc
   integer(kind=intTYpe), dimension(:), allocatable :: nCellsProc, cumCellsProc
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, ii, jj,mm
@@ -278,10 +278,10 @@ subroutine setGlobalCellsAndNodes(level)
   nNodesProc(:) = 0_intType
   nCellsProc(:) = 0_intType
 
-  call mpi_allgather(npts*nTS, 1, sumb_integer, nNodesProc, 1, sumb_integer, &
+  call mpi_allgather(npts*nTimeIntervalsSpectral, 1, sumb_integer, nNodesProc, 1, sumb_integer, &
        sumb_comm_world, ierr)
 
-  call mpi_allgather(ncells*nTS, 1, sumb_integer, nCellsProc, 1, sumb_integer, &
+  call mpi_allgather(ncells*nTimeIntervalsSpectral, 1, sumb_integer, nCellsProc, 1, sumb_integer, &
        sumb_comm_world, ierr)
 
   ! Sum and Allocate receive displ offsets
