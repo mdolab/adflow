@@ -547,12 +547,14 @@ subroutine computeIsoVariable(solName, sps, isoVal)
                     ! U / a
                     a  = sqrt(gamma(i,j,k)*max(p(i,j,k),plim) &
                          / max(w(i,j,k,irho),rholim))
-                    UovA = (/w(i,j,k,ivx)-s(i,j,k,1), &
-                         w(i,j,k,ivy)-s(i,j,k,2), &
-                         w(i,j,k,ivz)-s(i,j,k,3)/)/a
-
-                    UovA = (/w(i,j,k,ivx),w(i,j,k,ivy), w(i,j,k,ivz)/)/a
-
+                    
+                    if (addGridVelocities) then
+                       UovA = (/w(i,j,k,ivx)-s(i,j,k,1), &
+                            w(i,j,k,ivy)-s(i,j,k,2), &
+                            w(i,j,k,ivz)-s(i,j,k,3)/)/a
+                    else
+                       UovA = (/w(i,j,k,ivx),w(i,j,k,ivy), w(i,j,k,ivz)/)/a
+                    end if
                     ! grad P / ||grad P||
 
                     gradP(1) = si(i,  j,k,1)*P(i+1,j,k) &
