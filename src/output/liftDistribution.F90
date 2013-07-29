@@ -27,25 +27,167 @@ subroutine addLiftDistribution(nSegments, dir_vec, dir_ind, distName)
   
 end subroutine addLiftDistribution
 
-subroutine writeLiftDistributions(sps)
+subroutine writeSlicesFile(fileName)
+  !
+  !      ******************************************************************
+  !      *                                                                *
+  !      * This subroutine is intended to be called from python.          *
+  !      *                                                                *
+  !      * This routine will write the user defined slics to an           *
+  !      * to the (ascii) tecplot file fileName. ASCII files are          *
+  !      * used for siplicity since very little informatin is actually    *
+  !      * written.                                                       *
+  !      *                                                                *
+  !      ******************************************************************
+  use communication
+  use liftDistributionData
+  use outputMod
+  use inputTimeSpectral
+  use inputPhysics
+  implicit none
 
+  ! Input Params
+  character*(*), intent(in) :: fileName
+
+  ! Working parameters
+  integer(kind=intType) :: file, i, sps
+  character(len=maxStringLen) :: fname, sliceName
+  character(len=7) :: intString
+  real(kind=realType), dimension(3) :: pt, dir
+  
+
+  ! Only write if we actually have lift distributions
+  testwriteSlices: if(nParaSlices + nAbsSlices > 0) then
+
+     do sps=1,nTimeIntervalsSpectral
+
+        ! If it is time spectral we need to agument the filename
+        if (equationMode == timeSpectral) then
+           write(intString,"(i7)") sps
+           intString = adjustl(intString)
+           fname = trim(fileName)//"Spectral"//trim(intString)
+        else
+           fname = fileName
+        end if
+
+        file = 11
+        ! Open file on root proc:
+        if (myid == 0) then 
+           open(unit=file, file=trim(fname))
+
+           ! Write Header Information 
+           write (file,*) "Title = ""SUmb Slice Data"""
+           write (file,*) "Variables = ""CoordianteX"" ""CoordinateY"" ""CoordinateZ"""
+        
+           do i=1,nParaSlices
+              call integrateSlice(paraSlices(i))
+              call writeSlice(paraSlices(i), file)
+           end do
+
+           do i=1,nAbsSlices
+              ! 'Destroy' the slice...just dealloc the data
+              call destroySlice(absSlices(i))
+
+              ! Make new one in the same location
+              call createSlice(absSlices(i), absSlices(i)%pt, absSlices(i)%dir)
+
+              ! Integrate and write
+              call integrateSlice(absSlices(i))
+              call writeSlice(absSlices(i), file)
+           end do
+
+           ! Close file on root proc
+           close(file)
+        end if
+     end do
+  end if testwriteSlices
+end subroutine writeSlicesFile
+
+subroutine writeLiftDistributionFile(fileName)
+  !
+  !      ******************************************************************
+  !      *                                                                *
+  !      * This subroutine is intended to be called from python.          *
+  !      *                                                                *
+  !      * This routine will write the added lift distributions           *
+  !      * to the (ascii) tecplot file fileName. ASCII files are          *
+  !      * used for siplicity since very little informatin is actually    *
+  !      * written.                                                       *
+  !      *                                                                *
+  !      ******************************************************************
+  use communication
+  use liftDistributionData
+  use outputMod
+  use inputPhysics
+  use inputTimeSpectral
+  implicit none
+
+  ! Input Params
+  character*(*), intent(in) :: fileName
+
+  ! Working parameters
+  integer(kind=intType) :: file, sps
+  character(len=maxStringLen) :: fname
+  character(len=7) :: intString
+
+  ! Only write if we actually have lift distributions
+  testwriteLiftDists: if(nLiftDists > 0) then
+
+     do sps=1,nTimeIntervalsSpectral
+
+        ! If it is time spectral we need to agument the filename
+        if (equationMode == timeSpectral) then
+           write(intString,"(i7)") sps
+           intString = adjustl(intString)
+           fname = trim(fileName)//"Spectral"//trim(intString)
+        else
+           fname = fileName
+        end if
+
+
+        file = 11
+        ! Open file on root proc:
+        if (myid == 0) then 
+           open(unit=file, file=trim(fname))
+        end if
+
+        call writeLiftDistributions(sps, file)
+
+        ! Close file on root proc
+        if (myid == 0) then
+           close(file)
+        end if
+     end do
+  end if testwriteLiftDists
+end subroutine writeLiftDistributionFile
+
+
+subroutine writeLiftDistributions(sps, fileID)
+  !
+  !      ******************************************************************
+  !      *                                                                *
+  !      * This subroutine writes the liftdistribution for the specified  *
+  !      * spectral instance. It is assumed that the required file handles*
+  !      * are already open and can be written to                         *
+  !      *                                                                *
+  !      ******************************************************************
   use constants
   use communication
   use liftDistributionData
   use outputMod
   use su_cgns
+  use cgnsNames
   implicit none
 
   ! Input parameters
-  integer(kind=intType), intent(in) :: sps
+  integer(kind=intType), intent(in) :: sps, fileID
 
   real(kind=realType), dimension(3) :: xmin, xmax
   real(kind=realType), parameter :: tol=1e-8
   type(liftDist), pointer :: d
-  integer(kind=intType) :: i, iDist, sizes(6)
-  integer(kind=intType) :: cgnsInd, cgnsSol, cgnsBase, cgnsZone, ierr, coordID, fieldID, solID
-  real(kind=realType), dimension(:,:), allocatable :: CoorX, CoorY, CoorZ
-  real(kind=realType), dimension(:, :, :), allocatable :: values
+  integer(kind=intType) :: i, j, iVar, iDist, sizes(6)
+  real(kind=realType), dimension(:, :), allocatable :: values
+  character(len=maxCGNSNameLen), dimension(:), allocatable :: liftDistNames
 
   call initializeLiftDistributionData
   call liftDistGatherForcesAndNodes(sps)
@@ -77,82 +219,58 @@ subroutine writeLiftDistributions(sps)
            call integrateSlice(d%slices(i))
         end do
 
-        cgnsInd  = fileIDs(sps)
-        cgnsBase = cgnsLiftDistBases(sps)
-        sizes(1) = d%nSegments
-        sizes(2) = 2
-        sizes(3) = d%nSegments-1
-        sizes(4) = 2-1
-        sizes(5) = 0
-        sizes(6) = 0
+        ! These are the variable names for the lift distribution:
+        allocate(liftDistNames(nLiftDistVar))
+        ! Set the names here
+        liftDistNames(1) = cgnsCoorX
+        liftDistNames(2) = cgnsCoorY
+        liftDistNames(3) = cgnsCoorZ
+        liftDistNames(4) = "Lift"
+        liftDistNames(5) = "Drag"
+        liftDistNames(6) = cgnsCL
+        liftDistNames(7) = cgnsCD
 
-        call cg_zone_write_f(cgnsInd, cgnsBase, d%distName, sizes, &
-             Structured, cgnsZone, ierr)
-        if (ierr .eq. CG_ERROR) call cg_error_exit_f
+        ! Only write header info for first distribution only
+        if (iDist == 1) then
+           write (fileID,*) "Title= ""SUmb Lift Distribution Data"""
+           write (fileID,"(a)", advance="no") "Variables = "
+           do i=1,nLIftDistVar
+              write(fileID,"(a,a,a)",advance="no") """",trim(liftDistNames(i)),""" "
+           end do
+           write(fileID,"(1ex)")
+        end if
 
-        call cg_sol_write_f(cgnsInd, cgnsBase, cgnsZone, &
-             "data", Vertex, solID, ierr)
-        if (ierr .eq. CG_ERROR) call cg_error_exit_f
+        write (fileID,"(a,a,a)") "Zone T= """,trim(d%distName),""""
+        write (fileID,*) "I= ",d%nSegments
+        write (fileID,*) "DATAPACKING=BLOCK"
+15      format (E14.6)
 
-        allocate(CoorX(d%nSegments, 2), CoorY(d%nSegments, 2), CoorZ(d%nSegments, 2))
-          
-        coorX = zero
-        coorY = zero
-        coorZ = zero
+        allocate(values(d%nSegments, nLiftDistVar))
+        values = zero
 
+        ! Coordinate Varaibles
         if (d%dir_ind == 1) then! X slices
-           coorX(:, 1) = d%slicePts(1, :)
-           coorX(:, 2) = d%slicePts(1, :)
-           coorY(:, 2) = one
+           values(:, 1) = d%slicePts(1, :)
         else if (d%dir_ind == 2) then ! Y slices
-           coorY(:, 1) = d%slicePts(2, :)
-           coorY(:, 2) = d%slicePts(2, :)
-           coorZ(:, 2) = one
+           values(:, 2) = d%slicePts(2, :)
         else if (d%dir_ind == 3) then ! Z slices
-           coorZ(:, 1) = d%slicePts(3, :)
-           coorZ(:, 2) = d%slicePts(3, :)
-           coorX(:, 2) = one
+           values(:, 3) = d%slicePts(3, :)
         end if
         
-        ! Write each set of grid coords
-        call cg_coord_write_f(cgnsInd, cgnsBase, cgnsZone, realDouble, &
-             'CoordinateX', coorX, coordID, ierr)
-        if (ierr .eq. CG_ERROR) call cg_error_exit_f
-        
-        call cg_coord_write_f(cgnsInd, cgnsBase, cgnsZone, realDouble, &
-             'CoordinateY', coorY, coordID, ierr)
-        if (ierr .eq. CG_ERROR) call cg_error_exit_f
-        
-        call cg_coord_write_f(cgnsInd, cgnsBase, cgnsZone, realDouble, &
-             'CoordinateZ', coorZ, coordID, ierr)
-        if (ierr .eq. CG_ERROR) call cg_error_exit_f
-
-        ! We currently have 4 values
-        allocate(values(d%nSegments, 2, 4))
-        
+        ! Other variables
         do i=1,d%nSegments
-           values(i, :, 1) = d%slices(i)%pL
-           values(i, :, 2) = d%slices(i)%pD
-           values(i, :, 3) = d%slices(i)%Clp
-           values(i, :, 4) = d%slices(i)%Cdp
+           values(i, 4) = d%slices(i)%pL
+           values(i, 5) = d%slices(i)%pD
+           values(i, 6) = d%slices(i)%Clp
+           values(i, 7) = d%slices(i)%Cdp
         end do
 
-        ! Write the 4 of them:
-        call cg_field_write_f(cgnsInd, cgnsBase, cgnsZone, solID, realDouble, &
-             "Lift", values(:, :, 1), fieldID, ierr)
-        if (ierr .eq. CG_ERROR) call cg_error_exit_f
-
-        call cg_field_write_f(cgnsInd, cgnsBase, cgnsZone, solID, realDouble, &
-             "Drag", values(:, :, 2), fieldID, ierr)
-        if (ierr .eq. CG_ERROR) call cg_error_exit_f
-
-        call cg_field_write_f(cgnsInd, cgnsBase, cgnsZone, solID, realDouble, &
-             "Cl", values(:, :, 3), fieldID, ierr)
-        if (ierr .eq. CG_ERROR) call cg_error_exit_f
-
-        call cg_field_write_f(cgnsInd, cgnsBase, cgnsZone, solID, realDouble, &
-             "Cd", values(:, :, 4), fieldID, ierr)
-        if (ierr .eq. CG_ERROR) call cg_error_exit_f
+        ! Write all variables in block format
+        do j=1,nLiftDistVar
+           do i=1,d%nSegments
+              write(fileID,15) values(i, j)
+           end do
+        end do
 
         ! Destroy the lift slices:
         do i=1,d%nSegments
@@ -163,8 +281,7 @@ subroutine writeLiftDistributions(sps)
         deallocate(d%slices, d%slicePts)
 
         ! Destroy temp variables
-        deallocate(CoorX, CoorY, CoorZ, values)
-        
+        deallocate(liftDistNames, values)
      end do
   end if
 
@@ -195,6 +312,8 @@ subroutine addParaSlice(sliceName, pt, direction)
      nParaSlices = nParaSlices + 1
      call createSlice(paraSlices(nParaSlices), pt, direction)
      paraSlices(nParaSlices)%sliceName = sliceName
+     paraSlices(nParaSlices)%pt = pt
+     paraSlices(nParaSlices)%dir = direction
   end if
 end subroutine addParaSlice
 
@@ -223,6 +342,9 @@ subroutine addAbsSlice(sliceName, pt, direction)
      nAbsSlices = nAbsSlices + 1
      call createSlice(absSlices(nAbsSlices), pt, direction)
      absSlices(nAbsSlices)%sliceName = sliceName
+     absSlices(nAbsSlices)%pt = pt
+     absSlices(nAbsSlices)%dir = direction
+     
   end if
   
 end subroutine addAbsSlice
@@ -746,7 +868,6 @@ subroutine integrateSlice(slc)
 
      ! Length of this segment
      len = sqrt((x1(1)-x2(1))**2 + (x1(2)-x2(2))**2 + (x1(3)-x2(3))**2)
-     
      ! Integrate the pressure and viscous forces separately
      pF = pF + half*(pT1 + pT2)*len
      vF = vF + half*(vT1 + vT2)*len
@@ -780,7 +901,7 @@ subroutine integrateSlice(slc)
   end do
 
   ! Set chord
-  slc%chord = dmax
+  slc%chord = max(dmax, 1e-12)
   
   ! Compute factor to get coefficient
   scaleDim = pRef/pInf
@@ -795,35 +916,47 @@ subroutine integrateSlice(slc)
 
 end subroutine integrateSlice
   
-! subroutine writeSliceTecplot(slc, fileName)
+subroutine writeSlice(slc, fileID)
+  ! Write the data in slice 'slc' to openfile ID fileID
 
-!   use liftDistributionData
-!   implicit none
+  use liftDistributionData
+  implicit none
 
-!   character*(*), intent(in) :: fileName
-!   type(slice), intent(in) :: slc
-!   integer(kind=intType) :: i 
-!   open (unit=7, file=fileName)
-!   write (7,*) "Title = ""Lift Dist Test"""
-!   write (7,*) "Variables = ""X"" ""Y"" ""Z"""! ""Tx"" ""Ty"" ""Tz"""
-!   write (7,*) "Zone T=""FE Mesh"""
-!   write (7,*) "Nodes = ", slc%nNodes, " Elements= ", slc%nNodes/2, " ZONETYPE=FELINESEG"
-!   write (7,*) "DATAPACKING=POINT"
-! 13 format (E16.10, E16.10, E16.10)
-!   do i=1,slc%nNodes
-!      write(7,13) &
-!           slc%w(1,i)*uniqueNodes(1, slc%ind(1,i)) + slc%w(2,i)*uniqueNodes(1, slc%ind(2, i)), &
-!           slc%w(1,i)*uniqueNodes(2, slc%ind(1,i)) + slc%w(2,i)*uniqueNodes(2, slc%ind(2, i)), &
-!           slc%w(1,i)*uniqueNodes(3, slc%ind(1,i)) + slc%w(2,i)*uniqueNodes(3, slc%ind(2, i))!, &
-!           ! slc%w(1,i)*uniqueTractionsP(1, slc%ind(1,i)) + slc%w(2,i)*uniqueTractionsP(1, slc%ind(2, i)), &
-!           ! slc%w(1,i)*uniqueTractionsP(2, slc%ind(1,i)) + slc%w(2,i)*uniqueTractionsP(2, slc%ind(2, i)), &
-!           ! slc%w(1,i)*uniqueTractionsP(3, slc%ind(1,i)) + slc%w(2,i)*uniqueTractionsP(3, slc%ind(2, i))
-!   end do
-          
-! 14 format(I5, I5)
-!   do i=1, slc%nNodes/2
-!      write(7, 14) 2*i-1, 2*i
-!   end do
-!   close(7)
+  ! Input Parameters
+  type(slice), intent(in) :: slc
+  integer(kind=intType) :: fileID
 
-! end subroutine writeSliceTecplot
+  ! Working Variables
+  integer(kind=intType) :: i 
+
+  write (fileID,"(a,a,a)") "Zone T= """,trim(slc%sliceName),""""
+
+  ! IF we have nodes actually write:
+  if (slc%nNodes > 0) then
+     write (fileID,*) "Nodes = ", slc%nNodes, " Elements= ", slc%nNodes/2, " ZONETYPE=FELINESEG"
+     write (fileID,*) "DATAPACKING=POINT"
+13   format (E14.6, E14.6, E14.6)
+     do i=1,slc%nNodes
+        write(fileID,13) &
+             slc%w(1,i)*uniqueNodes(1, slc%ind(1,i)) + slc%w(2,i)*uniqueNodes(1, slc%ind(2, i)), &
+             slc%w(1,i)*uniqueNodes(2, slc%ind(1,i)) + slc%w(2,i)*uniqueNodes(2, slc%ind(2, i)), &
+             slc%w(1,i)*uniqueNodes(3, slc%ind(1,i)) + slc%w(2,i)*uniqueNodes(3, slc%ind(2, i))!, &
+        ! slc%w(1,i)*uniqueTractionsP(1, slc%ind(1,i)) + slc%w(2,i)*uniqueTractionsP(1, slc%ind(2, i)), &
+        ! slc%w(1,i)*uniqueTractionsP(2, slc%ind(1,i)) + slc%w(2,i)*uniqueTractionsP(2, slc%ind(2, i)), &
+        ! slc%w(1,i)*uniqueTractionsP(3, slc%ind(1,i)) + slc%w(2,i)*uniqueTractionsP(3, slc%ind(2, i))
+     end do
+     
+14   format(I5, I5)
+     do i=1, slc%nNodes/2
+        write(fileID, 14) 2*i-1, 2*i
+     end do
+  else ! Write dummy data so the zones are the same
+
+     write (fileID,*) "Nodes = ", 2, " Elements= ", 1, " ZONETYPE=FELINESEG"
+     write (fileID,*) "DATAPACKING=POINT"
+     do i=1,2
+        write(fileID,13) zero, zero, zero
+     end do
+     write(fileID, 14) 1, 2
+  end if
+end subroutine writeSlice

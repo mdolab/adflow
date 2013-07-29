@@ -72,6 +72,14 @@ python module sumb
          character*(*) intent(in) :: distname
        end subroutine addliftdistribution
        
+       subroutine writeliftdistributionfile(filename)
+         character*(*), intent(in) :: filename
+       end subroutine writeliftdistributionfile
+
+       subroutine writeslicesfile(filename)
+         character*(*), intent(in) :: filename
+       end subroutine writeslicesfile
+
        subroutine dummyreadparamfile ! in :sumb:../../inputParam/readParamFile.f90
        end subroutine dummyreadparamfile
        

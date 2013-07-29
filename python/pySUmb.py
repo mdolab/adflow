@@ -27,7 +27,7 @@ To Do:
 # =============================================================================
 # Standard Python modules
 # =============================================================================
-import sys, string
+import sys, string, os
 import time
 import copy
 
@@ -960,7 +960,7 @@ name is unavailable.'%(flowCase), comm=self.comm)
 
         positions = numpy.atleast_1d(positions)
         N = len(positions)
-        tmp = numpy.zeros((N, 3))
+        tmp = numpy.zeros((N, 3),self.dtype)
         if direction == 'x':
             tmp[:, 0] = positions
             dir_vec = [1.0, 0.0, 0.0]
@@ -968,10 +968,10 @@ name is unavailable.'%(flowCase), comm=self.comm)
             tmp[:, 1] = positions
             dir_vec = [0.0, 1.0, 0.0]
         elif direction == 'z':
-            tmp[:, 2] == 'z'
+            tmp[:, 2] = positions
             dir_vec = [0.0, 0.0, 1.0]
         # end if
- 
+
         for i in xrange(len(positions)):
             # It is important to ensure each slice get a unique
             # name...so we will number sequentially from pythhon
@@ -1375,22 +1375,7 @@ name is unavailable.'%(flowCase), comm=self.comm)
 
         # Post-Processing -- Write Solutions
         if self.getOption('writeSolution'):
-            base = self.getOption('outputDir') + '/' + self.getOption('probName')
-            if self.curFlowCase <> "default":
-                base = base + '_%s'%self.curFlowCase
-            # end if
-
-            volname = base + '_vol.cgns'
-            surfname = base + '_surf.cgns'
-
-            if self.getOption('numberSolutions'):
-                counter = self.flowCases[self.curFlowCase]['callCounter']
-                volname = base + '_c%3.3d_vol.cgns'%(counter)
-                surfname = base + '_c%3.3d_surf.cgns'%(counter)
-            #end if
-
-            self.writeVolumeSolutionFile(volname)
-            self.writeSurfaceSolutionFile(surfname)
+            self.writeSolution()
         # end if
             
         if self.getOption('TSStability'):
@@ -1502,61 +1487,153 @@ name is unavailable.'%(flowCase), comm=self.comm)
         '''
         return self.mesh.getSurfaceConnectivity(group_name)
         
-    def writeMeshFile(self, filename=None):
+    def writeSolution(self):
+        '''This is a generic shell function that potentially writes
+        the various output files. The intent is that the user or
+        calling program can call this file and SUmb write all the
+        files that the user has defined. It is recommneded that this
+        function is used along with the associated logical flags in
+        the options to determine the desired writing procedure'''
+        
+        base = self.getOption('outputDir') + '/' + self.getOption('probName')
+
+        # If we have flow cases, add the flow case name:
+        if self.curFlowCase <> "default":
+            base = base + '_%s'%self.curFlowCase
+        # end if
+
+        # If we are numbering solution, it saving the sequence of
+        # calls, add the call number
+        if self.getOption('numberSolutions'):
+            base = base + '_%3.3d'%self.flowCases[self.curFlowCase]['callCounter']
+        # end if
+
+        # Now call each of the 4 routines with the appropriate file name:
+        self.writeVolumeSolutionFile(base + '_vol.cgns')
+        self.writeSurfaceSolutionFile(base + '_surf.cgns')
+        self.writeLiftDistributionFile(base + '_lift.dat')
+        self.writeSlicesFile(base + '_slices.dat')
+        
+        return
+
+    def writeMeshFile(self, fileName):
+        """Write the current mesh to a CGNS file. This call isn't used
+                normally since the volume solution usually contains the grid
+        
+        fileName -- the name of the file 
+        """
+        
+        # Ensure extension is .cgns even if the user didn't specify
+        fileName, ext = os.path.splitext(fileName)
+        if ext <> 'cgns':
+            fileName += '.cgns'
+        # end if
+
+        # Set Flags for writing
         self.sumb.monitor.writegrid = True
         self.sumb.monitor.writevolume = False
         self.sumb.monitor.writesurface = False
 
-        if (filename):
-            self.sumb.inputio.solfile[:] = ''
-            self.sumb.inputio.solfile[0:len(filename)] = filename
+        # Set filename in sumb
+        self.sumb.inputio.solfile[:] = ''
+        self.sumb.inputio.solfile[0:len(filename)] = filename
+        
+        self.sumb.inputio.newgridfile[:] = ''
+        self.sumb.inputio.newgridfile[0:len(filename)] = filename
 
-            self.sumb.inputio.newgridfile[:] = ''
-            self.sumb.inputio.newgridfile[0:len(filename)] = filename
-        # end if
-
+        # Actual fortran write call
         self.sumb.writesol()
 
         return
 
-    def writeVolumeSolutionFile(self, filename=None, writeGrid=True):
+    def writeVolumeSolutionFile(self, fileName, writeGrid=True):
         """Write the current state of the volume flow solution to a CGNS file.
                 Keyword arguments:
         
-        filename -- the name of the file (optional)
+        filename -- the name of the file 
+        writeGrid -- Include the grid or use links. Always 
+                     writing the grid is recommended, even in cases
+                     where it is not strictly necessary
 
         """
+        # Ensure extension is .cgns even if the user didn't specify
+        fileName, ext = os.path.splitext(fileName)
+        if ext <> 'cgns':
+            fileName += '.cgns'
+        # end if
 
+        # Set Flags for writing
         self.sumb.monitor.writegrid = writeGrid
         self.sumb.monitor.writevolume = True
         self.sumb.monitor.writesurface = False
 
-        if filename is not None:
-            self.sumb.inputio.solfile[:] = ''
-            self.sumb.inputio.solfile[0:len(filename)] = filename
+        # Set filename in sumb
+        self.sumb.inputio.solfile[:] = ''
+        self.sumb.inputio.solfile[0:len(fileName)] = fileName
 
-            self.sumb.inputio.newgridfile[:] = ''
-            self.sumb.inputio.newgridfile[0:len(filename)] = filename
-        # end if
+        self.sumb.inputio.newgridfile[:] = ''
+        self.sumb.inputio.newgridfile[0:len(fileName)] = fileName
 
+        # Actual fortran write call
         self.sumb.writesol()
 
         return
 
-    def writeSurfaceSolutionFile(self, filename=None):
+    def writeSurfaceSolutionFile(self, fileName):
         '''Write the current state of the surface flow solution to a CGNS file.
         Keyword arguments:
-        filename -- the name of the file (optional)
+        fileName -- the name of the file
         '''
-        if filename is not None:
-            self.sumb.inputio.surfacesolfile[:] = ''
-            self.sumb.inputio.surfacesolfile[0:len(filename)] = filename
+        # Ensure extension is .cgns even if the user didn't specify
+        fileName, ext = os.path.splitext(fileName)
+        if ext <> 'cgns':
+            fileName += '.cgns'
         # end if
 
+        # Set Flags for writing
         self.sumb.monitor.writegrid=False
         self.sumb.monitor.writevolume=False
         self.sumb.monitor.writesurface=True
+
+        # Set filename in sumb
+        self.sumb.inputio.surfacesolfile[:] = ''
+        self.sumb.inputio.surfacesolfile[0:len(fileName)] = fileName
+
+        # Actual fortran write call
         self.sumb.writesol()
+
+        return
+
+    def writeLiftDistributionFile(self, fileName):
+        '''Evaluate and write the lift distibution to a tecplot file.
+        fileName: Filename of the lift file.
+        '''
+        
+        # Ensure filename is .dat even if the user didn't specify
+        fileName, ext = os.path.splitext(fileName)
+        if ext <> 'dat':
+            fileName += '.dat'
+        # end if
+            
+        # Actual write command
+        self.sumb.writeliftdistributionfile(fileName)
+
+        return
+
+    def writeSlicesFile(self, fileName):
+        '''Evaluate and write the defined slice information to a
+        tecplot file.
+        fileName: Filename of the slice file
+        '''
+
+        # Ensure filename is .dat even if the user didn't specify
+        fileName, ext = os.path.splitext(fileName)
+        if ext <> 'dat':
+            fileName += '.dat'
+        # end if
+            
+        # Actual write command
+        self.sumb.writeslicesfile(fileName)
 
         return
 

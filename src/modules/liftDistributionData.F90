@@ -31,7 +31,7 @@ module liftDistributionData
      real(kind=realType), dimension(:, :), pointer :: w
      real(kind=realType) :: pL, vL, pD, vD, CLp, CLv, CDp, CDv
      real(kind=realType) :: chord
-
+     real(kind=realType), dimension(3) :: pt, dir
   end type slice
 
   type liftDist
@@ -111,5 +111,9 @@ module liftDistributionData
   integer(kind=intType), parameter :: nLiftDistMax=100
   integer(kind=intType) :: nLiftDists
   type(liftDist), dimension(nLiftDistMax), target :: liftDists
+
+  ! Tecplot Variable names of the data in the lift distribution data file:
+  character(len=maxCGNSNameLen), dimension(:), allocatable :: liftDistName
+  integer(kind=intType), parameter :: nLiftDistVar=7
 
 end module liftDistributionData
