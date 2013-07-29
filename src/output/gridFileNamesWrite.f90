@@ -51,8 +51,8 @@
        ! Determine the situation we are having here.
 
        select case (equationMode)
-
-         case (steady)
+          
+           case (steady)
 
            ! Steady state computation. Allocate the memory for the
            ! grid file names. Even if no file needs to be written the
