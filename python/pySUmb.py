@@ -1637,6 +1637,44 @@ name is unavailable.'%(flowCase), comm=self.comm)
 
         return
 
+    def getTriangulatedMeshSurface(self, flowCase=None):
+        '''
+        This function returns a trianguled verision of the surface
+        mesh on all processors. The intent is to use this for doing
+        constraints in DVConstraints.
+        '''
+
+        self.setFlowCase(flowCase, True, 'getTriangulatedMeshSurface')
+
+        # Use first spectral instance
+        pts = self.comm.allgather(self.getForcePoints(0))
+        conn = self.comm.allgather(self.mesh.getSurfaceConnectivity('all'))
+
+        # Triangle info...point and two vectors 
+        p0 = []
+        v1 = []
+        v2 = []
+
+        for iProc in xrange(len(conn)):
+            for i in xrange(len(conn[iProc])/4):
+                i0 = conn[iProc][4*i+0]
+                i1 = conn[iProc][4*i+1]
+                i2 = conn[iProc][4*i+2]
+                i3 = conn[iProc][4*i+3]
+
+                p0.append(pts[iProc][i0])
+                v1.append(pts[iProc][i1]-pts[iProc][i0])
+                v2.append(pts[iProc][i3]-pts[iProc][i0])
+
+                p0.append(pts[iProc][i2])
+                v1.append(pts[iProc][i1]-pts[iProc][i2])
+                v2.append(pts[iProc][i3]-pts[iProc][i2])
+
+            # end for
+        # end for
+                
+        return [p0, v1, v2]
+
     def writeForceFile(self, file_name, TS=0, group_name='all', 
                        cfd_force_pts=None, flowCase=None):
         '''This function collects all the forces and locations and
