@@ -50,11 +50,12 @@ subroutine writeSlicesFile(fileName)
   character*(*), intent(in) :: fileName
 
   ! Working parameters
-  integer(kind=intType) :: file, i, sps
+  integer(kind=intType) :: file, i, sps, nSolVar
   character(len=maxStringLen) :: fname, sliceName
   character(len=7) :: intString
   real(kind=realType), dimension(3) :: pt, dir
-
+  character(len=maxCGNSNameLen), dimension(:), allocatable :: solNames
+  
   ! Only write if we actually have lift distributions
   testwriteSlices: if(nParaSlices + nAbsSlices > 0) then
 
@@ -76,11 +77,26 @@ subroutine writeSlicesFile(fileName)
 
            ! Write Header Information 
            write (file,*) "Title = ""SUmb Slice Data"""
-           write (file,*) "Variables = ""CoordianteX"" ""CoordinateY"" ""CoordinateZ"""
+           write (file,"(a)", advance="no") "Variables = "
+           write(file,"(a)",advance="no") " ""CoordinateX"" "
+           write(file,"(a)",advance="no") " ""CoordinateY"" "
+           write(file,"(a)",advance="no") " ""CoordinateZ"" "
+
+           ! Number of additional variables on slices
+           call numberOfSurfSolVariables(nSolVar)
+           allocate(solNames(nSolVar))
+           call surfSolNames(solNames)
+
+           ! Write the rest of the variables
+           do i=1,nSolVar
+              write(file,"(a,a,a)",advance="no") """",trim(solNames(i)),""" "
+           end do
+           write(file,"(1ex)")
+           deallocate(solNames)
 
            do i=1,nParaSlices
               call integrateSlice(paraSlices(i))
-              call writeSlice(paraSlices(i), file)
+              call writeSlice(paraSlices(i), file, ifzv+nSolVar)
            end do
 
            do i=1,nAbsSlices
@@ -92,7 +108,7 @@ subroutine writeSlicesFile(fileName)
 
               ! Integrate and write
               call integrateSlice(absSlices(i))
-              call writeSlice(absSlices(i), file)
+              call writeSlice(absSlices(i), file, ifzv+nSolVar)
            end do
 
            ! Close file on root proc
@@ -448,7 +464,7 @@ subroutine initializeLiftDistributionData
   ! Working Variables
   integer(kind=intType) :: ierr, i, j
   real(kind=realType), parameter :: tol=1e-8
-
+  integer(kind=intType) :: nSurfVariables, nSliceVariables
   interface
      subroutine pointReduce(pts, N, tol, uniquePts, link, nUnique)
        use precision
@@ -466,7 +482,6 @@ subroutine initializeLiftDistributionData
 
   if (liftDistInitialized) then
      return
-
   else
      ! Step 1a. Number of local nodes and quads on each proc:
      call getForceSize(nNodesLocal, nCellsLocal)
@@ -533,12 +548,23 @@ subroutine initializeLiftDistributionData
           sumb_comm_world, ierr)
      call EChk(ierr, __FILE__, __LINE__)
 
+
+     ! Now determine of cell centered values that will be
+     ! communicated. It is equal to 6 plus the number of surface
+     ! variables. The 6 are the three components of pressure and
+     ! viscous forces. 
+     call numberOfSurfSolVariables(nSurfVariables)
+
+     nSliceVariables = nSurfVariables + 6
+
+     ! Allocate a few additional arrays that will be required for the data transfer:
+     allocate(localData(nSliceVariables, nCellsLocal))
+
      ! Step 1d. Determine the unique coordiantes and the new cell mapping:
      if (myid == 0) then
         ! Maximum space for the unique coordinates and link array
         allocate(uniqueNodes(3, nNodesTotal))
         allocate(link(nNodesTotal))
-        allocate(allForcesP(3, nNodesTotal), allForcesV(3, nNodesTotal))
 
         call pointReduce(allNodes, nNodesTotal, tol, uniqueNodes, link, nUnique)
 
@@ -550,17 +576,11 @@ subroutine initializeLiftDistributionData
               allCells(j, i) = link(allCells(j, i))
            end do
         end do
+
+        allocate(globalData(nSliceVariables, nCellsTotal))
+        allocate(uniqueData(nSliceVariables, nUnique))
+        allocate(fc(nUnique), dualAreas(nUnique))
      end if
-
-     ! Allocate a few additional arrays that will be required for the forces:
-     allocate(localForcesP(3, nNodesLocal), localForcesV(3, nNodesLocal))
-
-     if (myid == 0) then
-        allocate(uniqueTractionsP(3, nUnique), uniqueTractionsV(3, nUnique), &
-             dualAreas(nUnique))
-        allocate(fc(nUnique))
-     end if
-
      ! Data for the marching squares method:
      ! Which edges are cut by the contour
      msCon1( 1 , : ) = (/ 0 , 0 , 0 , 0 , 0 /)
@@ -610,9 +630,7 @@ subroutine destroyLiftDistributionData
      if (myid == 0) then
         ! Free all data allocated only on root proc:
         deallocate(allNodes, allCells, link, uniqueNodes)
-        deallocate(allForcesP, allForcesV)
-        deallocate(uniqueTractionsP, uniqueTractionsV, dualAreas)
-        deallocate(fc)
+        deallocate(globalData, uniqueNodes, uniqueData, fc, dualAreas)
      end if
 
      ! Free data for localCells and Nodes
@@ -622,7 +640,7 @@ subroutine destroyLiftDistributionData
      deallocate(nNodesProc, nCellsProc, cumNodesProc, cumCellsProc)
 
      ! Deallocate local force data
-     deallocate(localForcesP, localForcesV)
+     deallocate(localData)
 
      liftDistInitialized = .False.
   end if
@@ -648,8 +666,8 @@ subroutine liftDistGatherForcesAndNodes(sps)
   integer(kind=intType), intent(in) :: sps
 
   !orking param
-  integer(kind=intType) :: i, j, ierr
-  real(kind=realType), dimension(3) :: n1, n2, n3, n4, v1, v2, sss
+  integer(kind=intType) :: i, j, jj, ierr, nFields
+  real(kind=realType), dimension(3) :: n1, n2, n3, n4, v1, v2, sss, qfp, qfv
   real(kind=realType) :: qa
   logical :: forcesTypeSave
 
@@ -663,38 +681,37 @@ subroutine liftDistGatherForcesAndNodes(sps)
        sumb_comm_world, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  ! Now get the forces. Make sure we get forces, and not tractions.
-  forcesTypeSave = forcesAsTractions
-  forcesAsTractions = .False.
-  call getForces(localForcesP, localForcesV, nNodesLocal, sps)
-  forcesAsTractions = forcesTypeSave
+  ! Now get the forces and any other surface data that we neded to
+  ! communicate. Since all this data is cell centered we do a single
+  ! reduction. 
+  call computeSliceSurfaceData(sps, nFields)
 
   ! Gather pressure and viscous forces to root proc:
   call mpi_gatherv(&
-       localForcesP, nNodesLocal*3, sumb_real, &
-       allForcesP, nNodesProc*3, cumNodesProc*3, sumb_real, 0, &
-       sumb_comm_world, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-
-  call mpi_gatherv(&
-       localForcesV, nNodesLocal*3, sumb_real, &
-       allForcesV, nNodesProc*3, cumNodesProc*3, sumb_real, 0, &
+       localData, nCellsProc*nFields, sumb_real, &
+       globalData, nCellsProc*nFields, cumCellsProc*nFields, sumb_real, 0, &
        sumb_comm_world, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
   ! Process the unique set of forces and tractions using the finite elemnent data:
   if (myid == 0) then
-
-     ! First get the unique set of forces by summing into
-     ! uniquetractions. At this point, they are forces and not
-     ! tractions. Also update the unique node list using allNodes
-     uniqueTractionsP = zero
-     uniqueTractionsV = zero
-
+     
+     ! Assign the unique nodes:
      do i=1,nNodesTotal
-        uniqueTractionsP(:, link(i)) = uniqueTractionsP(:, link(i)) + allForcesP(:, i)
-        uniqueTractionsV(:, link(i)) = uniqueTractionsV(:, link(i)) + allForcesV(:, i)
         uniqueNodes(:, link(i)) = allNodes(:, i)
+     end do
+
+     ! Zero the entire uniqueData array
+     uniqueData = zero
+
+     ! For the forces we a quarter of each cell and sum onto the unique nodes:
+     do i=1,nCellsTotal
+        qfp = globalData(ifxp:ifzp, i)*fourth
+        qfv = globalData(ifxv:ifzv, i)*fourth
+        do jj=1,4
+           uniqueData(ifxp:ifzp, allCells(jj, i)) = uniqueData(ifxp:ifzp, allCells(jj, i)) + qfp
+           uniqueData(ifxv:ifzv, allCells(jj, i)) = uniqueData(ifxv:ifzv, allCells(jj, i)) + qfv
+        end do
      end do
 
      ! Next get the dual areas by computing area of each quad:
@@ -725,11 +742,34 @@ subroutine liftDistGatherForcesAndNodes(sps)
 
      ! Now compute the tractions by just dividing by the area:
      do i=1,nUnique
-        uniqueTractionsP(:, i) = uniquetractionsP(:, i) / dualAreas(i)
-        uniqueTractionsV(:, i) = uniquetractionsV(:, i) / dualAreas(i)
+        do j=ifxp,ifzv
+           uniqueData(j, i) = uniqueData(j, i) / dualAreas(i)
+        end do
+     end do
+
+     ! Finally we have the rest of data to average to the nodes. Add
+     ! each cell value to the nodes and keep track of the number so we
+     ! have an actual average
+     dualAreas = zero
+     do i=1,nCellsTotal
+        do j=ifzv+1,nFields
+           do jj=1,4
+              uniqueData(j, allCells(jj, i)) = uniqueData(j, allCells(jj, i)) + globalData(j, i)
+           end do
+        end do
+        do jj=1,4
+           dualAreas(allCells(jj, i)) = dualAreas(allCells(jj, i)) + one
+        end do
+     end do
+
+     ! Finally divide by the node count which was stored in dualAreas
+     do i=1,nUnique
+        do j=ifzv+1,nFields
+           uniqueData(j, i) = uniqueData(j, i) / dualAreas(i)
+        end do
      end do
   end if
-
+ 
 end subroutine liftDistGatherForcesAndNodes
 
 subroutine createSlice(slc, pt, dir)
@@ -920,18 +960,20 @@ subroutine integrateSlice(slc)
      x2 = slc%w(1,i2)*uniqueNodes(:, slc%ind(1,i2)) + slc%w(2,i2)*uniqueNodes(:, slc%ind(2, i2))
 
      ! extract pressure tractions
-     pT1 = slc%w(1,i1)*uniqueTractionsP(:, slc%ind(1,i1)) + slc%w(2,i1)*uniqueTractionsP(:, slc%ind(2, i1))
-     pT2 = slc%w(1,i2)*uniqueTractionsP(:, slc%ind(1,i2)) + slc%w(2,i2)*uniqueTractionsP(:, slc%ind(2, i2))
+     pT1 = slc%w(1,i1)*uniqueData(ifxp:ifzp, slc%ind(1,i1)) + slc%w(2,i1)*uniqueData(ifxp:ifzp, slc%ind(2, i1))
+     pT2 = slc%w(1,i2)*uniqueData(ifxp:ifzp, slc%ind(1,i2)) + slc%w(2,i2)*uniqueData(ifxp:ifzp, slc%ind(2, i2))
 
      ! extract viscous tractions
-     vT1 = slc%w(1,i1)*uniqueTractionsV(:, slc%ind(1,i1)) + slc%w(2,i1)*uniqueTractionsV(:, slc%ind(2, i1))
-     vT2 = slc%w(1,i2)*uniqueTractionsV(:, slc%ind(1,i2)) + slc%w(2,i2)*uniqueTractionsV(:, slc%ind(2, i2))
+     vT1 = slc%w(1,i1)*uniqueData(ifxv:ifzv, slc%ind(1,i1)) + slc%w(2,i1)*uniqueData(ifxv:ifzv, slc%ind(2, i1))
+     vT2 = slc%w(1,i2)*uniqueData(ifxv:ifzv, slc%ind(1,i2)) + slc%w(2,i2)*uniqueData(ifxv:ifzv, slc%ind(2, i2))
 
      ! Length of this segment
      len = sqrt((x1(1)-x2(1))**2 + (x1(2)-x2(2))**2 + (x1(3)-x2(3))**2)
+
      ! Integrate the pressure and viscous forces separately
      pF = pF + half*(pT1 + pT2)*len
      vF = vF + half*(vT1 + vT2)*len
+
   end do
 
   ! Set the values we can in the slice
@@ -1062,7 +1104,7 @@ subroutine integrateSlice(slc)
 
 end subroutine integrateSlice
 
-subroutine writeSlice(slc, fileID)
+subroutine writeSlice(slc, fileID, nFields)
   ! Write the data in slice 'slc' to openfile ID fileID
 
   use liftDistributionData
@@ -1070,10 +1112,10 @@ subroutine writeSlice(slc, fileID)
 
   ! Input Parameters
   type(slice), intent(in) :: slc
-  integer(kind=intType) :: fileID
+  integer(kind=intType), intent(in) :: fileID, nFields
 
   ! Working Variables
-  integer(kind=intType) :: i 
+  integer(kind=intType) :: i, j
 
   write (fileID,"(a,a,a)") "Zone T= """,trim(slc%sliceName),""""
 
@@ -1081,28 +1123,41 @@ subroutine writeSlice(slc, fileID)
   if (slc%nNodes > 0) then
      write (fileID,*) "Nodes = ", slc%nNodes, " Elements= ", slc%nNodes/2, " ZONETYPE=FELINESEG"
      write (fileID,*) "DATAPACKING=POINT"
-13   format (E14.6, E14.6, E14.6)
+13   format (E14.6)
+
      do i=1,slc%nNodes
-        write(fileID,13) &
-             slc%w(1,i)*uniqueNodes(1, slc%ind(1,i)) + slc%w(2,i)*uniqueNodes(1, slc%ind(2, i)), &
-             slc%w(1,i)*uniqueNodes(2, slc%ind(1,i)) + slc%w(2,i)*uniqueNodes(2, slc%ind(2, i)), &
-             slc%w(1,i)*uniqueNodes(3, slc%ind(1,i)) + slc%w(2,i)*uniqueNodes(3, slc%ind(2, i))!, &
-        ! slc%w(1,i)*uniqueTractionsP(1, slc%ind(1,i)) + slc%w(2,i)*uniqueTractionsP(1, slc%ind(2, i)), &
-        ! slc%w(1,i)*uniqueTractionsP(2, slc%ind(1,i)) + slc%w(2,i)*uniqueTractionsP(2, slc%ind(2, i)), &
-        ! slc%w(1,i)*uniqueTractionsP(3, slc%ind(1,i)) + slc%w(2,i)*uniqueTractionsP(3, slc%ind(2, i))
+        ! Write the coordinates
+        do j=1,3
+           write(fileID,13, advance='no') &
+                slc%w(1,i)*uniqueNodes(j, slc%ind(1,i)) + slc%w(2,i)*uniqueNodes(j, slc%ind(2, i))
+        end do
+
+        ! Write field data
+        do j=ifzv+1,nFields
+           write(fileID,13, advance='no') &
+                slc%w(1,i)*uniqueData(j, slc%ind(1,i)) + slc%w(2,i)*uniqueData(j, slc%ind(2, i))
+        end do
+        write(fileID,"(1ex)")
      end do
 
-14   format(I5, I5)
+15   format(I5, I5)
      do i=1, slc%nNodes/2
-        write(fileID, 14) 2*i-1, 2*i
+        write(fileID, 15) 2*i-1, 2*i
      end do
-  else ! Write dummy data so the zones are the same
+  else ! Write dummy data so the number of zones are the same
 
      write (fileID,*) "Nodes = ", 2, " Elements= ", 1, " ZONETYPE=FELINESEG"
      write (fileID,*) "DATAPACKING=POINT"
      do i=1,2
-        write(fileID,13) zero, zero, zero
+        do j=1,3
+           write(fileID,13, advance='no') zero
+        end do
+
+        do j=ifzv+1,nFields
+           write(fileID,13, advance='no') zero
+        end do
+        write(fileID,"(1ex)")
      end do
-     write(fileID, 14) 1, 2
+     write(fileID, 15) 1, 2
   end if
 end subroutine writeSlice

@@ -44,6 +44,7 @@ FF90_OBJECTS_1 = outputMod.o
 FILES_TO_COMPLEXIFY = outputMod.f90\
 		 copyDataBuf.f90\
 		 computeIsoVariable.F90\
+		 computeSliceSurfaceData.F90\
 		 describeScheme.f90\
 		 gridFileNamesWrite.f90\
 		 isoSurfNames.f90\
