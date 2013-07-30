@@ -7,7 +7,7 @@ subroutine addLiftDistribution(nSegments, dir_vec, dir_ind, distName)
   !      * This routine will add the description of a lift distribution   *
   !      *                                                                *
   !      ******************************************************************
-  
+
   use communication
   use liftDistributionData
 
@@ -24,7 +24,7 @@ subroutine addLiftDistribution(nSegments, dir_vec, dir_ind, distName)
   liftDists(nLiftDists)%dir = dir_vec
   liftDists(nLiftDists)%distName = distName
   liftDists(nLIftDists)%dir_ind = dir_ind
-  
+
 end subroutine addLiftDistribution
 
 subroutine writeSlicesFile(fileName)
@@ -54,7 +54,6 @@ subroutine writeSlicesFile(fileName)
   character(len=maxStringLen) :: fname, sliceName
   character(len=7) :: intString
   real(kind=realType), dimension(3) :: pt, dir
-  
 
   ! Only write if we actually have lift distributions
   testwriteSlices: if(nParaSlices + nAbsSlices > 0) then
@@ -78,7 +77,7 @@ subroutine writeSlicesFile(fileName)
            ! Write Header Information 
            write (file,*) "Title = ""SUmb Slice Data"""
            write (file,*) "Variables = ""CoordianteX"" ""CoordinateY"" ""CoordinateZ"""
-        
+
            do i=1,nParaSlices
               call integrateSlice(paraSlices(i))
               call writeSlice(paraSlices(i), file)
@@ -161,7 +160,6 @@ subroutine writeLiftDistributionFile(fileName)
   end if testwriteLiftDists
 end subroutine writeLiftDistributionFile
 
-
 subroutine writeLiftDistributions(sps, fileID)
   !
   !      ******************************************************************
@@ -186,9 +184,9 @@ subroutine writeLiftDistributions(sps, fileID)
   real(kind=realType), parameter :: tol=1e-8
   type(liftDist), pointer :: d
   integer(kind=intType) :: i, j, iVar, iDist, sizes(6)
-  real(kind=realType), dimension(:, :), allocatable :: values
+  real(kind=realType), dimension(:,:), allocatable :: values
   character(len=maxCGNSNameLen), dimension(:), allocatable :: liftDistNames
-
+  real(kind=realType) :: dmin, dmax, sumL, sumD, span, delta
   call initializeLiftDistributionData
   call liftDistGatherForcesAndNodes(sps)
 
@@ -199,7 +197,7 @@ subroutine writeLiftDistributions(sps, fileID)
         xmin(i) = minval(uniqueNodes(i,:))
         xmax(i) = maxval(uniqueNodes(i,:))
      end do
-     
+
      do iDist=1,nLiftDists
         d => liftDists(iDist)
         d%delta = (xMax(d%dir_ind) - xMin(d%dir_ind))/dble((d%nSegments - 1))
@@ -222,13 +220,24 @@ subroutine writeLiftDistributions(sps, fileID)
         ! These are the variable names for the lift distribution:
         allocate(liftDistNames(nLiftDistVar))
         ! Set the names here
-        liftDistNames(1) = cgnsCoorX
-        liftDistNames(2) = cgnsCoorY
-        liftDistNames(3) = cgnsCoorZ
-        liftDistNames(4) = "Lift"
-        liftDistNames(5) = "Drag"
-        liftDistNames(6) = cgnsCL
-        liftDistNames(7) = cgnsCD
+        liftDistNames(1) = "eta"
+        liftDistNames(2) = cgnsCoorX
+        liftDistNames(3) = cgnsCoorY
+        liftDistNames(4) = cgnsCoorZ
+        liftDistNames(5) = "Lift"
+        liftDistNames(6) = "Drag"
+        liftDistNames(7) = "Normalized Lift"
+        liftDistNames(8) = "Normalized Drag"
+        liftDistNames(9) = "CL"
+        liftDistNames(10) = "CD"
+        liftDistNames(11) = "CLp"
+        liftDistNames(12) = "CDp"
+        liftDistNames(13) = "CLv"
+        liftDistNames(14) = "CDv"
+        liftDistNames(15) = "Ellptical"
+        liftDistNames(16) = "thickness"
+        liftDistNames(17) = "twist"
+        liftDistNames(18) = "chord"
 
         ! Only write header info for first distribution only
         if (iDist == 1) then
@@ -248,21 +257,72 @@ subroutine writeLiftDistributions(sps, fileID)
         allocate(values(d%nSegments, nLiftDistVar))
         values = zero
 
+        ! Scaled Eta values
+        dmin = minVal(d%slicePts(d%dir_ind, :))
+        dmax = maxval(d%slicePts(d%dir_ind, :))
+        values(:, 1) = d%slicePts(d%dir_ind, :)/dmax
+
         ! Coordinate Varaibles
         if (d%dir_ind == 1) then! X slices
-           values(:, 1) = d%slicePts(1, :)
+           values(:, 2) = d%slicePts(1, :)
         else if (d%dir_ind == 2) then ! Y slices
-           values(:, 2) = d%slicePts(2, :)
+           values(:, 3) = d%slicePts(2, :)
         else if (d%dir_ind == 3) then ! Z slices
-           values(:, 3) = d%slicePts(3, :)
+           values(:, 4) = d%slicePts(3, :)
         end if
-        
+
         ! Other variables
         do i=1,d%nSegments
-           values(i, 4) = d%slices(i)%pL
-           values(i, 5) = d%slices(i)%pD
-           values(i, 6) = d%slices(i)%Clp
-           values(i, 7) = d%slices(i)%Cdp
+           ! Total lift and drag 
+           values(i, 5)  = d%slices(i)%pL + d%slices(i)%vL
+           values(i, 6)  = d%slices(i)%pD + d%slices(i)%vD
+
+           ! Total CL and CD
+           values(i, 9)  = d%slices(i)%CLp + d%slices(i)%CLv
+           values(i, 10) = d%slices(i)%CDp + d%slices(i)%CDv
+
+           ! Pressure lift and drag coefficients
+           values(i, 11) = d%slices(i)%CLp
+           values(i, 12) = d%slices(i)%CDp
+
+           ! Viscous lift and drag coefficients
+           values(i, 13) = d%slices(i)%CLv
+           values(i, 14) = d%slices(i)%CDv
+
+           ! t/c, twist, chord
+           values(i, 16) = d%slices(i)%thickness
+           values(i, 17) = d%slices(i)%twist
+           values(i, 18) = d%slices(i)%chord
+        end do
+
+        ! Sum up the lift and drag values from the slices:
+        sumL = zero
+        sumD = zero
+        do i=1,d%nSegments-1
+           sumL = sumL + half*(values(i, 5) + values(i+1, 5))
+           sumD = sumD + half*(values(i, 6) + values(i+1, 6))
+        end do
+
+
+        ! Now compute the normalized lift, drag and elliptical since
+        ! we know the sum. Note delta is non-dimensional!
+        delta = values(2, 1) - values(1, 1)
+
+        ! This is the "nondimensional" span...it basically takes into account if you have
+        ! a wing not at the sym plane
+        span = maxval(values(:, 1)) - minval(values(:, 1)) 
+        dmin = minval(values(:, 1))
+        sumL = sumL * delta
+        sumD = sumD * delta
+
+        do i=1,d%nSegments 
+
+           ! Normalized Lift
+           values(i, 7) = values(i, 5) / sumL 
+           values(i, 8) = values(i, 6) / sumD
+
+           ! elliptical value
+           values(i, 15) = four/pi/span*sqrt(one-(values(i, 1)-dmin)**2/span**2)
         end do
 
         ! Write all variables in block format
@@ -276,7 +336,7 @@ subroutine writeLiftDistributions(sps, fileID)
         do i=1,d%nSegments
            call destroySlice(d%slices(i))
         end do
-        
+
         ! Deallocate slice list and point list
         deallocate(d%slices, d%slicePts)
 
@@ -312,8 +372,6 @@ subroutine addParaSlice(sliceName, pt, direction)
      nParaSlices = nParaSlices + 1
      call createSlice(paraSlices(nParaSlices), pt, direction)
      paraSlices(nParaSlices)%sliceName = sliceName
-     paraSlices(nParaSlices)%pt = pt
-     paraSlices(nParaSlices)%dir = direction
   end if
 end subroutine addParaSlice
 
@@ -329,7 +387,7 @@ subroutine addAbsSlice(sliceName, pt, direction)
   !      ******************************************************************
   use communication
   use liftDistributionData
-  
+
   implicit none
 
   ! Input parameters
@@ -342,11 +400,8 @@ subroutine addAbsSlice(sliceName, pt, direction)
      nAbsSlices = nAbsSlices + 1
      call createSlice(absSlices(nAbsSlices), pt, direction)
      absSlices(nAbsSlices)%sliceName = sliceName
-     absSlices(nAbsSlices)%pt = pt
-     absSlices(nAbsSlices)%dir = direction
-     
   end if
-  
+
 end subroutine addAbsSlice
 
 subroutine initializeLiftDistributionData
@@ -430,7 +485,7 @@ subroutine initializeLiftDistributionData
      ! Step 1c: Fill Coordinates and Connecitivty for each proc. We will
      ! reuse some of the force code for simpliciity, even if it requires
      ! a bit more work 
-     
+
      allocate(localCells(4, nCellsLocal))
      allocate(localNodes(3, nNodesLocal))
 
@@ -635,7 +690,7 @@ subroutine liftDistGatherForcesAndNodes(sps)
      ! tractions. Also update the unique node list using allNodes
      uniqueTractionsP = zero
      uniqueTractionsV = zero
-     
+
      do i=1,nNodesTotal
         uniqueTractionsP(:, link(i)) = uniqueTractionsP(:, link(i)) + allForcesP(:, i)
         uniqueTractionsV(:, link(i)) = uniqueTractionsV(:, link(i)) + allForcesV(:, i)
@@ -710,17 +765,21 @@ subroutine createSlice(slc, pt, dir)
             oldSize1, oldSize2
        logical, intent(in) :: alwaysFreeMem
      end subroutine reallocateReal2
-     
+
      subroutine reallocateInteger2(intArray, newSize1, newSize2, &
           oldSize1, oldSize2, alwaysFreeMem)
        use precision
        implicit none
        integer(kind=intType), dimension(:,:), pointer :: intArray
        integer(kind=intType), intent(in) :: newSize1, newSize2, &
-                                            oldSize1, oldSize2
+            oldSize1, oldSize2
        logical, intent(in) :: alwaysFreeMem
      end subroutine reallocateInteger2
   end interface
+
+  ! Set the info for the slic:
+  slc%pt = pt
+  slc%dir = dir
 
   ! First step is to compute the 'function' value that will be used
   ! for the contour.
@@ -734,9 +793,9 @@ subroutine createSlice(slc, pt, dir)
           dir(3)*uniqueNodes(3, i) + d)*ovrdnom
   end do
 
-  ! Estimate size of slice by the sqrt of the number of nodes in the
+  ! Estimate size of slice by the 5 times sqrt of the number of nodes in the
   ! mesh
-  nMax = int(sqrt(dble(nNodesTotal)))
+  nMax = int(sqrt(dble(nNodesTotal)))*5
   allocate(slc%w(2,nMax), slc%ind(2, nMax))
 
   iCoor = 0
@@ -780,7 +839,7 @@ subroutine createSlice(slc, pt, dir)
               call reallocateInteger2(slc%ind, 2, 2*nMax, 2, nMax, .true.)
               nMax = nMax * 2
            end if
-           
+
            ! Weight factors
            slc%w(2, iCoor) = (zero - f(num1))/(f(num2) - f(num1))
            slc%w(1, iCoor) = one - slc%w(2, icoor)
@@ -792,7 +851,7 @@ subroutine createSlice(slc, pt, dir)
         end if
      end do
   end do ! Cell Loop
-  
+
   slc%nNodes = iCoor
 
 end subroutine createSlice
@@ -844,8 +903,10 @@ subroutine integrateSlice(slc)
   ! Working variables
   integer(kind=intType) :: i, j, i1, i2
   real(kind=realType), dimension(3) :: x1, x2, pT1, pT2, vT1, vT2, pF, vF
-  real(kind=realType) :: len, dmax, dist, fact, scaleDim
-  integer(kind=intType) :: bestPair(2)
+  real(kind=realType) :: len, dmax, dmin, dist, fact, scaleDim, M(3,3)
+  real(kind=realType) :: r(3), r_new(3), hyp, te(3), le(3), theta
+  integer(kind=intType) :: bestPair(2), dir_ind
+  real(kind=realtype), dimension(:,:), allocatable :: tempCoords
   ! Loop over elements and integrate:
 
   pF = zero
@@ -879,10 +940,11 @@ subroutine integrateSlice(slc)
   slc%vL = liftDirection(1)*vF(1) + liftDirection(2)*vF(2) + liftDirection(3)*vF(3)
   slc%vD = dragDirection(1)*vF(1) + dragDirection(2)*vF(2) + dragDirection(3)*vF(3)
 
-  ! Compute the chord as the max lenght between two nodes...this is
-  ! n^2, so should be changed in the future
+  ! Compute the chord as the max length between any two nodes...this
+  ! is n^2, so should be changed in the future
 
   dmax = zero
+  bestPair = (/1, 1/)
   do i=1,slc%nNodes
      ! extract node:
      x1 = slc%w(1,i)*uniqueNodes(:, slc%ind(1,i)) + slc%w(2,i)*uniqueNodes(:, slc%ind(2, i))
@@ -890,9 +952,9 @@ subroutine integrateSlice(slc)
      do j=i+1,slc%Nnodes
         ! extract node:
         x2 = slc%w(1,j)*uniqueNodes(:, slc%ind(1,j)) + slc%w(2,j)*uniqueNodes(:, slc%ind(2, j))
-        
+
         dist = sqrt((x1(1)-x2(1))**2 +(x1(2)-x2(2))**2 + (x1(3)-x2(3))**2)
-        
+
         if (dist > dmax) then
            dmax = dist
            bestPair = (/i, j/)
@@ -900,22 +962,107 @@ subroutine integrateSlice(slc)
      end  do
   end do
 
-  ! Set chord
+  ! Set chord, protected from zero
   slc%chord = max(dmax, 1e-12)
-  
+
   ! Compute factor to get coefficient
   scaleDim = pRef/pInf
   fact = two/(gammaInf*pInf*MachCoef*MachCoef &
        *surfaceRef*LRef*LRef*scaleDim)
 
-  ! Take dmax as chord:
+  ! Take dmax as chord and compute coefficients
   slc%CLp = slc%pL / slc%chord * fact
   slc%CDp = slc%pD / slc%chord * fact
   slc%CLv = slc%vL / slc%chord * fact
   slc%CDv = slc%vD / slc%chord * fact
 
+  ! Default values
+  slc%twist = zero
+  slc%thickness = zero
+
+  if (slc%nNodes == 0) then
+     return
+  end if
+
+  ! Lastly we need the twist and the twist and the thickness
+  i1 = bestPair(1)
+  i2 = bestPair(2)
+  x1 = slc%w(1,i1)*uniqueNodes(:, slc%ind(1,i1)) + slc%w(2,i1)*uniqueNodes(:, slc%ind(2, i1))
+  x2 = slc%w(1,i2)*uniqueNodes(:, slc%ind(1,i2)) + slc%w(2,i2)*uniqueNodes(:, slc%ind(2, i2))
+
+  if (x1(1) > x2(1)) then
+     te = x1
+     le = x2
+  else
+     te = x2
+     le = x1
+  end if
+
+  ! Length of hyptoneuse is the same
+  hyp = sqrt((x1(1)-x2(1))**2 + (x1(2)-x2(2))**2 + (x1(3)-x2(3))**2)
+
+  if (dir_ind == 1) then
+     ! Xslice...we don't how what to do here..could be y or z. Don't
+     ! do anything.
+     slc%twist = zero
+  else if (dir_ind == 2) then
+     ! Yslice
+     theta = asin((le(3)-te(3))/hyp)
+     slc%twist = theta*180.0/pi
+  else
+     ! Zslice
+     theta = asin((le(2)-te(2))/hyp)
+     slc%twist = theta*180.0/pi
+  end if
+
+  ! Finally we need to get the thickness. For this, compute temporary
+  ! section nodes and rotate them by the twist values we just computed
+  ! and take the max and min
+
+  ! Back out what is the main index of the slice, x, y or z based on
+  ! the direction. Not the best approach, but that's ok
+  dir_ind = maxloc(abs(slc%dir),1)
+
+  if (dir_ind == 1) then
+     M(1,1) = one; M(1,2) = zero; M(1, 3) = zero;
+     M(2,1) = zero; M(2,2) = one; M(2, 3) = zero;
+     M(3,1) = zero; M(3,2) = zero; M(3,3) = one;
+  else if(dir_ind == 2) then
+     ! Y-rotation matrix
+     M(1,1) = cos(-theta); M(1,2) = zero; M(1, 3) = sin(-theta);
+     M(2,1) = zero; M(2,2) = one; M(2, 3) = zero;
+     M(3,1) = -sin(-theta); M(3,2) = zero; M(3,3) = cos(-theta);
+  else
+     ! Z rotation Matrix
+     M(1,1) = cos(-theta); M(1,2) = -sin(-theta); M(1,3) = zero;
+     M(2,1) = sin(-theta); M(2,2) = cos(-theta); M(2,3) = zero;
+     M(3,1) = zero; M(3,2) = zero; M(3,3) = one;
+  end if
+
+  allocate(tempCoords(3, slc%nNodes))
+  do i=1,slc%nNodes
+     ! extract node:
+     r = slc%w(1,i)*uniqueNodes(:, slc%ind(1,i)) + slc%w(2,i)*uniqueNodes(:, slc%ind(2, i)) - te
+     r_new = matmul(M, r)
+     tempCoords(:, i) = r_new + te
+  end do
+
+  ! Now get the max and the min and divide by the chord for t/c
+  if (dir_ind == 1) then
+     slc%thickness = 0 ! Again, don't know what to do here
+  else if(dir_ind == 2) then
+     dmax = maxval(tempCoords(3, :))
+     dmin = minval(tempCoords(3, :))
+     slc%thickness = (dmax-dmin)/hyp
+  else if(dir_ind == 3) then
+     dmax = maxval(tempCoords(2, :))
+     dmin = minval(tempCoords(2, :))
+     slc%thickness = (dmax-dmin)/hyp
+  end if
+  deallocate(tempCoords)
+
 end subroutine integrateSlice
-  
+
 subroutine writeSlice(slc, fileID)
   ! Write the data in slice 'slc' to openfile ID fileID
 
@@ -945,7 +1092,7 @@ subroutine writeSlice(slc, fileID)
         ! slc%w(1,i)*uniqueTractionsP(2, slc%ind(1,i)) + slc%w(2,i)*uniqueTractionsP(2, slc%ind(2, i)), &
         ! slc%w(1,i)*uniqueTractionsP(3, slc%ind(1,i)) + slc%w(2,i)*uniqueTractionsP(3, slc%ind(2, i))
      end do
-     
+
 14   format(I5, I5)
      do i=1, slc%nNodes/2
         write(fileID, 14) 2*i-1, 2*i
