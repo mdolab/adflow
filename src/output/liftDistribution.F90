@@ -44,6 +44,7 @@ subroutine writeSlicesFile(fileName)
   use outputMod
   use inputTimeSpectral
   use inputPhysics
+  use inputIteration
   implicit none
 
   ! Input Params
@@ -58,6 +59,12 @@ subroutine writeSlicesFile(fileName)
   
   ! Only write if we actually have lift distributions
   testwriteSlices: if(nParaSlices + nAbsSlices > 0) then
+
+     if(myID == 0 .and. printIterations) then
+        print "(a)", "#"
+        print "(a)", "# Writing slices file(s) ..."
+     endif
+
 
      do sps=1,nTimeIntervalsSpectral
 
@@ -115,6 +122,11 @@ subroutine writeSlicesFile(fileName)
            close(file)
         end if
      end do
+
+     if(myID == 0 .and. printIterations) then
+        print "(a)", "# Slices file(s) written"
+        print "(a)", "#"
+     endif
   end if testwriteSlices
 end subroutine writeSlicesFile
 
@@ -135,6 +147,7 @@ subroutine writeLiftDistributionFile(fileName)
   use outputMod
   use inputPhysics
   use inputTimeSpectral
+  use inputIteration
   implicit none
 
   ! Input Params
@@ -147,6 +160,11 @@ subroutine writeLiftDistributionFile(fileName)
 
   ! Only write if we actually have lift distributions
   testwriteLiftDists: if(nLiftDists > 0) then
+
+     if(myID == 0 .and. printIterations) then
+        print "(a)", "#"
+        print "(a)", "# Writing lift distribution file(s) ..."
+     endif
 
      do sps=1,nTimeIntervalsSpectral
 
@@ -173,6 +191,12 @@ subroutine writeLiftDistributionFile(fileName)
            close(file)
         end if
      end do
+
+     if(myID == 0 .and. printIterations) then
+        print "(a)", "# Lift distribution file(s) written"
+        print "(a)", "#"
+     endif
+
   end if testwriteLiftDists
 end subroutine writeLiftDistributionFile
 
@@ -688,7 +712,7 @@ subroutine liftDistGatherForcesAndNodes(sps)
 
   ! Gather pressure and viscous forces to root proc:
   call mpi_gatherv(&
-       localData, nCellsProc*nFields, sumb_real, &
+       localData, nCellsLocal*nFields, sumb_real, &
        globalData, nCellsProc*nFields, cumCellsProc*nFields, sumb_real, 0, &
        sumb_comm_world, ierr)
   call EChk(ierr, __FILE__, __LINE__)
