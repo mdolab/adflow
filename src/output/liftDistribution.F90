@@ -967,8 +967,7 @@ subroutine integrateSlice(slc)
 
   ! Compute factor to get coefficient
   scaleDim = pRef/pInf
-  fact = two/(gammaInf*pInf*MachCoef*MachCoef &
-       *surfaceRef*LRef*LRef*scaleDim)
+  fact = two/(gammaInf*pInf*MachCoef*MachCoef*scaleDim)
 
   ! Take dmax as chord and compute coefficients
   slc%CLp = slc%pL / slc%chord * fact
