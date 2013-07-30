@@ -1033,8 +1033,8 @@ subroutine integrateSlice(slc)
      M(3,1) = -sin(-theta); M(3,2) = zero; M(3,3) = cos(-theta);
   else
      ! Z rotation Matrix
-     M(1,1) = cos(-theta); M(1,2) = -sin(-theta); M(1,3) = zero;
-     M(2,1) = sin(-theta); M(2,2) = cos(-theta); M(2,3) = zero;
+     M(1,1) = cos(theta); M(1,2) = -sin(theta); M(1,3) = zero;
+     M(2,1) = sin(theta); M(2,2) = cos(theta); M(2,3) = zero;
      M(3,1) = zero; M(3,2) = zero; M(3,3) = one;
   end if
 
