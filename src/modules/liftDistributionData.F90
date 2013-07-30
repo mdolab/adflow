@@ -94,10 +94,8 @@ module liftDistributionData
   integer(kind=intType), allocatable, dimension(:,:)  :: localCells, allCells
   integer(kind=intType), allocatable, dimension(:)    :: link
   real(kind=realType),   allocatable, dimension(:, :) :: localNodes, allNodes
-  real(kind=realType),   allocatable, dimension(:, :) :: localForcesP, localForcesV
-  real(kind=realType),   allocatable, dimension(:, :) :: allForcesP, allForcesV
-  real(kind=realType),   allocatable, dimension(:, :) :: uniqueNodes
-  real(kind=realType),   allocatable, dimension(:, :) :: uniqueTractionsP, uniqueTractionsV
+  real(kind=realType),   allocatable, dimension(:, :) :: localData, globalData
+  real(kind=realType),   allocatable, dimension(:, :) :: uniqueNodes, uniqueData
   real(kind=realType),   allocatable, dimension(:)    :: dualAreas, fc
   logical :: liftDistInitialized = .False.
   integer(kind=intType) :: msCon1(16, 5), msCon2(4, 2)
@@ -115,5 +113,13 @@ module liftDistributionData
   ! Tecplot Variable names of the data in the lift distribution data file:
   character(len=maxCGNSNameLen), dimension(:), allocatable :: liftDistName
   integer(kind=intType), parameter :: nLiftDistVar=18
+
+  ! Parameters for indexing
+  integer(kind=intType), parameter :: ifxp = 1
+  integer(kind=intType), parameter :: ifyp = 2
+  integer(kind=intType), parameter :: ifzp = 3
+  integer(kind=intType), parameter :: ifxv = 4
+  integer(kind=intType), parameter :: ifyv = 5
+  integer(kind=intType), parameter :: ifzv = 6
 
 end module liftDistributionData
