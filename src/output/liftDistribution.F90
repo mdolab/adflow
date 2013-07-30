@@ -98,7 +98,7 @@ subroutine writeSlicesFile(fileName)
            do i=1,nSolVar
               write(file,"(a,a,a)",advance="no") """",trim(solNames(i)),""" "
            end do
-           write(file,"(1ex)")
+           write(file,"(1x)")
            deallocate(solNames)
 
            do i=1,nParaSlices
@@ -286,7 +286,7 @@ subroutine writeLiftDistributions(sps, fileID)
            do i=1,nLIftDistVar
               write(fileID,"(a,a,a)",advance="no") """",trim(liftDistNames(i)),""" "
            end do
-           write(fileID,"(1ex)")
+           write(fileID,"(1x)")
         end if
 
         write (fileID,"(a,a,a)") "Zone T= """,trim(d%distName),""""
@@ -1161,7 +1161,7 @@ subroutine writeSlice(slc, fileID, nFields)
            write(fileID,13, advance='no') &
                 slc%w(1,i)*uniqueData(j, slc%ind(1,i)) + slc%w(2,i)*uniqueData(j, slc%ind(2, i))
         end do
-        write(fileID,"(1ex)")
+        write(fileID,"(1x)")
      end do
 
 15   format(I5, I5)
@@ -1180,7 +1180,7 @@ subroutine writeSlice(slc, fileID, nFields)
         do j=ifzv+1,nFields
            write(fileID,13, advance='no') zero
         end do
-        write(fileID,"(1ex)")
+        write(fileID,"(1x)")
      end do
      write(fileID, 15) 1, 2
   end if
