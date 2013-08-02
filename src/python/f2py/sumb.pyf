@@ -646,6 +646,7 @@ python module sumb
          logical :: autoparameterupdate
          logical :: writesymmetry
          logical :: writefarfield
+         logical :: viscoussurfacevelocities
          integer(kind=inttype) parameter,optional :: precisionsingle=1
          logical optional :: firstwrite=.true.
          integer(kind=inttype) :: fileformatwrite

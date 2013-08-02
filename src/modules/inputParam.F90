@@ -267,6 +267,7 @@
        ! writeFarfield        Flag to turn off writing of farfield surfaces
        logical :: writeSymmetry = .True. 
        logical :: writeFarfield = .False. 
+       logical:: viscousSurfaceVelocities = .True.
 
        end module inputIO
 
