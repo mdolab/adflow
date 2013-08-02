@@ -437,12 +437,16 @@
 
          case (cgnsVelx)
 
-           do j=rangeFace(2,1), rangeFace(2,2)
-             do i=rangeFace(1,1), rangeFace(1,2)
-               nn = nn + 1
-               buffer(nn) = half*(ww1(i,j,ivx) + ww2(i,j,ivx))
-             enddo
-           enddo
+            do j=rangeFace(2,1), rangeFace(2,2)
+               do i=rangeFace(1,1), rangeFace(1,2)
+                  nn = nn + 1
+                  if (viscousSurfaceVelocities .and. viscous) then
+                     buffer(nn) = ww2(i,j,ivx)
+                  else
+                     buffer(nn) = half*(ww1(i,j,ivx) + ww2(i,j,ivx))
+                  end if
+               enddo
+            enddo
 
          !===============================================================
 
@@ -450,8 +454,12 @@
 
            do j=rangeFace(2,1), rangeFace(2,2)
              do i=rangeFace(1,1), rangeFace(1,2)
-               nn = nn + 1
-               buffer(nn) = half*(ww1(i,j,ivy) + ww2(i,j,ivy))
+                nn = nn + 1
+                if (viscousSurfaceVelocities .and. viscous) then
+                   buffer(nn) = ww2(i,j,ivy)
+                else
+                   buffer(nn) = half*(ww1(i,j,ivy) + ww2(i,j,ivy))
+                end if
              enddo
            enddo
 
@@ -462,40 +470,54 @@
            do j=rangeFace(2,1), rangeFace(2,2)
              do i=rangeFace(1,1), rangeFace(1,2)
                nn = nn + 1
-               buffer(nn) = half*(ww1(i,j,ivz) + ww2(i,j,ivz))
+               if (viscousSurfaceVelocities .and. viscous) then
+                   buffer(nn) = ww2(i,j,ivz)
+                else
+                   buffer(nn) = half*(ww1(i,j,ivz) + ww2(i,j,ivz))
+                end if
+
              enddo
            enddo
 
          !===============================================================
 
          case (cgnsRelVelx)
-            !print *,'in relvelx',ie,je,ke,'rf',rangeFace
            do j=rangeFace(2,1), rangeFace(2,2)
              do i=rangeFace(1,1), rangeFace(1,2)
                nn = nn + 1
-               buffer(nn) = half*(ww1(i,j,ivx) + ww2(i,j,ivx))-half*(ss1(i,j,1) + ss2(i,j,1))
+               if (viscousSurfaceVelocities .and. viscous) then
+                  buffer(nn) = ww2(i,j,ivx) - ss2(i,j,1)
+               else
+                  buffer(nn) = half*(ww1(i,j,ivx) + ww2(i,j,ivx))-half*(ss1(i,j,1) + ss2(i,j,1))
+               end if
              enddo
            enddo
 
          !===============================================================
 
          case (cgnsRelVely)
-            !print *,'in relvely'
            do j=rangeFace(2,1), rangeFace(2,2)
              do i=rangeFace(1,1), rangeFace(1,2)
                nn = nn + 1
-               buffer(nn) = half*(ww1(i,j,ivy) + ww2(i,j,ivy))-half*(ss1(i,j,2) + ss2(i,j,2))
+               if (viscousSurfaceVelocities .and. viscous) then
+                  buffer(nn) = ww2(i,j,ivy) - ss2(i,j,2)
+               else
+                  buffer(nn) = half*(ww1(i,j,ivy) + ww2(i,j,ivy))-half*(ss1(i,j,2) + ss2(i,j,2))
+               end if
              enddo
            enddo
 
          !===============================================================
 
          case (cgnsRelVelz)
-            !print *,'in relvelz'
            do j=rangeFace(2,1), rangeFace(2,2)
              do i=rangeFace(1,1), rangeFace(1,2)
                nn = nn + 1
-               buffer(nn) = half*(ww1(i,j,ivz) + ww2(i,j,ivz))-half*(ss1(i,j,3) + ss2(i,j,3))
+               if (viscousSurfaceVelocities .and. viscous) then
+                  buffer(nn) = ww2(i,j,ivz) - ss2(i,j,3)
+               else
+                  buffer(nn) = half*(ww1(i,j,ivz) + ww2(i,j,ivz))-half*(ss1(i,j,3) + ss2(i,j,3))
+               end if
              enddo
            enddo
 

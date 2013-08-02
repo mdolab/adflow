@@ -76,6 +76,7 @@ class SUMB(AeroSolver):
             'gridprecision':[str,'double'],
             'isosurface':[dict, {}],
             'isovariables':[list, []],
+            'viscoussurfacevelocities':[bool, True],
 
             # Physics Paramters
             'discretization':[str, 'central plus scalar dissipation'],
@@ -336,6 +337,8 @@ class SUMB(AeroSolver):
             'storerindlayer':{'location':'inputio.storerindlayer'},
             'writesymmetry':{'location':'inputio.writesymmetry'},
             'writefarfield':{'location':'inputio.writefarfield'},
+            'viscoussurfacevelocities':{'location':'inputio.viscoussurfacevelocities'},
+
             'solutionprecision':{'single':
                                      self.sumb.inputio.precisionsingle,
                                  'double':
@@ -1792,7 +1795,8 @@ name is unavailable.'%(flowCase), comm=self.comm)
 
         [npts, ncell] = self.sumb.getforcesize()
         pts = numpy.zeros((npts, 3),self.dtype)
-        self.sumb.getforcepoints(pts.T, TS+1)
+        if npts > 0:
+            self.sumb.getforcepoints(pts.T, TS+1)
         
         return pts
 
