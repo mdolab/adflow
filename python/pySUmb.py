@@ -1927,7 +1927,8 @@ name is unavailable.'%(flowCase), comm=self.comm)
             nTS  = self.sumb.inputtimespectral.ntimeintervalsspectral
             forcePoints = numpy.zeros((nTS, npts, 3),self.dtype)
             for i in xrange(nTS):
-                self.sumb.getforcepoints(forcePoints[i].T,i+1)
+                forcePoints[i] = self.getForcePoints(TS=i)
+
             self.sumb.setupcouplingmatrixstruct(forcePoints.T)
             
             # Setup the KSP object
@@ -2351,20 +2352,22 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         self.setFlowCase(flowCase)
         obj, aeroObj = self._getObjective(objective)
 
-        # Note: Computeobjective partials MUST be called with the full
-        # force pt list.
-        if forcePoints is None:
-            [npts, ncells] = self.sumb.getforcesize()
-            nTS  = self.sumb.inputtimespectral.ntimeintervalsspectral
-            forcePoints = numpy.zeros((nTS, npts, 3),self.dtype)
-            for i in xrange(nTS):
-                self.sumb.getforcepoints(forcePoints[i].T,i+1)
-        # end if
-
         if aeroObj:
             obj_num = self.SUmbCostfunctions[obj]
 
             if self.getOption('useReverseModeAD'):
+
+                # Note: Computeobjective partials MUST be called with the full
+                # force pt list.
+                if forcePoints is None:
+                    [npts, ncells] = self.sumb.getforcesize()
+                    nTS  = self.sumb.inputtimespectral.ntimeintervalsspectral
+                    forcePoints = numpy.zeros((nTS, npts, 3),self.dtype)
+                    for i in xrange(nTS):
+                        forcePoints[i] = self.getForcePoints(TS=i)
+                    # end force
+                # end if
+
                 self.sumb.computeobjpartials(
                     obj_num, forcePoints.T, True, True)
             else:
