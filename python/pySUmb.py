@@ -1542,7 +1542,7 @@ name is unavailable.'%(flowCase), comm=self.comm)
         if self.getOption('writevolumesolution'):
             self.writeVolumeSolutionFile(base + '_vol.cgns')
         if self.getOption('writesurfacesolution'):
-            self.writeVolumeSolutionFile(base + '_surf.cgns')
+            self.writeSurfaceSolutionFile(base + '_surf.cgns')
 
         self.writeLiftDistributionFile(base + '_lift.dat')
         self.writeSlicesFile(base + '_slices.dat')
