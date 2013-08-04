@@ -66,12 +66,13 @@ class SUMB(AeroSolver):
             'solrestart':[bool, False],
 
             # Output Parameters
-            'writesolution':[bool, True],
             'storerindlayer':[bool, True],
             'probname':[str, 'defaultName'],
             'outputdir':[str, './'],
             'writesymmetry':[bool, True],
             'writefarfield':[bool, False],
+            'writesurfacesolution':[bool,True],
+            'writevolumesolution':[bool,True],
             'solutionprecision':[str,'single'],
             'gridprecision':[str,'double'],
             'isosurface':[dict, {}],
@@ -623,7 +624,8 @@ class SUMB(AeroSolver):
             'defaults',
             'storehistory',
             'numbersolutions',
-            'writesolution',
+            'writesurfacesolution',
+            'writevolumesolution',
             'familyrot',  # -> Not sure how to do
             'autosolveretry',
             'autoadjointretry',
@@ -632,7 +634,10 @@ class SUMB(AeroSolver):
 
         # Deprecated options. These should not be used, but old
         # scripts can continue to run
-        self.deprecatedOptions = ['finitedifferencepc']
+        self.deprecatedOptions = {'finitedifferencepc':
+                                      'Use the ADPC option.',
+                                  'writesolution':
+                                      'Use writeSurfaceSolution and writeVolumeSolution options instead.'}
 
         self.specialOptions = ['surfacevariables',
                                'volumevariables',
@@ -1250,7 +1255,7 @@ name is unavailable.'%(flowCase), comm=self.comm)
         return V
 
     def __solve__(self, aero_problem, nIterations=500, flowCase=None, 
-                  MDCallBack=None):
+                  MDCallBack=None, writeSolution=True):
         
         '''
         Run Analyzer (Analyzer Specific Routine)
@@ -1376,11 +1381,10 @@ name is unavailable.'%(flowCase), comm=self.comm)
             mpiPrint('Solution Time: %10.3f sec'%sol_time, comm=self.comm)
         # end if
 
-        # Post-Processing -- Write Solutions
-        if self.getOption('writeSolution'):
+        # Post-Processing -- Write Solutions is requested
+        if writeSolution:
             self.writeSolution()
-        # end if
-            
+                    
         if self.getOption('TSStability'):
             self.computeStabilityParameters()
         # end if
@@ -1430,7 +1434,7 @@ name is unavailable.'%(flowCase), comm=self.comm)
             aeroProblem._flows.alpha = anm1
 
             # Solve for n-1 value (anm1)
-            self.__solve__(aeroProblem, nIterations=nIterations)
+            self.__solve__(aeroProblem, nIterations=nIterations, writeSolution=False)
             sol = self.getSolution()
             fnm1 =  sol['cl'] - CL_star
             
@@ -1490,15 +1494,31 @@ name is unavailable.'%(flowCase), comm=self.comm)
         '''
         return self.mesh.getSurfaceConnectivity(group_name)
         
-    def writeSolution(self):
+    def writeSolution(self, outputDir=None, baseName=None, number=None):
         '''This is a generic shell function that potentially writes
         the various output files. The intent is that the user or
         calling program can call this file and SUmb write all the
         files that the user has defined. It is recommneded that this
         function is used along with the associated logical flags in
-        the options to determine the desired writing procedure'''
-        
-        base = self.getOption('outputDir') + '/' + self.getOption('probName')
+        the options to determine the desired writing procedure
+
+        Optional arguments 
+
+        outputDir: Use the supplied output directory
+
+        baseName: Use this supplied string for the base filename. Typically
+                  only used from an external solver.
+        number: Use the user spplied number to index solutino. Again, only
+                typically used from an external solver.
+                '''
+        if outputDir is None:
+            outputDir = self.getOption('outputDir')
+
+        if baseName is None:
+            baseName = self.getOption('probName')
+
+        # Join to get the base filename
+        base = os.path.join(outputDir, baseName)
 
         # If we have flow cases, add the flow case name:
         if self.curFlowCase <> "default":
@@ -1507,13 +1527,23 @@ name is unavailable.'%(flowCase), comm=self.comm)
 
         # If we are numbering solution, it saving the sequence of
         # calls, add the call number
-        if self.getOption('numberSolutions'):
-            base = base + '_%3.3d'%self.flowCases[self.curFlowCase]['callCounter']
+        if number is not None:
+            # We need number based on the provided number:
+            base = base + '_%3.3d'%number
+        else:
+            # if number is none, i.e. standalone, but we need to
+            # number solutions, use internal counter
+            if self.getOption('numberSolutions'):            
+                base = base + '_%3.3d'%self.flowCases[self.curFlowCase]['callCounter']
+            # end if
         # end if
-
+        
         # Now call each of the 4 routines with the appropriate file name:
-        self.writeVolumeSolutionFile(base + '_vol.cgns')
-        self.writeSurfaceSolutionFile(base + '_surf.cgns')
+        if self.getOption('writevolumesolution'):
+            self.writeVolumeSolutionFile(base + '_vol.cgns')
+        if self.getOption('writesurfacesolution'):
+            self.writeVolumeSolutionFile(base + '_surf.cgns')
+
         self.writeLiftDistributionFile(base + '_lift.dat')
         self.writeSlicesFile(base + '_slices.dat')
         
@@ -2671,9 +2701,10 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
 
         # Check to see if we have a deprecated option. Print a useful
         # warning that this is deprecated.
-        if name in self.deprecatedOptions:
+        if name in self.deprecatedOptions.keys():
             mpiPrint('+'+'-'*78+'+',comm=self.comm)
             mpiPrint('| WARNING: Option: \'%-29s\' is a deprecated SUmb Option |'%name,comm=self.comm)
+            mpiPrint('| %-78s'%self.deprecatedOptions[name],comm=self.comm)
             mpiPrint('+'+'-'*78+'+',comm=self.comm)
             return
         # end if
