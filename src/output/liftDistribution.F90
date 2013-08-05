@@ -1063,6 +1063,14 @@ subroutine integrateSlice(slc)
      le = x1
   end if
 
+  ! Finally we need to get the thickness. For this, compute temporary
+  ! section nodes and rotate them by the twist values we just computed
+  ! and take the max and min
+
+  ! Back out what is the main index of the slice, x, y or z based on
+  ! the direction. Not the best approach, but that's ok
+  dir_ind = maxloc(abs(slc%dir),1)
+
   ! Length of hyptoneuse is the same
   hyp = sqrt((x1(1)-x2(1))**2 + (x1(2)-x2(2))**2 + (x1(3)-x2(3))**2)
 
@@ -1079,14 +1087,6 @@ subroutine integrateSlice(slc)
      theta = asin((le(2)-te(2))/hyp)
      slc%twist = theta*180.0/pi
   end if
-
-  ! Finally we need to get the thickness. For this, compute temporary
-  ! section nodes and rotate them by the twist values we just computed
-  ! and take the max and min
-
-  ! Back out what is the main index of the slice, x, y or z based on
-  ! the direction. Not the best approach, but that's ok
-  dir_ind = maxloc(abs(slc%dir),1)
 
   if (dir_ind == 1) then
      M(1,1) = one; M(1,2) = zero; M(1, 3) = zero;
