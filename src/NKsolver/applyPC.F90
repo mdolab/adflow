@@ -79,10 +79,10 @@ subroutine applyAdjointPC(in_vec, out_vec, ndof)
   integer(kind=intType) :: ierr
 
   ! Hijack adjoint and adjointRes with in_vec and out_vec
-  call VecPlaceArray(w_like1, in_vec, ierr)
+  call VecPlaceArray(psi_like1, in_vec, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  call VecPlaceArray(w_like2, out_vec, ierr)
+  call VecPlaceArray(psi_like2, out_vec, ierr)
   call EChk(ierr,__FILE__,__LINE__)
  
   ! Set KSP_NORM Type to none. Implictly turns off convergence
@@ -99,14 +99,14 @@ subroutine applyAdjointPC(in_vec, out_vec, ndof)
   call EChk(ierr, __FILE__, __LINE__)
 
   ! Actually do the Linear Krylov Solve
-  call KSPSolve(adjointKSP, w_like1, w_like2, ierr)
+  call KSPSolve(adjointKSP, psi_like1, psi_like2, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Reset the array pointers:
-  call VecResetArray(w_like1, ierr)
+  call VecResetArray(psi_like1, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  call VecResetArray(w_like2, ierr)
+  call VecResetArray(psi_like2, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 #endif
 end subroutine applyAdjointPC

@@ -22,7 +22,8 @@ subroutine preprocessingADjoint
   use flowVarRefState
   use inputTimeSpectral
   use inputAdjoint
-  use ADjointPETSc, only: w_like1, w_like2, fvec1, fvec2, PETScIerr
+  use ADjointPETSc, only: w_like1, w_like2, fvec1, fvec2, PETScIerr, &
+       psi_like1, psi_like2
   implicit none
 
 #ifndef USE_NO_PETSC
@@ -32,7 +33,7 @@ subroutine preprocessingADjoint
 
   !     Local variables.
   !
-  integer(kind=intType) :: ierr, level, ndimW, ndimS, nTS, ncell, nState
+  integer(kind=intType) :: ierr, level, ndimW, ndimS, nTS, ncell, nState, nDimPsi
   !
   !     ******************************************************************
   !     *                                                                *
@@ -56,7 +57,8 @@ subroutine preprocessingADjoint
   nDimS = nDimS * 3 *nTimeIntervalsSpectral! Multiply by 3 for each
                                            ! dof on each point
 
-  nDimW = nState * nCellsLocal(1_intType)*nTimeIntervalsSpectral
+  nDimW = nw * nCellsLocal(1_intType)*nTimeIntervalsSpectral
+  nDimPsi = nState*  nCellsLocal(1_intType)*nTimeIntervalsSpectral
 
   if (.not. adjointInitialized) then
      if (PETSC_VERSION_MINOR == 2) then
@@ -76,6 +78,16 @@ subroutine preprocessingADjoint
         call VecCreateMPIWithArray(SUMB_COMM_WORLD,ndimW,PETSC_DECIDE, &
              PETSC_NULL_SCALAR,w_like2,PETScIerr)
         call EChk(PETScIerr,__FILE__,__LINE__)
+
+        ! Two psi-like vectors. 
+        call VecCreateMPIWithArray(SUMB_COMM_WORLD,ndimPsi,PETSC_DECIDE, &
+             PETSC_NULL_SCALAR,psi_like1,PETScIerr)
+        call EChk(PETScIerr,__FILE__,__LINE__)
+        
+        call VecCreateMPIWithArray(SUMB_COMM_WORLD,ndimPsi,PETSC_DECIDE, &
+             PETSC_NULL_SCALAR,psi_like2,PETScIerr)
+        call EChk(PETScIerr,__FILE__,__LINE__)
+
      else
         call VecCreateMPIWithArray(SUMB_COMM_WORLD,1,ndimS,PETSC_DECIDE, &
              PETSC_NULL_SCALAR,fVec1,PETScIerr)
@@ -93,6 +105,17 @@ subroutine preprocessingADjoint
         call VecCreateMPIWithArray(SUMB_COMM_WORLD,nw,ndimW,PETSC_DECIDE, &
              PETSC_NULL_SCALAR,w_like2,PETScIerr)
         call EChk(PETScIerr,__FILE__,__LINE__)
+        
+        ! Two psi-like vectors. 
+        call VecCreateMPIWithArray(SUMB_COMM_WORLD,nState,ndimPsi,PETSC_DECIDE, &
+             PETSC_NULL_SCALAR,psi_like1,PETScIerr)
+        call EChk(PETScIerr,__FILE__,__LINE__)
+        
+        call VecCreateMPIWithArray(SUMB_COMM_WORLD,nState,ndimPsi,PETSC_DECIDE, &
+             PETSC_NULL_SCALAR,psi_like2,PETScIerr)
+        call EChk(PETScIerr,__FILE__,__LINE__)
+
+
      end if
      adjointInitialized = .True.
   endif
