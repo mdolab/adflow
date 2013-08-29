@@ -63,7 +63,7 @@
       Vec     dRdaTPsi, dRdaTPsi_local
       Vec     xVec
       Vec     fVec1, fVec2, overArea, fCell, fNode
-      Vec     w_like1, w_like2
+      Vec     w_like1, w_like2, psi_like1, psi_like2
       Vec     dJcdW
       VecScatter dRdaTpsi_scatter
       PetscErrorCode PETScIerr
