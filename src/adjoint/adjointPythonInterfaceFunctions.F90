@@ -95,21 +95,21 @@ subroutine getdRdwTVec(in_vec, out_vec, ndof)
   ! Working Variables
   integer(kind=intType) :: ierr
 
-  ! We will use empty generic vectors w_like1, w_like2
+  ! We will use empty generic vectors psi_like1, psi_like2
 
-  call VecPlaceArray(w_like1, in_vec, ierr)
+  call VecPlaceArray(psi_like1, in_vec, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  call VecPlaceArray(w_like2, out_vec, ierr)
+  call VecPlaceArray(psi_like2, out_vec, ierr)
   call EChk(ierr, __FILE__, __LINE__)
   
-  call MatMult(dRdwT, w_like1, w_like2, ierr)
+  call MatMult(dRdwT, psi_like1, psi_like2, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  call VecResetArray(w_like1, ierr)
+  call VecResetArray(psi_like1, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  call VecResetArray(w_like2, ierr)
+  call VecResetArray(psi_like2, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
 #endif
@@ -138,8 +138,8 @@ subroutine getdRdaPsi(output, ndv, adjoint, nstate)
   ! Local Variables
   integer(kind=intType) :: ierr, i
 
-  ! put adjoint arry in w_like1
-  call VecPlaceArray(w_like1, adjoint, ierr)
+  ! put adjoint arry in psi_like1
+  call VecPlaceArray(psi_like1, adjoint, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
   ! Create the result vector for dRda^T * psi
@@ -147,7 +147,7 @@ subroutine getdRdaPsi(output, ndv, adjoint, nstate)
   call EChk(ierr, __FILE__, __LINE__)
 
   ! Do the Multiplication
-  call MatMultTranspose(dRda, w_like1, dRdaTPsi, ierr)
+  call MatMultTranspose(dRda, psi_like1, dRdaTPsi, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
   ! This is a little wonkly, since dRdaTPsi only contains a handful of
@@ -179,7 +179,7 @@ subroutine getdRdaPsi(output, ndv, adjoint, nstate)
   call VecDestroy(dRdaTpsi_local, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  call VecResetArray(w_like1, ierr)
+  call VecResetArray(psi_like1, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 #endif
 end subroutine getdRdaPsi
@@ -189,7 +189,7 @@ subroutine getdRdXvPsi(dXv, ndof, adjoint, nstate)
  
 #define PETSC_AVOID_MPIF_H
   use petscvec
-  use ADjointPETSc, only: dRdx, xVec, w_like1
+  use ADjointPETSc, only: dRdx, xVec, psi_like1
   use blockPointers
   use inputTimeSpectral 
   implicit none
@@ -204,14 +204,14 @@ subroutine getdRdXvPsi(dXv, ndof, adjoint, nstate)
    real(kind=realType), pointer :: xvec_pointer(:)
 
   ! Place adjoint in Vector
-  call VecPlaceArray(w_like1, adjoint, ierr)
+  call VecPlaceArray(psi_like1, adjoint, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
   ! Do the matMult with dRdx and put result into xVec. NOTE dRdx is
   ! already transposed and thus we just do a matMult NOT
   ! a matMultTranspose
 
-  call MatMult(dRdx, w_like1, xVec, ierr)
+  call MatMult(dRdx, psi_like1, xVec, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
   ! Extract pointer for xVec
@@ -224,7 +224,7 @@ subroutine getdRdXvPsi(dXv, ndof, adjoint, nstate)
   end do
 
   ! Reset the arrays
-  call VecResetArray(w_like1, ierr)
+  call VecResetArray(psi_like1, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
   call VecRestoreArrayF90(xVec, xvec_pointer, ierr)
@@ -475,11 +475,11 @@ subroutine getdFdwTVec(in_vec, in_dof, out_vec, out_dof)
   call VecPlaceArray(fVec1, in_vec, ierr)
   call EChk(ierr, __FILE__, __LINE__)
   
-  call VecPlaceArray(w_like1, out_vec, ierr)
+  call VecPlaceArray(psi_like1, out_vec, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
   ! Dump the result into adjointRHS since the we want to ADD this
-  ! result to w_like1 below
+  ! result to psi_like1 below
 
   ! ------------ OldMethod
   ! call MatMultTranspose(dFdw, fVec1, adjointRHS, ierr)
@@ -495,14 +495,14 @@ subroutine getdFdwTVec(in_vec, in_dof, out_vec, out_dof)
   call MatMultTranspose(dFcdw, fCell, adjointRHS, ierr)
   call EChk(ierr, __FILE__, __LINE__)
  
-  ! do: w_like1 = w_like1 + adjointRHS
-  call VecAxpy(w_like1, one, adjointRHS, ierr)
+  ! do: psi_like1 = psi_like1 + adjointRHS
+  call VecAxpy(psi_like1, one, adjointRHS, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
   call vecResetArray(fVec1, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  call VecResetArray(w_like1, ierr)
+  call VecResetArray(psi_like1, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 #endif
 
