@@ -138,7 +138,7 @@
        ! otherwise it is set to 2.
 
        iterMax = 1
-       if( splitBlocks ) iterMax = 2
+       if( splitBlocks ) iterMax = loadBalanceIter
 
        ! Loop to determine a good load balance.
 
