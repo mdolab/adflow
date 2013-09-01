@@ -757,6 +757,7 @@ python module sumb
        module inputparallel ! in :sumb:../../modules/inputParam.f90
          real(kind=realtype) :: loadimbalance
          logical :: splitblocks
+         integer(kind=inttype) :: loadbalanceiter
        end module inputparallel
 
        module inputphysics ! in :sumb:../../modules/inputParam.f90

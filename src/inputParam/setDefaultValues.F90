@@ -250,6 +250,7 @@
        loadImbalance = 0.1_realType  ! Allow 10 percent load imbalance.
        splitBlocks   = .true.        ! Allow the splitting of blocks to
                                      ! obtain a better load balancing.
+       loadbalanceiter = 2           ! Do two iterations
 !
 !      ******************************************************************
 !      *                                                                *
