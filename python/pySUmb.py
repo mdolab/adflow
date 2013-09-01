@@ -160,8 +160,9 @@ class SUMB(AeroSolver):
             'nkouterpreconits':[int, 1],
 
             # Load Balance Paramters
-            'blocksplitting':[bool, False],
+            'blocksplitting':[bool, True],
             'loadimbalance':[float, 0.1],
+            'loadbalanceiter':[int, 10],
        
             # Misc Paramters
             'metricconversion':[float, 1.0],
@@ -553,6 +554,7 @@ class SUMB(AeroSolver):
             # Load Balance Paramters
             'blocksplitting':{'location':'inputparallel.splitblocks'},
             'loadimbalance':{'location':'inputparallel.loadimbalance'},
+            'loadbalanceiter':{'location':'inputparalle.loadbalanceiter'},
 
             # Misc Paramters
             'printiterations':{'location':'inputiteration.printiterations'},

@@ -597,10 +597,11 @@
        ! loadImbalance: Allowable load imbalance
        ! splitBlocks:   Whether or not blocks can be split to improve
        !                the load balance.
-
+       ! loadBalanceIter: The number of refinment iterations to run to try
+       !                   to get better load balancing.
        real(realType) :: loadImbalance
        logical        :: splitBlocks
-
+       integer(kind=inttype) :: loadBalanceIter
        end module inputParallel
 
 !      ==================================================================
