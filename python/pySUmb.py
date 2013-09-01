@@ -554,7 +554,7 @@ class SUMB(AeroSolver):
             # Load Balance Paramters
             'blocksplitting':{'location':'inputparallel.splitblocks'},
             'loadimbalance':{'location':'inputparallel.loadimbalance'},
-            'loadbalanceiter':{'location':'inputparalle.loadbalanceiter'},
+            'loadbalanceiter':{'location':'inputparallel.loadbalanceiter'},
 
             # Misc Paramters
             'printiterations':{'location':'inputiteration.printiterations'},
