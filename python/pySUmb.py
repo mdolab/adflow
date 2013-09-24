@@ -39,8 +39,8 @@ import numpy
 # =============================================================================
 # Extension modules
 # =============================================================================
-from mdo_import_helper import MPI, import_modules, mpiPrint, MExt
-exec(import_modules('pyAero_solver'))
+from baseclasses import AeroSolver
+from mdo_import_helper import mpiPrint, MExt, MPI
 
 # =============================================================================
 # SUMB Class
