@@ -2036,7 +2036,7 @@ name is unavailable.'%(flowCase), comm=self.comm)
         # Check to see if we need to agument the RHS with a structural
         # adjoint:
         if structAdjoint is not None and group_name is not None:
-            if self.getOption('usereversemodead') is True:
+            if self.getOption('usereversemodead'):
                 print('Reverse mode AD no longer supported with \
 aerostructural analysis. Use Forward mode AD for the adjoint')
                 sys.exit(0)
