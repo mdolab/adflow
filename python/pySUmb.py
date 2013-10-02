@@ -7,9 +7,9 @@ Copyright (c) 2008 by Mr.C.A (Sandy) Mader
 All rights reserved. Not to be used for commercial purposes.
 Revision: 1.0   $Date: 03/07/2008 11:00$
 
-
 Developers:
 -----------
+- Dr. Gaetan K.W. Kenway (GKK)
 - Mr. C.A.(Sandy) Mader (SM)
 - Dr. Ruben E. Perez (RP)
 
@@ -46,20 +46,17 @@ from mdo_import_helper import mpiPrint, MExt, MPI
 # SUMB Class
 # =============================================================================
 class SUMB(AeroSolver):
-    
     '''
     SUmb Aerodynamic Analysis Class - Inherited from Solver Abstract Class
     '''
     def __init__(self, comm=None, options=None, mesh=None, **kwargs):
         '''
         SUMB Class Initialization
-        
-        Documentation last updated:  July. 03, 2008 - C.A.(Sandy) Mader
         '''
         
         name = 'SUMB'
         category = 'Three Dimensional CFD'
-        def_opts = {
+        defOpts = {
             # Common Paramters
             'gridfile':[str, 'default.cgns'],
             'restartfile':[str, 'default_restart.cgns'],
@@ -221,10 +218,10 @@ class SUMB(AeroSolver):
         try: 
             self.sumb
         except:
-            cur_dir = os.path.dirname(os.path.realpath(__file__))
+            curDir = os.path.dirname(os.path.realpath(__file__))
             # Explictly only search the local directory that this file
             # resides in
-            self.sumb = MExt('sumb', [cur_dir])._module
+            self.sumb = MExt('sumb', [curDir])._module
         # end try
         
         # Next set the MPI Communicators and associated info
@@ -658,7 +655,7 @@ class SUMB(AeroSolver):
         self.curFlowCase = None
         self.flowCases = {}
         
-        self.update_time = 0.0
+        self.updateTime = 0.0
         self.nSlice = 0
         self.nLiftDist = 0
 
@@ -677,11 +674,11 @@ class SUMB(AeroSolver):
 
         # Initialize the inherited aerosolver
         AeroSolver.__init__(\
-            self, name, category, def_opts, informs, options=options)
+            self, name, category, defOpts, informs, options=options)
         self.sumb.inputio.autoparameterupdate = False
 
         # Set the external Mesh Warping is provided
-        self._update_geom_info = False
+        self._updateGeomInfo = False
 
         # Sumb can be used without a external mesh warping
         # object, however, geometric sensitivities cannot be computed. 
@@ -697,12 +694,12 @@ class SUMB(AeroSolver):
 
         # Matrix Setup Flags
         self.adjointSetup = False
-        self._update_geom_info = False
-        self._update_period_info = True
-        self._update_vel_info = True
+        self._updateGeomInfo = False
+        self._updatePeriodInfo = True
+        self._updateVelInfo = True
         self.fatalFail = False
-        self.solve_failed = False
-        self.adjoint_failed = False
+        self.solveFailed = False
+        self.adjointFailed = False
         self.dtype = 'd'
 
         # Write the intro message
@@ -710,7 +707,7 @@ class SUMB(AeroSolver):
 
         return
 
-    def initialize(self, aero_problem, partitionOnly=False):
+    def initialize(self, aeroProblem, partitionOnly=False):
         '''
         Run High Level Initialization 
         
@@ -721,7 +718,7 @@ class SUMB(AeroSolver):
             return
         
         # Set periodic paramters
-        self._setPeriodicParams(aero_problem)
+        self._setPeriodicParams(aeroProblem)
   
         # Make sure all the params are ok
         for option in self.options:
@@ -733,9 +730,9 @@ class SUMB(AeroSolver):
         # Do the remainder of the operations that would have been done
         # had we read in a param file
         self.sumb.iteration.deforming_grid = True
-        self._setMachNumber(aero_problem)
-        self._setRefState(aero_problem)
-        self._setPeriodicParams(aero_problem)
+        self._setMachNumber(aeroProblem)
+        self._setRefState(aeroProblem)
+        self._setPeriodicParams(aeroProblem)
         self.sumb.dummyreadparamfile()
 
         mpiPrint(' -> Partitioning and Reading Grid', comm=self.comm)
@@ -749,7 +746,7 @@ class SUMB(AeroSolver):
 
         mpiPrint(' -> Initializing flow', comm=self.comm)
         self.sumb.initflow()
-        self._setInflowAngle(aero_problem)
+        self._setInflowAngle(aeroProblem)
 
         # Create dictionary of variables we are monitoring
         nmon = self.sumb.monitor.nmon
@@ -880,8 +877,8 @@ name is unavailable.'%(flowCase), comm=self.comm)
         # Now we have to do a bunch of updates. This is fairly
         # expensive and flow cases should only be switched when
         # required.
-        self._update_geom_info = True
-        self._updateGeometryInfo
+        self._updateGeomInfo = True
+        self._updateGeometryInfo()
         
         self.curFlowCase = flowCaseName
         self.flowCases[self.curFlowCase]['adjointRHS'] = None
@@ -893,13 +890,13 @@ name is unavailable.'%(flowCase), comm=self.comm)
         return
 
     def addLiftDistribution(self, nSegments, direction,
-                            group_name=None, description=''):
+                            groupName=None, description=''):
         '''
         Add a lift distribution to the surface output. 
         nSegments: Number of slices to use for the distribution. Typically 150-250 is sufficient
         direction: str, one of 'x', 'y', or 'z'. Auto bases the direction
                    on the liftDir given in aeroproblem. 
-        group_name: The family (as defined in pyWarp) to use for the lift distribution
+        groupName: The family (as defined in pyWarp) to use for the lift distribution
         description: An additional string that can be used to destingush between 
                      multiple lift distributions in the output
         '''
@@ -907,34 +904,34 @@ name is unavailable.'%(flowCase), comm=self.comm)
         if direction not in ['x','y','z']:
             mpiPrint(' Error: \'direction\' must be one of \'x\', \
 \'y\', \'z\'', comm=self.comm)
-            group_tag = '%s: '%group_name
+            groupTag = '%s: '%groupName
             return
         else:
-            group_tag = ''
+            groupTag = ''
         # end if
 
-        if group_name is not None:
+        if groupName is not None:
             mpiPrint(' Error: lift distributions by group is not yet supported')
             return
         # end if
 
         if direction == 'x':
-            dir_vec = [1.0, 0.0, 0.0]
-            dir_ind = 1
+            dirVec = [1.0, 0.0, 0.0]
+            dirInd = 1
         elif direction == 'y':
-            dir_vec = [0.0, 1.0, 0.0]
-            dir_ind = 2
+            dirVec = [0.0, 1.0, 0.0]
+            dirInd = 2
         else:
-            dir_vec = [0.0, 0.0, 1.0]
-            dir_ind = 3
+            dirVec = [0.0, 0.0, 1.0]
+            dirInd = 3
         # end if
         
-        distName = 'LiftDist_%2.2d %s: %s normal'%(self.nLiftDist + 1, group_tag, direction)
+        distName = 'LiftDist_%2.2d %s: %s normal'%(self.nLiftDist + 1, groupTag, direction)
         self.nLiftDist += 1
 
-        self.sumb.addliftdistribution(nSegments, dir_vec, dir_ind, distName)
+        self.sumb.addliftdistribution(nSegments, dirVec, dirInd, distName)
 
-    def addSlices(self, direction, positions, sliceType='relative', group_name=None):
+    def addSlices(self, direction, positions, sliceType='relative', groupName=None):
         '''
         Add parametric slice positions. Slices are taken of the wing
         at time addParaSlices() is called and the parametric positions
@@ -946,15 +943,15 @@ name is unavailable.'%(flowCase), comm=self.comm)
         direction: one of 'x', 'y', 'z' 
         positions: scalar or list or array: List of slice positions 
         sliceType: One of 'relative' or 'absolute'
-        group_name: The family (as defined in pyWarp) to use for the slices
+        groupName: The family (as defined in pyWarp) to use for the slices
         '''
 
-        if group_name is not None:
+        if groupName is not None:
             mpiPrint(' Error: slices by group is not yet supported')
-            group_tag = '%s: '%group_name
+            groupTag = '%s: '%groupName
             return
         else:
-            group_tag = ''
+            groupTag = ''
         # end if
 
         direction = direction.lower()
@@ -976,13 +973,13 @@ name is unavailable.'%(flowCase), comm=self.comm)
         tmp = numpy.zeros((N, 3),self.dtype)
         if direction == 'x':
             tmp[:, 0] = positions
-            dir_vec = [1.0, 0.0, 0.0]
+            dirVec = [1.0, 0.0, 0.0]
         elif direction == 'y':
             tmp[:, 1] = positions
-            dir_vec = [0.0, 1.0, 0.0]
+            dirVec = [0.0, 1.0, 0.0]
         elif direction == 'z':
             tmp[:, 2] = positions
-            dir_vec = [0.0, 0.0, 1.0]
+            dirVec = [0.0, 0.0, 1.0]
         # end if
 
         for i in xrange(len(positions)):
@@ -990,75 +987,75 @@ name is unavailable.'%(flowCase), comm=self.comm)
             # name...so we will number sequentially from pythhon
             j = self.nSlice + i + 1
             if sliceType == 'relative':
-                sliceName = 'Slice_%4.4d %s Para Init %s=%7.3f'%(j, group_tag, direction, positions[i])
-                self.sumb.addparaslice(sliceName, tmp[i], dir_vec)
+                sliceName = 'Slice_%4.4d %s Para Init %s=%7.3f'%(j, groupTag, direction, positions[i])
+                self.sumb.addparaslice(sliceName, tmp[i], dirVec)
             else:
-                sliceName = 'Slice_%4.4d %s Absolute %s=%7.3f'%(j, group_tag, direction, positions[i])
-                self.sumb.addabsslice(sliceName, tmp[i], dir_vec)
+                sliceName = 'Slice_%4.4d %s Absolute %s=%7.3f'%(j, groupTag, direction, positions[i])
+                self.sumb.addabsslice(sliceName, tmp[i], dirVec)
             # end if
         # end for
         self.nSlice += N
         return
         
-    def _setInflowAngle(self, aero_problem):
+    def _setInflowAngle(self, aeroProblem):
         '''
         Set the alpha and beta fromthe desiggn variables
         '''
         
         [velDir, liftDir, dragDir] = self.sumb.adjustinflowangleadjts(\
-            (aero_problem._flows.alpha*(numpy.pi/180.0)),
-            (aero_problem._flows.beta*(numpy.pi/180.0)),
-            aero_problem._flows.liftIndex)
+            (aeroProblem._flows.alpha*(numpy.pi/180.0)),
+            (aeroProblem._flows.beta*(numpy.pi/180.0)),
+            aeroProblem._flows.liftIndex)
         self.sumb.inputphysics.veldirfreestream = velDir
         self.sumb.inputphysics.liftdirection = liftDir
         self.sumb.inputphysics.dragdirection = dragDir
 
         if self.sumb.inputiteration.printiterations:
             mpiPrint('-> Alpha... %f %f'%(
-                    numpy.real(aero_problem._flows.alpha*(numpy.pi/180.0)),
-                    numpy.real(aero_problem._flows.alpha)), comm=self.comm)
+                    numpy.real(aeroProblem._flows.alpha*(numpy.pi/180.0)),
+                    numpy.real(aeroProblem._flows.alpha)), comm=self.comm)
 
         #update the flow vars
         self.sumb.updateflow()
-        self._update_vel_info = True
+        self._updateVelInfo = True
 
         return
 
-    def _setElasticCenter(self, aero_problem):
+    def _setElasticCenter(self, aeroProblem):
         '''
         set the value of pointRefEC for the bending moment calculation
         '''
         
-        self.sumb.inputphysics.pointrefec[0] = aero_problem._geometry.xRootec\
+        self.sumb.inputphysics.pointrefec[0] = aeroProblem._geometry.xRootec\
             *self.metricConversion
-        self.sumb.inputphysics.pointrefec[1] = aero_problem._geometry.yRootec\
+        self.sumb.inputphysics.pointrefec[1] = aeroProblem._geometry.yRootec\
             *self.metricConversion
-        self.sumb.inputphysics.pointrefec[2] = aero_problem._geometry.zRootec\
+        self.sumb.inputphysics.pointrefec[2] = aeroProblem._geometry.zRootec\
             *self.metricConversion
     
-    def _setReferencePoint(self, aero_problem):
+    def _setReferencePoint(self, aeroProblem):
         '''
         Set the reference point for rotations and moment calculations
         '''
-        self.sumb.inputphysics.pointref[0] = aero_problem._refs.xref\
+        self.sumb.inputphysics.pointref[0] = aeroProblem._refs.xref\
             *self.metricConversion
-        self.sumb.inputphysics.pointref[1] = aero_problem._refs.yref\
+        self.sumb.inputphysics.pointref[1] = aeroProblem._refs.yref\
             *self.metricConversion
-        self.sumb.inputphysics.pointref[2] = aero_problem._refs.zref\
+        self.sumb.inputphysics.pointref[2] = aeroProblem._refs.zref\
             *self.metricConversion
-        self.sumb.inputmotion.rotpoint[0] = aero_problem._refs.xrot\
+        self.sumb.inputmotion.rotpoint[0] = aeroProblem._refs.xrot\
             *self.metricConversion
-        self.sumb.inputmotion.rotpoint[1] = aero_problem._refs.yrot\
+        self.sumb.inputmotion.rotpoint[1] = aeroProblem._refs.yrot\
             *self.metricConversion
-        self.sumb.inputmotion.rotpoint[2] = aero_problem._refs.zrot\
+        self.sumb.inputmotion.rotpoint[2] = aeroProblem._refs.zrot\
             *self.metricConversion
         #update the flow vars
         self.sumb.updatereferencepoint()
-        self._update_vel_info = True
+        self._updateVelInfo = True
 
         return
 
-    def _setRotationRate(self, aero_problem):
+    def _setRotationRate(self, aeroProblem):
         '''
         Set the rotational rate for the grid
         '''
@@ -1067,73 +1064,73 @@ name is unavailable.'%(flowCase), comm=self.comm)
                       self.sumb.flowvarrefstate.rhoinfdim)
         V = (self.sumb.inputphysics.machgrid+self.sumb.inputphysics.mach)*a
         
-        p = aero_problem._flows.phat*V/aero_problem._refs.bref
-        q = aero_problem._flows.qhat*2*V/aero_problem._refs.cref
-        r = aero_problem._flows.rhat*V/aero_problem._refs.bref
+        p = aeroProblem._flows.phat*V/aeroProblem._refs.bref
+        q = aeroProblem._flows.qhat*2*V/aeroProblem._refs.cref
+        r = aeroProblem._flows.rhat*V/aeroProblem._refs.bref
 
         self.sumb.updaterotationrate(p, r, q)
-        self._update_vel_info = True
+        self._updateVelInfo = True
 
         return
     
-    def _setRefArea(self, aero_problem):
-        self.sumb.inputphysics.surfaceref = aero_problem._refs.sref*self.metricConversion**2
-        self.sumb.inputphysics.lengthref = aero_problem._refs.cref*self.metricConversion
+    def _setRefArea(self, aeroProblem):
+        self.sumb.inputphysics.surfaceref = aeroProblem._refs.sref*self.metricConversion**2
+        self.sumb.inputphysics.lengthref = aeroProblem._refs.cref*self.metricConversion
         
         return
 
-    def _setPeriodicParams(self, aero_problem):
+    def _setPeriodicParams(self, aeroProblem):
         '''
         Set the frequecy and amplitude of the oscillations
         '''
         if  self.getOption('alphaMode'):
-            self.sumb.inputmotion.degreepolalpha = int(aero_problem._flows.degreePol)
-            self.sumb.inputmotion.coefpolalpha = aero_problem._flows.coefPol
-            self.sumb.inputmotion.omegafouralpha   = aero_problem._flows.omegaFourier
-            self.sumb.inputmotion.degreefouralpha  = aero_problem._flows.degreeFourier
-            self.sumb.inputmotion.coscoeffouralpha = aero_problem._flows.cosCoefFourier
-            self.sumb.inputmotion.sincoeffouralpha = aero_problem._flows.sinCoefFourier
+            self.sumb.inputmotion.degreepolalpha = int(aeroProblem._flows.degreePol)
+            self.sumb.inputmotion.coefpolalpha = aeroProblem._flows.coefPol
+            self.sumb.inputmotion.omegafouralpha   = aeroProblem._flows.omegaFourier
+            self.sumb.inputmotion.degreefouralpha  = aeroProblem._flows.degreeFourier
+            self.sumb.inputmotion.coscoeffouralpha = aeroProblem._flows.cosCoefFourier
+            self.sumb.inputmotion.sincoeffouralpha = aeroProblem._flows.sinCoefFourier
             self.sumb.inputmotion.gridmotionspecified = True
         elif  self.getOption('betaMode'):
-            self.sumb.inputmotion.degreepolmach = int(aero_problem._flows.degreePol)
-            self.sumb.inputmotion.coefpolmach = aero_problem._flows.coefPol
-            self.sumb.inputmotion.omegafourbeta   = aero_problem._flows.omegaFourier
-            self.sumb.inputmotion.degreefourbeta  = aero_problem._flows.degreeFourier
-            self.sumb.inputmotion.coscoeffourbeta = aero_problem._flows.cosCoefFourier
-            self.sumb.inputmotion.sincoeffourbeta = aero_problem._flows.sinCoefFourier
+            self.sumb.inputmotion.degreepolmach = int(aeroProblem._flows.degreePol)
+            self.sumb.inputmotion.coefpolmach = aeroProblem._flows.coefPol
+            self.sumb.inputmotion.omegafourbeta   = aeroProblem._flows.omegaFourier
+            self.sumb.inputmotion.degreefourbeta  = aeroProblem._flows.degreeFourier
+            self.sumb.inputmotion.coscoeffourbeta = aeroProblem._flows.cosCoefFourier
+            self.sumb.inputmotion.sincoeffourbeta = aeroProblem._flows.sinCoefFourier
             self.sumb.inputmotion.gridmotionspecified = True
         elif self.getOption('machMode'):
-            self.sumb.inputmotion.degreepolmach = int(aero_problem._flows.degreePol)
-            self.sumb.inputmotion.coefpolmach = aero_problem._flows.coefPol
-            self.sumb.inputmotion.omegafourmach   = aero_problem._flows.omegaFourier
-            self.sumb.inputmotion.degreefourmach  = aero_problem._flows.degreeFourier
-            self.sumb.inputmotion.coscoeffourmach = aero_problem._flows.cosCoefFourier
-            self.sumb.inputmotion.sincoeffourmach = aero_problem._flows.sinCoefFourier
+            self.sumb.inputmotion.degreepolmach = int(aeroProblem._flows.degreePol)
+            self.sumb.inputmotion.coefpolmach = aeroProblem._flows.coefPol
+            self.sumb.inputmotion.omegafourmach   = aeroProblem._flows.omegaFourier
+            self.sumb.inputmotion.degreefourmach  = aeroProblem._flows.degreeFourier
+            self.sumb.inputmotion.coscoeffourmach = aeroProblem._flows.cosCoefFourier
+            self.sumb.inputmotion.sincoeffourmach = aeroProblem._flows.sinCoefFourier
             self.sumb.inputmotion.gridmotionspecified = True
         elif  self.getOption('pMode'):
             ### add in lift axis dependence
-            self.sumb.inputmotion.degreepolxrot = int(aero_problem._flows.degreePol)
-            self.sumb.inputmotion.coefpolxrot = aero_problem._flows.coefPol
-            self.sumb.inputmotion.omegafourxrot = aero_problem._flows.omegaFourier
-            self.sumb.inputmotion.degreefourxrot  = aero_problem._flows.degreeFourier
-            self.sumb.inputmotion.coscoeffourxrot = aero_problem._flows.cosCoefFourier
-            self.sumb.inputmotion.sincoeffourxrot = aero_problem._flows.sinCoefFourier
+            self.sumb.inputmotion.degreepolxrot = int(aeroProblem._flows.degreePol)
+            self.sumb.inputmotion.coefpolxrot = aeroProblem._flows.coefPol
+            self.sumb.inputmotion.omegafourxrot = aeroProblem._flows.omegaFourier
+            self.sumb.inputmotion.degreefourxrot  = aeroProblem._flows.degreeFourier
+            self.sumb.inputmotion.coscoeffourxrot = aeroProblem._flows.cosCoefFourier
+            self.sumb.inputmotion.sincoeffourxrot = aeroProblem._flows.sinCoefFourier
             self.sumb.inputmotion.gridmotionspecified = True
         elif self.getOption('qMode'):
-            self.sumb.inputmotion.degreepolzrot = int(aero_problem._flows.degreePol)
-            self.sumb.inputmotion.coefpolzrot = aero_problem._flows.coefPol
-            self.sumb.inputmotion.omegafourzrot = aero_problem._flows.omegaFourier
-            self.sumb.inputmotion.degreefourzrot  = aero_problem._flows.degreeFourier
-            self.sumb.inputmotion.coscoeffourzrot = aero_problem._flows.cosCoefFourier
-            self.sumb.inputmotion.sincoeffourzrot = aero_problem._flows.sinCoefFourier
+            self.sumb.inputmotion.degreepolzrot = int(aeroProblem._flows.degreePol)
+            self.sumb.inputmotion.coefpolzrot = aeroProblem._flows.coefPol
+            self.sumb.inputmotion.omegafourzrot = aeroProblem._flows.omegaFourier
+            self.sumb.inputmotion.degreefourzrot  = aeroProblem._flows.degreeFourier
+            self.sumb.inputmotion.coscoeffourzrot = aeroProblem._flows.cosCoefFourier
+            self.sumb.inputmotion.sincoeffourzrot = aeroProblem._flows.sinCoefFourier
             self.sumb.inputmotion.gridmotionspecified = True
         elif self.getOption('rMode'):
-            self.sumb.inputmotion.degreepolyrot = int(aero_problem._flows.degreePol)
-            self.sumb.inputmotion.coefpolyrot = aero_problem._flows.coefPol
-            self.sumb.inputmotion.omegafouryrot = aero_problem._flows.omegaFourier
-            self.sumb.inputmotion.degreefouryrot  = aero_problem._flows.degreeFourier
-            self.sumb.inputmotion.coscoeffouryrot = aero_problem._flows.cosCoefFourier
-            self.sumb.inputmotion.sincoeffouryrot = aero_problem._flows.sinCoefFourier
+            self.sumb.inputmotion.degreepolyrot = int(aeroProblem._flows.degreePol)
+            self.sumb.inputmotion.coefpolyrot = aeroProblem._flows.coefPol
+            self.sumb.inputmotion.omegafouryrot = aeroProblem._flows.omegaFourier
+            self.sumb.inputmotion.degreefouryrot  = aeroProblem._flows.degreeFourier
+            self.sumb.inputmotion.coscoeffouryrot = aeroProblem._flows.cosCoefFourier
+            self.sumb.inputmotion.sincoeffouryrot = aeroProblem._flows.sinCoefFourier
             self.sumb.inputmotion.gridmotionspecified = True
         # end if
 
@@ -1143,7 +1140,7 @@ name is unavailable.'%(flowCase), comm=self.comm)
  
         return
 
-    def _setMachNumber(self, aero_problem):
+    def _setMachNumber(self, aeroProblem):
         '''
         Set the mach number for the problem...
         '''
@@ -1155,34 +1152,34 @@ name is unavailable.'%(flowCase), comm=self.comm)
 
         if Rotating or self.getOption('equationMode').lower()=='time spectral':
             self.sumb.inputphysics.mach = 0.0
-            self.sumb.inputphysics.machcoef = aero_problem._flows.mach
-            self.sumb.inputphysics.machgrid = aero_problem._flows.mach
+            self.sumb.inputphysics.machcoef = aeroProblem._flows.mach
+            self.sumb.inputphysics.machgrid = aeroProblem._flows.mach
             self.sumb.inputmotion.gridmotionspecified = True
         else:
-            self.sumb.inputphysics.mach = aero_problem._flows.mach 
-            self.sumb.inputphysics.machcoef = aero_problem._flows.mach
+            self.sumb.inputphysics.mach = aeroProblem._flows.mach 
+            self.sumb.inputphysics.machcoef = aeroProblem._flows.mach
             self.sumb.inputphysics.machgrid = 0.0
         # end if
 
         return
 
-    def _setRefState(self, aero_problem):
+    def _setRefState(self, aeroProblem):
         ''' Set the Pressure, density and viscosity/reynolds number
-        from the aero_problem
+        from the aeroProblem
         '''
-        self.sumb.flowvarrefstate.pref = aero_problem._flows.P
-        self.sumb.flowvarrefstate.rhoref = aero_problem._flows.rho
-        self.sumb.flowvarrefstate.tref = aero_problem._flows.T
+        self.sumb.flowvarrefstate.pref = aeroProblem._flows.P
+        self.sumb.flowvarrefstate.rhoref = aeroProblem._flows.rho
+        self.sumb.flowvarrefstate.tref = aeroProblem._flows.T
 
         # Reynolds number info not setup yet...
 
         return
 
-    def _updatePeriodInfo(self):
+    def _updatePeriodicInfo(self):
         """Update the SUmb TS period info"""
         if (self._update_period_info):
             self.sumb.updateperiodicinfoalllevels()
-            self._update_period_info = False
+            self._updatePeriodInfo = False
         # end if
 
         return 
@@ -1190,7 +1187,7 @@ name is unavailable.'%(flowCase), comm=self.comm)
     def _updateVelocityInfo(self):
         if (self._update_vel_info):
             self.sumb.updategridvelocitiesalllevels()
-            self._update_vel_info = False
+            self._updateVelInfo = False
         # end if
         
         return 
@@ -1259,7 +1256,7 @@ name is unavailable.'%(flowCase), comm=self.comm)
 
         return V
 
-    def __solve__(self, aero_problem, nIterations=500, flowCase=None, 
+    def __solve__(self, aeroProblem, nIterations=500, flowCase=None, 
                   MDCallBack=None, writeSolution=True):
         
         '''
@@ -1275,22 +1272,22 @@ name is unavailable.'%(flowCase), comm=self.comm)
         self.releaseAdjointMemory()
 
         # Save aeroProblem, and other information into the current flow case
-        self.flowCases[self.curFlowCase]['aeroProblem'] = aero_problem
+        self.flowCases[self.curFlowCase]['aeroProblem'] = aeroProblem
         self.flowCases[self.curFlowCase]['adjointRHS'] = None
         self.flowCases[self.curFlowCase]['callCounter'] += 1
 
         # Run Initialize, if already run it just returns.
-        self.initialize(aero_problem)
+        self.initialize(aeroProblem)
 
         # Set all the infor contained in the aeroProblem object
-        self._setMachNumber(aero_problem)
-        self._setPeriodicParams(aero_problem)
-        self._setInflowAngle(aero_problem)
-        self._setReferencePoint(aero_problem)
-        #self._setElasticCenter(aero_problem)
-        self._setRotationRate(aero_problem)
-        self._setRefArea(aero_problem)
-        self._setRefState(aero_problem)
+        self._setMachNumber(aeroProblem)
+        self._setPeriodicParams(aeroProblem)
+        self._setInflowAngle(aeroProblem)
+        self._setReferencePoint(aeroProblem)
+        #self._setElasticCenter(aeroProblem)
+        self._setRotationRate(aeroProblem)
+        self._setRefArea(aeroProblem)
+        self._setRefState(aeroProblem)
 
         # Run Solver
         t0 = time.time()
@@ -1303,27 +1300,27 @@ name is unavailable.'%(flowCase), comm=self.comm)
             self.sumb.monitor.nitercur == 0 and \
             self.sumb.iteration.itertot == 0:
             if self.myid == 0:
-                desired_size = self.sumb.inputiteration.nsgstartup + \
+                desiredSize = self.sumb.inputiteration.nsgstartup + \
                     self.sumb.inputiteration.ncycles
-                self.sumb.allocconvarrays(desired_size)
+                self.sumb.allocconvarrays(desiredSize)
             # end if
         else:
             # More Time Steps / Iterations OR a restart
             # Reallocate convergence history array and time array
             # with new size,  storing old values from previous runs
             if self.getOption('storeHistory'):
-                current_size = len(self.sumb.monitor.convarray)
-                desired_size = current_size + self.sumb.inputiteration.ncycles+1
+                currentSize = len(self.sumb.monitor.convarray)
+                desiredSize = currentSize + self.sumb.inputiteration.ncycles+1
                 self.sumb.monitor.niterold  = self.sumb.monitor.nitercur+1
             else:
                 self.sumb.monitor.nitercur  = 0
                 self.sumb.monitor.niterold  = 1
-                desired_size = self.sumb.inputiteration.nsgstartup + \
+                desiredSize = self.sumb.inputiteration.nsgstartup + \
                     self.sumb.inputiteration.ncycles +1
             # end if
             # Allocate Arrays
             if self.myid == 0:
-                self.sumb.allocconvarrays(desired_size)
+                self.sumb.allocconvarrays(desiredSize)
 
             self.sumb.inputiteration.mgstartlevel = 1
             self.sumb.iteration.itertot = 0
@@ -1335,9 +1332,9 @@ name is unavailable.'%(flowCase), comm=self.comm)
         # Reset Fail Flags
         self.sumb.killsignals.routinefailed =  False
         self.sumb.killsignals.fatalfail = False
-        self.solve_failed =  self.fatalFail = False
+        self.solveFailed =  self.fatalFail = False
 
-        self._updatePeriodInfo()
+        self._updatePeriodicInfo()
         if (self.getOption('equationMode').lower() == 'steady' or 
             self.getOption('equationMode').lower() == 'time spectral'):
             self._updateGeometryInfo()
@@ -1351,7 +1348,7 @@ name is unavailable.'%(flowCase), comm=self.comm)
         if self.sumb.killsignals.routinefailed:
             mpiPrint('Fatal failure during mesh warp', comm=self.comm)
             self.fatalFail = True
-            self.solve_failed = True
+            self.solveFailed = True
             return
      
         t1 = time.time()
@@ -1368,7 +1365,7 @@ name is unavailable.'%(flowCase), comm=self.comm)
             self.getStates()
             
         # Assign Fail Flags
-        self.solve_failed = self.sumb.killsignals.routinefailed
+        self.solveFailed = self.sumb.killsignals.routinefailed
         self.fatalFail = self.sumb.killsignals.fatalfail
 
         # Reset Flow if there's a fatal fail reset and return;
@@ -1379,11 +1376,11 @@ name is unavailable.'%(flowCase), comm=self.comm)
         # end if
 
         t2 = time.time()
-        sol_time = t2 - t0
-        self.update_time = t1 - t0
+        solTime = t2 - t0
+        self.updateTime = t1 - t0
 
         if self.getOption('printTiming'):
-            mpiPrint('Solution Time: %10.3f sec'%sol_time, comm=self.comm)
+            mpiPrint('Solution Time: %10.3f sec'%solTime, comm=self.comm)
         # end if
 
         # Post-Processing -- Write Solutions is requested
@@ -1396,14 +1393,14 @@ name is unavailable.'%(flowCase), comm=self.comm)
         
         return
 
-    def solveCL(self, aeroProblem, CL_star, nIterations=500, alpha0=0, 
+    def solveCL(self, aeroProblem, CLStar, nIterations=500, alpha0=0, 
                 delta=0.5, tol=1e-3, autoReset=True, flowCase=None):
         '''This is a simple secant method search for solving for a
         fixed CL. This really should only be used to determine the
         starting alpha for a lift constraint in an optimization.
 
         Input:  aeroProblem -> aerodynamic problem definition
-                CL_star     -> Target CL
+                CLStar     -> Target CL
                 nIterations -> Number of CFD iterations to run (same as 
                                input to __solve__
                 alpha0      -> Initial guess for secant search (deg)
@@ -1420,7 +1417,7 @@ name is unavailable.'%(flowCase), comm=self.comm)
         aeroProblem._flows.alpha = anm2
         self.__solve__(aeroProblem, nIterations=nIterations)
         sol = self.getSolution()
-        fnm2 =  sol['cl'] - CL_star
+        fnm2 =  sol['cl'] - CLStar
 
         L2ConvSave = self.getOption('l2convergence')
         for iIter in xrange(20):
@@ -1441,7 +1438,7 @@ name is unavailable.'%(flowCase), comm=self.comm)
             # Solve for n-1 value (anm1)
             self.__solve__(aeroProblem, nIterations=nIterations, writeSolution=False)
             sol = self.getSolution()
-            fnm1 =  sol['cl'] - CL_star
+            fnm1 =  sol['cl'] - CLStar
             
             # Secant Update
             anew = anm1 - fnm1*(anm1-anm2)/(fnm1-fnm2)
@@ -1466,20 +1463,20 @@ name is unavailable.'%(flowCase), comm=self.comm)
         self.setOption('l2convergence', L2ConvSave)
         return
 
-    def getSurfaceCoordinates(self, group_name):
+    def getSurfaceCoordinates(self, groupName):
         ''' 
         See MultiBlockMesh.py for more info
         '''
 
-        return self.mesh.getSurfaceCoordinates(group_name)
+        return self.mesh.getSurfaceCoordinates(groupName)
 
-    def setSurfaceCoordinates(self, group_name, coordinates, flowCase=None):
+    def setSurfaceCoordinates(self, groupName, coordinates, flowCase=None):
         ''' 
         See MultiBlockMesh.py for more info
         '''
 
-        self._update_geom_info = True
-        self.mesh.setSurfaceCoordinates(group_name, coordinates)
+        self._updateGeomInfo = True
+        self.mesh.setSurfaceCoordinates(groupName, coordinates)
         
         if flowCase is None:
             for case in self.flowCases.keys():
@@ -1493,11 +1490,11 @@ name is unavailable.'%(flowCase), comm=self.comm)
 
         return 
 
-    def getSurfaceConnectivity(self, group_name):
+    def getSurfaceConnectivity(self, groupName):
         '''
         See MultiBlockMesh.py for more info
         '''
-        return self.mesh.getSurfaceConnectivity(group_name)
+        return self.mesh.getSurfaceConnectivity(groupName)
         
     def writeSolution(self, outputDir=None, baseName=None, number=None):
         '''This is a generic shell function that potentially writes
@@ -1713,8 +1710,8 @@ name is unavailable.'%(flowCase), comm=self.comm)
                 
         return [p0, v1, v2]
 
-    def writeForceFile(self, file_name, TS=0, group_name='all', 
-                       cfd_force_pts=None, flowCase=None):
+    def writeForceFile(self, fileName, TS=0, groupName='all', 
+                       cfdForcePts=None, flowCase=None):
         '''This function collects all the forces and locations and
         writes them to a file with each line having: X Y Z Fx Fy Fz.
         This can then be used to set a set of structural loads in TACS
@@ -1733,15 +1730,15 @@ name is unavailable.'%(flowCase), comm=self.comm)
             return
 
         # Now we need to gather the data:
-        if cfd_force_pts is None:
+        if cfdForcePts is None:
             pts = self.comm.gather(self.getForcePoints(TS), root=0)
         else:
-            pts = self.comm.gather(cfd_force_pts)
+            pts = self.comm.gather(cfdForcePts)
         # end if
             
         # Forces are still evaluated on the displaced surface so do NOT pass in pts.
-        forces = self.comm.gather(self.getForces(group_name, TS=TS), root=0)
-        conn   = self.comm.gather(self.mesh.getSurfaceConnectivity(group_name),
+        forces = self.comm.gather(self.getForces(groupName, TS=TS), root=0)
+        conn   = self.comm.gather(self.mesh.getSurfaceConnectivity(groupName),
                                   root=0)
 
         # Write out Data only on root proc:
@@ -1755,7 +1752,7 @@ name is unavailable.'%(flowCase), comm=self.comm)
             # end for
      
             # Open output file
-            f = open(file_name, 'w')
+            f = open(fileName, 'w')
             
             # Write header with number of nodes and number of cells
             f.write("%d %d\n"%(nPt, nCell))
@@ -1799,7 +1796,7 @@ name is unavailable.'%(flowCase), comm=self.comm)
 
         return 
 
-    def getForces(self, group_name=None, TS=0, pressure=True, viscous=True, 
+    def getForces(self, groupName=None, TS=0, pressure=True, viscous=True, 
                   flowCase=None):
         ''' Return the forces on this processor.
         '''
@@ -1820,8 +1817,8 @@ name is unavailable.'%(flowCase), comm=self.comm)
             forces = numpy.zeros((0,3),self.dtype)
         # end if
 
-        if group_name is not None:
-            forces = self.mesh.sectionVectorByFamily(group_name, forces)
+        if groupName is not None:
+            forces = self.mesh.sectionVectorByFamily(groupName, forces)
 
         return forces
 
@@ -1847,22 +1844,22 @@ name is unavailable.'%(flowCase), comm=self.comm)
         
         return
 
-    def globalNKPreCon(self, in_vec, out_vec, flowCase=None):
+    def globalNKPreCon(self, inVec, outVec, flowCase=None):
         '''This function is ONLY used as a preconditioner to the
         global Aero-Structural system'''
         self.setFlowCase(flowCase, True, 'globalNKPreCon')
-        out_vec = self.sumb.applypc(in_vec, out_vec)
+        outVec = self.sumb.applypc(inVec, outVec)
         
-        return out_vec
+        return outVec
 
-    def globalAdjointPreCon(self, in_vec, out_vec, flowCase=None):
+    def globalAdjointPreCon(self, inVec, outVec, flowCase=None):
         ''' This function is ONLY used as a preconditioner for the
         global Aero-Structural Adjoint system'''
         self.setFlowCase(flowCase, True, 'globalAdjointPreCon')
 
-        out_vec = self.sumb.applyadjointpc(in_vec, out_vec)
+        outVec = self.sumb.applyadjointpc(inVec, outVec)
 
-        return out_vec
+        return outVec
 
     def verifyAD(self):
         '''
@@ -1905,10 +1902,10 @@ name is unavailable.'%(flowCase), comm=self.comm)
         if self.nDVAero >0:           
             self.sumb.adjointvars.dida = numpy.zeros(self.nDVAero)
             for i in xrange(self.nDVAero):
-                exec_str = 'self.sumb.' + self.possibleAeroDVs[self.aeroDVs[i]] + \
+                execStr = 'self.sumb.' + self.possibleAeroDVs[self.aeroDVs[i]] + \
                            '= %d'%(i)
                 # Leave this zero-based since we only need to use it in petsc
-                exec(exec_str)
+                exec(execStr)
             # end for
         # end if
 
@@ -1992,9 +1989,9 @@ name is unavailable.'%(flowCase), comm=self.comm)
         grid is never actually loaded so this function can be run with
         VERY large grids without issue.'''
   
-        load_inbalance, face_inbalance = self.sumb.checkpartitioning(nprocs)
+        loadInbalance, faceInbalance = self.sumb.checkpartitioning(nprocs)
                 
-        return load_inbalance, face_inbalance
+        return loadInbalance, faceInbalance
     
     def releaseAdjointMemory(self):
         '''
@@ -2007,7 +2004,7 @@ name is unavailable.'%(flowCase), comm=self.comm)
         return
 
     def _on_adjoint(self, objective, forcePoints=None, structAdjoint=None, 
-                    group_name=None, flowCase=None):
+                    groupName=None, flowCase=None):
 
         # Try to see if obj is an aerodynamic objective. If it is, we
         # will have a non-zero RHS, otherwise its an objective with a
@@ -2017,14 +2014,14 @@ name is unavailable.'%(flowCase), comm=self.comm)
 
         # We need to reset some of the flow condition because the flow
         # case may have changed.
-        aero_problem = self.flowCases[self.curFlowCase]['aeroProblem']
-        self._setMachNumber(aero_problem)
-        self._setPeriodicParams(aero_problem)
-        self._setInflowAngle(aero_problem)
-        self._setReferencePoint(aero_problem)
-        self._setRotationRate(aero_problem)
-        self._setRefArea(aero_problem)
-        self._setRefState(aero_problem)
+        aeroProblem = self.flowCases[self.curFlowCase]['aeroProblem']
+        self._setMachNumber(aeroProblem)
+        self._setPeriodicParams(aeroProblem)
+        self._setInflowAngle(aeroProblem)
+        self._setReferencePoint(aeroProblem)
+        self._setRotationRate(aeroProblem)
+        self._setRefArea(aeroProblem)
+        self._setRefState(aeroProblem)
 
         obj, aeroObj = self._getObjective(objective)
 
@@ -2038,14 +2035,14 @@ name is unavailable.'%(flowCase), comm=self.comm)
 
         # Check to see if we need to agument the RHS with a structural
         # adjoint:
-        if structAdjoint is not None and group_name is not None:
+        if structAdjoint is not None and groupName is not None:
             if self.getOption('usereversemodead'):
                 print('Reverse mode AD no longer supported with \
 aerostructural analysis. Use Forward mode AD for the adjoint')
                 sys.exit(0)
             # end if
 
-            phi = self.mesh.expandVectorByFamily(group_name, structAdjoint)
+            phi = self.mesh.expandVectorByFamily(groupName, structAdjoint)
             self.sumb.agumentrhs(numpy.ravel(phi))
         # end if
 
@@ -2078,9 +2075,9 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         if self.sumb.killsignals.adjointfailed == False:
             self.flowCases[self.curFlowCase]['adjoints'][obj] = \
                 self.sumb.getadjoint(self.getAdjointStateSize())
-            self.adjoint_failed = False
+            self.adjointFailed = False
         else:
-            self.adjoint_failed = True
+            self.adjointFailed = True
 
             # Reset stored adjoint
             self.flowCases[self.curFlowCase]['adjoints'][obj][:] = 0.0
@@ -2106,7 +2103,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         dIdxs_2 = self.getdRdXvPsi('all', objective)
           
         # Direct partial derivative contibution 
-        dIdxs_1 = self.getdIdx(objective, group_name='all')
+        dIdxs_1 = self.getdIdx(objective, groupName='all')
 
         # Total derivative of the obective with surface coordinates
         dIdXs = dIdxs_1 - dIdxs_2
@@ -2191,7 +2188,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
     def _updateGeometryInfo(self):
         """Update the SUmb internal geometry info, if necessary."""
 
-        if self._update_geom_info:
+        if self._updateGeomInfo:
             self.mesh.warpMesh()
             newGrid = self.mesh.getSolverGrid()
 
@@ -2204,7 +2201,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             self.sumb.updateslidingalllevels()
             self.sumb.updatemetricsalllevels()
             self.sumb.updategridvelocitiesalllevels()
-            self._update_geom_info = False
+            self._updateGeomInfo = False
         # end if
 
         return 
@@ -2285,7 +2282,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
 
         return indices
     
-    def getdRdXvPsi(self, group_name=None, objective=None, flowCase=None):
+    def getdRdXvPsi(self, groupName=None, objective=None, flowCase=None):
 
         self.setFlowCase(flowCase, True, 'getdRdXvpsi') 
 
@@ -2301,22 +2298,22 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         # end if
 
         # Now call getdrdxvpsi WITH the psi vector:
-        dxv_solver = self.sumb.getdrdxvpsi(self.getSpatialSize(), psi)
+        dxvSolver = self.sumb.getdrdxvpsi(self.getSpatialSize(), psi)
 
         # If we are doing a prescribed motion TS motion, we need to
         # convert this back to a single instance 
         if self._prescribedTSMotion():
             ndof_1_instance = self.sumb.adjointvars.nnodeslocal[0]*3
-            dxv_solver = self.sumb.spectralprecscribedmotion(
-                dxv_solver, ndof_1_instance)
+            dxvSolver = self.sumb.spectralprecscribedmotion(
+                dxvSolver, ndof_1_instance)
         # end if
 
-        if group_name is not None:
-            self.mesh.warpDeriv(dxv_solver)
-            dxs = self.mesh.getdXs(group_name)
+        if groupName is not None:
+            self.mesh.warpDeriv(dxvSolver)
+            dxs = self.mesh.getdXs(groupName)
             return dxs
         else:
-            return dxv_solver
+            return dxvSolver
         # end if
 
     def _prescribedTSMotion(self):
@@ -2331,15 +2328,15 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             return False
         # end if
 
-    def getdRdXvVec(self, in_vec, group_name, flowCase=None):
+    def getdRdXvVec(self, inVec, groupName, flowCase=None):
         self.setFlowCase(flowCase, True, 'getdRdXvVec')
 
         ndof = self.sumb.adjointvars.nnodeslocal[0]*3
 
         # Now call getdrdxvpsi WITH the psi vector:
-        dxv_solver = self.sumb.getdrdxvpsi(self.getSpatialSize(), in_vec)
-        self.mesh.warpDeriv(dxv_solver)
-        dxs = self.mesh.getdXs(group_name)
+        dxvSolver = self.sumb.getdrdxvpsi(self.getSpatialSize(), inVec)
+        self.mesh.warpDeriv(dxvSolver)
+        dxs = self.mesh.getdXs(groupName)
 
         return dxs
 
@@ -2353,33 +2350,33 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
 
         return dIda
 
-    def getdRdwTVec(self, in_vec, out_vec, flowCase=None):
-        ''' Compute the result: out_vec = dRdw^T * in_vec'''
+    def getdRdwTVec(self, inVec, outVec, flowCase=None):
+        ''' Compute the result: outVec = dRdw^T * inVec'''
         self.setFlowCase(flowCase, True, 'getdRdwTVec')
 
-        out_vec = self.sumb.getdrdwtvec(in_vec, out_vec)
+        outVec = self.sumb.getdrdwtvec(inVec, outVec)
         
-        return out_vec
+        return outVec
 
-    def getdFdxVec(self, group_name, vec, flowCase=None):
+    def getdFdxVec(self, groupName, vec, flowCase=None):
         # Calculate dFdx * vec and return the result
         self.setFlowCase(flowCase, True, 'getdFdxVec')
 
-        vec = self.mesh.expandVectorByFamily(group_name, vec)
+        vec = self.mesh.expandVectorByFamily(groupName, vec)
         if len(vec) > 0:
             vec = self.sumb.getdfdxvec(numpy.ravel(vec))
-        vec = self.mesh.sectionVectorByFamily(group_name, vec)
+        vec = self.mesh.sectionVectorByFamily(groupName, vec)
 
         return vec
 
-    def getdFdxTVec(self, group_name, vec, flowCase=None):
+    def getdFdxTVec(self, groupName, vec, flowCase=None):
         # Calculate dFdx^T * vec and return the result
         self.setFlowCase(flowCase, True, 'getdFdxTVec')
 
-        vec = self.mesh.expandVectorByFamily(group_name, vec)
+        vec = self.mesh.expandVectorByFamily(groupName, vec)
         if len(vec) > 0:
             vec = self.sumb.getdfdxtvec(numpy.ravel(vec))
-        vec = self.mesh.sectionVectorByFamily(group_name, vec)
+        vec = self.mesh.sectionVectorByFamily(groupName, vec)
 
         return vec
 
@@ -2388,7 +2385,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         obj, aeroObj = self._getObjective(objective)
 
         if aeroObj:
-            obj_num = self.SUmbCostfunctions[obj]
+            objNum = self.SUmbCostfunctions[obj]
 
             if self.getOption('useReverseModeAD'):
 
@@ -2404,9 +2401,9 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
                 # end if
 
                 self.sumb.computeobjpartials(
-                    obj_num, forcePoints.T, True, True)
+                    objNum, forcePoints.T, True, True)
             else:
-                self.sumb.computeobjectivepartialsfwd(obj_num)
+                self.sumb.computeobjectivepartialsfwd(objNum)
             # end if
 
             # Store the current RHS
@@ -2417,7 +2414,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
 
         return 
 
-    def getdIdx(self, objective, forcePoints=None, TS=0, group_name=None,
+    def getdIdx(self, objective, forcePoints=None, TS=0, groupName=None,
                 flowCase=None):
         self.setFlowCase(flowCase, True, 'getdIdx')
         obj, aeroObj = self._getObjective(objective)
@@ -2434,7 +2431,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             dXv = self.sumb.spectralprecscribedmotion(dXv, ndof_1_instance)
         # end if
 
-        if group_name is not None:
+        if groupName is not None:
             # We have a decision to make here: If we have euler
             # analysis, we can do a "surfOnly" meshDerivative since
             # there is no information on the interior anyway. However,
@@ -2447,7 +2444,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
                 self.mesh.warpDeriv(dXv, surfOnly=False)
             # end if
 
-            dxs = self.mesh.getdXs(group_name)
+            dxs = self.mesh.getdXs(groupName)
             return dxs
         else:
             return dXv
@@ -2463,13 +2460,13 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             
             self.computeObjPartials(objective, forcePoints)
             if aeroObj:
-                dIda_local = self.sumb.adjointvars.dida
+                dIdaLocal = self.sumb.adjointvars.dida
             else:
-                dIda_local = numpy.zeros_like(self.sumb.adjointvars.dida)
+                dIdaLocal = numpy.zeros_like(self.sumb.adjointvars.dida)
             # end if
 
             # We must MPI all reuduce
-            dIda = self.comm.allreduce(dIda_local,  op=MPI.SUM)
+            dIda = self.comm.allreduce(dIdaLocal,  op=MPI.SUM)
         else:
             dIda = numpy.zeros((0))
         # end if
@@ -2566,13 +2563,13 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         
         return res
 
-    def computedSdwTVec(self, in_vec, out_vec, group_name, flowCase=None):
-        '''This function computes: out_vec = out_vec + dFdw^T*in_vec'''
+    def computedSdwTVec(self, inVec, outVec, groupName, flowCase=None):
+        '''This function computes: outVec = outVec + dFdw^T*inVec'''
         self.setFlowCase(flowCase, True, 'computedSdwTVec')
-        phi = self.mesh.expandVectorByFamily(group_name, in_vec)
-        out_vec = self.sumb.getdfdwtvec(numpy.ravel(phi), out_vec)
+        phi = self.mesh.expandVectorByFamily(groupName, inVec)
+        outVec = self.sumb.getdfdwtvec(numpy.ravel(phi), outVec)
 
-        return out_vec
+        return outVec
 
     def getSolution(self, sps=1, flowCase=None):
         ''' Retrieve the solution variables from the solver. Note this
@@ -2622,14 +2619,14 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         
         return SUmbsolution
 
-    def computeArea(self, axis, group_name=None, TS=0, flowCase=None):
+    def computeArea(self, axis, groupName=None, TS=0, flowCase=None):
         """
         Compute the projected area of the surface mesh
 
         Input Arguments:
            axis, numpy array, size(3): The projection vector
                along which to determine the shadow area
-           group_name, str: The group from which to obtain the coordinates.
+           groupName, str: The group from which to obtain the coordinates.
                This name must have been obtained from addFamilyGroup() or 
                be the default 'all' which contains all surface coordiantes 
 
@@ -2638,15 +2635,15 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             """
         self.setFlowCase(flowCase)
 
-        cfd_force_pts = self.getForcePoints(TS)
-        if len(cfd_force_pts) > 0:
-            areas = self.sumb.getareas(cfd_force_pts.T, TS+1, axis).T
+        cfdForcePts = self.getForcePoints(TS)
+        if len(cfdForcepts) > 0:
+            areas = self.sumb.getareas(cfdForcePts.T, TS+1, axis).T
         else:
             areas = numpy.zeros((0,3), self.dtype)
         # end if
 
-        if group_name is not None:
-            areas = self.mesh.sectionVectorByFamily(group_name, areas)
+        if groupName is not None:
+            areas = self.mesh.sectionVectorByFamily(groupName, areas)
         # end if
 
         # Now we do an mpiallreduce with sum:
@@ -2654,14 +2651,14 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         
         return area
 
-    def computeAreaSensitivity(self, axis, group_name=None, TS=0, flowCase=None):
+    def computeAreaSensitivity(self, axis, groupName=None, TS=0, flowCase=None):
         """ 
         Compute the projected area of the surface mesh
 
         Input Arguments:
            axis, numpy array, size(3): The projection vector
                along which to determine the shadow area  
-           group_name, str: The group from which to obtain the coordinates.
+           groupName, str: The group from which to obtain the coordinates.
                This name must have been obtained from addFamilyGroup() or 
                be the default 'all' which contains all surface coordiantes 
 
@@ -2669,16 +2666,16 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             Area: The resulting area    
             """
         self.setFlowCase(flowCase)
-        cfd_force_pts = self.getForcePoints(TS)
+        cfdForcePts = self.getForcePoints(TS)
 
-        if len(cfd_force_pts) > 0:
-            da = self.sumb.getareasensitivity(cfd_force_pts.T, TS+1, axis).T
+        if len(cfdForcePts) > 0:
+            da = self.sumb.getareasensitivity(cfdForcePts.T, TS+1, axis).T
         else:
             da = numpy.zeros((0,3), self.dtype)
         # end if
 
-        if group_name is not None:
-            da = self.mesh.sectionVectorByFamily(group_name, da)
+        if groupName is not None:
+            da = self.mesh.sectionVectorByFamily(groupName, da)
         # end if
 
         return da
@@ -2715,9 +2712,9 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         # end if
 
         # Try to the option in the option dictionary
-        def_options = self.options['defaults']
+        defOptions = self.options['defaults']
         try: 
-            def_options[name]
+            defOptions[name]
         except: 
             mpiPrint('+'+'-'*78+'+',comm=self.comm)
             mpiPrint('| WARNING: Option: \'%-30s\' is not a valid SUmb Option |'%name,comm=self.comm)
@@ -2825,9 +2822,9 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         # end if
       
         # Exec str is what is actually executed:
-        exec_str = 'self.sumb.'+self.optionMap[name]['location'] + '=' + value
+        execStr = 'self.sumb.'+self.optionMap[name]['location'] + '=' + value
 
-        exec(exec_str)
+        exec(execStr)
 
         return
         
@@ -2836,12 +2833,12 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         # Redefine the getOption def from the base class so we can
         # mane sure the name is lowercase
 
-        def_options = self.options['defaults']
-        if def_options.has_key(name.lower()):
+        defOptions = self.options['defaults']
+        if defOptions.has_key(name.lower()):
             return self.options[name.lower()][1]
         else:    
             raise InputError(repr(name) + ' is not a valid option name')
-        #end
+        # end if
         
         return
 
@@ -2853,19 +2850,19 @@ class SUmbDummyMesh(object):
     def __init__(self):
         return
         
-    def getSurfaceCoordinates(self, group_name):
+    def getSurfaceCoordinates(self, groupName):
     
         return 
 
-    def getSurfaceConnectivity(self, group_name):
+    def getSurfaceConnectivity(self, groupName):
 
         return
 
-    def setSurfaceCoordinates(self, group_name, coordinates):
+    def setSurfaceCoordinates(self, groupName, coordinates):
        
         return 
 
-    def addFamilyGroup(self, group_name, families=None):
+    def addFamilyGroup(self, groupName, families=None):
 
         return 
    
@@ -2885,7 +2882,7 @@ class SUmbDummyMesh(object):
       
         return
 
-    def getdXs(self, group_name):
+    def getdXs(self, groupName):
 
         return 
 
@@ -2893,17 +2890,17 @@ class SUmbDummyMesh(object):
 #                        Output Functionality
 # ==========================================================================
 
-    def writeVolumeGrid(self, file_name):
+    def writeVolumeGrid(self, fileName):
         '''write volume mesh'''
 
         return
 
-    def writeSurfaceGrid(self, file_name):
+    def writeSurfaceGrid(self, fileName):
         '''write surface mesh'''
 
         return
 
-    def writeFEGrid(self, file_name):
+    def writeFEGrid(self, fileName):
         ''' write the FE grid to file '''
         return
 
@@ -2925,7 +2922,7 @@ class SUmbDummyMesh(object):
         warping scheme depending on the options
         '''
 
-    def WarpDeriv(self, solver_dxv):
+    def WarpDeriv(self, solverdXdv):
 
         return
 
