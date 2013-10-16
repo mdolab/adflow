@@ -31,6 +31,7 @@ module liftDistributionData
      real(kind=realType), dimension(:, :), pointer :: w
      real(kind=realType) :: pL, vL, pD, vD, CLp, CLv, CDp, CDv
      real(kind=realType) :: chord, twist, thickness
+     real(kind=realType), dimension(3) :: le, te
      real(kind=realType), dimension(3) :: pt, dir
   end type slice
 
