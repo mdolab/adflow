@@ -389,6 +389,8 @@ class SUMB(AeroSolver):
                             self.sumb.inputiteration.nllusgs,
                         'lu sgs line':
                             self.sumb.inputiteration.nllusgsline,
+                        'dadi':
+                            self.sumb.inputiteration.dadi,
                         'location':
                             'inputiteration.smoother'},
             

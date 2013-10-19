@@ -662,8 +662,9 @@ python module sumb
        module inputiteration ! in :sumb:../../modules/inputParam.f90
          use precision
          integer(kind=inttype) parameter,optional :: rungekutta=1_inttype
-         integer(kind=inttype) parameter,optional :: nllusgs=2_inttype
-         integer(kind=inttype) parameter,optional :: nllusgsline=3_inttype
+         integer(kind=inttype) parameter,optional :: dadi=2_inttype
+         integer(kind=inttype) parameter,optional :: nllusgs=3_inttype
+         integer(kind=inttype) parameter,optional :: nllusgsline=4_inttype
          integer(kind=inttype) parameter,optional :: segregated=1_inttype
          integer(kind=inttype) parameter,optional :: coupled=2_inttype
          integer(kind=inttype) parameter,optional :: gmres=1_inttype
@@ -687,6 +688,7 @@ python module sumb
          real(kind=realtype) :: cfllimit
          integer(kind=inttype) :: turbtreatment
          integer(kind=inttype) :: nsubiterturb
+         integer(kind=inttype) :: nsubiterations
          integer(kind=inttype) :: turbsmoother
          integer(kind=inttype) :: turbrelax
          integer(kind=inttype) :: mgboundcorr

@@ -90,6 +90,8 @@
              select case (smoother)
                case (RungeKutta)
                  call RungeKuttaSmoother
+               case (DADI)
+                  call DADISmoother
                case (nlLusgs)
                  call terminate("executeMGCycle", &
                                 "nlLusgs smoother not implemented yet")
