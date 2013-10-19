@@ -88,6 +88,9 @@ subroutine writeSlicesFile(fileName)
            write(file,"(a)",advance="no") " ""CoordinateX"" "
            write(file,"(a)",advance="no") " ""CoordinateY"" "
            write(file,"(a)",advance="no") " ""CoordinateZ"" "
+           write(file,"(a)",advance="no") " ""XoC"" "
+           write(file,"(a)",advance="no") " ""YoC"" "
+           write(file,"(a)",advance="no") " ""ZoC"" "
 
            ! Number of additional variables on slices
            call numberOfSurfSolVariables(nSolVar)
@@ -1063,6 +1066,11 @@ subroutine integrateSlice(slc)
      le = x1
   end if
 
+  ! Save the leading and trailing edges so we can do scaled output
+  ! later
+  slc%le = le
+  slc%te = te
+
   ! Finally we need to get the thickness. For this, compute temporary
   ! section nodes and rotate them by the twist values we just computed
   ! and take the max and min
@@ -1137,10 +1145,10 @@ subroutine writeSlice(slc, fileID, nFields)
   ! Input Parameters
   type(slice), intent(in) :: slc
   integer(kind=intType), intent(in) :: fileID, nFields
-
+  
   ! Working Variables
   integer(kind=intType) :: i, j
-
+  real(kind=realType) :: tmp
   write (fileID,"(a,a,a)") "Zone T= """,trim(slc%sliceName),""""
 
   ! IF we have nodes actually write:
@@ -1154,6 +1162,12 @@ subroutine writeSlice(slc, fileID, nFields)
         do j=1,3
            write(fileID,13, advance='no') &
                 slc%w(1,i)*uniqueNodes(j, slc%ind(1,i)) + slc%w(2,i)*uniqueNodes(j, slc%ind(2, i))
+        end do
+
+        ! Write the scaled coordiantes with the LE at (0,0,0)
+        do j=1,3
+           tmp = slc%w(1,i)*uniqueNodes(j, slc%ind(1,i)) + slc%w(2,i)*uniqueNodes(j, slc%ind(2, i)) 
+           write(fileID,13, advance='no') (tmp - slc%le(j))/slc%chord
         end do
 
         ! Write field data
