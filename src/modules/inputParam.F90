@@ -296,8 +296,9 @@
 !      ******************************************************************
 !
        integer(kind=intType), parameter :: RungeKutta  = 1,  &
-                                           nlLusgs     = 2,  &
-                                           nlLusgsLine = 3
+                                           DADI        = 2,  &
+                                           nlLusgs     = 3,  &
+                                           nlLusgsLine = 4
        integer(kind=intType), parameter :: segregated = 1,   &
                                            coupled    = 2
        integer(kind=intType), parameter :: gmres = 1,        &
@@ -334,6 +335,8 @@
        !                   boundary conditions must be updated.
        ! smoother:         Smoother to be used.
        ! nRKStages:        Number of stages in the runge kutta scheme.
+       ! nSubiterations:   Maximum number of subiterations used in
+       !                   DADI.
        ! turbTreatment:    Treatment of the turbulent transport equations;
        !                   either segregated or coupled.
        ! turbSmoother:     Smoother to use in case a segregated solver
@@ -377,6 +380,7 @@
        integer(kind=intType) :: nCycles, nCyclesCoarse
        integer(kind=intType) :: nSaveVolume, nSaveSurface
        integer(kind=intType) :: nsgStartup, smoother, nRKStages
+       integer(kind=intType) :: nSubiterations
        integer(kind=intType) :: nSubIterTurb, nUpdateBleeds
        integer(kind=intType) :: resAveraging
        real(kind=realType) :: CFLLimit

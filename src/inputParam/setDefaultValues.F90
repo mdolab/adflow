@@ -157,6 +157,7 @@
 
        smoother  = none
        nRKStages = 5
+       nSubiterations = 1
 
        !resAveraging =  noResAveraging ! No residual averaging.
        resAveraging =  alwaysResAveraging
