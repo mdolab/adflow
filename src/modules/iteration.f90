@@ -30,7 +30,7 @@
        !               must be computed.
 
        integer(kind=intType) :: groundLevel, currentLevel
-       integer(kind=intType) :: rkStage
+       integer(kind=intType) :: rkStage, Subit
 
        ! nStepsCycling: Number of steps in the current cycling strategy
        ! cycling:       The corresponding array defining the multigrid
