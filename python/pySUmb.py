@@ -1432,7 +1432,7 @@ name is unavailable.'%(flowCase), comm=self.comm)
             # immediately due to the alpha, and the solver will
             # convergnce after 2 iterations. We slightly lower the
             # tolerance at each iteration to prevent this. 
-            self.setOption('l2convergence', 0.95*self.getOption('l2convergence'))
+            self.setOption('l2convergence', 0.75*self.getOption('l2convergence'))
 
             # Set current alpha
             aeroProblem._flows.alpha = anm1
