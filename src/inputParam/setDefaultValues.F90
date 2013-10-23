@@ -65,7 +65,7 @@
        limiter     = noLimiter            ! No limiter in upwind schemes.
        precond     = noPrecond            ! No preconditioning.
 
-       wallBCTreatment = normalMomentum    ! Normal momentum equation is
+       wallBCTreatment =                                  linExtrapolPressure !normalMomentum    ! Normal momentum equation is
                                            ! Used to determine ghost
                                            ! cell pressure.
        outflowTreatment = constantExtrapol ! Constant extrapolation at
@@ -156,11 +156,11 @@
        nSaveSurface = 1
 
        smoother  = none
-       nRKStages = 5
+       nRKStages = 4
        nSubiterations = 1
 
        !resAveraging =  noResAveraging ! No residual averaging.
-       resAveraging =  alwaysResAveraging
+       resAveraging =  noResAveraging
        smoop        = 1.5_realType
 
        turbTreatment     = segregated     ! Segregated solver for the
@@ -425,4 +425,5 @@
        useApproxWallDistance = .False.
        updateWallAssociation = .False.
        adjointInitialized = .False.
+       cflLimit = 3.0
        end subroutine setDefaultValues

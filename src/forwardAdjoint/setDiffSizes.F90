@@ -23,6 +23,7 @@ subroutine setDiffSizes
   use flowVarRefState
   use inputTimeSpectral
   use inputPhysics
+  use costFunctions
   implicit none
 
   ! local variables
@@ -30,6 +31,11 @@ subroutine setDiffSizes
 
   ! Compute nlevels
   nLevels = ubound(flowDoms, 2)
+
+  ! Size of costfuncmat
+  ISIZE1OFDrfcostfuncmat = 6
+  ISIZE2OFDrfcostfuncmat = nCostFunction
+  ISIZE3OFDrfcostfuncmat = nTimeIntervalsSpectral
 
   ! Set the size for dynamic pointers to zero for debug purpose
   ! bcdata%norm

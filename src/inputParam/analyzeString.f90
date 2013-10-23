@@ -393,6 +393,8 @@
            select case (value)
              case ("runge kutta")
                smoother = RungeKutta
+             case ("dadi")
+                smoother = dadi
              case ("nonlinear lusgs")
                smoother = nlLusgs
              case ("nonlinear lusgs line")
@@ -500,7 +502,7 @@
            read(value,*) smoop
 
          case ("number of multigrid cycles")
-           read(value,*) nCycles
+            read(value,*) nCycles
 
          case ("number of single grid startup iterations")
            read(value,*) nsgStartup
@@ -562,7 +564,7 @@
            fcoll = min(fcoll,one)
 
          case ("multigrid start level")
-           read(value,*) mgStartlevel
+            read(value,*) mgStartlevel
 
          case ("multigrid cycle strategy")
            mgDescription = value
@@ -1070,7 +1072,7 @@
 
          case ("lift direction")
            read(value,*) liftDirection(1), liftDirection(2), &
-                         liftDirection(3)
+                liftDirection(3)
            liftDirSpecified = .true.
 
          case ("reynolds length (in meter)")
@@ -1194,7 +1196,7 @@
            read(value,*) nTimeStepsCoarse
 
          case ("number of unsteady time steps fine grid")
-           read(value,*) nTimeStepsFine
+            read(value,*) nTimeStepsFine
 
         case ("unsteady time step (in sec)")
            read(value,*) deltaT

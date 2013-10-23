@@ -52,8 +52,8 @@
       Mat     dRda, dRdx
       Mat     dFcdw, dFcdx, dFndFc
       Mat     dFdx, dFdw
-      Vec, dimension(6) :: FMw
-      Vec, dimension(6) :: FMx
+      Vec, allocatable, dimension(:,:) :: FMw ! 6 by ntimespectral instance
+      Vec, allocatable, dimension(:,:) :: FMx ! 6 by ntimespectral instance
       Mat, allocatable, dimension(:) :: coarsedRdWPreT
       Mat, allocatable, dimension(:) :: restrictionOperator
       Mat, allocatable, dimension(:) :: prolongationOperator

@@ -105,12 +105,14 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
   delta_x = 1e-5
   one_over_dx = 1.0/delta_x
   if (useObjective .and. useAD) then
-     do fmDim=1,6
-        call VecZeroEntries(FMx(fmDim), ierr)
-        call EChk(ierr, __FILE__, __LINE__)
+     do sps=1,nTimeIntervalsSpectral
+        do fmDim=1,6
+           call VecZeroEntries(FMx(fmDim, sps), ierr)
+           call EChk(ierr, __FILE__, __LINE__)
+        end do
      end do
   end if
-
+     
   ! If we are computing the jacobian for the RANS equations, we need
   ! to make block_res think that we are evauluating the residual in a
   ! fully coupled sense.  This is reset after this routine is
@@ -304,13 +306,13 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
                                      ind >=0) then
                                    ! This real node has been peturbed
                                    do fmDim = 1,3
-                                      call VecSetValues(FMx(fmDim), 1, ind, &
+                                      call VecSetValues(FMx(fmDim, sps), 1, ind, &
                                            bcDatad(mm)%Fp(i, j, fmDim)+ &
                                            bcDatad(mm)%Fv(i, j, fmDim), &
                                            ADD_VALUES, ierr) 
                                       call EChk(ierr, __FILE__, __LINE__)
 
-                                      call VecSetValues(FMx(fmDim+3), 1, ind, &
+                                      call VecSetValues(FMx(fmDim+3, sps), 1, ind, &
                                            bcDatad(mm)%M(i,j,fmDim), &
                                            ADD_VALUES, ierr) 
                                       call EChk(ierr, __FILE__, __LINE__)
@@ -436,11 +438,13 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
   end do domainLoopAD
 
   if (useObjective .and. useAD) then
-     do fmDim=1,6
-        call VecAssemblyBegin(FMx(fmDim), ierr)
-        call EChk(ierr, __FILE__, __LINE__)
-        call VecAssemblyEnd(FMx(fmDim), ierr)
-        call EChk(ierr, __FILE__, __LINE__)
+     do sps=1,nTimeIntervalsSpectral
+        do fmDim=1,6
+           call VecAssemblyBegin(FMx(fmDim, sps), ierr)
+           call EChk(ierr, __FILE__, __LINE__)
+           call VecAssemblyEnd(FMx(fmDim, sps), ierr)
+           call EChk(ierr, __FILE__, __LINE__)
+        end do
      end do
      call MatAssemblyBegin(dFcdx, MAT_FINAL_ASSEMBLY, ierr)
      call MatAssemblyEnd(dFcdx, MAT_FINAL_ASSEMBLY, ierr)

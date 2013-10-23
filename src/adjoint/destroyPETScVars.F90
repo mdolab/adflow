@@ -6,9 +6,11 @@ subroutine destroyPETScVars
   use ADjointPETSc
   use inputADjoint    
   use blockPointers
+  use costFunctions
+  use inputTimeSpectral
   implicit none
 
-  integer(kind=intType) :: i, nLevels
+  integer(kind=intType) :: i, nLevels, sps
   
 #ifndef USE_NO_PETSC
 
@@ -65,10 +67,13 @@ subroutine destroyPETScVars
   call MatDestroy(dFdw, PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
 
-  do i=1,6
-     call VecDestroy(FMw(i), PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
+  do sps=1,nTimeIntervalsSpectral
+     do i=1,6
+        call VecDestroy(FMw(i, sps), PETScIerr)
+        call EChk(PETScIerr,__FILE__,__LINE__)
+     end do
   end do
+  deallocate(FMw)
 
   call MatDestroy(dRdx, PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
@@ -79,10 +84,13 @@ subroutine destroyPETScVars
   call VecDestroy(xVec,PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
 
-  do i=1,6
-     call VecDestroy(FMx(i), PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
+  do sps=1,ntimeIntervalsSpectral
+     do i=1,6
+        call VecDestroy(FMx(i, sps), PETScIerr)
+        call EChk(PETScIerr,__FILE__,__LINE__)
+     end do
   end do
+  deallocate(FMx)
 
   call vecDestroy(overArea, PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)

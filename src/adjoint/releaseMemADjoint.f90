@@ -24,7 +24,10 @@ subroutine releaseMemADjoint()
   use ADjointPETSc
   use blockPointers
   use inputTimeSpectral
+  use costFUnctions
   implicit none
+
+  deallocate(costFuncMat, costFuncMatd)
 
   ! Destroy the empty vectors:
   call vecDestroy(fVec1,PETScIerr)
