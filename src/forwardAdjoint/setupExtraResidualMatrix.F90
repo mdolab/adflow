@@ -83,7 +83,7 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
      deallocate(dCostFuncMatdExtra)
   end if
 
-  allocate(dCostFuncMatdExtra(6, nCostFunction, nDesignExtra))
+  allocate(dCostFuncMatdExtra(6, nCostFunction, nTimeIntervalsSpectral, nDesignExtra))
   dCostFuncmatdextra = zero
 
   ! call getDirAngle to get the baseline values for alpha and beta
@@ -258,7 +258,7 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
            end do
            
            ! Save the costfuncmatd for this peturbation
-           dCostFuncMatdExtra(:, :, iColor) = costFuncMatd(:, :)
+           dCostFuncMatdExtra(:, :, :, iColor) = costFuncMatd(:, :, :)
 
            ! Set the computed residual in dw_deriv. If using FD,
            ! actually do the FD calculation if AD, just copy out dw
