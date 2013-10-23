@@ -14,14 +14,16 @@ Subroutine computeObjectivePartialsFwd(costFunction)
   use blockPointers   
   use communication  
   use costFunctions
+  use inputTimeSpectral
   implicit none
 
   ! Input Variables
   integer(kind=intType), intent(in) :: costFunction
 
   ! Working Variables
-  integer(kind=intType) :: i, ierr
+  integer(kind=intType) :: i, ierr, sps
   real(kind=realtype) :: val
+
   !******************************************! 
   !               dIdw                       ! 
   !******************************************! 
@@ -32,11 +34,13 @@ Subroutine computeObjectivePartialsFwd(costFunction)
   call EChk(ierr,__FILE__,__LINE__)
   
   ! Write force and moment to dJdw
-  do i = 1,6
-     call VecAXPY(dJdw, costfuncmat(i, costFunction), FMw(i), ierr)
-     call EChk(ierr, __FILE__, __LINE__)
+  do sps=1,nTimeIntervalsSpectral
+     do i = 1,6
+        call VecAXPY(dJdw, costfuncmat(i, costFunction, sps), FMw(i, sps), ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+     end do
   end do
-  
+
   ! Assemble dJdw
   call VecAssemblyBegin(dJdw, ierr)
   call EChk(ierr, __FILE__, __LINE__)
@@ -50,12 +54,13 @@ Subroutine computeObjectivePartialsFwd(costFunction)
   ! Zero Entries and multiply through by costFuncMat
   call VecZeroEntries(dJdx, ierr)
   call EChk(ierr, __FILE__, __LINE__)
-  
-  do i = 1,6
-     call VecAXPY(dJdx, costfuncmat(i, costFunction), FMx(i), ierr)
-     call EChk(ierr, __FILE__, __LINE__)
+
+  do sps=1,nTimeIntervalsSpectral
+     do i = 1,6
+        call VecAXPY(dJdx, costfuncmat(i, costFunction, sps), FMx(i, sps), ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+     end do
   end do
-  
   ! Assemble dJdx
   call VecAssemblyBegin(dJdx, ierr)
   call EChk(ierr, __FILE__, __LINE__)
@@ -67,12 +72,14 @@ Subroutine computeObjectivePartialsFwd(costFunction)
   !******************************************!
   if (nDesignExtra > 0) then
      dIda = zero
-     do i = 1,6
-        ! This is actually doing a product rule of :
-        ! I = sum(i=1,6): FMextra(i) * costFuncVec(i)
-        dIda(:) = dIda(:) + dFMdExtra(i,:) * costFuncMat(i, costFunction) + &
-             FMextra(i) * dCostFuncMatdExtra(i, costFunction, :)
+     do sps=1,nTimeIntervalsSpectral
+        do i = 1,6
+           ! This is actually doing a product rule of :
+           ! I = sum(i=1,6): FMextra(i) * costFuncVec(i)
+           dIda(:) = dIda(:) + dFMdExtra(i,:) * costFuncMat(i, costFunction, sps) + &
+                FMextra(i) * dCostFuncMatdExtra(i, costFunction, 1, :)
+        end do
      end do
   end if
-
+     
 end subroutine computeObjectivePartialsFwd

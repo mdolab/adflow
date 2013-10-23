@@ -22,6 +22,7 @@ subroutine preprocessingADjoint
   use flowVarRefState
   use inputTimeSpectral
   use inputAdjoint
+  use costFunctions
   use ADjointPETSc, only: w_like1, w_like2, fvec1, fvec2, PETScIerr, &
        psi_like1, psi_like2
   implicit none
@@ -61,6 +62,11 @@ subroutine preprocessingADjoint
   nDimPsi = nState*  nCellsLocal(1_intType)*nTimeIntervalsSpectral
 
   if (.not. adjointInitialized) then
+     
+     ! Allocate costFuncMat Here!
+     allocate(costFuncMat(6, nCostFunction, nTimeIntervalsSpectral)) 
+     allocate(costFuncMatd(6, nCostFunction, nTimeIntervalsSpectral)) 
+     
      if (PETSC_VERSION_MINOR == 2) then
         call VecCreateMPIWithArray(SUMB_COMM_WORLD,ndimS,PETSC_DECIDE, &
              PETSC_NULL_SCALAR,fVec1,PETScIerr)

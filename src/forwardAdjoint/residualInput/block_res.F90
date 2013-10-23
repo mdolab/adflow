@@ -126,11 +126,15 @@ subroutine block_res(nn, sps, useSpatial, useForces, &
   ! Compute time step and spectral radius
   call timeStep_block(.false.)
 
+  spectralLoop0: do sps2=1,nTimeIntervalsSpectral
+     flowDoms(nn, 1, sps2)%dw(:,:,:,:) = zero
+  end do spectralLoop0
+  
   ! -------------------------------
   ! Compute turbulence residual for RANS equations
   if( equations == RANSEquations) then
      ! Initialize only the Turblent Variables
-     call unsteadyTurbSpectral_block(itu1, itu2, nn, sps)
+     call unsteadyTurbSpectral_block(itu1, itu1, nn, sps)
      
      select case (turbModel)
         
@@ -143,7 +147,7 @@ subroutine block_res(nn, sps, useSpatial, useForces, &
              "Only SA turbulence adjoint implemented")
         
      end select
-     
+
   endif
 
   ! -------------------------------  
@@ -240,7 +244,7 @@ subroutine block_res(nn, sps, useSpatial, useForces, &
 
      CL =  cForce(1)*liftDirection(1) &
           + cForce(2)*liftDirection(2) &
-          + cForce(3)*liftDirection(3)
+           + cForce(3)*liftDirection(3)
 
      ! Divide by fact to get the forces, Lift and Drag back
      fact = two/(gammaInf*pInf*MachCoef*MachCoef &

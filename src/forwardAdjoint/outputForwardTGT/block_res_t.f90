@@ -4,15 +4,15 @@
    !  Differentiation of block_res in forward (tangent) mode (with options debugTangent i4 dr8 r8):
    !   variations   of useful results: *(flowdoms.x) *(flowdoms.w)
    !                *(flowdoms.dw) *(*bcdata.fp) *(*bcdata.fv) *(*bcdata.m)
-   !                pointref costfuncmat moment lift cforce drag force
-   !                cd cl cmoment
+   !                pointref *costfuncmat moment lift cforce drag
+   !                force cd cl cmoment
    !   with respect to varying inputs: *(flowdoms.x) *(flowdoms.w)
    !                mach machgrid lengthref surfaceref machcoef pointref
    !                alpha beta
    !   RW status of diff variables: *(flowdoms.x):in-out *(flowdoms.w):in-out
    !                *(flowdoms.dw):out *(*bcdata.fp):out *(*bcdata.fv):out
    !                *(*bcdata.m):out mach:in machgrid:in lengthref:in
-   !                surfaceref:in machcoef:in pointref:in-out costfuncmat:out
+   !                surfaceref:in machcoef:in pointref:in-out *costfuncmat:out
    !                moment:out lift:out alpha:in cforce:out drag:out
    !                force:out cd:out beta:in cl:out cmoment:out
    !   Plus diff mem management of: flowdoms.x:in flowdoms.vol:in
@@ -23,6 +23,7 @@
    !                bmtj1:in bmtj2:in viscsubface:in *viscsubface.tau:in
    !                bcdata:in *bcdata.norm:in *bcdata.rface:in *bcdata.fp:in
    !                *bcdata.fv:in *bcdata.m:in radi:in radj:in radk:in
+   !                costfuncmat:in
    ! This is a super-combined function that combines the original
    ! functionality of: 
    ! Pressure Computation
@@ -109,6 +110,9 @@
    !  Hint: ISIZE3OFDrfflowdoms_vol should be the size of dimension 3 of array *flowdoms%vol
    !  Hint: ISIZE2OFDrfflowdoms_vol should be the size of dimension 2 of array *flowdoms%vol
    !  Hint: ISIZE1OFDrfflowdoms_vol should be the size of dimension 1 of array *flowdoms%vol
+   !  Hint: ISIZE3OFDrfcostfuncmat should be the size of dimension 3 of array *costfuncmat
+   !  Hint: ISIZE2OFDrfcostfuncmat should be the size of dimension 2 of array *costfuncmat
+   !  Hint: ISIZE1OFDrfcostfuncmat should be the size of dimension 1 of array *costfuncmat
    !  Hint: ISIZE3OFDrfDrfbcdata_m should be the size of dimension 3 of array **bcdata%m
    !  Hint: ISIZE2OFDrfDrfbcdata_m should be the size of dimension 2 of array **bcdata%m
    !  Hint: ISIZE1OFDrfDrfbcdata_m should be the size of dimension 1 of array **bcdata%m
@@ -321,7 +325,7 @@
    IF (equations .EQ. ransequations) THEN
    CALL DEBUG_TGT_CALL('UNSTEADYTURBSPECTRAL_BLOCK', .TRUE., .FALSE.)
    ! Initialize only the Turblent Variables
-   CALL UNSTEADYTURBSPECTRAL_BLOCK_T(itu1, itu2, nn, sps)
+   CALL UNSTEADYTURBSPECTRAL_BLOCK_T(itu1, itu1, nn, sps)
    CALL DEBUG_TGT_EXIT()
    SELECT CASE  (turbmodel) 
    CASE (spalartallmaras) 
@@ -667,7 +671,8 @@
    END DO
    CALL DEBUG_TGT_REAL8ARRAY('pointref', pointref, pointrefd, 3)
    CALL DEBUG_TGT_REAL8ARRAY('costfuncmat', costfuncmat, costfuncmatd, &
-   &                        6*ncostfunction)
+   &                        ISIZE1OFDrfcostfuncmat*ISIZE2OFDrfcostfuncmat*&
+   &                        ISIZE3OFDrfcostfuncmat)
    CALL DEBUG_TGT_REAL8ARRAY('moment', moment, momentd, 3)
    CALL DEBUG_TGT_REAL8('lift', lift, liftd)
    CALL DEBUG_TGT_REAL8ARRAY('cforce', cforce, cforced, 3)

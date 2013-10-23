@@ -114,15 +114,14 @@ subroutine createPETScVars
   call VecDuplicate(dJdW, adjointRHS, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  ! Create the 6 vectors for d{F,M}/dw
-  do i=1,6
-     call VecDuplicate(dJdw, FMw(i), ierr)
-     call EChk(ierr, __FILE__, __LINE__)
+  ! Create the 6 * nTimeIntervalsSpectral vectors for d{F,M}/dw
+  allocate(FMw(6, nTimeIntervalsSpectral))
+  do sps=1,nTimeIntervalsSpectral
+     do i=1,6
+        call VecDuplicate(dJdw, FMw(i, sps), ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+     end do
   end do
-
-  call VecZeroEntries(dJdw, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-
 
   ! Create dFcdw, dFcdx, dFcdx2, dFcdFn
 
@@ -308,15 +307,13 @@ subroutine createPETScVars
   call VecSetType(dJdx, "mpi", ierr) 
   call EChk(ierr, __FILE__, __LINE__)
 
-  ! Create the vectors for the FMx
-  do i=1,6
-     call VecDuplicate(dJdx, FMx(i), ierr)
-     call EChk(ierr, __FILE__, __LINE__)
+  allocate(FMx(6, nTimeIntervalsSpectral))
+  do sps=1,nTimeIntervalsSpectral
+     do i=1,6
+        call VecDuplicate(dJdx, FMx(i, sps), ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+     end do
   end do
-
-
-  
-
 
   ! Create the KSP Object
   call KSPCreate(SUMB_COMM_WORLD, adjointKSP, ierr)

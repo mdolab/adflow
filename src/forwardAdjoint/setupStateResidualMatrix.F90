@@ -143,12 +143,14 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   rkStage = 0
   
   if (useObjective .and. useAD) then
-     do fmDim=1,6
-        call VecZeroEntries(FMw(fmDim), ierr)
-        call EChk(ierr, __FILE__, __LINE__)
+     do sps=1,nTimeIntervalsSpectral
+        do fmDim=1,6
+           call VecZeroEntries(FMw(fmDim, sps), ierr)
+           call EChk(ierr, __FILE__, __LINE__)
+        end do
      end do
   end if
-
+  
   ! If we are computing the jacobian for the RANS equations, we need
   ! to make block_res think that we are evauluating the residual in a
   ! fully coupled sense.  This is reset after this routine is
@@ -346,13 +348,13 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
                                      colInd >= 0) then
                                    ! This real cell has been peturbed!
                                    do fmDim = 1,3
-                                      call VecSetValues(FMw(fmDim), 1, colInd, &
+                                      call VecSetValues(FMw(fmDim, sps), 1, colInd, &
                                            bcDatad(mm)%Fp(i, j, fmDim) + &
                                            bcDatad(mm)%Fv(i, j, fmDim), &
                                            ADD_VALUES, ierr) 
                                       call EChk(ierr, __FILE__, __LINE__)
 
-                                      call VecSetValues(FMw(fmDim+3), 1, Colind, &
+                                      call VecSetValues(FMw(fmDim+3, sps), 1, Colind, &
                                            bcDatad(mm)%M(i, j, fmDim), &
                                            ADD_VALUES, ierr) 
                                       call EChk(ierr, __FILE__, __LINE__)
@@ -487,13 +489,14 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   end do domainLoopAD
 
   if (useObjective .and. useAD) then
-     do fmDim=1,6
-        call VecAssemblyBegin(FMw(fmDim), ierr) 
-        call EChk(ierr, __FILE__, __LINE__)
-        call VecAssemblyEnd(FMw(fmDim), ierr)
-        call EChk(ierr, __FILE__, __LINE__)
+     do sps=1,nTimeIntervalsSpectral
+        do fmDim=1,6
+           call VecAssemblyBegin(FMw(fmDim, sps), ierr) 
+           call EChk(ierr, __FILE__, __LINE__)
+           call VecAssemblyEnd(FMw(fmDim, sps), ierr)
+           call EChk(ierr, __FILE__, __LINE__)
+        end do
      end do
-
      call MatAssemblyBegin(dFcdw, MAT_FINAL_ASSEMBLY, ierr)
      call MatAssemblyEnd(dFcdw, MAT_FINAL_ASSEMBLY, ierr)
   end if
@@ -562,6 +565,10 @@ contains
     ! Check if the blk has nan
     if (isnan(sum(blk))) then
        print *,'Bad Block:',blk
+       print *,'irow:',irow
+       print *,'icol',icol
+       print *,'nn:',nn
+       print *,'ijk:',i,j,k
        call EChk(1, __FILE__, __LINE__)
     end if
 #endif

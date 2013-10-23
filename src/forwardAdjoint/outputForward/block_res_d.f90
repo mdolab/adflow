@@ -4,15 +4,15 @@
    !  Differentiation of block_res in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *(flowdoms.x) *(flowdoms.w)
    !                *(flowdoms.dw) *(*bcdata.fp) *(*bcdata.fv) *(*bcdata.m)
-   !                pointref costfuncmat moment lift cforce drag force
-   !                cd cl cmoment
+   !                pointref *costfuncmat moment lift cforce drag
+   !                force cd cl cmoment
    !   with respect to varying inputs: *(flowdoms.x) *(flowdoms.w)
    !                mach machgrid lengthref surfaceref machcoef pointref
    !                alpha beta
    !   RW status of diff variables: *(flowdoms.x):in-out *(flowdoms.w):in-out
    !                *(flowdoms.dw):out *(*bcdata.fp):out *(*bcdata.fv):out
    !                *(*bcdata.m):out mach:in machgrid:in lengthref:in
-   !                surfaceref:in machcoef:in pointref:in-out costfuncmat:out
+   !                surfaceref:in machcoef:in pointref:in-out *costfuncmat:out
    !                moment:out lift:out alpha:in cforce:out drag:out
    !                force:out cd:out beta:in cl:out cmoment:out
    !   Plus diff mem management of: flowdoms.x:in flowdoms.vol:in
@@ -23,6 +23,7 @@
    !                bmtj1:in bmtj2:in viscsubface:in *viscsubface.tau:in
    !                bcdata:in *bcdata.norm:in *bcdata.rface:in *bcdata.fp:in
    !                *bcdata.fv:in *bcdata.m:in radi:in radj:in radk:in
+   !                costfuncmat:in
    ! This is a super-combined function that combines the original
    ! functionality of: 
    ! Pressure Computation
@@ -187,11 +188,15 @@
    ! #endif
    ! Compute time step and spectral radius
    CALL TIMESTEP_BLOCK_D(.false.)
+   spectralloop0:DO sps2=1,ntimeintervalsspectral
+   flowdomsd(nn, 1, sps2)%dw(:, :, :, :) = 0.0_8
+   flowdoms(nn, 1, sps2)%dw(:, :, :, :) = zero
+   END DO spectralloop0
    ! -------------------------------
    ! Compute turbulence residual for RANS equations
    IF (equations .EQ. ransequations) THEN
    ! Initialize only the Turblent Variables
-   CALL UNSTEADYTURBSPECTRAL_BLOCK_D(itu1, itu2, nn, sps)
+   CALL UNSTEADYTURBSPECTRAL_BLOCK_D(itu1, itu1, nn, sps)
    SELECT CASE  (turbmodel) 
    CASE (spalartallmaras) 
    !call determineDistance2(1, sps)

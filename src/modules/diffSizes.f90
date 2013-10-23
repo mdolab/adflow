@@ -6,7 +6,9 @@
     ! These are the diff sizes reqruied for the forward mode AD
     integer(kind=intType), parameter :: ISIZE3ofviscsubface = 3
     integer(kind=intType) :: ISIZE1OFDrfbcdata
-    
+    integer(kind=intType) :: ISIZE1OFDrfcostfuncmat
+    integer(kind=intType) :: ISIZE2OFDrfcostfuncmat
+    integer(kind=intType) :: ISIZE3OFDrfcostfuncmat
 
     integer(kind=intType) :: ISIZE1OFDrfviscsubface
     integer(kind=intType) :: ISIZE1OFDrfflowdoms
