@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include "SUmb_c_types.h"
-
+#include <fenv.h>
 /*
        ******************************************************************
        *                                                                *
@@ -88,6 +88,7 @@ int main(int argc, char **argv)
   char *param_file;
 
   /* Enroll the program in MPI; for a sequential code this is a dummy. */
+  //feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 
   MPI_Init(&argc, &argv);
 

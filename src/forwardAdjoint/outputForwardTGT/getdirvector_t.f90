@@ -3,7 +3,7 @@
    !
    !  Differentiation of getdirvector in forward (tangent) mode (with options debugTangent i4 dr8 r8):
    !   variations   of useful results: winddirection
-   !   with respect to varying inputs: alpha beta winddirection
+   !   with respect to varying inputs: alpha beta
    !
    !     ******************************************************************
    !     *                                                                *
@@ -116,8 +116,6 @@
    IF (.TRUE. .AND. DEBUG_TGT_HERE('middle', .FALSE.)) THEN
    CALL DEBUG_TGT_REAL8('alpha', alpha, alphad)
    CALL DEBUG_TGT_REAL8('beta', beta, betad)
-   CALL DEBUG_TGT_REAL8ARRAY('winddirection', winddirection, &
-   &                          winddirectiond, 3)
    CALL DEBUG_TGT_DISPLAY('middle')
    END IF
    ! Compute the wind direction vector.Aerosurf axes different!!
@@ -142,6 +140,7 @@
    xwd = 0.0_8
    ywd = 0.0_8
    END IF
+   winddirectiond = 0.0_8
    winddirectiond(1) = xwd
    winddirection(1) = xw
    winddirectiond(2) = ywd

@@ -3,7 +3,7 @@
    !
    !  Differentiation of getdirangle in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: alpha beta
-   !   with respect to varying inputs: alpha beta freestreamaxis
+   !   with respect to varying inputs: freestreamaxis
    !
    !     ******************************************************************
    !     *                                                                *
@@ -188,5 +188,7 @@
    beta = ATAN2(freestreamaxisnorm(2), freestreamaxisnorm(1))
    ELSE
    CALL TERMINATE('getDirAngle', 'Invalid Lift Direction')
+   alphad = 0.0_8
+   betad = 0.0_8
    END IF
    END SUBROUTINE GETDIRANGLE_D

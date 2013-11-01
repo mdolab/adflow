@@ -38,7 +38,6 @@ vpath %.o $(SUMB_OBJDIR)
 
 FILES_TO_COMPLEXIFY = \
 		block_res.F90\
-		getCostFuncMat.f90\
 		metric_block.F90\
 		xhalo_block.F90\
 

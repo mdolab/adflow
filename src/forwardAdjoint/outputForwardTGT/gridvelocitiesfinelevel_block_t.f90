@@ -3,8 +3,8 @@
    !
    !  Differentiation of gridvelocitiesfinelevel_block in forward (tangent) mode (with options debugTangent i4 dr8 r8):
    !   variations   of useful results: *sfacei *sfacej *s *sfacek
-   !   with respect to varying inputs: *x *si *sj *sk pinf timeref
-   !                rhoinf veldirfreestream machgrid
+   !   with respect to varying inputs: *x *si *sj *sk gammainf pinf
+   !                timeref rhoinf veldirfreestream machgrid
    !   Plus diff mem management of: sfacei:in sfacej:in s:in sfacek:in
    !                x:in si:in sj:in sk:in
    !
@@ -12,7 +12,7 @@
    !      *                                                                *
    !      * File:          gridVelocities.f90                              *
    !      * Author:        Edwin van der Weide                             *
-   !      * Starting date: 02-23-2004                                      *
+   !      * Starting date: 02-23-2004                                     *
    !      * Last modified: 06-28-2005                                      *
    !      *                                                                *
    !      ******************************************************************
@@ -95,10 +95,8 @@
    REAL(kind=realtype), DIMENSION(3) :: rotcenter, rotrate
    REAL(kind=realtype), DIMENSION(3) :: rotrated
    REAL(kind=realtype), DIMENSION(3) :: rotratetemp
-   REAL(kind=realtype), DIMENSION(3) :: rotratetempd
    REAL(kind=realtype), DIMENSION(3) :: offsetvector
    REAL(kind=realtype), DIMENSION(3, 3) :: rotratetrans
-   REAL(kind=realtype), DIMENSION(3, 3) :: rotratetransd
    REAL(kind=realtype), DIMENSION(3) :: rotationpoint
    REAL(kind=realtype), DIMENSION(3, 3) :: rotationmatrix, &
    &  derivrotationmatrix
@@ -121,8 +119,6 @@
    REAL(kind=realtype) :: TSALPHA, TSBETA, TSMACH
    REAL(kind=realtype) :: arg1
    REAL(kind=realtype) :: arg1d
-   INTRINSIC COS
-   INTRINSIC SIN
    EXTERNAL DEBUG_TGT_HERE
    LOGICAL :: DEBUG_TGT_HERE
    INTRINSIC SQRT
@@ -135,6 +131,7 @@
    &                        *ISIZE3OFDrfsj*ISIZE4OFDrfsj)
    CALL DEBUG_TGT_REAL8ARRAY('sk', sk, skd, ISIZE1OFDrfsk*ISIZE2OFDrfsk&
    &                        *ISIZE3OFDrfsk*ISIZE4OFDrfsk)
+   CALL DEBUG_TGT_REAL8('gammainf', gammainf, gammainfd)
    CALL DEBUG_TGT_REAL8('pinf', pinf, pinfd)
    CALL DEBUG_TGT_REAL8('timeref', timeref, timerefd)
    CALL DEBUG_TGT_REAL8('rhoinf', rhoinf, rhoinfd)
@@ -151,11 +148,10 @@
    !      ******************************************************************
    !
    ! Compute the mesh velocity from the given mesh Mach number.
-   !  aInf = sqrt(gammaInf*pInf/rhoInf)
-   !  velxGrid = aInf*MachGrid(1)
-   !  velyGrid = aInf*MachGrid(2)
-   !  velzGrid = aInf*MachGrid(3)
-   arg1d = (gammainf*pinfd*rhoinf-gammainf*pinf*rhoinfd)/rhoinf**2
+   ! ! vel{x,y,z}Grid0 is the ACTUAL velocity you want at the
+   ! ! geometry. The actual 
+   arg1d = ((gammainfd*pinf+gammainf*pinfd)*rhoinf-gammainf*pinf*rhoinfd)&
+   &    /rhoinf**2
    arg1 = gammainf*pinf/rhoinf
    IF (arg1 .EQ. 0.0_8) THEN
    ainfd = 0.0_8
@@ -206,13 +202,9 @@
    &        )*velygrid0d + rotationmatrix(3, 3)*velzgrid0d
    velzgrid0 = rotationmatrix(3, 1)*velxgrid0 + rotationmatrix(3, 2)*&
    &        velygrid0 + rotationmatrix(3, 3)*velzgrid0
-   alphad = 0.0_8
-   betad = 0.0_8
    ELSE IF (tsalphamode) THEN
-   ! get the baseline alpha and determine the liftIndex
-   betad = 0.0_8
-   alphad = 0.0_8
    CALL DEBUG_TGT_CALL('GETDIRANGLE', .TRUE., .FALSE.)
+   ! get the baseline alpha and determine the liftIndex
    CALL GETDIRANGLE_T(veldirfreestream, veldirfreestreamd, &
    &                   liftdirection, liftindex, alpha, alphad, beta, betad)
    CALL DEBUG_TGT_EXIT()
@@ -226,7 +218,6 @@
    refdirection(:) = zero
    refdirectiond(1) = 0.0_8
    refdirection(1) = one
-   veldird = 0.0_8
    CALL DEBUG_TGT_CALL('GETDIRVECTOR', .TRUE., .FALSE.)
    CALL GETDIRVECTOR_T(refdirection, alphats, alphatsd, beta, betad, &
    &                    veldir, veldird, liftindex)
@@ -243,10 +234,8 @@
    &        machgrid*veldird(3)
    velzgrid0 = ainf*machgrid*(-veldir(3))
    ELSE IF (tsbetamode) THEN
-   ! get the baseline alpha and determine the liftIndex
-   betad = 0.0_8
-   alphad = 0.0_8
    CALL DEBUG_TGT_CALL('GETDIRANGLE', .TRUE., .FALSE.)
+   ! get the baseline alpha and determine the liftIndex
    CALL GETDIRANGLE_T(veldirfreestream, veldirfreestreamd, &
    &                   liftdirection, liftindex, alpha, alphad, beta, betad)
    CALL DEBUG_TGT_EXIT()
@@ -260,7 +249,6 @@
    refdirection(:) = zero
    refdirectiond(1) = 0.0_8
    refdirection(1) = one
-   veldird = 0.0_8
    CALL DEBUG_TGT_CALL('GETDIRVECTOR', .TRUE., .FALSE.)
    CALL GETDIRVECTOR_T(refdirection, alpha, alphad, betats, betatsd, &
    &                    veldir, veldird, liftindex)
@@ -294,22 +282,13 @@
    &        veldirfreestream(3)) - ainf*(intervalmach+machgrid)*&
    &        veldirfreestreamd(3)
    velzgrid0 = ainf*(intervalmach+machgrid)*(-veldirfreestream(3))
-   alphad = 0.0_8
-   betad = 0.0_8
    ELSE IF (tsaltitudemode) THEN
    CALL TERMINATE('gridVelocityFineLevel', &
    &                  'altitude motion not yet implemented...')
-   alphad = 0.0_8
-   betad = 0.0_8
    ELSE
    CALL TERMINATE('gridVelocityFineLevel', &
    &                  'Not a recognized Stability Motion')
-   alphad = 0.0_8
-   betad = 0.0_8
    END IF
-   ELSE
-   alphad = 0.0_8
-   betad = 0.0_8
    END IF
    IF (blockismoving) THEN
    ! Determine the situation we are having here.
@@ -435,6 +414,33 @@
    !              **********************************************************
    !
    DO i=0,iie
+   IF (.TRUE. .AND. DEBUG_TGT_HERE('middle', .FALSE.)) THEN
+   CALL DEBUG_TGT_REAL8ARRAY('sfacei', sfacei, sfaceid, &
+   &                                ISIZE1OFDrfsfacei*ISIZE2OFDrfsfacei*&
+   &                                ISIZE3OFDrfsfacei)
+   CALL DEBUG_TGT_REAL8ARRAY('sfacej', sfacej, sfacejd, &
+   &                                ISIZE1OFDrfsfacej*ISIZE2OFDrfsfacej*&
+   &                                ISIZE3OFDrfsfacej)
+   CALL DEBUG_TGT_REAL8ARRAY('s', s, sd, ISIZE1OFDrfs*&
+   &                                ISIZE2OFDrfs*ISIZE3OFDrfs*ISIZE4OFDrfs)
+   CALL DEBUG_TGT_REAL8ARRAY('sfacek', sfacek, sfacekd, &
+   &                                ISIZE1OFDrfsfacek*ISIZE2OFDrfsfacek*&
+   &                                ISIZE3OFDrfsfacek)
+   CALL DEBUG_TGT_REAL8ARRAY('x', x, xd, ISIZE1OFDrfx*&
+   &                                ISIZE2OFDrfx*ISIZE3OFDrfx*ISIZE4OFDrfx)
+   CALL DEBUG_TGT_REAL8ARRAY('si', si, sid, ISIZE1OFDrfsi*&
+   &                                ISIZE2OFDrfsi*ISIZE3OFDrfsi*&
+   &                                ISIZE4OFDrfsi)
+   CALL DEBUG_TGT_REAL8ARRAY('sj', sj, sjd, ISIZE1OFDrfsj*&
+   &                                ISIZE2OFDrfsj*ISIZE3OFDrfsj*&
+   &                                ISIZE4OFDrfsj)
+   CALL DEBUG_TGT_REAL8ARRAY('sk', sk, skd, ISIZE1OFDrfsk*&
+   &                                ISIZE2OFDrfsk*ISIZE3OFDrfsk*&
+   &                                ISIZE4OFDrfsk)
+   CALL DEBUG_TGT_REAL8ARRAY('sc', sc, scd, 3)
+   CALL DEBUG_TGT_REAL8('oneover4dt', oneover4dt, oneover4dtd)
+   CALL DEBUG_TGT_DISPLAY('middle')
+   END IF
    ! Set the pointers for the coordinates, normals and
    ! normal velocities for this generalized i-plane.
    ! This depends on the value of mm.
@@ -474,36 +480,6 @@
    ! originally start at 0 for the i, j and k indices.
    DO k=1,kke
    DO j=1,jje
-   IF (.TRUE. .AND. DEBUG_TGT_HERE('middle', .FALSE.)) THEN
-   CALL DEBUG_TGT_REAL8ARRAY('sfacei', sfacei, sfaceid, &
-   &                                    ISIZE1OFDrfsfacei*ISIZE2OFDrfsfacei*&
-   &                                    ISIZE3OFDrfsfacei)
-   CALL DEBUG_TGT_REAL8ARRAY('sfacej', sfacej, sfacejd, &
-   &                                    ISIZE1OFDrfsfacej*ISIZE2OFDrfsfacej*&
-   &                                    ISIZE3OFDrfsfacej)
-   CALL DEBUG_TGT_REAL8ARRAY('s', s, sd, ISIZE1OFDrfs*&
-   &                                    ISIZE2OFDrfs*ISIZE3OFDrfs*&
-   &                                    ISIZE4OFDrfs)
-   CALL DEBUG_TGT_REAL8ARRAY('sfacek', sfacek, sfacekd, &
-   &                                    ISIZE1OFDrfsfacek*ISIZE2OFDrfsfacek*&
-   &                                    ISIZE3OFDrfsfacek)
-   CALL DEBUG_TGT_REAL8ARRAY('x', x, xd, ISIZE1OFDrfx*&
-   &                                    ISIZE2OFDrfx*ISIZE3OFDrfx*&
-   &                                    ISIZE4OFDrfx)
-   CALL DEBUG_TGT_REAL8ARRAY('si', si, sid, ISIZE1OFDrfsi*&
-   &                                    ISIZE2OFDrfsi*ISIZE3OFDrfsi*&
-   &                                    ISIZE4OFDrfsi)
-   CALL DEBUG_TGT_REAL8ARRAY('sj', sj, sjd, ISIZE1OFDrfsj*&
-   &                                    ISIZE2OFDrfsj*ISIZE3OFDrfsj*&
-   &                                    ISIZE4OFDrfsj)
-   CALL DEBUG_TGT_REAL8ARRAY('sk', sk, skd, ISIZE1OFDrfsk*&
-   &                                    ISIZE2OFDrfsk*ISIZE3OFDrfsk*&
-   &                                    ISIZE4OFDrfsk)
-   CALL DEBUG_TGT_REAL8ARRAY('sc', sc, scd, 3)
-   CALL DEBUG_TGT_REAL8('oneover4dt', oneover4dt, &
-   &                               oneover4dtd)
-   CALL DEBUG_TGT_DISPLAY('middle')
-   END IF
    ! The velocity of the face center is determined
    ! by a finite difference formula. First store
    ! the current coordinate, multiplied by 4 and
@@ -562,144 +538,82 @@
    ! the nonDimensional velocity is computed.
    j = nbkglobal
    rotcenter = cgnsdoms(j)%rotcenter
-   offsetvector = rotcenter - rotpoint
    rotrated = cgnsdoms(j)%rotrate*timerefd
    rotrate = timeref*cgnsdoms(j)%rotrate
-   IF (usewindaxis) THEN
-   CALL DEBUG_TGT_CALL('GETDIRANGLE', .TRUE., .FALSE.)
-   !determine the current angles from the free stream velocity
-   CALL GETDIRANGLE_T(veldirfreestream, veldirfreestreamd, &
-   &                     liftdirection, liftindex, alpha, alphad, beta, &
-   &                     betad)
-   CALL DEBUG_TGT_EXIT()
-   IF (liftindex .EQ. 2) THEN
-   rotratetransd = 0.0_8
-   ! different coordinate system for aerosurf
-   ! Wing is in z- direction
-   rotratetransd(1, 1) = -(alphad*SIN(alpha)*COS(beta)) - COS(&
-   &            alpha)*betad*SIN(beta)
-   rotratetrans(1, 1) = COS(alpha)*COS(beta)
-   rotratetransd(1, 2) = -(alphad*COS(alpha))
-   rotratetrans(1, 2) = -SIN(alpha)
-   rotratetransd(1, 3) = -(COS(alpha)*betad*COS(beta)-alphad*SIN(&
-   &            alpha)*SIN(beta))
-   rotratetrans(1, 3) = -(COS(alpha)*SIN(beta))
-   rotratetransd(2, 1) = alphad*COS(alpha)*COS(beta) - SIN(alpha)&
-   &            *betad*SIN(beta)
-   rotratetrans(2, 1) = SIN(alpha)*COS(beta)
-   rotratetransd(2, 2) = -(alphad*SIN(alpha))
-   rotratetrans(2, 2) = COS(alpha)
-   rotratetransd(2, 3) = -(alphad*COS(alpha)*SIN(beta)+SIN(alpha)&
-   &            *betad*COS(beta))
-   rotratetrans(2, 3) = -(SIN(alpha)*SIN(beta))
-   rotratetransd(3, 1) = betad*COS(beta)
-   rotratetrans(3, 1) = SIN(beta)
-   rotratetransd(3, 2) = 0.0_8
-   rotratetrans(3, 2) = 0.0
-   rotratetransd(3, 3) = -(betad*SIN(beta))
-   rotratetrans(3, 3) = COS(beta)
-   ELSE IF (liftindex .EQ. 3) THEN
-   rotratetransd = 0.0_8
-   ! Wing is in y- direction
-   !Rotate the rotation rate from the wind axis back to the local body axis
-   rotratetransd(1, 1) = -(alphad*SIN(alpha)*COS(beta)) - COS(&
-   &            alpha)*betad*SIN(beta)
-   rotratetrans(1, 1) = COS(alpha)*COS(beta)
-   rotratetransd(1, 2) = -(COS(alpha)*betad*COS(beta)-alphad*SIN(&
-   &            alpha)*SIN(beta))
-   rotratetrans(1, 2) = -(COS(alpha)*SIN(beta))
-   rotratetransd(1, 3) = -(alphad*COS(alpha))
-   rotratetrans(1, 3) = -SIN(alpha)
-   rotratetransd(2, 1) = betad*COS(beta)
-   rotratetrans(2, 1) = SIN(beta)
-   rotratetransd(2, 2) = -(betad*SIN(beta))
-   rotratetrans(2, 2) = COS(beta)
-   rotratetransd(2, 3) = 0.0_8
-   rotratetrans(2, 3) = 0.0
-   rotratetransd(3, 1) = alphad*COS(alpha)*COS(beta) - SIN(alpha)&
-   &            *betad*SIN(beta)
-   rotratetrans(3, 1) = SIN(alpha)*COS(beta)
-   rotratetransd(3, 2) = -(alphad*COS(alpha)*SIN(beta)+SIN(alpha)&
-   &            *betad*COS(beta))
-   rotratetrans(3, 2) = -(SIN(alpha)*SIN(beta))
-   rotratetransd(3, 3) = -(alphad*SIN(alpha))
-   rotratetrans(3, 3) = COS(alpha)
-   ELSE
-   CALL TERMINATE('getDirAngle', 'Invalid Lift Direction')
-   rotratetransd = 0.0_8
-   END IF
-   rotratetempd = rotrated
-   rotratetemp = rotrate
-   rotrate = 0.0
-   rotrated = 0.0_8
-   DO i=1,3
-   DO j=1,3
-   rotrated(i) = rotrated(i) + rotratetempd(j)*rotratetrans(i, &
-   &              j) + rotratetemp(j)*rotratetransd(i, j)
-   rotrate(i) = rotrate(i) + rotratetemp(j)*rotratetrans(i, j)
-   END DO
-   END DO
-   END IF
-   !!$             if (useWindAxis)then
-   !!$                !determine the current angles from the free stream velocity
-   !!$                call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
-   !!$                !Rotate the rotation rate from the wind axis back to the local body axis
-   !!$                !checkt he relationship between the differnt degrees of freedom!
-   !!$                rotRateTrans(1,1)=cos(alpha)*cos(beta)
-   !!$                rotRateTrans(1,2)=-cos(alpha)*sin(beta)
-   !!$                rotRateTrans(1,3)=-sin(alpha)
-   !!$                rotRateTrans(2,1)=sin(beta)
-   !!$                rotRateTrans(2,2)=cos(beta)
-   !!$                rotRateTrans(2,3)=0.0
-   !!$                rotRateTrans(3,1)=sin(alpha)*cos(beta)
-   !!$                rotRateTrans(3,2)=-sin(alpha)*sin(beta)
-   !!$                rotRateTrans(3,3)=cos(alpha)
-   !!$
-   !!$                rotRateTemp = rotRate
-   !!$                rotRate=0.0
-   !!$                do i=1,3
-   !!$                   do j=1,3
-   !!$                      rotRate(i)=rotRate(i)+rotRateTemp(j)*rotRateTrans(i,j)
-   !!$                   end do
-   !!$                end do
-   !!$             end if
+   ! if (useWindAxis)then
+   !    !determine the current angles from the free stream velocity
+   !    call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
+   !    if (liftIndex == 2) then
+   !       ! different coordinate system for aerosurf
+   !       ! Wing is in z- direction
+   !       rotRateTrans(1,1)=cos(alpha)*cos(beta)
+   !       rotRateTrans(1,2)=-sin(alpha)
+   !       rotRateTrans(1,3)=-cos(alpha)*sin(beta)
+   !       rotRateTrans(2,1)=sin(alpha)*cos(beta)
+   !       rotRateTrans(2,2)=cos(alpha)
+   !       rotRateTrans(2,3)=-sin(alpha)*sin(beta)
+   !       rotRateTrans(3,1)=sin(beta)
+   !       rotRateTrans(3,2)=0.0
+   !       rotRateTrans(3,3)=cos(beta)
+   !    elseif(liftIndex ==3) then
+   !       ! Wing is in y- direction
+   !       !Rotate the rotation rate from the wind axis back to the local body axis
+   !       rotRateTrans(1,1)=cos(alpha)*cos(beta)
+   !       rotRateTrans(1,2)=-cos(alpha)*sin(beta)
+   !       rotRateTrans(1,3)=-sin(alpha)
+   !       rotRateTrans(2,1)=sin(beta)
+   !       rotRateTrans(2,2)=cos(beta)
+   !       rotRateTrans(2,3)=0.0
+   !       rotRateTrans(3,1)=sin(alpha)*cos(beta)
+   !       rotRateTrans(3,2)=-sin(alpha)*sin(beta)
+   !       rotRateTrans(3,3)=cos(alpha)
+   !    else
+   !       call terminate('getDirAngle', 'Invalid Lift Direction')
+   !    endif
+   !    rotRateTemp = rotRate
+   !    rotRate=0.0
+   !    do i=1,3
+   !       do j=1,3
+   !          rotRate(i)=rotRate(i)+rotRateTemp(j)*rotRateTrans(i,j)
+   !       end do
+   !    end do
+   ! end if
    !subtract off the rotational velocity of the center of the grid
    ! to account for the added overall velocity.
    !             velxGrid =velxgrid0+ 1*(rotRate(2)*rotCenter(3) - rotRate(3)*rotCenter(2))
    !             velyGrid =velygrid0+ 1*(rotRate(3)*rotCenter(1) - rotRate(1)*rotCenter(3))
    !             velzGrid =velzgrid0+ 1*(rotRate(1)*rotCenter(2) - rotRate(2)*rotCenter(1))
-   velxgridd = velxgrid0d + offsetvector(3)*rotrated(2) - &
-   &        offsetvector(2)*rotrated(3) + offsetvector(1)*&
-   &        derivrotationmatrixd(1, 1) + offsetvector(2)*&
-   &        derivrotationmatrixd(1, 2) + offsetvector(3)*&
-   &        derivrotationmatrixd(1, 3)
-   velxgrid = velxgrid0 + 1*(rotrate(2)*offsetvector(3)-rotrate(3)*&
-   &        offsetvector(2)) + derivrotationmatrix(1, 1)*offsetvector(1) + &
-   &        derivrotationmatrix(1, 2)*offsetvector(2) + derivrotationmatrix(&
-   &        1, 3)*offsetvector(3)
-   velygridd = velygrid0d + offsetvector(1)*rotrated(3) - &
-   &        offsetvector(3)*rotrated(1) + offsetvector(1)*&
-   &        derivrotationmatrixd(2, 1) + offsetvector(2)*&
-   &        derivrotationmatrixd(2, 2) + offsetvector(3)*&
-   &        derivrotationmatrixd(2, 3)
-   velygrid = velygrid0 + 1*(rotrate(3)*offsetvector(1)-rotrate(1)*&
-   &        offsetvector(3)) + derivrotationmatrix(2, 1)*offsetvector(1) + &
-   &        derivrotationmatrix(2, 2)*offsetvector(2) + derivrotationmatrix(&
-   &        2, 3)*offsetvector(3)
-   velzgridd = velzgrid0d + offsetvector(2)*rotrated(1) - &
-   &        offsetvector(1)*rotrated(2) + offsetvector(1)*&
-   &        derivrotationmatrixd(3, 1) + offsetvector(2)*&
-   &        derivrotationmatrixd(3, 2) + offsetvector(3)*&
-   &        derivrotationmatrixd(3, 3)
-   velzgrid = velzgrid0 + 1*(rotrate(1)*offsetvector(2)-rotrate(2)*&
-   &        offsetvector(1)) + derivrotationmatrix(3, 1)*offsetvector(1) + &
-   &        derivrotationmatrix(3, 2)*offsetvector(2) + derivrotationmatrix(&
-   &        3, 3)*offsetvector(3)
+   ! print *,'velxGrid0:',velxgrid0
+   ! print *,'velygrid0:',velygrid0
+   ! print *,'velzgrid0:',velzgrid0
+   ! velxGrid =velxgrid0+ 1*(rotRate(2)*offSetVector(3) &
+   !      - rotRate(3)*offSetVector(2)) &
+   !      + derivRotationMatrix(1,1)*offSetVector(1) &
+   !      + derivRotationMatrix(1,2)*offSetVector(2) &
+   !      + derivRotationMatrix(1,3)*offSetVector(3)
+   ! velyGrid =velygrid0+ 1*(rotRate(3)*offSetVector(1)&
+   !      - rotRate(1)*offSetVector(3))&
+   !      + derivRotationMatrix(2,1)*offSetVector(1) &
+   !      + derivRotationMatrix(2,2)*offSetVector(2) &
+   !      + derivRotationMatrix(2,3)*offSetVector(3)
+   ! velzGrid =velzgrid0+ 1*(rotRate(1)*offSetVector(2) &
+   !      - rotRate(2)*offSetVector(1)) &
+   !      + derivRotationMatrix(3,1)*offSetVector(1) &
+   !      + derivRotationMatrix(3,2)*offSetVector(2) &
+   !      + derivRotationMatrix(3,3)*offSetVector(3)
+   ! print *,'velxGrid:',velxgrid
+   ! print *,'velygrid:',velygrid
+   ! print *,'velzgrid:',velzgrid
+   velxgridd = velxgrid0d
+   velxgrid = velxgrid0
+   velygridd = velygrid0d
+   velygrid = velygrid0
+   velzgridd = velzgrid0d
+   velzgrid = velzgrid0
    sd = 0.0_8
    xcd = 0.0_8
    xxcd = 0.0_8
    scd = 0.0_8
-   !add in rotmatrix*rotpoint....
    !
    !            ************************************************************
    !            *                                                          *

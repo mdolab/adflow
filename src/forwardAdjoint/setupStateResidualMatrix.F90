@@ -51,15 +51,11 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   real(kind=realType) :: delta_x, one_over_dx
 
 #ifdef USE_COMPLEX
-  complex(kind=realType) :: alpha, beta, Lift, Drag, CL, CD
-  complex(kind=realType), dimension(3) :: Force, Moment, cForce, cMoment
-  complex(kind=realType) :: alphad, betad, Liftd, Dragd, CLd, CDd
-  complex(kind=realType), dimension(3) :: Forced, Momentd, cForced, cMomentd
+  complex(kind=realType) :: alpha, beta, force(3), moment(3)
+  complex(kind=realType) :: alphad, betad, forced(3), momentd(3)
 #else
-  real(kind=realType) :: alpha, beta, Lift, Drag, CL, CD
-  real(kind=realType), dimension(3) :: Force, Moment, cForce, cMoment
-  real(kind=realType) :: alphad, betad, Liftd, Dragd, CLd, CDd
-  real(kind=realType), dimension(3) :: Forced, Momentd, cForced, cMomentd
+  real(kind=realType) :: alpha, beta, force(3), moment(3)
+  real(kind=realType) :: alphad, betad, forced(3), momentd(3)
 #endif
   integer(kind=intType) :: liftIndex
   integer(kind=intType), dimension(:,:), pointer ::  colorPtr1, colorPtr2
@@ -143,12 +139,14 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   rkStage = 0
   
   if (useObjective .and. useAD) then
-     do fmDim=1,6
-        call VecZeroEntries(FMw(fmDim), ierr)
-        call EChk(ierr, __FILE__, __LINE__)
+     do sps=1,nTimeIntervalsSpectral
+        do fmDim=1,6
+           call VecZeroEntries(FMw(fmDim, sps), ierr)
+           call EChk(ierr, __FILE__, __LINE__)
+        end do
      end do
   end if
-
+  
   ! If we are computing the jacobian for the RANS equations, we need
   ! to make block_res think that we are evauluating the residual in a
   ! fully coupled sense.  This is reset after this routine is
@@ -252,18 +250,14 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
               ! Run Block-based residual 
               if (useAD) then
 #ifndef USE_COMPLEX
-                 call block_res_d(nn, sps, .False., useObjective, &
-                      alpha, alphad, beta, betad, liftIndex, Force, Forced, &
-                      Moment, Momentd, lift, liftd, drag, dragd, cForce, &
-                      cForced, cMoment, cMomentd, CL, CLD, CD, CDd)
+                 call block_res_d(nn, sps, .False., &
+                      alpha, alphad, beta, betad, liftIndex, force, forced, moment, momentd) 
 #else
                  print *, 'Forward AD routines are not complexified'
                  stop
 #endif
               else
-                 call block_res(nn, sps, .False., .False., &
-                      alpha, beta, liftIndex, Force, Moment, Lift, Drag, &
-                      cForce, cMoment, CL, CD)
+                 call block_res(nn, sps, .False., alpha, beta, liftIndex, force, moment)
               end if
 
               ! If required, set values in the 6 vectors defined in
@@ -346,13 +340,13 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
                                      colInd >= 0) then
                                    ! This real cell has been peturbed!
                                    do fmDim = 1,3
-                                      call VecSetValues(FMw(fmDim), 1, colInd, &
+                                      call VecSetValues(FMw(fmDim, sps), 1, colInd, &
                                            bcDatad(mm)%Fp(i, j, fmDim) + &
                                            bcDatad(mm)%Fv(i, j, fmDim), &
                                            ADD_VALUES, ierr) 
                                       call EChk(ierr, __FILE__, __LINE__)
 
-                                      call VecSetValues(FMw(fmDim+3), 1, Colind, &
+                                      call VecSetValues(FMw(fmDim+3, sps), 1, Colind, &
                                            bcDatad(mm)%M(i, j, fmDim), &
                                            ADD_VALUES, ierr) 
                                       call EChk(ierr, __FILE__, __LINE__)
@@ -487,13 +481,14 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   end do domainLoopAD
 
   if (useObjective .and. useAD) then
-     do fmDim=1,6
-        call VecAssemblyBegin(FMw(fmDim), ierr) 
-        call EChk(ierr, __FILE__, __LINE__)
-        call VecAssemblyEnd(FMw(fmDim), ierr)
-        call EChk(ierr, __FILE__, __LINE__)
+     do sps=1,nTimeIntervalsSpectral
+        do fmDim=1,6
+           call VecAssemblyBegin(FMw(fmDim, sps), ierr) 
+           call EChk(ierr, __FILE__, __LINE__)
+           call VecAssemblyEnd(FMw(fmDim, sps), ierr)
+           call EChk(ierr, __FILE__, __LINE__)
+        end do
      end do
-
      call MatAssemblyBegin(dFcdw, MAT_FINAL_ASSEMBLY, ierr)
      call MatAssemblyEnd(dFcdw, MAT_FINAL_ASSEMBLY, ierr)
   end if
@@ -562,6 +557,10 @@ contains
     ! Check if the blk has nan
     if (isnan(sum(blk))) then
        print *,'Bad Block:',blk
+       print *,'irow:',irow
+       print *,'icol',icol
+       print *,'nn:',nn
+       print *,'ijk:',i,j,k
        call EChk(1, __FILE__, __LINE__)
     end if
 #endif

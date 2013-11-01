@@ -61,6 +61,7 @@ subroutine preprocessingADjoint
   nDimPsi = nState*  nCellsLocal(1_intType)*nTimeIntervalsSpectral
 
   if (.not. adjointInitialized) then
+     
      if (PETSC_VERSION_MINOR == 2) then
         call VecCreateMPIWithArray(SUMB_COMM_WORLD,ndimS,PETSC_DECIDE, &
              PETSC_NULL_SCALAR,fVec1,PETScIerr)

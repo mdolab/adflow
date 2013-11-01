@@ -2,14 +2,20 @@
    !  Tapenade 3.7 (r4786) - 21 Feb 2013 15:53
    !
    !  Differentiation of getcostfuncmat in forward (tangent) mode (with options debugTangent i4 dr8 r8):
-   !   variations   of useful results: costfuncmat
+   !   variations   of useful results: *costfuncmat
    !   with respect to varying inputs: pinf pref lengthref surfaceref
    !                machcoef dragdirection liftdirection alpha beta
+   !   Plus diff mem management of: costfuncmat:in
    SUBROUTINE GETCOSTFUNCMAT_T(alpha, alphad, beta, betad, liftindex)
    USE CONSTANTS
    USE FLOWVARREFSTATE
+   USE INPUTTIMESPECTRAL
    USE COSTFUNCTIONS
    USE INPUTPHYSICS
+   USE DIFFSIZES
+   !  Hint: ISIZE3OFDrfcostfuncmat should be the size of dimension 3 of array *costfuncmat
+   !  Hint: ISIZE2OFDrfcostfuncmat should be the size of dimension 2 of array *costfuncmat
+   !  Hint: ISIZE1OFDrfcostfuncmat should be the size of dimension 1 of array *costfuncmat
    IMPLICIT NONE
    !
    !     ******************************************************************
@@ -24,6 +30,7 @@
    REAL(kind=realtype), INTENT(IN) :: alphad, betad
    INTEGER(kind=inttype), INTENT(IN) :: liftindex
    ! Working vars
+   INTEGER(kind=inttype) :: sps
    REAL(kind=realtype) :: fact, scaledim
    REAL(kind=realtype) :: factd, scaledimd
    EXTERNAL DEBUG_TGT_HERE
@@ -52,72 +59,96 @@
    &    machcoef**2*scaledimd))/(gammainf*pinf*machcoef**2*surfaceref*lref**&
    &    2*scaledim)**2)
    fact = two/(gammainf*pinf*machcoef**2*surfaceref*lref**2*scaledim)
+   costfuncmatd = 0.0_8
    costfuncmat = zero
    costfuncmatd = 0.0_8
+   DO sps=1,ntimeintervalsspectral
+   IF (.TRUE. .AND. DEBUG_TGT_HERE('middle', .FALSE.)) THEN
+   CALL DEBUG_TGT_REAL8('lengthref', lengthref, lengthrefd)
+   CALL DEBUG_TGT_REAL8ARRAY('dragdirection', dragdirection, &
+   &                          dragdirectiond, 3)
+   CALL DEBUG_TGT_REAL8ARRAY('liftdirection', liftdirection, &
+   &                          liftdirectiond, 3)
+   CALL DEBUG_TGT_REAL8ARRAY('costfuncmat', costfuncmat, costfuncmatd&
+   &                          , ISIZE1OFDrfcostfuncmat*&
+   &                          ISIZE2OFDrfcostfuncmat*ISIZE3OFDrfcostfuncmat)
+   CALL DEBUG_TGT_REAL8('fact', fact, factd)
+   CALL DEBUG_TGT_DISPLAY('middle')
+   END IF
    ! Just set the ones we know
-   costfuncmatd(:, costfunclift) = (/liftdirectiond(1), liftdirectiond(2)&
-   &    , liftdirectiond(3), 0.0_8, 0.0_8, 0.0_8/)
-   costfuncmat(:, costfunclift) = (/liftdirection(1), liftdirection(2), &
-   &    liftdirection(3), zero, zero, zero/)
-   costfuncmatd(:, costfuncdrag) = (/dragdirectiond(1), dragdirectiond(2)&
-   &    , dragdirectiond(3), 0.0_8, 0.0_8, 0.0_8/)
-   costfuncmat(:, costfuncdrag) = (/dragdirection(1), dragdirection(2), &
-   &    dragdirection(3), zero, zero, zero/)
-   costfuncmatd(:, costfuncliftcoef) = (/liftdirectiond(1)*fact+&
-   &    liftdirection(1)*factd, liftdirectiond(2)*fact+liftdirection(2)*&
-   &    factd, liftdirectiond(3)*fact+liftdirection(3)*factd, 0.0_8, 0.0_8, &
-   &    0.0_8/)
-   costfuncmat(:, costfuncliftcoef) = (/liftdirection(1)*fact, &
-   &    liftdirection(2)*fact, liftdirection(3)*fact, zero, zero, zero/)
-   costfuncmatd(:, costfuncdragcoef) = (/dragdirectiond(1)*fact+&
-   &    dragdirection(1)*factd, dragdirectiond(2)*fact+dragdirection(2)*&
-   &    factd, dragdirectiond(3)*fact+dragdirection(3)*factd, 0.0_8, 0.0_8, &
-   &    0.0_8/)
-   costfuncmat(:, costfuncdragcoef) = (/dragdirection(1)*fact, &
-   &    dragdirection(2)*fact, dragdirection(3)*fact, zero, zero, zero/)
-   costfuncmatd(:, costfuncforcex) = 0.0_8
-   costfuncmat(:, costfuncforcex) = (/one, zero, zero, zero, zero, zero/)
-   costfuncmatd(:, costfuncforcey) = 0.0_8
-   costfuncmat(:, costfuncforcey) = (/zero, one, zero, zero, zero, zero/)
-   costfuncmatd(:, costfuncforcez) = 0.0_8
-   costfuncmat(:, costfuncforcez) = (/zero, zero, one, zero, zero, zero/)
-   costfuncmatd(:, costfuncforcexcoef) = (/factd, 0.0_8, 0.0_8, 0.0_8, &
-   &    0.0_8, 0.0_8/)
-   costfuncmat(:, costfuncforcexcoef) = (/fact, zero, zero, zero, zero, &
-   &    zero/)
-   costfuncmatd(:, costfuncforceycoef) = (/0.0_8, factd, 0.0_8, 0.0_8, &
-   &    0.0_8, 0.0_8/)
-   costfuncmat(:, costfuncforceycoef) = (/zero, fact, zero, zero, zero, &
-   &    zero/)
-   costfuncmatd(:, costfuncforcezcoef) = (/0.0_8, 0.0_8, factd, 0.0_8, &
-   &    0.0_8, 0.0_8/)
-   costfuncmat(:, costfuncforcezcoef) = (/zero, zero, fact, zero, zero, &
-   &    zero/)
-   costfuncmatd(:, costfuncmomx) = 0.0_8
-   costfuncmat(:, costfuncmomx) = (/zero, zero, zero, one, zero, zero/)
-   costfuncmatd(:, costfuncmomy) = 0.0_8
-   costfuncmat(:, costfuncmomy) = (/zero, zero, zero, zero, one, zero/)
-   costfuncmatd(:, costfuncmomz) = 0.0_8
-   costfuncmat(:, costfuncmomz) = (/zero, zero, zero, zero, zero, one/)
+   costfuncmatd(:, costfunclift, sps) = (/liftdirectiond(1), &
+   &      liftdirectiond(2), liftdirectiond(3), 0.0_8, 0.0_8, 0.0_8/)
+   costfuncmat(:, costfunclift, sps) = (/liftdirection(1), &
+   &      liftdirection(2), liftdirection(3), zero, zero, zero/)
+   costfuncmatd(:, costfuncdrag, sps) = (/dragdirectiond(1), &
+   &      dragdirectiond(2), dragdirectiond(3), 0.0_8, 0.0_8, 0.0_8/)
+   costfuncmat(:, costfuncdrag, sps) = (/dragdirection(1), &
+   &      dragdirection(2), dragdirection(3), zero, zero, zero/)
+   costfuncmatd(:, costfuncliftcoef, sps) = (/liftdirectiond(1)*fact+&
+   &      liftdirection(1)*factd, liftdirectiond(2)*fact+liftdirection(2)*&
+   &      factd, liftdirectiond(3)*fact+liftdirection(3)*factd, 0.0_8, 0.0_8&
+   &      , 0.0_8/)
+   costfuncmat(:, costfuncliftcoef, sps) = (/liftdirection(1)*fact, &
+   &      liftdirection(2)*fact, liftdirection(3)*fact, zero, zero, zero/)
+   costfuncmatd(:, costfuncdragcoef, sps) = (/dragdirectiond(1)*fact+&
+   &      dragdirection(1)*factd, dragdirectiond(2)*fact+dragdirection(2)*&
+   &      factd, dragdirectiond(3)*fact+dragdirection(3)*factd, 0.0_8, 0.0_8&
+   &      , 0.0_8/)
+   costfuncmat(:, costfuncdragcoef, sps) = (/dragdirection(1)*fact, &
+   &      dragdirection(2)*fact, dragdirection(3)*fact, zero, zero, zero/)
+   costfuncmatd(:, costfuncforcex, sps) = 0.0_8
+   costfuncmat(:, costfuncforcex, sps) = (/one, zero, zero, zero, zero&
+   &      , zero/)
+   costfuncmatd(:, costfuncforcey, sps) = 0.0_8
+   costfuncmat(:, costfuncforcey, sps) = (/zero, one, zero, zero, zero&
+   &      , zero/)
+   costfuncmatd(:, costfuncforcez, sps) = 0.0_8
+   costfuncmat(:, costfuncforcez, sps) = (/zero, zero, one, zero, zero&
+   &      , zero/)
+   costfuncmatd(:, costfuncforcexcoef, sps) = (/factd, 0.0_8, 0.0_8, &
+   &      0.0_8, 0.0_8, 0.0_8/)
+   costfuncmat(:, costfuncforcexcoef, sps) = (/fact, zero, zero, zero, &
+   &      zero, zero/)
+   costfuncmatd(:, costfuncforceycoef, sps) = (/0.0_8, factd, 0.0_8, &
+   &      0.0_8, 0.0_8, 0.0_8/)
+   costfuncmat(:, costfuncforceycoef, sps) = (/zero, fact, zero, zero, &
+   &      zero, zero/)
+   costfuncmatd(:, costfuncforcezcoef, sps) = (/0.0_8, 0.0_8, factd, &
+   &      0.0_8, 0.0_8, 0.0_8/)
+   costfuncmat(:, costfuncforcezcoef, sps) = (/zero, zero, fact, zero, &
+   &      zero, zero/)
+   costfuncmatd(:, costfuncmomx, sps) = 0.0_8
+   costfuncmat(:, costfuncmomx, sps) = (/zero, zero, zero, one, zero, &
+   &      zero/)
+   costfuncmatd(:, costfuncmomy, sps) = 0.0_8
+   costfuncmat(:, costfuncmomy, sps) = (/zero, zero, zero, zero, one, &
+   &      zero/)
+   costfuncmatd(:, costfuncmomz, sps) = 0.0_8
+   costfuncmat(:, costfuncmomz, sps) = (/zero, zero, zero, zero, zero, &
+   &      one/)
    ! update fact to get the moment
-   factd = (factd*lengthref*lref-fact*lref*lengthrefd)/(lengthref*lref)**&
-   &    2
+   factd = (factd*lengthref*lref-fact*lref*lengthrefd)/(lengthref*lref)&
+   &      **2
    fact = fact/(lengthref*lref)
-   costfuncmatd(:, costfuncmomxcoef) = (/0.0_8, 0.0_8, 0.0_8, factd, &
-   &    0.0_8, 0.0_8/)
-   costfuncmat(:, costfuncmomxcoef) = (/zero, zero, zero, fact, zero, &
-   &    zero/)
-   costfuncmatd(:, costfuncmomycoef) = (/0.0_8, 0.0_8, 0.0_8, 0.0_8, &
-   &    factd, 0.0_8/)
-   costfuncmat(:, costfuncmomycoef) = (/zero, zero, zero, zero, fact, &
-   &    zero/)
-   costfuncmatd(:, costfuncmomzcoef) = (/0.0_8, 0.0_8, 0.0_8, 0.0_8, &
-   &    0.0_8, factd/)
-   costfuncmat(:, costfuncmomzcoef) = (/zero, zero, zero, zero, zero, &
-   &    fact/)
+   costfuncmatd(:, costfuncmomxcoef, sps) = (/0.0_8, 0.0_8, 0.0_8, &
+   &      factd, 0.0_8, 0.0_8/)
+   costfuncmat(:, costfuncmomxcoef, sps) = (/zero, zero, zero, fact, &
+   &      zero, zero/)
+   costfuncmatd(:, costfuncmomycoef, sps) = (/0.0_8, 0.0_8, 0.0_8, &
+   &      0.0_8, factd, 0.0_8/)
+   costfuncmat(:, costfuncmomycoef, sps) = (/zero, zero, zero, zero, &
+   &      fact, zero/)
+   costfuncmatd(:, costfuncmomzcoef, sps) = (/0.0_8, 0.0_8, 0.0_8, &
+   &      0.0_8, 0.0_8, factd/)
+   costfuncmat(:, costfuncmomzcoef, sps) = (/zero, zero, zero, zero, &
+   &      zero, fact/)
+   END DO
+   costfuncmatd = costfuncmatd/ntimeintervalsspectral
+   costfuncmat = costfuncmat/ntimeintervalsspectral
    IF (.TRUE. .AND. DEBUG_TGT_HERE('exit', .FALSE.)) THEN
    CALL DEBUG_TGT_REAL8ARRAY('costfuncmat', costfuncmat, costfuncmatd, &
-   &                        6*ncostfunction)
+   &                        ISIZE1OFDrfcostfuncmat*ISIZE2OFDrfcostfuncmat*&
+   &                        ISIZE3OFDrfcostfuncmat)
    CALL DEBUG_TGT_DISPLAY('exit')
    END IF
    END SUBROUTINE GETCOSTFUNCMAT_T
