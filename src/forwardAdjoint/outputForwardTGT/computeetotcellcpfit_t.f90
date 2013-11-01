@@ -3,7 +3,7 @@
    !
    !  Differentiation of computeetotcellcpfit in forward (tangent) mode (with options debugTangent i4 dr8 r8):
    !   variations   of useful results: *gamma *w
-   !   with respect to varying inputs: *p *gamma *w rgas scale
+   !   with respect to varying inputs: *p *gamma *w tref rgas scale
    !   Plus diff mem management of: p:in gamma:in w:in
    !      ==================================================================
    SUBROUTINE COMPUTEETOTCELLCPFIT_T(i, j, k, scale, scaled, correctfork)
@@ -56,6 +56,7 @@
    &                        ISIZE3OFDrfp)
    CALL DEBUG_TGT_REAL8ARRAY('w', w, wd, ISIZE1OFDrfw*ISIZE2OFDrfw*&
    &                        ISIZE3OFDrfw*ISIZE4OFDrfw)
+   CALL DEBUG_TGT_REAL8('tref', tref, trefd)
    CALL DEBUG_TGT_REAL8('rgas', rgas, rgasd)
    CALL DEBUG_TGT_REAL8('scale', scale, scaled)
    CALL DEBUG_TGT_DISPLAY('entry')
@@ -75,8 +76,8 @@
    &      irho)*wd(i, j, k, itu1))
    pp = pp - twothird*w(i, j, k, irho)*w(i, j, k, itu1)
    END IF
-   td = (tref*ppd*rgas*w(i, j, k, irho)-tref*pp*(rgasd*w(i, j, k, irho)+&
-   &    rgas*wd(i, j, k, irho)))/(rgas*w(i, j, k, irho))**2
+   td = ((trefd*pp+tref*ppd)*rgas*w(i, j, k, irho)-tref*pp*(rgasd*w(i, j&
+   &    , k, irho)+rgas*wd(i, j, k, irho)))/(rgas*w(i, j, k, irho))**2
    t = tref*pp/(rgas*w(i, j, k, irho))
    ! Determine the case we are having here.
    IF (t .LE. cptrange(0)) THEN

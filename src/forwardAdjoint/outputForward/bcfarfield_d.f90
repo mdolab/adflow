@@ -4,7 +4,7 @@
    !  Differentiation of bcfarfield in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *rev *p *gamma *w *rlv
    !   with respect to varying inputs: *rev *p *gamma *w *rlv *(*bcdata.norm)
-   !                winf pinfcorr rgas
+   !                gammainf tref winf pinfcorr rgas
    !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
    !                bcdata:in *bcdata.norm:in *bcdata.rface:in
    !
@@ -46,7 +46,7 @@
    REAL(kind=realtype) :: nnx, nny, nnz
    REAL(kind=realtype) :: nnxd, nnyd, nnzd
    REAL(kind=realtype) :: gm1, ovgm1, ac1, ac2
-   REAL(kind=realtype) :: ac1d, ac2d
+   REAL(kind=realtype) :: gm1d, ovgm1d, ac1d, ac2d
    REAL(kind=realtype) :: r0, u0, v0, w0, qn0, vn0, c0, s0
    REAL(kind=realtype) :: r0d, u0d, v0d, w0d, qn0d, c0d, s0d
    REAL(kind=realtype) :: re, ue, ve, we, qne, ce
@@ -107,7 +107,9 @@
    !      ******************************************************************
    !
    ! Some constants needed to compute the riemann inVariants.
+   gm1d = gammainfd
    gm1 = gammainf - one
+   ovgm1d = -(one*gm1d/gm1**2)
    ovgm1 = one/gm1
    ! Compute the three velocity components, the speed of sound and
    ! the entropy of the free stream.
@@ -119,7 +121,8 @@
    v0 = winf(ivy)
    w0d = winfd(ivz)
    w0 = winf(ivz)
-   arg1d = gammainf*(pinfcorrd*r0+pinfcorr*r0d)
+   arg1d = (gammainfd*pinfcorr+gammainf*pinfcorrd)*r0 + gammainf*pinfcorr&
+   &    *r0d
    arg1 = gammainf*pinfcorr*r0
    IF (arg1 .EQ. 0.0_8) THEN
    c0d = 0.0_8
@@ -127,11 +130,17 @@
    c0d = arg1d/(2.0*SQRT(arg1))
    END IF
    c0 = SQRT(arg1)
-   IF (winf(irho) .GT. 0.0_8 .OR. (winf(irho) .LT. 0.0_8 .AND. gammainf &
-   &      .EQ. INT(gammainf))) THEN
-   pwr1d = gammainf*winf(irho)**(gammainf-1)*winfd(irho)
-   ELSE IF (winf(irho) .EQ. 0.0_8 .AND. gammainf .EQ. 1.0) THEN
+   IF (winf(irho) .GT. 0.0_8) THEN
+   pwr1d = winf(irho)**gammainf*(LOG(winf(irho))*gammainfd+gammainf*&
+   &      winfd(irho)/winf(irho))
+   ELSE IF (winf(irho) .EQ. 0.0_8) THEN
+   IF (gammainf .EQ. 1.0) THEN
    pwr1d = winfd(irho)
+   ELSE
+   pwr1d = 0.0_8
+   END IF
+   ELSE IF (gammainf .EQ. INT(gammainf)) THEN
+   pwr1d = gammainf*winf(irho)**(gammainf-1)*winfd(irho)
    ELSE
    pwr1d = 0.0_8
    END IF
@@ -218,25 +227,25 @@
    ! (otherwise).
    IF (vn0 .GT. -c0) THEN
    ! Outflow or subsonic inflow.
-   ac1d = qned + two*ovgm1*ced
+   ac1d = qned + two*(ovgm1d*ce+ovgm1*ced)
    ac1 = qne + two*ovgm1*ce
    ELSE
    ! Supersonic inflow.
-   ac1d = qn0d + two*ovgm1*c0d
+   ac1d = qn0d + two*(ovgm1d*c0+ovgm1*c0d)
    ac1 = qn0 + two*ovgm1*c0
    END IF
    IF (vn0 .GT. c0) THEN
    ! Supersonic outflow.
-   ac2d = qned - two*ovgm1*ced
+   ac2d = qned - two*(ovgm1d*ce+ovgm1*ced)
    ac2 = qne - two*ovgm1*ce
    ELSE
    ! Inflow or subsonic outflow.
-   ac2d = qn0d - two*ovgm1*c0d
+   ac2d = qn0d - two*(ovgm1d*c0+ovgm1*c0d)
    ac2 = qn0 - two*ovgm1*c0
    END IF
    qnfd = half*(ac1d+ac2d)
    qnf = half*(ac1+ac2)
-   cfd = fourth*gm1*(ac1d-ac2d)
+   cfd = fourth*((ac1d-ac2d)*gm1+(ac1-ac2)*gm1d)
    cf = fourth*(ac1-ac2)*gm1
    IF (vn0 .GT. zero) THEN
    ! Outflow.
@@ -297,11 +306,17 @@
    qq = uf*uf + vf*vf + wf*wf
    pwx1d = sfd*cc + sf*ccd
    pwx1 = sf*cc
-   IF (pwx1 .GT. 0.0_8 .OR. (pwx1 .LT. 0.0_8 .AND. ovgm1 .EQ. INT&
-   &              (ovgm1))) THEN
-   ww1d(i, j, irho) = ovgm1*pwx1**(ovgm1-1)*pwx1d
-   ELSE IF (pwx1 .EQ. 0.0_8 .AND. ovgm1 .EQ. 1.0) THEN
+   IF (pwx1 .GT. 0.0_8) THEN
+   ww1d(i, j, irho) = pwx1**ovgm1*(LOG(pwx1)*ovgm1d+ovgm1*pwx1d&
+   &              /pwx1)
+   ELSE IF (pwx1 .EQ. 0.0_8) THEN
+   IF (ovgm1 .EQ. 1.0) THEN
    ww1d(i, j, irho) = pwx1d
+   ELSE
+   ww1d(i, j, irho) = 0.0_8
+   END IF
+   ELSE IF (ovgm1 .EQ. INT(ovgm1)) THEN
+   ww1d(i, j, irho) = ovgm1*pwx1**(ovgm1-1)*pwx1d
    ELSE
    ww1d(i, j, irho) = 0.0_8
    END IF

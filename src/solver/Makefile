@@ -57,7 +57,7 @@ FILES_TO_COMPLEXIFY = \
 	       calMassFlux.f90\
 	       coeffConvergenceCheck.f90\
 	       convergenceInfo.F90\
-	       computedwDADI.f90\
+	       computedwD3ADI.f90\
 	       computeInletMassFlowFullWheel.f90\
 	       computeLamViscosity.f90\
 	       computeUtau.f90\

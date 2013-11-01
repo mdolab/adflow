@@ -3,8 +3,8 @@
    !
    !  Differentiation of setflowinfinitystate in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: winf pinfcorr
-   !   with respect to varying inputs: pinf rhoinf muinf uinf rgas
-   !                veldirfreestream machcoef
+   !   with respect to varying inputs: gammainf pinf rhoinf tref muinf
+   !                uinf rgas veldirfreestream
    !
    !      ******************************************************************
    !      *                                                                *
@@ -55,9 +55,8 @@
    ! Compute the velocity squared based on MachCoef;
    ! needed for the initialization of the turbulent energy,
    ! especially for moving geometries.
-   uinf2d = (gammainf*((machcoefd*machcoef+machcoef*machcoefd)*pinf+&
-   &    machcoef**2*pinfd)*rhoinf-machcoef**2*gammainf*pinf*rhoinfd)/rhoinf&
-   &    **2
+   uinf2d = (machcoef**2*(gammainfd*pinf+gammainf*pinfd)*rhoinf-machcoef&
+   &    **2*gammainf*pinf*rhoinfd)/rhoinf**2
    uinf2 = machcoef*machcoef*gammainf*pinf/rhoinf
    winfd = 0.0_8
    ! Allocate the memory for wInf.

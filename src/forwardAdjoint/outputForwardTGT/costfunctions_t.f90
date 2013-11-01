@@ -43,6 +43,6 @@
    &  costfunccfyalphadot=34, costfunccfyq=35, costfunccfyqdot=36, &
    &  costfuncbendingcoef=37
    REAL(kind=realtype), DIMENSION(:), ALLOCATABLE :: functionvalue
-   REAL(kind=realtype), DIMENSION(6, ncostfunction) :: costfuncmat
-   REAL(kind=realtype), DIMENSION(6, ncostfunction) :: costfuncmatd
+   REAL(kind=realtype), DIMENSION(:, :, :), ALLOCATABLE :: costfuncmat
+   REAL(kind=realtype), DIMENSION(:, :, :), ALLOCATABLE :: costfuncmatd
    END MODULE COSTFUNCTIONS_T

@@ -24,6 +24,7 @@ subroutine releaseMemADjoint()
   use ADjointPETSc
   use blockPointers
   use inputTimeSpectral
+  use costFUnctions
   implicit none
 
   ! Destroy the empty vectors:

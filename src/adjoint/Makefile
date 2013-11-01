@@ -7,21 +7,6 @@
 #      *                                                                *
 #      ******************************************************************
 
-#      ******************************************************************
-#      *                                                                *
-#      * Description: Makefile to create the object files of this       *
-#      * directory.                                                     *
-#      *                                                                *
-#      ******************************************************************
-
-#      ==================================================================
-
-#      ******************************************************************
-#      *                                                                *
-#      * Include the settings for the entire code.                      *
-#      *                                                                *
-#      ******************************************************************
-
 SUMB_DIR = ../..
 SUMB_COMMON_FILE = $(SUMB_DIR)/SUmb_Common.mk
 SUMB_RULES_FILE  = $(SUMB_DIR)/rulesSources.mk
@@ -39,8 +24,6 @@ vpath %.o $(SUMB_OBJDIR)
 FILES_TO_COMPLEXIFY = \
 		adjointPythonInterfaceFunctions.F90\
 		computeAeroCoef.f90        \
-		computeObjPartials.F90\
-		copyADjointStencil.f90     \
 		createPETScVars.F90        \
 		destroyPETScVars.F90       \
 		preallocation.F90          \
@@ -49,17 +32,19 @@ FILES_TO_COMPLEXIFY = \
 		initializePETSc.F90        \
 		preprocessingADjoint.F90   \
 		releaseMemADjoint.f90      \
-		setupAllResidualMatrices.F90\
-		setupRestrictionMatrices.F90\
-		setupProlongationMatrix.F90\
 		setupPETScKsp.F90         \
-		solverADjoint.F90         \
 		updateFlow.f90            \
 		updateReferencePoint.f90   \
 		updateRotationRate.f90     \
-		setupCouplingMatrixStruct.F90\
 		matrixInfo.F90\
 		adjoint_stencils.f90\
+		setupCouplingMatrixStruct.F90\
+#		copyADjointStencil.f90    \
+		solverADjoint.F90         \
+		setupAllResidualMatrices.F90\
+		setupRestrictionMatrices.F90\
+		setupProlongationMatrix.F90\
+		computeObjPartials.F90\
 
 FILES_TO_COPY = \
 		solveADjointTransposePETSc.F90\

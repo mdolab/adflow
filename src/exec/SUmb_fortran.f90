@@ -51,10 +51,7 @@
        ! the parameter file.
 
        !set reference time
-!!$       if(myID==0)then
-!!$          print *, 'Set reference time ....'
        call cpu_time(timer(1))
-!!$       endif
 
        call initExec(execName, lenExec, paramName, lenParam, &
                      nArgs, sizeC_int)
@@ -83,53 +80,27 @@
           call cpu_time(timer(2))
           print *, "       time to end of solver = ", timer(2)-timer(1) 
        endif
-
-     
-!stop
-       if(TSStability)then
-          !call stabilityDerivativeDriver
-          !call computeTSDerivatives
-          
-          if(myID==0)then
-             call cpu_time(timer(4))
-             print *, "       time for tsDerivatives = ", timer(4)-timer(3)
-          endif
-       end if
-
-       ! Solve ADjoint
-       
-       if(solveADjoint) then
-          call solverADjoint
-          
-          if(myID==0)then
-             call cpu_time(timer(3))
-             print *, "       time for adjoint = ", timer(3)-timer(2)
-          endif
-       end if
-       !print *,'tsstability',TSStability
-
+       stop
        ! First part to release the memory.
-       !print *,'releasing memory'
+
        call releaseMemoryPart1
-       !print *,'memory released'
+
        ! Check if for the time spectral method additional solution
        ! files must be written.
        
        if(equationMode == timeSpectral) then
-        !  print *,'writing ts 1'
          if( writeUnsteadyRestartSpectral ) &
            call writeUnsteadyFromSpectral
-         !print *,'writing ts 2'
+
          if(writeUnsteadyVolSpectral .or. &
             writeUnsteadySurfSpectral)    &
            call writeInterpolFromSpectral
-         !print *,'written'
        endif
 
        ! Second part to release the memory.
-       !print *,'releasing memory 2'
+
        call releaseMemoryPart2
-       !print *,'memory released 2'
+
        ! Write the parameters used for this run to stdout.
 
        call writeInputParam

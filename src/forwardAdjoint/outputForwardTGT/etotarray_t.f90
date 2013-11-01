@@ -3,7 +3,8 @@
    !
    !  Differentiation of etotarray in forward (tangent) mode (with options debugTangent i4 dr8 r8):
    !   variations   of useful results: etot
-   !   with respect to varying inputs: k p u v w etot rho (global)rgas
+   !   with respect to varying inputs: k p u v w etot rho (global)tref
+   !                (global)rgas
    !      ==================================================================
    SUBROUTINE ETOTARRAY_T(rho, rhod, u, ud, v, vd, w, wd, p, pd, k, kd, &
    &  etot, etotd, correctfork, kk)
