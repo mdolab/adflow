@@ -34,7 +34,7 @@
       !       psi(il,jl,kl,nw) in each local domain mapped to a vector.
       !       Size[nNodes*nw].
       !
-      ! dJdW  Right-hand side vector holding the cost function J
+      ! dJdW  Right-hand side vector holding the cost function Jpetsc
       !       sensitivity w.r.t. W: dJ/dW.
       !       dJdW(il,jl,kl,nw) in each local domain mapped to a vector.
       !       Size[nNodes*nw].
@@ -51,9 +51,9 @@
       Mat     dRdWT, dRdWPreT
       Mat     dRda, dRdx
       Mat     dFcdw, dFcdx, dFndFc
-      Mat     dFdx, dFdw
-      Vec, dimension(6) :: FMw
-      Vec, dimension(6) :: FMx
+      Mat     dFdx, dFdw, doAdX
+      Vec, allocatable, dimension(:,:) :: FMw ! 6 by ntimespectral instance
+      Vec, allocatable, dimension(:,:) :: FMx ! 6 by ntimespectral instance
       Mat, allocatable, dimension(:) :: coarsedRdWPreT
       Mat, allocatable, dimension(:) :: restrictionOperator
       Mat, allocatable, dimension(:) :: prolongationOperator
@@ -66,6 +66,7 @@
       Vec     w_like1, w_like2, psi_like1, psi_like2
       Vec     dJcdW
       VecScatter dRdaTpsi_scatter
+      VecScatter XstoXv
       PetscErrorCode PETScIerr
 
       !adjointKSP   Linear solver (Krylov subspace method) context
@@ -76,7 +77,7 @@
 
       ! Data for dRda and dFMdExtra
       real(kind=realType), allocatable, dimension(:,:) :: dRda_data
-      real(kind=realType), allocatable, dimension(:,:) :: dFMdExtra
+      real(kind=realType), allocatable, dimension(:,:,:) :: dFMdExtra
        ! Logical identifying the type of PETSc matrix being used for dRdW
        logical :: PETScBlockMatrix
 

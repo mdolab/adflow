@@ -10,7 +10,7 @@ subroutine createPETScVars
   !
   use ADjointPETSc, only: dRdwT, dRdwPreT, dJdw, psi, adjointRHS, adjointRes, &
        FMw, dFcdw, dFcdx, dFndFc, dFdx, dFdw, dRdx, xVec, dJdx, FMx, dRda, &
-       adjointKSP, dFMdExtra, dRda_data, overArea, fCell, fNode
+       adjointKSP, dFMdExtra, dRda_data, overArea, fCell, fNode, doAdx
   use ADjointVars   
   use BCTypes
   use communication  
@@ -114,15 +114,14 @@ subroutine createPETScVars
   call VecDuplicate(dJdW, adjointRHS, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  ! Create the 6 vectors for d{F,M}/dw
-  do i=1,6
-     call VecDuplicate(dJdw, FMw(i), ierr)
-     call EChk(ierr, __FILE__, __LINE__)
+  ! Create the 6 * nTimeIntervalsSpectral vectors for d{F,M}/dw
+  allocate(FMw(6, nTimeIntervalsSpectral))
+  do sps=1,nTimeIntervalsSpectral
+     do i=1,6
+        call VecDuplicate(dJdw, FMw(i, sps), ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+     end do
   end do
-
-  call VecZeroEntries(dJdw, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-
 
   ! Create dFcdw, dFcdx, dFcdx2, dFcdFn
 
@@ -139,7 +138,6 @@ subroutine createPETScVars
   ! dFndFc: Derivative of the nodal forces with respect to the face
   ! centered forces. This matrix will consist entirely of rows with 4
   ! values each of which is exactly 1/4 
-
 
   ! dFcdw
   allocate( nnzDiagonal(nDimCell), nnzOffDiag(nDimCell))
@@ -171,6 +169,15 @@ subroutine createPETScVars
 
   call myMatCreate(dFcdx, 1, nDimCell, nDimX, nnzDiagonal, nnzOffDiag, &
        __FILE__, __LINE__)
+  deallocate(nnzDiagonal, nnzOffDiag)
+
+  ! doAdx -> Derviative of 1/area wrt the spatial nodes.
+  allocate( nnzDiagonal(nDimPt), nnzOffDiag(nDimPt))
+  nnzDiagonal = 3*3*3
+  nnzOffDiag = 0
+
+  call myMatCreate(doAdx, 1, nDimPt, nDimx, nnzDiagonal, nnzOffDiag, &
+       __FILE__, __LINE__)
 
   deallocate(nnzDiagonal, nnzOffDiag)
 
@@ -181,7 +188,6 @@ subroutine createPETScVars
   nnzOffDiag  = 4 ! This should be enough...might get a couple of mallocs
   call myMatCreate(dFndFc, 1, nDimPt, nDimCell, nnzDiagonal, nnzOffDiag, &
        __FILE__, __LINE__)
-
 
   deallocate(nnzDiagonal, nnzOffDiag)
 
@@ -308,15 +314,13 @@ subroutine createPETScVars
   call VecSetType(dJdx, "mpi", ierr) 
   call EChk(ierr, __FILE__, __LINE__)
 
-  ! Create the vectors for the FMx
-  do i=1,6
-     call VecDuplicate(dJdx, FMx(i), ierr)
-     call EChk(ierr, __FILE__, __LINE__)
+  allocate(FMx(6, nTimeIntervalsSpectral))
+  do sps=1,nTimeIntervalsSpectral
+     do i=1,6
+        call VecDuplicate(dJdx, FMx(i, sps), ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+     end do
   end do
-
-
-  
-
 
   ! Create the KSP Object
   call KSPCreate(SUMB_COMM_WORLD, adjointKSP, ierr)
@@ -333,7 +337,7 @@ subroutine createPETScVars
   if (allocated(dFMdExtra)) then
      deallocate(dFMdExtra)
   end if
-  allocate(dFMdExtra(6, nDesignExtra))
+  allocate(dFMdExtra(6, nDesignExtra, nTimeIntervalsSpectral))
 
   if (PETSC_VERSION_MINOR < 3 ) then
      call MatCreateMPIDense(SUMB_COMM_WORLD, nDimW, PETSC_DECIDE, &

@@ -3,7 +3,7 @@
    !
    !  Differentiation of getdirvector in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: winddirection
-   !   with respect to varying inputs: alpha beta winddirection
+   !   with respect to varying inputs: alpha beta
    !
    !     ******************************************************************
    !     *                                                                *
@@ -120,6 +120,7 @@
    xwd = 0.0_8
    ywd = 0.0_8
    END IF
+   winddirectiond = 0.0_8
    winddirectiond(1) = xwd
    winddirection(1) = xw
    winddirectiond(2) = ywd

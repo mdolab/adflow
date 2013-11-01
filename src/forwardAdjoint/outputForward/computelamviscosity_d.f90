@@ -3,7 +3,7 @@
    !
    !  Differentiation of computelamviscosity in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *p *rlv
-   !   with respect to varying inputs: *p *w muref rgas
+   !   with respect to varying inputs: *p *w muref tref rgas
    !   Plus diff mem management of: p:in w:in rlv:in
    !
    !      ******************************************************************
@@ -41,7 +41,7 @@
    !
    INTEGER(kind=inttype) :: i, j, k
    REAL(kind=realtype) :: musuth, tsuth, ssuth, t
-   REAL(kind=realtype) :: musuthd, td
+   REAL(kind=realtype) :: musuthd, tsuthd, ssuthd, td
    LOGICAL :: correctfork
    !
    !      ******************************************************************
@@ -69,7 +69,9 @@
    ! Compute the nonDimensional constants in sutherland's law.
    musuthd = -(musuthdim*murefd/muref**2)
    musuth = musuthdim/muref
+   tsuthd = -(tsuthdim*trefd/tref**2)
    tsuth = tsuthdim/tref
+   ssuthd = -(ssuthdim*trefd/tref**2)
    ssuth = ssuthdim/tref
    ! Substract 2/3 rho k, which is a part of the normal turbulent
    ! stresses, in case the pressure must be corrected.
@@ -99,10 +101,11 @@
    &            , j, k, irho)+rgas*wd(i, j, k, irho)))/(rgas*w(i, j, k, irho&
    &            ))**2
    t = p(i, j, k)/(rgas*w(i, j, k, irho))
-   rlvd(i, j, k) = (musuthd*(tsuth+ssuth)/(t+ssuth)-musuth*(tsuth&
-   &            +ssuth)*td/(t+ssuth)**2)*(t/tsuth)**1.5_realType + musuth*(&
-   &            tsuth+ssuth)*1.5_realType*(t/tsuth)**0.5*td/((t+ssuth)*tsuth&
-   &            )
+   rlvd(i, j, k) = (musuthd*(tsuth+ssuth)/(t+ssuth)+musuth*((&
+   &            tsuthd+ssuthd)*(t+ssuth)-(tsuth+ssuth)*(td+ssuthd))/(t+ssuth&
+   &            )**2)*(t/tsuth)**1.5_realType + musuth*(tsuth+ssuth)*&
+   &            1.5_realType*(t/tsuth)**0.5*(td*tsuth-t*tsuthd)/((t+ssuth)*&
+   &            tsuth**2)
    rlv(i, j, k) = musuth*((tsuth+ssuth)/(t+ssuth))*(t/tsuth)**&
    &            1.5_realType
    END DO

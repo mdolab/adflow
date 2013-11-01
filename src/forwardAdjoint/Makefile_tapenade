@@ -38,28 +38,22 @@ SUMB_DIR = ../..
 SUMB_COMMON_FILE = $(SUMB_DIR)/SUmb_Common.mk
 SRC = ..
 
-# Dependent output variables (separator: white space, default: all)
-TAPENADE_OUTVARS = "flowdoms%dw  Force Moment Lift Drag cForce cMoment CL CD BCData%Fp BCData%Fv BCData%M costFuncMat flowdoms%w flowdoms%x"
-
-# Independent input variables (separator: white space, default: all)
-TAPENADE_VARS = "flowdoms%w flowdoms%x alpha beta mach machgrid machcoef lengthref pointref surfaceref"
-
-# Name of the top routine
-TAPENADE_HEADROUTINE = "block_res"
-
 # Integer, double and real precision (bytes)
 TAPENADE_PRECISION = -i4 -dr8 -r8
 
-#     ******************************************************************
-#     *                                                                *
-#     * Routines to be differentiated (and dependencies).              *
-#     *                                                                *
-#     ******************************************************************
+# -------------------- Residual AD Info---------------------------------
+# Dependent output variables (separator: white space, default: all)
+TAPENADE_RES_OUTVARS = "flowdoms%dw  BCData%Fp BCData%Fv BCData%M  BCData%oArea flowdoms%w flowdoms%x force moment"
 
-ALL_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.F90\
+# Independent input variables (separator: white space, default: all)
+TAPENADE_RES_VARS = "flowdoms%w flowdoms%x alpha beta mach machgrid pointref Pref Reynolds tempFreeStream"
+
+# Name of the top routine
+TAPENADE_RES_HEADROUTINE = "block_res"
+
+ALL_RES_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.F90\
 		$(SRC)/forwardAdjoint/residualInput/xhalo_block.F90\
 		$(SRC)/forwardAdjoint/residualInput/metric_block.F90\
-		$(SRC)/forwardAdjoint/residualInput/getCostFuncMat.f90\
 		$(SRC)/modules/monitor.f90\
 		$(SRC)/modules/diffSizes.f90\
 		$(SRC)/modules/block.F90\
@@ -75,7 +69,6 @@ ALL_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.F90\
 		$(SRC)/modules/CpCurveFits.f90\
 		$(SRC)/modules/blockPointers.F90 \
 		$(SRC)/modules/flowVarRefState.F90 \
-		$(SRC)/modules/costFunctions.F90\
 		$(SRC)/solver/inviscidCentralFlux.F90\
 		$(SRC)/solver/inviscidDissFluxCusp.f90\
 		$(SRC)/solver/inviscidDissFluxCuspCoarse.f90\
@@ -143,7 +136,54 @@ ALL_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.F90\
 		$(SRC)/utils/setPointers.f90\
 		$(SRC)/utils/terminate.F90
 
-IFILES := $(ALL_FILES:%=%.f90)
+# intermediate residual files.
+I_RES_FILES := $(ALL_RES_FILES:%=%.f90)
+# ---------------------------------------------------------------------
+
+# -------------------- CostFunction AD Info----------------------------
+# Dependent output variables (separator: white space, default: all)
+TAPENADE_COST_OUTVARS = "objValue"
+
+# Independent input variables (separator: white space, default: all)
+TAPENADE_COST_VARS = "force moment alpha beta  machgrid machcoef pointref lengthref"
+
+# Name of the top routine
+TAPENADE_COST_HEADROUTINE = "getCostFunction"
+
+ALL_COST_FILES =$(SRC)/forwardAdjoint/costInput/costFunction.F90\
+		$(SRC)/solver/adjustInflowAngle.f90\
+		$(SRC)/stabilityDerivatives/computeTSDerivatives.f90\
+		$(SRC)/stabilityDerivatives/computeLeastSquaresRegression.f90\
+		$(SRC)/bendingMomentAnalysis/rootBendingMomentAnalysis.f90\
+		$(SRC)/modules/inputParam.F90\
+		$(SRC)/modules/monitor.f90\
+		$(SRC)/modules/diffSizes.f90\
+		$(SRC)/modules/block.F90\
+		$(SRC)/modules/constants.F90 \
+		$(SRC)/modules/precision_tapenade.f90\
+		$(SRC)/modules/iteration.f90\
+		$(SRC)/modules/section.f90\
+		$(SRC)/modules/communication.f90\
+		$(SRC)/modules/BCTypes.f90\
+		$(SRC)/modules/paramTurb.F90\
+		$(SRC)/modules/cgnsGrid.f90 \
+		$(SRC)/modules/CpCurveFits.f90\
+		$(SRC)/modules/blockPointers.F90 \
+		$(SRC)/modules/flowVarRefState.F90 \
+		$(SRC)/modules/costFunctions.F90\
+		$(SRC)/utils/TSalpha.f90\
+		$(SRC)/utils/TSalphadot.f90\
+		$(SRC)/solver/getDirVector.f90\
+		$(SRC)/solver/getDirAngle.f90\
+		$(SRC)/solver/vectorRotation.f90\
+		$(SRC)/utils/derivativeRigidRotAngle.f90\
+		$(SRC)/utils/secondDerivativeRigidRotAngle.f90\
+
+# intermediate cost files
+I_COST_FILES := $(ALL_COST_FILES:%=%.f90)
+
+# ---------------------------------------------------------------------
+
 #     ******************************************************************
 #     *                                                                *
 #     * General targets.                                               *
@@ -151,6 +191,31 @@ IFILES := $(ALL_FILES:%=%.f90)
 #     ******************************************************************
 
 default: ad_forward
+
+cost:
+# Differenate the cost functions in reverse
+	rm -fr tmp_cost
+
+# Next create the holidng directory:
+	mkdir -p temp_cost
+
+# Run preprocessor on all input files
+	make -f Makefile_tapenade preprocess_cost
+
+# The following is the single Tapenade command to run:
+	$(TAPENADE_HOME)/bin/tapenade -html \
+	-outvars $(TAPENADE_COST_OUTVARS) \
+	-vars $(TAPENADE_COST_VARS) \
+	-head $(TAPENADE_COST_HEADROUTINE)  \
+	-reverse $(TAPENADE_PRECISION) \
+	-O temp_cost $(I_COST_FILES)
+
+# Run the auto-edit file:
+	python autoEdit/autoEditCost.py temp_cost outputCost
+
+# Remove preprocessor files
+	make -f Makefile_tapenade cleanpreprocess_cost
+
 
 ad_forward:
 # First delete the holding directory if it exists
@@ -164,17 +229,17 @@ ad_forward:
 
 # The following is the single Tapenade command to run:
 	$(TAPENADE_HOME)/bin/tapenade -html \
-	-outvars $(TAPENADE_OUTVARS) \
-	-vars $(TAPENADE_VARS) \
-	-head $(TAPENADE_HEADROUTINE)  \
+	-outvars $(TAPENADE_RES_OUTVARS) \
+	-vars $(TAPENADE_RES_VARS) \
+	-head $(TAPENADE_RES_HEADROUTINE)  \
 	-forward $(TAPENADE_PRECISION) \
-	-O temp_forward $(IFILES)
+	-O temp_forward $(I_RES_FILES)
 
 # Run the auto-edit file:
 	python autoEdit/autoEditForward.py temp_forward outputForward
 
 # Remove preprocessor files
-	make -f Makefile_tapenade cleanpreprocess
+	make -f Makefile_tapenade cleanpreprocess_res
 
 ad_forward_multi:
 # First delete the holding directory if it exists
@@ -188,18 +253,18 @@ ad_forward_multi:
 
 # The following is the single Tapenade command to run:
 	$(TAPENADE_HOME)/bin/tapenade -html \
-	-outvars $(TAPENADE_OUTVARS) \
-	-vars $(TAPENADE_VARS) \
-	-head $(TAPENADE_HEADROUTINE)  \
+	-outvars $(TAPENADE_RES_OUTVARS) \
+	-vars $(TAPENADE_RES_VARS) \
+	-head $(TAPENADE_RES_HEADROUTINE)  \
 	-diffvarname dv \
 	-forward -multi $(TAPENADE_PRECISION) \
-	-O temp_forward_multi $(IFILES)
+	-O temp_forward_multi $(I_RES_FILES)
 
 # Run the auto-edit file:
 	python autoEdit/autoEditMulti.py temp_forward_multi outputForwardMulti
 
 # Remove preprocessor files
-	make -f Makefile_tapenade cleanpreprocess
+	make -f Makefile_tapenade cleanpreprocess_res
 
 ad_reverse:
 # First delete the holding directory if it exists
@@ -213,17 +278,17 @@ ad_reverse:
 
 # The following is the single Tapenade command to run:
 	$(TAPENADE_HOME)/bin/tapenade -html \
-	-outvars $(TAPENADE_OUTVARS) \
-	-vars $(TAPENADE_VARS) \
-	-head $(TAPENADE_HEADROUTINE)  \
+	-outvars $(TAPENADE_RES_OUTVARS) \
+	-vars $(TAPENADE_RES_VARS) \
+	-head $(TAPENADE_RES_HEADROUTINE)  \
 	-reverse 	 -msglevel 30 $(TAPENADE_PRECISION) \
-	-O temp_reverse $(IFILES)
+	-O temp_reverse $(I_RES_FILES)
 
 # Run the auto-edit file:
 	python autoEdit/autoEditReverse.py temp_reverse outputReverse
 
 # Remove preprocessor files
-	make -f Makefile_tapenade cleanpreprocess
+	make -f Makefile_tapenade cleanpreprocess_res
 
 ad_forward_debugTGT:
 # First delete the holding directory if it exists
@@ -238,17 +303,17 @@ ad_forward_debugTGT:
 # The following is the single Tapenade command to run:
 	$(TAPENADE_HOME)/bin/tapenade -html \
 	-difffuncname "%_T"  -debugTGT \
-	-outvars $(TAPENADE_OUTVARS) \
-	-vars $(TAPENADE_VARS) \
-	-head $(TAPENADE_HEADROUTINE)  \
+	-outvars $(TAPENADE_RES_OUTVARS) \
+	-vars $(TAPENADE_RES_VARS) \
+	-head $(TAPENADE_RES_HEADROUTINE)  \
 	-forward $(TAPENADE_PRECISION) \
-	-O temp_forward_debugTGT $(IFILES)
+	-O temp_forward_debugTGT $(I_RES_FILES)
 
 # Run the auto-edit file:
 	python autoEdit/autoEditForwardDebug.py temp_forward_debugTGT outputForwardTGT
 
 # Remove preprocessor files
-	make -f Makefile_tapenade cleanpreprocess	
+	make -f Makefile_tapenade cleanpreprocess_res
 
 ad_forward_debugADJ:
 	@echo "Not implemented yet"
@@ -256,23 +321,37 @@ ad_forward_debugADJ:
 ad_reverse_debugADJ:
 	@echo "Not implemented yet"
 
+preprocess_cost:
+	@echo "Preprocessing all input files for cost AD..."
+	@for file in $(ALL_COST_FILES); do \
+		echo Preprocessing $$file; \
+		cpp -DUSE_TAPENADE -traditional -P  $$file $$file.f90; \
+	done
+
+
 preprocess_forward:
 	@echo "Preprocessing all input files for forward mode AD..."
-	@for file in $(ALL_FILES); do \
+	@for file in $(ALL_RES_FILES); do \
 		echo Preprocessing $$file; \
 		cpp -DUSE_TAPENADE -traditional -P  $$file $$file.f90; \
 	done
 
 preprocess_reverse:
 	@echo "Preprocessing all input files for reverse mode AD..."
-	@for file in $(ALL_FILES); do \
+	@for file in $(ALL_RES_FILES); do \
 		echo Preprocessing $$file; \
 		cpp -DUSE_TAPENADE -DTAPENADE_REVERSE -traditional -P $(FF90_ALL_FLAGS) $$file $$file.f90; \
 	done
 
-cleanpreprocess:
-	@echo "Cleaning up preprocessed files..."
-	@for file in $(ALL_FILES); do \
+cleanpreprocess_res:
+	@echo "Cleaning up residual preprocessed files..."
+	@for file in $(ALL_RES_FILES); do \
+		rm $$file.f90; \
+	done
+
+cleanpreprocess_cost:
+	@echo "Cleaning up cost preprocessed files..."
+	@for file in $(ALL_COST_FILES); do \
 		rm $$file.f90; \
 	done
 

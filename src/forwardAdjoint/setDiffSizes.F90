@@ -23,6 +23,7 @@ subroutine setDiffSizes
   use flowVarRefState
   use inputTimeSpectral
   use inputPhysics
+  use costFunctions
   implicit none
 
   ! local variables
@@ -55,6 +56,11 @@ subroutine setDiffSizes
   ISIZE1OFDrfDrfbcdata_fv = 0
   ISIZE2OFDrfDrfbcdata_fv = 0
   ISIZE3OFDrfDrfbcdata_fv = 0
+
+  ! bcdata%fp
+  ISIZE1OFDrfDrfbcdata_oarea = 0
+  ISIZE2OFDrfDrfbcdata_oarea = 0
+  ISIZE3OFDrfDrfbcdata_oarea = 0
 
   ! viscsubface%tau
   ISIZE1OFDrfDrfviscsubface_tau = 0

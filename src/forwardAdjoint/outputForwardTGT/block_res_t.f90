@@ -4,17 +4,16 @@
    !  Differentiation of block_res in forward (tangent) mode (with options debugTangent i4 dr8 r8):
    !   variations   of useful results: *(flowdoms.x) *(flowdoms.w)
    !                *(flowdoms.dw) *(*bcdata.fp) *(*bcdata.fv) *(*bcdata.m)
-   !                pointref costfuncmat moment lift cforce drag force
-   !                cd cl cmoment
+   !                *(*bcdata.oarea) pref pointref moment force
    !   with respect to varying inputs: *(flowdoms.x) *(flowdoms.w)
-   !                mach machgrid lengthref surfaceref machcoef pointref
+   !                pref mach tempfreestream reynolds machgrid pointref
    !                alpha beta
    !   RW status of diff variables: *(flowdoms.x):in-out *(flowdoms.w):in-out
    !                *(flowdoms.dw):out *(*bcdata.fp):out *(*bcdata.fv):out
-   !                *(*bcdata.m):out mach:in machgrid:in lengthref:in
-   !                surfaceref:in machcoef:in pointref:in-out costfuncmat:out
-   !                moment:out lift:out alpha:in cforce:out drag:out
-   !                force:out cd:out beta:in cl:out cmoment:out
+   !                *(*bcdata.m):out *(*bcdata.oarea):out pref:in-out
+   !                mach:in tempfreestream:in reynolds:in machgrid:in
+   !                pointref:in-out moment:out alpha:in force:out
+   !                beta:in
    !   Plus diff mem management of: flowdoms.x:in flowdoms.vol:in
    !                flowdoms.w:in flowdoms.dw:in rev:in bvtj1:in bvtj2:in
    !                p:in sfacei:in sfacej:in s:in gamma:in sfacek:in
@@ -22,7 +21,8 @@
    !                bmti2:in si:in sj:in sk:in bvti1:in bvti2:in fw:in
    !                bmtj1:in bmtj2:in viscsubface:in *viscsubface.tau:in
    !                bcdata:in *bcdata.norm:in *bcdata.rface:in *bcdata.fp:in
-   !                *bcdata.fv:in *bcdata.m:in radi:in radj:in radk:in
+   !                *bcdata.fv:in *bcdata.m:in *bcdata.oarea:in radi:in
+   !                radj:in radk:in
    ! This is a super-combined function that combines the original
    ! functionality of: 
    ! Pressure Computation
@@ -34,9 +34,8 @@
    ! it only operates on a single block at a time and as such the nominal
    ! block/sps loop is outside the calculation. This routine is suitable
    ! for forward mode AD with Tapenade
-   SUBROUTINE BLOCK_RES_T(nn, sps, usespatial, useforces, alpha, alphad, &
-   &  beta, betad, liftindex, force, forced, moment, momentd, lift, liftd, &
-   &  drag, dragd, cforce, cforced, cmoment, cmomentd, cl, cld, cd, cdd)
+   SUBROUTINE BLOCK_RES_T(nn, sps, usespatial, alpha, alphad, beta, betad, &
+   &  liftindex, force, forced, moment, momentd)
    USE ITERATION
    USE FLOWVARREFSTATE
    USE DIFFSIZES
@@ -45,7 +44,6 @@
    USE INPUTADJOINT
    USE SECTION
    USE INPUTTIMESPECTRAL
-   USE COSTFUNCTIONS
    USE INPUTPHYSICS
    USE DIFFSIZES
    !  Hint: ISIZE1OFDrfbcdata should be the size of dimension 1 of array *bcdata
@@ -109,6 +107,8 @@
    !  Hint: ISIZE3OFDrfflowdoms_vol should be the size of dimension 3 of array *flowdoms%vol
    !  Hint: ISIZE2OFDrfflowdoms_vol should be the size of dimension 2 of array *flowdoms%vol
    !  Hint: ISIZE1OFDrfflowdoms_vol should be the size of dimension 1 of array *flowdoms%vol
+   !  Hint: ISIZE2OFDrfDrfbcdata_oarea should be the size of dimension 2 of array **bcdata%oarea
+   !  Hint: ISIZE1OFDrfDrfbcdata_oarea should be the size of dimension 1 of array **bcdata%oarea
    !  Hint: ISIZE3OFDrfDrfbcdata_m should be the size of dimension 3 of array **bcdata%m
    !  Hint: ISIZE2OFDrfDrfbcdata_m should be the size of dimension 2 of array **bcdata%m
    !  Hint: ISIZE1OFDrfDrfbcdata_m should be the size of dimension 1 of array **bcdata%m
@@ -121,29 +121,25 @@
    IMPLICIT NONE
    ! Input Arguments:
    INTEGER(kind=inttype), INTENT(IN) :: nn, sps
-   LOGICAL, INTENT(IN) :: usespatial, useforces
+   LOGICAL, INTENT(IN) :: usespatial
    REAL(kind=realtype), INTENT(IN) :: alpha, beta
    REAL(kind=realtype), INTENT(IN) :: alphad, betad
    INTEGER(kind=inttype), INTENT(IN) :: liftindex
-   ! Output Arguments: Note: Cannot put intent(out) since reverse mode
-   ! may NOT compute these values and then compilation will fail
-   REAL(kind=realtype), DIMENSION(3) :: force, moment, cforce, cmoment
-   REAL(kind=realtype), DIMENSION(3) :: forced, momentd, cforced, &
-   &  cmomentd
-   REAL(kind=realtype) :: lift, drag, cl, cd
-   REAL(kind=realtype) :: liftd, dragd, cld, cdd
+   ! Output Variables
+   REAL(kind=realtype) :: force(3), moment(3)
+   REAL(kind=realtype) :: forced(3), momentd(3)
    ! Working Variables
-   REAL(kind=realtype) :: gm1, v2, fact
-   REAL(kind=realtype) :: v2d, factd
+   REAL(kind=realtype) :: gm1, v2, fact, tmp
+   REAL(kind=realtype) :: v2d, factd, tmpd
    INTEGER(kind=inttype) :: i, j, k, sps2, mm, l, ii, ll, jj, lend
    INTEGER(kind=inttype) :: nstate
    REAL(kind=realtype), DIMENSION(nsections) :: t
    REAL(kind=realtype), DIMENSION(nsections) :: td
+   LOGICAL :: useoldcoor
    REAL(kind=realtype), DIMENSION(3) :: cfp, cfv, cmp, cmv
    REAL(kind=realtype), DIMENSION(3) :: cfpd, cfvd, cmpd, cmvd
-   REAL(kind=realtype) :: yplusmax, scaledim, tmp
-   REAL(kind=realtype) :: scaledimd, tmpd
-   LOGICAL :: useoldcoor
+   REAL(kind=realtype) :: yplusmax, scaledim
+   REAL(kind=realtype) :: scaledimd
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: wsp
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: volsp
    REAL(realtype) :: result1
@@ -179,11 +175,12 @@
    END DO
    END DO
    END DO
+   CALL DEBUG_TGT_REAL8('pref', pref, prefd)
    CALL DEBUG_TGT_REAL8('mach', mach, machd)
+   CALL DEBUG_TGT_REAL8('tempfreestream', tempfreestream, &
+   &                   tempfreestreamd)
+   CALL DEBUG_TGT_REAL8('reynolds', reynolds, reynoldsd)
    CALL DEBUG_TGT_REAL8('machgrid', machgrid, machgridd)
-   CALL DEBUG_TGT_REAL8('lengthref', lengthref, lengthrefd)
-   CALL DEBUG_TGT_REAL8('surfaceref', surfaceref, surfacerefd)
-   CALL DEBUG_TGT_REAL8('machcoef', machcoef, machcoefd)
    CALL DEBUG_TGT_REAL8ARRAY('pointref', pointref, pointrefd, 3)
    CALL DEBUG_TGT_REAL8('alpha', alpha, alphad)
    CALL DEBUG_TGT_REAL8('beta', beta, betad)
@@ -205,12 +202,10 @@
    x => flowdoms(nn, currentlevel, sps)%x
    vold => flowdomsd(nn, currentlevel, sps)%vol
    vol => flowdoms(nn, currentlevel, sps)%vol
+   CALL DEBUG_TGT_CALL('ADJUSTINFLOWANGLE', .TRUE., .FALSE.)
    ! ------------------------------------------------
    !        Additional 'Extra' Components
    ! ------------------------------------------------ 
-   liftdirectiond = 0.0_8
-   dragdirectiond = 0.0_8
-   CALL DEBUG_TGT_CALL('ADJUSTINFLOWANGLE', .TRUE., .FALSE.)
    CALL ADJUSTINFLOWANGLE_T(alpha, alphad, beta, betad, liftindex)
    CALL DEBUG_TGT_EXIT()
    CALL DEBUG_TGT_CALL('REFERENCESTATE', .TRUE., .FALSE.)
@@ -316,12 +311,16 @@
    ! Compute time step and spectral radius
    CALL TIMESTEP_BLOCK_T(.false.)
    CALL DEBUG_TGT_EXIT()
+   spectralloop0:DO sps2=1,ntimeintervalsspectral
+   flowdomsd(nn, 1, sps2)%dw(:, :, :, :) = 0.0_8
+   flowdoms(nn, 1, sps2)%dw(:, :, :, :) = zero
+   END DO spectralloop0
    ! -------------------------------
    ! Compute turbulence residual for RANS equations
    IF (equations .EQ. ransequations) THEN
    CALL DEBUG_TGT_CALL('UNSTEADYTURBSPECTRAL_BLOCK', .TRUE., .FALSE.)
    ! Initialize only the Turblent Variables
-   CALL UNSTEADYTURBSPECTRAL_BLOCK_T(itu1, itu2, nn, sps)
+   CALL UNSTEADYTURBSPECTRAL_BLOCK_T(itu1, itu1, nn, sps)
    CALL DEBUG_TGT_EXIT()
    SELECT CASE  (turbmodel) 
    CASE (spalartallmaras) 
@@ -358,111 +357,103 @@
    flowdoms(nn, 1, sps2)%dw(:, :, :, 1:nwf) = zero
    END DO spectralloop1
    spectralloop2:DO sps2=1,ntimeintervalsspectral
-   jj = sectionid
-   timeloopfine:DO mm=1,ntimeintervalsspectral
    IF (.TRUE. .AND. DEBUG_TGT_HERE('middle', .FALSE.)) THEN
    DO ii1=1,ntimeintervalsspectral
    DO ii2=1,1
    DO ii3=nn,nn
-   CALL DEBUG_TGT_REAL8ARRAY('flowdoms', flowdoms(ii3, ii2&
-   &                                    , ii1)%x, flowdomsd(ii3, ii2, ii1)%x&
-   &                                    , ISIZE1OFDrfflowdoms_x*&
-   &                                    ISIZE2OFDrfflowdoms_x*&
-   &                                    ISIZE3OFDrfflowdoms_x*&
-   &                                    ISIZE4OFDrfflowdoms_x)
+   CALL DEBUG_TGT_REAL8ARRAY('flowdoms', flowdoms(ii3, ii2, &
+   &                                  ii1)%x, flowdomsd(ii3, ii2, ii1)%x, &
+   &                                  ISIZE1OFDrfflowdoms_x*&
+   &                                  ISIZE2OFDrfflowdoms_x*&
+   &                                  ISIZE3OFDrfflowdoms_x*&
+   &                                  ISIZE4OFDrfflowdoms_x)
    END DO
    END DO
    END DO
    DO ii1=1,ntimeintervalsspectral
    DO ii2=1,1
    DO ii3=nn,nn
-   CALL DEBUG_TGT_REAL8ARRAY('flowdoms', flowdoms(ii3, ii2&
-   &                                    , ii1)%vol, flowdomsd(ii3, ii2, ii1)&
-   &                                    %vol, ISIZE1OFDrfflowdoms_vol*&
-   &                                    ISIZE2OFDrfflowdoms_vol*&
-   &                                    ISIZE3OFDrfflowdoms_vol)
+   CALL DEBUG_TGT_REAL8ARRAY('flowdoms', flowdoms(ii3, ii2, &
+   &                                  ii1)%vol, flowdomsd(ii3, ii2, ii1)%vol&
+   &                                  , ISIZE1OFDrfflowdoms_vol*&
+   &                                  ISIZE2OFDrfflowdoms_vol*&
+   &                                  ISIZE3OFDrfflowdoms_vol)
    END DO
    END DO
    END DO
    DO ii1=1,ntimeintervalsspectral
    DO ii2=1,1
    DO ii3=nn,nn
-   CALL DEBUG_TGT_REAL8ARRAY('flowdoms', flowdoms(ii3, ii2&
-   &                                    , ii1)%w, flowdomsd(ii3, ii2, ii1)%w&
-   &                                    , ISIZE1OFDrfflowdoms_w*&
-   &                                    ISIZE2OFDrfflowdoms_w*&
-   &                                    ISIZE3OFDrfflowdoms_w*&
-   &                                    ISIZE4OFDrfflowdoms_w)
+   CALL DEBUG_TGT_REAL8ARRAY('flowdoms', flowdoms(ii3, ii2, &
+   &                                  ii1)%w, flowdomsd(ii3, ii2, ii1)%w, &
+   &                                  ISIZE1OFDrfflowdoms_w*&
+   &                                  ISIZE2OFDrfflowdoms_w*&
+   &                                  ISIZE3OFDrfflowdoms_w*&
+   &                                  ISIZE4OFDrfflowdoms_w)
    END DO
    END DO
    END DO
    DO ii1=1,ntimeintervalsspectral
    DO ii2=1,1
    DO ii3=nn,nn
-   CALL DEBUG_TGT_REAL8ARRAY('flowdoms', flowdoms(ii3, ii2&
-   &                                    , ii1)%dw, flowdomsd(ii3, ii2, ii1)%&
-   &                                    dw, ISIZE1OFDrfflowdoms_dw*&
-   &                                    ISIZE2OFDrfflowdoms_dw*&
-   &                                    ISIZE3OFDrfflowdoms_dw*&
-   &                                    ISIZE4OFDrfflowdoms_dw)
+   CALL DEBUG_TGT_REAL8ARRAY('flowdoms', flowdoms(ii3, ii2, &
+   &                                  ii1)%dw, flowdomsd(ii3, ii2, ii1)%dw, &
+   &                                  ISIZE1OFDrfflowdoms_dw*&
+   &                                  ISIZE2OFDrfflowdoms_dw*&
+   &                                  ISIZE3OFDrfflowdoms_dw*&
+   &                                  ISIZE4OFDrfflowdoms_dw)
    END DO
    END DO
    END DO
    CALL DEBUG_TGT_REAL8ARRAY('rev', rev, revd, ISIZE1OFDrfrev*&
-   &                              ISIZE2OFDrfrev*ISIZE3OFDrfrev)
-   CALL DEBUG_TGT_REAL8ARRAY('p', p, pd, ISIZE1OFDrfp*&
-   &                              ISIZE2OFDrfp*ISIZE3OFDrfp)
+   &                            ISIZE2OFDrfrev*ISIZE3OFDrfrev)
+   CALL DEBUG_TGT_REAL8ARRAY('p', p, pd, ISIZE1OFDrfp*ISIZE2OFDrfp*&
+   &                            ISIZE3OFDrfp)
    CALL DEBUG_TGT_REAL8ARRAY('sfacei', sfacei, sfaceid, &
-   &                              ISIZE1OFDrfsfacei*ISIZE2OFDrfsfacei*&
-   &                              ISIZE3OFDrfsfacei)
+   &                            ISIZE1OFDrfsfacei*ISIZE2OFDrfsfacei*&
+   &                            ISIZE3OFDrfsfacei)
    CALL DEBUG_TGT_REAL8ARRAY('sfacej', sfacej, sfacejd, &
-   &                              ISIZE1OFDrfsfacej*ISIZE2OFDrfsfacej*&
-   &                              ISIZE3OFDrfsfacej)
+   &                            ISIZE1OFDrfsfacej*ISIZE2OFDrfsfacej*&
+   &                            ISIZE3OFDrfsfacej)
    CALL DEBUG_TGT_REAL8ARRAY('gamma', gamma, gammad, &
-   &                              ISIZE1OFDrfgamma*ISIZE2OFDrfgamma*&
-   &                              ISIZE3OFDrfgamma)
+   &                            ISIZE1OFDrfgamma*ISIZE2OFDrfgamma*&
+   &                            ISIZE3OFDrfgamma)
    CALL DEBUG_TGT_REAL8ARRAY('sfacek', sfacek, sfacekd, &
-   &                              ISIZE1OFDrfsfacek*ISIZE2OFDrfsfacek*&
-   &                              ISIZE3OFDrfsfacek)
+   &                            ISIZE1OFDrfsfacek*ISIZE2OFDrfsfacek*&
+   &                            ISIZE3OFDrfsfacek)
    CALL DEBUG_TGT_REAL8ARRAY('rlv', rlv, rlvd, ISIZE1OFDrfrlv*&
-   &                              ISIZE2OFDrfrlv*ISIZE3OFDrfrlv)
+   &                            ISIZE2OFDrfrlv*ISIZE3OFDrfrlv)
    CALL DEBUG_TGT_REAL8ARRAY('si', si, sid, ISIZE1OFDrfsi*&
-   &                              ISIZE2OFDrfsi*ISIZE3OFDrfsi*ISIZE4OFDrfsi)
+   &                            ISIZE2OFDrfsi*ISIZE3OFDrfsi*ISIZE4OFDrfsi)
    CALL DEBUG_TGT_REAL8ARRAY('sj', sj, sjd, ISIZE1OFDrfsj*&
-   &                              ISIZE2OFDrfsj*ISIZE3OFDrfsj*ISIZE4OFDrfsj)
+   &                            ISIZE2OFDrfsj*ISIZE3OFDrfsj*ISIZE4OFDrfsj)
    CALL DEBUG_TGT_REAL8ARRAY('sk', sk, skd, ISIZE1OFDrfsk*&
-   &                              ISIZE2OFDrfsk*ISIZE3OFDrfsk*ISIZE4OFDrfsk)
+   &                            ISIZE2OFDrfsk*ISIZE3OFDrfsk*ISIZE4OFDrfsk)
    DO ii1=1,ISIZE1OFDrfbcdata
-   CALL DEBUG_TGT_REAL8ARRAY('bcdata', bcdata(ii1)%norm, &
-   &                                bcdatad(ii1)%norm, &
-   &                                ISIZE1OFDrfDrfbcdata_norm*&
-   &                                ISIZE2OFDrfDrfbcdata_norm*&
-   &                                ISIZE3OFDrfDrfbcdata_norm)
+   CALL DEBUG_TGT_REAL8ARRAY('bcdata', bcdata(ii1)%norm, bcdatad(&
+   &                              ii1)%norm, ISIZE1OFDrfDrfbcdata_norm*&
+   &                              ISIZE2OFDrfDrfbcdata_norm*&
+   &                              ISIZE3OFDrfDrfbcdata_norm)
    END DO
-   CALL DEBUG_TGT_REAL8ARRAY('radi', radi, radid, ISIZE1OFDrfradi&
-   &                              *ISIZE2OFDrfradi*ISIZE3OFDrfradi)
-   CALL DEBUG_TGT_REAL8ARRAY('radj', radj, radjd, ISIZE1OFDrfradj&
-   &                              *ISIZE2OFDrfradj*ISIZE3OFDrfradj)
-   CALL DEBUG_TGT_REAL8ARRAY('radk', radk, radkd, ISIZE1OFDrfradk&
-   &                              *ISIZE2OFDrfradk*ISIZE3OFDrfradk)
+   CALL DEBUG_TGT_REAL8ARRAY('radi', radi, radid, ISIZE1OFDrfradi*&
+   &                            ISIZE2OFDrfradi*ISIZE3OFDrfradi)
+   CALL DEBUG_TGT_REAL8ARRAY('radj', radj, radjd, ISIZE1OFDrfradj*&
+   &                            ISIZE2OFDrfradj*ISIZE3OFDrfradj)
+   CALL DEBUG_TGT_REAL8ARRAY('radk', radk, radkd, ISIZE1OFDrfradk*&
+   &                            ISIZE2OFDrfradk*ISIZE3OFDrfradk)
+   CALL DEBUG_TGT_REAL8('gammainf', gammainf, gammainfd)
    CALL DEBUG_TGT_REAL8('pinf', pinf, pinfd)
    CALL DEBUG_TGT_REAL8('timeref', timeref, timerefd)
    CALL DEBUG_TGT_REAL8('rhoinf', rhoinf, rhoinfd)
+   CALL DEBUG_TGT_REAL8('tref', tref, trefd)
    CALL DEBUG_TGT_REAL8('pinfcorr', pinfcorr, pinfcorrd)
    CALL DEBUG_TGT_REAL8('rgas', rgas, rgasd)
    CALL DEBUG_TGT_REAL8('pref', pref, prefd)
-   CALL DEBUG_TGT_REAL8('lengthref', lengthref, lengthrefd)
-   CALL DEBUG_TGT_REAL8('surfaceref', surfaceref, surfacerefd)
-   CALL DEBUG_TGT_REAL8('machcoef', machcoef, machcoefd)
-   CALL DEBUG_TGT_REAL8ARRAY('dragdirection', dragdirection, &
-   &                              dragdirectiond, 3)
-   CALL DEBUG_TGT_REAL8ARRAY('liftdirection', liftdirection, &
-   &                              liftdirectiond, 3)
    CALL DEBUG_TGT_REAL8ARRAY('pointref', pointref, pointrefd, 3)
-   CALL DEBUG_TGT_REAL8('alpha', alpha, alphad)
-   CALL DEBUG_TGT_REAL8('beta', beta, betad)
    CALL DEBUG_TGT_DISPLAY('middle')
    END IF
+   jj = sectionid
+   timeloopfine:DO mm=1,ntimeintervalsspectral
    ii = 3*(mm-1)
    varloopfine:DO l=1,nwf
    IF ((l .EQ. ivx .OR. l .EQ. ivy) .OR. l .EQ. ivz) THEN
@@ -537,80 +528,27 @@
    END DO
    END DO
    END DO
-   ! We are now done with the residuals, we move on to the forces and
-   ! moments
-   IF (useforces) THEN
    CALL DEBUG_TGT_CALL('FORCESANDMOMENTS', .TRUE., .FALSE.)
    CALL FORCESANDMOMENTS_T(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd, &
-   &                      yplusmax)
+   &                    yplusmax)
    CALL DEBUG_TGT_EXIT()
+   ! Convert back to actual forces. Note that even though we use
+   ! MachCoef, Lref, and surfaceRef here, they are NOT differented,
+   ! since F doesn't actually depend on them. Ideally we would just get
+   ! the raw forces and moment form forcesAndMoments. 
    scaledimd = (prefd*pinf-pref*pinfd)/pinf**2
    scaledim = pref/pinf
-   ! Sum pressure and viscous contributions
-   cforced = cfpd + cfvd
-   cforce = cfp + cfv
-   cmomentd = cmpd + cmvd
-   cmoment = cmp + cmv
-   ! Get Lift coef and Drag coef
-   cdd = cforced(1)*dragdirection(1) + cforce(1)*dragdirectiond(1) + &
-   &      cforced(2)*dragdirection(2) + cforce(2)*dragdirectiond(2) + &
-   &      cforced(3)*dragdirection(3) + cforce(3)*dragdirectiond(3)
-   cd = cforce(1)*dragdirection(1) + cforce(2)*dragdirection(2) + &
-   &      cforce(3)*dragdirection(3)
-   cld = cforced(1)*liftdirection(1) + cforce(1)*liftdirectiond(1) + &
-   &      cforced(2)*liftdirection(2) + cforce(2)*liftdirectiond(2) + &
-   &      cforced(3)*liftdirection(3) + cforce(3)*liftdirectiond(3)
-   cl = cforce(1)*liftdirection(1) + cforce(2)*liftdirection(2) + &
-   &      cforce(3)*liftdirection(3)
-   ! Divide by fact to get the forces, Lift and Drag back
-   factd = -(two*gammainf*lref**2*(((pinfd*machcoef+pinf*machcoefd)*&
-   &      scaledim+pinf*machcoef*scaledimd)*machcoef*surfaceref+pinf*&
-   &      machcoef*scaledim*(machcoefd*surfaceref+machcoef*surfacerefd))/(&
-   &      gammainf*pinf*machcoef*machcoef*surfaceref*lref*lref*scaledim)**2)
+   factd = -(two*machcoef**2*surfaceref*lref**2*((gammainfd*pinf+gammainf&
+   &    *pinfd)*scaledim+gammainf*pinf*scaledimd)/(gammainf*pinf*machcoef*&
+   &    machcoef*surfaceref*lref*lref*scaledim)**2)
    fact = two/(gammainf*pinf*machcoef*machcoef*surfaceref*lref*lref*&
-   &      scaledim)
-   forced = (cforced*fact-cforce*factd)/fact**2
-   force = cforce/fact
-   liftd = (cld*fact-cl*factd)/fact**2
-   lift = cl/fact
-   dragd = (cdd*fact-cd*factd)/fact**2
-   drag = cd/fact
-   ! Moment factor has an extra lengthRef
-   factd = (factd*lengthref*lref-fact*lref*lengthrefd)/(lengthref*lref)&
-   &      **2
+   &    scaledim)
+   forced = ((cfpd+cfvd)*fact-(cfp+cfv)*factd)/fact**2
+   force = (cfp+cfv)/fact
+   factd = factd/(lengthref*lref)
    fact = fact/(lengthref*lref)
-   momentd = (cmomentd*fact-cmoment*factd)/fact**2
-   moment = cmoment/fact
-   ELSE
-   force = zero
-   moment = zero
-   cforce = zero
-   cmoment = zero
-   lift = zero
-   drag = zero
-   cd = zero
-   cd = zero
-   DO ii1=1,ISIZE1OFDrfbcdata
-   bcdatad(ii1)%fp = 0.0_8
-   END DO
-   DO ii1=1,ISIZE1OFDrfbcdata
-   bcdatad(ii1)%fv = 0.0_8
-   END DO
-   DO ii1=1,ISIZE1OFDrfbcdata
-   bcdatad(ii1)%m = 0.0_8
-   END DO
-   momentd = 0.0_8
-   liftd = 0.0_8
-   cforced = 0.0_8
-   dragd = 0.0_8
-   forced = 0.0_8
-   cdd = 0.0_8
-   cld = 0.0_8
-   cmomentd = 0.0_8
-   END IF
-   CALL DEBUG_TGT_CALL('GETCOSTFUNCMAT', .TRUE., .FALSE.)
-   CALL GETCOSTFUNCMAT_T(alpha, alphad, beta, betad, liftindex)
-   CALL DEBUG_TGT_EXIT()
+   momentd = ((cmpd+cmvd)*fact-(cmp+cmv)*factd)/fact**2
+   moment = (cmp+cmv)/fact
    IF (.TRUE. .AND. DEBUG_TGT_HERE('exit', .FALSE.)) THEN
    DO ii1=1,ntimeintervalsspectral
    DO ii2=1,1
@@ -665,17 +603,15 @@
    &                          , ISIZE1OFDrfDrfbcdata_m*&
    &                          ISIZE2OFDrfDrfbcdata_m*ISIZE3OFDrfDrfbcdata_m)
    END DO
+   DO ii1=1,ISIZE1OFDrfbcdata
+   CALL DEBUG_TGT_REAL8ARRAY('bcdata', bcdata(ii1)%oarea, bcdatad(ii1&
+   &                          )%oarea, ISIZE1OFDrfDrfbcdata_oarea*&
+   &                          ISIZE2OFDrfDrfbcdata_oarea)
+   END DO
+   CALL DEBUG_TGT_REAL8('pref', pref, prefd)
    CALL DEBUG_TGT_REAL8ARRAY('pointref', pointref, pointrefd, 3)
-   CALL DEBUG_TGT_REAL8ARRAY('costfuncmat', costfuncmat, costfuncmatd, &
-   &                        6*ncostfunction)
    CALL DEBUG_TGT_REAL8ARRAY('moment', moment, momentd, 3)
-   CALL DEBUG_TGT_REAL8('lift', lift, liftd)
-   CALL DEBUG_TGT_REAL8ARRAY('cforce', cforce, cforced, 3)
-   CALL DEBUG_TGT_REAL8('drag', drag, dragd)
    CALL DEBUG_TGT_REAL8ARRAY('force', force, forced, 3)
-   CALL DEBUG_TGT_REAL8('cd', cd, cdd)
-   CALL DEBUG_TGT_REAL8('cl', cl, cld)
-   CALL DEBUG_TGT_REAL8ARRAY('cmoment', cmoment, cmomentd, 3)
    CALL DEBUG_TGT_DISPLAY('exit')
    END IF
    END SUBROUTINE BLOCK_RES_T

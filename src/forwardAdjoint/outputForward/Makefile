@@ -40,12 +40,12 @@ FF90_OBJECTS =  blockpointers_d.o\
 		applyallbc_block_d.o\
 		bcsymm_d.o\
                 computeetot_d.o\
+		computegamma_d.o\
 		computelamviscosity_d.o\
 		extrapolate2ndhalo_d.o\
 	        invisciddissfluxscalarcoarse_d.o\
 		timestep_block_d.o\
 		bceulerwall_d.o\
-	  	getcostfuncmat_d.o\
 		curveupre_d.o\
 		invisciddissfluxscalar_d.o\
 		turbbcnswall_d.o\
@@ -71,8 +71,8 @@ FF90_OBJECTS =  blockpointers_d.o\
                 applyallturbbcthisblock_d.o\
                 bceddynowall_d.o\
                 bceddywall_d.o\
-                bcturbfarfield_d.o\
-               	bcturbsymm_d.o\
+		bcturbfarfield_d.o\
+		bcturbsymm_d.o\
 		eintarray_d.o  \
 		xhalo_block_d.o\
 		metric_block_d.o\

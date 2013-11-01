@@ -27,7 +27,8 @@ module costFunctions
   !     ******************************************************************
 
   integer(kind=intType), parameter :: nCostFunction = 37
-  integer(kind=intType), parameter :: costFuncLift       = 1,&
+  integer(kind=intType), parameter :: &
+       costFuncLift       = 1,&
        costFuncDrag       = 2,&
        costFuncLiftCoef   = 3,&
        costFuncDragCoef   = 4,&
@@ -66,12 +67,7 @@ module costFunctions
        costFuncBendingCoef= 37
 
   real(kind=realType), allocatable, dimension(:)   :: functionValue
-  real(kind=realType), dimension(6, nCostFunction) :: costFuncMat
-#ifndef USE_TAPENADE
-  REAL(kind=realtype), DIMENSION(6, ncostfunction) :: costfuncmatd
-  real(kind=realType), dimension(:,:,:), allocatable :: dCostFuncmatdExtra
-  real(kind=realType), dimension(6) :: FMExtra
-#endif
+
 end module costFunctions
 
 

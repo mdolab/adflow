@@ -12,6 +12,7 @@ subroutine getCostFuncMat(alpha, beta, liftIndex)
   use costFunctions
   use flowVarRefState 
   use inputPhysics
+  use inputTimeSpectral
   implicit none
  
   !Subroutine Vars Input/Ouput
@@ -19,6 +20,7 @@ subroutine getCostFuncMat(alpha, beta, liftIndex)
   integer(kind=intType), intent(in) ::liftIndex
 
   ! Working vars
+  integer(kind=intType) :: sps
   real(kind=realtype) :: fact, scaleDim
 
   call adjustInflowAngle(alpha, beta, liftIndex)
@@ -29,36 +31,42 @@ subroutine getCostFuncMat(alpha, beta, liftIndex)
 
   costFuncMat = zero
 
-  ! Just set the ones we know
-  costFuncMat(:, costFuncLift) = (/liftDirection(1), liftDirection(2), &
-       liftDirection(3), zero, zero, zero/)
-  
-  costFuncMat(:, costFuncDrag) = (/dragDirection(1), dragDirection(2), &
-       dragDirection(3), zero, zero, zero/)
+  do sps=1,nTimeIntervalsSpectral
 
-  costFuncMat(:, costFuncLiftCoef) = (/liftDirection(1)*fact, &
-       liftDirection(2)*fact, liftDirection(3)*fact, zero, zero, zero/)
+     ! Just set the ones we know
+     costFuncMat(:, costFuncLift,sps) = (/liftDirection(1), liftDirection(2), &
+          liftDirection(3), zero, zero, zero/)
+     
+     costFuncMat(:, costFuncDrag,sps) = (/dragDirection(1), dragDirection(2), &
+          dragDirection(3), zero, zero, zero/)
+     
+     costFuncMat(:, costFuncLiftCoef,sps) = (/liftDirection(1)*fact, &
+          liftDirection(2)*fact, liftDirection(3)*fact, zero, zero, zero/)
+     
+     costFuncMat(:, costFuncDragCoef,sps) = (/dragDirection(1)*fact, &
+          dragDirection(2)*fact, dragDirection(3)*fact, zero, zero, zero/)
+     
+     costFuncMat(:, costFuncForceX,sps) = (/one, zero, zero, zero, zero, zero/)
+     costFuncMat(:, costFuncForceY,sps) = (/zero, one, zero, zero, zero, zero/)
+     costFuncMat(:, costFuncForceZ,sps) = (/zero, zero, one, zero, zero, zero/)
+     
+     costFuncMat(:, costFuncForceXCoef,sps) = (/fact, zero, zero, zero, zero, zero/)
+     costFuncMat(:, costFuncForceYCoef,sps) = (/zero, fact, zero, zero, zero, zero/)
+     costFuncMat(:, costFuncForceZCoef,sps) = (/zero, zero, fact, zero, zero, zero/)
+     
+     costFuncMat(:, costFuncMomX,sps) = (/zero, zero, zero, one, zero, zero/)
+     costFuncMat(:, costFuncMomY,sps) = (/zero, zero, zero, zero, one, zero/)
+     costFuncMat(:, costFuncMomZ,sps) = (/zero, zero, zero, zero, zero, one/)
+     
+     ! update fact to get the moment
+     fact = fact/(lengthRef*LRef)
+     
+     costFuncMat(:, costFuncMomXCoef,sps) = (/zero, zero, zero, fact, zero, zero/)
+     costFuncMat(:, costFuncMomYCoef,sps) = (/zero, zero, zero, zero, fact, zero/)
+     costFuncMat(:, costFuncMomZCoef,sps) = (/zero, zero, zero, zero, zero, fact/)
 
-  costFuncMat(:, costFuncDragCoef) = (/dragDirection(1)*fact, &
-       dragDirection(2)*fact, dragDirection(3)*fact, zero, zero, zero/)
+  end do
 
-  costFuncMat(:, costFuncForceX) = (/one, zero, zero, zero, zero, zero/)
-  costFuncMat(:, costFuncForceY) = (/zero, one, zero, zero, zero, zero/)
-  costFuncMat(:, costFuncForceZ) = (/zero, zero, one, zero, zero, zero/)
-
-  costFuncMat(:, costFuncForceXCoef) = (/fact, zero, zero, zero, zero, zero/)
-  costFuncMat(:, costFuncForceYCoef) = (/zero, fact, zero, zero, zero, zero/)
-  costFuncMat(:, costFuncForceZCoef) = (/zero, zero, fact, zero, zero, zero/)
-
-  costFuncMat(:, costFuncMomX) = (/zero, zero, zero, one, zero, zero/)
-  costFuncMat(:, costFuncMomY) = (/zero, zero, zero, zero, one, zero/)
-  costFuncMat(:, costFuncMomZ) = (/zero, zero, zero, zero, zero, one/)
-
-  ! update fact to get the moment
-  fact = fact/(lengthRef*LRef)
-
-  costFuncMat(:, costFuncMomXCoef) = (/zero, zero, zero, fact, zero, zero/)
-  costFuncMat(:, costFuncMomYCoef) = (/zero, zero, zero, zero, fact, zero/)
-  costFuncMat(:, costFuncMomZCoef) = (/zero, zero, zero, zero, zero, fact/)
+  costFuncMat = costFuncMat / nTimeIntervalsSpectral
 
 end subroutine getCostFuncMat
