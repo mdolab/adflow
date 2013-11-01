@@ -6,8 +6,8 @@
    !                *bmtk1 *w *bmtk2 *rlv *bvtk1 *bvtk2 *bmti1 *bmti2
    !                *bvti1 *bvti2 *bmtj1 *bmtj2 (global)pointref[1:3]
    !   with respect to varying inputs: *rev *p *s *w *rlv *si *sj
-   !                *sk *(*bcdata.norm) *(*bcdata.rface) winf pinfcorr
-   !                rgas (global)pointref[1:3]
+   !                *sk *(*bcdata.norm) *(*bcdata.rface) gammainf
+   !                tref winf pinfcorr rgas (global)pointref[1:3]
    !   Plus diff mem management of: rev:in bvtj1:in bvtj2:in p:in
    !                gamma:in bmtk1:in w:in bmtk2:in rlv:in bvtk1:in
    !                bvtk2:in bmti1:in bmti2:in si:in sj:in sk:in bvti1:in

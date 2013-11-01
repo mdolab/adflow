@@ -4,7 +4,7 @@
    !  Differentiation of inviscidupwindflux in forward (tangent) mode (with options debugTangent i4 dr8 r8):
    !   variations   of useful results: *fw
    !   with respect to varying inputs: *p *sfacei *sfacej *gamma *sfacek
-   !                *w *si *sj *sk rgas
+   !                *w *si *sj *sk tref rgas
    !   Plus diff mem management of: p:in sfacei:in sfacej:in gamma:in
    !                sfacek:in w:in si:in sj:in sk:in fw:in
    !
@@ -128,6 +128,7 @@
    &                        *ISIZE3OFDrfsj*ISIZE4OFDrfsj)
    CALL DEBUG_TGT_REAL8ARRAY('sk', sk, skd, ISIZE1OFDrfsk*ISIZE2OFDrfsk&
    &                        *ISIZE3OFDrfsk*ISIZE4OFDrfsk)
+   CALL DEBUG_TGT_REAL8('tref', tref, trefd)
    CALL DEBUG_TGT_REAL8('rgas', rgas, rgasd)
    CALL DEBUG_TGT_DISPLAY('entry')
    END IF
@@ -363,6 +364,7 @@
    CALL DEBUG_TGT_REAL8ARRAY('fw', fw, fwd, ISIZE1OFDrffw*&
    &                                  ISIZE2OFDrffw*ISIZE3OFDrffw*&
    &                                  ISIZE4OFDrffw)
+   CALL DEBUG_TGT_REAL8('tref', tref, trefd)
    CALL DEBUG_TGT_REAL8('rgas', rgas, rgasd)
    CALL DEBUG_TGT_REAL8ARRAY('flux', flux, fluxd, nwf)
    CALL DEBUG_TGT_REAL8ARRAY('left', left, leftd, nw)
@@ -1659,8 +1661,8 @@
    END SUBROUTINE LEFTRIGHTSTATE
    !  Differentiation of riemannflux in forward (tangent) mode (with options debugTangent i4 dr8 r8):
    !   variations   of useful results: flux
-   !   with respect to varying inputs: rgas gammaface sface sx sy
-   !                sz flux left right
+   !   with respect to varying inputs: tref rgas gammaface sface sx
+   !                sy sz flux left right
    !        ================================================================
    SUBROUTINE RIEMANNFLUX_T(left, leftd, right, rightd, flux, fluxd)
    USE DIFFSIZES
@@ -1725,6 +1727,7 @@
    INTRINSIC SQRT
    REAL(kind=realtype) :: max2
    IF (.TRUE. .AND. DEBUG_TGT_HERE('entry', .FALSE.)) THEN
+   CALL DEBUG_TGT_REAL8('tref', tref, trefd)
    CALL DEBUG_TGT_REAL8('rgas', rgas, rgasd)
    CALL DEBUG_TGT_REAL8('gammaface', gammaface, gammafaced)
    CALL DEBUG_TGT_REAL8('sface', sface, sfaced)

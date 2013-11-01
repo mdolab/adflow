@@ -3,7 +3,7 @@
    !
    !  Differentiation of getdirangle in forward (tangent) mode (with options debugTangent i4 dr8 r8):
    !   variations   of useful results: alpha beta
-   !   with respect to varying inputs: alpha beta freestreamaxis
+   !   with respect to varying inputs: freestreamaxis
    !
    !     ******************************************************************
    !     *                                                                *
@@ -125,8 +125,6 @@
    END IF
    IF (liftaxis(1) .GE. 0.) THEN
    IF (.TRUE. .AND. DEBUG_TGT_HERE('middle', .FALSE.)) THEN
-   CALL DEBUG_TGT_REAL8('alpha', alpha, alphad)
-   CALL DEBUG_TGT_REAL8('beta', beta, betad)
    CALL DEBUG_TGT_REAL8ARRAY('freestreamaxis', freestreamaxis, &
    &                            freestreamaxisd, 3)
    CALL DEBUG_TGT_DISPLAY('middle')
@@ -202,6 +200,8 @@
    beta = ATAN2(freestreamaxisnorm(2), freestreamaxisnorm(1))
    ELSE
    CALL TERMINATE('getDirAngle', 'Invalid Lift Direction')
+   alphad = 0.0_8
+   betad = 0.0_8
    END IF
    IF (.TRUE. .AND. DEBUG_TGT_HERE('exit', .FALSE.)) THEN
    CALL DEBUG_TGT_REAL8('alpha', alpha, alphad)

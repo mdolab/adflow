@@ -3,12 +3,12 @@
    !
    !  Differentiation of forcesandmoments in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *(*bcdata.fp) *(*bcdata.fv)
-   !                *(*bcdata.m) cfp cfv cmp cmv
+   !                *(*bcdata.m) *(*bcdata.oarea) cfp cfv cmp cmv
    !   with respect to varying inputs: *p *x *si *sj *sk *(*viscsubface.tau)
-   !                pinf pref lengthref surfaceref machcoef pointref
+   !                gammainf pinf pref pointref
    !   Plus diff mem management of: p:in x:in si:in sj:in sk:in viscsubface:in
    !                *viscsubface.tau:in bcdata:in *bcdata.fp:in *bcdata.fv:in
-   !                *bcdata.m:in
+   !                *bcdata.m:in *bcdata.oarea:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -75,10 +75,12 @@
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ssd, xxd
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: norm
    REAL(kind=realtype) :: mx, my, mz, qa
-   REAL(kind=realtype) :: mxd, myd, mzd
+   REAL(kind=realtype) :: mxd, myd, mzd, qad
    LOGICAL :: viscoussubface
    REAL(kind=realtype) :: arg1
+   REAL(kind=realtype) :: arg1d
    REAL(kind=realtype) :: result1
+   REAL(kind=realtype) :: result1d
    REAL(kind=realtype) :: arg2
    REAL(kind=realtype) :: result2
    INTRINSIC MAX
@@ -138,6 +140,9 @@
    END DO
    DO ii1=1,ISIZE1OFDrfbcdata
    bcdatad(ii1)%m = 0.0_8
+   END DO
+   DO ii1=1,ISIZE1OFDrfbcdata
+   bcdatad(ii1)%oarea = 0.0_8
    END DO
    cfpd = 0.0_8
    cfvd = 0.0_8
@@ -291,6 +296,7 @@
    ! cell range, because the latter may include the halo's in i
    ! and j-direction. The offset +1 is there, because inBeg and
    ! jnBeg refer to nodal ranges and not to cell ranges.
+   bcdatad(nn)%oarea(:, :) = 0.0_8
    bcdata(nn)%oarea(:, :) = zero
    DO j=bcdata(nn)%jnbeg+1,bcdata(nn)%jnend
    DO i=bcdata(nn)%inbeg+1,bcdata(nn)%inend
@@ -331,12 +337,25 @@
    bcdatad(nn)%fp(i, j, 3) = fzd
    bcdata(nn)%fp(i, j, 3) = fz
    ! Scatter a quarter of the area to each node:
+   arg1d = 2*ss(i, j, 1)*ssd(i, j, 1) + 2*ss(i, j, 2)*ssd(i, j, 2&
+   &            ) + 2*ss(i, j, 3)*ssd(i, j, 3)
    arg1 = ss(i, j, 1)**2 + ss(i, j, 2)**2 + ss(i, j, 3)**2
+   IF (arg1 .EQ. 0.0_8) THEN
+   result1d = 0.0_8
+   ELSE
+   result1d = arg1d/(2.0*SQRT(arg1))
+   END IF
    result1 = SQRT(arg1)
+   qad = fourth*result1d
    qa = fourth*result1
+   bcdatad(nn)%oarea(i-1, j-1) = bcdatad(nn)%oarea(i-1, j-1) + &
+   &            qad
    bcdata(nn)%oarea(i-1, j-1) = bcdata(nn)%oarea(i-1, j-1) + qa
+   bcdatad(nn)%oarea(i, j-1) = bcdatad(nn)%oarea(i, j-1) + qad
    bcdata(nn)%oarea(i, j-1) = bcdata(nn)%oarea(i, j-1) + qa
+   bcdatad(nn)%oarea(i-1, j) = bcdatad(nn)%oarea(i-1, j) + qad
    bcdata(nn)%oarea(i-1, j) = bcdata(nn)%oarea(i-1, j) + qa
+   bcdatad(nn)%oarea(i, j) = bcdatad(nn)%oarea(i, j) + qad
    bcdata(nn)%oarea(i, j) = bcdata(nn)%oarea(i, j) + qa
    ! Update the inviscid force and moment coefficients.
    cfpd(1) = cfpd(1) + fxd
@@ -507,6 +526,8 @@
    ! We have to inverse the nodal areas
    DO j=bcdata(nn)%jnbeg,bcdata(nn)%jnend
    DO i=bcdata(nn)%inbeg,bcdata(nn)%inend
+   bcdatad(nn)%oarea(i, j) = -(one*bcdatad(nn)%oarea(i, j)/bcdata&
+   &            (nn)%oarea(i, j)**2)
    bcdata(nn)%oarea(i, j) = one/bcdata(nn)%oarea(i, j)
    END DO
    END DO
@@ -515,10 +536,9 @@
    ! Currently the coefficients only contain the surface integral
    ! of the pressure tensor. These values must be scaled to
    ! obtain the correct coefficients.
-   factd = -(two*gammainf*lref**2*(((pinfd*machcoef+pinf*machcoefd)*&
-   &    scaledim+pinf*machcoef*scaledimd)*machcoef*surfaceref+pinf*machcoef*&
-   &    scaledim*(machcoefd*surfaceref+machcoef*surfacerefd))/(gammainf*pinf&
-   &    *machcoef*machcoef*surfaceref*lref*lref*scaledim)**2)
+   factd = -(two*machcoef**2*surfaceref*lref**2*((gammainfd*pinf+gammainf&
+   &    *pinfd)*scaledim+gammainf*pinf*scaledimd)/(gammainf*pinf*machcoef*&
+   &    machcoef*surfaceref*lref*lref*scaledim)**2)
    fact = two/(gammainf*pinf*machcoef*machcoef*surfaceref*lref*lref*&
    &    scaledim)
    cfpd(1) = cfpd(1)*fact + cfp(1)*factd
@@ -533,8 +553,7 @@
    cfv(2) = cfv(2)*fact
    cfvd(3) = cfvd(3)*fact + cfv(3)*factd
    cfv(3) = cfv(3)*fact
-   factd = (factd*lengthref*lref-fact*lref*lengthrefd)/(lengthref*lref)**&
-   &    2
+   factd = factd/(lengthref*lref)
    fact = fact/(lengthref*lref)
    cmpd(1) = cmpd(1)*fact + cmp(1)*factd
    cmp(1) = cmp(1)*fact

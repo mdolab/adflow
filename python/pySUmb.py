@@ -39,7 +39,7 @@ import numpy
 # =============================================================================
 # Extension modules
 # =============================================================================
-from baseclasses import AeroSolver
+from baseclasses import AeroSolver, AeroProblem
 from mdo_import_helper import mpiPrint, MExt, MPI
 
 # =============================================================================
@@ -88,14 +88,12 @@ class SUMB(AeroSolver):
             'turbulenceorder':[str,'first order'],           
             'usewallfunctions':[bool, False],
             'useapproxwalldistance':[bool, True],
-            'reynoldsnumber':[float, 1e6], 
-            'reynoldslength':[float, 1.0], 
             'walltreatment':[str, 'linear pressure extrapolation'],
             'dissipationscalingexponent':[float, 0.67],
             'vis4':[float, 0.0156],
-            'vis2':[float, 0.5],
+            'vis2':[float, 0.25],
             'vis2coarse':[float, 0.5], 
-            'restrictionrelaxation':[float, 1.0],
+            'restrictionrelaxation':[float, .80],
 
             # Common Paramters
             'ncycles':[int, 500],
@@ -126,9 +124,6 @@ class SUMB(AeroSolver):
             'rmode':[bool, False],
             'altitudemode':[bool, False],
             'windaxis':[bool, False],
-            'familyrot':[str, ''],
-            'rotcenter':[list, [0.0,0.0, 0.0]],
-            'rotrate':[list, [0.0,0.0, 0.0]],
             'tsstability': [bool, False],
 
             # Convergence Paramters
@@ -239,7 +234,7 @@ class SUMB(AeroSolver):
         # Initialize petec in case the user has not already
         self.sumb.initializepetsc()
 
-        # Set the stand-alone sumb flag to flase...this changes how
+        # Set the stand-alone sumb flag to false...this changes how
         # terminate calls are handled. 
         self.sumb.iteration.standalonemode = False
 
@@ -506,8 +501,6 @@ class SUMB(AeroSolver):
             'rmode':{'location':'inputtsstabderiv.tsrmode'},
             'altitudemode':{'location':'inputtsstabderiv.tsaltitudemode'},
             'windaxis':{'location':'inputtsstabderiv.usewindaxis'},
-            'rotcenter':{'location':'inputmotion.rotpoint'},
-            'rotrate':{'location':'inputmotion.rotrate'},
             'tsstability':{'location':'inputtsstabderiv.tsstability'},
             
             # Convergence Paramters
@@ -630,7 +623,6 @@ class SUMB(AeroSolver):
             'numbersolutions',
             'writesurfacesolution',
             'writevolumesolution',
-            'familyrot',  # -> Not sure how to do
             'autosolveretry',
             'autoadjointretry',
             'usereversemodead'
@@ -641,7 +633,11 @@ class SUMB(AeroSolver):
         self.deprecatedOptions = {'finitedifferencepc':
                                       'Use the ADPC option.',
                                   'writesolution':
-                                      'Use writeSurfaceSolution and writeVolumeSolution options instead.'}
+                                      'Use writeSurfaceSolution and writeVolumeSolution options instead.',
+                                  'reynoldsnumber':
+                                      'Put required information in flow class',
+                                  'reynoldslength':
+                                      'Length ref in reference object used if reynolds number specified in flow class'}
 
         self.specialOptions = ['surfacevariables',
                                'volumevariables',
@@ -1004,13 +1000,10 @@ name is unavailable.'%(flowCase), comm=self.comm)
         Set the alpha and beta fromthe desiggn variables
         '''
         
-        [velDir, liftDir, dragDir] = self.sumb.adjustinflowangleadjts(\
-            (aeroProblem._flows.alpha*(numpy.pi/180.0)),
-            (aeroProblem._flows.beta*(numpy.pi/180.0)),
+        self.sumb.adjustinflowangle(
+            aeroProblem._flows.alpha*(numpy.pi/180.0),
+            aeroProblem._flows.beta*(numpy.pi/180.0),
             aeroProblem._flows.liftIndex)
-        self.sumb.inputphysics.veldirfreestream = velDir
-        self.sumb.inputphysics.liftdirection = liftDir
-        self.sumb.inputphysics.dragdirection = dragDir
 
         if self.sumb.inputiteration.printiterations:
             mpiPrint('-> Alpha... %f %f'%(
@@ -1051,26 +1044,52 @@ name is unavailable.'%(flowCase), comm=self.comm)
             *self.metricConversion
         self.sumb.inputmotion.rotpoint[2] = aeroProblem._refs.zrot\
             *self.metricConversion
-        #update the flow vars
-        self.sumb.updatereferencepoint()
+
         self._updateVelInfo = True
 
         return
 
-    def _setRotationRate(self, aeroProblem):
+    def setRotationRate(self, rotCenter, rotRate, cgnsBlocks=None):
         '''
-        Set the rotational rate for the grid
-        '''
-        a  = numpy.sqrt(self.sumb.flowvarrefstate.gammainf*\
-                      self.sumb.flowvarrefstate.pinfdim/ \
-                      self.sumb.flowvarrefstate.rhoinfdim)
-        V = (self.sumb.inputphysics.machgrid+self.sumb.inputphysics.mach)*a
-        
-        p = aeroProblem._flows.phat*V/aeroProblem._refs.bref
-        q = aeroProblem._flows.qhat*2*V/aeroProblem._refs.cref
-        r = aeroProblem._flows.rhat*V/aeroProblem._refs.bref
+        Set the rotational rate for the grid:
 
-        self.sumb.updaterotationrate(p, r, q)
+        rotCenter: 3-vectorThe center of rotation for steady motion
+        rotRate: 3-vector or aeroProblem: If it is a 3-vector, take
+        the rotations to about x-y-z, if it is an aeroProblem with
+        p,q,r, defined, use that to compute rotations.  cgnsBlocks:
+        The list of blocks to set. NOTE: This must be in 1-based ordering!
+
+        '''
+
+        if isinstance(rotRate, AeroProblem):
+            aeroProblem = rotRate
+            a  = numpy.sqrt(self.sumb.flowvarrefstate.gammainf*\
+                                self.sumb.flowvarrefstate.pinfdim/ \
+                                self.sumb.flowvarrefstate.rhoinfdim)
+            V = (self.sumb.inputphysics.machgrid+self.sumb.inputphysics.mach)*a
+        
+            p = aeroProblem._flows.phat*V/aeroProblem._refs.bref
+            q = aeroProblem._flows.qhat*V/aeroProblem._refs.cref
+            r = aeroProblem._flows.rhat*V/aeroProblem._refs.bref
+            if aeroProblem._flows.liftIndex == 2:
+                rotations = [p,r,q]
+            elif aeroProblem._flows.liftIndex == 3:
+                rotations = [p,q,r]
+            else:
+                mpiPrint('Invalid lift direction. Must be 2 or 3 for \
+steady rotations and specifying an aeroProblem')
+                sys.exit(1)
+            # end if
+        else:
+            rotations = rotRate
+        # end if
+
+        if cgnsBlocks is None:
+            # By Default set all the blocks:
+            cgnsBlocks = numpy.arange(1, self.sumb.cgnsgrid.cgnsndom+1)
+        # end if
+
+        self.sumb.updaterotationrate(rotCenter, rotations, cgnsBlocks)
         self._updateVelInfo = True
 
         return
@@ -1146,13 +1165,8 @@ name is unavailable.'%(flowCase), comm=self.comm)
         '''
         Set the mach number for the problem...
         '''
-        if self.getOption('familyRot') != '':
-            Rotating = True
-        else:
-            Rotating = False
-        #endif
 
-        if Rotating or self.getOption('equationMode').lower()=='time spectral':
+        if self.getOption('equationMode').lower()=='time spectral':
             self.sumb.inputphysics.mach = 0.0
             self.sumb.inputphysics.machcoef = aeroProblem._flows.mach
             self.sumb.inputphysics.machgrid = aeroProblem._flows.mach
@@ -1169,11 +1183,55 @@ name is unavailable.'%(flowCase), comm=self.comm)
         ''' Set the Pressure, density and viscosity/reynolds number
         from the aeroProblem
         '''
-        self.sumb.flowvarrefstate.pref = aeroProblem._flows.P
-        self.sumb.flowvarrefstate.rhoref = aeroProblem._flows.rho
-        self.sumb.flowvarrefstate.tref = aeroProblem._flows.T
+        # There are three ways the required free stream conditions are
+        # set. In order of preference they are: 
 
-        # Reynolds number info not setup yet...
+        # 1. Altitude: A standard ICAO atmosphere is used to compute
+        #    ALL the required properties. No other input is used.
+
+        # 2. Specification of reynolds number, P and T in flow
+        #    class. This emulates the normal way it was originally
+        #    done in the fortran code. This sets Pref, TempFreeStream
+        #    and uses the lengthRef in the reference class for the
+        #    reynolds number computation. 
+        #
+   
+        Mach = aeroProblem._flows.mach
+
+        if aeroProblem._flows.altitude is not None:
+            rho, P, T, mu, a = self.getAltitudeParams(aeroProblem._flows.altitude)
+            ReLength = 1.0
+            Re = rho*a*Mach/mu
+            print('RE:',Re)
+
+        elif aeroProblem._flows.reynolds is not None:
+            P = aeroProblem._flows.P
+            T = aeroProblem._flows.T
+            Re = aeroProblem._flows.reynolds
+            ReLength = aeroProblem._refs.cref
+        else:
+            P = aeroProblem._flows.P
+            T = aeroProblem._flows.T
+            if self.getOption('equationtype') <> 'euler':
+                mpiPrint('altitude or reynolds number \
+must be speciifed for viscous computation')
+                sys.exit(1)
+            else:
+                # Dummy value for Euler calc...values not important
+                Re = 1.0
+                ReLength = 1.0
+        # end if
+
+        # Set all values
+        self.sumb.flowvarrefstate.pref = P 
+        self.sumb.flowvarrefstate.tref = T
+        self.sumb.inputphysics.tempfreestream = T
+        self.sumb.inputphysics.reynolds = Re
+        self.sumb.inputphysics.reynoldslength = ReLength
+
+        if self.allInitialized:
+            self.sumb.referencestate()
+            self.sumb.setflowinfinitystate()
 
         return
 
@@ -1216,14 +1274,12 @@ name is unavailable.'%(flowCase), comm=self.comm)
             self._setInflowAngle(aeroProblem)
             self._setMachNumber(aeroProblem)
             self._setRefState(aeroProblem)
-            self.sumb.referencestate()
-            self.sumb.setflowinfinitystate()
             if self.myid == 0:
                 print ('alpha:',aeroProblem._flows.alpha*(numpy.pi/180))
                 print ('Mach:',aeroProblem._flows.mach)
+        self.sumb.referencestate()
+        self.sumb.setflowinfinitystate()
 
-        #mgLvlSave =  self.sumb.inputiteration.mgstartlevel
-        #self.sumb.inputiteration.mgstartlevel = 1
         strLvl =  self.getOption('MGStartLevel')
         nLevels = self.sumb.inputiteration.nmglevels
         if strLvl < 0 or strLvl > nLevels :
@@ -1286,8 +1342,10 @@ name is unavailable.'%(flowCase), comm=self.comm)
         self._setPeriodicParams(aeroProblem)
         self._setInflowAngle(aeroProblem)
         self._setReferencePoint(aeroProblem)
-        #self._setElasticCenter(aeroProblem)
-        self._setRotationRate(aeroProblem)
+
+        ##self._setElasticCenter(aeroProblem)
+        ##self._setRotationRate(aeroProblem)
+
         self._setRefArea(aeroProblem)
         self._setRefState(aeroProblem)
 
@@ -2021,7 +2079,6 @@ name is unavailable.'%(flowCase), comm=self.comm)
         self._setPeriodicParams(aeroProblem)
         self._setInflowAngle(aeroProblem)
         self._setReferencePoint(aeroProblem)
-        self._setRotationRate(aeroProblem)
         self._setRefArea(aeroProblem)
         self._setRefState(aeroProblem)
 
@@ -2638,7 +2695,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         self.setFlowCase(flowCase)
 
         cfdForcePts = self.getForcePoints(TS)
-        if len(cfdForcepts) > 0:
+        if len(cfdForcePts) > 0:
             areas = self.sumb.getareas(cfdForcePts.T, TS+1, axis).T
         else:
             areas = numpy.zeros((0,3), self.dtype)
@@ -2843,6 +2900,71 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         # end if
         
         return
+
+
+    def getAltitudeParams(self, altitude):
+        '''
+        Compute the atmospheric properties at altitude, 'altitude' in meters
+        '''
+        
+        # Convert altitude to km since this is what the ICAO
+        # atmosphere uses:
+        altitude = altitude / 1000.0
+
+        def hermite(t, p0, m0, p1, m1):
+            return p0*(2*t**3 - 3*t**2 + 1) + m0*(t**3 - 2*t**2 + t) + \
+                p1*(-2*t**3 + 3*t**2) + m1*(t**3-t**2)
+
+        K= 34.163195
+        R0 = 6356.766 # Radius of Earth    
+        H= altitude/(1.0 + altitude/R0)
+
+        # Smoothing region on either side    
+        dH_smooth = 0.1
+
+        # Sea Level Values
+        T0 = 288.15 # Temperature
+        P0 = 101325 # Pressure
+        RL = 1.225  # Density
+        AL = 340.294 # Speed of Sound
+
+        C1 = 1.458e-6 # Constant for Sutherland's Law
+        S = 110.4 # Constant for Sutherland's Law
+
+        if (H <= 11 - dH_smooth):
+            T = 288.15 - 6.5*H
+            PP = (288.15/T)**(-K/6.5)
+        elif (H > 11 - dH_smooth and H <= 11 + dH_smooth):
+            # Parametric distance along smoothing region        
+            H_left = 11 - dH_smooth
+            H_right = 11 + dH_smooth
+            t = (H - H_left)/(H_right-H_left) # Parametric value from 0 to 1
+            val_left = T0 - 6.5*(H_left) # Value at Left
+            slope_left = -6.5*(dH_smooth*2) # Slope at left side scaled to size of region
+            val_right = 216.65 # Value at right
+            slope_right = 0 # Slope at right
+
+            # Standard cubic hermite spline interpolation
+            T = hermite(t, val_left, slope_left, val_right, slope_right)        
+
+            # Now do the same for the pressure ratio
+            T_left = T0 - 6.5*(H_left)
+            val_left = (T0/T_left)**(-K/6.5)
+            slope_left =(-6.5)*K*(T0/T_left)**(-K/6.5)/(6.5*T_left)*(dH_smooth*2)
+            val_right = 0.22336*numpy.exp(-K*(H_right-11.0)/216.650)
+            slope_right = 0.22336*numpy.exp(-K*(H_right-11.0)/216.650)*(-K/216.650)*(dH_smooth)*2
+            PP = hermite(t, val_left, slope_left, val_right, slope_right)
+        elif(H > 11 + dH_smooth):
+            T = 216.65
+            PP = 0.22336*numpy.exp(-K*(H-11.0)/216.650)
+        # end if
+
+        rho = RL * PP/(T/T0) # Density
+        mu = C1*(T**1.5)/(T+S) # Kinematic Viscosity
+        P = P0*PP # Pressure    
+        a = AL*numpy.sqrt(T/T0) # 
+
+        return rho, P, T, mu, a
 
 class SUmbDummyMesh(object):
     """

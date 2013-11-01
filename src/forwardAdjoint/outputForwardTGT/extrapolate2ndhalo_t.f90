@@ -3,7 +3,8 @@
    !
    !  Differentiation of extrapolate2ndhalo in forward (tangent) mode (with options debugTangent i4 dr8 r8):
    !   variations   of useful results: *rev *p *gamma *w *rlv
-   !   with respect to varying inputs: *rev *p *gamma *w *rlv rgas
+   !   with respect to varying inputs: *rev *p *gamma *w *rlv tref
+   !                rgas
    !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
    !                bcdata:in
    !
@@ -112,6 +113,7 @@
    &                        ISIZE3OFDrfw*ISIZE4OFDrfw)
    CALL DEBUG_TGT_REAL8ARRAY('rlv', rlv, rlvd, ISIZE1OFDrfrlv*&
    &                        ISIZE2OFDrfrlv*ISIZE3OFDrfrlv)
+   CALL DEBUG_TGT_REAL8('tref', tref, trefd)
    CALL DEBUG_TGT_REAL8('rgas', rgas, rgasd)
    CALL DEBUG_TGT_DISPLAY('entry')
    END IF
@@ -215,6 +217,7 @@
    &                          ISIZE3OFDrfw*ISIZE4OFDrfw)
    CALL DEBUG_TGT_REAL8ARRAY('rlv', rlv, rlvd, ISIZE1OFDrfrlv*&
    &                          ISIZE2OFDrfrlv*ISIZE3OFDrfrlv)
+   CALL DEBUG_TGT_REAL8('tref', tref, trefd)
    CALL DEBUG_TGT_REAL8('rgas', rgas, rgasd)
    CALL DEBUG_TGT_DISPLAY('middle')
    END IF
