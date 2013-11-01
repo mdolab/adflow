@@ -5,7 +5,8 @@
    !   variations   of useful results: *p *dw *w *(*viscsubface.tau)
    !   with respect to varying inputs: *rev *p *sfacei *sfacej *gamma
    !                *sfacek *dw *w *rlv *x *vol *si *sj *sk *(*bcdata.norm)
-   !                *radi *radj *radk timeref rhoinf pinfcorr rgas
+   !                *radi *radj *radk gammainf timeref rhoinf tref
+   !                pinfcorr rgas
    !   Plus diff mem management of: rev:in p:in sfacei:in sfacej:in
    !                gamma:in sfacek:in dw:in w:in rlv:in x:in vol:in
    !                si:in sj:in sk:in fw:in viscsubface:in *viscsubface.tau:in
@@ -158,8 +159,10 @@
    &                        ISIZE2OFDrfradj*ISIZE3OFDrfradj)
    CALL DEBUG_TGT_REAL8ARRAY('radk', radk, radkd, ISIZE1OFDrfradk*&
    &                        ISIZE2OFDrfradk*ISIZE3OFDrfradk)
+   CALL DEBUG_TGT_REAL8('gammainf', gammainf, gammainfd)
    CALL DEBUG_TGT_REAL8('timeref', timeref, timerefd)
    CALL DEBUG_TGT_REAL8('rhoinf', rhoinf, rhoinfd)
+   CALL DEBUG_TGT_REAL8('tref', tref, trefd)
    CALL DEBUG_TGT_REAL8('pinfcorr', pinfcorr, pinfcorrd)
    CALL DEBUG_TGT_REAL8('rgas', rgas, rgasd)
    CALL DEBUG_TGT_DISPLAY('entry')

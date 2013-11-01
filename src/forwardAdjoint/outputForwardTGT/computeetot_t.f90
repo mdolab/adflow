@@ -3,7 +3,7 @@
    !
    !  Differentiation of computeetot in forward (tangent) mode (with options debugTangent i4 dr8 r8):
    !   variations   of useful results: *gamma *w
-   !   with respect to varying inputs: *p *gamma *w rgas
+   !   with respect to varying inputs: *p *gamma *w tref rgas
    !   Plus diff mem management of: p:in gamma:in w:in
    !
    !      ******************************************************************
@@ -64,6 +64,7 @@
    &                        ISIZE3OFDrfp)
    CALL DEBUG_TGT_REAL8ARRAY('w', w, wd, ISIZE1OFDrfw*ISIZE2OFDrfw*&
    &                        ISIZE3OFDrfw*ISIZE4OFDrfw)
+   CALL DEBUG_TGT_REAL8('tref', tref, trefd)
    CALL DEBUG_TGT_REAL8('rgas', rgas, rgasd)
    CALL DEBUG_TGT_DISPLAY('entry')
    END IF
@@ -123,7 +124,7 @@
    ! Cp as function of the temperature is given via curve fits.
    ! Store a scale factor to compute the nonDimensional
    ! internal energy.
-   scaled = rgasd/tref
+   scaled = (rgasd*tref-rgas*trefd)/tref**2
    scale = rgas/tref
    ! Loop over the given range of the block.
    DO k=kstart,kend

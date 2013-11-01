@@ -11,9 +11,7 @@
 ! block/sps loop is outside the calculation. This routine is suitable
 ! for forward mode AD with Tapenade
 
-subroutine block_res(nn, sps, useSpatial, useForces, &
-     alpha, beta, liftIndex, &
-     Force, Moment, Lift, Drag, cForce, cMoment, CL, CD)
+subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment)
 
   use blockPointers       
   use flowVarRefState     
@@ -22,30 +20,28 @@ subroutine block_res(nn, sps, useSpatial, useForces, &
   use section
   use monitor
   use iteration
-  use costFunctions
   use inputADjoint
   use diffSizes
   implicit none
 
   ! Input Arguments:
   integer(kind=intType), intent(in) :: nn, sps
-  logical, intent(in) :: useSpatial, useForces
+  logical, intent(in) :: useSpatial
   real(kind=realType), intent(in) :: alpha, beta
   integer(kind=intType), intent(in) :: liftIndex
 
-  ! Output Arguments: Note: Cannot put intent(out) since reverse mode
-  ! may NOT compute these values and then compilation will fail
-  real(kind=realType), dimension(3) :: Force, Moment, cForce, cMoment
-  real(kind=realType) :: Lift, Drag, CL, CD
-
+  ! Output Variables
+  real(kind=realType) :: force(3), moment(3)
+  
   ! Working Variables
-  real(kind=realType) :: gm1, v2, fact
+  real(kind=realType) :: gm1, v2, fact, tmp
   integer(kind=intType) :: i, j, k, sps2, mm, l, ii, ll, jj, lEnd
   integer(kind=intType) :: nState
   real(kind=realType), dimension(nSections) :: t
-  real(kind=realType), dimension(3) :: cFp, cFv, cMp, cMv
-  real(kind=realType) :: yplusMax, scaleDim, tmp
   logical :: useOldCoor
+  real(kind=realType), dimension(3) :: cFp, cFv, cMp, cMv
+  real(kind=realType) :: yplusMax, scaleDim
+
   real(kind=realType), pointer, dimension(:,:,:,:) :: wsp
   real(kind=realType), pointer, dimension(:,:,:) :: volsp
   useOldCoor = .False.
@@ -145,9 +141,7 @@ subroutine block_res(nn, sps, useSpatial, useForces, &
      case default
         call terminate("turbResidual", & 
              "Only SA turbulence adjoint implemented")
-        
      end select
-
   endif
 
   ! -------------------------------  
@@ -226,48 +220,18 @@ subroutine block_res(nn, sps, useSpatial, useForces, &
      end do
   end do
 
-  ! We are now done with the residuals, we move on to the forces and
-  ! moments
+  call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
 
-  if (useForces) then
-     call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
-     scaleDim = pRef/pInf
+  ! Convert back to actual forces. Note that even though we use
+  ! MachCoef, Lref, and surfaceRef here, they are NOT differented,
+  ! since F doesn't actually depend on them. Ideally we would just get
+  ! the raw forces and moment form forcesAndMoments. 
+  scaleDim = pRef/pInf
+  fact = two/(gammaInf*pInf*MachCoef*MachCoef &
+       *surfaceRef*LRef*LRef*scaleDim)
+  force = (cFp + cFV)/fact
 
-     ! Sum pressure and viscous contributions
-     cForce = cFp + cFv
-     cMoment = cMp + cMv
-
-     ! Get Lift coef and Drag coef
-     CD =  cForce(1)*dragDirection(1) &
-          + cForce(2)*dragDirection(2) &
-          + cForce(3)*dragDirection(3)
-
-     CL =  cForce(1)*liftDirection(1) &
-          + cForce(2)*liftDirection(2) &
-           + cForce(3)*liftDirection(3)
-
-     ! Divide by fact to get the forces, Lift and Drag back
-     fact = two/(gammaInf*pInf*MachCoef*MachCoef &
-          *surfaceRef*LRef*LRef*scaleDim)
-     Force = cForce / fact
-     Lift  = CL / fact
-     Drag  = CD / fact
-
-     ! Moment factor has an extra lengthRef
-     fact = fact/(lengthRef*LRef)
-
-     Moment = cMoment / fact
-  else
-     Force = zero
-     Moment = zero
-     cForce = zero
-     cMoment = zero
-     Lift = zero
-     Drag = zero
-     CD = zero
-     CD = zero
-  end if
-
-  call getCostFuncMat(alpha, beta, liftIndex)
+  fact = fact/(lengthRef*LRef)
+  moment = (cMp + cMV)/fact
 
 end subroutine block_res

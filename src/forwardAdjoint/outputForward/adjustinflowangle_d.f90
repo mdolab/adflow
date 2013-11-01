@@ -2,10 +2,8 @@
    !  Tapenade 3.7 (r4786) - 21 Feb 2013 15:53
    !
    !  Differentiation of adjustinflowangle in forward (tangent) mode (with options i4 dr8 r8):
-   !   variations   of useful results: veldirfreestream dragdirection
-   !                liftdirection
-   !   with respect to varying inputs: dragdirection liftdirection
-   !                alpha beta
+   !   variations   of useful results: veldirfreestream
+   !   with respect to varying inputs: alpha beta
    !
    !      ******************************************************************
    !      *                                                                *
@@ -34,7 +32,6 @@
    refdirection(:) = zero
    refdirectiond(1) = 0.0_8
    refdirection(1) = one
-   veldirfreestreamd = 0.0_8
    CALL GETDIRVECTOR_D(refdirection, alpha, alphad, beta, betad, &
    &                veldirfreestream, veldirfreestreamd, liftindex)
    ! Drag direction given by the rotation of a unit vector
@@ -42,17 +39,15 @@
    ! 1) rotate alpha radians cw about y or z-axis
    ! 2) rotate beta radians ccw about z or y-axis
    refdirection(:) = zero
-   refdirectiond(1) = 0.0_8
    refdirection(1) = one
-   CALL GETDIRVECTOR_D(refdirection, alpha, alphad, beta, betad, &
-   &                dragdirection, dragdirectiond, liftindex)
+   CALL GETDIRVECTOR(refdirection, alpha, beta, dragdirection, &
+   &                 liftindex)
    ! Lift direction given by the rotation of a unit vector
    ! initially aligned along the positive z-direction (0,0,1)
    ! 1) rotate alpha radians cw about y or z-axis
    ! 2) rotate beta radians ccw about z or y-axis
    refdirection(:) = zero
-   refdirectiond(liftindex) = 0.0_8
    refdirection(liftindex) = one
-   CALL GETDIRVECTOR_D(refdirection, alpha, alphad, beta, betad, &
-   &                liftdirection, liftdirectiond, liftindex)
+   CALL GETDIRVECTOR(refdirection, alpha, beta, liftdirection, &
+   &                 liftindex)
    END SUBROUTINE ADJUSTINFLOWANGLE_D

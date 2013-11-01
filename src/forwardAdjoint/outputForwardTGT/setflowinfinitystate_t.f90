@@ -3,8 +3,8 @@
    !
    !  Differentiation of setflowinfinitystate in forward (tangent) mode (with options debugTangent i4 dr8 r8):
    !   variations   of useful results: winf pinfcorr
-   !   with respect to varying inputs: pinf rhoinf muinf uinf rgas
-   !                veldirfreestream machcoef
+   !   with respect to varying inputs: gammainf pinf rhoinf tref muinf
+   !                uinf rgas veldirfreestream
    !
    !      ******************************************************************
    !      *                                                                *
@@ -48,14 +48,15 @@
    EXTERNAL DEBUG_TGT_HERE
    LOGICAL :: DEBUG_TGT_HERE
    IF (.TRUE. .AND. DEBUG_TGT_HERE('entry', .FALSE.)) THEN
+   CALL DEBUG_TGT_REAL8('gammainf', gammainf, gammainfd)
    CALL DEBUG_TGT_REAL8('pinf', pinf, pinfd)
    CALL DEBUG_TGT_REAL8('rhoinf', rhoinf, rhoinfd)
+   CALL DEBUG_TGT_REAL8('tref', tref, trefd)
    CALL DEBUG_TGT_REAL8('muinf', muinf, muinfd)
    CALL DEBUG_TGT_REAL8('uinf', uinf, uinfd)
    CALL DEBUG_TGT_REAL8('rgas', rgas, rgasd)
    CALL DEBUG_TGT_REAL8ARRAY('veldirfreestream', veldirfreestream, &
    &                        veldirfreestreamd, 3)
-   CALL DEBUG_TGT_REAL8('machcoef', machcoef, machcoefd)
    CALL DEBUG_TGT_DISPLAY('entry')
    END IF
    !
@@ -68,9 +69,8 @@
    ! Compute the velocity squared based on MachCoef;
    ! needed for the initialization of the turbulent energy,
    ! especially for moving geometries.
-   uinf2d = (gammainf*((machcoefd*machcoef+machcoef*machcoefd)*pinf+&
-   &    machcoef**2*pinfd)*rhoinf-machcoef**2*gammainf*pinf*rhoinfd)/rhoinf&
-   &    **2
+   uinf2d = (machcoef**2*(gammainfd*pinf+gammainf*pinfd)*rhoinf-machcoef&
+   &    **2*gammainf*pinf*rhoinfd)/rhoinf**2
    uinf2 = machcoef*machcoef*gammainf*pinf/rhoinf
    winfd = 0.0_8
    ! Allocate the memory for wInf.
@@ -114,6 +114,7 @@
    IF (.TRUE. .AND. DEBUG_TGT_HERE('middle', .FALSE.)) THEN
    CALL DEBUG_TGT_REAL8('pinf', pinf, pinfd)
    CALL DEBUG_TGT_REAL8('rhoinf', rhoinf, rhoinfd)
+   CALL DEBUG_TGT_REAL8('tref', tref, trefd)
    CALL DEBUG_TGT_REAL8ARRAY('winf', winf, winfd, 10)
    CALL DEBUG_TGT_REAL8('uinf', uinf, uinfd)
    CALL DEBUG_TGT_REAL8('rgas', rgas, rgasd)

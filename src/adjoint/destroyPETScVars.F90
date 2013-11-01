@@ -58,6 +58,9 @@ subroutine destroyPETScVars
   call MatDestroy(dFcdx, PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
 
+  call MatDestroy(doAdx, PETScIerr)
+  call EChk(PETScIerr,__FILE__,__LINE__)
+
   call MatDestroy(dFndFc, PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
 

@@ -67,12 +67,7 @@ module costFunctions
        costFuncBendingCoef= 37
 
   real(kind=realType), allocatable, dimension(:)   :: functionValue
-  real(kind=realType), allocatable, dimension(:, :, :) :: costFuncMat
-#ifndef USE_TAPENADE
-  REAL(kind=realtype), allocatable, DIMENSION(:, :, :) :: costfuncmatd
-  real(kind=realType), dimension(:,:,:,:), allocatable :: dCostFuncmatdExtra
-  real(kind=realType), dimension(6) :: FMExtra
-#endif
+
 end module costFunctions
 
 

@@ -4,7 +4,8 @@
    !  Differentiation of bceulerwall in forward (tangent) mode (with options debugTangent i4 dr8 r8):
    !   variations   of useful results: *rev *p *gamma *w *rlv
    !   with respect to varying inputs: *rev *p *s *gamma *w *rlv *si
-   !                *sj *sk *(*bcdata.norm) *(*bcdata.rface) rgas
+   !                *sj *sk *(*bcdata.norm) *(*bcdata.rface) tref
+   !                rgas
    !   Plus diff mem management of: rev:in p:in s:in gamma:in w:in
    !                rlv:in si:in sj:in sk:in bcdata:in *bcdata.norm:in
    !                *bcdata.rface:in
@@ -178,6 +179,7 @@
    &                          )%rface, ISIZE1OFDrfDrfbcdata_rface*&
    &                          ISIZE2OFDrfDrfbcdata_rface)
    END DO
+   CALL DEBUG_TGT_REAL8('tref', tref, trefd)
    CALL DEBUG_TGT_REAL8('rgas', rgas, rgasd)
    CALL DEBUG_TGT_DISPLAY('entry')
    END IF
@@ -410,6 +412,7 @@
    &                                    ISIZE1OFDrfDrfbcdata_rface*&
    &                                    ISIZE2OFDrfDrfbcdata_rface)
    END DO
+   CALL DEBUG_TGT_REAL8('tref', tref, trefd)
    CALL DEBUG_TGT_REAL8('rgas', rgas, rgasd)
    CALL DEBUG_TGT_DISPLAY('middle')
    END IF

@@ -24,7 +24,6 @@ subroutine gridVelocitiesFineLevel(useOldCoor, t, sps)
      ! Set the pointers for this block.
 
      call setPointers(nn, groundLevel, sps)
-
      call gridVelocitiesFineLevel_block(useOldCoor, t, sps)
 
   end do domains
@@ -35,7 +34,7 @@ end subroutine gridVelocitiesFineLevel
 !      *                                                                *
 !      * File:          gridVelocities.f90                              *
 !      * Author:        Edwin van der Weide                             *
-!      * Starting date: 02-23-2004                                      *
+!      * Starting date: 02-23-2004                                     *
 !      * Last modified: 06-28-2005                                      *
 !      *                                                                *
 !      ******************************************************************
@@ -117,11 +116,8 @@ subroutine gridVelocitiesFineLevel_block(useOldCoor, t, sps)
   !
   ! Compute the mesh velocity from the given mesh Mach number.
 
-  !  aInf = sqrt(gammaInf*pInf/rhoInf)
-  !  velxGrid = aInf*MachGrid(1)
-  !  velyGrid = aInf*MachGrid(2)
-  !  velzGrid = aInf*MachGrid(3)
-
+  ! vel{x,y,z}Grid0 is the ACTUAL velocity you want at the
+  ! geometry. 
   aInf = sqrt(gammaInf*pInf/rhoInf)
   velxGrid0 = (aInf*machgrid)*(-velDirFreestream(1))
   velyGrid0 = (aInf*machgrid)*(-velDirFreestream(2))
@@ -144,7 +140,7 @@ subroutine gridVelocitiesFineLevel_block(useOldCoor, t, sps)
 
      tNew = timeUnsteady + timeUnsteadyRestart
      tOld = tNew - t(1)
-
+     
      if(TSpMode.or. TSqMode .or.TSrMode) then
         ! Compute the rotation matrix of the rigid body rotation as
         ! well as the rotation point; the latter may vary in time due
@@ -161,6 +157,7 @@ subroutine gridVelocitiesFineLevel_block(useOldCoor, t, sps)
         velzgrid0 = rotationMatrix(3,1)*velxgrid0 &
              + rotationMatrix(3,2)*velygrid0 &
              + rotationMatrix(3,3)*velzgrid0
+
      elseif(tsAlphaMode)then
         ! get the baseline alpha and determine the liftIndex
         call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
@@ -220,7 +217,7 @@ subroutine gridVelocitiesFineLevel_block(useOldCoor, t, sps)
 
   testMoving: if( blockIsMoving ) then
      ! Determine the situation we are having here.
-
+     
      testUseOldCoor: if( useOldCoor ) then
         !
         !            ************************************************************
@@ -441,101 +438,11 @@ subroutine gridVelocitiesFineLevel_block(useOldCoor, t, sps)
         j = nbkGlobal
 
         rotCenter = cgnsDoms(j)%rotCenter
-        offSetVector= (rotCenter-rotPoint)
         rotRate   = timeRef*cgnsDoms(j)%rotRate
 
-
-        if (useWindAxis)then
-           !determine the current angles from the free stream velocity
-           call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
-
-           if (liftIndex == 2) then
-              ! different coordinate system for aerosurf
-              ! Wing is in z- direction
-              rotRateTrans(1,1)=cos(alpha)*cos(beta)
-              rotRateTrans(1,2)=-sin(alpha)
-              rotRateTrans(1,3)=-cos(alpha)*sin(beta)
-              rotRateTrans(2,1)=sin(alpha)*cos(beta)
-              rotRateTrans(2,2)=cos(alpha)
-              rotRateTrans(2,3)=-sin(alpha)*sin(beta)
-              rotRateTrans(3,1)=sin(beta)
-              rotRateTrans(3,2)=0.0
-              rotRateTrans(3,3)=cos(beta)
-
-           elseif(liftIndex ==3) then
-              ! Wing is in y- direction
-              !Rotate the rotation rate from the wind axis back to the local body axis
-              rotRateTrans(1,1)=cos(alpha)*cos(beta)
-              rotRateTrans(1,2)=-cos(alpha)*sin(beta)
-              rotRateTrans(1,3)=-sin(alpha)
-              rotRateTrans(2,1)=sin(beta)
-              rotRateTrans(2,2)=cos(beta)
-              rotRateTrans(2,3)=0.0
-              rotRateTrans(3,1)=sin(alpha)*cos(beta)
-              rotRateTrans(3,2)=-sin(alpha)*sin(beta)
-              rotRateTrans(3,3)=cos(alpha)
-           else
-              call terminate('getDirAngle', 'Invalid Lift Direction')
-           endif
-
-           rotRateTemp = rotRate
-           rotRate=0.0
-           do i=1,3
-              do j=1,3
-                 rotRate(i)=rotRate(i)+rotRateTemp(j)*rotRateTrans(i,j)
-              end do
-           end do
-        end if
-
-
-!!$             if (useWindAxis)then
-!!$                !determine the current angles from the free stream velocity
-!!$                call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
-!!$                !Rotate the rotation rate from the wind axis back to the local body axis
-!!$                !checkt he relationship between the differnt degrees of freedom!
-!!$                rotRateTrans(1,1)=cos(alpha)*cos(beta)
-!!$                rotRateTrans(1,2)=-cos(alpha)*sin(beta)
-!!$                rotRateTrans(1,3)=-sin(alpha)
-!!$                rotRateTrans(2,1)=sin(beta)
-!!$                rotRateTrans(2,2)=cos(beta)
-!!$                rotRateTrans(2,3)=0.0
-!!$                rotRateTrans(3,1)=sin(alpha)*cos(beta)
-!!$                rotRateTrans(3,2)=-sin(alpha)*sin(beta)
-!!$                rotRateTrans(3,3)=cos(alpha)
-!!$
-!!$                rotRateTemp = rotRate
-!!$                rotRate=0.0
-!!$                do i=1,3
-!!$                   do j=1,3
-!!$                      rotRate(i)=rotRate(i)+rotRateTemp(j)*rotRateTrans(i,j)
-!!$                   end do
-!!$                end do
-!!$             end if
-
-        !subtract off the rotational velocity of the center of the grid
-        ! to account for the added overall velocity.
-        !             velxGrid =velxgrid0+ 1*(rotRate(2)*rotCenter(3) - rotRate(3)*rotCenter(2))
-        !             velyGrid =velygrid0+ 1*(rotRate(3)*rotCenter(1) - rotRate(1)*rotCenter(3))
-        !             velzGrid =velzgrid0+ 1*(rotRate(1)*rotCenter(2) - rotRate(2)*rotCenter(1))
-
-        velxGrid =velxgrid0+ 1*(rotRate(2)*offSetVector(3) &
-             - rotRate(3)*offSetVector(2)) &
-             + derivRotationMatrix(1,1)*offSetVector(1) &
-             + derivRotationMatrix(1,2)*offSetVector(2) &
-             + derivRotationMatrix(1,3)*offSetVector(3)
-        velyGrid =velygrid0+ 1*(rotRate(3)*offSetVector(1)&
-             - rotRate(1)*offSetVector(3))&
-             + derivRotationMatrix(2,1)*offSetVector(1) &
-             + derivRotationMatrix(2,2)*offSetVector(2) &
-             + derivRotationMatrix(2,3)*offSetVector(3)
-        velzGrid =velzgrid0+ 1*(rotRate(1)*offSetVector(2) &
-             - rotRate(2)*offSetVector(1)) &
-             + derivRotationMatrix(3,1)*offSetVector(1) &
-             + derivRotationMatrix(3,2)*offSetVector(2) &
-             + derivRotationMatrix(3,3)*offSetVector(3)
-
-        !add in rotmatrix*rotpoint....
-
+        velXgrid = velXGrid0
+        velYgrid = velYGrid0
+        velZgrid = velZGrid0
 !
 !            ************************************************************
 !            *                                                          *

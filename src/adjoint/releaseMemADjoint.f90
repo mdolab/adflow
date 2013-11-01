@@ -27,8 +27,6 @@ subroutine releaseMemADjoint()
   use costFUnctions
   implicit none
 
-  deallocate(costFuncMat, costFuncMatd)
-
   ! Destroy the empty vectors:
   call vecDestroy(fVec1,PETScIerr)
   call vecDestroy(fVec2,PETScIerr)

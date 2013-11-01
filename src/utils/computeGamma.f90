@@ -24,8 +24,8 @@
 !
 !      Subroutine arguments.
 !
-       real(kind=realType), dimension(*), intent(in)  :: T
-       real(kind=realType), dimension(*), intent(out) :: gamma
+       real(kind=realType), dimension(mm), intent(in)  :: T
+       real(kind=realType), dimension(mm), intent(out) :: gamma
        integer(kind=intType), intent(in)              :: mm
 !
 !      Local variables.

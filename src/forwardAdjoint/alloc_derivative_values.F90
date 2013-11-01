@@ -23,8 +23,7 @@ subroutine alloc_derivative_values(nn, level)
   integer(kind=intType) :: iBeg, jBeg, iEnd, jEnd
   integer(kind=intType) :: massShape(2), max_face_size
 
-  real(kind=realType) :: alpha, beta, Lift, Drag, CL, CD
-  real(kind=realType), dimension(3) :: Force, Moment, cForce, cMoment
+  real(kind=realType) :: alpha, beta, force(3), moment(3)
   integer(kind=intType) :: liftIndex
   
   ! Setup number of state variable based on turbulence assumption
@@ -161,6 +160,10 @@ subroutine alloc_derivative_values(nn, level)
         call EChk(ierr,__FILE__,__LINE__)
          flowDomsd(nn,1,sps)%bcData(mm)%M = zero
 
+         allocate(flowDomsd(nn,1,sps)%BCData(mm)%oArea(iBeg:iEnd,jBeg:jEnd), stat=ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+        flowDomsd(nn,1,sps)%bcData(mm)%oArea = zero
+
         allocate(flowDomsd(nn,1,sps)%BCData(mm)%uSlip(iBeg:iEnd,jBeg:jEnd,3), stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
         flowDomsd(nn,1,sps)%BCData(mm)%uSlip = zero
@@ -229,9 +232,7 @@ subroutine alloc_derivative_values(nn, level)
 
      call setPointers(nn,level,sps)
 
-     call block_res(nn, sps, .False., .False., &
-          alpha, beta, liftIndex, Force, Moment, Lift, Drag, &
-          cForce, cMoment, CL, CD)
+     call block_res(nn, sps, .False., alpha, beta, liftIndex, force, moment)
      
      allocate(flowDomsd(nn,1,sps)%wtmp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
      call EChk(ierr,__FILE__,__LINE__)

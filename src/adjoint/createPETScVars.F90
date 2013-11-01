@@ -10,7 +10,7 @@ subroutine createPETScVars
   !
   use ADjointPETSc, only: dRdwT, dRdwPreT, dJdw, psi, adjointRHS, adjointRes, &
        FMw, dFcdw, dFcdx, dFndFc, dFdx, dFdw, dRdx, xVec, dJdx, FMx, dRda, &
-       adjointKSP, dFMdExtra, dRda_data, overArea, fCell, fNode
+       adjointKSP, dFMdExtra, dRda_data, overArea, fCell, fNode, doAdx
   use ADjointVars   
   use BCTypes
   use communication  
@@ -139,7 +139,6 @@ subroutine createPETScVars
   ! centered forces. This matrix will consist entirely of rows with 4
   ! values each of which is exactly 1/4 
 
-
   ! dFcdw
   allocate( nnzDiagonal(nDimCell), nnzOffDiag(nDimCell))
   if (.not. viscous) then
@@ -170,6 +169,15 @@ subroutine createPETScVars
 
   call myMatCreate(dFcdx, 1, nDimCell, nDimX, nnzDiagonal, nnzOffDiag, &
        __FILE__, __LINE__)
+  deallocate(nnzDiagonal, nnzOffDiag)
+
+  ! doAdx -> Derviative of 1/area wrt the spatial nodes.
+  allocate( nnzDiagonal(nDimPt), nnzOffDiag(nDimPt))
+  nnzDiagonal = 3*3*3
+  nnzOffDiag = 0
+
+  call myMatCreate(doAdx, 1, nDimPt, nDimx, nnzDiagonal, nnzOffDiag, &
+       __FILE__, __LINE__)
 
   deallocate(nnzDiagonal, nnzOffDiag)
 
@@ -180,7 +188,6 @@ subroutine createPETScVars
   nnzOffDiag  = 4 ! This should be enough...might get a couple of mallocs
   call myMatCreate(dFndFc, 1, nDimPt, nDimCell, nnzDiagonal, nnzOffDiag, &
        __FILE__, __LINE__)
-
 
   deallocate(nnzDiagonal, nnzOffDiag)
 
@@ -330,7 +337,7 @@ subroutine createPETScVars
   if (allocated(dFMdExtra)) then
      deallocate(dFMdExtra)
   end if
-  allocate(dFMdExtra(6, nDesignExtra))
+  allocate(dFMdExtra(6, nDesignExtra, nTimeIntervalsSpectral))
 
   if (PETSC_VERSION_MINOR < 3 ) then
      call MatCreateMPIDense(SUMB_COMM_WORLD, nDimW, PETSC_DECIDE, &

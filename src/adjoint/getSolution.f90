@@ -11,8 +11,9 @@
 subroutine getSolution(sps)
 
   use costFunctions
-  use inputTSStabDeriv !TSStability
-  use inputTimeSpectral !nTimeIntervalsSpectral
+  use inputTSStabDeriv
+  use inputPhysics
+  use inputTimeSpectral 
   use communication
   use inputIteration
   implicit none
@@ -28,28 +29,48 @@ subroutine getSolution(sps)
   real(kind=realType), dimension(8) :: Coef0,Coef0dot
   real(kind=realType), dimension(nCostFunction)::globalCFVals
   real(kind=realType), dimension(:),allocatable :: localVal,globalVal
-  real(kind=realType)::bendingMoment,bendingSum
-  real(kind=realType) :: value1,value2
-  integer(kind=intType) :: ierr, i
+  real(kind=realType), dimension(nTimeIntervalsSpectral, 8) :: baseCoef
+  real(kind=realType)::bendingMoment,bendingSum, cf(3), cm(3)
+  integer(kind=intType) :: ierr, i, liftIndex
 
   ! Function values
   if (.not. allocated(functionValue)) then
      allocate(functionValue(nCostFunction))
   end if
 
+  !Begin execution
+  !determine the liftIndex from the flow and liftdirection
+  call getDirAngle(velDirFreestream, LiftDirection,&
+       liftIndex, alpha, beta)
+
   functionValue(:) = 0.0
+
   bendingSum = 0.0
   do i =1,nTimeIntervalsSpectral
      call computeAeroCoef(globalCFVals,i)
+
+     BaseCoef(i,1) = globalCFVals(costFuncLiftCoef)
+     BaseCoef(i,2) = globalCFVals(costFuncDragCoef)
+     BaseCoef(i,3) = globalCFVals(costFuncForceXCoef)
+     BaseCoef(i,4) = globalCFVals(costFuncForceYCoef)
+     BaseCoef(i,5) = globalCFVals(costFuncForceZCoef)
+     BaseCoef(i,6) = globalCFVals(costFuncMomXCoef)
+     BaseCoef(i,7) = globalCFVals(costFuncMomYCoef)
+     BaseCoef(i,8) = globalCFVals(costFuncMomZCoef)
+
+     cf = (/globalCFVals(costFuncForceXCoef), &
+          globalCFVals(costFuncForceYCoef), &
+          globalCFVals(costFuncForceZCoef)/)
      
-     call computeRootBendingMoment(globalCFVals,bendingMoment)
+     cm = (/globalCFVals(costFuncMomXCoef), &
+          globalCFVals(costFuncMomYCoef), &
+          globalCFVals(costFuncMomZCoef)/)
+     call computeRootBendingMoment(cf, cm, liftIndex, bendingMoment)
      bendingsum = bendingsum+bendingMoment
-
   end do
-
-  functionValue(costFuncBendingCoef)=bendingSum/nTimeIntervalsSpectral
-
+  
   call computeAeroCoef(globalCFVals,sps)
+  functionValue(costFuncBendingCoef)=bendingSum/nTimeIntervalsSpectral
 
   functionValue(costFuncLift) = globalCFVals(costFuncLift) 
   functionValue(costFuncDrag) = globalCFVals(costFuncDrag) 
@@ -69,7 +90,9 @@ subroutine getSolution(sps)
   functionValue(costFuncMomZCoef) = globalCFVals(costFuncMomZCoef)
 
   if(TSStability)then
-     call computeTSDerivatives(coef0,dcdalpha,dcdalphadot,dcdq,dcdqdot)
+
+     call computeTSDerivatives(baseCoef, coef0, dcdalpha, &
+          dcdalphadot, dcdq, dcdqdot)
 
      functionValue( costFuncCl0  )       = coef0(1)
      functionValue( costFuncCd0 )        = coef0(2)

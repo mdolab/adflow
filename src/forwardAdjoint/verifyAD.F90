@@ -33,10 +33,8 @@ subroutine verifyAD
   integer(kind=intType) :: i, j, k, l, nn
   integer(kind=intType) :: nState, level, idxblk
    
-  real(kind=realType) :: alpha, beta, Lift, Drag, CL, CD
-  real(kind=realType), dimension(3) :: Force, Moment, cForce, cMoment
-  real(kind=realType) :: alphad, betad, Liftd, Dragd, CLd, CDd
-  real(kind=realType), dimension(3) :: Forced, Momentd, cForced, cMomentd
+  real(kind=realType) :: alpha, beta, force(3), moment(3)
+  real(kind=realType) :: alphad, betad, forced(3), momentd(3)
 
   integer(kind=intType) :: liftIndex
   logical :: resetToRANS
@@ -144,14 +142,13 @@ subroutine verifyAD
                     
                     ! call block_res_t
                     call DEBUG_TGT_CALL('block_res',.true.,.false.)
-                    call block_res_t(nn, 1, .True., .True., &
-                         alpha, alphad, beta, betad, liftIndex, Force, Forced, &
-                         Moment, Momentd, lift, liftd, drag, dragd, cForce, &
-                         cForced, cMoment, cMomentd, CL, CLD, CD, CDd)
+                    call block_res_t(nn, 1, .True., &
+                         alpha, alphad, beta, betad, liftIndex, force, forced, moment, momentd)
                     
                     ! conclude debugger
                     call DEBUG_TGT_EXIT()
-                    call DEBUG_TGT_CONCLUDEREAL8('CL',CL,CLD)
+                    call DEBUG_TGT_CONCLUDEREAL8ARRAY('force', force, forced)
+                    call DEBUG_TGT_CONCLUDEREAL8ARRAY('moment', moment, momentd)
                     
                  end do stateLoop
               end do
@@ -212,14 +209,13 @@ subroutine verifyAD
                     
                     ! call block_res_t
                     call DEBUG_TGT_CALL('block_res',.true.,.false.)
-                    call block_res_t(nn, 1, .True., .True., &
-                         alpha, alphad, beta, betad, liftIndex, Force, Forced, &
-                         Moment, Momentd, lift, liftd, drag, dragd, cForce, &
-                         cForced, cMoment, cMomentd, CL, CLD, CD, CDd)
-                    
+                    call block_res_t(nn, 1, .True., &
+                         alpha, alphad, beta, betad, liftIndex, force, forced, moment, momentd)
+
                     ! conclude debugger
                     call DEBUG_TGT_EXIT()
-                    call DEBUG_TGT_CONCLUDEREAL8('CL',CL,CLD)
+                    call DEBUG_TGT_CONCLUDEREAL8ARRAY('force', force, forced)
+                    call DEBUG_TGT_CONCLUDEREAL8ARRAY('moment', moment, momentd)
                
                  end do dofLoop
               end do
@@ -284,14 +280,13 @@ subroutine verifyAD
                     
         ! call block_res_t
         call DEBUG_TGT_CALL('block_res',.true.,.false.)
-        call block_res_t(nn, 1, .True., .True., &
-             alpha, alphad, beta, betad, liftIndex, Force, Forced, &
-             Moment, Momentd, lift, liftd, drag, dragd, cForce, &
-             cForced, cMoment, cMomentd, CL, CLD, CD, CDd)
+        call block_res_t(nn, 1, .True., &
+             alpha, alphad, beta, betad, liftIndex, &
+             force, forced, moment, momentd)
                     
         ! conclude debugger
         call DEBUG_TGT_EXIT()
-        call DEBUG_TGT_CONCLUDEREAL8('CL',CL,CLD)
+        call DEBUG_TGT_CONCLUDEREAL8ARRAY('moment', moment, momentd)
         
      end do domainLoopAD3
      
