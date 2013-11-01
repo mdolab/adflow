@@ -52,17 +52,17 @@ subroutine getAreas(areas, pts, npts, sps_in, axis)
               ! happens, the normals for the jMin and jMax faces are
               ! flipped. 
            case (iMin)
-              fact = -one 
+              fact = one 
            case (iMax)
-              fact = one
+              fact = -one
            case (jMin)
-              fact = one
+              fact = -one
            case (jMax)
-              fact = -one
-           case (kMin)
-              fact = -one
-           case (kMax)
               fact = one
+           case (kMin)
+              fact = one
+           case (kMax)
+              fact = -one
            end select
            
            ! Store the cell range of the subfaces a bit easier.
@@ -73,7 +73,6 @@ subroutine getAreas(areas, pts, npts, sps_in, axis)
            iBeg = BCData(mm)%inBeg + 1; iEnd = BCData(mm)%inEnd
            
            ! Compute the dual area at each node. Just store in first dof
-           
            do j=jBeg, jEnd ! This is a face loop
               do i=iBeg, iEnd ! This is a face loop 
                  
@@ -83,7 +82,7 @@ subroutine getAreas(areas, pts, npts, sps_in, axis)
                  lower_right = lower_left + 1
                  upper_left  = lower_right + iend - ibeg + 1
                  upper_right = upper_left + 1
-
+             
                  call quad_area(&
                       pts(:, lower_left), pts(:, lower_right), &
                       pts(:, upper_left), pts(:, upper_right), &
@@ -99,7 +98,7 @@ subroutine getAreas(areas, pts, npts, sps_in, axis)
                  end if
               end do
            end do
-           
+
            ! Note how iBeg,iBeg is defined above... it is one MORE
            ! then the starting node (used for looping over faces, not
            ! nodes)
@@ -165,19 +164,19 @@ subroutine getAreaSensitivity(darea, pts, npts, sps_in, axis)
               ! happens, the normals for the jMin and jMax faces are
               ! flipped. 
            case (iMin)
-              fact = -one 
+              fact = one 
            case (iMax)
-              fact = one
+              fact = -one
            case (jMin)
-              fact = one
+              fact = -one
            case (jMax)
-              fact = -one
-           case (kMin)
-              fact = -one
-           case (kMax)
               fact = one
+           case (kMin)
+              fact = one
+           case (kMax)
+              fact = -one
            end select
-           
+       
            ! Store the cell range of the subfaces a bit easier.
            ! As only owned faces must be considered the nodal range
            ! in BCData must be used to obtain this data.
@@ -213,10 +212,10 @@ subroutine getAreaSensitivity(darea, pts, npts, sps_in, axis)
                          pts(:, upper_right), pt4b, &
                          axis, area, areab)
 
-                    darea(:,lower_left)  = darea(:, lower_left)  + pt1b*fact*fact2
-                    darea(:,lower_right) = darea(:, lower_right) + pt2b*fact*fact2
-                    darea(:,upper_left)  = darea(:, upper_left)  + pt3b*fact*fact2
-                    darea(:,upper_right) = darea(:, upper_right) + pt4b*fact*fact2
+                    darea(:,lower_left)  = darea(:, lower_left)  + pt1b
+                    darea(:,lower_right) = darea(:, lower_right) + pt2b
+                    darea(:,upper_left)  = darea(:, upper_left)  + pt3b
+                    darea(:,upper_right) = darea(:, upper_right) + pt4b
                  end if
               end do
            end do

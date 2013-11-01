@@ -43,22 +43,18 @@ SUBDIR_SRC    = src/modules       \
 	        src/utils         \
 	        src/wallDistance  \
 		src/warping       \
-		src/bendingMomentAnalysis \
 		src/adjoint               \
                 src/adjoint/ADFirstAidKit \
-                src/adjoint/stabilityInput\
-                src/adjoint/stabilityOutput\
-                src/adjoint/forcesInput\
-                src/adjoint/forcesOutput\
-                src/adjoint/residualInputTS \
-                src/adjoint/residualOutputTS\
-                src/bendingMomentAnalysis/bendingOutput\
                 src/forwardAdjoint \
                 src/forwardAdjoint/residualInput \
                 src/forwardAdjoint/outputForwardTGT \
                 src/forwardAdjoint/outputForward \
+		src/forwardAdjoint/costInput \
+		src/forwardAdjoint/outputCost\
+		src/bendingMomentAnalysis \
+                src/adjoint/forcesOutput\
+                src/adjoint/forcesInput\
 #                src/forwardAdjoint/residualOutputReverse\
-
 
 SUBDIR_EXEC   = src/exec
 SUBDIR_PV3    = src/pv3Interface

@@ -37,7 +37,6 @@ include ${SUMB_RULES_FILE}
 vpath %.o $(SUMB_OBJDIR)
 
 FILES_TO_COMPLEXIFY =	rootBendingMomentAnalysis.f90\
-			verifyBendingDerivatives.f90
 
 FILES_TO_COPY = 
 

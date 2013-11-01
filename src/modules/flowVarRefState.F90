@@ -89,8 +89,9 @@
        REAL(kind=realtype) :: prefd, rhorefd, trefd
        REAL(kind=realtype) :: murefd, timerefd
        REAL(kind=realtype) :: pinfdimd, rhoinfdimd
+       real(kind=realType) :: mudimd
        REAL(kind=realtype) :: rhoinfd, uinfd, pinfd, pinfcorrd
-       REAL(kind=realtype) :: rgasd, muinfd
+       REAL(kind=realtype) :: rgasd, muinfd, gammainfd
        real(kind=realType), dimension(:), allocatable :: wInfd
 #endif
        ! viscous:   whether or not this is a viscous computation.

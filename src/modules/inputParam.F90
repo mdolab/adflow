@@ -426,7 +426,6 @@
        use precision
        implicit none
        save
-
        ! rotPoint(3): Rotation point of the rigid body rotation.
 
        real(kind=realType), dimension(3) :: rotPoint
@@ -731,19 +730,19 @@
        real(kind=realType), dimension(3) :: pointRef
 
 #ifndef USE_TAPENADE
-       real(kind=realType), dimension(3) :: velDirFreestreamd
-       real(kind=realType), dimension(3) :: liftDirectiond
-       real(kind=realType), dimension(3) :: dragDirectiond
-       real(kind=realType), dimension(3) :: pointRefd
+       real(kind=realType), dimension(3) :: velDirFreestreamd, velDirFreeStreamb
+       real(kind=realType), dimension(3) :: liftDirectiond, liftDirectionb
+       real(kind=realType), dimension(3) :: dragDirectiond, dragDirectionb
+       real(kind=realType), dimension(3) :: pointRefd, pointRefb
        real(kind=realType) :: Machd, MachCoefd, MachGridd
+       real(kind=realType) :: Machb, MachCoefb, MachGridb
+       real(kind=realType) :: reynoldsd
        real(kind=realType) :: gammaconstantb, gammaconstantd
-       real(kind=realType) :: surfaceRefd, lengthRefd, lengthRefb
-
+       real(kind=realType) :: surfaceRefd, surfaceRefb, lengthRefd, lengthRefb
+       real(kind=realType) :: tempFreeStreamd
        real(kind=realType) :: Prandtlb, PrandtlTurbb
 #endif
 
-       !bending moment derivative
-       real(kind=realType), dimension(3) :: pointRefb
        real(kind=realType), dimension(3) :: pointRefEC
 
        ! Return forces as tractions instead of forces:

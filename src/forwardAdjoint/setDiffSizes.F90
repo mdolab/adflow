@@ -32,11 +32,6 @@ subroutine setDiffSizes
   ! Compute nlevels
   nLevels = ubound(flowDoms, 2)
 
-  ! Size of costfuncmat
-  ISIZE1OFDrfcostfuncmat = 6
-  ISIZE2OFDrfcostfuncmat = nCostFunction
-  ISIZE3OFDrfcostfuncmat = nTimeIntervalsSpectral
-
   ! Set the size for dynamic pointers to zero for debug purpose
   ! bcdata%norm
   ISIZE1OFDrfDrfbcdata_norm = 0
@@ -61,6 +56,11 @@ subroutine setDiffSizes
   ISIZE1OFDrfDrfbcdata_fv = 0
   ISIZE2OFDrfDrfbcdata_fv = 0
   ISIZE3OFDrfDrfbcdata_fv = 0
+
+  ! bcdata%fp
+  ISIZE1OFDrfDrfbcdata_oarea = 0
+  ISIZE2OFDrfDrfbcdata_oarea = 0
+  ISIZE3OFDrfDrfbcdata_oarea = 0
 
   ! viscsubface%tau
   ISIZE1OFDrfDrfviscsubface_tau = 0

@@ -38,12 +38,12 @@ vpath %.o $(SUMB_OBJDIR)
 FF90_OBJECTS =  applyallbc_block_t.o\
 		bcsymm_t.o\
                 computeetot_t.o\
+		computegamma_t.o\
 		computelamviscosity_t.o\
 		extrapolate2ndhalo_t.o\
 	        invisciddissfluxscalarcoarse_t.o\
 		timestep_block_t.o\
 		bceulerwall_t.o\
-	  	getcostfuncmat_t.o\
 		curveupre_t.o\
 		invisciddissfluxscalar_t.o\
 		turbbcnswall_t.o\

@@ -5,7 +5,7 @@
    !   variations   of useful results: *rev *bvtj1 *bvtj2 *p *gamma
    !                *bmtk1 *w *bmtk2 *rlv *bvtk1 *bvtk2 *bmti1 *bmti2
    !                *bvti1 *bvti2 *bmtj1 *bmtj2
-   !   with respect to varying inputs: *rev *p *w *rlv rgas
+   !   with respect to varying inputs: *rev *p *w *rlv tref rgas
    !   Plus diff mem management of: rev:in bvtj1:in bvtj2:in p:in
    !                gamma:in bmtk1:in w:in bmtk2:in rlv:in bvtk1:in
    !                bvtk2:in bmti1:in bmti2:in bvti1:in bvti2:in bmtj1:in
@@ -153,6 +153,7 @@
    &                        ISIZE3OFDrfw*ISIZE4OFDrfw)
    CALL DEBUG_TGT_REAL8ARRAY('rlv', rlv, rlvd, ISIZE1OFDrfrlv*&
    &                        ISIZE2OFDrfrlv*ISIZE3OFDrfrlv)
+   CALL DEBUG_TGT_REAL8('tref', tref, trefd)
    CALL DEBUG_TGT_REAL8('rgas', rgas, rgasd)
    CALL DEBUG_TGT_DISPLAY('entry')
    END IF
@@ -272,6 +273,7 @@
    CALL DEBUG_TGT_REAL8ARRAY('bmtj2', bmtj2, bmtj2d, &
    &                                ISIZE1OFDrfbmtj2*ISIZE2OFDrfbmtj2*&
    &                                ISIZE3OFDrfbmtj2*ISIZE4OFDrfbmtj2)
+   CALL DEBUG_TGT_REAL8('tref', tref, trefd)
    CALL DEBUG_TGT_REAL8('rgas', rgas, rgasd)
    CALL DEBUG_TGT_REAL8('rhok', rhok, rhokd)
    CALL DEBUG_TGT_DISPLAY('middle')

@@ -51,15 +51,11 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   real(kind=realType) :: delta_x, one_over_dx
 
 #ifdef USE_COMPLEX
-  complex(kind=realType) :: alpha, beta, Lift, Drag, CL, CD
-  complex(kind=realType), dimension(3) :: Force, Moment, cForce, cMoment
-  complex(kind=realType) :: alphad, betad, Liftd, Dragd, CLd, CDd
-  complex(kind=realType), dimension(3) :: Forced, Momentd, cForced, cMomentd
+  complex(kind=realType) :: alpha, beta, force(3), moment(3)
+  complex(kind=realType) :: alphad, betad, forced(3), momentd(3)
 #else
-  real(kind=realType) :: alpha, beta, Lift, Drag, CL, CD
-  real(kind=realType), dimension(3) :: Force, Moment, cForce, cMoment
-  real(kind=realType) :: alphad, betad, Liftd, Dragd, CLd, CDd
-  real(kind=realType), dimension(3) :: Forced, Momentd, cForced, cMomentd
+  real(kind=realType) :: alpha, beta, force(3), moment(3)
+  real(kind=realType) :: alphad, betad, forced(3), momentd(3)
 #endif
   integer(kind=intType) :: liftIndex
   integer(kind=intType), dimension(:,:), pointer ::  colorPtr1, colorPtr2
@@ -254,18 +250,14 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
               ! Run Block-based residual 
               if (useAD) then
 #ifndef USE_COMPLEX
-                 call block_res_d(nn, sps, .False., useObjective, &
-                      alpha, alphad, beta, betad, liftIndex, Force, Forced, &
-                      Moment, Momentd, lift, liftd, drag, dragd, cForce, &
-                      cForced, cMoment, cMomentd, CL, CLD, CD, CDd)
+                 call block_res_d(nn, sps, .False., &
+                      alpha, alphad, beta, betad, liftIndex, force, forced, moment, momentd) 
 #else
                  print *, 'Forward AD routines are not complexified'
                  stop
 #endif
               else
-                 call block_res(nn, sps, .False., .False., &
-                      alpha, beta, liftIndex, Force, Moment, Lift, Drag, &
-                      cForce, cMoment, CL, CD)
+                 call block_res(nn, sps, .False., alpha, beta, liftIndex, force, moment)
               end if
 
               ! If required, set values in the 6 vectors defined in

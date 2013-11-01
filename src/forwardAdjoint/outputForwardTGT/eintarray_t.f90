@@ -3,7 +3,7 @@
    !
    !  Differentiation of eintarray in forward (tangent) mode (with options debugTangent i4 dr8 r8):
    !   variations   of useful results: eint
-   !   with respect to varying inputs: rgas k p eint rho
+   !   with respect to varying inputs: tref rgas k p eint rho
    !      ==================================================================
    SUBROUTINE EINTARRAY_T(rho, rhod, p, pd, k, kd, eint, eintd, correctfork&
    &  , kk)
@@ -48,6 +48,7 @@
    LOGICAL :: DEBUG_TGT_HERE
    INTRINSIC LOG
    IF (.TRUE. .AND. DEBUG_TGT_HERE('entry', .FALSE.)) THEN
+   CALL DEBUG_TGT_REAL8('tref', tref, trefd)
    CALL DEBUG_TGT_REAL8('rgas', rgas, rgasd)
    CALL DEBUG_TGT_REAL8ARRAY('k', k, kd, kk)
    CALL DEBUG_TGT_REAL8ARRAY('p', p, pd, kk)
@@ -87,7 +88,7 @@
    ! Cp as function of the temperature is given via curve fits.
    ! Store a scale factor to compute the nonDimensional
    ! internal energy.
-   scaled = rgasd/tref
+   scaled = (rgasd*tref-rgas*trefd)/tref**2
    scale = rgas/tref
    ! Loop over the number of elements of the array
    DO i=1,kk
@@ -98,8 +99,8 @@
    ppd = ppd - twothird*(rhod(i)*k(i)+rho(i)*kd(i))
    pp = pp - twothird*rho(i)*k(i)
    END IF
-   td = (tref*ppd*rgas*rho(i)-tref*pp*(rgasd*rho(i)+rgas*rhod(i)))/(&
-   &        rgas*rho(i))**2
+   td = ((trefd*pp+tref*ppd)*rgas*rho(i)-tref*pp*(rgasd*rho(i)+rgas*&
+   &        rhod(i)))/(rgas*rho(i))**2
    t = tref*pp/(rgas*rho(i))
    ! Determine the case we are having here.
    IF (t .LE. cptrange(0)) THEN
@@ -110,6 +111,7 @@
    eint(i) = scale*(cpeint(0)+cv0*(t-cptrange(0)))
    ELSE IF (t .GE. cptrange(cpnparts)) THEN
    IF (.TRUE. .AND. DEBUG_TGT_HERE('middle', .FALSE.)) THEN
+   CALL DEBUG_TGT_REAL8('tref', tref, trefd)
    CALL DEBUG_TGT_REAL8('rgas', rgas, rgasd)
    CALL DEBUG_TGT_REAL8ARRAY('k', k, kd, kk)
    CALL DEBUG_TGT_REAL8ARRAY('p', p, pd, kk)

@@ -10,7 +10,7 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
   !     *                                                                *
   !     ******************************************************************
   !
-  use ADjointPetsc, only : FMx, dFcdx
+  use ADjointPetsc, only : FMx, dFcdx, doAdx
   use BCTypes
   use blockPointers_d      
   use inputDiscretization 
@@ -40,15 +40,13 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
   integer(kind=intType) :: nColor, iColor, jColor, ind, fmInd
   real(kind=realType) :: delta_x,one_over_dx, val
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, fmDim
-  real(kind=realType) :: alpha, beta, Lift, Drag, CL, CD
-  real(kind=realType), dimension(3) :: Force, Moment, cForce, cMoment
-  real(kind=realType) :: alphad, betad, Liftd, Dragd, CLd, CDd
-  real(kind=realType), dimension(3) :: Forced, Momentd, cForced, cMomentd
+  real(kind=realType) :: alpha, beta, force(3), moment(3)
+  real(kind=realType) :: alphad, betad, forced(3), momentd(3)
   integer(kind=intType) :: liftIndex
   integer(kind=intType), dimension(:,:), pointer ::  colorPtr, colorPtr1, colorPtr2
   integer(kind=intType), dimension(:,:), pointer ::  globalNodePtr
   integer(kind=intType), dimension(:,:), pointer ::  globalNodePtr1, globalNodePtr2
-  integer(kind=intType) :: fRow
+  integer(kind=intType) :: fRow, oaRow
   logical :: resetToRANS
 
   ! This routine will not use the extra variables to block_res or the
@@ -211,18 +209,16 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
               ! Block-based residual
               if (useAD) then
 #ifndef USE_COMPLEX
-                 call block_res_d(nn, sps, .True., useObjective, &
-                      alpha, alphad, beta, betad, liftIndex, Force, Forced, &
-                      Moment, Momentd, lift, liftd, drag, dragd, cForce, &
-                      cForced, cMoment, cMomentd, CL, CLd, CD, CDd)
+                 call block_res_d(nn, sps, .True., &
+                      alpha, alphad, beta, betad, liftIndex, force, forced, &
+                      moment, momentd)
 #else
                  print *,'Forward AD routines are not complexified!'
                  stop
 #endif
               else
-                 call block_res(nn, sps, .True., .False., &
-                      alpha, beta, liftIndex, Force, Moment, Lift, Drag, &
-                      cForce, cMoment, CL, CD)
+                 call block_res(nn, sps, .True., &
+                      alpha, beta, liftIndex, force, moment)
               end if
 
               ! If required, set values in the 6 vectors defined in
@@ -326,6 +322,13 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
                                            bcDatad(mm)%Fv(i, j, fmDim), &
                                           ADD_VALUES, ierr)
                                       call EChk(ierr, __FILE__, __LINE__)
+
+                                      oaRow = BCData(mm)%FMNodeIndex(i,j)*3 + fmDim - 1
+                                      call MatSetValues(doAdx, 1, oaRow, 1, ind, &
+                                           bcDatad(mm)%oarea(i,j), ADD_VALUES, ierr)
+                                      call EChk(ierr, __FILE__, __LINE__)
+
+
                                    end do
                                 end if
                              end do forceStencilLoop
@@ -448,6 +451,9 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
      end do
      call MatAssemblyBegin(dFcdx, MAT_FINAL_ASSEMBLY, ierr)
      call MatAssemblyEnd(dFcdx, MAT_FINAL_ASSEMBLY, ierr)
+     call MatAssemblyBegin(doAdx, MAT_FINAL_ASSEMBLY, ierr)
+     call MatAssemblyEnd(doAdx, MAT_FINAL_ASSEMBLY, ierr)
+
   end if
 
   ! PETSc Matrix Assembly and Options Set
@@ -477,8 +483,6 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
      if( eddyModel ) restrictEddyVis = .True.
   end if
 
-
-
 contains
 
   subroutine setBlock(blk)
@@ -489,21 +493,20 @@ contains
 
     implicit none
 #ifdef USE_COMPLEX
-    complex(kind=realType), dimension(nState,nState) :: blk
+    complex(kind=realType), dimension(nState, nState) :: blk
 #else
-    real(kind=realType), dimension(nState,nState) :: blk
+    real(kind=realType), dimension(nState, nState) :: blk
 #endif
     integer(kind=intType) :: iii,jjj, nrows, ncols
 
     do jjj=1,3
        do iii=1,nState
-         
           ! NOTE: We are setting the values in the tranpose
           ! sense. That's why icol is followed by irow. 
           if ( .not. blk(iii,jjj) == zero) then
-             call MatSetValues(matrix,1,icol*3+jjj-1,1,irow*nState+iii-1,&
-                  blk(iii,jjj),ADD_VALUES,ierr)
-             call EChk(ierr,__FILE__,__LINE__)
+             call MatSetValues(matrix, 1, icol*3+jjj-1, 1, irow*nState+iii-1, &
+                  blk(iii, jjj), ADD_VALUES, ierr)
+             call EChk(ierr, __FILE__, __LINE__)
           end if
        end do
     end do
