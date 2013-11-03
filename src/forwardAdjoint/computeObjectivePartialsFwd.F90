@@ -56,7 +56,7 @@ Subroutine computeObjectivePartialsFwd(costFunction)
   call EChk(ierr, __FILE__, __LINE__)
   
   do sps=1, nTimeIntervalsSpectral
-     do i = 1, 3
+     do i=1, 3
         call VecAXPY(dJdw, forceb(i, sps), FMw(i, sps), ierr)
         call EChk(ierr, __FILE__, __LINE__)
         call VecAXPY(dJdw, momentb(i, sps), FMw(i+3, sps), ierr)
@@ -167,7 +167,18 @@ Subroutine computeObjectivePartialsFwd(costFunction)
            end do
         end do
      end if
-     
+
+     if (nDesignLengthRef > 0) then
+        do sps=1, nTimeIntervalsSpectral
+           do idim=1,3
+              dIda(nDesignLengthRef+1) = dIda(nDesignLengthRef+1) + &
+                   dFMdExtra(idim, nDesignLengthRef+1, sps)*forceb(idim, sps)
+              dIda(nDesignLengthRef+1) = dIda(nDesignLengthRef+1) + &
+                   dFMdExtra(idim+3, nDesignLengthRef+1, sps)*momentb(idim, sps)
+           end do
+        end do
+     end if
+
   end if
 #else
   print *,'Cost Function routines are not complexified'

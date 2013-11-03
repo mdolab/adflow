@@ -6,14 +6,14 @@
    !                *(flowdoms.dw) *(*bcdata.fp) *(*bcdata.fv) *(*bcdata.m)
    !                *(*bcdata.oarea) pref pointref moment force
    !   with respect to varying inputs: *(flowdoms.x) *(flowdoms.w)
-   !                pref mach tempfreestream reynolds machgrid pointref
-   !                alpha beta
+   !                pref mach tempfreestream reynolds reynoldslength
+   !                machgrid lengthref pointref alpha beta
    !   RW status of diff variables: *(flowdoms.x):in-out *(flowdoms.w):in-out
    !                *(flowdoms.dw):out *(*bcdata.fp):out *(*bcdata.fv):out
    !                *(*bcdata.m):out *(*bcdata.oarea):out pref:in-out
-   !                mach:in tempfreestream:in reynolds:in machgrid:in
-   !                pointref:in-out moment:out alpha:in force:out
-   !                beta:in
+   !                mach:in tempfreestream:in reynolds:in reynoldslength:in
+   !                machgrid:in lengthref:in pointref:in-out moment:out
+   !                alpha:in force:out beta:in
    !   Plus diff mem management of: flowdoms.x:in flowdoms.vol:in
    !                flowdoms.w:in flowdoms.dw:in rev:in bvtj1:in bvtj2:in
    !                p:in sfacei:in sfacej:in s:in gamma:in sfacek:in
@@ -310,7 +310,8 @@
    &    scaledim)
    forced = ((cfpd+cfvd)*fact-(cfp+cfv)*factd)/fact**2
    force = (cfp+cfv)/fact
-   factd = factd/(lengthref*lref)
+   factd = (factd*lengthref*lref-fact*lref*lengthrefd)/(lengthref*lref)**&
+   &    2
    fact = fact/(lengthref*lref)
    momentd = ((cmpd+cmvd)*fact-(cmp+cmv)*factd)/fact**2
    moment = (cmp+cmv)/fact

@@ -55,7 +55,7 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
   real(kind=realType) :: alpharef, betaref, machref, machGridRef, machCoefRef
   real(kind=realType), dimension(3) :: rotRateRef,rotcenterRef
   real(kind=realType), dimension(3) :: rotPointRef,pointRefRef
-
+  real(kind=realType) :: lengthrefref, reynoldslengthref
   if (ndesignextra < 1) then
      ! No need to do anything here
      return
@@ -130,7 +130,8 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
      rotcenterRef = cgnsDoms(idxblk)%rotCenter
      rotPointRef = rotPoint
      pointRefRef = pointRef
-
+     lengthRefRef = lengthref
+     reynoldslengthref = reynoldslength
      ! Do 'Coloring' and extra varibales
      do iColor = 1,nColor !set colors based on extra vars....
         !zero derivatives
@@ -148,7 +149,9 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
         cgnsDomsd(idxblk)%rotcenter(:) = 0.0
         rotpointd(:) = 0.0
         pointrefd(:) = 0.0
-
+        lengthrefd = 0.0
+        reynoldslengthd = 0.0
+        reynoldsd = 0.0
         if (useAD) then
            if (nDesignAoA ==icolor-1) then
               alphad = one
@@ -166,6 +169,9 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
               pointrefd(2) = one
            elseif (nDesignPointRefZ==icolor-1) then
               pointrefd(3) = one
+           elseif (nDesignLengthRef==icolor-1) then
+              lengthrefd = one
+              reynoldslengthd = one
            end if
         else
            if (nDesignAoA ==icolor-1) then
@@ -184,6 +190,9 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
               pointref(2) = pointref(2) + delta_x
            elseif (nDesignPointRefZ==icolor-1) then
               pointref(3) = pointref(3) + delta_x
+           elseif(nDesignLengthRef==icolor-1) then
+              lengthref = lengthref + delta_x
+              reynoldslength = reynoldslength + delta_x
            end if
         end if
 
@@ -267,7 +276,8 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
      cgnsDoms(idxblk)%rotcenter = rotCenterRef
      rotPoint = rotPointRef
      pointRef = pointRefRef
-     
+     LengthRef = LengthRefRef
+     ReynoldsLength = ReynoldsLengthRef
   end do domainLoopAD
 
   ! PETSc Matrix Assembly and Options Set

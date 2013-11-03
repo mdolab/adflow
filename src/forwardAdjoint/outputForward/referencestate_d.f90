@@ -5,7 +5,7 @@
    !   variations   of useful results: gammainf pinf timeref rhoinf
    !                muref tref muinf uinf rgas pref
    !   with respect to varying inputs: pref mach tempfreestream reynolds
-   !                veldirfreestream
+   !                veldirfreestream reynoldslength
    !
    !      ******************************************************************
    !      *                                                                *
@@ -118,7 +118,8 @@
    mz = machcoef*veldirfreestream(3)
    ! Reynolds number per meter, the viscosity using sutherland's
    ! law and the free stream velocity relative to the body.
-   red = reynoldsd/reynoldslength
+   red = (reynoldsd*reynoldslength-reynolds*reynoldslengthd)/&
+   &        reynoldslength**2
    re = reynolds/reynoldslength
    mudimd = musuthdim*((tsuthdim+ssuthdim)*1.5*(tempfreestream/&
    &        tsuthdim)**0.5*tempfreestreamd/((tempfreestream+ssuthdim)*&
