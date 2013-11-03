@@ -46,7 +46,7 @@ TAPENADE_PRECISION = -i4 -dr8 -r8
 TAPENADE_RES_OUTVARS = "flowdoms%dw  BCData%Fp BCData%Fv BCData%M  BCData%oArea flowdoms%w flowdoms%x force moment"
 
 # Independent input variables (separator: white space, default: all)
-TAPENADE_RES_VARS = "flowdoms%w flowdoms%x alpha beta mach machgrid pointref Pref Reynolds tempFreeStream"
+TAPENADE_RES_VARS = "flowdoms%w flowdoms%x alpha beta mach machgrid pointref lengthRef Pref Reynolds ReynoldsLength tempFreeStream"
 
 # Name of the top routine
 TAPENADE_RES_HEADROUTINE = "block_res"

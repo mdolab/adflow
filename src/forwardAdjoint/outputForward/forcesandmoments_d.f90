@@ -5,7 +5,7 @@
    !   variations   of useful results: *(*bcdata.fp) *(*bcdata.fv)
    !                *(*bcdata.m) *(*bcdata.oarea) cfp cfv cmp cmv
    !   with respect to varying inputs: *p *x *si *sj *sk *(*viscsubface.tau)
-   !                gammainf pinf pref pointref
+   !                gammainf pinf pref lengthref pointref
    !   Plus diff mem management of: p:in x:in si:in sj:in sk:in viscsubface:in
    !                *viscsubface.tau:in bcdata:in *bcdata.fp:in *bcdata.fv:in
    !                *bcdata.m:in *bcdata.oarea:in
@@ -553,7 +553,8 @@
    cfv(2) = cfv(2)*fact
    cfvd(3) = cfvd(3)*fact + cfv(3)*factd
    cfv(3) = cfv(3)*fact
-   factd = factd/(lengthref*lref)
+   factd = (factd*lengthref*lref-fact*lref*lengthrefd)/(lengthref*lref)**&
+   &    2
    fact = fact/(lengthref*lref)
    cmpd(1) = cmpd(1)*fact + cmp(1)*factd
    cmp(1) = cmp(1)*fact

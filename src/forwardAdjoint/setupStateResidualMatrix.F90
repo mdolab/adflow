@@ -80,6 +80,8 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   lengthRefd = zero
   pointRefd  = zero
   surfaceRefd = zero
+  reynoldslengthd = zero
+  reynoldsd = zero
   call getDirAngle(velDirFreestream, liftDirection, liftIndex, alpha, beta)
 
   rkStage = 0
