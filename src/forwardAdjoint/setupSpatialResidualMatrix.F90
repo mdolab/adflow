@@ -58,6 +58,8 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
   lengthRefd = zero
   pointRefd  = zero
   surfaceRefd = zero
+  reynoldslengthd = zero
+  reynoldsd = zero
   call getDirAngle(velDirFreestream, liftDirection, liftIndex, alpha, beta)
 
 ! Setup number of state variable based on turbulence assumption
