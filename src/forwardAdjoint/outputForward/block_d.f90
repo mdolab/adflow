@@ -143,6 +143,7 @@
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: m
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: oarea
    REAL(kind=realtype), DIMENSION(3) :: symnorm
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: uslip
    END TYPE BCDATATYPE_D
    !
    !        ****************************************************************

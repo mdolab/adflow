@@ -98,7 +98,7 @@ FF90_OBJECTS =  blockpointers_d.o\
 		turbadvection_d.o\
 		unsteadyturbterm_d.o\
 		curvetupyp_d.o\
-
+		slipvelocitiesfinelevel_block_d.o\
 
 #      ******************************************************************
 #      *                                                                *

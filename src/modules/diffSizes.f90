@@ -11,6 +11,7 @@
     integer(kind=intType) :: ISIZE1OFDrfflowdoms
     integer(kind=intType) :: ISIZE2OFDrfflowdoms 
     integer(kind=intType) :: ISIZE3OFDrfflowdoms
+    integer(kind=intType) :: ISIZE1OFDrfflowdoms_bcdata
 
     ! These are the diff sizes reqruied for the reverse mode AD
     integer(kind=intType) :: ISIZE3OFDrfrlv, ISIZE2OFDrfrlv, ISIZE1OFDrfrlv
