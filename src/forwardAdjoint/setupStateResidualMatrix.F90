@@ -19,7 +19,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   !     *         always the finest level                                *         
   !     ******************************************************************
   !
-  use ADjointPetsc, only : FMw, dFcdW, psi, adjointRHS, viewer
+  use ADjointPetsc, only : FMw, dFcdW
   use BCTypes
   use blockPointers_d      
   use inputDiscretization 
