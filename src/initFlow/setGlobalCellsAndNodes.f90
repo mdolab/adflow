@@ -57,7 +57,11 @@ subroutine setGlobalCellsAndNodes(level)
   integer(kind=intType) :: npts
   integer(kind=intType), dimension(:), allocatable :: nNodesProc, cumNodesProc
   integer(kind=intTYpe), dimension(:), allocatable :: nCellsProc, cumCellsProc
-  integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, ii, jj,mm
+  integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, ii, jj,mm, iCGNS
+  integer(kind=intType), dimension(:,:), pointer ::  globalCellPtr0
+  integer(kind=intType), dimension(:,:), pointer ::  globalCellPtr1
+  integer(kind=intType), dimension(:,:), pointer ::  globalCellPtr2
+
   ! Determine the number of nodes and cells owned by each processor
   ! by looping over the local block domains.
   nCellsLocal(level) = 0
@@ -143,6 +147,59 @@ subroutine setGlobalCellsAndNodes(level)
      enddo
   end do
 
+  ! Now, we have have to deal with halo under BC's. Go through and do
+  ! a mock application of BCs and "extrapolate" the index of teh
+  ! required cell to the halos.
+  do nn=1,nDom
+     do sps=1,nTimeIntervalsSpectral
+        call setPointers(nn, level, sps)
+        do mm=1,nBocos
+           if (BCType(mm) == NSWallAdiabatic .or. &
+               BCType(mm) == NSWallIsoThermal .or. &
+               BCType(mm) == EulerWall .or. &
+               BCType(mm) == FarField .or. &
+               BCType(mm) == Symm) then
+
+              select case (BCFaceID(mm))
+              case (iMin)
+                 globalCellPtr0 => globalCell(0, :, :)
+                 globalCellPtr1 => globalCell(1, :, :)
+                 globalCellPtr2 => globalCell(2, :, :)
+              case (iMax)
+                 globalCellPtr0 => globalCell(ib, :, :)
+                 globalCellPtr1 => globalCell(ie, :, :)
+                 globalCellPtr2 => globalCell(il, :, :)
+              case (jMin)
+                 globalCellPtr0 => globalCell(:, 0, :)
+                 globalCellPtr1 => globalCell(:, 1, :)
+                 globalCellPtr2 => globalCell(:, 2, :)
+              case (jMax)
+                 globalCellPtr0 => globalCell(:, jb, :)
+                 globalCellPtr1 => globalCell(:, je, :)
+                 globalCellPtr2 => globalCell(:, jl, :)
+              case (kMin)
+                 globalCellPtr0 => globalCell(:, :, 0)
+                 globalCellPtr1 => globalCell(:, :, 1)
+                 globalCellPtr2 => globalCell(:, :, 2)
+              case (kMax)
+                 globalCellPtr0 => globalCell(:, :, kb)
+                 globalCellPtr1 => globalCell(:, :, ke)
+                 globalCellPtr2 => globalCell(:, :, kl)
+              end select
+
+              do j=BCData(mm)%jcBeg, BCData(mm)%jcEnd
+                 do i=BCData(mm)%icBeg, BCData(mm)%icEnd
+                    ! 'Extrapolate' the index of the '2' level to the
+                    ! '1' and '0' levels
+                    globalCellPtr1(i,j) = -globalCellPtr2(i,j)-1
+                    globalCellPtr0(i,j) = -globalCellPtr2(i,j)-1
+                 end do
+              end do
+           end if
+        end do
+     end do
+  end do
+
   ! Determine the global block row index for each (i,j,k) node in
   ! each local block.
   do sps=1, nTimeIntervalsSpectral
@@ -201,6 +258,7 @@ subroutine setGlobalCellsAndNodes(level)
            do j=0, jb
               do i=0, ib
                  globalCell(i, j, k) = int(P(i, j, k)) 
+
               end do
            end do
         end do

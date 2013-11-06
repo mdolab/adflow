@@ -109,14 +109,15 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
      resetToRANS = .True.
   end if
 
+  ! Allocate the memory we need for this block to do the forward
+  ! mode derivatives and copy reference values
+  call alloc_derivative_values(level)
+
   domainLoopAD: do nn=1,nDom
 
      ! Set pointers to the first timeInstance...just to getSizes
      call setPointers(nn, level, 1)
      idxblk = nbkGlobal
-     ! Allocate the memory we need for this block to do the forward
-     ! mode derivatives and copy reference values
-     call alloc_derivative_values(nn, level)
      ISIZE1OFDrfbcdata = nBocos
      ISIZE1OFDrfviscsubface = nViscBocos
 
@@ -263,8 +264,6 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
         end do ! spectral Loop
      end do !color loop
 
-     ! Deallocate and reset Values
-     call dealloc_derivative_values(nn, level)
 
      ! Reset values to reference 
      alpha = alpharef
@@ -279,6 +278,10 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
      LengthRef = LengthRefRef
      ReynoldsLength = ReynoldsLengthRef
   end do domainLoopAD
+
+  ! Deallocate and reset Values
+  call dealloc_derivative_values(level)
+
 
   ! PETSc Matrix Assembly and Options Set
   call MatAssemblyBegin(matrix, MAT_FINAL_ASSEMBLY, ierr)
