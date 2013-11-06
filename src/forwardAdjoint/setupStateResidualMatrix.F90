@@ -19,7 +19,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   !     *         always the finest level                                *         
   !     ******************************************************************
   !
-  use ADjointPetsc, only : FMw, dFcdW
+  use ADjointPetsc, only : FMw, dFcdW, psi, adjointRHS, viewer
   use BCTypes
   use blockPointers_d      
   use inputDiscretization 
@@ -31,6 +31,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   use stencils
   use diffSizes
   use NKSolverVars, only : diag
+  use communication
   implicit none
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
@@ -45,7 +46,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   ! Local variables.
   integer(kind=intType) :: ierr, nn, sps, sps2, i, j, k, l, ll, ii, jj, kk
   integer(kind=intType) :: nColor, iColor, jColor, irow, icol, fmDim, frow
-  integer(kind=intType) :: nTransfer, nState
+  integer(kind=intType) :: nTransfer, nState, tmp, icount
   integer(kind=intType) :: n_stencil, i_stencil, n_force_stencil
   integer(kind=intType), dimension(:, :), pointer :: stencil, force_stencil
   real(kind=realType) :: delta_x, one_over_dx
@@ -63,13 +64,14 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   integer(kind=intType), dimension(:,:), pointer ::  colorPtr, globalCellPtr
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, mm, colInd
   logical :: resetToRANS
-
+  real :: val
   ! Setup number of state variable based on turbulence assumption
   if ( frozenTurbulence ) then
      nState = nwf
   else
      nState = nw
   endif
+  
 
   ! This routine will not use the extra variables to block_res or the
   ! extra outputs, so we must zero them here
@@ -169,6 +171,10 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
      resetToRANS = .True.
   end if
 
+  ! Allocate the additional memory we need for doing forward mode AD
+  !  derivatives and copy any required reference values:
+  call alloc_derivative_values(level)
+
   ! Master Domain Loop
   domainLoopAD: do nn=1, nDom
 
@@ -178,9 +184,6 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
      ! Set unknown sizes in diffSizes for AD routine
      ISIZE1OFDrfbcdata = nBocos
      ISIZE1OFDrfviscsubface = nViscBocos
-     ! Allocate the memory we need for this block to do the forward
-     ! mode derivatives and copy reference values
-     call alloc_derivative_values(nn, level)
 
      ! Setup the coloring for this block depending on if its
      ! drdw or a PC
@@ -194,12 +197,11 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
      !       call setup_PC_coloring(nn, level,  nColor)
      !       call setup_dRdw_euler_coloring(nn, level,  nColor)
      !       call setup_dRdw_visc_coloring(nn, level,  nColor)
-     
+
      if (usePC) then
         ! Note: The lumped dissipation doesn't quite result in a
         !3-cell stencil in each direction but we will still use PC
         !coloring. Not really a big deal.
-     
         if (viscous) then
            call setup_3x3x3_coloring(nn, level,  nColor) ! dense 3x3x3 coloring
         else
@@ -207,12 +209,13 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
         end if
      else
         if (viscous) then
+           !call setup_5x5x5_coloring(nn, level,  nColor)
            call setup_dRdw_visc_coloring(nn, level,  nColor)! Viscous/RANS
         else 
            call setup_dRdw_euler_coloring(nn, level,  nColor) ! Euler Colorings
         end if
      end if
-     
+
      spectralLoop: do sps=1, nTimeIntervalsSpectral
         ! Set pointers and derivative pointers
         call setPointers_d(nn, level, sps)
@@ -262,15 +265,16 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
                  call block_res(nn, sps, .False., alpha, beta, liftIndex, force, moment)
               end if
 
-              ! If required, set values in the 6 vectors defined in
-              ! FMw. We have to be a little carful actually. What we
-              ! have to do is loop over subfaces where the cell
-              ! centered forces are defined. Then for each force, we
-              ! loop over its stencil. There should be at most 1
-              ! peturbed cell/state in its stencil. Then, we can take
-              ! the derivatives out F and M defined on the face. The
+              ! If required, set values in the
+              ! 6*nTimeIntervalsSpectral vectors defined in FMw. We
+              ! have to be a little carful actually. What we have to
+              ! do is loop over subfaces where the cell centered
+              ! forces are defined. Then for each force, we loop over
+              ! its stencil. There should be at most 1 peturbed
+              ! cell/state in its stencil. Then, we can take the
+              ! derivatives out F and M defined on the face. The
               ! derivatives are correct, since for objective we are
-              ! using a simple sum. 
+              ! using a simple sum.
               sotreObjectivePartials: if (useObjective .and. useAD .and. .not. usePC) then
                  bocos: do mm=1,nBocos
                     if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic &
@@ -418,9 +422,13 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
            kLoop: do k=0, kb
               jLoop: do j=0, jb
                  iLoop: do i=0, ib
-                    icol = flowDoms(nn, level, sps)%globalCell(i, j, k)
-                    colorCheck: if (flowdomsd(nn, 1, 1)%color(i, j, k) == icolor&
-                         .and. icol >= 0) then
+                    iCol = flowDoms(nn, level, sps)%globalCell(i, j, k)
+                    ! if (iCol < 0) then
+                    !    iCol = -(iCol + 1)
+                    ! end if
+                    colorCheck: if (flowdomsd(nn, 1, 1)%color(i, j, k) == icolor) then! &
+                       !.and. icol >= 0) then
+                       !colorCheck: if (flowdomsd(nn, 1, 1)%color(i, j, k) == icolor) then
 
                        ! i, j, k are now the "Center" cell that we
                        ! actually petrubed. From knowledge of the
@@ -441,7 +449,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
                                         k+kk >= 2 .and. k+kk <= kl) then 
 
                              irow = flowDoms(nn, level, sps)%globalCell(&
-                                  i+ii, j+jj, k+kk)
+                                 i+ii, j+jj, k+kk)
 
                              centerCell: if ( ii == 0 .and. jj == 0 &
                                   .and. kk == 0) then
@@ -477,11 +485,11 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
            end do kLoop
         end do colorLoop
      end do spectralLoop
-
-     ! Deallocate and reset values for block nn
-     call dealloc_derivative_values(nn, level)
   end do domainLoopAD
 
+  ! Deallocate and reset values 
+  call dealloc_derivative_values(level)
+  
   if (useObjective .and. useAD) then
      do sps=1,nTimeIntervalsSpectral
         do fmDim=1,6
@@ -527,8 +535,6 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
      if( eddyModel ) restrictEddyVis = .true.
   end if
 
-
-
 contains
 
   subroutine setBlock(blk)
@@ -547,6 +553,7 @@ contains
 
 #ifndef USE_COMPLEX
     ! Check if the blk is all zeros
+
     zeroFlag = .True.
     do i = 1, nState
        do j = 1, nState
@@ -566,7 +573,7 @@ contains
        call EChk(1, __FILE__, __LINE__)
     end if
 #endif
-    
+
     if (.not. zeroFlag) then
        if (useTranspose) then
           call MatSetValuesBlocked(matrix, 1, icol, 1, irow, transpose(blk), &

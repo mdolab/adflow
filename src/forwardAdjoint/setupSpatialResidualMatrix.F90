@@ -133,6 +133,10 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
      resetToRANS = .True.
   end if
 
+  ! Allocate the memory we need for this block to do the forward
+  ! mode derivatives and copy reference values
+  call alloc_derivative_values(level)
+
   ! Master Domain Loop
   domainLoopAD: do nn=1,nDom
 
@@ -140,9 +144,6 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
      call setPointers(nn, level, 1)
 
      
-     ! Allocate the memory we need for this block to do the forward
-     ! mode derivatives and copy reference values
-     call alloc_derivative_values(nn, level)
      
      ! Setup the coloring for this block depending on if its
      ! drdw or a PC
@@ -438,9 +439,10 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
         end do colorLoop
      end do spectralLoop
 
-     ! Deallocate and reset Values
-     call dealloc_derivative_values(nn, level)
   end do domainLoopAD
+
+  ! Deallocate and reset Values
+  call dealloc_derivative_values(level)
 
   if (useObjective .and. useAD) then
      do sps=1,nTimeIntervalsSpectral
