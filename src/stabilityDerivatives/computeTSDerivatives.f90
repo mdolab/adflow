@@ -72,6 +72,8 @@ subroutine computeTSDerivatives(force, moment, liftIndex, coef0, dcdalpha, &
        *surfaceRef*LRef**2*scaleDim)
   factMoment = fact/(lengthRef*LRef)
 
+  call getDirAngle(velDirFreestream, LiftDirection,&
+       liftIndex, alpha, beta)
 
   if (TSqMode)then
 
