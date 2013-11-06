@@ -52,7 +52,7 @@ subroutine getSolution(sps)
      force(1, i) = globalCFVals(costFuncForceX)
      force(2, i) = globalCFVals(costFuncForceY)
      force(3, i) = globalCFVals(costFuncForceZ)
-     momnet(1, i) = globalCFVals(costFuncMomX)
+     moment(1, i) = globalCFVals(costFuncMomX)
      moment(2, i) = globalCFVals(costFuncMomY)
      moment(3, i) = globalCFVals(costFuncMomZ)
 
