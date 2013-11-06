@@ -32,6 +32,7 @@ subroutine setDiffSizes
   ! Compute nlevels
   nLevels = ubound(flowDoms, 2)
 
+
   ! Set the size for dynamic pointers to zero for debug purpose
   ! bcdata%norm
   ISIZE1OFDrfDrfbcdata_norm = 0
@@ -139,6 +140,7 @@ subroutine setDiffSizes
   
   !viscSubface
   ISIZE1OFDrfviscsubface = nViscBocos
+  ISIZE1OFDrfflowdoms_bcdata = nBocos
 
   ! x
   ISIZE4OFDrfx = 3

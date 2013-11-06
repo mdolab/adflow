@@ -94,6 +94,7 @@ ALL_RES_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.F90\
 		$(SRC)/solver/bcNSWallAdiabatic.F90\
 		$(SRC)/solver/bcNSWallIsothermal.F90\
 		$(SRC)/solver/extrapolate2ndHalo.F90\
+		$(SRC)/solver/slipVelocities.f90\
 		$(SRC)/solver/viscousFlux.F90\
 		$(SRC)/solver/utauWF.F90\
 		$(SRC)/solver/gridVelocitiesFineLevel.F90\

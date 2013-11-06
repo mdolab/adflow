@@ -88,6 +88,8 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment)
 
      call gridVelocitiesFineLevel_block(useOldCoor, t, sps) ! Required for TS
      call normalVelocities_block(sps) ! Required for TS
+     call slipVelocitiesFineLevel_block(useOldCoor, t, sps)
+
   end if
 
   ! ------------------------------------------------

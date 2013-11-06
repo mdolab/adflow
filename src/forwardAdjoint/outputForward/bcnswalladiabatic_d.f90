@@ -5,11 +5,12 @@
    !   variations   of useful results: *rev *bvtj1 *bvtj2 *p *gamma
    !                *bmtk1 *w *bmtk2 *rlv *bvtk1 *bvtk2 *bmti1 *bmti2
    !                *bvti1 *bvti2 *bmtj1 *bmtj2
-   !   with respect to varying inputs: *rev *p *w *rlv tref rgas
+   !   with respect to varying inputs: *rev *p *w *rlv *(*bcdata.uslip)
+   !                tref rgas
    !   Plus diff mem management of: rev:in bvtj1:in bvtj2:in p:in
    !                gamma:in bmtk1:in w:in bmtk2:in rlv:in bvtk1:in
    !                bvtk2:in bmti1:in bmti2:in bvti1:in bvti2:in bmtj1:in
-   !                bmtj2:in bcdata:in
+   !                bmtj2:in bcdata:in *bcdata.uslip:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -48,6 +49,7 @@
    REAL(kind=realtype) :: rhok
    REAL(kind=realtype) :: rhokd
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: uslip
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: uslipd
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1d, ww2d
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1, pp2
@@ -131,6 +133,7 @@
    ! Check for adiabatic viscous wall boundary conditions.
    IF (bctype(nn) .EQ. nswalladiabatic) THEN
    ! Set the pointer for uSlip to make the code more readable.
+   uslipd => bcdatad(nn)%uslip
    uslip => bcdata(nn)%uslip
    ! Nullify the pointers and set them to the correct subface.
    ! They are nullified first, because some compilers require
@@ -161,11 +164,11 @@
    ! velocity into account.
    ww1d(i, j, irho) = ww2d(i, j, irho)
    ww1(i, j, irho) = ww2(i, j, irho)
-   ww1d(i, j, ivx) = -ww2d(i, j, ivx)
+   ww1d(i, j, ivx) = two*uslipd(i, j, 1) - ww2d(i, j, ivx)
    ww1(i, j, ivx) = -ww2(i, j, ivx) + two*uslip(i, j, 1)
-   ww1d(i, j, ivy) = -ww2d(i, j, ivy)
+   ww1d(i, j, ivy) = two*uslipd(i, j, 2) - ww2d(i, j, ivy)
    ww1(i, j, ivy) = -ww2(i, j, ivy) + two*uslip(i, j, 2)
-   ww1d(i, j, ivz) = -ww2d(i, j, ivz)
+   ww1d(i, j, ivz) = two*uslipd(i, j, 3) - ww2d(i, j, ivz)
    ww1(i, j, ivz) = -ww2(i, j, ivz) + two*uslip(i, j, 3)
    pp1d(i, j) = pp2d(i, j) - four*third*rhokd
    pp1(i, j) = pp2(i, j) - four*third*rhok
