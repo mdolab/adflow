@@ -47,7 +47,7 @@ subroutine getCostFunction(costFunction, force, moment, alpha, beta, liftIndex, 
        costFuncClq,costFuncCdq,costFuncCmzq,&
        costFuncClqDot,costFuncCdqDot,costFuncCmzqDot)
 
-     call computeTSDerivatives(force, moment, coef0, dcdalpha, &
+     call computeTSDerivatives(force, moment, liftIndex, coef0, dcdalpha, &
           dcdalphadot, dcdq, dcdqdot)
   end select
 

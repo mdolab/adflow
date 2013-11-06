@@ -29,7 +29,7 @@ subroutine getSolution(sps)
   real(kind=realType), dimension(8) :: Coef0,Coef0dot
   real(kind=realType), dimension(nCostFunction)::globalCFVals
   real(kind=realType), dimension(:),allocatable :: localVal,globalVal
-  real(kind=realType), dimension(nTimeIntervalsSpectral, 8) :: baseCoef
+  real(kind=realType), dimension(3, nTimeIntervalsSpectral) :: force, moment
   real(kind=realType)::bendingMoment,bendingSum, cf(3), cm(3)
   integer(kind=intType) :: ierr, i, liftIndex
 
@@ -49,14 +49,12 @@ subroutine getSolution(sps)
   do i =1,nTimeIntervalsSpectral
      call computeAeroCoef(globalCFVals,i)
 
-     BaseCoef(i,1) = globalCFVals(costFuncLiftCoef)
-     BaseCoef(i,2) = globalCFVals(costFuncDragCoef)
-     BaseCoef(i,3) = globalCFVals(costFuncForceXCoef)
-     BaseCoef(i,4) = globalCFVals(costFuncForceYCoef)
-     BaseCoef(i,5) = globalCFVals(costFuncForceZCoef)
-     BaseCoef(i,6) = globalCFVals(costFuncMomXCoef)
-     BaseCoef(i,7) = globalCFVals(costFuncMomYCoef)
-     BaseCoef(i,8) = globalCFVals(costFuncMomZCoef)
+     force(1, i) = globalCFVals(costFuncForceX)
+     force(2, i) = globalCFVals(costFuncForceY)
+     force(3, i) = globalCFVals(costFuncForceZ)
+     momnet(1, i) = globalCFVals(costFuncMomX)
+     moment(2, i) = globalCFVals(costFuncMomY)
+     moment(3, i) = globalCFVals(costFuncMomZ)
 
      cf = (/globalCFVals(costFuncForceXCoef), &
           globalCFVals(costFuncForceYCoef), &
@@ -91,7 +89,7 @@ subroutine getSolution(sps)
 
   if(TSStability)then
 
-     call computeTSDerivatives(baseCoef, coef0, dcdalpha, &
+     call computeTSDerivatives(force, moment, liftIndex, coef0, dcdalpha, &
           dcdalphadot, dcdq, dcdqdot)
 
      functionValue( costFuncCl0  )       = coef0(1)
