@@ -21,8 +21,8 @@
    !                bmti2:in si:in sj:in sk:in bvti1:in bvti2:in fw:in
    !                bmtj1:in bmtj2:in viscsubface:in *viscsubface.tau:in
    !                bcdata:in *bcdata.norm:in *bcdata.rface:in *bcdata.fp:in
-   !                *bcdata.fv:in *bcdata.m:in *bcdata.oarea:in radi:in
-   !                radj:in radk:in
+   !                *bcdata.fv:in *bcdata.m:in *bcdata.oarea:in *bcdata.uslip:in
+   !                radi:in radj:in radk:in
    ! This is a super-combined function that combines the original
    ! functionality of: 
    ! Pressure Computation
@@ -120,6 +120,7 @@
    ! Required for TS
    CALL NORMALVELOCITIES_BLOCK_D(sps)
    ! Required for TS
+   CALL SLIPVELOCITIESFINELEVEL_BLOCK_D(useoldcoor, t, sps)
    ELSE
    DO ii1=1,ntimeintervalsspectral
    DO ii2=1,1
@@ -140,6 +141,9 @@
    END DO
    DO ii1=1,ISIZE1OFDrfbcdata
    bcdatad(ii1)%rface = 0.0_8
+   END DO
+   DO ii1=1,ISIZE1OFDrfbcdata
+   bcdatad(ii1)%uslip = 0.0_8
    END DO
    END IF
    ! ------------------------------------------------

@@ -24,15 +24,18 @@ subroutine updateRotationRate(rotCenter, rotRate, blocks, nblocks)
   integer(kind=intType), intent(in) :: nblocks
   integer(kind=intType), intent(in) :: blocks(nblocks)
 
-  integer(kind=intType) ::mm,nnn,nn, level, sps
+  integer(kind=intType) ::mm,nnn,nn, level, sps, i
   real(kind=realType), dimension(nSections) :: t
 
   groundlevel = 1
-  do mm=1,nTimeIntervalsSpectral
-     do nn=1,nblocks
-        cgnsDoms(nn)%rotRate = rotRate
-        cgnsDoms(nn)%rotCenter = rotCenter
-     enddo
+
+  do nn=1,nblocks
+     cgnsDoms(nn)%rotRate = rotRate
+     cgnsDoms(nn)%rotCenter = rotCenter
+
+     do i=1,cgnsDoms(nn)%nBocos
+        cgnsDoms(nn)%bocoInfo(i)%rotRate = rotRate
+     end do
   enddo
 
   do sps=1,nTimeIntervalsSpectral
