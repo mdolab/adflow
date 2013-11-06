@@ -47,24 +47,7 @@ subroutine getCostFunction(costFunction, force, moment, alpha, beta, liftIndex, 
        costFuncClq,costFuncCdq,costFuncCmzq,&
        costFuncClqDot,costFuncCdqDot,costFuncCmzqDot)
 
-     do sps=1,nTimeIntervalsSpectral
-        BaseCoef(sps,1) = fact*(&
-             force(1, sps)*liftDirection(1) + &
-             force(2, sps)*liftDirection(2) + &
-             force(3, sps)*liftDIrection(3))
-        BaseCoef(sps,2) = fact*(&
-             force(1, sps)*dragDirection(1) + &
-             force(2, sps)*dragDirection(2) + &
-             force(3, sps)*dragDIrection(3))
-        BaseCoef(sps,3) = force(1, sps)*fact
-        BaseCoef(sps,4) = force(2, sps)*fact
-        BaseCoef(sps,5) = force(3, sps)*fact
-        BaseCoef(sps,6) = moment(1, sps)*factMoment
-        BaseCoef(sps,7) = moment(2, sps)*factMoment
-        BaseCoef(sps,8) = moment(3, sps)*factMoment
-     end do
-
-     call computeTSDerivatives(baseCoef, coef0, dcdalpha, &
+     call computeTSDerivatives(force, moment, coef0, dcdalpha, &
           dcdalphadot, dcdq, dcdqdot)
   end select
 

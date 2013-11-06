@@ -434,68 +434,13 @@ end subroutine slipVelocitiesFineLevel
              i = cgnsSubface(mm)
 
              rotCenter = cgnsDoms(j)%bocoInfo(i)%rotCenter
-             offSetVector= (rotCenter-rotPoint)
              rotRate   = timeRef*cgnsDoms(j)%bocoInfo(i)%rotRate
 
-             if (useWindAxis)then
-                !determine the current angles from the free stream velocity
-                call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)
-
-                if (liftIndex == 2) then
-                   ! different coordinate system for aerosurf
-                   ! Wing is in z- direction
-                   rotRateTrans(1,1)=cos(alpha)*cos(beta)
-                   rotRateTrans(1,2)=-sin(alpha)
-                   rotRateTrans(1,3)=-cos(alpha)*sin(beta)
-                   rotRateTrans(2,1)=sin(alpha)*cos(beta)
-                   rotRateTrans(2,2)=cos(alpha)
-                   rotRateTrans(2,3)=-sin(alpha)*sin(beta)
-                   rotRateTrans(3,1)=sin(beta)
-                   rotRateTrans(3,2)=0.0
-                   rotRateTrans(3,3)=cos(beta)
-
-                elseif(liftIndex ==3) then
-                   ! Wing is in y- direction
-                   !Rotate the rotation rate from the wind axis back to the local body axis
-                   rotRateTrans(1,1)=cos(alpha)*cos(beta)
-                   rotRateTrans(1,2)=-cos(alpha)*sin(beta)
-                   rotRateTrans(1,3)=-sin(alpha)
-                   rotRateTrans(2,1)=sin(beta)
-                   rotRateTrans(2,2)=cos(beta)
-                   rotRateTrans(2,3)=0.0
-                   rotRateTrans(3,1)=sin(alpha)*cos(beta)
-                   rotRateTrans(3,2)=-sin(alpha)*sin(beta)
-                   rotRateTrans(3,3)=cos(alpha)
-                else
-                   call terminate('getDirAngle', 'Invalid Lift Direction')
-                endif
-
-                rotRateTemp = rotRate
-                rotRate=0.0
-                do i=1,3
-                   do j=1,3
-                      rotRate(i)=rotRate(i)+rotRateTemp(j)*rotRateTrans(i,j)
-                   end do
-                end do
-             end if
-
-             velxGrid =velxgrid0+ 1*(rotRate(2)*offSetVector(3) &
-                  - rotRate(3)*offSetVector(2)) &
-                  + derivRotationMatrix(1,1)*offSetVector(1) &
-                  + derivRotationMatrix(1,2)*offSetVector(2) &
-                  + derivRotationMatrix(1,3)*offSetVector(3)
-             velyGrid =velygrid0+ 1*(rotRate(3)*offSetVector(1)&
-                  - rotRate(1)*offSetVector(3))&
-                  + derivRotationMatrix(2,1)*offSetVector(1) &
-                  + derivRotationMatrix(2,2)*offSetVector(2) &
-                  + derivRotationMatrix(2,3)*offSetVector(3)
-             velzGrid =velzgrid0+ 1*(rotRate(1)*offSetVector(2) &
-                  - rotRate(2)*offSetVector(1)) &
-                  + derivRotationMatrix(3,1)*offSetVector(1) &
-                  + derivRotationMatrix(3,2)*offSetVector(2) &
-                  + derivRotationMatrix(3,3)*offSetVector(3)
-
-
+             ! useWindAxis should go back here!
+             velXgrid = velXGrid0
+             velYgrid = velYGrid0
+             velZgrid = velZGrid0
+             
              ! Loop over the quadrilateral faces of the viscous
              ! subface.
 
