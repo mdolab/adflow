@@ -339,13 +339,13 @@ subroutine createPETScVars
   end if
   allocate(dFMdExtra(6, nDesignExtra, nTimeIntervalsSpectral))
 
-  if (PETSC_VERSION_MINOR < 3 ) then
+#if PETSC_VERSION_MINOR < 3 
      call MatCreateMPIDense(SUMB_COMM_WORLD, nDimW, PETSC_DECIDE, &
           PETSC_DETERMINE, nDesignExtra, dRda_data, dRda, ierr)
-  else
+#else
      call MatCreateDense(SUMB_COMM_WORLD, nDimW, PETSC_DECIDE, &
           PETSC_DETERMINE, nDesignExtra, dRda_data, dRda, ierr)
-  end if
+#endif
   call EChk(ierr, __FILE__, __LINE__)
 #endif
 end subroutine createPETScVars
@@ -369,28 +369,29 @@ subroutine myMatCreate(matrix, blockSize, m, n, nnzDiagonal, nnzOffDiag, &
   character*(*) :: file
   integer(kind=intType) :: ierr, line
   if (blockSize > 1) then
-     if (PETSC_VERSION_MINOR <  3) then
-        call MatCreateMPIBAIJ(SUMB_COMM_WORLD, blockSize, &
-             m, n, PETSC_DETERMINE, PETSC_DETERMINE, &
-             0, nnzDiagonal, 0, nnzOffDiag, matrix, ierr)
-     else
-        call MatCreateBAIJ(SUMB_COMM_WORLD, blockSize, &
-             m, n, PETSC_DETERMINE, PETSC_DETERMINE, &
-             0, nnzDiagonal, 0, nnzOffDiag, matrix, ierr)
-     end if
+#if PETSC_VERSION_MINOR <  3
+     call MatCreateMPIBAIJ(SUMB_COMM_WORLD, blockSize, &
+          m, n, PETSC_DETERMINE, PETSC_DETERMINE, &
+          0, nnzDiagonal, 0, nnzOffDiag, matrix, ierr)
+#else
+     call MatCreateBAIJ(SUMB_COMM_WORLD, blockSize, &
+          m, n, PETSC_DETERMINE, PETSC_DETERMINE, &
+          0, nnzDiagonal, 0, nnzOffDiag, matrix, ierr)
+#endif
   else
-     if (PETSC_VERSION_MINOR <  3) then
-        call MatCreateMPIAIJ(SUMB_COMM_WORLD, &
-             m, n, PETSC_DETERMINE, PETSC_DETERMINE, &
-             0, nnzDiagonal, 0, nnzOffDiag, matrix, ierr)
-     else
-        call MatCreateAIJ(SUMB_COMM_WORLD,&
-             m, n, PETSC_DETERMINE, PETSC_DETERMINE, &
-             0, nnzDiagonal, 0, nnzOffDiag, matrix, ierr)
-     end if
+     
+#if PETSC_VERSION_MINOR <  3
+     call MatCreateMPIAIJ(SUMB_COMM_WORLD, &
+          m, n, PETSC_DETERMINE, PETSC_DETERMINE, &
+          0, nnzDiagonal, 0, nnzOffDiag, matrix, ierr)
+#else
+     call MatCreateAIJ(SUMB_COMM_WORLD,&
+          m, n, PETSC_DETERMINE, PETSC_DETERMINE, &
+          0, nnzDiagonal, 0, nnzOffDiag, matrix, ierr)
+#endif
      call EChk(ierr, file, line)
   end if
-
+  
   ! Warning: The array values is logically two-dimensional, 
   ! containing the values that are to be inserted. By default the
   ! values are given in row major order, which is the opposite of

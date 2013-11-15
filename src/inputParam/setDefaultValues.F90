@@ -65,7 +65,7 @@
        limiter     = noLimiter            ! No limiter in upwind schemes.
        precond     = noPrecond            ! No preconditioning.
 
-       wallBCTreatment =                                  linExtrapolPressure !normalMomentum    ! Normal momentum equation is
+       wallBCTreatment = normalMomentum    ! Normal momentum equation is
                                            ! Used to determine ghost
                                            ! cell pressure.
        outflowTreatment = constantExtrapol ! Constant extrapolation at
@@ -156,7 +156,7 @@
        nSaveSurface = 1
 
        smoother  = none
-       nRKStages = 4
+       nRKStages = 5
        nSubiterations = 1
 
        !resAveraging =  noResAveraging ! No residual averaging.
