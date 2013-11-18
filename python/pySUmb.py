@@ -1202,7 +1202,6 @@ steady rotations and specifying an aeroProblem')
             rho, P, T, mu, a = self.getAltitudeParams(aeroProblem._flows.altitude)
             ReLength = 1.0
             Re = rho*a*Mach/mu
-            print('RE:',Re)
 
         elif aeroProblem._flows.reynolds is not None:
             P = aeroProblem._flows.P
@@ -2195,6 +2194,11 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
 
         # Total derivative of the obective wrt aero-only DVs
         dIda = dIda_1 - dIda_2
+
+        # Alpha derivative needs to be scaled to degrees to be
+        # consistent:
+        if self.sumb.adjointvars.ndesignaoa <> -1:
+            dIda[self.sumb.adjointvars.ndesignaoa] *= numpy.pi/180.0
 
         return dIda
 
