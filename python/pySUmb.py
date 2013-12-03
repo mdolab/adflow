@@ -867,10 +867,11 @@ name is unavailable.'%(flowCase), comm=self.comm)
         # Set the stored data for the new flowCase:
         if self.flowCases[flowCaseName]['states'] is not None:
             self.setStates(self.flowCases[flowCaseName]['states'])
+        # end if
+            
         coords = self.flowCases[flowCaseName]['surfMesh']
         if coords is not None:
-            self.setSurfaceCoordinates('all', coords)
-        # end if
+            self.setSurfaceCoordinates('all', coords, flowCase=flowCaseName)
     
         # Now we have to do a bunch of updates. This is fairly
         # expensive and flow cases should only be switched when
@@ -1273,9 +1274,7 @@ must be speciifed for viscous computation')
             self._setInflowAngle(aeroProblem)
             self._setMachNumber(aeroProblem)
             self._setRefState(aeroProblem)
-            if self.myid == 0:
-                print ('alpha:',aeroProblem._flows.alpha*(numpy.pi/180))
-                print ('Mach:',aeroProblem._flows.mach)
+
         self.sumb.referencestate()
         self.sumb.setflowinfinitystate()
 
@@ -1324,6 +1323,9 @@ must be speciifed for viscous computation')
         # Set the desired flow Case
         self.setFlowCase(flowCase)
         
+        if self.flowCases[self.curFlowCase]['states'] is None:
+            self.resetFlow(aeroProblem)
+
         # Possibly release adjoint memory (if flowCase is unchanged,
         # this would not have been  done in the above caall
         self.releaseAdjointMemory()
