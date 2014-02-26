@@ -5,7 +5,7 @@
    !   variations   of useful results: *(*bcdata.fp) *(*bcdata.fv)
    !                *(*bcdata.m) *(*bcdata.oarea) cfp cfv cmp cmv
    !   with respect to varying inputs: *p *x *si *sj *sk *(*viscsubface.tau)
-   !                gammainf pinf pref lengthref pointref
+   !                pinf pref lengthref surfaceref machcoef pointref
    !   Plus diff mem management of: p:in x:in si:in sj:in sk:in viscsubface:in
    !                *viscsubface.tau:in bcdata:in *bcdata.fp:in *bcdata.fv:in
    !                *bcdata.m:in *bcdata.oarea:in
@@ -536,9 +536,10 @@
    ! Currently the coefficients only contain the surface integral
    ! of the pressure tensor. These values must be scaled to
    ! obtain the correct coefficients.
-   factd = -(two*machcoef**2*surfaceref*lref**2*((gammainfd*pinf+gammainf&
-   &    *pinfd)*scaledim+gammainf*pinf*scaledimd)/(gammainf*pinf*machcoef*&
-   &    machcoef*surfaceref*lref*lref*scaledim)**2)
+   factd = -(two*gammainf*lref**2*(((pinfd*machcoef+pinf*machcoefd)*&
+   &    scaledim+pinf*machcoef*scaledimd)*machcoef*surfaceref+pinf*machcoef*&
+   &    scaledim*(machcoefd*surfaceref+machcoef*surfacerefd))/(gammainf*pinf&
+   &    *machcoef*machcoef*surfaceref*lref*lref*scaledim)**2)
    fact = two/(gammainf*pinf*machcoef*machcoef*surfaceref*lref*lref*&
    &    scaledim)
    cfpd(1) = cfpd(1)*fact + cfp(1)*factd

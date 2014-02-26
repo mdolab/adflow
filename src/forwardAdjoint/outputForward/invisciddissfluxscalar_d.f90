@@ -4,7 +4,7 @@
    !  Differentiation of invisciddissfluxscalar in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *w *fw
    !   with respect to varying inputs: *p *gamma *w *radi *radj *radk
-   !                gammainf rhoinf pinfcorr
+   !                rhoinf pinfcorr
    !   Plus diff mem management of: p:in gamma:in w:in fw:in radi:in
    !                radj:in radk:in
    !
@@ -167,17 +167,11 @@
    ! Also set the value of sslim. To be fully consistent this
    ! must have the dimension of entropy and it is therefore
    ! set to a fraction of the free stream value.
-   IF (rhoinf .GT. 0.0_8) THEN
-   pwr1d = rhoinf**gammainf*(LOG(rhoinf)*gammainfd+gammainf*rhoinfd&
-   &          /rhoinf)
-   ELSE IF (rhoinf .EQ. 0.0_8) THEN
-   IF (gammainf .EQ. 1.0) THEN
-   pwr1d = rhoinfd
-   ELSE
-   pwr1d = 0.0_8
-   END IF
-   ELSE IF (gammainf .EQ. INT(gammainf)) THEN
+   IF (rhoinf .GT. 0.0_8 .OR. (rhoinf .LT. 0.0_8 .AND. gammainf .EQ. &
+   &          INT(gammainf))) THEN
    pwr1d = gammainf*rhoinf**(gammainf-1)*rhoinfd
+   ELSE IF (rhoinf .EQ. 0.0_8 .AND. gammainf .EQ. 1.0) THEN
+   pwr1d = rhoinfd
    ELSE
    pwr1d = 0.0_8
    END IF

@@ -3,8 +3,8 @@
    !
    !  Differentiation of slipvelocitiesfinelevel_block in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *(*bcdata.uslip)
-   !   with respect to varying inputs: *x gammainf pinf timeref rhoinf
-   !                veldirfreestream machgrid
+   !   with respect to varying inputs: *x pinf timeref rhoinf veldirfreestream
+   !                machgrid
    !   Plus diff mem management of: x:in bcdata:in *bcdata.uslip:in
    !
    !      ******************************************************************
@@ -253,8 +253,7 @@
    !  velxGrid = aInf*MachGrid(1)
    !  velyGrid = aInf*MachGrid(2)
    !  velzGrid = aInf*MachGrid(3)
-   arg1d = ((gammainfd*pinf+gammainf*pinfd)*rhoinf-gammainf*pinf*&
-   &      rhoinfd)/rhoinf**2
+   arg1d = (gammainf*pinfd*rhoinf-gammainf*pinf*rhoinfd)/rhoinf**2
    arg1 = gammainf*pinf/rhoinf
    IF (arg1 .EQ. 0.0_8) THEN
    ainfd = 0.0_8

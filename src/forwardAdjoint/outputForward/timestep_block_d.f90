@@ -4,7 +4,7 @@
    !  Differentiation of timestep_block in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *radi *radj *radk
    !   with respect to varying inputs: *p *sfacei *sfacej *gamma *sfacek
-   !                *w *si *sj *sk gammainf rhoinf pinfcorr
+   !                *w *si *sj *sk rhoinf pinfcorr
    !   Plus diff mem management of: rev:in p:in sfacei:in sfacej:in
    !                gamma:in sfacek:in w:in rlv:in vol:in si:in sj:in
    !                sk:in radi:in radj:in radk:in
@@ -105,8 +105,8 @@
    ! is used. Idem for rlim; compute clim2 as well.
    plim = 0.001_realType*pinfcorr
    rlim = 0.001_realType*rhoinf
-   clim2d = (0.000001_realType*(gammainfd*pinfcorr+gammainf*pinfcorrd)*&
-   &      rhoinf-0.000001_realType*gammainf*pinfcorr*rhoinfd)/rhoinf**2
+   clim2d = (0.000001_realType*gammainf*pinfcorrd*rhoinf-&
+   &      0.000001_realType*gammainf*pinfcorr*rhoinfd)/rhoinf**2
    clim2 = 0.000001_realType*gammainf*pinfcorr/rhoinf
    ! Initialize sFace to zero. This value will be used if the
    ! block is not moving.
