@@ -135,6 +135,7 @@ Subroutine computeObjectivePartialsFwd(costFunction)
 
      end if
 
+     
      ! These three are a little different; The derivative wrt to the
      ! forces and moments for each spectral instance are computed when
      ! the extra residual matrix is computed. This is the only
@@ -142,7 +143,19 @@ Subroutine computeObjectivePartialsFwd(costFunction)
      ! wrt forces and moment so we chain-rule them together. Note that
      ! there is no dependence of 'force' on pointRef so it is not
      ! included here. Also these derivatives DO need to be summed over
-     ! all procs.
+     ! all procs
+     
+     ! add missing dependence of mach
+     if (nDesignMach > 0) then
+        do sps=1, nTimeIntervalsSpectral
+           do idim=1,3
+              dIda(nDesignMach+1) = dIda(nDesignMach+1) + &
+                   dFMdExtra(idim, nDesignmach+1, sps)*forceb(idim, sps) + &
+                   dFMdExtra(idim+3, nDesignmach+1, sps)*momentb(idim, sps)
+           end do
+        end do
+     end if
+
      if (nDesignPointRefX > 0) then
         do sps=1, nTimeIntervalsSpectral
            do idim=1,3
@@ -151,6 +164,7 @@ Subroutine computeObjectivePartialsFwd(costFunction)
            end do
         end do
      end if
+
      if (nDesignPointRefY > 0) then
         do sps=1, nTimeIntervalsSpectral
            do idim=1,3

@@ -2,10 +2,9 @@
    !  Tapenade 3.7 (r4786) - 21 Feb 2013 15:53
    !
    !  Differentiation of referencestate in forward (tangent) mode (with options i4 dr8 r8):
-   !   variations   of useful results: gammainf pinf timeref rhoinf
-   !                muref tref muinf uinf rgas pref
-   !   with respect to varying inputs: pref mach tempfreestream reynolds
-   !                veldirfreestream reynoldslength
+   !   variations   of useful results: pinf timeref rhoinf muref muinf
+   !                uinf rgas pref
+   !   with respect to varying inputs: mach veldirfreestream machcoef
    !
    !      ******************************************************************
    !      *                                                                *
@@ -49,7 +48,7 @@
    INTEGER(kind=inttype) :: sps, nn, mm
    REAL(kind=realtype) :: gm1, ratio, tmp
    REAL(kind=realtype) :: mx, my, mz, re, v, tinfdim
-   REAL(kind=realtype) :: mxd, myd, mzd, red, vd, tinfdimd
+   REAL(kind=realtype) :: mxd, myd, mzd, vd
    REAL(kind=realtype), DIMENSION(3) :: dirloc, dirglob
    REAL(kind=realtype), DIMENSION(5) :: valloc, valglob
    TYPE(BCDATATYPE), DIMENSION(:), POINTER :: bcdata
@@ -78,31 +77,21 @@
    ! From these values the density and viscosity is computed. For
    ! external viscous and internal computation this is corrected
    ! later on.
-   pinfdimd = prefd
    pinfdim = pref
-   IF (pref .LE. zero) THEN
-   pinfdim = 101325.0_realType
-   pinfdimd = 0.0_8
-   END IF
-   tinfdimd = tempfreestreamd
+   IF (pref .LE. zero) pinfdim = 101325.0_realType
    tinfdim = tempfreestream
-   rhoinfdimd = (pinfdimd*rgasdim*tinfdim-pinfdim*rgasdim*tinfdimd)/(&
-   &    rgasdim*tinfdim)**2
    rhoinfdim = pinfdim/(rgasdim*tinfdim)
-   mudimd = musuthdim*((tsuthdim+ssuthdim)*1.5_realType*(tinfdim/tsuthdim&
-   &    )**0.5*tinfdimd/((tinfdim+ssuthdim)*tsuthdim)-(tsuthdim+ssuthdim)*&
-   &    tinfdimd*(tinfdim/tsuthdim)**1.5_realType/(tinfdim+ssuthdim)**2)
    mudim = musuthdim*((tsuthdim+ssuthdim)/(tinfdim+ssuthdim))*(tinfdim/&
    &    tsuthdim)**1.5_realType
    ! Check the flow type we are having here.
    IF (flowtype .EQ. internalflow) THEN
-   gammainfd = 0.0_8
-   trefd = 0.0_8
+   rhoinfdimd = 0.0_8
+   pinfdimd = 0.0_8
+   prefd = 0.0_8
    rhorefd = 0.0_8
    ELSE
    ! External flow. Compute the value of gammaInf.
-   CALL COMPUTEGAMMA_D(tempfreestream, tempfreestreamd, gammainf, &
-   &                  gammainfd, 1)
+   CALL COMPUTEGAMMA(tempfreestream, gammainf, 1)
    ! In case of a viscous problem, compute the
    ! dimensional free stream density and pressure.
    IF (equations .EQ. nsequations .OR. equations .EQ. ransequations) &
@@ -110,26 +99,22 @@
    ! Compute the x, y, and z-components of the Mach number
    ! relative to the body; i.e. the mesh velocity must be
    ! taken into account here.
-   mxd = machcoef*veldirfreestreamd(1)
+   mxd = machcoefd*veldirfreestream(1) + machcoef*veldirfreestreamd(1&
+   &        )
    mx = machcoef*veldirfreestream(1)
-   myd = machcoef*veldirfreestreamd(2)
+   myd = machcoefd*veldirfreestream(2) + machcoef*veldirfreestreamd(2&
+   &        )
    my = machcoef*veldirfreestream(2)
-   mzd = machcoef*veldirfreestreamd(3)
+   mzd = machcoefd*veldirfreestream(3) + machcoef*veldirfreestreamd(3&
+   &        )
    mz = machcoef*veldirfreestream(3)
    ! Reynolds number per meter, the viscosity using sutherland's
    ! law and the free stream velocity relative to the body.
-   red = (reynoldsd*reynoldslength-reynolds*reynoldslengthd)/&
-   &        reynoldslength**2
    re = reynolds/reynoldslength
-   mudimd = musuthdim*((tsuthdim+ssuthdim)*1.5*(tempfreestream/&
-   &        tsuthdim)**0.5*tempfreestreamd/((tempfreestream+ssuthdim)*&
-   &        tsuthdim)-(tsuthdim+ssuthdim)*tempfreestreamd*(tempfreestream/&
-   &        tsuthdim)**1.5/(tempfreestream+ssuthdim)**2)
    mudim = musuthdim*((tsuthdim+ssuthdim)/(tempfreestream+ssuthdim))*&
    &        (tempfreestream/tsuthdim)**1.5
-   arg1d = rgasdim*((mxd*mx+mx*mxd+myd*my+my*myd+mzd*mz+mz*mzd)*&
-   &        gammainf*tempfreestream+(mx*mx+my*my+mz*mz)*(gammainfd*&
-   &        tempfreestream+gammainf*tempfreestreamd))
+   arg1d = gammainf*rgasdim*tempfreestream*(mxd*mx+mx*mxd+myd*my+my*&
+   &        myd+mzd*mz+mz*mzd)
    arg1 = (mx*mx+my*my+mz*mz)*gammainf*rgasdim*tempfreestream
    IF (arg1 .EQ. 0.0_8) THEN
    vd = 0.0_8
@@ -139,19 +124,22 @@
    v = SQRT(arg1)
    ! Compute the free stream density and pressure.
    ! Set TInfDim to tempFreestream.
-   rhoinfdimd = ((red*mudim+re*mudimd)*v-re*mudim*vd)/v**2
+   rhoinfdimd = -(re*mudim*vd/v**2)
    rhoinfdim = re*mudim/v
-   pinfdimd = rgasdim*(rhoinfdimd*tempfreestream+rhoinfdim*&
-   &        tempfreestreamd)
+   pinfdimd = rgasdim*tempfreestream*rhoinfdimd
    pinfdim = rhoinfdim*rgasdim*tempfreestream
-   tinfdimd = tempfreestreamd
    tinfdim = tempfreestream
+   ELSE
+   rhoinfdimd = 0.0_8
+   pinfdimd = 0.0_8
    END IF
    ! In case the reference pressure, density and temperature were
    ! not specified, set them to the infinity values.
    IF (pref .LE. zero) THEN
    prefd = pinfdimd
    pref = pinfdim
+   ELSE
+   prefd = 0.0_8
    END IF
    IF (rhoref .LE. zero) THEN
    rhorefd = rhoinfdimd
@@ -159,12 +147,7 @@
    ELSE
    rhorefd = 0.0_8
    END IF
-   IF (tref .LE. zero) THEN
-   trefd = tinfdimd
-   tref = tinfdim
-   ELSE
-   trefd = 0.0_8
-   END IF
+   IF (tref .LE. zero) tref = tinfdim
    END IF
    ! Compute the value of muRef, such that the nonDimensional
    ! equations are identical to the dimensional ones.
@@ -194,8 +177,7 @@
    pinf = pinfdim/pref
    rhoinfd = (rhoinfdimd*rhoref-rhoinfdim*rhorefd)/rhoref**2
    rhoinf = rhoinfdim/rhoref
-   arg1d = ((gammainfd*pinf+gammainf*pinfd)*rhoinf-gammainf*pinf*rhoinfd)&
-   &    /rhoinf**2
+   arg1d = (gammainf*pinfd*rhoinf-gammainf*pinf*rhoinfd)/rhoinf**2
    arg1 = gammainf*pinf/rhoinf
    IF (arg1 .EQ. 0.0_8) THEN
    result1d = 0.0_8
@@ -205,10 +187,9 @@
    result1 = SQRT(arg1)
    uinfd = machd*result1 + mach*result1d
    uinf = mach*result1
-   rgasd = (rgasdim*(rhorefd*tref+rhoref*trefd)*pref-rgasdim*rhoref*tref*&
-   &    prefd)/pref**2
+   rgasd = (rgasdim*tref*rhorefd*pref-rgasdim*rhoref*tref*prefd)/pref**2
    rgas = rgasdim*rhoref*tref/pref
-   muinfd = (mudimd*muref-mudim*murefd)/muref**2
+   muinfd = -(mudim*murefd/muref**2)
    muinf = mudim/muref
       CONTAINS
    !=================================================================
