@@ -39,9 +39,9 @@
    cv13 = rsacv1**3
    ! Loop over the cells of this block and compute the eddy viscosity.
    ! Do not include halo's.
-   DO k=1,ke
-   DO j=1,je
-   DO i=1,ie
+   DO k=2,kl
+   DO j=2,jl
+   DO i=2,il
    rnusad = wd(i, j, k, itu1)*w(i, j, k, irho) + w(i, j, k, itu1)*&
    &          wd(i, j, k, irho)
    rnusa = w(i, j, k, itu1)*w(i, j, k, irho)

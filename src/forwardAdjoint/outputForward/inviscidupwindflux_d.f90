@@ -4,7 +4,7 @@
    !  Differentiation of inviscidupwindflux in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *fw
    !   with respect to varying inputs: *p *sfacei *sfacej *gamma *sfacek
-   !                *w *si *sj *sk tref rgas
+   !                *w *si *sj *sk rgas
    !   Plus diff mem management of: p:in sfacei:in sfacej:in gamma:in
    !                sfacek:in w:in si:in sj:in sk:in fw:in
    !
@@ -1504,8 +1504,8 @@
    END SUBROUTINE LEFTRIGHTSTATE
    !  Differentiation of riemannflux in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: flux
-   !   with respect to varying inputs: tref rgas gammaface sface sx
-   !                sy sz flux left right
+   !   with respect to varying inputs: rgas gammaface sface sx sy
+   !                sz flux left right
    !        ================================================================
    SUBROUTINE RIEMANNFLUX_D(left, leftd, right, rightd, flux, fluxd)
    IMPLICIT NONE
