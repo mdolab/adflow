@@ -150,7 +150,8 @@ Subroutine computeObjectivePartialsFwd(costFunction)
         do sps=1, nTimeIntervalsSpectral
            do idim=1,3
               dIda(nDesignMach+1) = dIda(nDesignMach+1) + &
-                   dFMdExtra(idim, nDesignmach+1, sps)*forceb(idim, sps) + &
+                   dFMdExtra(idim, nDesignmach+1, sps)*forceb(idim, sps) 
+              dIda(nDesignMach+1) = dIda(nDesignMach+1) + &
                    dFMdExtra(idim+3, nDesignmach+1, sps)*momentb(idim, sps)
            end do
         end do
