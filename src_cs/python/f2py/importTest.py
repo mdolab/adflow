@@ -2,7 +2,7 @@
 
 import sys
 
-name = 'sumb_cs'
+name = 'libsumb_cs'
 print "Testing if module %s can be imported..." % name
 import_cmd = "import %s" % name
 try:
