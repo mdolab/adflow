@@ -18,8 +18,8 @@ LINKER_ALL_FLAGS = -L$(SUMB_LIBDIR) -lsumb $(PV3_LINKER_FLAGS)\
 		    $(PETSC_LINKER_FLAGS) $(LINKER_FLAGS)
 
 PYTHON_OBJECTS = fortranobject.o \
-		 sumbmodule.o \
-		 sumb-f2pywrappers2.o 
+		 libsumbmodule.o \
+		 libsumb-f2pywrappers2.o 
 
 default: all
 
@@ -54,7 +54,7 @@ all:
 
 # Compile c wrapper
 	$(CC) $(CC_FLAGS) $(PYTHON_INCLUDES) -I$(NUMPY_INCLUDES) \
-	-I$(F2PY_ROOT)/src -c sumbmodule.c
+	-I$(F2PY_ROOT)/src -c libsumbmodule.c
 
 # Compile fortranobject needed by all f2py modules
 	$(CC) $(CC_FLAGS) $(PYTHON_INCLUDES) -I$(NUMPY_INCLUDES) \
@@ -63,12 +63,12 @@ all:
 # Compiled f2py-generated wrapper file
 	$(FF90) $(FF90_ALL_FLAGS) -I$(SUMB_MODDIR) \
 	-I$(SUMB_DIR)/src/python/fortran/suggar/ \
-	-I$(SUMB_DIR)/src/python/fortran/aeroElastic -c sumb-f2pywrappers2.f90
+	-I$(SUMB_DIR)/src/python/fortran/aeroElastic -c libsumb-f2pywrappers2.f90
 
 # Final Link:
-	$(FF90) -shared $(PYTHON_OBJECTS) $(LINKER_ALL_FLAGS) -o sumb.so
+	$(FF90) -shared $(PYTHON_OBJECTS) $(LINKER_ALL_FLAGS) -o libsumb.so
 	python importTest.py
-	mv sumb.so ../../../python
+	mv libsumb.so ../../../python
 	-rm *.o
 	-rm *.f90 *.f *.c
 clean:

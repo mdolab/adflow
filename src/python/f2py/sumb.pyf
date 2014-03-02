@@ -8,9 +8,9 @@ python module solverunsteadymd__user__routines
 end python module solverunsteadymd__user__routines
 
 #ifdef USE_COMPLEX
-python module sumb_cs ! in 
+python module libsumb_cs ! in 
 #else
-python module sumb
+python module libsumb
 #endif
     interface  ! in :sumb
 
@@ -1111,9 +1111,9 @@ python module sumb
     end interface 
 
 #ifdef USE_COMPLEX
-end python module sumb_cs
+end python module libsumb_cs
 #else
-end python module sumb
+end python module libsumb
 #endif
 
 ! This file was auto-generated with f2py (version:2.39.235_1700).

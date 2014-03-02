@@ -30,8 +30,8 @@ LINKER_ALL_FLAGS = -L$(SUMB_LIBDIR) -lsumb_cs $(PV3_LINKER_FLAGS)\
 #      ******************************************************************
 
 PYTHON_OBJECTS = fortranobject.o \
-		 sumb_csmodule.o \
-		 sumb_cs-f2pywrappers2.o 
+		 libsumb_csmodule.o \
+		 libsumb_cs-f2pywrappers2.o 
 
 #      ******************************************************************
 #      *                                                                *
@@ -66,20 +66,20 @@ all:
 
 # Compile c wrapper
 	$(CC) $(CC_FLAGS) $(PYTHON_INCLUDES) -I$(NUMPY_INCLUDES) \
-	-I$(F2PY_ROOT)/src -c sumb_csmodule.c
+	-I$(F2PY_ROOT)/src -c libsumb_csmodule.c
 
 # Compile fortran object needed by all f2py modules
 	$(CC) $(CC_FLAGS) $(PYTHON_INCLUDES) -I$(NUMPY_INCLUDES) \
 	-c $(F2PY_ROOT)/src/fortranobject.c -o fortranobject.o
 
 # Compiled f2py generated wrapper file
-	$(FF90) $(FF90_ALL_FLAGS) -I$(SUMB_MODDIR) -c sumb_cs-f2pywrappers2.f90
+	$(FF90) $(FF90_ALL_FLAGS) -I$(SUMB_MODDIR) -c libsumb_cs-f2pywrappers2.f90
 
 # Final Link:
-	$(FF90) -shared $(PYTHON_OBJECTS) $(LINKER_ALL_FLAGS) -o sumb_cs.so
+	$(FF90) -shared $(PYTHON_OBJECTS) $(LINKER_ALL_FLAGS) -o libsumb_cs.so
 	python importTest.py
 
-	mv sumb_cs.so ../../../python
+	mv libsumb_cs.so ../../../python
 	-rm *.o
 	-rm *.f90 *.f *.c
 	-rm .f2py_f2cmap
