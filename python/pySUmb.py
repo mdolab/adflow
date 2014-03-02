@@ -216,7 +216,7 @@ class SUMB(AeroSolver):
             curDir = os.path.dirname(os.path.realpath(__file__))
             # Explictly only search the local directory that this file
             # resides in
-            self.sumb = MExt('sumb', [curDir])._module
+            self.sumb = MExt('libsumb', [curDir])._module
         # end try
         
         # Next set the MPI Communicators and associated info
