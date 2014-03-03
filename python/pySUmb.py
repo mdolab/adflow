@@ -666,7 +666,6 @@ steady rotations and specifying an aeroProblem')
                 if not ignoreMissing:
                     raise Error('Supplied function is not known to SUmb.')
 
-
     def evalFunctionsSens(self, aeroProblem, funcsSens, evalFuncs=None, sps=1):
         """
         Evaluate the sensitivity of the desired functions given in
@@ -720,7 +719,7 @@ steady rotations and specifying an aeroProblem')
             else:
                 raise Error('The design variable \'%s\' as specified in the\
                 aeroProblem cannot be used with SUmb.'% dv)
-             
+
         # Do the functions one at a time:
         for f in evalFuncs:
             if f not in self.possibleObjectives:
@@ -738,8 +737,7 @@ steady rotations and specifying an aeroProblem')
             # Geometric derivatives
             if self.DVGeo is not None and self.DVGeo.getNDV() > 0:
                 dIdpt = self.totalSurfaceDerivative(f)
-                return
-                dIdx = self.DVGeo.totalSensitivity(dIdpt, ptSetName=ptSetName)
+                dIdx = self.DVGeo.totalSensitivity(dIdpt, ptSetName=ptSetName, comm=self.comm)
                 funcsSens[key][self.DVGeo.varSet] = dIdx
 
             # Compute total aero derivatives
@@ -1554,7 +1552,9 @@ steady rotations and specifying an aeroProblem')
         if dv not in self.aeroDVs:
             # A new DV add it:
             self.aeroDVs[dv] = len(self.aeroDVs)
-
+        self._updateAeroDVs()
+        
+    def _updateAeroDVs(self):
         # Reset all:
         for pdv in self.possibleAeroDVs:
             execStr = 'self.sumb.' + self.possibleAeroDVs[pdv] + '=-1'
@@ -1581,7 +1581,7 @@ steady rotations and specifying an aeroProblem')
         # Destroy the NKsolver to free memory -- Call this even if the
         # solver is not used...a safeguard check is done in Fortran
         self.sumb.destroynksolver()
-
+        self._updateAeroDVs()
         # For now, just create all the petsc variables
         if not self.adjointSetup or reform:
             self.sumb.createpetscvars()
