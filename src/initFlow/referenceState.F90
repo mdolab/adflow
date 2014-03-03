@@ -335,7 +335,6 @@
          if(pRef   <= zero) pRef   = pInfDim
          if(rhoRef <= zero) rhoRef = rhoInfDim
          if(TRef   <= zero) TRef   = TInfDim
-
        endif flowTypeTest
 
        ! Compute the value of muRef, such that the nonDimensional
