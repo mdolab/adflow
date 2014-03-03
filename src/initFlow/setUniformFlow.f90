@@ -57,7 +57,6 @@
 !      ******************************************************************
 !
        ! Loop over the number of spectral solutions and blocks.
-
        spectralLoop: do mm=1,nTimeIntervalsSpectral
          domains: do nn=1,nDom
 
