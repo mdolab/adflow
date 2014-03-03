@@ -1,70 +1,51 @@
-#!/usr/local/bin/python
+#!/usr/bin/python
 from __future__ import print_function
-'''
+from __future__ import division
+"""
 pySUmb - A Python interface to SUmb.
 
 Copyright (c) 2008 by Mr.C.A (Sandy) Mader
 All rights reserved. Not to be used for commercial purposes.
 Revision: 1.0   $Date: 03/07/2008 11:00$
 
-
 Developers:
 -----------
+- Dr. Gaetan K.W. Kenway (GKK)
 - Mr. C.A.(Sandy) Mader (SM)
 - Dr. Ruben E. Perez (RP)
 
 History
 -------
-    v. 1.0  - Original pyAero Framework Implementation (RP,SM 2008)
-'''
-
-__version__ = '$Revision$'
-
-'''
-To Do:
-    - 
-'''
+v. 1.0  - Original pyAero Framework Implementation (RP,SM 2008)
+"""
 
 # =============================================================================
-# Standard Python modules
+# Imports
 # =============================================================================
+import os
+import time
 import copy
-
+import numpy
+from mpi4py import MPI
+from baseclasses import AeroSolver, AeroProblem
+from . import MExt
+from .pySUmb import SUMB
 # =============================================================================
-# External Python modules
-# =============================================================================
-
-# =============================================================================
-# Extension modules
-# =============================================================================
-from mdo_import_helper import MExt, mpiPrint
-from pySUmb import SUMB
-
-# =============================================================================
-# Misc Definitions
-# =============================================================================
-
-# =============================================================================
-# SUMB Class
+# SUMB_C Class
 # =============================================================================
 class SUMB_C(SUMB):
-    '''
-    SUmb Aerodynamic Analysis Class - Inherited from the SUMB Class
-    '''
-    
-    def __init__(self, *args, **kwargs):
-        
-        '''
-        SUMB Class Initialization
-        
-        Documentation last updated:  July. 03, 2008 - C.A.(Sandy) Mader
-        '''
 
-        self.sumb = MExt('sumb_cs')._module
+    def __init__(self, *args, **kwargs):
+      
+        # Load the compiled module using MExt, allowing multiple
+        # imports
+        try: 
+            self.sumb
+        except:
+            curDir = os.path.dirname(os.path.realpath(__file__))
+            self.sumb = MExt.MExt('libsumb_cs',[curDir])._module
         SUMB.__init__(self, *args, **kwargs)        
         self.dtype = 'D'
-
-        return
 
     def _on_setOption(self, name, value):
         
@@ -111,7 +92,6 @@ class SUMB_C(SUMB):
             temp.pop('len')
         except:
             pass
-        # end if
 
         # If temp has anything left in it, we MUST be able to match to
         # one of them.
@@ -133,36 +113,19 @@ class SUMB_C(SUMB):
             value = str(complex(value))
         else:
             value = str(value)
-        # end if
       
         # Exec str is what is actually executed:
         exec_str = 'self.sumb.'+self.optionMap[name]['location'] + '=' + value
         exec(exec_str)
-
-        return
-        
+    
     def writeMeshFile(self, filename=None):
-        mpiPrint('Output not supported with complex version.',comm=self.comm)
-
-        return
+        if self.comm.rank == 0:
+            print('Output not supported with complex version.')
 
     def writeVolumeSolutionFile(self, filename=None, writeGrid=True):
-        mpiPrint('Output not supported with complex version.',comm=self.comm)
-
-        return
+        if self.comm.rank == 0:
+            print('Output not supported with complex version.')
 
     def writeSurfaceSolutionFile(self, *filename):
-        mpiPrint('Output not supported with complex version.',comm=self.comm)
-
-        return
-
-#==============================================================================
-# SUmb Analysis Test
-#==============================================================================
-if __name__ == '__main__':
-    
-    # Test SUmb
-    print('Testing ...')
-    sumb = SUMB_C()
-    print(sumb)
-    
+        if self.comm.rank == 0:
+            print('Output not supported with complex version.')
