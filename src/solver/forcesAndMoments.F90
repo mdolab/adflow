@@ -275,8 +275,9 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
            ! Loop over the quadrilateral faces of the subface and
            ! compute the viscous contribution to the force and
            ! moment and update the maximum value of y+.
-
+           !DEC$ NOVECTOR
            do j=(BCData(nn)%jnBeg+1),BCData(nn)%jnEnd
+              !DEC$ NOVECTOR
               do i=(BCData(nn)%inBeg+1),BCData(nn)%inEnd
 
                  ! Store the viscous stress tensor a bit easier.
