@@ -180,7 +180,6 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
 
      ! Set pointers to the first timeInstance...just to getSizes
      call setPointers(nn, level, 1)
-     
      ! Set unknown sizes in diffSizes for AD routine
      ISIZE1OFDrfbcdata = nBocos
      ISIZE1OFDrfviscsubface = nViscBocos
@@ -231,7 +230,16 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
 
               ! Reset All States and possibe AD seeds
               do sps2 = 1, nTimeIntervalsSpectral
-                 flowDoms(nn, level, sps2)%w(:, :, :, :) =  flowDomsd(nn, 1, sps2)%wtmp
+                 do ll=1,nw
+                    do k=0,kb
+                       do j=0,jb
+                          do i=0,ib
+                             flowDoms(nn, level, sps2)%w(i,j,k,ll) =  flowDomsd(nn, 1, sps2)%wtmp(i,j,k,ll)
+                          end do
+                       end do
+                    end do
+                 end do
+
                  if (useAD) then
                     flowdomsd(nn, 1, sps2)%w = zero ! This is actually w seed
                  end if
