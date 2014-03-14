@@ -224,10 +224,27 @@ subroutine alloc_derivative_values(level)
         flowDomsd(nn,1,sps)%dw_deriv(:,:,:,:,:) = 0.0
 
         ! Set the values
-        flowdomsd(nn,1,sps)%wtmp  = w
-        flowdomsd(nn,1,sps)%dwtmp = dw
-        flowdomsd(nn,1,sps)%xtmp  = x
-        
+        do l=1,nw
+           do k=0,kb 
+              do j=0,jb
+                 do i=0,ib
+                    flowdomsd(nn,1,sps)%wtmp(i,j,k,l)  = w(i,j,k,l)
+                    flowdomsd(nn,1,sps)%dwtmp(i,j,k,l) = dw(i,j,k,l)
+                 end do
+              end do
+           end do
+        end do
+
+        do l=1,3
+           do k=0,ke
+              do j=0,je
+                 do i=0,ie
+                    flowdomsd(nn,1,sps)%xtmp(i,j,k,l)  = x(i,j,k,l)
+                 end do
+              end do
+           end do
+        end do
+             
         call initRes_block(1, nwf, nn, sps)
         
         ! Note: we have to divide by the volume for dwtmp2 since

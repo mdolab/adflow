@@ -183,8 +183,24 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
 
               ! Reset All Coordinates and possibe AD seeds
               do sps2 = 1,nTimeIntervalsSpectral
-                 flowDoms(nn,1,sps2)%x = flowDomsd(nn,1,sps2)%xtmp
-                 flowDoms(nn,1,sps2)%w = flowDomsd(nn,1,sps2)%wtmp
+                 do ll=1,3
+                    do k=0,ke
+                       do j=0,je
+                          do i=0,ie
+                             flowDoms(nn,1,sps2)%x(i,j,k,ll) = flowDomsd(nn,1,sps2)%xtmp(i,j,k,ll)
+                          end do
+                       end do
+                    end do
+                 end do
+                 do ll=1,nw
+                    do k=0,kb
+                       do j=0,jb
+                          do i=0,ib
+                             flowDoms(nn,1,sps2)%w(i,j,k,ll) = flowDomsd(nn,1,sps2)%wtmp(i,j,k,ll)
+                          end do
+                       end do
+                    end do
+                 end do
 
                  if (useAD) then
                     flowdomsd(nn,1,sps2)%x = zero ! This is actually
