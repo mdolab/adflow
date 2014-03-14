@@ -737,9 +737,9 @@ steady rotations and specifying an aeroProblem')
             # Geometric derivatives
             if self.DVGeo is not None and self.DVGeo.getNDV() > 0:
                 dIdpt = self.totalSurfaceDerivative(f)
-                dIdx = self.DVGeo.totalSensitivity(dIdpt, ptSetName=ptSetName, comm=self.comm)
-                funcsSens[key][self.DVGeo.varSet] = dIdx
-
+                dIdx = self.DVGeo.totalSensitivity(dIdpt, ptSetName=ptSetName,
+                                                   comm=self.comm)
+                funcsSens[key].update(dIdx)
             # Compute total aero derivatives
             res = self.totalAeroDerivative(f)
         
@@ -2412,8 +2412,8 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             'nksubspacesize':[int, 60],
             'nklinearsolvetol':[float, 1e-1],
             'nkpc':[str, 'additive schwartz'],
-            'nkasmoverlap':[int, 3],
-            'nkpcilufill':[int, 3],
+            'nkasmoverlap':[int, 1],
+            'nkpcilufill':[int, 2],
             'nklocalpcordering':[str, 'rcm'],
             'nkjacobianlag':[int, 10],
             'rkreset':[bool, False],
@@ -2463,7 +2463,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             'matrixordering': [str, 'rcm'],
             'globalpreconditioner': [str, 'additive schwartz'],
             'localpreconditioner' : [str, 'ilu'],
-            'ilufill': [int, 1],
+            'ilufill': [int, 2],
             'asmoverlap' : [int, 1],
             'innerpreconits':[int,1],
             'outerpreconits':[int,3],
