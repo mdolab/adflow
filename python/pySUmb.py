@@ -283,7 +283,7 @@ class SUMB(AeroSolver):
         if direction not in ['x','y','z']:
             mpiPrint(' Error: \'direction\' must be one of \'x\', \
 \'y\', \'z\'', comm=self.comm)
-            groupTag = '%s: '%groupName
+            groupTag = '%s: '% groupName
             return
         else:
             groupTag = ''
@@ -370,10 +370,10 @@ class SUMB(AeroSolver):
             # name...so we will number sequentially from pythhon
             j = self.nSlice + i + 1
             if sliceType == 'relative':
-                sliceName = 'Slice_%4.4d %s Para Init %s=%7.3f'%(j, groupTag, direction, positions[i])
+                sliceName = 'Slice_%4.4d %s Para Init %s=%7.3f'% (j, groupTag, direction, positions[i])
                 self.sumb.addparaslice(sliceName, tmp[i], dirVec)
             else:
-                sliceName = 'Slice_%4.4d %s Absolute %s=%7.3f'%(j, groupTag, direction, positions[i])
+                sliceName = 'Slice_%4.4d %s Absolute %s=%7.3f'% (j, groupTag, direction, positions[i])
                 self.sumb.addabsslice(sliceName, tmp[i], dirVec)
      
         self.nSlice += N
@@ -659,7 +659,7 @@ steady rotations and specifying an aeroProblem')
 
         for f in evalFuncs:
             if f in self.possibleObjectives:
-                key = self.curAP.name + '_%s'%f
+                key = self.curAP.name + '_%s'% f
                 self.curAP.funcNames[f] = key
                 funcs[key] = res[f]
             else:
@@ -725,8 +725,8 @@ steady rotations and specifying an aeroProblem')
             if f not in self.possibleObjectives:
                 raise Error('Supplied function is not known to SUmb.')
 
-            key = self.curAP.name + '_%s'%f
-            ptSetName = 'sumb_%s_coords'%(self.curAP.name)
+            key = self.curAP.name + '_%s'% f
+            ptSetName = self.curAP.ptSetName
             
             # Set dict structure for this derivative
             funcsSens[key] = {}
@@ -1056,21 +1056,19 @@ steady rotations and specifying an aeroProblem')
             f = open(fileName, 'w')
             
             # Write header with number of nodes and number of cells
-            f.write("%d %d\n"%(nPt, nCell))
+            f.write("%d %d\n"% (nPt, nCell))
 
             # Now write out all the Nodes and Forces (or tractions)
             for iProc in xrange(len(pts)):
                 for i in xrange(len(pts[iProc])):
-                    f.write('%15.8g %15.8g %15.8g '%(
-                            numpy.real(pts[iProc][i,0]),
-                            numpy.real(pts[iProc][i,1]),
-                            numpy.real(pts[iProc][i,2])))
-                    f.write('%15.8g %15.8g %15.8g\n'%(
-                            numpy.real(forces[iProc][i,0]),
-                            numpy.real(forces[iProc][i,1]),
-
-
-                            numpy.real(forces[iProc][i,2])))
+                    f.write('%15.8g %15.8g %15.8g '% (
+                            numpy.real(pts[iProc][i, 0]),
+                            numpy.real(pts[iProc][i, 1]),
+                            numpy.real(pts[iProc][i, 2])))
+                    f.write('%15.8g %15.8g %15.8g\n'% (
+                            numpy.real(forces[iProc][i, 0]),
+                            numpy.real(forces[iProc][i, 1]),
+                            numpy.real(forces[iProc][i, 2])))
 
             # Now write out the connectivity information. We have to
             # be a little careful, since the connectivitiy is given
@@ -1081,7 +1079,7 @@ steady rotations and specifying an aeroProblem')
             nodeOffset = 0
             for iProc in xrange(len(conn)):
                 for i in xrange(len(conn[iProc])/4):
-                    f.write('%d %d %d %d\n'%(
+                    f.write('%d %d %d %d\n'% (
                             conn[iProc][4*i+0]+nodeOffset,
                             conn[iProc][4*i+1]+nodeOffset,
                             conn[iProc][4*i+2]+nodeOffset,
@@ -1231,7 +1229,7 @@ steady rotations and specifying an aeroProblem')
         
         if self.comm.rank == 0:
             print('+'+'-'*70+'+')
-            print('|  Solving Aero Problem: %-46s|'%aeroProblem.name)
+            print('|  Solving Aero Problem: %-46s|'% aeroProblem.name)
             print('+'+'-'*70+'+')
 
         # See if the aeroProblem has sumbData already, if not, create.
@@ -1239,6 +1237,7 @@ steady rotations and specifying an aeroProblem')
             aeroProblem.sumbData
         except AttributeError:
             aeroProblem.sumbData = sumbFlowCase()
+            aeroProblem.ptSetName = ptSetName
      
         if self.curAP is not None:
             # If we have already solved something and are now
@@ -2858,14 +2857,3 @@ class sumbFlowCase(object):
         self.callCounter = -1
         self.adjointRHS = None
 
-#==============================================================================
-# SUmb Analysis Test
-#==============================================================================
-if __name__ == '__main__':
-    
-    # Test SUmb
-    mpiPrint('Testing ...')
-    sumb = SUMB()
-    print(sumb)
-
-    
