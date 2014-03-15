@@ -331,8 +331,8 @@ python module libsumb
        end subroutine computeobjectivepartialsfwd
 
         subroutine getdidw(output,nstate) ! in :test:computeObjPartials.F90
-            real(kind=realtype) dimension(nstate),intent(inout) :: output
-            integer(kind=inttype) optional,intent(in,out),check(len(output)>=nstate),depend(output) :: nstate=len(output)
+            real(kind=realtype) dimension(nstate),intent(in,out) :: output
+            integer(kind=inttype) optional,intent(in),check(len(output)>=nstate),depend(output) :: nstate=len(output)
         end subroutine getdidw
 
         subroutine getdidx(output,ndof) ! in :test:computeObjPartials.F90
