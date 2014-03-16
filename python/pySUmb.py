@@ -572,7 +572,11 @@ steady rotations and specifying an aeroProblem')
             bool(self.sumb.killsignals.routinefailed), op=MPI.LOR)
 
         if self.sumb.killsignals.routinefailed:
-            mpiPrint('Fatal failure during mesh warp', comm=self.comm)
+            print('Fatal failure during mesh warp! Bad mesh is \
+            written in output directory as failed_mesh.cgns')
+            fileName = os.path.join(self.getOption('outputDirectory'),
+                                    'failed_mesh.cgns')
+            self.writeMeshFile(fileName)
             self.fatalFail = True
             self.solveFailed = True
             return
@@ -1200,7 +1204,8 @@ steady rotations and specifying an aeroProblem')
         except AttributeError:
             aeroProblem.sumbData = sumbFlowCase()
             aeroProblem.ptSetName = ptSetName
-     
+            aeroProblem.surfMesh = self.getSurfaceCoordinates('all')
+            
         if self.curAP is not None:
             # If we have already solved something and are now
             # switching, save what we need:
