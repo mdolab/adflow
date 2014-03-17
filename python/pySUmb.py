@@ -1048,7 +1048,7 @@ steady rotations and specifying an aeroProblem')
             nCell = 0
             for iProc in xrange(len(pts)):
                 nPt += len(pts[iProc])
-                nCell += len(conn[iProc])/4
+                nCell += len(conn[iProc])//4
      
             # Open output file
             f = open(fileName, 'w')
@@ -1078,7 +1078,7 @@ steady rotations and specifying an aeroProblem')
 
             nodeOffset = 0
             for iProc in xrange(len(conn)):
-                for i in xrange(len(conn[iProc])/4):
+                for i in xrange(len(conn[iProc])//4):
                     f.write('%d %d %d %d\n'%(
                             conn[iProc][4*i+0]+nodeOffset,
                             conn[iProc][4*i+1]+nodeOffset,
