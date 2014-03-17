@@ -871,8 +871,6 @@ steady rotations and specifying an aeroProblem')
 
         if baseName is None:
             baseName = self.curAP.name
-        else:
-            baseName = baseName + '_%s'% self.curAP.name
 
         # If we are numbering solution, it saving the sequence of
         # calls, add the call number
