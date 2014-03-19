@@ -771,7 +771,7 @@ steady rotations and specifying an aeroProblem')
 
         # Solve for the n-2 value:
         aeroProblem.alpha = anm2
-        self.__solve__(aeroProblem, nIterations=nIterations)
+        self.__call__(aeroProblem, writeSolution=False)
         sol = self.getSolution()
         fnm2 =  sol['cl'] - CLStar
 
@@ -792,7 +792,7 @@ steady rotations and specifying an aeroProblem')
             aeroProblem.alpha = anm1
 
             # Solve for n-1 value (anm1)
-            self.__solve__(aeroProblem, nIterations=nIterations, writeSolution=False)
+            self.__call__(aeroProblem, writeSolution=False)
             sol = self.getSolution()
             fnm1 =  sol['cl'] - CLStar
             
@@ -840,8 +840,6 @@ steady rotations and specifying an aeroProblem')
 
         if baseName is None:
             baseName = self.curAP.name
-        else:
-            baseName = baseName + '_%s'% self.curAP.name
 
         # If we are numbering solution, it saving the sequence of
         # calls, add the call number
@@ -1019,7 +1017,7 @@ steady rotations and specifying an aeroProblem')
             nCell = 0
             for iProc in xrange(len(pts)):
                 nPt += len(pts[iProc])
-                nCell += len(conn[iProc])/4
+                nCell += len(conn[iProc])//4
      
             # Open output file
             f = open(fileName, 'w')
@@ -1047,8 +1045,8 @@ steady rotations and specifying an aeroProblem')
 
             nodeOffset = 0
             for iProc in xrange(len(conn)):
-                for i in xrange(len(conn[iProc])/4):
-                    f.write('%d %d %d %d\n'% (
+                for i in xrange(len(conn[iProc])//4):
+                    f.write('%d %d %d %d\n'%(
                             conn[iProc][4*i+0]+nodeOffset,
                             conn[iProc][4*i+1]+nodeOffset,
                             conn[iProc][4*i+2]+nodeOffset,
