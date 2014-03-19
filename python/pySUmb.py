@@ -771,6 +771,11 @@ steady rotations and specifying an aeroProblem')
 
         # Solve for the n-2 value:
         aeroProblem.alpha = anm2
+
+        # Print alpha
+        if self.comm.rank == 0:
+            print ('Current alpha is: ', aeroProblem.alpha)
+
         self.__call__(aeroProblem, writeSolution=False)
         sol = self.getSolution()
         fnm2 =  sol['cl'] - CLStar
@@ -787,9 +792,13 @@ steady rotations and specifying an aeroProblem')
             # convergnce after 2 iterations. We slightly lower the
             # tolerance at each iteration to prevent this. 
             self.setOption('l2convergence', 0.75*self.getOption('l2convergence'))
-
+            
             # Set current alpha
             aeroProblem.alpha = anm1
+
+            # Print alpha
+            if self.comm.rank == 0:
+                print ('Current alpha is: ', aeroProblem.alpha)
 
             # Solve for n-1 value (anm1)
             self.__call__(aeroProblem, writeSolution=False)
@@ -1189,6 +1198,9 @@ steady rotations and specifying an aeroProblem')
                 if not self.DVGeo.pointSetUpToDate(ptSetName):
                     self.setSurfaceCoordinates(self.DVGeo.update(ptSetName), 'all')
                     self.updateGeometryInfo()
+            # Finally update other data
+            self._setAeroProblemData()
+
             return
         
         if self.comm.rank == 0:
