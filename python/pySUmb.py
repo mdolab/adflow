@@ -706,6 +706,8 @@ steady rotations and specifying an aeroProblem')
         # derivatives. We must provide the derivatives that have been
         # asked for in the aeroProblem. Before we start, lets setup
         # the aeroDVs we need
+        self.setAeroProblem(aeroProblem)
+
         if evalFuncs is None:
             evalFuncs = self.curAP.evalFuncs
         else:
@@ -715,6 +717,8 @@ steady rotations and specifying an aeroProblem')
         for f in evalFuncs:
             if f not in self.possibleObjectives:
                 raise Error('Supplied function is not known to SUmb.')
+            if self.comm.rank == 0:
+                print('Solving adjoint: %s'%f)
 
             key = self.curAP.name + '_%s'% f
             ptSetName = self.curAP.ptSetName
