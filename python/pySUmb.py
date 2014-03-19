@@ -802,7 +802,7 @@ steady rotations and specifying an aeroProblem')
 
         # Solve for the n-2 value:
         aeroProblem.alpha = anm2
-        self.__solve__(aeroProblem, nIterations=nIterations)
+        self.__call__(aeroProblem, writeSolution=False)
         sol = self.getSolution()
         fnm2 =  sol['cl'] - CLStar
 
@@ -823,7 +823,7 @@ steady rotations and specifying an aeroProblem')
             aeroProblem.alpha = anm1
 
             # Solve for n-1 value (anm1)
-            self.__solve__(aeroProblem, nIterations=nIterations, writeSolution=False)
+            self.__call__(aeroProblem, writeSolution=False)
             sol = self.getSolution()
             fnm1 =  sol['cl'] - CLStar
             
