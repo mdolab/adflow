@@ -22,7 +22,7 @@ v. 1.0  - Original pyAero Framework Implementation (RP,SM 2008)
 # =============================================================================
 # Imports
 # =============================================================================
-import os
+import os, sys
 import time
 import copy
 import numpy
@@ -258,6 +258,9 @@ class SUMB(AeroSolver):
         pts  = self.getForcePoints()
         self.mesh.setExternalSurface(patchnames, patchsizes, conn, pts)
 
+        # Get a inital copy of coordinates and save
+        self.coords0 = self.getSurfaceCoordinates()
+
     def setDVGeo(self, DVGeo):
         """
         Set the DVGeometry object that will manipulate 'geometry' in
@@ -305,7 +308,7 @@ class SUMB(AeroSolver):
         if direction not in ['x','y','z']:
             mpiPrint(' Error: \'direction\' must be one of \'x\', \
 \'y\', \'z\'', comm=self.comm)
-            groupTag = '%s: '%groupName
+            groupTag = '%s: '% groupName
             return
         else:
             groupTag = ''
@@ -392,10 +395,10 @@ class SUMB(AeroSolver):
             # name...so we will number sequentially from pythhon
             j = self.nSlice + i + 1
             if sliceType == 'relative':
-                sliceName = 'Slice_%4.4d %s Para Init %s=%7.3f'%(j, groupTag, direction, positions[i])
+                sliceName = 'Slice_%4.4d %s Para Init %s=%7.3f'% (j, groupTag, direction, positions[i])
                 self.sumb.addparaslice(sliceName, tmp[i], dirVec)
             else:
-                sliceName = 'Slice_%4.4d %s Absolute %s=%7.3f'%(j, groupTag, direction, positions[i])
+                sliceName = 'Slice_%4.4d %s Absolute %s=%7.3f'% (j, groupTag, direction, positions[i])
                 self.sumb.addabsslice(sliceName, tmp[i], dirVec)
      
         self.nSlice += N
@@ -528,9 +531,6 @@ steady rotations and specifying an aeroProblem')
         # Set the aeroProblem
         self.setAeroProblem(aeroProblem)
     
-        # Set all the info contained in the aeroProblem object
-        self._setAeroProblemData()
-    
         # If this problem has't been solved yet, reset flow to this
         # flight condition
         if self.curAP.sumbData.states is None:
@@ -594,7 +594,11 @@ steady rotations and specifying an aeroProblem')
             bool(self.sumb.killsignals.routinefailed), op=MPI.LOR)
 
         if self.sumb.killsignals.routinefailed:
-            mpiPrint('Fatal failure during mesh warp', comm=self.comm)
+            print('Fatal failure during mesh warp! Bad mesh is \
+            written in output directory as failed_mesh.cgns')
+            fileName = os.path.join(self.getOption('outputDirectory'),
+                                    'failed_mesh.cgns')
+            self.writeMeshFile(fileName)
             self.fatalFail = True
             self.solveFailed = True
             return
@@ -681,7 +685,7 @@ steady rotations and specifying an aeroProblem')
 
         for f in evalFuncs:
             if f in self.possibleObjectives:
-                key = self.curAP.name + '_%s'%f
+                key = self.curAP.name + '_%s'% f
                 self.curAP.funcNames[f] = key
                 funcs[key] = res[f]
             else:
@@ -724,31 +728,22 @@ steady rotations and specifying an aeroProblem')
         # derivatives. We must provide the derivatives that have been
         # asked for in the aeroProblem. Before we start, lets setup
         # the aeroDVs we need
+        self.setAeroProblem(aeroProblem)
+
         if evalFuncs is None:
             evalFuncs = self.curAP.evalFuncs
         else:
-            evalFuncs = set(evalFuncs).add(self.curAP.evalFuncs)
-
-        DVsRequired = list(self.curAP.DVNames.keys())
-        DVMap = {}
-        for dv in DVsRequired:
-            if dv in self.possibleAeroDVs:
-                self._addAeroDV(dv)
-            elif dv in ['altitude']:
-                # We internally need to add the following:
-                self._addAeroDV('T')
-                self._addAeroDV('P')
-            else:
-                raise Error('The design variable \'%s\' as specified in the\
-                aeroProblem cannot be used with SUmb.'% dv)
+            evalFuncs = set(evalFuncs)
 
         # Do the functions one at a time:
         for f in evalFuncs:
             if f not in self.possibleObjectives:
                 raise Error('Supplied function is not known to SUmb.')
+            if self.comm.rank == 0:
+                print('Solving adjoint: %s'%f)
 
-            key = self.curAP.name + '_%s'%f
-            ptSetName = 'sumb_%s_coords'%(self.curAP.name)
+            key = self.curAP.name + '_%s'% f
+            ptSetName = self.curAP.ptSetName
             
             # Set dict structure for this derivative
             funcsSens[key] = {}
@@ -759,34 +754,12 @@ steady rotations and specifying an aeroProblem')
             # Geometric derivatives
             if self.DVGeo is not None and self.DVGeo.getNDV() > 0:
                 dIdpt = self.totalSurfaceDerivative(f)
-                dIdx = self.DVGeo.totalSensitivity(dIdpt, ptSetName=ptSetName, comm=self.comm)
-                funcsSens[key][self.DVGeo.varSet] = dIdx
-
+                dIdx = self.DVGeo.totalSensitivity(
+                    dIdpt, ptSetName=ptSetName, comm=self.comm)
+                funcsSens[key].update(dIdx)
+                
             # Compute total aero derivatives
-            res = self.totalAeroDerivative(f)
-        
-            for dv in DVsRequired:
-                if dv in self.possibleAeroDVs:
-                    funcsSens[key][self.curAP.DVNames[dv]] = res[self.aeroDVs[dv]]
-                elif dv in ['altitude']:
-                    # Extract the derivatives wrt the independent
-                    # parameters in SUmb
-                    dIdP = res[self.aeroDVs['P']]
-                    dIdT = res[self.aeroDVs['T']]
-
-                    # Get the derivative of THESE values with respect
-                    # to the altitude:
-                    tmp = {}
-                    self.curAP.evalFunctionsSens(tmp, ['P', 'T'])
-
-                    # Chain-rule to get the final derivative:
-                    funcsSens[key][self.curAP.DVNames[dv]] = (
-                        tmp[self.curAP['P']][self.curAP.DVNames['altitude']]*dIdP +
-                        tmp[self.curAP['T']][self.curAP.DVNames['altitude']]*dIdT)
-
-                        
-
-        # end for (functions)
+            funcsSens[key].update(self.totalAeroDerivative(f))
                     
     def solveCL(self, aeroProblem, CLStar, alpha0=0, 
                 delta=0.5, tol=1e-3, autoReset=True):
@@ -824,7 +797,12 @@ steady rotations and specifying an aeroProblem')
 
         # Solve for the n-2 value:
         aeroProblem.alpha = anm2
-        self.__solve__(aeroProblem, nIterations=nIterations)
+
+        # Print alpha
+        if self.comm.rank == 0:
+            print ('Current alpha is: ', aeroProblem.alpha)
+
+        self.__call__(aeroProblem, writeSolution=False)
         sol = self.getSolution()
         fnm2 =  sol['cl'] - CLStar
 
@@ -840,12 +818,16 @@ steady rotations and specifying an aeroProblem')
             # convergnce after 2 iterations. We slightly lower the
             # tolerance at each iteration to prevent this. 
             self.setOption('l2convergence', 0.75*self.getOption('l2convergence'))
-
+            
             # Set current alpha
             aeroProblem.alpha = anm1
 
+            # Print alpha
+            if self.comm.rank == 0:
+                print ('Current alpha is: ', aeroProblem.alpha)
+
             # Solve for n-1 value (anm1)
-            self.__solve__(aeroProblem, nIterations=nIterations, writeSolution=False)
+            self.__call__(aeroProblem, writeSolution=False)
             sol = self.getSolution()
             fnm1 =  sol['cl'] - CLStar
             
@@ -893,8 +875,6 @@ steady rotations and specifying an aeroProblem')
 
         if baseName is None:
             baseName = self.curAP.name
-        else:
-            baseName = baseName + '_%s'% self.curAP.name
 
         # If we are numbering solution, it saving the sequence of
         # calls, add the call number
@@ -940,10 +920,10 @@ steady rotations and specifying an aeroProblem')
 
         # Set filename in sumb
         self.sumb.inputio.solfile[:] = ''
-        self.sumb.inputio.solfile[0:len(filename)] = filename
+        self.sumb.inputio.solfile[0:len(fileName)] = fileName
         
         self.sumb.inputio.newgridfile[:] = ''
-        self.sumb.inputio.newgridfile[0:len(filename)] = filename
+        self.sumb.inputio.newgridfile[0:len(fileName)] = fileName
 
         # Actual fortran write call
         self.sumb.writesol()
@@ -953,7 +933,7 @@ steady rotations and specifying an aeroProblem')
 
         Parameters
         ----------
-        filename : str
+        fileName : str
             Name of the file. Should have .cgns extension. 
         writeGrid : bool
             Flag specifying whether the grid should be included or if
@@ -969,7 +949,7 @@ steady rotations and specifying an aeroProblem')
         self.sumb.monitor.writevolume = True
         self.sumb.monitor.writesurface = False
 
-        # Set filename in sumb
+        # Set fileName in sumb
         self.sumb.inputio.solfile[:] = ''
         self.sumb.inputio.solfile[0:len(fileName)] = fileName
 
@@ -997,7 +977,7 @@ steady rotations and specifying an aeroProblem')
         self.sumb.monitor.writevolume=False
         self.sumb.monitor.writesurface=True
 
-        # Set filename in sumb
+        # Set fileName in sumb
         self.sumb.inputio.surfacesolfile[:] = ''
         self.sumb.inputio.surfacesolfile[0:len(fileName)] = fileName
 
@@ -1012,7 +992,7 @@ steady rotations and specifying an aeroProblem')
         fileName : str
             File of lift distribution. Should have .dat extension. 
         """
-        # Ensure filename is .dat even if the user didn't specify
+        # Ensure fileName is .dat even if the user didn't specify
         fileName, ext = os.path.splitext(fileName)
         fileName += '.dat'
             
@@ -1072,27 +1052,25 @@ steady rotations and specifying an aeroProblem')
             nCell = 0
             for iProc in xrange(len(pts)):
                 nPt += len(pts[iProc])
-                nCell += len(conn[iProc])/4
+                nCell += len(conn[iProc])//4
      
             # Open output file
             f = open(fileName, 'w')
             
             # Write header with number of nodes and number of cells
-            f.write("%d %d\n"%(nPt, nCell))
+            f.write("%d %d\n"% (nPt, nCell))
 
             # Now write out all the Nodes and Forces (or tractions)
             for iProc in xrange(len(pts)):
                 for i in xrange(len(pts[iProc])):
-                    f.write('%15.8g %15.8g %15.8g '%(
-                            numpy.real(pts[iProc][i,0]),
-                            numpy.real(pts[iProc][i,1]),
-                            numpy.real(pts[iProc][i,2])))
-                    f.write('%15.8g %15.8g %15.8g\n'%(
-                            numpy.real(forces[iProc][i,0]),
-                            numpy.real(forces[iProc][i,1]),
-
-
-                            numpy.real(forces[iProc][i,2])))
+                    f.write('%15.8g %15.8g %15.8g '% (
+                            numpy.real(pts[iProc][i, 0]),
+                            numpy.real(pts[iProc][i, 1]),
+                            numpy.real(pts[iProc][i, 2])))
+                    f.write('%15.8g %15.8g %15.8g\n'% (
+                            numpy.real(forces[iProc][i, 0]),
+                            numpy.real(forces[iProc][i, 1]),
+                            numpy.real(forces[iProc][i, 2])))
 
             # Now write out the connectivity information. We have to
             # be a little careful, since the connectivitiy is given
@@ -1102,7 +1080,7 @@ steady rotations and specifying an aeroProblem')
 
             nodeOffset = 0
             for iProc in xrange(len(conn)):
-                for i in xrange(len(conn[iProc])/4):
+                for i in xrange(len(conn[iProc])//4):
                     f.write('%d %d %d %d\n'%(
                             conn[iProc][4*i+0]+nodeOffset,
                             conn[iProc][4*i+1]+nodeOffset,
@@ -1138,8 +1116,6 @@ steady rotations and specifying an aeroProblem')
             to reset the flow to.
             """
         self.setAeroProblem(aeroProblem)
-        # Explictly call _setAeroProblemData
-        self._setAeroProblemData()
         self.sumb.referencestate()
         self.sumb.setflowinfinitystate()
 
@@ -1229,7 +1205,6 @@ steady rotations and specifying an aeroProblem')
         self._updateGeomInfo = True
         if self.mesh is not None:
             self.mesh.setSurfaceCoordinates(coordinates, groupName)
-            self.curAP.sumbData.coords = coordinates.copy()
             
     def getSurfaceConnectivity(self, groupName='all'):
         """
@@ -1249,11 +1224,14 @@ steady rotations and specifying an aeroProblem')
                 if not self.DVGeo.pointSetUpToDate(ptSetName):
                     self.setSurfaceCoordinates(self.DVGeo.update(ptSetName), 'all')
                     self.updateGeometryInfo()
+            # Finally update other data
+            self._setAeroProblemData()
+
             return
         
         if self.comm.rank == 0:
             print('+'+'-'*70+'+')
-            print('|  Solving Aero Problem: %-46s|'%aeroProblem.name)
+            print('|  Switching to Aero Problem: %-41s|'% aeroProblem.name)
             print('+'+'-'*70+'+')
 
         # See if the aeroProblem has sumbData already, if not, create.
@@ -1261,7 +1239,9 @@ steady rotations and specifying an aeroProblem')
             aeroProblem.sumbData
         except AttributeError:
             aeroProblem.sumbData = sumbFlowCase()
-     
+            aeroProblem.ptSetName = ptSetName
+            aeroProblem.surfMesh = self.getSurfaceCoordinates('all')
+            
         if self.curAP is not None:
             # If we have already solved something and are now
             # switching, save what we need:
@@ -1270,8 +1250,7 @@ steady rotations and specifying an aeroProblem')
 
         # If not done so already, embed the coordinates:
         if self.DVGeo is not None and ptSetName not in self.DVGeo.points:
-            self.DVGeo.addPointSet(
-                self.getSurfaceCoordinates('all'), ptSetName)
+            self.DVGeo.addPointSet(self.coords0, ptSetName)
 
         # We are now ready to associate self.curAP with the supplied AP
         self.curAP = aeroProblem
@@ -1286,7 +1265,11 @@ steady rotations and specifying an aeroProblem')
         if self.DVGeo is not None:
             if not self.DVGeo.pointSetUpToDate(ptSetName):
                 self.setSurfaceCoordinates(self.DVGeo.update(ptSetName), 'all')
-    
+            else:
+                self.setSurfaceCoordinates(self.curAP.surfMesh, 'all')
+        else:
+            self.setSurfaceCoordinates(self.curAP.surfMesh, 'all')
+            
         # Now we have to do a bunch of updates. This is fairly
         # expensive so switchign aeroProblems should not be done that
         #  frequently
@@ -1296,6 +1279,9 @@ steady rotations and specifying an aeroProblem')
         self.sumb.destroynksolver()
         self.releaseAdjointMemory()
 
+        # Finally update other data
+        self._setAeroProblemData()
+        
     def _setAeroProblemData(self, firstCall=False):
         """
         After an aeroProblem has been associated with self.cuAP, set
@@ -1566,47 +1552,27 @@ steady rotations and specifying an aeroProblem')
             """
 
         if dv not in self.possibleAeroDVs:
-            raise Error('%s was not one of the possible AeroDVs.\
-            The complete list of DVs for SUmb is %s. '%(
+            raise Error("%s was not one of the possible AeroDVs. "
+                        "The complete list of DVs for SUmb is %s. "%(
                             dv, repr(set(self.possibleAeroDVs.keys()))))
 
         if dv not in self.aeroDVs:
             # A new DV add it:
             self.aeroDVs[dv] = len(self.aeroDVs)
-        self._updateAeroDVs()
-        
-    def _updateAeroDVs(self):
-        # Reset all:
-        for pdv in self.possibleAeroDVs:
-            execStr = 'self.sumb.' + self.possibleAeroDVs[pdv] + '=-1'
-            exec(execStr)
-        
-        # Set the required paramters for the aero-Only design vars:
-        self.nDVAero = len(self.aeroDVs)
-        self.sumb.adjointvars.ndesignextra = self.nDVAero
-        self.sumb.adjointvars.dida = numpy.zeros(self.nDVAero)
-        for adv in self.aeroDVs:
-            execStr = 'self.sumb.' + self.possibleAeroDVs[adv] + \
-                      '= %d'% self.aeroDVs[adv]
-            # Leave this zero-based since we only need to use it in petsc
-            exec(execStr)
-      
-        # Run the small amount of fortran code for adjoint initialization
-        self.sumb.preprocessingadjoint()
-
+   
     def _setupAdjoint(self, reform=False):
         """
         Setup the data structures required to solve the adjoint problem
         """
-
+      
         # Destroy the NKsolver to free memory -- Call this even if the
         # solver is not used...a safeguard check is done in Fortran
         self.sumb.destroynksolver()
-        self._updateAeroDVs()
+        self._setAeroDVs()
         # For now, just create all the petsc variables
         if not self.adjointSetup or reform:
             self.sumb.createpetscvars()
-
+            
             if self.getOption('useReverseModeAD'):
                 self.sumb.setupallresidualmatrices()
             else:
@@ -1648,9 +1614,6 @@ steady rotations and specifying an aeroProblem')
 
         # May be switching aeroProblems here
         self.setAeroProblem(aeroProblem)
-
-        # Update this stuff
-        self._setAeroProblemData()
 
         obj, aeroObj = self._getObjective(objective)
 
@@ -1728,16 +1691,105 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
 
         return dIdXs
 
-    def totalAeroDerivative(self, objective):
-        # The adjoint vector is now calculated. This function as above
-        # computes dI/dX_aero = pI/pX_aero - dR/dX_aero^T * psi. The
-        # "aero" variables are intrinsic ONLY to the aero
-        # discipline. Nothing in the structural process should depend
-        # on these functions directly. 
+    def totalAeroDerivative(self, obj):
+        """
+        This function returns the total derivative of the obj with
+        respect to the aerodynamic variables defined the currently set
+        aeroproblem. It essentially processes the output of
+        _totalAeroDerivative to the dictionary return format
+
+        Parameters
+        ----------
+        objectives : list, set
+            The list of objectives to get derivatives for
+
+        Returns
+        -------
+        funcsSens : dict
+            The dictionary of the derivatives of obj wrt the aerodynamic
+            variables
+            """
+
+        # Get the list of derivatives and then process:
+        res = self._totalAeroDerivative(obj)
+        funcsSens = {}
+
+        DVsRequired = list(self.curAP.DVNames.keys())
+        for dv in DVsRequired:
+            if dv in self.possibleAeroDVs:
+                funcsSens[self.curAP.DVNames[dv]] = res[self.aeroDVs[dv]]
+            elif dv in ['altitude']:
+                # Extract the derivatives wrt the independent
+                # parameters in SUmb
+                dIdP = res[self.aeroDVs['P']]
+                dIdT = res[self.aeroDVs['T']]
+
+                # Get the derivative of THESE values with respect
+                # to the altitude:
+                tmp = {}
+                self.curAP.evalFunctionsSens(tmp, ['P', 'T'])
+
+                # Chain-rule to get the final derivative:
+                funcsSens[self.curAP.DVNames[dv]] = (
+                    tmp[self.curAP['P']][self.curAP.DVNames['altitude']]*dIdP +
+                    tmp[self.curAP['T']][self.curAP.DVNames['altitude']]*dIdT)
+            # end if (dv type)
+        # end for (dv loop)
+
+        return funcsSens
+                        
+    def _setAeroDVs(self):
+        """ Do everything that is required to deal with aerodynamic
+        design variables in SUmb"""
+        
+        DVsRequired = list(self.curAP.DVNames.keys())
+        DVMap = {}
+        for dv in DVsRequired:
+            if dv in self.possibleAeroDVs:
+                self._addAeroDV(dv)
+            elif dv.lower() in ['altitude']:
+                # We internally need to add the following:
+                self._addAeroDV('T')
+                self._addAeroDV('P')
+            else:
+                raise Error('The design variable \'%s\' as specified in the\
+                aeroProblem cannot be used with SUmb.'% dv)
+
+        # Reset all:
+        for pdv in self.possibleAeroDVs:
+            execStr = 'self.sumb.' + self.possibleAeroDVs[pdv] + '=-1'
+            exec(execStr)
+        
+        # Set the required paramters for the aero-Only design vars:
+        self.nDVAero = len(self.aeroDVs)
+        self.sumb.adjointvars.ndesignextra = self.nDVAero
+        self.sumb.adjointvars.dida = numpy.zeros(self.nDVAero)
+        for adv in self.aeroDVs:
+            execStr = 'self.sumb.' + self.possibleAeroDVs[adv] + \
+                      '= %d'% self.aeroDVs[adv]
+            # Leave this zero-based since we only need to use it in petsc
+            exec(execStr)
+      
+        # Run the small amount of fortran code for adjoint initialization
+        self.sumb.preprocessingadjoint()
+
+    def _totalAeroDerivative(self, objective):
+        """
+        This function computes the total aerodynamic derivatives for
+        the given objective. It returns a flattened array of the
+        aerodynamic variables which may more may not be actually the
+        DV's that the user wants. 
+
+        The adjoint vector is now calculated. This function computes
+        dI/dX_aero = pI/pX_aero - dR/dX_aero^T * psi. The "aero"
+        variables are intrinsic ONLY to the aero discipline. Nothing
+        in the structural process should depend on these functions
+        directly.
+        """
 
         obj, aeroObj = self._getObjective(objective)
 
-        if obj in self.curAP.sumbData.adjoints.keys():
+        if obj in self.curAP.sumbData.adjoints:
             psi = self.curAP.sumbData.adjoints[obj]
         else:
             raise Error('%s adjoint for current aeroProblem \
@@ -1818,14 +1870,13 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
 
             if newGrid is not None:
                 self.sumb.setgrid(newGrid)
-                
+
             self.sumb.updatecoordinatesalllevels()
             self.sumb.updatewalldistancealllevels()
             self.sumb.updateslidingalllevels()
             self.sumb.updatemetricsalllevels()
             self.sumb.updategridvelocitiesalllevels()
             self._updateGeomInfo = False
-
 
     def getAdjointResiduals(self):
         '''
@@ -2052,7 +2103,6 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         
     def getdIdw(self, dIdw, objective, forcePoints=None):
         obj, aeroObj = self._getObjective(objective)
-
         if aeroObj:
             self.computeObjPartials(objective, forcePoints)
             dIdw = self.sumb.getdidw(dIdw)
@@ -2121,7 +2171,17 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         if objective is not None:
             obj, aeroObj = self._getObjective(objective)
             self.curAP.sumbData.adjoints[obj] = adjoint.copy()
-   
+
+    def getAdjoint(self, objective):
+        """ Return the adjoint values for objective if they
+        exist. Otherwise just return zeros"""
+        obj, aeroObj = self._getObjective(objective)
+
+        if obj in self.curAP.sumbData.adjoints:
+            return self.curAP.sumbData.adjoints[obj]
+        else:
+            return numpy.zeros(self.getAdjointStateSize(), self.dtype)
+        
     def getResidual(self, aeroProblem, res=None):
         """Return the residual on this processor. Used in aerostructural
         analysis"""
@@ -2438,8 +2498,8 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             'nksubspacesize':[int, 60],
             'nklinearsolvetol':[float, 1e-1],
             'nkpc':[str, 'additive schwartz'],
-            'nkasmoverlap':[int, 3],
-            'nkpcilufill':[int, 3],
+            'nkasmoverlap':[int, 1],
+            'nkpcilufill':[int, 2],
             'nklocalpcordering':[str, 'rcm'],
             'nkjacobianlag':[int, 10],
             'rkreset':[bool, False],
@@ -2489,7 +2549,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             'matrixordering': [str, 'rcm'],
             'globalpreconditioner': [str, 'additive schwartz'],
             'localpreconditioner' : [str, 'ilu'],
-            'ilufill': [int, 1],
+            'ilufill': [int, 2],
             'asmoverlap' : [int, 1],
             'innerpreconits':[int,1],
             'outerpreconits':[int,3],
@@ -2883,14 +2943,3 @@ class sumbFlowCase(object):
         self.callCounter = -1
         self.adjointRHS = None
 
-#==============================================================================
-# SUmb Analysis Test
-#==============================================================================
-if __name__ == '__main__':
-    
-    # Test SUmb
-    mpiPrint('Testing ...')
-    sumb = SUMB()
-    print(sumb)
-
-    

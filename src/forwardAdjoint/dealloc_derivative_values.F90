@@ -15,7 +15,7 @@ subroutine dealloc_derivative_values(level)
   integer(kind=intType) :: level
 
   ! Local variables
-  integer(kind=intType) :: sps, ierr, i, mm, nn
+  integer(kind=intType) :: sps, ierr, i, j, k, l, mm, nn
 
   do nn=1,nDom
      ! Deallocate the color array in flowDoms
@@ -23,17 +23,23 @@ subroutine dealloc_derivative_values(level)
      call EChk(ierr,__FILE__,__LINE__)
   end do
 
-
   do nn=1,nDom
      ! Reset w and dw -> Its like nothing happened...
      deallocatespectral: do sps=1,nTimeIntervalsSpectral
         call setPointers(nn,level,sps)
-        ! Reset w 
-        flowDoms(nn,level,sps)%w = flowDomsd(nn,1,sps)%wtmp
-        
-        ! Set dw
-        flowDoms(nn,level,sps)%dw =flowDomsd(nn,1,sps)%dwtmp
-     
+
+        ! Reset w and dw                            
+        do l=1,nw
+           do k=0,kb 
+              do j=0,jb
+                 do i=0,ib
+                    w(i,j,k,l) = flowdomsd(nn,1,sps)%wtmp(i,j,k,l)
+                    dw(i,j,k,l) = flowdomsd(nn,1,sps)%dwtmp(i,j,k,l)
+                 end do
+              end do
+           end do
+        end do
+          
         ! Deallocate memtory
         deallocate(&
              flowDomsd(nn,1,sps)%wtmp, &
