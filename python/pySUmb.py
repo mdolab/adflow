@@ -184,6 +184,7 @@ class SUMB(AeroSolver):
         # and a few other things set. Just create a dummy aeroproblem, 
         # use it, and then it will be deleted.
 
+        self.liftIndex = 2 # Will be updated below
         dummyAP = AeroProblem(name='dummy',mach=0.5, altitude=10000.0,
                               areaRef=1.0, chordRef=1.0, alpha=0.0, degreePol=0,
                               coefPol = [0.0], degreeFourier=1, omegaFourier=6.28,
@@ -203,6 +204,27 @@ class SUMB(AeroSolver):
         self.sumb.preprocessing()
         self.sumb.initflow()
         self.sumb.preprocessingadjoint()
+
+        # Now determine the lift index:
+        liftIndex = self.sumb.getliftdirfromsymmetry()
+        userLiftIndex = self.getOption('liftIndex')
+        if liftIndex != 0:
+            if liftIndex == userLiftIndex:
+                # We're good -- the user supplied one matches
+                self.liftIndex = liftIndex
+            else:
+                if userLiftIndex is None:
+                    self.liftIndex = liftIndex # Take the auto one
+                else:
+                    raise Error('Detected the liftIndex from the mesh as %d, \
+                    but the user supplied %d!'% (liftIndex, userLiftIndex))
+        else:
+            # We have to take the user-supplied one. 
+            if userLiftIndex in [2, 3]:
+                self.liftIndex = userLiftIndex
+            else:
+                raise Error("Invalid 'liftIndex' option. Must be one of 2 \
+                or 3")
 
     def setMesh(self, mesh):
         """
@@ -398,9 +420,9 @@ class SUMB(AeroSolver):
             p = aeroProblem.phat*V/aeroProblem.spanRef
             q = aeroProblem.qhat*V/aeroProblem.chordRef
             r = aeroProblem.rhat*V/aeroProblem.spanRef
-            if aeroProblem.liftIndex == 2:
+            if self.liftIndex == 2:
                 rotations = [p,r,q]
-            elif aeroProblem.liftIndex == 3:
+            elif self.liftIndex == 3:
                 rotations = [p,q,r]
             else:
                 raise Error('Invalid lift direction. Must be 2 or 3 for \
@@ -1288,7 +1310,6 @@ steady rotations and specifying an aeroProblem')
         xRot = AP.xRot; yRot = AP.yRot; zRot = AP.zRot
         areaRef = AP.areaRef
         chordRef = AP.chordRef
-        liftIndex = self.getOption('liftIndex')
         T = AP.T
         P = AP.P
         rho = AP.rho
@@ -1331,7 +1352,7 @@ steady rotations and specifying an aeroProblem')
             
         # 1. Angle of attack:
         dToR = numpy.pi/180.0
-        self.sumb.adjustinflowangle(alpha*dToR, beta*dToR, liftIndex)
+        self.sumb.adjustinflowangle(alpha*dToR, beta*dToR, self.liftIndex)
         if self.getOption('printIterations') and self.comm.rank == 0:
             print('-> Alpha... %f '% numpy.real(alpha))
 
@@ -2215,7 +2236,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             return
         
         # Now we know the option exists, lets check if the type is ok:
-        if type(value) == self.options[name][0]:
+        if isinstance(value, self.options[name][0]):
             # Just set:
             self.options[name] = [type(value),value]
         else:
@@ -2233,11 +2254,11 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             if name in ['monitorvariables',
                         'surfacevariables',
                         'volumevariables',
-                        'isovariables']:
+                        'isosurface']:
                 varStr = ''
                 for i in xrange(len(value)):
                     varStr = varStr + value[i] + '_'
-                # end if
+
                 varStr = varStr[0:-1] # Get rid of last '_'
                 if name == 'monitorvariables':
                     self.sumb.monitorvariables(varStr)
@@ -2245,8 +2266,6 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
                     self.sumb.surfacevariables(varStr)
                 if name == 'volumevariables':
                     self.sumb.volumevariables(varStr)
-                if name == 'isovariables':
-                    self.sumb.isovariables(varStr)
 
             if name == 'isosurface':
                 # We have a bit of work to do...extract out the
@@ -2260,9 +2279,12 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
                     for i in xrange(len(isoVals)):
                         var.append(key)
                         val.append(isoVals[i])
-                    # end for
-                # end for
+
                 val = numpy.array(val)
+
+                varStr = ''
+                for i in xrange(len(value)):
+                    varStr = varStr + value[i] + '_'
 
                 self.sumb.initializeisosurfacevariables(val)
                 for i in xrange(len(val)):
@@ -2295,8 +2317,13 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         if len(temp) == 0:
             pass
         else:
-            #Convert the value to lower case:
-            value = self.optionMap[name][value.lower()]
+            try:
+                value = self.optionMap[name][value.lower()]
+            except:
+                raise Error("Invalid option given for '%s'. Possible \
+                values are %s."% (name, repr(list(temp.keys()))))
+
+         
 
         # If value is a string, put quotes around it and make it
         # the correct length, otherwise convert to string
@@ -2329,7 +2356,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         """
         defOpts = {
             # Common Paramters
-            'gridfile':[str, 'default.cgns'],
+            'gridfile':[object, None],
             'restartfile':[str, 'default_restart.cgns'],
             'solrestart':[bool, False],
     
@@ -2343,7 +2370,6 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             'solutionprecision':[str,'single'],
             'gridprecision':[str,'double'],
             'isosurface':[dict, {}],
-            'isovariables':[list, []],
             'viscoussurfacevelocities':[bool, True],
 
             # Physics Paramters
@@ -2364,7 +2390,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             'vis2':[float, 0.25],
             'vis2coarse':[float, 0.5], 
             'restrictionrelaxation':[float, .80],
-            'liftindex':[int, 2],
+            'liftindex':[object, None],
             
             # Common Paramters
             'ncycles':[int, 500],
@@ -2753,7 +2779,6 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
                           'monitorvariables',
                           'metricconversion',
                           'outputdirectory',
-                          'isovariables',
                           'isosurface',
                           ]
 
