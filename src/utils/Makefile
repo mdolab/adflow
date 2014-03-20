@@ -100,6 +100,7 @@ FILES_TO_COMPLEXIFY =  \
 
 FILES_TO_COPY = myIsNaNC.c\
 		f77flush.c\
+		getLiftDirFromSymmetry.F90
 
 ALL_FILES = $(FILES_TO_COMPLEXIFY) $(FILES_TO_COPY)
 OFILES := $(ALL_FILES:%.f90=%.o) $(ALL_FILES:%.F90=%.o) $(ALL_FILES:%.c=%.o)
