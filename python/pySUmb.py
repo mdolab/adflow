@@ -65,7 +65,7 @@ class SUMBWarning(object):
                 i += len(word)+1
         msg += ' '*(78-i) + '|\n' + '+'+'-'*78+'+'+'\n'
         print(msg)
-        
+
 # =============================================================================
 # SUMB Class
 # =============================================================================
@@ -87,12 +87,12 @@ class SUMB(AeroSolver):
 
         # Load the compiled module using MExt, allowing multiple
         # imports
-        try: 
+        try:
             self.sumb
         except:
             curDir = os.path.dirname(os.path.realpath(__file__))
             self.sumb = MExt.MExt('libsumb',[curDir])._module
-            
+
         # Information for base class:
         name = 'SUMB'
         category = 'Three Dimensional CFD'
@@ -115,11 +115,11 @@ class SUMB(AeroSolver):
                            self._getSpecialOptionLists()
         self.possibleObjectives, self.possibleAeroDVs, self.sumbCostFunctions = \
                                  self._getObjectivesAndDVs()
-        
-   
+
+
         # This is the real solver so dtype is 'd'
         self.dtype = 'd'
-        
+
         # Next set the MPI Communicators and associated info
         if comm is None:
             comm = MPI.COMM_WORLD
@@ -135,12 +135,12 @@ class SUMB(AeroSolver):
         # Initialize the inherited aerosolver
         AeroSolver.__init__(self, name, category, defOpts, informs,
                             options=options)
-        
+
         # Initialize petec in case the user has not already
         self.sumb.initializepetsc()
 
         # Set the stand-alone sumb flag to false...this changes how
-        # terminate calls are handled. 
+        # terminate calls are handled.
         self.sumb.iteration.standalonemode = False
 
         # Set the frompython flag to true... this also changes how
@@ -159,12 +159,12 @@ class SUMB(AeroSolver):
         self.sumb.setdefaultvalues()
         self.sumb.inputio.autoparameterupdate = False
         self._updateGeomInfo = True
-        
+
         # By Default we don't have an external mesh object or a
         # geometric manipulation object
-        self.mesh = None 
+        self.mesh = None
         self.DVGeo = None
-        
+
         # Matrix Setup Flag
         self.adjointSetup = False
 
@@ -175,20 +175,20 @@ class SUMB(AeroSolver):
         for option in self.options:
             if option != 'defaults':
                 self.setOption(option.lower(), self.options[option][1])
-        
+
         # Do the remainder of the operations that would have been done
         # had we read in a param file
         self.sumb.iteration.deforming_grid = True
 
         # In order to properly initialize we need to have mach number
-        # and a few other things set. Just create a dummy aeroproblem, 
+        # and a few other things set. Just create a dummy aeroproblem,
         # use it, and then it will be deleted.
 
         dummyAP = AeroProblem(name='dummy',mach=0.5, altitude=10000.0,
                               areaRef=1.0, chordRef=1.0, alpha=0.0, degreePol=0,
                               coefPol = [0.0], degreeFourier=1, omegaFourier=6.28,
                               sinCoefFourier=[0,0],cosCoefFourier=[0,0])
-        
+
         self.curAP = dummyAP
         self._setAeroProblemData(firstCall=True)
         # Now set it back to None so the user is none the wiser
@@ -231,7 +231,7 @@ class SUMB(AeroSolver):
             patchnames.append(
                 ''.join([tmp[j] for j in range(256)]).lower().strip())
             patchsizes.append(self.sumb.getpatchsize(i+1))
- 
+
         conn = self.getForceConnectivity()
         pts  = self.getForcePoints()
         self.mesh.setExternalSurface(patchnames, patchsizes, conn, pts)
@@ -258,7 +258,7 @@ class SUMB(AeroSolver):
         >>> CFDsolver.setDVGeo(DVGeo)
         """
 
-        self.DVGeo = DVGeo   
+        self.DVGeo = DVGeo
 
     def addLiftDistribution(self, nSegments, direction,
                             groupName=None, description=''):
@@ -271,17 +271,17 @@ class SUMB(AeroSolver):
             Number of slices to use for the distribution. Typically
             150-250 is sufficient
         direction : str
-            One of 'x', 'y', or 'z'. The axis that is the 'lift' direction. 
-                   
+            One of 'x', 'y', or 'z'. The axis that is the 'lift' direction.
+
         groupName: str
             The family (as defined in pyWarp) to use for the lift
-            distribution. Currently not coded. 
+            distribution. Currently not coded.
 
         description : str
             An additional string that can be used to destingush
             between multiple lift distributions in the output.
         """
-        
+
         direction=direction.lower()
         if direction not in ['x','y','z']:
             mpiPrint(' Error: \'direction\' must be one of \'x\', \
@@ -290,7 +290,7 @@ class SUMB(AeroSolver):
             return
         else:
             groupTag = ''
-   
+
         if groupName is not None:
             raise Error('Lift distributions by group is not yet supported')
 
@@ -303,7 +303,7 @@ class SUMB(AeroSolver):
         else:
             dirVec = [0.0, 0.0, 1.0]
             dirInd = 3
-        
+
         distName = 'LiftDist_%2.2d %s: %s normal'% (
             self.nLiftDist + 1, groupTag, direction)
         self.nLiftDist += 1
@@ -378,7 +378,7 @@ class SUMB(AeroSolver):
             else:
                 sliceName = 'Slice_%4.4d %s Absolute %s=%7.3f'% (j, groupTag, direction, positions[i])
                 self.sumb.addabsslice(sliceName, tmp[i], dirVec)
-     
+
         self.nSlice += N
 
     def setRotationRate(self, rotCenter, rotRate, cgnsBlocks=None):
@@ -397,7 +397,7 @@ class SUMB(AeroSolver):
                                 self.sumb.flowvarrefstate.pinfdim/ \
                                 self.sumb.flowvarrefstate.rhoinfdim)
             V = (self.sumb.inputphysics.machgrid+self.sumb.inputphysics.mach)*a
-        
+
             p = aeroProblem.phat*V/aeroProblem.spanRef
             q = aeroProblem.qhat*V/aeroProblem.chordRef
             r = aeroProblem.rhat*V/aeroProblem.spanRef
@@ -439,11 +439,11 @@ steady rotations and specifying an aeroProblem')
             The fraction of inbalance for cells. 0 is good. 1.0 is really bad
         faceInbalance : float
             The fraction of inbalance for faces. This gives an idea of
-            communication code. 0 is god. 1.0 is really bad. 
+            communication code. 0 is god. 1.0 is really bad.
         """
-  
+
         loadInbalance, faceInbalance = self.sumb.checkpartitioning(nprocs)
-                
+
         return loadInbalance, faceInbalance
 
     def getTriangulatedMeshSurface(self):
@@ -456,14 +456,14 @@ steady rotations and specifying an aeroProblem')
         -------
         surf : list
            List of points and vectors describing the surface. This may
-           be passed directly to DVConstraint setSurface() function. 
+           be passed directly to DVConstraint setSurface() function.
         """
 
         # Use first spectral instance
         pts = self.comm.allgather(self.getForcePoints(0))
         conn = self.comm.allgather(self.mesh.getSurfaceConnectivity('all'))
 
-        # Triangle info...point and two vectors 
+        # Triangle info...point and two vectors
         p0 = []
         v1 = []
         v2 = []
@@ -485,9 +485,9 @@ steady rotations and specifying an aeroProblem')
 
             # end for
         # end for
-                
+
         return [p0, v1, v2]
-    
+
     def __call__(self, aeroProblem, **kwargs):
         """
         Common routine for solving the problem specified in
@@ -508,13 +508,13 @@ steady rotations and specifying an aeroProblem')
 
         # Set the aeroProblem
         self.setAeroProblem(aeroProblem)
-    
+
         # If this problem has't been solved yet, reset flow to this
         # flight condition
         if self.curAP.sumbData.states is None:
             self.resetFlow(aeroProblem)
 
-        # Possibly release adjoint memory 
+        # Possibly release adjoint memory
         self.releaseAdjointMemory()
 
         # Save aeroProblem, and other information into the current flow case
@@ -553,7 +553,7 @@ steady rotations and specifying an aeroProblem')
             self.sumb.iteration.itertot = 0
 
         # --------------------------------------------------------------
-        
+
         if self.getOption('equationMode') == 'unsteady':
             self.sumb.alloctimearrays(self.getOption('nTimeStepsFine'))
 
@@ -562,7 +562,7 @@ steady rotations and specifying an aeroProblem')
         self.sumb.killsignals.fatalfail = False
         self.solveFailed =  self.fatalFail = False
 
-        if (self.getOption('equationMode').lower() == 'steady' or 
+        if (self.getOption('equationMode').lower() == 'steady' or
             self.getOption('equationMode').lower() == 'time spectral'):
             self.updateGeometryInfo()
 
@@ -580,7 +580,7 @@ steady rotations and specifying an aeroProblem')
             self.fatalFail = True
             self.solveFailed = True
             return
-     
+
         t1 = time.time()
 
         # Call the Solver or the MD callback solver
@@ -592,7 +592,7 @@ steady rotations and specifying an aeroProblem')
 
         # Save the states into the aeroProblem
         self.curAP.sumbData.states = self.getStates()
-            
+
         # Assign Fail Flags
         self.curAP.solveFailed = self.sumb.killsignals.routinefailed
         self.curAP.fatalFail = self.sumb.killsignals.fatalfail
@@ -602,7 +602,7 @@ steady rotations and specifying an aeroProblem')
         if self.fatalFail:
             self.resetFlow(aeroProblem)
             return
-    
+
         t2 = time.time()
         solTime = t2 - t1
 
@@ -613,7 +613,7 @@ steady rotations and specifying an aeroProblem')
         writeSolution = kwargs.pop('writeSolution', True)
         if writeSolution:
             self.writeSolution()
-                    
+
         if self.getOption('TSStability'):
             self.computeStabilityParameters()
 
@@ -622,7 +622,7 @@ steady rotations and specifying an aeroProblem')
         """
         Evaluate the desired functions given in iterable object, 'evalFuncs'
         and add them to the dictionary 'funcs'. The keys in the funcs dictioary
-        will be have an _<ap.name> appended to them. 
+        will be have an _<ap.name> appended to them.
 
         Parameters
         ----------
@@ -630,7 +630,7 @@ steady rotations and specifying an aeroProblem')
             The aerodynamic problem to to get the solution for
 
         funcs : dict
-            Dictionary into which the functions are saved. 
+            Dictionary into which the functions are saved.
 
         evalFuncs : iterable object containing strings
           If not None, use these functions to evaluate.
@@ -640,7 +640,7 @@ steady rotations and specifying an aeroProblem')
 
         ignoreMissing : bool
             Flag to supress checking for a valid function. Please use
-            this option with caution. 
+            this option with caution.
 
         Examples
         --------
@@ -680,7 +680,7 @@ steady rotations and specifying an aeroProblem')
         Parameters
         ----------
         funcSens : dict
-            Dictionary into which the function derivatives are saved. 
+            Dictionary into which the function derivatives are saved.
 
         evalFuncs : iterable object containing strings
             The functions the user wants the derivatives of
@@ -691,7 +691,7 @@ steady rotations and specifying an aeroProblem')
 
         sps : int, optional
             Spectral instance to use for funcions
-            
+
         Examples
         --------
         >>> funcSens = {}
@@ -700,7 +700,7 @@ steady rotations and specifying an aeroProblem')
 
         # This is the one and only gateway to the getting derivatives
         # out of sumb. If you want a derivative, it should come from
-        # here. 
+        # here.
 
         # 'Extra' derivatives --- ie the aerodynamic/reference
         # derivatives. We must provide the derivatives that have been
@@ -722,24 +722,24 @@ steady rotations and specifying an aeroProblem')
 
             key = self.curAP.name + '_%s'% f
             ptSetName = self.curAP.ptSetName
-            
+
             # Set dict structure for this derivative
             funcsSens[key] = {}
 
             # Solve adjoint equation (if necessary)
             self.solveAdjoint(aeroProblem, f)
-          
+
             # Geometric derivatives
             if self.DVGeo is not None and self.DVGeo.getNDV() > 0:
                 dIdpt = self.totalSurfaceDerivative(f)
                 dIdx = self.DVGeo.totalSensitivity(
                     dIdpt, ptSetName=ptSetName, comm=self.comm)
                 funcsSens[key].update(dIdx)
-                
+
             # Compute total aero derivatives
             funcsSens[key].update(self.totalAeroDerivative(f))
-                    
-    def solveCL(self, aeroProblem, CLStar, alpha0=0, 
+
+    def solveCL(self, aeroProblem, CLStar, alpha0=0,
                 delta=0.5, tol=1e-3, autoReset=True):
         """This is a simple secant method search for solving for a
         fixed CL. This really should only be used to determine the
@@ -762,11 +762,11 @@ steady rotations and specifying an aeroProblem')
             issues when only the alpha is changed (Martois effect we
             think). This will reset the flow after each solve which
             solves this problem. Not necessary (or desired) when using
-            the RK solver. 
-            
+            the RK solver.
+
         Returns
         -------
-        None, but the correct alpha is stored in the aeroProblem 
+        None, but the correct alpha is stored in the aeroProblem
         """
         self.setAeroProblem(aeroProblem)
 
@@ -794,7 +794,7 @@ steady rotations and specifying an aeroProblem')
             # Sometimes with the RKSolver, the residual doesn't spike
             # immediately due to the alpha, and the solver will
             # convergnce after 2 iterations. We slightly lower the
-            # tolerance at each iteration to prevent this. 
+            # tolerance at each iteration to prevent this.
             self.setOption('l2convergence', 0.75*self.getOption('l2convergence'))
             
             # Set current alpha
@@ -808,17 +808,17 @@ steady rotations and specifying an aeroProblem')
             self.__call__(aeroProblem, writeSolution=False)
             sol = self.getSolution()
             fnm1 =  sol['cl'] - CLStar
-            
+
             # Secant Update
             anew = anm1 - fnm1*(anm1-anm2)/(fnm1-fnm2)
 
             # Shift n-1 values to n-2 values
             fnm2 = fnm1
             anm2 = anm1
-     
+
             # Se the n-1 alpha value from update
             anm1 = anew
-            
+
             # Check for convergence
             if abs(fnm1) < tol:
                 break
@@ -827,10 +827,10 @@ steady rotations and specifying an aeroProblem')
 
         # Set the new alpha in the aeroProblem
         aeroProblem.alpha = anew
-        
+
         # Restore the initial tolerance so the user isn't confused
         self.setOption('l2convergence', L2ConvSave)
-        
+
     def writeSolution(self, outputDir=None, baseName=None, number=None):
         """This is a generic shell function that potentially writes
         the various output files. The intent is that the user or
@@ -839,7 +839,7 @@ steady rotations and specifying an aeroProblem')
         function is used along with the associated logical flags in
         the options to determine the desired writing procedure
 
-        Optional arguments 
+        Optional arguments
 
         outputDir: Use the supplied output directory
 
@@ -862,7 +862,7 @@ steady rotations and specifying an aeroProblem')
         else:
             # if number is none, i.e. standalone, but we need to
             # number solutions, use internal counter
-            if self.getOption('numberSolutions'):            
+            if self.getOption('numberSolutions'):
                 baseName = baseName + '_%3.3d'% self.curAP.sumbData.callCounter
 
         # Join to get the actual filename root
@@ -876,7 +876,7 @@ steady rotations and specifying an aeroProblem')
 
         self.writeLiftDistributionFile(base + '_lift.dat')
         self.writeSlicesFile(base + '_slices.dat')
-  
+
     def writeMeshFile(self, fileName):
         """Write the current mesh to a CGNS file. This call isn't used
                 normally since the volume solution usually contains
@@ -886,7 +886,7 @@ steady rotations and specifying an aeroProblem')
         fileName : str
             Name of the mesh file
         """
-        
+
         # Ensure extension is .cgns even if the user didn't specify
         fileName, ext = os.path.splitext(fileName)
         fileName += '.cgns'
@@ -899,7 +899,7 @@ steady rotations and specifying an aeroProblem')
         # Set filename in sumb
         self.sumb.inputio.solfile[:] = ''
         self.sumb.inputio.solfile[0:len(fileName)] = fileName
-        
+
         self.sumb.inputio.newgridfile[:] = ''
         self.sumb.inputio.newgridfile[0:len(fileName)] = fileName
 
@@ -912,11 +912,11 @@ steady rotations and specifying an aeroProblem')
         Parameters
         ----------
         fileName : str
-            Name of the file. Should have .cgns extension. 
+            Name of the file. Should have .cgns extension.
         writeGrid : bool
             Flag specifying whether the grid should be included or if
             links should be used. Always writing the grid is
-            recommended even in cases when it is not strictly necessary. 
+            recommended even in cases when it is not strictly necessary.
         """
         # Ensure extension is .cgns even if the user didn't specify
         fileName, ext = os.path.splitext(fileName)
@@ -944,7 +944,7 @@ steady rotations and specifying an aeroProblem')
         Parameters
         ----------
         fileName : str
-            Name of the file. Should have .cgns extension. 
+            Name of the file. Should have .cgns extension.
         """
         # Ensure extension is .cgns even if the user didn't specify
         fileName, ext = os.path.splitext(fileName)
@@ -968,12 +968,12 @@ steady rotations and specifying an aeroProblem')
         Parameters
         ----------
         fileName : str
-            File of lift distribution. Should have .dat extension. 
+            File of lift distribution. Should have .dat extension.
         """
         # Ensure fileName is .dat even if the user didn't specify
         fileName, ext = os.path.splitext(fileName)
         fileName += '.dat'
-            
+
         # Actual write command
         self.sumb.writeliftdistributionfile(fileName)
 
@@ -990,20 +990,20 @@ steady rotations and specifying an aeroProblem')
         # Ensure filename is .dat even if the user didn't specify
         fileName, ext = os.path.splitext(fileName)
         fileName += '.dat'
-            
+
         # Actual write command
         self.sumb.writeslicesfile(fileName)
-        
-    def writeForceFile(self, fileName, TS=0, groupName='all', 
+
+    def writeForceFile(self, fileName, TS=0, groupName='all',
                        cfdForcePts=None):
         """This function collects all the forces and locations and
         writes them to a file with each line having: X Y Z Fx Fy Fz.
         This can then be used to set a set of structural loads in TACS
-        for structural only optimization 
+        for structural only optimization
 
         Like the getForces() routine, an external set of forces may be
         passed in on which to evaluate the forces. This is only
-        typically used in an aerostructural case. 
+        typically used in an aerostructural case.
 
         """
 
@@ -1017,7 +1017,7 @@ steady rotations and specifying an aeroProblem')
             pts = self.comm.gather(self.getForcePoints(TS), root=0)
         else:
             pts = self.comm.gather(cfdForcePts)
-            
+
         # Forces are still evaluated on the displaced surface so do NOT pass in pts.
         forces = self.comm.gather(self.getForces(groupName, TS=TS), root=0)
         conn   = self.comm.gather(self.mesh.getSurfaceConnectivity(groupName),
@@ -1034,7 +1034,7 @@ steady rotations and specifying an aeroProblem')
      
             # Open output file
             f = open(fileName, 'w')
-            
+
             # Write header with number of nodes and number of cells
             f.write("%d %d\n"% (nPt, nCell))
 
@@ -1064,7 +1064,7 @@ steady rotations and specifying an aeroProblem')
                             conn[iProc][4*i+1]+nodeOffset,
                             conn[iProc][4*i+2]+nodeOffset,
                             conn[iProc][4*i+3]+nodeOffset))
-     
+
                 nodeOffset += len(pts[iProc])
             f.close()
         # end if (root proc )
@@ -1081,7 +1081,7 @@ steady rotations and specifying an aeroProblem')
         """
         if obj in self.curAP.sumbData.adjoints:
             self.curAP.sumbData.adjoints[obj][:] = 0.0
-  
+
     def resetFlow(self, aeroProblem):
         """
         Reset the flow after a failure or for a complex step
@@ -1101,7 +1101,7 @@ steady rotations and specifying an aeroProblem')
         nLevels = self.sumb.inputiteration.nmglevels
         if strLvl < 0 or strLvl > nLevels :
             strLvl = nLevels
-  
+
         self.sumb.inputiteration.mgstartlevel = strLvl
         self.sumb.inputiteration.groundlevel = strLvl
         self.sumb.inputiteration.currentlevel = strLvl
@@ -1110,12 +1110,12 @@ steady rotations and specifying an aeroProblem')
         self.sumb.iteration.itertot = 0
         self.sumb.setuniformflow()
         self.sumb.nksolvervars.nksolvecount = 0
-  
+
     def getSolution(self, sps=1):
         """ Retrieve the solution variables from the solver. Note this
         is a collective function and must be called on all processors
         """
-     
+
         # We should return the list of results that is the same as the
         # possibleObjectives list
         self.sumb.getsolution(sps)
@@ -1156,7 +1156,7 @@ steady rotations and specifying an aeroProblem')
             'clq'        :funcVals[self.sumb.costfunctions.costfuncclq-1],
             'cbend'      :funcVals[self.sumb.costfunctions.costfuncbendingcoef-1]
             }
-        
+
         return SUmbsolution
 
     # =========================================================================
@@ -1167,23 +1167,23 @@ steady rotations and specifying an aeroProblem')
     # =========================================================================
 
     def getSurfaceCoordinates(self, groupName='all'):
-        """ 
+        """
         See MultiBlockMesh.py for more info
         """
         if self.mesh is not None:
             return self.mesh.getSurfaceCoordinates(groupName)
         else:
             return numpy.empty((0, 3), self.dtype)
-        
+
     def setSurfaceCoordinates(self, coordinates, groupName='all'):
-        """ 
+        """
         See MultiBlockMesh.py for more info
         """
 
         self._updateGeomInfo = True
         if self.mesh is not None:
             self.mesh.setSurfaceCoordinates(coordinates, groupName)
-            
+
     def getSurfaceConnectivity(self, groupName='all'):
         """
         See MultiBlockMesh.py for more info
@@ -1194,7 +1194,7 @@ steady rotations and specifying an aeroProblem')
     def setAeroProblem(self, aeroProblem):
         """Set the supplied aeroProblem to be used in SUmb"""
         ptSetName = 'sumb_%s_coords'% aeroProblem.name
-        
+
         # If the aeroProblem is the same as the currently stored
         # reference; only check the DV changes
         if aeroProblem is self.curAP:
@@ -1206,7 +1206,7 @@ steady rotations and specifying an aeroProblem')
             self._setAeroProblemData()
 
             return
-        
+
         if self.comm.rank == 0:
             print('+'+'-'*70+'+')
             print('|  Switching to Aero Problem: %-41s|'% aeroProblem.name)
@@ -1219,7 +1219,7 @@ steady rotations and specifying an aeroProblem')
             aeroProblem.sumbData = sumbFlowCase()
             aeroProblem.ptSetName = ptSetName
             aeroProblem.surfMesh = self.getSurfaceCoordinates('all')
-            
+
         if self.curAP is not None:
             # If we have already solved something and are now
             # switching, save what we need:
@@ -1238,7 +1238,7 @@ steady rotations and specifying an aeroProblem')
         states = aeroProblem.sumbData.states
         if states is not None:
             self.setStates(states)
-    
+
         # We have to update coordinates here as well:
         if self.DVGeo is not None:
             if not self.DVGeo.pointSetUpToDate(ptSetName):
@@ -1247,19 +1247,19 @@ steady rotations and specifying an aeroProblem')
                 self.setSurfaceCoordinates(self.curAP.surfMesh, 'all')
         else:
             self.setSurfaceCoordinates(self.curAP.surfMesh, 'all')
-            
+
         # Now we have to do a bunch of updates. This is fairly
         # expensive so switchign aeroProblems should not be done that
         #  frequently
         self.updateGeometryInfo()
-        
+
         # Destroy the NK solver and the adjoint memory
         self.sumb.destroynksolver()
         self.releaseAdjointMemory()
 
         # Finally update other data
         self._setAeroProblemData()
-        
+
     def _setAeroProblemData(self, firstCall=False):
         """
         After an aeroProblem has been associated with self.cuAP, set
@@ -1280,7 +1280,7 @@ steady rotations and specifying an aeroProblem')
         rho = AP.rho
         V = AP.V
         mu = AP.mu
-        
+
         # Do some checking here for things that MUST be specified:
         if AP.mach is None:
             raise Error('\'mach\' number must be specified in the aeroProblem\
@@ -1291,7 +1291,7 @@ steady rotations and specifying an aeroProblem')
         if chordRef is None:
             raise Error('\'chordRef\' must be specified in aeroProblem\
             for SUmb.')
-            
+
         # Now set defaults
         if alpha is None:
             alpha = 0.0
@@ -1314,7 +1314,7 @@ steady rotations and specifying an aeroProblem')
             raise Error('Insufficient information is given in the\
             aeroProblem to determine physical state. See AeroProblem\
             documentation for how to specify complete aerodynamic states.')
-            
+
         # 1. Angle of attack:
         dToR = numpy.pi/180.0
         self.sumb.adjustinflowangle(alpha*dToR, beta*dToR, liftIndex)
@@ -1353,12 +1353,12 @@ steady rotations and specifying an aeroProblem')
             self.sumb.inputphysics.reynolds = rho*V/mu
             self.sumb.inputphysics.reynoldslength = ReLength
         else:
-            self.sumb.flowvarrefstate.pref = P 
+            self.sumb.flowvarrefstate.pref = P
             self.sumb.flowvarrefstate.tref = T
             self.sumb.inputphysics.tempfreestream = T
             self.sumb.inputphysics.reynolds = 1.0
             self.sumb.inputphysics.reynoldslength = 1.0
-      
+
         # 4. Periodic Parameters --- These are not checked/verified
         # and come directly from aeroProblem. Make sure you specify
         # them there properly!!
@@ -1440,7 +1440,7 @@ steady rotations and specifying an aeroProblem')
         forces : array (N,3)
             Forces (or tractions depending on that forceAsTractions
             options) on this processor. Note that N may be 0, and an
-            empty array of shape (0, 3) can be returned. 
+            empty array of shape (0, 3) can be returned.
         """
 
         [npts, ncell] = self.sumb.getforcesize()
@@ -1456,7 +1456,7 @@ steady rotations and specifying an aeroProblem')
                 forces += forcesv
         else:
             forces = numpy.zeros((0,3),self.dtype)
-  
+
         if groupName is not None:
             forces = self.mesh.sectionVectorByFamily(groupName, forces)
 
@@ -1467,7 +1467,7 @@ steady rotations and specifying an aeroProblem')
         pts = numpy.zeros((npts, 3),self.dtype)
         if npts > 0:
             self.sumb.getforcepoints(pts.T, TS+1)
-        
+
         return pts
 
     def getForceConnectivity(self):
@@ -1481,7 +1481,7 @@ steady rotations and specifying an aeroProblem')
         """This function is ONLY used as a preconditioner to the
         global Aero-Structural system. This computes outVec =
         M^(-1)*inVec where M^(-1) is the approximate inverse
-        application of the preconditing matrix. 
+        application of the preconditing matrix.
 
         Parameters
         ----------
@@ -1500,7 +1500,7 @@ steady rotations and specifying an aeroProblem')
         """This function is ONLY used as a preconditioner to the
         global Aero-Structural ADJOINT system. This computes outVec =
         M^(-1)*inVec where M^(-1) is the approximate inverse
-        application of the preconditing matrix. 
+        application of the preconditing matrix.
 
         Parameters
         ----------
@@ -1522,7 +1522,7 @@ steady rotations and specifying an aeroProblem')
         self.sumb.verifyad()
 
     def _addAeroDV(self, dv):
-        """Add a single desgin variable that SUmb knows about. 
+        """Add a single desgin variable that SUmb knows about.
 
         Parameters
         ----------
@@ -1538,12 +1538,12 @@ steady rotations and specifying an aeroProblem')
         if dv not in self.aeroDVs:
             # A new DV add it:
             self.aeroDVs[dv] = len(self.aeroDVs)
-   
+
     def _setupAdjoint(self, reform=False):
         """
         Setup the data structures required to solve the adjoint problem
         """
-      
+
         # Destroy the NKsolver to free memory -- Call this even if the
         # solver is not used...a safeguard check is done in Fortran
         self.sumb.destroynksolver()
@@ -1551,12 +1551,12 @@ steady rotations and specifying an aeroProblem')
         # For now, just create all the petsc variables
         if not self.adjointSetup or reform:
             self.sumb.createpetscvars()
-            
+
             if self.getOption('useReverseModeAD'):
                 self.sumb.setupallresidualmatrices()
             else:
                 self.sumb.setupallresidualmatricesfwd()
-                
+
             # Create coupling matrix struct whether we need it or not
             [npts, ncells] = self.sumb.getforcesize()
             nTS  = self.sumb.inputtimespectral.ntimeintervalsspectral
@@ -1565,7 +1565,7 @@ steady rotations and specifying an aeroProblem')
                 forcePoints[i] = self.getForcePoints(TS=i)
 
             self.sumb.setupcouplingmatrixstruct(forcePoints.T)
-            
+
             # Setup the KSP object
             self.sumb.setuppetscksp()
 
@@ -1575,11 +1575,11 @@ steady rotations and specifying an aeroProblem')
     def printMatrixInfo(self, dRdwT=False, dRdwPre=False, dRdx=False,
                         dRda=False, dSdw=False, dSdx=False,
                         printLocal=False, printSum=False, printMax=False):
-        
+
         # Call sumb matrixinfo function
-        self.sumb.matrixinfo(dRdwT, dRdwPre, dRdx, dRda, dSdw, dSdx, 
+        self.sumb.matrixinfo(dRdwT, dRdwPre, dRdx, dRda, dSdw, dSdx,
                              printLocal, printSum, printMax)
-   
+
     def releaseAdjointMemory(self):
         """
         release the PETSc Memory that have been allocated
@@ -1630,7 +1630,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
 
             # 2. The stored adjoint must have been already set at
             # least once; that is we've already tried one solve
-            
+
             self.curAP.sumbData.adjoints[obj][:] = 0.0
             if self.getOption('autoAdjointRetry'):
                 self.sumb.solveadjointtransposepetsc()
@@ -1651,18 +1651,18 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         # following operation to produce dI/dX_surf:
         # (p represents partial, d total)
         # dI/dX_s = pI/pX_s - (dXv/dXs)^T * ( dRdX_v^T * psi)
-        # 
+        #
         # The derivative wrt the surface captures the effect of ALL
         # GLOBAL Multidisciplinary variables -- any DV that changes
-        # the surface. 
+        # the surface.
 
         obj, aeroObj = self._getObjective(objective)
 
         # NOTE: do dRdxvPsi MUST be done first since this
         # allocates spatial memory if required.
         dIdxs_2 = self.getdRdXvPsi(objective, 'all')
-          
-        # Direct partial derivative contibution 
+
+        # Direct partial derivative contibution
         dIdxs_1 = self.getdIdx(objective, groupName='all')
 
         # Total derivative of the obective with surface coordinates
@@ -1716,11 +1716,11 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         # end for (dv loop)
 
         return funcsSens
-                        
+
     def _setAeroDVs(self):
         """ Do everything that is required to deal with aerodynamic
         design variables in SUmb"""
-        
+
         DVsRequired = list(self.curAP.DVNames.keys())
         DVMap = {}
         for dv in DVsRequired:
@@ -1738,7 +1738,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         for pdv in self.possibleAeroDVs:
             execStr = 'self.sumb.' + self.possibleAeroDVs[pdv] + '=-1'
             exec(execStr)
-        
+
         # Set the required paramters for the aero-Only design vars:
         self.nDVAero = len(self.aeroDVs)
         self.sumb.adjointvars.ndesignextra = self.nDVAero
@@ -1748,7 +1748,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
                       '= %d'% self.aeroDVs[adv]
             # Leave this zero-based since we only need to use it in petsc
             exec(execStr)
-      
+
         # Run the small amount of fortran code for adjoint initialization
         self.sumb.preprocessingadjoint()
 
@@ -1757,7 +1757,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         This function computes the total aerodynamic derivatives for
         the given objective. It returns a flattened array of the
         aerodynamic variables which may more may not be actually the
-        DV's that the user wants. 
+        DV's that the user wants.
 
         The adjoint vector is now calculated. This function computes
         dI/dX_aero = pI/pX_aero - dR/dX_aero^T * psi. The "aero"
@@ -1774,7 +1774,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             raise Error('%s adjoint for current aeroProblem \
             %s is not computed.'% obj)
 
-        # Direct partial derivative contibution 
+        # Direct partial derivative contibution
         dIda_1 = self.getdIda(objective)
 
         # dIda contribution for drda^T * psi
@@ -1797,7 +1797,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         Parameters
         ----------
         fileName : str
-            Filename to use. 
+            Filename to use.
         """
         if self.adjointSetup:
             self.sumb.saveadjointmatrix(fileName)
@@ -1811,7 +1811,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         Parameters
         ----------
         fileName : str
-            Filename to use. 
+            Filename to use.
         """
 
         if self.adjointSetup and self.getOption('approxpc'):
@@ -1826,13 +1826,13 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         Parameters
         ----------
         fileName : str
-            Filename to use. 
+            Filename to use.
         """
         if self.adjointSetup:
             self.sumb.saveadjointrhs(fileName)
         else:
             raise Error('Cannot save RHS since adjoint not setup.')
-        
+
     def computeStabilityParameters(self):
         """
         run the stability derivative driver to compute the stability parameters
@@ -1870,7 +1870,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         fail = self.sumb.killsignals.adjointfailed
 
         return startRes, finalRes, fail
-    
+
     def getResNorms(self):
         """Return the initial, starting and final Res Norms. Typically
         used by an external solver."""
@@ -1895,7 +1895,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         given in 'objective'. If the mesh is present this will also
         pass it through the warping code and complete the following
         calculation:
-        
+
         dXs = (dXv/dXs)^T * (dR/dXv)^T * psi
 
         Parameters
@@ -1919,7 +1919,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         dxvSolver = self.sumb.getdrdxvpsi(self.getSpatialSize(), psi)
 
         # If we are doing a prescribed motion TS motion, we need to
-        # convert this back to a single instance 
+        # convert this back to a single instance
         if self._prescribedTSMotion():
             ndof_1_instance = self.sumb.adjointvars.nnodeslocal[0]*3
             dxvSolver = self.sumb.spectralprecscribedmotion(
@@ -1931,10 +1931,10 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             return dxs
         else:
             return dxvSolver
-  
+
     def _prescribedTSMotion(self):
         """Determine if we have prescribed motion timespectral analysis"""
-        
+
         if self.getOption('alphamode') or self.getOption('betamode') or \
                 self.getOption('machmode') or self.getOption('pmode') or \
                 self.getOption('qmode') or self.getOption('rmode') or \
@@ -1946,7 +1946,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
     def getdRdXvVec(self, inVec, groupName):
         """
         Compute the product of (dXv/dXs)^T * (dR/dXv)^T * inVec. It is
-        assumed the mesh is present and groupName is defined.  
+        assumed the mesh is present and groupName is defined.
 
         Parameters
         ----------
@@ -1955,7 +1955,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         groupName : str
             Family name to use to section out just part of dXs
             """
-        
+
         dxvSolver = self.sumb.getdrdxvpsi(self.getSpatialSize(), inVec)
         self.mesh.warpDeriv(dxvSolver)
         dxs = self.mesh.getdXs(groupName)
@@ -1979,10 +1979,10 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         inVec : arrary
             Arrary of size getAdjointStateSize()
         outVec : array
-            Ouput result. Same size as inVec. 
+            Ouput result. Same size as inVec.
         """
         outVec = self.sumb.getdrdwtvec(inVec, outVec)
-        
+
         return outVec
 
     def getdFdxVec(self, groupName, vec):
@@ -2031,14 +2031,14 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
     def getdIdx(self, objective, forcePoints=None, TS=0, groupName=None):
         self._setupAdjoint()
         obj, aeroObj = self._getObjective(objective)
-    
+
         # Compute the partials
         self.computeObjPartials(objective, forcePoints)
         dXv = numpy.zeros(self.getSpatialSize())
         self.sumb.getdidx(dXv)
 
         # If we are doing a prescribed motion TS motion, we need to
-        # convert this back to a single instance 
+        # convert this back to a single instance
         if self._prescribedTSMotion():
             ndof_1_instance = self.sumb.adjointvars.nnodeslocal[0]*3
             dXv = self.sumb.spectralprecscribedmotion(dXv, ndof_1_instance)
@@ -2061,7 +2061,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             return dxs
         else:
             return dXv
-         
+
     def getdIda(self, objective, forcePoints=None):
 
         obj, aeroObj = self._getObjective(objective)
@@ -2079,7 +2079,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             dIda = numpy.zeros((0))
 
         return dIda
-        
+
     def getdIdw(self, dIdw, objective, forcePoints=None):
         obj, aeroObj = self._getObjective(objective)
         if aeroObj:
@@ -2094,7 +2094,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         """
         self.releaseAdjointMemory()
         self.sumb.releasememadjoint()
-  
+
     def getStateSize(self):
         """Return the number of degrees of freedom (states) that are
         on this processor. This is (number of states)*(number of
@@ -2160,7 +2160,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             return self.curAP.sumbData.adjoints[obj]
         else:
             return numpy.zeros(self.getAdjointStateSize(), self.dtype)
-        
+
     def getResidual(self, aeroProblem, res=None):
         """Return the residual on this processor. Used in aerostructural
         analysis"""
@@ -2168,7 +2168,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         if res is None:
             res = numpy.zeros(self.getStateSize())
         res = self.sumb.getres(res)
-        
+
         return res
 
     def computedSdwTVec(self, inVec, outVec, groupName):
@@ -2186,11 +2186,11 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
            axis, numpy array, size(3): The projection vector
                along which to determine the shadow area
            groupName, str: The group from which to obtain the coordinates.
-               This name must have been obtained from addFamilyGroup() or 
-               be the default 'all' which contains all surface coordiantes 
+               This name must have been obtained from addFamilyGroup() or
+               be the default 'all' which contains all surface coordiantes
 
-        Output Arguments: 
-            Area: The resulting area  
+        Output Arguments:
+            Area: The resulting area
             """
 
         cfdForcePts = self.getForcePoints(TS)
@@ -2206,22 +2206,22 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
 
         # Now we do an mpiallreduce with sum:
         area = self.comm.allreduce(numpy.sum(areas), op=MPI.SUM)
-        
+
         return area
 
     def computeAreaSensitivity(self, axis, groupName=None, TS=0):
-        """ 
+        """
         Compute the projected area of the surface mesh
 
         Input Arguments:
            axis, numpy array, size(3): The projection vector
-               along which to determine the shadow area  
+               along which to determine the shadow area
            groupName, str: The group from which to obtain the coordinates.
-               This name must have been obtained from addFamilyGroup() or 
-               be the default 'all' which contains all surface coordiantes 
+               This name must have been obtained from addFamilyGroup() or
+               be the default 'all' which contains all surface coordiantes
 
         Output Arguments:
-            Area: The resulting area    
+            Area: The resulting area
             """
 
         cfdForcePts = self.getForcePoints(TS)
@@ -2247,14 +2247,14 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             obj = self.possibleObjectives[objective]
             aeroObj = True
         else:
-            obj = objective 
+            obj = objective
             aeroObj = False
-    
+
         return obj, aeroObj
 
     def setOption(self, name, value):
         """
-        Set Solver Option Value 
+        Set Solver Option Value
         """
         name = name.lower()
 
@@ -2267,13 +2267,13 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
 
         # Try to the option in the option dictionary
         defOptions = self.options['defaults']
-        try: 
+        try:
             defOptions[name]
-        except: 
+        except:
             if self.comm.rank == 0:
                 SUMBWarning('Option \'%-30s\' is not a valid SUmb Option |'%name)
             return
-        
+
         # Now we know the option exists, lets check if the type is ok:
         if type(value) == self.options[name][0]:
             # Just set:
@@ -2283,11 +2283,11 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             Expected data type is %-47s \n \
             Received data type is %-47s'% (
                             name, self.options[name][0], type(value)))
-            
-        # If the option is in the ignoredOption list, we just return. 
+
+        # If the option is in the ignoredOption list, we just return.
         if name in self.ignoreOptions:
             return
-        
+
         # Do special Options individually
         if name in self.specialOptions:
             if name in ['monitorvariables',
@@ -2315,7 +2315,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
                 val = []
                 isoDict = value
                 for key in isoDict.keys():
-                    
+
                     isoVals = numpy.atleast_1d(isoDict[key])
                     for i in xrange(len(isoVals)):
                         var.append(key)
@@ -2360,13 +2360,13 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
 
         # If value is a string, put quotes around it and make it
         # the correct length, otherwise convert to string
-        if isinstance(value, str): 
+        if isinstance(value, str):
             spacesToAdd = self.optionMap[name]['len'] - len(value)
             value = '\'' + value + ' '*spacesToAdd + '\''
         else:
             value = str(value)
         # end if
-      
+
         # Exec str is what is actually executed:
         execStr = 'self.sumb.'+self.optionMap[name]['location'] + '=' + value
 
@@ -2378,21 +2378,21 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
 
         if name.lower() in self.options['defaults']:
             return self.options[name.lower()][1]
-        else:    
+        else:
             raise Error('%s is not a valid option name'% name)
 
     def _getDefOptions(self):
         """
         There are many options for SUmb. These technically belong in
         the __init__ function but it gets far too long so we split
-        them out. 
+        them out.
         """
         defOpts = {
             # Common Paramters
             'gridfile':[str, 'default.cgns'],
             'restartfile':[str, 'default_restart.cgns'],
             'solrestart':[bool, False],
-    
+
             # Output Parameters
             'storerindlayer':[bool, True],
             'outputdirectory':[str, './'],
@@ -2414,18 +2414,18 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             'equationtype': [str, 'euler'],
             'equationmode': [str, 'steady'],
             'flowtype':[str, 'external'],
-            'turbulencemodel':[str, 'sa'], 
-            'turbulenceorder':[str,'first order'],           
+            'turbulencemodel':[str, 'sa'],
+            'turbulenceorder':[str,'first order'],
             'usewallfunctions':[bool, False],
             'useapproxwalldistance':[bool, True],
             'walltreatment':[str, 'linear pressure extrapolation'],
             'dissipationscalingexponent':[float, 0.67],
             'vis4':[float, 0.0156],
             'vis2':[float, 0.25],
-            'vis2coarse':[float, 0.5], 
+            'vis2coarse':[float, 0.5],
             'restrictionrelaxation':[float, .80],
             'liftindex':[int, 2],
-            
+
             # Common Paramters
             'ncycles':[int, 500],
             'ncyclescoarse':[int, 500],
@@ -2438,12 +2438,12 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             'smoothparameter':[float, 1.5],
             'cfllimit':[float, 1.5],
 
-            # Unsteady Paramters           
+            # Unsteady Paramters
             'timeintegrationscheme':[str, 'bdf'],
             'timeaccuracy':[int, 2],
             'ntimestepscoarse':[int, 48],
             'ntimestepsfine':[int, 400],
-            'deltat':[float, .010],            
+            'deltat':[float, .010],
 
             # Time Spectral Paramters
             'timeintervals': [int, 1],
@@ -2460,7 +2460,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             # Convergence Paramters
             'l2convergence':[float, 1e-6],
             'l2convergencerel':[float, 1e-16],
-            'l2convergencecoarse':[float, 1e-2], 
+            'l2convergencecoarse':[float, 1e-2],
             'maxl2deviationfactor':[float, 1.0],
             'coeffconvcheck':[bool, False],
             'miniterationnum':[int, 10],
@@ -2487,7 +2487,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             'loadimbalance':[float, 0.1],
             'loadbalanceiter':[int, 10],
             'partitiononly':[bool, False],
-            
+
             # Misc Paramters
             'metricconversion':[float, 1.0],
             'autosolveretry':[bool, False],
@@ -2496,7 +2496,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             'numbersolutions':[bool, True],
             'printiterations':[bool, True],
             'printtiming':[bool, True],
-            'setmonitor':[bool, True],        
+            'setmonitor':[bool, True],
             'monitorvariables':[list, ['cpu','resrho','cl', 'cd']],
             'surfacevariables':[list, ['cp','vx', 'vy','vz', 'mach']],
             'volumevariables':[list, ['resrho']],
@@ -2556,7 +2556,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             'viscoussurfacevelocities':{'location':'inputio.viscoussurfacevelocities'},
             'solutionprecision':{'single':self.sumb.inputio.precisionsingle,
                                  'double':self.sumb.inputio.precisiondouble,
-                                 'location':'inputio.precisionsol'},            
+                                 'location':'inputio.precisionsol'},
             'gridprecision':{'single':self.sumb.inputio.precisionsingle,
                              'double':self.sumb.inputio.precisiondouble,
                              'location':'inputio.precisiongrid'},
@@ -2637,8 +2637,8 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             'ncycles':{'location':'inputiteration.ncycles'},
             'ncyclescoarse':{'location':'inputiteration.ncyclescoarse'},
             'nsubiterturb':{'location':'inputiteration.nsubiterturb'},
-            'cfl':{'location':'inputiteration.cfl'},        
-            'cflcoarse':{'location':'inputiteration.cflcoarse'},        
+            'cfl':{'location':'inputiteration.cfl'},
+            'cflcoarse':{'location':'inputiteration.cflcoarse'},
             'mgcycle':{'location':'localmg.mgdescription',
                        'len':self.sumb.constants.maxstringlen},
             'mgstartlevel':{'location':'inputiteration.mgstartlevel'},
@@ -2695,7 +2695,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
                     'location':'nksolvervars.global_pc_type',
                     'len':self.sumb.constants.maxstringlen},
             'nkasmoverlap':{'location':'nksolvervars.asm_overlap'},
-            'nkpcilufill':{'location':'nksolvervars.local_pc_ilu_level'},               
+            'nkpcilufill':{'location':'nksolvervars.local_pc_ilu_level'},
             'nklocalpcordering':{'natural':'natural',
                                  'rcm':'rcm',
                                  'nested dissection':'nd',
@@ -2774,7 +2774,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             'verifystate':{'location':'inputadjoint.verifystate'},
             'verifyspatial':{'location':'inputadjoint.verifyspatial'},
             'verifyextra':{'location':'inputadjoint.verifyextra'},
-            }                
+            }
 
         return optionMap
 
@@ -2820,33 +2820,33 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         return ignoreOptions, deprecatedOptions, specialOptions
 
     def _getObjectivesAndDVs(self):
-        
+
         possibleObjectives = {
             'lift':'Lift',
             'drag':'Drag',
             'cl':'Cl', 'cd':'Cd',
-            'fx':'Fx', 'fy':'Fy','fz':'Fz', 
+            'fx':'Fx', 'fy':'Fy','fz':'Fz',
             'cfx':'cFx','cfy':'cFy', 'cfz':'cFz',
-            'mx':'Mx', 'my':'My', 'mz':'Mz', 
-            'cmx':'cMx', 'cmy':'cMy', 'cmz':'cMz', 
-            'cm0':'cM0', 
-            'cmzalpha':'cMzAlpha', 
-            'cmzalphadot':'cMzAlphaDot', 
-            'cl0':'cl0', 
-            'clalpha':'clAlpha', 
-            'clalphadot':'clAlphaDot', 
-            'cd0':'cd0', 
-            'cdalpha':'cdAlpha', 
-            'cdalphadot':'cdAlphaDot', 
-            'cmzq':'cmzq', 
-            'cmzqdot':'cmzqdot', 
-            'clq':'clq', 
-            'clqdot':'clqDot', 
-            'cbend':'cBend', 
+            'mx':'Mx', 'my':'My', 'mz':'Mz',
+            'cmx':'cMx', 'cmy':'cMy', 'cmz':'cMz',
+            'cm0':'cM0',
+            'cmzalpha':'cMzAlpha',
+            'cmzalphadot':'cMzAlphaDot',
+            'cl0':'cl0',
+            'clalpha':'clAlpha',
+            'clalphadot':'clAlphaDot',
+            'cd0':'cd0',
+            'cdalpha':'cdAlpha',
+            'cdalphadot':'cdAlphaDot',
+            'cmzq':'cmzq',
+            'cmzqdot':'cmzqdot',
+            'clq':'clq',
+            'clqdot':'clqDot',
+            'cbend':'cBend',
             }
 
         possibleAeroDVs = {
-            'alpha':'adjointvars.ndesignaoa', 
+            'alpha':'adjointvars.ndesignaoa',
             'beta':'adjointvars.ndesignssa',
             'mach':'adjointvars.ndesignmach',
             'machgrid':'adjointvars.ndesignmachgrid',
@@ -2866,16 +2866,16 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             'areaRef':'adjointvars.ndesignsurfaceref',
             'disserror':'adjointvars.ndesigndisserror'
             }
-        
+
         # This is SUmb's internal mapping for cost functions
         sumbCostFunctions = {
-            'Lift':self.sumb.costfunctions.costfunclift, 
+            'Lift':self.sumb.costfunctions.costfunclift,
             'Drag':self.sumb.costfunctions.costfuncdrag,
-            'Cl'  :self.sumb.costfunctions.costfuncliftcoef, 
+            'Cl'  :self.sumb.costfunctions.costfuncliftcoef,
             'Cd'  :self.sumb.costfunctions.costfuncdragcoef,
-            'Fx'  :self.sumb.costfunctions.costfuncforcex, 
+            'Fx'  :self.sumb.costfunctions.costfuncforcex,
             'Fy'  :self.sumb.costfunctions.costfuncforcey,
-            'Fz'  :self.sumb.costfunctions.costfuncforcez, 
+            'Fz'  :self.sumb.costfunctions.costfuncforcez,
             'cFx' :self.sumb.costfunctions.costfuncforcexcoef,
             'cFy' :self.sumb.costfunctions.costfuncforceycoef,
             'cFz' :self.sumb.costfunctions.costfuncforcezcoef,
@@ -2905,7 +2905,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             }
 
         return possibleObjectives, possibleAeroDVs, sumbCostFunctions
-     
+
 class sumbFlowCase(object):
     """
     Class containing the data that SUmb requires to be saved to an
