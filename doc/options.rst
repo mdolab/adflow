@@ -5,16 +5,16 @@ Options
 
 Here are a list of options currently available in SUmb.
 
-=====================================    =========   ========================      =======================================================================================
+======================================  ==========  ===========================   ========================================================================================================
 Parameter                                  Type       Default                                   Description
-=====================================    =========   ========================      =======================================================================================
- `gridFile`                              `str` *     `None`                        This is the grid file to use. It must be a multi-block-structured CGNS file with
+======================================  ==========  ===========================   ========================================================================================================
+ `gridFile`                              `str`       `None`                        This is the grid file to use. It must be a multi-block-structured CGNS file with
                                                                                    all block-to-block information and boundary condition information contained in the
 		                       				                
-`restartFile`                            `str` *     `restart.cgns`                Use this CGNS file to restart the solution from a previous solution. This file must
+`restartFile`                            `str`       `restart.cgns`                Use this CGNS file to restart the solution from a previous solution. This file must
                                                                                    have been a volume solution file that was written by ``sumb``.  
                                                                                                                                                                          
-`solRestart`                             `bool` *    `False`                       Flag to use specified restart file.
+`solRestart`                             `bool`      `False`                       Flag to use specified restart file.
                                                                                                                                                                          
 `storeRindLayer`                         `bool`      `True`                        Flag to use write halo or "rind cell" information into cgns files. This is required
                                                                                    to have some postprocessors compute contour lines correctly (Tecplot).                
@@ -63,32 +63,32 @@ Parameter                                  Type       Default                   
 									      	   diagonal-dominant alternating-direction implicit (D3ADI) scheme. This is typically 
 									      	   faster that the Runge Kutta method but may be less robust. 
 									      
-`equationType`                           `str` *     `euler`                       The type of equations to solve. Possible values are `euler`, `laminar NS`, or `RANS`. 
+`equationType`                           `str`       `euler`                       The type of equations to solve. Possible values are `euler`, `laminar NS`, or `RANS`. 
 									      
-`equationMode`                           `str` *     `steady`                      The temporal mode of the equations to solve. Possible values are `steady`, `unsteady`
+`equationMode`                           `str`       `steady`                      The temporal mode of the equations to solve. Possible values are `steady`, `unsteady`
                                                                                    or `time spectral`. The `steady` and `time spectral` methods have been extensively 
 									      	   tested from the Python interface. The unsteady method has not been extensively 
 									      	   tested from Python.
 									      
-`flowType`                               `str` *     `external`                    Type of flow simulation. Must be `internal` or `external`. Only external flow 
+`flowType`                               `str`       `external`                    Type of flow simulation. Must be `internal` or `external`. Only external flow 
                                                                                    simulations have been tested with the Python interface. 
 									      
-`turbulenceModel`                        `str` *     `sa`                          Select the turbulence model to use. Possible values are `sa` for the Spalart Allmaras 
+`turbulenceModel`                        `str`       `sa`                          Select the turbulence model to use. Possible values are `sa` for the Spalart Allmaras 
                                                                                    model, `sae` for the Sparart Allmaras-Edward model, `k omega wilcox`, 
 									      	   `k omega modified`, `ktau`, `menter sst` and `v2f`. For external aerodynamic flow 
 									      	   applications, `sa` is recommended as this is currently the only turbulence model
 									      	   that has been differentiated. 
 									      
-`turbulenceOrder`                        `str` *     `first order`                 The numerical order of accuracy of the turbulence model. Possible values are 
+`turbulenceOrder`                        `str`       `first order`                 The numerical order of accuracy of the turbulence model. Possible values are 
                                                                                    `first order` or `second order`. Generally `first order` is recommended as the
 									      	   adjoints systems are much easier to solve with the first order discretrization. 
 									      
-`useWallFunctions`                       `bool` *    `False`                       Flag specifying if wall functions are to be used. This is generally not recommended
+`useWallFunctions`                       `bool`      `False`                       Flag specifying if wall functions are to be used. This is generally not recommended
                                                                                    since they give (potentially very) poor drag estimates. Furthermore, the required 
 									      	   routines are differentiated so wall function simulations cannot be used for 
 									      	   optimization
 									      
-`useApproximateWallDistance`             `bool` *    `True`                        Flag to use a `cheap` wall distance calculation. When this is true, the exact wall
+`useApproximateWallDistance`             `bool`      `True`                        Flag to use a `cheap` wall distance calculation. When this is true, the exact wall
                                                                                    distances are computed during initialization and the parametric location of the 
 									      	   closest wall point is stored for each cell. After the geometry deforms (say during
 									      	   an optimization) the spatial search algorithm is not run, but the distance between
@@ -124,7 +124,7 @@ Parameter                                  Type       Default                   
 									      	   well for a wide variety of cases. 
 									      
 									      
-`liftIndex`                              `int` *     None                          Specify the coordinate index that will be considered the 'lift' direction. 
+`liftIndex`                              `int`       None                          Specify the coordinate index that will be considered the 'lift' direction. 
                                                                                    If not supplied, this parameter will be determined automatically if there are 
 									      	   symmetry planes present in the grid. Otherwise, it must be supplied. The applicable 
 									      	   values are 2 for the y-axis as the lift direction and 3 for the z-axis as the lift
@@ -141,21 +141,22 @@ Parameter                                  Type       Default                   
 `nSubIterTurb`                           `int`       1                             The number of **additional** iterations of the turbulent ADI solver to run. Only 
                                                                                    meaningful for RANS simulations. Certain RANS simulations may benefit from a slight
 									      	   increase of this parameter to 2 or 3 which will lower the overall solution time. 
+
 `CFL`                                    `float`     1.5                           The Courant–Friedrichs–Lewy (CFL) number to use for the Runge-Kutta simulations. This
                                                                                    is the main parameter that determines the overall speed and robustness of RK simulations.
 									      	   Lower CFL numbers give more robust solutions but are slower. The default parameter of 
 									      	   1.5 is a good place to start. Usually some experimentation is required to determine
 									      	   the maximum CFL for a particular simulation. 
 									      
-`CFLCoarse`                              `float`     1.o                           The CFL number to use on the coarse grids of the multigrid simulations. It is often
+`CFLCoarse`                              `float`     1.0                           The CFL number to use on the coarse grids of the multigrid simulations. It is often
                                                                                    desirable to have this number somewhat lower than the CFL number of the fine grid. 
 									      
-`mcCycle`                                `str` *     `3w`                          The type of multigrid cycle to use. The dimensions of the grid must be such that the 
+`mcCycle`                                `str`      `3w`                           The type of multigrid cycle to use. The dimensions of the grid must be such that the 
                                                                                    requested multigrid level is possible. To run a single grid simulation (no multigrid)
 									      	   use `sg`. To run 3 multigrid levels with a 'w' cycle use `3w`. To use a 'v' cycle use
 									      	   `3v` etc. 
 									      
-`mgStartLevel`                           `int` *     -1                            Specifiy the starting grid level. This is ued to perform a "full multigrid startup"
+`mgStartLevel`                           `int`      -1                             Specifiy the starting grid level. This is ued to perform a "full multigrid startup"
                                                                                    procedure. This can lead to significally reduced simulation times since a good starting
 									      	   point can be obtained from approximate solutions on the coarser grids. A -1 indicated
 									      	   that the coarsest grid level should be used. For RANS simulations, it is often not
@@ -192,7 +193,7 @@ Parameter                                  Type       Default                   
 									      
 `machMode`                               `bool`      False                         Use a specified mach number motion for the Time spectral analysis. Untested
 									      
-`pmode`   `                              `bool`      False                         Use a specified p-motion (rolling) motion for the Time spectral analysis. Untested.
+`pmode`                                  `bool`      False                         Use a specified p-motion (rolling) motion for the Time spectral analysis. Untested.
 									      
 `qmode`                                  `bool`      False                         Use a specified q-motion (pictch) motion for the Time spectral analysis. 
 									      
@@ -272,9 +273,9 @@ Parameter                                  Type       Default                   
 										   For more difficult cases, a lower value may help convergence. A lower value will 
 										   result in more (preconditioner) jacobian assemblies that are fairly costly in SUmb. 
 
-`RKReset`                                 `bool`      `False`                      ???
+`RKReset`                                `bool`      `False`                       Option to reset runge-kutta solver at each iteration.
 
-`NKReset`                                `int`       5                             ???
+`NKReset`                                `int`       5                             Option to reset newton-kylov solver at given number of iteration intervals.
 
 `applyPCSubSpaceSize`                    `int`       10                            This option is only used when SUmb is used in an aero-structural analysis. This parameter
                                                                                    determines the subspace **and** the total number of iterations to run when SUmb is only
@@ -287,69 +288,141 @@ Parameter                                  Type       Default                   
                                                                                    linear system faster. This should be left at 1, unless a very difficult problem is 
 										   encountered. 
 
-`blockSplitting`                         `bool` *    True                          Flag determining if the block may be split to obtain better load balancing
-=====================================    =========   ========================      =======================================================================================
+`blockSplitting`                         `bool`      True                          Flag determining if the block may be split to obtain better load balancing.
 
 
-	    ..
-	       'blocksplitting':[bool, True],*
-	       'loadimbalance':[float, 0.1], *
-	       'loadbalanceiter':[int, 10], *
-	       'partitiononly':[bool, False], *
-	       'metricconversion':[float, 1.0],
-	       'autosolveretry':[bool, False],
-	       'autoadjointretry':[bool, False], *
-	       'storehistory':[bool, False], ????????
-	       'numbersolutions':[bool, True],
-	       'printiterations':[bool, True],
-	       'printtiming':[bool, True],
-	       'setmonitor':[bool, True],        
-	       'monitorvariables':[list, ['cpu','resrho','cl', 'cd']], (CHECK)
-	       'surfacevariables':[list, ['cp','vx', 'vy','vz', 'mach']], (chECK)
-	       'volumevariables':[list, ['resrho']], (check)
-	       'forcesastractions':[bool, True], 
-	       'adjointl2convergence':[float, 1e-6],
-	       'adjointl2convergencerel':[float, 1e-16],
-	       'adjointl2convergenceabs':[float, 1e-16],
-	       'adjointdivtol':[float, 1e5],
-	       'approxpc': [bool, True],
-	       'adpc': [bool, False],
-	       'viscpc':[bool,False],
-	       'usediagtspc':[bool, True],
-	       'restartadjoint':[bool, True],
-	       'adjointsolver': [str, 'gmres'],
-	       'adjointmaxiter': [int, 500],
-	       'adjointsubspacesize' : [int, 100],
-	       'adjointmonitorstep': [int, 10],
-	       'dissipationlumpingparameter':[float, 6.0],
-	       'preconditionerside': [str, 'right'],
-	       'matrixordering': [str, 'rcm'],
-	       'globalpreconditioner': [str, 'additive schwartz'],
-	       'localpreconditioner' : [str, 'ilu'],
-	       'ilufill': [int, 1],
-	       'asmoverlap' : [int, 1],
-	       'innerpreconits':[int,1],
-	       'outerpreconits':[int,3],
-	       'usereversemodead':[bool, False],
-	       'applyadjointpcsubspacesize':[int, 20],
-	       'frozenturbulence':[bool, True], **** check *****
-	       'firstrun':[bool, True],
-	       'verifystate':[bool, True],
-	       'verifyspatial':[bool, True],
-	       'verifyextra':[bool, True],
+`loadImbalance`                          `float`     0.1                           This is the allowable load imbalance. The tolerated load imbalance between processors when 
+                                                                                   mapping the blocks onto these processors. The default value is 0.1, i.e. 10 percent.
+
+`loadBalanceIter`                        `int`       10                            Number of METIS graph partitioning iteration. Increase this number will give you better
+                                                                                   load balancing. However, it will also tend to split up block more often. Therefore, there is
+										   panelty on communication cost.
+
+`partitionOnly`                          `bool`      False                         Flag determines whether to only run the partitioning algorithm, not the flow solution. This is
+                                                                                   used when checking the load balancing of a grid without running a CFD solve.
+
+`metricConversion`                       `float`     1.0                            This value can be set to convert the results to a particular unit. 
+
+`autoSolveRetry`                         `bool`      False                          Flag to set whether to try solve the flow solution again if the previous flow solution failed.
+
+`numberSolutions`                        `bool`      True                           Flag to set whether to attach the numbering of aeroProblem to the grid solution file.
+
+`printIterations`                        `bool`      True                           Flag to set whether to print out the monitoring values at each iteration.
+
+`storehistory`                           `bool`      False                          Flag to set whether to store the iteration history.
+
+`printTiming`                            `bool`      True                           Flag to set whether to print the total solution time of the adjoint solver.
+
+`setMonitor`                             `bool`      True                           Flag to set whether to monitor the adjoint iterations.
+
+`monitorVariables`                       `list`      ['cpu','resrho',               List of the variables whose convergence should be monitored. The possible monitoring variables
+                                                     'cl', 'cd']                    are `resrho` (density residual), `resmom` (momentum residuals), `resrhoe` (total energy residual),
+                                                                                    `resturb` (turbulence residuals), `cl` (lift coefficient), `clp` (pressure part of cl),
+                                                                                    `clv` (viscous part of cl), `cd` (drag coefficient), `cdp` (pressure part of cd),
+                                                                                    `cdv` (viscous part of cd), `cfx` (force coefficient in x-direction), 
+                                                                                    `cfy` (force coefficient in y-direction), `cfz` (force coefficient in z-direction),
+                                                                                    `cmx` (moment coefficient in x-direction), `cmy` (moment coefficient in y-direction),
+                                                                                    `cmz` (moment coefficient in z-direction), `hdiff` (maximum relative difference between H and Hinf),
+										    `mach` (maximum mach number), `yplus` (maximum y+ value), 
+										    `eddyv` (maximum ratio of eddy viscosity and laminar viscosity).
+
+                                                                        
+`surfaceVariables`                       `list`     ['cp','vx', 'vy',               The variables which are written to the CGNS surface solution file. The available keywords are:
+                                                    'vz', 'mach']                   `rho` (density), `p` (pressure), `temp` (temperature), `vx` (velocity in x-direction),
+                                                                                    `vy` (velocity in y-direction), `vz` (velocity in z-direction), `cp` (pressure coefficient),
+										    `ptloss` (relative total pressure loss), `mach` (mach number), `cf` (magnitude of the skin friction),
+										    `cfx` (x-component of the skin friction), `cfy` (y-component of the skin friction),
+										    `cfz` (z-component of the skin friction), `ch` (Stanton number), 
+										    `yplus` (y+ value of the cell center of the first cell), `lift` (lift force),
+										    `blank` (cell iblank values used for visualiztion or other post-processing).
+
+`volumeVariables`                        `list`     ['resrho']                      The variables which are, additionally to the variables needed for the restart, written
+                                                                                    to the CGNS volume solution file. The available keywords are: `mx` (momentum in x-direction),
+										    `my` (momentum in y-direction), `mz` (momentum in z-direction), `rhoe` (total energy),
+										    `temp` (temperature), `vort` (magnitude of the vorticity), `vortx` (x-component of the vorticity),
+										    `vorty` (y-component of the vorticity), `vortz` (z-component of the vorticity), 
+										    `cp` (pressure coefficient), `mach` (Mach number), `macht` (turbulent Mach number),
+										    `ptloss` (relative total pressure loss), `eddy` (eddy viscosity),
+										    `eddyratio` (ratio of eddy viscosity and laminar viscosity),
+										    `dist` (wall distance to the nearest viscous wall, `resrho` (density residual),
+										    `resmom` (momentum residuals), `resrhoe` (total energy residual), `resturb` (turbulence residuals),
+										    `blank` (cell iblank values used for visualiztion or other post-processing).
+
+`forcesAsTractions`                      `bool`      True                           Flag to set whether to return tractive force instead forces.
+
+`adjointL2Convergence`                   `float`     1e-6                           Adjoint solution convergence tolerance.
+
+`adjointL2ConvergenceRel`                `float`     1e-16                          Adjoint solution relative tolerance.
+
+`adjointL2ConvergenceAbs`                `float`     1e-16                          Adjoint solution absalute tolerance.
+
+`adjointDivTol`                          `float`     1e5                            The tolerance of divergence for adjoint solution.
+
+`approxPC`                               `bool`      True                           Whether or not to use the approximate jacobian.
+
+`ADPC`                                   `bool`      False                          Whether or not to use AD for preconditioning matrix.
+
+`viscPC`                                 `bool`      False                          Whether or not to keep cross derivative terms.
+
+`useDiagTSPC`                            `bool`      True                           Whether or not the off time instance terms are included in the TS preconditioner.
+ 
+`restartADjoint`                         `bool`      True                           Whether or not we want to restart the adjoint from the previous solution.
+
+`adjointSolver`                          `str`       `gmres`                        Type of linear solver for the ADjoint. You can choice from `gmres`, `tfqmr`, 
+                                                                                    `rechardson`, `bcgs`, `ibcgs`. Tipically, `gmres` will give you the best performance.
+
+`adjointMaxIter`                         `int`       500                           Maximum number of iterations for adjoint solution.
+
+`adjointSubspaceSize`                    `int`       100                           The size of Kylov subspace for adjoint solution.
+
+`adjointMonitorStep`                     `int`       10                            The adjoint solution convergence monitor step.
+
+`dissipationLumpingParameter`            `float`     6.0                           Scaling parameter for dissipation lumping in approximate precondtioner.
+
+`preconditionerSide`                     `str`       `right`                        Which side to apply preconditioner `lift` and `right`.
+
+`golbalPreconditioner`                   `str`       `additive schwartz`           The type of (global) preconditioner to use for the linearized system. The default
+                                                                                   is recommended unless memory is a issue. In that case, `block jacobi` can be used
+										   which is less efficient but, has a lower memory footprint.
+
+`localPreconditioner`                    `str`       `ilu`                          The type of preconditioner to use on the local preconditioning iteration.
 
 
-Contents:
+`ASMOverlap`                             `int`       1                             The number of overlap levels in the ASM preconditions. More overlap levels result in a
+                                                                                   stronger preconditioner, at the expense of more expensive iterations and more memory. 
+										   Typicaly values range from 1 for easy problems up to 2 or 3 for more difficult ones. 
 
-.. toctree::
-   :maxdepth: 2
+`ILUFill`                                `int`       1                             The number of levels of fill to use on the local (subdomain) Incomplete LU (ILU) factorization
+                                                                                   Typical values are 1 for easy cases and up to 3 for more difficult cases. More levels
+										   of fill result in a stronger precondtioner which will result in fewer (linear) 
+										   iterations, but individual iterations will be more costly and consume more memory. 
+
+`matrixOrdering`                         `str`       `rcm`                         The type of reordering algorithm to use on the local subdomains. For practically all
+                                                                                   cases Reverse Cuthill McKee performs the best. 
 
 
+`innerPreconIts`                         `int`       1                              Number of local preconditioning iteration. Increase this number may help with difficult problems.
+                                                                                    However, each iteration will take more time.
 
-Indices and tables
-==================
+`outerPreconIts`                         `int`       3                              Number of global preconditioning iteration. Increase this number may help with difficult problems.
+                                                                                    However, each iteration will take more time. Default value should be sufficient for most of the 
+										    the problems.
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+`useReverseModeAD`                       `bool`      False                          Flag to set whether to use reversemodeAD. Currently, reverse mode AD only work on Euler problems.
+
+`applyAdjointPCSubspaceSize`             `int`       20                             The kylov subspace size for the adjoint preconditioner.
+
+`frozenTurbulence`                       `bool`      True                           Flag to set whether to use frozen turbulence assumption in the adjoint. Frozen turbulence neglect 
+                                                                                    the linearization of the turbulence model. Currently, only SA model is ADed. Use frozenTurbulence 
+										    may help with convergence of high transonic flows. However, the resulting sensitivity is less
+										    accurate. 
+
+`firstRun`                               `bool`      True                           This option is for debugging adjoint only. This option set to false will turn on the Tapanade debugger.
+
+`verifyState`                            `bool`      True                           This option is for debugging adjoint only. It is used to verify dRdw.
+
+`verifySpatial`                          `bool`      True                           This option is for debugging adjoint only. It is used to verify dRdx.
+
+`verifyExtra`                            `bool`      True                           This option is for debugging adjoint only. It is used to verify dIda.
+======================================  ==========  ===========================   ========================================================================================================
 
