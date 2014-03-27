@@ -1,4 +1,4 @@
-.. _pySUmb:
+.. _sumb_pySUmb:
 
 pySUmb
 ---------

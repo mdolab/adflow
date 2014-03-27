@@ -1,4 +1,4 @@
-.. _tutorial:
+.. _sumb_tutorial:
 
 Tutorial
 ========
@@ -54,22 +54,24 @@ each statement line by line::
   'L2ConvergenceCoarse':1e-2,
   }
 
+
   # Aerodynamic problem description
   ap = AeroProblem(name=name, alpha=alpha, mach=mach, altitude=altitude,
   areaRef=areaRef, chordRef=chordRef,
   evalFuncs=['cl','cd'])
   # Create solver
   CFDSolver = SUMB(options=aeroOptions)
-  
+
   # Solve and evaluate functions
   funcs = {}
   CFDSolver(ap)
   CFDSolver.evalFunctions(ap, funcs)
-  
+
   # Print the evaluatd functions
   if MPI.COMM_WORLD.rank == 0:
-  print funcs
+      print funcs
   
+
 Start by importing the ``sumb``, ``baseclasses``, and ``mpi4py``.::
 
   # ======================================================================
