@@ -1,7 +1,7 @@
-.. _options:
+.. _sumb_options:
 
 Options
-====
+=======
 
 Here are a list of options currently available in SUmb.
 

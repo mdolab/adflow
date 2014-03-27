@@ -879,13 +879,13 @@ steady rotations and specifying an aeroProblem')
 
     def writeMeshFile(self, fileName):
         """Write the current mesh to a CGNS file. This call isn't used
-                normally since the volume solution usually contains
-                the grid
+        normally since the volume solution usually contains the grid
+
         Parameters
         ----------
         fileName : str
             Name of the mesh file
-        """
+            """
 
         # Ensure extension is .cgns even if the user didn't specify
         fileName, ext = os.path.splitext(fileName)
