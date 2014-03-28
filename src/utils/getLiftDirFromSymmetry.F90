@@ -59,7 +59,7 @@ subroutine getLiftDirFromSymmetry(liftDir)
            cp = abs(cp)
 
            ! Location, ie coordiante direction of dominate direction
-           i_index = maxloc(cp)
+           i_index = maxloc(real(cp))
 
            sym_local(i_index(1)) = 1_intType
         end if
