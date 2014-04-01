@@ -17,5 +17,6 @@ SUmb -- Stanford University MultiBlock -- is a structured multi-block 3D CFD sol
    introduction
    install
    tutorial
+   meshing
    options
    pySUmb
