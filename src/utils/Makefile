@@ -53,7 +53,7 @@ FILES_TO_COMPLEXIFY =  \
 	       nullifyCGNSDomPointers.f90\
 	       nullifyFlowDomPointers.f90\
 	       orphanAverage.f90\
-		   pointReduce.F90\
+	       pointReduce.F90\
 	       qsortIntegers.f90\
 	       qsortReals.f90\
 	       qsortStrings.f90\
@@ -65,10 +65,10 @@ FILES_TO_COMPLEXIFY =  \
 	       removeTiesStrings.f90\
 	       replaceTabsAndReturns.f90\
 	       rigidRotAngle.f90\
-		   rotMatrixRigidBody.f90\
-           secondDerivativeRigidRotAngle.f90\
+	       rotMatrixRigidBody.f90\
+	       secondDerivativeRigidRotAngle.f90\
 	       setBCPointers.F90\
-           setBufferSizes.f90\
+	       setBufferSizes.f90\
 	       setCGNSRealType.F90\
 	       setPointers.f90\
 	       siAngle.f90\
@@ -95,11 +95,12 @@ FILES_TO_COMPLEXIFY =  \
 	       whaloMixing.f90\
 	       whaloSliding.f90\
 	       wOverset.f90\
-	       writeVarsToBuffer.f90
-
+	       writeVarsToBuffer.f90\
+	       getLiftDirFromSymmetry.F90
 
 FILES_TO_COPY = myIsNaNC.c\
 		f77flush.c\
+
 
 ALL_FILES = $(FILES_TO_COMPLEXIFY) $(FILES_TO_COPY)
 OFILES := $(ALL_FILES:%.f90=%.o) $(ALL_FILES:%.F90=%.o) $(ALL_FILES:%.c=%.o)
