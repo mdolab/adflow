@@ -400,6 +400,10 @@ python module libsumb
          logical intent(in) :: psum
          logical intent(in) :: pmax
        end subroutine matrixinfo
+
+       subroutine getliftdirfromsymmetry(liftdir)
+         integer(kind=inttype), intent(out) :: liftdir
+       end subroutine getliftdirfromsymmetry
       
        subroutine releasememadjoint
        end subroutine releasememadjoint
