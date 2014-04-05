@@ -514,6 +514,25 @@ steady rotations and specifying an aeroProblem')
         if self.curAP.sumbData.states is None:
             self.resetFlow(aeroProblem)
 
+        # Check to see if setting the aeroProbelm (which may have updated the mesh)
+        self.sumb.killsignals.routinefailed = self.comm.allreduce(
+            bool(self.sumb.killsignals.routinefailed), op=MPI.LOR)
+
+        if self.sumb.killsignals.routinefailed:
+            if self.comm.rank == 0:
+                print("Fatal failure during mesh warp! Bad mesh is "
+                      "written in output directory as failed_mesh.cgns")
+            fileName = os.path.join(self.getOption('outputDirectory'),
+                                    'failed_mesh.cgns')
+            self.writeMeshFile(fileName)
+            self.curAP.solveFailed = True
+            self.curAP.fatalFail = True
+            return
+
+        # Reset Fail Flags
+        self.sumb.killsignals.routinefailed =  False
+        self.sumb.killsignals.fatalfail = False
+
         # Possibly release adjoint memory 
         self.releaseAdjointMemory()
 
@@ -557,30 +576,7 @@ steady rotations and specifying an aeroProblem')
         if self.getOption('equationMode') == 'unsteady':
             self.sumb.alloctimearrays(self.getOption('nTimeStepsFine'))
 
-        # Reset Fail Flags
-        self.sumb.killsignals.routinefailed =  False
-        self.sumb.killsignals.fatalfail = False
-        self.solveFailed =  self.fatalFail = False
 
-        if (self.getOption('equationMode').lower() == 'steady' or 
-            self.getOption('equationMode').lower() == 'time spectral'):
-            self.updateGeometryInfo()
-
-        # Check to see if the above update routines failed.
-        self.sumb.killsignals.routinefailed = \
-            self.comm.allreduce(
-            bool(self.sumb.killsignals.routinefailed), op=MPI.LOR)
-
-        if self.sumb.killsignals.routinefailed:
-            print('Fatal failure during mesh warp! Bad mesh is \
-            written in output directory as failed_mesh.cgns')
-            fileName = os.path.join(self.getOption('outputDirectory'),
-                                    'failed_mesh.cgns')
-            self.writeMeshFile(fileName)
-            self.fatalFail = True
-            self.solveFailed = True
-            return
-     
         t1 = time.time()
 
         # Call the Solver or the MD callback solver
@@ -594,12 +590,12 @@ steady rotations and specifying an aeroProblem')
         self.curAP.sumbData.states = self.getStates()
             
         # Assign Fail Flags
-        self.curAP.solveFailed = self.sumb.killsignals.routinefailed
-        self.curAP.fatalFail = self.sumb.killsignals.fatalfail
+        self.curAP.solveFailed = bool(self.sumb.killsignals.routinefailed)
+        self.curAP.fatalFail = bool(self.sumb.killsignals.fatalfail)
 
         # Reset Flow if there's a fatal fail reset and return;
         # --> Do not write solution
-        if self.fatalFail:
+        if self.curAP.fatalFail:
             self.resetFlow(aeroProblem)
             return
     
@@ -620,9 +616,20 @@ steady rotations and specifying an aeroProblem')
     def evalFunctions(self, aeroProblem, funcs, evalFuncs=None, sps=1,
                       ignoreMissing=False):
         """
-        Evaluate the desired functions given in iterable object, 'evalFuncs'
-        and add them to the dictionary 'funcs'. The keys in the funcs dictioary
-        will be have an _<ap.name> appended to them. 
+        Evaluate the desired functions given in iterable object,
+        'evalFuncs' and add them to the dictionary 'funcs'. The keys
+        in the funcs dictioary will be have an _<ap.name> appended to
+        them. Additionally, information regarding whether or not the
+        last analysis with the aeroProblem was sucessful is
+        included. This information is included as "funcs['fail']". If
+        the 'fail' entry already exits in the dictionary the following
+        operation is performed:
+
+        funcs['fail'] = funcs['fail'] or <did this problem fail>
+
+        In other words, if any one problem fails, the funcs['fail']
+        entry will be False. This information can then be used
+        directly in the pyOptSparse. 
 
         Parameters
         ----------
@@ -669,6 +676,15 @@ steady rotations and specifying an aeroProblem')
             else:
                 if not ignoreMissing:
                     raise Error('Supplied function is not known to SUmb.')
+
+        # We also add the fail flag into the funcs dictionary. If fail
+        # is already there, we just logically 'or' what was
+        # there. Otherwise we add a new entry. 
+        failFlag = self.curAP.solveFailed or self.curAP.fatalFail
+        if 'fail' in funcs:
+            funcs['fail'] = funcs['fail'] or failFlag
+        else:
+            funcs['fail'] = failFlag
 
     def evalFunctionsSens(self, aeroProblem, funcsSens, evalFuncs=None, sps=1):
         """
@@ -1844,6 +1860,10 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         """Update the SUmb internal geometry info, if necessary."""
 
         if self._updateGeomInfo and self.mesh is not None:
+            # Reset Fail Flags
+            self.sumb.killsignals.routinefailed =  False
+            self.sumb.killsignals.fatalfail = False
+
             self.mesh.warpMesh()
             newGrid = self.mesh.getSolverGrid()
 
