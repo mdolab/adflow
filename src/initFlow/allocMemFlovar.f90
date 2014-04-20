@@ -79,6 +79,10 @@ subroutine allocMemFlovarPart1(sps,level)
           call terminate("allocMemFlovarPart1", &
           "Memory allocation failure for w")
 
+     ! Alloc mem for dadi
+     allocate(flowDoms(nn,level,sps)%dadidata(ie,je,ke,10), stat=ierr)
+     
+
      ! Allocate memory for the pressure.
 
      allocate(flowDoms(nn,level,sps)%p(0:ib,0:jb,0:kb), stat=ierr)

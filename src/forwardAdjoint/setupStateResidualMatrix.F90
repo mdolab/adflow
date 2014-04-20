@@ -78,6 +78,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   alphad = zero
   betad  = zero
   machd  = zero
+  machcoefd = zero
   machGridd = zero
   lengthRefd = zero
   pointRefd  = zero

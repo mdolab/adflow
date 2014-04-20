@@ -737,9 +737,10 @@
        real(kind=realType) :: Machd, MachCoefd, MachGridd
        real(kind=realType) :: Machb, MachCoefb, MachGridb
        real(kind=realType) :: reynoldsd, reynoldslengthd
+       real(kind=realType) :: reynoldsb, reynoldslengthb
        real(kind=realType) :: gammaconstantb, gammaconstantd
        real(kind=realType) :: surfaceRefd, surfaceRefb, lengthRefd, lengthRefb
-       real(kind=realType) :: tempFreeStreamd
+       real(kind=realType) :: tempFreeStreamd, tempFreeStreamb
        real(kind=realType) :: Prandtlb, PrandtlTurbb
 #endif
 

@@ -16,6 +16,7 @@ Subroutine computeObjectivePartialsFwd(costFunction)
   use costFunctions
   use inputTimeSpectral
   use inputPhysics
+  use flowvarrefstate
   implicit none
 
   ! Input Variables
@@ -106,36 +107,43 @@ Subroutine computeObjectivePartialsFwd(costFunction)
         if (nDesignSSA >= 0) then 
            dIda(nDesignSSA + 1) = dIda(nDesignSSA+1) + betab
         end if
-        if (nDesignMach > 0) then 
-           dIda(nDesignMach + 1) = dIda(nDesignMach+1) + machb + machcoefb
+        if (nDesignMach >= 0) then 
+           dIda(nDesignMach + 1) = dIda(nDesignMach+1) + machcoefb + machb 
         end if
         
-        if (nDesignMachGrid > 0) then 
+        if (nDesignMachGrid >= 0) then 
            dIda(nDesignMachGrid + 1) = dIda(nDesignMachGrid+1) + machgridb + machcoefb
         end if
 
-        if (nDesignLengthRef > 0) then
+        if (nDesignPressure >= 0) then 
+           dIda(nDesignPressure + 1) = dIda(nDesignPressure+1) + Prefb
+        end if
+
+        if (nDesignTemperature >= 0) then 
+           dIda(nDesignTemperature + 1) = dIda(nDesignTemperature+1) + tempfreestreamb
+        end if
+
+        if (nDesignLengthRef >= 0) then
            dIda(nDesignLengthRef + 1) = dIda(nDesignLengthRef+1) + lengthrefb
         end if
 
         ! Explict dependence on pointRef....Only on one proc since
         ! they are the same across all procs, and the sum would nProc
         ! too large if they were on all procs. 
-        if (nDesignPointRefX > 0) then
+        if (nDesignPointRefX >= 0) then
            dIda(nDesignPointRefX + 1) = dIda(nDesignPointRefX + 1) + pointrefb(1)
         end if
 
-        if (nDesignPointRefY > 0) then
+        if (nDesignPointRefY >= 0) then
            dIda(nDesignPointRefY + 1) = dIda(nDesignPointRefY + 1) + pointrefb(2)
         end if
 
-        if (nDesignPointRefZ > 0) then
+        if (nDesignPointRefZ >= 0) then
            dIda(nDesignPointRefZ + 1) = dIda(nDesignPointRefZ + 1) + pointrefb(3)
         end if
 
      end if
 
-     
      ! These three are a little different; The derivative wrt to the
      ! forces and moments for each spectral instance are computed when
      ! the extra residual matrix is computed. This is the only
@@ -143,7 +151,8 @@ Subroutine computeObjectivePartialsFwd(costFunction)
      ! wrt forces and moment so we chain-rule them together. Note that
      ! there is no dependence of 'force' on pointRef so it is not
      ! included here. Also these derivatives DO need to be summed over
-     ! all procs
+     ! all procs.
+
      
      ! add missing dependence of mach
      if (nDesignMach > 0) then
@@ -157,7 +166,7 @@ Subroutine computeObjectivePartialsFwd(costFunction)
         end do
      end if
 
-     if (nDesignPointRefX > 0) then
+     if (nDesignPointRefX >= 0) then
         do sps=1, nTimeIntervalsSpectral
            do idim=1,3
               dIda(nDesignPointRefX+1) = dIda(nDesignPointRefX+1) + &
@@ -166,7 +175,7 @@ Subroutine computeObjectivePartialsFwd(costFunction)
         end do
      end if
 
-     if (nDesignPointRefY > 0) then
+     if (nDesignPointRefY >= 0) then
         do sps=1, nTimeIntervalsSpectral
            do idim=1,3
               dIda(nDesignPointRefY+1) = dIda(nDesignPointRefY+1) + &
@@ -174,7 +183,7 @@ Subroutine computeObjectivePartialsFwd(costFunction)
            end do
         end do
      end if
-     if (nDesignPointRefZ > 0) then
+     if (nDesignPointRefZ >= 0) then
         do sps=1, nTimeIntervalsSpectral
            do idim=1,3
               dIda(nDesignPointRefZ+1) = dIda(nDesignPointRefZ+1) + &
@@ -183,13 +192,35 @@ Subroutine computeObjectivePartialsFwd(costFunction)
         end do
      end if
 
-     if (nDesignLengthRef > 0) then
+     if (nDesignLengthRef >= 0) then
         do sps=1, nTimeIntervalsSpectral
            do idim=1,3
               dIda(nDesignLengthRef+1) = dIda(nDesignLengthRef+1) + &
                    dFMdExtra(idim, nDesignLengthRef+1, sps)*forceb(idim, sps)
               dIda(nDesignLengthRef+1) = dIda(nDesignLengthRef+1) + &
                    dFMdExtra(idim+3, nDesignLengthRef+1, sps)*momentb(idim, sps)
+           end do
+        end do
+     end if
+
+     if (nDesignPressure >= 0) then
+        do sps=1, nTimeIntervalsSpectral
+           do idim=1,3
+              dIda(nDesignPressure+1) = dIda(nDesignPressure+1) + &
+                   dFMdExtra(idim, nDesignPressure+1, sps)*forceb(idim, sps)
+              dIda(nDesignPressure+1) = dIda(nDesignPressure+1) + &
+                   dFMdExtra(idim+3, nDesignPressure+1, sps)*momentb(idim, sps)
+           end do
+        end do
+     end if
+
+     if (nDesignTemperature >= 0) then
+        do sps=1, nTimeIntervalsSpectral
+           do idim=1,3
+              dIda(nDesignTemperature+1) = dIda(nDesignTemperature+1) + &
+                   dFMdExtra(idim, nDesignTemperature+1, sps)*forceb(idim, sps)
+              dIda(nDesignTemperature+1) = dIda(nDesignTemperature+1) + &
+                   dFMdExtra(idim+3, nDesignTemperature+1, sps)*momentb(idim, sps)
            end do
         end do
      end if

@@ -3,8 +3,8 @@
    !
    !  Differentiation of gridvelocitiesfinelevel_block in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *sfacei *sfacej *s *sfacek
-   !   with respect to varying inputs: *x *si *sj *sk pinf timeref
-   !                rhoinf veldirfreestream machgrid
+   !   with respect to varying inputs: *x *si *sj *sk gammainf pinf
+   !                timeref rhoinf veldirfreestream machgrid
    !   Plus diff mem management of: sfacei:in sfacej:in s:in sfacek:in
    !                x:in si:in sj:in sk:in
    !
@@ -100,7 +100,8 @@
    ! Compute the mesh velocity from the given mesh Mach number.
    ! vel{x,y,z}Grid0 is the ACTUAL velocity you want at the
    ! geometry. 
-   arg1d = (gammainf*pinfd*rhoinf-gammainf*pinf*rhoinfd)/rhoinf**2
+   arg1d = ((gammainfd*pinf+gammainf*pinfd)*rhoinf-gammainf*pinf*rhoinfd)&
+   &    /rhoinf**2
    arg1 = gammainf*pinf/rhoinf
    IF (arg1 .EQ. 0.0_8) THEN
    ainfd = 0.0_8
