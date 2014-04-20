@@ -1026,6 +1026,10 @@ python module libsumb
          integer(kind=inttype) :: ndesignlengthref
          integer(kind=inttype) :: ndesignsurfaceref
          integer(kind=inttype) :: ndesigndisserror
+         integer(kind=inttype) :: ndesignpressure
+         integer(kind=inttype) :: ndesigntemperature
+         integer(kind=inttype) :: ndesignreynolds
+
        end module adjointvars
 
        module inputtsstabderiv ! in :test:inputParam.f90

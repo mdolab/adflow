@@ -612,6 +612,7 @@
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: si, sj, sk
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: vol
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: volold
+   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: dadidata
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: uv
    INTEGER(kind=inttype), DIMENSION(:, :, :), POINTER :: elemid
    INTEGER(kind=portype), DIMENSION(:, :, :), POINTER :: pori, porj, &

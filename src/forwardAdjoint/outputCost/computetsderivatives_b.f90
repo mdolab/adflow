@@ -5,7 +5,8 @@
    !   gradient     of useful results: lengthref dragdirection liftdirection
    !                moment dcdalphadot coef0 force dcdalpha
    !   with respect to varying inputs: machgrid lengthref machcoef
-   !                dragdirection liftdirection moment force
+   !                dragdirection liftdirection gammainf pinf rhoinfdim
+   !                pinfdim pref moment force
    !
    !     ******************************************************************
    !     *                                                                *
@@ -68,8 +69,9 @@
    INTEGER(kind=inttype) :: i, sps, nn
    !speed of sound: for normalization of q derivatives
    REAL(kind=realtype) :: a
+   REAL(kind=realtype) :: ab
    REAL(kind=realtype) :: scaledim, fact, factmoment
-   REAL(kind=realtype) :: factb, factmomentb
+   REAL(kind=realtype) :: scaledimb, factb, factmomentb
    ! Functions
    REAL(kind=realtype), DIMENSION(ntimeintervalsspectral) :: dphix, dphiy&
    &  , dphiz
@@ -80,13 +82,19 @@
    REAL(kind=realtype) :: TSALPHA, TSALPHADOT
    EXTERNAL TERMINATE
    REAL(kind=realtype) :: arg1
+   REAL(kind=realtype) :: temp2
+   REAL(kind=realtype) :: temp1
    REAL(kind=realtype) :: temp0
-   REAL(kind=realtype) :: temp1b
+   REAL(kind=realtype) :: tempb0
+   REAL*8 :: temp3b(8)
+   REAL(kind=realtype) :: temp2b2
+   REAL(kind=realtype) :: temp2b1
+   REAL(kind=realtype) :: temp2b0
+   REAL(kind=realtype) :: tempb
+   REAL(kind=realtype) :: temp2b
+   REAL(kind=realtype) :: temp3b0
    INTRINSIC SQRT
    REAL(kind=realtype) :: temp
-   REAL*8 :: temp1b2(8)
-   REAL(kind=realtype) :: temp1b1
-   REAL(kind=realtype) :: temp1b0
    !
    !     ******************************************************************
    !     *                                                                *
@@ -194,11 +202,21 @@
    &                                        dcdalphadot(i), coef0dot(i))
    END DO
    a = SQRT(gammainf*pinfdim/rhoinfdim)
-   temp1b2 = a*2*dcdalphadotb/lengthref
-   machgridb = SUM(dcdalphadot*temp1b2)
-   lengthrefb = lengthrefb + SUM(-(dcdalphadot*machgrid*temp1b2/&
-   &        lengthref))
-   dcdalphadotb = machgrid*temp1b2
+   temp3b = 2*a*dcdalphadotb/lengthref
+   temp3b0 = 2*SUM(dcdalphadot*machgrid*dcdalphadotb)/lengthref
+   machgridb = SUM(dcdalphadot*temp3b)
+   ab = temp3b0
+   lengthrefb = lengthrefb - a*temp3b0/lengthref
+   dcdalphadotb = machgrid*temp3b
+   temp2 = gammainf*pinfdim/rhoinfdim
+   IF (temp2 .EQ. 0.0_8) THEN
+   temp2b2 = 0.0
+   ELSE
+   temp2b2 = ab/(2.0*SQRT(temp2)*rhoinfdim)
+   END IF
+   gammainfb = pinfdim*temp2b2
+   pinfdimb = gammainf*temp2b2
+   rhoinfdimb = -(temp2*temp2b2)
    resbasecoefb = 0.0_8
    DO i=8,1,-1
    coef0dotb = 0.0_8
@@ -251,39 +269,49 @@
    forceb(1, sps) = forceb(1, sps) + fact*basecoefb(sps, 3)
    factb = factb + force(1, sps)*basecoefb(sps, 3)
    basecoefb(sps, 3) = 0.0_8
-   temp1b0 = fact*basecoefb(sps, 2)
+   temp2b0 = fact*basecoefb(sps, 2)
    factb = factb + (force(1, sps)*dragdirection(1)+force(2, sps)*&
    &          dragdirection(2)+force(3, sps)*dragdirection(3))*basecoefb(sps&
    &          , 2)
-   forceb(1, sps) = forceb(1, sps) + dragdirection(1)*temp1b0
-   dragdirectionb(1) = dragdirectionb(1) + force(1, sps)*temp1b0
-   forceb(2, sps) = forceb(2, sps) + dragdirection(2)*temp1b0
-   dragdirectionb(2) = dragdirectionb(2) + force(2, sps)*temp1b0
-   forceb(3, sps) = forceb(3, sps) + dragdirection(3)*temp1b0
-   dragdirectionb(3) = dragdirectionb(3) + force(3, sps)*temp1b0
+   forceb(1, sps) = forceb(1, sps) + dragdirection(1)*temp2b0
+   dragdirectionb(1) = dragdirectionb(1) + force(1, sps)*temp2b0
+   forceb(2, sps) = forceb(2, sps) + dragdirection(2)*temp2b0
+   dragdirectionb(2) = dragdirectionb(2) + force(2, sps)*temp2b0
+   forceb(3, sps) = forceb(3, sps) + dragdirection(3)*temp2b0
+   dragdirectionb(3) = dragdirectionb(3) + force(3, sps)*temp2b0
    basecoefb(sps, 2) = 0.0_8
-   temp1b1 = fact*basecoefb(sps, 1)
+   temp2b1 = fact*basecoefb(sps, 1)
    factb = factb + (force(1, sps)*liftdirection(1)+force(2, sps)*&
    &          liftdirection(2)+force(3, sps)*liftdirection(3))*basecoefb(sps&
    &          , 1)
-   forceb(1, sps) = forceb(1, sps) + liftdirection(1)*temp1b1
-   liftdirectionb(1) = liftdirectionb(1) + force(1, sps)*temp1b1
-   forceb(2, sps) = forceb(2, sps) + liftdirection(2)*temp1b1
-   liftdirectionb(2) = liftdirectionb(2) + force(2, sps)*temp1b1
-   forceb(3, sps) = forceb(3, sps) + liftdirection(3)*temp1b1
-   liftdirectionb(3) = liftdirectionb(3) + force(3, sps)*temp1b1
+   forceb(1, sps) = forceb(1, sps) + liftdirection(1)*temp2b1
+   liftdirectionb(1) = liftdirectionb(1) + force(1, sps)*temp2b1
+   forceb(2, sps) = forceb(2, sps) + liftdirection(2)*temp2b1
+   liftdirectionb(2) = liftdirectionb(2) + force(2, sps)*temp2b1
+   forceb(3, sps) = forceb(3, sps) + liftdirection(3)*temp2b1
+   liftdirectionb(3) = liftdirectionb(3) + force(3, sps)*temp2b1
    basecoefb(sps, 1) = 0.0_8
    END DO
    ELSE
    machgridb = 0.0_8
+   gammainfb = 0.0_8
+   rhoinfdimb = 0.0_8
+   pinfdimb = 0.0_8
    factmomentb = 0.0_8
    factb = 0.0_8
    END IF
-   temp1b = factmomentb/(lref*lengthref)
-   factb = factb + temp1b
-   lengthrefb = lengthrefb - fact*temp1b/lengthref
-   temp0 = gammainf*pinf*lref**2*surfaceref*scaledim
-   temp = temp0*machcoef**2
-   machcoefb = -(temp0*two*2*machcoef*factb/temp**2)
+   temp2b = factmomentb/(lref*lengthref)
+   factb = factb + temp2b
+   lengthrefb = lengthrefb - fact*temp2b/lengthref
+   temp1 = machcoef**2*scaledim
+   temp0 = surfaceref*lref**2
+   temp = temp0*gammainf*pinf
+   tempb = -(two*factb/(temp**2*temp1**2))
+   tempb0 = temp1*temp0*tempb
+   gammainfb = gammainfb + pinf*tempb0
+   machcoefb = scaledim*temp*2*machcoef*tempb
+   scaledimb = temp*machcoef**2*tempb
+   pinfb = gammainf*tempb0 - pref*scaledimb/pinf**2
+   prefb = scaledimb/pinf
    END IF
    END SUBROUTINE COMPUTETSDERIVATIVES_B

@@ -33,6 +33,10 @@
       integer(kind=intType) :: nDesignLengthRef
       integer(kind=intType) :: nDesignSurfaceRef
       integer(kind=intType) :: nDesignDissError
+      integer(kind=intType) :: nDesignPressure
+      integer(kind=intType) :: nDesignTemperature
+      integer(kind=intType) :: nDesignReynolds
+      integer(kind=intType) :: nDesignReynoldsLength
       integer(kind=intType) :: nDesignExtra = 0
       real(kind=realType),dimension(:),allocatable :: dIda
       

@@ -593,6 +593,10 @@
          deallocate(flowDoms(nn,level,sps)%w, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
 
+       if( associated(flowDoms(nn,level,sps)%dadidata) ) &
+         deallocate(flowDoms(nn,level,sps)%dadidata, stat=ierr)
+       if(ierr /= 0) deallocationFailure = .true.
+
        if( associated(flowDoms(nn,level,sps)%wOld) ) &
          deallocate(flowDoms(nn,level,sps)%wOld, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.

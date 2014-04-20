@@ -30,6 +30,7 @@ subroutine getCostFunction(costFunction, force, moment, alpha, beta, liftIndex, 
 
   ! Compute the factor since we may need it below
   call adjustInflowAngle(alpha, beta, liftIndex)
+  call referenceState()
   scaleDim = pRef/pInf
 
   fact = two/(gammaInf*pInf*MachCoef**2 &

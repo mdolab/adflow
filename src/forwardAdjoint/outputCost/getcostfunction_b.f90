@@ -3,11 +3,13 @@
    !
    !  Differentiation of getcostfunction in reverse (adjoint) mode (with options i4 dr8 r8):
    !   gradient     of useful results: objvalue
-   !   with respect to varying inputs: machgrid lengthref machcoef
-   !                pointref moment objvalue alpha force beta
-   !   RW status of diff variables: machgrid:out lengthref:out machcoef:out
-   !                pointref:out moment:out objvalue:in-zero alpha:out
-   !                force:out beta:out
+   !   with respect to varying inputs: tempfreestream machgrid lengthref
+   !                machcoef pointref pref moment objvalue alpha force
+   !                beta
+   !   RW status of diff variables: tempfreestream:out machgrid:out
+   !                lengthref:out machcoef:out pointref:out pref:out
+   !                moment:out objvalue:in-zero alpha:out force:out
+   !                beta:out
    SUBROUTINE GETCOSTFUNCTION_B(costfunction, force, forceb, moment, &
    &  momentb, alpha, alphab, beta, betab, liftindex, objvalue, objvalueb)
    USE INPUTTIMESPECTRAL
@@ -33,7 +35,7 @@
    REAL(kind=realtype) :: objvalueb
    ! Working
    REAL(kind=realtype) :: fact, factmoment, scaledim, ovrnts
-   REAL(kind=realtype) :: factb, factmomentb
+   REAL(kind=realtype) :: factb, factmomentb, scaledimb
    REAL(kind=realtype), DIMENSION(3) :: cf, cm
    REAL(kind=realtype), DIMENSION(3) :: cfb, cmb
    REAL(kind=realtype) :: elasticmomentx, elasticmomenty, elasticmomentz
@@ -45,15 +47,21 @@
    REAL(kind=realtype) :: bendingmomentb
    INTEGER(kind=inttype) :: sps
    INTEGER :: branch
+   REAL(kind=realtype) :: temp1
    REAL(kind=realtype) :: temp0
-   REAL(kind=realtype) :: temp1b
+   REAL(kind=realtype) :: tempb0
+   REAL(kind=realtype) :: temp2b3
+   REAL(kind=realtype) :: temp2b2
+   REAL(kind=realtype) :: temp2b1
+   REAL(kind=realtype) :: temp2b0
+   REAL(kind=realtype) :: tempb
+   REAL(kind=realtype) :: temp2b
    REAL(kind=realtype) :: temp
-   REAL(kind=realtype) :: temp1b3
-   REAL(kind=realtype) :: temp1b2
-   REAL(kind=realtype) :: temp1b1
-   REAL(kind=realtype) :: temp1b0
    ! Compute the factor since we may need it below
    CALL ADJUSTINFLOWANGLE(alpha, beta, liftindex)
+   CALL PUSHREAL8(pref)
+   CALL PUSHREAL8(gammainf)
+   CALL REFERENCESTATE()
    scaledim = pref/pinf
    fact = two/(gammainf*pinf*machcoef**2*surfaceref*lref**2*scaledim)
    factmoment = fact/(lengthref*lref)
@@ -263,13 +271,13 @@
    liftdirectionb = 0.0_8
    forceb = 0.0_8
    DO sps=ntimeintervalsspectral,1,-1
-   temp1b0 = ovrnts*objvalueb
-   forceb(1, sps) = forceb(1, sps) + liftdirection(1)*temp1b0
-   liftdirectionb(1) = liftdirectionb(1) + force(1, sps)*temp1b0
-   forceb(2, sps) = forceb(2, sps) + liftdirection(2)*temp1b0
-   liftdirectionb(2) = liftdirectionb(2) + force(2, sps)*temp1b0
-   forceb(3, sps) = forceb(3, sps) + liftdirection(3)*temp1b0
-   liftdirectionb(3) = liftdirectionb(3) + force(3, sps)*temp1b0
+   temp2b0 = ovrnts*objvalueb
+   forceb(1, sps) = forceb(1, sps) + liftdirection(1)*temp2b0
+   liftdirectionb(1) = liftdirectionb(1) + force(1, sps)*temp2b0
+   forceb(2, sps) = forceb(2, sps) + liftdirection(2)*temp2b0
+   liftdirectionb(2) = liftdirectionb(2) + force(2, sps)*temp2b0
+   forceb(3, sps) = forceb(3, sps) + liftdirection(3)*temp2b0
+   liftdirectionb(3) = liftdirectionb(3) + force(3, sps)*temp2b0
    END DO
    lengthrefb = 0.0_8
    dragdirectionb = 0.0_8
@@ -284,13 +292,13 @@
    dragdirectionb = 0.0_8
    forceb = 0.0_8
    DO sps=ntimeintervalsspectral,1,-1
-   temp1b1 = ovrnts*objvalueb
-   forceb(1, sps) = forceb(1, sps) + dragdirection(1)*temp1b1
-   dragdirectionb(1) = dragdirectionb(1) + force(1, sps)*temp1b1
-   forceb(2, sps) = forceb(2, sps) + dragdirection(2)*temp1b1
-   dragdirectionb(2) = dragdirectionb(2) + force(2, sps)*temp1b1
-   forceb(3, sps) = forceb(3, sps) + dragdirection(3)*temp1b1
-   dragdirectionb(3) = dragdirectionb(3) + force(3, sps)*temp1b1
+   temp2b1 = ovrnts*objvalueb
+   forceb(1, sps) = forceb(1, sps) + dragdirection(1)*temp2b1
+   dragdirectionb(1) = dragdirectionb(1) + force(1, sps)*temp2b1
+   forceb(2, sps) = forceb(2, sps) + dragdirection(2)*temp2b1
+   dragdirectionb(2) = dragdirectionb(2) + force(2, sps)*temp2b1
+   forceb(3, sps) = forceb(3, sps) + dragdirection(3)*temp2b1
+   dragdirectionb(3) = dragdirectionb(3) + force(3, sps)*temp2b1
    END DO
    lengthrefb = 0.0_8
    liftdirectionb = 0.0_8
@@ -306,15 +314,15 @@
    forceb = 0.0_8
    factb = 0.0_8
    DO sps=ntimeintervalsspectral,1,-1
-   temp1b2 = ovrnts*fact*objvalueb
+   temp2b2 = ovrnts*fact*objvalueb
    factb = factb + ovrnts*(force(1, sps)*liftdirection(1)+force(2, &
    &        sps)*liftdirection(2)+force(3, sps)*liftdirection(3))*objvalueb
-   forceb(1, sps) = forceb(1, sps) + liftdirection(1)*temp1b2
-   liftdirectionb(1) = liftdirectionb(1) + force(1, sps)*temp1b2
-   forceb(2, sps) = forceb(2, sps) + liftdirection(2)*temp1b2
-   liftdirectionb(2) = liftdirectionb(2) + force(2, sps)*temp1b2
-   forceb(3, sps) = forceb(3, sps) + liftdirection(3)*temp1b2
-   liftdirectionb(3) = liftdirectionb(3) + force(3, sps)*temp1b2
+   forceb(1, sps) = forceb(1, sps) + liftdirection(1)*temp2b2
+   liftdirectionb(1) = liftdirectionb(1) + force(1, sps)*temp2b2
+   forceb(2, sps) = forceb(2, sps) + liftdirection(2)*temp2b2
+   liftdirectionb(2) = liftdirectionb(2) + force(2, sps)*temp2b2
+   forceb(3, sps) = forceb(3, sps) + liftdirection(3)*temp2b2
+   liftdirectionb(3) = liftdirectionb(3) + force(3, sps)*temp2b2
    END DO
    lengthrefb = 0.0_8
    dragdirectionb = 0.0_8
@@ -329,15 +337,15 @@
    forceb = 0.0_8
    factb = 0.0_8
    DO sps=ntimeintervalsspectral,1,-1
-   temp1b3 = ovrnts*fact*objvalueb
+   temp2b3 = ovrnts*fact*objvalueb
    factb = factb + ovrnts*(force(1, sps)*dragdirection(1)+force(2, &
    &        sps)*dragdirection(2)+force(3, sps)*dragdirection(3))*objvalueb
-   forceb(1, sps) = forceb(1, sps) + dragdirection(1)*temp1b3
-   dragdirectionb(1) = dragdirectionb(1) + force(1, sps)*temp1b3
-   forceb(2, sps) = forceb(2, sps) + dragdirection(2)*temp1b3
-   dragdirectionb(2) = dragdirectionb(2) + force(2, sps)*temp1b3
-   forceb(3, sps) = forceb(3, sps) + dragdirection(3)*temp1b3
-   dragdirectionb(3) = dragdirectionb(3) + force(3, sps)*temp1b3
+   forceb(1, sps) = forceb(1, sps) + dragdirection(1)*temp2b3
+   dragdirectionb(1) = dragdirectionb(1) + force(1, sps)*temp2b3
+   forceb(2, sps) = forceb(2, sps) + dragdirection(2)*temp2b3
+   dragdirectionb(2) = dragdirectionb(2) + force(2, sps)*temp2b3
+   forceb(3, sps) = forceb(3, sps) + dragdirection(3)*temp2b3
+   dragdirectionb(3) = dragdirectionb(3) + force(3, sps)*temp2b3
    END DO
    lengthrefb = 0.0_8
    liftdirectionb = 0.0_8
@@ -576,18 +584,33 @@
    IF (branch .EQ. 0) THEN
    machgridb = 0.0_8
    machcoefb = 0.0_8
+   gammainfb = 0.0_8
+   pinfb = 0.0_8
+   rhoinfdimb = 0.0_8
+   pinfdimb = 0.0_8
+   prefb = 0.0_8
    ELSE
    CALL POPINTEGER4(liftindex)
    CALL COMPUTETSDERIVATIVES_B(force, forceb, moment, momentb, &
    &                          liftindex, coef0, coef0b, dcdalpha, dcdalphab&
    &                          , dcdalphadot, dcdalphadotb, dcdq, dcdqdot)
    END IF
-   temp1b = factmomentb/(lref*lengthref)
-   factb = factb + temp1b
-   lengthrefb = lengthrefb - fact*temp1b/lengthref
-   temp0 = gammainf*pinf*lref**2*surfaceref*scaledim
-   temp = temp0*machcoef**2
-   machcoefb = machcoefb - temp0*two*2*machcoef*factb/temp**2
+   temp2b = factmomentb/(lref*lengthref)
+   factb = factb + temp2b
+   lengthrefb = lengthrefb - fact*temp2b/lengthref
+   temp1 = machcoef**2*scaledim
+   temp0 = surfaceref*lref**2
+   temp = temp0*gammainf*pinf
+   tempb = -(two*factb/(temp**2*temp1**2))
+   tempb0 = temp1*temp0*tempb
+   gammainfb = gammainfb + pinf*tempb0
+   machcoefb = machcoefb + scaledim*temp*2*machcoef*tempb
+   scaledimb = temp*machcoef**2*tempb
+   pinfb = pinfb + gammainf*tempb0 - pref*scaledimb/pinf**2
+   prefb = prefb + scaledimb/pinf
+   CALL POPREAL8(gammainf)
+   CALL POPREAL8(pref)
+   CALL REFERENCESTATE_B()
    CALL ADJUSTINFLOWANGLE_B(alpha, alphab, beta, betab, liftindex)
    objvalueb = 0.0_8
    END SUBROUTINE GETCOSTFUNCTION_B

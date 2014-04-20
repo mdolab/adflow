@@ -2,7 +2,8 @@
    !  Tapenade 3.7 (r4786) - 21 Feb 2013 15:53
    !
    !  Differentiation of adjustinflowangle in reverse (adjoint) mode (with options i4 dr8 r8):
-   !   gradient     of useful results: dragdirection liftdirection
+   !   gradient     of useful results: veldirfreestream dragdirection
+   !                liftdirection
    !   with respect to varying inputs: alpha beta
    !
    !      ******************************************************************
@@ -28,6 +29,9 @@
    ! initially aligned along the positive x-direction (1,0,0)
    ! 1) rotate alpha radians cw about y or z-axis
    ! 2) rotate beta radians ccw about z or y-axis
+   refdirection(:) = zero
+   refdirection(1) = one
+   CALL PUSHREAL8ARRAY(refdirection, 3)
    ! Drag direction given by the rotation of a unit vector
    ! initially aligned along the positive x-direction (1,0,0)
    ! 1) rotate alpha radians cw about y or z-axis
@@ -48,4 +52,7 @@
    CALL POPREAL8ARRAY(refdirection, 3)
    CALL GETDIRVECTOR_B(refdirection, alpha, alphab, beta, betab, &
    &                dragdirection, dragdirectionb, liftindex)
+   CALL POPREAL8ARRAY(refdirection, 3)
+   CALL GETDIRVECTOR_B(refdirection, alpha, alphab, beta, betab, &
+   &                veldirfreestream, veldirfreestreamb, liftindex)
    END SUBROUTINE ADJUSTINFLOWANGLE_B

@@ -4,16 +4,16 @@
    !  Differentiation of block_res in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *(flowdoms.x) *(flowdoms.w)
    !                *(flowdoms.dw) *(*bcdata.fp) *(*bcdata.fv) *(*bcdata.m)
-   !                *(*bcdata.oarea) pointref moment force
+   !                *(*bcdata.oarea) pref pointref moment force
    !   with respect to varying inputs: *(flowdoms.x) *(flowdoms.w)
-   !                mach machgrid lengthref surfaceref machcoef pointref
-   !                alpha beta
+   !                pref mach tempfreestream machgrid lengthref machcoef
+   !                pointref alpha beta
    !   RW status of diff variables: *(flowdoms.x):in-out *(flowdoms.w):in-out
    !                *(flowdoms.dw):out *(*bcdata.fp):out *(*bcdata.fv):out
-   !                *(*bcdata.m):out *(*bcdata.oarea):out mach:in
-   !                machgrid:in lengthref:in surfaceref:in machcoef:in
-   !                pointref:in-out moment:out alpha:in force:out
-   !                beta:in
+   !                *(*bcdata.m):out *(*bcdata.oarea):out pref:in-out
+   !                mach:in tempfreestream:in machgrid:in lengthref:in
+   !                machcoef:in pointref:in-out moment:out alpha:in
+   !                force:out beta:in
    !   Plus diff mem management of: flowdoms.x:in flowdoms.vol:in
    !                flowdoms.w:in flowdoms.dw:in rev:in bvtj1:in bvtj2:in
    !                p:in sfacei:in sfacej:in s:in gamma:in sfacek:in
@@ -307,10 +307,10 @@
    ! the raw forces and moment form forcesAndMoments. 
    scaledimd = (prefd*pinf-pref*pinfd)/pinf**2
    scaledim = pref/pinf
-   factd = -(two*gammainf*lref**2*(((pinfd*machcoef+pinf*machcoefd)*&
-   &    scaledim+pinf*machcoef*scaledimd)*machcoef*surfaceref+pinf*machcoef*&
-   &    scaledim*(machcoefd*surfaceref+machcoef*surfacerefd))/(gammainf*pinf&
-   &    *machcoef*machcoef*surfaceref*lref*lref*scaledim)**2)
+   factd = -(two*surfaceref*lref**2*(((gammainfd*pinf+gammainf*pinfd)*&
+   &    scaledim+gammainf*pinf*scaledimd)*machcoef**2+gammainf*pinf*scaledim&
+   &    *(machcoefd*machcoef+machcoef*machcoefd))/(gammainf*pinf*machcoef*&
+   &    machcoef*surfaceref*lref*lref*scaledim)**2)
    fact = two/(gammainf*pinf*machcoef*machcoef*surfaceref*lref*lref*&
    &    scaledim)
    forced = ((cfpd+cfvd)*fact-(cfp+cfv)*factd)/fact**2

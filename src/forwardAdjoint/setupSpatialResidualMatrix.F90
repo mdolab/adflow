@@ -54,6 +54,7 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
   alphad = zero
   betad  = zero
   machd  = zero
+  machCoefd = zero
   machGridd = zero
   lengthRefd = zero
   pointRefd  = zero
