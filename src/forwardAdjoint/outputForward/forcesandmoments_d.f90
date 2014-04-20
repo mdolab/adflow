@@ -5,7 +5,7 @@
    !   variations   of useful results: *(*bcdata.fp) *(*bcdata.fv)
    !                *(*bcdata.m) *(*bcdata.oarea) cfp cfv cmp cmv
    !   with respect to varying inputs: *p *x *si *sj *sk *(*viscsubface.tau)
-   !                pinf pref lengthref surfaceref machcoef pointref
+   !                gammainf pinf pref lengthref machcoef pointref
    !   Plus diff mem management of: p:in x:in si:in sj:in sk:in viscsubface:in
    !                *viscsubface.tau:in bcdata:in *bcdata.fp:in *bcdata.fv:in
    !                *bcdata.m:in *bcdata.oarea:in
@@ -401,7 +401,9 @@
    ! Loop over the quadrilateral faces of the subface and
    ! compute the viscous contribution to the force and
    ! moment and update the maximum value of y+.
+   !DEC$ NOVECTOR
    DO j=bcdata(nn)%jnbeg+1,bcdata(nn)%jnend
+   !DEC$ NOVECTOR
    DO i=bcdata(nn)%inbeg+1,bcdata(nn)%inend
    ! Store the viscous stress tensor a bit easier.
    tauxxd = viscsubfaced(nn)%tau(i, j, 1)
@@ -536,10 +538,10 @@
    ! Currently the coefficients only contain the surface integral
    ! of the pressure tensor. These values must be scaled to
    ! obtain the correct coefficients.
-   factd = -(two*gammainf*lref**2*(((pinfd*machcoef+pinf*machcoefd)*&
-   &    scaledim+pinf*machcoef*scaledimd)*machcoef*surfaceref+pinf*machcoef*&
-   &    scaledim*(machcoefd*surfaceref+machcoef*surfacerefd))/(gammainf*pinf&
-   &    *machcoef*machcoef*surfaceref*lref*lref*scaledim)**2)
+   factd = -(two*surfaceref*lref**2*(((gammainfd*pinf+gammainf*pinfd)*&
+   &    scaledim+gammainf*pinf*scaledimd)*machcoef**2+gammainf*pinf*scaledim&
+   &    *(machcoefd*machcoef+machcoef*machcoefd))/(gammainf*pinf*machcoef*&
+   &    machcoef*surfaceref*lref*lref*scaledim)**2)
    fact = two/(gammainf*pinf*machcoef*machcoef*surfaceref*lref*lref*&
    &    scaledim)
    cfpd(1) = cfpd(1)*fact + cfp(1)*factd

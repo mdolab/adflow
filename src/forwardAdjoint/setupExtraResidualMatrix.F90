@@ -55,7 +55,7 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
   real(kind=realType) :: alpharef, betaref, machref, machGridRef, machCoefRef
   real(kind=realType), dimension(3) :: rotRateRef,rotcenterRef
   real(kind=realType), dimension(3) :: rotPointRef,pointRefRef
-  real(kind=realType) :: lengthrefref, reynoldslengthref
+  real(kind=realType) :: lengthrefref, prefref, tempfreestreamref
   if (ndesignextra < 1) then
      ! No need to do anything here
      return
@@ -132,7 +132,8 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
      rotPointRef = rotPoint
      pointRefRef = pointRef
      lengthRefRef = lengthref
-     reynoldslengthref = reynoldslength
+     prefref = pref
+     tempfreestreamref = tempfreestream
      ! Do 'Coloring' and extra varibales
      do iColor = 1,nColor !set colors based on extra vars....
         !zero derivatives
@@ -151,8 +152,8 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
         rotpointd(:) = 0.0
         pointrefd(:) = 0.0
         lengthrefd = 0.0
-        reynoldslengthd = 0.0
-        reynoldsd = 0.0
+        tempfreestreamd = 0.0
+        prefd = 0.0
         if (useAD) then
            if (nDesignAoA ==icolor-1) then
               alphad = one
@@ -164,6 +165,10 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
            elseif (nDesignMachGrid==icolor-1) then
               machGridd = one
               machCoefd = one
+           elseif (nDesignPressure == icolor-1) then
+              Prefd = one
+           elseif (nDesignTemperature == icolor-1) then
+              Tempfreestreamd = one
            elseif (nDesignPointRefX==icolor-1) then
               pointrefd(1) = one
            elseif (nDesignPointRefY==icolor-1) then
@@ -172,7 +177,6 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
               pointrefd(3) = one
            elseif (nDesignLengthRef==icolor-1) then
               lengthrefd = one
-              reynoldslengthd = one
            end if
         else
            if (nDesignAoA ==icolor-1) then
@@ -193,7 +197,10 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
               pointref(3) = pointref(3) + delta_x
            elseif(nDesignLengthRef==icolor-1) then
               lengthref = lengthref + delta_x
-              reynoldslength = reynoldslength + delta_x
+           elseif (nDesignPressure == icolor-1) then
+              Pref = pref + delta_x
+           elseif (nDesignTemperature == icolor-1) then
+              Tempfreestream  = tempfreestream + delta_x
            end if
         end if
 
@@ -276,7 +283,8 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
      rotPoint = rotPointRef
      pointRef = pointRefRef
      LengthRef = LengthRefRef
-     ReynoldsLength = ReynoldsLengthRef
+     pref = prefref
+     tempfreestream = tempfreestreamref
   end do domainLoopAD
 
   ! Deallocate and reset Values

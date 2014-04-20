@@ -82,8 +82,12 @@ class SUMB(AeroSolver):
         The list of options to use with SUmb. This keyword arguement
         is NOT OPTIONAL. It must always be provided. It must contain, at least
         the \'gridFile\' entry for the filename of the grid to load
+    debug : bool
+        Set this flag to true when debugging with a symbolic
+        debugger. The MExt module deletes the copied .so file when not
+        required which causes issues debugging. 
         """
-    def __init__(self, comm=None, options=None):
+    def __init__(self, comm=None, options=None, debug=False):
 
         # Load the compiled module using MExt, allowing multiple
         # imports
@@ -91,7 +95,7 @@ class SUMB(AeroSolver):
             self.sumb
         except:
             curDir = os.path.dirname(os.path.realpath(__file__))
-            self.sumb = MExt.MExt('libsumb',[curDir])._module
+            self.sumb = MExt.MExt('libsumb', [curDir], debug=debug)._module
 
         # Information for base class:
         name = 'SUMB'
@@ -1746,7 +1750,8 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
                 # to the altitude:
                 tmp = {}
                 self.curAP.evalFunctionsSens(tmp, ['P', 'T'])
-
+                print ('dIdP:',dIdP,   tmp[self.curAP['P']][self.curAP.DVNames['altitude']])
+                print ('dIdT:',dIdT,   tmp[self.curAP['T']][self.curAP.DVNames['altitude']])
                 # Chain-rule to get the final derivative:
                 funcsSens[self.curAP.DVNames[dv]] = (
                     tmp[self.curAP['P']][self.curAP.DVNames['altitude']]*dIdP +

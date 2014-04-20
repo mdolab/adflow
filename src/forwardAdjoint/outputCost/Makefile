@@ -42,6 +42,8 @@ FF90_OBJECTS =  adjustinflowangle_b.o\
 		getcostfunction_b.o\
 		getdirvector_b.o\
 		vectorrotation_b.o\
+		referencestate_b.o\
+		computegamma_b.o\
 
 #      ******************************************************************
 #      *                                                                *
