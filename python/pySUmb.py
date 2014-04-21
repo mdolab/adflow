@@ -518,25 +518,6 @@ steady rotations and specifying an aeroProblem')
         if self.curAP.sumbData.states is None:
             self.resetFlow(aeroProblem)
 
-        # Check to see if setting the aeroProbelm (which may have updated the mesh)
-        self.sumb.killsignals.routinefailed = self.comm.allreduce(
-            bool(self.sumb.killsignals.routinefailed), op=MPI.LOR)
-
-        if self.sumb.killsignals.routinefailed:
-            if self.comm.rank == 0:
-                print("Fatal failure during mesh warp! Bad mesh is "
-                      "written in output directory as failed_mesh.cgns")
-            fileName = os.path.join(self.getOption('outputDirectory'),
-                                    'failed_mesh.cgns')
-            self.writeMeshFile(fileName)
-            self.curAP.solveFailed = True
-            self.curAP.fatalFail = True
-            return
-
-        # Reset Fail Flags
-        self.sumb.killsignals.routinefailed =  False
-        self.sumb.killsignals.fatalfail = False
-
         # Possibly release adjoint memory 
         self.releaseAdjointMemory()
 
@@ -1750,8 +1731,6 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
                 # to the altitude:
                 tmp = {}
                 self.curAP.evalFunctionsSens(tmp, ['P', 'T'])
-                print ('dIdP:',dIdP,   tmp[self.curAP['P']][self.curAP.DVNames['altitude']])
-                print ('dIdT:',dIdT,   tmp[self.curAP['T']][self.curAP.DVNames['altitude']])
                 # Chain-rule to get the final derivative:
                 funcsSens[self.curAP.DVNames[dv]] = (
                     tmp[self.curAP['P']][self.curAP.DVNames['altitude']]*dIdP +
@@ -1888,10 +1867,6 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         """Update the SUmb internal geometry info, if necessary."""
 
         if self._updateGeomInfo and self.mesh is not None:
-            # Reset Fail Flags
-            self.sumb.killsignals.routinefailed =  False
-            self.sumb.killsignals.fatalfail = False
-
             self.mesh.warpMesh()
             newGrid = self.mesh.getSolverGrid()
 
@@ -2226,7 +2201,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
 
         return outVec
 
-    def computeArea(self, axis, groupName=None, TS=0):
+    def computeArea(self, aeroProblem, funcs, axis, groupName=None, TS=0):
         """
         Compute the projected area of the surface mesh
 
@@ -2240,7 +2215,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         Output Arguments:
             Area: The resulting area
             """
-
+        self.setAeroProblem(aeroProblem)
         cfdForcePts = self.getForcePoints(TS)
         if len(cfdForcePts) > 0:
             areas = self.sumb.getareas(cfdForcePts.T, TS+1, axis).T
@@ -2255,9 +2230,11 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         # Now we do an mpiallreduce with sum:
         area = self.comm.allreduce(numpy.sum(areas), op=MPI.SUM)
 
-        return area
+        key = self.curAP.name + '_area'
+        self.curAP.funcNames['area'] = key
+        funcs[key] = area
 
-    def computeAreaSensitivity(self, axis, groupName=None, TS=0):
+    def computeAreaSensitivity(self, aeroProblem, funcsSens, axis, groupName=None, TS=0):
         """
         Compute the projected area of the surface mesh
 
@@ -2271,20 +2248,20 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         Output Arguments:
             Area: The resulting area
             """
-
+        self.setAeroProblem(aeroProblem)
         cfdForcePts = self.getForcePoints(TS)
 
         if len(cfdForcePts) > 0:
             da = self.sumb.getareasensitivity(cfdForcePts.T, TS+1, axis).T
         else:
             da = numpy.zeros((0,3), self.dtype)
-        # end if
 
         if groupName is not None:
             da = self.mesh.sectionVectorByFamily(groupName, da)
-        # end if
+            da = self.mesh.expandVectorByFamily(groupName, da)
 
-        return da
+        funcsSens[self.curAP.name + '_area'] = self.DVGeo.totalSensitivity(
+            da, ptSetName=self.curAP.ptSetName, comm=self.comm)
 
     def _getObjective(self, objective):
         """Check to see if objective is one of the possible
@@ -2545,6 +2522,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             'printiterations':[bool, True],
             'printtiming':[bool, True],
             'setmonitor':[bool, True],
+            'printwarnings':[bool, True],
             'monitorvariables':[list, ['cpu','resrho','cl', 'cd']],
             'surfacevariables':[list, ['cp','vx', 'vy','vz', 'mach']],
             'volumevariables':[list, ['resrho']],
@@ -2768,6 +2746,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
 
             # Misc Paramters
             'printiterations':{'location':'inputiteration.printiterations'},
+            'printwarnings':{'location':'inputiteration.printwarnings'},
             'printtiming':{'location':'inputadjoint.printtiming'},
             'setmonitor':{'location':'inputadjoint.setmonitor'},
 
