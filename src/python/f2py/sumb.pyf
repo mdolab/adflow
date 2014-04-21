@@ -661,6 +661,7 @@ python module libsumb
          real(kind=realtype) allocatable,dimension(:) :: cdisrk
          logical :: freezeturbsource
          logical :: printiterations
+         logical :: printwarnings
        end module inputiteration
 
        module inputmotion ! in :sumb:../../modules/inputParam.f90
