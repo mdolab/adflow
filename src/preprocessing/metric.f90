@@ -168,6 +168,7 @@
        use communication
        use inputTimeSpectral
        use checkVolBlock
+       use inputIteration
        implicit none
 !
 !      Subroutine arguments.
@@ -741,7 +742,7 @@
          ! Print a warning in case bad volumes were found. Only processor
          ! 0 prints this warning.
 
-         if(myID == 0 .and. nVolBadGlobal > 0) then
+         if(myID == 0 .and. nVolBadGlobal > 0 .and. printWarnings) then
            write(integerString,"(i10)") nVolBadGlobal
            integerString = adjustl(integerString)
            integerString = trim(integerString)

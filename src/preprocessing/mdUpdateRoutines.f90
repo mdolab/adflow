@@ -69,6 +69,7 @@ subroutine updateMetricsAllLevels
   use block
   use iteration
   use inputphysics
+  use inputIteration
   implicit none
   !
   !      Local variables.
@@ -91,8 +92,9 @@ subroutine updateMetricsAllLevels
         call metric(nn)
      end if
 
-
-     call checkSymmetry(nn)
+     if (printWarnings) then
+        call checkSymmetry(nn)
+     end if
   enddo
 
 end subroutine updateMetricsAllLevels

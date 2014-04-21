@@ -407,6 +407,7 @@
 
        logical :: freezeTurbSource
        logical :: printIterations
+       logical :: printWarnings
 
        end module inputIteration
 
