@@ -564,7 +564,6 @@ steady rotations and specifying an aeroProblem')
         # Reset Fail Flags
         self.sumb.killsignals.routinefailed =  False
         self.sumb.killsignals.fatalfail = False
-        self.solveFailed =  self.fatalFail = False
 
         if (self.getOption('equationMode').lower() == 'steady' or
             self.getOption('equationMode').lower() == 'time spectral'):
@@ -576,13 +575,13 @@ steady rotations and specifying an aeroProblem')
             bool(self.sumb.killsignals.routinefailed), op=MPI.LOR)
 
         if self.sumb.killsignals.routinefailed:
-            print('Fatal failure during mesh warp! Bad mesh is \
-            written in output directory as failed_mesh.cgns')
+            print("Fatal failure during mesh warp! Bad mesh is "
+                  "written in output directory as failed_mesh.cgns")
             fileName = os.path.join(self.getOption('outputDirectory'),
                                     'failed_mesh.cgns')
             self.writeMeshFile(fileName)
-            self.fatalFail = True
-            self.solveFailed = True
+            self.curAP.fatalFail = True
+            self.curAP.solveFailed = True
             return
 
         t1 = time.time()
