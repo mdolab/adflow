@@ -22,7 +22,7 @@ v. 1.0  - Original pyAero Framework Implementation (RP,SM 2008)
 # =============================================================================
 # Imports
 # =============================================================================
-import os, sys
+import os
 import time
 import copy
 import numpy
@@ -85,7 +85,7 @@ class SUMB(AeroSolver):
     debug : bool
         Set this flag to true when debugging with a symbolic
         debugger. The MExt module deletes the copied .so file when not
-        required which causes issues debugging. 
+        required which causes issues debugging.
         """
     def __init__(self, comm=None, options=None, debug=False):
 
@@ -230,14 +230,14 @@ class SUMB(AeroSolver):
         patchnames = []
         patchsizes = []
         for i in xrange(npatch):
-            tmp = numpy.zeros(256,'c')
+            tmp = numpy.zeros(256, 'c')
             self.sumb.getpatchname(i+1, tmp)
             patchnames.append(
                 ''.join([tmp[j] for j in range(256)]).lower().strip())
             patchsizes.append(self.sumb.getpatchsize(i+1))
 
         conn = self.getForceConnectivity()
-        pts  = self.getForcePoints()
+        pts = self.getForcePoints()
         self.mesh.setExternalSurface(patchnames, patchsizes, conn, pts)
 
         # Get a inital copy of coordinates and save
@@ -819,7 +819,6 @@ steady rotations and specifying an aeroProblem')
             # convergnce after 2 iterations. We slightly lower the
             # tolerance at each iteration to prevent this.
             self.setOption('l2convergence', 0.75*self.getOption('l2convergence'))
-            
             # Set current alpha
             aeroProblem.alpha = anm1
 
@@ -1054,7 +1053,7 @@ steady rotations and specifying an aeroProblem')
             for iProc in xrange(len(pts)):
                 nPt += len(pts[iProc])
                 nCell += len(conn[iProc])//4
-     
+
             # Open output file
             f = open(fileName, 'w')
 
@@ -1120,9 +1119,9 @@ steady rotations and specifying an aeroProblem')
         self.sumb.referencestate()
         self.sumb.setflowinfinitystate()
 
-        strLvl =  self.getOption('MGStartLevel')
+        strLvl = self.getOption('MGStartLevel')
         nLevels = self.sumb.inputiteration.nmglevels
-        if strLvl < 0 or strLvl > nLevels :
+        if strLvl < 0 or strLvl > nLevels:
             strLvl = nLevels
 
         self.sumb.inputiteration.mgstartlevel = strLvl
@@ -1202,7 +1201,6 @@ steady rotations and specifying an aeroProblem')
         """
         See MultiBlockMesh.py for more info
         """
-
         self._updateGeomInfo = True
         if self.mesh is not None:
             self.mesh.setSurfaceCoordinates(coordinates, groupName)
@@ -1222,6 +1220,9 @@ steady rotations and specifying an aeroProblem')
         # reference; only check the DV changes
         if aeroProblem is self.curAP:
             if self.DVGeo is not None:
+                if not ptSetName in self.DVGeo.points:
+                    # DVGeo appeared and we have not embedded points!
+                    self.DVGeo.addPointSet(self.coords0, ptSetName)
                 if not self.DVGeo.pointSetUpToDate(ptSetName):
                     self.setSurfaceCoordinates(self.DVGeo.update(ptSetName), 'all')
                     self.updateGeometryInfo()
