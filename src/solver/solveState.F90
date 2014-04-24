@@ -294,8 +294,18 @@ subroutine solveState
   ! Determine and write the initial convergence info.
   ! Note that if single grid startup iterations were made, this
   ! value is printed twice.
-
   call convergenceInfo
+  if(routineFailed)then
+     ! Release the memory of cycling.
+     deallocate(cycling, stat=ierr)
+     if(ierr /= 0)                 &
+          call terminate("solveState", &
+          "Deallocation failure for cycling")
+     ! Reset the L2Convergence in case it had been changed above
+     L2Conv = L2ConvSave
+     return
+  endif
+
   !
   !         In a components-break-down run, do not execute MG, but exit
   !
@@ -395,7 +405,6 @@ subroutine solveState
 #endif
 
         ! Determine and write the convergence info.
-
         call convergenceInfo
 
         !check for divergence or nan here
@@ -407,7 +416,6 @@ subroutine solveState
                 "Deallocation failure for cycling")
            ! Reset the L2Convergence in case it had been changed above
            L2Conv = L2ConvSave
-
            return
         endif
 
