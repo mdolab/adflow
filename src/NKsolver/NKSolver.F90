@@ -367,6 +367,10 @@ subroutine LSCubic(x, f, g, y, w, fnorm, ynorm, gnorm, nfevals, flag)
   nfevals = nfevals + 1
 
   call VecNorm(g, NORM_2, gnorm, ierr)
+  if (ierr == PETSC_ERR_FP) then
+     flag = .False.
+     return
+  end if
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Sufficient reduction 
@@ -407,6 +411,11 @@ subroutine LSCubic(x, f, g, y, w, fnorm, ynorm, gnorm, nfevals, flag)
         lambda = .1_realType*lambda
      else           
         lambda = lambdatemp
+     end if
+
+     if (isnan(lambda)) then
+        flag = .False.
+        exit cubic_loop
      end if
 #ifdef USE_COMPLEX
      call VecWAXPY(w, cmplx(-lambda,0.0), y, x, ierr)
@@ -561,20 +570,25 @@ subroutine LSNM(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals,flag)
      
      ! Compute the norm at the new trial location
      call VecNorm(g, NORM_2, gnorm, ierr)
-     call EChk(ierr,__FILE__,__LINE__)
-
-     max_val = func_evals(iter_k) + alpha*gamma*initSlope
-
-     ! Loop over the previous, m function values and find the max:
-     do j=iter_k-1,iter_k-iter_m+1,-1
-        max_val = max(max_val,func_evals(j) + alpha*gamma*initSlope)
-     end do
-        
-     ! Sufficient reduction 
-     if (0.5_realType*gnorm*gnorm <= max_val) then
-        exit backtrack
-     else
+     if (ierr == PETSC_ERR_FP) then ! Error code 72 floating point error
+        ! Just apply the step limit and keep going (back to the loop start)
         alpha = alpha * sigma
+     else
+        call EChk(ierr,__FILE__,__LINE__)
+
+        max_val = func_evals(iter_k) + alpha*gamma*initSlope
+
+        ! Loop over the previous, m function values and find the max:
+        do j=iter_k-1,iter_k-iter_m+1,-1
+           max_val = max(max_val,func_evals(j) + alpha*gamma*initSlope)
+        end do
+        
+        ! Sufficient reduction 
+        if (0.5_realType*gnorm*gnorm <= max_val) then
+           exit backtrack
+        else
+           alpha = alpha * sigma
+        end if
      end if
   end do backtrack
 
