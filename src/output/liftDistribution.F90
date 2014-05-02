@@ -237,8 +237,8 @@ subroutine writeLiftDistributions(sps, fileID)
 
      ! Get the bounding box for the entire geometry
      do i=1,3
-        xmin(i) = minval(uniqueNodes(i,:))
-        xmax(i) = maxval(uniqueNodes(i,:))
+        xmin(i) = minval(uniqueNodes(i,1:nUnique))
+        xmax(i) = maxval(uniqueNodes(i,1:nUnique))
      end do
 
      do iDist=1,nLiftDists
@@ -722,7 +722,7 @@ subroutine liftDistGatherForcesAndNodes(sps)
 
   ! Process the unique set of forces and tractions using the finite elemnent data:
   if (myid == 0) then
-     
+
      ! Assign the unique nodes:
      do i=1,nNodesTotal
         uniqueNodes(:, link(i)) = allNodes(:, i)
