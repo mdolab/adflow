@@ -285,18 +285,18 @@ class SUMB(AeroSolver):
             An additional string that can be used to destingush
             between multiple lift distributions in the output.
         """
+        if groupName is None:
+            groupTag = ""
+        else:
+            groupTag = '%s: '% groupName
 
         direction=direction.lower()
         if direction not in ['x','y','z']:
-            mpiPrint(' Error: \'direction\' must be one of \'x\', \
-\'y\', \'z\'', comm=self.comm)
-            groupTag = '%s: '% groupName
-            return
-        else:
-            groupTag = ''
+            if direction not in ['x','y','z']:
+                raise Error("direction must be one of 'x', 'y', or 'z'")
 
-        if groupName is not None:
-            raise Error('Lift distributions by group is not yet supported')
+        # Determine the mask for the cells
+        mask = self._getCellGroupMask(groupName)
 
         if direction == 'x':
             dirVec = [1.0, 0.0, 0.0]
@@ -312,7 +312,7 @@ class SUMB(AeroSolver):
             self.nLiftDist + 1, groupTag, direction)
         self.nLiftDist += 1
 
-        self.sumb.addliftdistribution(nSegments, dirVec, dirInd, distName)
+        self.sumb.addliftdistribution(nSegments, dirVec, dirInd, distName, mask)
 
     def addSlices(self, direction, positions, sliceType='relative',
                   groupName=None):
@@ -342,22 +342,21 @@ class SUMB(AeroSolver):
             currently supported.
             """
 
-        if groupName is not None:
-            raise Error('Slices by group is not yet supported')
+        if groupName is None:
+            groupTag = ""
         else:
-            groupTag = ''
+            groupTag = '%s: '% groupName
+
+        # Determine the mask for the cells
+        mask = self._getCellGroupMask(groupName)
 
         direction = direction.lower()
-        if direction not in ['x','y','z']:
-            mpiPrint(' Error: \'direction\' must be one of \'x\', \
-\'y\', \'z\'', comm=self.comm)
-            return
+        if direction not in ['x', 'y', 'z']:
+            raise Error("'direction' must be one of 'x', 'y', or 'z'")
 
         sliceType = sliceType.lower()
         if sliceType not in ['relative', 'absolute']:
-            mpiPrint(' Error: \'sliceType\' must be \'relative\' or \
-\'absolute\'', comm=self.comm)
-            return
+            raise Error("'sliceType' must be 'relative' or 'absolute'.")
 
         positions = numpy.atleast_1d(positions)
         N = len(positions)
@@ -377,11 +376,13 @@ class SUMB(AeroSolver):
             # name...so we will number sequentially from pythhon
             j = self.nSlice + i + 1
             if sliceType == 'relative':
-                sliceName = 'Slice_%4.4d %s Para Init %s=%7.3f'% (j, groupTag, direction, positions[i])
-                self.sumb.addparaslice(sliceName, tmp[i], dirVec)
+                sliceName = 'Slice_%4.4d %s Para Init %s=%7.3f'% (
+                    j, groupTag, direction, positions[i])
+                self.sumb.addparaslice(sliceName, tmp[i], dirVec, mask)
             else:
-                sliceName = 'Slice_%4.4d %s Absolute %s=%7.3f'% (j, groupTag, direction, positions[i])
-                self.sumb.addabsslice(sliceName, tmp[i], dirVec)
+                sliceName = 'Slice_%4.4d %s Absolute %s=%7.3f'% (
+                    j, groupTag, direction, positions[i])
+                self.sumb.addabsslice(sliceName, tmp[i], dirVec, mask)
 
         self.nSlice += N
 
@@ -1188,6 +1189,62 @@ steady rotations and specifying an aeroProblem')
     #   i.e. an Aerostructural solver
     # =========================================================================
 
+    def _getCellGroupMask(self, groupName=None):
+        """
+        This function determines a mask (array of 1's and 0's) that
+        determines if the cell in the globally reduced set of wall
+        faces is a member of the groupName as defined by the warping.
+
+        Parameters
+        ----------
+        groupName : str
+            The name of the family group defined in the warping
+
+        Returns
+        -------
+        mask : numpy array of integers
+            The mask. Only returned on root proc. All other procs have
+            numpy array of length 0.
+            """
+      
+        if groupName is None:
+            localMask = []
+            for i in xrange(self.sumb.getnpatches()):
+                patchsize = self.sumb.getpatchsize(i+1)
+                nCells = patchsize[0]*patchsize[1]
+                localMask.extend(numpy.ones(nCells, 'intc'))
+        else:
+            try:
+                famList = self.mesh.familyGroup[groupName]['families']
+
+            except:
+                raise Error("The supplied family group name has not "
+                            "been added in pyWarp.")
+
+            # Now we just go through each patch and see if it in our familyList
+            localMask = []
+            for i in xrange(self.sumb.getnpatches()):
+                tmp = numpy.zeros(256, 'c')
+                self.sumb.getpatchname(i+1, tmp)
+                patchname = ''.join([tmp[j] for j in range(256)]).lower().strip()
+                patchsize = self.sumb.getpatchsize(i+1)
+                nCells = (patchsize[0]-1)*(patchsize[1]-1)
+                if patchname in famList:
+                    localMask.extend(numpy.ones(nCells, 'intc'))
+                else:
+                    localMask.extend(numpy.zeros(nCells, 'intc'))
+
+        # Now we need to gather all of the local masks to the root
+        # proc.
+        tmp = self.comm.gather(localMask, root=0)
+        globalMask = []
+        if self.comm.rank == 0:
+            for i in range(self.nproc):
+                globalMask.extend(tmp[i])
+            globalMask = numpy.array(globalMask)
+
+        return globalMask
+    
     def getSurfaceCoordinates(self, groupName='all'):
         """
         See MultiBlockMesh.py for more info
