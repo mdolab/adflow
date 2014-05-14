@@ -33,6 +33,8 @@ module liftDistributionData
      real(kind=realType) :: chord, twist, thickness
      real(kind=realType), dimension(3) :: le, te
      real(kind=realType), dimension(3) :: pt, dir
+     integer(kind=intType) :: nMask
+     integer(kind=intType), allocatable, dimension(:) :: mask
   end type slice
 
   type liftDist
@@ -44,7 +46,8 @@ module liftDistributionData
      ! delta: The current delta spacing for the distribution
      ! slicePoints: The list of points where the slices are taken
      character(len=maxStringLen) :: distName
-     integer(kind=intType) :: nSegments, dir_ind
+     integer(kind=intType) :: nSegments, dir_ind, nMask
+     integer(kind=intType), dimension(:), allocatable :: mask
      real(kind=realType) :: dir(3)
      type(slice), dimension(:), allocatable :: slices
      real(kind=realType) :: delta

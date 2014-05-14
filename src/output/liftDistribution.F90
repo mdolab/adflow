@@ -1,4 +1,4 @@
-subroutine addLiftDistribution(nSegments, dir_vec, dir_ind, distName)
+subroutine addLiftDistribution(nSegments, dir_vec, dir_ind, distName, mask, nmask)
   !
   !      ******************************************************************
   !      *                                                                *
@@ -15,15 +15,19 @@ subroutine addLiftDistribution(nSegments, dir_vec, dir_ind, distName)
 
   ! Input parameters
   character*(*), intent(in) :: distName
-  integer(kind=intType), intent(in) :: nSegments
+  integer(kind=intType), intent(in) :: nSegments, nmask
   real(kind=realType), dimension(3) :: dir_vec
   integer(kind=intType), intent(in) :: dir_ind
+  integer(kind=intType), intent(in), dimension(nmask) :: mask
 
   nLiftDists = nLiftDists + 1
   liftDists(nLIftDists)%nSegments = nSegments
   liftDists(nLiftDists)%dir = dir_vec
   liftDists(nLiftDists)%distName = distName
   liftDists(nLIftDists)%dir_ind = dir_ind
+  liftDists(nLiftDists)%nMask = nMask
+  allocate(liftDists(nLiftDists)%mask(nMask))
+  liftDists(nLiftDists)%mask(:) = mask(:)
 
 end subroutine addLiftDistribution
 
@@ -56,7 +60,9 @@ subroutine writeSlicesFile(fileName)
   character(len=7) :: intString
   real(kind=realType), dimension(3) :: pt, dir
   character(len=maxCGNSNameLen), dimension(:), allocatable :: solNames
-  
+  integer(kind=intType), dimension(:), allocatable :: mask
+  integer(kind=intType) :: nMask
+
   ! Only write if we actually have lift distributions
   testwriteSlices: if(nParaSlices + nAbsSlices > 0) then
 
@@ -110,12 +116,17 @@ subroutine writeSlicesFile(fileName)
            end do
 
            do i=1,nAbsSlices
-              ! 'Destroy' the slice...just dealloc the data
+              ! 'Destroy' the slice...just dealloc the data...but
+              ! before we do, get the mask that was saved. 
+              allocate(mask(absSlices(i)%nmask))
+              mask(:) = absSlices(i)%mask
+              nMask = absSlices(i)%nMask
               call destroySlice(absSlices(i))
 
               ! Make new one in the same location
-              call createSlice(absSlices(i), absSlices(i)%pt, absSlices(i)%dir)
-
+              call createSlice(absSlices(i), absSlices(i)%pt, absSlices(i)%dir, &
+                   mask, nMask, .True.)
+              deallocate(mask)
               ! Integrate and write
               call integrateSlice(absSlices(i))
               call writeSlice(absSlices(i), file, ifzv+nSolVar)
@@ -256,7 +267,8 @@ subroutine writeLiftDistributions(sps, fileID)
               d%slicePts(d%dir_ind, i) = d%slicePts(d%dir_ind, i) + (i-1)*d%delta 
            end if
 
-           call createSlice(d%slices(i), d%slicePts(:, i), d%dir)
+           call createSlice(d%slices(i), d%slicePts(:, i), d%dir, &
+                d%mask, d%nmask, .False.)
            call integrateSlice(d%slices(i))
         end do
 
@@ -390,7 +402,7 @@ subroutine writeLiftDistributions(sps, fileID)
 
 end subroutine writeLiftDistributions
 
-subroutine addParaSlice(sliceName, pt, direction)
+subroutine addParaSlice(sliceName, pt, direction, mask, nmask)
   !
   !      ******************************************************************
   !      *                                                                *
@@ -408,17 +420,18 @@ subroutine addParaSlice(sliceName, pt, direction)
   ! Input parameters
   character*(*), intent(in) :: sliceName
   real(kind=realType), dimension(3), intent(in) :: pt, direction
-
+  integer(kind=intType), intent(in) :: mask(nmask), nmask
   call initializeLiftDistributionData
 
   if (myid == 0) then
      nParaSlices = nParaSlices + 1
-     call createSlice(paraSlices(nParaSlices), pt, direction)
+     call createSlice(paraSlices(nParaSlices), pt, direction, &
+          mask, nmask, .False.)
      paraSlices(nParaSlices)%sliceName = sliceName
   end if
 end subroutine addParaSlice
 
-subroutine addAbsSlice(sliceName, pt, direction)
+subroutine addAbsSlice(sliceName, pt, direction, mask, nmask)
   !
   !      ******************************************************************
   !      *                                                                *
@@ -436,12 +449,13 @@ subroutine addAbsSlice(sliceName, pt, direction)
   ! Input parameters
   character*(*), intent(in) :: sliceName
   real(kind=realType), dimension(3), intent(in) :: pt, direction
-
+  integer(kind=intType), intent(in) :: mask(nmask), nmask
   call initializeLiftDistributionData
 
   if (myid == 0) then
      nAbsSlices = nAbsSlices + 1
-     call createSlice(absSlices(nAbsSlices), pt, direction)
+     call createSlice(absSlices(nAbsSlices), pt, direction, &
+          mask, nmask, .True.)
      absSlices(nAbsSlices)%sliceName = sliceName
   end if
 
@@ -454,7 +468,7 @@ subroutine initializeLiftDistributionData
   !      * This subroutine initializes and allocates the data requried    *
   !      * for slice options.                                             *
   !      *                                                                *
-  !      * The purpose of this routine is t ost step is we need to        *
+  !      * The purpose of this routine is that we need to                 *
   !      * produce a finite-element type mesh for the entire wall         *
   !      * surface. There is a specific reason for this: The slicing      *
   !      * algorithm requies the function values to be stored at the      *
@@ -799,7 +813,7 @@ subroutine liftDistGatherForcesAndNodes(sps)
  
 end subroutine liftDistGatherForcesAndNodes
 
-subroutine createSlice(slc, pt, dir)
+subroutine createSlice(slc, pt, dir, mask, nmask, saveMask)
   !
   !      ******************************************************************
   !      *                                                                *
@@ -816,7 +830,8 @@ subroutine createSlice(slc, pt, dir)
   ! Input param
   type(slice), intent(inout) :: slc
   real(kind=realType), dimension(3), intent(in) :: pt, dir
-
+  integer(kind=intType) , intent(in) :: mask(nmask), nmask
+  logical, intent(in) :: saveMask
   ! Working param
   integer(kind=intType) :: i, j, nMax
   integer(kind=intType) :: patchIndices(4), indexSquare, jj, kk, icon, iCoor, num1, num2
@@ -844,6 +859,13 @@ subroutine createSlice(slc, pt, dir)
      end subroutine reallocateInteger2
   end interface
 
+  ! Save the mask info if we need to:
+  if (saveMask) then
+     allocate(slc%mask(nMask))
+     slc%mask(:) = mask(:)
+     slc%nmask = nmask
+  end if
+
   ! Set the info for the slic:
   slc%pt = pt
   slc%dir = dir
@@ -867,56 +889,58 @@ subroutine createSlice(slc, pt, dir)
 
   iCoor = 0
   ! Loop over the cells
+
   do i=1,nCellsTotal
-
-     ! Extract the indices and function values at each corner
-     do jj=1,4
-        patchIndices(jj) = allCells(jj, i)
-        f(jj) = fc(patchIndices(jj))
-     end do
-
-     ! Based on the values at each corner, determine which
-     ! type contour we have
-     indexSquare = 1
-
-     if (f(1) .lt. zero) indexsquare = indexsquare + 1
-     if (f(2) .lt. zero) indexsquare = indexsquare + 2
-     if (f(3) .lt. zero) indexsquare = indexsquare + 4
-     if (f(4) .lt. zero) indexsquare = indexsquare + 8
-
-     logic1 = .true.
-
-     kk = 1
-     do while (logic1)
-        ! This is the edge
-        icon = mscon1(indexSquare, kk)
-
-        if (icon == 0) then
-           logic1=.false.
-        else
-
-           ! num1, num2 are node indices
-           num1 = mscon2(icon,1) 
-           num2 = mscon2(icon,2)
-
-           iCoor = iCoor + 1
-           if (iCoor > nMax) then
-              ! Need to reallocate the arrays. Make it double the size
-              call reallocateReal2(slc%w, 2, 2*nMax, 2, nMax, .true.)
-              call reallocateInteger2(slc%ind, 2, 2*nMax, 2, nMax, .true.)
-              nMax = nMax * 2
+     if (mask(i) == 1) then
+        ! Extract the indices and function values at each corner
+        do jj=1,4
+           patchIndices(jj) = allCells(jj, i)
+           f(jj) = fc(patchIndices(jj))
+        end do
+        
+        ! Based on the values at each corner, determine which
+        ! type contour we have
+        indexSquare = 1
+        
+        if (f(1) .lt. zero) indexsquare = indexsquare + 1
+        if (f(2) .lt. zero) indexsquare = indexsquare + 2
+        if (f(3) .lt. zero) indexsquare = indexsquare + 4
+        if (f(4) .lt. zero) indexsquare = indexsquare + 8
+        
+        logic1 = .true.
+        
+        kk = 1
+        do while (logic1)
+           ! This is the edge
+           icon = mscon1(indexSquare, kk)
+           
+           if (icon == 0) then
+              logic1=.false.
+           else
+              
+              ! num1, num2 are node indices
+              num1 = mscon2(icon,1) 
+              num2 = mscon2(icon,2)
+              
+              iCoor = iCoor + 1
+              if (iCoor > nMax) then
+                 ! Need to reallocate the arrays. Make it double the size
+                 call reallocateReal2(slc%w, 2, 2*nMax, 2, nMax, .true.)
+                 call reallocateInteger2(slc%ind, 2, 2*nMax, 2, nMax, .true.)
+                 nMax = nMax * 2
+              end if
+              
+              ! Weight factors
+              slc%w(2, iCoor) = (zero - f(num1))/(f(num2) - f(num1))
+              slc%w(1, iCoor) = one - slc%w(2, icoor)
+              
+              ! Store the weight factors
+              slc%ind(:, iCoor) = (/patchIndices(num1), patchIndices(num2)/)
+              
+              kk = kk + 1
            end if
-
-           ! Weight factors
-           slc%w(2, iCoor) = (zero - f(num1))/(f(num2) - f(num1))
-           slc%w(1, iCoor) = one - slc%w(2, icoor)
-
-           ! Store the weight factors
-           slc%ind(:, iCoor) = (/patchIndices(num1), patchIndices(num2)/)
-
-           kk = kk + 1
-        end if
-     end do
+        end do
+     end if
   end do ! Cell Loop
 
   slc%nNodes = iCoor
@@ -945,6 +969,10 @@ subroutine destroySlice(slc)
 
   if (associated(slc%ind)) then
      deallocate(slc%ind) 
+  end if
+
+  if (allocated(slc%mask)) then
+     deallocate(slc%mask)
   end if
 
 end subroutine destroySlice
