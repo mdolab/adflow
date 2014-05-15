@@ -238,6 +238,7 @@ class SUMB(AeroSolver):
 
         conn = self.getForceConnectivity()
         pts = self.getForcePoints()
+
         self.mesh.setExternalSurface(patchnames, patchsizes, conn, pts)
 
         # Get a inital copy of coordinates and save
@@ -1037,7 +1038,7 @@ steady rotations and specifying an aeroProblem')
 
         # Now we need to gather the data:
         if cfdForcePts is None:
-            pts = self.comm.gather(self.getForcePoints(TS), root=0)
+            pts = self.comm.gather(self.getForcePoints(TS, groupName), root=0)
         else:
             pts = self.comm.gather(cfdForcePts)
 
@@ -1543,11 +1544,14 @@ steady rotations and specifying an aeroProblem')
 
         return forces
 
-    def getForcePoints(self, TS=0):
+    def getForcePoints(self, TS=0, groupName=None):
         [npts, ncell] = self.sumb.getforcesize()
         pts = numpy.zeros((npts, 3),self.dtype)
         if npts > 0:
             self.sumb.getforcepoints(pts.T, TS+1)
+
+        if groupName is not None:
+            pts = self.mesh.sectionVectorByFamily(groupName, pts)
 
         return pts
 
