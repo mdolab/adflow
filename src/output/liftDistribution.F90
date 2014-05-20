@@ -237,32 +237,47 @@ subroutine writeLiftDistributions(sps, fileID)
   real(kind=realType), dimension(3) :: xmin, xmax
   real(kind=realType), parameter :: tol=1e-8
   type(liftDist), pointer :: d
-  integer(kind=intType) :: i, j, iVar, iDist, sizes(6)
+  integer(kind=intType) :: i, ii, j, jj,iVar, iDist, sizes(6)
   real(kind=realType), dimension(:,:), allocatable :: values
   character(len=maxCGNSNameLen), dimension(:), allocatable :: liftDistNames
-  real(kind=realType) :: dmin, dmax, sumL, sumD, span, delta
+  real(kind=realType) :: dmin, dmax, sumL, sumD, span, delta, xCur(3)
+  integer(kind=intType) :: patchIndices(4)
   call initializeLiftDistributionData
   call liftDistGatherForcesAndNodes(sps)
 
   if (myid == 0) then 
 
-     ! Get the bounding box for the entire geometry
-     do i=1,3
-        xmin(i) = minval(uniqueNodes(i,1:nUnique))
-        xmax(i) = maxval(uniqueNodes(i,1:nUnique))
-     end do
-
      do iDist=1,nLiftDists
         d => liftDists(iDist)
+        xmin = huge(zero)
+        xmax = -huge(zero)
+        ! Get the bounding box for the entire geometry
+        do i=1, nCellsTotal
+           if (d%mask(i) == 1) then
+              ! Extract each of the 4 nodes on this quad:
+              do jj=1,4
+                 xCur = uniqueNodes(:, allCells(jj, i))
+                 ! Check the max/min on each index
+                 do ii=1,3
+                    xmin(ii) = min(xmin(ii) , xCur(ii))
+                    xmax(ii) = max(xmax(ii) , xCur(ii))
+                 end do
+              end do
+           end if
+        end do
+        
         d%delta = (xMax(d%dir_ind) - xMin(d%dir_ind))/dble((d%nSegments - 1))
         allocate(d%slicePts(3, d%nSegments))
         allocate(d%slices(d%nSegments))
+        ! Zero out all segments
         d%slicePts = zero
-        do i=1,d%nSegments
-           if (i == 1) then
-              d%slicePts(d%dir_ind, i) = d%slicePts(d%dir_ind, i) + (i-1)*d%delta + tol
-           else if (i == d%nSegments) then 
-              d%slicePts(d%dir_ind, i) = d%slicePts(d%dir_ind, i) + (i-1)*d%delta -tol
+
+        ! Set the first point to the required index on xmin plus tol.
+        d%slicePts(d%dir_ind, 1) = xMin(d%dir_ind) + tol
+
+        do i=2,d%nSegments
+           if (i == d%nSegments) then 
+              d%slicePts(d%dir_ind, i) = d%slicePts(d%dir_ind, i) + (i-1)*d%delta - tol
            else
               d%slicePts(d%dir_ind, i) = d%slicePts(d%dir_ind, i) + (i-1)*d%delta 
            end if
