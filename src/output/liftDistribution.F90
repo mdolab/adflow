@@ -265,21 +265,20 @@ subroutine writeLiftDistributions(sps, fileID)
               end do
            end if
         end do
-        
+
         d%delta = (xMax(d%dir_ind) - xMin(d%dir_ind))/dble((d%nSegments - 1))
         allocate(d%slicePts(3, d%nSegments))
         allocate(d%slices(d%nSegments))
         ! Zero out all segments
         d%slicePts = zero
 
-        ! Set the first point to the required index on xmin plus tol.
-        d%slicePts(d%dir_ind, 1) = xMin(d%dir_ind) + tol
-
-        do i=2,d%nSegments
-           if (i == d%nSegments) then 
-              d%slicePts(d%dir_ind, i) = d%slicePts(d%dir_ind, i) + (i-1)*d%delta - tol
+        do i=1,d%nSegments
+           if (i==1) then
+              d%slicePts(d%dir_ind, 1) = xMin(d%dir_ind) + tol
+           else if (i == d%nSegments) then 
+              d%slicePts(d%dir_ind, i) = xMin(d%dir_ind) + (i-1)*d%delta - tol
            else
-              d%slicePts(d%dir_ind, i) = d%slicePts(d%dir_ind, i) + (i-1)*d%delta 
+              d%slicePts(d%dir_ind, i) = xMin(d%dir_ind) + (i-1)*d%delta 
            end if
 
            call createSlice(d%slices(i), d%slicePts(:, i), d%dir, &
@@ -330,7 +329,7 @@ subroutine writeLiftDistributions(sps, fileID)
         ! Scaled Eta values
         dmin = minVal(d%slicePts(d%dir_ind, :))
         dmax = maxval(d%slicePts(d%dir_ind, :))
-        values(:, 1) = d%slicePts(d%dir_ind, :)/dmax
+        values(:, 1) = (d%slicePts(d%dir_ind, :) - dmin)/(dmax-dmin)
 
         ! Coordinate Varaibles
         if (d%dir_ind == 1) then! X slices
@@ -372,7 +371,6 @@ subroutine writeLiftDistributions(sps, fileID)
            sumL = sumL + half*(values(i, 5) + values(i+1, 5))
            sumD = sumD + half*(values(i, 6) + values(i+1, 6))
         end do
-
 
         ! Now compute the normalized lift, drag and elliptical since
         ! we know the sum. Note delta is non-dimensional!
