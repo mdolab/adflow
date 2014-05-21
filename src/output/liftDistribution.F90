@@ -249,8 +249,9 @@ subroutine writeLiftDistributions(sps, fileID)
 
      do iDist=1,nLiftDists
         d => liftDists(iDist)
-        xmin = huge(zero)
-        xmax = -huge(zero)
+        xmin = huge(real(zero))
+        xmax = -huge(real(zero))
+
         ! Get the bounding box for the entire geometry
         do i=1, nCellsTotal
            if (d%mask(i) == 1) then
