@@ -113,25 +113,33 @@ subroutine alloc_derivative_values(level)
            
            iBeg = BCData(mm)%icbeg; iEnd = BCData(mm)%icend
            jBeg = BCData(mm)%jcbeg; jEnd = BCData(mm)%jcend
-           
+
            allocate(flowDomsd(nn,1,sps)%BCData(mm)%norm(iBeg:iEnd,jBeg:jEnd,3), stat=ierr)
            call EChk(ierr,__FILE__,__LINE__)
            
            allocate(flowDomsd(nn,1,sps)%BCData(mm)%rface(iBeg:iEnd,jBeg:jEnd), stat=ierr)
            call EChk(ierr,__FILE__,__LINE__)
            
-           allocate(flowDomsd(nn,1,sps)%BCData(mm)%Fp(iBeg:iEnd,jBeg:jEnd,3), stat=ierr)
+           allocate(flowDomsd(nn,1,sps)%BCData(mm)%Fp(&
+                bcData(mm)%inBeg+1:bcData(mm)%inEnd, &
+                bcData(mm)%jnBeg+1:bcData(mm)%jnEnd, 3), stat=ierr)
            call EChk(ierr,__FILE__,__LINE__)
-           
-           allocate(flowDomsd(nn,1,sps)%BCData(mm)%Fv(iBeg:iEnd,jBeg:jEnd,3), stat=ierr)
-           call EChk(ierr,__FILE__,__LINE__)
-           
-           allocate(flowDomsd(nn,1,sps)%BCData(mm)%M(iBeg:iEnd,jBeg:jEnd,3), stat=ierr)
+ 
+           allocate(flowDomsd(nn,1,sps)%BCData(mm)%Fv(&
+                bcData(mm)%inBeg+1:bcData(mm)%inEnd, &
+                bcData(mm)%jnBeg+1:bcData(mm)%jnEnd, 3), stat=ierr)
            call EChk(ierr,__FILE__,__LINE__)
 
-           allocate(flowDomsd(nn,1,sps)%BCData(mm)%oArea(iBeg:iEnd,jBeg:jEnd), stat=ierr)
+           allocate(flowDomsd(nn,1,sps)%BCData(mm)%M(&
+                bcData(mm)%inBeg+1:bcData(mm)%inEnd, &
+                bcData(mm)%jnBeg+1:bcData(mm)%jnEnd, 3), stat=ierr)
            call EChk(ierr,__FILE__,__LINE__)
            
+           allocate(flowDomsd(nn,1,sps)%BCData(mm)%oArea(&
+                bcData(mm)%inbeg:bcData(mm)%inEnd, &
+                bcData(mm)%jnbeg:bcData(mm)%jnEnd), stat=ierr)
+           call EChk(ierr,__FILE__,__LINE__)
+
            allocate(flowDomsd(nn,1,sps)%BCData(mm)%uSlip(iBeg:iEnd,jBeg:jEnd,3), stat=ierr)
            call EChk(ierr,__FILE__,__LINE__)
 
