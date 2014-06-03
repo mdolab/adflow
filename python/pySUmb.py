@@ -1940,7 +1940,7 @@ steady rotations and specifying an aeroProblem')
             self.sumb.updategridvelocitiesalllevels()
             self._updateGeomInfo = False
 
-    def getAdjointResiduals(self):
+    def getAdjointResNorms(self):
         '''
         Return the following adjoint residual norms:
         initCFD Norm: Norm the adjoint starts with (zero adjoint)
@@ -2621,8 +2621,8 @@ steady rotations and specifying an aeroProblem')
             'localpreconditioner' : [str, 'ilu'],
             'ilufill': [int, 2],
             'asmoverlap' : [int, 1],
-            'innerpreconits':[int,1],
-            'outerpreconits':[int,3],
+            'innerpreconits':[int, 1],
+            'outerpreconits':[int, 3],
             'usereversemodead':[bool, False],
             'applyadjointpcsubspacesize':[int, 20],
             'frozenturbulence':[bool, True],
