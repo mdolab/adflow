@@ -1635,6 +1635,7 @@ steady rotations and specifying an aeroProblem')
         self._setAeroDVs()
         # For now, just create all the petsc variables
         if not self.adjointSetup or reform:
+            self.releaseAdjointMemory()
             self.sumb.createpetscvars()
 
             if self.getOption('useReverseModeAD'):
@@ -1644,8 +1645,8 @@ steady rotations and specifying an aeroProblem')
 
             # Create coupling matrix struct whether we need it or not
             [npts, ncells] = self.sumb.getforcesize()
-            nTS  = self.sumb.inputtimespectral.ntimeintervalsspectral
-            forcePoints = numpy.zeros((nTS, npts, 3),self.dtype)
+            nTS = self.sumb.inputtimespectral.ntimeintervalsspectral
+            forcePoints = numpy.zeros((nTS, npts, 3), self.dtype)
             for i in xrange(nTS):
                 forcePoints[i] = self.getForcePoints(TS=i)
 
@@ -1692,8 +1693,8 @@ steady rotations and specifying an aeroProblem')
         # adjoint:
         if structAdjoint is not None and groupName is not None:
             if self.getOption('usereversemodead'):
-                raise Error('Reverse mode AD no longer supported with \
-aerostructural analysis. Use Forward mode AD for the adjoint')
+                raise Error("Reverse mode AD no longer supported with "
+                "aerostructural analysis. Use Forward mode AD for the adjoint")
 
             phi = self.mesh.expandVectorByFamily(groupName, structAdjoint)
             self.sumb.agumentrhs(numpy.ravel(phi))
@@ -1740,8 +1741,6 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         # The derivative wrt the surface captures the effect of ALL
         # GLOBAL Multidisciplinary variables -- any DV that changes
         # the surface.
-
-        obj, aeroObj = self._getObjective(objective)
 
         # NOTE: do dRdxvPsi MUST be done first since this
         # allocates spatial memory if required.
@@ -2069,6 +2068,11 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
 
         return outVec
 
+    def getdFdxAero(self, iDV, groupName=None):
+        """Potential aerodynamic variable dependence on forces. This
+        is zero for all aerodynamic variables in SUmb"""
+        return None
+
     def getdFdxVec(self, groupName, vec):
         # Calculate dFdx * vec and return the result
         vec = self.mesh.expandVectorByFamily(groupName, vec)
@@ -2114,7 +2118,6 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
 
     def getdIdx(self, objective, forcePoints=None, TS=0, groupName=None):
         self._setupAdjoint()
-        obj, aeroObj = self._getObjective(objective)
 
         # Compute the partials
         self.computeObjPartials(objective, forcePoints)
@@ -2158,7 +2161,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
                 dIdaLocal = numpy.zeros_like(self.sumb.adjointvars.dida)
 
             # We must MPI all reuduce
-            dIda = self.comm.allreduce(dIdaLocal,  op=MPI.SUM)
+            dIda = self.comm.allreduce(dIdaLocal, op=MPI.SUM)
         else:
             dIda = numpy.zeros((0))
 
@@ -2171,6 +2174,12 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             dIdw = self.sumb.getdidw(dIdw)
 
         return dIdw
+
+    def sectionVectorByFamily(self, *args, **kwargs):
+        return self.mesh.sectionVectorByFamily(*args, **kwargs)
+
+    def expandVectorByFamily(self, *args, **kwargs):
+        return self.mesh.expandVectorByFamily(*args, **kwargs)
 
     def finalizeAdjoint(self):
         """
