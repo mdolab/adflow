@@ -1754,7 +1754,7 @@ steady rotations and specifying an aeroProblem')
 
         return dIdXs
 
-    def totalAeroDerivative(self, obj):
+    def totalAeroDerivative(self, obj, extraSens=None):
         """
         This function returns the total derivative of the obj with
         respect to the aerodynamic variables defined the currently set
