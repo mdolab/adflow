@@ -71,7 +71,7 @@
 
        if(myID == 0 .and. printIterations) then
          print "(a)", "#"
-         print "(a)", "# Writing surface solution file(s) ..."
+         print "(a,a)", "# Writing surface solution file(s): ", trim(surfSolFileNames(1))
        endif
 
        ! Allocate the memory for the fileIDs and the bases.
