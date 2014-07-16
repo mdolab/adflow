@@ -456,7 +456,7 @@ steady rotations and specifying an aeroProblem')
 
         return loadInbalance, faceInbalance
 
-    def getTriangulatedMeshSurface(self):
+    def getTriangulatedMeshSurface(self, groupName='all'):
         """
         This function returns a trianguled verision of the surface
         mesh on all processors. The intent is to use this for doing
@@ -470,8 +470,8 @@ steady rotations and specifying an aeroProblem')
         """
 
         # Use first spectral instance
-        pts = self.comm.allgather(self.getForcePoints(0))
-        conn = self.comm.allgather(self.mesh.getSurfaceConnectivity('all'))
+        pts = self.comm.allgather(self.getForcePoints(0, groupName))
+        conn = self.comm.allgather(self.mesh.getSurfaceConnectivity(groupName))
 
         # Triangle info...point and two vectors
         p0 = []
@@ -492,9 +492,6 @@ steady rotations and specifying an aeroProblem')
                 p0.append(pts[iProc][i2])
                 v1.append(pts[iProc][i1]-pts[iProc][i2])
                 v2.append(pts[iProc][i3]-pts[iProc][i2])
-
-            # end for
-        # end for
 
         return [p0, v1, v2]
 
