@@ -93,8 +93,8 @@ subroutine applyAdjointPC(in_vec, out_vec, ndof)
   call EChk(ierr, __FILE__, __LINE__)
 
   ! This needs to be a bit better...
-  call KSPSetTolerances(adjointKSP, PETSC_DEFAULT_DOUBLE_PRECISION, &
-       PETSC_DEFAULT_DOUBLE_PRECISION, PETSC_DEFAULT_DOUBLE_PRECISION, &
+  call KSPSetTolerances(adjointKSP, PETSC_DEFAULT_REAL, &
+       PETSC_DEFAULT_REAL, PETSC_DEFAULT_REAL, &
        applyAdjointPCSubSpaceSize, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 

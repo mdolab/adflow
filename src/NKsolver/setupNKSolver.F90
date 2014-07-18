@@ -20,7 +20,7 @@ subroutine setupNKsolver
   implicit none
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
-
+#include "include/petscversion.h"
   ! Working Variables
   integer(kind=intType) :: ierr, nDimw, totalCells
   integer(kind=intType) , dimension(:), allocatable :: nnzDiagonal, nnzOffDiag
@@ -134,8 +134,11 @@ subroutine setupNKsolver
      call EChk(ierr, __FILE__, __LINE__)
 
      ! Set operators for the solver
-     call KSPSetOperators(newtonKrylovKSP, dRdw, dRdWPre, &
-          DIFFERENT_NONZERO_PATTERN, ierr)
+#if PETSC_VERSION_MINOR > 4
+     call KSPSetOperators(newtonKrylovKSP, dRdw, dRdwPre, ierr)
+#else
+     call KSPSetOperators(newtonKrylovKSP, dRdw, dRdwPre, DIFFERENT_NONZERO_PATTERN, ierr)
+#endif
      call EChk(ierr, __FILE__, __LINE__)
 
      ! ! DEBUGGING ONLY!

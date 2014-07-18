@@ -21,7 +21,7 @@ subroutine setupPETScKsp
 #ifndef USE_NO_PETSC
 #define PETSC_AVOID_MPIF_H
 #include "finclude/petsc.h"
-
+#include "include/petscversion.h"
   !     Local variables.
   logical :: useAD, usePC, useTranspose, useObjective
   integer(kind=intType) :: ierr, nLevels, i, l
@@ -40,16 +40,23 @@ subroutine setupPETScKsp
      useObjective = .False.
      call setupStateResidualMatrix(drdwpret, useAD, usePC, useTranspose, &
           useObjective, 1_intType)
-
      !now set up KSP Context
-     call KSPSetOperators(adjointKSP, dRdWT, dRdWPreT, &
+#if PETSC_VERSION_MINOR > 4
+     call KSPSetOperators(adjointKSP, dRdWt, dRdWPreT, ierr)
+#else
+     call KSPSetOperators(adjointKSP, dRdWt, dRdWPreT, &
           DIFFERENT_NONZERO_PATTERN, ierr)
+#endif
      call EChk(ierr, __FILE__, __LINE__)
   else
      ! Use the exact jacobian.  Here the matrix that defines the
      ! linear system also serves as the preconditioning matrix.
-     call KSPSetOperators(adjointKSP, dRdWT, dRdWT, &
+#if PETSC_VERSION_MINOR > 4
+     call KSPSetOperators(adjointKSP, dRdWt, dRdWT, ierr)
+#else
+     call KSPSetOperators(adjointKSP, dRdWt, dRdWT, &
           SAME_NONZERO_PATTERN, ierr)
+#endif
      call EChk(ierr, __FILE__, __LINE__)
   end if
 
@@ -302,8 +309,8 @@ subroutine setupStandardKSP(kspObject, kspObjectType, gmresRestart, preConSide, 
 
      ! Do one iteration of the outer ksp preconditioners. Note the
      ! tolerances are unsued since we have set KSP_NORM_NON
-     call KSPSetTolerances(master_PC_KSP, PETSC_DEFAULT_DOUBLE_PRECISION, &
-          PETSC_DEFAULT_DOUBLE_PRECISION, PETSC_DEFAULT_DOUBLE_PRECISION, &
+     call KSPSetTolerances(master_PC_KSP, PETSC_DEFAULT_REAL, &
+          PETSC_DEFAULT_REAL, PETSC_DEFAULT_REAL, &
           globalPreConIts, ierr)
      call EChk(ierr, __FILE__, __LINE__)
      
@@ -343,8 +350,8 @@ subroutine setupStandardKSP(kspObject, kspObjectType, gmresRestart, preConSide, 
      call EChk(ierr, __FILE__, __LINE__)
 
      ! Set the number of iterations to do on local blocks. Tolerances are ignored. 
-     call KSPSetTolerances(subksp, PETSC_DEFAULT_DOUBLE_PRECISION, &
-          PETSC_DEFAULT_DOUBLE_PRECISION, PETSC_DEFAULT_DOUBLE_PRECISION, &
+     call KSPSetTolerances(subksp, PETSC_DEFAULT_REAL, &
+          PETSC_DEFAULT_REAL, PETSC_DEFAULT_REAL, &
           localPreConIts, ierr)
      call EChk(ierr, __FILE__, __LINE__)
 
