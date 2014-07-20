@@ -7,7 +7,7 @@ subroutine applyPC(in_vec, out_vec, ndof)
   use NKSolverVars
   use communication
   implicit none
-
+#include "include/petscversion.h"
   ! Input/Output
   integer(kind=intType) :: ndof
   real(kind=realType), dimension(ndof),intent(in)    :: in_vec
@@ -93,9 +93,15 @@ subroutine applyAdjointPC(in_vec, out_vec, ndof)
   call EChk(ierr, __FILE__, __LINE__)
 
   ! This needs to be a bit better...
-  call KSPSetTolerances(adjointKSP, PETSC_DEFAULT_REAL, &
-       PETSC_DEFAULT_REAL, PETSC_DEFAULT_REAL, &
-       applyAdjointPCSubSpaceSize, ierr)
+#if PETSC_VERSION_MINOR > 4
+     call KSPSetTolerances(adjointKSP, PETSC_DEFAULT_REAL, &
+          PETSC_DEFAULT_REAL, PETSC_DEFAULT_REAL, &
+          applyAdjointPCSubSpaceSize, ierr)
+#else
+     call KSPSetTolerances(adjointKSP, PETSC_DEFAULT_DOUBLE_PRECISION, &
+          PETSC_DEFAULT_DOUBLE_PRECISION, PETSC_DEFAULT_DOUBLE_PRECISION, &
+          applyAdjointPCSubSpaceSize, ierr)
+#endif
   call EChk(ierr, __FILE__, __LINE__)
 
   ! Actually do the Linear Krylov Solve
