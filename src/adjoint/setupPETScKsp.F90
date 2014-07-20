@@ -309,9 +309,15 @@ subroutine setupStandardKSP(kspObject, kspObjectType, gmresRestart, preConSide, 
 
      ! Do one iteration of the outer ksp preconditioners. Note the
      ! tolerances are unsued since we have set KSP_NORM_NON
+#if PETSC_VERSION_MINOR > 4
      call KSPSetTolerances(master_PC_KSP, PETSC_DEFAULT_REAL, &
           PETSC_DEFAULT_REAL, PETSC_DEFAULT_REAL, &
           globalPreConIts, ierr)
+#else
+     call KSPSetTolerances(master_PC_KSP, PETSC_DEFAULT_DOUBLE_PRECISION, &
+          PETSC_DEFAULT_DOUBLE_PRECISION, PETSC_DEFAULT_DOUBLE_PRECISION, &
+          globalPreConIts, ierr)
+#endif
      call EChk(ierr, __FILE__, __LINE__)
      
      ! Get the 'preconditioner for master_PC_KSP, called 'globalPC'. This
@@ -350,9 +356,15 @@ subroutine setupStandardKSP(kspObject, kspObjectType, gmresRestart, preConSide, 
      call EChk(ierr, __FILE__, __LINE__)
 
      ! Set the number of iterations to do on local blocks. Tolerances are ignored. 
+#if PETSC_VERSION_MINOR > 4
      call KSPSetTolerances(subksp, PETSC_DEFAULT_REAL, &
           PETSC_DEFAULT_REAL, PETSC_DEFAULT_REAL, &
           localPreConIts, ierr)
+#else
+     call KSPSetTolerances(subksp, PETSC_DEFAULT_DOUBLE_PRECISION, &
+          PETSC_DEFAULT_DOUBLE_PRECISION, PETSC_DEFAULT_DOUBLE_PRECISION, &
+          localPreConIts, ierr)
+#endif
      call EChk(ierr, __FILE__, __LINE__)
 
      ! Again, norm_type is NONE since we don't want to check error
