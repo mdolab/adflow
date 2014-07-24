@@ -1,4 +1,4 @@
-!
+on !
 !      ******************************************************************
 !      *                                                                *
 !      * File:          DADISmoother.f90                                *
@@ -39,7 +39,6 @@
 !      ******************************************************************
 !
        ! Store the variables of the zeroth runge kutta stage.
-
         do Subit=1,nSubiterations-1
 
          ! Execute a DADI step and exchange the externals.
@@ -114,11 +113,14 @@
 
        if(currentLevel <= groundLevel) then
          secondHalo = .true.
-         currentCfl = cfl
        else
          secondHalo = .false.
-         currentCfl = cflCoarse
        endif
+
+       currentCfl = cflCoarse
+       if (currentLevel == 1) then
+          currentCfl = cfl
+       end if
 
        ! Determine whether or not residual averaging must be applied.
 

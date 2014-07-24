@@ -61,12 +61,10 @@ subroutine computedwDADI
   ! depending on the situation. On the finest grid in the mg cycle
   ! the second halo is computed, otherwise not.
 
-  if(currentLevel <= groundLevel) then
+  currentCfl = cflCoarse
+  if (currentLevel == 1) then
      currentCfl = cfl
-  else
-     currentCfl = cflCoarse
-  endif
-
+  end if
   qq_i => dadidata(:,:,:,1)
   qq_j => dadidata(:,:,:,2)
   qq_k => dadidata(:,:,:,3)
