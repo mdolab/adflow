@@ -29,7 +29,8 @@ import numpy
 from mpi4py import MPI
 from baseclasses import AeroSolver, AeroProblem
 from . import MExt
-
+from pprint import pprint as pp
+    
 class Error(Exception):
     """
     Format the error message in a box to make it clear this
@@ -108,9 +109,9 @@ class SUMB(AeroSolver):
             for key in options.keys():
                 options[key.lower()] = options.pop(key)
         else:
-            raise Error('The \'options\' keyword argument must be passed \
-            sumb. The options dictionary must contain (at least) the gridFile \
-            entry for the grid')
+            raise Error("The 'options' keyword argument must be passed "
+                        "sumb. The options dictionary must contain (at least) "
+                        "the gridFile entry for the grid")
 
         # Load all the option/objective/DV information:
         defOpts = self._getDefOptions()
@@ -119,7 +120,6 @@ class SUMB(AeroSolver):
                            self._getSpecialOptionLists()
         self.possibleObjectives, self.possibleAeroDVs, self.sumbCostFunctions = \
                                  self._getObjectivesAndDVs()
-
 
         # This is the real solver so dtype is 'd'
         self.dtype = 'd'
@@ -130,11 +130,11 @@ class SUMB(AeroSolver):
 
         self.comm = comm
         self.sumb.communication.sumb_comm_world = self.comm.py2f()
-        self.sumb.communication.sumb_comm_self  = MPI.COMM_SELF.py2f()
+        self.sumb.communication.sumb_comm_self = MPI.COMM_SELF.py2f()
         self.sumb.communication.sendrequests = numpy.zeros(self.comm.size)
         self.sumb.communication.recvrequests = numpy.zeros(self.comm.size)
         self.myid = self.sumb.communication.myid = self.comm.rank
-	self.nproc = self.sumb.communication.nproc = self.comm.size
+        self.sumb.communication.nproc = self.comm.size
 
         # Initialize the inherited aerosolver
         AeroSolver.__init__(self, name, category, defOpts, informs,
@@ -180,6 +180,9 @@ class SUMB(AeroSolver):
             if option != 'defaults':
                 self.setOption(option.lower(), self.options[option][1])
 
+        # Remind the user of all the sumb options:
+        self.printCurrentOptions()
+
         # Do the remainder of the operations that would have been done
         # had we read in a param file
         self.sumb.iteration.deforming_grid = True
@@ -188,10 +191,11 @@ class SUMB(AeroSolver):
         # and a few other things set. Just create a dummy aeroproblem,
         # use it, and then it will be deleted.
 
-        dummyAP = AeroProblem(name='dummy',mach=0.5, altitude=10000.0,
+        dummyAP = AeroProblem(name='dummy', mach=0.5, altitude=10000.0,
                               areaRef=1.0, chordRef=1.0, alpha=0.0, degreePol=0,
-                              coefPol = [0.0], degreeFourier=1, omegaFourier=6.28,
-                              sinCoefFourier=[0,0],cosCoefFourier=[0,0])
+                              coefPol=[0, 0], degreeFourier=1,
+                              omegaFourier=6.28, sinCoefFourier=[0, 0],
+                              cosCoefFourier=[0, 0])
 
         self.curAP = dummyAP
         self._setAeroProblemData(firstCall=True)
@@ -452,7 +456,7 @@ steady rotations and specifying an aeroProblem')
 
         return loadInbalance, faceInbalance
 
-    def getTriangulatedMeshSurface(self):
+    def getTriangulatedMeshSurface(self, groupName='all'):
         """
         This function returns a trianguled verision of the surface
         mesh on all processors. The intent is to use this for doing
@@ -466,8 +470,8 @@ steady rotations and specifying an aeroProblem')
         """
 
         # Use first spectral instance
-        pts = self.comm.allgather(self.getForcePoints(0))
-        conn = self.comm.allgather(self.mesh.getSurfaceConnectivity('all'))
+        pts = self.comm.allgather(self.getForcePoints(0, groupName))
+        conn = self.comm.allgather(self.mesh.getSurfaceConnectivity(groupName))
 
         # Triangle info...point and two vectors
         p0 = []
@@ -488,9 +492,6 @@ steady rotations and specifying an aeroProblem')
                 p0.append(pts[iProc][i2])
                 v1.append(pts[iProc][i1]-pts[iProc][i2])
                 v2.append(pts[iProc][i3]-pts[iProc][i2])
-
-            # end for
-        # end for
 
         return [p0, v1, v2]
 
@@ -1183,6 +1184,21 @@ steady rotations and specifying an aeroProblem')
 
         return SUmbsolution
 
+    def printCurrentOptions(self):
+        """
+        Prints a nicely formatted dictionary of all the current SUmb
+        options to the stdout on the root processor"""
+        if self.comm.rank == 0:
+            print('+---------------------------------------+')
+            print('|          All SUmb Options:            |')
+            print('+---------------------------------------+')
+            # Need to assemble a temporary dictionary 
+            tmpDict = {}
+            for key in self.options:
+                if key != 'defaults':
+                    tmpDict[key] = self.getOption(key)
+            pp(tmpDict)
+
     # =========================================================================
     #   The following routines are public functions however, they should
     #   not need to be used by a user using this class directly. They are
@@ -1240,7 +1256,7 @@ steady rotations and specifying an aeroProblem')
         tmp = self.comm.gather(localMask, root=0)
         globalMask = []
         if self.comm.rank == 0:
-            for i in range(self.nproc):
+            for i in range(self.comm.size):
                 globalMask.extend(tmp[i])
             globalMask = numpy.array(globalMask)
 
@@ -1635,6 +1651,7 @@ steady rotations and specifying an aeroProblem')
         self._setAeroDVs()
         # For now, just create all the petsc variables
         if not self.adjointSetup or reform:
+            self.releaseAdjointMemory()
             self.sumb.createpetscvars()
 
             if self.getOption('useReverseModeAD'):
@@ -1644,8 +1661,8 @@ steady rotations and specifying an aeroProblem')
 
             # Create coupling matrix struct whether we need it or not
             [npts, ncells] = self.sumb.getforcesize()
-            nTS  = self.sumb.inputtimespectral.ntimeintervalsspectral
-            forcePoints = numpy.zeros((nTS, npts, 3),self.dtype)
+            nTS = self.sumb.inputtimespectral.ntimeintervalsspectral
+            forcePoints = numpy.zeros((nTS, npts, 3), self.dtype)
             for i in xrange(nTS):
                 forcePoints[i] = self.getForcePoints(TS=i)
 
@@ -1692,8 +1709,8 @@ steady rotations and specifying an aeroProblem')
         # adjoint:
         if structAdjoint is not None and groupName is not None:
             if self.getOption('usereversemodead'):
-                raise Error('Reverse mode AD no longer supported with \
-aerostructural analysis. Use Forward mode AD for the adjoint')
+                raise Error("Reverse mode AD no longer supported with "
+                "aerostructural analysis. Use Forward mode AD for the adjoint")
 
             phi = self.mesh.expandVectorByFamily(groupName, structAdjoint)
             self.sumb.agumentrhs(numpy.ravel(phi))
@@ -1741,8 +1758,6 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
         # GLOBAL Multidisciplinary variables -- any DV that changes
         # the surface.
 
-        obj, aeroObj = self._getObjective(objective)
-
         # NOTE: do dRdxvPsi MUST be done first since this
         # allocates spatial memory if required.
         dIdxs_2 = self.getdRdXvPsi(objective, 'all')
@@ -1755,7 +1770,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
 
         return dIdXs
 
-    def totalAeroDerivative(self, obj):
+    def totalAeroDerivative(self, obj, extraSens=None):
         """
         This function returns the total derivative of the obj with
         respect to the aerodynamic variables defined the currently set
@@ -1941,7 +1956,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             self.sumb.updategridvelocitiesalllevels()
             self._updateGeomInfo = False
 
-    def getAdjointResiduals(self):
+    def getAdjointResNorms(self):
         '''
         Return the following adjoint residual norms:
         initCFD Norm: Norm the adjoint starts with (zero adjoint)
@@ -2069,6 +2084,11 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
 
         return outVec
 
+    def getdFdxAero(self, iDV, groupName=None):
+        """Potential aerodynamic variable dependence on forces. This
+        is zero for all aerodynamic variables in SUmb"""
+        return None
+
     def getdFdxVec(self, groupName, vec):
         # Calculate dFdx * vec and return the result
         vec = self.mesh.expandVectorByFamily(groupName, vec)
@@ -2114,7 +2134,6 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
 
     def getdIdx(self, objective, forcePoints=None, TS=0, groupName=None):
         self._setupAdjoint()
-        obj, aeroObj = self._getObjective(objective)
 
         # Compute the partials
         self.computeObjPartials(objective, forcePoints)
@@ -2158,7 +2177,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
                 dIdaLocal = numpy.zeros_like(self.sumb.adjointvars.dida)
 
             # We must MPI all reuduce
-            dIda = self.comm.allreduce(dIdaLocal,  op=MPI.SUM)
+            dIda = self.comm.allreduce(dIdaLocal, op=MPI.SUM)
         else:
             dIda = numpy.zeros((0))
 
@@ -2171,6 +2190,12 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             dIdw = self.sumb.getdidw(dIdw)
 
         return dIdw
+
+    def sectionVectorByFamily(self, *args, **kwargs):
+        return self.mesh.sectionVectorByFamily(*args, **kwargs)
+
+    def expandVectorByFamily(self, *args, **kwargs):
+        return self.mesh.expandVectorByFamily(*args, **kwargs)
 
     def finalizeAdjoint(self):
         """
@@ -2501,7 +2526,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             'equationmode': [str, 'steady'],
             'flowtype':[str, 'external'],
             'turbulencemodel':[str, 'sa'],
-            'turbulenceorder':[str,'first order'],
+            'turbulenceorder':[str, 'first order'],
             'usewallfunctions':[bool, False],
             'useapproxwalldistance':[bool, True],
             'walltreatment':[str, 'linear pressure extrapolation'],
@@ -2516,6 +2541,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             'ncycles':[int, 500],
             'ncyclescoarse':[int, 500],
             'nsubiterturb':[int, 1],
+            'nsubiter':[int, 1],
             'cfl':[float, 1.7],
             'cflcoarse':[float, 1.0],
             'mgcycle':[str, '3w'],
@@ -2612,8 +2638,8 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             'localpreconditioner' : [str, 'ilu'],
             'ilufill': [int, 2],
             'asmoverlap' : [int, 1],
-            'innerpreconits':[int,1],
-            'outerpreconits':[int,3],
+            'innerpreconits':[int, 1],
+            'outerpreconits':[int, 3],
             'usereversemodead':[bool, False],
             'applyadjointpcsubspacesize':[int, 20],
             'frozenturbulence':[bool, True],
@@ -2724,6 +2750,7 @@ aerostructural analysis. Use Forward mode AD for the adjoint')
             'ncycles':{'location':'inputiteration.ncycles'},
             'ncyclescoarse':{'location':'inputiteration.ncyclescoarse'},
             'nsubiterturb':{'location':'inputiteration.nsubiterturb'},
+            'nsubiter':{'location':'inputiteration.nsubiterations'},
             'cfl':{'location':'inputiteration.cfl'},
             'cflcoarse':{'location':'inputiteration.cflcoarse'},
             'mgcycle':{'location':'localmg.mgdescription',

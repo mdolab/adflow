@@ -149,12 +149,15 @@
 
        if(currentLevel <= groundLevel) then
          secondHalo = .true.
-         currentCfl = cfl
        else
          secondHalo = .false.
-         currentCfl = cflCoarse
        endif
 
+       currentCfl = cflCoarse
+       if (currentLevel == 1) then
+          currentCfl = cfl
+       end if
+       
        ! Determine whether or not residual averaging must be applied.
 
        if(resAveraging == noResAveraging) then

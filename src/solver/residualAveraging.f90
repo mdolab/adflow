@@ -104,11 +104,10 @@
 !
 !      rfl0 is a measure of the ratio lambda/lambda*
 !
-       if(currentLevel <= groundLevel) then
-         currentCfl = cfl
-       else
-         currentCfl = cflCoarse
-       endif
+      currentCfl = cflCoarse
+       if (currentLevel == 1) then
+          currentCfl = cfl
+       end if
 
        rfl0  = half*currentCfl/cflLimit
 
