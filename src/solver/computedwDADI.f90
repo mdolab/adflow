@@ -17,6 +17,7 @@ subroutine computedwDADI
   use inputUnsteady
   use iteration
   implicit none
+  
   !
   !      Local parameter.
   !
@@ -54,12 +55,10 @@ subroutine computedwDADI
   ! Set the value of the current cfl number,
   ! depending on the situation. On the finest grid in the mg cycle
   ! the second halo is computed, otherwise not.
-
-  if(currentLevel <= groundLevel) then
+  currentCfl = cflCoarse
+  if (currentLevel == 1) then
      currentCfl = cfl
-  else
-     currentCfl = cflCoarse
-  endif
+  end if
 
   !  havent thought about iblank
 
