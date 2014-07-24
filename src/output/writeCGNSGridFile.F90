@@ -71,7 +71,7 @@
 
        if(myID == 0 .and. printIterations) then
          print "(a)", "#"
-         print "(a)", "# Writing grid file(s) ..."
+         print "(a,a)", "# Writing grid file(s): ",trim(gridFileNames(1))
        endif
 
        ! All grid information is stored on all processors, with the
