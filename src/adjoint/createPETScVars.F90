@@ -277,6 +277,11 @@ subroutine createPETScVars
   ! Create the matrix dRdx.
   level = 1_intType
   call drdxPreAllocation(nnzDiagonal, nnzOffDiag, nDimX, level)
+  ! Sanity check on diagonal portion: For 2D cases nnzDiagon may be
+  ! too large because of the x-block corners:
+  do i=1, nDimx
+     nnzDiagonal(i) = min(nnzDiagonal(i), nDimw)
+  end do
 
   ! Note we are creating the TRANPOSE of dRdx. It is size dDimX by nDimW
   call myMatCreate(dRdx, 1, nDimX, nDimW, nnzDiagonal, nnzOffDiag, &

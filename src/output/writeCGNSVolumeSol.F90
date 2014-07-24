@@ -63,7 +63,7 @@
 
        if(myID == 0 .and. printIterations) then
          print "(a)", "#"
-         print "(a)", "# Writing volume solution file(s) ..."
+         print "(a,a)", "# Writing volume solution file(s): ",trim(volSolFileNames(1))
        endif
 
        ! Open the CGNS file(s), the convergence info and if needed the
