@@ -36,7 +36,7 @@
        logical :: surfWriteCp,    surfWritePtotLoss, surfWriteMach, surfWriteRMach
        logical :: surfWriteCf,    surfWriteCh,       surfWriteYPlus
        logical :: surfWriteCfx,   surfWriteCfy,      surfWriteCfz
-       logical :: surfWriteBlank, surfWriteLift
+       logical :: surfWriteBlank, surfWriteLift,     surfWriteSepSensor
 !
 !      ******************************************************************
 !      *                                                                *

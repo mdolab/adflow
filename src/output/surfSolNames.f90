@@ -148,4 +148,9 @@
           solNames(nn) = cgnsLift
        end if
 
+       if (surfWriteSepSensor) then
+          nn = nn + 1
+          solNames(nn) = cgnsSepSensor
+       end if
+
        end subroutine surfSolNames
