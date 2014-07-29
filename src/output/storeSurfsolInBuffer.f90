@@ -60,8 +60,8 @@
        real(kind=realType) :: fx, fy, fz, fn, a2Tot, a2, qw
        real(kind=realType) :: tauxx, tauyy, tauzz
        real(kind=realType) :: tauxy, tauxz, tauyz
-       real(kind=realType) :: pm1, scaleDim, a
-       real(kind=realType), dimension(3) :: norm
+       real(kind=realType) :: pm1, scaleDim, a, sensor
+       real(kind=realType), dimension(3) :: norm, V
 
        real(kind=realType), dimension(:,:,:), pointer :: ww1, ww2
        real(kind=realType), dimension(:,:,:), pointer :: ss1, ss2, ss
@@ -851,7 +851,30 @@
                  buffer(nn) = fx*liftDirection(1) +fy*liftDirection(2) + fz*liftDirection(3)
               end do
            end do
-           
+
+        case (cgnsSepSensor)
+
+           do j=rangeFace(2,1), rangeFace(2,2)
+             do i=rangeFace(1,1), rangeFace(1,2)
+               nn = nn + 1
+               
+               ! Get normalized surface velocity:
+               v(1) = ww2(i, j, ivx)
+               v(2) = ww2(i, j, ivy)
+               v(3) = ww2(i, j, ivz)
+
+               ! Normalize
+               v = v / (sqrt(v(1)**2 + v(2)**2 + v(3)**2) + 1e-16)
+
+               ! Dot product with free stream
+               sensor = -dot_product(v, velDirFreeStream)
+               
+               !Now run through a smooth heaviside function:
+               sensor = one/(one + exp(-2*10*sensor))
+               buffer(nn) = sensor
+             enddo
+           enddo
+
        end select varName
 
        end subroutine storeSurfsolInBuffer

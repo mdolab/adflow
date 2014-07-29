@@ -70,6 +70,7 @@
 
        surfWriteBlank = .false.
        surfWriteLift  = .false.
+       surfWriteSepSensor = .false.
 
        ! Initialize nVarSpecified to 0. This serves as a test
        ! later on.
@@ -183,6 +184,10 @@
 
            case ("lift")
               surfWriteLift = .true. 
+              nVarSpecified = nVarSpecified + 1
+
+           case ("sepsensor")
+              surfWriteSepSensor = .true. 
               nVarSpecified = nVarSpecified + 1
 
            case default
