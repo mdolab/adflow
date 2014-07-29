@@ -389,24 +389,27 @@
                    ! are stored and this info can be used. The logical
                    ! converged is set to .false. if the density residual
                    ! has not converged yet.
-
-                   if(convArray(iConv,sps,1) > L2ConvThisLevel*convArray(0,sps,1)) then
-                      absNotConv = .True.
-                   else
-                      absNotConv = .False.
-                   end if
-                   
-                   if(fromPython) then
-                      if (convArray(iConv,sps,1) > L2ConvThisLevelRel*convArray(1,sps,1)) then
-                         relNotConv = .True.
+                   if (iterTot > minIterNum) then 
+                      if(convArray(iConv,sps,1) > L2ConvThisLevel*convArray(0,sps,1)) then
+                         absNotConv = .True.
                       else
-                         relNotConv = .False.
+                         absNotConv = .False.
+                      end if
+                      
+                      if(fromPython) then
+                         if (convArray(iConv,sps,1) > L2ConvThisLevelRel*convArray(1,sps,1)) then
+                            relNotConv = .True.
+                         else
+                            relNotConv = .False.
+                         end if
+                      else
+                         relNotConv = .True.
+                      end if
+                      
+                      if (absNotConv .and. relNotConv) then ! Not converged if the absCheck is True and the rel Check is true.
+                         converged = .False.
                       end if
                    else
-                      relNotConv = .True.
-                   end if
-                   
-                   if (absNotConv .and. relNotConv) then ! Not converged if the absCheck is True and the rel Check is true.
                       converged = .False.
                    end if
                 else
