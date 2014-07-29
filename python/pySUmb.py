@@ -2575,7 +2575,7 @@ steady rotations and specifying an aeroProblem')
             'l2convergencecoarse':[float, 1e-2],
             'maxl2deviationfactor':[float, 1.0],
             'coeffconvcheck':[bool, False],
-            'miniterationnum':[int, 10],
+            'miniterationnum':[int, 0],
 
             # Newton-Krylov Paramters
             'usenksolver':[bool, False],
