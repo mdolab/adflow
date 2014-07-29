@@ -307,11 +307,12 @@
 !
 !      ******************************************************************
 !      *                                                                *
-!      * Names of the "lift" pressure                                   *
+!      * Names of the "lift" force and separation sensor                *
 !      *                                                                *
 !      ******************************************************************
 !
        character(len=maxCGNSNameLen), parameter :: cgnsLift = "Lift"
+       character(len=maxCGNSNameLen), parameter :: cgnsSepSensor = "SepSensor"
 !
 !      ******************************************************************
 !      *                                                                *
