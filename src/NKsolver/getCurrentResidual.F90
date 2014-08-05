@@ -16,23 +16,6 @@ subroutine getCurrentResidual(rhoRes,totalRRes)
   groundLevel = 1
   rkStage = 0
 
-  call whalo2(1_intType, 1_intType, nw, .False., .False.,.False.)
-
-  ! Compute time step
-  call timestep(.false.)
-
-  !  Possible Turblent Equations
-  if( equations == RANSEquations ) then
-     call initres(nt1MG, nMGVar) ! Initialize only the Turblent Variables
-     call turbResidual
-  endif
-  
-  !  Initialize Flow residuals
-  call initres(1_intType, nwf)
-  
-  ! Actual Residual Calc
-  call residual 
-  
   r_sum = zero
   rho_sum = zero
   do sps=1,nTimeIntervalsSpectral

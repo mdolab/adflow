@@ -357,6 +357,20 @@ python module libsumb
          integer(kind=inttype) optional,intent(in),check(len(states)>=ndimw),depend(states) :: ndimw=len(states)
        end subroutine setstates
 
+       subroutine getinfosize(isize)
+         integer(kind=inttype) intent(out) :: isize
+       end subroutine getinfosize
+
+       subroutine setinfo(info,isize) ! in :test:getADjoint.F90
+         real(kind=realtype) dimension(isize),intent(in) :: info
+         integer(kind=inttype) optional,intent(in),check(len(info)>=isize),depend(info) :: isize=len(info)
+       end subroutine setinfo
+
+       subroutine getinfo(info,isize) ! in :test:getADjoint.F90
+         real(kind=realtype) dimension(isize),intent(out),depend(isize) :: info
+         integer(kind=inttype) intent(in) :: isize
+       end subroutine setinfo
+
        subroutine getres(res,ndimw) ! in :test:NKUtilities.F90
          real(kind=realtype) dimension(ndimw),intent(in,out) :: res
          integer(kind=inttype) optional,intent(in),check(len(res)>=ndimw),depend(res) :: ndimw=len(res)
