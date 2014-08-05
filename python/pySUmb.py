@@ -518,7 +518,7 @@ steady rotations and specifying an aeroProblem')
 
         # If this problem has't been solved yet, reset flow to this
         # flight condition
-        if self.curAP.sumbData.states is None:
+        if self.curAP.sumbData.stateInfo is None:
             self.resetFlow(aeroProblem)
 
         # Possibly release adjoint memory 
@@ -564,20 +564,19 @@ steady rotations and specifying an aeroProblem')
         if self.getOption('equationMode') == 'unsteady':
             self.sumb.alloctimearrays(self.getOption('nTimeStepsFine'))
 
-        # Reset Fail Flags
-        self.sumb.killsignals.routinefailed =  False
-        self.sumb.killsignals.fatalfail = False
+        # Mesh warp may have already failed:
+        if not self.sumb.killsignals.fatalfail:
 
-        if (self.getOption('equationMode').lower() == 'steady' or
-            self.getOption('equationMode').lower() == 'time spectral'):
-            self.updateGeometryInfo()
+            if (self.getOption('equationMode').lower() == 'steady' or
+                self.getOption('equationMode').lower() == 'time spectral'):
+                self.updateGeometryInfo()
 
-        # Check to see if the above update routines failed.
-        self.sumb.killsignals.routinefailed = \
-            self.comm.allreduce(
-            bool(self.sumb.killsignals.routinefailed), op=MPI.LOR)
+            # Check to see if the above update routines failed.
+                self.sumb.killsignals.fatalfail = \
+                    self.comm.allreduce(
+                    bool(self.sumb.killsignals.fatalfail), op=MPI.LOR)
 
-        if self.sumb.killsignals.routinefailed:
+        if self.sumb.killsignals.fatalfail:
             print("Fatal failure during mesh warp! Bad mesh is "
                   "written in output directory as failed_mesh.cgns")
             fileName = os.path.join(self.getOption('outputDirectory'),
@@ -586,6 +585,10 @@ steady rotations and specifying an aeroProblem')
             self.curAP.fatalFail = True
             self.curAP.solveFailed = True
             return
+
+        # We now now the mesh warping was ok so reset the flags:
+        self.sumb.killsignals.routinefailed =  False
+        self.sumb.killsignals.fatalfail = False
 
         t1 = time.time()
 
@@ -597,7 +600,7 @@ steady rotations and specifying an aeroProblem')
             self.sumb.solverunsteadymd(MDCallBack)
 
         # Save the states into the aeroProblem
-        self.curAP.sumbData.states = self.getStates()
+        self.curAP.sumbData.stateInfo = self._getInfo()
 
         # Assign Fail Flags
         self.curAP.solveFailed = bool(self.sumb.killsignals.routinefailed)
@@ -1135,6 +1138,8 @@ steady rotations and specifying an aeroProblem')
         self.sumb.iteration.itertot = 0
         self.sumb.setuniformflow()
         self.sumb.nksolvervars.nksolvecount = 0
+        self.sumb.killsignals.routinefailed =  False
+        self.sumb.killsignals.fatalfail = False
 
     def getSolution(self, sps=1):
         """ Retrieve the solution variables from the solver. Note this
@@ -1321,7 +1326,7 @@ steady rotations and specifying an aeroProblem')
         if self.curAP is not None:
             # If we have already solved something and are now
             # switching, save what we need:
-            self.curAP.states = self.getStates()
+            self.curAP.stateInfo = self._getInfo()
             self.curAP.surfMesh = self.getSurfaceCoordinates('all')
 
         # If not done so already, embed the coordinates:
@@ -1333,9 +1338,9 @@ steady rotations and specifying an aeroProblem')
         self.curAP.adjointRHS = None
 
         # Now set the data from the incomming aeroProblem:
-        states = aeroProblem.sumbData.states
-        if states is not None:
-            self.setStates(states)
+        stateInfo = aeroProblem.sumbData.stateInfo
+        if stateInfo is not None:
+            self._setInfo(stateInfo)
 
         # We have to update coordinates here as well:
         if self.DVGeo is not None:
@@ -1350,6 +1355,9 @@ steady rotations and specifying an aeroProblem')
         # expensive so switchign aeroProblems should not be done that
         #  frequently
         self.updateGeometryInfo()
+
+        self.sumb.killsignals.routinefailed = False
+        self.sumb.killsignals.fatalFail = False
 
         # Destroy the NK solver and the adjoint memory
         self.sumb.destroynksolver()
@@ -1943,18 +1951,23 @@ steady rotations and specifying an aeroProblem')
         """Update the SUmb internal geometry info, if necessary."""
 
         if self._updateGeomInfo and self.mesh is not None:
+
             self.mesh.warpMesh()
             newGrid = self.mesh.getSolverGrid()
+            self.sumb.killsignals.routinefailed = False
+            self.sumb.killsignals.fatalFail = False
 
             if newGrid is not None:
                 self.sumb.setgrid(newGrid)
-
             self.sumb.updatecoordinatesalllevels()
             self.sumb.updatewalldistancealllevels()
             self.sumb.updateslidingalllevels()
             self.sumb.updatemetricsalllevels()
             self.sumb.updategridvelocitiesalllevels()
             self._updateGeomInfo = False
+            self.sumb.killsignals.routinefailed = \
+                self.comm.allreduce(
+                bool(self.sumb.killsignals.routinefailed), op=MPI.LOR)
 
     def getAdjointResNorms(self):
         '''
@@ -2249,9 +2262,19 @@ steady rotations and specifying an aeroProblem')
 
     def setStates(self, states):
         """ Set the states on this processor. Used in aerostructural
-        analysis"""
+        analysis and for switching aeroproblems"""
 
         self.sumb.setstates(states)
+
+    def _getInfo(self):
+        """Get the haloed state vector, pressure (and
+        viscocities). Used to save "state" between aeroProblems"""
+        return self.sumb.getinfo(self.sumb.getinfosize())
+
+    def _setInfo(self, info):
+        """Get the haloed state vector, pressure (and
+        viscocities). Used to save "state" between aeroProblems"""
+        self.sumb.setinfo(info)
 
     def setAdjoint(self, adjoint, objective=None):
         """Sets the adjoint vector externally. Used in coupled solver"""
@@ -3027,7 +3050,7 @@ class sumbFlowCase(object):
     aeroProblem to permit the analysis of multiple flow cases
     """
     def __init__(self):
-        self.states = None
+        self.stateInfo = None
         self.adjoints = {}
         self.coords = None
         self.callCounter = -1
