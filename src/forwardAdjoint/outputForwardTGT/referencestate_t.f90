@@ -4,8 +4,8 @@
    !  Differentiation of referencestate in forward (tangent) mode (with options debugTangent i4 dr8 r8):
    !   variations   of useful results: gammainf pinf timeref rhoinf
    !                muref tref muinf uinf rgas pref
-   !   with respect to varying inputs: pref mach tempfreestream reynolds
-   !                veldirfreestream
+   !   with respect to varying inputs: pref mach tempfreestream veldirfreestream
+   !                machcoef
    !
    !      ******************************************************************
    !      *                                                                *
@@ -49,7 +49,7 @@
    INTEGER(kind=inttype) :: sps, nn, mm
    REAL(kind=realtype) :: gm1, ratio, tmp
    REAL(kind=realtype) :: mx, my, mz, re, v, tinfdim
-   REAL(kind=realtype) :: mxd, myd, mzd, red, vd, tinfdimd
+   REAL(kind=realtype) :: mxd, myd, mzd, vd, tinfdimd
    REAL(kind=realtype), DIMENSION(3) :: dirloc, dirglob
    REAL(kind=realtype), DIMENSION(5) :: valloc, valglob
    TYPE(BCDATATYPE), DIMENSION(:), POINTER :: bcdata
@@ -74,9 +74,9 @@
    CALL DEBUG_TGT_REAL8('mach', mach, machd)
    CALL DEBUG_TGT_REAL8('tempfreestream', tempfreestream, &
    &                   tempfreestreamd)
-   CALL DEBUG_TGT_REAL8('reynolds', reynolds, reynoldsd)
    CALL DEBUG_TGT_REAL8ARRAY('veldirfreestream', veldirfreestream, &
    &                        veldirfreestreamd, 3)
+   CALL DEBUG_TGT_REAL8('machcoef', machcoef, machcoefd)
    CALL DEBUG_TGT_DISPLAY('entry')
    END IF
    !
@@ -124,15 +124,17 @@
    ! Compute the x, y, and z-components of the Mach number
    ! relative to the body; i.e. the mesh velocity must be
    ! taken into account here.
-   mxd = machcoef*veldirfreestreamd(1)
+   mxd = machcoefd*veldirfreestream(1) + machcoef*veldirfreestreamd(1&
+   &        )
    mx = machcoef*veldirfreestream(1)
-   myd = machcoef*veldirfreestreamd(2)
+   myd = machcoefd*veldirfreestream(2) + machcoef*veldirfreestreamd(2&
+   &        )
    my = machcoef*veldirfreestream(2)
-   mzd = machcoef*veldirfreestreamd(3)
+   mzd = machcoefd*veldirfreestream(3) + machcoef*veldirfreestreamd(3&
+   &        )
    mz = machcoef*veldirfreestream(3)
    ! Reynolds number per meter, the viscosity using sutherland's
    ! law and the free stream velocity relative to the body.
-   red = reynoldsd/reynoldslength
    re = reynolds/reynoldslength
    mudimd = musuthdim*((tsuthdim+ssuthdim)*1.5*(tempfreestream/&
    &        tsuthdim)**0.5*tempfreestreamd/((tempfreestream+ssuthdim)*&
@@ -152,7 +154,7 @@
    v = SQRT(arg1)
    ! Compute the free stream density and pressure.
    ! Set TInfDim to tempFreestream.
-   rhoinfdimd = ((red*mudim+re*mudimd)*v-re*mudim*vd)/v**2
+   rhoinfdimd = (re*mudimd*v-re*mudim*vd)/v**2
    rhoinfdim = re*mudim/v
    pinfdimd = rgasdim*(rhoinfdimd*tempfreestream+rhoinfdim*&
    &        tempfreestreamd)

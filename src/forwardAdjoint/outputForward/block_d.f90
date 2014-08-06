@@ -115,7 +115,7 @@
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: norm
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rface
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: fp, fv, m
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: oarea
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: oarea, sepsensor
    INTEGER(kind=inttype), DIMENSION(:, :), POINTER :: fmnodeindex, &
    &      fmcellindex
    REAL(kind=realtype), DIMENSION(3) :: symnorm
@@ -142,6 +142,7 @@
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: fv
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: m
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: oarea
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: sepsensor
    REAL(kind=realtype), DIMENSION(3) :: symnorm
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: uslip
    END TYPE BCDATATYPE_D

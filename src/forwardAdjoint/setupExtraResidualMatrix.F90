@@ -10,7 +10,7 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
   !     ******************************************************************
 
   use ADjointVars
-  use ADjointPETSc, only : dFMdExtra
+  use ADjointPETSc, only : dFMdExtra, iSepSensor
   use blockPointers      
   use communication      
   use inputDiscretization
@@ -47,8 +47,8 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
   integer(kind=intType) :: FMDim, nState
 
   ! Values for block_res
-  real(kind=realType) :: alpha, beta, force(3), moment(3)
-  real(kind=realType) :: alphad, betad, forced(3), momentd(3)
+  real(kind=realType) :: alpha, beta, force(3), moment(3), sepSensor
+  real(kind=realType) :: alphad, betad, forced(3), momentd(3), sepSensord
   integer(kind=intType) :: liftIndex
   
   !Reference values for FD
@@ -213,14 +213,14 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
 #ifndef USE_COMPLEX       
               call block_res_d(nn, sps, .True., &
                    alpha, alphad, beta, betad, liftIndex, force, forced, &
-                   moment, momentd)
+                   moment, momentd, sepSensor, sepSensord)
 #else
               print *,'Forward AD routines are not complexified'
               stop
 #endif
            else
               call block_res(nn, sps, .True., &
-                   alpha, beta, liftIndex, force, moment)
+                   alpha, beta, liftIndex, force, moment, sepSensor)
            end if
 
            ! Save the values of FMExtra and the derivatives
@@ -229,7 +229,7 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
               dFMdExtra(FMDim, iColor, sps) = dFMdExtra(FMDim, iColor, sps) + Forced(FMDim)
               dFMdExtra(FMDim+3, iColor, sps) = dFMdExtra(FMDim+3, iColor, sps) + Momentd(FMDim)
            end do
-
+           dFMdExtra(iSepSensor, iColor, sps) = dFMdExtra(iSepSensor, iColor, sps) + sepSensord
            ! Set the computed residual in dw_deriv. If using FD,
            ! actually do the FD calculation if AD, just copy out dw
            ! in flowdomsd

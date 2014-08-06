@@ -85,6 +85,7 @@
                             BCData(mm)%oArea(inodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
                             BCData(mm)%FMNodeIndex(inodeBeg:inodeEnd, jnodeBeg:jnodeEnd), &
                             BCData(mm)%FMCellIndex(iBeg:iEnd, jBeg:jEnd), &
+                            BCData(mm)%sepSensor(iBeg:iEnd, jBeg:jEnd), &
                             stat=ierr)
                    if(ierr /= 0)                      &
                      call terminate("allocMemBCData", &
@@ -105,6 +106,7 @@
                             BCData(mm)%oArea(inodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
                             BCData(mm)%FMNodeIndex(inodeBeg:inodeEnd, jnodeBeg:jnodeEnd), &
                             BCData(mm)%FMCellIndex(iBeg:iEnd, jBeg:jEnd), &
+                            BCData(mm)%sepSensor(iBeg:iEnd, jBeg:jEnd), &
                             stat=ierr)
                    if(ierr /= 0)                      &
                      call terminate("allocMemBCData", &
@@ -113,10 +115,9 @@
 
                  !=======================================================
 
-                 case (EulerWall,farField)
+                 case (EulerWall)
 
-                   ! Euler wall or farfield. Just allocate the memory for
-                   ! the normal mesh velocity.
+                   ! Euler wall
 
                    allocate(BCData(mm)%rface(iBeg:iEnd,jBeg:jEnd), &
                             BCData(mm)%Fp(iBeg:iEnd,jBeg:jEnd,3), &
@@ -125,11 +126,26 @@
                             BCData(mm)%oArea(inodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
                             BCData(mm)%FMNodeIndex(inodeBeg:inodeEnd, jnodeBeg:jnodeEnd), &
                             BCData(mm)%FMCellIndex(iBeg:iEnd, jBeg:jEnd), &
+                            BCData(mm)%sepSensor(iBeg:iEnd, jBeg:jEnd), &
                             stat=ierr)
                    if(ierr /= 0)                      &
                      call terminate("allocMemBCData", &
                                     "Memory allocation failure for &
-                                    &an Euler wall or a farfield")
+                                    &an Euler wall")
+
+                   !=======================================================
+
+                 case (farField)
+
+                   ! Just allocate the memory for the normal mesh
+                   ! velocity.
+
+                   allocate(BCData(mm)%rface(iBeg:iEnd,jBeg:jEnd), &
+                        stat=ierr)
+                   if(ierr /= 0)                      &
+                     call terminate("allocMemBCData", &
+                                    "Memory allocation failure for &
+                                    &a farfield")
 
                  !=======================================================
 

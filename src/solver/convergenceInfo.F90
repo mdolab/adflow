@@ -43,7 +43,7 @@
        integer(kind=intType) :: fTempMon=87 ! !eran-tempmon
 
        real(kind=realType) :: hdiffMax, MachMax
-       real(kind=realType) :: eddyvisMax, yplusMax
+       real(kind=realType) :: eddyvisMax, yplusMax, sepSensor
 
        real(kind=realType) :: L2ConvThisLevel
        real(kind=realType) :: L2ConvThisLevelRel
@@ -143,7 +143,7 @@
 
            ! Compute the forces and moments for this block.
 
-             call forcesAndMoments(cfp, cfv, cmp, cmv, yplusMax)
+             call forcesAndMoments(cfp, cfv, cmp, cmv, yplusMax, sepSensor)
 
 
            ! Determine the maximum values of the monitoring variables
@@ -252,7 +252,9 @@
 
                 case (cgnsEddyMax)
                    monLoc(mm) = max(monLoc(mm), eddyvisMax)
-
+                   
+                case (cgnsSepSensor)
+                   monLoc(mm) = monLoc(mm) + sepSensor
                 end select ! monNames(mm)
 
              end do nMonitoringVar

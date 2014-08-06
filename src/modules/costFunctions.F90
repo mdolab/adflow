@@ -26,7 +26,7 @@ module costFunctions
   !     *                                                                *
   !     ******************************************************************
 
-  integer(kind=intType), parameter :: nCostFunction = 37
+  integer(kind=intType), parameter :: nCostFunction = 38
   integer(kind=intType), parameter :: &
        costFuncLift       = 1,&
        costFuncDrag       = 2,&
@@ -64,7 +64,8 @@ module costFunctions
        costFuncCfyAlphadot= 34,&
        costFuncCfyq       = 35,&
        costFuncCfyqDot    = 36,&
-       costFuncBendingCoef= 37
+       costFuncBendingCoef= 37,&
+       costFuncSepSensor  = 38
 
   real(kind=realType), allocatable, dimension(:)   :: functionValue
 

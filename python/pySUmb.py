@@ -817,11 +817,6 @@ steady rotations and specifying an aeroProblem')
             if autoReset:
                 self.resetFlow(aeroProblem)
 
-            # Sometimes with the RKSolver, the residual doesn't spike
-            # immediately due to the alpha, and the solver will
-            # convergnce after 2 iterations. We slightly lower the
-            # tolerance at each iteration to prevent this.
-            self.setOption('l2convergence', 0.75*self.getOption('l2convergence'))
             # Set current alpha
             aeroProblem.alpha = anm1
 
@@ -832,7 +827,7 @@ steady rotations and specifying an aeroProblem')
             # Solve for n-1 value (anm1)
             self.__call__(aeroProblem, writeSolution=False)
             sol = self.getSolution()
-            fnm1 =  sol['cl'] - CLStar
+            fnm1 = sol['cl'] - CLStar
 
             # Secant Update
             anew = anm1 - fnm1*(anm1-anm2)/(fnm1-fnm2)
@@ -848,14 +843,87 @@ steady rotations and specifying an aeroProblem')
             if abs(fnm1) < tol:
                 break
 
-        # end for
-
         # Set the new alpha in the aeroProblem
         aeroProblem.alpha = anew
 
-        # Restore the initial tolerance so the user isn't confused
-        self.setOption('l2convergence', L2ConvSave)
+        # Restore the min iter option
+        self.setOption('minIterationNum', minIterSave)
 
+    def solveSep(self, aeroProblem, sepStar, alpha0=0,
+                delta=0.5, tol=1e-3):
+        """This is a bisection search method to determine the alpha
+        that yields a specified value of the sep sensor. Since this
+        function is highly nonlinear we use a bisection search
+        instead of a secant search. 
+
+        Parameters
+        ----------
+        aeroProblem : pyAero_problem class
+            The aerodynamic problem to solve
+        sepStar : float
+            The desired target separation sensor value
+        alpha0 : angle (deg)
+            Initial guess 
+        delta : angle (deg)
+            Initial step. Only the magnitude is significant
+        tol : float
+            Desired tolerance for sepSensor
+
+        Returns
+        -------
+        None, but the correct alpha is stored in the aeroProblem
+        """ 
+        self.setAeroProblem(aeroProblem)
+
+        # There are two main parts of the algorithm: First we need to
+        # find the alpha range bracketing the desired function
+        # value. Then we use a bisection search to zero into that vlaue.
+
+        # Solve first problem
+        aeroProblem.alpha = alpha0
+        self.__call__(aeroProblem, writeSolution=False)
+        sol = self.getSolution()
+        f = sol['sepsensor'] - sepStar
+        da = delta
+        # Now try to find the interval
+        for i in range(20):
+            if f > 0.0:
+                da = -numpy.abs(da)
+            else:
+                da = numpy.abs(da)
+            # Increment the alpha and solve again
+            aeroProblem.alpha += da
+            self.__call__(aeroProblem, writeSolution=False)
+            sol = self.getSolution()
+            fnew = sol['sepsensor'] - sepStar
+
+            if numpy.sign(f) != numpy.sign(fnew):
+                # We crossed the zero:
+                break
+            else:
+                f = fnew
+                # Expand the delta:
+                da *= 1.5
+
+        # Now we know 'a' and 'b' bracket the zero:
+        a = aeroProblem.alpha
+        b = aeroProblem.alpha - da
+        fa = fnew
+        for i in range(20):
+            c = 0.5*(a + b)
+            aeroProblem.alpha = c
+            self.__call__(aeroProblem, writeSolution=False)
+            sol = self.getSolution()
+            f = sol['sepsensor'] - sepStar
+            if abs(f) < tol:
+                break
+            if f*fa > 0:
+                a = c
+            else:
+                b = c
+            
+                
+            
     def writeSolution(self, outputDir=None, baseName=None, number=None):
         """This is a generic shell function that potentially writes
         the various output files. The intent is that the user or
@@ -1179,7 +1247,8 @@ steady rotations and specifying an aeroProblem')
             'cmzq'       :funcVals[self.sumb.costfunctions.costfunccmzq-1],
             'clqdot'     :funcVals[self.sumb.costfunctions.costfuncclqdot-1],
             'clq'        :funcVals[self.sumb.costfunctions.costfuncclq-1],
-            'cbend'      :funcVals[self.sumb.costfunctions.costfuncbendingcoef-1]
+            'cbend'      :funcVals[self.sumb.costfunctions.costfuncbendingcoef-1],
+            'sepsensor':funcVals[self.sumb.costfunctions.costfuncsepsensor-1],
             }
 
         return SUmbsolution
@@ -2117,8 +2186,8 @@ steady rotations and specifying an aeroProblem')
                 # force pt list.
                 if forcePoints is None:
                     [npts, ncells] = self.sumb.getforcesize()
-                    nTS  = self.sumb.inputtimespectral.ntimeintervalsspectral
-                    forcePoints = numpy.zeros((nTS, npts, 3),self.dtype)
+                    nTS = self.sumb.inputtimespectral.ntimeintervalsspectral
+                    forcePoints = numpy.zeros((nTS, npts, 3), self.dtype)
                     for i in xrange(nTS):
                         forcePoints[i] = self.getForcePoints(TS=i)
 
@@ -2958,6 +3027,7 @@ steady rotations and specifying an aeroProblem')
             'clq':'clq',
             'clqdot':'clqDot',
             'cbend':'cBend',
+            'sepsensor':'sepsensor',
             }
 
         possibleAeroDVs = {
@@ -3017,6 +3087,7 @@ steady rotations and specifying an aeroProblem')
             'clq':self.sumb.costfunctions.costfuncclq,
             'clqDot':self.sumb.costfunctions.costfuncclqdot,
             'cBend':self.sumb.costfunctions.costfuncbendingcoef,
+            'sepsensor':self.sumb.costfunctions.costfuncsepsensor,
             }
 
         return possibleObjectives, possibleAeroDVs, sumbCostFunctions

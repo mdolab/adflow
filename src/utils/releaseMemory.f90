@@ -239,6 +239,10 @@
               deallocate(BCData(i)%oArea, stat=ierr)
          if(ierr /= 0) deallocationFailure = .true.
 
+         if( associated(BCData(i)%sepSensor) ) &
+              deallocate(BCData(i)%sepSensor, stat=ierr)
+         if(ierr /= 0) deallocationFailure = .true.
+
          if( associated(BCData(i)%FMNodeIndex) ) &
               deallocate(BCData(i)%FMNodeIndex, stat=ierr)
          if(ierr /= 0) deallocationFailure = .true.

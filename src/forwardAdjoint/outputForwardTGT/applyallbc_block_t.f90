@@ -6,13 +6,13 @@
    !                *bmtk1 *w *bmtk2 *rlv *bvtk1 *bvtk2 *bmti1 *bmti2
    !                *bvti1 *bvti2 *bmtj1 *bmtj2 (global)pointref[1:3]
    !   with respect to varying inputs: *rev *p *s *w *rlv *si *sj
-   !                *sk *(*bcdata.norm) *(*bcdata.rface) gammainf
-   !                tref winf pinfcorr rgas (global)pointref[1:3]
+   !                *sk *(*bcdata.norm) *(*bcdata.rface) *(*bcdata.uslip)
+   !                gammainf tref winf pinfcorr rgas (global)pointref[1:3]
    !   Plus diff mem management of: rev:in bvtj1:in bvtj2:in p:in
    !                gamma:in bmtk1:in w:in bmtk2:in rlv:in bvtk1:in
    !                bvtk2:in bmti1:in bmti2:in si:in sj:in sk:in bvti1:in
    !                bvti2:in bmtj1:in bmtj2:in bcdata:in *bcdata.norm:in
-   !                *bcdata.rface:in
+   !                *bcdata.rface:in *bcdata.uslip:in
    SUBROUTINE APPLYALLBC_BLOCK_T(secondhalo)
    USE ITERATION
    USE FLOWVARREFSTATE
@@ -20,9 +20,12 @@
    USE INPUTTIMESPECTRAL
    USE INPUTDISCRETIZATION
    USE DIFFSIZES
+   !  Hint: ISIZE3OFDrfDrfbcdata_uslip should be the size of dimension 3 of array **bcdata%uslip
+   !  Hint: ISIZE2OFDrfDrfbcdata_uslip should be the size of dimension 2 of array **bcdata%uslip
+   !  Hint: ISIZE1OFDrfDrfbcdata_uslip should be the size of dimension 1 of array **bcdata%uslip
+   !  Hint: ISIZE1OFDrfbcdata should be the size of dimension 1 of array *bcdata
    !  Hint: ISIZE2OFDrfDrfbcdata_rface should be the size of dimension 2 of array **bcdata%rface
    !  Hint: ISIZE1OFDrfDrfbcdata_rface should be the size of dimension 1 of array **bcdata%rface
-   !  Hint: ISIZE1OFDrfbcdata should be the size of dimension 1 of array *bcdata
    !  Hint: ISIZE3OFDrfDrfbcdata_norm should be the size of dimension 3 of array **bcdata%norm
    !  Hint: ISIZE2OFDrfDrfbcdata_norm should be the size of dimension 2 of array **bcdata%norm
    !  Hint: ISIZE1OFDrfDrfbcdata_norm should be the size of dimension 1 of array **bcdata%norm
@@ -144,6 +147,12 @@
    &                          )%rface, ISIZE1OFDrfDrfbcdata_rface*&
    &                          ISIZE2OFDrfDrfbcdata_rface)
    END DO
+   DO ii1=1,ISIZE1OFDrfbcdata
+   CALL DEBUG_TGT_REAL8ARRAY('bcdata', bcdata(ii1)%uslip, bcdatad(ii1&
+   &                          )%uslip, ISIZE1OFDrfDrfbcdata_uslip*&
+   &                          ISIZE2OFDrfDrfbcdata_uslip*&
+   &                          ISIZE3OFDrfDrfbcdata_uslip)
+   END DO
    CALL DEBUG_TGT_REAL8('gammainf', gammainf, gammainfd)
    CALL DEBUG_TGT_REAL8('tref', tref, trefd)
    CALL DEBUG_TGT_REAL8ARRAY('winf', winf, winfd, 10)
@@ -190,6 +199,12 @@
    CALL DEBUG_TGT_REAL8ARRAY('bcdata', bcdata(ii1)%rface, bcdatad(ii1&
    &                          )%rface, ISIZE1OFDrfDrfbcdata_rface*&
    &                          ISIZE2OFDrfDrfbcdata_rface)
+   END DO
+   DO ii1=1,ISIZE1OFDrfbcdata
+   CALL DEBUG_TGT_REAL8ARRAY('bcdata', bcdata(ii1)%uslip, bcdatad(ii1&
+   &                          )%uslip, ISIZE1OFDrfDrfbcdata_uslip*&
+   &                          ISIZE2OFDrfDrfbcdata_uslip*&
+   &                          ISIZE3OFDrfDrfbcdata_uslip)
    END DO
    CALL DEBUG_TGT_REAL8('gammainf', gammainf, gammainfd)
    CALL DEBUG_TGT_REAL8('tref', tref, trefd)

@@ -86,7 +86,7 @@ subroutine getSolution(sps)
   functionValue(costFuncMomXCoef) = globalCFVals(costFuncMomXCoef) 
   functionValue(costFuncMomYCoef) = globalCFVals(costFuncMomYCoef)
   functionValue(costFuncMomZCoef) = globalCFVals(costFuncMomZCoef)
-
+  functionValue(costFuncSepSensor) = globalCFVals(costFuncSepSensor)
   if(TSStability)then
 
      call computeTSDerivatives(force, moment, liftIndex, coef0, dcdalpha, &
