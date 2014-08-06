@@ -10,7 +10,7 @@ subroutine createPETScVars
   !
   use ADjointPETSc, only: dRdwT, dRdwPreT, dJdw, psi, adjointRHS, adjointRes, &
        FMw, dFcdw, dFcdx, dFndFc, dFdx, dFdw, dRdx, xVec, dJdx, FMx, dRda, &
-       adjointKSP, dFMdExtra, dRda_data, overArea, fCell, fNode, doAdx
+       adjointKSP, dFMdExtra, dRda_data, overArea, fCell, fNode, doAdx, nFM
   use ADjointVars   
   use BCTypes
   use communication  
@@ -114,10 +114,11 @@ subroutine createPETScVars
   call VecDuplicate(dJdW, adjointRHS, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  ! Create the 6 * nTimeIntervalsSpectral vectors for d{F,M}/dw
-  allocate(FMw(6, nTimeIntervalsSpectral))
+  ! Create the nFM * nTimeIntervalsSpectral vectors for d{F,M}/dw plus
+  ! any additional functions 
+  allocate(FMw(nFM, nTimeIntervalsSpectral))
   do sps=1,nTimeIntervalsSpectral
-     do i=1,6
+     do i=1,nFM
         call VecDuplicate(dJdw, FMw(i, sps), ierr)
         call EChk(ierr, __FILE__, __LINE__)
      end do
@@ -319,9 +320,9 @@ subroutine createPETScVars
   call VecSetType(dJdx, "mpi", ierr) 
   call EChk(ierr, __FILE__, __LINE__)
 
-  allocate(FMx(6, nTimeIntervalsSpectral))
+  allocate(FMx(nFM, nTimeIntervalsSpectral))
   do sps=1,nTimeIntervalsSpectral
-     do i=1,6
+     do i=1,nFM
         call VecDuplicate(dJdx, FMx(i, sps), ierr)
         call EChk(ierr, __FILE__, __LINE__)
      end do
@@ -342,7 +343,7 @@ subroutine createPETScVars
   if (allocated(dFMdExtra)) then
      deallocate(dFMdExtra)
   end if
-  allocate(dFMdExtra(6, nDesignExtra, nTimeIntervalsSpectral))
+  allocate(dFMdExtra(nFM, nDesignExtra, nTimeIntervalsSpectral))
 
 #if PETSC_VERSION_MINOR < 3 
      call MatCreateMPIDense(SUMB_COMM_WORLD, nDimW, PETSC_DECIDE, &

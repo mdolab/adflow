@@ -4,16 +4,17 @@
    !  Differentiation of block_res in forward (tangent) mode (with options debugTangent i4 dr8 r8):
    !   variations   of useful results: *(flowdoms.x) *(flowdoms.w)
    !                *(flowdoms.dw) *(*bcdata.fp) *(*bcdata.fv) *(*bcdata.m)
-   !                *(*bcdata.oarea) pref pointref moment force
+   !                *(*bcdata.oarea) *(*bcdata.sepsensor) pref pointref
+   !                moment force sepsensor
    !   with respect to varying inputs: *(flowdoms.x) *(flowdoms.w)
-   !                pref mach tempfreestream reynolds machgrid pointref
-   !                alpha beta
+   !                pref mach tempfreestream machgrid lengthref machcoef
+   !                pointref alpha beta
    !   RW status of diff variables: *(flowdoms.x):in-out *(flowdoms.w):in-out
    !                *(flowdoms.dw):out *(*bcdata.fp):out *(*bcdata.fv):out
-   !                *(*bcdata.m):out *(*bcdata.oarea):out pref:in-out
-   !                mach:in tempfreestream:in reynolds:in machgrid:in
-   !                pointref:in-out moment:out alpha:in force:out
-   !                beta:in
+   !                *(*bcdata.m):out *(*bcdata.oarea):out *(*bcdata.sepsensor):out
+   !                pref:in-out mach:in tempfreestream:in machgrid:in
+   !                lengthref:in machcoef:in pointref:in-out moment:out
+   !                alpha:in force:out beta:in sepsensor:out
    !   Plus diff mem management of: flowdoms.x:in flowdoms.vol:in
    !                flowdoms.w:in flowdoms.dw:in rev:in bvtj1:in bvtj2:in
    !                p:in sfacei:in sfacej:in s:in gamma:in sfacek:in
@@ -21,8 +22,8 @@
    !                bmti2:in si:in sj:in sk:in bvti1:in bvti2:in fw:in
    !                bmtj1:in bmtj2:in viscsubface:in *viscsubface.tau:in
    !                bcdata:in *bcdata.norm:in *bcdata.rface:in *bcdata.fp:in
-   !                *bcdata.fv:in *bcdata.m:in *bcdata.oarea:in radi:in
-   !                radj:in radk:in
+   !                *bcdata.fv:in *bcdata.m:in *bcdata.oarea:in *bcdata.sepsensor:in
+   !                *bcdata.uslip:in radi:in radj:in radk:in
    ! This is a super-combined function that combines the original
    ! functionality of: 
    ! Pressure Computation
@@ -35,7 +36,7 @@
    ! block/sps loop is outside the calculation. This routine is suitable
    ! for forward mode AD with Tapenade
    SUBROUTINE BLOCK_RES_T(nn, sps, usespatial, alpha, alphad, beta, betad, &
-   &  liftindex, force, forced, moment, momentd)
+   &  liftindex, force, forced, moment, momentd, sepsensor, sepsensord)
    USE ITERATION
    USE FLOWVARREFSTATE
    USE DIFFSIZES
@@ -107,6 +108,8 @@
    !  Hint: ISIZE3OFDrfflowdoms_vol should be the size of dimension 3 of array *flowdoms%vol
    !  Hint: ISIZE2OFDrfflowdoms_vol should be the size of dimension 2 of array *flowdoms%vol
    !  Hint: ISIZE1OFDrfflowdoms_vol should be the size of dimension 1 of array *flowdoms%vol
+   !  Hint: ISIZE2OFDrfDrfbcdata_sepsensor should be the size of dimension 2 of array **bcdata%sepsensor
+   !  Hint: ISIZE1OFDrfDrfbcdata_sepsensor should be the size of dimension 1 of array **bcdata%sepsensor
    !  Hint: ISIZE2OFDrfDrfbcdata_oarea should be the size of dimension 2 of array **bcdata%oarea
    !  Hint: ISIZE1OFDrfDrfbcdata_oarea should be the size of dimension 1 of array **bcdata%oarea
    !  Hint: ISIZE3OFDrfDrfbcdata_m should be the size of dimension 3 of array **bcdata%m
@@ -126,8 +129,8 @@
    REAL(kind=realtype), INTENT(IN) :: alphad, betad
    INTEGER(kind=inttype), INTENT(IN) :: liftindex
    ! Output Variables
-   REAL(kind=realtype) :: force(3), moment(3)
-   REAL(kind=realtype) :: forced(3), momentd(3)
+   REAL(kind=realtype) :: force(3), moment(3), sepsensor
+   REAL(kind=realtype) :: forced(3), momentd(3), sepsensord
    ! Working Variables
    REAL(kind=realtype) :: gm1, v2, fact, tmp
    REAL(kind=realtype) :: v2d, factd, tmpd
@@ -179,8 +182,9 @@
    CALL DEBUG_TGT_REAL8('mach', mach, machd)
    CALL DEBUG_TGT_REAL8('tempfreestream', tempfreestream, &
    &                   tempfreestreamd)
-   CALL DEBUG_TGT_REAL8('reynolds', reynolds, reynoldsd)
    CALL DEBUG_TGT_REAL8('machgrid', machgrid, machgridd)
+   CALL DEBUG_TGT_REAL8('lengthref', lengthref, lengthrefd)
+   CALL DEBUG_TGT_REAL8('machcoef', machcoef, machcoefd)
    CALL DEBUG_TGT_REAL8ARRAY('pointref', pointref, pointrefd, 3)
    CALL DEBUG_TGT_REAL8('alpha', alpha, alphad)
    CALL DEBUG_TGT_REAL8('beta', beta, betad)
@@ -242,7 +246,11 @@
    CALL DEBUG_TGT_CALL('NORMALVELOCITIES_BLOCK', .TRUE., .FALSE.)
    ! Required for TS
    CALL NORMALVELOCITIES_BLOCK_T(sps)
+   CALL DEBUG_TGT_EXIT()
+   CALL DEBUG_TGT_CALL('SLIPVELOCITIESFINELEVEL_BLOCK', .TRUE., .FALSE.&
+   &                 )
    ! Required for TS
+   CALL SLIPVELOCITIESFINELEVEL_BLOCK_T(useoldcoor, t, sps)
    CALL DEBUG_TGT_EXIT()
    ELSE
    DO ii1=1,ntimeintervalsspectral
@@ -264,6 +272,9 @@
    END DO
    DO ii1=1,ISIZE1OFDrfbcdata
    bcdatad(ii1)%rface = 0.0_8
+   END DO
+   DO ii1=1,ISIZE1OFDrfbcdata
+   bcdatad(ii1)%uslip = 0.0_8
    END DO
    END IF
    ! ------------------------------------------------
@@ -449,6 +460,10 @@
    CALL DEBUG_TGT_REAL8('pinfcorr', pinfcorr, pinfcorrd)
    CALL DEBUG_TGT_REAL8('rgas', rgas, rgasd)
    CALL DEBUG_TGT_REAL8('pref', pref, prefd)
+   CALL DEBUG_TGT_REAL8ARRAY('veldirfreestream', veldirfreestream, &
+   &                            veldirfreestreamd, 3)
+   CALL DEBUG_TGT_REAL8('lengthref', lengthref, lengthrefd)
+   CALL DEBUG_TGT_REAL8('machcoef', machcoef, machcoefd)
    CALL DEBUG_TGT_REAL8ARRAY('pointref', pointref, pointrefd, 3)
    CALL DEBUG_TGT_DISPLAY('middle')
    END IF
@@ -530,7 +545,7 @@
    END DO
    CALL DEBUG_TGT_CALL('FORCESANDMOMENTS', .TRUE., .FALSE.)
    CALL FORCESANDMOMENTS_T(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd, &
-   &                    yplusmax)
+   &                    yplusmax, sepsensor, sepsensord)
    CALL DEBUG_TGT_EXIT()
    ! Convert back to actual forces. Note that even though we use
    ! MachCoef, Lref, and surfaceRef here, they are NOT differented,
@@ -538,14 +553,16 @@
    ! the raw forces and moment form forcesAndMoments. 
    scaledimd = (prefd*pinf-pref*pinfd)/pinf**2
    scaledim = pref/pinf
-   factd = -(two*machcoef**2*surfaceref*lref**2*((gammainfd*pinf+gammainf&
-   &    *pinfd)*scaledim+gammainf*pinf*scaledimd)/(gammainf*pinf*machcoef*&
+   factd = -(two*surfaceref*lref**2*(((gammainfd*pinf+gammainf*pinfd)*&
+   &    scaledim+gammainf*pinf*scaledimd)*machcoef**2+gammainf*pinf*scaledim&
+   &    *(machcoefd*machcoef+machcoef*machcoefd))/(gammainf*pinf*machcoef*&
    &    machcoef*surfaceref*lref*lref*scaledim)**2)
    fact = two/(gammainf*pinf*machcoef*machcoef*surfaceref*lref*lref*&
    &    scaledim)
    forced = ((cfpd+cfvd)*fact-(cfp+cfv)*factd)/fact**2
    force = (cfp+cfv)/fact
-   factd = factd/(lengthref*lref)
+   factd = (factd*lengthref*lref-fact*lref*lengthrefd)/(lengthref*lref)**&
+   &    2
    fact = fact/(lengthref*lref)
    momentd = ((cmpd+cmvd)*fact-(cmp+cmv)*factd)/fact**2
    moment = (cmp+cmv)/fact
@@ -608,10 +625,17 @@
    &                          )%oarea, ISIZE1OFDrfDrfbcdata_oarea*&
    &                          ISIZE2OFDrfDrfbcdata_oarea)
    END DO
+   DO ii1=1,ISIZE1OFDrfbcdata
+   CALL DEBUG_TGT_REAL8ARRAY('bcdata', bcdata(ii1)%sepsensor, bcdatad&
+   &                          (ii1)%sepsensor, &
+   &                          ISIZE1OFDrfDrfbcdata_sepsensor*&
+   &                          ISIZE2OFDrfDrfbcdata_sepsensor)
+   END DO
    CALL DEBUG_TGT_REAL8('pref', pref, prefd)
    CALL DEBUG_TGT_REAL8ARRAY('pointref', pointref, pointrefd, 3)
    CALL DEBUG_TGT_REAL8ARRAY('moment', moment, momentd, 3)
    CALL DEBUG_TGT_REAL8ARRAY('force', force, forced, 3)
+   CALL DEBUG_TGT_REAL8('sepsensor', sepsensor, sepsensord)
    CALL DEBUG_TGT_DISPLAY('exit')
    END IF
    END SUBROUTINE BLOCK_RES_T

@@ -52,8 +52,8 @@
       Mat     dRda, dRdx
       Mat     dFcdw, dFcdx, dFndFc
       Mat     dFdx, dFdw, doAdX
-      Vec, allocatable, dimension(:,:) :: FMw ! 6 by ntimespectral instance
-      Vec, allocatable, dimension(:,:) :: FMx ! 6 by ntimespectral instance
+      Vec, allocatable, dimension(:,:) :: FMw ! nFM by ntimespectral instance
+      Vec, allocatable, dimension(:,:) :: FMx ! nFM by ntimespectral instance
       Mat, allocatable, dimension(:) :: coarsedRdWPreT
       Mat, allocatable, dimension(:) :: restrictionOperator
       Mat, allocatable, dimension(:) :: prolongationOperator
@@ -78,12 +78,14 @@
       ! Data for dRda and dFMdExtra
       real(kind=realType), allocatable, dimension(:,:) :: dRda_data
       real(kind=realType), allocatable, dimension(:,:,:) :: dFMdExtra
-       ! Logical identifying the type of PETSc matrix being used for dRdW
+      integer(kind=intType), parameter :: nFM = 7
+      integer(kind=intTYpe), parameter:: iSepSensor = 7
+      ! Logical identifying the type of PETSc matrix being used for dRdW
        logical :: PETScBlockMatrix
-
+       
       real(kind=realType), allocatable, dimension(:) :: adjResHist
       integer(kind=intType)                          :: adjConvIts
-
+      
       !Binary Viewer
       real(kind=realType) :: localInfo(MAT_INFO_SIZE)
       real(kind=realType) :: sumInfo(MAT_INFO_SIZE)

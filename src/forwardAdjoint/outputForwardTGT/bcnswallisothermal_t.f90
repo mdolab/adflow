@@ -7,11 +7,12 @@
    !                *bvti1 *bvti2 *bmtj1 *bmtj2
    !   with respect to varying inputs: *rev *bvtj1 *bvtj2 *p *gamma
    !                *bmtk1 *w *bmtk2 *rlv *bvtk1 *bvtk2 *bmti1 *bmti2
-   !                *bvti1 *bvti2 *bmtj1 *bmtj2 tref rgas
+   !                *bvti1 *bvti2 *bmtj1 *bmtj2 *(*bcdata.uslip) tref
+   !                rgas
    !   Plus diff mem management of: rev:in bvtj1:in bvtj2:in p:in
    !                gamma:in bmtk1:in w:in bmtk2:in rlv:in bvtk1:in
    !                bvtk2:in bmti1:in bmti2:in bvti1:in bvti2:in bmtj1:in
-   !                bmtj2:in bcdata:in
+   !                bmtj2:in bcdata:in *bcdata.uslip:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -29,6 +30,10 @@
    USE BLOCKPOINTERS_D
    USE BCTYPES
    USE DIFFSIZES
+   !  Hint: ISIZE3OFDrfDrfbcdata_uslip should be the size of dimension 3 of array **bcdata%uslip
+   !  Hint: ISIZE2OFDrfDrfbcdata_uslip should be the size of dimension 2 of array **bcdata%uslip
+   !  Hint: ISIZE1OFDrfDrfbcdata_uslip should be the size of dimension 1 of array **bcdata%uslip
+   !  Hint: ISIZE1OFDrfbcdata should be the size of dimension 1 of array *bcdata
    !  Hint: ISIZE4OFDrfbmtj2 should be the size of dimension 4 of array *bmtj2
    !  Hint: ISIZE3OFDrfbmtj2 should be the size of dimension 3 of array *bmtj2
    !  Hint: ISIZE2OFDrfbmtj2 should be the size of dimension 2 of array *bmtj2
@@ -109,6 +114,7 @@
    REAL(kind=realtype) :: rhok, t2, t1
    REAL(kind=realtype) :: rhokd, t2d, t1d
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: uslip
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: uslipd
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: tns_wall
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1d, ww2d
@@ -149,6 +155,7 @@
       EXTERNAL DEBUG_TGT_HERE
    LOGICAL :: DEBUG_TGT_HERE
    INTRINSIC MIN
+   INTEGER :: ii1
    IF (.TRUE. .AND. DEBUG_TGT_HERE('entry', .FALSE.)) THEN
    CALL DEBUG_TGT_REAL8ARRAY('rev', rev, revd, ISIZE1OFDrfrev*&
    &                        ISIZE2OFDrfrev*ISIZE3OFDrfrev)
@@ -188,6 +195,12 @@
    CALL DEBUG_TGT_REAL8ARRAY('bmtj2', bmtj2, bmtj2d, ISIZE1OFDrfbmtj2*&
    &                        ISIZE2OFDrfbmtj2*ISIZE3OFDrfbmtj2*&
    &                        ISIZE4OFDrfbmtj2)
+   DO ii1=1,ISIZE1OFDrfbcdata
+   CALL DEBUG_TGT_REAL8ARRAY('bcdata', bcdata(ii1)%uslip, bcdatad(ii1&
+   &                          )%uslip, ISIZE1OFDrfDrfbcdata_uslip*&
+   &                          ISIZE2OFDrfDrfbcdata_uslip*&
+   &                          ISIZE3OFDrfDrfbcdata_uslip)
+   END DO
    CALL DEBUG_TGT_REAL8('tref', tref, trefd)
    CALL DEBUG_TGT_REAL8('rgas', rgas, rgasd)
    CALL DEBUG_TGT_DISPLAY('entry')
@@ -216,6 +229,7 @@
    IF (bctype(nn) .EQ. nswallisothermal) THEN
    ! Set the pointers for uSlip and TNSWall to make
    ! the code more readable.
+   uslipd => bcdatad(nn)%uslip
    uslip => bcdata(nn)%uslip
    tns_wall => bcdata(nn)%tns_wall
    CALL DEBUG_TGT_CALL('SETBCPOINTERS', .TRUE., .FALSE.)
@@ -291,6 +305,13 @@
    CALL DEBUG_TGT_REAL8ARRAY('bmtj2', bmtj2, bmtj2d, &
    &                                ISIZE1OFDrfbmtj2*ISIZE2OFDrfbmtj2*&
    &                                ISIZE3OFDrfbmtj2*ISIZE4OFDrfbmtj2)
+   DO ii1=1,ISIZE1OFDrfbcdata
+   CALL DEBUG_TGT_REAL8ARRAY('bcdata', bcdata(ii1)%uslip, &
+   &                                  bcdatad(ii1)%uslip, &
+   &                                  ISIZE1OFDrfDrfbcdata_uslip*&
+   &                                  ISIZE2OFDrfDrfbcdata_uslip*&
+   &                                  ISIZE3OFDrfDrfbcdata_uslip)
+   END DO
    CALL DEBUG_TGT_REAL8('tref', tref, trefd)
    CALL DEBUG_TGT_REAL8('rgas', rgas, rgasd)
    CALL DEBUG_TGT_REAL8('rhok', rhok, rhokd)
@@ -324,11 +345,11 @@
    ww1d(i, j, irho) = (pp1d(i, j)*rgas*t1-pp1(i, j)*(rgasd*t1+&
    &            rgas*t1d))/(rgas*t1)**2
    ww1(i, j, irho) = pp1(i, j)/(rgas*t1)
-   ww1d(i, j, ivx) = -ww2d(i, j, ivx)
+   ww1d(i, j, ivx) = two*uslipd(i, j, 1) - ww2d(i, j, ivx)
    ww1(i, j, ivx) = -ww2(i, j, ivx) + two*uslip(i, j, 1)
-   ww1d(i, j, ivy) = -ww2d(i, j, ivy)
+   ww1d(i, j, ivy) = two*uslipd(i, j, 2) - ww2d(i, j, ivy)
    ww1(i, j, ivy) = -ww2(i, j, ivy) + two*uslip(i, j, 2)
-   ww1d(i, j, ivz) = -ww2d(i, j, ivz)
+   ww1d(i, j, ivz) = two*uslipd(i, j, 3) - ww2d(i, j, ivz)
    ww1(i, j, ivz) = -ww2(i, j, ivz) + two*uslip(i, j, 3)
    ! Set the viscosities. There is no need to test for a
    ! viscous problem of course. The eddy viscosity is

@@ -23,7 +23,7 @@ subroutine determineStencil(lumped)
   integer(kind=intType) :: stencil(-3:3,-3:3,-3:3)
   real(kind=realType) :: deriv(-3:3,-3:3,-3:3,nw,2)
   logical :: different
-  real(kind=realType) :: alpha, beta, force(3), moment(3)
+  real(kind=realType) :: alpha, beta, force(3), moment(3), sepSensor
   integer(kind=intType) :: liftIndex
   call getDirAngle(velDirFreestream, liftDirection, liftIndex, alpha, beta)
 
@@ -55,7 +55,7 @@ subroutine determineStencil(lumped)
   groundLevel = 1
   currentLevel = 1
   ! Get current dw
-  call block_res(nn, 1, .False., alpha, beta, liftIndex, force, moment)
+  call block_res(nn, 1, .False., alpha, beta, liftIndex, force, moment, sepSensor)
   
 ! Copy out dw
   do k=3,3
@@ -73,7 +73,7 @@ subroutine determineStencil(lumped)
   end do
 
   ! Re-run dw
-  call block_res(nn, 1, .False., alpha, beta, liftIndex, force, moment)
+  call block_res(nn, 1, .False., alpha, beta, liftIndex, force, moment, sepSensor)
  
   do i=3,3
      do j=3,3
@@ -127,8 +127,8 @@ subroutine determineStencil(lumped)
   currentLevel = 1
 
   ! Get current dw -> We can use the normal version here
-  call block_res(nn, 1, .True., alpha, beta, liftIndex, force, moment)
-  call block_res(nn, 1, .False., alpha, beta, liftIndex, force, moment)
+  call block_res(nn, 1, .True., alpha, beta, liftIndex, force, moment, sepSensor)
+  call block_res(nn, 1, .False., alpha, beta, liftIndex, force, moment, sepSensor)
   dw_0=zero
   ! Copy out dw
   do k=-3,3
@@ -146,7 +146,7 @@ subroutine determineStencil(lumped)
   
 
   ! Re-run dw
-  call block_res(nn, 1, .True., alpha, beta, liftIndex, force, moment)
+  call block_res(nn, 1, .True., alpha, beta, liftIndex, force, moment, sepSensor)
   do k=-3,3
      do j=-3,3
         do i=-3,3

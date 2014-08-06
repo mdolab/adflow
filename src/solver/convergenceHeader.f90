@@ -52,7 +52,7 @@ subroutine convergenceHeader
        ! always written. This depends on the equation mode. For unsteady
        ! and spectral computations a bit more info is written.
 
-     nCharWrite = 9
+     nCharWrite = 25
      if( writeIterations ) nCharWrite = nCharWrite + 7
      if(equationMode == unsteady) then
         nCharWrite = nCharWrite + 7 + fieldWidth + 1
@@ -191,6 +191,8 @@ subroutine convergenceHeader
            case (cgnsEddyMax)
              write(*,"(a)",advance="no") "  Eddyv_max |"
 
+          case (cgnsSepSensor)
+             write(*,"(a)",advance="no") "  SepSensor |"
           end select
        enddo
 

@@ -27,6 +27,7 @@ Subroutine computeObjectivePartialsFwd(costFunction)
   real(kind=realtype) :: val
   real(kind=realType), dimension(3, nTimeIntervalsSpectral) :: force, forceb
   real(kind=realType), dimension(3, nTimeIntervalsSpectral) :: moment, momentb
+  real(kind=realType), dimension(nTimeIntervalsSpectral) :: sepSensor, sepSensorb
   real(kind=realType) :: alpha, alphab, beta, betab
   real(kind=realType) :: objValue, objValueb
   integer(kind=intType) :: liftIndex, idim
@@ -41,12 +42,13 @@ Subroutine computeObjectivePartialsFwd(costFunction)
      moment(1, sps) = functionValue(costFuncMomX)
      moment(2, sps) = functionValue(costFuncMomY)
      moment(3, sps) = functionValue(costFuncMomZ)
+     sepSensor(sps) = functionValue(costFuncSepSensor)
   end do
 
   objValueb = one
   call getDirAngle(velDirFreestream, liftDirection, liftIndex, alpha, beta)
-  call getCostFunction_b(costFunction, force, forceb, moment, momentb, &
-       alpha, alphab, beta, betab, liftIndex, objValue, objValueb)
+  call getCostFunction_b(costFunction, force, forceb, moment, momentb, sepSensor, &
+       sepSensorb, alpha, alphab, beta, betab, liftIndex, objValue, objValueb)
 
   !******************************************! 
   !               dIdw                       ! 
@@ -65,10 +67,17 @@ Subroutine computeObjectivePartialsFwd(costFunction)
      end do
   end do
 
+  if (costFunction == costFuncSepSensor) then 
+     do sps=1,nTimeIntervalsSpectral
+        call VecAXPY(dJdw, sepSensorb(sps), FMw(iSepSensor, sps), ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+     end do
+  end if
+
   ! Assemble dJdw
   call VecAssemblyBegin(dJdw, ierr)
   call EChk(ierr, __FILE__, __LINE__)
- call VecAssemblyEnd(dJdw, ierr)
+  call VecAssemblyEnd(dJdw, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
   !******************************************!
@@ -94,6 +103,12 @@ Subroutine computeObjectivePartialsFwd(costFunction)
   call VecAssemblyEnd(dJdx, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
+  if (costFunction == costFuncSepSensor) then 
+     do sps=1,nTimeIntervalsSpectral
+        call VecAXPY(dJdx, sepSensorb(sps), FMx(iSepSensor, sps), ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+     end do
+  end if
   !******************************************!
   !          dIda CALCULATIONS               !
   !******************************************!

@@ -190,6 +190,9 @@
           case("totalr")
              nMon = nMon + 1; nMonSum = nMonSum + 1
              tmpNames(nMon) = 'totalR'
+          case("sepsensor")
+             nMon = nMon + 1; nMonSum = nMonSum + 1
+             tmpNames(nMon) = cgnsSepSensor
            case default
              write(errorMessage,"(3a)") "Unknown monitoring variable, ", &
                                         trim(keyword), ", specified"

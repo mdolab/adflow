@@ -113,6 +113,9 @@ subroutine dealloc_derivative_values(level)
            deallocate(flowDomsd(nn,1,sps)%BCData(mm)%M, stat=ierr)
            call EChk(ierr,__FILE__,__LINE__)
 
+           deallocate(flowDomsd(nn,1,sps)%BCData(mm)%sepSensor, stat=ierr)
+           call EChk(ierr,__FILE__,__LINE__)
+
            deallocate(flowDomsd(nn,1,sps)%BCData(mm)%uSlip, stat=ierr)
            call EChk(ierr,__FILE__,__LINE__)
 

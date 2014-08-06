@@ -3,12 +3,14 @@
    !
    !  Differentiation of forcesandmoments in forward (tangent) mode (with options debugTangent i4 dr8 r8):
    !   variations   of useful results: *(*bcdata.fp) *(*bcdata.fv)
-   !                *(*bcdata.m) *(*bcdata.oarea) cfp cfv cmp cmv
-   !   with respect to varying inputs: *p *x *si *sj *sk *(*viscsubface.tau)
-   !                gammainf pinf pref pointref
-   !   Plus diff mem management of: p:in x:in si:in sj:in sk:in viscsubface:in
-   !                *viscsubface.tau:in bcdata:in *bcdata.fp:in *bcdata.fv:in
-   !                *bcdata.m:in *bcdata.oarea:in
+   !                *(*bcdata.m) *(*bcdata.oarea) *(*bcdata.sepsensor)
+   !                cfp cfv cmp cmv sepsensor
+   !   with respect to varying inputs: *p *w *x *si *sj *sk *(*viscsubface.tau)
+   !                gammainf pinf pref veldirfreestream lengthref
+   !                machcoef pointref
+   !   Plus diff mem management of: p:in w:in x:in si:in sj:in sk:in
+   !                viscsubface:in *viscsubface.tau:in bcdata:in *bcdata.fp:in
+   !                *bcdata.fv:in *bcdata.m:in *bcdata.oarea:in *bcdata.sepsensor:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -20,7 +22,7 @@
    !      ******************************************************************
    !
    SUBROUTINE FORCESANDMOMENTS_T(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd&
-   &  , yplusmax)
+   &  , yplusmax, sepsensor, sepsensord)
    USE FLOWVARREFSTATE
    USE BLOCKPOINTERS_D
    USE BCTYPES
@@ -47,9 +49,15 @@
    !  Hint: ISIZE3OFDrfx should be the size of dimension 3 of array *x
    !  Hint: ISIZE2OFDrfx should be the size of dimension 2 of array *x
    !  Hint: ISIZE1OFDrfx should be the size of dimension 1 of array *x
+   !  Hint: ISIZE4OFDrfw should be the size of dimension 4 of array *w
+   !  Hint: ISIZE3OFDrfw should be the size of dimension 3 of array *w
+   !  Hint: ISIZE2OFDrfw should be the size of dimension 2 of array *w
+   !  Hint: ISIZE1OFDrfw should be the size of dimension 1 of array *w
    !  Hint: ISIZE3OFDrfp should be the size of dimension 3 of array *p
    !  Hint: ISIZE2OFDrfp should be the size of dimension 2 of array *p
    !  Hint: ISIZE1OFDrfp should be the size of dimension 1 of array *p
+   !  Hint: ISIZE2OFDrfDrfbcdata_sepsensor should be the size of dimension 2 of array **bcdata%sepsensor
+   !  Hint: ISIZE1OFDrfDrfbcdata_sepsensor should be the size of dimension 1 of array **bcdata%sepsensor
    !  Hint: ISIZE2OFDrfDrfbcdata_oarea should be the size of dimension 2 of array **bcdata%oarea
    !  Hint: ISIZE1OFDrfDrfbcdata_oarea should be the size of dimension 1 of array **bcdata%oarea
    !  Hint: ISIZE3OFDrfDrfbcdata_m should be the size of dimension 3 of array **bcdata%m
@@ -70,8 +78,8 @@
    !      * moment coefficients of the geometry. A distinction is made     *
    !      * between the inviscid and viscous parts. In case the maximum    *
    !      * yplus value must be monitored (only possible for rans), this   *
-   !      * value is also computed.                                        *
-   !      *                                                                *
+   !      * value is also computed. The separation sensor is also computed *
+   !      * here.                                                          *
    !      ******************************************************************
    !
    !
@@ -81,7 +89,8 @@
    REAL(kind=realtype), DIMENSION(3), INTENT(OUT) :: cfpd, cfvd
    REAL(kind=realtype), DIMENSION(3), INTENT(OUT) :: cmp, cmv
    REAL(kind=realtype), DIMENSION(3), INTENT(OUT) :: cmpd, cmvd
-   REAL(kind=realtype), INTENT(OUT) :: yplusmax
+   REAL(kind=realtype), INTENT(OUT) :: yplusmax, sepsensor
+   REAL(kind=realtype), INTENT(OUT) :: sepsensord
    !
    !      Local variables.
    !
@@ -92,8 +101,8 @@
    REAL(kind=realtype) :: xcd, ycd, zcd
    REAL(kind=realtype) :: fact, rho, mul, yplus, dwall
    REAL(kind=realtype) :: factd
-   REAL(kind=realtype) :: scaledim
-   REAL(kind=realtype) :: scaledimd
+   REAL(kind=realtype) :: scaledim, v(3), sensor
+   REAL(kind=realtype) :: scaledimd, vd(3), sensord
    REAL(kind=realtype) :: tauxx, tauyy, tauzz
    REAL(kind=realtype) :: tauxxd, tauyyd, tauzzd
    REAL(kind=realtype) :: tauxy, tauxz, tauyz
@@ -103,10 +112,13 @@
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp2, pp1
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp2d, pp1d
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rho2, rho1
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rho2d, rho1d
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv2, rlv1
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: dd2wall
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ss, xx
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ssd, xxd
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww2
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww2d
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: norm
    REAL(kind=realtype) :: mx, my, mz, qa
    REAL(kind=realtype) :: mxd, myd, mzd, qad
@@ -117,6 +129,7 @@
    REAL(kind=realtype) :: result1d
    REAL(kind=realtype) :: arg2
    REAL(kind=realtype) :: result2
+   INTRINSIC EXP
    INTRINSIC MAX
    EXTERNAL DEBUG_TGT_HERE
    LOGICAL :: DEBUG_TGT_HERE
@@ -125,6 +138,8 @@
    IF (.TRUE. .AND. DEBUG_TGT_HERE('entry', .FALSE.)) THEN
    CALL DEBUG_TGT_REAL8ARRAY('p', p, pd, ISIZE1OFDrfp*ISIZE2OFDrfp*&
    &                        ISIZE3OFDrfp)
+   CALL DEBUG_TGT_REAL8ARRAY('w', w, wd, ISIZE1OFDrfw*ISIZE2OFDrfw*&
+   &                        ISIZE3OFDrfw*ISIZE4OFDrfw)
    CALL DEBUG_TGT_REAL8ARRAY('x', x, xd, ISIZE1OFDrfx*ISIZE2OFDrfx*&
    &                        ISIZE3OFDrfx*ISIZE4OFDrfx)
    CALL DEBUG_TGT_REAL8ARRAY('si', si, sid, ISIZE1OFDrfsi*ISIZE2OFDrfsi&
@@ -143,6 +158,10 @@
    CALL DEBUG_TGT_REAL8('gammainf', gammainf, gammainfd)
    CALL DEBUG_TGT_REAL8('pinf', pinf, pinfd)
    CALL DEBUG_TGT_REAL8('pref', pref, prefd)
+   CALL DEBUG_TGT_REAL8ARRAY('veldirfreestream', veldirfreestream, &
+   &                        veldirfreestreamd, 3)
+   CALL DEBUG_TGT_REAL8('lengthref', lengthref, lengthrefd)
+   CALL DEBUG_TGT_REAL8('machcoef', machcoef, machcoefd)
    CALL DEBUG_TGT_REAL8ARRAY('pointref', pointref, pointrefd, 3)
    CALL DEBUG_TGT_DISPLAY('entry')
    END IF
@@ -192,6 +211,7 @@
    cmvd(3) = 0.0_8
    cmv(3) = zero
    yplusmax = zero
+   sepsensor = zero
    DO ii1=1,ISIZE1OFDrfbcdata
    bcdatad(ii1)%fp = 0.0_8
    END DO
@@ -204,10 +224,15 @@
    DO ii1=1,ISIZE1OFDrfbcdata
    bcdatad(ii1)%oarea = 0.0_8
    END DO
+   DO ii1=1,ISIZE1OFDrfbcdata
+   bcdatad(ii1)%sepsensor = 0.0_8
+   END DO
    cfpd = 0.0_8
    cfvd = 0.0_8
    cmpd = 0.0_8
    cmvd = 0.0_8
+   sepsensord = 0.0_8
+   vd = 0.0_8
    ! Loop over the boundary subfaces of this block.
    bocos:DO nn=1,nbocos
    !
@@ -236,12 +261,16 @@
    pp2 => p(2, 1:, 1:)
    pp1d => pd(1, 1:, 1:)
    pp1 => p(1, 1:, 1:)
+   rho2d => wd(2, 1:, 1:, irho)
    rho2 => w(2, 1:, 1:, irho)
+   rho1d => wd(1, 1:, 1:, irho)
    rho1 => w(1, 1:, 1:, irho)
    ssd => sid(1, :, :, :)
    ss => si(1, :, :, :)
    xxd => xd(1, :, :, :)
    xx => x(1, :, :, :)
+   ww2d => wd(2, 1:, 1:, :)
+   ww2 => w(2, 1:, 1:, :)
    fact = -one
    IF (equations .EQ. ransequations) THEN
    dd2wall => d2wall(2, :, :)
@@ -256,12 +285,16 @@
    pp2 => p(il, 1:, 1:)
    pp1d => pd(ie, 1:, 1:)
    pp1 => p(ie, 1:, 1:)
+   rho2d => wd(il, 1:, 1:, irho)
    rho2 => w(il, 1:, 1:, irho)
+   rho1d => wd(ie, 1:, 1:, irho)
    rho1 => w(ie, 1:, 1:, irho)
    ssd => sid(il, :, :, :)
    ss => si(il, :, :, :)
    xxd => xd(il, :, :, :)
    xx => x(il, :, :, :)
+   ww2d => wd(il, 1:, 1:, :)
+   ww2 => w(il, 1:, 1:, :)
    fact = one
    IF (equations .EQ. ransequations) THEN
    dd2wall => d2wall(il, :, :)
@@ -276,12 +309,16 @@
    pp2 => p(1:, 2, 1:)
    pp1d => pd(1:, 1, 1:)
    pp1 => p(1:, 1, 1:)
+   rho2d => wd(1:, 2, 1:, irho)
    rho2 => w(1:, 2, 1:, irho)
+   rho1d => wd(1:, 1, 1:, irho)
    rho1 => w(1:, 1, 1:, irho)
    ssd => sjd(:, 1, :, :)
    ss => sj(:, 1, :, :)
    xxd => xd(:, 1, :, :)
    xx => x(:, 1, :, :)
+   ww2d => wd(1:, 2, 1:, :)
+   ww2 => w(1:, 2, 1:, :)
    fact = -one
    IF (equations .EQ. ransequations) THEN
    dd2wall => d2wall(:, 2, :)
@@ -296,12 +333,16 @@
    pp2 => p(1:, jl, 1:)
    pp1d => pd(1:, je, 1:)
    pp1 => p(1:, je, 1:)
+   rho2d => wd(1:, jl, 1:, irho)
    rho2 => w(1:, jl, 1:, irho)
+   rho1d => wd(1:, je, 1:, irho)
    rho1 => w(1:, je, 1:, irho)
    ssd => sjd(:, jl, :, :)
    ss => sj(:, jl, :, :)
    xxd => xd(:, jl, :, :)
    xx => x(:, jl, :, :)
+   ww2d => wd(1:, jl, 1:, :)
+   ww2 => w(1:, jl, 1:, :)
    fact = one
    IF (equations .EQ. ransequations) THEN
    dd2wall => d2wall(:, jl, :)
@@ -316,12 +357,16 @@
    pp2 => p(1:, 1:, 2)
    pp1d => pd(1:, 1:, 1)
    pp1 => p(1:, 1:, 1)
+   rho2d => wd(1:, 1:, 2, irho)
    rho2 => w(1:, 1:, 2, irho)
+   rho1d => wd(1:, 1:, 1, irho)
    rho1 => w(1:, 1:, 1, irho)
    ssd => skd(:, :, 1, :)
    ss => sk(:, :, 1, :)
    xxd => xd(:, :, 1, :)
    xx => x(:, :, 1, :)
+   ww2d => wd(1:, 1:, 2, :)
+   ww2 => w(1:, 1:, 2, :)
    fact = -one
    IF (equations .EQ. ransequations) THEN
    dd2wall => d2wall(:, :, 2)
@@ -329,6 +374,8 @@
    IF (.TRUE. .AND. DEBUG_TGT_HERE('middle', .FALSE.)) THEN
    CALL DEBUG_TGT_REAL8ARRAY('p', p, pd, ISIZE1OFDrfp*&
    &                              ISIZE2OFDrfp*ISIZE3OFDrfp)
+   CALL DEBUG_TGT_REAL8ARRAY('w', w, wd, ISIZE1OFDrfw*&
+   &                              ISIZE2OFDrfw*ISIZE3OFDrfw*ISIZE4OFDrfw)
    CALL DEBUG_TGT_REAL8ARRAY('x', x, xd, ISIZE1OFDrfx*&
    &                              ISIZE2OFDrfx*ISIZE3OFDrfx*ISIZE4OFDrfx)
    CALL DEBUG_TGT_REAL8ARRAY('si', si, sid, ISIZE1OFDrfsi*&
@@ -368,12 +415,24 @@
    &                                ISIZE1OFDrfDrfbcdata_oarea*&
    &                                ISIZE2OFDrfDrfbcdata_oarea)
    END DO
+   DO ii1=1,ISIZE1OFDrfbcdata
+   CALL DEBUG_TGT_REAL8ARRAY('bcdata', bcdata(ii1)%sepsensor, &
+   &                                bcdatad(ii1)%sepsensor, &
+   &                                ISIZE1OFDrfDrfbcdata_sepsensor*&
+   &                                ISIZE2OFDrfDrfbcdata_sepsensor)
+   END DO
    CALL DEBUG_TGT_REAL8('gammainf', gammainf, gammainfd)
    CALL DEBUG_TGT_REAL8('pinf', pinf, pinfd)
+   CALL DEBUG_TGT_REAL8ARRAY('veldirfreestream', veldirfreestream&
+   &                              , veldirfreestreamd, 3)
+   CALL DEBUG_TGT_REAL8('lengthref', lengthref, lengthrefd)
+   CALL DEBUG_TGT_REAL8('machcoef', machcoef, machcoefd)
    CALL DEBUG_TGT_REAL8ARRAY('cfp', cfp, cfpd, 3)
    CALL DEBUG_TGT_REAL8ARRAY('cfv', cfv, cfvd, 3)
    CALL DEBUG_TGT_REAL8ARRAY('cmp', cmp, cmpd, 3)
    CALL DEBUG_TGT_REAL8ARRAY('cmv', cmv, cmvd, 3)
+   CALL DEBUG_TGT_REAL8('sepsensor', sepsensor, sepsensord)
+   CALL DEBUG_TGT_REAL8ARRAY('v', v, vd, 3)
    CALL DEBUG_TGT_REAL8ARRAY('refpoint', refpoint, refpointd, 3)
    CALL DEBUG_TGT_REAL8('scaledim', scaledim, scaledimd)
    CALL DEBUG_TGT_DISPLAY('middle')
@@ -388,12 +447,16 @@
    pp2 => p(1:, 1:, kl)
    pp1d => pd(1:, 1:, ke)
    pp1 => p(1:, 1:, ke)
+   rho2d => wd(1:, 1:, kl, irho)
    rho2 => w(1:, 1:, kl, irho)
+   rho1d => wd(1:, 1:, ke, irho)
    rho1 => w(1:, 1:, ke, irho)
    ssd => skd(:, :, kl, :)
    ss => sk(:, :, kl, :)
    xxd => xd(:, :, kl, :)
    xx => x(:, :, kl, :)
+   ww2d => wd(1:, 1:, kl, :)
+   ww2 => w(1:, 1:, kl, :)
    fact = one
    IF (equations .EQ. ransequations) THEN
    dd2wall => d2wall(:, :, kl)
@@ -469,6 +532,40 @@
    bcdata(nn)%oarea(i-1, j) = bcdata(nn)%oarea(i-1, j) + qa
    bcdatad(nn)%oarea(i, j) = bcdatad(nn)%oarea(i, j) + qad
    bcdata(nn)%oarea(i, j) = bcdata(nn)%oarea(i, j) + qa
+   ! Get normalized surface velocity:
+   vd(1) = ww2d(i, j, ivx)
+   v(1) = ww2(i, j, ivx)
+   vd(2) = ww2d(i, j, ivy)
+   v(2) = ww2(i, j, ivy)
+   vd(3) = ww2d(i, j, ivz)
+   v(3) = ww2(i, j, ivz)
+   arg1d = 2*v(1)*vd(1) + 2*v(2)*vd(2) + 2*v(3)*vd(3)
+   arg1 = v(1)**2 + v(2)**2 + v(3)**2
+   IF (arg1 .EQ. 0.0_8) THEN
+   result1d = 0.0_8
+   ELSE
+   result1d = arg1d/(2.0*SQRT(arg1))
+   END IF
+   result1 = SQRT(arg1)
+   vd = (vd*(result1+1e-16)-v*result1d)/(result1+1e-16)**2
+   v = v/(result1+1e-16)
+   ! Dot product with free stream
+   sensord = -(vd(1)*veldirfreestream(1)+v(1)*veldirfreestreamd(1&
+   &            )+vd(2)*veldirfreestream(2)+v(2)*veldirfreestreamd(2)+vd(3)*&
+   &            veldirfreestream(3)+v(3)*veldirfreestreamd(3))
+   sensor = -(v(1)*veldirfreestream(1)+v(2)*veldirfreestream(2)+v&
+   &            (3)*veldirfreestream(3))
+   !Now run through a smooth heaviside function:
+   sensord = -((-(one*2*10*sensord*EXP(-(2*10*sensor))))/(one+EXP&
+   &            (-(2*10*sensor)))**2)
+   sensor = one/(one+EXP(-(2*10*sensor)))
+   ! And integrate over the area of this cell and save:
+   sensord = four*(sensord*qa+sensor*qad)
+   sensor = sensor*four*qa
+   sepsensord = sepsensord + sensord
+   sepsensor = sepsensor + sensor
+   bcdatad(nn)%sepsensor(i, j) = sensord
+   bcdata(nn)%sepsensor(i, j) = sensor
    ! Update the inviscid force and moment coefficients.
    cfpd(1) = cfpd(1) + fxd
    cfp(1) = cfp(1) + fx
@@ -513,7 +610,9 @@
    ! Loop over the quadrilateral faces of the subface and
    ! compute the viscous contribution to the force and
    ! moment and update the maximum value of y+.
+   !DEC$ NOVECTOR
    DO j=bcdata(nn)%jnbeg+1,bcdata(nn)%jnend
+   !DEC$ NOVECTOR
    DO i=bcdata(nn)%inbeg+1,bcdata(nn)%inend
    ! Store the viscous stress tensor a bit easier.
    tauxxd = viscsubfaced(nn)%tau(i, j, 1)
@@ -648,8 +747,9 @@
    ! Currently the coefficients only contain the surface integral
    ! of the pressure tensor. These values must be scaled to
    ! obtain the correct coefficients.
-   factd = -(two*machcoef**2*surfaceref*lref**2*((gammainfd*pinf+gammainf&
-   &    *pinfd)*scaledim+gammainf*pinf*scaledimd)/(gammainf*pinf*machcoef*&
+   factd = -(two*surfaceref*lref**2*(((gammainfd*pinf+gammainf*pinfd)*&
+   &    scaledim+gammainf*pinf*scaledimd)*machcoef**2+gammainf*pinf*scaledim&
+   &    *(machcoefd*machcoef+machcoef*machcoefd))/(gammainf*pinf*machcoef*&
    &    machcoef*surfaceref*lref*lref*scaledim)**2)
    fact = two/(gammainf*pinf*machcoef*machcoef*surfaceref*lref*lref*&
    &    scaledim)
@@ -665,7 +765,8 @@
    cfv(2) = cfv(2)*fact
    cfvd(3) = cfvd(3)*fact + cfv(3)*factd
    cfv(3) = cfv(3)*fact
-   factd = factd/(lengthref*lref)
+   factd = (factd*lengthref*lref-fact*lref*lengthrefd)/(lengthref*lref)**&
+   &    2
    fact = fact/(lengthref*lref)
    cmpd(1) = cmpd(1)*fact + cmp(1)*factd
    cmp(1) = cmp(1)*fact
@@ -702,10 +803,17 @@
    &                          )%oarea, ISIZE1OFDrfDrfbcdata_oarea*&
    &                          ISIZE2OFDrfDrfbcdata_oarea)
    END DO
+   DO ii1=1,ISIZE1OFDrfbcdata
+   CALL DEBUG_TGT_REAL8ARRAY('bcdata', bcdata(ii1)%sepsensor, bcdatad&
+   &                          (ii1)%sepsensor, &
+   &                          ISIZE1OFDrfDrfbcdata_sepsensor*&
+   &                          ISIZE2OFDrfDrfbcdata_sepsensor)
+   END DO
    CALL DEBUG_TGT_REAL8ARRAY('cfp', cfp, cfpd, 3)
    CALL DEBUG_TGT_REAL8ARRAY('cfv', cfv, cfvd, 3)
    CALL DEBUG_TGT_REAL8ARRAY('cmp', cmp, cmpd, 3)
    CALL DEBUG_TGT_REAL8ARRAY('cmv', cmv, cmvd, 3)
+   CALL DEBUG_TGT_REAL8('sepsensor', sepsensor, sepsensord)
    CALL DEBUG_TGT_DISPLAY('exit')
    END IF
    END SUBROUTINE FORCESANDMOMENTS_T

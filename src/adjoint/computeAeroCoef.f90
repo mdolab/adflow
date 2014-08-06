@@ -36,7 +36,7 @@ subroutine computeAeroCoef(globalCFVals,sps)
   integer(kind=intType) :: nn, ierr
   real(kind=realType) :: force(3), cforce(3), Lift, Drag, CL, CD
   real(kind=realType) :: Moment(3),cMoment(3), fact, scaleDim
-  real(kind=realType) :: cFp(3), cFv(3), cMp(3), cMv(3), yPlusMax
+  real(kind=realType) :: cFp(3), cFv(3), cMp(3), cMv(3), yPlusMax, sepSensor
   real(kind=realType), dimension(nCostFunction)::localCFVals
 
   !     ******************************************************************
@@ -51,7 +51,7 @@ subroutine computeAeroCoef(globalCFVals,sps)
   domains: do nn=1,nDom
      call setPointers(nn,1_intType,sps)
      
-     call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
+     call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor)
      scaleDim = pRef/pInf
 
      ! Sum pressure and viscous contributions
@@ -94,6 +94,7 @@ subroutine computeAeroCoef(globalCFVals,sps)
      localCFVals(costFuncMomXCoef) = localCFVals(costFuncMomXCoef) + cmoment(1)
      localCFVals(costFuncMomYCoef) = localCFVals(costFuncMomYCoef) + cmoment(2)
      localCFVals(costFuncMomZCoef) = localCFVals(costFuncMomZCoef) + cmoment(3)
+     localCFVals(costFuncSepSensor) = localCFVals(costFuncSepSensor) + sepSensor
   end do domains
 
   ! Now we will mpi_allReduce them into globalCFVals
