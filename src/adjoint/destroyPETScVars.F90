@@ -71,7 +71,7 @@ subroutine destroyPETScVars
   call EChk(PETScIerr,__FILE__,__LINE__)
 
   do sps=1,nTimeIntervalsSpectral
-     do i=1,6
+     do i=1,nFM
         call VecDestroy(FMw(i, sps), PETScIerr)
         call EChk(PETScIerr,__FILE__,__LINE__)
      end do
@@ -88,7 +88,7 @@ subroutine destroyPETScVars
   call EChk(PETScIerr,__FILE__,__LINE__)
 
   do sps=1,ntimeIntervalsSpectral
-     do i=1,6
+     do i=1,nFM
         call VecDestroy(FMx(i, sps), PETScIerr)
         call EChk(PETScIerr,__FILE__,__LINE__)
      end do

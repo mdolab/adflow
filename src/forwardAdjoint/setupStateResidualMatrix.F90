@@ -19,7 +19,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   !     *         always the finest level                                *         
   !     ******************************************************************
   !
-  use ADjointPetsc, only : FMw, dFcdW
+  use ADjointPetsc, only : FMw, dFcdW, nFM, iSepSensor
   use BCTypes
   use blockPointers_d      
   use inputDiscretization 
@@ -52,11 +52,11 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   real(kind=realType) :: delta_x, one_over_dx
 
 #ifdef USE_COMPLEX
-  complex(kind=realType) :: alpha, beta, force(3), moment(3)
-  complex(kind=realType) :: alphad, betad, forced(3), momentd(3)
+  complex(kind=realType) :: alpha, beta, force(3), moment(3), sepSensor
+  complex(kind=realType) :: alphad, betad, forced(3), momentd(3), sepSensord
 #else
-  real(kind=realType) :: alpha, beta, force(3), moment(3)
-  real(kind=realType) :: alphad, betad, forced(3), momentd(3)
+  real(kind=realType) :: alpha, beta, force(3), moment(3), sepSensor
+  real(kind=realType) :: alphad, betad, forced(3), momentd(3), sepSensord
 #endif
   integer(kind=intType) :: liftIndex
   integer(kind=intType), dimension(:,:), pointer ::  colorPtr1, colorPtr2
@@ -145,7 +145,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   
   if (useObjective .and. useAD) then
      do sps=1,nTimeIntervalsSpectral
-        do fmDim=1,6
+        do fmDim=1,nFM
            call VecZeroEntries(FMw(fmDim, sps), ierr)
            call EChk(ierr, __FILE__, __LINE__)
         end do
@@ -265,17 +265,19 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
               if (useAD) then
 #ifndef USE_COMPLEX
                  call block_res_d(nn, sps, .False., &
-                      alpha, alphad, beta, betad, liftIndex, force, forced, moment, momentd) 
+                      alpha, alphad, beta, betad, liftIndex, force, forced, moment, momentd,&
+                      sepSensor, sepSensord)
 #else
                  print *, 'Forward AD routines are not complexified'
                  stop
 #endif
               else
-                 call block_res(nn, sps, .False., alpha, beta, liftIndex, force, moment)
+                 call block_res(nn, sps, .False., alpha, beta, liftIndex, force, moment, &
+                 sepSensor)
               end if
 
               ! If required, set values in the
-              ! 6*nTimeIntervalsSpectral vectors defined in FMw. We
+              ! nFM*nTimeIntervalsSpectral vectors defined in FMw. We
               ! have to be a little carful actually. What we have to
               ! do is loop over subfaces where the cell centered
               ! forces are defined. Then for each force, we loop over
@@ -376,6 +378,12 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
                                           ADD_VALUES, ierr)
                                       call EChk(ierr, __FILE__, __LINE__)
                                    end do
+
+                                   ! Now add in the additional functions
+                                   call VecSetValues(FMw(iSepSensor, sps), 1, colInd, &
+                                        bcDatad(mm)%sepSensor(i, j), ADD_VALUES, ierr)
+                                   call EChk(ierr, __FILE__, __LINE__)
+
                                 end if
                              end do forceStencilLoop
                           end do
@@ -501,7 +509,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   
   if (useObjective .and. useAD) then
      do sps=1,nTimeIntervalsSpectral
-        do fmDim=1,6
+        do fmDim=1,nFM
            call VecAssemblyBegin(FMw(fmDim, sps), ierr) 
            call EChk(ierr, __FILE__, __LINE__)
            call VecAssemblyEnd(FMw(fmDim, sps), ierr)

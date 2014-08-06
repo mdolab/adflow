@@ -8,7 +8,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
+subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor)
   !
   !      ******************************************************************
   !      *                                                                *
@@ -17,8 +17,8 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
   !      * moment coefficients of the geometry. A distinction is made     *
   !      * between the inviscid and viscous parts. In case the maximum    *
   !      * yplus value must be monitored (only possible for rans), this   *
-  !      * value is also computed.                                        *
-  !      *                                                                *
+  !      * value is also computed. The separation sensor is also computed *
+  !      * here.                                                          *
   !      ******************************************************************
   !
   use blockPointers
@@ -32,7 +32,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
   real(kind=realType), dimension(3), intent(out) :: cFp, cFv
   real(kind=realType), dimension(3), intent(out) :: cMp, cMv
 
-  real(kind=realType), intent(out) :: yplusMax
+  real(kind=realType), intent(out) :: yplusMax, sepSensor
   !
   !      Local variables.
   !
@@ -41,7 +41,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
   real(kind=realType) :: pm1, fx, fy, fz, fn
   real(kind=realType) :: xc, yc, zc
   real(kind=realType) :: fact, rho, mul, yplus, dwall
-  real(kind=realType) :: scaleDim
+  real(kind=realType) :: scaleDim, V(3), sensor
   real(kind=realType) :: tauXx, tauYy, tauZz
   real(kind=realType) :: tauXy, tauXz, tauYz
 
@@ -52,6 +52,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
   real(kind=realType), dimension(:,:),   pointer :: rlv2, rlv1
   real(kind=realType), dimension(:,:),   pointer :: dd2Wall
   real(kind=realType), dimension(:,:,:), pointer :: ss, xx
+  real(kind=realType), dimension(:,:,:), pointer :: ww2
   real(kind=realType), dimension(:,:,:), pointer :: norm
   real(kind=realType) :: mx, my, mz, qa
   logical :: viscousSubface
@@ -81,7 +82,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
   cMv(1) = zero; cMv(2) = zero; cMv(3) = zero
 
   yplusMax = zero
-
+  sepSensor = zero
   ! Loop over the boundary subfaces of this block.
 
   bocos: do nn=1,nBocos
@@ -117,6 +118,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
            pp2  => p(2,1:,1:);      pp1  => p(1,1:,1:)
            rho2 => w(2,1:,1:,irho); rho1 => w(1,1:,1:,irho)
            ss   => si(1,:,:,:);     xx   => x(1,:,:,:)
+           ww2 => w(2,1:,1:,:)
            fact = -one
 
            if(equations == RANSEquations) dd2Wall => d2Wall(2,:,:)
@@ -130,6 +132,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
            pp2  => p(il,1:,1:);      pp1  => p(ie,1:,1:)
            rho2 => w(il,1:,1:,irho); rho1 => w(ie,1:,1:,irho)
            ss   => si(il,:,:,:);     xx   => x(il,:,:,:)
+           ww2    => w(il,1:,1:,:)
            fact = one
 
            if(equations == RANSEquations) dd2Wall => d2Wall(il,:,:)
@@ -143,6 +146,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
            pp2  => p(1:,2,1:);      pp1  => p(1:,1,1:)
            rho2 => w(1:,2,1:,irho); rho1 => w(1:,1,1:,irho)
            ss   => sj(:,1,:,:);     xx   => x(:,1,:,:)
+           ww2    => w(1:,2,1:,:)
            fact = -one
 
            if(equations == RANSEquations) dd2Wall => d2Wall(:,2,:)
@@ -156,6 +160,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
            pp2  => p(1:,jl,1:);      pp1  => p(1:,je,1:)
            rho2 => w(1:,jl,1:,irho); rho1 => w(1:,je,1:,irho)
            ss   => sj(:,jl,:,:);     xx   => x(:,jl,:,:)
+           ww2    => w(1:,jl,1:,:)
            fact = one
 
            if(equations == RANSEquations) dd2Wall => d2Wall(:,jl,:)
@@ -169,6 +174,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
            pp2  => p(1:,1:,2);      pp1  => p(1:,1:,1)
            rho2 => w(1:,1:,2,irho); rho1 => w(1:,1:,1,irho)
            ss   => sk(:,:,1,:);     xx   => x(:,:,1,:)
+           ww2    => w(1:,1:,2,:)
            fact = -one
 
            if(equations == RANSEquations) dd2Wall => d2Wall(:,:,2)
@@ -182,6 +188,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
            pp2  => p(1:,1:,kl);      pp1  => p(1:,1:,ke)
            rho2 => w(1:,1:,kl,irho); rho1 => w(1:,1:,ke,irho)
            ss   => sk(:,:,kl,:);     xx   => x(:,:,kl,:)
+           ww2    => w(1:,1:,kl,:)
            fact = one
 
            if(equations == RANSEquations) dd2Wall => d2Wall(:,:,kl)
@@ -236,6 +243,25 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
               BCData(nn)%oArea(i-1, j  ) = BCData(nn)%oArea(i-1, j  ) + qA
               BCData(nn)%oArea(i  , j  ) = BCData(nn)%oArea(i  , j  ) + qA
               
+              ! Get normalized surface velocity:
+              v(1) = ww2(i, j, ivx)
+              v(2) = ww2(i, j, ivy)
+              v(3) = ww2(i, j, ivz)
+              v = v / (sqrt(v(1)**2 + v(2)**2 + v(3)**2) + 1e-16)
+
+              ! Dot product with free stream
+              sensor = -(v(1)*velDirFreeStream(1) + &
+                         v(2)*velDirFreeStream(2) + &
+                         v(3)*velDirFreeStream(3))
+               
+              !Now run through a smooth heaviside function:
+              sensor = one/(one + exp(-2*10*sensor))
+                 
+              ! And integrate over the area of this cell and save:
+              sensor = sensor * four * qA
+              sepSensor = sepSensor + sensor
+              bcData(nn)%sepSensor(i, j) = sensor
+
               ! Update the inviscid force and moment coefficients.
               cFp(1) = cFp(1) + fx
               cFp(2) = cFp(2) + fy
@@ -355,6 +381,8 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax)
                  fy = fy - fn*norm(i,j,2)
                  fz = fz - fn*norm(i,j,3)
 
+
+            
                  ! Compute the local value of y+. Due to the usage
                  ! of pointers there is on offset of -1 in dd2Wall..
 

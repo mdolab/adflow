@@ -10,7 +10,7 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
   !     *                                                                *
   !     ******************************************************************
   !
-  use ADjointPetsc, only : FMx, dFcdx, doAdx
+  use ADjointPetsc, only : FMx, dFcdx, doAdx, nFM, iSepSensor
   use BCTypes
   use blockPointers_d      
   use inputDiscretization 
@@ -40,8 +40,8 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
   integer(kind=intType) :: nColor, iColor, jColor, ind, fmInd
   real(kind=realType) :: delta_x,one_over_dx, val
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, fmDim
-  real(kind=realType) :: alpha, beta, force(3), moment(3)
-  real(kind=realType) :: alphad, betad, forced(3), momentd(3)
+  real(kind=realType) :: alpha, beta, force(3), moment(3), sepSensor
+  real(kind=realType) :: alphad, betad, forced(3), momentd(3), sepSensord
   integer(kind=intType) :: liftIndex
   integer(kind=intType), dimension(:,:), pointer ::  colorPtr, colorPtr1, colorPtr2
   integer(kind=intType), dimension(:,:), pointer ::  globalNodePtr
@@ -107,7 +107,7 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
   one_over_dx = 1.0/delta_x
   if (useObjective .and. useAD) then
      do sps=1,nTimeIntervalsSpectral
-        do fmDim=1,6
+        do fmDim=1,nFM
            call VecZeroEntries(FMx(fmDim, sps), ierr)
            call EChk(ierr, __FILE__, __LINE__)
         end do
@@ -231,14 +231,14 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
 #ifndef USE_COMPLEX
                  call block_res_d(nn, sps, .True., &
                       alpha, alphad, beta, betad, liftIndex, force, forced, &
-                      moment, momentd)
+                      moment, momentd, sepSensor, sepSensord)
 #else
                  print *,'Forward AD routines are not complexified!'
                  stop
 #endif
               else
                  call block_res(nn, sps, .True., &
-                      alpha, beta, liftIndex, force, moment)
+                      alpha, beta, liftIndex, force, moment, sepSensor)
               end if
 
               ! If required, set values in the 6 vectors defined in
@@ -350,6 +350,11 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
 
 
                                    end do
+
+                                   ! Now add in the additional functions
+                                   call VecSetValues(FMx(iSepSensor, sps), 1, ind, &
+                                        bcDatad(mm)%sepSensor(i, j), ADD_VALUES, ierr)
+                                   call EChk(ierr, __FILE__, __LINE__)
                                 end if
                              end do forceStencilLoop
                           end do
@@ -463,7 +468,7 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
 
   if (useObjective .and. useAD) then
      do sps=1,nTimeIntervalsSpectral
-        do fmDim=1,6
+        do fmDim=1,nFM
            call VecAssemblyBegin(FMx(fmDim, sps), ierr)
            call EChk(ierr, __FILE__, __LINE__)
            call VecAssemblyEnd(FMx(fmDim, sps), ierr)

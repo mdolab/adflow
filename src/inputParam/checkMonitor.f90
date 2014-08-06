@@ -273,6 +273,9 @@
           case('totalR')
              sortNumber(i) = 113
 
+          case(cgnsSepSensor)
+             sortNumber(i) = 114
+
            case (cgnsHdiffMax)
              sortNumber(i) = 201
 

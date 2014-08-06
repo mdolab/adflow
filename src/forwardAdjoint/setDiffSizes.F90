@@ -63,6 +63,10 @@ subroutine setDiffSizes
   ISIZE2OFDrfDrfbcdata_oarea = 0
   ISIZE3OFDrfDrfbcdata_oarea = 0
 
+  ! sepSensor
+  ISIZE1OFDrfDrfbcdata_sepSensor = 0
+  ISIZE2OFDrfDrfbcdata_sepSensor = 0
+
   ! viscsubface%tau
   ISIZE1OFDrfDrfviscsubface_tau = 0
   ISIZE2OFDrfDrfviscsubface_tau = 0

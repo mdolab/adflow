@@ -74,6 +74,7 @@
     integer(kind=intType) :: ISIZE1OFDrfDrfbcdata_fv, ISIZE2OFDrfDrfbcdata_fv, ISIZE3OFDrfDrfbcdata_fv
     integer(kind=intType) :: ISIZE1OFDrfDrfbcdata_norm, ISIZE2OFDrfDrfbcdata_norm, ISIZE3OFDrfDrfbcdata_norm
     integer(kind=intType) :: ISIZE1OFDrfDrfbcdata_oarea, ISIZE2OFDrfDrfbcdata_oarea, ISIZE3OFDrfDrfbcdata_oarea
+    integer(kind=intType) :: ISIZE1OFDrfDrfbcdata_sepsensor, ISIZE2OFDrfDrfbcdata_sepSensor
 
     integer(kind=intType) :: ISIZE1OFDrfDrfbcdata_rface, ISIZE2OFDrfDrfbcdata_rface, ISIZE3OFDrfDrfbcdata_rface
     integer(kind=intType) :: ISIZE1OFDrfDrfbcdata_uslip, ISIZE2OFDrfDrfbcdata_uslip, ISIZE3OFDrfDrfbcdata_uslip

@@ -45,8 +45,7 @@ FF90_OBJECTS = 	computePressureForcesAdj.o\
 	        computeForceAndMomentAdj.o\
 		adjustInflowAngleForcesAdj.o\
 		getDirVectorForces.o\
-		vectorRotationForces.o\
-                verifydCfdx.o
+		vectorRotationForces.o
 
 FILES_TO_COMPLEXIFY  = \
 		computePressureForcesAdj.f90\
@@ -59,8 +58,7 @@ FILES_TO_COMPLEXIFY  = \
 	        computeForceAndMomentAdj.f90\
 		adjustInflowAngleForcesAdj.f90\
 		getDirVectorForces.f90\
-		vectorRotationForces.f90\
-                verifydCfdx.F90
+		vectorRotationForces.f90
 
 FILES_TO_COPY = 
 #      ******************************************************************

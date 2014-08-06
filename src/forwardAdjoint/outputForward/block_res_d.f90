@@ -4,16 +4,17 @@
    !  Differentiation of block_res in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *(flowdoms.x) *(flowdoms.w)
    !                *(flowdoms.dw) *(*bcdata.fp) *(*bcdata.fv) *(*bcdata.m)
-   !                *(*bcdata.oarea) pref pointref moment force
+   !                *(*bcdata.oarea) *(*bcdata.sepsensor) pref pointref
+   !                moment force sepsensor
    !   with respect to varying inputs: *(flowdoms.x) *(flowdoms.w)
    !                pref mach tempfreestream machgrid lengthref machcoef
    !                pointref alpha beta
    !   RW status of diff variables: *(flowdoms.x):in-out *(flowdoms.w):in-out
    !                *(flowdoms.dw):out *(*bcdata.fp):out *(*bcdata.fv):out
-   !                *(*bcdata.m):out *(*bcdata.oarea):out pref:in-out
-   !                mach:in tempfreestream:in machgrid:in lengthref:in
-   !                machcoef:in pointref:in-out moment:out alpha:in
-   !                force:out beta:in
+   !                *(*bcdata.m):out *(*bcdata.oarea):out *(*bcdata.sepsensor):out
+   !                pref:in-out mach:in tempfreestream:in machgrid:in
+   !                lengthref:in machcoef:in pointref:in-out moment:out
+   !                alpha:in force:out beta:in sepsensor:out
    !   Plus diff mem management of: flowdoms.x:in flowdoms.vol:in
    !                flowdoms.w:in flowdoms.dw:in rev:in bvtj1:in bvtj2:in
    !                p:in sfacei:in sfacej:in s:in gamma:in sfacek:in
@@ -21,8 +22,8 @@
    !                bmti2:in si:in sj:in sk:in bvti1:in bvti2:in fw:in
    !                bmtj1:in bmtj2:in viscsubface:in *viscsubface.tau:in
    !                bcdata:in *bcdata.norm:in *bcdata.rface:in *bcdata.fp:in
-   !                *bcdata.fv:in *bcdata.m:in *bcdata.oarea:in *bcdata.uslip:in
-   !                radi:in radj:in radk:in
+   !                *bcdata.fv:in *bcdata.m:in *bcdata.oarea:in *bcdata.sepsensor:in
+   !                *bcdata.uslip:in radi:in radj:in radk:in
    ! This is a super-combined function that combines the original
    ! functionality of: 
    ! Pressure Computation
@@ -35,7 +36,7 @@
    ! block/sps loop is outside the calculation. This routine is suitable
    ! for forward mode AD with Tapenade
    SUBROUTINE BLOCK_RES_D(nn, sps, usespatial, alpha, alphad, beta, betad, &
-   &  liftindex, force, forced, moment, momentd)
+   &  liftindex, force, forced, moment, momentd, sepsensor, sepsensord)
    USE FLOWVARREFSTATE
    USE DIFFSIZES
    USE MONITOR
@@ -55,8 +56,8 @@
    REAL(kind=realtype), INTENT(IN) :: alphad, betad
    INTEGER(kind=inttype), INTENT(IN) :: liftindex
    ! Output Variables
-   REAL(kind=realtype) :: force(3), moment(3)
-   REAL(kind=realtype) :: forced(3), momentd(3)
+   REAL(kind=realtype) :: force(3), moment(3), sepsensor
+   REAL(kind=realtype) :: forced(3), momentd(3), sepsensord
    ! Working Variables
    REAL(kind=realtype) :: gm1, v2, fact, tmp
    REAL(kind=realtype) :: v2d, factd, tmpd
@@ -300,7 +301,7 @@
    END DO
    END DO
    CALL FORCESANDMOMENTS_D(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd, &
-   &                    yplusmax)
+   &                    yplusmax, sepsensor, sepsensord)
    ! Convert back to actual forces. Note that even though we use
    ! MachCoef, Lref, and surfaceRef here, they are NOT differented,
    ! since F doesn't actually depend on them. Ideally we would just get

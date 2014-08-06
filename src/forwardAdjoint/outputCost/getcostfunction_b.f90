@@ -5,13 +5,14 @@
    !   gradient     of useful results: objvalue
    !   with respect to varying inputs: tempfreestream machgrid lengthref
    !                machcoef pointref pref moment objvalue alpha force
-   !                beta
+   !                beta sepsensor
    !   RW status of diff variables: tempfreestream:out machgrid:out
    !                lengthref:out machcoef:out pointref:out pref:out
    !                moment:out objvalue:in-zero alpha:out force:out
-   !                beta:out
+   !                beta:out sepsensor:out
    SUBROUTINE GETCOSTFUNCTION_B(costfunction, force, forceb, moment, &
-   &  momentb, alpha, alphab, beta, betab, liftindex, objvalue, objvalueb)
+   &  momentb, sepsensor, sepsensorb, alpha, alphab, beta, betab, liftindex&
+   &  , objvalue, objvalueb)
    USE INPUTTIMESPECTRAL
    USE COSTFUNCTIONS
    USE INPUTPHYSICS
@@ -28,6 +29,9 @@
    &  :: force, moment
    REAL(kind=realtype), DIMENSION(3, ntimeintervalsspectral) :: forceb, &
    &  momentb
+   REAL(kind=realtype), DIMENSION(ntimeintervalsspectral), INTENT(IN) :: &
+   &  sepsensor
+   REAL(kind=realtype), DIMENSION(ntimeintervalsspectral) :: sepsensorb
    REAL(kind=realtype), INTENT(IN) :: alpha, beta
    REAL(kind=realtype) :: alphab, betab
    ! Output
@@ -91,6 +95,7 @@
    liftdirectionb = 0.0_8
    pointrefb = 0.0_8
    momentb = 0.0_8
+   sepsensorb = 0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
@@ -106,6 +111,7 @@
    liftdirectionb = 0.0_8
    pointrefb = 0.0_8
    momentb = 0.0_8
+   sepsensorb = 0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
@@ -121,6 +127,7 @@
    liftdirectionb = 0.0_8
    pointrefb = 0.0_8
    momentb = 0.0_8
+   sepsensorb = 0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
@@ -136,6 +143,7 @@
    liftdirectionb = 0.0_8
    pointrefb = 0.0_8
    forceb = 0.0_8
+   sepsensorb = 0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
@@ -151,6 +159,7 @@
    liftdirectionb = 0.0_8
    pointrefb = 0.0_8
    forceb = 0.0_8
+   sepsensorb = 0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
@@ -166,6 +175,7 @@
    liftdirectionb = 0.0_8
    pointrefb = 0.0_8
    forceb = 0.0_8
+   sepsensorb = 0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
@@ -183,6 +193,7 @@
    liftdirectionb = 0.0_8
    pointrefb = 0.0_8
    momentb = 0.0_8
+   sepsensorb = 0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
@@ -199,6 +210,7 @@
    liftdirectionb = 0.0_8
    pointrefb = 0.0_8
    momentb = 0.0_8
+   sepsensorb = 0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
@@ -215,6 +227,7 @@
    liftdirectionb = 0.0_8
    pointrefb = 0.0_8
    momentb = 0.0_8
+   sepsensorb = 0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
@@ -231,6 +244,7 @@
    liftdirectionb = 0.0_8
    pointrefb = 0.0_8
    forceb = 0.0_8
+   sepsensorb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
    factb = 0.0_8
@@ -247,6 +261,7 @@
    liftdirectionb = 0.0_8
    pointrefb = 0.0_8
    forceb = 0.0_8
+   sepsensorb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
    factb = 0.0_8
@@ -263,6 +278,7 @@
    liftdirectionb = 0.0_8
    pointrefb = 0.0_8
    forceb = 0.0_8
+   sepsensorb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
    factb = 0.0_8
@@ -283,6 +299,7 @@
    dragdirectionb = 0.0_8
    pointrefb = 0.0_8
    momentb = 0.0_8
+   sepsensorb = 0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
@@ -304,6 +321,7 @@
    liftdirectionb = 0.0_8
    pointrefb = 0.0_8
    momentb = 0.0_8
+   sepsensorb = 0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
@@ -328,6 +346,7 @@
    dragdirectionb = 0.0_8
    pointrefb = 0.0_8
    momentb = 0.0_8
+   sepsensorb = 0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
@@ -351,6 +370,7 @@
    liftdirectionb = 0.0_8
    pointrefb = 0.0_8
    momentb = 0.0_8
+   sepsensorb = 0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
@@ -364,6 +384,7 @@
    pointrefb = 0.0_8
    momentb = 0.0_8
    forceb = 0.0_8
+   sepsensorb = 0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    factb = 0.0_8
@@ -377,6 +398,7 @@
    pointrefb = 0.0_8
    momentb = 0.0_8
    forceb = 0.0_8
+   sepsensorb = 0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    factb = 0.0_8
@@ -390,6 +412,7 @@
    pointrefb = 0.0_8
    momentb = 0.0_8
    forceb = 0.0_8
+   sepsensorb = 0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    factb = 0.0_8
@@ -403,6 +426,7 @@
    pointrefb = 0.0_8
    momentb = 0.0_8
    forceb = 0.0_8
+   sepsensorb = 0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
@@ -416,6 +440,7 @@
    pointrefb = 0.0_8
    momentb = 0.0_8
    forceb = 0.0_8
+   sepsensorb = 0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
@@ -429,6 +454,7 @@
    pointrefb = 0.0_8
    momentb = 0.0_8
    forceb = 0.0_8
+   sepsensorb = 0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
@@ -442,6 +468,7 @@
    pointrefb = 0.0_8
    momentb = 0.0_8
    forceb = 0.0_8
+   sepsensorb = 0.0_8
    factmomentb = 0.0_8
    coef0b = 0.0_8
    factb = 0.0_8
@@ -455,6 +482,7 @@
    pointrefb = 0.0_8
    momentb = 0.0_8
    forceb = 0.0_8
+   sepsensorb = 0.0_8
    factmomentb = 0.0_8
    coef0b = 0.0_8
    factb = 0.0_8
@@ -468,6 +496,7 @@
    pointrefb = 0.0_8
    momentb = 0.0_8
    forceb = 0.0_8
+   sepsensorb = 0.0_8
    factmomentb = 0.0_8
    coef0b = 0.0_8
    factb = 0.0_8
@@ -479,6 +508,7 @@
    pointrefb = 0.0_8
    momentb = 0.0_8
    forceb = 0.0_8
+   sepsensorb = 0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
@@ -491,6 +521,7 @@
    pointrefb = 0.0_8
    momentb = 0.0_8
    forceb = 0.0_8
+   sepsensorb = 0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
@@ -503,6 +534,7 @@
    pointrefb = 0.0_8
    momentb = 0.0_8
    forceb = 0.0_8
+   sepsensorb = 0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
@@ -515,6 +547,7 @@
    pointrefb = 0.0_8
    momentb = 0.0_8
    forceb = 0.0_8
+   sepsensorb = 0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
@@ -527,6 +560,7 @@
    pointrefb = 0.0_8
    momentb = 0.0_8
    forceb = 0.0_8
+   sepsensorb = 0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
@@ -539,6 +573,7 @@
    pointrefb = 0.0_8
    momentb = 0.0_8
    forceb = 0.0_8
+   sepsensorb = 0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
@@ -564,8 +599,25 @@
    END DO
    dragdirectionb = 0.0_8
    liftdirectionb = 0.0_8
+   sepsensorb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
+   dcdalphab = 0.0_8
+   CASE (costfuncsepsensor) 
+   sepsensorb = 0.0_8
+   DO sps=ntimeintervalsspectral,1,-1
+   sepsensorb(sps) = sepsensorb(sps) + ovrnts*objvalueb
+   END DO
+   lengthrefb = 0.0_8
+   dragdirectionb = 0.0_8
+   liftdirectionb = 0.0_8
+   pointrefb = 0.0_8
+   momentb = 0.0_8
+   forceb = 0.0_8
+   factmomentb = 0.0_8
+   dcdalphadotb = 0.0_8
+   coef0b = 0.0_8
+   factb = 0.0_8
    dcdalphab = 0.0_8
    CASE DEFAULT
    lengthrefb = 0.0_8
@@ -574,6 +626,7 @@
    pointrefb = 0.0_8
    momentb = 0.0_8
    forceb = 0.0_8
+   sepsensorb = 0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8

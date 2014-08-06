@@ -33,8 +33,8 @@ subroutine verifyAD
   integer(kind=intType) :: i, j, k, l, nn
   integer(kind=intType) :: nState, level, idxblk
    
-  real(kind=realType) :: alpha, beta, force(3), moment(3)
-  real(kind=realType) :: alphad, betad, forced(3), momentd(3)
+  real(kind=realType) :: alpha, beta, force(3), moment(3), sepSensor
+  real(kind=realType) :: alphad, betad, forced(3), momentd(3), sepSensord
 
   integer(kind=intType) :: liftIndex
   logical :: resetToRANS
@@ -143,7 +143,8 @@ subroutine verifyAD
                     ! call block_res_t
                     call DEBUG_TGT_CALL('block_res',.true.,.false.)
                     call block_res_t(nn, 1, .True., &
-                         alpha, alphad, beta, betad, liftIndex, force, forced, moment, momentd)
+                         alpha, alphad, beta, betad, liftIndex, force, forced, moment, momentd, &
+                         sepSensor, sepSensord)
                     
                     ! conclude debugger
                     call DEBUG_TGT_EXIT()
@@ -210,7 +211,8 @@ subroutine verifyAD
                     ! call block_res_t
                     call DEBUG_TGT_CALL('block_res',.true.,.false.)
                     call block_res_t(nn, 1, .True., &
-                         alpha, alphad, beta, betad, liftIndex, force, forced, moment, momentd)
+                         alpha, alphad, beta, betad, liftIndex, force, forced, moment, momentd,&
+                         sepSensor, sepSensord)
 
                     ! conclude debugger
                     call DEBUG_TGT_EXIT()
@@ -282,7 +284,7 @@ subroutine verifyAD
         call DEBUG_TGT_CALL('block_res',.true.,.false.)
         call block_res_t(nn, 1, .True., &
              alpha, alphad, beta, betad, liftIndex, &
-             force, forced, moment, momentd)
+             force, forced, moment, momentd, sepSensor, sepSensord)
                     
         ! conclude debugger
         call DEBUG_TGT_EXIT()

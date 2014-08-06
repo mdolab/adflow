@@ -96,7 +96,7 @@ FF90_OBJECTS =  applyallbc_block_t.o\
 		turbadvection_t.o\
 		unsteadyturbterm_t.o\
 		curvetupyp_t.o\
-
+		slipvelocitiesfinelevel_block_t.o\
 
 #      ******************************************************************
 #      *                                                                *
