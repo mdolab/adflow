@@ -808,10 +808,11 @@ steady rotations and specifying an aeroProblem')
 
         self.__call__(aeroProblem, writeSolution=False)
         sol = self.getSolution()
-        fnm2 =  sol['cl'] - CLStar
+        fnm2 = sol['cl'] - CLStar
 
-        L2ConvSave = self.getOption('l2convergence')
-        for iIter in xrange(20):
+        minIterSave = self.getOption('minIterationNum')
+        self.setOptions('minIterationNum', 25)
+        for iIter in range(20):
             # We need to reset the flow since changing the alpha leads
             # to problems with the NK solver
             if autoReset:
@@ -829,6 +830,10 @@ steady rotations and specifying an aeroProblem')
             sol = self.getSolution()
             fnm1 = sol['cl'] - CLStar
 
+            # Check for convergence
+            if abs(fnm1) < tol:
+                break
+
             # Secant Update
             anew = anm1 - fnm1*(anm1-anm2)/(fnm1-fnm2)
 
@@ -839,19 +844,12 @@ steady rotations and specifying an aeroProblem')
             # Se the n-1 alpha value from update
             anm1 = anew
 
-            # Check for convergence
-            if abs(fnm1) < tol:
-                break
-
-        # Set the new alpha in the aeroProblem
-        aeroProblem.alpha = anew
-
         # Restore the min iter option
         self.setOption('minIterationNum', minIterSave)
 
     def solveSep(self, aeroProblem, sepStar, alpha0=0,
                 delta=0.5, tol=1e-3):
-        """This is a bisection search method to determine the alpha
+        """This is a safe-guarded secant search method to determine the alpha
         that yields a specified value of the sep sensor. Since this
         function is highly nonlinear we use a bisection search
         instead of a secant search. 
@@ -877,7 +875,8 @@ steady rotations and specifying an aeroProblem')
 
         # There are two main parts of the algorithm: First we need to
         # find the alpha range bracketing the desired function
-        # value. Then we use a bisection search to zero into that vlaue.
+        # value. Then we use a safe-guarded secant search to zero into
+        # that vlaue.
 
         # Solve first problem
         aeroProblem.alpha = alpha0
@@ -905,24 +904,41 @@ steady rotations and specifying an aeroProblem')
                 # Expand the delta:
                 da *= 1.5
 
-        # Now we know 'a' and 'b' bracket the zero:
-        a = aeroProblem.alpha
-        b = aeroProblem.alpha - da
-        fa = fnew
-        for i in range(20):
-            c = 0.5*(a + b)
-            aeroProblem.alpha = c
-            self.__call__(aeroProblem, writeSolution=False)
-            sol = self.getSolution()
-            f = sol['sepsensor'] - sepStar
-            if abs(f) < tol:
-                break
-            if f*fa > 0:
-                a = c
-            else:
-                b = c
+        # Now we know anm2 and anm1 bracket the zero. We now start the
+        # secant search but make sure that we stay inside of these known bounds
+        anm1 = aeroProblem.alpha
+        anm2 = aeroProblem.alpha - da
+        fnm1 = fnew
+        fnm2 = f
+        lowAlpha = min(anm1, anm2)
+        highAlpha = max(anm1, anm2)
+        for iIter in range(20):
+            if iIter != 0:
+                aeroProblem.alpha = anm1
+                self.__call__(aeroProblem, writeSolution=False)
+                sol = self.getSolution()
+                fnm1 = sol['sepsensor'] - sepStar
+
+            # Secant update
+            anew = anm1 - fnm1*(anm1 - anm2)/(fnm1-fnm2)
+
+            # Make sure the anew update doesn't go outside (lowAlpha,
+            # highAlpha). Just use bisection in this case.
+            if anew < lowAlpha:
+                anew = 0.5*(anm1 + lowAlpha)
+            if anew > highAlpha:
+                anew = 0.5*(anm1 + highAlpha)
             
-                
+            # Shift the n-1 values to n-2
+            fnm2 = fnm1
+            anm2 = anm1
+
+            # Set the new n-1 alpha value from update
+            anm1 = anew
+
+            # Finally, convergence check
+            if abs(fnm1) < tol:
+                break
             
     def writeSolution(self, outputDir=None, baseName=None, number=None):
         """This is a generic shell function that potentially writes
