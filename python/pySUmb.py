@@ -851,7 +851,7 @@ steady rotations and specifying an aeroProblem')
         self.setOption('minIterationNum', minIterSave)
 
     def solveSep(self, aeroProblem, sepStar, alpha0=0,
-                delta=0.5, tol=1e-3):
+                delta=0.5, tol=1e-3, expansionRatio=1.2):
         """This is a safe-guarded secant search method to determine the alpha
         that yields a specified value of the sep sensor. Since this
         function is highly nonlinear we use a bisection search
@@ -881,6 +881,9 @@ steady rotations and specifying an aeroProblem')
         # value. Then we use a safe-guarded secant search to zero into
         # that vlaue.
 
+        minIterSave = self.getOption('minIterationNum')
+        self.setOption('minIterationNum', 25)
+
         # Solve first problem
         aeroProblem.alpha = alpha0
         self.__call__(aeroProblem, writeSolution=False)
@@ -905,7 +908,7 @@ steady rotations and specifying an aeroProblem')
             else:
                 f = fnew
                 # Expand the delta:
-                da *= 1.5
+                da *= expansionRatio
 
         # Now we know anm2 and anm1 bracket the zero. We now start the
         # secant search but make sure that we stay inside of these known bounds
@@ -942,6 +945,8 @@ steady rotations and specifying an aeroProblem')
             # Finally, convergence check
             if abs(fnm1) < tol:
                 break
+        # Restore the min iter option
+        self.setOption('minIterationNum', minIterSave)
             
     def writeSolution(self, outputDir=None, baseName=None, number=None):
         """This is a generic shell function that potentially writes
