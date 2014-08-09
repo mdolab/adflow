@@ -2058,6 +2058,7 @@ steady rotations and specifying an aeroProblem')
             self.sumb.killsignals.routinefailed = \
                 self.comm.allreduce(
                 bool(self.sumb.killsignals.routinefailed), op=MPI.LOR)
+            self.sumb.killsignals.fatalfail = self.sumb.killsignals.routinefailed
 
     def getAdjointResNorms(self):
         '''
