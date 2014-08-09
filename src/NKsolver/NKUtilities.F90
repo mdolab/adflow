@@ -624,3 +624,117 @@ subroutine setBase(w)
 
 end subroutine setBase
 
+subroutine getInfoSize(iSize)
+  use blockPointers
+  use inputTimeSpectral
+  use flowvarrefstate
+  use inputphysics
+
+  implicit none
+  integer(kind=intType), intent(out) :: iSize
+  integer(kind=intType) :: nc, nn, counter, i, j, k, l, sps
+  ! Determine the size of a flat array needed to store w, P, ( and
+  ! rlv, rev if necessary) with full double halos. 
+  iSize = 0
+  do nn=1,nDom
+     do sps=1,nTimeIntervalsSpectral
+        call setPointers(nn,1_intType,sps)
+        nc = (kb+1)*(jb+1)*(ib+1)
+        iSize = iSize + nc*(nw + 1) ! plus 1 for the P
+        if (viscous) then
+           iSize = iSize + nc
+        end if
+        if (eddyModel) then
+           iSize = iSize + nc
+        end if
+     end do
+  end do
+end subroutine getInfoSize
+
+subroutine setInfo(info, iSize)
+
+  use blockPointers
+  use inputTimeSpectral
+  use flowvarrefstate
+  use inputphysics
+  implicit none
+
+  real(kind=realType), intent(in), dimension(iSize) :: info
+  integer(kind=intType), intent(in) :: iSize
+  integer(kind=intType) :: nc, nn, counter, i, j, k, l, sps
+  ! Determine the size of a flat array needed to store w, P, ( and
+  ! rlv, rev if necessary) with full double halos. 
+  counter = 0
+  do nn=1,nDom
+     do sps=1,nTimeIntervalsSpectral
+        call setPointers(nn,1,sps)
+        do k=0,kb
+           do j=0,jb
+              do i=0,ib
+                 do l=1,nw
+                    counter = counter + 1
+                    w(i,j,k,l) = info(counter)
+                 end do
+                 
+                 counter = counter + 1
+                 P(i,j,k) = info(counter)
+                 
+                 if (viscous) then
+                    counter = counter + 1
+                    rlv(i,j,k) = info(counter)
+                 end if
+
+                 if (eddyModel) then
+                    counter = counter + 1
+                    rev(i,j,k) = info(counter)
+                 end if
+              end do
+           end do
+        end do
+     end do
+  end do
+end subroutine setInfo
+
+subroutine getInfo(info, iSize)
+  use blockPointers
+  use inputTimeSpectral
+  use flowvarrefstate
+  use inputphysics
+  implicit none
+
+  real(kind=realType), intent(out), dimension(iSize) :: info
+  integer(kind=intType), intent(in) :: iSize
+  integer(kind=intType) :: nc, nn, counter, i, j, k, l, sps
+  ! Determine the size of a flat array needed to store w, P, ( and
+  ! rlv, rev if necessary) with full double halos. 
+  counter = 0
+  do nn=1,nDom
+     do sps=1,nTimeIntervalsSpectral
+        call setPointers(nn,1,sps)
+        do k=0,kb
+           do j=0,jb
+              do i=0,ib
+                 do l=1,nw
+                    counter = counter + 1
+                    info(counter) = w(i,j,k,l)
+                 end do
+                 
+                 counter = counter + 1
+                 info(counter) = P(i,j,k) 
+                 
+                 if (viscous) then
+                    counter = counter + 1
+                    info(counter) = rlv(i,j,k) 
+                 end if
+
+                 if (eddyModel) then
+                    counter = counter + 1
+                    info(counter) = rev(i,j,k)
+                 end if
+              end do
+           end do
+        end do
+     end do
+  end do
+end subroutine getInfo
+
