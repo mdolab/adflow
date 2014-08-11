@@ -15,6 +15,20 @@ subroutine getCurrentResidual(rhoRes,totalRRes)
   currentLevel = 1
   groundLevel = 1
   rkStage = 0
+  
+ call timestep(.false.)
+
+  !  Possible Turblent Equations
+  if( equations == RANSEquations ) then
+     call initres(nt1MG, nMGVar) ! Initialize only the Turblent Variables
+     call turbResidual
+  endif
+  
+  !  Initialize Flow residuals
+  call initres(1_intType, nwf)
+  
+  ! Actual Residual Calc
+  call residual 
 
   r_sum = zero
   rho_sum = zero
