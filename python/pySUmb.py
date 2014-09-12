@@ -762,7 +762,7 @@ steady rotations and specifying an aeroProblem')
             if self.DVGeo is not None and self.DVGeo.getNDV() > 0:
                 dIdpt = self.totalSurfaceDerivative(f)
                 dIdx = self.DVGeo.totalSensitivity(
-                    dIdpt, ptSetName=ptSetName, comm=self.comm)
+                    dIdpt, ptSetName=ptSetName, comm=self.comm, config=self.curAP.name)
                 funcsSens[key].update(dIdx)
 
             # Compute total aero derivatives
@@ -1393,7 +1393,8 @@ steady rotations and specifying an aeroProblem')
                     # DVGeo appeared and we have not embedded points!
                     self.DVGeo.addPointSet(self.coords0, ptSetName)
                 if not self.DVGeo.pointSetUpToDate(ptSetName):
-                    self.setSurfaceCoordinates(self.DVGeo.update(ptSetName), 'all')
+                    self.setSurfaceCoordinates(
+                        self.DVGeo.update(ptSetName, config=self.curAP.name), 'all')
                     self.updateGeometryInfo()
             # Finally update other data
             self._setAeroProblemData()
@@ -1435,7 +1436,7 @@ steady rotations and specifying an aeroProblem')
         # We have to update coordinates here as well:
         if self.DVGeo is not None:
             if not self.DVGeo.pointSetUpToDate(ptSetName):
-                self.setSurfaceCoordinates(self.DVGeo.update(ptSetName), 'all')
+                self.setSurfaceCoordinates(self.DVGeo.update(ptSetName, config=self.curAP.name), 'all')
             else:
                 self.setSurfaceCoordinates(self.curAP.surfMesh, 'all')
         else:
@@ -2460,7 +2461,7 @@ steady rotations and specifying an aeroProblem')
             da = self.mesh.expandVectorByFamily(groupName, da)
 
         funcsSens[self.curAP.name + '_area'] = self.DVGeo.totalSensitivity(
-            da, ptSetName=self.curAP.ptSetName, comm=self.comm)
+            da, ptSetName=self.curAP.ptSetName, comm=self.comm, config=self.curAP.name)
 
     def _getObjective(self, objective):
         """Check to see if objective is one of the possible
