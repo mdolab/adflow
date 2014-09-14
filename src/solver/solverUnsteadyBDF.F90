@@ -161,7 +161,7 @@
 
        timeStepUnsteady = timeStepUnsteady + 1
        timeUnsteady     = timeUnsteady     + deltaT
-       print *,'timeUnsteady:',timeUnsteady
+
        ! Write the unsteady header. Only done by processor 0
        ! to avoid a messy output.
 
