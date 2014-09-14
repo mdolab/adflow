@@ -800,7 +800,7 @@ steady rotations and specifying an aeroProblem')
         self.setAeroProblem(aeroProblem)
 
         anm2 = alpha0
-        anm1 = alpha0 + delta
+
 
         # Solve for the n-2 value:
         aeroProblem.alpha = anm2
@@ -812,9 +812,13 @@ steady rotations and specifying an aeroProblem')
         self.__call__(aeroProblem, writeSolution=False)
         sol = self.getSolution()
         fnm2 = sol['cl'] - CLStar
+        if fnm2 < 0:
+            anm1 = alpha0 + abs(delta)
+        else:
+            anm1 = alpha0 - abs(delta)
 
         minIterSave = self.getOption('minIterationNum')
-        self.setOptions('minIterationNum', 25)
+        self.setOption('minIterationNum', 25)
         for iIter in range(20):
             # We need to reset the flow since changing the alpha leads
             # to problems with the NK solver
@@ -2059,6 +2063,7 @@ steady rotations and specifying an aeroProblem')
             self.sumb.killsignals.routinefailed = \
                 self.comm.allreduce(
                 bool(self.sumb.killsignals.routinefailed), op=MPI.LOR)
+            self.sumb.killsignals.fatalfail = self.sumb.killsignals.routinefailed
 
     def getAdjointResNorms(self):
         '''
