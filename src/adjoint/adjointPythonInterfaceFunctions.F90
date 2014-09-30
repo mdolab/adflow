@@ -5,7 +5,7 @@
 ! 2. getAdjoint: Returns the variables in petsc adjoint vector to Python
 ! 3. getdrdwTVec: Multiply vec_in by dRdw^T to produce vec_out
 ! 4. getdRdaPsi: Multiply dRda^T*adjoint where adjoint is supplied, and output returned
-! 5. getdRdxVPsi: Compute product dRdXv^T*psi and return result in dXv
+! 5. getdRdxVTPsi: Compute product dRdXv^T*psi and return result in dXv
 ! 6. getdFdxVec: Multiply vec_in by dFdx to produce vec_out
 ! 7. getdFdxTVec: Multiple vec_in by dFdx^T to produce vec_out
 ! 8. agumentRHS: Agument RHS of adjoint by dRdw^T*phi, where phi is supplied
@@ -184,7 +184,7 @@ subroutine getdRdaPsi(output, ndv, adjoint, nstate)
 #endif
 end subroutine getdRdaPsi
 !
-subroutine getdRdXvPsi(dXv, ndof, adjoint, nstate)
+subroutine getdRdXvTPsi(dXv, ndof, adjoint, nstate)
 #ifndef USE_NO_PETSC
  
 #define PETSC_AVOID_MPIF_H
@@ -230,7 +230,7 @@ subroutine getdRdXvPsi(dXv, ndof, adjoint, nstate)
   call VecRestoreArrayF90(xVec, xvec_pointer, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 #endif
-end subroutine getdRdXvPsi
+end subroutine getdRdXvTPsi
 
 subroutine spectralPrecscribedMotion(input, nin, dXv, nout)
 

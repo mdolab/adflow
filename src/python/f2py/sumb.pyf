@@ -376,12 +376,12 @@ python module libsumb
          integer(kind=inttype) optional,intent(in),check(len(res)>=ndimw),depend(res) :: ndimw=len(res)
        end subroutine getres
 
-       subroutine getdrdxvpsi(dxv,ndof,adjoint,nstate) ! in :test:getdRdXvPsi.F90
+       subroutine getdrdxvtpsi(dxv,ndof,adjoint,nstate) ! in :test:getdRdXvPsi.F90
          real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: dxv
          integer(kind=inttype) intent(in) :: ndof
          real(kind=realtype) dimension(nstate),intent(in) :: adjoint
          integer(kind=inttype) optional,intent(in),check(len(adjoint)>=nstate),depend(adjoint) :: nstate=len(adjoint)
-       end subroutine getdrdxvpsi
+       end subroutine getdrdxvtpsi
        
        subroutine spectralprecscribedmotion(input,nin,dxv,nout)
          real(kind=realtype) dimension(nin),intent(in) :: input

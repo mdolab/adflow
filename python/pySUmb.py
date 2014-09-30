@@ -1863,7 +1863,7 @@ steady rotations and specifying an aeroProblem')
 
         # NOTE: do dRdxvPsi MUST be done first since this
         # allocates spatial memory if required.
-        dIdxs_2 = self.getdRdXvPsi(objective, 'all')
+        dIdxs_2 = self.getdRdXvTPsi(objective, 'all')
 
         # Direct partial derivative contibution
         dIdxs_1 = self.getdIdx(objective, groupName='all')
@@ -2097,7 +2097,7 @@ steady rotations and specifying an aeroProblem')
         if finalNorm is not None:
             self.sumb.nksolvervars.finalNorm = finalNorm
 
-    def getdRdXvPsi(self, objective, groupName=None):
+    def getdRdXvTPsi(self, objective, groupName=None):
         """
         Compute the product of (dR/dXv)^T * psi for the objective
         given in 'objective'. If the mesh is present this will also
@@ -2123,8 +2123,8 @@ steady rotations and specifying an aeroProblem')
             raise Error('%s adjoint for current aeroProblem is not computed.'%
                     obj)
 
-        # Now call getdrdxvpsi WITH the psi vector:
-        dxvSolver = self.sumb.getdrdxvpsi(self.getSpatialSize(), psi)
+        # Now call getdrdxvtpsi WITH the psi vector:
+        dxvSolver = self.sumb.getdrdxvtpsi(self.getSpatialSize(), psi)
 
         # If we are doing a prescribed motion TS motion, we need to
         # convert this back to a single instance
@@ -2151,7 +2151,7 @@ steady rotations and specifying an aeroProblem')
         else:
             return False
 
-    def getdRdXvVec(self, inVec, groupName):
+    def getdRdXvTVec(self, inVec, groupName):
         """
         Compute the product of (dXv/dXs)^T * (dR/dXv)^T * inVec. It is
         assumed the mesh is present and groupName is defined.
@@ -2164,7 +2164,7 @@ steady rotations and specifying an aeroProblem')
             Family name to use to section out just part of dXs
             """
 
-        dxvSolver = self.sumb.getdrdxvpsi(self.getSpatialSize(), inVec)
+        dxvSolver = self.sumb.getdrdxvtpsi(self.getSpatialSize(), inVec)
         self.mesh.warpDeriv(dxvSolver)
         dxs = self.mesh.getdXs(groupName)
 
