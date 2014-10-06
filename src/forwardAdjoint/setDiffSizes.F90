@@ -181,7 +181,7 @@ subroutine setDiffSizes
   ISIZE2OFDrfw = jb + 1
   ISIZE3OFDrfw = kb + 1
 
-  ! flowdoms_x
+  ! flowdoms_w
   ISIZE4OFDRFFLOWDOMS_W = nw
   ISIZE1OFDRFFLOWDOMS_W = ib + 1
   ISIZE2OFDRFFLOWDOMS_W = jb + 1

@@ -97,7 +97,7 @@
        REAL(kind=realtype) :: rhoinfb, uinfb, pinfb, pinfcorrb
        REAL(kind=realtype) :: rgasd, muinfd, gammainfd
        REAL(kind=realtype) :: rgasb, muinfb, gammainfb
-       real(kind=realType), dimension(:), allocatable :: wInfd
+       real(kind=realType), dimension(:), allocatable :: wInfd, wInfb
 #endif
        ! viscous:   whether or not this is a viscous computation.
        ! kPresent:  whether or not a turbulent kinetic energy is present
