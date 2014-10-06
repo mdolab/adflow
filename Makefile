@@ -48,7 +48,8 @@ SUBDIR_SRC    = src/modules       \
                 src/forwardAdjoint \
                 src/forwardAdjoint/residualInput \
                 src/forwardAdjoint/outputForwardTGT \
-                src/forwardAdjoint/outputForward \
+                src/forwardAdjoint/outputForward 
+\                src/forwardAdjoint/outputReverse \
 		src/forwardAdjoint/costInput \
 		src/forwardAdjoint/outputCost\
 		src/bendingMomentAnalysis \
