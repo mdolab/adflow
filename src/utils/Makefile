@@ -68,6 +68,9 @@ FILES_TO_COMPLEXIFY =  \
 	       rotMatrixRigidBody.f90\
 	       secondDerivativeRigidRotAngle.f90\
 	       setBCPointers.F90\
+	       setBCPointersBwd.F90\
+	       resetBCPointers.F90\
+	       resetBCPointersBwd.F90\
 	       setBufferSizes.f90\
 	       setCGNSRealType.F90\
 	       setPointers.f90\

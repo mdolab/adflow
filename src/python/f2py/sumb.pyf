@@ -278,6 +278,9 @@ python module libsumb
        subroutine verifyad
        end subroutine verifyad
 
+       subroutine verifyonevalue
+       end subroutine verifyonevalue
+
        ! ############################################################################
        ! SUmb ADjoint Core Routines
        ! ############################################################################
