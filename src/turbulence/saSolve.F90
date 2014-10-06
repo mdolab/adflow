@@ -80,10 +80,11 @@
        ! Set the pointer for dvt in dw, such that the code is more
        ! readable. Also set the pointers for the production term
        ! and vorticity.
-
+#ifndef USE_TAPENADE
        dvt  => dw(1:,1:,1:,idvt:)
        prod => dw(1:,1:,1:,iprod)
        vort => prod
+#endif
 !
 !      ******************************************************************
 !      *                                                                *
@@ -119,7 +120,7 @@
              ! First take the square root of the production term to
              ! obtain the correct production term for spalart-allmaras.
 
-             ss = sqrt(prod(i,j,k))
+             ss = sqrt(dw(i,j,k,iprod))
 
              ! Compute the laminar kinematic viscosity, the inverse of
              ! wall distance squared, the ratio chi (ratio of nuTilde
@@ -167,7 +168,7 @@
              term2 = dist2Inv*(kar2Inv*rsaCb1*((one-ft2)*fv2 + ft2) &
                    -           rsaCw1*fwSa)
 
-             dvt(i,j,k,1) = (term1 + term2*w(i,j,k,itu1))*w(i,j,k,itu1)
+             dw(i,j,k,idvt) = (term1 + term2*w(i,j,k,itu1))*w(i,j,k,itu1)
 
              ! Compute some derivatives w.r.t. nuTilde. These will occur
              ! in the left hand side, i.e. the matrix for the implicit
@@ -278,7 +279,7 @@
              ! Update the residual for this cell and store the possible
              ! coefficients for the matrix in b1, c1 and d1.
 
-             dvt(i,j,k,1) = dvt(i,j,k,1)      + c1m*w(i,j,k-1,itu1) &
+             dw(i,j,k,idvt) = dw(i,j,k,idvt)      + c1m*w(i,j,k-1,itu1) &
                           - c10*w(i,j,k,itu1) + c1p*w(i,j,k+1,itu1)
 
              b1 = -c1m
@@ -370,7 +371,7 @@
              ! Update the residual for this cell and store the possible
              ! coefficients for the matrix in b1, c1 and d1.
 
-             dvt(i,j,k,1) = dvt(i,j,k,1)      + c1m*w(i,j-1,k,itu1) &
+             dw(i,j,k,idvt) = dw(i,j,k,idvt)      + c1m*w(i,j-1,k,itu1) &
                           - c10*w(i,j,k,itu1) + c1p*w(i,j+1,k,itu1)
 
              b1 = -c1m
@@ -462,7 +463,7 @@
              ! Update the residual for this cell and store the possible
              ! coefficients for the matrix in b1, c1 and d1.
 
-             dvt(i,j,k,1) = dvt(i,j,k,1)      + c1m*w(i-1,j,k,itu1) &
+             dw(i,j,k,idvt) = dw(i,j,k,idvt)      + c1m*w(i-1,j,k,itu1) &
                           - c10*w(i,j,k,itu1) + c1p*w(i+1,j,k,itu1)
 
              b1 = -c1m
@@ -502,7 +503,7 @@
          do j=2,jl
            do i=2,il
              rblank = real(iblank(i,j,k), realType)
-             dw(i,j,k,itu1) = -vol(i,j,k)*dvt(i,j,k,1)*rblank
+             dw(i,j,k,itu1) = -vol(i,j,k)*dw(i,j,k,idvt)*rblank
            enddo
          enddo
        enddo
@@ -519,6 +520,7 @@
        ! Modify the rhs of the 1st internal cell, if wall functions
        ! are used; their value is determined by the table.
 
+#ifndef USE_TAPENADE
        testWallFunctions: if( wallFunctions ) then
 
          bocos: do nn=1,nViscBocos
@@ -601,7 +603,7 @@
 
          enddo bocos
        endif testWallFunctions
-
+#endif
        ! Return if only the residual must be computed.
 
        if( resOnly ) return
@@ -728,7 +730,7 @@
              rblank = real(iblank(i,j,k), realType)
 
              cc(j) = qq(i,j,k)
-             ff(j) = dvt(i,j,k,1)*rblank
+             ff(j) = dw(i,j,k,idvt)*rblank
 
              bb(j) = bb(j)*rblank
              dd(j) = dd(j)*rblank
@@ -768,7 +770,7 @@
            ! Determine the new rhs for the next direction.
 
            do j=2,jl
-             dvt(i,j,k,1) = ff(j)*qq(i,j,k)
+             dw(i,j,k,idvt) = ff(j)*qq(i,j,k)
            enddo
 
          enddo
@@ -856,7 +858,7 @@
              rblank = real(iblank(i,j,k), realType)
 
              cc(i) = qq(i,j,k)
-             ff(i) = dvt(i,j,k,1)*rblank
+             ff(i) = dw(i,j,k,idvt)*rblank
 
              bb(i) = bb(i)*rblank
              dd(i) = dd(i)*rblank
@@ -896,7 +898,7 @@
            ! Determine the new rhs for the next direction.
 
            do i=2,il
-             dvt(i,j,k,1) = ff(i)*qq(i,j,k)
+             dw(i,j,k,idvt) = ff(i)*qq(i,j,k)
            enddo
 
          enddo
@@ -984,7 +986,7 @@
              rblank = real(iblank(i,j,k), realType)
 
              cc(k) = qq(i,j,k)
-             ff(k) = dvt(i,j,k,1)*rblank
+             ff(k) = dw(i,j,k,idvt)*rblank
 
              bb(k) = bb(k)*rblank
              dd(k) = dd(k)*rblank
@@ -1024,7 +1026,7 @@
            ! Store the update in dvt.
 
            do k=2,kl
-             dvt(i,j,k,1) = ff(k)
+             dw(i,j,k,idvt) = ff(k)
            enddo
 
          enddo
@@ -1044,7 +1046,7 @@
        do k=2,kl
          do j=2,jl
            do i=2,il
-             w(i,j,k,itu1) = w(i,j,k,itu1) + factor*dvt(i,j,k,1)
+             w(i,j,k,itu1) = w(i,j,k,itu1) + factor*dw(i,j,k,idvt)
              w(i,j,k,itu1) = max(w(i,j,k,itu1), zero)
            enddo
          enddo
