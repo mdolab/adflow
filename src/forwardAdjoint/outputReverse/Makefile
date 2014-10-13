@@ -47,6 +47,7 @@ FF90_OBJECTS =  computeetot_b.o\
 		viscousflux_b.o \
 		computeetotcellcpfit_b.o \
                 setbcpointersbwd_b.o\
+                setbcpointers_b.o\
                 resetbcpointersbwd_b.o\
 	        sa_block_b.o\
 	        inviscidcentralflux_b.o\
