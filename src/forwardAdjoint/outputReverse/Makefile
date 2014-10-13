@@ -33,7 +33,7 @@ include ${SUMB_RULES_FILE}
 #      * Names of the Fortran and C object files to be created.         *
 #      *                                                                *
 #      ******************************************************************
-
+a
 vpath %.o $(SUMB_OBJDIR)
 FF90_OBJECTS =  diffSizes.o\
 		applyallbc_block_b.o\
@@ -44,7 +44,6 @@ FF90_OBJECTS =  diffSizes.o\
 		curveupre_b.o\
 		invisciddissfluxscalar_b.o\
 		dim_b.o\
-		initres_block_b.o\
 		inviscidupwindflux_b.o  \
 		block_res_b.o  \
 		invisciddissfluxmatrixcoarse_b.o \
@@ -59,7 +58,7 @@ FF90_OBJECTS =  diffSizes.o\
 #		metric_block_b.o\
 #		xhalo_block_b.o\
 		gridvelocitiesfinelevel_block_b.o\
-
+#initres_block_b.o\
 
 #		computeetotcellcpfit_b.o \
                 computeetot_b.o\
