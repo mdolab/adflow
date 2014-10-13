@@ -96,8 +96,8 @@
 
              ! Compute the magnitude squared of the vorticity.
 
-             vort(i,j,k) = vortx**2 + vorty**2 + vortz**2
-
+             dw(i,j,k,ivort) = vortx**2 + vorty**2 + vortz**2
+             
            enddo
          enddo
        enddo

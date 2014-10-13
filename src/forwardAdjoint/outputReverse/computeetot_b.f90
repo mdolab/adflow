@@ -2,9 +2,9 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of computeetot in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *p *gamma *w
-   !   with respect to varying inputs: *p *gamma *w
-   !   Plus diff mem management of: p:in gamma:in w:in
+   !   gradient     of useful results: *p *w
+   !   with respect to varying inputs: *p *w
+   !   Plus diff mem management of: p:in w:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -136,8 +136,6 @@
    DO i=istart,iend
    CALL PUSHREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w&
    &                       , 4))
-   CALL PUSHREAL8ARRAY(gamma, SIZE(gamma, 1)*SIZE(gamma, 2)*SIZE(&
-   &                       gamma, 3))
    CALL COMPUTEETOTCELLCPFIT(i, j, k, scale, correctfork)
    END DO
    END DO
@@ -145,8 +143,6 @@
    DO k=kend,kstart,-1
    DO j=jend,jstart,-1
    DO i=iend,istart,-1
-   CALL POPREAL8ARRAY(gamma, SIZE(gamma, 1)*SIZE(gamma, 2)*SIZE(&
-   &                      gamma, 3))
    CALL POPREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w&
    &                      , 4))
    CALL COMPUTEETOTCELLCPFIT_B(i, j, k, scale, correctfork)

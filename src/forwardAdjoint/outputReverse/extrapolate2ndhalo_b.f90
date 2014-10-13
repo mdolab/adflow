@@ -2,9 +2,9 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of extrapolate2ndhalo in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *rev *p *gamma *w *rlv
-   !   with respect to varying inputs: *rev *p *gamma *w *rlv
-   !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
+   !   gradient     of useful results: *p *w *rlv
+   !   with respect to varying inputs: *p *w *rlv
+   !   Plus diff mem management of: p:in w:in rlv:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -54,7 +54,6 @@
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv0, rlv1
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv0b, rlv1b
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev0, rev1
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev0b, rev1b
    INTERFACE 
    SUBROUTINE SETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
    &       rev1, rev2, offset)
@@ -69,8 +68,7 @@
    END INTERFACE
       INTERFACE 
    SUBROUTINE SETBCPOINTERS_B(nn, ww1, ww1b, ww2, ww2b, pp1, pp1b, &
-   &       pp2, pp2b, rlv1, rlv1b, rlv2, rlv2b, rev1, rev1b, rev2, rev2b, &
-   &       offset)
+   &       pp2, pp2b, rlv1, rlv1b, rlv2, rlv2b, rev1, rev2, offset)
    USE BLOCKPOINTERS_B
    IMPLICIT NONE
    INTEGER(kind=inttype), INTENT(IN) :: nn, offset
@@ -81,7 +79,6 @@
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1b, rlv2b
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1b, rev2b
    END SUBROUTINE SETBCPOINTERS_B
    END INTERFACE
       INTRINSIC MAX
@@ -96,7 +93,6 @@
    REAL(kind=realtype) :: tmp7
    REAL(kind=realtype) :: tmp8
    INTEGER :: branch
-   REAL(kind=realtype) :: tmpb8
    REAL(kind=realtype) :: tmpb7
    REAL(kind=realtype) :: tmpb6
    REAL(kind=realtype) :: tmpb5
@@ -131,9 +127,6 @@
    IF (viscous) THEN
    rlv0b => rlvb(0, 1:, 1:)
    END IF
-   IF (eddymodel) THEN
-   rev0b => revb(0, 1:, 1:)
-   END IF
    idim = 1
    ddim = 0
    CASE (imax) 
@@ -142,9 +135,6 @@
    pp0b => pb(ib, 1:, 1:)
    IF (viscous) THEN
    rlv0b => rlvb(ib, 1:, 1:)
-   END IF
-   IF (eddymodel) THEN
-   rev0b => revb(ib, 1:, 1:)
    END IF
    idim = 1
    ddim = ib
@@ -155,9 +145,6 @@
    IF (viscous) THEN
    rlv0b => rlvb(1:, 0, 1:)
    END IF
-   IF (eddymodel) THEN
-   rev0b => revb(1:, 0, 1:)
-   END IF
    idim = 2
    ddim = 0
    CASE (jmax) 
@@ -166,9 +153,6 @@
    pp0b => pb(1:, jb, 1:)
    IF (viscous) THEN
    rlv0b => rlvb(1:, jb, 1:)
-   END IF
-   IF (eddymodel) THEN
-   rev0b => revb(1:, jb, 1:)
    END IF
    idim = 2
    ddim = jb
@@ -179,9 +163,6 @@
    IF (viscous) THEN
    rlv0b => rlvb(1:, 1:, 0)
    END IF
-   IF (eddymodel) THEN
-   rev0b => revb(1:, 1:, 0)
-   END IF
    idim = 3
    ddim = 0
    CASE (kmax) 
@@ -190,9 +171,6 @@
    pp0b => pb(1:, 1:, kb)
    IF (viscous) THEN
    rlv0b => rlvb(1:, 1:, kb)
-   END IF
-   IF (eddymodel) THEN
-   rev0b => revb(1:, 1:, kb)
    END IF
    idim = 3
    ddim = kb
@@ -238,17 +216,9 @@
    ! The laminar and eddy viscosity, if present. These values
    ! are simply taken constant. Their values do not matter.
    IF (viscous) THEN
-   tmp7 = rlv1(i, j)
-   CALL PUSHREAL8(rlv0(i, j))
-   rlv0(i, j) = tmp7
    CALL PUSHCONTROL1B(0)
    ELSE
    CALL PUSHCONTROL1B(1)
-   END IF
-   IF (eddymodel) THEN
-   CALL PUSHCONTROL1B(1)
-   ELSE
-   CALL PUSHCONTROL1B(0)
    END IF
    END DO
    END DO
@@ -267,14 +237,7 @@
    DO j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
    DO i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
    CALL POPCONTROL1B(branch)
-   IF (branch .NE. 0) THEN
-   tmpb8 = rev0b(i, j)
-   rev0b(i, j) = 0.0_8
-   rev1b(i, j) = rev1b(i, j) + tmpb8
-   END IF
-   CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   CALL POPREAL8(rlv0(i, j))
    tmpb7 = rlv0b(i, j)
    rlv0b(i, j) = 0.0_8
    rlv1b(i, j) = rlv1b(i, j) + tmpb7
@@ -322,5 +285,5 @@
    END DO
    END DO
    CALL SETBCPOINTERS_B(nn, ww1, ww1b, ww2, ww2b, pp1, pp1b, pp2, pp2b, &
-   &                rlv1, rlv1b, rlv0, rlv0b, rev1, rev1b, rev0, rev0b, 0)
+   &                rlv1, rlv1b, rlv0, rlv0b, rev1, rev0, 0)
    END SUBROUTINE EXTRAPOLATE2NDHALO_B

@@ -17,6 +17,7 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   use flowVarRefState     
   use inputPhysics 
   use inputTimeSpectral
+  use inputDiscretization
   use section
   use monitor
   use iteration
@@ -59,38 +60,38 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   x  => flowDoms(nn, currentLevel, sps)%x
   vol=> flowDoms(nn, currentLevel, sps)%vol 
 
-  ! ------------------------------------------------
-  !        Additional 'Extra' Components
-  ! ------------------------------------------------ 
-
-  call adjustInflowAngle(alpha, beta, liftIndex)
-  call referenceState
-  call setFlowInfinityState
-
-  ! ------------------------------------------------
-  !        Additional Spatial Components
-  ! ------------------------------------------------
-  if (useSpatial) then
-
-     call xhalo_block
-     call metric_block
-     ! -------------------------------------
-     ! These functions are required for TS
-     ! --------------------------------------
-
-     t = timeUnsteadyRestart
-     if(equationMode == timeSpectral) then
-        do mm=1,nSections
-           t(mm) = t(mm) + (sps-1)*sections(mm)%timePeriod &
-                /         real(nTimeIntervalsSpectral,realType)
-        enddo
-     endif
-
-     call gridVelocitiesFineLevel_block(useOldCoor, t, sps) ! Required for TS
-     call normalVelocities_block(sps) ! Required for TS
-     call slipVelocitiesFineLevel_block(useOldCoor, t, sps)
-
-  end if
+!!$  ! ------------------------------------------------
+!!$  !        Additional 'Extra' Components
+!!$  ! ------------------------------------------------ 
+!!$
+!!$  call adjustInflowAngle(alpha, beta, liftIndex)
+!!$  call referenceState
+!!$  call setFlowInfinityState
+!!$
+!!$  ! ------------------------------------------------
+!!$  !        Additional Spatial Components
+!!$  ! ------------------------------------------------
+!!$  if (useSpatial) then
+!!$
+!!$     call xhalo_block
+!!$     call metric_block
+!!$     ! -------------------------------------
+!!$     ! These functions are required for TS
+!!$     ! --------------------------------------
+!!$
+!!$     t = timeUnsteadyRestart
+!!$     if(equationMode == timeSpectral) then
+!!$        do mm=1,nSections
+!!$           t(mm) = t(mm) + (sps-1)*sections(mm)%timePeriod &
+!!$                /         real(nTimeIntervalsSpectral,realType)
+!!$        enddo
+!!$     endif
+!!$
+!!$     call gridVelocitiesFineLevel_block(useOldCoor, t, sps) ! Required for TS
+!!$     call normalVelocities_block(sps) ! Required for TS
+!!$     call slipVelocitiesFineLevel_block(useOldCoor, t, sps)
+!!$
+!!$  end if
 
   ! ------------------------------------------------
   !        Normal Residual Computation
@@ -115,7 +116,8 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   call computeEddyViscosity 
 
   !  Apply all BC's
-  call applyAllBC_block(.True.)
+  !call applyAllBC_block(.True.)
+  call bcEulerWall(.True., .False.)
 
   ! Compute skin_friction Velocity (only for wall Functions)
 ! #ifndef TAPENADE_REVERSE
@@ -132,7 +134,7 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   ! Compute turbulence residual for RANS equations
   if( equations == RANSEquations) then
      ! Initialize only the Turblent Variables
-     call unsteadyTurbSpectral_block(itu1, itu1, nn, sps)
+     !call unsteadyTurbSpectral_block(itu1, itu1, nn, sps)
      
      select case (turbModel)
         
@@ -205,7 +207,10 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   end if
 
   !  Actual residual calc
-  call residual_block
+  !call residual_block
+  call inviscidCentralFlux
+  call inviscidDissFluxScalar
+  if( viscous ) call viscousFlux
 
   ! Divide through by the volume
   do sps2 = 1,nTimeIntervalsSpectral
@@ -222,18 +227,18 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
      end do
   end do
 
-  call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor)
+  !call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor)
 
   ! Convert back to actual forces. Note that even though we use
   ! MachCoef, Lref, and surfaceRef here, they are NOT differented,
   ! since F doesn't actually depend on them. Ideally we would just get
   ! the raw forces and moment form forcesAndMoments. 
-  scaleDim = pRef/pInf
-  fact = two/(gammaInf*pInf*MachCoef*MachCoef &
-       *surfaceRef*LRef*LRef*scaleDim)
-  force = (cFp + cFV)/fact
+  !scaleDim = pRef/pInf
+  !fact = two/(gammaInf*pInf*MachCoef*MachCoef &
+  !     *surfaceRef*LRef*LRef*scaleDim)
+  !force = (cFp + cFV)/fact
 
-  fact = fact/(lengthRef*LRef)
-  moment = (cMp + cMV)/fact
+  !fact = fact/(lengthRef*LRef)
+  !moment = (cMp + cMV)/fact
 
 end subroutine block_res

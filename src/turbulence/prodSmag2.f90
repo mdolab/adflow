@@ -109,8 +109,8 @@
 
              ! Store the square of strain as the production term.
 
-             prod(i,j,k) = two*(two*(sxy**2 + sxz**2 + syz**2) &
-                         +           sxx**2 + syy**2 + szz**2) - div2
+             dw(i,j,k, iprod) = two*(two*(sxy**2 + sxz**2 + syz**2) &
+                  +           sxx**2 + syy**2 + szz**2) - div2
 
            enddo
          enddo

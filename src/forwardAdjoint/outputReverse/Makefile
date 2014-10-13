@@ -35,35 +35,30 @@ include ${SUMB_RULES_FILE}
 #      ******************************************************************
 
 vpath %.o $(SUMB_OBJDIR)
-FF90_OBJECTS =  diffSizes.o\
-		applyallbc_block_b.o\
+
+FF90_OBJECTS =  computeetot_b.o\
 		computelamviscosity_b.o\
 		extrapolate2ndhalo_b.o\
-	        invisciddissfluxscalarcoarse_b.o\
 		timestep_block_b.o\
-		curveupre_b.o\
+		bceulerwall_b.o\
 		invisciddissfluxscalar_b.o\
 		dim_b.o\
-		inviscidupwindflux_b.o  \
 		block_res_b.o  \
-		invisciddissfluxmatrixcoarse_b.o \
-		residual_block_b.o \
 		viscousflux_b.o \
-		invisciddissfluxmatrix_b.o \
+		computeetotcellcpfit_b.o \
+                setbcpointersbwd_b.o\
+                resetbcpointersbwd_b.o\
+	        sa_block_b.o\
 	        inviscidcentralflux_b.o\
                 saeddyviscosity_b.o\
 		computeeddyviscosity_b.o\
+		sasolve_b.o\
+		unsteadyturbterm_b.o\
+		prodkatolaunder_b.o\
+		prodwmag2_b.o\
+		prodsmag2_b.o\
+		turbadvection_b.o\
 
-#		normalvelocities_block_b.o\
-#		metric_block_b.o\
-#		xhalo_block_b.o\
-		gridvelocitiesfinelevel_block_b.o\
-#initres_block_b.o\
-
-#		computeetotcellcpfit_b.o \
-                computeetot_b.o\
-		etotarray_b.o \
-		eintarray_b.o  \
 
 #      ******************************************************************
 #      *                                                                *

@@ -5,17 +5,9 @@
    !   gradient     of useful results: *(flowdoms.w) *(flowdoms.dw)
    !   with respect to varying inputs: *(flowdoms.w) *(flowdoms.dw)
    !   RW status of diff variables: *(flowdoms.w):in-out *(flowdoms.dw):in-out
-   !                *rev:(loc) *bvtj1:(loc) *bvtj2:(loc) *p:(loc)
-   !                *gamma:(loc) *bmtk1:(loc) *bmtk2:(loc) *rlv:(loc)
-   !                *bvtk1:(loc) *bvtk2:(loc) *bmti1:(loc) *bmti2:(loc)
-   !                *bvti1:(loc) *bvti2:(loc) *fw:(loc) *bmtj1:(loc)
-   !                *bmtj2:(loc) *(*viscsubface.tau):(loc) *radi:(loc)
-   !                *radj:(loc) *radk:(loc)
-   !   Plus diff mem management of: flowdoms.w:in flowdoms.dw:in rev:in
-   !                bvtj1:in bvtj2:in p:in gamma:in bmtk1:in bmtk2:in
-   !                rlv:in bvtk1:in bvtk2:in bmti1:in bmti2:in bvti1:in
-   !                bvti2:in fw:in bmtj1:in bmtj2:in viscsubface:in
-   !                *viscsubface.tau:in radi:in radj:in radk:in
+   !                *p:(loc) *rlv:(loc)
+   !   Plus diff mem management of: flowdoms.w:in flowdoms.dw:in p:in
+   !                rlv:in
    ! This is a super-combined function that combines the original
    ! functionality of: 
    ! Pressure Computation
@@ -33,12 +25,24 @@
    USE FLOWVARREFSTATE
    USE INPUTPHYSICS
    USE INPUTTIMESPECTRAL
+   USE INPUTDISCRETIZATION
    USE SECTION
    USE MONITOR
    USE ITERATION
    USE INPUTADJOINT
    USE DIFFSIZES
    IMPLICIT NONE
+   !call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor)
+   ! Convert back to actual forces. Note that even though we use
+   ! MachCoef, Lref, and surfaceRef here, they are NOT differented,
+   ! since F doesn't actually depend on them. Ideally we would just get
+   ! the raw forces and moment form forcesAndMoments. 
+   !scaleDim = pRef/pInf
+   !fact = two/(gammaInf*pInf*MachCoef*MachCoef &
+   !     *surfaceRef*LRef*LRef*scaleDim)
+   !force = (cFp + cFV)/fact
+   !fact = fact/(lengthRef*LRef)
+   !moment = (cMp + cMV)/fact
    ! Input Arguments:
    INTEGER(kind=inttype), INTENT(IN) :: nn, sps
    LOGICAL, INTENT(IN) :: usespatial
@@ -57,7 +61,6 @@
    REAL(kind=realtype) :: yplusmax, scaledim
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: wsp
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: volsp
-   INTRINSIC REAL
    INTRINSIC MAX
    INTEGER :: branch
    REAL(kind=realtype) :: tempb0
@@ -65,7 +68,6 @@
    INTEGER :: ii3
    INTEGER :: ii2
    INTEGER :: ii1
-   useoldcoor = .false.
    ! Setup number of state variable based on turbulence assumption
    IF (frozenturbulence) THEN
    nstate = nwf
@@ -77,36 +79,39 @@
    w => flowdoms(nn, currentlevel, sps)%w
    dwb => flowdomsb(nn, 1, sps)%dw
    dw => flowdoms(nn, 1, sps)%dw
-   x => flowdoms(nn, currentlevel, sps)%x
    vol => flowdoms(nn, currentlevel, sps)%vol
-   ! ------------------------------------------------
-   !        Additional 'Extra' Components
-   ! ------------------------------------------------ 
-   CALL ADJUSTINFLOWANGLE(alpha, beta, liftindex)
-   CALL REFERENCESTATE()
-   CALL SETFLOWINFINITYSTATE()
-   ! ------------------------------------------------
-   !        Additional Spatial Components
-   ! ------------------------------------------------
-   IF (usespatial) THEN
-   CALL XHALO_BLOCK()
-   CALL METRIC_BLOCK()
-   ! -------------------------------------
-   ! These functions are required for TS
-   ! --------------------------------------
-   t = timeunsteadyrestart
-   IF (equationmode .EQ. timespectral) THEN
-   DO mm=1,nsections
-   t(mm) = t(mm) + (sps-1)*sections(mm)%timeperiod/REAL(&
-   &         ntimeintervalsspectral, realtype)
-   END DO
-   END IF
-   CALL GRIDVELOCITIESFINELEVEL_BLOCK(useoldcoor, t, sps)
-   ! Required for TS
-   CALL NORMALVELOCITIES_BLOCK(sps)
-   ! Required for TS
-   CALL SLIPVELOCITIESFINELEVEL_BLOCK(useoldcoor, t, sps)
-   END IF
+   !!$  ! ------------------------------------------------
+   !!$  !        Additional 'Extra' Components
+   !!$  ! ------------------------------------------------ 
+   !!$
+   !!$  call adjustInflowAngle(alpha, beta, liftIndex)
+   !!$  call referenceState
+   !!$  call setFlowInfinityState
+   !!$
+   !!$  ! ------------------------------------------------
+   !!$  !        Additional Spatial Components
+   !!$  ! ------------------------------------------------
+   !!$  if (useSpatial) then
+   !!$
+   !!$     call xhalo_block
+   !!$     call metric_block
+   !!$     ! -------------------------------------
+   !!$     ! These functions are required for TS
+   !!$     ! --------------------------------------
+   !!$
+   !!$     t = timeUnsteadyRestart
+   !!$     if(equationMode == timeSpectral) then
+   !!$        do mm=1,nSections
+   !!$           t(mm) = t(mm) + (sps-1)*sections(mm)%timePeriod &
+   !!$                /         real(nTimeIntervalsSpectral,realType)
+   !!$        enddo
+   !!$     endif
+   !!$
+   !!$     call gridVelocitiesFineLevel_block(useOldCoor, t, sps) ! Required for TS
+   !!$     call normalVelocities_block(sps) ! Required for TS
+   !!$     call slipVelocitiesFineLevel_block(useOldCoor, t, sps)
+   !!$
+   !!$  end if
    ! ------------------------------------------------
    !        Normal Residual Computation
    ! ------------------------------------------------
@@ -135,34 +140,9 @@
    CALL COMPUTELAMVISCOSITY()
    CALL COMPUTEEDDYVISCOSITY()
    !  Apply all BC's
-   CALL PUSHREAL8ARRAY(bmtj2, SIZE(bmtj2, 1)*SIZE(bmtj2, 2)*SIZE(bmtj2, 3&
-   &               )*SIZE(bmtj2, 4))
-   CALL PUSHREAL8ARRAY(bmtj1, SIZE(bmtj1, 1)*SIZE(bmtj1, 2)*SIZE(bmtj1, 3&
-   &               )*SIZE(bmtj1, 4))
-   CALL PUSHREAL8ARRAY(bvti2, SIZE(bvti2, 1)*SIZE(bvti2, 2)*SIZE(bvti2, 3&
-   &               ))
-   CALL PUSHREAL8ARRAY(bvti1, SIZE(bvti1, 1)*SIZE(bvti1, 2)*SIZE(bvti1, 3&
-   &               ))
-   CALL PUSHREAL8ARRAY(bmti2, SIZE(bmti2, 1)*SIZE(bmti2, 2)*SIZE(bmti2, 3&
-   &               )*SIZE(bmti2, 4))
-   CALL PUSHREAL8ARRAY(bmti1, SIZE(bmti1, 1)*SIZE(bmti1, 2)*SIZE(bmti1, 3&
-   &               )*SIZE(bmti1, 4))
-   CALL PUSHREAL8ARRAY(bvtk2, SIZE(bvtk2, 1)*SIZE(bvtk2, 2)*SIZE(bvtk2, 3&
-   &               ))
-   CALL PUSHREAL8ARRAY(bvtk1, SIZE(bvtk1, 1)*SIZE(bvtk1, 2)*SIZE(bvtk1, 3&
-   &               ))
+   !call applyAllBC_block(.True.)
    CALL PUSHREAL8ARRAY(rlv, SIZE(rlv, 1)*SIZE(rlv, 2)*SIZE(rlv, 3))
-   CALL PUSHREAL8ARRAY(bmtk2, SIZE(bmtk2, 1)*SIZE(bmtk2, 2)*SIZE(bmtk2, 3&
-   &               )*SIZE(bmtk2, 4))
-   CALL PUSHREAL8ARRAY(bmtk1, SIZE(bmtk1, 1)*SIZE(bmtk1, 2)*SIZE(bmtk1, 3&
-   &               )*SIZE(bmtk1, 4))
-   CALL PUSHREAL8ARRAY(gamma, SIZE(gamma, 1)*SIZE(gamma, 2)*SIZE(gamma, 3&
-   &               ))
    CALL PUSHREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
-   CALL PUSHREAL8ARRAY(bvtj2, SIZE(bvtj2, 1)*SIZE(bvtj2, 2)*SIZE(bvtj2, 3&
-   &               ))
-   CALL PUSHREAL8ARRAY(bvtj1, SIZE(bvtj1, 1)*SIZE(bvtj1, 2)*SIZE(bvtj1, 3&
-   &               ))
    CALL PUSHREAL8ARRAY(rev, SIZE(rev, 1)*SIZE(rev, 2)*SIZE(rev, 3))
    DO ii1=1,ntimeintervalsspectral
    DO ii2=1,1
@@ -174,16 +154,12 @@
    END DO
    END DO
    END DO
-   CALL APPLYALLBC_BLOCK(.true.)
+   CALL BCEULERWALL(.true., .false.)
    ! Compute skin_friction Velocity (only for wall Functions)
    ! #ifndef 1
    !   call computeUtau_block
    ! #endif
    ! Compute time step and spectral radius
-   CALL PUSHREAL8ARRAY(radk, SIZE(radk, 1)*SIZE(radk, 2)*SIZE(radk, 3))
-   CALL PUSHREAL8ARRAY(radj, SIZE(radj, 1)*SIZE(radj, 2)*SIZE(radj, 3))
-   CALL PUSHREAL8ARRAY(radi, SIZE(radi, 1)*SIZE(radi, 2)*SIZE(radi, 3))
-   CALL TIMESTEP_BLOCK(.false.)
    spectralloop0:DO sps2=1,ntimeintervalsspectral
    flowdoms(nn, 1, sps2)%dw(:, :, :, :) = zero
    END DO spectralloop0
@@ -191,35 +167,10 @@
    ! Compute turbulence residual for RANS equations
    IF (equations .EQ. ransequations) THEN
    ! Initialize only the Turblent Variables
-   CALL UNSTEADYTURBSPECTRAL_BLOCK(itu1, itu1, nn, sps)
+   !call unsteadyTurbSpectral_block(itu1, itu1, nn, sps)
    SELECT CASE  (turbmodel) 
    CASE (spalartallmaras) 
    !call determineDistance2(1, sps)
-   CALL PUSHREAL8ARRAY(bmtj2, SIZE(bmtj2, 1)*SIZE(bmtj2, 2)*SIZE(&
-   &                   bmtj2, 3)*SIZE(bmtj2, 4))
-   CALL PUSHREAL8ARRAY(bmtj1, SIZE(bmtj1, 1)*SIZE(bmtj1, 2)*SIZE(&
-   &                   bmtj1, 3)*SIZE(bmtj1, 4))
-   CALL PUSHREAL8ARRAY(bvti2, SIZE(bvti2, 1)*SIZE(bvti2, 2)*SIZE(&
-   &                   bvti2, 3))
-   CALL PUSHREAL8ARRAY(bvti1, SIZE(bvti1, 1)*SIZE(bvti1, 2)*SIZE(&
-   &                   bvti1, 3))
-   CALL PUSHREAL8ARRAY(bmti2, SIZE(bmti2, 1)*SIZE(bmti2, 2)*SIZE(&
-   &                   bmti2, 3)*SIZE(bmti2, 4))
-   CALL PUSHREAL8ARRAY(bmti1, SIZE(bmti1, 1)*SIZE(bmti1, 2)*SIZE(&
-   &                   bmti1, 3)*SIZE(bmti1, 4))
-   CALL PUSHREAL8ARRAY(bvtk2, SIZE(bvtk2, 1)*SIZE(bvtk2, 2)*SIZE(&
-   &                   bvtk2, 3))
-   CALL PUSHREAL8ARRAY(bvtk1, SIZE(bvtk1, 1)*SIZE(bvtk1, 2)*SIZE(&
-   &                   bvtk1, 3))
-   CALL PUSHREAL8ARRAY(bmtk2, SIZE(bmtk2, 1)*SIZE(bmtk2, 2)*SIZE(&
-   &                   bmtk2, 3)*SIZE(bmtk2, 4))
-   CALL PUSHREAL8ARRAY(bmtk1, SIZE(bmtk1, 1)*SIZE(bmtk1, 2)*SIZE(&
-   &                   bmtk1, 3)*SIZE(bmtk1, 4))
-   CALL PUSHREAL8ARRAY(bvtj2, SIZE(bvtj2, 1)*SIZE(bvtj2, 2)*SIZE(&
-   &                   bvtj2, 3))
-   CALL PUSHREAL8ARRAY(bvtj1, SIZE(bvtj1, 1)*SIZE(bvtj1, 2)*SIZE(&
-   &                   bvtj1, 3))
-   CALL PUSHREAL8ARRAY(rev, SIZE(rev, 1)*SIZE(rev, 2)*SIZE(rev, 3))
    DO ii1=1,ntimeintervalsspectral
    DO ii2=1,1
    DO ii3=nn,nn
@@ -320,7 +271,8 @@
    END DO
    END DO
    END DO
-   CALL RESIDUAL_BLOCK_B()
+   CALL INVISCIDDISSFLUXSCALAR_B()
+   CALL INVISCIDCENTRALFLUX_B()
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    dwb(:, :, :, 1:nwf) = 0.0_8
@@ -397,68 +349,15 @@
    END DO
    END DO
    END DO
-   CALL POPREAL8ARRAY(rev, SIZE(rev, 1)*SIZE(rev, 2)*SIZE(rev, 3))
-   CALL POPREAL8ARRAY(bvtj1, SIZE(bvtj1, 1)*SIZE(bvtj1, 2)*SIZE(bvtj1, &
-   &                3))
-   CALL POPREAL8ARRAY(bvtj2, SIZE(bvtj2, 1)*SIZE(bvtj2, 2)*SIZE(bvtj2, &
-   &                3))
-   CALL POPREAL8ARRAY(bmtk1, SIZE(bmtk1, 1)*SIZE(bmtk1, 2)*SIZE(bmtk1, &
-   &                3)*SIZE(bmtk1, 4))
-   CALL POPREAL8ARRAY(bmtk2, SIZE(bmtk2, 1)*SIZE(bmtk2, 2)*SIZE(bmtk2, &
-   &                3)*SIZE(bmtk2, 4))
-   CALL POPREAL8ARRAY(bvtk1, SIZE(bvtk1, 1)*SIZE(bvtk1, 2)*SIZE(bvtk1, &
-   &                3))
-   CALL POPREAL8ARRAY(bvtk2, SIZE(bvtk2, 1)*SIZE(bvtk2, 2)*SIZE(bvtk2, &
-   &                3))
-   CALL POPREAL8ARRAY(bmti1, SIZE(bmti1, 1)*SIZE(bmti1, 2)*SIZE(bmti1, &
-   &                3)*SIZE(bmti1, 4))
-   CALL POPREAL8ARRAY(bmti2, SIZE(bmti2, 1)*SIZE(bmti2, 2)*SIZE(bmti2, &
-   &                3)*SIZE(bmti2, 4))
-   CALL POPREAL8ARRAY(bvti1, SIZE(bvti1, 1)*SIZE(bvti1, 2)*SIZE(bvti1, &
-   &                3))
-   CALL POPREAL8ARRAY(bvti2, SIZE(bvti2, 1)*SIZE(bvti2, 2)*SIZE(bvti2, &
-   &                3))
-   CALL POPREAL8ARRAY(bmtj1, SIZE(bmtj1, 1)*SIZE(bmtj1, 2)*SIZE(bmtj1, &
-   &                3)*SIZE(bmtj1, 4))
-   CALL POPREAL8ARRAY(bmtj2, SIZE(bmtj2, 1)*SIZE(bmtj2, 2)*SIZE(bmtj2, &
-   &                3)*SIZE(bmtj2, 4))
    CALL SA_BLOCK_B(.true.)
    ELSE IF (branch .EQ. 1) THEN
-   bvtj1b = 0.0_8
-   bvtj2b = 0.0_8
-   bmtk1b = 0.0_8
-   bmtk2b = 0.0_8
-   bvtk1b = 0.0_8
-   bvtk2b = 0.0_8
-   bmti1b = 0.0_8
-   bmti2b = 0.0_8
-   bvti1b = 0.0_8
-   bvti2b = 0.0_8
-   bmtj1b = 0.0_8
-   bmtj2b = 0.0_8
+   rlvb = 0.0_8
    ELSE
-   bvtj1b = 0.0_8
-   bvtj2b = 0.0_8
-   bmtk1b = 0.0_8
-   bmtk2b = 0.0_8
-   bvtk1b = 0.0_8
-   bvtk2b = 0.0_8
-   bmti1b = 0.0_8
-   bmti2b = 0.0_8
-   bvti1b = 0.0_8
-   bvti2b = 0.0_8
-   bmtj1b = 0.0_8
-   bmtj2b = 0.0_8
-   GOTO 100
+   rlvb = 0.0_8
    END IF
-   CALL UNSTEADYTURBSPECTRAL_BLOCK_B(itu1, itu1, nn, sps)
-   100 DO sps2=ntimeintervalsspectral,1,-1
+   DO sps2=ntimeintervalsspectral,1,-1
    flowdomsb(nn, 1, sps2)%dw = 0.0_8
    END DO
-   CALL POPREAL8ARRAY(radi, SIZE(radi, 1)*SIZE(radi, 2)*SIZE(radi, 3))
-   CALL POPREAL8ARRAY(radj, SIZE(radj, 1)*SIZE(radj, 2)*SIZE(radj, 3))
-   CALL POPREAL8ARRAY(radk, SIZE(radk, 1)*SIZE(radk, 2)*SIZE(radk, 3))
-   CALL TIMESTEP_BLOCK_B(.false.)
    DO ii1=ntimeintervalsspectral,1,-1
    DO ii2=1,1,-1
    DO ii3=nn,nn,-1
@@ -470,36 +369,9 @@
    END DO
    END DO
    CALL POPREAL8ARRAY(rev, SIZE(rev, 1)*SIZE(rev, 2)*SIZE(rev, 3))
-   CALL POPREAL8ARRAY(bvtj1, SIZE(bvtj1, 1)*SIZE(bvtj1, 2)*SIZE(bvtj1, 3)&
-   &             )
-   CALL POPREAL8ARRAY(bvtj2, SIZE(bvtj2, 1)*SIZE(bvtj2, 2)*SIZE(bvtj2, 3)&
-   &             )
    CALL POPREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
-   CALL POPREAL8ARRAY(gamma, SIZE(gamma, 1)*SIZE(gamma, 2)*SIZE(gamma, 3)&
-   &             )
-   CALL POPREAL8ARRAY(bmtk1, SIZE(bmtk1, 1)*SIZE(bmtk1, 2)*SIZE(bmtk1, 3)&
-   &              *SIZE(bmtk1, 4))
-   CALL POPREAL8ARRAY(bmtk2, SIZE(bmtk2, 1)*SIZE(bmtk2, 2)*SIZE(bmtk2, 3)&
-   &              *SIZE(bmtk2, 4))
    CALL POPREAL8ARRAY(rlv, SIZE(rlv, 1)*SIZE(rlv, 2)*SIZE(rlv, 3))
-   CALL POPREAL8ARRAY(bvtk1, SIZE(bvtk1, 1)*SIZE(bvtk1, 2)*SIZE(bvtk1, 3)&
-   &             )
-   CALL POPREAL8ARRAY(bvtk2, SIZE(bvtk2, 1)*SIZE(bvtk2, 2)*SIZE(bvtk2, 3)&
-   &             )
-   CALL POPREAL8ARRAY(bmti1, SIZE(bmti1, 1)*SIZE(bmti1, 2)*SIZE(bmti1, 3)&
-   &              *SIZE(bmti1, 4))
-   CALL POPREAL8ARRAY(bmti2, SIZE(bmti2, 1)*SIZE(bmti2, 2)*SIZE(bmti2, 3)&
-   &              *SIZE(bmti2, 4))
-   CALL POPREAL8ARRAY(bvti1, SIZE(bvti1, 1)*SIZE(bvti1, 2)*SIZE(bvti1, 3)&
-   &             )
-   CALL POPREAL8ARRAY(bvti2, SIZE(bvti2, 1)*SIZE(bvti2, 2)*SIZE(bvti2, 3)&
-   &             )
-   CALL POPREAL8ARRAY(bmtj1, SIZE(bmtj1, 1)*SIZE(bmtj1, 2)*SIZE(bmtj1, 3)&
-   &              *SIZE(bmtj1, 4))
-   CALL POPREAL8ARRAY(bmtj2, SIZE(bmtj2, 1)*SIZE(bmtj2, 2)*SIZE(bmtj2, 3)&
-   &              *SIZE(bmtj2, 4))
-   CALL APPLYALLBC_BLOCK_B(.true.)
-   CALL COMPUTEEDDYVISCOSITY_B()
+   CALL BCEULERWALL_B(.true., .false.)
    CALL POPREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
    CALL COMPUTELAMVISCOSITY_B()
    DO k=kb,0,-1

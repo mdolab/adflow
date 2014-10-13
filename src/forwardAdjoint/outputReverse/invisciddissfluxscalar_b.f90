@@ -2,10 +2,9 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of invisciddissfluxscalar in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *p *gamma *w *fw
-   !   with respect to varying inputs: *p *gamma *w *radi *radj *radk
-   !   Plus diff mem management of: p:in gamma:in w:in fw:in radi:in
-   !                radj:in radk:in
+   !   gradient     of useful results: *w
+   !   with respect to varying inputs: *p *w
+   !   Plus diff mem management of: p:in w:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -47,17 +46,13 @@
    REAL(kind=realtype) :: rhoib
    REAL(kind=realtype) :: sfil, fis2, fis4
    REAL(kind=realtype) :: ppor, rrad, dis2, dis4
-   REAL(kind=realtype) :: rradb, dis2b, dis4b
    REAL(kind=realtype) :: dss1, dss2, ddw, fs
-   REAL(kind=realtype) :: dss1b, dss2b, ddwb, fsb
    REAL(kind=realtype), DIMENSION(0:ib, 0:jb, 0:kb) :: ss
-   REAL(kind=realtype), DIMENSION(0:ib, 0:jb, 0:kb) :: ssb
    INTRINSIC ABS
    INTRINSIC MAX
    INTRINSIC MIN
    REAL(kind=realtype) :: DIM
    REAL(kind=realtype) :: arg1
-   REAL(kind=realtype) :: arg1b
    REAL(kind=realtype) :: tmp
    REAL(kind=realtype) :: tmp0
    REAL(kind=realtype) :: tmp1
@@ -85,145 +80,57 @@
    REAL(kind=realtype) :: tmp23
    REAL(kind=realtype) :: tmp24
    REAL(kind=realtype) :: tmp25
-   INTEGER :: branch
    REAL(kind=realtype) :: temp3
-   REAL(kind=realtype) :: x3b
-   REAL(kind=realtype) :: temp29
    REAL(kind=realtype) :: temp2
-   REAL(kind=realtype) :: y1b
-   REAL(kind=realtype) :: temp28
    REAL(kind=realtype) :: temp1
-   REAL(kind=realtype) :: temp27
    REAL(kind=realtype) :: temp0
-   REAL(kind=realtype) :: temp26
-   REAL(kind=realtype) :: temp25
-   REAL(kind=realtype) :: min5b
-   REAL(kind=realtype) :: temp24
-   REAL(kind=realtype) :: temp23
-   REAL(kind=realtype) :: temp22
-   REAL(kind=realtype) :: x6b
-   REAL(kind=realtype) :: temp21
-   REAL(kind=realtype) :: y4b
-   REAL(kind=realtype) :: temp20
    REAL(kind=realtype) :: min6
    REAL(kind=realtype) :: min5
-   REAL(kind=realtype) :: tempb9
    REAL(kind=realtype) :: min4
-   REAL(kind=realtype) :: tempb8
    REAL(kind=realtype) :: min3
-   REAL(kind=realtype) :: tempb7
    REAL(kind=realtype) :: min2
-   REAL(kind=realtype) :: tempb6
    REAL(kind=realtype) :: min1
-   REAL(kind=realtype) :: tempb5
-   REAL(kind=realtype) :: tempb4
    REAL(kind=realtype) :: tmpb9
    REAL(kind=realtype) :: tmpb25
-   REAL(kind=realtype) :: tempb19
-   REAL(kind=realtype) :: tempb3
    REAL(kind=realtype) :: tmpb8
    REAL(kind=realtype) :: tmpb24
-   REAL(kind=realtype) :: tempb18
-   REAL(kind=realtype) :: tempb2
    REAL(kind=realtype) :: tmpb7
    REAL(kind=realtype) :: tmpb23
-   REAL(kind=realtype) :: tempb17
-   REAL(kind=realtype) :: tempb1
    REAL(kind=realtype) :: tmpb6
    REAL(kind=realtype) :: tmpb22
-   REAL(kind=realtype) :: tempb16
-   REAL(kind=realtype) :: tempb0
    REAL(kind=realtype) :: tmpb5
    REAL(kind=realtype) :: tmpb21
-   REAL(kind=realtype) :: tempb15
    REAL(kind=realtype) :: tmpb4
    REAL(kind=realtype) :: tmpb20
-   REAL(kind=realtype) :: tempb14
    REAL(kind=realtype) :: tmpb3
-   REAL(kind=realtype) :: tempb13
    REAL(kind=realtype) :: tmpb
    REAL(kind=realtype) :: tmpb2
-   REAL(kind=realtype) :: tempb12
    REAL(kind=realtype) :: x6
    REAL(kind=realtype) :: tmpb1
-   REAL(kind=realtype) :: tempb11
    REAL(kind=realtype) :: x5
    REAL(kind=realtype) :: tmpb0
-   REAL(kind=realtype) :: tempb10
    REAL(kind=realtype) :: x4
    REAL(kind=realtype) :: x3
-   REAL(kind=realtype) :: min1b
    REAL(kind=realtype) :: x2
    REAL(kind=realtype) :: x1
-   REAL(kind=realtype) :: temp19
-   REAL(kind=realtype) :: x2b
-   REAL(kind=realtype) :: temp18
-   REAL(kind=realtype) :: temp17
-   REAL(kind=realtype) :: temp16
-   REAL(kind=realtype) :: temp15
-   REAL(kind=realtype) :: min4b
-   REAL(kind=realtype) :: temp14
-   REAL(kind=realtype) :: temp13
-   REAL(kind=realtype) :: temp12
-   REAL(kind=realtype) :: x5b
-   REAL(kind=realtype) :: temp11
-   REAL(kind=realtype) :: y3b
-   REAL(kind=realtype) :: temp10
    REAL(kind=realtype) :: tmpb19
    REAL(kind=realtype) :: tmpb18
    REAL(kind=realtype) :: tmpb17
-   REAL(kind=realtype) :: y6b
    REAL(kind=realtype) :: tmpb16
-   REAL(kind=realtype) :: temp40
    REAL(kind=realtype) :: tmpb15
    REAL(kind=realtype) :: tmpb14
    REAL(kind=realtype) :: tmpb13
    REAL(kind=realtype) :: tmpb12
    REAL(kind=realtype) :: tmpb11
-   REAL(kind=realtype) :: tempb
    REAL(kind=realtype) :: tmpb10
-   REAL(kind=realtype) :: tempb34
-   REAL(kind=realtype) :: tempb33
-   REAL(kind=realtype) :: x1b
-   REAL(kind=realtype) :: tempb32
-   REAL(kind=realtype) :: tempb31
-   REAL(kind=realtype) :: tempb30
-   REAL(kind=realtype) :: min3b
-   REAL(kind=realtype) :: x4b
-   REAL(kind=realtype) :: temp39
-   REAL(kind=realtype) :: y2b
-   REAL(kind=realtype) :: temp38
-   REAL(kind=realtype) :: temp37
-   REAL(kind=realtype) :: temp36
-   REAL(kind=realtype) :: min6b
-   REAL(kind=realtype) :: temp35
-   REAL(kind=realtype) :: temp34
-   REAL(kind=realtype) :: temp33
-   REAL(kind=realtype) :: temp32
-   REAL(kind=realtype) :: temp31
-   REAL(kind=realtype) :: y5b
-   REAL(kind=realtype) :: temp30
    REAL(kind=realtype) :: abs0
-   REAL(kind=realtype) :: tempb29
-   REAL(kind=realtype) :: tempb28
-   REAL(kind=realtype) :: tempb27
-   REAL(kind=realtype) :: tempb26
-   REAL(kind=realtype) :: tempb25
    REAL(kind=realtype) :: temp
-   REAL(kind=realtype) :: tempb24
-   REAL(kind=realtype) :: tempb23
-   REAL(kind=realtype) :: tempb22
    REAL(kind=realtype) :: y6
-   REAL(kind=realtype) :: temp9
-   REAL(kind=realtype) :: tempb21
    REAL(kind=realtype) :: y5
-   REAL(kind=realtype) :: temp8
-   REAL(kind=realtype) :: tempb20
    REAL(kind=realtype) :: y4
    REAL(kind=realtype) :: temp7
    REAL(kind=realtype) :: y3
    REAL(kind=realtype) :: temp6
-   REAL(kind=realtype) :: min2b
    REAL(kind=realtype) :: y2
    REAL(kind=realtype) :: temp5
    REAL(kind=realtype) :: y1
@@ -243,85 +150,8 @@
    ! Check if rFil == 0. If so, the dissipative flux needs not to
    ! be computed.
    IF (abs0 .LT. thresholdreal) THEN
-   radib = 0.0_8
-   radjb = 0.0_8
-   radkb = 0.0_8
+   pb = 0.0_8
    ELSE
-   ! Determine the variables used to compute the switch.
-   ! For the inviscid case this is the pressure; for the viscous
-   ! case it is the entropy.
-   SELECT CASE  (equations) 
-   CASE (eulerequations) 
-   ! Inviscid case. Pressure switch is based on the pressure.
-   ! Also set the value of sslim. To be fully consistent this
-   ! must have the dimension of pressure and it is therefore
-   ! set to a fraction of the free stream value.
-   sslim = 0.001_realType*pinfcorr
-   ! Copy the pressure in ss. Only fill the entries used in
-   ! the discretization, i.e. ignore the corner halo's.
-   DO k=0,kb
-   DO j=2,jl
-   DO i=2,il
-   ss(i, j, k) = p(i, j, k)
-   END DO
-   END DO
-   END DO
-   DO k=2,kl
-   DO j=2,jl
-   ss(0, j, k) = p(0, j, k)
-   ss(1, j, k) = p(1, j, k)
-   ss(ie, j, k) = p(ie, j, k)
-   ss(ib, j, k) = p(ib, j, k)
-   END DO
-   END DO
-   DO k=2,kl
-   DO i=2,il
-   ss(i, 0, k) = p(i, 0, k)
-   ss(i, 1, k) = p(i, 1, k)
-   ss(i, je, k) = p(i, je, k)
-   ss(i, jb, k) = p(i, jb, k)
-   END DO
-   END DO
-   CALL PUSHCONTROL2B(1)
-   CASE (nsequations, ransequations) 
-   !===============================================================
-   ! Viscous case. Pressure switch is based on the entropy.
-   ! Also set the value of sslim. To be fully consistent this
-   ! must have the dimension of entropy and it is therefore
-   ! set to a fraction of the free stream value.
-   sslim = 0.001_realType*pinfcorr/rhoinf**gammainf
-   ! Store the entropy in ss. Only fill the entries used in
-   ! the discretization, i.e. ignore the corner halo's.
-   DO k=0,kb
-   DO j=2,jl
-   DO i=2,il
-   ss(i, j, k) = p(i, j, k)/w(i, j, k, irho)**gamma(i, j, k)
-   END DO
-   END DO
-   END DO
-   DO k=2,kl
-   DO j=2,jl
-   ss(0, j, k) = p(0, j, k)/w(0, j, k, irho)**gamma(0, j, k)
-   ss(1, j, k) = p(1, j, k)/w(1, j, k, irho)**gamma(1, j, k)
-   ss(ie, j, k) = p(ie, j, k)/w(ie, j, k, irho)**gamma(ie, j, k)
-   ss(ib, j, k) = p(ib, j, k)/w(ib, j, k, irho)**gamma(ib, j, k)
-   END DO
-   END DO
-   DO k=2,kl
-   DO i=2,il
-   ss(i, 0, k) = p(i, 0, k)/w(i, 0, k, irho)**gamma(i, 0, k)
-   ss(i, 1, k) = p(i, 1, k)/w(i, 1, k, irho)**gamma(i, 1, k)
-   ss(i, je, k) = p(i, je, k)/w(i, je, k, irho)**gamma(i, je, k)
-   ss(i, jb, k) = p(i, jb, k)/w(i, jb, k, irho)**gamma(i, jb, k)
-   END DO
-   END DO
-   CALL PUSHCONTROL2B(2)
-   CASE DEFAULT
-   CALL PUSHCONTROL2B(0)
-   END SELECT
-   ! Set a couple of constants for the scheme.
-   fis2 = rfil*vis2
-   fis4 = rfil*vis4
    ! Replace the total energy by rho times the total enthalpy.
    ! In this way the numerical solution is total enthalpy preserving
    ! for the steady Euler equations. Also replace the velocities by
@@ -440,292 +270,6 @@
    w(i, jb, k, irhoe) = w(i, jb, k, irhoe) + p(i, jb, k)
    END DO
    END DO
-   !
-   !      ******************************************************************
-   !      *                                                                *
-   !      * Dissipative fluxes in the i-direction.                         *
-   !      *                                                                *
-   !      ******************************************************************
-   !
-   DO k=2,kl
-   DO j=2,jl
-   x1 = (ss(2, j, k)-two*ss(1, j, k)+ss(0, j, k))/(ss(2, j, k)+two*&
-   &         ss(1, j, k)+ss(0, j, k)+sslim)
-   IF (x1 .GE. 0.) THEN
-   dss1 = x1
-   CALL PUSHCONTROL1B(0)
-   ELSE
-   dss1 = -x1
-   CALL PUSHCONTROL1B(1)
-   END IF
-   ! Loop in i-direction.
-   DO i=1,il
-   x2 = (ss(i+2, j, k)-two*ss(i+1, j, k)+ss(i, j, k))/(ss(i+2, j&
-   &           , k)+two*ss(i+1, j, k)+ss(i, j, k)+sslim)
-   IF (x2 .GE. 0.) THEN
-   dss2 = x2
-   CALL PUSHCONTROL1B(0)
-   ELSE
-   dss2 = -x2
-   CALL PUSHCONTROL1B(1)
-   END IF
-   ! Compute the dissipation coefficients for this face.
-   CALL PUSHREAL8(ppor)
-   ppor = zero
-   IF (pori(i, j, k) .EQ. normalflux) ppor = half
-   rrad = ppor*(radi(i, j, k)+radi(i+1, j, k))
-   ! Modification for FD Preconditioner Note: This lumping
-   ! actually still results in a greater than 3 cell stencil
-   ! in any direction. Since this seems to work slightly
-   ! better than the dis2=sigma*fis4*rrad, we will just use
-   ! a 5-cell stencil for doing the PC
-   IF (lumpeddiss) THEN
-   IF (dss1 .LT. dss2) THEN
-   y1 = dss2
-   CALL PUSHCONTROL1B(0)
-   ELSE
-   y1 = dss1
-   CALL PUSHCONTROL1B(1)
-   END IF
-   IF (dssmax .GT. y1) THEN
-   CALL PUSHREAL8(min1)
-   min1 = y1
-   CALL PUSHCONTROL1B(0)
-   ELSE
-   CALL PUSHREAL8(min1)
-   min1 = dssmax
-   CALL PUSHCONTROL1B(1)
-   END IF
-   CALL PUSHREAL8(dis2)
-   dis2 = fis2*rrad*min1 + sigma*fis4*rrad
-   !dis2 = sigma*fis4*rrad 
-   CALL PUSHREAL8(dis4)
-   dis4 = 0.0
-   CALL PUSHCONTROL1B(0)
-   ELSE
-   IF (dss1 .LT. dss2) THEN
-   y2 = dss2
-   CALL PUSHCONTROL1B(0)
-   ELSE
-   y2 = dss1
-   CALL PUSHCONTROL1B(1)
-   END IF
-   IF (dssmax .GT. y2) THEN
-   CALL PUSHREAL8(min2)
-   min2 = y2
-   CALL PUSHCONTROL1B(0)
-   ELSE
-   CALL PUSHREAL8(min2)
-   min2 = dssmax
-   CALL PUSHCONTROL1B(1)
-   END IF
-   CALL PUSHREAL8(dis2)
-   dis2 = fis2*rrad*min2
-   arg1 = fis4*rrad
-   CALL PUSHREAL8(dis4)
-   dis4 = DIM(arg1, dis2)
-   CALL PUSHCONTROL1B(1)
-   END IF
-   ! Compute and scatter the dissipative flux.
-   ! Density. Store it in the mass flow of the
-   ! appropriate sliding mesh interface.
-   ! X-momentum.
-   ! Y-momentum.
-   ! Z-momentum.
-   ! Energy.
-   ! Set dss1 to dss2 for the next face.
-   dss1 = dss2
-   END DO
-   END DO
-   END DO
-   !
-   !      ******************************************************************
-   !      *                                                                *
-   !      * Dissipative fluxes in the j-direction.                         *
-   !      *                                                                *
-   !      ******************************************************************
-   !
-   DO k=2,kl
-   DO i=2,il
-   x3 = (ss(i, 2, k)-two*ss(i, 1, k)+ss(i, 0, k))/(ss(i, 2, k)+two*&
-   &         ss(i, 1, k)+ss(i, 0, k)+sslim)
-   IF (x3 .GE. 0.) THEN
-   dss1 = x3
-   CALL PUSHCONTROL1B(0)
-   ELSE
-   dss1 = -x3
-   CALL PUSHCONTROL1B(1)
-   END IF
-   ! Loop in j-direction.
-   DO j=1,jl
-   x4 = (ss(i, j+2, k)-two*ss(i, j+1, k)+ss(i, j, k))/(ss(i, j+2&
-   &           , k)+two*ss(i, j+1, k)+ss(i, j, k)+sslim)
-   IF (x4 .GE. 0.) THEN
-   dss2 = x4
-   CALL PUSHCONTROL1B(0)
-   ELSE
-   dss2 = -x4
-   CALL PUSHCONTROL1B(1)
-   END IF
-   ! Compute the dissipation coefficients for this face.
-   CALL PUSHREAL8(ppor)
-   ppor = zero
-   IF (porj(i, j, k) .EQ. normalflux) ppor = half
-   rrad = ppor*(radj(i, j, k)+radj(i, j+1, k))
-   ! Modification for FD Preconditioner
-   IF (lumpeddiss) THEN
-   IF (dss1 .LT. dss2) THEN
-   y3 = dss2
-   CALL PUSHCONTROL1B(0)
-   ELSE
-   y3 = dss1
-   CALL PUSHCONTROL1B(1)
-   END IF
-   IF (dssmax .GT. y3) THEN
-   CALL PUSHREAL8(min3)
-   min3 = y3
-   CALL PUSHCONTROL1B(0)
-   ELSE
-   CALL PUSHREAL8(min3)
-   min3 = dssmax
-   CALL PUSHCONTROL1B(1)
-   END IF
-   CALL PUSHREAL8(dis2)
-   dis2 = fis2*rrad*min3 + sigma*fis4*rrad
-   !dis2 = sigma*fis4*rrad 
-   CALL PUSHREAL8(dis4)
-   dis4 = 0.0
-   CALL PUSHCONTROL1B(0)
-   ELSE
-   IF (dss1 .LT. dss2) THEN
-   y4 = dss2
-   CALL PUSHCONTROL1B(0)
-   ELSE
-   y4 = dss1
-   CALL PUSHCONTROL1B(1)
-   END IF
-   IF (dssmax .GT. y4) THEN
-   CALL PUSHREAL8(min4)
-   min4 = y4
-   CALL PUSHCONTROL1B(0)
-   ELSE
-   CALL PUSHREAL8(min4)
-   min4 = dssmax
-   CALL PUSHCONTROL1B(1)
-   END IF
-   CALL PUSHREAL8(dis2)
-   dis2 = fis2*rrad*min4
-   arg1 = fis4*rrad
-   CALL PUSHREAL8(dis4)
-   dis4 = DIM(arg1, dis2)
-   CALL PUSHCONTROL1B(1)
-   END IF
-   ! Compute and scatter the dissipative flux.
-   ! Density. Store it in the mass flow of the
-   ! appropriate sliding mesh interface.
-   ! X-momentum.
-   ! Y-momentum.
-   ! Z-momentum.
-   ! Energy.
-   ! Set dss1 to dss2 for the next face.
-   dss1 = dss2
-   END DO
-   END DO
-   END DO
-   !
-   !      ******************************************************************
-   !      *                                                                *
-   !      * Dissipative fluxes in the k-direction.                         *
-   !      *                                                                *
-   !      ******************************************************************
-   !
-   DO j=2,jl
-   DO i=2,il
-   x5 = (ss(i, j, 2)-two*ss(i, j, 1)+ss(i, j, 0))/(ss(i, j, 2)+two*&
-   &         ss(i, j, 1)+ss(i, j, 0)+sslim)
-   IF (x5 .GE. 0.) THEN
-   dss1 = x5
-   CALL PUSHCONTROL1B(0)
-   ELSE
-   dss1 = -x5
-   CALL PUSHCONTROL1B(1)
-   END IF
-   ! Loop in k-direction.
-   DO k=1,kl
-   x6 = (ss(i, j, k+2)-two*ss(i, j, k+1)+ss(i, j, k))/(ss(i, j, k&
-   &           +2)+two*ss(i, j, k+1)+ss(i, j, k)+sslim)
-   IF (x6 .GE. 0.) THEN
-   dss2 = x6
-   CALL PUSHCONTROL1B(0)
-   ELSE
-   dss2 = -x6
-   CALL PUSHCONTROL1B(1)
-   END IF
-   ! Compute the dissipation coefficients for this face.
-   CALL PUSHREAL8(ppor)
-   ppor = zero
-   IF (pork(i, j, k) .EQ. normalflux) ppor = half
-   rrad = ppor*(radk(i, j, k)+radk(i, j, k+1))
-   ! Modification for FD Preconditioner
-   IF (lumpeddiss) THEN
-   IF (dss1 .LT. dss2) THEN
-   y5 = dss2
-   CALL PUSHCONTROL1B(0)
-   ELSE
-   y5 = dss1
-   CALL PUSHCONTROL1B(1)
-   END IF
-   IF (dssmax .GT. y5) THEN
-   CALL PUSHREAL8(min5)
-   min5 = y5
-   CALL PUSHCONTROL1B(0)
-   ELSE
-   CALL PUSHREAL8(min5)
-   min5 = dssmax
-   CALL PUSHCONTROL1B(1)
-   END IF
-   CALL PUSHREAL8(dis2)
-   dis2 = fis2*rrad*min5 + sigma*fis4*rrad
-   !dis2 = sigma*fis4*rrad 
-   CALL PUSHREAL8(dis4)
-   dis4 = 0.0
-   CALL PUSHCONTROL1B(0)
-   ELSE
-   IF (dss1 .LT. dss2) THEN
-   y6 = dss2
-   CALL PUSHCONTROL1B(0)
-   ELSE
-   y6 = dss1
-   CALL PUSHCONTROL1B(1)
-   END IF
-   IF (dssmax .GT. y6) THEN
-   CALL PUSHREAL8(min6)
-   min6 = y6
-   CALL PUSHCONTROL1B(0)
-   ELSE
-   CALL PUSHREAL8(min6)
-   min6 = dssmax
-   CALL PUSHCONTROL1B(1)
-   END IF
-   CALL PUSHREAL8(dis2)
-   dis2 = fis2*rrad*min6
-   arg1 = fis4*rrad
-   CALL PUSHREAL8(dis4)
-   dis4 = DIM(arg1, dis2)
-   CALL PUSHCONTROL1B(1)
-   END IF
-   ! Compute and scatter the dissipative flux.
-   ! Density. Store it in the mass flow of the
-   ! appropriate sliding mesh interface.
-   ! X-momentum.
-   ! Y-momentum.
-   ! Z-momentum.
-   ! Energy.
-   ! Set dss1 to dss2 for the next face.
-   dss1 = dss2
-   END DO
-   END DO
-   END DO
    ! Replace rho times the total enthalpy by the total energy and
    ! store the velocities again instead of the momentum. Only for
    ! those entries that have been altered, i.e. ignore the
@@ -834,6 +378,7 @@
    w(i, jb, k, irhoe) = w(i, jb, k, irhoe) - p(i, jb, k)
    END DO
    END DO
+   pb = 0.0_8
    DO k=kl,2,-1
    DO i=il,2,-1
    CALL POPREAL8(w(i, jb, k, irhoe))
@@ -848,8 +393,8 @@
    rhoib = rhoib + w(i, jb, k, ivx)*wb(i, jb, k, ivx)
    wb(i, jb, k, ivx) = rhoi*wb(i, jb, k, ivx)
    CALL POPREAL8(rhoi)
-   temp40 = w(i, jb, k, irho)
-   wb(i, jb, k, irho) = wb(i, jb, k, irho) - one*rhoib/temp40**2
+   temp7 = w(i, jb, k, irho)
+   wb(i, jb, k, irho) = wb(i, jb, k, irho) - one*rhoib/temp7**2
    CALL POPREAL8(w(i, je, k, irhoe))
    pb(i, je, k) = pb(i, je, k) - wb(i, je, k, irhoe)
    CALL POPREAL8(w(i, je, k, ivz))
@@ -862,8 +407,8 @@
    rhoib = rhoib + w(i, je, k, ivx)*wb(i, je, k, ivx)
    wb(i, je, k, ivx) = rhoi*wb(i, je, k, ivx)
    CALL POPREAL8(rhoi)
-   temp39 = w(i, je, k, irho)
-   wb(i, je, k, irho) = wb(i, je, k, irho) - one*rhoib/temp39**2
+   temp6 = w(i, je, k, irho)
+   wb(i, je, k, irho) = wb(i, je, k, irho) - one*rhoib/temp6**2
    CALL POPREAL8(w(i, 1, k, irhoe))
    pb(i, 1, k) = pb(i, 1, k) - wb(i, 1, k, irhoe)
    CALL POPREAL8(w(i, 1, k, ivz))
@@ -876,8 +421,8 @@
    rhoib = rhoib + w(i, 1, k, ivx)*wb(i, 1, k, ivx)
    wb(i, 1, k, ivx) = rhoi*wb(i, 1, k, ivx)
    CALL POPREAL8(rhoi)
-   temp38 = w(i, 1, k, irho)
-   wb(i, 1, k, irho) = wb(i, 1, k, irho) - one*rhoib/temp38**2
+   temp5 = w(i, 1, k, irho)
+   wb(i, 1, k, irho) = wb(i, 1, k, irho) - one*rhoib/temp5**2
    CALL POPREAL8(w(i, 0, k, irhoe))
    pb(i, 0, k) = pb(i, 0, k) - wb(i, 0, k, irhoe)
    CALL POPREAL8(w(i, 0, k, ivz))
@@ -890,8 +435,8 @@
    rhoib = rhoib + w(i, 0, k, ivx)*wb(i, 0, k, ivx)
    wb(i, 0, k, ivx) = rhoi*wb(i, 0, k, ivx)
    CALL POPREAL8(rhoi)
-   temp37 = w(i, 0, k, irho)
-   wb(i, 0, k, irho) = wb(i, 0, k, irho) - one*rhoib/temp37**2
+   temp4 = w(i, 0, k, irho)
+   wb(i, 0, k, irho) = wb(i, 0, k, irho) - one*rhoib/temp4**2
    END DO
    END DO
    DO k=kl,2,-1
@@ -908,8 +453,8 @@
    rhoib = rhoib + w(ib, j, k, ivx)*wb(ib, j, k, ivx)
    wb(ib, j, k, ivx) = rhoi*wb(ib, j, k, ivx)
    CALL POPREAL8(rhoi)
-   temp36 = w(ib, j, k, irho)
-   wb(ib, j, k, irho) = wb(ib, j, k, irho) - one*rhoib/temp36**2
+   temp3 = w(ib, j, k, irho)
+   wb(ib, j, k, irho) = wb(ib, j, k, irho) - one*rhoib/temp3**2
    CALL POPREAL8(w(ie, j, k, irhoe))
    pb(ie, j, k) = pb(ie, j, k) - wb(ie, j, k, irhoe)
    CALL POPREAL8(w(ie, j, k, ivz))
@@ -922,8 +467,8 @@
    rhoib = rhoib + w(ie, j, k, ivx)*wb(ie, j, k, ivx)
    wb(ie, j, k, ivx) = rhoi*wb(ie, j, k, ivx)
    CALL POPREAL8(rhoi)
-   temp35 = w(ie, j, k, irho)
-   wb(ie, j, k, irho) = wb(ie, j, k, irho) - one*rhoib/temp35**2
+   temp2 = w(ie, j, k, irho)
+   wb(ie, j, k, irho) = wb(ie, j, k, irho) - one*rhoib/temp2**2
    CALL POPREAL8(w(1, j, k, irhoe))
    pb(1, j, k) = pb(1, j, k) - wb(1, j, k, irhoe)
    CALL POPREAL8(w(1, j, k, ivz))
@@ -936,8 +481,8 @@
    rhoib = rhoib + w(1, j, k, ivx)*wb(1, j, k, ivx)
    wb(1, j, k, ivx) = rhoi*wb(1, j, k, ivx)
    CALL POPREAL8(rhoi)
-   temp34 = w(1, j, k, irho)
-   wb(1, j, k, irho) = wb(1, j, k, irho) - one*rhoib/temp34**2
+   temp1 = w(1, j, k, irho)
+   wb(1, j, k, irho) = wb(1, j, k, irho) - one*rhoib/temp1**2
    CALL POPREAL8(w(0, j, k, irhoe))
    pb(0, j, k) = pb(0, j, k) - wb(0, j, k, irhoe)
    CALL POPREAL8(w(0, j, k, ivz))
@@ -950,8 +495,8 @@
    rhoib = rhoib + w(0, j, k, ivx)*wb(0, j, k, ivx)
    wb(0, j, k, ivx) = rhoi*wb(0, j, k, ivx)
    CALL POPREAL8(rhoi)
-   temp33 = w(0, j, k, irho)
-   wb(0, j, k, irho) = wb(0, j, k, irho) - one*rhoib/temp33**2
+   temp0 = w(0, j, k, irho)
+   wb(0, j, k, irho) = wb(0, j, k, irho) - one*rhoib/temp0**2
    END DO
    END DO
    DO k=kb,0,-1
@@ -969,430 +514,9 @@
    rhoib = rhoib + w(i, j, k, ivx)*wb(i, j, k, ivx)
    wb(i, j, k, ivx) = rhoi*wb(i, j, k, ivx)
    CALL POPREAL8(rhoi)
-   temp32 = w(i, j, k, irho)
-   wb(i, j, k, irho) = wb(i, j, k, irho) - one*rhoib/temp32**2
+   temp = w(i, j, k, irho)
+   wb(i, j, k, irho) = wb(i, j, k, irho) - one*rhoib/temp**2
    END DO
-   END DO
-   END DO
-   radkb = 0.0_8
-   ssb = 0.0_8
-   DO j=jl,2,-1
-   DO i=il,2,-1
-   dss1b = 0.0_8
-   DO k=kl,1,-1
-   dss2b = dss1b
-   fsb = fwb(i, j, k+1, irhoe) - fwb(i, j, k, irhoe)
-   ddw = w(i, j, k+1, irhoe) - w(i, j, k, irhoe)
-   tempb30 = -(dis4*fsb)
-   dis2b = ddw*fsb
-   ddwb = dis2*fsb - three*tempb30
-   dis4b = -((w(i, j, k+2, irhoe)-w(i, j, k-1, irhoe)-three*ddw)*&
-   &           fsb)
-   wb(i, j, k+2, irhoe) = wb(i, j, k+2, irhoe) + tempb30
-   wb(i, j, k-1, irhoe) = wb(i, j, k-1, irhoe) - tempb30
-   wb(i, j, k+1, irhoe) = wb(i, j, k+1, irhoe) + ddwb
-   wb(i, j, k, irhoe) = wb(i, j, k, irhoe) - ddwb
-   fsb = fwb(i, j, k+1, imz) - fwb(i, j, k, imz)
-   ddw = w(i, j, k+1, ivz) - w(i, j, k, ivz)
-   tempb31 = -(dis4*fsb)
-   dis2b = dis2b + ddw*fsb
-   ddwb = dis2*fsb - three*tempb31
-   dis4b = dis4b - (w(i, j, k+2, ivz)-w(i, j, k-1, ivz)-three*ddw&
-   &           )*fsb
-   wb(i, j, k+2, ivz) = wb(i, j, k+2, ivz) + tempb31
-   wb(i, j, k-1, ivz) = wb(i, j, k-1, ivz) - tempb31
-   wb(i, j, k+1, ivz) = wb(i, j, k+1, ivz) + ddwb
-   wb(i, j, k, ivz) = wb(i, j, k, ivz) - ddwb
-   fsb = fwb(i, j, k+1, imy) - fwb(i, j, k, imy)
-   ddw = w(i, j, k+1, ivy) - w(i, j, k, ivy)
-   tempb32 = -(dis4*fsb)
-   dis2b = dis2b + ddw*fsb
-   ddwb = dis2*fsb - three*tempb32
-   dis4b = dis4b - (w(i, j, k+2, ivy)-w(i, j, k-1, ivy)-three*ddw&
-   &           )*fsb
-   wb(i, j, k+2, ivy) = wb(i, j, k+2, ivy) + tempb32
-   wb(i, j, k-1, ivy) = wb(i, j, k-1, ivy) - tempb32
-   wb(i, j, k+1, ivy) = wb(i, j, k+1, ivy) + ddwb
-   wb(i, j, k, ivy) = wb(i, j, k, ivy) - ddwb
-   fsb = fwb(i, j, k+1, imx) - fwb(i, j, k, imx)
-   ddw = w(i, j, k+1, ivx) - w(i, j, k, ivx)
-   tempb33 = -(dis4*fsb)
-   dis2b = dis2b + ddw*fsb
-   ddwb = dis2*fsb - three*tempb33
-   dis4b = dis4b - (w(i, j, k+2, ivx)-w(i, j, k-1, ivx)-three*ddw&
-   &           )*fsb
-   wb(i, j, k+2, ivx) = wb(i, j, k+2, ivx) + tempb33
-   wb(i, j, k-1, ivx) = wb(i, j, k-1, ivx) - tempb33
-   wb(i, j, k+1, ivx) = wb(i, j, k+1, ivx) + ddwb
-   wb(i, j, k, ivx) = wb(i, j, k, ivx) - ddwb
-   fsb = fwb(i, j, k+1, irho) - fwb(i, j, k, irho)
-   ddw = w(i, j, k+1, irho) - w(i, j, k, irho)
-   tempb34 = -(dis4*fsb)
-   dis2b = dis2b + ddw*fsb
-   ddwb = dis2*fsb - three*tempb34
-   dis4b = dis4b - (w(i, j, k+2, irho)-w(i, j, k-1, irho)-three*&
-   &           ddw)*fsb
-   wb(i, j, k+2, irho) = wb(i, j, k+2, irho) + tempb34
-   wb(i, j, k-1, irho) = wb(i, j, k-1, irho) - tempb34
-   wb(i, j, k+1, irho) = wb(i, j, k+1, irho) + ddwb
-   wb(i, j, k, irho) = wb(i, j, k, irho) - ddwb
-   rrad = ppor*(radk(i, j, k)+radk(i, j, k+1))
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
-   CALL POPREAL8(dis4)
-   CALL POPREAL8(dis2)
-   rradb = (sigma*fis4+fis2*min5)*dis2b
-   min5b = fis2*rrad*dis2b
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
-   CALL POPREAL8(min5)
-   y5b = min5b
-   ELSE
-   CALL POPREAL8(min5)
-   y5b = 0.0_8
-   END IF
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
-   dss2b = dss2b + y5b
-   dss1b = 0.0_8
-   ELSE
-   dss1b = y5b
-   END IF
-   ELSE
-   arg1 = fis4*rrad
-   CALL POPREAL8(dis4)
-   arg1b = 0.0_8
-   CALL DIM_B(arg1, arg1b, dis2, dis2b, dis4b)
-   rradb = fis2*min6*dis2b + fis4*arg1b
-   CALL POPREAL8(dis2)
-   min6b = fis2*rrad*dis2b
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
-   CALL POPREAL8(min6)
-   y6b = min6b
-   ELSE
-   CALL POPREAL8(min6)
-   y6b = 0.0_8
-   END IF
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
-   dss2b = dss2b + y6b
-   dss1b = 0.0_8
-   ELSE
-   dss1b = y6b
-   END IF
-   END IF
-   radkb(i, j, k) = radkb(i, j, k) + ppor*rradb
-   radkb(i, j, k+1) = radkb(i, j, k+1) + ppor*rradb
-   CALL POPREAL8(ppor)
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
-   x6b = dss2b
-   ELSE
-   x6b = -dss2b
-   END IF
-   temp31 = sslim + ss(i, j, k+2) + two*ss(i, j, k+1) + ss(i, j, &
-   &           k)
-   tempb28 = x6b/temp31
-   tempb29 = -((ss(i, j, k+2)-two*ss(i, j, k+1)+ss(i, j, k))*&
-   &           tempb28/temp31)
-   ssb(i, j, k+2) = ssb(i, j, k+2) + tempb29 + tempb28
-   ssb(i, j, k+1) = ssb(i, j, k+1) + two*tempb29 - two*tempb28
-   ssb(i, j, k) = ssb(i, j, k) + tempb29 + tempb28
-   END DO
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
-   x5b = dss1b
-   ELSE
-   x5b = -dss1b
-   END IF
-   temp30 = sslim + ss(i, j, 2) + two*ss(i, j, 1) + ss(i, j, 0)
-   tempb26 = x5b/temp30
-   tempb27 = -((ss(i, j, 2)-two*ss(i, j, 1)+ss(i, j, 0))*tempb26/&
-   &         temp30)
-   ssb(i, j, 2) = ssb(i, j, 2) + tempb27 + tempb26
-   ssb(i, j, 1) = ssb(i, j, 1) + two*tempb27 - two*tempb26
-   ssb(i, j, 0) = ssb(i, j, 0) + tempb27 + tempb26
-   END DO
-   END DO
-   radjb = 0.0_8
-   DO k=kl,2,-1
-   DO i=il,2,-1
-   dss1b = 0.0_8
-   DO j=jl,1,-1
-   dss2b = dss1b
-   fsb = fwb(i, j+1, k, irhoe) - fwb(i, j, k, irhoe)
-   ddw = w(i, j+1, k, irhoe) - w(i, j, k, irhoe)
-   tempb21 = -(dis4*fsb)
-   dis2b = ddw*fsb
-   ddwb = dis2*fsb - three*tempb21
-   dis4b = -((w(i, j+2, k, irhoe)-w(i, j-1, k, irhoe)-three*ddw)*&
-   &           fsb)
-   wb(i, j+2, k, irhoe) = wb(i, j+2, k, irhoe) + tempb21
-   wb(i, j-1, k, irhoe) = wb(i, j-1, k, irhoe) - tempb21
-   wb(i, j+1, k, irhoe) = wb(i, j+1, k, irhoe) + ddwb
-   wb(i, j, k, irhoe) = wb(i, j, k, irhoe) - ddwb
-   fsb = fwb(i, j+1, k, imz) - fwb(i, j, k, imz)
-   ddw = w(i, j+1, k, ivz) - w(i, j, k, ivz)
-   tempb22 = -(dis4*fsb)
-   dis2b = dis2b + ddw*fsb
-   ddwb = dis2*fsb - three*tempb22
-   dis4b = dis4b - (w(i, j+2, k, ivz)-w(i, j-1, k, ivz)-three*ddw&
-   &           )*fsb
-   wb(i, j+2, k, ivz) = wb(i, j+2, k, ivz) + tempb22
-   wb(i, j-1, k, ivz) = wb(i, j-1, k, ivz) - tempb22
-   wb(i, j+1, k, ivz) = wb(i, j+1, k, ivz) + ddwb
-   wb(i, j, k, ivz) = wb(i, j, k, ivz) - ddwb
-   fsb = fwb(i, j+1, k, imy) - fwb(i, j, k, imy)
-   ddw = w(i, j+1, k, ivy) - w(i, j, k, ivy)
-   tempb23 = -(dis4*fsb)
-   dis2b = dis2b + ddw*fsb
-   ddwb = dis2*fsb - three*tempb23
-   dis4b = dis4b - (w(i, j+2, k, ivy)-w(i, j-1, k, ivy)-three*ddw&
-   &           )*fsb
-   wb(i, j+2, k, ivy) = wb(i, j+2, k, ivy) + tempb23
-   wb(i, j-1, k, ivy) = wb(i, j-1, k, ivy) - tempb23
-   wb(i, j+1, k, ivy) = wb(i, j+1, k, ivy) + ddwb
-   wb(i, j, k, ivy) = wb(i, j, k, ivy) - ddwb
-   fsb = fwb(i, j+1, k, imx) - fwb(i, j, k, imx)
-   ddw = w(i, j+1, k, ivx) - w(i, j, k, ivx)
-   tempb24 = -(dis4*fsb)
-   dis2b = dis2b + ddw*fsb
-   ddwb = dis2*fsb - three*tempb24
-   dis4b = dis4b - (w(i, j+2, k, ivx)-w(i, j-1, k, ivx)-three*ddw&
-   &           )*fsb
-   wb(i, j+2, k, ivx) = wb(i, j+2, k, ivx) + tempb24
-   wb(i, j-1, k, ivx) = wb(i, j-1, k, ivx) - tempb24
-   wb(i, j+1, k, ivx) = wb(i, j+1, k, ivx) + ddwb
-   wb(i, j, k, ivx) = wb(i, j, k, ivx) - ddwb
-   fsb = fwb(i, j+1, k, irho) - fwb(i, j, k, irho)
-   ddw = w(i, j+1, k, irho) - w(i, j, k, irho)
-   tempb25 = -(dis4*fsb)
-   dis2b = dis2b + ddw*fsb
-   ddwb = dis2*fsb - three*tempb25
-   dis4b = dis4b - (w(i, j+2, k, irho)-w(i, j-1, k, irho)-three*&
-   &           ddw)*fsb
-   wb(i, j+2, k, irho) = wb(i, j+2, k, irho) + tempb25
-   wb(i, j-1, k, irho) = wb(i, j-1, k, irho) - tempb25
-   wb(i, j+1, k, irho) = wb(i, j+1, k, irho) + ddwb
-   wb(i, j, k, irho) = wb(i, j, k, irho) - ddwb
-   rrad = ppor*(radj(i, j, k)+radj(i, j+1, k))
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
-   CALL POPREAL8(dis4)
-   CALL POPREAL8(dis2)
-   rradb = (sigma*fis4+fis2*min3)*dis2b
-   min3b = fis2*rrad*dis2b
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
-   CALL POPREAL8(min3)
-   y3b = min3b
-   ELSE
-   CALL POPREAL8(min3)
-   y3b = 0.0_8
-   END IF
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
-   dss2b = dss2b + y3b
-   dss1b = 0.0_8
-   ELSE
-   dss1b = y3b
-   END IF
-   ELSE
-   arg1 = fis4*rrad
-   CALL POPREAL8(dis4)
-   arg1b = 0.0_8
-   CALL DIM_B(arg1, arg1b, dis2, dis2b, dis4b)
-   rradb = fis2*min4*dis2b + fis4*arg1b
-   CALL POPREAL8(dis2)
-   min4b = fis2*rrad*dis2b
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
-   CALL POPREAL8(min4)
-   y4b = min4b
-   ELSE
-   CALL POPREAL8(min4)
-   y4b = 0.0_8
-   END IF
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
-   dss2b = dss2b + y4b
-   dss1b = 0.0_8
-   ELSE
-   dss1b = y4b
-   END IF
-   END IF
-   radjb(i, j, k) = radjb(i, j, k) + ppor*rradb
-   radjb(i, j+1, k) = radjb(i, j+1, k) + ppor*rradb
-   CALL POPREAL8(ppor)
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
-   x4b = dss2b
-   ELSE
-   x4b = -dss2b
-   END IF
-   temp29 = sslim + ss(i, j+2, k) + two*ss(i, j+1, k) + ss(i, j, &
-   &           k)
-   tempb19 = x4b/temp29
-   tempb20 = -((ss(i, j+2, k)-two*ss(i, j+1, k)+ss(i, j, k))*&
-   &           tempb19/temp29)
-   ssb(i, j+2, k) = ssb(i, j+2, k) + tempb20 + tempb19
-   ssb(i, j+1, k) = ssb(i, j+1, k) + two*tempb20 - two*tempb19
-   ssb(i, j, k) = ssb(i, j, k) + tempb20 + tempb19
-   END DO
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
-   x3b = dss1b
-   ELSE
-   x3b = -dss1b
-   END IF
-   temp28 = sslim + ss(i, 2, k) + two*ss(i, 1, k) + ss(i, 0, k)
-   tempb17 = x3b/temp28
-   tempb18 = -((ss(i, 2, k)-two*ss(i, 1, k)+ss(i, 0, k))*tempb17/&
-   &         temp28)
-   ssb(i, 2, k) = ssb(i, 2, k) + tempb18 + tempb17
-   ssb(i, 1, k) = ssb(i, 1, k) + two*tempb18 - two*tempb17
-   ssb(i, 0, k) = ssb(i, 0, k) + tempb18 + tempb17
-   END DO
-   END DO
-   radib = 0.0_8
-   DO k=kl,2,-1
-   DO j=jl,2,-1
-   dss1b = 0.0_8
-   DO i=il,1,-1
-   dss2b = dss1b
-   fsb = fwb(i+1, j, k, irhoe) - fwb(i, j, k, irhoe)
-   ddw = w(i+1, j, k, irhoe) - w(i, j, k, irhoe)
-   tempb12 = -(dis4*fsb)
-   dis2b = ddw*fsb
-   ddwb = dis2*fsb - three*tempb12
-   dis4b = -((w(i+2, j, k, irhoe)-w(i-1, j, k, irhoe)-three*ddw)*&
-   &           fsb)
-   wb(i+2, j, k, irhoe) = wb(i+2, j, k, irhoe) + tempb12
-   wb(i-1, j, k, irhoe) = wb(i-1, j, k, irhoe) - tempb12
-   wb(i+1, j, k, irhoe) = wb(i+1, j, k, irhoe) + ddwb
-   wb(i, j, k, irhoe) = wb(i, j, k, irhoe) - ddwb
-   fsb = fwb(i+1, j, k, imz) - fwb(i, j, k, imz)
-   ddw = w(i+1, j, k, ivz) - w(i, j, k, ivz)
-   tempb13 = -(dis4*fsb)
-   dis2b = dis2b + ddw*fsb
-   ddwb = dis2*fsb - three*tempb13
-   dis4b = dis4b - (w(i+2, j, k, ivz)-w(i-1, j, k, ivz)-three*ddw&
-   &           )*fsb
-   wb(i+2, j, k, ivz) = wb(i+2, j, k, ivz) + tempb13
-   wb(i-1, j, k, ivz) = wb(i-1, j, k, ivz) - tempb13
-   wb(i+1, j, k, ivz) = wb(i+1, j, k, ivz) + ddwb
-   wb(i, j, k, ivz) = wb(i, j, k, ivz) - ddwb
-   fsb = fwb(i+1, j, k, imy) - fwb(i, j, k, imy)
-   ddw = w(i+1, j, k, ivy) - w(i, j, k, ivy)
-   tempb14 = -(dis4*fsb)
-   dis2b = dis2b + ddw*fsb
-   ddwb = dis2*fsb - three*tempb14
-   dis4b = dis4b - (w(i+2, j, k, ivy)-w(i-1, j, k, ivy)-three*ddw&
-   &           )*fsb
-   wb(i+2, j, k, ivy) = wb(i+2, j, k, ivy) + tempb14
-   wb(i-1, j, k, ivy) = wb(i-1, j, k, ivy) - tempb14
-   wb(i+1, j, k, ivy) = wb(i+1, j, k, ivy) + ddwb
-   wb(i, j, k, ivy) = wb(i, j, k, ivy) - ddwb
-   fsb = fwb(i+1, j, k, imx) - fwb(i, j, k, imx)
-   ddw = w(i+1, j, k, ivx) - w(i, j, k, ivx)
-   tempb15 = -(dis4*fsb)
-   dis2b = dis2b + ddw*fsb
-   ddwb = dis2*fsb - three*tempb15
-   dis4b = dis4b - (w(i+2, j, k, ivx)-w(i-1, j, k, ivx)-three*ddw&
-   &           )*fsb
-   wb(i+2, j, k, ivx) = wb(i+2, j, k, ivx) + tempb15
-   wb(i-1, j, k, ivx) = wb(i-1, j, k, ivx) - tempb15
-   wb(i+1, j, k, ivx) = wb(i+1, j, k, ivx) + ddwb
-   wb(i, j, k, ivx) = wb(i, j, k, ivx) - ddwb
-   fsb = fwb(i+1, j, k, irho) - fwb(i, j, k, irho)
-   ddw = w(i+1, j, k, irho) - w(i, j, k, irho)
-   tempb16 = -(dis4*fsb)
-   dis2b = dis2b + ddw*fsb
-   ddwb = dis2*fsb - three*tempb16
-   dis4b = dis4b - (w(i+2, j, k, irho)-w(i-1, j, k, irho)-three*&
-   &           ddw)*fsb
-   wb(i+2, j, k, irho) = wb(i+2, j, k, irho) + tempb16
-   wb(i-1, j, k, irho) = wb(i-1, j, k, irho) - tempb16
-   wb(i+1, j, k, irho) = wb(i+1, j, k, irho) + ddwb
-   wb(i, j, k, irho) = wb(i, j, k, irho) - ddwb
-   rrad = ppor*(radi(i, j, k)+radi(i+1, j, k))
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
-   CALL POPREAL8(dis4)
-   CALL POPREAL8(dis2)
-   rradb = (sigma*fis4+fis2*min1)*dis2b
-   min1b = fis2*rrad*dis2b
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
-   CALL POPREAL8(min1)
-   y1b = min1b
-   ELSE
-   CALL POPREAL8(min1)
-   y1b = 0.0_8
-   END IF
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
-   dss2b = dss2b + y1b
-   dss1b = 0.0_8
-   ELSE
-   dss1b = y1b
-   END IF
-   ELSE
-   arg1 = fis4*rrad
-   CALL POPREAL8(dis4)
-   arg1b = 0.0_8
-   CALL DIM_B(arg1, arg1b, dis2, dis2b, dis4b)
-   rradb = fis2*min2*dis2b + fis4*arg1b
-   CALL POPREAL8(dis2)
-   min2b = fis2*rrad*dis2b
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
-   CALL POPREAL8(min2)
-   y2b = min2b
-   ELSE
-   CALL POPREAL8(min2)
-   y2b = 0.0_8
-   END IF
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
-   dss2b = dss2b + y2b
-   dss1b = 0.0_8
-   ELSE
-   dss1b = y2b
-   END IF
-   END IF
-   radib(i, j, k) = radib(i, j, k) + ppor*rradb
-   radib(i+1, j, k) = radib(i+1, j, k) + ppor*rradb
-   CALL POPREAL8(ppor)
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
-   x2b = dss2b
-   ELSE
-   x2b = -dss2b
-   END IF
-   temp27 = sslim + ss(i+2, j, k) + two*ss(i+1, j, k) + ss(i, j, &
-   &           k)
-   tempb10 = x2b/temp27
-   tempb11 = -((ss(i+2, j, k)-two*ss(i+1, j, k)+ss(i, j, k))*&
-   &           tempb10/temp27)
-   ssb(i+2, j, k) = ssb(i+2, j, k) + tempb11 + tempb10
-   ssb(i+1, j, k) = ssb(i+1, j, k) + two*tempb11 - two*tempb10
-   ssb(i, j, k) = ssb(i, j, k) + tempb11 + tempb10
-   END DO
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
-   x1b = dss1b
-   ELSE
-   x1b = -dss1b
-   END IF
-   temp26 = sslim + ss(2, j, k) + two*ss(1, j, k) + ss(0, j, k)
-   tempb8 = x1b/temp26
-   tempb9 = -((ss(2, j, k)-two*ss(1, j, k)+ss(0, j, k))*tempb8/&
-   &         temp26)
-   ssb(2, j, k) = ssb(2, j, k) + tempb9 + tempb8
-   ssb(1, j, k) = ssb(1, j, k) + two*tempb9 - two*tempb8
-   ssb(0, j, k) = ssb(0, j, k) + tempb9 + tempb8
    END DO
    END DO
    DO k=kl,2,-1
@@ -1568,156 +692,5 @@
    END DO
    END DO
    END DO
-   CALL POPCONTROL2B(branch)
-   IF (branch .NE. 0) THEN
-   IF (branch .EQ. 1) THEN
-   DO k=kl,2,-1
-   DO i=il,2,-1
-   pb(i, jb, k) = pb(i, jb, k) + ssb(i, jb, k)
-   ssb(i, jb, k) = 0.0_8
-   pb(i, je, k) = pb(i, je, k) + ssb(i, je, k)
-   ssb(i, je, k) = 0.0_8
-   pb(i, 1, k) = pb(i, 1, k) + ssb(i, 1, k)
-   ssb(i, 1, k) = 0.0_8
-   pb(i, 0, k) = pb(i, 0, k) + ssb(i, 0, k)
-   ssb(i, 0, k) = 0.0_8
-   END DO
-   END DO
-   DO k=kl,2,-1
-   DO j=jl,2,-1
-   pb(ib, j, k) = pb(ib, j, k) + ssb(ib, j, k)
-   ssb(ib, j, k) = 0.0_8
-   pb(ie, j, k) = pb(ie, j, k) + ssb(ie, j, k)
-   ssb(ie, j, k) = 0.0_8
-   pb(1, j, k) = pb(1, j, k) + ssb(1, j, k)
-   ssb(1, j, k) = 0.0_8
-   pb(0, j, k) = pb(0, j, k) + ssb(0, j, k)
-   ssb(0, j, k) = 0.0_8
-   END DO
-   END DO
-   DO k=kb,0,-1
-   DO j=jl,2,-1
-   DO i=il,2,-1
-   pb(i, j, k) = pb(i, j, k) + ssb(i, j, k)
-   ssb(i, j, k) = 0.0_8
-   END DO
-   END DO
-   END DO
-   ELSE
-   DO k=kl,2,-1
-   DO i=il,2,-1
-   temp25 = gamma(i, jb, k)
-   temp24 = w(i, jb, k, irho)
-   temp23 = temp24**temp25
-   tempb4 = -(p(i, jb, k)*ssb(i, jb, k)/temp23**2)
-   pb(i, jb, k) = pb(i, jb, k) + ssb(i, jb, k)/temp23
-   IF (.NOT.(temp24 .LE. 0.0_8 .AND. (temp25 .EQ. 0.0_8 .OR. &
-   &               temp25 .NE. INT(temp25)))) wb(i, jb, k, irho) = wb(i, jb&
-   &               , k, irho) + temp25*temp24**(temp25-1)*tempb4
-   IF (.NOT.temp24 .LE. 0.0_8) gammab(i, jb, k) = gammab(i, jb&
-   &               , k) + temp23*LOG(temp24)*tempb4
-   ssb(i, jb, k) = 0.0_8
-   temp22 = gamma(i, je, k)
-   temp21 = w(i, je, k, irho)
-   temp20 = temp21**temp22
-   tempb5 = -(p(i, je, k)*ssb(i, je, k)/temp20**2)
-   pb(i, je, k) = pb(i, je, k) + ssb(i, je, k)/temp20
-   IF (.NOT.(temp21 .LE. 0.0_8 .AND. (temp22 .EQ. 0.0_8 .OR. &
-   &               temp22 .NE. INT(temp22)))) wb(i, je, k, irho) = wb(i, je&
-   &               , k, irho) + temp22*temp21**(temp22-1)*tempb5
-   IF (.NOT.temp21 .LE. 0.0_8) gammab(i, je, k) = gammab(i, je&
-   &               , k) + temp20*LOG(temp21)*tempb5
-   ssb(i, je, k) = 0.0_8
-   temp19 = gamma(i, 1, k)
-   temp18 = w(i, 1, k, irho)
-   temp17 = temp18**temp19
-   tempb6 = -(p(i, 1, k)*ssb(i, 1, k)/temp17**2)
-   pb(i, 1, k) = pb(i, 1, k) + ssb(i, 1, k)/temp17
-   IF (.NOT.(temp18 .LE. 0.0_8 .AND. (temp19 .EQ. 0.0_8 .OR. &
-   &               temp19 .NE. INT(temp19)))) wb(i, 1, k, irho) = wb(i, 1, &
-   &               k, irho) + temp19*temp18**(temp19-1)*tempb6
-   IF (.NOT.temp18 .LE. 0.0_8) gammab(i, 1, k) = gammab(i, 1, k&
-   &               ) + temp17*LOG(temp18)*tempb6
-   ssb(i, 1, k) = 0.0_8
-   temp16 = gamma(i, 0, k)
-   temp15 = w(i, 0, k, irho)
-   temp14 = temp15**temp16
-   tempb7 = -(p(i, 0, k)*ssb(i, 0, k)/temp14**2)
-   pb(i, 0, k) = pb(i, 0, k) + ssb(i, 0, k)/temp14
-   IF (.NOT.(temp15 .LE. 0.0_8 .AND. (temp16 .EQ. 0.0_8 .OR. &
-   &               temp16 .NE. INT(temp16)))) wb(i, 0, k, irho) = wb(i, 0, &
-   &               k, irho) + temp16*temp15**(temp16-1)*tempb7
-   IF (.NOT.temp15 .LE. 0.0_8) gammab(i, 0, k) = gammab(i, 0, k&
-   &               ) + temp14*LOG(temp15)*tempb7
-   ssb(i, 0, k) = 0.0_8
-   END DO
-   END DO
-   DO k=kl,2,-1
-   DO j=jl,2,-1
-   temp13 = gamma(ib, j, k)
-   temp12 = w(ib, j, k, irho)
-   temp11 = temp12**temp13
-   tempb0 = -(p(ib, j, k)*ssb(ib, j, k)/temp11**2)
-   pb(ib, j, k) = pb(ib, j, k) + ssb(ib, j, k)/temp11
-   IF (.NOT.(temp12 .LE. 0.0_8 .AND. (temp13 .EQ. 0.0_8 .OR. &
-   &               temp13 .NE. INT(temp13)))) wb(ib, j, k, irho) = wb(ib, j&
-   &               , k, irho) + temp13*temp12**(temp13-1)*tempb0
-   IF (.NOT.temp12 .LE. 0.0_8) gammab(ib, j, k) = gammab(ib, j&
-   &               , k) + temp11*LOG(temp12)*tempb0
-   ssb(ib, j, k) = 0.0_8
-   temp10 = gamma(ie, j, k)
-   temp9 = w(ie, j, k, irho)
-   temp8 = temp9**temp10
-   tempb1 = -(p(ie, j, k)*ssb(ie, j, k)/temp8**2)
-   pb(ie, j, k) = pb(ie, j, k) + ssb(ie, j, k)/temp8
-   IF (.NOT.(temp9 .LE. 0.0_8 .AND. (temp10 .EQ. 0.0_8 .OR. &
-   &               temp10 .NE. INT(temp10)))) wb(ie, j, k, irho) = wb(ie, j&
-   &               , k, irho) + temp10*temp9**(temp10-1)*tempb1
-   IF (.NOT.temp9 .LE. 0.0_8) gammab(ie, j, k) = gammab(ie, j, &
-   &               k) + temp8*LOG(temp9)*tempb1
-   ssb(ie, j, k) = 0.0_8
-   temp7 = gamma(1, j, k)
-   temp6 = w(1, j, k, irho)
-   temp5 = temp6**temp7
-   tempb2 = -(p(1, j, k)*ssb(1, j, k)/temp5**2)
-   pb(1, j, k) = pb(1, j, k) + ssb(1, j, k)/temp5
-   IF (.NOT.(temp6 .LE. 0.0_8 .AND. (temp7 .EQ. 0.0_8 .OR. &
-   &               temp7 .NE. INT(temp7)))) wb(1, j, k, irho) = wb(1, j, k&
-   &               , irho) + temp7*temp6**(temp7-1)*tempb2
-   IF (.NOT.temp6 .LE. 0.0_8) gammab(1, j, k) = gammab(1, j, k)&
-   &               + temp5*LOG(temp6)*tempb2
-   ssb(1, j, k) = 0.0_8
-   temp4 = gamma(0, j, k)
-   temp3 = w(0, j, k, irho)
-   temp2 = temp3**temp4
-   tempb3 = -(p(0, j, k)*ssb(0, j, k)/temp2**2)
-   pb(0, j, k) = pb(0, j, k) + ssb(0, j, k)/temp2
-   IF (.NOT.(temp3 .LE. 0.0_8 .AND. (temp4 .EQ. 0.0_8 .OR. &
-   &               temp4 .NE. INT(temp4)))) wb(0, j, k, irho) = wb(0, j, k&
-   &               , irho) + temp4*temp3**(temp4-1)*tempb3
-   IF (.NOT.temp3 .LE. 0.0_8) gammab(0, j, k) = gammab(0, j, k)&
-   &               + temp2*LOG(temp3)*tempb3
-   ssb(0, j, k) = 0.0_8
-   END DO
-   END DO
-   DO k=kb,0,-1
-   DO j=jl,2,-1
-   DO i=il,2,-1
-   temp1 = gamma(i, j, k)
-   temp0 = w(i, j, k, irho)
-   temp = temp0**temp1
-   tempb = -(p(i, j, k)*ssb(i, j, k)/temp**2)
-   pb(i, j, k) = pb(i, j, k) + ssb(i, j, k)/temp
-   IF (.NOT.(temp0 .LE. 0.0_8 .AND. (temp1 .EQ. 0.0_8 .OR. &
-   &                 temp1 .NE. INT(temp1)))) wb(i, j, k, irho) = wb(i, j, &
-   &                 k, irho) + temp1*temp0**(temp1-1)*tempb
-   IF (.NOT.temp0 .LE. 0.0_8) gammab(i, j, k) = gammab(i, j, &
-   &                 k) + temp*LOG(temp0)*tempb
-   ssb(i, j, k) = 0.0_8
-   END DO
-   END DO
-   END DO
-   END IF
-   END IF
    END IF
    END SUBROUTINE INVISCIDDISSFLUXSCALAR_B

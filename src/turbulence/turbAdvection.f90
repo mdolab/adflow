@@ -155,7 +155,7 @@
                  ! substracted, because it appears on the other side of
                  ! the equation as the source and viscous terms.
 
-                 dvt(i,j,k,ii) = dvt(i,j,k,ii) - uu*dwtk
+                 dw(i,j,k,idvt+ii) = dw(i,j,k,idvt+ii) - uu*dwtk
 
                  ! Update the central jacobian. First the term which is
                  ! always present, i.e. uu.
@@ -241,7 +241,7 @@
                  ! substracted, because it appears on the other side
                  ! of the equation as the source and viscous terms.
 
-                 dvt(i,j,k,ii) = dvt(i,j,k,ii) - uu*dwtk
+                 dw(i,j,k,idvt+ii) = dw(i,j,k,idvt+ii) - uu*dwtk
 
                  ! Update the central jacobian. First the term which is
                  ! always present, i.e. -uu.
@@ -366,7 +366,7 @@
                  ! substracted, because it appears on the other side of
                  ! the equation as the source and viscous terms.
 
-                 dvt(i,j,k,ii) = dvt(i,j,k,ii) - uu*dwtj
+                 dw(i,j,k,idvt+ii) = dw(i,j,k,idvt+ii) - uu*dwtj
 
                  ! Update the central jacobian. First the term which is
                  ! always present, i.e. uu.
@@ -452,7 +452,7 @@
                  ! substracted, because it appears on the other side
                  ! of the equation as the source and viscous terms.
 
-                 dvt(i,j,k,ii) = dvt(i,j,k,ii) - uu*dwtj
+                 dw(i,j,k,idvt+ii) = dw(i,j,k,idvt+ii) - uu*dwtj
 
                  ! Update the central jacobian. First the term which is
                  ! always present, i.e. -uu.
@@ -577,7 +577,7 @@
                  ! substracted, because it appears on the other side of
                  ! the equation as the source and viscous terms.
 
-                 dvt(i,j,k,ii) = dvt(i,j,k,ii) - uu*dwti
+                 dw(i,j,k,idvt+ii) = dw(i,j,k,idvt+ii) - uu*dwti
 
                  ! Update the central jacobian. First the term which is
                  ! always present, i.e. uu.
@@ -663,7 +663,7 @@
                  ! substracted, because it appears on the other side
                  ! of the equation as the source and viscous terms.
 
-                 dvt(i,j,k,ii) = dvt(i,j,k,ii) - uu*dwti
+                 dw(i,j,k,idvt+ii) = dw(i,j,k,idvt+ii) - uu*dwti
 
                  ! Update the central jacobian. First the term which is
                  ! always present, i.e. -uu.
