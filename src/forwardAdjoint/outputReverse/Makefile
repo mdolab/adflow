@@ -33,7 +33,7 @@ include ${SUMB_RULES_FILE}
 #      * Names of the Fortran and C object files to be created.         *
 #      *                                                                *
 #      ******************************************************************
-a
+
 vpath %.o $(SUMB_OBJDIR)
 FF90_OBJECTS =  diffSizes.o\
 		applyallbc_block_b.o\
