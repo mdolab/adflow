@@ -18,25 +18,15 @@ subroutine metric_block
   !
   !      Local variables.
   !
-  integer :: ierr
-
   integer(kind=intType) :: i, j, k, n, m, l
-  integer(kind=intType) :: nn, mm, sps
-  integer(kind=intType) :: nVolNeg,   nVolPos
-  integer(kind=intType) :: nVolBad,   nVolBadGlobal
-  integer(kind=intType) :: nBlockBad, nBlockBadGlobal
-
+  integer(kind=intType) :: mm
   real(kind=realType) :: fact, mult
   real(kind=realType) :: xp, yp, zp, vp1, vp2, vp3, vp4, vp5, vp6
 
   real(kind=realType), dimension(3) :: v1, v2
 
   real(kind=realType), dimension(:,:,:), pointer :: ss
-
-  character(len=10) :: integerString
-
   logical :: checkK, checkJ, checkI, checkAll
-  logical :: badVolume
 
   !
   !      ******************************************************************

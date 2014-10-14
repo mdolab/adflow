@@ -67,10 +67,6 @@ subroutine sa_block(resOnly)
   !
   logical, intent(in) :: resOnly
   !
-  !      Local variables.
-  !
-  integer(kind=intType) :: nn, sps
-  !
   !      ******************************************************************
   !      *                                                                *
   !      * Begin execution                                                *

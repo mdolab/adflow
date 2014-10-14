@@ -39,8 +39,7 @@ subroutine solveState
   integer :: ierr
 
 
-  integer(kind=intType) :: iter, nMGCycles, nn
-  real(kind=realType) :: curRes
+  integer(kind=intType) :: iter, nMGCycles
   character (len=7) :: numberString
   logical :: solve_NK, solve_RK
   real(kind=realType) :: rhoRes1,totalRRes1
@@ -62,7 +61,7 @@ subroutine solveState
 
 
   ! Some initializations.
-
+  
   writeVolume  = .false.
   writeSurface = .false.
   converged    = .false.

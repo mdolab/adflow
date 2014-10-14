@@ -31,9 +31,7 @@
 !
        integer(kind=intType) :: sps, nn, discr
        integer(kind=intType) :: i, j, k, l
-       integer(kind=intType) :: dw_nan,w_nan,p_nan
        logical :: fineGrid
-       logical :: myisNan
 !
 !      ******************************************************************
 !      *                                                                *

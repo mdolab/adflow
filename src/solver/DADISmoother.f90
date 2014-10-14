@@ -27,10 +27,7 @@
        use inputTimeSpectral
        use iteration
        implicit none
-!
-!      Local variables.
-!
-       integer(kind=intType) :: sps, nn, i, j, k, l
+
 !
 !      ******************************************************************
 !      *                                                                *

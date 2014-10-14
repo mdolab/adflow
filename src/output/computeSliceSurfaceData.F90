@@ -32,7 +32,7 @@ subroutine computeSliceSurfaceData(sps, nFields)
   ! Working parameters
   integer(kind=intType) :: mm, nn, i, j, jj
   integer(kind=intType) :: iFace, nSolVar, iFaceStart, iSolVar, ivar
-  real(kind=realType) :: cFp(3), cFv(3), cMp(3), cMv(3), yplusmax, qf(3)
+  real(kind=realType) :: cFp(3), cFv(3), cMp(3), cMv(3), yplusmax
   real(kind=realType) :: sepSensor
   character(len=maxCGNSNameLen), dimension(:), allocatable :: solNames
 
@@ -44,7 +44,6 @@ subroutine computeSliceSurfaceData(sps, nFields)
   real(kind=realType) :: fx, fy, fz, fn, a2Tot, a2, qw
   real(kind=realType) :: tauxx, tauyy, tauzz
   real(kind=realType) :: tauxy, tauxz, tauyz
-  real(kind=realType) :: pm1, scaleDim, a
   real(kind=realType), dimension(3) :: norm
 
   real(kind=realType), dimension(:,:,:), pointer :: ww1, ww2
