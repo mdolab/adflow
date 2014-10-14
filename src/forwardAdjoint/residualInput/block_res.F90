@@ -112,8 +112,13 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   enddo
 
   ! Compute Laminar/eddy viscosity if required
-  call computeLamViscosity
-  call computeEddyViscosity 
+  if ( viscous ) then
+	call computeLamViscosity
+  endif
+  
+  if ( eddyModel ) then
+	call computeEddyViscosity 
+  endif
 
   !  Apply all BC's
   !call applyAllBC_block(.True.)

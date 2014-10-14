@@ -48,6 +48,10 @@ FF90_OBJECTS =  computeetot_b.o\
 		computeetotcellcpfit_b.o \
                 setbcpointersbwd_b.o\
                 setbcpointers_b.o\
+		setpp3pp4bwd_b.o\
+		resetpp3pp4bwd_b.o\
+        setww0pp0rlv0rev0bwd_b.o\
+		resetww0pp0rlv0rev0bwd_b.o\
                 resetbcpointersbwd_b.o\
 	        sa_block_b.o\
 	        inviscidcentralflux_b.o\

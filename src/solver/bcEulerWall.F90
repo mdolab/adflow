@@ -79,6 +79,50 @@
            real(kind=realType), dimension(:,:),   pointer :: rlv1, rlv2
            real(kind=realType), dimension(:,:),   pointer :: rev1, rev2
          end subroutine resetBCPointers
+
+
+        subroutine setpp3pp4(nn, pp3, pp4)
+
+           use BCTypes
+           use blockPointers
+           implicit none
+
+           integer(kind=intType), intent(in) :: nn
+           real(kind=realType), dimension(:,:),   pointer :: pp3, pp4
+         end subroutine setpp3pp4
+
+        subroutine resetpp3pp4(nn, pp3, pp4)
+
+           use BCTypes
+           use blockPointers
+           implicit none
+
+           integer(kind=intType), intent(in) :: nn
+           real(kind=realType), dimension(:,:),   pointer :: pp3, pp4
+         end subroutine resetpp3pp4
+
+        subroutine setss(nn, ssi, ssj, ssk, ss)
+
+           use BCTypes
+           use blockPointers
+           implicit none
+
+           integer(kind=intType), intent(in) :: nn
+           real(kind=realType), dimension(:,:,:), pointer :: ssi, ssj, ssk
+           real(kind=realType), dimension(:,:,:), pointer :: ss
+         end subroutine setss
+
+        subroutine resetss(nn, ssi, ssj, ssk, ss)
+
+           use BCTypes
+           use blockPointers
+           implicit none
+
+           integer(kind=intType), intent(in) :: nn
+           real(kind=realType), dimension(:,:,:), pointer :: ssi, ssj, ssk
+           real(kind=realType), dimension(:,:,:), pointer :: ss
+         end subroutine resetss
+
        end interface
 
 #else
@@ -142,7 +186,6 @@
            BCTreatment: select case (wallTreatment)
 
              case (constantPressure)
-
                ! Constant pressure. Set the gradient to zero.
 
                do k=BCData(nn)%jcBeg, BCData(nn)%jcEnd
@@ -153,132 +196,78 @@
 
              !===========================================================
 
-!!$             case (linExtrapolPressure)
-!!$
-!!$               ! Linear extrapolation. First set the additional pointer
-!!$               ! for pp3, depending on the block face.
-!!$
-!!$               select case (BCFaceID(nn))
-!!$                 case (iMin)
-!!$                   pp3 => p(3,1:,1:)
-!!$                 case (iMax)
-!!$                   pp3 => p(nx,1:,1:)
-!!$                 case (jMin)
-!!$                   pp3 => p(1:,3,1:)
-!!$                 case (jMax)
-!!$                   pp3 => p(1:,ny,1:)
-!!$                 case (kMin)
-!!$                   pp3 => p(1:,1:,3)
-!!$                 case (kMax)
-!!$                   pp3 => p(1:,1:,nz)
-!!$               end select
-!!$
-!!$               ! Compute the gradient.
-!!$
-!!$               do k=BCData(nn)%jcBeg, BCData(nn)%jcEnd
-!!$                 do j=BCData(nn)%icBeg, BCData(nn)%icEnd
-!!$                   pp1(j,k) = pp3(j,k) - pp2(j,k)
-!!$                 enddo
-!!$               enddo
-!!$
-!!$             !===========================================================
-!!$
-!!$             case (quadExtrapolPressure)
-!!$
-!!$               ! Quadratic extrapolation. First set the additional
-!!$               ! pointers for pp3 and pp4, depending on the block face.
-!!$
-!!$               select case (BCFaceID(nn))
-!!$                 case (iMin)
-!!$                   pp3 => p(3,1:,1:);  pp4 => p(4,1:,1:)
-!!$                 case (iMax)
-!!$                   pp3 => p(nx,1:,1:); pp4 => p(nx-1,1:,1:)
-!!$                 case (jMin)
-!!$                   pp3 => p(1:,3,1:);  pp4 => p(1:,4,1:)
-!!$                 case (jMax)
-!!$                   pp3 => p(1:,ny,1:); pp4 => p(1:,ny-1,1:)
-!!$                 case (kMin)
-!!$                   pp3 => p(1:,1:,3);  pp4 => p(1:,1:,4)
-!!$                 case (kMax)
-!!$                   pp3 => p(1:,1:,nz); pp4 => p(1:,1:,nz-1)
-!!$               end select
-!!$
-!!$               ! Compute the gradient.
-!!$
-!!$               do k=BCData(nn)%jcBeg, BCData(nn)%jcEnd
-!!$                 do j=BCData(nn)%icBeg, BCData(nn)%icEnd
-!!$                   pp1(j,k) = two*pp3(j,k) - 1.5_realType*pp2(j,k) &
-!!$                            - half*pp4(j,k)
-!!$                 enddo
-!!$               enddo
-!!$
-!!$             !===========================================================
-!!$
-!!$             case (normalMomentum)
-!!$
-!!$               ! Pressure gradient is computed using the normal momentum
-!!$               ! equation. First set a couple of additional variables for
-!!$               ! the normals, depending on the block face. Note that the
-!!$               ! construction 1: should not be used in these pointers,
-!!$               ! because element 0 is needed. Consequently there will be
-!!$               ! an offset of 1 for these normals. This is commented in
-!!$               ! the code. For moving faces also the grid velocity of
-!!$               ! the 1st cell center from the wall is needed.
-!!$
-!!$               select case (BCFaceID(nn))
-!!$                 case (iMin)
-!!$                   ssi => si(1,:,:,:)
-!!$                   ssj => sj(2,:,:,:)
-!!$                   ssk => sk(2,:,:,:)
-!!$
-!!$                   if( addGridVelocities ) ss => s(2,:,:,:)
-!!$
-!!$                 !=======================================================
-!!$
-!!$                 case (iMax)
-!!$                   ssi => si(il,:,:,:)
-!!$                   ssj => sj(il,:,:,:)
-!!$                   ssk => sk(il,:,:,:)
-!!$
-!!$                   if( addGridVelocities ) ss => s(il,:,:,:)
-!!$
-!!$                 !=======================================================
-!!$
-!!$                 case (jMin)
-!!$                   ssi => sj(:,1,:,:)
-!!$                   ssj => si(:,2,:,:)
-!!$                   ssk => sk(:,2,:,:)
-!!$
-!!$                   if( addGridVelocities ) ss => s(:,2,:,:)
-!!$
-!!$                 !=======================================================
-!!$
-!!$                 case (jMax)
-!!$                   ssi => sj(:,jl,:,:)
-!!$                   ssj => si(:,jl,:,:)
-!!$                   ssk => sk(:,jl,:,:)
-!!$
-!!$                   if( addGridVelocities ) ss => s(:,jl,:,:)
-!!$
-!!$                 !=======================================================
-!!$
-!!$                 case (kMin)
-!!$                   ssi => sk(:,:,1,:)
-!!$                   ssj => si(:,:,2,:)
-!!$                   ssk => sj(:,:,2,:)
-!!$
-!!$                   if( addGridVelocities ) ss => s(:,:,2,:)
-!!$
-!!$                 !=======================================================
-!!$
-!!$                 case (kMax)
-!!$                   ssi => sk(:,:,kl,:)
-!!$                   ssj => si(:,:,kl,:)
-!!$                   ssk => sj(:,:,kl,:)
-!!$
-!!$                   if( addGridVelocities ) ss => s(:,:,kl,:)
-!!$
-!!$               end select
+             case (linExtrapolPressure)
+
+               ! Linear extrapolation. First set the additional pointer
+               ! for pp3, depending on the block face.
+
+#ifndef TAPENADE_REVERSE
+               call setpp3pp4(nn, pp3, pp4)
+#else
+               call setpp3pp4Bwd(nn, pp3, pp4)
+#endif
+               ! Compute the gradient.
+
+               do k=BCData(nn)%jcBeg, BCData(nn)%jcEnd
+                 do j=BCData(nn)%icBeg, BCData(nn)%icEnd
+                   pp1(j,k) = pp3(j,k) - pp2(j,k)
+                 enddo
+               enddo
+
+#ifndef TAPENADE_REVERSE
+               call resetpp3pp4(nn, pp3, pp4)
+#else
+               call resetpp3pp4Bwd(nn, pp3, pp4)
+#endif
+
+
+             !===========================================================
+
+             case (quadExtrapolPressure)
+
+               ! Quadratic extrapolation. First set the additional
+               ! pointers for pp3 and pp4, depending on the block face.
+
+#ifndef TAPENADE_REVERSE
+               call setpp3pp4(nn, pp3, pp4)
+#else
+               call setpp3pp4Bwd(nn, pp3, pp4)
+#endif
+
+               ! Compute the gradient.
+
+               do k=BCData(nn)%jcBeg, BCData(nn)%jcEnd
+                 do j=BCData(nn)%icBeg, BCData(nn)%icEnd
+                   pp1(j,k) = two*pp3(j,k) - 1.5_realType*pp2(j,k) &
+                            - half*pp4(j,k)
+                 enddo
+               enddo
+
+#ifndef TAPENADE_REVERSE
+               call resetpp3pp4(nn, pp3, pp4)
+#else
+               call resetpp3pp4Bwd(nn, pp3, pp4)
+#endif
+
+             !===========================================================
+
+             case (normalMomentum)
+
+               ! Pressure gradient is computed using the normal momentum
+               ! equation. First set a couple of additional variables for
+               ! the normals, depending on the block face. Note that the
+               ! construction 1: should not be used in these pointers,
+               ! because element 0 is needed. Consequently there will be
+               ! an offset of 1 for these normals. This is commented in
+               ! the code. For moving faces also the grid velocity of
+               ! the 1st cell center from the wall is needed.
+
+#ifndef TAPENADE_REVERSE
+               call setss(nn, ssi, ssj, ssk, ss)
+#else
+               call setssBwd(nn, ssi, ssj, ssk, ss)
+#endif
+
 !!$
 !!$               ! Loop over the faces of the generic subface.
 !!$
@@ -387,6 +376,12 @@
 !!$                            *  ww2(j,k,irho) - rj*dpj - rk*dpk)/ri
 !!$                 enddo
 !!$               enddo
+
+#ifndef TAPENADE_REVERSE
+               call resetss(nn, ssi, ssj, ssk, ss)
+#else
+               call resetssBwd(nn, ssi, ssj, ssk, ss)
+#endif
 
            end select BCTreatment
 
