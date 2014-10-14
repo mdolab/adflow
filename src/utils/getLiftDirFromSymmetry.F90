@@ -16,7 +16,7 @@ subroutine getLiftDirFromSymmetry(liftDir)
   integer(kind=intType), dimension(3) :: sym_local, sym
 
   ! Working
-  integer(kind=intType) :: nn, i_index(1), mm, ierr, jerr
+  integer(kind=intType) :: nn, i_index(1), mm, ierr
   real(kind=realType), dimension(:, :, :), pointer :: xx
   real(kind=realType) :: cp(3), v1(3), v2(3)
   ! Loop over each block and each subFace

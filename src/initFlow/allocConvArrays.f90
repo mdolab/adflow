@@ -29,7 +29,7 @@ subroutine allocConvArrays(nIterTot)
   !
   !      Subroutine argument.
   !
-  integer(kind=intType) :: nIterTot,ll,mm,nn,i,j,k
+  integer(kind=intType) :: nIterTot
   !
   !      Local variables.
   !

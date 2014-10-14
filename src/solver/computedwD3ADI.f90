@@ -24,20 +24,19 @@ subroutine computedwDADI
   !      Local variables.
   !
   integer(kind=intType) :: i, j, k, n
-  real(kind=realType) :: gm1,epsval,fac,eps2
-  real(kind=realType) :: uvel,vvel,wvel,cijk,cijkinv,c2inv,uvw
-  real(kind=realType) :: ri1,ri2,ri3,rj1,rj2,rj3,rk1,rk2,rk3,uu
-  real(kind=realType) :: ri,rj,rk,qsi,qsj,qsk,currentCfl
-  real(kind=realType) :: xfact,xfacti,xfactj,xfactk,cInf,cInf2
-  real(kind=realType) :: dw1,dw2,dw3,dw4,dw5,eig1,eig2,eig3
-  real(kind=realType) :: a1,a2,a3,a4,a5,a6,a7,a8,xn,yn,zn,mut,ge
-  real(kind=realType) :: viscTerm1,viscTerm2,viscTerm3
-  real(kind=realType) :: gamavg,pavg,rhoavg,c2avg,metterm
-  real(kind=realType) :: uavg,vavg,wavg,ccavg,uuavg,epsroe,roefix
-  real(kind=realType) :: unsteadyImpl,mult
-  real(kind=realType) :: sqrt2,sqrt2inv,alph,alphinv
-  real(kind=realType) :: volhalf,volhalfrho,volfact
-  real(kind=realType) :: mutpI,mutmI,mutpJ,mutmJ,mutpK,mutmK, &
+  real(kind=realType) :: gm1, epsval, fac, eps2
+  real(kind=realType) :: uvel, vvel, wvel, cijk, cijkinv, c2inv, uvw
+  real(kind=realType) :: ri1, ri2, ri3, rj1, rj2, rj3, rk1, rk2, rk3, uu
+  real(kind=realType) :: ri, rj, rk, qsi, qsj, qsk, currentCfl
+  real(kind=realType) :: xfact,  cInf, cInf2
+  real(kind=realType) :: dw1, dw2, dw3, dw4, dw5
+  real(kind=realType) :: a1, a2, a3, a4, a5, a6, a7, mut, ge
+  real(kind=realType) :: viscTerm1, viscTerm2, viscTerm3
+  real(kind=realType) :: metterm
+  real(kind=realType) :: unsteadyImpl, mult
+  real(kind=realType) :: sqrt2, sqrt2inv, alph, alphinv
+  real(kind=realType) :: volhalf, volhalfrho, volfact
+  real(kind=realType) :: mutpI, mutmI, mutpJ, mutmJ, mutpK, mutmK, &
        mettermp,mettermm, &
        viscTermI,viscTermJ,viscTermK
 
@@ -46,9 +45,9 @@ subroutine computedwDADI
   real(kind=realType), dimension(ie,5) :: bbi,cci,ddi,ffi
   real(kind=realType), dimension(je,5) :: bbj,ccj,ddj,ffj
   real(kind=realType), dimension(ke,5) :: bbk,cck,ddk,ffk
-  real(kind=realType), dimension(ie) :: mettermi,uui,uupi,uumi
-  real(kind=realType), dimension(je) :: mettermj,uuj,uupj,uumj
-  real(kind=realType), dimension(ke) :: mettermk,uuk,uupk,uumk
+  real(kind=realType), dimension(ie) :: mettermi
+  real(kind=realType), dimension(je) :: mettermj
+  real(kind=realType), dimension(ke) :: mettermk
   real(kind=realType), dimension(5) :: diagPlus,diagMinus
   !
   !      ******************************************************************
@@ -714,7 +713,7 @@ subroutine tridiagsolve(bb,cc,dd,ff,nn)
   !     local variables
 
   integer(kind=intType) :: m,n
-  real(kind=realType) :: d0,d1,d2
+  real(kind=realType) :: d0,d2
 
   do n=1,5
      m=2

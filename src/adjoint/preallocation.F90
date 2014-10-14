@@ -27,7 +27,6 @@ subroutine statePreAllocation(onProc, offProc, wSize, stencil, N_stencil, &
   ! Local Variables
   integer(kind=intType) :: nn, i, j, k, sps, ii, jj, iii, jjj, kkk
   integer(kind=intType) :: iRowStart, iRowEnd
-  integer(kind=intTYpe) :: onAdd, offAdd
   
   ! Zero the cell movement counter
   ii = 0
@@ -106,10 +105,9 @@ subroutine drdxPreAllocation(onProc, offProc, xSize, level)
   ! Local Variables
   integer(kind=intType) :: nn, sps, ii, jj, mm, iii, jjj, kkk
   integer(kind=intType) :: inode, jnode, knode, iDim, irowStart, irowEnd
-  integer(kind=intType) :: icell, jcell, kcell
 
   integer(kind=intType), dimension(:, :), pointer :: stencil
-  integer(kind=intType) :: n_stencil, i_stencil
+  integer(kind=intType) :: n_stencil
   integer(kind=intType) :: ijk(3), cells_on_face, nState
   logical :: faces(6)
   logical :: is_corner, is_a_corner

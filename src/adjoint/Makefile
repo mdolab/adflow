@@ -24,11 +24,13 @@ vpath %.o $(SUMB_OBJDIR)
 FILES_TO_COMPLEXIFY = \
 		adjointPythonInterfaceFunctions.F90\
 		computeAeroCoef.f90        \
+		computeAeroCoefMask.f90        \
 		createPETScVars.F90        \
 		destroyPETScVars.F90       \
 		preallocation.F90          \
 		finalizePETSc.F90          \
 		getSolution.f90            \
+		getSolutionMask.f90            \
 		initializePETSc.F90        \
 		preprocessingADjoint.F90   \
 		releaseMemADjoint.f90      \

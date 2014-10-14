@@ -12,7 +12,7 @@
 !
 !      Local variables.
 !
-       integer(kind=intType) :: ii, mm, nn, sps, i, j, k
+       integer(kind=intType) :: nn, sps
 !
 !      ******************************************************************
 !      *                                                                *

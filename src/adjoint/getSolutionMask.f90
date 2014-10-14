@@ -8,7 +8,7 @@
 !     *                                                                *
 !     ******************************************************************
 !
-subroutine getSolution(sps)
+subroutine getSolutionMask(sps, mask, nMask)
 
   use costFunctions
   use inputTSStabDeriv
@@ -20,6 +20,8 @@ subroutine getSolution(sps)
 
   ! Input Variables
   integer(kind=intType) :: sps
+  integer(kind=intType), intent(in), dimension(nmask) :: mask
+  integer(kind=intType), intent(in) :: nMask
 
   !  Local variables.
   real(kind=realType)   :: alpha, beta
@@ -45,7 +47,7 @@ subroutine getSolution(sps)
 
   bendingSum = 0.0
   do i =1,nTimeIntervalsSpectral
-     call computeAeroCoef(globalCFVals,i)
+     call computeAeroCoefMask(globalCFVals,i, mask, nmask)
 
      force(1, i) = globalCFVals(costFuncForceX)
      force(2, i) = globalCFVals(costFuncForceY)
@@ -65,7 +67,7 @@ subroutine getSolution(sps)
      bendingsum = bendingsum+bendingMoment
   end do
   
-  call computeAeroCoef(globalCFVals,sps)
+  call computeAeroCoefMask(globalCFVals,sps, mask, nmask)
   functionValue(costFuncBendingCoef)=bendingSum/nTimeIntervalsSpectral
 
   functionValue(costFuncLift) = globalCFVals(costFuncLift) 
@@ -115,4 +117,4 @@ subroutine getSolution(sps)
      functionValue( costFuncCfyqDot)        = dcdqdot(4)
      functionValue( costFuncCmzqDot)        = dcdqdot(8)
   end if
-end subroutine getSolution
+end subroutine getSolutionMask

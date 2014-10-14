@@ -57,7 +57,7 @@ subroutine setGlobalCellsAndNodes(level)
   integer(kind=intType) :: npts
   integer(kind=intType), dimension(:), allocatable :: nNodesProc, cumNodesProc
   integer(kind=intTYpe), dimension(:), allocatable :: nCellsProc, cumCellsProc
-  integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, ii, jj,mm, iCGNS
+  integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, ii, jj,mm
   integer(kind=intType), dimension(:,:), pointer ::  globalCellPtr0
   integer(kind=intType), dimension(:,:), pointer ::  globalCellPtr1
   integer(kind=intType), dimension(:,:), pointer ::  globalCellPtr2

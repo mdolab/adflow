@@ -39,7 +39,7 @@
 !
        integer :: ierr, iConvStdout
 
-       integer(kind=intType) :: sps, nn, mm, iConv,ilevel
+       integer(kind=intType) :: sps, nn, mm, iConv
        integer(kind=intType) :: fTempMon=87 ! !eran-tempmon
 
        real(kind=realType) :: hdiffMax, MachMax
@@ -47,12 +47,10 @@
 
        real(kind=realType) :: L2ConvThisLevel
        real(kind=realType) :: L2ConvThisLevelRel
-       real(kind=realType) :: varStdMax
 
        real(kind=realType), dimension(3) :: cfp, cfv, cmp, cmv
 
-       integer(kind=intType) :: tempStartLevel,tempCurrentLevel,&
-            tempMGStartLevel
+       integer(kind=intType) :: tempCurrentLevel,tempMGStartLevel
 
        logical :: nanOccurred, writeIterations
        logical :: relNotConv,absNotConv
