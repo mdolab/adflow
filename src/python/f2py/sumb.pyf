@@ -181,9 +181,11 @@ python module libsumb
        subroutine checkwriteunsteadyendloop ! in :sumb:../../solver/solverUnsteady.F90
        end subroutine checkwriteunsteadyendloop
 
-       subroutine getsolution(sps) ! in :sumb:../../adjoint/designExport.f90
-         integer(kind=inttype) intent(in) :: sps
-       end subroutine getsolution
+       subroutine getsolutionmask(sps,mask,nmask) ! in :test:getSolutionMask.f90
+         integer(kind=inttype) :: sps
+         integer(kind=inttype) dimension(nmask),intent(in) :: mask
+         integer(kind=inttype), optional,intent(in),check(len(mask)>=nmask),depend(mask) :: nmask=len(mask)
+        end subroutine getsolutionmask
 
        subroutine solverunsteadymd(mdcallback_python) ! in :test:solverUnsteadyMD.F90
          use solverunsteadymd__user__routines

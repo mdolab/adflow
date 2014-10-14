@@ -14,8 +14,7 @@ subroutine getAreas(areas, pts, npts, sps_in, axis)
   real(kind=realType), intent(in)  :: pts(3,npts), axis(3)
   real(kind=realType), intent(out) :: areas(3,npts)
 
-  integer :: ierr
-  integer(kind=intType) :: mm, nn, i, j, ipt, ii, jj,sps
+  integer(kind=intType) :: mm, nn, i, j, ii, sps
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd
   integer(kind=intType) :: lower_left,lower_right,upper_left,upper_right
   real(kind=realType) :: da, fact, fact2
@@ -125,8 +124,7 @@ subroutine getAreaSensitivity(darea, pts, npts, sps_in, axis)
   real(kind=realType), intent(in)  :: pts(3,npts), axis(3)
   real(kind=realType), intent(out) :: darea(3,npts)
 
-  integer :: ierr
-  integer(kind=intType) :: mm, nn, i, j, ipt, ii, jj,sps
+  integer(kind=intType) :: mm, nn, i, j, ii, sps
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd
   integer(kind=intType) :: lower_left,lower_right,upper_left,upper_right
   real(kind=realType) :: area, areab, pt1b(3), pt2b(3), pt3b(3), pt4b(3)

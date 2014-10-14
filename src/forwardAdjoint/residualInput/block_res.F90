@@ -35,15 +35,12 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   
   ! Working Variables
   real(kind=realType) :: gm1, v2, fact, tmp
-  integer(kind=intType) :: i, j, k, sps2, mm, l, ii, ll, jj, lEnd
+  integer(kind=intType) :: i, j, k, sps2, mm, l, ii, ll, jj
   integer(kind=intType) :: nState
   real(kind=realType), dimension(nSections) :: t
   logical :: useOldCoor
   real(kind=realType), dimension(3) :: cFp, cFv, cMp, cMv
   real(kind=realType) :: yplusMax, scaleDim
-
-  real(kind=realType), pointer, dimension(:,:,:,:) :: wsp
-  real(kind=realType), pointer, dimension(:,:,:) :: volsp
   useOldCoor = .False.
 
   ! Setup number of state variable based on turbulence assumption

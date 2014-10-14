@@ -72,7 +72,6 @@ subroutine applyAllBC_block(secondHalo)
   !
   !      Local variables.
   !
-  integer(kind=intType) :: nn, sps
   logical :: correctForK
   !
   ! Determine whether or not the total energy must be corrected

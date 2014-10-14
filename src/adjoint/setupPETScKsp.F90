@@ -24,12 +24,10 @@ subroutine setupPETScKsp
 #include "include/petscversion.h"
   !     Local variables.
   logical :: useAD, usePC, useTranspose, useObjective
-  integer(kind=intType) :: ierr, nLevels, i, l
-  integer(kind=intType) :: nlocal, first
-  integer(kind=intType), allocatable, dimension(:) :: comms
+  integer(kind=intType) :: ierr
 
-  PC master_PC, coarsePC, finePC, levelPC, subpc
-  KSP coarseKSPSolver, fineKSPSolver, levelKSP, subksp
+  PC master_PC
+  !KSP coarseKSPSolver, fineKSPSolver, levelKSP, subksp
   external MyKSPMonitor
 
   if (ApproxPC)then
@@ -248,7 +246,6 @@ subroutine setupStandardKSP(kspObject, kspObjectType, gmresRestart, preConSide, 
   ! Working Variables
   PC  master_PC, globalPC, subpc
   KSP master_PC_KSP, subksp
-  character(len=10)  :: pcType
   integer(kind=intType) :: nlocal, first, ierr
 
   ! First, KSPSetFromOptions MUST be called
