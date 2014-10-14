@@ -20,7 +20,7 @@ subroutine computeResidualNK()
   implicit none
 
   ! Local Variables
-  integer(kind=intType) :: ierr,i,j,k,l,sps,nn
+  integer(kind=intType) :: i, j, k, sps,nn
   logical secondHalo ,correctForK
   real(kind=realType) :: gm1,v2
 

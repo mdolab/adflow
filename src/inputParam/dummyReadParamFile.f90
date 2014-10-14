@@ -17,11 +17,6 @@
 !      Local variables
 !
        integer, parameter :: readUnit = 32
-
-       integer :: ios, ierr
-
-       character (len=2*maxStringLen) :: errorMessage
-       character (len=512)            :: string
 !
 !      ******************************************************************
 !      *                                                                *

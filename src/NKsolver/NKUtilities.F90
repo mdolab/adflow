@@ -119,7 +119,6 @@ subroutine setRVec(rVec)
 
   Vec    rVec
   integer(kind=intType) :: ierr,nn,sps,i,j,k,l,ii
-  real(kind=realType) :: ovv
   real(kind=realType),pointer :: rvec_pointer(:)
 
   call VecGetArrayF90(rVec,rvec_pointer,ierr)
@@ -169,7 +168,6 @@ subroutine setRVec2(rVec)
 
   Vec    rVec
   integer(kind=intType) :: ierr,nn,sps,i,j,k,l,ii
-  real(kind=realType) :: ovv
   real(kind=realType),pointer :: rvec_pointer(:)
 
   call VecGetArrayF90(rVec,rvec_pointer,ierr)
@@ -213,9 +211,8 @@ subroutine setW(wVec)
 
   Vec  wVec
   integer(kind=intType) :: ierr,nn,sps,i,j,k,l,ii
-  real(kind=realType) :: temp,diff
   real(kind=realType),pointer :: wvec_pointer(:)
-
+  
   call VecGetArrayF90(wVec,wvec_pointer,ierr)
   call EChk(ierr,__FILE__,__LINE__)
   
@@ -258,7 +255,6 @@ subroutine setW2(wVec)
 
   Vec  wVec
   integer(kind=intType) :: ierr,nn,sps,i,j,k,l,ii
-  real(kind=realType) :: temp,diff
   real(kind=realType),pointer :: wvec_pointer(:)
 
   call VecGetArrayF90(wVec,wvec_pointer,ierr)
@@ -412,7 +408,6 @@ subroutine calcScaling(scaleVec)
   integer(kind=intType) :: ierr,nn,sps,i,j,k,l,ii
   real(kind=realType) :: ovv
   real(kind=realType) :: resSum_l(nw)
-  real(kind=realTYpe) :: norm
   real(kind=realType),pointer :: scale_pointer(:)
 
   ! Loop over current residual and determine the scaling for each of
@@ -507,7 +502,7 @@ subroutine  MyMult(matrix, X, F, ierr)
   Mat   matrix
   Vec   X, F
   
-  real(kind=realType) :: h, sum, nrm, dot, umin, err_rel, value
+  real(kind=realType) :: h, sum, nrm, dot, umin, err_rel
   integer(kind=intType) :: ierr
   umin = 1e-6
   err_rel = 1e-8
@@ -632,7 +627,7 @@ subroutine getInfoSize(iSize)
 
   implicit none
   integer(kind=intType), intent(out) :: iSize
-  integer(kind=intType) :: nc, nn, counter, i, j, k, l, sps
+  integer(kind=intType) :: nn, sps, nc
   ! Determine the size of a flat array needed to store w, P, ( and
   ! rlv, rev if necessary) with full double halos. 
   iSize = 0
@@ -661,7 +656,7 @@ subroutine setInfo(info, iSize)
 
   real(kind=realType), intent(in), dimension(iSize) :: info
   integer(kind=intType), intent(in) :: iSize
-  integer(kind=intType) :: nc, nn, counter, i, j, k, l, sps
+  integer(kind=intType) :: nn, counter, i, j, k, l, sps
   ! Determine the size of a flat array needed to store w, P, ( and
   ! rlv, rev if necessary) with full double halos. 
   counter = 0
@@ -704,7 +699,7 @@ subroutine getInfo(info, iSize)
 
   real(kind=realType), intent(out), dimension(iSize) :: info
   integer(kind=intType), intent(in) :: iSize
-  integer(kind=intType) :: nc, nn, counter, i, j, k, l, sps
+  integer(kind=intType) ::  nn, counter, i, j, k, l, sps
   ! Determine the size of a flat array needed to store w, P, ( and
   ! rlv, rev if necessary) with full double halos. 
   counter = 0

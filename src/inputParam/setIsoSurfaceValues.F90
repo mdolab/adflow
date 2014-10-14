@@ -18,8 +18,6 @@ subroutine initializeIsoSurfaceVariables(values, nValues)
   real(kind=realType), dimension(nValues), intent(in) :: values
   integer(kind=intType), intent(in) :: nValues
 
-  integer(kind=intType) :: i
-
   ! Basically just copy into module
   if (allocated(isoValues)) then
      deallocate(isoValues)

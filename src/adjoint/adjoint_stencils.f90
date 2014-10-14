@@ -7,7 +7,6 @@ subroutine five_pt_node_stencil_i(icell,jcell,kcell,ind,CellsToDo)
   integer(kind=intType), intent(in) :: icell, jcell, kcell
   integer(kind=intType), intent(out) :: ind(3,22), CellsToDo
   integer(kind=intType) :: counter
-
   ! We want i: -3 -> 2
   !         j: -2 -> 2
   !         k: -2 -> 2
@@ -366,7 +365,6 @@ subroutine three_point_cell_stencil(ind,cellstodo)
   use blockPointers
 
   integer(kind=intType), intent(out) :: ind(3,7),CellsToDo
-  integer(kind=intType) :: counter
 
   ind(:,1) = (/0,0,0/)
   ind(:,2) = (/-1,0,0/)
