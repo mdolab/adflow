@@ -46,7 +46,7 @@
        real(kind=realType) :: qs, uu, um, up, utau
        real(kind=realType) :: tke, tep, tv2, tf2, tkea, tepa, tv2a
        real(kind=realType) :: tkel, tv2l, sle2i, stei
-       real(kind=realType) :: rsct, rnu, rn2
+       real(kind=realType) :: rsct, rnu
        real(kind=realType) :: tu12, tu22, tu32, tu42, tu52
        real(kind=realType) :: rnu23, dtu23, rblank
 

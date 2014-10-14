@@ -1514,15 +1514,15 @@
 
                 ! Call the subroutine minD2Hexa to do the work.
 
-                call minD2Hexa(coor(1,nn),            &
-                               ADTs(jj)%coor(1,n(1)), &
-                               ADTs(jj)%coor(1,n(2)), &
-                               ADTs(jj)%coor(1,n(3)), &
-                               ADTs(jj)%coor(1,n(4)), &
-                               ADTs(jj)%coor(1,n(5)), &
-                               ADTs(jj)%coor(1,n(6)), &
-                               ADTs(jj)%coor(1,n(7)), &
-                               ADTs(jj)%coor(1,n(8)), &
+                call minD2Hexa(coor(1:3,nn),            &
+                               ADTs(jj)%coor(1:3,n(1)), &
+                               ADTs(jj)%coor(1:3,n(2)), &
+                               ADTs(jj)%coor(1:3,n(3)), &
+                               ADTs(jj)%coor(1:3,n(4)), &
+                               ADTs(jj)%coor(1:3,n(5)), &
+                               ADTs(jj)%coor(1:3,n(6)), &
+                               ADTs(jj)%coor(1:3,n(7)), &
+                               ADTs(jj)%coor(1:3,n(8)), &
                                val, chi, ierr)
 
                 ! If the distance squared is less than the current value

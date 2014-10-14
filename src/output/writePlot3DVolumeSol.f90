@@ -52,7 +52,7 @@
 
        integer(kind=mpi_offset_kind) :: sizeVolumeSol, disp
 
-       real(kind=realType) :: dummyBuf
+       real(kind=realType) :: dummyBuf(1)
 
        real(kind=4), dimension(3) :: buf4
        real(kind=8), dimension(3) :: buf8
