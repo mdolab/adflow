@@ -11,8 +11,8 @@ subroutine getFreeStreamResidual(rhoRes,totalRRes)
 
   real(kind=realType), intent(out) :: rhoRes,totalRRes
   real(kind=realType),dimension(:), allocatable :: wtemp, ptemp, rlvtemp, revtemp
-  integer(kind=intType) :: nDimW,nDimP,ierr,counter
-  integer(kind=intType) :: tempStartLevel,tempCurrentLevel,tempMGStartLevel
+  integer(kind=intType) :: nDimW, nDimP, counter
+  integer(kind=intType) :: tempCurrentLevel, tempMGStartLevel
   integer(kind=intType) :: nn,sps,i,j,k,l
 
   ! Get the residual cooresponding to the free-stream on the fine grid-level

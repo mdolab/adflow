@@ -244,7 +244,6 @@ class SUMB(AeroSolver):
         pts = self.getForcePoints()
 
         self.mesh.setExternalSurface(patchnames, patchsizes, conn, pts)
-
         # Get a inital copy of coordinates and save
         self.coords0 = self.getSurfaceCoordinates()
 
@@ -471,7 +470,8 @@ steady rotations and specifying an aeroProblem')
 
         # Use first spectral instance
         pts = self.comm.allgather(self.getForcePoints(0, groupName))
-        conn = self.comm.allgather(self.mesh.getSurfaceConnectivity(groupName))
+        conn = self.mesh.getSurfaceConnectivity(groupName)
+        conn = self.comm.allgather(conn)
 
         # Triangle info...point and two vectors
         p0 = []
@@ -1234,14 +1234,17 @@ steady rotations and specifying an aeroProblem')
         self.sumb.killsignals.routinefailed =  False
         self.sumb.killsignals.fatalfail = False
 
-    def getSolution(self, sps=1):
+    def getSolution(self, sps=1, groupName=None):
         """ Retrieve the solution variables from the solver. Note this
         is a collective function and must be called on all processors
         """
 
+        # Get the mask for the group
+        mask = self._getCellGroupMaskLocal(groupName)
+        
         # We should return the list of results that is the same as the
         # possibleObjectives list
-        self.sumb.getsolution(sps)
+        self.sumb.getsolutionmask(sps, mask)
 
         funcVals = self.sumb.costfunctions.functionvalue
         SUmbsolution = {
@@ -1282,8 +1285,9 @@ steady rotations and specifying an aeroProblem')
             }
 
         return SUmbsolution
-
+        
     def printCurrentOptions(self):
+
         """
         Prints a nicely formatted dictionary of all the current SUmb
         options to the stdout on the root processor"""
@@ -1322,7 +1326,35 @@ steady rotations and specifying an aeroProblem')
             The mask. Only returned on root proc. All other procs have
             numpy array of length 0.
             """
-      
+
+        localMask = self._getCellGroupMaskLocal(groupName)
+        # Now we need to gather all of the local masks to the root
+        # proc.
+        tmp = self.comm.gather(localMask, root=0)
+        globalMask = []
+        if self.comm.rank == 0:
+            for i in range(self.comm.size):
+                globalMask.extend(tmp[i])
+            globalMask = numpy.array(globalMask)
+
+        return globalMask
+
+    def _getCellGroupMaskLocal(self, groupName=None):
+        """
+        This function determines a mask (array of 1's and 0's) that
+        determines if the cell in the local set of wall faces 
+        is a member of the groupName as defined by the warping.
+
+        Parameters
+        ----------
+        groupName : str
+            The name of the family group defined in the warping
+
+        Returns
+        -------
+        mask : numpy array of integers
+            The mask. Returned on all procs. May be length 0.
+            """
         if groupName is None:
             localMask = []
             for i in xrange(self.sumb.getnpatches()):
@@ -1332,7 +1364,6 @@ steady rotations and specifying an aeroProblem')
         else:
             try:
                 famList = self.mesh.familyGroup[groupName]['families']
-
             except:
                 raise Error("The supplied family group name has not "
                             "been added in pyWarp.")
@@ -1349,18 +1380,8 @@ steady rotations and specifying an aeroProblem')
                     localMask.extend(numpy.ones(nCells, 'intc'))
                 else:
                     localMask.extend(numpy.zeros(nCells, 'intc'))
+        return localMask
 
-        # Now we need to gather all of the local masks to the root
-        # proc.
-        tmp = self.comm.gather(localMask, root=0)
-        globalMask = []
-        if self.comm.rank == 0:
-            for i in range(self.comm.size):
-                globalMask.extend(tmp[i])
-            globalMask = numpy.array(globalMask)
-
-        return globalMask
-    
     def getSurfaceCoordinates(self, groupName='all'):
         """
         See MultiBlockMesh.py for more info

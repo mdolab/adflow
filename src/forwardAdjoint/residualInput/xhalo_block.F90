@@ -26,13 +26,9 @@ subroutine xhalo_block
   use inputTimeSpectral
   implicit none
   !
-  !      Subroutine arguments.
-  !
-  integer(kind=intType) :: level
-  !
   !      Local variables.
   !
-  integer(kind=intType) :: nn, mm, sps, i, j, k,ii,jj, l
+  integer(kind=intType) :: mm, i, j, k
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, iiMax, jjMax
   real(kind=realType), dimension(:,:,:), pointer :: x0, x1, x2
   logical err

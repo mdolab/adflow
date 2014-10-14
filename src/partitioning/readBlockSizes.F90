@@ -234,11 +234,7 @@
          ! Count the number of each connectivity for the supported
          ! types (needed for memory allocation and to add up 1-to-1)
 
-         call countConnectivities(cgnsInd, cgnsBase, nZone,          &
-                                  cgnsDoms(nZone)%n1to1,             &
-                                  cgnsDoms(nZone)%n1to1General,      &
-                                  cgnsDoms(nZone)%nNonMatchAbutting, &
-                                  cgnsDoms(nZone)%nOverset)
+         call countConnectivities(cgnsInd, cgnsBase, nZone)
 
          ! If there are any overset connectivities, reset
          ! oversetPresent.

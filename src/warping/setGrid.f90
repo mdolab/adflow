@@ -27,7 +27,7 @@ subroutine setGrid(grid,ndof)
 
   ! Local Variables
 
-  integer(kind=intType) :: nn,i,j,k,counter,idim,sps
+  integer(kind=intType) :: nn,i,j,k,counter,sps
   real(kind=realType) :: t(nSections),dt(nSections)
   real(kind=realType) :: displ(3)
   real(kind=realType) :: tOld,tNew

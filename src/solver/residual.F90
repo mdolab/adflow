@@ -62,7 +62,7 @@ subroutine residual_block
   !
   !      Local variables.
   !
-  integer(kind=intType) :: sps, nn, discr
+  integer(kind=intType) :: discr
   integer(kind=intType) :: i, j, k, l
 
   logical :: fineGrid
