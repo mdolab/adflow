@@ -243,6 +243,10 @@
               deallocate(BCData(i)%sepSensor, stat=ierr)
          if(ierr /= 0) deallocationFailure = .true.
 
+         if( associated(BCData(i)%Cavitation) ) &
+              deallocate(BCData(i)%Cavitation, stat=ierr)
+         if(ierr /= 0) deallocationFailure = .true.
+
          if( associated(BCData(i)%FMNodeIndex) ) &
               deallocate(BCData(i)%FMNodeIndex, stat=ierr)
          if(ierr /= 0) deallocationFailure = .true.

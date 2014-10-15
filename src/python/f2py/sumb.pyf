@@ -585,6 +585,7 @@ python module libsumb
          real(kind=realtype) :: sigma
          logical :: useapproxwalldistance
          logical :: updatewallassociation
+         logical :: lowspeedpreconditioner
        end module inputdiscretization
 
        module cgnsgrid
@@ -1016,6 +1017,7 @@ python module libsumb
             integer(kind=inttype) parameter,optional :: costfunccfyqdot=36
             integer(kind=inttype) parameter,optional :: costfuncbendingcoef=37
             integer(kind=inttype) parameter,optional :: costfuncsepsensor=38
+            integer(kind=inttype) parameter,optional :: costfunccavitation=39
        end module costfunctions
 
        module adjointpetsc ! in :sumb:ADjointPETSc.F90
