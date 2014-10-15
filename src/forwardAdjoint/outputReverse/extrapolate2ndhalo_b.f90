@@ -47,61 +47,16 @@
    !
    INTEGER(kind=inttype) :: i, j, l, idim, ddim
    INTEGER(kind=inttype), DIMENSION(3, 2) :: crange
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww0, ww1, ww2
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww0b, ww1b, ww2b
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp0, pp1, pp2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp0b, pp1b, pp2b
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv0, rlv1
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv0b, rlv1b
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev0, rev1
-   INTERFACE 
-   SUBROUTINE SETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
-   &       rev1, rev2, offset)
-   USE BLOCKPOINTERS_B
-   IMPLICIT NONE
-   INTEGER(kind=inttype), INTENT(IN) :: nn, offset
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1, pp2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
-   END SUBROUTINE SETBCPOINTERS
-   END INTERFACE
-      INTERFACE 
-   SUBROUTINE SETBCPOINTERS_B(nn, ww1, ww1b, ww2, ww2b, pp1, pp1b, &
-   &       pp2, pp2b, rlv1, rlv1b, rlv2, rlv2b, rev1, rev2, offset)
-   USE BLOCKPOINTERS_B
-   IMPLICIT NONE
-   INTEGER(kind=inttype), INTENT(IN) :: nn, offset
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1b, ww2b
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1, pp2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1b, pp2b
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1b, rlv2b
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
-   END SUBROUTINE SETBCPOINTERS_B
-   END INTERFACE
-      INTRINSIC MAX
-   REAL(kind=realtype) :: tmp
-   REAL(kind=realtype) :: tmp0
-   REAL(kind=realtype) :: tmp1
-   REAL(kind=realtype) :: tmp2
-   REAL(kind=realtype) :: tmp3
-   REAL(kind=realtype) :: tmp4
-   REAL(kind=realtype) :: tmp5
-   REAL(kind=realtype) :: tmp6
-   REAL(kind=realtype) :: tmp7
-   REAL(kind=realtype) :: tmp8
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, nw) :: ww0, ww1, ww2
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, nw) :: ww0b, ww1b, &
+   & ww2b
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: pp0, pp1, pp2
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: pp0b, pp1b, pp2b
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rlv0, rlv1
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rlv0b, rlv1b
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rev0, rev1
+   INTRINSIC MAX
    INTEGER :: branch
-   REAL(kind=realtype) :: tmpb7
-   REAL(kind=realtype) :: tmpb6
-   REAL(kind=realtype) :: tmpb5
-   REAL(kind=realtype) :: tmpb4
-   REAL(kind=realtype) :: tmpb3
-   REAL(kind=realtype) :: tmpb
-   REAL(kind=realtype) :: tmpb2
-   REAL(kind=realtype) :: tmpb1
-   REAL(kind=realtype) :: tmpb0
    !
    !      ******************************************************************
    !      *                                                                *
@@ -113,115 +68,56 @@
    ! They are nullified first, because some compilers require that.
    ! Note that rlv0 and rev0 are used here as dummies.
    !nullify(ww1, ww2, pp1, pp2, rlv1, rlv0, rev1, rev0)
-   CALL SETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv0, rev1, rev0, &
-   &                 0)
-   !_intType)
    ! Set a couple of additional variables needed for the
    ! extrapolation. This depends on the block face on which the
    ! subface is located.
-   SELECT CASE  (bcfaceid(nn)) 
-   CASE (imin) 
-   ww0b => wb(0, 1:, 1:, :)
-   ww0 => w(0, 1:, 1:, :)
-   pp0b => pb(0, 1:, 1:)
-   IF (viscous) THEN
-   rlv0b => rlvb(0, 1:, 1:)
-   END IF
-   idim = 1
-   ddim = 0
-   CASE (imax) 
-   ww0b => wb(ib, 1:, 1:, :)
-   ww0 => w(ib, 1:, 1:, :)
-   pp0b => pb(ib, 1:, 1:)
-   IF (viscous) THEN
-   rlv0b => rlvb(ib, 1:, 1:)
-   END IF
-   idim = 1
-   ddim = ib
-   CASE (jmin) 
-   ww0b => wb(1:, 0, 1:, :)
-   ww0 => w(1:, 0, 1:, :)
-   pp0b => pb(1:, 0, 1:)
-   IF (viscous) THEN
-   rlv0b => rlvb(1:, 0, 1:)
-   END IF
-   idim = 2
-   ddim = 0
-   CASE (jmax) 
-   ww0b => wb(1:, jb, 1:, :)
-   ww0 => w(1:, jb, 1:, :)
-   pp0b => pb(1:, jb, 1:)
-   IF (viscous) THEN
-   rlv0b => rlvb(1:, jb, 1:)
-   END IF
-   idim = 2
-   ddim = jb
-   CASE (kmin) 
-   ww0b => wb(1:, 1:, 0, :)
-   ww0 => w(1:, 1:, 0, :)
-   pp0b => pb(1:, 1:, 0)
-   IF (viscous) THEN
-   rlv0b => rlvb(1:, 1:, 0)
-   END IF
-   idim = 3
-   ddim = 0
-   CASE (kmax) 
-   ww0b => wb(1:, 1:, kb, :)
-   ww0 => w(1:, 1:, kb, :)
-   pp0b => pb(1:, 1:, kb)
-   IF (viscous) THEN
-   rlv0b => rlvb(1:, 1:, kb)
-   END IF
-   idim = 3
-   ddim = kb
-   END SELECT
+   CALL SETBCPOINTERSBWD(nn, ww1, ww2, pp1, pp2, rlv1, rlv0, rev1, &
+   &                    rev0, 0)
+   !_intType)
+   CALL SETWW0PP0RLV0REV0BWD(nn, idim, ddim, ww0, pp0, rlv0, rev0)
    ! Loop over the generic subface to set the state in the halo's.
    DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
    DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
    ! Extrapolate the density, momentum and pressure.
    ! Make sure that a certain threshold is kept.
-   tmp = two*ww1(i, j, irho) - ww2(i, j, irho)
-   ww0(i, j, irho) = tmp
+   ww0(i, j, irho) = two*ww1(i, j, irho) - ww2(i, j, irho)
    IF (factor*ww1(i, j, irho) .LT. ww0(i, j, irho)) THEN
    CALL PUSHCONTROL1B(0)
    ww0(i, j, irho) = ww0(i, j, irho)
    ELSE
-   tmp0 = factor*ww1(i, j, irho)
-   ww0(i, j, irho) = tmp0
+   ww0(i, j, irho) = factor*ww1(i, j, irho)
    CALL PUSHCONTROL1B(1)
    END IF
-   tmp1 = two*ww1(i, j, ivx) - ww2(i, j, ivx)
-   ww0(i, j, ivx) = tmp1
-   tmp2 = two*ww1(i, j, ivy) - ww2(i, j, ivy)
-   ww0(i, j, ivy) = tmp2
-   tmp3 = two*ww1(i, j, ivz) - ww2(i, j, ivz)
-   ww0(i, j, ivz) = tmp3
+   ww0(i, j, ivx) = two*ww1(i, j, ivx) - ww2(i, j, ivx)
+   ww0(i, j, ivy) = two*ww1(i, j, ivy) - ww2(i, j, ivy)
+   ww0(i, j, ivz) = two*ww1(i, j, ivz) - ww2(i, j, ivz)
    IF (factor*pp1(i, j) .LT. two*pp1(i, j) - pp2(i, j)) THEN
-   tmp4 = two*pp1(i, j) - pp2(i, j)
-   CALL PUSHREAL8(pp0(i, j))
-   pp0(i, j) = tmp4
+   pp0(i, j) = two*pp1(i, j) - pp2(i, j)
    CALL PUSHCONTROL1B(0)
    ELSE
-   tmp5 = factor*pp1(i, j)
-   CALL PUSHREAL8(pp0(i, j))
-   pp0(i, j) = tmp5
+   pp0(i, j) = factor*pp1(i, j)
    CALL PUSHCONTROL1B(1)
    END IF
    ! Extrapolate the turbulent variables. Use constant
    ! extrapolation.
    DO l=nt1mg,nt2mg
-   tmp6 = ww1(i, j, l)
-   ww0(i, j, l) = tmp6
+   ww0(i, j, l) = ww1(i, j, l)
    END DO
    ! The laminar and eddy viscosity, if present. These values
    ! are simply taken constant. Their values do not matter.
    IF (viscous) THEN
+   rlv0(i, j) = rlv1(i, j)
    CALL PUSHCONTROL1B(0)
    ELSE
    CALL PUSHCONTROL1B(1)
    END IF
+   IF (eddymodel) rev0(i, j) = rev1(i, j)
    END DO
    END DO
+   CALL PUSHREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
+   CALL RESETBCPOINTERSBWD(nn, ww1, ww2, pp1, pp2, rlv1, rlv0, rev1, &
+   &                      rev0, 0)
+   CALL RESETWW0PP0RLV0REV0BWD(nn, idim, ddim, ww0, pp0, rlv0, rev0)
    ! Set the range for the halo cells for the energy computation.
    crange(1, 1) = icbeg(nn)
    crange(1, 2) = icend(nn)
@@ -234,56 +130,57 @@
    ! Compute the energy for this halo range.
    CALL COMPUTEETOT_B(crange(1, 1), crange(1, 2), crange(2, 1), crange(2&
    &              , 2), crange(3, 1), crange(3, 2), correctfork)
+   CALL RESETWW0PP0RLV0REV0BWD_B(nn, idim, ddim, ww0, ww0b, pp0, pp0b, &
+   &                         rlv0, rlv0b, rev0)
+   CALL POPREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
+   ww1b = 0.0_8
+   ww2b = 0.0_8
+   pp1b = 0.0_8
+   pp2b = 0.0_8
+   rlv1b = 0.0_8
+   CALL RESETBCPOINTERSBWD_B(nn, ww1, ww1b, ww2, ww2b, pp1, pp1b, pp2, &
+   &                     pp2b, rlv1, rlv1b, rlv0, rlv0b, rev1, rev0, 0)
    DO j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
    DO i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   tmpb7 = rlv0b(i, j)
+   rlv1b(i, j) = rlv1b(i, j) + rlv0b(i, j)
    rlv0b(i, j) = 0.0_8
-   rlv1b(i, j) = rlv1b(i, j) + tmpb7
    END IF
    DO l=nt2mg,nt1mg,-1
-   tmpb6 = ww0b(i, j, l)
+   ww1b(i, j, l) = ww1b(i, j, l) + ww0b(i, j, l)
    ww0b(i, j, l) = 0.0_8
-   ww1b(i, j, l) = ww1b(i, j, l) + tmpb6
    END DO
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   CALL POPREAL8(pp0(i, j))
-   tmpb4 = pp0b(i, j)
+   pp1b(i, j) = pp1b(i, j) + two*pp0b(i, j)
+   pp2b(i, j) = pp2b(i, j) - pp0b(i, j)
    pp0b(i, j) = 0.0_8
-   pp1b(i, j) = pp1b(i, j) + two*tmpb4
-   pp2b(i, j) = pp2b(i, j) - tmpb4
    ELSE
-   CALL POPREAL8(pp0(i, j))
-   tmpb5 = pp0b(i, j)
+   pp1b(i, j) = pp1b(i, j) + factor*pp0b(i, j)
    pp0b(i, j) = 0.0_8
-   pp1b(i, j) = pp1b(i, j) + factor*tmpb5
    END IF
-   tmpb1 = ww0b(i, j, ivz)
+   ww1b(i, j, ivz) = ww1b(i, j, ivz) + two*ww0b(i, j, ivz)
+   ww2b(i, j, ivz) = ww2b(i, j, ivz) - ww0b(i, j, ivz)
    ww0b(i, j, ivz) = 0.0_8
-   ww1b(i, j, ivz) = ww1b(i, j, ivz) + two*tmpb1
-   ww2b(i, j, ivz) = ww2b(i, j, ivz) - tmpb1
-   tmpb2 = ww0b(i, j, ivy)
+   ww1b(i, j, ivy) = ww1b(i, j, ivy) + two*ww0b(i, j, ivy)
+   ww2b(i, j, ivy) = ww2b(i, j, ivy) - ww0b(i, j, ivy)
    ww0b(i, j, ivy) = 0.0_8
-   ww1b(i, j, ivy) = ww1b(i, j, ivy) + two*tmpb2
-   ww2b(i, j, ivy) = ww2b(i, j, ivy) - tmpb2
-   tmpb3 = ww0b(i, j, ivx)
+   ww1b(i, j, ivx) = ww1b(i, j, ivx) + two*ww0b(i, j, ivx)
+   ww2b(i, j, ivx) = ww2b(i, j, ivx) - ww0b(i, j, ivx)
    ww0b(i, j, ivx) = 0.0_8
-   ww1b(i, j, ivx) = ww1b(i, j, ivx) + two*tmpb3
-   ww2b(i, j, ivx) = ww2b(i, j, ivx) - tmpb3
    CALL POPCONTROL1B(branch)
    IF (branch .NE. 0) THEN
-   tmpb0 = ww0b(i, j, irho)
+   ww1b(i, j, irho) = ww1b(i, j, irho) + factor*ww0b(i, j, irho)
    ww0b(i, j, irho) = 0.0_8
-   ww1b(i, j, irho) = ww1b(i, j, irho) + factor*tmpb0
    END IF
-   tmpb = ww0b(i, j, irho)
+   ww1b(i, j, irho) = ww1b(i, j, irho) + two*ww0b(i, j, irho)
+   ww2b(i, j, irho) = ww2b(i, j, irho) - ww0b(i, j, irho)
    ww0b(i, j, irho) = 0.0_8
-   ww1b(i, j, irho) = ww1b(i, j, irho) + two*tmpb
-   ww2b(i, j, irho) = ww2b(i, j, irho) - tmpb
    END DO
    END DO
-   CALL SETBCPOINTERS_B(nn, ww1, ww1b, ww2, ww2b, pp1, pp1b, pp2, pp2b, &
-   &                rlv1, rlv1b, rlv0, rlv0b, rev1, rev0, 0)
+   CALL SETWW0PP0RLV0REV0BWD_B(nn, idim, ddim, ww0, ww0b, pp0, pp0b, rlv0&
+   &                       , rlv0b, rev0)
+   CALL SETBCPOINTERSBWD_B(nn, ww1, ww1b, ww2, ww2b, pp1, pp1b, pp2, pp2b&
+   &                   , rlv1, rlv1b, rlv0, rlv0b, rev1, rev0, 0)
    END SUBROUTINE EXTRAPOLATE2NDHALO_B
