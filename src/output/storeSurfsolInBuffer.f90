@@ -46,7 +46,7 @@
 !
 !      Local variables.
 !
-       integer(kind=intType) :: i, j, k
+       integer(kind=intType) :: i, j, k, sigma
        integer(kind=intType) :: ii, jj, mm, iiMax, jjMax, offVis
 
        integer(kind=intType), dimension(2,2) :: rangeFace
@@ -60,7 +60,7 @@
        real(kind=realType) :: fx, fy, fz, fn, a2Tot, a2, qw
        real(kind=realType) :: tauxx, tauyy, tauzz
        real(kind=realType) :: tauxy, tauxz, tauyz
-       real(kind=realType) :: pm1, scaleDim, a, sensor
+       real(kind=realType) :: pm1, scaleDim, a, sensor, plocal, sensor1
        real(kind=realType), dimension(3) :: norm, V
 
        real(kind=realType), dimension(:,:,:), pointer :: ww1, ww2
@@ -874,7 +874,23 @@
                buffer(nn) = sensor
              enddo
            enddo
+  
+         case (cgnsCavitation)
+		fact = two/(gammaInf*pInf*MachCoef*MachCoef)
+		do j=rangeFace(2,1), rangeFace(2,2)
+		  do i=rangeFace(1,1), rangeFace(1,2)
 
+	 		nn = nn + 1
+		  ! Get local pressure
+			plocal = half*(pp1(i,j) + pp2(i,j))
+
+			sigma = 1.4 
+			sensor1 = (-(fact)*(plocal-pInf))- sigma
+			sensor1 = one/(one + exp(-2*10*sensor1))
+			buffer(nn) = sensor1
+			!print*, sensor
+		  enddo
+		enddo
        end select varName
 
        end subroutine storeSurfsolInBuffer

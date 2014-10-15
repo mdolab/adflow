@@ -11,13 +11,13 @@ subroutine farFieldDrag(value)
 !   !      *                                                                *
 !   !      ******************************************************************
 !   !
-!   use blockPointers
-!   use BCTypes
-!   use flowVarRefState
-!   use inputPhysics
-!   use inputTimeSpectral
-!   use communication
-!   implicit none
+  use blockPointers
+  use BCTypes
+  use flowVarRefState
+  use inputPhysics
+  use inputTimeSpectral
+  use communication
+  implicit none
 
 !   ! Woring Variables
 
@@ -37,7 +37,7 @@ subroutine farFieldDrag(value)
 !   real(kind=realType) :: dPoP,dSoR,dHou2
 
 !   ! Drag Values:
-!   real(kind=realType) :: drag_local,drag,value
+   real(kind=realType) :: drag_local,drag,value
 
 !   ! Temp Variables for divergence calc
 !   real(kind=realType) :: qsp, qsm, porVel, porFlux
@@ -236,9 +236,9 @@ end subroutine farFieldDrag
 subroutine getWindAxis(V1,V2,alpha)
 
   ! ! Return vector V1 specified in body axis frame in wind axis frame. Only works for alpha (and not beta)
-  ! use constants
+  use constants
   
-  ! real(kind=realType) :: V1(3),V2(3),alpha
+   real(kind=realType) :: V1(3),V2(3),alpha
   
   ! if (liftIndex == 2) then
 

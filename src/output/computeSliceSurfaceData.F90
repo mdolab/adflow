@@ -34,6 +34,7 @@ subroutine computeSliceSurfaceData(sps, nFields)
   integer(kind=intType) :: iFace, nSolVar, iFaceStart, iSolVar, ivar
   real(kind=realType) :: cFp(3), cFv(3), cMp(3), cMv(3), yplusmax
   real(kind=realType) :: sepSensor
+  real(kind=realType) :: Cavitation
   character(len=maxCGNSNameLen), dimension(:), allocatable :: solNames
 
   integer(kind=intType), dimension(:,:), pointer :: viscPointer
@@ -58,7 +59,7 @@ subroutine computeSliceSurfaceData(sps, nFields)
   iFace = 0
   domains1: do nn=1,nDom
      call setPointers(nn,1_intType,sps)
-     call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor)
+     call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, Cavitation)
 
      ! Loop over the number of boundary subfaces of this block.
      bocos1: do mm=1,nBocos
