@@ -11,7 +11,7 @@
    !                moment:out objvalue:in-zero alpha:out force:out
    !                beta:out sepsensor:out
    SUBROUTINE GETCOSTFUNCTION_B(costfunction, force, forceb, moment, &
-   &  momentb, sepsensor, sepsensorb, alpha, alphab, beta, betab, liftindex&
+   &  momentb, sepsensor, sepsensorb, cavitation, cavitationb,alpha, alphab, beta, betab, liftindex&
    &  , objvalue, objvalueb)
    USE INPUTTIMESPECTRAL
    USE COSTFUNCTIONS
@@ -29,9 +29,10 @@
    &  :: force, moment
    REAL(kind=realtype), DIMENSION(3, ntimeintervalsspectral) :: forceb, &
    &  momentb
-   REAL(kind=realtype), DIMENSION(ntimeintervalsspectral), INTENT(IN) :: &
-   &  sepsensor
+   REAL(kind=realtype), DIMENSION(ntimeintervalsspectral), INTENT(IN) :: sepsensor
    REAL(kind=realtype), DIMENSION(ntimeintervalsspectral) :: sepsensorb
+   REAL(kind=realtype), DIMENSION(ntimeintervalsspectral), INTENT(IN) :: Cavitation
+   REAL(kind=realtype), DIMENSION(ntimeintervalsspectral) :: Cavitationb
    REAL(kind=realtype), INTENT(IN) :: alpha, beta
    REAL(kind=realtype) :: alphab, betab
    ! Output
@@ -96,6 +97,7 @@
    pointrefb = 0.0_8
    momentb = 0.0_8
    sepsensorb = 0.0_8
+   cavitationb =0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
@@ -112,6 +114,7 @@
    pointrefb = 0.0_8
    momentb = 0.0_8
    sepsensorb = 0.0_8
+   cavitationb =0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
@@ -128,6 +131,7 @@
    pointrefb = 0.0_8
    momentb = 0.0_8
    sepsensorb = 0.0_8
+   cavitationb =0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
@@ -144,6 +148,7 @@
    pointrefb = 0.0_8
    forceb = 0.0_8
    sepsensorb = 0.0_8
+   cavitationb =0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
@@ -160,6 +165,7 @@
    pointrefb = 0.0_8
    forceb = 0.0_8
    sepsensorb = 0.0_8
+   cavitationb =0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
@@ -176,6 +182,7 @@
    pointrefb = 0.0_8
    forceb = 0.0_8
    sepsensorb = 0.0_8
+   cavitationb =0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
@@ -194,6 +201,7 @@
    pointrefb = 0.0_8
    momentb = 0.0_8
    sepsensorb = 0.0_8
+   cavitationb =0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
@@ -211,6 +219,7 @@
    pointrefb = 0.0_8
    momentb = 0.0_8
    sepsensorb = 0.0_8
+   cavitationb =0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
@@ -245,6 +254,7 @@
    pointrefb = 0.0_8
    forceb = 0.0_8
    sepsensorb = 0.0_8
+   cavitationb =0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
    factb = 0.0_8
@@ -262,6 +272,7 @@
    pointrefb = 0.0_8
    forceb = 0.0_8
    sepsensorb = 0.0_8
+   cavitationb =0.0_8   
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
    factb = 0.0_8
@@ -279,6 +290,7 @@
    pointrefb = 0.0_8
    forceb = 0.0_8
    sepsensorb = 0.0_8
+   cavitationb =0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
    factb = 0.0_8
@@ -300,6 +312,7 @@
    pointrefb = 0.0_8
    momentb = 0.0_8
    sepsensorb = 0.0_8
+   cavitationb =0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
@@ -322,6 +335,7 @@
    pointrefb = 0.0_8
    momentb = 0.0_8
    sepsensorb = 0.0_8
+   cavitationb =0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
@@ -347,6 +361,7 @@
    pointrefb = 0.0_8
    momentb = 0.0_8
    sepsensorb = 0.0_8
+   cavitationb =0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
@@ -371,6 +386,7 @@
    pointrefb = 0.0_8
    momentb = 0.0_8
    sepsensorb = 0.0_8
+   cavitationb =0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
@@ -385,6 +401,7 @@
    momentb = 0.0_8
    forceb = 0.0_8
    sepsensorb = 0.0_8
+   cavitationb =0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    factb = 0.0_8
@@ -399,6 +416,7 @@
    momentb = 0.0_8
    forceb = 0.0_8
    sepsensorb = 0.0_8
+   cavitationb =0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    factb = 0.0_8
@@ -413,6 +431,7 @@
    momentb = 0.0_8
    forceb = 0.0_8
    sepsensorb = 0.0_8
+   cavitationb =0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    factb = 0.0_8
@@ -427,6 +446,7 @@
    momentb = 0.0_8
    forceb = 0.0_8
    sepsensorb = 0.0_8
+   cavitationb =0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
@@ -441,6 +461,7 @@
    momentb = 0.0_8
    forceb = 0.0_8
    sepsensorb = 0.0_8
+   cavitationb =0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
@@ -455,6 +476,7 @@
    momentb = 0.0_8
    forceb = 0.0_8
    sepsensorb = 0.0_8
+   cavitationb =0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
@@ -469,6 +491,7 @@
    momentb = 0.0_8
    forceb = 0.0_8
    sepsensorb = 0.0_8
+   cavitationb =0.0_8
    factmomentb = 0.0_8
    coef0b = 0.0_8
    factb = 0.0_8
@@ -483,6 +506,7 @@
    momentb = 0.0_8
    forceb = 0.0_8
    sepsensorb = 0.0_8
+   cavitationb =0.0_8
    factmomentb = 0.0_8
    coef0b = 0.0_8
    factb = 0.0_8
@@ -497,6 +521,7 @@
    momentb = 0.0_8
    forceb = 0.0_8
    sepsensorb = 0.0_8
+   cavitationb =0.0_8
    factmomentb = 0.0_8
    coef0b = 0.0_8
    factb = 0.0_8
@@ -509,6 +534,7 @@
    momentb = 0.0_8
    forceb = 0.0_8
    sepsensorb = 0.0_8
+   cavitationb =0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
@@ -522,6 +548,7 @@
    momentb = 0.0_8
    forceb = 0.0_8
    sepsensorb = 0.0_8
+   cavitationb =0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
@@ -535,6 +562,7 @@
    momentb = 0.0_8
    forceb = 0.0_8
    sepsensorb = 0.0_8
+   cavitationb =0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
@@ -548,6 +576,7 @@
    momentb = 0.0_8
    forceb = 0.0_8
    sepsensorb = 0.0_8
+   cavitationb =0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
@@ -561,6 +590,7 @@
    momentb = 0.0_8
    forceb = 0.0_8
    sepsensorb = 0.0_8
+   cavitationb =0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
@@ -574,6 +604,7 @@
    momentb = 0.0_8
    forceb = 0.0_8
    sepsensorb = 0.0_8
+   cavitationb =0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
@@ -600,6 +631,7 @@
    dragdirectionb = 0.0_8
    liftdirectionb = 0.0_8
    sepsensorb = 0.0_8
+   cavitationb =0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8
    dcdalphab = 0.0_8
@@ -612,6 +644,24 @@
    dragdirectionb = 0.0_8
    liftdirectionb = 0.0_8
    pointrefb = 0.0_8
+   momentb = 0.0_8
+   forceb = 0.0_8
+   cavitationb = 0.0_8
+   factmomentb = 0.0_8
+   dcdalphadotb = 0.0_8
+   coef0b = 0.0_8
+   factb = 0.0_8
+   dcdalphab = 0.0_8
+   CASE (costfuncCavitation) 
+   cavitationb = 0.0_8
+   DO sps=ntimeintervalsspectral,1,-1
+   cavitationb(sps) = cavitationb(sps) + ovrnts*objvalueb
+   END DO
+   lengthrefb = 0.0_8
+   dragdirectionb = 0.0_8
+   liftdirectionb = 0.0_8
+   pointrefb = 0.0_8
+   sepsensorb = 0.0_8
    momentb = 0.0_8
    forceb = 0.0_8
    factmomentb = 0.0_8
@@ -627,6 +677,7 @@
    momentb = 0.0_8
    forceb = 0.0_8
    sepsensorb = 0.0_8
+   cavitationb = 0.0_8
    factmomentb = 0.0_8
    dcdalphadotb = 0.0_8
    coef0b = 0.0_8

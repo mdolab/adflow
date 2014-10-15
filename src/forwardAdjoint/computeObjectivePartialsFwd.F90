@@ -28,6 +28,7 @@ Subroutine computeObjectivePartialsFwd(costFunction)
   real(kind=realType), dimension(3, nTimeIntervalsSpectral) :: force, forceb
   real(kind=realType), dimension(3, nTimeIntervalsSpectral) :: moment, momentb
   real(kind=realType), dimension(nTimeIntervalsSpectral) :: sepSensor, sepSensorb
+  real(kind=realType), dimension(nTimeIntervalsSpectral) :: Cavitation, Cavitationb
   real(kind=realType) :: alpha, alphab, beta, betab
   real(kind=realType) :: objValue, objValueb
   integer(kind=intType) :: liftIndex, idim
@@ -43,12 +44,13 @@ Subroutine computeObjectivePartialsFwd(costFunction)
      moment(2, sps) = functionValue(costFuncMomY)
      moment(3, sps) = functionValue(costFuncMomZ)
      sepSensor(sps) = functionValue(costFuncSepSensor)
+     Cavitation(sps) = functionValue(costFuncCavitation)
   end do
 
   objValueb = one
   call getDirAngle(velDirFreestream, liftDirection, liftIndex, alpha, beta)
-  call getCostFunction_b(costFunction, force, forceb, moment, momentb, sepSensor, &
-       sepSensorb, alpha, alphab, beta, betab, liftIndex, objValue, objValueb)
+  call getCostFunction_b(costFunction, force, forceb, moment, momentb, sepSensor,&
+       sepSensorb, Cavitation, Cavitationb, alpha, alphab, beta, betab, liftIndex, objValue, objValueb)
 
   !******************************************! 
   !               dIdw                       ! 
@@ -73,7 +75,13 @@ Subroutine computeObjectivePartialsFwd(costFunction)
         call EChk(ierr, __FILE__, __LINE__)
      end do
   end if
-
+ 
+  if (costFunction == costFuncCavitation) then 
+     do sps=1,nTimeIntervalsSpectral
+        call VecAXPY(dJdw, Cavitationb(sps), FMw(iCavitation, sps), ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+     end do
+  end if
   ! Assemble dJdw
   call VecAssemblyBegin(dJdw, ierr)
   call EChk(ierr, __FILE__, __LINE__)
@@ -106,6 +114,13 @@ Subroutine computeObjectivePartialsFwd(costFunction)
   if (costFunction == costFuncSepSensor) then 
      do sps=1,nTimeIntervalsSpectral
         call VecAXPY(dJdx, sepSensorb(sps), FMx(iSepSensor, sps), ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+     end do
+  end if
+
+  if (costFunction == costFuncCavitation) then 
+     do sps=1,nTimeIntervalsSpectral
+        call VecAXPY(dJdx, Cavitationb(sps), FMx(iCavitation, sps), ierr)
         call EChk(ierr, __FILE__, __LINE__)
      end do
   end if
