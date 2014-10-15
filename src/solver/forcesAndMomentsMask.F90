@@ -208,8 +208,8 @@ subroutine forcesAndMomentsMask(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
         ! jnBeg refer to nodal ranges and not to cell ranges.
 
         bcData(nn)%oArea(:,:) = zero
-        jsize = BCData(nn)%jnEnd - bcData(nn)%jnEnd
-        isize = BCData(nn)%inEnd - bcData(nn)%inEnd
+        jsize = BCData(nn)%jnEnd - bcData(nn)%jnBeg
+        isize = BCData(nn)%inEnd - bcData(nn)%inBeg
         do j=(BCData(nn)%jnBeg+1),BCData(nn)%jnEnd
            do i=(BCData(nn)%inBeg+1),BCData(nn)%inEnd
 
