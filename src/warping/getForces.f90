@@ -258,7 +258,7 @@ subroutine getForces(forcesP, forcesV, npts, sps_in)
   real(kind=realType) :: area(npts) ! Dual area's
   integer(kind=intType) :: mm, nn, i, j, ipt, ii, jj,sps
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd
-  real(kind=realType) :: sss(3),v2(3),v1(3), qa, sepSensor
+  real(kind=realType) :: sss(3),v2(3),v1(3), qa, sepSensor, Cavitation
   integer(kind=intType) :: lower_left,lower_right,upper_left,upper_right
   real(kind=realType) :: cFp(3), cFv(3), cMp(3), cMv(3), yplusmax, qf(3)
 
@@ -276,7 +276,7 @@ subroutine getForces(forcesP, forcesV, npts, sps_in)
   ii = 0 
   domains: do nn=1,nDom
      call setPointers(nn,1_intType,sps)
-     call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor)
+     call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, Cavitation)
      
      ! Loop over the number of boundary subfaces of this block.
      bocos: do mm=1,nBocos

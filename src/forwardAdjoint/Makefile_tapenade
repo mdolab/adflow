@@ -43,7 +43,7 @@ TAPENADE_PRECISION = -i4 -dr8 -r8
 
 # -------------------- Residual AD Info---------------------------------
 # Dependent output variables (separator: white space, default: all)
-TAPENADE_RES_OUTVARS = "flowdoms%dw  BCData%Fp BCData%Fv BCData%M  BCData%sepSensor BCData%oArea flowdoms%w flowdoms%x force moment sepSensor"
+TAPENADE_RES_OUTVARS = "flowdoms%dw  BCData%Fp BCData%Fv BCData%M  BCData%sepSensor BCData%Cavitation BCData%oArea flowdoms%w flowdoms%x force moment sepSensor Cavitation"
 
 # Independent input variables (separator: white space, default: all)
 TAPENADE_RES_VARS = "flowdoms%w flowdoms%x alpha beta mach machgrid machcoef pointref lengthRef Pref tempFreeStream"
@@ -147,7 +147,7 @@ I_RES_FILES := $(ALL_RES_FILES:%=%.f90)
 TAPENADE_COST_OUTVARS = "objValue"
 
 # Independent input variables (separator: white space, default: all)
-TAPENADE_COST_VARS = "force moment sepsensor alpha beta  machgrid machcoef pointref lengthref pRef tempFreeStream"
+TAPENADE_COST_VARS = "force moment sepsensor Cavitation alpha beta  machgrid machcoef pointref lengthref pRef tempFreeStream"
 
 # Name of the top routine
 TAPENADE_COST_HEADROUTINE = "getCostFunction"

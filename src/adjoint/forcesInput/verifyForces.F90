@@ -44,7 +44,7 @@ subroutine verifyForces(pts,npts,nTS)
   real(kind=realType)   :: max_rel_err,max_err,ad_val,fd_val
   integer(kind=intType) :: i_err,j_err,k_err,l_err,err_count,pt_high,ind
 
-  real(kind=realType) :: cFp(3),cFv(3),cMp(3),cMv(3),yplusmax, sepSensor
+  real(kind=realType) :: cFp(3),cFv(3),cMp(3),cMv(3),yplusmax, sepSensor, Cavitation
   real(kind=realType) :: origForceSum(3,nts),&
        getForceSum(3,nts), &
        ADForceSum(3,nts)
@@ -186,7 +186,7 @@ subroutine verifyForces(pts,npts,nTS)
   do sps =1,ntimeintervalsspectral
      do nn=1,nDom
         call setPointers(nn,1_intType,sps)
-        call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor)
+        call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, Cavitation)
         origForceSum(:,sps) = origForceSum(:,sps) + cFp + cFv
      end do
   end do

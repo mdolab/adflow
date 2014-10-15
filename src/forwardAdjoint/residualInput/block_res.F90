@@ -11,7 +11,7 @@
 ! block/sps loop is outside the calculation. This routine is suitable
 ! for forward mode AD with Tapenade
 
-subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment, sepSensor)
+subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment, sepSensor, Cavitation)
 
   use blockPointers       
   use flowVarRefState     
@@ -31,7 +31,7 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   integer(kind=intType), intent(in) :: liftIndex
 
   ! Output Variables
-  real(kind=realType) :: force(3), moment(3), sepSensor
+  real(kind=realType) :: force(3), moment(3), sepSensor, Cavitation
   
   ! Working Variables
   real(kind=realType) :: gm1, v2, fact, tmp
@@ -222,7 +222,7 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
      end do
   end do
 
-  call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor)
+  call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, Cavitation)
 
   ! Convert back to actual forces. Note that even though we use
   ! MachCoef, Lref, and surfaceRef here, they are NOT differented,
