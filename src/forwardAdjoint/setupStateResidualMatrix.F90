@@ -19,7 +19,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   !     *         always the finest level                                *         
   !     ******************************************************************
   !
-  use ADjointPetsc, only : FMw, dFcdW, nFM, iSepSensor
+  use ADjointPetsc, only : FMw, dFcdW, nFM, iSepSensor, iCavitation
   use BCTypes
   use blockPointers_d      
   use inputDiscretization 
@@ -52,11 +52,11 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   real(kind=realType) :: delta_x, one_over_dx
 
 #ifdef USE_COMPLEX
-  complex(kind=realType) :: alpha, beta, force(3), moment(3), sepSensor
-  complex(kind=realType) :: alphad, betad, forced(3), momentd(3), sepSensord
+  complex(kind=realType) :: alpha, beta, force(3), moment(3), sepSensor, Cavitation
+  complex(kind=realType) :: alphad, betad, forced(3), momentd(3), sepSensord, Cavitationd
 #else
-  real(kind=realType) :: alpha, beta, force(3), moment(3), sepSensor
-  real(kind=realType) :: alphad, betad, forced(3), momentd(3), sepSensord
+  real(kind=realType) :: alpha, beta, force(3), moment(3), sepSensor, Cavitation
+  real(kind=realType) :: alphad, betad, forced(3), momentd(3), sepSensord, Cavitationd
 #endif
   integer(kind=intType) :: liftIndex
   integer(kind=intType), dimension(:,:), pointer ::  colorPtr1, colorPtr2
@@ -266,14 +266,14 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
 #ifndef USE_COMPLEX
                  call block_res_d(nn, sps, .False., &
                       alpha, alphad, beta, betad, liftIndex, force, forced, moment, momentd,&
-                      sepSensor, sepSensord)
+                      sepSensor, sepSensord, Cavitation, Cavitationd)
 #else
                  print *, 'Forward AD routines are not complexified'
                  stop
 #endif
               else
                  call block_res(nn, sps, .False., alpha, beta, liftIndex, force, moment, &
-                 sepSensor)
+                 sepSensor, Cavitation)
               end if
 
               ! If required, set values in the
@@ -382,6 +382,10 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
                                    ! Now add in the additional functions
                                    call VecSetValues(FMw(iSepSensor, sps), 1, colInd, &
                                         bcDatad(mm)%sepSensor(i, j), ADD_VALUES, ierr)
+                                   call EChk(ierr, __FILE__, __LINE__)
+
+                                   call VecSetValues(FMw(iCavitation, sps), 1, colInd, &
+                                        bcDatad(mm)%Cavitation(i, j), ADD_VALUES, ierr)
                                    call EChk(ierr, __FILE__, __LINE__)
 
                                 end if

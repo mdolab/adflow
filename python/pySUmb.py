@@ -1278,7 +1278,8 @@ steady rotations and specifying an aeroProblem')
             'clqdot'     :funcVals[self.sumb.costfunctions.costfuncclqdot-1],
             'clq'        :funcVals[self.sumb.costfunctions.costfuncclq-1],
             'cbend'      :funcVals[self.sumb.costfunctions.costfuncbendingcoef-1],
-            'sepsensor':funcVals[self.sumb.costfunctions.costfuncsepsensor-1],
+            'sepsensor'  :funcVals[self.sumb.costfunctions.costfuncsepsensor-1],
+            'cavitation' :funcVals[self.sumb.costfunctions.costfunccavitation-1],
             }
 
         return SUmbsolution
@@ -2655,6 +2656,7 @@ steady rotations and specifying an aeroProblem')
             'vis2coarse':[float, 0.5],
             'restrictionrelaxation':[float, .80],
             'liftindex':[int, 2],
+            'lowspeedpreconditioner':[bool, False],
 
             # Common Paramters
             'ncycles':[int, 500],
@@ -2864,6 +2866,7 @@ steady rotations and specifying an aeroProblem')
             'vis2coarse':{'location':'inputdiscretization.vis2coarse'},
             'restrictionrelaxation':{'location':'inputiteration.fcoll'},
             'forcesastractions':{'location':'inputphysics.forcesastractions'},
+            'lowspeedpreconditioner':{'location':'inputdiscretization.lowspeedpreconditioner'},
 
             # Common Paramters
             'ncycles':{'location':'inputiteration.ncycles'},
@@ -3032,7 +3035,7 @@ steady rotations and specifying an aeroProblem')
             'usereversemodead',
             'partitiononly',
             'liftindex'
-            ]
+             ]
 
         # Deprecated options. These should not be used, but old
         # scripts can continue to run
@@ -3078,6 +3081,7 @@ steady rotations and specifying an aeroProblem')
             'clqdot':'clqDot',
             'cbend':'cBend',
             'sepsensor':'sepsensor',
+            'cavitation':'cavitation',
             }
 
         possibleAeroDVs = {
@@ -3138,6 +3142,7 @@ steady rotations and specifying an aeroProblem')
             'clqDot':self.sumb.costfunctions.costfuncclqdot,
             'cBend':self.sumb.costfunctions.costfuncbendingcoef,
             'sepsensor':self.sumb.costfunctions.costfuncsepsensor,
+            'cavitation':self.sumb.costfunctions.costfunccavitation,
             }
 
         return possibleObjectives, possibleAeroDVs, sumbCostFunctions

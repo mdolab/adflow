@@ -1,4 +1,4 @@
-subroutine getCostFunction(costFunction, force, moment, sepSensor, &
+subroutine getCostFunction(costFunction, force, moment, sepSensor, Cavitation, &
   alpha, beta, liftIndex, objValue)
 
   ! Compute the value of the actual objective function based on the
@@ -15,7 +15,7 @@ subroutine getCostFunction(costFunction, force, moment, sepSensor, &
   integer(kind=intType), intent(in) :: costFunction
   integer(kind=intType), intent(in) :: liftIndex
   real(kind=realType), intent(in), dimension(3, nTimeIntervalsSpectral) :: force, moment
-  real(kind=realType), intent(in), dimension(nTimeIntervalsSpectral) :: sepSensor
+  real(kind=realType), intent(in), dimension(nTimeIntervalsSpectral) :: sepSensor, Cavitation
   real(kind=realType), intent(in) :: alpha, beta
 
   ! Output
@@ -185,6 +185,11 @@ subroutine getCostFunction(costFunction, force, moment, sepSensor, &
         objValue = objValue + ovrNTS*sepSensor(sps)
      end do
         
+  case (costFuncCavitation)
+     do sps=1,nTimeIntervalsSpectral
+        objValue = objValue + ovrNTS*Cavitation(sps)
+     end do
+
   end select
 end subroutine getCostFunction
 
