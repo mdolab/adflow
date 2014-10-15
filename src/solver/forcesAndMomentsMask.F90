@@ -338,8 +338,8 @@ subroutine forcesAndMomentsMask(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
 
                  ! Account for the mask
                  fx = fx * mask(maskCount)
-                 fx = fx * mask(maskCount)
-                 fx = fx * mask(maskCount)
+                 fy = fy * mask(maskCount)
+                 fz = fz * mask(maskCount)
                  maskCount = maskCount + 1
 
                  ! Compute the coordinates of the centroid of the face
