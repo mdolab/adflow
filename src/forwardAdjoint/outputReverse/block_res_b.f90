@@ -155,6 +155,7 @@
    END DO
    END DO
    CALL BCEULERWALL(.true., .false.)
+   !call bcFarfield(.True., .False.)
    ! Compute skin_friction Velocity (only for wall Functions)
    ! #ifndef 1
    !   call computeUtau_block

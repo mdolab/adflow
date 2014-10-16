@@ -34,7 +34,7 @@
 !
        ! Determine the face id on which the subface is located and set
        ! the pointers accordinly.
-
+      
        select case (BCFaceID(nn))
 
          case (iMin)

@@ -193,81 +193,81 @@
                    pp1(j,k) = zero
                  enddo
                enddo
-
-             !===========================================================
-
-             case (linExtrapolPressure)
-
-               ! Linear extrapolation. First set the additional pointer
-               ! for pp3, depending on the block face.
-
-#ifndef TAPENADE_REVERSE
-               call setpp3pp4(nn, pp3, pp4)
-#else
-               call setpp3pp4Bwd(nn, pp3, pp4)
-#endif
-               ! Compute the gradient.
-
-               do k=BCData(nn)%jcBeg, BCData(nn)%jcEnd
-                 do j=BCData(nn)%icBeg, BCData(nn)%icEnd
-                   pp1(j,k) = pp3(j,k) - pp2(j,k)
-                 enddo
-               enddo
-
-#ifndef TAPENADE_REVERSE
-               call resetpp3pp4(nn, pp3, pp4)
-#else
-               call resetpp3pp4Bwd(nn, pp3, pp4)
-#endif
-
-
-             !===========================================================
-
-             case (quadExtrapolPressure)
-
-               ! Quadratic extrapolation. First set the additional
-               ! pointers for pp3 and pp4, depending on the block face.
-
-#ifndef TAPENADE_REVERSE
-               call setpp3pp4(nn, pp3, pp4)
-#else
-               call setpp3pp4Bwd(nn, pp3, pp4)
-#endif
-
-               ! Compute the gradient.
-
-               do k=BCData(nn)%jcBeg, BCData(nn)%jcEnd
-                 do j=BCData(nn)%icBeg, BCData(nn)%icEnd
-                   pp1(j,k) = two*pp3(j,k) - 1.5_realType*pp2(j,k) &
-                            - half*pp4(j,k)
-                 enddo
-               enddo
-
-#ifndef TAPENADE_REVERSE
-               call resetpp3pp4(nn, pp3, pp4)
-#else
-               call resetpp3pp4Bwd(nn, pp3, pp4)
-#endif
-
-             !===========================================================
-
-             case (normalMomentum)
-
-               ! Pressure gradient is computed using the normal momentum
-               ! equation. First set a couple of additional variables for
-               ! the normals, depending on the block face. Note that the
-               ! construction 1: should not be used in these pointers,
-               ! because element 0 is needed. Consequently there will be
-               ! an offset of 1 for these normals. This is commented in
-               ! the code. For moving faces also the grid velocity of
-               ! the 1st cell center from the wall is needed.
-
-#ifndef TAPENADE_REVERSE
-               call setss(nn, ssi, ssj, ssk, ss)
-#else
-               call setssBwd(nn, ssi, ssj, ssk, ss)
-#endif
-
+!!$
+!!$             !===========================================================
+!!$
+!!$             case (linExtrapolPressure)
+!!$
+!!$               ! Linear extrapolation. First set the additional pointer
+!!$               ! for pp3, depending on the block face.
+!!$
+!!$#ifndef TAPENADE_REVERSE
+!!$               call setpp3pp4(nn, pp3, pp4)
+!!$#else
+!!$               call setpp3pp4Bwd(nn, pp3, pp4)
+!!$#endif
+!!$               ! Compute the gradient.
+!!$
+!!$               do k=BCData(nn)%jcBeg, BCData(nn)%jcEnd
+!!$                 do j=BCData(nn)%icBeg, BCData(nn)%icEnd
+!!$                   pp1(j,k) = pp3(j,k) - pp2(j,k)
+!!$                 enddo
+!!$               enddo
+!!$
+!!$#ifndef TAPENADE_REVERSE
+!!$               call resetpp3pp4(nn, pp3, pp4)
+!!$#else
+!!$               call resetpp3pp4Bwd(nn, pp3, pp4)
+!!$#endif
+!!$
+!!$
+!!$             !===========================================================
+!!$
+!!$             case (quadExtrapolPressure)
+!!$
+!!$               ! Quadratic extrapolation. First set the additional
+!!$               ! pointers for pp3 and pp4, depending on the block face.
+!!$
+!!$#ifndef TAPENADE_REVERSE
+!!$               call setpp3pp4(nn, pp3, pp4)
+!!$#else
+!!$               call setpp3pp4Bwd(nn, pp3, pp4)
+!!$#endif
+!!$
+!!$               ! Compute the gradient.
+!!$
+!!$               do k=BCData(nn)%jcBeg, BCData(nn)%jcEnd
+!!$                 do j=BCData(nn)%icBeg, BCData(nn)%icEnd
+!!$                   pp1(j,k) = two*pp3(j,k) - 1.5_realType*pp2(j,k) &
+!!$                            - half*pp4(j,k)
+!!$                 enddo
+!!$               enddo
+!!$
+!!$#ifndef TAPENADE_REVERSE
+!!$               call resetpp3pp4(nn, pp3, pp4)
+!!$#else
+!!$               call resetpp3pp4Bwd(nn, pp3, pp4)
+!!$#endif
+!!$
+!!$             !===========================================================
+!!$
+!!$             case (normalMomentum)
+!!$
+!!$               ! Pressure gradient is computed using the normal momentum
+!!$               ! equation. First set a couple of additional variables for
+!!$               ! the normals, depending on the block face. Note that the
+!!$               ! construction 1: should not be used in these pointers,
+!!$               ! because element 0 is needed. Consequently there will be
+!!$               ! an offset of 1 for these normals. This is commented in
+!!$               ! the code. For moving faces also the grid velocity of
+!!$               ! the 1st cell center from the wall is needed.
+!!$
+!!$#ifndef TAPENADE_REVERSE
+!!$               call setss(nn, ssi, ssj, ssk, ss)
+!!$#else
+!!$               call setssBwd(nn, ssi, ssj, ssk, ss)
+!!$#endif
+!!$
 !!$
 !!$               ! Loop over the faces of the generic subface.
 !!$
@@ -327,25 +327,25 @@
 !!$                   ! however this is not really a problem, because these
 !!$                   ! values are overwritten in the communication pattern.
 !!$
-!!$                   rxj = a1*(norm(jp1,k,1) - norm(jm1,k,1))
-!!$                   ryj = a1*(norm(jp1,k,2) - norm(jm1,k,2))
-!!$                   rzj = a1*(norm(jp1,k,3) - norm(jm1,k,3))
+!!$                   rxj = a1*(BCData(nn)%norm(jp1,k,1) - BCData(nn)%norm(jm1,k,1))
+!!$                   ryj = a1*(BCData(nn)%norm(jp1,k,2) - BCData(nn)%norm(jm1,k,2))
+!!$                   rzj = a1*(BCData(nn)%norm(jp1,k,3) - BCData(nn)%norm(jm1,k,3))
 !!$                   dpj = a1*(pp2(jp1,k)    - pp2(jm1,k))
 !!$
-!!$                   rxk = b1*(norm(j,kp1,1) - norm(j,km1,1))
-!!$                   ryk = b1*(norm(j,kp1,2) - norm(j,km1,2))
-!!$                   rzk = b1*(norm(j,kp1,3) - norm(j,km1,3))
+!!$                   rxk = b1*(BCData(nn)%norm(j,kp1,1) - BCData(nn)%norm(j,km1,1))
+!!$                   ryk = b1*(BCData(nn)%norm(j,kp1,2) - BCData(nn)%norm(j,km1,2))
+!!$                   rzk = b1*(BCData(nn)%norm(j,kp1,3) - BCData(nn)%norm(j,km1,3))
 !!$                   dpk = b1*(pp2(j,kp1)    - pp2(j,km1))
 !!$
 !!$                   ! Compute the dot product between the unit vector
 !!$                   ! and the normal vectors in i, j and k-direction.
 !!$
-!!$                   ri = norm(j,k,1)*sixa + norm(j,k,2)*siya &
-!!$                      + norm(j,k,3)*siza
-!!$                   rj = norm(j,k,1)*sjxa + norm(j,k,2)*sjya &
-!!$                      + norm(j,k,3)*sjza
-!!$                   rk = norm(j,k,1)*skxa + norm(j,k,2)*skya &
-!!$                      + norm(j,k,3)*skza
+!!$                   ri = BCData(nn)%norm(j,k,1)*sixa + BCData(nn)%norm(j,k,2)*siya &
+!!$                      + BCData(nn)%norm(j,k,3)*siza
+!!$                   rj = BCData(nn)%norm(j,k,1)*sjxa + BCData(nn)%norm(j,k,2)*sjya &
+!!$                      + BCData(nn)%norm(j,k,3)*sjza
+!!$                   rk = BCData(nn)%norm(j,k,1)*skxa + BCData(nn)%norm(j,k,2)*skya &
+!!$                      + BCData(nn)%norm(j,k,3)*skza
 !!$
 !!$                   ! Store the velocity components in ux, uy and uz and
 !!$                   ! subtract the mesh velocity if the face is moving.
@@ -376,12 +376,12 @@
 !!$                            *  ww2(j,k,irho) - rj*dpj - rk*dpk)/ri
 !!$                 enddo
 !!$               enddo
-
-#ifndef TAPENADE_REVERSE
-               call resetss(nn, ssi, ssj, ssk, ss)
-#else
-               call resetssBwd(nn, ssi, ssj, ssk, ss)
-#endif
+!!$
+!!$#ifndef TAPENADE_REVERSE
+!!$               call resetss(nn, ssi, ssj, ssk, ss)
+!!$#else
+!!$               call resetssBwd(nn, ssi, ssj, ssk, ss)
+!!$#endif
 
            end select BCTreatment
 

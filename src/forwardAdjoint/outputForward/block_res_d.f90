@@ -148,6 +148,7 @@
    !  Apply all BC's
    !call applyAllBC_block(.True.)
    CALL BCEULERWALL_D(.true., .false.)
+   !call bcFarfield(.True., .False.)
    ! Compute skin_friction Velocity (only for wall Functions)
    ! #ifndef TAPENADE_REVERSE
    !   call computeUtau_block

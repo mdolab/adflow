@@ -256,20 +256,20 @@ subroutine allocMemFlovarPart2(sps, level)
 
      ! Allocate the mesh velocities; only for a moving block.
 
-     if( flowDoms(nn,level,sps)%blockIsMoving ) then
+     !if( flowDoms(nn,level,sps)%blockIsMoving ) then
 
-        ! Block is moving. Allocate the memory for s, sFaceI,
-        ! sFaceJ and sFaceK.
+     ! Block is moving. Allocate the memory for s, sFaceI,
+     ! sFaceJ and sFaceK.
 
-        allocate(flowDoms(nn,level,sps)%s(ie,je,ke,3),      &
-             flowDoms(nn,level,sps)%sFaceI(0:ie,je,ke), &
-             flowDoms(nn,level,sps)%sFaceJ(ie,0:je,ke), &
-             flowDoms(nn,level,sps)%sFaceK(ie,je,0:ke), stat=ierr)
-        if(ierr /= 0)                              &
-             call terminate("allocMemFlovarPart2", &
-             "Memory allocation failure for s, &
-             &sFaceI, sFaceJ and sFaceK.")
-     endif
+     allocate(flowDoms(nn,level,sps)%s(ie,je,ke,3),  &
+          flowDoms(nn,level,sps)%sFaceI(0:ie,je,ke), &
+          flowDoms(nn,level,sps)%sFaceJ(ie,0:je,ke), &
+          flowDoms(nn,level,sps)%sFaceK(ie,je,0:ke), stat=ierr)
+     if(ierr /= 0)                              &
+          call terminate("allocMemFlovarPart2", &
+          "Memory allocation failure for s, &
+          &sFaceI, sFaceJ and sFaceK.")
+     !endif
 
      ! Test if we are on the finest mesh.
 

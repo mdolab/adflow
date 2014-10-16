@@ -54,7 +54,6 @@
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: pp1, pp2
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: pp1b, pp2b
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: pp3, pp4
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: pp3b, pp4b
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rlv1, rlv2
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rlv1b, rlv2b
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rev1, rev2
@@ -68,17 +67,9 @@
    INTEGER :: ad_to0
    INTEGER :: ad_from1
    INTEGER :: ad_to1
+   INTEGER :: branch
    INTEGER :: ad_from2
    INTEGER :: ad_to2
-   INTEGER :: ad_from3
-   INTEGER :: ad_to3
-   INTEGER :: ad_from4
-   INTEGER :: ad_to4
-   INTEGER :: ad_from5
-   INTEGER :: ad_to5
-   INTEGER :: branch
-   INTEGER :: ad_from6
-   INTEGER :: ad_to6
    REAL(kind=realtype) :: tmpb
    REAL(kind=realtype) :: tempb
    !
@@ -107,6 +98,195 @@
    CALL PUSHREAL8ARRAY(pp2, imaxdim*jmaxdim)
    CALL SETBCPOINTERSBWD(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, rev1&
    &                        , rev2, 0)
+   !!$
+   !!$             !===========================================================
+   !!$
+   !!$             case (linExtrapolPressure)
+   !!$
+   !!$               ! Linear extrapolation. First set the additional pointer
+   !!$               ! for pp3, depending on the block face.
+   !!$
+   !!$#ifndef 1
+   !!$               call setpp3pp4(nn, pp3, pp4)
+   !!$#else
+   !!$               call setpp3pp4Bwd(nn, pp3, pp4)
+   !!$#endif
+   !!$               ! Compute the gradient.
+   !!$
+   !!$               do k=BCData(nn)%jcBeg, BCData(nn)%jcEnd
+   !!$                 do j=BCData(nn)%icBeg, BCData(nn)%icEnd
+   !!$                   pp1(j,k) = pp3(j,k) - pp2(j,k)
+   !!$                 enddo
+   !!$               enddo
+   !!$
+   !!$#ifndef 1
+   !!$               call resetpp3pp4(nn, pp3, pp4)
+   !!$#else
+   !!$               call resetpp3pp4Bwd(nn, pp3, pp4)
+   !!$#endif
+   !!$
+   !!$
+   !!$             !===========================================================
+   !!$
+   !!$             case (quadExtrapolPressure)
+   !!$
+   !!$               ! Quadratic extrapolation. First set the additional
+   !!$               ! pointers for pp3 and pp4, depending on the block face.
+   !!$
+   !!$#ifndef 1
+   !!$               call setpp3pp4(nn, pp3, pp4)
+   !!$#else
+   !!$               call setpp3pp4Bwd(nn, pp3, pp4)
+   !!$#endif
+   !!$
+   !!$               ! Compute the gradient.
+   !!$
+   !!$               do k=BCData(nn)%jcBeg, BCData(nn)%jcEnd
+   !!$                 do j=BCData(nn)%icBeg, BCData(nn)%icEnd
+   !!$                   pp1(j,k) = two*pp3(j,k) - 1.5_realType*pp2(j,k) &
+   !!$                            - half*pp4(j,k)
+   !!$                 enddo
+   !!$               enddo
+   !!$
+   !!$#ifndef 1
+   !!$               call resetpp3pp4(nn, pp3, pp4)
+   !!$#else
+   !!$               call resetpp3pp4Bwd(nn, pp3, pp4)
+   !!$#endif
+   !!$
+   !!$             !===========================================================
+   !!$
+   !!$             case (normalMomentum)
+   !!$
+   !!$               ! Pressure gradient is computed using the normal momentum
+   !!$               ! equation. First set a couple of additional variables for
+   !!$               ! the normals, depending on the block face. Note that the
+   !!$               ! construction 1: should not be used in these pointers,
+   !!$               ! because element 0 is needed. Consequently there will be
+   !!$               ! an offset of 1 for these normals. This is commented in
+   !!$               ! the code. For moving faces also the grid velocity of
+   !!$               ! the 1st cell center from the wall is needed.
+   !!$
+   !!$#ifndef 1
+   !!$               call setss(nn, ssi, ssj, ssk, ss)
+   !!$#else
+   !!$               call setssBwd(nn, ssi, ssj, ssk, ss)
+   !!$#endif
+   !!$
+   !!$
+   !!$               ! Loop over the faces of the generic subface.
+   !!$
+   !!$               do k=BCData(nn)%jcBeg, BCData(nn)%jcEnd
+   !!$
+   !!$                 ! Store the indices k+1, k-1 a bit easier and make
+   !!$                 ! sure that they do not exceed the range of the arrays.
+   !!$
+   !!$                 km1 = k-1; km1 = max(BCData(nn)%jcBeg,km1)
+   !!$                 kp1 = k+1; kp1 = min(BCData(nn)%jcEnd,kp1)
+   !!$
+   !!$                 ! Compute the scaling factor for the central difference
+   !!$                 ! in the k-direction.
+   !!$
+   !!$                 b1 = one/max(1_intType,(kp1-km1))
+   !!$
+   !!$                 ! The j-loop.
+   !!$
+   !!$                 do j=BCData(nn)%icBeg, BCData(nn)%icEnd
+   !!$
+   !!$                   ! The indices j+1 and j-1. Make sure that they
+   !!$                   ! do not exceed the range of the arrays.
+   !!$
+   !!$                   jm1 = j-1; jm1 = max(BCData(nn)%icBeg,jm1)
+   !!$                   jp1 = j+1; jp1 = min(BCData(nn)%icEnd,jp1)
+   !!$
+   !!$                   ! Compute the scaling factor for the central
+   !!$                   ! difference in the j-direction.
+   !!$
+   !!$                   a1 = one/max(1_intType,(jp1-jm1))
+   !!$
+   !!$                   ! Compute (twice) the average normal in the generic i,
+   !!$                   ! j and k-direction. Note that in j and k-direction
+   !!$                   ! the average in the original indices should be taken
+   !!$                   ! using j-1 and j (and k-1 and k). However due to the
+   !!$                   ! usage of pointers ssj and ssk there is an offset in
+   !!$                   ! the indices of 1 and therefore now the correct
+   !!$                   ! average is obtained with the indices j and j+1
+   !!$                   ! (k and k+1).
+   !!$
+   !!$                   sixa = two*ssi(j,k,1)
+   !!$                   siya = two*ssi(j,k,2)
+   !!$                   siza = two*ssi(j,k,3)
+   !!$
+   !!$                   sjxa = ssj(j,k,1) + ssj(j+1,k,1)
+   !!$                   sjya = ssj(j,k,2) + ssj(j+1,k,2)
+   !!$                   sjza = ssj(j,k,3) + ssj(j+1,k,3)
+   !!$
+   !!$                   skxa = ssk(j,k,1) + ssk(j,k+1,1)
+   !!$                   skya = ssk(j,k,2) + ssk(j,k+1,2)
+   !!$                   skza = ssk(j,k,3) + ssk(j,k+1,3)
+   !!$
+   !!$                   ! Compute the difference of the normal vector and
+   !!$                   ! pressure in j and k-direction. As the indices are
+   !!$                   ! restricted to the 1st halo-layer, the computation
+   !!$                   ! of the internal halo values is not consistent;
+   !!$                   ! however this is not really a problem, because these
+   !!$                   ! values are overwritten in the communication pattern.
+   !!$
+   !!$                   rxj = a1*(BCData(nn)%norm(jp1,k,1) - BCData(nn)%norm(jm1,k,1))
+   !!$                   ryj = a1*(BCData(nn)%norm(jp1,k,2) - BCData(nn)%norm(jm1,k,2))
+   !!$                   rzj = a1*(BCData(nn)%norm(jp1,k,3) - BCData(nn)%norm(jm1,k,3))
+   !!$                   dpj = a1*(pp2(jp1,k)    - pp2(jm1,k))
+   !!$
+   !!$                   rxk = b1*(BCData(nn)%norm(j,kp1,1) - BCData(nn)%norm(j,km1,1))
+   !!$                   ryk = b1*(BCData(nn)%norm(j,kp1,2) - BCData(nn)%norm(j,km1,2))
+   !!$                   rzk = b1*(BCData(nn)%norm(j,kp1,3) - BCData(nn)%norm(j,km1,3))
+   !!$                   dpk = b1*(pp2(j,kp1)    - pp2(j,km1))
+   !!$
+   !!$                   ! Compute the dot product between the unit vector
+   !!$                   ! and the normal vectors in i, j and k-direction.
+   !!$
+   !!$                   ri = BCData(nn)%norm(j,k,1)*sixa + BCData(nn)%norm(j,k,2)*siya &
+   !!$                      + BCData(nn)%norm(j,k,3)*siza
+   !!$                   rj = BCData(nn)%norm(j,k,1)*sjxa + BCData(nn)%norm(j,k,2)*sjya &
+   !!$                      + BCData(nn)%norm(j,k,3)*sjza
+   !!$                   rk = BCData(nn)%norm(j,k,1)*skxa + BCData(nn)%norm(j,k,2)*skya &
+   !!$                      + BCData(nn)%norm(j,k,3)*skza
+   !!$
+   !!$                   ! Store the velocity components in ux, uy and uz and
+   !!$                   ! subtract the mesh velocity if the face is moving.
+   !!$
+   !!$                   ux = ww2(j,k,ivx)
+   !!$                   uy = ww2(j,k,ivy)
+   !!$                   uz = ww2(j,k,ivz)
+   !!$
+   !!$                   if( addGridVelocities ) then
+   !!$                     ux = ux - ss(j,k,1)
+   !!$                     uy = uy - ss(j,k,2)
+   !!$                     uz = uz - ss(j,k,3)
+   !!$                   endif
+   !!$
+   !!$                   ! Compute the velocity components in j and
+   !!$                   ! k-direction.
+   !!$
+   !!$                   qj = ux*sjxa + uy*sjya + uz*sjza
+   !!$                   qk = ux*skxa + uy*skya + uz*skza
+   !!$
+   !!$                   ! Compute the pressure gradient, which is stored
+   !!$                   ! in pp1. I'm not entirely sure whether this
+   !!$                   ! formulation is correct for moving meshes. It could
+   !!$                   ! be that an additional term is needed there.
+   !!$
+   !!$                   pp1(j,k) = ((qj*(ux*rxj + uy*ryj + uz*rzj)      &
+   !!$                            +   qk*(ux*rxk + uy*ryk + uz*rzk))     &
+   !!$                            *  ww2(j,k,irho) - rj*dpj - rk*dpk)/ri
+   !!$                 enddo
+   !!$               enddo
+   !!$
+   !!$#ifndef 1
+   !!$               call resetss(nn, ssi, ssj, ssk, ss)
+   !!$#else
+   !!$               call resetssBwd(nn, ssi, ssj, ssk, ss)
+   !!$#endif
    !
    !          **************************************************************
    !          *                                                            *
@@ -130,57 +310,16 @@
    END DO
    CALL PUSHINTEGER4(k - 1)
    CALL PUSHINTEGER4(ad_from0)
-   CALL PUSHCONTROL2B(2)
-   CASE (linextrapolpressure) 
-   !===========================================================
-   ! Linear extrapolation. First set the additional pointer
-   ! for pp3, depending on the block face.
-   CALL SETPP3PP4BWD(nn, pp3, pp4)
+   CALL PUSHCONTROL1B(0)
+   CASE DEFAULT
+   CALL PUSHCONTROL1B(1)
+   END SELECT
    ad_from2 = bcdata(nn)%jcbeg
-   ! Compute the gradient.
+   ! Determine the state in the halo cell. Again loop over
+   ! the cell range for this subface.
    DO k=ad_from2,bcdata(nn)%jcend
    ad_from1 = bcdata(nn)%icbeg
    DO j=ad_from1,bcdata(nn)%icend
-   pp1(j, k) = pp3(j, k) - pp2(j, k)
-   END DO
-   CALL PUSHINTEGER4(j - 1)
-   CALL PUSHINTEGER4(ad_from1)
-   END DO
-   CALL PUSHINTEGER4(k - 1)
-   CALL PUSHINTEGER4(ad_from2)
-   CALL RESETPP3PP4BWD(nn, pp3, pp4)
-   CALL PUSHCONTROL2B(1)
-   CASE (quadextrapolpressure) 
-   !===========================================================
-   ! Quadratic extrapolation. First set the additional
-   ! pointers for pp3 and pp4, depending on the block face.
-   CALL SETPP3PP4BWD(nn, pp3, pp4)
-   ad_from4 = bcdata(nn)%jcbeg
-   ! Compute the gradient.
-   DO k=ad_from4,bcdata(nn)%jcend
-   ad_from3 = bcdata(nn)%icbeg
-   DO j=ad_from3,bcdata(nn)%icend
-   pp1(j, k) = two*pp3(j, k) - 1.5_realType*pp2(j, k) - half*&
-   &             pp4(j, k)
-   END DO
-   CALL PUSHINTEGER4(j - 1)
-   CALL PUSHINTEGER4(ad_from3)
-   END DO
-   CALL PUSHINTEGER4(k - 1)
-   CALL PUSHINTEGER4(ad_from4)
-   CALL RESETPP3PP4BWD(nn, pp3, pp4)
-   CALL PUSHCONTROL2B(0)
-   CASE (normalmomentum) 
-   CALL PUSHCONTROL2B(3)
-   CASE DEFAULT
-   CALL PUSHCONTROL2B(3)
-   END SELECT
-   ad_from6 = bcdata(nn)%jcbeg
-   ! Determine the state in the halo cell. Again loop over
-   ! the cell range for this subface.
-   DO k=ad_from6,bcdata(nn)%jcend
-   ad_from5 = bcdata(nn)%icbeg
-   DO j=ad_from5,bcdata(nn)%icend
    ! Compute the pressure density and velocity in the
    ! halo cell. Note that rface is the grid velocity
    ! component in the direction of norm, i.e. outward
@@ -209,10 +348,10 @@
    IF (eddymodel) rev1(j, k) = rev2(j, k)
    END DO
    CALL PUSHINTEGER4(j - 1)
-   CALL PUSHINTEGER4(ad_from5)
+   CALL PUSHINTEGER4(ad_from1)
    END DO
    CALL PUSHINTEGER4(k - 1)
-   CALL PUSHINTEGER4(ad_from6)
+   CALL PUSHINTEGER4(ad_from2)
    ! Compute the energy for these halo's.
    CALL PUSHREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4)&
    &                  )
@@ -243,8 +382,6 @@
    END DO bocos
    pp1b = 0.0_8
    pp2b = 0.0_8
-   pp3b = 0.0_8
-   pp4b = 0.0_8
    rlv1b = 0.0_8
    rlv2b = 0.0_8
    ww1b = 0.0_8
@@ -268,12 +405,12 @@
    CALL POPREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4))
    CALL COMPUTEETOT_B(icbeg(nn), icend(nn), jcbeg(nn), jcend(nn), &
    &                  kcbeg(nn), kcend(nn), correctfork)
-   CALL POPINTEGER4(ad_from6)
-   CALL POPINTEGER4(ad_to6)
-   DO k=ad_to6,ad_from6,-1
-   CALL POPINTEGER4(ad_from5)
-   CALL POPINTEGER4(ad_to5)
-   DO j=ad_to5,ad_from5,-1
+   CALL POPINTEGER4(ad_from2)
+   CALL POPINTEGER4(ad_to2)
+   DO k=ad_to2,ad_from2,-1
+   CALL POPINTEGER4(ad_from1)
+   CALL POPINTEGER4(ad_to1)
+   DO j=ad_to1,ad_from1,-1
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    rlv2b(j, k) = rlv2b(j, k) + rlv1b(j, k)
@@ -307,39 +444,8 @@
    CALL DIM_B(pp2(j, k), pp2b(j, k), pp1(j, k), pp1b(j, k), tmpb)
    END DO
    END DO
-   CALL POPCONTROL2B(branch)
-   IF (branch .LT. 2) THEN
+   CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   CALL RESETPP3PP4BWD_B(nn, pp3, pp3b, pp4, pp4b)
-   CALL POPINTEGER4(ad_from4)
-   CALL POPINTEGER4(ad_to4)
-   DO k=ad_to4,ad_from4,-1
-   CALL POPINTEGER4(ad_from3)
-   CALL POPINTEGER4(ad_to3)
-   DO j=ad_to3,ad_from3,-1
-   pp3b(j, k) = pp3b(j, k) + two*pp1b(j, k)
-   pp2b(j, k) = pp2b(j, k) - 1.5_realType*pp1b(j, k)
-   pp4b(j, k) = pp4b(j, k) - half*pp1b(j, k)
-   pp1b(j, k) = 0.0_8
-   END DO
-   END DO
-   CALL SETPP3PP4BWD_B(nn, pp3, pp3b, pp4, pp4b)
-   ELSE
-   CALL RESETPP3PP4BWD_B(nn, pp3, pp3b, pp4, pp4b)
-   CALL POPINTEGER4(ad_from2)
-   CALL POPINTEGER4(ad_to2)
-   DO k=ad_to2,ad_from2,-1
-   CALL POPINTEGER4(ad_from1)
-   CALL POPINTEGER4(ad_to1)
-   DO j=ad_to1,ad_from1,-1
-   pp3b(j, k) = pp3b(j, k) + pp1b(j, k)
-   pp2b(j, k) = pp2b(j, k) - pp1b(j, k)
-   pp1b(j, k) = 0.0_8
-   END DO
-   END DO
-   CALL SETPP3PP4BWD_B(nn, pp3, pp3b, pp4, pp4b)
-   END IF
-   ELSE IF (branch .EQ. 2) THEN
    CALL POPINTEGER4(ad_from0)
    CALL POPINTEGER4(ad_to0)
    DO k=ad_to0,ad_from0,-1

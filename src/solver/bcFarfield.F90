@@ -43,6 +43,7 @@
        ! Variables Added for forward AD
        real(kind=realType) :: rho,sf2
 
+!#ifndef TAPENADE_REVERSE
        real(kind=realType), dimension(:,:,:), pointer :: ww1, ww2
        real(kind=realType), dimension(:,:),   pointer :: pp1, pp2
        real(kind=realType), dimension(:,:),   pointer :: gamma2
@@ -63,7 +64,49 @@
            real(kind=realType), dimension(:,:),   pointer :: rlv1, rlv2
            real(kind=realType), dimension(:,:),   pointer :: rev1, rev2
          end subroutine setBCPointers
+
+        subroutine resetBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
+                                  rev1, rev2, offset)
+           use blockPointers
+           implicit none
+
+           integer(kind=intType), intent(in) :: nn, offset
+           real(kind=realType), dimension(:,:,:), pointer :: ww1, ww2
+           real(kind=realType), dimension(:,:),   pointer :: pp1, pp2
+           real(kind=realType), dimension(:,:),   pointer :: rlv1, rlv2
+           real(kind=realType), dimension(:,:),   pointer :: rev1, rev2
+         end subroutine resetBCPointers
+
+!!$        subroutine setgamma2(nn, gamma2)
+!!$
+!!$           use BCTypes
+!!$           use blockPointers
+!!$           implicit none
+!!$
+!!$           integer(kind=intType), intent(in) :: nn
+!!$           real(kind=realType), dimension(:,:),   pointer :: gamma2
+!!$         end subroutine setgamma2
+!!$
+!!$        subroutine resetgamma2(nn, gamma2)
+!!$
+!!$           use BCTypes
+!!$           use blockPointers
+!!$           implicit none
+!!$
+!!$           integer(kind=intType), intent(in) :: nn
+!!$           real(kind=realType), dimension(:,:),   pointer :: gamma2
+!!$         end subroutine resetgamma2
+
        end interface
+
+
+!#else
+!       real(kind=realType), dimension(imaxDim,jmaxDim,nw) :: ww1, ww2
+!       real(kind=realType), dimension(imaxDim,jmaxDim) :: pp1, pp2
+!       real(kind=realType), dimension(imaxDim,jmaxDim) :: gamma2
+!       real(kind=realType), dimension(imaxDim,jmaxDim) :: rlv1, rlv2
+!       real(kind=realType), dimension(imaxDim,jmaxDim) :: rev1, rev2
+!#endif
 !
 !      ******************************************************************
 !      *                                                                *
@@ -99,10 +142,20 @@
            ! that.
 
             !nullify(ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2)
+!#ifndef TAPENADE_REVERSE
            call setBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
                               rev1, rev2, 0)
+!#else
+!           call setBCPointersBwd(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
+!                rev1, rev2, 0)
+!#endif
 
            ! Set the additional pointer for gamma2.
+!#ifndef TAPENADE_REVERSE
+!               call setgamma2(nn, gamma2)
+!#else
+!               call setgamma2Bwd(nn, gamma2)
+!#endif
 
            select case (BCFaceID(nn))
              case (iMin)
@@ -188,8 +241,8 @@
                    ww1(i,j,l) = ww2(i,j,l)
                  enddo
 
-               else                           ! Inflow
-
+               else                          
+                 ! Inflow
                  uf = u0 + (qnf - qn0)*nnx
                  vf = v0 + (qnf - qn0)*nny
                  wf = w0 + (qnf - qn0)*nnz

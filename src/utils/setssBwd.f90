@@ -9,83 +9,83 @@
 !      *                                                                *
 !      ******************************************************************
 
-       subroutine setssBwd(nn, ssi, ssj, ssk, ss)
-       
-       use BCTypes
-       use blockPointers
- !      use flowVarRefState
-       implicit none
-!
-!      Subroutine arguments.
-!
-       integer(kind=intType), intent(in) :: nn
-       real(kind=realType), dimension(imaxDim,jmaxDim,3) :: ssi, ssj, ssk
-       real(kind=realType), dimension(imaxDim,jmaxDim,3) :: ss
+subroutine setssBwd(nn, ssi, ssj, ssk, ss)
+  
+  use BCTypes
+  use blockPointers
+  use flowVarRefState
+  implicit none
+  !
+  !      Subroutine arguments.
+  !
+  integer(kind=intType), intent(in) :: nn
+  real(kind=realType), dimension(imaxDim,jmaxDim,3) :: ssi, ssj, ssk
+  real(kind=realType), dimension(imaxDim,jmaxDim,3) :: ss
 
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
-       ! Determine the face id on which the subface is located and set
-       ! the pointers accordinly.
+  !
+  !      ******************************************************************
+  !      *                                                                *
+  !      * Begin execution                                                *
+  !      *                                                                *
+  !      ******************************************************************
+  !
+  ! Determine the face id on which the subface is located and set
+  ! the pointers accordinly.
 
-		   select case (BCFaceID(nn))
-			 case (iMin)
-			   ssi = si(1,:,:,:)
-			   ssj = sj(2,:,:,:)
-			   ssk = sk(2,:,:,:)
+  select case (BCFaceID(nn))
+  case (iMin)
+     ssi = si(1,:,:,:)
+     ssj = sj(2,:,:,:)
+     ssk = sk(2,:,:,:)
 
-			   if( addGridVelocities ) ss = s(2,:,:,:)
+     if( addGridVelocities ) ss = s(2,:,:,:)
 
-			 !=======================================================
+     !=======================================================
 
-			 case (iMax)
-			   ssi = si(il,:,:,:)
-			   ssj = sj(il,:,:,:)
-			   ssk = sk(il,:,:,:)
+  case (iMax)
+     ssi = si(il,:,:,:)
+     ssj = sj(il,:,:,:)
+     ssk = sk(il,:,:,:)
 
-			   if( addGridVelocities ) ss = s(il,:,:,:)
+     if( addGridVelocities ) ss = s(il,:,:,:)
 
-			 !=======================================================
+     !=======================================================
 
-			 case (jMin)
-			   ssi = sj(:,1,:,:)
-			   ssj = si(:,2,:,:)
-			   ssk = sk(:,2,:,:)
+  case (jMin)
+     ssi = sj(:,1,:,:)
+     ssj = si(:,2,:,:)
+     ssk = sk(:,2,:,:)
 
-			   if( addGridVelocities ) ss = s(:,2,:,:)
+     if( addGridVelocities ) ss = s(:,2,:,:)
 
-			 !=======================================================
+     !=======================================================
 
-			 case (jMax)
-			   ssi = sj(:,jl,:,:)
-			   ssj = si(:,jl,:,:)
-			   ssk = sk(:,jl,:,:)
+  case (jMax)
+     ssi = sj(:,jl,:,:)
+     ssj = si(:,jl,:,:)
+     ssk = sk(:,jl,:,:)
 
-			   if( addGridVelocities ) ss = s(:,jl,:,:)
+     if( addGridVelocities ) ss = s(:,jl,:,:)
 
-			 !=======================================================
+     !=======================================================
 
-			 case (kMin)
-			   ssi = sk(:,:,1,:)
-			   ssj = si(:,:,2,:)
-			   ssk = sj(:,:,2,:)
+  case (kMin)
+     ssi = sk(:,:,1,:)
+     ssj = si(:,:,2,:)
+     ssk = sj(:,:,2,:)
 
-			   if( addGridVelocities ) ss = s(:,:,2,:)
+     if( addGridVelocities ) ss = s(:,:,2,:)
 
-			 !=======================================================
+     !=======================================================
 
-			 case (kMax)
-			   ssi = sk(:,:,kl,:)
-			   ssj = si(:,:,kl,:)
-			   ssk = sj(:,:,kl,:)
+  case (kMax)
+     ssi = sk(:,:,kl,:)
+     ssj = si(:,:,kl,:)
+     ssk = sj(:,:,kl,:)
 
-			   if( addGridVelocities ) ss = s(:,:,kl,:)
+     if( addGridVelocities ) ss = s(:,:,kl,:)
 
-		   end select
-       end subroutine setssBwd
+  end select
+end subroutine setssBwd
 
 
