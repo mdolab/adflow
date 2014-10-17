@@ -2046,12 +2046,12 @@ steady rotations and specifying an aeroProblem')
         """Update the SUmb internal geometry info, if necessary."""
 
         if self._updateGeomInfo and self.mesh is not None:
-
+            timeA = time.time()
             self.mesh.warpMesh()
             newGrid = self.mesh.getSolverGrid()
             self.sumb.killsignals.routinefailed = False
             self.sumb.killsignals.fatalFail = False
-
+            self.updateTime = time.time()-timeA
             if newGrid is not None:
                 self.sumb.setgrid(newGrid)
             self.sumb.updatecoordinatesalllevels()
