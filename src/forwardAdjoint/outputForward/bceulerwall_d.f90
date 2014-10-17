@@ -127,19 +127,6 @@
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1d, rlv2d
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
    END SUBROUTINE SETBCPOINTERS_D
-   SUBROUTINE RESETBCPOINTERS_D(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, &
-   &       pp2, pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev2, offset)
-   USE BLOCKPOINTERS_D
-   IMPLICIT NONE
-   INTEGER(kind=inttype), INTENT(IN) :: nn, offset
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1d, ww2d
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1, pp2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1d, pp2d
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1d, rlv2d
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
-   END SUBROUTINE RESETBCPOINTERS_D
    END INTERFACE
       REAL(kind=realtype) :: DIM
    REAL(kind=realtype) :: DIM_D
@@ -425,8 +412,8 @@
    ! is needed.
    IF (secondhalo) CALL EXTRAPOLATE2NDHALO_D(nn, correctfork)
    ! deallocation all pointer
-   CALL RESETBCPOINTERS_D(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, pp2, &
-   &                      pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev2, 0)
+   CALL RESETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, &
+   &                       rev2, 0)
    END IF
    END DO bocos
    END SUBROUTINE BCEULERWALL_D

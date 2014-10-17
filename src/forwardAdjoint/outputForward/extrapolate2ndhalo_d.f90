@@ -115,19 +115,6 @@
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1d, rlv2d
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
    END SUBROUTINE SETBCPOINTERS_D
-   SUBROUTINE RESETBCPOINTERS_D(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, &
-   &       pp2, pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev2, offset)
-   USE BLOCKPOINTERS_D
-   IMPLICIT NONE
-   INTEGER(kind=inttype), INTENT(IN) :: nn, offset
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1d, ww2d
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1, pp2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1d, pp2d
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1d, rlv2d
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
-   END SUBROUTINE RESETBCPOINTERS_D
    SUBROUTINE SETWW0PP0RLV0REV0_D(nn, idim, ddim, ww0, ww0d, pp0, &
    &       pp0d, rlv0, rlv0d, rev0)
    USE BCTYPES
@@ -221,8 +208,8 @@
    IF (eddymodel) rev0(i, j) = rev1(i, j)
    END DO
    END DO
-   CALL RESETBCPOINTERS_D(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, pp2, pp2d&
-   &                  , rlv1, rlv1d, rlv0, rlv0d, rev1, rev0, 0)
+   CALL RESETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv0, rev1, rev0&
+   &                   , 0)
    CALL RESETWW0PP0RLV0REV0_D(nn, idim, ddim, ww0, ww0d, pp0, pp0d, rlv0&
    &                      , rlv0d, rev0)
    ! Set the range for the halo cells for the energy computation.
