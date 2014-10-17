@@ -4,13 +4,15 @@
    !  Differentiation of forcesandmoments in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *(*bcdata.fp) *(*bcdata.fv)
    !                *(*bcdata.m) *(*bcdata.oarea) *(*bcdata.sepsensor)
-   !                cfp cfv cmp cmv sepsensor
+   !                *(*bcdata.cavitation) cfp cfv cmp cmv cavitation
+   !                sepsensor
    !   with respect to varying inputs: *p *w *x *si *sj *sk *(*viscsubface.tau)
    !                gammainf pinf pref veldirfreestream lengthref
    !                machcoef pointref
    !   Plus diff mem management of: p:in w:in x:in si:in sj:in sk:in
    !                viscsubface:in *viscsubface.tau:in bcdata:in *bcdata.fp:in
    !                *bcdata.fv:in *bcdata.m:in *bcdata.oarea:in *bcdata.sepsensor:in
+   !                *bcdata.cavitation:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -22,7 +24,7 @@
    !      ******************************************************************
    !
    SUBROUTINE FORCESANDMOMENTS_D(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd&
-   &  , yplusmax, sepsensor, sepsensord)
+   &  , yplusmax, sepsensor, sepsensord, cavitation, cavitationd)
    USE FLOWVARREFSTATE
    USE BLOCKPOINTERS_D
    USE BCTYPES
@@ -38,7 +40,8 @@
    !      * moment coefficients of the geometry. A distinction is made     *
    !      * between the inviscid and viscous parts. In case the maximum    *
    !      * yplus value must be monitored (only possible for rans), this   *
-   !      * value is also computed. The separation sensor is also computed *
+   !      * value is also computed. The separation sensor and the cavita-  *
+   !      * tion sensor is also computed                                   *
    !      * here.                                                          *
    !      ******************************************************************
    !
@@ -49,20 +52,22 @@
    REAL(kind=realtype), DIMENSION(3), INTENT(OUT) :: cfpd, cfvd
    REAL(kind=realtype), DIMENSION(3), INTENT(OUT) :: cmp, cmv
    REAL(kind=realtype), DIMENSION(3), INTENT(OUT) :: cmpd, cmvd
-   REAL(kind=realtype), INTENT(OUT) :: yplusmax, sepsensor
-   REAL(kind=realtype), INTENT(OUT) :: sepsensord
+   REAL(kind=realtype), INTENT(OUT) :: yplusmax, sepsensor, cavitation
+   REAL(kind=realtype), INTENT(OUT) :: sepsensord, cavitationd
    !
    !      Local variables.
    !
    INTEGER(kind=inttype) :: nn, i, j
-   REAL(kind=realtype) :: pm1, fx, fy, fz, fn
+   REAL(kind=realtype) :: pm1, fx, fy, fz, fn, sigma
    REAL(kind=realtype) :: pm1d, fxd, fyd, fzd
    REAL(kind=realtype) :: xc, yc, zc
    REAL(kind=realtype) :: xcd, ycd, zcd
    REAL(kind=realtype) :: fact, rho, mul, yplus, dwall
    REAL(kind=realtype) :: factd
-   REAL(kind=realtype) :: scaledim, v(3), sensor
-   REAL(kind=realtype) :: scaledimd, vd(3), sensord
+   REAL(kind=realtype) :: scaledim, v(3), sensor, sensor1, cp, tmp, &
+   &  plocal
+   REAL(kind=realtype) :: scaledimd, vd(3), sensord, sensor1d, cpd, tmpd&
+   &  , plocald
    REAL(kind=realtype) :: tauxx, tauyy, tauzz
    REAL(kind=realtype) :: tauxxd, tauyyd, tauzzd
    REAL(kind=realtype) :: tauxy, tauxz, tauyz
@@ -140,6 +145,7 @@
    cmv(3) = zero
    yplusmax = zero
    sepsensor = zero
+   cavitation = zero
    DO ii1=1,ISIZE1OFDrfbcdata
    bcdatad(ii1)%fp = 0.0_8
    END DO
@@ -155,10 +161,14 @@
    DO ii1=1,ISIZE1OFDrfbcdata
    bcdatad(ii1)%sepsensor = 0.0_8
    END DO
+   DO ii1=1,ISIZE1OFDrfbcdata
+   bcdatad(ii1)%cavitation = 0.0_8
+   END DO
    cfpd = 0.0_8
    cfvd = 0.0_8
    cmpd = 0.0_8
    cmvd = 0.0_8
+   cavitationd = 0.0_8
    sepsensord = 0.0_8
    vd = 0.0_8
    ! Loop over the boundary subfaces of this block.
@@ -428,6 +438,31 @@
    sepsensor = sepsensor + sensor
    bcdatad(nn)%sepsensor(i, j) = sensord
    bcdata(nn)%sepsensor(i, j) = sensor
+   plocald = pp2d(i, j)
+   plocal = pp2(i, j)
+   tmpd = -(two*((gammainfd*pinf+gammainf*pinfd)*machcoef**2+&
+   &            gammainf*pinf*(machcoefd*machcoef+machcoef*machcoefd))/(&
+   &            gammainf*pinf*machcoef*machcoef)**2)
+   tmp = two/(gammainf*pinf*machcoef*machcoef)
+   cpd = tmpd*(plocal-pinf) + tmp*(plocald-pinfd)
+   cp = tmp*(plocal-pinf)
+   sigma = 1.4
+   sensor1d = -cpd
+   sensor1 = -cp - sigma
+   !IF (sense >= 0) THEN
+   !Sensor = 1
+   !ELSE 
+   !Sensor = 0
+   !END IF
+   sensor1d = -((-(one*2*10*sensor1d*EXP(-(2*10*sensor1))))/(one+&
+   &            EXP(-(2*10*sensor1)))**2)
+   sensor1 = one/(one+EXP(-(2*10*sensor1)))
+   sensor1d = four*(sensor1d*qa+sensor1*qad)
+   sensor1 = sensor1*four*qa
+   cavitationd = cavitationd + sensor1d
+   cavitation = cavitation + sensor1
+   bcdatad(nn)%cavitation(i, j) = sensor1d
+   bcdata(nn)%cavitation(i, j) = sensor1
    ! Update the inviscid force and moment coefficients.
    cfpd(1) = cfpd(1) + fxd
    cfp(1) = cfp(1) + fx

@@ -244,7 +244,6 @@ class SUMB(AeroSolver):
         pts = self.getForcePoints()
 
         self.mesh.setExternalSurface(patchnames, patchsizes, conn, pts)
-
         # Get a inital copy of coordinates and save
         self.coords0 = self.getSurfaceCoordinates()
 
@@ -471,7 +470,8 @@ steady rotations and specifying an aeroProblem')
 
         # Use first spectral instance
         pts = self.comm.allgather(self.getForcePoints(0, groupName))
-        conn = self.comm.allgather(self.mesh.getSurfaceConnectivity(groupName))
+        conn = self.mesh.getSurfaceConnectivity(groupName)
+        conn = self.comm.allgather(conn)
 
         # Triangle info...point and two vectors
         p0 = []
@@ -1234,14 +1234,17 @@ steady rotations and specifying an aeroProblem')
         self.sumb.killsignals.routinefailed =  False
         self.sumb.killsignals.fatalfail = False
 
-    def getSolution(self, sps=1):
+    def getSolution(self, sps=1, groupName=None):
         """ Retrieve the solution variables from the solver. Note this
         is a collective function and must be called on all processors
         """
 
+        # Get the mask for the group
+        mask = self._getCellGroupMaskLocal(groupName)
+        
         # We should return the list of results that is the same as the
         # possibleObjectives list
-        self.sumb.getsolution(sps)
+        self.sumb.getsolutionmask(sps, mask)
 
         funcVals = self.sumb.costfunctions.functionvalue
         SUmbsolution = {
@@ -1278,12 +1281,14 @@ steady rotations and specifying an aeroProblem')
             'clqdot'     :funcVals[self.sumb.costfunctions.costfuncclqdot-1],
             'clq'        :funcVals[self.sumb.costfunctions.costfuncclq-1],
             'cbend'      :funcVals[self.sumb.costfunctions.costfuncbendingcoef-1],
-            'sepsensor':funcVals[self.sumb.costfunctions.costfuncsepsensor-1],
+            'sepsensor'  :funcVals[self.sumb.costfunctions.costfuncsepsensor-1],
+            'cavitation' :funcVals[self.sumb.costfunctions.costfunccavitation-1],
             }
 
         return SUmbsolution
-
+        
     def printCurrentOptions(self):
+
         """
         Prints a nicely formatted dictionary of all the current SUmb
         options to the stdout on the root processor"""
@@ -1322,7 +1327,35 @@ steady rotations and specifying an aeroProblem')
             The mask. Only returned on root proc. All other procs have
             numpy array of length 0.
             """
-      
+
+        localMask = self._getCellGroupMaskLocal(groupName)
+        # Now we need to gather all of the local masks to the root
+        # proc.
+        tmp = self.comm.gather(localMask, root=0)
+        globalMask = []
+        if self.comm.rank == 0:
+            for i in range(self.comm.size):
+                globalMask.extend(tmp[i])
+            globalMask = numpy.array(globalMask)
+
+        return globalMask
+
+    def _getCellGroupMaskLocal(self, groupName=None):
+        """
+        This function determines a mask (array of 1's and 0's) that
+        determines if the cell in the local set of wall faces 
+        is a member of the groupName as defined by the warping.
+
+        Parameters
+        ----------
+        groupName : str
+            The name of the family group defined in the warping
+
+        Returns
+        -------
+        mask : numpy array of integers
+            The mask. Returned on all procs. May be length 0.
+            """
         if groupName is None:
             localMask = []
             for i in xrange(self.sumb.getnpatches()):
@@ -1332,7 +1365,6 @@ steady rotations and specifying an aeroProblem')
         else:
             try:
                 famList = self.mesh.familyGroup[groupName]['families']
-
             except:
                 raise Error("The supplied family group name has not "
                             "been added in pyWarp.")
@@ -1349,18 +1381,8 @@ steady rotations and specifying an aeroProblem')
                     localMask.extend(numpy.ones(nCells, 'intc'))
                 else:
                     localMask.extend(numpy.zeros(nCells, 'intc'))
+        return localMask
 
-        # Now we need to gather all of the local masks to the root
-        # proc.
-        tmp = self.comm.gather(localMask, root=0)
-        globalMask = []
-        if self.comm.rank == 0:
-            for i in range(self.comm.size):
-                globalMask.extend(tmp[i])
-            globalMask = numpy.array(globalMask)
-
-        return globalMask
-    
     def getSurfaceCoordinates(self, groupName='all'):
         """
         See MultiBlockMesh.py for more info
@@ -1863,7 +1885,7 @@ steady rotations and specifying an aeroProblem')
 
         # NOTE: do dRdxvPsi MUST be done first since this
         # allocates spatial memory if required.
-        dIdxs_2 = self.getdRdXvPsi(objective, 'all')
+        dIdxs_2 = self.getdRdXvTPsi(objective, 'all')
 
         # Direct partial derivative contibution
         dIdxs_1 = self.getdIdx(objective, groupName='all')
@@ -2097,7 +2119,7 @@ steady rotations and specifying an aeroProblem')
         if finalNorm is not None:
             self.sumb.nksolvervars.finalNorm = finalNorm
 
-    def getdRdXvPsi(self, objective, groupName=None):
+    def getdRdXvTPsi(self, objective, groupName=None):
         """
         Compute the product of (dR/dXv)^T * psi for the objective
         given in 'objective'. If the mesh is present this will also
@@ -2123,8 +2145,8 @@ steady rotations and specifying an aeroProblem')
             raise Error('%s adjoint for current aeroProblem is not computed.'%
                     obj)
 
-        # Now call getdrdxvpsi WITH the psi vector:
-        dxvSolver = self.sumb.getdrdxvpsi(self.getSpatialSize(), psi)
+        # Now call getdrdxvtpsi WITH the psi vector:
+        dxvSolver = self.sumb.getdrdxvtpsi(self.getSpatialSize(), psi)
 
         # If we are doing a prescribed motion TS motion, we need to
         # convert this back to a single instance
@@ -2151,7 +2173,7 @@ steady rotations and specifying an aeroProblem')
         else:
             return False
 
-    def getdRdXvVec(self, inVec, groupName):
+    def getdRdXvTVec(self, inVec, groupName):
         """
         Compute the product of (dXv/dXs)^T * (dR/dXv)^T * inVec. It is
         assumed the mesh is present and groupName is defined.
@@ -2164,7 +2186,7 @@ steady rotations and specifying an aeroProblem')
             Family name to use to section out just part of dXs
             """
 
-        dxvSolver = self.sumb.getdrdxvpsi(self.getSpatialSize(), inVec)
+        dxvSolver = self.sumb.getdrdxvtpsi(self.getSpatialSize(), inVec)
         self.mesh.warpDeriv(dxvSolver)
         dxs = self.mesh.getdXs(groupName)
 
@@ -2655,6 +2677,7 @@ steady rotations and specifying an aeroProblem')
             'vis2coarse':[float, 0.5],
             'restrictionrelaxation':[float, .80],
             'liftindex':[int, 2],
+            'lowspeedpreconditioner':[bool, False],
 
             # Common Paramters
             'ncycles':[int, 500],
@@ -2864,6 +2887,7 @@ steady rotations and specifying an aeroProblem')
             'vis2coarse':{'location':'inputdiscretization.vis2coarse'},
             'restrictionrelaxation':{'location':'inputiteration.fcoll'},
             'forcesastractions':{'location':'inputphysics.forcesastractions'},
+            'lowspeedpreconditioner':{'location':'inputdiscretization.lowspeedpreconditioner'},
 
             # Common Paramters
             'ncycles':{'location':'inputiteration.ncycles'},
@@ -3032,7 +3056,7 @@ steady rotations and specifying an aeroProblem')
             'usereversemodead',
             'partitiononly',
             'liftindex'
-            ]
+             ]
 
         # Deprecated options. These should not be used, but old
         # scripts can continue to run
@@ -3078,6 +3102,7 @@ steady rotations and specifying an aeroProblem')
             'clqdot':'clqDot',
             'cbend':'cBend',
             'sepsensor':'sepsensor',
+            'cavitation':'cavitation',
             }
 
         possibleAeroDVs = {
@@ -3138,6 +3163,7 @@ steady rotations and specifying an aeroProblem')
             'clqDot':self.sumb.costfunctions.costfuncclqdot,
             'cBend':self.sumb.costfunctions.costfuncbendingcoef,
             'sepsensor':self.sumb.costfunctions.costfuncsepsensor,
+            'cavitation':self.sumb.costfunctions.costfunccavitation,
             }
 
         return possibleObjectives, possibleAeroDVs, sumbCostFunctions

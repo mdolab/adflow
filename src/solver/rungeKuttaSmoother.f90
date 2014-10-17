@@ -26,6 +26,7 @@
        use inputIteration
        use inputTimeSpectral
        use iteration
+       use inputDiscretization
        implicit none
 !
 !      Local variables.
@@ -121,6 +122,7 @@
        use inputTimeSpectral
        use inputUnsteady
        use iteration
+       use inputDiscretization
        implicit none
 !
 !      Local parameter.
@@ -222,8 +224,11 @@
 
                      ! Determine the local time step (multiplied by the
                      ! current rk coefficient).
-
-                     dt = tmp*dtl(i,j,k)
+                     if ( lowspeedpreconditioner) then
+                        dt = 0.8*tmp*dtl(i,j,k)
+                     else
+                        dt = tmp*dtl(i,j,k)
+                     end if
 
                      ! Compute the updates of the flow field variables.
 

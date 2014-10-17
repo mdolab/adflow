@@ -29,12 +29,11 @@ subroutine createPETScVars
   integer(kind=intType)  :: nDimW, nDimX, nDimPt, nDimCell
   integer(kind=intType) :: i, n_stencil, nState
   integer(kind=intType), dimension(:), allocatable :: nnzDiagonal, nnzOffDiag
-  integer(kind=intType), dimension(:), allocatable :: nnzDiagonal2, nnzOffDiag2
   integer(kind=intType), dimension(:, :), pointer :: stencil
-  integer(kind=intType) :: level, ierr, nlevels
+  integer(kind=intType) :: level, ierr
   integer(kind=intType) :: rows(4), iCol, nn, sps, ii
-  integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, iDim, iStride, j, mm
-  integer(kind=intType) :: npts, ncells, nTS
+  integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, iDim, j, mm
+  integer(kind=intType) :: npts, ncells
 
   ! DETERMINE ALL SIZES HERE!
   if ( frozenTurbulence ) then

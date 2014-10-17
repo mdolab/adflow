@@ -53,8 +53,8 @@ subroutine determineDistance2(level, sps)
 
   integer(kind=adtElementType), dimension(:), allocatable :: elementType
 
-  integer(kind=intType) :: nn, mm, ll, ii, jj, i, j, k, idim, faceID
-  real(kind=realType), dimension(3) :: xc,xp
+  integer(kind=intType) :: nn, mm, ll, i, j, k
+  real(kind=realType), dimension(3) :: xc
 
   integer(kind=intType), dimension(:), allocatable :: nFaceViscProc
   integer(kind=intType), dimension(:), allocatable :: cumFaceViscProc
@@ -281,9 +281,8 @@ subroutine determineDistance3(level, sps)
   !      Local variables.
   !
   integer :: ierr
-  integer, dimension(mpi_status_size) :: status
 
-  integer(kind=intType) :: nn, mm, ll, ii, jj, i, j, k, idim, index
+  integer(kind=intType) :: nn, ll, ii, i, j, k, idim, index
   integer(kind=intType) :: iProc, faceID
 
   real(kind=realType), dimension(3) :: xc, xp

@@ -29,8 +29,6 @@ subroutine updateCoordinatesAllLevels
   !      Local variables.
   !
   integer(kind=intType) :: nLevels, nn
-  !temporary!
-  integer(kind=intType) :: sps,i,j,k,n
   !
   !      ******************************************************************
   !      *                                                                *

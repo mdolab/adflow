@@ -275,6 +275,9 @@
 
           case(cgnsSepSensor)
              sortNumber(i) = 114
+   
+          case (cgnsCavitation)
+	     sortNumber(i) = 115
 
            case (cgnsHdiffMax)
              sortNumber(i) = 201

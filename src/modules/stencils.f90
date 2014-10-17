@@ -40,9 +40,10 @@ module stencils
 end module stencils
        
 subroutine initialize_stencils
-
+  
   use stencils
-  integer(kind=intType) :: i,j,k,counter
+  implicit none
+  integer(kind=intType) :: i,j,k,ii
 
   ! Euler PC Stencil
   euler_pc_stencil(1,:) = (/ 0, 0, 0 /)

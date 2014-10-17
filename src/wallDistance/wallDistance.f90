@@ -40,7 +40,7 @@
 !
        integer :: ierr
 
-       integer(kind=intType) :: sps, sps2, nn, ll, nLevels
+       integer(kind=intType) :: sps, sps2, ll, nLevels
        logical :: tempLogical 
        double precision :: t0
        character(len=3) :: integerString
