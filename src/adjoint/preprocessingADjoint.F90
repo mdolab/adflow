@@ -33,7 +33,7 @@ subroutine preprocessingADjoint
 
   !     Local variables.
   !
-  integer(kind=intType) :: ierr, level, ndimW, ndimS, nTS, ncell, nState, nDimPsi
+  integer(kind=intType) :: ndimW, ndimS, ncell, nState, nDimPsi
   !
   !     ******************************************************************
   !     *                                                                *

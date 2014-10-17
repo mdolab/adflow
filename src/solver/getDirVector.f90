@@ -47,7 +47,6 @@
 !     Local variables.
 !
       real(kind=realType) :: rnorm,x1,y1,z1,xbn,ybn,zbn,xw,yw,zw
-      real(kind=realType),dimension (3)::refDirectionNorm
       real(kind=realType) :: tmp
 !     ******************************************************************
 !     *                                                                *

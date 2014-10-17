@@ -8,7 +8,8 @@
 !      *                                                                *
 !      ******************************************************************
 !
-subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, Cavitation)
+subroutine forcesAndMomentsMask(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
+     mask, maskCount, nMask)
   !
   !      ******************************************************************
   !      *                                                                *
@@ -17,8 +18,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, Cavitation)
   !      * moment coefficients of the geometry. A distinction is made     *
   !      * between the inviscid and viscous parts. In case the maximum    *
   !      * yplus value must be monitored (only possible for rans), this   *
-  !      * value is also computed. The separation sensor and the cavita-  *
-  !      * tion sensor is also computed                                   *
+  !      * value is also computed. The separation sensor is also computed *
   !      * here.                                                          *
   !      ******************************************************************
   !
@@ -32,17 +32,19 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, Cavitation)
   !
   real(kind=realType), dimension(3), intent(out) :: cFp, cFv
   real(kind=realType), dimension(3), intent(out) :: cMp, cMv
+  integer(kind=intType), dimension(nMask), intent(in) :: mask
+  integer(kind=intType) :: maskCount, nMask
 
-  real(kind=realType), intent(out) :: yplusMax, sepSensor, Cavitation
+  real(kind=realType), intent(out) :: yplusMax, sepSensor
   !
   !      Local variables.
   !
-  integer(kind=intType) :: nn, i, j
+  integer(kind=intType) :: nn, i, j, isize, jsize
 
-  real(kind=realType) :: pm1, fx, fy, fz, fn, sigma
+  real(kind=realType) :: pm1, fx, fy, fz, fn
   real(kind=realType) :: xc, yc, zc
   real(kind=realType) :: fact, rho, mul, yplus, dwall
-  real(kind=realType) :: scaleDim, V(3), sensor, sensor1, Cp, tmp, plocal
+  real(kind=realType) :: scaleDim, V(3), sensor
   real(kind=realType) :: tauXx, tauYy, tauZz
   real(kind=realType) :: tauXy, tauXz, tauYz
 
@@ -84,7 +86,6 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, Cavitation)
 
   yplusMax = zero
   sepSensor = zero
-  Cavitation = zero
   ! Loop over the boundary subfaces of this block.
 
   bocos: do nn=1,nBocos
@@ -207,7 +208,8 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, Cavitation)
         ! jnBeg refer to nodal ranges and not to cell ranges.
 
         bcData(nn)%oArea(:,:) = zero
-
+        jsize = BCData(nn)%jnEnd - bcData(nn)%jnBeg
+        isize = BCData(nn)%inEnd - bcData(nn)%inBeg
         do j=(BCData(nn)%jnBeg+1),BCData(nn)%jnEnd
            do i=(BCData(nn)%inBeg+1),BCData(nn)%inEnd
 
@@ -220,6 +222,10 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, Cavitation)
               ! outward pointing normal.
 
               pm1 = fact*(half*(pp2(i,j) + pp1(i,j)) - pInf)*scaleDim
+
+              ! Account for the mask:
+              pm1 = pm1 * mask(maskCount)
+              maskCount = maskCount + 1
 
               xc = fourth*(xx(i,j,  1) + xx(i+1,j,  1) &
                    +         xx(i,j+1,1) + xx(i+1,j+1,1)) - refPoint(1)
@@ -263,25 +269,6 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, Cavitation)
               sensor = sensor * four * qA
               sepSensor = sepSensor + sensor
               bcData(nn)%sepSensor(i, j) = sensor
-    
-              plocal = pp2(i,j)
-		
-   	      tmp = two/(gammaInf*pInf*MachCoef*MachCoef)
-	      
-	      Cp = tmp*(plocal-pinf)
-	      Sigma = 1.4
-	      Sensor1 = -Cp - Sigma
-	      !IF (sense >= 0) THEN
-	      !Sensor = 1
-	      !ELSE 
-	      !Sensor = 0
-	      !END IF
-
-	      Sensor1 = one/(one+exp(-2*10*Sensor1))
-
-	      Sensor1 = Sensor1 * four * qA
-	      Cavitation = Cavitation + Sensor1
-	      bcData(nn)%Cavitation(i,j) = Sensor1
 
               ! Update the inviscid force and moment coefficients.
               cFp(1) = cFp(1) + fx
@@ -312,6 +299,9 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, Cavitation)
         !          **************************************************************
         !
         visForce: if( viscousSubface ) then
+
+           ! Rewind the maskCount
+           maskCount = maskCount - isize*jsize
 
            ! Initialize dwall for the laminar case and set the pointer
            ! for the unit normals.
@@ -345,6 +335,12 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, Cavitation)
                       +        tauYz*ss(i,j,3))*scaleDim
                  fz = -fact*(tauXz*ss(i,j,1) + tauYz*ss(i,j,2) &
                       +        tauZz*ss(i,j,3))*scaleDim
+
+                 ! Account for the mask
+                 fx = fx * mask(maskCount)
+                 fy = fy * mask(maskCount)
+                 fz = fz * mask(maskCount)
+                 maskCount = maskCount + 1
 
                  ! Compute the coordinates of the centroid of the face
                  ! relative from the moment reference point. Due to the
@@ -403,7 +399,6 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, Cavitation)
                  fz = fz - fn*norm(i,j,3)
 
 
-            
                  ! Compute the local value of y+. Due to the usage
                  ! of pointers there is on offset of -1 in dd2Wall..
 
@@ -451,4 +446,4 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, Cavitation)
   cMp(1) = cMp(1)*fact; cMp(2) = cMp(2)*fact; cMp(3) = cMp(3)*fact
   cMv(1) = cMv(1)*fact; cMv(2) = cMv(2)*fact; cMv(3) = cMv(3)*fact
 
-end subroutine forcesAndMoments
+end subroutine forcesAndMomentsMask

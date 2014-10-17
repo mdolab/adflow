@@ -78,8 +78,9 @@
       ! Data for dRda and dFMdExtra
       real(kind=realType), allocatable, dimension(:,:) :: dRda_data
       real(kind=realType), allocatable, dimension(:,:,:) :: dFMdExtra
-      integer(kind=intType), parameter :: nFM = 7
+      integer(kind=intType), parameter :: nFM = 8
       integer(kind=intTYpe), parameter:: iSepSensor = 7
+      integer(kind=intTYpe), parameter:: iCavitation = 8
       ! Logical identifying the type of PETSc matrix being used for dRdW
        logical :: PETScBlockMatrix
        

@@ -152,5 +152,10 @@
           nn = nn + 1
           solNames(nn) = cgnsSepSensor
        end if
+     
+       if (surfWriteCavitation) then
+          nn = nn + 1
+          solNames(nn) = cgnsCavitation
+       end if
 
        end subroutine surfSolNames

@@ -181,9 +181,11 @@ python module libsumb
        subroutine checkwriteunsteadyendloop ! in :sumb:../../solver/solverUnsteady.F90
        end subroutine checkwriteunsteadyendloop
 
-       subroutine getsolution(sps) ! in :sumb:../../adjoint/designExport.f90
-         integer(kind=inttype) intent(in) :: sps
-       end subroutine getsolution
+       subroutine getsolutionmask(sps,mask,nmask) ! in :test:getSolutionMask.f90
+         integer(kind=inttype) :: sps
+         integer(kind=inttype) dimension(nmask),intent(in) :: mask
+         integer(kind=inttype), optional,intent(in),check(len(mask)>=nmask),depend(mask) :: nmask=len(mask)
+        end subroutine getsolutionmask
 
        subroutine solverunsteadymd(mdcallback_python) ! in :test:solverUnsteadyMD.F90
          use solverunsteadymd__user__routines
@@ -376,12 +378,12 @@ python module libsumb
          integer(kind=inttype) optional,intent(in),check(len(res)>=ndimw),depend(res) :: ndimw=len(res)
        end subroutine getres
 
-       subroutine getdrdxvpsi(dxv,ndof,adjoint,nstate) ! in :test:getdRdXvPsi.F90
+       subroutine getdrdxvtpsi(dxv,ndof,adjoint,nstate) ! in :test:getdRdXvPsi.F90
          real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: dxv
          integer(kind=inttype) intent(in) :: ndof
          real(kind=realtype) dimension(nstate),intent(in) :: adjoint
          integer(kind=inttype) optional,intent(in),check(len(adjoint)>=nstate),depend(adjoint) :: nstate=len(adjoint)
-       end subroutine getdrdxvpsi
+       end subroutine getdrdxvtpsi
        
        subroutine spectralprecscribedmotion(input,nin,dxv,nout)
          real(kind=realtype) dimension(nin),intent(in) :: input
@@ -585,6 +587,7 @@ python module libsumb
          real(kind=realtype) :: sigma
          logical :: useapproxwalldistance
          logical :: updatewallassociation
+         logical :: lowspeedpreconditioner
        end module inputdiscretization
 
        module cgnsgrid
@@ -1016,6 +1019,7 @@ python module libsumb
             integer(kind=inttype) parameter,optional :: costfunccfyqdot=36
             integer(kind=inttype) parameter,optional :: costfuncbendingcoef=37
             integer(kind=inttype) parameter,optional :: costfuncsepsensor=38
+            integer(kind=inttype) parameter,optional :: costfunccavitation=39
        end module costfunctions
 
        module adjointpetsc ! in :sumb:ADjointPETSc.F90

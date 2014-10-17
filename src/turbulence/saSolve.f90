@@ -49,7 +49,7 @@
        real(kind=realType) :: xa, ya, za, ttm, ttp, cnud, cam, cap
        real(kind=realType) :: nutm, nutp, num, nup, cdm, cdp
        real(kind=realType) :: c1m, c1p, c10, b1, c1, d1, qs
-       real(kind=realType) :: uu, um, up, factor, f, tu1p, rblank
+       real(kind=realType) :: uu, um, up, factor, f, tu1p(1), rblank
 
        real(kind=realType), dimension(2:il,2:jl,2:kl)  :: qq
        real(kind=realType), dimension(2:max(kl,il,jl)) :: bb, cc, dd, ff
@@ -590,7 +590,7 @@
                   * viscSubface(nn)%utau(i,j)/rrlv(i,j)
 
                call curveTupYp(tu1p, yp, itu1, itu1)
-               ddvt(i,j,1) = tu1p*rrlv(i,j)/ww(i,j,irho) - ww(i,j,itu1)
+               ddvt(i,j,1) = tu1p(1)*rrlv(i,j)/ww(i,j,irho) - ww(i,j,itu1)
 
                ! Set the wall flag to .true.
 

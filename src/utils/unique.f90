@@ -32,9 +32,10 @@ subroutine unique(arr, nn, n_unique, inverse)
   integer(kind=intType), intent(out), dimension(nn) :: inverse
 
   ! Local Arguments
-  integer(kind=intType) :: temp_arr(nn), irngt(nn)
+  integer(kind=intType), dimension(:), allocatable :: temp_arr, irngt
   integer(kind=intType) :: i
 
+  allocate(temp_arr(nn), irngt(nn))
   ! Copy arr to temp array:
   temp_arr(:) = arr(:)
  
@@ -52,7 +53,7 @@ subroutine unique(arr, nn, n_unique, inverse)
   do i=n_unique+1,nn
      arr(i) = 0_intType
   end do
-
+  deallocate(temp_arr, irngt)
 end subroutine unique
 
 

@@ -32,7 +32,7 @@
 !
 !      Local variables.
 !
-       integer(kind=intType) :: nn, mm, sps, i, j, k,ii,jj
+       integer(kind=intType) :: nn, mm, sps, i, j, k
        integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, iiMax, jjMax
 
        real(kind=realType), dimension(:,:,:), pointer :: x0, x1, x2
