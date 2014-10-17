@@ -39,20 +39,18 @@
 !
        integer :: ierr, iConvStdout
 
-       integer(kind=intType) :: sps, nn, mm, iConv,ilevel
+       integer(kind=intType) :: sps, nn, mm, iConv
        integer(kind=intType) :: fTempMon=87 ! !eran-tempmon
 
        real(kind=realType) :: hdiffMax, MachMax
-       real(kind=realType) :: eddyvisMax, yplusMax, sepSensor
+       real(kind=realType) :: eddyvisMax, yplusMax, sepSensor, Cavitation
 
        real(kind=realType) :: L2ConvThisLevel
        real(kind=realType) :: L2ConvThisLevelRel
-       real(kind=realType) :: varStdMax
 
        real(kind=realType), dimension(3) :: cfp, cfv, cmp, cmv
 
-       integer(kind=intType) :: tempStartLevel,tempCurrentLevel,&
-            tempMGStartLevel
+       integer(kind=intType) :: tempCurrentLevel,tempMGStartLevel
 
        logical :: nanOccurred, writeIterations
        logical :: relNotConv,absNotConv
@@ -143,7 +141,7 @@
 
            ! Compute the forces and moments for this block.
 
-             call forcesAndMoments(cfp, cfv, cmp, cmv, yplusMax, sepSensor)
+             call forcesAndMoments(cfp, cfv, cmp, cmv, yplusMax, sepSensor, Cavitation)
 
 
            ! Determine the maximum values of the monitoring variables
@@ -255,6 +253,9 @@
                    
                 case (cgnsSepSensor)
                    monLoc(mm) = monLoc(mm) + sepSensor
+                case (cgnsCavitation)
+                   monLoc(mm) = monLoc(mm) + Cavitation
+
                 end select ! monNames(mm)
 
              end do nMonitoringVar

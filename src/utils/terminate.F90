@@ -147,8 +147,6 @@ subroutine EChk(ierr, file, line)
   integer(kind=intType),intent(in) :: ierr
   character*(*),intent(in) :: file
   integer(kind=intType),intent(in) :: line
-  integer(kind=intType) :: jerr
-
 
   if (ierr == 0) then
      return ! No error, return immediately

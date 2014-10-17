@@ -56,9 +56,8 @@ subroutine writeSlicesFile(fileName)
 
   ! Working parameters
   integer(kind=intType) :: file, i, sps, nSolVar
-  character(len=maxStringLen) :: fname, sliceName
+  character(len=maxStringLen) :: fname
   character(len=7) :: intString
-  real(kind=realType), dimension(3) :: pt, dir
   character(len=maxCGNSNameLen), dimension(:), allocatable :: solNames
   integer(kind=intType), dimension(:), allocatable :: mask
   integer(kind=intType) :: nMask
@@ -237,11 +236,10 @@ subroutine writeLiftDistributions(sps, fileID)
   real(kind=realType), dimension(3) :: xmin, xmax
   real(kind=realType), parameter :: tol=1e-8
   type(liftDist), pointer :: d
-  integer(kind=intType) :: i, ii, j, jj,iVar, iDist, sizes(6)
+  integer(kind=intType) :: i, j, ii, jj, iDist
   real(kind=realType), dimension(:,:), allocatable :: values
   character(len=maxCGNSNameLen), dimension(:), allocatable :: liftDistNames
   real(kind=realType) :: dmin, dmax, sumL, sumD, span, delta, xCur(3)
-  integer(kind=intType) :: patchIndices(4)
   call initializeLiftDistributionData
   call liftDistGatherForcesAndNodes(sps)
 
@@ -724,7 +722,6 @@ subroutine liftDistGatherForcesAndNodes(sps)
   integer(kind=intType) :: i, j, jj, ierr, nFields
   real(kind=realType), dimension(3) :: n1, n2, n3, n4, v1, v2, sss, qfp, qfv
   real(kind=realType) :: qa
-  logical :: forcesTypeSave
 
   ! First get and communicate the coordinates
 
@@ -847,7 +844,7 @@ subroutine createSlice(slc, pt, dir, mask, nmask, saveMask)
   integer(kind=intType) , intent(in) :: mask(nmask), nmask
   logical, intent(in) :: saveMask
   ! Working param
-  integer(kind=intType) :: i, j, nMax
+  integer(kind=intType) :: i, nMax
   integer(kind=intType) :: patchIndices(4), indexSquare, jj, kk, icon, iCoor, num1, num2
   real(kind=realType) :: f(4), d, ovrdnom
   logical :: logic1

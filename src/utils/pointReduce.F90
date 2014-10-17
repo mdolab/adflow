@@ -32,12 +32,12 @@ subroutine pointReduce(pts, N, tol, uniquePts, link, nUnique)
        use precision
        implicit none
 
-       real(kind=realType), dimension(:, :) :: pts
+       real(kind=realType), intent(in), dimension(:, :) :: pts
        integer(kind=intType), intent(in) :: N
        real(kind=realType), intent(in) :: tol
-       real(kind=realType), dimension(:, :) :: uniquePts
-       integer(kind=intType), dimension(:) :: link
-       integer(kind=intType) :: nUnique
+       real(kind=realType), intent(out), dimension(:, :) :: uniquePts
+       integer(kind=intType), intent(out), dimension(:) :: link
+       integer(kind=intType), intent(out) :: nUnique
      end subroutine pointReduceBruteForce
 
   end interface

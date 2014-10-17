@@ -70,6 +70,7 @@ FILES_TO_COMPLEXIFY = \
                farFieldDrag.f90\
 	       farFieldInducedDrag.f90\
 	       forcesAndMoments.F90\
+	       forcesAndMomentsMask.F90\
 	       forcesAndMomentsCBD.f90\
 	       farFieldDrag.f90\
 	       getDirAngle.f90\

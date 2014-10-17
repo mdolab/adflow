@@ -22,11 +22,11 @@ subroutine setupNKsolver
 #include "include/finclude/petsc.h"
 #include "include/petscversion.h"
   ! Working Variables
-  integer(kind=intType) :: ierr, nDimw, totalCells
+  integer(kind=intType) :: ierr, nDimw
   integer(kind=intType) , dimension(:), allocatable :: nnzDiagonal, nnzOffDiag
   integer(kind=intType) :: n_stencil
   integer(kind=intType), dimension(:, :), pointer :: stencil
-  integer(kind=intType) :: i, j, k, nn, i2, j2, k2, d2, l, sps, level
+  integer(kind=intType) :: level
   external FormFunction_mf
   external mykspmonitor
 

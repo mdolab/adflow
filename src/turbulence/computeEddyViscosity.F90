@@ -198,8 +198,8 @@
                utau = viscSubface(nn)%utau(i,j)
                yp = ww(i,j,irho)*dd2Wall(i-1,j-1)*utau/rrlv(i,j)
 
-             ! call curveTupYp(tup(itu5:itu5), yp, itu5, itu5)
-             ! rrev(i,j) = tup(itu5)*rrlv(i,j)
+               call curveTupYp(tup(itu5:itu5), yp, itu5, itu5)
+               rrev(i,j) = tup(itu5)*rrlv(i,j)
              enddo
            enddo
 

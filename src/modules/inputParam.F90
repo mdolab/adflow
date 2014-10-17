@@ -139,7 +139,7 @@
        !                         reassociate the face a cell is associated
        !                         with. 
        !                      
-
+       ! lowspeedpreconditoner:        Whether or not to use low-speed precondioner
 
        integer(kind=intType) :: spaceDiscr, spaceDiscrCoarse
        integer(kind=intType) :: orderTurb, limiter
@@ -163,7 +163,7 @@
 
        logical :: useApproxWallDistance
        logical :: updateWallAssociation
-
+       logical :: lowSpeedPreconditioner
        end module inputDiscretization
 
 !      ==================================================================
@@ -790,6 +790,7 @@
        !                               capable to do a restart in
        !                               unsteady mode.
        ! dtUnsteadyRestartSpectral:    The corresponding time step.
+
 
        real(kind=realType) :: dtUnsteadyRestartSpectral
        logical ::             writeUnsteadyRestartSpectral

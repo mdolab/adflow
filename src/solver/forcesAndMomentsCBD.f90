@@ -39,9 +39,9 @@
        integer(kind=intType) :: nn, i, j
        integer(kind=intType) :: nd, idWBCB ! eran-CBD
 
-       real(kind=realType) :: pm1, fx, fy, fz, fn
+       real(kind=realType) :: pm1, fx, fy, fz
        real(kind=realType) :: xc, yc, zc
-       real(kind=realType) :: fact, rho
+       real(kind=realType) :: fact
 
        real(kind=realType) :: tauXx, tauYy, tauZz
        real(kind=realType) :: tauXy, tauXz, tauYz

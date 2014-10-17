@@ -84,9 +84,6 @@ subroutine gridVelocitiesFineLevel_block(useOldCoor, t, sps)
 
   real(kind=realType), dimension(3) :: sc, xc, xxc
   real(kind=realType), dimension(3) :: rotCenter, rotRate
-  real(kind=realType), dimension(3) :: rotRateTemp
-  real(kind=realType), dimension(3) :: offsetVector
-  real(kind=realType), dimension(3,3) :: rotRateTrans
 
   real(kind=realType), dimension(3)   :: rotationPoint
   real(kind=realType), dimension(3,3) :: rotationMatrix,&
@@ -101,7 +98,7 @@ subroutine gridVelocitiesFineLevel_block(useOldCoor, t, sps)
   integer(kind=intType) :: liftIndex
   real(kind=realType) :: alpha,beta,intervalMach,alphaTS,alphaIncrement,&
        betaTS,betaIncrement
-  real(kind=realType), dimension(3) ::velDir,liftDir,dragDir
+  real(kind=realType), dimension(3) ::velDir
   real(kind=realType), dimension(3) :: refDirection
  
   !Function Definitions

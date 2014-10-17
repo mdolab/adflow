@@ -36,8 +36,6 @@ subroutine solverUnsteadyMD(mdcallback_python)
   
   logical :: EulerWallsPresent
   integer(kind=intType) :: iter, nTimeSteps
-  real(kind=realType), dimension(nSections) :: tNewSec, deltaTSec
-  real(kind=realType) :: temp
   integer(kind=intType) :: i,j,k,nn,kk
   external mdcallback_python
 

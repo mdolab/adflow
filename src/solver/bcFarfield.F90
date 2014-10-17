@@ -40,9 +40,6 @@
        real(kind=realType) :: re, ue, ve, we, qne, ce
        real(kind=realType) :: qnf, cf, uf, vf, wf, sf, cc, qq
 
-       ! Variables Added for forward AD
-       real(kind=realType) :: rho,sf2
-
        real(kind=realType), dimension(:,:,:), pointer :: ww1, ww2
        real(kind=realType), dimension(:,:),   pointer :: pp1, pp2
        real(kind=realType), dimension(:,:),   pointer :: gamma2

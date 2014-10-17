@@ -86,6 +86,7 @@
                             BCData(mm)%FMNodeIndex(inodeBeg:inodeEnd, jnodeBeg:jnodeEnd), &
                             BCData(mm)%FMCellIndex(iBeg:iEnd, jBeg:jEnd), &
                             BCData(mm)%sepSensor(iBeg:iEnd, jBeg:jEnd), &
+                            BCData(mm)%Cavitation(iBeg:iEnd, jBeg:jEnd), &
                             stat=ierr)
                    if(ierr /= 0)                      &
                      call terminate("allocMemBCData", &
@@ -107,6 +108,7 @@
                             BCData(mm)%FMNodeIndex(inodeBeg:inodeEnd, jnodeBeg:jnodeEnd), &
                             BCData(mm)%FMCellIndex(iBeg:iEnd, jBeg:jEnd), &
                             BCData(mm)%sepSensor(iBeg:iEnd, jBeg:jEnd), &
+                            BCData(mm)%Cavitation(iBeg:iEnd, jBeg:jEnd), &
                             stat=ierr)
                    if(ierr /= 0)                      &
                      call terminate("allocMemBCData", &
@@ -127,6 +129,7 @@
                             BCData(mm)%FMNodeIndex(inodeBeg:inodeEnd, jnodeBeg:jnodeEnd), &
                             BCData(mm)%FMCellIndex(iBeg:iEnd, jBeg:jEnd), &
                             BCData(mm)%sepSensor(iBeg:iEnd, jBeg:jEnd), &
+                            BCData(mm)%Cavitation(iBeg:iEnd, jBeg:jEnd), &
                             stat=ierr)
                    if(ierr /= 0)                      &
                      call terminate("allocMemBCData", &

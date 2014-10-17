@@ -79,7 +79,7 @@ subroutine timeStep_block(onlyRadii)
   !
   !      Local variables.
   !
-  integer(kind=intType) :: sps, nn, i, j, k
+  integer(kind=intType) :: i, j, k
 
   real(kind=realType) :: plim, rlim, clim2
   real(kind=realType) :: ux, uy, uz, cc2, qs, sx, sy, sz, rmu

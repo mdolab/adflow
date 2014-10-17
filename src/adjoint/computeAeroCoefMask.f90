@@ -8,7 +8,7 @@
 !     *                                                                *
 !     ******************************************************************
 !
-subroutine computeAeroCoef(globalCFVals,sps)
+subroutine computeAeroCoefMask(globalCFVals,sps, mask, nmask)
   !
   !     ******************************************************************
   !     *                                                                *
@@ -29,15 +29,16 @@ subroutine computeAeroCoef(globalCFVals,sps)
   implicit none
 
   ! Input/Ouput Variables
-  integer(kind=intType), intent(in) :: sps
+  integer(kind=intType), intent(in) :: sps, nmask
   real(kind=realType), intent(out), dimension(nCostFunction)::globalCFVals
-
+  integer(kind=intType), intent(in), dimension(nmask) :: mask
   !      Local variables.
   integer(kind=intType) :: nn, ierr
   real(kind=realType) :: force(3), cforce(3), Lift, Drag, CL, CD
   real(kind=realType) :: Moment(3),cMoment(3), fact, scaleDim
-  real(kind=realType) :: cFp(3), cFv(3), cMp(3), cMv(3), yPlusMax, sepSensor, Cavitation
+  real(kind=realType) :: cFp(3), cFv(3), cMp(3), cMv(3), yPlusMax, sepSensor
   real(kind=realType), dimension(nCostFunction)::localCFVals
+  integer(kind=intType) :: maskCount
 
   !     ******************************************************************
   !     *                                                                *
@@ -48,10 +49,12 @@ subroutine computeAeroCoef(globalCFVals,sps)
   !Zero the summing variable
   localCFVals(:) = 0.0
   globalCFVals(:) = 0.0
+  maskCount = 1
   domains: do nn=1,nDom
      call setPointers(nn,1_intType,sps)
-     
-     call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, Cavitation)
+     call forcesAndMomentsMask(cFp, cFv, cMp, cMv, yplusMax, sepSensor,&
+          mask, maskCount, nMask)
+
      scaleDim = pRef/pInf
 
      ! Sum pressure and viscous contributions
@@ -95,11 +98,10 @@ subroutine computeAeroCoef(globalCFVals,sps)
      localCFVals(costFuncMomYCoef) = localCFVals(costFuncMomYCoef) + cmoment(2)
      localCFVals(costFuncMomZCoef) = localCFVals(costFuncMomZCoef) + cmoment(3)
      localCFVals(costFuncSepSensor) = localCFVals(costFuncSepSensor) + sepSensor
-     localCFVals(costFuncCavitation) = localCFVals(costFuncCavitation) + Cavitation
   end do domains
 
   ! Now we will mpi_allReduce them into globalCFVals
   call mpi_allreduce(localCFVals, globalCFVals, nCostFunction, sumb_real, &
        mpi_sum, SUmb_comm_world, ierr)
 
-end subroutine computeAeroCoef
+end subroutine computeAeroCoefMask

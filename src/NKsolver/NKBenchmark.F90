@@ -39,9 +39,9 @@ subroutine NKBenchmark(NKRes,niter)
   integer(kind=intType), intent(in) :: niter
 
   ! Working
-  integer(kind=intType) :: iter,i,ierr
+  integer(kind=intType) :: iter, ierr
   real(kind=realType) :: timeA,timeB,timeX,timeY
-  real(kind=realType) :: haloTime,resTime,totalTime
+  real(kind=realType) :: resTime, totalTime
   real(kind=realType),dimension(:), allocatable :: all_times
   ! Setup NK solver in case it isn't already done:
   call setupNKsolver
