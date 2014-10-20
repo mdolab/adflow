@@ -40,6 +40,7 @@
 
        real(kind=realType) :: vn, nnx, nny, nnz
 
+#ifndef TAPENADE_REVERSE
        real(kind=realType), dimension(:,:,:), pointer :: ww1, ww2
        real(kind=realType), dimension(:,:),   pointer :: pp1, pp2
        real(kind=realType), dimension(:,:),   pointer :: gamma1, gamma2
@@ -60,7 +61,47 @@
            real(kind=realType), dimension(:,:),   pointer :: rlv1, rlv2
            real(kind=realType), dimension(:,:),   pointer :: rev1, rev2
          end subroutine setBcPointers
+
+        subroutine resetBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
+                                  rev1, rev2, offset)
+           use blockPointers
+           implicit none
+
+           integer(kind=intType), intent(in) :: nn, offset
+           real(kind=realType), dimension(:,:,:), pointer :: ww1, ww2
+           real(kind=realType), dimension(:,:),   pointer :: pp1, pp2
+           real(kind=realType), dimension(:,:),   pointer :: rlv1, rlv2
+           real(kind=realType), dimension(:,:),   pointer :: rev1, rev2
+         end subroutine resetBCPointers
+
+        subroutine setgamma(nn, gamma1, gamma2)
+
+           use BCTypes
+           use blockPointers
+           implicit none
+
+           integer(kind=intType), intent(in) :: nn
+           real(kind=realType), dimension(:,:),   pointer :: gamma1, gamma2
+         end subroutine setgamma
+
+        subroutine resetgamma(nn, gamma1, gamma2)
+
+           use BCTypes
+           use blockPointers
+           implicit none
+
+           integer(kind=intType), intent(in) :: nn
+           real(kind=realType), dimension(:,:),   pointer :: gamma1, gamma2
+         end subroutine resetgamma
        end interface
+#else
+       real(kind=realType), dimension(imaxDim,jmaxDim,nw) :: ww1, ww2
+       real(kind=realType), dimension(imaxDim,jmaxDim) :: pp1, pp2
+       real(kind=realType), dimension(imaxDim,jmaxDim) :: gamma1, gamma2
+       real(kind=realType), dimension(imaxDim,jmaxDim) :: rlv1, rlv2
+       real(kind=realType), dimension(imaxDim,jmaxDim) :: rev1, rev2
+#endif
+
 !
 !      ******************************************************************
 !      *                                                                *
@@ -91,26 +132,35 @@
               !nullify(ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2)
 
              ! Set the pointers to the correct subface.
+#ifndef TAPENADE_REVERSE
+           call setBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
+                              rev1, rev2, mm)
+#else
+           call setBCPointersBwd(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
+                rev1, rev2, mm)
+#endif
 
-             call setBcPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
-                                rev1, rev2, mm)
+           ! Set the additional pointers for gamma1 and gamma2.
+#ifndef TAPENADE_REVERSE
+               call setgamma(nn, gamma1, gamma2)
+#else
+               call setgammaBwd(nn, gamma1, gamma2)
+#endif
 
-             ! Set the additional pointers for gamma1 and gamma2.
-
-             select case (BCFaceID(nn))
-               case (iMin)
-                 gamma1 => gamma(1, 1:,1:); gamma2 => gamma(2, 1:,1:)
-               case (iMax)
-                 gamma1 => gamma(ie,1:,1:); gamma2 => gamma(il,1:,1:)
-               case (jMin)
-                 gamma1 => gamma(1:,1, 1:); gamma2 => gamma(1:,2, 1:)
-               case (jMax)
-                 gamma1 => gamma(1:,je,1:); gamma2 => gamma(1:,jl,1:)
-               case (kMin)
-                 gamma1 => gamma(1:,1:,1 ); gamma2 => gamma(1:,1:,2 )
-               case (kMax)
-                 gamma1 => gamma(1:,1:,ke); gamma2 => gamma(1:,1:,kl)
-             end select
+!!$             select case (BCFaceID(nn))
+!!$               case (iMin)
+!!$                 gamma1 => gamma(1, 1:,1:); gamma2 => gamma(2, 1:,1:)
+!!$               case (iMax)
+!!$                 gamma1 => gamma(ie,1:,1:); gamma2 => gamma(il,1:,1:)
+!!$               case (jMin)
+!!$                 gamma1 => gamma(1:,1, 1:); gamma2 => gamma(1:,2, 1:)
+!!$               case (jMax)
+!!$                 gamma1 => gamma(1:,je,1:); gamma2 => gamma(1:,jl,1:)
+!!$               case (kMin)
+!!$                 gamma1 => gamma(1:,1:,1 ); gamma2 => gamma(1:,1:,2 )
+!!$               case (kMax)
+!!$                 gamma1 => gamma(1:,1:,ke); gamma2 => gamma(1:,1:,kl)
+!!$             end select
 
              ! Loop over the generic subface to set the state in the
              ! halo cells.
@@ -159,6 +209,21 @@
                enddo
              enddo
 
+#ifndef TAPENADE_REVERSE
+               call resetgamma(nn, gamma1, gamma2)
+#else
+               call resetgammaBwd(nn, gamma1, gamma2)
+#endif
+
+          ! deallocation all pointer
+#ifndef TAPENADE_REVERSE
+           call resetBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
+                              rev1, rev2, 0)
+#else
+!           call resetNormRfaceBwd(nn,norm,rface)
+           call resetBCPointersBwd(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
+                rev1, rev2, 0)
+#endif
            endif symmetry
          enddo bocos
        enddo nHalo
