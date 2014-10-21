@@ -143,7 +143,6 @@
        call setww0pp0rlv0rev0Bwd(nn, idim, ddim, ww0, pp0, rlv0, rev0)
 #endif
 
-
        ! Loop over the generic subface to set the state in the halo's.
 
        do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd

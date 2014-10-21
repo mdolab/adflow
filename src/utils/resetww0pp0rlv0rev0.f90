@@ -33,6 +33,6 @@
 !
        ! Determine the face id on which the subface is located and set
        ! the pointers accordinly.
-       nullify(ww0, pp0, rlv0, rev0)
+       !nullify(ww0, pp0, rlv0, rev0)
 
        end subroutine resetww0pp0rlv0rev0

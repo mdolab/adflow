@@ -2,9 +2,9 @@
 !      ******************************************************************
 !      *                                                                *
 !      * File:          setww0pp0rlv0rev0Bwd.f90                        *
-!      * Author:        Eirikur Jonsson                                 *
-!      * Starting date: 10-14-2014                                      *
-!      * Last modified: 10-14-2014                                      *
+!      * Author:        Peter Zhoujie Lyu                               *
+!      * Starting date: 10-21-2014                                      *
+!      * Last modified: 10-21-2014                                      *
 !      *                                                                *
 !      ******************************************************************
 !
@@ -38,39 +38,45 @@
        select case (BCFaceID(nn))
 
          case (iMin)
-           ww0 = w(0,1:,1:,:); pp0 = p(0,1:,1:)
-           if( viscous )   rlv0 = rlv(0,1:,1:)
-           if( eddyModel ) rev0 = rev(0,1:,1:)
+           ww0(1:je,1:ke,:) = w(0,1:je,1:ke,:)
+           pp0(1:je,1:ke) = p(0,1:je,1:ke)
+           if( viscous )   rlv0(1:je,1:ke) = rlv(0,1:je,1:ke)
+           if( eddyModel ) rev0(1:je,1:ke) = rev(0,1:je,1:ke)
            idim = 1; ddim = 0
 
          case (iMax)
-           ww0 = w(ib,1:,1:,:); pp0 = p(ib,1:,1:)
-           if( viscous )   rlv0 = rlv(ib,1:,1:)
-           if( eddyModel ) rev0 = rev(ib,1:,1:)
+           ww0(1:je,1:ke,:) = w(ib,1:je,1:ke,:)
+           pp0(1:je,1:ke) = p(ib,1:je,1:ke)
+           if( viscous )   rlv0(1:je,1:ke) = rlv(ib,1:je,1:ke)
+           if( eddyModel ) rev0(1:je,1:ke) = rev(ib,1:je,1:ke)
            idim = 1; ddim = ib
 
          case (jMin)
-           ww0 = w(1:,0,1:,:); pp0 = p(1:,0,1:)
-           if( viscous )   rlv0 = rlv(1:,0,1:)
-           if( eddyModel ) rev0 = rev(1:,0,1:)
+           ww0(1:ie,1:ke,:) = w(1:ie,0,1:ke,:)
+           pp0(1:ie,1:ke) = p(1:ie,0,1:ke)
+           if( viscous )   rlv0(1:ie,1:ke) = rlv(1:ie,0,1:ke)
+           if( eddyModel ) rev0(1:ie,1:ke) = rev(1:ie,0,1:ke)
            idim = 2; ddim = 0
 
          case (jMax)
-           ww0 = w(1:,jb,1:,:); pp0 = p(1:,jb,1:)
-           if( viscous )   rlv0 = rlv(1:,jb,1:)
-           if( eddyModel ) rev0 = rev(1:,jb,1:)
+           ww0(1:ie,1:ke,:) = w(1:ie,jb,1:ke,:)
+           pp0(1:ie,1:ke) = p(1:ie,jb,1:ke)
+           if( viscous )   rlv0(1:ie,1:ke) = rlv(1:ie,jb,1:ke)
+           if( eddyModel ) rev0(1:ie,1:ke) = rev(1:ie,jb,1:ke)
            idim = 2; ddim = jb
 
          case (kMin)
-           ww0 = w(1:,1:,0,:); pp0 = p(1:,1:,0)
-           if( viscous )   rlv0 = rlv(1:,1:,0)
-           if( eddyModel ) rev0 = rev(1:,1:,0)
+           ww0(1:ie,1:je,:) = w(1:ie,1:je,0,:)
+           pp0(1:ie,1:je) = p(1:ie,1:je,0)
+           if( viscous )   rlv0(1:ie,1:je) = rlv(1:ie,1:je,0)
+           if( eddyModel ) rev0(1:ie,1:je) = rev(1:ie,1:je,0)
            idim = 3; ddim = 0
 
          case (kMax)
-           ww0 = w(1:,1:,kb,:); pp0 = p(1:,1:,kb)
-           if( viscous )   rlv0 = rlv(1:,1:,kb)
-           if( eddyModel ) rev0 = rev(1:,1:,kb)
+           ww0(1:ie,1:je,:) = w(1:ie,1:je,kb,:)
+           pp0(1:ie,1:je) = p(1:ie,1:je,kb)
+           if( viscous )   rlv0(1:ie,1:je) = rlv(1:ie,1:je,kb)
+           if( eddyModel ) rev0(1:ie,1:je) = rev(1:ie,1:je,kb)
            idim = 3; ddim = kb
 
        end select
