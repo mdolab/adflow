@@ -204,11 +204,10 @@
           ! deallocation all pointer
 #ifndef TAPENADE_REVERSE
            call resetBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
-                              rev1, rev2, 0)
+                              rev1, rev2, mm)
 #else
-!           call resetNormRfaceBwd(nn,norm,rface)
            call resetBCPointersBwd(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
-                rev1, rev2, 0)
+                rev1, rev2, mm)
 #endif
            endif symmetry
          enddo bocos

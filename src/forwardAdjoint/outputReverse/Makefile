@@ -42,6 +42,7 @@ FF90_OBJECTS =  computeetot_b.o\
 		timestep_block_b.o\
 		bceulerwall_b.o\
 		bcfarfield_b.o\
+		bcsymm_b.o\
 		invisciddissfluxscalar_b.o\
 		dim_b.o\
 		block_res_b.o  \
