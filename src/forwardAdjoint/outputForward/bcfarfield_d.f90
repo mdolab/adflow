@@ -3,7 +3,7 @@
    !
    !  Differentiation of bcfarfield in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *p *w *rlv
-   !   with respect to varying inputs: *p *gamma *w *rlv
+   !   with respect to varying inputs: *p *w *rlv
    !   Plus diff mem management of: p:in gamma:in w:in rlv:in
    !
    !      ******************************************************************
@@ -40,7 +40,7 @@
    !
    !      Local variables.
    !
-   INTEGER(kind=inttype) :: nn, i, j, l
+   INTEGER(kind=inttype) :: nn, i, j, k, l
    REAL(kind=realtype) :: nnx, nny, nnz
    REAL(kind=realtype) :: gm1, ovgm1, ac1, ac2
    REAL(kind=realtype) :: ac1d, ac2d
@@ -147,6 +147,7 @@
    c0 = SQRT(arg1)
    pwr1 = winf(irho)**gammainf
    s0 = pwr1/pinfcorr
+   gammad = 0.0_8
    ! Loop over the boundary condition subfaces of this block.
    bocos:DO nn=1,nbocos
    ! Check for farfield boundary conditions.
@@ -311,16 +312,16 @@
    IF (eddymodel) rev1(i, j) = rev2(i, j)
    END DO
    END DO
+   CALL RESETGAMMA(nn, gamma1, gamma2)
+   ! deallocation all pointer
+   CALL RESETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, &
+   &                       rev2, 0)
    ! Compute the energy for these halo's.
    CALL COMPUTEETOT_D(icbeg(nn), icend(nn), jcbeg(nn), jcend(nn), &
    &                  kcbeg(nn), kcend(nn), correctfork)
    ! Extrapolate the state vectors in case a second halo
    ! is needed.
    IF (secondhalo) CALL EXTRAPOLATE2NDHALO_D(nn, correctfork)
-   CALL RESETGAMMA(nn, gamma1, gamma2)
-   ! deallocation all pointer
-   CALL RESETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, &
-   &                       rev2, 0)
    END IF
    END DO bocos
    END SUBROUTINE BCFARFIELD_D

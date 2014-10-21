@@ -52,7 +52,6 @@
    INTRINSIC MAX
    INTRINSIC MIN
    REAL(kind=realtype) :: DIM
-   REAL(kind=realtype) :: DIM_D
    REAL(kind=realtype) :: pwr1
    REAL(kind=realtype) :: min6
    REAL(kind=realtype) :: min5

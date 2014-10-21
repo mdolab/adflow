@@ -51,7 +51,7 @@
        select case (cpModel)
 
          case (cpConstant)
-
+            
            ! Constant cp and thus constant gamma.
            ! Abbreviate 1/(gamma -1) a bit easier.
 
@@ -59,14 +59,15 @@
 
            ! Loop over the given range of the block and compute the first
            ! step of the energy.
-          
+           
            do k=kStart,kEnd
              do j=jStart,jEnd
                do i=iStart,iEnd
-                 w(i,j,k,irhoE) = ovgm1*p(i,j,k) &
-                                + half*w(i,j,k,irho)*(w(i,j,k,ivx)**2 &
-                                +                     w(i,j,k,ivy)**2 &
-                                +                     w(i,j,k,ivz)**2)
+
+                 w(i,j,k,irhoE) = p(i,j,k)!ovgm1*p(i,j,k) &
+                              !  + half*w(i,j,k,irho)*(w(i,j,k,ivx)**2 &
+                              !  +                     w(i,j,k,ivy)**2 &
+                              !  +                     w(i,j,k,ivz)**2)
                enddo
              enddo
            enddo

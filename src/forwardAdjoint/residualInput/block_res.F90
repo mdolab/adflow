@@ -118,8 +118,8 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
 
   !  Apply all BC's
   !call applyAllBC_block(.True.)
-  call bcEulerWall(.True., .False.)
-  !call bcFarfield(.True., .False.)
+  !call bcEulerWall(.True., .False.)
+  call bcFarfield(.True., .False.)
 
   ! Compute skin_friction Velocity (only for wall Functions)
 ! #ifndef TAPENADE_REVERSE

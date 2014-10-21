@@ -3,7 +3,7 @@
    !
    !  Differentiation of bcfarfield in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
    !   gradient     of useful results: *p *w *rlv
-   !   with respect to varying inputs: *p *gamma *w *rlv
+   !   with respect to varying inputs: *p *w *rlv
    !   Plus diff mem management of: p:in gamma:in w:in rlv:in
    !
    !      ******************************************************************
@@ -40,7 +40,7 @@
    !
    !      Local variables.
    !
-   INTEGER(kind=inttype) :: nn, i, j, l
+   INTEGER(kind=inttype) :: nn, i, j, k, l
    REAL(kind=realtype) :: nnx, nny, nnz
    REAL(kind=realtype) :: gm1, ovgm1, ac1, ac2
    REAL(kind=realtype) :: ac1b, ac2b
@@ -218,6 +218,13 @@
    END DO
    CALL PUSHINTEGER4(j - 1)
    CALL PUSHINTEGER4(ad_from0)
+   CALL RESETGAMMABWD(nn, gamma1, gamma2)
+   ! deallocation all pointer
+   CALL PUSHREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4)&
+   &                  )
+   CALL PUSHREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
+   CALL RESETBCPOINTERSBWD(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
+   &                          rev1, rev2, 0)
    ! Compute the energy for these halo's.
    CALL PUSHREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4)&
    &                  )
@@ -232,19 +239,12 @@
    CALL PUSHREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
    CALL PUSHREAL8ARRAY(rev, SIZE(rev, 1)*SIZE(rev, 2)*SIZE(rev, 3))
    CALL EXTRAPOLATE2NDHALO(nn, correctfork)
-   CALL PUSHCONTROL1B(0)
+   CALL PUSHCONTROL2B(2)
    ELSE
-   CALL PUSHCONTROL1B(1)
+   CALL PUSHCONTROL2B(1)
    END IF
-   CALL RESETGAMMABWD(nn, gamma1, gamma2)
-   ! deallocation all pointer
-   !           call resetNormRfaceBwd(nn,norm,rface)
-   CALL PUSHREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
-   CALL RESETBCPOINTERSBWD(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
-   &                          rev1, rev2, 0)
-   CALL PUSHCONTROL1B(1)
    ELSE
-   CALL PUSHCONTROL1B(0)
+   CALL PUSHCONTROL2B(0)
    END IF
    END DO bocos
    gammab = 0.0_8
@@ -257,15 +257,9 @@
    ww1b = 0.0_8
    ww2b = 0.0_8
    DO nn=nbocos,1,-1
-   CALL POPCONTROL1B(branch)
+   CALL POPCONTROL2B(branch)
    IF (branch .NE. 0) THEN
-   CALL POPREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
-   CALL RESETBCPOINTERSBWD_B(nn, ww1, ww1b, ww2, ww2b, pp1, pp1b, pp2&
-   &                         , pp2b, rlv1, rlv1b, rlv2, rlv2b, rev1, rev2, &
-   &                         0)
-   CALL RESETGAMMABWD_B(nn, gamma1, gamma1b, gamma2, gamma2b)
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
+   IF (branch .NE. 1) THEN
    CALL POPREAL8ARRAY(rev, SIZE(rev, 1)*SIZE(rev, 2)*SIZE(rev, 3))
    CALL POPREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
    CALL POPREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4&
@@ -276,6 +270,12 @@
    CALL POPREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4))
    CALL COMPUTEETOT_B(icbeg(nn), icend(nn), jcbeg(nn), jcend(nn), &
    &                  kcbeg(nn), kcend(nn), correctfork)
+   CALL POPREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
+   CALL POPREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4))
+   CALL RESETBCPOINTERSBWD_B(nn, ww1, ww1b, ww2, ww2b, pp1, pp1b, pp2&
+   &                         , pp2b, rlv1, rlv1b, rlv2, rlv2b, rev1, rev2, &
+   &                         0)
+   CALL RESETGAMMABWD_B(nn, gamma1, gamma1b, gamma2, gamma2b)
    CALL POPINTEGER4(ad_from0)
    CALL POPINTEGER4(ad_to0)
    DO j=ad_to0,ad_from0,-1

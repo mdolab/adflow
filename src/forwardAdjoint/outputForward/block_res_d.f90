@@ -147,7 +147,7 @@
    CALL COMPUTEEDDYVISCOSITY()
    !  Apply all BC's
    !call applyAllBC_block(.True.)
-   CALL BCEULERWALL_D(.true., .false.)
+   !call bcEulerWall(.True., .False.)
    CALL BCFARFIELD_D(.true., .false.)
    ! Compute skin_friction Velocity (only for wall Functions)
    ! #ifndef TAPENADE_REVERSE

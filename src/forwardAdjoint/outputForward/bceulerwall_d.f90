@@ -2,9 +2,9 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of bceulerwall in forward (tangent) mode (with options i4 dr8 r8):
-   !   variations   of useful results: *p *gamma *w *rlv
+   !   variations   of useful results: *p *w *rlv
    !   with respect to varying inputs: *p *w *rlv
-   !   Plus diff mem management of: p:in gamma:in w:in rlv:in
+   !   Plus diff mem management of: p:in w:in rlv:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -155,12 +155,7 @@
    ! Make sure that on the coarser grids the constant pressure
    ! boundary condition is used.
    walltreatment = wallbctreatment
-   IF (currentlevel .GT. groundlevel) THEN
-   walltreatment = constantpressure
-   gammad = 0.0_8
-   ELSE
-   gammad = 0.0_8
-   END IF
+   IF (currentlevel .GT. groundlevel) walltreatment = constantpressure
    ! Loop over the boundary condition subfaces of this block.
    bocos:DO nn=1,nbocos
    ! Check for Euler wall boundary condition.

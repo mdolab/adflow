@@ -422,16 +422,6 @@
              enddo
            enddo
 
-           ! Compute the energy for these halo's.
-
-           call computeEtot(icBeg(nn),icEnd(nn), jcBeg(nn),jcEnd(nn), &
-                            kcBeg(nn),kcEnd(nn), correctForK)
-
-           ! Extrapolate the state vectors in case a second halo
-           ! is needed.
-
-           if( secondHalo ) call extrapolate2ndHalo(nn, correctForK)
-
            ! deallocation all pointer
 #ifndef TAPENADE_REVERSE
            call resetBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
@@ -442,7 +432,16 @@
                 rev1, rev2, 0)
 #endif
 
-         
+           ! Compute the energy for these halo's.
+
+           call computeEtot(icBeg(nn),icEnd(nn), jcBeg(nn),jcEnd(nn), &
+                            kcBeg(nn),kcEnd(nn), correctForK)
+
+           ! Extrapolate the state vectors in case a second halo
+           ! is needed.
+
+           if( secondHalo ) call extrapolate2ndHalo(nn, correctForK)
+  
         endif invWall
        enddo bocos
 

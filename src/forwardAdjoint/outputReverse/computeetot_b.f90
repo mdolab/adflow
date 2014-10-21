@@ -46,13 +46,7 @@
    INTEGER(kind=inttype) :: i, j, k
    REAL(kind=realtype) :: ovgm1, factk, scale
    REAL(kind=realtype) :: tmp
-   REAL(kind=realtype) :: tmp0
-   REAL(kind=realtype) :: temp1
-   REAL(kind=realtype) :: temp0
    REAL(kind=realtype) :: tmpb
-   REAL(kind=realtype) :: tmpb0
-   REAL(kind=realtype) :: tempb
-   REAL(kind=realtype) :: temp
    !      ******************************************************************
    !      *                                                                *
    !      * Begin execution                                                *
@@ -70,13 +64,14 @@
    DO k=kstart,kend
    DO j=jstart,jend
    DO i=istart,iend
-   tmp = ovgm1*p(i, j, k) + half*w(i, j, k, irho)*(w(i, j, k, ivx&
-   &           )**2+w(i, j, k, ivy)**2+w(i, j, k, ivz)**2)
-   CALL PUSHREAL8(w(i, j, k, irhoe))
-   w(i, j, k, irhoe) = tmp
+   !ovgm1*p(i,j,k) &
+   w(i, j, k, irhoe) = p(i, j, k)
    END DO
    END DO
    END DO
+   !  + half*w(i,j,k,irho)*(w(i,j,k,ivx)**2 &
+   !  +                     w(i,j,k,ivy)**2 &
+   !  +                     w(i,j,k,ivz)**2)
    ! Second step. Correct the energy in case a turbulent kinetic
    ! energy is present.
    IF (correctfork) THEN
@@ -84,10 +79,10 @@
    DO k=kstart,kend
    DO j=jstart,jend
    DO i=istart,iend
-   tmp0 = w(i, j, k, irhoe) - factk*w(i, j, k, irho)*w(i, j, k&
-   &             , itu1)
+   tmp = w(i, j, k, irhoe) - factk*w(i, j, k, irho)*w(i, j, k, &
+   &             itu1)
    CALL PUSHREAL8(w(i, j, k, irhoe))
-   w(i, j, k, irhoe) = tmp0
+   w(i, j, k, irhoe) = tmp
    END DO
    END DO
    END DO
@@ -95,12 +90,12 @@
    DO j=jend,jstart,-1
    DO i=iend,istart,-1
    CALL POPREAL8(w(i, j, k, irhoe))
-   tmpb0 = wb(i, j, k, irhoe)
-   wb(i, j, k, irhoe) = tmpb0
+   tmpb = wb(i, j, k, irhoe)
+   wb(i, j, k, irhoe) = tmpb
    wb(i, j, k, irho) = wb(i, j, k, irho) - factk*w(i, j, k, &
-   &             itu1)*tmpb0
+   &             itu1)*tmpb
    wb(i, j, k, itu1) = wb(i, j, k, itu1) - factk*w(i, j, k, &
-   &             irho)*tmpb0
+   &             irho)*tmpb
    END DO
    END DO
    END DO
@@ -108,19 +103,8 @@
    DO k=kend,kstart,-1
    DO j=jend,jstart,-1
    DO i=iend,istart,-1
-   CALL POPREAL8(w(i, j, k, irhoe))
-   tmpb = wb(i, j, k, irhoe)
+   pb(i, j, k) = pb(i, j, k) + wb(i, j, k, irhoe)
    wb(i, j, k, irhoe) = 0.0_8
-   temp1 = w(i, j, k, ivz)
-   temp0 = w(i, j, k, ivy)
-   temp = w(i, j, k, ivx)
-   tempb = half*w(i, j, k, irho)*tmpb
-   pb(i, j, k) = pb(i, j, k) + ovgm1*tmpb
-   wb(i, j, k, irho) = wb(i, j, k, irho) + half*(temp**2+temp0**2&
-   &           +temp1**2)*tmpb
-   wb(i, j, k, ivx) = wb(i, j, k, ivx) + 2*temp*tempb
-   wb(i, j, k, ivy) = wb(i, j, k, ivy) + 2*temp0*tempb
-   wb(i, j, k, ivz) = wb(i, j, k, ivz) + 2*temp1*tempb
    END DO
    END DO
    END DO

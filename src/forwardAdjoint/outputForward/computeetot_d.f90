@@ -62,16 +62,15 @@
    DO k=kstart,kend
    DO j=jstart,jend
    DO i=istart,iend
-   wd(i, j, k, irhoe) = ovgm1*pd(i, j, k) + half*(wd(i, j, k, &
-   &           irho)*(w(i, j, k, ivx)**2+w(i, j, k, ivy)**2+w(i, j, k, ivz)&
-   &           **2)+w(i, j, k, irho)*(2*w(i, j, k, ivx)*wd(i, j, k, ivx)+2*&
-   &           w(i, j, k, ivy)*wd(i, j, k, ivy)+2*w(i, j, k, ivz)*wd(i, j, &
-   &           k, ivz)))
-   w(i, j, k, irhoe) = ovgm1*p(i, j, k) + half*w(i, j, k, irho)*(&
-   &           w(i, j, k, ivx)**2+w(i, j, k, ivy)**2+w(i, j, k, ivz)**2)
+   !ovgm1*p(i,j,k) &
+   wd(i, j, k, irhoe) = pd(i, j, k)
+   w(i, j, k, irhoe) = p(i, j, k)
    END DO
    END DO
    END DO
+   !  + half*w(i,j,k,irho)*(w(i,j,k,ivx)**2 &
+   !  +                     w(i,j,k,ivy)**2 &
+   !  +                     w(i,j,k,ivz)**2)
    ! Second step. Correct the energy in case a turbulent kinetic
    ! energy is present.
    IF (correctfork) THEN

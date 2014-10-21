@@ -32,14 +32,14 @@
 !
 !      Local variables.
 !
-       integer(kind=intType) :: nn, i, j, l
+       integer(kind=intType) :: nn, i, j, k, l
 
        real(kind=realType) :: nnx, nny, nnz
        real(kind=realType) :: gm1, ovgm1, ac1, ac2
        real(kind=realType) :: r0, u0, v0, w0, qn0, vn0, c0, s0
        real(kind=realType) :: re, ue, ve, we, qne, ce
        real(kind=realType) :: qnf, cf, uf, vf, wf, sf, cc, qq
-
+       
        ! Variables Added for forward AD
        real(kind=realType) :: rho,sf2
 
@@ -98,8 +98,6 @@
          end subroutine resetgamma
 
        end interface
-
-
 #else
        real(kind=realType), dimension(imaxDim,jmaxDim,nw) :: ww1, ww2
        real(kind=realType), dimension(imaxDim,jmaxDim) :: pp1, pp2
@@ -162,7 +160,7 @@
 
            do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
              do i=BCData(nn)%icBeg, BCData(nn)%icEnd
-
+          
                ! Store the three components of the unit normal a
                ! bit easier.
                 
@@ -256,21 +254,10 @@
                ! not matter too much in the far field.
 
                if( viscous )    rlv1(i,j) = rlv2(i,j)
-               if( eddyModel ) rev1(i,j) = rev2(i,j)
+               if( eddyModel )  rev1(i,j) = rev2(i,j)
 
              enddo
            enddo
-
-           ! Compute the energy for these halo's.
-
-           call computeEtot(icBeg(nn),icEnd(nn), jcBeg(nn),jcEnd(nn), &
-                            kcBeg(nn),kcEnd(nn), correctForK)
-
-           ! Extrapolate the state vectors in case a second halo
-           ! is needed.
-
-           if( secondHalo ) call extrapolate2ndHalo(nn, correctForK)
-
 #ifndef TAPENADE_REVERSE
                call resetgamma(nn, gamma1, gamma2)
 #else
@@ -282,10 +269,18 @@
            call resetBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
                               rev1, rev2, 0)
 #else
-!           call resetNormRfaceBwd(nn,norm,rface)
            call resetBCPointersBwd(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
                 rev1, rev2, 0)
 #endif
+
+           ! Compute the energy for these halo's.
+           call computeEtot(icBeg(nn),icEnd(nn), jcBeg(nn),jcEnd(nn), &
+                            kcBeg(nn),kcEnd(nn), correctForK)
+
+           ! Extrapolate the state vectors in case a second halo
+           ! is needed.
+
+           if( secondHalo ) call extrapolate2ndHalo(nn, correctForK)
 
          endif testFarfield
        enddo bocos
