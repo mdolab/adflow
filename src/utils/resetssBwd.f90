@@ -33,6 +33,7 @@ subroutine resetssBwd(nn, ssi, ssj, ssk, ss)
   ! the pointers accordinly.
 
   select case (BCFaceID(nn))
+ case (iMin)
       si(1,1:je,1:ke,:) = ssi(1:je,1:ke,:)
       sj(2,0:je,1:ke,:) = ssj(0:je,1:ke,:)
       sk(2,1:je,0:ke,:) = ssk(1:je,0:ke,:)

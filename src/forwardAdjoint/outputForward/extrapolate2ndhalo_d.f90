@@ -131,21 +131,6 @@
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv0d
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev0
    END SUBROUTINE SETWW0PP0RLV0REV0_D
-   SUBROUTINE RESETWW0PP0RLV0REV0_D(nn, idim, ddim, ww0, ww0d, pp0, &
-   &       pp0d, rlv0, rlv0d, rev0)
-   USE BCTYPES
-   USE BLOCKPOINTERS_D
-   IMPLICIT NONE
-   INTEGER(kind=inttype), INTENT(IN) :: nn
-   INTEGER(kind=inttype) :: idim, ddim
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww0
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww0d
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp0
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp0d
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv0
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv0d
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev0
-   END SUBROUTINE RESETWW0PP0RLV0REV0_D
    END INTERFACE
       INTRINSIC MAX
    !
@@ -210,8 +195,7 @@
    END DO
    CALL RESETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv0, rev1, rev0&
    &                   , 0)
-   CALL RESETWW0PP0RLV0REV0_D(nn, idim, ddim, ww0, ww0d, pp0, pp0d, rlv0&
-   &                      , rlv0d, rev0)
+   CALL RESETWW0PP0RLV0REV0(nn, idim, ddim, ww0, pp0, rlv0, rev0)
    ! Set the range for the halo cells for the energy computation.
    crange(1, 1) = icbeg(nn)
    crange(1, 2) = icend(nn)

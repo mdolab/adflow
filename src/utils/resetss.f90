@@ -1,7 +1,7 @@
 !
 !      ******************************************************************
 !      *                                                                *
-!      * File:          resetss.f90                                 *
+!      * File:          resetss.f90                                     *
 !      * Author:        Eirikur Jonsson                                 *
 !      * Starting date: 10-14-2014                                      *
 !      * Last modified: 10-14-2014                                      *

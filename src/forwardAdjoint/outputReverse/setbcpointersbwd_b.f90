@@ -61,8 +61,8 @@
    CASE (imin) 
    id = 2 + offset
    ih = 1 - offset
-   DO k=1,kl+1
-   DO j=1,jl+1
+   DO k=1,ke
+   DO j=1,je
    IF (viscous) THEN
    CALL PUSHCONTROL1B(0)
    ELSE
@@ -70,8 +70,8 @@
    END IF
    END DO
    END DO
-   DO k=kl+1,1,-1
-   DO j=jl+1,1,-1
+   DO k=ke,1,-1
+   DO j=je,1,-1
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    rlvb(id, j, k) = rlvb(id, j, k) + rlv2b(j, k)
@@ -93,8 +93,8 @@
    !===============================================================
    id = il - offset
    ih = ie + offset
-   DO k=1,kl+1
-   DO j=1,jl+1
+   DO k=1,ke
+   DO j=1,je
    IF (viscous) THEN
    CALL PUSHCONTROL1B(0)
    ELSE
@@ -102,8 +102,8 @@
    END IF
    END DO
    END DO
-   DO k=kl+1,1,-1
-   DO j=jl+1,1,-1
+   DO k=ke,1,-1
+   DO j=je,1,-1
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    rlvb(id, j, k) = rlvb(id, j, k) + rlv2b(j, k)
@@ -125,8 +125,8 @@
    !===============================================================
    id = 2 + offset
    ih = 1 - offset
-   DO k=1,kl+1
-   DO i=1,il+1
+   DO k=1,ke
+   DO i=1,ie
    IF (viscous) THEN
    CALL PUSHCONTROL1B(0)
    ELSE
@@ -134,8 +134,8 @@
    END IF
    END DO
    END DO
-   DO k=kl+1,1,-1
-   DO i=il+1,1,-1
+   DO k=ke,1,-1
+   DO i=ie,1,-1
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    rlvb(i, id, k) = rlvb(i, id, k) + rlv2b(i, k)
@@ -157,8 +157,8 @@
    !===============================================================
    id = jl - offset
    ih = je + offset
-   DO k=1,kl+1
-   DO i=1,il+1
+   DO k=1,ke
+   DO i=1,ie
    IF (viscous) THEN
    CALL PUSHCONTROL1B(0)
    ELSE
@@ -166,8 +166,8 @@
    END IF
    END DO
    END DO
-   DO k=kl+1,1,-1
-   DO i=il+1,1,-1
+   DO k=ke,1,-1
+   DO i=ie,1,-1
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    rlvb(i, id, k) = rlvb(i, id, k) + rlv2b(i, k)
@@ -189,8 +189,8 @@
    !===============================================================
    id = 2 + offset
    ih = 1 - offset
-   DO j=1,jl+1
-   DO i=1,il+1
+   DO j=1,je
+   DO i=1,ie
    IF (viscous) THEN
    CALL PUSHCONTROL1B(0)
    ELSE
@@ -198,8 +198,8 @@
    END IF
    END DO
    END DO
-   DO j=jl+1,1,-1
-   DO i=il+1,1,-1
+   DO j=je,1,-1
+   DO i=ie,1,-1
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    rlvb(i, j, id) = rlvb(i, j, id) + rlv2b(i, j)
@@ -221,8 +221,8 @@
    !===============================================================
    id = kl - offset
    ih = ke + offset
-   DO j=1,jl+1
-   DO i=1,il+1
+   DO j=1,je
+   DO i=1,ie
    IF (viscous) THEN
    CALL PUSHCONTROL1B(0)
    ELSE
@@ -230,8 +230,8 @@
    END IF
    END DO
    END DO
-   DO j=jl+1,1,-1
-   DO i=il+1,1,-1
+   DO j=je,1,-1
+   DO i=ie,1,-1
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    rlvb(i, j, id) = rlvb(i, j, id) + rlv2b(i, j)
