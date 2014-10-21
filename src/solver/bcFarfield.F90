@@ -157,21 +157,6 @@
                call setgammaBwd(nn, gamma1, gamma2)
 #endif
 
-!!$           select case (BCFaceID(nn))
-!!$             case (iMin)
-!!$               gamma2 => gamma(2,1:,1:)
-!!$             case (iMax)
-!!$               gamma2 => gamma(il,1:,1:)
-!!$             case (jMin)
-!!$               gamma2 => gamma(1:,2,1:)
-!!$             case (jMax)
-!!$               gamma2 => gamma(1:,jl,1:)
-!!$             case (kMin)
-!!$               gamma2 => gamma(1:,1:,2)
-!!$             case (kMax)
-!!$               gamma2 => gamma(1:,1:,kl)
-!!$           end select
-
            ! Loop over the generic subface to set the state in the
            ! halo cells.
 
@@ -180,15 +165,16 @@
 
                ! Store the three components of the unit normal a
                ! bit easier.
-
-               nnx = BCData(nn)%norm(i,j,1)
-               nny = BCData(nn)%norm(i,j,2)
-               nnz = BCData(nn)%norm(i,j,3)
+                
+               ! replace with actual BCData - Peter Lyu 
+               !nnx = BCData(nn)%norm(i,j,1)
+               !nny = BCData(nn)%norm(i,j,2)
+               !nnz = BCData(nn)%norm(i,j,3)
 
                ! Compute the normal velocity of the free stream and
                ! substract the normal velocity of the mesh.
 
-               qn0 = u0*nnx + v0*nny + w0*nnz
+               qn0 = u0*BCData(nn)%norm(i,j,1) + v0*BCData(nn)%norm(i,j,2) + w0*BCData(nn)%norm(i,j,3)
                vn0 = qn0 - BCData(nn)%rface(i,j)
 
                ! Compute the three velocity components, the normal
@@ -199,7 +185,7 @@
                ue  = ww2(i,j,ivx)
                ve  = ww2(i,j,ivy)
                we  = ww2(i,j,ivz)
-               qne = ue*nnx + ve*nny + we*nnz
+               qne = ue*BCData(nn)%norm(i,j,1) + ve*BCData(nn)%norm(i,j,2) + we*BCData(nn)%norm(i,j,3)
                ce  = sqrt(gamma2(i,j)*pp2(i,j)*re)
 
                ! Compute the new values of the riemann inVariants in
@@ -225,9 +211,9 @@
 
                if(vn0 > zero) then            ! Outflow.
 
-                 uf = ue + (qnf - qne)*nnx
-                 vf = ve + (qnf - qne)*nny
-                 wf = we + (qnf - qne)*nnz
+                 uf = ue + (qnf - qne)*BCData(nn)%norm(i,j,1)
+                 vf = ve + (qnf - qne)*BCData(nn)%norm(i,j,2)
+                 wf = we + (qnf - qne)*BCData(nn)%norm(i,j,3)
                  
                  !Intermediate rho variable added to fix AD bug,ww2
                  ! was not getting picked up here. Tapenade 3.6 Does
@@ -243,9 +229,9 @@
 
                else                          
                  ! Inflow
-                 uf = u0 + (qnf - qn0)*nnx
-                 vf = v0 + (qnf - qn0)*nny
-                 wf = w0 + (qnf - qn0)*nnz
+                 uf = u0 + (qnf - qn0)*BCData(nn)%norm(i,j,1)
+                 vf = v0 + (qnf - qn0)*BCData(nn)%norm(i,j,2)
+                 wf = w0 + (qnf - qn0)*BCData(nn)%norm(i,j,3)
                  sf = s0
 
                  do l=nt1MG,nt2MG

@@ -147,21 +147,6 @@
                call setgammaBwd(nn, gamma1, gamma2)
 #endif
 
-!!$             select case (BCFaceID(nn))
-!!$               case (iMin)
-!!$                 gamma1 => gamma(1, 1:,1:); gamma2 => gamma(2, 1:,1:)
-!!$               case (iMax)
-!!$                 gamma1 => gamma(ie,1:,1:); gamma2 => gamma(il,1:,1:)
-!!$               case (jMin)
-!!$                 gamma1 => gamma(1:,1, 1:); gamma2 => gamma(1:,2, 1:)
-!!$               case (jMax)
-!!$                 gamma1 => gamma(1:,je,1:); gamma2 => gamma(1:,jl,1:)
-!!$               case (kMin)
-!!$                 gamma1 => gamma(1:,1:,1 ); gamma2 => gamma(1:,1:,2 )
-!!$               case (kMax)
-!!$                 gamma1 => gamma(1:,1:,ke); gamma2 => gamma(1:,1:,kl)
-!!$             end select
-
              ! Loop over the generic subface to set the state in the
              ! halo cells.
 
@@ -171,24 +156,25 @@
                  ! Store the three components of the unit normal a
                  ! bit easier.
 
-                 nnx = BCData(nn)%norm(i,j,1)
-                 nny = BCData(nn)%norm(i,j,2)
-                 nnz = BCData(nn)%norm(i,j,3)
+                 ! Replace with actual BCData - Peter Lyu
+                 !nnx = BCData(nn)%norm(i,j,1)
+                 !nny = BCData(nn)%norm(i,j,2)
+                 !nnz = BCData(nn)%norm(i,j,3)
                 
                  ! Determine twice the normal velocity component,
                  ! which must be substracted from the donor velocity
                  ! to obtain the halo velocity.
 
-                 vn = two*(ww2(i,j,ivx)*nnx + ww2(i,j,ivy)*nny &
-                    +      ww2(i,j,ivz)*nnz)
+                 vn = two*(ww2(i,j,ivx)*BCData(nn)%norm(i,j,1) + ww2(i,j,ivy)*BCData(nn)%norm(i,j,2) &
+                    +      ww2(i,j,ivz)*BCData(nn)%norm(i,j,3))
 
                  ! Determine the flow variables in the halo cell.
 
                  ww1(i,j,irho) = ww2(i,j,irho)
 
-                 ww1(i,j,ivx) = ww2(i,j,ivx) - vn*nnx
-                 ww1(i,j,ivy) = ww2(i,j,ivy) - vn*nny
-                 ww1(i,j,ivz) = ww2(i,j,ivz) - vn*nnz
+                 ww1(i,j,ivx) = ww2(i,j,ivx) - vn*BCData(nn)%norm(i,j,1)
+                 ww1(i,j,ivy) = ww2(i,j,ivy) - vn*BCData(nn)%norm(i,j,2)
+                 ww1(i,j,ivz) = ww2(i,j,ivz) - vn*BCData(nn)%norm(i,j,3)
 
                  ww1(i,j,irhoE) = ww2(i,j,irhoE)
 
