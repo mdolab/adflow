@@ -3,9 +3,9 @@
 !      ******************************************************************
 !      *                                                                *
 !      * File:          setssBwd.f90                                    *
-!      * Author:        Eirikur Jonsson                                 *
-!      * Starting date: 10-14-2014                                      *
-!      * Last modified: 10-14-2014                                      *
+!      * Author:        Peter Zhoujie Lyu                               *
+!      * Starting date: 10-21-2014                                      *
+!      * Last modified: 10-21-2014                                      *
 !      *                                                                *
 !      ******************************************************************
 
@@ -34,56 +34,56 @@ subroutine setssBwd(nn, ssi, ssj, ssk, ss)
 
   select case (BCFaceID(nn))
   case (iMin)
-     ssi = si(1,:,:,:)
-     ssj = sj(2,:,:,:)
-     ssk = sk(2,:,:,:)
+     ssi(1:je,1:ke,:) = si(1,1:je,1:ke,:)
+     ssj(0:je,1:ke,:) = sj(2,0:je,1:ke,:)
+     ssk(1:je,0:ke,:) = sk(2,1:je,0:ke,:)
 
-     if( addGridVelocities ) ss = s(2,:,:,:)
+     if( addGridVelocities ) ss(1:je,1:ke,:) = s(2,1:je,1:ke,:)
 
      !=======================================================
 
   case (iMax)
-     ssi = si(il,:,:,:)
-     ssj = sj(il,:,:,:)
-     ssk = sk(il,:,:,:)
+     ssi(1:je,1:ke,:) = si(il,1:je,1:ke,:)
+     ssj(0:je,1:ke,:) = sj(il,0:je,1:ke,:)
+     ssk(1:je,0:ke,:) = sk(il,1:je,0:ke,:)
 
-     if( addGridVelocities ) ss = s(il,:,:,:)
+     if( addGridVelocities ) ss(1:je,1:ke,:) = s(il,1:je,1:ke,:)
 
      !=======================================================
 
   case (jMin)
-     ssi = sj(:,1,:,:)
-     ssj = si(:,2,:,:)
-     ssk = sk(:,2,:,:)
+     ssi(0:ie,1:ke,:) = sj(0:ie,1,1:ke,:)
+     ssj(1:ie,1:ke,:) = si(1:ie,2,1:ke,:)
+     ssk(1:ie,0:ke,:) = sk(1:ie,2,0:ke,:)
 
-     if( addGridVelocities ) ss = s(:,2,:,:)
+     if( addGridVelocities ) ss(1:ie,1:ke,:) = s(1:ie,2,1:ke,:)
 
      !=======================================================
 
   case (jMax)
-     ssi = sj(:,jl,:,:)
-     ssj = si(:,jl,:,:)
-     ssk = sk(:,jl,:,:)
+     ssi(0:ie,1:ke,:) = sj(0:ie,jl,1:ke,:)
+     ssj(1:ie,1:ke,:) = si(1:ie,jl,1:ke,:)
+     ssk(1:ie,0:ke,:) = sk(1:ie,jl,0:ke,:)
 
-     if( addGridVelocities ) ss = s(:,jl,:,:)
+     if( addGridVelocities ) ss(1:ie,1:ke,:) = s(1:ie,jl,1:ke,:)
 
      !=======================================================
 
   case (kMin)
-     ssi = sk(:,:,1,:)
-     ssj = si(:,:,2,:)
-     ssk = sj(:,:,2,:)
+     ssi(0:ie,1:je,:) = sk(0:ie,1:je,1,:)
+     ssj(1:ie,0:je,:) = si(1:ie,0:je,2,:)
+     ssk(1:ie,1:je,:) = sj(1:ie,1:je,2,:)
 
-     if( addGridVelocities ) ss = s(:,:,2,:)
+     if( addGridVelocities ) ss(1:ie,1:je,:) = s(1:ie,1:je,2,:)
 
      !=======================================================
 
   case (kMax)
-     ssi = sk(:,:,kl,:)
-     ssj = si(:,:,kl,:)
-     ssk = sj(:,:,kl,:)
+     ssi(0:ie,1:je,:) = sk(0:ie,1:je,kl,:)
+     ssj(1:ie,0:je,:) = si(1:ie,0:je,kl,:)
+     ssk(1:ie,1:je,:) = sj(1:ie,1:je,kl,:)
 
-     if( addGridVelocities ) ss = s(:,:,kl,:)
+     if( addGridVelocities ) ss(1:ie,1:je,:) = s(1:ie,1:je,kl,:)
 
   end select
 end subroutine setssBwd

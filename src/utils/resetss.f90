@@ -29,7 +29,7 @@
 !      ******************************************************************
 !
        ! nullify all pointers
-       nullify(ssi, ssj, ssk ,ss)
+       !nullify(ssi, ssj, ssk ,ss)
 
 
        end subroutine resetss

@@ -51,8 +51,8 @@
          case (iMin)
           
            id = 2 + offset;   ih = 1 - offset
-           do k = 1,kl+1
-              do j = 1,jl+1
+           do k = 1,ke
+              do j = 1,je
                  ww1(j,k,:) = w(ih,j,k,:)
                  ww2(j,k,:) = w(id,j,k,:)
                  pp1(j,k)   = p(ih,j,k)
@@ -74,8 +74,8 @@
          case (iMax)
            
            id = il - offset;  ih = ie + offset
-           do k = 1,kl+1
-              do j = 1,jl+1
+           do k = 1,ke
+              do j = 1,je
                  ww1(j,k,:) = w(ih,j,k,:)
                  ww2(j,k,:) = w(id,j,k,:)
                  pp1(j,k)   = p(ih,j,k)
@@ -97,8 +97,8 @@
          case (jMin)
         
            id = 2 + offset;   ih = 1 - offset
-           do k = 1,kl+1
-              do i = 1,il+1
+           do k = 1,ke
+              do i = 1,ie
                  ww1(i,k,:) = w(i,ih,k,:)
                  ww2(i,k,:) = w(i,id,k,:)
                  pp1(i,k)   = p(i,ih,k)
@@ -120,8 +120,8 @@
          case (jMax)
           
            id = jl - offset;  ih = je + offset
-           do k = 1,kl+1
-              do i = 1,il+1
+           do k = 1,ke
+              do i = 1,ie
                  ww1(i,k,:) = w(i,ih,k,:)
                  ww2(i,k,:) = w(i,id,k,:)
                  pp1(i,k)   = p(i,ih,k)
@@ -143,8 +143,8 @@
          case (kMin)
            
            id = 2 + offset;   ih = 1 - offset
-           do j = 1,jl+1
-              do i = 1,il+1
+           do j = 1,je
+              do i = 1,ie
                  ww1(i,j,:) = w(i,j,ih,:)
                  ww2(i,j,:) = w(i,j,id,:)
                  pp1(i,j)   = p(i,j,ih)
@@ -166,8 +166,8 @@
          case (kMax)
         
            id = kl - offset;  ih = ke + offset
-           do j = 1,jl+1
-              do i = 1,il+1
+           do j = 1,je
+              do i = 1,ie
                  ww1(i,j,:) = w(i,j,ih,:)
                  ww2(i,j,:) = w(i,j,id,:)
                  pp1(i,j)   = p(i,j,ih)

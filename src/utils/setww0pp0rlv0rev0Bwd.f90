@@ -1,7 +1,7 @@
 !
 !      ******************************************************************
 !      *                                                                *
-!      * File:          setww0pp0rlv0rev0Bwd.f90                           *
+!      * File:          setww0pp0rlv0rev0Bwd.f90                        *
 !      * Author:        Eirikur Jonsson                                 *
 !      * Starting date: 10-14-2014                                      *
 !      * Last modified: 10-14-2014                                      *

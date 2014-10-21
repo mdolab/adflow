@@ -27,7 +27,7 @@
 !      ******************************************************************
 !
        ! nullify all pointers
-       nullify(pp3, pp4)
+       !nullify(pp3, pp4)
 
 
        end subroutine resetpp3pp4

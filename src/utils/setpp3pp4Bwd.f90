@@ -2,9 +2,9 @@
 !      ******************************************************************
 !      *                                                                *
 !      * File:          setpp3pp4Bwd.f90                                *
-!      * Author:        Eirikur Jonsson                                 *
+!      * Author:        Eirikur Jonsson, Peter Zhoujie Lyu              *
 !      * Starting date: 10-14-2014                                      *
-!      * Last modified: 10-14-2014                                      *
+!      * Last modified: 10-21-2014                                      *
 !      *                                                                *
 !      ******************************************************************
 !
@@ -12,7 +12,7 @@
        
        use BCTypes
        use blockPointers
-!       use flowVarRefState
+       use flowVarRefState
        implicit none
 !
 !      Subroutine arguments.
@@ -32,23 +32,23 @@
 
        select case (BCFaceID(nn))
          case (iMin)
-           pp3 = p(3,1:,1:)
-           pp4 = p(4,1:,1:)
+           pp3(1:je,1:ke) = p(3,1:je,1:ke)
+           pp4(1:je,1:ke) = p(4,1:je,1:ke)
          case (iMax)
-           pp3 = p(nx,1:,1:)
-           pp4 = p(nx-1,1:,1:)
+           pp3(1:je,1:ke) = p(nx,1:je,1:ke)
+           pp4(1:je,1:ke) = p(nx-1,1:je,1:ke)
          case (jMin)
-           pp3 = p(1:,3,1:)
-           pp4 = p(1:,4,1:)
+           pp3(1:ie,1:ke) = p(1:ie,3,1:ke)
+           pp4(1:ie,1:ke) = p(1:ie,4,1:ke)
          case (jMax)
-           pp3 = p(1:,ny,1:)
-           pp4 = p(1:,ny-1,1:)
+           pp3(1:ie,1:ke) = p(1:ie,ny,1:ke)
+           pp4(1:ie,1:ke) = p(1:ie,ny-1,1:ke)
          case (kMin)
-           pp3 = p(1:,1:,3)
-           pp4 = p(1:,1:,4)
+           pp3(1:ie,1:je) = p(1:ie,1:je,3)
+           pp4(1:ie,1:je) = p(1:ie,1:je,4)
          case (kMax)
-           pp3 = p(1:,1:,nz)
-           pp4 = p(1:,1:,nz-1)
+           pp3(1:ie,1:je) = p(1:ie,1:je,nz)
+           pp4(1:ie,1:je) = p(1:ie,1:je,nz-1)
        end select
 
        end subroutine setpp3pp4Bwd   
