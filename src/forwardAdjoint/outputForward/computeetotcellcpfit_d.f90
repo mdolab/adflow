@@ -2,9 +2,9 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of computeetotcellcpfit in forward (tangent) mode (with options i4 dr8 r8):
-   !   variations   of useful results: *w
-   !   with respect to varying inputs: *p *w
-   !   Plus diff mem management of: p:in w:in
+   !   variations   of useful results: *gamma *w
+   !   with respect to varying inputs: *p *gamma *w
+   !   Plus diff mem management of: p:in gamma:in w:in
    !      ==================================================================
    SUBROUTINE COMPUTEETOTCELLCPFIT_D(i, j, k, scale, correctfork)
    !
@@ -35,7 +35,7 @@
    !
    INTEGER(kind=inttype) :: nn, mm, ii, start
    REAL(kind=realtype) :: pp, t, t2, cv, eint
-   REAL(kind=realtype) :: ppd, td, t2d, eintd
+   REAL(kind=realtype) :: ppd, td, t2d, cvd, eintd
    INTRINSIC LOG
    !
    !      ******************************************************************
@@ -62,6 +62,7 @@
    ! constant cv.
    eintd = scale*cv0*td
    eint = scale*(cpeint(0)+cv0*(t-cptrange(0)))
+   gammad(i, j, k) = 0.0_8
    gamma(i, j, k) = (cv0+one)/cv0
    ELSE IF (t .GE. cptrange(cpnparts)) THEN
    ! Temperature is larger than the largest temperature
@@ -69,6 +70,7 @@
    ! constant cv.
    eintd = scale*cvn*td
    eint = scale*(cpeint(cpnparts)+cvn*(t-cptrange(cpnparts)))
+   gammad(i, j, k) = 0.0_8
    gamma(i, j, k) = (cvn+one)/cvn
    ELSE
    ! Temperature is in the curve fit range.
@@ -96,6 +98,7 @@
    100 eintd = -td
    eint = cptempfit(nn)%eint0 - t
    cv = -one
+   cvd = 0.0_8
    DO ii=1,cptempfit(nn)%nterm
    IF (t .GT. 0.0_8 .OR. (t .LT. 0.0_8 .AND. cptempfit(nn)%exponents(&
    &         ii) .EQ. INT(cptempfit(nn)%exponents(ii)))) THEN
@@ -108,6 +111,7 @@
    t2d = 0.0_8
    END IF
    t2 = t**cptempfit(nn)%exponents(ii)
+   cvd = cvd + cptempfit(nn)%constants(ii)*t2d
    cv = cv + cptempfit(nn)%constants(ii)*t2
    IF (cptempfit(nn)%exponents(ii) .EQ. -1) THEN
    eintd = eintd + cptempfit(nn)%constants(ii)*td/t
@@ -122,6 +126,7 @@
    END DO
    eintd = scale*eintd
    eint = scale*eint
+   gammad(i, j, k) = (cvd*cv-(cv+one)*cvd)/cv**2
    gamma(i, j, k) = (cv+one)/cv
    END IF
    ! Compute the total energy per unit volume.

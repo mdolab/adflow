@@ -2,9 +2,9 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of computeetotcellcpfit in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *p *w
-   !   with respect to varying inputs: *p *w
-   !   Plus diff mem management of: p:in w:in
+   !   gradient     of useful results: *p *gamma *w
+   !   with respect to varying inputs: *p *gamma *w
+   !   Plus diff mem management of: p:in gamma:in w:in
    !      ==================================================================
    SUBROUTINE COMPUTEETOTCELLCPFIT_B(i, j, k, scale, correctfork)
    !
@@ -35,7 +35,7 @@
    !
    INTEGER(kind=inttype) :: nn, mm, ii, start
    REAL(kind=realtype) :: pp, t, t2, cv, eint
-   REAL(kind=realtype) :: ppb, tb, t2b, eintb
+   REAL(kind=realtype) :: ppb, tb, t2b, cvb, eintb
    INTRINSIC LOG
    REAL(kind=realtype) :: tmp
    REAL(kind=realtype) :: tmp0
@@ -101,8 +101,10 @@
    ! Nn contains the correct curve fit interval.
    ! Integrate cv to compute eint.
    110 eint = cptempfit(nn)%eint0 - t
+   cv = -one
    DO ii=1,cptempfit(nn)%nterm
    t2 = t**cptempfit(nn)%exponents(ii)
+   cv = cv + cptempfit(nn)%constants(ii)*t2
    IF (cptempfit(nn)%exponents(ii) .EQ. -1) THEN
    eint = eint + cptempfit(nn)%constants(ii)*LOG(t)
    CALL PUSHCONTROL1B(1)
@@ -144,10 +146,14 @@
    wb(i, j, k, ivz) = wb(i, j, k, ivz) + 2*temp2*tempb1
    CALL POPCONTROL2B(branch)
    IF (branch .EQ. 0) THEN
+   gammab(i, j, k) = 0.0_8
    tb = scale*cv0*eintb
    ELSE IF (branch .EQ. 1) THEN
+   gammab(i, j, k) = 0.0_8
    tb = scale*cvn*eintb
    ELSE
+   cvb = (1.0/cv-(one+cv)/cv**2)*gammab(i, j, k)
+   gammab(i, j, k) = 0.0_8
    eintb = scale*eintb
    tb = 0.0_8
    DO ii=cptempfit(nn)%nterm,1,-1
@@ -162,6 +168,7 @@
    tb = tb + cptempfit(nn)%constants(ii)*eintb/t
    t2b = 0.0_8
    END IF
+   t2b = t2b + cptempfit(nn)%constants(ii)*cvb
    IF (.NOT.(t .LE. 0.0_8 .AND. (cptempfit(nn)%exponents(ii) .EQ. &
    &         0.0_8 .OR. cptempfit(nn)%exponents(ii) .NE. INT(cptempfit(nn)%&
    &         exponents(ii))))) tb = tb + cptempfit(nn)%exponents(ii)*t**(&

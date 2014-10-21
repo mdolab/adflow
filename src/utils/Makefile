@@ -75,10 +75,14 @@ FILES_TO_COMPLEXIFY =  \
 	       setpp3pp4Bwd.f90\
 	       setss.f90\
 	       setssBwd.f90\
+	       setgamma.f90\
+	       setgammaBwd.f90\
 	       resetpp3pp4.f90\
 	       resetpp3pp4Bwd.f90\
 	       resetss.f90\
 	       resetssBwd.f90\
+	       resetgamma.f90\
+	       resetgammaBwd.f90\
 	       setww0pp0rlv0rev0.f90\
 	       resetww0pp0rlv0rev0.f90\
 	       setww0pp0rlv0rev0Bwd.f90\

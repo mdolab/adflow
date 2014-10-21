@@ -2,9 +2,9 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of computeetot in forward (tangent) mode (with options i4 dr8 r8):
-   !   variations   of useful results: *w
-   !   with respect to varying inputs: *p *w
-   !   Plus diff mem management of: p:in w:in
+   !   variations   of useful results: *gamma *w
+   !   with respect to varying inputs: *p *gamma *w
+   !   Plus diff mem management of: p:in gamma:in w:in
    !
    !      ******************************************************************
    !      *                                                                *

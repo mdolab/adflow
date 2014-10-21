@@ -2,9 +2,9 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of extrapolate2ndhalo in forward (tangent) mode (with options i4 dr8 r8):
-   !   variations   of useful results: *p *w *rlv
-   !   with respect to varying inputs: *p *w *rlv
-   !   Plus diff mem management of: p:in w:in rlv:in
+   !   variations   of useful results: *p *gamma *w *rlv
+   !   with respect to varying inputs: *p *gamma *w *rlv
+   !   Plus diff mem management of: p:in gamma:in w:in rlv:in
    !
    !      ******************************************************************
    !      *                                                                *

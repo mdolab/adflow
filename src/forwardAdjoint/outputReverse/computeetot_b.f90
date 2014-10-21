@@ -2,9 +2,9 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of computeetot in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *p *w
-   !   with respect to varying inputs: *p *w
-   !   Plus diff mem management of: p:in w:in
+   !   gradient     of useful results: *p *gamma *w
+   !   with respect to varying inputs: *p *gamma *w
+   !   Plus diff mem management of: p:in gamma:in w:in
    !
    !      ******************************************************************
    !      *                                                                *

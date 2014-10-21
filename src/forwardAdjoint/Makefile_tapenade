@@ -13,7 +13,7 @@
 #     *             'foward' directory                                 *
 #     *                                                                *
 #     * ad_multi: Run in foward multi-directional mode. Preprocessed   *
-#     *           output is in the 'fowardMulti'directory               *
+#     *           output is in the 'fowardMulti'directory              *
 #     *                                                                *
 #     * ad_reverse: Run in reverse mode. Preprocessed output is in the *
 #     *             'reverse' directory                                *
@@ -152,6 +152,10 @@ ALL_RES_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.F90\
 		$(SRC)/utils/resetww0pp0rlv0rev0Bwd.f90\
 		$(SRC)/utils/resetss.f90\
 		$(SRC)/utils/resetssBwd.f90\
+		$(SRC)/utils/setgamma.f90\
+		$(SRC)/utils/setgammaBwd.f90\
+		$(SRC)/utils/resetgamma.f90\
+		$(SRC)/utils/resetgammaBwd.f90\
 		$(SRC)/utils/computeEtot.f90\
 		$(SRC)/utils/setPointers.f90\
 		$(SRC)/utils/terminate.F90

@@ -41,6 +41,7 @@ FF90_OBJECTS =  computeetot_b.o\
 		extrapolate2ndhalo_b.o\
 		timestep_block_b.o\
 		bceulerwall_b.o\
+		bcfarfield_b.o\
 		invisciddissfluxscalar_b.o\
 		dim_b.o\
 		block_res_b.o  \
@@ -50,8 +51,6 @@ FF90_OBJECTS =  computeetot_b.o\
                 setbcpointers_b.o\
 		setpp3pp4bwd_b.o\
 		resetpp3pp4bwd_b.o\
-		setssbwd_b.o\
-		resetssbwd_b.o\
 		setgammabwd_b.o\
 		resetgammabwd_b.o\
                 setww0pp0rlv0rev0bwd_b.o\

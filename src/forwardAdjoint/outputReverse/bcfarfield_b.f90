@@ -2,9 +2,9 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of bcfarfield in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *rev *p *gamma *w *rlv
-   !   with respect to varying inputs: *rev *p *gamma *w *rlv
-   !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
+   !   gradient     of useful results: *p *w *rlv
+   !   with respect to varying inputs: *p *gamma *w *rlv
+   !   Plus diff mem management of: p:in gamma:in w:in rlv:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -51,76 +51,32 @@
    REAL(kind=realtype) :: qnfb, cfb, ufb, vfb, wfb, sfb, ccb
    ! Variables Added for forward AD
    REAL(kind=realtype) :: rho, sf2
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1b, ww2b
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1, pp2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1b, pp2b
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: gamma2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: gamma2b
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1b, rlv2b
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1b, rev2b
-   INTERFACE 
-   SUBROUTINE SETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
-   &       rev1, rev2, offset)
-   USE BLOCKPOINTERS_B
-   IMPLICIT NONE
-   INTEGER(kind=inttype), INTENT(IN) :: nn, offset
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1, pp2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
-   END SUBROUTINE SETBCPOINTERS
-   END INTERFACE
-      INTERFACE 
-   SUBROUTINE SETBCPOINTERS_B(nn, ww1, ww1b, ww2, ww2b, pp1, pp1b, &
-   &       pp2, pp2b, rlv1, rlv1b, rlv2, rlv2b, rev1, rev1b, rev2, rev2b, &
-   &       offset)
-   USE BLOCKPOINTERS_B
-   IMPLICIT NONE
-   INTEGER(kind=inttype), INTENT(IN) :: nn, offset
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1b, ww2b
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1, pp2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1b, pp2b
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1b, rlv2b
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1b, rev2b
-   END SUBROUTINE SETBCPOINTERS_B
-   END INTERFACE
-      INTRINSIC SQRT
-   REAL(kind=realtype) :: tmp
-   REAL(kind=realtype) :: tmp0
-   REAL(kind=realtype) :: tmp1
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, nw) :: ww1, ww2
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, nw) :: ww1b, ww2b
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: pp1, pp2
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: pp1b, pp2b
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: gamma1, gamma2
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: gamma1b, gamma2b
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rlv1, rlv2
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rlv1b, rlv2b
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rev1, rev2
+   INTRINSIC SQRT
    INTEGER :: branch
    INTEGER :: ad_from
    INTEGER :: ad_to
    INTEGER :: ad_from0
    INTEGER :: ad_to0
-   INTERFACE 
-   SUBROUTINE PUSHPOINTER4(pp)
-   REAL, POINTER :: pp
-   END SUBROUTINE PUSHPOINTER4
-   SUBROUTINE LOOKPOINTER4(pp)
-   REAL, POINTER :: pp
-   END SUBROUTINE LOOKPOINTER4
-   SUBROUTINE POPPOINTER4(pp)
-   REAL, POINTER :: pp
-   END SUBROUTINE POPPOINTER4
-   END INTERFACE
-      REAL(kind=realtype) :: temp3
    REAL(kind=realtype) :: temp2
    REAL(kind=realtype) :: temp1
    REAL(kind=realtype) :: temp0
+   REAL(kind=realtype) :: tempb7
+   REAL(kind=realtype) :: tempb6
+   REAL(kind=realtype) :: tempb5
+   REAL(kind=realtype) :: tempb4
    REAL(kind=realtype) :: tempb3
    REAL(kind=realtype) :: tempb2
    REAL(kind=realtype) :: tempb1
    REAL(kind=realtype) :: tempb0
-   REAL(kind=realtype) :: tmpb
-   REAL(kind=realtype) :: tmpb1
-   REAL(kind=realtype) :: tmpb0
    REAL(kind=realtype) :: tempb
    REAL(kind=realtype) :: temp
    !
@@ -149,57 +105,14 @@
    ! They are nullified first, because some compilers require
    ! that.
    !nullify(ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2)
-   CALL PUSHPOINTER4(rev2)
-   CALL PUSHPOINTER4(rev1)
-   CALL PUSHPOINTER4(rlv2)
-   CALL PUSHPOINTER4(rlv1)
-   CALL PUSHPOINTER4(pp2)
-   CALL PUSHPOINTER4(pp1)
-   CALL PUSHPOINTER4(ww2)
-   CALL PUSHPOINTER4(ww1)
-   CALL SETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, &
-   &                     rev2, 0)
+   CALL PUSHREAL8ARRAY(pp2, imaxdim*jmaxdim)
+   CALL PUSHREAL8ARRAY(ww2, imaxdim*jmaxdim*nw)
+   CALL PUSHREAL8ARRAY(ww1, imaxdim*jmaxdim*nw)
+   CALL SETBCPOINTERSBWD(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, rev1&
+   &                        , rev2, 0)
    ! Set the additional pointer for gamma2.
-   SELECT CASE  (bcfaceid(nn)) 
-   CASE (imin) 
-   CALL PUSHPOINTER4(gamma2b)
-   gamma2b => gammab(2, 1:, 1:)
-   CALL PUSHPOINTER4(gamma2)
-   gamma2 => gamma(2, 1:, 1:)
-   CALL PUSHCONTROL3B(5)
-   CASE (imax) 
-   CALL PUSHPOINTER4(gamma2b)
-   gamma2b => gammab(il, 1:, 1:)
-   CALL PUSHPOINTER4(gamma2)
-   gamma2 => gamma(il, 1:, 1:)
-   CALL PUSHCONTROL3B(4)
-   CASE (jmin) 
-   CALL PUSHPOINTER4(gamma2b)
-   gamma2b => gammab(1:, 2, 1:)
-   CALL PUSHPOINTER4(gamma2)
-   gamma2 => gamma(1:, 2, 1:)
-   CALL PUSHCONTROL3B(3)
-   CASE (jmax) 
-   CALL PUSHPOINTER4(gamma2b)
-   gamma2b => gammab(1:, jl, 1:)
-   CALL PUSHPOINTER4(gamma2)
-   gamma2 => gamma(1:, jl, 1:)
-   CALL PUSHCONTROL3B(2)
-   CASE (kmin) 
-   CALL PUSHPOINTER4(gamma2b)
-   gamma2b => gammab(1:, 1:, 2)
-   CALL PUSHPOINTER4(gamma2)
-   gamma2 => gamma(1:, 1:, 2)
-   CALL PUSHCONTROL3B(1)
-   CASE (kmax) 
-   CALL PUSHPOINTER4(gamma2b)
-   gamma2b => gammab(1:, 1:, kl)
-   CALL PUSHPOINTER4(gamma2)
-   gamma2 => gamma(1:, 1:, kl)
-   CALL PUSHCONTROL3B(0)
-   CASE DEFAULT
-   CALL PUSHCONTROL3B(6)
-   END SELECT
+   CALL PUSHREAL8ARRAY(gamma2, imaxdim*jmaxdim)
+   CALL SETGAMMABWD(nn, gamma1, gamma2)
    ad_from0 = bcdata(nn)%jcbeg
    ! Loop over the generic subface to set the state in the
    ! halo cells.
@@ -208,15 +121,14 @@
    DO i=ad_from,bcdata(nn)%icend
    ! Store the three components of the unit normal a
    ! bit easier.
-   CALL PUSHREAL8(nnx)
-   nnx = bcdata(nn)%norm(i, j, 1)
-   CALL PUSHREAL8(nny)
-   nny = bcdata(nn)%norm(i, j, 2)
-   CALL PUSHREAL8(nnz)
-   nnz = bcdata(nn)%norm(i, j, 3)
+   ! replace with actual BCData - Peter Lyu 
+   !nnx = BCData(nn)%norm(i,j,1)
+   !nny = BCData(nn)%norm(i,j,2)
+   !nnz = BCData(nn)%norm(i,j,3)
    ! Compute the normal velocity of the free stream and
    ! substract the normal velocity of the mesh.
-   qn0 = u0*nnx + v0*nny + w0*nnz
+   qn0 = u0*bcdata(nn)%norm(i, j, 1) + v0*bcdata(nn)%norm(i, j, 2&
+   &           ) + w0*bcdata(nn)%norm(i, j, 3)
    vn0 = qn0 - bcdata(nn)%rface(i, j)
    ! Compute the three velocity components, the normal
    ! velocity and the speed of sound of the current state
@@ -225,7 +137,8 @@
    ue = ww2(i, j, ivx)
    ve = ww2(i, j, ivy)
    we = ww2(i, j, ivz)
-   qne = ue*nnx + ve*nny + we*nnz
+   qne = ue*bcdata(nn)%norm(i, j, 1) + ve*bcdata(nn)%norm(i, j, 2&
+   &           ) + we*bcdata(nn)%norm(i, j, 3)
    ce = SQRT(gamma2(i, j)*pp2(i, j)*re)
    ! Compute the new values of the riemann inVariants in
    ! the halo cell. Either the value in the internal cell
@@ -255,9 +168,9 @@
    cf = fourth*(ac1-ac2)*gm1
    IF (vn0 .GT. zero) THEN
    ! Outflow.
-   uf = ue + (qnf-qne)*nnx
-   vf = ve + (qnf-qne)*nny
-   wf = we + (qnf-qne)*nnz
+   uf = ue + (qnf-qne)*bcdata(nn)%norm(i, j, 1)
+   vf = ve + (qnf-qne)*bcdata(nn)%norm(i, j, 2)
+   wf = we + (qnf-qne)*bcdata(nn)%norm(i, j, 3)
    !Intermediate rho variable added to fix AD bug,ww2
    ! was not getting picked up here. Tapenade 3.6 Does
    ! this properly and this is not required:
@@ -266,20 +179,17 @@
    CALL PUSHREAL8(sf)
    sf = ww2(i, j, irho)**gamma2(i, j)/pp2(i, j)
    DO l=nt1mg,nt2mg
-   tmp = ww2(i, j, l)
-   CALL PUSHREAL8(ww1(i, j, l))
-   ww1(i, j, l) = tmp
+   ww1(i, j, l) = ww2(i, j, l)
    END DO
    CALL PUSHCONTROL1B(0)
    ELSE
    ! Inflow
-   uf = u0 + (qnf-qn0)*nnx
-   vf = v0 + (qnf-qn0)*nny
-   wf = w0 + (qnf-qn0)*nnz
+   uf = u0 + (qnf-qn0)*bcdata(nn)%norm(i, j, 1)
+   vf = v0 + (qnf-qn0)*bcdata(nn)%norm(i, j, 2)
+   wf = w0 + (qnf-qn0)*bcdata(nn)%norm(i, j, 3)
    CALL PUSHREAL8(sf)
    sf = s0
    DO l=nt1mg,nt2mg
-   CALL PUSHREAL8(ww1(i, j, l))
    ww1(i, j, l) = winf(l)
    END DO
    CALL PUSHCONTROL1B(1)
@@ -287,33 +197,21 @@
    ! Compute the density, velocity and pressure in the
    ! halo cell.
    cc = cf*cf/gamma2(i, j)
-   CALL PUSHREAL8(ww1(i, j, irho))
    ww1(i, j, irho) = (sf*cc)**ovgm1
-   CALL PUSHREAL8(ww1(i, j, ivx))
    ww1(i, j, ivx) = uf
-   CALL PUSHREAL8(ww1(i, j, ivy))
    ww1(i, j, ivy) = vf
-   CALL PUSHREAL8(ww1(i, j, ivz))
    ww1(i, j, ivz) = wf
-   CALL PUSHREAL8(pp1(i, j))
    pp1(i, j) = ww1(i, j, irho)*cc
    ! Simply set the laminar and eddy viscosity to
    ! the value in the donor cell. Their values do
    ! not matter too much in the far field.
    IF (viscous) THEN
-   tmp0 = rlv2(i, j)
-   rlv1(i, j) = tmp0
+   rlv1(i, j) = rlv2(i, j)
    CALL PUSHCONTROL1B(0)
    ELSE
    CALL PUSHCONTROL1B(1)
    END IF
-   IF (eddymodel) THEN
-   tmp1 = rev2(i, j)
-   rev1(i, j) = tmp1
-   CALL PUSHCONTROL1B(1)
-   ELSE
-   CALL PUSHCONTROL1B(0)
-   END IF
+   IF (eddymodel) rev1(i, j) = rev2(i, j)
    END DO
    CALL PUSHINTEGER4(i - 1)
    CALL PUSHINTEGER4(ad_from)
@@ -323,8 +221,6 @@
    ! Compute the energy for these halo's.
    CALL PUSHREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4)&
    &                  )
-   CALL PUSHREAL8ARRAY(gamma, SIZE(gamma, 1)*SIZE(gamma, 2)*SIZE(&
-   &                   gamma, 3))
    CALL COMPUTEETOT(icbeg(nn), icend(nn), jcbeg(nn), jcend(nn), &
    &                   kcbeg(nn), kcend(nn), correctfork)
    ! Extrapolate the state vectors in case a second halo
@@ -334,27 +230,49 @@
    CALL PUSHREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, &
    &                     4))
    CALL PUSHREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
+   CALL PUSHREAL8ARRAY(rev, SIZE(rev, 1)*SIZE(rev, 2)*SIZE(rev, 3))
    CALL EXTRAPOLATE2NDHALO(nn, correctfork)
-   CALL PUSHCONTROL2B(2)
+   CALL PUSHCONTROL1B(0)
    ELSE
-   CALL PUSHCONTROL2B(1)
+   CALL PUSHCONTROL1B(1)
    END IF
+   CALL RESETGAMMABWD(nn, gamma1, gamma2)
+   ! deallocation all pointer
+   !           call resetNormRfaceBwd(nn,norm,rface)
+   CALL PUSHREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
+   CALL RESETBCPOINTERSBWD(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
+   &                          rev1, rev2, 0)
+   CALL PUSHCONTROL1B(1)
    ELSE
-   CALL PUSHCONTROL2B(0)
+   CALL PUSHCONTROL1B(0)
    END IF
    END DO bocos
+   gammab = 0.0_8
+   gamma1b = 0.0_8
+   gamma2b = 0.0_8
+   pp1b = 0.0_8
+   pp2b = 0.0_8
+   rlv1b = 0.0_8
+   rlv2b = 0.0_8
+   ww1b = 0.0_8
+   ww2b = 0.0_8
    DO nn=nbocos,1,-1
-   CALL POPCONTROL2B(branch)
+   CALL POPCONTROL1B(branch)
    IF (branch .NE. 0) THEN
-   IF (branch .NE. 1) THEN
+   CALL POPREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
+   CALL RESETBCPOINTERSBWD_B(nn, ww1, ww1b, ww2, ww2b, pp1, pp1b, pp2&
+   &                         , pp2b, rlv1, rlv1b, rlv2, rlv2b, rev1, rev2, &
+   &                         0)
+   CALL RESETGAMMABWD_B(nn, gamma1, gamma1b, gamma2, gamma2b)
+   CALL POPCONTROL1B(branch)
+   IF (branch .EQ. 0) THEN
+   CALL POPREAL8ARRAY(rev, SIZE(rev, 1)*SIZE(rev, 2)*SIZE(rev, 3))
    CALL POPREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
    CALL POPREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4&
    &                    ))
    CALL POPREAL8ARRAY(rlv, SIZE(rlv, 1)*SIZE(rlv, 2)*SIZE(rlv, 3))
    CALL EXTRAPOLATE2NDHALO_B(nn, correctfork)
    END IF
-   CALL POPREAL8ARRAY(gamma, SIZE(gamma, 1)*SIZE(gamma, 2)*SIZE(gamma&
-   &                  , 3))
    CALL POPREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4))
    CALL COMPUTEETOT_B(icbeg(nn), icend(nn), jcbeg(nn), jcend(nn), &
    &                  kcbeg(nn), kcend(nn), correctfork)
@@ -365,84 +283,72 @@
    CALL POPINTEGER4(ad_to)
    DO i=ad_to,ad_from,-1
    CALL POPCONTROL1B(branch)
-   IF (branch .NE. 0) THEN
-   tmpb1 = rev1b(i, j)
-   rev1b(i, j) = 0.0_8
-   rev2b(i, j) = rev2b(i, j) + tmpb1
-   END IF
-   CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   tmpb0 = rlv1b(i, j)
+   rlv2b(i, j) = rlv2b(i, j) + rlv1b(i, j)
    rlv1b(i, j) = 0.0_8
-   rlv2b(i, j) = rlv2b(i, j) + tmpb0
    END IF
    cc = cf*cf/gamma2(i, j)
-   CALL POPREAL8(pp1(i, j))
    ww1b(i, j, irho) = ww1b(i, j, irho) + cc*pp1b(i, j)
-   ccb = ww1(i, j, irho)*pp1b(i, j)
-   pp1b(i, j) = 0.0_8
-   CALL POPREAL8(ww1(i, j, ivz))
    wfb = ww1b(i, j, ivz)
    ww1b(i, j, ivz) = 0.0_8
-   CALL POPREAL8(ww1(i, j, ivy))
    vfb = ww1b(i, j, ivy)
    ww1b(i, j, ivy) = 0.0_8
-   CALL POPREAL8(ww1(i, j, ivx))
    ufb = ww1b(i, j, ivx)
    ww1b(i, j, ivx) = 0.0_8
-   CALL POPREAL8(ww1(i, j, irho))
    IF (sf*cc .LE. 0.0_8 .AND. (ovgm1 .EQ. 0.0_8 .OR. ovgm1 .NE. &
    &             INT(ovgm1))) THEN
-   tempb2 = 0.0
+   tempb6 = 0.0
    ELSE
-   tempb2 = ovgm1*(sf*cc)**(ovgm1-1)*ww1b(i, j, irho)
+   tempb6 = ovgm1*(sf*cc)**(ovgm1-1)*ww1b(i, j, irho)
    END IF
-   sfb = cc*tempb2
-   ccb = ccb + sf*tempb2
+   ccb = sf*tempb6 + ww1(i, j, irho)*pp1b(i, j)
+   pp1b(i, j) = 0.0_8
+   sfb = cc*tempb6
    ww1b(i, j, irho) = 0.0_8
-   tempb3 = ccb/gamma2(i, j)
-   cfb = 2*cf*tempb3
-   gamma2b(i, j) = gamma2b(i, j) - cf**2*tempb3/gamma2(i, j)
+   tempb7 = ccb/gamma2(i, j)
+   cfb = 2*cf*tempb7
+   gamma2b(i, j) = gamma2b(i, j) - cf**2*tempb7/gamma2(i, j)
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    DO l=nt2mg,nt1mg,-1
-   CALL POPREAL8(ww1(i, j, l))
-   tmpb = ww1b(i, j, l)
+   ww2b(i, j, l) = ww2b(i, j, l) + ww1b(i, j, l)
    ww1b(i, j, l) = 0.0_8
-   ww2b(i, j, l) = ww2b(i, j, l) + tmpb
    END DO
+   tempb5 = bcdata(nn)%norm(i, j, 1)*ufb
+   tempb4 = bcdata(nn)%norm(i, j, 2)*vfb
    CALL POPREAL8(sf)
-   tempb1 = sfb/pp2(i, j)
-   temp3 = ww2(i, j, irho)
-   temp2 = gamma2(i, j)
-   temp1 = temp3**temp2
-   IF (.NOT.(temp3 .LE. 0.0_8 .AND. (temp2 .EQ. 0.0_8 .OR. &
-   &               temp2 .NE. INT(temp2)))) ww2b(i, j, irho) = ww2b(i, j, &
-   &               irho) + temp2*temp3**(temp2-1)*tempb1
-   IF (.NOT.temp3 .LE. 0.0_8) gamma2b(i, j) = gamma2b(i, j) + &
-   &               temp1*LOG(temp3)*tempb1
-   pp2b(i, j) = pp2b(i, j) - temp1*tempb1/pp2(i, j)
+   tempb2 = sfb/pp2(i, j)
+   temp2 = ww2(i, j, irho)
+   temp1 = gamma2(i, j)
+   temp0 = temp2**temp1
+   IF (.NOT.(temp2 .LE. 0.0_8 .AND. (temp1 .EQ. 0.0_8 .OR. &
+   &               temp1 .NE. INT(temp1)))) ww2b(i, j, irho) = ww2b(i, j, &
+   &               irho) + temp1*temp2**(temp1-1)*tempb2
+   IF (.NOT.temp2 .LE. 0.0_8) gamma2b(i, j) = gamma2b(i, j) + &
+   &               temp0*LOG(temp2)*tempb2
+   pp2b(i, j) = pp2b(i, j) - temp0*tempb2/pp2(i, j)
+   tempb3 = bcdata(nn)%norm(i, j, 3)*wfb
    web = wfb
-   qnfb = nny*vfb + nnx*ufb + nnz*wfb
-   qneb = -(nny*vfb) - nnx*ufb - nnz*wfb
+   qnfb = tempb4 + tempb5 + tempb3
+   qneb = -tempb4 - tempb5 - tempb3
    veb = vfb
    ueb = ufb
    ELSE
    DO l=nt2mg,nt1mg,-1
-   CALL POPREAL8(ww1(i, j, l))
    ww1b(i, j, l) = 0.0_8
    END DO
    CALL POPREAL8(sf)
-   qnfb = nny*vfb + nnx*ufb + nnz*wfb
+   qnfb = bcdata(nn)%norm(i, j, 2)*vfb + bcdata(nn)%norm(i, j, &
+   &             1)*ufb + bcdata(nn)%norm(i, j, 3)*wfb
    qneb = 0.0_8
    ueb = 0.0_8
    veb = 0.0_8
    web = 0.0_8
    END IF
    CALL POPREAL8(cf)
-   tempb0 = fourth*gm1*cfb
-   ac1b = half*qnfb + tempb0
-   ac2b = half*qnfb - tempb0
+   tempb1 = fourth*gm1*cfb
+   ac1b = half*qnfb + tempb1
+   ac2b = half*qnfb - tempb1
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    qneb = qneb + ac2b
@@ -456,64 +362,33 @@
    ceb = ceb + two*ovgm1*ac1b
    END IF
    re = one/ww2(i, j, irho)
-   temp0 = pp2(i, j)
    temp = gamma2(i, j)*re
-   IF (temp*temp0 .EQ. 0.0_8) THEN
+   IF (temp*pp2(i, j) .EQ. 0.0_8) THEN
    tempb = 0.0
    ELSE
-   tempb = ceb/(2.0*SQRT(temp*temp0))
+   tempb = ceb/(2.0*SQRT(temp*pp2(i, j)))
    END IF
-   gamma2b(i, j) = gamma2b(i, j) + temp0*re*tempb
-   reb = temp0*gamma2(i, j)*tempb
+   tempb0 = pp2(i, j)*tempb
+   gamma2b(i, j) = gamma2b(i, j) + re*tempb0
+   reb = gamma2(i, j)*tempb0
    pp2b(i, j) = pp2b(i, j) + temp*tempb
-   ueb = ueb + nnx*qneb
-   veb = veb + nny*qneb
-   web = web + nnz*qneb
+   ueb = ueb + bcdata(nn)%norm(i, j, 1)*qneb
+   veb = veb + bcdata(nn)%norm(i, j, 2)*qneb
+   web = web + bcdata(nn)%norm(i, j, 3)*qneb
    ww2b(i, j, ivz) = ww2b(i, j, ivz) + web
    ww2b(i, j, ivy) = ww2b(i, j, ivy) + veb
    ww2b(i, j, ivx) = ww2b(i, j, ivx) + ueb
    ww2b(i, j, irho) = ww2b(i, j, irho) - one*reb/ww2(i, j, irho)&
    &           **2
-   CALL POPREAL8(nnz)
-   CALL POPREAL8(nny)
-   CALL POPREAL8(nnx)
    END DO
    END DO
-   CALL POPCONTROL3B(branch)
-   IF (branch .LT. 3) THEN
-   IF (branch .EQ. 0) THEN
-   CALL POPPOINTER4(gamma2)
-   CALL POPPOINTER4(gamma2b)
-   ELSE IF (branch .EQ. 1) THEN
-   CALL POPPOINTER4(gamma2)
-   CALL POPPOINTER4(gamma2b)
-   ELSE
-   CALL POPPOINTER4(gamma2)
-   CALL POPPOINTER4(gamma2b)
-   END IF
-   ELSE IF (branch .LT. 5) THEN
-   IF (branch .EQ. 3) THEN
-   CALL POPPOINTER4(gamma2)
-   CALL POPPOINTER4(gamma2b)
-   ELSE
-   CALL POPPOINTER4(gamma2)
-   CALL POPPOINTER4(gamma2b)
-   END IF
-   ELSE IF (branch .EQ. 5) THEN
-   CALL POPPOINTER4(gamma2)
-   CALL POPPOINTER4(gamma2b)
-   END IF
-   CALL POPPOINTER4(ww1)
-   CALL POPPOINTER4(ww2)
-   CALL POPPOINTER4(pp1)
-   CALL POPPOINTER4(pp2)
-   CALL POPPOINTER4(rlv1)
-   CALL POPPOINTER4(rlv2)
-   CALL POPPOINTER4(rev1)
-   CALL POPPOINTER4(rev2)
-   CALL SETBCPOINTERS_B(nn, ww1, ww1b, ww2, ww2b, pp1, pp1b, pp2, &
-   &                    pp2b, rlv1, rlv1b, rlv2, rlv2b, rev1, rev1b, rev2, &
-   &                    rev2b, 0)
+   CALL POPREAL8ARRAY(gamma2, imaxdim*jmaxdim)
+   CALL SETGAMMABWD_B(nn, gamma1, gamma1b, gamma2, gamma2b)
+   CALL POPREAL8ARRAY(ww1, imaxdim*jmaxdim*nw)
+   CALL POPREAL8ARRAY(ww2, imaxdim*jmaxdim*nw)
+   CALL POPREAL8ARRAY(pp2, imaxdim*jmaxdim)
+   CALL SETBCPOINTERSBWD_B(nn, ww1, ww1b, ww2, ww2b, pp1, pp1b, pp2, &
+   &                       pp2b, rlv1, rlv1b, rlv2, rlv2b, rev1, rev2, 0)
    END IF
    END DO
    END SUBROUTINE BCFARFIELD_B
