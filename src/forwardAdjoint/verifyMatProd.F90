@@ -27,7 +27,8 @@ subroutine verifyMatProd
   !logical, intent(in) :: firstRun, verifyState, verifySpatial, verifyExtra
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
-  Vec,  allocatable, dimension(:) :: vec1, vec2
+  !Vec,  allocatable, dimension(:) :: vec1, vec2
+  real(kind=realType),dimension(:),allocatable :: vec1, vec2 
 
   ! Local variables.
   integer(kind=intType) :: i, j, k, l, nn, ii, ierr
@@ -93,8 +94,6 @@ subroutine verifyMatProd
   end if
 
 
-
-
   !Check state
   logicCheck1: if ( verifyState ) then
      nn = 1
@@ -109,10 +108,11 @@ subroutine verifyMatProd
         
      ! Set pointers and derivative pointers
      call setPointers_b(nn, level, 1)
-     call setPointers_d(nn, level, 1)
+     !call setPointers_d(nn, level, 1)
      ! Reset All States and possibe AD seeds
      flowdomsb(1,1,1)%dw = zero 
-     allocate(vec1(ncellslocal(1_intType)*5),vec2(ncellslocal(1_intType)*5))
+     print *, ncellslocal(1)
+     allocate(vec1(3072*5),vec2(3072*5))
      
      ii = 0
      do k=2, kl
@@ -123,13 +123,13 @@ subroutine verifyMatProd
                  call random_number(ran)
                  ii = ii + 1
                  vec1(ii) = ran
-                 !vec2(ii) = 1.0
-                 flowdomsb(1,1,1)%dw(i, j, k, l) = vec1(ii)
+                 vec2(ii) = ran
+                 flowdomsb(1,1,1)%dw(i, j, k, l) = ran
               end do
            end do
         end do
      end do
-     call getdRdwTVec(vec1, vec2, size(vec1))
+     call getdRdwTVec(vec1, vec2, 3072*5)
      call block_res_b(nn, 1, .False., alpha, beta, liftIndex, force, moment)
      
 
@@ -139,7 +139,10 @@ subroutine verifyMatProd
            do i=2,il
               do l = 1,5
                  ii = ii + 1
-                 print *, flowdomsb(1,1,1)%w(i, j, k, l), vec2(ii)
+                 if (abs(flowdomsb(1,1,1)%w(i,j,k,l) - vec2(ii)) > 1e-8) then
+                    print *,i,j,k,l,flowdomsb(1,1,1)%w(i, j, k, l)-vec2(ii)
+                    print *, flowdomsb(1,1,1)%w(i, j, k, l), vec2(ii)
+                 end if
               end do
            end do
         end do
