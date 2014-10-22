@@ -3,7 +3,7 @@
    !
    !  Differentiation of bcfarfield in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
    !   gradient     of useful results: *p *w *rlv
-   !   with respect to varying inputs: *p *w *rlv
+   !   with respect to varying inputs: *p *gamma *w *rlv
    !   Plus diff mem management of: p:in gamma:in w:in rlv:in
    !
    !      ******************************************************************
@@ -220,8 +220,6 @@
    CALL PUSHINTEGER4(ad_from0)
    CALL RESETGAMMABWD(nn, gamma1, gamma2)
    ! deallocation all pointer
-   CALL PUSHREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4)&
-   &                  )
    CALL PUSHREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
    CALL RESETBCPOINTERSBWD(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
    &                          rev1, rev2, 0)
@@ -271,7 +269,6 @@
    CALL COMPUTEETOT_B(icbeg(nn), icend(nn), jcbeg(nn), jcend(nn), &
    &                  kcbeg(nn), kcend(nn), correctfork)
    CALL POPREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
-   CALL POPREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4))
    CALL RESETBCPOINTERSBWD_B(nn, ww1, ww1b, ww2, ww2b, pp1, pp1b, pp2&
    &                         , pp2b, rlv1, rlv1b, rlv2, rlv2b, rev1, rev2, &
    &                         0)

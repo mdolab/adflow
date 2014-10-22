@@ -59,6 +59,7 @@ FILES_TO_COPY = setupStateResidualMatrix.F90\
 		setupSpatialResidualMatrix.F90\
 		setupAdjointMatrix.F90\
 		verifyAD.F90\
+		verifyMatProd.F90\
 		verifyOneValue.F90
 
 ALL_FILES = $(FILES_TO_COMPLEXIFY) $(FILES_TO_COPY)

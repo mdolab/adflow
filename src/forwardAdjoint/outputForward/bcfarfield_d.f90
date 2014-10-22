@@ -3,7 +3,7 @@
    !
    !  Differentiation of bcfarfield in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *p *w *rlv
-   !   with respect to varying inputs: *p *w *rlv
+   !   with respect to varying inputs: *p *gamma *w *rlv
    !   Plus diff mem management of: p:in gamma:in w:in rlv:in
    !
    !      ******************************************************************
@@ -147,7 +147,6 @@
    c0 = SQRT(arg1)
    pwr1 = winf(irho)**gammainf
    s0 = pwr1/pinfcorr
-   gammad = 0.0_8
    ! Loop over the boundary condition subfaces of this block.
    bocos:DO nn=1,nbocos
    ! Check for farfield boundary conditions.

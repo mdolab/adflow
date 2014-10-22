@@ -4,7 +4,7 @@
    !  Differentiation of bcsymm in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *p *w *rlv
    !   with respect to varying inputs: *p *w *rlv
-   !   Plus diff mem management of: p:in w:in rlv:in
+   !   Plus diff mem management of: p:in gamma:in w:in rlv:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -104,8 +104,18 @@
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1d, rlv2d
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
    END SUBROUTINE SETBCPOINTERS_D
+   SUBROUTINE SETGAMMA_D(nn, gamma1, gamma1d, gamma2, gamma2d)
+   USE BCTYPES
+   USE BLOCKPOINTERS_D
+   IMPLICIT NONE
+   INTEGER(kind=inttype), INTENT(IN) :: nn
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: gamma1, gamma2
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: gamma1d, &
+   &       gamma2d
+   END SUBROUTINE SETGAMMA_D
    END INTERFACE
-      !
+      REAL(kind=realtype), DIMENSION(:, :), POINTER :: gamma1d
+   !
    !      ******************************************************************
    !      *                                                                *
    !      * Begin execution                                                *
@@ -172,6 +182,7 @@
    END DO
    ! Set the pressure and gamma and possibly the
    ! laminar and eddy viscosity in the halo.
+   !gamma1d(i, j) = 0.0_8
    gamma1(i, j) = gamma2(i, j)
    pp1d(i, j) = pp2d(i, j)
    pp1(i, j) = pp2(i, j)

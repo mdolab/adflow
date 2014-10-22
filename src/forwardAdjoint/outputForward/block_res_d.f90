@@ -5,14 +5,14 @@
    !   variations   of useful results: *(flowdoms.w) *(flowdoms.dw)
    !   with respect to varying inputs: *(flowdoms.w)
    !   RW status of diff variables: *(flowdoms.w):in-out *(flowdoms.dw):out
-   !                *bvtj1:(loc) *bvtj2:(loc) *p:(loc) *bmtk1:(loc)
-   !                *bmtk2:(loc) *rlv:(loc) *bvtk1:(loc) *bvtk2:(loc)
-   !                *bmti1:(loc) *bmti2:(loc) *bvti1:(loc) *bvti2:(loc)
-   !                *bmtj1:(loc) *bmtj2:(loc)
+   !                *bvtj1:(loc) *bvtj2:(loc) *p:(loc) *gamma:(loc)
+   !                *bmtk1:(loc) *bmtk2:(loc) *rlv:(loc) *bvtk1:(loc)
+   !                *bvtk2:(loc) *bmti1:(loc) *bmti2:(loc) *bvti1:(loc)
+   !                *bvti2:(loc) *bmtj1:(loc) *bmtj2:(loc)
    !   Plus diff mem management of: flowdoms.w:in flowdoms.dw:in bvtj1:in
-   !                bvtj2:in p:in bmtk1:in bmtk2:in rlv:in bvtk1:in
-   !                bvtk2:in bmti1:in bmti2:in bvti1:in bvti2:in bmtj1:in
-   !                bmtj2:in
+   !                bvtj2:in p:in gamma:in bmtk1:in bmtk2:in rlv:in
+   !                bvtk1:in bvtk2:in bmti1:in bmti2:in bvti1:in bvti2:in
+   !                bmtj1:in bmtj2:in
    ! This is a super-combined function that combines the original
    ! functionality of: 
    ! Pressure Computation
@@ -146,10 +146,7 @@
    CALL COMPUTELAMVISCOSITY_D()
    CALL COMPUTEEDDYVISCOSITY()
    !  Apply all BC's
-   !call applyAllBC_block(.True.)
-   !call bcEulerWall(.True., .False.)
-   !call bcFarfield(.True., .False.)
-   CALL BCSYMM_D(.true.)
+   CALL APPLYALLBC_BLOCK_D(.true.)
    ! Compute skin_friction Velocity (only for wall Functions)
    ! #ifndef TAPENADE_REVERSE
    !   call computeUtau_block

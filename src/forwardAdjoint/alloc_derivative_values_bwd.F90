@@ -104,7 +104,7 @@ subroutine alloc_derivative_values_bwd(level)
         allocate(flowDomsb(nn,1,sps)%BCData(nBocos), stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
         
-        flowdomsd(nn,1,sps)%nBocos = flowdoms(nn,level,sps)%nbocos   
+        flowdomsb(nn,1,sps)%nBocos = flowdoms(nn,level,sps)%nbocos   
   
         bocoLoop: do mm=1,nBocos
            
@@ -193,7 +193,7 @@ subroutine alloc_derivative_values_bwd(level)
         end if
 
         ! Zero out all the derivative values we've just allocated
-        call zeroADSeeds(nn, 1, sps)
+        !call zeroADSeeds(nn, 1, sps)
      end do
   end do
   

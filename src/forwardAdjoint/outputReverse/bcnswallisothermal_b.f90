@@ -2,16 +2,9 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of bcnswallisothermal in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *rev *bvtj1 *bvtj2 *p *gamma
-   !                *bmtk1 *w *bmtk2 *rlv *bvtk1 *bvtk2 *bmti1 *bmti2
-   !                *bvti1 *bvti2 *bmtj1 *bmtj2
-   !   with respect to varying inputs: *rev *bvtj1 *bvtj2 *p *gamma
-   !                *bmtk1 *w *bmtk2 *rlv *bvtk1 *bvtk2 *bmti1 *bmti2
-   !                *bvti1 *bvti2 *bmtj1 *bmtj2
-   !   Plus diff mem management of: rev:in bvtj1:in bvtj2:in p:in
-   !                gamma:in bmtk1:in w:in bmtk2:in rlv:in bvtk1:in
-   !                bvtk2:in bmti1:in bmti2:in bvti1:in bvti2:in bmtj1:in
-   !                bmtj2:in
+   !   gradient     of useful results: *p *gamma *w *rlv
+   !   with respect to varying inputs: *p *gamma *w *rlv
+   !   Plus diff mem management of: p:in gamma:in w:in rlv:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -49,75 +42,20 @@
    INTEGER(kind=inttype) :: nn, i, j
    REAL(kind=realtype) :: rhok, t2, t1
    REAL(kind=realtype) :: rhokb, t2b, t1b
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: uslip
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: tns_wall
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1b, ww2b
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1, pp2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1b, pp2b
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1b, rlv2b
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1b, rev2b
-   INTERFACE 
-   SUBROUTINE SETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
-   &       rev1, rev2, offset)
-   USE BLOCKPOINTERS_B
-   IMPLICIT NONE
-   INTEGER(kind=inttype), INTENT(IN) :: nn, offset
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1, pp2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
-   END SUBROUTINE SETBCPOINTERS
-   END INTERFACE
-      INTERFACE 
-   SUBROUTINE SETBCPOINTERS_B(nn, ww1, ww1b, ww2, ww2b, pp1, pp1b, &
-   &       pp2, pp2b, rlv1, rlv1b, rlv2, rlv2b, rev1, rev1b, rev2, rev2b, &
-   &       offset)
-   USE BLOCKPOINTERS_B
-   IMPLICIT NONE
-   INTEGER(kind=inttype), INTENT(IN) :: nn, offset
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1b, ww2b
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1, pp2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1b, pp2b
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1b, rlv2b
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1b, rev2b
-   END SUBROUTINE SETBCPOINTERS_B
-   END INTERFACE
-      INTRINSIC MAX
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, nw) :: ww1, ww2
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, nw) :: ww1b, ww2b
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: pp1, pp2
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: pp1b, pp2b
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rlv1, rlv2
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rlv1b, rlv2b
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rev1, rev2
+   INTRINSIC MAX
    INTRINSIC MIN
-   REAL(kind=realtype) :: tmp
-   REAL(kind=realtype) :: tmp0
-   REAL(kind=realtype) :: tmp1
-   REAL(kind=realtype) :: tmp2
-   REAL(kind=realtype) :: tmp3
-   REAL(kind=realtype) :: tmp4
    INTEGER :: branch
    INTEGER :: ad_from
    INTEGER :: ad_to
    INTEGER :: ad_from0
    INTEGER :: ad_to0
-   INTERFACE 
-   SUBROUTINE PUSHPOINTER4(pp)
-   REAL, POINTER :: pp
-   END SUBROUTINE PUSHPOINTER4
-   SUBROUTINE LOOKPOINTER4(pp)
-   REAL, POINTER :: pp
-   END SUBROUTINE LOOKPOINTER4
-   SUBROUTINE POPPOINTER4(pp)
-   REAL, POINTER :: pp
-   END SUBROUTINE POPPOINTER4
-   END INTERFACE
-      REAL(kind=realtype) :: tmpb4
-   REAL(kind=realtype) :: tmpb3
-   REAL(kind=realtype) :: tmpb
-   REAL(kind=realtype) :: tmpb2
-   REAL(kind=realtype) :: tmpb1
-   REAL(kind=realtype) :: tmpb0
    REAL(kind=realtype) :: tempb
    REAL(kind=realtype) :: temp
    !
@@ -132,60 +70,28 @@
    ! wall boundary conditions for the turbulent variables.
    ! No need to extrapolate the secondary halo's, because this
    ! is done in extrapolate2ndHalo.
-   IF (turbcoupled) THEN
-   CALL PUSHREAL8ARRAY(bmtj2, SIZE(bmtj2, 1)*SIZE(bmtj2, 2)*SIZE(bmtj2&
-   &                 , 3)*SIZE(bmtj2, 4))
-   CALL PUSHREAL8ARRAY(bmtj1, SIZE(bmtj1, 1)*SIZE(bmtj1, 2)*SIZE(bmtj1&
-   &                 , 3)*SIZE(bmtj1, 4))
-   CALL PUSHREAL8ARRAY(bvti2, SIZE(bvti2, 1)*SIZE(bvti2, 2)*SIZE(bvti2&
-   &                 , 3))
-   CALL PUSHREAL8ARRAY(bvti1, SIZE(bvti1, 1)*SIZE(bvti1, 2)*SIZE(bvti1&
-   &                 , 3))
-   CALL PUSHREAL8ARRAY(bmti2, SIZE(bmti2, 1)*SIZE(bmti2, 2)*SIZE(bmti2&
-   &                 , 3)*SIZE(bmti2, 4))
-   CALL PUSHREAL8ARRAY(bmti1, SIZE(bmti1, 1)*SIZE(bmti1, 2)*SIZE(bmti1&
-   &                 , 3)*SIZE(bmti1, 4))
-   CALL PUSHREAL8ARRAY(bvtk2, SIZE(bvtk2, 1)*SIZE(bvtk2, 2)*SIZE(bvtk2&
-   &                 , 3))
-   CALL PUSHREAL8ARRAY(bvtk1, SIZE(bvtk1, 1)*SIZE(bvtk1, 2)*SIZE(bvtk1&
-   &                 , 3))
-   CALL PUSHREAL8ARRAY(bmtk2, SIZE(bmtk2, 1)*SIZE(bmtk2, 2)*SIZE(bmtk2&
-   &                 , 3)*SIZE(bmtk2, 4))
-   CALL PUSHREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4))
-   CALL PUSHREAL8ARRAY(bmtk1, SIZE(bmtk1, 1)*SIZE(bmtk1, 2)*SIZE(bmtk1&
-   &                 , 3)*SIZE(bmtk1, 4))
-   CALL PUSHREAL8ARRAY(bvtj2, SIZE(bvtj2, 1)*SIZE(bvtj2, 2)*SIZE(bvtj2&
-   &                 , 3))
-   CALL PUSHREAL8ARRAY(bvtj1, SIZE(bvtj1, 1)*SIZE(bvtj1, 2)*SIZE(bvtj1&
-   &                 , 3))
-   CALL PUSHREAL8ARRAY(rev, SIZE(rev, 1)*SIZE(rev, 2)*SIZE(rev, 3))
-   CALL TURBBCNSWALL(.false.)
-   CALL PUSHCONTROL1B(1)
-   ELSE
-   CALL PUSHCONTROL1B(0)
-   END IF
+   ! We turn off the turbulence BCwall for now. This needs
+   ! to be added and correct the pointers to use full turbulence.
+   ! It should be okay for frozen turbulence assumption.
    ! Loop over the viscous subfaces of this block. Note that
    ! these are numbered first.
    bocos:DO nn=1,nviscbocos
-   CALL PUSHCONTROL2B(0)
+   ! Check for isothermal viscous wall boundary conditions.
+   IF (bctype(nn) .EQ. nswallisothermal) THEN
    ! Set the pointers for uSlip and TNSWall to make
    ! the code more readable.
-   uslip => bcdata(nn)%uslip
-   tns_wall => bcdata(nn)%tns_wall
+   ! Replace those with actual BCData for reverse AD - Peter Lyu
+   !uSlip    => BCData(nn)%uSlip
+   !TNS_Wall => BCData(nn)%TNS_Wall
    ! Nullify the pointers and set them to the correct subface.
    ! They are nullified first, because some compilers require
    ! that.
    !nullify(ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2)
-   CALL PUSHPOINTER4(rev2)
-   CALL PUSHPOINTER4(rev1)
-   CALL PUSHPOINTER4(rlv2)
-   CALL PUSHPOINTER4(rlv1)
-   CALL PUSHPOINTER4(pp2)
-   CALL PUSHPOINTER4(pp1)
-   CALL PUSHPOINTER4(ww2)
-   CALL PUSHPOINTER4(ww1)
-   CALL SETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2&
-   &                   , 0)
+   CALL PUSHREAL8ARRAY(pp2, imaxdim*jmaxdim)
+   CALL PUSHREAL8ARRAY(pp1, imaxdim*jmaxdim)
+   CALL PUSHREAL8ARRAY(ww2, imaxdim*jmaxdim*nw)
+   CALL SETBCPOINTERSBWD(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, rev1&
+   &                        , rev2, 0)
    ! Initialize rhok to zero. This will be overwritten if a
    ! correction for k must be applied.
    rhok = zero
@@ -208,80 +114,82 @@
    ! halo cell such that the average is the wall temperature.
    t2 = pp2(i, j)/(rgas*ww2(i, j, irho))
    CALL PUSHREAL8(t1)
-   t1 = two*tns_wall(i, j) - t2
-   IF (half*tns_wall(i, j) .LT. t1) THEN
+   t1 = two*bcdata(nn)%tns_wall(i, j) - t2
+   IF (half*bcdata(nn)%tns_wall(i, j) .LT. t1) THEN
    CALL PUSHCONTROL1B(0)
    t1 = t1
    ELSE
-   t1 = half*tns_wall(i, j)
+   t1 = half*bcdata(nn)%tns_wall(i, j)
    CALL PUSHCONTROL1B(1)
    END IF
-   IF (two*tns_wall(i, j) .GT. t1) THEN
+   IF (two*bcdata(nn)%tns_wall(i, j) .GT. t1) THEN
    CALL PUSHCONTROL1B(0)
    t1 = t1
    ELSE
-   t1 = two*tns_wall(i, j)
+   t1 = two*bcdata(nn)%tns_wall(i, j)
    CALL PUSHCONTROL1B(1)
    END IF
    ! Determine the variables in the halo. As the spacing
    ! is very small a constant pressure boundary condition
    ! (except for the k correction) is okay. Take the slip
    ! velocity into account.
-   tmp = pp2(i, j) - four*third*rhok
-   CALL PUSHREAL8(pp1(i, j))
-   pp1(i, j) = tmp
-   CALL PUSHREAL8(ww1(i, j, irho))
+   pp1(i, j) = pp2(i, j) - four*third*rhok
    ww1(i, j, irho) = pp1(i, j)/(rgas*t1)
-   tmp0 = -ww2(i, j, ivx) + two*uslip(i, j, 1)
-   CALL PUSHREAL8(ww1(i, j, ivx))
-   ww1(i, j, ivx) = tmp0
-   tmp1 = -ww2(i, j, ivy) + two*uslip(i, j, 2)
-   CALL PUSHREAL8(ww1(i, j, ivy))
-   ww1(i, j, ivy) = tmp1
-   tmp2 = -ww2(i, j, ivz) + two*uslip(i, j, 3)
-   CALL PUSHREAL8(ww1(i, j, ivz))
-   ww1(i, j, ivz) = tmp2
+   ww1(i, j, ivx) = -ww2(i, j, ivx) + two*bcdata(nn)%uslip(i, j, &
+   &           1)
+   ww1(i, j, ivy) = -ww2(i, j, ivy) + two*bcdata(nn)%uslip(i, j, &
+   &           2)
+   ww1(i, j, ivz) = -ww2(i, j, ivz) + two*bcdata(nn)%uslip(i, j, &
+   &           3)
    ! Set the viscosities. There is no need to test for a
    ! viscous problem of course. The eddy viscosity is
    ! set to the negative value, as it should be zero on
    ! the wall.
-   tmp3 = rlv2(i, j)
-   CALL PUSHREAL8(rlv1(i, j))
-   rlv1(i, j) = tmp3
-   IF (eddymodel) THEN
-   tmp4 = -rev2(i, j)
-   rev1(i, j) = tmp4
-   CALL PUSHCONTROL1B(1)
-   ELSE
-   CALL PUSHCONTROL1B(0)
-   END IF
+   rlv1(i, j) = rlv2(i, j)
+   IF (eddymodel) rev1(i, j) = -rev2(i, j)
    END DO
    CALL PUSHINTEGER4(i - 1)
    CALL PUSHINTEGER4(ad_from)
    END DO
    CALL PUSHINTEGER4(j - 1)
    CALL PUSHINTEGER4(ad_from0)
+   ! deallocation all pointer
+   CALL PUSHREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
+   CALL RESETBCPOINTERSBWD(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
+   &                          rev1, rev2, 0)
    ! Compute the energy for these halo's.
-   CALL PUSHREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4))
+   CALL PUSHREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4)&
+   &                  )
    CALL COMPUTEETOT(icbeg(nn), icend(nn), jcbeg(nn), jcend(nn), &
-   &                 kcbeg(nn), kcend(nn), correctfork)
+   &                   kcbeg(nn), kcend(nn), correctfork)
    ! Extrapolate the state vectors in case a second halo
    ! is needed.
    IF (secondhalo) THEN
    CALL PUSHREAL8ARRAY(rlv, SIZE(rlv, 1)*SIZE(rlv, 2)*SIZE(rlv, 3))
-   CALL PUSHREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4)&
-   &                  )
+   CALL PUSHREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, &
+   &                     4))
    CALL PUSHREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
+   CALL PUSHREAL8ARRAY(rev, SIZE(rev, 1)*SIZE(rev, 2)*SIZE(rev, 3))
    CALL EXTRAPOLATE2NDHALO(nn, correctfork)
    CALL PUSHCONTROL2B(2)
    ELSE
    CALL PUSHCONTROL2B(1)
    END IF
+   ELSE
+   CALL PUSHCONTROL2B(0)
+   END IF
    END DO bocos
+   pp1b = 0.0_8
+   pp2b = 0.0_8
+   rlv1b = 0.0_8
+   rlv2b = 0.0_8
+   ww1b = 0.0_8
+   ww2b = 0.0_8
    DO nn=nviscbocos,1,-1
    CALL POPCONTROL2B(branch)
    IF (branch .NE. 0) THEN
    IF (branch .NE. 1) THEN
+   CALL POPREAL8ARRAY(rev, SIZE(rev, 1)*SIZE(rev, 2)*SIZE(rev, 3))
    CALL POPREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
    CALL POPREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4&
    &                    ))
@@ -291,6 +199,10 @@
    CALL POPREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4))
    CALL COMPUTEETOT_B(icbeg(nn), icend(nn), jcbeg(nn), jcend(nn), &
    &                  kcbeg(nn), kcend(nn), correctfork)
+   CALL POPREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
+   CALL RESETBCPOINTERSBWD_B(nn, ww1, ww1b, ww2, ww2b, pp1, pp1b, pp2&
+   &                         , pp2b, rlv1, rlv1b, rlv2, rlv2b, rev1, rev2, &
+   &                         0)
    rhokb = 0.0_8
    CALL POPINTEGER4(ad_from0)
    CALL POPINTEGER4(ad_to0)
@@ -298,38 +210,21 @@
    CALL POPINTEGER4(ad_from)
    CALL POPINTEGER4(ad_to)
    DO i=ad_to,ad_from,-1
-   CALL POPCONTROL1B(branch)
-   IF (branch .NE. 0) THEN
-   tmpb4 = rev1b(i, j)
-   rev1b(i, j) = 0.0_8
-   rev2b(i, j) = rev2b(i, j) - tmpb4
-   END IF
-   CALL POPREAL8(rlv1(i, j))
-   tmpb = rlv1b(i, j)
+   rlv2b(i, j) = rlv2b(i, j) + rlv1b(i, j)
    rlv1b(i, j) = 0.0_8
-   rlv2b(i, j) = rlv2b(i, j) + tmpb
-   CALL POPREAL8(ww1(i, j, ivz))
-   tmpb0 = ww1b(i, j, ivz)
+   ww2b(i, j, ivz) = ww2b(i, j, ivz) - ww1b(i, j, ivz)
    ww1b(i, j, ivz) = 0.0_8
-   ww2b(i, j, ivz) = ww2b(i, j, ivz) - tmpb0
-   CALL POPREAL8(ww1(i, j, ivy))
-   tmpb1 = ww1b(i, j, ivy)
+   ww2b(i, j, ivy) = ww2b(i, j, ivy) - ww1b(i, j, ivy)
    ww1b(i, j, ivy) = 0.0_8
-   ww2b(i, j, ivy) = ww2b(i, j, ivy) - tmpb1
-   CALL POPREAL8(ww1(i, j, ivx))
-   tmpb2 = ww1b(i, j, ivx)
+   ww2b(i, j, ivx) = ww2b(i, j, ivx) - ww1b(i, j, ivx)
    ww1b(i, j, ivx) = 0.0_8
-   ww2b(i, j, ivx) = ww2b(i, j, ivx) - tmpb2
-   CALL POPREAL8(ww1(i, j, irho))
    tempb = ww1b(i, j, irho)/(rgas*t1)
    pp1b(i, j) = pp1b(i, j) + tempb
    t1b = -(pp1(i, j)*tempb/t1)
    ww1b(i, j, irho) = 0.0_8
-   CALL POPREAL8(pp1(i, j))
-   tmpb3 = pp1b(i, j)
+   pp2b(i, j) = pp2b(i, j) + pp1b(i, j)
+   rhokb = rhokb - four*third*pp1b(i, j)
    pp1b(i, j) = 0.0_8
-   pp2b(i, j) = pp2b(i, j) + tmpb3
-   rhokb = rhokb - four*third*tmpb3
    CALL POPCONTROL1B(branch)
    IF (branch .NE. 0) t1b = 0.0_8
    CALL POPCONTROL1B(branch)
@@ -348,47 +243,11 @@
    END IF
    END DO
    END DO
-   CALL POPPOINTER4(ww1)
-   CALL POPPOINTER4(ww2)
-   CALL POPPOINTER4(pp1)
-   CALL POPPOINTER4(pp2)
-   CALL POPPOINTER4(rlv1)
-   CALL POPPOINTER4(rlv2)
-   CALL POPPOINTER4(rev1)
-   CALL POPPOINTER4(rev2)
-   CALL SETBCPOINTERS_B(nn, ww1, ww1b, ww2, ww2b, pp1, pp1b, pp2, &
-   &                    pp2b, rlv1, rlv1b, rlv2, rlv2b, rev1, rev1b, rev2, &
-   &                    rev2b, 0)
+   CALL POPREAL8ARRAY(ww2, imaxdim*jmaxdim*nw)
+   CALL POPREAL8ARRAY(pp1, imaxdim*jmaxdim)
+   CALL POPREAL8ARRAY(pp2, imaxdim*jmaxdim)
+   CALL SETBCPOINTERSBWD_B(nn, ww1, ww1b, ww2, ww2b, pp1, pp1b, pp2, &
+   &                       pp2b, rlv1, rlv1b, rlv2, rlv2b, rev1, rev2, 0)
    END IF
    END DO
-   CALL POPCONTROL1B(branch)
-   IF (branch .NE. 0) THEN
-   CALL POPREAL8ARRAY(rev, SIZE(rev, 1)*SIZE(rev, 2)*SIZE(rev, 3))
-   CALL POPREAL8ARRAY(bvtj1, SIZE(bvtj1, 1)*SIZE(bvtj1, 2)*SIZE(bvtj1, &
-   &                3))
-   CALL POPREAL8ARRAY(bvtj2, SIZE(bvtj2, 1)*SIZE(bvtj2, 2)*SIZE(bvtj2, &
-   &                3))
-   CALL POPREAL8ARRAY(bmtk1, SIZE(bmtk1, 1)*SIZE(bmtk1, 2)*SIZE(bmtk1, &
-   &                3)*SIZE(bmtk1, 4))
-   CALL POPREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4))
-   CALL POPREAL8ARRAY(bmtk2, SIZE(bmtk2, 1)*SIZE(bmtk2, 2)*SIZE(bmtk2, &
-   &                3)*SIZE(bmtk2, 4))
-   CALL POPREAL8ARRAY(bvtk1, SIZE(bvtk1, 1)*SIZE(bvtk1, 2)*SIZE(bvtk1, &
-   &                3))
-   CALL POPREAL8ARRAY(bvtk2, SIZE(bvtk2, 1)*SIZE(bvtk2, 2)*SIZE(bvtk2, &
-   &                3))
-   CALL POPREAL8ARRAY(bmti1, SIZE(bmti1, 1)*SIZE(bmti1, 2)*SIZE(bmti1, &
-   &                3)*SIZE(bmti1, 4))
-   CALL POPREAL8ARRAY(bmti2, SIZE(bmti2, 1)*SIZE(bmti2, 2)*SIZE(bmti2, &
-   &                3)*SIZE(bmti2, 4))
-   CALL POPREAL8ARRAY(bvti1, SIZE(bvti1, 1)*SIZE(bvti1, 2)*SIZE(bvti1, &
-   &                3))
-   CALL POPREAL8ARRAY(bvti2, SIZE(bvti2, 1)*SIZE(bvti2, 2)*SIZE(bvti2, &
-   &                3))
-   CALL POPREAL8ARRAY(bmtj1, SIZE(bmtj1, 1)*SIZE(bmtj1, 2)*SIZE(bmtj1, &
-   &                3)*SIZE(bmtj1, 4))
-   CALL POPREAL8ARRAY(bmtj2, SIZE(bmtj2, 1)*SIZE(bmtj2, 2)*SIZE(bmtj2, &
-   &                3)*SIZE(bmtj2, 4))
-   CALL TURBBCNSWALL_B(.false.)
-   END IF
    END SUBROUTINE BCNSWALLISOTHERMAL_B

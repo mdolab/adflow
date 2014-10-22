@@ -5,9 +5,9 @@
    !   gradient     of useful results: *(flowdoms.w) *(flowdoms.dw)
    !   with respect to varying inputs: *(flowdoms.w) *(flowdoms.dw)
    !   RW status of diff variables: *(flowdoms.w):in-out *(flowdoms.dw):in-out
-   !                *p:(loc) *rlv:(loc)
+   !                *p:(loc) *gamma:(loc) *rlv:(loc)
    !   Plus diff mem management of: flowdoms.w:in flowdoms.dw:in p:in
-   !                rlv:in
+   !                gamma:in rlv:in
    ! This is a super-combined function that combines the original
    ! functionality of: 
    ! Pressure Computation
@@ -140,9 +140,18 @@
    CALL COMPUTELAMVISCOSITY()
    CALL COMPUTEEDDYVISCOSITY()
    !  Apply all BC's
-   !call applyAllBC_block(.True.)
-   !call bcEulerWall(.True., .False.)
-   !call bcFarfield(.True., .False.)
+   CALL PUSHREAL8ARRAY(sk, SIZE(sk, 1)*SIZE(sk, 2)*SIZE(sk, 3)*SIZE(sk, 4&
+   &               ))
+   CALL PUSHREAL8ARRAY(sj, SIZE(sj, 1)*SIZE(sj, 2)*SIZE(sj, 3)*SIZE(sj, 4&
+   &               ))
+   CALL PUSHREAL8ARRAY(si, SIZE(si, 1)*SIZE(si, 2)*SIZE(si, 3)*SIZE(si, 4&
+   &               ))
+   CALL PUSHREAL8ARRAY(rlv, SIZE(rlv, 1)*SIZE(rlv, 2)*SIZE(rlv, 3))
+   CALL PUSHREAL8ARRAY(gamma, SIZE(gamma, 1)*SIZE(gamma, 2)*SIZE(gamma, 3&
+   &               ))
+   CALL PUSHREAL8ARRAY(s, SIZE(s, 1)*SIZE(s, 2)*SIZE(s, 3)*SIZE(s, 4))
+   CALL PUSHREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
+   CALL PUSHREAL8ARRAY(rev, SIZE(rev, 1)*SIZE(rev, 2)*SIZE(rev, 3))
    DO ii1=1,ntimeintervalsspectral
    DO ii2=1,1
    DO ii3=nn,nn
@@ -153,7 +162,7 @@
    END DO
    END DO
    END DO
-   CALL BCSYMM(.true.)
+   CALL APPLYALLBC_BLOCK(.true.)
    ! Compute skin_friction Velocity (only for wall Functions)
    ! #ifndef 1
    !   call computeUtau_block
@@ -367,7 +376,19 @@
    END DO
    END DO
    END DO
-   CALL BCSYMM_B(.true.)
+   CALL POPREAL8ARRAY(rev, SIZE(rev, 1)*SIZE(rev, 2)*SIZE(rev, 3))
+   CALL POPREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
+   CALL POPREAL8ARRAY(s, SIZE(s, 1)*SIZE(s, 2)*SIZE(s, 3)*SIZE(s, 4))
+   CALL POPREAL8ARRAY(gamma, SIZE(gamma, 1)*SIZE(gamma, 2)*SIZE(gamma, 3)&
+   &             )
+   CALL POPREAL8ARRAY(rlv, SIZE(rlv, 1)*SIZE(rlv, 2)*SIZE(rlv, 3))
+   CALL POPREAL8ARRAY(si, SIZE(si, 1)*SIZE(si, 2)*SIZE(si, 3)*SIZE(si, 4)&
+   &             )
+   CALL POPREAL8ARRAY(sj, SIZE(sj, 1)*SIZE(sj, 2)*SIZE(sj, 3)*SIZE(sj, 4)&
+   &             )
+   CALL POPREAL8ARRAY(sk, SIZE(sk, 1)*SIZE(sk, 2)*SIZE(sk, 3)*SIZE(sk, 4)&
+   &             )
+   CALL APPLYALLBC_BLOCK_B(.true.)
    CALL POPREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
    CALL COMPUTELAMVISCOSITY_B()
    DO k=kb,0,-1

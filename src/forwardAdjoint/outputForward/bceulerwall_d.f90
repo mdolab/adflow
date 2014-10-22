@@ -4,7 +4,7 @@
    !  Differentiation of bceulerwall in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *p *w *rlv
    !   with respect to varying inputs: *p *w *rlv
-   !   Plus diff mem management of: p:in w:in rlv:in
+   !   Plus diff mem management of: p:in gamma:in w:in rlv:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -398,15 +398,19 @@
    IF (eddymodel) rev1(j, k) = rev2(j, k)
    END DO
    END DO
+   ! deallocation all pointer
+   CALL RESETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, &
+   &                       rev2, 0)
    ! Compute the energy for these halo's.
+   gammad = 0.0_8
    CALL COMPUTEETOT_D(icbeg(nn), icend(nn), jcbeg(nn), jcend(nn), &
    &                  kcbeg(nn), kcend(nn), correctfork)
    ! Extrapolate the state vectors in case a second halo
    ! is needed.
-   IF (secondhalo) CALL EXTRAPOLATE2NDHALO_D(nn, correctfork)
-   ! deallocation all pointer
-   CALL RESETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, &
-   &                       rev2, 0)
+   IF (secondhalo) THEN
+   gammad = 0.0_8
+   CALL EXTRAPOLATE2NDHALO_D(nn, correctfork)
+   END IF
    END IF
    END DO bocos
    END SUBROUTINE BCEULERWALL_D

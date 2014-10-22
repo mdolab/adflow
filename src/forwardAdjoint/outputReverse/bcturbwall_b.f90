@@ -149,11 +149,13 @@
    ! so simply negate the internal value.
    DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
    DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
+   CALL PUSHREAL8(bmt(i, j, itu1, itu1))
    bmt(i, j, itu1, itu1) = one
    END DO
    END DO
    DO j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
    DO i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
+   CALL POPREAL8(bmt(i, j, itu1, itu1))
    bmtb(i, j, itu1, itu1) = 0.0_8
    END DO
    END DO
@@ -194,7 +196,9 @@
    nu = rlv2(i, j)/ww2(i, j, irho)
    CALL PUSHREAL8(tmpd)
    tmpd = one/(rkwbeta1*dd2wall(ii-1, jj-1)**2)
+   CALL PUSHREAL8(bmt(i, j, itu1, itu1))
    bmt(i, j, itu1, itu1) = one
+   CALL PUSHREAL8(bmt(i, j, itu2, itu2))
    bmt(i, j, itu2, itu2) = one
    bvt(i, j, itu2) = two*60.0_realType*nu*tmpd
    END DO
@@ -203,7 +207,9 @@
    DO i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
    nub = two*60.0_realType*tmpd*bvtb(i, j, itu2)
    bvtb(i, j, itu2) = 0.0_8
+   CALL POPREAL8(bmt(i, j, itu2, itu2))
    bmtb(i, j, itu2, itu2) = 0.0_8
+   CALL POPREAL8(bmt(i, j, itu1, itu1))
    bmtb(i, j, itu1, itu1) = 0.0_8
    CALL POPREAL8(tmpd)
    tempb = nub/ww2(i, j, irho)
@@ -218,13 +224,17 @@
    ! negative value of the internal cell is taken for the halo.
    DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
    DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
+   CALL PUSHREAL8(bmt(i, j, itu1, itu1))
    bmt(i, j, itu1, itu1) = one
+   CALL PUSHREAL8(bmt(i, j, itu2, itu2))
    bmt(i, j, itu2, itu2) = one
    END DO
    END DO
    DO j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
    DO i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
+   CALL POPREAL8(bmt(i, j, itu2, itu2))
    bmtb(i, j, itu2, itu2) = 0.0_8
+   CALL POPREAL8(bmt(i, j, itu1, itu1))
    bmtb(i, j, itu1, itu1) = 0.0_8
    END DO
    END DO
@@ -275,25 +285,37 @@
    ELSE
    CALL PUSHCONTROL1B(1)
    END IF
+   CALL PUSHREAL8(bmt(i, j, itu1, itu1))
    bmt(i, j, itu1, itu1) = one
+   CALL PUSHREAL8(bmt(i, j, itu2, itu2))
    bmt(i, j, itu2, itu2) = one
+   CALL PUSHREAL8(bmt(i, j, itu3, itu3))
    bmt(i, j, itu3, itu3) = one
+   CALL PUSHREAL8(bmt(i, j, itu4, itu4))
    bmt(i, j, itu4, itu4) = one
+   CALL PUSHREAL8(bmt(i, j, itu2, itu1))
    bmt(i, j, itu2, itu1) = -(two*tmpe)
+   CALL PUSHREAL8(bmt(i, j, itu4, itu3))
    bmt(i, j, itu4, itu3) = -(two*tmpf)
    END DO
    END DO
    DO j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
    DO i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
+   CALL POPREAL8(bmt(i, j, itu4, itu3))
    tmpfb = -(two*bmtb(i, j, itu4, itu3))
    bmtb(i, j, itu4, itu3) = 0.0_8
    nu = rlv2(i, j)/ww2(i, j, irho)
    tmpe = two*nu*tmpd
+   CALL POPREAL8(bmt(i, j, itu2, itu1))
    tmpeb = -(two*bmtb(i, j, itu2, itu1))
    bmtb(i, j, itu2, itu1) = 0.0_8
+   CALL POPREAL8(bmt(i, j, itu4, itu4))
    bmtb(i, j, itu4, itu4) = 0.0_8
+   CALL POPREAL8(bmt(i, j, itu3, itu3))
    bmtb(i, j, itu3, itu3) = 0.0_8
+   CALL POPREAL8(bmt(i, j, itu2, itu2))
    bmtb(i, j, itu2, itu2) = 0.0_8
+   CALL POPREAL8(bmt(i, j, itu1, itu1))
    bmtb(i, j, itu1, itu1) = 0.0_8
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) tmpfb = 0.0_8

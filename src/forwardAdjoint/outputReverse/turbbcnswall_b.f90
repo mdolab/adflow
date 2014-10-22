@@ -2,15 +2,12 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of turbbcnswall in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *rev *bvtj1 *bvtj2 *bmtk1 *w
-   !                *bmtk2 *rlv *bvtk1 *bvtk2 *bmti1 *bmti2 *bvti1
-   !                *bvti2 *bmtj1 *bmtj2
-   !   with respect to varying inputs: *rev *bvtj1 *bvtj2 *bmtk1 *w
-   !                *bmtk2 *rlv *bvtk1 *bvtk2 *bmti1 *bmti2 *bvti1
-   !                *bvti2 *bmtj1 *bmtj2
-   !   Plus diff mem management of: rev:in bvtj1:in bvtj2:in bmtk1:in
-   !                w:in bmtk2:in rlv:in bvtk1:in bvtk2:in bmti1:in
-   !                bmti2:in bvti1:in bvti2:in bmtj1:in bmtj2:in
+   !   gradient     of useful results: *bmtk1 *w *bmtk2 *rlv *bmti1
+   !                *bmti2 *bmtj1 *bmtj2
+   !   with respect to varying inputs: *w *rlv
+   !   Plus diff mem management of: bvtj1:in bvtj2:in bmtk1:in w:in
+   !                bmtk2:in rlv:in bvtk1:in bvtk2:in bmti1:in bmti2:in
+   !                bvti1:in bvti2:in bmtj1:in bmtj2:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -51,7 +48,6 @@
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww0, ww1, ww2
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww0b, ww1b, ww2b
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev0, rev1, rev2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev0b, rev1b, rev2b
    REAL(kind=realtype) :: tmp
    REAL(kind=realtype) :: tmp0
    REAL(kind=realtype) :: tmp1
@@ -64,14 +60,6 @@
    INTEGER :: ad_to1
    INTEGER :: ad_from2
    INTEGER :: ad_to2
-   INTEGER :: ad_from3
-   INTEGER :: ad_to3
-   INTEGER :: ad_from4
-   INTEGER :: ad_to4
-   INTEGER :: ad_from5
-   INTEGER :: ad_to5
-   INTEGER :: ad_from6
-   INTEGER :: ad_to6
    INTEGER :: branch
    INTERFACE 
    SUBROUTINE PUSHPOINTER4(pp)
@@ -85,8 +73,6 @@
    END SUBROUTINE POPPOINTER4
    END INTERFACE
       REAL(kind=realtype) :: tmpb
-   REAL(kind=realtype) :: tmpb2
-   REAL(kind=realtype) :: tmpb1
    REAL(kind=realtype) :: tmpb0
    !
    !      ******************************************************************
@@ -113,7 +99,7 @@
    CALL BCTURBWALL(nn)
    ! Determine the block face on which this subface is located
    ! and set some pointers accordingly.
-   CALL PUSHCONTROL4B(12)
+   CALL PUSHCONTROL3B(6)
    CALL PUSHPOINTER4(bmtb)
    bmtb => bmti1b
    CALL PUSHPOINTER4(bmt)
@@ -132,21 +118,7 @@
    ww2b => wb(2, 1:, 1:, :)
    CALL PUSHPOINTER4(ww2)
    ww2 => w(2, 1:, 1:, :)
-   IF (eddymodel) THEN
-   CALL PUSHPOINTER4(rev0b)
-   rev0b => revb(0, 1:, 1:)
-   CALL PUSHPOINTER4(rev1b)
-   rev1b => revb(1, 1:, 1:)
-   CALL PUSHPOINTER4(rev1)
-   rev1 => rev(1, 1:, 1:)
-   CALL PUSHPOINTER4(rev2b)
-   rev2b => revb(2, 1:, 1:)
-   CALL PUSHPOINTER4(rev2)
-   rev2 => rev(2, 1:, 1:)
-   CALL PUSHCONTROL4B(11)
-   ELSE
-   CALL PUSHCONTROL4B(10)
-   END IF
+   CALL PUSHCONTROL3B(5)
    ad_from0 = bcdata(nn)%jcbeg
    ! Loop over the faces and set the state in
    ! the turbulent halo cells.
@@ -190,69 +162,14 @@
    ELSE
    CALL PUSHCONTROL1B(1)
    END IF
-   ! Set the eddy viscosity for an eddy model.
-   IF (eddymodel) THEN
-   ad_from4 = bcdata(nn)%jcbeg
-   DO j=ad_from4,bcdata(nn)%jcend
-   ad_from3 = bcdata(nn)%icbeg
-   DO i=ad_from3,bcdata(nn)%icend
-   tmp1 = -rev2(i, j)
-   rev1(i, j) = tmp1
-   END DO
-   CALL PUSHINTEGER4(i - 1)
-   CALL PUSHINTEGER4(ad_from3)
-   END DO
-   CALL PUSHINTEGER4(j - 1)
-   CALL PUSHINTEGER4(ad_from4)
-   IF (secondhalo) THEN
-   ad_from6 = bcdata(nn)%jcbeg
-   DO j=ad_from6,bcdata(nn)%jcend
-   ad_from5 = bcdata(nn)%icbeg
-   DO i=ad_from5,bcdata(nn)%icend
-   tmp2 = rev1(i, j)
-   rev0(i, j) = tmp2
-   END DO
-   CALL PUSHINTEGER4(i - 1)
-   CALL PUSHINTEGER4(ad_from5)
-   END DO
-   CALL PUSHINTEGER4(j - 1)
-   CALL PUSHINTEGER4(ad_from6)
-   CALL PUSHCONTROL2B(2)
-   ELSE
-   CALL PUSHCONTROL2B(1)
-   END IF
-   ELSE
-   CALL PUSHCONTROL2B(0)
-   END IF
    END DO bocos
+   bvtj1b = 0.0_8
+   bvtj2b = 0.0_8
+   bvtk1b = 0.0_8
+   bvtk2b = 0.0_8
+   bvti1b = 0.0_8
+   bvti2b = 0.0_8
    DO nn=nviscbocos,1,-1
-   CALL POPCONTROL2B(branch)
-   IF (branch .NE. 0) THEN
-   IF (branch .NE. 1) THEN
-   CALL POPINTEGER4(ad_from6)
-   CALL POPINTEGER4(ad_to6)
-   DO j=ad_to6,ad_from6,-1
-   CALL POPINTEGER4(ad_from5)
-   CALL POPINTEGER4(ad_to5)
-   DO i=ad_to5,ad_from5,-1
-   tmpb2 = rev0b(i, j)
-   rev0b(i, j) = 0.0_8
-   rev1b(i, j) = rev1b(i, j) + tmpb2
-   END DO
-   END DO
-   END IF
-   CALL POPINTEGER4(ad_from4)
-   CALL POPINTEGER4(ad_to4)
-   DO j=ad_to4,ad_from4,-1
-   CALL POPINTEGER4(ad_from3)
-   CALL POPINTEGER4(ad_to3)
-   DO i=ad_to3,ad_from3,-1
-   tmpb1 = rev1b(i, j)
-   rev1b(i, j) = 0.0_8
-   rev2b(i, j) = rev2b(i, j) - tmpb1
-   END DO
-   END DO
-   END IF
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    CALL POPINTEGER4(ad_from2)
@@ -290,20 +207,9 @@
    END DO
    END DO
    END DO
-   CALL POPCONTROL4B(branch)
-   IF (branch .LT. 6) THEN
+   CALL POPCONTROL3B(branch)
    IF (branch .LT. 3) THEN
-   IF (branch .NE. 0) THEN
-   IF (branch .EQ. 1) THEN
-   CALL POPPOINTER4(rev2)
-   CALL POPPOINTER4(rev2b)
-   CALL POPPOINTER4(rev1)
-   CALL POPPOINTER4(rev1b)
-   CALL POPPOINTER4(rev0b)
-   ELSE
-   GOTO 100
-   END IF
-   END IF
+   IF (branch .EQ. 0) THEN
    CALL POPPOINTER4(ww2)
    CALL POPPOINTER4(ww2b)
    CALL POPPOINTER4(ww1)
@@ -315,35 +221,8 @@
    CALL POPPOINTER4(bmt)
    bmtk2b => bmtb
    CALL POPPOINTER4(bmtb)
-   GOTO 120
-   ELSE IF (branch .EQ. 3) THEN
-   CALL POPPOINTER4(rev2)
-   CALL POPPOINTER4(rev2b)
-   CALL POPPOINTER4(rev1)
-   CALL POPPOINTER4(rev1b)
-   CALL POPPOINTER4(rev0b)
-   ELSE
-   IF (branch .NE. 4) THEN
-   CALL POPPOINTER4(rev2)
-   CALL POPPOINTER4(rev2b)
-   CALL POPPOINTER4(rev1)
-   CALL POPPOINTER4(rev1b)
-   CALL POPPOINTER4(rev0b)
-   END IF
+   ELSE IF (branch .EQ. 1) THEN
    CALL POPPOINTER4(ww2)
-   CALL POPPOINTER4(ww2b)
-   CALL POPPOINTER4(ww1)
-   CALL POPPOINTER4(ww1b)
-   CALL POPPOINTER4(ww0b)
-   CALL POPPOINTER4(bvt)
-   bvtj2b => bvtb
-   CALL POPPOINTER4(bvtb)
-   CALL POPPOINTER4(bmt)
-   bmtj2b => bmtb
-   CALL POPPOINTER4(bmtb)
-   GOTO 120
-   END IF
-   100  CALL POPPOINTER4(ww2)
    CALL POPPOINTER4(ww2b)
    CALL POPPOINTER4(ww1)
    CALL POPPOINTER4(ww1b)
@@ -355,18 +234,20 @@
    bmtk1b => bmtb
    CALL POPPOINTER4(bmtb)
    ELSE
-   IF (branch .LT. 9) THEN
-   IF (branch .NE. 6) THEN
-   IF (branch .EQ. 7) THEN
-   CALL POPPOINTER4(rev2)
-   CALL POPPOINTER4(rev2b)
-   CALL POPPOINTER4(rev1)
-   CALL POPPOINTER4(rev1b)
-   CALL POPPOINTER4(rev0b)
-   ELSE
-   GOTO 110
+   CALL POPPOINTER4(ww2)
+   CALL POPPOINTER4(ww2b)
+   CALL POPPOINTER4(ww1)
+   CALL POPPOINTER4(ww1b)
+   CALL POPPOINTER4(ww0b)
+   CALL POPPOINTER4(bvt)
+   bvtj2b => bvtb
+   CALL POPPOINTER4(bvtb)
+   CALL POPPOINTER4(bmt)
+   bmtj2b => bmtb
+   CALL POPPOINTER4(bmtb)
    END IF
-   END IF
+   ELSE IF (branch .LT. 5) THEN
+   IF (branch .EQ. 3) THEN
    CALL POPPOINTER4(ww2)
    CALL POPPOINTER4(ww2b)
    CALL POPPOINTER4(ww1)
@@ -379,24 +260,19 @@
    bmtj1b => bmtb
    CALL POPPOINTER4(bmtb)
    ELSE
-   IF (branch .LT. 11) THEN
-   IF (branch .EQ. 9) THEN
-   CALL POPPOINTER4(rev2)
-   CALL POPPOINTER4(rev2b)
-   CALL POPPOINTER4(rev1)
-   CALL POPPOINTER4(rev1b)
-   CALL POPPOINTER4(rev0b)
-   GOTO 110
+   CALL POPPOINTER4(ww2)
+   CALL POPPOINTER4(ww2b)
+   CALL POPPOINTER4(ww1)
+   CALL POPPOINTER4(ww1b)
+   CALL POPPOINTER4(ww0b)
+   CALL POPPOINTER4(bvt)
+   bvti2b => bvtb
+   CALL POPPOINTER4(bvtb)
+   CALL POPPOINTER4(bmt)
+   bmti2b => bmtb
+   CALL POPPOINTER4(bmtb)
    END IF
-   ELSE IF (branch .EQ. 11) THEN
-   CALL POPPOINTER4(rev2)
-   CALL POPPOINTER4(rev2b)
-   CALL POPPOINTER4(rev1)
-   CALL POPPOINTER4(rev1b)
-   CALL POPPOINTER4(rev0b)
-   ELSE
-   GOTO 120
-   END IF
+   ELSE IF (branch .EQ. 5) THEN
    CALL POPPOINTER4(ww2)
    CALL POPPOINTER4(ww2b)
    CALL POPPOINTER4(ww1)
@@ -409,21 +285,8 @@
    bmti1b => bmtb
    CALL POPPOINTER4(bmtb)
    END IF
-   GOTO 120
-   110  CALL POPPOINTER4(ww2)
-   CALL POPPOINTER4(ww2b)
-   CALL POPPOINTER4(ww1)
-   CALL POPPOINTER4(ww1b)
-   CALL POPPOINTER4(ww0b)
-   CALL POPPOINTER4(bvt)
-   bvti2b => bvtb
-   CALL POPPOINTER4(bvtb)
-   CALL POPPOINTER4(bmt)
-   bmti2b => bmtb
-   CALL POPPOINTER4(bmtb)
-   END IF
-   120 CALL POPREAL8ARRAY(bmtk1, SIZE(bmtk1, 1)*SIZE(bmtk1, 2)*SIZE(bmtk1&
-   &                 , 3)*SIZE(bmtk1, 4))
+   CALL POPREAL8ARRAY(bmtk1, SIZE(bmtk1, 1)*SIZE(bmtk1, 2)*SIZE(bmtk1, &
+   &                3)*SIZE(bmtk1, 4))
    CALL POPREAL8ARRAY(bmtk2, SIZE(bmtk2, 1)*SIZE(bmtk2, 2)*SIZE(bmtk2, &
    &                3)*SIZE(bmtk2, 4))
    CALL POPREAL8ARRAY(bmti1, SIZE(bmti1, 1)*SIZE(bmti1, 2)*SIZE(bmti1, &

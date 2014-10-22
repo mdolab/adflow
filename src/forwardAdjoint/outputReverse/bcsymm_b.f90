@@ -4,7 +4,7 @@
    !  Differentiation of bcsymm in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
    !   gradient     of useful results: *p *w *rlv
    !   with respect to varying inputs: *p *w *rlv
-   !   Plus diff mem management of: p:in w:in rlv:in
+   !   Plus diff mem management of: p:in gamma:in w:in rlv:in
    !
    !      ******************************************************************
    !      *                                                                *

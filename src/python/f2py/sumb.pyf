@@ -281,6 +281,9 @@ python module libsumb
        subroutine verifyonevalue
        end subroutine verifyonevalue
 
+       subroutine verifymatprod
+       end subroutine verifymatprod
+
        ! ############################################################################
        ! SUmb ADjoint Core Routines
        ! ############################################################################
