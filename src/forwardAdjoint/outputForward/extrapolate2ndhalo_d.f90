@@ -2,9 +2,9 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of extrapolate2ndhalo in forward (tangent) mode (with options i4 dr8 r8):
-   !   variations   of useful results: *p *gamma *w *rlv
-   !   with respect to varying inputs: *p *gamma *w *rlv
-   !   Plus diff mem management of: p:in gamma:in w:in rlv:in
+   !   variations   of useful results: *rev *p *gamma *w *rlv
+   !   with respect to varying inputs: *rev *p *gamma *w *rlv
+   !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -54,6 +54,7 @@
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv0, rlv1
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv0d, rlv1d
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev0, rev1
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev0d, rev1d
    INTERFACE 
    SUBROUTINE SETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
    &       rev1, rev2, offset)
@@ -103,7 +104,8 @@
    END INTERFACE
       INTERFACE 
    SUBROUTINE SETBCPOINTERS_D(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, &
-   &       pp2, pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev2, offset)
+   &       pp2, pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev1d, rev2, rev2d, &
+   &       offset)
    USE BLOCKPOINTERS_D
    IMPLICIT NONE
    INTEGER(kind=inttype), INTENT(IN) :: nn, offset
@@ -114,9 +116,10 @@
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1d, rlv2d
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1d, rev2d
    END SUBROUTINE SETBCPOINTERS_D
    SUBROUTINE SETWW0PP0RLV0REV0_D(nn, idim, ddim, ww0, ww0d, pp0, &
-   &       pp0d, rlv0, rlv0d, rev0)
+   &       pp0d, rlv0, rlv0d, rev0, rev0d)
    USE BCTYPES
    USE BLOCKPOINTERS_D
    USE FLOWVARREFSTATE
@@ -130,6 +133,7 @@
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv0
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv0d
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev0
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev0d
    END SUBROUTINE SETWW0PP0RLV0REV0_D
    END INTERFACE
       INTRINSIC MAX
@@ -148,10 +152,10 @@
    ! extrapolation. This depends on the block face on which the
    ! subface is located.
    CALL SETBCPOINTERS_D(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, pp2, pp2d, &
-   &                rlv1, rlv1d, rlv0, rlv0d, rev1, rev0, 0)
+   &                rlv1, rlv1d, rlv0, rlv0d, rev1, rev1d, rev0, rev0d, 0)
    !_intType)
    CALL SETWW0PP0RLV0REV0_D(nn, idim, ddim, ww0, ww0d, pp0, pp0d, rlv0, &
-   &                    rlv0d, rev0)
+   &                    rlv0d, rev0, rev0d)
    ! Loop over the generic subface to set the state in the halo's.
    DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
    DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
@@ -190,7 +194,10 @@
    rlv0d(i, j) = rlv1d(i, j)
    rlv0(i, j) = rlv1(i, j)
    END IF
-   IF (eddymodel) rev0(i, j) = rev1(i, j)
+   IF (eddymodel) THEN
+   rev0d(i, j) = rev1d(i, j)
+   rev0(i, j) = rev1(i, j)
+   END IF
    END DO
    END DO
    CALL RESETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv0, rev1, rev0&

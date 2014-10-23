@@ -2,9 +2,9 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of sa_block in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *dw *w
-   !   with respect to varying inputs: *dw *w *rlv
-   !   Plus diff mem management of: dw:in w:in rlv:in
+   !   gradient     of useful results: *rev *dw *w *rlv
+   !   with respect to varying inputs: *rev *dw *w *rlv
+   !   Plus diff mem management of: rev:in dw:in w:in rlv:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -45,7 +45,15 @@
    !      ******************************************************************
    ! Set the arrays for the boundary condition treatment.
    ! Solve the transport equation for nuTilde.
+   CALL PUSHREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4))
+   CALL PUSHREAL8ARRAY(dw, SIZE(dw, 1)*SIZE(dw, 2)*SIZE(dw, 3)*SIZE(dw, 4&
+   &               ))
+   CALL SASOLVE(resonly)
    ! The eddy viscosity and the boundary conditions are only
    ! applied if an actual update has been computed in saSolve.
+   IF (.NOT.resonly) CALL SAEDDYVISCOSITY_B()
+   CALL POPREAL8ARRAY(dw, SIZE(dw, 1)*SIZE(dw, 2)*SIZE(dw, 3)*SIZE(dw, 4)&
+   &             )
+   CALL POPREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4))
    CALL SASOLVE_B(resonly)
    END SUBROUTINE SA_BLOCK_B

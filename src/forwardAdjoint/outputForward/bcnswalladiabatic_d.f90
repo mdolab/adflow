@@ -2,9 +2,9 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of bcnswalladiabatic in forward (tangent) mode (with options i4 dr8 r8):
-   !   variations   of useful results: *p *gamma *w *rlv
-   !   with respect to varying inputs: *p *w *rlv
-   !   Plus diff mem management of: p:in gamma:in w:in rlv:in
+   !   variations   of useful results: *rev *p *gamma *w *rlv
+   !   with respect to varying inputs: *rev *p *w *rlv
+   !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -50,6 +50,7 @@
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1d, rlv2d
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1d, rev2d
    INTERFACE 
    SUBROUTINE SETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
    &       rev1, rev2, offset)
@@ -74,7 +75,8 @@
    END INTERFACE
       INTERFACE 
    SUBROUTINE SETBCPOINTERS_D(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, &
-   &       pp2, pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev2, offset)
+   &       pp2, pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev1d, rev2, rev2d, &
+   &       offset)
    USE BLOCKPOINTERS_D
    IMPLICIT NONE
    INTEGER(kind=inttype), INTENT(IN) :: nn, offset
@@ -85,6 +87,7 @@
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1d, rlv2d
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1d, rev2d
    END SUBROUTINE SETBCPOINTERS_D
    END INTERFACE
       gammad = 0.0_8
@@ -116,7 +119,8 @@
    ! that.
    !nullify(ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2)
    CALL SETBCPOINTERS_D(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, pp2, &
-   &                    pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev2, 0)
+   &                    pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev1d, rev2, &
+   &                    rev2d, 0)
    ! Initialize rhok to zero. This will be overwritten if a
    ! correction for k must be applied.
    rhok = zero
@@ -156,7 +160,10 @@
    ! the wall.
    rlv1d(i, j) = rlv2d(i, j)
    rlv1(i, j) = rlv2(i, j)
-   IF (eddymodel) rev1(i, j) = -rev2(i, j)
+   IF (eddymodel) THEN
+   rev1d(i, j) = -rev2d(i, j)
+   rev1(i, j) = -rev2(i, j)
+   END IF
    END DO
    END DO
    ! deallocation all pointer

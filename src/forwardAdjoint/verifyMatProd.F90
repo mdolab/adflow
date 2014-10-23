@@ -139,7 +139,7 @@ subroutine verifyMatProd
            do i=2,il
               do l = 1,5
                  ii = ii + 1
-                 if (abs(flowdomsb(1,1,1)%w(i,j,k,l) - vec2(ii)) > 1e-8) then
+                 if (abs(flowdomsb(1,1,1)%w(i,j,k,l) - vec2(ii)) > 1e-4) then
                     print *,i,j,k,l,flowdomsb(1,1,1)%w(i, j, k, l)-vec2(ii)
                     print *, flowdomsb(1,1,1)%w(i, j, k, l), vec2(ii)
                  end if

@@ -5,9 +5,10 @@
    !   gradient     of useful results: *(flowdoms.w) *(flowdoms.dw)
    !   with respect to varying inputs: *(flowdoms.w) *(flowdoms.dw)
    !   RW status of diff variables: *(flowdoms.w):in-out *(flowdoms.dw):in-out
-   !                *p:(loc) *gamma:(loc) *rlv:(loc)
-   !   Plus diff mem management of: flowdoms.w:in flowdoms.dw:in p:in
-   !                gamma:in rlv:in
+   !                *rev:(loc) *p:(loc) *gamma:(loc) *rlv:(loc) *fw:(loc)
+   !                *radi:(loc) *radj:(loc) *radk:(loc)
+   !   Plus diff mem management of: flowdoms.w:in flowdoms.dw:in rev:in
+   !                p:in gamma:in rlv:in fw:in radi:in radj:in radk:in
    ! This is a super-combined function that combines the original
    ! functionality of: 
    ! Pressure Computation
@@ -43,6 +44,8 @@
    !force = (cFp + cFV)/fact
    !fact = fact/(lengthRef*LRef)
    !moment = (cMp + cMV)/fact
+   !call getCostFunction(costFunction, force, moment, sepSensor, &
+   !alpha, beta, liftIndex, objValue)
    ! Input Arguments:
    INTEGER(kind=inttype), INTENT(IN) :: nn, sps
    LOGICAL, INTENT(IN) :: usespatial
@@ -79,6 +82,7 @@
    w => flowdoms(nn, currentlevel, sps)%w
    dwb => flowdomsb(nn, 1, sps)%dw
    dw => flowdoms(nn, 1, sps)%dw
+   x => flowdoms(nn, currentlevel, sps)%x
    vol => flowdoms(nn, currentlevel, sps)%vol
    !!$  ! ------------------------------------------------
    !!$  !        Additional 'Extra' Components
@@ -168,6 +172,10 @@
    !   call computeUtau_block
    ! #endif
    ! Compute time step and spectral radius
+   CALL PUSHREAL8ARRAY(radk, SIZE(radk, 1)*SIZE(radk, 2)*SIZE(radk, 3))
+   CALL PUSHREAL8ARRAY(radj, SIZE(radj, 1)*SIZE(radj, 2)*SIZE(radj, 3))
+   CALL PUSHREAL8ARRAY(radi, SIZE(radi, 1)*SIZE(radi, 2)*SIZE(radi, 3))
+   CALL TIMESTEP_BLOCK(.false.)
    spectralloop0:DO sps2=1,ntimeintervalsspectral
    flowdoms(nn, 1, sps2)%dw(:, :, :, :) = zero
    END DO spectralloop0
@@ -279,8 +287,7 @@
    END DO
    END DO
    END DO
-   CALL INVISCIDDISSFLUXSCALAR_B()
-   CALL INVISCIDCENTRALFLUX_B()
+   CALL RESIDUAL_BLOCK_B()
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    dwb(:, :, :, 1:nwf) = 0.0_8
@@ -358,14 +365,14 @@
    END DO
    END DO
    CALL SA_BLOCK_B(.true.)
-   ELSE IF (branch .EQ. 1) THEN
-   rlvb = 0.0_8
-   ELSE
-   rlvb = 0.0_8
    END IF
    DO sps2=ntimeintervalsspectral,1,-1
    flowdomsb(nn, 1, sps2)%dw = 0.0_8
    END DO
+   CALL POPREAL8ARRAY(radi, SIZE(radi, 1)*SIZE(radi, 2)*SIZE(radi, 3))
+   CALL POPREAL8ARRAY(radj, SIZE(radj, 1)*SIZE(radj, 2)*SIZE(radj, 3))
+   CALL POPREAL8ARRAY(radk, SIZE(radk, 1)*SIZE(radk, 2)*SIZE(radk, 3))
+   CALL TIMESTEP_BLOCK_B(.false.)
    DO ii1=ntimeintervalsspectral,1,-1
    DO ii2=1,1,-1
    DO ii3=nn,nn,-1
@@ -389,6 +396,7 @@
    CALL POPREAL8ARRAY(sk, SIZE(sk, 1)*SIZE(sk, 2)*SIZE(sk, 3)*SIZE(sk, 4)&
    &             )
    CALL APPLYALLBC_BLOCK_B(.true.)
+   CALL COMPUTEEDDYVISCOSITY_B()
    CALL POPREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
    CALL COMPUTELAMVISCOSITY_B()
    DO k=kb,0,-1

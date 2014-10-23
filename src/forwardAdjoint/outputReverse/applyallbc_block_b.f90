@@ -2,9 +2,9 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of applyallbc_block in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *p *w *rlv
-   !   with respect to varying inputs: *p *w *rlv
-   !   Plus diff mem management of: p:in gamma:in w:in rlv:in
+   !   gradient     of useful results: *rev *p *gamma *w *rlv
+   !   with respect to varying inputs: *rev *p *w *rlv
+   !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
    SUBROUTINE APPLYALLBC_BLOCK_B(secondhalo)
    ! Apply BC's for a single block
    USE BLOCKPOINTERS_B
@@ -39,6 +39,7 @@
    END IF
    ! Apply all the boundary conditions. The order is important.
    ! The symmetry boundary conditions.
+   CALL PUSHREAL8ARRAY(rlv, SIZE(rlv, 1)*SIZE(rlv, 2)*SIZE(rlv, 3))
    CALL PUSHREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4))
    CALL BCSYMM(secondhalo)
    !call bcEulerWall(secondHalo, correctForK)
@@ -65,32 +66,24 @@
    CALL PUSHREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
    CALL PUSHREAL8ARRAY(rev, SIZE(rev, 1)*SIZE(rev, 2)*SIZE(rev, 3))
    CALL BCFARFIELD(secondhalo, correctfork)
-   CALL PUSHCONTROL2B(1)
+   CALL PUSHCONTROL1B(0)
    CASE (turkel) 
-   CALL PUSHCONTROL2B(2)
+   CALL PUSHCONTROL1B(1)
    CASE (choimerkle) 
-   CALL PUSHCONTROL2B(3)
+   CALL PUSHCONTROL1B(1)
    CASE DEFAULT
-   CALL PUSHCONTROL2B(0)
+   CALL PUSHCONTROL1B(1)
    END SELECT
    CALL BCEULERWALL_B(secondhalo, correctfork)
-   CALL POPCONTROL2B(branch)
-   IF (branch .LT. 2) THEN
+   CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   gammab = 0.0_8
-   ELSE
    CALL POPREAL8ARRAY(rev, SIZE(rev, 1)*SIZE(rev, 2)*SIZE(rev, 3))
    CALL POPREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
-   CALL POPREAL8ARRAY(gamma, SIZE(gamma, 1)*SIZE(gamma, 2)*SIZE(gamma&
-   &                  , 3))
+   CALL POPREAL8ARRAY(gamma, SIZE(gamma, 1)*SIZE(gamma, 2)*SIZE(gamma, &
+   &                3))
    CALL POPREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4))
    CALL POPREAL8ARRAY(rlv, SIZE(rlv, 1)*SIZE(rlv, 2)*SIZE(rlv, 3))
    CALL BCFARFIELD_B(secondhalo, correctfork)
-   END IF
-   ELSE IF (branch .EQ. 2) THEN
-   gammab = 0.0_8
-   ELSE
-   gammab = 0.0_8
    END IF
    CALL POPREAL8ARRAY(rev, SIZE(rev, 1)*SIZE(rev, 2)*SIZE(rev, 3))
    CALL POPREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
@@ -103,5 +96,6 @@
    CALL POPREAL8ARRAY(rlv, SIZE(rlv, 1)*SIZE(rlv, 2)*SIZE(rlv, 3))
    CALL BCNSWALLADIABATIC_B(secondhalo, correctfork)
    CALL POPREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4))
+   CALL POPREAL8ARRAY(rlv, SIZE(rlv, 1)*SIZE(rlv, 2)*SIZE(rlv, 3))
    CALL BCSYMM_B(secondhalo)
    END SUBROUTINE APPLYALLBC_BLOCK_B

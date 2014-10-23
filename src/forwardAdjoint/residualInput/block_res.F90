@@ -207,11 +207,8 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   end if
 
   !  Actual residual calc
-  !call residual_block
-  call inviscidCentralFlux
-  call inviscidDissFluxScalar
-  if( viscous ) call viscousFlux
-
+  call residual_block
+  
   ! Divide through by the volume
   do sps2 = 1,nTimeIntervalsSpectral
      do l=1, nState
@@ -240,5 +237,8 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
 
   !fact = fact/(lengthRef*LRef)
   !moment = (cMp + cMV)/fact
+
+  !call getCostFunction(costFunction, force, moment, sepSensor, &
+  !alpha, beta, liftIndex, objValue)
 
 end subroutine block_res

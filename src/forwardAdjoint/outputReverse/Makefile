@@ -41,12 +41,14 @@ FF90_OBJECTS =  computeetot_b.o\
 		extrapolate2ndhalo_b.o\
 		timestep_block_b.o\
 		applyallbc_block_b.o\
+		residual_block_b.o\
 		bceulerwall_b.o\
 		bcfarfield_b.o\
 		bcsymm_b.o\
 		bcnswallisothermal_b.o\
 		bcnswalladiabatic_b.o\
 		invisciddissfluxscalar_b.o\
+		invisciddissfluxscalarcoarse_b.o\
 		dim_b.o\
 		block_res_b.o  \
 		viscousflux_b.o \

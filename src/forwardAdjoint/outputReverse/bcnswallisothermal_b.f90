@@ -2,9 +2,9 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of bcnswallisothermal in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *p *gamma *w *rlv
-   !   with respect to varying inputs: *p *gamma *w *rlv
-   !   Plus diff mem management of: p:in gamma:in w:in rlv:in
+   !   gradient     of useful results: *rev *p *gamma *w *rlv
+   !   with respect to varying inputs: *rev *p *gamma *w *rlv
+   !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -49,6 +49,7 @@
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rlv1, rlv2
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rlv1b, rlv2b
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rev1, rev2
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rev1b, rev2b
    INTRINSIC MAX
    INTRINSIC MIN
    INTEGER :: branch
@@ -146,7 +147,12 @@
    ! set to the negative value, as it should be zero on
    ! the wall.
    rlv1(i, j) = rlv2(i, j)
-   IF (eddymodel) rev1(i, j) = -rev2(i, j)
+   IF (eddymodel) THEN
+   rev1(i, j) = -rev2(i, j)
+   CALL PUSHCONTROL1B(1)
+   ELSE
+   CALL PUSHCONTROL1B(0)
+   END IF
    END DO
    CALL PUSHINTEGER4(i - 1)
    CALL PUSHINTEGER4(ad_from)
@@ -179,6 +185,8 @@
    CALL PUSHCONTROL2B(0)
    END IF
    END DO bocos
+   rev1b = 0.0_8
+   rev2b = 0.0_8
    pp1b = 0.0_8
    pp2b = 0.0_8
    rlv1b = 0.0_8
@@ -201,8 +209,8 @@
    &                  kcbeg(nn), kcend(nn), correctfork)
    CALL POPREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
    CALL RESETBCPOINTERSBWD_B(nn, ww1, ww1b, ww2, ww2b, pp1, pp1b, pp2&
-   &                         , pp2b, rlv1, rlv1b, rlv2, rlv2b, rev1, rev2, &
-   &                         0)
+   &                         , pp2b, rlv1, rlv1b, rlv2, rlv2b, rev1, rev1b&
+   &                         , rev2, rev2b, 0)
    rhokb = 0.0_8
    CALL POPINTEGER4(ad_from0)
    CALL POPINTEGER4(ad_to0)
@@ -210,6 +218,11 @@
    CALL POPINTEGER4(ad_from)
    CALL POPINTEGER4(ad_to)
    DO i=ad_to,ad_from,-1
+   CALL POPCONTROL1B(branch)
+   IF (branch .NE. 0) THEN
+   rev2b(i, j) = rev2b(i, j) - rev1b(i, j)
+   rev1b(i, j) = 0.0_8
+   END IF
    rlv2b(i, j) = rlv2b(i, j) + rlv1b(i, j)
    rlv1b(i, j) = 0.0_8
    ww2b(i, j, ivz) = ww2b(i, j, ivz) - ww1b(i, j, ivz)
@@ -247,7 +260,8 @@
    CALL POPREAL8ARRAY(pp1, imaxdim*jmaxdim)
    CALL POPREAL8ARRAY(pp2, imaxdim*jmaxdim)
    CALL SETBCPOINTERSBWD_B(nn, ww1, ww1b, ww2, ww2b, pp1, pp1b, pp2, &
-   &                       pp2b, rlv1, rlv1b, rlv2, rlv2b, rev1, rev2, 0)
+   &                       pp2b, rlv1, rlv1b, rlv2, rlv2b, rev1, rev1b, &
+   &                       rev2, rev2b, 0)
    END IF
    END DO
    END SUBROUTINE BCNSWALLISOTHERMAL_B

@@ -2,8 +2,9 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of setbcpointers in forward (tangent) mode (with options i4 dr8 r8):
-   !   Plus diff mem management of: p:in w:in rlv:in pp1:in-out pp2:in-out
-   !                rlv1:in-out rlv2:in-out ww1:in-out ww2:in-out
+   !   Plus diff mem management of: rev:in p:in w:in rlv:in rev1:in-out
+   !                rev2:in-out pp1:in-out pp2:in-out rlv1:in-out
+   !                rlv2:in-out ww1:in-out ww2:in-out
    !
    !      ******************************************************************
    !      *                                                                *
@@ -15,7 +16,7 @@
    !      ******************************************************************
    !
    SUBROUTINE SETBCPOINTERS_D(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, pp2, &
-   & pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev2, offset)
+   & pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev1d, rev2, rev2d, offset)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -40,6 +41,7 @@
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1d, rlv2d
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1d, rev2d
    !
    !      Local variables
    !
@@ -72,7 +74,9 @@
    rlv2 => rlv(id, 1:, 1:)
    END IF
    IF (eddymodel) THEN
+   rev1d => revd(ih, 1:, 1:)
    rev1 => rev(ih, 1:, 1:)
+   rev2d => revd(id, 1:, 1:)
    rev2 => rev(id, 1:, 1:)
    END IF
    CASE (imax) 
@@ -94,7 +98,9 @@
    rlv2 => rlv(id, 1:, 1:)
    END IF
    IF (eddymodel) THEN
+   rev1d => revd(ih, 1:, 1:)
    rev1 => rev(ih, 1:, 1:)
+   rev2d => revd(id, 1:, 1:)
    rev2 => rev(id, 1:, 1:)
    END IF
    CASE (jmin) 
@@ -116,7 +122,9 @@
    rlv2 => rlv(1:, id, 1:)
    END IF
    IF (eddymodel) THEN
+   rev1d => revd(1:, ih, 1:)
    rev1 => rev(1:, ih, 1:)
+   rev2d => revd(1:, id, 1:)
    rev2 => rev(1:, id, 1:)
    END IF
    CASE (jmax) 
@@ -138,7 +146,9 @@
    rlv2 => rlv(1:, id, 1:)
    END IF
    IF (eddymodel) THEN
+   rev1d => revd(1:, ih, 1:)
    rev1 => rev(1:, ih, 1:)
+   rev2d => revd(1:, id, 1:)
    rev2 => rev(1:, id, 1:)
    END IF
    CASE (kmin) 
@@ -160,7 +170,9 @@
    rlv2 => rlv(1:, 1:, id)
    END IF
    IF (eddymodel) THEN
+   rev1d => revd(1:, 1:, ih)
    rev1 => rev(1:, 1:, ih)
+   rev2d => revd(1:, 1:, id)
    rev2 => rev(1:, 1:, id)
    END IF
    CASE (kmax) 
@@ -182,7 +194,9 @@
    rlv2 => rlv(1:, 1:, id)
    END IF
    IF (eddymodel) THEN
+   rev1d => revd(1:, 1:, ih)
    rev1 => rev(1:, 1:, ih)
+   rev2d => revd(1:, 1:, id)
    rev2 => rev(1:, 1:, id)
    END IF
    END SELECT

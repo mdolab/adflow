@@ -933,9 +933,10 @@
        endif
 
        ! Possibly correct the wall shear stress.
-
+       ! Wall function is not ADed
+#ifndef USE_TAPENADE       
        call utauWF(rFilv)
-
+#endif
 
        contains
 

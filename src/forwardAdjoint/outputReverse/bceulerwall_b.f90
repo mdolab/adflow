@@ -2,9 +2,9 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of bceulerwall in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *p *w *rlv
-   !   with respect to varying inputs: *p *w *rlv
-   !   Plus diff mem management of: p:in gamma:in w:in rlv:in
+   !   gradient     of useful results: *rev *p *gamma *w *rlv
+   !   with respect to varying inputs: *rev *p *gamma *w *rlv
+   !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -59,6 +59,7 @@
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rlv1, rlv2
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rlv1b, rlv2b
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rev1, rev2
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rev1b, rev2b
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, 3) :: ssi, ssj, ssk
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, 3) :: ss
    INTRINSIC MAX
@@ -81,9 +82,9 @@
    INTEGER :: ad_to5
    INTEGER :: ad_from6
    INTEGER :: ad_to6
+   INTEGER :: branch
    INTEGER :: ad_from7
    INTEGER :: ad_to7
-   INTEGER :: branch
    INTEGER :: ad_from8
    INTEGER :: ad_to8
    REAL(kind=realtype) :: temp0
@@ -383,7 +384,12 @@
    ELSE
    CALL PUSHCONTROL1B(1)
    END IF
-   IF (eddymodel) rev1(j, k) = rev2(j, k)
+   IF (eddymodel) THEN
+   rev1(j, k) = rev2(j, k)
+   CALL PUSHCONTROL1B(1)
+   ELSE
+   CALL PUSHCONTROL1B(0)
+   END IF
    END DO
    CALL PUSHINTEGER4(j - 1)
    CALL PUSHINTEGER4(ad_from7)
@@ -416,6 +422,8 @@
    CALL PUSHCONTROL2B(0)
    END IF
    END DO bocos
+   rev1b = 0.0_8
+   rev2b = 0.0_8
    pp1b = 0.0_8
    pp2b = 0.0_8
    pp3b = 0.0_8
@@ -433,23 +441,26 @@
    CALL POPREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4&
    &                    ))
    CALL POPREAL8ARRAY(rlv, SIZE(rlv, 1)*SIZE(rlv, 2)*SIZE(rlv, 3))
-   gammab = 0.0_8
    CALL EXTRAPOLATE2NDHALO_B(nn, correctfork)
    END IF
    CALL POPREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4))
-   gammab = 0.0_8
    CALL COMPUTEETOT_B(icbeg(nn), icend(nn), jcbeg(nn), jcend(nn), &
    &                  kcbeg(nn), kcend(nn), correctfork)
    CALL POPREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
    CALL RESETBCPOINTERSBWD_B(nn, ww1, ww1b, ww2, ww2b, pp1, pp1b, pp2&
-   &                         , pp2b, rlv1, rlv1b, rlv2, rlv2b, rev1, rev2, &
-   &                         0)
+   &                         , pp2b, rlv1, rlv1b, rlv2, rlv2b, rev1, rev1b&
+   &                         , rev2, rev2b, 0)
    CALL POPINTEGER4(ad_from8)
    CALL POPINTEGER4(ad_to8)
    DO k=ad_to8,ad_from8,-1
    CALL POPINTEGER4(ad_from7)
    CALL POPINTEGER4(ad_to7)
    DO j=ad_to7,ad_from7,-1
+   CALL POPCONTROL1B(branch)
+   IF (branch .NE. 0) THEN
+   rev2b(j, k) = rev2b(j, k) + rev1b(j, k)
+   rev1b(j, k) = 0.0_8
+   END IF
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    rlv2b(j, k) = rlv2b(j, k) + rlv1b(j, k)
@@ -595,7 +606,8 @@
    CALL POPREAL8ARRAY(ww2, imaxdim*jmaxdim*nw)
    CALL POPREAL8ARRAY(pp2, imaxdim*jmaxdim)
    CALL SETBCPOINTERSBWD_B(nn, ww1, ww1b, ww2, ww2b, pp1, pp1b, pp2, &
-   &                       pp2b, rlv1, rlv1b, rlv2, rlv2b, rev1, rev2, 0)
+   &                       pp2b, rlv1, rlv1b, rlv2, rlv2b, rev1, rev1b, &
+   &                       rev2, rev2b, 0)
    END IF
    END DO
    END SUBROUTINE BCEULERWALL_B

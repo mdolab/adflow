@@ -3,7 +3,7 @@
    !
    !  Differentiation of saeddyviscosity in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *rev
-   !   with respect to varying inputs: *w *rlv
+   !   with respect to varying inputs: *rev *w *rlv
    !   Plus diff mem management of: rev:in w:in rlv:in
    !      ==================================================================
    !      ==================================================================
@@ -37,7 +37,6 @@
    !
    ! Store the cv1^3; cv1 is a constant of the Spalart-Allmaras model.
    cv13 = rsacv1**3
-   revd = 0.0_8
    ! Loop over the cells of this block and compute the eddy viscosity.
    ! Do not include halo's.
    DO k=2,kl

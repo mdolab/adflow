@@ -2,9 +2,9 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of bcsymm in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *p *w *rlv
-   !   with respect to varying inputs: *p *w *rlv
-   !   Plus diff mem management of: p:in gamma:in w:in rlv:in
+   !   gradient     of useful results: *rev *p *w *rlv
+   !   with respect to varying inputs: *rev *p *w *rlv
+   !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -54,9 +54,10 @@
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rlv1, rlv2
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rlv1b, rlv2b
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rev1, rev2
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rev1b, rev2b
+   INTEGER :: branch
    INTEGER :: ad_from
    INTEGER :: ad_to
-   INTEGER :: branch
    INTEGER :: ad_from0
    INTEGER :: ad_to0
    REAL(kind=realtype) :: tempb
@@ -90,6 +91,11 @@
    ELSE
    CALL PUSHCONTROL1B(1)
    END IF
+   IF (eddymodel) THEN
+   CALL PUSHCONTROL1B(1)
+   ELSE
+   CALL PUSHCONTROL1B(0)
+   END IF
    END DO
    CALL PUSHINTEGER4(i - 1)
    CALL PUSHINTEGER4(ad_from)
@@ -102,6 +108,8 @@
    END IF
    END DO bocos
    END DO nhalo
+   rev1b = 0.0_8
+   rev2b = 0.0_8
    pp1b = 0.0_8
    pp2b = 0.0_8
    rlv1b = 0.0_8
@@ -114,13 +122,18 @@
    IF (branch .NE. 0) THEN
    CALL RESETBCPOINTERSBWD_B(nn, ww1, ww1b, ww2, ww2b, pp1, pp1b, &
    &                           pp2, pp2b, rlv1, rlv1b, rlv2, rlv2b, rev1, &
-   &                           rev2, mm)
+   &                           rev1b, rev2, rev2b, mm)
    CALL POPINTEGER4(ad_from0)
    CALL POPINTEGER4(ad_to0)
    DO j=ad_to0,ad_from0,-1
    CALL POPINTEGER4(ad_from)
    CALL POPINTEGER4(ad_to)
    DO i=ad_to,ad_from,-1
+   CALL POPCONTROL1B(branch)
+   IF (branch .NE. 0) THEN
+   rev2b(i, j) = rev2b(i, j) + rev1b(i, j)
+   rev1b(i, j) = 0.0_8
+   END IF
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    rlv2b(i, j) = rlv2b(i, j) + rlv1b(i, j)
@@ -155,8 +168,8 @@
    END DO
    END DO
    CALL SETBCPOINTERSBWD_B(nn, ww1, ww1b, ww2, ww2b, pp1, pp1b, pp2&
-   &                         , pp2b, rlv1, rlv1b, rlv2, rlv2b, rev1, rev2, &
-   &                         mm)
+   &                         , pp2b, rlv1, rlv1b, rlv2, rlv2b, rev1, rev1b&
+   &                         , rev2, rev2b, mm)
    END IF
    END DO
    END DO

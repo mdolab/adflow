@@ -2,10 +2,10 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of sa_block in forward (tangent) mode (with options i4 dr8 r8):
-   !   variations   of useful results: *dw *w
-   !   with respect to varying inputs: *w *rlv
-   !   Plus diff mem management of: bvtj1:in bvtj2:in bmtk1:in dw:in
-   !                w:in bmtk2:in rlv:in bvtk1:in bvtk2:in bmti1:in
+   !   variations   of useful results: *rev *dw *w
+   !   with respect to varying inputs: *rev *w *rlv
+   !   Plus diff mem management of: rev:in bvtj1:in bvtj2:in bmtk1:in
+   !                dw:in w:in bmtk2:in rlv:in bvtk1:in bvtk2:in bmti1:in
    !                bmti2:in bvti1:in bvti2:in bmtj1:in bmtj2:in
    !
    !      ******************************************************************
@@ -53,7 +53,7 @@
    ! applied if an actual update has been computed in saSolve.
    IF (.NOT.resonly) THEN
    ! Compute the corresponding eddy viscosity.
-   CALL SAEDDYVISCOSITY()
+   CALL SAEDDYVISCOSITY_D()
    ! Set the halo values for the turbulent variables.
    ! We are on the finest mesh, so the second layer of halo
    ! cells must be computed as well.

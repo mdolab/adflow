@@ -5,7 +5,7 @@
    !   gradient     of useful results: *w *fw
    !   with respect to varying inputs: *rev *p *gamma *w *rlv *fw
    !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
-   !                fw:in viscsubface:in *viscsubface.tau:in
+   !                fw:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -183,14 +183,6 @@
    ELSE
    correctfork = .false.
    END IF
-   ! Determine whether or not the wall stress tensor and wall heat
-   ! flux must be stored for viscous walls.
-   storewalltensor = .false.
-   IF (wallfunctions) THEN
-   storewalltensor = .true.
-   ELSE IF (rkstage .EQ. 0 .AND. currentlevel .EQ. groundlevel) THEN
-   storewalltensor = .true.
-   END IF
    ! Store the speed of sound squared instead of the pressure.
    ! To be 100 percent correct, substract 2/3*rho*k (if present)
    ! from the pressure to obtain the true presssure. First layer of
@@ -231,7 +223,6 @@
    ! multiplied by the porosity. Compute the factor in front of
    ! the gradients of the speed of sound squared for the heat
    ! flux.
-   CALL PUSHREAL8(mul)
    mul = por*(rlv(i, j, 1)+rlv(i, j, 2))
    IF (eddymodel) THEN
    CALL PUSHREAL8(mue)
@@ -241,11 +232,6 @@
    CALL PUSHCONTROL1B(1)
    END IF
    CALL PUSHREAL8(mut)
-   mut = mul + mue
-   gm1 = half*(gamma(i, j, 1)+gamma(i, j, 2)) - one
-   factlamheat = one/(prandtl*gm1)
-   factturbheat = one/(prandtlturb*gm1)
-   heatcoef = mul*factlamheat + mue*factturbheat
    ! Compute the gradients at the face by averaging the four
    ! nodal values.
    CALL PUSHREAL8(u_x)
@@ -275,10 +261,13 @@
    CALL PUSHREAL8(w_z)
    w_z = fourth*(wz(i-1, j-1, k1)+wz(i, j-1, k1)+wz(i-1, j, k1)+wz(&
    &         i, j, k1))
+   CALL PUSHREAL8(q_x)
    q_x = fourth*(qx(i-1, j-1, k1)+qx(i, j-1, k1)+qx(i-1, j, k1)+qx(&
    &         i, j, k1))
+   CALL PUSHREAL8(q_y)
    q_y = fourth*(qy(i-1, j-1, k1)+qy(i, j-1, k1)+qy(i-1, j, k1)+qy(&
    &         i, j, k1))
+   CALL PUSHREAL8(q_z)
    q_z = fourth*(qz(i-1, j-1, k1)+qz(i, j-1, k1)+qz(i-1, j, k1)+qz(&
    &         i, j, k1))
    ! The gradients in the normal direction are corrected, such
@@ -328,58 +317,12 @@
    ! Compute the stress tensor and the heat flux vector.
    CALL PUSHREAL8(fracdiv)
    fracdiv = twothird*(u_x+v_y+w_z)
-   CALL PUSHREAL8(tauxx)
-   tauxx = mut*(two*u_x-fracdiv)
-   CALL PUSHREAL8(tauyy)
-   tauyy = mut*(two*v_y-fracdiv)
-   CALL PUSHREAL8(tauzz)
-   tauzz = mut*(two*w_z-fracdiv)
-   CALL PUSHREAL8(tauxy)
-   tauxy = mut*(u_y+v_x)
-   CALL PUSHREAL8(tauxz)
-   tauxz = mut*(u_z+w_x)
-   CALL PUSHREAL8(tauyz)
-   tauyz = mut*(v_z+w_y)
-   CALL PUSHREAL8(q_x)
-   q_x = heatcoef*q_x
-   CALL PUSHREAL8(q_y)
-   q_y = heatcoef*q_y
-   CALL PUSHREAL8(q_z)
-   q_z = heatcoef*q_z
    ! Compute the average velocities for the face. Remember that
    ! the velocities are stored and not the momentum.
-   ubar = half*(w(i, j, 1, ivx)+w(i, j, 2, ivx))
-   vbar = half*(w(i, j, 1, ivy)+w(i, j, 2, ivy))
-   wbar = half*(w(i, j, 1, ivz)+w(i, j, 2, ivz))
    ! Compute the viscous fluxes for this k-face.
-   fmx = tauxx*sk(i, j, 1, 1) + tauxy*sk(i, j, 1, 2) + tauxz*sk(i, &
-   &         j, 1, 3)
-   fmy = tauxy*sk(i, j, 1, 1) + tauyy*sk(i, j, 1, 2) + tauyz*sk(i, &
-   &         j, 1, 3)
-   fmz = tauxz*sk(i, j, 1, 1) + tauyz*sk(i, j, 1, 2) + tauzz*sk(i, &
-   &         j, 1, 3)
-   frhoe = (ubar*tauxx+vbar*tauxy+wbar*tauxz)*sk(i, j, 1, 1) + (&
-   &         ubar*tauxy+vbar*tauyy+wbar*tauyz)*sk(i, j, 1, 2) + (ubar*tauxz&
-   &         +vbar*tauyz+wbar*tauzz)*sk(i, j, 1, 3) - q_x*sk(i, j, 1, 1) - &
-   &         q_y*sk(i, j, 1, 2) - q_z*sk(i, j, 1, 3)
    ! Update the residuals of cell k == 2.
-   fw(i, j, 2, imx) = fw(i, j, 2, imx) + fmx
-   fw(i, j, 2, imy) = fw(i, j, 2, imy) + fmy
-   fw(i, j, 2, imz) = fw(i, j, 2, imz) + fmz
-   fw(i, j, 2, irhoe) = fw(i, j, 2, irhoe) + frhoe
    ! Store the stress tensor and the heat flux vector if this
    ! face is part of a viscous subface.
-   IF (storewalltensor .AND. visckminpointer(i, j) .GT. 0) THEN
-   viscsubface(nn)%tau(i, j, 1) = tauxx
-   viscsubface(nn)%tau(i, j, 2) = tauyy
-   viscsubface(nn)%tau(i, j, 3) = tauzz
-   viscsubface(nn)%tau(i, j, 4) = tauxy
-   viscsubface(nn)%tau(i, j, 5) = tauxz
-   viscsubface(nn)%tau(i, j, 6) = tauyz
-   CALL PUSHCONTROL1B(1)
-   ELSE
-   CALL PUSHCONTROL1B(0)
-   END IF
    END DO
    END DO
    CALL PUSHINTEGER4(k)
@@ -414,8 +357,6 @@
    ! multiplied by the porosity. Compute the factor in front of
    ! the gradients of the speed of sound squared for the heat
    ! flux.
-   CALL PUSHREAL8(mul)
-   mul = por*(rlv(i, j, k)+rlv(i, j, k+1))
    IF (eddymodel) THEN
    CALL PUSHREAL8(mue)
    mue = por*(rev(i, j, k)+rev(i, j, k+1))
@@ -424,11 +365,6 @@
    CALL PUSHCONTROL1B(1)
    END IF
    CALL PUSHREAL8(mut)
-   mut = mul + mue
-   gm1 = half*(gamma(i, j, k)+gamma(i, j, k+1)) - one
-   factlamheat = one/(prandtl*gm1)
-   factturbheat = one/(prandtlturb*gm1)
-   heatcoef = mul*factlamheat + mue*factturbheat
    ! Compute the gradients at the face by averaging the four
    ! nodal values.
    CALL PUSHREAL8(u_x)
@@ -458,10 +394,13 @@
    CALL PUSHREAL8(w_z)
    w_z = fourth*(wz(i-1, j-1, k1)+wz(i, j-1, k1)+wz(i-1, j, k1)+&
    &           wz(i, j, k1))
+   CALL PUSHREAL8(q_x)
    q_x = fourth*(qx(i-1, j-1, k1)+qx(i, j-1, k1)+qx(i-1, j, k1)+&
    &           qx(i, j, k1))
+   CALL PUSHREAL8(q_y)
    q_y = fourth*(qy(i-1, j-1, k1)+qy(i, j-1, k1)+qy(i-1, j, k1)+&
    &           qy(i, j, k1))
+   CALL PUSHREAL8(q_z)
    q_z = fourth*(qz(i-1, j-1, k1)+qz(i, j-1, k1)+qz(i-1, j, k1)+&
    &           qz(i, j, k1))
    !!$             write(unitvf,*) i,j,k, u_x, u_y, u_z
@@ -512,63 +451,12 @@
    ! Compute the stress tensor and the heat flux vector.
    CALL PUSHREAL8(fracdiv)
    fracdiv = twothird*(u_x+v_y+w_z)
-   CALL PUSHREAL8(tauxx)
-   tauxx = mut*(two*u_x-fracdiv)
-   CALL PUSHREAL8(tauyy)
-   tauyy = mut*(two*v_y-fracdiv)
-   CALL PUSHREAL8(tauzz)
-   tauzz = mut*(two*w_z-fracdiv)
-   CALL PUSHREAL8(tauxy)
-   tauxy = mut*(u_y+v_x)
-   CALL PUSHREAL8(tauxz)
-   tauxz = mut*(u_z+w_x)
-   CALL PUSHREAL8(tauyz)
-   tauyz = mut*(v_z+w_y)
-   CALL PUSHREAL8(q_x)
-   q_x = heatcoef*q_x
-   CALL PUSHREAL8(q_y)
-   q_y = heatcoef*q_y
-   CALL PUSHREAL8(q_z)
-   q_z = heatcoef*q_z
    ! Compute the average velocities for the face. Remember that
    ! the velocities are stored and not the momentum.
-   ubar = half*(w(i, j, k, ivx)+w(i, j, k+1, ivx))
-   vbar = half*(w(i, j, k, ivy)+w(i, j, k+1, ivy))
-   wbar = half*(w(i, j, k, ivz)+w(i, j, k+1, ivz))
    ! Compute the viscous fluxes for this k-face.
-   fmx = tauxx*sk(i, j, k, 1) + tauxy*sk(i, j, k, 2) + tauxz*sk(i&
-   &           , j, k, 3)
-   fmy = tauxy*sk(i, j, k, 1) + tauyy*sk(i, j, k, 2) + tauyz*sk(i&
-   &           , j, k, 3)
-   fmz = tauxz*sk(i, j, k, 1) + tauyz*sk(i, j, k, 2) + tauzz*sk(i&
-   &           , j, k, 3)
-   frhoe = (ubar*tauxx+vbar*tauxy+wbar*tauxz)*sk(i, j, k, 1) + (&
-   &           ubar*tauxy+vbar*tauyy+wbar*tauyz)*sk(i, j, k, 2) + (ubar*&
-   &           tauxz+vbar*tauyz+wbar*tauzz)*sk(i, j, k, 3) - q_x*sk(i, j, k&
-   &           , 1) - q_y*sk(i, j, k, 2) - q_z*sk(i, j, k, 3)
    ! Update the residuals of cell k and k+1.
-   fw(i, j, k, imx) = fw(i, j, k, imx) - fmx
-   fw(i, j, k, imy) = fw(i, j, k, imy) - fmy
-   fw(i, j, k, imz) = fw(i, j, k, imz) - fmz
-   fw(i, j, k, irhoe) = fw(i, j, k, irhoe) - frhoe
-   fw(i, j, k+1, imx) = fw(i, j, k+1, imx) + fmx
-   fw(i, j, k+1, imy) = fw(i, j, k+1, imy) + fmy
-   fw(i, j, k+1, imz) = fw(i, j, k+1, imz) + fmz
-   fw(i, j, k+1, irhoe) = fw(i, j, k+1, irhoe) + frhoe
    ! Store the stress tensor and the heat flux vector if this
    ! face is part of a viscous subface.
-   IF (k .EQ. kl .AND. storewalltensor .AND. visckmaxpointer(i, j&
-   &             ) .GT. 0) THEN
-   viscsubface(nn)%tau(i, j, 1) = tauxx
-   viscsubface(nn)%tau(i, j, 2) = tauyy
-   viscsubface(nn)%tau(i, j, 3) = tauzz
-   viscsubface(nn)%tau(i, j, 4) = tauxy
-   viscsubface(nn)%tau(i, j, 5) = tauxz
-   viscsubface(nn)%tau(i, j, 6) = tauyz
-   CALL PUSHCONTROL1B(1)
-   ELSE
-   CALL PUSHCONTROL1B(0)
-   END IF
    END DO
    END DO
    !
@@ -590,8 +478,6 @@
    ! multiplied by the porosity. Compute the factor in front of
    ! the gradients of the speed of sound squared for the heat
    ! flux.
-   CALL PUSHREAL8(mul)
-   mul = por*(rlv(i, j, k)+rlv(i, j+1, k))
    IF (eddymodel) THEN
    CALL PUSHREAL8(mue)
    mue = por*(rev(i, j, k)+rev(i, j+1, k))
@@ -600,11 +486,6 @@
    CALL PUSHCONTROL1B(1)
    END IF
    CALL PUSHREAL8(mut)
-   mut = mul + mue
-   gm1 = half*(gamma(i, j, k)+gamma(i, j+1, k)) - one
-   factlamheat = one/(prandtl*gm1)
-   factturbheat = one/(prandtlturb*gm1)
-   heatcoef = mul*factlamheat + mue*factturbheat
    ! Compute the gradients at the face by averaging the four
    ! nodal values.
    CALL PUSHREAL8(u_x)
@@ -634,10 +515,13 @@
    CALL PUSHREAL8(w_z)
    w_z = fourth*(wz(i-1, j, k1)+wz(i, j, k1)+wz(i-1, j, k2)+wz(i&
    &           , j, k2))
+   CALL PUSHREAL8(q_x)
    q_x = fourth*(qx(i-1, j, k1)+qx(i, j, k1)+qx(i-1, j, k2)+qx(i&
    &           , j, k2))
+   CALL PUSHREAL8(q_y)
    q_y = fourth*(qy(i-1, j, k1)+qy(i, j, k1)+qy(i-1, j, k2)+qy(i&
    &           , j, k2))
+   CALL PUSHREAL8(q_z)
    q_z = fourth*(qz(i-1, j, k1)+qz(i, j, k1)+qz(i-1, j, k2)+qz(i&
    &           , j, k2))
    ! The gradients in the normal direction are corrected, such
@@ -687,77 +571,13 @@
    ! Compute the stress tensor and the heat flux vector.
    CALL PUSHREAL8(fracdiv)
    fracdiv = twothird*(u_x+v_y+w_z)
-   CALL PUSHREAL8(tauxx)
-   tauxx = mut*(two*u_x-fracdiv)
-   CALL PUSHREAL8(tauyy)
-   tauyy = mut*(two*v_y-fracdiv)
-   CALL PUSHREAL8(tauzz)
-   tauzz = mut*(two*w_z-fracdiv)
-   CALL PUSHREAL8(tauxy)
-   tauxy = mut*(u_y+v_x)
-   CALL PUSHREAL8(tauxz)
-   tauxz = mut*(u_z+w_x)
-   CALL PUSHREAL8(tauyz)
-   tauyz = mut*(v_z+w_y)
-   CALL PUSHREAL8(q_x)
-   q_x = heatcoef*q_x
-   CALL PUSHREAL8(q_y)
-   q_y = heatcoef*q_y
-   CALL PUSHREAL8(q_z)
-   q_z = heatcoef*q_z
    ! Compute the average velocities for the face. Remember that
    ! the velocities are stored and not the momentum.
-   ubar = half*(w(i, j, k, ivx)+w(i, j+1, k, ivx))
-   vbar = half*(w(i, j, k, ivy)+w(i, j+1, k, ivy))
-   wbar = half*(w(i, j, k, ivz)+w(i, j+1, k, ivz))
    ! Compute the viscous fluxes for this j-face.
-   fmx = tauxx*sj(i, j, k, 1) + tauxy*sj(i, j, k, 2) + tauxz*sj(i&
-   &           , j, k, 3)
-   fmy = tauxy*sj(i, j, k, 1) + tauyy*sj(i, j, k, 2) + tauyz*sj(i&
-   &           , j, k, 3)
-   fmz = tauxz*sj(i, j, k, 1) + tauyz*sj(i, j, k, 2) + tauzz*sj(i&
-   &           , j, k, 3)
-   frhoe = (ubar*tauxx+vbar*tauxy+wbar*tauxz)*sj(i, j, k, 1) + (&
-   &           ubar*tauxy+vbar*tauyy+wbar*tauyz)*sj(i, j, k, 2) + (ubar*&
-   &           tauxz+vbar*tauyz+wbar*tauzz)*sj(i, j, k, 3) - q_x*sj(i, j, k&
-   &           , 1) - q_y*sj(i, j, k, 2) - q_z*sj(i, j, k, 3)
    ! Update the residuals of cell j and j+1.
-   fw(i, j, k, imx) = fw(i, j, k, imx) - fmx
-   fw(i, j, k, imy) = fw(i, j, k, imy) - fmy
-   fw(i, j, k, imz) = fw(i, j, k, imz) - fmz
-   fw(i, j, k, irhoe) = fw(i, j, k, irhoe) - frhoe
-   fw(i, j+1, k, imx) = fw(i, j+1, k, imx) + fmx
-   fw(i, j+1, k, imy) = fw(i, j+1, k, imy) + fmy
-   fw(i, j+1, k, imz) = fw(i, j+1, k, imz) + fmz
-   fw(i, j+1, k, irhoe) = fw(i, j+1, k, irhoe) + frhoe
    ! Store the stress tensor and the heat flux vector if this
    ! face is part of a viscous subface. Both the cases j == 1
    ! and j == jl must be tested.
-   IF (j .EQ. 1 .AND. storewalltensor .AND. viscjminpointer(i, k)&
-   &             .GT. 0) THEN
-   viscsubface(nn)%tau(i, k, 1) = tauxx
-   viscsubface(nn)%tau(i, k, 2) = tauyy
-   viscsubface(nn)%tau(i, k, 3) = tauzz
-   viscsubface(nn)%tau(i, k, 4) = tauxy
-   viscsubface(nn)%tau(i, k, 5) = tauxz
-   viscsubface(nn)%tau(i, k, 6) = tauyz
-   CALL PUSHCONTROL1B(0)
-   ELSE
-   CALL PUSHCONTROL1B(1)
-   END IF
-   ! And the j == jl case.
-   IF (j .EQ. jl .AND. storewalltensor .AND. viscjmaxpointer(i, k&
-   &             ) .GT. 0) THEN
-   viscsubface(nn)%tau(i, k, 1) = tauxx
-   viscsubface(nn)%tau(i, k, 2) = tauyy
-   viscsubface(nn)%tau(i, k, 3) = tauzz
-   viscsubface(nn)%tau(i, k, 4) = tauxy
-   viscsubface(nn)%tau(i, k, 5) = tauxz
-   viscsubface(nn)%tau(i, k, 6) = tauyz
-   CALL PUSHCONTROL1B(1)
-   ELSE
-   CALL PUSHCONTROL1B(0)
-   END IF
    END DO
    END DO
    !
@@ -779,8 +599,6 @@
    ! multiplied the porosity. Compute the factor in front of
    ! the gradients of the speed of sound squared for the heat
    ! flux.
-   CALL PUSHREAL8(mul)
-   mul = por*(rlv(i, j, k)+rlv(i+1, j, k))
    IF (eddymodel) THEN
    CALL PUSHREAL8(mue)
    mue = por*(rev(i, j, k)+rev(i+1, j, k))
@@ -789,11 +607,6 @@
    CALL PUSHCONTROL1B(1)
    END IF
    CALL PUSHREAL8(mut)
-   mut = mul + mue
-   gm1 = half*(gamma(i, j, k)+gamma(i+1, j, k)) - one
-   factlamheat = one/(prandtl*gm1)
-   factturbheat = one/(prandtlturb*gm1)
-   heatcoef = mul*factlamheat + mue*factturbheat
    ! Compute the gradients at the face by averaging the four
    ! nodal values.
    CALL PUSHREAL8(u_x)
@@ -823,10 +636,13 @@
    CALL PUSHREAL8(w_z)
    w_z = fourth*(wz(i, j-1, k1)+wz(i, j, k1)+wz(i, j-1, k2)+wz(i&
    &           , j, k2))
+   CALL PUSHREAL8(q_x)
    q_x = fourth*(qx(i, j-1, k1)+qx(i, j, k1)+qx(i, j-1, k2)+qx(i&
    &           , j, k2))
+   CALL PUSHREAL8(q_y)
    q_y = fourth*(qy(i, j-1, k1)+qy(i, j, k1)+qy(i, j-1, k2)+qy(i&
    &           , j, k2))
+   CALL PUSHREAL8(q_z)
    q_z = fourth*(qz(i, j-1, k1)+qz(i, j, k1)+qz(i, j-1, k2)+qz(i&
    &           , j, k2))
    ! The gradients in the normal direction are corrected, such
@@ -876,84 +692,20 @@
    ! Compute the stress tensor and the heat flux vector.
    CALL PUSHREAL8(fracdiv)
    fracdiv = twothird*(u_x+v_y+w_z)
-   CALL PUSHREAL8(tauxx)
-   tauxx = mut*(two*u_x-fracdiv)
-   CALL PUSHREAL8(tauyy)
-   tauyy = mut*(two*v_y-fracdiv)
-   CALL PUSHREAL8(tauzz)
-   tauzz = mut*(two*w_z-fracdiv)
-   CALL PUSHREAL8(tauxy)
-   tauxy = mut*(u_y+v_x)
-   CALL PUSHREAL8(tauxz)
-   tauxz = mut*(u_z+w_x)
-   CALL PUSHREAL8(tauyz)
-   tauyz = mut*(v_z+w_y)
-   CALL PUSHREAL8(q_x)
-   q_x = heatcoef*q_x
-   CALL PUSHREAL8(q_y)
-   q_y = heatcoef*q_y
-   CALL PUSHREAL8(q_z)
-   q_z = heatcoef*q_z
    ! Compute the average velocities for the face. Remember that
    ! the velocities are stored and not the momentum.
-   ubar = half*(w(i, j, k, ivx)+w(i+1, j, k, ivx))
-   vbar = half*(w(i, j, k, ivy)+w(i+1, j, k, ivy))
-   wbar = half*(w(i, j, k, ivz)+w(i+1, j, k, ivz))
    ! Compute the viscous fluxes for this i-face.
-   fmx = tauxx*si(i, j, k, 1) + tauxy*si(i, j, k, 2) + tauxz*si(i&
-   &           , j, k, 3)
-   fmy = tauxy*si(i, j, k, 1) + tauyy*si(i, j, k, 2) + tauyz*si(i&
-   &           , j, k, 3)
-   fmz = tauxz*si(i, j, k, 1) + tauyz*si(i, j, k, 2) + tauzz*si(i&
-   &           , j, k, 3)
-   frhoe = (ubar*tauxx+vbar*tauxy+wbar*tauxz)*si(i, j, k, 1) + (&
-   &           ubar*tauxy+vbar*tauyy+wbar*tauyz)*si(i, j, k, 2) + (ubar*&
-   &           tauxz+vbar*tauyz+wbar*tauzz)*si(i, j, k, 3) - q_x*si(i, j, k&
-   &           , 1) - q_y*si(i, j, k, 2) - q_z*si(i, j, k, 3)
    ! Update the residuals of cell i and i+1.
-   fw(i, j, k, imx) = fw(i, j, k, imx) - fmx
-   fw(i, j, k, imy) = fw(i, j, k, imy) - fmy
-   fw(i, j, k, imz) = fw(i, j, k, imz) - fmz
-   fw(i, j, k, irhoe) = fw(i, j, k, irhoe) - frhoe
-   fw(i+1, j, k, imx) = fw(i+1, j, k, imx) + fmx
-   fw(i+1, j, k, imy) = fw(i+1, j, k, imy) + fmy
-   fw(i+1, j, k, imz) = fw(i+1, j, k, imz) + fmz
-   fw(i+1, j, k, irhoe) = fw(i+1, j, k, irhoe) + frhoe
    ! Store the stress tensor and the heat flux vector if this
    ! face is part of a viscous subface. Both the cases i == 1
    ! and i == il must be tested.
-   IF (i .EQ. 1 .AND. storewalltensor .AND. visciminpointer(j, k)&
-   &             .GT. 0) THEN
-   viscsubface(nn)%tau(j, k, 1) = tauxx
-   viscsubface(nn)%tau(j, k, 2) = tauyy
-   viscsubface(nn)%tau(j, k, 3) = tauzz
-   viscsubface(nn)%tau(j, k, 4) = tauxy
-   viscsubface(nn)%tau(j, k, 5) = tauxz
-   viscsubface(nn)%tau(j, k, 6) = tauyz
-   CALL PUSHCONTROL1B(0)
-   ELSE
-   CALL PUSHCONTROL1B(1)
-   END IF
-   ! And the i == il case.
-   IF (i .EQ. il .AND. storewalltensor .AND. viscimaxpointer(j, k&
-   &             ) .GT. 0) THEN
-   viscsubface(nn)%tau(j, k, 1) = tauxx
-   viscsubface(nn)%tau(j, k, 2) = tauyy
-   viscsubface(nn)%tau(j, k, 3) = tauzz
-   viscsubface(nn)%tau(j, k, 4) = tauxy
-   viscsubface(nn)%tau(j, k, 5) = tauxz
-   viscsubface(nn)%tau(j, k, 6) = tauyz
-   CALL PUSHCONTROL1B(1)
-   ELSE
-   CALL PUSHCONTROL1B(0)
-   END IF
    END DO
    END DO
    END DO kloop
-   CALL UTAUWF_B(rfilv)
    revb = 0.0_8
    pb = 0.0_8
    gammab = 0.0_8
+   rlvb = 0.0_8
    wxb = 0.0_8
    wyb = 0.0_8
    wzb = 0.0_8
@@ -970,73 +722,36 @@
    DO k=kl,2,-1
    DO j=jl,2,-1
    DO i=il,1,-1
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
-   tauzzb = 0.0_8
-   tauxxb = 0.0_8
-   tauxyb = 0.0_8
-   tauxzb = 0.0_8
-   tauyyb = 0.0_8
-   tauyzb = 0.0_8
-   ELSE
-   mul = por*(rlv(i, j, k)+rlv(i+1, j, k))
-   mut = mul + mue
-   tauyz = mut*(v_z+w_y)
-   tauyzb = viscsubfaceb(nn)%tau(j, k, 6)
-   viscsubfaceb(nn)%tau(j, k, 6) = 0.0_8
-   tauxz = mut*(u_z+w_x)
-   tauxzb = viscsubfaceb(nn)%tau(j, k, 5)
-   viscsubfaceb(nn)%tau(j, k, 5) = 0.0_8
-   tauxy = mut*(u_y+v_x)
-   tauxyb = viscsubfaceb(nn)%tau(j, k, 4)
-   viscsubfaceb(nn)%tau(j, k, 4) = 0.0_8
-   tauzz = mut*(two*w_z-fracdiv)
-   tauzzb = viscsubfaceb(nn)%tau(j, k, 3)
-   viscsubfaceb(nn)%tau(j, k, 3) = 0.0_8
-   tauyy = mut*(two*v_y-fracdiv)
-   tauyyb = viscsubfaceb(nn)%tau(j, k, 2)
-   viscsubfaceb(nn)%tau(j, k, 2) = 0.0_8
-   tauxx = mut*(two*u_x-fracdiv)
-   tauxxb = viscsubfaceb(nn)%tau(j, k, 1)
-   viscsubfaceb(nn)%tau(j, k, 1) = 0.0_8
-   END IF
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
-   tauyzb = tauyzb + viscsubfaceb(nn)%tau(j, k, 6)
-   viscsubfaceb(nn)%tau(j, k, 6) = 0.0_8
-   tauxzb = tauxzb + viscsubfaceb(nn)%tau(j, k, 5)
-   viscsubfaceb(nn)%tau(j, k, 5) = 0.0_8
-   tauxyb = tauxyb + viscsubfaceb(nn)%tau(j, k, 4)
-   viscsubfaceb(nn)%tau(j, k, 4) = 0.0_8
-   tauzzb = tauzzb + viscsubfaceb(nn)%tau(j, k, 3)
-   viscsubfaceb(nn)%tau(j, k, 3) = 0.0_8
-   tauyyb = tauyyb + viscsubfaceb(nn)%tau(j, k, 2)
-   viscsubfaceb(nn)%tau(j, k, 2) = 0.0_8
-   tauxxb = tauxxb + viscsubfaceb(nn)%tau(j, k, 1)
-   viscsubfaceb(nn)%tau(j, k, 1) = 0.0_8
-   END IF
    frhoeb = fwb(i+1, j, k, irhoe) - fwb(i, j, k, irhoe)
    fmzb = fwb(i+1, j, k, imz) - fwb(i, j, k, imz)
    fmyb = fwb(i+1, j, k, imy) - fwb(i, j, k, imy)
    fmxb = fwb(i+1, j, k, imx) - fwb(i, j, k, imx)
+   mul = por*(rlv(i, j, k)+rlv(i+1, j, k))
+   mut = mul + mue
+   tauzz = mut*(two*w_z-fracdiv)
    wbar = half*(w(i, j, k, ivz)+w(i+1, j, k, ivz))
    vbar = half*(w(i, j, k, ivy)+w(i+1, j, k, ivy))
+   tauxx = mut*(two*u_x-fracdiv)
+   tauxy = mut*(u_y+v_x)
+   tauxz = mut*(u_z+w_x)
    ubar = half*(w(i, j, k, ivx)+w(i+1, j, k, ivx))
+   tauyy = mut*(two*v_y-fracdiv)
+   tauyz = mut*(v_z+w_y)
    tempb48 = si(i, j, k, 1)*frhoeb
    tempb49 = si(i, j, k, 2)*frhoeb
    tempb50 = si(i, j, k, 3)*frhoeb
    ubarb = tauxz*tempb50 + tauxy*tempb49 + tauxx*tempb48
-   tauxxb = tauxxb + si(i, j, k, 1)*fmxb + ubar*tempb48
+   tauxxb = si(i, j, k, 1)*fmxb + ubar*tempb48
    vbarb = tauyz*tempb50 + tauyy*tempb49 + tauxy*tempb48
-   tauxyb = tauxyb + si(i, j, k, 1)*fmyb + si(i, j, k, 2)*fmxb + &
-   &           ubar*tempb49 + vbar*tempb48
+   tauxyb = si(i, j, k, 1)*fmyb + si(i, j, k, 2)*fmxb + ubar*&
+   &           tempb49 + vbar*tempb48
    wbarb = tauzz*tempb50 + tauyz*tempb49 + tauxz*tempb48
-   tauxzb = tauxzb + si(i, j, k, 1)*fmzb + si(i, j, k, 3)*fmxb + &
-   &           ubar*tempb50 + wbar*tempb48
-   tauyyb = tauyyb + si(i, j, k, 2)*fmyb + vbar*tempb49
-   tauyzb = tauyzb + si(i, j, k, 2)*fmzb + si(i, j, k, 3)*fmyb + &
-   &           vbar*tempb50 + wbar*tempb49
-   tauzzb = tauzzb + si(i, j, k, 3)*fmzb + wbar*tempb50
+   tauxzb = si(i, j, k, 1)*fmzb + si(i, j, k, 3)*fmxb + ubar*&
+   &           tempb50 + wbar*tempb48
+   tauyyb = si(i, j, k, 2)*fmyb + vbar*tempb49
+   tauyzb = si(i, j, k, 2)*fmzb + si(i, j, k, 3)*fmyb + vbar*&
+   &           tempb50 + wbar*tempb49
+   tauzzb = si(i, j, k, 3)*fmzb + wbar*tempb50
    q_xb = -(si(i, j, k, 1)*frhoeb)
    q_yb = -(si(i, j, k, 2)*frhoeb)
    q_zb = -(si(i, j, k, 3)*frhoeb)
@@ -1050,29 +765,20 @@
    factlamheat = one/(prandtl*gm1)
    factturbheat = one/(prandtlturb*gm1)
    heatcoef = mul*factlamheat + mue*factturbheat
-   CALL POPREAL8(q_z)
-   CALL POPREAL8(q_y)
-   CALL POPREAL8(q_x)
    heatcoefb = q_y*q_yb + q_x*q_xb + q_z*q_zb
    q_zb = heatcoef*q_zb
    q_yb = heatcoef*q_yb
    q_xb = heatcoef*q_xb
-   CALL POPREAL8(tauyz)
    mutb = (u_z+w_x)*tauxzb + (two*w_z-fracdiv)*tauzzb + (two*u_x-&
    &           fracdiv)*tauxxb + (two*v_y-fracdiv)*tauyyb + (u_y+v_x)*&
    &           tauxyb + (v_z+w_y)*tauyzb
    v_zb = mut*tauyzb
    w_yb = mut*tauyzb
-   CALL POPREAL8(tauxz)
    u_zb = mut*tauxzb
    w_xb = mut*tauxzb
-   CALL POPREAL8(tauxy)
    u_yb = mut*tauxyb
    v_xb = mut*tauxyb
-   CALL POPREAL8(tauzz)
    fracdivb = -(mut*tauyyb) - mut*tauxxb - mut*tauzzb
-   CALL POPREAL8(tauyy)
-   CALL POPREAL8(tauxx)
    CALL POPREAL8(fracdiv)
    tempb51 = twothird*fracdivb
    w_zb = tempb51 + mut*two*tauzzb
@@ -1106,16 +812,19 @@
    CALL POPREAL8(ssz)
    CALL POPREAL8(ssy)
    CALL POPREAL8(ssx)
+   CALL POPREAL8(q_z)
    tempb52 = fourth*q_zb
    qzb(i, j-1, k1) = qzb(i, j-1, k1) + tempb52
    qzb(i, j, k1) = qzb(i, j, k1) + tempb52
    qzb(i, j-1, k2) = qzb(i, j-1, k2) + tempb52
    qzb(i, j, k2) = qzb(i, j, k2) + tempb52
+   CALL POPREAL8(q_y)
    tempb53 = fourth*q_yb
    qyb(i, j-1, k1) = qyb(i, j-1, k1) + tempb53
    qyb(i, j, k1) = qyb(i, j, k1) + tempb53
    qyb(i, j-1, k2) = qyb(i, j-1, k2) + tempb53
    qyb(i, j, k2) = qyb(i, j, k2) + tempb53
+   CALL POPREAL8(q_x)
    tempb54 = fourth*q_xb
    qxb(i, j-1, k1) = qxb(i, j-1, k1) + tempb54
    qxb(i, j, k1) = qxb(i, j, k1) + tempb54
@@ -1191,7 +900,6 @@
    revb(i+1, j, k) = revb(i+1, j, k) + por*mueb
    mueb = 0.0_8
    END IF
-   CALL POPREAL8(mul)
    rlvb(i, j, k) = rlvb(i, j, k) + por*mulb
    rlvb(i+1, j, k) = rlvb(i+1, j, k) + por*mulb
    CALL POPREAL8(por)
@@ -1199,73 +907,36 @@
    END DO
    DO j=jl,1,-1
    DO i=il,2,-1
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
-   tauzzb = 0.0_8
-   tauxxb = 0.0_8
-   tauxyb = 0.0_8
-   tauxzb = 0.0_8
-   tauyyb = 0.0_8
-   tauyzb = 0.0_8
-   ELSE
-   mul = por*(rlv(i, j, k)+rlv(i, j+1, k))
-   mut = mul + mue
-   tauyz = mut*(v_z+w_y)
-   tauyzb = viscsubfaceb(nn)%tau(i, k, 6)
-   viscsubfaceb(nn)%tau(i, k, 6) = 0.0_8
-   tauxz = mut*(u_z+w_x)
-   tauxzb = viscsubfaceb(nn)%tau(i, k, 5)
-   viscsubfaceb(nn)%tau(i, k, 5) = 0.0_8
-   tauxy = mut*(u_y+v_x)
-   tauxyb = viscsubfaceb(nn)%tau(i, k, 4)
-   viscsubfaceb(nn)%tau(i, k, 4) = 0.0_8
-   tauzz = mut*(two*w_z-fracdiv)
-   tauzzb = viscsubfaceb(nn)%tau(i, k, 3)
-   viscsubfaceb(nn)%tau(i, k, 3) = 0.0_8
-   tauyy = mut*(two*v_y-fracdiv)
-   tauyyb = viscsubfaceb(nn)%tau(i, k, 2)
-   viscsubfaceb(nn)%tau(i, k, 2) = 0.0_8
-   tauxx = mut*(two*u_x-fracdiv)
-   tauxxb = viscsubfaceb(nn)%tau(i, k, 1)
-   viscsubfaceb(nn)%tau(i, k, 1) = 0.0_8
-   END IF
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
-   tauyzb = tauyzb + viscsubfaceb(nn)%tau(i, k, 6)
-   viscsubfaceb(nn)%tau(i, k, 6) = 0.0_8
-   tauxzb = tauxzb + viscsubfaceb(nn)%tau(i, k, 5)
-   viscsubfaceb(nn)%tau(i, k, 5) = 0.0_8
-   tauxyb = tauxyb + viscsubfaceb(nn)%tau(i, k, 4)
-   viscsubfaceb(nn)%tau(i, k, 4) = 0.0_8
-   tauzzb = tauzzb + viscsubfaceb(nn)%tau(i, k, 3)
-   viscsubfaceb(nn)%tau(i, k, 3) = 0.0_8
-   tauyyb = tauyyb + viscsubfaceb(nn)%tau(i, k, 2)
-   viscsubfaceb(nn)%tau(i, k, 2) = 0.0_8
-   tauxxb = tauxxb + viscsubfaceb(nn)%tau(i, k, 1)
-   viscsubfaceb(nn)%tau(i, k, 1) = 0.0_8
-   END IF
    frhoeb = fwb(i, j+1, k, irhoe) - fwb(i, j, k, irhoe)
    fmzb = fwb(i, j+1, k, imz) - fwb(i, j, k, imz)
    fmyb = fwb(i, j+1, k, imy) - fwb(i, j, k, imy)
    fmxb = fwb(i, j+1, k, imx) - fwb(i, j, k, imx)
+   mul = por*(rlv(i, j, k)+rlv(i, j+1, k))
+   mut = mul + mue
+   tauzz = mut*(two*w_z-fracdiv)
    wbar = half*(w(i, j, k, ivz)+w(i, j+1, k, ivz))
    vbar = half*(w(i, j, k, ivy)+w(i, j+1, k, ivy))
+   tauxx = mut*(two*u_x-fracdiv)
+   tauxy = mut*(u_y+v_x)
+   tauxz = mut*(u_z+w_x)
    ubar = half*(w(i, j, k, ivx)+w(i, j+1, k, ivx))
+   tauyy = mut*(two*v_y-fracdiv)
+   tauyz = mut*(v_z+w_y)
    tempb32 = sj(i, j, k, 1)*frhoeb
    tempb33 = sj(i, j, k, 2)*frhoeb
    tempb34 = sj(i, j, k, 3)*frhoeb
    ubarb = tauxz*tempb34 + tauxy*tempb33 + tauxx*tempb32
-   tauxxb = tauxxb + sj(i, j, k, 1)*fmxb + ubar*tempb32
+   tauxxb = sj(i, j, k, 1)*fmxb + ubar*tempb32
    vbarb = tauyz*tempb34 + tauyy*tempb33 + tauxy*tempb32
-   tauxyb = tauxyb + sj(i, j, k, 1)*fmyb + sj(i, j, k, 2)*fmxb + &
-   &           ubar*tempb33 + vbar*tempb32
+   tauxyb = sj(i, j, k, 1)*fmyb + sj(i, j, k, 2)*fmxb + ubar*&
+   &           tempb33 + vbar*tempb32
    wbarb = tauzz*tempb34 + tauyz*tempb33 + tauxz*tempb32
-   tauxzb = tauxzb + sj(i, j, k, 1)*fmzb + sj(i, j, k, 3)*fmxb + &
-   &           ubar*tempb34 + wbar*tempb32
-   tauyyb = tauyyb + sj(i, j, k, 2)*fmyb + vbar*tempb33
-   tauyzb = tauyzb + sj(i, j, k, 2)*fmzb + sj(i, j, k, 3)*fmyb + &
-   &           vbar*tempb34 + wbar*tempb33
-   tauzzb = tauzzb + sj(i, j, k, 3)*fmzb + wbar*tempb34
+   tauxzb = sj(i, j, k, 1)*fmzb + sj(i, j, k, 3)*fmxb + ubar*&
+   &           tempb34 + wbar*tempb32
+   tauyyb = sj(i, j, k, 2)*fmyb + vbar*tempb33
+   tauyzb = sj(i, j, k, 2)*fmzb + sj(i, j, k, 3)*fmyb + vbar*&
+   &           tempb34 + wbar*tempb33
+   tauzzb = sj(i, j, k, 3)*fmzb + wbar*tempb34
    q_xb = -(sj(i, j, k, 1)*frhoeb)
    q_yb = -(sj(i, j, k, 2)*frhoeb)
    q_zb = -(sj(i, j, k, 3)*frhoeb)
@@ -1279,29 +950,20 @@
    factlamheat = one/(prandtl*gm1)
    factturbheat = one/(prandtlturb*gm1)
    heatcoef = mul*factlamheat + mue*factturbheat
-   CALL POPREAL8(q_z)
-   CALL POPREAL8(q_y)
-   CALL POPREAL8(q_x)
    heatcoefb = q_y*q_yb + q_x*q_xb + q_z*q_zb
    q_zb = heatcoef*q_zb
    q_yb = heatcoef*q_yb
    q_xb = heatcoef*q_xb
-   CALL POPREAL8(tauyz)
    mutb = (u_z+w_x)*tauxzb + (two*w_z-fracdiv)*tauzzb + (two*u_x-&
    &           fracdiv)*tauxxb + (two*v_y-fracdiv)*tauyyb + (u_y+v_x)*&
    &           tauxyb + (v_z+w_y)*tauyzb
    v_zb = mut*tauyzb
    w_yb = mut*tauyzb
-   CALL POPREAL8(tauxz)
    u_zb = mut*tauxzb
    w_xb = mut*tauxzb
-   CALL POPREAL8(tauxy)
    u_yb = mut*tauxyb
    v_xb = mut*tauxyb
-   CALL POPREAL8(tauzz)
    fracdivb = -(mut*tauyyb) - mut*tauxxb - mut*tauzzb
-   CALL POPREAL8(tauyy)
-   CALL POPREAL8(tauxx)
    CALL POPREAL8(fracdiv)
    tempb35 = twothird*fracdivb
    w_zb = tempb35 + mut*two*tauzzb
@@ -1335,16 +997,19 @@
    CALL POPREAL8(ssz)
    CALL POPREAL8(ssy)
    CALL POPREAL8(ssx)
+   CALL POPREAL8(q_z)
    tempb36 = fourth*q_zb
    qzb(i-1, j, k1) = qzb(i-1, j, k1) + tempb36
    qzb(i, j, k1) = qzb(i, j, k1) + tempb36
    qzb(i-1, j, k2) = qzb(i-1, j, k2) + tempb36
    qzb(i, j, k2) = qzb(i, j, k2) + tempb36
+   CALL POPREAL8(q_y)
    tempb37 = fourth*q_yb
    qyb(i-1, j, k1) = qyb(i-1, j, k1) + tempb37
    qyb(i, j, k1) = qyb(i, j, k1) + tempb37
    qyb(i-1, j, k2) = qyb(i-1, j, k2) + tempb37
    qyb(i, j, k2) = qyb(i, j, k2) + tempb37
+   CALL POPREAL8(q_x)
    tempb38 = fourth*q_xb
    qxb(i-1, j, k1) = qxb(i-1, j, k1) + tempb38
    qxb(i, j, k1) = qxb(i, j, k1) + tempb38
@@ -1420,7 +1085,6 @@
    revb(i, j+1, k) = revb(i, j+1, k) + por*mueb
    mueb = 0.0_8
    END IF
-   CALL POPREAL8(mul)
    rlvb(i, j, k) = rlvb(i, j, k) + por*mulb
    rlvb(i, j+1, k) = rlvb(i, j+1, k) + por*mulb
    CALL POPREAL8(por)
@@ -1428,58 +1092,36 @@
    END DO
    DO j=jl,2,-1
    DO i=il,2,-1
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
-   tauzzb = 0.0_8
-   tauxxb = 0.0_8
-   tauxyb = 0.0_8
-   tauxzb = 0.0_8
-   tauyyb = 0.0_8
-   tauyzb = 0.0_8
-   ELSE
-   mul = por*(rlv(i, j, k)+rlv(i, j, k+1))
-   mut = mul + mue
-   tauyz = mut*(v_z+w_y)
-   tauyzb = viscsubfaceb(nn)%tau(i, j, 6)
-   viscsubfaceb(nn)%tau(i, j, 6) = 0.0_8
-   tauxz = mut*(u_z+w_x)
-   tauxzb = viscsubfaceb(nn)%tau(i, j, 5)
-   viscsubfaceb(nn)%tau(i, j, 5) = 0.0_8
-   tauxy = mut*(u_y+v_x)
-   tauxyb = viscsubfaceb(nn)%tau(i, j, 4)
-   viscsubfaceb(nn)%tau(i, j, 4) = 0.0_8
-   tauzz = mut*(two*w_z-fracdiv)
-   tauzzb = viscsubfaceb(nn)%tau(i, j, 3)
-   viscsubfaceb(nn)%tau(i, j, 3) = 0.0_8
-   tauyy = mut*(two*v_y-fracdiv)
-   tauyyb = viscsubfaceb(nn)%tau(i, j, 2)
-   viscsubfaceb(nn)%tau(i, j, 2) = 0.0_8
-   tauxx = mut*(two*u_x-fracdiv)
-   tauxxb = viscsubfaceb(nn)%tau(i, j, 1)
-   viscsubfaceb(nn)%tau(i, j, 1) = 0.0_8
-   END IF
    frhoeb = fwb(i, j, k+1, irhoe) - fwb(i, j, k, irhoe)
    fmzb = fwb(i, j, k+1, imz) - fwb(i, j, k, imz)
    fmyb = fwb(i, j, k+1, imy) - fwb(i, j, k, imy)
    fmxb = fwb(i, j, k+1, imx) - fwb(i, j, k, imx)
+   mul = por*(rlv(i, j, k)+rlv(i, j, k+1))
+   mut = mul + mue
+   tauzz = mut*(two*w_z-fracdiv)
    wbar = half*(w(i, j, k, ivz)+w(i, j, k+1, ivz))
    vbar = half*(w(i, j, k, ivy)+w(i, j, k+1, ivy))
+   tauxx = mut*(two*u_x-fracdiv)
+   tauxy = mut*(u_y+v_x)
+   tauxz = mut*(u_z+w_x)
    ubar = half*(w(i, j, k, ivx)+w(i, j, k+1, ivx))
+   tauyy = mut*(two*v_y-fracdiv)
+   tauyz = mut*(v_z+w_y)
    tempb16 = sk(i, j, k, 1)*frhoeb
    tempb17 = sk(i, j, k, 2)*frhoeb
    tempb18 = sk(i, j, k, 3)*frhoeb
    ubarb = tauxz*tempb18 + tauxy*tempb17 + tauxx*tempb16
-   tauxxb = tauxxb + sk(i, j, k, 1)*fmxb + ubar*tempb16
+   tauxxb = sk(i, j, k, 1)*fmxb + ubar*tempb16
    vbarb = tauyz*tempb18 + tauyy*tempb17 + tauxy*tempb16
-   tauxyb = tauxyb + sk(i, j, k, 1)*fmyb + sk(i, j, k, 2)*fmxb + &
-   &           ubar*tempb17 + vbar*tempb16
+   tauxyb = sk(i, j, k, 1)*fmyb + sk(i, j, k, 2)*fmxb + ubar*&
+   &           tempb17 + vbar*tempb16
    wbarb = tauzz*tempb18 + tauyz*tempb17 + tauxz*tempb16
-   tauxzb = tauxzb + sk(i, j, k, 1)*fmzb + sk(i, j, k, 3)*fmxb + &
-   &           ubar*tempb18 + wbar*tempb16
-   tauyyb = tauyyb + sk(i, j, k, 2)*fmyb + vbar*tempb17
-   tauyzb = tauyzb + sk(i, j, k, 2)*fmzb + sk(i, j, k, 3)*fmyb + &
-   &           vbar*tempb18 + wbar*tempb17
-   tauzzb = tauzzb + sk(i, j, k, 3)*fmzb + wbar*tempb18
+   tauxzb = sk(i, j, k, 1)*fmzb + sk(i, j, k, 3)*fmxb + ubar*&
+   &           tempb18 + wbar*tempb16
+   tauyyb = sk(i, j, k, 2)*fmyb + vbar*tempb17
+   tauyzb = sk(i, j, k, 2)*fmzb + sk(i, j, k, 3)*fmyb + vbar*&
+   &           tempb18 + wbar*tempb17
+   tauzzb = sk(i, j, k, 3)*fmzb + wbar*tempb18
    q_xb = -(sk(i, j, k, 1)*frhoeb)
    q_yb = -(sk(i, j, k, 2)*frhoeb)
    q_zb = -(sk(i, j, k, 3)*frhoeb)
@@ -1493,29 +1135,20 @@
    factlamheat = one/(prandtl*gm1)
    factturbheat = one/(prandtlturb*gm1)
    heatcoef = mul*factlamheat + mue*factturbheat
-   CALL POPREAL8(q_z)
-   CALL POPREAL8(q_y)
-   CALL POPREAL8(q_x)
    heatcoefb = q_y*q_yb + q_x*q_xb + q_z*q_zb
    q_zb = heatcoef*q_zb
    q_yb = heatcoef*q_yb
    q_xb = heatcoef*q_xb
-   CALL POPREAL8(tauyz)
    mutb = (u_z+w_x)*tauxzb + (two*w_z-fracdiv)*tauzzb + (two*u_x-&
    &           fracdiv)*tauxxb + (two*v_y-fracdiv)*tauyyb + (u_y+v_x)*&
    &           tauxyb + (v_z+w_y)*tauyzb
    v_zb = mut*tauyzb
    w_yb = mut*tauyzb
-   CALL POPREAL8(tauxz)
    u_zb = mut*tauxzb
    w_xb = mut*tauxzb
-   CALL POPREAL8(tauxy)
    u_yb = mut*tauxyb
    v_xb = mut*tauxyb
-   CALL POPREAL8(tauzz)
    fracdivb = -(mut*tauyyb) - mut*tauxxb - mut*tauzzb
-   CALL POPREAL8(tauyy)
-   CALL POPREAL8(tauxx)
    CALL POPREAL8(fracdiv)
    tempb19 = twothird*fracdivb
    w_zb = tempb19 + mut*two*tauzzb
@@ -1549,16 +1182,19 @@
    CALL POPREAL8(ssz)
    CALL POPREAL8(ssy)
    CALL POPREAL8(ssx)
+   CALL POPREAL8(q_z)
    tempb20 = fourth*q_zb
    qzb(i-1, j-1, k1) = qzb(i-1, j-1, k1) + tempb20
    qzb(i, j-1, k1) = qzb(i, j-1, k1) + tempb20
    qzb(i-1, j, k1) = qzb(i-1, j, k1) + tempb20
    qzb(i, j, k1) = qzb(i, j, k1) + tempb20
+   CALL POPREAL8(q_y)
    tempb21 = fourth*q_yb
    qyb(i-1, j-1, k1) = qyb(i-1, j-1, k1) + tempb21
    qyb(i, j-1, k1) = qyb(i, j-1, k1) + tempb21
    qyb(i-1, j, k1) = qyb(i-1, j, k1) + tempb21
    qyb(i, j, k1) = qyb(i, j, k1) + tempb21
+   CALL POPREAL8(q_x)
    tempb22 = fourth*q_xb
    qxb(i-1, j-1, k1) = qxb(i-1, j-1, k1) + tempb22
    qxb(i, j-1, k1) = qxb(i, j-1, k1) + tempb22
@@ -1634,7 +1270,6 @@
    revb(i, j, k+1) = revb(i, j, k+1) + por*mueb
    mueb = 0.0_8
    END IF
-   CALL POPREAL8(mul)
    rlvb(i, j, k) = rlvb(i, j, k) + por*mulb
    rlvb(i, j, k+1) = rlvb(i, j, k+1) + por*mulb
    CALL POPREAL8(por)
@@ -1649,58 +1284,36 @@
    CALL POPINTEGER4(k)
    DO j=jl,2,-1
    DO i=il,2,-1
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
-   tauzzb = 0.0_8
-   tauxxb = 0.0_8
-   tauxyb = 0.0_8
-   tauxzb = 0.0_8
-   tauyyb = 0.0_8
-   tauyzb = 0.0_8
-   ELSE
-   mul = por*(rlv(i, j, 1)+rlv(i, j, 2))
-   mut = mul + mue
-   tauyz = mut*(v_z+w_y)
-   tauyzb = viscsubfaceb(nn)%tau(i, j, 6)
-   viscsubfaceb(nn)%tau(i, j, 6) = 0.0_8
-   tauxz = mut*(u_z+w_x)
-   tauxzb = viscsubfaceb(nn)%tau(i, j, 5)
-   viscsubfaceb(nn)%tau(i, j, 5) = 0.0_8
-   tauxy = mut*(u_y+v_x)
-   tauxyb = viscsubfaceb(nn)%tau(i, j, 4)
-   viscsubfaceb(nn)%tau(i, j, 4) = 0.0_8
-   tauzz = mut*(two*w_z-fracdiv)
-   tauzzb = viscsubfaceb(nn)%tau(i, j, 3)
-   viscsubfaceb(nn)%tau(i, j, 3) = 0.0_8
-   tauyy = mut*(two*v_y-fracdiv)
-   tauyyb = viscsubfaceb(nn)%tau(i, j, 2)
-   viscsubfaceb(nn)%tau(i, j, 2) = 0.0_8
-   tauxx = mut*(two*u_x-fracdiv)
-   tauxxb = viscsubfaceb(nn)%tau(i, j, 1)
-   viscsubfaceb(nn)%tau(i, j, 1) = 0.0_8
-   END IF
    frhoeb = fwb(i, j, 2, irhoe)
    fmzb = fwb(i, j, 2, imz)
    fmyb = fwb(i, j, 2, imy)
    fmxb = fwb(i, j, 2, imx)
+   mul = por*(rlv(i, j, 1)+rlv(i, j, 2))
+   mut = mul + mue
+   tauzz = mut*(two*w_z-fracdiv)
    wbar = half*(w(i, j, 1, ivz)+w(i, j, 2, ivz))
    vbar = half*(w(i, j, 1, ivy)+w(i, j, 2, ivy))
+   tauxx = mut*(two*u_x-fracdiv)
+   tauxy = mut*(u_y+v_x)
+   tauxz = mut*(u_z+w_x)
    ubar = half*(w(i, j, 1, ivx)+w(i, j, 2, ivx))
+   tauyy = mut*(two*v_y-fracdiv)
+   tauyz = mut*(v_z+w_y)
    tempb0 = sk(i, j, 1, 1)*frhoeb
    tempb1 = sk(i, j, 1, 2)*frhoeb
    tempb2 = sk(i, j, 1, 3)*frhoeb
    ubarb = tauxz*tempb2 + tauxy*tempb1 + tauxx*tempb0
-   tauxxb = tauxxb + sk(i, j, 1, 1)*fmxb + ubar*tempb0
+   tauxxb = sk(i, j, 1, 1)*fmxb + ubar*tempb0
    vbarb = tauyz*tempb2 + tauyy*tempb1 + tauxy*tempb0
-   tauxyb = tauxyb + sk(i, j, 1, 1)*fmyb + sk(i, j, 1, 2)*fmxb + &
-   &         ubar*tempb1 + vbar*tempb0
+   tauxyb = sk(i, j, 1, 1)*fmyb + sk(i, j, 1, 2)*fmxb + ubar*tempb1&
+   &         + vbar*tempb0
    wbarb = tauzz*tempb2 + tauyz*tempb1 + tauxz*tempb0
-   tauxzb = tauxzb + sk(i, j, 1, 1)*fmzb + sk(i, j, 1, 3)*fmxb + &
-   &         ubar*tempb2 + wbar*tempb0
-   tauyyb = tauyyb + sk(i, j, 1, 2)*fmyb + vbar*tempb1
-   tauyzb = tauyzb + sk(i, j, 1, 2)*fmzb + sk(i, j, 1, 3)*fmyb + &
-   &         vbar*tempb2 + wbar*tempb1
-   tauzzb = tauzzb + sk(i, j, 1, 3)*fmzb + wbar*tempb2
+   tauxzb = sk(i, j, 1, 1)*fmzb + sk(i, j, 1, 3)*fmxb + ubar*tempb2&
+   &         + wbar*tempb0
+   tauyyb = sk(i, j, 1, 2)*fmyb + vbar*tempb1
+   tauyzb = sk(i, j, 1, 2)*fmzb + sk(i, j, 1, 3)*fmyb + vbar*tempb2&
+   &         + wbar*tempb1
+   tauzzb = sk(i, j, 1, 3)*fmzb + wbar*tempb2
    q_xb = -(sk(i, j, 1, 1)*frhoeb)
    q_yb = -(sk(i, j, 1, 2)*frhoeb)
    q_zb = -(sk(i, j, 1, 3)*frhoeb)
@@ -1714,29 +1327,20 @@
    factlamheat = one/(prandtl*gm1)
    factturbheat = one/(prandtlturb*gm1)
    heatcoef = mul*factlamheat + mue*factturbheat
-   CALL POPREAL8(q_z)
-   CALL POPREAL8(q_y)
-   CALL POPREAL8(q_x)
    heatcoefb = q_y*q_yb + q_x*q_xb + q_z*q_zb
    q_zb = heatcoef*q_zb
    q_yb = heatcoef*q_yb
    q_xb = heatcoef*q_xb
-   CALL POPREAL8(tauyz)
    mutb = (u_z+w_x)*tauxzb + (two*w_z-fracdiv)*tauzzb + (two*u_x-&
    &         fracdiv)*tauxxb + (two*v_y-fracdiv)*tauyyb + (u_y+v_x)*tauxyb &
    &         + (v_z+w_y)*tauyzb
    v_zb = mut*tauyzb
    w_yb = mut*tauyzb
-   CALL POPREAL8(tauxz)
    u_zb = mut*tauxzb
    w_xb = mut*tauxzb
-   CALL POPREAL8(tauxy)
    u_yb = mut*tauxyb
    v_xb = mut*tauxyb
-   CALL POPREAL8(tauzz)
    fracdivb = -(mut*tauyyb) - mut*tauxxb - mut*tauzzb
-   CALL POPREAL8(tauyy)
-   CALL POPREAL8(tauxx)
    CALL POPREAL8(fracdiv)
    tempb3 = twothird*fracdivb
    w_zb = tempb3 + mut*two*tauzzb
@@ -1770,16 +1374,19 @@
    CALL POPREAL8(ssz)
    CALL POPREAL8(ssy)
    CALL POPREAL8(ssx)
+   CALL POPREAL8(q_z)
    tempb4 = fourth*q_zb
    qzb(i-1, j-1, k1) = qzb(i-1, j-1, k1) + tempb4
    qzb(i, j-1, k1) = qzb(i, j-1, k1) + tempb4
    qzb(i-1, j, k1) = qzb(i-1, j, k1) + tempb4
    qzb(i, j, k1) = qzb(i, j, k1) + tempb4
+   CALL POPREAL8(q_y)
    tempb5 = fourth*q_yb
    qyb(i-1, j-1, k1) = qyb(i-1, j-1, k1) + tempb5
    qyb(i, j-1, k1) = qyb(i, j-1, k1) + tempb5
    qyb(i-1, j, k1) = qyb(i-1, j, k1) + tempb5
    qyb(i, j, k1) = qyb(i, j, k1) + tempb5
+   CALL POPREAL8(q_x)
    tempb6 = fourth*q_xb
    qxb(i-1, j-1, k1) = qxb(i-1, j-1, k1) + tempb6
    qxb(i, j-1, k1) = qxb(i, j-1, k1) + tempb6
@@ -1855,7 +1462,6 @@
    revb(i, j, 2) = revb(i, j, 2) + por*mueb
    mueb = 0.0_8
    END IF
-   CALL POPREAL8(mul)
    rlvb(i, j, 1) = rlvb(i, j, 1) + por*mulb
    rlvb(i, j, 2) = rlvb(i, j, 2) + por*mulb
    CALL POPREAL8(por)
@@ -1893,6 +1499,8 @@
    !   with respect to varying inputs: *p *w wx wy wz qx qy qz ux
    !                uy uz vx vy vz
    !   Plus diff mem management of: p:in w:in
+   ! Possibly correct the wall shear stress.
+   ! Wall function is not ADed
    SUBROUTINE NODALGRADIENTS_B(ux, uxb, uy, uyb, uz, uzb, vx, vxb, vy, &
    &   vyb, vz, vzb, wx, wxb, wy, wyb, wz, wzb, qx, qxb, qy, qyb, qz, qzb)
    IMPLICIT NONE
@@ -2285,6 +1893,8 @@
    END DO
    END DO
    END SUBROUTINE NODALGRADIENTS_B
+   ! Possibly correct the wall shear stress.
+   ! Wall function is not ADed
    SUBROUTINE NODALGRADIENTS(ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, &
    &   qz)
    IMPLICIT NONE

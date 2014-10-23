@@ -2,9 +2,9 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of extrapolate2ndhalo in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *p *gamma *w *rlv
-   !   with respect to varying inputs: *p *gamma *w *rlv
-   !   Plus diff mem management of: p:in gamma:in w:in rlv:in
+   !   gradient     of useful results: *rev *p *gamma *w *rlv
+   !   with respect to varying inputs: *rev *p *gamma *w *rlv
+   !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -55,6 +55,7 @@
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rlv0, rlv1
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rlv0b, rlv1b
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rev0, rev1
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rev0b, rev1b
    INTRINSIC MAX
    INTEGER :: branch
    !
@@ -111,7 +112,12 @@
    ELSE
    CALL PUSHCONTROL1B(1)
    END IF
-   IF (eddymodel) rev0(i, j) = rev1(i, j)
+   IF (eddymodel) THEN
+   rev0(i, j) = rev1(i, j)
+   CALL PUSHCONTROL1B(1)
+   ELSE
+   CALL PUSHCONTROL1B(0)
+   END IF
    END DO
    END DO
    CALL PUSHREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
@@ -131,17 +137,24 @@
    CALL COMPUTEETOT_B(crange(1, 1), crange(1, 2), crange(2, 1), crange(2&
    &              , 2), crange(3, 1), crange(3, 2), correctfork)
    CALL RESETWW0PP0RLV0REV0BWD_B(nn, idim, ddim, ww0, ww0b, pp0, pp0b, &
-   &                         rlv0, rlv0b, rev0)
+   &                         rlv0, rlv0b, rev0, rev0b)
    CALL POPREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
    ww1b = 0.0_8
    ww2b = 0.0_8
    pp1b = 0.0_8
    pp2b = 0.0_8
    rlv1b = 0.0_8
+   rev1b = 0.0_8
    CALL RESETBCPOINTERSBWD_B(nn, ww1, ww1b, ww2, ww2b, pp1, pp1b, pp2, &
-   &                     pp2b, rlv1, rlv1b, rlv0, rlv0b, rev1, rev0, 0)
+   &                     pp2b, rlv1, rlv1b, rlv0, rlv0b, rev1, rev1b, rev0&
+   &                     , rev0b, 0)
    DO j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
    DO i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
+   CALL POPCONTROL1B(branch)
+   IF (branch .NE. 0) THEN
+   rev1b(i, j) = rev1b(i, j) + rev0b(i, j)
+   rev0b(i, j) = 0.0_8
+   END IF
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    rlv1b(i, j) = rlv1b(i, j) + rlv0b(i, j)
@@ -180,7 +193,8 @@
    END DO
    END DO
    CALL SETWW0PP0RLV0REV0BWD_B(nn, idim, ddim, ww0, ww0b, pp0, pp0b, rlv0&
-   &                       , rlv0b, rev0)
+   &                       , rlv0b, rev0, rev0b)
    CALL SETBCPOINTERSBWD_B(nn, ww1, ww1b, ww2, ww2b, pp1, pp1b, pp2, pp2b&
-   &                   , rlv1, rlv1b, rlv0, rlv0b, rev1, rev0, 0)
+   &                   , rlv1, rlv1b, rlv0, rlv0b, rev1, rev1b, rev0, rev0b&
+   &                   , 0)
    END SUBROUTINE EXTRAPOLATE2NDHALO_B

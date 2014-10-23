@@ -60,6 +60,7 @@
    ! routine to compute the eddy viscosity.
    SELECT CASE  (turbmodel) 
    CASE (spalartallmaras, spalartallmarasedwards) 
+   revd = 0.0_8
    CALL SAEDDYVISCOSITY_D()
    CASE DEFAULT
    revd = 0.0_8

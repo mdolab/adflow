@@ -2,11 +2,11 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of resetbcpointersbwd in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *p *w *rlv pp1 pp2 rlv1 rlv2
-   !                ww1 ww2
-   !   with respect to varying inputs: *p *w *rlv pp1 pp2 rlv1 rlv2
-   !                ww1 ww2
-   !   Plus diff mem management of: p:in w:in rlv:in
+   !   gradient     of useful results: *rev *p *w *rlv rev1 rev2 pp1
+   !                pp2 rlv1 rlv2 ww1 ww2
+   !   with respect to varying inputs: *rev *p *w *rlv rev1 rev2 pp1
+   !                pp2 rlv1 rlv2 ww1 ww2
+   !   Plus diff mem management of: rev:in p:in w:in rlv:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -18,7 +18,7 @@
    !      ******************************************************************
    !
    SUBROUTINE RESETBCPOINTERSBWD_B(nn, ww1, ww1b, ww2, ww2b, pp1, pp1b, pp2&
-   & , pp2b, rlv1, rlv1b, rlv2, rlv2b, rev1, rev2, offset)
+   & , pp2b, rlv1, rlv1b, rlv2, rlv2b, rev1, rev1b, rev2, rev2b, offset)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -43,6 +43,7 @@
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rlv1, rlv2
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rlv1b, rlv2b
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rev1, rev2
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rev1b, rev2b
    !
    !      Local variables
    !
@@ -67,10 +68,22 @@
    ELSE
    CALL PUSHCONTROL1B(1)
    END IF
+   IF (eddymodel) THEN
+   CALL PUSHCONTROL1B(1)
+   ELSE
+   CALL PUSHCONTROL1B(0)
+   END IF
    END DO
    END DO
    DO k=kl+1,1,-1
    DO j=jl+1,1,-1
+   CALL POPCONTROL1B(branch)
+   IF (branch .NE. 0) THEN
+   rev2b(j, k) = rev2b(j, k) + revb(id, j, k)
+   revb(id, j, k) = 0.0_8
+   rev1b(j, k) = rev1b(j, k) + revb(ih, j, k)
+   revb(ih, j, k) = 0.0_8
+   END IF
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    rlv2b(j, k) = rlv2b(j, k) + rlvb(id, j, k)
@@ -99,10 +112,22 @@
    ELSE
    CALL PUSHCONTROL1B(1)
    END IF
+   IF (eddymodel) THEN
+   CALL PUSHCONTROL1B(1)
+   ELSE
+   CALL PUSHCONTROL1B(0)
+   END IF
    END DO
    END DO
    DO k=kl+1,1,-1
    DO j=jl+1,1,-1
+   CALL POPCONTROL1B(branch)
+   IF (branch .NE. 0) THEN
+   rev2b(j, k) = rev2b(j, k) + revb(id, j, k)
+   revb(id, j, k) = 0.0_8
+   rev1b(j, k) = rev1b(j, k) + revb(ih, j, k)
+   revb(ih, j, k) = 0.0_8
+   END IF
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    rlv2b(j, k) = rlv2b(j, k) + rlvb(id, j, k)
@@ -131,10 +156,22 @@
    ELSE
    CALL PUSHCONTROL1B(1)
    END IF
+   IF (eddymodel) THEN
+   CALL PUSHCONTROL1B(1)
+   ELSE
+   CALL PUSHCONTROL1B(0)
+   END IF
    END DO
    END DO
    DO k=kl+1,1,-1
    DO i=il+1,1,-1
+   CALL POPCONTROL1B(branch)
+   IF (branch .NE. 0) THEN
+   rev2b(i, k) = rev2b(i, k) + revb(i, id, k)
+   revb(i, id, k) = 0.0_8
+   rev1b(i, k) = rev1b(i, k) + revb(i, ih, k)
+   revb(i, ih, k) = 0.0_8
+   END IF
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    rlv2b(i, k) = rlv2b(i, k) + rlvb(i, id, k)
@@ -163,10 +200,22 @@
    ELSE
    CALL PUSHCONTROL1B(1)
    END IF
+   IF (eddymodel) THEN
+   CALL PUSHCONTROL1B(1)
+   ELSE
+   CALL PUSHCONTROL1B(0)
+   END IF
    END DO
    END DO
    DO k=kl+1,1,-1
    DO i=il+1,1,-1
+   CALL POPCONTROL1B(branch)
+   IF (branch .NE. 0) THEN
+   rev2b(i, k) = rev2b(i, k) + revb(i, id, k)
+   revb(i, id, k) = 0.0_8
+   rev1b(i, k) = rev1b(i, k) + revb(i, ih, k)
+   revb(i, ih, k) = 0.0_8
+   END IF
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    rlv2b(i, k) = rlv2b(i, k) + rlvb(i, id, k)
@@ -195,10 +244,22 @@
    ELSE
    CALL PUSHCONTROL1B(1)
    END IF
+   IF (eddymodel) THEN
+   CALL PUSHCONTROL1B(1)
+   ELSE
+   CALL PUSHCONTROL1B(0)
+   END IF
    END DO
    END DO
    DO j=jl+1,1,-1
    DO i=il+1,1,-1
+   CALL POPCONTROL1B(branch)
+   IF (branch .NE. 0) THEN
+   rev2b(i, j) = rev2b(i, j) + revb(i, j, id)
+   revb(i, j, id) = 0.0_8
+   rev1b(i, j) = rev1b(i, j) + revb(i, j, ih)
+   revb(i, j, ih) = 0.0_8
+   END IF
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    rlv2b(i, j) = rlv2b(i, j) + rlvb(i, j, id)
@@ -227,10 +288,22 @@
    ELSE
    CALL PUSHCONTROL1B(1)
    END IF
+   IF (eddymodel) THEN
+   CALL PUSHCONTROL1B(1)
+   ELSE
+   CALL PUSHCONTROL1B(0)
+   END IF
    END DO
    END DO
    DO j=jl+1,1,-1
    DO i=il+1,1,-1
+   CALL POPCONTROL1B(branch)
+   IF (branch .NE. 0) THEN
+   rev2b(i, j) = rev2b(i, j) + revb(i, j, id)
+   revb(i, j, id) = 0.0_8
+   rev1b(i, j) = rev1b(i, j) + revb(i, j, ih)
+   revb(i, j, ih) = 0.0_8
+   END IF
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    rlv2b(i, j) = rlv2b(i, j) + rlvb(i, j, id)

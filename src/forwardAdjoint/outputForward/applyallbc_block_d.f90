@@ -2,9 +2,9 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of applyallbc_block in forward (tangent) mode (with options i4 dr8 r8):
-   !   variations   of useful results: *p *w *rlv
-   !   with respect to varying inputs: *p *w *rlv
-   !   Plus diff mem management of: p:in gamma:in w:in rlv:in
+   !   variations   of useful results: *rev *p *gamma *w *rlv
+   !   with respect to varying inputs: *rev *p *w *rlv
+   !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
    SUBROUTINE APPLYALLBC_BLOCK_D(secondhalo)
    ! Apply BC's for a single block
    USE BLOCKPOINTERS_D

@@ -2,7 +2,7 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of sasolve in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *dw *w
+   !   gradient     of useful results: *dw *w *rlv
    !   with respect to varying inputs: *dw *w *rlv
    !   Plus diff mem management of: dw:in w:in rlv:in
    !
@@ -685,7 +685,6 @@
    ! are used; their value is determined by the table.
    ! Return if only the residual must be computed.
    IF (resonly) THEN
-   rlvb = 0.0_8
    qqb = 0.0_8
    ELSE
    ! For implicit relaxation take the local time step into account,
@@ -1199,7 +1198,6 @@
    END DO
    END DO
    CALL POPREAL8(factor)
-   rlvb = 0.0_8
    ddb = 0.0_8
    qqb = 0.0_8
    bbb = 0.0_8

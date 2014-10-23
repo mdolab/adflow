@@ -6,8 +6,7 @@
    !   with respect to varying inputs: *rev *p *gamma *dw *w *rlv
    !                *radi *radj *radk
    !   Plus diff mem management of: rev:in p:in gamma:in dw:in w:in
-   !                rlv:in fw:in viscsubface:in *viscsubface.tau:in
-   !                radi:in radj:in radk:in
+   !                rlv:in fw:in radi:in radj:in radk:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -70,6 +69,7 @@
    IF (currentlevel .EQ. 1) discr = spacediscr
    finegrid = .false.
    IF (currentlevel .EQ. groundlevel) finegrid = .true.
+   ! Reverse adjoint currently only work with invisciddissscalar
    ! Compute the artificial dissipation fluxes.
    ! This depends on the parameter discr.
    SELECT CASE  (discr) 
@@ -79,32 +79,15 @@
    CALL PUSHREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4)&
    &                  )
    CALL INVISCIDDISSFLUXSCALAR()
-   CALL PUSHCONTROL3B(1)
+   CALL PUSHCONTROL2B(1)
    ELSE
    CALL PUSHREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4)&
    &                  )
    CALL INVISCIDDISSFLUXSCALARCOARSE()
-   CALL PUSHCONTROL3B(2)
+   CALL PUSHCONTROL2B(2)
    END IF
-   CASE (dissmatrix) 
-   !===========================================================
-   ! Matrix dissipation scheme.
-   IF (finegrid) THEN
-   CALL INVISCIDDISSFLUXMATRIX()
-   CALL PUSHCONTROL3B(3)
-   ELSE
-   CALL INVISCIDDISSFLUXMATRIXCOARSE()
-   CALL PUSHCONTROL3B(4)
-   END IF
-   CASE (disscusp) 
-   CALL PUSHCONTROL3B(5)
-   CASE (upwind) 
-   !===========================================================
-   ! Dissipation via an upwind scheme.
-   CALL INVISCIDUPWINDFLUX(finegrid)
-   CALL PUSHCONTROL3B(6)
    CASE DEFAULT
-   CALL PUSHCONTROL3B(0)
+   CALL PUSHCONTROL2B(0)
    END SELECT
    ! Compute the viscous flux in case of a viscous computation.
    IF (viscous) THEN
@@ -133,8 +116,7 @@
    ELSE
    CALL VISCOUSFLUX_B()
    END IF
-   CALL POPCONTROL3B(branch)
-   IF (branch .LT. 3) THEN
+   CALL POPCONTROL2B(branch)
    IF (branch .EQ. 0) THEN
    radib = 0.0_8
    radjb = 0.0_8
@@ -145,25 +127,6 @@
    ELSE
    CALL POPREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4))
    CALL INVISCIDDISSFLUXSCALARCOARSE_B()
-   END IF
-   ELSE IF (branch .LT. 5) THEN
-   IF (branch .EQ. 3) THEN
-   CALL INVISCIDDISSFLUXMATRIX_B()
-   ELSE
-   CALL INVISCIDDISSFLUXMATRIXCOARSE_B()
-   END IF
-   radib = 0.0_8
-   radjb = 0.0_8
-   radkb = 0.0_8
-   ELSE IF (branch .EQ. 5) THEN
-   radib = 0.0_8
-   radjb = 0.0_8
-   radkb = 0.0_8
-   ELSE
-   CALL INVISCIDUPWINDFLUX_B(finegrid)
-   radib = 0.0_8
-   radjb = 0.0_8
-   radkb = 0.0_8
    END IF
    CALL INVISCIDCENTRALFLUX_B()
    END SUBROUTINE RESIDUAL_BLOCK_B

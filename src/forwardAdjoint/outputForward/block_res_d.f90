@@ -5,14 +5,16 @@
    !   variations   of useful results: *(flowdoms.w) *(flowdoms.dw)
    !   with respect to varying inputs: *(flowdoms.w)
    !   RW status of diff variables: *(flowdoms.w):in-out *(flowdoms.dw):out
-   !                *bvtj1:(loc) *bvtj2:(loc) *p:(loc) *gamma:(loc)
-   !                *bmtk1:(loc) *bmtk2:(loc) *rlv:(loc) *bvtk1:(loc)
-   !                *bvtk2:(loc) *bmti1:(loc) *bmti2:(loc) *bvti1:(loc)
-   !                *bvti2:(loc) *bmtj1:(loc) *bmtj2:(loc)
-   !   Plus diff mem management of: flowdoms.w:in flowdoms.dw:in bvtj1:in
-   !                bvtj2:in p:in gamma:in bmtk1:in bmtk2:in rlv:in
-   !                bvtk1:in bvtk2:in bmti1:in bmti2:in bvti1:in bvti2:in
-   !                bmtj1:in bmtj2:in
+   !                *rev:(loc) *bvtj1:(loc) *bvtj2:(loc) *p:(loc)
+   !                *gamma:(loc) *bmtk1:(loc) *bmtk2:(loc) *rlv:(loc)
+   !                *bvtk1:(loc) *bvtk2:(loc) *bmti1:(loc) *bmti2:(loc)
+   !                *bvti1:(loc) *bvti2:(loc) *fw:(loc) *bmtj1:(loc)
+   !                *bmtj2:(loc) *radi:(loc) *radj:(loc) *radk:(loc)
+   !   Plus diff mem management of: flowdoms.w:in flowdoms.dw:in rev:in
+   !                bvtj1:in bvtj2:in p:in gamma:in bmtk1:in bmtk2:in
+   !                rlv:in bvtk1:in bvtk2:in bmti1:in bmti2:in bvti1:in
+   !                bvti2:in fw:in bmtj1:in bmtj2:in radi:in radj:in
+   !                radk:in
    ! This is a super-combined function that combines the original
    ! functionality of: 
    ! Pressure Computation
@@ -48,6 +50,8 @@
    !force = (cFp + cFV)/fact
    !fact = fact/(lengthRef*LRef)
    !moment = (cMp + cMV)/fact
+   !call getCostFunction(costFunction, force, moment, sepSensor, &
+   !alpha, beta, liftIndex, objValue)
    ! Input Arguments:
    INTEGER(kind=inttype), INTENT(IN) :: nn, sps
    LOGICAL, INTENT(IN) :: usespatial
@@ -144,7 +148,7 @@
    END DO
    ! Compute Laminar/eddy viscosity if required
    CALL COMPUTELAMVISCOSITY_D()
-   CALL COMPUTEEDDYVISCOSITY()
+   CALL COMPUTEEDDYVISCOSITY_D()
    !  Apply all BC's
    CALL APPLYALLBC_BLOCK_D(.true.)
    ! Compute skin_friction Velocity (only for wall Functions)
@@ -152,7 +156,7 @@
    !   call computeUtau_block
    ! #endif
    ! Compute time step and spectral radius
-   CALL TIMESTEP_BLOCK(.false.)
+   CALL TIMESTEP_BLOCK_D(.false.)
    spectralloop0:DO sps2=1,ntimeintervalsspectral
    flowdomsd(nn, 1, sps2)%dw(:, :, :, :) = 0.0_8
    flowdoms(nn, 1, sps2)%dw(:, :, :, :) = zero
@@ -253,10 +257,7 @@
    END DO spectralloop2
    END IF
    !  Actual residual calc
-   !call residual_block
-   CALL INVISCIDCENTRALFLUX_D()
-   CALL INVISCIDDISSFLUXSCALAR_D()
-   IF (viscous) CALL VISCOUSFLUX()
+   CALL RESIDUAL_BLOCK_D()
    ! Divide through by the volume
    DO sps2=1,ntimeintervalsspectral
    DO l=1,nstate

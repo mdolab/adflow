@@ -2,13 +2,13 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of applyallturbbcthisblock in forward (tangent) mode (with options i4 dr8 r8):
-   !   variations   of useful results: *w
-   !   with respect to varying inputs: *bvtj1 *bvtj2 *bmtk1 *w *bmtk2
-   !                *bvtk1 *bvtk2 *bmti1 *bmti2 *bvti1 *bvti2 *bmtj1
-   !                *bmtj2
-   !   Plus diff mem management of: bvtj1:in bvtj2:in bmtk1:in w:in
-   !                bmtk2:in bvtk1:in bvtk2:in bmti1:in bmti2:in bvti1:in
-   !                bvti2:in bmtj1:in bmtj2:in
+   !   variations   of useful results: *rev *w
+   !   with respect to varying inputs: *rev *bvtj1 *bvtj2 *bmtk1 *w
+   !                *bmtk2 *bvtk1 *bvtk2 *bmti1 *bmti2 *bvti1 *bvti2
+   !                *bmtj1 *bmtj2
+   !   Plus diff mem management of: rev:in bvtj1:in bvtj2:in bmtk1:in
+   !                w:in bmtk2:in bvtk1:in bvtk2:in bmti1:in bmti2:in
+   !                bvti1:in bvti2:in bmtj1:in bmtj2:in
    !      ==================================================================
    SUBROUTINE APPLYALLTURBBCTHISBLOCK_D(secondhalo)
    !
@@ -147,11 +147,11 @@
    &         nswallisothermal) THEN
    ! Viscous wall boundary condition. Eddy viscosity is
    ! zero at the wall.
-   CALL BCEDDYWALL(nn)
+   CALL BCEDDYWALL_D(nn)
    ELSE
    ! Any boundary condition but viscous wall. A homogeneous
    ! Neumann condition is applied to the eddy viscosity.
-   CALL BCEDDYNOWALL(nn)
+   CALL BCEDDYNOWALL_D(nn)
    END IF
    END IF
    ! Extrapolate the turbulent variables in case a second halo

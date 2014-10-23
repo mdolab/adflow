@@ -2,9 +2,9 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of bceulerwall in forward (tangent) mode (with options i4 dr8 r8):
-   !   variations   of useful results: *p *w *rlv
-   !   with respect to varying inputs: *p *w *rlv
-   !   Plus diff mem management of: p:in gamma:in w:in rlv:in
+   !   variations   of useful results: *rev *p *gamma *w *rlv
+   !   with respect to varying inputs: *rev *p *gamma *w *rlv
+   !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -59,6 +59,7 @@
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1d, rlv2d
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1d, rev2d
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ssi, ssj, ssk
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ss
    INTERFACE 
@@ -117,7 +118,8 @@
    END INTERFACE
       INTERFACE 
    SUBROUTINE SETBCPOINTERS_D(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, &
-   &       pp2, pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev2, offset)
+   &       pp2, pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev1d, rev2, rev2d, &
+   &       offset)
    USE BLOCKPOINTERS_D
    IMPLICIT NONE
    INTEGER(kind=inttype), INTENT(IN) :: nn, offset
@@ -128,6 +130,7 @@
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1d, rlv2d
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1d, rev2d
    END SUBROUTINE SETBCPOINTERS_D
    SUBROUTINE SETPP3PP4_D(nn, pp3, pp3d, pp4, pp4d)
    USE BCTYPES
@@ -170,7 +173,8 @@
    ! that.
    !nullify(ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2)
    CALL SETBCPOINTERS_D(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, pp2, &
-   &                    pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev2, 0)
+   &                    pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev1d, rev2, &
+   &                    rev2d, 0)
    !
    !          **************************************************************
    !          *                                                            *
@@ -395,22 +399,21 @@
    rlv1d(j, k) = rlv2d(j, k)
    rlv1(j, k) = rlv2(j, k)
    END IF
-   IF (eddymodel) rev1(j, k) = rev2(j, k)
+   IF (eddymodel) THEN
+   rev1d(j, k) = rev2d(j, k)
+   rev1(j, k) = rev2(j, k)
+   END IF
    END DO
    END DO
    ! deallocation all pointer
    CALL RESETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, &
    &                       rev2, 0)
    ! Compute the energy for these halo's.
-   gammad = 0.0_8
    CALL COMPUTEETOT_D(icbeg(nn), icend(nn), jcbeg(nn), jcend(nn), &
    &                  kcbeg(nn), kcend(nn), correctfork)
    ! Extrapolate the state vectors in case a second halo
    ! is needed.
-   IF (secondhalo) THEN
-   gammad = 0.0_8
-   CALL EXTRAPOLATE2NDHALO_D(nn, correctfork)
-   END IF
+   IF (secondhalo) CALL EXTRAPOLATE2NDHALO_D(nn, correctfork)
    END IF
    END DO bocos
    END SUBROUTINE BCEULERWALL_D
