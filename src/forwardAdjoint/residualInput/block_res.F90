@@ -224,19 +224,19 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
      end do
   end do
 
-  !call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor)
+  call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor)
 
   ! Convert back to actual forces. Note that even though we use
   ! MachCoef, Lref, and surfaceRef here, they are NOT differented,
   ! since F doesn't actually depend on them. Ideally we would just get
   ! the raw forces and moment form forcesAndMoments. 
-  !scaleDim = pRef/pInf
-  !fact = two/(gammaInf*pInf*MachCoef*MachCoef &
-  !     *surfaceRef*LRef*LRef*scaleDim)
-  !force = (cFp + cFV)/fact
+  scaleDim = pRef/pInf
+  fact = two/(gammaInf*pInf*MachCoef*MachCoef &
+       *surfaceRef*LRef*LRef*scaleDim)
+  force = (cFp + cFV)/fact
 
-  !fact = fact/(lengthRef*LRef)
-  !moment = (cMp + cMV)/fact
+  fact = fact/(lengthRef*LRef)
+  moment = (cMp + cMV)/fact
 
   !call getCostFunction(costFunction, force, moment, sepSensor, &
   !alpha, beta, liftIndex, objValue)

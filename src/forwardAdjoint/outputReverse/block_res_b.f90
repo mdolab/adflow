@@ -2,13 +2,16 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of block_res in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *(flowdoms.w) *(flowdoms.dw)
-   !   with respect to varying inputs: *(flowdoms.w) *(flowdoms.dw)
-   !   RW status of diff variables: *(flowdoms.w):in-out *(flowdoms.dw):in-out
-   !                *rev:(loc) *p:(loc) *gamma:(loc) *rlv:(loc) *fw:(loc)
-   !                *radi:(loc) *radj:(loc) *radk:(loc)
-   !   Plus diff mem management of: flowdoms.w:in flowdoms.dw:in rev:in
-   !                p:in gamma:in rlv:in fw:in radi:in radj:in radk:in
+   !   gradient     of useful results: *(flowdoms.x) *(flowdoms.w)
+   !                *(flowdoms.dw)
+   !   with respect to varying inputs: *(flowdoms.x) *(flowdoms.w)
+   !                *(flowdoms.dw)
+   !   RW status of diff variables: *(flowdoms.x):incr *(flowdoms.w):in-out
+   !                *(flowdoms.dw):in-out *rev:(loc) *p:(loc) *gamma:(loc)
+   !                *rlv:(loc) *fw:(loc) *radi:(loc) *radj:(loc) *radk:(loc)
+   !   Plus diff mem management of: flowdoms.x:in flowdoms.w:in flowdoms.dw:in
+   !                rev:in p:in gamma:in rlv:in fw:in radi:in radj:in
+   !                radk:in
    ! This is a super-combined function that combines the original
    ! functionality of: 
    ! Pressure Computation
@@ -82,6 +85,7 @@
    w => flowdoms(nn, currentlevel, sps)%w
    dwb => flowdomsb(nn, 1, sps)%dw
    dw => flowdoms(nn, 1, sps)%dw
+   xb => flowdomsb(nn, currentlevel, sps)%x
    x => flowdoms(nn, currentlevel, sps)%x
    vol => flowdoms(nn, currentlevel, sps)%vol
    !!$  ! ------------------------------------------------

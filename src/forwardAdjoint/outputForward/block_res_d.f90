@@ -3,18 +3,19 @@
    !
    !  Differentiation of block_res in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *(flowdoms.w) *(flowdoms.dw)
-   !   with respect to varying inputs: *(flowdoms.w)
-   !   RW status of diff variables: *(flowdoms.w):in-out *(flowdoms.dw):out
-   !                *rev:(loc) *bvtj1:(loc) *bvtj2:(loc) *p:(loc)
-   !                *gamma:(loc) *bmtk1:(loc) *bmtk2:(loc) *rlv:(loc)
-   !                *bvtk1:(loc) *bvtk2:(loc) *bmti1:(loc) *bmti2:(loc)
-   !                *bvti1:(loc) *bvti2:(loc) *fw:(loc) *bmtj1:(loc)
-   !                *bmtj2:(loc) *radi:(loc) *radj:(loc) *radk:(loc)
-   !   Plus diff mem management of: flowdoms.w:in flowdoms.dw:in rev:in
-   !                bvtj1:in bvtj2:in p:in gamma:in bmtk1:in bmtk2:in
-   !                rlv:in bvtk1:in bvtk2:in bmti1:in bmti2:in bvti1:in
-   !                bvti2:in fw:in bmtj1:in bmtj2:in radi:in radj:in
-   !                radk:in
+   !   with respect to varying inputs: *(flowdoms.x) *(flowdoms.w)
+   !   RW status of diff variables: *(flowdoms.x):in *(flowdoms.w):in-out
+   !                *(flowdoms.dw):out *rev:(loc) *bvtj1:(loc) *bvtj2:(loc)
+   !                *p:(loc) *gamma:(loc) *bmtk1:(loc) *bmtk2:(loc)
+   !                *rlv:(loc) *bvtk1:(loc) *bvtk2:(loc) *bmti1:(loc)
+   !                *bmti2:(loc) *bvti1:(loc) *bvti2:(loc) *fw:(loc)
+   !                *bmtj1:(loc) *bmtj2:(loc) *radi:(loc) *radj:(loc)
+   !                *radk:(loc)
+   !   Plus diff mem management of: flowdoms.x:in flowdoms.w:in flowdoms.dw:in
+   !                rev:in bvtj1:in bvtj2:in p:in gamma:in bmtk1:in
+   !                bmtk2:in rlv:in bvtk1:in bvtk2:in bmti1:in bmti2:in
+   !                bvti1:in bvti2:in fw:in bmtj1:in bmtj2:in radi:in
+   !                radj:in radk:in
    ! This is a super-combined function that combines the original
    ! functionality of: 
    ! Pressure Computation
@@ -86,6 +87,7 @@
    w => flowdoms(nn, currentlevel, sps)%w
    dwd => flowdomsd(nn, 1, sps)%dw
    dw => flowdoms(nn, 1, sps)%dw
+   xd => flowdomsd(nn, currentlevel, sps)%x
    x => flowdoms(nn, currentlevel, sps)%x
    vol => flowdoms(nn, currentlevel, sps)%vol
    !!$  ! ------------------------------------------------

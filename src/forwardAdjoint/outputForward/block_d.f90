@@ -665,6 +665,7 @@
    INTEGER(kind=inttype), DIMENSION(:), POINTER :: iedgeptb
    END TYPE BLOCKTYPE
    TYPE BLOCKTYPE_D
+   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: x
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: w
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: dw
    END TYPE BLOCKTYPE_D

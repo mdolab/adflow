@@ -3,7 +3,7 @@
 #     * File:          Makefile_tapenade                               *
 #     * Author:        Gaetan Kenway                                   *
 #     * Starting date: 08-02-2006                                      *
-#     * Last modified: 01-10-2013                                      *
+#     * Last modified: 10-24-2014                                      *
 #     *                                                                *
 #     * This makefile is used to create automatically differentated    *
 #     * residual code that can be used to constuct the aerodynamic     *
@@ -44,11 +44,11 @@ TAPENADE_PRECISION = -i4 -dr8 -r8
 # -------------------- Residual AD Info---------------------------------
 # Dependent output variables (separator: white space, default: all)
 #TAPENADE_RES_OUTVARS = "flowdoms%dw  BCData%Fp BCData%Fv BCData%M  BCData%oArea flowdoms%w flowdoms%x force moment"
-TAPENADE_RES_OUTVARS = "flowdoms%dw  flowdoms%w"
+TAPENADE_RES_OUTVARS = "flowdoms%dw  flowdoms%w  flowdoms%x"
 #TAPENADE_RES_OUTVARS = "dw w"
 
 # Independent input variables (separator: white space, default: all)
-TAPENADE_RES_VARS = "flowdoms%w"
+TAPENADE_RES_VARS = "flowdoms%w  flowdoms%x"
 #TAPENADE_RES_VARS = "w"
 #Reynolds ReynoldsLength
 
@@ -266,6 +266,10 @@ ad_forward:
 
 # Remove preprocessor files
 	make -f Makefile_tapenade cleanpreprocess_res
+
+# Fix the AD bug in bcsymm_d.f90
+	mv outputForward/bcsymm_d.f90 outputForward/bcsymm_d.f90.bp
+	grep -v "   gamma1d(i, j) = 0.0_8" outputForward/bcsymm_d.f90.bp > outputForward/bcsymm_d.f90
 
 ad_forward_multi:
 # First delete the holding directory if it exists
