@@ -4,9 +4,9 @@
    !  Differentiation of residual_block in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *dw *w
    !   with respect to varying inputs: *rev *p *gamma *dw *w *rlv
-   !                *x *radi *radj *radk
+   !                *radi *radj *radk
    !   Plus diff mem management of: rev:in p:in gamma:in dw:in w:in
-   !                rlv:in x:in fw:in radi:in radj:in radk:in
+   !                rlv:in fw:in radi:in radj:in radk:in
    !
    !      ******************************************************************
    !      *                                                                *

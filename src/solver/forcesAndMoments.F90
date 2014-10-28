@@ -60,7 +60,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor)
 !
 !      Interfaces
 !
-       interface
+  interface
          subroutine setBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
                                   rev1, rev2, offset)
            use BCTypes
@@ -383,7 +383,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor)
                  mx = yc*fz - zc*fy
                  my = zc*fx - xc*fz
                  mz = xc*fy - yc*fx
-                 
+
                  cMv(1) = cMv(1) + mx
                  cMv(2) = cMv(2) + my
                  cMv(3) = cMv(3) + mz
@@ -414,7 +414,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor)
                  fz = fz - fn*BCData(nn)%norm(i,j,3)
 
 
-            
+
                  ! Compute the local value of y+. Due to the usage
                  ! of pointers there is on offset of -1 in dd2Wall..
 
@@ -445,13 +445,13 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor)
         end do
 
 #ifndef TAPENADE_REVERSE
-           call resetBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
-                              rev1, rev2, 0)
-           call resetxxssrhodd2Wall(nn, xx, ss, rho1, rho2, dd2Wall)
+        call resetBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
+             rev1, rev2, 0)
+        call resetxxssrhodd2Wall(nn, xx, ss, rho1, rho2, dd2Wall)
 #else
-           call resetBCPointersBwd(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
-                rev1, rev2, 0)
-           call resetxxssrhodd2WallBwd(nn, xx, ss, rho1, rho2, dd2Wall)
+        call resetBCPointersBwd(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
+             rev1, rev2, 0)
+        call resetxxssrhodd2WallBwd(nn, xx, ss, rho1, rho2, dd2Wall)
 #endif
 
      endif invForce

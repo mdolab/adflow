@@ -34,7 +34,7 @@ subroutine verifyMatProd
   integer(kind=intType) :: i, j, k, l, nn, ii, ierr
   integer(kind=intType) :: nState, level, idxblk
    
-  real(kind=realType) :: alpha, beta, force(3), moment(3)
+  real(kind=realType) :: alpha, beta, force(3), moment(3), sepSensor
   real(kind=realType) :: fwdValue, revValue, ran
   real(kind=realType) :: time1, timeb, timed, time
 
@@ -130,7 +130,7 @@ subroutine verifyMatProd
         end do
      end do
      call getdRdwTVec(vec1, vec2, 3072*5)
-     call block_res_b(nn, 1, .False., alpha, beta, liftIndex, force, moment)
+     call block_res_b(nn, 1, .False., alpha, beta, liftIndex, force, moment, sepSensor)
      
 
      ii = 0

@@ -61,6 +61,8 @@ FF90_OBJECTS =  computeetot_b.o\
 		resetgammabwd_b.o\
                 setww0pp0rlv0rev0bwd_b.o\
 		resetww0pp0rlv0rev0bwd_b.o\
+                setxxssrhodd2wallbwd_b.o\
+                resetxxssrhodd2wallbwd_b.o\
                 resetbcpointersbwd_b.o\
 	        sa_block_b.o\
 	        inviscidcentralflux_b.o\
@@ -72,6 +74,7 @@ FF90_OBJECTS =  computeetot_b.o\
 		prodwmag2_b.o\
 		prodsmag2_b.o\
 		turbadvection_b.o\
+		forcesandmoments_b.o\
 
 
 #      ******************************************************************

@@ -3,9 +3,9 @@
    !
    !  Differentiation of viscousflux in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *fw
-   !   with respect to varying inputs: *rev *p *gamma *w *rlv *x *fw
+   !   with respect to varying inputs: *rev *p *gamma *w *rlv *fw
    !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
-   !                x:in fw:in
+   !                fw:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -51,7 +51,7 @@
    REAL(kind=realtype) :: q_x, q_y, q_z, ubar, vbar, wbar
    REAL(kind=realtype) :: q_xd, q_yd, q_zd, ubard, vbard, wbard
    REAL(kind=realtype) :: corr, ssx, ssy, ssz, ss, fracdiv
-   REAL(kind=realtype) :: corrd, ssxd, ssyd, sszd, ssd, fracdivd
+   REAL(kind=realtype) :: corrd, fracdivd
    REAL(kind=realtype) :: tauxx, tauyy, tauzz
    REAL(kind=realtype) :: tauxxd, tauyyd, tauzzd
    REAL(kind=realtype) :: tauxy, tauxz, tauyz
@@ -70,9 +70,7 @@
    INTRINSIC ABS
    INTRINSIC SQRT
    REAL(kind=realtype) :: arg1
-   REAL(kind=realtype) :: arg1d
    REAL(kind=realtype) :: result1
-   REAL(kind=realtype) :: result1d
    REAL(kind=realtype) :: abs0
    !
    !      ******************************************************************
@@ -250,87 +248,63 @@
    ! that no averaging takes places here.
    ! First determine the vector in the direction from the
    ! cell center k to cell center k+1.
-   ssxd = eighth*(xd(i-1, j-1, k+1, 1)-xd(i-1, j-1, k-1, 1)+xd(i-1&
-   &         , j, k+1, 1)-xd(i-1, j, k-1, 1)+xd(i, j-1, k+1, 1)-xd(i, j-1, &
-   &         k-1, 1)+xd(i, j, k+1, 1)-xd(i, j, k-1, 1))
    ssx = eighth*(x(i-1, j-1, k+1, 1)-x(i-1, j-1, k-1, 1)+x(i-1, j, &
    &         k+1, 1)-x(i-1, j, k-1, 1)+x(i, j-1, k+1, 1)-x(i, j-1, k-1, 1)+&
    &         x(i, j, k+1, 1)-x(i, j, k-1, 1))
-   ssyd = eighth*(xd(i-1, j-1, k+1, 2)-xd(i-1, j-1, k-1, 2)+xd(i-1&
-   &         , j, k+1, 2)-xd(i-1, j, k-1, 2)+xd(i, j-1, k+1, 2)-xd(i, j-1, &
-   &         k-1, 2)+xd(i, j, k+1, 2)-xd(i, j, k-1, 2))
    ssy = eighth*(x(i-1, j-1, k+1, 2)-x(i-1, j-1, k-1, 2)+x(i-1, j, &
    &         k+1, 2)-x(i-1, j, k-1, 2)+x(i, j-1, k+1, 2)-x(i, j-1, k-1, 2)+&
    &         x(i, j, k+1, 2)-x(i, j, k-1, 2))
-   sszd = eighth*(xd(i-1, j-1, k+1, 3)-xd(i-1, j-1, k-1, 3)+xd(i-1&
-   &         , j, k+1, 3)-xd(i-1, j, k-1, 3)+xd(i, j-1, k+1, 3)-xd(i, j-1, &
-   &         k-1, 3)+xd(i, j, k+1, 3)-xd(i, j, k-1, 3))
    ssz = eighth*(x(i-1, j-1, k+1, 3)-x(i-1, j-1, k-1, 3)+x(i-1, j, &
    &         k+1, 3)-x(i-1, j, k-1, 3)+x(i, j-1, k+1, 3)-x(i, j-1, k-1, 3)+&
    &         x(i, j, k+1, 3)-x(i, j, k-1, 3))
    ! Determine the length of this vector and create the
    ! unit normal.
-   arg1d = ssxd*ssx + ssx*ssxd + ssyd*ssy + ssy*ssyd + sszd*ssz + &
-   &         ssz*sszd
    arg1 = ssx*ssx + ssy*ssy + ssz*ssz
-   IF (arg1 .EQ. 0.0_8) THEN
-   result1d = 0.0_8
-   ELSE
-   result1d = arg1d/(2.0*SQRT(arg1))
-   END IF
    result1 = SQRT(arg1)
-   ssd = -(one*result1d/result1**2)
    ss = one/result1
-   ssxd = ssd*ssx + ss*ssxd
    ssx = ss*ssx
-   ssyd = ssd*ssy + ss*ssyd
    ssy = ss*ssy
-   sszd = ssd*ssz + ss*sszd
    ssz = ss*ssz
    ! Correct the gradients.
-   corrd = u_xd*ssx + u_x*ssxd + u_yd*ssy + u_y*ssyd + u_zd*ssz + &
-   &         u_z*sszd - (wd(i, j, k+1, ivx)-wd(i, j, k, ivx))*ss - (w(i, j&
-   &         , k+1, ivx)-w(i, j, k, ivx))*ssd
+   corrd = ssx*u_xd + ssy*u_yd + ssz*u_zd - ss*(wd(i, j, k+1, ivx)-&
+   &         wd(i, j, k, ivx))
    corr = u_x*ssx + u_y*ssy + u_z*ssz - (w(i, j, k+1, ivx)-w(i, j, &
    &         k, ivx))*ss
-   u_xd = u_xd - corrd*ssx - corr*ssxd
+   u_xd = u_xd - ssx*corrd
    u_x = u_x - corr*ssx
-   u_yd = u_yd - corrd*ssy - corr*ssyd
+   u_yd = u_yd - ssy*corrd
    u_y = u_y - corr*ssy
-   u_zd = u_zd - corrd*ssz - corr*sszd
+   u_zd = u_zd - ssz*corrd
    u_z = u_z - corr*ssz
-   corrd = v_xd*ssx + v_x*ssxd + v_yd*ssy + v_y*ssyd + v_zd*ssz + &
-   &         v_z*sszd - (wd(i, j, k+1, ivy)-wd(i, j, k, ivy))*ss - (w(i, j&
-   &         , k+1, ivy)-w(i, j, k, ivy))*ssd
+   corrd = ssx*v_xd + ssy*v_yd + ssz*v_zd - ss*(wd(i, j, k+1, ivy)-&
+   &         wd(i, j, k, ivy))
    corr = v_x*ssx + v_y*ssy + v_z*ssz - (w(i, j, k+1, ivy)-w(i, j, &
    &         k, ivy))*ss
-   v_xd = v_xd - corrd*ssx - corr*ssxd
+   v_xd = v_xd - ssx*corrd
    v_x = v_x - corr*ssx
-   v_yd = v_yd - corrd*ssy - corr*ssyd
+   v_yd = v_yd - ssy*corrd
    v_y = v_y - corr*ssy
-   v_zd = v_zd - corrd*ssz - corr*sszd
+   v_zd = v_zd - ssz*corrd
    v_z = v_z - corr*ssz
-   corrd = w_xd*ssx + w_x*ssxd + w_yd*ssy + w_y*ssyd + w_zd*ssz + &
-   &         w_z*sszd - (wd(i, j, k+1, ivz)-wd(i, j, k, ivz))*ss - (w(i, j&
-   &         , k+1, ivz)-w(i, j, k, ivz))*ssd
+   corrd = ssx*w_xd + ssy*w_yd + ssz*w_zd - ss*(wd(i, j, k+1, ivz)-&
+   &         wd(i, j, k, ivz))
    corr = w_x*ssx + w_y*ssy + w_z*ssz - (w(i, j, k+1, ivz)-w(i, j, &
    &         k, ivz))*ss
-   w_xd = w_xd - corrd*ssx - corr*ssxd
+   w_xd = w_xd - ssx*corrd
    w_x = w_x - corr*ssx
-   w_yd = w_yd - corrd*ssy - corr*ssyd
+   w_yd = w_yd - ssy*corrd
    w_y = w_y - corr*ssy
-   w_zd = w_zd - corrd*ssz - corr*sszd
+   w_zd = w_zd - ssz*corrd
    w_z = w_z - corr*ssz
-   corrd = q_xd*ssx + q_x*ssxd + q_yd*ssy + q_y*ssyd + q_zd*ssz + &
-   &         q_z*sszd + (pd(i, j, k+1)-pd(i, j, k))*ss + (p(i, j, k+1)-p(i&
-   &         , j, k))*ssd
+   corrd = ssx*q_xd + ssy*q_yd + ssz*q_zd + ss*(pd(i, j, k+1)-pd(i&
+   &         , j, k))
    corr = q_x*ssx + q_y*ssy + q_z*ssz + (p(i, j, k+1)-p(i, j, k))*&
    &         ss
-   q_xd = q_xd - corrd*ssx - corr*ssxd
+   q_xd = q_xd - ssx*corrd
    q_x = q_x - corr*ssx
-   q_yd = q_yd - corrd*ssy - corr*ssyd
+   q_yd = q_yd - ssy*corrd
    q_y = q_y - corr*ssy
-   q_zd = q_zd - corrd*ssz - corr*sszd
+   q_zd = q_zd - ssz*corrd
    q_z = q_z - corr*ssz
    ! Compute the stress tensor and the heat flux vector.
    fracdivd = twothird*(u_xd+v_yd+w_zd)
@@ -510,87 +484,63 @@
    ! that no averaging takes places here.
    ! First determine the vector in the direction from the
    ! cell center k to cell center k+1.
-   ssxd = eighth*(xd(i-1, j-1, k+1, 1)-xd(i-1, j-1, k-1, 1)+xd(i-&
-   &           1, j, k+1, 1)-xd(i-1, j, k-1, 1)+xd(i, j-1, k+1, 1)-xd(i, j-&
-   &           1, k-1, 1)+xd(i, j, k+1, 1)-xd(i, j, k-1, 1))
    ssx = eighth*(x(i-1, j-1, k+1, 1)-x(i-1, j-1, k-1, 1)+x(i-1, j&
    &           , k+1, 1)-x(i-1, j, k-1, 1)+x(i, j-1, k+1, 1)-x(i, j-1, k-1&
    &           , 1)+x(i, j, k+1, 1)-x(i, j, k-1, 1))
-   ssyd = eighth*(xd(i-1, j-1, k+1, 2)-xd(i-1, j-1, k-1, 2)+xd(i-&
-   &           1, j, k+1, 2)-xd(i-1, j, k-1, 2)+xd(i, j-1, k+1, 2)-xd(i, j-&
-   &           1, k-1, 2)+xd(i, j, k+1, 2)-xd(i, j, k-1, 2))
    ssy = eighth*(x(i-1, j-1, k+1, 2)-x(i-1, j-1, k-1, 2)+x(i-1, j&
    &           , k+1, 2)-x(i-1, j, k-1, 2)+x(i, j-1, k+1, 2)-x(i, j-1, k-1&
    &           , 2)+x(i, j, k+1, 2)-x(i, j, k-1, 2))
-   sszd = eighth*(xd(i-1, j-1, k+1, 3)-xd(i-1, j-1, k-1, 3)+xd(i-&
-   &           1, j, k+1, 3)-xd(i-1, j, k-1, 3)+xd(i, j-1, k+1, 3)-xd(i, j-&
-   &           1, k-1, 3)+xd(i, j, k+1, 3)-xd(i, j, k-1, 3))
    ssz = eighth*(x(i-1, j-1, k+1, 3)-x(i-1, j-1, k-1, 3)+x(i-1, j&
    &           , k+1, 3)-x(i-1, j, k-1, 3)+x(i, j-1, k+1, 3)-x(i, j-1, k-1&
    &           , 3)+x(i, j, k+1, 3)-x(i, j, k-1, 3))
    ! Determine the length of this vector and create the
    ! unit normal.
-   arg1d = ssxd*ssx + ssx*ssxd + ssyd*ssy + ssy*ssyd + sszd*ssz +&
-   &           ssz*sszd
    arg1 = ssx*ssx + ssy*ssy + ssz*ssz
-   IF (arg1 .EQ. 0.0_8) THEN
-   result1d = 0.0_8
-   ELSE
-   result1d = arg1d/(2.0*SQRT(arg1))
-   END IF
    result1 = SQRT(arg1)
-   ssd = -(one*result1d/result1**2)
    ss = one/result1
-   ssxd = ssd*ssx + ss*ssxd
    ssx = ss*ssx
-   ssyd = ssd*ssy + ss*ssyd
    ssy = ss*ssy
-   sszd = ssd*ssz + ss*sszd
    ssz = ss*ssz
    ! Correct the gradients.
-   corrd = u_xd*ssx + u_x*ssxd + u_yd*ssy + u_y*ssyd + u_zd*ssz +&
-   &           u_z*sszd - (wd(i, j, k+1, ivx)-wd(i, j, k, ivx))*ss - (w(i, &
-   &           j, k+1, ivx)-w(i, j, k, ivx))*ssd
+   corrd = ssx*u_xd + ssy*u_yd + ssz*u_zd - ss*(wd(i, j, k+1, ivx&
+   &           )-wd(i, j, k, ivx))
    corr = u_x*ssx + u_y*ssy + u_z*ssz - (w(i, j, k+1, ivx)-w(i, j&
    &           , k, ivx))*ss
-   u_xd = u_xd - corrd*ssx - corr*ssxd
+   u_xd = u_xd - ssx*corrd
    u_x = u_x - corr*ssx
-   u_yd = u_yd - corrd*ssy - corr*ssyd
+   u_yd = u_yd - ssy*corrd
    u_y = u_y - corr*ssy
-   u_zd = u_zd - corrd*ssz - corr*sszd
+   u_zd = u_zd - ssz*corrd
    u_z = u_z - corr*ssz
-   corrd = v_xd*ssx + v_x*ssxd + v_yd*ssy + v_y*ssyd + v_zd*ssz +&
-   &           v_z*sszd - (wd(i, j, k+1, ivy)-wd(i, j, k, ivy))*ss - (w(i, &
-   &           j, k+1, ivy)-w(i, j, k, ivy))*ssd
+   corrd = ssx*v_xd + ssy*v_yd + ssz*v_zd - ss*(wd(i, j, k+1, ivy&
+   &           )-wd(i, j, k, ivy))
    corr = v_x*ssx + v_y*ssy + v_z*ssz - (w(i, j, k+1, ivy)-w(i, j&
    &           , k, ivy))*ss
-   v_xd = v_xd - corrd*ssx - corr*ssxd
+   v_xd = v_xd - ssx*corrd
    v_x = v_x - corr*ssx
-   v_yd = v_yd - corrd*ssy - corr*ssyd
+   v_yd = v_yd - ssy*corrd
    v_y = v_y - corr*ssy
-   v_zd = v_zd - corrd*ssz - corr*sszd
+   v_zd = v_zd - ssz*corrd
    v_z = v_z - corr*ssz
-   corrd = w_xd*ssx + w_x*ssxd + w_yd*ssy + w_y*ssyd + w_zd*ssz +&
-   &           w_z*sszd - (wd(i, j, k+1, ivz)-wd(i, j, k, ivz))*ss - (w(i, &
-   &           j, k+1, ivz)-w(i, j, k, ivz))*ssd
+   corrd = ssx*w_xd + ssy*w_yd + ssz*w_zd - ss*(wd(i, j, k+1, ivz&
+   &           )-wd(i, j, k, ivz))
    corr = w_x*ssx + w_y*ssy + w_z*ssz - (w(i, j, k+1, ivz)-w(i, j&
    &           , k, ivz))*ss
-   w_xd = w_xd - corrd*ssx - corr*ssxd
+   w_xd = w_xd - ssx*corrd
    w_x = w_x - corr*ssx
-   w_yd = w_yd - corrd*ssy - corr*ssyd
+   w_yd = w_yd - ssy*corrd
    w_y = w_y - corr*ssy
-   w_zd = w_zd - corrd*ssz - corr*sszd
+   w_zd = w_zd - ssz*corrd
    w_z = w_z - corr*ssz
-   corrd = q_xd*ssx + q_x*ssxd + q_yd*ssy + q_y*ssyd + q_zd*ssz +&
-   &           q_z*sszd + (pd(i, j, k+1)-pd(i, j, k))*ss + (p(i, j, k+1)-p(&
-   &           i, j, k))*ssd
+   corrd = ssx*q_xd + ssy*q_yd + ssz*q_zd + ss*(pd(i, j, k+1)-pd(&
+   &           i, j, k))
    corr = q_x*ssx + q_y*ssy + q_z*ssz + (p(i, j, k+1)-p(i, j, k))&
    &           *ss
-   q_xd = q_xd - corrd*ssx - corr*ssxd
+   q_xd = q_xd - ssx*corrd
    q_x = q_x - corr*ssx
-   q_yd = q_yd - corrd*ssy - corr*ssyd
+   q_yd = q_yd - ssy*corrd
    q_y = q_y - corr*ssy
-   q_zd = q_zd - corrd*ssz - corr*sszd
+   q_zd = q_zd - ssz*corrd
    q_z = q_z - corr*ssz
    ! Compute the stress tensor and the heat flux vector.
    fracdivd = twothird*(u_xd+v_yd+w_zd)
@@ -767,87 +717,63 @@
    ! that no averaging takes places here.
    ! First determine the vector in the direction from the
    ! cell center j to cell center j+1.
-   ssxd = eighth*(xd(i-1, j+1, k-1, 1)-xd(i-1, j-1, k-1, 1)+xd(i-&
-   &           1, j+1, k, 1)-xd(i-1, j-1, k, 1)+xd(i, j+1, k-1, 1)-xd(i, j-&
-   &           1, k-1, 1)+xd(i, j+1, k, 1)-xd(i, j-1, k, 1))
    ssx = eighth*(x(i-1, j+1, k-1, 1)-x(i-1, j-1, k-1, 1)+x(i-1, j&
    &           +1, k, 1)-x(i-1, j-1, k, 1)+x(i, j+1, k-1, 1)-x(i, j-1, k-1&
    &           , 1)+x(i, j+1, k, 1)-x(i, j-1, k, 1))
-   ssyd = eighth*(xd(i-1, j+1, k-1, 2)-xd(i-1, j-1, k-1, 2)+xd(i-&
-   &           1, j+1, k, 2)-xd(i-1, j-1, k, 2)+xd(i, j+1, k-1, 2)-xd(i, j-&
-   &           1, k-1, 2)+xd(i, j+1, k, 2)-xd(i, j-1, k, 2))
    ssy = eighth*(x(i-1, j+1, k-1, 2)-x(i-1, j-1, k-1, 2)+x(i-1, j&
    &           +1, k, 2)-x(i-1, j-1, k, 2)+x(i, j+1, k-1, 2)-x(i, j-1, k-1&
    &           , 2)+x(i, j+1, k, 2)-x(i, j-1, k, 2))
-   sszd = eighth*(xd(i-1, j+1, k-1, 3)-xd(i-1, j-1, k-1, 3)+xd(i-&
-   &           1, j+1, k, 3)-xd(i-1, j-1, k, 3)+xd(i, j+1, k-1, 3)-xd(i, j-&
-   &           1, k-1, 3)+xd(i, j+1, k, 3)-xd(i, j-1, k, 3))
    ssz = eighth*(x(i-1, j+1, k-1, 3)-x(i-1, j-1, k-1, 3)+x(i-1, j&
    &           +1, k, 3)-x(i-1, j-1, k, 3)+x(i, j+1, k-1, 3)-x(i, j-1, k-1&
    &           , 3)+x(i, j+1, k, 3)-x(i, j-1, k, 3))
    ! Determine the length of this vector and create the
    ! unit normal.
-   arg1d = ssxd*ssx + ssx*ssxd + ssyd*ssy + ssy*ssyd + sszd*ssz +&
-   &           ssz*sszd
    arg1 = ssx*ssx + ssy*ssy + ssz*ssz
-   IF (arg1 .EQ. 0.0_8) THEN
-   result1d = 0.0_8
-   ELSE
-   result1d = arg1d/(2.0*SQRT(arg1))
-   END IF
    result1 = SQRT(arg1)
-   ssd = -(one*result1d/result1**2)
    ss = one/result1
-   ssxd = ssd*ssx + ss*ssxd
    ssx = ss*ssx
-   ssyd = ssd*ssy + ss*ssyd
    ssy = ss*ssy
-   sszd = ssd*ssz + ss*sszd
    ssz = ss*ssz
    ! Correct the gradients.
-   corrd = u_xd*ssx + u_x*ssxd + u_yd*ssy + u_y*ssyd + u_zd*ssz +&
-   &           u_z*sszd - (wd(i, j+1, k, ivx)-wd(i, j, k, ivx))*ss - (w(i, &
-   &           j+1, k, ivx)-w(i, j, k, ivx))*ssd
+   corrd = ssx*u_xd + ssy*u_yd + ssz*u_zd - ss*(wd(i, j+1, k, ivx&
+   &           )-wd(i, j, k, ivx))
    corr = u_x*ssx + u_y*ssy + u_z*ssz - (w(i, j+1, k, ivx)-w(i, j&
    &           , k, ivx))*ss
-   u_xd = u_xd - corrd*ssx - corr*ssxd
+   u_xd = u_xd - ssx*corrd
    u_x = u_x - corr*ssx
-   u_yd = u_yd - corrd*ssy - corr*ssyd
+   u_yd = u_yd - ssy*corrd
    u_y = u_y - corr*ssy
-   u_zd = u_zd - corrd*ssz - corr*sszd
+   u_zd = u_zd - ssz*corrd
    u_z = u_z - corr*ssz
-   corrd = v_xd*ssx + v_x*ssxd + v_yd*ssy + v_y*ssyd + v_zd*ssz +&
-   &           v_z*sszd - (wd(i, j+1, k, ivy)-wd(i, j, k, ivy))*ss - (w(i, &
-   &           j+1, k, ivy)-w(i, j, k, ivy))*ssd
+   corrd = ssx*v_xd + ssy*v_yd + ssz*v_zd - ss*(wd(i, j+1, k, ivy&
+   &           )-wd(i, j, k, ivy))
    corr = v_x*ssx + v_y*ssy + v_z*ssz - (w(i, j+1, k, ivy)-w(i, j&
    &           , k, ivy))*ss
-   v_xd = v_xd - corrd*ssx - corr*ssxd
+   v_xd = v_xd - ssx*corrd
    v_x = v_x - corr*ssx
-   v_yd = v_yd - corrd*ssy - corr*ssyd
+   v_yd = v_yd - ssy*corrd
    v_y = v_y - corr*ssy
-   v_zd = v_zd - corrd*ssz - corr*sszd
+   v_zd = v_zd - ssz*corrd
    v_z = v_z - corr*ssz
-   corrd = w_xd*ssx + w_x*ssxd + w_yd*ssy + w_y*ssyd + w_zd*ssz +&
-   &           w_z*sszd - (wd(i, j+1, k, ivz)-wd(i, j, k, ivz))*ss - (w(i, &
-   &           j+1, k, ivz)-w(i, j, k, ivz))*ssd
+   corrd = ssx*w_xd + ssy*w_yd + ssz*w_zd - ss*(wd(i, j+1, k, ivz&
+   &           )-wd(i, j, k, ivz))
    corr = w_x*ssx + w_y*ssy + w_z*ssz - (w(i, j+1, k, ivz)-w(i, j&
    &           , k, ivz))*ss
-   w_xd = w_xd - corrd*ssx - corr*ssxd
+   w_xd = w_xd - ssx*corrd
    w_x = w_x - corr*ssx
-   w_yd = w_yd - corrd*ssy - corr*ssyd
+   w_yd = w_yd - ssy*corrd
    w_y = w_y - corr*ssy
-   w_zd = w_zd - corrd*ssz - corr*sszd
+   w_zd = w_zd - ssz*corrd
    w_z = w_z - corr*ssz
-   corrd = q_xd*ssx + q_x*ssxd + q_yd*ssy + q_y*ssyd + q_zd*ssz +&
-   &           q_z*sszd + (pd(i, j+1, k)-pd(i, j, k))*ss + (p(i, j+1, k)-p(&
-   &           i, j, k))*ssd
+   corrd = ssx*q_xd + ssy*q_yd + ssz*q_zd + ss*(pd(i, j+1, k)-pd(&
+   &           i, j, k))
    corr = q_x*ssx + q_y*ssy + q_z*ssz + (p(i, j+1, k)-p(i, j, k))&
    &           *ss
-   q_xd = q_xd - corrd*ssx - corr*ssxd
+   q_xd = q_xd - ssx*corrd
    q_x = q_x - corr*ssx
-   q_yd = q_yd - corrd*ssy - corr*ssyd
+   q_yd = q_yd - ssy*corrd
    q_y = q_y - corr*ssy
-   q_zd = q_zd - corrd*ssz - corr*sszd
+   q_zd = q_zd - ssz*corrd
    q_z = q_z - corr*ssz
    ! Compute the stress tensor and the heat flux vector.
    fracdivd = twothird*(u_xd+v_yd+w_zd)
@@ -1039,87 +965,63 @@
    ! that no averaging takes places here.
    ! First determine the vector in the direction from the
    ! cell center i to cell center i+1.
-   ssxd = eighth*(xd(i+1, j-1, k-1, 1)-xd(i-1, j-1, k-1, 1)+xd(i+&
-   &           1, j-1, k, 1)-xd(i-1, j-1, k, 1)+xd(i+1, j, k-1, 1)-xd(i-1, &
-   &           j, k-1, 1)+xd(i+1, j, k, 1)-xd(i-1, j, k, 1))
    ssx = eighth*(x(i+1, j-1, k-1, 1)-x(i-1, j-1, k-1, 1)+x(i+1, j&
    &           -1, k, 1)-x(i-1, j-1, k, 1)+x(i+1, j, k-1, 1)-x(i-1, j, k-1&
    &           , 1)+x(i+1, j, k, 1)-x(i-1, j, k, 1))
-   ssyd = eighth*(xd(i+1, j-1, k-1, 2)-xd(i-1, j-1, k-1, 2)+xd(i+&
-   &           1, j-1, k, 2)-xd(i-1, j-1, k, 2)+xd(i+1, j, k-1, 2)-xd(i-1, &
-   &           j, k-1, 2)+xd(i+1, j, k, 2)-xd(i-1, j, k, 2))
    ssy = eighth*(x(i+1, j-1, k-1, 2)-x(i-1, j-1, k-1, 2)+x(i+1, j&
    &           -1, k, 2)-x(i-1, j-1, k, 2)+x(i+1, j, k-1, 2)-x(i-1, j, k-1&
    &           , 2)+x(i+1, j, k, 2)-x(i-1, j, k, 2))
-   sszd = eighth*(xd(i+1, j-1, k-1, 3)-xd(i-1, j-1, k-1, 3)+xd(i+&
-   &           1, j-1, k, 3)-xd(i-1, j-1, k, 3)+xd(i+1, j, k-1, 3)-xd(i-1, &
-   &           j, k-1, 3)+xd(i+1, j, k, 3)-xd(i-1, j, k, 3))
    ssz = eighth*(x(i+1, j-1, k-1, 3)-x(i-1, j-1, k-1, 3)+x(i+1, j&
    &           -1, k, 3)-x(i-1, j-1, k, 3)+x(i+1, j, k-1, 3)-x(i-1, j, k-1&
    &           , 3)+x(i+1, j, k, 3)-x(i-1, j, k, 3))
    ! Determine the length of this vector and create the
    ! unit normal.
-   arg1d = ssxd*ssx + ssx*ssxd + ssyd*ssy + ssy*ssyd + sszd*ssz +&
-   &           ssz*sszd
    arg1 = ssx*ssx + ssy*ssy + ssz*ssz
-   IF (arg1 .EQ. 0.0_8) THEN
-   result1d = 0.0_8
-   ELSE
-   result1d = arg1d/(2.0*SQRT(arg1))
-   END IF
    result1 = SQRT(arg1)
-   ssd = -(one*result1d/result1**2)
    ss = one/result1
-   ssxd = ssd*ssx + ss*ssxd
    ssx = ss*ssx
-   ssyd = ssd*ssy + ss*ssyd
    ssy = ss*ssy
-   sszd = ssd*ssz + ss*sszd
    ssz = ss*ssz
    ! Correct the gradients.
-   corrd = u_xd*ssx + u_x*ssxd + u_yd*ssy + u_y*ssyd + u_zd*ssz +&
-   &           u_z*sszd - (wd(i+1, j, k, ivx)-wd(i, j, k, ivx))*ss - (w(i+1&
-   &           , j, k, ivx)-w(i, j, k, ivx))*ssd
+   corrd = ssx*u_xd + ssy*u_yd + ssz*u_zd - ss*(wd(i+1, j, k, ivx&
+   &           )-wd(i, j, k, ivx))
    corr = u_x*ssx + u_y*ssy + u_z*ssz - (w(i+1, j, k, ivx)-w(i, j&
    &           , k, ivx))*ss
-   u_xd = u_xd - corrd*ssx - corr*ssxd
+   u_xd = u_xd - ssx*corrd
    u_x = u_x - corr*ssx
-   u_yd = u_yd - corrd*ssy - corr*ssyd
+   u_yd = u_yd - ssy*corrd
    u_y = u_y - corr*ssy
-   u_zd = u_zd - corrd*ssz - corr*sszd
+   u_zd = u_zd - ssz*corrd
    u_z = u_z - corr*ssz
-   corrd = v_xd*ssx + v_x*ssxd + v_yd*ssy + v_y*ssyd + v_zd*ssz +&
-   &           v_z*sszd - (wd(i+1, j, k, ivy)-wd(i, j, k, ivy))*ss - (w(i+1&
-   &           , j, k, ivy)-w(i, j, k, ivy))*ssd
+   corrd = ssx*v_xd + ssy*v_yd + ssz*v_zd - ss*(wd(i+1, j, k, ivy&
+   &           )-wd(i, j, k, ivy))
    corr = v_x*ssx + v_y*ssy + v_z*ssz - (w(i+1, j, k, ivy)-w(i, j&
    &           , k, ivy))*ss
-   v_xd = v_xd - corrd*ssx - corr*ssxd
+   v_xd = v_xd - ssx*corrd
    v_x = v_x - corr*ssx
-   v_yd = v_yd - corrd*ssy - corr*ssyd
+   v_yd = v_yd - ssy*corrd
    v_y = v_y - corr*ssy
-   v_zd = v_zd - corrd*ssz - corr*sszd
+   v_zd = v_zd - ssz*corrd
    v_z = v_z - corr*ssz
-   corrd = w_xd*ssx + w_x*ssxd + w_yd*ssy + w_y*ssyd + w_zd*ssz +&
-   &           w_z*sszd - (wd(i+1, j, k, ivz)-wd(i, j, k, ivz))*ss - (w(i+1&
-   &           , j, k, ivz)-w(i, j, k, ivz))*ssd
+   corrd = ssx*w_xd + ssy*w_yd + ssz*w_zd - ss*(wd(i+1, j, k, ivz&
+   &           )-wd(i, j, k, ivz))
    corr = w_x*ssx + w_y*ssy + w_z*ssz - (w(i+1, j, k, ivz)-w(i, j&
    &           , k, ivz))*ss
-   w_xd = w_xd - corrd*ssx - corr*ssxd
+   w_xd = w_xd - ssx*corrd
    w_x = w_x - corr*ssx
-   w_yd = w_yd - corrd*ssy - corr*ssyd
+   w_yd = w_yd - ssy*corrd
    w_y = w_y - corr*ssy
-   w_zd = w_zd - corrd*ssz - corr*sszd
+   w_zd = w_zd - ssz*corrd
    w_z = w_z - corr*ssz
-   corrd = q_xd*ssx + q_x*ssxd + q_yd*ssy + q_y*ssyd + q_zd*ssz +&
-   &           q_z*sszd + (pd(i+1, j, k)-pd(i, j, k))*ss + (p(i+1, j, k)-p(&
-   &           i, j, k))*ssd
+   corrd = ssx*q_xd + ssy*q_yd + ssz*q_zd + ss*(pd(i+1, j, k)-pd(&
+   &           i, j, k))
    corr = q_x*ssx + q_y*ssy + q_z*ssz + (p(i+1, j, k)-p(i, j, k))&
    &           *ss
-   q_xd = q_xd - corrd*ssx - corr*ssxd
+   q_xd = q_xd - ssx*corrd
    q_x = q_x - corr*ssx
-   q_yd = q_yd - corrd*ssy - corr*ssyd
+   q_yd = q_yd - ssy*corrd
    q_y = q_y - corr*ssy
-   q_zd = q_zd - corrd*ssz - corr*sszd
+   q_zd = q_zd - ssz*corrd
    q_z = q_z - corr*ssz
    ! Compute the stress tensor and the heat flux vector.
    fracdivd = twothird*(u_xd+v_yd+w_zd)

@@ -2,73 +2,11 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of forcesandmoments in forward (tangent) mode (with options i4 dr8 r8):
-   !   variations   of useful results: *(flowdoms.x) *(flowdoms.w)
-   !                *(flowdoms.dw) *dw *w *x
-   !   with respect to varying inputs: *(flowdoms.x) *(flowdoms.w)
-   !                *(flowdoms.dw) *rev *dtl *bvtj1 *bvtj2 *p *gamma
-   !                *bmtk1 *dw *w *bmtk2 *rlv *x *bvtk1 *bvtk2 *bmti1
-   !                *bmti2 *bvti1 *bvti2 *fw *bmtj1 *bmtj2 *(*viscsubface.tau)
-   !                *(*viscsubface.q) *radi *radj *radk
-   !   Plus diff mem management of: flowdoms.overint:in-out flowdoms.bcdata:in-out
-   !                *(flowdoms.bcdata).norm:in-out *(flowdoms.bcdata).rface:in-out
-   !                *(flowdoms.bcdata).fp:in-out *(flowdoms.bcdata).fv:in-out
-   !                *(flowdoms.bcdata).m:in-out *(flowdoms.bcdata).oarea:in-out
-   !                *(flowdoms.bcdata).sepsensor:in-out *(flowdoms.bcdata).uslip:in-out
-   !                *(flowdoms.bcdata).tns_wall:in-out *(flowdoms.bcdata).ptinlet:in-out
-   !                *(flowdoms.bcdata).ttinlet:in-out *(flowdoms.bcdata).htinlet:in-out
-   !                *(flowdoms.bcdata).flowxdirinlet:in-out *(flowdoms.bcdata).flowydirinlet:in-out
-   !                *(flowdoms.bcdata).flowzdirinlet:in-out *(flowdoms.bcdata).turbinlet:in-out
-   !                *(flowdoms.bcdata).rho:in-out *(flowdoms.bcdata).velx:in-out
-   !                *(flowdoms.bcdata).vely:in-out *(flowdoms.bcdata).velz:in-out
-   !                *(flowdoms.bcdata).ps:in-out flowdoms.viscsubface:in-out
-   !                *(flowdoms.viscsubface).tau:in-out *(flowdoms.viscsubface).q:in-out
-   !                *(flowdoms.viscsubface).utau:in-out flowdoms.x:in-out
-   !                flowdoms.xtmp:in-out flowdoms.xold:in-out flowdoms.si:in-out
-   !                flowdoms.sj:in-out flowdoms.sk:in-out flowdoms.vol:in-out
-   !                flowdoms.volold:in-out flowdoms.dadidata:in-out
-   !                flowdoms.uv:in-out flowdoms.rotmatrixi:in-out
-   !                flowdoms.rotmatrixj:in-out flowdoms.rotmatrixk:in-out
-   !                flowdoms.sfacei:in-out flowdoms.sfacej:in-out
-   !                flowdoms.sfacek:in-out flowdoms.w:in-out flowdoms.wtmp:in-out
-   !                flowdoms.dw_deriv:in-out flowdoms.w_deriv:in-out
-   !                flowdoms.wold:in-out flowdoms.p:in-out flowdoms.ptmp:in-out
-   !                flowdoms.gamma:in-out flowdoms.rlv:in-out flowdoms.rev:in-out
-   !                flowdoms.s:in-out flowdoms.p1:in-out flowdoms.dw:in-out
-   !                flowdoms.fw:in-out flowdoms.dwtmp:in-out flowdoms.dwtmp2:in-out
-   !                flowdoms.dwoldrk:in-out flowdoms.w1:in-out flowdoms.wr:in-out
-   !                flowdoms.mgiweight:in-out flowdoms.mgjweight:in-out
-   !                flowdoms.mgkweight:in-out flowdoms.wn:in-out flowdoms.pn:in-out
-   !                flowdoms.dtl:in-out flowdoms.radi:in-out flowdoms.radj:in-out
-   !                flowdoms.radk:in-out flowdoms.fc:in-out flowdoms.fn:in-out
-   !                flowdoms.d2wall:in-out flowdoms.filterdes:in-out
-   !                flowdoms.bmti1:in-out flowdoms.bmti2:in-out flowdoms.bmtj1:in-out
-   !                flowdoms.bmtj2:in-out flowdoms.bmtk1:in-out flowdoms.bmtk2:in-out
-   !                flowdoms.bvti1:in-out flowdoms.bvti2:in-out flowdoms.bvtj1:in-out
-   !                flowdoms.bvtj2:in-out flowdoms.bvtk1:in-out flowdoms.bvtk2:in-out
-   !                volold:in-out wr:in-out rev:in-out dtl:in-out
-   !                bvtj1:in-out bvtj2:in-out p:in-out sfacei:in-out
-   !                sfacej:in-out s:in-out gamma:in-out sfacek:in-out
-   !                dadidata:in-out vol_offtimeinstance:in-out bmtk1:in-out
-   !                dw:in-out w:in-out bmtk2:in-out rlv:in-out x:in-out
-   !                p1:in-out overint:in-out bvtk1:in-out w1:in-out
-   !                bvtk2:in-out xold:in-out filterdes:in-out vol:in-out
-   !                wold:in-out mgkweight:in-out w_offtimeinstance:in-out
-   !                dwoldrk:in-out d2wall:in-out bmti1:in-out bmti2:in-out
-   !                mgjweight:in-out si:in-out sj:in-out sk:in-out
-   !                bvti1:in-out bvti2:in-out fw:in-out pn:in-out
-   !                mgiweight:in-out rotmatrixi:in-out rotmatrixj:in-out
-   !                rotmatrixk:in-out bmtj1:in-out bmtj2:in-out viscsubface:in-out
-   !                *viscsubface.tau:in-out *viscsubface.q:in-out
-   !                *viscsubface.utau:in-out bcdata:in-out *bcdata.norm:in-out
-   !                *bcdata.rface:in-out *bcdata.fp:in-out *bcdata.fv:in-out
-   !                *bcdata.m:in-out *bcdata.oarea:in-out *bcdata.sepsensor:in-out
-   !                *bcdata.uslip:in-out *bcdata.tns_wall:in-out *bcdata.ptinlet:in-out
-   !                *bcdata.ttinlet:in-out *bcdata.htinlet:in-out
-   !                *bcdata.flowxdirinlet:in-out *bcdata.flowydirinlet:in-out
-   !                *bcdata.flowzdirinlet:in-out *bcdata.turbinlet:in-out
-   !                *bcdata.rho:in-out *bcdata.velx:in-out *bcdata.vely:in-out
-   !                *bcdata.velz:in-out *bcdata.ps:in-out radi:in-out
-   !                radj:in-out radk:in-out wn:in-out
+   !   variations   of useful results: *(*bcdata.fp) *(*bcdata.fv)
+   !                *(*bcdata.m) cfp cfv cmp cmv
+   !   with respect to varying inputs: *p *x *(*viscsubface.tau)
+   !   Plus diff mem management of: viscsubface:in *viscsubface.tau:in
+   !                bcdata:in *bcdata.fp:in *bcdata.fv:in *bcdata.m:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -79,7 +17,8 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   SUBROUTINE FORCESANDMOMENTS_D(cfp, cfv, cmp, cmv, yplusmax, sepsensor)
+   SUBROUTINE FORCESANDMOMENTS_D(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd&
+   & , yplusmax, sepsensor)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -98,46 +37,45 @@
    USE INPUTPHYSICS
    USE DIFFSIZES
    !  Hint: ISIZE1OFDrfbcdata should be the size of dimension 1 of array *bcdata
-   !  Hint: ISIZE1OFDrfviscsubface should be the size of dimension 1 of array *viscsubface
-   !  Hint: ISIZE1OFDrfflowdoms_viscsubface should be the size of dimension 1 of array *flowdoms%viscsubface
-   !  Hint: ISIZE1OFDrfflowdoms_bcdata should be the size of dimension 1 of array *flowdoms%bcdata
    IMPLICIT NONE
    !
    !      Subroutine arguments
    !
    REAL(kind=realtype), DIMENSION(3), INTENT(OUT) :: cfp, cfv
+   REAL(kind=realtype), DIMENSION(3), INTENT(OUT) :: cfpd, cfvd
    REAL(kind=realtype), DIMENSION(3), INTENT(OUT) :: cmp, cmv
+   REAL(kind=realtype), DIMENSION(3), INTENT(OUT) :: cmpd, cmvd
    REAL(kind=realtype), INTENT(OUT) :: yplusmax, sepsensor
    !
    !      Local variables.
    !
    INTEGER(kind=inttype) :: nn, i, j
    REAL(kind=realtype) :: pm1, fx, fy, fz, fn
-   REAL(kind=realtype) :: fxd, fyd, fzd
+   REAL(kind=realtype) :: pm1d, fxd, fyd, fzd
    REAL(kind=realtype) :: xc, yc, zc
    REAL(kind=realtype) :: xcd, ycd, zcd
    REAL(kind=realtype) :: fact, rho, mul, yplus, dwall
    REAL(kind=realtype) :: scaledim, v(3), sensor
-   REAL(kind=realtype) :: sensord
    REAL(kind=realtype) :: tauxx, tauyy, tauzz
    REAL(kind=realtype) :: tauxxd, tauyyd, tauzzd
    REAL(kind=realtype) :: tauxy, tauxz, tauyz
    REAL(kind=realtype) :: tauxyd, tauxzd, tauyzd
    REAL(kind=realtype), DIMENSION(3) :: refpoint
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp2, pp1
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp2d, pp1d
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rho2, rho1
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rho2d, rho1d
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv2, rlv1
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: dd2wall
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: dd2walld
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ss, xx
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ssd, xxd
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: xxd
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
    INTERFACE 
    SUBROUTINE SETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
    &       rev1, rev2, offset)
+   USE BCTYPES
    USE BLOCKPOINTERS_D
+   USE FLOWVARREFSTATE
    IMPLICIT NONE
    INTEGER(kind=inttype), INTENT(IN) :: nn, offset
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
@@ -147,7 +85,9 @@
    END SUBROUTINE SETBCPOINTERS
    SUBROUTINE RESETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
    &       rev1, rev2, offset)
+   USE BCTYPES
    USE BLOCKPOINTERS_D
+   USE FLOWVARREFSTATE
    IMPLICIT NONE
    INTEGER(kind=inttype), INTENT(IN) :: nn, offset
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
@@ -158,6 +98,8 @@
    SUBROUTINE SETXXSSRHODD2WALL(nn, xx, ss, rho1, rho2, dd2wall)
    USE BCTYPES
    USE BLOCKPOINTERS_D
+   USE FLOWVARREFSTATE
+   USE INPUTPHYSICS
    IMPLICIT NONE
    INTEGER(kind=inttype), INTENT(IN) :: nn
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rho2, rho1
@@ -167,6 +109,8 @@
    SUBROUTINE RESETXXSSRHODD2WALL(nn, xx, ss, rho1, rho2, dd2wall)
    USE BCTYPES
    USE BLOCKPOINTERS_D
+   USE FLOWVARREFSTATE
+   USE INPUTPHYSICS
    IMPLICIT NONE
    INTEGER(kind=inttype), INTENT(IN) :: nn
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rho2, rho1
@@ -178,7 +122,9 @@
    SUBROUTINE SETBCPOINTERS_D(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, &
    &       pp2, pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev1d, rev2, rev2d, &
    &       offset)
+   USE BCTYPES
    USE BLOCKPOINTERS_D
+   USE FLOWVARREFSTATE
    IMPLICIT NONE
    INTEGER(kind=inttype), INTENT(IN) :: nn, offset
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
@@ -190,45 +136,37 @@
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1d, rev2d
    END SUBROUTINE SETBCPOINTERS_D
-   SUBROUTINE SETXXSSRHODD2WALL_D(nn, xx, ss, rho1, rho2, dd2wall)
+   SUBROUTINE SETXXSSRHODD2WALL_D(nn, xx, xxd, ss, rho1, rho2, &
+   &       dd2wall)
    USE BCTYPES
    USE BLOCKPOINTERS_D
+   USE FLOWVARREFSTATE
+   USE INPUTPHYSICS
    IMPLICIT NONE
    INTEGER(kind=inttype), INTENT(IN) :: nn
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rho2, rho1
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: dd2wall
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ss, xx
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: xxd
    END SUBROUTINE SETXXSSRHODD2WALL_D
-   SUBROUTINE RESETXXSSRHODD2WALL_D(nn, xx, xxd, ss, ssd, rho1, rho1d&
-   &       , rho2, rho2d, dd2wall, dd2walld)
-   USE BCTYPES
-   USE BLOCKPOINTERS_D
-   IMPLICIT NONE
-   INTEGER(kind=inttype), INTENT(IN) :: nn
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rho2, rho1
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rho2d, rho1d
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: dd2wall
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: dd2walld
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ss, xx
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ssd, xxd
-   END SUBROUTINE RESETXXSSRHODD2WALL_D
    END INTERFACE
       REAL(kind=realtype) :: mx, my, mz, qa
-   REAL(kind=realtype) :: mxd, myd, mzd, qad
+   REAL(kind=realtype) :: mxd, myd, mzd
    LOGICAL :: viscoussubface
    INTRINSIC SQRT
    INTRINSIC EXP
    INTRINSIC MAX
    REAL(kind=realtype) :: arg1
-   REAL(kind=realtype) :: arg1d
    REAL(kind=realtype) :: result1
-   REAL(kind=realtype) :: result1d
    REAL(kind=realtype) :: arg2
    REAL(kind=realtype) :: result2
-   INTEGER :: ii4
-   INTEGER :: ii3
-   INTEGER :: ii2
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv2d
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1d
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww2d
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev2d
    INTEGER :: ii1
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1d
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1d
    !
    !      ******************************************************************
    !      *                                                                *
@@ -259,674 +197,6 @@
    cmv(3) = zero
    yplusmax = zero
    sepsensor = zero
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%overint = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   DO ii4=1,ISIZE1OFDrfflowdoms_bcdata
-   flowdomsd(ii3, ii2, ii1)%bcdata(ii4)%norm = 0.0_8
-   END DO
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   DO ii4=1,ISIZE1OFDrfflowdoms_bcdata
-   flowdomsd(ii3, ii2, ii1)%bcdata(ii4)%rface = 0.0_8
-   END DO
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   DO ii4=1,ISIZE1OFDrfflowdoms_bcdata
-   flowdomsd(ii3, ii2, ii1)%bcdata(ii4)%fp = 0.0_8
-   END DO
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   DO ii4=1,ISIZE1OFDrfflowdoms_bcdata
-   flowdomsd(ii3, ii2, ii1)%bcdata(ii4)%fv = 0.0_8
-   END DO
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   DO ii4=1,ISIZE1OFDrfflowdoms_bcdata
-   flowdomsd(ii3, ii2, ii1)%bcdata(ii4)%m = 0.0_8
-   END DO
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   DO ii4=1,ISIZE1OFDrfflowdoms_bcdata
-   flowdomsd(ii3, ii2, ii1)%bcdata(ii4)%oarea = 0.0_8
-   END DO
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   DO ii4=1,ISIZE1OFDrfflowdoms_bcdata
-   flowdomsd(ii3, ii2, ii1)%bcdata(ii4)%sepsensor = 0.0_8
-   END DO
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   DO ii4=1,ISIZE1OFDrfflowdoms_bcdata
-   flowdomsd(ii3, ii2, ii1)%bcdata(ii4)%symnorm = 0.0_8
-   END DO
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   DO ii4=1,ISIZE1OFDrfflowdoms_bcdata
-   flowdomsd(ii3, ii2, ii1)%bcdata(ii4)%uslip = 0.0_8
-   END DO
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   DO ii4=1,ISIZE1OFDrfflowdoms_bcdata
-   flowdomsd(ii3, ii2, ii1)%bcdata(ii4)%tns_wall = 0.0_8
-   END DO
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   DO ii4=1,ISIZE1OFDrfflowdoms_bcdata
-   flowdomsd(ii3, ii2, ii1)%bcdata(ii4)%ptinlet = 0.0_8
-   END DO
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   DO ii4=1,ISIZE1OFDrfflowdoms_bcdata
-   flowdomsd(ii3, ii2, ii1)%bcdata(ii4)%ttinlet = 0.0_8
-   END DO
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   DO ii4=1,ISIZE1OFDrfflowdoms_bcdata
-   flowdomsd(ii3, ii2, ii1)%bcdata(ii4)%htinlet = 0.0_8
-   END DO
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   DO ii4=1,ISIZE1OFDrfflowdoms_bcdata
-   flowdomsd(ii3, ii2, ii1)%bcdata(ii4)%flowxdirinlet = 0.0_8
-   END DO
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   DO ii4=1,ISIZE1OFDrfflowdoms_bcdata
-   flowdomsd(ii3, ii2, ii1)%bcdata(ii4)%flowydirinlet = 0.0_8
-   END DO
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   DO ii4=1,ISIZE1OFDrfflowdoms_bcdata
-   flowdomsd(ii3, ii2, ii1)%bcdata(ii4)%flowzdirinlet = 0.0_8
-   END DO
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   DO ii4=1,ISIZE1OFDrfflowdoms_bcdata
-   flowdomsd(ii3, ii2, ii1)%bcdata(ii4)%turbinlet = 0.0_8
-   END DO
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   DO ii4=1,ISIZE1OFDrfflowdoms_bcdata
-   flowdomsd(ii3, ii2, ii1)%bcdata(ii4)%rho = 0.0_8
-   END DO
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   DO ii4=1,ISIZE1OFDrfflowdoms_bcdata
-   flowdomsd(ii3, ii2, ii1)%bcdata(ii4)%velx = 0.0_8
-   END DO
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   DO ii4=1,ISIZE1OFDrfflowdoms_bcdata
-   flowdomsd(ii3, ii2, ii1)%bcdata(ii4)%vely = 0.0_8
-   END DO
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   DO ii4=1,ISIZE1OFDrfflowdoms_bcdata
-   flowdomsd(ii3, ii2, ii1)%bcdata(ii4)%velz = 0.0_8
-   END DO
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   DO ii4=1,ISIZE1OFDrfflowdoms_bcdata
-   flowdomsd(ii3, ii2, ii1)%bcdata(ii4)%ps = 0.0_8
-   END DO
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   DO ii4=1,ISIZE1OFDrfflowdoms_viscsubface
-   flowdomsd(ii3, ii2, ii1)%viscsubface(ii4)%tau = 0.0_8
-   END DO
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   DO ii4=1,ISIZE1OFDrfflowdoms_viscsubface
-   flowdomsd(ii3, ii2, ii1)%viscsubface(ii4)%q = 0.0_8
-   END DO
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   DO ii4=1,ISIZE1OFDrfflowdoms_viscsubface
-   flowdomsd(ii3, ii2, ii1)%viscsubface(ii4)%utau = 0.0_8
-   END DO
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%xtmp = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%xold = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%si = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%sj = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%sk = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%vol = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%volold = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%dadidata = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%uv = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%rotmatrixi = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%rotmatrixj = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%rotmatrixk = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%sfacei = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%sfacej = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%sfacek = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%wtmp = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%dw_deriv = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%w_deriv = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%wold = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%p = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%ptmp = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%gamma = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%rlv = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%rev = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%s = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%p1 = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%fw = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%dwtmp = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%dwtmp2 = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%dwoldrk = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%w1 = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%wr = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%mgiweight = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%mgjweight = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%mgkweight = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%wn = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%pn = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%dtl = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%radi = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%radj = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%radk = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%fc = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%fn = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%d2wall = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%filterdes = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%bmti1 = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%bmti2 = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%bmtj1 = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%bmtj2 = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%bmtk1 = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%bmtk2 = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%bvti1 = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%bvti2 = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%bvtj1 = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%bvtj2 = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%bvtk1 = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   flowdomsd(ii3, ii2, ii1)%bvtk2 = 0.0_8
-   END DO
-   END DO
-   END DO
-   vololdd = 0.0_8
-   wrd = 0.0_8
-   sfaceid = 0.0_8
-   sfacejd = 0.0_8
-   sd = 0.0_8
-   sfacekd = 0.0_8
-   dadidatad = 0.0_8
-   vol_offtimeinstanced = 0.0_8
-   p1d = 0.0_8
-   overintd = 0.0_8
-   w1d = 0.0_8
-   xoldd = 0.0_8
-   filterdesd = 0.0_8
-   vold = 0.0_8
-   woldd = 0.0_8
-   mgkweightd = 0.0_8
-   w_offtimeinstanced = 0.0_8
-   dwoldrkd = 0.0_8
-   d2walld = 0.0_8
-   mgjweightd = 0.0_8
-   sid = 0.0_8
-   sjd = 0.0_8
-   skd = 0.0_8
-   pnd = 0.0_8
-   mgiweightd = 0.0_8
-   rotmatrixid = 0.0_8
-   rotmatrixjd = 0.0_8
-   rotmatrixkd = 0.0_8
-   DO ii1=1,ISIZE1OFDrfviscsubface
-   viscsubfaced(ii1)%utau = 0.0_8
-   END DO
-   DO ii1=1,ISIZE1OFDrfbcdata
-   bcdatad(ii1)%norm = 0.0_8
-   END DO
-   DO ii1=1,ISIZE1OFDrfbcdata
-   bcdatad(ii1)%rface = 0.0_8
-   END DO
    DO ii1=1,ISIZE1OFDrfbcdata
    bcdatad(ii1)%fp = 0.0_8
    END DO
@@ -936,63 +206,10 @@
    DO ii1=1,ISIZE1OFDrfbcdata
    bcdatad(ii1)%m = 0.0_8
    END DO
-   DO ii1=1,ISIZE1OFDrfbcdata
-   bcdatad(ii1)%oarea = 0.0_8
-   END DO
-   DO ii1=1,ISIZE1OFDrfbcdata
-   bcdatad(ii1)%sepsensor = 0.0_8
-   END DO
-   DO ii1=1,ISIZE1OFDrfbcdata
-   bcdatad(ii1)%symnorm = 0.0_8
-   END DO
-   DO ii1=1,ISIZE1OFDrfbcdata
-   bcdatad(ii1)%uslip = 0.0_8
-   END DO
-   DO ii1=1,ISIZE1OFDrfbcdata
-   bcdatad(ii1)%tns_wall = 0.0_8
-   END DO
-   DO ii1=1,ISIZE1OFDrfbcdata
-   bcdatad(ii1)%ptinlet = 0.0_8
-   END DO
-   DO ii1=1,ISIZE1OFDrfbcdata
-   bcdatad(ii1)%ttinlet = 0.0_8
-   END DO
-   DO ii1=1,ISIZE1OFDrfbcdata
-   bcdatad(ii1)%htinlet = 0.0_8
-   END DO
-   DO ii1=1,ISIZE1OFDrfbcdata
-   bcdatad(ii1)%flowxdirinlet = 0.0_8
-   END DO
-   DO ii1=1,ISIZE1OFDrfbcdata
-   bcdatad(ii1)%flowydirinlet = 0.0_8
-   END DO
-   DO ii1=1,ISIZE1OFDrfbcdata
-   bcdatad(ii1)%flowzdirinlet = 0.0_8
-   END DO
-   DO ii1=1,ISIZE1OFDrfbcdata
-   bcdatad(ii1)%turbinlet = 0.0_8
-   END DO
-   DO ii1=1,ISIZE1OFDrfbcdata
-   bcdatad(ii1)%rho = 0.0_8
-   END DO
-   DO ii1=1,ISIZE1OFDrfbcdata
-   bcdatad(ii1)%velx = 0.0_8
-   END DO
-   DO ii1=1,ISIZE1OFDrfbcdata
-   bcdatad(ii1)%vely = 0.0_8
-   END DO
-   DO ii1=1,ISIZE1OFDrfbcdata
-   bcdatad(ii1)%velz = 0.0_8
-   END DO
-   DO ii1=1,ISIZE1OFDrfbcdata
-   bcdatad(ii1)%ps = 0.0_8
-   END DO
-   wnd = 0.0_8
-   rho1d = 0.0_8
-   rho2d = 0.0_8
-   dd2walld = 0.0_8
-   xxd = 0.0_8
-   ssd = 0.0_8
+   cfpd = 0.0_8
+   cfvd = 0.0_8
+   cmpd = 0.0_8
+   cmvd = 0.0_8
    ! Loop over the boundary subfaces of this block.
    bocos:DO nn=1,nbocos
    !
@@ -1015,9 +232,10 @@
    ! Set a bunch of pointers depending on the face id to make
    ! a generic treatment possible. The routine setBcPointers
    ! is not used, because quite a few other ones are needed.
-   CALL SETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, &
-   &                     rev2, 0)
-   CALL SETXXSSRHODD2WALL_D(nn, xx, ss, rho1, rho2, dd2wall)
+   CALL SETBCPOINTERS_D(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, pp2, &
+   &                    pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev1d, rev2, &
+   &                    rev2d, 0)
+   CALL SETXXSSRHODD2WALL_D(nn, xx, xxd, ss, rho1, rho2, dd2wall)
    SELECT CASE  (bcfaceid(nn)) 
    CASE (imin) 
    fact = -one
@@ -1042,7 +260,6 @@
    ! cell range, because the latter may include the halo's in i
    ! and j-direction. The offset +1 is there, because inBeg and
    ! jnBeg refer to nodal ranges and not to cell ranges.
-   bcdatad(nn)%oarea(:, :) = 0.0_8
    bcdata(nn)%oarea(:, :) = zero
    DO j=bcdata(nn)%jnbeg+1,bcdata(nn)%jnend
    DO i=bcdata(nn)%inbeg+1,bcdata(nn)%inend
@@ -1053,6 +270,7 @@
    ! offset of 1 must be used. The pressure is multipled by
    ! fact to account for the possibility of an inward or
    ! outward pointing normal.
+   pm1d = fact*scaledim*half*(pp2d(i, j)+pp1d(i, j))
    pm1 = fact*(half*(pp2(i, j)+pp1(i, j))-pinf)*scaledim
    xcd = fourth*(xxd(i, j, 1)+xxd(i+1, j, 1)+xxd(i, j+1, 1)+xxd(i&
    &           +1, j+1, 1))
@@ -1067,11 +285,11 @@
    zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j&
    &           +1, 3)) - refpoint(3)
    ! Compute the force components.
-   fxd = pm1*ssd(i, j, 1)
+   fxd = ss(i, j, 1)*pm1d
    fx = pm1*ss(i, j, 1)
-   fyd = pm1*ssd(i, j, 2)
+   fyd = ss(i, j, 2)*pm1d
    fy = pm1*ss(i, j, 2)
-   fzd = pm1*ssd(i, j, 3)
+   fzd = ss(i, j, 3)*pm1d
    fz = pm1*ss(i, j, 3)
    ! Store Force data on face
    bcdatad(nn)%fp(i, j, 1) = fxd
@@ -1081,25 +299,12 @@
    bcdatad(nn)%fp(i, j, 3) = fzd
    bcdata(nn)%fp(i, j, 3) = fz
    ! Scatter a quarter of the area to each node:
-   arg1d = 2*ss(i, j, 1)*ssd(i, j, 1) + 2*ss(i, j, 2)*ssd(i, j, 2&
-   &           ) + 2*ss(i, j, 3)*ssd(i, j, 3)
    arg1 = ss(i, j, 1)**2 + ss(i, j, 2)**2 + ss(i, j, 3)**2
-   IF (arg1 .EQ. 0.0_8) THEN
-   result1d = 0.0_8
-   ELSE
-   result1d = arg1d/(2.0*SQRT(arg1))
-   END IF
    result1 = SQRT(arg1)
-   qad = fourth*result1d
    qa = fourth*result1
-   bcdatad(nn)%oarea(i-1, j-1) = bcdatad(nn)%oarea(i-1, j-1) + &
-   &           qad
    bcdata(nn)%oarea(i-1, j-1) = bcdata(nn)%oarea(i-1, j-1) + qa
-   bcdatad(nn)%oarea(i, j-1) = bcdatad(nn)%oarea(i, j-1) + qad
    bcdata(nn)%oarea(i, j-1) = bcdata(nn)%oarea(i, j-1) + qa
-   bcdatad(nn)%oarea(i-1, j) = bcdatad(nn)%oarea(i-1, j) + qad
    bcdata(nn)%oarea(i-1, j) = bcdata(nn)%oarea(i-1, j) + qa
-   bcdatad(nn)%oarea(i, j) = bcdatad(nn)%oarea(i, j) + qad
    bcdata(nn)%oarea(i, j) = bcdata(nn)%oarea(i, j) + qa
    ! Get normalized surface velocity:
    v(1) = ww2(i, j, ivx)
@@ -1114,14 +319,15 @@
    !Now run through a smooth heaviside function:
    sensor = one/(one+EXP(-(2*10*sensor)))
    ! And integrate over the area of this cell and save:
-   sensord = sensor*four*qad
    sensor = sensor*four*qa
    sepsensor = sepsensor + sensor
-   bcdatad(nn)%sepsensor(i, j) = sensord
    bcdata(nn)%sepsensor(i, j) = sensor
    ! Update the inviscid force and moment coefficients.
+   cfpd(1) = cfpd(1) + fxd
    cfp(1) = cfp(1) + fx
+   cfpd(2) = cfpd(2) + fyd
    cfp(2) = cfp(2) + fy
+   cfpd(3) = cfpd(3) + fzd
    cfp(3) = cfp(3) + fz
    mxd = ycd*fz + yc*fzd - zcd*fy - zc*fyd
    mx = yc*fz - zc*fy
@@ -1129,8 +335,11 @@
    my = zc*fx - xc*fz
    mzd = xcd*fy + xc*fyd - ycd*fx - yc*fxd
    mz = xc*fy - yc*fx
+   cmpd(1) = cmpd(1) + mxd
    cmp(1) = cmp(1) + mx
+   cmpd(2) = cmpd(2) + myd
    cmp(2) = cmp(2) + my
+   cmpd(3) = cmpd(3) + mzd
    cmp(3) = cmp(3) + mz
    ! Store Moment data on face
    bcdatad(nn)%m(i, j, 1) = mxd
@@ -1177,19 +386,16 @@
    tauyz = viscsubface(nn)%tau(i, j, 6)
    ! Compute the viscous force on the face. A minus sign
    ! is now present, due to the definition of this force.
-   fxd = -(fact*scaledim*(tauxxd*ss(i, j, 1)+tauxx*ssd(i, j, 1)&
-   &             +tauxyd*ss(i, j, 2)+tauxy*ssd(i, j, 2)+tauxzd*ss(i, j, 3)+&
-   &             tauxz*ssd(i, j, 3)))
+   fxd = -(fact*scaledim*(ss(i, j, 1)*tauxxd+ss(i, j, 2)*tauxyd&
+   &             +ss(i, j, 3)*tauxzd))
    fx = -(fact*(tauxx*ss(i, j, 1)+tauxy*ss(i, j, 2)+tauxz*ss(i&
    &             , j, 3))*scaledim)
-   fyd = -(fact*scaledim*(tauxyd*ss(i, j, 1)+tauxy*ssd(i, j, 1)&
-   &             +tauyyd*ss(i, j, 2)+tauyy*ssd(i, j, 2)+tauyzd*ss(i, j, 3)+&
-   &             tauyz*ssd(i, j, 3)))
+   fyd = -(fact*scaledim*(ss(i, j, 1)*tauxyd+ss(i, j, 2)*tauyyd&
+   &             +ss(i, j, 3)*tauyzd))
    fy = -(fact*(tauxy*ss(i, j, 1)+tauyy*ss(i, j, 2)+tauyz*ss(i&
    &             , j, 3))*scaledim)
-   fzd = -(fact*scaledim*(tauxzd*ss(i, j, 1)+tauxz*ssd(i, j, 1)&
-   &             +tauyzd*ss(i, j, 2)+tauyz*ssd(i, j, 2)+tauzzd*ss(i, j, 3)+&
-   &             tauzz*ssd(i, j, 3)))
+   fzd = -(fact*scaledim*(ss(i, j, 1)*tauxzd+ss(i, j, 2)*tauyzd&
+   &             +ss(i, j, 3)*tauzzd))
    fz = -(fact*(tauxz*ss(i, j, 1)+tauyz*ss(i, j, 2)+tauzz*ss(i&
    &             , j, 3))*scaledim)
    ! Compute the coordinates of the centroid of the face
@@ -1209,8 +415,11 @@
    zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1&
    &             , j+1, 3)) - refpoint(3)
    ! Update the viscous force and moment coefficients.
+   cfvd(1) = cfvd(1) + fxd
    cfv(1) = cfv(1) + fx
+   cfvd(2) = cfvd(2) + fyd
    cfv(2) = cfv(2) + fy
+   cfvd(3) = cfvd(3) + fzd
    cfv(3) = cfv(3) + fz
    ! Store Force data on face
    bcdatad(nn)%fv(i, j, 1) = fxd
@@ -1225,8 +434,11 @@
    my = zc*fx - xc*fz
    mzd = xcd*fy + xc*fyd - ycd*fx - yc*fxd
    mz = xc*fy - yc*fx
+   cmvd(1) = cmvd(1) + mxd
    cmv(1) = cmv(1) + mx
+   cmvd(2) = cmvd(2) + myd
    cmv(2) = cmv(2) + my
+   cmvd(3) = cmvd(3) + mzd
    cmv(3) = cmv(3) + mz
    ! Store Moment data on face
    bcdatad(nn)%m(i, j, 1) = bcdatad(nn)%m(i, j, 1) + mxd
@@ -1277,15 +489,12 @@
    ! We have to inverse the nodal areas
    DO j=bcdata(nn)%jnbeg,bcdata(nn)%jnend
    DO i=bcdata(nn)%inbeg,bcdata(nn)%inend
-   bcdatad(nn)%oarea(i, j) = -(one*bcdatad(nn)%oarea(i, j)/bcdata&
-   &           (nn)%oarea(i, j)**2)
    bcdata(nn)%oarea(i, j) = one/bcdata(nn)%oarea(i, j)
    END DO
    END DO
    CALL RESETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, &
    &                       rev2, 0)
-   CALL RESETXXSSRHODD2WALL_D(nn, xx, xxd, ss, ssd, rho1, rho1d, rho2&
-   &                          , rho2d, dd2wall, dd2walld)
+   CALL RESETXXSSRHODD2WALL(nn, xx, ss, rho1, rho2, dd2wall)
    END IF
    END DO bocos
    ! Currently the coefficients only contain the surface integral
@@ -1293,17 +502,29 @@
    ! obtain the correct coefficients.
    fact = two/(gammainf*pinf*machcoef*machcoef*surfaceref*lref*lref*&
    &   scaledim)
+   cfpd(1) = fact*cfpd(1)
    cfp(1) = cfp(1)*fact
+   cfpd(2) = fact*cfpd(2)
    cfp(2) = cfp(2)*fact
+   cfpd(3) = fact*cfpd(3)
    cfp(3) = cfp(3)*fact
+   cfvd(1) = fact*cfvd(1)
    cfv(1) = cfv(1)*fact
+   cfvd(2) = fact*cfvd(2)
    cfv(2) = cfv(2)*fact
+   cfvd(3) = fact*cfvd(3)
    cfv(3) = cfv(3)*fact
    fact = fact/(lengthref*lref)
+   cmpd(1) = fact*cmpd(1)
    cmp(1) = cmp(1)*fact
+   cmpd(2) = fact*cmpd(2)
    cmp(2) = cmp(2)*fact
+   cmpd(3) = fact*cmpd(3)
    cmp(3) = cmp(3)*fact
+   cmvd(1) = fact*cmvd(1)
    cmv(1) = cmv(1)*fact
+   cmvd(2) = fact*cmvd(2)
    cmv(2) = cmv(2)*fact
+   cmvd(3) = fact*cmvd(3)
    cmv(3) = cmv(3)*fact
    END SUBROUTINE FORCESANDMOMENTS_D

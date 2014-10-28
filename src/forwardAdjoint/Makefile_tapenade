@@ -44,12 +44,12 @@ TAPENADE_PRECISION = -i4 -dr8 -r8
 # -------------------- Residual AD Info---------------------------------
 # Dependent output variables (separator: white space, default: all)
 #TAPENADE_RES_OUTVARS = "flowdoms%dw  BCData%Fp BCData%Fv BCData%M  BCData%oArea flowdoms%w flowdoms%x force moment"
-TAPENADE_RES_OUTVARS = "flowdoms%dw  flowdoms%w  flowdoms%x"
+TAPENADE_RES_OUTVARS = "flowdoms%dw  flowdoms%w"
 #TAPENADE_RES_OUTVARS = "dw w"
 
 # Independent input variables (separator: white space, default: all)
-TAPENADE_RES_VARS = "flowdoms%w  flowdoms%x"
-#TAPENADE_RES_VARS = "w"
+#TAPENADE_RES_VARS = "flowdoms%w flowdoms%x"
+TAPENADE_RES_VARS = "flowdoms%w"
 #Reynolds ReynoldsLength
 
 # Name of the top routine

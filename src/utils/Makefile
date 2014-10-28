@@ -87,6 +87,10 @@ FILES_TO_COMPLEXIFY =  \
 	       resetww0pp0rlv0rev0.f90\
 	       setww0pp0rlv0rev0Bwd.f90\
 	       resetww0pp0rlv0rev0Bwd.f90\
+	       setxxssrhodd2Wall.f90\
+	       resetxxssrhodd2Wall.f90\
+	       setxxssrhodd2WallBwd.f90\
+	       resetxxssrhodd2WallBwd.f90\
 	       setBufferSizes.f90\
 	       setCGNSRealType.F90\
 	       setPointers.f90\

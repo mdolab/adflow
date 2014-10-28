@@ -2,11 +2,11 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of residual_block in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *dw *w *x
+   !   gradient     of useful results: *dw *w
    !   with respect to varying inputs: *rev *p *gamma *dw *w *rlv
-   !                *x *radi *radj *radk
+   !                *radi *radj *radk
    !   Plus diff mem management of: rev:in p:in gamma:in dw:in w:in
-   !                rlv:in x:in fw:in radi:in radj:in radk:in
+   !                rlv:in fw:in radi:in radj:in radk:in
    !
    !      ******************************************************************
    !      *                                                                *
