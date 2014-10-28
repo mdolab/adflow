@@ -208,7 +208,9 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
 
   !  Actual residual calc
   call residual_block
-  
+  ! Note that there are some error introduced by viscousflux from fw
+  ! The error only show up in the rho term in some cells
+
   ! Divide through by the volume
   do sps2 = 1,nTimeIntervalsSpectral
      do l=1, nState

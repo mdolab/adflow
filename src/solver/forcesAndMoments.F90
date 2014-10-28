@@ -47,13 +47,80 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor)
 
   real(kind=realType), dimension(3) :: refPoint
 
+#ifndef TAPENADE_REVERSE
   real(kind=realType), dimension(:,:),   pointer :: pp2, pp1
   real(kind=realType), dimension(:,:),   pointer :: rho2, rho1
   real(kind=realType), dimension(:,:),   pointer :: rlv2, rlv1
+  real(kind=realType), dimension(:,:),   pointer :: rev1, rev2
   real(kind=realType), dimension(:,:),   pointer :: dd2Wall
   real(kind=realType), dimension(:,:,:), pointer :: ss, xx
-  real(kind=realType), dimension(:,:,:), pointer :: ww2
-  real(kind=realType), dimension(:,:,:), pointer :: norm
+  real(kind=realType), dimension(:,:,:), pointer :: ww1, ww2
+  !real(kind=realType), dimension(:,:,:), pointer :: norm
+
+!
+!      Interfaces
+!
+       interface
+         subroutine setBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
+                                  rev1, rev2, offset)
+           use blockPointers
+           implicit none
+
+           integer(kind=intType), intent(in) :: nn, offset
+           real(kind=realType), dimension(:,:,:), pointer :: ww1, ww2
+           real(kind=realType), dimension(:,:),   pointer :: pp1, pp2
+           real(kind=realType), dimension(:,:),   pointer :: rlv1, rlv2
+           real(kind=realType), dimension(:,:),   pointer :: rev1, rev2
+         end subroutine setBCPointers
+
+         subroutine resetBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
+                                  rev1, rev2, offset)
+           use blockPointers
+           implicit none
+
+           integer(kind=intType), intent(in) :: nn, offset
+           real(kind=realType), dimension(:,:,:), pointer :: ww1, ww2
+           real(kind=realType), dimension(:,:),   pointer :: pp1, pp2
+           real(kind=realType), dimension(:,:),   pointer :: rlv1, rlv2
+           real(kind=realType), dimension(:,:),   pointer :: rev1, rev2
+         end subroutine resetBCPointers
+
+        subroutine setxxssrhodd2Wall(nn, xx, ss, rho1, rho2, dd2Wall)
+
+           use BCTypes
+           use blockPointers
+           implicit none
+
+           integer(kind=intType), intent(in) :: nn
+           real(kind=realType), dimension(:,:),   pointer :: rho2, rho1
+           real(kind=realType), dimension(:,:),   pointer :: dd2Wall
+           real(kind=realType), dimension(:,:,:), pointer :: ss, xx
+         end subroutine setxxssrhodd2Wall
+
+        subroutine resetxxssrhodd2Wall(nn, xx, ss, rho1, rho2, dd2Wall)
+
+           use BCTypes
+           use blockPointers
+           implicit none
+
+           integer(kind=intType), intent(in) :: nn
+           real(kind=realType), dimension(:,:),   pointer :: rho2, rho1
+           real(kind=realType), dimension(:,:),   pointer :: dd2Wall
+           real(kind=realType), dimension(:,:,:), pointer :: ss, xx
+         end subroutine resetxxssrhodd2Wall
+
+       end interface
+
+#else
+       real(kind=realType), dimension(imaxDim,jmaxDim,nw) :: ww1, ww2
+       real(kind=realType), dimension(imaxDim,jmaxDim) :: pp1, pp2
+       real(kind=realType), dimension(imaxDim,jmaxDim) :: rho2, rho1
+       real(kind=realType), dimension(imaxDim,jmaxDim) :: rlv1, rlv2
+       real(kind=realType), dimension(imaxDim,jmaxDim) :: rev1, rev2
+       real(kind=realType), dimension(imaxDim,jmaxDim) :: dd2Wall
+       real(kind=realType), dimension(imaxDim,jmaxDim,3) :: ss, xx
+#endif
+
   real(kind=realType) :: mx, my, mz, qa
   logical :: viscousSubface
   !
@@ -111,6 +178,16 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor)
         ! Set a bunch of pointers depending on the face id to make
         ! a generic treatment possible. The routine setBcPointers
         ! is not used, because quite a few other ones are needed.
+
+        #ifndef TAPENADE_REVERSE
+           call setBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
+                              rev1, rev2, 0)
+           call setxxssrhodd2Wall(nn, xx, ss, rho1, rho2, dd2Wall)
+#else
+           call setBCPointersBwd(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
+                rev1, rev2, 0)
+           call setxxssrhodd2WallBwd(nn, xx, ss, rho1, rho2, dd2Wall)
+#endif
 
         select case (BCFaceID(nn))
 
@@ -411,6 +488,16 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor)
               bcData(nn)%oArea(i,j) = one/bcData(nn)%oArea(i,j)
            end do
         end do
+
+#ifndef TAPENADE_REVERSE
+           call resetBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
+                              rev1, rev2, 0)
+           call resetxxssrhodd2Wall(nn, xx, ss, rho1, rho2, dd2Wall)
+#else
+           call resetBCPointersBwd(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
+                rev1, rev2, 0)
+           call resetxxssrhodd2WallBwd(nn, xx, ss, rho1, rho2, dd2Wall)
+#endif
 
      endif invForce
 
