@@ -179,7 +179,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor)
         ! a generic treatment possible. The routine setBcPointers
         ! is not used, because quite a few other ones are needed.
 
-        #ifndef TAPENADE_REVERSE
+#ifndef TAPENADE_REVERSE
            call setBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
                               rev1, rev2, 0)
            call setxxssrhodd2Wall(nn, xx, ss, rho1, rho2, dd2Wall)
@@ -192,86 +192,32 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor)
         select case (BCFaceID(nn))
 
         case (iMin)
-           pp2  => p(2,1:,1:);      pp1  => p(1,1:,1:)
-           rho2 => w(2,1:,1:,irho); rho1 => w(1,1:,1:,irho)
-           ss   => si(1,:,:,:);     xx   => x(1,:,:,:)
-           ww2 => w(2,1:,1:,:)
            fact = -one
-
-           if(equations == RANSEquations) dd2Wall => d2Wall(2,:,:)
-           if( viscousSubface ) then
-              rlv2 => rlv(2,1:,1:); rlv1 => rlv(1,1:,1:)
-           endif
 
            !===========================================================
 
         case (iMax)
-           pp2  => p(il,1:,1:);      pp1  => p(ie,1:,1:)
-           rho2 => w(il,1:,1:,irho); rho1 => w(ie,1:,1:,irho)
-           ss   => si(il,:,:,:);     xx   => x(il,:,:,:)
-           ww2    => w(il,1:,1:,:)
            fact = one
-
-           if(equations == RANSEquations) dd2Wall => d2Wall(il,:,:)
-           if( viscousSubface ) then
-              rlv2 => rlv(il,1:,1:); rlv1 => rlv(ie,1:,1:)
-           endif
 
            !===========================================================
 
         case (jMin)
-           pp2  => p(1:,2,1:);      pp1  => p(1:,1,1:)
-           rho2 => w(1:,2,1:,irho); rho1 => w(1:,1,1:,irho)
-           ss   => sj(:,1,:,:);     xx   => x(:,1,:,:)
-           ww2    => w(1:,2,1:,:)
            fact = -one
-
-           if(equations == RANSEquations) dd2Wall => d2Wall(:,2,:)
-           if( viscousSubface ) then
-              rlv2 => rlv(1:,2,1:); rlv1 => rlv(1:,1,1:)
-           endif
 
            !===========================================================
 
         case (jMax)
-           pp2  => p(1:,jl,1:);      pp1  => p(1:,je,1:)
-           rho2 => w(1:,jl,1:,irho); rho1 => w(1:,je,1:,irho)
-           ss   => sj(:,jl,:,:);     xx   => x(:,jl,:,:)
-           ww2    => w(1:,jl,1:,:)
            fact = one
-
-           if(equations == RANSEquations) dd2Wall => d2Wall(:,jl,:)
-           if( viscousSubface ) then
-              rlv2 => rlv(1:,jl,1:); rlv1 => rlv(1:,je,1:)
-           endif
 
            !===========================================================
 
         case (kMin)
-           pp2  => p(1:,1:,2);      pp1  => p(1:,1:,1)
-           rho2 => w(1:,1:,2,irho); rho1 => w(1:,1:,1,irho)
-           ss   => sk(:,:,1,:);     xx   => x(:,:,1,:)
-           ww2    => w(1:,1:,2,:)
            fact = -one
-
-           if(equations == RANSEquations) dd2Wall => d2Wall(:,:,2)
-           if( viscousSubface ) then
-              rlv2 => rlv(1:,1:,2); rlv1 => rlv(1:,1:,1)
-           endif
 
            !===========================================================
 
         case (kMax)
-           pp2  => p(1:,1:,kl);      pp1  => p(1:,1:,ke)
-           rho2 => w(1:,1:,kl,irho); rho1 => w(1:,1:,ke,irho)
-           ss   => sk(:,:,kl,:);     xx   => x(:,:,kl,:)
-           ww2    => w(1:,1:,kl,:)
            fact = one
-
-           if(equations == RANSEquations) dd2Wall => d2Wall(:,:,kl)
-           if( viscousSubface ) then
-              rlv2 => rlv(1:,1:,kl); rlv1 => rlv(1:,1:,ke)
-           endif
 
         end select
 
@@ -373,7 +319,8 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor)
            ! for the unit normals.
 
            dwall = zero
-           norm => BCData(nn)%norm
+           ! Replace norm with BCData norm - Peter Lyu
+           !norm => BCData(nn)%norm
 
            ! Loop over the quadrilateral faces of the subface and
            ! compute the viscous contribution to the force and
@@ -445,18 +392,18 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor)
                  ! component is important, there is no need to take the
                  ! sign into account (it should be a minus sign).
 
-                 fx = tauXx*norm(i,j,1) + tauXy*norm(i,j,2) &
-                      + tauXz*norm(i,j,3)
-                 fy = tauXy*norm(i,j,1) + tauYy*norm(i,j,2) &
-                      + tauYz*norm(i,j,3)
-                 fz = tauXz*norm(i,j,1) + tauYz*norm(i,j,2) &
-                      + tauZz*norm(i,j,3)
+                 fx = tauXx*BCData(nn)%norm(i,j,1) + tauXy*BCData(nn)%norm(i,j,2) &
+                      + tauXz*BCData(nn)%norm(i,j,3)
+                 fy = tauXy*BCData(nn)%norm(i,j,1) + tauYy*BCData(nn)%norm(i,j,2) &
+                      + tauYz*BCData(nn)%norm(i,j,3)
+                 fz = tauXz*BCData(nn)%norm(i,j,1) + tauYz*BCData(nn)%norm(i,j,2) &
+                      + tauZz*BCData(nn)%norm(i,j,3)
 
-                 fn = fx*norm(i,j,1) + fy*norm(i,j,2) + fz*norm(i,j,3)
+                 fn = fx*BCData(nn)%norm(i,j,1) + fy*BCData(nn)%norm(i,j,2) + fz*BCData(nn)%norm(i,j,3)
 
-                 fx = fx - fn*norm(i,j,1)
-                 fy = fy - fn*norm(i,j,2)
-                 fz = fz - fn*norm(i,j,3)
+                 fx = fx - fn*BCData(nn)%norm(i,j,1)
+                 fy = fy - fn*BCData(nn)%norm(i,j,2)
+                 fz = fz - fn*BCData(nn)%norm(i,j,3)
 
 
             

@@ -2,10 +2,12 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of viscousflux in forward (tangent) mode (with options i4 dr8 r8):
-   !   variations   of useful results: *fw
+   !   variations   of useful results: *p *fw *(*viscsubface.tau)
+   !                *(*viscsubface.q)
    !   with respect to varying inputs: *rev *p *gamma *w *rlv *x *fw
    !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
-   !                x:in fw:in
+   !                x:in vol:in si:in sj:in sk:in fw:in viscsubface:in
+   !                *viscsubface.tau:in *viscsubface.q:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -31,6 +33,8 @@
    USE FLOWVARREFSTATE
    USE INPUTPHYSICS
    USE ITERATION
+   USE DIFFSIZES
+   !  Hint: ISIZE1OFDrfviscsubface should be the size of dimension 1 of array *viscsubface
    IMPLICIT NONE
    !
    !      Local parameter.
@@ -74,6 +78,7 @@
    REAL(kind=realtype) :: result1
    REAL(kind=realtype) :: result1d
    REAL(kind=realtype) :: abs0
+   INTEGER :: ii1
    !
    !      ******************************************************************
    !      *                                                                *
@@ -104,6 +109,12 @@
    abs0 = -rfilv
    END IF
    IF (abs0 .LT. thresholdreal) THEN
+   DO ii1=1,ISIZE1OFDrfviscsubface
+   viscsubfaced(ii1)%tau = 0.0_8
+   END DO
+   DO ii1=1,ISIZE1OFDrfviscsubface
+   viscsubfaced(ii1)%q = 0.0_8
+   END DO
    RETURN
    ELSE
    ! Determine whether or not the pressure must be corrected
@@ -167,6 +178,12 @@
    ! Compute the viscous fluxes for the faces k == 1 and update
    ! the residuals for the cells k == 2.
    mue = zero
+   DO ii1=1,ISIZE1OFDrfviscsubface
+   viscsubfaced(ii1)%tau = 0.0_8
+   END DO
+   DO ii1=1,ISIZE1OFDrfviscsubface
+   viscsubfaced(ii1)%q = 0.0_8
+   END DO
    mued = 0.0_8
    DO j=2,jl
    DO i=2,il
@@ -397,14 +414,23 @@
    ! face is part of a viscous subface.
    IF (storewalltensor .AND. visckminpointer(i, j) .GT. 0) THEN
    nn = visckminpointer(i, j)
+   viscsubfaced(nn)%tau(i, j, 1) = tauxxd
    viscsubface(nn)%tau(i, j, 1) = tauxx
+   viscsubfaced(nn)%tau(i, j, 2) = tauyyd
    viscsubface(nn)%tau(i, j, 2) = tauyy
+   viscsubfaced(nn)%tau(i, j, 3) = tauzzd
    viscsubface(nn)%tau(i, j, 3) = tauzz
+   viscsubfaced(nn)%tau(i, j, 4) = tauxyd
    viscsubface(nn)%tau(i, j, 4) = tauxy
+   viscsubfaced(nn)%tau(i, j, 5) = tauxzd
    viscsubface(nn)%tau(i, j, 5) = tauxz
+   viscsubfaced(nn)%tau(i, j, 6) = tauyzd
    viscsubface(nn)%tau(i, j, 6) = tauyz
+   viscsubfaced(nn)%q(i, j, 1) = q_xd
    viscsubface(nn)%q(i, j, 1) = q_x
+   viscsubfaced(nn)%q(i, j, 2) = q_yd
    viscsubface(nn)%q(i, j, 2) = q_y
+   viscsubfaced(nn)%q(i, j, 3) = q_zd
    viscsubface(nn)%q(i, j, 3) = q_z
    END IF
    END DO
@@ -666,14 +692,23 @@
    IF (k .EQ. kl .AND. storewalltensor .AND. visckmaxpointer(i, j&
    &             ) .GT. 0) THEN
    nn = visckmaxpointer(i, j)
+   viscsubfaced(nn)%tau(i, j, 1) = tauxxd
    viscsubface(nn)%tau(i, j, 1) = tauxx
+   viscsubfaced(nn)%tau(i, j, 2) = tauyyd
    viscsubface(nn)%tau(i, j, 2) = tauyy
+   viscsubfaced(nn)%tau(i, j, 3) = tauzzd
    viscsubface(nn)%tau(i, j, 3) = tauzz
+   viscsubfaced(nn)%tau(i, j, 4) = tauxyd
    viscsubface(nn)%tau(i, j, 4) = tauxy
+   viscsubfaced(nn)%tau(i, j, 5) = tauxzd
    viscsubface(nn)%tau(i, j, 5) = tauxz
+   viscsubfaced(nn)%tau(i, j, 6) = tauyzd
    viscsubface(nn)%tau(i, j, 6) = tauyz
+   viscsubfaced(nn)%q(i, j, 1) = q_xd
    viscsubface(nn)%q(i, j, 1) = q_x
+   viscsubfaced(nn)%q(i, j, 2) = q_yd
    viscsubface(nn)%q(i, j, 2) = q_y
+   viscsubfaced(nn)%q(i, j, 3) = q_zd
    viscsubface(nn)%q(i, j, 3) = q_z
    END IF
    END DO
@@ -924,28 +959,46 @@
    IF (j .EQ. 1 .AND. storewalltensor .AND. viscjminpointer(i, k)&
    &             .GT. 0) THEN
    nn = viscjminpointer(i, k)
+   viscsubfaced(nn)%tau(i, k, 1) = tauxxd
    viscsubface(nn)%tau(i, k, 1) = tauxx
+   viscsubfaced(nn)%tau(i, k, 2) = tauyyd
    viscsubface(nn)%tau(i, k, 2) = tauyy
+   viscsubfaced(nn)%tau(i, k, 3) = tauzzd
    viscsubface(nn)%tau(i, k, 3) = tauzz
+   viscsubfaced(nn)%tau(i, k, 4) = tauxyd
    viscsubface(nn)%tau(i, k, 4) = tauxy
+   viscsubfaced(nn)%tau(i, k, 5) = tauxzd
    viscsubface(nn)%tau(i, k, 5) = tauxz
+   viscsubfaced(nn)%tau(i, k, 6) = tauyzd
    viscsubface(nn)%tau(i, k, 6) = tauyz
+   viscsubfaced(nn)%q(i, k, 1) = q_xd
    viscsubface(nn)%q(i, k, 1) = q_x
+   viscsubfaced(nn)%q(i, k, 2) = q_yd
    viscsubface(nn)%q(i, k, 2) = q_y
+   viscsubfaced(nn)%q(i, k, 3) = q_zd
    viscsubface(nn)%q(i, k, 3) = q_z
    END IF
    ! And the j == jl case.
    IF (j .EQ. jl .AND. storewalltensor .AND. viscjmaxpointer(i, k&
    &             ) .GT. 0) THEN
    nn = viscjmaxpointer(i, k)
+   viscsubfaced(nn)%tau(i, k, 1) = tauxxd
    viscsubface(nn)%tau(i, k, 1) = tauxx
+   viscsubfaced(nn)%tau(i, k, 2) = tauyyd
    viscsubface(nn)%tau(i, k, 2) = tauyy
+   viscsubfaced(nn)%tau(i, k, 3) = tauzzd
    viscsubface(nn)%tau(i, k, 3) = tauzz
+   viscsubfaced(nn)%tau(i, k, 4) = tauxyd
    viscsubface(nn)%tau(i, k, 4) = tauxy
+   viscsubfaced(nn)%tau(i, k, 5) = tauxzd
    viscsubface(nn)%tau(i, k, 5) = tauxz
+   viscsubfaced(nn)%tau(i, k, 6) = tauyzd
    viscsubface(nn)%tau(i, k, 6) = tauyz
+   viscsubfaced(nn)%q(i, k, 1) = q_xd
    viscsubface(nn)%q(i, k, 1) = q_x
+   viscsubfaced(nn)%q(i, k, 2) = q_yd
    viscsubface(nn)%q(i, k, 2) = q_y
+   viscsubfaced(nn)%q(i, k, 3) = q_zd
    viscsubface(nn)%q(i, k, 3) = q_z
    END IF
    END DO
@@ -1196,28 +1249,46 @@
    IF (i .EQ. 1 .AND. storewalltensor .AND. visciminpointer(j, k)&
    &             .GT. 0) THEN
    nn = visciminpointer(j, k)
+   viscsubfaced(nn)%tau(j, k, 1) = tauxxd
    viscsubface(nn)%tau(j, k, 1) = tauxx
+   viscsubfaced(nn)%tau(j, k, 2) = tauyyd
    viscsubface(nn)%tau(j, k, 2) = tauyy
+   viscsubfaced(nn)%tau(j, k, 3) = tauzzd
    viscsubface(nn)%tau(j, k, 3) = tauzz
+   viscsubfaced(nn)%tau(j, k, 4) = tauxyd
    viscsubface(nn)%tau(j, k, 4) = tauxy
+   viscsubfaced(nn)%tau(j, k, 5) = tauxzd
    viscsubface(nn)%tau(j, k, 5) = tauxz
+   viscsubfaced(nn)%tau(j, k, 6) = tauyzd
    viscsubface(nn)%tau(j, k, 6) = tauyz
+   viscsubfaced(nn)%q(j, k, 1) = q_xd
    viscsubface(nn)%q(j, k, 1) = q_x
+   viscsubfaced(nn)%q(j, k, 2) = q_yd
    viscsubface(nn)%q(j, k, 2) = q_y
+   viscsubfaced(nn)%q(j, k, 3) = q_zd
    viscsubface(nn)%q(j, k, 3) = q_z
    END IF
    ! And the i == il case.
    IF (i .EQ. il .AND. storewalltensor .AND. viscimaxpointer(j, k&
    &             ) .GT. 0) THEN
    nn = viscimaxpointer(j, k)
+   viscsubfaced(nn)%tau(j, k, 1) = tauxxd
    viscsubface(nn)%tau(j, k, 1) = tauxx
+   viscsubfaced(nn)%tau(j, k, 2) = tauyyd
    viscsubface(nn)%tau(j, k, 2) = tauyy
+   viscsubfaced(nn)%tau(j, k, 3) = tauzzd
    viscsubface(nn)%tau(j, k, 3) = tauzz
+   viscsubfaced(nn)%tau(j, k, 4) = tauxyd
    viscsubface(nn)%tau(j, k, 4) = tauxy
+   viscsubfaced(nn)%tau(j, k, 5) = tauxzd
    viscsubface(nn)%tau(j, k, 5) = tauxz
+   viscsubfaced(nn)%tau(j, k, 6) = tauyzd
    viscsubface(nn)%tau(j, k, 6) = tauyz
+   viscsubfaced(nn)%q(j, k, 1) = q_xd
    viscsubface(nn)%q(j, k, 1) = q_x
+   viscsubfaced(nn)%q(j, k, 2) = q_yd
    viscsubface(nn)%q(j, k, 2) = q_y
+   viscsubfaced(nn)%q(j, k, 3) = q_zd
    viscsubface(nn)%q(j, k, 3) = q_z
    END IF
    END DO
@@ -1228,7 +1299,9 @@
    DO k=1,ke
    DO j=1,je
    DO i=1,ie
-   pd(i, j, k) = 0.0_8
+   pd(i, j, k) = ((wd(i, j, k, irho)*p(i, j, k)+w(i, j, k, irho)*&
+   &           pd(i, j, k))*gamma(i, j, k)-w(i, j, k, irho)*p(i, j, k)*&
+   &           gammad(i, j, k))/gamma(i, j, k)**2
    p(i, j, k) = w(i, j, k, irho)*p(i, j, k)/gamma(i, j, k)
    END DO
    END DO
@@ -1237,7 +1310,8 @@
    DO k=1,ke
    DO j=1,je
    DO i=1,ie
-   pd(i, j, k) = 0.0_8
+   pd(i, j, k) = pd(i, j, k) + twothird*(wd(i, j, k, irho)*w(i&
+   &             , j, k, itu1)+w(i, j, k, irho)*wd(i, j, k, itu1))
    p(i, j, k) = p(i, j, k) + twothird*w(i, j, k, irho)*w(i, j, &
    &             k, itu1)
    END DO
@@ -1251,7 +1325,7 @@
    !                vx vy vz
    !   with respect to varying inputs: *p *w wx wy wz qx qy qz ux
    !                uy uz vx vy vz
-   !   Plus diff mem management of: p:in w:in
+   !   Plus diff mem management of: p:in w:in vol:in si:in sj:in sk:in
    ! Possibly correct the wall shear stress.
    ! Wall function is not ADed
    SUBROUTINE NODALGRADIENTS_D(ux, uxd, uy, uyd, uz, uzd, vx, vxd, vy, &

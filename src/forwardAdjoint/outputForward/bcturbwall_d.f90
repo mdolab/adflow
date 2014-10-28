@@ -9,8 +9,8 @@
    !                *rlv *bvtk1 *bvtk2 *bmti1 *bmti2 *bvti1 *bvti2
    !                *bmtj1 *bmtj2
    !   Plus diff mem management of: bvtj1:in bvtj2:in bmtk1:in w:in
-   !                bmtk2:in rlv:in bvtk1:in bvtk2:in bmti1:in bmti2:in
-   !                bvti1:in bvti2:in bmtj1:in bmtj2:in
+   !                bmtk2:in rlv:in bvtk1:in bvtk2:in d2wall:in bmti1:in
+   !                bmti2:in bvti1:in bvti2:in bmtj1:in bmtj2:in bcdata:in
    !
    !      ******************************************************************
    !      *                                                                *

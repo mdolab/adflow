@@ -2,20 +2,132 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of block_res in forward (tangent) mode (with options i4 dr8 r8):
-   !   variations   of useful results: *(flowdoms.w) *(flowdoms.dw)
+   !   variations   of useful results: *(flowdoms.x) *(flowdoms.w)
+   !                *(flowdoms.dw)
    !   with respect to varying inputs: *(flowdoms.x) *(flowdoms.w)
-   !   RW status of diff variables: *(flowdoms.x):in *(flowdoms.w):in-out
-   !                *(flowdoms.dw):out *rev:(loc) *bvtj1:(loc) *bvtj2:(loc)
-   !                *p:(loc) *gamma:(loc) *bmtk1:(loc) *bmtk2:(loc)
-   !                *rlv:(loc) *bvtk1:(loc) *bvtk2:(loc) *bmti1:(loc)
-   !                *bmti2:(loc) *bvti1:(loc) *bvti2:(loc) *fw:(loc)
-   !                *bmtj1:(loc) *bmtj2:(loc) *radi:(loc) *radj:(loc)
-   !                *radk:(loc)
-   !   Plus diff mem management of: flowdoms.x:in flowdoms.w:in flowdoms.dw:in
-   !                rev:in bvtj1:in bvtj2:in p:in gamma:in bmtk1:in
-   !                bmtk2:in rlv:in bvtk1:in bvtk2:in bmti1:in bmti2:in
-   !                bvti1:in bvti2:in fw:in bmtj1:in bmtj2:in radi:in
-   !                radj:in radk:in
+   !   RW status of diff variables: *(flowdoms.overint):(loc) *(*(flowdoms.bcdata).norm):(loc)
+   !                *(*(flowdoms.bcdata).rface):(loc) *(*(flowdoms.bcdata).fp):(loc)
+   !                *(*(flowdoms.bcdata).fv):(loc) *(*(flowdoms.bcdata).m):(loc)
+   !                *(*(flowdoms.bcdata).oarea):(loc) *(*(flowdoms.bcdata).sepsensor):(loc)
+   !                *(flowdoms.bcdata).symnorm:(loc) *(*(flowdoms.bcdata).uslip):(loc)
+   !                *(*(flowdoms.bcdata).tns_wall):(loc) *(*(flowdoms.bcdata).ptinlet):(loc)
+   !                *(*(flowdoms.bcdata).ttinlet):(loc) *(*(flowdoms.bcdata).htinlet):(loc)
+   !                *(*(flowdoms.bcdata).flowxdirinlet):(loc) *(*(flowdoms.bcdata).flowydirinlet):(loc)
+   !                *(*(flowdoms.bcdata).flowzdirinlet):(loc) *(*(flowdoms.bcdata).turbinlet):(loc)
+   !                *(*(flowdoms.bcdata).rho):(loc) *(*(flowdoms.bcdata).velx):(loc)
+   !                *(*(flowdoms.bcdata).vely):(loc) *(*(flowdoms.bcdata).velz):(loc)
+   !                *(*(flowdoms.bcdata).ps):(loc) *(*(flowdoms.viscsubface).tau):(loc)
+   !                *(*(flowdoms.viscsubface).q):(loc) *(*(flowdoms.viscsubface).utau):(loc)
+   !                *(flowdoms.x):in-out *(flowdoms.xtmp):(loc) *(flowdoms.xold):(loc)
+   !                *(flowdoms.si):(loc) *(flowdoms.sj):(loc) *(flowdoms.sk):(loc)
+   !                *(flowdoms.vol):(loc) *(flowdoms.volold):(loc)
+   !                *(flowdoms.dadidata):(loc) *(flowdoms.uv):(loc)
+   !                *(flowdoms.rotmatrixi):(loc) *(flowdoms.rotmatrixj):(loc)
+   !                *(flowdoms.rotmatrixk):(loc) *(flowdoms.sfacei):(loc)
+   !                *(flowdoms.sfacej):(loc) *(flowdoms.sfacek):(loc)
+   !                *(flowdoms.w):in-out *(flowdoms.wtmp):(loc) *(flowdoms.dw_deriv):(loc)
+   !                *(flowdoms.w_deriv):(loc) *(flowdoms.wold):(loc)
+   !                *(flowdoms.p):(loc) *(flowdoms.ptmp):(loc) *(flowdoms.gamma):(loc)
+   !                *(flowdoms.rlv):(loc) *(flowdoms.rev):(loc) *(flowdoms.s):(loc)
+   !                *(flowdoms.p1):(loc) *(flowdoms.dw):out *(flowdoms.fw):(loc)
+   !                *(flowdoms.dwtmp):(loc) *(flowdoms.dwtmp2):(loc)
+   !                *(flowdoms.dwoldrk):(loc) *(flowdoms.w1):(loc)
+   !                *(flowdoms.wr):(loc) *(flowdoms.mgiweight):(loc)
+   !                *(flowdoms.mgjweight):(loc) *(flowdoms.mgkweight):(loc)
+   !                *(flowdoms.wn):(loc) *(flowdoms.pn):(loc) *(flowdoms.dtl):(loc)
+   !                *(flowdoms.radi):(loc) *(flowdoms.radj):(loc)
+   !                *(flowdoms.radk):(loc) *(flowdoms.fc):(loc) *(flowdoms.fn):(loc)
+   !                *(flowdoms.d2wall):(loc) *(flowdoms.filterdes):(loc)
+   !                *(flowdoms.bmti1):(loc) *(flowdoms.bmti2):(loc)
+   !                *(flowdoms.bmtj1):(loc) *(flowdoms.bmtj2):(loc)
+   !                *(flowdoms.bmtk1):(loc) *(flowdoms.bmtk2):(loc)
+   !                *(flowdoms.bvti1):(loc) *(flowdoms.bvti2):(loc)
+   !                *(flowdoms.bvtj1):(loc) *(flowdoms.bvtj2):(loc)
+   !                *(flowdoms.bvtk1):(loc) *(flowdoms.bvtk2):(loc)
+   !                *volold:(loc) *wr:(loc) *rev:(loc) *dtl:(loc)
+   !                *bvtj1:(loc) *bvtj2:(loc) *p:(loc) *sfacei:(loc)
+   !                *sfacej:(loc) *s:(loc) *gamma:(loc) *sfacek:(loc)
+   !                *dadidata:(loc) *vol_offtimeinstance:(loc) *bmtk1:(loc)
+   !                *bmtk2:(loc) *rlv:(loc) *p1:(loc) *overint:(loc)
+   !                *bvtk1:(loc) *w1:(loc) *bvtk2:(loc) *xold:(loc)
+   !                *filterdes:(loc) *wold:(loc) *mgkweight:(loc)
+   !                *w_offtimeinstance:(loc) *dwoldrk:(loc) *d2wall:(loc)
+   !                *bmti1:(loc) *bmti2:(loc) *mgjweight:(loc) *si:(loc)
+   !                *sj:(loc) *sk:(loc) *bvti1:(loc) *bvti2:(loc)
+   !                *fw:(loc) *pn:(loc) *mgiweight:(loc) *rotmatrixi:(loc)
+   !                *rotmatrixj:(loc) *rotmatrixk:(loc) *bmtj1:(loc)
+   !                *bmtj2:(loc) *(*viscsubface.tau):(loc) *(*viscsubface.q):(loc)
+   !                *(*viscsubface.utau):(loc) *(*bcdata.norm):(loc)
+   !                *(*bcdata.rface):(loc) *(*bcdata.fp):(loc) *(*bcdata.fv):(loc)
+   !                *(*bcdata.m):(loc) *(*bcdata.oarea):(loc) *(*bcdata.sepsensor):(loc)
+   !                *bcdata.symnorm:(loc) *(*bcdata.uslip):(loc) *(*bcdata.tns_wall):(loc)
+   !                *(*bcdata.ptinlet):(loc) *(*bcdata.ttinlet):(loc)
+   !                *(*bcdata.htinlet):(loc) *(*bcdata.flowxdirinlet):(loc)
+   !                *(*bcdata.flowydirinlet):(loc) *(*bcdata.flowzdirinlet):(loc)
+   !                *(*bcdata.turbinlet):(loc) *(*bcdata.rho):(loc)
+   !                *(*bcdata.velx):(loc) *(*bcdata.vely):(loc) *(*bcdata.velz):(loc)
+   !                *(*bcdata.ps):(loc) *radi:(loc) *radj:(loc) *radk:(loc)
+   !                *wn:(loc)
+   !   Plus diff mem management of: flowdoms.overint:in-out flowdoms.bcdata:in-out
+   !                *(flowdoms.bcdata).norm:in-out *(flowdoms.bcdata).rface:in-out
+   !                *(flowdoms.bcdata).fp:in-out *(flowdoms.bcdata).fv:in-out
+   !                *(flowdoms.bcdata).m:in-out *(flowdoms.bcdata).oarea:in-out
+   !                *(flowdoms.bcdata).sepsensor:in-out *(flowdoms.bcdata).uslip:in-out
+   !                *(flowdoms.bcdata).tns_wall:in-out *(flowdoms.bcdata).ptinlet:in-out
+   !                *(flowdoms.bcdata).ttinlet:in-out *(flowdoms.bcdata).htinlet:in-out
+   !                *(flowdoms.bcdata).flowxdirinlet:in-out *(flowdoms.bcdata).flowydirinlet:in-out
+   !                *(flowdoms.bcdata).flowzdirinlet:in-out *(flowdoms.bcdata).turbinlet:in-out
+   !                *(flowdoms.bcdata).rho:in-out *(flowdoms.bcdata).velx:in-out
+   !                *(flowdoms.bcdata).vely:in-out *(flowdoms.bcdata).velz:in-out
+   !                *(flowdoms.bcdata).ps:in-out flowdoms.viscsubface:in-out
+   !                *(flowdoms.viscsubface).tau:in-out *(flowdoms.viscsubface).q:in-out
+   !                *(flowdoms.viscsubface).utau:in-out flowdoms.x:in-out
+   !                flowdoms.xtmp:in-out flowdoms.xold:in-out flowdoms.si:in-out
+   !                flowdoms.sj:in-out flowdoms.sk:in-out flowdoms.vol:in-out
+   !                flowdoms.volold:in-out flowdoms.dadidata:in-out
+   !                flowdoms.uv:in-out flowdoms.rotmatrixi:in-out
+   !                flowdoms.rotmatrixj:in-out flowdoms.rotmatrixk:in-out
+   !                flowdoms.sfacei:in-out flowdoms.sfacej:in-out
+   !                flowdoms.sfacek:in-out flowdoms.w:in-out flowdoms.wtmp:in-out
+   !                flowdoms.dw_deriv:in-out flowdoms.w_deriv:in-out
+   !                flowdoms.wold:in-out flowdoms.p:in-out flowdoms.ptmp:in-out
+   !                flowdoms.gamma:in-out flowdoms.rlv:in-out flowdoms.rev:in-out
+   !                flowdoms.s:in-out flowdoms.p1:in-out flowdoms.dw:in-out
+   !                flowdoms.fw:in-out flowdoms.dwtmp:in-out flowdoms.dwtmp2:in-out
+   !                flowdoms.dwoldrk:in-out flowdoms.w1:in-out flowdoms.wr:in-out
+   !                flowdoms.mgiweight:in-out flowdoms.mgjweight:in-out
+   !                flowdoms.mgkweight:in-out flowdoms.wn:in-out flowdoms.pn:in-out
+   !                flowdoms.dtl:in-out flowdoms.radi:in-out flowdoms.radj:in-out
+   !                flowdoms.radk:in-out flowdoms.fc:in-out flowdoms.fn:in-out
+   !                flowdoms.d2wall:in-out flowdoms.filterdes:in-out
+   !                flowdoms.bmti1:in-out flowdoms.bmti2:in-out flowdoms.bmtj1:in-out
+   !                flowdoms.bmtj2:in-out flowdoms.bmtk1:in-out flowdoms.bmtk2:in-out
+   !                flowdoms.bvti1:in-out flowdoms.bvti2:in-out flowdoms.bvtj1:in-out
+   !                flowdoms.bvtj2:in-out flowdoms.bvtk1:in-out flowdoms.bvtk2:in-out
+   !                volold:in-out wr:in-out rev:in-out dtl:in-out
+   !                bvtj1:in-out bvtj2:in-out p:in-out sfacei:in-out
+   !                sfacej:in-out s:in-out gamma:in-out sfacek:in-out
+   !                dadidata:in-out vol_offtimeinstance:in-out bmtk1:in-out
+   !                bmtk2:in-out rlv:in-out p1:in-out overint:in-out
+   !                bvtk1:in-out w1:in-out bvtk2:in-out xold:in-out
+   !                filterdes:in-out wold:in-out mgkweight:in-out
+   !                w_offtimeinstance:in-out dwoldrk:in-out d2wall:in-out
+   !                bmti1:in-out bmti2:in-out mgjweight:in-out si:in-out
+   !                sj:in-out sk:in-out bvti1:in-out bvti2:in-out
+   !                fw:in-out pn:in-out mgiweight:in-out rotmatrixi:in-out
+   !                rotmatrixj:in-out rotmatrixk:in-out bmtj1:in-out
+   !                bmtj2:in-out viscsubface:in-out *viscsubface.tau:in-out
+   !                *viscsubface.q:in-out *viscsubface.utau:in-out
+   !                bcdata:in-out *bcdata.norm:in-out *bcdata.rface:in-out
+   !                *bcdata.fp:in-out *bcdata.fv:in-out *bcdata.m:in-out
+   !                *bcdata.oarea:in-out *bcdata.sepsensor:in-out
+   !                *bcdata.uslip:in-out *bcdata.tns_wall:in-out *bcdata.ptinlet:in-out
+   !                *bcdata.ttinlet:in-out *bcdata.htinlet:in-out
+   !                *bcdata.flowxdirinlet:in-out *bcdata.flowydirinlet:in-out
+   !                *bcdata.flowzdirinlet:in-out *bcdata.turbinlet:in-out
+   !                *bcdata.rho:in-out *bcdata.velx:in-out *bcdata.vely:in-out
+   !                *bcdata.velz:in-out *bcdata.ps:in-out radi:in-out
+   !                radj:in-out radk:in-out wn:in-out
    ! This is a super-combined function that combines the original
    ! functionality of: 
    ! Pressure Computation
@@ -40,17 +152,6 @@
    USE INPUTADJOINT
    USE DIFFSIZES
    IMPLICIT NONE
-   !call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor)
-   ! Convert back to actual forces. Note that even though we use
-   ! MachCoef, Lref, and surfaceRef here, they are NOT differented,
-   ! since F doesn't actually depend on them. Ideally we would just get
-   ! the raw forces and moment form forcesAndMoments. 
-   !scaleDim = pRef/pInf
-   !fact = two/(gammaInf*pInf*MachCoef*MachCoef &
-   !     *surfaceRef*LRef*LRef*scaleDim)
-   !force = (cFp + cFV)/fact
-   !fact = fact/(lengthRef*LRef)
-   !moment = (cMp + cMV)/fact
    !call getCostFunction(costFunction, force, moment, sepSensor, &
    !alpha, beta, liftIndex, objValue)
    ! Input Arguments:
@@ -89,6 +190,7 @@
    dw => flowdoms(nn, 1, sps)%dw
    xd => flowdomsd(nn, currentlevel, sps)%x
    x => flowdoms(nn, currentlevel, sps)%x
+   vold => flowdomsd(nn, currentlevel, sps)%vol
    vol => flowdoms(nn, currentlevel, sps)%vol
    !!$  ! ------------------------------------------------
    !!$  !        Additional 'Extra' Components
@@ -182,6 +284,18 @@
    END DO
    END DO
    END DO
+   bvtj1d = 0.0_8
+   bvtj2d = 0.0_8
+   bmtk1d = 0.0_8
+   bmtk2d = 0.0_8
+   bvtk1d = 0.0_8
+   bvtk2d = 0.0_8
+   bmti1d = 0.0_8
+   bmti2d = 0.0_8
+   bvti1d = 0.0_8
+   bvti2d = 0.0_8
+   bmtj1d = 0.0_8
+   bmtj2d = 0.0_8
    END SELECT
    ELSE
    DO ii1=1,ntimeintervalsspectral
@@ -191,6 +305,18 @@
    END DO
    END DO
    END DO
+   bvtj1d = 0.0_8
+   bvtj2d = 0.0_8
+   bmtk1d = 0.0_8
+   bmtk2d = 0.0_8
+   bvtk1d = 0.0_8
+   bvtk2d = 0.0_8
+   bmti1d = 0.0_8
+   bmti2d = 0.0_8
+   bvti1d = 0.0_8
+   bvti2d = 0.0_8
+   bmtj1d = 0.0_8
+   bmtj2d = 0.0_8
    END IF
    ! -------------------------------  
    ! Next initialize residual for flow variables. The is the only place
@@ -260,6 +386,8 @@
    END IF
    !  Actual residual calc
    CALL RESIDUAL_BLOCK_D()
+   ! Note that there are some error introduced by viscousflux from fw
+   ! The error only show up in the rho term in some cells
    ! Divide through by the volume
    DO sps2=1,ntimeintervalsspectral
    DO l=1,nstate
@@ -277,4 +405,15 @@
    END DO
    END DO
    END DO
+   CALL FORCESANDMOMENTS_D(cfp, cfv, cmp, cmv, yplusmax, sepsensor)
+   ! Convert back to actual forces. Note that even though we use
+   ! MachCoef, Lref, and surfaceRef here, they are NOT differented,
+   ! since F doesn't actually depend on them. Ideally we would just get
+   ! the raw forces and moment form forcesAndMoments. 
+   scaledim = pref/pinf
+   fact = two/(gammainf*pinf*machcoef*machcoef*surfaceref*lref*lref*&
+   &   scaledim)
+   force = (cfp+cfv)/fact
+   fact = fact/(lengthref*lref)
+   moment = (cmp+cmv)/fact
    END SUBROUTINE BLOCK_RES_D

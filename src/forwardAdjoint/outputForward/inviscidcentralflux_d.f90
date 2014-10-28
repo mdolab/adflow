@@ -4,7 +4,8 @@
    !  Differentiation of inviscidcentralflux in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *dw
    !   with respect to varying inputs: *p *dw *w
-   !   Plus diff mem management of: p:in dw:in w:in
+   !   Plus diff mem management of: p:in sfacei:in sfacej:in sfacek:in
+   !                dw:in w:in vol:in si:in sj:in sk:in
    !
    !      ******************************************************************
    !      *                                                                *

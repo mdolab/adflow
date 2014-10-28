@@ -132,6 +132,30 @@
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: velz
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: ps
    END TYPE BCDATATYPE
+   TYPE BCDATATYPE_D
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: norm
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rface
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: fp
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: fv
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: m
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: oarea
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: sepsensor
+   REAL(kind=realtype), DIMENSION(3) :: symnorm
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: uslip
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: tns_wall
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: ptinlet
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: ttinlet
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: htinlet
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: flowxdirinlet
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: flowydirinlet
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: flowzdirinlet
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: turbinlet
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rho
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: velx
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: vely
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: velz
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: ps
+   END TYPE BCDATATYPE_D
    !
    !        ****************************************************************
    !        *                                                              *
@@ -665,9 +689,72 @@
    INTEGER(kind=inttype), DIMENSION(:), POINTER :: iedgeptb
    END TYPE BLOCKTYPE
    TYPE BLOCKTYPE_D
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: overint
+   TYPE(BCDATATYPE_D), DIMENSION(:), POINTER :: bcdata
+   TYPE(VISCSUBFACETYPE), DIMENSION(:), POINTER :: viscsubface
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: x
+   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: xtmp
+   REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: xold
+   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: si
+   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: sj
+   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: sk
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: vol
+   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: volold
+   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: dadidata
+   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: uv
+   REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: &
+   &     rotmatrixi
+   REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: &
+   &     rotmatrixj
+   REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: &
+   &     rotmatrixk
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: sfacei
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: sfacej
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: sfacek
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: w
+   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: wtmp
+   REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: dw_deriv
+   REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: w_deriv
+   REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: wold
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: p
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ptmp
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: gamma
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: rlv
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: rev
+   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: s
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: p1
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: dw
+   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: fw
+   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: dwtmp
+   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: dwtmp2
+   REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: dwoldrk
+   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: w1
+   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: wr
+   REAL(kind=realtype), DIMENSION(:), POINTER :: mgiweight
+   REAL(kind=realtype), DIMENSION(:), POINTER :: mgjweight
+   REAL(kind=realtype), DIMENSION(:), POINTER :: mgkweight
+   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: wn
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: pn
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: dtl
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: radi
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: radj
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: radk
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: fc
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: fn
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: d2wall
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: filterdes
+   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: bmti1
+   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: bmti2
+   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: bmtj1
+   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: bmtj2
+   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: bmtk1
+   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: bmtk2
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: bvti1
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: bvti2
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: bvtj1
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: bvtj2
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: bvtk1
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: bvtk2
    END TYPE BLOCKTYPE_D
    !
    !      ******************************************************************

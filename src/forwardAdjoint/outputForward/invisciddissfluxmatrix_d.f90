@@ -4,7 +4,8 @@
    !  Differentiation of invisciddissfluxmatrix in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *fw
    !   with respect to varying inputs: *p *gamma *w
-   !   Plus diff mem management of: p:in gamma:in w:in fw:in
+   !   Plus diff mem management of: p:in sfacei:in sfacej:in gamma:in
+   !                sfacek:in w:in si:in sj:in sk:in fw:in
    !
    !      ******************************************************************
    !      *                                                                *
