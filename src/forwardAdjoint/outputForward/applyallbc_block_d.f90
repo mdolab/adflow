@@ -4,9 +4,7 @@
    !  Differentiation of applyallbc_block in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *rev *p *gamma *w *rlv
    !   with respect to varying inputs: *rev *p *w *rlv
-   !   Plus diff mem management of: rev:in p:in s:in gamma:in w:in
-   !                rlv:in si:in sj:in sk:in bcdata:in *bcdata.norm:in
-   !                *bcdata.rface:in *bcdata.uslip:in *bcdata.tns_wall:in
+   !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
    SUBROUTINE APPLYALLBC_BLOCK_D(secondhalo)
    ! Apply BC's for a single block
    USE BLOCKPOINTERS_D

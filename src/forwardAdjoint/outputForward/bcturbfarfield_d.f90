@@ -10,7 +10,7 @@
    !                *bmtj2
    !   Plus diff mem management of: bvtj1:in bvtj2:in bmtk1:in bmtk2:in
    !                bvtk1:in bvtk2:in bmti1:in bmti2:in bvti1:in bvti2:in
-   !                bmtj1:in bmtj2:in bcdata:in *bcdata.norm:in *bcdata.rface:in
+   !                bmtj1:in bmtj2:in
    !
    !      ******************************************************************
    !      *                                                                *

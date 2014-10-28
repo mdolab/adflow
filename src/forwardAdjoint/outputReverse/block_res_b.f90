@@ -6,7 +6,7 @@
    !                *(flowdoms.dw)
    !   with respect to varying inputs: *(flowdoms.x) *(flowdoms.w)
    !                *(flowdoms.dw)
-   !   RW status of diff variables: *(flowdoms.x):incr *(flowdoms.w):in-out
+   !   RW status of diff variables: *(flowdoms.x):in-out *(flowdoms.w):in-out
    !                *(flowdoms.dw):in-out *rev:(loc) *p:(loc) *gamma:(loc)
    !                *rlv:(loc) *fw:(loc) *radi:(loc) *radj:(loc) *radk:(loc)
    !   Plus diff mem management of: flowdoms.x:in flowdoms.w:in flowdoms.dw:in
@@ -36,17 +36,6 @@
    USE INPUTADJOINT
    USE DIFFSIZES
    IMPLICIT NONE
-   !call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor)
-   ! Convert back to actual forces. Note that even though we use
-   ! MachCoef, Lref, and surfaceRef here, they are NOT differented,
-   ! since F doesn't actually depend on them. Ideally we would just get
-   ! the raw forces and moment form forcesAndMoments. 
-   !scaleDim = pRef/pInf
-   !fact = two/(gammaInf*pInf*MachCoef*MachCoef &
-   !     *surfaceRef*LRef*LRef*scaleDim)
-   !force = (cFp + cFV)/fact
-   !fact = fact/(lengthRef*LRef)
-   !moment = (cMp + cMV)/fact
    !call getCostFunction(costFunction, force, moment, sepSensor, &
    !alpha, beta, liftIndex, objValue)
    ! Input Arguments:
@@ -278,6 +267,7 @@
    END DO spectralloop2
    CALL PUSHCONTROL1B(1)
    END IF
+   CALL FORCESANDMOMENTS_B(cfp, cfv, cmp, cmv, yplusmax, sepsensor)
    DO sps2=ntimeintervalsspectral,1,-1
    DO l=nstate,1,-1
    DO k=kl,2,-1

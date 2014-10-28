@@ -4,7 +4,7 @@
    !  Differentiation of turb2ndhalo in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *rev *w
    !   with respect to varying inputs: *rev *w
-   !   Plus diff mem management of: rev:in w:in bcdata:in
+   !   Plus diff mem management of: rev:in w:in
    !
    !      ******************************************************************
    !      *                                                                *

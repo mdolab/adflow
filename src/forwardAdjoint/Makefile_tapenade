@@ -150,6 +150,10 @@ ALL_RES_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.F90\
 		$(SRC)/utils/resetww0pp0rlv0rev0.f90\
 		$(SRC)/utils/setww0pp0rlv0rev0Bwd.f90\
 		$(SRC)/utils/resetww0pp0rlv0rev0Bwd.f90\
+		$(SRC)/utils/setxxssrhodd2Wall.f90\
+		$(SRC)/utils/resetxxssrhodd2Wall.f90\
+		$(SRC)/utils/setxxssrhodd2WallBwd.f90\
+		$(SRC)/utils/resetxxssrhodd2WallBwd.f90\
 		$(SRC)/utils/resetss.f90\
 		$(SRC)/utils/resetssBwd.f90\
 		$(SRC)/utils/setgamma.f90\

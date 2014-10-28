@@ -2,15 +2,11 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of residual_block in forward (tangent) mode (with options i4 dr8 r8):
-   !   variations   of useful results: *p *dw *w *fw *(*viscsubface.tau)
-   !                *(*viscsubface.q)
+   !   variations   of useful results: *dw *w
    !   with respect to varying inputs: *rev *p *gamma *dw *w *rlv
    !                *x *radi *radj *radk
-   !   Plus diff mem management of: rev:in p:in sfacei:in sfacej:in
-   !                gamma:in sfacek:in dw:in w:in rlv:in x:in vol:in
-   !                si:in sj:in sk:in fw:in rotmatrixi:in rotmatrixj:in
-   !                rotmatrixk:in viscsubface:in *viscsubface.tau:in
-   !                *viscsubface.q:in radi:in radj:in radk:in
+   !   Plus diff mem management of: rev:in p:in gamma:in dw:in w:in
+   !                rlv:in x:in fw:in radi:in radj:in radk:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -37,8 +33,6 @@
    USE INPUTDISCRETIZATION
    USE INPUTTIMESPECTRAL
    USE ITERATION
-   USE DIFFSIZES
-   !  Hint: ISIZE1OFDrfviscsubface should be the size of dimension 1 of array *viscsubface
    IMPLICIT NONE
    !
    !      Local variables.
@@ -47,7 +41,6 @@
    INTEGER(kind=inttype) :: i, j, k, l
    LOGICAL :: finegrid
    INTRINSIC REAL
-   INTEGER :: ii1
    !
    !      ******************************************************************
    !      *                                                                *
@@ -112,16 +105,7 @@
    fwd = 0.0_8
    END SELECT
    ! Compute the viscous flux in case of a viscous computation.
-   IF (viscous) THEN
-   CALL VISCOUSFLUX_D()
-   ELSE
-   DO ii1=1,ISIZE1OFDrfviscsubface
-   viscsubfaced(ii1)%tau = 0.0_8
-   END DO
-   DO ii1=1,ISIZE1OFDrfviscsubface
-   viscsubfaced(ii1)%q = 0.0_8
-   END DO
-   END IF
+   IF (viscous) CALL VISCOUSFLUX_D()
    ! Add the dissipative and possibly viscous fluxes to the
    ! Euler fluxes. Loop over the owned cells and add fw to dw.
    ! Also multiply by iblank so that no updates occur in holes

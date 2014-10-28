@@ -4,7 +4,7 @@
    !  Differentiation of bceddywall in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *rev
    !   with respect to varying inputs: *rev
-   !   Plus diff mem management of: rev:in bcdata:in
+   !   Plus diff mem management of: rev:in
    !
    !      ******************************************************************
    !      *                                                                *

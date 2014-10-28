@@ -4,7 +4,7 @@
    !  Differentiation of unsteadyturbterm in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *dw qq
    !   with respect to varying inputs: *dw *w qq
-   !   Plus diff mem management of: dw:in w:in wold:in
+   !   Plus diff mem management of: dw:in w:in
    !
    !      ******************************************************************
    !      *                                                                *

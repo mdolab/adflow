@@ -2,15 +2,11 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of sa_block in forward (tangent) mode (with options i4 dr8 r8):
-   !   variations   of useful results: *rev *bvtj1 *bvtj2 *bmtk1 *dw
-   !                *w *bmtk2 *bvtk1 *bvtk2 *bmti1 *bmti2 *bvti1 *bvti2
-   !                *bmtj1 *bmtj2
+   !   variations   of useful results: *rev *dw *w
    !   with respect to varying inputs: *rev *w *rlv
-   !   Plus diff mem management of: rev:in bvtj1:in bvtj2:in sfacei:in
-   !                sfacej:in sfacek:in bmtk1:in dw:in w:in bmtk2:in
-   !                rlv:in bvtk1:in bvtk2:in vol:in wold:in d2wall:in
-   !                bmti1:in bmti2:in si:in sj:in sk:in bvti1:in bvti2:in
-   !                bmtj1:in bmtj2:in bcdata:in *bcdata.norm:in *bcdata.rface:in
+   !   Plus diff mem management of: rev:in bvtj1:in bvtj2:in bmtk1:in
+   !                dw:in w:in bmtk2:in rlv:in bvtk1:in bvtk2:in bmti1:in
+   !                bmti2:in bvti1:in bvti2:in bmtj1:in bmtj2:in
    !
    !      ******************************************************************
    !      *                                                                *

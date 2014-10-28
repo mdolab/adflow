@@ -8,7 +8,7 @@
    !                *bmtj1 *bmtj2
    !   Plus diff mem management of: rev:in bvtj1:in bvtj2:in bmtk1:in
    !                w:in bmtk2:in bvtk1:in bvtk2:in bmti1:in bmti2:in
-   !                bvti1:in bvti2:in bmtj1:in bmtj2:in bcdata:in
+   !                bvti1:in bvti2:in bmtj1:in bmtj2:in
    !      ==================================================================
    SUBROUTINE APPLYALLTURBBCTHISBLOCK_D(secondhalo)
    !

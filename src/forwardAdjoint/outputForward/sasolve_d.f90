@@ -5,10 +5,8 @@
    !   variations   of useful results: *dw *w
    !   with respect to varying inputs: *bmtk1 *w *bmtk2 *rlv *bmti1
    !                *bmti2 *bmtj1 *bmtj2
-   !   Plus diff mem management of: sfacei:in sfacej:in sfacek:in
-   !                bmtk1:in dw:in w:in bmtk2:in rlv:in vol:in wold:in
-   !                d2wall:in bmti1:in bmti2:in si:in sj:in sk:in
-   !                bmtj1:in bmtj2:in
+   !   Plus diff mem management of: bmtk1:in dw:in w:in bmtk2:in rlv:in
+   !                bmti1:in bmti2:in bmtj1:in bmtj2:in
    !
    !      ******************************************************************
    !      *                                                                *

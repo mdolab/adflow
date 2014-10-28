@@ -13,6 +13,8 @@ subroutine resetxxssrhodd2Wall(nn, xx, ss, rho1, rho2, dd2Wall)
 
   use BCTypes
   use blockPointers
+  use flowVarRefState
+  use inputPhysics
   implicit none
   !
   !      Subroutine arguments.

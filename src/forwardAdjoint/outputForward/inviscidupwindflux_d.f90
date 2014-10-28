@@ -4,9 +4,7 @@
    !  Differentiation of inviscidupwindflux in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *fw
    !   with respect to varying inputs: *p *gamma *w
-   !   Plus diff mem management of: p:in sfacei:in sfacej:in gamma:in
-   !                sfacek:in w:in si:in sj:in sk:in fw:in rotmatrixi:in
-   !                rotmatrixj:in rotmatrixk:in
+   !   Plus diff mem management of: p:in gamma:in w:in fw:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -469,8 +467,7 @@
    END IF
    ! Compute the differences from the first order scheme.
    CALL LEFTRIGHTSTATE_D(du1, du1d, du2, du2d, du3, du3d, &
-   &                           rotmatrixi, rotmatrixid, left, leftd, right&
-   &                           , rightd)
+   &                           rotmatrixi, left, leftd, right, rightd)
    ! Add the first order part to the currently stored
    ! differences, such that the correct state vector
    ! is stored.
@@ -585,8 +582,7 @@
    END IF
    ! Compute the differences from the first order scheme.
    CALL LEFTRIGHTSTATE_D(du1, du1d, du2, du2d, du3, du3d, &
-   &                           rotmatrixj, rotmatrixjd, left, leftd, right&
-   &                           , rightd)
+   &                           rotmatrixj, left, leftd, right, rightd)
    ! Add the first order part to the currently stored
    ! differences, such that the correct state vector
    ! is stored.
@@ -701,8 +697,7 @@
    END IF
    ! Compute the differences from the first order scheme.
    CALL LEFTRIGHTSTATE_D(du1, du1d, du2, du2d, du3, du3d, &
-   &                           rotmatrixk, rotmatrixkd, left, leftd, right&
-   &                           , rightd)
+   &                           rotmatrixk, left, leftd, right, rightd)
    ! Add the first order part to the currently stored
    ! differences, such that the correct state vector
    ! is stored.
@@ -775,12 +770,11 @@
    !  Differentiation of leftrightstate in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: left right du1 du2 du3
    !   with respect to varying inputs: left right du1 du2 du3
-   !   Plus diff mem management of: rotmatrix:in
    ! Store the density flux in the mass flow of the
    ! appropriate sliding mesh interface.
    !      ==================================================================
    SUBROUTINE LEFTRIGHTSTATE_D(du1, du1d, du2, du2d, du3, du3d, rotmatrix&
-   &   , rotmatrixd, left, leftd, right, rightd)
+   &   , left, leftd, right, rightd)
    IMPLICIT NONE
    !
    !        Local parameter.
@@ -794,7 +788,6 @@
    REAL(kind=realtype), DIMENSION(:), INTENT(OUT) :: left, right
    REAL(kind=realtype), DIMENSION(:), INTENT(OUT) :: leftd, rightd
    REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: rotmatrix
-   REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: rotmatrixd
    !
    !        Local variables.
    !

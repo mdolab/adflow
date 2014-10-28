@@ -2,11 +2,10 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of timestep_block in forward (tangent) mode (with options i4 dr8 r8):
-   !   variations   of useful results: *dtl *radi *radj *radk
-   !   with respect to varying inputs: *rev *p *gamma *w *rlv
-   !   Plus diff mem management of: rev:in dtl:in p:in sfacei:in sfacej:in
-   !                gamma:in sfacek:in w:in rlv:in vol:in si:in sj:in
-   !                sk:in radi:in radj:in radk:in
+   !   variations   of useful results: *radi *radj *radk
+   !   with respect to varying inputs: *p *gamma *w
+   !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
+   !                radi:in radj:in radk:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -54,11 +53,10 @@
    INTEGER(kind=inttype) :: sps, nn, i, j, k
    REAL(kind=realtype) :: plim, rlim, clim2
    REAL(kind=realtype) :: ux, uy, uz, cc2, qs, sx, sy, sz, rmu
-   REAL(kind=realtype) :: uxd, uyd, uzd, cc2d, qsd, rmud
+   REAL(kind=realtype) :: uxd, uyd, uzd, cc2d, qsd
    REAL(kind=realtype) :: ri, rj, rk, rij, rjk, rki
    REAL(kind=realtype) :: rid, rjd, rkd, rijd, rjkd, rkid
    REAL(kind=realtype) :: vsi, vsj, vsk, rfl, dpi, dpj, dpk
-   REAL(kind=realtype) :: vsid, vsjd, vskd, rfld, dpid, dpjd, dpkd
    REAL(kind=realtype) :: sface, tmp
    LOGICAL :: radiineeded
    INTRINSIC MAX
@@ -71,9 +69,7 @@
    REAL(kind=realtype) :: pwx1
    REAL(kind=realtype) :: pwx1d
    REAL(kind=realtype) :: abs1d
-   REAL(kind=realtype) :: abs4d
    REAL(kind=realtype) :: abs0d
-   REAL(kind=realtype) :: abs3d
    REAL(kind=realtype) :: abs5
    REAL(kind=realtype) :: abs4
    REAL(kind=realtype) :: abs3
@@ -81,7 +77,6 @@
    REAL(kind=realtype) :: abs2d
    REAL(kind=realtype) :: abs1
    REAL(kind=realtype) :: abs0
-   REAL(kind=realtype) :: abs5d
    !
    !      ******************************************************************
    !      *                                                                *
@@ -96,7 +91,6 @@
    ! Return immediately if only the spectral radii must be computed
    ! and these are not needed for the flux computation.
    IF (onlyradii .AND. (.NOT.radiineeded)) THEN
-   dtld = 0.0_8
    radid = 0.0_8
    radjd = 0.0_8
    radkd = 0.0_8
@@ -121,7 +115,6 @@
    !
    SELECT CASE  (precond) 
    CASE (noprecond) 
-   dtld = 0.0_8
    radid = 0.0_8
    radjd = 0.0_8
    radkd = 0.0_8
@@ -229,8 +222,6 @@
    radkd(i, j, k) = half*(abs2d+result1d)
    radk(i, j, k) = half*(abs2+result1)
    ! Compute the inviscid contribution to the time step.
-   dtld(i, j, k) = radid(i, j, k) + radjd(i, j, k) + radkd(i, j&
-   &             , k)
    dtl(i, j, k) = radi(i, j, k) + radj(i, j, k) + radk(i, j, k)
    END DO
    END DO
@@ -238,19 +229,16 @@
    CASE (turkel) 
    CALL TERMINATE('timeStep', &
    &                 'Turkel preconditioner not implemented yet')
-   dtld = 0.0_8
    radid = 0.0_8
    radjd = 0.0_8
    radkd = 0.0_8
    CASE (choimerkle) 
    CALL TERMINATE('timeStep', &
    &                 'choi merkle preconditioner not implemented yet')
-   dtld = 0.0_8
    radid = 0.0_8
    radjd = 0.0_8
    radkd = 0.0_8
    CASE DEFAULT
-   dtld = 0.0_8
    radid = 0.0_8
    radjd = 0.0_8
    radkd = 0.0_8
@@ -364,42 +352,29 @@
    ! it is divided by the volume and density to obtain
    ! the correct dimensions and multiplied by the
    ! non-dimensional factor factVis.
-   rmud = rlvd(i, j, k)
    rmu = rlv(i, j, k)
-   IF (eddymodel) THEN
-   rmud = rmud + revd(i, j, k)
-   rmu = rmu + rev(i, j, k)
-   END IF
-   rmud = (half*rmud*w(i, j, k, irho)*vol(i, j, k)-half*rmu*&
-   &               vol(i, j, k)*wd(i, j, k, irho))/(w(i, j, k, irho)*vol(i&
-   &               , j, k))**2
+   IF (eddymodel) rmu = rmu + rev(i, j, k)
    rmu = half*rmu/(w(i, j, k, irho)*vol(i, j, k))
    ! Add the viscous contribution in i-direction to the
    ! (inverse) of the time step.
    sx = si(i, j, k, 1) + si(i-1, j, k, 1)
    sy = si(i, j, k, 2) + si(i-1, j, k, 2)
    sz = si(i, j, k, 3) + si(i-1, j, k, 3)
-   vsid = (sx*sx+sy*sy+sz*sz)*rmud
    vsi = rmu*(sx*sx+sy*sy+sz*sz)
-   dtld(i, j, k) = dtld(i, j, k) + vsid
    dtl(i, j, k) = dtl(i, j, k) + vsi
    ! Add the viscous contribution in j-direction to the
    ! (inverse) of the time step.
    sx = sj(i, j, k, 1) + sj(i, j-1, k, 1)
    sy = sj(i, j, k, 2) + sj(i, j-1, k, 2)
    sz = sj(i, j, k, 3) + sj(i, j-1, k, 3)
-   vsjd = (sx*sx+sy*sy+sz*sz)*rmud
    vsj = rmu*(sx*sx+sy*sy+sz*sz)
-   dtld(i, j, k) = dtld(i, j, k) + vsjd
    dtl(i, j, k) = dtl(i, j, k) + vsj
    ! Add the viscous contribution in k-direction to the
    ! (inverse) of the time step.
    sx = sk(i, j, k, 1) + sk(i, j, k-1, 1)
    sy = sk(i, j, k, 2) + sk(i, j, k-1, 2)
    sz = sk(i, j, k, 3) + sk(i, j, k-1, 3)
-   vskd = (sx*sx+sy*sy+sz*sz)*rmud
    vsk = rmu*(sx*sx+sy*sy+sz*sz)
-   dtld(i, j, k) = dtld(i, j, k) + vskd
    dtl(i, j, k) = dtl(i, j, k) + vsk
    END DO
    END DO
@@ -428,44 +403,26 @@
    DO i=2,il
    IF (p(i+1, j, k) - two*p(i, j, k) + p(i-1, j, k) .GE. 0.) &
    &           THEN
-   abs3d = pd(i+1, j, k) - two*pd(i, j, k) + pd(i-1, j, k)
    abs3 = p(i+1, j, k) - two*p(i, j, k) + p(i-1, j, k)
    ELSE
-   abs3d = -(pd(i+1, j, k)-two*pd(i, j, k)+pd(i-1, j, k))
    abs3 = -(p(i+1, j, k)-two*p(i, j, k)+p(i-1, j, k))
    END IF
-   dpid = (abs3d*(p(i+1, j, k)+two*p(i, j, k)+p(i-1, j, k)+plim&
-   &             )-abs3*(pd(i+1, j, k)+two*pd(i, j, k)+pd(i-1, j, k)))/(p(i&
-   &             +1, j, k)+two*p(i, j, k)+p(i-1, j, k)+plim)**2
    dpi = abs3/(p(i+1, j, k)+two*p(i, j, k)+p(i-1, j, k)+plim)
    IF (p(i, j+1, k) - two*p(i, j, k) + p(i, j-1, k) .GE. 0.) &
    &           THEN
-   abs4d = pd(i, j+1, k) - two*pd(i, j, k) + pd(i, j-1, k)
    abs4 = p(i, j+1, k) - two*p(i, j, k) + p(i, j-1, k)
    ELSE
-   abs4d = -(pd(i, j+1, k)-two*pd(i, j, k)+pd(i, j-1, k))
    abs4 = -(p(i, j+1, k)-two*p(i, j, k)+p(i, j-1, k))
    END IF
-   dpjd = (abs4d*(p(i, j+1, k)+two*p(i, j, k)+p(i, j-1, k)+plim&
-   &             )-abs4*(pd(i, j+1, k)+two*pd(i, j, k)+pd(i, j-1, k)))/(p(i&
-   &             , j+1, k)+two*p(i, j, k)+p(i, j-1, k)+plim)**2
    dpj = abs4/(p(i, j+1, k)+two*p(i, j, k)+p(i, j-1, k)+plim)
    IF (p(i, j, k+1) - two*p(i, j, k) + p(i, j, k-1) .GE. 0.) &
    &           THEN
-   abs5d = pd(i, j, k+1) - two*pd(i, j, k) + pd(i, j, k-1)
    abs5 = p(i, j, k+1) - two*p(i, j, k) + p(i, j, k-1)
    ELSE
-   abs5d = -(pd(i, j, k+1)-two*pd(i, j, k)+pd(i, j, k-1))
    abs5 = -(p(i, j, k+1)-two*p(i, j, k)+p(i, j, k-1))
    END IF
-   dpkd = (abs5d*(p(i, j, k+1)+two*p(i, j, k)+p(i, j, k-1)+plim&
-   &             )-abs5*(pd(i, j, k+1)+two*pd(i, j, k)+pd(i, j, k-1)))/(p(i&
-   &             , j, k+1)+two*p(i, j, k)+p(i, j, k-1)+plim)**2
    dpk = abs5/(p(i, j, k+1)+two*p(i, j, k)+p(i, j, k-1)+plim)
-   rfld = -(one*b*(dpid+dpjd+dpkd)/(one+b*(dpi+dpj+dpk))**2)
    rfl = one/(one+b*(dpi+dpj+dpk))
-   dtld(i, j, k) = (rfld*dtl(i, j, k)-rfl*dtld(i, j, k))/dtl(i&
-   &             , j, k)**2
    dtl(i, j, k) = rfl/dtl(i, j, k)
    END DO
    END DO
