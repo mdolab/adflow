@@ -3,10 +3,11 @@
    !
    !  Differentiation of sasolve in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *dw *w
-   !   with respect to varying inputs: *bmtk1 *w *bmtk2 *rlv *bmti1
-   !                *bmti2 *bmtj1 *bmtj2
+   !   with respect to varying inputs: *bmtk1 *w *bmtk2 *rlv *vol
+   !                *bmti1 *bmti2 *si *sj *sk *bmtj1 *bmtj2
    !   Plus diff mem management of: bmtk1:in dw:in w:in bmtk2:in rlv:in
-   !                bmti1:in bmti2:in bmtj1:in bmtj2:in
+   !                vol:in bmti1:in bmti2:in si:in sj:in sk:in bmtj1:in
+   !                bmtj2:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -58,12 +59,14 @@
    REAL(kind=realtype) :: dfv1, dfv2, dft2, drr, dgg, dfw
    REAL(kind=realtype) :: dfv1d, dfv2d, dft2d, drrd, dggd, dfwd
    REAL(kind=realtype) :: voli, volmi, volpi, xm, ym, zm, xp, yp, zp
+   REAL(kind=realtype) :: volid, volmid, volpid, xmd, ymd, zmd, xpd, ypd&
+   & , zpd
    REAL(kind=realtype) :: xa, ya, za, ttm, ttp, cnud, cam, cap
-   REAL(kind=realtype) :: cnudd, camd, capd
+   REAL(kind=realtype) :: xad, yad, zad, ttmd, ttpd, cnudd, camd, capd
    REAL(kind=realtype) :: nutm, nutp, num, nup, cdm, cdp
    REAL(kind=realtype) :: nutmd, nutpd, numd, nupd, cdmd, cdpd
    REAL(kind=realtype) :: c1m, c1p, c10, b1, c1, d1, qs
-   REAL(kind=realtype) :: c1md, c1pd, c10d, b1d, c1d, d1d
+   REAL(kind=realtype) :: c1md, c1pd, c10d, b1d, c1d, d1d, qsd
    REAL(kind=realtype) :: uu, um, up, factor, f, tu1p, rblank
    REAL(kind=realtype) :: uud, umd, upd, fd
    REAL(kind=realtype), DIMENSION(2:il, 2:jl, 2:kl) :: qq
@@ -304,19 +307,38 @@
    DO i=2,il
    ! Compute the metrics in zeta-direction, i.e. along the
    ! line k = constant.
+   volid = -(one*vold(i, j, k)/vol(i, j, k)**2)
    voli = one/vol(i, j, k)
+   volmid = -(two*(vold(i, j, k)+vold(i, j, k-1))/(vol(i, j, k)+vol&
+   &         (i, j, k-1))**2)
    volmi = two/(vol(i, j, k)+vol(i, j, k-1))
+   volpid = -(two*(vold(i, j, k)+vold(i, j, k+1))/(vol(i, j, k)+vol&
+   &         (i, j, k+1))**2)
    volpi = two/(vol(i, j, k)+vol(i, j, k+1))
+   xmd = skd(i, j, k-1, 1)*volmi + sk(i, j, k-1, 1)*volmid
    xm = sk(i, j, k-1, 1)*volmi
+   ymd = skd(i, j, k-1, 2)*volmi + sk(i, j, k-1, 2)*volmid
    ym = sk(i, j, k-1, 2)*volmi
+   zmd = skd(i, j, k-1, 3)*volmi + sk(i, j, k-1, 3)*volmid
    zm = sk(i, j, k-1, 3)*volmi
+   xpd = skd(i, j, k, 1)*volpi + sk(i, j, k, 1)*volpid
    xp = sk(i, j, k, 1)*volpi
+   ypd = skd(i, j, k, 2)*volpi + sk(i, j, k, 2)*volpid
    yp = sk(i, j, k, 2)*volpi
+   zpd = skd(i, j, k, 3)*volpi + sk(i, j, k, 3)*volpid
    zp = sk(i, j, k, 3)*volpi
+   xad = half*((skd(i, j, k, 1)+skd(i, j, k-1, 1))*voli+(sk(i, j, k&
+   &         , 1)+sk(i, j, k-1, 1))*volid)
    xa = half*(sk(i, j, k, 1)+sk(i, j, k-1, 1))*voli
+   yad = half*((skd(i, j, k, 2)+skd(i, j, k-1, 2))*voli+(sk(i, j, k&
+   &         , 2)+sk(i, j, k-1, 2))*volid)
    ya = half*(sk(i, j, k, 2)+sk(i, j, k-1, 2))*voli
+   zad = half*((skd(i, j, k, 3)+skd(i, j, k-1, 3))*voli+(sk(i, j, k&
+   &         , 3)+sk(i, j, k-1, 3))*volid)
    za = half*(sk(i, j, k, 3)+sk(i, j, k-1, 3))*voli
+   ttmd = xmd*xa + xm*xad + ymd*ya + ym*yad + zmd*za + zm*zad
    ttm = xm*xa + ym*ya + zm*za
+   ttpd = xpd*xa + xp*xad + ypd*ya + yp*yad + zpd*za + zp*zad
    ttp = xp*xa + yp*ya + zp*za
    ! Computation of the viscous terms in zeta-direction; note
    ! that cross-derivatives are neglected, i.e. the mesh is
@@ -332,9 +354,9 @@
    ! these coefficients are nonnegative.
    cnudd = -(rsacb2*cb3inv*wd(i, j, k, itu1))
    cnud = -(rsacb2*w(i, j, k, itu1)*cb3inv)
-   camd = ttm*cnudd
+   camd = ttmd*cnud + ttm*cnudd
    cam = ttm*cnud
-   capd = ttp*cnudd
+   capd = ttpd*cnud + ttp*cnudd
    cap = ttp*cnud
    nutmd = half*(wd(i, j, k-1, itu1)+wd(i, j, k, itu1))
    nutm = half*(w(i, j, k-1, itu1)+w(i, j, k, itu1))
@@ -349,9 +371,11 @@
    nupd = half*((rlvd(i, j, k+1)*w(i, j, k+1, irho)-rlv(i, j, k+1)*&
    &         wd(i, j, k+1, irho))/w(i, j, k+1, irho)**2+nud)
    nup = half*(rlv(i, j, k+1)/w(i, j, k+1, irho)+nu)
-   cdmd = ttm*cb3inv*(numd+(one+rsacb2)*nutmd)
+   cdmd = cb3inv*((numd+(one+rsacb2)*nutmd)*ttm+(num+(one+rsacb2)*&
+   &         nutm)*ttmd)
    cdm = (num+(one+rsacb2)*nutm)*ttm*cb3inv
-   cdpd = ttp*cb3inv*(nupd+(one+rsacb2)*nutpd)
+   cdpd = cb3inv*((nupd+(one+rsacb2)*nutpd)*ttp+(nup+(one+rsacb2)*&
+   &         nutp)*ttpd)
    cdp = (nup+(one+rsacb2)*nutp)*ttp*cb3inv
    IF (cdm + cam .LT. zero) THEN
    c1m = zero
@@ -429,19 +453,38 @@
    DO i=2,il
    ! Compute the metrics in eta-direction, i.e. along the
    ! line j = constant.
+   volid = -(one*vold(i, j, k)/vol(i, j, k)**2)
    voli = one/vol(i, j, k)
+   volmid = -(two*(vold(i, j, k)+vold(i, j-1, k))/(vol(i, j, k)+vol&
+   &         (i, j-1, k))**2)
    volmi = two/(vol(i, j, k)+vol(i, j-1, k))
+   volpid = -(two*(vold(i, j, k)+vold(i, j+1, k))/(vol(i, j, k)+vol&
+   &         (i, j+1, k))**2)
    volpi = two/(vol(i, j, k)+vol(i, j+1, k))
+   xmd = sjd(i, j-1, k, 1)*volmi + sj(i, j-1, k, 1)*volmid
    xm = sj(i, j-1, k, 1)*volmi
+   ymd = sjd(i, j-1, k, 2)*volmi + sj(i, j-1, k, 2)*volmid
    ym = sj(i, j-1, k, 2)*volmi
+   zmd = sjd(i, j-1, k, 3)*volmi + sj(i, j-1, k, 3)*volmid
    zm = sj(i, j-1, k, 3)*volmi
+   xpd = sjd(i, j, k, 1)*volpi + sj(i, j, k, 1)*volpid
    xp = sj(i, j, k, 1)*volpi
+   ypd = sjd(i, j, k, 2)*volpi + sj(i, j, k, 2)*volpid
    yp = sj(i, j, k, 2)*volpi
+   zpd = sjd(i, j, k, 3)*volpi + sj(i, j, k, 3)*volpid
    zp = sj(i, j, k, 3)*volpi
+   xad = half*((sjd(i, j, k, 1)+sjd(i, j-1, k, 1))*voli+(sj(i, j, k&
+   &         , 1)+sj(i, j-1, k, 1))*volid)
    xa = half*(sj(i, j, k, 1)+sj(i, j-1, k, 1))*voli
+   yad = half*((sjd(i, j, k, 2)+sjd(i, j-1, k, 2))*voli+(sj(i, j, k&
+   &         , 2)+sj(i, j-1, k, 2))*volid)
    ya = half*(sj(i, j, k, 2)+sj(i, j-1, k, 2))*voli
+   zad = half*((sjd(i, j, k, 3)+sjd(i, j-1, k, 3))*voli+(sj(i, j, k&
+   &         , 3)+sj(i, j-1, k, 3))*volid)
    za = half*(sj(i, j, k, 3)+sj(i, j-1, k, 3))*voli
+   ttmd = xmd*xa + xm*xad + ymd*ya + ym*yad + zmd*za + zm*zad
    ttm = xm*xa + ym*ya + zm*za
+   ttpd = xpd*xa + xp*xad + ypd*ya + yp*yad + zpd*za + zp*zad
    ttp = xp*xa + yp*ya + zp*za
    ! Computation of the viscous terms in eta-direction; note
    ! that cross-derivatives are neglected, i.e. the mesh is
@@ -457,9 +500,9 @@
    ! these coefficients are nonnegative.
    cnudd = -(rsacb2*cb3inv*wd(i, j, k, itu1))
    cnud = -(rsacb2*w(i, j, k, itu1)*cb3inv)
-   camd = ttm*cnudd
+   camd = ttmd*cnud + ttm*cnudd
    cam = ttm*cnud
-   capd = ttp*cnudd
+   capd = ttpd*cnud + ttp*cnudd
    cap = ttp*cnud
    nutmd = half*(wd(i, j-1, k, itu1)+wd(i, j, k, itu1))
    nutm = half*(w(i, j-1, k, itu1)+w(i, j, k, itu1))
@@ -474,9 +517,11 @@
    nupd = half*((rlvd(i, j+1, k)*w(i, j+1, k, irho)-rlv(i, j+1, k)*&
    &         wd(i, j+1, k, irho))/w(i, j+1, k, irho)**2+nud)
    nup = half*(rlv(i, j+1, k)/w(i, j+1, k, irho)+nu)
-   cdmd = ttm*cb3inv*(numd+(one+rsacb2)*nutmd)
+   cdmd = cb3inv*((numd+(one+rsacb2)*nutmd)*ttm+(num+(one+rsacb2)*&
+   &         nutm)*ttmd)
    cdm = (num+(one+rsacb2)*nutm)*ttm*cb3inv
-   cdpd = ttp*cb3inv*(nupd+(one+rsacb2)*nutpd)
+   cdpd = cb3inv*((nupd+(one+rsacb2)*nutpd)*ttp+(nup+(one+rsacb2)*&
+   &         nutp)*ttpd)
    cdp = (nup+(one+rsacb2)*nutp)*ttp*cb3inv
    IF (cdm + cam .LT. zero) THEN
    c1m = zero
@@ -554,19 +599,38 @@
    DO i=2,il
    ! Compute the metrics in xi-direction, i.e. along the
    ! line i = constant.
+   volid = -(one*vold(i, j, k)/vol(i, j, k)**2)
    voli = one/vol(i, j, k)
+   volmid = -(two*(vold(i, j, k)+vold(i-1, j, k))/(vol(i, j, k)+vol&
+   &         (i-1, j, k))**2)
    volmi = two/(vol(i, j, k)+vol(i-1, j, k))
+   volpid = -(two*(vold(i, j, k)+vold(i+1, j, k))/(vol(i, j, k)+vol&
+   &         (i+1, j, k))**2)
    volpi = two/(vol(i, j, k)+vol(i+1, j, k))
+   xmd = sid(i-1, j, k, 1)*volmi + si(i-1, j, k, 1)*volmid
    xm = si(i-1, j, k, 1)*volmi
+   ymd = sid(i-1, j, k, 2)*volmi + si(i-1, j, k, 2)*volmid
    ym = si(i-1, j, k, 2)*volmi
+   zmd = sid(i-1, j, k, 3)*volmi + si(i-1, j, k, 3)*volmid
    zm = si(i-1, j, k, 3)*volmi
+   xpd = sid(i, j, k, 1)*volpi + si(i, j, k, 1)*volpid
    xp = si(i, j, k, 1)*volpi
+   ypd = sid(i, j, k, 2)*volpi + si(i, j, k, 2)*volpid
    yp = si(i, j, k, 2)*volpi
+   zpd = sid(i, j, k, 3)*volpi + si(i, j, k, 3)*volpid
    zp = si(i, j, k, 3)*volpi
+   xad = half*((sid(i, j, k, 1)+sid(i-1, j, k, 1))*voli+(si(i, j, k&
+   &         , 1)+si(i-1, j, k, 1))*volid)
    xa = half*(si(i, j, k, 1)+si(i-1, j, k, 1))*voli
+   yad = half*((sid(i, j, k, 2)+sid(i-1, j, k, 2))*voli+(si(i, j, k&
+   &         , 2)+si(i-1, j, k, 2))*volid)
    ya = half*(si(i, j, k, 2)+si(i-1, j, k, 2))*voli
+   zad = half*((sid(i, j, k, 3)+sid(i-1, j, k, 3))*voli+(si(i, j, k&
+   &         , 3)+si(i-1, j, k, 3))*volid)
    za = half*(si(i, j, k, 3)+si(i-1, j, k, 3))*voli
+   ttmd = xmd*xa + xm*xad + ymd*ya + ym*yad + zmd*za + zm*zad
    ttm = xm*xa + ym*ya + zm*za
+   ttpd = xpd*xa + xp*xad + ypd*ya + yp*yad + zpd*za + zp*zad
    ttp = xp*xa + yp*ya + zp*za
    ! Computation of the viscous terms in xi-direction; note
    ! that cross-derivatives are neglected, i.e. the mesh is
@@ -582,9 +646,9 @@
    ! these coefficients are nonnegative.
    cnudd = -(rsacb2*cb3inv*wd(i, j, k, itu1))
    cnud = -(rsacb2*w(i, j, k, itu1)*cb3inv)
-   camd = ttm*cnudd
+   camd = ttmd*cnud + ttm*cnudd
    cam = ttm*cnud
-   capd = ttp*cnudd
+   capd = ttpd*cnud + ttp*cnudd
    cap = ttp*cnud
    nutmd = half*(wd(i-1, j, k, itu1)+wd(i, j, k, itu1))
    nutm = half*(w(i-1, j, k, itu1)+w(i, j, k, itu1))
@@ -599,9 +663,11 @@
    nupd = half*((rlvd(i+1, j, k)*w(i+1, j, k, irho)-rlv(i+1, j, k)*&
    &         wd(i+1, j, k, irho))/w(i+1, j, k, irho)**2+nud)
    nup = half*(rlv(i+1, j, k)/w(i+1, j, k, irho)+nu)
-   cdmd = ttm*cb3inv*(numd+(one+rsacb2)*nutmd)
+   cdmd = cb3inv*((numd+(one+rsacb2)*nutmd)*ttm+(num+(one+rsacb2)*&
+   &         nutm)*ttmd)
    cdm = (num+(one+rsacb2)*nutm)*ttm*cb3inv
-   cdpd = ttp*cb3inv*(nupd+(one+rsacb2)*nutpd)
+   cdpd = cb3inv*((nupd+(one+rsacb2)*nutpd)*ttp+(nup+(one+rsacb2)*&
+   &         nutp)*ttpd)
    cdp = (nup+(one+rsacb2)*nutp)*ttp*cb3inv
    IF (cdm + cam .LT. zero) THEN
    c1m = zero
@@ -677,7 +743,8 @@
    DO j=2,jl
    DO i=2,il
    rblank = REAL(iblank(i, j, k), realtype)
-   dwd(i, j, k, itu1) = -(vol(i, j, k)*rblank*dwd(i, j, k, idvt))
+   dwd(i, j, k, itu1) = -(rblank*(vold(i, j, k)*dw(i, j, k, idvt)+&
+   &         vol(i, j, k)*dwd(i, j, k, idvt)))
    dw(i, j, k, itu1) = -(vol(i, j, k)*dw(i, j, k, idvt)*rblank)
    END DO
    END DO
@@ -727,6 +794,7 @@
    ! if the block is not moving.
    qs = zero
    ddd = 0.0_8
+   qsd = 0.0_8
    bbd = 0.0_8
    ffd = 0.0_8
    ccd = 0.0_8
@@ -749,25 +817,44 @@
    ! to be stored. To save memory, they are recomputed.
    ! Consequently, see the j-loop to build the residual for
    ! the comments.
+   volid = -(one*vold(i, j, k)/vol(i, j, k)**2)
    voli = one/vol(i, j, k)
+   volmid = -(two*(vold(i, j, k)+vold(i, j-1, k))/(vol(i, j, k)+&
+   &           vol(i, j-1, k))**2)
    volmi = two/(vol(i, j, k)+vol(i, j-1, k))
+   volpid = -(two*(vold(i, j, k)+vold(i, j+1, k))/(vol(i, j, k)+&
+   &           vol(i, j+1, k))**2)
    volpi = two/(vol(i, j, k)+vol(i, j+1, k))
+   xmd = sjd(i, j-1, k, 1)*volmi + sj(i, j-1, k, 1)*volmid
    xm = sj(i, j-1, k, 1)*volmi
+   ymd = sjd(i, j-1, k, 2)*volmi + sj(i, j-1, k, 2)*volmid
    ym = sj(i, j-1, k, 2)*volmi
+   zmd = sjd(i, j-1, k, 3)*volmi + sj(i, j-1, k, 3)*volmid
    zm = sj(i, j-1, k, 3)*volmi
+   xpd = sjd(i, j, k, 1)*volpi + sj(i, j, k, 1)*volpid
    xp = sj(i, j, k, 1)*volpi
+   ypd = sjd(i, j, k, 2)*volpi + sj(i, j, k, 2)*volpid
    yp = sj(i, j, k, 2)*volpi
+   zpd = sjd(i, j, k, 3)*volpi + sj(i, j, k, 3)*volpid
    zp = sj(i, j, k, 3)*volpi
+   xad = half*((sjd(i, j, k, 1)+sjd(i, j-1, k, 1))*voli+(sj(i, j&
+   &           , k, 1)+sj(i, j-1, k, 1))*volid)
    xa = half*(sj(i, j, k, 1)+sj(i, j-1, k, 1))*voli
+   yad = half*((sjd(i, j, k, 2)+sjd(i, j-1, k, 2))*voli+(sj(i, j&
+   &           , k, 2)+sj(i, j-1, k, 2))*volid)
    ya = half*(sj(i, j, k, 2)+sj(i, j-1, k, 2))*voli
+   zad = half*((sjd(i, j, k, 3)+sjd(i, j-1, k, 3))*voli+(sj(i, j&
+   &           , k, 3)+sj(i, j-1, k, 3))*volid)
    za = half*(sj(i, j, k, 3)+sj(i, j-1, k, 3))*voli
+   ttmd = xmd*xa + xm*xad + ymd*ya + ym*yad + zmd*za + zm*zad
    ttm = xm*xa + ym*ya + zm*za
+   ttpd = xpd*xa + xp*xad + ypd*ya + yp*yad + zpd*za + zp*zad
    ttp = xp*xa + yp*ya + zp*za
    cnudd = -(rsacb2*cb3inv*wd(i, j, k, itu1))
    cnud = -(rsacb2*w(i, j, k, itu1)*cb3inv)
-   camd = ttm*cnudd
+   camd = ttmd*cnud + ttm*cnudd
    cam = ttm*cnud
-   capd = ttp*cnudd
+   capd = ttpd*cnud + ttp*cnudd
    cap = ttp*cnud
    ! Off-diagonal terms due to the diffusion terms
    ! in j-direction.
@@ -784,9 +871,11 @@
    nupd = half*((rlvd(i, j+1, k)*w(i, j+1, k, irho)-rlv(i, j+1, k&
    &           )*wd(i, j+1, k, irho))/w(i, j+1, k, irho)**2+nud)
    nup = half*(rlv(i, j+1, k)/w(i, j+1, k, irho)+nu)
-   cdmd = ttm*cb3inv*(numd+(one+rsacb2)*nutmd)
+   cdmd = cb3inv*((numd+(one+rsacb2)*nutmd)*ttm+(num+(one+rsacb2)&
+   &           *nutm)*ttmd)
    cdm = (num+(one+rsacb2)*nutm)*ttm*cb3inv
-   cdpd = ttp*cb3inv*(nupd+(one+rsacb2)*nutpd)
+   cdpd = cb3inv*((nupd+(one+rsacb2)*nutpd)*ttp+(nup+(one+rsacb2)&
+   &           *nutp)*ttpd)
    cdp = (nup+(one+rsacb2)*nutp)*ttp*cb3inv
    IF (cdm + cam .LT. zero) THEN
    c1m = zero
@@ -808,12 +897,15 @@
    dd(j) = -c1p
    ! Compute the grid velocity if present.
    ! It is taken as the average of j and j-1,
-   IF (addgridvelocities) qs = half*(sfacej(i, j, k)+sfacej(i, j-&
-   &             1, k))*voli
+   IF (addgridvelocities) THEN
+   qsd = half*(sfacej(i, j, k)+sfacej(i, j-1, k))*volid
+   qs = half*(sfacej(i, j, k)+sfacej(i, j-1, k))*voli
+   END IF
    ! Off-diagonal terms due to the advection term in
    ! j-direction. First order approximation.
-   uud = xa*wd(i, j, k, ivx) + ya*wd(i, j, k, ivy) + za*wd(i, j, &
-   &           k, ivz)
+   uud = xad*w(i, j, k, ivx) + xa*wd(i, j, k, ivx) + yad*w(i, j, &
+   &           k, ivy) + ya*wd(i, j, k, ivy) + zad*w(i, j, k, ivz) + za*wd(&
+   &           i, j, k, ivz) - qsd
    uu = xa*w(i, j, k, ivx) + ya*w(i, j, k, ivy) + za*w(i, j, k, &
    &           ivz) - qs
    um = zero
@@ -902,25 +994,44 @@
    ! to be stored. To save memory, they are recomputed.
    ! Consequently, see the i-loop to build the residual for
    ! the comments.
+   volid = -(one*vold(i, j, k)/vol(i, j, k)**2)
    voli = one/vol(i, j, k)
+   volmid = -(two*(vold(i, j, k)+vold(i-1, j, k))/(vol(i, j, k)+&
+   &           vol(i-1, j, k))**2)
    volmi = two/(vol(i, j, k)+vol(i-1, j, k))
+   volpid = -(two*(vold(i, j, k)+vold(i+1, j, k))/(vol(i, j, k)+&
+   &           vol(i+1, j, k))**2)
    volpi = two/(vol(i, j, k)+vol(i+1, j, k))
+   xmd = sid(i-1, j, k, 1)*volmi + si(i-1, j, k, 1)*volmid
    xm = si(i-1, j, k, 1)*volmi
+   ymd = sid(i-1, j, k, 2)*volmi + si(i-1, j, k, 2)*volmid
    ym = si(i-1, j, k, 2)*volmi
+   zmd = sid(i-1, j, k, 3)*volmi + si(i-1, j, k, 3)*volmid
    zm = si(i-1, j, k, 3)*volmi
+   xpd = sid(i, j, k, 1)*volpi + si(i, j, k, 1)*volpid
    xp = si(i, j, k, 1)*volpi
+   ypd = sid(i, j, k, 2)*volpi + si(i, j, k, 2)*volpid
    yp = si(i, j, k, 2)*volpi
+   zpd = sid(i, j, k, 3)*volpi + si(i, j, k, 3)*volpid
    zp = si(i, j, k, 3)*volpi
+   xad = half*((sid(i, j, k, 1)+sid(i-1, j, k, 1))*voli+(si(i, j&
+   &           , k, 1)+si(i-1, j, k, 1))*volid)
    xa = half*(si(i, j, k, 1)+si(i-1, j, k, 1))*voli
+   yad = half*((sid(i, j, k, 2)+sid(i-1, j, k, 2))*voli+(si(i, j&
+   &           , k, 2)+si(i-1, j, k, 2))*volid)
    ya = half*(si(i, j, k, 2)+si(i-1, j, k, 2))*voli
+   zad = half*((sid(i, j, k, 3)+sid(i-1, j, k, 3))*voli+(si(i, j&
+   &           , k, 3)+si(i-1, j, k, 3))*volid)
    za = half*(si(i, j, k, 3)+si(i-1, j, k, 3))*voli
+   ttmd = xmd*xa + xm*xad + ymd*ya + ym*yad + zmd*za + zm*zad
    ttm = xm*xa + ym*ya + zm*za
+   ttpd = xpd*xa + xp*xad + ypd*ya + yp*yad + zpd*za + zp*zad
    ttp = xp*xa + yp*ya + zp*za
    cnudd = -(rsacb2*cb3inv*wd(i, j, k, itu1))
    cnud = -(rsacb2*w(i, j, k, itu1)*cb3inv)
-   camd = ttm*cnudd
+   camd = ttmd*cnud + ttm*cnudd
    cam = ttm*cnud
-   capd = ttp*cnudd
+   capd = ttpd*cnud + ttp*cnudd
    cap = ttp*cnud
    ! Off-diagonal terms due to the diffusion terms
    ! in i-direction.
@@ -937,9 +1048,11 @@
    nupd = half*((rlvd(i+1, j, k)*w(i+1, j, k, irho)-rlv(i+1, j, k&
    &           )*wd(i+1, j, k, irho))/w(i+1, j, k, irho)**2+nud)
    nup = half*(rlv(i+1, j, k)/w(i+1, j, k, irho)+nu)
-   cdmd = ttm*cb3inv*(numd+(one+rsacb2)*nutmd)
+   cdmd = cb3inv*((numd+(one+rsacb2)*nutmd)*ttm+(num+(one+rsacb2)&
+   &           *nutm)*ttmd)
    cdm = (num+(one+rsacb2)*nutm)*ttm*cb3inv
-   cdpd = ttp*cb3inv*(nupd+(one+rsacb2)*nutpd)
+   cdpd = cb3inv*((nupd+(one+rsacb2)*nutpd)*ttp+(nup+(one+rsacb2)&
+   &           *nutp)*ttpd)
    cdp = (nup+(one+rsacb2)*nutp)*ttp*cb3inv
    IF (cdm + cam .LT. zero) THEN
    c1m = zero
@@ -961,12 +1074,15 @@
    dd(i) = -c1p
    ! Compute the grid velocity if present.
    ! It is taken as the average of i and i-1,
-   IF (addgridvelocities) qs = half*(sfacei(i, j, k)+sfacei(i-1, &
-   &             j, k))*voli
+   IF (addgridvelocities) THEN
+   qsd = half*(sfacei(i, j, k)+sfacei(i-1, j, k))*volid
+   qs = half*(sfacei(i, j, k)+sfacei(i-1, j, k))*voli
+   END IF
    ! Off-diagonal terms due to the advection term in
    ! i-direction. First order approximation.
-   uud = xa*wd(i, j, k, ivx) + ya*wd(i, j, k, ivy) + za*wd(i, j, &
-   &           k, ivz)
+   uud = xad*w(i, j, k, ivx) + xa*wd(i, j, k, ivx) + yad*w(i, j, &
+   &           k, ivy) + ya*wd(i, j, k, ivy) + zad*w(i, j, k, ivz) + za*wd(&
+   &           i, j, k, ivz) - qsd
    uu = xa*w(i, j, k, ivx) + ya*w(i, j, k, ivy) + za*w(i, j, k, &
    &           ivz) - qs
    um = zero
@@ -1055,25 +1171,44 @@
    ! to be stored. To save memory, they are recomputed.
    ! Consequently, see the k-loop to build the residual for
    ! the comments.
+   volid = -(one*vold(i, j, k)/vol(i, j, k)**2)
    voli = one/vol(i, j, k)
+   volmid = -(two*(vold(i, j, k)+vold(i, j, k-1))/(vol(i, j, k)+&
+   &           vol(i, j, k-1))**2)
    volmi = two/(vol(i, j, k)+vol(i, j, k-1))
+   volpid = -(two*(vold(i, j, k)+vold(i, j, k+1))/(vol(i, j, k)+&
+   &           vol(i, j, k+1))**2)
    volpi = two/(vol(i, j, k)+vol(i, j, k+1))
+   xmd = skd(i, j, k-1, 1)*volmi + sk(i, j, k-1, 1)*volmid
    xm = sk(i, j, k-1, 1)*volmi
+   ymd = skd(i, j, k-1, 2)*volmi + sk(i, j, k-1, 2)*volmid
    ym = sk(i, j, k-1, 2)*volmi
+   zmd = skd(i, j, k-1, 3)*volmi + sk(i, j, k-1, 3)*volmid
    zm = sk(i, j, k-1, 3)*volmi
+   xpd = skd(i, j, k, 1)*volpi + sk(i, j, k, 1)*volpid
    xp = sk(i, j, k, 1)*volpi
+   ypd = skd(i, j, k, 2)*volpi + sk(i, j, k, 2)*volpid
    yp = sk(i, j, k, 2)*volpi
+   zpd = skd(i, j, k, 3)*volpi + sk(i, j, k, 3)*volpid
    zp = sk(i, j, k, 3)*volpi
+   xad = half*((skd(i, j, k, 1)+skd(i, j, k-1, 1))*voli+(sk(i, j&
+   &           , k, 1)+sk(i, j, k-1, 1))*volid)
    xa = half*(sk(i, j, k, 1)+sk(i, j, k-1, 1))*voli
+   yad = half*((skd(i, j, k, 2)+skd(i, j, k-1, 2))*voli+(sk(i, j&
+   &           , k, 2)+sk(i, j, k-1, 2))*volid)
    ya = half*(sk(i, j, k, 2)+sk(i, j, k-1, 2))*voli
+   zad = half*((skd(i, j, k, 3)+skd(i, j, k-1, 3))*voli+(sk(i, j&
+   &           , k, 3)+sk(i, j, k-1, 3))*volid)
    za = half*(sk(i, j, k, 3)+sk(i, j, k-1, 3))*voli
+   ttmd = xmd*xa + xm*xad + ymd*ya + ym*yad + zmd*za + zm*zad
    ttm = xm*xa + ym*ya + zm*za
+   ttpd = xpd*xa + xp*xad + ypd*ya + yp*yad + zpd*za + zp*zad
    ttp = xp*xa + yp*ya + zp*za
    cnudd = -(rsacb2*cb3inv*wd(i, j, k, itu1))
    cnud = -(rsacb2*w(i, j, k, itu1)*cb3inv)
-   camd = ttm*cnudd
+   camd = ttmd*cnud + ttm*cnudd
    cam = ttm*cnud
-   capd = ttp*cnudd
+   capd = ttpd*cnud + ttp*cnudd
    cap = ttp*cnud
    ! Off-diagonal terms due to the diffusion terms
    ! in k-direction.
@@ -1090,9 +1225,11 @@
    nupd = half*((rlvd(i, j, k+1)*w(i, j, k+1, irho)-rlv(i, j, k+1&
    &           )*wd(i, j, k+1, irho))/w(i, j, k+1, irho)**2+nud)
    nup = half*(rlv(i, j, k+1)/w(i, j, k+1, irho)+nu)
-   cdmd = ttm*cb3inv*(numd+(one+rsacb2)*nutmd)
+   cdmd = cb3inv*((numd+(one+rsacb2)*nutmd)*ttm+(num+(one+rsacb2)&
+   &           *nutm)*ttmd)
    cdm = (num+(one+rsacb2)*nutm)*ttm*cb3inv
-   cdpd = ttp*cb3inv*(nupd+(one+rsacb2)*nutpd)
+   cdpd = cb3inv*((nupd+(one+rsacb2)*nutpd)*ttp+(nup+(one+rsacb2)&
+   &           *nutp)*ttpd)
    cdp = (nup+(one+rsacb2)*nutp)*ttp*cb3inv
    IF (cdm + cam .LT. zero) THEN
    c1m = zero
@@ -1114,12 +1251,15 @@
    dd(k) = -c1p
    ! Compute the grid velocity if present.
    ! It is taken as the average of k and k-1,
-   IF (addgridvelocities) qs = half*(sfacek(i, j, k)+sfacek(i, j&
-   &             , k-1))*voli
+   IF (addgridvelocities) THEN
+   qsd = half*(sfacek(i, j, k)+sfacek(i, j, k-1))*volid
+   qs = half*(sfacek(i, j, k)+sfacek(i, j, k-1))*voli
+   END IF
    ! Off-diagonal terms due to the advection term in
    ! k-direction. First order approximation.
-   uud = xa*wd(i, j, k, ivx) + ya*wd(i, j, k, ivy) + za*wd(i, j, &
-   &           k, ivz)
+   uud = xad*w(i, j, k, ivx) + xa*wd(i, j, k, ivx) + yad*w(i, j, &
+   &           k, ivy) + ya*wd(i, j, k, ivy) + zad*w(i, j, k, ivz) + za*wd(&
+   &           i, j, k, ivz) - qsd
    uu = xa*w(i, j, k, ivx) + ya*w(i, j, k, ivy) + za*w(i, j, k, &
    &           ivz) - qs
    um = zero

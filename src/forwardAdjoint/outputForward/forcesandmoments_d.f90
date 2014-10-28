@@ -3,10 +3,11 @@
    !
    !  Differentiation of forcesandmoments in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *(*bcdata.fp) *(*bcdata.fv)
-   !                *(*bcdata.m) cfp cfv cmp cmv
-   !   with respect to varying inputs: *p *x *(*viscsubface.tau)
+   !                *(*bcdata.m) *(*bcdata.oarea) cfp cfv cmp cmv
+   !   with respect to varying inputs: *p *x *si *sj *sk *(*viscsubface.tau)
    !   Plus diff mem management of: viscsubface:in *viscsubface.tau:in
    !                bcdata:in *bcdata.fp:in *bcdata.fv:in *bcdata.m:in
+   !                *bcdata.oarea:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -68,7 +69,7 @@
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: dd2wall
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ss, xx
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: xxd
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ssd, xxd
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
    INTERFACE 
    SUBROUTINE SETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
@@ -136,7 +137,7 @@
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1d, rev2d
    END SUBROUTINE SETBCPOINTERS_D
-   SUBROUTINE SETXXSSRHODD2WALL_D(nn, xx, xxd, ss, rho1, rho2, &
+   SUBROUTINE SETXXSSRHODD2WALL_D(nn, xx, xxd, ss, ssd, rho1, rho2, &
    &       dd2wall)
    USE BCTYPES
    USE BLOCKPOINTERS_D
@@ -147,17 +148,19 @@
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rho2, rho1
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: dd2wall
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ss, xx
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: xxd
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ssd, xxd
    END SUBROUTINE SETXXSSRHODD2WALL_D
    END INTERFACE
       REAL(kind=realtype) :: mx, my, mz, qa
-   REAL(kind=realtype) :: mxd, myd, mzd
+   REAL(kind=realtype) :: mxd, myd, mzd, qad
    LOGICAL :: viscoussubface
    INTRINSIC SQRT
    INTRINSIC EXP
    INTRINSIC MAX
    REAL(kind=realtype) :: arg1
+   REAL(kind=realtype) :: arg1d
    REAL(kind=realtype) :: result1
+   REAL(kind=realtype) :: result1d
    REAL(kind=realtype) :: arg2
    REAL(kind=realtype) :: result2
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv2d
@@ -206,6 +209,9 @@
    DO ii1=1,ISIZE1OFDrfbcdata
    bcdatad(ii1)%m = 0.0_8
    END DO
+   DO ii1=1,ISIZE1OFDrfbcdata
+   bcdatad(ii1)%oarea = 0.0_8
+   END DO
    cfpd = 0.0_8
    cfvd = 0.0_8
    cmpd = 0.0_8
@@ -235,7 +241,8 @@
    CALL SETBCPOINTERS_D(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, pp2, &
    &                    pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev1d, rev2, &
    &                    rev2d, 0)
-   CALL SETXXSSRHODD2WALL_D(nn, xx, xxd, ss, rho1, rho2, dd2wall)
+   CALL SETXXSSRHODD2WALL_D(nn, xx, xxd, ss, ssd, rho1, rho2, dd2wall&
+   &                       )
    SELECT CASE  (bcfaceid(nn)) 
    CASE (imin) 
    fact = -one
@@ -260,6 +267,7 @@
    ! cell range, because the latter may include the halo's in i
    ! and j-direction. The offset +1 is there, because inBeg and
    ! jnBeg refer to nodal ranges and not to cell ranges.
+   bcdatad(nn)%oarea(:, :) = 0.0_8
    bcdata(nn)%oarea(:, :) = zero
    DO j=bcdata(nn)%jnbeg+1,bcdata(nn)%jnend
    DO i=bcdata(nn)%inbeg+1,bcdata(nn)%inend
@@ -285,11 +293,11 @@
    zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j&
    &           +1, 3)) - refpoint(3)
    ! Compute the force components.
-   fxd = ss(i, j, 1)*pm1d
+   fxd = pm1d*ss(i, j, 1) + pm1*ssd(i, j, 1)
    fx = pm1*ss(i, j, 1)
-   fyd = ss(i, j, 2)*pm1d
+   fyd = pm1d*ss(i, j, 2) + pm1*ssd(i, j, 2)
    fy = pm1*ss(i, j, 2)
-   fzd = ss(i, j, 3)*pm1d
+   fzd = pm1d*ss(i, j, 3) + pm1*ssd(i, j, 3)
    fz = pm1*ss(i, j, 3)
    ! Store Force data on face
    bcdatad(nn)%fp(i, j, 1) = fxd
@@ -299,12 +307,25 @@
    bcdatad(nn)%fp(i, j, 3) = fzd
    bcdata(nn)%fp(i, j, 3) = fz
    ! Scatter a quarter of the area to each node:
+   arg1d = 2*ss(i, j, 1)*ssd(i, j, 1) + 2*ss(i, j, 2)*ssd(i, j, 2&
+   &           ) + 2*ss(i, j, 3)*ssd(i, j, 3)
    arg1 = ss(i, j, 1)**2 + ss(i, j, 2)**2 + ss(i, j, 3)**2
+   IF (arg1 .EQ. 0.0_8) THEN
+   result1d = 0.0_8
+   ELSE
+   result1d = arg1d/(2.0*SQRT(arg1))
+   END IF
    result1 = SQRT(arg1)
+   qad = fourth*result1d
    qa = fourth*result1
+   bcdatad(nn)%oarea(i-1, j-1) = bcdatad(nn)%oarea(i-1, j-1) + &
+   &           qad
    bcdata(nn)%oarea(i-1, j-1) = bcdata(nn)%oarea(i-1, j-1) + qa
+   bcdatad(nn)%oarea(i, j-1) = bcdatad(nn)%oarea(i, j-1) + qad
    bcdata(nn)%oarea(i, j-1) = bcdata(nn)%oarea(i, j-1) + qa
+   bcdatad(nn)%oarea(i-1, j) = bcdatad(nn)%oarea(i-1, j) + qad
    bcdata(nn)%oarea(i-1, j) = bcdata(nn)%oarea(i-1, j) + qa
+   bcdatad(nn)%oarea(i, j) = bcdatad(nn)%oarea(i, j) + qad
    bcdata(nn)%oarea(i, j) = bcdata(nn)%oarea(i, j) + qa
    ! Get normalized surface velocity:
    v(1) = ww2(i, j, ivx)
@@ -386,16 +407,19 @@
    tauyz = viscsubface(nn)%tau(i, j, 6)
    ! Compute the viscous force on the face. A minus sign
    ! is now present, due to the definition of this force.
-   fxd = -(fact*scaledim*(ss(i, j, 1)*tauxxd+ss(i, j, 2)*tauxyd&
-   &             +ss(i, j, 3)*tauxzd))
+   fxd = -(fact*scaledim*(tauxxd*ss(i, j, 1)+tauxx*ssd(i, j, 1)&
+   &             +tauxyd*ss(i, j, 2)+tauxy*ssd(i, j, 2)+tauxzd*ss(i, j, 3)+&
+   &             tauxz*ssd(i, j, 3)))
    fx = -(fact*(tauxx*ss(i, j, 1)+tauxy*ss(i, j, 2)+tauxz*ss(i&
    &             , j, 3))*scaledim)
-   fyd = -(fact*scaledim*(ss(i, j, 1)*tauxyd+ss(i, j, 2)*tauyyd&
-   &             +ss(i, j, 3)*tauyzd))
+   fyd = -(fact*scaledim*(tauxyd*ss(i, j, 1)+tauxy*ssd(i, j, 1)&
+   &             +tauyyd*ss(i, j, 2)+tauyy*ssd(i, j, 2)+tauyzd*ss(i, j, 3)+&
+   &             tauyz*ssd(i, j, 3)))
    fy = -(fact*(tauxy*ss(i, j, 1)+tauyy*ss(i, j, 2)+tauyz*ss(i&
    &             , j, 3))*scaledim)
-   fzd = -(fact*scaledim*(ss(i, j, 1)*tauxzd+ss(i, j, 2)*tauyzd&
-   &             +ss(i, j, 3)*tauzzd))
+   fzd = -(fact*scaledim*(tauxzd*ss(i, j, 1)+tauxz*ssd(i, j, 1)&
+   &             +tauyzd*ss(i, j, 2)+tauyz*ssd(i, j, 2)+tauzzd*ss(i, j, 3)+&
+   &             tauzz*ssd(i, j, 3)))
    fz = -(fact*(tauxz*ss(i, j, 1)+tauyz*ss(i, j, 2)+tauzz*ss(i&
    &             , j, 3))*scaledim)
    ! Compute the coordinates of the centroid of the face
@@ -489,6 +513,8 @@
    ! We have to inverse the nodal areas
    DO j=bcdata(nn)%jnbeg,bcdata(nn)%jnend
    DO i=bcdata(nn)%inbeg,bcdata(nn)%inend
+   bcdatad(nn)%oarea(i, j) = -(one*bcdatad(nn)%oarea(i, j)/bcdata&
+   &           (nn)%oarea(i, j)**2)
    bcdata(nn)%oarea(i, j) = one/bcdata(nn)%oarea(i, j)
    END DO
    END DO

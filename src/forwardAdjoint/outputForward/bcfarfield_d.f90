@@ -3,8 +3,9 @@
    !
    !  Differentiation of bcfarfield in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *rev *p *gamma *w *rlv
-   !   with respect to varying inputs: *rev *p *gamma *w *rlv
+   !   with respect to varying inputs: *rev *p *gamma *w *rlv *(*bcdata.norm)
    !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
+   !                bcdata:in *bcdata.norm:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -45,6 +46,7 @@
    REAL(kind=realtype) :: gm1, ovgm1, ac1, ac2
    REAL(kind=realtype) :: ac1d, ac2d
    REAL(kind=realtype) :: r0, u0, v0, w0, qn0, vn0, c0, s0
+   REAL(kind=realtype) :: qn0d
    REAL(kind=realtype) :: re, ue, ve, we, qne, ce
    REAL(kind=realtype) :: red, ued, ved, wed, qned, ced
    REAL(kind=realtype) :: qnf, cf, uf, vf, wf, sf, cc, qq
@@ -184,6 +186,8 @@
    !nnz = BCData(nn)%norm(i,j,3)
    ! Compute the normal velocity of the free stream and
    ! substract the normal velocity of the mesh.
+   qn0d = u0*bcdatad(nn)%norm(i, j, 1) + v0*bcdatad(nn)%norm(i, j&
+   &           , 2) + w0*bcdatad(nn)%norm(i, j, 3)
    qn0 = u0*bcdata(nn)%norm(i, j, 1) + v0*bcdata(nn)%norm(i, j, 2&
    &           ) + w0*bcdata(nn)%norm(i, j, 3)
    vn0 = qn0 - bcdata(nn)%rface(i, j)
@@ -198,8 +202,10 @@
    ve = ww2(i, j, ivy)
    wed = ww2d(i, j, ivz)
    we = ww2(i, j, ivz)
-   qned = bcdata(nn)%norm(i, j, 1)*ued + bcdata(nn)%norm(i, j, 2)&
-   &           *ved + bcdata(nn)%norm(i, j, 3)*wed
+   qned = ued*bcdata(nn)%norm(i, j, 1) + ue*bcdatad(nn)%norm(i, j&
+   &           , 1) + ved*bcdata(nn)%norm(i, j, 2) + ve*bcdatad(nn)%norm(i&
+   &           , j, 2) + wed*bcdata(nn)%norm(i, j, 3) + we*bcdatad(nn)%norm&
+   &           (i, j, 3)
    qne = ue*bcdata(nn)%norm(i, j, 1) + ve*bcdata(nn)%norm(i, j, 2&
    &           ) + we*bcdata(nn)%norm(i, j, 3)
    arg1d = (gamma2d(i, j)*re+gamma2(i, j)*red)*pp2(i, j) + gamma2&
@@ -222,8 +228,8 @@
    ac1 = qne + two*ovgm1*ce
    ELSE
    ! Supersonic inflow.
+   ac1d = qn0d
    ac1 = qn0 + two*ovgm1*c0
-   ac1d = 0.0_8
    END IF
    IF (vn0 .GT. c0) THEN
    ! Supersonic outflow.
@@ -231,8 +237,8 @@
    ac2 = qne - two*ovgm1*ce
    ELSE
    ! Inflow or subsonic outflow.
+   ac2d = qn0d
    ac2 = qn0 - two*ovgm1*c0
-   ac2d = 0.0_8
    END IF
    qnfd = half*(ac1d+ac2d)
    qnf = half*(ac1+ac2)
@@ -240,11 +246,14 @@
    cf = fourth*(ac1-ac2)*gm1
    IF (vn0 .GT. zero) THEN
    ! Outflow.
-   ufd = ued + bcdata(nn)%norm(i, j, 1)*(qnfd-qned)
+   ufd = ued + (qnfd-qned)*bcdata(nn)%norm(i, j, 1) + (qnf-qne)&
+   &             *bcdatad(nn)%norm(i, j, 1)
    uf = ue + (qnf-qne)*bcdata(nn)%norm(i, j, 1)
-   vfd = ved + bcdata(nn)%norm(i, j, 2)*(qnfd-qned)
+   vfd = ved + (qnfd-qned)*bcdata(nn)%norm(i, j, 2) + (qnf-qne)&
+   &             *bcdatad(nn)%norm(i, j, 2)
    vf = ve + (qnf-qne)*bcdata(nn)%norm(i, j, 2)
-   wfd = wed + bcdata(nn)%norm(i, j, 3)*(qnfd-qned)
+   wfd = wed + (qnfd-qned)*bcdata(nn)%norm(i, j, 3) + (qnf-qne)&
+   &             *bcdatad(nn)%norm(i, j, 3)
    wf = we + (qnf-qne)*bcdata(nn)%norm(i, j, 3)
    !Intermediate rho variable added to fix AD bug,ww2
    ! was not getting picked up here. Tapenade 3.6 Does
@@ -276,11 +285,14 @@
    END DO
    ELSE
    ! Inflow
-   ufd = bcdata(nn)%norm(i, j, 1)*qnfd
+   ufd = (qnfd-qn0d)*bcdata(nn)%norm(i, j, 1) + (qnf-qn0)*&
+   &             bcdatad(nn)%norm(i, j, 1)
    uf = u0 + (qnf-qn0)*bcdata(nn)%norm(i, j, 1)
-   vfd = bcdata(nn)%norm(i, j, 2)*qnfd
+   vfd = (qnfd-qn0d)*bcdata(nn)%norm(i, j, 2) + (qnf-qn0)*&
+   &             bcdatad(nn)%norm(i, j, 2)
    vf = v0 + (qnf-qn0)*bcdata(nn)%norm(i, j, 2)
-   wfd = bcdata(nn)%norm(i, j, 3)*qnfd
+   wfd = (qnfd-qn0d)*bcdata(nn)%norm(i, j, 3) + (qnf-qn0)*&
+   &             bcdatad(nn)%norm(i, j, 3)
    wf = w0 + (qnf-qn0)*bcdata(nn)%norm(i, j, 3)
    sf = s0
    DO l=nt1mg,nt2mg

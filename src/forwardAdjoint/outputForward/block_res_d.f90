@@ -2,19 +2,29 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of block_res in forward (tangent) mode (with options i4 dr8 r8):
-   !   variations   of useful results: *(flowdoms.w) *(flowdoms.dw)
-   !   with respect to varying inputs: *(flowdoms.w)
-   !   RW status of diff variables: *(flowdoms.w):in-out *(flowdoms.dw):out
-   !                *rev:(loc) *bvtj1:(loc) *bvtj2:(loc) *p:(loc)
-   !                *gamma:(loc) *bmtk1:(loc) *bmtk2:(loc) *rlv:(loc)
-   !                *bvtk1:(loc) *bvtk2:(loc) *bmti1:(loc) *bmti2:(loc)
-   !                *bvti1:(loc) *bvti2:(loc) *fw:(loc) *bmtj1:(loc)
-   !                *bmtj2:(loc) *radi:(loc) *radj:(loc) *radk:(loc)
-   !   Plus diff mem management of: flowdoms.w:in flowdoms.dw:in rev:in
-   !                bvtj1:in bvtj2:in p:in gamma:in bmtk1:in bmtk2:in
-   !                rlv:in bvtk1:in bvtk2:in bmti1:in bmti2:in bvti1:in
-   !                bvti2:in fw:in bmtj1:in bmtj2:in radi:in radj:in
-   !                radk:in
+   !   variations   of useful results: *(flowdoms.x) *(flowdoms.w)
+   !                *(flowdoms.dw) *(*bcdata.fp) *(*bcdata.fv) *(*bcdata.m)
+   !                *(*bcdata.oarea) moment force
+   !   with respect to varying inputs: *(flowdoms.x) *(flowdoms.w)
+   !   RW status of diff variables: *(flowdoms.x):in-out *(flowdoms.vol):(loc)
+   !                *(flowdoms.w):in-out *(flowdoms.dw):out *rev:(loc)
+   !                *bvtj1:(loc) *bvtj2:(loc) *p:(loc) *gamma:(loc)
+   !                *bmtk1:(loc) *bmtk2:(loc) *rlv:(loc) *bvtk1:(loc)
+   !                *bvtk2:(loc) *bmti1:(loc) *bmti2:(loc) *si:(loc)
+   !                *sj:(loc) *sk:(loc) *bvti1:(loc) *bvti2:(loc)
+   !                *fw:(loc) *bmtj1:(loc) *bmtj2:(loc) *(*viscsubface.tau):(loc)
+   !                *(*bcdata.norm):(loc) *(*bcdata.fp):out *(*bcdata.fv):out
+   !                *(*bcdata.m):out *(*bcdata.oarea):out *bcdata.symnorm:(loc)
+   !                *radi:(loc) *radj:(loc) *radk:(loc) moment:out
+   !                force:out
+   !   Plus diff mem management of: flowdoms.x:in flowdoms.vol:in
+   !                flowdoms.w:in flowdoms.dw:in rev:in bvtj1:in bvtj2:in
+   !                p:in gamma:in bmtk1:in bmtk2:in rlv:in bvtk1:in
+   !                bvtk2:in bmti1:in bmti2:in si:in sj:in sk:in bvti1:in
+   !                bvti2:in fw:in bmtj1:in bmtj2:in viscsubface:in
+   !                *viscsubface.tau:in bcdata:in *bcdata.norm:in
+   !                *bcdata.fp:in *bcdata.fv:in *bcdata.m:in *bcdata.oarea:in
+   !                radi:in radj:in radk:in
    ! This is a super-combined function that combines the original
    ! functionality of: 
    ! Pressure Computation
@@ -27,7 +37,7 @@
    ! block/sps loop is outside the calculation. This routine is suitable
    ! for forward mode AD with Tapenade
    SUBROUTINE BLOCK_RES_D(nn, sps, usespatial, alpha, beta, liftindex, &
-   & force, moment, sepsensor)
+   & force, forced, moment, momentd, sepsensor)
    USE BLOCKPOINTERS_D
    USE FLOWVARREFSTATE
    USE INPUTPHYSICS
@@ -38,6 +48,8 @@
    USE ITERATION
    USE INPUTADJOINT
    USE DIFFSIZES
+   USE DIFFSIZES
+   !  Hint: ISIZE1OFDrfbcdata should be the size of dimension 1 of array *bcdata
    IMPLICIT NONE
    !call getCostFunction(costFunction, force, moment, sepSensor, &
    !alpha, beta, liftIndex, objValue)
@@ -48,6 +60,7 @@
    INTEGER(kind=inttype), INTENT(IN) :: liftindex
    ! Output Variables
    REAL(kind=realtype) :: force(3), moment(3), sepsensor
+   REAL(kind=realtype) :: forced(3), momentd(3)
    ! Working Variables
    REAL(kind=realtype) :: gm1, v2, fact, tmp
    REAL(kind=realtype) :: v2d, tmpd
@@ -56,6 +69,7 @@
    REAL(kind=realtype), DIMENSION(nsections) :: t
    LOGICAL :: useoldcoor
    REAL(kind=realtype), DIMENSION(3) :: cfp, cfv, cmp, cmv
+   REAL(kind=realtype), DIMENSION(3) :: cfpd, cfvd, cmpd, cmvd
    REAL(kind=realtype) :: yplusmax, scaledim
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: wsp
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: volsp
@@ -75,23 +89,22 @@
    w => flowdoms(nn, currentlevel, sps)%w
    dwd => flowdomsd(nn, 1, sps)%dw
    dw => flowdoms(nn, 1, sps)%dw
+   xd => flowdomsd(nn, currentlevel, sps)%x
    x => flowdoms(nn, currentlevel, sps)%x
+   vold => flowdomsd(nn, currentlevel, sps)%vol
    vol => flowdoms(nn, currentlevel, sps)%vol
-   !!$  ! ------------------------------------------------
-   !!$  !        Additional 'Extra' Components
-   !!$  ! ------------------------------------------------ 
-   !!$
-   !!$  call adjustInflowAngle(alpha, beta, liftIndex)
-   !!$  call referenceState
-   !!$  call setFlowInfinityState
-   !!$
-   !!$  ! ------------------------------------------------
-   !!$  !        Additional Spatial Components
-   !!$  ! ------------------------------------------------
-   !!$  if (useSpatial) then
-   !!$
-   !!$     call xhalo_block
-   !!$     call metric_block
+   ! ------------------------------------------------
+   !        Additional 'Extra' Components
+   ! ------------------------------------------------ 
+   CALL ADJUSTINFLOWANGLE(alpha, beta, liftindex)
+   CALL REFERENCESTATE()
+   CALL SETFLOWINFINITYSTATE()
+   ! ------------------------------------------------
+   !        Additional Spatial Components
+   ! ------------------------------------------------
+   IF (usespatial) THEN
+   CALL XHALO_BLOCK_D()
+   CALL METRIC_BLOCK_D()
    !!$     ! -------------------------------------
    !!$     ! These functions are required for TS
    !!$     ! --------------------------------------
@@ -107,8 +120,21 @@
    !!$     call gridVelocitiesFineLevel_block(useOldCoor, t, sps) ! Required for TS
    !!$     call normalVelocities_block(sps) ! Required for TS
    !!$     call slipVelocitiesFineLevel_block(useOldCoor, t, sps)
-   !!$
-   !!$  end if
+   ELSE
+   DO ii1=1,ntimeintervalsspectral
+   DO ii2=1,1
+   DO ii3=nn,nn
+   flowdomsd(ii3, ii2, ii1)%vol = 0.0_8
+   END DO
+   END DO
+   END DO
+   sid = 0.0_8
+   sjd = 0.0_8
+   skd = 0.0_8
+   DO ii1=1,ISIZE1OFDrfbcdata
+   bcdatad(ii1)%norm = 0.0_8
+   END DO
+   END IF
    ! ------------------------------------------------
    !        Normal Residual Computation
    ! ------------------------------------------------
@@ -215,9 +241,11 @@
    &                   )%w(i, j, k, ivy) + dvector(jj, ll, ii+3)*flowdoms(&
    &                   nn, 1, mm)%w(i, j, k, ivz)
    flowdomsd(nn, 1, sps2)%dw(i, j, k, l) = flowdomsd(nn, &
-   &                   1, sps2)%dw(i, j, k, l) + flowdoms(nn, 1, mm)%vol(i&
-   &                   , j, k)*(tmpd*flowdoms(nn, 1, mm)%w(i, j, k, irho)+&
-   &                   tmp*flowdomsd(nn, 1, mm)%w(i, j, k, irho))
+   &                   1, sps2)%dw(i, j, k, l) + (tmpd*flowdoms(nn, 1, mm)%&
+   &                   vol(i, j, k)+tmp*flowdomsd(nn, 1, mm)%vol(i, j, k))*&
+   &                   flowdoms(nn, 1, mm)%w(i, j, k, irho) + tmp*flowdoms(&
+   &                   nn, 1, mm)%vol(i, j, k)*flowdomsd(nn, 1, mm)%w(i, j&
+   &                   , k, irho)
    flowdoms(nn, 1, sps2)%dw(i, j, k, l) = flowdoms(nn, 1&
    &                   , sps2)%dw(i, j, k, l) + tmp*flowdoms(nn, 1, mm)%vol&
    &                   (i, j, k)*flowdoms(nn, 1, mm)%w(i, j, k, irho)
@@ -230,9 +258,10 @@
    DO i=2,il
    ! This is: dw = dw + dscalar*vol*w
    flowdomsd(nn, 1, sps2)%dw(i, j, k, l) = flowdomsd(nn, &
-   &                   1, sps2)%dw(i, j, k, l) + dscalar(jj, sps2, mm)*&
-   &                   flowdoms(nn, 1, mm)%vol(i, j, k)*flowdomsd(nn, 1, mm&
-   &                   )%w(i, j, k, l)
+   &                   1, sps2)%dw(i, j, k, l) + dscalar(jj, sps2, mm)*(&
+   &                   flowdomsd(nn, 1, mm)%vol(i, j, k)*flowdoms(nn, 1, mm&
+   &                   )%w(i, j, k, l)+flowdoms(nn, 1, mm)%vol(i, j, k)*&
+   &                   flowdomsd(nn, 1, mm)%w(i, j, k, l))
    flowdoms(nn, 1, sps2)%dw(i, j, k, l) = flowdoms(nn, 1&
    &                   , sps2)%dw(i, j, k, l) + dscalar(jj, sps2, mm)*&
    &                   flowdoms(nn, 1, mm)%vol(i, j, k)*flowdoms(nn, 1, mm)&
@@ -255,9 +284,11 @@
    DO k=2,kl
    DO j=2,jl
    DO i=2,il
-   flowdomsd(nn, 1, sps2)%dw(i, j, k, l) = flowdomsd(nn, 1, &
-   &             sps2)%dw(i, j, k, l)/flowdoms(nn, currentlevel, sps2)%vol(&
-   &             i, j, k)
+   flowdomsd(nn, 1, sps2)%dw(i, j, k, l) = (flowdomsd(nn, 1, &
+   &             sps2)%dw(i, j, k, l)*flowdoms(nn, currentlevel, sps2)%vol(&
+   &             i, j, k)-flowdoms(nn, 1, sps2)%dw(i, j, k, l)*flowdomsd(nn&
+   &             , currentlevel, sps2)%vol(i, j, k))/flowdoms(nn, &
+   &             currentlevel, sps2)%vol(i, j, k)**2
    flowdoms(nn, 1, sps2)%dw(i, j, k, l) = flowdoms(nn, 1, sps2)&
    &             %dw(i, j, k, l)/flowdoms(nn, currentlevel, sps2)%vol(i, j&
    &             , k)
@@ -266,7 +297,8 @@
    END DO
    END DO
    END DO
-   CALL FORCESANDMOMENTS(cfp, cfv, cmp, cmv, yplusmax, sepsensor)
+   CALL FORCESANDMOMENTS_D(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd, &
+   &                   yplusmax, sepsensor)
    ! Convert back to actual forces. Note that even though we use
    ! MachCoef, Lref, and surfaceRef here, they are NOT differented,
    ! since F doesn't actually depend on them. Ideally we would just get
@@ -274,7 +306,9 @@
    scaledim = pref/pinf
    fact = two/(gammainf*pinf*machcoef*machcoef*surfaceref*lref*lref*&
    &   scaledim)
+   forced = (cfpd+cfvd)/fact
    force = (cfp+cfv)/fact
    fact = fact/(lengthref*lref)
+   momentd = (cmpd+cmvd)/fact
    moment = (cmp+cmv)/fact
    END SUBROUTINE BLOCK_RES_D

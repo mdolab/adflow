@@ -3,8 +3,9 @@
    !
    !  Differentiation of bcsymm in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *rev *p *w *rlv
-   !   with respect to varying inputs: *rev *p *w *rlv
+   !   with respect to varying inputs: *rev *p *w *rlv *(*bcdata.norm)
    !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
+   !                bcdata:in *bcdata.norm:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -165,25 +166,27 @@
    ! Determine twice the normal velocity component,
    ! which must be substracted from the donor velocity
    ! to obtain the halo velocity.
-   vnd = two*(bcdata(nn)%norm(i, j, 1)*ww2d(i, j, ivx)+bcdata(&
-   &             nn)%norm(i, j, 2)*ww2d(i, j, ivy)+bcdata(nn)%norm(i, j, 3)&
-   &             *ww2d(i, j, ivz))
+   vnd = two*(ww2d(i, j, ivx)*bcdata(nn)%norm(i, j, 1)+ww2(i, j&
+   &             , ivx)*bcdatad(nn)%norm(i, j, 1)+ww2d(i, j, ivy)*bcdata(nn&
+   &             )%norm(i, j, 2)+ww2(i, j, ivy)*bcdatad(nn)%norm(i, j, 2)+&
+   &             ww2d(i, j, ivz)*bcdata(nn)%norm(i, j, 3)+ww2(i, j, ivz)*&
+   &             bcdatad(nn)%norm(i, j, 3))
    vn = two*(ww2(i, j, ivx)*bcdata(nn)%norm(i, j, 1)+ww2(i, j, &
    &             ivy)*bcdata(nn)%norm(i, j, 2)+ww2(i, j, ivz)*bcdata(nn)%&
    &             norm(i, j, 3))
    ! Determine the flow variables in the halo cell.
    ww1d(i, j, irho) = ww2d(i, j, irho)
    ww1(i, j, irho) = ww2(i, j, irho)
-   ww1d(i, j, ivx) = ww2d(i, j, ivx) - bcdata(nn)%norm(i, j, 1)&
-   &             *vnd
+   ww1d(i, j, ivx) = ww2d(i, j, ivx) - vnd*bcdata(nn)%norm(i, j&
+   &             , 1) - vn*bcdatad(nn)%norm(i, j, 1)
    ww1(i, j, ivx) = ww2(i, j, ivx) - vn*bcdata(nn)%norm(i, j, 1&
    &             )
-   ww1d(i, j, ivy) = ww2d(i, j, ivy) - bcdata(nn)%norm(i, j, 2)&
-   &             *vnd
+   ww1d(i, j, ivy) = ww2d(i, j, ivy) - vnd*bcdata(nn)%norm(i, j&
+   &             , 2) - vn*bcdatad(nn)%norm(i, j, 2)
    ww1(i, j, ivy) = ww2(i, j, ivy) - vn*bcdata(nn)%norm(i, j, 2&
    &             )
-   ww1d(i, j, ivz) = ww2d(i, j, ivz) - bcdata(nn)%norm(i, j, 3)&
-   &             *vnd
+   ww1d(i, j, ivz) = ww2d(i, j, ivz) - vnd*bcdata(nn)%norm(i, j&
+   &             , 3) - vn*bcdatad(nn)%norm(i, j, 3)
    ww1(i, j, ivz) = ww2(i, j, ivz) - vn*bcdata(nn)%norm(i, j, 3&
    &             )
    ww1d(i, j, irhoe) = ww2d(i, j, irhoe)

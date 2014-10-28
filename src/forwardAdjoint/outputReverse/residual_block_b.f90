@@ -2,11 +2,13 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of residual_block in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *dw *w
+   !   gradient     of useful results: *p *dw *w *x *vol *si *sj *sk
+   !                *(*viscsubface.tau)
    !   with respect to varying inputs: *rev *p *gamma *dw *w *rlv
-   !                *radi *radj *radk
+   !                *x *vol *si *sj *sk *radi *radj *radk
    !   Plus diff mem management of: rev:in p:in gamma:in dw:in w:in
-   !                rlv:in fw:in radi:in radj:in radk:in
+   !                rlv:in x:in vol:in si:in sj:in sk:in fw:in viscsubface:in
+   !                *viscsubface.tau:in radi:in radj:in radk:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -110,7 +112,6 @@
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    revb = 0.0_8
-   pb = 0.0_8
    gammab = 0.0_8
    rlvb = 0.0_8
    ELSE

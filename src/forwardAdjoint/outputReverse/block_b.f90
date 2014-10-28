@@ -59,6 +59,9 @@
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: tau, q
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: utau
    END TYPE VISCSUBFACETYPE
+   TYPE VISCSUBFACETYPE_B
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: tau
+   END TYPE VISCSUBFACETYPE_B
    ! inBeg, inEnd: Node range in the first direction of the subface
    ! jnBeg, jnEnd: Idem in the second direction.
    ! icBeg, icEnd: Cell range in the first direction of the subface
@@ -132,6 +135,14 @@
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: velz
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: ps
    END TYPE BCDATATYPE
+   TYPE BCDATATYPE_B
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: norm
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: fp
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: fv
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: m
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: oarea
+   REAL(kind=realtype), DIMENSION(3) :: symnorm
+   END TYPE BCDATATYPE_B
    !
    !        ****************************************************************
    !        *                                                              *
@@ -665,6 +676,8 @@
    INTEGER(kind=inttype), DIMENSION(:), POINTER :: iedgeptb
    END TYPE BLOCKTYPE
    TYPE BLOCKTYPE_B
+   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: x
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: vol
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: w
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: dw
    END TYPE BLOCKTYPE_B

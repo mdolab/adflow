@@ -3,9 +3,9 @@
    !
    !  Differentiation of timestep_block in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *radi *radj *radk
-   !   with respect to varying inputs: *p *gamma *w
+   !   with respect to varying inputs: *p *gamma *w *si *sj *sk
    !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
-   !                radi:in radj:in radk:in
+   !                vol:in si:in sj:in sk:in radi:in radj:in radk:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -53,7 +53,7 @@
    INTEGER(kind=inttype) :: sps, nn, i, j, k
    REAL(kind=realtype) :: plim, rlim, clim2
    REAL(kind=realtype) :: ux, uy, uz, cc2, qs, sx, sy, sz, rmu
-   REAL(kind=realtype) :: uxd, uyd, uzd, cc2d, qsd
+   REAL(kind=realtype) :: uxd, uyd, uzd, cc2d, qsd, sxd, syd, szd
    REAL(kind=realtype) :: ri, rj, rk, rij, rjk, rki
    REAL(kind=realtype) :: rid, rjd, rkd, rijd, rjkd, rkid
    REAL(kind=realtype) :: vsi, vsj, vsk, rfl, dpi, dpj, dpk
@@ -147,10 +147,13 @@
    IF (addgridvelocities) sface = sfacei(i-1, j, k) + sfacei(i&
    &               , j, k)
    ! Spectral radius in i-direction.
+   sxd = sid(i-1, j, k, 1) + sid(i, j, k, 1)
    sx = si(i-1, j, k, 1) + si(i, j, k, 1)
+   syd = sid(i-1, j, k, 2) + sid(i, j, k, 2)
    sy = si(i-1, j, k, 2) + si(i, j, k, 2)
+   szd = sid(i-1, j, k, 3) + sid(i, j, k, 3)
    sz = si(i-1, j, k, 3) + si(i, j, k, 3)
-   qsd = sx*uxd + sy*uyd + sz*uzd
+   qsd = uxd*sx + ux*sxd + uyd*sy + uy*syd + uzd*sz + uz*szd
    qs = ux*sx + uy*sy + uz*sz - sface
    IF (qs .GE. 0.) THEN
    abs0d = qsd
@@ -159,7 +162,8 @@
    abs0d = -qsd
    abs0 = -qs
    END IF
-   arg1d = (sx**2+sy**2+sz**2)*cc2d
+   arg1d = cc2d*(sx**2+sy**2+sz**2) + cc2*(2*sx*sxd+2*sy*syd+2*&
+   &             sz*szd)
    arg1 = cc2*(sx**2+sy**2+sz**2)
    IF (arg1 .EQ. 0.0_8) THEN
    result1d = 0.0_8
@@ -173,10 +177,13 @@
    IF (addgridvelocities) sface = sfacej(i, j-1, k) + sfacej(i&
    &               , j, k)
    ! Spectral radius in j-direction.
+   sxd = sjd(i, j-1, k, 1) + sjd(i, j, k, 1)
    sx = sj(i, j-1, k, 1) + sj(i, j, k, 1)
+   syd = sjd(i, j-1, k, 2) + sjd(i, j, k, 2)
    sy = sj(i, j-1, k, 2) + sj(i, j, k, 2)
+   szd = sjd(i, j-1, k, 3) + sjd(i, j, k, 3)
    sz = sj(i, j-1, k, 3) + sj(i, j, k, 3)
-   qsd = sx*uxd + sy*uyd + sz*uzd
+   qsd = uxd*sx + ux*sxd + uyd*sy + uy*syd + uzd*sz + uz*szd
    qs = ux*sx + uy*sy + uz*sz - sface
    IF (qs .GE. 0.) THEN
    abs1d = qsd
@@ -185,7 +192,8 @@
    abs1d = -qsd
    abs1 = -qs
    END IF
-   arg1d = (sx**2+sy**2+sz**2)*cc2d
+   arg1d = cc2d*(sx**2+sy**2+sz**2) + cc2*(2*sx*sxd+2*sy*syd+2*&
+   &             sz*szd)
    arg1 = cc2*(sx**2+sy**2+sz**2)
    IF (arg1 .EQ. 0.0_8) THEN
    result1d = 0.0_8
@@ -199,10 +207,13 @@
    IF (addgridvelocities) sface = sfacek(i, j, k-1) + sfacek(i&
    &               , j, k)
    ! Spectral radius in k-direction.
+   sxd = skd(i, j, k-1, 1) + skd(i, j, k, 1)
    sx = sk(i, j, k-1, 1) + sk(i, j, k, 1)
+   syd = skd(i, j, k-1, 2) + skd(i, j, k, 2)
    sy = sk(i, j, k-1, 2) + sk(i, j, k, 2)
+   szd = skd(i, j, k-1, 3) + skd(i, j, k, 3)
    sz = sk(i, j, k-1, 3) + sk(i, j, k, 3)
-   qsd = sx*uxd + sy*uyd + sz*uzd
+   qsd = uxd*sx + ux*sxd + uyd*sy + uy*syd + uzd*sz + uz*szd
    qs = ux*sx + uy*sy + uz*sz - sface
    IF (qs .GE. 0.) THEN
    abs2d = qsd
@@ -211,7 +222,8 @@
    abs2d = -qsd
    abs2 = -qs
    END IF
-   arg1d = (sx**2+sy**2+sz**2)*cc2d
+   arg1d = cc2d*(sx**2+sy**2+sz**2) + cc2*(2*sx*sxd+2*sy*syd+2*&
+   &             sz*szd)
    arg1 = cc2*(sx**2+sy**2+sz**2)
    IF (arg1 .EQ. 0.0_8) THEN
    result1d = 0.0_8

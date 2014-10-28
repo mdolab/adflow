@@ -50,6 +50,7 @@ FF90_OBJECTS =  computeetot_b.o\
 		invisciddissfluxscalar_b.o\
 		invisciddissfluxscalarcoarse_b.o\
 		dim_b.o\
+		xhalo_block_b.o\
 		block_res_b.o  \
 		viscousflux_b.o \
 		computeetotcellcpfit_b.o \

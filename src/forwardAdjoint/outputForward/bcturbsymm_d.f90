@@ -7,7 +7,7 @@
    !   with respect to varying inputs: *bmtk1 *bmtk2 *bmti1 *bmti2
    !                *bmtj1 *bmtj2
    !   Plus diff mem management of: bmtk1:in bmtk2:in bmti1:in bmti2:in
-   !                bmtj1:in bmtj2:in
+   !                bmtj1:in bmtj2:in bcdata:in
    !
    !      ******************************************************************
    !      *                                                                *

@@ -3,10 +3,10 @@
    !
    !  Differentiation of turbadvection in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *dw qq
-   !   with respect to varying inputs: *bmtk1 *dw *w *bmtk2 *bmti1
-   !                *bmti2 *bmtj1 *bmtj2 qq
-   !   Plus diff mem management of: bmtk1:in dw:in w:in bmtk2:in bmti1:in
-   !                bmti2:in bmtj1:in bmtj2:in
+   !   with respect to varying inputs: *bmtk1 *dw *w *bmtk2 *vol *bmti1
+   !                *bmti2 *si *sj *sk *bmtj1 *bmtj2 qq
+   !   Plus diff mem management of: bmtk1:in dw:in w:in bmtk2:in vol:in
+   !                bmti1:in bmti2:in si:in sj:in sk:in bmtj1:in bmtj2:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -58,6 +58,7 @@
    !
    INTEGER(kind=inttype) :: i, j, k, ii, jj, kk
    REAL(kind=realtype) :: qs, voli, xa, ya, za
+   REAL(kind=realtype) :: qsd, volid, xad, yad, zad
    REAL(kind=realtype) :: uu, dwt, dwtm1, dwtp1, dwti, dwtj, dwtk
    REAL(kind=realtype) :: uud, dwtd, dwtm1d, dwtp1d, dwtid, dwtjd, dwtkd
    REAL(kind=realtype), DIMENSION(madv) :: impl
@@ -98,6 +99,7 @@
    ! Initialize the grid velocity to zero. This value will be used
    ! if the block is not moving.
    qs = zero
+   qsd = 0.0_8
    impld = 0.0_8
    !
    !      ******************************************************************
@@ -115,16 +117,26 @@
    DO i=2,il
    ! Compute the grid velocity if present.
    ! It is taken as the average of k and k-1,
+   volid = -(half*vold(i, j, k)/vol(i, j, k)**2)
    voli = half/vol(i, j, k)
-   IF (addgridvelocities) qs = (sfacek(i, j, k)+sfacek(i, j, k-1))*&
-   &           voli
+   IF (addgridvelocities) THEN
+   qsd = (sfacek(i, j, k)+sfacek(i, j, k-1))*volid
+   qs = (sfacek(i, j, k)+sfacek(i, j, k-1))*voli
+   END IF
    ! Compute the normal velocity, where the normal direction
    ! is taken as the average of faces k and k-1.
+   xad = (skd(i, j, k, 1)+skd(i, j, k-1, 1))*voli + (sk(i, j, k, 1)&
+   &         +sk(i, j, k-1, 1))*volid
    xa = (sk(i, j, k, 1)+sk(i, j, k-1, 1))*voli
+   yad = (skd(i, j, k, 2)+skd(i, j, k-1, 2))*voli + (sk(i, j, k, 2)&
+   &         +sk(i, j, k-1, 2))*volid
    ya = (sk(i, j, k, 2)+sk(i, j, k-1, 2))*voli
+   zad = (skd(i, j, k, 3)+skd(i, j, k-1, 3))*voli + (sk(i, j, k, 3)&
+   &         +sk(i, j, k-1, 3))*volid
    za = (sk(i, j, k, 3)+sk(i, j, k-1, 3))*voli
-   uud = xa*wd(i, j, k, ivx) + ya*wd(i, j, k, ivy) + za*wd(i, j, k&
-   &         , ivz)
+   uud = xad*w(i, j, k, ivx) + xa*wd(i, j, k, ivx) + yad*w(i, j, k&
+   &         , ivy) + ya*wd(i, j, k, ivy) + zad*w(i, j, k, ivz) + za*wd(i, &
+   &         j, k, ivz) - qsd
    uu = xa*w(i, j, k, ivx) + ya*w(i, j, k, ivy) + za*w(i, j, k, ivz&
    &         ) - qs
    ! Determine the situation we are having here, i.e. positive
@@ -349,16 +361,26 @@
    DO i=2,il
    ! Compute the grid velocity if present.
    ! It is taken as the average of j and j-1,
+   volid = -(half*vold(i, j, k)/vol(i, j, k)**2)
    voli = half/vol(i, j, k)
-   IF (addgridvelocities) qs = (sfacej(i, j, k)+sfacej(i, j-1, k))*&
-   &           voli
+   IF (addgridvelocities) THEN
+   qsd = (sfacej(i, j, k)+sfacej(i, j-1, k))*volid
+   qs = (sfacej(i, j, k)+sfacej(i, j-1, k))*voli
+   END IF
    ! Compute the normal velocity, where the normal direction
    ! is taken as the average of faces j and j-1.
+   xad = (sjd(i, j, k, 1)+sjd(i, j-1, k, 1))*voli + (sj(i, j, k, 1)&
+   &         +sj(i, j-1, k, 1))*volid
    xa = (sj(i, j, k, 1)+sj(i, j-1, k, 1))*voli
+   yad = (sjd(i, j, k, 2)+sjd(i, j-1, k, 2))*voli + (sj(i, j, k, 2)&
+   &         +sj(i, j-1, k, 2))*volid
    ya = (sj(i, j, k, 2)+sj(i, j-1, k, 2))*voli
+   zad = (sjd(i, j, k, 3)+sjd(i, j-1, k, 3))*voli + (sj(i, j, k, 3)&
+   &         +sj(i, j-1, k, 3))*volid
    za = (sj(i, j, k, 3)+sj(i, j-1, k, 3))*voli
-   uud = xa*wd(i, j, k, ivx) + ya*wd(i, j, k, ivy) + za*wd(i, j, k&
-   &         , ivz)
+   uud = xad*w(i, j, k, ivx) + xa*wd(i, j, k, ivx) + yad*w(i, j, k&
+   &         , ivy) + ya*wd(i, j, k, ivy) + zad*w(i, j, k, ivz) + za*wd(i, &
+   &         j, k, ivz) - qsd
    uu = xa*w(i, j, k, ivx) + ya*w(i, j, k, ivy) + za*w(i, j, k, ivz&
    &         ) - qs
    ! Determine the situation we are having here, i.e. positive
@@ -583,16 +605,26 @@
    DO i=2,il
    ! Compute the grid velocity if present.
    ! It is taken as the average of i and i-1,
+   volid = -(half*vold(i, j, k)/vol(i, j, k)**2)
    voli = half/vol(i, j, k)
-   IF (addgridvelocities) qs = (sfacei(i, j, k)+sfacei(i-1, j, k))*&
-   &           voli
+   IF (addgridvelocities) THEN
+   qsd = (sfacei(i, j, k)+sfacei(i-1, j, k))*volid
+   qs = (sfacei(i, j, k)+sfacei(i-1, j, k))*voli
+   END IF
    ! Compute the normal velocity, where the normal direction
    ! is taken as the average of faces i and i-1.
+   xad = (sid(i, j, k, 1)+sid(i-1, j, k, 1))*voli + (si(i, j, k, 1)&
+   &         +si(i-1, j, k, 1))*volid
    xa = (si(i, j, k, 1)+si(i-1, j, k, 1))*voli
+   yad = (sid(i, j, k, 2)+sid(i-1, j, k, 2))*voli + (si(i, j, k, 2)&
+   &         +si(i-1, j, k, 2))*volid
    ya = (si(i, j, k, 2)+si(i-1, j, k, 2))*voli
+   zad = (sid(i, j, k, 3)+sid(i-1, j, k, 3))*voli + (si(i, j, k, 3)&
+   &         +si(i-1, j, k, 3))*volid
    za = (si(i, j, k, 3)+si(i-1, j, k, 3))*voli
-   uud = xa*wd(i, j, k, ivx) + ya*wd(i, j, k, ivy) + za*wd(i, j, k&
-   &         , ivz)
+   uud = xad*w(i, j, k, ivx) + xa*wd(i, j, k, ivx) + yad*w(i, j, k&
+   &         , ivy) + ya*wd(i, j, k, ivy) + zad*w(i, j, k, ivz) + za*wd(i, &
+   &         j, k, ivz) - qsd
    uu = xa*w(i, j, k, ivx) + ya*w(i, j, k, ivy) + za*w(i, j, k, ivz&
    &         ) - qs
    ! Determine the situation we are having here, i.e. positive

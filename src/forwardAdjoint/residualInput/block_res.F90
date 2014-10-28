@@ -60,21 +60,22 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   x  => flowDoms(nn, currentLevel, sps)%x
   vol=> flowDoms(nn, currentLevel, sps)%vol 
 
-!!$  ! ------------------------------------------------
-!!$  !        Additional 'Extra' Components
-!!$  ! ------------------------------------------------ 
-!!$
-!!$  call adjustInflowAngle(alpha, beta, liftIndex)
-!!$  call referenceState
-!!$  call setFlowInfinityState
-!!$
-!!$  ! ------------------------------------------------
-!!$  !        Additional Spatial Components
-!!$  ! ------------------------------------------------
-!!$  if (useSpatial) then
-!!$
-!!$     call xhalo_block
-!!$     call metric_block
+  ! ------------------------------------------------
+  !        Additional 'Extra' Components
+  ! ------------------------------------------------ 
+
+  call adjustInflowAngle(alpha, beta, liftIndex)
+  call referenceState
+  call setFlowInfinityState
+
+
+  ! ------------------------------------------------
+  !        Additional Spatial Components
+  ! ------------------------------------------------
+  if (useSpatial) then
+
+     call xhalo_block
+     call metric_block
 !!$     ! -------------------------------------
 !!$     ! These functions are required for TS
 !!$     ! --------------------------------------
@@ -90,8 +91,8 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
 !!$     call gridVelocitiesFineLevel_block(useOldCoor, t, sps) ! Required for TS
 !!$     call normalVelocities_block(sps) ! Required for TS
 !!$     call slipVelocitiesFineLevel_block(useOldCoor, t, sps)
-!!$
-!!$  end if
+
+  end if
 
   ! ------------------------------------------------
   !        Normal Residual Computation

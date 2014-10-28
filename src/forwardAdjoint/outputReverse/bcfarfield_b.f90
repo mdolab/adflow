@@ -2,9 +2,10 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of bcfarfield in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *rev *p *gamma *w *rlv
-   !   with respect to varying inputs: *rev *p *gamma *w *rlv
+   !   gradient     of useful results: *rev *p *gamma *w *rlv *(*bcdata.norm)
+   !   with respect to varying inputs: *rev *p *gamma *w *rlv *(*bcdata.norm)
    !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
+   !                bcdata:in *bcdata.norm:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -45,6 +46,7 @@
    REAL(kind=realtype) :: gm1, ovgm1, ac1, ac2
    REAL(kind=realtype) :: ac1b, ac2b
    REAL(kind=realtype) :: r0, u0, v0, w0, qn0, vn0, c0, s0
+   REAL(kind=realtype) :: qn0b
    REAL(kind=realtype) :: re, ue, ve, we, qne, ce
    REAL(kind=realtype) :: reb, ueb, veb, web, qneb, ceb
    REAL(kind=realtype) :: qnf, cf, uf, vf, wf, sf, cc, qq
@@ -70,6 +72,8 @@
    REAL(kind=realtype) :: temp2
    REAL(kind=realtype) :: temp1
    REAL(kind=realtype) :: temp0
+   REAL(kind=realtype) :: tempb9
+   REAL(kind=realtype) :: tempb8
    REAL(kind=realtype) :: tempb7
    REAL(kind=realtype) :: tempb6
    REAL(kind=realtype) :: tempb5
@@ -78,6 +82,7 @@
    REAL(kind=realtype) :: tempb2
    REAL(kind=realtype) :: tempb1
    REAL(kind=realtype) :: tempb0
+   REAL(kind=realtype) :: tempb10
    REAL(kind=realtype) :: tempb
    REAL(kind=realtype) :: temp
    !
@@ -128,6 +133,7 @@
    !nnz = BCData(nn)%norm(i,j,3)
    ! Compute the normal velocity of the free stream and
    ! substract the normal velocity of the mesh.
+   CALL PUSHREAL8(qn0)
    qn0 = u0*bcdata(nn)%norm(i, j, 1) + v0*bcdata(nn)%norm(i, j, 2&
    &           ) + w0*bcdata(nn)%norm(i, j, 3)
    vn0 = qn0 - bcdata(nn)%rface(i, j)
@@ -135,9 +141,13 @@
    ! velocity and the speed of sound of the current state
    ! in the internal cell.
    re = one/ww2(i, j, irho)
+   CALL PUSHREAL8(ue)
    ue = ww2(i, j, ivx)
+   CALL PUSHREAL8(ve)
    ve = ww2(i, j, ivy)
+   CALL PUSHREAL8(we)
    we = ww2(i, j, ivz)
+   CALL PUSHREAL8(qne)
    qne = ue*bcdata(nn)%norm(i, j, 1) + ve*bcdata(nn)%norm(i, j, 2&
    &           ) + we*bcdata(nn)%norm(i, j, 3)
    ce = SQRT(gamma2(i, j)*pp2(i, j)*re)
@@ -151,9 +161,9 @@
    ac1 = qne + two*ovgm1*ce
    CALL PUSHCONTROL1B(0)
    ELSE
-   CALL PUSHCONTROL1B(1)
    ! Supersonic inflow.
    ac1 = qn0 + two*ovgm1*c0
+   CALL PUSHCONTROL1B(1)
    END IF
    IF (vn0 .GT. c0) THEN
    ! Supersonic outflow.
@@ -164,6 +174,7 @@
    ac2 = qn0 - two*ovgm1*c0
    CALL PUSHCONTROL1B(1)
    END IF
+   CALL PUSHREAL8(qnf)
    qnf = half*(ac1+ac2)
    CALL PUSHREAL8(cf)
    cf = fourth*(ac1-ac2)*gm1
@@ -306,17 +317,17 @@
    ww1b(i, j, ivx) = 0.0_8
    IF (sf*cc .LE. 0.0_8 .AND. (ovgm1 .EQ. 0.0_8 .OR. ovgm1 .NE. &
    &             INT(ovgm1))) THEN
-   tempb6 = 0.0
+   tempb9 = 0.0
    ELSE
-   tempb6 = ovgm1*(sf*cc)**(ovgm1-1)*ww1b(i, j, irho)
+   tempb9 = ovgm1*(sf*cc)**(ovgm1-1)*ww1b(i, j, irho)
    END IF
-   ccb = sf*tempb6 + ww1(i, j, irho)*pp1b(i, j)
+   ccb = sf*tempb9 + ww1(i, j, irho)*pp1b(i, j)
    pp1b(i, j) = 0.0_8
-   sfb = cc*tempb6
+   sfb = cc*tempb9
    ww1b(i, j, irho) = 0.0_8
-   tempb7 = ccb/gamma2(i, j)
-   cfb = 2*cf*tempb7
-   gamma2b(i, j) = gamma2b(i, j) - cf**2*tempb7/gamma2(i, j)
+   tempb10 = ccb/gamma2(i, j)
+   cfb = 2*cf*tempb10
+   gamma2b(i, j) = gamma2b(i, j) - cf**2*tempb10/gamma2(i, j)
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    DO l=nt2mg,nt1mg,-1
@@ -340,15 +351,34 @@
    web = wfb
    qnfb = tempb4 + tempb5 + tempb3
    qneb = -tempb4 - tempb5 - tempb3
+   bcdatab(nn)%norm(i, j, 3) = bcdatab(nn)%norm(i, j, 3) + (qnf&
+   &             -qne)*wfb
    veb = vfb
+   bcdatab(nn)%norm(i, j, 2) = bcdatab(nn)%norm(i, j, 2) + (qnf&
+   &             -qne)*vfb
    ueb = ufb
+   bcdatab(nn)%norm(i, j, 1) = bcdatab(nn)%norm(i, j, 1) + (qnf&
+   &             -qne)*ufb
+   qn0b = 0.0_8
    ELSE
    DO l=nt2mg,nt1mg,-1
    ww1b(i, j, l) = 0.0_8
    END DO
+   tempb8 = bcdata(nn)%norm(i, j, 1)*ufb
+   tempb7 = bcdata(nn)%norm(i, j, 2)*vfb
    CALL POPREAL8(sf)
-   qnfb = bcdata(nn)%norm(i, j, 2)*vfb + bcdata(nn)%norm(i, j, &
-   &             1)*ufb + bcdata(nn)%norm(i, j, 3)*wfb
+   tempb6 = bcdata(nn)%norm(i, j, 3)*wfb
+   qnfb = tempb7 + tempb8 + tempb6
+   qn0b = -tempb7 - tempb8 - tempb6
+   bcdatab(nn)%norm(i, j, 3) = bcdatab(nn)%norm(i, j, 3) + (qnf&
+   &             -qn0)*wfb
+   bcdatab(nn)%norm(i, j, 2) = bcdatab(nn)%norm(i, j, 2) + (qnf&
+   &             -qn0)*vfb
+   bcdatab(nn)%norm(i, j, 1) = bcdatab(nn)%norm(i, j, 1) + (qnf&
+   &             -qn0)*ufb
+   ue = ww2(i, j, ivx)
+   ve = ww2(i, j, ivy)
+   we = ww2(i, j, ivz)
    qneb = 0.0_8
    ueb = 0.0_8
    veb = 0.0_8
@@ -358,17 +388,21 @@
    tempb1 = fourth*gm1*cfb
    ac1b = half*qnfb + tempb1
    ac2b = half*qnfb - tempb1
+   CALL POPREAL8(qnf)
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    qneb = qneb + ac2b
    ceb = -(two*ovgm1*ac2b)
    ELSE
+   qn0b = qn0b + ac2b
    ceb = 0.0_8
    END IF
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    qneb = qneb + ac1b
    ceb = ceb + two*ovgm1*ac1b
+   ELSE
+   qn0b = qn0b + ac1b
    END IF
    re = one/ww2(i, j, irho)
    temp = gamma2(i, j)*re
@@ -381,14 +415,31 @@
    gamma2b(i, j) = gamma2b(i, j) + re*tempb0
    reb = gamma2(i, j)*tempb0
    pp2b(i, j) = pp2b(i, j) + temp*tempb
+   CALL POPREAL8(qne)
    ueb = ueb + bcdata(nn)%norm(i, j, 1)*qneb
+   bcdatab(nn)%norm(i, j, 1) = bcdatab(nn)%norm(i, j, 1) + ue*&
+   &           qneb
    veb = veb + bcdata(nn)%norm(i, j, 2)*qneb
+   bcdatab(nn)%norm(i, j, 2) = bcdatab(nn)%norm(i, j, 2) + ve*&
+   &           qneb
    web = web + bcdata(nn)%norm(i, j, 3)*qneb
+   bcdatab(nn)%norm(i, j, 3) = bcdatab(nn)%norm(i, j, 3) + we*&
+   &           qneb
+   CALL POPREAL8(we)
    ww2b(i, j, ivz) = ww2b(i, j, ivz) + web
+   CALL POPREAL8(ve)
    ww2b(i, j, ivy) = ww2b(i, j, ivy) + veb
+   CALL POPREAL8(ue)
    ww2b(i, j, ivx) = ww2b(i, j, ivx) + ueb
    ww2b(i, j, irho) = ww2b(i, j, irho) - one*reb/ww2(i, j, irho)&
    &           **2
+   CALL POPREAL8(qn0)
+   bcdatab(nn)%norm(i, j, 1) = bcdatab(nn)%norm(i, j, 1) + u0*&
+   &           qn0b
+   bcdatab(nn)%norm(i, j, 2) = bcdatab(nn)%norm(i, j, 2) + v0*&
+   &           qn0b
+   bcdatab(nn)%norm(i, j, 3) = bcdatab(nn)%norm(i, j, 3) + w0*&
+   &           qn0b
    END DO
    END DO
    CALL POPREAL8ARRAY(gamma2, imaxdim*jmaxdim)

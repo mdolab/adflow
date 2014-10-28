@@ -2,9 +2,10 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of turbadvection in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *dw *w qq
-   !   with respect to varying inputs: *dw *w qq
-   !   Plus diff mem management of: dw:in w:in
+   !   gradient     of useful results: *dw *w *vol *si *sj *sk qq
+   !   with respect to varying inputs: *dw *w *vol *si *sj *sk qq
+   !   Plus diff mem management of: dw:in w:in vol:in si:in sj:in
+   !                sk:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -56,6 +57,7 @@
    !
    INTEGER(kind=inttype) :: i, j, k, ii, jj, kk
    REAL(kind=realtype) :: qs, voli, xa, ya, za
+   REAL(kind=realtype) :: qsb, volib, xab, yab, zab
    REAL(kind=realtype) :: uu, dwt, dwtm1, dwtp1, dwti, dwtj, dwtk
    REAL(kind=realtype) :: uub, dwtb, dwtm1b, dwtp1b, dwtib, dwtjb, dwtkb
    REAL(kind=realtype), DIMENSION(madv) :: impl
@@ -113,8 +115,12 @@
    ! Compute the grid velocity if present.
    ! It is taken as the average of k and k-1,
    voli = half/vol(i, j, k)
-   IF (addgridvelocities) qs = (sfacek(i, j, k)+sfacek(i, j, k-1))*&
-   &           voli
+   IF (addgridvelocities) THEN
+   qs = (sfacek(i, j, k)+sfacek(i, j, k-1))*voli
+   CALL PUSHCONTROL1B(0)
+   ELSE
+   CALL PUSHCONTROL1B(1)
+   END IF
    ! Compute the normal velocity, where the normal direction
    ! is taken as the average of faces k and k-1.
    xa = (sk(i, j, k, 1)+sk(i, j, k-1, 1))*voli
@@ -346,8 +352,12 @@
    ! Compute the grid velocity if present.
    ! It is taken as the average of j and j-1,
    voli = half/vol(i, j, k)
-   IF (addgridvelocities) qs = (sfacej(i, j, k)+sfacej(i, j-1, k))*&
-   &           voli
+   IF (addgridvelocities) THEN
+   qs = (sfacej(i, j, k)+sfacej(i, j-1, k))*voli
+   CALL PUSHCONTROL1B(0)
+   ELSE
+   CALL PUSHCONTROL1B(1)
+   END IF
    ! Compute the normal velocity, where the normal direction
    ! is taken as the average of faces j and j-1.
    xa = (sj(i, j, k, 1)+sj(i, j-1, k, 1))*voli
@@ -579,8 +589,12 @@
    ! Compute the grid velocity if present.
    ! It is taken as the average of i and i-1,
    voli = half/vol(i, j, k)
-   IF (addgridvelocities) qs = (sfacei(i, j, k)+sfacei(i-1, j, k))*&
-   &           voli
+   IF (addgridvelocities) THEN
+   qs = (sfacei(i, j, k)+sfacei(i-1, j, k))*voli
+   CALL PUSHCONTROL1B(0)
+   ELSE
+   CALL PUSHCONTROL1B(1)
+   END IF
    ! Compute the normal velocity, where the normal direction
    ! is taken as the average of faces i and i-1.
    xa = (si(i, j, k, 1)+si(i-1, j, k, 1))*voli
@@ -795,6 +809,7 @@
    END DO
    END DO
    END DO
+   qsb = 0.0_8
    DO k=kl,2,-1
    DO j=jl,2,-1
    DO i=il,2,-1
@@ -923,9 +938,27 @@
    ya = (si(i, j, k, 2)+si(i-1, j, k, 2))*voli
    za = (si(i, j, k, 3)+si(i-1, j, k, 3))*voli
    CALL POPREAL8(uu)
+   xab = w(i, j, k, ivx)*uub
    wb(i, j, k, ivx) = wb(i, j, k, ivx) + xa*uub
+   yab = w(i, j, k, ivy)*uub
    wb(i, j, k, ivy) = wb(i, j, k, ivy) + ya*uub
+   zab = w(i, j, k, ivz)*uub
    wb(i, j, k, ivz) = wb(i, j, k, ivz) + za*uub
+   qsb = qsb - uub
+   sib(i, j, k, 3) = sib(i, j, k, 3) + voli*zab
+   sib(i-1, j, k, 3) = sib(i-1, j, k, 3) + voli*zab
+   volib = (si(i, j, k, 2)+si(i-1, j, k, 2))*yab + (si(i, j, k, 1)+&
+   &         si(i-1, j, k, 1))*xab + (si(i, j, k, 3)+si(i-1, j, k, 3))*zab
+   sib(i, j, k, 2) = sib(i, j, k, 2) + voli*yab
+   sib(i-1, j, k, 2) = sib(i-1, j, k, 2) + voli*yab
+   sib(i, j, k, 1) = sib(i, j, k, 1) + voli*xab
+   sib(i-1, j, k, 1) = sib(i-1, j, k, 1) + voli*xab
+   CALL POPCONTROL1B(branch)
+   IF (branch .EQ. 0) THEN
+   volib = volib + (sfacei(i, j, k)+sfacei(i-1, j, k))*qsb
+   qsb = 0.0_8
+   END IF
+   volb(i, j, k) = volb(i, j, k) - half*volib/vol(i, j, k)**2
    END DO
    END DO
    END DO
@@ -1057,9 +1090,27 @@
    ya = (sj(i, j, k, 2)+sj(i, j-1, k, 2))*voli
    za = (sj(i, j, k, 3)+sj(i, j-1, k, 3))*voli
    CALL POPREAL8(uu)
+   xab = w(i, j, k, ivx)*uub
    wb(i, j, k, ivx) = wb(i, j, k, ivx) + xa*uub
+   yab = w(i, j, k, ivy)*uub
    wb(i, j, k, ivy) = wb(i, j, k, ivy) + ya*uub
+   zab = w(i, j, k, ivz)*uub
    wb(i, j, k, ivz) = wb(i, j, k, ivz) + za*uub
+   qsb = qsb - uub
+   sjb(i, j, k, 3) = sjb(i, j, k, 3) + voli*zab
+   sjb(i, j-1, k, 3) = sjb(i, j-1, k, 3) + voli*zab
+   volib = (sj(i, j, k, 2)+sj(i, j-1, k, 2))*yab + (sj(i, j, k, 1)+&
+   &         sj(i, j-1, k, 1))*xab + (sj(i, j, k, 3)+sj(i, j-1, k, 3))*zab
+   sjb(i, j, k, 2) = sjb(i, j, k, 2) + voli*yab
+   sjb(i, j-1, k, 2) = sjb(i, j-1, k, 2) + voli*yab
+   sjb(i, j, k, 1) = sjb(i, j, k, 1) + voli*xab
+   sjb(i, j-1, k, 1) = sjb(i, j-1, k, 1) + voli*xab
+   CALL POPCONTROL1B(branch)
+   IF (branch .EQ. 0) THEN
+   volib = volib + (sfacej(i, j, k)+sfacej(i, j-1, k))*qsb
+   qsb = 0.0_8
+   END IF
+   volb(i, j, k) = volb(i, j, k) - half*volib/vol(i, j, k)**2
    END DO
    END DO
    END DO
@@ -1191,9 +1242,27 @@
    ya = (sk(i, j, k, 2)+sk(i, j, k-1, 2))*voli
    za = (sk(i, j, k, 3)+sk(i, j, k-1, 3))*voli
    CALL POPREAL8(uu)
+   xab = w(i, j, k, ivx)*uub
    wb(i, j, k, ivx) = wb(i, j, k, ivx) + xa*uub
+   yab = w(i, j, k, ivy)*uub
    wb(i, j, k, ivy) = wb(i, j, k, ivy) + ya*uub
+   zab = w(i, j, k, ivz)*uub
    wb(i, j, k, ivz) = wb(i, j, k, ivz) + za*uub
+   qsb = qsb - uub
+   skb(i, j, k, 3) = skb(i, j, k, 3) + voli*zab
+   skb(i, j, k-1, 3) = skb(i, j, k-1, 3) + voli*zab
+   volib = (sk(i, j, k, 2)+sk(i, j, k-1, 2))*yab + (sk(i, j, k, 1)+&
+   &         sk(i, j, k-1, 1))*xab + (sk(i, j, k, 3)+sk(i, j, k-1, 3))*zab
+   skb(i, j, k, 2) = skb(i, j, k, 2) + voli*yab
+   skb(i, j, k-1, 2) = skb(i, j, k-1, 2) + voli*yab
+   skb(i, j, k, 1) = skb(i, j, k, 1) + voli*xab
+   skb(i, j, k-1, 1) = skb(i, j, k-1, 1) + voli*xab
+   CALL POPCONTROL1B(branch)
+   IF (branch .EQ. 0) THEN
+   volib = volib + (sfacek(i, j, k)+sfacek(i, j, k-1))*qsb
+   qsb = 0.0_8
+   END IF
+   volb(i, j, k) = volb(i, j, k) - half*volib/vol(i, j, k)**2
    END DO
    END DO
    END DO
