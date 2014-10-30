@@ -87,9 +87,13 @@
       call EChk(PETScIerr,__FILE__,__LINE__)
 
       ! Get Current Residual
-      call MatMult(dRdWT,psi,adjointRes,PETScIerr)
-      call EChk(PETScIerr,__FILE__,__LINE__)
-      
+      if (usematrixfreedrdw) then 
+         call MatMult(dRdWTShell,psi,adjointRes,PETScIerr)
+         call EChk(PETScIerr,__FILE__,__LINE__)
+      else
+         call MatMult(dRdWT,psi,adjointRes,PETScIerr)
+         call EChk(PETScIerr,__FILE__,__LINE__)
+      end if
       ! AdjointRes = AdjointRes - adjointRHS
       call VecAXPY(adjointRes,-one,adjointRHS,PETScIerr)
       call EChk(PETScIerr,__FILE__,__LINE__)
@@ -132,8 +136,14 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      call MatMult(dRdWT,psi,adjointRes,PETScIerr)
-      call EChk(PETScIerr,__FILE__,__LINE__)
+
+      if (usematrixfreedrdw) then 
+         call MatMult(dRdWTShell,psi,adjointRes,PETScIerr)
+         call EChk(PETScIerr,__FILE__,__LINE__)
+      else
+         call MatMult(dRdWT,psi,adjointRes,PETScIerr)
+         call EChk(PETScIerr,__FILE__,__LINE__)
+      end if
       
       call VecAXPY(adjointRes,-one,adjointRHS,PETScIerr)
       call EChk(PETScIerr,__FILE__,__LINE__)
