@@ -2,9 +2,9 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of unsteadyturbterm in forward (tangent) mode (with options i4 dr8 r8):
-   !   variations   of useful results: *dvt qq
-   !   with respect to varying inputs: timeref *dw *w *dvt qq
-   !   Plus diff mem management of: dw:in w:in dvt:in
+   !   variations   of useful results: *dw qq
+   !   with respect to varying inputs: timeref *dw *w qq
+   !   Plus diff mem management of: dw:in w:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -108,9 +108,10 @@
    ! sign compared to the residual of the flow equations.
    ! Therefore the time derivative must be substracted
    ! from dvt.
-   dvtd(i, j, k, ii) = dvtd(i, j, k, ii) - oneoverdtd*tmp - &
-   &               oneoverdt*tmpd
-   dvt(i, j, k, ii) = dvt(i, j, k, ii) - oneoverdt*tmp
+   dwd(i, j, k, idvt+ii) = dwd(i, j, k, idvt+ii) - oneoverdtd&
+   &               *tmp - oneoverdt*tmpd
+   dw(i, j, k, idvt+ii) = dw(i, j, k, idvt+ii) - oneoverdt*&
+   &               tmp
    ! Update the central jacobian.
    qqd(i, j, k, ii, ii) = qqd(i, j, k, ii, ii) + coeftime(0)*&
    &               oneoverdtd
@@ -154,8 +155,10 @@
    DO k=2,kl
    DO j=2,jl
    DO i=2,il
-   dvtd(i, j, k, ii) = dvtd(i, j, k, ii) - dwd(i, j, k, jj)
-   dvt(i, j, k, ii) = dvt(i, j, k, ii) - dw(i, j, k, jj)
+   dwd(i, j, k, idvt+ii) = dwd(i, j, k, idvt+ii) - dwd(i, j, k&
+   &             , jj)
+   dw(i, j, k, idvt+ii) = dw(i, j, k, idvt+ii) - dw(i, j, k, jj&
+   &             )
    qqd(i, j, k, ii, ii) = qqd(i, j, k, ii, ii) + tmpd
    qq(i, j, k, ii, ii) = qq(i, j, k, ii, ii) + tmp
    END DO
