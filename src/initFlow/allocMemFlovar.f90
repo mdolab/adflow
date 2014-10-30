@@ -106,13 +106,14 @@ subroutine allocMemFlovarPart1(sps,level)
      ! levels, because the eddy viscosity might be frozen in the
      ! multigrid.
 
-     if( eddyModel ) then
-        allocate(flowDoms(nn,level,sps)%rev(0:ib,0:jb,0:kb), &
-             stat=ierr)
-        if(ierr /= 0)                           &
-             call terminate("allocMemFlovarPart1", &
-             "Memory allocation failure for rev")
-     endif
+     ! Always allocate rev due to reverse mode - Peter Lyu 
+     !if( eddyModel ) then
+     allocate(flowDoms(nn,level,sps)%rev(0:ib,0:jb,0:kb), &
+          stat=ierr)
+     if(ierr /= 0)                           &
+          call terminate("allocMemFlovarPart1", &
+          "Memory allocation failure for rev")
+     !endif
 
      ! If this is the finest grid some more memory must be allocated.
 
@@ -130,14 +131,14 @@ subroutine allocMemFlovarPart1(sps,level)
         flowDoms(nn,level,sps)%gamma = gammaConstant
 
         ! The laminar viscosity for viscous computations.
-
-        if( viscous ) then
-           allocate(flowDoms(nn,level,sps)%rlv(0:ib,0:jb,0:kb), &
-                stat=ierr)
-           if(ierr /= 0)                           &
-                call terminate("allocMemFlovarPart1", &
-                "Memory allocation failure for rlv")
-        endif
+        ! Always allocate rlv due to reverse mode - Peter Lyu 
+        !if( viscous ) then
+        allocate(flowDoms(nn,level,sps)%rlv(0:ib,0:jb,0:kb), &
+             stat=ierr)
+        if(ierr /= 0)                           &
+             call terminate("allocMemFlovarPart1", &
+             "Memory allocation failure for rlv")
+        !endif
 
         ! The state vectors in the past for unsteady computations.
 
