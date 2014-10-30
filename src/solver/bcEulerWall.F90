@@ -43,22 +43,24 @@
        real(kind=realType) :: dpj, dpk, ri, rj, rk, qj, qk, vn
        real(kind=realType) :: ux, uy, uz
 
+#ifndef TAPENADE_REVERSE
        real(kind=realType), dimension(:,:,:), pointer :: ww1, ww2
        real(kind=realType), dimension(:,:),   pointer :: pp1, pp2
        real(kind=realType), dimension(:,:),   pointer :: pp3, pp4
        real(kind=realType), dimension(:,:),   pointer :: rlv1, rlv2
        real(kind=realType), dimension(:,:),   pointer :: rev1, rev2
        real(kind=realType), dimension(:,:,:), pointer :: ssi, ssj, ssk
-       real(kind=realType), dimension(:,:,:), pointer :: norm
-       real(kind=realType), dimension(:,:),   pointer :: rface
        real(kind=realType), dimension(:,:,:), pointer :: ss
+
 !
 !      Interfaces
 !
        interface
          subroutine setBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
                                   rev1, rev2, offset)
+           use BCTypes
            use blockPointers
+           use flowVarRefState
            implicit none
 
            integer(kind=intType), intent(in) :: nn, offset
@@ -67,7 +69,75 @@
            real(kind=realType), dimension(:,:),   pointer :: rlv1, rlv2
            real(kind=realType), dimension(:,:),   pointer :: rev1, rev2
          end subroutine setBCPointers
+
+         subroutine resetBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
+                                  rev1, rev2, offset)
+           use BCTypes
+           use blockPointers
+           use flowVarRefState
+           implicit none
+
+           integer(kind=intType), intent(in) :: nn, offset
+           real(kind=realType), dimension(:,:,:), pointer :: ww1, ww2
+           real(kind=realType), dimension(:,:),   pointer :: pp1, pp2
+           real(kind=realType), dimension(:,:),   pointer :: rlv1, rlv2
+           real(kind=realType), dimension(:,:),   pointer :: rev1, rev2
+         end subroutine resetBCPointers
+
+
+        subroutine setpp3pp4(nn, pp3, pp4)
+
+           use BCTypes
+           use blockPointers
+           implicit none
+
+           integer(kind=intType), intent(in) :: nn
+           real(kind=realType), dimension(:,:),   pointer :: pp3, pp4
+         end subroutine setpp3pp4
+
+        subroutine resetpp3pp4(nn, pp3, pp4)
+
+           use BCTypes
+           use blockPointers
+           implicit none
+
+           integer(kind=intType), intent(in) :: nn
+           real(kind=realType), dimension(:,:),   pointer :: pp3, pp4
+         end subroutine resetpp3pp4
+
+        subroutine setss(nn, ssi, ssj, ssk, ss)
+
+           use BCTypes
+           use blockPointers
+           implicit none
+
+           integer(kind=intType), intent(in) :: nn
+           real(kind=realType), dimension(:,:,:), pointer :: ssi, ssj, ssk
+           real(kind=realType), dimension(:,:,:), pointer :: ss
+         end subroutine setss
+
+        subroutine resetss(nn, ssi, ssj, ssk, ss)
+
+           use BCTypes
+           use blockPointers
+           implicit none
+
+           integer(kind=intType), intent(in) :: nn
+           real(kind=realType), dimension(:,:,:), pointer :: ssi, ssj, ssk
+           real(kind=realType), dimension(:,:,:), pointer :: ss
+         end subroutine resetss
+
        end interface
+
+#else
+       real(kind=realType), dimension(imaxDim,jmaxDim,nw) :: ww1, ww2
+       real(kind=realType), dimension(imaxDim,jmaxDim) :: pp1, pp2
+       real(kind=realType), dimension(imaxDim,jmaxDim) :: pp3, pp4
+       real(kind=realType), dimension(imaxDim,jmaxDim) :: rlv1, rlv2
+       real(kind=realType), dimension(imaxDim,jmaxDim) :: rev1, rev2
+       real(kind=realType), dimension(imaxDim,jmaxDim,3) :: ssi, ssj, ssk
+       real(kind=realType), dimension(imaxDim,jmaxDim,3) :: ss
+#endif
 !
 !      ******************************************************************
 !      *                                                                *
@@ -91,17 +161,24 @@
 
            ! Set the pointers for the unit normal and the normal
            ! velocity to make the code more readable.
-
-           norm  => BCData(nn)%norm
-           rface => BCData(nn)%rface
+           
+           ! Modify to use actual pointer - Peter Lyu
+           !norm  => BCData(nn)%norm
+           !rface => BCData(nn)%rface
 
            ! Nullify the pointers and set them to the correct subface.
            ! They are nullified first, because some compilers require
            ! that.
 
            !nullify(ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2)
+#ifndef TAPENADE_REVERSE
            call setBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
                               rev1, rev2, 0)
+#else
+           call setBCPointersBwd(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
+                rev1, rev2, 0)
+#endif
+
 !
 !          **************************************************************
 !          *                                                            *
@@ -114,7 +191,6 @@
            BCTreatment: select case (wallTreatment)
 
              case (constantPressure)
-
                ! Constant pressure. Set the gradient to zero.
 
                do k=BCData(nn)%jcBeg, BCData(nn)%jcEnd
@@ -130,21 +206,11 @@
                ! Linear extrapolation. First set the additional pointer
                ! for pp3, depending on the block face.
 
-               select case (BCFaceID(nn))
-                 case (iMin)
-                   pp3 => p(3,1:,1:)
-                 case (iMax)
-                   pp3 => p(nx,1:,1:)
-                 case (jMin)
-                   pp3 => p(1:,3,1:)
-                 case (jMax)
-                   pp3 => p(1:,ny,1:)
-                 case (kMin)
-                   pp3 => p(1:,1:,3)
-                 case (kMax)
-                   pp3 => p(1:,1:,nz)
-               end select
-
+#ifndef TAPENADE_REVERSE
+               call setpp3pp4(nn, pp3, pp4)
+#else
+               call setpp3pp4Bwd(nn, pp3, pp4)
+#endif
                ! Compute the gradient.
 
                do k=BCData(nn)%jcBeg, BCData(nn)%jcEnd
@@ -153,6 +219,13 @@
                  enddo
                enddo
 
+#ifndef TAPENADE_REVERSE
+               call resetpp3pp4(nn, pp3, pp4)
+#else
+               call resetpp3pp4Bwd(nn, pp3, pp4)
+#endif
+
+
              !===========================================================
 
              case (quadExtrapolPressure)
@@ -160,20 +233,11 @@
                ! Quadratic extrapolation. First set the additional
                ! pointers for pp3 and pp4, depending on the block face.
 
-               select case (BCFaceID(nn))
-                 case (iMin)
-                   pp3 => p(3,1:,1:);  pp4 => p(4,1:,1:)
-                 case (iMax)
-                   pp3 => p(nx,1:,1:); pp4 => p(nx-1,1:,1:)
-                 case (jMin)
-                   pp3 => p(1:,3,1:);  pp4 => p(1:,4,1:)
-                 case (jMax)
-                   pp3 => p(1:,ny,1:); pp4 => p(1:,ny-1,1:)
-                 case (kMin)
-                   pp3 => p(1:,1:,3);  pp4 => p(1:,1:,4)
-                 case (kMax)
-                   pp3 => p(1:,1:,nz); pp4 => p(1:,1:,nz-1)
-               end select
+#ifndef TAPENADE_REVERSE
+               call setpp3pp4(nn, pp3, pp4)
+#else
+               call setpp3pp4Bwd(nn, pp3, pp4)
+#endif
 
                ! Compute the gradient.
 
@@ -183,6 +247,12 @@
                             - half*pp4(j,k)
                  enddo
                enddo
+
+#ifndef TAPENADE_REVERSE
+               call resetpp3pp4(nn, pp3, pp4)
+#else
+               call resetpp3pp4Bwd(nn, pp3, pp4)
+#endif
 
              !===========================================================
 
@@ -197,60 +267,12 @@
                ! the code. For moving faces also the grid velocity of
                ! the 1st cell center from the wall is needed.
 
-               select case (BCFaceID(nn))
-                 case (iMin)
-                   ssi => si(1,:,:,:)
-                   ssj => sj(2,:,:,:)
-                   ssk => sk(2,:,:,:)
+#ifndef TAPENADE_REVERSE
+               call setss(nn, ssi, ssj, ssk, ss)
+#else
+               call setssBwd(nn, ssi, ssj, ssk, ss)
+#endif
 
-                   if( addGridVelocities ) ss => s(2,:,:,:)
-
-                 !=======================================================
-
-                 case (iMax)
-                   ssi => si(il,:,:,:)
-                   ssj => sj(il,:,:,:)
-                   ssk => sk(il,:,:,:)
-
-                   if( addGridVelocities ) ss => s(il,:,:,:)
-
-                 !=======================================================
-
-                 case (jMin)
-                   ssi => sj(:,1,:,:)
-                   ssj => si(:,2,:,:)
-                   ssk => sk(:,2,:,:)
-
-                   if( addGridVelocities ) ss => s(:,2,:,:)
-
-                 !=======================================================
-
-                 case (jMax)
-                   ssi => sj(:,jl,:,:)
-                   ssj => si(:,jl,:,:)
-                   ssk => sk(:,jl,:,:)
-
-                   if( addGridVelocities ) ss => s(:,jl,:,:)
-
-                 !=======================================================
-
-                 case (kMin)
-                   ssi => sk(:,:,1,:)
-                   ssj => si(:,:,2,:)
-                   ssk => sj(:,:,2,:)
-
-                   if( addGridVelocities ) ss => s(:,:,2,:)
-
-                 !=======================================================
-
-                 case (kMax)
-                   ssi => sk(:,:,kl,:)
-                   ssj => si(:,:,kl,:)
-                   ssk => sj(:,:,kl,:)
-
-                   if( addGridVelocities ) ss => s(:,:,kl,:)
-
-               end select
 
                ! Loop over the faces of the generic subface.
 
@@ -310,25 +332,25 @@
                    ! however this is not really a problem, because these
                    ! values are overwritten in the communication pattern.
 
-                   rxj = a1*(norm(jp1,k,1) - norm(jm1,k,1))
-                   ryj = a1*(norm(jp1,k,2) - norm(jm1,k,2))
-                   rzj = a1*(norm(jp1,k,3) - norm(jm1,k,3))
+                   rxj = a1*(BCData(nn)%norm(jp1,k,1) - BCData(nn)%norm(jm1,k,1))
+                   ryj = a1*(BCData(nn)%norm(jp1,k,2) - BCData(nn)%norm(jm1,k,2))
+                   rzj = a1*(BCData(nn)%norm(jp1,k,3) - BCData(nn)%norm(jm1,k,3))
                    dpj = a1*(pp2(jp1,k)    - pp2(jm1,k))
 
-                   rxk = b1*(norm(j,kp1,1) - norm(j,km1,1))
-                   ryk = b1*(norm(j,kp1,2) - norm(j,km1,2))
-                   rzk = b1*(norm(j,kp1,3) - norm(j,km1,3))
+                   rxk = b1*(BCData(nn)%norm(j,kp1,1) - BCData(nn)%norm(j,km1,1))
+                   ryk = b1*(BCData(nn)%norm(j,kp1,2) - BCData(nn)%norm(j,km1,2))
+                   rzk = b1*(BCData(nn)%norm(j,kp1,3) - BCData(nn)%norm(j,km1,3))
                    dpk = b1*(pp2(j,kp1)    - pp2(j,km1))
 
                    ! Compute the dot product between the unit vector
                    ! and the normal vectors in i, j and k-direction.
 
-                   ri = norm(j,k,1)*sixa + norm(j,k,2)*siya &
-                      + norm(j,k,3)*siza
-                   rj = norm(j,k,1)*sjxa + norm(j,k,2)*sjya &
-                      + norm(j,k,3)*sjza
-                   rk = norm(j,k,1)*skxa + norm(j,k,2)*skya &
-                      + norm(j,k,3)*skza
+                   ri = BCData(nn)%norm(j,k,1)*sixa + BCData(nn)%norm(j,k,2)*siya &
+                      + BCData(nn)%norm(j,k,3)*siza
+                   rj = BCData(nn)%norm(j,k,1)*sjxa + BCData(nn)%norm(j,k,2)*sjya &
+                      + BCData(nn)%norm(j,k,3)*sjza
+                   rk = BCData(nn)%norm(j,k,1)*skxa + BCData(nn)%norm(j,k,2)*skya &
+                      + BCData(nn)%norm(j,k,3)*skza
 
                    ! Store the velocity components in ux, uy and uz and
                    ! subtract the mesh velocity if the face is moving.
@@ -360,6 +382,12 @@
                  enddo
                enddo
 
+#ifndef TAPENADE_REVERSE
+               call resetss(nn, ssi, ssj, ssk, ss)
+#else
+               call resetssBwd(nn, ssi, ssj, ssk, ss)
+#endif
+
            end select BCTreatment
 
            ! Determine the state in the halo cell. Again loop over
@@ -375,14 +403,14 @@
 
                pp1(j,k) = dim(pp2(j,k),pp1(j,k))
 
-               vn = two*(rface(j,k) - ww2(j,k,ivx)*norm(j,k,1) &
-                                    - ww2(j,k,ivy)*norm(j,k,2) &
-                                    - ww2(j,k,ivz)*norm(j,k,3))
+               vn = two*(BCData(nn)%rface(j,k) - ww2(j,k,ivx)*BCData(nn)%norm(j,k,1) &
+                                    - ww2(j,k,ivy)*BCData(nn)%norm(j,k,2) &
+                                    - ww2(j,k,ivz)*BCData(nn)%norm(j,k,3))
                
                ww1(j,k,irho) = ww2(j,k,irho)
-               ww1(j,k,ivx)  = ww2(j,k,ivx) + vn*norm(j,k,1)
-               ww1(j,k,ivy)  = ww2(j,k,ivy) + vn*norm(j,k,2)
-               ww1(j,k,ivz)  = ww2(j,k,ivz) + vn*norm(j,k,3)
+               ww1(j,k,ivx)  = ww2(j,k,ivx) + vn*BCData(nn)%norm(j,k,1)
+               ww1(j,k,ivy)  = ww2(j,k,ivy) + vn*BCData(nn)%norm(j,k,2)
+               ww1(j,k,ivz)  = ww2(j,k,ivz) + vn*BCData(nn)%norm(j,k,3)
 
                ! Just copy the turbulent variables.
 
@@ -398,6 +426,15 @@
              enddo
            enddo
 
+           ! deallocation all pointer
+#ifndef TAPENADE_REVERSE
+           call resetBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
+                              rev1, rev2, 0)
+#else
+           call resetBCPointersBwd(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
+                rev1, rev2, 0)
+#endif
+
            ! Compute the energy for these halo's.
 
            call computeEtot(icBeg(nn),icEnd(nn), jcBeg(nn),jcEnd(nn), &
@@ -407,8 +444,8 @@
            ! is needed.
 
            if( secondHalo ) call extrapolate2ndHalo(nn, correctForK)
-
-         endif invWall
+  
+        endif invWall
        enddo bocos
 
        end subroutine bcEulerWall
