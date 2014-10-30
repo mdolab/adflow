@@ -629,7 +629,8 @@
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: sfacei, sfacej&
    &     , sfacek
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: w, wtmp
-   REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: dw_deriv
+   REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: dw_deriv&
+   &     , w_deriv
    REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: wold
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: p, ptmp, gamma
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: rlv, rev

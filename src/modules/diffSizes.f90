@@ -103,4 +103,10 @@
 
     integer(kind=intType) :: ISIZE1OFDu1, ISIZE1OFDu2, ISIZE1OFDu3
     integer(kind=intType) :: ISIZE1OFLeft, ISIZE1OFRight, ISIZE1OFFlux
+
+    ! These are the diff sizes reqruied for the reverse mode
+    integer(kind=intType) :: ISIZE1OFDRFCOEFTIME
+    integer(kind=intType) :: ISIZE1OFDRFDTL, ISIZE2OFDRFDTL, ISIZE3OFDRFDTL
+    integer(kind=intType) :: ISIZE1OFDRFDRFVISCSUBFACE_UTAU, ISIZE2OFDRFDRFVISCSUBFACE_UTAU
+
   end module diffSizes
