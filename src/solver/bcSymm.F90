@@ -40,6 +40,7 @@
 
        real(kind=realType) :: vn, nnx, nny, nnz
 
+#ifndef TAPENADE_REVERSE
        real(kind=realType), dimension(:,:,:), pointer :: ww1, ww2
        real(kind=realType), dimension(:,:),   pointer :: pp1, pp2
        real(kind=realType), dimension(:,:),   pointer :: gamma1, gamma2
@@ -51,7 +52,9 @@
        interface
          subroutine setBcPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
                                   rev1, rev2, offset)
+           use BCTypes
            use blockPointers
+           use flowVarRefState
            implicit none
 
            integer(kind=intType), intent(in) :: nn, offset
@@ -60,7 +63,49 @@
            real(kind=realType), dimension(:,:),   pointer :: rlv1, rlv2
            real(kind=realType), dimension(:,:),   pointer :: rev1, rev2
          end subroutine setBcPointers
+
+        subroutine resetBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
+                                  rev1, rev2, offset)
+           use BCTypes
+           use blockPointers
+           use flowVarRefState
+           implicit none
+
+           integer(kind=intType), intent(in) :: nn, offset
+           real(kind=realType), dimension(:,:,:), pointer :: ww1, ww2
+           real(kind=realType), dimension(:,:),   pointer :: pp1, pp2
+           real(kind=realType), dimension(:,:),   pointer :: rlv1, rlv2
+           real(kind=realType), dimension(:,:),   pointer :: rev1, rev2
+         end subroutine resetBCPointers
+
+        subroutine setgamma(nn, gamma1, gamma2)
+           use BCTypes
+           use blockPointers
+           use flowVarRefState
+           implicit none
+
+           integer(kind=intType), intent(in) :: nn
+           real(kind=realType), dimension(:,:),   pointer :: gamma1, gamma2
+         end subroutine setgamma
+
+        subroutine resetgamma(nn, gamma1, gamma2)
+           use BCTypes
+           use blockPointers
+           use flowVarRefState
+           implicit none
+
+           integer(kind=intType), intent(in) :: nn
+           real(kind=realType), dimension(:,:),   pointer :: gamma1, gamma2
+         end subroutine resetgamma
        end interface
+#else
+       real(kind=realType), dimension(imaxDim,jmaxDim,nw) :: ww1, ww2
+       real(kind=realType), dimension(imaxDim,jmaxDim) :: pp1, pp2
+       real(kind=realType), dimension(imaxDim,jmaxDim) :: gamma1, gamma2
+       real(kind=realType), dimension(imaxDim,jmaxDim) :: rlv1, rlv2
+       real(kind=realType), dimension(imaxDim,jmaxDim) :: rev1, rev2
+#endif
+
 !
 !      ******************************************************************
 !      *                                                                *
@@ -91,26 +136,20 @@
               !nullify(ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2)
 
              ! Set the pointers to the correct subface.
+#ifndef TAPENADE_REVERSE
+           call setBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
+                              rev1, rev2, mm)
+#else
+           call setBCPointersBwd(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
+                rev1, rev2, mm)
+#endif
 
-             call setBcPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
-                                rev1, rev2, mm)
-
-             ! Set the additional pointers for gamma1 and gamma2.
-
-             select case (BCFaceID(nn))
-               case (iMin)
-                 gamma1 => gamma(1, 1:,1:); gamma2 => gamma(2, 1:,1:)
-               case (iMax)
-                 gamma1 => gamma(ie,1:,1:); gamma2 => gamma(il,1:,1:)
-               case (jMin)
-                 gamma1 => gamma(1:,1, 1:); gamma2 => gamma(1:,2, 1:)
-               case (jMax)
-                 gamma1 => gamma(1:,je,1:); gamma2 => gamma(1:,jl,1:)
-               case (kMin)
-                 gamma1 => gamma(1:,1:,1 ); gamma2 => gamma(1:,1:,2 )
-               case (kMax)
-                 gamma1 => gamma(1:,1:,ke); gamma2 => gamma(1:,1:,kl)
-             end select
+           ! Set the additional pointers for gamma1 and gamma2.
+#ifndef TAPENADE_REVERSE
+               call setgamma(nn, gamma1, gamma2)
+#else
+               call setgammaBwd(nn, gamma1, gamma2)
+#endif
 
              ! Loop over the generic subface to set the state in the
              ! halo cells.
@@ -121,24 +160,25 @@
                  ! Store the three components of the unit normal a
                  ! bit easier.
 
-                 nnx = BCData(nn)%norm(i,j,1)
-                 nny = BCData(nn)%norm(i,j,2)
-                 nnz = BCData(nn)%norm(i,j,3)
+                 ! Replace with actual BCData - Peter Lyu
+                 !nnx = BCData(nn)%norm(i,j,1)
+                 !nny = BCData(nn)%norm(i,j,2)
+                 !nnz = BCData(nn)%norm(i,j,3)
                 
                  ! Determine twice the normal velocity component,
                  ! which must be substracted from the donor velocity
                  ! to obtain the halo velocity.
 
-                 vn = two*(ww2(i,j,ivx)*nnx + ww2(i,j,ivy)*nny &
-                    +      ww2(i,j,ivz)*nnz)
+                 vn = two*(ww2(i,j,ivx)*BCData(nn)%norm(i,j,1) + ww2(i,j,ivy)*BCData(nn)%norm(i,j,2) &
+                    +      ww2(i,j,ivz)*BCData(nn)%norm(i,j,3))
 
                  ! Determine the flow variables in the halo cell.
 
                  ww1(i,j,irho) = ww2(i,j,irho)
 
-                 ww1(i,j,ivx) = ww2(i,j,ivx) - vn*nnx
-                 ww1(i,j,ivy) = ww2(i,j,ivy) - vn*nny
-                 ww1(i,j,ivz) = ww2(i,j,ivz) - vn*nnz
+                 ww1(i,j,ivx) = ww2(i,j,ivx) - vn*BCData(nn)%norm(i,j,1)
+                 ww1(i,j,ivy) = ww2(i,j,ivy) - vn*BCData(nn)%norm(i,j,2)
+                 ww1(i,j,ivz) = ww2(i,j,ivz) - vn*BCData(nn)%norm(i,j,3)
 
                  ww1(i,j,irhoE) = ww2(i,j,irhoE)
 
@@ -159,6 +199,20 @@
                enddo
              enddo
 
+#ifndef TAPENADE_REVERSE
+               call resetgamma(nn, gamma1, gamma2)
+#else
+               call resetgammaBwd(nn, gamma1, gamma2)
+#endif
+
+          ! deallocation all pointer
+#ifndef TAPENADE_REVERSE
+           call resetBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
+                              rev1, rev2, mm)
+#else
+           call resetBCPointersBwd(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
+                rev1, rev2, mm)
+#endif
            endif symmetry
          enddo bocos
        enddo nHalo

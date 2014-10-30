@@ -43,6 +43,7 @@
 
        integer(kind=intType), dimension(3,2) :: crange
 
+#ifndef TAPENADE_REVERSE
        real(kind=realType), dimension(:,:,:), pointer :: ww0, ww1, ww2
        real(kind=realType), dimension(:,:),   pointer :: pp0, pp1, pp2
        real(kind=realType), dimension(:,:),   pointer :: rlv0, rlv1
@@ -62,7 +63,59 @@
            real(kind=realType), dimension(:,:),   pointer :: rlv1, rlv2
            real(kind=realType), dimension(:,:),   pointer :: rev1, rev2
          end subroutine setBcPointers
+
+
+         subroutine resetBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
+                                  rev1, rev2, offset)
+           use blockPointers
+           implicit none
+
+           integer(kind=intType), intent(in) :: nn, offset
+           real(kind=realType), dimension(:,:,:), pointer :: ww1, ww2
+           real(kind=realType), dimension(:,:),   pointer :: pp1, pp2
+           real(kind=realType), dimension(:,:),   pointer :: rlv1, rlv2
+           real(kind=realType), dimension(:,:),   pointer :: rev1, rev2
+         end subroutine resetBCPointers
+
+         subroutine setww0pp0rlv0rev0(nn, idim, ddim, ww0, pp0, rlv0, rev0)
+
+           use BCTypes
+           use blockPointers
+           use flowVarRefState
+           implicit none
+
+           integer(kind=intType), intent(in) :: nn
+           integer(kind=intType) :: idim, ddim
+
+           real(kind=realType), dimension(:,:,:), pointer :: ww0
+           real(kind=realType), dimension(:,:),   pointer :: pp0
+           real(kind=realType), dimension(:,:),   pointer :: rlv0
+           real(kind=realType), dimension(:,:),   pointer :: rev0
+         end subroutine setww0pp0rlv0rev0
+
+         subroutine resetww0pp0rlv0rev0(nn, idim, ddim, ww0, pp0, rlv0, rev0)
+
+           use BCTypes
+           use blockPointers
+           implicit none
+
+           integer(kind=intType), intent(in) :: nn
+           integer(kind=intType) :: idim, ddim
+
+           real(kind=realType), dimension(:,:,:), pointer :: ww0
+           real(kind=realType), dimension(:,:),   pointer :: pp0
+           real(kind=realType), dimension(:,:),   pointer :: rlv0
+           real(kind=realType), dimension(:,:),   pointer :: rev0
+         end subroutine resetww0pp0rlv0rev0
+
        end interface
+#else
+       real(kind=realType), dimension(imaxDim,jmaxDim,nw) :: ww0, ww1, ww2
+       real(kind=realType), dimension(imaxDim,jmaxDim) :: pp0, pp1, pp2
+       real(kind=realType), dimension(imaxDim,jmaxDim) :: rlv0, rlv1
+       real(kind=realType), dimension(imaxDim,jmaxDim) :: rev0, rev1
+#endif
+
 !
 !      ******************************************************************
 !      *                                                                *
@@ -75,52 +128,20 @@
        ! Note that rlv0 and rev0 are used here as dummies.
 
        !nullify(ww1, ww2, pp1, pp2, rlv1, rlv0, rev1, rev0)
-       call setBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv0, &
-                          rev1, rev0, 0)!_intType)
 
        ! Set a couple of additional variables needed for the
        ! extrapolation. This depends on the block face on which the
        ! subface is located.
 
-       select case (BCFaceID(nn))
-
-         case (iMin)
-           ww0 => w(0,1:,1:,:); pp0 => p(0,1:,1:)
-           if( viscous )   rlv0 => rlv(0,1:,1:)
-           if( eddyModel ) rev0 => rev(0,1:,1:)
-           idim = 1; ddim = 0
-
-         case (iMax)
-           ww0 => w(ib,1:,1:,:); pp0 => p(ib,1:,1:)
-           if( viscous )   rlv0 => rlv(ib,1:,1:)
-           if( eddyModel ) rev0 => rev(ib,1:,1:)
-           idim = 1; ddim = ib
-
-         case (jMin)
-           ww0 => w(1:,0,1:,:); pp0 => p(1:,0,1:)
-           if( viscous )   rlv0 => rlv(1:,0,1:)
-           if( eddyModel ) rev0 => rev(1:,0,1:)
-           idim = 2; ddim = 0
-
-         case (jMax)
-           ww0 => w(1:,jb,1:,:); pp0 => p(1:,jb,1:)
-           if( viscous )   rlv0 => rlv(1:,jb,1:)
-           if( eddyModel ) rev0 => rev(1:,jb,1:)
-           idim = 2; ddim = jb
-
-         case (kMin)
-           ww0 => w(1:,1:,0,:); pp0 => p(1:,1:,0)
-           if( viscous )   rlv0 => rlv(1:,1:,0)
-           if( eddyModel ) rev0 => rev(1:,1:,0)
-           idim = 3; ddim = 0
-
-         case (kMax)
-           ww0 => w(1:,1:,kb,:); pp0 => p(1:,1:,kb)
-           if( viscous )   rlv0 => rlv(1:,1:,kb)
-           if( eddyModel ) rev0 => rev(1:,1:,kb)
-           idim = 3; ddim = kb
-
-       end select
+#ifndef TAPENADE_REVERSE
+       call setBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv0, &
+                          rev1, rev0, 0)!_intType)
+       call setww0pp0rlv0rev0(nn, idim, ddim, ww0, pp0, rlv0, rev0)
+#else
+       call setBCPointersBwd(nn, ww1, ww2, pp1, pp2, rlv1, rlv0, &
+                          rev1, rev0, 0)!_intType)
+       call setww0pp0rlv0rev0Bwd(nn, idim, ddim, ww0, pp0, rlv0, rev0)
+#endif
 
        ! Loop over the generic subface to set the state in the halo's.
 
@@ -154,6 +175,16 @@
 
          enddo
        enddo
+
+#ifndef TAPENADE_REVERSE
+       call resetBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv0, &
+                          rev1, rev0, 0)
+       call resetww0pp0rlv0rev0(nn, idim, ddim, ww0, pp0, rlv0, rev0)
+#else
+       call resetBCPointersBwd(nn, ww1, ww2, pp1, pp2, rlv1, rlv0, &
+                          rev1, rev0, 0)
+       call resetww0pp0rlv0rev0Bwd(nn, idim, ddim, ww0, pp0, rlv0, rev0)
+#endif
 
        ! Set the range for the halo cells for the energy computation.
 
