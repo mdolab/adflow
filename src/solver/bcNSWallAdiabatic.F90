@@ -36,7 +36,8 @@
 
        real(kind=realType) :: rhok
 
-       real(kind=realType), dimension(:,:,:), pointer :: uSlip
+#ifndef TAPENADE_REVERSE
+       !real(kind=realType), dimension(:,:,:), pointer :: uSlip
        real(kind=realType), dimension(:,:,:), pointer :: ww1, ww2
        real(kind=realType), dimension(:,:),   pointer :: pp1, pp2
        real(kind=realType), dimension(:,:),   pointer :: rlv1, rlv2
@@ -47,7 +48,9 @@
        interface
          subroutine setBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
                                   rev1, rev2, offset)
+           use BCTypes
            use blockPointers
+           use flowVarRefState
            implicit none
 
            integer(kind=intType), intent(in) :: nn, offset
@@ -56,7 +59,30 @@
            real(kind=realType), dimension(:,:),   pointer :: rlv1, rlv2
            real(kind=realType), dimension(:,:),   pointer :: rev1, rev2
          end subroutine setBCPointers
+
+         subroutine resetBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
+                                  rev1, rev2, offset)
+           use BCTypes
+           use blockPointers
+           use flowVarRefState
+           implicit none
+
+           integer(kind=intType), intent(in) :: nn, offset
+           real(kind=realType), dimension(:,:,:), pointer :: ww1, ww2
+           real(kind=realType), dimension(:,:),   pointer :: pp1, pp2
+           real(kind=realType), dimension(:,:),   pointer :: rlv1, rlv2
+           real(kind=realType), dimension(:,:),   pointer :: rev1, rev2
+         end subroutine resetBCPointers
        end interface
+#else
+       real(kind=realType), dimension(imaxDim,jmaxDim,nw) :: ww1, ww2
+       real(kind=realType), dimension(imaxDim,jmaxDim) :: pp1, pp2
+       real(kind=realType), dimension(imaxDim,jmaxDim) :: rlv1, rlv2
+       real(kind=realType), dimension(imaxDim,jmaxDim) :: rev1, rev2
+#endif
+
+
+
 !
 !      ******************************************************************
 !      *                                                                *
@@ -70,8 +96,12 @@
        ! No need to extrapolate the secondary halo's, because this
        ! is done in extrapolate2ndHalo.
 
+       ! We turn off the turbulence BCwall for now. This needs
+       ! to be added and correct the pointers to use full turbulence.
+       ! It should be okay for frozen turbulence assumption.
+#ifndef USE_TAPENADE
        if( turbCoupled ) call turbBCNSWall(.false.)
-
+#endif
        ! Loop over the viscous subfaces of this block. Note that
        ! these are numbered first.
 
@@ -83,16 +113,22 @@
 
            ! Set the pointer for uSlip to make the code more readable.
 
-           uSlip => BCData(nn)%uSlip
+           ! Replace uslip with actual uslip in BCData for reverse AD - Peter Lyu
+           !uSlip => BCData(nn)%uSlip
 
            ! Nullify the pointers and set them to the correct subface.
            ! They are nullified first, because some compilers require
            ! that.
 
            !nullify(ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2)
+#ifndef TAPENADE_REVERSE
            call setBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
                               rev1, rev2, 0)
-
+#else
+           call setBCPointersBwd(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
+                rev1, rev2, 0)
+#endif
+  
            ! Initialize rhok to zero. This will be overwritten if a
            ! correction for k must be applied.
 
@@ -116,9 +152,9 @@
                ! velocity into account.
 
                ww1(i,j,irho) =  ww2(i,j,irho)
-               ww1(i,j,ivx)  = -ww2(i,j,ivx) + two*uSlip(i,j,1)
-               ww1(i,j,ivy)  = -ww2(i,j,ivy) + two*uSlip(i,j,2)
-               ww1(i,j,ivz)  = -ww2(i,j,ivz) + two*uSlip(i,j,3)
+               ww1(i,j,ivx)  = -ww2(i,j,ivx) + two*BCData(nn)%uSlip(i,j,1)
+               ww1(i,j,ivy)  = -ww2(i,j,ivy) + two*BCData(nn)%uSlip(i,j,2)
+               ww1(i,j,ivz)  = -ww2(i,j,ivz) + two*BCData(nn)%uSlip(i,j,3)
                pp1(i,j)      =  pp2(i,j) - four*third*rhok
 
                ! Set the viscosities. There is no need to test for a
@@ -131,6 +167,15 @@
 
              enddo
            enddo
+
+           ! deallocation all pointer
+#ifndef TAPENADE_REVERSE
+           call resetBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
+                              rev1, rev2, 0)
+#else
+           call resetBCPointersBwd(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
+                rev1, rev2, 0)
+#endif
 
            ! Compute the energy for these halo's.
 

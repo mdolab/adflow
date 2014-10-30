@@ -2,16 +2,11 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of bcnswallisothermal in forward (tangent) mode (with options i4 dr8 r8):
-   !   variations   of useful results: *rev *bvtj1 *bvtj2 *p *gamma
-   !                *bmtk1 *w *bmtk2 *rlv *bvtk1 *bvtk2 *bmti1 *bmti2
-   !                *bvti1 *bvti2 *bmtj1 *bmtj2
-   !   with respect to varying inputs: tref rgas *rev *bvtj1 *bvtj2
-   !                *p *gamma *bmtk1 *w *bmtk2 *rlv *bvtk1 *bvtk2
-   !                *bmti1 *bmti2 *bvti1 *bvti2 *bmtj1 *bmtj2 *(*bcdata.uslip)
-   !   Plus diff mem management of: rev:in bvtj1:in bvtj2:in p:in
-   !                gamma:in bmtk1:in w:in bmtk2:in rlv:in bvtk1:in
-   !                bvtk2:in bmti1:in bmti2:in bvti1:in bvti2:in bmtj1:in
-   !                bmtj2:in bcdata:in *bcdata.uslip:in
+   !   variations   of useful results: *rev *p *gamma *w *rlv
+   !   with respect to varying inputs: tref rgas *rev *p *gamma *w
+   !                *rlv *(*bcdata.uslip)
+   !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
+   !                bcdata:in *bcdata.uslip:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -49,9 +44,8 @@
    INTEGER(kind=inttype) :: nn, i, j
    REAL(kind=realtype) :: rhok, t2, t1
    REAL(kind=realtype) :: rhokd, t2d, t1d
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: uslip
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: uslipd
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: tns_wall
+   !real(kind=realType), dimension(:,:,:), pointer :: uSlip
+   !real(kind=realType), dimension(:,:),   pointer :: TNS_Wall
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1d, ww2d
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1, pp2
@@ -63,7 +57,9 @@
    INTERFACE 
    SUBROUTINE SETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
    &       rev1, rev2, offset)
+   USE BCTYPES
    USE BLOCKPOINTERS_D
+   USE FLOWVARREFSTATE
    IMPLICIT NONE
    INTEGER(kind=inttype), INTENT(IN) :: nn, offset
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
@@ -71,12 +67,26 @@
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
    END SUBROUTINE SETBCPOINTERS
+   SUBROUTINE RESETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
+   &       rev1, rev2, offset)
+   USE BCTYPES
+   USE BLOCKPOINTERS_D
+   USE FLOWVARREFSTATE
+   IMPLICIT NONE
+   INTEGER(kind=inttype), INTENT(IN) :: nn, offset
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1, pp2
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
+   END SUBROUTINE RESETBCPOINTERS
    END INTERFACE
       INTERFACE 
    SUBROUTINE SETBCPOINTERS_D(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, &
    &       pp2, pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev1d, rev2, rev2d, &
    &       offset)
+   USE BCTYPES
    USE BLOCKPOINTERS_D
+   USE FLOWVARREFSTATE
    IMPLICIT NONE
    INTEGER(kind=inttype), INTENT(IN) :: nn, offset
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
@@ -103,7 +113,9 @@
    ! wall boundary conditions for the turbulent variables.
    ! No need to extrapolate the secondary halo's, because this
    ! is done in extrapolate2ndHalo.
-   IF (turbcoupled) CALL TURBBCNSWALL_D(.false.)
+   ! We turn off the turbulence BCwall for now. This needs
+   ! to be added and correct the pointers to use full turbulence.
+   ! It should be okay for frozen turbulence assumption.
    ! Loop over the viscous subfaces of this block. Note that
    ! these are numbered first.
    bocos:DO nn=1,nviscbocos
@@ -111,9 +123,9 @@
    IF (bctype(nn) .EQ. nswallisothermal) THEN
    ! Set the pointers for uSlip and TNSWall to make
    ! the code more readable.
-   uslipd => bcdatad(nn)%uslip
-   uslip => bcdata(nn)%uslip
-   tns_wall => bcdata(nn)%tns_wall
+   ! Replace those with actual BCData for reverse AD - Peter Lyu
+   !uSlip    => BCData(nn)%uSlip
+   !TNS_Wall => BCData(nn)%TNS_Wall
    ! Nullify the pointers and set them to the correct subface.
    ! They are nullified first, because some compilers require
    ! that.
@@ -143,17 +155,17 @@
    &           , j, irho)+rgas*ww2d(i, j, irho)))/(rgas*ww2(i, j, irho))**2
    t2 = pp2(i, j)/(rgas*ww2(i, j, irho))
    t1d = -t2d
-   t1 = two*tns_wall(i, j) - t2
-   IF (half*tns_wall(i, j) .LT. t1) THEN
+   t1 = two*bcdata(nn)%tns_wall(i, j) - t2
+   IF (half*bcdata(nn)%tns_wall(i, j) .LT. t1) THEN
    t1 = t1
    ELSE
-   t1 = half*tns_wall(i, j)
+   t1 = half*bcdata(nn)%tns_wall(i, j)
    t1d = 0.0_8
    END IF
-   IF (two*tns_wall(i, j) .GT. t1) THEN
+   IF (two*bcdata(nn)%tns_wall(i, j) .GT. t1) THEN
    t1 = t1
    ELSE
-   t1 = two*tns_wall(i, j)
+   t1 = two*bcdata(nn)%tns_wall(i, j)
    t1d = 0.0_8
    END IF
    ! Determine the variables in the halo. As the spacing
@@ -165,12 +177,18 @@
    ww1d(i, j, irho) = (pp1d(i, j)*rgas*t1-pp1(i, j)*(rgasd*t1+&
    &           rgas*t1d))/(rgas*t1)**2
    ww1(i, j, irho) = pp1(i, j)/(rgas*t1)
-   ww1d(i, j, ivx) = two*uslipd(i, j, 1) - ww2d(i, j, ivx)
-   ww1(i, j, ivx) = -ww2(i, j, ivx) + two*uslip(i, j, 1)
-   ww1d(i, j, ivy) = two*uslipd(i, j, 2) - ww2d(i, j, ivy)
-   ww1(i, j, ivy) = -ww2(i, j, ivy) + two*uslip(i, j, 2)
-   ww1d(i, j, ivz) = two*uslipd(i, j, 3) - ww2d(i, j, ivz)
-   ww1(i, j, ivz) = -ww2(i, j, ivz) + two*uslip(i, j, 3)
+   ww1d(i, j, ivx) = two*bcdatad(nn)%uslip(i, j, 1) - ww2d(i, j, &
+   &           ivx)
+   ww1(i, j, ivx) = -ww2(i, j, ivx) + two*bcdata(nn)%uslip(i, j, &
+   &           1)
+   ww1d(i, j, ivy) = two*bcdatad(nn)%uslip(i, j, 2) - ww2d(i, j, &
+   &           ivy)
+   ww1(i, j, ivy) = -ww2(i, j, ivy) + two*bcdata(nn)%uslip(i, j, &
+   &           2)
+   ww1d(i, j, ivz) = two*bcdatad(nn)%uslip(i, j, 3) - ww2d(i, j, &
+   &           ivz)
+   ww1(i, j, ivz) = -ww2(i, j, ivz) + two*bcdata(nn)%uslip(i, j, &
+   &           3)
    ! Set the viscosities. There is no need to test for a
    ! viscous problem of course. The eddy viscosity is
    ! set to the negative value, as it should be zero on
@@ -183,6 +201,9 @@
    END IF
    END DO
    END DO
+   ! deallocation all pointer
+   CALL RESETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, &
+   &                       rev2, 0)
    ! Compute the energy for these halo's.
    CALL COMPUTEETOT_D(icbeg(nn), icend(nn), jcbeg(nn), jcend(nn), &
    &                  kcbeg(nn), kcend(nn), correctfork)

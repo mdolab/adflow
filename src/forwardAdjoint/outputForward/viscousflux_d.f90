@@ -4,10 +4,10 @@
    !  Differentiation of viscousflux in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *p *fw *(*viscsubface.tau)
    !   with respect to varying inputs: *rev *p *gamma *w *rlv *x *vol
-   !                *si *sj *sk *fw *(*bcdata.norm)
+   !                *si *sj *sk *fw
    !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
    !                x:in vol:in si:in sj:in sk:in fw:in viscsubface:in
-   !                *viscsubface.tau:in bcdata:in *bcdata.norm:in
+   !                *viscsubface.tau:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -1322,8 +1322,6 @@
    END DO
    END DO
    END IF
-   ! Possibly correct the wall shear stress.
-   CALL UTAUWF_D(rfilv)
    END IF
       CONTAINS
    !  Differentiation of nodalgradients in forward (tangent) mode (with options i4 dr8 r8):
@@ -1332,6 +1330,8 @@
    !   with respect to varying inputs: *p *w *vol *si *sj *sk wx wy
    !                wz qx qy qz ux uy uz vx vy vz
    !   Plus diff mem management of: p:in w:in vol:in si:in sj:in sk:in
+   ! Possibly correct the wall shear stress.
+   ! Wall function is not ADed
    SUBROUTINE NODALGRADIENTS_D(ux, uxd, uy, uyd, uz, uzd, vx, vxd, vy, &
    &   vyd, vz, vzd, wx, wxd, wy, wyd, wz, wzd, qx, qxd, qy, qyd, qz, qzd)
    IMPLICIT NONE
@@ -1750,6 +1750,8 @@
    END DO
    END DO
    END SUBROUTINE NODALGRADIENTS_D
+   ! Possibly correct the wall shear stress.
+   ! Wall function is not ADed
    SUBROUTINE NODALGRADIENTS(ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, &
    &   qz)
    IMPLICIT NONE

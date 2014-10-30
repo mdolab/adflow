@@ -2785,6 +2785,8 @@ steady rotations and specifying an aeroProblem')
             'usereversemodead':[bool, False],
             'applyadjointpcsubspacesize':[int, 20],
             'frozenturbulence':[bool, True],
+            'usematrixfreedrdw':[bool, False],
+            'usematrixfreedrdx':[bool, False],
 
             # ADjoint debugger
             'firstrun':[bool, True],
@@ -3032,6 +3034,8 @@ steady rotations and specifying an aeroProblem')
             'verifystate':{'location':'inputadjoint.verifystate'},
             'verifyspatial':{'location':'inputadjoint.verifyspatial'},
             'verifyextra':{'location':'inputadjoint.verifyextra'},
+            'usematrixfreedrdw':{'location':'inputadjoint.usematrixfreedrdw'},
+            'usematrixfreedrdx':{'location':'inputadjoint.usematrixfreedrdx'},
             }
 
         return optionMap
