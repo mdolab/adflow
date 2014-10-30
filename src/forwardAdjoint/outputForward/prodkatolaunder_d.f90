@@ -2,11 +2,11 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of prodkatolaunder in forward (tangent) mode (with options i4 dr8 r8):
-   !   variations   of useful results: *prod
-   !   with respect to varying inputs: timeref *w *vol *si *sj *sk
-   !                *prod
-   !   Plus diff mem management of: w:in vol:in si:in sj:in sk:in
-   !                prod:in
+   !   variations   of useful results: *dw
+   !   with respect to varying inputs: timeref *dw *w *vol *si *sj
+   !                *sk
+   !   Plus diff mem management of: dw:in w:in vol:in si:in sj:in
+   !                sk:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -227,8 +227,8 @@
    result1d = arg1d/(2.0*SQRT(arg1))
    END IF
    result1 = SQRT(arg1)
-   prodd(i, j, k) = two*result1d
-   prod(i, j, k) = two*result1
+   dwd(i, j, k, iprod) = two*result1d
+   dw(i, j, k, iprod) = two*result1
    END DO
    END DO
    END DO

@@ -67,6 +67,10 @@ subroutine sa_block(resOnly)
   !
   logical, intent(in) :: resOnly
   !
+  !      Local variables.
+  !
+  integer(kind=intType) :: nn, sps
+  !
   !      ******************************************************************
   !      *                                                                *
   !      * Begin execution                                                *
@@ -74,16 +78,16 @@ subroutine sa_block(resOnly)
   !      ******************************************************************
  
   ! Set the arrays for the boundary condition treatment.
-  
+#ifndef TAPENADE_REVERSE  
   call bcTurbTreatment
-  
+#endif  
   ! Solve the transport equation for nuTilde.
   
   call saSolve(resOnly)
   
   ! The eddy viscosity and the boundary conditions are only
   ! applied if an actual update has been computed in saSolve.
-  
+
   if(.not. resOnly ) then
      
      ! Compute the corresponding eddy viscosity.
@@ -93,9 +97,9 @@ subroutine sa_block(resOnly)
      ! Set the halo values for the turbulent variables.
      ! We are on the finest mesh, so the second layer of halo
      ! cells must be computed as well.
-     
+#ifndef TAPENADE_REVERSE         
      call applyAllTurbBCThisBlock(.true.)
-     
+#endif       
      ! Write the loglaw for a flat plate boundary layer.
      
      ! call writeLoglaw
