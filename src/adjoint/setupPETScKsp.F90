@@ -10,7 +10,7 @@
 !
 subroutine setupPETScKsp
 
-  use ADjointPETSc, only: drdwpret, drdwt, adjointKSP
+  use ADjointPETSc, only: drdwpret, drdwt, adjointKSP, dRdwTShell
   use ADjointPETSc, only : coarsedRdWPreT, restrictionOperator
   use ADjointPETSc, only : prolongationOperator
   use ADjointVars
@@ -24,10 +24,13 @@ subroutine setupPETScKsp
 #include "include/petscversion.h"
   !     Local variables.
   logical :: useAD, usePC, useTranspose, useObjective
-  integer(kind=intType) :: ierr
+  integer(kind=intType) :: ierr, nLevels, i, l
+  integer(kind=intType) :: nlocal, first
+  integer(kind=intType), allocatable, dimension(:) :: comms
 
-  PC master_PC
-  !KSP coarseKSPSolver, fineKSPSolver, levelKSP, subksp
+  PC master_PC, coarsePC, finePC, levelPC, subpc
+  KSP coarseKSPSolver, fineKSPSolver, levelKSP, subksp
+  Mat tmp1
   external MyKSPMonitor
 
   if (ApproxPC)then
@@ -39,10 +42,16 @@ subroutine setupPETScKsp
      call setupStateResidualMatrix(drdwpret, useAD, usePC, useTranspose, &
           useObjective, 1_intType)
      !now set up KSP Context
+     if (useMatrixFreedRdW) then 
+        tmp1 = dRdwTShell
+     else
+        tmp1 = dRdwT
+     end if
+
 #if PETSC_VERSION_MINOR > 4
-     call KSPSetOperators(adjointKSP, dRdWt, dRdWPreT, ierr)
+     call KSPSetOperators(adjointKSP, tmp1, dRdWPreT, ierr)
 #else
-     call KSPSetOperators(adjointKSP, dRdWt, dRdWPreT, &
+     call KSPSetOperators(adjointKSP, tmp1, dRdWPreT, &
           DIFFERENT_NONZERO_PATTERN, ierr)
 #endif
      call EChk(ierr, __FILE__, __LINE__)

@@ -200,7 +200,7 @@ subroutine getdRdXvTPsi(dXv, ndof, adjoint, nstate)
   real(kind=realType), intent(in)   :: adjoint(nstate)
 
   ! Local Variables
-  integer(kind=intType) :: ierr, i
+  integer(kind=intType) :: ierr, sps, i
    real(kind=realType), pointer :: xvec_pointer(:)
 
   ! Place adjoint in Vector
@@ -245,12 +245,14 @@ subroutine spectralPrecscribedMotion(input, nin, dXv, nout)
   real(kind=realType), intent(in)   :: input(nin)
 
   ! Local Variables
-  integer(kind=intType) :: sps, i, nn, mm, counter0, counter1
+  integer(kind=intType) :: ierr, sps, i, nn, mm, counter0, counter1
   integer(kind=intType) :: nodes_on_block, cum_nodes_on_block
-  real(kind=realType), dimension(3)   :: rotationPoint
+  real(kind=realType), dimension(3)   :: rotationPoint, r
   real(kind=realType), dimension(3, 3) :: rotationMatrix  
   real(kind=realType) :: t(nSections), dt(nSections)
   real(kind=realType) :: tOld, tNew, pt(3)
+  real(kind=realType), pointer :: xvec_pointer(:)
+  real(kind=realType) :: time(3)
  
   !       For the TimeSpectral case, we need to include    *
   !     * the operation that rotates the base grid to each time instance *
