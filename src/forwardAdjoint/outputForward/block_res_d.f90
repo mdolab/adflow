@@ -2,32 +2,32 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of block_res in forward (tangent) mode (with options i4 dr8 r8):
-   !   variations   of useful results: *(flowdoms.x) *(flowdoms.w)
+   !   variations   of useful results: pref *(flowdoms.x) *(flowdoms.w)
    !                *(flowdoms.dw) *(*bcdata.fp) *(*bcdata.fv) *(*bcdata.m)
-   !                *(*bcdata.oarea) *(*bcdata.sepsensor) pref moment
-   !                force sepsensor
-   !   with respect to varying inputs: *(flowdoms.x) *(flowdoms.w)
-   !                pref mach tempfreestream machgrid lengthref machcoef
+   !                *(*bcdata.oarea) *(*bcdata.sepsensor) moment force
+   !                sepsensor
+   !   with respect to varying inputs: pref *(flowdoms.x) *(flowdoms.w)
+   !                mach tempfreestream machgrid lengthref machcoef
    !                pointref alpha beta
-   !   RW status of diff variables: *(flowdoms.x):in-out *(flowdoms.vol):(loc)
-   !                *(flowdoms.w):in-out *(flowdoms.dw):out *rev:(loc)
-   !                *bvtj1:(loc) *bvtj2:(loc) *p:(loc) *sfacei:(loc)
-   !                *sfacej:(loc) *s:(loc) *gamma:(loc) *sfacek:(loc)
-   !                *bmtk1:(loc) *bmtk2:(loc) *rlv:(loc) *bvtk1:(loc)
-   !                *bvtk2:(loc) *bmti1:(loc) *bmti2:(loc) *si:(loc)
-   !                *sj:(loc) *sk:(loc) *bvti1:(loc) *bvti2:(loc)
-   !                *fw:(loc) *bmtj1:(loc) *bmtj2:(loc) *(*viscsubface.tau):(loc)
-   !                *(*bcdata.norm):(loc) *(*bcdata.rface):(loc) *(*bcdata.fp):out
-   !                *(*bcdata.fv):out *(*bcdata.m):out *(*bcdata.oarea):out
-   !                *(*bcdata.sepsensor):out *bcdata.symnorm:(loc)
-   !                *(*bcdata.uslip):(loc) *radi:(loc) *radj:(loc)
-   !                *radk:(loc) mudim:(loc) gammainf:(loc) pinf:(loc)
+   !   RW status of diff variables: mudim:(loc) gammainf:(loc) pinf:(loc)
    !                timeref:(loc) rhoinf:(loc) muref:(loc) rhoinfdim:(loc)
    !                tref:(loc) winf:(loc) muinf:(loc) uinf:(loc) pinfcorr:(loc)
    !                rgas:(loc) pinfdim:(loc) pref:in-out rhoref:(loc)
-   !                mach:in tempfreestream:in veldirfreestream:(loc)
-   !                machgrid:in lengthref:in machcoef:in pointref:in
-   !                moment:out alpha:in force:out beta:in sepsensor:out
+   !                *(flowdoms.x):in-out *(flowdoms.vol):(loc) *(flowdoms.w):in-out
+   !                *(flowdoms.dw):out *rev:(loc) *bvtj1:(loc) *bvtj2:(loc)
+   !                *p:(loc) *sfacei:(loc) *sfacej:(loc) *s:(loc)
+   !                *gamma:(loc) *sfacek:(loc) *bmtk1:(loc) *bmtk2:(loc)
+   !                *rlv:(loc) *bvtk1:(loc) *bvtk2:(loc) *bmti1:(loc)
+   !                *bmti2:(loc) *si:(loc) *sj:(loc) *sk:(loc) *bvti1:(loc)
+   !                *bvti2:(loc) *fw:(loc) *bmtj1:(loc) *bmtj2:(loc)
+   !                *(*viscsubface.tau):(loc) *(*bcdata.norm):(loc)
+   !                *(*bcdata.rface):(loc) *(*bcdata.fp):out *(*bcdata.fv):out
+   !                *(*bcdata.m):out *(*bcdata.oarea):out *(*bcdata.sepsensor):out
+   !                *bcdata.symnorm:(loc) *(*bcdata.uslip):(loc) *radi:(loc)
+   !                *radj:(loc) *radk:(loc) mach:in tempfreestream:in
+   !                veldirfreestream:(loc) machgrid:in lengthref:in
+   !                machcoef:in pointref:in moment:out alpha:in force:out
+   !                beta:in sepsensor:out
    !   Plus diff mem management of: flowdoms.x:in flowdoms.vol:in
    !                flowdoms.w:in flowdoms.dw:in rev:in bvtj1:in bvtj2:in
    !                p:in sfacei:in sfacej:in s:in gamma:in sfacek:in
