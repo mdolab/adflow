@@ -99,7 +99,7 @@
        ! We turn off the turbulence BCwall for now. This needs
        ! to be added and correct the pointers to use full turbulence.
        ! It should be okay for frozen turbulence assumption.
-#ifndef USE_TAPENADE
+#ifndef TAPENADE_REVERSE
        if( turbCoupled ) call turbBCNSWall(.false.)
 #endif
        ! Loop over the viscous subfaces of this block. Note that
