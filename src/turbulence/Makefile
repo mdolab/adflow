@@ -75,7 +75,7 @@ FILES_TO_COMPLEXIFY = turbMod.F90\
 		 prodWmag2.f90\
 		 sa.f90\
 		 saNuFromEddyRatio.f90\
-		 saSolve.f90\
+		 saSolve.F90\
 		 SST.f90\
 		 SSTSolve.f90\
 		 tdia3.f90\

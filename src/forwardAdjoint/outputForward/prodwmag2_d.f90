@@ -2,11 +2,11 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of prodwmag2 in forward (tangent) mode (with options i4 dr8 r8):
-   !   variations   of useful results: *vort
-   !   with respect to varying inputs: timeref *w *vol *si *sj *sk
-   !                *vort
-   !   Plus diff mem management of: w:in vol:in si:in sj:in sk:in
-   !                vort:in
+   !   variations   of useful results: *dw
+   !   with respect to varying inputs: timeref *dw *w *vol *si *sj
+   !                *sk
+   !   Plus diff mem management of: dw:in w:in vol:in si:in sj:in
+   !                sk:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -154,9 +154,9 @@
    vortzd = factd*(vx-uy) + fact*(vxd-uyd) - two*omegazd
    vortz = fact*(vx-uy) - two*omegaz
    ! Compute the magnitude squared of the vorticity.
-   vortd(i, j, k) = 2*vortx*vortxd + 2*vorty*vortyd + 2*vortz*&
+   dwd(i, j, k, ivort) = 2*vortx*vortxd + 2*vorty*vortyd + 2*vortz*&
    &         vortzd
-   vort(i, j, k) = vortx**2 + vorty**2 + vortz**2
+   dw(i, j, k, ivort) = vortx**2 + vorty**2 + vortz**2
    END DO
    END DO
    END DO
