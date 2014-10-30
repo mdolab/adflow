@@ -10,7 +10,8 @@ subroutine createPETScVars
   !
   use ADjointPETSc, only: dRdwT, dRdwPreT, dJdw, psi, adjointRHS, adjointRes, &
        FMw, dFcdw, dFcdx, dFndFc, dFdx, dFdw, dRdx, xVec, dJdx, FMx, dRda, &
-       adjointKSP, dFMdExtra, dRda_data, overArea, fCell, fNode, doAdx, nFM
+       adjointKSP, dFMdExtra, dRda_data, overArea, fCell, fNode, doAdx, nFM, &
+       dRdwTShell, matfreectx
   use ADjointVars   
   use BCTypes
   use communication  
@@ -29,12 +30,13 @@ subroutine createPETScVars
   integer(kind=intType)  :: nDimW, nDimX, nDimPt, nDimCell
   integer(kind=intType) :: i, n_stencil, nState
   integer(kind=intType), dimension(:), allocatable :: nnzDiagonal, nnzOffDiag
+  integer(kind=intType), dimension(:), allocatable :: nnzDiagonal2, nnzOffDiag2
   integer(kind=intType), dimension(:, :), pointer :: stencil
-  integer(kind=intType) :: level, ierr
+  integer(kind=intType) :: level, ierr, nlevels
   integer(kind=intType) :: rows(4), iCol, nn, sps, ii
-  integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, iDim, j, mm
-  integer(kind=intType) :: npts, ncells
-
+  integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, iDim, iStride, j, mm
+  integer(kind=intType) :: npts, ncells, nTS
+  external dRdwTMatMult
   ! DETERMINE ALL SIZES HERE!
   if ( frozenTurbulence ) then
      nState = nwf
@@ -111,6 +113,28 @@ subroutine createPETScVars
   call EChk(ierr, __FILE__, __LINE__)
 
   call VecDuplicate(dJdW, adjointRHS, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+  ! ------------------- Setup matrix free matix  --------------
+
+  call VecGetSize(psi, mm,ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+  call MatCreateShell(SUMB_COMM_WORLD, nDimW, nDimW, mm,mm, &
+       matfreectx, dRdwTShell, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+  ! call matCreate(SUMB_COMM_WORLD, dRdwTShell, ierr)
+  ! call EChk(ierr, __FILE__, __LINE__)
+  
+  ! call matSetSizes(dRdwTShell, nDimW, nDimW, PETSC_DETERMINE, PETSC_DETERMINE, ierr)
+  ! call EChk(ierr, __FILE__, __LINE__)
+
+  ! call matSetType(dRdwTShell, MATSHELL, ierr)
+  ! call EChk(ierr, __FILE__, __LINE__)
+
+  call MatShellSetOperation(dRdwTShell, MATOP_MULT, dRdwTMatMult, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+  call MatSetup(dRdwTShell, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
   ! Create the nFM * nTimeIntervalsSpectral vectors for d{F,M}/dw plus
@@ -413,3 +437,164 @@ subroutine myMatCreate(matrix, blockSize, m, n, nnzDiagonal, nnzOffDiag, &
 
 
 end subroutine myMatCreate
+
+subroutine dRdwTMatMult(A, vecX,  vecY, ierr)
+  use constants
+  use communication
+  use blockPointers
+  use blockPointers_b
+  use inputDiscretization 
+  use inputTimeSpectral 
+  use inputPhysics
+  use iteration         
+  use flowVarRefState     
+  use inputAdjoint       
+  use stencils
+  use diffSizes
+  use ADjointPETSc, only : dRdwT
+  implicit none
+#define PETSC_AVOID_MPIF_H
+#include "finclude/petsc.h"
+  
+  Mat   A
+  Vec   vecX, vecY
+  integer(kind=intType) :: ierr,nn,sps,i,j,k,l,ii, sps2
+  real(kind=realType) :: alpha, beta, force(3), moment(3), sepSensor
+  real(kind=realType),pointer :: dwb_pointer(:)
+  integer(kind=intType) :: nState, level, irow, liftIndex
+  logical :: resetToRans
+  !call VecView(vecX, PETSC_VIEWER_STDOUT_SELF, ierr)
+
+  ! !call VecGetArrayF90(vecX, dwb_pointer, ierr)
+  ! !call EChk(ierr,__FILE__,__LINE__)
+  ! call VecSet(vecY, zero, ierr)
+  ! call EChk(ierr,__FILE__,__LINE__)
+
+  ! ! Setup number of state variable based on turbulence assumption
+  ! if ( frozenTurbulence ) then
+  !    nState = nwf
+  ! else
+  !    nState = nw
+  ! end if
+  ! ! This routine will not use the extra variables to block_res or the
+  ! ! extra outputs, so we must zero them here
+  ! call getDirAngle(velDirFreestream, liftDirection, liftIndex, alpha, beta)
+  
+  ! ! Need to trick the residual evalution to use coupled (mean flow and
+  ! ! turbulent) together.
+  
+  ! level = 1
+  ! currentLevel = level
+  ! groundLevel = level
+
+  ! ! If we are computing the jacobian for the RANS equations, we need
+  ! ! to make block_res think that we are evauluating the residual in a
+  ! ! fully coupled sense.  This is reset after this routine is
+  ! ! finished.
+  ! if (equations == RANSEquations) then
+  !    nMGVar = nw
+  !    nt1MG = nt1
+  !    nt2MG = nt2
+
+  !    turbSegregated = .False.
+  !    turbCoupled = .True.
+  ! end if
+
+  ! ! Determine if we want to use frozenTurbulent Adjoint
+  ! resetToRANS = .False. 
+  ! if (frozenTurbulence .and. equations == RANSEquations) then
+  !    equations = NSEquations 
+  !    resetToRANS = .True.
+  ! end if
+
+  ! ii = 0
+  ! do nn=1,nDom
+
+  !    ! Just to get sizes
+  !    call setPointers(nn,1_intType,1)
+  !    call setDiffSizes
+     
+  !    ! Allocate the memory we need for this block to do the forward
+  !    ! mode derivatives and copy reference values
+  !    call alloc_derivative_values_bwd(nn, level)
+        
+  !    do sps=1,nTimeIntervalsSpectral
+  !       ! Set pointers and derivative pointers
+  !       call setPointers_b(nn, level, sps)
+
+  !       ! Reset All States and possibe AD seeds
+  !       flowdomsb(nn,1,sps)%dw = zero 
+
+  !       do k=2, kl
+  !          do j=2,jl
+  !             do i=2,il
+  !                do l = 1, nstate
+  !                   ii = ii + 1
+  !                   !flowdomsb(nn,1,sps)%dw(i, j, k, l) = dwb_pointer(ii)
+  !                   call VecGetValues(vecX, 1, (/ii-1/), &
+  !                        flowdomsb(nn,1,sps)%dw(i, j, k, l), ierr)
+  !                   call EChk(ierr,__FILE__,__LINE__)
+  !                end do
+  !             end do
+  !          end do
+  !       end do
+
+  !       call block_res_b(nn, sps, .False., alpha, beta, liftIndex, force, moment, sepSensor)
+
+  !       do sps2=1,nTimeIntervalsSpectral
+  !          do k=2, kl
+  !             do j=2,jl
+  !                do i=2,il
+  !                   do l = 1, nstate
+  !                      irow = flowDoms(nn, 1, sps2)%globalCell(i,j,k)*nstate + l -1
+  !                      call VecSetValues(vecY, 1, (/irow/), &
+  !                           flowdomsb(nn,1,sps2)%w(i, j, k, l), ADD_VALUES, ierr)
+  !                      call EChk(ierr,__FILE__,__LINE__)
+  !                   end do
+  !                end do
+  !             end do
+  !          end do
+  !       end do
+  !    end do
+
+  !    call dealloc_derivative_values_bwd(nn, 1)
+  ! end do
+
+  ! ! Reset the correct equation parameters if we were useing the frozen
+  ! ! Turbulent 
+  ! if (resetToRANS) then
+  !    equations = RANSEquations
+  ! end if
+
+  ! ! Reset the paraters to use segrated turbulence solve. 
+  ! if (equations == RANSEquations) then
+  !    nMGVar = nwf
+  !    nt1MG = nwf + 1
+  !    nt2MG = nwf
+
+  !    turbSegregated = .True.
+  !    turbCoupled = .False.
+  !    restrictEddyVis = .false.
+  !    if( eddyModel ) restrictEddyVis = .true.
+  ! end if
+  
+  ! call VecAssemblyBegin(vecY, ierr)
+  ! call EChk(ierr,__FILE__,__LINE__)
+  
+  ! call VecAssemblyEnd(vecY, ierr)
+  ! call EChk(ierr,__FILE__,__LINE__)
+
+
+  call MatMult(dRdwT, vecX, vecY, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+  ! call VecRestoreArrayF90(vecX, dwb_pointer, ierr)
+  ! call EChk(ierr,__FILE__,__LINE__)
+  ! call VecNorm(vecX, NORM_2, alpha, ierr)
+  ! print *, 'xnorm:', alpha
+
+  ! call VecNorm(vecY, NORM_2, alpha, ierr)
+  ! print *, 'ynorm:', alpha
+  
+  ierr = 0
+
+end subroutine dRdwTMatMult

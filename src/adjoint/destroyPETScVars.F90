@@ -18,6 +18,9 @@ subroutine destroyPETScVars
   call MatDestroy(dRdWT, PETScIerr)
   call EChk(PETScIerr,__FILE__,__LINE__)
 
+  call MatDestroy(dRdwTShell, PETScIErr)
+  call EChk(PETScIerr,__FILE__,__LINE__)
+
   if (ApproxPC) then
      call MatDestroy(dRdWPreT, PETScIerr)
      call EChk(PETScIerr,__FILE__,__LINE__)
