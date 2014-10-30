@@ -1011,6 +1011,7 @@
        !                 included in the TS preconditioner.
        logical :: solveADjoint, setMonitor, ApproxPC, restartADjoint, useDiagTSPC
        logical :: frozenTurbulence, viscPC, ADPC
+       logical :: useMatrixFreedrdw, useMatrixFreedrdx
 
        ! ADjointSolverType: Type of linear solver for the ADjoint
        ! PreCondType      : Type of Preconditioner to use

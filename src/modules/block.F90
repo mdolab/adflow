@@ -506,7 +506,7 @@ module block
      !                                problems.
 
      real(kind=realType), dimension(:,:,:,:),   pointer :: w, wtmp
-     real(kind=realType), dimension(:,:,:,:,:), pointer :: dw_deriv
+     real(kind=realType), dimension(:,:,:,:,:), pointer :: dw_deriv, w_deriv
      real(kind=realType), dimension(:,:,:,:,:), pointer :: wOld
      real(kind=realType), dimension(:,:,:),     pointer :: p, ptmp, gamma
      real(kind=realType), dimension(:,:,:),     pointer :: rlv, rev
