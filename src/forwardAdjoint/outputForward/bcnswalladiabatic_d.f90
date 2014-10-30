@@ -2,10 +2,14 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of bcnswalladiabatic in forward (tangent) mode (with options i4 dr8 r8):
-   !   variations   of useful results: *rev *p *gamma *w *rlv
+   !   variations   of useful results: *rev *bvtj1 *bvtj2 *p *gamma
+   !                *bmtk1 *w *bmtk2 *rlv *bvtk1 *bvtk2 *bmti1 *bmti2
+   !                *bvti1 *bvti2 *bmtj1 *bmtj2
    !   with respect to varying inputs: tref rgas *rev *p *w *rlv *(*bcdata.uslip)
-   !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
-   !                bcdata:in *bcdata.uslip:in
+   !   Plus diff mem management of: rev:in bvtj1:in bvtj2:in p:in
+   !                gamma:in bmtk1:in w:in bmtk2:in rlv:in bvtk1:in
+   !                bvtk2:in bmti1:in bmti2:in bvti1:in bvti2:in bmtj1:in
+   !                bmtj2:in bcdata:in *bcdata.uslip:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -97,8 +101,7 @@
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1d, rev2d
    END SUBROUTINE SETBCPOINTERS_D
    END INTERFACE
-      gammad = 0.0_8
-   !
+      !
    !      ******************************************************************
    !      *                                                                *
    !      * Begin execution                                                *
@@ -113,6 +116,36 @@
    ! We turn off the turbulence BCwall for now. This needs
    ! to be added and correct the pointers to use full turbulence.
    ! It should be okay for frozen turbulence assumption.
+   IF (turbcoupled) THEN
+   bmtj2d = 0.0_8
+   bmtj1d = 0.0_8
+   bvti2d = 0.0_8
+   bvti1d = 0.0_8
+   bmti2d = 0.0_8
+   bmti1d = 0.0_8
+   bvtk2d = 0.0_8
+   bvtk1d = 0.0_8
+   bmtk2d = 0.0_8
+   bmtk1d = 0.0_8
+   bvtj2d = 0.0_8
+   bvtj1d = 0.0_8
+   CALL TURBBCNSWALL_D(.false.)
+   gammad = 0.0_8
+   ELSE
+   bvtj1d = 0.0_8
+   bvtj2d = 0.0_8
+   gammad = 0.0_8
+   bmtk1d = 0.0_8
+   bmtk2d = 0.0_8
+   bvtk1d = 0.0_8
+   bvtk2d = 0.0_8
+   bmti1d = 0.0_8
+   bmti2d = 0.0_8
+   bvti1d = 0.0_8
+   bvti2d = 0.0_8
+   bmtj1d = 0.0_8
+   bmtj2d = 0.0_8
+   END IF
    ! Loop over the viscous subfaces of this block. Note that
    ! these are numbered first.
    bocos:DO nn=1,nviscbocos
