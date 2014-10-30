@@ -54,6 +54,7 @@ SUBDIR_SRC    = src/modules       \
 		src/bendingMomentAnalysis \
                 src/adjoint/forcesOutput\
                 src/adjoint/forcesInput\
+#                src/forwardAdjoint/outputReverse \
 #                src/forwardAdjoint/residualOutputReverse\
 
 SUBDIR_EXEC   = src/exec

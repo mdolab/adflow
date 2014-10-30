@@ -5,13 +5,10 @@
    !   variations   of useful results: *bvtj1 *bvtj2 *bmtk1 *bmtk2
    !                *bvtk1 *bvtk2 *bmti1 *bmti2 *bvti1 *bvti2 *bmtj1
    !                *bmtj2
-   !   with respect to varying inputs: winf *bvtj1 *bvtj2 *bmtk1 *w
-   !                *bmtk2 *rlv *bvtk1 *bvtk2 *bmti1 *bmti2 *bvti1
-   !                *bvti2 *bmtj1 *bmtj2
+   !   with respect to varying inputs: winf *w *rlv
    !   Plus diff mem management of: bvtj1:in bvtj2:in bmtk1:in w:in
    !                bmtk2:in rlv:in bvtk1:in bvtk2:in bmti1:in bmti2:in
    !                bvti1:in bvti2:in bmtj1:in bmtj2:in bcdata:in
-   !                *bcdata.norm:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -107,6 +104,18 @@
    END DO
    END DO
    END DO
+   bvtj1d = 0.0_8
+   bvtj2d = 0.0_8
+   bmtk1d = 0.0_8
+   bmtk2d = 0.0_8
+   bvtk1d = 0.0_8
+   bvtk2d = 0.0_8
+   bmti1d = 0.0_8
+   bmti2d = 0.0_8
+   bvti1d = 0.0_8
+   bvti2d = 0.0_8
+   bmtj1d = 0.0_8
+   bmtj2d = 0.0_8
    ! Loop over the boundary condition subfaces of this block.
    bocos:DO nn=1,nbocos
    ! Determine the kind of boundary condition for this subface.
