@@ -134,8 +134,17 @@ ALL_RES_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.F90\
 		$(SRC)/utils/derivativeRigidRotAngle.f90\
 		$(SRC)/utils/dummy_dim.f90\
 		$(SRC)/utils/setBCPointers.F90\
+		$(SRC)/utils/resetBCPointers.F90\
 		$(SRC)/utils/computeEtot.f90\
 		$(SRC)/utils/setPointers.f90\
+		$(SRC)/utils/setss.f90\
+		$(SRC)/utils/resetss.f90\
+		$(SRC)/utils/setgamma.f90\
+		$(SRC)/utils/resetgamma.f90\
+		$(SRC)/utils/setpp3pp4.f90\
+		$(SRC)/utils/resetpp3pp4.f90\
+		$(SRC)/utils/setww0pp0rlv0rev0.f90\
+		$(SRC)/utils/resetww0pp0rlv0rev0.f90\
 		$(SRC)/utils/terminate.F90
 
 # intermediate residual files.
@@ -244,6 +253,11 @@ ad_forward:
 
 # Remove preprocessor files
 	make -f Makefile_tapenade cleanpreprocess_res
+
+# Fix the AD bug in bcsymm_d.f90
+	mv outputForward/bcsymm_d.f90 outputForward/bcsymm_d.f90.bp
+	grep -v "   gamma1d(i, j) = 0.0_8" outputForward/bcsymm_d.f90.bp > outputForward/bcsymm_d.f90
+
 
 ad_forward_multi:
 # First delete the holding directory if it exists

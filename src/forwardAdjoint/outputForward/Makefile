@@ -64,6 +64,10 @@ FF90_OBJECTS =  blockpointers_d.o\
 		etotarray_d.o \
 		invisciddissfluxmatrix_d.o \
                 setbcpointers_d.o\
+                setww0pp0rlv0rev0_d.o\
+                setss_d.o\
+                setgamma_d.o\
+                setpp3pp4_d.o\
 	        sa_block_d.o\
 	        inviscidcentralflux_d.o\
                 saeddyviscosity_d.o\
