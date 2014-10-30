@@ -5,12 +5,12 @@
    !   variations   of useful results: *(*bcdata.fp) *(*bcdata.fv)
    !                *(*bcdata.m) *(*bcdata.oarea) *(*bcdata.sepsensor)
    !                cfp cfv cmp cmv sepsensor
-   !   with respect to varying inputs: *p *w *x *si *sj *sk *(*viscsubface.tau)
-   !                gammainf pinf pref veldirfreestream lengthref
-   !                machcoef pointref
-   !   Plus diff mem management of: p:in w:in x:in si:in sj:in sk:in
-   !                viscsubface:in *viscsubface.tau:in bcdata:in *bcdata.fp:in
-   !                *bcdata.fv:in *bcdata.m:in *bcdata.oarea:in *bcdata.sepsensor:in
+   !   with respect to varying inputs: gammainf pinf pref *p *w *x
+   !                *si *sj *sk *(*viscsubface.tau) veldirfreestream
+   !                lengthref machcoef pointref
+   !   Plus diff mem management of: viscsubface:in *viscsubface.tau:in
+   !                bcdata:in *bcdata.fp:in *bcdata.fv:in *bcdata.m:in
+   !                *bcdata.oarea:in *bcdata.sepsensor:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -74,13 +74,94 @@
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rho2, rho1
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rho2d, rho1d
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv2, rlv1
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: dd2wall
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ss, xx
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ssd, xxd
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww2
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww2d
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: norm
-   REAL(kind=realtype) :: mx, my, mz, qa
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1d, ww2d
+   INTERFACE 
+   SUBROUTINE SETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
+   &       rev1, rev2, offset)
+   USE BCTYPES
+   USE BLOCKPOINTERS_D
+   USE FLOWVARREFSTATE
+   IMPLICIT NONE
+   INTEGER(kind=inttype), INTENT(IN) :: nn, offset
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1, pp2
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
+   END SUBROUTINE SETBCPOINTERS
+   SUBROUTINE RESETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
+   &       rev1, rev2, offset)
+   USE BCTYPES
+   USE BLOCKPOINTERS_D
+   USE FLOWVARREFSTATE
+   IMPLICIT NONE
+   INTEGER(kind=inttype), INTENT(IN) :: nn, offset
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1, pp2
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
+   END SUBROUTINE RESETBCPOINTERS
+   SUBROUTINE SETXXSSRHODD2WALL(nn, xx, ss, rho1, rho2, dd2wall)
+   USE BCTYPES
+   USE BLOCKPOINTERS_D
+   USE FLOWVARREFSTATE
+   USE INPUTPHYSICS
+   IMPLICIT NONE
+   INTEGER(kind=inttype), INTENT(IN) :: nn
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rho2, rho1
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: dd2wall
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ss, xx
+   END SUBROUTINE SETXXSSRHODD2WALL
+   SUBROUTINE RESETXXSSRHODD2WALL(nn, xx, ss, rho1, rho2, dd2wall)
+   USE BCTYPES
+   USE BLOCKPOINTERS_D
+   USE FLOWVARREFSTATE
+   USE INPUTPHYSICS
+   IMPLICIT NONE
+   INTEGER(kind=inttype), INTENT(IN) :: nn
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rho2, rho1
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: dd2wall
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ss, xx
+   END SUBROUTINE RESETXXSSRHODD2WALL
+   END INTERFACE
+      INTERFACE 
+   SUBROUTINE SETBCPOINTERS_D(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, &
+   &       pp2, pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev1d, rev2, rev2d, &
+   &       offset)
+   USE BCTYPES
+   USE BLOCKPOINTERS_D
+   USE FLOWVARREFSTATE
+   IMPLICIT NONE
+   INTEGER(kind=inttype), INTENT(IN) :: nn, offset
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1d, ww2d
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1, pp2
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1d, pp2d
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1d, rlv2d
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1d, rev2d
+   END SUBROUTINE SETBCPOINTERS_D
+   SUBROUTINE SETXXSSRHODD2WALL_D(nn, xx, xxd, ss, ssd, rho1, rho1d, &
+   &       rho2, rho2d, dd2wall)
+   USE BCTYPES
+   USE BLOCKPOINTERS_D
+   USE FLOWVARREFSTATE
+   USE INPUTPHYSICS
+   IMPLICIT NONE
+   INTEGER(kind=inttype), INTENT(IN) :: nn
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rho2, rho1
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rho2d, rho1d
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: dd2wall
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ss, xx
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ssd, xxd
+   END SUBROUTINE SETXXSSRHODD2WALL_D
+   END INTERFACE
+      REAL(kind=realtype) :: mx, my, mz, qa
    REAL(kind=realtype) :: mxd, myd, mzd, qad
    LOGICAL :: viscoussubface
    INTRINSIC SQRT
@@ -92,7 +173,11 @@
    REAL(kind=realtype) :: result1d
    REAL(kind=realtype) :: arg2
    REAL(kind=realtype) :: result2
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv2d
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1d
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev2d
    INTEGER :: ii1
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1d
    !
    !      ******************************************************************
    !      *                                                                *
@@ -171,150 +256,29 @@
    ! Set a bunch of pointers depending on the face id to make
    ! a generic treatment possible. The routine setBcPointers
    ! is not used, because quite a few other ones are needed.
+   CALL SETBCPOINTERS_D(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, pp2, &
+   &                    pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev1d, rev2, &
+   &                    rev2d, 0)
+   CALL SETXXSSRHODD2WALL_D(nn, xx, xxd, ss, ssd, rho1, rho1d, rho2, &
+   &                        rho2d, dd2wall)
    SELECT CASE  (bcfaceid(nn)) 
    CASE (imin) 
-   pp2d => pd(2, 1:, 1:)
-   pp2 => p(2, 1:, 1:)
-   pp1d => pd(1, 1:, 1:)
-   pp1 => p(1, 1:, 1:)
-   rho2d => wd(2, 1:, 1:, irho)
-   rho2 => w(2, 1:, 1:, irho)
-   rho1d => wd(1, 1:, 1:, irho)
-   rho1 => w(1, 1:, 1:, irho)
-   ssd => sid(1, :, :, :)
-   ss => si(1, :, :, :)
-   xxd => xd(1, :, :, :)
-   xx => x(1, :, :, :)
-   ww2d => wd(2, 1:, 1:, :)
-   ww2 => w(2, 1:, 1:, :)
    fact = -one
-   IF (equations .EQ. ransequations) THEN
-   dd2wall => d2wall(2, :, :)
-   END IF
-   IF (viscoussubface) THEN
-   rlv2 => rlv(2, 1:, 1:)
-   rlv1 => rlv(1, 1:, 1:)
-   END IF
    CASE (imax) 
    !===========================================================
-   pp2d => pd(il, 1:, 1:)
-   pp2 => p(il, 1:, 1:)
-   pp1d => pd(ie, 1:, 1:)
-   pp1 => p(ie, 1:, 1:)
-   rho2d => wd(il, 1:, 1:, irho)
-   rho2 => w(il, 1:, 1:, irho)
-   rho1d => wd(ie, 1:, 1:, irho)
-   rho1 => w(ie, 1:, 1:, irho)
-   ssd => sid(il, :, :, :)
-   ss => si(il, :, :, :)
-   xxd => xd(il, :, :, :)
-   xx => x(il, :, :, :)
-   ww2d => wd(il, 1:, 1:, :)
-   ww2 => w(il, 1:, 1:, :)
    fact = one
-   IF (equations .EQ. ransequations) THEN
-   dd2wall => d2wall(il, :, :)
-   END IF
-   IF (viscoussubface) THEN
-   rlv2 => rlv(il, 1:, 1:)
-   rlv1 => rlv(ie, 1:, 1:)
-   END IF
    CASE (jmin) 
    !===========================================================
-   pp2d => pd(1:, 2, 1:)
-   pp2 => p(1:, 2, 1:)
-   pp1d => pd(1:, 1, 1:)
-   pp1 => p(1:, 1, 1:)
-   rho2d => wd(1:, 2, 1:, irho)
-   rho2 => w(1:, 2, 1:, irho)
-   rho1d => wd(1:, 1, 1:, irho)
-   rho1 => w(1:, 1, 1:, irho)
-   ssd => sjd(:, 1, :, :)
-   ss => sj(:, 1, :, :)
-   xxd => xd(:, 1, :, :)
-   xx => x(:, 1, :, :)
-   ww2d => wd(1:, 2, 1:, :)
-   ww2 => w(1:, 2, 1:, :)
    fact = -one
-   IF (equations .EQ. ransequations) THEN
-   dd2wall => d2wall(:, 2, :)
-   END IF
-   IF (viscoussubface) THEN
-   rlv2 => rlv(1:, 2, 1:)
-   rlv1 => rlv(1:, 1, 1:)
-   END IF
    CASE (jmax) 
    !===========================================================
-   pp2d => pd(1:, jl, 1:)
-   pp2 => p(1:, jl, 1:)
-   pp1d => pd(1:, je, 1:)
-   pp1 => p(1:, je, 1:)
-   rho2d => wd(1:, jl, 1:, irho)
-   rho2 => w(1:, jl, 1:, irho)
-   rho1d => wd(1:, je, 1:, irho)
-   rho1 => w(1:, je, 1:, irho)
-   ssd => sjd(:, jl, :, :)
-   ss => sj(:, jl, :, :)
-   xxd => xd(:, jl, :, :)
-   xx => x(:, jl, :, :)
-   ww2d => wd(1:, jl, 1:, :)
-   ww2 => w(1:, jl, 1:, :)
    fact = one
-   IF (equations .EQ. ransequations) THEN
-   dd2wall => d2wall(:, jl, :)
-   END IF
-   IF (viscoussubface) THEN
-   rlv2 => rlv(1:, jl, 1:)
-   rlv1 => rlv(1:, je, 1:)
-   END IF
    CASE (kmin) 
    !===========================================================
-   pp2d => pd(1:, 1:, 2)
-   pp2 => p(1:, 1:, 2)
-   pp1d => pd(1:, 1:, 1)
-   pp1 => p(1:, 1:, 1)
-   rho2d => wd(1:, 1:, 2, irho)
-   rho2 => w(1:, 1:, 2, irho)
-   rho1d => wd(1:, 1:, 1, irho)
-   rho1 => w(1:, 1:, 1, irho)
-   ssd => skd(:, :, 1, :)
-   ss => sk(:, :, 1, :)
-   xxd => xd(:, :, 1, :)
-   xx => x(:, :, 1, :)
-   ww2d => wd(1:, 1:, 2, :)
-   ww2 => w(1:, 1:, 2, :)
    fact = -one
-   IF (equations .EQ. ransequations) THEN
-   dd2wall => d2wall(:, :, 2)
-   END IF
-   IF (viscoussubface) THEN
-   rlv2 => rlv(1:, 1:, 2)
-   rlv1 => rlv(1:, 1:, 1)
-   END IF
    CASE (kmax) 
    !===========================================================
-   pp2d => pd(1:, 1:, kl)
-   pp2 => p(1:, 1:, kl)
-   pp1d => pd(1:, 1:, ke)
-   pp1 => p(1:, 1:, ke)
-   rho2d => wd(1:, 1:, kl, irho)
-   rho2 => w(1:, 1:, kl, irho)
-   rho1d => wd(1:, 1:, ke, irho)
-   rho1 => w(1:, 1:, ke, irho)
-   ssd => skd(:, :, kl, :)
-   ss => sk(:, :, kl, :)
-   xxd => xd(:, :, kl, :)
-   xx => x(:, :, kl, :)
-   ww2d => wd(1:, 1:, kl, :)
-   ww2 => w(1:, 1:, kl, :)
    fact = one
-   IF (equations .EQ. ransequations) THEN
-   dd2wall => d2wall(:, :, kl)
-   END IF
-   IF (viscoussubface) THEN
-   rlv2 => rlv(1:, 1:, kl)
-   rlv1 => rlv(1:, 1:, ke)
-   END IF
    END SELECT
    ! Loop over the quadrilateral faces of the subface. Note
    ! that the nodal range of BCData must be used and not the
@@ -456,7 +420,8 @@
    ! Initialize dwall for the laminar case and set the pointer
    ! for the unit normals.
    dwall = zero
-   norm => bcdata(nn)%norm
+   ! Replace norm with BCData norm - Peter Lyu
+   !norm => BCData(nn)%norm
    ! Loop over the quadrilateral faces of the subface and
    ! compute the viscous contribution to the force and
    ! moment and update the maximum value of y+.
@@ -552,16 +517,17 @@
    ! As later on only the magnitude of the tangential
    ! component is important, there is no need to take the
    ! sign into account (it should be a minus sign).
-   fx = tauxx*norm(i, j, 1) + tauxy*norm(i, j, 2) + tauxz*norm(&
-   &             i, j, 3)
-   fy = tauxy*norm(i, j, 1) + tauyy*norm(i, j, 2) + tauyz*norm(&
-   &             i, j, 3)
-   fz = tauxz*norm(i, j, 1) + tauyz*norm(i, j, 2) + tauzz*norm(&
-   &             i, j, 3)
-   fn = fx*norm(i, j, 1) + fy*norm(i, j, 2) + fz*norm(i, j, 3)
-   fx = fx - fn*norm(i, j, 1)
-   fy = fy - fn*norm(i, j, 2)
-   fz = fz - fn*norm(i, j, 3)
+   fx = tauxx*bcdata(nn)%norm(i, j, 1) + tauxy*bcdata(nn)%norm(&
+   &             i, j, 2) + tauxz*bcdata(nn)%norm(i, j, 3)
+   fy = tauxy*bcdata(nn)%norm(i, j, 1) + tauyy*bcdata(nn)%norm(&
+   &             i, j, 2) + tauyz*bcdata(nn)%norm(i, j, 3)
+   fz = tauxz*bcdata(nn)%norm(i, j, 1) + tauyz*bcdata(nn)%norm(&
+   &             i, j, 2) + tauzz*bcdata(nn)%norm(i, j, 3)
+   fn = fx*bcdata(nn)%norm(i, j, 1) + fy*bcdata(nn)%norm(i, j, &
+   &             2) + fz*bcdata(nn)%norm(i, j, 3)
+   fx = fx - fn*bcdata(nn)%norm(i, j, 1)
+   fy = fy - fn*bcdata(nn)%norm(i, j, 2)
+   fz = fz - fn*bcdata(nn)%norm(i, j, 3)
    ! Compute the local value of y+. Due to the usage
    ! of pointers there is on offset of -1 in dd2Wall..
    IF (equations .EQ. ransequations) dwall = dd2wall(i-1, j-1)
@@ -592,6 +558,9 @@
    bcdata(nn)%oarea(i, j) = one/bcdata(nn)%oarea(i, j)
    END DO
    END DO
+   CALL RESETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, &
+   &                       rev2, 0)
+   CALL RESETXXSSRHODD2WALL(nn, xx, ss, rho1, rho2, dd2wall)
    END IF
    END DO bocos
    ! Currently the coefficients only contain the surface integral

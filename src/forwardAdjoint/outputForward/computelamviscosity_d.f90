@@ -3,7 +3,7 @@
    !
    !  Differentiation of computelamviscosity in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *p *rlv
-   !   with respect to varying inputs: *p *w muref tref rgas
+   !   with respect to varying inputs: muref tref rgas *p *w
    !   Plus diff mem management of: p:in w:in rlv:in
    !
    !      ******************************************************************

@@ -3,7 +3,7 @@
    !
    !  Differentiation of prodkatolaunder in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *prod
-   !   with respect to varying inputs: *w *vol *si *sj *sk timeref
+   !   with respect to varying inputs: timeref *w *vol *si *sj *sk
    !                *prod
    !   Plus diff mem management of: w:in vol:in si:in sj:in sk:in
    !                prod:in
