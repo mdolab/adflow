@@ -2,10 +2,10 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of prodsmag2 in forward (tangent) mode (with options i4 dr8 r8):
-   !   variations   of useful results: *prod
-   !   with respect to varying inputs: *w *vol *si *sj *sk *prod
-   !   Plus diff mem management of: w:in vol:in si:in sj:in sk:in
-   !                prod:in
+   !   variations   of useful results: *dw
+   !   with respect to varying inputs: *dw *w *vol *si *sj *sk
+   !   Plus diff mem management of: dw:in w:in vol:in si:in sj:in
+   !                sk:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -194,10 +194,10 @@
    div2d = f23*2*(sxx+syy+szz)*(sxxd+syyd+szzd)
    div2 = f23*(sxx+syy+szz)**2
    ! Store the square of strain as the production term.
-   prodd(i, j, k) = two*(two*(2*sxy*sxyd+2*sxz*sxzd+2*syz*syzd)+2*&
-   &         sxx*sxxd+2*syy*syyd+2*szz*szzd) - div2d
-   prod(i, j, k) = two*(two*(sxy**2+sxz**2+syz**2)+sxx**2+syy**2+&
-   &         szz**2) - div2
+   dwd(i, j, k, iprod) = two*(two*(2*sxy*sxyd+2*sxz*sxzd+2*syz*syzd&
+   &         )+2*sxx*sxxd+2*syy*syyd+2*szz*szzd) - div2d
+   dw(i, j, k, iprod) = two*(two*(sxy**2+sxz**2+syz**2)+sxx**2+syy&
+   &         **2+szz**2) - div2
    END DO
    END DO
    END DO

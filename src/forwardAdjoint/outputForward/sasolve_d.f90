@@ -8,8 +8,7 @@
    !                *sk *bmtj1 *bmtj2 (global)timeref
    !   Plus diff mem management of: sfacei:in sfacej:in sfacek:in
    !                bmtk1:in dw:in w:in bmtk2:in rlv:in vol:in bmti1:in
-   !                bmti2:in si:in sj:in sk:in bmtj1:in bmtj2:in viscsubface:in
-   !                bcdata:in
+   !                bmti2:in si:in sj:in sk:in bmtj1:in bmtj2:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -69,17 +68,15 @@
    REAL(kind=realtype) :: nutmd, nutpd, numd, nupd, cdmd, cdpd
    REAL(kind=realtype) :: c1m, c1p, c10, b1, c1, d1, qs
    REAL(kind=realtype) :: c1md, c1pd, c10d, b1d, c1d, d1d, qsd
-   REAL(kind=realtype) :: uu, um, up, factor, f, tu1p(1), rblank
-   REAL(kind=realtype) :: uud, umd, upd, fd, tu1pd(1)
+   REAL(kind=realtype) :: uu, um, up, factor, f, tu1p, rblank
+   REAL(kind=realtype) :: uud, umd, upd, fd
    REAL(kind=realtype), DIMENSION(2:il, 2:jl, 2:kl) :: qq
    REAL(kind=realtype), DIMENSION(2:il, 2:jl, 2:kl) :: qqd
    REAL(kind=realtype), DIMENSION(2:MAX(kl, il, jl)) :: bb, cc, dd, ff
    REAL(kind=realtype), DIMENSION(2:MAX(kl, il, jl)) :: bbd, ccd, ddd, &
    & ffd
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ddw, ww, ddvt
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ddwd, wwd, ddvtd
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rrlv
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rrlvd
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: dd2wall
    LOGICAL, DIMENSION(2:jl, 2:kl), TARGET :: flagi2, flagil
    LOGICAL, DIMENSION(2:il, 2:kl), TARGET :: flagj2, flagjl
@@ -123,7 +120,6 @@
    dvt => dw(1:, 1:, 1:, idvt:)
    prodd => dwd(1:, 1:, 1:, iprod)
    prod => dw(1:, 1:, 1:, iprod)
-   vortd => prodd
    vort => prod
    !
    !      ******************************************************************
@@ -160,12 +156,12 @@
    DO i=2,il
    ! First take the square root of the production term to
    ! obtain the correct production term for spalart-allmaras.
-   IF (prod(i, j, k) .EQ. 0.0_8) THEN
+   IF (dw(i, j, k, iprod) .EQ. 0.0_8) THEN
    ssd = 0.0_8
    ELSE
-   ssd = prodd(i, j, k)/(2.0*SQRT(prod(i, j, k)))
+   ssd = dwd(i, j, k, iprod)/(2.0*SQRT(dw(i, j, k, iprod)))
    END IF
-   ss = SQRT(prod(i, j, k))
+   ss = SQRT(dw(i, j, k, iprod))
    ! Compute the laminar kinematic viscosity, the inverse of
    ! wall distance squared, the ratio chi (ratio of nuTilde
    ! and nu) and the functions fv1 and fv2. The latter corrects
@@ -241,11 +237,11 @@
    &         -rsacw1*fwsad)
    term2 = dist2inv*(kar2inv*rsacb1*((one-ft2)*fv2+ft2)-rsacw1*fwsa&
    &         )
-   dvtd(i, j, k, 1) = (term1d+term2d*w(i, j, k, itu1)+term2*wd(i, j&
-   &         , k, itu1))*w(i, j, k, itu1) + (term1+term2*w(i, j, k, itu1))*&
-   &         wd(i, j, k, itu1)
-   dvt(i, j, k, 1) = (term1+term2*w(i, j, k, itu1))*w(i, j, k, itu1&
-   &         )
+   dwd(i, j, k, idvt) = (term1d+term2d*w(i, j, k, itu1)+term2*wd(i&
+   &         , j, k, itu1))*w(i, j, k, itu1) + (term1+term2*w(i, j, k, itu1&
+   &         ))*wd(i, j, k, itu1)
+   dw(i, j, k, idvt) = (term1+term2*w(i, j, k, itu1))*w(i, j, k, &
+   &         itu1)
    ! Compute some derivatives w.r.t. nuTilde. These will occur
    ! in the left hand side, i.e. the matrix for the implicit
    ! treatment.
@@ -404,11 +400,12 @@
    c10 = c1m + c1p
    ! Update the residual for this cell and store the possible
    ! coefficients for the matrix in b1, c1 and d1.
-   dvtd(i, j, k, 1) = dvtd(i, j, k, 1) + c1md*w(i, j, k-1, itu1) + &
-   &         c1m*wd(i, j, k-1, itu1) - c10d*w(i, j, k, itu1) - c10*wd(i, j&
-   &         , k, itu1) + c1pd*w(i, j, k+1, itu1) + c1p*wd(i, j, k+1, itu1)
-   dvt(i, j, k, 1) = dvt(i, j, k, 1) + c1m*w(i, j, k-1, itu1) - c10&
-   &         *w(i, j, k, itu1) + c1p*w(i, j, k+1, itu1)
+   dwd(i, j, k, idvt) = dwd(i, j, k, idvt) + c1md*w(i, j, k-1, itu1&
+   &         ) + c1m*wd(i, j, k-1, itu1) - c10d*w(i, j, k, itu1) - c10*wd(i&
+   &         , j, k, itu1) + c1pd*w(i, j, k+1, itu1) + c1p*wd(i, j, k+1, &
+   &         itu1)
+   dw(i, j, k, idvt) = dw(i, j, k, idvt) + c1m*w(i, j, k-1, itu1) -&
+   &         c10*w(i, j, k, itu1) + c1p*w(i, j, k+1, itu1)
    b1d = -c1md
    b1 = -c1m
    c1d = c10d
@@ -549,11 +546,12 @@
    c10 = c1m + c1p
    ! Update the residual for this cell and store the possible
    ! coefficients for the matrix in b1, c1 and d1.
-   dvtd(i, j, k, 1) = dvtd(i, j, k, 1) + c1md*w(i, j-1, k, itu1) + &
-   &         c1m*wd(i, j-1, k, itu1) - c10d*w(i, j, k, itu1) - c10*wd(i, j&
-   &         , k, itu1) + c1pd*w(i, j+1, k, itu1) + c1p*wd(i, j+1, k, itu1)
-   dvt(i, j, k, 1) = dvt(i, j, k, 1) + c1m*w(i, j-1, k, itu1) - c10&
-   &         *w(i, j, k, itu1) + c1p*w(i, j+1, k, itu1)
+   dwd(i, j, k, idvt) = dwd(i, j, k, idvt) + c1md*w(i, j-1, k, itu1&
+   &         ) + c1m*wd(i, j-1, k, itu1) - c10d*w(i, j, k, itu1) - c10*wd(i&
+   &         , j, k, itu1) + c1pd*w(i, j+1, k, itu1) + c1p*wd(i, j+1, k, &
+   &         itu1)
+   dw(i, j, k, idvt) = dw(i, j, k, idvt) + c1m*w(i, j-1, k, itu1) -&
+   &         c10*w(i, j, k, itu1) + c1p*w(i, j+1, k, itu1)
    b1d = -c1md
    b1 = -c1m
    c1d = c10d
@@ -694,11 +692,12 @@
    c10 = c1m + c1p
    ! Update the residual for this cell and store the possible
    ! coefficients for the matrix in b1, c1 and d1.
-   dvtd(i, j, k, 1) = dvtd(i, j, k, 1) + c1md*w(i-1, j, k, itu1) + &
-   &         c1m*wd(i-1, j, k, itu1) - c10d*w(i, j, k, itu1) - c10*wd(i, j&
-   &         , k, itu1) + c1pd*w(i+1, j, k, itu1) + c1p*wd(i+1, j, k, itu1)
-   dvt(i, j, k, 1) = dvt(i, j, k, 1) + c1m*w(i-1, j, k, itu1) - c10&
-   &         *w(i, j, k, itu1) + c1p*w(i+1, j, k, itu1)
+   dwd(i, j, k, idvt) = dwd(i, j, k, idvt) + c1md*w(i-1, j, k, itu1&
+   &         ) + c1m*wd(i-1, j, k, itu1) - c10d*w(i, j, k, itu1) - c10*wd(i&
+   &         , j, k, itu1) + c1pd*w(i+1, j, k, itu1) + c1p*wd(i+1, j, k, &
+   &         itu1)
+   dw(i, j, k, idvt) = dw(i, j, k, idvt) + c1m*w(i-1, j, k, itu1) -&
+   &         c10*w(i, j, k, itu1) + c1p*w(i+1, j, k, itu1)
    b1d = -c1md
    b1 = -c1m
    c1d = c10d
@@ -749,9 +748,9 @@
    DO j=2,jl
    DO i=2,il
    rblank = REAL(iblank(i, j, k), realtype)
-   dwd(i, j, k, itu1) = -(rblank*(vold(i, j, k)*dvt(i, j, k, 1)+vol&
-   &         (i, j, k)*dvtd(i, j, k, 1)))
-   dw(i, j, k, itu1) = -(vol(i, j, k)*dvt(i, j, k, 1)*rblank)
+   dwd(i, j, k, itu1) = -(rblank*(vold(i, j, k)*dw(i, j, k, idvt)+&
+   &         vol(i, j, k)*dwd(i, j, k, idvt)))
+   dw(i, j, k, itu1) = -(vol(i, j, k)*dw(i, j, k, idvt)*rblank)
    END DO
    END DO
    END DO
@@ -764,113 +763,6 @@
    flagkl = .false.
    ! Modify the rhs of the 1st internal cell, if wall functions
    ! are used; their value is determined by the table.
-   IF (wallfunctions) THEN
-   tu1pd = 0.0_8
-   bocos:DO nn=1,nviscbocos
-   ! Determine the block face on which the subface is located
-   ! and set some variables. As flag points to the entire array
-   ! flagI2, etc., its starting indices are the starting indices
-   ! of its target and not 1.
-   SELECT CASE  (bcfaceid(nn)) 
-   CASE (imin) 
-   flag => flagi2
-   ddwd => dwd(2, 1:, 1:, 1:)
-   ddw => dw(2, 1:, 1:, 1:)
-   ddvtd => dvtd(2, 1:, 1:, 1:)
-   ddvt => dvt(2, 1:, 1:, 1:)
-   wwd => wd(2, 1:, 1:, 1:)
-   ww => w(2, 1:, 1:, 1:)
-   rrlvd => rlvd(2, 1:, 1:)
-   rrlv => rlv(2, 1:, 1:)
-   dd2wall => d2wall(2, :, :)
-   CASE (imax) 
-   flag => flagil
-   ddwd => dwd(il, 1:, 1:, 1:)
-   ddw => dw(il, 1:, 1:, 1:)
-   ddvtd => dvtd(il, 1:, 1:, 1:)
-   ddvt => dvt(il, 1:, 1:, 1:)
-   wwd => wd(il, 1:, 1:, 1:)
-   ww => w(il, 1:, 1:, 1:)
-   rrlvd => rlvd(il, 1:, 1:)
-   rrlv => rlv(il, 1:, 1:)
-   dd2wall => d2wall(il, :, :)
-   CASE (jmin) 
-   flag => flagj2
-   ddwd => dwd(1:, 2, 1:, 1:)
-   ddw => dw(1:, 2, 1:, 1:)
-   ddvtd => dvtd(1:, 2, 1:, 1:)
-   ddvt => dvt(1:, 2, 1:, 1:)
-   wwd => wd(1:, 2, 1:, 1:)
-   ww => w(1:, 2, 1:, 1:)
-   rrlvd => rlvd(1:, 2, 1:)
-   rrlv => rlv(1:, 2, 1:)
-   dd2wall => d2wall(:, 2, :)
-   CASE (jmax) 
-   flag => flagjl
-   ddwd => dwd(1:, jl, 1:, 1:)
-   ddw => dw(1:, jl, 1:, 1:)
-   ddvtd => dvtd(1:, jl, 1:, 1:)
-   ddvt => dvt(1:, jl, 1:, 1:)
-   wwd => wd(1:, jl, 1:, 1:)
-   ww => w(1:, jl, 1:, 1:)
-   rrlvd => rlvd(1:, jl, 1:)
-   rrlv => rlv(1:, jl, 1:)
-   dd2wall => d2wall(:, jl, :)
-   CASE (kmin) 
-   flag => flagk2
-   ddwd => dwd(1:, 1:, 2, 1:)
-   ddw => dw(1:, 1:, 2, 1:)
-   ddvtd => dvtd(1:, 1:, 2, 1:)
-   ddvt => dvt(1:, 1:, 2, 1:)
-   wwd => wd(1:, 1:, 2, 1:)
-   ww => w(1:, 1:, 2, 1:)
-   rrlvd => rlvd(1:, 1:, 2)
-   rrlv => rlv(1:, 1:, 2)
-   dd2wall => d2wall(:, :, 2)
-   CASE (kmax) 
-   flag => flagkl
-   ddwd => dwd(1:, 1:, kl, :)
-   ddw => dw(1:, 1:, kl, :)
-   ddvtd => dvtd(1:, 1:, kl, 1:)
-   ddvt => dvt(1:, 1:, kl, 1:)
-   wwd => wd(1:, 1:, kl, 1:)
-   ww => w(1:, 1:, kl, 1:)
-   rrlvd => rlvd(1:, 1:, kl)
-   rrlv => rlv(1:, 1:, kl)
-   dd2wall => d2wall(:, :, kl)
-   END SELECT
-   ! Loop over the owned faces of this subface. Therefore the
-   ! nodal range of BCData must be used. The offset of +1 is
-   ! present, because the starting index of the cell range is
-   ! 1 larger than the starting index of the nodal range.
-   DO j=bcdata(nn)%jnbeg+1,bcdata(nn)%jnend
-   DO i=bcdata(nn)%inbeg+1,bcdata(nn)%inend
-   ! Set ddw to zero.
-   ddwd(i, j, itu1) = 0.0_8
-   ddw(i, j, itu1) = zero
-   ! Enforce nu tilde in the 1st internal cell from the
-   ! wall function table. There is an offset of -1 in the
-   ! wall distance. Note that the offset compared to the
-   ! current value must be stored, because dvt contains
-   ! the update. Also note that the curve fits contain the
-   ! non-dimensional value.
-   ypd = (dd2wall(i-1, j-1)*viscsubface(nn)%utau(i, j)*wwd(i, j, &
-   &           irho)*rrlv(i, j)-ww(i, j, irho)*dd2wall(i-1, j-1)*&
-   &           viscsubface(nn)%utau(i, j)*rrlvd(i, j))/rrlv(i, j)**2
-   yp = ww(i, j, irho)*dd2wall(i-1, j-1)*viscsubface(nn)%utau(i, &
-   &           j)/rrlv(i, j)
-   CALL CURVETUPYP_D(tu1p, tu1pd, yp, ypd, itu1, itu1)
-   ddvtd(i, j, 1) = ((tu1pd(1)*rrlv(i, j)+tu1p(1)*rrlvd(i, j))*ww&
-   &           (i, j, irho)-tu1p(1)*rrlv(i, j)*wwd(i, j, irho))/ww(i, j, &
-   &           irho)**2 - wwd(i, j, itu1)
-   ddvt(i, j, 1) = tu1p(1)*rrlv(i, j)/ww(i, j, irho) - ww(i, j, &
-   &           itu1)
-   ! Set the wall flag to .true.
-   flag(i, j) = .true.
-   END DO
-   END DO
-   END DO bocos
-   END IF
    ! Return if only the residual must be computed.
    IF (resonly) THEN
    RETURN
@@ -1046,8 +938,8 @@
    rblank = REAL(iblank(i, j, k), realtype)
    ccd(j) = qqd(i, j, k)
    cc(j) = qq(i, j, k)
-   ffd(j) = rblank*dvtd(i, j, k, 1)
-   ff(j) = dvt(i, j, k, 1)*rblank
+   ffd(j) = rblank*dwd(i, j, k, idvt)
+   ff(j) = dw(i, j, k, idvt)*rblank
    bbd(j) = rblank*bbd(j)
    bb(j) = bb(j)*rblank
    ddd(j) = rblank*ddd(j)
@@ -1085,8 +977,8 @@
    END DO
    ! Determine the new rhs for the next direction.
    DO j=2,jl
-   dvtd(i, j, k, 1) = ffd(j)*qq(i, j, k) + ff(j)*qqd(i, j, k)
-   dvt(i, j, k, 1) = ff(j)*qq(i, j, k)
+   dwd(i, j, k, idvt) = ffd(j)*qq(i, j, k) + ff(j)*qqd(i, j, k)
+   dw(i, j, k, idvt) = ff(j)*qq(i, j, k)
    END DO
    END DO
    END DO
@@ -1224,8 +1116,8 @@
    rblank = REAL(iblank(i, j, k), realtype)
    ccd(i) = qqd(i, j, k)
    cc(i) = qq(i, j, k)
-   ffd(i) = rblank*dvtd(i, j, k, 1)
-   ff(i) = dvt(i, j, k, 1)*rblank
+   ffd(i) = rblank*dwd(i, j, k, idvt)
+   ff(i) = dw(i, j, k, idvt)*rblank
    bbd(i) = rblank*bbd(i)
    bb(i) = bb(i)*rblank
    ddd(i) = rblank*ddd(i)
@@ -1263,8 +1155,8 @@
    END DO
    ! Determine the new rhs for the next direction.
    DO i=2,il
-   dvtd(i, j, k, 1) = ffd(i)*qq(i, j, k) + ff(i)*qqd(i, j, k)
-   dvt(i, j, k, 1) = ff(i)*qq(i, j, k)
+   dwd(i, j, k, idvt) = ffd(i)*qq(i, j, k) + ff(i)*qqd(i, j, k)
+   dw(i, j, k, idvt) = ff(i)*qq(i, j, k)
    END DO
    END DO
    END DO
@@ -1402,8 +1294,8 @@
    rblank = REAL(iblank(i, j, k), realtype)
    ccd(k) = qqd(i, j, k)
    cc(k) = qq(i, j, k)
-   ffd(k) = rblank*dvtd(i, j, k, 1)
-   ff(k) = dvt(i, j, k, 1)*rblank
+   ffd(k) = rblank*dwd(i, j, k, idvt)
+   ff(k) = dw(i, j, k, idvt)*rblank
    bbd(k) = rblank*bbd(k)
    bb(k) = bb(k)*rblank
    ddd(k) = rblank*ddd(k)
@@ -1441,8 +1333,8 @@
    END DO
    ! Store the update in dvt.
    DO k=2,kl
-   dvtd(i, j, k, 1) = ffd(k)
-   dvt(i, j, k, 1) = ff(k)
+   dwd(i, j, k, idvt) = ffd(k)
+   dw(i, j, k, idvt) = ff(k)
    END DO
    END DO
    END DO
@@ -1460,9 +1352,9 @@
    DO k=2,kl
    DO j=2,jl
    DO i=2,il
-   wd(i, j, k, itu1) = wd(i, j, k, itu1) + factor*dvtd(i, j, k, 1&
-   &           )
-   w(i, j, k, itu1) = w(i, j, k, itu1) + factor*dvt(i, j, k, 1)
+   wd(i, j, k, itu1) = wd(i, j, k, itu1) + factor*dwd(i, j, k, &
+   &           idvt)
+   w(i, j, k, itu1) = w(i, j, k, itu1) + factor*dw(i, j, k, idvt)
    IF (w(i, j, k, itu1) .LT. zero) THEN
    wd(i, j, k, itu1) = 0.0_8
    w(i, j, k, itu1) = zero

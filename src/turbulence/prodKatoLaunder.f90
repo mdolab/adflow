@@ -124,7 +124,7 @@
 
              ! Compute the production term.
 
-             prod(i,j,k) = two*sqrt(sijsij*oijoij)
+             dw(i,j,k, iprod) = two*sqrt(sijsij*oijoij)
 
            enddo
          enddo

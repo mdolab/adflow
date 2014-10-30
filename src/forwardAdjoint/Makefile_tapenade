@@ -109,7 +109,7 @@ ALL_RES_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.F90\
 		$(SRC)/turbulence/turbMod.F90\
 		$(SRC)/turbulence/saNuFromEddyRatio.f90\
 		$(SRC)/turbulence/sa.f90\
-		$(SRC)/turbulence/saSolve.f90\
+		$(SRC)/turbulence/saSolve.F90\
 		$(SRC)/turbulence/prodKatoLaunder.f90\
 		$(SRC)/turbulence/prodSmag2.f90\
 		$(SRC)/turbulence/prodWmag2.f90\
