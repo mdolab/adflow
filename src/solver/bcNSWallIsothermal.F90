@@ -36,8 +36,9 @@
 
        real(kind=realType) :: rhok, t2, t1
 
-       real(kind=realType), dimension(:,:,:), pointer :: uSlip
-       real(kind=realType), dimension(:,:),   pointer :: TNS_Wall
+#ifndef TAPENADE_REVERSE
+       !real(kind=realType), dimension(:,:,:), pointer :: uSlip
+       !real(kind=realType), dimension(:,:),   pointer :: TNS_Wall
 
        real(kind=realType), dimension(:,:,:), pointer :: ww1, ww2
        real(kind=realType), dimension(:,:),   pointer :: pp1, pp2
@@ -49,7 +50,9 @@
        interface
          subroutine setBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
                                   rev1, rev2, offset)
+           use BCTypes
            use blockPointers
+           use flowVarRefState
            implicit none
 
            integer(kind=intType), intent(in) :: nn, offset
@@ -58,7 +61,28 @@
            real(kind=realType), dimension(:,:),   pointer :: rlv1, rlv2
            real(kind=realType), dimension(:,:),   pointer :: rev1, rev2
          end subroutine setBCPointers
+
+         subroutine resetBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
+                                  rev1, rev2, offset)
+           use BCTypes
+           use blockPointers
+           use flowVarRefState
+           implicit none
+
+           integer(kind=intType), intent(in) :: nn, offset
+           real(kind=realType), dimension(:,:,:), pointer :: ww1, ww2
+           real(kind=realType), dimension(:,:),   pointer :: pp1, pp2
+           real(kind=realType), dimension(:,:),   pointer :: rlv1, rlv2
+           real(kind=realType), dimension(:,:),   pointer :: rev1, rev2
+         end subroutine resetBCPointers
        end interface
+#else
+       real(kind=realType), dimension(imaxDim,jmaxDim,nw) :: ww1, ww2
+       real(kind=realType), dimension(imaxDim,jmaxDim) :: pp1, pp2
+       real(kind=realType), dimension(imaxDim,jmaxDim) :: rlv1, rlv2
+       real(kind=realType), dimension(imaxDim,jmaxDim) :: rev1, rev2
+#endif
+
 !
 !      ******************************************************************
 !      *                                                                *
@@ -72,8 +96,12 @@
        ! No need to extrapolate the secondary halo's, because this
        ! is done in extrapolate2ndHalo.
 
+       ! We turn off the turbulence BCwall for now. This needs
+       ! to be added and correct the pointers to use full turbulence.
+       ! It should be okay for frozen turbulence assumption.
+#ifndef USE_TAPENADE
        if( turbCoupled ) call turbBCNSWall(.false.)
-
+#endif
        ! Loop over the viscous subfaces of this block. Note that
        ! these are numbered first.
 
@@ -85,17 +113,23 @@
 
            ! Set the pointers for uSlip and TNSWall to make
            ! the code more readable.
-
-           uSlip    => BCData(nn)%uSlip
-           TNS_Wall => BCData(nn)%TNS_Wall
+           
+           ! Replace those with actual BCData for reverse AD - Peter Lyu
+           !uSlip    => BCData(nn)%uSlip
+           !TNS_Wall => BCData(nn)%TNS_Wall
 
            ! Nullify the pointers and set them to the correct subface.
            ! They are nullified first, because some compilers require
            ! that.
 
            !nullify(ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2)
+#ifndef TAPENADE_REVERSE
            call setBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
                               rev1, rev2, 0)
+#else
+           call setBCPointersBwd(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
+                rev1, rev2, 0)
+#endif
 
            ! Initialize rhok to zero. This will be overwritten if a
            ! correction for k must be applied.
@@ -118,15 +152,15 @@
                ! halo cell such that the average is the wall temperature.
 
                t2 = pp2(i,j)/(RGas*ww2(i,j,irho))
-               t1 = two*TNS_Wall(i,j) - t2
+               t1 = two*BCData(nn)%TNS_Wall(i,j) - t2
 
                ! Make sure that t1 is within reasonable bounds. These
                ! bounds are such that the clipping is never active in the
                ! converged solution; it is only to avoid instabilities
                ! during the convergence.
 
-               t1 = max(half*TNS_Wall(i,j), t1)
-               t1 = min(two *TNS_Wall(i,j), t1)
+               t1 = max(half*BCData(nn)%TNS_Wall(i,j), t1)
+               t1 = min(two *BCData(nn)%TNS_Wall(i,j), t1)
 
                ! Determine the variables in the halo. As the spacing
                ! is very small a constant pressure boundary condition
@@ -135,9 +169,9 @@
 
                pp1(i,j)      =  pp2(i,j) - four*third*rhok
                ww1(i,j,irho) =  pp1(i,j)/(RGas*t1)
-               ww1(i,j,ivx)  = -ww2(i,j,ivx) + two*uSlip(i,j,1)
-               ww1(i,j,ivy)  = -ww2(i,j,ivy) + two*uSlip(i,j,2)
-               ww1(i,j,ivz)  = -ww2(i,j,ivz) + two*uSlip(i,j,3)
+               ww1(i,j,ivx)  = -ww2(i,j,ivx) + two*BCData(nn)%uSlip(i,j,1)
+               ww1(i,j,ivy)  = -ww2(i,j,ivy) + two*BCData(nn)%uSlip(i,j,2)
+               ww1(i,j,ivz)  = -ww2(i,j,ivz) + two*BCData(nn)%uSlip(i,j,3)
 
                ! Set the viscosities. There is no need to test for a
                ! viscous problem of course. The eddy viscosity is
@@ -149,6 +183,15 @@
 
              enddo
            enddo
+
+           ! deallocation all pointer
+#ifndef TAPENADE_REVERSE
+           call resetBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
+                              rev1, rev2, 0)
+#else
+           call resetBCPointersBwd(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
+                rev1, rev2, 0)
+#endif
 
            ! Compute the energy for these halo's.
 
