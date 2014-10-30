@@ -58,7 +58,8 @@
        jb = flowDoms(nn,mm,ll)%jb
        kb = flowDoms(nn,mm,ll)%kb
 
-       maxDim = max(ib,jb,kb)
+       imaxDim = max(ie,je)
+       jmaxDim = max(je,ke)
 
        rightHanded = flowDoms(nn,mm,ll)%righthanded
 

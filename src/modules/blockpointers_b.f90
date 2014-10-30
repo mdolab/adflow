@@ -37,6 +37,7 @@
 
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: sb
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: dwb, fwb
+   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: w1b, wrb
 
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: wnb
 

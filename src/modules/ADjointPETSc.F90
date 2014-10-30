@@ -48,7 +48,7 @@
       !       of design variables.
       !
 
-      Mat     dRdWT, dRdWPreT
+      Mat     dRdWT, dRdWPreT, dRdWTShell
       Mat     dRda, dRdx
       Mat     dFcdw, dFcdx, dFndFc
       Mat     dFdx, dFdw, doAdX
@@ -68,6 +68,7 @@
       VecScatter dRdaTpsi_scatter
       VecScatter XstoXv
       PetscErrorCode PETScIerr
+      PetscFortranAddr   matfreectx(1)
 
       !adjointKSP   Linear solver (Krylov subspace method) context
       KSP     adjointKSP
