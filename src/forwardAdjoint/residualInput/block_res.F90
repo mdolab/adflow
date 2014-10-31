@@ -64,6 +64,7 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   call referenceState
   call setFlowInfinityState
 
+#ifndef TAPENADE_REVERSE
   ! ------------------------------------------------
   !        Additional Spatial Components
   ! ------------------------------------------------
@@ -88,7 +89,7 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
      call slipVelocitiesFineLevel_block(useOldCoor, t, sps)
 
   end if
-
+#endif
   ! ------------------------------------------------
   !        Normal Residual Computation
   ! ------------------------------------------------
@@ -128,9 +129,10 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   ! -------------------------------
   ! Compute turbulence residual for RANS equations
   if( equations == RANSEquations) then
+#ifndef TAPENADE_REVERSE
      ! Initialize only the Turblent Variables
      call unsteadyTurbSpectral_block(itu1, itu1, nn, sps)
-     
+#endif
      select case (turbModel)
         
      case (spalartAllmaras)
@@ -203,6 +205,8 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
 
   !  Actual residual calc
   call residual_block
+  ! Note that there are some error introduced by viscousflux from fw
+  ! The error only show up in the rho term in some cells
 
   ! Divide through by the volume
   do sps2 = 1,nTimeIntervalsSpectral
@@ -232,5 +236,8 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
 
   fact = fact/(lengthRef*LRef)
   moment = (cMp + cMV)/fact
+
+  !call getCostFunction(costFunction, force, moment, sepSensor, &
+  !alpha, beta, liftIndex, objValue)
 
 end subroutine block_res
