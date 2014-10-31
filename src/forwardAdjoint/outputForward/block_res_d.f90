@@ -4,8 +4,8 @@
    !  Differentiation of block_res in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *(flowdoms.x) *(flowdoms.w)
    !                *(flowdoms.dw) *(*bcdata.fp) *(*bcdata.fv) *(*bcdata.m)
-   !                *(*bcdata.oarea) *(*bcdata.sepsensor) pref moment
-   !                force sepsensor
+   !                *(*bcdata.oarea) *(*bcdata.sepsensor) *(*bcdata.cavitation)
+   !                pref moment force cavitation sepsensor
    !   with respect to varying inputs: *(flowdoms.x) *(flowdoms.w)
    !                pref mach tempfreestream machgrid lengthref machcoef
    !                pointref alpha beta
@@ -19,15 +19,16 @@
    !                *fw:(loc) *bmtj1:(loc) *bmtj2:(loc) *(*viscsubface.tau):(loc)
    !                *(*bcdata.norm):(loc) *(*bcdata.rface):(loc) *(*bcdata.fp):out
    !                *(*bcdata.fv):out *(*bcdata.m):out *(*bcdata.oarea):out
-   !                *(*bcdata.sepsensor):out *bcdata.symnorm:(loc)
-   !                *(*bcdata.uslip):(loc) *radi:(loc) *radj:(loc)
-   !                *radk:(loc) mudim:(loc) gammainf:(loc) pinf:(loc)
-   !                timeref:(loc) rhoinf:(loc) muref:(loc) rhoinfdim:(loc)
-   !                tref:(loc) winf:(loc) muinf:(loc) uinf:(loc) pinfcorr:(loc)
-   !                rgas:(loc) pinfdim:(loc) pref:in-out rhoref:(loc)
-   !                mach:in tempfreestream:in veldirfreestream:(loc)
-   !                machgrid:in lengthref:in machcoef:in pointref:in
-   !                moment:out alpha:in force:out beta:in sepsensor:out
+   !                *(*bcdata.sepsensor):out *(*bcdata.cavitation):out
+   !                *bcdata.symnorm:(loc) *(*bcdata.uslip):(loc) *radi:(loc)
+   !                *radj:(loc) *radk:(loc) mudim:(loc) gammainf:(loc)
+   !                pinf:(loc) timeref:(loc) rhoinf:(loc) muref:(loc)
+   !                rhoinfdim:(loc) tref:(loc) winf:(loc) muinf:(loc)
+   !                uinf:(loc) pinfcorr:(loc) rgas:(loc) pinfdim:(loc)
+   !                pref:in-out rhoref:(loc) mach:in tempfreestream:in
+   !                veldirfreestream:(loc) machgrid:in lengthref:in
+   !                machcoef:in pointref:in moment:out alpha:in force:out
+   !                beta:in cavitation:out sepsensor:out
    !   Plus diff mem management of: flowdoms.x:in flowdoms.vol:in
    !                flowdoms.w:in flowdoms.dw:in rev:in bvtj1:in bvtj2:in
    !                p:in sfacei:in sfacej:in s:in gamma:in sfacek:in
@@ -36,7 +37,8 @@
    !                bmtj1:in bmtj2:in viscsubface:in *viscsubface.tau:in
    !                bcdata:in *bcdata.norm:in *bcdata.rface:in *bcdata.fp:in
    !                *bcdata.fv:in *bcdata.m:in *bcdata.oarea:in *bcdata.sepsensor:in
-   !                *bcdata.uslip:in radi:in radj:in radk:in
+   !                *bcdata.cavitation:in *bcdata.uslip:in radi:in
+   !                radj:in radk:in
    ! This is a super-combined function that combines the original
    ! functionality of: 
    ! Pressure Computation
@@ -50,7 +52,7 @@
    ! for forward mode AD with Tapenade
    SUBROUTINE BLOCK_RES_D(nn, sps, usespatial, alpha, alphad, beta, betad, &
    & liftindex, force, forced, moment, momentd, sepsensor, sepsensord, &
-   & cavitation)
+   & cavitation, cavitationd)
    USE BLOCKPOINTERS_D
    USE FLOWVARREFSTATE
    USE INPUTPHYSICS
@@ -63,6 +65,8 @@
    USE DIFFSIZES
    !  Hint: ISIZE1OFDrfbcdata should be the size of dimension 1 of array *bcdata
    IMPLICIT NONE
+   !call getCostFunction(costFunction, force, moment, sepSensor, &
+   !alpha, beta, liftIndex, objValue)
    ! Input Arguments:
    INTEGER(kind=inttype), INTENT(IN) :: nn, sps
    LOGICAL, INTENT(IN) :: usespatial
@@ -71,7 +75,7 @@
    INTEGER(kind=inttype), INTENT(IN) :: liftindex
    ! Output Variables
    REAL(kind=realtype) :: force(3), moment(3), sepsensor, cavitation
-   REAL(kind=realtype) :: forced(3), momentd(3), sepsensord
+   REAL(kind=realtype) :: forced(3), momentd(3), sepsensord, cavitationd
    ! Working Variables
    REAL(kind=realtype) :: gm1, v2, fact, tmp
    REAL(kind=realtype) :: v2d, factd, tmpd
@@ -290,6 +294,8 @@
    END IF
    !  Actual residual calc
    CALL RESIDUAL_BLOCK_D()
+   ! Note that there are some error introduced by viscousflux from fw
+   ! The error only show up in the rho term in some cells
    ! Divide through by the volume
    DO sps2=1,ntimeintervalsspectral
    DO l=1,nstate
@@ -310,7 +316,8 @@
    END DO
    END DO
    CALL FORCESANDMOMENTS_D(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd, &
-   &                   yplusmax, sepsensor, sepsensord)
+   &                   yplusmax, sepsensor, sepsensord, cavitation, &
+   &                   cavitationd)
    ! Convert back to actual forces. Note that even though we use
    ! MachCoef, Lref, and surfaceRef here, they are NOT differented,
    ! since F doesn't actually depend on them. Ideally we would just get
