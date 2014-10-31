@@ -21,17 +21,17 @@
    !
    USE CONSTANTS
    IMPLICIT NONE
+   INTEGER(kind=inttype), INTENT(IN) :: kk
    !
    !      Subroutine arguments.
    !
-   REAL(kind=realtype), DIMENSION(*), INTENT(IN) :: rho, p, k
-   REAL(kind=realtype), DIMENSION(*), INTENT(IN) :: rhod, pd, kd
-   REAL(kind=realtype), DIMENSION(*), INTENT(IN) :: u, v, w
-   REAL(kind=realtype), DIMENSION(*), INTENT(IN) :: ud, vd, wd
-   REAL(kind=realtype), DIMENSION(*), INTENT(OUT) :: etot
-   REAL(kind=realtype), DIMENSION(*), INTENT(OUT) :: etotd
+   REAL(kind=realtype), DIMENSION(kk), INTENT(IN) :: rho, p, k
+   REAL(kind=realtype), DIMENSION(kk), INTENT(IN) :: rhod, pd, kd
+   REAL(kind=realtype), DIMENSION(kk), INTENT(IN) :: u, v, w
+   REAL(kind=realtype), DIMENSION(kk), INTENT(IN) :: ud, vd, wd
+   REAL(kind=realtype), DIMENSION(kk), INTENT(OUT) :: etot
+   REAL(kind=realtype), DIMENSION(kk), INTENT(OUT) :: etotd
    LOGICAL, INTENT(IN) :: correctfork
-   INTEGER(kind=inttype), INTENT(IN) :: kk
    !
    !      Local variables.
    !
