@@ -3,7 +3,7 @@
    !
    !  Differentiation of applyallbc_block in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
    !   gradient     of useful results: *rev *p *gamma *w *rlv gammainf
-   !                tref winf pinfcorr rgas
+   !                winf pinfcorr
    !   with respect to varying inputs: *rev *p *w *rlv gammainf tref
    !                winf pinfcorr rgas
    !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in

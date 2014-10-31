@@ -137,6 +137,8 @@ subroutine residual_block
         call inviscidDissFluxScalarCoarse
      endif
 
+     ! Reverse adjoint currently only work with invisciddissscalar
+#ifndef TAPENADE_REVERSE     
      !===========================================================
 
   case (dissMatrix) ! Matrix dissipation scheme.
@@ -162,7 +164,8 @@ subroutine residual_block
   case (upwind) ! Dissipation via an upwind scheme.
 
      call inviscidUpwindFlux(fineGrid)
-
+#endif
+     
   end select
 
   ! Compute the viscous flux in case of a viscous computation.

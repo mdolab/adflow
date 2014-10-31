@@ -117,6 +117,9 @@ subroutine dealloc_derivative_values_bwd(level)
            deallocate(flowDomsb(nn,1,sps)%BCData(mm)%sepSensor, stat=ierr)
            call EChk(ierr,__FILE__,__LINE__)
 
+           deallocate(flowDomsb(nn,1,sps)%BCData(mm)%Cavitation, stat=ierr)
+           call EChk(ierr,__FILE__,__LINE__)
+
            deallocate(flowDomsb(nn,1,sps)%BCData(mm)%uSlip, stat=ierr)
            call EChk(ierr,__FILE__,__LINE__)
 
@@ -145,24 +148,22 @@ subroutine dealloc_derivative_values_bwd(level)
            call EChk(ierr,__FILE__,__LINE__)
         end if
         
-        if (viscous) then
-           deallocate(flowDomsb(nn,1,sps)%d2Wall, &
-                stat=ierr)
-           call EChk(ierr,__FILE__,__LINE__)
+        deallocate(flowDomsb(nn,1,sps)%d2Wall, &
+             stat=ierr)
+        call EChk(ierr,__FILE__,__LINE__)
         
-           viscbocoLoop: do mm=1,nviscBocos
-              deallocate(flowDomsb(nn,1,sps)%viscSubface(mm)%tau, stat=ierr)
-              call EChk(ierr,__FILE__,__LINE__)
-              
-              deallocate(flowDomsb(nn,1,sps)%viscSubface(mm)%q, stat=ierr)
-              call EChk(ierr,__FILE__,__LINE__)
-              
-           end do viscbocoLoop
-           
-           deallocate(flowDomsb(nn,1,sps)%viscSubFace, stat=ierr)
+        viscbocoLoop: do mm=1,nviscBocos
+           deallocate(flowDomsb(nn,1,sps)%viscSubface(mm)%tau, stat=ierr)
            call EChk(ierr,__FILE__,__LINE__)
            
-        end if
+           deallocate(flowDomsb(nn,1,sps)%viscSubface(mm)%q, stat=ierr)
+           call EChk(ierr,__FILE__,__LINE__)
+           
+        end do viscbocoLoop
+        
+        deallocate(flowDomsb(nn,1,sps)%viscSubFace, stat=ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+        
      end do
   end do
 
@@ -171,7 +172,7 @@ subroutine dealloc_derivative_values_bwd(level)
   deallocate(winfb, stat=ierr)
   call EChk(ierr,__FILE__,__LINE__)
  
-  ! Finally deallocate flowdomsd
+  ! Finally deallocate flowdomsb
   deallocate(flowdomsb,stat=ierr)
   call EChk(ierr,__FILE__,__LINE__)
 

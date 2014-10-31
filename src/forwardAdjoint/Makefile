@@ -52,7 +52,8 @@ FILES_TO_COMPLEXIFY = \
 		setPointers_b.f90\
 		setDiffSizes.F90\
 		writeMatrices.F90\
-		zeroADSeeds.F90
+		zeroADSeeds.F90\
+		zeroADSeedsBwd.F90
 
 FILES_TO_COPY = setupStateResidualMatrix.F90\
 		setupSpatialMatrix.F90\

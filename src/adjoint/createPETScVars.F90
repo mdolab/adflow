@@ -459,142 +459,144 @@ subroutine dRdwTMatMult(A, vecX,  vecY, ierr)
   Mat   A
   Vec   vecX, vecY
   integer(kind=intType) :: ierr,nn,sps,i,j,k,l,ii, sps2
-  real(kind=realType) :: alpha, beta, force(3), moment(3), sepSensor
+  real(kind=realType) :: alpha, beta, force(3), moment(3), sepSensor, cavitation, cavitationb
+  real(kind=realType) :: alphab, betab, forceb(3), momentb(3), sepSensorb
   real(kind=realType),pointer :: dwb_pointer(:)
   integer(kind=intType) :: nState, level, irow, liftIndex
   logical :: resetToRans
-  !call VecView(vecX, PETSC_VIEWER_STDOUT_SELF, ierr)
 
-  ! !call VecGetArrayF90(vecX, dwb_pointer, ierr)
-  ! !call EChk(ierr,__FILE__,__LINE__)
-  ! call VecSet(vecY, zero, ierr)
-  ! call EChk(ierr,__FILE__,__LINE__)
+  !call VecGetArrayF90(vecX, dwb_pointer, ierr)
+  !call EChk(ierr,__FILE__,__LINE__)
 
-  ! ! Setup number of state variable based on turbulence assumption
-  ! if ( frozenTurbulence ) then
-  !    nState = nwf
-  ! else
-  !    nState = nw
-  ! end if
-  ! ! This routine will not use the extra variables to block_res or the
-  ! ! extra outputs, so we must zero them here
-  ! call getDirAngle(velDirFreestream, liftDirection, liftIndex, alpha, beta)
-  
-  ! ! Need to trick the residual evalution to use coupled (mean flow and
-  ! ! turbulent) together.
-  
-  ! level = 1
-  ! currentLevel = level
-  ! groundLevel = level
-
-  ! ! If we are computing the jacobian for the RANS equations, we need
-  ! ! to make block_res think that we are evauluating the residual in a
-  ! ! fully coupled sense.  This is reset after this routine is
-  ! ! finished.
-  ! if (equations == RANSEquations) then
-  !    nMGVar = nw
-  !    nt1MG = nt1
-  !    nt2MG = nt2
-
-  !    turbSegregated = .False.
-  !    turbCoupled = .True.
-  ! end if
-
-  ! ! Determine if we want to use frozenTurbulent Adjoint
-  ! resetToRANS = .False. 
-  ! if (frozenTurbulence .and. equations == RANSEquations) then
-  !    equations = NSEquations 
-  !    resetToRANS = .True.
-  ! end if
-
-  ! ii = 0
-  ! do nn=1,nDom
-
-  !    ! Just to get sizes
-  !    call setPointers(nn,1_intType,1)
-  !    call setDiffSizes
-     
-  !    ! Allocate the memory we need for this block to do the forward
-  !    ! mode derivatives and copy reference values
-  !    call alloc_derivative_values_bwd(nn, level)
-        
-  !    do sps=1,nTimeIntervalsSpectral
-  !       ! Set pointers and derivative pointers
-  !       call setPointers_b(nn, level, sps)
-
-  !       ! Reset All States and possibe AD seeds
-  !       flowdomsb(nn,1,sps)%dw = zero 
-
-  !       do k=2, kl
-  !          do j=2,jl
-  !             do i=2,il
-  !                do l = 1, nstate
-  !                   ii = ii + 1
-  !                   !flowdomsb(nn,1,sps)%dw(i, j, k, l) = dwb_pointer(ii)
-  !                   call VecGetValues(vecX, 1, (/ii-1/), &
-  !                        flowdomsb(nn,1,sps)%dw(i, j, k, l), ierr)
-  !                   call EChk(ierr,__FILE__,__LINE__)
-  !                end do
-  !             end do
-  !          end do
-  !       end do
-
-  !       call block_res_b(nn, sps, .False., alpha, beta, liftIndex, force, moment, sepSensor)
-
-  !       do sps2=1,nTimeIntervalsSpectral
-  !          do k=2, kl
-  !             do j=2,jl
-  !                do i=2,il
-  !                   do l = 1, nstate
-  !                      irow = flowDoms(nn, 1, sps2)%globalCell(i,j,k)*nstate + l -1
-  !                      call VecSetValues(vecY, 1, (/irow/), &
-  !                           flowdomsb(nn,1,sps2)%w(i, j, k, l), ADD_VALUES, ierr)
-  !                      call EChk(ierr,__FILE__,__LINE__)
-  !                   end do
-  !                end do
-  !             end do
-  !          end do
-  !       end do
-  !    end do
-
-  !    call dealloc_derivative_values_bwd(nn, 1)
-  ! end do
-
-  ! ! Reset the correct equation parameters if we were useing the frozen
-  ! ! Turbulent 
-  ! if (resetToRANS) then
-  !    equations = RANSEquations
-  ! end if
-
-  ! ! Reset the paraters to use segrated turbulence solve. 
-  ! if (equations == RANSEquations) then
-  !    nMGVar = nwf
-  !    nt1MG = nwf + 1
-  !    nt2MG = nwf
-
-  !    turbSegregated = .True.
-  !    turbCoupled = .False.
-  !    restrictEddyVis = .false.
-  !    if( eddyModel ) restrictEddyVis = .true.
-  ! end if
-  
-  ! call VecAssemblyBegin(vecY, ierr)
-  ! call EChk(ierr,__FILE__,__LINE__)
-  
-  ! call VecAssemblyEnd(vecY, ierr)
-  ! call EChk(ierr,__FILE__,__LINE__)
-
-
-  call MatMult(dRdwT, vecX, vecY, ierr)
+  call VecSet(vecY, zero, ierr)
   call EChk(ierr,__FILE__,__LINE__)
-  ! call VecRestoreArrayF90(vecX, dwb_pointer, ierr)
-  ! call EChk(ierr,__FILE__,__LINE__)
-  ! call VecNorm(vecX, NORM_2, alpha, ierr)
-  ! print *, 'xnorm:', alpha
 
-  ! call VecNorm(vecY, NORM_2, alpha, ierr)
-  ! print *, 'ynorm:', alpha
+  ! Setup number of state variable based on turbulence assumption
+  if ( frozenTurbulence ) then
+     nState = nwf
+  else
+     nState = nw
+  end if
+  ! This routine will not use the extra variables to block_res or the
+  ! extra outputs, so we must zero them here
+  call getDirAngle(velDirFreestream, liftDirection, liftIndex, alpha, beta)
   
+  ! Need to trick the residual evalution to use coupled (mean flow and
+  ! turbulent) together.
+  
+  level = 1
+  currentLevel = level
+  groundLevel = level
+
+  ! If we are computing the jacobian for the RANS equations, we need
+  ! to make block_res think that we are evauluating the residual in a
+  ! fully coupled sense.  This is reset after this routine is
+  ! finished.
+  if (equations == RANSEquations) then
+     nMGVar = nw
+     nt1MG = nt1
+     nt2MG = nt2
+
+     turbSegregated = .False.
+     turbCoupled = .True.
+  end if
+
+  ! Determine if we want to use frozenTurbulent Adjoint
+  resetToRANS = .False. 
+  if (frozenTurbulence .and. equations == RANSEquations) then
+     equations = NSEquations 
+     resetToRANS = .True.
+  end if
+
+  ! Zero the seeds
+  alphab = zero
+  betab = zero
+  forceb = zero
+  momentb = zero
+  sepSensorb = zero
+  cavitationb = zero
+
+  do nn=1,nDom
+
+     ! Just to get sizes
+     call setPointers(nn,1_intType,1)
+     call setDiffSizes
+     
+     ! Allocate the memory we need for this block to do the forward
+     ! mode derivatives and copy reference values
+     call alloc_derivative_values_bwd(nn, level)
+        
+     do sps=1,nTimeIntervalsSpectral
+        ! Set pointers and derivative pointers
+        call setPointers_b(nn, level, sps)
+
+        ii = 0
+        do k=2, kl
+           do j=2,jl
+              do i=2,il
+                 do l = 1, nstate
+                    ii = ii + 1
+                    ! flowdomsb(nn,1,sps)%dw(i, j, k, l) = dwb_pointer(ii)
+                    call VecGetValues(vecX, 1, (/ii-1/), &
+                          flowdomsb(nn,1,sps)%dw(i, j, k, l), ierr)
+                    call EChk(ierr,__FILE__,__LINE__)
+                 end do
+              end do
+           end do
+        end do
+
+     call BLOCK_RES_B(nn, 1, .False., alpha, alphab, beta, betab, &
+          & liftindex, force, forceb, moment, momentb, sepsensor, sepsensorb, &
+          & cavitation, cavitationb)
+
+        do sps2=1,nTimeIntervalsSpectral
+           do k=2, kl
+              do j=2,jl
+                 do i=2,il
+                    do l = 1, nstate
+           
+                       irow = flowDoms(nn, 1, sps2)%globalCell(i,j,k)*nstate + l -1
+                       call VecSetValues(vecY, 1, (/irow/), &
+                            flowdomsb(1,1,1)%w(i, j, k, l), ADD_VALUES, ierr)
+                       call EChk(ierr,__FILE__,__LINE__)
+                    end do
+                 end do
+              end do
+           end do
+        end do
+     end do
+
+     call dealloc_derivative_values_bwd(nn, 1)
+  end do
+
+  ! Reset the correct equation parameters if we were useing the frozen
+  ! Turbulent 
+  if (resetToRANS) then
+     equations = RANSEquations
+  end if
+
+  ! Reset the paraters to use segrated turbulence solve. 
+  if (equations == RANSEquations) then
+     nMGVar = nwf
+     nt1MG = nwf + 1
+     nt2MG = nwf
+
+     turbSegregated = .True.
+     turbCoupled = .False.
+     restrictEddyVis = .false.
+     if( eddyModel ) restrictEddyVis = .true.
+  end if
+  
+  call VecAssemblyBegin(vecY, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+  
+  call VecAssemblyEnd(vecY, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  ! Assume no error
   ierr = 0
+
+  !call VecRestoreArrayF90(vecX, dwb_pointer, ierr)
+  !call EChk(ierr,__FILE__,__LINE__)
 
 end subroutine dRdwTMatMult

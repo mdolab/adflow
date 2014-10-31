@@ -371,9 +371,9 @@
 !
 !      Subroutine arguments.
 !
-       real(kind=realType), dimension(*), intent(in)  :: rho, p, k
-       real(kind=realType), dimension(*), intent(in)  :: u, v, w
-       real(kind=realType), dimension(*), intent(out) :: etot
+       real(kind=realType), dimension(kk), intent(in)  :: rho, p, k
+       real(kind=realType), dimension(kk), intent(in)  :: u, v, w
+       real(kind=realType), dimension(kk), intent(out) :: etot
        logical, intent(in)                             :: correctForK
        integer(kind=intType), intent(in)              :: kk
 !

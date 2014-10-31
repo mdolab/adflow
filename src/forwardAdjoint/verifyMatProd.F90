@@ -34,7 +34,8 @@ subroutine verifyMatProd
   integer(kind=intType) :: i, j, k, l, nn, ii, ierr
   integer(kind=intType) :: nState, level, idxblk
    
-  real(kind=realType) :: alpha, beta, force(3), moment(3), sepSensor
+  real(kind=realType) :: alpha, beta, force(3), moment(3), sepSensor, Cavitation
+  real(kind=realType) :: alphab, betab, forceb(3), momentb(3), sepSensorb, Cavitationb
   real(kind=realType) :: fwdValue, revValue, ran
   real(kind=realType) :: time1, timeb, timed, time
 
@@ -42,7 +43,6 @@ subroutine verifyMatProd
   logical :: resetToRANS
 
 #ifndef USE_COMPLEX
-
 
   ! Setup number of state variable based on turbulence assumption
   if ( frozenTurbulence ) then
@@ -114,6 +114,7 @@ subroutine verifyMatProd
      print *, ncellslocal(1)
      allocate(vec1(3072*5),vec2(3072*5))
      
+     flowdomsb(1,1,1)%w = zero
      ii = 0
      do k=2, kl
         do j=2,jl
@@ -130,7 +131,11 @@ subroutine verifyMatProd
         end do
      end do
      call getdRdwTVec(vec1, vec2, 3072*5)
-     call block_res_b(nn, 1, .False., alpha, beta, liftIndex, force, moment, sepSensor)
+
+     
+     call BLOCK_RES_B(nn, 1, .False., alpha, alphab, beta, betab, &
+          & liftindex, force, forceb, moment, momentb, sepsensor, sepsensorb, &
+          & cavitation, cavitationb)
      
 
      ii = 0

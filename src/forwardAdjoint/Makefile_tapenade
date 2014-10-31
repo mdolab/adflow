@@ -108,7 +108,7 @@ ALL_RES_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.F90\
 		$(SRC)/turbulence/turbBCNSWall.f90\
 		$(SRC)/turbulence/turbMod.F90\
 		$(SRC)/turbulence/saNuFromEddyRatio.f90\
-		$(SRC)/turbulence/sa.f90\
+		$(SRC)/turbulence/sa.F90\
 		$(SRC)/turbulence/saSolve.F90\
 		$(SRC)/turbulence/prodKatoLaunder.f90\
 		$(SRC)/turbulence/prodSmag2.f90\
@@ -321,6 +321,9 @@ ad_reverse:
 
 # Remove preprocessor files
 	make -f Makefile_tapenade cleanpreprocess_res
+
+# Fix the AD bug in forcesandmoments_b.f90
+	sed -i 's/   DO ii1=1,SIZE(viscsubfaceb(ii1)%tau, 1)/   DO ii1=1,SIZE(viscsubfaceb)/' outputReverse/forcesandmoments_b.f90
 
 ad_forward_debugTGT:
 # First delete the holding directory if it exists
