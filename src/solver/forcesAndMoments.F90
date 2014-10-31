@@ -8,7 +8,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor)
+subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, Cavitation)
   !
   !      ******************************************************************
   !      *                                                                *
@@ -17,7 +17,8 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor)
   !      * moment coefficients of the geometry. A distinction is made     *
   !      * between the inviscid and viscous parts. In case the maximum    *
   !      * yplus value must be monitored (only possible for rans), this   *
-  !      * value is also computed. The separation sensor is also computed *
+  !      * value is also computed. The separation sensor and the cavita-  *
+  !      * tion sensor is also computed                                   *
   !      * here.                                                          *
   !      ******************************************************************
   !
@@ -32,16 +33,16 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor)
   real(kind=realType), dimension(3), intent(out) :: cFp, cFv
   real(kind=realType), dimension(3), intent(out) :: cMp, cMv
 
-  real(kind=realType), intent(out) :: yplusMax, sepSensor
+  real(kind=realType), intent(out) :: yplusMax, sepSensor, Cavitation
   !
   !      Local variables.
   !
   integer(kind=intType) :: nn, i, j
 
-  real(kind=realType) :: pm1, fx, fy, fz, fn
+  real(kind=realType) :: pm1, fx, fy, fz, fn, sigma
   real(kind=realType) :: xc, yc, zc
   real(kind=realType) :: fact, rho, mul, yplus, dwall
-  real(kind=realType) :: scaleDim, V(3), sensor
+  real(kind=realType) :: scaleDim, V(3), sensor, sensor1, Cp, tmp, plocal
   real(kind=realType) :: tauXx, tauYy, tauZz
   real(kind=realType) :: tauXy, tauXz, tauYz
 
@@ -158,6 +159,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor)
 
   yplusMax = zero
   sepSensor = zero
+  Cavitation = zero
   ! Loop over the boundary subfaces of this block.
 
   bocos: do nn=1,nBocos
@@ -292,6 +294,25 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor)
               sensor = sensor * four * qA
               sepSensor = sepSensor + sensor
               bcData(nn)%sepSensor(i, j) = sensor
+    
+              plocal = pp2(i,j)
+		
+   	      tmp = two/(gammaInf*pInf*MachCoef*MachCoef)
+	      
+	      Cp = tmp*(plocal-pinf)
+	      Sigma = 1.4
+	      Sensor1 = -Cp - Sigma
+	      !IF (sense >= 0) THEN
+	      !Sensor = 1
+	      !ELSE 
+	      !Sensor = 0
+	      !END IF
+
+	      Sensor1 = one/(one+exp(-2*10*Sensor1))
+
+	      Sensor1 = Sensor1 * four * qA
+	      Cavitation = Cavitation + Sensor1
+	      bcData(nn)%Cavitation(i,j) = Sensor1
 
               ! Update the inviscid force and moment coefficients.
               cFp(1) = cFp(1) + fx
