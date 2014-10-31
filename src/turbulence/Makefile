@@ -73,7 +73,7 @@ FILES_TO_COMPLEXIFY = turbMod.F90\
 		 prodKatoLaunder.f90\
 		 prodSmag2.f90\
 		 prodWmag2.f90\
-		 sa.f90\
+		 sa.F90\
 		 saNuFromEddyRatio.f90\
 		 saSolve.F90\
 		 SST.f90\

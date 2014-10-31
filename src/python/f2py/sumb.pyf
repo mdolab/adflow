@@ -280,6 +280,12 @@ python module libsumb
        subroutine verifyad
        end subroutine verifyad
 
+       subroutine verifyonevalue
+       end subroutine verifyonevalue
+
+       subroutine verifymatprod
+       end subroutine verifymatprod
+
        ! ############################################################################
        ! SUmb ADjoint Core Routines
        ! ############################################################################
@@ -822,6 +828,8 @@ python module libsumb
          logical :: verifystate
          logical :: verifyspatial
          logical :: verifyextra
+         logical :: usematrixfreedrdw
+         logical :: usematrixfreedrdx
          integer(kind=inttype) :: applyadjointpcsubspacesize
        end module inputadjoint
 

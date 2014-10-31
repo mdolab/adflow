@@ -53,7 +53,7 @@
 !
        ! Check if the RANS equations are solved. If not, the wall
        ! distance is not needed and a return can be made.
-
+       
        if(equations /= RANSEquations) return
 
        ! If the turbulence model is wall distance free just compute the
@@ -67,7 +67,7 @@
          ! distance and compute the initial normal spacing.
 
          do sps=1,nTimeIntervalsSpectral
-           call initWallDistance(level, sps, allocMem)
+            call initWallDistance(level, sps, allocMem)    
            call computeNormalSpacing(level, sps)
          enddo
 

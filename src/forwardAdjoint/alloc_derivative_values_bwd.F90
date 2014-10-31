@@ -23,7 +23,7 @@ subroutine alloc_derivative_values_bwd(level)
   integer(kind=intType) :: iBeg, jBeg, iEnd, jEnd
   integer(kind=intType) :: massShape(2), max_face_size
 
-  real(kind=realType) :: alpha, beta, force(3), moment(3), sepSensor
+  real(kind=realType) :: alpha, beta, force(3), moment(3), sepSensor, Cavitation
   integer(kind=intType) :: liftIndex
   
   ! Setup number of state variable based on turbulence assumption
@@ -46,13 +46,20 @@ subroutine alloc_derivative_values_bwd(level)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! winfd hasn't be allocated so we'll do it here
-  allocate(winfb(10),stat=ierr) ! to be consistant with flowVarRefSate
+  allocate(winfb(10),stat=ierr) 
   call EChk(ierr,__FILE__,__LINE__)
 
   do nn=1,nDom
      do sps=1,nTimeIntervalsSpectral
         call setPointers(nn,level,sps)
+
+        ! Allocate d2wall if not already done so
+        if (.not. associated(flowDoms(nn, 1, sps)%d2wall)) then 
+           allocate(flowDoms(nn, 1, sps)%d2wall(2:il, 2:jl, 2:kl))
+        end if
         
+        allocate(flowDomsb(nn, 1, sps)%d2wall(2:il, 2:jl, 2:kl))
+
         allocate(flowDomsb(nn,1,sps)%x(0:ie,0:je,0:ke,3), stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
         
@@ -139,7 +146,12 @@ subroutine alloc_derivative_values_bwd(level)
                 bcData(mm)%inBeg+1:bcData(mm)%inEnd, &
                 bcData(mm)%jnBeg+1:bcData(mm)%jnEnd), stat=ierr)
            call EChk(ierr,__FILE__,__LINE__)
-           
+          
+           allocate(flowDomsb(nn,1,sps)%BCData(mm)%Cavitation(&
+                bcData(mm)%inBeg+1:bcData(mm)%inEnd, &
+                bcData(mm)%jnBeg+1:bcData(mm)%jnEnd), stat=ierr)
+           call EChk(ierr,__FILE__,__LINE__)
+
            allocate(flowDomsb(nn,1,sps)%BCData(mm)%oArea(&
                 bcData(mm)%inbeg:bcData(mm)%inEnd, &
                 bcData(mm)%jnbeg:bcData(mm)%jnEnd), stat=ierr)
@@ -169,36 +181,35 @@ subroutine alloc_derivative_values_bwd(level)
            call EChk(ierr,__FILE__,__LINE__)
         end if
 
-        if (viscous) then
-           allocate(flowDomsb(nn,1,sps)%d2Wall(2:il,2:jl,2:kl), &
-                stat=ierr)
-           call EChk(ierr,__FILE__,__LINE__)
         
-           allocate(flowDomsb(nn,1,sps)%viscSubface(nviscBocos), &
+        allocate(flowDomsb(nn,1,sps)%d2Wall(2:il,2:jl,2:kl), &
+             stat=ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+        
+        allocate(flowDomsb(nn,1,sps)%viscSubface(nviscBocos), &
+             stat=ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+           
+        viscbocoLoop: do mm=1,nviscBocos
+           
+           iBeg = BCData(mm)%inBeg + 1
+           iEnd = BCData(mm)%inEnd
+           
+           jBeg = BCData(mm)%jnBeg + 1
+           jEnd = BCData(mm)%jnEnd
+           
+           allocate(flowDomsb(nn,1,sps)%viscSubface(mm)%tau(iBeg:iEnd,jBeg:jEnd,6), &
                 stat=ierr)
            call EChk(ierr,__FILE__,__LINE__)
            
-           viscbocoLoop: do mm=1,nviscBocos
+           allocate(flowDomsb(nn,1,sps)%viscSubface(mm)%q(iBeg:iEnd,jBeg:jEnd,6), &
+                stat=ierr)
+           call EChk(ierr,__FILE__,__LINE__)
            
-              iBeg = BCData(mm)%inBeg + 1
-              iEnd = BCData(mm)%inEnd
-              
-              jBeg = BCData(mm)%jnBeg + 1
-              jEnd = BCData(mm)%jnEnd
+        enddo viscbocoLoop
         
-              allocate(flowDomsb(nn,1,sps)%viscSubface(mm)%tau(iBeg:iEnd,jBeg:jEnd,6), &
-                   stat=ierr)
-              call EChk(ierr,__FILE__,__LINE__)
-              
-              allocate(flowDomsb(nn,1,sps)%viscSubface(mm)%q(iBeg:iEnd,jBeg:jEnd,6), &
-                   stat=ierr)
-              call EChk(ierr,__FILE__,__LINE__)
-         
-           enddo viscbocoLoop
-        end if
-
         ! Zero out all the derivative values we've just allocated
-        !call zeroADSeeds(nn, 1, sps)
+        call zeroADSeedsBwd(nn, 1, sps)
      end do
   end do
   
@@ -217,7 +228,7 @@ subroutine alloc_derivative_values_bwd(level)
 
         call setPointers(nn,level,sps)
         
-        call block_res(nn, sps, .False., alpha, beta, liftIndex, force, moment, sepSensor)
+        call block_res(nn, sps, .False., alpha, beta, liftIndex, force, moment, sepSensor, Cavitation)
      
         allocate(flowDomsb(nn,1,sps)%wtmp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)

@@ -60,6 +60,8 @@
    &   gammainf*pinf*rhoinfd)/rhoinf**2
    uinf2 = machcoef*machcoef*gammainf*pinf/rhoinf
    ! Allocate the memory for wInf.
+   ! zero out the winf first
+   winf(:) = zero
    ! Set the reference value of the flow variables, except the total
    ! energy. This will be computed at the end of this routine.
    winfd = 0.0_8

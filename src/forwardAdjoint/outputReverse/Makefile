@@ -54,7 +54,6 @@ FF90_OBJECTS =  computeetot_b.o\
 		viscousflux_b.o \
 		computeetotcellcpfit_b.o \
                 setbcpointersbwd_b.o\
-                setbcpointers_b.o\
 		setpp3pp4bwd_b.o\
 		resetpp3pp4bwd_b.o\
 		setgammabwd_b.o\
@@ -75,7 +74,11 @@ FF90_OBJECTS =  computeetot_b.o\
 		prodsmag2_b.o\
 		turbadvection_b.o\
 		forcesandmoments_b.o\
-#xhalo_block_b.o\	
+		setflowinfinitystate_b.o\
+		sanuknowneddyratio_b.o\
+		etotarray_b.o\
+		eintarray_b.o\
+#xhalo_block_b.o\
 
 #      ******************************************************************
 #      *                                                                *

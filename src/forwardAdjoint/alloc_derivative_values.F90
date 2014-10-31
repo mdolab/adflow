@@ -46,13 +46,13 @@ subroutine alloc_derivative_values(level)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! winfd hasn't be allocated so we'll do it here
-  allocate(winfd(10),stat=ierr) ! to be consistant with flowVarRefSate
+  allocate(winfd(10),stat=ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
   do nn=1,nDom
      do sps=1,nTimeIntervalsSpectral
         call setPointers(nn,level,sps)
-        
+
         allocate(flowDomsd(nn,1,sps)%x(0:ie,0:je,0:ke,3), stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
         

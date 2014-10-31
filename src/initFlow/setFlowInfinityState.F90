@@ -58,10 +58,11 @@
        if(ierr /= 0)                             &
          call terminate("setFlowReferenceState", &
                         "Memory allocation failure for wInf")
+#endif
 
        ! zero out the winf first
-       wInf = zero
-#endif
+       wInf(:) = zero
+
        ! Set the reference value of the flow variables, except the total
        ! energy. This will be computed at the end of this routine.
 

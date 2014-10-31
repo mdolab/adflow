@@ -131,6 +131,7 @@
    CALL INVISCIDDISSFLUXSCALARCOARSE_D()
    END IF
    CASE (dissmatrix) 
+   ! Reverse adjoint currently only work with invisciddissscalar
    !===========================================================
    ! Matrix dissipation scheme.
    IF (finegrid) THEN
