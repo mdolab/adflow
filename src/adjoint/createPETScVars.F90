@@ -465,6 +465,8 @@ subroutine dRdwTMatMult(A, vecX,  vecY, ierr)
   integer(kind=intType) :: nState, level, irow, liftIndex
   logical :: resetToRans
 
+#ifndef USE_COMPLEX
+
   !call VecGetArrayF90(vecX, dwb_pointer, ierr)
   !call EChk(ierr,__FILE__,__LINE__)
 
@@ -599,4 +601,5 @@ subroutine dRdwTMatMult(A, vecX,  vecY, ierr)
   !call VecRestoreArrayF90(vecX, dwb_pointer, ierr)
   !call EChk(ierr,__FILE__,__LINE__)
 
+#endif
 end subroutine dRdwTMatMult
