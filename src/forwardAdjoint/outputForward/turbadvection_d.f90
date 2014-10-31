@@ -2,13 +2,13 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of turbadvection in forward (tangent) mode (with options i4 dr8 r8):
-   !   variations   of useful results: *dvt qq
+   !   variations   of useful results: *dw qq
    !   with respect to varying inputs: *sfacei *sfacej *sfacek *bmtk1
-   !                *w *bmtk2 *vol *bmti1 *bmti2 *si *sj *sk *bmtj1
-   !                *bmtj2 *dvt qq
+   !                *dw *w *bmtk2 *vol *bmti1 *bmti2 *si *sj *sk *bmtj1
+   !                *bmtj2 qq
    !   Plus diff mem management of: sfacei:in sfacej:in sfacek:in
-   !                bmtk1:in w:in bmtk2:in vol:in bmti1:in bmti2:in
-   !                si:in sj:in sk:in bmtj1:in bmtj2:in dvt:in
+   !                bmtk1:in dw:in w:in bmtk2:in vol:in bmti1:in bmti2:in
+   !                si:in sj:in sk:in bmtj1:in bmtj2:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -213,8 +213,9 @@
    ! Update the residual. The convective term must be
    ! substracted, because it appears on the other side of
    ! the equation as the source and viscous terms.
-   dvtd(i, j, k, ii) = dvtd(i, j, k, ii) - uud*dwtk - uu*dwtkd
-   dvt(i, j, k, ii) = dvt(i, j, k, ii) - uu*dwtk
+   dwd(i, j, k, idvt+ii-1) = dwd(i, j, k, idvt+ii-1) - uud*dwtk&
+   &             - uu*dwtkd
+   dw(i, j, k, idvt+ii-1) = dw(i, j, k, idvt+ii-1) - uu*dwtk
    ! Update the central jacobian. First the term which is
    ! always present, i.e. uu.
    qqd(i, j, k, ii, ii) = qqd(i, j, k, ii, ii) + uud
@@ -312,8 +313,9 @@
    ! Update the residual. The convective term must be
    ! substracted, because it appears on the other side
    ! of the equation as the source and viscous terms.
-   dvtd(i, j, k, ii) = dvtd(i, j, k, ii) - uud*dwtk - uu*dwtkd
-   dvt(i, j, k, ii) = dvt(i, j, k, ii) - uu*dwtk
+   dwd(i, j, k, idvt+ii-1) = dwd(i, j, k, idvt+ii-1) - uud*dwtk&
+   &             - uu*dwtkd
+   dw(i, j, k, idvt+ii-1) = dw(i, j, k, idvt+ii-1) - uu*dwtk
    ! Update the central jacobian. First the term which is
    ! always present, i.e. -uu.
    qqd(i, j, k, ii, ii) = qqd(i, j, k, ii, ii) - uud
@@ -456,8 +458,9 @@
    ! Update the residual. The convective term must be
    ! substracted, because it appears on the other side of
    ! the equation as the source and viscous terms.
-   dvtd(i, j, k, ii) = dvtd(i, j, k, ii) - uud*dwtj - uu*dwtjd
-   dvt(i, j, k, ii) = dvt(i, j, k, ii) - uu*dwtj
+   dwd(i, j, k, idvt+ii-1) = dwd(i, j, k, idvt+ii-1) - uud*dwtj&
+   &             - uu*dwtjd
+   dw(i, j, k, idvt+ii-1) = dw(i, j, k, idvt+ii-1) - uu*dwtj
    ! Update the central jacobian. First the term which is
    ! always present, i.e. uu.
    qqd(i, j, k, ii, ii) = qqd(i, j, k, ii, ii) + uud
@@ -555,8 +558,9 @@
    ! Update the residual. The convective term must be
    ! substracted, because it appears on the other side
    ! of the equation as the source and viscous terms.
-   dvtd(i, j, k, ii) = dvtd(i, j, k, ii) - uud*dwtj - uu*dwtjd
-   dvt(i, j, k, ii) = dvt(i, j, k, ii) - uu*dwtj
+   dwd(i, j, k, idvt+ii-1) = dwd(i, j, k, idvt+ii-1) - uud*dwtj&
+   &             - uu*dwtjd
+   dw(i, j, k, idvt+ii-1) = dw(i, j, k, idvt+ii-1) - uu*dwtj
    ! Update the central jacobian. First the term which is
    ! always present, i.e. -uu.
    qqd(i, j, k, ii, ii) = qqd(i, j, k, ii, ii) - uud
@@ -699,8 +703,9 @@
    ! Update the residual. The convective term must be
    ! substracted, because it appears on the other side of
    ! the equation as the source and viscous terms.
-   dvtd(i, j, k, ii) = dvtd(i, j, k, ii) - uud*dwti - uu*dwtid
-   dvt(i, j, k, ii) = dvt(i, j, k, ii) - uu*dwti
+   dwd(i, j, k, idvt+ii-1) = dwd(i, j, k, idvt+ii-1) - uud*dwti&
+   &             - uu*dwtid
+   dw(i, j, k, idvt+ii-1) = dw(i, j, k, idvt+ii-1) - uu*dwti
    ! Update the central jacobian. First the term which is
    ! always present, i.e. uu.
    qqd(i, j, k, ii, ii) = qqd(i, j, k, ii, ii) + uud
@@ -798,8 +803,9 @@
    ! Update the residual. The convective term must be
    ! substracted, because it appears on the other side
    ! of the equation as the source and viscous terms.
-   dvtd(i, j, k, ii) = dvtd(i, j, k, ii) - uud*dwti - uu*dwtid
-   dvt(i, j, k, ii) = dvt(i, j, k, ii) - uu*dwti
+   dwd(i, j, k, idvt+ii-1) = dwd(i, j, k, idvt+ii-1) - uud*dwti&
+   &             - uu*dwtid
+   dw(i, j, k, idvt+ii-1) = dw(i, j, k, idvt+ii-1) - uu*dwti
    ! Update the central jacobian. First the term which is
    ! always present, i.e. -uu.
    qqd(i, j, k, ii, ii) = qqd(i, j, k, ii, ii) - uud
