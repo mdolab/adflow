@@ -3,8 +3,9 @@
    !
    !  Differentiation of bceulerwall in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *rev *p *gamma *w *rlv
-   !   with respect to varying inputs: tref rgas *rev *p *s *gamma
-   !                *w *rlv *si *sj *sk *(*bcdata.norm) *(*bcdata.rface)
+   !   with respect to varying inputs: *rev *p *s *gamma *w *rlv *si
+   !                *sj *sk *(*bcdata.norm) *(*bcdata.rface) tref
+   !                rgas
    !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
    !                si:in sj:in sk:in bcdata:in *bcdata.norm:in *bcdata.rface:in
    !

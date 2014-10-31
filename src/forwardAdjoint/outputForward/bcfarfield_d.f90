@@ -3,8 +3,8 @@
    !
    !  Differentiation of bcfarfield in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *rev *p *gamma *w *rlv
-   !   with respect to varying inputs: gammainf tref winf pinfcorr
-   !                rgas *rev *p *gamma *w *rlv *(*bcdata.norm)
+   !   with respect to varying inputs: *rev *p *gamma *w *rlv *(*bcdata.norm)
+   !                gammainf tref winf pinfcorr rgas
    !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
    !                bcdata:in *bcdata.norm:in *bcdata.rface:in
    !
