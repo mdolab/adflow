@@ -5,9 +5,9 @@
    !   variations   of useful results: *(*bcdata.fp) *(*bcdata.fv)
    !                *(*bcdata.m) *(*bcdata.oarea) *(*bcdata.sepsensor)
    !                cfp cfv cmp cmv sepsensor
-   !   with respect to varying inputs: gammainf pinf pref *p *w *x
-   !                *si *sj *sk *(*viscsubface.tau) veldirfreestream
-   !                lengthref machcoef pointref
+   !   with respect to varying inputs: *p *w *x *si *sj *sk *(*viscsubface.tau)
+   !                gammainf pinf pref veldirfreestream lengthref
+   !                machcoef pointref
    !   Plus diff mem management of: viscsubface:in *viscsubface.tau:in
    !                bcdata:in *bcdata.fp:in *bcdata.fv:in *bcdata.m:in
    !                *bcdata.oarea:in *bcdata.sepsensor:in

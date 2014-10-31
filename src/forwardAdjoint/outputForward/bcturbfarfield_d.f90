@@ -5,9 +5,9 @@
    !   variations   of useful results: *bvtj1 *bvtj2 *bmtk1 *bmtk2
    !                *bvtk1 *bvtk2 *bmti1 *bmti2 *bvti1 *bvti2 *bmtj1
    !                *bmtj2
-   !   with respect to varying inputs: winf *bvtj1 *bvtj2 *bmtk1 *bmtk2
+   !   with respect to varying inputs: *bvtj1 *bvtj2 *bmtk1 *bmtk2
    !                *bvtk1 *bvtk2 *bmti1 *bmti2 *bvti1 *bvti2 *bmtj1
-   !                *bmtj2
+   !                *bmtj2 winf
    !   Plus diff mem management of: bvtj1:in bvtj2:in bmtk1:in bmtk2:in
    !                bvtk1:in bvtk2:in bmti1:in bmti2:in bvti1:in bvti2:in
    !                bmtj1:in bmtj2:in bcdata:in
