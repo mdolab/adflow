@@ -116,7 +116,6 @@
    ! Set the pointer for dvt in dw, such that the code is more
    ! readable. Also set the pointers for the production term
    ! and vorticity.
-   dvtd => dwd(1:, 1:, 1:, idvt:)
    dvt => dw(1:, 1:, 1:, idvt:)
    prodd => dwd(1:, 1:, 1:, iprod)
    prod => dw(1:, 1:, 1:, iprod)

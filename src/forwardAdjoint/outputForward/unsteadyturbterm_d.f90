@@ -108,10 +108,10 @@
    ! sign compared to the residual of the flow equations.
    ! Therefore the time derivative must be substracted
    ! from dvt.
-   dwd(i, j, k, idvt+ii) = dwd(i, j, k, idvt+ii) - oneoverdtd&
-   &               *tmp - oneoverdt*tmpd
-   dw(i, j, k, idvt+ii) = dw(i, j, k, idvt+ii) - oneoverdt*&
-   &               tmp
+   dwd(i, j, k, idvt+ii-1) = dwd(i, j, k, idvt+ii-1) - &
+   &               oneoverdtd*tmp - oneoverdt*tmpd
+   dw(i, j, k, idvt+ii-1) = dw(i, j, k, idvt+ii-1) - &
+   &               oneoverdt*tmp
    ! Update the central jacobian.
    qqd(i, j, k, ii, ii) = qqd(i, j, k, ii, ii) + coeftime(0)*&
    &               oneoverdtd
@@ -155,10 +155,10 @@
    DO k=2,kl
    DO j=2,jl
    DO i=2,il
-   dwd(i, j, k, idvt+ii) = dwd(i, j, k, idvt+ii) - dwd(i, j, k&
+   dwd(i, j, k, idvt+ii-1) = dwd(i, j, k, idvt+ii-1) - dwd(i, j&
+   &             , k, jj)
+   dw(i, j, k, idvt+ii-1) = dw(i, j, k, idvt+ii-1) - dw(i, j, k&
    &             , jj)
-   dw(i, j, k, idvt+ii) = dw(i, j, k, idvt+ii) - dw(i, j, k, jj&
-   &             )
    qqd(i, j, k, ii, ii) = qqd(i, j, k, ii, ii) + tmpd
    qq(i, j, k, ii, ii) = qq(i, j, k, ii, ii) + tmp
    END DO

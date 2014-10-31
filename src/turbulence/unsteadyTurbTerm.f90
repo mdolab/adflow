@@ -122,7 +122,7 @@
                        ! Therefore the time derivative must be substracted
                        ! from dvt.
 
-                       dw(i,j,k,idvt+ii) = dw(i,j,k,idvt+ii) - oneOverDt*tmp
+                       dw(i,j,k,idvt+ii-1) = dw(i,j,k,idvt+ii-1) - oneOverDt*tmp
 
                        ! Update the central jacobian.
 
@@ -183,7 +183,7 @@
              do k=2,kl
                do j=2,jl
                  do i=2,il
-                   dw(i,j,k,idvt+ii)   = dw(i,j,k,idvt+ii)   - dw(i,j,k,jj)
+                   dw(i,j,k,idvt+ii-1)   = dw(i,j,k,idvt+ii-1)   - dw(i,j,k,jj)
                    qq(i,j,k,ii,ii) = qq(i,j,k,ii,ii) + tmp
                  enddo
                enddo
