@@ -3,10 +3,10 @@
    !
    !  Differentiation of residual_block in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *p *dw *w *(*viscsubface.tau)
-   !   with respect to varying inputs: gammainf timeref rhoinf tref
-   !                winf pinfcorr rgas *rev *p *sfacei *sfacej *gamma
+   !   with respect to varying inputs: *rev *p *sfacei *sfacej *gamma
    !                *sfacek *dw *w *rlv *x *vol *si *sj *sk *radi
-   !                *radj *radk
+   !                *radj *radk gammainf timeref rhoinf tref winf
+   !                pinfcorr rgas
    !   Plus diff mem management of: rev:in p:in sfacei:in sfacej:in
    !                gamma:in sfacek:in dw:in w:in rlv:in x:in vol:in
    !                si:in sj:in sk:in fw:in viscsubface:in *viscsubface.tau:in

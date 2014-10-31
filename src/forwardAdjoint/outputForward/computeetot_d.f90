@@ -3,7 +3,7 @@
    !
    !  Differentiation of computeetot in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *gamma *w
-   !   with respect to varying inputs: tref rgas *p *gamma *w
+   !   with respect to varying inputs: *p *gamma *w tref rgas
    !   Plus diff mem management of: p:in gamma:in w:in
    !
    !      ******************************************************************

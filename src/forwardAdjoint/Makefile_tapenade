@@ -3,7 +3,7 @@
 #     * File:          Makefile_tapenade                               *
 #     * Author:        Gaetan Kenway                                   *
 #     * Starting date: 08-02-2006                                      *
-#     * Last modified: 01-10-2013                                      *
+#     * Last modified: 10-24-2014                                      *
 #     *                                                                *
 #     * This makefile is used to create automatically differentated    *
 #     * residual code that can be used to constuct the aerodynamic     *
@@ -13,7 +13,7 @@
 #     *             'foward' directory                                 *
 #     *                                                                *
 #     * ad_multi: Run in foward multi-directional mode. Preprocessed   *
-#     *           output is in the 'fowardMulti'directory               *
+#     *           output is in the 'fowardMulti'directory              *
 #     *                                                                *
 #     * ad_reverse: Run in reverse mode. Preprocessed output is in the *
 #     *             'reverse' directory                                *
@@ -135,18 +135,30 @@ ALL_RES_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.F90\
 		$(SRC)/utils/dummy_dim.f90\
 		$(SRC)/utils/setBCPointers.F90\
 		$(SRC)/utils/resetBCPointers.F90\
-		$(SRC)/utils/computeEtot.f90\
-		$(SRC)/utils/setPointers.f90\
-		$(SRC)/utils/setss.f90\
-		$(SRC)/utils/resetss.f90\
-		$(SRC)/utils/setgamma.f90\
-		$(SRC)/utils/resetgamma.f90\
+		$(SRC)/utils/setBCPointersBwd.F90\
+		$(SRC)/utils/resetBCPointersBwd.F90\
 		$(SRC)/utils/setpp3pp4.f90\
+		$(SRC)/utils/setpp3pp4Bwd.f90\
+		$(SRC)/utils/setss.f90\
+		$(SRC)/utils/setssBwd.f90\
 		$(SRC)/utils/resetpp3pp4.f90\
+		$(SRC)/utils/resetpp3pp4Bwd.f90\
 		$(SRC)/utils/setww0pp0rlv0rev0.f90\
 		$(SRC)/utils/resetww0pp0rlv0rev0.f90\
+		$(SRC)/utils/setww0pp0rlv0rev0Bwd.f90\
+		$(SRC)/utils/resetww0pp0rlv0rev0Bwd.f90\
 		$(SRC)/utils/setxxssrhodd2Wall.f90\
 		$(SRC)/utils/resetxxssrhodd2Wall.f90\
+		$(SRC)/utils/setxxssrhodd2WallBwd.f90\
+		$(SRC)/utils/resetxxssrhodd2WallBwd.f90\
+		$(SRC)/utils/resetss.f90\
+		$(SRC)/utils/resetssBwd.f90\
+		$(SRC)/utils/setgamma.f90\
+		$(SRC)/utils/setgammaBwd.f90\
+		$(SRC)/utils/resetgamma.f90\
+		$(SRC)/utils/resetgammaBwd.f90\
+		$(SRC)/utils/computeEtot.f90\
+		$(SRC)/utils/setPointers.f90\
 		$(SRC)/utils/terminate.F90
 
 # intermediate residual files.
@@ -260,7 +272,6 @@ ad_forward:
 	mv outputForward/bcsymm_d.f90 outputForward/bcsymm_d.f90.bp
 	grep -v "   gamma1d(i, j) = 0.0_8" outputForward/bcsymm_d.f90.bp > outputForward/bcsymm_d.f90
 
-
 ad_forward_multi:
 # First delete the holding directory if it exists
 	rm -fr temp_forward_multi
@@ -302,6 +313,7 @@ ad_reverse:
 	-vars $(TAPENADE_RES_VARS) \
 	-head $(TAPENADE_RES_HEADROUTINE)  \
 	-reverse 	 -msglevel 30 $(TAPENADE_PRECISION) \
+	-noisize \
 	-O temp_reverse $(I_RES_FILES)
 
 # Run the auto-edit file:
@@ -336,10 +348,54 @@ ad_forward_debugTGT:
 	make -f Makefile_tapenade cleanpreprocess_res
 
 ad_forward_debugADJ:
-	@echo "Not implemented yet"
+# First delete the holding directory if it exists
+	rm -fr temp_forward_debugADJ
+
+# Next create the holidng directory:
+	mkdir -p temp_forward_debugADJ
+
+# Run preprocessor on all input files
+	make -f Makefile_tapenade preprocess_forward
+
+# The following is the single Tapenade command to run:
+	$(TAPENADE_HOME)/bin/tapenade -html \
+	-difffuncname "%_F"  -debugADJ \
+	-outvars $(TAPENADE_RES_OUTVARS) \
+	-vars $(TAPENADE_RES_VARS) \
+	-head $(TAPENADE_RES_HEADROUTINE)  \
+	-forward $(TAPENADE_PRECISION) \
+	-O temp_forward_debugADJ $(I_RES_FILES)
+
+# Run the auto-edit file:
+	python autoEdit/autoEditForwardDebugADJ.py temp_forward_debugADJ outputForwardADJ
+
+# Remove preprocessor files
+	make -f Makefile_tapenade cleanpreprocess_res
 
 ad_reverse_debugADJ:
-	@echo "Not implemented yet"
+# First delete the holding directory if it exists
+	rm -fr temp_reverse_debugADJ
+
+# Next create the holidng directory:
+	mkdir -p temp_reverse_debugADJ
+
+# Run preprocessor on all input files
+	make -f Makefile_tapenade preprocess_reverse
+
+# The following is the single Tapenade command to run:
+	$(TAPENADE_HOME)/bin/tapenade -html \
+	-difffuncname "%_R"  -debugADJ \
+	-outvars $(TAPENADE_RES_OUTVARS) \
+	-vars $(TAPENADE_RES_VARS) \
+	-head $(TAPENADE_RES_HEADROUTINE)  \
+	-reverse 	 -msglevel 30 $(TAPENADE_PRECISION) \
+	-O temp_reverse_debugADJ $(I_RES_FILES)
+
+# Run the auto-edit file:
+	python autoEdit/autoEditReverseDebugADJ.py temp_reverse_debugADJ outputReverseADJ
+
+# Remove preprocessor files
+	make -f Makefile_tapenade cleanpreprocess_res
 
 preprocess_cost:
 	@echo "Preprocessing all input files for cost AD..."
@@ -353,7 +409,7 @@ preprocess_forward:
 	@echo "Preprocessing all input files for forward mode AD..."
 	@for file in $(ALL_RES_FILES); do \
 		echo Preprocessing $$file; \
-		cpp -DUSE_TAPENADE -traditional -P  $$file $$file.f90; \
+		cpp -DUSE_TAPENADE -DTAPENADE_FORWARD -traditional -P  $$file $$file.f90; \
 	done
 
 preprocess_reverse:
