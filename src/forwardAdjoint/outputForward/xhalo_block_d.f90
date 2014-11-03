@@ -41,7 +41,34 @@
    INTEGER(kind=inttype) :: ibeg, iend, jbeg, jend, iimax, jjmax
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: x0, x1, x2
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: x0d, x1d, x2d
-   LOGICAL :: err
+   INTERFACE 
+   SUBROUTINE SETALLX(nn, x0, x1, x2)
+   USE BCTYPES
+   USE BLOCKPOINTERS_D
+   IMPLICIT NONE
+   INTEGER(kind=inttype), INTENT(IN) :: nn
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: x0, x1, x2
+   END SUBROUTINE SETALLX
+   SUBROUTINE RESETALLX(nn, x0, x1, x2)
+   USE BCTYPES
+   USE BLOCKPOINTERS_D
+   IMPLICIT NONE
+   INTEGER(kind=inttype), INTENT(IN) :: nn
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: x0, x1, x2
+   END SUBROUTINE RESETALLX
+   END INTERFACE
+      INTERFACE 
+   SUBROUTINE SETALLX_D(nn, x0, x0d, x1, x1d, x2, x2d)
+   USE BCTYPES
+   USE BLOCKPOINTERS_D
+   IMPLICIT NONE
+   INTEGER(kind=inttype), INTENT(IN) :: nn
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: x0, x1, x2
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: x0d, x1d, &
+   &       x2d
+   END SUBROUTINE SETALLX_D
+   END INTERFACE
+      LOGICAL :: err
    REAL(kind=realtype) :: length, dot
    REAL(kind=realtype) :: lengthd, dotd
    LOGICAL :: imininternal, jmininternal, kmininternal
@@ -51,6 +78,7 @@
    INTRINSIC SQRT
    REAL(kind=realtype) :: arg1
    REAL(kind=realtype) :: arg1d
+   INTEGER(kind=inttype) :: nn
    INTEGER :: ii1
    !      ******************************************************************
    !      *                                                                *
@@ -206,6 +234,7 @@
    IF (bctype(mm) .EQ. symm) THEN
    ! Set some variables, depending on the block face on
    ! which the subface is located.
+   CALL SETALLX_D(nn, x0, x0d, x1, x1d, x2, x2d)
    SELECT CASE  (bcfaceid(mm)) 
    CASE (imin) 
    ibeg = jnbeg(mm)
@@ -394,6 +423,7 @@
    END DO
    END DO
    END IF
+   CALL RESETALLX(nn, x0, x1, x2)
    END IF
    END DO loopbocos
    END IF
