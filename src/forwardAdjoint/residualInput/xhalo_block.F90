@@ -30,7 +30,37 @@ subroutine xhalo_block
   !
   integer(kind=intType) :: mm, i, j, k
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, iiMax, jjMax
+
+#ifndef TAPENADE_REVERSE
   real(kind=realType), dimension(:,:,:), pointer :: x0, x1, x2
+!
+!      Interfaces
+!
+       interface
+        subroutine setallx(nn, x0, x1, x2)
+
+           use BCTypes
+           use blockPointers
+           implicit none
+
+           integer(kind=intType), intent(in) :: nn
+           real(kind=realType), dimension(:,:,:),   pointer :: x0, x1, x2
+         end subroutine setallx
+
+        subroutine resetallx(nn, x0, x1, x2)
+
+           use BCTypes
+           use blockPointers
+           implicit none
+
+           integer(kind=intType), intent(in) :: nn
+           real(kind=realType), dimension(:,:,:),   pointer :: x0, x1, x2
+         end subroutine resetallx
+       end interface
+#else
+       real(kind=realType), dimension(imaxDim,jmaxDim,3) :: x0, x1, x2
+#endif
+
   logical err
   real(kind=realType) :: length, dot
   logical :: iMinInternal, jMinInternal, kMinInternal 
@@ -199,6 +229,12 @@ subroutine xhalo_block
         ! Set some variables, depending on the block face on
         ! which the subface is located.
 
+#ifndef TAPENADE_REVERSE
+               call setallx(nn, x0, x1, x2)
+#else
+               call setallxBwd(nn, x0, x1, x2))
+#endif
+         
         select case (BCFaceID(mm))
         case (iMin)
            iBeg = jnBeg(mm); iEnd = jnEnd(mm); iiMax = jl
@@ -325,6 +361,13 @@ subroutine xhalo_block
               enddo
            enddo
         endif testSingular
+
+#ifndef TAPENADE_REVERSE
+               call resetallx(nn, x0, x1, x2)
+#else
+               call resetallxBwd(nn, x0, x1, x2))
+#endif
+
      endif testSymmetry
   enddo loopBocos
 

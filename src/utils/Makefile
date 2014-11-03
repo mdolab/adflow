@@ -71,6 +71,10 @@ FILES_TO_COMPLEXIFY =  \
 	       resetBCPointers.F90\
 	       setss.f90\
 	       resetss.f90\
+	       setallx.f90\
+	       resetallx.f90\
+	       setssMetric.f90\
+	       resetssMetric.f90\
 	       setpp3pp4.f90\
 	       resetpp3pp4.f90\
 	       setgamma.f90\
@@ -83,6 +87,10 @@ FILES_TO_COMPLEXIFY =  \
 	       resetBCPointersBwd.F90\
 	       setssBwd.f90\
 	       resetssBwd.f90\
+	       setallxBwd.f90\
+	       resetallxBwd.f90\
+	       setssMetricBwd.f90\
+	       resetssMetricBwd.f90\
 	       setpp3pp4Bwd.f90\
 	       resetpp3pp4Bwd.f90\
 	       setgammaBwd.f90\
