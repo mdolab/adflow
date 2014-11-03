@@ -190,14 +190,6 @@
    CALL PUSHCONTROL2B(0)
    END IF
    END DO bocos
-   rev1b = 0.0_8
-   rev2b = 0.0_8
-   pp1b = 0.0_8
-   pp2b = 0.0_8
-   rlv1b = 0.0_8
-   rlv2b = 0.0_8
-   ww1b = 0.0_8
-   ww2b = 0.0_8
    DO nn=nviscbocos,1,-1
    CALL POPCONTROL2B(branch)
    IF (branch .NE. 0) THEN
@@ -213,6 +205,8 @@
    CALL COMPUTEETOT_B(icbeg(nn), icend(nn), jcbeg(nn), jcend(nn), &
    &                  kcbeg(nn), kcend(nn), correctfork)
    CALL POPREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
+   rlv2b = 0.0_8
+   rev2b = 0.0_8
    CALL RESETBCPOINTERSBWD_B(nn, ww1, ww1b, ww2, ww2b, pp1, pp1b, pp2&
    &                         , pp2b, rlv1, rlv1b, rlv2, rlv2b, rev1, rev1b&
    &                         , rev2, rev2b, 0)

@@ -333,7 +333,9 @@ ad_reverse:
 # Fix the AD bugs
 	sed -i 's/   DO ii1=1,SIZE(viscsubfaceb(ii1)%tau, 1)/   DO ii1=1,SIZE(viscsubfaceb)/' outputReverse/forcesandmoments_b.f90
 	sed -i 's/   DO ii1=1,SIZE(bcdata(ii1)%oarea, 1)/   DO ii1=1,SIZE(bcdata)/' outputReverse/block_res_b.f90
-	sed -i 's/   DO ii1=SIZE(bcdata(ii1)%oarea, 1),1,-1/    DO ii1=SIZE(bcdata(ii1),1,-1/' outputReverse/block_res_b.f90
+	sed -i 's/   DO ii1=SIZE(bcdata(ii1)%oarea, 1),1,-1/    DO ii1=SIZE(bcdata),1,-1/' outputReverse/block_res_b.f90
+	sed -i 's/   DO ii1=1,SIZE(bcdatab(ii1)%norm, 1)/   DO ii1=1,SIZE(bcdatab)/' outputReverse/bceulerwall_b.f90
+
 
 ad_forward_debugTGT:
 # First delete the holding directory if it exists

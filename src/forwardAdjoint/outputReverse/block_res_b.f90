@@ -478,7 +478,7 @@
    &             )
    CALL POPREAL8ARRAY(sk, SIZE(sk, 1)*SIZE(sk, 2)*SIZE(sk, 3)*SIZE(sk, 4)&
    &             )
-   DO ii1=SIZE(bcdata(ii1)%oarea, 1),1,-1
+    DO ii1=SIZE(bcdata),1,-1
    CALL POPREAL8ARRAY(bcdata(ii1)%oarea, SIZE(bcdata(ii1)%oarea, 1)*&
    &                SIZE(bcdata(ii1)%oarea, 2))
    END DO

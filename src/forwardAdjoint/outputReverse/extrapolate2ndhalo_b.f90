@@ -142,12 +142,6 @@
    CALL RESETWW0PP0RLV0REV0BWD_B(nn, idim, ddim, ww0, ww0b, pp0, pp0b, &
    &                         rlv0, rlv0b, rev0, rev0b)
    CALL POPREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
-   ww1b = 0.0_8
-   ww2b = 0.0_8
-   pp1b = 0.0_8
-   pp2b = 0.0_8
-   rlv1b = 0.0_8
-   rev1b = 0.0_8
    CALL RESETBCPOINTERSBWD_B(nn, ww1, ww1b, ww2, ww2b, pp1, pp1b, pp2, &
    &                     pp2b, rlv1, rlv1b, rlv0, rlv0b, rev1, rev1b, rev0&
    &                     , rev0b, 0)

@@ -42,16 +42,16 @@
    sib(il, 1:je, 1:ke, :) = sib(il, 1:je, 1:ke, :) + ssb(1:je, 1:ke, :)
    ssb(1:je, 1:ke, :) = 0.0_8
    CASE (jmin) 
-   sjb(0:ie, 1, 1:ke, :) = sjb(0:ie, 1, 1:ke, :) + ssb(0:ie, 1:ke, :)
-   ssb(0:ie, 1:ke, :) = 0.0_8
+   sjb(1:ie, 1, 1:ke, :) = sjb(1:ie, 1, 1:ke, :) + ssb(1:ie, 1:ke, :)
+   ssb(1:ie, 1:ke, :) = 0.0_8
    CASE (jmax) 
-   sjb(0:ie, jl, 1:ke, :) = sjb(0:ie, jl, 1:ke, :) + ssb(0:ie, 1:ke, :)
-   ssb(0:ie, 1:ke, :) = 0.0_8
+   sjb(1:ie, jl, 1:ke, :) = sjb(1:ie, jl, 1:ke, :) + ssb(1:ie, 1:ke, :)
+   ssb(1:ie, 1:ke, :) = 0.0_8
    CASE (kmin) 
-   skb(0:ie, 1:je, 1, :) = skb(0:ie, 1:je, 1, :) + ssb(0:ie, 1:je, :)
-   ssb(0:ie, 1:je, :) = 0.0_8
+   skb(1:ie, 1:je, 1, :) = skb(1:ie, 1:je, 1, :) + ssb(1:ie, 1:je, :)
+   ssb(1:ie, 1:je, :) = 0.0_8
    CASE (kmax) 
-   skb(0:ie, 1:je, kl, :) = skb(0:ie, 1:je, kl, :) + ssb(0:ie, 1:je, :)
-   ssb(0:ie, 1:je, :) = 0.0_8
+   skb(1:ie, 1:je, kl, :) = skb(1:ie, 1:je, kl, :) + ssb(1:ie, 1:je, :)
+   ssb(1:ie, 1:je, :) = 0.0_8
    END SELECT
    END SUBROUTINE SETSSMETRICBWD_B

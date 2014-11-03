@@ -37,8 +37,9 @@
    !
    INTEGER(kind=inttype) :: mm, i, j, k
    INTEGER(kind=inttype) :: ibeg, iend, jbeg, jend, iimax, jjmax
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, 3) :: x0, x1, x2
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, 3) :: x0b, x1b, x2b
+   REAL(kind=realtype), DIMENSION(0:imaxdim, 0:jmaxdim, 3) :: x0, x1, x2
+   REAL(kind=realtype), DIMENSION(0:imaxdim, 0:jmaxdim, 3) :: x0b, x1b, &
+   & x2b
    LOGICAL :: err
    REAL(kind=realtype) :: length, dot
    REAL(kind=realtype) :: lengthb, dotb
@@ -402,9 +403,6 @@
    v1b = 0.0_8
    v2b = 0.0_8
    normb = 0.0_8
-   x0b = 0.0_8
-   x1b = 0.0_8
-   x2b = 0.0_8
    DO mm=nbocos,1,-1
    CALL POPCONTROL1B(branch)
    IF (branch .NE. 0) THEN

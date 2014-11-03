@@ -58,7 +58,7 @@ subroutine xhalo_block
          end subroutine resetallx
        end interface
 #else
-       real(kind=realType), dimension(imaxDim,jmaxDim,3) :: x0, x1, x2
+       real(kind=realType), dimension(0:imaxDim,0:jmaxDim,3) :: x0, x1, x2
 #endif
 
   logical err
