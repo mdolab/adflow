@@ -43,6 +43,14 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       ww1 = zero
+       ww2 = zero
+       pp1 = zero
+       pp2 = zero
+       rlv1 = zero
+       rlv2 = zero
+       rev1 = zero
+       rev2 = zero
        ! Determine the face id on which the subface is located and set
        ! the pointers accordinly.
 

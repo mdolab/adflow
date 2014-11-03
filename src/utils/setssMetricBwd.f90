@@ -43,22 +43,22 @@ subroutine setssMetricBwd(nn, ss)
      !=======================================================
 
   case (jMin)
-     ss(0:ie,1:ke,:) = sj(0:ie,1,1:ke,:)
+     ss(1:ie,1:ke,:) = sj(1:ie,1,1:ke,:)
     
      !=======================================================
 
   case (jMax)
-     ss(0:ie,1:ke,:) = sj(0:ie,jl,1:ke,:)
+     ss(1:ie,1:ke,:) = sj(1:ie,jl,1:ke,:)
      
      !=======================================================
 
   case (kMin)
-     ss(0:ie,1:je,:) = sk(0:ie,1:je,1,:)
+     ss(1:ie,1:je,:) = sk(1:ie,1:je,1,:)
      
      !=======================================================
 
   case (kMax)
-     ss(0:ie,1:je,:) = sk(0:ie,1:je,kl,:)
+     ss(1:ie,1:je,:) = sk(1:ie,1:je,kl,:)
      
   end select
 end subroutine setssMetricBwd

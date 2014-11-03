@@ -31,6 +31,10 @@ subroutine setssBwd(nn, ssi, ssj, ssk, ss)
   !
   ! Determine the face id on which the subface is located and set
   ! the pointers accordinly.
+  ssi = zero
+  ssj = zero
+  ssk = zero
+  ss = zero
 
   select case (BCFaceID(nn))
   case (iMin)

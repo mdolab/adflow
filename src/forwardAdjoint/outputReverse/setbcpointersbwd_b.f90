@@ -4,8 +4,7 @@
    !  Differentiation of setbcpointersbwd in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
    !   gradient     of useful results: *rev *p *w *rlv rev1 rev2 pp1
    !                pp2 rlv1 rlv2 ww1 ww2
-   !   with respect to varying inputs: *rev *p *w *rlv rev1 rev2 pp1
-   !                pp2 rlv1 rlv2 ww1 ww2
+   !   with respect to varying inputs: *rev *p *w *rlv
    !   Plus diff mem management of: rev:in p:in w:in rlv:in
    !
    !      ******************************************************************
