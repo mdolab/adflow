@@ -20,7 +20,8 @@ subroutine verifyMatProd
   use ADjointVars
   use inputDiscretization
   use cgnsGrid
-  use inputMotion     
+  use inputMotion   
+  use ADjointPETSc, only: dRdx  
   implicit none
 
   ! Input Variables
@@ -167,7 +168,7 @@ subroutine verifyMatProd
      
      ! Allocate the memory we need for this block to do the forward
      ! mode derivatives and copy reference values
-     call alloc_derivative_values(nn, level)
+     !call alloc_derivative_values(nn, level)
      call alloc_derivative_values_bwd(nn, level)
         
      ! Set pointers and derivative pointers
@@ -176,7 +177,7 @@ subroutine verifyMatProd
      ! Reset All States and possibe AD seeds
      flowdomsb(1,1,1)%dw = zero 
      print *, nNodeslocal(1)
-     allocate(vec1(3072*3),vec2(nNodesLocal(1)*3))
+     allocate(vec1(3072*5),vec2(nNodesLocal(1)*3))
      
      flowdomsb(1,1,1)%x = zero
      ii = 0
@@ -193,8 +194,9 @@ subroutine verifyMatProd
            end do
         end do
      end do
-     call getdRdXvTPsi(vec1, vec2, 3072*5)
-
+     
+     call getdRdXvTPsi(vec2, nNodesLocal(1)*3, vec1, 3072*5)
+    
      call BLOCK_RES_B(nn, 1, .False., alpha, alphab, beta, betab, &
           & liftindex, force, forceb, moment, momentb, sepsensor, sepsensorb, &
           & cavitation, cavitationb)
@@ -215,7 +217,7 @@ subroutine verifyMatProd
      end do
      print *, 'spatial done'
      deallocate(vec1, vec2)
-     call dealloc_derivative_values(nn, level)
+     !call dealloc_derivative_values(nn, level)
      call dealloc_derivative_values_bwd(nn, level)
 
   end if logicCheck2
