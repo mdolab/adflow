@@ -2,9 +2,11 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of inviscidcentralflux in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *p *dw *w
-   !   with respect to varying inputs: *p *dw *w timeref
-   !   Plus diff mem management of: p:in dw:in w:in
+   !   gradient     of useful results: *p *dw *w *vol *si *sj *sk
+   !   with respect to varying inputs: *p *dw *w *vol *si *sj *sk
+   !                timeref
+   !   Plus diff mem management of: p:in dw:in w:in vol:in si:in sj:in
+   !                sk:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -273,6 +275,7 @@
    wb(i, j, k, ivz) = wb(i, j, k, ivz) + wy*tempb4
    wb(i, j, k, ivy) = wb(i, j, k, ivy) - wz*tempb4
    wb(i, j, k, irho) = wb(i, j, k, irho) + vol(i, j, k)*rvolb
+   volb(i, j, k) = volb(i, j, k) + w(i, j, k, irho)*rvolb
    END DO
    END DO
    END DO
@@ -295,23 +298,27 @@
    fsb = dwb(i, j, k, imz) - dwb(i, j, k+1, imz)
    rqsm = qsm*w(i, j, k, irho)
    rqsp = qsp*w(i, j, k+1, irho)
+   pa = porflux*(p(i, j, k+1)+p(i, j, k))
    rqspb = w(i, j, k+1, ivz)*fsb
    wb(i, j, k+1, ivz) = wb(i, j, k+1, ivz) + rqsp*fsb
    rqsmb = w(i, j, k, ivz)*fsb
    wb(i, j, k, ivz) = wb(i, j, k, ivz) + rqsm*fsb
    pab = sk(i, j, k, 3)*fsb
+   skb(i, j, k, 3) = skb(i, j, k, 3) + pa*fsb
    fsb = dwb(i, j, k, imy) - dwb(i, j, k+1, imy)
    rqspb = rqspb + w(i, j, k+1, ivy)*fsb
    wb(i, j, k+1, ivy) = wb(i, j, k+1, ivy) + rqsp*fsb
    rqsmb = rqsmb + w(i, j, k, ivy)*fsb
    wb(i, j, k, ivy) = wb(i, j, k, ivy) + rqsm*fsb
    pab = pab + sk(i, j, k, 2)*fsb
+   skb(i, j, k, 2) = skb(i, j, k, 2) + pa*fsb
    fsb = dwb(i, j, k, imx) - dwb(i, j, k+1, imx)
    rqspb = rqspb + w(i, j, k+1, ivx)*fsb
    wb(i, j, k+1, ivx) = wb(i, j, k+1, ivx) + rqsp*fsb
    rqsmb = rqsmb + w(i, j, k, ivx)*fsb
    wb(i, j, k, ivx) = wb(i, j, k, ivx) + rqsm*fsb
    pab = pab + sk(i, j, k, 1)*fsb
+   skb(i, j, k, 1) = skb(i, j, k, 1) + pa*fsb
    fsb = dwb(i, j, k, irho) - dwb(i, j, k+1, irho)
    rqspb = rqspb + fsb
    rqsmb = rqsmb + fsb
@@ -334,12 +341,18 @@
    CALL POPREAL8(porvel)
    CALL POPREAL8(vnm)
    wb(i, j, k, ivx) = wb(i, j, k, ivx) + sk(i, j, k, 1)*vnmb
+   skb(i, j, k, 1) = skb(i, j, k, 1) + w(i, j, k, ivx)*vnmb
    wb(i, j, k, ivy) = wb(i, j, k, ivy) + sk(i, j, k, 2)*vnmb
+   skb(i, j, k, 2) = skb(i, j, k, 2) + w(i, j, k, ivy)*vnmb
    wb(i, j, k, ivz) = wb(i, j, k, ivz) + sk(i, j, k, 3)*vnmb
+   skb(i, j, k, 3) = skb(i, j, k, 3) + w(i, j, k, ivz)*vnmb
    CALL POPREAL8(vnp)
    wb(i, j, k+1, ivx) = wb(i, j, k+1, ivx) + sk(i, j, k, 1)*vnpb
+   skb(i, j, k, 1) = skb(i, j, k, 1) + w(i, j, k+1, ivx)*vnpb
    wb(i, j, k+1, ivy) = wb(i, j, k+1, ivy) + sk(i, j, k, 2)*vnpb
+   skb(i, j, k, 2) = skb(i, j, k, 2) + w(i, j, k+1, ivy)*vnpb
    wb(i, j, k+1, ivz) = wb(i, j, k+1, ivz) + sk(i, j, k, 3)*vnpb
+   skb(i, j, k, 3) = skb(i, j, k, 3) + w(i, j, k+1, ivz)*vnpb
    END DO
    END DO
    END DO
@@ -357,23 +370,27 @@
    fsb = dwb(i, j, k, imz) - dwb(i, j+1, k, imz)
    rqsm = qsm*w(i, j, k, irho)
    rqsp = qsp*w(i, j+1, k, irho)
+   pa = porflux*(p(i, j+1, k)+p(i, j, k))
    rqspb = w(i, j+1, k, ivz)*fsb
    wb(i, j+1, k, ivz) = wb(i, j+1, k, ivz) + rqsp*fsb
    rqsmb = w(i, j, k, ivz)*fsb
    wb(i, j, k, ivz) = wb(i, j, k, ivz) + rqsm*fsb
    pab = sj(i, j, k, 3)*fsb
+   sjb(i, j, k, 3) = sjb(i, j, k, 3) + pa*fsb
    fsb = dwb(i, j, k, imy) - dwb(i, j+1, k, imy)
    rqspb = rqspb + w(i, j+1, k, ivy)*fsb
    wb(i, j+1, k, ivy) = wb(i, j+1, k, ivy) + rqsp*fsb
    rqsmb = rqsmb + w(i, j, k, ivy)*fsb
    wb(i, j, k, ivy) = wb(i, j, k, ivy) + rqsm*fsb
    pab = pab + sj(i, j, k, 2)*fsb
+   sjb(i, j, k, 2) = sjb(i, j, k, 2) + pa*fsb
    fsb = dwb(i, j, k, imx) - dwb(i, j+1, k, imx)
    rqspb = rqspb + w(i, j+1, k, ivx)*fsb
    wb(i, j+1, k, ivx) = wb(i, j+1, k, ivx) + rqsp*fsb
    rqsmb = rqsmb + w(i, j, k, ivx)*fsb
    wb(i, j, k, ivx) = wb(i, j, k, ivx) + rqsm*fsb
    pab = pab + sj(i, j, k, 1)*fsb
+   sjb(i, j, k, 1) = sjb(i, j, k, 1) + pa*fsb
    fsb = dwb(i, j, k, irho) - dwb(i, j+1, k, irho)
    rqspb = rqspb + fsb
    rqsmb = rqsmb + fsb
@@ -396,12 +413,18 @@
    CALL POPREAL8(porvel)
    CALL POPREAL8(vnm)
    wb(i, j, k, ivx) = wb(i, j, k, ivx) + sj(i, j, k, 1)*vnmb
+   sjb(i, j, k, 1) = sjb(i, j, k, 1) + w(i, j, k, ivx)*vnmb
    wb(i, j, k, ivy) = wb(i, j, k, ivy) + sj(i, j, k, 2)*vnmb
+   sjb(i, j, k, 2) = sjb(i, j, k, 2) + w(i, j, k, ivy)*vnmb
    wb(i, j, k, ivz) = wb(i, j, k, ivz) + sj(i, j, k, 3)*vnmb
+   sjb(i, j, k, 3) = sjb(i, j, k, 3) + w(i, j, k, ivz)*vnmb
    CALL POPREAL8(vnp)
    wb(i, j+1, k, ivx) = wb(i, j+1, k, ivx) + sj(i, j, k, 1)*vnpb
+   sjb(i, j, k, 1) = sjb(i, j, k, 1) + w(i, j+1, k, ivx)*vnpb
    wb(i, j+1, k, ivy) = wb(i, j+1, k, ivy) + sj(i, j, k, 2)*vnpb
+   sjb(i, j, k, 2) = sjb(i, j, k, 2) + w(i, j+1, k, ivy)*vnpb
    wb(i, j+1, k, ivz) = wb(i, j+1, k, ivz) + sj(i, j, k, 3)*vnpb
+   sjb(i, j, k, 3) = sjb(i, j, k, 3) + w(i, j+1, k, ivz)*vnpb
    END DO
    END DO
    END DO
@@ -419,23 +442,27 @@
    fsb = dwb(i, j, k, imz) - dwb(i+1, j, k, imz)
    rqsm = qsm*w(i, j, k, irho)
    rqsp = qsp*w(i+1, j, k, irho)
+   pa = porflux*(p(i+1, j, k)+p(i, j, k))
    rqspb = w(i+1, j, k, ivz)*fsb
    wb(i+1, j, k, ivz) = wb(i+1, j, k, ivz) + rqsp*fsb
    rqsmb = w(i, j, k, ivz)*fsb
    wb(i, j, k, ivz) = wb(i, j, k, ivz) + rqsm*fsb
    pab = si(i, j, k, 3)*fsb
+   sib(i, j, k, 3) = sib(i, j, k, 3) + pa*fsb
    fsb = dwb(i, j, k, imy) - dwb(i+1, j, k, imy)
    rqspb = rqspb + w(i+1, j, k, ivy)*fsb
    wb(i+1, j, k, ivy) = wb(i+1, j, k, ivy) + rqsp*fsb
    rqsmb = rqsmb + w(i, j, k, ivy)*fsb
    wb(i, j, k, ivy) = wb(i, j, k, ivy) + rqsm*fsb
    pab = pab + si(i, j, k, 2)*fsb
+   sib(i, j, k, 2) = sib(i, j, k, 2) + pa*fsb
    fsb = dwb(i, j, k, imx) - dwb(i+1, j, k, imx)
    rqspb = rqspb + w(i+1, j, k, ivx)*fsb
    wb(i+1, j, k, ivx) = wb(i+1, j, k, ivx) + rqsp*fsb
    rqsmb = rqsmb + w(i, j, k, ivx)*fsb
    wb(i, j, k, ivx) = wb(i, j, k, ivx) + rqsm*fsb
    pab = pab + si(i, j, k, 1)*fsb
+   sib(i, j, k, 1) = sib(i, j, k, 1) + pa*fsb
    fsb = dwb(i, j, k, irho) - dwb(i+1, j, k, irho)
    rqspb = rqspb + fsb
    rqsmb = rqsmb + fsb
@@ -458,12 +485,18 @@
    CALL POPREAL8(porvel)
    CALL POPREAL8(vnm)
    wb(i, j, k, ivx) = wb(i, j, k, ivx) + si(i, j, k, 1)*vnmb
+   sib(i, j, k, 1) = sib(i, j, k, 1) + w(i, j, k, ivx)*vnmb
    wb(i, j, k, ivy) = wb(i, j, k, ivy) + si(i, j, k, 2)*vnmb
+   sib(i, j, k, 2) = sib(i, j, k, 2) + w(i, j, k, ivy)*vnmb
    wb(i, j, k, ivz) = wb(i, j, k, ivz) + si(i, j, k, 3)*vnmb
+   sib(i, j, k, 3) = sib(i, j, k, 3) + w(i, j, k, ivz)*vnmb
    CALL POPREAL8(vnp)
    wb(i+1, j, k, ivx) = wb(i+1, j, k, ivx) + si(i, j, k, 1)*vnpb
+   sib(i, j, k, 1) = sib(i, j, k, 1) + w(i+1, j, k, ivx)*vnpb
    wb(i+1, j, k, ivy) = wb(i+1, j, k, ivy) + si(i, j, k, 2)*vnpb
+   sib(i, j, k, 2) = sib(i, j, k, 2) + w(i+1, j, k, ivy)*vnpb
    wb(i+1, j, k, ivz) = wb(i+1, j, k, ivz) + si(i, j, k, 3)*vnpb
+   sib(i, j, k, 3) = sib(i, j, k, 3) + w(i+1, j, k, ivz)*vnpb
    END DO
    END DO
    END DO

@@ -78,7 +78,6 @@
    INTRINSIC SQRT
    REAL(kind=realtype) :: arg1
    REAL(kind=realtype) :: arg1d
-   INTEGER(kind=inttype) :: nn
    INTEGER :: ii1
    !      ******************************************************************
    !      *                                                                *
@@ -234,7 +233,7 @@
    IF (bctype(mm) .EQ. symm) THEN
    ! Set some variables, depending on the block face on
    ! which the subface is located.
-   CALL SETALLX_D(nn, x0, x0d, x1, x1d, x2, x2d)
+   CALL SETALLX_D(mm, x0, x0d, x1, x1d, x2, x2d)
    SELECT CASE  (bcfaceid(mm)) 
    CASE (imin) 
    ibeg = jnbeg(mm)
@@ -243,12 +242,6 @@
    jbeg = knbeg(mm)
    jend = knend(mm)
    jjmax = kl
-   x0d => xd(0, :, :, :)
-   x0 => x(0, :, :, :)
-   x1d => xd(1, :, :, :)
-   x1 => x(1, :, :, :)
-   x2d => xd(2, :, :, :)
-   x2 => x(2, :, :, :)
    CASE (imax) 
    ibeg = jnbeg(mm)
    iend = jnend(mm)
@@ -256,12 +249,6 @@
    jbeg = knbeg(mm)
    jend = knend(mm)
    jjmax = kl
-   x0d => xd(ie, :, :, :)
-   x0 => x(ie, :, :, :)
-   x1d => xd(il, :, :, :)
-   x1 => x(il, :, :, :)
-   x2d => xd(nx, :, :, :)
-   x2 => x(nx, :, :, :)
    CASE (jmin) 
    ibeg = inbeg(mm)
    iend = inend(mm)
@@ -269,12 +256,6 @@
    jbeg = knbeg(mm)
    jend = knend(mm)
    jjmax = kl
-   x0d => xd(:, 0, :, :)
-   x0 => x(:, 0, :, :)
-   x1d => xd(:, 1, :, :)
-   x1 => x(:, 1, :, :)
-   x2d => xd(:, 2, :, :)
-   x2 => x(:, 2, :, :)
    CASE (jmax) 
    ibeg = inbeg(mm)
    iend = inend(mm)
@@ -282,12 +263,6 @@
    jbeg = knbeg(mm)
    jend = knend(mm)
    jjmax = kl
-   x0d => xd(:, je, :, :)
-   x0 => x(:, je, :, :)
-   x1d => xd(:, jl, :, :)
-   x1 => x(:, jl, :, :)
-   x2d => xd(:, ny, :, :)
-   x2 => x(:, ny, :, :)
    CASE (kmin) 
    ibeg = inbeg(mm)
    iend = inend(mm)
@@ -295,12 +270,6 @@
    jbeg = jnbeg(mm)
    jend = jnend(mm)
    jjmax = jl
-   x0d => xd(:, :, 0, :)
-   x0 => x(:, :, 0, :)
-   x1d => xd(:, :, 1, :)
-   x1 => x(:, :, 1, :)
-   x2d => xd(:, :, 2, :)
-   x2 => x(:, :, 2, :)
    CASE (kmax) 
    ibeg = inbeg(mm)
    iend = inend(mm)
@@ -308,12 +277,6 @@
    jbeg = jnbeg(mm)
    jend = jnend(mm)
    jjmax = jl
-   x0d => xd(:, :, ke, :)
-   x0 => x(:, :, ke, :)
-   x1d => xd(:, :, kl, :)
-   x1 => x(:, :, kl, :)
-   x2d => xd(:, :, nz, :)
-   x2 => x(:, :, nz, :)
    END SELECT
    IF (.NOT.bcdata(mm)%symnormset) THEN
    ! This code technically should not run. symNormSet should
@@ -423,7 +386,7 @@
    END DO
    END DO
    END IF
-   CALL RESETALLX(nn, x0, x1, x2)
+   CALL RESETALLX(mm, x0, x1, x2)
    END IF
    END DO loopbocos
    END IF

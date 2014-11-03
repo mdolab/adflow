@@ -4,31 +4,35 @@
    !  Differentiation of block_res in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
    !   gradient     of useful results: *(flowdoms.x) *(flowdoms.w)
    !                *(flowdoms.dw) *(*bcdata.fp) *(*bcdata.fv) *(*bcdata.m)
-   !                *(*bcdata.sepsensor) *(*bcdata.cavitation) moment
-   !                force cavitation sepsensor
+   !                *(*bcdata.oarea) *(*bcdata.sepsensor) *(*bcdata.cavitation)
+   !                moment force cavitation sepsensor
    !   with respect to varying inputs: *(flowdoms.x) *(flowdoms.w)
    !                *(flowdoms.dw) *(*bcdata.fp) *(*bcdata.fv) *(*bcdata.m)
-   !                *(*bcdata.sepsensor) *(*bcdata.cavitation) pref
-   !                mach tempfreestream lengthref machcoef pointref
+   !                *(*bcdata.oarea) *(*bcdata.sepsensor) *(*bcdata.cavitation)
+   !                pref mach tempfreestream lengthref machcoef pointref
    !                moment alpha force beta cavitation sepsensor
-   !   RW status of diff variables: *(flowdoms.x):in-out *(flowdoms.w):in-out
-   !                *(flowdoms.dw):in-out *rev:(loc) *p:(loc) *gamma:(loc)
-   !                *rlv:(loc) *fw:(loc) *(*viscsubface.tau):(loc)
-   !                *(*bcdata.fp):in-out *(*bcdata.fv):in-out *(*bcdata.m):in-out
-   !                *(*bcdata.sepsensor):in-out *(*bcdata.cavitation):in-out
-   !                *radi:(loc) *radj:(loc) *radk:(loc) mudim:(loc)
-   !                gammainf:(loc) pinf:(loc) timeref:(loc) rhoinf:(loc)
-   !                muref:(loc) rhoinfdim:(loc) tref:(loc) winf:(loc)
-   !                muinf:(loc) uinf:(loc) pinfcorr:(loc) rgas:(loc)
-   !                pinfdim:(loc) pref:out rhoref:(loc) mach:out tempfreestream:out
-   !                veldirfreestream:(loc) lengthref:out machcoef:out
-   !                pointref:out moment:in-zero alpha:out force:in-zero
-   !                beta:out cavitation:in-zero sepsensor:in-zero
-   !   Plus diff mem management of: flowdoms.x:in flowdoms.w:in flowdoms.dw:in
-   !                rev:in p:in gamma:in rlv:in fw:in viscsubface:in
-   !                *viscsubface.tau:in bcdata:in *bcdata.fp:in *bcdata.fv:in
-   !                *bcdata.m:in *bcdata.sepsensor:in *bcdata.cavitation:in
-   !                radi:in radj:in radk:in
+   !   RW status of diff variables: *(flowdoms.x):in-out *(flowdoms.vol):(loc)
+   !                *(flowdoms.w):in-out *(flowdoms.dw):in-out *rev:(loc)
+   !                *p:(loc) *gamma:(loc) *rlv:(loc) *si:(loc) *sj:(loc)
+   !                *sk:(loc) *fw:(loc) *(*viscsubface.tau):(loc)
+   !                *(*bcdata.norm):(loc) *(*bcdata.fp):in-out *(*bcdata.fv):in-out
+   !                *(*bcdata.m):in-out *(*bcdata.oarea):in-out *(*bcdata.sepsensor):in-out
+   !                *(*bcdata.cavitation):in-out *radi:(loc) *radj:(loc)
+   !                *radk:(loc) mudim:(loc) gammainf:(loc) pinf:(loc)
+   !                timeref:(loc) rhoinf:(loc) muref:(loc) rhoinfdim:(loc)
+   !                tref:(loc) winf:(loc) muinf:(loc) uinf:(loc) pinfcorr:(loc)
+   !                rgas:(loc) pinfdim:(loc) pref:out rhoref:(loc)
+   !                mach:out tempfreestream:out veldirfreestream:(loc)
+   !                lengthref:out machcoef:out pointref:out moment:in-zero
+   !                alpha:out force:in-zero beta:out cavitation:in-zero
+   !                sepsensor:in-zero
+   !   Plus diff mem management of: flowdoms.x:in flowdoms.vol:in
+   !                flowdoms.w:in flowdoms.dw:in rev:in p:in gamma:in
+   !                rlv:in si:in sj:in sk:in fw:in viscsubface:in
+   !                *viscsubface.tau:in bcdata:in *bcdata.norm:in
+   !                *bcdata.fp:in *bcdata.fv:in *bcdata.m:in *bcdata.oarea:in
+   !                *bcdata.sepsensor:in *bcdata.cavitation:in radi:in
+   !                radj:in radk:in
    ! This is a super-combined function that combines the original
    ! functionality of: 
    ! Pressure Computation
@@ -75,15 +79,19 @@
    REAL(kind=realtype), DIMENSION(3) :: cfpb, cfvb, cmpb, cmvb
    REAL(kind=realtype) :: yplusmax, scaledim
    REAL(kind=realtype) :: scaledimb
+   EXTERNAL XHALO_BLOCK
    INTRINSIC MAX
    INTEGER :: branch
+   REAL(kind=realtype) :: temp3
+   REAL(kind=realtype) :: temp2
    REAL(kind=realtype) :: temp1
    REAL(kind=realtype) :: temp0
+   REAL(kind=realtype) :: tempb6
    REAL(kind=realtype) :: tempb5
-   REAL(kind=realtype) :: tempb4
-   REAL(kind=realtype) :: tempb3(3)
-   REAL(kind=realtype) :: tempb2
-   REAL(kind=realtype) :: tempb1(3)
+   REAL(kind=realtype) :: tempb4(3)
+   REAL(kind=realtype) :: tempb3
+   REAL(kind=realtype) :: tempb2(3)
+   REAL(kind=realtype) :: tempb1
    REAL(kind=realtype) :: tempb0
    REAL(kind=realtype) :: tempb
    INTEGER :: ii3
@@ -103,6 +111,7 @@
    dw => flowdoms(nn, 1, sps)%dw
    xb => flowdomsb(nn, currentlevel, sps)%x
    x => flowdoms(nn, currentlevel, sps)%x
+   volb => flowdomsb(nn, currentlevel, sps)%vol
    vol => flowdoms(nn, currentlevel, sps)%vol
    ! ------------------------------------------------
    !        Additional 'Extra' Components
@@ -114,6 +123,21 @@
    CALL PUSHREAL8(gammainf)
    CALL REFERENCESTATE()
    CALL SETFLOWINFINITYSTATE()
+   ! ------------------------------------------------
+   !        Additional Spatial Components
+   ! ------------------------------------------------
+   IF (usespatial) THEN
+   CALL PUSHREAL8ARRAY(sk, SIZE(sk, 1)*SIZE(sk, 2)*SIZE(sk, 3)*SIZE(sk&
+   &                 , 4))
+   CALL PUSHREAL8ARRAY(sj, SIZE(sj, 1)*SIZE(sj, 2)*SIZE(sj, 3)*SIZE(sj&
+   &                 , 4))
+   CALL PUSHREAL8ARRAY(si, SIZE(si, 1)*SIZE(si, 2)*SIZE(si, 3)*SIZE(si&
+   &                 , 4))
+   CALL METRIC_BLOCK()
+   CALL PUSHCONTROL1B(0)
+   ELSE
+   CALL PUSHCONTROL1B(1)
+   END IF
    ! ------------------------------------------------
    !        Normal Residual Computation
    ! ------------------------------------------------
@@ -314,6 +338,27 @@
    END DO
    END DO
    CALL RESIDUAL_BLOCK()
+   ! Note that there are some error introduced by viscousflux from fw
+   ! The error only show up in the rho term in some cells
+   ! Divide through by the volume
+   DO sps2=1,ntimeintervalsspectral
+   DO l=1,nstate
+   DO k=2,kl
+   DO j=2,jl
+   DO i=2,il
+   CALL PUSHREAL8(flowdoms(nn, 1, sps2)%dw(i, j, k, l))
+   flowdoms(nn, 1, sps2)%dw(i, j, k, l) = flowdoms(nn, 1, sps2)&
+   &             %dw(i, j, k, l)/flowdoms(nn, currentlevel, sps2)%vol(i, j&
+   &             , k)
+   END DO
+   END DO
+   END DO
+   END DO
+   END DO
+   DO ii1=1,SIZE(bcdata(ii1)%oarea, 1)
+   CALL PUSHREAL8ARRAY(bcdata(ii1)%oarea, SIZE(bcdata(ii1)%oarea, 1)*&
+   &                 SIZE(bcdata(ii1)%oarea, 2))
+   END DO
    CALL PUSHREAL8ARRAY(sk, SIZE(sk, 1)*SIZE(sk, 2)*SIZE(sk, 3)*SIZE(sk, 4&
    &               ))
    CALL PUSHREAL8ARRAY(sj, SIZE(sj, 1)*SIZE(sj, 2)*SIZE(sj, 3)*SIZE(sj, 4&
@@ -362,28 +407,28 @@
    fact = fact/(lengthref*lref)
    cmpb = 0.0_8
    cmvb = 0.0_8
-   tempb1 = momentb/fact
-   cmpb = tempb1
-   cmvb = tempb1
-   factb = SUM(-((cmp+cmv)*tempb1/fact))
+   tempb2 = momentb/fact
+   cmpb = tempb2
+   cmvb = tempb2
+   factb = SUM(-((cmp+cmv)*tempb2/fact))
    CALL POPREAL8(fact)
-   tempb2 = factb/(lref*lengthref)
-   lengthrefb = -(fact*tempb2/lengthref)
+   tempb3 = factb/(lref*lengthref)
+   lengthrefb = -(fact*tempb3/lengthref)
    cfpb = 0.0_8
    cfvb = 0.0_8
-   tempb3 = forceb/fact
-   factb = SUM(-((cfp+cfv)*tempb3/fact)) + tempb2
-   cfpb = tempb3
-   cfvb = tempb3
-   temp1 = machcoef**2*scaledim
-   temp0 = surfaceref*lref**2
-   temp = temp0*gammainf*pinf
-   tempb4 = -(two*factb/(temp**2*temp1**2))
-   tempb5 = temp1*temp0*tempb4
-   gammainfb = pinf*tempb5
-   machcoefb = scaledim*temp*2*machcoef*tempb4
-   scaledimb = temp*machcoef**2*tempb4
-   pinfb = gammainf*tempb5 - pref*scaledimb/pinf**2
+   tempb4 = forceb/fact
+   factb = SUM(-((cfp+cfv)*tempb4/fact)) + tempb3
+   cfpb = tempb4
+   cfvb = tempb4
+   temp3 = machcoef**2*scaledim
+   temp2 = surfaceref*lref**2
+   temp1 = temp2*gammainf*pinf
+   tempb5 = -(two*factb/(temp1**2*temp3**2))
+   tempb6 = temp3*temp2*tempb5
+   gammainfb = pinf*tempb6
+   machcoefb = scaledim*temp1*2*machcoef*tempb5
+   scaledimb = temp1*machcoef**2*tempb5
+   pinfb = gammainf*tempb6 - pref*scaledimb/pinf**2
    prefb = scaledimb/pinf
    CALL POPREAL8ARRAY(cfp, 3)
    CALL POPREAL8ARRAY(cfv, 3)
@@ -420,17 +465,33 @@
    &             )
    CALL POPREAL8ARRAY(sk, SIZE(sk, 1)*SIZE(sk, 2)*SIZE(sk, 3)*SIZE(sk, 4)&
    &             )
+   DO ii1=SIZE(bcdata(ii1)%oarea, 1),1,-1
+   CALL POPREAL8ARRAY(bcdata(ii1)%oarea, SIZE(bcdata(ii1)%oarea, 1)*&
+   &                SIZE(bcdata(ii1)%oarea, 2))
+   END DO
    CALL FORCESANDMOMENTS_B(cfp, cfpb, cfv, cfvb, cmp, cmpb, cmv, cmvb, &
    &                   yplusmax, sepsensor, sepsensorb, cavitation, &
    &                   cavitationb)
+   DO ii1=1,ntimeintervalsspectral
+   DO ii2=1,1
+   DO ii3=nn,nn
+   flowdomsb(ii3, ii2, ii1)%vol = 0.0_8
+   END DO
+   END DO
+   END DO
    DO sps2=ntimeintervalsspectral,1,-1
    DO l=nstate,1,-1
    DO k=kl,2,-1
    DO j=jl,2,-1
    DO i=il,2,-1
+   CALL POPREAL8(flowdoms(nn, 1, sps2)%dw(i, j, k, l))
+   temp0 = flowdoms(nn, currentlevel, sps2)%vol(i, j, k)
+   flowdomsb(nn, currentlevel, sps2)%vol(i, j, k) = flowdomsb(&
+   &             nn, currentlevel, sps2)%vol(i, j, k) - flowdoms(nn, 1, &
+   &             sps2)%dw(i, j, k, l)*flowdomsb(nn, 1, sps2)%dw(i, j, k, l)&
+   &             /temp0**2
    flowdomsb(nn, 1, sps2)%dw(i, j, k, l) = flowdomsb(nn, 1, &
-   &             sps2)%dw(i, j, k, l)/flowdoms(nn, currentlevel, sps2)%vol(&
-   &             i, j, k)
+   &             sps2)%dw(i, j, k, l)/temp0
    END DO
    END DO
    END DO
@@ -472,10 +533,14 @@
    DO k=kl,2,-1
    DO j=jl,2,-1
    DO i=il,2,-1
+   tempb1 = dscalar(jj, sps2, mm)*flowdomsb(nn, 1, sps2)%&
+   &                   dw(i, j, k, l)
+   flowdomsb(nn, 1, mm)%vol(i, j, k) = flowdomsb(nn, 1, &
+   &                   mm)%vol(i, j, k) + flowdoms(nn, 1, mm)%w(i, j, k, l)&
+   &                   *tempb1
    flowdomsb(nn, 1, mm)%w(i, j, k, l) = flowdomsb(nn, 1, &
-   &                   mm)%w(i, j, k, l) + dscalar(jj, sps2, mm)*flowdoms(&
-   &                   nn, 1, mm)%vol(i, j, k)*flowdomsb(nn, 1, sps2)%dw(i&
-   &                   , j, k, l)
+   &                   mm)%w(i, j, k, l) + flowdoms(nn, 1, mm)%vol(i, j, k)&
+   &                   *tempb1
    END DO
    END DO
    END DO
@@ -483,11 +548,15 @@
    DO k=kl,2,-1
    DO j=jl,2,-1
    DO i=il,2,-1
-   tempb0 = flowdoms(nn, 1, mm)%vol(i, j, k)*flowdomsb(nn&
-   &                   , 1, sps2)%dw(i, j, k, l)
-   tmpb = flowdoms(nn, 1, mm)%w(i, j, k, irho)*tempb0
+   tempb0 = flowdoms(nn, 1, mm)%w(i, j, k, irho)*&
+   &                   flowdomsb(nn, 1, sps2)%dw(i, j, k, l)
+   temp = flowdoms(nn, 1, mm)%vol(i, j, k)
+   tmpb = temp*tempb0
+   flowdomsb(nn, 1, mm)%vol(i, j, k) = flowdomsb(nn, 1, &
+   &                   mm)%vol(i, j, k) + tmp*tempb0
    flowdomsb(nn, 1, mm)%w(i, j, k, irho) = flowdomsb(nn, &
-   &                   1, mm)%w(i, j, k, irho) + tmp*tempb0
+   &                   1, mm)%w(i, j, k, irho) + tmp*temp*flowdomsb(nn, 1, &
+   &                   sps2)%dw(i, j, k, l)
    CALL POPREAL8(tmp)
    flowdomsb(nn, 1, mm)%w(i, j, k, ivx) = flowdomsb(nn, 1&
    &                   , mm)%w(i, j, k, ivx) + dvector(jj, ll, ii+1)*tmpb
@@ -591,6 +660,16 @@
    END DO
    END DO
    END DO
+   CALL POPCONTROL1B(branch)
+   IF (branch .EQ. 0) THEN
+   CALL POPREAL8ARRAY(si, SIZE(si, 1)*SIZE(si, 2)*SIZE(si, 3)*SIZE(si, &
+   &                4))
+   CALL POPREAL8ARRAY(sj, SIZE(sj, 1)*SIZE(sj, 2)*SIZE(sj, 3)*SIZE(sj, &
+   &                4))
+   CALL POPREAL8ARRAY(sk, SIZE(sk, 1)*SIZE(sk, 2)*SIZE(sk, 3)*SIZE(sk, &
+   &                4))
+   CALL METRIC_BLOCK_B()
+   END IF
    CALL SETFLOWINFINITYSTATE_B()
    CALL POPREAL8(gammainf)
    CALL POPREAL8(tref)

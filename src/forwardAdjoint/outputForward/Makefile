@@ -66,6 +66,8 @@ FF90_OBJECTS =  blockpointers_d.o\
                 setbcpointers_d.o\
                 setww0pp0rlv0rev0_d.o\
                 setss_d.o\
+                setallx_d.o\
+                setssmetric_d.o\
                 setxxssrhodd2wall_d.o\
                 setgamma_d.o\
                 setpp3pp4_d.o\

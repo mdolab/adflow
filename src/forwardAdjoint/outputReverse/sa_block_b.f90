@@ -2,9 +2,12 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of sa_block in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *rev *dw *w *rlv (global)timeref
-   !   with respect to varying inputs: *rev *dw *w *rlv (global)timeref
-   !   Plus diff mem management of: rev:in dw:in w:in rlv:in
+   !   gradient     of useful results: *rev *dw *w *rlv *vol *si *sj
+   !                *sk (global)timeref
+   !   with respect to varying inputs: *rev *dw *w *rlv *vol *si *sj
+   !                *sk (global)timeref
+   !   Plus diff mem management of: rev:in dw:in w:in rlv:in vol:in
+   !                si:in sj:in sk:in
    !
    !      ******************************************************************
    !      *                                                                *

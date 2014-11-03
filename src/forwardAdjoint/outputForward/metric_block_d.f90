@@ -67,7 +67,6 @@
    INTRINSIC SQRT
    REAL(kind=realtype) :: arg1
    REAL(kind=realtype) :: arg1d
-   INTEGER(kind=inttype) :: nn
    INTEGER :: ii1
    !
    !      ******************************************************************
@@ -373,7 +372,7 @@
    bocoloop:DO mm=1,nbocos
    ! Determine the block face on which this subface is located
    ! and set ss and mult accordingly.
-   CALL SETSSMETRIC_D(nn, ss, ssd)
+   CALL SETSSMETRIC_D(mm, ss, ssd)
    SELECT CASE  (bcfaceid(mm)) 
    CASE (imin) 
    mult = -one
@@ -420,7 +419,7 @@
    bcdata(mm)%norm(i, j, 3) = fact*zp
    END DO
    END DO
-   CALL RESETSSMETRIC(nn, ss)
+   CALL RESETSSMETRIC(mm, ss)
    END DO bocoloop
       CONTAINS
    !  Differentiation of volpym in forward (tangent) mode (with options i4 dr8 r8):

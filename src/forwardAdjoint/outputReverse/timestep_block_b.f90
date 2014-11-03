@@ -2,12 +2,12 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of timestep_block in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *p *gamma *w *radi *radj *radk
-   !                gammainf rhoinf pinfcorr
-   !   with respect to varying inputs: *p *gamma *w gammainf rhoinf
-   !                pinfcorr
+   !   gradient     of useful results: *p *gamma *w *si *sj *sk *radi
+   !                *radj *radk gammainf rhoinf pinfcorr
+   !   with respect to varying inputs: *p *gamma *w *si *sj *sk gammainf
+   !                rhoinf pinfcorr
    !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
-   !                radi:in radj:in radk:in
+   !                vol:in si:in sj:in sk:in radi:in radj:in radk:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -56,7 +56,7 @@
    REAL(kind=realtype) :: plim, rlim, clim2
    REAL(kind=realtype) :: clim2b
    REAL(kind=realtype) :: ux, uy, uz, cc2, qs, sx, sy, sz, rmu
-   REAL(kind=realtype) :: uxb, uyb, uzb, cc2b, qsb
+   REAL(kind=realtype) :: uxb, uyb, uzb, cc2b, qsb, sxb, syb, szb
    REAL(kind=realtype) :: ri, rj, rk, rij, rjk, rki
    REAL(kind=realtype) :: rib, rjb, rkb, rijb, rjkb, rkib
    REAL(kind=realtype) :: vsi, vsj, vsk, rfl, dpi, dpj, dpk
@@ -70,6 +70,9 @@
    REAL(kind=realtype) :: temp1
    REAL(kind=realtype) :: temp0
    REAL(kind=realtype) :: abs1b
+   REAL(kind=realtype) :: tempb9
+   REAL(kind=realtype) :: tempb8
+   REAL(kind=realtype) :: tempb7
    REAL(kind=realtype) :: tempb6
    REAL(kind=realtype) :: tempb5
    REAL(kind=realtype) :: tempb4
@@ -77,6 +80,9 @@
    REAL(kind=realtype) :: tempb2
    REAL(kind=realtype) :: tempb1
    REAL(kind=realtype) :: tempb0
+   REAL(kind=realtype) :: tempb12
+   REAL(kind=realtype) :: tempb11
+   REAL(kind=realtype) :: tempb10
    REAL(kind=realtype) :: abs0b
    REAL(kind=realtype) :: tempb
    REAL(kind=realtype) :: abs5
@@ -266,39 +272,39 @@
    rjk = (rj/rk)**adis
    rki = (rk/ri)**adis
    CALL POPREAL8(radk(i, j, k))
-   tempb1 = radk(i, j, k)*radkb(i, j, k)
+   tempb7 = radk(i, j, k)*radkb(i, j, k)
    radkb(i, j, k) = (one+one/rki+rjk)*radkb(i, j, k)
    rij = (ri/rj)**adis
    CALL POPREAL8(radj(i, j, k))
-   tempb3 = radj(i, j, k)*radjb(i, j, k)
-   rjkb = tempb1 - one*tempb3/rjk**2
+   tempb9 = radj(i, j, k)*radjb(i, j, k)
+   rjkb = tempb7 - one*tempb9/rjk**2
    radjb(i, j, k) = (one+one/rjk+rij)*radjb(i, j, k)
    CALL POPREAL8(radi(i, j, k))
-   tempb2 = radi(i, j, k)*radib(i, j, k)
-   rkib = tempb2 - one*tempb1/rki**2
-   rijb = tempb3 - one*tempb2/rij**2
+   tempb8 = radi(i, j, k)*radib(i, j, k)
+   rkib = tempb8 - one*tempb7/rki**2
+   rijb = tempb9 - one*tempb8/rij**2
    radib(i, j, k) = (one+one/rij+rki)*radib(i, j, k)
    IF (rk/ri .LE. 0.0_8 .AND. (adis .EQ. 0.0_8 .OR. adis .NE. &
    &               INT(adis))) THEN
-   tempb4 = 0.0
+   tempb10 = 0.0
    ELSE
-   tempb4 = adis*(rk/ri)**(adis-1)*rkib/ri
+   tempb10 = adis*(rk/ri)**(adis-1)*rkib/ri
    END IF
    IF (rj/rk .LE. 0.0_8 .AND. (adis .EQ. 0.0_8 .OR. adis .NE. &
    &               INT(adis))) THEN
-   tempb5 = 0.0
+   tempb11 = 0.0
    ELSE
-   tempb5 = adis*(rj/rk)**(adis-1)*rjkb/rk
+   tempb11 = adis*(rj/rk)**(adis-1)*rjkb/rk
    END IF
-   rkb = tempb4 - rj*tempb5/rk
+   rkb = tempb10 - rj*tempb11/rk
    IF (ri/rj .LE. 0.0_8 .AND. (adis .EQ. 0.0_8 .OR. adis .NE. &
    &               INT(adis))) THEN
-   tempb6 = 0.0
+   tempb12 = 0.0
    ELSE
-   tempb6 = adis*(ri/rj)**(adis-1)*rijb/rj
+   tempb12 = adis*(ri/rj)**(adis-1)*rijb/rj
    END IF
-   rib = tempb6 - rk*tempb4/ri
-   rjb = tempb5 - ri*tempb6/rj
+   rib = tempb12 - rk*tempb10/ri
+   rjb = tempb11 - ri*tempb12/rj
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    CALL POPREAL8(rk)
@@ -337,12 +343,17 @@
    sy = sk(i, j, k-1, 2) + sk(i, j, k, 2)
    sz = sk(i, j, k-1, 3) + sk(i, j, k, 3)
    temp2 = sx**2 + sy**2 + sz**2
-   abs2b = half*radkb(i, j, k)
-   IF (temp2*cc2 .EQ. 0.0_8) THEN
-   cc2b = 0.0
+   IF (cc2*temp2 .EQ. 0.0_8) THEN
+   tempb5 = 0.0
    ELSE
-   cc2b = half*temp2*radkb(i, j, k)/(2.0*SQRT(temp2*cc2))
+   tempb5 = half*radkb(i, j, k)/(2.0*SQRT(cc2*temp2))
    END IF
+   tempb6 = cc2*tempb5
+   abs2b = half*radkb(i, j, k)
+   cc2b = temp2*tempb5
+   sxb = 2*sx*tempb6
+   syb = 2*sy*tempb6
+   szb = 2*sz*tempb6
    radkb(i, j, k) = 0.0_8
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
@@ -350,16 +361,36 @@
    ELSE
    qsb = -abs2b
    END IF
+   ux = w(i, j, k, ivx)
+   uy = w(i, j, k, ivy)
+   uz = w(i, j, k, ivz)
    uxb = sx*qsb
+   sxb = sxb + ux*qsb
    uyb = sy*qsb
+   syb = syb + uy*qsb
    uzb = sz*qsb
+   szb = szb + uz*qsb
+   skb(i, j, k-1, 3) = skb(i, j, k-1, 3) + szb
+   skb(i, j, k, 3) = skb(i, j, k, 3) + szb
+   skb(i, j, k-1, 2) = skb(i, j, k-1, 2) + syb
+   skb(i, j, k, 2) = skb(i, j, k, 2) + syb
+   skb(i, j, k-1, 1) = skb(i, j, k-1, 1) + sxb
+   skb(i, j, k, 1) = skb(i, j, k, 1) + sxb
    sx = sj(i, j-1, k, 1) + sj(i, j, k, 1)
    sy = sj(i, j-1, k, 2) + sj(i, j, k, 2)
    sz = sj(i, j-1, k, 3) + sj(i, j, k, 3)
    temp1 = sx**2 + sy**2 + sz**2
+   IF (cc2*temp1 .EQ. 0.0_8) THEN
+   tempb3 = 0.0
+   ELSE
+   tempb3 = half*radjb(i, j, k)/(2.0*SQRT(cc2*temp1))
+   END IF
+   tempb4 = cc2*tempb3
    abs1b = half*radjb(i, j, k)
-   IF (.NOT.temp1*cc2 .EQ. 0.0_8) cc2b = cc2b + half*temp1*&
-   &                 radjb(i, j, k)/(2.0*SQRT(temp1*cc2))
+   cc2b = cc2b + temp1*tempb3
+   sxb = 2*sx*tempb4
+   syb = 2*sy*tempb4
+   szb = 2*sz*tempb4
    radjb(i, j, k) = 0.0_8
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
@@ -368,15 +399,32 @@
    qsb = -abs1b
    END IF
    uxb = uxb + sx*qsb
+   sxb = sxb + ux*qsb
    uyb = uyb + sy*qsb
+   syb = syb + uy*qsb
    uzb = uzb + sz*qsb
+   szb = szb + uz*qsb
+   sjb(i, j-1, k, 3) = sjb(i, j-1, k, 3) + szb
+   sjb(i, j, k, 3) = sjb(i, j, k, 3) + szb
+   sjb(i, j-1, k, 2) = sjb(i, j-1, k, 2) + syb
+   sjb(i, j, k, 2) = sjb(i, j, k, 2) + syb
+   sjb(i, j-1, k, 1) = sjb(i, j-1, k, 1) + sxb
+   sjb(i, j, k, 1) = sjb(i, j, k, 1) + sxb
    sx = si(i-1, j, k, 1) + si(i, j, k, 1)
    sy = si(i-1, j, k, 2) + si(i, j, k, 2)
    sz = si(i-1, j, k, 3) + si(i, j, k, 3)
    temp0 = sx**2 + sy**2 + sz**2
+   IF (cc2*temp0 .EQ. 0.0_8) THEN
+   tempb1 = 0.0
+   ELSE
+   tempb1 = half*radib(i, j, k)/(2.0*SQRT(cc2*temp0))
+   END IF
+   tempb2 = cc2*tempb1
    abs0b = half*radib(i, j, k)
-   IF (.NOT.temp0*cc2 .EQ. 0.0_8) cc2b = cc2b + half*temp0*&
-   &                 radib(i, j, k)/(2.0*SQRT(temp0*cc2))
+   cc2b = cc2b + temp0*tempb1
+   sxb = 2*sx*tempb2
+   syb = 2*sy*tempb2
+   szb = 2*sz*tempb2
    radib(i, j, k) = 0.0_8
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
@@ -385,8 +433,17 @@
    qsb = -abs0b
    END IF
    uxb = uxb + sx*qsb
+   sxb = sxb + ux*qsb
    uyb = uyb + sy*qsb
+   syb = syb + uy*qsb
    uzb = uzb + sz*qsb
+   szb = szb + uz*qsb
+   sib(i-1, j, k, 3) = sib(i-1, j, k, 3) + szb
+   sib(i, j, k, 3) = sib(i, j, k, 3) + szb
+   sib(i-1, j, k, 2) = sib(i-1, j, k, 2) + syb
+   sib(i, j, k, 2) = sib(i, j, k, 2) + syb
+   sib(i-1, j, k, 1) = sib(i-1, j, k, 1) + sxb
+   sib(i, j, k, 1) = sib(i, j, k, 1) + sxb
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    clim2b = clim2b + cc2b

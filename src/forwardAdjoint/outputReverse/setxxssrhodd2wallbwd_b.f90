@@ -2,9 +2,11 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of setxxssrhodd2wallbwd in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *w *x rho1 rho2 xx
-   !   with respect to varying inputs: *w *x rho1 rho2 xx
-   !   Plus diff mem management of: w:in x:in
+   !   gradient     of useful results: *w *x *si *sj *sk rho1 rho2
+   !                xx ss
+   !   with respect to varying inputs: *w *x *si *sj *sk rho1 rho2
+   !                xx ss
+   !   Plus diff mem management of: w:in x:in si:in sj:in sk:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -14,8 +16,8 @@
    !      * Last modified: 10-28-2014                                      *
    !      *                                                                *
    !      ******************************************************************
-   SUBROUTINE SETXXSSRHODD2WALLBWD_B(nn, xx, xxb, ss, rho1, rho1b, rho2, &
-   & rho2b, dd2wall)
+   SUBROUTINE SETXXSSRHODD2WALLBWD_B(nn, xx, xxb, ss, ssb, rho1, rho1b, &
+   & rho2, rho2b, dd2wall)
    USE BCTYPES
    USE BLOCKPOINTERS_B
    USE FLOWVARREFSTATE
@@ -29,7 +31,7 @@
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rho2b, rho1b
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: dd2wall
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, 3) :: ss, xx
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, 3) :: xxb
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, 3) :: ssb, xxb
    !
    !      ******************************************************************
    !      *                                                                *
@@ -43,6 +45,8 @@
    CASE (imin) 
    xb(1, 1:je, 1:ke, :) = xb(1, 1:je, 1:ke, :) + xxb(1:je, 1:ke, :)
    xxb(1:je, 1:ke, :) = 0.0_8
+   sib(1, 1:je, 1:ke, :) = sib(1, 1:je, 1:ke, :) + ssb(1:je, 1:ke, :)
+   ssb(1:je, 1:ke, :) = 0.0_8
    wb(1, 1:je, 1:ke, irho) = wb(1, 1:je, 1:ke, irho) + rho1b(1:je, 1:ke&
    &     )
    rho1b(1:je, 1:ke) = 0.0_8
@@ -52,6 +56,8 @@
    CASE (imax) 
    xb(il, 1:je, 1:ke, :) = xb(il, 1:je, 1:ke, :) + xxb(1:je, 1:ke, :)
    xxb(1:je, 1:ke, :) = 0.0_8
+   sib(il, 1:je, 1:ke, :) = sib(il, 1:je, 1:ke, :) + ssb(1:je, 1:ke, :)
+   ssb(1:je, 1:ke, :) = 0.0_8
    wb(ie, 1:je, 1:ke, irho) = wb(ie, 1:je, 1:ke, irho) + rho1b(1:je, 1:&
    &     ke)
    rho1b(1:je, 1:ke) = 0.0_8
@@ -61,6 +67,8 @@
    CASE (jmin) 
    xb(1:ie, 1, 1:ke, :) = xb(1:ie, 1, 1:ke, :) + xxb(1:ie, 1:ke, :)
    xxb(1:ie, 1:ke, :) = 0.0_8
+   sjb(1:ie, 1, 1:ke, :) = sjb(1:ie, 1, 1:ke, :) + ssb(1:ie, 1:ke, :)
+   ssb(1:ie, 1:ke, :) = 0.0_8
    wb(1:ie, 1, 1:ke, irho) = wb(1:ie, 1, 1:ke, irho) + rho1b(1:ie, 1:ke&
    &     )
    rho1b(1:ie, 1:ke) = 0.0_8
@@ -70,6 +78,8 @@
    CASE (jmax) 
    xb(1:ie, jl, 1:ke, :) = xb(1:ie, jl, 1:ke, :) + xxb(1:ie, 1:ke, :)
    xxb(1:ie, 1:ke, :) = 0.0_8
+   sjb(1:ie, jl, 1:ke, :) = sjb(1:ie, jl, 1:ke, :) + ssb(1:ie, 1:ke, :)
+   ssb(1:ie, 1:ke, :) = 0.0_8
    wb(1:ie, je, 1:ke, irho) = wb(1:ie, je, 1:ke, irho) + rho1b(1:ie, 1:&
    &     ke)
    rho1b(1:ie, 1:ke) = 0.0_8
@@ -79,6 +89,8 @@
    CASE (kmin) 
    xb(1:ie, 1:je, 1, :) = xb(1:ie, 1:je, 1, :) + xxb(1:ie, 1:je, :)
    xxb(1:ie, 1:je, :) = 0.0_8
+   skb(1:ie, 1:je, 1, :) = skb(1:ie, 1:je, 1, :) + ssb(1:ie, 1:je, :)
+   ssb(1:ie, 1:je, :) = 0.0_8
    wb(1:ie, 1:je, 1, irho) = wb(1:ie, 1:je, 1, irho) + rho1b(1:ie, 1:je&
    &     )
    rho1b(1:ie, 1:je) = 0.0_8
@@ -88,6 +100,8 @@
    CASE (kmax) 
    xb(1:ie, 1:je, kl, :) = xb(1:ie, 1:je, kl, :) + xxb(1:ie, 1:je, :)
    xxb(1:ie, 1:je, :) = 0.0_8
+   skb(1:ie, 1:je, kl, :) = skb(1:ie, 1:je, kl, :) + ssb(1:ie, 1:je, :)
+   ssb(1:ie, 1:je, :) = 0.0_8
    wb(1:ie, 1:je, ke, irho) = wb(1:ie, 1:je, ke, irho) + rho1b(1:ie, 1:&
    &     je)
    rho1b(1:ie, 1:je) = 0.0_8

@@ -327,9 +327,9 @@ subroutine metric_block
      ! and set ss and mult accordingly.
 
 #ifndef TAPENADE_REVERSE
-     call setssMetric(nn, ss)
+     call setssMetric(mm, ss)
 #else
-     call setssMetricBwd(nn, ss)
+     call setssMetricBwd(mm, ss)
 #endif
 
      select case (BCFaceID(mm))
@@ -376,9 +376,9 @@ subroutine metric_block
      enddo
 
 #ifndef TAPENADE_REVERSE
-     call resetssMetric(nn, ss)
+     call resetssMetric(mm, ss)
 #else
-     call resetssMetricBwd(nn, ss)
+     call resetssMetricBwd(mm, ss)
 #endif
 
   enddo bocoLoop
