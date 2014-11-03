@@ -131,7 +131,6 @@ subroutine verifyMatProd
         end do
      end do
      call getdRdwTVec(vec1, vec2, 3072*5)
-
      
      call BLOCK_RES_B(nn, 1, .False., alpha, alphab, beta, betab, &
           & liftindex, force, forceb, moment, momentb, sepsensor, sepsensorb, &
@@ -153,12 +152,13 @@ subroutine verifyMatProd
         end do
      end do
      print *, 'state done'
+     deallocate(vec1, vec2)
      call dealloc_derivative_values(nn, level)
      call dealloc_derivative_values_bwd(nn, level)
 
   end if logicCheck1
 
-  !Check state
+  !Check spatial
   logicCheck2: if ( verifySpatial ) then
      nn = 1
      ! Set pointers to the first timeInstance...just to getSizes
@@ -176,7 +176,7 @@ subroutine verifyMatProd
      ! Reset All States and possibe AD seeds
      flowdomsb(1,1,1)%dw = zero 
      print *, nNodeslocal(1)
-     allocate(vec1(nNodesLocal(1)*3),vec2(nNodesLocal(1)*3))
+     allocate(vec1(3072*3),vec2(nNodesLocal(1)*3))
      
      flowdomsb(1,1,1)%x = zero
      ii = 0
@@ -188,13 +188,12 @@ subroutine verifyMatProd
                  call random_number(ran)
                  ii = ii + 1
                  vec1(ii) = ran
-                 vec2(ii) = ran
                  flowdomsb(1,1,1)%dw(i, j, k, l) = ran
               end do
            end do
         end do
      end do
-     call getdRdXvTPsi(vec1, vec2, nNodesLocal(1)*3)
+     call getdRdXvTPsi(vec1, vec2, 3072*5)
 
      call BLOCK_RES_B(nn, 1, .False., alpha, alphab, beta, betab, &
           & liftindex, force, forceb, moment, momentb, sepsensor, sepsensorb, &
@@ -215,6 +214,7 @@ subroutine verifyMatProd
         end do
      end do
      print *, 'spatial done'
+     deallocate(vec1, vec2)
      call dealloc_derivative_values(nn, level)
      call dealloc_derivative_values_bwd(nn, level)
 
