@@ -40,6 +40,8 @@ FF90_OBJECTS =  computeetot_b.o\
 		computelamviscosity_b.o\
 		extrapolate2ndhalo_b.o\
 		timestep_block_b.o\
+		metric_block_b.o\
+		xhalo_block_b.o\
 		applyallbc_block_b.o\
 		residual_block_b.o\
 		bceulerwall_b.o\
@@ -54,10 +56,12 @@ FF90_OBJECTS =  computeetot_b.o\
 		viscousflux_b.o \
 		computeetotcellcpfit_b.o \
                 setbcpointersbwd_b.o\
+		setssbwd_b.o\
+		resetssbwd_b.o\
 		setpp3pp4bwd_b.o\
 		resetpp3pp4bwd_b.o\
 		setallxbwd_b.o\
-		resetallxwd_b.o\
+		resetallxbwd_b.o\
 		setssmetricbwd_b.o\
 		resetssmetricbwd_b.o\
 		setgammabwd_b.o\
