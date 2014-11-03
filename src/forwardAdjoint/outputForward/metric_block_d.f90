@@ -36,11 +36,38 @@
    REAL(kind=realtype), DIMENSION(3) :: v1d, v2d
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ss
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ssd
-   LOGICAL :: checkk, checkj, checki, checkall
+   INTERFACE 
+   SUBROUTINE SETSSMETRIC(nn, ss)
+   USE BCTYPES
+   USE BLOCKPOINTERS_D
+   IMPLICIT NONE
+   INTEGER(kind=inttype), INTENT(IN) :: nn
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ss
+   END SUBROUTINE SETSSMETRIC
+   SUBROUTINE RESETSSMETRIC(nn, ss)
+   USE BCTYPES
+   USE BLOCKPOINTERS_D
+   IMPLICIT NONE
+   INTEGER(kind=inttype), INTENT(IN) :: nn
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ss
+   END SUBROUTINE RESETSSMETRIC
+   END INTERFACE
+      INTERFACE 
+   SUBROUTINE SETSSMETRIC_D(nn, ss, ssd)
+   USE BCTYPES
+   USE BLOCKPOINTERS_D
+   IMPLICIT NONE
+   INTEGER(kind=inttype), INTENT(IN) :: nn
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ss
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ssd
+   END SUBROUTINE SETSSMETRIC_D
+   END INTERFACE
+      LOGICAL :: checkk, checkj, checki, checkall
    INTRINSIC ABS
    INTRINSIC SQRT
    REAL(kind=realtype) :: arg1
    REAL(kind=realtype) :: arg1d
+   INTEGER(kind=inttype) :: nn
    INTEGER :: ii1
    !
    !      ******************************************************************
@@ -346,31 +373,20 @@
    bocoloop:DO mm=1,nbocos
    ! Determine the block face on which this subface is located
    ! and set ss and mult accordingly.
+   CALL SETSSMETRIC_D(nn, ss, ssd)
    SELECT CASE  (bcfaceid(mm)) 
    CASE (imin) 
    mult = -one
-   ssd => sid(1, :, :, :)
-   ss => si(1, :, :, :)
    CASE (imax) 
    mult = one
-   ssd => sid(il, :, :, :)
-   ss => si(il, :, :, :)
    CASE (jmin) 
    mult = -one
-   ssd => sjd(:, 1, :, :)
-   ss => sj(:, 1, :, :)
    CASE (jmax) 
    mult = one
-   ssd => sjd(:, jl, :, :)
-   ss => sj(:, jl, :, :)
    CASE (kmin) 
    mult = -one
-   ssd => skd(:, :, 1, :)
-   ss => sk(:, :, 1, :)
    CASE (kmax) 
    mult = one
-   ssd => skd(:, :, kl, :)
-   ss => sk(:, :, kl, :)
    END SELECT
    ! Loop over the boundary faces of the subface.
    DO j=bcdata(mm)%jcbeg,bcdata(mm)%jcend
@@ -404,6 +420,7 @@
    bcdata(mm)%norm(i, j, 3) = fact*zp
    END DO
    END DO
+   CALL RESETSSMETRIC(nn, ss)
    END DO bocoloop
       CONTAINS
    !  Differentiation of volpym in forward (tangent) mode (with options i4 dr8 r8):

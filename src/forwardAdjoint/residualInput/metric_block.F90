@@ -25,7 +25,38 @@ subroutine metric_block
 
   real(kind=realType), dimension(3) :: v1, v2
 
+#ifndef TAPENADE_REVERSE
   real(kind=realType), dimension(:,:,:), pointer :: ss
+
+    !
+!      Interfaces
+!
+       interface
+          subroutine setssMetric(nn, ss)
+
+           use BCTypes
+           use blockPointers
+           implicit none
+
+           integer(kind=intType), intent(in) :: nn
+           real(kind=realType), dimension(:,:,:), pointer :: ss
+         end subroutine setssMetric
+
+        subroutine resetssMetric(nn, ss)
+
+           use BCTypes
+           use blockPointers
+           implicit none
+
+           integer(kind=intType), intent(in) :: nn
+           real(kind=realType), dimension(:,:,:), pointer :: ss
+         end subroutine resetssMetric
+
+       end interface
+#else
+       real(kind=realType), dimension(imaxDim,jmaxDim,3) :: ss
+#endif
+
   logical :: checkK, checkJ, checkI, checkAll
 
   !
@@ -295,25 +326,31 @@ subroutine metric_block
      ! Determine the block face on which this subface is located
      ! and set ss and mult accordingly.
 
+#ifndef TAPENADE_REVERSE
+     call setssMetric(nn, ss)
+#else
+     call setssMetricBwd(nn, ss)
+#endif
+
      select case (BCFaceID(mm))
 
      case (iMin)
-        mult = -one; ss => si(1,:,:,:)
+        mult = -one
 
      case (iMax)
-        mult = one;  ss => si(il,:,:,:)
+        mult = one
 
      case (jMin)
-        mult = -one; ss => sj(:,1,:,:)
+        mult = -one
 
      case (jMax)
-        mult = one;  ss => sj(:,jl,:,:)
+        mult = one
 
      case (kMin)
-        mult = -one; ss => sk(:,:,1,:)
+        mult = -one
 
      case (kMax)
-        mult = one;  ss => sk(:,:,kl,:)
+        mult = one
 
      end select
 
@@ -337,6 +374,12 @@ subroutine metric_block
 
         enddo
      enddo
+
+#ifndef TAPENADE_REVERSE
+     call resetssMetric(nn, ss)
+#else
+     call resetssMetricBwd(nn, ss)
+#endif
 
   enddo bocoLoop
 
