@@ -232,7 +232,7 @@ subroutine xhalo_block
 #ifndef TAPENADE_REVERSE
                call setallx(mm, x0, x1, x2)
 #else
-               call setallxBwd(mm, x0, x1, x2))
+               call setallxBwd(mm, x0, x1, x2)
 #endif
          
         select case (BCFaceID(mm))
@@ -360,7 +360,7 @@ subroutine xhalo_block
 #ifndef TAPENADE_REVERSE
                call resetallx(mm, x0, x1, x2)
 #else
-               call resetallxBwd(mm, x0, x1, x2))
+               call resetallxBwd(mm, x0, x1, x2)
 #endif
 
      endif testSymmetry
