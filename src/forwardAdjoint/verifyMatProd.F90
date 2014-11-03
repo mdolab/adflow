@@ -158,6 +158,70 @@ subroutine verifyMatProd
 
   end if logicCheck1
 
+  !Check state
+  logicCheck1: if ( verifySpatial ) then
+     nn = 1
+     ! Set pointers to the first timeInstance...just to getSizes
+     call setPointers(nn, level, 1)
+     call setDiffSizes
+     
+     ! Allocate the memory we need for this block to do the forward
+     ! mode derivatives and copy reference values
+     call alloc_derivative_values(nn, level)
+     call alloc_derivative_values_bwd(nn, level)
+        
+     ! Set pointers and derivative pointers
+     call setPointers_b(nn, level, 1)
+     !call setPointers_d(nn, level, 1)
+     ! Reset All States and possibe AD seeds
+     flowdomsb(1,1,1)%dw = zero 
+     print *, ncellslocal(1)
+     allocate(vec1(3072*5),vec2(3072*5))
+     
+     flowdomsb(1,1,1)%x = zero
+     ii = 0
+     do k=2, kl
+        do j=2,jl
+           do i=2,il
+              do l = 1,5                
+                 call random_seed
+                 call random_number(ran)
+                 ii = ii + 1
+                 vec1(ii) = ran
+                 vec2(ii) = ran
+                 flowdomsb(1,1,1)%dw(i, j, k, l) = ran
+              end do
+           end do
+        end do
+     end do
+     call getdRdxTVec(vec1, vec2, 3072*5)
+
+     
+     call BLOCK_RES_B(nn, 1, .False., alpha, alphab, beta, betab, &
+          & liftindex, force, forceb, moment, momentb, sepsensor, sepsensorb, &
+          & cavitation, cavitationb)
+     
+
+     ii = 0
+     do k=2, kl
+        do j=2,jl
+           do i=2,il
+              do l = 1,5
+                 ii = ii + 1
+                 if (abs(flowdomsb(1,1,1)%w(i,j,k,l) - vec2(ii)) > 1e-4) then
+                    print *,i,j,k,l,flowdomsb(1,1,1)%w(i, j, k, l)-vec2(ii)
+                    print *, flowdomsb(1,1,1)%w(i, j, k, l), vec2(ii)
+                 end if
+              end do
+           end do
+        end do
+     end do
+     print *, 'done'
+     call dealloc_derivative_values(nn, level)
+     call dealloc_derivative_values_bwd(nn, level)
+
+  end if logicCheck1
+
   ! Reset the correct equation parameters if we were useing the frozen
   ! Turbulent 
   if (resetToRANS) then
