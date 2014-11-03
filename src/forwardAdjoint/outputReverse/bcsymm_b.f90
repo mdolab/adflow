@@ -2,10 +2,10 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of bcsymm in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *rev *p *w *rlv
-   !   with respect to varying inputs: *rev *p *w *rlv
+   !   gradient     of useful results: *rev *p *w *rlv *(*bcdata.norm)
+   !   with respect to varying inputs: *rev *p *w *rlv *(*bcdata.norm)
    !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
-   !                bcdata:in
+   !                bcdata:in *bcdata.norm:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -79,20 +79,56 @@
    bocos:DO nn=1,nbocos
    ! Check for symmetry boundary condition.
    IF (bctype(nn) .EQ. symm) THEN
+   ! Nullify the pointers, because some compilers require that.
+   !nullify(ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2)
+   ! Set the pointers to the correct subface.
+   CALL PUSHREAL8ARRAY(ww2, imaxdim*jmaxdim*nw)
+   CALL SETBCPOINTERSBWD(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
+   &                          rev1, rev2, mm)
+   ! Set the additional pointers for gamma1 and gamma2.
    ad_from0 = bcdata(nn)%jcbeg
    ! Loop over the generic subface to set the state in the
    ! halo cells.
    DO j=ad_from0,bcdata(nn)%jcend
    ad_from = bcdata(nn)%icbeg
    DO i=ad_from,bcdata(nn)%icend
+   ! Store the three components of the unit normal a
+   ! bit easier.
+   ! Replace with actual BCData - Peter Lyu
+   !nnx = BCData(nn)%norm(i,j,1)
+   !nny = BCData(nn)%norm(i,j,2)
+   !nnz = BCData(nn)%norm(i,j,3)
+   ! Determine twice the normal velocity component,
+   ! which must be substracted from the donor velocity
+   ! to obtain the halo velocity.
+   CALL PUSHREAL8(vn)
+   vn = two*(ww2(i, j, ivx)*bcdata(nn)%norm(i, j, 1)+ww2(i, j, &
+   &             ivy)*bcdata(nn)%norm(i, j, 2)+ww2(i, j, ivz)*bcdata(nn)%&
+   &             norm(i, j, 3))
+   ! Determine the flow variables in the halo cell.
+   ww1(i, j, irho) = ww2(i, j, irho)
+   ww1(i, j, ivx) = ww2(i, j, ivx) - vn*bcdata(nn)%norm(i, j, 1&
+   &             )
+   ww1(i, j, ivy) = ww2(i, j, ivy) - vn*bcdata(nn)%norm(i, j, 2&
+   &             )
+   ww1(i, j, ivz) = ww2(i, j, ivz) - vn*bcdata(nn)%norm(i, j, 3&
+   &             )
+   ww1(i, j, irhoe) = ww2(i, j, irhoe)
+   ! Simply copy the turbulent variables.
+   DO l=nt1mg,nt2mg
+   ww1(i, j, l) = ww2(i, j, l)
+   END DO
    ! Set the pressure and gamma and possibly the
    ! laminar and eddy viscosity in the halo.
+   pp1(i, j) = pp2(i, j)
    IF (viscous) THEN
+   rlv1(i, j) = rlv2(i, j)
    CALL PUSHCONTROL1B(0)
    ELSE
    CALL PUSHCONTROL1B(1)
    END IF
    IF (eddymodel) THEN
+   rev1(i, j) = rev2(i, j)
    CALL PUSHCONTROL1B(1)
    ELSE
    CALL PUSHCONTROL1B(0)
@@ -103,6 +139,12 @@
    END DO
    CALL PUSHINTEGER4(j - 1)
    CALL PUSHINTEGER4(ad_from0)
+   ! deallocation all pointer
+   CALL PUSHREAL8ARRAY(rlv, SIZE(rlv, 1)*SIZE(rlv, 2)*SIZE(rlv, 3))
+   CALL PUSHREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, &
+   &                     4))
+   CALL RESETBCPOINTERSBWD(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
+   &                            rev1, rev2, mm)
    CALL PUSHCONTROL1B(1)
    ELSE
    CALL PUSHCONTROL1B(0)
@@ -121,6 +163,9 @@
    DO nn=nbocos,1,-1
    CALL POPCONTROL1B(branch)
    IF (branch .NE. 0) THEN
+   CALL POPREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4&
+   &                    ))
+   CALL POPREAL8ARRAY(rlv, SIZE(rlv, 1)*SIZE(rlv, 2)*SIZE(rlv, 3))
    CALL RESETBCPOINTERSBWD_B(nn, ww1, ww1b, ww2, ww2b, pp1, pp1b, &
    &                           pp2, pp2b, rlv1, rlv1b, rlv2, rlv2b, rev1, &
    &                           rev1b, rev2, rev2b, mm)
@@ -150,24 +195,38 @@
    ww1b(i, j, irhoe) = 0.0_8
    ww2b(i, j, ivz) = ww2b(i, j, ivz) + ww1b(i, j, ivz)
    vnb = -(bcdata(nn)%norm(i, j, 3)*ww1b(i, j, ivz))
+   bcdatab(nn)%norm(i, j, 3) = bcdatab(nn)%norm(i, j, 3) - vn*&
+   &             ww1b(i, j, ivz)
    ww1b(i, j, ivz) = 0.0_8
    ww2b(i, j, ivy) = ww2b(i, j, ivy) + ww1b(i, j, ivy)
    vnb = vnb - bcdata(nn)%norm(i, j, 2)*ww1b(i, j, ivy)
+   bcdatab(nn)%norm(i, j, 2) = bcdatab(nn)%norm(i, j, 2) - vn*&
+   &             ww1b(i, j, ivy)
    ww1b(i, j, ivy) = 0.0_8
    ww2b(i, j, ivx) = ww2b(i, j, ivx) + ww1b(i, j, ivx)
    vnb = vnb - bcdata(nn)%norm(i, j, 1)*ww1b(i, j, ivx)
+   bcdatab(nn)%norm(i, j, 1) = bcdatab(nn)%norm(i, j, 1) - vn*&
+   &             ww1b(i, j, ivx)
    ww1b(i, j, ivx) = 0.0_8
    ww2b(i, j, irho) = ww2b(i, j, irho) + ww1b(i, j, irho)
    ww1b(i, j, irho) = 0.0_8
+   CALL POPREAL8(vn)
    tempb = two*vnb
    ww2b(i, j, ivx) = ww2b(i, j, ivx) + bcdata(nn)%norm(i, j, 1)&
    &             *tempb
+   bcdatab(nn)%norm(i, j, 1) = bcdatab(nn)%norm(i, j, 1) + ww2(&
+   &             i, j, ivx)*tempb
    ww2b(i, j, ivy) = ww2b(i, j, ivy) + bcdata(nn)%norm(i, j, 2)&
    &             *tempb
+   bcdatab(nn)%norm(i, j, 2) = bcdatab(nn)%norm(i, j, 2) + ww2(&
+   &             i, j, ivy)*tempb
    ww2b(i, j, ivz) = ww2b(i, j, ivz) + bcdata(nn)%norm(i, j, 3)&
    &             *tempb
+   bcdatab(nn)%norm(i, j, 3) = bcdatab(nn)%norm(i, j, 3) + ww2(&
+   &             i, j, ivz)*tempb
    END DO
    END DO
+   CALL POPREAL8ARRAY(ww2, imaxdim*jmaxdim*nw)
    CALL SETBCPOINTERSBWD_B(nn, ww1, ww1b, ww2, ww2b, pp1, pp1b, pp2&
    &                         , pp2b, rlv1, rlv1b, rlv2, rlv2b, rev1, rev1b&
    &                         , rev2, rev2b, mm)

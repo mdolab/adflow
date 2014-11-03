@@ -56,6 +56,10 @@ FF90_OBJECTS =  computeetot_b.o\
                 setbcpointersbwd_b.o\
 		setpp3pp4bwd_b.o\
 		resetpp3pp4bwd_b.o\
+		setallxbwd_b.o\
+		resetallxwd_b.o\
+		setssmetricbwd_b.o\
+		resetssmetricbwd_b.o\
 		setgammabwd_b.o\
 		resetgammabwd_b.o\
                 setww0pp0rlv0rev0bwd_b.o\

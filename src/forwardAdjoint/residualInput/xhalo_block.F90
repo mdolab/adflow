@@ -230,41 +230,36 @@ subroutine xhalo_block
         ! which the subface is located.
 
 #ifndef TAPENADE_REVERSE
-               call setallx(nn, x0, x1, x2)
+               call setallx(mm, x0, x1, x2)
 #else
-               call setallxBwd(nn, x0, x1, x2))
+               call setallxBwd(mm, x0, x1, x2))
 #endif
          
         select case (BCFaceID(mm))
         case (iMin)
            iBeg = jnBeg(mm); iEnd = jnEnd(mm); iiMax = jl
            jBeg = knBeg(mm); jEnd = knEnd(mm); jjMax = kl
-           x0 => x(0,:,:,:); x1 => x(1,:,:,:); x2 => x(2,:,:,:)
 
         case (iMax)
            iBeg = jnBeg(mm); iEnd = jnEnd(mm); iiMax = jl
            jBeg = knBeg(mm); jEnd = knEnd(mm); jjMax = kl
-           x0 => x(ie,:,:,:); x1 => x(il,:,:,:); x2 => x(nx,:,:,:)
 
         case (jMin)
            iBeg = inBeg(mm); iEnd = inEnd(mm); iiMax = il
            jBeg = knBeg(mm); jEnd = knEnd(mm); jjMax = kl
-           x0 => x(:,0,:,:); x1 => x(:,1,:,:); x2 => x(:,2,:,:)
 
         case (jMax)
            iBeg = inBeg(mm); iEnd = inEnd(mm); iiMax = il
            jBeg = knBeg(mm); jEnd = knEnd(mm); jjMax = kl
-           x0 => x(:,je,:,:); x1 => x(:,jl,:,:); x2 => x(:,ny,:,:)
 
         case (kMin)
            iBeg = inBeg(mm); iEnd = inEnd(mm); iiMax = il
            jBeg = jnBeg(mm); jEnd = jnEnd(mm); jjMax = jl
-           x0 => x(:,:,0,:); x1 => x(:,:,1,:); x2 => x(:,:,2,:)
 
         case (kMax)
            iBeg = inBeg(mm); iEnd = inEnd(mm); iiMax = il
            jBeg = jnBeg(mm); jEnd = jnEnd(mm); jjMax = jl
-           x0 => x(:,:,ke,:); x1 => x(:,:,kl,:); x2 => x(:,:,nz,:)
+
         end select
 
 
@@ -363,9 +358,9 @@ subroutine xhalo_block
         endif testSingular
 
 #ifndef TAPENADE_REVERSE
-               call resetallx(nn, x0, x1, x2)
+               call resetallx(mm, x0, x1, x2)
 #else
-               call resetallxBwd(nn, x0, x1, x2))
+               call resetallxBwd(mm, x0, x1, x2))
 #endif
 
      endif testSymmetry

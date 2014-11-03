@@ -64,7 +64,7 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   call referenceState
   call setFlowInfinityState
 
-#ifndef TAPENADE_REVERSE
+
   ! ------------------------------------------------
   !        Additional Spatial Components
   ! ------------------------------------------------
@@ -72,6 +72,7 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
 
      call xhalo_block
      call metric_block
+#ifndef TAPENADE_REVERSE
      ! -------------------------------------
      ! These functions are required for TS
      ! --------------------------------------
@@ -87,9 +88,9 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
      call gridVelocitiesFineLevel_block(useOldCoor, t, sps) ! Required for TS
      call normalVelocities_block(sps) ! Required for TS
      call slipVelocitiesFineLevel_block(useOldCoor, t, sps)
-
-  end if
 #endif
+  end if
+
   ! ------------------------------------------------
   !        Normal Residual Computation
   ! ------------------------------------------------
