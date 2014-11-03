@@ -137,9 +137,11 @@
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: ps
    END TYPE BCDATATYPE
    TYPE BCDATATYPE_B
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: norm
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: fp
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: fv
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: m
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: oarea
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: sepsensor
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: cavitation
    END TYPE BCDATATYPE_B
@@ -677,6 +679,7 @@
    END TYPE BLOCKTYPE
    TYPE BLOCKTYPE_B
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: x
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: vol
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: w
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: dw
    END TYPE BLOCKTYPE_B

@@ -152,14 +152,14 @@ subroutine verifyMatProd
            end do
         end do
      end do
-     print *, 'done'
+     print *, 'state done'
      call dealloc_derivative_values(nn, level)
      call dealloc_derivative_values_bwd(nn, level)
 
   end if logicCheck1
 
   !Check state
-  logicCheck1: if ( verifySpatial ) then
+  logicCheck2: if ( verifySpatial ) then
      nn = 1
      ! Set pointers to the first timeInstance...just to getSizes
      call setPointers(nn, level, 1)
@@ -175,8 +175,8 @@ subroutine verifyMatProd
      !call setPointers_d(nn, level, 1)
      ! Reset All States and possibe AD seeds
      flowdomsb(1,1,1)%dw = zero 
-     print *, ncellslocal(1)
-     allocate(vec1(3072*5),vec2(3072*5))
+     print *, nNodeslocal(1)
+     allocate(vec1(nNodesLocal(1)*3),vec2(nNodesLocal(1)*3))
      
      flowdomsb(1,1,1)%x = zero
      ii = 0
@@ -194,33 +194,31 @@ subroutine verifyMatProd
            end do
         end do
      end do
-     call getdRdxTVec(vec1, vec2, 3072*5)
+     call getdRdXvTPsi(vec1, vec2, nNodesLocal(1)*3)
 
-     
      call BLOCK_RES_B(nn, 1, .False., alpha, alphab, beta, betab, &
           & liftindex, force, forceb, moment, momentb, sepsensor, sepsensorb, &
           & cavitation, cavitationb)
      
-
      ii = 0
      do k=2, kl
         do j=2,jl
            do i=2,il
               do l = 1,5
                  ii = ii + 1
-                 if (abs(flowdomsb(1,1,1)%w(i,j,k,l) - vec2(ii)) > 1e-4) then
-                    print *,i,j,k,l,flowdomsb(1,1,1)%w(i, j, k, l)-vec2(ii)
-                    print *, flowdomsb(1,1,1)%w(i, j, k, l), vec2(ii)
+                 if (abs(flowdomsb(1,1,1)%x(i,j,k,l) - vec2(ii)) > 1e-4) then
+                    print *,i,j,k,l,flowdomsb(1,1,1)%x(i, j, k, l)-vec2(ii)
+                    print *, flowdomsb(1,1,1)%x(i, j, k, l), vec2(ii)
                  end if
               end do
            end do
         end do
      end do
-     print *, 'done'
+     print *, 'spatial done'
      call dealloc_derivative_values(nn, level)
      call dealloc_derivative_values_bwd(nn, level)
 
-  end if logicCheck1
+  end if logicCheck2
 
   ! Reset the correct equation parameters if we were useing the frozen
   ! Turbulent 

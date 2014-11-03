@@ -2,9 +2,10 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of prodwmag2 in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *dw *w timeref
-   !   with respect to varying inputs: *dw *w timeref
-   !   Plus diff mem management of: dw:in w:in
+   !   gradient     of useful results: *dw *w *vol *si *sj *sk timeref
+   !   with respect to varying inputs: *dw *w *vol *si *sj *sk timeref
+   !   Plus diff mem management of: dw:in w:in vol:in si:in sj:in
+   !                sk:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -39,7 +40,7 @@
    REAL(kind=realtype) :: uy, uz, vx, vz, wx, wy
    REAL(kind=realtype) :: uyb, uzb, vxb, vzb, wxb, wyb
    REAL(kind=realtype) :: fact, vortx, vorty, vortz
-   REAL(kind=realtype) :: vortxb, vortyb, vortzb
+   REAL(kind=realtype) :: factb, vortxb, vortyb, vortzb
    REAL(kind=realtype) :: omegax, omegay, omegaz
    REAL(kind=realtype) :: omegaxb, omegayb, omegazb
    !
@@ -64,41 +65,40 @@
    ! Use is made of the fact that the surrounding normals sum up
    ! to zero, such that the cell i,j,k does not give a
    ! contribution. The gradient is scaled by a factor 2*vol.
+   CALL PUSHREAL8(uy)
    uy = w(i+1, j, k, ivx)*si(i, j, k, 2) - w(i-1, j, k, ivx)*si(i-1&
    &         , j, k, 2) + w(i, j+1, k, ivx)*sj(i, j, k, 2) - w(i, j-1, k, &
    &         ivx)*sj(i, j-1, k, 2) + w(i, j, k+1, ivx)*sk(i, j, k, 2) - w(i&
    &         , j, k-1, ivx)*sk(i, j, k-1, 2)
+   CALL PUSHREAL8(uz)
    uz = w(i+1, j, k, ivx)*si(i, j, k, 3) - w(i-1, j, k, ivx)*si(i-1&
    &         , j, k, 3) + w(i, j+1, k, ivx)*sj(i, j, k, 3) - w(i, j-1, k, &
    &         ivx)*sj(i, j-1, k, 3) + w(i, j, k+1, ivx)*sk(i, j, k, 3) - w(i&
    &         , j, k-1, ivx)*sk(i, j, k-1, 3)
    ! Idem for the gradient of v.
+   CALL PUSHREAL8(vx)
    vx = w(i+1, j, k, ivy)*si(i, j, k, 1) - w(i-1, j, k, ivy)*si(i-1&
    &         , j, k, 1) + w(i, j+1, k, ivy)*sj(i, j, k, 1) - w(i, j-1, k, &
    &         ivy)*sj(i, j-1, k, 1) + w(i, j, k+1, ivy)*sk(i, j, k, 1) - w(i&
    &         , j, k-1, ivy)*sk(i, j, k-1, 1)
+   CALL PUSHREAL8(vz)
    vz = w(i+1, j, k, ivy)*si(i, j, k, 3) - w(i-1, j, k, ivy)*si(i-1&
    &         , j, k, 3) + w(i, j+1, k, ivy)*sj(i, j, k, 3) - w(i, j-1, k, &
    &         ivy)*sj(i, j-1, k, 3) + w(i, j, k+1, ivy)*sk(i, j, k, 3) - w(i&
    &         , j, k-1, ivy)*sk(i, j, k-1, 3)
    ! And for the gradient of w.
+   CALL PUSHREAL8(wx)
    wx = w(i+1, j, k, ivz)*si(i, j, k, 1) - w(i-1, j, k, ivz)*si(i-1&
    &         , j, k, 1) + w(i, j+1, k, ivz)*sj(i, j, k, 1) - w(i, j-1, k, &
    &         ivz)*sj(i, j-1, k, 1) + w(i, j, k+1, ivz)*sk(i, j, k, 1) - w(i&
    &         , j, k-1, ivz)*sk(i, j, k-1, 1)
+   CALL PUSHREAL8(wy)
    wy = w(i+1, j, k, ivz)*si(i, j, k, 2) - w(i-1, j, k, ivz)*si(i-1&
    &         , j, k, 2) + w(i, j+1, k, ivz)*sj(i, j, k, 2) - w(i, j-1, k, &
    &         ivz)*sj(i, j-1, k, 2) + w(i, j, k+1, ivz)*sk(i, j, k, 2) - w(i&
    &         , j, k-1, ivz)*sk(i, j, k-1, 2)
    ! Compute the three components of the vorticity vector.
    ! Substract the part coming from the rotating frame.
-   fact = half/vol(i, j, k)
-   CALL PUSHREAL8(vortx)
-   vortx = fact*(wy-vz) - two*omegax
-   CALL PUSHREAL8(vorty)
-   vorty = fact*(uz-wx) - two*omegay
-   CALL PUSHREAL8(vortz)
-   vortz = fact*(vx-uy) - two*omegaz
    ! Compute the magnitude squared of the vorticity.
    END DO
    END DO
@@ -109,59 +109,103 @@
    DO k=kl,2,-1
    DO j=jl,2,-1
    DO i=il,2,-1
+   fact = half/vol(i, j, k)
+   vortx = fact*(wy-vz) - two*omegax
+   vorty = fact*(uz-wx) - two*omegay
+   vortz = fact*(vx-uy) - two*omegaz
    vortxb = 2*vortx*dwb(i, j, k, ivort)
    vortyb = 2*vorty*dwb(i, j, k, ivort)
    vortzb = 2*vortz*dwb(i, j, k, ivort)
    dwb(i, j, k, ivort) = 0.0_8
-   fact = half/vol(i, j, k)
-   CALL POPREAL8(vortz)
+   factb = (uz-wx)*vortyb + (wy-vz)*vortxb + (vx-uy)*vortzb
    vxb = fact*vortzb
    uyb = -(fact*vortzb)
    omegazb = omegazb - two*vortzb
-   CALL POPREAL8(vorty)
    uzb = fact*vortyb
    wxb = -(fact*vortyb)
    omegayb = omegayb - two*vortyb
-   CALL POPREAL8(vortx)
    wyb = fact*vortxb
    vzb = -(fact*vortxb)
    omegaxb = omegaxb - two*vortxb
+   volb(i, j, k) = volb(i, j, k) - half*factb/vol(i, j, k)**2
+   CALL POPREAL8(wy)
    wb(i+1, j, k, ivz) = wb(i+1, j, k, ivz) + si(i, j, k, 2)*wyb
+   sib(i, j, k, 2) = sib(i, j, k, 2) + w(i+1, j, k, ivz)*wyb
    wb(i-1, j, k, ivz) = wb(i-1, j, k, ivz) - si(i-1, j, k, 2)*wyb
+   sib(i-1, j, k, 2) = sib(i-1, j, k, 2) - w(i-1, j, k, ivz)*wyb
    wb(i, j+1, k, ivz) = wb(i, j+1, k, ivz) + sj(i, j, k, 2)*wyb
+   sjb(i, j, k, 2) = sjb(i, j, k, 2) + w(i, j+1, k, ivz)*wyb
    wb(i, j, k+1, ivz) = wb(i, j, k+1, ivz) + sk(i, j, k, 2)*wyb
+   skb(i, j, k, 2) = skb(i, j, k, 2) + w(i, j, k+1, ivz)*wyb
    wb(i, j-1, k, ivz) = wb(i, j-1, k, ivz) - sj(i, j-1, k, 2)*wyb
+   sjb(i, j-1, k, 2) = sjb(i, j-1, k, 2) - w(i, j-1, k, ivz)*wyb
    wb(i, j, k-1, ivz) = wb(i, j, k-1, ivz) - sk(i, j, k-1, 2)*wyb
+   skb(i, j, k-1, 2) = skb(i, j, k-1, 2) - w(i, j, k-1, ivz)*wyb
+   CALL POPREAL8(wx)
    wb(i+1, j, k, ivz) = wb(i+1, j, k, ivz) + si(i, j, k, 1)*wxb
+   sib(i, j, k, 1) = sib(i, j, k, 1) + w(i+1, j, k, ivz)*wxb
    wb(i-1, j, k, ivz) = wb(i-1, j, k, ivz) - si(i-1, j, k, 1)*wxb
+   sib(i-1, j, k, 1) = sib(i-1, j, k, 1) - w(i-1, j, k, ivz)*wxb
    wb(i, j+1, k, ivz) = wb(i, j+1, k, ivz) + sj(i, j, k, 1)*wxb
+   sjb(i, j, k, 1) = sjb(i, j, k, 1) + w(i, j+1, k, ivz)*wxb
    wb(i, j, k+1, ivz) = wb(i, j, k+1, ivz) + sk(i, j, k, 1)*wxb
+   skb(i, j, k, 1) = skb(i, j, k, 1) + w(i, j, k+1, ivz)*wxb
    wb(i, j-1, k, ivz) = wb(i, j-1, k, ivz) - sj(i, j-1, k, 1)*wxb
+   sjb(i, j-1, k, 1) = sjb(i, j-1, k, 1) - w(i, j-1, k, ivz)*wxb
    wb(i, j, k-1, ivz) = wb(i, j, k-1, ivz) - sk(i, j, k-1, 1)*wxb
+   skb(i, j, k-1, 1) = skb(i, j, k-1, 1) - w(i, j, k-1, ivz)*wxb
+   CALL POPREAL8(vz)
    wb(i+1, j, k, ivy) = wb(i+1, j, k, ivy) + si(i, j, k, 3)*vzb
+   sib(i, j, k, 3) = sib(i, j, k, 3) + w(i+1, j, k, ivy)*vzb
    wb(i-1, j, k, ivy) = wb(i-1, j, k, ivy) - si(i-1, j, k, 3)*vzb
+   sib(i-1, j, k, 3) = sib(i-1, j, k, 3) - w(i-1, j, k, ivy)*vzb
    wb(i, j+1, k, ivy) = wb(i, j+1, k, ivy) + sj(i, j, k, 3)*vzb
+   sjb(i, j, k, 3) = sjb(i, j, k, 3) + w(i, j+1, k, ivy)*vzb
    wb(i, j, k+1, ivy) = wb(i, j, k+1, ivy) + sk(i, j, k, 3)*vzb
+   skb(i, j, k, 3) = skb(i, j, k, 3) + w(i, j, k+1, ivy)*vzb
    wb(i, j-1, k, ivy) = wb(i, j-1, k, ivy) - sj(i, j-1, k, 3)*vzb
+   sjb(i, j-1, k, 3) = sjb(i, j-1, k, 3) - w(i, j-1, k, ivy)*vzb
    wb(i, j, k-1, ivy) = wb(i, j, k-1, ivy) - sk(i, j, k-1, 3)*vzb
+   skb(i, j, k-1, 3) = skb(i, j, k-1, 3) - w(i, j, k-1, ivy)*vzb
+   CALL POPREAL8(vx)
    wb(i+1, j, k, ivy) = wb(i+1, j, k, ivy) + si(i, j, k, 1)*vxb
+   sib(i, j, k, 1) = sib(i, j, k, 1) + w(i+1, j, k, ivy)*vxb
    wb(i-1, j, k, ivy) = wb(i-1, j, k, ivy) - si(i-1, j, k, 1)*vxb
+   sib(i-1, j, k, 1) = sib(i-1, j, k, 1) - w(i-1, j, k, ivy)*vxb
    wb(i, j+1, k, ivy) = wb(i, j+1, k, ivy) + sj(i, j, k, 1)*vxb
+   sjb(i, j, k, 1) = sjb(i, j, k, 1) + w(i, j+1, k, ivy)*vxb
    wb(i, j, k+1, ivy) = wb(i, j, k+1, ivy) + sk(i, j, k, 1)*vxb
+   skb(i, j, k, 1) = skb(i, j, k, 1) + w(i, j, k+1, ivy)*vxb
    wb(i, j-1, k, ivy) = wb(i, j-1, k, ivy) - sj(i, j-1, k, 1)*vxb
+   sjb(i, j-1, k, 1) = sjb(i, j-1, k, 1) - w(i, j-1, k, ivy)*vxb
    wb(i, j, k-1, ivy) = wb(i, j, k-1, ivy) - sk(i, j, k-1, 1)*vxb
+   skb(i, j, k-1, 1) = skb(i, j, k-1, 1) - w(i, j, k-1, ivy)*vxb
+   CALL POPREAL8(uz)
    wb(i+1, j, k, ivx) = wb(i+1, j, k, ivx) + si(i, j, k, 3)*uzb
+   sib(i, j, k, 3) = sib(i, j, k, 3) + w(i+1, j, k, ivx)*uzb
    wb(i-1, j, k, ivx) = wb(i-1, j, k, ivx) - si(i-1, j, k, 3)*uzb
+   sib(i-1, j, k, 3) = sib(i-1, j, k, 3) - w(i-1, j, k, ivx)*uzb
    wb(i, j+1, k, ivx) = wb(i, j+1, k, ivx) + sj(i, j, k, 3)*uzb
+   sjb(i, j, k, 3) = sjb(i, j, k, 3) + w(i, j+1, k, ivx)*uzb
    wb(i, j, k+1, ivx) = wb(i, j, k+1, ivx) + sk(i, j, k, 3)*uzb
+   skb(i, j, k, 3) = skb(i, j, k, 3) + w(i, j, k+1, ivx)*uzb
    wb(i, j-1, k, ivx) = wb(i, j-1, k, ivx) - sj(i, j-1, k, 3)*uzb
+   sjb(i, j-1, k, 3) = sjb(i, j-1, k, 3) - w(i, j-1, k, ivx)*uzb
    wb(i, j, k-1, ivx) = wb(i, j, k-1, ivx) - sk(i, j, k-1, 3)*uzb
+   skb(i, j, k-1, 3) = skb(i, j, k-1, 3) - w(i, j, k-1, ivx)*uzb
+   CALL POPREAL8(uy)
    wb(i+1, j, k, ivx) = wb(i+1, j, k, ivx) + si(i, j, k, 2)*uyb
+   sib(i, j, k, 2) = sib(i, j, k, 2) + w(i+1, j, k, ivx)*uyb
    wb(i-1, j, k, ivx) = wb(i-1, j, k, ivx) - si(i-1, j, k, 2)*uyb
+   sib(i-1, j, k, 2) = sib(i-1, j, k, 2) - w(i-1, j, k, ivx)*uyb
    wb(i, j+1, k, ivx) = wb(i, j+1, k, ivx) + sj(i, j, k, 2)*uyb
+   sjb(i, j, k, 2) = sjb(i, j, k, 2) + w(i, j+1, k, ivx)*uyb
    wb(i, j, k+1, ivx) = wb(i, j, k+1, ivx) + sk(i, j, k, 2)*uyb
+   skb(i, j, k, 2) = skb(i, j, k, 2) + w(i, j, k+1, ivx)*uyb
    wb(i, j-1, k, ivx) = wb(i, j-1, k, ivx) - sj(i, j-1, k, 2)*uyb
+   sjb(i, j-1, k, 2) = sjb(i, j-1, k, 2) - w(i, j-1, k, ivx)*uyb
    wb(i, j, k-1, ivx) = wb(i, j, k-1, ivx) - sk(i, j, k-1, 2)*uyb
+   skb(i, j, k-1, 2) = skb(i, j, k-1, 2) - w(i, j, k-1, ivx)*uyb
    END DO
    END DO
    END DO
