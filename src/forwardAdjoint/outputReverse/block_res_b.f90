@@ -368,7 +368,7 @@
    END DO
    END DO
    END DO
-   DO ii1=1,SIZE(bcdata(ii1)%oarea, 1)
+   DO ii1=1,SIZE(bcdata)
    CALL PUSHREAL8ARRAY(bcdata(ii1)%oarea, SIZE(bcdata(ii1)%oarea, 1)*&
    &                 SIZE(bcdata(ii1)%oarea, 2))
    END DO
