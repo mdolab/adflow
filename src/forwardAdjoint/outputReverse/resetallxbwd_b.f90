@@ -2,7 +2,7 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of resetallxbwd in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *x x0 x1 x2
+   !   gradient     of useful results: *x
    !   with respect to varying inputs: *x x0 x1 x2
    !   Plus diff mem management of: x:in
    !
@@ -22,8 +22,9 @@
    !      Subroutine arguments.
    !
    INTEGER(kind=inttype), INTENT(IN) :: nn
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, 3) :: x0, x1, x2
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, 3) :: x0b, x1b, x2b
+   REAL(kind=realtype), DIMENSION(0:imaxdim, 0:jmaxdim, 3) :: x0, x1, x2
+   REAL(kind=realtype), DIMENSION(0:imaxdim, 0:jmaxdim, 3) :: x0b, x1b, &
+   & x2b
    !
    !      ******************************************************************
    !      *                                                                *
@@ -35,46 +36,68 @@
    ! the pointers accordinly.
    SELECT CASE  (bcfaceid(nn)) 
    CASE (imin) 
-   x2b(1:je, 1:ke, :) = x2b(1:je, 1:ke, :) + xb(2, 1:je, 1:ke, :)
-   xb(2, 1:je, 1:ke, :) = 0.0_8
-   x1b(1:je, 1:ke, :) = x1b(1:je, 1:ke, :) + xb(1, 1:je, 1:ke, :)
-   xb(1, 1:je, 1:ke, :) = 0.0_8
-   x0b(1:je, 1:ke, :) = x0b(1:je, 1:ke, :) + xb(0, 1:je, 1:ke, :)
-   xb(0, 1:je, 1:ke, :) = 0.0_8
+   x2b = 0.0_8
+   x2b(0:je, 0:ke, :) = x2b(0:je, 0:ke, :) + xb(2, 0:je, 0:ke, :)
+   xb(2, 0:je, 0:ke, :) = 0.0_8
+   x1b = 0.0_8
+   x1b(0:je, 0:ke, :) = x1b(0:je, 0:ke, :) + xb(1, 0:je, 0:ke, :)
+   xb(1, 0:je, 0:ke, :) = 0.0_8
+   x0b = 0.0_8
+   x0b(0:je, 0:ke, :) = x0b(0:je, 0:ke, :) + xb(0, 0:je, 0:ke, :)
+   xb(0, 0:je, 0:ke, :) = 0.0_8
    CASE (imax) 
-   x2b(1:je, 1:ke, :) = x2b(1:je, 1:ke, :) + xb(nx, 1:je, 1:ke, :)
-   xb(nx, 1:je, 1:ke, :) = 0.0_8
-   x1b(1:je, 1:ke, :) = x1b(1:je, 1:ke, :) + xb(il, 1:je, 1:ke, :)
-   xb(il, 1:je, 1:ke, :) = 0.0_8
-   x0b(1:je, 1:ke, :) = x0b(1:je, 1:ke, :) + xb(ie, 1:je, 1:ke, :)
-   xb(ie, 1:je, 1:ke, :) = 0.0_8
+   x2b = 0.0_8
+   x2b(0:je, 0:ke, :) = x2b(0:je, 0:ke, :) + xb(nx, 0:je, 0:ke, :)
+   xb(nx, 0:je, 0:ke, :) = 0.0_8
+   x1b = 0.0_8
+   x1b(0:je, 0:ke, :) = x1b(0:je, 0:ke, :) + xb(il, 0:je, 0:ke, :)
+   xb(il, 0:je, 0:ke, :) = 0.0_8
+   x0b = 0.0_8
+   x0b(0:je, 0:ke, :) = x0b(0:je, 0:ke, :) + xb(ie, 0:je, 0:ke, :)
+   xb(ie, 0:je, 0:ke, :) = 0.0_8
    CASE (jmin) 
-   x2b(1:ie, 1:ke, :) = x2b(1:ie, 1:ke, :) + xb(1:ie, 2, 1:ke, :)
-   xb(1:ie, 2, 1:ke, :) = 0.0_8
-   x1b(1:ie, 1:ke, :) = x1b(1:ie, 1:ke, :) + xb(1:ie, 1, 1:ke, :)
-   xb(1:ie, 1, 1:ke, :) = 0.0_8
-   x0b(1:ie, 1:ke, :) = x0b(1:ie, 1:ke, :) + xb(1:ie, 0, 1:ke, :)
-   xb(1:ie, 0, 1:ke, :) = 0.0_8
+   x2b = 0.0_8
+   x2b(0:ie, 0:ke, :) = x2b(0:ie, 0:ke, :) + xb(0:ie, 2, 0:ke, :)
+   xb(0:ie, 2, 0:ke, :) = 0.0_8
+   x1b = 0.0_8
+   x1b(0:ie, 0:ke, :) = x1b(0:ie, 0:ke, :) + xb(1:ie, 0, 0:ke, :)
+   xb(1:ie, 0, 0:ke, :) = 0.0_8
+   x0b = 0.0_8
+   x0b(0:ie, 0:ke, :) = x0b(0:ie, 0:ke, :) + xb(0:ie, 0, 0:ke, :)
+   xb(0:ie, 0, 0:ke, :) = 0.0_8
    CASE (jmax) 
-   x2b(1:ie, 1:ke, :) = x2b(1:ie, 1:ke, :) + xb(1:ie, ny, 1:ke, :)
-   xb(1:ie, ny, 1:ke, :) = 0.0_8
-   x1b(1:ie, 1:ke, :) = x1b(1:ie, 1:ke, :) + xb(1:ie, jl, 1:ke, :)
-   xb(1:ie, jl, 1:ke, :) = 0.0_8
-   x0b(1:ie, 1:ke, :) = x0b(1:ie, 1:ke, :) + xb(1:ie, je, 1:ke, :)
-   xb(1:ie, je, 1:ke, :) = 0.0_8
+   x2b = 0.0_8
+   x2b(0:ie, 0:ke, :) = x2b(0:ie, 0:ke, :) + xb(0:ie, ny, 0:ke, :)
+   xb(0:ie, ny, 0:ke, :) = 0.0_8
+   x1b = 0.0_8
+   x1b(0:ie, 0:ke, :) = x1b(0:ie, 0:ke, :) + xb(0:ie, jl, 0:ke, :)
+   xb(0:ie, jl, 0:ke, :) = 0.0_8
+   x0b = 0.0_8
+   x0b(0:ie, 0:ke, :) = x0b(0:ie, 0:ke, :) + xb(0:ie, je, 0:ke, :)
+   xb(0:ie, je, 0:ke, :) = 0.0_8
    CASE (kmin) 
-   x2b(1:ie, 1:je, :) = x2b(1:ie, 1:je, :) + xb(1:ie, 1:je, 2, :)
-   xb(1:ie, 1:je, 2, :) = 0.0_8
-   x1b(1:ie, 1:je, :) = x1b(1:ie, 1:je, :) + xb(1:ie, 1:je, 1, :)
-   xb(1:ie, 1:je, 1, :) = 0.0_8
-   x0b(1:ie, 1:je, :) = x0b(1:ie, 1:je, :) + xb(1:ie, 1:je, 0, :)
-   xb(1:ie, 1:je, 0, :) = 0.0_8
+   x2b = 0.0_8
+   x2b(0:ie, 0:je, :) = x2b(0:ie, 0:je, :) + xb(0:ie, 0:je, 2, :)
+   xb(0:ie, 0:je, 2, :) = 0.0_8
+   x1b = 0.0_8
+   x1b(0:ie, 0:je, :) = x1b(0:ie, 0:je, :) + xb(0:ie, 0:je, 1, :)
+   xb(0:ie, 0:je, 1, :) = 0.0_8
+   x0b = 0.0_8
+   x0b(0:ie, 0:je, :) = x0b(0:ie, 0:je, :) + xb(0:ie, 0:je, 0, :)
+   xb(0:ie, 0:je, 0, :) = 0.0_8
    CASE (kmax) 
-   x2b(1:ie, 1:je, :) = x2b(1:ie, 1:je, :) + xb(1:ie, 1:je, nz, :)
-   xb(1:ie, 1:je, nz, :) = 0.0_8
-   x1b(1:ie, 1:je, :) = x1b(1:ie, 1:je, :) + xb(1:ie, 1:je, kl, :)
-   xb(1:ie, 1:je, kl, :) = 0.0_8
-   x0b(1:ie, 1:je, :) = x0b(1:ie, 1:je, :) + xb(1:ie, 1:je, ke, :)
-   xb(1:ie, 1:je, ke, :) = 0.0_8
+   x2b = 0.0_8
+   x2b(0:ie, 0:je, :) = x2b(0:ie, 0:je, :) + xb(0:ie, 0:je, nz, :)
+   xb(0:ie, 0:je, nz, :) = 0.0_8
+   x1b = 0.0_8
+   x1b(0:ie, 0:je, :) = x1b(0:ie, 0:je, :) + xb(0:ie, 0:je, kl, :)
+   xb(0:ie, 0:je, kl, :) = 0.0_8
+   x0b = 0.0_8
+   x0b(0:ie, 0:je, :) = x0b(0:ie, 0:je, :) + xb(0:ie, 0:je, ke, :)
+   xb(0:ie, 0:je, ke, :) = 0.0_8
+   CASE DEFAULT
+   x0b = 0.0_8
+   x1b = 0.0_8
+   x2b = 0.0_8
    END SELECT
    END SUBROUTINE RESETALLXBWD_B

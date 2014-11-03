@@ -2,7 +2,7 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of resetssbwd in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *si *sj *sk ssi ssj ssk
+   !   gradient     of useful results: *si *sj *sk
    !   with respect to varying inputs: *si *sj *sk ssi ssj ssk
    !   Plus diff mem management of: si:in sj:in sk:in
    !
@@ -39,46 +39,68 @@
    ! the pointers accordinly.
    SELECT CASE  (bcfaceid(nn)) 
    CASE (imin) 
+   sskb = 0.0_8
    sskb(1:je, 0:ke, :) = sskb(1:je, 0:ke, :) + skb(2, 1:je, 0:ke, :)
    skb(2, 1:je, 0:ke, :) = 0.0_8
+   ssjb = 0.0_8
    ssjb(0:je, 1:ke, :) = ssjb(0:je, 1:ke, :) + sjb(2, 0:je, 1:ke, :)
    sjb(2, 0:je, 1:ke, :) = 0.0_8
+   ssib = 0.0_8
    ssib(1:je, 1:ke, :) = ssib(1:je, 1:ke, :) + sib(1, 1:je, 1:ke, :)
    sib(1, 1:je, 1:ke, :) = 0.0_8
    CASE (imax) 
+   sskb = 0.0_8
    sskb(1:je, 0:ke, :) = sskb(1:je, 0:ke, :) + skb(il, 1:je, 0:ke, :)
    skb(il, 1:je, 0:ke, :) = 0.0_8
+   ssjb = 0.0_8
    ssjb(0:je, 1:ke, :) = ssjb(0:je, 1:ke, :) + sjb(il, 0:je, 1:ke, :)
    sjb(il, 0:je, 1:ke, :) = 0.0_8
+   ssib = 0.0_8
    ssib(1:je, 1:ke, :) = ssib(1:je, 1:ke, :) + sib(il, 1:je, 1:ke, :)
    sib(il, 1:je, 1:ke, :) = 0.0_8
    CASE (jmin) 
+   sskb = 0.0_8
    sskb(1:ie, 0:ke, :) = sskb(1:ie, 0:ke, :) + skb(1:ie, 2, 0:ke, :)
    skb(1:ie, 2, 0:ke, :) = 0.0_8
+   ssjb = 0.0_8
    ssjb(1:ie, 1:ke, :) = ssjb(1:ie, 1:ke, :) + sib(1:ie, 2, 1:ke, :)
    sib(1:ie, 2, 1:ke, :) = 0.0_8
+   ssib = 0.0_8
    ssib(0:ie, 1:ke, :) = ssib(0:ie, 1:ke, :) + sjb(0:ie, 1, 1:ke, :)
    sjb(0:ie, 1, 1:ke, :) = 0.0_8
    CASE (jmax) 
+   sskb = 0.0_8
    sskb(1:ie, 0:ke, :) = sskb(1:ie, 0:ke, :) + skb(1:ie, jl, 0:ke, :)
    skb(1:ie, jl, 0:ke, :) = 0.0_8
+   ssjb = 0.0_8
    ssjb(1:ie, 1:ke, :) = ssjb(1:ie, 1:ke, :) + sib(1:ie, jl, 1:ke, :)
    sib(1:ie, jl, 1:ke, :) = 0.0_8
+   ssib = 0.0_8
    ssib(0:ie, 1:ke, :) = ssib(0:ie, 1:ke, :) + sjb(0:ie, jl, 1:ke, :)
    sjb(0:ie, jl, 1:ke, :) = 0.0_8
    CASE (kmin) 
+   sskb = 0.0_8
    sskb(1:ie, 1:je, :) = sskb(1:ie, 1:je, :) + sjb(1:ie, 1:je, 2, :)
    sjb(1:ie, 1:je, 2, :) = 0.0_8
+   ssjb = 0.0_8
    ssjb(1:ie, 0:je, :) = ssjb(1:ie, 0:je, :) + sib(1:ie, 0:je, 2, :)
    sib(1:ie, 0:je, 2, :) = 0.0_8
+   ssib = 0.0_8
    ssib(0:ie, 1:je, :) = ssib(0:ie, 1:je, :) + skb(0:ie, 1:je, 1, :)
    skb(0:ie, 1:je, 1, :) = 0.0_8
    CASE (kmax) 
+   sskb = 0.0_8
    sskb(1:ie, 1:je, :) = sskb(1:ie, 1:je, :) + sjb(1:ie, 1:je, kl, :)
    sjb(1:ie, 1:je, kl, :) = 0.0_8
+   ssjb = 0.0_8
    ssjb(1:ie, 0:je, :) = ssjb(1:ie, 0:je, :) + sib(1:ie, 0:je, kl, :)
    sib(1:ie, 0:je, kl, :) = 0.0_8
+   ssib = 0.0_8
    ssib(0:ie, 1:je, :) = ssib(0:ie, 1:je, :) + skb(0:ie, 1:je, kl, :)
    skb(0:ie, 1:je, kl, :) = 0.0_8
+   CASE DEFAULT
+   ssib = 0.0_8
+   ssjb = 0.0_8
+   sskb = 0.0_8
    END SELECT
    END SUBROUTINE RESETSSBWD_B

@@ -104,8 +104,8 @@ subroutine verifyMatProd
      
      ! Allocate the memory we need for this block to do the forward
      ! mode derivatives and copy reference values
-     call alloc_derivative_values(nn, level)
-     call alloc_derivative_values_bwd(nn, level)
+     !call alloc_derivative_values( level)
+     call alloc_derivative_values_bwd(level)
         
      ! Set pointers and derivative pointers
      call setPointers_b(nn, level, 1)
@@ -154,8 +154,8 @@ subroutine verifyMatProd
      end do
      print *, 'state done'
      deallocate(vec1, vec2)
-     call dealloc_derivative_values(nn, level)
-     call dealloc_derivative_values_bwd(nn, level)
+     !call dealloc_derivative_values(nn, level)
+     call dealloc_derivative_values_bwd(level)
 
   end if logicCheck1
 
@@ -169,7 +169,7 @@ subroutine verifyMatProd
      ! Allocate the memory we need for this block to do the forward
      ! mode derivatives and copy reference values
      !call alloc_derivative_values(nn, level)
-     call alloc_derivative_values_bwd(nn, level)
+     call alloc_derivative_values_bwd(level)
         
      ! Set pointers and derivative pointers
      call setPointers_b(nn, level, 1)
@@ -197,15 +197,15 @@ subroutine verifyMatProd
      
      call getdRdXvTPsi(vec2, nNodesLocal(1)*3, vec1, 3072*5)
     
-     call BLOCK_RES_B(nn, 1, .False., alpha, alphab, beta, betab, &
+     call BLOCK_RES_B(nn, 1, .True., alpha, alphab, beta, betab, &
           & liftindex, force, forceb, moment, momentb, sepsensor, sepsensorb, &
           & cavitation, cavitationb)
      
      ii = 0
-     do k=2, kl
-        do j=2,jl
-           do i=2,il
-              do l = 1,5
+     do k=1, kl
+        do j=1,jl
+           do i=1,il
+              do l = 1,3
                  ii = ii + 1
                  if (abs(flowdomsb(1,1,1)%x(i,j,k,l) - vec2(ii)) > 1e-4) then
                     print *,i,j,k,l,flowdomsb(1,1,1)%x(i, j, k, l)-vec2(ii)
@@ -218,7 +218,7 @@ subroutine verifyMatProd
      print *, 'spatial done'
      deallocate(vec1, vec2)
      !call dealloc_derivative_values(nn, level)
-     call dealloc_derivative_values_bwd(nn, level)
+     call dealloc_derivative_values_bwd(level)
 
   end if logicCheck2
 

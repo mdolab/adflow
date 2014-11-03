@@ -520,11 +520,7 @@
    vb = 0.0_8
    refpointb = 0.0_8
    xxb = 0.0_8
-   pp1b = 0.0_8
-   pp2b = 0.0_8
    ssb = 0.0_8
-   ww1b = 0.0_8
-   ww2b = 0.0_8
    DO nn=nbocos,1,-1
    CALL POPCONTROL1B(branch)
    IF (branch .NE. 0) THEN
@@ -541,9 +537,7 @@
    &                             rho2, rho2b, dd2wall)
    CALL POPREAL8ARRAY(rev, SIZE(rev, 1)*SIZE(rev, 2)*SIZE(rev, 3))
    CALL POPREAL8ARRAY(rlv, SIZE(rlv, 1)*SIZE(rlv, 2)*SIZE(rlv, 3))
-   rlv1b = 0.0_8
    rlv2b = 0.0_8
-   rev1b = 0.0_8
    rev2b = 0.0_8
    rlvb = 0.0_8
    revb = 0.0_8

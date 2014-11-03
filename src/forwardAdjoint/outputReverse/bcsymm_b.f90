@@ -151,14 +151,6 @@
    END IF
    END DO bocos
    END DO nhalo
-   rev1b = 0.0_8
-   rev2b = 0.0_8
-   pp1b = 0.0_8
-   pp2b = 0.0_8
-   rlv1b = 0.0_8
-   rlv2b = 0.0_8
-   ww1b = 0.0_8
-   ww2b = 0.0_8
    DO mm=kk,0,-1
    DO nn=nbocos,1,-1
    CALL POPCONTROL1B(branch)
@@ -166,6 +158,8 @@
    CALL POPREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4&
    &                    ))
    CALL POPREAL8ARRAY(rlv, SIZE(rlv, 1)*SIZE(rlv, 2)*SIZE(rlv, 3))
+   rlv2b = 0.0_8
+   rev2b = 0.0_8
    CALL RESETBCPOINTERSBWD_B(nn, ww1, ww1b, ww2, ww2b, pp1, pp1b, &
    &                           pp2, pp2b, rlv1, rlv1b, rlv2, rlv2b, rev1, &
    &                           rev1b, rev2, rev2b, mm)

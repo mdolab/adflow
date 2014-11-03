@@ -2,8 +2,7 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of resetbcpointersbwd in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *rev *p *w *rlv rev1 rev2 pp1
-   !                pp2 rlv1 rlv2 ww1 ww2
+   !   gradient     of useful results: *rev *p *w *rlv rev2 rlv2
    !   with respect to varying inputs: *rev *p *w *rlv rev1 rev2 pp1
    !                pp2 rlv1 rlv2 ww1 ww2
    !   Plus diff mem management of: rev:in p:in w:in rlv:in
@@ -75,6 +74,12 @@
    END IF
    END DO
    END DO
+   rev1b = 0.0_8
+   pp1b = 0.0_8
+   pp2b = 0.0_8
+   rlv1b = 0.0_8
+   ww1b = 0.0_8
+   ww2b = 0.0_8
    DO k=kl+1,1,-1
    DO j=jl+1,1,-1
    CALL POPCONTROL1B(branch)
@@ -119,6 +124,12 @@
    END IF
    END DO
    END DO
+   rev1b = 0.0_8
+   pp1b = 0.0_8
+   pp2b = 0.0_8
+   rlv1b = 0.0_8
+   ww1b = 0.0_8
+   ww2b = 0.0_8
    DO k=kl+1,1,-1
    DO j=jl+1,1,-1
    CALL POPCONTROL1B(branch)
@@ -163,6 +174,12 @@
    END IF
    END DO
    END DO
+   rev1b = 0.0_8
+   pp1b = 0.0_8
+   pp2b = 0.0_8
+   rlv1b = 0.0_8
+   ww1b = 0.0_8
+   ww2b = 0.0_8
    DO k=kl+1,1,-1
    DO i=il+1,1,-1
    CALL POPCONTROL1B(branch)
@@ -207,6 +224,12 @@
    END IF
    END DO
    END DO
+   rev1b = 0.0_8
+   pp1b = 0.0_8
+   pp2b = 0.0_8
+   rlv1b = 0.0_8
+   ww1b = 0.0_8
+   ww2b = 0.0_8
    DO k=kl+1,1,-1
    DO i=il+1,1,-1
    CALL POPCONTROL1B(branch)
@@ -251,6 +274,12 @@
    END IF
    END DO
    END DO
+   rev1b = 0.0_8
+   pp1b = 0.0_8
+   pp2b = 0.0_8
+   rlv1b = 0.0_8
+   ww1b = 0.0_8
+   ww2b = 0.0_8
    DO j=jl+1,1,-1
    DO i=il+1,1,-1
    CALL POPCONTROL1B(branch)
@@ -295,6 +324,12 @@
    END IF
    END DO
    END DO
+   rev1b = 0.0_8
+   pp1b = 0.0_8
+   pp2b = 0.0_8
+   rlv1b = 0.0_8
+   ww1b = 0.0_8
+   ww2b = 0.0_8
    DO j=jl+1,1,-1
    DO i=il+1,1,-1
    CALL POPCONTROL1B(branch)
@@ -321,5 +356,12 @@
    wb(i, j, ih, :) = 0.0_8
    END DO
    END DO
+   CASE DEFAULT
+   rev1b = 0.0_8
+   pp1b = 0.0_8
+   pp2b = 0.0_8
+   rlv1b = 0.0_8
+   ww1b = 0.0_8
+   ww2b = 0.0_8
    END SELECT
    END SUBROUTINE RESETBCPOINTERSBWD_B
