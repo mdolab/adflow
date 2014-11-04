@@ -62,6 +62,7 @@
    USE ITERATION
    USE INPUTADJOINT
    USE DIFFSIZES
+   USE COSTFUNCTIONS
    USE DIFFSIZES
    !  Hint: ISIZE1OFDrfbcdata should be the size of dimension 1 of array *bcdata
    IMPLICIT NONE

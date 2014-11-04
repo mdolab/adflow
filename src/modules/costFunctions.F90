@@ -69,6 +69,9 @@ module costFunctions
        costFuncCavitation = 39
 
   real(kind=realType), allocatable, dimension(:)   :: functionValue
+  real(kind=realType), dimension(nCostFunction)   :: funcValues
+  real(kind=realType), dimension(nCostFunction)   :: funcValuesd
+  real(kind=realType), dimension(nCostFunction)   :: funcValuesb
 
 end module costFunctions
 

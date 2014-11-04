@@ -23,6 +23,7 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   use iteration
   use inputADjoint
   use diffSizes
+  use costFunctions
   implicit none
 
   ! Input Arguments:
@@ -239,7 +240,12 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   fact = fact/(lengthRef*LRef)
   moment = (cMp + cMV)/fact
 
+#ifndef TAPENADE_REVERSE
   call getCostFunction(costFunction, force, moment, sepSensor, &
   alpha, beta, liftIndex, objValue)
+#else
+  call getCostFunction2(costFunction, force, moment, sepSensor, &
+  alpha, beta, liftIndex, objValue)
+#endif
 
 end subroutine block_res
