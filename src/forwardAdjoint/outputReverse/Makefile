@@ -86,7 +86,8 @@ FF90_OBJECTS =  computeetot_b.o\
 		sanuknowneddyratio_b.o\
 		etotarray_b.o\
 		eintarray_b.o\
-#xhalo_block_b.o\
+		getcostfunction_b.o\
+		getcostfunction2_b.o\
 
 #      ******************************************************************
 #      *                                                                *

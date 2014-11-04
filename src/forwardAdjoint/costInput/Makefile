@@ -38,6 +38,7 @@ vpath %.o $(SUMB_OBJDIR)
 
 FILES_TO_COMPLEXIFY = \
 		costFunction.F90\
+		costFunction2.F90\
 
 FILES_TO_COPY = 
 
