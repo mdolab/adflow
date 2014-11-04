@@ -35,7 +35,7 @@ subroutine DADISmoother
   !      *                                                                *
   !      ******************************************************************
   !
-  if (currentLevel == 1) then 
+  if (groundLevel == 1) then 
      do Subit=1,nSubiterations-1
 
         ! Execute a DADI step and exchange the externals.
