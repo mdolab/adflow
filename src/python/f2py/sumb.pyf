@@ -420,6 +420,19 @@ python module libsumb
             integer(kind=inttype), optional,check(len(invec)>=ndofin),depend(invec) :: ndofin=len(invec)
             integer(kind=inttype) :: ndofout
         end subroutine drdxtmult
+        subroutine drdamult(invec,outvec,sizeinvec,sizeoutvec) ! in matrixFreeRoutines.F90
+          real(kind=realtype) dimension(sizeinvec),intent(in) :: invec
+          real(kind=realtype) dimension(sizeoutvec),intent(out),depend(sizeoutvec) :: outvec
+          integer(kind=inttype), optional,intent(in),check(len(invec)>=sizeinvec),depend(invec) :: sizeinvec=len(invec)
+          integer(kind=inttype) intent(in) :: sizeoutvec
+        end subroutine drdamult
+
+        subroutine drdatmult(invec,outvec,sizeinvec,sizeoutvec) ! in matrixFreeRoutines.F90
+          real(kind=realtype) dimension(sizeinvec),intent(in) :: invec
+          real(kind=realtype) dimension(sizeoutvec),intent(out),depend(sizeoutvec) :: outvec
+          integer(kind=inttype), optional,intent(in),check(len(invec)>=sizeinvec),depend(invec) :: sizeinvec=len(invec)
+          integer(kind=inttype) intent(in) :: sizeoutvec
+        end subroutine drdatmult
 
         subroutine getdrdapsi(output,ndv,adjoint,nstate) ! in :test:getdRdaPsi.F90
             real(kind=realtype) dimension(ndv),intent(out),depend(ndv) :: output

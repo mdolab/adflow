@@ -133,6 +133,8 @@ subroutine dRdwMult(inVec, outVec, nDOF)
      end do spectalLoopAD
   end do domainLoopAD
 
+  call dealloc_derivative_values(level)
+
   ! Reset the correct equation parameters if we were useing the frozen
   ! Turbulent 
   if (resetToRANS) then
@@ -436,6 +438,8 @@ subroutine dRdxMult(inVec, outVec, nDOFin, nDOFout)
      end do spectalLoopAD
   end do domainLoopAD
 
+  call dealloc_derivative_values(level)
+
   ! Reset the correct equation parameters if we were useing the frozen
   ! Turbulent 
   if (resetToRANS) then
@@ -573,7 +577,7 @@ subroutine dRdxTMult(inVec, outVec, nDOFin, nDOFout)
      end do
   end do domainLoopAD
 
-  call dealloc_derivative_values_bwd(level)
+  call dealloc_derivative_values_bwd(level) 
 
   ! Reset the correct equation parameters if we were useing the frozen
   ! Turbulent 
@@ -603,6 +607,422 @@ subroutine dRdxTMult(inVec, outVec, nDOFin, nDOFout)
   call EChk(ierr,__FILE__,__LINE__)
 
 end subroutine dRdxTMult
+
+subroutine dRdaMult(inVec, outVec, sizeInVec, sizeOutVec)
+
+  ! Perform a matrix-free multiplication of dRda with inVec where
+  ! inVec is the peturbation on the extra design variables
+
+  use ADJointVars
+  use ADjointPETSc
+  use blockPointers
+  use inputDiscretization
+  use inputTimeSpectral  
+  use iteration         
+  use flowVarRefState   
+  use inputTimeSpectral 
+  use inputDiscretization
+  use inputPhysics 
+  use inputMotion     
+  use cgnsGrid
+  use inputADjoint
+  use diffSizes
+     
+  implicit none
+
+  ! Input Variables
+  real(kind=realType), dimension(sizeInVec), intent(in) :: inVec
+  real(kind=realType), dimension(sizeOutVec), intent(out) :: outVec
+  integer(kind=intType), intent(in) :: sizeInVec, sizeOutVec
+  
+  ! Working variables
+  real(kind=realType) :: alpha, beta, force(3), moment(3), sepSensor, Cavitation
+  real(kind=realType) :: alphad, betad, forced(3), momentd(3), sepSensord, Cavitationd
+  integer(kind=intType) :: liftIndex, ii, i, j, k, l, nn, sps, idxblk, level, sps2
+  logical :: resetToRANS
+  
+
+  ! call getDirAngle to get the baseline values for alpha and beta
+  call getDirAngle(velDirFreestream, LiftDirection, liftIndex, alpha, beta)
+
+  ! Master Domain Loop
+  level = 1_intType
+
+  ! If we are computing the jacobian for the RANS equations, we need
+  ! to make block_res think that we are evauluating the residual in a
+  ! fully coupled sense.  This is reset after this routine is
+  ! finished.
+  if (equations == RANSEquations) then
+     nMGVar = nwf
+     nt1MG = nt1
+     nt2MG = nt2
+
+     turbSegregated = .False.
+     turbCoupled = .True.
+  end if
+
+  ! Determine if we want to use forzenTurbulent Adjiont
+  resetToRANS = .False. 
+  if (frozenTurbulence .and. equations == RANSEquations) then
+     equations = NSEquations 
+     resetToRANS = .True.
+  end if
+
+  ! Allocate the memory we need for this block to do the forward
+  ! mode derivatives and copy reference values
+  call alloc_derivative_values(level)
+
+  ii = 0
+  domainLoopAD: do nn=1,nDom
+
+     ! Set pointers to the first timeInstance...just to getSizes
+     call setPointers(nn, level, 1)
+     idxblk = nbkGlobal
+     ISIZE1OFDrfbcdata = nBocos
+     ISIZE1OFDrfviscsubface = nViscBocos
+
+     ! Zero all seeds
+     alphad = 0.0
+     betad = 0.0
+     machd = 0.0
+     machGridd = 0.0
+     machCoefd = 0.0
+     cgnsDomsd(idxblk)%rotrate(:) = 0.0
+     cgnsDomsd(idxblk)%rotcenter(:) = 0.0
+     rotpointd(:) = 0.0
+     pointrefd(:) = 0.0
+     lengthrefd = 0.0
+     tempfreestreamd = 0.0
+     prefd = 0.0
+
+     ! Set the seeds we have:
+     if (nDesignAoA > 0) &
+        alphad = inVec(nDesignAoA)
+     if (nDesignSSA > 0) &
+        betad = inVec(nDesignSSA)
+     if (nDesignMach  > 0) then
+        machd = inVec(nDesignMach)
+        machCoefd = inVec(nDesignMach)
+     end if
+     if (nDesignMachGrid > 0) then
+        machGridd = inVec(nDesignMachGrid)
+        machCoefd = inVec(nDesignMachGrid)
+     end if
+     if (nDesignPressure > 0) &
+          Prefd = inVec(nDesignPressure)
+     if (nDesignTemperature > 0) &
+          Tempfreestreamd = inVec(nDesignTemperature)
+     if (nDesignPointRefX > 0) &
+          pointrefd(1) = inVec(nDesignPointRefX)
+     if (nDesignPointRefY > 0) &
+          pointrefd(2) = inVec(nDesignPointRefY)
+     if (nDesignPointRefZ > 0) &
+          pointrefd(3) = inVec(nDesignPointRefZ)
+
+     ! Take all Derivatives
+     spectralLoopAD: do sps = 1,nTimeIntervalsSpectral
+        call setPointers_d(nn, level, sps)
+
+        call block_res_d(nn, sps, .True., &
+             alpha, alphad, beta, betad, liftIndex, force, forced, &
+             moment, momentd, sepSensor, sepSensord, Cavitation, Cavitationd)
+
+        ! Now now just get dw
+        do sps2=1,nTimeIntervalsSpectral
+           do k=2, kl
+              do j=2, jl
+                 do i=2, il
+                    do l=1, nw
+                       outVec(ii) = flowdomsd(nn, level, sps2)%dw(i, j, k, l)
+                    end do
+                 end do
+              end do
+           end do
+        end do
+     end do spectralLoopAD
+  end do domainLoopAD
+
+  ! Deallocate and reset Values
+  call dealloc_derivative_values(level)
+
+  ! Reset the correct equation parameters if we were useing the frozen
+  ! Turbulent 
+  if (resetToRANS) then
+     equations = RANSEquations
+  end if
+
+  ! Reset the parameters to use segrated turbulence solve. 
+  if (equations == RANSEquations) then
+     nMGVar = nwf
+     nt1MG = nwf + 1
+     nt2MG = nwf
+
+     turbSegregated = .True.
+     turbCoupled = .False.
+     restrictEddyVis = .false.
+     if( eddyModel ) restrictEddyVis = .true.
+  end if
+
+end subroutine dRdaMult
+
+subroutine dRdaTMult(inVec, outVec, sizeInVec, sizeOutVec)
+ use ADJointVars
+  use ADjointPETSc
+  use blockPointers
+  use inputDiscretization
+  use inputTimeSpectral  
+  use iteration         
+  use flowVarRefState   
+  use inputTimeSpectral 
+  use inputDiscretization
+  use inputPhysics 
+  use inputMotion     
+  use cgnsGrid
+  use inputADjoint
+  use diffSizes
+  use communication
+  implicit none
+
+  ! Input Variables
+  real(kind=realType), dimension(sizeInVec), intent(in) :: inVec
+  real(kind=realType), dimension(sizeOutVec), intent(out) :: outVec
+  integer(kind=intType), intent(in) :: sizeInVec, sizeOutVec
+
+  ! Working
+  real(kind=realType) :: outVecLocal(sizeOutVec)
+  integer(kind=intType) :: ierr,nn,sps,i,j,k,l,ii, sps2
+  real(kind=realType) :: alpha, beta, force(3), moment(3), sepSensor, cavitation, cavitationb
+  real(kind=realType) :: alphab, betab, forceb(3), momentb(3), sepSensorb
+  integer(kind=intType) :: nState, level, irow, liftIndex
+  logical :: resetToRans
+
+  ! Setup number of state variable based on turbulence assumption
+  if ( frozenTurbulence ) then
+     nState = nwf
+  else
+     nState = nw
+  end if
+
+  ! Need to trick the residual evalution to use coupled (mean flow and
+  ! turbulent) together.
+
+  level = 1
+  currentLevel = level
+  groundLevel = level
+
+  ! If we are computing the jacobian for the RANS equations, we need
+  ! to make block_res think that we are evauluating the residual in a
+  ! fully coupled sense.  This is reset after this routine is
+  ! finished.
+  if (equations == RANSEquations) then
+     nMGVar = nw
+     nt1MG = nt1
+     nt2MG = nt2
+
+     turbSegregated = .False.
+     turbCoupled = .True.
+  end if
+
+  ! Determine if we want to use frozenTurbulent Adjoint
+  resetToRANS = .False. 
+  if (frozenTurbulence .and. equations == RANSEquations) then
+     equations = NSEquations 
+     resetToRANS = .True.
+  end if
+
+  ! Zero the seeds
+  alphab = zero
+  betab = zero
+  forceb = zero
+  momentb = zero
+  sepSensorb = zero
+  call getDirAngle(velDirFreestream, liftDirection, liftIndex, alpha, beta)
+
+  ! Allocate the memory for reverse
+  call alloc_derivative_values_bwd(level)
+  outVecLocal = zero
+  ii = 0
+  domainLoopAD: do nn=1,nDom
+
+     ! Just to get sizes
+     call setPointers(nn,1_intType,1)
+     call setDiffSizes
+
+     spectralLoopAD: do sps=1,nTimeIntervalsSpectral
+        ! Set pointers and derivative pointers
+        call setPointers_b(nn, level, sps)
+
+        do k=2, kl
+           do j=2,jl
+              do i=2,il
+                 do l = 1, nstate
+                    ii = ii + 1
+                    flowdomsb(nn, level, sps)%dw(i, j, k, l) = inVec(ii)
+                 end do
+              end do
+           end do
+        end do
+
+        call BLOCK_RES_B(nn, 1, .False., alpha, alphab, beta, betab, &
+             & liftindex, force, forceb, moment, momentb, sepsensor, sepsensorb, &
+             & cavitation, cavitationb)
+        
+        ! Exact with SUM (accumulate) into the outVecLocal the values we need
+        
+        ! Set the seeds we have:
+        if (nDesignAoA > 0) &
+             outVecLocal(nDesignAoA) = outVecLocal(nDesignAoA) + alphab
+        if (nDesignSSA > 0) &
+             outVecLocal(nDesignSSA) = outVecLocal(nDesignSSA) + alphab
+        if (nDesignMach  > 0) &
+           outVecLocal(nDesignMach) = outVecLocal(nDesignMach) + machb + machcoefb
+        if (nDesignMachGrid > 0) &
+           outVecLocal(nDesignMachGrid) = outVecLocal(nDesignMachGrid) + machgridb + machcoefb
+        if (nDesignPressure > 0) &
+             outVecLocal(nDesignPressure) = outVecLocal(nDesignPressure) + prefb
+        if (nDesignTemperature > 0) &
+             outVecLocal(nDesignTemperature) = outVecLocal(nDesignTemperature) + tempfreestreamb
+        if (nDesignPointRefX > 0) &
+             outVecLocal(nDesignPointRefX) = outVecLocal(nDesignPointRefX) + pointrefb(1)
+        if (nDesignPointRefY > 0) &
+             outVecLocal(nDesignPointRefY) = outVecLocal(nDesignPointRefY) + pointrefb(2)
+        if (nDesignPointRefZ > 0) &
+             outVecLocal(nDesignPointRefZ) = outVecLocal(nDesignPointRefZ) + pointrefb(3)
+               
+     end do spectralLoopAD
+  end do domainLoopAD
+
+  call dealloc_derivative_values_bwd(level)
+
+  ! Reset the correct equation parameters if we were useing the frozen
+  ! Turbulent 
+  if (resetToRANS) then
+     equations = RANSEquations
+  end if
+
+  ! Reset the paraters to use segrated turbulence solve. 
+  if (equations == RANSEquations) then
+     nMGVar = nwf
+     nt1MG = nwf + 1
+     nt2MG = nwf
+
+     turbSegregated = .True.
+     turbCoupled = .False.
+     restrictEddyVis = .false.
+     if( eddyModel ) restrictEddyVis = .true.
+  end if
+
+  ! Finally we have to do an mpi all reduce on the local parts:
+  call mpi_allreduce(outVecLocal, outVec, sizeOutVec, sumb_real, mpi_sum, SUmb_comm_world, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+end subroutine dRdaTMult
+
+subroutine solveAdjointForRHS(inVec, outVec, nDOF, relativeTolerance)
+
+  use ADJointPETSc
+  use inputADjoint
+  use adjointvars
+  use killsignals
+  implicit none
+
+  ! Input Variables
+  real(kind=realType), dimension(ndof), intent(in) :: inVec
+  real(kind=realType), dimension(ndof), intent(out) :: outVec
+  real(kind=realType), intent(in) :: relativeTolerance
+  integer(kind=intType), intent(in) :: nDOF
+
+  ! Working variables
+  integer(kind=intType) :: ierr
+
+  ! Place the arrays
+  call VecPlaceArray(psi_like1, inVec, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  call VecPlaceArray(psi_like2, outVec, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+    
+  ! Set desired realtive tolerance
+  call KSPSetTolerances(adjointKSP, relativeTolerance, adjAbsTol, adjDivTol, &
+       adjMaxIter, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+  ! Solve (remember this is actually a transpose solve)
+  call KSPSolve(adjointKSP, psi_like1, psi_like2, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+  call KSPGetConvergedReason(adjointKSP, adjointConvergedReason, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+  if (adjointConvergedReason ==  KSP_CONVERGED_RTOL .or. &
+       adjointConvergedReason ==  KSP_CONVERGED_ATOL .or. &
+       adjointConvergedReason ==  KSP_CONVERGED_HAPPY_BREAKDOWN) then
+     adjointFailed = .False.
+  else
+     adjointFailed = .True.
+  end if
+  
+  ! Rest arrays
+  call VecResetArray(psi_like1, inVec, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  call VecResetArray(psi_like2, outVec, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+end subroutine solveAdjointForRHS
+
+subroutine solveDirectForRHS(inVec, outVec, nDOF, relativeTolerance)
+
+  use ADJointPETSc
+  use inputADjoint
+  use adjointVars
+  use killsignals
+  implicit none
+
+  ! Input Variables
+  real(kind=realType), dimension(ndof), intent(in) :: inVec
+  real(kind=realType), dimension(ndof), intent(out) :: outVec
+  real(kind=realType), intent(in) :: relativeTolerance
+  integer(kind=intType), intent(in) :: nDOF
+
+  ! Working variables
+  integer(kind=intType) :: ierr
+
+  ! Place the arrays
+  call VecPlaceArray(psi_like1, inVec, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  call VecPlaceArray(psi_like2, outVec, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+    
+  ! Set desired realtive tolerance
+  call KSPSetTolerances(adjointKSP, relativeTolerance, adjAbsTol, adjDivTol, &
+       adjMaxIter, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+  ! Solve (remember this is actually a transpose solve)
+  call KSPSolveTranspose(adjointKSP, psi_like1, psi_like2, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+  call KSPGetConvergedReason(adjointKSP, adjointConvergedReason, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+  if (adjointConvergedReason ==  KSP_CONVERGED_RTOL .or. &
+       adjointConvergedReason ==  KSP_CONVERGED_ATOL .or. &
+       adjointConvergedReason ==  KSP_CONVERGED_HAPPY_BREAKDOWN) then
+     adjointFailed = .False.
+  else
+     adjointFailed = .True.
+  end if
+  
+  ! Rest arrays
+  call VecResetArray(psi_like1, inVec, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  call VecResetArray(psi_like2, outVec, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+end subroutine solveDirectForRHS
 
 subroutine whalo1to1d(level, start, end, commPressure,       &
      commVarGamma, commLamVis, commEddyVis, &
