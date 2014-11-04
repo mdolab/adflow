@@ -43,7 +43,7 @@ TAPENADE_PRECISION = -i4 -dr8 -r8
 
 # -------------------- Residual AD Info---------------------------------
 # Dependent output variables (separator: white space, default: all)
-TAPENADE_RES_OUTVARS = "flowdoms%dw  BCData%Fp BCData%Fv BCData%M  BCData%sepSensor BCData%Cavitation BCData%oArea flowdoms%w flowdoms%x force moment sepSensor Cavitation"
+TAPENADE_RES_OUTVARS = "flowdoms%dw  BCData%Fp BCData%Fv BCData%M  BCData%sepSensor BCData%Cavitation BCData%oArea flowdoms%w flowdoms%x force moment sepSensor Cavitation objValue"
 
 # Independent input variables (separator: white space, default: all)
 TAPENADE_RES_VARS = "flowdoms%w flowdoms%x alpha beta mach machgrid machcoef pointref lengthRef Pref tempFreeStream"
@@ -55,6 +55,7 @@ TAPENADE_RES_HEADROUTINE = "block_res"
 ALL_RES_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.F90\
 		$(SRC)/forwardAdjoint/residualInput/xhalo_block.F90\
 		$(SRC)/forwardAdjoint/residualInput/metric_block.F90\
+		$(SRC)/forwardAdjoint/costInput/costFunction.F90\
 		$(SRC)/modules/monitor.f90\
 		$(SRC)/modules/diffSizes.f90\
 		$(SRC)/modules/block.F90\
@@ -70,6 +71,7 @@ ALL_RES_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.F90\
 		$(SRC)/modules/CpCurveFits.f90\
 		$(SRC)/modules/blockPointers.F90 \
 		$(SRC)/modules/flowVarRefState.F90 \
+		$(SRC)/modules/costFunctions.F90\
 		$(SRC)/solver/inviscidCentralFlux.F90\
 		$(SRC)/solver/inviscidDissFluxCusp.f90\
 		$(SRC)/solver/inviscidDissFluxCuspCoarse.f90\
@@ -101,6 +103,8 @@ ALL_RES_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.F90\
 		$(SRC)/solver/gridVelocitiesFineLevel.F90\
 		$(SRC)/solver/normalVelocities.F90\
 		$(SRC)/solver/forcesAndMoments.F90\
+		$(SRC)/stabilityDerivatives/computeTSDerivatives.f90\
+		$(SRC)/stabilityDerivatives/computeLeastSquaresRegression.f90\
 		$(SRC)/initFlow/referenceState.F90\
 		$(SRC)/initFlow/setFlowInfinityState.F90\
 		$(SRC)/turbulence/computeEddyViscosity.F90\
@@ -167,7 +171,8 @@ ALL_RES_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.F90\
 		$(SRC)/utils/resetgammaBwd.f90\
 		$(SRC)/utils/computeEtot.f90\
 		$(SRC)/utils/setPointers.f90\
-		$(SRC)/utils/terminate.F90
+		$(SRC)/utils/terminate.F90\
+		$(SRC)/bendingMomentAnalysis/rootBendingMomentAnalysis.f90
 
 # intermediate residual files.
 I_RES_FILES := $(ALL_RES_FILES:%=%.f90)

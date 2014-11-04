@@ -2,10 +2,10 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of setflowinfinitystate in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: gammainf pinf rhoinf tref winf
-   !                pinfcorr rgas veldirfreestream machcoef
-   !   with respect to varying inputs: gammainf pinf rhoinf tref muinf
-   !                uinf rgas veldirfreestream machcoef
+   !   gradient     of useful results: veldirfreestream machcoef gammainf
+   !                pinf rhoinf tref winf pinfcorr rgas
+   !   with respect to varying inputs: veldirfreestream machcoef gammainf
+   !                pinf rhoinf tref muinf uinf rgas
    !
    !      ******************************************************************
    !      *                                                                *

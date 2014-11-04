@@ -42,6 +42,7 @@ subroutine getCostFunction(costFunction, force, moment, sepSensor, Cavitation, &
   objValue = zero
   ovrNTS = one/nTimeIntervalsSpectral
 
+#ifndef TAPENADE_REVERSE
   ! Pre-compute TS stability info if required:
   select case(costFunction)
   case(costFuncCl0,costFuncCd0,costFuncCm0, &
@@ -53,6 +54,7 @@ subroutine getCostFunction(costFunction, force, moment, sepSensor, Cavitation, &
      call computeTSDerivatives(force, moment, liftIndex, coef0, dcdalpha, &
           dcdalphadot, dcdq, dcdqdot)
   end select
+#endif
 
   ! Main cost function selection
   select case(costFunction)

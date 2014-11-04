@@ -4,8 +4,8 @@
    !  Differentiation of referencestate in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: gammainf pinf timeref rhoinf
    !                muref tref muinf uinf rgas pref
-   !   with respect to varying inputs: pref mach tempfreestream veldirfreestream
-   !                machcoef
+   !   with respect to varying inputs: mach tempfreestream veldirfreestream
+   !                machcoef gammainf pref
    !
    !      ******************************************************************
    !      *                                                                *
@@ -97,7 +97,6 @@
    &   tsuthdim)**1.5_realType
    ! Check the flow type we are having here.
    IF (flowtype .EQ. internalflow) THEN
-   gammainfd = 0.0_8
    trefd = 0.0_8
    rhorefd = 0.0_8
    ELSE
