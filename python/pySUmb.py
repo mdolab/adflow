@@ -522,7 +522,8 @@ steady rotations and specifying an aeroProblem')
             self.resetFlow(aeroProblem)
 
         # Possibly release adjoint memory 
-        self.releaseAdjointMemory()
+        if kwargs.pop('relaseAdjointMemory', True):
+            self.releaseAdjointMemory()
 
         # Save aeroProblem, and other information into the current flow case
         self.curAP.sumbData.adjointRHS = None
@@ -2013,6 +2014,46 @@ steady rotations and specifying an aeroProblem')
             dIda[self.sumb.adjointvars.ndesignaoa] *= numpy.pi/180.0
 
         return dIda
+
+    def solveAdjointForRHS(self, inVec, relTol=None):
+        """
+        Solve the adjoint system with an arbitary RHS vector.
+
+        Parameters
+        ----------
+        inVec : numpy array
+            Array of size w
+
+        Returns
+        -------
+        outVec : numpy array
+            Solution vector of size w
+        """
+        if relTol is None:
+            relTol = self.getOption('adjointRelTol')
+        outVec = self.sumb.solveadjointforrhs(inVec, relTol)
+
+        return outVec
+
+    def solveDirectForRHS(self, inVec, relTol=None):
+        """
+        Solve the direct system with an arbitary RHS vector.
+
+        Parameters
+        ----------
+        inVec : numpy array
+            Array of size w
+
+        Returns
+        -------
+        outVec : numpy array
+            Solution vector of size w
+        """
+        if relTol is None:
+            relTol = self.getOption('adjointRelTol')
+        outVec = self.sumb.solvedirectforrhs(inVec, relTol)
+
+        return outVec
 
     def saveAdjointMatrix(self, fileName):
         """ Save the adjoint matrix to a binary petsc file for
