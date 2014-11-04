@@ -41,6 +41,7 @@ FILES_TO_COMPLEXIFY = \
 		matrixInfo.F90\
 		adjoint_stencils.f90\
 		setupCouplingMatrixStruct.F90\
+		matrixFreeRoutines.F90\
 #		copyADjointStencil.f90    \
 		solverADjoint.F90         \
 		setupAllResidualMatrices.F90\
