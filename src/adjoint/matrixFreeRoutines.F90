@@ -631,9 +631,10 @@ subroutine dRdaMult(inVec, outVec, sizeInVec, sizeOutVec)
   implicit none
 
   ! Input Variables
+  integer(kind=intType), intent(in) :: sizeInVec, sizeOutVec
   real(kind=realType), dimension(sizeInVec), intent(in) :: inVec
   real(kind=realType), dimension(sizeOutVec), intent(out) :: outVec
-  integer(kind=intType), intent(in) :: sizeInVec, sizeOutVec
+
   
   ! Working variables
   real(kind=realType) :: alpha, beta, force(3), moment(3), sepSensor, Cavitation
@@ -784,9 +785,9 @@ subroutine dRdaTMult(inVec, outVec, sizeInVec, sizeOutVec)
   implicit none
 
   ! Input Variables
+  integer(kind=intType), intent(in) :: sizeInVec, sizeOutVec
   real(kind=realType), dimension(sizeInVec), intent(in) :: inVec
   real(kind=realType), dimension(sizeOutVec), intent(out) :: outVec
-  integer(kind=intType), intent(in) :: sizeInVec, sizeOutVec
 
   ! Working
   real(kind=realType) :: outVecLocal(sizeOutVec)
