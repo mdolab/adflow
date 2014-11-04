@@ -106,7 +106,6 @@
    CALL PUSHCONTROL2B(0)
    ELSE
    ! External flow. Compute the value of gammaInf.
-   CALL PUSHREAL8(gammainf)
    CALL COMPUTEGAMMA(tempfreestream, gammainf, 1)
    ! In case of a viscous problem, compute the
    ! dimensional free stream density and pressure.
@@ -137,7 +136,6 @@
    ! In case the reference pressure, density and temperature were
    ! not specified, set them to the infinity values.
    IF (pref .LE. zero) THEN
-   CALL PUSHREAL8(pref)
    pref = pinfdim
    CALL PUSHCONTROL1B(0)
    ELSE
@@ -150,7 +148,6 @@
    CALL PUSHCONTROL1B(1)
    END IF
    IF (tref .LE. zero) THEN
-   CALL PUSHREAL8(tref)
    tref = tinfdim
    CALL PUSHCONTROL2B(1)
    ELSE
@@ -163,16 +160,13 @@
    ! a reference length. However this reference length is 1.0
    ! in this code, because the coordinates are converted to
    ! meters.
-   CALL PUSHREAL8(muref)
    muref = SQRT(pref*rhoref)
    ! Compute timeRef for a correct nonDimensionalization of the
    ! unsteady equations. Some story as for the reference viscosity
    ! concerning the reference length.
    ! Compute the nonDimensional pressure, density, velocity,
    ! viscosity and gas constant.
-   CALL PUSHREAL8(pinf)
    pinf = pinfdim/pref
-   CALL PUSHREAL8(rhoinf)
    rhoinf = rhoinfdim/rhoref
    mudimb = muinfb/muref
    murefb = murefb - mudim*muinfb/muref**2
@@ -189,16 +183,13 @@
    gammainfb = gammainfb + pinf*tempb8
    pinfb = pinfb + gammainf*tempb8
    rhoinfb = rhoinfb - temp0*tempb8
-   CALL POPREAL8(rhoinf)
    rhoinfdimb = rhoinfb/rhoref
-   CALL POPREAL8(pinf)
    pinfdimb = pinfb/pref
    IF (rhoref/pref .EQ. 0.0_8) THEN
    tempb7 = 0.0
    ELSE
    tempb7 = timerefb/(2.0*SQRT(rhoref/pref)*pref)
    END IF
-   CALL POPREAL8(muref)
    IF (pref*rhoref .EQ. 0.0_8) THEN
    tempb6 = 0.0
    ELSE
@@ -214,7 +205,6 @@
    tinfdimb = 0.0_8
    ELSE
    IF (branch .EQ. 1) THEN
-   CALL POPREAL8(tref)
    tinfdimb = trefb
    ELSE
    tinfdimb = 0.0_8
@@ -223,7 +213,6 @@
    IF (branch .EQ. 0) rhoinfdimb = rhoinfdimb + rhorefb
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   CALL POPREAL8(pref)
    pinfdimb = pinfdimb + prefb
    prefb = 0.0_8
    END IF
@@ -265,7 +254,6 @@
    ELSE
    tempfreestreamb = 0.0_8
    END IF
-   CALL POPREAL8(gammainf)
    CALL COMPUTEGAMMA_B(tempfreestream, tempfreestreamb, gammainf, &
    &                 gammainfb, 1)
    END IF
