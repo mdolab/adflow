@@ -3,7 +3,7 @@
    !
    !  Differentiation of adjustinflowangle in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: veldirfreestream
-   !   with respect to varying inputs: alpha beta
+   !   with respect to varying inputs: veldirfreestream alpha beta
    !
    !      ******************************************************************
    !      *                                                                *

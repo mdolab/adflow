@@ -3,8 +3,8 @@
    !
    !  Differentiation of gridvelocitiesfinelevel_block in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *sfacei *sfacej *s *sfacek
-   !   with respect to varying inputs: *x *si *sj *sk gammainf pinf
-   !                timeref rhoinf veldirfreestream machgrid
+   !   with respect to varying inputs: veldirfreestream machgrid *x
+   !                *si *sj *sk gammainf pinf timeref rhoinf
    !   Plus diff mem management of: sfacei:in sfacej:in s:in sfacek:in
    !                x:in si:in sj:in sk:in
    !
@@ -159,6 +159,7 @@
    !Determine the grid velocity for this alpha
    refdirection(:) = zero
    refdirection(1) = one
+   veldird = 0.0_8
    CALL GETDIRVECTOR_D(refdirection, alphats, alphatsd, beta, betad, &
    &                   veldir, veldird, liftindex)
    !do I need to update the lift direction and drag direction as well?
@@ -185,6 +186,7 @@
    !Determine the grid velocity for this alpha
    refdirection(:) = zero
    refdirection(1) = one
+   veldird = 0.0_8
    CALL GETDIRVECTOR_D(refdirection, alpha, alphad, betats, betatsd, &
    &                   veldir, veldird, liftindex)
    !do I need to update the lift direction and drag direction as well?
