@@ -144,11 +144,26 @@
                    ! velocity.
 
                    allocate(BCData(mm)%rface(iBeg:iEnd,jBeg:jEnd), &
+                        BCData(mm)%oArea(inodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
                         stat=ierr)
                    if(ierr /= 0)                      &
                      call terminate("allocMemBCData", &
                                     "Memory allocation failure for &
                                     &a farfield")
+                   !=======================================================
+
+                 case (symm, symmPolar)
+
+                   ! Allocate for symm as well. This is not necessary
+                   ! but we need it for the reverse AD.
+
+                   allocate(BCData(mm)%rface(iBeg:iEnd,jBeg:jEnd), &
+                        BCData(mm)%oArea(inodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
+                        stat=ierr)
+                   if(ierr /= 0)                      &
+                     call terminate("allocMemBCData", &
+                                    "Memory allocation failure for &
+                                    &a symm")
 
                  !=======================================================
 
