@@ -24,7 +24,7 @@ subroutine pointReduce(pts, N, tol, uniquePts, link, nUnique)
   integer(kind=intType), allocatable, dimension(:) :: ind
   integer(kind=intType) :: i, j, nTmp, link_counter, ii
   logical cont, cont2
-  integer(kind=intType), parameter :: dupMax = 50
+  integer(kind=intType), parameter :: dupMax = 500
   integer(kind=intType) :: tmpInd(dupMax), subLink(dupMax), nSubUnique
   real(kind=realType) :: subPts(3, dupMax), subUniquePts(3, dupMax)
   interface
