@@ -522,7 +522,8 @@ steady rotations and specifying an aeroProblem')
             self.resetFlow(aeroProblem)
 
         # Possibly release adjoint memory 
-        self.releaseAdjointMemory()
+        if kwargs.pop('relaseAdjointMemory', True):
+            self.releaseAdjointMemory()
 
         # Save aeroProblem, and other information into the current flow case
         self.curAP.sumbData.adjointRHS = None
