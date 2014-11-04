@@ -398,6 +398,29 @@ python module libsumb
          integer(kind=inttype) intent(in) :: nout
        end subroutine spectralprecscribedmotion
   
+        subroutine drdwmult(invec,outvec,ndof) ! in :test:matrixFreeRoutines.F90
+            real(kind=realtype) dimension(ndof),intent(in) :: invec
+            real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: outvec
+            integer(kind=inttype), optional,check(len(invec)>=ndof),depend(invec) :: ndof=len(invec)
+        end subroutine drdwmult
+        subroutine drdwtmult(invec,outvec,ndof) ! in :test:matrixFreeRoutines.F90
+            real(kind=realtype) dimension(ndof),intent(in) :: invec
+            real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: outvec
+            integer(kind=inttype), optional,check(len(invec)>=ndof),depend(invec) :: ndof=len(invec)
+        end subroutine drdwtmult
+        subroutine drdxmult(invec,outvec,ndofin,ndofout) ! in :test:matrixFreeRoutines.F90
+            real(kind=realtype) dimension(ndofin),intent(in) :: invec
+            real(kind=realtype) dimension(ndofout),intent(out),depend(ndofout) :: outvec
+            integer(kind=inttype), optional,check(len(invec)>=ndofin),depend(invec) :: ndofin=len(invec)
+            integer(kind=inttype) :: ndofout
+        end subroutine drdxmult
+        subroutine drdxtmult(invec,outvec,ndofin,ndofout) ! in :test:matrixFreeRoutines.F90
+            real(kind=realtype) dimension(ndofin),intent(in) :: invec
+            real(kind=realtype) dimension(ndofout),intent(out),depend(ndofout) :: outvec
+            integer(kind=inttype), optional,check(len(invec)>=ndofin),depend(invec) :: ndofin=len(invec)
+            integer(kind=inttype) :: ndofout
+        end subroutine drdxtmult
+
         subroutine getdrdapsi(output,ndv,adjoint,nstate) ! in :test:getdRdaPsi.F90
             real(kind=realtype) dimension(ndv),intent(out),depend(ndv) :: output
             integer(kind=inttype) intent(in) :: ndv
