@@ -11,7 +11,8 @@
 ! block/sps loop is outside the calculation. This routine is suitable
 ! for forward mode AD with Tapenade
 
-subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment, sepSensor, Cavitation)
+subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment, sepSensor, &
+     Cavitation, costFunction, objValue)
 
   use blockPointers       
   use flowVarRefState     
@@ -28,10 +29,10 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   integer(kind=intType), intent(in) :: nn, sps
   logical, intent(in) :: useSpatial
   real(kind=realType), intent(in) :: alpha, beta
-  integer(kind=intType), intent(in) :: liftIndex
+  integer(kind=intType), intent(in) :: liftIndex, costFunction
 
   ! Output Variables
-  real(kind=realType) :: force(3), moment(3), sepSensor, Cavitation
+  real(kind=realType) :: force(3), moment(3), sepSensor, Cavitation, objValue
   
   ! Working Variables
   real(kind=realType) :: gm1, v2, fact, tmp
@@ -238,7 +239,7 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   fact = fact/(lengthRef*LRef)
   moment = (cMp + cMV)/fact
 
-  !call getCostFunction(costFunction, force, moment, sepSensor, &
-  !alpha, beta, liftIndex, objValue)
+  call getCostFunction(costFunction, force, moment, sepSensor, &
+  alpha, beta, liftIndex, objValue)
 
 end subroutine block_res

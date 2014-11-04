@@ -3,7 +3,7 @@
    !
    !  Differentiation of computegamma in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: gamma
-   !   with respect to varying inputs: t
+   !   with respect to varying inputs: gamma t
    !
    !      ******************************************************************
    !      *                                                                *
@@ -53,11 +53,10 @@
    CASE (cpconstant) 
    ! Constant cp and thus constant gamma. Set the values.
    DO i=1,mm
+   gammad(i) = 0.0_8
    gamma(i) = gammaconstant
    END DO
-   gammad = 0.0_8
    CASE (cptempcurvefits) 
-   gammad = 0.0_8
    !        ================================================================
    ! Cp as function of the temperature is given via curve fits.
    DO i=1,mm
@@ -117,7 +116,5 @@
    gamma(i) = cp/(cp-one)
    END IF
    END DO
-   CASE DEFAULT
-   gammad = 0.0_8
    END SELECT
    END SUBROUTINE COMPUTEGAMMA_D
