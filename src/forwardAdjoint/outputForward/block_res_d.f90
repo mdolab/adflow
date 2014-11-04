@@ -6,29 +6,29 @@
    !                *(flowdoms.dw) *(*bcdata.fp) *(*bcdata.fv) *(*bcdata.m)
    !                *(*bcdata.oarea) *(*bcdata.sepsensor) *(*bcdata.cavitation)
    !                pref moment force cavitation sepsensor
-   !   with respect to varying inputs: *(flowdoms.x) *(flowdoms.w)
-   !                pref mach tempfreestream machgrid lengthref machcoef
-   !                pointref alpha beta
-   !   RW status of diff variables: *(flowdoms.x):in-out *(flowdoms.vol):(loc)
-   !                *(flowdoms.w):in-out *(flowdoms.dw):out *rev:(loc)
-   !                *bvtj1:(loc) *bvtj2:(loc) *p:(loc) *sfacei:(loc)
-   !                *sfacej:(loc) *s:(loc) *gamma:(loc) *sfacek:(loc)
-   !                *bmtk1:(loc) *bmtk2:(loc) *rlv:(loc) *bvtk1:(loc)
-   !                *bvtk2:(loc) *bmti1:(loc) *bmti2:(loc) *si:(loc)
-   !                *sj:(loc) *sk:(loc) *bvti1:(loc) *bvti2:(loc)
-   !                *fw:(loc) *bmtj1:(loc) *bmtj2:(loc) *(*viscsubface.tau):(loc)
-   !                *(*bcdata.norm):(loc) *(*bcdata.rface):(loc) *(*bcdata.fp):out
-   !                *(*bcdata.fv):out *(*bcdata.m):out *(*bcdata.oarea):out
-   !                *(*bcdata.sepsensor):out *(*bcdata.cavitation):out
-   !                *bcdata.symnorm:(loc) *(*bcdata.uslip):(loc) *radi:(loc)
-   !                *radj:(loc) *radk:(loc) mudim:(loc) gammainf:(loc)
-   !                pinf:(loc) timeref:(loc) rhoinf:(loc) muref:(loc)
-   !                rhoinfdim:(loc) tref:(loc) winf:(loc) muinf:(loc)
-   !                uinf:(loc) pinfcorr:(loc) rgas:(loc) pinfdim:(loc)
-   !                pref:in-out rhoref:(loc) mach:in tempfreestream:in
-   !                veldirfreestream:(loc) machgrid:in lengthref:in
-   !                machcoef:in pointref:in moment:out alpha:in force:out
-   !                beta:in cavitation:out sepsensor:out
+   !   with respect to varying inputs: mach tempfreestream machgrid
+   !                lengthref machcoef pointref *(flowdoms.x) *(flowdoms.w)
+   !                pref alpha beta
+   !   RW status of diff variables: mach:in tempfreestream:in veldirfreestream:(loc)
+   !                machgrid:in lengthref:in machcoef:in pointref:in
+   !                *(flowdoms.x):in-out *(flowdoms.vol):(loc) *(flowdoms.w):in-out
+   !                *(flowdoms.dw):out *rev:(loc) *bvtj1:(loc) *bvtj2:(loc)
+   !                *p:(loc) *sfacei:(loc) *sfacej:(loc) *s:(loc)
+   !                *gamma:(loc) *sfacek:(loc) *bmtk1:(loc) *bmtk2:(loc)
+   !                *rlv:(loc) *bvtk1:(loc) *bvtk2:(loc) *bmti1:(loc)
+   !                *bmti2:(loc) *si:(loc) *sj:(loc) *sk:(loc) *bvti1:(loc)
+   !                *bvti2:(loc) *fw:(loc) *bmtj1:(loc) *bmtj2:(loc)
+   !                *(*viscsubface.tau):(loc) *(*bcdata.norm):(loc)
+   !                *(*bcdata.rface):(loc) *(*bcdata.fp):out *(*bcdata.fv):out
+   !                *(*bcdata.m):out *(*bcdata.oarea):out *(*bcdata.sepsensor):out
+   !                *(*bcdata.cavitation):out *bcdata.symnorm:(loc)
+   !                *(*bcdata.uslip):(loc) *radi:(loc) *radj:(loc)
+   !                *radk:(loc) mudim:(loc) gammainf:(loc) pinf:(loc)
+   !                timeref:(loc) rhoinf:(loc) muref:(loc) rhoinfdim:(loc)
+   !                tref:(loc) winf:(loc) muinf:(loc) uinf:(loc) pinfcorr:(loc)
+   !                rgas:(loc) pinfdim:(loc) pref:in-out rhoref:(loc)
+   !                moment:out alpha:in force:out beta:in cavitation:out
+   !                sepsensor:out
    !   Plus diff mem management of: flowdoms.x:in flowdoms.vol:in
    !                flowdoms.w:in flowdoms.dw:in rev:in bvtj1:in bvtj2:in
    !                p:in sfacei:in sfacej:in s:in gamma:in sfacek:in
@@ -52,7 +52,7 @@
    ! for forward mode AD with Tapenade
    SUBROUTINE BLOCK_RES_D(nn, sps, usespatial, alpha, alphad, beta, betad, &
    & liftindex, force, forced, moment, momentd, sepsensor, sepsensord, &
-   & cavitation, cavitationd)
+   & cavitation, cavitationd, costfunction, objvalue)
    USE BLOCKPOINTERS_D
    USE FLOWVARREFSTATE
    USE INPUTPHYSICS
@@ -65,16 +65,15 @@
    USE DIFFSIZES
    !  Hint: ISIZE1OFDrfbcdata should be the size of dimension 1 of array *bcdata
    IMPLICIT NONE
-   !call getCostFunction(costFunction, force, moment, sepSensor, &
-   !alpha, beta, liftIndex, objValue)
    ! Input Arguments:
    INTEGER(kind=inttype), INTENT(IN) :: nn, sps
    LOGICAL, INTENT(IN) :: usespatial
    REAL(kind=realtype), INTENT(IN) :: alpha, beta
    REAL(kind=realtype), INTENT(IN) :: alphad, betad
-   INTEGER(kind=inttype), INTENT(IN) :: liftindex
+   INTEGER(kind=inttype), INTENT(IN) :: liftindex, costfunction
    ! Output Variables
-   REAL(kind=realtype) :: force(3), moment(3), sepsensor, cavitation
+   REAL(kind=realtype) :: force(3), moment(3), sepsensor, cavitation, &
+   & objvalue
    REAL(kind=realtype) :: forced(3), momentd(3), sepsensord, cavitationd
    ! Working Variables
    REAL(kind=realtype) :: gm1, v2, fact, tmp
@@ -111,7 +110,9 @@
    ! ------------------------------------------------
    !        Additional 'Extra' Components
    ! ------------------------------------------------ 
+   veldirfreestreamd = 0.0_8
    CALL ADJUSTINFLOWANGLE_D(alpha, alphad, beta, betad, liftindex)
+   gammainfd = 0.0_8
    CALL REFERENCESTATE_D()
    CALL SETFLOWINFINITYSTATE_D()
    ! ------------------------------------------------
@@ -337,4 +338,6 @@
    fact = fact/(lengthref*lref)
    momentd = ((cmpd+cmvd)*fact-(cmp+cmv)*factd)/fact**2
    moment = (cmp+cmv)/fact
+   CALL GETCOSTFUNCTION_D(costfunction, force, moment, sepsensor, alpha, &
+   &                  beta, betad, liftindex, objvalue)
    END SUBROUTINE BLOCK_RES_D
