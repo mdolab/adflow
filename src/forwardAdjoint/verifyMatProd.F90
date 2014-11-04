@@ -113,7 +113,7 @@ subroutine verifyMatProd
      ! Reset All States and possibe AD seeds
      flowdomsb(1,1,1)%dw = zero 
      print *, ncellslocal(1)
-     allocate(vec1(3072*5),vec2(3072*5))
+     allocate(vec1(ncellslocal(1)*nState),vec2(ncellslocal(1)*nState))
      
      flowdomsb(1,1,1)%w = zero
      ii = 0
@@ -131,7 +131,7 @@ subroutine verifyMatProd
            end do
         end do
      end do
-     call getdRdwTVec(vec1, vec2, 3072*5)
+     call getdRdwTVec(vec1, vec2, ncellslocal(1)*nState)
      
      call BLOCK_RES_B(nn, 1, .False., alpha, alphab, beta, betab, &
           & liftindex, force, forceb, moment, momentb, sepsensor, sepsensorb, &
@@ -177,7 +177,7 @@ subroutine verifyMatProd
      ! Reset All States and possibe AD seeds
      flowdomsb(1,1,1)%dw = zero 
      print *, nNodeslocal(1)
-     allocate(vec1(3072*5),vec2(nNodesLocal(1)*3))
+     allocate(vec1(ncellslocal(1)*nState),vec2(nNodesLocal(1)*3))
      
      flowdomsb(1,1,1)%x = zero
      ii = 0
@@ -195,7 +195,7 @@ subroutine verifyMatProd
         end do
      end do
      
-     call getdRdXvTPsi(vec2, nNodesLocal(1)*3, vec1, 3072*5)
+     call getdRdXvTPsi(vec2, nNodesLocal(1)*3, vec1, ncellslocal(1)*nState)
     
      call BLOCK_RES_B(nn, 1, .True., alpha, alphab, beta, betab, &
           & liftindex, force, forceb, moment, momentb, sepsensor, sepsensorb, &
