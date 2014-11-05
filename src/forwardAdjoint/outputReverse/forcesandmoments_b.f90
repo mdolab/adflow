@@ -2,10 +2,11 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of forcesandmoments in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: lengthref machcoef *w *x *(*bcdata.fp)
-   !                *(*bcdata.fv) *(*bcdata.m) *(*bcdata.oarea) *(*bcdata.sepsensor)
-   !                *(*bcdata.cavitation) gammainf pinf pref cfp cfv
-   !                cmp cmv cavitation sepsensor
+   !   gradient     of useful results: lengthref machcoef pointref
+   !                *w *x *(*bcdata.fp) *(*bcdata.fv) *(*bcdata.m)
+   !                *(*bcdata.oarea) *(*bcdata.sepsensor) *(*bcdata.cavitation)
+   !                gammainf pinf pref cfp cfv cmp cmv cavitation
+   !                sepsensor
    !   with respect to varying inputs: veldirfreestream lengthref
    !                machcoef pointref *p *w *x *si *sj *sk *(*viscsubface.tau)
    !                *(*bcdata.fp) *(*bcdata.fv) *(*bcdata.m) *(*bcdata.oarea)
@@ -827,7 +828,6 @@
    &                       rev2, rev2b, 0)
    END IF
    END DO
-   pointrefb = 0.0_8
    pointrefb(3) = pointrefb(3) + lref*refpointb(3)
    refpointb(3) = 0.0_8
    pointrefb(2) = pointrefb(2) + lref*refpointb(2)
