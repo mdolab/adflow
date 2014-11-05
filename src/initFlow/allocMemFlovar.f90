@@ -92,14 +92,14 @@ subroutine allocMemFlovarPart1(sps,level)
 
      ! Allocate memory for the cell and node indexing...only on sps=1
      allocate(flowDoms(nn,level,sps)%globalCell(0:ib,0:jb,0:kb), &
-          flowDoms(nn,level,sps)%globalNode(0:ib,0:jb,0:kb), stat=ierr)
+          flowDoms(nn,level,sps)%globalNode(0:ie,0:je,0:ke), stat=ierr)
      if (ierr /=0) then
         call terminate("allMemFlowvarPart1", "Allocation failure for globalCell/Node")
      end if
 
      ! Assign a 'magic number' of -5 to globalCell and global Node:
-     flowDoms(nn,level,sps)%globalCell(0:ib,0:jb,0:kb) = -5           
-     flowDoms(nn,level,sps)%globalNode(0:ib,0:jb,0:kb) = -5
+     flowDoms(nn,level,sps)%globalCell = -5
+     flowDoms(nn,level,sps)%globalNode = -5
 
      ! The eddy viscosity for eddy viscosity models.
      ! Although a dependent variable, it is allocated on all grid
