@@ -1,5 +1,5 @@
 subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useState, dwdot, funcsDot, &
-     spatialSize, extraSize, stateSize) 
+     spatialSize, extraSize, stateSize, costSize)
 
   ! This is the main matrix-free forward mode computation
   use constants
@@ -22,7 +22,7 @@ subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useSta
 #include "finclude/petsc.h"
 
   ! Input Variables
-  integer(kind=intType), intent(in) :: spatialSize, extraSize, stateSize
+  integer(kind=intType), intent(in) :: spatialSize, extraSize, stateSize, costSize
   real(kind=realType), dimension(spatialSize), intent(in) :: xvdot
   real(kind=realType), dimension(extraSize), intent(in) :: extradot
   real(kind=realType), dimension(stateSize), intent(in) :: wdot
@@ -30,14 +30,14 @@ subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useSta
 
   ! Ouput Variables
   real(kind=realType), dimension(stateSize), intent(out) :: dwDot
-  real(kind=realType), dimension(nCostFunction), intent(out) :: funcsDot
+  real(kind=realType), dimension(costSize), intent(out) :: funcsDot
 
   ! Working Variables
   integer(kind=intType) :: ierr,nn,sps,i,j,k,l,ii, sps2
   real(kind=realType) :: alpha, beta, force(3), moment(3), sepSensor, cavitation, cavitationd
   real(kind=realType) :: alphad, betad, forced(3), momentd(3), sepSensord
   integer(kind=intType) ::  level, irow, liftIndex
-  real(kind=realType), dimension(nCostFunction) :: funcsLocalDot
+  real(kind=realType), dimension(costSize) :: funcsLocalDot
   logical :: resetToRans
 
   ! Need to trick the residual evalution to use coupled (mean flow and
@@ -180,13 +180,13 @@ subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useSta
         end do
 
         ! We need to SUM the funcs into the local array
-        funcsLocalDot = funcsLocalDot + functionValuesd
+        funcsLocalDot = funcsLocalDot + funcValuesd
 
      end do spectalLoopAD
   end do domainLoopAD
 
   ! We need to allreduce the function values to all processors
-  call mpi_allreduce(funcsLocalDot, funcsDot, nCostFunction, sumb_real, mpi_sum, SUmb_comm_world, ierr)
+  call mpi_allreduce(funcsLocalDot, funcsDot, costSize, sumb_real, mpi_sum, SUmb_comm_world, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Finish up the tear-down of this routine
@@ -213,7 +213,7 @@ subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useSta
 end subroutine computeMatrixFreeProductFwd
 
 subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xvbar, extrabar, wbar,&
-     spatialSize, extraSize, stateSize)
+     spatialSize, extraSize, stateSize, costSize)
   use constants
   use communication
   use blockPointers
@@ -231,9 +231,9 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
   implicit none
 
   ! Input Variables
-  integer(kind=intType), intent(in) :: spatialSize, extraSize, stateSize
+  integer(kind=intType), intent(in) :: spatialSize, extraSize, stateSize, costSize
   real(kind=realType), dimension(stateSize), intent(in) :: dwbar
-  real(kind=realType), dimension(nCostFunction), intent(in) :: funcsbar
+  real(kind=realType), dimension(costSize), intent(in) :: funcsbar
   logical, intent(in) :: useSpatial, useState
 
   ! Ouput Variables
@@ -297,7 +297,7 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
   momentb = zero
   sepSensorb = zero
   cavitationb = zero
-  functionValueb = zero
+  funcValuesb = zero
   call getDirAngle(velDirFreestream, liftDirection, liftIndex, alpha, beta)
 
   ii = 0
@@ -324,7 +324,7 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
         end do
 
         ! And the function value seeds
-        functionValueb = funcsBar
+        funcValuesb = funcsBar
 
         call BLOCK_RES_B(nn, 1, useSpatial, alpha, alphab, beta, betab, &
              & liftindex, force, forceb, moment, momentb, sepsensor, sepsensorb, &
