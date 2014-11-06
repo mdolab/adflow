@@ -12,7 +12,7 @@
 ! for forward mode AD with Tapenade
 
 subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment, sepSensor, &
-     Cavitation, costFunction, objValue)
+     Cavitation)
 
   use blockPointers       
   use flowVarRefState     
@@ -30,10 +30,10 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   integer(kind=intType), intent(in) :: nn, sps
   logical, intent(in) :: useSpatial
   real(kind=realType), intent(in) :: alpha, beta
-  integer(kind=intType), intent(in) :: liftIndex, costFunction
+  integer(kind=intType), intent(in) :: liftIndex
 
   ! Output Variables
-  real(kind=realType) :: force(3), moment(3), sepSensor, Cavitation, objValue
+  real(kind=realType) :: force(3), moment(3), sepSensor, Cavitation
   
   ! Working Variables
   real(kind=realType) :: gm1, v2, fact, tmp
@@ -240,12 +240,12 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   fact = fact/(lengthRef*LRef)
   moment = (cMp + cMV)/fact
 
-#ifndef TAPENADE_REVERSE
-  call getCostFunction(costFunction, force, moment, sepSensor, &
-  alpha, beta, liftIndex, objValue)
-#else
-  call getCostFunction2(costFunction, force, moment, sepSensor, &
-  alpha, beta, liftIndex, objValue)
-#endif
+! #ifndef TAPENADE_REVERSE
+!   call getCostFunction(costFunction, force, moment, sepSensor, &
+!   alpha, beta, liftIndex, objValue)
+! #else
+!   call getCostFunction2(costFunction, force, moment, sepSensor, &
+!   alpha, beta, liftIndex, objValue)
+! #endif
 
 end subroutine block_res
