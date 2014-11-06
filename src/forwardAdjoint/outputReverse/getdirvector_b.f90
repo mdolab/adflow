@@ -2,7 +2,7 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of getdirvector in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: alpha beta winddirection
+   !   gradient     of useful results: winddirection
    !   with respect to varying inputs: alpha beta
    !
    !     ******************************************************************
@@ -111,19 +111,20 @@
    xwb = winddirectionb(1)
    CALL POPCONTROL2B(branch)
    IF (branch .EQ. 0) THEN
-   tmpb = 0.0_8
    CALL VECTORROTATION_B(xw, xwb, yw, ywb, zw, zwb, 2, tmp, tmpb, x1, &
    &                   x1b, y1, y1b, z1, z1b)
-   betab = betab - tmpb
+   betab = -tmpb
    tmp = -alpha
-   tmpb = 0.0_8
    CALL VECTORROTATION_B(x1, x1b, y1, y1b, z1, z1b, 3, tmp, tmpb, xbn, &
    &                   xbnb, ybn, ybnb, zbn, zbnb)
-   alphab = alphab - tmpb
+   alphab = -tmpb
    ELSE IF (branch .EQ. 1) THEN
    CALL VECTORROTATION_B(xw, xwb, yw, ywb, zw, zwb, 3, beta, betab, x1&
    &                   , x1b, y1, y1b, z1, z1b)
    CALL VECTORROTATION_B(x1, x1b, y1, y1b, z1, z1b, 2, alpha, alphab, &
    &                   xbn, xbnb, ybn, ybnb, zbn, zbnb)
+   ELSE
+   alphab = 0.0_8
+   betab = 0.0_8
    END IF
    END SUBROUTINE GETDIRVECTOR_B

@@ -52,7 +52,7 @@
    ! for forward mode AD with Tapenade
    SUBROUTINE BLOCK_RES_D(nn, sps, usespatial, alpha, alphad, beta, betad, &
    & liftindex, force, forced, moment, momentd, sepsensor, sepsensord, &
-   & cavitation, cavitationd, costfunction, objvalue)
+   & cavitation, cavitationd)
    USE BLOCKPOINTERS_D
    USE FLOWVARREFSTATE
    USE INPUTPHYSICS
@@ -66,15 +66,21 @@
    USE DIFFSIZES
    !  Hint: ISIZE1OFDrfbcdata should be the size of dimension 1 of array *bcdata
    IMPLICIT NONE
+   ! #ifndef TAPENADE_REVERSE
+   !   call getCostFunction(costFunction, force, moment, sepSensor, &
+   !   alpha, beta, liftIndex, objValue)
+   ! #else
+   !   call getCostFunction2(costFunction, force, moment, sepSensor, &
+   !   alpha, beta, liftIndex, objValue)
+   ! #endif
    ! Input Arguments:
    INTEGER(kind=inttype), INTENT(IN) :: nn, sps
    LOGICAL, INTENT(IN) :: usespatial
    REAL(kind=realtype), INTENT(IN) :: alpha, beta
    REAL(kind=realtype), INTENT(IN) :: alphad, betad
-   INTEGER(kind=inttype), INTENT(IN) :: liftindex, costfunction
+   INTEGER(kind=inttype), INTENT(IN) :: liftindex
    ! Output Variables
-   REAL(kind=realtype) :: force(3), moment(3), sepsensor, cavitation, &
-   & objvalue
+   REAL(kind=realtype) :: force(3), moment(3), sepsensor, cavitation
    REAL(kind=realtype) :: forced(3), momentd(3), sepsensord, cavitationd
    ! Working Variables
    REAL(kind=realtype) :: gm1, v2, fact, tmp
@@ -111,9 +117,7 @@
    ! ------------------------------------------------
    !        Additional 'Extra' Components
    ! ------------------------------------------------ 
-   veldirfreestreamd = 0.0_8
    CALL ADJUSTINFLOWANGLE_D(alpha, alphad, beta, betad, liftindex)
-   gammainfd = 0.0_8
    CALL REFERENCESTATE_D()
    CALL SETFLOWINFINITYSTATE_D()
    ! ------------------------------------------------
@@ -339,6 +343,4 @@
    fact = fact/(lengthref*lref)
    momentd = ((cmpd+cmvd)*fact-(cmp+cmv)*factd)/fact**2
    moment = (cmp+cmv)/fact
-   CALL GETCOSTFUNCTION_D(costfunction, force, moment, sepsensor, alpha, &
-   &                  beta, betad, liftindex, objvalue)
    END SUBROUTINE BLOCK_RES_D
