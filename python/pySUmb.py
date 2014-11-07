@@ -2375,6 +2375,10 @@ steady rotations and specifying an aeroProblem')
             
             # Do the aerodynamic design variables
             extradot = numpy.zeros(self.nDVAero)
+            for key in xDVdot:
+                if key in self.aeroDVs:
+                    mapping = self.possibleAeroDVs[key]
+                    extradot[mapping] = xDVdot[key]
 
             useSpatial = True
         else:
@@ -2419,9 +2423,8 @@ steady rotations and specifying an aeroProblem')
             tmp = numpy.zeros(self.sumb.costfunctions.ncostfunction)
             # Extract out the seeds
             for f in funcsBar:
-                key = self.curAP.name + '_%s'% f
                 mapping = self.sumbCostFunctions[self.possibleObjectives[f]]
-                tmp[mapping] = funcsBar[key]
+                tmp[mapping] = funcsBar[f]
             funcsBar = tmp
 
         useSpatial = False
@@ -2442,6 +2445,9 @@ steady rotations and specifying an aeroProblem')
                                                 config=self.curAP.name))
             
             # We also need to add in the aero derivatives here
+            for key in self.aeroDVs:
+                mapping = self.possibleAeroDVs[key]
+                xdvbar[key] = extrabar[mapping]
             
         if wDeriv and xDvDeriv:
             return wbar, xdvbar
