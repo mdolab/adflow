@@ -76,6 +76,7 @@ default:
 	@echo " NOTE: There has been a change in the config files. Please "
 	@echo "       use a default config file or modifiy an existing one "
 	@echo "       to match the defaults"
+	@echo " 												SCOREC_GFORTRAN_MPICH"
 	@echo "                         LINUX_INTEL_OPENMPI"
 	@echo "                         LINUX_INTEL_OPENMPI_SCINET"
 	@echo "                         LINUX_INTEL_INTELMPI_SCINET"
@@ -157,6 +158,14 @@ sumb:
 #      * Currently Supported Platforms                                  *
 #      *                                                                *
 #      ******************************************************************
+
+SCOREC_GFORTRAN_MPICH:
+	make dirs
+	if [ ! -f "config/config.SCOREC_GFORTRAN_MPICH.mk" ]; then cp "config/defaults/config.SCOREC_GFORTRAN_MPICH.mk" ./config; fi
+	ln -sf config/config.SCOREC_GFORTRAN_MPICH.mk config.mk
+	ln -sf SUmb_Common_real.mk SUmb_Common.mk
+	make sumb
+	(cd src/python/f2py &&  make)
 
 LINUX_INTEL_OPENMPI:
 	make dirs
