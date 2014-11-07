@@ -40,6 +40,8 @@ subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useSta
   real(kind=realType), dimension(costSize) :: funcsLocalDot
   logical :: resetToRans
 
+#ifndef USE_COMPLEX
+
   ! Need to trick the residual evalution to use coupled (mean flow and
   ! turbulent) together.
   level = 1
@@ -210,6 +212,8 @@ subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useSta
      if( eddyModel ) restrictEddyVis = .true.
   end if
 
+#endif
+
 end subroutine computeMatrixFreeProductFwd
 
 subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xvbar, extrabar, wbar,&
@@ -262,6 +266,8 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
 
   call VecSet(Xvec, zero, ierr)
   call EChk(ierr, __FILE__, __LINE__)
+
+#ifndef USE_COMPLEX
 
   ! Need to trick the residual evalution to use coupled (mean flow and
   ! turbulent) together.
@@ -436,6 +442,8 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
   call VecResetArray(Xvec, xvbar, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
+#endif
+
 end subroutine computeMatrixFreeProductBwd
 
 subroutine solveAdjointForRHS(inVec, outVec, nDOF, relativeTolerance)
@@ -454,6 +462,8 @@ subroutine solveAdjointForRHS(inVec, outVec, nDOF, relativeTolerance)
 
   ! Working variables
   integer(kind=intType) :: ierr
+
+#ifndef USE_COMPLEX
 
   ! Place the arrays
   call VecPlaceArray(psi_like1, inVec, ierr)
@@ -489,6 +499,8 @@ subroutine solveAdjointForRHS(inVec, outVec, nDOF, relativeTolerance)
   call VecResetArray(psi_like2, outVec, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
+#endif
+
 end subroutine solveAdjointForRHS
 
 subroutine solveDirectForRHS(inVec, outVec, nDOF, relativeTolerance)
@@ -507,6 +519,8 @@ subroutine solveDirectForRHS(inVec, outVec, nDOF, relativeTolerance)
 
   ! Working variables
   integer(kind=intType) :: ierr
+
+#ifndef USE_COMPLEX
 
   ! Place the arrays
   call VecPlaceArray(psi_like1, inVec, ierr)
@@ -541,6 +555,8 @@ subroutine solveDirectForRHS(inVec, outVec, nDOF, relativeTolerance)
 
   call VecResetArray(psi_like2, outVec, ierr)
   call EChk(ierr,__FILE__,__LINE__)
+
+#endif
 
 end subroutine solveDirectForRHS
 
