@@ -2363,6 +2363,99 @@ steady rotations and specifying an aeroProblem')
 
         return dIdw
 
+    def computeMatrixFreeProductFwd(self, xDVdot=None, wDot=None, residualDeriv=True, funcDeriv=True):
+        
+        if xDVdot is None and wDot is None:
+            raise Error('computeMatrixFreeProductFwd: xDVdot and wDot cannot both be None')
+        
+        if xDVdot is not None:
+            # Do the sptatial design variables -> Go through the geometry + mesh warp
+            xsdot = self.DVGeo.totalSensitivityProd(xDVdot, self.curAP.ptSetName)
+            xvdot = self.mesh.warpDerivFwd(xsdot)
+            
+            # Do the aerodynamic design variables
+            extradot = numpy.zeros(self.nDVAero)
+            for key in xDVdot:
+                if key in self.aeroDVs:
+                    mapping = self.possibleAeroDVs[key]
+                    extradot[mapping] = xDVdot[key]
+
+            useSpatial = True
+        else:
+            xvdot = numpy.zeros(self.getSpatialSize())
+            extradot = numpy.zeros(self.nDVAero)
+            useSpatial = False
+
+        if wDot is not None:
+            useState = True
+        else:
+            wDot = numpy.zeros(self.getSateSize())
+            useState = False
+        dwdot, tmp = self.sumb.computematrixfreeproductfwd(
+            xvdot, extradot, wDot, useSpatial, useState)
+
+        funcsdot = {}
+        for f in self.curAP.evalFuncs:
+            key = self.curAP.name + '_%s'% f
+            self.curAP.funcNames[f] = key
+            mapping = self.sumbCostFunctions[self.possibleObjectives[f]]
+            funcsdot[key] = tmp[mapping]
+            
+        if residualDeriv and funcDeriv:
+            return dwdot, funcsdot
+        elif residualDeriv:
+            return dwdot
+        else:
+            return funcsdot
+
+    def computeMatrixFreeProductBwd(self, resBar=None, funcsBar=None, wDeriv=True, xDvDeriv=True):
+
+        if resBar is None and funcsBar is None:
+            raise Error("computeMatrixFreeProductBwd: resBar and funcsBar"
+                        " cannot both be None")
+        
+        if resBar is None:
+            resBar = numpy.zeros(self.getStateSize())
+
+        if funcsBar is None:
+            funcsBar = numpy.zeros(self.sumb.costfunctions.ncostfunction)
+        else:
+            tmp = numpy.zeros(self.sumb.costfunctions.ncostfunction)
+            # Extract out the seeds
+            for f in funcsBar:
+                mapping = self.sumbCostFunctions[self.possibleObjectives[f]]
+                tmp[mapping] = funcsBar[f]
+            funcsBar = tmp
+
+        useSpatial = False
+        useState = False
+        if wDeriv:
+            useState = True
+        if xDvDeriv:
+            useSpatial = True
+            
+        xvbar, extrabar, wbar = self.sumb.computematrixfreeproductbwd(
+            resBar, funcsBar, useSpatial, useState, self.getSpatialSize(), self.nDVAero)
+
+        xdvbar = {}
+        if xDvDeriv:
+            self.mesh.warpDeriv(xvbar)
+            xsbar = self.mesh.getdXs('all')
+            xdvbar.update(self.DVGeo.totalSensitivity(xsbar, self.curAP.ptSetName, self.comm, 
+                                                config=self.curAP.name))
+            
+            # We also need to add in the aero derivatives here
+            for key in self.aeroDVs:
+                mapping = self.possibleAeroDVs[key]
+                xdvbar[key] = extrabar[mapping]
+            
+        if wDeriv and xDvDeriv:
+            return wbar, xdvbar
+        elif wDeriv:
+            return wbar
+        else:
+            return xdvbar
+
     def sectionVectorByFamily(self, *args, **kwargs):
         return self.mesh.sectionVectorByFamily(*args, **kwargs)
 
