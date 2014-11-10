@@ -2,7 +2,7 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of vectorrotation in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: xp yp angle zp
+   !   gradient     of useful results: xp yp zp
    !   with respect to varying inputs: x y z angle
    !
    !     ******************************************************************
@@ -54,13 +54,13 @@
    SELECT CASE  (iaxis) 
    CASE (1) 
    xb = xpb
-   angleb = angleb + (z*COS(angle)-y*SIN(angle))*ypb + (-(z*SIN(angle))&
-   &     -y*COS(angle))*zpb
+   angleb = (z*COS(angle)-y*SIN(angle))*ypb + (-(z*SIN(angle))-y*COS(&
+   &     angle))*zpb
    yb = COS(angle)*ypb - SIN(angle)*zpb
    zb = SIN(angle)*ypb + COS(angle)*zpb
    CASE (2) 
-   angleb = angleb + (-(z*COS(angle))-x*SIN(angle))*xpb + (x*COS(angle)&
-   &     -z*SIN(angle))*zpb
+   angleb = (-(z*COS(angle))-x*SIN(angle))*xpb + (x*COS(angle)-z*SIN(&
+   &     angle))*zpb
    xb = COS(angle)*xpb + SIN(angle)*zpb
    yb = ypb
    zb = COS(angle)*zpb - SIN(angle)*xpb
@@ -68,8 +68,8 @@
    xb = COS(angle)*xpb - SIN(angle)*ypb
    yb = COS(angle)*ypb + SIN(angle)*xpb
    zb = zpb
-   angleb = angleb + (y*COS(angle)-x*SIN(angle))*xpb + (-(x*COS(angle))&
-   &     -y*SIN(angle))*ypb
+   angleb = (y*COS(angle)-x*SIN(angle))*xpb + (-(x*COS(angle))-y*SIN(&
+   &     angle))*ypb
    CASE DEFAULT
    STOP
    END SELECT

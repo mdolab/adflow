@@ -98,8 +98,8 @@ subroutine allocMemFlovarPart1(sps,level)
      end if
 
      ! Assign a 'magic number' of -5 to globalCell and global Node:
-     flowDoms(nn,level,sps)%globalCell(0:ib,0:jb,0:kb) = -5           
-     flowDoms(nn,level,sps)%globalNode(0:ib,0:jb,0:kb) = -5
+     flowDoms(nn,level,sps)%globalCell = -5
+     flowDoms(nn,level,sps)%globalNode = -5
 
      ! The eddy viscosity for eddy viscosity models.
      ! Although a dependent variable, it is allocated on all grid
