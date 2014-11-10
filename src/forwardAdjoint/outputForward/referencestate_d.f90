@@ -5,7 +5,7 @@
    !   variations   of useful results: gammainf pinf timeref rhoinf
    !                muref tref muinf uinf rgas pref
    !   with respect to varying inputs: mach tempfreestream veldirfreestream
-   !                machcoef gammainf pref
+   !                machcoef pref
    !
    !      ******************************************************************
    !      *                                                                *
@@ -97,6 +97,7 @@
    &   tsuthdim)**1.5_realType
    ! Check the flow type we are having here.
    IF (flowtype .EQ. internalflow) THEN
+   gammainfd = 0.0_8
    trefd = 0.0_8
    rhorefd = 0.0_8
    ELSE

@@ -159,7 +159,6 @@
    !Determine the grid velocity for this alpha
    refdirection(:) = zero
    refdirection(1) = one
-   veldird = 0.0_8
    CALL GETDIRVECTOR_D(refdirection, alphats, alphatsd, beta, betad, &
    &                   veldir, veldird, liftindex)
    !do I need to update the lift direction and drag direction as well?
@@ -186,7 +185,6 @@
    !Determine the grid velocity for this alpha
    refdirection(:) = zero
    refdirection(1) = one
-   veldird = 0.0_8
    CALL GETDIRVECTOR_D(refdirection, alpha, alphad, betats, betatsd, &
    &                   veldir, veldird, liftindex)
    !do I need to update the lift direction and drag direction as well?

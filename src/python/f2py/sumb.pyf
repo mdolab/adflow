@@ -398,41 +398,34 @@ python module libsumb
          integer(kind=inttype) intent(in) :: nout
        end subroutine spectralprecscribedmotion
   
-        subroutine drdwmult(invec,outvec,ndof) ! in :test:matrixFreeRoutines.F90
-            real(kind=realtype) dimension(ndof),intent(in) :: invec
-            real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: outvec
-            integer(kind=inttype), optional,check(len(invec)>=ndof),depend(invec) :: ndof=len(invec)
-        end subroutine drdwmult
-        subroutine drdwtmult(invec,outvec,ndof) ! in :test:matrixFreeRoutines.F90
-            real(kind=realtype) dimension(ndof),intent(in) :: invec
-            real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: outvec
-            integer(kind=inttype), optional,check(len(invec)>=ndof),depend(invec) :: ndof=len(invec)
-        end subroutine drdwtmult
-        subroutine drdxmult(invec,outvec,ndofin,ndofout) ! in :test:matrixFreeRoutines.F90
-            real(kind=realtype) dimension(ndofin),intent(in) :: invec
-            real(kind=realtype) dimension(ndofout),intent(out),depend(ndofout) :: outvec
-            integer(kind=inttype), optional,check(len(invec)>=ndofin),depend(invec) :: ndofin=len(invec)
-            integer(kind=inttype) :: ndofout
-        end subroutine drdxmult
-        subroutine drdxtmult(invec,outvec,ndofin,ndofout) ! in :test:matrixFreeRoutines.F90
-            real(kind=realtype) dimension(ndofin),intent(in) :: invec
-            real(kind=realtype) dimension(ndofout),intent(out),depend(ndofout) :: outvec
-            integer(kind=inttype), optional,check(len(invec)>=ndofin),depend(invec) :: ndofin=len(invec)
-            integer(kind=inttype) :: ndofout
-        end subroutine drdxtmult
-        subroutine drdamult(invec,outvec,sizeinvec,sizeoutvec) ! in matrixFreeRoutines.F90
-          real(kind=realtype) dimension(sizeinvec),intent(in) :: invec
-          real(kind=realtype) dimension(sizeoutvec),intent(out),depend(sizeoutvec) :: outvec
-          integer(kind=inttype), optional,intent(in),check(len(invec)>=sizeinvec),depend(invec) :: sizeinvec=len(invec)
-          integer(kind=inttype) intent(in) :: sizeoutvec
-        end subroutine drdamult
+        subroutine computematrixfreeproductfwd(xvdot,extradot,wdot,usespatial,usestate,dwdot,funcsdot,spatialsize,extrasize,statesize,costsize) ! in :test:matrixFreeRoutines.F90
+            real(kind=realtype) dimension(spatialsize),intent(in) :: xvdot
+            real(kind=realtype) dimension(extrasize),intent(in) :: extradot
+            real(kind=realtype) dimension(statesize),intent(in) :: wdot
+            logical intent(in) :: usespatial
+            logical intent(in) :: usestate
+            real(kind=realtype) dimension(statesize),intent(out),depend(statesize) :: dwdot
+            real(kind=realtype) dimension(costsize),intent(out),depend(costsize) :: funcsdot
+            integer(kind=inttype), optional,intent(in),check(len(xvdot)>=spatialsize),depend(xvdot) :: spatialsize=len(xvdot)
+            integer(kind=inttype), optional,intent(in),check(len(extradot)>=extrasize),depend(extradot) :: extrasize=len(extradot)
+            integer(kind=inttype), optional,intent(in),check(len(wdot)>=statesize),depend(wdot) :: statesize=len(wdot)
+            integer(kind=inttype) intent(in) :: costsize
+        end subroutine computematrixfreeproductfwd
+        subroutine computematrixfreeproductbwd(dwbar,funcsbar,usespatial,usestate,xvbar,extrabar,wbar,spatialsize,extrasize,statesize,costsize) ! in :test:matrixFreeRoutines.F90
+            real(kind=realtype) dimension(statesize),intent(in) :: dwbar
+            real(kind=realtype) dimension(costsize),intent(in) :: funcsbar
+            logical intent(in) :: usespatial
+            logical intent(in) :: usestate
+            real(kind=realtype) dimension(spatialsize),intent(out),depend(spatialsize) :: xvbar
+            real(kind=realtype) dimension(extrasize),intent(out),depend(extrasize) :: extrabar
+            real(kind=realtype) dimension(statesize),intent(out),depend(statesize) :: wbar
+            integer(kind=inttype) intent(in) :: spatialsize
+            integer(kind=inttype) intent(in) :: extrasize
+            integer(kind=inttype), optional,intent(in),check(len(dwbar)>=statesize),depend(dwbar) :: statesize=len(dwbar)
+            integer(kind=inttype), optional,intent(in),check(len(funcsbar)>=costsize),depend(funcsbar) :: costsize=len(funcsbar)
+        end subroutine computematrixfreeproductbwd
+        
 
-        subroutine drdatmult(invec,outvec,sizeinvec,sizeoutvec) ! in matrixFreeRoutines.F90
-          real(kind=realtype) dimension(sizeinvec),intent(in) :: invec
-          real(kind=realtype) dimension(sizeoutvec),intent(out),depend(sizeoutvec) :: outvec
-          integer(kind=inttype), optional,intent(in),check(len(invec)>=sizeinvec),depend(invec) :: sizeinvec=len(invec)
-          integer(kind=inttype) intent(in) :: sizeoutvec
-        end subroutine drdatmult
 
         subroutine getdrdapsi(output,ndv,adjoint,nstate) ! in :test:getdRdaPsi.F90
             real(kind=realtype) dimension(ndv),intent(out),depend(ndv) :: output
@@ -1023,6 +1016,7 @@ python module libsumb
 
        module costfunctions ! in :test:costFunctions.F90
           use constants
+            integer(kind=inttype) :: ncostfunction
             integer(kind=inttype) parameter,optional :: costfunccdq=30
             integer(kind=inttype) parameter,optional :: costfuncforcezcoef=10
             integer(kind=inttype) parameter,optional :: costfuncmomzcoef=16
@@ -1052,7 +1046,6 @@ python module libsumb
             integer(kind=inttype) parameter,optional :: costfunccmzalpha=18
             integer(kind=inttype) parameter,optional :: costfuncdragcoef=4
             integer(kind=inttype) parameter,optional :: costfuncclalphadot=24
-            integer(kind=inttype) parameter,optional :: ncostfunction=37
             integer(kind=inttype) parameter,optional :: costfuncforceycoef=9
             integer(kind=inttype) parameter,optional :: costfuncclalpha=23
             integer(kind=inttype) parameter,optional :: costfuncmomycoef=15
