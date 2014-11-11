@@ -98,7 +98,7 @@
    LOGICAL :: rvfb
    LOGICAL :: wallfunctions, walldistanceneeded
    REAL(kind=realtype) :: mach, machcoef, machgrid
-   REAL(kind=realtype) :: machb, machcoefb
+   REAL(kind=realtype) :: machb, machcoefb, machgridb
    REAL(kind=realtype) :: reynolds, reynoldslength
    REAL(kind=realtype) :: tempfreestream, gammaconstant, rgasdim
    REAL(kind=realtype) :: tempfreestreamb
@@ -109,7 +109,9 @@
    REAL(kind=realtype), DIMENSION(3) :: veldirfreestream
    REAL(kind=realtype), DIMENSION(3) :: veldirfreestreamb
    REAL(kind=realtype), DIMENSION(3) :: liftdirection
+   REAL(kind=realtype), DIMENSION(3) :: liftdirectionb
    REAL(kind=realtype), DIMENSION(3) :: dragdirection
+   REAL(kind=realtype), DIMENSION(3) :: dragdirectionb
    REAL(kind=realtype), DIMENSION(3) :: pointref
    REAL(kind=realtype), DIMENSION(3) :: pointrefb
    REAL(kind=realtype), DIMENSION(3) :: pointrefec
