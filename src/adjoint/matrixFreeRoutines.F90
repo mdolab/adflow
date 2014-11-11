@@ -174,6 +174,7 @@ subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useSta
               do j=2, jl
                  do i=2, il
                     do l=1, nw
+                       ii = ii + 1
                        dwDot(ii) = flowdomsd(nn, level, sps2)%dw(i, j, k, l)
                     end do
                  end do

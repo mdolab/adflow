@@ -232,6 +232,49 @@ subroutine getdRdXvTPsi(dXv, ndof, adjoint, nstate)
 #endif
 end subroutine getdRdXvTPsi
 
+subroutine getdRdXvPsi(dXv, ndof, adjoint, nstate)
+#ifndef USE_NO_PETSC
+ 
+#define PETSC_AVOID_MPIF_H
+  use petscvec
+  use ADjointPETSc, only: dRdx, xVec, psi_like1
+  use blockPointers
+  use inputTimeSpectral 
+  implicit none
+
+  ! Input/Output Variables
+  integer(kind=intType), intent(in) :: ndof, nstate
+  real(kind=realType), intent(in)  :: dXv(ndof)
+  real(kind=realType), intent(out)   :: adjoint(nstate)
+
+  ! Local Variables
+  integer(kind=intType) :: ierr, sps, i
+   real(kind=realType), pointer :: xvec_pointer(:)
+
+  ! Place adjoint in Vector
+  call VecPlaceArray(xVec, dXv, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+  call VecPlaceArray(psi_like1, adjoint, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+  ! Do the matMult with dRdx and put result into xVec. NOTE dRdx is
+  ! already transposed and thus we just do a matMult NOT
+  ! a matMultTranspose
+
+  call MatMultTranspose(dRdx,  xVec, psi_like1, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+  ! Reset the arrays
+  call VecResetArray(psi_like1, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+  ! Reset the arrays
+  call VecResetArray(xVec, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+#endif
+end subroutine getdRdXvPsi
+
 subroutine spectralPrecscribedMotion(input, nin, dXv, nout)
 
   use blockPointers

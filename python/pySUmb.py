@@ -2368,6 +2368,8 @@ steady rotations and specifying an aeroProblem')
         if xDVdot is None and wDot is None:
             raise Error('computeMatrixFreeProductFwd: xDVdot and wDot cannot both be None')
         
+        self._setAeroDVs()
+
         if xDVdot is not None:
             # Do the sptatial design variables -> Go through the geometry + mesh warp
             xsdot = self.DVGeo.totalSensitivityProd(xDVdot, self.curAP.ptSetName)
@@ -2391,15 +2393,17 @@ steady rotations and specifying an aeroProblem')
         else:
             wDot = numpy.zeros(self.getSateSize())
             useState = False
+
+        costSize = self.sumb.costfunctions.ncostfunction
         dwdot, tmp = self.sumb.computematrixfreeproductfwd(
-            xvdot, extradot, wDot, useSpatial, useState)
+            xvdot, extradot, wDot, useSpatial, useState, costSize)
 
         funcsdot = {}
         for f in self.curAP.evalFuncs:
             key = self.curAP.name + '_%s'% f
             self.curAP.funcNames[f] = key
             mapping = self.sumbCostFunctions[self.possibleObjectives[f]]
-            funcsdot[key] = tmp[mapping]
+            funcsdot[key] = tmp[mapping-1]
             
         if residualDeriv and funcDeriv:
             return dwdot, funcsdot
@@ -2424,7 +2428,7 @@ steady rotations and specifying an aeroProblem')
             # Extract out the seeds
             for f in funcsBar:
                 mapping = self.sumbCostFunctions[self.possibleObjectives[f]]
-                tmp[mapping] = funcsBar[f]
+                tmp[mapping-1] = funcsBar[f]
             funcsBar = tmp
 
         useSpatial = False
