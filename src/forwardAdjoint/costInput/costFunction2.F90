@@ -1,5 +1,4 @@
-subroutine getCostFunction2(costFunction, force, moment, sepSensor, Cavitation, &
-  alpha, beta, liftIndex, objValue)
+subroutine getCostFunction2(force, moment, sepSensor, Cavitation, alpha, beta, liftIndex)
 
   ! Compute the value of the actual objective function based on the
   ! (summed) forces and moments and any other "extra" design
@@ -9,17 +8,14 @@ subroutine getCostFunction2(costFunction, force, moment, sepSensor, Cavitation, 
   use costFunctions
   use inputPhysics
   use flowvarRefState
+  use inputTSStabDeriv
   implicit none
 
   ! Input 
-  integer(kind=intType), intent(in) :: costFunction
   integer(kind=intType), intent(in) :: liftIndex
   real(kind=realType), intent(in), dimension(3, nTimeIntervalsSpectral) :: force, moment
   real(kind=realType), intent(in), dimension(nTimeIntervalsSpectral) :: sepSensor, Cavitation
   real(kind=realType), intent(in) :: alpha, beta
-
-  ! Output
-  real(kind=realType) :: objValue
 
   ! Working
   real(kind=realType) :: fact, factMoment, scaleDim, ovrNTS
@@ -36,22 +32,13 @@ subroutine getCostFunction2(costFunction, force, moment, sepSensor, Cavitation, 
        *surfaceRef*LRef**2*scaleDim)
   factMoment = fact/(lengthRef*LRef)
 
-  objValue = zero
   ovrNTS = one/nTimeIntervalsSpectral
 
-#ifndef TAPENADE_REVERSE
   ! Pre-compute TS stability info if required:
-  select case(costFunction)
-  case(costFuncCl0,costFuncCd0,costFuncCm0, &
-       costFuncClAlpha,costFuncCdAlpha,costFuncCmzAlpha,&
-       costFuncClAlphaDot,costFuncCdAlphaDot,costFuncCmzAlphaDot,&
-       costFuncClq,costFuncCdq,costFuncCmzq,&
-       costFuncClqDot,costFuncCdqDot,costFuncCmzqDot)
-
+  if (TSStability) then
      call computeTSDerivatives(force, moment, liftIndex, coef0, dcdalpha, &
           dcdalphadot, dcdq, dcdqdot)
-  end select
-#endif
+  end if
   
   funcValues = zero
   ! Now we just compute each cost function:
@@ -111,9 +98,6 @@ subroutine getCostFunction2(costFunction, force, moment, sepSensor, Cavitation, 
   funcValues(costFuncClqDot) = dcdqdot(1)
   funcValues(costFuncCdqDot) = dcdqdot(2)
   funcValues(costFuncCmzqDot) = dcdqdot(8)
-
-  ! Finally, for the *actual* 'objective' value we just select the one we need:
-  objValue = funcValues(costFunction)
 
 end subroutine getCostFunction2
 

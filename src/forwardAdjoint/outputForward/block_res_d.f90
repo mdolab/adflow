@@ -2,33 +2,34 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of block_res in forward (tangent) mode (with options i4 dr8 r8):
-   !   variations   of useful results: *(flowdoms.x) *(flowdoms.w)
+   !   variations   of useful results: funcvalues *(flowdoms.x) *(flowdoms.w)
    !                *(flowdoms.dw) *(*bcdata.fp) *(*bcdata.fv) *(*bcdata.m)
    !                *(*bcdata.oarea) *(*bcdata.sepsensor) *(*bcdata.cavitation)
    !                pref moment force cavitation sepsensor
    !   with respect to varying inputs: mach tempfreestream machgrid
    !                lengthref machcoef pointref *(flowdoms.x) *(flowdoms.w)
    !                pref alpha beta
-   !   RW status of diff variables: mach:in tempfreestream:in veldirfreestream:(loc)
-   !                machgrid:in lengthref:in machcoef:in pointref:in
-   !                *(flowdoms.x):in-out *(flowdoms.vol):(loc) *(flowdoms.w):in-out
-   !                *(flowdoms.dw):out *rev:(loc) *bvtj1:(loc) *bvtj2:(loc)
-   !                *p:(loc) *sfacei:(loc) *sfacej:(loc) *s:(loc)
-   !                *gamma:(loc) *sfacek:(loc) *bmtk1:(loc) *bmtk2:(loc)
-   !                *rlv:(loc) *bvtk1:(loc) *bvtk2:(loc) *bmti1:(loc)
-   !                *bmti2:(loc) *si:(loc) *sj:(loc) *sk:(loc) *bvti1:(loc)
-   !                *bvti2:(loc) *fw:(loc) *bmtj1:(loc) *bmtj2:(loc)
-   !                *(*viscsubface.tau):(loc) *(*bcdata.norm):(loc)
-   !                *(*bcdata.rface):(loc) *(*bcdata.fp):out *(*bcdata.fv):out
-   !                *(*bcdata.m):out *(*bcdata.oarea):out *(*bcdata.sepsensor):out
-   !                *(*bcdata.cavitation):out *bcdata.symnorm:(loc)
-   !                *(*bcdata.uslip):(loc) *radi:(loc) *radj:(loc)
-   !                *radk:(loc) mudim:(loc) gammainf:(loc) pinf:(loc)
-   !                timeref:(loc) rhoinf:(loc) muref:(loc) rhoinfdim:(loc)
-   !                tref:(loc) winf:(loc) muinf:(loc) uinf:(loc) pinfcorr:(loc)
-   !                rgas:(loc) pinfdim:(loc) pref:in-out rhoref:(loc)
-   !                moment:out alpha:in force:out beta:in cavitation:out
-   !                sepsensor:out
+   !   RW status of diff variables: funcvalues:out mach:in tempfreestream:in
+   !                veldirfreestream:(loc) machgrid:in lengthref:in
+   !                machcoef:in dragdirection:(loc) liftdirection:(loc)
+   !                pointref:in *(flowdoms.x):in-out *(flowdoms.vol):(loc)
+   !                *(flowdoms.w):in-out *(flowdoms.dw):out *rev:(loc)
+   !                *bvtj1:(loc) *bvtj2:(loc) *p:(loc) *sfacei:(loc)
+   !                *sfacej:(loc) *s:(loc) *gamma:(loc) *sfacek:(loc)
+   !                *bmtk1:(loc) *bmtk2:(loc) *rlv:(loc) *bvtk1:(loc)
+   !                *bvtk2:(loc) *bmti1:(loc) *bmti2:(loc) *si:(loc)
+   !                *sj:(loc) *sk:(loc) *bvti1:(loc) *bvti2:(loc)
+   !                *fw:(loc) *bmtj1:(loc) *bmtj2:(loc) *(*viscsubface.tau):(loc)
+   !                *(*bcdata.norm):(loc) *(*bcdata.rface):(loc) *(*bcdata.fp):out
+   !                *(*bcdata.fv):out *(*bcdata.m):out *(*bcdata.oarea):out
+   !                *(*bcdata.sepsensor):out *(*bcdata.cavitation):out
+   !                *bcdata.symnorm:(loc) *(*bcdata.uslip):(loc) *radi:(loc)
+   !                *radj:(loc) *radk:(loc) mudim:(loc) gammainf:(loc)
+   !                pinf:(loc) timeref:(loc) rhoinf:(loc) muref:(loc)
+   !                rhoinfdim:(loc) tref:(loc) winf:(loc) muinf:(loc)
+   !                uinf:(loc) pinfcorr:(loc) rgas:(loc) pinfdim:(loc)
+   !                pref:in-out rhoref:(loc) moment:out alpha:in force:out
+   !                beta:in cavitation:out sepsensor:out
    !   Plus diff mem management of: flowdoms.x:in flowdoms.vol:in
    !                flowdoms.w:in flowdoms.dw:in rev:in bvtj1:in bvtj2:in
    !                p:in sfacei:in sfacej:in s:in gamma:in sfacek:in
@@ -66,13 +67,6 @@
    USE DIFFSIZES
    !  Hint: ISIZE1OFDrfbcdata should be the size of dimension 1 of array *bcdata
    IMPLICIT NONE
-   ! #ifndef TAPENADE_REVERSE
-   !   call getCostFunction(costFunction, force, moment, sepSensor, &
-   !   alpha, beta, liftIndex, objValue)
-   ! #else
-   !   call getCostFunction2(costFunction, force, moment, sepSensor, &
-   !   alpha, beta, liftIndex, objValue)
-   ! #endif
    ! Input Arguments:
    INTEGER(kind=inttype), INTENT(IN) :: nn, sps
    LOGICAL, INTENT(IN) :: usespatial
@@ -80,8 +74,12 @@
    REAL(kind=realtype), INTENT(IN) :: alphad, betad
    INTEGER(kind=inttype), INTENT(IN) :: liftindex
    ! Output Variables
-   REAL(kind=realtype) :: force(3), moment(3), sepsensor, cavitation
-   REAL(kind=realtype) :: forced(3), momentd(3), sepsensord, cavitationd
+   REAL(kind=realtype), DIMENSION(3, ntimeintervalsspectral) :: force, &
+   & moment
+   REAL(kind=realtype), DIMENSION(3, ntimeintervalsspectral) :: forced, &
+   & momentd
+   REAL(kind=realtype) :: sepsensor, cavitation
+   REAL(kind=realtype) :: sepsensord, cavitationd
    ! Working Variables
    REAL(kind=realtype) :: gm1, v2, fact, tmp
    REAL(kind=realtype) :: v2d, factd, tmpd
@@ -328,6 +326,8 @@
    ! MachCoef, Lref, and surfaceRef here, they are NOT differented,
    ! since F doesn't actually depend on them. Ideally we would just get
    ! the raw forces and moment form forcesAndMoments. 
+   force = zero
+   moment = zero
    scaledimd = (prefd*pinf-pref*pinfd)/pinf**2
    scaledim = pref/pinf
    factd = -(two*surfaceref*lref**2*(((gammainfd*pinf+gammainf*pinfd)*&
@@ -336,11 +336,16 @@
    &   machcoef*surfaceref*lref*lref*scaledim)**2)
    fact = two/(gammainf*pinf*machcoef*machcoef*surfaceref*lref*lref*&
    &   scaledim)
-   forced = ((cfpd+cfvd)*fact-(cfp+cfv)*factd)/fact**2
-   force = (cfp+cfv)/fact
+   forced = 0.0_8
+   forced(:, 1) = ((cfpd+cfvd)*fact-(cfp+cfv)*factd)/fact**2
+   force(:, 1) = (cfp+cfv)/fact
    factd = (factd*lengthref*lref-fact*lref*lengthrefd)/(lengthref*lref)**&
    &   2
    fact = fact/(lengthref*lref)
-   momentd = ((cmpd+cmvd)*fact-(cmp+cmv)*factd)/fact**2
-   moment = (cmp+cmv)/fact
+   momentd = 0.0_8
+   momentd(:, 1) = ((cmpd+cmvd)*fact-(cmp+cmv)*factd)/fact**2
+   moment(:, 1) = (cmp+cmv)/fact
+   CALL GETCOSTFUNCTION2_D(force, forced, moment, momentd, sepsensor, &
+   &                   sepsensord, cavitation, cavitationd, alpha, beta, &
+   &                   liftindex)
    END SUBROUTINE BLOCK_RES_D
