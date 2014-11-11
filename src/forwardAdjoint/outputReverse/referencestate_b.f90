@@ -3,8 +3,8 @@
    !
    !  Differentiation of referencestate in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
    !   gradient     of useful results: veldirfreestream machcoef gammainf
-   !                pinf timeref rhoinf muref tref muinf uinf rgas
-   !                pref
+   !                pinf timeref rhoinf muref rhoinfdim tref muinf
+   !                uinf rgas pinfdim pref
    !   with respect to varying inputs: mach tempfreestream veldirfreestream
    !                machcoef pref
    !
@@ -183,8 +183,8 @@
    gammainfb = gammainfb + pinf*tempb8
    pinfb = pinfb + gammainf*tempb8
    rhoinfb = rhoinfb - temp0*tempb8
-   rhoinfdimb = rhoinfb/rhoref
-   pinfdimb = pinfb/pref
+   rhoinfdimb = rhoinfdimb + rhoinfb/rhoref
+   pinfdimb = pinfdimb + pinfb/pref
    IF (rhoref/pref .EQ. 0.0_8) THEN
    tempb7 = 0.0
    ELSE

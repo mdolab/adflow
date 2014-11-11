@@ -106,7 +106,10 @@ FF90_OBJECTS =  blockpointers_d.o\
 		unsteadyturbterm_d.o\
 		curvetupyp_d.o\
 		slipvelocitiesfinelevel_block_d.o\
-		getcostfunction_d.o\
+		getcostfunction2_d.o\
+		computetsderivatives_d.o\
+		computeleastsquaresregression_d.o\
+		computerootbendingmoment_d.o\
 
 #      ******************************************************************
 #      *                                                                *

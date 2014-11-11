@@ -70,9 +70,10 @@ module costFunctions
 
   real(kind=realType), allocatable, dimension(:)   :: functionValue
   real(kind=realType), dimension(nCostFunction)   :: funcValues
+#ifndef USE_TAPENADE 
   real(kind=realType), dimension(nCostFunction)   :: funcValuesd
   real(kind=realType), dimension(nCostFunction)   :: funcValuesb
-
+#endif
 end module costFunctions
 
 

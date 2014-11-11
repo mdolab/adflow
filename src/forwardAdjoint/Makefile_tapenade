@@ -43,7 +43,7 @@ TAPENADE_PRECISION = -i4 -dr8 -r8
 
 # -------------------- Residual AD Info---------------------------------
 # Dependent output variables (separator: white space, default: all)
-TAPENADE_RES_OUTVARS = "flowdoms%dw  BCData%Fp BCData%Fv BCData%M  BCData%sepSensor BCData%Cavitation BCData%oArea flowdoms%w flowdoms%x force moment sepSensor Cavitation"
+TAPENADE_RES_OUTVARS = "flowdoms%dw  BCData%Fp BCData%Fv BCData%M  BCData%sepSensor BCData%Cavitation BCData%oArea flowdoms%w flowdoms%x force moment sepSensor Cavitation funcValues"
 
 # Independent input variables (separator: white space, default: all)
 TAPENADE_RES_VARS = "flowdoms%w flowdoms%x alpha beta mach machgrid machcoef pointref lengthRef Pref tempFreeStream"
@@ -57,6 +57,7 @@ ALL_RES_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.F90\
 		$(SRC)/forwardAdjoint/residualInput/metric_block.F90\
 		$(SRC)/forwardAdjoint/costInput/costFunction.F90\
 		$(SRC)/forwardAdjoint/costInput/costFunction2.F90\
+		$(SRC)/stabilityDerivatives/computeTSDerivatives.f90\
 		$(SRC)/modules/monitor.f90\
 		$(SRC)/modules/diffSizes.f90\
 		$(SRC)/modules/block.F90\

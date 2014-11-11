@@ -86,8 +86,10 @@ FF90_OBJECTS =  computeetot_b.o\
 		sanuknowneddyratio_b.o\
 		etotarray_b.o\
 		eintarray_b.o\
-		getcostfunction_b.o\
 		getcostfunction2_b.o\
+		computeleastsquaresregression_b.o\
+		computerootbendingmoment_b.o\
+		computetsderivatives_b.o\
 
 #      ******************************************************************
 #      *                                                                *

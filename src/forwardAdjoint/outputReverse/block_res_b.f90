@@ -2,20 +2,23 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of block_res in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *(flowdoms.x) *(flowdoms.w)
+   !   gradient     of useful results: funcvalues *(flowdoms.x) *(flowdoms.w)
    !                *(flowdoms.dw) *(*bcdata.fp) *(*bcdata.fv) *(*bcdata.m)
    !                *(*bcdata.oarea) *(*bcdata.sepsensor) *(*bcdata.cavitation)
    !                moment force cavitation sepsensor
-   !   with respect to varying inputs: mach tempfreestream lengthref
-   !                machcoef pointref *(flowdoms.x) *(flowdoms.w)
-   !                *(flowdoms.dw) *(*bcdata.fp) *(*bcdata.fv) *(*bcdata.m)
-   !                *(*bcdata.oarea) *(*bcdata.sepsensor) *(*bcdata.cavitation)
-   !                pref moment alpha force beta cavitation sepsensor
-   !   RW status of diff variables: mach:out tempfreestream:out veldirfreestream:(loc)
-   !                lengthref:out machcoef:out pointref:out *(flowdoms.x):in-out
-   !                *(flowdoms.vol):(loc) *(flowdoms.w):in-out *(flowdoms.dw):in-out
-   !                *rev:(loc) *p:(loc) *gamma:(loc) *rlv:(loc) *si:(loc)
-   !                *sj:(loc) *sk:(loc) *fw:(loc) *(*viscsubface.tau):(loc)
+   !   with respect to varying inputs: funcvalues mach tempfreestream
+   !                machgrid lengthref machcoef pointref *(flowdoms.x)
+   !                *(flowdoms.w) *(flowdoms.dw) *(*bcdata.fp) *(*bcdata.fv)
+   !                *(*bcdata.m) *(*bcdata.oarea) *(*bcdata.sepsensor)
+   !                *(*bcdata.cavitation) pref moment alpha force
+   !                beta cavitation sepsensor
+   !   RW status of diff variables: funcvalues:in-zero mach:out tempfreestream:out
+   !                veldirfreestream:(loc) machgrid:out lengthref:out
+   !                machcoef:out dragdirection:(loc) liftdirection:(loc)
+   !                pointref:out *(flowdoms.x):in-out *(flowdoms.vol):(loc)
+   !                *(flowdoms.w):in-out *(flowdoms.dw):in-out *rev:(loc)
+   !                *p:(loc) *gamma:(loc) *rlv:(loc) *si:(loc) *sj:(loc)
+   !                *sk:(loc) *fw:(loc) *(*viscsubface.tau):(loc)
    !                *(*bcdata.norm):(loc) *(*bcdata.fp):in-out *(*bcdata.fv):in-out
    !                *(*bcdata.m):in-out *(*bcdata.oarea):in-out *(*bcdata.sepsensor):in-out
    !                *(*bcdata.cavitation):in-out *bcdata.symnorm:(loc)
@@ -58,13 +61,6 @@
    USE DIFFSIZES
    USE COSTFUNCTIONS
    IMPLICIT NONE
-   ! #ifndef 1
-   !   call getCostFunction(costFunction, force, moment, sepSensor, &
-   !   alpha, beta, liftIndex, objValue)
-   ! #else
-   !   call getCostFunction2(costFunction, force, moment, sepSensor, &
-   !   alpha, beta, liftIndex, objValue)
-   ! #endif
    ! Input Arguments:
    INTEGER(kind=inttype), INTENT(IN) :: nn, sps
    LOGICAL, INTENT(IN) :: usespatial
@@ -72,8 +68,12 @@
    REAL(kind=realtype) :: alphab, betab
    INTEGER(kind=inttype), INTENT(IN) :: liftindex
    ! Output Variables
-   REAL(kind=realtype) :: force(3), moment(3), sepsensor, cavitation
-   REAL(kind=realtype) :: forceb(3), momentb(3), sepsensorb, cavitationb
+   REAL(kind=realtype), DIMENSION(3, ntimeintervalsspectral) :: force, &
+   & moment
+   REAL(kind=realtype), DIMENSION(3, ntimeintervalsspectral) :: forceb, &
+   & momentb
+   REAL(kind=realtype) :: sepsensor, cavitation
+   REAL(kind=realtype) :: sepsensorb, cavitationb
    ! Working Variables
    REAL(kind=realtype) :: gm1, v2, fact, tmp
    REAL(kind=realtype) :: v2b, factb, tmpb
@@ -419,23 +419,30 @@
    ! MachCoef, Lref, and surfaceRef here, they are NOT differented,
    ! since F doesn't actually depend on them. Ideally we would just get
    ! the raw forces and moment form forcesAndMoments. 
+   force = zero
+   moment = zero
    scaledim = pref/pinf
    fact = two/(gammainf*pinf*machcoef*machcoef*surfaceref*lref*lref*&
    &   scaledim)
+   force(:, 1) = (cfp+cfv)/fact
    CALL PUSHREAL8(fact)
    fact = fact/(lengthref*lref)
+   moment(:, 1) = (cmp+cmv)/fact
+   CALL GETCOSTFUNCTION2_B(force, forceb, moment, momentb, sepsensor, &
+   &                   sepsensorb, cavitation, cavitationb, alpha, beta, &
+   &                   liftindex)
    cmpb = 0.0_8
    cmvb = 0.0_8
-   tempb2 = momentb/fact
+   tempb2 = momentb(:, 1)/fact
    cmpb = tempb2
    cmvb = tempb2
    factb = SUM(-((cmp+cmv)*tempb2/fact))
    CALL POPREAL8(fact)
    tempb3 = factb/(lref*lengthref)
-   lengthrefb = -(fact*tempb3/lengthref)
+   lengthrefb = lengthrefb - fact*tempb3/lengthref
    cfpb = 0.0_8
    cfvb = 0.0_8
-   tempb4 = forceb/fact
+   tempb4 = forceb(:, 1)/fact
    factb = SUM(-((cfp+cfv)*tempb4/fact)) + tempb3
    cfpb = tempb4
    cfvb = tempb4
@@ -444,11 +451,11 @@
    temp1 = temp2*gammainf*pinf
    tempb5 = -(two*factb/(temp1**2*temp3**2))
    tempb6 = temp3*temp2*tempb5
-   gammainfb = pinf*tempb6
-   machcoefb = scaledim*temp1*2*machcoef*tempb5
+   gammainfb = gammainfb + pinf*tempb6
+   machcoefb = machcoefb + scaledim*temp1*2*machcoef*tempb5
    scaledimb = temp1*machcoef**2*tempb5
-   pinfb = gammainf*tempb6 - pref*scaledimb/pinf**2
-   prefb = scaledimb/pinf
+   pinfb = pinfb + gammainf*tempb6 - pref*scaledimb/pinf**2
+   prefb = prefb + scaledimb/pinf
    CALL POPREAL8ARRAY(cfp, 3)
    CALL POPREAL8ARRAY(cfv, 3)
    CALL POPREAL8ARRAY(cmp, 3)
@@ -710,6 +717,7 @@
    CALL POPREAL8(rhoref)
    CALL REFERENCESTATE_B()
    CALL ADJUSTINFLOWANGLE_B(alpha, alphab, beta, betab, liftindex)
+   funcvaluesb = 0.0_8
    momentb = 0.0_8
    forceb = 0.0_8
    cavitationb = 0.0_8

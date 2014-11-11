@@ -33,7 +33,8 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   integer(kind=intType), intent(in) :: liftIndex
 
   ! Output Variables
-  real(kind=realType) :: force(3), moment(3), sepSensor, Cavitation
+  real(kind=realType), dimension(3, nTimeIntervalsSpectral) :: force, moment
+  real(kind=realType) :: sepSensor, Cavitation
   
   ! Working Variables
   real(kind=realType) :: gm1, v2, fact, tmp
@@ -232,20 +233,16 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   ! MachCoef, Lref, and surfaceRef here, they are NOT differented,
   ! since F doesn't actually depend on them. Ideally we would just get
   ! the raw forces and moment form forcesAndMoments. 
+  force = zero
+  moment = zero
   scaleDim = pRef/pInf
   fact = two/(gammaInf*pInf*MachCoef*MachCoef &
        *surfaceRef*LRef*LRef*scaleDim)
-  force = (cFp + cFV)/fact
+  force(:,1) = (cFp + cFV)/fact
 
   fact = fact/(lengthRef*LRef)
-  moment = (cMp + cMV)/fact
+  moment(:,1) = (cMp + cMV)/fact
 
-! #ifndef TAPENADE_REVERSE
-!   call getCostFunction(costFunction, force, moment, sepSensor, &
-!   alpha, beta, liftIndex, objValue)
-! #else
-!   call getCostFunction2(costFunction, force, moment, sepSensor, &
-!   alpha, beta, liftIndex, objValue)
-! #endif
+  call getCostFunction2(force, moment, sepSensor, Cavitation, alpha, beta, liftIndex)
 
 end subroutine block_res

@@ -2,13 +2,14 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of getcostfunction2 in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: funcvalues moment force sepsensor
-   !   with respect to varying inputs: lengthref machcoef dragdirection
-   !                liftdirection pointref gammainf pinf pref moment
-   !                force cavitation sepsensor
-   SUBROUTINE GETCOSTFUNCTION2_B(costfunction, force, forceb, moment, &
-   & momentb, sepsensor, sepsensorb, cavitation, cavitationb, alpha, beta, &
-   & liftindex, objvalue)
+   !   gradient     of useful results: funcvalues moment force cavitation
+   !                sepsensor
+   !   with respect to varying inputs: machgrid lengthref machcoef
+   !                dragdirection liftdirection pointref gammainf
+   !                pinf rhoinfdim pinfdim pref moment force cavitation
+   !                sepsensor
+   SUBROUTINE GETCOSTFUNCTION2_B(force, forceb, moment, momentb, sepsensor&
+   & , sepsensorb, cavitation, cavitationb, alpha, beta, liftindex)
    ! Compute the value of the actual objective function based on the
    ! (summed) forces and moments and any other "extra" design
    ! variables. The index of the objective is determined by 'iDV'. This
@@ -17,9 +18,9 @@
    USE COSTFUNCTIONS
    USE INPUTPHYSICS
    USE FLOWVARREFSTATE
+   USE INPUTTSSTABDERIV
    IMPLICIT NONE
    ! Input 
-   INTEGER(kind=inttype), INTENT(IN) :: costfunction
    INTEGER(kind=inttype), INTENT(IN) :: liftindex
    REAL(kind=realtype), DIMENSION(3, ntimeintervalsspectral), INTENT(IN) &
    & :: force, moment
@@ -30,8 +31,6 @@
    REAL(kind=realtype), DIMENSION(ntimeintervalsspectral) :: sepsensorb, &
    & cavitationb
    REAL(kind=realtype), INTENT(IN) :: alpha, beta
-   ! Output
-   REAL(kind=realtype) :: objvalue
    ! Working
    REAL(kind=realtype) :: fact, factmoment, scaledim, ovrnts
    REAL(kind=realtype) :: factb, factmomentb, scaledimb
@@ -41,6 +40,7 @@
    REAL(kind=realtype), DIMENSION(ntimeintervalsspectral, 8) :: basecoef
    REAL(kind=realtype), DIMENSION(8) :: coef0, dcdalpha, dcdalphadot, &
    & dcdq, dcdqdot
+   REAL(kind=realtype), DIMENSION(8) :: coef0b, dcdalphab, dcdalphadotb
    REAL(kind=realtype) :: bendingmoment
    REAL(kind=realtype) :: bendingmomentb
    INTEGER(kind=inttype) :: sps
@@ -54,6 +54,7 @@
    REAL(kind=realtype) :: tmp6
    REAL(kind=realtype) :: tmp7
    REAL(kind=realtype) :: tmp8
+   INTEGER :: branch
    REAL(kind=realtype) :: temp1
    REAL(kind=realtype) :: temp0
    REAL(kind=realtype) :: tmpb8
@@ -75,6 +76,15 @@
    fact = two/(gammainf*pinf*machcoef**2*surfaceref*lref**2*scaledim)
    factmoment = fact/(lengthref*lref)
    ovrnts = one/ntimeintervalsspectral
+   ! Pre-compute TS stability info if required:
+   IF (tsstability) THEN
+   CALL PUSHINTEGER4(liftindex)
+   CALL COMPUTETSDERIVATIVES(force, moment, liftindex, coef0, &
+   &                          dcdalpha, dcdalphadot, dcdq, dcdqdot)
+   CALL PUSHCONTROL1B(0)
+   ELSE
+   CALL PUSHCONTROL1B(1)
+   END IF
    funcvalues = zero
    ! Now we just compute each cost function:
    DO sps=1,ntimeintervalsspectral
@@ -133,21 +143,32 @@
    CALL PUSHREAL8(funcvalues(costfuncliftcoef))
    funcvalues(costfuncliftcoef) = tmp7
    ! -------------------- Time Spectral Objectives ------------------
-   ! Finally, for the *actual* 'objective' value we just select the one we need:
    funcvaluesb(costfunccmzqdot) = 0.0_8
    funcvaluesb(costfunccdqdot) = 0.0_8
    funcvaluesb(costfuncclqdot) = 0.0_8
    funcvaluesb(costfunccmzq) = 0.0_8
    funcvaluesb(costfunccdq) = 0.0_8
    funcvaluesb(costfuncclq) = 0.0_8
+   dcdalphadotb = 0.0_8
+   dcdalphadotb(8) = dcdalphadotb(8) + funcvaluesb(costfunccmzalphadot)
    funcvaluesb(costfunccmzalphadot) = 0.0_8
+   dcdalphadotb(2) = dcdalphadotb(2) + funcvaluesb(costfunccdalphadot)
    funcvaluesb(costfunccdalphadot) = 0.0_8
+   dcdalphadotb(1) = dcdalphadotb(1) + funcvaluesb(costfuncclalphadot)
    funcvaluesb(costfuncclalphadot) = 0.0_8
+   dcdalphab = 0.0_8
+   dcdalphab(8) = dcdalphab(8) + funcvaluesb(costfunccmzalpha)
    funcvaluesb(costfunccmzalpha) = 0.0_8
+   dcdalphab(2) = dcdalphab(2) + funcvaluesb(costfunccdalpha)
    funcvaluesb(costfunccdalpha) = 0.0_8
+   dcdalphab(1) = dcdalphab(1) + funcvaluesb(costfuncclalpha)
    funcvaluesb(costfuncclalpha) = 0.0_8
+   coef0b = 0.0_8
+   coef0b(8) = coef0b(8) + funcvaluesb(costfunccm0)
    funcvaluesb(costfunccm0) = 0.0_8
+   coef0b(2) = coef0b(2) + funcvaluesb(costfunccd0)
    funcvaluesb(costfunccd0) = 0.0_8
+   coef0b(1) = coef0b(1) + funcvaluesb(costfunccl0)
    funcvaluesb(costfunccl0) = 0.0_8
    tmpb = funcvaluesb(costfuncdragcoef)
    funcvaluesb(costfuncdragcoef) = 0.0_8
@@ -227,7 +248,6 @@
    factb = factb + funcvalues(costfuncforcex)*tmpb8
    lengthrefb = 0.0_8
    pointrefb = 0.0_8
-   cavitationb = 0.0_8
    DO sps=ntimeintervalsspectral,1,-1
    bendingmomentb = ovrnts*funcvaluesb(costfuncbendingcoef)
    cf = fact*force(:, sps)
@@ -249,6 +269,21 @@
    forceb(2, sps) = forceb(2, sps) + ovrnts*funcvaluesb(costfuncforcey)
    forceb(1, sps) = forceb(1, sps) + ovrnts*funcvaluesb(costfuncforcex)
    END DO
+   CALL POPCONTROL1B(branch)
+   IF (branch .EQ. 0) THEN
+   CALL POPINTEGER4(liftindex)
+   CALL COMPUTETSDERIVATIVES_B(force, forceb, moment, momentb, &
+   &                         liftindex, coef0, coef0b, dcdalpha, dcdalphab&
+   &                         , dcdalphadot, dcdalphadotb, dcdq, dcdqdot)
+   ELSE
+   machgridb = 0.0_8
+   machcoefb = 0.0_8
+   gammainfb = 0.0_8
+   pinfb = 0.0_8
+   rhoinfdimb = 0.0_8
+   pinfdimb = 0.0_8
+   prefb = 0.0_8
+   END IF
    tempb = factmomentb/(lref*lengthref)
    factb = factb + tempb
    lengthrefb = lengthrefb - fact*tempb/lengthref
@@ -257,9 +292,9 @@
    temp = temp0*gammainf*pinf
    tempb0 = -(two*factb/(temp**2*temp1**2))
    tempb1 = temp1*temp0*tempb0
-   gammainfb = pinf*tempb1
-   machcoefb = scaledim*temp*2*machcoef*tempb0
+   gammainfb = gammainfb + pinf*tempb1
+   machcoefb = machcoefb + scaledim*temp*2*machcoef*tempb0
    scaledimb = temp*machcoef**2*tempb0
-   pinfb = gammainf*tempb1 - pref*scaledimb/pinf**2
-   prefb = scaledimb/pinf
+   pinfb = pinfb + gammainf*tempb1 - pref*scaledimb/pinf**2
+   prefb = prefb + scaledimb/pinf
    END SUBROUTINE GETCOSTFUNCTION2_B

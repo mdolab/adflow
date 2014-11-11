@@ -3,7 +3,7 @@
    !
    !  Differentiation of referencestate in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: gammainf pinf timeref rhoinf
-   !                muref tref muinf uinf rgas pref
+   !                muref rhoinfdim tref muinf uinf rgas pinfdim pref
    !   with respect to varying inputs: mach tempfreestream veldirfreestream
    !                machcoef pref
    !
