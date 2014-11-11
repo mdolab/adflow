@@ -384,6 +384,13 @@ python module libsumb
          integer(kind=inttype) optional,intent(in),check(len(res)>=ndimw),depend(res) :: ndimw=len(res)
        end subroutine getres
 
+        subroutine getdrdxvpsi(dxv,ndof,adjoint,nstate) ! in :test:adjointPythonInterfaceFunctions.F90
+            real(kind=realtype) dimension(ndof),intent(in) :: dxv
+            integer(kind=inttype), optional,intent(in),check(len(dxv)>=ndof),depend(dxv) :: ndof=len(dxv)
+            real(kind=realtype) dimension(nstate),intent(out),depend(nstate) :: adjoint
+            integer(kind=inttype) intent(in) :: nstate
+        end subroutine getdrdxvpsi
+
        subroutine getdrdxvtpsi(dxv,ndof,adjoint,nstate) ! in :test:getdRdXvPsi.F90
          real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: dxv
          integer(kind=inttype) intent(in) :: ndof

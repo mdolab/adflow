@@ -91,11 +91,11 @@
    REAL(kind=realtype) :: temp2
    REAL(kind=realtype) :: temp1
    REAL(kind=realtype) :: temp0
-   REAL(kind=realtype) :: tempb6
+   REAL(kind=realtype) :: tempb6(3)
    REAL(kind=realtype) :: tempb5
    REAL(kind=realtype) :: tempb4(3)
    REAL(kind=realtype) :: tempb3
-   REAL(kind=realtype) :: tempb2(3)
+   REAL(kind=realtype) :: tempb2
    REAL(kind=realtype) :: tempb1
    REAL(kind=realtype) :: tempb0
    REAL(kind=realtype) :: tempb
@@ -424,37 +424,49 @@
    scaledim = pref/pinf
    fact = two/(gammainf*pinf*machcoef*machcoef*surfaceref*lref*lref*&
    &   scaledim)
-   force(:, 1) = (cfp+cfv)/fact
+   DO sps2=1,ntimeintervalsspectral
+   force(:, sps2) = (cfp+cfv)/fact
+   END DO
    CALL PUSHREAL8(fact)
    fact = fact/(lengthref*lref)
-   moment(:, 1) = (cmp+cmv)/fact
+   DO sps2=1,ntimeintervalsspectral
+   moment(:, sps2) = (cmp+cmv)/fact
+   END DO
    CALL GETCOSTFUNCTION2_B(force, forceb, moment, momentb, sepsensor, &
    &                   sepsensorb, cavitation, cavitationb, alpha, beta, &
    &                   liftindex)
    cmpb = 0.0_8
    cmvb = 0.0_8
-   tempb2 = momentb(:, 1)/fact
-   cmpb = tempb2
-   cmvb = tempb2
-   factb = SUM(-((cmp+cmv)*tempb2/fact))
+   factb = 0.0_8
+   DO sps2=ntimeintervalsspectral,1,-1
+   tempb6 = momentb(:, sps2)/fact
+   cmpb = cmpb + tempb6
+   cmvb = cmvb + tempb6
+   factb = factb + SUM(-((cmp+cmv)*tempb6/fact))
+   momentb(:, sps2) = 0.0_8
+   END DO
    CALL POPREAL8(fact)
-   tempb3 = factb/(lref*lengthref)
-   lengthrefb = lengthrefb - fact*tempb3/lengthref
+   tempb5 = factb/(lref*lengthref)
+   lengthrefb = lengthrefb - fact*tempb5/lengthref
+   factb = tempb5
    cfpb = 0.0_8
    cfvb = 0.0_8
-   tempb4 = forceb(:, 1)/fact
-   factb = SUM(-((cfp+cfv)*tempb4/fact)) + tempb3
-   cfpb = tempb4
-   cfvb = tempb4
+   DO sps2=ntimeintervalsspectral,1,-1
+   tempb4 = forceb(:, sps2)/fact
+   cfpb = cfpb + tempb4
+   cfvb = cfvb + tempb4
+   factb = factb + SUM(-((cfp+cfv)*tempb4/fact))
+   forceb(:, sps2) = 0.0_8
+   END DO
    temp3 = machcoef**2*scaledim
    temp2 = surfaceref*lref**2
    temp1 = temp2*gammainf*pinf
-   tempb5 = -(two*factb/(temp1**2*temp3**2))
-   tempb6 = temp3*temp2*tempb5
-   gammainfb = gammainfb + pinf*tempb6
-   machcoefb = machcoefb + scaledim*temp1*2*machcoef*tempb5
-   scaledimb = temp1*machcoef**2*tempb5
-   pinfb = pinfb + gammainf*tempb6 - pref*scaledimb/pinf**2
+   tempb2 = -(two*factb/(temp1**2*temp3**2))
+   tempb3 = temp3*temp2*tempb2
+   gammainfb = gammainfb + pinf*tempb3
+   machcoefb = machcoefb + scaledim*temp1*2*machcoef*tempb2
+   scaledimb = temp1*machcoef**2*tempb2
+   pinfb = pinfb + gammainf*tempb3 - pref*scaledimb/pinf**2
    prefb = prefb + scaledimb/pinf
    CALL POPREAL8ARRAY(cfp, 3)
    CALL POPREAL8ARRAY(cfv, 3)
