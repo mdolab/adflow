@@ -337,14 +337,18 @@
    fact = two/(gammainf*pinf*machcoef*machcoef*surfaceref*lref*lref*&
    &   scaledim)
    forced = 0.0_8
-   forced(:, 1) = ((cfpd+cfvd)*fact-(cfp+cfv)*factd)/fact**2
-   force(:, 1) = (cfp+cfv)/fact
+   DO sps2=1,ntimeintervalsspectral
+   forced(:, sps2) = ((cfpd+cfvd)*fact-(cfp+cfv)*factd)/fact**2
+   force(:, sps2) = (cfp+cfv)/fact
+   END DO
    factd = (factd*lengthref*lref-fact*lref*lengthrefd)/(lengthref*lref)**&
    &   2
    fact = fact/(lengthref*lref)
    momentd = 0.0_8
-   momentd(:, 1) = ((cmpd+cmvd)*fact-(cmp+cmv)*factd)/fact**2
-   moment(:, 1) = (cmp+cmv)/fact
+   DO sps2=1,ntimeintervalsspectral
+   momentd(:, sps2) = ((cmpd+cmvd)*fact-(cmp+cmv)*factd)/fact**2
+   moment(:, sps2) = (cmp+cmv)/fact
+   END DO
    CALL GETCOSTFUNCTION2_D(force, forced, moment, momentd, sepsensor, &
    &                   sepsensord, cavitation, cavitationd, alpha, beta, &
    &                   liftindex)

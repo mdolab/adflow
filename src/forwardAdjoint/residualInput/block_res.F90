@@ -238,11 +238,16 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   scaleDim = pRef/pInf
   fact = two/(gammaInf*pInf*MachCoef*MachCoef &
        *surfaceRef*LRef*LRef*scaleDim)
-  force(:,1) = (cFp + cFV)/fact
+  do sps2 = 1,nTimeIntervalsSpectral
+     force(:, sps2) = (cFp + cFV)/fact
+  end do
 
   fact = fact/(lengthRef*LRef)
-  moment(:,1) = (cMp + cMV)/fact
-
+  
+  do sps2 = 1,nTimeIntervalsSpectral
+     moment(:, sps2) = (cMp + cMV)/fact
+  end do
+  
   call getCostFunction2(force, moment, sepSensor, Cavitation, alpha, beta, liftIndex)
 
 end subroutine block_res
