@@ -37,8 +37,9 @@
    !
    INTEGER(kind=inttype) :: mm, i, j, k
    INTEGER(kind=inttype) :: ibeg, iend, jbeg, jend, iimax, jjmax
-   REAL(kind=realtype), DIMENSION(0:imaxdim, 0:jmaxdim, 3) :: x0, x1, x2
-   REAL(kind=realtype), DIMENSION(0:imaxdim, 0:jmaxdim, 3) :: x0b, x1b, &
+   REAL(kind=realtype), DIMENSION(imaxdim + 1, jmaxdim + 1, 3) :: x0, x1&
+   & , x2
+   REAL(kind=realtype), DIMENSION(imaxdim+1, jmaxdim+1, 3) :: x0b, x1b, &
    & x2b
    LOGICAL :: err
    REAL(kind=realtype) :: length, dot
