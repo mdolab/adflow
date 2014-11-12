@@ -23,7 +23,7 @@ subroutine preprocessingADjoint
   use inputTimeSpectral
   use inputAdjoint
   use ADjointPETSc, only: w_like1, w_like2, fvec1, fvec2, PETScIerr, &
-       psi_like1, psi_like2
+       psi_like1, psi_like2, x_like
   implicit none
 
 #ifndef USE_NO_PETSC
@@ -33,7 +33,7 @@ subroutine preprocessingADjoint
 
   !     Local variables.
   !
-  integer(kind=intType) :: ndimW, ndimS, ncell, nState, nDimPsi
+  integer(kind=intType) :: ndimW, ndimS, ncell, nState, nDimPsi, nDimX
   !
   !     ******************************************************************
   !     *                                                                *
@@ -59,6 +59,7 @@ subroutine preprocessingADjoint
 
   nDimW = nw * nCellsLocal(1_intType)*nTimeIntervalsSpectral
   nDimPsi = nState*  nCellsLocal(1_intType)*nTimeIntervalsSpectral
+  nDimX = 3 * nNodesLocal(1_intType)*nTimeIntervalsSpectral
 
   if (.not. adjointInitialized) then
      
@@ -89,6 +90,10 @@ subroutine preprocessingADjoint
              PETSC_NULL_SCALAR,psi_like2,PETScIerr)
         call EChk(PETScIerr,__FILE__,__LINE__)
 
+        call VecCreateMPIWithArray(SUMB_COMM_WORLD,ndimX,PETSC_DECIDE, &
+             PETSC_NULL_SCALAR,x_like,PETScIerr)
+        call EChk(PETScIerr,__FILE__,__LINE__)
+
      else
         call VecCreateMPIWithArray(SUMB_COMM_WORLD,1,ndimS,PETSC_DECIDE, &
              PETSC_NULL_SCALAR,fVec1,PETScIerr)
@@ -114,6 +119,10 @@ subroutine preprocessingADjoint
         
         call VecCreateMPIWithArray(SUMB_COMM_WORLD,nState,ndimPsi,PETSC_DECIDE, &
              PETSC_NULL_SCALAR,psi_like2,PETScIerr)
+        call EChk(PETScIerr,__FILE__,__LINE__)
+
+        call VecCreateMPIWithArray(SUMB_COMM_WORLD,nState,ndimX,PETSC_DECIDE, &
+             PETSC_NULL_SCALAR,x_like,PETScIerr)
         call EChk(PETScIerr,__FILE__,__LINE__)
 
 

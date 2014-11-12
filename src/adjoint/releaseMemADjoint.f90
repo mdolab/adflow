@@ -37,4 +37,6 @@ subroutine releaseMemADjoint()
   call vecDestroy(psi_like1,PETScIerr)
   call vecDestroy(psi_like2,PETScIerr)
 
+  call vecDestroy(x_like,PETScIerr)
+
 end subroutine releaseMemADjoint
