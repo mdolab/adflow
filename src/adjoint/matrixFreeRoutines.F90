@@ -262,10 +262,10 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Place adjoint in Vector
-  call VecPlaceArray(Xvec, xvbar, ierr)
+  call VecPlaceArray(x_like, xvbar, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  call VecSet(Xvec, zero, ierr)
+  call VecSet(x_like, zero, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
 #ifndef USE_COMPLEX
@@ -347,7 +347,7 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
                        do l=1, 3
                           irow = flowDoms(nn, 1, sps2)%globalNode(i,j,k)*3 + l -1
                           if (irow > 0) then 
-                             call VecSetValues(xVec, 1, (/irow/), &
+                             call VecSetValues(x_like, 1, (/irow/), &
                                   flowdomsb(nn, level, sps)%x(i, j, k, l), ADD_VALUES, ierr)
                              call EChk(ierr,__FILE__,__LINE__)
                           end if
@@ -434,13 +434,13 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
   call EChk(ierr,__FILE__,__LINE__)
 
   ! And performa assembly on the w and x vectors
-  call VecAssemblyBegin(Xvec, ierr)
+  call VecAssemblyBegin(x_like, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  call VecAssemblyEnd(Xvec, ierr)
+  call VecAssemblyEnd(x_like, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  call VecResetArray(Xvec, xvbar, ierr)
+  call VecResetArray(x_like, xvbar, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
 #endif
