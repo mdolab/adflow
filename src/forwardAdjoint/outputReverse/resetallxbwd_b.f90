@@ -22,8 +22,9 @@
    !      Subroutine arguments.
    !
    INTEGER(kind=inttype), INTENT(IN) :: nn
-   REAL(kind=realtype), DIMENSION(0:imaxdim, 0:jmaxdim, 3) :: x0, x1, x2
-   REAL(kind=realtype), DIMENSION(0:imaxdim, 0:jmaxdim, 3) :: x0b, x1b, &
+   REAL(kind=realtype), DIMENSION(imaxdim + 1, jmaxdim + 1, 3) :: x0, x1&
+   & , x2
+   REAL(kind=realtype), DIMENSION(imaxdim+1, jmaxdim+1, 3) :: x0b, x1b, &
    & x2b
    !
    !      ******************************************************************
@@ -37,63 +38,81 @@
    SELECT CASE  (bcfaceid(nn)) 
    CASE (imin) 
    x2b = 0.0_8
-   x2b(0:je, 0:ke, :) = x2b(0:je, 0:ke, :) + xb(2, 0:je, 0:ke, :)
+   x2b(1:je+1, 1:ke+1, :) = x2b(1:je+1, 1:ke+1, :) + xb(2, 0:je, 0:ke, &
+   &     :)
    xb(2, 0:je, 0:ke, :) = 0.0_8
    x1b = 0.0_8
-   x1b(0:je, 0:ke, :) = x1b(0:je, 0:ke, :) + xb(1, 0:je, 0:ke, :)
+   x1b(1:je+1, 1:ke+1, :) = x1b(1:je+1, 1:ke+1, :) + xb(1, 0:je, 0:ke, &
+   &     :)
    xb(1, 0:je, 0:ke, :) = 0.0_8
    x0b = 0.0_8
-   x0b(0:je, 0:ke, :) = x0b(0:je, 0:ke, :) + xb(0, 0:je, 0:ke, :)
+   x0b(1:je+1, 1:ke+1, :) = x0b(1:je+1, 1:ke+1, :) + xb(0, 0:je, 0:ke, &
+   &     :)
    xb(0, 0:je, 0:ke, :) = 0.0_8
    CASE (imax) 
    x2b = 0.0_8
-   x2b(0:je, 0:ke, :) = x2b(0:je, 0:ke, :) + xb(nx, 0:je, 0:ke, :)
+   x2b(1:je+1, 1:ke+1, :) = x2b(1:je+1, 1:ke+1, :) + xb(nx, 0:je, 0:ke&
+   &     , :)
    xb(nx, 0:je, 0:ke, :) = 0.0_8
    x1b = 0.0_8
-   x1b(0:je, 0:ke, :) = x1b(0:je, 0:ke, :) + xb(il, 0:je, 0:ke, :)
+   x1b(1:je+1, 1:ke+1, :) = x1b(1:je+1, 1:ke+1, :) + xb(il, 0:je, 0:ke&
+   &     , :)
    xb(il, 0:je, 0:ke, :) = 0.0_8
    x0b = 0.0_8
-   x0b(0:je, 0:ke, :) = x0b(0:je, 0:ke, :) + xb(ie, 0:je, 0:ke, :)
+   x0b(1:je+1, 1:ke+1, :) = x0b(1:je+1, 1:ke+1, :) + xb(ie, 0:je, 0:ke&
+   &     , :)
    xb(ie, 0:je, 0:ke, :) = 0.0_8
    CASE (jmin) 
    x2b = 0.0_8
-   x2b(0:ie, 0:ke, :) = x2b(0:ie, 0:ke, :) + xb(0:ie, 2, 0:ke, :)
+   x2b(1:ie+1, 1:ke+1, :) = x2b(1:ie+1, 1:ke+1, :) + xb(0:ie, 2, 0:ke, &
+   &     :)
    xb(0:ie, 2, 0:ke, :) = 0.0_8
    x1b = 0.0_8
-   x1b(0:ie, 0:ke, :) = x1b(0:ie, 0:ke, :) + xb(1:ie, 0, 0:ke, :)
+   x1b(1:ie+1, 1:ke+1, :) = x1b(1:ie+1, 1:ke+1, :) + xb(1:ie, 0, 0:ke, &
+   &     :)
    xb(1:ie, 0, 0:ke, :) = 0.0_8
    x0b = 0.0_8
-   x0b(0:ie, 0:ke, :) = x0b(0:ie, 0:ke, :) + xb(0:ie, 0, 0:ke, :)
+   x0b(1:ie+1, 1:ke+1, :) = x0b(1:ie+1, 1:ke+1, :) + xb(0:ie, 0, 0:ke, &
+   &     :)
    xb(0:ie, 0, 0:ke, :) = 0.0_8
    CASE (jmax) 
    x2b = 0.0_8
-   x2b(0:ie, 0:ke, :) = x2b(0:ie, 0:ke, :) + xb(0:ie, ny, 0:ke, :)
+   x2b(1:ie+1, 1:ke+1, :) = x2b(1:ie+1, 1:ke+1, :) + xb(0:ie, ny, 0:ke&
+   &     , :)
    xb(0:ie, ny, 0:ke, :) = 0.0_8
    x1b = 0.0_8
-   x1b(0:ie, 0:ke, :) = x1b(0:ie, 0:ke, :) + xb(0:ie, jl, 0:ke, :)
+   x1b(1:ie+1, 1:ke+1, :) = x1b(1:ie+1, 1:ke+1, :) + xb(0:ie, jl, 0:ke&
+   &     , :)
    xb(0:ie, jl, 0:ke, :) = 0.0_8
    x0b = 0.0_8
-   x0b(0:ie, 0:ke, :) = x0b(0:ie, 0:ke, :) + xb(0:ie, je, 0:ke, :)
+   x0b(1:ie+1, 1:ke+1, :) = x0b(1:ie+1, 1:ke+1, :) + xb(0:ie, je, 0:ke&
+   &     , :)
    xb(0:ie, je, 0:ke, :) = 0.0_8
    CASE (kmin) 
    x2b = 0.0_8
-   x2b(0:ie, 0:je, :) = x2b(0:ie, 0:je, :) + xb(0:ie, 0:je, 2, :)
+   x2b(1:ie+1, 1:je+1, :) = x2b(1:ie+1, 1:je+1, :) + xb(0:ie, 0:je, 2, &
+   &     :)
    xb(0:ie, 0:je, 2, :) = 0.0_8
    x1b = 0.0_8
-   x1b(0:ie, 0:je, :) = x1b(0:ie, 0:je, :) + xb(0:ie, 0:je, 1, :)
+   x1b(1:ie+1, 1:je+1, :) = x1b(1:ie+1, 1:je+1, :) + xb(0:ie, 0:je, 1, &
+   &     :)
    xb(0:ie, 0:je, 1, :) = 0.0_8
    x0b = 0.0_8
-   x0b(0:ie, 0:je, :) = x0b(0:ie, 0:je, :) + xb(0:ie, 0:je, 0, :)
+   x0b(1:ie+1, 1:je+1, :) = x0b(1:ie+1, 1:je+1, :) + xb(0:ie, 0:je, 0, &
+   &     :)
    xb(0:ie, 0:je, 0, :) = 0.0_8
    CASE (kmax) 
    x2b = 0.0_8
-   x2b(0:ie, 0:je, :) = x2b(0:ie, 0:je, :) + xb(0:ie, 0:je, nz, :)
+   x2b(1:ie+1, 1:je+1, :) = x2b(1:ie+1, 1:je+1, :) + xb(0:ie, 0:je, nz&
+   &     , :)
    xb(0:ie, 0:je, nz, :) = 0.0_8
    x1b = 0.0_8
-   x1b(0:ie, 0:je, :) = x1b(0:ie, 0:je, :) + xb(0:ie, 0:je, kl, :)
+   x1b(1:ie+1, 1:je+1, :) = x1b(1:ie+1, 1:je+1, :) + xb(0:ie, 0:je, kl&
+   &     , :)
    xb(0:ie, 0:je, kl, :) = 0.0_8
    x0b = 0.0_8
-   x0b(0:ie, 0:je, :) = x0b(0:ie, 0:je, :) + xb(0:ie, 0:je, ke, :)
+   x0b(1:ie+1, 1:je+1, :) = x0b(1:ie+1, 1:je+1, :) + xb(0:ie, 0:je, ke&
+   &     , :)
    xb(0:ie, 0:je, ke, :) = 0.0_8
    CASE DEFAULT
    x0b = 0.0_8
