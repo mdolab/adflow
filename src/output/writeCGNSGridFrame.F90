@@ -46,7 +46,7 @@
        integer(kind=intType) :: nn, mm, ll, i, j, k
        integer(kind=intType) :: s1, s2, s3
 
-       real, dimension(3) :: rotCenter, rotRate, translation
+       real(kind=cgnsPerType), dimension(3) :: rotCenter, rotRate, translation
 
        real(kind=realType) :: LRefInv
 
