@@ -117,11 +117,11 @@ subroutine preprocessingADjoint
              PETSC_NULL_SCALAR,psi_like1,PETScIerr)
         call EChk(PETScIerr,__FILE__,__LINE__)
         
-        call VecCreateMPIWithArray(SUMB_COMM_WORLD,nState,ndimPsi,PETSC_DECIDE, &
+        call VecCreateMPIWithArray(SUMB_COMM_WORLD,nstate,ndimPsi,PETSC_DECIDE, &
              PETSC_NULL_SCALAR,psi_like2,PETScIerr)
         call EChk(PETScIerr,__FILE__,__LINE__)
 
-        call VecCreateMPIWithArray(SUMB_COMM_WORLD,nState,ndimX,PETSC_DECIDE, &
+        call VecCreateMPIWithArray(SUMB_COMM_WORLD,3,ndimX,PETSC_DECIDE, &
              PETSC_NULL_SCALAR,x_like,PETScIerr)
         call EChk(PETScIerr,__FILE__,__LINE__)
 
