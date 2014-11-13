@@ -247,7 +247,8 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   do sps2 = 1,nTimeIntervalsSpectral
      moment(:, sps2) = (cMp + cMV)/fact
   end do
-  
-  call getCostFunction2(force, moment, sepSensor, Cavitation, alpha, beta, liftIndex)
 
+#ifndef USE_COMPLEX  
+  call getCostFunction2(force, moment, sepSensor, Cavitation, alpha, beta, liftIndex)
+#endif
 end subroutine block_res
