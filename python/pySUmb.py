@@ -1230,7 +1230,7 @@ steady rotations and specifying an aeroProblem')
         self.sumb.monitor.nitercur = 0
         self.sumb.iteration.itertot = 0
         self.sumb.setuniformflow()
-        self.sumb.initdepvarandhalos(True)
+        #self.sumb.initdepvarandhalos(True)
         self.sumb.nksolvervars.nksolvecount = 0
         self.sumb.killsignals.routinefailed =  False
         self.sumb.killsignals.fatalfail = False
