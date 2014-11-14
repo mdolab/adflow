@@ -51,7 +51,7 @@
 
        integer(kind=intType) :: ii, nn
 
-       real, dimension(3) :: rotCenter, rotRate
+       real(kind=cgnsPertype), dimension(3) :: rotCenter, rotRate
 
        real(kind=realType) :: mult, trans
 

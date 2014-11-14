@@ -1223,7 +1223,6 @@ steady rotations and specifying an aeroProblem')
         nLevels = self.sumb.inputiteration.nmglevels
         if strLvl < 0 or strLvl > nLevels:
             strLvl = nLevels
-
         self.sumb.inputiteration.mgstartlevel = strLvl
         self.sumb.inputiteration.groundlevel = strLvl
         self.sumb.inputiteration.currentlevel = strLvl
@@ -1231,6 +1230,7 @@ steady rotations and specifying an aeroProblem')
         self.sumb.monitor.nitercur = 0
         self.sumb.iteration.itertot = 0
         self.sumb.setuniformflow()
+        #self.sumb.initdepvarandhalos(True)
         self.sumb.nksolvervars.nksolvecount = 0
         self.sumb.killsignals.routinefailed =  False
         self.sumb.killsignals.fatalfail = False
@@ -1504,7 +1504,7 @@ steady rotations and specifying an aeroProblem')
         rho = AP.rho
         V = AP.V
         mu = AP.mu
-
+        R = AP.R
         # Do some checking here for things that MUST be specified:
         if AP.mach is None:
             raise Error('\'mach\' number must be specified in the aeroProblem\
@@ -1569,6 +1569,7 @@ steady rotations and specifying an aeroProblem')
             self.sumb.inputphysics.machgrid = 0.0
 
         # Set reference state information:
+        self.sumb.inputphysics.rgasdim = R
         if self.getOption('equationType') != 'euler':
             self.sumb.flowvarrefstate.pref = P
             self.sumb.flowvarrefstate.tref = T
