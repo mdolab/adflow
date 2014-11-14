@@ -60,7 +60,7 @@ subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useSta
   betad = zero
   machd = zero
   machgrid = zero
-  machcoef = zero
+  machcoefd = zero
   pointrefd = zero
   lengthrefd = zero
   prefd = zero
