@@ -137,6 +137,11 @@ python module libsumb
 
        subroutine setuniformflow
        end subroutine setuniformflow
+
+       subroutine initdepvarandhalos(halosread)
+         logical intent(in) :: halosread
+       end subroutine initdepvarandhalos
+
        subroutine allocconvarrays(nitertot) ! in :sumb:../../initFlow/allocConvArrays.f90
          integer(kind=inttype) :: nitertot
        end subroutine allocconvarrays
