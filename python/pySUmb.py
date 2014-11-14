@@ -2379,8 +2379,9 @@ steady rotations and specifying an aeroProblem')
             extradot = numpy.zeros(self.nDVAero)
             for key in xDVdot:
                 if key in self.aeroDVs:
-                    mapping = self.possibleAeroDVs[key]
-                    extradot[mapping] = xDVdot[key]
+                    execStr = 'mapping = self.sumb.%s'%self.possibleAeroDVs[key]
+                    exec(execStr)
+                    extradot[mapping - 1] = xDVdot[key]
 
             useSpatial = True
         else:
@@ -2391,7 +2392,7 @@ steady rotations and specifying an aeroProblem')
         if wDot is not None:
             useState = True
         else:
-            wDot = numpy.zeros(self.getSateSize())
+            wDot = numpy.zeros(self.getStateSize())
             useState = False
 
         costSize = self.sumb.costfunctions.ncostfunction
@@ -2403,7 +2404,7 @@ steady rotations and specifying an aeroProblem')
             key = self.curAP.name + '_%s'% f
             self.curAP.funcNames[f] = key
             mapping = self.sumbCostFunctions[self.possibleObjectives[f]]
-            funcsdot[key] = tmp[mapping-1]
+            funcsdot[f] = tmp[mapping-1]
             
         if residualDeriv and funcDeriv:
             return dwdot, funcsdot
@@ -2445,13 +2446,14 @@ steady rotations and specifying an aeroProblem')
         if xDvDeriv:
             self.mesh.warpDeriv(xvbar)
             xsbar = self.mesh.getdXs('all')
-            xdvbar.update(self.DVGeo.totalSensitivity(xsbar, self.curAP.ptSetName, self.comm, 
-                                                config=self.curAP.name))
+            xdvbar.update(self.DVGeo.totalSensitivity(xsbar, 
+                self.curAP.ptSetName, self.comm, config=self.curAP.name))
             
             # We also need to add in the aero derivatives here
             for key in self.aeroDVs:
-                mapping = self.possibleAeroDVs[key]
-                xdvbar[key] = extrabar[mapping]
+                execStr = 'mapping = self.sumb.%s'%self.possibleAeroDVs[key]
+                exec(execStr)
+                xdvbar[key] = extrabar[mapping - 1]
             
         if wDeriv and xDvDeriv:
             return wbar, xdvbar
