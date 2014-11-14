@@ -1223,6 +1223,7 @@ steady rotations and specifying an aeroProblem')
         nLevels = self.sumb.inputiteration.nmglevels
         if strLvl < 0 or strLvl > nLevels:
             strLvl = nLevels
+
         self.sumb.inputiteration.mgstartlevel = strLvl
         self.sumb.inputiteration.groundlevel = strLvl
         self.sumb.inputiteration.currentlevel = strLvl
@@ -1230,7 +1231,6 @@ steady rotations and specifying an aeroProblem')
         self.sumb.monitor.nitercur = 0
         self.sumb.iteration.itertot = 0
         self.sumb.setuniformflow()
-        #self.sumb.initdepvarandhalos(True)
         self.sumb.nksolvervars.nksolvecount = 0
         self.sumb.killsignals.routinefailed =  False
         self.sumb.killsignals.fatalfail = False
@@ -1504,7 +1504,7 @@ steady rotations and specifying an aeroProblem')
         rho = AP.rho
         V = AP.V
         mu = AP.mu
-        R = AP.R
+
         # Do some checking here for things that MUST be specified:
         if AP.mach is None:
             raise Error('\'mach\' number must be specified in the aeroProblem\
@@ -1569,7 +1569,6 @@ steady rotations and specifying an aeroProblem')
             self.sumb.inputphysics.machgrid = 0.0
 
         # Set reference state information:
-        self.sumb.inputphysics.rgasdim = R
         if self.getOption('equationType') != 'euler':
             self.sumb.flowvarrefstate.pref = P
             self.sumb.flowvarrefstate.tref = T
@@ -2379,8 +2378,8 @@ steady rotations and specifying an aeroProblem')
             # Do the aerodynamic design variables
             extradot = numpy.zeros(self.nDVAero)
             for key in xDVdot:
-                if key in self.aeroDVs:
-                    execStr = 'mapping = self.sumb.%s'%self.possibleAeroDVs[key]
+                if key.lower() in self.aeroDVs:
+                    execStr = 'mapping = self.sumb.%s'%self.possibleAeroDVs[key.lower()]
                     exec(execStr)
                     extradot[mapping - 1] = xDVdot[key]
 
@@ -2402,8 +2401,6 @@ steady rotations and specifying an aeroProblem')
 
         funcsdot = {}
         for f in self.curAP.evalFuncs:
-            key = self.curAP.name + '_%s'% f
-            self.curAP.funcNames[f] = key
             mapping = self.sumbCostFunctions[self.possibleObjectives[f]]
             funcsdot[f] = tmp[mapping-1]
             
@@ -2429,7 +2426,7 @@ steady rotations and specifying an aeroProblem')
             tmp = numpy.zeros(self.sumb.costfunctions.ncostfunction)
             # Extract out the seeds
             for f in funcsBar:
-                mapping = self.sumbCostFunctions[self.possibleObjectives[f]]
+                mapping = self.sumbCostFunctions[self.possibleObjectives[f.lower()]]
                 tmp[mapping-1] = funcsBar[f]
             funcsBar = tmp
 
@@ -2442,13 +2439,12 @@ steady rotations and specifying an aeroProblem')
             
         xvbar, extrabar, wbar = self.sumb.computematrixfreeproductbwd(
             resBar, funcsBar, useSpatial, useState, self.getSpatialSize(), self.nDVAero)
-
-        xdvbar = {}
+            
         if xDvDeriv:
             self.mesh.warpDeriv(xvbar)
             xsbar = self.mesh.getdXs('all')
-            xdvbar.update(self.DVGeo.totalSensitivity(xsbar, 
-                self.curAP.ptSetName, self.comm, config=self.curAP.name))
+            xdvbar = self.DVGeo.totalSensitivity(xsbar, 
+                self.curAP.ptSetName, self.comm, config=self.curAP.name)
             
             # We also need to add in the aero derivatives here
             for key in self.aeroDVs:
