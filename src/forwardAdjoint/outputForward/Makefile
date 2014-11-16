@@ -35,7 +35,11 @@ include ${SUMB_RULES_FILE}
 #      ******************************************************************
 
 vpath %.o $(SUMB_OBJDIR)
-FF90_OBJECTS =  blockpointers_d.o\
+FF90_OBJECTS =  viscousflux_d.o \
+	        sa_block_d.o\
+		sasolve_d.o\
+		invisciddissfluxmatrix_d.o \
+		blockpointers_d.o\
 		diffSizes.o\
 		applyallbc_block_d.o\
 		bcsymm_d.o\
@@ -58,11 +62,9 @@ FF90_OBJECTS =  blockpointers_d.o\
 		block_res_d.o  \
 		invisciddissfluxmatrixcoarse_d.o \
 		residual_block_d.o \
-		viscousflux_d.o \
 		bcnswallisothermal_d.o \
 		computeetotcellcpfit_d.o \
 		etotarray_d.o \
-		invisciddissfluxmatrix_d.o \
                 setbcpointers_d.o\
                 setww0pp0rlv0rev0_d.o\
                 setss_d.o\
@@ -71,7 +73,6 @@ FF90_OBJECTS =  blockpointers_d.o\
                 setxxssrhodd2wall_d.o\
                 setgamma_d.o\
                 setpp3pp4_d.o\
-	        sa_block_d.o\
 	        inviscidcentralflux_d.o\
                 saeddyviscosity_d.o\
                 bcturbtreatment_d.o\
@@ -98,7 +99,6 @@ FF90_OBJECTS =  blockpointers_d.o\
 		sanuknowneddyratio_d.o\
 		unsteadyturbspectral_block_d.o\
 		turb2ndhalo_d.o\
-		sasolve_d.o\
 		prodkatolaunder_d.o\
 		prodwmag2_d.o\
 		prodsmag2_d.o\

@@ -83,16 +83,9 @@ default:
 	echo "The modify this config file as required. Typically the CGNS directory "; \
 	echo "will have to be modified. With the config file specified, rerun "; \
 	echo "'make' and the build will start"; \
+	else make -f Makefile_CS sumb;\
 	fi;
-# Otherwise we do the acutal make:
-	@if [ -f "config/config.mk" ]; then \
-	make -f Makefile_CS dirs;\
-	ln -sf config/config.mk config.mk;\
-	ln -sf SUmb_Common_CS.mk SUmb_Common.mk;\
-	make -f Makefile_CS sumb;\
-	(cd src/python/f2py && make complexify);\
-	(cd src_cs/python/f2py && make);\
-	fi;
+
 dirs:	
 	mkdir -p bin
 	mkdir -p obj_cs
@@ -118,6 +111,9 @@ clean:
 	rm -f lib_cs/lib* mod_cs/* obj_cs/*
 
 sumb:
+	make -f Makefile_CS dirs
+	ln -sf config/config.mk config.mk
+	ln -sf SUmb_Common_CS.mk SUmb_Common.mk
 
 	@for subdir in $(REAL_SRC) ; \
 		do \
@@ -135,3 +131,5 @@ sumb:
 
 	(cd lib_cs && make)
 	(cd $(SUBDIR_EXEC) && make)
+	(cd src/python/f2py && make complexify)
+	(cd src_cs/python/f2py && make)	

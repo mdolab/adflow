@@ -17,11 +17,11 @@ subroutine NKsolver
   use NKSolverVars, only: dRdw, dRdwPre, jacobian_lag, &
        totalR0, totalRStart, wVec, rVec, deltaW, newtonKrylovKSP, &
        ksp_rtol, ksp_atol, func_evals, ksp_max_it, ksp_subspace, ksp_div_tol, &
-       nksolvecount, Mmax, iter_k, iter_m, NKLS, &
+       nksolvecount, Mmax, iter_k, iter_m, NKLS, NKuseEw, &
        nolinesearch, cubiclinesearch, nonmonotonelinesearch, rhores0, &
-       NK_switch_tol, rhoresstart, work, g, scaleVec
+       NK_switch_tol, rhoresstart, work, g
 
-  use InputIO ! L2conv,l2convrel
+  use InputIO ! L2conv, l2convrel
   use inputIteration
   use inputPhysics
   use monitor
@@ -41,9 +41,8 @@ subroutine NKsolver
 #else
   real(kind=realType) :: rtol_last
 #endif
-
-
   logical :: flag
+
   ! maxNonLinearIts is (far) larger that necessary. The "iteration"
   ! limit is really set from the maxmimum number of funcEvals
   maxNonLinearIts = ncycles-iterTot
@@ -57,8 +56,6 @@ subroutine NKsolver
   if (maxNonLinearIts < 1) then
      return
   end if
-
-  call calcScaling(scaleVec)
 
   Mmax = 5
   iter_k = 1
@@ -74,14 +71,13 @@ subroutine NKsolver
   call setW(wVec)
   call computeResidualNK()
   call setRVec(rVec)
-
-  call vecCopy(rVec,g,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+  call vecCopy(rVec, g, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
 
   iterTot = iterTot + 1 ! Add this function evaluation
 
   ! Master Non-Linear Loop:
-  NonLinearLoop: do iter= 1,maxNonLinearIts
+  NonLinearLoop: do iter=1, maxNonLinearIts
 
      ! Increment the function evals from the Krylov Iterations and the
      ! line search iterations
@@ -101,8 +97,8 @@ subroutine NKsolver
      end if
 
      ! Use the result from the last line search
-     call vecCopy(g,rVec,ierr)
-     call EChk(ierr,__FILE__,__LINE__)
+     call vecCopy(g, rVec, ierr)
+     call EChk(ierr, __FILE__, __LINE__)
 
      ! Determine if if we need to form the Preconditioner: For a
      ! normal aerodynamic solution, form the preconditioner every
@@ -113,38 +109,36 @@ subroutine NKsolver
      ! iteration, we check the variable NKsolveCount. If THIS is a
      ! multiple of jacobian lag, we then reform the preconditioner. 
 
-     if (mod(iter-1,jacobian_lag) == 0) then
+     if (mod(iter-1, jacobian_lag) == 0) then
         if (iter == 1) then ! Special case check:
-           if (mod(NKsolveCount,jacobian_lag) == 0) then
-              call calcScaling(scaleVec)
+           if (mod(NKsolveCount, jacobian_lag) == 0) then
               call FormJacobian()
            else
-              call MatAssemblyBegin(dRdw,MAT_FINAL_ASSEMBLY,ierr)
-              call EChk(ierr,__FILE__,__LINE__)
-              call MatAssemblyEnd(dRdw,MAT_FINAL_ASSEMBLY,ierr)
-              call EChk(ierr,__FILE__,__LINE__)
+              call MatAssemblyBegin(dRdw, MAT_FINAL_ASSEMBLY, ierr)
+              call EChk(ierr, __FILE__, __LINE__)
+              call MatAssemblyEnd(dRdw, MAT_FINAL_ASSEMBLY, ierr)
+              call EChk(ierr, __FILE__, __LINE__)
            end if
         else
-           call calcScaling(scaleVec)
            call FormJacobian()
         end if
      else
         ! Else just call assmebly begin/end on dRdW
-        call MatAssemblyBegin(dRdw,MAT_FINAL_ASSEMBLY,ierr)
-        call EChk(ierr,__FILE__,__LINE__)
-        call MatAssemblyEnd(dRdw,MAT_FINAL_ASSEMBLY,ierr)
-        call EChk(ierr,__FILE__,__LINE__)
+        call MatAssemblyBegin(dRdw, MAT_FINAL_ASSEMBLY, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+        call MatAssemblyEnd(dRdw, MAT_FINAL_ASSEMBLY, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
      end if
 
      ! Set the BaseVector of the matrix-free matrix:
-     call MatMFFDSetBase(dRdW,wVec,PETSC_NULL_OBJECT,ierr)
-     call EChk(ierr,__FILE__,__LINE__)
+     call MatMFFDSetBase(dRdW, wVec, PETSC_NULL_OBJECT, ierr)
+     call EChk(ierr, __FILE__, __LINE__)
 
      ! Compute the norm of rVec for use in EW Criteria
      old_norm = norm
      rtol_last = ksp_rtol
-     call VecNorm(rVec,NORM_2,norm,ierr)
-     call EChk(ierr,__FILE__,__LINE__)
+     call VecNorm(rVec, NORM_2, norm, ierr)
+     call EChk(ierr, __FILE__, __LINE__)
 
      ! Check to see if we're converged: We need to check if we've meet
      ! L2Conv or L2ConvRel
@@ -165,21 +159,22 @@ subroutine NKsolver
         end if
      end if
 
-
      ! Check to see if we've done too many function Evals:
      if (iterTot >= ncycles) then
         iterTot = ncycles 
         exit NonLinearLoop
      end if
 
-     ! Get the EW Forcing tolerance ksp_rtol
-     call getEWTol(iter, norm, old_norm, rtol_last, ksp_rtol)
-  
+     ! Get the EW Forcing tolerance ksp_rtol if necessary
+     if (NKUseEW) then 
+        call getEWTol(iter, norm, old_norm, rtol_last, ksp_rtol)
+     end if
+
      ! Set all tolerances for linear solve:
-     ksp_atol =totalR0*L2Conv
-     ksp_max_it = min(ksp_subspace,ncycles-iterTot)
-     ksp_max_it = max(ksp_max_it,1) ! At least one iteration!
-    
+     ksp_atol = totalR0*L2Conv
+     ksp_max_it = min(ksp_subspace, ncycles-iterTot)
+     ksp_max_it = max(ksp_max_it, 1) ! At least one iteration!
+
      call KSPSetTolerances(newtonKrylovKSP, real(ksp_rtol), &
           real(ksp_atol), real(ksp_div_tol), ksp_max_it, ierr)
      call EChk(ierr, __FILE__, __LINE__)
@@ -191,18 +186,17 @@ subroutine NKsolver
      ! which is a floating point error. This is ok, we just reset and
      ! keep going
      if (ierr == 72) then
-        print *,'NAN in PETSc on proc:',myid
+        print *, 'NAN in PETSc on proc:', myid
 
         fatalFail = .True.
         routineFailed = .True.
         call setUniformFlow
         exit NonLinearLoop
      else
-        call EChk(ierr,__FILE__,__LINE__)
+        call EChk(ierr, __FILE__, __LINE__)
      end if
+
      ! Linesearching:
-     NKLS = nonMonotoneLineSearch
-     !NKLS = cubicLineSearch
      if (iter <= 1 ) then
         call LSCubic(wVec, rVec, g, deltaW, work, fnorm, ynorm, gnorm, &
              nfevals, flag)
@@ -214,7 +208,7 @@ subroutine NKsolver
                 nfevals, flag)
         else if (NKLS == nonMonotoneLineSearch) then
            iter_k = iter
-           iter_m = min(iter_m+1,Mmax)
+           iter_m = min(iter_m+1, Mmax)
            call LSNM(wVec, rVec, g, deltaW, work, fnorm, ynorm, gnorm, &
                 nfevals, flag)
         end if
@@ -227,11 +221,11 @@ subroutine NKsolver
 
      ! Copy the work vector to wVec
      call VecCopy(work, wVec, ierr)
-     call EChk(ierr,__FILE__,__LINE__)
+     call EChk(ierr, __FILE__, __LINE__)
 
      ! Get the number of iterations to use with Convergence Info
      call KSPGetIterationNumber(newtonKrylovKSP, ksp_iterations, ierr)
-     call EChk(ierr,__FILE__,__LINE__)
+     call EChk(ierr, __FILE__, __LINE__)
 
   end do NonLinearLoop
 
@@ -266,7 +260,7 @@ subroutine LSCubic(x, f, g, y, w, fnorm, ynorm, gnorm, nfevals, flag)
   integer(kind=intType) :: nfevals
   !   Note that for line search purposes we work with with the related
   !   minimization problem:
-  !      min  z(x):  R^n -> R,
+  !      min  z(x):  R^n -> R, 
   !   where z(x) = .5 * fnorm*fnorm, and fnorm = || f ||_2.
   !         
 
@@ -284,27 +278,27 @@ subroutine LSCubic(x, f, g, y, w, fnorm, ynorm, gnorm, nfevals, flag)
   flag = .True. 
 
   ! Compute the two norms we need:
-  call VecNorm(y,NORM_2,ynorm,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+  call VecNorm(y, NORM_2, ynorm, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
 
-  call VecNorm(f,NORM_2,fnorm,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+  call VecNorm(f, NORM_2, fnorm, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
 
-  call VecMaxPointwiseDivide(y,x,rellength,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+  call VecMaxPointwiseDivide(y, x, rellength, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
 
   minlambda = minlambda/rellength ! Fix this
-  call MatMult(dRdw,y,w,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+  call MatMult(dRdw, y, w, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
   nfevals = nfevals + 1
 
 #ifdef USE_COMPLEX
   call VecDot(f, w, cinitslope, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+  call EChk(ierr, __FILE__, __LINE__)
   initslope = real(cinitslope)
 #else
   call VecDot(f, w, initslope, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+  call EChk(ierr, __FILE__, __LINE__)
 #endif
 
   if (initslope > 0.0_realType)  then
@@ -316,19 +310,20 @@ subroutine LSCubic(x, f, g, y, w, fnorm, ynorm, gnorm, nfevals, flag)
   end if
 #ifdef USE_COMPLEX
   call VecWAXPY(w, cmplx(-1.0, 0.0), y, x, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+  call EChk(ierr, __FILE__, __LINE__)
 #else
   call VecWAXPY(w, -one, y, x, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+  call EChk(ierr, __FILE__, __LINE__)
 #endif
   ! Compute Function:
   call setW(w)
   call computeResidualNK()
+  call setRVec(g)  
 
   nfevals = nfevals + 1
 
   call VecNorm(g, NORM_2, gnorm, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+  call EChk(ierr, __FILE__, __LINE__)
 
   ! Sufficient reduction 
   if (0.5_realType*gnorm*gnorm <= 0.5_realType*fnorm*fnorm + alpha*initslope) then
@@ -340,7 +335,6 @@ subroutine LSCubic(x, f, g, y, w, fnorm, ynorm, gnorm, nfevals, flag)
   lambdatemp = -initslope/(gnorm*gnorm - fnorm*fnorm - 2.0_realType*initslope)
   lambdaprev = lambda
   gnormprev  = gnorm
-
   if (lambdatemp > 0.5_realType*lambda) then
      lambdatemp = 0.5_realType*lambda
   end if
@@ -350,18 +344,18 @@ subroutine LSCubic(x, f, g, y, w, fnorm, ynorm, gnorm, nfevals, flag)
   else                 
      lambda = lambdatemp
   end if
+
 #ifdef USE_COMPLEX
-  call VecWAXPY(w, -cmplx(lambda,0.0), y, x, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+  call VecWAXPY(w, -cmplx(lambda, 0.0), y, x, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
 #else
   call VecWAXPY(w, -lambda, y, x, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+  call EChk(ierr, __FILE__, __LINE__)
 #endif
 
   ! Compute new function again:
   call setW(w)
   call computeResidualNK()
-
   call setRVec(g)
 
   nfevals = nfevals + 1
@@ -371,7 +365,7 @@ subroutine LSCubic(x, f, g, y, w, fnorm, ynorm, gnorm, nfevals, flag)
      flag = .False.
      return
   end if
-  call EChk(ierr,__FILE__,__LINE__)
+  call EChk(ierr, __FILE__, __LINE__)
 
   ! Sufficient reduction 
     if (0.5_realType*gnorm*gnorm <= 0.5_realType*fnorm*fnorm + lambda*alpha*initslope) then
@@ -418,21 +412,20 @@ subroutine LSCubic(x, f, g, y, w, fnorm, ynorm, gnorm, nfevals, flag)
         exit cubic_loop
      end if
 #ifdef USE_COMPLEX
-     call VecWAXPY(w, cmplx(-lambda,0.0), y, x, ierr)
-     call EChk(ierr,__FILE__,__LINE__)
+     call VecWAXPY(w, cmplx(-lambda, 0.0), y, x, ierr)
+     call EChk(ierr, __FILE__, __LINE__)
 #else
      call VecWAXPY(w, -lambda, y, x, ierr)
-     call EChk(ierr,__FILE__,__LINE__)
+     call EChk(ierr, __FILE__, __LINE__)
 #endif
      ! Compute new function again:
      call setW(w)
      call computeResidualNK()
-
      call setRVec(g)
      nfevals = nfevals + 1
 
      call VecNorm(g, NORM_2, gnorm, ierr)
-     call EChk(ierr,__FILE__,__LINE__)
+     call EChk(ierr, __FILE__, __LINE__)
 
      ! Is reduction enough?
      if (0.5_realType*gnorm*gnorm <= 0.5_realType*fnorm*fnorm + lambda*alpha*initslope) then
@@ -441,7 +434,6 @@ subroutine LSCubic(x, f, g, y, w, fnorm, ynorm, gnorm, nfevals, flag)
   end do cubic_loop
 
 100 continue
- 
 #endif
 end subroutine LSCubic
 
@@ -468,7 +460,7 @@ subroutine LSNone(x, f, g, y, w, nfevals, flag)
   ! We just accept the step and compute the new residual at the new iterate
   nfevals = 0
   call VecWAXPY(w, -1.0_realType, y, x, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+  call EChk(ierr, __FILE__, __LINE__)
 
   ! Compute new function:
   call setW(w)
@@ -480,7 +472,7 @@ subroutine LSNone(x, f, g, y, w, nfevals, flag)
 #endif
 end subroutine LSNone
 
-subroutine LSNM(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals,flag)
+subroutine LSNM(x, f, g, y, w, fnorm, ynorm, gnorm, nfevals, flag)
 #ifndef USE_NO_PETSC
   use precision 
   use communication
@@ -491,7 +483,7 @@ subroutine LSNM(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals,flag)
 #include "include/finclude/petsc.h"
 
   ! Input/Output
-  Vec x,f,g,y,w
+  Vec x, f, g, y, w
   !x 	- current iterate
   !f 	- residual evaluated at x
   !y 	- search direction
@@ -504,7 +496,7 @@ subroutine LSNM(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals,flag)
   integer(kind=intType) :: nfevals
   !   Note that for line search purposes we work with with the related
   !   minimization problem:
-  !      min  z(x):  R^n -> R,
+  !      min  z(x):  R^n -> R, 
   !   where z(x) = .5 * fnorm*fnorm, and fnorm = || f ||_2.
   !         
 #ifdef USE_COMPLEX
@@ -522,24 +514,24 @@ subroutine LSNM(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals,flag)
 
   ! Compute the two norms we need:
   call VecNorm(y, NORM_2, ynorm, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+  call EChk(ierr, __FILE__, __LINE__)
 
   call VecNorm(f, NORM_2, fnorm, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+  call EChk(ierr, __FILE__, __LINE__)
 
   func_evals(iter_k) = 0.5_realType*fnorm*fnorm
 
   call MatMult(dRdw, y, w, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+  call EChk(ierr, __FILE__, __LINE__)
   nfevals = nfevals + 1
 
 #ifdef USE_COMPLEX
   call VecDot(f, w, cinitslope, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+  call EChk(ierr, __FILE__, __LINE__)
   initslope = real(cinitslope)
 #else
   call VecDot(f, w, initslope, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+  call EChk(ierr, __FILE__, __LINE__)
 #endif
 
   if (initslope > 0.0_realType)  then
@@ -551,15 +543,15 @@ subroutine LSNM(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals,flag)
   end if
 
   alpha = 1.0 ! Initial step length:
-  backtrack: do iter=1,10
+  backtrack: do iter=1, 10
 
      ! Compute new x value:
 #ifdef USE_COMPLEX
-     call VecWAXPY(w, cmplx(-alpha,0.0), y, x, ierr)
-     call EChk(ierr,__FILE__,__LINE__)
+     call VecWAXPY(w, cmplx(-alpha, 0.0), y, x, ierr)
+     call EChk(ierr, __FILE__, __LINE__)
 #else
      call VecWAXPY(w, -alpha, y, x, ierr)
-     call EChk(ierr,__FILE__,__LINE__)
+     call EChk(ierr, __FILE__, __LINE__)
 #endif
 
      ! Compute Function @ new x (w is the work vector
@@ -574,13 +566,13 @@ subroutine LSNM(x,f,g,y,w,fnorm,ynorm,gnorm,nfevals,flag)
         ! Just apply the step limit and keep going (back to the loop start)
         alpha = alpha * sigma
      else
-        call EChk(ierr,__FILE__,__LINE__)
+        call EChk(ierr, __FILE__, __LINE__)
 
         max_val = func_evals(iter_k) + alpha*gamma*initSlope
 
         ! Loop over the previous, m function values and find the max:
-        do j=iter_k-1,iter_k-iter_m+1,-1
-           max_val = max(max_val,func_evals(j) + alpha*gamma*initSlope)
+        do j=iter_k-1, iter_k-iter_m+1, -1
+           max_val = max(max_val, func_evals(j) + alpha*gamma*initSlope)
         end do
         
         ! Sufficient reduction 
@@ -612,9 +604,8 @@ subroutine getEWTol(iter, norm, old_norm, rtol_last, rtol)
   integer(kind=intType) :: iter
   real(kind=realType), intent(in) :: norm, old_norm, rtol_last
   real(kind=realType), intent(out) :: rtol
-  real(kind=realType) :: rtol_0, rtol_max, gamma, alpha, alpha2, threshold, stol
+  real(kind=realType) :: rtol_max, gamma, alpha, alpha2, threshold, stol
 
-  rtol_0    = 0.30_realType
   rtol_max  = 0.9_realType
   gamma     = 1.0_realType
   alpha     = (1.0_realType+sqrt(five))/2.0_realType
@@ -622,18 +613,18 @@ subroutine getEWTol(iter, norm, old_norm, rtol_last, rtol)
   threshold = 0.10_realType
 
   if (iter == 1) then
-     rtol = rtol_0
+     rtol = rtol
   else
      ! We use version 2:
      rtol = gamma*(norm/old_norm)**alpha
      stol = gamma*rtol_last**alpha
 
      if (stol > threshold) then
-        rtol = max(rtol,stol)
+        rtol = max(rtol, stol)
      end if
 
      ! Safeguard: avoid rtol greater than one
-     rtol = min(rtol,rtol_max)
+     rtol = min(rtol, rtol_max)
   end if
 
 end subroutine getEWTol

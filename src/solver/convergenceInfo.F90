@@ -747,6 +747,7 @@
        use blockPointers
        use monitor
        use flowvarrefstate
+       use inputIteration
        implicit none
 !
 !      Subroutine arguments.
@@ -771,11 +772,13 @@
          do j=2,jl
            do i=2,il
               state_sum = 0.0
-              ovv = 1/vol(i,j,k)
-              do l=1,nw
+              ovv = one/vol(i,j,k)
+              do l=1,nwf
                  state_sum = state_sum + (dw(i,j,k,l)*ovv)**2
               end do
-
+              do l=nt1,nt2
+                 state_sum = state_sum + (dw(i,j,k,l)*ovv*turbResScale)**2
+              end do
               monLoc(mm) = monLoc(mm) + state_sum
 
            enddo

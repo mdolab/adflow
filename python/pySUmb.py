@@ -2815,6 +2815,7 @@ steady rotations and specifying an aeroProblem')
             'restrictionrelaxation':[float, .80],
             'liftindex':[int, 2],
             'lowspeedpreconditioner':[bool, False],
+            'turbresscale':[float, 10000.0],
 
             # Common Paramters
             'ncycles':[int, 500],
@@ -2859,20 +2860,25 @@ steady rotations and specifying an aeroProblem')
             # Newton-Krylov Paramters
             'usenksolver':[bool, False],
             'nklinearsolver':[str, 'gmres'],
-            'nkswitchtol':[float, 1e-2],
+            'nkswitchtol':[float, 2.5e-4],
             'nksubspacesize':[int, 60],
-            'nklinearsolvetol':[float, 1e-1],
+            'nklinearsolvetol':[float, 0.3],
+            'nkuseew':[bool, True],
             'nkpc':[str, 'additive schwartz'],
+            'nkadpc':[bool, True],
+            'nkviscpc':[bool, False],
             'nkasmoverlap':[int, 1],
             'nkpcilufill':[int, 2],
             'nklocalpcordering':[str, 'rcm'],
-            'nkjacobianlag':[int, 10],
+            'nkjacobianlag':[int, 20],
             'rkreset':[bool, False],
             'nrkreset':[int, 5],
             'applypcsubspacesize':[int, 10],
             'nkinnerpreconits':[int, 1],
             'nkouterpreconits':[int, 1],
-
+            'nkls':[str, 'cubic'],
+            'nkpcfastcoloring':[bool, True],
+            
             # Load Balance/partitioning parameters
             'blocksplitting':[bool, True],
             'loadimbalance':[float, 0.1],
@@ -3027,7 +3033,7 @@ steady rotations and specifying an aeroProblem')
             'restrictionrelaxation':{'location':'inputiteration.fcoll'},
             'forcesastractions':{'location':'inputphysics.forcesastractions'},
             'lowspeedpreconditioner':{'location':'inputdiscretization.lowspeedpreconditioner'},
-
+            'turbresscale':{'location':'inputiteration.turbresscale'},
             # Common Paramters
             'ncycles':{'location':'inputiteration.ncycles'},
             'ncyclescoarse':{'location':'inputiteration.ncyclescoarse'},
@@ -3082,7 +3088,7 @@ steady rotations and specifying an aeroProblem')
                               'tfqmr':'tfqmr',
                               'location':'nksolvervars.ksp_solver_type',
                               'len':self.sumb.constants.maxstringlen},
-
+            'nkuseew':{'location':'nksolvervars.nkuseew'},
             'nkswitchtol':{'location':'nksolvervars.nk_switch_tol'},
             'nksubspacesize':{'location':'nksolvervars.ksp_subspace'},
             'nklinearsolvetol':{'location':'nksolvervars.ksp_rtol'},
@@ -3104,10 +3110,17 @@ steady rotations and specifying an aeroProblem')
             'nkjacobianlag':{'location':'nksolvervars.jacobian_lag'},
             'rkreset':{'location':'nksolvervars.rkreset'},
             'nrkreset':{'location':'nksolvervars.nrkreset'},
-            'nnkfnitedifferencepc':{'location':'nksolvervars.nkfinitedifferencepc'},
+            'nkadpc':{'location':'nksolvervars.nkadpc'},
+            'nkviscpc':{'location':'nksolvervars.nkadpc'},
             'applypcsubspacesize':{'location':'nksolvervars.applypcsubspacesize'},
             'nkinnerpreconits':{'location':'nksolvervars.innerpreconits'},
             'nkouterpreconits':{'location':'nksolvervars.outerpreconits'},
+            'nkls':{'none':self.sumb.nksolvervars.nolinesearch,
+                    'cubic':self.sumb.nksolvervars.cubiclinesearch,
+                    'non monotone':self.sumb.nksolvervars.nonmonotonelinesearch,
+                    'location':'nksolvervars.nkls'
+                },
+            'nkpcfastcoloring':{'location':'nksolvervars.nkpcfastcoloring'},
 
             # Load Balance Paramters
             'blocksplitting':{'location':'inputparallel.splitblocks'},

@@ -13,9 +13,8 @@ subroutine setupNKsolver
   use stencils
   use InputAdjoint, only: viscPC
   use ADjointVars , only: nCellsLocal
-  use NKSolverVars, only: dRdw, dRdwPre, dRdwPseudo, ctx, wVec, rVec, deltaW, &
-       NKsolvecount, nksolversetup, work, g, w_like1, w_like2, scaleVec, &
-       newtonKrylovKSP
+  use NKSolverVars, only: dRdw, dRdwPre, ctx, wVec, rVec, deltaW, &
+       NKsolvecount, nksolversetup, work, g, NKViscPC, newtonKrylovKSP
   use ADJointPetsc,  only: drdwpret
   implicit none
 #define PETSC_AVOID_MPIF_H
@@ -28,7 +27,6 @@ subroutine setupNKsolver
   integer(kind=intType), dimension(:, :), pointer :: stencil
   integer(kind=intType) :: level
   external FormFunction_mf
-  external mykspmonitor
 
   if (.not. NKSolverSetup) then
      nDimW = nw * nCellsLocal(1_intTYpe) * nTimeIntervalsSpectral
@@ -59,31 +57,11 @@ subroutine setupNKsolver
      call VecDuplicate(wVec, work, ierr)
      call EChk(ierr, __FILE__, __LINE__)
 
-     call VecDuplicate(wVec, scaleVec, ierr)
-     call EChk(ierr, __FILE__, __LINE__)
-
-     ! Create two empty w-like vectors
-     if (PETSC_VERSION_MINOR == 2) then
-        call VecCreateMPIWithArray(SUMB_COMM_WORLD, nDimW, PETSC_DETERMINE, &
-             PETSC_NULL_SCALAR, w_like1, ierr)
-        call EChk(ierr, __FILE__, __LINE__)
-        call VecCreateMPIWithArray(SUMB_COMM_WORLD, nDimW, PETSC_DETERMINE, &
-             PETSC_NULL_SCALAR, w_like2, ierr)
-        call EChk(ierr, __FILE__, __LINE__)
-     else 
-        call VecCreateMPIWithArray(SUMB_COMM_WORLD, nw, nDimW, PETSC_DETERMINE, &
-             PETSC_NULL_SCALAR, w_like1, ierr)
-        call EChk(ierr, __FILE__, __LINE__)
-        call VecCreateMPIWithArray(SUMB_COMM_WORLD, nw, nDimW, PETSC_DETERMINE, &
-             PETSC_NULL_SCALAR, w_like2, ierr)
-        call EChk(ierr, __FILE__, __LINE__)
-     end if
-
      ! Create Pre-Conditioning Matrix
      allocate(nnzDiagonal(nCellsLocal(1_intType)*nTimeIntervalsSpectral), &
           nnzOffDiag(nCellsLocal(1_intType)*nTimeIntervalsSpectral) )
 
-     if (viscous .and. viscPC) then
+     if (viscous .and. NKviscPC) then
         stencil => visc_pc_stencil
         n_stencil = N_visc_pc
      else
@@ -101,19 +79,6 @@ subroutine setupNKsolver
      call EChk(ierr, __FILE__, __LINE__)
      deallocate(nnzDiagonal, nnzOffDiag)
 
-     !call createpetscvars()
-     call MatZeroEntries(dRdwpre, ierr)
-     call EChk(ierr, __FILE__, __LINE__)
-
-     ! Compute dRdw with forward AD
-     ! useAD = .True.
-     ! usePC = .False.
-     ! useTranspose = .True.
-     ! useObjective = .True.
-
-
-
-
      ! Setup Matrix-Free dRdw matrix and its function
      call MatCreateMFFD(sumb_comm_world, nDimW, nDimW, &
           PETSC_DETERMINE, PETSC_DETERMINE, dRdw, ierr)
@@ -126,9 +91,10 @@ subroutine setupNKsolver
      ! subblocks can be passed in in fortran column-oriented format
      call MatSetOption(dRdWPre, MAT_ROW_ORIENTED, PETSC_FALSE, ierr)
      call EChk(ierr, __FILE__, __LINE__)
-     call MatSetOption(dRdW   , MAT_ROW_ORIENTED, PETSC_FALSE, ierr)
+
+     call MatSetOption(dRdW, MAT_ROW_ORIENTED, PETSC_FALSE, ierr)
      call EChk(ierr, __FILE__, __LINE__)
-     
+
      !  Create the linear solver context
      call KSPCreate(SUMB_COMM_WORLD, newtonKrylovKSP, ierr)
      call EChk(ierr, __FILE__, __LINE__)
@@ -141,18 +107,9 @@ subroutine setupNKsolver
 #endif
      call EChk(ierr, __FILE__, __LINE__)
 
-     ! ! DEBUGGING ONLY!
-     ! call KSPMonitorSet(newtonKrylovKSP, MyKSPMonitor, PETSC_NULL_OBJECT, &
-     !     PETSC_NULL_FUNCTION, ierr)
-     ! call EChk(ierr, __FILE__, __LINE__)
-    
      NKSolverSetup = .True.
      NKSolveCount = 0
-     !if(equations == RANSEquations)  then
-     !   turbCoupled = .True.
-     !   turbSegregated = .False.
-     !end if
-
   end if
 #endif
+
 end subroutine setupNKsolver

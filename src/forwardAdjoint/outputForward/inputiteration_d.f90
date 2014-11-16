@@ -97,6 +97,8 @@
    !                   scheme. The values depend on the number of
    !                   stages specified.
    ! printIterations: If True, iterations are printed to stdout
+   ! turbresscale: Scaling factor for turbulent residual. Necessary for
+   !            NKsolver with RANS. Only tested on SA. 
    INTEGER(kind=inttype) :: ncycles, ncyclescoarse
    INTEGER(kind=inttype) :: nsavevolume, nsavesurface
    INTEGER(kind=inttype) :: nsgstartup, smoother, nrkstages
@@ -121,4 +123,5 @@
    LOGICAL :: freezeturbsource
    LOGICAL :: printiterations
    LOGICAL :: printwarnings
+   REAL(kind=realtype) :: turbresscale
    END MODULE INPUTITERATION_D

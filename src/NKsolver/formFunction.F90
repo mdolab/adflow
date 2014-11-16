@@ -1,4 +1,4 @@
-subroutine FormFunction_mf(ctx,wVec,rVec,ierr)
+subroutine FormFunction_mf(ctx, wVec, rVec, ierr)
 #ifndef USE_NO_PETSC
   ! This is basically a copy of FormFunction, however it has a
   ! different calling sequence from PETSc. It performs the identical
