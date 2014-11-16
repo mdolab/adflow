@@ -53,6 +53,7 @@
    USE BLOCKPOINTERS_B
    USE FLOWVARREFSTATE
    USE INPUTPHYSICS
+   USE INPUTITERATION
    USE INPUTTIMESPECTRAL
    USE SECTION
    USE MONITOR
@@ -91,9 +92,10 @@
    REAL(kind=realtype) :: temp2
    REAL(kind=realtype) :: temp1
    REAL(kind=realtype) :: temp0
-   REAL(kind=realtype) :: tempb6(3)
-   REAL(kind=realtype) :: tempb5
-   REAL(kind=realtype) :: tempb4(3)
+   REAL(kind=realtype) :: tempb7(3)
+   REAL(kind=realtype) :: tempb6
+   REAL(kind=realtype) :: tempb5(3)
+   REAL(kind=realtype) :: tempb4
    REAL(kind=realtype) :: tempb3
    REAL(kind=realtype) :: tempb2
    REAL(kind=realtype) :: tempb1
@@ -103,6 +105,7 @@
    INTEGER :: ii2
    INTEGER :: ii1
    REAL(kind=realtype) :: temp
+   REAL(kind=realtype) :: temp4
    ! Setup number of state variable based on turbulence assumption
    IF (frozenturbulence) THEN
    nstate = nwf
@@ -361,7 +364,7 @@
    ! The error only show up in the rho term in some cells
    ! Divide through by the volume
    DO sps2=1,ntimeintervalsspectral
-   DO l=1,nstate
+   DO l=1,nwf
    DO k=2,kl
    DO j=2,jl
    DO i=2,il
@@ -369,6 +372,20 @@
    flowdoms(nn, 1, sps2)%dw(i, j, k, l) = flowdoms(nn, 1, sps2)&
    &             %dw(i, j, k, l)/flowdoms(nn, currentlevel, sps2)%vol(i, j&
    &             , k)
+   END DO
+   END DO
+   END DO
+   END DO
+   ! Treat the turblent residual with the scaling factor on the
+   ! residual
+   DO l=nt1,nstate
+   DO k=2,kl
+   DO j=2,jl
+   DO i=2,il
+   CALL PUSHREAL8(flowdoms(nn, 1, sps2)%dw(i, j, k, l))
+   flowdoms(nn, 1, sps2)%dw(i, j, k, l) = flowdoms(nn, 1, sps2)&
+   &             %dw(i, j, k, l)/flowdoms(nn, currentlevel, sps2)%vol(i, j&
+   &             , k)*turbresscale
    END DO
    END DO
    END DO
@@ -439,34 +456,34 @@
    cmvb = 0.0_8
    factb = 0.0_8
    DO sps2=ntimeintervalsspectral,1,-1
-   tempb6 = momentb(:, sps2)/fact
-   cmpb = cmpb + tempb6
-   cmvb = cmvb + tempb6
-   factb = factb + SUM(-((cmp+cmv)*tempb6/fact))
+   tempb7 = momentb(:, sps2)/fact
+   cmpb = cmpb + tempb7
+   cmvb = cmvb + tempb7
+   factb = factb + SUM(-((cmp+cmv)*tempb7/fact))
    momentb(:, sps2) = 0.0_8
    END DO
    CALL POPREAL8(fact)
-   tempb5 = factb/(lref*lengthref)
-   lengthrefb = lengthrefb - fact*tempb5/lengthref
-   factb = tempb5
+   tempb6 = factb/(lref*lengthref)
+   lengthrefb = lengthrefb - fact*tempb6/lengthref
+   factb = tempb6
    cfpb = 0.0_8
    cfvb = 0.0_8
    DO sps2=ntimeintervalsspectral,1,-1
-   tempb4 = forceb(:, sps2)/fact
-   cfpb = cfpb + tempb4
-   cfvb = cfvb + tempb4
-   factb = factb + SUM(-((cfp+cfv)*tempb4/fact))
+   tempb5 = forceb(:, sps2)/fact
+   cfpb = cfpb + tempb5
+   cfvb = cfvb + tempb5
+   factb = factb + SUM(-((cfp+cfv)*tempb5/fact))
    forceb(:, sps2) = 0.0_8
    END DO
-   temp3 = machcoef**2*scaledim
-   temp2 = surfaceref*lref**2
-   temp1 = temp2*gammainf*pinf
-   tempb2 = -(two*factb/(temp1**2*temp3**2))
-   tempb3 = temp3*temp2*tempb2
-   gammainfb = gammainfb + pinf*tempb3
-   machcoefb = machcoefb + scaledim*temp1*2*machcoef*tempb2
-   scaledimb = temp1*machcoef**2*tempb2
-   pinfb = pinfb + gammainf*tempb3 - pref*scaledimb/pinf**2
+   temp4 = machcoef**2*scaledim
+   temp3 = surfaceref*lref**2
+   temp2 = temp3*gammainf*pinf
+   tempb3 = -(two*factb/(temp2**2*temp4**2))
+   tempb4 = temp4*temp3*tempb3
+   gammainfb = gammainfb + pinf*tempb4
+   machcoefb = machcoefb + scaledim*temp2*2*machcoef*tempb3
+   scaledimb = temp2*machcoef**2*tempb3
+   pinfb = pinfb + gammainf*tempb4 - pref*scaledimb/pinf**2
    prefb = prefb + scaledimb/pinf
    CALL POPREAL8ARRAY(cfp, 3)
    CALL POPREAL8ARRAY(cfv, 3)
@@ -518,7 +535,23 @@
    END DO
    END DO
    DO sps2=ntimeintervalsspectral,1,-1
-   DO l=nstate,1,-1
+   DO l=nstate,nt1,-1
+   DO k=kl,2,-1
+   DO j=jl,2,-1
+   DO i=il,2,-1
+   CALL POPREAL8(flowdoms(nn, 1, sps2)%dw(i, j, k, l))
+   temp1 = flowdoms(nn, currentlevel, sps2)%vol(i, j, k)
+   tempb2 = turbresscale*flowdomsb(nn, 1, sps2)%dw(i, j, k, l)/&
+   &             temp1
+   flowdomsb(nn, currentlevel, sps2)%vol(i, j, k) = flowdomsb(&
+   &             nn, currentlevel, sps2)%vol(i, j, k) - flowdoms(nn, 1, &
+   &             sps2)%dw(i, j, k, l)*tempb2/temp1
+   flowdomsb(nn, 1, sps2)%dw(i, j, k, l) = tempb2
+   END DO
+   END DO
+   END DO
+   END DO
+   DO l=nwf,1,-1
    DO k=kl,2,-1
    DO j=jl,2,-1
    DO i=il,2,-1

@@ -421,9 +421,10 @@
        nkSolverSetup = .False.
        NKPCSetup     = .False.
        lumpedDiss    = .False.
-       NKFiniteDifferencePC = .True.
        useApproxWallDistance = .False.
        updateWallAssociation = .False.
        adjointInitialized = .False.
        cflLimit = 3.0
+       rhoResL1Start = -one
+       turbresscale = one
        end subroutine setDefaultValues

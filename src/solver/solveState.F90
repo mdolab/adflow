@@ -331,11 +331,11 @@ subroutine solveState
 
      ! Now we must determine if the solution is converged sufficently
      ! to start directly into the NKsolver OR if we have to run the
-     ! RKsolver first to improve the starting point aand then the NKsolver
+     ! RKsolver first to improve the starting point and then the NKsolver
 
      ! Get Frestream and starting residuals
      if (.not. freeStreamResSet) then
-        call getFreeStreamResidual(rhoRes0,totalR0)
+        call getFreeStreamResidual(rhoRes0, totalR0)
         freeStreamResSet = .True.
      end if
      call getCurrentResidual(rhoResStart,totalRStart)
@@ -343,26 +343,27 @@ subroutine solveState
      ! Determine if we need to run the RK solver, before we can
      ! run the NK solver 
      L2ConvSave = L2Conv
+     if (totalRStart/totalR0 > NK_Switch_Tol) then
 
-       if (rhoResStart/rhoRes0 > NK_Switch_Tol) then
+        ! If we haven't run anything yet, set rhoResL1Start...this is
+        ! the intial rho residual on the fine grid. This is what is
+        ! used in convergence info
+        if (rhoResL1Start < zero) then 
+          rhoResL1Start = rhoResStart
+        end if
+        
+        L2Conv = NK_Switch_Tol*rhoRes0/rhoResL1Start
 
-        ! We haven't run anything yet OR the solution is not
-        ! yet converged tightly enough to start with NK solver
-
-        ! Try to run RK solver down to NKSwitchTol
-        L2Conv = NK_Switch_Tol*rhoRes0/rhoResStart
         solve_RK = .True.
         solve_NK = .True.
-
      else 
+        ! Nominally we don't run any RK iterations....
         solve_NK = .True.
         solve_RK = .False.
         if (RKreset) then
-
-
-           !for difficult restarts during optimization
+           ! EXCEPT if we explictly want the solver to run a (small)
+           ! fixed number of iterations to re-globlaize the solution
            solve_RK = .True.
-           !run a small number of RK iterations to re-globalize the solution
            nMGCycles = nRKreset
         end if
      end if
@@ -494,14 +495,13 @@ subroutine solveState
      ! l2convrel. This means that the RK solution is already good
      ! enough for what we want so we're done
     
-     call getcurrentResidual(rhoRes1,totalRRes1)
+     call getcurrentResidual(rhoRes1, totalRRes1)
      if (rhoRes1 < rhoResStart * l2convrel) then
         ! We no not have to run the NK solver so do nothing
      else
         ! Run the NK solver down as far we need to go
         call setupNKsolver() 
         call NKsolver()
-
      end if
   end if
 

@@ -57,6 +57,7 @@
    USE BLOCKPOINTERS_D
    USE FLOWVARREFSTATE
    USE INPUTPHYSICS
+   USE INPUTITERATION
    USE INPUTTIMESPECTRAL
    USE SECTION
    USE MONITOR
@@ -302,7 +303,7 @@
    ! The error only show up in the rho term in some cells
    ! Divide through by the volume
    DO sps2=1,ntimeintervalsspectral
-   DO l=1,nstate
+   DO l=1,nwf
    DO k=2,kl
    DO j=2,jl
    DO i=2,il
@@ -314,6 +315,24 @@
    flowdoms(nn, 1, sps2)%dw(i, j, k, l) = flowdoms(nn, 1, sps2)&
    &             %dw(i, j, k, l)/flowdoms(nn, currentlevel, sps2)%vol(i, j&
    &             , k)
+   END DO
+   END DO
+   END DO
+   END DO
+   ! Treat the turblent residual with the scaling factor on the
+   ! residual
+   DO l=nt1,nstate
+   DO k=2,kl
+   DO j=2,jl
+   DO i=2,il
+   flowdomsd(nn, 1, sps2)%dw(i, j, k, l) = turbresscale*(&
+   &             flowdomsd(nn, 1, sps2)%dw(i, j, k, l)*flowdoms(nn, &
+   &             currentlevel, sps2)%vol(i, j, k)-flowdoms(nn, 1, sps2)%dw(&
+   &             i, j, k, l)*flowdomsd(nn, currentlevel, sps2)%vol(i, j, k)&
+   &             )/flowdoms(nn, currentlevel, sps2)%vol(i, j, k)**2
+   flowdoms(nn, 1, sps2)%dw(i, j, k, l) = flowdoms(nn, 1, sps2)&
+   &             %dw(i, j, k, l)/flowdoms(nn, currentlevel, sps2)%vol(i, j&
+   &             , k)*turbresscale
    END DO
    END DO
    END DO

@@ -62,12 +62,14 @@ module NKsolverVars
   ! Non-linear Solver Options
   integer(kind=intType) :: jacobian_lag
   integer(kind=intType) :: NKSolveCount
-  logical :: useEW
+  logical :: NKuseEW
   logical :: useNKSolver
   logical :: NKSolverSetup
   logical :: NKPCSetup
-  logical :: NKFiniteDifferencePC
+  logical :: NKADPC
+  logical :: NKViscPC
   logical :: RKreset
+  logical :: NKPCFastColoring
   integer(kind=intType) :: nRKreset
   real(kind=realType) :: resSum(8)
 
@@ -110,6 +112,7 @@ module NKsolverVars
   ! Misc Parameters
   real(kind=realType) :: totalR0, totalRStart, totalRFinal
   real(kind=realType) :: rhoRes0, rhoResStart, rhoResFinal
+  real(kind=realType) :: rhoResL1Start
   logical :: freeStreamResSet
   real(kind=realType) :: CFL0
   integer(kind=intType) :: iterTot0

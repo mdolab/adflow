@@ -26,18 +26,18 @@ SUBDIR_SRC    = src/modules       \
 	        src/utils         \
 	        src/wallDistance  \
 		src/warping       \
+		src/bendingMomentAnalysis \
 		src/adjoint               \
                 src/adjoint/ADFirstAidKit \
-                src/forwardAdjoint \
-                src/forwardAdjoint/residualInput \
-                src/forwardAdjoint/outputForwardTGT \
-                src/forwardAdjoint/outputForward \
-		src/forwardAdjoint/costInput \
-		src/forwardAdjoint/outputCost\
-		src/bendingMomentAnalysis \
                 src/adjoint/forcesOutput\
                 src/adjoint/forcesInput\
+                src/forwardAdjoint \
+                src/forwardAdjoint/residualInput \
+                src/forwardAdjoint/outputForward \
                 src/forwardAdjoint/outputReverse \
+		src/forwardAdjoint/costInput \
+		src/forwardAdjoint/outputCost\
+
 
 SUBDIR_EXEC   = src/exec
 SUBDIR_PV3    = src/pv3Interface
@@ -56,17 +56,7 @@ default:
 	echo "The modify this config file as required. Typically the CGNS directory "; \
 	echo "will have to be modified. With the config file specified, rerun "; \
 	echo "'make' and the build will start"; \
-	fi;
-# Otherwise we do the acutal make:
-	@if [ -f "config/config.mk" ]; then \
-	mkdir -p bin;\
-	mkdir -p obj;\
-	mkdir -p mod;\
-	ln -sf config/config.mk config.mk;\
-	make sumb;\
-	ln -sf SUmb_Common_real.mk SUmb_Common.mk;\
-	make sumb;\
-	(cd src/python/f2py && make);\
+	else make sumb;\
 	fi;
 
 clean:
@@ -83,6 +73,12 @@ clean:
 	rm -f lib/lib* mod/* obj/*
 
 sumb:
+	mkdir -p bin;
+	mkdir -p obj;
+	mkdir -p mod;
+	ln -sf config/config.mk config.mk;
+	ln -sf SUmb_Common_real.mk SUmb_Common.mk;
+
 	@for subdir in $(SUMB_SUBDIRS) ; \
 		do \
 			echo "making $@ in $$subdir"; \
@@ -91,4 +87,4 @@ sumb:
 		done
 	(cd lib && make)
 	(cd $(SUBDIR_EXEC) && make)
-
+	(cd src/python/f2py && make)

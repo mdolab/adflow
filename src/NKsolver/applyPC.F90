@@ -10,8 +10,8 @@ subroutine applyPC(in_vec, out_vec, ndof)
 #include "include/petscversion.h"
   ! Input/Output
   integer(kind=intType) :: ndof
-  real(kind=realType), dimension(ndof),intent(in)    :: in_vec
-  real(kind=realTYpe), dimension(ndof),intent(inout) :: out_vec
+  real(kind=realType), dimension(ndof), intent(in)    :: in_vec
+  real(kind=realTYpe), dimension(ndof), intent(inout) :: out_vec
 
   ! Working Variables
   integer(kind=intType) :: ierr
@@ -22,39 +22,38 @@ subroutine applyPC(in_vec, out_vec, ndof)
   end if
   
   ! We possibly need to re-form the jacobian
-  if (mod(NKsolveCount,jacobian_lag) == 0) then
+  if (mod(NKsolveCount, jacobian_lag) == 0) then
      call FormJacobian()
   end if
 
   ! Place the two arrays in the vector
   call VecPlaceArray(w_like1, in_vec, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+  call EChk(ierr, __FILE__, __LINE__)
 
   call VecPlaceArray(w_like2, out_vec, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+  call EChk(ierr, __FILE__, __LINE__)
   
   ! Set the base vec
   call setwVec(wVec)
   
   call MatMFFDSetBase(dRdW, wVec, PETSC_NULL_OBJECT, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+  call EChk(ierr, __FILE__, __LINE__)
 
    ! This needs to be a bit better...
   call KSPSetTolerances(newtonKrylovKSP, 1e-8, 1e-16, 10.0, &
        applyPCSubSpaceSize, ierr)
-
-  call EChk(ierr,__FILE__,__LINE__)
+  call EChk(ierr, __FILE__, __LINE__)
 
   ! Actually do the Linear Krylov Solve
   call KSPSolve(newtonKrylovKSP, w_like1, w_like2, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+  call EChk(ierr, __FILE__, __LINE__)
 
   ! Reset the array pointers:
   call VecResetArray(w_like1, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+  call EChk(ierr, __FILE__, __LINE__)
 
   call VecResetArray(w_like2, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+  call EChk(ierr, __FILE__, __LINE__)
 
   NKSolveCount = NKSolveCount + 1
 #endif
@@ -80,10 +79,10 @@ subroutine applyAdjointPC(in_vec, out_vec, ndof)
 
   ! Hijack adjoint and adjointRes with in_vec and out_vec
   call VecPlaceArray(psi_like1, in_vec, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+  call EChk(ierr, __FILE__, __LINE__)
 
   call VecPlaceArray(psi_like2, out_vec, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+  call EChk(ierr, __FILE__, __LINE__)
  
   ! Set KSP_NORM Type to none. Implictly turns off convergence
   ! check. Since we just want to run a fixed number of iterations this
@@ -106,13 +105,13 @@ subroutine applyAdjointPC(in_vec, out_vec, ndof)
 
   ! Actually do the Linear Krylov Solve
   call KSPSolve(adjointKSP, psi_like1, psi_like2, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+  call EChk(ierr, __FILE__, __LINE__)
 
   ! Reset the array pointers:
   call VecResetArray(psi_like1, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+  call EChk(ierr, __FILE__, __LINE__)
 
   call VecResetArray(psi_like2, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+  call EChk(ierr, __FILE__, __LINE__)
 #endif
 end subroutine applyAdjointPC

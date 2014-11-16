@@ -553,11 +553,6 @@ python module libsumb
        subroutine destroynksolver
        end subroutine destroynksolver
        
-       subroutine nkbenchmark(nkres,niter)
-         logical :: nkres
-         integer(kind=inttype) :: niter
-       end subroutine nkbenchmark
-
        ! ############################################################################
        ! Time Spectral Stability Routines
        ! ############################################################################
@@ -729,6 +724,7 @@ python module libsumb
          real(kind=realtype) :: epscoefconv
          real(kind=realtype) allocatable,dimension(:) :: etark
          real(kind=realtype) allocatable,dimension(:) :: cdisrk
+         real(kind=realtype) :: turbresscale
          logical :: freezeturbsource
          logical :: printiterations
          logical :: printwarnings
@@ -1125,7 +1121,14 @@ python module libsumb
          integer(kind=inttype) :: outerpreconits
          integer(kind=inttype) :: jacobian_lag
          logical :: usenksolver
-         logical :: nkfinitedifferencepc
+         logical :: nkadpc
+         logical :: nkuseew
+         logical :: nkviscpc
+         logical :: nkpcfastcoloring
+         integer(kind=inttype) :: nkls
+         integer(kind=inttype) :: nolinesearch=0
+         integer(kind=inttype) :: cubiclinesearch=1
+         integer(kind=inttype) :: nonmonotonelinesearch=2
          integer(kind=inttype) :: snes_max_funcs
          real(kind=realtype) :: snes_rtol
          character(len=maxstringlen) :: global_pc_side

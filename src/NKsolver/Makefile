@@ -43,7 +43,6 @@ FILES_TO_COMPLEXIFY = applyPC.F90\
 	       formJacobian.F90\
 	       getCurrentResidual.F90\
 	       getFreeStreamResidual.F90\
-	       NKBenchmark.F90\
 	       NKUtilities.F90\
 	       setupNKSolver.F90\
 
