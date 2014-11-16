@@ -1,4 +1,4 @@
-subroutine getFreeStreamResidual(rhoRes,totalRRes)
+subroutine getFreeStreamResidual(rhoRes, totalRRes)
 
   use communication
   use inputTimeSpectral
@@ -9,13 +9,15 @@ subroutine getFreeStreamResidual(rhoRes,totalRRes)
 
   implicit none
 
-  real(kind=realType), intent(out) :: rhoRes,totalRRes
-  real(kind=realType),dimension(:), allocatable :: wtemp, ptemp, rlvtemp, revtemp
+  real(kind=realType), intent(out) :: rhoRes, totalRRes
+  real(kind=realType), dimension(:), allocatable :: wtemp, ptemp, rlvtemp, revtemp
   integer(kind=intType) :: nDimW, nDimP, counter
   integer(kind=intType) :: tempCurrentLevel, tempMGStartLevel
-  integer(kind=intType) :: nn,sps,i,j,k,l
+  integer(kind=intType) :: nn, sps, i, j, k, l
 
-  ! Get the residual cooresponding to the free-stream on the fine grid-level
+  ! Get the residual cooresponding to the free-stream on the fine
+  ! grid-level --- This saves the current values in W, P, rlv and rev
+  ! and restores them when finished. 
 
   ! We need to copy the current wvector temporirly since it may be a
   ! restart and actually useful
@@ -23,8 +25,8 @@ subroutine getFreeStreamResidual(rhoRes,totalRRes)
   ! Copy out ALL states and ALL pressures including the halos. 
   nDimW = 0
   nDimP = 0
-  do nn=1,nDom
-     call setPointers(nn,1,1)
+  do nn=1, nDom
+     call setPointers(nn, 1, 1)
      nDimp = nDimp + (ib+1)*(jb+1)*(kb+1)
      nDimW = nDimw + (ib+1)*(jb+1)*(kb+1)
   end do
@@ -32,7 +34,7 @@ subroutine getFreeStreamResidual(rhoRes,totalRRes)
   nDimp = nDimp * nTimeIntervalsSpectral
   nDimw = nDimw * nTimeIntervalsSpectral * nw 
 
-  allocate(wtemp(nDimW),ptemp(nDimP))
+  allocate(wtemp(nDimW), ptemp(nDimP))
   if (viscous) then
      allocate(rlvtemp(nDimP))
   end if
@@ -43,15 +45,15 @@ subroutine getFreeStreamResidual(rhoRes,totalRRes)
 
   ! Copy w to wTemp
   counter = 0
-  spectralLoop1: do sps=1,nTimeIntervalsSpectral
-     domains1: do nn=1,nDom
-        call setPointers(nn,1,sps)
-        do l=1,nw
-           do k=0,kb
-              do j=0,jb
-                 do i=0,ib
+  spectralLoop1: do sps=1, nTimeIntervalsSpectral
+     domains1: do nn=1, nDom
+        call setPointers(nn, 1, sps)
+        do l=1, nw
+           do k=0, kb
+              do j=0, jb
+                 do i=0, ib
                     counter = counter + 1
-                    wtemp(counter) = w(i,j,k,l)
+                    wtemp(counter) = w(i, j, k, l)
                  enddo
               enddo
            enddo
@@ -61,14 +63,14 @@ subroutine getFreeStreamResidual(rhoRes,totalRRes)
 
   ! Copy p to pTemp
   counter = 0
-  spectralLoop2: do sps=1,nTimeIntervalsSpectral
-     domains2: do nn=1,nDom
-        call setPointers(nn,1,sps)
-        do k=0,kb
-           do j=0,jb
-              do i=0,ib
+  spectralLoop2: do sps=1, nTimeIntervalsSpectral
+     domains2: do nn=1, nDom
+        call setPointers(nn, 1, sps)
+        do k=0, kb
+           do j=0, jb
+              do i=0, ib
                  counter = counter + 1
-                 ptemp(counter) = p(i,j,k)
+                 ptemp(counter) = p(i, j, k)
               enddo
            enddo
         enddo
@@ -77,14 +79,14 @@ subroutine getFreeStreamResidual(rhoRes,totalRRes)
 
   if (viscous) then
      counter = 0
-     spectralLoop3: do sps=1,nTimeIntervalsSpectral
-        domains3: do nn=1,nDom
-           call setPointers(nn,1,sps)
-           do k=0,kb
-              do j=0,jb
-                 do i=0,ib
+     spectralLoop3: do sps=1, nTimeIntervalsSpectral
+        domains3: do nn=1, nDom
+           call setPointers(nn, 1, sps)
+           do k=0, kb
+              do j=0, jb
+                 do i=0, ib
                     counter = counter + 1
-                    rlvtemp(counter) = rlv(i,j,k)
+                    rlvtemp(counter) = rlv(i, j, k)
                  enddo
               enddo
            enddo
@@ -94,14 +96,14 @@ subroutine getFreeStreamResidual(rhoRes,totalRRes)
 
   if (eddyModel) then
      counter = 0
-     spectralLoop4: do sps=1,nTimeIntervalsSpectral
-        domains4: do nn=1,nDom
-           call setPointers(nn,1,sps)
-           do k=0,kb
-              do j=0,jb
-                 do i=0,ib
+     spectralLoop4: do sps=1, nTimeIntervalsSpectral
+        domains4: do nn=1, nDom
+           call setPointers(nn, 1, sps)
+           do k=0, kb
+              do j=0, jb
+                 do i=0, ib
                     counter = counter + 1
-                    revtemp(counter) = rev(i,j,k)
+                    revtemp(counter) = rev(i, j, k)
                  enddo
               enddo
            enddo
@@ -116,18 +118,18 @@ subroutine getFreeStreamResidual(rhoRes,totalRRes)
   currentlevel = 1
 
   call setUniformFlow
-  call getCurrentResidual(rhoRes,totalRRes)
+  call getCurrentResidual(rhoRes, totalRRes)
 
   counter = 0
-  redospectralLoop1: do sps=1,nTimeIntervalsSpectral
-     redomains1: do nn=1,nDom
-        call setPointers(nn,1,sps)
-        do l=1,nw
-           do k=0,kb
-              do j=0,jb
-                 do i=0,ib
+  redospectralLoop1: do sps=1, nTimeIntervalsSpectral
+     redomains1: do nn=1, nDom
+        call setPointers(nn, 1, sps)
+        do l=1, nw
+           do k=0, kb
+              do j=0, jb
+                 do i=0, ib
                     counter = counter + 1
-                    w(i,j,k,l) = wtemp(counter) 
+                    w(i, j, k, l) = wtemp(counter) 
                  enddo
               enddo
            enddo
@@ -136,14 +138,14 @@ subroutine getFreeStreamResidual(rhoRes,totalRRes)
   end do redospectralLoop1
 
   counter = 0
-  respectralLoop2: do sps=1,nTimeIntervalsSpectral
-     redomains2: do nn=1,nDom
-        call setPointers(nn,1,sps)
-        do k=0,kb
-           do j=0,jb
-              do i=0,ib
+  respectralLoop2: do sps=1, nTimeIntervalsSpectral
+     redomains2: do nn=1, nDom
+        call setPointers(nn, 1, sps)
+        do k=0, kb
+           do j=0, jb
+              do i=0, ib
                  counter = counter + 1
-                 p(i,j,k) = ptemp(counter) 
+                 p(i, j, k) = ptemp(counter) 
               enddo
            enddo
         enddo
@@ -152,14 +154,14 @@ subroutine getFreeStreamResidual(rhoRes,totalRRes)
 
   if (viscous) then
      counter = 0
-     redospectralLoop3: do sps=1,nTimeIntervalsSpectral
-        redodomains3: do nn=1,nDom
-           call setPointers(nn,1,sps)
-           do k=0,kb
-              do j=0,jb
-                 do i=0,ib
+     redospectralLoop3: do sps=1, nTimeIntervalsSpectral
+        redodomains3: do nn=1, nDom
+           call setPointers(nn, 1, sps)
+           do k=0, kb
+              do j=0, jb
+                 do i=0, ib
                     counter = counter + 1
-                    rlv(i,j,k) = rlvtemp(counter)
+                    rlv(i, j, k) = rlvtemp(counter)
                  enddo
               enddo
            enddo
@@ -169,14 +171,14 @@ subroutine getFreeStreamResidual(rhoRes,totalRRes)
 
   if (eddyModel) then
      counter = 0
-     redospectralLoop4: do sps=1,nTimeIntervalsSpectral
-        redodomains4: do nn=1,nDom
-           call setPointers(nn,1,sps)
-           do k=0,kb
-              do j=0,jb
-                 do i=0,ib
+     redospectralLoop4: do sps=1, nTimeIntervalsSpectral
+        redodomains4: do nn=1, nDom
+           call setPointers(nn, 1, sps)
+           do k=0, kb
+              do j=0, jb
+                 do i=0, ib
                     counter = counter + 1
-                    rev(i,j,k) = revtemp(counter)
+                    rev(i, j, k) = revtemp(counter)
                  enddo
               enddo
            enddo
@@ -187,7 +189,7 @@ subroutine getFreeStreamResidual(rhoRes,totalRRes)
   mgStartLevel = tempMGStartLevel
   currentLevel = tempCurrentLevel
 
-  deallocate(wtemp,ptemp)
+  deallocate(wtemp, ptemp)
 
   if (viscous) then
      deallocate(rlvtemp)

@@ -17,6 +17,7 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   use blockPointers       
   use flowVarRefState     
   use inputPhysics 
+  use inputIteration
   use inputTimeSpectral
   use section
   use monitor
@@ -214,13 +215,27 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
 
   ! Divide through by the volume
   do sps2 = 1,nTimeIntervalsSpectral
-     do l=1, nState
+     do l=1, nwf
         do k=2, kl
            do j=2, jl
               do i=2, il
                  flowDoms(nn, 1, sps2)%dw(i, j, k, l)  = & 
                       flowDoms(nn, 1, sps2)%dw(i, j, k, l)  / &
                       flowDoms(nn, currentLevel, sps2)%vol(i, j, k)
+              end do
+           end do
+        end do
+     end do
+
+     ! Treat the turblent residual with the scaling factor on the
+     ! residual
+     do l=nt1,nState
+        do k=2, kl
+           do j=2, jl
+              do i=2, il
+                 flowDoms(nn, 1, sps2)%dw(i, j, k, l)  = & 
+                      flowDoms(nn, 1, sps2)%dw(i, j, k, l)  / &
+                      flowDoms(nn, currentLevel, sps2)%vol(i, j, k)*turbResScale
               end do
            end do
         end do
