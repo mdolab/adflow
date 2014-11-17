@@ -2,7 +2,8 @@ subroutine FormJacobian()
 #ifndef USE_NO_PETSC
 
   use NKSolverVars
-
+  use inputADjoint, only : viscPC
+  implicit none
   ! Local Variables
   character(len=maxStringLen) :: preConSide, localPCType
   integer(kind=intType) ::ierr
