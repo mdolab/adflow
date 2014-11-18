@@ -436,6 +436,26 @@ python module libsumb
             integer(kind=inttype), optional,intent(in),check(len(dwbar)>=statesize),depend(dwbar) :: statesize=len(dwbar)
             integer(kind=inttype), optional,intent(in),check(len(funcsbar)>=costsize),depend(funcsbar) :: costsize=len(funcsbar)
         end subroutine computematrixfreeproductbwd
+        subroutine solveadjointforrhs(invec,outvec,ndof,relativetolerance) ! in matrixFreeRoutines.F90
+            use killsignals
+            use adjointpetsc
+            use adjointvars
+            use inputadjoint
+            real(kind=realtype) dimension(ndof),intent(in) :: invec
+            real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: outvec
+            integer(kind=inttype), optional,intent(in),check(len(invec)>=ndof),depend(invec) :: ndof=len(invec)
+            real(kind=realtype) intent(in) :: relativetolerance
+        end subroutine solveadjointforrhs
+        subroutine solvedirectforrhs(invec,outvec,ndof,relativetolerance) ! in matrixFreeRoutines.F90
+            use killsignals
+            use adjointpetsc
+            use adjointvars
+            use inputadjoint
+            real(kind=realtype) dimension(ndof),intent(in) :: invec
+            real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: outvec
+            integer(kind=inttype), optional,intent(in),check(len(invec)>=ndof),depend(invec) :: ndof=len(invec)
+            real(kind=realtype) intent(in) :: relativetolerance
+        end subroutine solvedirectforrhs
         
 
 
