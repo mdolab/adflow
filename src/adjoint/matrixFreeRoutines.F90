@@ -92,29 +92,29 @@ subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useSta
      call exchangecoord(level)
 
      ! And now do the extra ones
-     ! Set the seeds we have:
-     if (nDesignAoA > 0) &
-          alphad = extraDot(nDesignAoA)
-     if (nDesignSSA > 0) &
-          betad = extraDot(nDesignSSA)
-     if (nDesignMach  > 0) then
-        machd = extraDot(nDesignMach)
-        machCoefd = extraDot(nDesignMach)
+     ! Set the seeds we have, this is zero-based:
+     if (nDesignAoA >= 0) &
+          alphad = extraDot(nDesignAoA+1)
+     if (nDesignSSA >= 0) &
+          betad = extraDot(nDesignSSA+1)
+     if (nDesignMach  >= 0) then
+        machd = extraDot(nDesignMach+1)
+        machCoefd = extraDot(nDesignMach+1)
      end if
-     if (nDesignMachGrid > 0) then
-        machGridd = extraDot(nDesignMachGrid)
-        machCoefd = extraDot(nDesignMachGrid)
+     if (nDesignMachGrid >= 0) then
+        machGridd = extraDot(nDesignMachGrid+1)
+        machCoefd = extraDot(nDesignMachGrid+1)
      end if
-     if (nDesignPressure > 0) &
-          Prefd = extraDot(nDesignPressure)
-     if (nDesignTemperature > 0) &
-          Tempfreestreamd = extraDot(nDesignTemperature)
-     if (nDesignPointRefX > 0) &
-          pointrefd(1) = extraDot(nDesignPointRefX)
-     if (nDesignPointRefY > 0) &
-          pointrefd(2) = extraDot(nDesignPointRefY)
-     if (nDesignPointRefZ > 0) &
-          pointrefd(3) = extraDot(nDesignPointRefZ)
+     if (nDesignPressure >= 0) &
+          Prefd = extraDot(nDesignPressure+1)
+     if (nDesignTemperature >= 0) &
+          Tempfreestreamd = extraDot(nDesignTemperature+1)
+     if (nDesignPointRefX >= 0) &
+          pointrefd(1) = extraDot(nDesignPointRefX+1)
+     if (nDesignPointRefY >= 0) &
+          pointrefd(2) = extraDot(nDesignPointRefY+1)
+     if (nDesignPointRefZ >= 0) &
+          pointrefd(3) = extraDot(nDesignPointRefZ+1)
   end if
 
   ! Now set any STATE seeds
@@ -307,6 +307,9 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
   funcValuesb = zero
   call getDirAngle(velDirFreestream, liftDirection, liftIndex, alpha, beta)
 
+  ! Zero out extraLocal
+  extraLocalBar = zero
+
   ii = 0
   domainLoopAD: do nn=1,nDom
 
@@ -356,25 +359,25 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
                  end do
               end do
               
-              ! Also need the extra variables
-              if (nDesignAoA > 0) &
-                   extraLocalBar(nDesignAoA) = extraLocalBar(nDesignAoA) + alphab
-              if (nDesignSSA > 0) &
-                   extraLocalBar(nDesignSSA) = extraLocalBar(nDesignSSA) + alphab
-              if (nDesignMach  > 0) &
-                   extraLocalBar(nDesignMach) = extraLocalBar(nDesignMach) + machb + machcoefb
-              if (nDesignMachGrid > 0) &
-                   extraLocalBar(nDesignMachGrid) = extraLocalBar(nDesignMachGrid) + machgridb + machcoefb
-              if (nDesignPressure > 0) &
-                   extraLocalBar(nDesignPressure) = extraLocalBar(nDesignPressure) + prefb
-              if (nDesignTemperature > 0) &
-                   extraLocalBar(nDesignTemperature) = extraLocalBar(nDesignTemperature) + tempfreestreamb
-              if (nDesignPointRefX > 0) &
-                   extraLocalBar(nDesignPointRefX) = extraLocalBar(nDesignPointRefX) + pointrefb(1)
-              if (nDesignPointRefY > 0) &
-                   extraLocalBar(nDesignPointRefY) = extraLocalBar(nDesignPointRefY) + pointrefb(2)
-              if (nDesignPointRefZ > 0) &
-                   extraLocalBar(nDesignPointRefZ) = extraLocalBar(nDesignPointRefZ) + pointrefb(3)
+              ! Also need the extra variables, those are zero-based:
+              if (nDesignAoA >= 0) &
+                   extraLocalBar(nDesignAoA+1) = extraLocalBar(nDesignAoA+1) + alphab
+              if (nDesignSSA >= 0) &
+                   extraLocalBar(nDesignSSA+1) = extraLocalBar(nDesignSSA+1) + alphab
+              if (nDesignMach  >= 0) &
+                   extraLocalBar(nDesignMach+1) = extraLocalBar(nDesignMach+1) + machb + machcoefb
+              if (nDesignMachGrid >= 0) &
+                   extraLocalBar(nDesignMachGrid+1) = extraLocalBar(nDesignMachGrid+1) + machgridb + machcoefb
+              if (nDesignPressure >= 0) &
+                   extraLocalBar(nDesignPressure+1) = extraLocalBar(nDesignPressure+1) + prefb
+              if (nDesignTemperature >= 0) &
+                   extraLocalBar(nDesignTemperature+1) = extraLocalBar(nDesignTemperature+1) + tempfreestreamb
+              if (nDesignPointRefX >= 0) &
+                   extraLocalBar(nDesignPointRefX+1) = extraLocalBar(nDesignPointRefX+1) + pointrefb(1)
+              if (nDesignPointRefY >= 0) &
+                   extraLocalBar(nDesignPointRefY+1) = extraLocalBar(nDesignPointRefY+1) + pointrefb(2)
+              if (nDesignPointRefZ >= 0) &
+                   extraLocalBar(nDesignPointRefZ+1) = extraLocalBar(nDesignPointRefZ+1) + pointrefb(3)
            end if
 
            if (useState) then 
