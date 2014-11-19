@@ -669,7 +669,7 @@ subroutine whalo1to1d(level, start, end, commPressure,       &
            ! The specific heat ratio, if needed. Note that level == 1.
 
            if( commVarGamma ) then
-              sendBuffer(jj) = flowDoms(d1,1,mm)%gamma(i1,j1,k1)
+              sendBuffer(jj) = flowDomsd(d1,1,mm)%gamma(i1,j1,k1)
               jj = jj + 1
            endif
 
@@ -783,7 +783,7 @@ subroutine whalo1to1d(level, start, end, commPressure,       &
      ! Correct the periodic halo's of the internal communication
      ! pattern, if needed.
 
-     if(correctPeriodic .and. internal(level)%nPeriodic > 0)   &
+     !if(correctPeriodic .and. internal(level)%nPeriodic > 0)   &
                                 !NOT IMPLEMENTED YET
                                 ! call correctPeriodicVelocity(level, mm,                 &
                                 !                              internal(level)%nPeriodic, &
@@ -830,7 +830,7 @@ subroutine whalo1to1d(level, start, end, commPressure,       &
 
            if( commVarGamma ) then
               jj = jj + 1
-              flowDoms(d2,1,mm)%gamma(i2,j2,k2) = recvBuffer(jj)
+              flowDomsd(d2,1,mm)%gamma(i2,j2,k2) = recvBuffer(jj)
            endif
 
            ! The laminar viscosity for viscous computations.
@@ -857,7 +857,7 @@ subroutine whalo1to1d(level, start, end, commPressure,       &
      ! Correct the periodic halo's of the external communication
      ! pattern, if needed.
 
-     if(correctPeriodic .and. commPattern(level)%nPeriodic > 0)   &
+     !if(correctPeriodic .and. commPattern(level)%nPeriodic > 0)   &
                                 !NOT IMLEMENTED
                                 ! call correctPeriodicVelocity(level, mm,                    &
                                 !                              commPattern(level)%nPeriodic, &
