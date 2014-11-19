@@ -42,7 +42,7 @@
    !
    !      Local variables.
    !
-   INTEGER(kind=inttype) :: i, j, k, nn
+   INTEGER(kind=inttype) :: i, j, k
    INTEGER(kind=inttype) :: k1, k2, kk
    REAL(kind=realtype) :: rfilv, por, mul, mue, mut, heatcoef
    REAL(kind=realtype) :: mulb, mueb, mutb, heatcoefb
@@ -980,33 +980,39 @@
    tauyyb = 0.0_8
    tauyzb = 0.0_8
    ELSE
-   tauyzb = viscsubfaceb(nn)%tau(j, k, 6)
-   viscsubfaceb(nn)%tau(j, k, 6) = 0.0_8
-   tauxzb = viscsubfaceb(nn)%tau(j, k, 5)
-   viscsubfaceb(nn)%tau(j, k, 5) = 0.0_8
-   tauxyb = viscsubfaceb(nn)%tau(j, k, 4)
-   viscsubfaceb(nn)%tau(j, k, 4) = 0.0_8
-   tauzzb = viscsubfaceb(nn)%tau(j, k, 3)
-   viscsubfaceb(nn)%tau(j, k, 3) = 0.0_8
-   tauyyb = viscsubfaceb(nn)%tau(j, k, 2)
-   viscsubfaceb(nn)%tau(j, k, 2) = 0.0_8
-   tauxxb = viscsubfaceb(nn)%tau(j, k, 1)
-   viscsubfaceb(nn)%tau(j, k, 1) = 0.0_8
+   tauyzb = viscsubfaceb(viscimaxpointer(j, k))%tau(j, k, 6)
+   viscsubfaceb(viscimaxpointer(j, k))%tau(j, k, 6) = 0.0_8
+   tauxzb = viscsubfaceb(viscimaxpointer(j, k))%tau(j, k, 5)
+   viscsubfaceb(viscimaxpointer(j, k))%tau(j, k, 5) = 0.0_8
+   tauxyb = viscsubfaceb(viscimaxpointer(j, k))%tau(j, k, 4)
+   viscsubfaceb(viscimaxpointer(j, k))%tau(j, k, 4) = 0.0_8
+   tauzzb = viscsubfaceb(viscimaxpointer(j, k))%tau(j, k, 3)
+   viscsubfaceb(viscimaxpointer(j, k))%tau(j, k, 3) = 0.0_8
+   tauyyb = viscsubfaceb(viscimaxpointer(j, k))%tau(j, k, 2)
+   viscsubfaceb(viscimaxpointer(j, k))%tau(j, k, 2) = 0.0_8
+   tauxxb = viscsubfaceb(viscimaxpointer(j, k))%tau(j, k, 1)
+   viscsubfaceb(viscimaxpointer(j, k))%tau(j, k, 1) = 0.0_8
    END IF
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   tauyzb = tauyzb + viscsubfaceb(nn)%tau(j, k, 6)
-   viscsubfaceb(nn)%tau(j, k, 6) = 0.0_8
-   tauxzb = tauxzb + viscsubfaceb(nn)%tau(j, k, 5)
-   viscsubfaceb(nn)%tau(j, k, 5) = 0.0_8
-   tauxyb = tauxyb + viscsubfaceb(nn)%tau(j, k, 4)
-   viscsubfaceb(nn)%tau(j, k, 4) = 0.0_8
-   tauzzb = tauzzb + viscsubfaceb(nn)%tau(j, k, 3)
-   viscsubfaceb(nn)%tau(j, k, 3) = 0.0_8
-   tauyyb = tauyyb + viscsubfaceb(nn)%tau(j, k, 2)
-   viscsubfaceb(nn)%tau(j, k, 2) = 0.0_8
-   tauxxb = tauxxb + viscsubfaceb(nn)%tau(j, k, 1)
-   viscsubfaceb(nn)%tau(j, k, 1) = 0.0_8
+   tauyzb = tauyzb + viscsubfaceb(visciminpointer(j, k))%tau(j&
+   &             , k, 6)
+   viscsubfaceb(visciminpointer(j, k))%tau(j, k, 6) = 0.0_8
+   tauxzb = tauxzb + viscsubfaceb(visciminpointer(j, k))%tau(j&
+   &             , k, 5)
+   viscsubfaceb(visciminpointer(j, k))%tau(j, k, 5) = 0.0_8
+   tauxyb = tauxyb + viscsubfaceb(visciminpointer(j, k))%tau(j&
+   &             , k, 4)
+   viscsubfaceb(visciminpointer(j, k))%tau(j, k, 4) = 0.0_8
+   tauzzb = tauzzb + viscsubfaceb(visciminpointer(j, k))%tau(j&
+   &             , k, 3)
+   viscsubfaceb(visciminpointer(j, k))%tau(j, k, 3) = 0.0_8
+   tauyyb = tauyyb + viscsubfaceb(visciminpointer(j, k))%tau(j&
+   &             , k, 2)
+   viscsubfaceb(visciminpointer(j, k))%tau(j, k, 2) = 0.0_8
+   tauxxb = tauxxb + viscsubfaceb(visciminpointer(j, k))%tau(j&
+   &             , k, 1)
+   viscsubfaceb(visciminpointer(j, k))%tau(j, k, 1) = 0.0_8
    END IF
    frhoeb = fwb(i+1, j, k, irhoe) - fwb(i, j, k, irhoe)
    fmzb = fwb(i+1, j, k, imz) - fwb(i, j, k, imz)
@@ -1293,33 +1299,39 @@
    tauyyb = 0.0_8
    tauyzb = 0.0_8
    ELSE
-   tauyzb = viscsubfaceb(nn)%tau(i, k, 6)
-   viscsubfaceb(nn)%tau(i, k, 6) = 0.0_8
-   tauxzb = viscsubfaceb(nn)%tau(i, k, 5)
-   viscsubfaceb(nn)%tau(i, k, 5) = 0.0_8
-   tauxyb = viscsubfaceb(nn)%tau(i, k, 4)
-   viscsubfaceb(nn)%tau(i, k, 4) = 0.0_8
-   tauzzb = viscsubfaceb(nn)%tau(i, k, 3)
-   viscsubfaceb(nn)%tau(i, k, 3) = 0.0_8
-   tauyyb = viscsubfaceb(nn)%tau(i, k, 2)
-   viscsubfaceb(nn)%tau(i, k, 2) = 0.0_8
-   tauxxb = viscsubfaceb(nn)%tau(i, k, 1)
-   viscsubfaceb(nn)%tau(i, k, 1) = 0.0_8
+   tauyzb = viscsubfaceb(viscjmaxpointer(i, k))%tau(i, k, 6)
+   viscsubfaceb(viscjmaxpointer(i, k))%tau(i, k, 6) = 0.0_8
+   tauxzb = viscsubfaceb(viscjmaxpointer(i, k))%tau(i, k, 5)
+   viscsubfaceb(viscjmaxpointer(i, k))%tau(i, k, 5) = 0.0_8
+   tauxyb = viscsubfaceb(viscjmaxpointer(i, k))%tau(i, k, 4)
+   viscsubfaceb(viscjmaxpointer(i, k))%tau(i, k, 4) = 0.0_8
+   tauzzb = viscsubfaceb(viscjmaxpointer(i, k))%tau(i, k, 3)
+   viscsubfaceb(viscjmaxpointer(i, k))%tau(i, k, 3) = 0.0_8
+   tauyyb = viscsubfaceb(viscjmaxpointer(i, k))%tau(i, k, 2)
+   viscsubfaceb(viscjmaxpointer(i, k))%tau(i, k, 2) = 0.0_8
+   tauxxb = viscsubfaceb(viscjmaxpointer(i, k))%tau(i, k, 1)
+   viscsubfaceb(viscjmaxpointer(i, k))%tau(i, k, 1) = 0.0_8
    END IF
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   tauyzb = tauyzb + viscsubfaceb(nn)%tau(i, k, 6)
-   viscsubfaceb(nn)%tau(i, k, 6) = 0.0_8
-   tauxzb = tauxzb + viscsubfaceb(nn)%tau(i, k, 5)
-   viscsubfaceb(nn)%tau(i, k, 5) = 0.0_8
-   tauxyb = tauxyb + viscsubfaceb(nn)%tau(i, k, 4)
-   viscsubfaceb(nn)%tau(i, k, 4) = 0.0_8
-   tauzzb = tauzzb + viscsubfaceb(nn)%tau(i, k, 3)
-   viscsubfaceb(nn)%tau(i, k, 3) = 0.0_8
-   tauyyb = tauyyb + viscsubfaceb(nn)%tau(i, k, 2)
-   viscsubfaceb(nn)%tau(i, k, 2) = 0.0_8
-   tauxxb = tauxxb + viscsubfaceb(nn)%tau(i, k, 1)
-   viscsubfaceb(nn)%tau(i, k, 1) = 0.0_8
+   tauyzb = tauyzb + viscsubfaceb(viscjminpointer(i, k))%tau(i&
+   &             , k, 6)
+   viscsubfaceb(viscjminpointer(i, k))%tau(i, k, 6) = 0.0_8
+   tauxzb = tauxzb + viscsubfaceb(viscjminpointer(i, k))%tau(i&
+   &             , k, 5)
+   viscsubfaceb(viscjminpointer(i, k))%tau(i, k, 5) = 0.0_8
+   tauxyb = tauxyb + viscsubfaceb(viscjminpointer(i, k))%tau(i&
+   &             , k, 4)
+   viscsubfaceb(viscjminpointer(i, k))%tau(i, k, 4) = 0.0_8
+   tauzzb = tauzzb + viscsubfaceb(viscjminpointer(i, k))%tau(i&
+   &             , k, 3)
+   viscsubfaceb(viscjminpointer(i, k))%tau(i, k, 3) = 0.0_8
+   tauyyb = tauyyb + viscsubfaceb(viscjminpointer(i, k))%tau(i&
+   &             , k, 2)
+   viscsubfaceb(viscjminpointer(i, k))%tau(i, k, 2) = 0.0_8
+   tauxxb = tauxxb + viscsubfaceb(viscjminpointer(i, k))%tau(i&
+   &             , k, 1)
+   viscsubfaceb(viscjminpointer(i, k))%tau(i, k, 1) = 0.0_8
    END IF
    frhoeb = fwb(i, j+1, k, irhoe) - fwb(i, j, k, irhoe)
    fmzb = fwb(i, j+1, k, imz) - fwb(i, j, k, imz)
@@ -1606,18 +1618,18 @@
    tauyyb = 0.0_8
    tauyzb = 0.0_8
    ELSE
-   tauyzb = viscsubfaceb(nn)%tau(i, j, 6)
-   viscsubfaceb(nn)%tau(i, j, 6) = 0.0_8
-   tauxzb = viscsubfaceb(nn)%tau(i, j, 5)
-   viscsubfaceb(nn)%tau(i, j, 5) = 0.0_8
-   tauxyb = viscsubfaceb(nn)%tau(i, j, 4)
-   viscsubfaceb(nn)%tau(i, j, 4) = 0.0_8
-   tauzzb = viscsubfaceb(nn)%tau(i, j, 3)
-   viscsubfaceb(nn)%tau(i, j, 3) = 0.0_8
-   tauyyb = viscsubfaceb(nn)%tau(i, j, 2)
-   viscsubfaceb(nn)%tau(i, j, 2) = 0.0_8
-   tauxxb = viscsubfaceb(nn)%tau(i, j, 1)
-   viscsubfaceb(nn)%tau(i, j, 1) = 0.0_8
+   tauyzb = viscsubfaceb(visckmaxpointer(i, j))%tau(i, j, 6)
+   viscsubfaceb(visckmaxpointer(i, j))%tau(i, j, 6) = 0.0_8
+   tauxzb = viscsubfaceb(visckmaxpointer(i, j))%tau(i, j, 5)
+   viscsubfaceb(visckmaxpointer(i, j))%tau(i, j, 5) = 0.0_8
+   tauxyb = viscsubfaceb(visckmaxpointer(i, j))%tau(i, j, 4)
+   viscsubfaceb(visckmaxpointer(i, j))%tau(i, j, 4) = 0.0_8
+   tauzzb = viscsubfaceb(visckmaxpointer(i, j))%tau(i, j, 3)
+   viscsubfaceb(visckmaxpointer(i, j))%tau(i, j, 3) = 0.0_8
+   tauyyb = viscsubfaceb(visckmaxpointer(i, j))%tau(i, j, 2)
+   viscsubfaceb(visckmaxpointer(i, j))%tau(i, j, 2) = 0.0_8
+   tauxxb = viscsubfaceb(visckmaxpointer(i, j))%tau(i, j, 1)
+   viscsubfaceb(visckmaxpointer(i, j))%tau(i, j, 1) = 0.0_8
    END IF
    frhoeb = fwb(i, j, k+1, irhoe) - fwb(i, j, k, irhoe)
    fmzb = fwb(i, j, k+1, imz) - fwb(i, j, k, imz)
@@ -1923,18 +1935,18 @@
    tauyyb = 0.0_8
    tauyzb = 0.0_8
    ELSE
-   tauyzb = viscsubfaceb(nn)%tau(i, j, 6)
-   viscsubfaceb(nn)%tau(i, j, 6) = 0.0_8
-   tauxzb = viscsubfaceb(nn)%tau(i, j, 5)
-   viscsubfaceb(nn)%tau(i, j, 5) = 0.0_8
-   tauxyb = viscsubfaceb(nn)%tau(i, j, 4)
-   viscsubfaceb(nn)%tau(i, j, 4) = 0.0_8
-   tauzzb = viscsubfaceb(nn)%tau(i, j, 3)
-   viscsubfaceb(nn)%tau(i, j, 3) = 0.0_8
-   tauyyb = viscsubfaceb(nn)%tau(i, j, 2)
-   viscsubfaceb(nn)%tau(i, j, 2) = 0.0_8
-   tauxxb = viscsubfaceb(nn)%tau(i, j, 1)
-   viscsubfaceb(nn)%tau(i, j, 1) = 0.0_8
+   tauyzb = viscsubfaceb(visckminpointer(i, j))%tau(i, j, 6)
+   viscsubfaceb(visckminpointer(i, j))%tau(i, j, 6) = 0.0_8
+   tauxzb = viscsubfaceb(visckminpointer(i, j))%tau(i, j, 5)
+   viscsubfaceb(visckminpointer(i, j))%tau(i, j, 5) = 0.0_8
+   tauxyb = viscsubfaceb(visckminpointer(i, j))%tau(i, j, 4)
+   viscsubfaceb(visckminpointer(i, j))%tau(i, j, 4) = 0.0_8
+   tauzzb = viscsubfaceb(visckminpointer(i, j))%tau(i, j, 3)
+   viscsubfaceb(visckminpointer(i, j))%tau(i, j, 3) = 0.0_8
+   tauyyb = viscsubfaceb(visckminpointer(i, j))%tau(i, j, 2)
+   viscsubfaceb(visckminpointer(i, j))%tau(i, j, 2) = 0.0_8
+   tauxxb = viscsubfaceb(visckminpointer(i, j))%tau(i, j, 1)
+   viscsubfaceb(visckminpointer(i, j))%tau(i, j, 1) = 0.0_8
    END IF
    frhoeb = fwb(i, j, 2, irhoe)
    fmzb = fwb(i, j, 2, imz)

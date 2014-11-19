@@ -120,7 +120,7 @@ subroutine verifyMatProd
      do k=2, kl
         do j=2,jl
            do i=2,il
-              do l = 1,5                
+              do l = 1,nstate
                  call random_seed
                  call random_number(ran)
                  ii = ii + 1
@@ -142,9 +142,9 @@ subroutine verifyMatProd
      do k=2, kl
         do j=2,jl
            do i=2,il
-              do l = 1,5
+              do l = 1,nstate
                  ii = ii + 1
-                 if (abs(flowdomsb(1,1,1)%w(i,j,k,l) - vec2(ii)) > 1e-4) then
+                 if (abs(flowdomsb(1,1,1)%w(i,j,k,l) - vec2(ii))/abs(vec2(ii)) > 1e-3) then
                     print *,i,j,k,l,flowdomsb(1,1,1)%w(i, j, k, l)-vec2(ii)
                     print *, flowdomsb(1,1,1)%w(i, j, k, l), vec2(ii)
                  end if
