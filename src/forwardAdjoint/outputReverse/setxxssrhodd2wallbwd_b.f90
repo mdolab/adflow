@@ -29,9 +29,11 @@
    INTEGER(kind=inttype), INTENT(IN) :: nn
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rho2, rho1
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rho2b, rho1b
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: dd2wall
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, 3) :: ss, xx
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, 3) :: ssb, xxb
+   REAL(kind=realtype), DIMENSION(imaxdim - 2, jmaxdim - 2) :: dd2wall
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, 3) :: ss
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, 3) :: ssb
+   REAL(kind=realtype), DIMENSION(imaxdim + 1, jmaxdim + 1, 3) :: xx
+   REAL(kind=realtype), DIMENSION(imaxdim+1, jmaxdim+1, 3) :: xxb
    !
    !      ******************************************************************
    !      *                                                                *
@@ -43,8 +45,8 @@
    ! the pointers accordinly.
    SELECT CASE  (bcfaceid(nn)) 
    CASE (imin) 
-   xb(1, 1:je, 1:ke, :) = xb(1, 1:je, 1:ke, :) + xxb(1:je, 1:ke, :)
-   xxb(1:je, 1:ke, :) = 0.0_8
+   xb(1, 0:je, 0:ke, :) = xb(1, 0:je, 0:ke, :) + xxb(1:je+1, 1:ke+1, :)
+   xxb(1:je+1, 1:ke+1, :) = 0.0_8
    sib(1, 1:je, 1:ke, :) = sib(1, 1:je, 1:ke, :) + ssb(1:je, 1:ke, :)
    ssb(1:je, 1:ke, :) = 0.0_8
    wb(1, 1:je, 1:ke, irho) = wb(1, 1:je, 1:ke, irho) + rho1b(1:je, 1:ke&
@@ -54,8 +56,9 @@
    &     )
    rho2b(1:je, 1:ke) = 0.0_8
    CASE (imax) 
-   xb(il, 1:je, 1:ke, :) = xb(il, 1:je, 1:ke, :) + xxb(1:je, 1:ke, :)
-   xxb(1:je, 1:ke, :) = 0.0_8
+   xb(il, 0:je, 0:ke, :) = xb(il, 0:je, 0:ke, :) + xxb(1:je+1, 1:ke+1, &
+   &     :)
+   xxb(1:je+1, 1:ke+1, :) = 0.0_8
    sib(il, 1:je, 1:ke, :) = sib(il, 1:je, 1:ke, :) + ssb(1:je, 1:ke, :)
    ssb(1:je, 1:ke, :) = 0.0_8
    wb(ie, 1:je, 1:ke, irho) = wb(ie, 1:je, 1:ke, irho) + rho1b(1:je, 1:&
@@ -65,8 +68,8 @@
    &     ke)
    rho2b(1:je, 1:ke) = 0.0_8
    CASE (jmin) 
-   xb(1:ie, 1, 1:ke, :) = xb(1:ie, 1, 1:ke, :) + xxb(1:ie, 1:ke, :)
-   xxb(1:ie, 1:ke, :) = 0.0_8
+   xb(0:ie, 1, 0:ke, :) = xb(0:ie, 1, 0:ke, :) + xxb(1:ie+1, 1:ke+1, :)
+   xxb(1:ie+1, 1:ke+1, :) = 0.0_8
    sjb(1:ie, 1, 1:ke, :) = sjb(1:ie, 1, 1:ke, :) + ssb(1:ie, 1:ke, :)
    ssb(1:ie, 1:ke, :) = 0.0_8
    wb(1:ie, 1, 1:ke, irho) = wb(1:ie, 1, 1:ke, irho) + rho1b(1:ie, 1:ke&
@@ -76,8 +79,9 @@
    &     )
    rho2b(1:ie, 1:ke) = 0.0_8
    CASE (jmax) 
-   xb(1:ie, jl, 1:ke, :) = xb(1:ie, jl, 1:ke, :) + xxb(1:ie, 1:ke, :)
-   xxb(1:ie, 1:ke, :) = 0.0_8
+   xb(0:ie, jl, 0:ke, :) = xb(0:ie, jl, 0:ke, :) + xxb(1:ie+1, 1:ke+1, &
+   &     :)
+   xxb(1:ie+1, 1:ke+1, :) = 0.0_8
    sjb(1:ie, jl, 1:ke, :) = sjb(1:ie, jl, 1:ke, :) + ssb(1:ie, 1:ke, :)
    ssb(1:ie, 1:ke, :) = 0.0_8
    wb(1:ie, je, 1:ke, irho) = wb(1:ie, je, 1:ke, irho) + rho1b(1:ie, 1:&
@@ -87,8 +91,8 @@
    &     ke)
    rho2b(1:ie, 1:ke) = 0.0_8
    CASE (kmin) 
-   xb(1:ie, 1:je, 1, :) = xb(1:ie, 1:je, 1, :) + xxb(1:ie, 1:je, :)
-   xxb(1:ie, 1:je, :) = 0.0_8
+   xb(0:ie, 0:je, 1, :) = xb(0:ie, 0:je, 1, :) + xxb(1:ie+1, 1:je+1, :)
+   xxb(1:ie+1, 1:je+1, :) = 0.0_8
    skb(1:ie, 1:je, 1, :) = skb(1:ie, 1:je, 1, :) + ssb(1:ie, 1:je, :)
    ssb(1:ie, 1:je, :) = 0.0_8
    wb(1:ie, 1:je, 1, irho) = wb(1:ie, 1:je, 1, irho) + rho1b(1:ie, 1:je&
@@ -98,8 +102,9 @@
    &     )
    rho2b(1:ie, 1:je) = 0.0_8
    CASE (kmax) 
-   xb(1:ie, 1:je, kl, :) = xb(1:ie, 1:je, kl, :) + xxb(1:ie, 1:je, :)
-   xxb(1:ie, 1:je, :) = 0.0_8
+   xb(0:ie, 0:je, kl, :) = xb(0:ie, 0:je, kl, :) + xxb(1:ie+1, 1:je+1, &
+   &     :)
+   xxb(1:ie+1, 1:je+1, :) = 0.0_8
    skb(1:ie, 1:je, kl, :) = skb(1:ie, 1:je, kl, :) + ssb(1:ie, 1:je, :)
    ssb(1:ie, 1:je, :) = 0.0_8
    wb(1:ie, 1:je, ke, irho) = wb(1:ie, 1:je, ke, irho) + rho1b(1:ie, 1:&

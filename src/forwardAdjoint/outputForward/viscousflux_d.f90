@@ -43,7 +43,7 @@
    !
    !      Local variables.
    !
-   INTEGER(kind=inttype) :: i, j, k, nn
+   INTEGER(kind=inttype) :: i, j, k
    INTEGER(kind=inttype) :: k1, k2, kk
    REAL(kind=realtype) :: rfilv, por, mul, mue, mut, heatcoef
    REAL(kind=realtype) :: muld, mued, mutd, heatcoefd
@@ -414,22 +414,23 @@
    ! Store the stress tensor and the heat flux vector if this
    ! face is part of a viscous subface.
    IF (storewalltensor .AND. visckminpointer(i, j) .GT. 0) THEN
-   nn = visckminpointer(i, j)
-   viscsubfaced(nn)%tau(i, j, 1) = tauxxd
-   viscsubface(nn)%tau(i, j, 1) = tauxx
-   viscsubfaced(nn)%tau(i, j, 2) = tauyyd
-   viscsubface(nn)%tau(i, j, 2) = tauyy
-   viscsubfaced(nn)%tau(i, j, 3) = tauzzd
-   viscsubface(nn)%tau(i, j, 3) = tauzz
-   viscsubfaced(nn)%tau(i, j, 4) = tauxyd
-   viscsubface(nn)%tau(i, j, 4) = tauxy
-   viscsubfaced(nn)%tau(i, j, 5) = tauxzd
-   viscsubface(nn)%tau(i, j, 5) = tauxz
-   viscsubfaced(nn)%tau(i, j, 6) = tauyzd
-   viscsubface(nn)%tau(i, j, 6) = tauyz
-   viscsubface(nn)%q(i, j, 1) = q_x
-   viscsubface(nn)%q(i, j, 2) = q_y
-   viscsubface(nn)%q(i, j, 3) = q_z
+   ! We need to index viscSubface with viscKminPointer(i,j) 
+   ! since Tapenade does not like temporary indexes 
+   viscsubfaced(visckminpointer(i, j))%tau(i, j, 1) = tauxxd
+   viscsubface(visckminpointer(i, j))%tau(i, j, 1) = tauxx
+   viscsubfaced(visckminpointer(i, j))%tau(i, j, 2) = tauyyd
+   viscsubface(visckminpointer(i, j))%tau(i, j, 2) = tauyy
+   viscsubfaced(visckminpointer(i, j))%tau(i, j, 3) = tauzzd
+   viscsubface(visckminpointer(i, j))%tau(i, j, 3) = tauzz
+   viscsubfaced(visckminpointer(i, j))%tau(i, j, 4) = tauxyd
+   viscsubface(visckminpointer(i, j))%tau(i, j, 4) = tauxy
+   viscsubfaced(visckminpointer(i, j))%tau(i, j, 5) = tauxzd
+   viscsubface(visckminpointer(i, j))%tau(i, j, 5) = tauxz
+   viscsubfaced(visckminpointer(i, j))%tau(i, j, 6) = tauyzd
+   viscsubface(visckminpointer(i, j))%tau(i, j, 6) = tauyz
+   viscsubface(visckminpointer(i, j))%q(i, j, 1) = q_x
+   viscsubface(visckminpointer(i, j))%q(i, j, 2) = q_y
+   viscsubface(visckminpointer(i, j))%q(i, j, 3) = q_z
    END IF
    END DO
    END DO
@@ -696,22 +697,23 @@
    ! face is part of a viscous subface.
    IF (k .EQ. kl .AND. storewalltensor .AND. visckmaxpointer(i, j&
    &             ) .GT. 0) THEN
-   nn = visckmaxpointer(i, j)
-   viscsubfaced(nn)%tau(i, j, 1) = tauxxd
-   viscsubface(nn)%tau(i, j, 1) = tauxx
-   viscsubfaced(nn)%tau(i, j, 2) = tauyyd
-   viscsubface(nn)%tau(i, j, 2) = tauyy
-   viscsubfaced(nn)%tau(i, j, 3) = tauzzd
-   viscsubface(nn)%tau(i, j, 3) = tauzz
-   viscsubfaced(nn)%tau(i, j, 4) = tauxyd
-   viscsubface(nn)%tau(i, j, 4) = tauxy
-   viscsubfaced(nn)%tau(i, j, 5) = tauxzd
-   viscsubface(nn)%tau(i, j, 5) = tauxz
-   viscsubfaced(nn)%tau(i, j, 6) = tauyzd
-   viscsubface(nn)%tau(i, j, 6) = tauyz
-   viscsubface(nn)%q(i, j, 1) = q_x
-   viscsubface(nn)%q(i, j, 2) = q_y
-   viscsubface(nn)%q(i, j, 3) = q_z
+   ! We need to index viscSubface with viscKmaxPointer(i,j) 
+   ! since Tapenade does not like temporary indexes 
+   viscsubfaced(visckmaxpointer(i, j))%tau(i, j, 1) = tauxxd
+   viscsubface(visckmaxpointer(i, j))%tau(i, j, 1) = tauxx
+   viscsubfaced(visckmaxpointer(i, j))%tau(i, j, 2) = tauyyd
+   viscsubface(visckmaxpointer(i, j))%tau(i, j, 2) = tauyy
+   viscsubfaced(visckmaxpointer(i, j))%tau(i, j, 3) = tauzzd
+   viscsubface(visckmaxpointer(i, j))%tau(i, j, 3) = tauzz
+   viscsubfaced(visckmaxpointer(i, j))%tau(i, j, 4) = tauxyd
+   viscsubface(visckmaxpointer(i, j))%tau(i, j, 4) = tauxy
+   viscsubfaced(visckmaxpointer(i, j))%tau(i, j, 5) = tauxzd
+   viscsubface(visckmaxpointer(i, j))%tau(i, j, 5) = tauxz
+   viscsubfaced(visckmaxpointer(i, j))%tau(i, j, 6) = tauyzd
+   viscsubface(visckmaxpointer(i, j))%tau(i, j, 6) = tauyz
+   viscsubface(visckmaxpointer(i, j))%q(i, j, 1) = q_x
+   viscsubface(visckmaxpointer(i, j))%q(i, j, 2) = q_y
+   viscsubface(visckmaxpointer(i, j))%q(i, j, 3) = q_z
    END IF
    END DO
    END DO
@@ -967,42 +969,42 @@
    ! and j == jl must be tested.
    IF (j .EQ. 1 .AND. storewalltensor .AND. viscjminpointer(i, k)&
    &             .GT. 0) THEN
-   nn = viscjminpointer(i, k)
-   viscsubfaced(nn)%tau(i, k, 1) = tauxxd
-   viscsubface(nn)%tau(i, k, 1) = tauxx
-   viscsubfaced(nn)%tau(i, k, 2) = tauyyd
-   viscsubface(nn)%tau(i, k, 2) = tauyy
-   viscsubfaced(nn)%tau(i, k, 3) = tauzzd
-   viscsubface(nn)%tau(i, k, 3) = tauzz
-   viscsubfaced(nn)%tau(i, k, 4) = tauxyd
-   viscsubface(nn)%tau(i, k, 4) = tauxy
-   viscsubfaced(nn)%tau(i, k, 5) = tauxzd
-   viscsubface(nn)%tau(i, k, 5) = tauxz
-   viscsubfaced(nn)%tau(i, k, 6) = tauyzd
-   viscsubface(nn)%tau(i, k, 6) = tauyz
-   viscsubface(nn)%q(i, k, 1) = q_x
-   viscsubface(nn)%q(i, k, 2) = q_y
-   viscsubface(nn)%q(i, k, 3) = q_z
+   ! We need to index viscSubface with viscJminPointer(i,k) 
+   ! since Tapenade does not like temporary indexes 
+   viscsubfaced(viscjminpointer(i, k))%tau(i, k, 1) = tauxxd
+   viscsubface(viscjminpointer(i, k))%tau(i, k, 1) = tauxx
+   viscsubfaced(viscjminpointer(i, k))%tau(i, k, 2) = tauyyd
+   viscsubface(viscjminpointer(i, k))%tau(i, k, 2) = tauyy
+   viscsubfaced(viscjminpointer(i, k))%tau(i, k, 3) = tauzzd
+   viscsubface(viscjminpointer(i, k))%tau(i, k, 3) = tauzz
+   viscsubfaced(viscjminpointer(i, k))%tau(i, k, 4) = tauxyd
+   viscsubface(viscjminpointer(i, k))%tau(i, k, 4) = tauxy
+   viscsubfaced(viscjminpointer(i, k))%tau(i, k, 5) = tauxzd
+   viscsubface(viscjminpointer(i, k))%tau(i, k, 5) = tauxz
+   viscsubfaced(viscjminpointer(i, k))%tau(i, k, 6) = tauyzd
+   viscsubface(viscjminpointer(i, k))%tau(i, k, 6) = tauyz
+   viscsubface(viscjminpointer(i, k))%q(i, k, 1) = q_x
+   viscsubface(viscjminpointer(i, k))%q(i, k, 2) = q_y
+   viscsubface(viscjminpointer(i, k))%q(i, k, 3) = q_z
    END IF
    ! And the j == jl case.
    IF (j .EQ. jl .AND. storewalltensor .AND. viscjmaxpointer(i, k&
    &             ) .GT. 0) THEN
-   nn = viscjmaxpointer(i, k)
-   viscsubfaced(nn)%tau(i, k, 1) = tauxxd
-   viscsubface(nn)%tau(i, k, 1) = tauxx
-   viscsubfaced(nn)%tau(i, k, 2) = tauyyd
-   viscsubface(nn)%tau(i, k, 2) = tauyy
-   viscsubfaced(nn)%tau(i, k, 3) = tauzzd
-   viscsubface(nn)%tau(i, k, 3) = tauzz
-   viscsubfaced(nn)%tau(i, k, 4) = tauxyd
-   viscsubface(nn)%tau(i, k, 4) = tauxy
-   viscsubfaced(nn)%tau(i, k, 5) = tauxzd
-   viscsubface(nn)%tau(i, k, 5) = tauxz
-   viscsubfaced(nn)%tau(i, k, 6) = tauyzd
-   viscsubface(nn)%tau(i, k, 6) = tauyz
-   viscsubface(nn)%q(i, k, 1) = q_x
-   viscsubface(nn)%q(i, k, 2) = q_y
-   viscsubface(nn)%q(i, k, 3) = q_z
+   viscsubfaced(viscjmaxpointer(i, k))%tau(i, k, 1) = tauxxd
+   viscsubface(viscjmaxpointer(i, k))%tau(i, k, 1) = tauxx
+   viscsubfaced(viscjmaxpointer(i, k))%tau(i, k, 2) = tauyyd
+   viscsubface(viscjmaxpointer(i, k))%tau(i, k, 2) = tauyy
+   viscsubfaced(viscjmaxpointer(i, k))%tau(i, k, 3) = tauzzd
+   viscsubface(viscjmaxpointer(i, k))%tau(i, k, 3) = tauzz
+   viscsubfaced(viscjmaxpointer(i, k))%tau(i, k, 4) = tauxyd
+   viscsubface(viscjmaxpointer(i, k))%tau(i, k, 4) = tauxy
+   viscsubfaced(viscjmaxpointer(i, k))%tau(i, k, 5) = tauxzd
+   viscsubface(viscjmaxpointer(i, k))%tau(i, k, 5) = tauxz
+   viscsubfaced(viscjmaxpointer(i, k))%tau(i, k, 6) = tauyzd
+   viscsubface(viscjmaxpointer(i, k))%tau(i, k, 6) = tauyz
+   viscsubface(viscjmaxpointer(i, k))%q(i, k, 1) = q_x
+   viscsubface(viscjmaxpointer(i, k))%q(i, k, 2) = q_y
+   viscsubface(viscjmaxpointer(i, k))%q(i, k, 3) = q_z
    END IF
    END DO
    END DO
@@ -1258,42 +1260,44 @@
    ! and i == il must be tested.
    IF (i .EQ. 1 .AND. storewalltensor .AND. visciminpointer(j, k)&
    &             .GT. 0) THEN
-   nn = visciminpointer(j, k)
-   viscsubfaced(nn)%tau(j, k, 1) = tauxxd
-   viscsubface(nn)%tau(j, k, 1) = tauxx
-   viscsubfaced(nn)%tau(j, k, 2) = tauyyd
-   viscsubface(nn)%tau(j, k, 2) = tauyy
-   viscsubfaced(nn)%tau(j, k, 3) = tauzzd
-   viscsubface(nn)%tau(j, k, 3) = tauzz
-   viscsubfaced(nn)%tau(j, k, 4) = tauxyd
-   viscsubface(nn)%tau(j, k, 4) = tauxy
-   viscsubfaced(nn)%tau(j, k, 5) = tauxzd
-   viscsubface(nn)%tau(j, k, 5) = tauxz
-   viscsubfaced(nn)%tau(j, k, 6) = tauyzd
-   viscsubface(nn)%tau(j, k, 6) = tauyz
-   viscsubface(nn)%q(j, k, 1) = q_x
-   viscsubface(nn)%q(j, k, 2) = q_y
-   viscsubface(nn)%q(j, k, 3) = q_z
+   ! We need to index viscSubface with viscIminPointer(j,k) 
+   ! since Tapenade does not like temporary indexes 
+   viscsubfaced(visciminpointer(j, k))%tau(j, k, 1) = tauxxd
+   viscsubface(visciminpointer(j, k))%tau(j, k, 1) = tauxx
+   viscsubfaced(visciminpointer(j, k))%tau(j, k, 2) = tauyyd
+   viscsubface(visciminpointer(j, k))%tau(j, k, 2) = tauyy
+   viscsubfaced(visciminpointer(j, k))%tau(j, k, 3) = tauzzd
+   viscsubface(visciminpointer(j, k))%tau(j, k, 3) = tauzz
+   viscsubfaced(visciminpointer(j, k))%tau(j, k, 4) = tauxyd
+   viscsubface(visciminpointer(j, k))%tau(j, k, 4) = tauxy
+   viscsubfaced(visciminpointer(j, k))%tau(j, k, 5) = tauxzd
+   viscsubface(visciminpointer(j, k))%tau(j, k, 5) = tauxz
+   viscsubfaced(visciminpointer(j, k))%tau(j, k, 6) = tauyzd
+   viscsubface(visciminpointer(j, k))%tau(j, k, 6) = tauyz
+   viscsubface(visciminpointer(j, k))%q(j, k, 1) = q_x
+   viscsubface(visciminpointer(j, k))%q(j, k, 2) = q_y
+   viscsubface(visciminpointer(j, k))%q(j, k, 3) = q_z
    END IF
    ! And the i == il case.
    IF (i .EQ. il .AND. storewalltensor .AND. viscimaxpointer(j, k&
    &             ) .GT. 0) THEN
-   nn = viscimaxpointer(j, k)
-   viscsubfaced(nn)%tau(j, k, 1) = tauxxd
-   viscsubface(nn)%tau(j, k, 1) = tauxx
-   viscsubfaced(nn)%tau(j, k, 2) = tauyyd
-   viscsubface(nn)%tau(j, k, 2) = tauyy
-   viscsubfaced(nn)%tau(j, k, 3) = tauzzd
-   viscsubface(nn)%tau(j, k, 3) = tauzz
-   viscsubfaced(nn)%tau(j, k, 4) = tauxyd
-   viscsubface(nn)%tau(j, k, 4) = tauxy
-   viscsubfaced(nn)%tau(j, k, 5) = tauxzd
-   viscsubface(nn)%tau(j, k, 5) = tauxz
-   viscsubfaced(nn)%tau(j, k, 6) = tauyzd
-   viscsubface(nn)%tau(j, k, 6) = tauyz
-   viscsubface(nn)%q(j, k, 1) = q_x
-   viscsubface(nn)%q(j, k, 2) = q_y
-   viscsubface(nn)%q(j, k, 3) = q_z
+   ! We need to index viscSubface with viscImaxPointer(j,k) 
+   ! since Tapenade does not like temporary indexes 
+   viscsubfaced(viscimaxpointer(j, k))%tau(j, k, 1) = tauxxd
+   viscsubface(viscimaxpointer(j, k))%tau(j, k, 1) = tauxx
+   viscsubfaced(viscimaxpointer(j, k))%tau(j, k, 2) = tauyyd
+   viscsubface(viscimaxpointer(j, k))%tau(j, k, 2) = tauyy
+   viscsubfaced(viscimaxpointer(j, k))%tau(j, k, 3) = tauzzd
+   viscsubface(viscimaxpointer(j, k))%tau(j, k, 3) = tauzz
+   viscsubfaced(viscimaxpointer(j, k))%tau(j, k, 4) = tauxyd
+   viscsubface(viscimaxpointer(j, k))%tau(j, k, 4) = tauxy
+   viscsubfaced(viscimaxpointer(j, k))%tau(j, k, 5) = tauxzd
+   viscsubface(viscimaxpointer(j, k))%tau(j, k, 5) = tauxz
+   viscsubfaced(viscimaxpointer(j, k))%tau(j, k, 6) = tauyzd
+   viscsubface(viscimaxpointer(j, k))%tau(j, k, 6) = tauyz
+   viscsubface(viscimaxpointer(j, k))%q(j, k, 1) = q_x
+   viscsubface(viscimaxpointer(j, k))%q(j, k, 2) = q_y
+   viscsubface(viscimaxpointer(j, k))%q(j, k, 3) = q_z
    END IF
    END DO
    END DO

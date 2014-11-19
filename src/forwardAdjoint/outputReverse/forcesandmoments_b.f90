@@ -85,9 +85,11 @@
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rlv1b, rlv2b
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rev1, rev2
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rev1b, rev2b
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: dd2wall
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, 3) :: ss, xx
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, 3) :: ssb, xxb
+   REAL(kind=realtype), DIMENSION(imaxdim - 2, jmaxdim - 2) :: dd2wall
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, 3) :: ss
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, 3) :: ssb
+   REAL(kind=realtype), DIMENSION(imaxdim + 1, jmaxdim + 1, 3) :: xx
+   REAL(kind=realtype), DIMENSION(imaxdim+1, jmaxdim+1, 3) :: xxb
    REAL(kind=realtype) :: mx, my, mz, qa
    REAL(kind=realtype) :: mxb, myb, mzb, qab
    LOGICAL :: viscoussubface
