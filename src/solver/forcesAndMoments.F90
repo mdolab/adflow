@@ -126,8 +126,9 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, Cavitation)
        real(kind=realType), dimension(imaxDim,jmaxDim) :: rho2, rho1
        real(kind=realType), dimension(imaxDim,jmaxDim) :: rlv1, rlv2
        real(kind=realType), dimension(imaxDim,jmaxDim) :: rev1, rev2
-       real(kind=realType), dimension(imaxDim,jmaxDim) :: dd2Wall
-       real(kind=realType), dimension(imaxDim,jmaxDim,3) :: ss, xx
+       real(kind=realType), dimension(imaxDim-2,jmaxDim-2) :: dd2Wall
+       real(kind=realType), dimension(imaxDim,jmaxDim,3) :: ss
+       real(kind=realType), dimension(imaxDim+1,jmaxDim+1,3) :: xx
 #endif
 
   real(kind=realType) :: mx, my, mz, qa

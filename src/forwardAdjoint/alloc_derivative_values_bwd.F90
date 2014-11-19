@@ -56,6 +56,7 @@ subroutine alloc_derivative_values_bwd(level)
         ! Allocate d2wall if not already done so
         if (.not. associated(flowDoms(nn, 1, sps)%d2wall)) then 
            allocate(flowDoms(nn, 1, sps)%d2wall(2:il, 2:jl, 2:kl))
+           call EChk(ierr,__FILE__,__LINE__)
         end if
         
         allocate(flowDomsb(nn, 1, sps)%d2wall(2:il, 2:jl, 2:kl))
@@ -197,7 +198,7 @@ subroutine alloc_derivative_values_bwd(level)
            
            jBeg = BCData(mm)%jnBeg + 1
            jEnd = BCData(mm)%jnEnd
-           
+            
            allocate(flowDomsb(nn,1,sps)%viscSubface(mm)%tau(iBeg:iEnd,jBeg:jEnd,6), &
                 stat=ierr)
            call EChk(ierr,__FILE__,__LINE__)

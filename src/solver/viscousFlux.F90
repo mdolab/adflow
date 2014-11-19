@@ -31,7 +31,7 @@
 !
 !      Local variables.
 !
-       integer(kind=intType) :: i, j, k, nn
+       integer(kind=intType) :: i, j, k
        integer(kind=intType) :: k1, k2, kk
 
        real(kind=realType) :: rFilv, por, mul, mue, mut, heatCoef
@@ -283,18 +283,18 @@
            ! face is part of a viscous subface.
 
            if(storeWallTensor .and. viscKminPointer(i,j) > 0) then
-             nn = viscKminPointer(i,j)
+             ! We need to index viscSubface with viscKminPointer(i,j) 
+             ! since Tapenade does not like temporary indexes 
+             viscSubface(viscKminPointer(i,j))%tau(i,j,1) = tauxx
+             viscSubface(viscKminPointer(i,j))%tau(i,j,2) = tauyy
+             viscSubface(viscKminPointer(i,j))%tau(i,j,3) = tauzz
+             viscSubface(viscKminPointer(i,j))%tau(i,j,4) = tauxy
+             viscSubface(viscKminPointer(i,j))%tau(i,j,5) = tauxz
+             viscSubface(viscKminPointer(i,j))%tau(i,j,6) = tauyz
 
-             viscSubface(nn)%tau(i,j,1) = tauxx
-             viscSubface(nn)%tau(i,j,2) = tauyy
-             viscSubface(nn)%tau(i,j,3) = tauzz
-             viscSubface(nn)%tau(i,j,4) = tauxy
-             viscSubface(nn)%tau(i,j,5) = tauxz
-             viscSubface(nn)%tau(i,j,6) = tauyz
-
-             viscSubface(nn)%q(i,j,1) = q_x
-             viscSubface(nn)%q(i,j,2) = q_y
-             viscSubface(nn)%q(i,j,3) = q_z
+             viscSubface(viscKminPointer(i,j))%q(i,j,1) = q_x
+             viscSubface(viscKminPointer(i,j))%q(i,j,2) = q_y
+             viscSubface(viscKminPointer(i,j))%q(i,j,3) = q_z
            endif
 
          enddo
@@ -486,18 +486,18 @@
 
              if(k == kl .and. storeWallTensor .and. &
                 viscKmaxPointer(i,j) > 0) then
-               nn = viscKmaxPointer(i,j)
+               ! We need to index viscSubface with viscKmaxPointer(i,j) 
+               ! since Tapenade does not like temporary indexes 
+               viscSubface(viscKmaxPointer(i,j))%tau(i,j,1) = tauxx
+               viscSubface(viscKmaxPointer(i,j))%tau(i,j,2) = tauyy
+               viscSubface(viscKmaxPointer(i,j))%tau(i,j,3) = tauzz
+               viscSubface(viscKmaxPointer(i,j))%tau(i,j,4) = tauxy
+               viscSubface(viscKmaxPointer(i,j))%tau(i,j,5) = tauxz
+               viscSubface(viscKmaxPointer(i,j))%tau(i,j,6) = tauyz
 
-               viscSubface(nn)%tau(i,j,1) = tauxx
-               viscSubface(nn)%tau(i,j,2) = tauyy
-               viscSubface(nn)%tau(i,j,3) = tauzz
-               viscSubface(nn)%tau(i,j,4) = tauxy
-               viscSubface(nn)%tau(i,j,5) = tauxz
-               viscSubface(nn)%tau(i,j,6) = tauyz
-
-               viscSubface(nn)%q(i,j,1) = q_x
-               viscSubface(nn)%q(i,j,2) = q_y
-               viscSubface(nn)%q(i,j,3) = q_z
+               viscSubface(viscKmaxPointer(i,j))%q(i,j,1) = q_x
+               viscSubface(viscKmaxPointer(i,j))%q(i,j,2) = q_y
+               viscSubface(viscKmaxPointer(i,j))%q(i,j,3) = q_z
              endif
 
            enddo
@@ -671,36 +671,37 @@
 
              if(j == 1 .and. storeWallTensor .and. &
                 viscJminPointer(i,k) > 0) then
-               nn = viscJminPointer(i,k)
+               ! We need to index viscSubface with viscJminPointer(i,k) 
+               ! since Tapenade does not like temporary indexes 
 
-               viscSubface(nn)%tau(i,k,1) = tauxx
-               viscSubface(nn)%tau(i,k,2) = tauyy
-               viscSubface(nn)%tau(i,k,3) = tauzz
-               viscSubface(nn)%tau(i,k,4) = tauxy
-               viscSubface(nn)%tau(i,k,5) = tauxz
-               viscSubface(nn)%tau(i,k,6) = tauyz
+               viscSubface(viscJminPointer(i,k))%tau(i,k,1) = tauxx
+               viscSubface(viscJminPointer(i,k))%tau(i,k,2) = tauyy
+               viscSubface(viscJminPointer(i,k))%tau(i,k,3) = tauzz
+               viscSubface(viscJminPointer(i,k))%tau(i,k,4) = tauxy
+               viscSubface(viscJminPointer(i,k))%tau(i,k,5) = tauxz
+               viscSubface(viscJminPointer(i,k))%tau(i,k,6) = tauyz
 
-               viscSubface(nn)%q(i,k,1) = q_x
-               viscSubface(nn)%q(i,k,2) = q_y
-               viscSubface(nn)%q(i,k,3) = q_z
+               viscSubface(viscJminPointer(i,k))%q(i,k,1) = q_x
+               viscSubface(viscJminPointer(i,k))%q(i,k,2) = q_y
+               viscSubface(viscJminPointer(i,k))%q(i,k,3) = q_z
              endif
 
              ! And the j == jl case.
 
              if(j == jl .and. storeWallTensor .and. &
                 viscJmaxPointer(i,k) > 0) then
-               nn = viscJmaxPointer(i,k)
 
-               viscSubface(nn)%tau(i,k,1) = tauxx
-               viscSubface(nn)%tau(i,k,2) = tauyy
-               viscSubface(nn)%tau(i,k,3) = tauzz
-               viscSubface(nn)%tau(i,k,4) = tauxy
-               viscSubface(nn)%tau(i,k,5) = tauxz
-               viscSubface(nn)%tau(i,k,6) = tauyz
 
-               viscSubface(nn)%q(i,k,1) = q_x
-               viscSubface(nn)%q(i,k,2) = q_y
-               viscSubface(nn)%q(i,k,3) = q_z
+               viscSubface(viscJmaxPointer(i,k))%tau(i,k,1) = tauxx
+               viscSubface(viscJmaxPointer(i,k))%tau(i,k,2) = tauyy
+               viscSubface(viscJmaxPointer(i,k))%tau(i,k,3) = tauzz
+               viscSubface(viscJmaxPointer(i,k))%tau(i,k,4) = tauxy
+               viscSubface(viscJmaxPointer(i,k))%tau(i,k,5) = tauxz
+               viscSubface(viscJmaxPointer(i,k))%tau(i,k,6) = tauyz
+
+               viscSubface(viscJmaxPointer(i,k))%q(i,k,1) = q_x
+               viscSubface(viscJmaxPointer(i,k))%q(i,k,2) = q_y
+               viscSubface(viscJmaxPointer(i,k))%q(i,k,3) = q_z
              endif
 
            enddo
@@ -874,36 +875,38 @@
 
              if(i == 1 .and. storeWallTensor .and. &
                 viscIminPointer(j,k) > 0) then
-               nn = viscIminPointer(j,k)
+               ! We need to index viscSubface with viscIminPointer(j,k) 
+               ! since Tapenade does not like temporary indexes 
 
-               viscSubface(nn)%tau(j,k,1) = tauxx
-               viscSubface(nn)%tau(j,k,2) = tauyy
-               viscSubface(nn)%tau(j,k,3) = tauzz
-               viscSubface(nn)%tau(j,k,4) = tauxy
-               viscSubface(nn)%tau(j,k,5) = tauxz
-               viscSubface(nn)%tau(j,k,6) = tauyz
+               viscSubface(viscIminPointer(j,k))%tau(j,k,1) = tauxx
+               viscSubface(viscIminPointer(j,k))%tau(j,k,2) = tauyy
+               viscSubface(viscIminPointer(j,k))%tau(j,k,3) = tauzz
+               viscSubface(viscIminPointer(j,k))%tau(j,k,4) = tauxy
+               viscSubface(viscIminPointer(j,k))%tau(j,k,5) = tauxz
+               viscSubface(viscIminPointer(j,k))%tau(j,k,6) = tauyz
 
-               viscSubface(nn)%q(j,k,1) = q_x
-               viscSubface(nn)%q(j,k,2) = q_y
-               viscSubface(nn)%q(j,k,3) = q_z
+               viscSubface(viscIminPointer(j,k))%q(j,k,1) = q_x
+               viscSubface(viscIminPointer(j,k))%q(j,k,2) = q_y
+               viscSubface(viscIminPointer(j,k))%q(j,k,3) = q_z
              endif
 
              ! And the i == il case.
 
              if(i == il .and. storeWallTensor .and. &
                 viscImaxPointer(j,k) > 0) then
-               nn = viscImaxPointer(j,k)
+               ! We need to index viscSubface with viscImaxPointer(j,k) 
+               ! since Tapenade does not like temporary indexes 
 
-               viscSubface(nn)%tau(j,k,1) = tauxx
-               viscSubface(nn)%tau(j,k,2) = tauyy
-               viscSubface(nn)%tau(j,k,3) = tauzz
-               viscSubface(nn)%tau(j,k,4) = tauxy
-               viscSubface(nn)%tau(j,k,5) = tauxz
-               viscSubface(nn)%tau(j,k,6) = tauyz
+               viscSubface(viscImaxPointer(j,k))%tau(j,k,1) = tauxx
+               viscSubface(viscImaxPointer(j,k))%tau(j,k,2) = tauyy
+               viscSubface(viscImaxPointer(j,k))%tau(j,k,3) = tauzz
+               viscSubface(viscImaxPointer(j,k))%tau(j,k,4) = tauxy
+               viscSubface(viscImaxPointer(j,k))%tau(j,k,5) = tauxz
+               viscSubface(viscImaxPointer(j,k))%tau(j,k,6) = tauyz
 
-               viscSubface(nn)%q(j,k,1) = q_x
-               viscSubface(nn)%q(j,k,2) = q_y
-               viscSubface(nn)%q(j,k,3) = q_z
+               viscSubface(viscImaxPointer(j,k))%q(j,k,1) = q_x
+               viscSubface(viscImaxPointer(j,k))%q(j,k,2) = q_y
+               viscSubface(viscImaxPointer(j,k))%q(j,k,3) = q_z
              endif
 
            enddo
