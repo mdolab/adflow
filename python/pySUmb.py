@@ -2444,7 +2444,7 @@ steady rotations and specifying an aeroProblem')
             resBar, funcsBar, useSpatial, useState, self.getSpatialSize(), self.nDVAero)
             
         if xDvDeriv:
-            #self.mesh.warpDeriv(xvbar)
+            self.mesh.warpDeriv(xvbar)
             xsbar = self.mesh.getdXs('all')
             xdvbar = self.DVGeo.totalSensitivity(xsbar, 
                 self.curAP.ptSetName, self.comm, config=self.curAP.name)
@@ -3118,7 +3118,7 @@ steady rotations and specifying an aeroProblem')
             'rkreset':{'location':'nksolvervars.rkreset'},
             'nrkreset':{'location':'nksolvervars.nrkreset'},
             'nkadpc':{'location':'nksolvervars.nkadpc'},
-            'nkviscpc':{'location':'nksolvervars.nkviscpc'},
+            'nkviscpc':{'location':'nksolvervars.nkadpc'},
             'applypcsubspacesize':{'location':'nksolvervars.applypcsubspacesize'},
             'nkinnerpreconits':{'location':'nksolvervars.innerpreconits'},
             'nkouterpreconits':{'location':'nksolvervars.outerpreconits'},
