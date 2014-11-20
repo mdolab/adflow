@@ -3118,7 +3118,7 @@ steady rotations and specifying an aeroProblem')
             'rkreset':{'location':'nksolvervars.rkreset'},
             'nrkreset':{'location':'nksolvervars.nrkreset'},
             'nkadpc':{'location':'nksolvervars.nkadpc'},
-            'nkviscpc':{'location':'nksolvervars.nkadpc'},
+            'nkviscpc':{'location':'nksolvervars.nkviscpc'},
             'applypcsubspacesize':{'location':'nksolvervars.applypcsubspacesize'},
             'nkinnerpreconits':{'location':'nksolvervars.innerpreconits'},
             'nkouterpreconits':{'location':'nksolvervars.outerpreconits'},
