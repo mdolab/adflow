@@ -2377,11 +2377,14 @@ steady rotations and specifying an aeroProblem')
             
             # Do the aerodynamic design variables
             extradot = numpy.zeros(self.nDVAero)
-            for key in xDVdot:
-                if key.lower() in self.aeroDVs:
-                    execStr = 'mapping = self.sumb.%s'%self.possibleAeroDVs[key.lower()]
-                    exec(execStr)
-                    extradot[mapping - 1] = xDVdot[key]
+            for key in self.aeroDVs:
+                execStr = 'mapping = self.sumb.%s'%self.possibleAeroDVs[key.lower()]
+                exec(execStr)
+                if key == 'alpha':
+                    # convert angle of attack to radians
+                    extradot[mapping] = xDVdot[key]*(numpy.pi/180.0)
+                else:
+                    extradot[mapping] = xDVdot[key]
 
             useSpatial = True
         else:
@@ -2445,12 +2448,16 @@ steady rotations and specifying an aeroProblem')
             xsbar = self.mesh.getdXs('all')
             xdvbar = self.DVGeo.totalSensitivity(xsbar, 
                 self.curAP.ptSetName, self.comm, config=self.curAP.name)
-            
+                
             # We also need to add in the aero derivatives here
             for key in self.aeroDVs:
                 execStr = 'mapping = self.sumb.%s'%self.possibleAeroDVs[key]
                 exec(execStr)
-                xdvbar[key] = extrabar[mapping - 1]
+                if key == 'alpha':
+                    # convert angle of attack to degrees
+                    xdvbar[key] = extrabar[mapping]*(numpy.pi/180.0)
+                else:
+                    xdvbar[key] = extrabar[mapping]
             
         if wDeriv and xDvDeriv:
             return wbar, xdvbar
