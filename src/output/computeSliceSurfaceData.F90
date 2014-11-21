@@ -30,7 +30,7 @@ subroutine computeSliceSurfaceData(sps, nFields)
   integer(kind=intType), intent(out) :: nFields
 
   ! Working parameters
-  integer(kind=intType) :: mm, nn, i, j, jj
+  integer(kind=intType) :: mm, nn, i, j, jj, offVis, ii
   integer(kind=intType) :: iFace, nSolVar, iFaceStart, iSolVar, ivar
   real(kind=realType) :: cFp(3), cFv(3), cMp(3), cMv(3), yplusmax
   real(kind=realType) :: sepSensor
@@ -45,7 +45,8 @@ subroutine computeSliceSurfaceData(sps, nFields)
   real(kind=realType) :: fx, fy, fz, fn, a2Tot, a2, qw
   real(kind=realType) :: tauxx, tauyy, tauzz
   real(kind=realType) :: tauxy, tauxz, tauyz
-  real(kind=realType), dimension(3) :: norm
+  real(kind=realType) ::scaleDim, sigma, sensor, sensor1, plocal
+  real(kind=realType), dimension(3) :: norm, V
 
   real(kind=realType), dimension(:,:,:), pointer :: ww1, ww2
   real(kind=realType), dimension(:,:,:), pointer :: ss1, ss2, ss
@@ -54,7 +55,7 @@ subroutine computeSliceSurfaceData(sps, nFields)
   real(kind=realType), dimension(:,:),   pointer :: gamma1, gamma2
   real(kind=realType), dimension(:,:),   pointer :: rlv1, rlv2
   real(kind=realType), dimension(:,:),   pointer :: dd2Wall
-  
+
   ! We will do the pressure and viscous forces first:
   iFace = 0
   domains1: do nn=1,nDom
@@ -559,13 +560,60 @@ subroutine computeSliceSurfaceData(sps, nFields)
                        localData(iVar, iFace) = real(min(iblank2(i,j), 1_intType), realType)
                     enddo
                  enddo
+              case (cgnsLift) 
+                 
+                 ! This is not implemented so just put in zeros
+                 do j= BCData(mm)%jnBeg+1, BCData(mm)%jnEnd
+                    do i=BCData(mm)%inBeg+1, BCData(mm)%inEnd
+                       iFace = iFace + 1
+                       localData(iVar, iFace) = zero
+                    enddo
+                 enddo
+                 
+              case (cgnsSepSensor)
 
+                 do j= BCData(mm)%jnBeg+1, BCData(mm)%jnEnd
+                    do i=BCData(mm)%inBeg+1, BCData(mm)%inEnd
+                       ! Get normalized surface velocity:
+                       v(1) = ww2(i, j, ivx)
+                       v(2) = ww2(i, j, ivy)
+                       v(3) = ww2(i, j, ivz)
+                       
+                       ! Normalize
+                       v = v / (sqrt(v(1)**2 + v(2)**2 + v(3)**2) + 1e-16)
+                       
+                       ! Dot product with free stream
+                       sensor = -dot_product(v, velDirFreeStream)
+               
+                       !Now run through a smooth heaviside function:
+                       sensor = one/(one + exp(-2*10*sensor))
+                       iFace = iFace + 1
+                       localData(iVar, iFace) = sensor
+                    enddo
+                 enddo
+  
+              case (cgnsCavitation)
+                 fact = two/(gammaInf*pInf*MachCoef*MachCoef)
+                  do j= BCData(mm)%jnBeg+1, BCData(mm)%jnEnd
+                    do i=BCData(mm)%inBeg+1, BCData(mm)%inEnd
+                       
+                       ! Get local pressure
+                       plocal = half*(pp1(i,j) + pp2(i,j))
+                       
+                       sigma = 1.4 
+                       sensor1 = (-(fact)*(plocal-pInf))- sigma
+                       sensor1 = one/(one + exp(-2*10*sensor1))
+                       iface = iface + 1
+                       localData(iVar, iFace)= sensor1
+                       
+                    enddo
+                 enddo
               end select varName
+
            end do ! Solution Variable loop
         end if ! Wall Type
      end do bocos2 ! Boco loop
   end do domains2 ! Domain loop
-
   ! Destroy the surface variable names
   deallocate(solNames)
 end subroutine computeSliceSurfaceData
