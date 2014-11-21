@@ -115,6 +115,55 @@ subroutine getdRdwTVec(in_vec, out_vec, ndof)
 #endif
 end subroutine getdRdwTVec
 
+subroutine getdRdaPsiFwd(out_vec, nstate, in_vec, ndv)
+
+#ifndef USE_NO_PETSC
+
+  use communication
+  use ADjointPETSc
+  use ADjointVars
+  use blockPointers
+  use inputADjoint
+  use section
+  use inputTimeSpectral 
+  use monitor 
+
+  implicit none
+
+  ! Input/Output Variables
+  integer(kind=intType), intent(in) :: ndv, nstate
+  real(kind=realType), intent(in) :: in_vec(ndv)
+  real(kind=realType), intent(out) :: out_vec(nstate)
+
+  ! Local Variables
+  Vec                   :: a_like
+  integer(kind=intType) :: ierr, i
+  
+  ! Create the result vector for dRda * psi
+  call VecCreateMPI(SUMB_COMM_WORLD, PETSC_DECIDE, ndv, a_like, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+  ! put input arry in a_like
+  call VecPlaceArray(a_like, in_vec, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+  
+  ! put output array in psi_like1
+  call VecPlaceArray(psi_like2, out_vec, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+  ! Do the Multiplication
+  call MatMult(dRda, a_like, psi_like2, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+  
+  ! memory cleanup
+  call VecDestroy(a_like, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+  call VecResetArray(psi_like2, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+#endif
+end subroutine getdRdaPsiFwd
+
 subroutine getdRdaPsi(output, ndv, adjoint, nstate)
 
 #ifndef USE_NO_PETSC
