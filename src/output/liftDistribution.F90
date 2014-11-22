@@ -70,8 +70,10 @@ subroutine writeSlicesFile(fileName)
         print "(a)", "# Writing slices file(s) ..."
      endif
 
-
      do sps=1,nTimeIntervalsSpectral
+
+        ! Gather the forces and nodes
+        call liftDistGatherForcesAndNodes(sps)
 
         ! If it is time spectral we need to agument the filename
         if (equationMode == timeSpectral) then
