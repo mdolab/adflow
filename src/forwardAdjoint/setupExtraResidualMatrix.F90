@@ -47,8 +47,9 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
   integer(kind=intType) :: FMDim, nState
 
   ! Values for block_res
-  real(kind=realType) :: alpha, beta, force(3), moment(3), sepSensor, Cavitation
-  real(kind=realType) :: alphad, betad, forced(3), momentd(3), sepSensord, Cavitationd
+  real(kind=realType) :: alpha, beta, sepSensor, Cavitation
+  real(kind=realType) :: alphad, betad, sepSensord, Cavitationd
+  real(kind=realType), dimension(3, nTimeIntervalsSpectral) :: force, moment, forced, momentd
   integer(kind=intType) :: liftIndex
   
   !Reference values for FD
@@ -226,8 +227,8 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
            ! Save the values of FMExtra and the derivatives
 
            do FMDim=1,3
-              dFMdExtra(FMDim, iColor, sps) = dFMdExtra(FMDim, iColor, sps) + Forced(FMDim)
-              dFMdExtra(FMDim+3, iColor, sps) = dFMdExtra(FMDim+3, iColor, sps) + Momentd(FMDim)
+              dFMdExtra(FMDim, iColor, sps) = dFMdExtra(FMDim, iColor, sps) + Forced(FMDim, sps)
+              dFMdExtra(FMDim+3, iColor, sps) = dFMdExtra(FMDim+3, iColor, sps) + Momentd(FMDim, sps)
            end do
            dFMdExtra(iSepSensor, iColor, sps) = dFMdExtra(iSepSensor, iColor, sps) + sepSensord
            dFMdExtra(iCavitation, iColor, sps) = dFMdExtra(iCavitation, iColor, sps) + Cavitationd
