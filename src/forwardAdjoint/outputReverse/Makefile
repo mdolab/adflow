@@ -36,7 +36,12 @@ include ${SUMB_RULES_FILE}
 
 vpath %.o $(SUMB_OBJDIR)
 
-FF90_OBJECTS =  computeetot_b.o\
+FF90_OBJECTS =  \
+	adjustinflowangle_b.o\
+		getdirvector_b.o\
+		referencestate_b.o\
+		vectorrotation_b.o\
+		computeetot_b.o\
 		computelamviscosity_b.o\
 		extrapolate2ndhalo_b.o\
 		timestep_block_b.o\
