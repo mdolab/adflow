@@ -512,17 +512,20 @@ steady rotations and specifying an aeroProblem')
             is used in a multidisciplinary enviornment when the outer
             solver can suppress all I/O during intermediate solves.
             """
+        
+        # Get option about adjoint memory
+        releaseAdjointMemory = kwargs.pop('relaseAdjointMemory', True)
 
         # Set the aeroProblem
-        self.setAeroProblem(aeroProblem)
+        self.setAeroProblem(aeroProblem, releaseAdjointMemory)
 
         # If this problem has't been solved yet, reset flow to this
         # flight condition
         if self.curAP.sumbData.stateInfo is None:
-            self.resetFlow(aeroProblem)
+            self.resetFlow(aeroProblem, releaseAdjointMemory)
 
         # Possibly release adjoint memory 
-        if kwargs.pop('relaseAdjointMemory', True):
+        if releaseAdjointMemory:
             self.releaseAdjointMemory()
 
         # Save aeroProblem, and other information into the current flow case
@@ -1204,7 +1207,7 @@ steady rotations and specifying an aeroProblem')
         if obj in self.curAP.sumbData.adjoints:
             self.curAP.sumbData.adjoints[obj][:] = 0.0
 
-    def resetFlow(self, aeroProblem):
+    def resetFlow(self, aeroProblem, releaseAdjointMemory=True):
         """
         Reset the flow after a failure or for a complex step
         derivative operation.
@@ -1215,7 +1218,7 @@ steady rotations and specifying an aeroProblem')
             The aeroproblem with the flow information we would like
             to reset the flow to.
             """
-        self.setAeroProblem(aeroProblem)
+        self.setAeroProblem(aeroProblem, releaseAdjointMemory)
         self.sumb.referencestate()
         self.sumb.setflowinfinitystate()
 
@@ -1408,7 +1411,7 @@ steady rotations and specifying an aeroProblem')
         if self.mesh is not None:
             return self.mesh.getSurfaceConnectivity(groupName)
 
-    def setAeroProblem(self, aeroProblem):
+    def setAeroProblem(self, aeroProblem, releaseAdjointMemory=True):
         """Set the supplied aeroProblem to be used in SUmb"""
         ptSetName = 'sumb_%s_coords'% aeroProblem.name
 
@@ -1479,7 +1482,8 @@ steady rotations and specifying an aeroProblem')
 
         # Destroy the NK solver and the adjoint memory
         self.sumb.destroynksolver()
-        self.releaseAdjointMemory()
+        if releaseAdjointMemory:
+            self.releaseAdjointMemory()
 
         # Finally update other data
         self._setAeroProblemData()
@@ -2030,7 +2034,7 @@ steady rotations and specifying an aeroProblem')
             Solution vector of size w
         """
         if relTol is None:
-            relTol = self.getOption('adjointRelTol')
+            relTol = self.getOption('adjointl2convergence')
         outVec = self.sumb.solveadjointforrhs(inVec, relTol)
 
         return outVec
@@ -2050,7 +2054,7 @@ steady rotations and specifying an aeroProblem')
             Solution vector of size w
         """
         if relTol is None:
-            relTol = self.getOption('adjointRelTol')
+            relTol = self.getOption('adjointl2convergence')
         outVec = self.sumb.solvedirectforrhs(inVec, relTol)
 
         return outVec
@@ -2405,7 +2409,7 @@ steady rotations and specifying an aeroProblem')
         funcsdot = {}
         for f in self.curAP.evalFuncs:
             mapping = self.sumbCostFunctions[self.possibleObjectives[f]]
-            funcsdot[f] = tmp[mapping-1]
+            funcsdot[f] = tmp[mapping - 1]
             
         if residualDeriv and funcDeriv:
             return dwdot, funcsdot
@@ -2555,10 +2559,10 @@ steady rotations and specifying an aeroProblem')
         else:
             return numpy.zeros(self.getAdjointStateSize(), self.dtype)
 
-    def getResidual(self, aeroProblem, res=None):
+    def getResidual(self, aeroProblem, res=None, releaseAdjointMemory=True):
         """Return the residual on this processor. Used in aerostructural
         analysis"""
-        self.setAeroProblem(aeroProblem)
+        self.setAeroProblem(aeroProblem, releaseAdjointMemory)
         if res is None:
             res = numpy.zeros(self.getStateSize())
         res = self.sumb.getres(res)
