@@ -35,14 +35,12 @@ include ${SUMB_RULES_FILE}
 #      ******************************************************************
 
 vpath %.o $(SUMB_OBJDIR)
-FF90_OBJECTS =  adjustinflowangle_b.o\
-		computeleastsquaresregression_b.o\
+
+
+FF90_OBJECTS =  computeleastsquaresregression_b.o\
 		computerootbendingmoment_b.o\
 		computetsderivatives_b.o\
 		getcostfunction_b.o\
-		getdirvector_b.o\
-		vectorrotation_b.o\
-		referencestate_b.o\
 		computegamma_b.o\
 
 #      ******************************************************************
