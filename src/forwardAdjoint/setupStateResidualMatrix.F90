@@ -52,11 +52,13 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   real(kind=realType) :: delta_x, one_over_dx
 
 #ifdef USE_COMPLEX
-  complex(kind=realType) :: alpha, beta, force(3), moment(3), sepSensor, Cavitation
-  complex(kind=realType) :: alphad, betad, forced(3), momentd(3), sepSensord, Cavitationd
+  complex(kind=realType) :: alpha, beta, sepSensor, Cavitation
+  complex(kind=realType) :: alphad, betad, sepSensord, Cavitationd
+  complex(kind=realType), dimension(3, nTimeIntervalsSpectral) :: force, moment, forced, momentd
 #else
-  real(kind=realType) :: alpha, beta, force(3), moment(3), sepSensor, Cavitation
-  real(kind=realType) :: alphad, betad, forced(3), momentd(3), sepSensord, Cavitationd
+  real(kind=realType) :: alpha, beta, sepSensor, Cavitation
+  real(kind=realType) :: alphad, betad,  sepSensord, Cavitationd
+  real(kind=realType), dimension(3, nTimeIntervalsSpectral) :: force, moment, forced, momentd
 #endif
   integer(kind=intType) :: liftIndex
   integer(kind=intType), dimension(:,:), pointer ::  colorPtr1, colorPtr2

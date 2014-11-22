@@ -40,8 +40,9 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
   integer(kind=intType) :: nColor, iColor, jColor, ind, fmInd
   real(kind=realType) :: delta_x,one_over_dx, val
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, fmDim
-  real(kind=realType) :: alpha, beta, force(3), moment(3), sepSensor, Cavitation
-  real(kind=realType) :: alphad, betad, forced(3), momentd(3), sepSensord, Cavitationd
+  real(kind=realType) :: alpha, beta, sepSensor, Cavitation
+  real(kind=realType) :: alphad, betad, sepSensord, Cavitationd
+  real(kind=realType), dimension(3, nTimeIntervalsSpectral) :: force, moment, forced, momentd
   integer(kind=intType) :: liftIndex
   integer(kind=intType), dimension(:,:), pointer ::  colorPtr, colorPtr1, colorPtr2
   integer(kind=intType), dimension(:,:), pointer ::  globalNodePtr

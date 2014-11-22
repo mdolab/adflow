@@ -26,10 +26,8 @@
    & :: force, moment
    REAL(kind=realtype), DIMENSION(3, ntimeintervalsspectral) :: forceb, &
    & momentb
-   REAL(kind=realtype), DIMENSION(ntimeintervalsspectral), INTENT(IN) :: &
-   & sepsensor, cavitation
-   REAL(kind=realtype), DIMENSION(ntimeintervalsspectral) :: sepsensorb, &
-   & cavitationb
+   REAL(kind=realtype), INTENT(IN) :: sepsensor, cavitation
+   REAL(kind=realtype) :: sepsensorb, cavitationb
    REAL(kind=realtype), INTENT(IN) :: alpha, beta
    ! Working
    REAL(kind=realtype) :: fact, factmoment, scaledim, ovrnts
@@ -101,9 +99,9 @@
    funcvalues(costfuncmomz) = funcvalues(costfuncmomz) + ovrnts*moment(&
    &     3, sps)
    funcvalues(costfuncsepsensor) = funcvalues(costfuncsepsensor) + &
-   &     ovrnts*sepsensor(sps)
+   &     ovrnts*sepsensor
    funcvalues(costfunccavitation) = funcvalues(costfunccavitation) + &
-   &     ovrnts*cavitation(sps)
+   &     ovrnts*cavitation
    ! Bending moment calc
    cm = factmoment*moment(:, sps)
    cf = fact*force(:, sps)
@@ -258,10 +256,8 @@
    forceb(:, sps) = forceb(:, sps) + fact*cfb
    factmomentb = factmomentb + SUM(moment(:, sps)*cmb)
    momentb(:, sps) = momentb(:, sps) + factmoment*cmb
-   cavitationb(sps) = cavitationb(sps) + ovrnts*funcvaluesb(&
-   &     costfunccavitation)
-   sepsensorb(sps) = sepsensorb(sps) + ovrnts*funcvaluesb(&
-   &     costfuncsepsensor)
+   cavitationb = cavitationb + ovrnts*funcvaluesb(costfunccavitation)
+   sepsensorb = sepsensorb + ovrnts*funcvaluesb(costfuncsepsensor)
    momentb(3, sps) = momentb(3, sps) + ovrnts*funcvaluesb(costfuncmomz)
    momentb(2, sps) = momentb(2, sps) + ovrnts*funcvaluesb(costfuncmomy)
    momentb(1, sps) = momentb(1, sps) + ovrnts*funcvaluesb(costfuncmomx)
