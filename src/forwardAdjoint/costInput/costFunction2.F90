@@ -14,7 +14,7 @@ subroutine getCostFunction2(force, moment, sepSensor, Cavitation, alpha, beta, l
   ! Input 
   integer(kind=intType), intent(in) :: liftIndex
   real(kind=realType), intent(in), dimension(3, nTimeIntervalsSpectral) :: force, moment
-  real(kind=realType), intent(in), dimension(nTimeIntervalsSpectral) :: sepSensor, Cavitation
+  real(kind=realType), intent(in) ::  sepSensor, Cavitation
   real(kind=realType), intent(in) :: alpha, beta
 
   ! Working
@@ -51,8 +51,8 @@ subroutine getCostFunction2(force, moment, sepSensor, Cavitation, alpha, beta, l
      funcValues(costFuncMomY) = funcValues(costFuncMomY) + ovrNTS*moment(2, sps)
      funcValues(costFuncMomZ) = funcValues(costFuncMomZ) + ovrNTS*moment(3, sps)
 
-     funcValues(costFuncSepSensor) = funcValues(costFuncSepSensor) + ovrNTS*sepSensor(sps)
-     funcValues(costFuncCavitation) = funcValues(costFuncCavitation) + ovrNTS*Cavitation(sps)
+     funcValues(costFuncSepSensor) = funcValues(costFuncSepSensor) + ovrNTS*sepSensor
+     funcValues(costFuncCavitation) = funcValues(costFuncCavitation) + ovrNTS*Cavitation
 
      ! Bending moment calc
      cm = factMoment*moment(:, sps)

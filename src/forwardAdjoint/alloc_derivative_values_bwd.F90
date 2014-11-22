@@ -23,7 +23,8 @@ subroutine alloc_derivative_values_bwd(level)
   integer(kind=intType) :: iBeg, jBeg, iEnd, jEnd
   integer(kind=intType) :: massShape(2), max_face_size
 
-  real(kind=realType) :: alpha, beta, force(3), moment(3), sepSensor, Cavitation
+  real(kind=realType) :: alpha, beta,  sepSensor, Cavitation
+  real(kind=realType) :: force(3,nTimeIntervalsSpectral), moment(3, nTimeIntervalsSpectral)
   integer(kind=intType) :: liftIndex
   
   ! Setup number of state variable based on turbulence assumption
