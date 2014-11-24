@@ -599,3 +599,38 @@ subroutine getdFdwTVec(in_vec, in_dof, out_vec, out_dof)
 #endif
 
 end subroutine getdFdwTVec
+
+subroutine setdJdw(nstate, inVec)
+
+#ifndef USE_NO_PETSC	
+#define PETSC_AVOID_MPIF_
+#include "finclude/petscdef.h"
+
+  use ADjointPETSc, only : dJdw
+  use petscvec
+  use constants
+
+  implicit none
+
+  !  Input Variables
+  integer(kind=intType),intent(in):: nstate
+  real(kind=realType),dimension(nstate), intent(in) :: inVec
+
+  ! Local Variables
+  integer(kind=intType) :: i, ierr
+  real(kind=realType),pointer :: dJdw_pointer(:)
+
+  ! Copy out adjoint vector:
+  call VecGetArrayF90(dJdw, dJdw_pointer, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+  ! Do a straight copy:
+  do i=1,nstate
+     dJdw_pointer(i) = inVec(i)
+  end do
+
+  call VecRestoreArrayF90(dJdw, dJdw_pointer, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+#endif
+
+end subroutine setdJdw
