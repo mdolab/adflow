@@ -517,6 +517,7 @@ subroutine solveDirectForRHS(inVec, outVec, nDOF, relativeTolerance)
   use ADJointPETSc
   use inputADjoint
   use adjointVars
+  use constants
   use killsignals
   implicit none
 
