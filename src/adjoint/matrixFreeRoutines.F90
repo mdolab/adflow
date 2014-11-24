@@ -456,6 +456,7 @@ subroutine solveAdjointForRHS(inVec, outVec, nDOF, relativeTolerance)
   use inputADjoint
   use adjointvars
   use killsignals
+  use constants
   implicit none
 
   ! Input Variables
@@ -474,6 +475,10 @@ subroutine solveAdjointForRHS(inVec, outVec, nDOF, relativeTolerance)
   call EChk(ierr,__FILE__,__LINE__)
 
   call VecPlaceArray(psi_like2, outVec, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+  
+  ! Zero out initial solution
+  call VecSet(psi_like2, zero, ierr)
   call EChk(ierr,__FILE__,__LINE__)
     
   ! Set desired realtive tolerance
@@ -532,13 +537,17 @@ subroutine solveDirectForRHS(inVec, outVec, nDOF, relativeTolerance)
 
   call VecPlaceArray(psi_like2, outVec, ierr)
   call EChk(ierr,__FILE__,__LINE__)
+  
+  ! Zero out initial solution
+  call VecSet(psi_like2, zero, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
     
   ! Set desired realtive tolerance
   call KSPSetTolerances(adjointKSP, relativeTolerance, adjAbsTol, adjDivTol, &
        adjMaxIter, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  ! Solve (remember this is actually a transpose solve)
+  ! Solve (this is the transpose solve of a transpose matrix, so it's direct)
   call KSPSolveTranspose(adjointKSP, psi_like1, psi_like2, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
