@@ -144,7 +144,6 @@
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: oarea
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: sepsensor
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: cavitation
-   REAL(kind=realtype), DIMENSION(3) :: symnorm
    END TYPE BCDATATYPE_B
    !
    !        ****************************************************************

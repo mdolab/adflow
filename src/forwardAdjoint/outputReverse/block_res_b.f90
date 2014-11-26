@@ -21,14 +21,13 @@
    !                *sk:(loc) *fw:(loc) *(*viscsubface.tau):(loc)
    !                *(*bcdata.norm):(loc) *(*bcdata.fp):in-out *(*bcdata.fv):in-out
    !                *(*bcdata.m):in-out *(*bcdata.oarea):in-out *(*bcdata.sepsensor):in-out
-   !                *(*bcdata.cavitation):in-out *bcdata.symnorm:(loc)
-   !                *radi:(loc) *radj:(loc) *radk:(loc) mudim:(loc)
-   !                gammainf:(loc) pinf:(loc) timeref:(loc) rhoinf:(loc)
-   !                muref:(loc) rhoinfdim:(loc) tref:(loc) winf:(loc)
-   !                muinf:(loc) uinf:(loc) pinfcorr:(loc) rgas:(loc)
-   !                pinfdim:(loc) pref:out rhoref:(loc) moment:in-zero
-   !                alpha:out force:in-zero beta:out cavitation:in-zero
-   !                sepsensor:in-zero
+   !                *(*bcdata.cavitation):in-out *radi:(loc) *radj:(loc)
+   !                *radk:(loc) mudim:(loc) gammainf:(loc) pinf:(loc)
+   !                timeref:(loc) rhoinf:(loc) muref:(loc) rhoinfdim:(loc)
+   !                tref:(loc) winf:(loc) muinf:(loc) uinf:(loc) pinfcorr:(loc)
+   !                rgas:(loc) pinfdim:(loc) pref:out rhoref:(loc)
+   !                moment:in-zero alpha:out force:in-zero beta:out
+   !                cavitation:in-zero sepsensor:in-zero
    !   Plus diff mem management of: flowdoms.x:in flowdoms.vol:in
    !                flowdoms.w:in flowdoms.dw:in rev:in p:in gamma:in
    !                rlv:in si:in sj:in sk:in fw:in viscsubface:in
@@ -135,19 +134,6 @@
    !        Additional Spatial Components
    ! ------------------------------------------------
    IF (usespatial) THEN
-   DO ii1=1,SIZE(bcdata, 1)
-   CALL PUSHREAL8ARRAY(bcdata(ii1)%symnorm, 3)
-   END DO
-   DO ii1=1,ntimeintervalsspectral
-   DO ii2=1,1
-   DO ii3=nn,nn
-   CALL PUSHREAL8ARRAY(flowdoms(ii3, ii2, ii1)%x, SIZE(flowdoms(&
-   &                       ii3, ii2, ii1)%x, 1)*SIZE(flowdoms(ii3, ii2, ii1&
-   &                       )%x, 2)*SIZE(flowdoms(ii3, ii2, ii1)%x, 3)*SIZE(&
-   &                       flowdoms(ii3, ii2, ii1)%x, 4))
-   END DO
-   END DO
-   END DO
    CALL XHALO_BLOCK()
    CALL PUSHREAL8ARRAY(sk, SIZE(sk, 1)*SIZE(sk, 2)*SIZE(sk, 3)*SIZE(sk&
    &                 , 4))
@@ -740,19 +726,6 @@
    CALL POPREAL8ARRAY(sk, SIZE(sk, 1)*SIZE(sk, 2)*SIZE(sk, 3)*SIZE(sk, &
    &                4))
    CALL METRIC_BLOCK_B()
-   DO ii1=ntimeintervalsspectral,1,-1
-   DO ii2=1,1,-1
-   DO ii3=nn,nn,-1
-   CALL POPREAL8ARRAY(flowdoms(ii3, ii2, ii1)%x, SIZE(flowdoms(&
-   &                      ii3, ii2, ii1)%x, 1)*SIZE(flowdoms(ii3, ii2, ii1)&
-   &                      %x, 2)*SIZE(flowdoms(ii3, ii2, ii1)%x, 3)*SIZE(&
-   &                      flowdoms(ii3, ii2, ii1)%x, 4))
-   END DO
-   END DO
-   END DO
-   DO ii1=SIZE(bcdata, 1),1,-1
-   CALL POPREAL8ARRAY(bcdata(ii1)%symnorm, 3)
-   END DO
    CALL XHALO_BLOCK_B()
    END IF
    CALL SETFLOWINFINITYSTATE_B()
