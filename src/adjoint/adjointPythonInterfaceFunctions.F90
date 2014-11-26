@@ -90,7 +90,7 @@ subroutine getdRdwTVec(in_vec, out_vec, ndof)
   ! Input/Output
   integer(kind=intType), intent(in) :: ndof
   real(kind=realType), intent(in) :: in_vec(ndof)
-  real(kind=realType), intent(inout) :: out_vec
+  real(kind=realType), intent(inout) :: out_vec(ndof)
 
   ! Working Variables
   integer(kind=intType) :: ierr
@@ -214,7 +214,7 @@ subroutine getdRdaPsi(output, ndv, adjoint, nstate)
 
   ! Now just pluck off the local values
   do i=1, nDv
-     call VecGetValues(dRdaTPsi_local, 1, i-1, output(i), ierr)
+     call VecGetValues(dRdaTPsi_local, 1, (/i-1/), output(i), ierr)
      call EChk(ierr, __FILE__, __LINE__)
   end do
 
