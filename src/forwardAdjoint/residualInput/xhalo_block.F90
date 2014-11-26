@@ -30,51 +30,12 @@ subroutine xhalo_block
   !
   integer(kind=intType) :: mm, i, j, k
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, iiMax, jjMax
-
-#ifndef TAPENADE_REVERSE
-  real(kind=realType), dimension(:,:,:), pointer :: x0, x1, x2
-!
-!      Interfaces
-!
-       interface
-        subroutine setallx(nn, x0, x1, x2)
-
-           use BCTypes
-           use blockPointers
-           implicit none
-
-           integer(kind=intType), intent(in) :: nn
-           real(kind=realType), dimension(:,:,:),   pointer :: x0, x1, x2
-         end subroutine setallx
-
-        subroutine resetallx(nn, x0, x1, x2)
-
-           use BCTypes
-           use blockPointers
-           implicit none
-
-           integer(kind=intType), intent(in) :: nn
-           real(kind=realType), dimension(:,:,:),   pointer :: x0, x1, x2
-         end subroutine resetallx
-       end interface
-#else
-       real(kind=realType), dimension(imaxDim+1,jmaxDim+1,3) :: x0, x1, x2
-#endif
-
   logical err
   real(kind=realType) :: length, dot
   logical :: iMinInternal, jMinInternal, kMinInternal 
   logical :: iMaxInternal, jMaxInternal, kMaxInternal
   real(kind=realType), dimension(3) :: v1, v2, norm
  
-
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
-  !
-
   !
   !          **************************************************************
   !          *                                                            *
@@ -228,148 +189,163 @@ subroutine xhalo_block
 
         ! Set some variables, depending on the block face on
         ! which the subface is located.
+        norm(1) = bcData(mm)%symNorm(1)
+        norm(2) = bcData(mm)%symNorm(2)
+        norm(3) = bcData(mm)%symNorm(3)
 
-#ifndef TAPENADE_REVERSE
-               call setallx(mm, x0, x1, x2)
-#else
-               call setallxBwd(mm, x0, x1, x2)
-#endif
-         
-        select case (BCFaceID(mm))
-        case (iMin)
-           iBeg = jnBeg(mm); iEnd = jnEnd(mm); iiMax = jl
-           jBeg = knBeg(mm); jEnd = knEnd(mm); jjMax = kl
+        length = sqrt(norm(1)**2 + norm(2)**2 + norm(3)**2)
+
+        ! Compute the unit normal of the subface.
+
+        norm(1) = norm(1)/length
+        norm(2) = norm(2)/length
+        norm(3) = norm(3)/length
+        ! See xhalo_block for comments for below:
+        testSingular: if(length > eps) then
+        
+           select case (BCFaceID(mm))
+           case (iMin)
+              iBeg = jnBeg(mm); iEnd = jnEnd(mm); iiMax = jl
+              jBeg = knBeg(mm); jEnd = knEnd(mm); jjMax = kl
+
+              if(iBeg == 1)     iBeg = 0
+              if(iEnd == iiMax) iEnd = iiMax + 1
+              
+              if(jBeg == 1)     jBeg = 0
+              if(jEnd == jjMax) jEnd = jjMax + 1
+              
+              do j=jBeg,jEnd
+                 do i=iBeg,iEnd
+                    v1(1) = x(1, i,j,1) - x(2, i,j,1)
+                    v1(2) = x(1, i,j,2) - x(2, i,j,2)
+                    v1(3) = x(1, i,j,3) - x(2, i,j,3)
+                    dot = two*(v1(1)*norm(1) + v1(2)*norm(2) &
+                         +      v1(3)*norm(3))
+                    x(0,i,j,1) = x(2,i,j,1) + dot*norm(1)
+                    x(0,i,j,2) = x(2,i,j,2) + dot*norm(2)
+                    x(0,i,j,3) = x(2,i,j,3) + dot*norm(3)
+              enddo
+           enddo
 
         case (iMax)
            iBeg = jnBeg(mm); iEnd = jnEnd(mm); iiMax = jl
            jBeg = knBeg(mm); jEnd = knEnd(mm); jjMax = kl
 
+           if(iBeg == 1)     iBeg = 0
+           if(iEnd == iiMax) iEnd = iiMax + 1
+           
+           if(jBeg == 1)     jBeg = 0
+           if(jEnd == jjMax) jEnd = jjMax + 1
+           
+           do j=jBeg,jEnd
+              do i=iBeg,iEnd
+                 v1(1) = x(il, i,j,1) - x(nx, i,j,1)
+                 v1(2) = x(il, i,j,2) - x(nx, i,j,2)
+                 v1(3) = x(il, i,j,3) - x(nx, i,j,3)
+                 dot = two*(v1(1)*norm(1) + v1(2)*norm(2) &
+                      +      v1(3)*norm(3))
+                 x(ie,i,j,1) = x(nx,i,j,1) + dot*norm(1)
+                 x(ie,i,j,2) = x(nx,i,j,2) + dot*norm(2)
+                 x(ie,i,j,3) = x(nx,i,j,3) + dot*norm(3)
+              enddo
+           enddo
+           
         case (jMin)
            iBeg = inBeg(mm); iEnd = inEnd(mm); iiMax = il
            jBeg = knBeg(mm); jEnd = knEnd(mm); jjMax = kl
+           
+           if(iBeg == 1)     iBeg = 0
+           if(iEnd == iiMax) iEnd = iiMax + 1
+           
+           if(jBeg == 1)     jBeg = 0
+           if(jEnd == jjMax) jEnd = jjMax + 1
+           
+           do j=jBeg,jEnd
+              do i=iBeg,iEnd
+                 v1(1) = x(i,1,j,1) - x(i,2,j,1)
+                 v1(2) = x(i,1,j,2) - x(i,2,j,2)
+                 v1(3) = x(i,1,j,3) - x(i,2,j,3)
+                 dot = two*(v1(1)*norm(1) + v1(2)*norm(2) &
+                      +      v1(3)*norm(3))
+                 x(i,0,j,1) = x(i,2,j,1) + dot*norm(1)
+                 x(i,0,j,2) = x(i,2,j,2) + dot*norm(2)
+                 x(i,0,j,3) = x(i,2,j,3) + dot*norm(3)
+              enddo
+           enddo
 
         case (jMax)
            iBeg = inBeg(mm); iEnd = inEnd(mm); iiMax = il
            jBeg = knBeg(mm); jEnd = knEnd(mm); jjMax = kl
 
+           if(iBeg == 1)     iBeg = 0
+           if(iEnd == iiMax) iEnd = iiMax + 1
+           
+           if(jBeg == 1)     jBeg = 0
+           if(jEnd == jjMax) jEnd = jjMax + 1
+           
+           do j=jBeg,jEnd
+              do i=iBeg,iEnd
+                 v1(1) = x(i,jl,j,1) - x(i,ny,j,1)
+                 v1(2) = x(i,jl,j,2) - x(i,ny,j,2)
+                 v1(3) = x(i,jl,j,3) - x(i,ny,j,3)
+                 dot = two*(v1(1)*norm(1) + v1(2)*norm(2) &
+                      +      v1(3)*norm(3))
+                 x(i,je,j,1) = x(i,ny,j,1) + dot*norm(1)
+                 x(i,je,j,2) = x(i,ny,j,2) + dot*norm(2)
+                 x(i,je,j,3) = x(i,ny,j,3) + dot*norm(3)
+              enddo
+           enddo
+
         case (kMin)
            iBeg = inBeg(mm); iEnd = inEnd(mm); iiMax = il
            jBeg = jnBeg(mm); jEnd = jnEnd(mm); jjMax = jl
+
+           if(iBeg == 1)     iBeg = 0
+           if(iEnd == iiMax) iEnd = iiMax + 1
+           
+           if(jBeg == 1)     jBeg = 0
+           if(jEnd == jjMax) jEnd = jjMax + 1
+           
+           do j=jBeg,jEnd
+              do i=iBeg,iEnd
+                 v1(1) = x(i,j,1,1) - x(i,j,2,1)
+                 v1(2) = x(i,j,1,2) - x(i,j,2,2)
+                 v1(3) = x(i,j,1,3) - x(i,j,2,3)
+                 dot = two*(v1(1)*norm(1) + v1(2)*norm(2) &
+                      +      v1(3)*norm(3))
+                 x(i,j,0,1) = x(i,j,2,1) + dot*norm(1)
+                 x(i,j,0,2) = x(i,j,2,2) + dot*norm(2)
+                 x(i,j,0,3) = x(i,j,2,3) + dot*norm(3)
+              enddo
+           enddo
 
         case (kMax)
            iBeg = inBeg(mm); iEnd = inEnd(mm); iiMax = il
            jBeg = jnBeg(mm); jEnd = jnEnd(mm); jjMax = jl
 
-        end select
-
-
-        if (.not. bcData(mm)%symNormSet) then
-           ! This code technically should not run. symNormSet should
-           ! already be set from the regular Xhao on the
-           ! first call.
-
-           ! Determine the vector from the lower left corner to
-           ! the upper right corner. Due to the usage of pointers an
-           ! offset of +1 must be used, because the original array x
-           ! start at 0.
-
-           v1(1) = x1(iimax+1,jjmax+1,1) - x1(1+1,1+1,1)
-           v1(2) = x1(iimax+1,jjmax+1,2) - x1(1+1,1+1,2)
-           v1(3) = x1(iimax+1,jjmax+1,3) - x1(1+1,1+1,3)
-
-           ! And the vector from the upper left corner to the
-           ! lower right corner.
-           
-           v2(1) = x1(iimax+1,1+1,1) - x1(1+1,jjmax+1,1)
-           v2(2) = x1(iimax+1,1+1,2) - x1(1+1,jjmax+1,2)
-           v2(3) = x1(iimax+1,1+1,3) - x1(1+1,jjmax+1,3)
-           
-           ! Determine the normal of the face by taking the cross
-           ! product of v1 and v2 and add it to norm.
-           
-           norm(1) = v1(2)*v2(3) - v1(3)*v2(2)
-           norm(2) = v1(3)*v2(1) - v1(1)*v2(3)
-           norm(3) = v1(1)*v2(2) - v1(2)*v2(1)
-           
-           bcData(mm)%symNorm(1) = norm(1)
-           bcData(mm)%symNorm(2) = norm(2)
-           bcData(mm)%symNorm(3) = norm(3)
-        else
-           ! Copy out the saved symNorm
-           norm(1) = bcData(mm)%symNorm(1)
-           norm(2) = bcData(mm)%symNorm(2)
-           norm(3) = bcData(mm)%symNorm(3)
-        end if
-           
-        ! Compute the length of the normal and test if this is
-        ! larger than eps. If this is the case this means that
-        ! it is a nonsingular subface and the coordinates are
-        ! corrected.
-
-        length = sqrt(norm(1)**2 + norm(2)**2 + norm(3)**2)
-
-        testSingular: if(length > eps) then
-
-           ! Compute the unit normal of the subface.
-
-           norm(1) = norm(1)/length
-           norm(2) = norm(2)/length
-           norm(3) = norm(3)/length
-
-           ! Add an overlap to the symmetry subface if the
-           ! boundaries coincide with the block boundaries.
-           ! This way the indirect halo's are treated properly.
-
            if(iBeg == 1)     iBeg = 0
            if(iEnd == iiMax) iEnd = iiMax + 1
-
+           
            if(jBeg == 1)     jBeg = 0
            if(jEnd == jjMax) jEnd = jjMax + 1
-
-           ! Loop over the nodes of the subface and set the
-           ! corresponding halo coordinates.
-
+           
            do j=jBeg,jEnd
               do i=iBeg,iEnd
-
-                 ! Determine the vector from the internal node to the
-                 ! node on the face. Again an offset of +1 must be
-                 ! used, due to the usage of pointers.
-
-                 v1(1) = x1(i+1,j+1,1) - x2(i+1,j+1,1)
-                 v1(2) = x1(i+1,j+1,2) - x2(i+1,j+1,2)
-                 v1(3) = x1(i+1,j+1,3) - x2(i+1,j+1,3)
-
-                 ! Determine two times the normal component of this
-                 ! vector; this vector must be added to the
-                 ! coordinates of the internal node to obtain the
-                 ! halo coordinates. Again the offset of +1.
-
+                 v1(1) = x(i,j,kl,1) - x(i,j,nz,1)
+                 v1(2) = x(i,j,kl,2) - x(i,j,nz,2)
+                 v1(3) = x(i,j,kl,3) - x(i,j,nz,3)
                  dot = two*(v1(1)*norm(1) + v1(2)*norm(2) &
                       +      v1(3)*norm(3))
-
-                 x0(i+1,j+1,1) = x2(i+1,j+1,1) + dot*norm(1)
-                 x0(i+1,j+1,2) = x2(i+1,j+1,2) + dot*norm(2)
-                 x0(i+1,j+1,3) = x2(i+1,j+1,3) + dot*norm(3)
-
-
+                 x(i,j,ke,1) = x(i,j,nz,1) + dot*norm(1)
+                 x(i,j,ke,2) = x(i,j,nz,2) + dot*norm(2)
+                 x(i,j,ke,3) = x(i,j,nz,3) + dot*norm(3)
               enddo
            enddo
-        endif testSingular
-
-#ifndef TAPENADE_REVERSE
-               call resetallx(mm, x0, x1, x2)
-#else
-               call resetallxBwd(mm, x0, x1, x2)
-#endif
-
-     endif testSymmetry
-  enddo loopBocos
+        end select
+   
+     endif testSingular
+  end if testSymmetry
+enddo loopBocos
 
 end subroutine xhalo_block
-
-
-
-
-
 
