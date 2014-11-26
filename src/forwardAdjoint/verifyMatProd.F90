@@ -32,13 +32,13 @@ subroutine verifyMatProd
   real(kind=realType),dimension(:),allocatable :: vec1, vec2 
 
   ! Local variables.
-  integer(kind=intType) :: i, j, k, l, nn, ii, ierr
+  integer(kind=intType) :: i, j, k, l, nn, ii, ierr, jj
   integer(kind=intType) :: nState, level, idxblk
    
   real(kind=realType) :: alpha, beta, force(3), moment(3), sepSensor, Cavitation
   real(kind=realType) :: alphab, betab, forceb(3), momentb(3), sepSensorb, Cavitationb
   real(kind=realType) :: fwdValue, revValue, ran
-  real(kind=realType) :: time1, timeb, timed, time
+  real(kind=realType) :: time1, timeb, timed, time, xvbarsum1, xvbarsum2
 
   integer(kind=intType) :: liftIndex
   logical :: resetToRANS
@@ -161,65 +161,94 @@ subroutine verifyMatProd
 
   !Check spatial
   logicCheck2: if ( verifySpatial ) then
-     nn = 1
-     ! Set pointers to the first timeInstance...just to getSizes
-     call setPointers(nn, level, 1)
-     call setDiffSizes
-     
      ! Allocate the memory we need for this block to do the forward
      ! mode derivatives and copy reference values
      !call alloc_derivative_values(nn, level)
      call alloc_derivative_values_bwd(level)
-        
-     ! Set pointers and derivative pointers
-     call setPointers_b(nn, level, 1)
-     !call setPointers_d(nn, level, 1)
-     ! Reset All States and possibe AD seeds
-     flowdomsb(1,1,1)%dw = zero 
-     print *, nNodeslocal(1)
+
+
      allocate(vec1(ncellslocal(1)*nState),vec2(nNodesLocal(1)*3))
-     
-     flowdomsb(1,1,1)%x = zero
+     call random_seed
+
+     xvbarsum1 = zero
+     xvbarsum2 = zero
      ii = 0
-     do k=2, kl
-        do j=2,jl
-           do i=2,il
-              do l = 1,5                
-                 call random_seed
-                 call random_number(ran)
-                 ii = ii + 1
-                 vec1(ii) = ran
-                 flowdomsb(1,1,1)%dw(i, j, k, l) = ran
+     do nn=1,nDom
+        call setPointers(nn, 1, 1)
+        do k=2, kl
+           do j=2,jl
+              do i=2,il
+                 do l = 1,5                
+                    call random_number(ran)
+                    ran = one
+                    ii = ii + 1
+                    vec1(ii) = ran
+                 end do
               end do
            end do
         end do
      end do
      
      call getdRdXvTPsi(vec2, nNodesLocal(1)*3, vec1, ncellslocal(1)*nState)
-    
-     call BLOCK_RES_B(nn, 1, .True., alpha, alphab, beta, betab, &
-          & liftindex, force, forceb, moment, momentb, sepsensor, sepsensorb, &
-          & cavitation, cavitationb)
-     
+     xvbarsum1 = sum(vec2)
      ii = 0
-     do k=1, kl
-        do j=1,jl
-           do i=1,il
-              do l = 1,3
-                 ii = ii + 1
-                 if (abs(flowdomsb(1,1,1)%x(i,j,k,l) - vec2(ii)) > 1e-4) then
-                    print *,i,j,k,l,flowdomsb(1,1,1)%x(i, j, k, l)-vec2(ii)
-                    print *, flowdomsb(1,1,1)%x(i, j, k, l), vec2(ii)
-                 end if
+     jj = 0
+     do nn=1,ndom
+        print *, '******************** BLOCK ****************', nn
+        ! Set pointers to the first timeInstance...just to getSizes
+        call setPointers(nn, level, 1)
+        call setDiffSizes
+     
+        ! Set pointers and derivative pointers
+        call setPointers_b(nn, level, 1)
+
+        ! Reset All States and possibe AD seeds
+        flowdomsb(nn,1,1)%dw = zero 
+
+        funcvaluesb = zero
+        flowdomsb(nn,1,1)%x = zero
+        forceb = zero
+        momentb = zero
+        sepSensorb = zero
+        cavitationb = zero
+        funcValuesb = zero
+        do k=2, kl
+           do j=2,jl
+              do i=2,il
+                 do l = 1,5                
+                    ii = ii + 1
+                    flowdomsb(nn,1,1)%dw(i, j, k, l) = vec1(ii)
+                 end do
               end do
            end do
         end do
+         
+        call BLOCK_RES_B(nn, 1, .True., alpha, alphab, beta, betab, &
+             & liftindex, force, forceb, moment, momentb, sepsensor, sepsensorb, &
+             & cavitation, cavitationb)
+     
+        do k=1, kl
+           do j=1,jl
+              do i=1,il
+                 do l = 1,3
+                    jj = jj + 1
+                    xvbarsum2 = xvbarsum2 + flowdomsb(nn,1,1)%X(i,j,k,l)
+                    if (abs(flowdomsb(nn,1,1)%x(i,j,k,l) - vec2(jj)) > 1e-11) then
+                       print *,'------',i,j,k,l
+                       print *, flowdomsb(nn,1,1)%x(i, j, k, l) - vec2(jj)
+                       print *, flowdomsb(nn,1,1)%x(i, j, k, l),  vec2(jj)
+                    end if
+              
+                 end do
+              end do
+           end do
+        end do
+        print *, 'spatial done'
      end do
-     print *, 'spatial done'
      deallocate(vec1, vec2)
      !call dealloc_derivative_values(nn, level)
      call dealloc_derivative_values_bwd(level)
-
+     print *,' xvbarsums:', xvbarsum1, xvbarsum2
   end if logicCheck2
 
   ! Reset the correct equation parameters if we were useing the frozen
