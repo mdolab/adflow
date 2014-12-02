@@ -37,6 +37,7 @@
    USE INPUTDISCRETIZATION
    USE INPUTTIMESPECTRAL
    USE ITERATION
+   USE INPUTADJOINT
    USE DIFFSIZES
    !  Hint: ISIZE1OFDrfviscsubface should be the size of dimension 1 of array *viscsubface
    IMPLICIT NONE
@@ -158,7 +159,19 @@
    END SELECT
    ! Compute the viscous flux in case of a viscous computation.
    IF (viscous) THEN
+   ! not lumpedDiss means it isn't the PC...call the vicousFlux
+   IF (.NOT.lumpeddiss) THEN
    CALL VISCOUSFLUX_D()
+   ELSE IF (viscpc) THEN
+   ! This is a PC calc...only include viscous fluxes if viscPC
+   ! is used
+   CALL VISCOUSFLUX_D()
+   ELSE
+   CALL VISCOUSFLUXAPPROX_D()
+   DO ii1=1,ISIZE1OFDrfviscsubface
+   viscsubfaced(ii1)%tau = 0.0_8
+   END DO
+   END IF
    ELSE
    DO ii1=1,ISIZE1OFDrfviscsubface
    viscsubfaced(ii1)%tau = 0.0_8

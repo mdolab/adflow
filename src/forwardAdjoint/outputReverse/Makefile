@@ -59,6 +59,7 @@ FF90_OBJECTS =  \
 		dim_b.o\
 		block_res_b.o  \
 		viscousflux_b.o \
+		viscousfluxapprox_b.o\
 		computeetotcellcpfit_b.o \
                 setbcpointersbwd_b.o\
 		setssbwd_b.o\

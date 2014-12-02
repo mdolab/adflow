@@ -36,6 +36,7 @@ include ${SUMB_RULES_FILE}
 
 vpath %.o $(SUMB_OBJDIR)
 FF90_OBJECTS =  viscousflux_d.o \
+		viscousfluxapprox_d.o\
 	        sa_block_d.o\
 		sasolve_d.o\
 		invisciddissfluxmatrix_d.o \
