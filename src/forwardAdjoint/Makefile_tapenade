@@ -146,8 +146,6 @@ ALL_RES_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.F90\
 		$(SRC)/utils/setpp3pp4Bwd.f90\
 		$(SRC)/utils/setss.f90\
 		$(SRC)/utils/setssBwd.f90\
-		$(SRC)/utils/setallx.f90\
-		$(SRC)/utils/setallxBwd.f90\
 		$(SRC)/utils/setssMetric.f90\
 		$(SRC)/utils/setssMetricBwd.f90\
 		$(SRC)/utils/resetpp3pp4.f90\
@@ -162,8 +160,6 @@ ALL_RES_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.F90\
 		$(SRC)/utils/resetxxssrhodd2WallBwd.f90\
 		$(SRC)/utils/resetss.f90\
 		$(SRC)/utils/resetssBwd.f90\
-		$(SRC)/utils/resetallx.f90\
-		$(SRC)/utils/resetallxBwd.f90\
 		$(SRC)/utils/resetssMetric.f90\
 		$(SRC)/utils/resetssMetricBwd.f90\
 		$(SRC)/utils/setgamma.f90\

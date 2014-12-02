@@ -2377,7 +2377,6 @@ steady rotations and specifying an aeroProblem')
             # Do the sptatial design variables -> Go through the geometry + mesh warp
             xsdot = self.DVGeo.totalSensitivityProd(xDVdot, self.curAP.ptSetName)
             xvdot = self.mesh.warpDerivFwd(xsdot)
-            
             # Do the aerodynamic design variables
             extradot = numpy.zeros(self.nDVAero)
             for key in self.aeroDVs:
@@ -2442,16 +2441,17 @@ steady rotations and specifying an aeroProblem')
             useState = True
         if xDvDeriv:
             useSpatial = True
-            
+        
         xvbar, extrabar, wbar = self.sumb.computematrixfreeproductbwd(
             resBar, funcsBar, useSpatial, useState, self.getSpatialSize(), self.nDVAero)
             
         if xDvDeriv:
+            xdvbar = {}
             self.mesh.warpDeriv(xvbar)
             xsbar = self.mesh.getdXs('all')
-            xdvbar = self.DVGeo.totalSensitivity(xsbar, 
-                self.curAP.ptSetName, self.comm, config=self.curAP.name)
-                
+            xdvbar.update(self.DVGeo.totalSensitivity(xsbar, 
+                self.curAP.ptSetName, self.comm, config=self.curAP.name))
+               
             # We also need to add in the aero derivatives here
             for key in self.aeroDVs:
                 execStr = 'mapping = self.sumb.%s'%self.possibleAeroDVs[key]

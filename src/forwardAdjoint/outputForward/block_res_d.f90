@@ -23,13 +23,13 @@
    !                *(*bcdata.norm):(loc) *(*bcdata.rface):(loc) *(*bcdata.fp):out
    !                *(*bcdata.fv):out *(*bcdata.m):out *(*bcdata.oarea):out
    !                *(*bcdata.sepsensor):out *(*bcdata.cavitation):out
-   !                *bcdata.symnorm:(loc) *(*bcdata.uslip):(loc) *radi:(loc)
-   !                *radj:(loc) *radk:(loc) mudim:(loc) gammainf:(loc)
-   !                pinf:(loc) timeref:(loc) rhoinf:(loc) muref:(loc)
-   !                rhoinfdim:(loc) tref:(loc) winf:(loc) muinf:(loc)
-   !                uinf:(loc) pinfcorr:(loc) rgas:(loc) pinfdim:(loc)
-   !                pref:in-out rhoref:(loc) moment:out alpha:in force:out
-   !                beta:in cavitation:out sepsensor:out
+   !                *(*bcdata.uslip):(loc) *radi:(loc) *radj:(loc)
+   !                *radk:(loc) mudim:(loc) gammainf:(loc) pinf:(loc)
+   !                timeref:(loc) rhoinf:(loc) muref:(loc) rhoinfdim:(loc)
+   !                tref:(loc) winf:(loc) muinf:(loc) uinf:(loc) pinfcorr:(loc)
+   !                rgas:(loc) pinfdim:(loc) pref:in-out rhoref:(loc)
+   !                moment:out alpha:in force:out beta:in cavitation:out
+   !                sepsensor:out
    !   Plus diff mem management of: flowdoms.x:in flowdoms.vol:in
    !                flowdoms.w:in flowdoms.dw:in rev:in bvtj1:in bvtj2:in
    !                p:in sfacei:in sfacej:in s:in gamma:in sfacek:in

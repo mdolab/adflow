@@ -480,6 +480,11 @@ python module libsumb
          integer(kind=inttype) optional,intent(in),check(len(adjoint)>=nstate),depend(adjoint) :: nstate=len(adjoint)
          real(kind=realtype) dimension(nstate),intent(in) :: adjoint
        end subroutine setadjoint
+       
+       subroutine setdjdw(nstate,invec) ! in :test:setADjoint.F90
+         integer(kind=inttype) optional,intent(in),check(len(invec)>=nstate),depend(invec) :: nstate=len(invec)
+         real(kind=realtype) dimension(nstate),intent(in) :: invec
+       end subroutine setdjdw
 
        ! ------------- Misc --------------------
     
