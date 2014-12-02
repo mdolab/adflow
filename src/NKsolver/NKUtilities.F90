@@ -241,9 +241,6 @@ subroutine getRes(res,ndimw)
   ! Local Variables
   integer(kind=intType) :: nn,i,j,k,l,counter,sps
 
-  call whalo2(1_intType, 1_intType, nw, .False., &
-       .False.,.False.)
-
   call computeResidualNK()
   counter = 0 
   do nn=1,nDom
