@@ -23,7 +23,7 @@
 #ifndef USE_NO_PETSC
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
-
+#include "include/finclude/petscvec.h90"
       ! dRdWT Adjoint matrix that defines the (transpose) linear system dR/dW.
       !       dRdW(il,jl,kl,nw) in each local domain mapped to a matrix.
       !       Size[nNodes*nw, nNodes*nw], where nNodes is the global

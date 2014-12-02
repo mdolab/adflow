@@ -66,8 +66,6 @@ FF90_OBJECTS =  \
 		resetssbwd_b.o\
 		setpp3pp4bwd_b.o\
 		resetpp3pp4bwd_b.o\
-		setallxbwd_b.o\
-		resetallxbwd_b.o\
 		setssmetricbwd_b.o\
 		resetssmetricbwd_b.o\
 		setgammabwd_b.o\
