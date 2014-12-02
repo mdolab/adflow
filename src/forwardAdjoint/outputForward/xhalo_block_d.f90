@@ -31,60 +31,21 @@
    USE BCTYPES
    USE COMMUNICATION
    USE INPUTTIMESPECTRAL
-   USE DIFFSIZES
-   !  Hint: ISIZE1OFDrfbcdata should be the size of dimension 1 of array *bcdata
    IMPLICIT NONE
    !
    !      Local variables.
    !
    INTEGER(kind=inttype) :: mm, i, j, k
    INTEGER(kind=inttype) :: ibeg, iend, jbeg, jend, iimax, jjmax
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: x0, x1, x2
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: x0d, x1d, x2d
-   INTERFACE 
-   SUBROUTINE SETALLX(nn, x0, x1, x2)
-   USE BCTYPES
-   USE BLOCKPOINTERS_D
-   IMPLICIT NONE
-   INTEGER(kind=inttype), INTENT(IN) :: nn
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: x0, x1, x2
-   END SUBROUTINE SETALLX
-   SUBROUTINE RESETALLX(nn, x0, x1, x2)
-   USE BCTYPES
-   USE BLOCKPOINTERS_D
-   IMPLICIT NONE
-   INTEGER(kind=inttype), INTENT(IN) :: nn
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: x0, x1, x2
-   END SUBROUTINE RESETALLX
-   END INTERFACE
-      INTERFACE 
-   SUBROUTINE SETALLX_D(nn, x0, x0d, x1, x1d, x2, x2d)
-   USE BCTYPES
-   USE BLOCKPOINTERS_D
-   IMPLICIT NONE
-   INTEGER(kind=inttype), INTENT(IN) :: nn
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: x0, x1, x2
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: x0d, x1d, &
-   &       x2d
-   END SUBROUTINE SETALLX_D
-   END INTERFACE
-      LOGICAL :: err
+   LOGICAL :: err
    REAL(kind=realtype) :: length, dot
-   REAL(kind=realtype) :: lengthd, dotd
+   REAL(kind=realtype) :: dotd
    LOGICAL :: imininternal, jmininternal, kmininternal
    LOGICAL :: imaxinternal, jmaxinternal, kmaxinternal
    REAL(kind=realtype), DIMENSION(3) :: v1, v2, norm
-   REAL(kind=realtype), DIMENSION(3) :: v1d, v2d, normd
+   REAL(kind=realtype), DIMENSION(3) :: v1d
    INTRINSIC SQRT
    REAL(kind=realtype) :: arg1
-   REAL(kind=realtype) :: arg1d
-   INTEGER :: ii1
-   !      ******************************************************************
-   !      *                                                                *
-   !      * Begin execution                                                *
-   !      *                                                                *
-   !      ******************************************************************
-   !
    !
    !          **************************************************************
    !          *                                                            *
@@ -212,12 +173,7 @@
    END IF
    END DO
    END DO
-   DO ii1=1,ISIZE1OFDrfbcdata
-   bcdatad(ii1)%symnorm = 0.0_8
-   END DO
    v1d = 0.0_8
-   v2d = 0.0_8
-   normd = 0.0_8
    !
    !          **************************************************************
    !          *                                                            *
@@ -233,7 +189,17 @@
    IF (bctype(mm) .EQ. symm) THEN
    ! Set some variables, depending on the block face on
    ! which the subface is located.
-   CALL SETALLX_D(mm, x0, x0d, x1, x1d, x2, x2d)
+   norm(1) = bcdata(mm)%symnorm(1)
+   norm(2) = bcdata(mm)%symnorm(2)
+   norm(3) = bcdata(mm)%symnorm(3)
+   arg1 = norm(1)**2 + norm(2)**2 + norm(3)**2
+   length = SQRT(arg1)
+   ! Compute the unit normal of the subface.
+   norm(1) = norm(1)/length
+   norm(2) = norm(2)/length
+   norm(3) = norm(3)/length
+   ! See xhalo_block for comments for below:
+   IF (length .GT. eps) THEN
    SELECT CASE  (bcfaceid(mm)) 
    CASE (imin) 
    ibeg = jnbeg(mm)
@@ -242,6 +208,29 @@
    jbeg = knbeg(mm)
    jend = knend(mm)
    jjmax = kl
+   IF (ibeg .EQ. 1) ibeg = 0
+   IF (iend .EQ. iimax) iend = iimax + 1
+   IF (jbeg .EQ. 1) jbeg = 0
+   IF (jend .EQ. jjmax) jend = jjmax + 1
+   DO j=jbeg,jend
+   DO i=ibeg,iend
+   v1d(1) = xd(1, i, j, 1) - xd(2, i, j, 1)
+   v1(1) = x(1, i, j, 1) - x(2, i, j, 1)
+   v1d(2) = xd(1, i, j, 2) - xd(2, i, j, 2)
+   v1(2) = x(1, i, j, 2) - x(2, i, j, 2)
+   v1d(3) = xd(1, i, j, 3) - xd(2, i, j, 3)
+   v1(3) = x(1, i, j, 3) - x(2, i, j, 3)
+   dotd = two*(norm(1)*v1d(1)+norm(2)*v1d(2)+norm(3)*v1d(3)&
+   &                 )
+   dot = two*(v1(1)*norm(1)+v1(2)*norm(2)+v1(3)*norm(3))
+   xd(0, i, j, 1) = xd(2, i, j, 1) + norm(1)*dotd
+   x(0, i, j, 1) = x(2, i, j, 1) + dot*norm(1)
+   xd(0, i, j, 2) = xd(2, i, j, 2) + norm(2)*dotd
+   x(0, i, j, 2) = x(2, i, j, 2) + dot*norm(2)
+   xd(0, i, j, 3) = xd(2, i, j, 3) + norm(3)*dotd
+   x(0, i, j, 3) = x(2, i, j, 3) + dot*norm(3)
+   END DO
+   END DO
    CASE (imax) 
    ibeg = jnbeg(mm)
    iend = jnend(mm)
@@ -249,6 +238,29 @@
    jbeg = knbeg(mm)
    jend = knend(mm)
    jjmax = kl
+   IF (ibeg .EQ. 1) ibeg = 0
+   IF (iend .EQ. iimax) iend = iimax + 1
+   IF (jbeg .EQ. 1) jbeg = 0
+   IF (jend .EQ. jjmax) jend = jjmax + 1
+   DO j=jbeg,jend
+   DO i=ibeg,iend
+   v1d(1) = xd(il, i, j, 1) - xd(nx, i, j, 1)
+   v1(1) = x(il, i, j, 1) - x(nx, i, j, 1)
+   v1d(2) = xd(il, i, j, 2) - xd(nx, i, j, 2)
+   v1(2) = x(il, i, j, 2) - x(nx, i, j, 2)
+   v1d(3) = xd(il, i, j, 3) - xd(nx, i, j, 3)
+   v1(3) = x(il, i, j, 3) - x(nx, i, j, 3)
+   dotd = two*(norm(1)*v1d(1)+norm(2)*v1d(2)+norm(3)*v1d(3)&
+   &                 )
+   dot = two*(v1(1)*norm(1)+v1(2)*norm(2)+v1(3)*norm(3))
+   xd(ie, i, j, 1) = xd(nx, i, j, 1) + norm(1)*dotd
+   x(ie, i, j, 1) = x(nx, i, j, 1) + dot*norm(1)
+   xd(ie, i, j, 2) = xd(nx, i, j, 2) + norm(2)*dotd
+   x(ie, i, j, 2) = x(nx, i, j, 2) + dot*norm(2)
+   xd(ie, i, j, 3) = xd(nx, i, j, 3) + norm(3)*dotd
+   x(ie, i, j, 3) = x(nx, i, j, 3) + dot*norm(3)
+   END DO
+   END DO
    CASE (jmin) 
    ibeg = inbeg(mm)
    iend = inend(mm)
@@ -256,6 +268,29 @@
    jbeg = knbeg(mm)
    jend = knend(mm)
    jjmax = kl
+   IF (ibeg .EQ. 1) ibeg = 0
+   IF (iend .EQ. iimax) iend = iimax + 1
+   IF (jbeg .EQ. 1) jbeg = 0
+   IF (jend .EQ. jjmax) jend = jjmax + 1
+   DO j=jbeg,jend
+   DO i=ibeg,iend
+   v1d(1) = xd(i, 1, j, 1) - xd(i, 2, j, 1)
+   v1(1) = x(i, 1, j, 1) - x(i, 2, j, 1)
+   v1d(2) = xd(i, 1, j, 2) - xd(i, 2, j, 2)
+   v1(2) = x(i, 1, j, 2) - x(i, 2, j, 2)
+   v1d(3) = xd(i, 1, j, 3) - xd(i, 2, j, 3)
+   v1(3) = x(i, 1, j, 3) - x(i, 2, j, 3)
+   dotd = two*(norm(1)*v1d(1)+norm(2)*v1d(2)+norm(3)*v1d(3)&
+   &                 )
+   dot = two*(v1(1)*norm(1)+v1(2)*norm(2)+v1(3)*norm(3))
+   xd(i, 0, j, 1) = xd(i, 2, j, 1) + norm(1)*dotd
+   x(i, 0, j, 1) = x(i, 2, j, 1) + dot*norm(1)
+   xd(i, 0, j, 2) = xd(i, 2, j, 2) + norm(2)*dotd
+   x(i, 0, j, 2) = x(i, 2, j, 2) + dot*norm(2)
+   xd(i, 0, j, 3) = xd(i, 2, j, 3) + norm(3)*dotd
+   x(i, 0, j, 3) = x(i, 2, j, 3) + dot*norm(3)
+   END DO
+   END DO
    CASE (jmax) 
    ibeg = inbeg(mm)
    iend = inend(mm)
@@ -263,6 +298,29 @@
    jbeg = knbeg(mm)
    jend = knend(mm)
    jjmax = kl
+   IF (ibeg .EQ. 1) ibeg = 0
+   IF (iend .EQ. iimax) iend = iimax + 1
+   IF (jbeg .EQ. 1) jbeg = 0
+   IF (jend .EQ. jjmax) jend = jjmax + 1
+   DO j=jbeg,jend
+   DO i=ibeg,iend
+   v1d(1) = xd(i, jl, j, 1) - xd(i, ny, j, 1)
+   v1(1) = x(i, jl, j, 1) - x(i, ny, j, 1)
+   v1d(2) = xd(i, jl, j, 2) - xd(i, ny, j, 2)
+   v1(2) = x(i, jl, j, 2) - x(i, ny, j, 2)
+   v1d(3) = xd(i, jl, j, 3) - xd(i, ny, j, 3)
+   v1(3) = x(i, jl, j, 3) - x(i, ny, j, 3)
+   dotd = two*(norm(1)*v1d(1)+norm(2)*v1d(2)+norm(3)*v1d(3)&
+   &                 )
+   dot = two*(v1(1)*norm(1)+v1(2)*norm(2)+v1(3)*norm(3))
+   xd(i, je, j, 1) = xd(i, ny, j, 1) + norm(1)*dotd
+   x(i, je, j, 1) = x(i, ny, j, 1) + dot*norm(1)
+   xd(i, je, j, 2) = xd(i, ny, j, 2) + norm(2)*dotd
+   x(i, je, j, 2) = x(i, ny, j, 2) + dot*norm(2)
+   xd(i, je, j, 3) = xd(i, ny, j, 3) + norm(3)*dotd
+   x(i, je, j, 3) = x(i, ny, j, 3) + dot*norm(3)
+   END DO
+   END DO
    CASE (kmin) 
    ibeg = inbeg(mm)
    iend = inend(mm)
@@ -270,6 +328,29 @@
    jbeg = jnbeg(mm)
    jend = jnend(mm)
    jjmax = jl
+   IF (ibeg .EQ. 1) ibeg = 0
+   IF (iend .EQ. iimax) iend = iimax + 1
+   IF (jbeg .EQ. 1) jbeg = 0
+   IF (jend .EQ. jjmax) jend = jjmax + 1
+   DO j=jbeg,jend
+   DO i=ibeg,iend
+   v1d(1) = xd(i, j, 1, 1) - xd(i, j, 2, 1)
+   v1(1) = x(i, j, 1, 1) - x(i, j, 2, 1)
+   v1d(2) = xd(i, j, 1, 2) - xd(i, j, 2, 2)
+   v1(2) = x(i, j, 1, 2) - x(i, j, 2, 2)
+   v1d(3) = xd(i, j, 1, 3) - xd(i, j, 2, 3)
+   v1(3) = x(i, j, 1, 3) - x(i, j, 2, 3)
+   dotd = two*(norm(1)*v1d(1)+norm(2)*v1d(2)+norm(3)*v1d(3)&
+   &                 )
+   dot = two*(v1(1)*norm(1)+v1(2)*norm(2)+v1(3)*norm(3))
+   xd(i, j, 0, 1) = xd(i, j, 2, 1) + norm(1)*dotd
+   x(i, j, 0, 1) = x(i, j, 2, 1) + dot*norm(1)
+   xd(i, j, 0, 2) = xd(i, j, 2, 2) + norm(2)*dotd
+   x(i, j, 0, 2) = x(i, j, 2, 2) + dot*norm(2)
+   xd(i, j, 0, 3) = xd(i, j, 2, 3) + norm(3)*dotd
+   x(i, j, 0, 3) = x(i, j, 2, 3) + dot*norm(3)
+   END DO
+   END DO
    CASE (kmax) 
    ibeg = inbeg(mm)
    iend = inend(mm)
@@ -277,116 +358,31 @@
    jbeg = jnbeg(mm)
    jend = jnend(mm)
    jjmax = jl
-   END SELECT
-   IF (.NOT.bcdata(mm)%symnormset) THEN
-   ! This code technically should not run. symNormSet should
-   ! already be set from the regular Xhao on the
-   ! first call.
-   ! Determine the vector from the lower left corner to
-   ! the upper right corner. Due to the usage of pointers an
-   ! offset of +1 must be used, because the original array x
-   ! start at 0.
-   v1d(1) = x1d(iimax+1, jjmax+1, 1) - x1d(1+1, 1+1, 1)
-   v1(1) = x1(iimax+1, jjmax+1, 1) - x1(1+1, 1+1, 1)
-   v1d(2) = x1d(iimax+1, jjmax+1, 2) - x1d(1+1, 1+1, 2)
-   v1(2) = x1(iimax+1, jjmax+1, 2) - x1(1+1, 1+1, 2)
-   v1d(3) = x1d(iimax+1, jjmax+1, 3) - x1d(1+1, 1+1, 3)
-   v1(3) = x1(iimax+1, jjmax+1, 3) - x1(1+1, 1+1, 3)
-   ! And the vector from the upper left corner to the
-   ! lower right corner.
-   v2d(1) = x1d(iimax+1, 1+1, 1) - x1d(1+1, jjmax+1, 1)
-   v2(1) = x1(iimax+1, 1+1, 1) - x1(1+1, jjmax+1, 1)
-   v2d(2) = x1d(iimax+1, 1+1, 2) - x1d(1+1, jjmax+1, 2)
-   v2(2) = x1(iimax+1, 1+1, 2) - x1(1+1, jjmax+1, 2)
-   v2d(3) = x1d(iimax+1, 1+1, 3) - x1d(1+1, jjmax+1, 3)
-   v2(3) = x1(iimax+1, 1+1, 3) - x1(1+1, jjmax+1, 3)
-   ! Determine the normal of the face by taking the cross
-   ! product of v1 and v2 and add it to norm.
-   normd(1) = v1d(2)*v2(3) + v1(2)*v2d(3) - v1d(3)*v2(2) - v1(3)*&
-   &           v2d(2)
-   norm(1) = v1(2)*v2(3) - v1(3)*v2(2)
-   normd(2) = v1d(3)*v2(1) + v1(3)*v2d(1) - v1d(1)*v2(3) - v1(1)*&
-   &           v2d(3)
-   norm(2) = v1(3)*v2(1) - v1(1)*v2(3)
-   normd(3) = v1d(1)*v2(2) + v1(1)*v2d(2) - v1d(2)*v2(1) - v1(2)*&
-   &           v2d(1)
-   norm(3) = v1(1)*v2(2) - v1(2)*v2(1)
-   bcdatad(mm)%symnorm(1) = normd(1)
-   bcdata(mm)%symnorm(1) = norm(1)
-   bcdatad(mm)%symnorm(2) = normd(2)
-   bcdata(mm)%symnorm(2) = norm(2)
-   bcdatad(mm)%symnorm(3) = normd(3)
-   bcdata(mm)%symnorm(3) = norm(3)
-   ELSE
-   ! Copy out the saved symNorm
-   normd(1) = bcdatad(mm)%symnorm(1)
-   norm(1) = bcdata(mm)%symnorm(1)
-   normd(2) = bcdatad(mm)%symnorm(2)
-   norm(2) = bcdata(mm)%symnorm(2)
-   normd(3) = bcdatad(mm)%symnorm(3)
-   norm(3) = bcdata(mm)%symnorm(3)
-   END IF
-   ! Compute the length of the normal and test if this is
-   ! larger than eps. If this is the case this means that
-   ! it is a nonsingular subface and the coordinates are
-   ! corrected.
-   arg1d = 2*norm(1)*normd(1) + 2*norm(2)*normd(2) + 2*norm(3)*&
-   &         normd(3)
-   arg1 = norm(1)**2 + norm(2)**2 + norm(3)**2
-   IF (arg1 .EQ. 0.0_8) THEN
-   lengthd = 0.0_8
-   ELSE
-   lengthd = arg1d/(2.0*SQRT(arg1))
-   END IF
-   length = SQRT(arg1)
-   IF (length .GT. eps) THEN
-   ! Compute the unit normal of the subface.
-   normd(1) = (normd(1)*length-norm(1)*lengthd)/length**2
-   norm(1) = norm(1)/length
-   normd(2) = (normd(2)*length-norm(2)*lengthd)/length**2
-   norm(2) = norm(2)/length
-   normd(3) = (normd(3)*length-norm(3)*lengthd)/length**2
-   norm(3) = norm(3)/length
-   ! Add an overlap to the symmetry subface if the
-   ! boundaries coincide with the block boundaries.
-   ! This way the indirect halo's are treated properly.
    IF (ibeg .EQ. 1) ibeg = 0
    IF (iend .EQ. iimax) iend = iimax + 1
    IF (jbeg .EQ. 1) jbeg = 0
    IF (jend .EQ. jjmax) jend = jjmax + 1
-   ! Loop over the nodes of the subface and set the
-   ! corresponding halo coordinates.
    DO j=jbeg,jend
    DO i=ibeg,iend
-   ! Determine the vector from the internal node to the
-   ! node on the face. Again an offset of +1 must be
-   ! used, due to the usage of pointers.
-   v1d(1) = x1d(i+1, j+1, 1) - x2d(i+1, j+1, 1)
-   v1(1) = x1(i+1, j+1, 1) - x2(i+1, j+1, 1)
-   v1d(2) = x1d(i+1, j+1, 2) - x2d(i+1, j+1, 2)
-   v1(2) = x1(i+1, j+1, 2) - x2(i+1, j+1, 2)
-   v1d(3) = x1d(i+1, j+1, 3) - x2d(i+1, j+1, 3)
-   v1(3) = x1(i+1, j+1, 3) - x2(i+1, j+1, 3)
-   ! Determine two times the normal component of this
-   ! vector; this vector must be added to the
-   ! coordinates of the internal node to obtain the
-   ! halo coordinates. Again the offset of +1.
-   dotd = two*(v1d(1)*norm(1)+v1(1)*normd(1)+v1d(2)*norm(2)+&
-   &               v1(2)*normd(2)+v1d(3)*norm(3)+v1(3)*normd(3))
+   v1d(1) = xd(i, j, kl, 1) - xd(i, j, nz, 1)
+   v1(1) = x(i, j, kl, 1) - x(i, j, nz, 1)
+   v1d(2) = xd(i, j, kl, 2) - xd(i, j, nz, 2)
+   v1(2) = x(i, j, kl, 2) - x(i, j, nz, 2)
+   v1d(3) = xd(i, j, kl, 3) - xd(i, j, nz, 3)
+   v1(3) = x(i, j, kl, 3) - x(i, j, nz, 3)
+   dotd = two*(norm(1)*v1d(1)+norm(2)*v1d(2)+norm(3)*v1d(3)&
+   &                 )
    dot = two*(v1(1)*norm(1)+v1(2)*norm(2)+v1(3)*norm(3))
-   x0d(i+1, j+1, 1) = x2d(i+1, j+1, 1) + dotd*norm(1) + dot*&
-   &               normd(1)
-   x0(i+1, j+1, 1) = x2(i+1, j+1, 1) + dot*norm(1)
-   x0d(i+1, j+1, 2) = x2d(i+1, j+1, 2) + dotd*norm(2) + dot*&
-   &               normd(2)
-   x0(i+1, j+1, 2) = x2(i+1, j+1, 2) + dot*norm(2)
-   x0d(i+1, j+1, 3) = x2d(i+1, j+1, 3) + dotd*norm(3) + dot*&
-   &               normd(3)
-   x0(i+1, j+1, 3) = x2(i+1, j+1, 3) + dot*norm(3)
+   xd(i, j, ke, 1) = xd(i, j, nz, 1) + norm(1)*dotd
+   x(i, j, ke, 1) = x(i, j, nz, 1) + dot*norm(1)
+   xd(i, j, ke, 2) = xd(i, j, nz, 2) + norm(2)*dotd
+   x(i, j, ke, 2) = x(i, j, nz, 2) + dot*norm(2)
+   xd(i, j, ke, 3) = xd(i, j, nz, 3) + norm(3)*dotd
+   x(i, j, ke, 3) = x(i, j, nz, 3) + dot*norm(3)
    END DO
    END DO
+   END SELECT
    END IF
-   CALL RESETALLX(mm, x0, x1, x2)
    END IF
    END DO loopbocos
    END IF

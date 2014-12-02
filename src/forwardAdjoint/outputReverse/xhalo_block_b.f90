@@ -37,17 +37,13 @@
    !
    INTEGER(kind=inttype) :: mm, i, j, k
    INTEGER(kind=inttype) :: ibeg, iend, jbeg, jend, iimax, jjmax
-   REAL(kind=realtype), DIMENSION(imaxdim + 1, jmaxdim + 1, 3) :: x0, x1&
-   & , x2
-   REAL(kind=realtype), DIMENSION(imaxdim+1, jmaxdim+1, 3) :: x0b, x1b, &
-   & x2b
    LOGICAL :: err
    REAL(kind=realtype) :: length, dot
-   REAL(kind=realtype) :: lengthb, dotb
+   REAL(kind=realtype) :: dotb
    LOGICAL :: imininternal, jmininternal, kmininternal
    LOGICAL :: imaxinternal, jmaxinternal, kmaxinternal
    REAL(kind=realtype), DIMENSION(3) :: v1, v2, norm
-   REAL(kind=realtype), DIMENSION(3) :: v1b, v2b, normb
+   REAL(kind=realtype), DIMENSION(3) :: v1b
    INTRINSIC SQRT
    REAL(kind=realtype) :: tmp
    REAL(kind=realtype) :: tmp0
@@ -58,13 +54,48 @@
    REAL(kind=realtype) :: tmp5
    REAL(kind=realtype) :: tmp6
    REAL(kind=realtype) :: tmp7
+   REAL(kind=realtype) :: tmp8
+   REAL(kind=realtype) :: tmp9
+   REAL(kind=realtype) :: tmp10
+   REAL(kind=realtype) :: tmp11
+   REAL(kind=realtype) :: tmp12
+   REAL(kind=realtype) :: tmp13
+   REAL(kind=realtype) :: tmp14
+   REAL(kind=realtype) :: tmp15
+   REAL(kind=realtype) :: tmp16
    INTEGER :: branch
    INTEGER :: ad_from
    INTEGER :: ad_to
    INTEGER :: ad_from0
    INTEGER :: ad_to0
+   INTEGER :: ad_from1
+   INTEGER :: ad_to1
+   INTEGER :: ad_from2
+   INTEGER :: ad_to2
+   INTEGER :: ad_from3
+   INTEGER :: ad_to3
+   INTEGER :: ad_from4
+   INTEGER :: ad_to4
+   INTEGER :: ad_from5
+   INTEGER :: ad_to5
+   INTEGER :: ad_from6
+   INTEGER :: ad_to6
+   INTEGER :: ad_from7
+   INTEGER :: ad_to7
+   INTEGER :: ad_from8
+   INTEGER :: ad_to8
+   INTEGER :: ad_from9
+   INTEGER :: ad_to9
+   INTEGER :: ad_from10
+   INTEGER :: ad_to10
+   REAL(kind=realtype) :: tmpb9
+   REAL(kind=realtype) :: tempb4
+   REAL(kind=realtype) :: tmpb8
+   REAL(kind=realtype) :: tempb3
    REAL(kind=realtype) :: tmpb7
+   REAL(kind=realtype) :: tempb2
    REAL(kind=realtype) :: tmpb6
+   REAL(kind=realtype) :: tempb1
    REAL(kind=realtype) :: tmpb5
    REAL(kind=realtype) :: tempb0
    REAL(kind=realtype) :: tmpb4
@@ -73,14 +104,14 @@
    REAL(kind=realtype) :: tmpb2
    REAL(kind=realtype) :: tmpb1
    REAL(kind=realtype) :: tmpb0
+   REAL(kind=realtype) :: tmpb16
+   REAL(kind=realtype) :: tmpb15
+   REAL(kind=realtype) :: tmpb14
+   REAL(kind=realtype) :: tmpb13
+   REAL(kind=realtype) :: tmpb12
+   REAL(kind=realtype) :: tmpb11
    REAL(kind=realtype) :: tempb
-   INTEGER :: ii1
-   !      ******************************************************************
-   !      *                                                                *
-   !      * Begin execution                                                *
-   !      *                                                                *
-   !      ******************************************************************
-   !
+   REAL(kind=realtype) :: tmpb10
    !
    !          **************************************************************
    !          *                                                            *
@@ -146,20 +177,11 @@
    DO k=1,kl
    DO j=1,jl
    IF (.NOT.imininternal) THEN
-   x(0, j, k, 1) = two*x(1, j, k, 1) - x(2, j, k, 1)
-   x(0, j, k, 2) = two*x(1, j, k, 2) - x(2, j, k, 2)
-   x(0, j, k, 3) = two*x(1, j, k, 3) - x(2, j, k, 3)
    CALL PUSHCONTROL1B(0)
    ELSE
    CALL PUSHCONTROL1B(1)
    END IF
    IF (.NOT.imaxinternal) THEN
-   tmp = two*x(il, j, k, 1) - x(nx, j, k, 1)
-   x(ie, j, k, 1) = tmp
-   tmp0 = two*x(il, j, k, 2) - x(nx, j, k, 2)
-   x(ie, j, k, 2) = tmp0
-   tmp1 = two*x(il, j, k, 3) - x(nx, j, k, 3)
-   x(ie, j, k, 3) = tmp1
    CALL PUSHCONTROL1B(1)
    ELSE
    CALL PUSHCONTROL1B(0)
@@ -170,20 +192,11 @@
    DO k=1,kl
    DO i=0,ie
    IF (.NOT.jmininternal) THEN
-   x(i, 0, k, 1) = two*x(i, 1, k, 1) - x(i, 2, k, 1)
-   x(i, 0, k, 2) = two*x(i, 1, k, 2) - x(i, 2, k, 2)
-   x(i, 0, k, 3) = two*x(i, 1, k, 3) - x(i, 2, k, 3)
    CALL PUSHCONTROL1B(0)
    ELSE
    CALL PUSHCONTROL1B(1)
    END IF
    IF (.NOT.jmaxinternal) THEN
-   tmp2 = two*x(i, jl, k, 1) - x(i, ny, k, 1)
-   x(i, je, k, 1) = tmp2
-   tmp3 = two*x(i, jl, k, 2) - x(i, ny, k, 2)
-   x(i, je, k, 2) = tmp3
-   tmp4 = two*x(i, jl, k, 3) - x(i, ny, k, 3)
-   x(i, je, k, 3) = tmp4
    CALL PUSHCONTROL1B(1)
    ELSE
    CALL PUSHCONTROL1B(0)
@@ -194,20 +207,11 @@
    DO j=0,je
    DO i=0,ie
    IF (.NOT.kmininternal) THEN
-   x(i, j, 0, 1) = two*x(i, j, 1, 1) - x(i, j, 2, 1)
-   x(i, j, 0, 2) = two*x(i, j, 1, 2) - x(i, j, 2, 2)
-   x(i, j, 0, 3) = two*x(i, j, 1, 3) - x(i, j, 2, 3)
    CALL PUSHCONTROL1B(0)
    ELSE
    CALL PUSHCONTROL1B(1)
    END IF
    IF (.NOT.kmaxinternal) THEN
-   tmp5 = two*x(i, j, kl, 1) - x(i, j, nz, 1)
-   x(i, j, ke, 1) = tmp5
-   tmp6 = two*x(i, j, kl, 2) - x(i, j, nz, 2)
-   x(i, j, ke, 2) = tmp6
-   tmp7 = two*x(i, j, kl, 3) - x(i, j, nz, 3)
-   x(i, j, ke, 3) = tmp7
    CALL PUSHCONTROL1B(1)
    ELSE
    CALL PUSHCONTROL1B(0)
@@ -229,122 +233,13 @@
    IF (bctype(mm) .EQ. symm) THEN
    ! Set some variables, depending on the block face on
    ! which the subface is located.
-   CALL SETALLXBWD(mm, x0, x1, x2)
-   SELECT CASE  (bcfaceid(mm)) 
-   CASE (imin) 
-   ibeg = jnbeg(mm)
-   iend = jnend(mm)
-   CALL PUSHINTEGER4(iimax)
-   iimax = jl
-   jbeg = knbeg(mm)
-   jend = knend(mm)
-   CALL PUSHINTEGER4(jjmax)
-   jjmax = kl
-   CALL PUSHCONTROL3B(1)
-   CASE (imax) 
-   ibeg = jnbeg(mm)
-   iend = jnend(mm)
-   CALL PUSHINTEGER4(iimax)
-   iimax = jl
-   jbeg = knbeg(mm)
-   jend = knend(mm)
-   CALL PUSHINTEGER4(jjmax)
-   jjmax = kl
-   CALL PUSHCONTROL3B(2)
-   CASE (jmin) 
-   ibeg = inbeg(mm)
-   iend = inend(mm)
-   CALL PUSHINTEGER4(iimax)
-   iimax = il
-   jbeg = knbeg(mm)
-   jend = knend(mm)
-   CALL PUSHINTEGER4(jjmax)
-   jjmax = kl
-   CALL PUSHCONTROL3B(3)
-   CASE (jmax) 
-   ibeg = inbeg(mm)
-   iend = inend(mm)
-   CALL PUSHINTEGER4(iimax)
-   iimax = il
-   jbeg = knbeg(mm)
-   jend = knend(mm)
-   CALL PUSHINTEGER4(jjmax)
-   jjmax = kl
-   CALL PUSHCONTROL3B(4)
-   CASE (kmin) 
-   ibeg = inbeg(mm)
-   iend = inend(mm)
-   CALL PUSHINTEGER4(iimax)
-   iimax = il
-   jbeg = jnbeg(mm)
-   jend = jnend(mm)
-   CALL PUSHINTEGER4(jjmax)
-   jjmax = jl
-   CALL PUSHCONTROL3B(5)
-   CASE (kmax) 
-   ibeg = inbeg(mm)
-   iend = inend(mm)
-   CALL PUSHINTEGER4(iimax)
-   iimax = il
-   jbeg = jnbeg(mm)
-   jend = jnend(mm)
-   CALL PUSHINTEGER4(jjmax)
-   jjmax = jl
-   CALL PUSHCONTROL3B(6)
-   CASE DEFAULT
-   CALL PUSHCONTROL3B(0)
-   END SELECT
-   IF (.NOT.bcdata(mm)%symnormset) THEN
-   ! This code technically should not run. symNormSet should
-   ! already be set from the regular Xhao on the
-   ! first call.
-   ! Determine the vector from the lower left corner to
-   ! the upper right corner. Due to the usage of pointers an
-   ! offset of +1 must be used, because the original array x
-   ! start at 0.
-   CALL PUSHREAL8(v1(1))
-   v1(1) = x1(iimax+1, jjmax+1, 1) - x1(1+1, 1+1, 1)
-   CALL PUSHREAL8(v1(2))
-   v1(2) = x1(iimax+1, jjmax+1, 2) - x1(1+1, 1+1, 2)
-   CALL PUSHREAL8(v1(3))
-   v1(3) = x1(iimax+1, jjmax+1, 3) - x1(1+1, 1+1, 3)
-   ! And the vector from the upper left corner to the
-   ! lower right corner.
-   CALL PUSHREAL8(v2(1))
-   v2(1) = x1(iimax+1, 1+1, 1) - x1(1+1, jjmax+1, 1)
-   CALL PUSHREAL8(v2(2))
-   v2(2) = x1(iimax+1, 1+1, 2) - x1(1+1, jjmax+1, 2)
-   CALL PUSHREAL8(v2(3))
-   v2(3) = x1(iimax+1, 1+1, 3) - x1(1+1, jjmax+1, 3)
-   ! Determine the normal of the face by taking the cross
-   ! product of v1 and v2 and add it to norm.
-   CALL PUSHREAL8(norm(1))
-   norm(1) = v1(2)*v2(3) - v1(3)*v2(2)
-   CALL PUSHREAL8(norm(2))
-   norm(2) = v1(3)*v2(1) - v1(1)*v2(3)
-   CALL PUSHREAL8(norm(3))
-   norm(3) = v1(1)*v2(2) - v1(2)*v2(1)
-   bcdata(mm)%symnorm(1) = norm(1)
-   bcdata(mm)%symnorm(2) = norm(2)
-   bcdata(mm)%symnorm(3) = norm(3)
-   CALL PUSHCONTROL1B(0)
-   ELSE
-   ! Copy out the saved symNorm
    CALL PUSHREAL8(norm(1))
    norm(1) = bcdata(mm)%symnorm(1)
    CALL PUSHREAL8(norm(2))
    norm(2) = bcdata(mm)%symnorm(2)
    CALL PUSHREAL8(norm(3))
    norm(3) = bcdata(mm)%symnorm(3)
-   CALL PUSHCONTROL1B(1)
-   END IF
-   ! Compute the length of the normal and test if this is
-   ! larger than eps. If this is the case this means that
-   ! it is a nonsingular subface and the coordinates are
-   ! corrected.
-   CALL PUSHREAL8(length)
    length = SQRT(norm(1)**2 + norm(2)**2 + norm(3)**2)
-   IF (length .GT. eps) THEN
    ! Compute the unit normal of the subface.
    CALL PUSHREAL8(norm(1))
    norm(1) = norm(1)/length
@@ -352,214 +247,351 @@
    norm(2) = norm(2)/length
    CALL PUSHREAL8(norm(3))
    norm(3) = norm(3)/length
-   ! Add an overlap to the symmetry subface if the
-   ! boundaries coincide with the block boundaries.
-   ! This way the indirect halo's are treated properly.
+   ! See xhalo_block for comments for below:
+   IF (length .GT. eps) THEN
+   SELECT CASE  (bcfaceid(mm)) 
+   CASE (imin) 
+   ibeg = jnbeg(mm)
+   iend = jnend(mm)
+   iimax = jl
+   jbeg = knbeg(mm)
+   jend = knend(mm)
+   jjmax = kl
    IF (ibeg .EQ. 1) ibeg = 0
    IF (iend .EQ. iimax) iend = iimax + 1
    IF (jbeg .EQ. 1) jbeg = 0
    IF (jend .EQ. jjmax) jend = jjmax + 1
    ad_from0 = jbeg
-   ! Loop over the nodes of the subface and set the
-   ! corresponding halo coordinates.
    DO j=ad_from0,jend
    ad_from = ibeg
-   DO i=ad_from,iend
-   ! Determine the vector from the internal node to the
-   ! node on the face. Again an offset of +1 must be
-   ! used, due to the usage of pointers.
-   CALL PUSHREAL8(v1(1))
-   v1(1) = x1(i+1, j+1, 1) - x2(i+1, j+1, 1)
-   CALL PUSHREAL8(v1(2))
-   v1(2) = x1(i+1, j+1, 2) - x2(i+1, j+1, 2)
-   CALL PUSHREAL8(v1(3))
-   v1(3) = x1(i+1, j+1, 3) - x2(i+1, j+1, 3)
-   ! Determine two times the normal component of this
-   ! vector; this vector must be added to the
-   ! coordinates of the internal node to obtain the
-   ! halo coordinates. Again the offset of +1.
-   dot = two*(v1(1)*norm(1)+v1(2)*norm(2)+v1(3)*norm(3))
-   x0(i+1, j+1, 1) = x2(i+1, j+1, 1) + dot*norm(1)
-   x0(i+1, j+1, 2) = x2(i+1, j+1, 2) + dot*norm(2)
-   x0(i+1, j+1, 3) = x2(i+1, j+1, 3) + dot*norm(3)
-   END DO
+   i = iend + 1
    CALL PUSHINTEGER4(i - 1)
    CALL PUSHINTEGER4(ad_from)
    END DO
    CALL PUSHINTEGER4(j - 1)
    CALL PUSHINTEGER4(ad_from0)
-   CALL PUSHCONTROL1B(0)
+   CALL PUSHCONTROL4B(7)
+   CASE (imax) 
+   ibeg = jnbeg(mm)
+   iend = jnend(mm)
+   iimax = jl
+   jbeg = knbeg(mm)
+   jend = knend(mm)
+   jjmax = kl
+   IF (ibeg .EQ. 1) ibeg = 0
+   IF (iend .EQ. iimax) iend = iimax + 1
+   IF (jbeg .EQ. 1) jbeg = 0
+   IF (jend .EQ. jjmax) jend = jjmax + 1
+   ad_from2 = jbeg
+   DO j=ad_from2,jend
+   ad_from1 = ibeg
+   i = iend + 1
+   CALL PUSHINTEGER4(i - 1)
+   CALL PUSHINTEGER4(ad_from1)
+   END DO
+   CALL PUSHINTEGER4(j - 1)
+   CALL PUSHINTEGER4(ad_from2)
+   CALL PUSHCONTROL4B(6)
+   CASE (jmin) 
+   ibeg = inbeg(mm)
+   iend = inend(mm)
+   iimax = il
+   jbeg = knbeg(mm)
+   jend = knend(mm)
+   jjmax = kl
+   IF (ibeg .EQ. 1) ibeg = 0
+   IF (iend .EQ. iimax) iend = iimax + 1
+   IF (jbeg .EQ. 1) jbeg = 0
+   IF (jend .EQ. jjmax) jend = jjmax + 1
+   ad_from4 = jbeg
+   DO j=ad_from4,jend
+   ad_from3 = ibeg
+   i = iend + 1
+   CALL PUSHINTEGER4(i - 1)
+   CALL PUSHINTEGER4(ad_from3)
+   END DO
+   CALL PUSHINTEGER4(j - 1)
+   CALL PUSHINTEGER4(ad_from4)
+   CALL PUSHCONTROL4B(5)
+   CASE (jmax) 
+   ibeg = inbeg(mm)
+   iend = inend(mm)
+   iimax = il
+   jbeg = knbeg(mm)
+   jend = knend(mm)
+   jjmax = kl
+   IF (ibeg .EQ. 1) ibeg = 0
+   IF (iend .EQ. iimax) iend = iimax + 1
+   IF (jbeg .EQ. 1) jbeg = 0
+   IF (jend .EQ. jjmax) jend = jjmax + 1
+   ad_from6 = jbeg
+   DO j=ad_from6,jend
+   ad_from5 = ibeg
+   i = iend + 1
+   CALL PUSHINTEGER4(i - 1)
+   CALL PUSHINTEGER4(ad_from5)
+   END DO
+   CALL PUSHINTEGER4(j - 1)
+   CALL PUSHINTEGER4(ad_from6)
+   CALL PUSHCONTROL4B(4)
+   CASE (kmin) 
+   ibeg = inbeg(mm)
+   iend = inend(mm)
+   iimax = il
+   jbeg = jnbeg(mm)
+   jend = jnend(mm)
+   jjmax = jl
+   IF (ibeg .EQ. 1) ibeg = 0
+   IF (iend .EQ. iimax) iend = iimax + 1
+   IF (jbeg .EQ. 1) jbeg = 0
+   IF (jend .EQ. jjmax) jend = jjmax + 1
+   ad_from8 = jbeg
+   DO j=ad_from8,jend
+   ad_from7 = ibeg
+   i = iend + 1
+   CALL PUSHINTEGER4(i - 1)
+   CALL PUSHINTEGER4(ad_from7)
+   END DO
+   CALL PUSHINTEGER4(j - 1)
+   CALL PUSHINTEGER4(ad_from8)
+   CALL PUSHCONTROL4B(3)
+   CASE (kmax) 
+   ibeg = inbeg(mm)
+   iend = inend(mm)
+   iimax = il
+   jbeg = jnbeg(mm)
+   jend = jnend(mm)
+   jjmax = jl
+   IF (ibeg .EQ. 1) ibeg = 0
+   IF (iend .EQ. iimax) iend = iimax + 1
+   IF (jbeg .EQ. 1) jbeg = 0
+   IF (jend .EQ. jjmax) jend = jjmax + 1
+   ad_from10 = jbeg
+   DO j=ad_from10,jend
+   ad_from9 = ibeg
+   i = iend + 1
+   CALL PUSHINTEGER4(i - 1)
+   CALL PUSHINTEGER4(ad_from9)
+   END DO
+   CALL PUSHINTEGER4(j - 1)
+   CALL PUSHINTEGER4(ad_from10)
+   CALL PUSHCONTROL4B(2)
+   CASE DEFAULT
+   CALL PUSHCONTROL4B(8)
+   END SELECT
    ELSE
-   CALL PUSHCONTROL1B(1)
+   CALL PUSHCONTROL4B(1)
    END IF
-   CALL RESETALLXBWD(mm, x0, x1, x2)
-   CALL PUSHCONTROL1B(1)
    ELSE
-   CALL PUSHCONTROL1B(0)
+   CALL PUSHCONTROL4B(0)
    END IF
    END DO loopbocos
-   DO ii1=1,SIZE(bcdatab, 1)
-   bcdatab(ii1)%symnorm = 0.0_8
-   END DO
    v1b = 0.0_8
-   v2b = 0.0_8
-   normb = 0.0_8
-   DO mm=nbocos,1,-1
-   CALL POPCONTROL1B(branch)
-   IF (branch .NE. 0) THEN
-   CALL RESETALLXBWD_B(mm, x0, x0b, x1, x1b, x2, x2b)
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
+   DO 100 mm=nbocos,1,-1
+   CALL POPCONTROL4B(branch)
+   IF (branch .LT. 4) THEN
+   IF (branch .LT. 2) THEN
+   IF (branch .EQ. 0) GOTO 100
+   ELSE IF (branch .EQ. 2) THEN
+   CALL POPINTEGER4(ad_from10)
+   CALL POPINTEGER4(ad_to10)
+   DO j=ad_to10,ad_from10,-1
+   CALL POPINTEGER4(ad_from9)
+   CALL POPINTEGER4(ad_to9)
+   DO i=ad_to9,ad_from9,-1
+   tmpb14 = xb(i, j, ke, 3)
+   xb(i, j, ke, 3) = 0.0_8
+   xb(i, j, nz, 3) = xb(i, j, nz, 3) + tmpb14
+   tmpb15 = xb(i, j, ke, 2)
+   xb(i, j, ke, 2) = 0.0_8
+   xb(i, j, nz, 2) = xb(i, j, nz, 2) + tmpb15
+   tmpb16 = xb(i, j, ke, 1)
+   dotb = norm(2)*tmpb15 + norm(1)*tmpb16 + norm(3)*tmpb14
+   xb(i, j, ke, 1) = 0.0_8
+   xb(i, j, nz, 1) = xb(i, j, nz, 1) + tmpb16
+   tempb4 = two*dotb
+   v1b(1) = v1b(1) + norm(1)*tempb4
+   v1b(2) = v1b(2) + norm(2)*tempb4
+   v1b(3) = v1b(3) + norm(3)*tempb4
+   xb(i, j, kl, 3) = xb(i, j, kl, 3) + v1b(3)
+   xb(i, j, nz, 3) = xb(i, j, nz, 3) - v1b(3)
+   v1b(3) = 0.0_8
+   xb(i, j, kl, 2) = xb(i, j, kl, 2) + v1b(2)
+   xb(i, j, nz, 2) = xb(i, j, nz, 2) - v1b(2)
+   v1b(2) = 0.0_8
+   xb(i, j, kl, 1) = xb(i, j, kl, 1) + v1b(1)
+   xb(i, j, nz, 1) = xb(i, j, nz, 1) - v1b(1)
+   v1b(1) = 0.0_8
+   END DO
+   END DO
+   ELSE
+   CALL POPINTEGER4(ad_from8)
+   CALL POPINTEGER4(ad_to8)
+   DO j=ad_to8,ad_from8,-1
+   CALL POPINTEGER4(ad_from7)
+   CALL POPINTEGER4(ad_to7)
+   DO i=ad_to7,ad_from7,-1
+   xb(i, j, 2, 3) = xb(i, j, 2, 3) + xb(i, j, 0, 3)
+   dotb = norm(3)*xb(i, j, 0, 3)
+   xb(i, j, 0, 3) = 0.0_8
+   xb(i, j, 2, 2) = xb(i, j, 2, 2) + xb(i, j, 0, 2)
+   dotb = dotb + norm(2)*xb(i, j, 0, 2)
+   xb(i, j, 0, 2) = 0.0_8
+   xb(i, j, 2, 1) = xb(i, j, 2, 1) + xb(i, j, 0, 1)
+   dotb = dotb + norm(1)*xb(i, j, 0, 1)
+   xb(i, j, 0, 1) = 0.0_8
+   tempb3 = two*dotb
+   v1b(1) = v1b(1) + norm(1)*tempb3
+   v1b(2) = v1b(2) + norm(2)*tempb3
+   v1b(3) = v1b(3) + norm(3)*tempb3
+   xb(i, j, 1, 3) = xb(i, j, 1, 3) + v1b(3)
+   xb(i, j, 2, 3) = xb(i, j, 2, 3) - v1b(3)
+   v1b(3) = 0.0_8
+   xb(i, j, 1, 2) = xb(i, j, 1, 2) + v1b(2)
+   xb(i, j, 2, 2) = xb(i, j, 2, 2) - v1b(2)
+   v1b(2) = 0.0_8
+   xb(i, j, 1, 1) = xb(i, j, 1, 1) + v1b(1)
+   xb(i, j, 2, 1) = xb(i, j, 2, 1) - v1b(1)
+   v1b(1) = 0.0_8
+   END DO
+   END DO
+   END IF
+   ELSE IF (branch .LT. 6) THEN
+   IF (branch .EQ. 4) THEN
+   CALL POPINTEGER4(ad_from6)
+   CALL POPINTEGER4(ad_to6)
+   DO j=ad_to6,ad_from6,-1
+   CALL POPINTEGER4(ad_from5)
+   CALL POPINTEGER4(ad_to5)
+   DO i=ad_to5,ad_from5,-1
+   tmpb11 = xb(i, je, j, 3)
+   xb(i, je, j, 3) = 0.0_8
+   xb(i, ny, j, 3) = xb(i, ny, j, 3) + tmpb11
+   tmpb12 = xb(i, je, j, 2)
+   xb(i, je, j, 2) = 0.0_8
+   xb(i, ny, j, 2) = xb(i, ny, j, 2) + tmpb12
+   tmpb13 = xb(i, je, j, 1)
+   dotb = norm(2)*tmpb12 + norm(1)*tmpb13 + norm(3)*tmpb11
+   xb(i, je, j, 1) = 0.0_8
+   xb(i, ny, j, 1) = xb(i, ny, j, 1) + tmpb13
+   tempb2 = two*dotb
+   v1b(1) = v1b(1) + norm(1)*tempb2
+   v1b(2) = v1b(2) + norm(2)*tempb2
+   v1b(3) = v1b(3) + norm(3)*tempb2
+   xb(i, jl, j, 3) = xb(i, jl, j, 3) + v1b(3)
+   xb(i, ny, j, 3) = xb(i, ny, j, 3) - v1b(3)
+   v1b(3) = 0.0_8
+   xb(i, jl, j, 2) = xb(i, jl, j, 2) + v1b(2)
+   xb(i, ny, j, 2) = xb(i, ny, j, 2) - v1b(2)
+   v1b(2) = 0.0_8
+   xb(i, jl, j, 1) = xb(i, jl, j, 1) + v1b(1)
+   xb(i, ny, j, 1) = xb(i, ny, j, 1) - v1b(1)
+   v1b(1) = 0.0_8
+   END DO
+   END DO
+   ELSE
+   CALL POPINTEGER4(ad_from4)
+   CALL POPINTEGER4(ad_to4)
+   DO j=ad_to4,ad_from4,-1
+   CALL POPINTEGER4(ad_from3)
+   CALL POPINTEGER4(ad_to3)
+   DO i=ad_to3,ad_from3,-1
+   xb(i, 2, j, 3) = xb(i, 2, j, 3) + xb(i, 0, j, 3)
+   dotb = norm(3)*xb(i, 0, j, 3)
+   xb(i, 0, j, 3) = 0.0_8
+   xb(i, 2, j, 2) = xb(i, 2, j, 2) + xb(i, 0, j, 2)
+   dotb = dotb + norm(2)*xb(i, 0, j, 2)
+   xb(i, 0, j, 2) = 0.0_8
+   xb(i, 2, j, 1) = xb(i, 2, j, 1) + xb(i, 0, j, 1)
+   dotb = dotb + norm(1)*xb(i, 0, j, 1)
+   xb(i, 0, j, 1) = 0.0_8
+   tempb1 = two*dotb
+   v1b(1) = v1b(1) + norm(1)*tempb1
+   v1b(2) = v1b(2) + norm(2)*tempb1
+   v1b(3) = v1b(3) + norm(3)*tempb1
+   xb(i, 1, j, 3) = xb(i, 1, j, 3) + v1b(3)
+   xb(i, 2, j, 3) = xb(i, 2, j, 3) - v1b(3)
+   v1b(3) = 0.0_8
+   xb(i, 1, j, 2) = xb(i, 1, j, 2) + v1b(2)
+   xb(i, 2, j, 2) = xb(i, 2, j, 2) - v1b(2)
+   v1b(2) = 0.0_8
+   xb(i, 1, j, 1) = xb(i, 1, j, 1) + v1b(1)
+   xb(i, 2, j, 1) = xb(i, 2, j, 1) - v1b(1)
+   v1b(1) = 0.0_8
+   END DO
+   END DO
+   END IF
+   ELSE IF (branch .EQ. 6) THEN
+   CALL POPINTEGER4(ad_from2)
+   CALL POPINTEGER4(ad_to2)
+   DO j=ad_to2,ad_from2,-1
+   CALL POPINTEGER4(ad_from1)
+   CALL POPINTEGER4(ad_to1)
+   DO i=ad_to1,ad_from1,-1
+   tmpb8 = xb(ie, i, j, 3)
+   xb(ie, i, j, 3) = 0.0_8
+   xb(nx, i, j, 3) = xb(nx, i, j, 3) + tmpb8
+   tmpb9 = xb(ie, i, j, 2)
+   xb(ie, i, j, 2) = 0.0_8
+   xb(nx, i, j, 2) = xb(nx, i, j, 2) + tmpb9
+   tmpb10 = xb(ie, i, j, 1)
+   dotb = norm(2)*tmpb9 + norm(1)*tmpb10 + norm(3)*tmpb8
+   xb(ie, i, j, 1) = 0.0_8
+   xb(nx, i, j, 1) = xb(nx, i, j, 1) + tmpb10
+   tempb0 = two*dotb
+   v1b(1) = v1b(1) + norm(1)*tempb0
+   v1b(2) = v1b(2) + norm(2)*tempb0
+   v1b(3) = v1b(3) + norm(3)*tempb0
+   xb(il, i, j, 3) = xb(il, i, j, 3) + v1b(3)
+   xb(nx, i, j, 3) = xb(nx, i, j, 3) - v1b(3)
+   v1b(3) = 0.0_8
+   xb(il, i, j, 2) = xb(il, i, j, 2) + v1b(2)
+   xb(nx, i, j, 2) = xb(nx, i, j, 2) - v1b(2)
+   v1b(2) = 0.0_8
+   xb(il, i, j, 1) = xb(il, i, j, 1) + v1b(1)
+   xb(nx, i, j, 1) = xb(nx, i, j, 1) - v1b(1)
+   v1b(1) = 0.0_8
+   END DO
+   END DO
+   ELSE IF (branch .EQ. 7) THEN
    CALL POPINTEGER4(ad_from0)
    CALL POPINTEGER4(ad_to0)
    DO j=ad_to0,ad_from0,-1
    CALL POPINTEGER4(ad_from)
    CALL POPINTEGER4(ad_to)
    DO i=ad_to,ad_from,-1
-   dot = two*(v1(1)*norm(1)+v1(2)*norm(2)+v1(3)*norm(3))
-   x2b(i+1, j+1, 3) = x2b(i+1, j+1, 3) + x0b(i+1, j+1, 3)
-   dotb = norm(3)*x0b(i+1, j+1, 3)
-   normb(3) = normb(3) + dot*x0b(i+1, j+1, 3)
-   x0b(i+1, j+1, 3) = 0.0_8
-   x2b(i+1, j+1, 2) = x2b(i+1, j+1, 2) + x0b(i+1, j+1, 2)
-   dotb = dotb + norm(2)*x0b(i+1, j+1, 2)
-   normb(2) = normb(2) + dot*x0b(i+1, j+1, 2)
-   x0b(i+1, j+1, 2) = 0.0_8
-   x2b(i+1, j+1, 1) = x2b(i+1, j+1, 1) + x0b(i+1, j+1, 1)
-   dotb = dotb + norm(1)*x0b(i+1, j+1, 1)
-   tempb0 = two*dotb
-   normb(1) = normb(1) + v1(1)*tempb0 + dot*x0b(i+1, j+1, 1)
-   x0b(i+1, j+1, 1) = 0.0_8
-   v1b(1) = v1b(1) + norm(1)*tempb0
-   v1b(2) = v1b(2) + norm(2)*tempb0
-   normb(2) = normb(2) + v1(2)*tempb0
-   v1b(3) = v1b(3) + norm(3)*tempb0
-   normb(3) = normb(3) + v1(3)*tempb0
-   CALL POPREAL8(v1(3))
-   x1b(i+1, j+1, 3) = x1b(i+1, j+1, 3) + v1b(3)
-   x2b(i+1, j+1, 3) = x2b(i+1, j+1, 3) - v1b(3)
+   xb(2, i, j, 3) = xb(2, i, j, 3) + xb(0, i, j, 3)
+   dotb = norm(3)*xb(0, i, j, 3)
+   xb(0, i, j, 3) = 0.0_8
+   xb(2, i, j, 2) = xb(2, i, j, 2) + xb(0, i, j, 2)
+   dotb = dotb + norm(2)*xb(0, i, j, 2)
+   xb(0, i, j, 2) = 0.0_8
+   xb(2, i, j, 1) = xb(2, i, j, 1) + xb(0, i, j, 1)
+   dotb = dotb + norm(1)*xb(0, i, j, 1)
+   xb(0, i, j, 1) = 0.0_8
+   tempb = two*dotb
+   v1b(1) = v1b(1) + norm(1)*tempb
+   v1b(2) = v1b(2) + norm(2)*tempb
+   v1b(3) = v1b(3) + norm(3)*tempb
+   xb(1, i, j, 3) = xb(1, i, j, 3) + v1b(3)
+   xb(2, i, j, 3) = xb(2, i, j, 3) - v1b(3)
    v1b(3) = 0.0_8
-   CALL POPREAL8(v1(2))
-   x1b(i+1, j+1, 2) = x1b(i+1, j+1, 2) + v1b(2)
-   x2b(i+1, j+1, 2) = x2b(i+1, j+1, 2) - v1b(2)
+   xb(1, i, j, 2) = xb(1, i, j, 2) + v1b(2)
+   xb(2, i, j, 2) = xb(2, i, j, 2) - v1b(2)
    v1b(2) = 0.0_8
-   CALL POPREAL8(v1(1))
-   x1b(i+1, j+1, 1) = x1b(i+1, j+1, 1) + v1b(1)
-   x2b(i+1, j+1, 1) = x2b(i+1, j+1, 1) - v1b(1)
+   xb(1, i, j, 1) = xb(1, i, j, 1) + v1b(1)
+   xb(2, i, j, 1) = xb(2, i, j, 1) - v1b(1)
    v1b(1) = 0.0_8
    END DO
    END DO
+   END IF
    CALL POPREAL8(norm(3))
-   lengthb = -(norm(3)*normb(3)/length**2)
-   normb(3) = normb(3)/length
    CALL POPREAL8(norm(2))
-   lengthb = lengthb - norm(2)*normb(2)/length**2
-   normb(2) = normb(2)/length
    CALL POPREAL8(norm(1))
-   lengthb = lengthb - norm(1)*normb(1)/length**2
-   normb(1) = normb(1)/length
-   ELSE
-   lengthb = 0.0_8
-   END IF
-   CALL POPREAL8(length)
-   IF (norm(1)**2 + norm(2)**2 + norm(3)**2 .EQ. 0.0_8) THEN
-   tempb = 0.0
-   ELSE
-   tempb = lengthb/(2.0*SQRT(norm(1)**2+norm(2)**2+norm(3)**2))
-   END IF
-   normb(1) = normb(1) + 2*norm(1)*tempb
-   normb(2) = normb(2) + 2*norm(2)*tempb
-   normb(3) = normb(3) + 2*norm(3)*tempb
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
-   normb(3) = normb(3) + bcdatab(mm)%symnorm(3)
-   bcdatab(mm)%symnorm(3) = 0.0_8
-   normb(2) = normb(2) + bcdatab(mm)%symnorm(2)
-   bcdatab(mm)%symnorm(2) = 0.0_8
-   normb(1) = normb(1) + bcdatab(mm)%symnorm(1)
-   bcdatab(mm)%symnorm(1) = 0.0_8
    CALL POPREAL8(norm(3))
-   v1b(1) = v1b(1) + v2(2)*normb(3)
-   v2b(2) = v2b(2) + v1(1)*normb(3)
-   v1b(2) = v1b(2) - v2(1)*normb(3)
-   v2b(1) = v2b(1) - v1(2)*normb(3)
-   normb(3) = 0.0_8
    CALL POPREAL8(norm(2))
-   v1b(3) = v1b(3) + v2(1)*normb(2)
-   v2b(1) = v2b(1) + v1(3)*normb(2)
-   v1b(1) = v1b(1) - v2(3)*normb(2)
-   v2b(3) = v2b(3) - v1(1)*normb(2)
-   normb(2) = 0.0_8
    CALL POPREAL8(norm(1))
-   v1b(2) = v1b(2) + v2(3)*normb(1)
-   v2b(3) = v2b(3) + v1(2)*normb(1)
-   v1b(3) = v1b(3) - v2(2)*normb(1)
-   v2b(2) = v2b(2) - v1(3)*normb(1)
-   normb(1) = 0.0_8
-   CALL POPREAL8(v2(3))
-   x1b(iimax+1, 1+1, 3) = x1b(iimax+1, 1+1, 3) + v2b(3)
-   x1b(1+1, jjmax+1, 3) = x1b(1+1, jjmax+1, 3) - v2b(3)
-   v2b(3) = 0.0_8
-   CALL POPREAL8(v2(2))
-   x1b(iimax+1, 1+1, 2) = x1b(iimax+1, 1+1, 2) + v2b(2)
-   x1b(1+1, jjmax+1, 2) = x1b(1+1, jjmax+1, 2) - v2b(2)
-   v2b(2) = 0.0_8
-   CALL POPREAL8(v2(1))
-   x1b(iimax+1, 1+1, 1) = x1b(iimax+1, 1+1, 1) + v2b(1)
-   x1b(1+1, jjmax+1, 1) = x1b(1+1, jjmax+1, 1) - v2b(1)
-   v2b(1) = 0.0_8
-   CALL POPREAL8(v1(3))
-   x1b(iimax+1, jjmax+1, 3) = x1b(iimax+1, jjmax+1, 3) + v1b(3)
-   x1b(1+1, 1+1, 3) = x1b(1+1, 1+1, 3) - v1b(3)
-   v1b(3) = 0.0_8
-   CALL POPREAL8(v1(2))
-   x1b(iimax+1, jjmax+1, 2) = x1b(iimax+1, jjmax+1, 2) + v1b(2)
-   x1b(1+1, 1+1, 2) = x1b(1+1, 1+1, 2) - v1b(2)
-   v1b(2) = 0.0_8
-   CALL POPREAL8(v1(1))
-   x1b(iimax+1, jjmax+1, 1) = x1b(iimax+1, jjmax+1, 1) + v1b(1)
-   x1b(1+1, 1+1, 1) = x1b(1+1, 1+1, 1) - v1b(1)
-   v1b(1) = 0.0_8
-   ELSE
-   CALL POPREAL8(norm(3))
-   bcdatab(mm)%symnorm(3) = bcdatab(mm)%symnorm(3) + normb(3)
-   normb(3) = 0.0_8
-   CALL POPREAL8(norm(2))
-   bcdatab(mm)%symnorm(2) = bcdatab(mm)%symnorm(2) + normb(2)
-   normb(2) = 0.0_8
-   CALL POPREAL8(norm(1))
-   bcdatab(mm)%symnorm(1) = bcdatab(mm)%symnorm(1) + normb(1)
-   normb(1) = 0.0_8
-   END IF
-   CALL POPCONTROL3B(branch)
-   IF (branch .LT. 3) THEN
-   IF (branch .NE. 0) THEN
-   IF (branch .EQ. 1) THEN
-   CALL POPINTEGER4(jjmax)
-   CALL POPINTEGER4(iimax)
-   ELSE
-   CALL POPINTEGER4(jjmax)
-   CALL POPINTEGER4(iimax)
-   END IF
-   END IF
-   ELSE IF (branch .LT. 5) THEN
-   IF (branch .EQ. 3) THEN
-   CALL POPINTEGER4(jjmax)
-   CALL POPINTEGER4(iimax)
-   ELSE
-   CALL POPINTEGER4(jjmax)
-   CALL POPINTEGER4(iimax)
-   END IF
-   ELSE IF (branch .EQ. 5) THEN
-   CALL POPINTEGER4(jjmax)
-   CALL POPINTEGER4(iimax)
-   ELSE
-   CALL POPINTEGER4(jjmax)
-   CALL POPINTEGER4(iimax)
-   END IF
-   CALL SETALLXBWD_B(mm, x0, x0b, x1, x1b, x2, x2b)
-   END IF
-   END DO
+   100 CONTINUE
    DO j=je,0,-1
    DO i=ie,0,-1
    CALL POPCONTROL1B(branch)

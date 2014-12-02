@@ -437,8 +437,8 @@ subroutine addParaSlice(sliceName, pt, direction, mask, nmask)
   integer(kind=intType), intent(in) :: mask(nmask), nmask
   call initializeLiftDistributionData
 
+  nParaSlices = nParaSlices + 1
   if (myid == 0) then
-     nParaSlices = nParaSlices + 1
      call createSlice(paraSlices(nParaSlices), pt, direction, &
           mask, nmask, .False.)
      paraSlices(nParaSlices)%sliceName = sliceName
@@ -465,9 +465,9 @@ subroutine addAbsSlice(sliceName, pt, direction, mask, nmask)
   real(kind=realType), dimension(3), intent(in) :: pt, direction
   integer(kind=intType), intent(in) :: mask(nmask), nmask
   call initializeLiftDistributionData
+  nAbsSlices = nAbsSlices + 1
 
   if (myid == 0) then
-     nAbsSlices = nAbsSlices + 1
      call createSlice(absSlices(nAbsSlices), pt, direction, &
           mask, nmask, .True.)
      absSlices(nAbsSlices)%sliceName = sliceName

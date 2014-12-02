@@ -42,6 +42,22 @@ subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useSta
 
 #ifndef USE_COMPLEX
 
+  if (equations == RANSEquations) then
+     nMGVar = nw
+     nt1MG = nt1
+     nt2MG = nt2
+
+     turbSegregated = .False.
+     turbCoupled = .True.
+  end if
+
+  ! Determine if we want to use frozenTurbulent Adjoint
+  resetToRANS = .False. 
+  if (frozenTurbulence .and. equations == RANSEquations) then
+     equations = NSEquations 
+     resetToRANS = .True.
+  end if
+
   ! Need to trick the residual evalution to use coupled (mean flow and
   ! turbulent) together.
   level = 1
@@ -253,7 +269,6 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
   integer(kind=intType) ::  level, irow, liftIndex
   logical :: resetToRans
   real(kind=realType), dimension(extraSize) :: extraLocalBar
-
   ! Place output arrays in psi_like and x_like vectors. 
   call VecPlaceArray(psi_like1, wbar, ierr)
   call EChk(ierr,__FILE__,__LINE__)
@@ -309,7 +324,7 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
 
   ! Zero out extraLocal
   extraLocalBar = zero
-
+  
   ii = 0
   domainLoopAD: do nn=1,nDom
 
@@ -344,21 +359,21 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
         
         do sps2=1,nTimeIntervalsSpectral
            if (useSpatial) then 
-              do k=0, ke
+              do k=0,ke
                  do j=0,je
                     do i=0,ie
                        do l=1, 3
                           irow = flowDoms(nn, 1, sps2)%globalNode(i,j,k)*3 + l -1
-                          if (irow > 0) then 
+                          if (irow >= 0) then 
                              call VecSetValues(x_like, 1, (/irow/), &
-                                  flowdomsb(nn, level, sps)%x(i, j, k, l), ADD_VALUES, ierr)
+                                  (/flowdomsb(nn, level, sps)%x(i, j, k, l)/), ADD_VALUES, ierr)
                              call EChk(ierr,__FILE__,__LINE__)
                           end if
                        end do
                     end do
                  end do
               end do
-              
+
               ! Also need the extra variables, those are zero-based:
               if (nDesignAoA >= 0) &
                    extraLocalBar(nDesignAoA+1) = extraLocalBar(nDesignAoA+1) + alphab
@@ -388,7 +403,7 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
                           irow = flowDoms(nn, 1, sps2)%globalCell(i,j,k)*nw + l -1
                           if (irow >= 0) then 
                              call VecSetValues(psi_like1, 1, (/irow/), &
-                                  flowdomsb(nn, level, sps)%w(i, j, k, l), ADD_VALUES, ierr)
+                                  (/flowdomsb(nn, level, sps)%w(i, j, k, l)/), ADD_VALUES, ierr)
                              call EChk(ierr,__FILE__,__LINE__)
                           end if
                        end do
@@ -399,7 +414,7 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
         end do
      end do
   end do domainLoopAD
-
+ 
   call dealloc_derivative_values_bwd(level)
 
   ! Reset the correct equation parameters if we were useing the frozen
@@ -420,7 +435,6 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
      if( eddyModel ) restrictEddyVis = .true.
   end if
 
-
   ! Finally we have to do an mpi all reduce on the local parts:
   extraBar = zero
   call mpi_allreduce(extraLocalBar, extraBar, extraSize, sumb_real, mpi_sum, SUmb_comm_world, ierr)
@@ -433,7 +447,7 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
   call VecAssemblyEnd(psi_like1, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  call VecResetArray(psi_like1, wbar, ierr)
+  call VecResetArray(psi_like1, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! And performa assembly on the w and x vectors
@@ -443,8 +457,9 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
   call VecAssemblyEnd(x_like, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  call VecResetArray(x_like, xvbar, ierr)
+  call VecResetArray(x_like, ierr)
   call EChk(ierr,__FILE__,__LINE__)
+
 
 #endif
 
@@ -456,6 +471,7 @@ subroutine solveAdjointForRHS(inVec, outVec, nDOF, relativeTolerance)
   use inputADjoint
   use adjointvars
   use killsignals
+  use constants
   implicit none
 
   ! Input Variables
@@ -474,6 +490,10 @@ subroutine solveAdjointForRHS(inVec, outVec, nDOF, relativeTolerance)
   call EChk(ierr,__FILE__,__LINE__)
 
   call VecPlaceArray(psi_like2, outVec, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+  
+  ! Zero out initial solution
+  call VecSet(psi_like2, zero, ierr)
   call EChk(ierr,__FILE__,__LINE__)
     
   ! Set desired realtive tolerance
@@ -497,10 +517,10 @@ subroutine solveAdjointForRHS(inVec, outVec, nDOF, relativeTolerance)
   end if
   
   ! Rest arrays
-  call VecResetArray(psi_like1, inVec, ierr)
+  call VecResetArray(psi_like1,  ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  call VecResetArray(psi_like2, outVec, ierr)
+  call VecResetArray(psi_like2,  ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
 #endif
@@ -512,6 +532,7 @@ subroutine solveDirectForRHS(inVec, outVec, nDOF, relativeTolerance)
   use ADJointPETSc
   use inputADjoint
   use adjointVars
+  use constants
   use killsignals
   implicit none
 
@@ -532,13 +553,17 @@ subroutine solveDirectForRHS(inVec, outVec, nDOF, relativeTolerance)
 
   call VecPlaceArray(psi_like2, outVec, ierr)
   call EChk(ierr,__FILE__,__LINE__)
+  
+  ! Zero out initial solution
+  call VecSet(psi_like2, zero, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
     
   ! Set desired realtive tolerance
   call KSPSetTolerances(adjointKSP, relativeTolerance, adjAbsTol, adjDivTol, &
        adjMaxIter, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  ! Solve (remember this is actually a transpose solve)
+  ! Solve (this is the transpose solve of a transpose matrix, so it's direct)
   call KSPSolveTranspose(adjointKSP, psi_like1, psi_like2, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
@@ -554,10 +579,10 @@ subroutine solveDirectForRHS(inVec, outVec, nDOF, relativeTolerance)
   end if
   
   ! Rest arrays
-  call VecResetArray(psi_like1, inVec, ierr)
+  call VecResetArray(psi_like1, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  call VecResetArray(psi_like2, outVec, ierr)
+  call VecResetArray(psi_like2, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
 #endif
