@@ -6,6 +6,7 @@ subroutine residual
   use constants
   use inputTimeSpectral
   use Iteration
+
   implicit none
   !
   !      Local variables.
@@ -58,6 +59,7 @@ subroutine residual_block
   use inputDiscretization
   use inputTimeSpectral
   use iteration
+  use inputAdjoint
   implicit none
   !
   !      Local variables.
@@ -170,8 +172,20 @@ subroutine residual_block
 
   ! Compute the viscous flux in case of a viscous computation.
 
-  if( viscous ) call viscousFlux
-
+  if( viscous ) then 
+     ! not lumpedDiss means it isn't the PC...call the vicousFlux
+     if (.not. lumpedDiss) then 
+        call viscousFlux
+     else
+        ! This is a PC calc...only include viscous fluxes if viscPC
+        ! is used
+        if (viscPC) then 
+           call viscousFlux
+        else
+           call viscousFluxApprox
+        end if
+     end if
+  end if
   ! Add the dissipative and possibly viscous fluxes to the
   ! Euler fluxes. Loop over the owned cells and add fw to dw.
   ! Also multiply by iblank so that no updates occur in holes
