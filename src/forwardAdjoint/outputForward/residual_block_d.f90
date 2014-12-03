@@ -127,30 +127,32 @@
    CASE (dissscalar) 
    ! Standard scalar dissipation scheme.
    IF (finegrid) THEN
+   IF (.NOT.lumpeddiss) THEN
    CALL INVISCIDDISSFLUXSCALAR_D()
    ELSE
-   CALL INVISCIDDISSFLUXSCALARCOARSE_D()
+   CALL INVISCIDDISSFLUXSCALARAPPROX_D()
+   END IF
+   ELSE
+   fwd = 0.0_8
    END IF
    CASE (dissmatrix) 
    ! Reverse adjoint currently only work with invisciddissscalar
    !===========================================================
    ! Matrix dissipation scheme.
    IF (finegrid) THEN
+   IF (.NOT.lumpeddiss) THEN
    CALL INVISCIDDISSFLUXMATRIX_D()
    ELSE
-   CALL INVISCIDDISSFLUXMATRIXCOARSE_D()
+   CALL INVISCIDDISSFLUXMATRIXAPPROX_D()
+   END IF
+   ELSE
+   fwd = 0.0_8
    END IF
    CASE (disscusp) 
+   fwd = 0.0_8
+   CASE (upwind) 
    !===========================================================
    ! Cusp dissipation scheme.
-   IF (finegrid) THEN
-   CALL INVISCIDDISSFLUXCUSP()
-   fwd = 0.0_8
-   ELSE
-   CALL INVISCIDDISSFLUXCUSPCOARSE()
-   fwd = 0.0_8
-   END IF
-   CASE (upwind) 
    !===========================================================
    ! Dissipation via an upwind scheme.
    CALL INVISCIDUPWINDFLUX_D(finegrid)

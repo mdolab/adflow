@@ -2879,7 +2879,7 @@ steady rotations and specifying an aeroProblem')
             'nklinearsolvetol':[float, 0.3],
             'nkuseew':[bool, True],
             'nkpc':[str, 'additive schwartz'],
-            'nkadpc':[bool, True],
+            'nkadpc':[bool, False],
             'nkviscpc':[bool, False],
             'nkasmoverlap':[int, 1],
             'nkpcilufill':[int, 2],
@@ -2891,7 +2891,6 @@ steady rotations and specifying an aeroProblem')
             'nkinnerpreconits':[int, 1],
             'nkouterpreconits':[int, 1],
             'nkls':[str, 'cubic'],
-            'nkpcfastcoloring':[bool, True],
             
             # Load Balance/partitioning parameters
             'blocksplitting':[bool, True],
@@ -3134,7 +3133,6 @@ steady rotations and specifying an aeroProblem')
                     'non monotone':self.sumb.nksolvervars.nonmonotonelinesearch,
                     'location':'nksolvervars.nkls'
                 },
-            'nkpcfastcoloring':{'location':'nksolvervars.nkpcfastcoloring'},
 
             # Load Balance Paramters
             'blocksplitting':{'location':'inputparallel.splitblocks'},
