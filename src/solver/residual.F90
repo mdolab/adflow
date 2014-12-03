@@ -133,10 +133,16 @@ subroutine residual_block
 
   case (dissScalar) ! Standard scalar dissipation scheme.
 
-     if( fineGrid ) then
-        call inviscidDissFluxScalar
+     if( fineGrid) then 
+        if (.not. lumpedDiss) then
+           call inviscidDissFluxScalar
+        else
+           call inviscidDissFluxScalarApprox
+        end if
      else
+#ifndef USE_TAPENADE        
         call inviscidDissFluxScalarCoarse
+#endif
      endif
 
      ! Reverse adjoint currently only work with invisciddissscalar
@@ -146,21 +152,27 @@ subroutine residual_block
   case (dissMatrix) ! Matrix dissipation scheme.
 
      if( fineGrid ) then
-        call inviscidDissFluxMatrix
+        if (.not. lumpedDiss) then 
+           call inviscidDissFluxMatrix
+        else
+           call inviscidDissFluxMatrixApprox
+        end if
      else
+#ifndef USE_TAPENADE
         call inviscidDissFluxMatrixCoarse
+#endif
      endif
 
      !===========================================================
 
   case (dissCusp) ! Cusp dissipation scheme.
-
+#ifndef USE_TAPENADE
      if( fineGrid ) then
         call inviscidDissFluxCusp
      else
         call inviscidDissFluxCuspCoarse
      endif
-
+#endif
      !===========================================================
 
   case (upwind) ! Dissipation via an upwind scheme.

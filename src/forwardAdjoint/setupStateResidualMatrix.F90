@@ -74,6 +74,9 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
      nState = nw
   endif
   
+  ! Exchange data and call the residual to make sure its up to date
+  ! withe current w
+  call whalo2(1_intType, 1_intType, nw, .True., .True., .True.)
 
   ! This routine will not use the extra variables to block_res or the
   ! extra outputs, so we must zero them here
@@ -135,14 +138,10 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   currentLevel = level
   groundLevel = level
 
-  ! Exchange data and call the residual to make sure its up to date
-  ! withe current w
-  call whalo2(1_intType, 1_intType, nw, .True., .True., .True.)
-  call computeResidualNK ! This is the easiest way to do this
-
   ! Set delta_x
-  delta_x = 1e-6_realType
+  delta_x = 1e-9_realType
   one_over_dx = one/delta_x
+
   rkStage = 0
   
   if (useObjective .and. useAD) then
@@ -201,10 +200,8 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
      !       call setup_dRdw_visc_coloring(nn, level,  nColor)
 
      if (usePC) then
-        ! Note: The lumped dissipation doesn't quite result in a
-        !3-cell stencil in each direction but we will still use PC
-        !coloring. Not really a big deal.
-        if (viscous) then
+      
+        if (viscous .and. viscPC) then
            call setup_3x3x3_coloring(nn, level,  nColor) ! dense 3x3x3 coloring
         else
            call setup_PC_coloring(nn, level,  nColor) ! Euler Colorings
@@ -247,7 +244,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
                     flowdomsd(nn, 1, sps2)%w = zero ! This is actually w seed
                  end if
               end do
-
+              
               ! Peturb w or set AD Seed according to iColor
               do k=0, kb
                  do j=0, jb
@@ -256,6 +253,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
                           if (useAD) then
                              flowDomsd(nn, 1, sps)%w(i, j, k, l) = one
                           else
+
                              w(i, j, k, l) = w(i, j, k, l) + delta_x
                           end if
                        end if

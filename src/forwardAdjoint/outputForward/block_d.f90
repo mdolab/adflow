@@ -452,6 +452,8 @@
    !                               The forcing term of course
    !                               contains conservative residuals,
    !                               at least for the flow variables.
+   ! shockSensor(0:ib,0:jb,0:kb)   Precomputed sensor value for shock 
+   !                               that is *NOT* differentated. 
    ! mgIFine(2:il,2) - The two fine grid i-cells used for the
    !                   restriction of the solution and residual to
    !                   the coarse grid. Only on the coarser grids.
@@ -635,6 +637,7 @@
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: p, ptmp, gamma
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: rlv, rev
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: s
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: shocksensor
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: p1
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: dw, fw
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: dwtmp, &

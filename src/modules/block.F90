@@ -511,6 +511,7 @@ module block
      real(kind=realType), dimension(:,:,:),     pointer :: p, ptmp, gamma
      real(kind=realType), dimension(:,:,:),     pointer :: rlv, rev
      real(kind=realType), dimension(:,:,:,:),   pointer :: s
+     real(kind=realType), dimension(:,:,:),   pointer :: shockSensor
      !
      !        ****************************************************************
      !        *                                                              *
@@ -550,6 +551,8 @@ module block
      !                               The forcing term of course
      !                               contains conservative residuals,
      !                               at least for the flow variables.
+     ! shockSensor(0:ib,0:jb,0:kb)   Precomputed sensor value for shock 
+     !                               that is *NOT* differentated. 
 
      real(kind=realType), dimension(:,:,:),     pointer :: p1
      real(kind=realType), dimension(:,:,:,:),   pointer :: dw, fw
