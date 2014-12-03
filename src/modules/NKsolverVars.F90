@@ -69,7 +69,7 @@ module NKsolverVars
   logical :: NKADPC
   logical :: NKViscPC
   logical :: RKreset
-  logical :: NKPCFastColoring
+
   integer(kind=intType) :: nRKreset
   real(kind=realType) :: resSum(8)
 
