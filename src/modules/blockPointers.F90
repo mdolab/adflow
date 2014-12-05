@@ -144,6 +144,7 @@ module blockPointers
   real(kind=realType), dimension(:,:,:,:,:), pointer :: wOld
 
   real(kind=realType), dimension(:,:,:),     pointer :: p, gamma
+  real(kind=realType), dimension(:,:,:),     pointer :: shockSensor
   real(kind=realType), dimension(:,:,:),     pointer :: rlv, rev
   real(kind=realType), dimension(:,:,:,:),   pointer :: s
   real(kind=realType), dimension(:,:,:),     pointer :: p1

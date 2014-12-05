@@ -12,6 +12,9 @@ subroutine setPointers_d(nn, level, sps)
   ! Set normal pointers
   call setPointers(nn, level, sps)
   
+  ! Set shockSensor pointer IN FLOWDOMS!
+  shockSensor => flowDoms(nn,1,sps)%shockSensor
+
   viscSubfaced => flowDomsd(nn,1,sps)%viscSubface
 
   xd    => flowDomsd(nn,1,sps)%x

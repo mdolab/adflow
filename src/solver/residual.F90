@@ -6,6 +6,7 @@ subroutine residual
   use constants
   use inputTimeSpectral
   use Iteration
+
   implicit none
   !
   !      Local variables.
@@ -58,6 +59,7 @@ subroutine residual_block
   use inputDiscretization
   use inputTimeSpectral
   use iteration
+  use inputAdjoint
   implicit none
   !
   !      Local variables.
@@ -131,10 +133,16 @@ subroutine residual_block
 
   case (dissScalar) ! Standard scalar dissipation scheme.
 
-     if( fineGrid ) then
-        call inviscidDissFluxScalar
+     if( fineGrid) then 
+        if (.not. lumpedDiss) then
+           call inviscidDissFluxScalar
+        else
+           call inviscidDissFluxScalarApprox
+        end if
      else
+#ifndef USE_TAPENADE        
         call inviscidDissFluxScalarCoarse
+#endif
      endif
 
      ! Reverse adjoint currently only work with invisciddissscalar
@@ -144,21 +152,27 @@ subroutine residual_block
   case (dissMatrix) ! Matrix dissipation scheme.
 
      if( fineGrid ) then
-        call inviscidDissFluxMatrix
+        if (.not. lumpedDiss) then 
+           call inviscidDissFluxMatrix
+        else
+           call inviscidDissFluxMatrixApprox
+        end if
      else
+#ifndef USE_TAPENADE
         call inviscidDissFluxMatrixCoarse
+#endif
      endif
 
      !===========================================================
 
   case (dissCusp) ! Cusp dissipation scheme.
-
+#ifndef USE_TAPENADE
      if( fineGrid ) then
         call inviscidDissFluxCusp
      else
         call inviscidDissFluxCuspCoarse
      endif
-
+#endif
      !===========================================================
 
   case (upwind) ! Dissipation via an upwind scheme.
@@ -170,8 +184,20 @@ subroutine residual_block
 
   ! Compute the viscous flux in case of a viscous computation.
 
-  if( viscous ) call viscousFlux
-
+  if( viscous ) then 
+     ! not lumpedDiss means it isn't the PC...call the vicousFlux
+     if (.not. lumpedDiss) then 
+        call viscousFlux
+     else
+        ! This is a PC calc...only include viscous fluxes if viscPC
+        ! is used
+        if (viscPC) then 
+           call viscousFlux
+        else
+           call viscousFluxApprox
+        end if
+     end if
+  end if
   ! Add the dissipative and possibly viscous fluxes to the
   ! Euler fluxes. Loop over the owned cells and add fw to dw.
   ! Also multiply by iblank so that no updates occur in holes

@@ -45,7 +45,7 @@ subroutine initialize_stencils
   implicit none
   integer(kind=intType) :: i,j,k,ii
 
-  ! Euler PC Stencil
+  ! -------- Euler PC Stencil ---------
   euler_pc_stencil(1,:) = (/ 0, 0, 0 /)
   euler_pc_stencil(2,:) = (/-1, 0, 0 /)
   euler_pc_stencil(3,:) = (/ 1, 0, 0 /)
@@ -54,7 +54,7 @@ subroutine initialize_stencils
   euler_pc_stencil(6,:) = (/ 0, 0,-1 /)
   euler_pc_stencil(7,:) = (/ 0, 0, 1 /)
 
- ! Euler drdw Stencil
+ ! ---------- Euler drdw Stencil ---------
   euler_drdw_stencil(1 ,:) = (/ 0, 0, 0 /)
   euler_drdw_stencil(2 ,:) = (/-2, 0, 0 /)
   euler_drdw_stencil(3 ,:) = (/-1, 0, 0 /)
@@ -69,7 +69,7 @@ subroutine initialize_stencils
   euler_drdw_stencil(12,:) = (/ 0, 0, 1 /)
   euler_drdw_stencil(13,:) = (/ 0, 0, 2 /)
 
-  ! Euler dRdx Stencil
+  ! -------- Euler dRdx Stencil ---------------
   euler_drdx_stencil(1 ,:) = (/   -1,  0,  0 /)
   euler_drdx_stencil(2 ,:) = (/   -1,  0,  1 /)
   euler_drdx_stencil(3 ,:) = (/   -1,  1,  0 /)
@@ -113,19 +113,36 @@ subroutine initialize_stencils
   euler_force_x_stencil(3, :) = (/ 0, -1, 0/)
   euler_force_x_stencil(4, :) = (/ 0,  0, 0/)
 
-  ! Visc PC Stencil --- 3x3x3 cube 
-  ii = 1
-  do k=-1,1
-     do j=-1,1
-        do i=-1,1
-           visc_pc_stencil(ii, :) =  (/i, j, k/)
-           ii = ii + 1
-        end do
-     end do
-  end do
-  
+  ! ---------- Visc PC Stencil -------
 
-  ! Visc drdw stencil
+  ! Set the first 7 to the euler pc stencil
+  visc_pc_stencil(1:7,:) = euler_pc_stencil
+
+  ! And now for the remaining 20
+  visc_pc_stencil(8, :) =   (/-1, -1, -1/)
+  visc_pc_stencil(9, :) =   (/ 0, -1, -1/)
+  visc_pc_stencil(10, :) =  (/ 1, -1, -1/)
+  visc_pc_stencil(11, :) =  (/-1,  0, -1/)
+  visc_pc_stencil(12, :) =  (/ 1,  0, -1/)
+  visc_pc_stencil(13, :) =  (/-1,  1, -1/)
+  visc_pc_stencil(14, :) =  (/ 0,  1, -1/)
+  visc_pc_stencil(15, :) =  (/ 1,  1, -1/)
+
+  visc_pc_stencil(16, :) =  (/-1, -1,  0/)
+  visc_pc_stencil(17, :) =  (/ 1, -1,  0/)
+  visc_pc_stencil(18, :) =  (/-1,  1,  0/)
+  visc_pc_stencil(19, :) =  (/ 1,  1,  0/)
+
+  visc_pc_stencil(20, :) =  (/-1, -1,  1/)
+  visc_pc_stencil(21, :) =  (/ 0, -1,  1/)
+  visc_pc_stencil(22, :) =  (/ 1, -1,  1/)
+  visc_pc_stencil(23, :) =  (/-1,  0,  1/)
+  visc_pc_stencil(24, :) =  (/ 1,  0,  1/)
+  visc_pc_stencil(25, :) =  (/-1,  1,  1/)
+  visc_pc_stencil(26, :) =  (/ 0,  1,  1/)
+  visc_pc_stencil(27, :) =  (/ 1,  1,  1/)
+
+  ! ------------ Visc dRdw Stencil -------------
   ! Dense 3x3x3 cube
   ii = 1
   do k=-1,1
@@ -145,7 +162,7 @@ subroutine initialize_stencils
   visc_drdw_stencil(32, :) = (/ 0, 0,-2 /)
   visc_drdw_stencil(33, :) = (/ 0, 0, 2 /)
 
-  ! Visc drdx stencil
+  ! -------- Visc dRdx Stencil --------------
   ! Dense 4x4x4 cube
   ii = 1
   do k=-1,2
@@ -157,7 +174,7 @@ subroutine initialize_stencils
      end do
   end do
 
-  ! visc force stencil for w
+  ! --------- Visc force stencil for w ----------
   ! 3x3 on surface and two levels high
   ii = 1
   do k=0, 1
@@ -169,7 +186,7 @@ subroutine initialize_stencils
      end do
   end do
   
-  ! visc force stencil for x
+  ! ---------- Visc force stencil for x -----------
   ! 4x4 on surface and two levels high
   ii = 1
   do k=0,1

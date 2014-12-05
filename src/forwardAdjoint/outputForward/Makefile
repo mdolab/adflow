@@ -36,6 +36,7 @@ include ${SUMB_RULES_FILE}
 
 vpath %.o $(SUMB_OBJDIR)
 FF90_OBJECTS =  viscousflux_d.o \
+		viscousfluxapprox_d.o\
 	        sa_block_d.o\
 		sasolve_d.o\
 		invisciddissfluxmatrix_d.o \
@@ -47,11 +48,12 @@ FF90_OBJECTS =  viscousflux_d.o \
 		computegamma_d.o\
 		computelamviscosity_d.o\
 		extrapolate2ndhalo_d.o\
-	        invisciddissfluxscalarcoarse_d.o\
 		timestep_block_d.o\
 		bceulerwall_d.o\
 		curveupre_d.o\
 		invisciddissfluxscalar_d.o\
+		invisciddissfluxscalarapprox_d.o\
+		invisciddissfluxmatrixapprox_d.o\
 		turbbcnswall_d.o\
 		bcfarfield_d.o\
 		bcturbwall_d.o\
@@ -60,7 +62,6 @@ FF90_OBJECTS =  viscousflux_d.o \
 		utauwf_d.o \
 		bcnswalladiabatic_d.o \
 		block_res_d.o  \
-		invisciddissfluxmatrixcoarse_d.o \
 		residual_block_d.o \
 		bcnswallisothermal_d.o \
 		computeetotcellcpfit_d.o \
