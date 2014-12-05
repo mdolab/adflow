@@ -40,6 +40,9 @@ FILES_TO_COMPLEXIFY = \
 		block_res.F90\
 		metric_block.F90\
 		xhalo_block.F90\
+		viscousFluxApprox.F90\
+		inviscidDissFluxScalarApprox.F90\
+		inviscidDissFluxMatrixApprox.F90\
 
 FILES_TO_COPY = 
 

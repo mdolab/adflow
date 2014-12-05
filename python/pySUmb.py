@@ -524,7 +524,7 @@ steady rotations and specifying an aeroProblem')
         if self.curAP.sumbData.stateInfo is None:
             self.resetFlow(aeroProblem, releaseAdjointMemory)
 
-        # Possibly release adjoint memory 
+        # Possibly release adjoint memory if not already done so.
         if releaseAdjointMemory:
             self.releaseAdjointMemory()
 
@@ -575,7 +575,7 @@ steady rotations and specifying an aeroProblem')
                 self.getOption('equationMode').lower() == 'time spectral'):
                 self.updateGeometryInfo()
 
-            # Check to see if the above update routines failed.
+                # Check to see if the above update routines failed.
                 self.sumb.killsignals.fatalfail = \
                     self.comm.allreduce(
                     bool(self.sumb.killsignals.fatalfail), op=MPI.LOR)
@@ -623,8 +623,7 @@ steady rotations and specifying an aeroProblem')
             print('Solution Time: %10.3f sec'% solTime)
 
         # Post-Processing -- Write Solutions is requested
-        writeSolution = kwargs.pop('writeSolution', True)
-        if writeSolution:
+        if kwargs.pop('writeSolution', True):
             self.writeSolution()
 
         if self.getOption('TSStability'):
@@ -2210,10 +2209,10 @@ steady rotations and specifying an aeroProblem')
     def _prescribedTSMotion(self):
         """Determine if we have prescribed motion timespectral analysis"""
 
-        if self.getOption('alphamode') or self.getOption('betamode') or \
-                self.getOption('machmode') or self.getOption('pmode') or \
-                self.getOption('qmode') or self.getOption('rmode') or \
-                self.getOption('altitudemode'):
+        if (self.getOption('alphamode') or self.getOption('betamode') or 
+            self.getOption('machmode') or self.getOption('pmode') or 
+            self.getOption('qmode') or self.getOption('rmode') or 
+            self.getOption('altitudemode')):
             return True
         else:
             return False
@@ -2537,19 +2536,23 @@ steady rotations and specifying an aeroProblem')
         return self.sumb.getstates(self.getStateSize())
 
     def setStates(self, states):
-        """ Set the states on this processor. Used in aerostructural
-        analysis and for switching aeroproblems"""
-
+        """Set the states on this processor. Used in aerostructural analysis
+        and for switching aeroproblems
+        """
         self.sumb.setstates(states)
 
     def _getInfo(self):
-        """Get the haloed state vector, pressure (and
-        viscocities). Used to save "state" between aeroProblems"""
+        """Get the haloed state vector, pressure (and viscocities). Used to
+        save "state" between aeroProblems
+
+        """
         return self.sumb.getinfo(self.sumb.getinfosize())
 
     def _setInfo(self, info):
-        """Get the haloed state vector, pressure (and
-        viscocities). Used to save "state" between aeroProblems"""
+        """Set the haloed state vector, pressure (and viscocities). Used to
+        restore "state" between aeroProblems
+
+        """
         self.sumb.setinfo(info)
 
     def setAdjoint(self, adjoint, objective=None):
@@ -2886,7 +2889,7 @@ steady rotations and specifying an aeroProblem')
             'nklinearsolvetol':[float, 0.3],
             'nkuseew':[bool, True],
             'nkpc':[str, 'additive schwartz'],
-            'nkadpc':[bool, True],
+            'nkadpc':[bool, False],
             'nkviscpc':[bool, False],
             'nkasmoverlap':[int, 1],
             'nkpcilufill':[int, 2],
@@ -2898,7 +2901,6 @@ steady rotations and specifying an aeroProblem')
             'nkinnerpreconits':[int, 1],
             'nkouterpreconits':[int, 1],
             'nkls':[str, 'cubic'],
-            'nkpcfastcoloring':[bool, True],
             
             # Load Balance/partitioning parameters
             'blocksplitting':[bool, True],
@@ -3141,7 +3143,6 @@ steady rotations and specifying an aeroProblem')
                     'non monotone':self.sumb.nksolvervars.nonmonotonelinesearch,
                     'location':'nksolvervars.nkls'
                 },
-            'nkpcfastcoloring':{'location':'nksolvervars.nkpcfastcoloring'},
 
             # Load Balance Paramters
             'blocksplitting':{'location':'inputparallel.splitblocks'},

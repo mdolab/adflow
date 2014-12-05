@@ -37,6 +37,7 @@
    USE INPUTDISCRETIZATION
    USE INPUTTIMESPECTRAL
    USE ITERATION
+   USE INPUTADJOINT
    USE DIFFSIZES
    !  Hint: ISIZE1OFDrfviscsubface should be the size of dimension 1 of array *viscsubface
    IMPLICIT NONE
@@ -126,30 +127,32 @@
    CASE (dissscalar) 
    ! Standard scalar dissipation scheme.
    IF (finegrid) THEN
+   IF (.NOT.lumpeddiss) THEN
    CALL INVISCIDDISSFLUXSCALAR_D()
    ELSE
-   CALL INVISCIDDISSFLUXSCALARCOARSE_D()
+   CALL INVISCIDDISSFLUXSCALARAPPROX_D()
+   END IF
+   ELSE
+   fwd = 0.0_8
    END IF
    CASE (dissmatrix) 
    ! Reverse adjoint currently only work with invisciddissscalar
    !===========================================================
    ! Matrix dissipation scheme.
    IF (finegrid) THEN
+   IF (.NOT.lumpeddiss) THEN
    CALL INVISCIDDISSFLUXMATRIX_D()
    ELSE
-   CALL INVISCIDDISSFLUXMATRIXCOARSE_D()
+   CALL INVISCIDDISSFLUXMATRIXAPPROX_D()
+   END IF
+   ELSE
+   fwd = 0.0_8
    END IF
    CASE (disscusp) 
+   fwd = 0.0_8
+   CASE (upwind) 
    !===========================================================
    ! Cusp dissipation scheme.
-   IF (finegrid) THEN
-   CALL INVISCIDDISSFLUXCUSP()
-   fwd = 0.0_8
-   ELSE
-   CALL INVISCIDDISSFLUXCUSPCOARSE()
-   fwd = 0.0_8
-   END IF
-   CASE (upwind) 
    !===========================================================
    ! Dissipation via an upwind scheme.
    CALL INVISCIDUPWINDFLUX_D(finegrid)
@@ -158,7 +161,19 @@
    END SELECT
    ! Compute the viscous flux in case of a viscous computation.
    IF (viscous) THEN
+   ! not lumpedDiss means it isn't the PC...call the vicousFlux
+   IF (.NOT.lumpeddiss) THEN
    CALL VISCOUSFLUX_D()
+   ELSE IF (viscpc) THEN
+   ! This is a PC calc...only include viscous fluxes if viscPC
+   ! is used
+   CALL VISCOUSFLUX_D()
+   ELSE
+   CALL VISCOUSFLUXAPPROX_D()
+   DO ii1=1,ISIZE1OFDrfviscsubface
+   viscsubfaced(ii1)%tau = 0.0_8
+   END DO
+   END IF
    ELSE
    DO ii1=1,ISIZE1OFDrfviscsubface
    viscsubfaced(ii1)%tau = 0.0_8

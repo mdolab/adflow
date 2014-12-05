@@ -53,6 +53,11 @@ subroutine dealloc_derivative_values(level)
      do sps=1,nTimeIntervalsSpectral
         call setPointers(nn,level,sps)
 
+        ! deallocate shockSensor in flowDoms *NOT* flowDomsd
+        deallocate(flowDoms(nn,1,sps)%shockSensor, stat=ierr)
+
+        call EChk(ierr,__FILE__,__LINE__)
+
         deallocate(flowDomsd(nn,1,sps)%x, stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
         
