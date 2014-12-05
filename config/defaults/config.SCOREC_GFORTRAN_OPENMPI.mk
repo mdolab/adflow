@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------
-# Config file for Intel ifort  with OpenMPI
+# Config file for RPI SCOREC clusters using GCC 4.7.0 and OpenMPI
 # ----------------------------------------------------------------------
 
 # ------- Define a possible parallel make (use PMAKE = make otherwise)--
@@ -31,8 +31,8 @@ CGNS_LINKER_FLAGS = -Wl,-rpath,${CGNS_LIB_DIR} -L${CGNS_LIB_DIR} -lcgns
 FF90_GEN_FLAGS = -DHAS_ISNAN 
 CC_GEN_FLAGS   = -DHAS_ISNAN  
 
-FF90_OPT_FLAGS   =  -fPIC -fdefault-real-8 -O1 -fdefault-double-8 -g
-CC_OPT_FLAGS     = -O -fPIC -g
+FF90_OPT_FLAGS   = -fPIC -fdefault-real-8 -O2 -fdefault-double-8 -g
+CC_OPT_FLAGS     = -O2 -fPIC -g
 
 FF90_DEBUG_FLAGS = #-check bounds -check all
 CC_DEBUG_FLAGS   = #-g -Wall -pedantic -DDEBUG_MODE
