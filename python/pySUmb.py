@@ -2379,20 +2379,25 @@ steady rotations and specifying an aeroProblem')
             xsdot = self.DVGeo.totalSensitivityProd(xDVdot, self.curAP.ptSetName)
             xvdot = self.mesh.warpDerivFwd(xsdot)
             # Do the aerodynamic design variables
-            extradot = numpy.zeros(self.nDVAero)
-            for key in self.aeroDVs:
-                execStr = 'mapping = self.sumb.%s'%self.possibleAeroDVs[key.lower()]
-                exec(execStr)
-                if key == 'alpha':
-                    # convert angle of attack to radians
-                    extradot[mapping] = xDVdot[key]*(numpy.pi/180.0)
-                else:
-                    extradot[mapping] = xDVdot[key]
-
+            if self.nDVAero > 0:
+                extradot = numpy.zeros(self.nDVAero)
+                for key in self.aeroDVs:
+                    execStr = 'mapping = self.sumb.%s'%self.possibleAeroDVs[key.lower()]
+                    exec(execStr)
+                    if key == 'alpha':
+                        # convert angle of attack to radians
+                        extradot[mapping] = xDVdot[key]*(numpy.pi/180.0)
+                    else:
+                        extradot[mapping] = xDVdot[key]
+            else:
+                extradot = numpy.zeros(1)
             useSpatial = True
         else:
             xvdot = numpy.zeros(self.getSpatialSize())
-            extradot = numpy.zeros(self.nDVAero)
+            if self.nDVAero > 0:
+                extradot = numpy.zeros(self.nDVAero)
+            else:
+                extradot = numpy.zeros(1)
             useSpatial = False
 
         if wDot is not None:
@@ -2442,9 +2447,14 @@ steady rotations and specifying an aeroProblem')
             useState = True
         if xDvDeriv:
             useSpatial = True
+            
+        if self.nDVAero > 0:
+            aeroDVsize = self.nDVAero
+        else:
+            aeroDVsize = 1
         
         xvbar, extrabar, wbar = self.sumb.computematrixfreeproductbwd(
-            resBar, funcsBar, useSpatial, useState, self.getSpatialSize(), self.nDVAero)
+            resBar, funcsBar, useSpatial, useState, self.getSpatialSize(), aeroDVsize)
             
         if xDvDeriv:
             xdvbar = {}
