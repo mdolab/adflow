@@ -55,6 +55,9 @@ TAPENADE_RES_HEADROUTINE = "block_res"
 ALL_RES_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.F90\
 		$(SRC)/forwardAdjoint/residualInput/xhalo_block.F90\
 		$(SRC)/forwardAdjoint/residualInput/metric_block.F90\
+		$(SRC)/forwardAdjoint/residualInput/viscousFluxApprox.F90\
+		$(SRC)/forwardAdjoint/residualInput/inviscidDissFluxScalarApprox.F90\
+		$(SRC)/forwardAdjoint/residualInput/inviscidDissFluxMatrixApprox.F90\
 		$(SRC)/forwardAdjoint/costInput/costFunction2.F90\
 		$(SRC)/modules/monitor.f90\
 		$(SRC)/modules/diffSizes.f90\
@@ -73,12 +76,8 @@ ALL_RES_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.F90\
 		$(SRC)/modules/flowVarRefState.F90 \
 		$(SRC)/modules/costFunctions.F90\
 		$(SRC)/solver/inviscidCentralFlux.F90\
-		$(SRC)/solver/inviscidDissFluxCusp.f90\
-		$(SRC)/solver/inviscidDissFluxCuspCoarse.f90\
 		$(SRC)/solver/inviscidDissFluxMatrix.F90\
-		$(SRC)/solver/inviscidDissFluxMatrixCoarse.f90\
 		$(SRC)/solver/inviscidDissFluxScalar.F90\
-		$(SRC)/solver/inviscidDissFluxScalarCoarse.f90\
 		$(SRC)/solver/inviscidUpwindFlux.F90\
 		$(SRC)/solver/computeUtau.f90\
 		$(SRC)/solver/applyAllBC.F90\

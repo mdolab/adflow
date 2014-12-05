@@ -36,6 +36,7 @@
    USE INPUTDISCRETIZATION
    USE INPUTTIMESPECTRAL
    USE ITERATION
+   USE INPUTADJOINT
    IMPLICIT NONE
    !
    !      Local variables.
@@ -244,11 +245,24 @@
    END SELECT
    ! Compute the viscous flux in case of a viscous computation.
    IF (viscous) THEN
+   ! not lumpedDiss means it isn't the PC...call the vicousFlux
+   IF (.NOT.lumpeddiss) THEN
    CALL PUSHREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
    CALL VISCOUSFLUX()
-   CALL PUSHCONTROL1B(0)
+   CALL PUSHCONTROL2B(0)
+   ELSE IF (viscpc) THEN
+   ! This is a PC calc...only include viscous fluxes if viscPC
+   ! is used
+   CALL PUSHREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
+   CALL VISCOUSFLUX()
+   CALL PUSHCONTROL2B(1)
    ELSE
-   CALL PUSHCONTROL1B(1)
+   CALL PUSHREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
+   CALL VISCOUSFLUXAPPROX()
+   CALL PUSHCONTROL2B(2)
+   END IF
+   ELSE
+   CALL PUSHCONTROL2B(3)
    END IF
    ! Add the dissipative and possibly viscous fluxes to the
    ! Euler fluxes. Loop over the owned cells and add fw to dw.
@@ -825,10 +839,18 @@
    gammab = 0.0_8
    winfb = 0.0_8
    END IF
-   CALL POPCONTROL1B(branch)
+   CALL POPCONTROL2B(branch)
+   IF (branch .LT. 2) THEN
    IF (branch .EQ. 0) THEN
    CALL POPREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
    CALL VISCOUSFLUX_B()
+   ELSE
+   CALL POPREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
+   CALL VISCOUSFLUX_B()
+   END IF
+   ELSE IF (branch .EQ. 2) THEN
+   CALL POPREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
+   CALL VISCOUSFLUXAPPROX_B()
    ELSE
    revb = 0.0_8
    rlvb = 0.0_8

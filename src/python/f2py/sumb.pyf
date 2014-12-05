@@ -1154,7 +1154,6 @@ python module libsumb
          logical :: nkadpc
          logical :: nkuseew
          logical :: nkviscpc
-         logical :: nkpcfastcoloring
          integer(kind=inttype) :: nkls
          integer(kind=inttype) :: nolinesearch=0
          integer(kind=inttype) :: cubiclinesearch=1
