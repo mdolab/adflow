@@ -857,6 +857,110 @@ steady rotations and specifying an aeroProblem')
         # Restore the min iter option
         self.setOption('minIterationNum', minIterSave)
 
+    def solveTrimCL(self, aeroProblem, CLStar, trimStar, alpha0, tail0, 
+                    trimValue, trimDV, dvIndex=0, tol=1e-3, nIter=10):
+        """Solve the trim-Cl problem: Find the angle of attack and
+        trim actuator value that satifies a given lift and moment
+        value. It is solved using a Broyden method. A DVGeometry and
+        mesh object must be set for this routine to be used. 
+
+        Parameter
+        ---------
+        aeroProblem : pyAero_problem class
+            The aerodynamic problem to solve
+        CLStar : float
+            The desired target CL
+        trimStar : float
+            The desired target moment value. Usually this is zero
+        alpha0 : angle (deg)
+            Initial guess for angle of attach 
+        tail0 : angle (deg)
+            Initial guess for tail-anlge design varaible 
+        trimValue : str
+            The SUmb function to use for moment. This will normally be either
+            'cmy' or 'cmz' depending on the orientation. 
+        trimDV : str
+             DVGeo function name that is used for trimming
+        dvIndex : int 
+             Index of trimDV to use in DVGeo. By default this is 0 which means use
+             use the first DV in the DVGeo design variable.
+        tol : float
+             Tolerance for broyden solution
+        nIter : int
+             Maximum number of iterations
+             
+        Returns
+        -------
+        None. However, the alpha value is updated in the aeroProblem and tail angle
+        variable is updated in DVGeo.
+           """
+
+        self.setAeroProblem(aeroProblem)
+        
+        def broyden3(F, xin, tol, iter, alpha=0.4):
+            """Broyden's second method. See Scipy Documetation --> This is
+            copied verbatim. Modified to add tolerance"""
+            zy = []
+            def myF(F, xm):
+                return numpy.matrix(F(tuple(xm.flat))).T
+
+            def updateG(z, y):
+                "G:=G+z*y.T"
+                zy.append((z, y))
+
+            def norm(v):
+                """Returns an L2 norm of the vector."""
+                return numpy.sqrt(numpy.sum((numpy.array(v)**2).flat))
+        
+            def Gmul(f):
+                "G=-alpha*1+z*y.T+z*y.T ..."
+                s = -alpha*f
+                for z, y in zy:
+                    s = s+z*(y.T*f)
+                return s
+
+            xm = numpy.matrix(xin).T
+            Fxm = myF(F, xm)
+            #    Gm=-alpha*numpy.matrix(numpy.identity(len(xin)))
+            for n in range(iter):
+                #deltaxm=-Gm*Fxm
+                deltaxm = Gmul(-Fxm)
+                xm = xm+deltaxm
+                Fxm1 = myF(F, xm)
+                deltaFxm = Fxm1 - Fxm
+                Fxm = Fxm1
+                #Gm=Gm+(deltaxm-Gm*deltaFxm)*deltaFxm.T/norm(deltaFxm)**2
+                updateG(deltaxm-Gmul(deltaFxm), deltaFxm/norm(deltaFxm)**2)
+                if numpy.linalg.norm(Fxm) < tol:
+                    break
+
+            return xm.flat
+
+        def function(X):
+            if self.comm.rank == 0:
+                print ('X:',X)
+            # Set Alpha
+            self.curAP.alpha = X[0]
+
+            # Set Trim Anlge
+            xGeo = self.DVGeo.getValues()
+            xGeo[trimDV][dvIndex] = X[1]
+            self.DVGeo.setDesignVars(xGeo)
+
+            # Solve Problem:
+            self.__call__(aeroProblem, writeSolution=False)
+    
+            # Extract Solution
+            sol = self.getSolution()
+
+            # Build 'F'
+            F = [sol['cl']-CLStar, sol[trimValue]-trimStar]
+
+            return F
+        
+        # Run Broyden search
+        broyden3(function, [alpha0, tail0], tol, nIter)
+
     def solveSep(self, aeroProblem, sepStar, alpha0=0,
                 delta=0.5, tol=1e-3, expansionRatio=1.2):
         """This is a safe-guarded secant search method to determine the alpha
