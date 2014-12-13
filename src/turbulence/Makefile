@@ -41,7 +41,7 @@ vpath %.o $(SUMB_OBJDIR)
 FF90_OBJECTS_1 = turbMod.o
 
 FILES_TO_COMPLEXIFY = turbMod.F90\
-		 applyAllTurbBC.f90\
+		 applyAllTurbBC.F90\
 		 bcEddyNoWall.f90\
 		 bcEddyWall.f90\
 		 bcTurbFarfield.f90\
@@ -50,7 +50,7 @@ FILES_TO_COMPLEXIFY = turbMod.F90\
 		 bcTurbOutflow.f90\
 		 bcTurbSymm.f90\
 		 bcTurbTreatment.F90\
-		 bcTurbWall.f90\
+		 bcTurbWall.F90\
 		 bl.f90\
 		 computeEddyViscosity.F90\
 		 curveFit.f90\
