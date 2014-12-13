@@ -2,10 +2,9 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of sasolve in forward (tangent) mode (with options i4 dr8 r8):
-   !   variations   of useful results: *dw *w
-   !   with respect to varying inputs: *sfacei *sfacej *sfacek *bmtk1
-   !                *dw *w *bmtk2 *rlv *vol *bmti1 *bmti2 *si *sj
-   !                *sk *bmtj1 *bmtj2 (global)timeref
+   !   variations   of useful results: *dw
+   !   with respect to varying inputs: *sfacei *sfacej *sfacek *dw
+   !                *w *rlv *vol *si *sj *sk (global)timeref
    !   Plus diff mem management of: sfacei:in sfacej:in sfacek:in
    !                bmtk1:in dw:in w:in bmtk2:in rlv:in vol:in bmti1:in
    !                bmti2:in si:in sj:in sk:in bmtj1:in bmtj2:in
@@ -38,6 +37,7 @@
    USE PARAMTURB
    USE TURBMOD
    IMPLICIT NONE
+   ! Don't need the remainder for residual derivative
    !
    !      Subroutine arguments.
    !
@@ -58,7 +58,6 @@
    REAL(kind=realtype) :: rr, gg, gg6, termfw, fwsa, term1, term2
    REAL(kind=realtype) :: rrd, ggd, gg6d, termfwd, fwsad, term1d, term2d
    REAL(kind=realtype) :: dfv1, dfv2, dft2, drr, dgg, dfw
-   REAL(kind=realtype) :: dfv1d, dfv2d, dft2d, drrd, dggd, dfwd
    REAL(kind=realtype) :: voli, volmi, volpi, xm, ym, zm, xp, yp, zp
    REAL(kind=realtype) :: volid, volmid, volpid, xmd, ymd, zmd, xpd, ypd&
    & , zpd
@@ -67,14 +66,10 @@
    REAL(kind=realtype) :: nutm, nutp, num, nup, cdm, cdp
    REAL(kind=realtype) :: nutmd, nutpd, numd, nupd, cdmd, cdpd
    REAL(kind=realtype) :: c1m, c1p, c10, b1, c1, d1, qs
-   REAL(kind=realtype) :: c1md, c1pd, c10d, b1d, c1d, d1d, qsd
+   REAL(kind=realtype) :: c1md, c1pd, c10d
    REAL(kind=realtype) :: uu, um, up, factor, f, tu1p, rblank
-   REAL(kind=realtype) :: uud, umd, upd, fd
    REAL(kind=realtype), DIMENSION(2:il, 2:jl, 2:kl) :: qq
-   REAL(kind=realtype), DIMENSION(2:il, 2:jl, 2:kl) :: qqd
    REAL(kind=realtype), DIMENSION(2:MAX(kl, il, jl)) :: bb, cc, dd, ff
-   REAL(kind=realtype), DIMENSION(2:MAX(kl, il, jl)) :: bbd, ccd, ddd, &
-   & ffd
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ddw, ww, ddvt
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rrlv
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: dd2wall
@@ -89,13 +84,7 @@
    INTRINSIC REAL
    REAL(kind=realtype) :: pwx1
    REAL(kind=realtype) :: pwx1d
-   REAL(kind=realtype) :: max2d
-   REAL(kind=realtype) :: max5d
-   REAL(kind=realtype) :: max1d
-   REAL(kind=realtype) :: max4d
-   REAL(kind=realtype) :: max3d
    REAL(kind=realtype) :: max6
-   REAL(kind=realtype) :: max6d
    REAL(kind=realtype) :: max5
    REAL(kind=realtype) :: max4
    REAL(kind=realtype) :: max3
@@ -116,10 +105,6 @@
    ! Set the pointer for dvt in dw, such that the code is more
    ! readable. Also set the pointers for the production term
    ! and vorticity.
-   dvt => dw(1:, 1:, 1:, idvt:)
-   prodd => dwd(1:, 1:, 1:, iprod)
-   prod => dw(1:, 1:, 1:, iprod)
-   vort => prod
    !
    !      ******************************************************************
    !      *                                                                *
@@ -130,15 +115,10 @@
    SELECT CASE  (turbprod) 
    CASE (strain) 
    CALL PRODSMAG2_D()
-   qqd = 0.0_8
    CASE (vorticity) 
    CALL PRODWMAG2_D()
-   qqd = 0.0_8
    CASE (katolaunder) 
    CALL PRODKATOLAUNDER_D()
-   qqd = 0.0_8
-   CASE DEFAULT
-   qqd = 0.0_8
    END SELECT
    !
    !      ******************************************************************
@@ -244,25 +224,11 @@
    ! Compute some derivatives w.r.t. nuTilde. These will occur
    ! in the left hand side, i.e. the matrix for the implicit
    ! treatment.
-   dfv1d = (three*cv13*chi2d*(chi3+cv13)**2-three*chi2*cv13*2*(chi3&
-   &         +cv13)*chi3d)/((chi3+cv13)**2)**2
    dfv1 = three*chi2*cv13/(chi3+cv13)**2
-   dfv2d = ((chi2d*dfv1+chi2*dfv1d)*nu*(one+chi*fv1)**2-(chi2*dfv1-&
-   &         one)*(nud*(one+chi*fv1)**2+nu*2*(one+chi*fv1)*(chid*fv1+chi*&
-   &         fv1d)))/(nu*(one+chi*fv1)**2)**2
    dfv2 = (chi2*dfv1-one)/(nu*(one+chi*fv1)**2)
-   dft2d = -((two*rsact4*(chid*ft2+chi*ft2d)*nu-two*rsact4*chi*ft2*&
-   &         nud)/nu**2)
    dft2 = -(two*rsact4*chi*ft2/nu)
-   drrd = (kar2inv*dist2inv*(-(rrd*(fv2+w(i, j, k, itu1)*dfv2))-rr*&
-   &         (fv2d+wd(i, j, k, itu1)*dfv2+w(i, j, k, itu1)*dfv2d))*sst-(one&
-   &         -rr*(fv2+w(i, j, k, itu1)*dfv2))*kar2inv*dist2inv*sstd)/sst**2
    drr = (one-rr*(fv2+w(i, j, k, itu1)*dfv2))*kar2inv*dist2inv/sst
-   dggd = six*rsacw2*5*rr**4*rrd*drr + (one-rsacw2+six*rsacw2*rr**5&
-   &         )*drrd
    dgg = (one-rsacw2+six*rsacw2*rr**5)*drr
-   dfwd = cw36*(termfwd*dgg+termfw*dggd)/(gg6+cw36) - cw36*gg6d*&
-   &         termfw*dgg/(gg6+cw36)**2
    dfw = cw36/(gg6+cw36)*termfw*dgg
    ! Compute the source term jacobian. Note that the part
    ! containing term1 is treated explicitly. The reason is that
@@ -271,17 +237,10 @@
    ! the stability. You may want to play around and try to
    ! take this term into account in the jacobian.
    ! Note that -dsource/dnu is stored.
-   qqd(i, j, k) = -(two*(term2d*w(i, j, k, itu1)+term2*wd(i, j, k, &
-   &         itu1))) - dist2inv*((wd(i, j, k, itu1)*w(i, j, k, itu1)+w(i, j&
-   &         , k, itu1)*wd(i, j, k, itu1))*(rsacb1*kar2inv*(dfv2-ft2*dfv2-&
-   &         fv2*dft2+dft2)-rsacw1*dfw)+w(i, j, k, itu1)**2*(rsacb1*kar2inv&
-   &         *(dfv2d-ft2d*dfv2-ft2*dfv2d-fv2d*dft2-fv2*dft2d+dft2d)-rsacw1*&
-   &         dfwd))
    qq(i, j, k) = -(two*term2*w(i, j, k, itu1)) - dist2inv*w(i, j, k&
    &         , itu1)*w(i, j, k, itu1)*(rsacb1*kar2inv*(dfv2-ft2*dfv2-fv2*&
    &         dft2+dft2)-rsacw1*dfw)
    IF (qq(i, j, k) .LT. zero) THEN
-   qqd(i, j, k) = 0.0_8
    qq(i, j, k) = zero
    ELSE
    qq(i, j, k) = qq(i, j, k)
@@ -297,8 +256,8 @@
    !      ******************************************************************
    !
    nn = itu1 - 1
-   CALL TURBADVECTION_D(1_intType, 1_intType, nn, qq, qqd)
-   CALL UNSTEADYTURBTERM_D(1_intType, 1_intType, nn, qq, qqd)
+   CALL TURBADVECTION_D(1_intType, 1_intType, nn, qq)
+   CALL UNSTEADYTURBTERM_D(1_intType, 1_intType, nn, qq)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -405,11 +364,8 @@
    &         itu1)
    dw(i, j, k, idvt) = dw(i, j, k, idvt) + c1m*w(i, j, k-1, itu1) -&
    &         c10*w(i, j, k, itu1) + c1p*w(i, j, k+1, itu1)
-   b1d = -c1md
    b1 = -c1m
-   c1d = c10d
    c1 = c10
-   d1d = -c1pd
    d1 = -c1p
    ! Update the central jacobian. For nonboundary cells this
    ! is simply c1. For boundary cells this is slightly more
@@ -421,25 +377,18 @@
    IF (k .EQ. 2) THEN
    IF (bmtk1(i, j, itu1, itu1) .LT. zero) THEN
    max1 = zero
-   max1d = 0.0_8
    ELSE
-   max1d = bmtk1d(i, j, itu1, itu1)
    max1 = bmtk1(i, j, itu1, itu1)
    END IF
-   qqd(i, j, k) = qqd(i, j, k) + c1d - b1d*max1 - b1*max1d
    qq(i, j, k) = qq(i, j, k) + c1 - b1*max1
    ELSE IF (k .EQ. kl) THEN
    IF (bmtk2(i, j, itu1, itu1) .LT. zero) THEN
    max2 = zero
-   max2d = 0.0_8
    ELSE
-   max2d = bmtk2d(i, j, itu1, itu1)
    max2 = bmtk2(i, j, itu1, itu1)
    END IF
-   qqd(i, j, k) = qqd(i, j, k) + c1d - d1d*max2 - d1*max2d
    qq(i, j, k) = qq(i, j, k) + c1 - d1*max2
    ELSE
-   qqd(i, j, k) = qqd(i, j, k) + c1d
    qq(i, j, k) = qq(i, j, k) + c1
    END IF
    END DO
@@ -551,11 +500,8 @@
    &         itu1)
    dw(i, j, k, idvt) = dw(i, j, k, idvt) + c1m*w(i, j-1, k, itu1) -&
    &         c10*w(i, j, k, itu1) + c1p*w(i, j+1, k, itu1)
-   b1d = -c1md
    b1 = -c1m
-   c1d = c10d
    c1 = c10
-   d1d = -c1pd
    d1 = -c1p
    ! Update the central jacobian. For nonboundary cells this
    ! is simply c1. For boundary cells this is slightly more
@@ -567,25 +513,18 @@
    IF (j .EQ. 2) THEN
    IF (bmtj1(i, k, itu1, itu1) .LT. zero) THEN
    max3 = zero
-   max3d = 0.0_8
    ELSE
-   max3d = bmtj1d(i, k, itu1, itu1)
    max3 = bmtj1(i, k, itu1, itu1)
    END IF
-   qqd(i, j, k) = qqd(i, j, k) + c1d - b1d*max3 - b1*max3d
    qq(i, j, k) = qq(i, j, k) + c1 - b1*max3
    ELSE IF (j .EQ. jl) THEN
    IF (bmtj2(i, k, itu1, itu1) .LT. zero) THEN
    max4 = zero
-   max4d = 0.0_8
    ELSE
-   max4d = bmtj2d(i, k, itu1, itu1)
    max4 = bmtj2(i, k, itu1, itu1)
    END IF
-   qqd(i, j, k) = qqd(i, j, k) + c1d - d1d*max4 - d1*max4d
    qq(i, j, k) = qq(i, j, k) + c1 - d1*max4
    ELSE
-   qqd(i, j, k) = qqd(i, j, k) + c1d
    qq(i, j, k) = qq(i, j, k) + c1
    END IF
    END DO
@@ -697,11 +636,8 @@
    &         itu1)
    dw(i, j, k, idvt) = dw(i, j, k, idvt) + c1m*w(i-1, j, k, itu1) -&
    &         c10*w(i, j, k, itu1) + c1p*w(i+1, j, k, itu1)
-   b1d = -c1md
    b1 = -c1m
-   c1d = c10d
    c1 = c10
-   d1d = -c1pd
    d1 = -c1p
    ! Update the central jacobian. For nonboundary cells this
    ! is simply c1. For boundary cells this is slightly more
@@ -713,25 +649,18 @@
    IF (i .EQ. 2) THEN
    IF (bmti1(j, k, itu1, itu1) .LT. zero) THEN
    max5 = zero
-   max5d = 0.0_8
    ELSE
-   max5d = bmti1d(j, k, itu1, itu1)
    max5 = bmti1(j, k, itu1, itu1)
    END IF
-   qqd(i, j, k) = qqd(i, j, k) + c1d - b1d*max5 - b1*max5d
    qq(i, j, k) = qq(i, j, k) + c1 - b1*max5
    ELSE IF (i .EQ. il) THEN
    IF (bmti2(j, k, itu1, itu1) .LT. zero) THEN
    max6 = zero
-   max6d = 0.0_8
    ELSE
-   max6d = bmti2d(j, k, itu1, itu1)
    max6 = bmti2(j, k, itu1, itu1)
    END IF
-   qqd(i, j, k) = qqd(i, j, k) + c1d - d1d*max6 - d1*max6d
    qq(i, j, k) = qq(i, j, k) + c1 - d1*max6
    ELSE
-   qqd(i, j, k) = qqd(i, j, k) + c1d
    qq(i, j, k) = qq(i, j, k) + c1
    END IF
    END DO
@@ -763,605 +692,5 @@
    ! Modify the rhs of the 1st internal cell, if wall functions
    ! are used; their value is determined by the table.
    ! Return if only the residual must be computed.
-   IF (resonly) THEN
-   RETURN
-   ELSE
-   ! For implicit relaxation take the local time step into account,
-   ! where dt is the inverse of the central jacobian times the cfl
-   ! number. The following system is solved:
-   ! (I/dt + cc + bb + dd)*dw = rhs, in which I/dt = cc/cfl. As in
-   ! the rest of the algorithm only the modified central jacobian is
-   ! used, stored it now.
-   ! Compute the factor multiplying the central jacobian, which
-   ! is 1 + 1/cfl (implicit relaxation only).
-   factor = one
-   IF (turbrelax .EQ. turbrelaximplicit) factor = one + (one-alfaturb)/&
-   &       alfaturb
-   DO k=2,kl
-   DO j=2,jl
-   DO i=2,il
-   qqd(i, j, k) = factor*qqd(i, j, k)
-   qq(i, j, k) = factor*qq(i, j, k)
-   ! Set qq to 1 if the value is determined by the
-   ! wall function table.
-   IF ((((((i .EQ. 2 .AND. flagi2(j, k)) .OR. (i .EQ. il .AND. &
-   &             flagil(j, k))) .OR. (j .EQ. 2 .AND. flagj2(i, k))) .OR. (j&
-   &             .EQ. jl .AND. flagjl(i, k))) .OR. (k .EQ. 2 .AND. flagk2(i&
-   &             , j))) .OR. (k .EQ. kl .AND. flagkl(i, j))) THEN
-   qqd(i, j, k) = 0.0_8
-   qq(i, j, k) = one
-   END IF
-   END DO
-   END DO
-   END DO
-   ! Initialize the grid velocity to zero. This value will be used
-   ! if the block is not moving.
-   qs = zero
-   ddd = 0.0_8
-   qsd = 0.0_8
-   bbd = 0.0_8
-   ffd = 0.0_8
-   ccd = 0.0_8
-   !
-   !      ******************************************************************
-   !      *                                                                *
-   !      * dd-ADI step in j-direction. There is no particular reason to   *
-   !      * start in j-direction, it just happened to be so. As we solve   *
-   !      * in j-direction, the j-loop is the innermost loop.              *
-   !      *                                                                *
-   !      ******************************************************************
-   !
-   DO k=2,kl
-   DO i=2,il
-   DO j=2,jl
-   ! More or less the same code is executed here as above when
-   ! the residual was built. However, now the off-diagonal
-   ! terms for the dd-ADI must be built and stored. This could
-   ! have been done earlier, but then all the coefficients had
-   ! to be stored. To save memory, they are recomputed.
-   ! Consequently, see the j-loop to build the residual for
-   ! the comments.
-   volid = -(one*vold(i, j, k)/vol(i, j, k)**2)
-   voli = one/vol(i, j, k)
-   volmid = -(two*(vold(i, j, k)+vold(i, j-1, k))/(vol(i, j, k)+&
-   &           vol(i, j-1, k))**2)
-   volmi = two/(vol(i, j, k)+vol(i, j-1, k))
-   volpid = -(two*(vold(i, j, k)+vold(i, j+1, k))/(vol(i, j, k)+&
-   &           vol(i, j+1, k))**2)
-   volpi = two/(vol(i, j, k)+vol(i, j+1, k))
-   xmd = sjd(i, j-1, k, 1)*volmi + sj(i, j-1, k, 1)*volmid
-   xm = sj(i, j-1, k, 1)*volmi
-   ymd = sjd(i, j-1, k, 2)*volmi + sj(i, j-1, k, 2)*volmid
-   ym = sj(i, j-1, k, 2)*volmi
-   zmd = sjd(i, j-1, k, 3)*volmi + sj(i, j-1, k, 3)*volmid
-   zm = sj(i, j-1, k, 3)*volmi
-   xpd = sjd(i, j, k, 1)*volpi + sj(i, j, k, 1)*volpid
-   xp = sj(i, j, k, 1)*volpi
-   ypd = sjd(i, j, k, 2)*volpi + sj(i, j, k, 2)*volpid
-   yp = sj(i, j, k, 2)*volpi
-   zpd = sjd(i, j, k, 3)*volpi + sj(i, j, k, 3)*volpid
-   zp = sj(i, j, k, 3)*volpi
-   xad = half*((sjd(i, j, k, 1)+sjd(i, j-1, k, 1))*voli+(sj(i, j&
-   &           , k, 1)+sj(i, j-1, k, 1))*volid)
-   xa = half*(sj(i, j, k, 1)+sj(i, j-1, k, 1))*voli
-   yad = half*((sjd(i, j, k, 2)+sjd(i, j-1, k, 2))*voli+(sj(i, j&
-   &           , k, 2)+sj(i, j-1, k, 2))*volid)
-   ya = half*(sj(i, j, k, 2)+sj(i, j-1, k, 2))*voli
-   zad = half*((sjd(i, j, k, 3)+sjd(i, j-1, k, 3))*voli+(sj(i, j&
-   &           , k, 3)+sj(i, j-1, k, 3))*volid)
-   za = half*(sj(i, j, k, 3)+sj(i, j-1, k, 3))*voli
-   ttmd = xmd*xa + xm*xad + ymd*ya + ym*yad + zmd*za + zm*zad
-   ttm = xm*xa + ym*ya + zm*za
-   ttpd = xpd*xa + xp*xad + ypd*ya + yp*yad + zpd*za + zp*zad
-   ttp = xp*xa + yp*ya + zp*za
-   cnudd = -(rsacb2*cb3inv*wd(i, j, k, itu1))
-   cnud = -(rsacb2*w(i, j, k, itu1)*cb3inv)
-   camd = ttmd*cnud + ttm*cnudd
-   cam = ttm*cnud
-   capd = ttpd*cnud + ttp*cnudd
-   cap = ttp*cnud
-   ! Off-diagonal terms due to the diffusion terms
-   ! in j-direction.
-   nutmd = half*(wd(i, j-1, k, itu1)+wd(i, j, k, itu1))
-   nutm = half*(w(i, j-1, k, itu1)+w(i, j, k, itu1))
-   nutpd = half*(wd(i, j+1, k, itu1)+wd(i, j, k, itu1))
-   nutp = half*(w(i, j+1, k, itu1)+w(i, j, k, itu1))
-   nud = (rlvd(i, j, k)*w(i, j, k, irho)-rlv(i, j, k)*wd(i, j, k&
-   &           , irho))/w(i, j, k, irho)**2
-   nu = rlv(i, j, k)/w(i, j, k, irho)
-   numd = half*((rlvd(i, j-1, k)*w(i, j-1, k, irho)-rlv(i, j-1, k&
-   &           )*wd(i, j-1, k, irho))/w(i, j-1, k, irho)**2+nud)
-   num = half*(rlv(i, j-1, k)/w(i, j-1, k, irho)+nu)
-   nupd = half*((rlvd(i, j+1, k)*w(i, j+1, k, irho)-rlv(i, j+1, k&
-   &           )*wd(i, j+1, k, irho))/w(i, j+1, k, irho)**2+nud)
-   nup = half*(rlv(i, j+1, k)/w(i, j+1, k, irho)+nu)
-   cdmd = cb3inv*((numd+(one+rsacb2)*nutmd)*ttm+(num+(one+rsacb2)&
-   &           *nutm)*ttmd)
-   cdm = (num+(one+rsacb2)*nutm)*ttm*cb3inv
-   cdpd = cb3inv*((nupd+(one+rsacb2)*nutpd)*ttp+(nup+(one+rsacb2)&
-   &           *nutp)*ttpd)
-   cdp = (nup+(one+rsacb2)*nutp)*ttp*cb3inv
-   IF (cdm + cam .LT. zero) THEN
-   c1m = zero
-   c1md = 0.0_8
-   ELSE
-   c1md = cdmd + camd
-   c1m = cdm + cam
-   END IF
-   IF (cdp + cap .LT. zero) THEN
-   c1p = zero
-   c1pd = 0.0_8
-   ELSE
-   c1pd = cdpd + capd
-   c1p = cdp + cap
-   END IF
-   bbd(j) = -c1md
-   bb(j) = -c1m
-   ddd(j) = -c1pd
-   dd(j) = -c1p
-   ! Compute the grid velocity if present.
-   ! It is taken as the average of j and j-1,
-   IF (addgridvelocities) THEN
-   qsd = half*((sfacejd(i, j, k)+sfacejd(i, j-1, k))*voli+(&
-   &             sfacej(i, j, k)+sfacej(i, j-1, k))*volid)
-   qs = half*(sfacej(i, j, k)+sfacej(i, j-1, k))*voli
-   END IF
-   ! Off-diagonal terms due to the advection term in
-   ! j-direction. First order approximation.
-   uud = xad*w(i, j, k, ivx) + xa*wd(i, j, k, ivx) + yad*w(i, j, &
-   &           k, ivy) + ya*wd(i, j, k, ivy) + zad*w(i, j, k, ivz) + za*wd(&
-   &           i, j, k, ivz) - qsd
-   uu = xa*w(i, j, k, ivx) + ya*w(i, j, k, ivy) + za*w(i, j, k, &
-   &           ivz) - qs
-   um = zero
-   up = zero
-   IF (uu .LT. zero) THEN
-   umd = uud
-   um = uu
-   ELSE
-   umd = 0.0_8
-   END IF
-   IF (uu .GT. zero) THEN
-   upd = uud
-   up = uu
-   ELSE
-   upd = 0.0_8
-   END IF
-   bbd(j) = bbd(j) - upd
-   bb(j) = bb(j) - up
-   ddd(j) = ddd(j) + umd
-   dd(j) = dd(j) + um
-   ! Store the central jacobian and rhs in cc and ff.
-   ! Multiply the off-diagonal terms and rhs by the iblank
-   ! value so the update determined for iblank = 0 is zero.
-   rblank = REAL(iblank(i, j, k), realtype)
-   ccd(j) = qqd(i, j, k)
-   cc(j) = qq(i, j, k)
-   ffd(j) = rblank*dwd(i, j, k, idvt)
-   ff(j) = dw(i, j, k, idvt)*rblank
-   bbd(j) = rblank*bbd(j)
-   bb(j) = bb(j)*rblank
-   ddd(j) = rblank*ddd(j)
-   dd(j) = dd(j)*rblank
-   ! Set the off diagonal terms to zero if the wall is flagged.
-   IF ((((((i .EQ. 2 .AND. flagi2(j, k)) .OR. (i .EQ. il .AND. &
-   &             flagil(j, k))) .OR. (j .EQ. 2 .AND. flagj2(i, k))) .OR. (j&
-   &             .EQ. jl .AND. flagjl(i, k))) .OR. (k .EQ. 2 .AND. flagk2(i&
-   &             , j))) .OR. (k .EQ. kl .AND. flagkl(i, j))) THEN
-   bbd(j) = 0.0_8
-   bb(j) = zero
-   ddd(j) = 0.0_8
-   dd(j) = zero
-   END IF
-   END DO
-   ! Solve the tri-diagonal system in j-direction.
-   ! First the backward sweep to eliMinate the upper diagonal dd.
-   DO j=ny,2,-1
-   fd = (ddd(j)*cc(j+1)-dd(j)*ccd(j+1))/cc(j+1)**2
-   f = dd(j)/cc(j+1)
-   ccd(j) = ccd(j) - fd*bb(j+1) - f*bbd(j+1)
-   cc(j) = cc(j) - f*bb(j+1)
-   ffd(j) = ffd(j) - fd*ff(j+1) - f*ffd(j+1)
-   ff(j) = ff(j) - f*ff(j+1)
-   END DO
-   ! The matrix is now in lower block bi-diagonal form.
-   ! Perform a forward sweep to compute the solution.
-   ffd(2) = (ffd(2)*cc(2)-ff(2)*ccd(2))/cc(2)**2
-   ff(2) = ff(2)/cc(2)
-   DO j=3,jl
-   ffd(j) = ffd(j) - bbd(j)*ff(j-1) - bb(j)*ffd(j-1)
-   ff(j) = ff(j) - bb(j)*ff(j-1)
-   ffd(j) = (ffd(j)*cc(j)-ff(j)*ccd(j))/cc(j)**2
-   ff(j) = ff(j)/cc(j)
-   END DO
-   ! Determine the new rhs for the next direction.
-   DO j=2,jl
-   dwd(i, j, k, idvt) = ffd(j)*qq(i, j, k) + ff(j)*qqd(i, j, k)
-   dw(i, j, k, idvt) = ff(j)*qq(i, j, k)
-   END DO
-   END DO
-   END DO
-   !
-   !      ******************************************************************
-   !      *                                                                *
-   !      * dd-ADI step in i-direction. As we solve in i-direction, the    *
-   !      * i-loop is the innermost loop.                                  *
-   !      *                                                                *
-   !      ******************************************************************
-   !
-   DO k=2,kl
-   DO j=2,jl
-   DO i=2,il
-   ! More or less the same code is executed here as above when
-   ! the residual was built. However, now the off-diagonal
-   ! terms for the dd-ADI must be built and stored. This could
-   ! have been done earlier, but then all the coefficients had
-   ! to be stored. To save memory, they are recomputed.
-   ! Consequently, see the i-loop to build the residual for
-   ! the comments.
-   volid = -(one*vold(i, j, k)/vol(i, j, k)**2)
-   voli = one/vol(i, j, k)
-   volmid = -(two*(vold(i, j, k)+vold(i-1, j, k))/(vol(i, j, k)+&
-   &           vol(i-1, j, k))**2)
-   volmi = two/(vol(i, j, k)+vol(i-1, j, k))
-   volpid = -(two*(vold(i, j, k)+vold(i+1, j, k))/(vol(i, j, k)+&
-   &           vol(i+1, j, k))**2)
-   volpi = two/(vol(i, j, k)+vol(i+1, j, k))
-   xmd = sid(i-1, j, k, 1)*volmi + si(i-1, j, k, 1)*volmid
-   xm = si(i-1, j, k, 1)*volmi
-   ymd = sid(i-1, j, k, 2)*volmi + si(i-1, j, k, 2)*volmid
-   ym = si(i-1, j, k, 2)*volmi
-   zmd = sid(i-1, j, k, 3)*volmi + si(i-1, j, k, 3)*volmid
-   zm = si(i-1, j, k, 3)*volmi
-   xpd = sid(i, j, k, 1)*volpi + si(i, j, k, 1)*volpid
-   xp = si(i, j, k, 1)*volpi
-   ypd = sid(i, j, k, 2)*volpi + si(i, j, k, 2)*volpid
-   yp = si(i, j, k, 2)*volpi
-   zpd = sid(i, j, k, 3)*volpi + si(i, j, k, 3)*volpid
-   zp = si(i, j, k, 3)*volpi
-   xad = half*((sid(i, j, k, 1)+sid(i-1, j, k, 1))*voli+(si(i, j&
-   &           , k, 1)+si(i-1, j, k, 1))*volid)
-   xa = half*(si(i, j, k, 1)+si(i-1, j, k, 1))*voli
-   yad = half*((sid(i, j, k, 2)+sid(i-1, j, k, 2))*voli+(si(i, j&
-   &           , k, 2)+si(i-1, j, k, 2))*volid)
-   ya = half*(si(i, j, k, 2)+si(i-1, j, k, 2))*voli
-   zad = half*((sid(i, j, k, 3)+sid(i-1, j, k, 3))*voli+(si(i, j&
-   &           , k, 3)+si(i-1, j, k, 3))*volid)
-   za = half*(si(i, j, k, 3)+si(i-1, j, k, 3))*voli
-   ttmd = xmd*xa + xm*xad + ymd*ya + ym*yad + zmd*za + zm*zad
-   ttm = xm*xa + ym*ya + zm*za
-   ttpd = xpd*xa + xp*xad + ypd*ya + yp*yad + zpd*za + zp*zad
-   ttp = xp*xa + yp*ya + zp*za
-   cnudd = -(rsacb2*cb3inv*wd(i, j, k, itu1))
-   cnud = -(rsacb2*w(i, j, k, itu1)*cb3inv)
-   camd = ttmd*cnud + ttm*cnudd
-   cam = ttm*cnud
-   capd = ttpd*cnud + ttp*cnudd
-   cap = ttp*cnud
-   ! Off-diagonal terms due to the diffusion terms
-   ! in i-direction.
-   nutmd = half*(wd(i-1, j, k, itu1)+wd(i, j, k, itu1))
-   nutm = half*(w(i-1, j, k, itu1)+w(i, j, k, itu1))
-   nutpd = half*(wd(i+1, j, k, itu1)+wd(i, j, k, itu1))
-   nutp = half*(w(i+1, j, k, itu1)+w(i, j, k, itu1))
-   nud = (rlvd(i, j, k)*w(i, j, k, irho)-rlv(i, j, k)*wd(i, j, k&
-   &           , irho))/w(i, j, k, irho)**2
-   nu = rlv(i, j, k)/w(i, j, k, irho)
-   numd = half*((rlvd(i-1, j, k)*w(i-1, j, k, irho)-rlv(i-1, j, k&
-   &           )*wd(i-1, j, k, irho))/w(i-1, j, k, irho)**2+nud)
-   num = half*(rlv(i-1, j, k)/w(i-1, j, k, irho)+nu)
-   nupd = half*((rlvd(i+1, j, k)*w(i+1, j, k, irho)-rlv(i+1, j, k&
-   &           )*wd(i+1, j, k, irho))/w(i+1, j, k, irho)**2+nud)
-   nup = half*(rlv(i+1, j, k)/w(i+1, j, k, irho)+nu)
-   cdmd = cb3inv*((numd+(one+rsacb2)*nutmd)*ttm+(num+(one+rsacb2)&
-   &           *nutm)*ttmd)
-   cdm = (num+(one+rsacb2)*nutm)*ttm*cb3inv
-   cdpd = cb3inv*((nupd+(one+rsacb2)*nutpd)*ttp+(nup+(one+rsacb2)&
-   &           *nutp)*ttpd)
-   cdp = (nup+(one+rsacb2)*nutp)*ttp*cb3inv
-   IF (cdm + cam .LT. zero) THEN
-   c1m = zero
-   c1md = 0.0_8
-   ELSE
-   c1md = cdmd + camd
-   c1m = cdm + cam
-   END IF
-   IF (cdp + cap .LT. zero) THEN
-   c1p = zero
-   c1pd = 0.0_8
-   ELSE
-   c1pd = cdpd + capd
-   c1p = cdp + cap
-   END IF
-   bbd(i) = -c1md
-   bb(i) = -c1m
-   ddd(i) = -c1pd
-   dd(i) = -c1p
-   ! Compute the grid velocity if present.
-   ! It is taken as the average of i and i-1,
-   IF (addgridvelocities) THEN
-   qsd = half*((sfaceid(i, j, k)+sfaceid(i-1, j, k))*voli+(&
-   &             sfacei(i, j, k)+sfacei(i-1, j, k))*volid)
-   qs = half*(sfacei(i, j, k)+sfacei(i-1, j, k))*voli
-   END IF
-   ! Off-diagonal terms due to the advection term in
-   ! i-direction. First order approximation.
-   uud = xad*w(i, j, k, ivx) + xa*wd(i, j, k, ivx) + yad*w(i, j, &
-   &           k, ivy) + ya*wd(i, j, k, ivy) + zad*w(i, j, k, ivz) + za*wd(&
-   &           i, j, k, ivz) - qsd
-   uu = xa*w(i, j, k, ivx) + ya*w(i, j, k, ivy) + za*w(i, j, k, &
-   &           ivz) - qs
-   um = zero
-   up = zero
-   IF (uu .LT. zero) THEN
-   umd = uud
-   um = uu
-   ELSE
-   umd = 0.0_8
-   END IF
-   IF (uu .GT. zero) THEN
-   upd = uud
-   up = uu
-   ELSE
-   upd = 0.0_8
-   END IF
-   bbd(i) = bbd(i) - upd
-   bb(i) = bb(i) - up
-   ddd(i) = ddd(i) + umd
-   dd(i) = dd(i) + um
-   ! Store the central jacobian and rhs in cc and ff.
-   ! Multiply the off-diagonal terms and rhs by the iblank
-   ! value so the update determined for iblank = 0 is zero.
-   rblank = REAL(iblank(i, j, k), realtype)
-   ccd(i) = qqd(i, j, k)
-   cc(i) = qq(i, j, k)
-   ffd(i) = rblank*dwd(i, j, k, idvt)
-   ff(i) = dw(i, j, k, idvt)*rblank
-   bbd(i) = rblank*bbd(i)
-   bb(i) = bb(i)*rblank
-   ddd(i) = rblank*ddd(i)
-   dd(i) = dd(i)*rblank
-   ! Set the off diagonal terms to zero if the wall is flagged.
-   IF ((((((i .EQ. 2 .AND. flagi2(j, k)) .OR. (i .EQ. il .AND. &
-   &             flagil(j, k))) .OR. (j .EQ. 2 .AND. flagj2(i, k))) .OR. (j&
-   &             .EQ. jl .AND. flagjl(i, k))) .OR. (k .EQ. 2 .AND. flagk2(i&
-   &             , j))) .OR. (k .EQ. kl .AND. flagkl(i, j))) THEN
-   bbd(i) = 0.0_8
-   bb(i) = zero
-   ddd(i) = 0.0_8
-   dd(i) = zero
-   END IF
-   END DO
-   ! Solve the tri-diagonal system in i-direction.
-   ! First the backward sweep to eliMinate the upper diagonal dd.
-   DO i=nx,2,-1
-   fd = (ddd(i)*cc(i+1)-dd(i)*ccd(i+1))/cc(i+1)**2
-   f = dd(i)/cc(i+1)
-   ccd(i) = ccd(i) - fd*bb(i+1) - f*bbd(i+1)
-   cc(i) = cc(i) - f*bb(i+1)
-   ffd(i) = ffd(i) - fd*ff(i+1) - f*ffd(i+1)
-   ff(i) = ff(i) - f*ff(i+1)
-   END DO
-   ! The matrix is now in lower block bi-diagonal form.
-   ! Perform a forward sweep to compute the solution.
-   ffd(2) = (ffd(2)*cc(2)-ff(2)*ccd(2))/cc(2)**2
-   ff(2) = ff(2)/cc(2)
-   DO i=3,il
-   ffd(i) = ffd(i) - bbd(i)*ff(i-1) - bb(i)*ffd(i-1)
-   ff(i) = ff(i) - bb(i)*ff(i-1)
-   ffd(i) = (ffd(i)*cc(i)-ff(i)*ccd(i))/cc(i)**2
-   ff(i) = ff(i)/cc(i)
-   END DO
-   ! Determine the new rhs for the next direction.
-   DO i=2,il
-   dwd(i, j, k, idvt) = ffd(i)*qq(i, j, k) + ff(i)*qqd(i, j, k)
-   dw(i, j, k, idvt) = ff(i)*qq(i, j, k)
-   END DO
-   END DO
-   END DO
-   !
-   !      ******************************************************************
-   !      *                                                                *
-   !      * dd-ADI step in k-direction. As we solve in k-direction, the    *
-   !      * k-loop is the innermost loop.                                  *
-   !      *                                                                *
-   !      ******************************************************************
-   !
-   DO j=2,jl
-   DO i=2,il
-   DO k=2,kl
-   ! More or less the same code is executed here as above when
-   ! the residual was built. However, now the off-diagonal
-   ! terms for the dd-ADI must be built and stored. This could
-   ! have been done earlier, but then all the coefficients had
-   ! to be stored. To save memory, they are recomputed.
-   ! Consequently, see the k-loop to build the residual for
-   ! the comments.
-   volid = -(one*vold(i, j, k)/vol(i, j, k)**2)
-   voli = one/vol(i, j, k)
-   volmid = -(two*(vold(i, j, k)+vold(i, j, k-1))/(vol(i, j, k)+&
-   &           vol(i, j, k-1))**2)
-   volmi = two/(vol(i, j, k)+vol(i, j, k-1))
-   volpid = -(two*(vold(i, j, k)+vold(i, j, k+1))/(vol(i, j, k)+&
-   &           vol(i, j, k+1))**2)
-   volpi = two/(vol(i, j, k)+vol(i, j, k+1))
-   xmd = skd(i, j, k-1, 1)*volmi + sk(i, j, k-1, 1)*volmid
-   xm = sk(i, j, k-1, 1)*volmi
-   ymd = skd(i, j, k-1, 2)*volmi + sk(i, j, k-1, 2)*volmid
-   ym = sk(i, j, k-1, 2)*volmi
-   zmd = skd(i, j, k-1, 3)*volmi + sk(i, j, k-1, 3)*volmid
-   zm = sk(i, j, k-1, 3)*volmi
-   xpd = skd(i, j, k, 1)*volpi + sk(i, j, k, 1)*volpid
-   xp = sk(i, j, k, 1)*volpi
-   ypd = skd(i, j, k, 2)*volpi + sk(i, j, k, 2)*volpid
-   yp = sk(i, j, k, 2)*volpi
-   zpd = skd(i, j, k, 3)*volpi + sk(i, j, k, 3)*volpid
-   zp = sk(i, j, k, 3)*volpi
-   xad = half*((skd(i, j, k, 1)+skd(i, j, k-1, 1))*voli+(sk(i, j&
-   &           , k, 1)+sk(i, j, k-1, 1))*volid)
-   xa = half*(sk(i, j, k, 1)+sk(i, j, k-1, 1))*voli
-   yad = half*((skd(i, j, k, 2)+skd(i, j, k-1, 2))*voli+(sk(i, j&
-   &           , k, 2)+sk(i, j, k-1, 2))*volid)
-   ya = half*(sk(i, j, k, 2)+sk(i, j, k-1, 2))*voli
-   zad = half*((skd(i, j, k, 3)+skd(i, j, k-1, 3))*voli+(sk(i, j&
-   &           , k, 3)+sk(i, j, k-1, 3))*volid)
-   za = half*(sk(i, j, k, 3)+sk(i, j, k-1, 3))*voli
-   ttmd = xmd*xa + xm*xad + ymd*ya + ym*yad + zmd*za + zm*zad
-   ttm = xm*xa + ym*ya + zm*za
-   ttpd = xpd*xa + xp*xad + ypd*ya + yp*yad + zpd*za + zp*zad
-   ttp = xp*xa + yp*ya + zp*za
-   cnudd = -(rsacb2*cb3inv*wd(i, j, k, itu1))
-   cnud = -(rsacb2*w(i, j, k, itu1)*cb3inv)
-   camd = ttmd*cnud + ttm*cnudd
-   cam = ttm*cnud
-   capd = ttpd*cnud + ttp*cnudd
-   cap = ttp*cnud
-   ! Off-diagonal terms due to the diffusion terms
-   ! in k-direction.
-   nutmd = half*(wd(i, j, k-1, itu1)+wd(i, j, k, itu1))
-   nutm = half*(w(i, j, k-1, itu1)+w(i, j, k, itu1))
-   nutpd = half*(wd(i, j, k+1, itu1)+wd(i, j, k, itu1))
-   nutp = half*(w(i, j, k+1, itu1)+w(i, j, k, itu1))
-   nud = (rlvd(i, j, k)*w(i, j, k, irho)-rlv(i, j, k)*wd(i, j, k&
-   &           , irho))/w(i, j, k, irho)**2
-   nu = rlv(i, j, k)/w(i, j, k, irho)
-   numd = half*((rlvd(i, j, k-1)*w(i, j, k-1, irho)-rlv(i, j, k-1&
-   &           )*wd(i, j, k-1, irho))/w(i, j, k-1, irho)**2+nud)
-   num = half*(rlv(i, j, k-1)/w(i, j, k-1, irho)+nu)
-   nupd = half*((rlvd(i, j, k+1)*w(i, j, k+1, irho)-rlv(i, j, k+1&
-   &           )*wd(i, j, k+1, irho))/w(i, j, k+1, irho)**2+nud)
-   nup = half*(rlv(i, j, k+1)/w(i, j, k+1, irho)+nu)
-   cdmd = cb3inv*((numd+(one+rsacb2)*nutmd)*ttm+(num+(one+rsacb2)&
-   &           *nutm)*ttmd)
-   cdm = (num+(one+rsacb2)*nutm)*ttm*cb3inv
-   cdpd = cb3inv*((nupd+(one+rsacb2)*nutpd)*ttp+(nup+(one+rsacb2)&
-   &           *nutp)*ttpd)
-   cdp = (nup+(one+rsacb2)*nutp)*ttp*cb3inv
-   IF (cdm + cam .LT. zero) THEN
-   c1m = zero
-   c1md = 0.0_8
-   ELSE
-   c1md = cdmd + camd
-   c1m = cdm + cam
-   END IF
-   IF (cdp + cap .LT. zero) THEN
-   c1p = zero
-   c1pd = 0.0_8
-   ELSE
-   c1pd = cdpd + capd
-   c1p = cdp + cap
-   END IF
-   bbd(k) = -c1md
-   bb(k) = -c1m
-   ddd(k) = -c1pd
-   dd(k) = -c1p
-   ! Compute the grid velocity if present.
-   ! It is taken as the average of k and k-1,
-   IF (addgridvelocities) THEN
-   qsd = half*((sfacekd(i, j, k)+sfacekd(i, j, k-1))*voli+(&
-   &             sfacek(i, j, k)+sfacek(i, j, k-1))*volid)
-   qs = half*(sfacek(i, j, k)+sfacek(i, j, k-1))*voli
-   END IF
-   ! Off-diagonal terms due to the advection term in
-   ! k-direction. First order approximation.
-   uud = xad*w(i, j, k, ivx) + xa*wd(i, j, k, ivx) + yad*w(i, j, &
-   &           k, ivy) + ya*wd(i, j, k, ivy) + zad*w(i, j, k, ivz) + za*wd(&
-   &           i, j, k, ivz) - qsd
-   uu = xa*w(i, j, k, ivx) + ya*w(i, j, k, ivy) + za*w(i, j, k, &
-   &           ivz) - qs
-   um = zero
-   up = zero
-   IF (uu .LT. zero) THEN
-   umd = uud
-   um = uu
-   ELSE
-   umd = 0.0_8
-   END IF
-   IF (uu .GT. zero) THEN
-   upd = uud
-   up = uu
-   ELSE
-   upd = 0.0_8
-   END IF
-   bbd(k) = bbd(k) - upd
-   bb(k) = bb(k) - up
-   ddd(k) = ddd(k) + umd
-   dd(k) = dd(k) + um
-   ! Store the central jacobian and rhs in cc and ff.
-   ! Multiply the off-diagonal terms and rhs by the iblank
-   ! value so the update determined for iblank = 0 is zero.
-   rblank = REAL(iblank(i, j, k), realtype)
-   ccd(k) = qqd(i, j, k)
-   cc(k) = qq(i, j, k)
-   ffd(k) = rblank*dwd(i, j, k, idvt)
-   ff(k) = dw(i, j, k, idvt)*rblank
-   bbd(k) = rblank*bbd(k)
-   bb(k) = bb(k)*rblank
-   ddd(k) = rblank*ddd(k)
-   dd(k) = dd(k)*rblank
-   ! Set the off diagonal terms to zero if the wall is flagged.
-   IF ((((((i .EQ. 2 .AND. flagi2(j, k)) .OR. (i .EQ. il .AND. &
-   &             flagil(j, k))) .OR. (j .EQ. 2 .AND. flagj2(i, k))) .OR. (j&
-   &             .EQ. jl .AND. flagjl(i, k))) .OR. (k .EQ. 2 .AND. flagk2(i&
-   &             , j))) .OR. (k .EQ. kl .AND. flagkl(i, j))) THEN
-   bbd(k) = 0.0_8
-   bb(k) = zero
-   ddd(k) = 0.0_8
-   dd(k) = zero
-   END IF
-   END DO
-   ! Solve the tri-diagonal system in k-direction.
-   ! First the backward sweep to eliMinate the upper diagonal dd.
-   DO k=nz,2,-1
-   fd = (ddd(k)*cc(k+1)-dd(k)*ccd(k+1))/cc(k+1)**2
-   f = dd(k)/cc(k+1)
-   ccd(k) = ccd(k) - fd*bb(k+1) - f*bbd(k+1)
-   cc(k) = cc(k) - f*bb(k+1)
-   ffd(k) = ffd(k) - fd*ff(k+1) - f*ffd(k+1)
-   ff(k) = ff(k) - f*ff(k+1)
-   END DO
-   ! The matrix is now in lower block bi-diagonal form.
-   ! Perform a forward sweep to compute the solution.
-   ffd(2) = (ffd(2)*cc(2)-ff(2)*ccd(2))/cc(2)**2
-   ff(2) = ff(2)/cc(2)
-   DO k=3,kl
-   ffd(k) = ffd(k) - bbd(k)*ff(k-1) - bb(k)*ffd(k-1)
-   ff(k) = ff(k) - bb(k)*ff(k-1)
-   ffd(k) = (ffd(k)*cc(k)-ff(k)*ccd(k))/cc(k)**2
-   ff(k) = ff(k)/cc(k)
-   END DO
-   ! Store the update in dvt.
-   DO k=2,kl
-   dwd(i, j, k, idvt) = ffd(k)
-   dw(i, j, k, idvt) = ff(k)
-   END DO
-   END DO
-   END DO
-   !
-   !      ******************************************************************
-   !      *                                                                *
-   !      * Update the turbulent variables. For explicit relaxation the    *
-   !      * update must be relaxed; for implicit relaxation this has been  *
-   !      * done via the time step.                                        *
-   !      *                                                                *
-   !      ******************************************************************
-   !
-   factor = one
-   IF (turbrelax .EQ. turbrelaxexplicit) factor = alfaturb
-   DO k=2,kl
-   DO j=2,jl
-   DO i=2,il
-   wd(i, j, k, itu1) = wd(i, j, k, itu1) + factor*dwd(i, j, k, &
-   &           idvt)
-   w(i, j, k, itu1) = w(i, j, k, itu1) + factor*dw(i, j, k, idvt)
-   IF (w(i, j, k, itu1) .LT. zero) THEN
-   wd(i, j, k, itu1) = 0.0_8
-   w(i, j, k, itu1) = zero
-   ELSE
-   w(i, j, k, itu1) = w(i, j, k, itu1)
-   END IF
-   END DO
-   END DO
-   END DO
-   END IF
+   IF (resonly) RETURN
    END SUBROUTINE SASOLVE_D

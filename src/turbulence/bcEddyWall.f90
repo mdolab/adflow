@@ -8,62 +8,82 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       subroutine bcEddyWall(nn)
-!
-!      ******************************************************************
-!      *                                                                *
-!      * bcEddyWall sets the eddy viscosity in the halo cells of        *
-!      * viscous subface nn of the block given in blockPointers.        *
-!      * As the eddy viscosity is zero at the wall, the value in the    *
-!      * halo is simply the negative value of the first interior cell.  *
-!      *                                                                *
-!      ******************************************************************
-!
-       use blockPointers
-       use BCTypes
-       implicit none
-!
-!      Subroutine arguments.
-!
-       integer(kind=intType), intent(in) :: nn
-!
-!      Local variables.
-!
-       integer(kind=intType) :: i, j
+subroutine bcEddyWall(nn)
+  !
+  !      ******************************************************************
+  !      *                                                                *
+  !      * bcEddyWall sets the eddy viscosity in the halo cells of        *
+  !      * viscous subface nn of the block given in blockPointers.        *
+  !      * As the eddy viscosity is zero at the wall, the value in the    *
+  !      * halo is simply the negative value of the first interior cell.  *
+  !      *                                                                *
+  !      ******************************************************************
+  !
+  use blockPointers
+  use BCTypes
+  implicit none
+  !
+  !      Subroutine arguments.
+  !
+  integer(kind=intType), intent(in) :: nn
+  !
+  !      Local variables.
+  !
+  integer(kind=intType) :: i, j
 
-       real(kind=realType), dimension(:,:), pointer :: rev1, rev2
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
-       ! Determine the face id on which the subface is located and
-       ! set the pointers rev1 and rev2 accordingly.
+  !
+  !      ******************************************************************
+  !      *                                                                *
+  !      * Begin execution                                                *
+  !      *                                                                *
+  !      ******************************************************************
+  !
+  ! Determine the face id on which the subface is located and
+  ! loop over the faces of the subface and set the eddy viscosity
+  ! in the halo cells.
 
-       select case (BCFaceid(nn))
-         case (iMin)
-           rev1 => rev(1, 1:,1:); rev2 => rev(2, 1:,1:)
-         case (iMax)
-           rev1 => rev(ie,1:,1:); rev2 => rev(il,1:,1:)
-         case (jMin)
-           rev1 => rev(1:,1 ,1:); rev2 => rev(1:,2 ,1:)
-         case (jMax)
-           rev1 => rev(1:,je,1:); rev2 => rev(1:,jl,1:)
-         case (kMin)
-           rev1 => rev(1:,1:,1 ); rev2 => rev(1:,1:,2 )
-         case (kMax)
-           rev1 => rev(1:,1:,ke); rev2 => rev(1:,1:,kl)
-       end select
+  select case (BCFaceid(nn))
+  case (iMin)
+     do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
+        do i=BCData(nn)%icBeg, BCData(nn)%icEnd
+           rev(1,i,j) = -rev(2,i,j)
+        enddo
+     enddo
 
-       ! Loop over the faces of the subface and set the eddy
-       ! viscosity in the halo cells.
+  case (iMax)
+     do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
+        do i=BCData(nn)%icBeg, BCData(nn)%icEnd
+           rev(ie,i,j) = -rev(il,i,j)
+        enddo
+     enddo
 
-       do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
-         do i=BCData(nn)%icBeg, BCData(nn)%icEnd
-           rev1(i,j) = -rev2(i,j)
-         enddo
-       enddo
+  case (jMin)
+     do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
+        do i=BCData(nn)%icBeg, BCData(nn)%icEnd
+           rev(i,1,j) = -rev(i,2,j)
+        enddo
+     enddo
 
-       end subroutine bcEddyWall
+  case (jMax)
+     do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
+        do i=BCData(nn)%icBeg, BCData(nn)%icEnd
+           rev(i,je,j) = -rev(i,jl,j)
+        enddo
+     enddo
+
+  case (kMin)
+     do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
+        do i=BCData(nn)%icBeg, BCData(nn)%icEnd
+           rev(i,j,1) = -rev(i,j,2)
+        enddo
+     enddo
+
+  case (kMax)
+     do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
+        do i=BCData(nn)%icBeg, BCData(nn)%icEnd
+           rev(i,j,ke) = -rev(i,j,kl)
+        enddo
+     enddo
+  end select
+
+end subroutine bcEddyWall

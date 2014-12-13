@@ -80,11 +80,6 @@
        ! Set the pointer for dvt in dw, such that the code is more
        ! readable. Also set the pointers for the production term
        ! and vorticity.
-#ifndef TAPENADE_REVERSE
-       dvt  => dw(1:,1:,1:,idvt:)
-       prod => dw(1:,1:,1:,iprod)
-       vort => prod
-#endif
 !
 !      ******************************************************************
 !      *                                                                *
@@ -533,37 +528,37 @@
            select case (BCFaceID(nn))
              case (iMin)
                flag    => flagI2
-               ddw     => dw(2,1:,1:,1:); ddvt => dvt(2,1:,1:,1:)
+               ddw     => dw(2,1:,1:,1:); ddvt => dw(2,1:,1:,idvt:)
                ww      => w(2,1:,1:,1:);  rrlv => rlv(2,1:,1:)
                dd2Wall => d2Wall(2,:,:)
 
              case (iMax)
                flag    => flagIl
-               ddw     => dw(il,1:,1:,1:); ddvt => dvt(il,1:,1:,1:)
+               ddw     => dw(il,1:,1:,1:); ddvt => dw(il,1:,1:,idvt:)
                ww      => w(il,1:,1:,1:);  rrlv => rlv(il,1:,1:)
                dd2Wall => d2Wall(il,:,:)
 
              case (jMin)
                flag    => flagJ2
-               ddw     => dw(1:,2,1:,1:); ddvt => dvt(1:,2,1:,1:)
+               ddw     => dw(1:,2,1:,1:); ddvt => dw(1:,2,1:,idvt:)
                ww      => w(1:,2,1:,1:);  rrlv => rlv(1:,2,1:)
                dd2Wall => d2Wall(:,2,:)
 
              case (jMax)
                flag    => flagJl
-               ddw     => dw(1:,jl,1:,1:); ddvt => dvt(1:,jl,1:,1:)
+               ddw     => dw(1:,jl,1:,1:); ddvt => dw(1:,jl,1:,idvt:)
                ww      => w(1:,jl,1:,1:);  rrlv => rlv(1:,jl,1:)
                dd2Wall => d2Wall(:,jl,:)
 
              case (kMin)
                flag    => flagK2
-               ddw     => dw(1:,1:,2,1:); ddvt => dvt(1:,1:,2,1:)
+               ddw     => dw(1:,1:,2,1:); ddvt => dw(1:,1:,2,idvt:)
                ww      => w(1:,1:,2,1:);  rrlv => rlv(1:,1:,2)
                dd2Wall => d2Wall(:,:,2)
 
              case (kMax)
                flag    => flagKl
-               ddw     => dw(1:,1:,kl,:); ddvt => dvt(1:,1:,kl,1:)
+               ddw     => dw(1:,1:,kl,:); ddvt => dw(1:,1:,kl,idvt:)
                ww      => w(1:,1:,kl,1:); rrlv => rlv(1:,1:,kl)
                dd2Wall => d2Wall(:,:,kl)
 
@@ -608,6 +603,8 @@
 
        if( resOnly ) return
 
+! Don't need the remainder for residual derivative
+#ifndef USE_TAPENADE
        ! For implicit relaxation take the local time step into account,
        ! where dt is the inverse of the central jacobian times the cfl
        ! number. The following system is solved:
@@ -1051,5 +1048,5 @@
            enddo
          enddo
        enddo
-
+#endif
        end subroutine saSolve

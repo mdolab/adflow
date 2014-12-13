@@ -78,9 +78,8 @@ subroutine sa_block(resOnly)
   !      ******************************************************************
  
   ! Set the arrays for the boundary condition treatment.
-#ifndef TAPENADE_REVERSE  
   call bcTurbTreatment
-#endif  
+
   ! Solve the transport equation for nuTilde.
   
   call saSolve(resOnly)
@@ -97,9 +96,9 @@ subroutine sa_block(resOnly)
      ! Set the halo values for the turbulent variables.
      ! We are on the finest mesh, so the second layer of halo
      ! cells must be computed as well.
-#ifndef TAPENADE_REVERSE         
+
      call applyAllTurbBCThisBlock(.true.)
-#endif       
+
      ! Write the loglaw for a flat plate boundary layer.
      
      ! call writeLoglaw
