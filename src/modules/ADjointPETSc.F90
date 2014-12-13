@@ -93,5 +93,7 @@
       real(kind=realType) :: sumInfo(MAT_INFO_SIZE)
       real(kind=realType) :: maxInfo(MAT_INFO_SIZE)
 
+      logical :: adjointPETScVarsAllocated
+
 #endif
       end module ADjointPETSc

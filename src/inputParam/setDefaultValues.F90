@@ -29,6 +29,7 @@
        use killSignals
        use NKSolverVars
        use inputDiscretization
+       use ADjointPETSc
        implicit none
 !
 !      ******************************************************************
@@ -423,8 +424,7 @@
        lumpedDiss    = .False.
        useApproxWallDistance = .False.
        updateWallAssociation = .False.
-       adjointInitialized = .False.
        cflLimit = 3.0
        rhoResL1Start = -one
-       turbresscale = one
+       adjointPETScVarsAllocated = .False.
        end subroutine setDefaultValues

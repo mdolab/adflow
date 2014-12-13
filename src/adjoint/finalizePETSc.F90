@@ -30,33 +30,9 @@ subroutine finalizePETSc
   !
 #ifndef USE_NO_PETSC
 
-  ! This is not necessary since MPI_Finalize is called in SUmb.c
 
-  ! PetscFinalize - Checks for options to be called at the
-  ! conclusion of the prog. MPI_Finalize() is called only if the
-  ! user had not called MPI_Init() before calling PetscInitialize().
-  !
-  ! Synopsis
-  !
-  ! #include "petsc.h"   
-  ! call PetscFinalize(PetscErrorCode ierr)
-  !
-  ! Collective on SUMB_COMM_WORLD
-  !
-  ! see .../petsc/docs/manualpages/Sys/PetscFinalize.html
-  ! or PETSc users manual, pp.17
+  call PetscFinalize(PETScIerr)
+  print *, 'finialized:', PETScIerr
 
-  !      call PetscFinalize(PETScIerr)
-
-  !      if( PETScIerr/=0 ) &
-  !        call terminate("finalizePETSc", "Could not finalize PETSc")
-
-  ! Release the memory for the convergence residual history.
-
-  if( allocated(adjResHist) ) deallocate(adjResHist)
-
-  ! Flush the output buffer and synchronize the processors.
-  call f77flush()
-  call mpi_barrier(SUMB_COMM_WORLD, PETScIerr)
 #endif
 end subroutine finalizePETSc

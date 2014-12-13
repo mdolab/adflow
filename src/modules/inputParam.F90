@@ -1013,7 +1013,6 @@
        !                 included in the TS preconditioner.
        logical :: solveADjoint, setMonitor, ApproxPC, restartADjoint, useDiagTSPC
        logical :: frozenTurbulence, viscPC, ADPC
-       logical :: useMatrixFreedrdw, useMatrixFreedrdx
 
        ! ADjointSolverType: Type of linear solver for the ADjoint
        ! PreCondType      : Type of Preconditioner to use
@@ -1063,8 +1062,11 @@
        logical :: verifySpatial
        logical :: verifyExtra
 
-       ! Logical to remember if (empty) petsc arrays are allocated
-       logical :: adjointInitialized
+       ! Logicals for specifiying if we are using matrix-free forms of
+       ! dRdx+dRda or dRdw
+       logical :: useMatrixFreedRdx
+       logical :: useMatrixFreedRdw
+
      end module inputADjoint
 
      module inputTSStabDeriv

@@ -400,6 +400,7 @@ subroutine loadBalance
           blocks(i)%l3,          blocks(i)%groupNum,    &
           blocks(i)%cgnsOver,    blocks(i)%ipntOver,    &
           blocks(i)%neighOver,   blocks(i)%overComm,    &
+          blocks(i)%idWBC,       blocks(i)%contributeToForce, &
           stat=ierr)
      if(ierr /= 0)                   &
           call terminate("loadBalance", &
