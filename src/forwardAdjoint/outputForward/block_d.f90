@@ -182,9 +182,6 @@
    !                         possible values are: iMin, iMax, jMin,
    !                         jMax, kMin, kMax. see also module
    !                         BCTypes.
-   !  nNodesSubface        - Total nuber of nodes on this subface.
-   !                         Added for the integrated warping
-   !                         algorithm(used in synchronizeFaces)
    !  cgnsSubface(:)       - The subface in the corresponding cgns
    !                         block. As cgns distinguishes between
    !                         boundary and internal boundaries, the
@@ -578,7 +575,6 @@
    INTEGER(kind=inttype) :: nsubface, n1to1, nbocos, nviscbocos
    INTEGER(kind=inttype), DIMENSION(:), POINTER :: bctype
    INTEGER(kind=inttype), DIMENSION(:), POINTER :: bcfaceid
-   INTEGER(kind=inttype), DIMENSION(:), POINTER :: nnodessubface
    INTEGER(kind=inttype), DIMENSION(:), POINTER :: cgnssubface
    INTEGER(kind=inttype), DIMENSION(:), POINTER :: inbeg, inend
    INTEGER(kind=inttype), DIMENSION(:), POINTER :: jnbeg, jnend

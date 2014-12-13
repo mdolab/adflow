@@ -457,10 +457,6 @@
    REAL(kind=realtype), DIMENSION(:, :), ALLOCATABLE :: massflowfamilyinv
    REAL(kind=realtype), DIMENSION(:, :), ALLOCATABLE :: &
    & massflowfamilydiss
-   REAL(kind=realtype), DIMENSION(:, :), ALLOCATABLE :: &
-   & massflowfamilyinvd
-   REAL(kind=realtype), DIMENSION(:, :), ALLOCATABLE :: &
-   & massflowfamilydissd
    !
    !------ eran-CBD starts -------------
    !

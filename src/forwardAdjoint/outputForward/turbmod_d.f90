@@ -46,7 +46,6 @@
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: dvt
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: vort
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: prod
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: prodd
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: f1
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: kwcd
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ktcd

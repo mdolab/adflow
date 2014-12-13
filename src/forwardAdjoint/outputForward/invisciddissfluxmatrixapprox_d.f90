@@ -55,7 +55,7 @@
    REAL(kind=realtype) :: sfil, fis2, fis4
    REAL(kind=realtype) :: gammaavg, gm1, ovgm1, gm53
    REAL(kind=realtype) :: gammaavgd, gm1d, ovgm1d, gm53d
-   REAL(kind=realtype) :: ppor, rrad, dis2, dis4
+   REAL(kind=realtype) :: ppor, rrad, dis2
    REAL(kind=realtype) :: rradd, dis2d
    REAL(kind=realtype) :: dp1, dp2, ddw, tmp, fs
    REAL(kind=realtype) :: dp1d, dp2d, ddwd, tmpd, fsd
@@ -958,12 +958,8 @@
    &             , itu1) - w(i, j, k, irho)*wd(i, j, k, itu1)
    ddw = w(i, j, k+1, irho)*w(i, j, k+1, itu1) - w(i, j, k, &
    &             irho)*w(i, j, k, itu1)
-   drkd = dis2d*ddw + dis2*ddwd - dis4*(wd(i, j, k+2, irho)*w(i&
-   &             , j, k+2, itu1)+w(i, j, k+2, irho)*wd(i, j, k+2, itu1)-wd(&
-   &             i, j, k-1, irho)*w(i, j, k-1, itu1)-w(i, j, k-1, irho)*wd(&
-   &             i, j, k-1, itu1)-three*ddwd)
-   drk = dis2*ddw - dis4*(w(i, j, k+2, irho)*w(i, j, k+2, itu1)&
-   &             -w(i, j, k-1, irho)*w(i, j, k-1, itu1)-three*ddw)
+   drkd = dis2d*ddw + dis2*ddwd
+   drk = dis2*ddw
    kavgd = half*(wd(i, j, k+1, itu1)+wd(i, j, k, itu1))
    kavg = half*(w(i, j, k+1, itu1)+w(i, j, k, itu1))
    ELSE

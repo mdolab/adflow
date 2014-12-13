@@ -2,8 +2,8 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of unsteadyturbterm in forward (tangent) mode (with options i4 dr8 r8):
-   !   variations   of useful results: *dw qq
-   !   with respect to varying inputs: *dw *w timeref qq
+   !   variations   of useful results: *dw
+   !   with respect to varying inputs: *dw *w timeref
    !   Plus diff mem management of: dw:in w:in
    !
    !      ******************************************************************
@@ -15,7 +15,7 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   SUBROUTINE UNSTEADYTURBTERM_D(madv, nadv, offset, qq, qqd)
+   SUBROUTINE UNSTEADYTURBTERM_D(madv, nadv, offset, qq)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -52,8 +52,6 @@
    INTEGER(kind=inttype), INTENT(IN) :: madv, nadv, offset
    REAL(kind=realtype), DIMENSION(2:il, 2:jl, 2:kl, madv, madv), INTENT(&
    & INOUT) :: qq
-   REAL(kind=realtype), DIMENSION(2:il, 2:jl, 2:kl, madv, madv), INTENT(&
-   & INOUT) :: qqd
    !
    !      Local variables.
    !
@@ -113,8 +111,6 @@
    dw(i, j, k, idvt+ii-1) = dw(i, j, k, idvt+ii-1) - &
    &               oneoverdt*tmp
    ! Update the central jacobian.
-   qqd(i, j, k, ii, ii) = qqd(i, j, k, ii, ii) + coeftime(0)*&
-   &               oneoverdtd
    qq(i, j, k, ii, ii) = qq(i, j, k, ii, ii) + coeftime(0)*&
    &               oneoverdt
    END DO
@@ -148,8 +144,6 @@
    ! to to the contribution of the highest frequency. This is
    ! equivalent to an explicit treatment of the time derivative
    ! and may need to be changed.
-   tmpd = ntimeintervalsspectral*pi*timerefd/sections(sectionid)%&
-   &       timeperiod
    tmp = ntimeintervalsspectral*pi*timeref/sections(sectionid)%&
    &       timeperiod
    DO k=2,kl
@@ -159,7 +153,6 @@
    &             , k, jj)
    dw(i, j, k, idvt+ii-1) = dw(i, j, k, idvt+ii-1) - dw(i, j, k&
    &             , jj)
-   qqd(i, j, k, ii, ii) = qqd(i, j, k, ii, ii) + tmpd
    qq(i, j, k, ii, ii) = qq(i, j, k, ii, ii) + tmp
    END DO
    END DO
