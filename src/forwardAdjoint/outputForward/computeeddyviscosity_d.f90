@@ -63,6 +63,8 @@
    revd = 0.0_8
    CALL SAEDDYVISCOSITY_D()
    CASE DEFAULT
+   CALL TERMINATE('computeEddyViscosity', &
+   &                 'Turbulence model not implemented yet')
    revd = 0.0_8
    END SELECT
    END IF
