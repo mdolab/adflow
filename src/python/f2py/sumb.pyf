@@ -1181,6 +1181,7 @@ python module libsumb
          logical :: rkreset
          integer(kind=inttype) :: nrkreset
          integer(kind=inttype) :: applypcsubspacesize
+         logical :: freestreamresset
        end module nksolvervars
       
        ! ############################################################################
