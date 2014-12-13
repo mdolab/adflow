@@ -59,7 +59,7 @@ FILES_TO_COMPLEXIFY =  \
 	       qsortStrings.f90\
 	       reallocateIntegers.f90\
 	       reallocateReals.f90\
-	       releaseMemory.f90\
+	       releaseMemory.F90\
 	       releaseOversetCGNSGrid.f90\
 	       removeTiesIntegers.f90\
 	       removeTiesStrings.f90\

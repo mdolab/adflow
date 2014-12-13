@@ -33,7 +33,6 @@
        nullify(flowDoms(nn,level,sps)%BCType)
        nullify(flowDoms(nn,level,sps)%BCFaceID)
        nullify(flowDoms(nn,level,sps)%cgnsSubface)
-       nullify(flowDoms(nn,level,sps)%nNodesSubface)
 
        nullify(flowDoms(nn,level,sps)%inBeg)
        nullify(flowDoms(nn,level,sps)%jnBeg)
@@ -118,6 +117,7 @@
        nullify(flowDoms(nn,level,sps)%rlv)
        nullify(flowDoms(nn,level,sps)%rev)
        nullify(flowDoms(nn,level,sps)%s)
+       nullify(flowDoms(nn,level,sps)%dadidata)
 
        nullify(flowDoms(nn,level,sps)%dw)
        nullify(flowDoms(nn,level,sps)%fw)

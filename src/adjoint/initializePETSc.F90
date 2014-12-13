@@ -9,35 +9,16 @@
 !     ******************************************************************
 !
 subroutine initializePETSc
-  !
-  !     ******************************************************************
-  !     *                                                                *
-  !     * Initialize PETSc by calling the appropriate routine provided   *
-  !     * provided in the PETSc library - PetscInitialize. This          *
-  !     * automatically calls MPI_Init() if MPI has not been previously  *
-  !     * initialized. It also initializes some auxiliar variables       *
-  !     * declared in module ADjointPETSc.                               *
-  !     *                                                                *
-  !     ******************************************************************
-  !
+
+  ! Call the C-version of the petsc initialize routine
+
   use ADjointPETSc
   use inputADjoint
   use communication
   implicit none
 
-#ifndef USE_NO_PETSC
-
+  PETSC_COMM_WORLD= SUMB_COMM_WORLD
   call initPETScWrap()
-
-  PETSC_COMM_SELF = SUmb_comm_self
-
-  ! Allocate memory for the convergence residual history.
-  if (.not. allocated(adjResHist))then
-     allocate(adjResHist(adjMaxIter))
-  endif
-
-  ! Flush the output buffer and synchronize the processors.
-  call f77flush()
-  call mpi_barrier(SUMB_COMM_WORLD, PETScIerr)
-#endif
+  !call PetscInitialize(PETSC_NULL_CHARACTER, PETScIErr)
+  !call ECHK(PETScIerr, __FILE__, __LINE__)
 end subroutine initializePETSc

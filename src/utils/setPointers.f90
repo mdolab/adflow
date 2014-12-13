@@ -81,8 +81,6 @@
        nBocos     = flowDoms(nn,mm,ll)%nBocos
        nViscBocos = flowDoms(nn,mm,ll)%nViscBocos
 
-       nNodesSubface  => flowDoms(nn,1,ll)%nNodesSubface
-
        BCType      => flowDoms(nn,mm,1)%BCType
        BCFaceID    => flowDoms(nn,mm,1)%BCFaceID
        cgnsSubface => flowDoms(nn,mm,1)%cgnsSubface

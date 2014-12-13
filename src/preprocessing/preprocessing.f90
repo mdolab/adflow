@@ -34,7 +34,7 @@
 !
        integer :: ierr
 
-       integer(kind=intType) :: nLevels, level, nn, mm, nsMin, nsMax
+       integer(kind=intType) :: nLevels, level, nn, mm, nsMin, nsMax, i
 !
 !      ******************************************************************
 !      *                                                                *
@@ -79,6 +79,26 @@
        if(ierr /= 0)                     &
          call terminate("preprocessing", &
                         "Memory allocation failure for commPatterns")
+
+       ! Set the sizes here so that we know how to dealloc the stuff
+       ! later on
+       do i=1,nLevels
+          commPatternCell_1st(i)%nPeriodic = 0
+          commPatternCell_1st(i)%nProcSend = 0
+          commPatternCell_1st(i)%nProcRecv = 0
+
+          commPatternCell_2nd(i)%nPeriodic = 0
+          commPatternCell_2nd(i)%nProcSend = 0
+          commPatternCell_2nd(i)%nProcRecv = 0
+
+          commPatternNode_1st(i)%nPeriodic = 0
+          commPatternNode_1st(i)%nProcSend = 0
+          commPatternNode_1st(i)%nProcRecv = 0
+
+          internalCell_1st(i)%nPeriodic = 0
+          internalCell_2nd(i)%nPeriodic = 0
+          internalNode_1st(i)%nPeriodic = 0
+       end do
 
        ! Allocate the memory for the sliding mesh communication pattern.
        ! This pattern changes in time and therefore each spectral time
