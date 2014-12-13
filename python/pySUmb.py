@@ -82,7 +82,7 @@ class SUMB(AeroSolver):
     options : dictionary
         The list of options to use with SUmb. This keyword arguement
         is NOT OPTIONAL. It must always be provided. It must contain, at least
-        the \'gridFile\' entry for the filename of the grid to load
+        the 'gridFile' entry for the filename of the grid to load
     debug : bool
         Set this flag to true when debugging with a symbolic
         debugger. The MExt module deletes the copied .so file when not
@@ -415,17 +415,15 @@ class SUMB(AeroSolver):
             elif aeroProblem.liftIndex == 3:
                 rotations = [p,q,r]
             else:
-                raise Error('Invalid lift direction. Must be 2 or 3 for \
-steady rotations and specifying an aeroProblem')
+                raise Error("Invalid lift direction. Must be 2 or 3 for "
+                            "steady rotations and specifying an aeroProblem")
 
         else:
             rotations = rotRate
-        # end if
 
         if cgnsBlocks is None:
             # By Default set all the blocks:
             cgnsBlocks = numpy.arange(1, self.sumb.cgnsgrid.cgnsndom+1)
-        # end if
 
         self.sumb.updaterotationrate(rotCenter, rotations, cgnsBlocks)
         self._updateVelInfo = True
@@ -1340,7 +1338,7 @@ steady rotations and specifying an aeroProblem')
         self.sumb.nksolvervars.nksolvecount = 0
         self.sumb.killsignals.routinefailed =  False
         self.sumb.killsignals.fatalfail = False
-
+        self.sumb.nksolvervars.freestreamresset = False
     def getSolution(self, sps=1, groupName=None):
         """ Retrieve the solution variables from the solver. Note this
         is a collective function and must be called on all processors
@@ -1606,22 +1604,29 @@ steady rotations and specifying an aeroProblem')
         areaRef = AP.areaRef
         chordRef = AP.chordRef
         liftIndex = self.getOption('liftIndex')
-        T = AP.T
-        P = AP.P
-        rho = AP.rho
-        V = AP.V
-        mu = AP.mu
+        if self.dtype == 'd':
+            T = numpy.real(AP.T)
+            P = numpy.real(AP.P)
+            rho = numpy.real(AP.rho)
+            V = numpy.real(AP.V)
+            mu = numpy.real(AP.mu)
+        else:
+            T = AP.T
+            P = AP.P
+            rho = AP.rho
+            V = AP.V
+            mu = AP.mu
 
         # Do some checking here for things that MUST be specified:
         if AP.mach is None:
-            raise Error('\'mach\' number must be specified in the aeroProblem\
-            for SUmb.')
+            raise Error("'mach' number must be specified in the aeroProblem"
+                        " for SUmb.")
         if areaRef is None:
-            raise Error('\'areaRef\' must be specified in aeroProblem\
-            for SUmb.')
+            raise Error("'areaRef' must be specified in aeroProblem"
+                        " for SUmb.")
         if chordRef is None:
-            raise Error('\'chordRef\' must be specified in aeroProblem\
-            for SUmb.')
+            raise Error("'chordRef' must be specified in aeroProblem"
+                        " for SUmb.")
 
         # Now set defaults
         if alpha is None:
@@ -1642,9 +1647,10 @@ steady rotations and specifying an aeroProblem')
             zRot = 0.0
 
         if T is None or P is None or rho is None or V is None or mu is None:
-            raise Error('Insufficient information is given in the\
-            aeroProblem to determine physical state. See AeroProblem\
-            documentation for how to specify complete aerodynamic states.')
+            raise Error("Insufficient information is given in the "
+                        "aeroProblem to determine physical state. "
+                        "See AeroProblem documentation for how to "
+                        "specify complete aerodynamic states.")
 
         # 1. Angle of attack:
         dToR = numpy.pi/180.0
@@ -2063,8 +2069,8 @@ steady rotations and specifying an aeroProblem')
                 self._addAeroDV('T')
                 self._addAeroDV('P')
             else:
-                raise Error('The design variable \'%s\' as specified in the\
-                aeroProblem cannot be used with SUmb.'% dv)
+                raise Error("The design variable '%s' as specified in the"
+                            " aeroProblem cannot be used with SUmb."% dv)
 
         # Reset all:
         for pdv in self.possibleAeroDVs:
@@ -2103,8 +2109,8 @@ steady rotations and specifying an aeroProblem')
         if obj in self.curAP.sumbData.adjoints:
             psi = self.curAP.sumbData.adjoints[obj]
         else:
-            raise Error('%s adjoint for current aeroProblem \
-            %s is not computed.'% obj)
+            raise Error("%s adjoint for current aeroProblem "
+                        "%s is not computed."% obj)
 
         # Direct partial derivative contibution
         dIda_1 = self.getdIda(objective)
@@ -2779,7 +2785,7 @@ steady rotations and specifying an aeroProblem')
         # warning that this is deprecated.
         if name in self.deprecatedOptions.keys():
             if self.comm.rank == 0:
-                SUMBWarning('Option \'%-29s\' is a deprecated SUmb Option |'% name)
+                SUMBWarning("Option '%-29s\' is a deprecated SUmb Option |"% name)
             return
 
         # Try to the option in the option dictionary
@@ -2788,7 +2794,7 @@ steady rotations and specifying an aeroProblem')
             defOptions[name]
         except:
             if self.comm.rank == 0:
-                SUMBWarning('Option \'%-30s\' is not a valid SUmb Option |'%name)
+                SUMBWarning("Option '%-30s' is not a valid SUmb Option |"%name)
             return
 
         # Now we know the option exists, lets check if the type is ok:
@@ -2796,9 +2802,9 @@ steady rotations and specifying an aeroProblem')
             # Just set:
             self.options[name] = [type(value),value]
         else:
-            raise Error('Datatype for Option %-35s was not valid \n \
-            Expected data type is %-47s \n \
-            Received data type is %-47s'% (
+            raise Error("Datatype for Option %-35s was not valid \n "
+                        "Expected data type is %-47s \n "
+                        "Received data type is %-47s"% (
                             name, self.options[name][0], type(value)))
 
         # If the option is in the ignoredOption list, we just return.
