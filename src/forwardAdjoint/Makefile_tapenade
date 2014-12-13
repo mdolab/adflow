@@ -119,11 +119,11 @@ ALL_RES_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.F90\
 		$(SRC)/turbulence/turbAdvection.f90\
 		$(SRC)/turbulence/unsteadyTurbTerm.f90\
 		$(SRC)/turbulence/bcTurbSymm.f90\
-		$(SRC)/turbulence/bcTurbWall.f90\
+		$(SRC)/turbulence/bcTurbWall.F90\
 		$(SRC)/turbulence/bcTurbFarfield.f90\
 		$(SRC)/turbulence/unsteadyTurbSpectral.f90\
 		$(SRC)/turbulence/bcTurbTreatment.F90\
-		$(SRC)/turbulence/applyAllTurbBC.f90\
+		$(SRC)/turbulence/applyAllTurbBC.F90\
 		$(SRC)/turbulence/bcEddyWall.f90\
 		$(SRC)/turbulence/bcEddyNoWall.f90\
 		$(SRC)/turbulence/turb2ndHalo.f90\
