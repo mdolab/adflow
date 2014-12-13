@@ -1,3 +1,13 @@
+!
+!     ******************************************************************
+!     *                                                                *
+!     * This file contains three routines for saving the adjoint       *
+!     * matrix, the preconditioning matrix and the RHS to a file.      *
+!     * The intended usage for this is to do experimentation with      *
+!     * stand-alone PETSc programs that just solve a linear system.    *
+!     *                                                                *
+!     ******************************************************************
+
 subroutine saveADjointMatrix(fileName)
 
   use ADjointPETSc, only: drdwt
@@ -55,27 +65,27 @@ end subroutine saveAdjointPC
 
 subroutine saveADjointRHS(fileName)
 
-  use ADjointPETSc, only: dJdw
-  use communication
-  implicit none
+!   use ADjointPETSc, only: dJdw
+!   use communication
+!   implicit none
 
-#ifndef USE_NO_PETSC
-#define PETSC_AVOID_MPIF_H
-#include "finclude/petsc.h"
-  ! Input params
-  character*(*), intent(in) :: fileName
+! #ifndef USE_NO_PETSC
+! #define PETSC_AVOID_MPIF_H
+! #include "finclude/petsc.h"
+!   ! Input params
+!   character*(*), intent(in) :: fileName
 
-  ! Working parameters
-  PetscViewer binViewer
-  integer(kind=intType) :: ierr
+!   ! Working parameters
+!   PetscViewer binViewer
+!   integer(kind=intType) :: ierr
 
-  call PetscViewerBinaryOpen(sumb_comm_world, fileName, FILE_MODE_WRITE, binViewer, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
+!   call PetscViewerBinaryOpen(sumb_comm_world, fileName, FILE_MODE_WRITE, binViewer, ierr)
+!   call EChk(ierr, __FILE__, __LINE__)
 
-  call VecView(dJdw, binViewer, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
+!   call VecView(dJdw, binViewer, ierr)
+!   call EChk(ierr, __FILE__, __LINE__)
 
-  call PetscViewerDestroy(binViewer,ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-#endif
+!   call PetscViewerDestroy(binViewer,ierr)
+!   call EChk(ierr, __FILE__, __LINE__)
+! #endif
 end subroutine saveADjointRHS

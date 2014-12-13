@@ -504,9 +504,6 @@ python module libsumb
          integer(kind=inttype), intent(out) :: liftdir
        end subroutine getliftdirfromsymmetry
       
-       subroutine releasememadjoint
-       end subroutine releasememadjoint
-
        ! ############################################################################
        ! SUmb Adjoint Coupling Routines
        ! ############################################################################

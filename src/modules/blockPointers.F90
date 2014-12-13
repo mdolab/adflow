@@ -69,8 +69,6 @@ module blockPointers
   integer(kind=intType), dimension(:), pointer :: BCType
   integer(kind=intType), dimension(:), pointer :: BCFaceID
 
-  integer(kind=intType), dimension(:), pointer :: nNodesSubface
-
   integer(kind=intType), dimension(:), pointer :: cgnsSubface
 
   integer(kind=intType), dimension(:), pointer :: inBeg, inEnd
