@@ -44,14 +44,6 @@
    !      Local variables.
    !
    INTEGER(kind=inttype) :: nn, i, j, l, m
-   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: bmt
-   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: bmtd
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: bvt
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: bvtd
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww0, ww1, ww2
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww0d, ww1d, ww2d
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev0, rev1, rev2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev0d, rev1d, rev2d
    !
    !      ******************************************************************
    !      *                                                                *
@@ -63,167 +55,171 @@
    bocos:DO nn=1,nviscbocos
    ! Set the corresponding arrays.
    CALL BCTURBWALL_D(nn)
-   ! Determine the block face on which this subface is located
-   ! and set some pointers accordingly.
-   SELECT CASE  (bcfaceid(nn)) 
-   CASE (imin) 
-   bmtd => bmti1d
-   bmt => bmti1
-   bvtd => bvti1d
-   bvt => bvti1
-   ww0d => wd(0, 1:, 1:, :)
-   ww0 => w(0, 1:, 1:, :)
-   ww1d => wd(1, 1:, 1:, :)
-   ww1 => w(1, 1:, 1:, :)
-   ww2d => wd(2, 1:, 1:, :)
-   ww2 => w(2, 1:, 1:, :)
-   IF (eddymodel) THEN
-   rev0d => revd(0, 1:, 1:)
-   rev0 => rev(0, 1:, 1:)
-   rev1d => revd(1, 1:, 1:)
-   rev1 => rev(1, 1:, 1:)
-   rev2d => revd(2, 1:, 1:)
-   rev2 => rev(2, 1:, 1:)
-   END IF
-   CASE (imax) 
-   bmtd => bmti2d
-   bmt => bmti2
-   bvtd => bvti2d
-   bvt => bvti2
-   ww0d => wd(ib, 1:, 1:, :)
-   ww0 => w(ib, 1:, 1:, :)
-   ww1d => wd(ie, 1:, 1:, :)
-   ww1 => w(ie, 1:, 1:, :)
-   ww2d => wd(il, 1:, 1:, :)
-   ww2 => w(il, 1:, 1:, :)
-   IF (eddymodel) THEN
-   rev0d => revd(ib, 1:, 1:)
-   rev0 => rev(ib, 1:, 1:)
-   rev1d => revd(ie, 1:, 1:)
-   rev1 => rev(ie, 1:, 1:)
-   rev2d => revd(il, 1:, 1:)
-   rev2 => rev(il, 1:, 1:)
-   END IF
-   CASE (jmin) 
-   bmtd => bmtj1d
-   bmt => bmtj1
-   bvtd => bvtj1d
-   bvt => bvtj1
-   ww0d => wd(1:, 0, 1:, :)
-   ww0 => w(1:, 0, 1:, :)
-   ww1d => wd(1:, 1, 1:, :)
-   ww1 => w(1:, 1, 1:, :)
-   ww2d => wd(1:, 2, 1:, :)
-   ww2 => w(1:, 2, 1:, :)
-   IF (eddymodel) THEN
-   rev0d => revd(1:, 0, 1:)
-   rev0 => rev(1:, 0, 1:)
-   rev1d => revd(1:, 1, 1:)
-   rev1 => rev(1:, 1, 1:)
-   rev2d => revd(1:, 2, 1:)
-   rev2 => rev(1:, 2, 1:)
-   END IF
-   CASE (jmax) 
-   bmtd => bmtj2d
-   bmt => bmtj2
-   bvtd => bvtj2d
-   bvt => bvtj2
-   ww0d => wd(1:, jb, 1:, :)
-   ww0 => w(1:, jb, 1:, :)
-   ww1d => wd(1:, je, 1:, :)
-   ww1 => w(1:, je, 1:, :)
-   ww2d => wd(1:, jl, 1:, :)
-   ww2 => w(1:, jl, 1:, :)
-   IF (eddymodel) THEN
-   rev0d => revd(1:, jb, 1:)
-   rev0 => rev(1:, jb, 1:)
-   rev1d => revd(1:, je, 1:)
-   rev1 => rev(1:, je, 1:)
-   rev2d => revd(1:, jl, 1:)
-   rev2 => rev(1:, jl, 1:)
-   END IF
-   CASE (kmin) 
-   bmtd => bmtk1d
-   bmt => bmtk1
-   bvtd => bvtk1d
-   bvt => bvtk1
-   ww0d => wd(1:, 1:, 0, :)
-   ww0 => w(1:, 1:, 0, :)
-   ww1d => wd(1:, 1:, 1, :)
-   ww1 => w(1:, 1:, 1, :)
-   ww2d => wd(1:, 1:, 2, :)
-   ww2 => w(1:, 1:, 2, :)
-   IF (eddymodel) THEN
-   rev0d => revd(1:, 1:, 0)
-   rev0 => rev(1:, 1:, 0)
-   rev1d => revd(1:, 1:, 1)
-   rev1 => rev(1:, 1:, 1)
-   rev2d => revd(1:, 1:, 2)
-   rev2 => rev(1:, 1:, 2)
-   END IF
-   CASE (kmax) 
-   bmtd => bmtk2d
-   bmt => bmtk2
-   bvtd => bvtk2d
-   bvt => bvtk2
-   ww0d => wd(1:, 1:, kb, :)
-   ww0 => w(1:, 1:, kb, :)
-   ww1d => wd(1:, 1:, ke, :)
-   ww1 => w(1:, 1:, ke, :)
-   ww2d => wd(1:, 1:, kl, :)
-   ww2 => w(1:, 1:, kl, :)
-   IF (eddymodel) THEN
-   rev0d => revd(1:, 1:, kb)
-   rev0 => rev(1:, 1:, kb)
-   rev1d => revd(1:, 1:, ke)
-   rev1 => rev(1:, 1:, ke)
-   rev2d => revd(1:, 1:, kl)
-   rev2 => rev(1:, 1:, kl)
-   END IF
-   END SELECT
    ! Loop over the faces and set the state in
    ! the turbulent halo cells.
+   SELECT CASE  (bcfaceid(nn)) 
+   CASE (imin) 
    DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
    DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
    DO l=nt1,nt2
-   ww1d(i, j, l) = bvtd(i, j, l)
-   ww1(i, j, l) = bvt(i, j, l)
+   wd(1, i, j, l) = bvti1d(i, j, l)
+   w(1, i, j, l) = bvti1(i, j, l)
    DO m=nt1,nt2
-   ww1d(i, j, l) = ww1d(i, j, l) - bmtd(i, j, l, m)*ww2(i, j, m&
-   &             ) - bmt(i, j, l, m)*ww2d(i, j, m)
-   ww1(i, j, l) = ww1(i, j, l) - bmt(i, j, l, m)*ww2(i, j, m)
+   wd(1, i, j, l) = wd(1, i, j, l) - bmti1d(i, j, l, m)*w(2, &
+   &               i, j, m) - bmti1(i, j, l, m)*wd(2, i, j, m)
+   w(1, i, j, l) = w(1, i, j, l) - bmti1(i, j, l, m)*w(2, i, &
+   &               j, m)
    END DO
-   END DO
-   END DO
-   END DO
-   ! Use constant extrapolation if the state in the second halo
-   ! must be computed.
    IF (secondhalo) THEN
+   wd(0, i, j, l) = wd(1, i, j, l)
+   w(0, i, j, l) = w(1, i, j, l)
+   END IF
+   END DO
+   IF (eddymodel) THEN
+   revd(1, i, j) = -revd(2, i, j)
+   rev(1, i, j) = -rev(2, i, j)
+   IF (secondhalo) THEN
+   revd(0, i, j) = revd(1, i, j)
+   rev(0, i, j) = rev(1, i, j)
+   END IF
+   END IF
+   END DO
+   END DO
+   CASE (imax) 
    DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
    DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
    DO l=nt1,nt2
-   ww0d(i, j, l) = ww1d(i, j, l)
-   ww0(i, j, l) = ww1(i, j, l)
-   END DO
-   END DO
-   END DO
-   END IF
-   ! Set the eddy viscosity for an eddy model.
-   IF (eddymodel) THEN
-   DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
-   DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
-   rev1d(i, j) = -rev2d(i, j)
-   rev1(i, j) = -rev2(i, j)
-   END DO
+   wd(ie, i, j, l) = bvti2d(i, j, l)
+   w(ie, i, j, l) = bvti2(i, j, l)
+   DO m=nt1,nt2
+   wd(ie, i, j, l) = wd(ie, i, j, l) - bmti2d(i, j, l, m)*w(&
+   &               il, i, j, m) - bmti2(i, j, l, m)*wd(il, i, j, m)
+   w(ie, i, j, l) = w(ie, i, j, l) - bmti2(i, j, l, m)*w(il, &
+   &               i, j, m)
    END DO
    IF (secondhalo) THEN
+   wd(ib, i, j, l) = wd(ie, i, j, l)
+   w(ib, i, j, l) = w(ie, i, j, l)
+   END IF
+   END DO
+   IF (eddymodel) THEN
+   revd(ie, i, j) = -revd(il, i, j)
+   rev(ie, i, j) = -rev(il, i, j)
+   IF (secondhalo) THEN
+   revd(ib, i, j) = revd(ie, i, j)
+   rev(ib, i, j) = rev(ie, i, j)
+   END IF
+   END IF
+   END DO
+   END DO
+   CASE (jmin) 
    DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
    DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
-   rev0d(i, j) = rev1d(i, j)
-   rev0(i, j) = rev1(i, j)
+   DO l=nt1,nt2
+   wd(i, 1, j, l) = bvtj1d(i, j, l)
+   w(i, 1, j, l) = bvtj1(i, j, l)
+   DO m=nt1,nt2
+   wd(i, 1, j, l) = wd(i, 1, j, l) - bmtj1d(i, j, l, m)*w(i, &
+   &               2, j, m) - bmtj1(i, j, l, m)*wd(i, 2, j, m)
+   w(i, 1, j, l) = w(i, 1, j, l) - bmtj1(i, j, l, m)*w(i, 2, &
+   &               j, m)
    END DO
+   IF (secondhalo) THEN
+   wd(i, 0, j, l) = wd(i, 1, j, l)
+   w(i, 0, j, l) = w(i, 1, j, l)
+   END IF
    END DO
+   IF (eddymodel) THEN
+   revd(i, 1, j) = -revd(i, 2, j)
+   rev(i, 1, j) = -rev(i, 2, j)
+   IF (secondhalo) THEN
+   revd(i, 0, j) = revd(i, 1, j)
+   rev(i, 0, j) = rev(i, 1, j)
    END IF
    END IF
+   END DO
+   END DO
+   CASE (jmax) 
+   DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+   DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
+   DO l=nt1,nt2
+   wd(i, je, j, l) = bvtj2d(i, j, l)
+   w(i, je, j, l) = bvtj2(i, j, l)
+   DO m=nt1,nt2
+   wd(i, je, j, l) = wd(i, je, j, l) - bmtj2d(i, j, l, m)*w(i&
+   &               , jl, j, m) - bmtj2(i, j, l, m)*wd(i, jl, j, m)
+   w(i, je, j, l) = w(i, je, j, l) - bmtj2(i, j, l, m)*w(i, &
+   &               jl, j, m)
+   END DO
+   IF (secondhalo) THEN
+   wd(i, jb, j, l) = wd(i, je, j, l)
+   w(i, jb, j, l) = w(i, je, j, l)
+   END IF
+   END DO
+   IF (eddymodel) THEN
+   revd(i, je, j) = -revd(i, jl, j)
+   rev(i, je, j) = -rev(i, jl, j)
+   IF (secondhalo) THEN
+   revd(i, jb, j) = revd(i, je, j)
+   rev(i, jb, j) = rev(i, je, j)
+   END IF
+   END IF
+   END DO
+   END DO
+   CASE (kmin) 
+   DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+   DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
+   DO l=nt1,nt2
+   wd(i, j, 1, l) = bvtk1d(i, j, l)
+   w(i, j, 1, l) = bvtk1(i, j, l)
+   DO m=nt1,nt2
+   wd(i, j, 1, l) = wd(i, j, 1, l) - bmtk1d(i, j, l, m)*w(i, &
+   &               j, 2, m) - bmtk1(i, j, l, m)*wd(i, j, 2, m)
+   w(i, j, 1, l) = w(i, j, 1, l) - bmtk1(i, j, l, m)*w(i, j, &
+   &               2, m)
+   END DO
+   IF (secondhalo) THEN
+   wd(i, j, 0, l) = wd(i, j, 1, l)
+   w(i, j, 0, l) = w(i, j, 1, l)
+   END IF
+   END DO
+   IF (eddymodel) THEN
+   revd(i, j, 1) = -revd(i, j, 2)
+   rev(i, j, 1) = -rev(i, j, 2)
+   IF (secondhalo) THEN
+   revd(i, j, 0) = revd(i, j, 1)
+   rev(i, j, 0) = rev(i, j, 1)
+   END IF
+   END IF
+   END DO
+   END DO
+   CASE (kmax) 
+   DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+   DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
+   DO l=nt1,nt2
+   wd(i, j, ke, l) = bvtk2d(i, j, l)
+   w(i, j, ke, l) = bvtk2(i, j, l)
+   DO m=nt1,nt2
+   wd(i, j, ke, l) = wd(i, j, ke, l) - bmtk2d(i, j, l, m)*w(i&
+   &               , j, kl, m) - bmtk2(i, j, l, m)*wd(i, j, kl, m)
+   w(i, j, ke, l) = w(i, j, ke, l) - bmtk2(i, j, l, m)*w(i, j&
+   &               , kl, m)
+   END DO
+   IF (secondhalo) THEN
+   wd(i, j, kb, l) = wd(i, j, ke, l)
+   w(i, j, kb, l) = w(i, j, ke, l)
+   END IF
+   END DO
+   IF (eddymodel) THEN
+   revd(i, j, ke) = -revd(i, j, kl)
+   rev(i, j, ke) = -rev(i, j, kl)
+   IF (secondhalo) THEN
+   revd(i, j, kb) = revd(i, j, ke)
+   rev(i, j, kb) = rev(i, j, ke)
+   END IF
+   END IF
+   END DO
+   END DO
+   END SELECT
    END DO bocos
    END SUBROUTINE TURBBCNSWALL_D
