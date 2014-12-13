@@ -48,10 +48,6 @@
    !
    INTEGER(kind=inttype) :: i, j, l
    REAL(kind=realtype) :: nnx, nny, nnz, dot
-   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: bmt
-   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: bmtd
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: bvt
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: bvtd
    !
    !      ******************************************************************
    !      *                                                                *
@@ -59,52 +55,15 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   ! Set the pointers for bmt and bvt, depending on the block face
-   ! on which the subface is located.
-   SELECT CASE  (bcfaceid(nn)) 
-   CASE (imin) 
-   bmtd => bmti1d
-   bmt => bmti1
-   bvtd => bvti1d
-   bvt => bvti1
-   CASE (imax) 
-   bmtd => bmti2d
-   bmt => bmti2
-   bvtd => bvti2d
-   bvt => bvti2
-   CASE (jmin) 
-   bmtd => bmtj1d
-   bmt => bmtj1
-   bvtd => bvtj1d
-   bvt => bvtj1
-   CASE (jmax) 
-   bmtd => bmtj2d
-   bmt => bmtj2
-   bvtd => bvtj2d
-   bvt => bvtj2
-   CASE (kmin) 
-   bmtd => bmtk1d
-   bmt => bmtk1
-   bvtd => bvtk1d
-   bvt => bvtk1
-   CASE (kmax) 
-   bmtd => bmtk2d
-   bmt => bmtk2
-   bvtd => bvtk2d
-   bvt => bvtk2
-   END SELECT
    ! Loop over the faces of the subfaces and set the values of
    ! bmt and bvt for an implicit treatment.
    DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
    DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
-   ! Store the three components of the unit normal a bit easier.
-   nnx = bcdata(nn)%norm(i, j, 1)
-   nny = bcdata(nn)%norm(i, j, 2)
-   nnz = bcdata(nn)%norm(i, j, 3)
    ! Determine the dot product between the outward pointing
    ! normal and the free stream velocity direction and add the
    ! possible grid velocity.
-   dot = nnx*winf(ivx) + nny*winf(ivy) + nnz*winf(ivz) - bcdata(nn)%&
+   dot = bcdata(nn)%norm(i, j, 1)*winf(ivx) + bcdata(nn)%norm(i, j, 2&
+   &       )*winf(ivy) + bcdata(nn)%norm(i, j, 3)*winf(ivz) - bcdata(nn)%&
    &       rface(i, j)
    ! Determine whether we are dealing with an inflow or
    ! outflow boundary here.
@@ -112,14 +71,50 @@
    ! Outflow. Simply extrapolation or zero Neumann BC
    ! of the turbulent variables.
    DO l=nt1,nt2
-   bmtd(i, j, l, l) = 0.0_8
-   bmt(i, j, l, l) = -one
+   SELECT CASE  (bcfaceid(nn)) 
+   CASE (imin) 
+   bmti1d(i, j, l, l) = 0.0_8
+   bmti1(i, j, l, l) = -one
+   CASE (imax) 
+   bmti2d(i, j, l, l) = 0.0_8
+   bmti2(i, j, l, l) = -one
+   CASE (jmin) 
+   bmtj1d(i, j, l, l) = 0.0_8
+   bmtj1(i, j, l, l) = -one
+   CASE (jmax) 
+   bmtj2d(i, j, l, l) = 0.0_8
+   bmtj2(i, j, l, l) = -one
+   CASE (kmin) 
+   bmtk1d(i, j, l, l) = 0.0_8
+   bmtk1(i, j, l, l) = -one
+   CASE (kmax) 
+   bmtk2d(i, j, l, l) = 0.0_8
+   bmtk2(i, j, l, l) = -one
+   END SELECT
    END DO
    ELSE
    ! Inflow. Turbulent variables are prescribed.
    DO l=nt1,nt2
-   bvtd(i, j, l) = winfd(l)
-   bvt(i, j, l) = winf(l)
+   SELECT CASE  (bcfaceid(nn)) 
+   CASE (imin) 
+   bvti1d(i, j, l) = winfd(l)
+   bvti1(i, j, l) = winf(l)
+   CASE (imax) 
+   bvti2d(i, j, l) = winfd(l)
+   bvti2(i, j, l) = winf(l)
+   CASE (jmin) 
+   bvtj1d(i, j, l) = winfd(l)
+   bvtj1(i, j, l) = winf(l)
+   CASE (jmax) 
+   bvtj2d(i, j, l) = winfd(l)
+   bvtj2(i, j, l) = winf(l)
+   CASE (kmin) 
+   bvtk1d(i, j, l) = winfd(l)
+   bvtk1(i, j, l) = winf(l)
+   CASE (kmax) 
+   bvtk2d(i, j, l) = winfd(l)
+   bvtk2(i, j, l) = winf(l)
+   END SELECT
    END DO
    END IF
    END DO

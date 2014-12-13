@@ -2,10 +2,9 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of turbadvection in forward (tangent) mode (with options i4 dr8 r8):
-   !   variations   of useful results: *dw qq
-   !   with respect to varying inputs: *sfacei *sfacej *sfacek *bmtk1
-   !                *dw *w *bmtk2 *vol *bmti1 *bmti2 *si *sj *sk *bmtj1
-   !                *bmtj2 qq
+   !   variations   of useful results: *dw
+   !   with respect to varying inputs: *sfacei *sfacej *sfacek *dw
+   !                *w *vol *si *sj *sk
    !   Plus diff mem management of: sfacei:in sfacej:in sfacek:in
    !                bmtk1:in dw:in w:in bmtk2:in vol:in bmti1:in bmti2:in
    !                si:in sj:in sk:in bmtj1:in bmtj2:in
@@ -19,7 +18,7 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   SUBROUTINE TURBADVECTION_D(madv, nadv, offset, qq, qqd)
+   SUBROUTINE TURBADVECTION_D(madv, nadv, offset, qq)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -53,8 +52,6 @@
    INTEGER(kind=inttype), INTENT(IN) :: nadv, madv, offset
    REAL(kind=realtype), DIMENSION(2:il, 2:jl, 2:kl, madv, madv), INTENT(&
    & INOUT) :: qq
-   REAL(kind=realtype), DIMENSION(2:il, 2:jl, 2:kl, madv, madv), INTENT(&
-   & INOUT) :: qqd
    !
    !      Local variables.
    !
@@ -64,7 +61,6 @@
    REAL(kind=realtype) :: uu, dwt, dwtm1, dwtp1, dwti, dwtj, dwtk
    REAL(kind=realtype) :: uud, dwtd, dwtm1d, dwtp1d, dwtid, dwtjd, dwtkd
    REAL(kind=realtype), DIMENSION(madv) :: impl
-   REAL(kind=realtype), DIMENSION(madv) :: impld
    INTRINSIC ABS
    INTRINSIC MAX
    REAL(kind=realtype) :: abs23
@@ -102,7 +98,6 @@
    ! if the block is not moving.
    qs = zero
    qsd = 0.0_8
-   impld = 0.0_8
    !
    !      ******************************************************************
    !      *                                                                *
@@ -218,7 +213,6 @@
    dw(i, j, k, idvt+ii-1) = dw(i, j, k, idvt+ii-1) - uu*dwtk
    ! Update the central jacobian. First the term which is
    ! always present, i.e. uu.
-   qqd(i, j, k, ii, ii) = qqd(i, j, k, ii, ii) + uud
    qq(i, j, k, ii, ii) = qq(i, j, k, ii, ii) + uu
    ! For boundary cells k == 2, the implicit treatment must
    ! be taken into account. Note that the implicit part
@@ -228,18 +222,14 @@
    ! it is positive.
    IF (k .EQ. 2) THEN
    DO kk=1,madv
-   impld(kk) = bmtk1d(i, j, jj, kk+offset)
    impl(kk) = bmtk1(i, j, jj, kk+offset)
    END DO
    IF (impl(ii) .LT. zero) THEN
-   impld(ii) = 0.0_8
    impl(ii) = zero
    ELSE
    impl(ii) = impl(ii)
    END IF
    DO kk=1,madv
-   qqd(i, j, k, ii, kk) = qqd(i, j, k, ii, kk) + uud*impl(&
-   &                 kk) + uu*impld(kk)
    qq(i, j, k, ii, kk) = qq(i, j, k, ii, kk) + uu*impl(kk)
    END DO
    END IF
@@ -318,7 +308,6 @@
    dw(i, j, k, idvt+ii-1) = dw(i, j, k, idvt+ii-1) - uu*dwtk
    ! Update the central jacobian. First the term which is
    ! always present, i.e. -uu.
-   qqd(i, j, k, ii, ii) = qqd(i, j, k, ii, ii) - uud
    qq(i, j, k, ii, ii) = qq(i, j, k, ii, ii) - uu
    ! For boundary cells k == kl, the implicit treatment must
    ! be taken into account. Note that the implicit part
@@ -328,18 +317,14 @@
    ! it is positive.
    IF (k .EQ. kl) THEN
    DO kk=1,madv
-   impld(kk) = bmtk2d(i, j, jj, kk+offset)
    impl(kk) = bmtk2(i, j, jj, kk+offset)
    END DO
    IF (impl(ii) .LT. zero) THEN
-   impld(ii) = 0.0_8
    impl(ii) = zero
    ELSE
    impl(ii) = impl(ii)
    END IF
    DO kk=1,madv
-   qqd(i, j, k, ii, kk) = qqd(i, j, k, ii, kk) - uud*impl(&
-   &                 kk) - uu*impld(kk)
    qq(i, j, k, ii, kk) = qq(i, j, k, ii, kk) - uu*impl(kk)
    END DO
    END IF
@@ -463,7 +448,6 @@
    dw(i, j, k, idvt+ii-1) = dw(i, j, k, idvt+ii-1) - uu*dwtj
    ! Update the central jacobian. First the term which is
    ! always present, i.e. uu.
-   qqd(i, j, k, ii, ii) = qqd(i, j, k, ii, ii) + uud
    qq(i, j, k, ii, ii) = qq(i, j, k, ii, ii) + uu
    ! For boundary cells j == 2, the implicit treatment must
    ! be taken into account. Note that the implicit part
@@ -473,18 +457,14 @@
    ! it is positive.
    IF (j .EQ. 2) THEN
    DO kk=1,madv
-   impld(kk) = bmtj1d(i, k, jj, kk+offset)
    impl(kk) = bmtj1(i, k, jj, kk+offset)
    END DO
    IF (impl(ii) .LT. zero) THEN
-   impld(ii) = 0.0_8
    impl(ii) = zero
    ELSE
    impl(ii) = impl(ii)
    END IF
    DO kk=1,madv
-   qqd(i, j, k, ii, kk) = qqd(i, j, k, ii, kk) + uud*impl(&
-   &                 kk) + uu*impld(kk)
    qq(i, j, k, ii, kk) = qq(i, j, k, ii, kk) + uu*impl(kk)
    END DO
    END IF
@@ -563,7 +543,6 @@
    dw(i, j, k, idvt+ii-1) = dw(i, j, k, idvt+ii-1) - uu*dwtj
    ! Update the central jacobian. First the term which is
    ! always present, i.e. -uu.
-   qqd(i, j, k, ii, ii) = qqd(i, j, k, ii, ii) - uud
    qq(i, j, k, ii, ii) = qq(i, j, k, ii, ii) - uu
    ! For boundary cells j == jl, the implicit treatment must
    ! be taken into account. Note that the implicit part
@@ -573,18 +552,14 @@
    ! it is positive.
    IF (j .EQ. jl) THEN
    DO kk=1,madv
-   impld(kk) = bmtj2d(i, k, jj, kk+offset)
    impl(kk) = bmtj2(i, k, jj, kk+offset)
    END DO
    IF (impl(ii) .LT. zero) THEN
-   impld(ii) = 0.0_8
    impl(ii) = zero
    ELSE
    impl(ii) = impl(ii)
    END IF
    DO kk=1,madv
-   qqd(i, j, k, ii, kk) = qqd(i, j, k, ii, kk) - uud*impl(&
-   &                 kk) - uu*impld(kk)
    qq(i, j, k, ii, kk) = qq(i, j, k, ii, kk) - uu*impl(kk)
    END DO
    END IF
@@ -708,7 +683,6 @@
    dw(i, j, k, idvt+ii-1) = dw(i, j, k, idvt+ii-1) - uu*dwti
    ! Update the central jacobian. First the term which is
    ! always present, i.e. uu.
-   qqd(i, j, k, ii, ii) = qqd(i, j, k, ii, ii) + uud
    qq(i, j, k, ii, ii) = qq(i, j, k, ii, ii) + uu
    ! For boundary cells i == 2, the implicit treatment must
    ! be taken into account. Note that the implicit part
@@ -718,18 +692,14 @@
    ! it is positive.
    IF (i .EQ. 2) THEN
    DO kk=1,madv
-   impld(kk) = bmti1d(j, k, jj, kk+offset)
    impl(kk) = bmti1(j, k, jj, kk+offset)
    END DO
    IF (impl(ii) .LT. zero) THEN
-   impld(ii) = 0.0_8
    impl(ii) = zero
    ELSE
    impl(ii) = impl(ii)
    END IF
    DO kk=1,madv
-   qqd(i, j, k, ii, kk) = qqd(i, j, k, ii, kk) + uud*impl(&
-   &                 kk) + uu*impld(kk)
    qq(i, j, k, ii, kk) = qq(i, j, k, ii, kk) + uu*impl(kk)
    END DO
    END IF
@@ -808,7 +778,6 @@
    dw(i, j, k, idvt+ii-1) = dw(i, j, k, idvt+ii-1) - uu*dwti
    ! Update the central jacobian. First the term which is
    ! always present, i.e. -uu.
-   qqd(i, j, k, ii, ii) = qqd(i, j, k, ii, ii) - uud
    qq(i, j, k, ii, ii) = qq(i, j, k, ii, ii) - uu
    ! For boundary cells i == il, the implicit treatment must
    ! be taken into account. Note that the implicit part
@@ -818,18 +787,14 @@
    ! it is positive.
    IF (i .EQ. il) THEN
    DO kk=1,madv
-   impld(kk) = bmti2d(j, k, jj, kk+offset)
    impl(kk) = bmti2(j, k, jj, kk+offset)
    END DO
    IF (impl(ii) .LT. zero) THEN
-   impld(ii) = 0.0_8
    impl(ii) = zero
    ELSE
    impl(ii) = impl(ii)
    END IF
    DO kk=1,madv
-   qqd(i, j, k, ii, kk) = qqd(i, j, k, ii, kk) - uud*impl(&
-   &                 kk) - uu*impld(kk)
    qq(i, j, k, ii, kk) = qq(i, j, k, ii, kk) - uu*impl(kk)
    END DO
    END IF

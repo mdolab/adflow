@@ -136,7 +136,6 @@
    fwd = 0.0_8
    END IF
    CASE (dissmatrix) 
-   ! Reverse adjoint currently only work with invisciddissscalar
    !===========================================================
    ! Matrix dissipation scheme.
    IF (finegrid) THEN

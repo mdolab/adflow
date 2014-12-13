@@ -8,104 +8,101 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       subroutine bcTurbFarfield(nn)
-!
-!      ******************************************************************
-!      *                                                                *
-!      * bcTurbFarfield applies the implicit treatment of the           *
-!      * farfield boundary condition to subface nn. As the farfield     *
-!      * boundary condition is independent of the turbulence model,     *
-!      * this routine is valid for all models. It is assumed that the   *
-!      * pointers in blockPointers are already set to the correct       *
-!      * block on the correct grid level.                               *
-!      *                                                                *
-!      ******************************************************************
-!
-       use blockPointers
-       use BCTypes
-       use constants
-       use flowVarRefState
-       implicit none
-!
-!      Subroutine arguments.
-!
-       integer(kind=intType), intent(in) :: nn
-!
-!      Local variables.
-!
-       integer(kind=intType) :: i, j, l
+subroutine bcTurbFarfield(nn)
+  !
+  !      ******************************************************************
+  !      *                                                                *
+  !      * bcTurbFarfield applies the implicit treatment of the           *
+  !      * farfield boundary condition to subface nn. As the farfield     *
+  !      * boundary condition is independent of the turbulence model,     *
+  !      * this routine is valid for all models. It is assumed that the   *
+  !      * pointers in blockPointers are already set to the correct       *
+  !      * block on the correct grid level.                               *
+  !      *                                                                *
+  !      ******************************************************************
+  !
+  use blockPointers
+  use BCTypes
+  use constants
+  use flowVarRefState
+  implicit none
+  !
+  !      Subroutine arguments.
+  !
+  integer(kind=intType), intent(in) :: nn
+  !
+  !      Local variables.
+  !
+  integer(kind=intType) :: i, j, l
 
-       real(kind=realType) :: nnx, nny, nnz, dot
+  real(kind=realType) :: nnx, nny, nnz, dot
+  !
+  !      ******************************************************************
+  !      *                                                                *
+  !      * Begin execution                                                *
+  !      *                                                                *
+  !      ******************************************************************
+  !
+  ! Loop over the faces of the subfaces and set the values of
+  ! bmt and bvt for an implicit treatment.
 
-       real(kind=realType), dimension(:,:,:,:), pointer :: bmt
-       real(kind=realType), dimension(:,:,:),   pointer :: bvt
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
-       ! Set the pointers for bmt and bvt, depending on the block face
-       ! on which the subface is located.
+  do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
+     do i=BCData(nn)%icBeg, BCData(nn)%icEnd
 
-       select case (BCFaceID(nn))
-         case (iMin)
-           bmt => bmti1; bvt => bvti1
-         case (iMax)
-           bmt => bmti2; bvt => bvti2
-         case (jMin)
-           bmt => bmtj1; bvt => bvtj1
-         case (jMax)
-           bmt => bmtj2; bvt => bvtj2
-         case (kMin)
-           bmt => bmtk1; bvt => bvtk1
-         case (kMax)
-           bmt => bmtk2; bvt => bvtk2
-       end select
+        ! Determine the dot product between the outward pointing
+        ! normal and the free stream velocity direction and add the
+        ! possible grid velocity.
 
-       ! Loop over the faces of the subfaces and set the values of
-       ! bmt and bvt for an implicit treatment.
+        dot = BCData(nn)%norm(i,j,1)*wInf(ivx) + &
+             BCData(nn)%norm(i,j,2)*wInf(ivy) + &
+             BCData(nn)%norm(i,j,3)*wInf(ivz) - BCData(nn)%rface(i,j)
 
-       do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
-         do i=BCData(nn)%icBeg, BCData(nn)%icEnd
+        ! Determine whether we are dealing with an inflow or
+        ! outflow boundary here.
 
-           ! Store the three components of the unit normal a bit easier.
+        if(dot > zero) then
 
-           nnx = BCData(nn)%norm(i,j,1)
-           nny = BCData(nn)%norm(i,j,2)
-           nnz = BCData(nn)%norm(i,j,3)
+           ! Outflow. Simply extrapolation or zero Neumann BC
+           ! of the turbulent variables.
 
-           ! Determine the dot product between the outward pointing
-           ! normal and the free stream velocity direction and add the
-           ! possible grid velocity.
+           do l=nt1,nt2
+              select case (BCFaceID(nn))
+              case (iMin)
+                 bmti1(i,j,l,l) = -one
+              case (iMax)
+                 bmti2(i,j,l,l) = -one
+              case (jMin)
+                 bmtj1(i,j,l,l) = -one
+              case (jMax)
+                 bmtj2(i,j,l,l) = -one
+              case (kMin)
+                 bmtk1(i,j,l,l) = -one
+              case (kMax)
+                 bmtk2(i,j,l,l) = -one
+              end select
+           end do
 
-           dot = nnx*wInf(ivx) + nny*wInf(ivy) + nnz*wInf(ivz) &
-               - BCData(nn)%rface(i,j)
+        else
 
-           ! Determine whether we are dealing with an inflow or
-           ! outflow boundary here.
+           ! Inflow. Turbulent variables are prescribed.
 
-           if(dot > zero) then
-
-             ! Outflow. Simply extrapolation or zero Neumann BC
-             ! of the turbulent variables.
-
-             do l=nt1,nt2
-               bmt(i,j,l,l) = -one
-             enddo
-
-           else
-
-             ! Inflow. Turbulent variables are prescribed.
-
-             do l=nt1,nt2
-               bvt(i,j,l) = wInf(l)
-             enddo
-
-           endif
-
-         enddo
-       enddo
-
-       end subroutine bcTurbFarfield
+           do l=nt1,nt2
+              select case(BCFaceID(nn))
+              case (iMin)
+                 bvti1(i,j,l) = wInf(l)
+              case (iMax)
+                 bvti2(i,j,l) = wInf(l)
+              case (jMin)
+                 bvtj1(i,j,l) = wInf(l)
+              case (jMax)
+                 bvtj2(i,j,l) = wInf(l)
+              case (kMin)
+                 bvtk1(i,j,l) = wInf(l)
+              case (kMax)
+                 bvtk2(i,j,l) = wInf(l)
+              end select
+           enddo
+        endif
+     enddo
+  enddo
+end subroutine bcTurbFarfield

@@ -43,8 +43,6 @@
    !      Local variables.
    !
    INTEGER(kind=inttype) :: i, j, l
-   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: bmt
-   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: bmtd
    !
    !      ******************************************************************
    !      *                                                                *
@@ -52,36 +50,32 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   ! Set the pointer for bmt, depending on the block face on which
-   ! the subface is located.
-   SELECT CASE  (bcfaceid(nn)) 
-   CASE (imin) 
-   bmtd => bmti1d
-   bmt => bmti1
-   CASE (imax) 
-   bmtd => bmti2d
-   bmt => bmti2
-   CASE (jmin) 
-   bmtd => bmtj1d
-   bmt => bmtj1
-   CASE (jmax) 
-   bmtd => bmtj2d
-   bmt => bmtj2
-   CASE (kmin) 
-   bmtd => bmtk1d
-   bmt => bmtk1
-   CASE (kmax) 
-   bmtd => bmtk2d
-   bmt => bmtk2
-   END SELECT
    ! Loop over the faces of the subfaces and set the values of bmt
    ! for an implicit treatment. For a symmetry face this means
    ! that the halo value is set to the internal value.
    DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
    DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
    DO l=nt1,nt2
-   bmtd(i, j, l, l) = 0.0_8
-   bmt(i, j, l, l) = -one
+   SELECT CASE  (bcfaceid(nn)) 
+   CASE (imin) 
+   bmti1d(i, j, l, l) = 0.0_8
+   bmti1(i, j, l, l) = -one
+   CASE (imax) 
+   bmti2d(i, j, l, l) = 0.0_8
+   bmti2(i, j, l, l) = -one
+   CASE (jmin) 
+   bmtj1d(i, j, l, l) = 0.0_8
+   bmtj1(i, j, l, l) = -one
+   CASE (jmax) 
+   bmtj2d(i, j, l, l) = 0.0_8
+   bmtj2(i, j, l, l) = -one
+   CASE (kmin) 
+   bmtk1d(i, j, l, l) = 0.0_8
+   bmtk1(i, j, l, l) = -one
+   CASE (kmax) 
+   bmtk2d(i, j, l, l) = 0.0_8
+   bmtk2(i, j, l, l) = -one
+   END SELECT
    END DO
    END DO
    END DO

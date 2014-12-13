@@ -37,8 +37,6 @@
    !      Local variables.
    !
    INTEGER(kind=inttype) :: i, j
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1d, rev2d
    !
    !      ******************************************************************
    !      *                                                                *
@@ -47,45 +45,50 @@
    !      ******************************************************************
    !
    ! Determine the face id on which the subface is located and
-   ! set the pointers rev1 and rev2 accordingly.
+   ! loop over the faces of the subface and set the eddy viscosity
+   ! in the halo cells.
    SELECT CASE  (bcfaceid(nn)) 
    CASE (imin) 
-   rev1d => revd(1, 1:, 1:)
-   rev1 => rev(1, 1:, 1:)
-   rev2d => revd(2, 1:, 1:)
-   rev2 => rev(2, 1:, 1:)
-   CASE (imax) 
-   rev1d => revd(ie, 1:, 1:)
-   rev1 => rev(ie, 1:, 1:)
-   rev2d => revd(il, 1:, 1:)
-   rev2 => rev(il, 1:, 1:)
-   CASE (jmin) 
-   rev1d => revd(1:, 1, 1:)
-   rev1 => rev(1:, 1, 1:)
-   rev2d => revd(1:, 2, 1:)
-   rev2 => rev(1:, 2, 1:)
-   CASE (jmax) 
-   rev1d => revd(1:, je, 1:)
-   rev1 => rev(1:, je, 1:)
-   rev2d => revd(1:, jl, 1:)
-   rev2 => rev(1:, jl, 1:)
-   CASE (kmin) 
-   rev1d => revd(1:, 1:, 1)
-   rev1 => rev(1:, 1:, 1)
-   rev2d => revd(1:, 1:, 2)
-   rev2 => rev(1:, 1:, 2)
-   CASE (kmax) 
-   rev1d => revd(1:, 1:, ke)
-   rev1 => rev(1:, 1:, ke)
-   rev2d => revd(1:, 1:, kl)
-   rev2 => rev(1:, 1:, kl)
-   END SELECT
-   ! Loop over the faces of the subface and set the eddy
-   ! viscosity in the halo cells.
    DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
    DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
-   rev1d(i, j) = -rev2d(i, j)
-   rev1(i, j) = -rev2(i, j)
+   revd(1, i, j) = -revd(2, i, j)
+   rev(1, i, j) = -rev(2, i, j)
    END DO
    END DO
+   CASE (imax) 
+   DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+   DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
+   revd(ie, i, j) = -revd(il, i, j)
+   rev(ie, i, j) = -rev(il, i, j)
+   END DO
+   END DO
+   CASE (jmin) 
+   DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+   DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
+   revd(i, 1, j) = -revd(i, 2, j)
+   rev(i, 1, j) = -rev(i, 2, j)
+   END DO
+   END DO
+   CASE (jmax) 
+   DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+   DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
+   revd(i, je, j) = -revd(i, jl, j)
+   rev(i, je, j) = -rev(i, jl, j)
+   END DO
+   END DO
+   CASE (kmin) 
+   DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+   DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
+   revd(i, j, 1) = -revd(i, j, 2)
+   rev(i, j, 1) = -rev(i, j, 2)
+   END DO
+   END DO
+   CASE (kmax) 
+   DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+   DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
+   revd(i, j, ke) = -revd(i, j, kl)
+   rev(i, j, ke) = -rev(i, j, kl)
+   END DO
+   END DO
+   END SELECT
    END SUBROUTINE BCEDDYWALL_D
