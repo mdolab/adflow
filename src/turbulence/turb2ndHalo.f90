@@ -30,9 +30,6 @@
 !      Local variables.
 !
        integer(kind=intType) :: i, j, l
-
-       real(kind=realType), dimension(:,:,:), pointer :: ww0,   ww1
-       real(kind=realType), dimension(:,:),   pointer :: rrev0, rrev1
 !
 !      ******************************************************************
 !      *                                                                *
@@ -43,75 +40,81 @@
        ! Determine the face on which this subface is located and set
        ! some pointers accordingly.
 
+       ! Loop over the turbulent variables and set the second halo
+       ! value. If this is an eddy model, also set the eddy viscosity.
+
        select case (BCFaceID(nn))
          case (iMin)
-           ww0 => w(0,1:,1:,:); ww1 => w(1,1:,1:,:)
-
-           if( eddyModel ) then
-             rrev0 => rev(0,1:,1:); rrev1 => rev(1,1:,1:)
-           endif
-
+            do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
+               do i=BCData(nn)%icBeg, BCData(nn)%icEnd
+                  do l=nt1,nt2
+                     w(0,i,j,l) = w(1,i,j,l)
+                  enddo
+                  if( eddyModel ) rev(0,i,j) = rev(1,i,j)
+               enddo
+            enddo
+            
          !===============================================================
 
          case (iMax)
-           ww0 => w(ib,1:,1:,:); ww1 => w(ie,1:,1:,:)
-
-           if( eddyModel ) then
-             rrev0 => rev(ib,1:,1:); rrev1 => rev(ie,1:,1:)
-           endif
-
+            do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
+               do i=BCData(nn)%icBeg, BCData(nn)%icEnd
+                  do l=nt1,nt2
+                     w(ib,i,j,l) = w(ie,i,j,l)
+                  enddo
+                  if( eddyModel ) rev(ib,i,j) = rev(ie,i,j)
+               enddo
+            enddo
+            
          !===============================================================
 
          case (jMin)
-           ww0 => w(1:,0,1:,:); ww1 => w(1:,1,1:,:)
-
-           if( eddyModel ) then
-             rrev0 => rev(1:,0,1:); rrev1 => rev(1:,1,1:)
-           endif
+            do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
+               do i=BCData(nn)%icBeg, BCData(nn)%icEnd
+                  do l=nt1,nt2
+                     w(i,0,j,l) = w(i,1,j,l)
+                  enddo
+                  if( eddyModel ) rev(i,0,j) = rev(i,1,j)
+               enddo
+            enddo
 
          !===============================================================
 
          case (jMax)
-           ww0 => w(1:,jb,1:,:); ww1 => w(1:,je,1:,:)
-
-           if( eddyModel ) then
-             rrev0 => rev(1:,jb,1:); rrev1 => rev(1:,je,1:)
-           endif
+            do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
+               do i=BCData(nn)%icBeg, BCData(nn)%icEnd
+                  do l=nt1,nt2
+                     w(i,jb,j,l) = w(i,je,j,l)
+                  enddo
+                  if( eddyModel ) rev(i,jb,j) = rev(i,je,j)
+               enddo
+            enddo
 
          !===============================================================
 
          case (kMin)
-           ww0 => w(1:,1:,0,:); ww1 => w(1:,1:,1,:)
-
-           if( eddyModel ) then
-             rrev0 => rev(1:,1:,0); rrev1 => rev(1:,1:,1)
-           endif
+            do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
+               do i=BCData(nn)%icBeg, BCData(nn)%icEnd
+                  do l=nt1,nt2
+                     w(i,j,0,l) = w(i,j,1,l)
+                  enddo
+                  if( eddyModel ) rev(i,j,0) = rev(i,j,1)
+               enddo
+            enddo
 
          !===============================================================
 
          case (kMax)
-           ww0 => w(1:,1:,kb,:); ww1 => w(1:,1:,ke,:)
 
-           if( eddyModel ) then
-             rrev0 => rev(1:,1:,kb); rrev1 => rev(1:,1:,ke)
-           endif
+            do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
+               do i=BCData(nn)%icBeg, BCData(nn)%icEnd
+                  do l=nt1,nt2
+                     w(i,j,kb,l) = w(i,j,ke,l)
+                  enddo
+                  if( eddyModel ) rev(i,j,kb) = rev(i,j,ke)
+               enddo
+            enddo
+
        end select
-
-       ! Loop over the faces of the subface.
-
-       do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
-         do i=BCData(nn)%icBeg, BCData(nn)%icEnd
-
-           ! Loop over the turbulent variables and set the second halo
-           ! value. If this is an eddy model, also set the eddy viscosity.
-
-           do l=nt1,nt2
-             ww0(i,j,l) = ww1(i,j,l)
-           enddo
-
-           if( eddyModel ) rrev0(i,j) = rrev1(i,j)
-
-         enddo
-       enddo
 
        end subroutine turb2ndHalo
