@@ -60,6 +60,8 @@
          case (baldwinLomax)
            call blEddyViscosity
 
+         case (v2f)
+           call vfEddyViscosity
          case (komegaWilcox, komegaModified)
            call kwEddyViscosity
 
@@ -68,14 +70,10 @@
 
          case (ktau)
            call ktEddyViscosity
-
-         case (v2f)
-           call vfEddyViscosity
-
+#endif
          case default
            call terminate("computeEddyViscosity", &
                           "Turbulence model not implemented yet")
-#endif
        end select
 
        end subroutine computeEddyViscosity
@@ -259,7 +257,6 @@
        end subroutine saEddyViscosity
 
 !      ==================================================================
-#ifndef USE_TAPENADE
        subroutine kwEddyViscosity
 !
 !      ******************************************************************
@@ -296,9 +293,9 @@
        enddo
 
        end subroutine kwEddyViscosity
-#endif
+
 !      ==================================================================
-#ifndef USE_TAPENADE
+
        subroutine SSTEddyViscosity
 !
 !      ******************************************************************
@@ -332,8 +329,6 @@
        ! for it; for the actual eddy viscosity computation the vorticity
        ! itself is needed.
 
-       prod  => dw(1:,1:,1:,iprod)
-       vort  => prod
        call prodWmag2
 
        ! Loop over the cells of this block and compute the eddy viscosity.
@@ -356,7 +351,7 @@
 
              ! And compute the eddy viscosity.
 
-             vortMag    = sqrt(vort(i,j,k))
+             vortMag    = sqrt(dw(i,j,k,iprod))
              rev(i,j,k) = w(i,j,k,irho)*rSSTA1*w(i,j,k,itu1) &
                         / max(rSSTA1*w(i,j,k,itu2), f2*vortMag)
 
@@ -365,9 +360,9 @@
        enddo
 
        end subroutine SSTEddyViscosity
-#endif
+
 !      ==================================================================
-#ifndef USE_TAPENADE
+
        subroutine ktEddyViscosity
 !
 !      ******************************************************************
@@ -403,4 +398,4 @@
        enddo
 
        end subroutine ktEddyViscosity
-#endif
+
