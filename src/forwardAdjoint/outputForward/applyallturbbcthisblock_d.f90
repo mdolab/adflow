@@ -33,7 +33,6 @@
    INTEGER(kind=inttype) :: nn, i, j, l, m
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: bmt
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: bvt, ww1, ww2
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: bvtd, ww1d, ww2d
    !
    !      ******************************************************************
    !      *                                                                *
@@ -43,92 +42,101 @@
    !
    ! Loop over the boundary condition subfaces of this block.
    bocos:DO nn=1,nbocos
-   ! Determine the block face on which this subface is located
-   ! and set some pointers accordingly.
-   SELECT CASE  (bcfaceid(nn)) 
-   CASE (imin) 
-   bmt => bmti1
-   bvtd => bvti1d
-   bvt => bvti1
-   ww1d => wd(1, 1:, 1:, :)
-   ww1 => w(1, 1:, 1:, :)
-   ww2d => wd(2, 1:, 1:, :)
-   ww2 => w(2, 1:, 1:, :)
-   CASE (imax) 
-   bmt => bmti2
-   bvtd => bvti2d
-   bvt => bvti2
-   ww1d => wd(ie, 1:, 1:, :)
-   ww1 => w(ie, 1:, 1:, :)
-   ww2d => wd(il, 1:, 1:, :)
-   ww2 => w(il, 1:, 1:, :)
-   CASE (jmin) 
-   bmt => bmtj1
-   bvtd => bvtj1d
-   bvt => bvtj1
-   ww1d => wd(1:, 1, 1:, :)
-   ww1 => w(1:, 1, 1:, :)
-   ww2d => wd(1:, 2, 1:, :)
-   ww2 => w(1:, 2, 1:, :)
-   CASE (jmax) 
-   bmt => bmtj2
-   bvtd => bvtj2d
-   bvt => bvtj2
-   ww1d => wd(1:, je, 1:, :)
-   ww1 => w(1:, je, 1:, :)
-   ww2d => wd(1:, jl, 1:, :)
-   ww2 => w(1:, jl, 1:, :)
-   CASE (kmin) 
-   bmt => bmtk1
-   bvtd => bvtk1d
-   bvt => bvtk1
-   ww1d => wd(1:, 1:, 1, :)
-   ww1 => w(1:, 1:, 1, :)
-   ww2d => wd(1:, 1:, 2, :)
-   ww2 => w(1:, 1:, 2, :)
-   CASE (kmax) 
-   bmt => bmtk2
-   bvtd => bvtk2d
-   bvt => bvtk2
-   ww1d => wd(1:, 1:, ke, :)
-   ww1 => w(1:, 1:, ke, :)
-   ww2d => wd(1:, 1:, kl, :)
-   ww2 => w(1:, 1:, kl, :)
-   END SELECT
    ! Loop over the faces and set the state in
    ! the turbulent halo cells.
-   IF (wallfunctions) THEN
-   ! Write an approximate value into the halo cell for
-   ! postprocessing (it is not used in computation).
+   IF (.NOT.wallfunctions) THEN
+   SELECT CASE  (bcfaceid(nn)) 
+   CASE (imin) 
    DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
    DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
    DO l=nt1,nt2
-   ww1d(i, j, l) = bvtd(i, j, l) - bmt(i, j, l, l)*ww2d(i, j, l&
-   &             )
-   ww1(i, j, l) = bvt(i, j, l) - bmt(i, j, l, l)*ww2(i, j, l)
+   wd(1, i, j, l) = bvti1d(i, j, l)
+   w(1, i, j, l) = bvti1(i, j, l)
    DO m=nt1,nt2
-   IF (m .NE. l .AND. bmt(i, j, l, m) .NE. zero) THEN
-   ww1d(i, j, l) = ww2d(i, j, l)
-   ww1(i, j, l) = ww2(i, j, l)
-   END IF
+   wd(1, i, j, l) = wd(1, i, j, l) - bmti1(i, j, l, m)*wd(2&
+   &                 , i, j, m)
+   w(1, i, j, l) = w(1, i, j, l) - bmti1(i, j, l, m)*w(2, i&
+   &                 , j, m)
    END DO
    END DO
    END DO
    END DO
-   ELSE
+   CASE (imax) 
    DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
    DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
    DO l=nt1,nt2
-   ww1d(i, j, l) = bvtd(i, j, l)
-   ww1(i, j, l) = bvt(i, j, l)
+   wd(ie, i, j, l) = bvti2d(i, j, l)
+   w(ie, i, j, l) = bvti2(i, j, l)
    DO m=nt1,nt2
-   ww1d(i, j, l) = ww1d(i, j, l) - bmt(i, j, l, m)*ww2d(i, j&
-   &               , m)
-   ww1(i, j, l) = ww1(i, j, l) - bmt(i, j, l, m)*ww2(i, j, m)
+   wd(ie, i, j, l) = wd(ie, i, j, l) - bmti2(i, j, l, m)*wd&
+   &                 (il, i, j, m)
+   w(ie, i, j, l) = w(ie, i, j, l) - bmti2(i, j, l, m)*w(il&
+   &                 , i, j, m)
    END DO
    END DO
    END DO
    END DO
+   CASE (jmin) 
+   DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+   DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
+   DO l=nt1,nt2
+   wd(i, 1, j, l) = bvtj1d(i, j, l)
+   w(i, 1, j, l) = bvtj1(i, j, l)
+   DO m=nt1,nt2
+   wd(i, 1, j, l) = wd(i, 1, j, l) - bmtj1(i, j, l, m)*wd(i&
+   &                 , 2, j, m)
+   w(i, 1, j, l) = w(i, 1, j, l) - bmtj1(i, j, l, m)*w(i, 2&
+   &                 , j, m)
+   END DO
+   END DO
+   END DO
+   END DO
+   CASE (jmax) 
+   DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+   DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
+   DO l=nt1,nt2
+   wd(i, je, j, l) = bvtj2d(i, j, l)
+   w(i, je, j, l) = bvtj2(i, j, l)
+   DO m=nt1,nt2
+   wd(i, je, j, l) = wd(i, je, j, l) - bmtj2(i, j, l, m)*wd&
+   &                 (i, jl, j, m)
+   w(i, je, j, l) = w(i, je, j, l) - bmtj2(i, j, l, m)*w(i&
+   &                 , jl, j, m)
+   END DO
+   END DO
+   END DO
+   END DO
+   CASE (kmin) 
+   DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+   DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
+   DO l=nt1,nt2
+   wd(i, j, 1, l) = bvtk1d(i, j, l)
+   w(i, j, 1, l) = bvtk1(i, j, l)
+   DO m=nt1,nt2
+   wd(i, j, 1, l) = wd(i, j, 1, l) - bmtk1(i, j, l, m)*wd(i&
+   &                 , j, 2, m)
+   w(i, j, 1, l) = w(i, j, 1, l) - bmtk1(i, j, l, m)*w(i, j&
+   &                 , 2, m)
+   END DO
+   END DO
+   END DO
+   END DO
+   CASE (kmax) 
+   DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+   DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
+   DO l=nt1,nt2
+   wd(i, j, ke, l) = bvtk2d(i, j, l)
+   w(i, j, ke, l) = bvtk2(i, j, l)
+   DO m=nt1,nt2
+   wd(i, j, ke, l) = wd(i, j, ke, l) - bmtk2(i, j, l, m)*wd&
+   &                 (i, j, kl, m)
+   w(i, j, ke, l) = w(i, j, ke, l) - bmtk2(i, j, l, m)*w(i&
+   &                 , j, kl, m)
+   END DO
+   END DO
+   END DO
+   END DO
+   END SELECT
    END IF
    ! Set the value of the eddy viscosity, depending on the type of
    ! boundary condition. Only if the turbulence model is an eddy
