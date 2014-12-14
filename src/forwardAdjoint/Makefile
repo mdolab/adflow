@@ -45,9 +45,6 @@ FILES_TO_COMPLEXIFY = \
 		setupAllResidualMatricesFwd.F90\
 		setupColoring.F90\
 		setupExtraResidualMatrix.F90\
-		setupExtraMatrix.F90\
-		setPointersOffTSInstance.f90\
-		setPointersOffTSInstance_d.f90\
 		setPointers_d.f90\
 		setPointers_b.f90\
 		setDiffSizes.F90\
@@ -56,9 +53,7 @@ FILES_TO_COMPLEXIFY = \
 		zeroADSeedsBwd.F90
 
 FILES_TO_COPY = setupStateResidualMatrix.F90\
-		setupSpatialMatrix.F90\
 		setupSpatialResidualMatrix.F90\
-		setupAdjointMatrix.F90\
 		verifyAD.F90\
 		verifyMatProd.F90\
 		verifyOneValue.F90

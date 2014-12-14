@@ -315,15 +315,6 @@ python module libsumb
        subroutine setupallresidualmatricesfwd
        end subroutine setupallresidualmatricesfwd
 
-       subroutine setupadjointmatrix
-       end subroutine setupadjointmatrix
-
-       subroutine setupspatialmatrix(usead)
-         logical, intent(in) :: usead
-       end subroutine setupspatialmatrix
-
-       subroutine setupextramatrix
-       end subroutine setupextramatrix
 
        subroutine solveadjoint(rhs,psi,checksolution,nstate) ! in :test:solveADjointTransposePETSc.F90
          real(kind=realtype) dimension(nstate) :: rhs
@@ -1087,13 +1078,7 @@ python module libsumb
             integer(kind=inttype) parameter,optional :: costfunccavitation=39
        end module costfunctions
 
-       module adjointpetsc ! in :sumb:ADjointPETSc.F90
-         use constants
-         real(kind=realtype) allocatable,dimension(:) :: adjreshist
-         logical :: petscblockmatrix
-         integer(kind=inttype) :: adjconvits
-       end module adjointpetsc
-       
+      
        module adjointvars ! in :test:ADjointVars.F90
          use constants
          use costfunctions
