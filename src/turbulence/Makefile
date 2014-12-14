@@ -54,7 +54,7 @@ FILES_TO_COMPLEXIFY = turbMod.F90\
 		 bl.f90\
 		 computeEddyViscosity.F90\
 		 curveFit.f90\
-		 f1SST.f90\
+		 f1SST.F90\
 		 initCurveFitDataKtau.f90\
 		 initCurveFitDataKw.f90\
 		 initCurveFitDataKwMod.f90\
@@ -63,13 +63,13 @@ FILES_TO_COMPLEXIFY = turbMod.F90\
 		 initCurveFitDataSST.f90\
 		 initCurveFitDataVf.f90\
 		 initKOmega.f90\
-		 keSolve.f90\
+		 keSolve.F90\
 		 kt.f90\
 		 ktCDterm.f90\
-		 ktSolve.f90\
+		 ktSolve.F90\
 		 kw.f90\
 		 kwCDterm.f90\
-		 kwSolve.f90\
+		 kwSolve.F90\
 		 prodKatoLaunder.f90\
 		 prodSmag2.f90\
 		 prodWmag2.f90\
@@ -77,12 +77,12 @@ FILES_TO_COMPLEXIFY = turbMod.F90\
 		 saNuFromEddyRatio.f90\
 		 saSolve.F90\
 		 SST.f90\
-		 SSTSolve.f90\
+		 SSTSolve.F90\
 		 tdia3.f90\
 		 turb2ndHalo.f90\
 		 turbAdvection.f90\
 		 turbBCNSWall.f90\
-		 turbResidual.f90\
+		 turbResidual.F90\
 		 turbSolveSegregated.f90\
 		 unsteadyTurbSpectral.f90\
 		 unsteadyTurbTerm.f90\
