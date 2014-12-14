@@ -3,12 +3,10 @@
    !
    !  Differentiation of applyallturbbcthisblock in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *rev *w
-   !   with respect to varying inputs: *rev *bvtj1 *bvtj2 *bmtk1 *w
-   !                *bmtk2 *bvtk1 *bvtk2 *bmti1 *bmti2 *bvti1 *bvti2
-   !                *bmtj1 *bmtj2
-   !   Plus diff mem management of: rev:in bvtj1:in bvtj2:in bmtk1:in
-   !                w:in bmtk2:in bvtk1:in bvtk2:in bmti1:in bmti2:in
-   !                bvti1:in bvti2:in bmtj1:in bmtj2:in bcdata:in
+   !   with respect to varying inputs: *rev *bvtj1 *bvtj2 *w *bvtk1
+   !                *bvtk2 *bvti1 *bvti2
+   !   Plus diff mem management of: rev:in bvtj1:in bvtj2:in w:in
+   !                bvtk1:in bvtk2:in bvti1:in bvti2:in bcdata:in
    !      ==================================================================
    SUBROUTINE APPLYALLTURBBCTHISBLOCK_D(secondhalo)
    !
@@ -34,7 +32,6 @@
    !
    INTEGER(kind=inttype) :: nn, i, j, l, m
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: bmt
-   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: bmtd
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: bvt, ww1, ww2
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: bvtd, ww1d, ww2d
    !
@@ -50,7 +47,6 @@
    ! and set some pointers accordingly.
    SELECT CASE  (bcfaceid(nn)) 
    CASE (imin) 
-   bmtd => bmti1d
    bmt => bmti1
    bvtd => bvti1d
    bvt => bvti1
@@ -59,7 +55,6 @@
    ww2d => wd(2, 1:, 1:, :)
    ww2 => w(2, 1:, 1:, :)
    CASE (imax) 
-   bmtd => bmti2d
    bmt => bmti2
    bvtd => bvti2d
    bvt => bvti2
@@ -68,7 +63,6 @@
    ww2d => wd(il, 1:, 1:, :)
    ww2 => w(il, 1:, 1:, :)
    CASE (jmin) 
-   bmtd => bmtj1d
    bmt => bmtj1
    bvtd => bvtj1d
    bvt => bvtj1
@@ -77,7 +71,6 @@
    ww2d => wd(1:, 2, 1:, :)
    ww2 => w(1:, 2, 1:, :)
    CASE (jmax) 
-   bmtd => bmtj2d
    bmt => bmtj2
    bvtd => bvtj2d
    bvt => bvtj2
@@ -86,7 +79,6 @@
    ww2d => wd(1:, jl, 1:, :)
    ww2 => w(1:, jl, 1:, :)
    CASE (kmin) 
-   bmtd => bmtk1d
    bmt => bmtk1
    bvtd => bvtk1d
    bvt => bvtk1
@@ -95,7 +87,6 @@
    ww2d => wd(1:, 1:, 2, :)
    ww2 => w(1:, 1:, 2, :)
    CASE (kmax) 
-   bmtd => bmtk2d
    bmt => bmtk2
    bvtd => bvtk2d
    bvt => bvtk2
@@ -112,8 +103,8 @@
    DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
    DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
    DO l=nt1,nt2
-   ww1d(i, j, l) = bvtd(i, j, l) - bmtd(i, j, l, l)*ww2(i, j, l&
-   &             ) - bmt(i, j, l, l)*ww2d(i, j, l)
+   ww1d(i, j, l) = bvtd(i, j, l) - bmt(i, j, l, l)*ww2d(i, j, l&
+   &             )
    ww1(i, j, l) = bvt(i, j, l) - bmt(i, j, l, l)*ww2(i, j, l)
    DO m=nt1,nt2
    IF (m .NE. l .AND. bmt(i, j, l, m) .NE. zero) THEN
@@ -131,8 +122,8 @@
    ww1d(i, j, l) = bvtd(i, j, l)
    ww1(i, j, l) = bvt(i, j, l)
    DO m=nt1,nt2
-   ww1d(i, j, l) = ww1d(i, j, l) - bmtd(i, j, l, m)*ww2(i, j&
-   &               , m) - bmt(i, j, l, m)*ww2d(i, j, m)
+   ww1d(i, j, l) = ww1d(i, j, l) - bmt(i, j, l, m)*ww2d(i, j&
+   &               , m)
    ww1(i, j, l) = ww1(i, j, l) - bmt(i, j, l, m)*ww2(i, j, m)
    END DO
    END DO

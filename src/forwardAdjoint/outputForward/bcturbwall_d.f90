@@ -2,15 +2,12 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of bcturbwall in forward (tangent) mode (with options i4 dr8 r8):
-   !   variations   of useful results: *bvtj1 *bvtj2 *bmtk1 *bmtk2
-   !                *bvtk1 *bvtk2 *bmti1 *bmti2 *bvti1 *bvti2 *bmtj1
-   !                *bmtj2
-   !   with respect to varying inputs: *bvtj1 *bvtj2 *bmtk1 *w *bmtk2
-   !                *rlv *bvtk1 *bvtk2 *bmti1 *bmti2 *bvti1 *bvti2
-   !                *bmtj1 *bmtj2
-   !   Plus diff mem management of: bvtj1:in bvtj2:in bmtk1:in w:in
-   !                bmtk2:in rlv:in bvtk1:in bvtk2:in bmti1:in bmti2:in
-   !                bvti1:in bvti2:in bmtj1:in bmtj2:in bcdata:in
+   !   variations   of useful results: *bvtj1 *bvtj2 *bvtk1 *bvtk2
+   !                *bvti1 *bvti2
+   !   with respect to varying inputs: *bvtj1 *bvtj2 *w *rlv *bvtk1
+   !                *bvtk2 *bvti1 *bvti2
+   !   Plus diff mem management of: bvtj1:in bvtj2:in w:in rlv:in
+   !                bvtk1:in bvtk2:in bvti1:in bvti2:in bcdata:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -49,18 +46,20 @@
    !
    INTEGER(kind=inttype) :: i, j, ii, jj, iimax, jjmax
    REAL(kind=realtype) :: tmpd, tmpe, tmpf, nu
-   REAL(kind=realtype) :: tmped, tmpfd, nud
+   REAL(kind=realtype) :: nud
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: bmt
-   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: bmtd
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: bvt, ww2
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: bvtd, ww2d
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv2, dd2wall
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv2d
    INTRINSIC MIN
    INTRINSIC MAX
-   INTRINSIC ABS
-   REAL(kind=realtype) :: abs0d
-   REAL(kind=realtype) :: abs0
+   INTEGER(kind=inttype) :: y12
+   INTEGER(kind=inttype) :: y11
+   INTEGER(kind=inttype) :: y10
+   INTEGER(kind=inttype) :: y9
+   INTEGER(kind=inttype) :: y8
+   INTEGER(kind=inttype) :: y7
+   INTEGER(kind=inttype) :: y6
+   INTEGER(kind=inttype) :: y5
    INTEGER(kind=inttype) :: y4
    INTEGER(kind=inttype) :: y3
    INTEGER(kind=inttype) :: y2
@@ -72,82 +71,6 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   ! Set some variables depending on the block face on which the
-   ! subface is located. Needed for a general treatment.
-   SELECT CASE  (bcfaceid(nn)) 
-   CASE (imin) 
-   iimax = jl
-   jjmax = kl
-   bmtd => bmti1d
-   bmt => bmti1
-   bvtd => bvti1d
-   bvt => bvti1
-   ww2d => wd(2, 1:, 1:, :)
-   ww2 => w(2, 1:, 1:, :)
-   rlv2d => rlvd(2, 1:, 1:)
-   rlv2 => rlv(2, 1:, 1:)
-   dd2wall => d2wall(2, :, :)
-   CASE (imax) 
-   iimax = jl
-   jjmax = kl
-   bmtd => bmti2d
-   bmt => bmti2
-   bvtd => bvti2d
-   bvt => bvti2
-   ww2d => wd(il, 1:, 1:, :)
-   ww2 => w(il, 1:, 1:, :)
-   rlv2d => rlvd(il, 1:, 1:)
-   rlv2 => rlv(il, 1:, 1:)
-   dd2wall => d2wall(il, :, :)
-   CASE (jmin) 
-   iimax = il
-   jjmax = kl
-   bmtd => bmtj1d
-   bmt => bmtj1
-   bvtd => bvtj1d
-   bvt => bvtj1
-   ww2d => wd(1:, 2, 1:, :)
-   ww2 => w(1:, 2, 1:, :)
-   rlv2d => rlvd(1:, 2, 1:)
-   rlv2 => rlv(1:, 2, 1:)
-   dd2wall => d2wall(:, 2, :)
-   CASE (jmax) 
-   iimax = il
-   jjmax = kl
-   bmtd => bmtj2d
-   bmt => bmtj2
-   bvtd => bvtj2d
-   bvt => bvtj2
-   ww2d => wd(1:, jl, 1:, :)
-   ww2 => w(1:, jl, 1:, :)
-   rlv2d => rlvd(1:, jl, 1:)
-   rlv2 => rlv(1:, jl, 1:)
-   dd2wall => d2wall(:, jl, :)
-   CASE (kmin) 
-   iimax = il
-   jjmax = jl
-   bmtd => bmtk1d
-   bmt => bmtk1
-   bvtd => bvtk1d
-   bvt => bvtk1
-   ww2d => wd(1:, 1:, 2, :)
-   ww2 => w(1:, 1:, 2, :)
-   rlv2d => rlvd(1:, 1:, 2)
-   rlv2 => rlv(1:, 1:, 2)
-   dd2wall => d2wall(:, :, 2)
-   CASE (kmax) 
-   iimax = il
-   jjmax = jl
-   bmtd => bmtk2d
-   bmt => bmtk2
-   bvtd => bvtk2d
-   bvt => bvtk2
-   ww2d => wd(1:, 1:, kl, :)
-   ww2 => w(1:, 1:, kl, :)
-   rlv2d => rlvd(1:, 1:, kl)
-   rlv2 => rlv(1:, 1:, kl)
-   dd2wall => d2wall(:, :, kl)
-   END SELECT
    ! Determine the turbulence model used and loop over the faces
    ! of the subface and set the values of bmt and bvt for an
    ! implicit treatment.
@@ -155,12 +78,44 @@
    CASE (spalartallmaras, spalartallmarasedwards) 
    ! Spalart-allmaras type of model. Value at the wall is zero,
    ! so simply negate the internal value.
+   SELECT CASE  (bcfaceid(nn)) 
+   CASE (imin) 
    DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
    DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
-   bmtd(i, j, itu1, itu1) = 0.0_8
-   bmt(i, j, itu1, itu1) = one
+   bmti1(i, j, itu1, itu1) = one
    END DO
    END DO
+   CASE (imax) 
+   DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+   DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
+   bmti2(i, j, itu1, itu1) = one
+   END DO
+   END DO
+   CASE (jmin) 
+   DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+   DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
+   bmtj1(i, j, itu1, itu1) = one
+   END DO
+   END DO
+   CASE (jmax) 
+   DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+   DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
+   bmtj2(i, j, itu1, itu1) = one
+   END DO
+   END DO
+   CASE (kmin) 
+   DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+   DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
+   bmtk1(i, j, itu1, itu1) = one
+   END DO
+   END DO
+   CASE (kmax) 
+   DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+   DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
+   bmtk2(i, j, itu1, itu1) = one
+   END DO
+   END DO
+   END SELECT
    CASE (komegawilcox, komegamodified, mentersst) 
    !        ================================================================
    ! K-omega type of models. K is zero on the wall and thus the
@@ -173,6 +128,10 @@
    ! distance. Due to the usage of the dd2Wall pointer and the
    ! fact that the original d2Wall array starts at 2, there is
    ! an offset of -1 present in dd2Wall.
+   SELECT CASE  (bcfaceid(nn)) 
+   CASE (imin) 
+   iimax = jl
+   jjmax = kl
    DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
    IF (j .GT. jjmax) THEN
    y1 = jjmax
@@ -195,35 +154,19 @@
    ELSE
    ii = 2
    END IF
-   nud = (rlv2d(i, j)*ww2(i, j, irho)-rlv2(i, j)*ww2d(i, j, irho))/&
-   &         ww2(i, j, irho)**2
-   nu = rlv2(i, j)/ww2(i, j, irho)
-   tmpd = one/(rkwbeta1*dd2wall(ii-1, jj-1)**2)
-   bmtd(i, j, itu1, itu1) = 0.0_8
-   bmt(i, j, itu1, itu1) = one
-   bmtd(i, j, itu2, itu2) = 0.0_8
-   bmt(i, j, itu2, itu2) = one
-   bvtd(i, j, itu2) = two*60.0_realType*tmpd*nud
-   bvt(i, j, itu2) = two*60.0_realType*nu*tmpd
+   nud = (rlvd(2, i, j)*w(2, i, j, irho)-rlv(2, i, j)*wd(2, i, j&
+   &           , irho))/w(2, i, j, irho)**2
+   nu = rlv(2, i, j)/w(2, i, j, irho)
+   tmpd = one/(rkwbeta1*d2wall(2, ii, jj)**2)
+   bmti1(i, j, itu1, itu1) = one
+   bmti1(i, j, itu2, itu2) = one
+   bvti1d(i, j, itu2) = two*60.0_realType*tmpd*nud
+   bvti1(i, j, itu2) = two*60.0_realType*nu*tmpd
    END DO
    END DO
-   CASE (ktau) 
-   !        ================================================================
-   ! K-tau model. Both k and tau are zero at the wall, so the
-   ! negative value of the internal cell is taken for the halo.
-   DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
-   DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
-   bmtd(i, j, itu1, itu1) = 0.0_8
-   bmt(i, j, itu1, itu1) = one
-   bmtd(i, j, itu2, itu2) = 0.0_8
-   bmt(i, j, itu2, itu2) = one
-   END DO
-   END DO
-   CASE (v2f) 
-   !        ================================================================
-   ! V2f turbulence model. Same story for the wall distance as
-   ! for k-omega. For this model there is a coupling between the
-   ! equations via the boundary conditions.
+   CASE (imax) 
+   iimax = jl
+   jjmax = kl
    DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
    IF (j .GT. jjmax) THEN
    y3 = jjmax
@@ -246,41 +189,207 @@
    ELSE
    ii = 2
    END IF
-   nud = (rlv2d(i, j)*ww2(i, j, irho)-rlv2(i, j)*ww2d(i, j, irho))/&
-   &         ww2(i, j, irho)**2
-   nu = rlv2(i, j)/ww2(i, j, irho)
-   tmpd = one/dd2wall(ii-1, jj-1)**2
-   tmped = two*tmpd*nud
-   tmpe = two*nu*tmpd
-   IF (tmpe*ww2(i, j, itu1) .GE. 0.) THEN
-   abs0d = tmped*ww2(i, j, itu1) + tmpe*ww2d(i, j, itu1)
-   abs0 = tmpe*ww2(i, j, itu1)
+   nud = (rlvd(jl, i, j)*w(il, i, j, irho)-rlv(jl, i, j)*wd(il, i&
+   &           , j, irho))/w(il, i, j, irho)**2
+   nu = rlv(jl, i, j)/w(il, i, j, irho)
+   tmpd = one/(rkwbeta1*d2wall(il, ii, jj)**2)
+   bmti2(i, j, itu1, itu1) = one
+   bmti2(i, j, itu2, itu2) = one
+   bvti2d(i, j, itu2) = two*60.0_realType*tmpd*nud
+   bvti2(i, j, itu2) = two*60.0_realType*nu*tmpd
+   END DO
+   END DO
+   CASE (jmin) 
+   iimax = il
+   jjmax = kl
+   DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+   IF (j .GT. jjmax) THEN
+   y5 = jjmax
    ELSE
-   abs0d = -(tmped*ww2(i, j, itu1)+tmpe*ww2d(i, j, itu1))
-   abs0 = -(tmpe*ww2(i, j, itu1))
+   y5 = j
    END IF
-   tmpfd = -((20.0_realType*2*nu*tmpd**2*nud*abs0-20.0_realType*nu&
-   &         **2*tmpd**2*abs0d)/abs0**2)
-   tmpf = -(20.0_realType*(nu*tmpd)**2/abs0)
-   IF (rvfn .EQ. 6) THEN
-   tmpf = zero
-   tmpfd = 0.0_8
+   IF (2 .LT. y5) THEN
+   jj = y5
+   ELSE
+   jj = 2
    END IF
-   bmtd(i, j, itu1, itu1) = 0.0_8
-   bmt(i, j, itu1, itu1) = one
-   bmtd(i, j, itu2, itu2) = 0.0_8
-   bmt(i, j, itu2, itu2) = one
-   bmtd(i, j, itu3, itu3) = 0.0_8
-   bmt(i, j, itu3, itu3) = one
-   bmtd(i, j, itu4, itu4) = 0.0_8
-   bmt(i, j, itu4, itu4) = one
-   bmtd(i, j, itu2, itu1) = -(two*tmped)
-   bmt(i, j, itu2, itu1) = -(two*tmpe)
-   bmtd(i, j, itu4, itu3) = -(two*tmpfd)
-   bmt(i, j, itu4, itu3) = -(two*tmpf)
+   DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
+   IF (i .GT. iimax) THEN
+   y6 = iimax
+   ELSE
+   y6 = i
+   END IF
+   IF (2 .LT. y6) THEN
+   ii = y6
+   ELSE
+   ii = 2
+   END IF
+   nud = (rlvd(i, 2, j)*w(i, 2, j, irho)-rlv(i, 2, j)*wd(i, 2, j&
+   &           , irho))/w(i, 2, j, irho)**2
+   nu = rlv(i, 2, j)/w(i, 2, j, irho)
+   tmpd = one/(rkwbeta1*d2wall(ii, 2, jj)**2)
+   bmtj1(i, j, itu1, itu1) = one
+   bmtj1(i, j, itu2, itu2) = one
+   bvtj1d(i, j, itu2) = two*60.0_realType*tmpd*nud
+   bvtj1(i, j, itu2) = two*60.0_realType*nu*tmpd
    END DO
    END DO
+   CASE (jmax) 
+   iimax = il
+   jjmax = kl
+   DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+   IF (j .GT. jjmax) THEN
+   y7 = jjmax
+   ELSE
+   y7 = j
+   END IF
+   IF (2 .LT. y7) THEN
+   jj = y7
+   ELSE
+   jj = 2
+   END IF
+   DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
+   IF (i .GT. iimax) THEN
+   y8 = iimax
+   ELSE
+   y8 = i
+   END IF
+   IF (2 .LT. y8) THEN
+   ii = y8
+   ELSE
+   ii = 2
+   END IF
+   nud = (rlvd(i, jl, j)*w(i, jl, j, irho)-rlv(i, jl, j)*wd(i, jl&
+   &           , j, irho))/w(i, jl, j, irho)**2
+   nu = rlv(i, jl, j)/w(i, jl, j, irho)
+   tmpd = one/(rkwbeta1*d2wall(ii, jl, jj)**2)
+   bmtj2(i, j, itu1, itu1) = one
+   bmtj2(i, j, itu2, itu2) = one
+   bvtj2d(i, j, itu2) = two*60.0_realType*tmpd*nud
+   bvtj2(i, j, itu2) = two*60.0_realType*nu*tmpd
+   END DO
+   END DO
+   CASE (kmin) 
+   iimax = il
+   jjmax = jl
+   DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+   IF (j .GT. jjmax) THEN
+   y9 = jjmax
+   ELSE
+   y9 = j
+   END IF
+   IF (2 .LT. y9) THEN
+   jj = y9
+   ELSE
+   jj = 2
+   END IF
+   DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
+   IF (i .GT. iimax) THEN
+   y10 = iimax
+   ELSE
+   y10 = i
+   END IF
+   IF (2 .LT. y10) THEN
+   ii = y10
+   ELSE
+   ii = 2
+   END IF
+   nud = (rlvd(i, j, 2)*w(i, j, 2, irho)-rlv(i, j, 2)*wd(i, j, 2&
+   &           , irho))/w(i, j, 2, irho)**2
+   nu = rlv(i, j, 2)/w(i, j, 2, irho)
+   tmpd = one/(rkwbeta1*d2wall(ii, jj, 2)**2)
+   bmtk1(i, j, itu1, itu1) = one
+   bmtk1(i, j, itu2, itu2) = one
+   bvtk1d(i, j, itu2) = two*60.0_realType*tmpd*nud
+   bvtk1(i, j, itu2) = two*60.0_realType*nu*tmpd
+   END DO
+   END DO
+   CASE (kmax) 
+   iimax = il
+   jjmax = jl
+   DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+   IF (j .GT. jjmax) THEN
+   y11 = jjmax
+   ELSE
+   y11 = j
+   END IF
+   IF (2 .LT. y11) THEN
+   jj = y11
+   ELSE
+   jj = 2
+   END IF
+   DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
+   IF (i .GT. iimax) THEN
+   y12 = iimax
+   ELSE
+   y12 = i
+   END IF
+   IF (2 .LT. y12) THEN
+   ii = y12
+   ELSE
+   ii = 2
+   END IF
+   nud = (rlvd(i, j, kl)*w(i, j, kl, irho)-rlv(i, j, kl)*wd(i, j&
+   &           , kl, irho))/w(i, j, kl, irho)**2
+   nu = rlv(i, j, kl)/w(i, j, kl, irho)
+   tmpd = one/(rkwbeta1*d2wall(ii, jj, kl)**2)
+   bmtk2(i, j, itu1, itu1) = one
+   bmtk2(i, j, itu2, itu2) = one
+   bvtk2d(i, j, itu2) = two*60.0_realType*tmpd*nud
+   bvtk2(i, j, itu2) = two*60.0_realType*nu*tmpd
+   END DO
+   END DO
+   END SELECT
+   CASE (ktau) 
+   !        ================================================================
+   ! K-tau model. Both k and tau are zero at the wall, so the
+   ! negative value of the internal cell is taken for the halo.
+   SELECT CASE  (bcfaceid(nn)) 
+   CASE (imin) 
+   DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+   DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
+   bmti1(i, j, itu1, itu1) = one
+   bmti1(i, j, itu2, itu2) = one
+   END DO
+   END DO
+   CASE (imax) 
+   DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+   DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
+   bmti2(i, j, itu1, itu1) = one
+   bmti2(i, j, itu2, itu2) = one
+   END DO
+   END DO
+   CASE (jmin) 
+   DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+   DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
+   bmtj1(i, j, itu1, itu1) = one
+   bmtj1(i, j, itu2, itu2) = one
+   END DO
+   END DO
+   CASE (jmax) 
+   DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+   DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
+   bmtj2(i, j, itu1, itu1) = one
+   bmtj2(i, j, itu2, itu2) = one
+   END DO
+   END DO
+   CASE (kmin) 
+   DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+   DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
+   bmtk1(i, j, itu1, itu1) = one
+   bmtk1(i, j, itu2, itu2) = one
+   END DO
+   END DO
+   CASE (kmax) 
+   DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+   DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
+   bmtk2(i, j, itu1, itu1) = one
+   bmtk2(i, j, itu2, itu2) = one
+   END DO
+   END DO
+   END SELECT
    CASE DEFAULT
+   !        ================================================================
    CALL TERMINATE('bcTurbWall', &
    &               'Turbulence model not implemented yet')
    END SELECT

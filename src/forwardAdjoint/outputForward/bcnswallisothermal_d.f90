@@ -3,16 +3,13 @@
    !
    !  Differentiation of bcnswallisothermal in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *rev *bvtj1 *bvtj2 *p *gamma
-   !                *bmtk1 *w *bmtk2 *rlv *bvtk1 *bvtk2 *bmti1 *bmti2
-   !                *bvti1 *bvti2 *bmtj1 *bmtj2
+   !                *w *rlv *bvtk1 *bvtk2 *bvti1 *bvti2
    !   with respect to varying inputs: *rev *bvtj1 *bvtj2 *p *gamma
-   !                *bmtk1 *w *bmtk2 *rlv *bvtk1 *bvtk2 *bmti1 *bmti2
-   !                *bvti1 *bvti2 *bmtj1 *bmtj2 *(*bcdata.uslip) tref
-   !                rgas
+   !                *w *rlv *bvtk1 *bvtk2 *bvti1 *bvti2 *(*bcdata.uslip)
+   !                tref rgas
    !   Plus diff mem management of: rev:in bvtj1:in bvtj2:in p:in
-   !                gamma:in bmtk1:in w:in bmtk2:in rlv:in bvtk1:in
-   !                bvtk2:in bmti1:in bmti2:in bvti1:in bvti2:in bmtj1:in
-   !                bmtj2:in bcdata:in *bcdata.uslip:in
+   !                gamma:in w:in rlv:in bvtk1:in bvtk2:in bvti1:in
+   !                bvti2:in bcdata:in *bcdata.uslip:in
    !
    !      ******************************************************************
    !      *                                                                *

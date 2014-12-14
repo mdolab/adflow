@@ -4,13 +4,11 @@
    !  Differentiation of sa_block in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *rev *dw *w
    !   with respect to varying inputs: *rev *bvtj1 *bvtj2 *sfacei
-   !                *sfacej *sfacek *bmtk1 *dw *w *bmtk2 *rlv *bvtk1
-   !                *bvtk2 *vol *bmti1 *bmti2 *si *sj *sk *bvti1 *bvti2
-   !                *bmtj1 *bmtj2 (global)timeref (global)winf[1:10]
+   !                *sfacej *sfacek *dw *w *rlv *bvtk1 *bvtk2 *vol
+   !                *si *sj *sk *bvti1 *bvti2 (global)timeref (global)winf[1:10]
    !   Plus diff mem management of: rev:in bvtj1:in bvtj2:in sfacei:in
-   !                sfacej:in sfacek:in bmtk1:in dw:in w:in bmtk2:in
-   !                rlv:in bvtk1:in bvtk2:in vol:in bmti1:in bmti2:in
-   !                si:in sj:in sk:in bvti1:in bvti2:in bmtj1:in bmtj2:in
+   !                sfacej:in sfacek:in dw:in w:in rlv:in bvtk1:in
+   !                bvtk2:in vol:in si:in sj:in sk:in bvti1:in bvti2:in
    !                bcdata:in
    !
    !      ******************************************************************

@@ -3,15 +3,13 @@
    !
    !  Differentiation of applyallbc_block in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *rev *bvtj1 *bvtj2 *p *gamma
-   !                *bmtk1 *w *bmtk2 *rlv *bvtk1 *bvtk2 *bmti1 *bmti2
-   !                *bvti1 *bvti2 *bmtj1 *bmtj2
+   !                *w *rlv *bvtk1 *bvtk2 *bvti1 *bvti2
    !   with respect to varying inputs: *rev *p *s *w *rlv *si *sj
    !                *sk *(*bcdata.norm) *(*bcdata.rface) *(*bcdata.uslip)
    !                gammainf tref winf pinfcorr rgas
    !   Plus diff mem management of: rev:in bvtj1:in bvtj2:in p:in
-   !                gamma:in bmtk1:in w:in bmtk2:in rlv:in bvtk1:in
-   !                bvtk2:in bmti1:in bmti2:in si:in sj:in sk:in bvti1:in
-   !                bvti2:in bmtj1:in bmtj2:in bcdata:in *bcdata.norm:in
+   !                gamma:in w:in rlv:in bvtk1:in bvtk2:in si:in sj:in
+   !                sk:in bvti1:in bvti2:in bcdata:in *bcdata.norm:in
    !                *bcdata.rface:in *bcdata.uslip:in
    SUBROUTINE APPLYALLBC_BLOCK_D(secondhalo)
    ! Apply BC's for a single block

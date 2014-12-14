@@ -6,8 +6,7 @@
    !   with respect to varying inputs: *sfacei *sfacej *sfacek *dw
    !                *w *vol *si *sj *sk
    !   Plus diff mem management of: sfacei:in sfacej:in sfacek:in
-   !                bmtk1:in dw:in w:in bmtk2:in vol:in bmti1:in bmti2:in
-   !                si:in sj:in sk:in bmtj1:in bmtj2:in
+   !                dw:in w:in vol:in si:in sj:in sk:in
    !
    !      ******************************************************************
    !      *                                                                *

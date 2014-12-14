@@ -16,26 +16,23 @@
    !                *(flowdoms.w):in-out *(flowdoms.dw):out *rev:(loc)
    !                *bvtj1:(loc) *bvtj2:(loc) *p:(loc) *sfacei:(loc)
    !                *sfacej:(loc) *s:(loc) *gamma:(loc) *sfacek:(loc)
-   !                *bmtk1:(loc) *bmtk2:(loc) *rlv:(loc) *bvtk1:(loc)
-   !                *bvtk2:(loc) *bmti1:(loc) *bmti2:(loc) *si:(loc)
+   !                *rlv:(loc) *bvtk1:(loc) *bvtk2:(loc) *si:(loc)
    !                *sj:(loc) *sk:(loc) *bvti1:(loc) *bvti2:(loc)
-   !                *fw:(loc) *bmtj1:(loc) *bmtj2:(loc) *(*viscsubface.tau):(loc)
-   !                *(*bcdata.norm):(loc) *(*bcdata.rface):(loc) *(*bcdata.fp):out
-   !                *(*bcdata.fv):out *(*bcdata.m):out *(*bcdata.oarea):out
-   !                *(*bcdata.sepsensor):out *(*bcdata.cavitation):out
-   !                *(*bcdata.uslip):(loc) *radi:(loc) *radj:(loc)
-   !                *radk:(loc) mudim:(loc) gammainf:(loc) pinf:(loc)
-   !                timeref:(loc) rhoinf:(loc) muref:(loc) rhoinfdim:(loc)
-   !                tref:(loc) winf:(loc) muinf:(loc) uinf:(loc) pinfcorr:(loc)
-   !                rgas:(loc) pinfdim:(loc) pref:in-out rhoref:(loc)
-   !                moment:out alpha:in force:out beta:in cavitation:out
-   !                sepsensor:out
+   !                *fw:(loc) *(*viscsubface.tau):(loc) *(*bcdata.norm):(loc)
+   !                *(*bcdata.rface):(loc) *(*bcdata.fp):out *(*bcdata.fv):out
+   !                *(*bcdata.m):out *(*bcdata.oarea):out *(*bcdata.sepsensor):out
+   !                *(*bcdata.cavitation):out *(*bcdata.uslip):(loc)
+   !                *radi:(loc) *radj:(loc) *radk:(loc) mudim:(loc)
+   !                gammainf:(loc) pinf:(loc) timeref:(loc) rhoinf:(loc)
+   !                muref:(loc) rhoinfdim:(loc) tref:(loc) winf:(loc)
+   !                muinf:(loc) uinf:(loc) pinfcorr:(loc) rgas:(loc)
+   !                pinfdim:(loc) pref:in-out rhoref:(loc) moment:out
+   !                alpha:in force:out beta:in cavitation:out sepsensor:out
    !   Plus diff mem management of: flowdoms.x:in flowdoms.vol:in
    !                flowdoms.w:in flowdoms.dw:in rev:in bvtj1:in bvtj2:in
    !                p:in sfacei:in sfacej:in s:in gamma:in sfacek:in
-   !                bmtk1:in bmtk2:in rlv:in bvtk1:in bvtk2:in bmti1:in
-   !                bmti2:in si:in sj:in sk:in bvti1:in bvti2:in fw:in
-   !                bmtj1:in bmtj2:in viscsubface:in *viscsubface.tau:in
+   !                rlv:in bvtk1:in bvtk2:in si:in sj:in sk:in bvti1:in
+   !                bvti2:in fw:in viscsubface:in *viscsubface.tau:in
    !                bcdata:in *bcdata.norm:in *bcdata.rface:in *bcdata.fp:in
    !                *bcdata.fv:in *bcdata.m:in *bcdata.oarea:in *bcdata.sepsensor:in
    !                *bcdata.cavitation:in *bcdata.uslip:in radi:in
