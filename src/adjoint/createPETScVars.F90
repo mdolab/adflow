@@ -8,10 +8,10 @@ subroutine createPETScVars
   !     *                                                                *
   !     ******************************************************************
   !
-  use ADjointPETSc, only: dRdwT, dRdwPreT, dJdw, psi, adjointRHS, adjointRes, &
-       FMw, dFcdw, dFcdx, dFndFc, dFdx, dFdw, dRdx, xVec, dJdx, FMx, dRda, &
-       adjointKSP, dFMdExtra, dRda_data, overArea, fCell, fNode, doAdx, nFM, &
-       dRdwTShell, matfreectx
+  use ADjointPETSc, only: dRdwT, dRdwPreT, FMw, dFcdw, dFcdx, dFndFc, &
+       dFdx, dFdw, dRdx, FMx, dRda, adjointKSP, dFMdExtra, dRda_data, &
+       overArea, fCell, fNode, doAdx, nFM, matfreectx, &
+       x_like, psi_like1, adjointPETScVarsAllocated
   use ADjointVars   
   use BCTypes
   use communication  
@@ -36,7 +36,10 @@ subroutine createPETScVars
   integer(kind=intType) :: rows(4), iCol, nn, sps, ii
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, iDim, iStride, j, mm
   integer(kind=intType) :: npts, ncells, nTS
-  external dRdwTMatMult
+  external dRdwTMatMult, dRdwMatMult
+
+    ! Destroy variables if they already exist
+  call destroyPETScVars()
   ! DETERMINE ALL SIZES HERE!
   if ( frozenTurbulence ) then
      nState = nwf
@@ -51,32 +54,50 @@ subroutine createPETScVars
   nDimPt = npts * 3 * nTimeIntervalsSpectral
   nDimCell = nCells * 3 * nTimeIntervalsSpectral
 
-  ! ------------------- Determine Preallocation for dRdw --------------
+  if (.not. useMatrixFreedRdw) then 
+     ! Setup matrix-based dRdwT
+     allocate(nnzDiagonal(nCellsLocal(1_intType)*nTimeIntervalsSpectral), &
+          nnzOffDiag(nCellsLocal(1_intType)*nTimeIntervalsSpectral) )
 
-  allocate(nnzDiagonal(nCellsLocal(1_intType)*nTimeIntervalsSpectral), &
-       nnzOffDiag(nCellsLocal(1_intType)*nTimeIntervalsSpectral) )
+     if (viscous) then
+        n_stencil = N_visc_drdw
+        stencil => visc_drdw_stencil
+     else
+        n_stencil = N_euler_drdw
+        stencil => euler_drdw_stencil 
+     end if
 
-  call initialize_stencils
-  if (.not. viscous) then
-     n_stencil = N_euler_drdw
-     stencil => euler_drdw_stencil 
+     level = 1
+     
+     call statePreAllocation(nnzDiagonal, nnzOffDiag, nDimW/nState, stencil, n_stencil, &
+          level)
+     call myMatCreate(dRdwT, nState, nDimW, nDimW, nnzDiagonal, nnzOffDiag, &
+       __FILE__, __LINE__)
+     
+     call matSetOption(dRdwT, MAT_STRUCTURALLY_SYMMETRIC, PETSC_TRUE, ierr)
+     call EChk(ierr, __FILE__, __LINE__)
+
+     deallocate(nnzDiagonal, nnzOffDiag)
   else
-     n_stencil = N_visc_drdw
-     stencil => visc_drdw_stencil
+       ! Setup matrix-free dRdwT
+     call MatCreateShell(SUMB_COMM_WORLD, nDimW, nDimW, PETSC_DETERMINE, &
+          PETSC_DETERMINE, matfreectx, dRdwT, ierr)
+     call EChk(ierr, __FILE__, __LINE__)
+     
+     ! Set the shell operation for doing matrix vector multiplies
+     call MatShellSetOperation(dRdwT, MATOP_MULT, dRdwTMatMult, ierr)
+     call EChk(ierr, __FILE__, __LINE__)
+     
+     ! Set the shell operation for doing TRNASPOSE matrix vector
+     ! multiplies
+     call MatShellSetOperation(dRdwT, MATOP_MULT_TRANSPOSE, dRdwMatMult, ierr)
+     call EChk(ierr, __FILE__, __LINE__)
+     
+     call MatSetup(dRdwT, ierr)
+     call EChk(ierr, __FILE__, __LINE__)
   end if
 
-  level = 1
-
-  call statePreAllocation(nnzDiagonal, nnzOffDiag, nDimW/nState, stencil, n_stencil, &
-       level)
-  call myMatCreate(dRdwT, nState, nDimW, nDimW, nnzDiagonal, nnzOffDiag, &
-       __FILE__, __LINE__)
-
-  call matSetOption(dRdwT, MAT_STRUCTURALLY_SYMMETRIC, PETSC_TRUE, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-
-  deallocate(nnzDiagonal, nnzOffDiag)
-
+  ! Create the approxPC if required
   if (ApproxPC) then
      ! ------------------- Determine Preallocation for dRdwPre -------------
      allocate(nnzDiagonal(nCellsLocal(1_intType)*nTimeIntervalsSpectral), &
@@ -100,49 +121,14 @@ subroutine createPETScVars
      call EChk(ierr, __FILE__, __LINE__)
 
      deallocate(nnzDiagonal, nnzOffDiag)
-     ! --------------------------------------------------------------------
-  end if ! Approx PC
-
-  ! Vectors:
-  ! Get dJdw and psi from one MatGetVecs Call
-  call MatGetVecs(dRdwT, dJdW, psi, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-
-  ! adjointRes is the same size as dJdw, psi
-  call VecDuplicate(dJdW, adjointRes, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-
-  call VecDuplicate(dJdW, adjointRHS, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-
-  ! ------------------- Setup matrix free matix  --------------
-
-  call VecGetSize(psi, mm,ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-  call MatCreateShell(SUMB_COMM_WORLD, nDimW, nDimW, mm,mm, &
-       matfreectx, dRdwTShell, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-
-  ! call matCreate(SUMB_COMM_WORLD, dRdwTShell, ierr)
-  ! call EChk(ierr, __FILE__, __LINE__)
-  
-  ! call matSetSizes(dRdwTShell, nDimW, nDimW, PETSC_DETERMINE, PETSC_DETERMINE, ierr)
-  ! call EChk(ierr, __FILE__, __LINE__)
-
-  ! call matSetType(dRdwTShell, MATSHELL, ierr)
-  ! call EChk(ierr, __FILE__, __LINE__)
-
-  call MatShellSetOperation(dRdwTShell, MATOP_MULT, dRdwTMatMult, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-  call MatSetup(dRdwTShell, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
+  end if 
 
   ! Create the nFM * nTimeIntervalsSpectral vectors for d{F,M}/dw plus
   ! any additional functions 
   allocate(FMw(nFM, nTimeIntervalsSpectral))
   do sps=1,nTimeIntervalsSpectral
      do i=1,nFM
-        call VecDuplicate(dJdw, FMw(i, sps), ierr)
+        call VecDuplicate(psi_like1, FMw(i, sps), ierr)
         call EChk(ierr, __FILE__, __LINE__)
      end do
   end do
@@ -278,75 +264,33 @@ subroutine createPETScVars
 
   call myMatCreate(dFdx, 1, nDimPt, nDimPt, nnzDiagonal, nnzOffDiag, &
        __FILE__, __LINE__)
-
-
   deallocate(nnzDiagonal, nnzOffDiag)
 
-  !     ******************************************************************
-  !     *                                                                *
-  !     * Create matrix dRdx that is used to compute the total cost /    *
-  !     * constraint function sensitivity with respect to the spatial    *
-  !     * design variables 'x' as dIdx = dJdx - psi^T dRdx.              *
-  !     *                                                                *
-  !     * Matrix dRdx has size [nDimW, nDimX] and is generally            *
-  !     * sparse for the coordinate design variables.                    *
-  !     *                                                                *
-  !     * The local dimensions are specified so that the spatial         *
-  !     * coordinates x (a) are placed in the local processor. This has  *
-  !     * to be consistent with the vectors dIdx and dJdx.               *
-  !     *                                                                *
-  !     ******************************************************************
+  if (.not. useMatrixFreedRdx) then 
+     ! Create Matrix-based dRdx
+     allocate( nnzDiagonal(nDimX), nnzOffDiag(nDimX) )
+     ! Create the matrix dRdx.
+     level = 1_intType
+     call drdxPreAllocation(nnzDiagonal, nnzOffDiag, nDimX, level)
+     ! Sanity check on diagonal portion: For 2D cases nnzDiagon may be
+     ! too large because of the x-block corners:
+     do i=1, nDimx
+        nnzDiagonal(i) = min(nnzDiagonal(i), nDimw)
+     end do
 
-  allocate( nnzDiagonal(nDimX), nnzOffDiag(nDimX) )
-  ! Create the matrix dRdx.
-  level = 1_intType
-  call drdxPreAllocation(nnzDiagonal, nnzOffDiag, nDimX, level)
-  ! Sanity check on diagonal portion: For 2D cases nnzDiagon may be
-  ! too large because of the x-block corners:
-  do i=1, nDimx
-     nnzDiagonal(i) = min(nnzDiagonal(i), nDimw)
-  end do
-
-  ! Note we are creating the TRANPOSE of dRdx. It is size dDimX by nDimW
-  call myMatCreate(dRdx, 1, nDimX, nDimW, nnzDiagonal, nnzOffDiag, &
-       __FILE__, __LINE__)
-  deallocate( nnzDiagonal, nnzOffDiag )
-
-  call MatSetOption(dRdx, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-
-  call getForceSize(npts, ncells)
-
-  ! xVec
-  call VecCreate(SUMB_COMM_WORLD, xVec, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-
-  call VecSetSizes(xVec, nDimX, PETSC_DECIDE, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-
-  call VecSetBlockSize(xVec, 3, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-
-  call VecSetType(xVec, "mpi", ierr) 
-  call EChk(ierr, __FILE__, __LINE__)
-
-  ! Vectors
-  call VecCreate(SUMB_COMM_WORLD, dJdx, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-
-  call VecSetSizes(dJdx, nDimX, PETSC_DECIDE, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-
-  call VecSetBlockSize(dJdx, 3, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-
-  call VecSetType(dJdx, "mpi", ierr) 
-  call EChk(ierr, __FILE__, __LINE__)
+     ! Note we are creating the TRANPOSE of dRdx. It is size dDimX by nDimW
+     call myMatCreate(dRdx, 1, nDimX, nDimW, nnzDiagonal, nnzOffDiag, &
+          __FILE__, __LINE__)
+     deallocate( nnzDiagonal, nnzOffDiag )
+     
+     call MatSetOption(dRdx, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE, ierr)
+     call EChk(ierr, __FILE__, __LINE__)
+  end if
 
   allocate(FMx(nFM, nTimeIntervalsSpectral))
   do sps=1,nTimeIntervalsSpectral
      do i=1,nFM
-        call VecDuplicate(dJdx, FMx(i, sps), ierr)
+        call VecDuplicate(x_like, FMx(i, sps), ierr)
         call EChk(ierr, __FILE__, __LINE__)
      end do
   end do
@@ -355,19 +299,22 @@ subroutine createPETScVars
   call KSPCreate(SUMB_COMM_WORLD, adjointKSP, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  ! Once again, PETSC is royally screwed up. You CANNOT use PETSC_NULL
-  ! arguments. They simply do NOT work in Fortran. The PETSc
-  ! documentation lies to you. We have to allocate our own data. 
-  if (allocated(dRda_data)) then
-     deallocate(dRda_data)
-  end if
-  allocate(dRda_data(nDimw, nDesignExtra))
-
   if (allocated(dFMdExtra)) then
      deallocate(dFMdExtra)
   end if
   allocate(dFMdExtra(nFM, nDesignExtra, nTimeIntervalsSpectral))
-
+  
+  ! Create dRdA if not using matrix-free mode:
+  if (.not. useMatrixFreedRdX) then 
+  
+     ! Once again, PETSC is royally screwed up. You CANNOT use PETSC_NULL
+     ! arguments. They simply do NOT work in Fortran. The PETSc
+     ! documentation lies to you. We have to allocate our own data. 
+     if (allocated(dRda_data)) then
+        deallocate(dRda_data)
+     end if
+     allocate(dRda_data(nDimw, nDesignExtra))
+         
 #if PETSC_VERSION_MINOR < 3 
      call MatCreateMPIDense(SUMB_COMM_WORLD, nDimW, PETSC_DECIDE, &
           PETSC_DETERMINE, nDesignExtra, dRda_data, dRda, ierr)
@@ -375,8 +322,10 @@ subroutine createPETScVars
      call MatCreateDense(SUMB_COMM_WORLD, nDimW, PETSC_DECIDE, &
           PETSC_DETERMINE, nDesignExtra, dRda_data, dRda, ierr)
 #endif
-  call EChk(ierr, __FILE__, __LINE__)
+     call EChk(ierr, __FILE__, __LINE__)
 #endif
+  end if
+  adjointPETScVarsAllocated = .True.
 end subroutine createPETScVars
 
 subroutine myMatCreate(matrix, blockSize, m, n, nnzDiagonal, nnzOffDiag, &
@@ -435,171 +384,4 @@ subroutine myMatCreate(matrix, blockSize, m, n, nnzDiagonal, nnzOffDiag, &
   call MatSetOption(matrix, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-
 end subroutine myMatCreate
-
-subroutine dRdwTMatMult(A, vecX,  vecY, ierr)
-  use constants
-  use communication
-  use blockPointers
-  use blockPointers_b
-  use inputDiscretization 
-  use inputTimeSpectral 
-  use inputPhysics
-  use iteration         
-  use flowVarRefState     
-  use inputAdjoint       
-  use stencils
-  use diffSizes
-  use ADjointPETSc, only : dRdwT
-  implicit none
-#define PETSC_AVOID_MPIF_H
-#include "finclude/petsc.h"
-  
-  Mat   A
-  Vec   vecX, vecY
-  integer(kind=intType) :: ierr,nn,sps,i,j,k,l,ii, sps2
-  real(kind=realType) :: alpha, beta, force(3), moment(3), sepSensor, cavitation, cavitationb
-  real(kind=realType) :: alphab, betab, forceb(3), momentb(3), sepSensorb
-  real(kind=realType),pointer :: dwb_pointer(:)
-  integer(kind=intType) :: nState, level, irow, liftIndex
-  logical :: resetToRans
-
-#ifndef USE_COMPLEX
-
-  !call VecGetArrayF90(vecX, dwb_pointer, ierr)
-  !call EChk(ierr,__FILE__,__LINE__)
-
-  call VecSet(vecY, zero, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-
-  ! Setup number of state variable based on turbulence assumption
-  if ( frozenTurbulence ) then
-     nState = nwf
-  else
-     nState = nw
-  end if
-  ! This routine will not use the extra variables to block_res or the
-  ! extra outputs, so we must zero them here
-  call getDirAngle(velDirFreestream, liftDirection, liftIndex, alpha, beta)
-  
-  ! Need to trick the residual evalution to use coupled (mean flow and
-  ! turbulent) together.
-  
-  level = 1
-  currentLevel = level
-  groundLevel = level
-
-  ! If we are computing the jacobian for the RANS equations, we need
-  ! to make block_res think that we are evauluating the residual in a
-  ! fully coupled sense.  This is reset after this routine is
-  ! finished.
-  if (equations == RANSEquations) then
-     nMGVar = nw
-     nt1MG = nt1
-     nt2MG = nt2
-
-     turbSegregated = .False.
-     turbCoupled = .True.
-  end if
-
-  ! Determine if we want to use frozenTurbulent Adjoint
-  resetToRANS = .False. 
-  if (frozenTurbulence .and. equations == RANSEquations) then
-     equations = NSEquations 
-     resetToRANS = .True.
-  end if
-
-  ! Zero the seeds
-  alphab = zero
-  betab = zero
-  forceb = zero
-  momentb = zero
-  sepSensorb = zero
-  cavitationb = zero
-
-  do nn=1,nDom
-
-     ! Just to get sizes
-     call setPointers(nn,1_intType,1)
-     call setDiffSizes
-     
-     ! Allocate the memory we need for this block to do the forward
-     ! mode derivatives and copy reference values
-     call alloc_derivative_values_bwd(nn, level)
-        
-     do sps=1,nTimeIntervalsSpectral
-        ! Set pointers and derivative pointers
-        call setPointers_b(nn, level, sps)
-
-        ii = 0
-        do k=2, kl
-           do j=2,jl
-              do i=2,il
-                 do l = 1, nstate
-                    ii = ii + 1
-                    ! flowdomsb(nn,1,sps)%dw(i, j, k, l) = dwb_pointer(ii)
-                    call VecGetValues(vecX, 1, (/ii-1/), &
-                          flowdomsb(nn,1,sps)%dw(i, j, k, l), ierr)
-                    call EChk(ierr,__FILE__,__LINE__)
-                 end do
-              end do
-           end do
-        end do
-
-     call BLOCK_RES_B(nn, 1, .False., alpha, alphab, beta, betab, &
-          & liftindex, force, forceb, moment, momentb, sepsensor, sepsensorb, &
-          & cavitation, cavitationb)
-
-        do sps2=1,nTimeIntervalsSpectral
-           do k=2, kl
-              do j=2,jl
-                 do i=2,il
-                    do l = 1, nstate
-           
-                       irow = flowDoms(nn, 1, sps2)%globalCell(i,j,k)*nstate + l -1
-                       call VecSetValues(vecY, 1, (/irow/), &
-                            flowdomsb(1,1,1)%w(i, j, k, l), ADD_VALUES, ierr)
-                       call EChk(ierr,__FILE__,__LINE__)
-                    end do
-                 end do
-              end do
-           end do
-        end do
-     end do
-
-     call dealloc_derivative_values_bwd(nn, 1)
-  end do
-
-  ! Reset the correct equation parameters if we were useing the frozen
-  ! Turbulent 
-  if (resetToRANS) then
-     equations = RANSEquations
-  end if
-
-  ! Reset the paraters to use segrated turbulence solve. 
-  if (equations == RANSEquations) then
-     nMGVar = nwf
-     nt1MG = nwf + 1
-     nt2MG = nwf
-
-     turbSegregated = .True.
-     turbCoupled = .False.
-     restrictEddyVis = .false.
-     if( eddyModel ) restrictEddyVis = .true.
-  end if
-  
-  call VecAssemblyBegin(vecY, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-  
-  call VecAssemblyEnd(vecY, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-
-  ! Assume no error
-  ierr = 0
-
-  !call VecRestoreArrayF90(vecX, dwb_pointer, ierr)
-  !call EChk(ierr,__FILE__,__LINE__)
-
-#endif
-end subroutine dRdwTMatMult

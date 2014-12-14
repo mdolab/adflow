@@ -11,78 +11,7 @@
 ! 8. agumentRHS: Agument RHS of adjoint by dRdw^T*phi, where phi is supplied
 ! 9. getdFdwTVec: Return out_vec = dFdw^T*in_vec. 
 
-subroutine setADjoint(nstate, adjoint)
-
-#ifndef USE_NO_PETSC	
-#define PETSC_AVOID_MPIF_
-#include "finclude/petscdef.h"
-
-  use ADjointPETSc, only : psi
-  use petscvec
-  use constants
-
-  implicit none
-
-  !  Input Variables
-  integer(kind=intType),intent(in):: nstate
-  real(kind=realType),dimension(nstate), intent(in) :: adjoint
-
-  ! Local Variables
-  integer(kind=intType) :: i, ierr
-  real(kind=realType),pointer :: psi_pointer(:)
-
-  ! Copy out adjoint vector:
-  call VecGetArrayF90(psi, psi_pointer, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-
-  ! Do a straight copy:
-  do i=1,nstate
-     psi_pointer(i) = adjoint(i)
-  end do
-
-  call VecRestoreArrayF90(psi, psi_pointer, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-#endif
-
-end subroutine setADjoint
-
-subroutine getADjoint(nstate, adjoint)
-
-#ifndef USE_NO_PETSC	
-#define PETSC_AVOID_MPIF_
-#include "finclude/petscdef.h"
-
-  use ADjointPETSc, only : psi
-  use petscvec
-  use constants
-
-  implicit none
-
-  ! Local Variables
-  integer(kind=intType), intent(in):: nstate
-  real(kind=realType), dimension(nstate), intent(out) :: adjoint
-
-  ! Local Variables
-  integer(kind=intType) :: i, ierr
-  real(kind=realType), pointer :: psi_pointer(:)
-
-  ! Copy out adjoint vector:
-  call VecGetArrayF90(psi, psi_pointer, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-
-  ! Do a straight copy:
-  do i=1, nstate
-     adjoint(i) = psi_pointer(i)
-  end do
-
-  call VecRestoreArrayF90(psi, psi_pointer, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-#endif
-
-end subroutine getADjoint
-
 subroutine getdRdwTVec(in_vec, out_vec, ndof)
-#ifndef USE_NO_PETSC
 
   use ADjointPETSc
   implicit none
@@ -112,32 +41,31 @@ subroutine getdRdwTVec(in_vec, out_vec, ndof)
   call VecResetArray(psi_like2, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-#endif
 end subroutine getdRdwTVec
 
 subroutine getdRdaPsiFwd(out_vec, nstate, in_vec, ndv)
 
-#ifndef USE_NO_PETSC
-
   use communication
-  use ADjointPETSc
+  use ADjointPETSc, only : dRda, psi_like1
   use ADjointVars
   use blockPointers
   use inputADjoint
   use section
   use inputTimeSpectral 
   use monitor 
-
   implicit none
+
+#define PETSC_AVOID_MPIF_H
+#include "finclude/petsc.h"
 
   ! Input/Output Variables
   integer(kind=intType), intent(in) :: ndv, nstate
   real(kind=realType), intent(in) :: in_vec(ndv)
   real(kind=realType), intent(out) :: out_vec(nstate)
-
+  integer(kind=intType) :: ierr, i
   ! Local Variables
   Vec                   :: a_like
-  integer(kind=intType) :: ierr, i
+
   
   ! Create the result vector for dRda * psi
   call VecCreateMPI(SUMB_COMM_WORLD, PETSC_DECIDE, ndv, a_like, ierr)
@@ -148,23 +76,23 @@ subroutine getdRdaPsiFwd(out_vec, nstate, in_vec, ndv)
   call EChk(ierr, __FILE__, __LINE__)
   
   ! put output array in psi_like1
-  call VecPlaceArray(psi_like2, out_vec, ierr)
+  call VecPlaceArray(psi_like1, out_vec, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
   ! Do the Multiplication
-  call MatMult(dRda, a_like, psi_like2, ierr)
+  call MatMult(dRda, a_like, psi_like1, ierr)
   call EChk(ierr, __FILE__, __LINE__)
   
   ! memory cleanup
   call VecDestroy(a_like, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  call VecResetArray(psi_like2, ierr)
+  call VecResetArray(psi_like1, ierr)
   call EChk(ierr, __FILE__, __LINE__)
-#endif
+
 end subroutine getdRdaPsiFwd
 
-subroutine getdRdaPsi(output, ndv, adjoint, nstate)
+subroutine getdRdaTPsi(output, ndv, adjoint, nstate)
 
 #ifndef USE_NO_PETSC
 
@@ -231,14 +159,14 @@ subroutine getdRdaPsi(output, ndv, adjoint, nstate)
   call VecResetArray(psi_like1, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 #endif
-end subroutine getdRdaPsi
+end subroutine getdRdaTPsi
 !
 subroutine getdRdXvTPsi(dXv, ndof, adjoint, nstate)
 #ifndef USE_NO_PETSC
  
 #define PETSC_AVOID_MPIF_H
   use petscvec
-  use ADjointPETSc, only: dRdx, xVec, psi_like1
+  use ADjointPETSc, only: dRdx, x_like, psi_like1
   use blockPointers
   use inputTimeSpectral 
   implicit none
@@ -256,27 +184,22 @@ subroutine getdRdXvTPsi(dXv, ndof, adjoint, nstate)
   call VecPlaceArray(psi_like1, adjoint, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
+  call VecPlaceArray(x_like, dXv, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
   ! Do the matMult with dRdx and put result into xVec. NOTE dRdx is
   ! already transposed and thus we just do a matMult NOT
   ! a matMultTranspose
 
-  call MatMult(dRdx, psi_like1, xVec, ierr)
+  call MatMult(dRdx, psi_like1, x_like, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  ! Extract pointer for xVec
-  call VecGetArrayF90(xVec, xvec_pointer, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-  
-  ! Copy out the values to return
-  do i=1, ndof
-     dXv(i) = xvec_pointer(i)
-  end do
 
   ! Reset the arrays
   call VecResetArray(psi_like1, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  call VecRestoreArrayF90(xVec, xvec_pointer, ierr)
+  call VecResetArray(x_like, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 #endif
 end subroutine getdRdXvTPsi
@@ -286,7 +209,7 @@ subroutine getdRdXvPsi(dXv, ndof, adjoint, nstate)
  
 #define PETSC_AVOID_MPIF_H
   use petscvec
-  use ADjointPETSc, only: dRdx, xVec, psi_like1
+  use ADjointPETSc, only: dRdx, x_like, psi_like1
   use blockPointers
   use inputTimeSpectral 
   implicit none
@@ -301,8 +224,8 @@ subroutine getdRdXvPsi(dXv, ndof, adjoint, nstate)
    real(kind=realType), pointer :: xvec_pointer(:)
 
   ! Place adjoint in Vector
-  call VecPlaceArray(xVec, dXv, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
+   call VecPlaceArray(x_like, dXv, ierr)
+   call EChk(ierr, __FILE__, __LINE__)
 
   call VecPlaceArray(psi_like1, adjoint, ierr)
   call EChk(ierr, __FILE__, __LINE__)
@@ -311,7 +234,7 @@ subroutine getdRdXvPsi(dXv, ndof, adjoint, nstate)
   ! already transposed and thus we just do a matMult NOT
   ! a matMultTranspose
 
-  call MatMultTranspose(dRdx,  xVec, psi_like1, ierr)
+  call MatMultTranspose(dRdx,  x_like, psi_like1, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
   ! Reset the arrays
@@ -319,7 +242,7 @@ subroutine getdRdXvPsi(dXv, ndof, adjoint, nstate)
   call EChk(ierr, __FILE__, __LINE__)
 
   ! Reset the arrays
-  call VecResetArray(xVec, ierr)
+  call VecResetArray(x_like, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 #endif
 end subroutine getdRdXvPsi
@@ -373,9 +296,6 @@ subroutine spectralPrecscribedMotion(input, nin, dXv, nout)
   
   ! Zero dXv for time spectral case since we add to array.
   dXv = zero
-  
-  ! Now we loop over the number of timeInstances and reduce xVec
-  ! into GridVec
   
   do nn=1, nSections
      dt(nn) = sections(nn)%timePeriod &
@@ -504,133 +424,93 @@ subroutine getdFdxTVec(ndof, vec_in, vec_out)
 end subroutine getdFdxTVec
 
 subroutine agumentRHS(ndof, phi)
-#ifndef USE_NO_PETSC 
 
-  use ADjointPETSc 
-  use ADjointVars 
-  use communication
-  use inputADjoint
+  ! use ADjointPETSc 
+  ! use ADjointVars 
+  ! use communication
+  ! use inputADjoint
 
-  implicit none
+  ! implicit none
 
-  ! Input Variables
-  integer(kind=intType), intent(in) :: ndof
-  real(kind=realType), intent(in) :: phi(ndof)
-  integer(kind=intType) :: ierr
+  ! ! Input Variables
+  ! integer(kind=intType), intent(in) :: ndof
+  ! real(kind=realType), intent(in) :: phi(ndof)
+  ! integer(kind=intType) :: ierr
 
-  call VecPlaceArray(fVec1, phi, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-
-  ! ------------- OLD Code using explit dFdw ---------
-  ! ! Dump the result into adjointRHS
-  ! call MatMultTranspose(dFdw, fVec1, adjointRHS, ierr)
+  ! call VecPlaceArray(fVec1, phi, ierr)
   ! call EChk(ierr, __FILE__, __LINE__)
-  ! -------------------------------------------------
 
-  ! New code using dFcdw computation from forward mode Assembly. This
-  ! function requires the use of forward mode AD
+  ! ! ------------- OLD Code using explit dFdw ---------
+  ! ! ! Dump the result into adjointRHS
+  ! ! call MatMultTranspose(dFdw, fVec1, adjointRHS, ierr)
+  ! ! call EChk(ierr, __FILE__, __LINE__)
+  ! ! -------------------------------------------------
 
-  !w = x * y : VecPointwiseMult(Vec w, Vec x,Vec y)
-  call VecPointwiseMult(fNode, fVec1, overArea, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
+  ! ! New code using dFcdw computation from forward mode Assembly. This
+  ! ! function requires the use of forward mode AD
 
-  call MatMultTranspose(dFndFc, fNode, fCell, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
+  ! !w = x * y : VecPointwiseMult(Vec w, Vec x,Vec y)
+  ! call VecPointwiseMult(fNode, fVec1, overArea, ierr)
+  ! call EChk(ierr, __FILE__, __LINE__)
 
-  call MatMultTranspose(dFcdw, fCell, adjointRHS, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
+  ! call MatMultTranspose(dFndFc, fNode, fCell, ierr)
+  ! call EChk(ierr, __FILE__, __LINE__)
 
-  call vecResetArray(fVec1, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
+  ! call MatMultTranspose(dFcdw, fCell, adjointRHS, ierr)
+  ! call EChk(ierr, __FILE__, __LINE__)
 
-#endif
+  ! call vecResetArray(fVec1, ierr)
+  ! call EChk(ierr, __FILE__, __LINE__)
 
 end subroutine agumentRHS
 
 subroutine getdFdwTVec(in_vec, in_dof, out_vec, out_dof)
-#ifndef USE_NO_PETSC 
 
-  use ADjointPETSc
-  use communication
+  ! use ADjointPETSc
+  ! use communication
 
-  implicit none
+  ! implicit none
 
-  ! Input/Ouput
-  integer(kind=intType), intent(in) :: in_dof, out_dof
-  real(kind=realType), intent(in) :: in_vec(in_dof)
-  real(kind=realType), intent(inout) :: out_vec(out_dof)
+  ! ! Input/Ouput
+  ! integer(kind=intType), intent(in) :: in_dof, out_dof
+  ! real(kind=realType), intent(in) :: in_vec(in_dof)
+  ! real(kind=realType), intent(inout) :: out_vec(out_dof)
 
-  ! Working
-  integer(kind=intType) :: ierr
+  ! ! Working
+  ! integer(kind=intType) :: ierr
 
-  ! Put petsc wrapper around arrays
-  call VecPlaceArray(fVec1, in_vec, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
+  ! ! Put petsc wrapper around arrays
+  ! call VecPlaceArray(fVec1, in_vec, ierr)
+  ! call EChk(ierr, __FILE__, __LINE__)
   
-  call VecPlaceArray(psi_like1, out_vec, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-
-  ! Dump the result into adjointRHS since the we want to ADD this
-  ! result to psi_like1 below
-
-  ! ------------ OldMethod
-  ! call MatMultTranspose(dFdw, fVec1, adjointRHS, ierr)
+  ! call VecPlaceArray(psi_like1, out_vec, ierr)
   ! call EChk(ierr, __FILE__, __LINE__)
 
-  ! ------------ New Method
-  call VecPointwiseMult(fNode, fVec1, overArea, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
+  ! ! Dump the result into adjointRHS since the we want to ADD this
+  ! ! result to psi_like1 below
 
-  call MatMultTranspose(dFndFc, fNode, fCell, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
+  ! ! ------------ OldMethod
+  ! ! call MatMultTranspose(dFdw, fVec1, adjointRHS, ierr)
+  ! ! call EChk(ierr, __FILE__, __LINE__)
 
-  call MatMultTranspose(dFcdw, fCell, adjointRHS, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
+  ! ! ------------ New Method
+  ! call VecPointwiseMult(fNode, fVec1, overArea, ierr)
+  ! call EChk(ierr, __FILE__, __LINE__)
+
+  ! call MatMultTranspose(dFndFc, fNode, fCell, ierr)
+  ! call EChk(ierr, __FILE__, __LINE__)
+
+  ! call MatMultTranspose(dFcdw, fCell, adjointRHS, ierr)
+  ! call EChk(ierr, __FILE__, __LINE__)
  
-  ! do: psi_like1 = psi_like1 + adjointRHS
-  call VecAxpy(psi_like1, one, adjointRHS, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
+  ! ! do: psi_like1 = psi_like1 + adjointRHS
+  ! call VecAxpy(psi_like1, one, adjointRHS, ierr)
+  ! call EChk(ierr, __FILE__, __LINE__)
 
-  call vecResetArray(fVec1, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
+  ! call vecResetArray(fVec1, ierr)
+  ! call EChk(ierr, __FILE__, __LINE__)
 
-  call VecResetArray(psi_like1, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-#endif
+  ! call VecResetArray(psi_like1, ierr)
+  ! call EChk(ierr, __FILE__, __LINE__)
 
 end subroutine getdFdwTVec
-
-subroutine setdJdw(nstate, inVec)
-
-#ifndef USE_NO_PETSC	
-#define PETSC_AVOID_MPIF_
-#include "finclude/petscdef.h"
-
-  use ADjointPETSc, only : dJdw
-  use petscvec
-  use constants
-
-  implicit none
-
-  !  Input Variables
-  integer(kind=intType),intent(in):: nstate
-  real(kind=realType),dimension(nstate), intent(in) :: inVec
-
-  ! Local Variables
-  integer(kind=intType) :: i, ierr
-  real(kind=realType),pointer :: dJdw_pointer(:)
-
-  ! Copy out adjoint vector:
-  call VecGetArrayF90(dJdw, dJdw_pointer, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-
-  ! Do a straight copy:
-  do i=1,nstate
-     dJdw_pointer(i) = inVec(i)
-  end do
-
-  call VecRestoreArrayF90(dJdw, dJdw_pointer, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-#endif
-
-end subroutine setdJdw
