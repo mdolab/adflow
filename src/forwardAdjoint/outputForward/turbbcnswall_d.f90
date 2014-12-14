@@ -2,15 +2,12 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of turbbcnswall in forward (tangent) mode (with options i4 dr8 r8):
-   !   variations   of useful results: *rev *bvtj1 *bvtj2 *bmtk1 *w
-   !                *bmtk2 *bvtk1 *bvtk2 *bmti1 *bmti2 *bvti1 *bvti2
-   !                *bmtj1 *bmtj2
-   !   with respect to varying inputs: *rev *bvtj1 *bvtj2 *bmtk1 *w
-   !                *bmtk2 *rlv *bvtk1 *bvtk2 *bmti1 *bmti2 *bvti1
-   !                *bvti2 *bmtj1 *bmtj2
-   !   Plus diff mem management of: rev:in bvtj1:in bvtj2:in bmtk1:in
-   !                w:in bmtk2:in rlv:in bvtk1:in bvtk2:in bmti1:in
-   !                bmti2:in bvti1:in bvti2:in bmtj1:in bmtj2:in bcdata:in
+   !   variations   of useful results: *rev *bvtj1 *bvtj2 *w *bvtk1
+   !                *bvtk2 *bvti1 *bvti2
+   !   with respect to varying inputs: *rev *bvtj1 *bvtj2 *w *rlv
+   !                *bvtk1 *bvtk2 *bvti1 *bvti2
+   !   Plus diff mem management of: rev:in bvtj1:in bvtj2:in w:in
+   !                rlv:in bvtk1:in bvtk2:in bvti1:in bvti2:in bcdata:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -65,8 +62,8 @@
    wd(1, i, j, l) = bvti1d(i, j, l)
    w(1, i, j, l) = bvti1(i, j, l)
    DO m=nt1,nt2
-   wd(1, i, j, l) = wd(1, i, j, l) - bmti1d(i, j, l, m)*w(2, &
-   &               i, j, m) - bmti1(i, j, l, m)*wd(2, i, j, m)
+   wd(1, i, j, l) = wd(1, i, j, l) - bmti1(i, j, l, m)*wd(2, &
+   &               i, j, m)
    w(1, i, j, l) = w(1, i, j, l) - bmti1(i, j, l, m)*w(2, i, &
    &               j, m)
    END DO
@@ -92,8 +89,8 @@
    wd(ie, i, j, l) = bvti2d(i, j, l)
    w(ie, i, j, l) = bvti2(i, j, l)
    DO m=nt1,nt2
-   wd(ie, i, j, l) = wd(ie, i, j, l) - bmti2d(i, j, l, m)*w(&
-   &               il, i, j, m) - bmti2(i, j, l, m)*wd(il, i, j, m)
+   wd(ie, i, j, l) = wd(ie, i, j, l) - bmti2(i, j, l, m)*wd(&
+   &               il, i, j, m)
    w(ie, i, j, l) = w(ie, i, j, l) - bmti2(i, j, l, m)*w(il, &
    &               i, j, m)
    END DO
@@ -119,8 +116,8 @@
    wd(i, 1, j, l) = bvtj1d(i, j, l)
    w(i, 1, j, l) = bvtj1(i, j, l)
    DO m=nt1,nt2
-   wd(i, 1, j, l) = wd(i, 1, j, l) - bmtj1d(i, j, l, m)*w(i, &
-   &               2, j, m) - bmtj1(i, j, l, m)*wd(i, 2, j, m)
+   wd(i, 1, j, l) = wd(i, 1, j, l) - bmtj1(i, j, l, m)*wd(i, &
+   &               2, j, m)
    w(i, 1, j, l) = w(i, 1, j, l) - bmtj1(i, j, l, m)*w(i, 2, &
    &               j, m)
    END DO
@@ -146,8 +143,8 @@
    wd(i, je, j, l) = bvtj2d(i, j, l)
    w(i, je, j, l) = bvtj2(i, j, l)
    DO m=nt1,nt2
-   wd(i, je, j, l) = wd(i, je, j, l) - bmtj2d(i, j, l, m)*w(i&
-   &               , jl, j, m) - bmtj2(i, j, l, m)*wd(i, jl, j, m)
+   wd(i, je, j, l) = wd(i, je, j, l) - bmtj2(i, j, l, m)*wd(i&
+   &               , jl, j, m)
    w(i, je, j, l) = w(i, je, j, l) - bmtj2(i, j, l, m)*w(i, &
    &               jl, j, m)
    END DO
@@ -173,8 +170,8 @@
    wd(i, j, 1, l) = bvtk1d(i, j, l)
    w(i, j, 1, l) = bvtk1(i, j, l)
    DO m=nt1,nt2
-   wd(i, j, 1, l) = wd(i, j, 1, l) - bmtk1d(i, j, l, m)*w(i, &
-   &               j, 2, m) - bmtk1(i, j, l, m)*wd(i, j, 2, m)
+   wd(i, j, 1, l) = wd(i, j, 1, l) - bmtk1(i, j, l, m)*wd(i, &
+   &               j, 2, m)
    w(i, j, 1, l) = w(i, j, 1, l) - bmtk1(i, j, l, m)*w(i, j, &
    &               2, m)
    END DO
@@ -200,8 +197,8 @@
    wd(i, j, ke, l) = bvtk2d(i, j, l)
    w(i, j, ke, l) = bvtk2(i, j, l)
    DO m=nt1,nt2
-   wd(i, j, ke, l) = wd(i, j, ke, l) - bmtk2d(i, j, l, m)*w(i&
-   &               , j, kl, m) - bmtk2(i, j, l, m)*wd(i, j, kl, m)
+   wd(i, j, ke, l) = wd(i, j, ke, l) - bmtk2(i, j, l, m)*wd(i&
+   &               , j, kl, m)
    w(i, j, ke, l) = w(i, j, ke, l) - bmtk2(i, j, l, m)*w(i, j&
    &               , kl, m)
    END DO
