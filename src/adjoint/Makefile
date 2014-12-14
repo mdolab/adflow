@@ -28,18 +28,15 @@ FILES_TO_COMPLEXIFY = \
 		createPETScVars.F90        \
 		destroyPETScVars.F90       \
 		preallocation.F90          \
-		finalizePETSc.F90          \
 		getSolution.f90            \
-		getSolutionMask.f90            \
+		getSolutionMask.f90        \
 		initializePETSc.F90        \
+		finalizePETSc.F90        \
 		preprocessingADjoint.F90   \
-		releaseMemADjoint.f90      \
 		setupPETScKsp.F90         \
 		updateFlow.f90            \
 		updateReferencePoint.f90   \
 		updateRotationRate.f90     \
-		matrixInfo.F90\
-		adjoint_stencils.f90\
 		setupCouplingMatrixStruct.F90\
 		matrixFreeRoutines.F90\
 #		copyADjointStencil.f90    \

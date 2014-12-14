@@ -46,7 +46,7 @@ subroutine solveAdjoint(RHS, psi, checkSolution, nState)
   integer(kind=intType) :: ierr
   integer(kind=intType) :: adjConvIts
   KSPConvergedReason adjointConvergedReason
-  Vec adjointRes
+  Vec adjointRes, RHSVec
 
   ! Send some feedback to screen.
 
@@ -64,6 +64,13 @@ subroutine solveAdjoint(RHS, psi, checkSolution, nState)
 
   call VecDuplicate(psi_like1, adjointRes, ierr)
   call EChk(ierr,__FILE__,__LINE__)
+  if (checkSolution) then 
+     call VecDuplicate(psi_like1, RHSVec, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     call vecCopy(psi_like2, RHSVec, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+  end if
 
   ! Get Current Residual -- we always solve for the delta
   call MatMult(dRdWT, psi_like1, adjointRes, ierr)
@@ -114,7 +121,7 @@ subroutine solveAdjoint(RHS, psi, checkSolution, nState)
      call MatMult(dRdWT, psi_like1, adjointRes, ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
-     call VecAXPY(adjointRes, -one, psi_like2, ierr)
+     call VecAXPY(adjointRes, -one, RHSVec, ierr)
      call EChk(ierr,__FILE__,__LINE__)
      
      call VecNorm(adjointRes, NORM_2, norm,ierr)
@@ -139,6 +146,9 @@ subroutine solveAdjoint(RHS, psi, checkSolution, nState)
         endif
           write(*,*) "------------------------------------------------"
        endif
+
+       call VecDestroy(RHSVec, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
     end if
     
     ! Destroy the temporary vector and reset the arrays
