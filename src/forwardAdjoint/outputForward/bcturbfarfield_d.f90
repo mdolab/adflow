@@ -2,15 +2,12 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of bcturbfarfield in forward (tangent) mode (with options i4 dr8 r8):
-   !   variations   of useful results: *bvtj1 *bvtj2 *bmtk1 *bmtk2
-   !                *bvtk1 *bvtk2 *bmti1 *bmti2 *bvti1 *bvti2 *bmtj1
-   !                *bmtj2
-   !   with respect to varying inputs: *bvtj1 *bvtj2 *bmtk1 *bmtk2
-   !                *bvtk1 *bvtk2 *bmti1 *bmti2 *bvti1 *bvti2 *bmtj1
-   !                *bmtj2 winf
-   !   Plus diff mem management of: bvtj1:in bvtj2:in bmtk1:in bmtk2:in
-   !                bvtk1:in bvtk2:in bmti1:in bmti2:in bvti1:in bvti2:in
-   !                bmtj1:in bmtj2:in bcdata:in
+   !   variations   of useful results: *bvtj1 *bvtj2 *bvtk1 *bvtk2
+   !                *bvti1 *bvti2
+   !   with respect to varying inputs: *bvtj1 *bvtj2 *bvtk1 *bvtk2
+   !                *bvti1 *bvti2 winf
+   !   Plus diff mem management of: bvtj1:in bvtj2:in bvtk1:in bvtk2:in
+   !                bvti1:in bvti2:in bcdata:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -73,22 +70,16 @@
    DO l=nt1,nt2
    SELECT CASE  (bcfaceid(nn)) 
    CASE (imin) 
-   bmti1d(i, j, l, l) = 0.0_8
    bmti1(i, j, l, l) = -one
    CASE (imax) 
-   bmti2d(i, j, l, l) = 0.0_8
    bmti2(i, j, l, l) = -one
    CASE (jmin) 
-   bmtj1d(i, j, l, l) = 0.0_8
    bmtj1(i, j, l, l) = -one
    CASE (jmax) 
-   bmtj2d(i, j, l, l) = 0.0_8
    bmtj2(i, j, l, l) = -one
    CASE (kmin) 
-   bmtk1d(i, j, l, l) = 0.0_8
    bmtk1(i, j, l, l) = -one
    CASE (kmax) 
-   bmtk2d(i, j, l, l) = 0.0_8
    bmtk2(i, j, l, l) = -one
    END SELECT
    END DO

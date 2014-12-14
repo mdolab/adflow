@@ -2,15 +2,12 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of bcturbtreatment in forward (tangent) mode (with options i4 dr8 r8):
-   !   variations   of useful results: *bvtj1 *bvtj2 *bmtk1 *bmtk2
-   !                *bvtk1 *bvtk2 *bmti1 *bmti2 *bvti1 *bvti2 *bmtj1
-   !                *bmtj2
-   !   with respect to varying inputs: *bvtj1 *bvtj2 *bmtk1 *w *bmtk2
-   !                *rlv *bvtk1 *bvtk2 *bmti1 *bmti2 *bvti1 *bvti2
-   !                *bmtj1 *bmtj2 winf
-   !   Plus diff mem management of: bvtj1:in bvtj2:in bmtk1:in w:in
-   !                bmtk2:in rlv:in bvtk1:in bvtk2:in bmti1:in bmti2:in
-   !                bvti1:in bvti2:in bmtj1:in bmtj2:in bcdata:in
+   !   variations   of useful results: *bvtj1 *bvtj2 *bvtk1 *bvtk2
+   !                *bvti1 *bvti2
+   !   with respect to varying inputs: *bvtj1 *bvtj2 *w *rlv *bvtk1
+   !                *bvtk2 *bvti1 *bvti2 winf
+   !   Plus diff mem management of: bvtj1:in bvtj2:in w:in rlv:in
+   !                bvtk1:in bvtk2:in bvti1:in bvti2:in bcdata:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -62,9 +59,7 @@
    DO j=1,je
    DO l=nt1,nt2
    DO m=nt1,nt2
-   bmti1d(j, k, l, m) = 0.0_8
    bmti1(j, k, l, m) = zero
-   bmti2d(j, k, l, m) = 0.0_8
    bmti2(j, k, l, m) = zero
    END DO
    bvti1d(j, k, l) = 0.0_8
@@ -78,9 +73,7 @@
    DO i=1,ie
    DO l=nt1,nt2
    DO m=nt1,nt2
-   bmtj1d(i, k, l, m) = 0.0_8
    bmtj1(i, k, l, m) = zero
-   bmtj2d(i, k, l, m) = 0.0_8
    bmtj2(i, k, l, m) = zero
    END DO
    bvtj1d(i, k, l) = 0.0_8
@@ -94,9 +87,7 @@
    DO i=1,ie
    DO l=nt1,nt2
    DO m=nt1,nt2
-   bmtk1d(i, j, l, m) = 0.0_8
    bmtk1(i, j, l, m) = zero
-   bmtk2d(i, j, l, m) = 0.0_8
    bmtk2(i, j, l, m) = zero
    END DO
    bvtk1d(i, j, l) = 0.0_8
@@ -120,7 +111,7 @@
    !=============================================================
    ! Symmetry, polar symmetry or inviscid wall. Treatment of
    ! the turbulent equations is identical.
-   CALL BCTURBSYMM_D(nn)
+   CALL BCTURBSYMM(nn)
    CASE (farfield) 
    !=============================================================
    ! Farfield. The kind of boundary condition to be applied,
