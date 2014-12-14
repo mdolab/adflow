@@ -425,26 +425,7 @@ python module libsumb
             integer(kind=inttype), optional,intent(in),check(len(dwbar)>=statesize),depend(dwbar) :: statesize=len(dwbar)
             integer(kind=inttype), optional,intent(in),check(len(funcsbar)>=costsize),depend(funcsbar) :: costsize=len(funcsbar)
         end subroutine computematrixfreeproductbwd
-        ! subroutine solveadjointforrhs(invec,outvec,ndof,relativetolerance) ! in matrixFreeRoutines.F90
-        !     use killsignals
-        !     use adjointpetsc
-        !     use adjointvars
-        !     use inputadjoint
-        !     real(kind=realtype) dimension(ndof),intent(in) :: invec
-        !     real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: outvec
-        !     integer(kind=inttype), optional,intent(in),check(len(invec)>=ndof),depend(invec) :: ndof=len(invec)
-        !     real(kind=realtype) intent(in) :: relativetolerance
-        ! end subroutine solveadjointforrhs
-        ! subroutine solvedirectforrhs(invec,outvec,ndof,relativetolerance) ! in matrixFreeRoutines.F90
-        !     use killsignals
-        !     use adjointpetsc
-        !     use adjointvars
-        !     use inputadjoint
-        !     real(kind=realtype) dimension(ndof),intent(in) :: invec
-        !     real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: outvec
-        !     integer(kind=inttype), optional,intent(in),check(len(invec)>=ndof),depend(invec) :: ndof=len(invec)
-        !     real(kind=realtype) intent(in) :: relativetolerance
-        ! end subroutine solvedirectforrhs
+
         subroutine getdida(costfunction) ! in :test:computeObjectivePartialsFwd.F90
           integer(kind=inttype) intent(in) :: costfunction
         end subroutine getdida
@@ -462,27 +443,9 @@ python module libsumb
             real(kind=realtype) dimension(ndv),intent(in) :: in_vec
             integer(kind=inttype) optional,intent(in),check(len(in_vec)>=ndv),depend(in_vec) :: ndv=len(in_vec)
         end subroutine getdrdapsi
-        ! subroutine getdrdapsi(output,ndv,adjoint,nstate) ! in :test:getdRdaPsi.F90
-        !     real(kind=realtype) dimension(ndv),intent(out),depend(ndv) :: output
-        !     integer(kind=inttype) intent(in) :: ndv
-        !     real(kind=realtype) dimension(nstate),intent(in) :: adjoint
-        !     integer(kind=inttype) optional,intent(in),check(len(adjoint)>=nstate),depend(adjoint) :: nstate=len(adjoint)
-        ! end subroutine getdrdapsi
-
 
        ! ------------- Misc --------------------
-    
-       subroutine matrixinfo(pdrdwt,pdrdwpret,pdrdx,pdrda,pdfdw,pdfdx,plocal,psum,pmax) ! in :test:matrixInfo.F90
-         logical intent(in) :: pdrdwt
-         logical intent(in) :: pdrdwpret
-         logical intent(in) :: pdrdx
-         logical intent(in) :: pdrda
-         logical intent(in) :: pdfdw
-         logical intent(in) :: pdfdx
-         logical intent(in) :: plocal
-         logical intent(in) :: psum
-         logical intent(in) :: pmax
-       end subroutine matrixinfo
+ 
 
        subroutine getliftdirfromsymmetry(liftdir)
          integer(kind=inttype), intent(out) :: liftdir
