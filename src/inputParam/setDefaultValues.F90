@@ -427,4 +427,6 @@
        cflLimit = 3.0
        rhoResL1Start = -one
        adjointPETScVarsAllocated = .False.
+       usematrixfreedrdw = .False.
+       usematrixfreedrdx = .False.
        end subroutine setDefaultValues

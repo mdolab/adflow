@@ -1,200 +1,174 @@
 !
 !     ******************************************************************
 !     *                                                                *
-!     * File:          solveADjointTransposePETSc.F90                  *
-!     * Author:        C.A.(Sandy) Mader                               *
-!     * Starting date: 05-07-2010                                      *
-!     * Last modified: 05-14-2010                                      *
+!     * File:          solveAdjoint.F90                                *
+!     * Author:        Gaetan K.W. Kenway                              *
+!     * Starting date: 03-12-2014                                      *
+!     * Last modified: 03-12-2014                                      *
 !     *                                                                *
 !     ******************************************************************
 !
-      subroutine solveADjointTransposePETSc
-!
-!     ******************************************************************
-!     *                                                                *
-!     * Solve the linear discrete ADjoint system of equations          *
-!     *                                                                *
-!     *     [dR/dW]T . psi = {dJdW}                                    *
-!     *                                                                *
-!     * using preconditioned GMRES provided by PETSc. It also stores   *
-!     * the residual convergence history and the number of iterations  *
-!     * to convergence. The convergence is verified by computing the   *
-!     * norm of the residual vector r =  {dJdW} - [dR/dW]T . psi       *
-!     *                                                                *
-!     ******************************************************************
-!
-       
-      use ADjointPETSc
-      use killsignals
-      use inputADjoint
-      use communication
-      implicit none
-!
-!     Local variables.
-      real(kind=realType)   :: norm
-      real(kind=realType), dimension(2) :: time
-      real(kind=realType)               :: timeAdjLocal, timeAdj,l2abs,curRes
+subroutine solveAdjoint(RHS, psi, checkSolution, nState)
+  !
+  !     ******************************************************************
+  !     *                                                                *
+  !     * Solve the linear discrete ADjoint system of equations          *
+  !     *                                                                *
+  !     *     [dR/dW]T . psi = {RHS}                                     *
+  !     *                                                                *
+  !     * using preconditioned GMRES provided by PETSc. The values in psi*
+  !     * are significant as they are used as the inital guess.          *
+  !     *                                                                *
+  !     *                                                                *
+  !     *                                                                *
+  !     *                                                                *
+  !     ******************************************************************
+  !
 
-!     ******************************************************************
-!     *                                                                *
-!     * Begin execution.                                               *
-!     *                                                                *
-!     ******************************************************************
-!
-#ifndef USE_NO_PETSC
+  use ADjointPETSc, only : dRdwT, psi_like1, psi_like2, adjointKSP
 
-      ! Send some feedback to screen.
+  use killsignals
+  use inputADjoint
+  use communication
+  implicit none
+#define PETSC_AVOID_MPIF_H
+#include "finclude/petsc.h"
 
-      if( myid ==0 .and. printTiming)  &
-           write(*,10) "Solving ADjoint Transpose with PETSc..."
+  ! Input Parameters
+  real(kind=realType), dimension(nState) :: RHS, psi
+  integer(kind=intType) :: nState
+  logical :: checkSolution 
+  !
+  !     Local variables.
+  real(kind=realType)   :: norm
+  real(kind=realType), dimension(2) :: time
+  real(kind=realType)               :: timeAdjLocal, timeAdj,l2abs,curRes
+  integer(kind=intType) :: ierr
+  integer(kind=intType) :: adjConvIts
+  KSPConvergedReason adjointConvergedReason
+  Vec adjointRes
 
-      ! Allocate resHist of not already done so
-      if (allocated(adjResHist)) then
-         deallocate(adjResHist) 
-      end if
-      allocate(adjResHist(adjMaxIter))
+  ! Send some feedback to screen.
 
-      call cpu_time(time(1))
+  if(myid ==0 .and. printTiming)  &
+       write(*,10) "Solving ADjoint Transpose with PETSc..."
 
-      !Get the initial time.
-      if (restartADjoint) then
-         !The user wants to restart the adjoint from the last point. Set
-         !initial guess non-zero to true instead of zeroing the vector
-         call KSPSetInitialGuessNonzero(adjointKSP,PETSC_TRUE,PETScIerr)
-      else
-         call VecSet(psi, zero, PETScIerr)
-         call EChk(PETScIerr,__FILE__,__LINE__)
-      end if
-!
-!     ******************************************************************
-!     *                                                                *
-!     * Solve the linear system of equations dRdWT . psi = dIdW using  *
-!     * preconditioned GMRES.                                          *
-!     *                                                                *
-!     ******************************************************************
-      adjResHist = zero
-      call KSPSetResidualHistory(adjointKSP, adjResHist, adjMaxIter, &
-           PETSC_FALSE, PETScIerr)
-      call EChk(PETScIerr,__FILE__,__LINE__)
+  call cpu_time(time(1))
 
-      ! If the user is doing a MDO problem there may be an
-      ! agumentation to the RHS. This is set in agumentRHS.F90 and
-      ! results in a non-zero vector in adjointRHS. For an aero-only
-      ! problem this vector should be zero at this point. We compute:
-      ! adjointRHS = -adjointRHS + dJdw
-      
-      call VecAYPX(adjointRHS,-one,dJdw,PETScIerr)
-      call EChk(PETScIerr,__FILE__,__LINE__)
+  ! Dump psi into psi_like1 and RHS into psi_like2
+  call VecPlaceArray(psi_like1, psi, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
 
-      ! Get Current Residual
-      if (usematrixfreedrdw) then 
-         call MatMult(dRdWTShell,psi,adjointRes,PETScIerr)
-         call EChk(PETScIerr,__FILE__,__LINE__)
-      else
-         call MatMult(dRdWT,psi,adjointRes,PETScIerr)
-         call EChk(PETScIerr,__FILE__,__LINE__)
-      end if
-      ! AdjointRes = AdjointRes - adjointRHS
-      call VecAXPY(adjointRes,-one,adjointRHS,PETScIerr)
-      call EChk(PETScIerr,__FILE__,__LINE__)
-      
-      ! Norm of adjoint Residual
-      call VecNorm(adjointRes,NORM_2,curRes,PETScIerr)
-      call EChk(PETScIerr,__FILE__,__LINE__)
+  call VecPlaceArray(psi_like2, RHS, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
 
-      ! L2Abs is used to stipulate an exit criteria for adjreltolrel
-      L2abs = curRes * adjreltolrel
-      
-      ! If L2Abs is less that what we actually want as the absolute
-      ! tolerance, clip it
-      if (L2Abs < adjAbsTol) then
-         L2abs = adjabstol
-      end if
+  call VecDuplicate(psi_like1, adjointRes, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
 
-      ! Set the tolerances
-      call KSPSetTolerances(adjointKSP,adjRelTol,L2Abs,adjDivTol,adjMaxIter,PETScIerr)
-      call EChk(PETScIerr,__FILE__,__LINE__)
+  ! Get Current Residual -- we always solve for the delta
+  call MatMult(dRdWT, psi_like1, adjointRes, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
 
-      ! Solve the adjoint system of equations [dR/dW]T psi = adjointRHS
+  ! AdjointRes = AdjointRes - adjointRHS
+  call VecAXPY(adjointRes, -one, psi_like2, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
 
-      call KSPSolve(adjointKSP,adjointRHS,psi,PETScIerr)
-      call EChk(PETScIerr,__FILE__,__LINE__)
+  ! Norm of adjoint Residual
+  call VecNorm(adjointRes, NORM_2, curRes,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
 
-      ! Get new time and compute the elapsed time.
-      call cpu_time(time(2))
-      timeAdjLocal = time(2)-time(1)
+  ! L2Abs is used to stipulate an exit criteria for adjreltolrel
+  L2abs = curRes * adjreltolrel
 
-      ! Determine the maximum time using MPI reduce
-      ! with operation mpi_max.
+  ! If L2Abs is less that what we actually want as the absolute
+  ! tolerance, clip it
+  if (L2Abs < adjAbsTol) then
+     L2abs = adjabstol
+  end if
 
-      call mpi_reduce(timeAdjLocal, timeAdj, 1, sumb_real, &
-                      mpi_max, 0, SUMB_COMM_WORLD, PETScIerr)
-!
-!     ******************************************************************
-!     *                                                                *
-!     * Check the solution.                                            *
-!     *                                                                *
-!     ******************************************************************
-!
+  ! Set the tolerances
+  call KSPSetTolerances(adjointKSP, adjRelTol, L2Abs, adjDivTol, &
+       adjMaxIter, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
 
-      if (usematrixfreedrdw) then 
-         call MatMult(dRdWTShell,psi,adjointRes,PETScIerr)
-         call EChk(PETScIerr,__FILE__,__LINE__)
-      else
-         call MatMult(dRdWT,psi,adjointRes,PETScIerr)
-         call EChk(PETScIerr,__FILE__,__LINE__)
-      end if
-      
-      call VecAXPY(adjointRes,-one,adjointRHS,PETScIerr)
-      call EChk(PETScIerr,__FILE__,__LINE__)
-      
-      call VecNorm(adjointRes,NORM_2,norm,PETScIerr)
-      call EChk(PETScIerr,__FILE__,__LINE__)
-      
-      ! Finally we MUST zero adjointRHS
-      call VecZeroEntries(adjointRHS,PETscIerr)
-      call EChk(PETScIerr,__FILE__,__LINE__)
+  ! Solve the update (psi_like2)
+  call KSPSolve(adjointKSP, adjointRes, psi_like2, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
 
-      call KSPGetIterationNumber(adjointKSP,adjConvIts,PETScIerr)
-      call EChk(PETScIerr,__FILE__,__LINE__)
-      
-      ! Use the root processor to display the output summary, such as
-      ! the norm of error and the number of iterations
+  ! Now compute the update to psi_like1 (psi)
+  call VecAXPY(psi_like1, -one, psi_like2, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
 
-      if( myid ==0 .and. printTiming) then
+  if (checkSolution) then 
+
+     ! Get new time and compute the elapsed time.
+     call cpu_time(time(2))
+     timeAdjLocal = time(2)-time(1)
+
+     ! Determine the maximum time using MPI reduce
+     ! with operation mpi_max.
+
+     call mpi_reduce(timeAdjLocal, timeAdj, 1, sumb_real, &
+          mpi_max, 0, SUMB_COMM_WORLD, ierr)
+   
+     call MatMult(dRdWT, psi_like1, adjointRes, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     call VecAXPY(adjointRes, -one, psi_like2, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     
+     call VecNorm(adjointRes, NORM_2, norm,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     call KSPGetIterationNumber(adjointKSP,adjConvIts,ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     
+     ! Use the root processor to display the output summary, such as
+     ! the norm of error and the number of iterations
+     
+     if( myid ==0 .and. printTiming) then
         write(*,20) "Solving ADjoint Transpose with PETSc time (s) =", timeAdj
         write(*,30) "Norm of error =",norm,"Iterations =",adjConvIts
         write(*,*) "------------------------------------------------"
         if( adjConvIts.lt.0 ) then
-          write(*,40) "PETSc solver diverged after", -adjConvIts, &
-                     "iterations..."
+           write(*,40) "PETSc solver diverged after", -adjConvIts, &
+                "iterations..."
         else
-          write(*,40) "PETSc solver converged after", adjConvIts, &
-                       "iterations."
+           write(*,40) "PETSc solver converged after", adjConvIts, &
+                "iterations."
         endif
-        write(*,*) "------------------------------------------------"
-      endif
+          write(*,*) "------------------------------------------------"
+       endif
+    end if
+    
+    ! Destroy the temporary vector and reset the arrays
+    call VecDestroy(adjointRes, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
 
-      ! Get the petsc converged reason and set the fail flag
+    call VecResetArray(psi_like1, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
 
-      call KSPGetConvergedReason(adjointKSP, adjointConvergedReason,PETScIerr)
-      call EChk(PETScIerr,__FILE__,__LINE__)
+    call VecResetArray(psi_like2, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+    
+    ! Get the petsc converged reason and set the fail flag
+    call KSPGetConvergedReason(adjointKSP, adjointConvergedReason,ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+    
+    if (adjointConvergedReason ==  KSP_CONVERGED_RTOL .or. &
+         adjointConvergedReason ==  KSP_CONVERGED_ATOL .or. &
+         adjointConvergedReason ==  KSP_CONVERGED_HAPPY_BREAKDOWN) then
+       adjointFailed = .False.
+    else
+       adjointFailed = .True.
+    end if
+    
+  ! Output formats.
 
-      if (adjointConvergedReason ==  KSP_CONVERGED_RTOL .or. &
-          adjointConvergedReason ==  KSP_CONVERGED_ATOL .or. &
-          adjointConvergedReason ==  KSP_CONVERGED_HAPPY_BREAKDOWN) then
-         adjointFailed = .False.
-      else
-         adjointFailed = .True.
-      end if
-   
-      ! Output formats.
+10 format(a)
+20 format(a,1x,f8.2)
+30 format(1x,a,1x,e10.4,4x,a,1x,i4)
+40 format(1x,a,1x,i5,1x,a)
 
-   10 format(a)
-   20 format(a,1x,f8.2)
-   30 format(1x,a,1x,e10.4,4x,a,1x,i4)
-   40 format(1x,a,1x,i5,1x,a)
+end subroutine solveAdjoint
 
-#endif
-    end subroutine solveADjointTransposePETSc
-      
