@@ -1,15 +1,9 @@
-Subroutine computeObjectivePartialsFwd(costFunction)
+subroutine getdIdw(costFunction, dIdw, nState)
 
-  !     ******************************************************************
-  !     *                                                                *
-  !     * Assemble the objective partials from the data precomputed      *
-  !     * from the forward mode computations. 
-  !     *                                                                *
-  !     * costFunction: The index of the cost function to use.           *
-  !     *                                                                *
-  !     ******************************************************************
-  !
-  use ADjointVars
+  ! Return the derivative: 'dIdw' of size 'nState' for the objective
+  ! number 'costFunction'.
+
+    use ADjointVars
   use ADjointPETSc
   use blockPointers   
   use communication  
@@ -20,8 +14,9 @@ Subroutine computeObjectivePartialsFwd(costFunction)
   implicit none
 
   ! Input Variables
-  integer(kind=intType), intent(in) :: costFunction
-
+  integer(kind=intType), intent(in) :: costFunction, nState
+  reaL(kind=realType), intent(out) :: dIdw(nState)
+  
   ! Working Variables
   integer(kind=intType) :: i, ierr, sps
   real(kind=realtype) :: val
@@ -32,9 +27,10 @@ Subroutine computeObjectivePartialsFwd(costFunction)
   real(kind=realType) :: alpha, alphab, beta, betab
   real(kind=realType) :: objValue, objValueb
   integer(kind=intType) :: liftIndex, idim
+
   ! Compute the requiquired sensitivity of the objective with respect
   ! to the forces, moments and extra variables.
-#ifndef USE_COMPLEX       
+
   do sps=1, nTimeIntervalsSpectral
      call getSolution(sps)
      force(1, sps) = functionValue(costFuncForceX)
@@ -52,81 +48,189 @@ Subroutine computeObjectivePartialsFwd(costFunction)
   call getCostFunction_b(costFunction, force, forceb, moment, momentb, sepSensor,&
        sepSensorb, Cavitation, Cavitationb, alpha, alphab, beta, betab, liftIndex, objValue, objValueb)
 
-  !******************************************! 
-  !               dIdw                       ! 
-  !******************************************! 
+  ! Set the supplied vector into a psi_like array
+  call VecPlaceArray(psi_like1, dIdw, ierr)
+  call EChk(ierr, __FILE__, __LINE__)  
 
   ! Zero Entries and multiply through by reverse-mode derivatives
-  call VecZeroEntries(dJdw, ierr)
+  call VecZeroEntries(psi_like1, ierr)
   call EChk(ierr, __FILE__, __LINE__)
   
   do sps=1, nTimeIntervalsSpectral
      do i=1, 3
-        call VecAXPY(dJdw, forceb(i, sps), FMw(i, sps), ierr)
+        call VecAXPY(psi_like1, forceb(i, sps), FMw(i, sps), ierr)
         call EChk(ierr, __FILE__, __LINE__)
-        call VecAXPY(dJdw, momentb(i, sps), FMw(i+3, sps), ierr)
+        call VecAXPY(psi_like1, momentb(i, sps), FMw(i+3, sps), ierr)
         call EChk(ierr, __FILE__, __LINE__)
      end do
   end do
 
   if (costFunction == costFuncSepSensor) then 
      do sps=1,nTimeIntervalsSpectral
-        call VecAXPY(dJdw, sepSensorb(sps), FMw(iSepSensor, sps), ierr)
+        call VecAXPY(psi_like1, sepSensorb(sps), FMw(iSepSensor, sps), ierr)
         call EChk(ierr, __FILE__, __LINE__)
      end do
   end if
  
   if (costFunction == costFuncCavitation) then 
      do sps=1,nTimeIntervalsSpectral
-        call VecAXPY(dJdw, Cavitationb(sps), FMw(iCavitation, sps), ierr)
+        call VecAXPY(psi_like1, Cavitationb(sps), FMw(iCavitation, sps), ierr)
         call EChk(ierr, __FILE__, __LINE__)
      end do
   end if
-  ! Assemble dJdw
-  call VecAssemblyBegin(dJdw, ierr)
+
+  ! Assemble dIdw (vector is called psi_like1)
+  call VecAssemblyBegin(psi_like1, ierr)
   call EChk(ierr, __FILE__, __LINE__)
-  call VecAssemblyEnd(dJdw, ierr)
+  call VecAssemblyEnd(psi_like1, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  !******************************************!
-  !          dIdx CALCULATIONS               !
-  !******************************************!
+  ! Reset array
+  call VecResetArray(psi_like1, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+end subroutine getdIdw
+
+subroutine getdIdx(costFunction, dIdx, nSpatial)
+  
+  ! Return the derivative: 'dIdx' of size 'nSpatial' for the objective
+  ! number 'costFunction'.
+
+  use ADjointVars
+  use ADjointPETSc
+  use blockPointers   
+  use communication  
+  use costFunctions
+  use inputTimeSpectral
+  use inputPhysics
+  use flowvarrefstate
+  implicit none
+
+  ! Input Variables
+  integer(kind=intType), intent(in) :: costFunction, nSpatial
+  reaL(kind=realType), intent(out) :: dIdx(nSpatial)
+  
+  ! Working Variables
+  integer(kind=intType) :: i, ierr, sps
+  real(kind=realtype) :: val
+  real(kind=realType), dimension(3, nTimeIntervalsSpectral) :: force, forceb
+  real(kind=realType), dimension(3, nTimeIntervalsSpectral) :: moment, momentb
+  real(kind=realType), dimension(nTimeIntervalsSpectral) :: sepSensor, sepSensorb
+  real(kind=realType), dimension(nTimeIntervalsSpectral) :: Cavitation, Cavitationb
+  real(kind=realType) :: alpha, alphab, beta, betab
+  real(kind=realType) :: objValue, objValueb
+  integer(kind=intType) :: liftIndex, idim
+
+  ! Compute the requiquired sensitivity of the objective with respect
+  ! to the forces, moments and extra variables.
+
+  do sps=1, nTimeIntervalsSpectral
+     call getSolution(sps)
+     force(1, sps) = functionValue(costFuncForceX)
+     force(2, sps) = functionValue(costFuncForceY)
+     force(3, sps) = functionValue(costFuncForceZ)
+     moment(1, sps) = functionValue(costFuncMomX)
+     moment(2, sps) = functionValue(costFuncMomY)
+     moment(3, sps) = functionValue(costFuncMomZ)
+     sepSensor(sps) = functionValue(costFuncSepSensor)
+     Cavitation(sps) = functionValue(costFuncCavitation)
+  end do
+
+  objValueb = one
+  call getDirAngle(velDirFreestream, liftDirection, liftIndex, alpha, beta)
+  call getCostFunction_b(costFunction, force, forceb, moment, momentb, sepSensor,&
+       sepSensorb, Cavitation, Cavitationb, alpha, alphab, beta, betab, liftIndex, objValue, objValueb)
+
+  call VecPlaceArray(x_like, dIdx, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
 
   ! Zero Entries and multiply by reverse-mode derivatives
-  call VecZeroEntries(dJdx, ierr)
+  call VecZeroEntries(x_like, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
   do sps=1, nTimeIntervalsSpectral
      do i = 1, 3
-        call VecAXPY(dJdx, forceb(i, sps), FMx(i, sps), ierr)
+        call VecAXPY(x_like, forceb(i, sps), FMx(i, sps), ierr)
         call EChk(ierr, __FILE__, __LINE__)
-        call VecAXPY(dJdx, momentb(i, sps), FMx(i+3, sps), ierr)
+        call VecAXPY(x_like, momentb(i, sps), FMx(i+3, sps), ierr)
         call EChk(ierr, __FILE__, __LINE__)
      end do
   end do
 
-  ! Assemble dJdx
-  call VecAssemblyBegin(dJdx, ierr)
+  ! Assemble x_like
+  call VecAssemblyBegin(x_like, ierr)
   call EChk(ierr, __FILE__, __LINE__)
-  call VecAssemblyEnd(dJdx, ierr)
+  call VecAssemblyEnd(x_like, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
   if (costFunction == costFuncSepSensor) then 
      do sps=1,nTimeIntervalsSpectral
-        call VecAXPY(dJdx, sepSensorb(sps), FMx(iSepSensor, sps), ierr)
+        call VecAXPY(x_like, sepSensorb(sps), FMx(iSepSensor, sps), ierr)
         call EChk(ierr, __FILE__, __LINE__)
      end do
   end if
 
   if (costFunction == costFuncCavitation) then 
      do sps=1,nTimeIntervalsSpectral
-        call VecAXPY(dJdx, Cavitationb(sps), FMx(iCavitation, sps), ierr)
+        call VecAXPY(x_like, Cavitationb(sps), FMx(iCavitation, sps), ierr)
         call EChk(ierr, __FILE__, __LINE__)
      end do
   end if
-  !******************************************!
-  !          dIda CALCULATIONS               !
-  !******************************************!
+
+  call VecResetArray(x_like, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+end subroutine getdIdx
+
+subroutine getdIda(costFunction)
+
+  ! Return the derivative: 'dIda' for the objective number 'costFunction'
+  ! Result is stored in the dIda variable in the ADjointVars Module.
+
+  use ADjointVars
+  use ADjointPETSc
+  use blockPointers   
+  use communication  
+  use costFunctions
+  use inputTimeSpectral
+  use inputPhysics
+  use flowvarrefstate
+  implicit none
+
+  ! Input Variables
+  integer(kind=intType), intent(in) :: costFunction
+  
+  ! Working Variables
+  integer(kind=intType) :: i, ierr, sps
+  real(kind=realtype) :: val
+  real(kind=realType), dimension(3, nTimeIntervalsSpectral) :: force, forceb
+  real(kind=realType), dimension(3, nTimeIntervalsSpectral) :: moment, momentb
+  real(kind=realType), dimension(nTimeIntervalsSpectral) :: sepSensor, sepSensorb
+  real(kind=realType), dimension(nTimeIntervalsSpectral) :: Cavitation, Cavitationb
+  real(kind=realType) :: alpha, alphab, beta, betab
+  real(kind=realType) :: objValue, objValueb
+  integer(kind=intType) :: liftIndex, idim
+
+  ! Compute the requiquired sensitivity of the objective with respect
+  ! to the forces, moments and extra variables.
+  
+  do sps=1, nTimeIntervalsSpectral
+     call getSolution(sps)
+     force(1, sps) = functionValue(costFuncForceX)
+     force(2, sps) = functionValue(costFuncForceY)
+     force(3, sps) = functionValue(costFuncForceZ)
+     moment(1, sps) = functionValue(costFuncMomX)
+     moment(2, sps) = functionValue(costFuncMomY)
+     moment(3, sps) = functionValue(costFuncMomZ)
+     sepSensor(sps) = functionValue(costFuncSepSensor)
+     Cavitation(sps) = functionValue(costFuncCavitation)
+  end do
+
+  objValueb = one
+  call getDirAngle(velDirFreestream, liftDirection, liftIndex, alpha, beta)
+  call getCostFunction_b(costFunction, force, forceb, moment, momentb, sepSensor,&
+       sepSensorb, Cavitation, Cavitationb, alpha, alphab, beta, betab, liftIndex, objValue, objValueb)
+
   if (nDesignExtra > 0) then
      dIda = zero
 
@@ -182,7 +286,6 @@ Subroutine computeObjectivePartialsFwd(costFunction)
      ! there is no dependence of 'force' on pointRef so it is not
      ! included here. Also these derivatives DO need to be summed over
      ! all procs.
-
      
      ! add missing dependence of mach
      if (nDesignMach > 0) then
@@ -254,113 +357,8 @@ Subroutine computeObjectivePartialsFwd(costFunction)
            end do
         end do
      end if
-
-  end if
-#else
-  print *,'Cost Function routines are not complexified'
-  stop
-#endif
-
-end subroutine computeObjectivePartialsFwd
-
-! Add two functions to return dIdw and dIdx. dIda is available
-! directly in python in dIda in the adjointVars module. 
-
-subroutine getdIdw(output, nstate)
-
-#ifndef USE_NO_PETSC	
-  ! #define PETSC_AVOID_MPIF_
-  ! #include "finclude/petscdef.h"
-
-  use ADjointPETSc, only : dJdw
-  use constants
-
-  implicit none
-#define PETSC_AVOID_MPIF_H
-#include "finclude/petscsys.h"
-#include "finclude/petscvec.h"
-#include "finclude/petscvec.h90"
-  !
-  !     Subroutine arguments.
-  !
-  integer(kind=intType), intent(in):: nstate
-  real(kind=realType), dimension(nstate), intent(inout) :: output
-  real(kind=realType), pointer :: dJdw_pointer(:)
-
-  ! Local Variables
-  integer(kind=intType) :: i, ierr
-
-  ! Copy out adjoint vector:
-  call VecGetArrayF90(dJdw, dJdw_pointer, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-
-  ! Do a straight copy:
-  do i=1, nstate
-     output(i) = dJdw_pointer(i)
-  end do
-
-  call VecRestoreArrayF90(dJdw, dJdw_pointer, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-#endif
-
-end subroutine getdIdw
-
-subroutine getdIdx(output, ndof)
-
-#ifndef USE_NO_PETSC	
-  ! #define PETSC_AVOID_MPIF_
-  ! #include "finclude/petscdef.h"
-
-  use ADjointPETSc, only : dJdx
-  use constants
-
-  implicit none
-#define PETSC_AVOID_MPIF_H
-#include "finclude/petscsys.h"
-#include "finclude/petscvec.h"
-#include "finclude/petscvec.h90"
-  !
-  !     Subroutine arguments.
-  !
-  integer(kind=intType), intent(in):: ndof
-  real(kind=realType), dimension(ndof), intent(inout) :: output
-  real(kind=realType), pointer :: dJdx_pointer(:)
-
-  ! Local Variables
-  integer(kind=intType) :: i, ierr
-
-  ! Copy out adjoint vector:
-  call VecGetArrayF90(dJdx, dJdx_pointer, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-
-  ! Do a straight copy:
-  do i=1, ndof
-     output(i) = dJdx_pointer(i)
-  end do
-  
-  call VecRestoreArrayF90(dJdx, dJdx_pointer, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-#endif
-
-end subroutine getdIdx
-
-subroutine zeroObjPartials(stateSetup, spatialSetup)
-#ifndef USE_NO_PETSC
-  use precision 
-  use ADjointVars ! include costFunctions
-  use ADjointPETSc
-
-  integer(kind=intType) :: ierr
-  logical, intent(in) :: stateSetup, spatialSetup
-
-  if (stateSetup) then
-     call VecZeroEntries(dJdw, ierr)
-     call EChk(ierr, __FILE__, __LINE__)
   end if
 
-  if (spatialSetup) then
-     call VecZeroEntries(dJdx, ierr)
-     call EChk(ierr, __FILE__, __LINE__)
-  end if
-#endif
-end subroutine zeroObjPartials
+end subroutine getdIda
+
+

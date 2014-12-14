@@ -118,8 +118,9 @@ class SUMB(AeroSolver):
         self.optionMap = self._getOptionMap()
         self.ignoreOptions, self.deprecatedOptions, self.specialOptions = \
                            self._getSpecialOptionLists()
-        self.possibleObjectives, self.possibleAeroDVs, self.sumbCostFunctions = \
-                                 self._getObjectivesAndDVs()
+
+        self.possibleAeroDVs, self.sumbCostFunctions = (
+            self._getObjectivesAndDVs())
 
         # This is the real solver so dtype is 'd'
         self.dtype = 'd'
@@ -683,7 +684,7 @@ class SUMB(AeroSolver):
         res = self.getSolution(sps)
 
         for f in evalFuncs:
-            if f in self.possibleObjectives:
+            if f.lower() in self.sumbCostFunctions:
                 key = self.curAP.name + '_%s'% f
                 self.curAP.funcNames[f] = key
                 funcs[key] = res[f]
@@ -745,8 +746,8 @@ class SUMB(AeroSolver):
 
         # Do the functions one at a time:
         for f in evalFuncs:
-            if f not in self.possibleObjectives:
-                raise Error('Supplied function is not known to SUmb.')
+            if f.lower() not in self.sumbCostFunctions:
+                raise Error('Supplied %s function is not known to SUmb.'%f)
             if self.comm.rank == 0:
                 print('Solving adjoint: %s'%f)
 
@@ -761,9 +762,23 @@ class SUMB(AeroSolver):
 
             # Geometric derivatives
             if self.DVGeo is not None and self.DVGeo.getNDV() > 0:
-                dIdpt = self.totalSurfaceDerivative(f)
+
+                dIdXv_2 = self.getdRdXvTPsi(f, groupName=None)
+                dIdXv_1 = self.getdIdx(f, groupName=None)
+
+                # Total derivative of the obective with volume coordinates
+                dIdXv = dIdXv_1 - dIdXv_2
+
+                # Now get total derivative wrt surface cordinates
+                self.mesh.warpDeriv(dIdXv)
+                dIdXs = self.mesh.getdXs('all')
+
+                # Now get the total derivative wrt the design variables
                 dIdx = self.DVGeo.totalSensitivity(
-                    dIdpt, ptSetName=ptSetName, comm=self.comm, config=self.curAP.name)
+                    dIdXs, ptSetName=ptSetName, comm=self.comm, 
+                    config=self.curAP.name)
+
+                # Finally put derivatives into the dictionary
                 funcsSens[key].update(dIdx)
 
             # Compute total aero derivatives
@@ -1937,12 +1952,11 @@ class SUMB(AeroSolver):
 
         obj, aeroObj = self._getObjective(objective)
 
-        # Setup adjoint matrices/vector as required
+        # Possibly setup adjoint matrices/vector as required
         self._setupAdjoint()
 
-        # Check to see if the RHS Partials have been computed
-        if not self.curAP.adjointRHS == obj:
-            self.computeObjPartials(objective, forcePoints)
+        # # Check to see if the RHS Partials have been computed
+        RHS = self.getdIdw(objective)
 
         # Check to see if we need to agument the RHS with a structural
         # adjoint:
@@ -1954,72 +1968,37 @@ class SUMB(AeroSolver):
             phi = self.mesh.expandVectorByFamily(groupName, structAdjoint)
             self.sumb.agumentrhs(numpy.ravel(phi))
 
-        # Check if objective is allocated:
-        if obj not in self.curAP.sumbData.adjoints.keys():
-            self.curAP.sumbData.adjoints[obj] = numpy.zeros(self.getAdjointStateSize(), float)
-        self.sumb.setadjoint(self.curAP.sumbData.adjoints[obj])
+        # Check if objective is python 'allocated':
+        if obj not in self.curAP.sumbData.adjoints:
+            self.curAP.sumbData.adjoints[obj] = (
+                numpy.zeros(self.getAdjointStateSize(), float))
 
-        # Actually Solve the adjoint system
-        self.sumb.solveadjointtransposepetsc()
+        # Extract the psi:
+        psi = self.curAP.sumbData.adjoints[obj]
 
-        # Possibly try another solve
-        if self.sumb.killsignals.adjointfailed and self.getOption('restartAdjoint'):
-            # Only retry if the following conditions are met:
-
-            # 1. restartAdjoint is true -> that is we were starting
-            # from a non-zero starting point
-
-            # 2. The stored adjoint must have been already set at
-            # least once; that is we've already tried one solve
-
-            self.curAP.sumbData.adjoints[obj][:] = 0.0
-            if self.getOption('autoAdjointRetry'):
-                self.sumb.solveadjointtransposepetsc()
+        # Actually Solve the adjoint system...psi is updated with the
+        # new solution.
+        self.sumb.solveadjoint(RHS, psi, True)
 
         # Now set the flags and possibly reset adjoint
-        if self.sumb.killsignals.adjointfailed == False:
-            self.curAP.sumbData.adjoints[obj] = \
-                self.sumb.getadjoint(self.getAdjointStateSize())
-            self.adjointFailed = False
-        else:
+        if self.sumb.killsignals.adjointfailed:
             self.adjointFailed = True
-
             # Reset stored adjoint
             self.curAP.sumbData.adjoints[obj][:] = 0.0
+        else:
+            self.curAP.sumbData.adjoints[obj] = psi
+            self.adjointFailed = False
 
-    def totalSurfaceDerivative(self, objective):
-        # The adjoint vector is now calculated so perform the
-        # following operation to produce dI/dX_surf:
-        # (p represents partial, d total)
-        # dI/dX_s = pI/pX_s - (dXv/dXs)^T * ( dRdX_v^T * psi)
-        #
-        # The derivative wrt the surface captures the effect of ALL
-        # GLOBAL Multidisciplinary variables -- any DV that changes
-        # the surface.
-
-        # NOTE: do dRdxvPsi MUST be done first since this
-        # allocates spatial memory if required.
-        dIdxs_2 = self.getdRdXvTPsi(objective, 'all')
-
-        # Direct partial derivative contibution
-        dIdxs_1 = self.getdIdx(objective, groupName='all')
-
-        # Total derivative of the obective with surface coordinates
-        dIdXs = dIdxs_1 - dIdxs_2
-
-        return dIdXs
-
-    def totalAeroDerivative(self, obj, extraSens=None):
+    def totalAeroDerivative(self, objective, extraSens=None):
         """
         This function returns the total derivative of the obj with
         respect to the aerodynamic variables defined the currently set
-        aeroproblem. It essentially processes the output of
-        _totalAeroDerivative to the dictionary return format
+        aeroproblem.
 
         Parameters
         ----------
-        objectives : list, set
-            The list of objectives to get derivatives for
+        objective : str
+            The objective to get derivatives for
 
         Returns
         -------
@@ -2028,32 +2007,35 @@ class SUMB(AeroSolver):
             variables
             """
 
-        # Get the list of derivatives and then process:
-        res = self._totalAeroDerivative(obj)
-        funcsSens = {}
+	# Get the list of derivatives and then process:
+        dIda_1 = self.getdIda(objective)
+        dIda_2 = self.getdRdaTPsi(objective)
+        res = dIda_1-dIda_2
+
+	funcsSens = {}
 
         DVsRequired = list(self.curAP.DVNames.keys())
         for dv in DVsRequired:
             if dv in self.possibleAeroDVs:
                 funcsSens[self.curAP.DVNames[dv]] = res[self.aeroDVs[dv]]
+                if dv == 'alpha':
+                    funcsSens[self.curAP.DVNames[dv]] *= numpy.pi/180.0
             elif dv in ['altitude']:
                 # Extract the derivatives wrt the independent
-                # parameters in SUmb
+                # parameters in SUmb       
                 dIdP = res[self.aeroDVs['P']]
                 dIdT = res[self.aeroDVs['T']]
 
-                # Get the derivative of THESE values with respect
+		# Get the derivative of THESE values with respect
                 # to the altitude:
-                tmp = {}
-                self.curAP.evalFunctionsSens(tmp, ['P', 'T'])
+		tmp = {}
+	        self.curAP.evalFunctionsSens(tmp, ['P', 'T'])
                 # Chain-rule to get the final derivative:
                 funcsSens[self.curAP.DVNames[dv]] = (
                     tmp[self.curAP['P']][self.curAP.DVNames['altitude']]*dIdP +
                     tmp[self.curAP['T']][self.curAP.DVNames['altitude']]*dIdT)
-            # end if (dv type)
-        # end for (dv loop)
-
-        return funcsSens
+     
+	return funcsSens
 
     def _setAeroDVs(self):
         """ Do everything that is required to deal with aerodynamic
@@ -2273,61 +2255,21 @@ class SUMB(AeroSolver):
         if finalNorm is not None:
             self.sumb.nksolvervars.finalNorm = finalNorm
 
+
     def getdRdXvTPsi(self, objective, groupName=None):
+        """Shortcut function to perform dRdXvT*vec operation with the adjoint
+        vector corresponding to objective. Needed by the
+        aerosturctural solver only.
         """
-        Compute the product of (dR/dXv)^T * psi for the objective
-        given in 'objective'. If the mesh is present this will also
-        pass it through the warping code and complete the following
-        calculation:
-
-        dXs = (dXv/dXs)^T * (dR/dXv)^T * psi
-
-        Parameters
-        ----------
-        groupName : str
-            Family name to use to section out just part of dXs
-        objective : str
-            Object to use. Must already be computed
-            """
-
-        # Get objective
-        obj, aeroObj = self._getObjective(objective)
-
-        if obj in self.curAP.sumbData.adjoints.keys():
+        obj, aeroObj = self._getObjective(objective)        
+        try:
             psi = self.curAP.sumbData.adjoints[obj]
-        else:
-            raise Error('%s adjoint for current aeroProblem is not computed.'%
-                    obj)
+        except:
+            raise Error('%s adjoint for %s is not computed.'% obj)
 
-        # Now call getdrdxvtpsi WITH the psi vector:
-        dxvSolver = self.sumb.getdrdxvtpsi(self.getSpatialSize(), psi)
-
-        # If we are doing a prescribed motion TS motion, we need to
-        # convert this back to a single instance
-        if self._prescribedTSMotion():
-            ndof_1_instance = self.sumb.adjointvars.nnodeslocal[0]*3
-            dxvSolver = self.sumb.spectralprecscribedmotion(
-                dxvSolver, ndof_1_instance)
-
-        if groupName is not None:
-            self.mesh.warpDeriv(dxvSolver)
-            dxs = self.mesh.getdXs(groupName)
-            return dxs
-        else:
-            return dxvSolver
-
-    def _prescribedTSMotion(self):
-        """Determine if we have prescribed motion timespectral analysis"""
-
-        if (self.getOption('alphamode') or self.getOption('betamode') or 
-            self.getOption('machmode') or self.getOption('pmode') or 
-            self.getOption('qmode') or self.getOption('rmode') or 
-            self.getOption('altitudemode')):
-            return True
-        else:
-            return False
-
-    def getdRdXvTVec(self, inVec, groupName):
+        return self.getdRdXvTVec(psi, groupName)
+        
+    def getdRdXvTVec(self, inVec, groupName=None):
         """
         Compute the product of (dXv/dXs)^T * (dR/dXv)^T * inVec. It is
         assumed the mesh is present and groupName is defined.
@@ -2340,11 +2282,35 @@ class SUMB(AeroSolver):
             Family name to use to section out just part of dXs
             """
 
-        dxvSolver = self.sumb.getdrdxvtpsi(self.getSpatialSize(), inVec)
-        self.mesh.warpDeriv(dxvSolver)
-        dxs = self.mesh.getdXs(groupName)
+        if self.getOption('useMatrixFreedRdx'):
+            dXvSolver = self.computeMatrixFreeProductBwd(resBar=inVec,
+                                                         xVDeriv=True)
+        else:
+            dXvSolver = self.sumb.getdrdxvtpsi(self.getSpatialSize(), inVec)
 
-        return dxs
+        # If we are doing a prescribed motion TS motion, we need to
+        # convert this back to a single instance
+        if self._prescribedTSMotion():
+            ndof_1_instance = self.sumb.adjointvars.nnodeslocal[0]*3
+            dXvSolver = self.sumb.spectralprecscribedmotion(
+                dXvSolver, ndof_1_instance)
+
+        if groupName is not None:
+            self.mesh.warpDeriv(dXvSolver)
+            return self.mesh.getdXs(groupName)
+        else:
+            return dXvSolver
+
+    def _prescribedTSMotion(self):
+        """Determine if we have prescribed motion timespectral analysis"""
+
+        if (self.getOption('alphamode') or self.getOption('betamode') or 
+            self.getOption('machmode') or self.getOption('pmode') or 
+            self.getOption('qmode') or self.getOption('rmode') or 
+            self.getOption('altitudemode')):
+            return True
+        else:
+            return False
 
     def getdRdaPsi(self,  psi):
 
@@ -2410,71 +2376,93 @@ class SUMB(AeroSolver):
                 self.sumb.computeobjpartials(
                     objNum, forcePoints.T, True, True)
             else:
-                self.sumb.computeobjectivepartialsfwd(objNum)
+                #self.sumb.computeobjectivepartialsfwd(objNum)
+                pass
 
             # Store the current RHS
             self.curAP.sumbData.adjointRHS = obj
         else:
             self.sumb.zeroobjpartials(True, True)
 
-    def getdIdx(self, objective, forcePoints=None, TS=0, groupName=None):
-        self._setupAdjoint()
 
-        # Compute the partials
-        self.computeObjPartials(objective, forcePoints)
-        dXv = numpy.zeros(self.getSpatialSize())
-        self.sumb.getdidx(dXv)
+    def getdIdx(self, objective, groupName=None):
+        obj, aeroObj = self._getObjective(objective)
+        if not aeroObj:
+            return numpy.zeros(self.getSpatialSize())
 
-        # If we are doing a prescribed motion TS motion, we need to
-        # convert this back to a single instance
+        if self.getOption('usematrixfreedrdx'):
+            funcsBar = {objective.lower():1.0}
+            dXv = self.computeMatrixFreeProductBwd(funcsBar=funcsBar, xVDeriv=True)
+        else:
+            dXv = self.sumb.getdidx(obj, self.getSpatialSize())
+        
         if self._prescribedTSMotion():
             ndof_1_instance = self.sumb.adjointvars.nnodeslocal[0]*3
-            dXv = self.sumb.spectralprecscribedmotion(dXv, ndof_1_instance)
-        # end if
+            dXv = self.sumb.spectralprecscribedmotion(
+                dXv, ndof_1_instance)
 
-        if groupName is not None:
-            # We have a decision to make here: If we have euler
-            # analysis, we can do a "surfOnly" meshDerivative since
-            # there is no information on the interior anyway. However,
-            # if we have a viscous analysis, then we DO have to do a
-            # proper mesh warp, its fairly costly, but worth it.
-
-            if self.getOption('equationType') == 'euler':
-               self.mesh.warpDeriv(dXv, surfOnly=True)
-            else:
-                self.mesh.warpDeriv(dXv, surfOnly=False)
-            # end if
-
-            dxs = self.mesh.getdXs(groupName)
-            return dxs
-        else:
+        if groupName is None:
             return dXv
+        else:
+            self.mesh.warpDeriv(dXv, surfOnly=True)
+            return self.mesh.getdXs(groupName)
 
-    def getdIda(self, objective, forcePoints=None):
+    def getdIda(self, objective):
 
-        obj, aeroObj = self._getObjective(objective)
+        if self.nDVAero <= 0:
+            return {}
 
-        if self.nDVAero > 0:
-            self.computeObjPartials(objective, forcePoints)
+        obj, aeroObj = self._getObjective(objective)        
+
+        if self.getOption('useMatrixFreedRdx'):
+            funcsBar = {objective.lower():1.0}
+            return self.computeMatrixFreeProductBwd(
+                funcsBar=funcsBar, xDvDerivAero=True)
+        else:
+            self.sumb.getdida(obj)
             if aeroObj:
                 dIdaLocal = self.sumb.adjointvars.dida
             else:
                 dIdaLocal = numpy.zeros_like(self.sumb.adjointvars.dida)
 
             # We must MPI all reuduce
-            dIda = self.comm.allreduce(dIdaLocal, op=MPI.SUM)
+            return self.comm.allreduce(dIdaLocal, op=MPI.SUM)
+
+    def getdRdaTPsi(self, objective):
+        """Shortcut function to perform dRdXaT*vec operation with the adjoint
+        vector corresponding to objective.
+        """
+        obj, aeroObj = self._getObjective(objective)        
+        try:
+            psi = self.curAP.sumbData.adjoints[obj]
+        except:
+            raise Error('%s adjoint for %s is not computed.'% obj)
+
+        return self.getdRdaTVec(psi)
+
+    def getdRdaTVec(self,  vec):
+        """Compute the vector product dRda^T * vec. """
+
+        if self.nDVAero <= 0:
+            return numpy.zeros((0))
+
+        if self.getOption('useMatrixFreedRdx'):
+            return self.computeMatrixFreeProductBwd(
+                resBar=vec, xDvDerivAero=True)
         else:
-            dIda = numpy.zeros((0))
+            return self.sumb.getdrdatpsi(self.nDVAero, vec)
 
-        return dIda
-
-    def getdIdw(self, dIdw, objective, forcePoints=None):
+    def getdIdw(self, objective):
         obj, aeroObj = self._getObjective(objective)
-        if aeroObj:
-            self.computeObjPartials(objective, forcePoints)
-            dIdw = self.sumb.getdidw(dIdw)
+        if not aeroObj:
+            return numpy.zeros(self.getAdjointStateSize())
 
-        return dIdw
+        if self.getOption('usematrixfreedrdw'):
+            funcsBar = {objective.lower():1.0}
+            return self.computeMatrixFreeProductBwd(funcsBar=funcsBar, wDeriv=True)
+        else:
+            # Call the fortran version
+            return self.sumb.getdidw(obj, self.getAdjointStateSize())
 
     def computeMatrixFreeProductFwd(self, xDVdot=None, wDot=None, residualDeriv=True, funcDeriv=True):
         
@@ -2766,8 +2754,8 @@ class SUMB(AeroSolver):
         objective. If it is, return the obj value for SUmb and
         True. Otherwise simply return the objective string and
         False"""
-        if objective in self.possibleObjectives.keys():
-            obj = self.possibleObjectives[objective]
+        if objective.lower() in self.sumbCostFunctions:
+            obj = int(self.sumbCostFunctions[objective.lower()])
             aeroObj = True
         else:
             obj = objective
@@ -3365,32 +3353,6 @@ class SUMB(AeroSolver):
 
     def _getObjectivesAndDVs(self):
 
-        possibleObjectives = {
-            'lift':'Lift',
-            'drag':'Drag',
-            'cl':'Cl', 'cd':'Cd',
-            'fx':'Fx', 'fy':'Fy','fz':'Fz',
-            'cfx':'cFx','cfy':'cFy', 'cfz':'cFz',
-            'mx':'Mx', 'my':'My', 'mz':'Mz',
-            'cmx':'cMx', 'cmy':'cMy', 'cmz':'cMz',
-            'cm0':'cM0',
-            'cmzalpha':'cMzAlpha',
-            'cmzalphadot':'cMzAlphaDot',
-            'cl0':'cl0',
-            'clalpha':'clAlpha',
-            'clalphadot':'clAlphaDot',
-            'cd0':'cd0',
-            'cdalpha':'cdAlpha',
-            'cdalphadot':'cdAlphaDot',
-            'cmzq':'cmzq',
-            'cmzqdot':'cmzqdot',
-            'clq':'clq',
-            'clqdot':'clqDot',
-            'cbend':'cBend',
-            'sepsensor':'sepsensor',
-            'cavitation':'cavitation',
-            }
-
         possibleAeroDVs = {
             'alpha':'adjointvars.ndesignaoa',
             'beta':'adjointvars.ndesignssa',
@@ -3415,44 +3377,45 @@ class SUMB(AeroSolver):
 
         # This is SUmb's internal mapping for cost functions
         sumbCostFunctions = {
-            'Lift':self.sumb.costfunctions.costfunclift,
-            'Drag':self.sumb.costfunctions.costfuncdrag,
-            'Cl'  :self.sumb.costfunctions.costfuncliftcoef,
-            'Cd'  :self.sumb.costfunctions.costfuncdragcoef,
-            'Fx'  :self.sumb.costfunctions.costfuncforcex,
-            'Fy'  :self.sumb.costfunctions.costfuncforcey,
-            'Fz'  :self.sumb.costfunctions.costfuncforcez,
-            'cFx' :self.sumb.costfunctions.costfuncforcexcoef,
-            'cFy' :self.sumb.costfunctions.costfuncforceycoef,
-            'cFz' :self.sumb.costfunctions.costfuncforcezcoef,
-            'Mx'  :self.sumb.costfunctions.costfuncmomx,
-            'My'  :self.sumb.costfunctions.costfuncmomy,
-            'Mz'  :self.sumb.costfunctions.costfuncmomz,
-            'cMx':self.sumb.costfunctions.costfuncmomxcoef,
-            'cMy':self.sumb.costfunctions.costfuncmomycoef,
-            'cMz':self.sumb.costfunctions.costfuncmomzcoef,
-            'cM0':self.sumb.costfunctions.costfunccm0,
-            'cMzAlpha':self.sumb.costfunctions.costfunccmzalpha,
-            'cMzAlphaDot':self.sumb.costfunctions.costfunccmzalphadot,
+            'lift':self.sumb.costfunctions.costfunclift,
+            'drag':self.sumb.costfunctions.costfuncdrag,
+            'cl'  :self.sumb.costfunctions.costfuncliftcoef,
+            'cd'  :self.sumb.costfunctions.costfuncdragcoef,
+            'fx'  :self.sumb.costfunctions.costfuncforcex,
+            'fy'  :self.sumb.costfunctions.costfuncforcey,
+            'fz'  :self.sumb.costfunctions.costfuncforcez,
+            'cfx' :self.sumb.costfunctions.costfuncforcexcoef,
+            'cfy' :self.sumb.costfunctions.costfuncforceycoef,
+            'cfz' :self.sumb.costfunctions.costfuncforcezcoef,
+            'mx'  :self.sumb.costfunctions.costfuncmomx,
+            'my'  :self.sumb.costfunctions.costfuncmomy,
+            'mz'  :self.sumb.costfunctions.costfuncmomz,
+            'cmx':self.sumb.costfunctions.costfuncmomxcoef,
+            'cmy':self.sumb.costfunctions.costfuncmomycoef,
+            'cmz':self.sumb.costfunctions.costfuncmomzcoef,
+            'cm0':self.sumb.costfunctions.costfunccm0,
+            'cmzalpha':self.sumb.costfunctions.costfunccmzalpha,
+            'cmzalphadot':self.sumb.costfunctions.costfunccmzalphadot,
             'cl0':self.sumb.costfunctions.costfunccl0,
-            'clAlpha':self.sumb.costfunctions.costfuncclalpha,
-            'clAlphaDot':self.sumb.costfunctions.costfuncclalphadot,
+            'clalpha':self.sumb.costfunctions.costfuncclalpha,
+            'clalphadot':self.sumb.costfunctions.costfuncclalphadot,
             'cfy0':self.sumb.costfunctions.costfunccfy0,
-            'cfyAlpha':self.sumb.costfunctions.costfunccfyalpha,
-            'cfyAlphaDot':self.sumb.costfunctions.costfunccfyalphadot,
+            'cfyalpha':self.sumb.costfunctions.costfunccfyalpha,
+            'cfyalphdDot':self.sumb.costfunctions.costfunccfyalphadot,
             'cd0':self.sumb.costfunctions.costfunccd0,
-            'cdAlpha':self.sumb.costfunctions.costfunccdalpha,
-            'cdAlphaDot':self.sumb.costfunctions.costfunccdalphadot,
+            'cdalpha':self.sumb.costfunctions.costfunccdalpha,
+            'cdalphadot':self.sumb.costfunctions.costfunccdalphadot,
             'cmzq':self.sumb.costfunctions.costfunccmzq,
-            'cmzqDot':self.sumb.costfunctions.costfunccmzqdot,
+            'cmzqdot':self.sumb.costfunctions.costfunccmzqdot,
             'clq':self.sumb.costfunctions.costfuncclq,
-            'clqDot':self.sumb.costfunctions.costfuncclqdot,
-            'cBend':self.sumb.costfunctions.costfuncbendingcoef,
+            'clqdot':self.sumb.costfunctions.costfuncclqdot,
+            'cbend':self.sumb.costfunctions.costfuncbendingcoef,
             'sepsensor':self.sumb.costfunctions.costfuncsepsensor,
             'cavitation':self.sumb.costfunctions.costfunccavitation,
             }
 
-        return possibleObjectives, possibleAeroDVs, sumbCostFunctions
+        return possibleAeroDVs, sumbCostFunctions
+
 
 class sumbFlowCase(object):
     """

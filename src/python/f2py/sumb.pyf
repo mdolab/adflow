@@ -325,8 +325,13 @@ python module libsumb
        subroutine setupextramatrix
        end subroutine setupextramatrix
 
-       subroutine solveadjointtransposepetsc ! in :sumb:../../adjoint/solveADjointPETSc.F90
-       end subroutine solveadjointtransposepetsc
+       subroutine solveadjoint(rhs,psi,checksolution,nstate) ! in :test:solveADjointTransposePETSc.F90
+         real(kind=realtype) dimension(nstate) :: rhs
+         real(kind=realtype) dimension(nstate),depend(nstate) :: psi
+         logical :: checksolution
+         integer(kind=inttype), optional,check(len(rhs)>=nstate),depend(rhs) :: nstate=len(rhs)
+       end subroutine solveadjoint
+
 
         subroutine saveadjointmatrix(filename) ! in :test:saveAdjoint.F90
             character*(*) intent(in) :: filename
@@ -340,24 +345,17 @@ python module libsumb
 
        ! -------- Partial Derivative Functions -----------
        
-       subroutine zeroobjpartials(statesetup,spatialsetup)
-         logical :: statesetup
-         logical :: spatialsetup
-       end subroutine zeroobjpartials
-
-       subroutine computeobjectivepartialsfwd(costfunction) ! in :sumb:../../adjoint/computeObjPartials.F90
+       subroutine getdidw(costfunction,didw,nstate) ! in :test:computeObjectivePartialsFwd.F90
          integer(kind=inttype) intent(in) :: costfunction
-       end subroutine computeobjectivepartialsfwd
+         real(kind=realtype) dimension(nstate),intent(out) :: didw
+         integer(kind=inttype), intent(in) :: nstate
+       end subroutine getdidw
 
-        subroutine getdidw(output,nstate) ! in :test:computeObjPartials.F90
-            real(kind=realtype) dimension(nstate),intent(in,out) :: output
-            integer(kind=inttype) optional,intent(in),check(len(output)>=nstate),depend(output) :: nstate=len(output)
-        end subroutine getdidw
-
-        subroutine getdidx(output,ndof) ! in :test:computeObjPartials.F90
-          real(kind=realtype) dimension(ndof),intent(inout) :: output
-          integer(kind=inttype) optional,intent(in),check(len(output)>=ndof),depend(output) :: ndof=len(output)
-        end subroutine getdidx
+       subroutine getdidx(costfunction,didx,nspatial) ! in :test:computeObjectivePartialsFwd.F90
+         integer(kind=inttype) intent(in) :: costfunction
+         real(kind=realtype) dimension(nspatial),intent(out) :: didx
+         integer(kind=inttype), intent(in) :: nspatial
+       end subroutine getdidx
 
        ! -------- Get/Set Functions --------------------
        subroutine getstates(states,ndimw) ! in :test:getADjoint.F90
@@ -436,27 +434,36 @@ python module libsumb
             integer(kind=inttype), optional,intent(in),check(len(dwbar)>=statesize),depend(dwbar) :: statesize=len(dwbar)
             integer(kind=inttype), optional,intent(in),check(len(funcsbar)>=costsize),depend(funcsbar) :: costsize=len(funcsbar)
         end subroutine computematrixfreeproductbwd
-        subroutine solveadjointforrhs(invec,outvec,ndof,relativetolerance) ! in matrixFreeRoutines.F90
-            use killsignals
-            use adjointpetsc
-            use adjointvars
-            use inputadjoint
-            real(kind=realtype) dimension(ndof),intent(in) :: invec
-            real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: outvec
-            integer(kind=inttype), optional,intent(in),check(len(invec)>=ndof),depend(invec) :: ndof=len(invec)
-            real(kind=realtype) intent(in) :: relativetolerance
-        end subroutine solveadjointforrhs
-        subroutine solvedirectforrhs(invec,outvec,ndof,relativetolerance) ! in matrixFreeRoutines.F90
-            use killsignals
-            use adjointpetsc
-            use adjointvars
-            use inputadjoint
-            real(kind=realtype) dimension(ndof),intent(in) :: invec
-            real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: outvec
-            integer(kind=inttype), optional,intent(in),check(len(invec)>=ndof),depend(invec) :: ndof=len(invec)
-            real(kind=realtype) intent(in) :: relativetolerance
-        end subroutine solvedirectforrhs
+        ! subroutine solveadjointforrhs(invec,outvec,ndof,relativetolerance) ! in matrixFreeRoutines.F90
+        !     use killsignals
+        !     use adjointpetsc
+        !     use adjointvars
+        !     use inputadjoint
+        !     real(kind=realtype) dimension(ndof),intent(in) :: invec
+        !     real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: outvec
+        !     integer(kind=inttype), optional,intent(in),check(len(invec)>=ndof),depend(invec) :: ndof=len(invec)
+        !     real(kind=realtype) intent(in) :: relativetolerance
+        ! end subroutine solveadjointforrhs
+        ! subroutine solvedirectforrhs(invec,outvec,ndof,relativetolerance) ! in matrixFreeRoutines.F90
+        !     use killsignals
+        !     use adjointpetsc
+        !     use adjointvars
+        !     use inputadjoint
+        !     real(kind=realtype) dimension(ndof),intent(in) :: invec
+        !     real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: outvec
+        !     integer(kind=inttype), optional,intent(in),check(len(invec)>=ndof),depend(invec) :: ndof=len(invec)
+        !     real(kind=realtype) intent(in) :: relativetolerance
+        ! end subroutine solvedirectforrhs
+        subroutine getdida(costfunction) ! in :test:computeObjectivePartialsFwd.F90
+          integer(kind=inttype) intent(in) :: costfunction
+        end subroutine getdida
         
+        subroutine getdrdatpsi(output,ndv,adjoint,nstate) ! in :test:getdRdaPsi.F90
+          real(kind=realtype) dimension(ndv),intent(out),depend(ndv) :: output
+          integer(kind=inttype) intent(in) :: ndv
+          real(kind=realtype) dimension(nstate),intent(in) :: adjoint
+          integer(kind=inttype) optional,intent(in),check(len(adjoint)>=nstate),depend(adjoint) :: nstate=len(adjoint)
+        end subroutine getdrdatpsi
 
         subroutine getdrdapsifwd(out_vec,nstate,in_vec,ndv) ! in :test:getdRdaPsi.F90
             real(kind=realtype) dimension(nstate),intent(out),depend(nstate) :: out_vec
@@ -464,27 +471,13 @@ python module libsumb
             real(kind=realtype) dimension(ndv),intent(in) :: in_vec
             integer(kind=inttype) optional,intent(in),check(len(in_vec)>=ndv),depend(in_vec) :: ndv=len(in_vec)
         end subroutine getdrdapsi
-        subroutine getdrdapsi(output,ndv,adjoint,nstate) ! in :test:getdRdaPsi.F90
-            real(kind=realtype) dimension(ndv),intent(out),depend(ndv) :: output
-            integer(kind=inttype) intent(in) :: ndv
-            real(kind=realtype) dimension(nstate),intent(in) :: adjoint
-            integer(kind=inttype) optional,intent(in),check(len(adjoint)>=nstate),depend(adjoint) :: nstate=len(adjoint)
-        end subroutine getdrdapsi
+        ! subroutine getdrdapsi(output,ndv,adjoint,nstate) ! in :test:getdRdaPsi.F90
+        !     real(kind=realtype) dimension(ndv),intent(out),depend(ndv) :: output
+        !     integer(kind=inttype) intent(in) :: ndv
+        !     real(kind=realtype) dimension(nstate),intent(in) :: adjoint
+        !     integer(kind=inttype) optional,intent(in),check(len(adjoint)>=nstate),depend(adjoint) :: nstate=len(adjoint)
+        ! end subroutine getdrdapsi
 
-       subroutine getadjoint(nstate,adjoint) ! in :test:getADjoint.F90
-         integer(kind=inttype) intent(in) :: nstate
-         real(kind=realtype) dimension(nstate),intent(out),depend(nstate) :: adjoint
-       end subroutine getadjoint
-
-       subroutine setadjoint(nstate,adjoint) ! in :test:setADjoint.F90
-         integer(kind=inttype) optional,intent(in),check(len(adjoint)>=nstate),depend(adjoint) :: nstate=len(adjoint)
-         real(kind=realtype) dimension(nstate),intent(in) :: adjoint
-       end subroutine setadjoint
-       
-       subroutine setdjdw(nstate,invec) ! in :test:setADjoint.F90
-         integer(kind=inttype) optional,intent(in),check(len(invec)>=nstate),depend(invec) :: nstate=len(invec)
-         real(kind=realtype) dimension(nstate),intent(in) :: invec
-       end subroutine setdjdw
 
        ! ------------- Misc --------------------
     
