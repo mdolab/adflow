@@ -3,7 +3,7 @@
    !
    !  Differentiation of prodsmag2 in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *dw
-   !   with respect to varying inputs: *dw *w *vol *si *sj *sk
+   !   with respect to varying inputs: *w *vol *si *sj *sk
    !   Plus diff mem management of: dw:in w:in vol:in si:in sj:in
    !                sk:in
    !
@@ -44,6 +44,7 @@
    REAL(kind=realtype) :: div2, fact, sxx, syy, szz, sxy, sxz, syz
    REAL(kind=realtype) :: div2d, factd, sxxd, syyd, szzd, sxyd, sxzd, &
    & syzd
+   dwd = 0.0_8
    !
    !      ******************************************************************
    !      *                                                                *

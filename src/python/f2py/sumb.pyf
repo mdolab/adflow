@@ -504,9 +504,15 @@ python module libsumb
 
        subroutine getdrdwtvec(in_vec,out_vec,ndof) ! in :test:NKsolver.F90
          real(kind=realtype) dimension(ndof),intent(in) :: in_vec
-         real(kind=realtype) dimension(ndof),intent(in, out),depend(ndof) :: out_vec
+         real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: out_vec
          integer(kind=inttype) optional,check(len(in_vec)>=ndof),depend(in_vec) :: n=len(in_vec)
        end subroutine getdrdwtvec
+
+       subroutine getdrdwvec(in_vec,out_vec,ndof) ! in :test:NKsolver.F90
+         real(kind=realtype) dimension(ndof),intent(in) :: in_vec
+         real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: out_vec
+         integer(kind=inttype) optional,check(len(in_vec)>=ndof),depend(in_vec) :: n=len(in_vec)
+       end subroutine getdrdwvec
 
        subroutine getcurrentresidual(rhores,totalrres)
          real(kind=realtype), intent(out) :: rhores

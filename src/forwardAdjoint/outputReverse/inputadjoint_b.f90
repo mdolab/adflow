@@ -37,7 +37,6 @@
    LOGICAL :: solveadjoint, setmonitor, approxpc, restartadjoint, &
    & usediagtspc
    LOGICAL :: frozenturbulence, viscpc, adpc
-   LOGICAL :: usematrixfreedrdw, usematrixfreedrdx
    ! ADjointSolverType: Type of linear solver for the ADjoint
    ! PreCondType      : Type of Preconditioner to use
    ! Matrix Ordering  : Type of matrix ordering to use
@@ -79,6 +78,8 @@
    LOGICAL :: verifystate
    LOGICAL :: verifyspatial
    LOGICAL :: verifyextra
-   ! Logical to remember if (empty) petsc arrays are allocated
-   LOGICAL :: adjointinitialized
+   ! Logicals for specifiying if we are using matrix-free forms of
+   ! dRdx+dRda or dRdw
+   LOGICAL :: usematrixfreedrdx
+   LOGICAL :: usematrixfreedrdw
    END MODULE INPUTADJOINT_B

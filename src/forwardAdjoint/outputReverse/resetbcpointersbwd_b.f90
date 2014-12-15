@@ -2,7 +2,7 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of resetbcpointersbwd in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *rev *p *w *rlv rev2 rlv2
+   !   gradient     of useful results: *rev *p *w *rlv
    !   with respect to varying inputs: *rev *p *w *rlv rev1 rev2 pp1
    !                pp2 rlv1 rlv2 ww1 ww2
    !   Plus diff mem management of: rev:in p:in w:in rlv:in
@@ -75,9 +75,11 @@
    END DO
    END DO
    rev1b = 0.0_8
+   rev2b = 0.0_8
    pp1b = 0.0_8
    pp2b = 0.0_8
    rlv1b = 0.0_8
+   rlv2b = 0.0_8
    ww1b = 0.0_8
    ww2b = 0.0_8
    DO k=kl+1,1,-1
@@ -125,9 +127,11 @@
    END DO
    END DO
    rev1b = 0.0_8
+   rev2b = 0.0_8
    pp1b = 0.0_8
    pp2b = 0.0_8
    rlv1b = 0.0_8
+   rlv2b = 0.0_8
    ww1b = 0.0_8
    ww2b = 0.0_8
    DO k=kl+1,1,-1
@@ -175,9 +179,11 @@
    END DO
    END DO
    rev1b = 0.0_8
+   rev2b = 0.0_8
    pp1b = 0.0_8
    pp2b = 0.0_8
    rlv1b = 0.0_8
+   rlv2b = 0.0_8
    ww1b = 0.0_8
    ww2b = 0.0_8
    DO k=kl+1,1,-1
@@ -225,9 +231,11 @@
    END DO
    END DO
    rev1b = 0.0_8
+   rev2b = 0.0_8
    pp1b = 0.0_8
    pp2b = 0.0_8
    rlv1b = 0.0_8
+   rlv2b = 0.0_8
    ww1b = 0.0_8
    ww2b = 0.0_8
    DO k=kl+1,1,-1
@@ -275,9 +283,11 @@
    END DO
    END DO
    rev1b = 0.0_8
+   rev2b = 0.0_8
    pp1b = 0.0_8
    pp2b = 0.0_8
    rlv1b = 0.0_8
+   rlv2b = 0.0_8
    ww1b = 0.0_8
    ww2b = 0.0_8
    DO j=jl+1,1,-1
@@ -325,9 +335,11 @@
    END DO
    END DO
    rev1b = 0.0_8
+   rev2b = 0.0_8
    pp1b = 0.0_8
    pp2b = 0.0_8
    rlv1b = 0.0_8
+   rlv2b = 0.0_8
    ww1b = 0.0_8
    ww2b = 0.0_8
    DO j=jl+1,1,-1
@@ -358,9 +370,11 @@
    END DO
    CASE DEFAULT
    rev1b = 0.0_8
+   rev2b = 0.0_8
    pp1b = 0.0_8
    pp2b = 0.0_8
    rlv1b = 0.0_8
+   rlv2b = 0.0_8
    ww1b = 0.0_8
    ww2b = 0.0_8
    END SELECT

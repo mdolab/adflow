@@ -3,8 +3,8 @@
    !
    !  Differentiation of sasolve in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *dw
-   !   with respect to varying inputs: *sfacei *sfacej *sfacek *dw
-   !                *w *rlv *vol *si *sj *sk (global)timeref
+   !   with respect to varying inputs: *sfacei *sfacej *sfacek *w
+   !                *rlv *vol *si *sj *sk (global)timeref
    !   Plus diff mem management of: sfacei:in sfacej:in sfacek:in
    !                dw:in w:in rlv:in vol:in si:in sj:in sk:in
    !
@@ -118,6 +118,8 @@
    CALL PRODWMAG2_D()
    CASE (katolaunder) 
    CALL PRODKATOLAUNDER_D()
+   CASE DEFAULT
+   dwd = 0.0_8
    END SELECT
    !
    !      ******************************************************************
