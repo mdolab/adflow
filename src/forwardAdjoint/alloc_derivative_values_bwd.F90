@@ -181,11 +181,25 @@ subroutine alloc_derivative_values_bwd(level)
                 flowDomsb(nn,1,sps)%bvtk2(ie,je,nt1:nt2), &
                 stat=ierr)
            call EChk(ierr,__FILE__,__LINE__)
+       
+           flowDomsb(nn,1,sps)%bmti1 = zero
+           flowDomsb(nn,1,sps)%bmti2 = zero
+           flowDomsb(nn,1,sps)%bmtj1 = zero
+           flowDomsb(nn,1,sps)%bmtj2 = zero
+           flowDomsb(nn,1,sps)%bmtk1 = zero
+           flowDomsb(nn,1,sps)%bmtk2 = zero
+           flowDomsb(nn,1,sps)%bvti1 = zero
+           flowDomsb(nn,1,sps)%bvti2 = zero
+           flowDomsb(nn,1,sps)%bvtj1 = zero
+           flowDomsb(nn,1,sps)%bvtj2 = zero
+           flowDomsb(nn,1,sps)%bvtk1 = zero
+           flowDomsb(nn,1,sps)%bvtk2 = zero
+           
         end if
-
         
         allocate(flowDomsb(nn,1,sps)%d2Wall(2:il,2:jl,2:kl), &
              stat=ierr)
+        flowDomsb(nn,1,sps)%d2wall = zero
         call EChk(ierr,__FILE__,__LINE__)
         
         allocate(flowDomsb(nn,1,sps)%viscSubface(nviscBocos), &

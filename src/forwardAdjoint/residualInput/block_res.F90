@@ -119,6 +119,10 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
 
   !  Apply all BC's
   call applyAllBC_block(.True.)
+ 
+  ! if (equations == RANSequations) then 
+  !    call applyAllTurbBCThisBLock(.True.)
+  ! end if
 
   ! Compute skin_friction Velocity (only for wall Functions)
 ! #ifndef TAPENADE_REVERSE
@@ -134,10 +138,10 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   ! -------------------------------
   ! Compute turbulence residual for RANS equations
   if( equations == RANSEquations) then
-#ifndef TAPENADE_REVERSE
-     ! Initialize only the Turblent Variables
-     call unsteadyTurbSpectral_block(itu1, itu1, nn, sps)
-#endif
+
+     ! ! Initialize only the Turblent Variables
+     ! call unsteadyTurbSpectral_block(itu1, itu1, nn, sps)
+
      select case (turbModel)
         
      case (spalartAllmaras)
@@ -210,6 +214,7 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
 
   !  Actual residual calc
   call residual_block
+
   ! Note that there are some error introduced by viscousflux from fw
   ! The error only show up in the rho term in some cells
 

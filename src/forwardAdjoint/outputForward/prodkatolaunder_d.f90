@@ -3,7 +3,7 @@
    !
    !  Differentiation of prodkatolaunder in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *dw
-   !   with respect to varying inputs: *dw *w *vol *si *sj *sk timeref
+   !   with respect to varying inputs: *w *vol *si *sj *sk timeref
    !   Plus diff mem management of: dw:in w:in vol:in si:in sj:in
    !                sk:in
    !
@@ -67,6 +67,7 @@
    omegay = timeref*sections(sectionid)%rotrate(2)
    omegazd = sections(sectionid)%rotrate(3)*timerefd
    omegaz = timeref*sections(sectionid)%rotrate(3)
+   dwd = 0.0_8
    ! Loop over the cell centers of the given block. It may be more
    ! efficient to loop over the faces and to scatter the gradient,
    ! but in that case the gradients for u, v and w must be stored.

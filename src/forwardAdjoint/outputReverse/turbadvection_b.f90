@@ -2,8 +2,8 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of turbadvection in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *dw *w *vol *si *sj *sk qq
-   !   with respect to varying inputs: *dw *w *vol *si *sj *sk qq
+   !   gradient     of useful results: *dw *w *vol *si *sj *sk
+   !   with respect to varying inputs: *dw *w *vol *si *sj *sk
    !   Plus diff mem management of: dw:in w:in vol:in si:in sj:in
    !                sk:in
    !
@@ -16,7 +16,7 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   SUBROUTINE TURBADVECTION_B(madv, nadv, offset, qq, qqb)
+   SUBROUTINE TURBADVECTION_B(madv, nadv, offset, qq)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -50,8 +50,6 @@
    INTEGER(kind=inttype), INTENT(IN) :: nadv, madv, offset
    REAL(kind=realtype), DIMENSION(2:il, 2:jl, 2:kl, madv, madv), INTENT(&
    & INOUT) :: qq
-   REAL(kind=realtype), DIMENSION(2:il, 2:jl, 2:kl, madv, madv), INTENT(&
-   & INOUT) :: qqb
    !
    !      Local variables.
    !
@@ -137,7 +135,6 @@
    DO ii=1,nadv
    ! Set the value of jj such that it corresponds to the
    ! turbulent entry in w.
-   CALL PUSHINTEGER4(jj)
    jj = ii + offset
    ! Check whether a first or a second order discretization
    ! must be used.
@@ -200,35 +197,6 @@
    dwtk = w(i, j, k, jj) - w(i, j, k-1, jj)
    CALL PUSHCONTROL2B(3)
    END IF
-   ! Update the residual. The convective term must be
-   ! substracted, because it appears on the other side of
-   ! the equation as the source and viscous terms.
-   ! Update the central jacobian. First the term which is
-   ! always present, i.e. uu.
-   ! For boundary cells k == 2, the implicit treatment must
-   ! be taken into account. Note that the implicit part
-   ! is only based on the 1st order discretization.
-   ! To improve stability the diagonal term is only taken
-   ! into account when it improves stability, i.e. when
-   ! it is positive.
-   IF (k .EQ. 2) THEN
-   DO kk=1,madv
-   CALL PUSHREAL8(impl(kk))
-   impl(kk) = bmtk1(i, j, jj, kk+offset)
-   END DO
-   IF (impl(ii) .LT. zero) THEN
-   CALL PUSHREAL8(impl(ii))
-   impl(ii) = zero
-   CALL PUSHCONTROL1B(0)
-   ELSE
-   CALL PUSHREAL8(impl(ii))
-   impl(ii) = impl(ii)
-   CALL PUSHCONTROL1B(1)
-   END IF
-   CALL PUSHCONTROL1B(1)
-   ELSE
-   CALL PUSHCONTROL1B(0)
-   END IF
    END DO
    CALL PUSHCONTROL1B(1)
    ELSE
@@ -237,7 +205,6 @@
    DO ii=1,nadv
    ! Set the value of jj such that it corresponds to the
    ! turbulent entry in w.
-   CALL PUSHINTEGER4(jj)
    jj = ii + offset
    ! Check whether a first or a second order discretization
    ! must be used.
@@ -300,35 +267,6 @@
    dwtk = w(i, j, k+1, jj) - w(i, j, k, jj)
    CALL PUSHCONTROL2B(3)
    END IF
-   ! Update the residual. The convective term must be
-   ! substracted, because it appears on the other side
-   ! of the equation as the source and viscous terms.
-   ! Update the central jacobian. First the term which is
-   ! always present, i.e. -uu.
-   ! For boundary cells k == kl, the implicit treatment must
-   ! be taken into account. Note that the implicit part
-   ! is only based on the 1st order discretization.
-   ! To improve stability the diagonal term is only taken
-   ! into account when it improves stability, i.e. when
-   ! it is positive.
-   IF (k .EQ. kl) THEN
-   DO kk=1,madv
-   CALL PUSHREAL8(impl(kk))
-   impl(kk) = bmtk2(i, j, jj, kk+offset)
-   END DO
-   IF (impl(ii) .LT. zero) THEN
-   CALL PUSHREAL8(impl(ii))
-   impl(ii) = zero
-   CALL PUSHCONTROL1B(0)
-   ELSE
-   CALL PUSHREAL8(impl(ii))
-   impl(ii) = impl(ii)
-   CALL PUSHCONTROL1B(1)
-   END IF
-   CALL PUSHCONTROL1B(1)
-   ELSE
-   CALL PUSHCONTROL1B(0)
-   END IF
    END DO
    CALL PUSHCONTROL1B(0)
    END IF
@@ -374,7 +312,6 @@
    DO ii=1,nadv
    ! Set the value of jj such that it corresponds to the
    ! turbulent entry in w.
-   CALL PUSHINTEGER4(jj)
    jj = ii + offset
    ! Check whether a first or a second order discretization
    ! must be used.
@@ -437,35 +374,6 @@
    dwtj = w(i, j, k, jj) - w(i, j-1, k, jj)
    CALL PUSHCONTROL2B(3)
    END IF
-   ! Update the residual. The convective term must be
-   ! substracted, because it appears on the other side of
-   ! the equation as the source and viscous terms.
-   ! Update the central jacobian. First the term which is
-   ! always present, i.e. uu.
-   ! For boundary cells j == 2, the implicit treatment must
-   ! be taken into account. Note that the implicit part
-   ! is only based on the 1st order discretization.
-   ! To improve stability the diagonal term is only taken
-   ! into account when it improves stability, i.e. when
-   ! it is positive.
-   IF (j .EQ. 2) THEN
-   DO kk=1,madv
-   CALL PUSHREAL8(impl(kk))
-   impl(kk) = bmtj1(i, k, jj, kk+offset)
-   END DO
-   IF (impl(ii) .LT. zero) THEN
-   CALL PUSHREAL8(impl(ii))
-   impl(ii) = zero
-   CALL PUSHCONTROL1B(0)
-   ELSE
-   CALL PUSHREAL8(impl(ii))
-   impl(ii) = impl(ii)
-   CALL PUSHCONTROL1B(1)
-   END IF
-   CALL PUSHCONTROL1B(1)
-   ELSE
-   CALL PUSHCONTROL1B(0)
-   END IF
    END DO
    CALL PUSHCONTROL1B(1)
    ELSE
@@ -474,7 +382,6 @@
    DO ii=1,nadv
    ! Set the value of jj such that it corresponds to the
    ! turbulent entry in w.
-   CALL PUSHINTEGER4(jj)
    jj = ii + offset
    ! Check whether a first or a second order discretization
    ! must be used.
@@ -537,35 +444,6 @@
    dwtj = w(i, j+1, k, jj) - w(i, j, k, jj)
    CALL PUSHCONTROL2B(3)
    END IF
-   ! Update the residual. The convective term must be
-   ! substracted, because it appears on the other side
-   ! of the equation as the source and viscous terms.
-   ! Update the central jacobian. First the term which is
-   ! always present, i.e. -uu.
-   ! For boundary cells j == jl, the implicit treatment must
-   ! be taken into account. Note that the implicit part
-   ! is only based on the 1st order discretization.
-   ! To improve stability the diagonal term is only taken
-   ! into account when it improves stability, i.e. when
-   ! it is positive.
-   IF (j .EQ. jl) THEN
-   DO kk=1,madv
-   CALL PUSHREAL8(impl(kk))
-   impl(kk) = bmtj2(i, k, jj, kk+offset)
-   END DO
-   IF (impl(ii) .LT. zero) THEN
-   CALL PUSHREAL8(impl(ii))
-   impl(ii) = zero
-   CALL PUSHCONTROL1B(0)
-   ELSE
-   CALL PUSHREAL8(impl(ii))
-   impl(ii) = impl(ii)
-   CALL PUSHCONTROL1B(1)
-   END IF
-   CALL PUSHCONTROL1B(1)
-   ELSE
-   CALL PUSHCONTROL1B(0)
-   END IF
    END DO
    CALL PUSHCONTROL1B(0)
    END IF
@@ -611,7 +489,6 @@
    DO ii=1,nadv
    ! Set the value of jj such that it corresponds to the
    ! turbulent entry in w.
-   CALL PUSHINTEGER4(jj)
    jj = ii + offset
    ! Check whether a first or a second order discretization
    ! must be used.
@@ -674,35 +551,6 @@
    dwti = w(i, j, k, jj) - w(i-1, j, k, jj)
    CALL PUSHCONTROL2B(3)
    END IF
-   ! Update the residual. The convective term must be
-   ! substracted, because it appears on the other side of
-   ! the equation as the source and viscous terms.
-   ! Update the central jacobian. First the term which is
-   ! always present, i.e. uu.
-   ! For boundary cells i == 2, the implicit treatment must
-   ! be taken into account. Note that the implicit part
-   ! is only based on the 1st order discretization.
-   ! To improve stability the diagonal term is only taken
-   ! into account when it improves stability, i.e. when
-   ! it is positive.
-   IF (i .EQ. 2) THEN
-   DO kk=1,madv
-   CALL PUSHREAL8(impl(kk))
-   impl(kk) = bmti1(j, k, jj, kk+offset)
-   END DO
-   IF (impl(ii) .LT. zero) THEN
-   CALL PUSHREAL8(impl(ii))
-   impl(ii) = zero
-   CALL PUSHCONTROL1B(0)
-   ELSE
-   CALL PUSHREAL8(impl(ii))
-   impl(ii) = impl(ii)
-   CALL PUSHCONTROL1B(1)
-   END IF
-   CALL PUSHCONTROL1B(1)
-   ELSE
-   CALL PUSHCONTROL1B(0)
-   END IF
    END DO
    CALL PUSHCONTROL1B(1)
    ELSE
@@ -711,7 +559,6 @@
    DO ii=1,nadv
    ! Set the value of jj such that it corresponds to the
    ! turbulent entry in w.
-   CALL PUSHINTEGER4(jj)
    jj = ii + offset
    ! Check whether a first or a second order discretization
    ! must be used.
@@ -774,35 +621,6 @@
    dwti = w(i+1, j, k, jj) - w(i, j, k, jj)
    CALL PUSHCONTROL2B(3)
    END IF
-   ! Update the residual. The convective term must be
-   ! substracted, because it appears on the other side
-   ! of the equation as the source and viscous terms.
-   ! Update the central jacobian. First the term which is
-   ! always present, i.e. -uu.
-   ! For boundary cells i == il, the implicit treatment must
-   ! be taken into account. Note that the implicit part
-   ! is only based on the 1st order discretization.
-   ! To improve stability the diagonal term is only taken
-   ! into account when it improves stability, i.e. when
-   ! it is positive.
-   IF (i .EQ. il) THEN
-   DO kk=1,madv
-   CALL PUSHREAL8(impl(kk))
-   impl(kk) = bmti2(j, k, jj, kk+offset)
-   END DO
-   IF (impl(ii) .LT. zero) THEN
-   CALL PUSHREAL8(impl(ii))
-   impl(ii) = zero
-   CALL PUSHCONTROL1B(0)
-   ELSE
-   CALL PUSHREAL8(impl(ii))
-   impl(ii) = impl(ii)
-   CALL PUSHCONTROL1B(1)
-   END IF
-   CALL PUSHCONTROL1B(1)
-   ELSE
-   CALL PUSHCONTROL1B(0)
-   END IF
    END DO
    CALL PUSHCONTROL1B(0)
    END IF
@@ -816,26 +634,10 @@
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    uub = 0.0_8
-   DO ii=nadv,1,-1
-   CALL POPCONTROL1B(branch)
-   IF (branch .NE. 0) THEN
-   DO kk=madv,1,-1
-   uub = uub - impl(kk)*qqb(i, j, k, ii, kk)
-   END DO
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
-   CALL POPREAL8(impl(ii))
-   ELSE
-   CALL POPREAL8(impl(ii))
-   END IF
-   jj = ii + offset
-   DO kk=madv,1,-1
-   CALL POPREAL8(impl(kk))
-   END DO
-   END IF
-   uub = uub - dwti*dwb(i, j, k, idvt+ii-1) - qqb(i, j, k, ii, &
-   &             ii)
+   DO 100 ii=nadv,1,-1
+   uub = uub - dwti*dwb(i, j, k, idvt+ii-1)
    dwtib = -(uu*dwb(i, j, k, idvt+ii-1))
+   jj = ii + offset
    CALL POPCONTROL2B(branch)
    IF (branch .LT. 2) THEN
    IF (branch .EQ. 0) THEN
@@ -871,30 +673,13 @@
    wb(i, j, k, jj) = wb(i, j, k, jj) - dwtb
    wb(i, j, k, jj) = wb(i, j, k, jj) + dwtm1b
    wb(i-1, j, k, jj) = wb(i-1, j, k, jj) - dwtm1b
-   100        CALL POPINTEGER4(jj)
-   END DO
+   100      CONTINUE
    ELSE
    uub = 0.0_8
-   DO ii=nadv,1,-1
-   CALL POPCONTROL1B(branch)
-   IF (branch .NE. 0) THEN
-   DO kk=madv,1,-1
-   uub = uub + impl(kk)*qqb(i, j, k, ii, kk)
-   END DO
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
-   CALL POPREAL8(impl(ii))
-   ELSE
-   CALL POPREAL8(impl(ii))
-   END IF
-   jj = ii + offset
-   DO kk=madv,1,-1
-   CALL POPREAL8(impl(kk))
-   END DO
-   END IF
-   uub = uub + qqb(i, j, k, ii, ii) - dwti*dwb(i, j, k, idvt+ii&
-   &             -1)
+   DO 110 ii=nadv,1,-1
+   uub = uub - dwti*dwb(i, j, k, idvt+ii-1)
    dwtib = -(uu*dwb(i, j, k, idvt+ii-1))
+   jj = ii + offset
    CALL POPCONTROL2B(branch)
    IF (branch .LT. 2) THEN
    IF (branch .EQ. 0) THEN
@@ -930,8 +715,7 @@
    wb(i-1, j, k, jj) = wb(i-1, j, k, jj) - dwtb
    wb(i-1, j, k, jj) = wb(i-1, j, k, jj) + dwtm1b
    wb(i-2, j, k, jj) = wb(i-2, j, k, jj) - dwtm1b
-   110        CALL POPINTEGER4(jj)
-   END DO
+   110      CONTINUE
    END IF
    voli = half/vol(i, j, k)
    xa = (si(i, j, k, 1)+si(i-1, j, k, 1))*voli
@@ -968,26 +752,10 @@
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    uub = 0.0_8
-   DO ii=nadv,1,-1
-   CALL POPCONTROL1B(branch)
-   IF (branch .NE. 0) THEN
-   DO kk=madv,1,-1
-   uub = uub - impl(kk)*qqb(i, j, k, ii, kk)
-   END DO
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
-   CALL POPREAL8(impl(ii))
-   ELSE
-   CALL POPREAL8(impl(ii))
-   END IF
-   jj = ii + offset
-   DO kk=madv,1,-1
-   CALL POPREAL8(impl(kk))
-   END DO
-   END IF
-   uub = uub - dwtj*dwb(i, j, k, idvt+ii-1) - qqb(i, j, k, ii, &
-   &             ii)
+   DO 120 ii=nadv,1,-1
+   uub = uub - dwtj*dwb(i, j, k, idvt+ii-1)
    dwtjb = -(uu*dwb(i, j, k, idvt+ii-1))
+   jj = ii + offset
    CALL POPCONTROL2B(branch)
    IF (branch .LT. 2) THEN
    IF (branch .EQ. 0) THEN
@@ -1023,30 +791,13 @@
    wb(i, j, k, jj) = wb(i, j, k, jj) - dwtb
    wb(i, j, k, jj) = wb(i, j, k, jj) + dwtm1b
    wb(i, j-1, k, jj) = wb(i, j-1, k, jj) - dwtm1b
-   120        CALL POPINTEGER4(jj)
-   END DO
+   120      CONTINUE
    ELSE
    uub = 0.0_8
-   DO ii=nadv,1,-1
-   CALL POPCONTROL1B(branch)
-   IF (branch .NE. 0) THEN
-   DO kk=madv,1,-1
-   uub = uub + impl(kk)*qqb(i, j, k, ii, kk)
-   END DO
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
-   CALL POPREAL8(impl(ii))
-   ELSE
-   CALL POPREAL8(impl(ii))
-   END IF
-   jj = ii + offset
-   DO kk=madv,1,-1
-   CALL POPREAL8(impl(kk))
-   END DO
-   END IF
-   uub = uub + qqb(i, j, k, ii, ii) - dwtj*dwb(i, j, k, idvt+ii&
-   &             -1)
+   DO 130 ii=nadv,1,-1
+   uub = uub - dwtj*dwb(i, j, k, idvt+ii-1)
    dwtjb = -(uu*dwb(i, j, k, idvt+ii-1))
+   jj = ii + offset
    CALL POPCONTROL2B(branch)
    IF (branch .LT. 2) THEN
    IF (branch .EQ. 0) THEN
@@ -1082,8 +833,7 @@
    wb(i, j-1, k, jj) = wb(i, j-1, k, jj) - dwtb
    wb(i, j-1, k, jj) = wb(i, j-1, k, jj) + dwtm1b
    wb(i, j-2, k, jj) = wb(i, j-2, k, jj) - dwtm1b
-   130        CALL POPINTEGER4(jj)
-   END DO
+   130      CONTINUE
    END IF
    voli = half/vol(i, j, k)
    xa = (sj(i, j, k, 1)+sj(i, j-1, k, 1))*voli
@@ -1120,26 +870,10 @@
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    uub = 0.0_8
-   DO ii=nadv,1,-1
-   CALL POPCONTROL1B(branch)
-   IF (branch .NE. 0) THEN
-   DO kk=madv,1,-1
-   uub = uub - impl(kk)*qqb(i, j, k, ii, kk)
-   END DO
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
-   CALL POPREAL8(impl(ii))
-   ELSE
-   CALL POPREAL8(impl(ii))
-   END IF
-   jj = ii + offset
-   DO kk=madv,1,-1
-   CALL POPREAL8(impl(kk))
-   END DO
-   END IF
-   uub = uub - dwtk*dwb(i, j, k, idvt+ii-1) - qqb(i, j, k, ii, &
-   &             ii)
+   DO 140 ii=nadv,1,-1
+   uub = uub - dwtk*dwb(i, j, k, idvt+ii-1)
    dwtkb = -(uu*dwb(i, j, k, idvt+ii-1))
+   jj = ii + offset
    CALL POPCONTROL2B(branch)
    IF (branch .LT. 2) THEN
    IF (branch .EQ. 0) THEN
@@ -1175,30 +909,13 @@
    wb(i, j, k, jj) = wb(i, j, k, jj) - dwtb
    wb(i, j, k, jj) = wb(i, j, k, jj) + dwtm1b
    wb(i, j, k-1, jj) = wb(i, j, k-1, jj) - dwtm1b
-   140        CALL POPINTEGER4(jj)
-   END DO
+   140      CONTINUE
    ELSE
    uub = 0.0_8
-   DO ii=nadv,1,-1
-   CALL POPCONTROL1B(branch)
-   IF (branch .NE. 0) THEN
-   DO kk=madv,1,-1
-   uub = uub + impl(kk)*qqb(i, j, k, ii, kk)
-   END DO
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
-   CALL POPREAL8(impl(ii))
-   ELSE
-   CALL POPREAL8(impl(ii))
-   END IF
-   jj = ii + offset
-   DO kk=madv,1,-1
-   CALL POPREAL8(impl(kk))
-   END DO
-   END IF
-   uub = uub + qqb(i, j, k, ii, ii) - dwtk*dwb(i, j, k, idvt+ii&
-   &             -1)
+   DO 150 ii=nadv,1,-1
+   uub = uub - dwtk*dwb(i, j, k, idvt+ii-1)
    dwtkb = -(uu*dwb(i, j, k, idvt+ii-1))
+   jj = ii + offset
    CALL POPCONTROL2B(branch)
    IF (branch .LT. 2) THEN
    IF (branch .EQ. 0) THEN
@@ -1234,8 +951,7 @@
    wb(i, j, k-1, jj) = wb(i, j, k-1, jj) - dwtb
    wb(i, j, k-1, jj) = wb(i, j, k-1, jj) + dwtm1b
    wb(i, j, k-2, jj) = wb(i, j, k-2, jj) - dwtm1b
-   150        CALL POPINTEGER4(jj)
-   END DO
+   150      CONTINUE
    END IF
    voli = half/vol(i, j, k)
    xa = (sk(i, j, k, 1)+sk(i, j, k-1, 1))*voli

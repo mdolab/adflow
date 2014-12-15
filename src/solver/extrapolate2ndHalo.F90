@@ -43,148 +43,124 @@
 
        integer(kind=intType), dimension(3,2) :: crange
 
-#ifndef TAPENADE_REVERSE
-       real(kind=realType), dimension(:,:,:), pointer :: ww0, ww1, ww2
-       real(kind=realType), dimension(:,:),   pointer :: pp0, pp1, pp2
-       real(kind=realType), dimension(:,:),   pointer :: rlv0, rlv1
-       real(kind=realType), dimension(:,:),   pointer :: rev0, rev1
-!
-!      Interfaces
-!
-       interface
-         subroutine setBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
-                                  rev1, rev2, offset)
-           use blockPointers
-           implicit none
+       select case (BCFaceID(nn))
+       case (iMin)
+          do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
+             do i=BCData(nn)%icBeg, BCData(nn)%icEnd
 
-           integer(kind=intType), intent(in) :: nn, offset
-           real(kind=realType), dimension(:,:,:), pointer :: ww1, ww2
-           real(kind=realType), dimension(:,:),   pointer :: pp1, pp2
-           real(kind=realType), dimension(:,:),   pointer :: rlv1, rlv2
-           real(kind=realType), dimension(:,:),   pointer :: rev1, rev2
-         end subroutine setBcPointers
+                ! Extrapolate the density, momentum and pressure.
+                ! Make sure that a certain threshold is kept.
 
+                w(0,i,j,irho) = two*w(1,i,j,irho) - w(2,i,j,irho)
+                w(0,i,j,irho) = max(factor*w(1,i,j,irho),w(0,i,j,irho))
+                
+                w(0,i,j,ivx) = two*w(1,i,j,ivx) - w(2,i,j,ivx)
+                w(0,i,j,ivy) = two*w(1,i,j,ivy) - w(2,i,j,ivy)
+                w(0,i,j,ivz) = two*w(1,i,j,ivz) - w(2,i,j,ivz)
+                
+                p(0,i,j) = max(factor*p(1,i,j),two*p(1,i,j) - p(2,i,j))
 
-         subroutine resetBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
-                                  rev1, rev2, offset)
-           use blockPointers
-           implicit none
+                ! Extrapolate the turbulent variables. Use constant
+                ! extrapolation.
 
-           integer(kind=intType), intent(in) :: nn, offset
-           real(kind=realType), dimension(:,:,:), pointer :: ww1, ww2
-           real(kind=realType), dimension(:,:),   pointer :: pp1, pp2
-           real(kind=realType), dimension(:,:),   pointer :: rlv1, rlv2
-           real(kind=realType), dimension(:,:),   pointer :: rev1, rev2
-         end subroutine resetBCPointers
+                do l=nt1MG,nt2MG
+                   w(0,i,j,l) = w(1,i,j,l)
+                enddo
 
-         subroutine setww0pp0rlv0rev0(nn, idim, ddim, ww0, pp0, rlv0, rev0)
+                ! The laminar and eddy viscosity, if present. These values
+                ! are simply taken constant. Their values do not matter.
 
-           use BCTypes
-           use blockPointers
-           use flowVarRefState
-           implicit none
-
-           integer(kind=intType), intent(in) :: nn
-           integer(kind=intType) :: idim, ddim
-
-           real(kind=realType), dimension(:,:,:), pointer :: ww0
-           real(kind=realType), dimension(:,:),   pointer :: pp0
-           real(kind=realType), dimension(:,:),   pointer :: rlv0
-           real(kind=realType), dimension(:,:),   pointer :: rev0
-         end subroutine setww0pp0rlv0rev0
-
-         subroutine resetww0pp0rlv0rev0(nn, idim, ddim, ww0, pp0, rlv0, rev0)
-
-           use BCTypes
-           use blockPointers
-           implicit none
-
-           integer(kind=intType), intent(in) :: nn
-           integer(kind=intType) :: idim, ddim
-
-           real(kind=realType), dimension(:,:,:), pointer :: ww0
-           real(kind=realType), dimension(:,:),   pointer :: pp0
-           real(kind=realType), dimension(:,:),   pointer :: rlv0
-           real(kind=realType), dimension(:,:),   pointer :: rev0
-         end subroutine resetww0pp0rlv0rev0
-
-       end interface
-#else
-       real(kind=realType), dimension(imaxDim,jmaxDim,nw) :: ww0, ww1, ww2
-       real(kind=realType), dimension(imaxDim,jmaxDim) :: pp0, pp1, pp2
-       real(kind=realType), dimension(imaxDim,jmaxDim) :: rlv0, rlv1
-       real(kind=realType), dimension(imaxDim,jmaxDim) :: rev0, rev1
-#endif
-
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
-       ! Nullify the pointers and set them to the correct subface.
-       ! They are nullified first, because some compilers require that.
-       ! Note that rlv0 and rev0 are used here as dummies.
-
-       !nullify(ww1, ww2, pp1, pp2, rlv1, rlv0, rev1, rev0)
-
-       ! Set a couple of additional variables needed for the
-       ! extrapolation. This depends on the block face on which the
-       ! subface is located.
-
-#ifndef TAPENADE_REVERSE
-       call setBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv0, &
-                          rev1, rev0, 0)!_intType)
-       call setww0pp0rlv0rev0(nn, idim, ddim, ww0, pp0, rlv0, rev0)
-#else
-       call setBCPointersBwd(nn, ww1, ww2, pp1, pp2, rlv1, rlv0, &
-                          rev1, rev0, 0)!_intType)
-       call setww0pp0rlv0rev0Bwd(nn, idim, ddim, ww0, pp0, rlv0, rev0)
-#endif
-
-       ! Loop over the generic subface to set the state in the halo's.
-
-       do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
-         do i=BCData(nn)%icBeg, BCData(nn)%icEnd
-
-           ! Extrapolate the density, momentum and pressure.
-           ! Make sure that a certain threshold is kept.
-
-           ww0(i,j,irho) = two*ww1(i,j,irho) - ww2(i,j,irho)
-           ww0(i,j,irho) = max(factor*ww1(i,j,irho),ww0(i,j,irho))
-
-           ww0(i,j,ivx) = two*ww1(i,j,ivx) - ww2(i,j,ivx)
-           ww0(i,j,ivy) = two*ww1(i,j,ivy) - ww2(i,j,ivy)
-           ww0(i,j,ivz) = two*ww1(i,j,ivz) - ww2(i,j,ivz)
-
-           pp0(i,j) = max(factor*pp1(i,j),two*pp1(i,j) - pp2(i,j))
-
-           ! Extrapolate the turbulent variables. Use constant
-           ! extrapolation.
-
-           do l=nt1MG,nt2MG
-             ww0(i,j,l) = ww1(i,j,l)
-           enddo
-
-           ! The laminar and eddy viscosity, if present. These values
-           ! are simply taken constant. Their values do not matter.
-
-           if( viscous )   rlv0(i,j) = rlv1(i,j)
-           if( eddyModel ) rev0(i,j) = rev1(i,j)
-
-         enddo
-       enddo
-
-#ifndef TAPENADE_REVERSE
-       call resetBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv0, &
-                          rev1, rev0, 0)
-       call resetww0pp0rlv0rev0(nn, idim, ddim, ww0, pp0, rlv0, rev0)
-#else
-       call resetBCPointersBwd(nn, ww1, ww2, pp1, pp2, rlv1, rlv0, &
-                          rev1, rev0, 0)
-       call resetww0pp0rlv0rev0Bwd(nn, idim, ddim, ww0, pp0, rlv0, rev0)
-#endif
+                if( viscous )   rlv(0,i,j) = rlv(1,i,j)
+                if( eddyModel ) rev(0,i,j) = rev(1,i,j)
+                idim = 1; ddim = 0
+             enddo
+          enddo
+       case (iMax)
+          do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
+             do i=BCData(nn)%icBeg, BCData(nn)%icEnd
+                w(ib,i,j,irho) = two*w(ie,i,j,irho) - w(il,i,j,irho)
+                w(ib,i,j,irho) = max(factor*w(ie,i,j,irho),w(ib,i,j,irho))
+                w(ib,i,j,ivx) = two*w(ie,i,j,ivx) - w(il,i,j,ivx)
+                w(ib,i,j,ivy) = two*w(ie,i,j,ivy) - w(il,i,j,ivy)
+                w(ib,i,j,ivz) = two*w(ie,i,j,ivz) - w(il,i,j,ivz)
+                p(ib,i,j) = max(factor*p(ie,i,j),two*p(ie,i,j) - p(il,i,j))
+                do l=nt1MG,nt2MG
+                   w(ib,i,j,l) = w(ie,i,j,l)
+                enddo
+                if( viscous )   rlv(ib,i,j) = rlv(ie,i,j)
+                if( eddyModel ) rev(ib,i,j) = rev(ie,i,j)
+                idim = 1; ddim = ib
+             enddo 
+          enddo
+       case (jMin)
+          do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
+             do i=BCData(nn)%icBeg, BCData(nn)%icEnd
+                w(i,0,j,irho) = two*w(i,1,j,irho) - w(i,2,j,irho)
+                w(i,0,j,irho) = max(factor*w(i,1,j,irho),w(i,0,j,irho))
+                w(i,0,j,ivx) = two*w(i,1,j,ivx) - w(i,2,j,ivx)
+                w(i,0,j,ivy) = two*w(i,1,j,ivy) - w(i,2,j,ivy)
+                w(i,0,j,ivz) = two*w(i,1,j,ivz) - w(i,2,j,ivz)
+                p(i,0,j) = max(factor*p(i,1,j),two*p(i,1,j) - p(i,2,j))
+                do l=nt1MG,nt2MG
+                   w(i,0,j,l) = w(i,1,j,l)
+                end do
+                if( viscous )   rlv(i,0,j) = rlv(i,1,j)
+                if( eddyModel ) rev(i,0,j) = rev(i,1,j)
+                idim = 2; ddim = 0
+             enddo
+          enddo
+       case (jMax)
+          do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
+             do i=BCData(nn)%icBeg, BCData(nn)%icEnd
+                w(i,jb,j,irho) = two*w(i,je,j,irho) - w(i,jl,j,irho)
+                w(i,jb,j,irho) = max(factor*w(i,je,j,irho),w(i,jb,j,irho))
+                w(i,jb,j,ivx) = two*w(i,je,j,ivx) - w(i,jl,j,ivx)
+                w(i,jb,j,ivy) = two*w(i,je,j,ivy) - w(i,jl,j,ivy)
+                w(i,jb,j,ivz) = two*w(i,je,j,ivz) - w(i,jl,j,ivz)
+                p(i,jb,j) = max(factor*p(i,je,j),two*p(i,je,j) - p(i,jl,j))
+                do l=nt1MG,nt2MG
+                   w(i,jb,j,l) = w(i,je,j,l)
+                end do
+                if( viscous )   rlv(i,jb,j) = rlv(i,je,j)
+                if( eddyModel ) rev(i,jb,j) = rev(i,je,j)
+                idim = 2; ddim = jb
+             enddo
+          enddo
+       case (kMin)
+          do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
+             do i=BCData(nn)%icBeg, BCData(nn)%icEnd
+                w(i,j,0,irho) = two*w(i,j,1,irho) - w(i,j,2,irho)
+                w(i,j,0,irho) = max(factor*w(i,j,1,irho),w(i,j,0,irho))
+                w(i,j,0,ivx) = two*w(i,j,1,ivx) - w(i,j,2,ivx)
+                w(i,j,0,ivy) = two*w(i,j,1,ivy) - w(i,j,2,ivy)
+                w(i,j,0,ivz) = two*w(i,j,1,ivz) - w(i,j,2,ivz)
+                p(i,j,0) = max(factor*p(i,j,1),two*p(i,j,1) - p(i,j,2))
+                do l=nt1MG,nt2MG
+                   w(i,j,0,l) = w(i,j,1,l)
+                end do
+                if( viscous )   rlv(i,j,0) = rlv(i,j,1)
+                if( eddyModel ) rev(i,j,0) = rev(i,j,1)
+                idim = 3; ddim = 0
+             enddo
+          enddo
+       case (kMax)
+          do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
+             do i=BCData(nn)%icBeg, BCData(nn)%icEnd
+                w(i,j,kb,irho) = two*w(i,j,ke,irho) - w(i,j,kl,irho)
+                w(i,j,kb,irho) = max(factor*w(i,j,ke,irho),w(i,j,kb,irho))
+                w(i,j,kb,ivx) = two*w(i,j,ke,ivx) - w(i,j,kl,ivx)
+                w(i,j,kb,ivy) = two*w(i,j,ke,ivy) - w(i,j,kl,ivy)
+                w(i,j,kb,ivz) = two*w(i,j,ke,ivz) - w(i,j,kl,ivz)
+                p(i,j,kb) = max(factor*p(i,j,ke),two*p(i,j,ke) - p(i,j,kl))
+                do l=nt1MG,nt2MG
+                   w(i,j,kb,l) = w(i,j,ke,l)
+                end do
+                if( viscous )   rlv(i,j,kb) = rlv(i,j,ke)
+                if( eddyModel ) rev(i,j,kb) = rev(i,j,ke)
+                enddo
+             enddo
+             idim = 3; ddim = kb
+          end select
 
        ! Set the range for the halo cells for the energy computation.
 

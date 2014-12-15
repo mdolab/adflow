@@ -340,7 +340,7 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
         do k=2, kl
            do j=2,jl
               do i=2,il
-                 do l = 1, nw
+                 do l=1,nw
                     ii = ii + 1
                     flowdomsb(nn, level, sps)%dw(i, j, k, l) = dwbar(ii)
                  end do
@@ -362,7 +362,7 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
               do k=0,ke
                  do j=0,je
                     do i=0,ie
-                       do l=1, 3
+                       do l=1,3
                           irow = flowDoms(nn, 1, sps2)%globalNode(i,j,k)*3 + l -1
                           if (irow >= 0) then 
                              call VecSetValues(x_like, 1, (/irow/), &
@@ -399,7 +399,7 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
               do k=0, kb
                  do j=0,jb
                     do i=0,ib
-                       do l=1, nw
+                       do l=1,nw
                           irow = flowDoms(nn, 1, sps2)%globalCell(i,j,k)*nw + l -1
                           if (irow >= 0) then 
                              call VecSetValues(psi_like1, 1, (/irow/), &

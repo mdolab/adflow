@@ -50,83 +50,348 @@
    !
    INTEGER(kind=inttype) :: i, j, l, idim, ddim
    INTEGER(kind=inttype), DIMENSION(3, 2) :: crange
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, nw) :: ww0, ww1, ww2
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, nw) :: ww0b, ww1b, &
-   & ww2b
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: pp0, pp1, pp2
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: pp0b, pp1b, pp2b
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rlv0, rlv1
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rlv0b, rlv1b
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rev0, rev1
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rev0b, rev1b
    INTRINSIC MAX
+   REAL(kind=realtype) :: tmp
+   REAL(kind=realtype) :: tmp0
+   REAL(kind=realtype) :: tmp1
+   REAL(kind=realtype) :: tmp2
+   REAL(kind=realtype) :: tmp3
+   REAL(kind=realtype) :: tmp4
+   REAL(kind=realtype) :: tmp5
+   REAL(kind=realtype) :: tmp6
+   REAL(kind=realtype) :: tmp7
+   REAL(kind=realtype) :: tmp8
+   REAL(kind=realtype) :: tmp9
+   REAL(kind=realtype) :: tmp10
+   REAL(kind=realtype) :: tmp11
+   REAL(kind=realtype) :: tmp12
+   REAL(kind=realtype) :: tmp13
+   REAL(kind=realtype) :: tmp14
+   REAL(kind=realtype) :: tmp15
+   REAL(kind=realtype) :: tmp16
+   REAL(kind=realtype) :: tmp17
+   REAL(kind=realtype) :: tmp18
+   REAL(kind=realtype) :: tmp19
+   REAL(kind=realtype) :: tmp20
+   REAL(kind=realtype) :: tmp21
+   REAL(kind=realtype) :: tmp22
+   REAL(kind=realtype) :: tmp23
+   REAL(kind=realtype) :: tmp24
+   REAL(kind=realtype) :: tmp25
+   REAL(kind=realtype) :: tmp26
+   REAL(kind=realtype) :: tmp27
+   REAL(kind=realtype) :: tmp28
    INTEGER :: branch
-   !
-   !      ******************************************************************
-   !      *                                                                *
-   !      * Begin execution                                                *
-   !      *                                                                *
-   !      ******************************************************************
-   !
-   ! Nullify the pointers and set them to the correct subface.
-   ! They are nullified first, because some compilers require that.
-   ! Note that rlv0 and rev0 are used here as dummies.
-   !nullify(ww1, ww2, pp1, pp2, rlv1, rlv0, rev1, rev0)
-   ! Set a couple of additional variables needed for the
-   ! extrapolation. This depends on the block face on which the
-   ! subface is located.
-   CALL SETBCPOINTERSBWD(nn, ww1, ww2, pp1, pp2, rlv1, rlv0, rev1, &
-   &                    rev0, 0)
-   !_intType)
-   CALL SETWW0PP0RLV0REV0BWD(nn, idim, ddim, ww0, pp0, rlv0, rev0)
-   ! Loop over the generic subface to set the state in the halo's.
+   REAL(kind=realtype) :: tmpb28
+   REAL(kind=realtype) :: tmpb27
+   REAL(kind=realtype) :: tmpb26
+   REAL(kind=realtype) :: tmpb9
+   REAL(kind=realtype) :: tmpb25
+   REAL(kind=realtype) :: tmpb8
+   REAL(kind=realtype) :: tmpb24
+   REAL(kind=realtype) :: tmpb7
+   REAL(kind=realtype) :: tmpb23
+   REAL(kind=realtype) :: tmpb6
+   REAL(kind=realtype) :: tmpb22
+   REAL(kind=realtype) :: tmpb5
+   REAL(kind=realtype) :: tmpb21
+   REAL(kind=realtype) :: tmpb4
+   REAL(kind=realtype) :: tmpb20
+   REAL(kind=realtype) :: tmpb3
+   REAL(kind=realtype) :: tmpb
+   REAL(kind=realtype) :: tmpb2
+   REAL(kind=realtype) :: tmpb1
+   REAL(kind=realtype) :: tmpb0
+   REAL(kind=realtype) :: tmpb19
+   REAL(kind=realtype) :: tmpb18
+   REAL(kind=realtype) :: tmpb17
+   REAL(kind=realtype) :: tmpb16
+   REAL(kind=realtype) :: tmpb15
+   REAL(kind=realtype) :: tmpb14
+   REAL(kind=realtype) :: tmpb13
+   REAL(kind=realtype) :: tmpb12
+   REAL(kind=realtype) :: tmpb11
+   REAL(kind=realtype) :: tmpb10
+   SELECT CASE  (bcfaceid(nn)) 
+   CASE (imin) 
    DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
    DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
    ! Extrapolate the density, momentum and pressure.
    ! Make sure that a certain threshold is kept.
-   ww0(i, j, irho) = two*ww1(i, j, irho) - ww2(i, j, irho)
-   IF (factor*ww1(i, j, irho) .LT. ww0(i, j, irho)) THEN
+   w(0, i, j, irho) = two*w(1, i, j, irho) - w(2, i, j, irho)
+   IF (factor*w(1, i, j, irho) .LT. w(0, i, j, irho)) THEN
    CALL PUSHCONTROL1B(0)
-   ww0(i, j, irho) = ww0(i, j, irho)
+   w(0, i, j, irho) = w(0, i, j, irho)
    ELSE
-   ww0(i, j, irho) = factor*ww1(i, j, irho)
+   w(0, i, j, irho) = factor*w(1, i, j, irho)
    CALL PUSHCONTROL1B(1)
    END IF
-   ww0(i, j, ivx) = two*ww1(i, j, ivx) - ww2(i, j, ivx)
-   ww0(i, j, ivy) = two*ww1(i, j, ivy) - ww2(i, j, ivy)
-   ww0(i, j, ivz) = two*ww1(i, j, ivz) - ww2(i, j, ivz)
-   IF (factor*pp1(i, j) .LT. two*pp1(i, j) - pp2(i, j)) THEN
-   pp0(i, j) = two*pp1(i, j) - pp2(i, j)
+   w(0, i, j, ivx) = two*w(1, i, j, ivx) - w(2, i, j, ivx)
+   w(0, i, j, ivy) = two*w(1, i, j, ivy) - w(2, i, j, ivy)
+   w(0, i, j, ivz) = two*w(1, i, j, ivz) - w(2, i, j, ivz)
+   IF (factor*p(1, i, j) .LT. two*p(1, i, j) - p(2, i, j)) THEN
+   CALL PUSHREAL8(p(0, i, j))
+   p(0, i, j) = two*p(1, i, j) - p(2, i, j)
    CALL PUSHCONTROL1B(0)
    ELSE
-   pp0(i, j) = factor*pp1(i, j)
+   CALL PUSHREAL8(p(0, i, j))
+   p(0, i, j) = factor*p(1, i, j)
    CALL PUSHCONTROL1B(1)
    END IF
    ! Extrapolate the turbulent variables. Use constant
    ! extrapolation.
    DO l=nt1mg,nt2mg
-   ww0(i, j, l) = ww1(i, j, l)
+   w(0, i, j, l) = w(1, i, j, l)
    END DO
    ! The laminar and eddy viscosity, if present. These values
    ! are simply taken constant. Their values do not matter.
    IF (viscous) THEN
-   rlv0(i, j) = rlv1(i, j)
    CALL PUSHCONTROL1B(0)
    ELSE
    CALL PUSHCONTROL1B(1)
    END IF
    IF (eddymodel) THEN
-   rev0(i, j) = rev1(i, j)
+   CALL PUSHCONTROL1B(0)
+   ELSE
+   CALL PUSHCONTROL1B(1)
+   END IF
+   idim = 1
+   ddim = 0
+   END DO
+   END DO
+   CALL PUSHCONTROL3B(1)
+   CASE (imax) 
+   DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+   DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
+   tmp = two*w(ie, i, j, irho) - w(il, i, j, irho)
+   w(ib, i, j, irho) = tmp
+   IF (factor*w(ie, i, j, irho) .LT. w(ib, i, j, irho)) THEN
+   CALL PUSHCONTROL1B(0)
+   w(ib, i, j, irho) = w(ib, i, j, irho)
+   ELSE
+   tmp0 = factor*w(ie, i, j, irho)
+   w(ib, i, j, irho) = tmp0
+   CALL PUSHCONTROL1B(1)
+   END IF
+   tmp1 = two*w(ie, i, j, ivx) - w(il, i, j, ivx)
+   w(ib, i, j, ivx) = tmp1
+   tmp2 = two*w(ie, i, j, ivy) - w(il, i, j, ivy)
+   w(ib, i, j, ivy) = tmp2
+   tmp3 = two*w(ie, i, j, ivz) - w(il, i, j, ivz)
+   w(ib, i, j, ivz) = tmp3
+   IF (factor*p(ie, i, j) .LT. two*p(ie, i, j) - p(il, i, j)) THEN
+   tmp4 = two*p(ie, i, j) - p(il, i, j)
+   CALL PUSHREAL8(p(ib, i, j))
+   p(ib, i, j) = tmp4
+   CALL PUSHCONTROL1B(0)
+   ELSE
+   tmp5 = factor*p(ie, i, j)
+   CALL PUSHREAL8(p(ib, i, j))
+   p(ib, i, j) = tmp5
+   CALL PUSHCONTROL1B(1)
+   END IF
+   DO l=nt1mg,nt2mg
+   tmp6 = w(ie, i, j, l)
+   w(ib, i, j, l) = tmp6
+   END DO
+   IF (viscous) THEN
+   CALL PUSHCONTROL1B(0)
+   ELSE
+   CALL PUSHCONTROL1B(1)
+   END IF
+   IF (eddymodel) THEN
+   CALL PUSHCONTROL1B(0)
+   ELSE
+   CALL PUSHCONTROL1B(1)
+   END IF
+   idim = 1
+   ddim = ib
+   END DO
+   END DO
+   CALL PUSHCONTROL3B(2)
+   CASE (jmin) 
+   DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+   DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
+   w(i, 0, j, irho) = two*w(i, 1, j, irho) - w(i, 2, j, irho)
+   IF (factor*w(i, 1, j, irho) .LT. w(i, 0, j, irho)) THEN
+   CALL PUSHCONTROL1B(0)
+   w(i, 0, j, irho) = w(i, 0, j, irho)
+   ELSE
+   w(i, 0, j, irho) = factor*w(i, 1, j, irho)
+   CALL PUSHCONTROL1B(1)
+   END IF
+   w(i, 0, j, ivx) = two*w(i, 1, j, ivx) - w(i, 2, j, ivx)
+   w(i, 0, j, ivy) = two*w(i, 1, j, ivy) - w(i, 2, j, ivy)
+   w(i, 0, j, ivz) = two*w(i, 1, j, ivz) - w(i, 2, j, ivz)
+   IF (factor*p(i, 1, j) .LT. two*p(i, 1, j) - p(i, 2, j)) THEN
+   CALL PUSHREAL8(p(i, 0, j))
+   p(i, 0, j) = two*p(i, 1, j) - p(i, 2, j)
+   CALL PUSHCONTROL1B(0)
+   ELSE
+   CALL PUSHREAL8(p(i, 0, j))
+   p(i, 0, j) = factor*p(i, 1, j)
+   CALL PUSHCONTROL1B(1)
+   END IF
+   DO l=nt1mg,nt2mg
+   w(i, 0, j, l) = w(i, 1, j, l)
+   END DO
+   IF (viscous) THEN
+   CALL PUSHCONTROL1B(0)
+   ELSE
+   CALL PUSHCONTROL1B(1)
+   END IF
+   IF (eddymodel) THEN
+   CALL PUSHCONTROL1B(0)
+   ELSE
+   CALL PUSHCONTROL1B(1)
+   END IF
+   idim = 2
+   ddim = 0
+   END DO
+   END DO
+   CALL PUSHCONTROL3B(3)
+   CASE (jmax) 
+   DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+   DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
+   tmp9 = two*w(i, je, j, irho) - w(i, jl, j, irho)
+   w(i, jb, j, irho) = tmp9
+   IF (factor*w(i, je, j, irho) .LT. w(i, jb, j, irho)) THEN
+   CALL PUSHCONTROL1B(0)
+   w(i, jb, j, irho) = w(i, jb, j, irho)
+   ELSE
+   tmp10 = factor*w(i, je, j, irho)
+   w(i, jb, j, irho) = tmp10
+   CALL PUSHCONTROL1B(1)
+   END IF
+   tmp11 = two*w(i, je, j, ivx) - w(i, jl, j, ivx)
+   w(i, jb, j, ivx) = tmp11
+   tmp12 = two*w(i, je, j, ivy) - w(i, jl, j, ivy)
+   w(i, jb, j, ivy) = tmp12
+   tmp13 = two*w(i, je, j, ivz) - w(i, jl, j, ivz)
+   w(i, jb, j, ivz) = tmp13
+   IF (factor*p(i, je, j) .LT. two*p(i, je, j) - p(i, jl, j)) THEN
+   tmp14 = two*p(i, je, j) - p(i, jl, j)
+   CALL PUSHREAL8(p(i, jb, j))
+   p(i, jb, j) = tmp14
+   CALL PUSHCONTROL1B(0)
+   ELSE
+   tmp15 = factor*p(i, je, j)
+   CALL PUSHREAL8(p(i, jb, j))
+   p(i, jb, j) = tmp15
+   CALL PUSHCONTROL1B(1)
+   END IF
+   DO l=nt1mg,nt2mg
+   tmp16 = w(i, je, j, l)
+   w(i, jb, j, l) = tmp16
+   END DO
+   IF (viscous) THEN
+   CALL PUSHCONTROL1B(0)
+   ELSE
+   CALL PUSHCONTROL1B(1)
+   END IF
+   IF (eddymodel) THEN
+   CALL PUSHCONTROL1B(0)
+   ELSE
+   CALL PUSHCONTROL1B(1)
+   END IF
+   idim = 2
+   ddim = jb
+   END DO
+   END DO
+   CALL PUSHCONTROL3B(4)
+   CASE (kmin) 
+   DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+   DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
+   w(i, j, 0, irho) = two*w(i, j, 1, irho) - w(i, j, 2, irho)
+   IF (factor*w(i, j, 1, irho) .LT. w(i, j, 0, irho)) THEN
+   CALL PUSHCONTROL1B(0)
+   w(i, j, 0, irho) = w(i, j, 0, irho)
+   ELSE
+   w(i, j, 0, irho) = factor*w(i, j, 1, irho)
+   CALL PUSHCONTROL1B(1)
+   END IF
+   w(i, j, 0, ivx) = two*w(i, j, 1, ivx) - w(i, j, 2, ivx)
+   w(i, j, 0, ivy) = two*w(i, j, 1, ivy) - w(i, j, 2, ivy)
+   w(i, j, 0, ivz) = two*w(i, j, 1, ivz) - w(i, j, 2, ivz)
+   IF (factor*p(i, j, 1) .LT. two*p(i, j, 1) - p(i, j, 2)) THEN
+   CALL PUSHREAL8(p(i, j, 0))
+   p(i, j, 0) = two*p(i, j, 1) - p(i, j, 2)
+   CALL PUSHCONTROL1B(0)
+   ELSE
+   CALL PUSHREAL8(p(i, j, 0))
+   p(i, j, 0) = factor*p(i, j, 1)
+   CALL PUSHCONTROL1B(1)
+   END IF
+   DO l=nt1mg,nt2mg
+   w(i, j, 0, l) = w(i, j, 1, l)
+   END DO
+   IF (viscous) THEN
+   CALL PUSHCONTROL1B(0)
+   ELSE
+   CALL PUSHCONTROL1B(1)
+   END IF
+   IF (eddymodel) THEN
+   CALL PUSHCONTROL1B(0)
+   ELSE
+   CALL PUSHCONTROL1B(1)
+   END IF
+   idim = 3
+   ddim = 0
+   END DO
+   END DO
+   CALL PUSHCONTROL3B(5)
+   CASE (kmax) 
+   DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+   DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
+   tmp19 = two*w(i, j, ke, irho) - w(i, j, kl, irho)
+   w(i, j, kb, irho) = tmp19
+   IF (factor*w(i, j, ke, irho) .LT. w(i, j, kb, irho)) THEN
+   CALL PUSHCONTROL1B(0)
+   w(i, j, kb, irho) = w(i, j, kb, irho)
+   ELSE
+   tmp20 = factor*w(i, j, ke, irho)
+   w(i, j, kb, irho) = tmp20
+   CALL PUSHCONTROL1B(1)
+   END IF
+   tmp21 = two*w(i, j, ke, ivx) - w(i, j, kl, ivx)
+   w(i, j, kb, ivx) = tmp21
+   tmp22 = two*w(i, j, ke, ivy) - w(i, j, kl, ivy)
+   w(i, j, kb, ivy) = tmp22
+   tmp23 = two*w(i, j, ke, ivz) - w(i, j, kl, ivz)
+   w(i, j, kb, ivz) = tmp23
+   IF (factor*p(i, j, ke) .LT. two*p(i, j, ke) - p(i, j, kl)) THEN
+   tmp24 = two*p(i, j, ke) - p(i, j, kl)
+   CALL PUSHREAL8(p(i, j, kb))
+   p(i, j, kb) = tmp24
+   CALL PUSHCONTROL1B(0)
+   ELSE
+   tmp25 = factor*p(i, j, ke)
+   CALL PUSHREAL8(p(i, j, kb))
+   p(i, j, kb) = tmp25
+   CALL PUSHCONTROL1B(1)
+   END IF
+   DO l=nt1mg,nt2mg
+   tmp26 = w(i, j, ke, l)
+   w(i, j, kb, l) = tmp26
+   END DO
+   IF (viscous) THEN
+   CALL PUSHCONTROL1B(0)
+   ELSE
+   CALL PUSHCONTROL1B(1)
+   END IF
+   IF (eddymodel) THEN
    CALL PUSHCONTROL1B(1)
    ELSE
    CALL PUSHCONTROL1B(0)
    END IF
    END DO
    END DO
-   CALL PUSHREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
-   CALL RESETBCPOINTERSBWD(nn, ww1, ww2, pp1, pp2, rlv1, rlv0, rev1, &
-   &                      rev0, 0)
-   CALL RESETWW0PP0RLV0REV0BWD(nn, idim, ddim, ww0, pp0, rlv0, rev0)
+   CALL PUSHCONTROL3B(6)
+   idim = 3
+   ddim = kb
+   CASE DEFAULT
+   CALL PUSHCONTROL3B(0)
+   END SELECT
    ! Set the range for the halo cells for the energy computation.
    crange(1, 1) = icbeg(nn)
    crange(1, 2) = icend(nn)
@@ -139,59 +404,328 @@
    ! Compute the energy for this halo range.
    CALL COMPUTEETOT_B(crange(1, 1), crange(1, 2), crange(2, 1), crange(2&
    &              , 2), crange(3, 1), crange(3, 2), correctfork)
-   CALL RESETWW0PP0RLV0REV0BWD_B(nn, idim, ddim, ww0, ww0b, pp0, pp0b, &
-   &                         rlv0, rlv0b, rev0, rev0b)
-   CALL POPREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
-   CALL RESETBCPOINTERSBWD_B(nn, ww1, ww1b, ww2, ww2b, pp1, pp1b, pp2, &
-   &                     pp2b, rlv1, rlv1b, rlv0, rlv0b, rev1, rev1b, rev0&
-   &                     , rev0b, 0)
+   CALL POPCONTROL3B(branch)
+   IF (branch .LT. 3) THEN
+   IF (branch .NE. 0) THEN
+   IF (branch .EQ. 1) THEN
+   DO j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
+   DO i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
+   CALL POPCONTROL1B(branch)
+   IF (branch .EQ. 0) THEN
+   revb(1, i, j) = revb(1, i, j) + revb(0, i, j)
+   revb(0, i, j) = 0.0_8
+   END IF
+   CALL POPCONTROL1B(branch)
+   IF (branch .EQ. 0) THEN
+   rlvb(1, i, j) = rlvb(1, i, j) + rlvb(0, i, j)
+   rlvb(0, i, j) = 0.0_8
+   END IF
+   DO l=nt2mg,nt1mg,-1
+   wb(1, i, j, l) = wb(1, i, j, l) + wb(0, i, j, l)
+   wb(0, i, j, l) = 0.0_8
+   END DO
+   CALL POPCONTROL1B(branch)
+   IF (branch .EQ. 0) THEN
+   CALL POPREAL8(p(0, i, j))
+   pb(1, i, j) = pb(1, i, j) + two*pb(0, i, j)
+   pb(2, i, j) = pb(2, i, j) - pb(0, i, j)
+   pb(0, i, j) = 0.0_8
+   ELSE
+   CALL POPREAL8(p(0, i, j))
+   pb(1, i, j) = pb(1, i, j) + factor*pb(0, i, j)
+   pb(0, i, j) = 0.0_8
+   END IF
+   wb(1, i, j, ivz) = wb(1, i, j, ivz) + two*wb(0, i, j, ivz)
+   wb(2, i, j, ivz) = wb(2, i, j, ivz) - wb(0, i, j, ivz)
+   wb(0, i, j, ivz) = 0.0_8
+   wb(1, i, j, ivy) = wb(1, i, j, ivy) + two*wb(0, i, j, ivy)
+   wb(2, i, j, ivy) = wb(2, i, j, ivy) - wb(0, i, j, ivy)
+   wb(0, i, j, ivy) = 0.0_8
+   wb(1, i, j, ivx) = wb(1, i, j, ivx) + two*wb(0, i, j, ivx)
+   wb(2, i, j, ivx) = wb(2, i, j, ivx) - wb(0, i, j, ivx)
+   wb(0, i, j, ivx) = 0.0_8
+   CALL POPCONTROL1B(branch)
+   IF (branch .NE. 0) THEN
+   wb(1, i, j, irho) = wb(1, i, j, irho) + factor*wb(0, i, j&
+   &               , irho)
+   wb(0, i, j, irho) = 0.0_8
+   END IF
+   wb(1, i, j, irho) = wb(1, i, j, irho) + two*wb(0, i, j, irho&
+   &             )
+   wb(2, i, j, irho) = wb(2, i, j, irho) - wb(0, i, j, irho)
+   wb(0, i, j, irho) = 0.0_8
+   END DO
+   END DO
+   ELSE
+   DO j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
+   DO i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
+   CALL POPCONTROL1B(branch)
+   IF (branch .EQ. 0) THEN
+   tmpb8 = revb(ib, i, j)
+   revb(ib, i, j) = 0.0_8
+   revb(ie, i, j) = revb(ie, i, j) + tmpb8
+   END IF
+   CALL POPCONTROL1B(branch)
+   IF (branch .EQ. 0) THEN
+   tmpb7 = rlvb(ib, i, j)
+   rlvb(ib, i, j) = 0.0_8
+   rlvb(ie, i, j) = rlvb(ie, i, j) + tmpb7
+   END IF
+   DO l=nt2mg,nt1mg,-1
+   tmpb6 = wb(ib, i, j, l)
+   wb(ib, i, j, l) = 0.0_8
+   wb(ie, i, j, l) = wb(ie, i, j, l) + tmpb6
+   END DO
+   CALL POPCONTROL1B(branch)
+   IF (branch .EQ. 0) THEN
+   CALL POPREAL8(p(ib, i, j))
+   tmpb4 = pb(ib, i, j)
+   pb(ib, i, j) = 0.0_8
+   pb(ie, i, j) = pb(ie, i, j) + two*tmpb4
+   pb(il, i, j) = pb(il, i, j) - tmpb4
+   ELSE
+   CALL POPREAL8(p(ib, i, j))
+   tmpb5 = pb(ib, i, j)
+   pb(ib, i, j) = 0.0_8
+   pb(ie, i, j) = pb(ie, i, j) + factor*tmpb5
+   END IF
+   tmpb1 = wb(ib, i, j, ivz)
+   wb(ib, i, j, ivz) = 0.0_8
+   wb(ie, i, j, ivz) = wb(ie, i, j, ivz) + two*tmpb1
+   wb(il, i, j, ivz) = wb(il, i, j, ivz) - tmpb1
+   tmpb2 = wb(ib, i, j, ivy)
+   wb(ib, i, j, ivy) = 0.0_8
+   wb(ie, i, j, ivy) = wb(ie, i, j, ivy) + two*tmpb2
+   wb(il, i, j, ivy) = wb(il, i, j, ivy) - tmpb2
+   tmpb3 = wb(ib, i, j, ivx)
+   wb(ib, i, j, ivx) = 0.0_8
+   wb(ie, i, j, ivx) = wb(ie, i, j, ivx) + two*tmpb3
+   wb(il, i, j, ivx) = wb(il, i, j, ivx) - tmpb3
+   CALL POPCONTROL1B(branch)
+   IF (branch .NE. 0) THEN
+   tmpb0 = wb(ib, i, j, irho)
+   wb(ib, i, j, irho) = 0.0_8
+   wb(ie, i, j, irho) = wb(ie, i, j, irho) + factor*tmpb0
+   END IF
+   tmpb = wb(ib, i, j, irho)
+   wb(ib, i, j, irho) = 0.0_8
+   wb(ie, i, j, irho) = wb(ie, i, j, irho) + two*tmpb
+   wb(il, i, j, irho) = wb(il, i, j, irho) - tmpb
+   END DO
+   END DO
+   END IF
+   END IF
+   ELSE IF (branch .LT. 5) THEN
+   IF (branch .EQ. 3) THEN
+   DO j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
+   DO i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
+   CALL POPCONTROL1B(branch)
+   IF (branch .EQ. 0) THEN
+   revb(i, 1, j) = revb(i, 1, j) + revb(i, 0, j)
+   revb(i, 0, j) = 0.0_8
+   END IF
+   CALL POPCONTROL1B(branch)
+   IF (branch .EQ. 0) THEN
+   rlvb(i, 1, j) = rlvb(i, 1, j) + rlvb(i, 0, j)
+   rlvb(i, 0, j) = 0.0_8
+   END IF
+   DO l=nt2mg,nt1mg,-1
+   wb(i, 1, j, l) = wb(i, 1, j, l) + wb(i, 0, j, l)
+   wb(i, 0, j, l) = 0.0_8
+   END DO
+   CALL POPCONTROL1B(branch)
+   IF (branch .EQ. 0) THEN
+   CALL POPREAL8(p(i, 0, j))
+   pb(i, 1, j) = pb(i, 1, j) + two*pb(i, 0, j)
+   pb(i, 2, j) = pb(i, 2, j) - pb(i, 0, j)
+   pb(i, 0, j) = 0.0_8
+   ELSE
+   CALL POPREAL8(p(i, 0, j))
+   pb(i, 1, j) = pb(i, 1, j) + factor*pb(i, 0, j)
+   pb(i, 0, j) = 0.0_8
+   END IF
+   wb(i, 1, j, ivz) = wb(i, 1, j, ivz) + two*wb(i, 0, j, ivz)
+   wb(i, 2, j, ivz) = wb(i, 2, j, ivz) - wb(i, 0, j, ivz)
+   wb(i, 0, j, ivz) = 0.0_8
+   wb(i, 1, j, ivy) = wb(i, 1, j, ivy) + two*wb(i, 0, j, ivy)
+   wb(i, 2, j, ivy) = wb(i, 2, j, ivy) - wb(i, 0, j, ivy)
+   wb(i, 0, j, ivy) = 0.0_8
+   wb(i, 1, j, ivx) = wb(i, 1, j, ivx) + two*wb(i, 0, j, ivx)
+   wb(i, 2, j, ivx) = wb(i, 2, j, ivx) - wb(i, 0, j, ivx)
+   wb(i, 0, j, ivx) = 0.0_8
+   CALL POPCONTROL1B(branch)
+   IF (branch .NE. 0) THEN
+   wb(i, 1, j, irho) = wb(i, 1, j, irho) + factor*wb(i, 0, j, &
+   &             irho)
+   wb(i, 0, j, irho) = 0.0_8
+   END IF
+   wb(i, 1, j, irho) = wb(i, 1, j, irho) + two*wb(i, 0, j, irho)
+   wb(i, 2, j, irho) = wb(i, 2, j, irho) - wb(i, 0, j, irho)
+   wb(i, 0, j, irho) = 0.0_8
+   END DO
+   END DO
+   ELSE
+   DO j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
+   DO i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
+   CALL POPCONTROL1B(branch)
+   IF (branch .EQ. 0) THEN
+   tmpb18 = revb(i, jb, j)
+   revb(i, jb, j) = 0.0_8
+   revb(i, je, j) = revb(i, je, j) + tmpb18
+   END IF
+   CALL POPCONTROL1B(branch)
+   IF (branch .EQ. 0) THEN
+   tmpb17 = rlvb(i, jb, j)
+   rlvb(i, jb, j) = 0.0_8
+   rlvb(i, je, j) = rlvb(i, je, j) + tmpb17
+   END IF
+   DO l=nt2mg,nt1mg,-1
+   tmpb16 = wb(i, jb, j, l)
+   wb(i, jb, j, l) = 0.0_8
+   wb(i, je, j, l) = wb(i, je, j, l) + tmpb16
+   END DO
+   CALL POPCONTROL1B(branch)
+   IF (branch .EQ. 0) THEN
+   CALL POPREAL8(p(i, jb, j))
+   tmpb14 = pb(i, jb, j)
+   pb(i, jb, j) = 0.0_8
+   pb(i, je, j) = pb(i, je, j) + two*tmpb14
+   pb(i, jl, j) = pb(i, jl, j) - tmpb14
+   ELSE
+   CALL POPREAL8(p(i, jb, j))
+   tmpb15 = pb(i, jb, j)
+   pb(i, jb, j) = 0.0_8
+   pb(i, je, j) = pb(i, je, j) + factor*tmpb15
+   END IF
+   tmpb11 = wb(i, jb, j, ivz)
+   wb(i, jb, j, ivz) = 0.0_8
+   wb(i, je, j, ivz) = wb(i, je, j, ivz) + two*tmpb11
+   wb(i, jl, j, ivz) = wb(i, jl, j, ivz) - tmpb11
+   tmpb12 = wb(i, jb, j, ivy)
+   wb(i, jb, j, ivy) = 0.0_8
+   wb(i, je, j, ivy) = wb(i, je, j, ivy) + two*tmpb12
+   wb(i, jl, j, ivy) = wb(i, jl, j, ivy) - tmpb12
+   tmpb13 = wb(i, jb, j, ivx)
+   wb(i, jb, j, ivx) = 0.0_8
+   wb(i, je, j, ivx) = wb(i, je, j, ivx) + two*tmpb13
+   wb(i, jl, j, ivx) = wb(i, jl, j, ivx) - tmpb13
+   CALL POPCONTROL1B(branch)
+   IF (branch .NE. 0) THEN
+   tmpb10 = wb(i, jb, j, irho)
+   wb(i, jb, j, irho) = 0.0_8
+   wb(i, je, j, irho) = wb(i, je, j, irho) + factor*tmpb10
+   END IF
+   tmpb9 = wb(i, jb, j, irho)
+   wb(i, jb, j, irho) = 0.0_8
+   wb(i, je, j, irho) = wb(i, je, j, irho) + two*tmpb9
+   wb(i, jl, j, irho) = wb(i, jl, j, irho) - tmpb9
+   END DO
+   END DO
+   END IF
+   ELSE IF (branch .EQ. 5) THEN
+   DO j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
+   DO i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
+   CALL POPCONTROL1B(branch)
+   IF (branch .EQ. 0) THEN
+   revb(i, j, 1) = revb(i, j, 1) + revb(i, j, 0)
+   revb(i, j, 0) = 0.0_8
+   END IF
+   CALL POPCONTROL1B(branch)
+   IF (branch .EQ. 0) THEN
+   rlvb(i, j, 1) = rlvb(i, j, 1) + rlvb(i, j, 0)
+   rlvb(i, j, 0) = 0.0_8
+   END IF
+   DO l=nt2mg,nt1mg,-1
+   wb(i, j, 1, l) = wb(i, j, 1, l) + wb(i, j, 0, l)
+   wb(i, j, 0, l) = 0.0_8
+   END DO
+   CALL POPCONTROL1B(branch)
+   IF (branch .EQ. 0) THEN
+   CALL POPREAL8(p(i, j, 0))
+   pb(i, j, 1) = pb(i, j, 1) + two*pb(i, j, 0)
+   pb(i, j, 2) = pb(i, j, 2) - pb(i, j, 0)
+   pb(i, j, 0) = 0.0_8
+   ELSE
+   CALL POPREAL8(p(i, j, 0))
+   pb(i, j, 1) = pb(i, j, 1) + factor*pb(i, j, 0)
+   pb(i, j, 0) = 0.0_8
+   END IF
+   wb(i, j, 1, ivz) = wb(i, j, 1, ivz) + two*wb(i, j, 0, ivz)
+   wb(i, j, 2, ivz) = wb(i, j, 2, ivz) - wb(i, j, 0, ivz)
+   wb(i, j, 0, ivz) = 0.0_8
+   wb(i, j, 1, ivy) = wb(i, j, 1, ivy) + two*wb(i, j, 0, ivy)
+   wb(i, j, 2, ivy) = wb(i, j, 2, ivy) - wb(i, j, 0, ivy)
+   wb(i, j, 0, ivy) = 0.0_8
+   wb(i, j, 1, ivx) = wb(i, j, 1, ivx) + two*wb(i, j, 0, ivx)
+   wb(i, j, 2, ivx) = wb(i, j, 2, ivx) - wb(i, j, 0, ivx)
+   wb(i, j, 0, ivx) = 0.0_8
+   CALL POPCONTROL1B(branch)
+   IF (branch .NE. 0) THEN
+   wb(i, j, 1, irho) = wb(i, j, 1, irho) + factor*wb(i, j, 0, &
+   &           irho)
+   wb(i, j, 0, irho) = 0.0_8
+   END IF
+   wb(i, j, 1, irho) = wb(i, j, 1, irho) + two*wb(i, j, 0, irho)
+   wb(i, j, 2, irho) = wb(i, j, 2, irho) - wb(i, j, 0, irho)
+   wb(i, j, 0, irho) = 0.0_8
+   END DO
+   END DO
+   ELSE
    DO j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
    DO i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
    CALL POPCONTROL1B(branch)
    IF (branch .NE. 0) THEN
-   rev1b(i, j) = rev1b(i, j) + rev0b(i, j)
-   rev0b(i, j) = 0.0_8
+   tmpb28 = revb(i, j, kb)
+   revb(i, j, kb) = 0.0_8
+   revb(i, j, ke) = revb(i, j, ke) + tmpb28
    END IF
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   rlv1b(i, j) = rlv1b(i, j) + rlv0b(i, j)
-   rlv0b(i, j) = 0.0_8
+   tmpb27 = rlvb(i, j, kb)
+   rlvb(i, j, kb) = 0.0_8
+   rlvb(i, j, ke) = rlvb(i, j, ke) + tmpb27
    END IF
    DO l=nt2mg,nt1mg,-1
-   ww1b(i, j, l) = ww1b(i, j, l) + ww0b(i, j, l)
-   ww0b(i, j, l) = 0.0_8
+   tmpb26 = wb(i, j, kb, l)
+   wb(i, j, kb, l) = 0.0_8
+   wb(i, j, ke, l) = wb(i, j, ke, l) + tmpb26
    END DO
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   pp1b(i, j) = pp1b(i, j) + two*pp0b(i, j)
-   pp2b(i, j) = pp2b(i, j) - pp0b(i, j)
-   pp0b(i, j) = 0.0_8
+   CALL POPREAL8(p(i, j, kb))
+   tmpb24 = pb(i, j, kb)
+   pb(i, j, kb) = 0.0_8
+   pb(i, j, ke) = pb(i, j, ke) + two*tmpb24
+   pb(i, j, kl) = pb(i, j, kl) - tmpb24
    ELSE
-   pp1b(i, j) = pp1b(i, j) + factor*pp0b(i, j)
-   pp0b(i, j) = 0.0_8
+   CALL POPREAL8(p(i, j, kb))
+   tmpb25 = pb(i, j, kb)
+   pb(i, j, kb) = 0.0_8
+   pb(i, j, ke) = pb(i, j, ke) + factor*tmpb25
    END IF
-   ww1b(i, j, ivz) = ww1b(i, j, ivz) + two*ww0b(i, j, ivz)
-   ww2b(i, j, ivz) = ww2b(i, j, ivz) - ww0b(i, j, ivz)
-   ww0b(i, j, ivz) = 0.0_8
-   ww1b(i, j, ivy) = ww1b(i, j, ivy) + two*ww0b(i, j, ivy)
-   ww2b(i, j, ivy) = ww2b(i, j, ivy) - ww0b(i, j, ivy)
-   ww0b(i, j, ivy) = 0.0_8
-   ww1b(i, j, ivx) = ww1b(i, j, ivx) + two*ww0b(i, j, ivx)
-   ww2b(i, j, ivx) = ww2b(i, j, ivx) - ww0b(i, j, ivx)
-   ww0b(i, j, ivx) = 0.0_8
+   tmpb21 = wb(i, j, kb, ivz)
+   wb(i, j, kb, ivz) = 0.0_8
+   wb(i, j, ke, ivz) = wb(i, j, ke, ivz) + two*tmpb21
+   wb(i, j, kl, ivz) = wb(i, j, kl, ivz) - tmpb21
+   tmpb22 = wb(i, j, kb, ivy)
+   wb(i, j, kb, ivy) = 0.0_8
+   wb(i, j, ke, ivy) = wb(i, j, ke, ivy) + two*tmpb22
+   wb(i, j, kl, ivy) = wb(i, j, kl, ivy) - tmpb22
+   tmpb23 = wb(i, j, kb, ivx)
+   wb(i, j, kb, ivx) = 0.0_8
+   wb(i, j, ke, ivx) = wb(i, j, ke, ivx) + two*tmpb23
+   wb(i, j, kl, ivx) = wb(i, j, kl, ivx) - tmpb23
    CALL POPCONTROL1B(branch)
    IF (branch .NE. 0) THEN
-   ww1b(i, j, irho) = ww1b(i, j, irho) + factor*ww0b(i, j, irho)
-   ww0b(i, j, irho) = 0.0_8
+   tmpb20 = wb(i, j, kb, irho)
+   wb(i, j, kb, irho) = 0.0_8
+   wb(i, j, ke, irho) = wb(i, j, ke, irho) + factor*tmpb20
    END IF
-   ww1b(i, j, irho) = ww1b(i, j, irho) + two*ww0b(i, j, irho)
-   ww2b(i, j, irho) = ww2b(i, j, irho) - ww0b(i, j, irho)
-   ww0b(i, j, irho) = 0.0_8
+   tmpb19 = wb(i, j, kb, irho)
+   wb(i, j, kb, irho) = 0.0_8
+   wb(i, j, ke, irho) = wb(i, j, ke, irho) + two*tmpb19
+   wb(i, j, kl, irho) = wb(i, j, kl, irho) - tmpb19
    END DO
    END DO
-   CALL SETWW0PP0RLV0REV0BWD_B(nn, idim, ddim, ww0, ww0b, pp0, pp0b, rlv0&
-   &                       , rlv0b, rev0, rev0b)
-   CALL SETBCPOINTERSBWD_B(nn, ww1, ww1b, ww2, ww2b, pp1, pp1b, pp2, pp2b&
-   &                   , rlv1, rlv1b, rlv0, rlv0b, rev1, rev1b, rev0, rev0b&
-   &                   , 0)
+   END IF
    END SUBROUTINE EXTRAPOLATE2NDHALO_B

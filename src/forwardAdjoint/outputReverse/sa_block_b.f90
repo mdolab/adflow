@@ -3,11 +3,13 @@
    !
    !  Differentiation of sa_block in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
    !   gradient     of useful results: *rev *dw *w *rlv *vol *si *sj
-   !                *sk (global)timeref
-   !   with respect to varying inputs: *rev *dw *w *rlv *vol *si *sj
-   !                *sk (global)timeref
-   !   Plus diff mem management of: rev:in dw:in w:in rlv:in vol:in
-   !                si:in sj:in sk:in
+   !                *sk (global)timeref (global)winf[1:10]
+   !   with respect to varying inputs: *rev *bvtj1 *bvtj2 *dw *w *rlv
+   !                *bvtk1 *bvtk2 *vol *si *sj *sk *bvti1 *bvti2 (global)timeref
+   !                (global)winf[1:10]
+   !   Plus diff mem management of: rev:in bvtj1:in bvtj2:in dw:in
+   !                w:in rlv:in bvtk1:in bvtk2:in vol:in si:in sj:in
+   !                sk:in bvti1:in bvti2:in bcdata:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -47,16 +49,21 @@
    !      *                                                                *
    !      ******************************************************************
    ! Set the arrays for the boundary condition treatment.
+   CALL BCTURBTREATMENT()
    ! Solve the transport equation for nuTilde.
-   CALL PUSHREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4))
-   CALL PUSHREAL8ARRAY(dw, SIZE(dw, 1)*SIZE(dw, 2)*SIZE(dw, 3)*SIZE(dw, 4&
-   &               ))
-   CALL SASOLVE(resonly)
    ! The eddy viscosity and the boundary conditions are only
    ! applied if an actual update has been computed in saSolve.
-   IF (.NOT.resonly) CALL SAEDDYVISCOSITY_B()
-   CALL POPREAL8ARRAY(dw, SIZE(dw, 1)*SIZE(dw, 2)*SIZE(dw, 3)*SIZE(dw, 4)&
-   &             )
-   CALL POPREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4))
+   IF (.NOT.resonly) THEN
+   CALL APPLYALLTURBBCTHISBLOCK_B(.true.)
+   CALL SAEDDYVISCOSITY_B()
+   ELSE
+   bvtj1b = 0.0_8
+   bvtj2b = 0.0_8
+   bvtk1b = 0.0_8
+   bvtk2b = 0.0_8
+   bvti1b = 0.0_8
+   bvti2b = 0.0_8
+   END IF
    CALL SASOLVE_B(resonly)
+   CALL BCTURBTREATMENT_B()
    END SUBROUTINE SA_BLOCK_B
