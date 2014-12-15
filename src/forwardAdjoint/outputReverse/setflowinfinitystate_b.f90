@@ -44,6 +44,7 @@
    REAL(kind=realtype) :: SANUKNOWNEDDYRATIO
    ! Dummy parameters
    REAL(kind=realtype) :: vinf, zinf
+   REAL(kind=realtype) :: vinfb, zinfb
    REAL(kind=realtype) :: tmp
    REAL(kind=realtype) :: tmp0
    REAL(kind=realtype) :: tmp1
@@ -139,9 +140,9 @@
    END IF
    vinf = zero
    zinf = zero
-   CALL ETOTARRAY_B(rhoinf, rhoinfb, uinf, uinfb, vinf, zinf, pinfcorr, &
-   &            pinfcorrb, ktmp, ktmpb, winf(irhoe), winfb(irhoe), kpresent&
-   &            , 1)
+   CALL ETOTARRAY_B(rhoinf, rhoinfb, uinf, uinfb, vinf, vinfb, zinf, &
+   &            zinfb, pinfcorr, pinfcorrb, ktmp, ktmpb, winf(irhoe), winfb&
+   &            (irhoe), kpresent, 1)
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) winfb(itu1) = winfb(itu1) + ktmpb
    CALL POPCONTROL1B(branch)

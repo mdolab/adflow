@@ -193,6 +193,9 @@
    CALL COMPUTEEDDYVISCOSITY_D()
    !  Apply all BC's
    CALL APPLYALLBC_BLOCK_D(.true.)
+   ! if (equations == RANSequations) then 
+   !    call applyAllTurbBCThisBLock(.True.)
+   ! end if
    ! Compute skin_friction Velocity (only for wall Functions)
    ! #ifndef TAPENADE_REVERSE
    !   call computeUtau_block
@@ -206,8 +209,8 @@
    ! -------------------------------
    ! Compute turbulence residual for RANS equations
    IF (equations .EQ. ransequations) THEN
-   ! Initialize only the Turblent Variables
-   CALL UNSTEADYTURBSPECTRAL_BLOCK_D(itu1, itu1, nn, sps)
+   ! ! Initialize only the Turblent Variables
+   ! call unsteadyTurbSpectral_block(itu1, itu1, nn, sps)
    SELECT CASE  (turbmodel) 
    CASE (spalartallmaras) 
    !call determineDistance2(1, sps)
@@ -215,6 +218,13 @@
    CASE DEFAULT
    CALL TERMINATE('turbResidual', &
    &                 'Only SA turbulence adjoint implemented')
+   DO ii1=1,ntimeintervalsspectral
+   DO ii2=1,1
+   DO ii3=nn,nn
+   flowdomsd(ii3, ii2, ii1)%dw = 0.0_8
+   END DO
+   END DO
+   END DO
    END SELECT
    ELSE
    DO ii1=1,ntimeintervalsspectral

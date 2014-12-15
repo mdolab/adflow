@@ -46,61 +46,7 @@
    INTEGER(kind=inttype) :: nn, i, j
    REAL(kind=realtype) :: rhok
    REAL(kind=realtype) :: rhokd
-   !real(kind=realType), dimension(:,:,:), pointer :: uSlip
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1d, ww2d
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1, pp2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1d, pp2d
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1d, rlv2d
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1d, rev2d
-   INTERFACE 
-   SUBROUTINE SETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
-   &       rev1, rev2, offset)
-   USE BCTYPES
-   USE BLOCKPOINTERS_D
-   USE FLOWVARREFSTATE
-   IMPLICIT NONE
-   INTEGER(kind=inttype), INTENT(IN) :: nn, offset
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1, pp2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
-   END SUBROUTINE SETBCPOINTERS
-   SUBROUTINE RESETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
-   &       rev1, rev2, offset)
-   USE BCTYPES
-   USE BLOCKPOINTERS_D
-   USE FLOWVARREFSTATE
-   IMPLICIT NONE
-   INTEGER(kind=inttype), INTENT(IN) :: nn, offset
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1, pp2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
-   END SUBROUTINE RESETBCPOINTERS
-   END INTERFACE
-      INTERFACE 
-   SUBROUTINE SETBCPOINTERS_D(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, &
-   &       pp2, pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev1d, rev2, rev2d, &
-   &       offset)
-   USE BCTYPES
-   USE BLOCKPOINTERS_D
-   USE FLOWVARREFSTATE
-   IMPLICIT NONE
-   INTEGER(kind=inttype), INTENT(IN) :: nn, offset
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1d, ww2d
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1, pp2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1d, pp2d
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1d, rlv2d
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1d, rev2d
-   END SUBROUTINE SETBCPOINTERS_D
-   END INTERFACE
-      !
+   !
    !      ******************************************************************
    !      *                                                                *
    !      * Begin execution                                                *
@@ -112,9 +58,6 @@
    ! wall boundary conditions for the turbulent variables.
    ! No need to extrapolate the secondary halo's, because this
    ! is done in extrapolate2ndHalo.
-   ! We turn off the turbulence BCwall for now. This needs
-   ! to be added and correct the pointers to use full turbulence.
-   ! It should be okay for frozen turbulence assumption.
    IF (turbcoupled) THEN
    bvti2d = 0.0_8
    bvti1d = 0.0_8
@@ -138,67 +81,222 @@
    bocos:DO nn=1,nviscbocos
    ! Check for adiabatic viscous wall boundary conditions.
    IF (bctype(nn) .EQ. nswalladiabatic) THEN
-   ! Set the pointer for uSlip to make the code more readable.
-   ! Replace uslip with actual uslip in BCData for reverse AD - Peter Lyu
-   !uSlip => BCData(nn)%uSlip
-   ! Nullify the pointers and set them to the correct subface.
-   ! They are nullified first, because some compilers require
-   ! that.
-   !nullify(ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2)
-   CALL SETBCPOINTERS_D(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, pp2, &
-   &                    pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev1d, rev2, &
-   &                    rev2d, 0)
    ! Initialize rhok to zero. This will be overwritten if a
    ! correction for k must be applied.
    rhok = zero
-   rhokd = 0.0_8
    ! Loop over the generic subface to set the state in the
    ! halo cells.
+   SELECT CASE  (bcfaceid(nn)) 
+   CASE (imin) 
+   rhokd = 0.0_8
    DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
    DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
    ! Set the value of rhok if a correcton must be applied.
    ! It probably does not matter too much, because k is very
    ! small near the wall.
    IF (correctfork) THEN
-   rhokd = ww2d(i, j, irho)*ww2(i, j, itu1) + ww2(i, j, irho)*&
-   &             ww2d(i, j, itu1)
-   rhok = ww2(i, j, irho)*ww2(i, j, itu1)
+   rhokd = wd(2, i, j, irho)*w(2, i, j, itu1) + w(2, i, j, &
+   &               irho)*wd(2, i, j, itu1)
+   rhok = w(2, i, j, irho)*w(2, i, j, itu1)
    END IF
    ! Determine the variables in the halo. As the spacing
    ! is very small a constant pressure boundary condition
    ! (except for the k correction) is okay. Take the slip
    ! velocity into account.
-   ww1d(i, j, irho) = ww2d(i, j, irho)
-   ww1(i, j, irho) = ww2(i, j, irho)
-   ww1d(i, j, ivx) = two*bcdatad(nn)%uslip(i, j, 1) - ww2d(i, j, &
-   &           ivx)
-   ww1(i, j, ivx) = -ww2(i, j, ivx) + two*bcdata(nn)%uslip(i, j, &
-   &           1)
-   ww1d(i, j, ivy) = two*bcdatad(nn)%uslip(i, j, 2) - ww2d(i, j, &
-   &           ivy)
-   ww1(i, j, ivy) = -ww2(i, j, ivy) + two*bcdata(nn)%uslip(i, j, &
-   &           2)
-   ww1d(i, j, ivz) = two*bcdatad(nn)%uslip(i, j, 3) - ww2d(i, j, &
-   &           ivz)
-   ww1(i, j, ivz) = -ww2(i, j, ivz) + two*bcdata(nn)%uslip(i, j, &
-   &           3)
-   pp1d(i, j) = pp2d(i, j) - four*third*rhokd
-   pp1(i, j) = pp2(i, j) - four*third*rhok
+   wd(1, i, j, irho) = wd(2, i, j, irho)
+   w(1, i, j, irho) = w(2, i, j, irho)
+   wd(1, i, j, ivx) = two*bcdatad(nn)%uslip(i, j, 1) - wd(2, i&
+   &             , j, ivx)
+   w(1, i, j, ivx) = -w(2, i, j, ivx) + two*bcdata(nn)%uslip(i&
+   &             , j, 1)
+   wd(1, i, j, ivy) = two*bcdatad(nn)%uslip(i, j, 2) - wd(2, i&
+   &             , j, ivy)
+   w(1, i, j, ivy) = -w(2, i, j, ivy) + two*bcdata(nn)%uslip(i&
+   &             , j, 2)
+   wd(1, i, j, ivz) = two*bcdatad(nn)%uslip(i, j, 3) - wd(2, i&
+   &             , j, ivz)
+   w(1, i, j, ivz) = -w(2, i, j, ivz) + two*bcdata(nn)%uslip(i&
+   &             , j, 3)
+   pd(1, i, j) = pd(2, i, j) - four*third*rhokd
+   p(1, i, j) = p(2, i, j) - four*third*rhok
    ! Set the viscosities. There is no need to test for a
    ! viscous problem of course. The eddy viscosity is
    ! set to the negative value, as it should be zero on
    ! the wall.
-   rlv1d(i, j) = rlv2d(i, j)
-   rlv1(i, j) = rlv2(i, j)
+   rlvd(1, i, j) = rlvd(2, i, j)
+   rlv(1, i, j) = rlv(2, i, j)
    IF (eddymodel) THEN
-   rev1d(i, j) = -rev2d(i, j)
-   rev1(i, j) = -rev2(i, j)
+   revd(1, i, j) = -revd(2, i, j)
+   rev(1, i, j) = -rev(2, i, j)
    END IF
    END DO
    END DO
-   ! deallocation all pointer
-   CALL RESETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, &
-   &                       rev2, 0)
+   CASE (imax) 
+   rhokd = 0.0_8
+   DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+   DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
+   IF (correctfork) THEN
+   rhokd = wd(il, i, j, irho)*w(il, i, j, itu1) + w(il, i, j&
+   &               , irho)*wd(il, i, j, itu1)
+   rhok = w(il, i, j, irho)*w(il, i, j, itu1)
+   END IF
+   wd(ie, i, j, irho) = wd(il, i, j, irho)
+   w(ie, i, j, irho) = w(il, i, j, irho)
+   wd(ie, i, j, ivx) = two*bcdatad(nn)%uslip(i, j, 1) - wd(il, &
+   &             i, j, ivx)
+   w(ie, i, j, ivx) = -w(il, i, j, ivx) + two*bcdata(nn)%uslip(&
+   &             i, j, 1)
+   wd(ie, i, j, ivy) = two*bcdatad(nn)%uslip(i, j, 2) - wd(il, &
+   &             i, j, ivy)
+   w(ie, i, j, ivy) = -w(il, i, j, ivy) + two*bcdata(nn)%uslip(&
+   &             i, j, 2)
+   wd(ie, i, j, ivz) = two*bcdatad(nn)%uslip(i, j, 3) - wd(il, &
+   &             i, j, ivz)
+   w(ie, i, j, ivz) = -w(il, i, j, ivz) + two*bcdata(nn)%uslip(&
+   &             i, j, 3)
+   pd(ie, i, j) = pd(il, i, j) - four*third*rhokd
+   p(ie, i, j) = p(il, i, j) - four*third*rhok
+   rlvd(ie, i, j) = rlvd(il, i, j)
+   rlv(ie, i, j) = rlv(il, i, j)
+   IF (eddymodel) THEN
+   revd(ie, i, j) = -revd(il, i, j)
+   rev(ie, i, j) = -rev(il, i, j)
+   END IF
+   END DO
+   END DO
+   CASE (jmin) 
+   rhokd = 0.0_8
+   DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+   DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
+   IF (correctfork) THEN
+   rhokd = wd(i, 2, j, irho)*w(i, 2, j, itu1) + w(i, 2, j, &
+   &               irho)*wd(i, 2, j, itu1)
+   rhok = w(i, 2, j, irho)*w(i, 2, j, itu1)
+   END IF
+   wd(i, 1, j, irho) = wd(i, 2, j, irho)
+   w(i, 1, j, irho) = w(i, 2, j, irho)
+   wd(i, 1, j, ivx) = two*bcdatad(nn)%uslip(i, j, 1) - wd(i, 2&
+   &             , j, ivx)
+   w(i, 1, j, ivx) = -w(i, 2, j, ivx) + two*bcdata(nn)%uslip(i&
+   &             , j, 1)
+   wd(i, 1, j, ivy) = two*bcdatad(nn)%uslip(i, j, 2) - wd(i, 2&
+   &             , j, ivy)
+   w(i, 1, j, ivy) = -w(i, 2, j, ivy) + two*bcdata(nn)%uslip(i&
+   &             , j, 2)
+   wd(i, 1, j, ivz) = two*bcdatad(nn)%uslip(i, j, 3) - wd(i, 2&
+   &             , j, ivz)
+   w(i, 1, j, ivz) = -w(i, 2, j, ivz) + two*bcdata(nn)%uslip(i&
+   &             , j, 3)
+   pd(i, 1, j) = pd(i, 2, j) - four*third*rhokd
+   p(i, 1, j) = p(i, 2, j) - four*third*rhok
+   rlvd(i, 1, j) = rlvd(i, 2, j)
+   rlv(i, 1, j) = rlv(i, 2, j)
+   IF (eddymodel) THEN
+   revd(i, 1, j) = -revd(i, 2, j)
+   rev(i, 1, j) = -rev(i, 2, j)
+   END IF
+   END DO
+   END DO
+   CASE (jmax) 
+   rhokd = 0.0_8
+   DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+   DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
+   IF (correctfork) THEN
+   rhokd = wd(i, jl, j, irho)*w(i, jl, j, itu1) + w(i, jl, j&
+   &               , irho)*wd(i, jl, j, itu1)
+   rhok = w(i, jl, j, irho)*w(i, jl, j, itu1)
+   END IF
+   wd(i, je, j, irho) = wd(i, jl, j, irho)
+   w(i, je, j, irho) = w(i, jl, j, irho)
+   wd(i, je, j, ivx) = two*bcdatad(nn)%uslip(i, j, 1) - wd(i, &
+   &             jl, j, ivx)
+   w(i, je, j, ivx) = -w(i, jl, j, ivx) + two*bcdata(nn)%uslip(&
+   &             i, j, 1)
+   wd(i, je, j, ivy) = two*bcdatad(nn)%uslip(i, j, 2) - wd(i, &
+   &             jl, j, ivy)
+   w(i, je, j, ivy) = -w(i, jl, j, ivy) + two*bcdata(nn)%uslip(&
+   &             i, j, 2)
+   wd(i, je, j, ivz) = two*bcdatad(nn)%uslip(i, j, 3) - wd(i, &
+   &             jl, j, ivz)
+   w(i, je, j, ivz) = -w(i, jl, j, ivz) + two*bcdata(nn)%uslip(&
+   &             i, j, 3)
+   pd(i, je, j) = pd(i, jl, j) - four*third*rhokd
+   p(i, je, j) = p(i, jl, j) - four*third*rhok
+   rlvd(i, je, j) = rlvd(i, jl, j)
+   rlv(i, je, j) = rlv(i, jl, j)
+   IF (eddymodel) THEN
+   revd(i, je, j) = -revd(i, jl, j)
+   rev(i, je, j) = -rev(i, jl, j)
+   END IF
+   END DO
+   END DO
+   CASE (kmin) 
+   rhokd = 0.0_8
+   DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+   DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
+   IF (correctfork) THEN
+   rhokd = wd(i, j, 1, irho)*w(i, j, 1, itu1) + w(i, j, 1, &
+   &               irho)*wd(i, j, 1, itu1)
+   rhok = w(i, j, 1, irho)*w(i, j, 1, itu1)
+   END IF
+   wd(i, j, 1, irho) = wd(i, j, 2, irho)
+   w(i, j, 1, irho) = w(i, j, 2, irho)
+   wd(i, j, 1, ivx) = two*bcdatad(nn)%uslip(i, j, 1) - wd(i, j&
+   &             , 2, ivx)
+   w(i, j, 1, ivx) = -w(i, j, 2, ivx) + two*bcdata(nn)%uslip(i&
+   &             , j, 1)
+   wd(i, j, 1, ivy) = two*bcdatad(nn)%uslip(i, j, 2) - wd(i, j&
+   &             , 2, ivy)
+   w(i, j, 1, ivy) = -w(i, j, 2, ivy) + two*bcdata(nn)%uslip(i&
+   &             , j, 2)
+   wd(i, j, 1, ivz) = two*bcdatad(nn)%uslip(i, j, 3) - wd(i, j&
+   &             , 2, ivz)
+   w(i, j, 1, ivz) = -w(i, j, 2, ivz) + two*bcdata(nn)%uslip(i&
+   &             , j, 3)
+   pd(i, j, 1) = pd(i, j, 2) - four*third*rhokd
+   p(i, j, 1) = p(i, j, 2) - four*third*rhok
+   rlvd(i, j, 1) = rlvd(i, j, 2)
+   rlv(i, j, 1) = rlv(i, j, 2)
+   IF (eddymodel) THEN
+   revd(i, j, 1) = -revd(i, j, 2)
+   rev(i, j, 1) = -rev(i, j, 2)
+   END IF
+   END DO
+   END DO
+   CASE (kmax) 
+   rhokd = 0.0_8
+   DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+   DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
+   IF (correctfork) THEN
+   rhokd = wd(i, j, 1, irho)*w(i, j, 1, itu1) + w(i, j, 1, &
+   &               irho)*wd(i, j, 1, itu1)
+   rhok = w(i, j, 1, irho)*w(i, j, 1, itu1)
+   END IF
+   wd(i, j, ke, irho) = wd(i, j, kl, irho)
+   w(i, j, ke, irho) = w(i, j, kl, irho)
+   wd(i, j, ke, ivx) = two*bcdatad(nn)%uslip(i, j, 1) - wd(i, j&
+   &             , kl, ivx)
+   w(i, j, ke, ivx) = -w(i, j, kl, ivx) + two*bcdata(nn)%uslip(&
+   &             i, j, 1)
+   wd(i, j, ke, ivy) = two*bcdatad(nn)%uslip(i, j, 2) - wd(i, j&
+   &             , kl, ivy)
+   w(i, j, ke, ivy) = -w(i, j, kl, ivy) + two*bcdata(nn)%uslip(&
+   &             i, j, 2)
+   wd(i, j, ke, ivz) = two*bcdatad(nn)%uslip(i, j, 3) - wd(i, j&
+   &             , kl, ivz)
+   w(i, j, ke, ivz) = -w(i, j, kl, ivz) + two*bcdata(nn)%uslip(&
+   &             i, j, 3)
+   pd(i, j, ke) = pd(i, j, kl) - four*third*rhokd
+   p(i, j, ke) = p(i, j, kl) - four*third*rhok
+   rlvd(i, j, ke) = rlvd(i, j, jl)
+   rlv(i, j, ke) = rlv(i, j, jl)
+   IF (eddymodel) THEN
+   revd(i, j, ke) = -revd(i, j, jl)
+   rev(i, j, ke) = -rev(i, j, jl)
+   END IF
+   END DO
+   END DO
+   END SELECT
    ! Compute the energy for these halo's.
    CALL COMPUTEETOT_D(icbeg(nn), icend(nn), jcbeg(nn), jcend(nn), &
    &                  kcbeg(nn), kcend(nn), correctfork)

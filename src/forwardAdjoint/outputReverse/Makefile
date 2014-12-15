@@ -94,6 +94,20 @@ FF90_OBJECTS =  \
 		computeleastsquaresregression_b.o\
 		computerootbendingmoment_b.o\
 		computetsderivatives_b.o\
+		invisciddissfluxscalarapprox_b.o\
+		invisciddissfluxmatrix_b.o\
+		inviscidupwindflux_b.o\
+		invisciddissfluxmatrixapprox_b.o\
+		applyallturbbcthisblock_b.o\
+		bcturbtreatment_b.o\
+		turb2ndhalo_b.o\
+		bceddywall_b.o\
+		bceddynowall_b.o\
+		bcturbwall_b.o\
+		bcturbfarfield_b.o\
+		turbbcnswall_b.o\
+		unsteadyturbspectral_block_b.o\
+
 
 #      ******************************************************************
 #      *                                                                *

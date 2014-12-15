@@ -2,8 +2,8 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of unsteadyturbterm in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *dw *w timeref qq
-   !   with respect to varying inputs: *dw *w timeref qq
+   !   gradient     of useful results: *dw *w timeref
+   !   with respect to varying inputs: *dw *w timeref
    !   Plus diff mem management of: dw:in w:in
    !
    !      ******************************************************************
@@ -15,7 +15,7 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   SUBROUTINE UNSTEADYTURBTERM_B(madv, nadv, offset, qq, qqb)
+   SUBROUTINE UNSTEADYTURBTERM_B(madv, nadv, offset, qq)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -52,8 +52,6 @@
    INTEGER(kind=inttype), INTENT(IN) :: madv, nadv, offset
    REAL(kind=realtype), DIMENSION(2:il, 2:jl, 2:kl, madv, madv), INTENT(&
    & INOUT) :: qq
-   REAL(kind=realtype), DIMENSION(2:il, 2:jl, 2:kl, madv, madv), INTENT(&
-   & INOUT) :: qqb
    !
    !      Local variables.
    !
@@ -112,8 +110,7 @@
    DO k=kl,2,-1
    DO j=jl,2,-1
    DO i=il,2,-1
-   oneoverdtb = oneoverdtb + coeftime(0)*qqb(i, j, k, ii, ii)&
-   &               - tmp*dwb(i, j, k, idvt+ii-1)
+   oneoverdtb = oneoverdtb - tmp*dwb(i, j, k, idvt+ii-1)
    tmpb = -(oneoverdt*dwb(i, j, k, idvt+ii-1))
    CALL POPREAL8(tmp)
    wb(i, j, k, jj) = wb(i, j, k, jj) + coeftime(0)*tmpb
@@ -144,19 +141,15 @@
    ! and may need to be changed.
    END DO nadvloopspectral
    DO ii=nadv,1,-1
-   tmpb = 0.0_8
    DO k=kl,2,-1
    DO j=jl,2,-1
    DO i=il,2,-1
-   tmpb = tmpb + qqb(i, j, k, ii, ii)
    tmpb0 = dwb(i, j, k, idvt+ii-1)
    dwb(i, j, k, idvt+ii-1) = tmpb0
    dwb(i, j, k, jj) = dwb(i, j, k, jj) - tmpb0
    END DO
    END DO
    END DO
-   timerefb = timerefb + ntimeintervalsspectral*pi*tmpb/sections(&
-   &       sectionid)%timeperiod
    CALL POPINTEGER4(jj)
    END DO
    END SELECT

@@ -49,162 +49,255 @@
    !
    INTEGER(kind=inttype) :: i, j, l, idim, ddim
    INTEGER(kind=inttype), DIMENSION(3, 2) :: crange
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww0, ww1, ww2
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww0d, ww1d, ww2d
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp0, pp1, pp2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp0d, pp1d, pp2d
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv0, rlv1
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv0d, rlv1d
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev0, rev1
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev0d, rev1d
-   INTERFACE 
-   SUBROUTINE SETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
-   &       rev1, rev2, offset)
-   USE BLOCKPOINTERS_D
-   IMPLICIT NONE
-   INTEGER(kind=inttype), INTENT(IN) :: nn, offset
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1, pp2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
-   END SUBROUTINE SETBCPOINTERS
-   SUBROUTINE RESETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
-   &       rev1, rev2, offset)
-   USE BLOCKPOINTERS_D
-   IMPLICIT NONE
-   INTEGER(kind=inttype), INTENT(IN) :: nn, offset
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1, pp2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
-   END SUBROUTINE RESETBCPOINTERS
-   SUBROUTINE SETWW0PP0RLV0REV0(nn, idim, ddim, ww0, pp0, rlv0, &
-   &       rev0)
-   USE BCTYPES
-   USE BLOCKPOINTERS_D
-   USE FLOWVARREFSTATE
-   IMPLICIT NONE
-   INTEGER(kind=inttype), INTENT(IN) :: nn
-   INTEGER(kind=inttype) :: idim, ddim
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww0
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp0
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv0
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev0
-   END SUBROUTINE SETWW0PP0RLV0REV0
-   SUBROUTINE RESETWW0PP0RLV0REV0(nn, idim, ddim, ww0, pp0, rlv0, &
-   &       rev0)
-   USE BCTYPES
-   USE BLOCKPOINTERS_D
-   IMPLICIT NONE
-   INTEGER(kind=inttype), INTENT(IN) :: nn
-   INTEGER(kind=inttype) :: idim, ddim
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww0
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp0
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv0
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev0
-   END SUBROUTINE RESETWW0PP0RLV0REV0
-   END INTERFACE
-      INTERFACE 
-   SUBROUTINE SETBCPOINTERS_D(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, &
-   &       pp2, pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev1d, rev2, rev2d, &
-   &       offset)
-   USE BLOCKPOINTERS_D
-   IMPLICIT NONE
-   INTEGER(kind=inttype), INTENT(IN) :: nn, offset
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1d, ww2d
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1, pp2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1d, pp2d
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1d, rlv2d
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1d, rev2d
-   END SUBROUTINE SETBCPOINTERS_D
-   SUBROUTINE SETWW0PP0RLV0REV0_D(nn, idim, ddim, ww0, ww0d, pp0, &
-   &       pp0d, rlv0, rlv0d, rev0, rev0d)
-   USE BCTYPES
-   USE BLOCKPOINTERS_D
-   USE FLOWVARREFSTATE
-   IMPLICIT NONE
-   INTEGER(kind=inttype), INTENT(IN) :: nn
-   INTEGER(kind=inttype) :: idim, ddim
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww0
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww0d
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp0
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp0d
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv0
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv0d
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev0
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev0d
-   END SUBROUTINE SETWW0PP0RLV0REV0_D
-   END INTERFACE
-      INTRINSIC MAX
-   !
-   !      ******************************************************************
-   !      *                                                                *
-   !      * Begin execution                                                *
-   !      *                                                                *
-   !      ******************************************************************
-   !
-   ! Nullify the pointers and set them to the correct subface.
-   ! They are nullified first, because some compilers require that.
-   ! Note that rlv0 and rev0 are used here as dummies.
-   !nullify(ww1, ww2, pp1, pp2, rlv1, rlv0, rev1, rev0)
-   ! Set a couple of additional variables needed for the
-   ! extrapolation. This depends on the block face on which the
-   ! subface is located.
-   CALL SETBCPOINTERS_D(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, pp2, pp2d, &
-   &                rlv1, rlv1d, rlv0, rlv0d, rev1, rev1d, rev0, rev0d, 0)
-   !_intType)
-   CALL SETWW0PP0RLV0REV0_D(nn, idim, ddim, ww0, ww0d, pp0, pp0d, rlv0, &
-   &                    rlv0d, rev0, rev0d)
-   ! Loop over the generic subface to set the state in the halo's.
+   INTRINSIC MAX
+   SELECT CASE  (bcfaceid(nn)) 
+   CASE (imin) 
    DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
    DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
    ! Extrapolate the density, momentum and pressure.
    ! Make sure that a certain threshold is kept.
-   ww0d(i, j, irho) = two*ww1d(i, j, irho) - ww2d(i, j, irho)
-   ww0(i, j, irho) = two*ww1(i, j, irho) - ww2(i, j, irho)
-   IF (factor*ww1(i, j, irho) .LT. ww0(i, j, irho)) THEN
-   ww0(i, j, irho) = ww0(i, j, irho)
+   wd(0, i, j, irho) = two*wd(1, i, j, irho) - wd(2, i, j, irho)
+   w(0, i, j, irho) = two*w(1, i, j, irho) - w(2, i, j, irho)
+   IF (factor*w(1, i, j, irho) .LT. w(0, i, j, irho)) THEN
+   w(0, i, j, irho) = w(0, i, j, irho)
    ELSE
-   ww0d(i, j, irho) = factor*ww1d(i, j, irho)
-   ww0(i, j, irho) = factor*ww1(i, j, irho)
+   wd(0, i, j, irho) = factor*wd(1, i, j, irho)
+   w(0, i, j, irho) = factor*w(1, i, j, irho)
    END IF
-   ww0d(i, j, ivx) = two*ww1d(i, j, ivx) - ww2d(i, j, ivx)
-   ww0(i, j, ivx) = two*ww1(i, j, ivx) - ww2(i, j, ivx)
-   ww0d(i, j, ivy) = two*ww1d(i, j, ivy) - ww2d(i, j, ivy)
-   ww0(i, j, ivy) = two*ww1(i, j, ivy) - ww2(i, j, ivy)
-   ww0d(i, j, ivz) = two*ww1d(i, j, ivz) - ww2d(i, j, ivz)
-   ww0(i, j, ivz) = two*ww1(i, j, ivz) - ww2(i, j, ivz)
-   IF (factor*pp1(i, j) .LT. two*pp1(i, j) - pp2(i, j)) THEN
-   pp0d(i, j) = two*pp1d(i, j) - pp2d(i, j)
-   pp0(i, j) = two*pp1(i, j) - pp2(i, j)
+   wd(0, i, j, ivx) = two*wd(1, i, j, ivx) - wd(2, i, j, ivx)
+   w(0, i, j, ivx) = two*w(1, i, j, ivx) - w(2, i, j, ivx)
+   wd(0, i, j, ivy) = two*wd(1, i, j, ivy) - wd(2, i, j, ivy)
+   w(0, i, j, ivy) = two*w(1, i, j, ivy) - w(2, i, j, ivy)
+   wd(0, i, j, ivz) = two*wd(1, i, j, ivz) - wd(2, i, j, ivz)
+   w(0, i, j, ivz) = two*w(1, i, j, ivz) - w(2, i, j, ivz)
+   IF (factor*p(1, i, j) .LT. two*p(1, i, j) - p(2, i, j)) THEN
+   pd(0, i, j) = two*pd(1, i, j) - pd(2, i, j)
+   p(0, i, j) = two*p(1, i, j) - p(2, i, j)
    ELSE
-   pp0d(i, j) = factor*pp1d(i, j)
-   pp0(i, j) = factor*pp1(i, j)
+   pd(0, i, j) = factor*pd(1, i, j)
+   p(0, i, j) = factor*p(1, i, j)
    END IF
    ! Extrapolate the turbulent variables. Use constant
    ! extrapolation.
    DO l=nt1mg,nt2mg
-   ww0d(i, j, l) = ww1d(i, j, l)
-   ww0(i, j, l) = ww1(i, j, l)
+   wd(0, i, j, l) = wd(1, i, j, l)
+   w(0, i, j, l) = w(1, i, j, l)
    END DO
    ! The laminar and eddy viscosity, if present. These values
    ! are simply taken constant. Their values do not matter.
    IF (viscous) THEN
-   rlv0d(i, j) = rlv1d(i, j)
-   rlv0(i, j) = rlv1(i, j)
+   rlvd(0, i, j) = rlvd(1, i, j)
+   rlv(0, i, j) = rlv(1, i, j)
    END IF
    IF (eddymodel) THEN
-   rev0d(i, j) = rev1d(i, j)
-   rev0(i, j) = rev1(i, j)
+   revd(0, i, j) = revd(1, i, j)
+   rev(0, i, j) = rev(1, i, j)
+   END IF
+   idim = 1
+   ddim = 0
+   END DO
+   END DO
+   CASE (imax) 
+   DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+   DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
+   wd(ib, i, j, irho) = two*wd(ie, i, j, irho) - wd(il, i, j, irho)
+   w(ib, i, j, irho) = two*w(ie, i, j, irho) - w(il, i, j, irho)
+   IF (factor*w(ie, i, j, irho) .LT. w(ib, i, j, irho)) THEN
+   w(ib, i, j, irho) = w(ib, i, j, irho)
+   ELSE
+   wd(ib, i, j, irho) = factor*wd(ie, i, j, irho)
+   w(ib, i, j, irho) = factor*w(ie, i, j, irho)
+   END IF
+   wd(ib, i, j, ivx) = two*wd(ie, i, j, ivx) - wd(il, i, j, ivx)
+   w(ib, i, j, ivx) = two*w(ie, i, j, ivx) - w(il, i, j, ivx)
+   wd(ib, i, j, ivy) = two*wd(ie, i, j, ivy) - wd(il, i, j, ivy)
+   w(ib, i, j, ivy) = two*w(ie, i, j, ivy) - w(il, i, j, ivy)
+   wd(ib, i, j, ivz) = two*wd(ie, i, j, ivz) - wd(il, i, j, ivz)
+   w(ib, i, j, ivz) = two*w(ie, i, j, ivz) - w(il, i, j, ivz)
+   IF (factor*p(ie, i, j) .LT. two*p(ie, i, j) - p(il, i, j)) THEN
+   pd(ib, i, j) = two*pd(ie, i, j) - pd(il, i, j)
+   p(ib, i, j) = two*p(ie, i, j) - p(il, i, j)
+   ELSE
+   pd(ib, i, j) = factor*pd(ie, i, j)
+   p(ib, i, j) = factor*p(ie, i, j)
+   END IF
+   DO l=nt1mg,nt2mg
+   wd(ib, i, j, l) = wd(ie, i, j, l)
+   w(ib, i, j, l) = w(ie, i, j, l)
+   END DO
+   IF (viscous) THEN
+   rlvd(ib, i, j) = rlvd(ie, i, j)
+   rlv(ib, i, j) = rlv(ie, i, j)
+   END IF
+   IF (eddymodel) THEN
+   revd(ib, i, j) = revd(ie, i, j)
+   rev(ib, i, j) = rev(ie, i, j)
+   END IF
+   idim = 1
+   ddim = ib
+   END DO
+   END DO
+   CASE (jmin) 
+   DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+   DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
+   wd(i, 0, j, irho) = two*wd(i, 1, j, irho) - wd(i, 2, j, irho)
+   w(i, 0, j, irho) = two*w(i, 1, j, irho) - w(i, 2, j, irho)
+   IF (factor*w(i, 1, j, irho) .LT. w(i, 0, j, irho)) THEN
+   w(i, 0, j, irho) = w(i, 0, j, irho)
+   ELSE
+   wd(i, 0, j, irho) = factor*wd(i, 1, j, irho)
+   w(i, 0, j, irho) = factor*w(i, 1, j, irho)
+   END IF
+   wd(i, 0, j, ivx) = two*wd(i, 1, j, ivx) - wd(i, 2, j, ivx)
+   w(i, 0, j, ivx) = two*w(i, 1, j, ivx) - w(i, 2, j, ivx)
+   wd(i, 0, j, ivy) = two*wd(i, 1, j, ivy) - wd(i, 2, j, ivy)
+   w(i, 0, j, ivy) = two*w(i, 1, j, ivy) - w(i, 2, j, ivy)
+   wd(i, 0, j, ivz) = two*wd(i, 1, j, ivz) - wd(i, 2, j, ivz)
+   w(i, 0, j, ivz) = two*w(i, 1, j, ivz) - w(i, 2, j, ivz)
+   IF (factor*p(i, 1, j) .LT. two*p(i, 1, j) - p(i, 2, j)) THEN
+   pd(i, 0, j) = two*pd(i, 1, j) - pd(i, 2, j)
+   p(i, 0, j) = two*p(i, 1, j) - p(i, 2, j)
+   ELSE
+   pd(i, 0, j) = factor*pd(i, 1, j)
+   p(i, 0, j) = factor*p(i, 1, j)
+   END IF
+   DO l=nt1mg,nt2mg
+   wd(i, 0, j, l) = wd(i, 1, j, l)
+   w(i, 0, j, l) = w(i, 1, j, l)
+   END DO
+   IF (viscous) THEN
+   rlvd(i, 0, j) = rlvd(i, 1, j)
+   rlv(i, 0, j) = rlv(i, 1, j)
+   END IF
+   IF (eddymodel) THEN
+   revd(i, 0, j) = revd(i, 1, j)
+   rev(i, 0, j) = rev(i, 1, j)
+   END IF
+   idim = 2
+   ddim = 0
+   END DO
+   END DO
+   CASE (jmax) 
+   DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+   DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
+   wd(i, jb, j, irho) = two*wd(i, je, j, irho) - wd(i, jl, j, irho)
+   w(i, jb, j, irho) = two*w(i, je, j, irho) - w(i, jl, j, irho)
+   IF (factor*w(i, je, j, irho) .LT. w(i, jb, j, irho)) THEN
+   w(i, jb, j, irho) = w(i, jb, j, irho)
+   ELSE
+   wd(i, jb, j, irho) = factor*wd(i, je, j, irho)
+   w(i, jb, j, irho) = factor*w(i, je, j, irho)
+   END IF
+   wd(i, jb, j, ivx) = two*wd(i, je, j, ivx) - wd(i, jl, j, ivx)
+   w(i, jb, j, ivx) = two*w(i, je, j, ivx) - w(i, jl, j, ivx)
+   wd(i, jb, j, ivy) = two*wd(i, je, j, ivy) - wd(i, jl, j, ivy)
+   w(i, jb, j, ivy) = two*w(i, je, j, ivy) - w(i, jl, j, ivy)
+   wd(i, jb, j, ivz) = two*wd(i, je, j, ivz) - wd(i, jl, j, ivz)
+   w(i, jb, j, ivz) = two*w(i, je, j, ivz) - w(i, jl, j, ivz)
+   IF (factor*p(i, je, j) .LT. two*p(i, je, j) - p(i, jl, j)) THEN
+   pd(i, jb, j) = two*pd(i, je, j) - pd(i, jl, j)
+   p(i, jb, j) = two*p(i, je, j) - p(i, jl, j)
+   ELSE
+   pd(i, jb, j) = factor*pd(i, je, j)
+   p(i, jb, j) = factor*p(i, je, j)
+   END IF
+   DO l=nt1mg,nt2mg
+   wd(i, jb, j, l) = wd(i, je, j, l)
+   w(i, jb, j, l) = w(i, je, j, l)
+   END DO
+   IF (viscous) THEN
+   rlvd(i, jb, j) = rlvd(i, je, j)
+   rlv(i, jb, j) = rlv(i, je, j)
+   END IF
+   IF (eddymodel) THEN
+   revd(i, jb, j) = revd(i, je, j)
+   rev(i, jb, j) = rev(i, je, j)
+   END IF
+   idim = 2
+   ddim = jb
+   END DO
+   END DO
+   CASE (kmin) 
+   DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+   DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
+   wd(i, j, 0, irho) = two*wd(i, j, 1, irho) - wd(i, j, 2, irho)
+   w(i, j, 0, irho) = two*w(i, j, 1, irho) - w(i, j, 2, irho)
+   IF (factor*w(i, j, 1, irho) .LT. w(i, j, 0, irho)) THEN
+   w(i, j, 0, irho) = w(i, j, 0, irho)
+   ELSE
+   wd(i, j, 0, irho) = factor*wd(i, j, 1, irho)
+   w(i, j, 0, irho) = factor*w(i, j, 1, irho)
+   END IF
+   wd(i, j, 0, ivx) = two*wd(i, j, 1, ivx) - wd(i, j, 2, ivx)
+   w(i, j, 0, ivx) = two*w(i, j, 1, ivx) - w(i, j, 2, ivx)
+   wd(i, j, 0, ivy) = two*wd(i, j, 1, ivy) - wd(i, j, 2, ivy)
+   w(i, j, 0, ivy) = two*w(i, j, 1, ivy) - w(i, j, 2, ivy)
+   wd(i, j, 0, ivz) = two*wd(i, j, 1, ivz) - wd(i, j, 2, ivz)
+   w(i, j, 0, ivz) = two*w(i, j, 1, ivz) - w(i, j, 2, ivz)
+   IF (factor*p(i, j, 1) .LT. two*p(i, j, 1) - p(i, j, 2)) THEN
+   pd(i, j, 0) = two*pd(i, j, 1) - pd(i, j, 2)
+   p(i, j, 0) = two*p(i, j, 1) - p(i, j, 2)
+   ELSE
+   pd(i, j, 0) = factor*pd(i, j, 1)
+   p(i, j, 0) = factor*p(i, j, 1)
+   END IF
+   DO l=nt1mg,nt2mg
+   wd(i, j, 0, l) = wd(i, j, 1, l)
+   w(i, j, 0, l) = w(i, j, 1, l)
+   END DO
+   IF (viscous) THEN
+   rlvd(i, j, 0) = rlvd(i, j, 1)
+   rlv(i, j, 0) = rlv(i, j, 1)
+   END IF
+   IF (eddymodel) THEN
+   revd(i, j, 0) = revd(i, j, 1)
+   rev(i, j, 0) = rev(i, j, 1)
+   END IF
+   idim = 3
+   ddim = 0
+   END DO
+   END DO
+   CASE (kmax) 
+   DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+   DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
+   wd(i, j, kb, irho) = two*wd(i, j, ke, irho) - wd(i, j, kl, irho)
+   w(i, j, kb, irho) = two*w(i, j, ke, irho) - w(i, j, kl, irho)
+   IF (factor*w(i, j, ke, irho) .LT. w(i, j, kb, irho)) THEN
+   w(i, j, kb, irho) = w(i, j, kb, irho)
+   ELSE
+   wd(i, j, kb, irho) = factor*wd(i, j, ke, irho)
+   w(i, j, kb, irho) = factor*w(i, j, ke, irho)
+   END IF
+   wd(i, j, kb, ivx) = two*wd(i, j, ke, ivx) - wd(i, j, kl, ivx)
+   w(i, j, kb, ivx) = two*w(i, j, ke, ivx) - w(i, j, kl, ivx)
+   wd(i, j, kb, ivy) = two*wd(i, j, ke, ivy) - wd(i, j, kl, ivy)
+   w(i, j, kb, ivy) = two*w(i, j, ke, ivy) - w(i, j, kl, ivy)
+   wd(i, j, kb, ivz) = two*wd(i, j, ke, ivz) - wd(i, j, kl, ivz)
+   w(i, j, kb, ivz) = two*w(i, j, ke, ivz) - w(i, j, kl, ivz)
+   IF (factor*p(i, j, ke) .LT. two*p(i, j, ke) - p(i, j, kl)) THEN
+   pd(i, j, kb) = two*pd(i, j, ke) - pd(i, j, kl)
+   p(i, j, kb) = two*p(i, j, ke) - p(i, j, kl)
+   ELSE
+   pd(i, j, kb) = factor*pd(i, j, ke)
+   p(i, j, kb) = factor*p(i, j, ke)
+   END IF
+   DO l=nt1mg,nt2mg
+   wd(i, j, kb, l) = wd(i, j, ke, l)
+   w(i, j, kb, l) = w(i, j, ke, l)
+   END DO
+   IF (viscous) THEN
+   rlvd(i, j, kb) = rlvd(i, j, ke)
+   rlv(i, j, kb) = rlv(i, j, ke)
+   END IF
+   IF (eddymodel) THEN
+   revd(i, j, kb) = revd(i, j, ke)
+   rev(i, j, kb) = rev(i, j, ke)
    END IF
    END DO
    END DO
-   CALL RESETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv0, rev1, rev0&
-   &                   , 0)
-   CALL RESETWW0PP0RLV0REV0(nn, idim, ddim, ww0, pp0, rlv0, rev0)
+   idim = 3
+   ddim = kb
+   END SELECT
    ! Set the range for the halo cells for the energy computation.
    crange(1, 1) = icbeg(nn)
    crange(1, 2) = icend(nn)

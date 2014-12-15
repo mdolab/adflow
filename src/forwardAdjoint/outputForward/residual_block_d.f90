@@ -480,13 +480,6 @@
    &           dwod(4) + b55d*dwo(5) + b55*dwod(5)
    dw(i, j, k, 5) = b51*dwo(1) + b52*dwo(2) + b53*dwo(3) + b54*&
    &           dwo(4) + b55*dwo(5)
-   ! Regular copy (identity) for the turbulence variables
-   DO l=nt1,nt2
-   dwd(i, j, k, l) = REAL(iblank(i, j, k), realtype)*(dwd(i, j&
-   &             , k, l)+fwd(i, j, k, l))
-   dw(i, j, k, l) = (dw(i, j, k, l)+fw(i, j, k, l))*REAL(iblank&
-   &             (i, j, k), realtype)
-   END DO
    END DO
    END DO
    END DO

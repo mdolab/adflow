@@ -6,7 +6,7 @@
    !                *(*viscsubface.tau) gammainf
    !   with respect to varying inputs: *rev *p *gamma *dw *w *rlv
    !                *x *vol *si *sj *sk *radi *radj *radk gammainf
-   !                timeref rhoinf winf pinfcorr
+   !                timeref rhoinf tref winf pinfcorr rgas
    !   Plus diff mem management of: rev:in p:in gamma:in dw:in w:in
    !                rlv:in x:in vol:in si:in sj:in sk:in fw:in viscsubface:in
    !                *viscsubface.tau:in radi:in radj:in radk:in
@@ -157,7 +157,6 @@
    REAL(kind=realtype) :: tempb32
    REAL(kind=realtype) :: tempb31
    REAL(kind=realtype) :: tempb30
-   REAL(kind=realtype) :: tempb65
    REAL(kind=realtype) :: tempb64
    REAL(kind=realtype) :: tempb63
    REAL(kind=realtype) :: temp39
@@ -223,25 +222,51 @@
    finegrid = .false.
    IF (currentlevel .EQ. groundlevel) finegrid = .true.
    CALL INVISCIDCENTRALFLUX()
-   ! Reverse adjoint currently only work with invisciddissscalar
    ! Compute the artificial dissipation fluxes.
    ! This depends on the parameter discr.
    SELECT CASE  (discr) 
    CASE (dissscalar) 
    ! Standard scalar dissipation scheme.
    IF (finegrid) THEN
-   CALL PUSHREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4)&
-   &                  )
+   IF (.NOT.lumpeddiss) THEN
+   CALL PUSHREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, &
+   &                     4))
    CALL INVISCIDDISSFLUXSCALAR()
-   CALL PUSHCONTROL2B(1)
+   CALL PUSHCONTROL3B(0)
    ELSE
-   CALL PUSHREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4)&
-   &                  )
-   CALL INVISCIDDISSFLUXSCALARCOARSE()
-   CALL PUSHCONTROL2B(2)
+   CALL PUSHREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, &
+   &                     4))
+   CALL INVISCIDDISSFLUXSCALARAPPROX()
+   CALL PUSHCONTROL3B(1)
    END IF
+   ELSE
+   CALL PUSHCONTROL3B(2)
+   END IF
+   CASE (dissmatrix) 
+   !===========================================================
+   ! Matrix dissipation scheme.
+   IF (finegrid) THEN
+   IF (.NOT.lumpeddiss) THEN
+   CALL INVISCIDDISSFLUXMATRIX()
+   CALL PUSHCONTROL3B(3)
+   ELSE
+   CALL INVISCIDDISSFLUXMATRIXAPPROX()
+   CALL PUSHCONTROL3B(4)
+   END IF
+   ELSE
+   CALL PUSHCONTROL3B(5)
+   END IF
+   CASE (disscusp) 
+   CALL PUSHCONTROL3B(6)
+   CASE (upwind) 
+   !===========================================================
+   ! Cusp dissipation scheme.
+   !===========================================================
+   ! Dissipation via an upwind scheme.
+   CALL INVISCIDUPWINDFLUX(finegrid)
+   CALL PUSHCONTROL3B(7)
    CASE DEFAULT
-   CALL PUSHCONTROL2B(0)
+   CALL PUSHCONTROL3B(6)
    END SELECT
    ! Compute the viscous flux in case of a viscous computation.
    IF (viscous) THEN
@@ -414,11 +439,6 @@
    &           dwo(4) + b45*dwo(5)
    dw(i, j, k, 5) = b51*dwo(1) + b52*dwo(2) + b53*dwo(3) + b54*&
    &           dwo(4) + b55*dwo(5)
-   ! Regular copy (identity) for the turbulence variables
-   DO l=nt1,nt2
-   dw(i, j, k, l) = (dw(i, j, k, l)+fw(i, j, k, l))*REAL(iblank&
-   &             (i, j, k), realtype)
-   END DO
    END DO
    END DO
    END DO
@@ -429,11 +449,6 @@
    DO k=kl,2,-1
    DO j=jl,2,-1
    DO i=il,2,-1
-   DO l=nt2,nt1,-1
-   tempb64 = REAL(iblank(i, j, k), realtype)*dwb(i, j, k, l)
-   fwb(i, j, k, l) = fwb(i, j, k, l) + tempb64
-   dwb(i, j, k, l) = tempb64
-   END DO
    a51 = one*(1/(gamma(i, j, k)-1)+resm**2/2)
    a55 = one*((-(resm**2))/2)
    b55 = a51*(gamma(i, j, k)-1) + a55*(gamma(i, j, k)-1)
@@ -829,9 +844,9 @@
    DO k=kl,2,-1
    DO j=jl,2,-1
    DO i=il,2,-1
-   tempb65 = REAL(iblank(i, j, k), realtype)*dwb(i, j, k, l)
-   fwb(i, j, k, l) = fwb(i, j, k, l) + tempb65
-   dwb(i, j, k, l) = tempb65
+   tempb64 = REAL(iblank(i, j, k), realtype)*dwb(i, j, k, l)
+   fwb(i, j, k, l) = fwb(i, j, k, l) + tempb64
+   dwb(i, j, k, l) = tempb64
    END DO
    END DO
    END DO
@@ -855,21 +870,61 @@
    revb = 0.0_8
    rlvb = 0.0_8
    END IF
-   CALL POPCONTROL2B(branch)
+   CALL POPCONTROL3B(branch)
+   IF (branch .LT. 4) THEN
+   IF (branch .LT. 2) THEN
    IF (branch .EQ. 0) THEN
+   CALL POPREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4&
+   &                    ))
+   CALL INVISCIDDISSFLUXSCALAR_B()
+   ELSE
+   CALL POPREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4&
+   &                    ))
+   CALL INVISCIDDISSFLUXSCALARAPPROX_B()
+   END IF
+   ELSE IF (branch .EQ. 2) THEN
    radib = 0.0_8
    radjb = 0.0_8
    radkb = 0.0_8
    rhoinfb = 0.0_8
    pinfcorrb = 0.0_8
-   ELSE IF (branch .EQ. 1) THEN
-   CALL POPREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4))
-   CALL INVISCIDDISSFLUXSCALAR_B()
    ELSE
-   CALL POPREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4))
-   CALL INVISCIDDISSFLUXSCALARCOARSE_B()
+   CALL INVISCIDDISSFLUXMATRIX_B()
+   GOTO 100
+   END IF
+   trefb = 0.0_8
+   rgasb = 0.0_8
+   GOTO 110
+   ELSE IF (branch .LT. 6) THEN
+   IF (branch .EQ. 4) THEN
+   CALL INVISCIDDISSFLUXMATRIXAPPROX_B()
+   ELSE
+   pinfcorrb = 0.0_8
+   END IF
+   ELSE
+   IF (branch .EQ. 6) THEN
+   radib = 0.0_8
+   radjb = 0.0_8
+   radkb = 0.0_8
+   rhoinfb = 0.0_8
+   trefb = 0.0_8
+   pinfcorrb = 0.0_8
+   rgasb = 0.0_8
+   ELSE
+   CALL INVISCIDUPWINDFLUX_B(finegrid)
+   radib = 0.0_8
+   radjb = 0.0_8
+   radkb = 0.0_8
    rhoinfb = 0.0_8
    pinfcorrb = 0.0_8
    END IF
-   CALL INVISCIDCENTRALFLUX_B()
+   GOTO 110
+   END IF
+   100 radib = 0.0_8
+   radjb = 0.0_8
+   radkb = 0.0_8
+   rhoinfb = 0.0_8
+   trefb = 0.0_8
+   rgasb = 0.0_8
+   110 CALL INVISCIDCENTRALFLUX_B()
    END SUBROUTINE RESIDUAL_BLOCK_B

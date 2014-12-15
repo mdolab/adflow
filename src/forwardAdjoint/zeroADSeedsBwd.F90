@@ -52,7 +52,22 @@ subroutine zeroADSeedsBwd(nn, level, sps)
      flowDomsb(nn, level, sps)%BCData(mm)%Cavitation = zero
      flowDomsb(nn, level, sps)%BCData(mm)%SepSensor = zero
   end do bocoLoop
-  
+
+  if (sps == 1) then
+     flowDomsb(nn,1,sps)%bmti1 = zero
+     flowDomsb(nn,1,sps)%bmti2 = zero
+     flowDomsb(nn,1,sps)%bmtj1 = zero
+     flowDomsb(nn,1,sps)%bmtj2 = zero
+     flowDomsb(nn,1,sps)%bmtk1 = zero
+     flowDomsb(nn,1,sps)%bmtk2 = zero
+     flowDomsb(nn,1,sps)%bvti1 = zero
+     flowDomsb(nn,1,sps)%bvti2 = zero
+     flowDomsb(nn,1,sps)%bvtj1 = zero
+     flowDomsb(nn,1,sps)%bvtj2 = zero
+     flowDomsb(nn,1,sps)%bvtk1 = zero
+     flowDomsb(nn,1,sps)%bvtk2 = zero
+  end if
+
    viscbocoLoop: do mm=1,nviscBocos
       flowDomsb(nn, level, sps)%viscSubface(mm)%tau = zero 
       flowDomsb(nn, level, sps)%viscSubface(mm)%q = zero

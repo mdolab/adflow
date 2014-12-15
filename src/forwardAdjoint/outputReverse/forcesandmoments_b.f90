@@ -540,8 +540,6 @@
    &                             rho2, rho2b, dd2wall)
    CALL POPREAL8ARRAY(rev, SIZE(rev, 1)*SIZE(rev, 2)*SIZE(rev, 3))
    CALL POPREAL8ARRAY(rlv, SIZE(rlv, 1)*SIZE(rlv, 2)*SIZE(rlv, 3))
-   rlv2b = 0.0_8
-   rev2b = 0.0_8
    rlvb = 0.0_8
    revb = 0.0_8
    CALL RESETBCPOINTERSBWD_B(nn, ww1, ww1b, ww2, ww2b, pp1, pp1b, pp2&

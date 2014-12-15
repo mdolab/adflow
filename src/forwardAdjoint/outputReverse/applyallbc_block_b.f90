@@ -2,12 +2,14 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of applyallbc_block in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *rev *p *gamma *w *rlv *si
-   !                *sj *sk gammainf winf pinfcorr
+   !   gradient     of useful results: *rev *bvtj1 *bvtj2 *p *gamma
+   !                *w *rlv *bvtk1 *bvtk2 *si *sj *sk *bvti1 *bvti2
+   !                gammainf tref winf pinfcorr rgas
    !   with respect to varying inputs: *rev *p *w *rlv *si *sj *sk
    !                *(*bcdata.norm) gammainf tref winf pinfcorr rgas
-   !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
-   !                si:in sj:in sk:in bcdata:in *bcdata.norm:in
+   !   Plus diff mem management of: rev:in bvtj1:in bvtj2:in p:in
+   !                gamma:in w:in rlv:in bvtk1:in bvtk2:in si:in sj:in
+   !                sk:in bvti1:in bvti2:in bcdata:in *bcdata.norm:in
    SUBROUTINE APPLYALLBC_BLOCK_B(secondhalo)
    ! Apply BC's for a single block
    USE BLOCKPOINTERS_B
@@ -48,14 +50,62 @@
    CALL BCSYMM(secondhalo)
    !call bcEulerWall(secondHalo, correctForK)
    ! The viscous wall boundary conditions.
+   CALL PUSHREAL8ARRAY(bmtj2, SIZE(bmtj2, 1)*SIZE(bmtj2, 2)*SIZE(bmtj2, 3&
+   &               )*SIZE(bmtj2, 4))
+   CALL PUSHREAL8ARRAY(bmtj1, SIZE(bmtj1, 1)*SIZE(bmtj1, 2)*SIZE(bmtj1, 3&
+   &               )*SIZE(bmtj1, 4))
+   CALL PUSHREAL8ARRAY(bvti2, SIZE(bvti2, 1)*SIZE(bvti2, 2)*SIZE(bvti2, 3&
+   &               ))
+   CALL PUSHREAL8ARRAY(bvti1, SIZE(bvti1, 1)*SIZE(bvti1, 2)*SIZE(bvti1, 3&
+   &               ))
+   CALL PUSHREAL8ARRAY(bmti2, SIZE(bmti2, 1)*SIZE(bmti2, 2)*SIZE(bmti2, 3&
+   &               )*SIZE(bmti2, 4))
+   CALL PUSHREAL8ARRAY(bmti1, SIZE(bmti1, 1)*SIZE(bmti1, 2)*SIZE(bmti1, 3&
+   &               )*SIZE(bmti1, 4))
+   CALL PUSHREAL8ARRAY(bvtk2, SIZE(bvtk2, 1)*SIZE(bvtk2, 2)*SIZE(bvtk2, 3&
+   &               ))
+   CALL PUSHREAL8ARRAY(bvtk1, SIZE(bvtk1, 1)*SIZE(bvtk1, 2)*SIZE(bvtk1, 3&
+   &               ))
    CALL PUSHREAL8ARRAY(rlv, SIZE(rlv, 1)*SIZE(rlv, 2)*SIZE(rlv, 3))
+   CALL PUSHREAL8ARRAY(bmtk2, SIZE(bmtk2, 1)*SIZE(bmtk2, 2)*SIZE(bmtk2, 3&
+   &               )*SIZE(bmtk2, 4))
    CALL PUSHREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4))
+   CALL PUSHREAL8ARRAY(bmtk1, SIZE(bmtk1, 1)*SIZE(bmtk1, 2)*SIZE(bmtk1, 3&
+   &               )*SIZE(bmtk1, 4))
    CALL PUSHREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
+   CALL PUSHREAL8ARRAY(bvtj2, SIZE(bvtj2, 1)*SIZE(bvtj2, 2)*SIZE(bvtj2, 3&
+   &               ))
+   CALL PUSHREAL8ARRAY(bvtj1, SIZE(bvtj1, 1)*SIZE(bvtj1, 2)*SIZE(bvtj1, 3&
+   &               ))
    CALL PUSHREAL8ARRAY(rev, SIZE(rev, 1)*SIZE(rev, 2)*SIZE(rev, 3))
    CALL BCNSWALLADIABATIC(secondhalo, correctfork)
+   CALL PUSHREAL8ARRAY(bmtj2, SIZE(bmtj2, 1)*SIZE(bmtj2, 2)*SIZE(bmtj2, 3&
+   &               )*SIZE(bmtj2, 4))
+   CALL PUSHREAL8ARRAY(bmtj1, SIZE(bmtj1, 1)*SIZE(bmtj1, 2)*SIZE(bmtj1, 3&
+   &               )*SIZE(bmtj1, 4))
+   CALL PUSHREAL8ARRAY(bvti2, SIZE(bvti2, 1)*SIZE(bvti2, 2)*SIZE(bvti2, 3&
+   &               ))
+   CALL PUSHREAL8ARRAY(bvti1, SIZE(bvti1, 1)*SIZE(bvti1, 2)*SIZE(bvti1, 3&
+   &               ))
+   CALL PUSHREAL8ARRAY(bmti2, SIZE(bmti2, 1)*SIZE(bmti2, 2)*SIZE(bmti2, 3&
+   &               )*SIZE(bmti2, 4))
+   CALL PUSHREAL8ARRAY(bmti1, SIZE(bmti1, 1)*SIZE(bmti1, 2)*SIZE(bmti1, 3&
+   &               )*SIZE(bmti1, 4))
+   CALL PUSHREAL8ARRAY(bvtk2, SIZE(bvtk2, 1)*SIZE(bvtk2, 2)*SIZE(bvtk2, 3&
+   &               ))
+   CALL PUSHREAL8ARRAY(bvtk1, SIZE(bvtk1, 1)*SIZE(bvtk1, 2)*SIZE(bvtk1, 3&
+   &               ))
    CALL PUSHREAL8ARRAY(rlv, SIZE(rlv, 1)*SIZE(rlv, 2)*SIZE(rlv, 3))
+   CALL PUSHREAL8ARRAY(bmtk2, SIZE(bmtk2, 1)*SIZE(bmtk2, 2)*SIZE(bmtk2, 3&
+   &               )*SIZE(bmtk2, 4))
    CALL PUSHREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4))
+   CALL PUSHREAL8ARRAY(bmtk1, SIZE(bmtk1, 1)*SIZE(bmtk1, 2)*SIZE(bmtk1, 3&
+   &               )*SIZE(bmtk1, 4))
    CALL PUSHREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
+   CALL PUSHREAL8ARRAY(bvtj2, SIZE(bvtj2, 1)*SIZE(bvtj2, 2)*SIZE(bvtj2, 3&
+   &               ))
+   CALL PUSHREAL8ARRAY(bvtj1, SIZE(bvtj1, 1)*SIZE(bvtj1, 2)*SIZE(bvtj1, 3&
+   &               ))
    CALL PUSHREAL8ARRAY(rev, SIZE(rev, 1)*SIZE(rev, 2)*SIZE(rev, 3))
    CALL BCNSWALLISOTHERMAL(secondhalo, correctfork)
    ! The farfield is a special case, because the treatment
@@ -90,14 +140,62 @@
    CALL BCFARFIELD_B(secondhalo, correctfork)
    END IF
    CALL POPREAL8ARRAY(rev, SIZE(rev, 1)*SIZE(rev, 2)*SIZE(rev, 3))
+   CALL POPREAL8ARRAY(bvtj1, SIZE(bvtj1, 1)*SIZE(bvtj1, 2)*SIZE(bvtj1, 3)&
+   &             )
+   CALL POPREAL8ARRAY(bvtj2, SIZE(bvtj2, 1)*SIZE(bvtj2, 2)*SIZE(bvtj2, 3)&
+   &             )
    CALL POPREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
+   CALL POPREAL8ARRAY(bmtk1, SIZE(bmtk1, 1)*SIZE(bmtk1, 2)*SIZE(bmtk1, 3)&
+   &              *SIZE(bmtk1, 4))
    CALL POPREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4))
+   CALL POPREAL8ARRAY(bmtk2, SIZE(bmtk2, 1)*SIZE(bmtk2, 2)*SIZE(bmtk2, 3)&
+   &              *SIZE(bmtk2, 4))
    CALL POPREAL8ARRAY(rlv, SIZE(rlv, 1)*SIZE(rlv, 2)*SIZE(rlv, 3))
+   CALL POPREAL8ARRAY(bvtk1, SIZE(bvtk1, 1)*SIZE(bvtk1, 2)*SIZE(bvtk1, 3)&
+   &             )
+   CALL POPREAL8ARRAY(bvtk2, SIZE(bvtk2, 1)*SIZE(bvtk2, 2)*SIZE(bvtk2, 3)&
+   &             )
+   CALL POPREAL8ARRAY(bmti1, SIZE(bmti1, 1)*SIZE(bmti1, 2)*SIZE(bmti1, 3)&
+   &              *SIZE(bmti1, 4))
+   CALL POPREAL8ARRAY(bmti2, SIZE(bmti2, 1)*SIZE(bmti2, 2)*SIZE(bmti2, 3)&
+   &              *SIZE(bmti2, 4))
+   CALL POPREAL8ARRAY(bvti1, SIZE(bvti1, 1)*SIZE(bvti1, 2)*SIZE(bvti1, 3)&
+   &             )
+   CALL POPREAL8ARRAY(bvti2, SIZE(bvti2, 1)*SIZE(bvti2, 2)*SIZE(bvti2, 3)&
+   &             )
+   CALL POPREAL8ARRAY(bmtj1, SIZE(bmtj1, 1)*SIZE(bmtj1, 2)*SIZE(bmtj1, 3)&
+   &              *SIZE(bmtj1, 4))
+   CALL POPREAL8ARRAY(bmtj2, SIZE(bmtj2, 1)*SIZE(bmtj2, 2)*SIZE(bmtj2, 3)&
+   &              *SIZE(bmtj2, 4))
    CALL BCNSWALLISOTHERMAL_B(secondhalo, correctfork)
    CALL POPREAL8ARRAY(rev, SIZE(rev, 1)*SIZE(rev, 2)*SIZE(rev, 3))
+   CALL POPREAL8ARRAY(bvtj1, SIZE(bvtj1, 1)*SIZE(bvtj1, 2)*SIZE(bvtj1, 3)&
+   &             )
+   CALL POPREAL8ARRAY(bvtj2, SIZE(bvtj2, 1)*SIZE(bvtj2, 2)*SIZE(bvtj2, 3)&
+   &             )
    CALL POPREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
+   CALL POPREAL8ARRAY(bmtk1, SIZE(bmtk1, 1)*SIZE(bmtk1, 2)*SIZE(bmtk1, 3)&
+   &              *SIZE(bmtk1, 4))
    CALL POPREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4))
+   CALL POPREAL8ARRAY(bmtk2, SIZE(bmtk2, 1)*SIZE(bmtk2, 2)*SIZE(bmtk2, 3)&
+   &              *SIZE(bmtk2, 4))
    CALL POPREAL8ARRAY(rlv, SIZE(rlv, 1)*SIZE(rlv, 2)*SIZE(rlv, 3))
+   CALL POPREAL8ARRAY(bvtk1, SIZE(bvtk1, 1)*SIZE(bvtk1, 2)*SIZE(bvtk1, 3)&
+   &             )
+   CALL POPREAL8ARRAY(bvtk2, SIZE(bvtk2, 1)*SIZE(bvtk2, 2)*SIZE(bvtk2, 3)&
+   &             )
+   CALL POPREAL8ARRAY(bmti1, SIZE(bmti1, 1)*SIZE(bmti1, 2)*SIZE(bmti1, 3)&
+   &              *SIZE(bmti1, 4))
+   CALL POPREAL8ARRAY(bmti2, SIZE(bmti2, 1)*SIZE(bmti2, 2)*SIZE(bmti2, 3)&
+   &              *SIZE(bmti2, 4))
+   CALL POPREAL8ARRAY(bvti1, SIZE(bvti1, 1)*SIZE(bvti1, 2)*SIZE(bvti1, 3)&
+   &             )
+   CALL POPREAL8ARRAY(bvti2, SIZE(bvti2, 1)*SIZE(bvti2, 2)*SIZE(bvti2, 3)&
+   &             )
+   CALL POPREAL8ARRAY(bmtj1, SIZE(bmtj1, 1)*SIZE(bmtj1, 2)*SIZE(bmtj1, 3)&
+   &              *SIZE(bmtj1, 4))
+   CALL POPREAL8ARRAY(bmtj2, SIZE(bmtj2, 1)*SIZE(bmtj2, 2)*SIZE(bmtj2, 3)&
+   &              *SIZE(bmtj2, 4))
    CALL BCNSWALLADIABATIC_B(secondhalo, correctfork)
    CALL POPREAL8ARRAY(rev, SIZE(rev, 1)*SIZE(rev, 2)*SIZE(rev, 3))
    CALL POPREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))

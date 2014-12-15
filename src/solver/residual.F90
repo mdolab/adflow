@@ -319,11 +319,6 @@ subroutine residual_block
               dw(i,j,k,4)=B41*dwo(1) + B42*dwo(2)+ B43*dwo(3) + B44*dwo(4) + B45*dwo(5)
               dw(i,j,k,5)=B51*dwo(1) + B52*dwo(2)+ B53*dwo(3) + B54*dwo(4) + B55*dwo(5)
 
-              ! Regular copy (identity) for the turbulence variables
-              do l=nt1,nt2
-                 dw(i,j,k,l) = (dw(i,j,k,l) + fw(i,j,k,l)) &
-                      * real(iblank(i,j,k), realType)
-              end do
            enddo
         enddo
      enddo
