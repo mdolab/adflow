@@ -92,7 +92,7 @@ subroutine allocMemFlovarPart1(sps,level)
 
      ! Allocate memory for the cell and node indexing...only on sps=1
      allocate(flowDoms(nn,level,sps)%globalCell(0:ib,0:jb,0:kb), &
-          flowDoms(nn,level,sps)%globalNode(0:ib,0:jb,0:kb), stat=ierr)
+          flowDoms(nn,level,sps)%globalNode(0:ie,0:je,0:ke), stat=ierr)
      if (ierr /=0) then
         call terminate("allMemFlowvarPart1", "Allocation failure for globalCell/Node")
      end if
