@@ -236,7 +236,7 @@ subroutine setGlobalCellsAndNodes(level)
            do j=0,jb
               do i=0,ib
                  dw(i ,j, k, 1) = P(i, j, k)
-                 P(i,j,k) = real(globalCell(i,j,k))
+                 P(i,j,k) = transfer(globalCell(i,j,k), P(1,1,1))
               end do
            end do
         end do
@@ -257,7 +257,7 @@ subroutine setGlobalCellsAndNodes(level)
         do k=0, kb
            do j=0, jb
               do i=0, ib
-                 globalCell(i, j, k) = int(P(i, j, k)) 
+                 globalCell(i, j, k) = transfer(P(i, j, k), globalCell(1,1,1))
 
               end do
            end do
@@ -273,7 +273,7 @@ subroutine setGlobalCellsAndNodes(level)
            do j=0,je
               do i=0,ie
                  dw(i, j, k, 2) = X(i, j, k, 1)
-                 X(i, j, k, 1) = globalNode(i, j, k)
+                 X(i, j, k, 1) = transfer(globalNode(i, j, k), X(1,1,1,1))
               end do
            end do
         end do
@@ -289,7 +289,7 @@ subroutine setGlobalCellsAndNodes(level)
         do k=0, ke
            do j=0, je
               do i=0, ie
-                 globalNode(i, j, k) = X(i, j, k, 1)
+                 globalNode(i, j, k) = transfer(X(i, j, k, 1), globalNode(1,1,1))
               end do
            end do
         end do
