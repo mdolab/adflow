@@ -93,10 +93,10 @@
    revd(0, i, j) = revd(1, i, j)
    rev(0, i, j) = rev(1, i, j)
    END IF
+   END DO
+   END DO
    idim = 1
    ddim = 0
-   END DO
-   END DO
    CASE (imax) 
    DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
    DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
@@ -133,10 +133,10 @@
    revd(ib, i, j) = revd(ie, i, j)
    rev(ib, i, j) = rev(ie, i, j)
    END IF
+   END DO
+   END DO
    idim = 1
    ddim = ib
-   END DO
-   END DO
    CASE (jmin) 
    DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
    DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
@@ -173,10 +173,10 @@
    revd(i, 0, j) = revd(i, 1, j)
    rev(i, 0, j) = rev(i, 1, j)
    END IF
+   END DO
+   END DO
    idim = 2
    ddim = 0
-   END DO
-   END DO
    CASE (jmax) 
    DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
    DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
@@ -213,10 +213,10 @@
    revd(i, jb, j) = revd(i, je, j)
    rev(i, jb, j) = rev(i, je, j)
    END IF
+   END DO
+   END DO
    idim = 2
    ddim = jb
-   END DO
-   END DO
    CASE (kmin) 
    DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
    DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
@@ -253,10 +253,10 @@
    revd(i, j, 0) = revd(i, j, 1)
    rev(i, j, 0) = rev(i, j, 1)
    END IF
+   END DO
+   END DO
    idim = 3
    ddim = 0
-   END DO
-   END DO
    CASE (kmax) 
    DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
    DO i=bcdata(nn)%icbeg,bcdata(nn)%icend

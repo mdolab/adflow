@@ -44,9 +44,9 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
   real(kind=realType) :: alphad, betad, sepSensord, Cavitationd
   real(kind=realType), dimension(3, nTimeIntervalsSpectral) :: force, moment, forced, momentd
   integer(kind=intType) :: liftIndex
-  integer(kind=intType), dimension(:,:), pointer ::  colorPtr, colorPtr1, colorPtr2
-  integer(kind=intType), dimension(:,:), pointer ::  globalNodePtr
-  integer(kind=intType), dimension(:,:), pointer ::  globalNodePtr1, globalNodePtr2
+  integer(kind=intType), dimension(:,:), pointer ::  colorPtr0, colorPtr1, colorPtr2
+  integer(kind=intType), dimension(:,:), pointer ::  globalNodePtr, colorPtr
+  integer(kind=intType), dimension(:,:), pointer ::  globalNodePtr0, globalNodePtr1, globalNodePtr2
   integer(kind=intType) :: fRow, oaRow
   logical :: resetToRANS
 
@@ -259,34 +259,46 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
 
                        select case (BCFaceID(mm))
                        case (iMin)
+                          colorPtr0 => flowDomsd(nn, 1, 1)%color(0, :, :)
                           colorPtr1 => flowDomsd(nn, 1, 1)%color(1, :, :)
-                          globalNodePtr1 => globalNode(1, :, :)
                           colorPtr2 => flowDomsd(nn, 1, 1)%color(2, :, :)
+                          globalNodePtr0 => globalNode(0, :, :)
+                          globalNodePtr1 => globalNode(1, :, :)
                           globalNodePtr2 => globalNode(2, :, :)
                        case (iMax)
-                          colorPtr1 => flowDomsd(nn, 1, 1)%color(il, :, :)
-                          globalNodePtr1 => globalNode(il, :, :)
+                          colorPtr0 => flowDomsd(nn, 1, 1)%color(il+1, :, :)
+                          colorPtr1 => flowDomsd(nn, 1, 1)%color(il  , :, :)
                           colorPtr2 => flowDomsd(nn, 1, 1)%color(il-1, :, :)
+                          globalNodePtr0 => globalNode(il+1, :, :)
+                          globalNodePtr1 => globalNode(il  , :, :)
                           globalNodePtr2 => globalNode(il-1, :, :)
                        case (jMin)
+                          colorPtr0 => flowDomsd(nn, 1, 1)%color(:, 0, :)
                           colorPtr1 => flowDomsd(nn, 1, 1)%color(:, 1, :)
-                          globalNodePtr1 => globalNode(:, 1, :)
                           colorPtr2 => flowDomsd(nn, 1, 1)%color(:, 2, :)
+                          globalNodePtr0 => globalNode(:, 0, :)
+                          globalNodePtr1 => globalNode(:, 1, :)
                           globalNodePtr2 => globalNode(:, 2, :)
                        case (jMax)
-                          colorPtr1 => flowDomsd(nn, 1, 1)%color(:, jl, :)
-                          globalNodePtr1 => globalNode(:, jl, :)
+                          colorPtr0 => flowDomsd(nn, 1, 1)%color(:, jl+1, :)
+                          colorPtr1 => flowDomsd(nn, 1, 1)%color(:, jl  , :)
                           colorPtr2 => flowDomsd(nn, 1, 1)%color(:, jl-1, :)
+                          globalNodePtr0 => globalNode(:, jl+1, :)
+                          globalNodePtr1 => globalNode(:, jl  , :)
                           globalNodePtr2 => globalNode(:, jl-1, :)
                        case (kMin)
+                          colorPtr0 => flowDomsd(nn, 1, 1)%color(:, :, 0)
                           colorPtr1 => flowDomsd(nn, 1, 1)%color(:, :, 1)
-                          globalNodePtr1 => globalNode(:, :, 1)
                           colorPtr2 => flowDomsd(nn, 1, 1)%color(:, :, 2)
+                          globalNodePtr0 => globalNode(:, :, 0)
+                          globalNodePtr1 => globalNode(:, :, 1)
                           globalNodePtr2 => globalNode(:, :, 2)
                        case (kMax)
-                          colorPtr1 => flowDomsd(nn, 1, 1)%color(:, :, kl)
-                          globalNodePtr1 => globalNode(:, :, kl)
+                          colorPtr0 => flowDomsd(nn, 1, 1)%color(:, :, kl+1)
+                          colorPtr1 => flowDomsd(nn, 1, 1)%color(:, :, kl  )
                           colorPtr2 => flowDomsd(nn, 1, 1)%color(:, :, kl-1)
+                          globalNodePtr0 => globalNode(:, :, kl+1)
+                          globalNodePtr1 => globalNode(:, :, kl  )
                           globalNodePtr2 => globalNode(:, :, kl-1)
                        end select
 
@@ -308,7 +320,10 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
                                 kk = force_stencil(i_stencil, 3)
 
                                 ! check which k level and set pointers
-                                if (kk == 0) then
+                                if (kk == -1) then
+                                   colorPtr => colorPtr1
+                                   globalNodePtr => globalNodePtr0
+                                else if (kk==0) then
                                    colorPtr => colorPtr1
                                    globalNodePtr => globalNodePtr1
                                 else if (kk==1) then
@@ -348,8 +363,6 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
                                       call MatSetValues(doAdx, 1, oaRow, 1, ind, &
                                            bcDatad(mm)%oarea(i,j), ADD_VALUES, ierr)
                                       call EChk(ierr, __FILE__, __LINE__)
-
-
                                    end do
 
                                    ! Now add in the additional functions

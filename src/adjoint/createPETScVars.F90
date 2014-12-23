@@ -173,8 +173,8 @@ subroutine createPETScVars
      nnzDiagonal = 4 * 3
      nnzOffDiag  = 1
   else
-     nnzDiagonal = 4*4*2*3
-     nnzOffDiag = 7*2*3
+     nnzDiagonal = 4*4*3*3
+     nnzOffDiag = 7*3*3
   end if
 
   call myMatCreate(dFcdx, 1, nDimCell, nDimX, nnzDiagonal, nnzOffDiag, &

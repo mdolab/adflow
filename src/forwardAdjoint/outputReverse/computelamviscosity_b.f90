@@ -81,9 +81,9 @@
    ! Substract 2/3 rho k, which is a part of the normal turbulent
    ! stresses, in case the pressure must be corrected.
    IF (correctfork) THEN
-   DO k=2,kl
-   DO j=2,jl
-   DO i=2,il
+   DO k=1,ke
+   DO j=1,je
+   DO i=1,ie
    p(i, j, k) = p(i, j, k) - twothird*w(i, j, k, irho)*w(i, j, &
    &             k, itu1)
    END DO
@@ -96,9 +96,9 @@
    ! Add the 2/3 rho k again to the pressure if the pressure was
    ! corrected earlier.
    IF (correctfork) THEN
-   DO k=kl,2,-1
-   DO j=jl,2,-1
-   DO i=il,2,-1
+   DO k=ke,1,-1
+   DO j=je,1,-1
+   DO i=ie,1,-1
    wb(i, j, k, irho) = wb(i, j, k, irho) + twothird*w(i, j, k, &
    &             itu1)*pb(i, j, k)
    wb(i, j, k, itu1) = wb(i, j, k, itu1) + twothird*w(i, j, k, &
@@ -110,9 +110,9 @@
    ssuthb = 0.0_8
    musuthb = 0.0_8
    tsuthb = 0.0_8
-   DO k=kl,2,-1
-   DO j=jl,2,-1
-   DO i=il,2,-1
+   DO k=ke,1,-1
+   DO j=je,1,-1
+   DO i=ie,1,-1
    t = p(i, j, k)/(rgas*w(i, j, k, irho))
    temp2 = t/tsuth
    tempb = temp2**1.5_realType*rlvb(i, j, k)/(t+ssuth)
@@ -135,9 +135,9 @@
    END DO
    CALL POPCONTROL1B(branch)
    IF (branch .NE. 0) THEN
-   DO k=kl,2,-1
-   DO j=jl,2,-1
-   DO i=il,2,-1
+   DO k=ke,1,-1
+   DO j=je,1,-1
+   DO i=ie,1,-1
    wb(i, j, k, irho) = wb(i, j, k, irho) - twothird*w(i, j, k, &
    &             itu1)*pb(i, j, k)
    wb(i, j, k, itu1) = wb(i, j, k, itu1) - twothird*w(i, j, k, &

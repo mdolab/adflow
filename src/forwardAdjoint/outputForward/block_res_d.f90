@@ -6,12 +6,12 @@
    !                *(flowdoms.dw) *(*bcdata.fp) *(*bcdata.fv) *(*bcdata.m)
    !                *(*bcdata.oarea) *(*bcdata.sepsensor) *(*bcdata.cavitation)
    !                pref moment force cavitation sepsensor
-   !   with respect to varying inputs: mach tempfreestream machgrid
-   !                lengthref machcoef pointref *(flowdoms.x) *(flowdoms.w)
-   !                pref alpha beta
+   !   with respect to varying inputs: mach tempfreestream reynolds
+   !                machgrid lengthref machcoef pointref *(flowdoms.x)
+   !                *(flowdoms.w) pref alpha beta
    !   RW status of diff variables: funcvalues:out mach:in tempfreestream:in
-   !                veldirfreestream:(loc) machgrid:in lengthref:in
-   !                machcoef:in dragdirection:(loc) liftdirection:(loc)
+   !                reynolds:in veldirfreestream:(loc) machgrid:in
+   !                lengthref:in machcoef:in dragdirection:(loc) liftdirection:(loc)
    !                pointref:in *(flowdoms.x):in-out *(flowdoms.vol):(loc)
    !                *(flowdoms.w):in-out *(flowdoms.dw):out *rev:(loc)
    !                *bvtj1:(loc) *bvtj2:(loc) *p:(loc) *sfacei:(loc)
@@ -193,9 +193,8 @@
    CALL COMPUTEEDDYVISCOSITY_D()
    !  Apply all BC's
    CALL APPLYALLBC_BLOCK_D(.true.)
-   ! if (equations == RANSequations) then 
-   !    call applyAllTurbBCThisBLock(.True.)
-   ! end if
+   IF (equations .EQ. ransequations) CALL APPLYALLTURBBCTHISBLOCK_D(&
+   &                                                            .true.)
    ! Compute skin_friction Velocity (only for wall Functions)
    ! #ifndef TAPENADE_REVERSE
    !   call computeUtau_block

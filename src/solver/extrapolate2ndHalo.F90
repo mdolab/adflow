@@ -72,9 +72,10 @@
 
                 if( viscous )   rlv(0,i,j) = rlv(1,i,j)
                 if( eddyModel ) rev(0,i,j) = rev(1,i,j)
-                idim = 1; ddim = 0
              enddo
           enddo
+          idim = 1; ddim = 0
+
        case (iMax)
           do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
              do i=BCData(nn)%icBeg, BCData(nn)%icEnd
@@ -89,9 +90,9 @@
                 enddo
                 if( viscous )   rlv(ib,i,j) = rlv(ie,i,j)
                 if( eddyModel ) rev(ib,i,j) = rev(ie,i,j)
-                idim = 1; ddim = ib
              enddo 
           enddo
+          idim = 1; ddim = ib
        case (jMin)
           do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
              do i=BCData(nn)%icBeg, BCData(nn)%icEnd
@@ -106,9 +107,9 @@
                 end do
                 if( viscous )   rlv(i,0,j) = rlv(i,1,j)
                 if( eddyModel ) rev(i,0,j) = rev(i,1,j)
-                idim = 2; ddim = 0
              enddo
           enddo
+          idim = 2; ddim = 0
        case (jMax)
           do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
              do i=BCData(nn)%icBeg, BCData(nn)%icEnd
@@ -123,9 +124,9 @@
                 end do
                 if( viscous )   rlv(i,jb,j) = rlv(i,je,j)
                 if( eddyModel ) rev(i,jb,j) = rev(i,je,j)
-                idim = 2; ddim = jb
              enddo
           enddo
+          idim = 2; ddim = jb
        case (kMin)
           do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
              do i=BCData(nn)%icBeg, BCData(nn)%icEnd
@@ -140,9 +141,9 @@
                 end do
                 if( viscous )   rlv(i,j,0) = rlv(i,j,1)
                 if( eddyModel ) rev(i,j,0) = rev(i,j,1)
-                idim = 3; ddim = 0
              enddo
           enddo
+          idim = 3; ddim = 0
        case (kMax)
           do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
              do i=BCData(nn)%icBeg, BCData(nn)%icEnd

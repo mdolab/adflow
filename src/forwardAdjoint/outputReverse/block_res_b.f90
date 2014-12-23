@@ -7,19 +7,19 @@
    !                *(*bcdata.oarea) *(*bcdata.sepsensor) *(*bcdata.cavitation)
    !                moment force cavitation sepsensor
    !   with respect to varying inputs: funcvalues mach tempfreestream
-   !                machgrid lengthref machcoef pointref *(flowdoms.x)
-   !                *(flowdoms.w) *(flowdoms.dw) *(*bcdata.fp) *(*bcdata.fv)
-   !                *(*bcdata.m) *(*bcdata.oarea) *(*bcdata.sepsensor)
+   !                reynolds machgrid lengthref machcoef pointref
+   !                *(flowdoms.x) *(flowdoms.w) *(flowdoms.dw) *(*bcdata.fp)
+   !                *(*bcdata.fv) *(*bcdata.m) *(*bcdata.oarea) *(*bcdata.sepsensor)
    !                *(*bcdata.cavitation) pref moment alpha force
    !                beta cavitation sepsensor
    !   RW status of diff variables: funcvalues:in-zero mach:out tempfreestream:out
-   !                veldirfreestream:(loc) machgrid:out lengthref:out
-   !                machcoef:out dragdirection:(loc) liftdirection:(loc)
-   !                pointref:out *(flowdoms.x):in-out *(flowdoms.vol):(loc)
-   !                *(flowdoms.w):in-out *(flowdoms.dw):in-out *rev:(loc)
-   !                *bvtj1:(loc) *bvtj2:(loc) *p:(loc) *gamma:(loc)
-   !                *rlv:(loc) *bvtk1:(loc) *bvtk2:(loc) *si:(loc)
-   !                *sj:(loc) *sk:(loc) *bvti1:(loc) *bvti2:(loc)
+   !                reynolds:out veldirfreestream:(loc) machgrid:out
+   !                lengthref:out machcoef:out dragdirection:(loc)
+   !                liftdirection:(loc) pointref:out *(flowdoms.x):in-out
+   !                *(flowdoms.vol):(loc) *(flowdoms.w):in-out *(flowdoms.dw):in-out
+   !                *rev:(loc) *bvtj1:(loc) *bvtj2:(loc) *p:(loc)
+   !                *gamma:(loc) *rlv:(loc) *bvtk1:(loc) *bvtk2:(loc)
+   !                *si:(loc) *sj:(loc) *sk:(loc) *bvti1:(loc) *bvti2:(loc)
    !                *fw:(loc) *(*viscsubface.tau):(loc) *(*bcdata.norm):(loc)
    !                *(*bcdata.fp):in-out *(*bcdata.fv):in-out *(*bcdata.m):in-out
    !                *(*bcdata.oarea):in-out *(*bcdata.sepsensor):in-out
@@ -223,9 +223,12 @@
    END DO
    END DO
    CALL APPLYALLBC_BLOCK(.true.)
-   ! if (equations == RANSequations) then 
-   !    call applyAllTurbBCThisBLock(.True.)
-   ! end if
+   IF (equations .EQ. ransequations) THEN
+   CALL APPLYALLTURBBCTHISBLOCK(.true.)
+   CALL PUSHCONTROL1B(0)
+   ELSE
+   CALL PUSHCONTROL1B(1)
+   END IF
    ! Compute skin_friction Velocity (only for wall Functions)
    ! #ifndef 1
    !   call computeUtau_block
@@ -740,6 +743,8 @@
    CALL POPREAL8ARRAY(radj, SIZE(radj, 1)*SIZE(radj, 2)*SIZE(radj, 3))
    CALL POPREAL8ARRAY(radk, SIZE(radk, 1)*SIZE(radk, 2)*SIZE(radk, 3))
    CALL TIMESTEP_BLOCK_B(.false.)
+   CALL POPCONTROL1B(branch)
+   IF (branch .EQ. 0) CALL APPLYALLTURBBCTHISBLOCK_B(.true.)
    DO ii1=ntimeintervalsspectral,1,-1
    DO ii2=1,1,-1
    DO ii3=nn,nn,-1
