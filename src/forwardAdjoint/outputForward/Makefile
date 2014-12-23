@@ -67,16 +67,12 @@ FF90_OBJECTS =  viscousflux_d.o \
 		computeetotcellcpfit_d.o \
 		etotarray_d.o \
                 setbcpointers_d.o\
-                setbcpointersbwd_d.o\
-                resetbcpointersbwd_d.o\
                 setww0pp0rlv0rev0_d.o\
                 setss_d.o\
                 setallx_d.o\
                 setssmetric_d.o\
                 setxxssrhodd2wall_d.o\
                 setgamma_d.o\
-                setgammabwd_d.o\
-                resetgammabwd_d.o\
                 setpp3pp4_d.o\
 	        inviscidcentralflux_d.o\
                 saeddyviscosity_d.o\
