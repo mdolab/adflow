@@ -56,7 +56,7 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
   real(kind=realType) :: alpharef, betaref, machref, machGridRef, machCoefRef
   real(kind=realType), dimension(3) :: rotRateRef,rotcenterRef
   real(kind=realType), dimension(3) :: rotPointRef,pointRefRef
-  real(kind=realType) :: lengthrefref, prefref, tempfreestreamref
+  real(kind=realType) :: lengthrefref, prefref, tempfreestreamref, reynoldsref
   if (ndesignextra < 1) then
      ! No need to do anything here
      return
@@ -135,6 +135,7 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
      lengthRefRef = lengthref
      prefref = pref
      tempfreestreamref = tempfreestream
+     reynoldsref = reynolds
      ! Do 'Coloring' and extra varibales
      do iColor = 1,nColor !set colors based on extra vars....
         !zero derivatives
@@ -154,6 +155,7 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
         pointrefd(:) = 0.0
         lengthrefd = 0.0
         tempfreestreamd = 0.0
+        reynoldsd =0.0
         prefd = 0.0
         if (useAD) then
            if (nDesignAoA ==icolor-1) then
@@ -170,6 +172,8 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
               Prefd = one
            elseif (nDesignTemperature == icolor-1) then
               Tempfreestreamd = one
+           elseif (nDesignReynolds == icolor-1) then
+              reynoldsd = one
            elseif (nDesignPointRefX==icolor-1) then
               pointrefd(1) = one
            elseif (nDesignPointRefY==icolor-1) then
@@ -202,6 +206,9 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
               Pref = pref + delta_x
            elseif (nDesignTemperature == icolor-1) then
               Tempfreestream  = tempfreestream + delta_x
+           elseif (nDesignReynolds == icolor-1) then
+              reynolds = reynolds + delta_x
+
            end if
         end if
 
@@ -287,6 +294,7 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
      LengthRef = LengthRefRef
      pref = prefref
      tempfreestream = tempfreestreamref
+     reynolds = reynoldsref
   end do domainLoopAD
 
   ! Deallocate and reset Values

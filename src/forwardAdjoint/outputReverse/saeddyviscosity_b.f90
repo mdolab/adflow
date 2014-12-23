@@ -39,9 +39,9 @@
    !
    ! Store the cv1^3; cv1 is a constant of the Spalart-Allmaras model.
    cv13 = rsacv1**3
-   DO k=kl,2,-1
-   DO j=jl,2,-1
-   DO i=il,2,-1
+   DO k=ke,1,-1
+   DO j=je,1,-1
+   DO i=ie,1,-1
    rnusa = w(i, j, k, itu1)*w(i, j, k, irho)
    chi = rnusa/rlv(i, j, k)
    chi3 = chi**3

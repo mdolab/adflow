@@ -10,3 +10,6 @@ bin/SUmb
 SUmb_Common.mk
 config.mk
 config/config*
+src_cs/*
+src/forwardAdjoint/temp*
+*.orig

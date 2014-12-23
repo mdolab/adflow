@@ -390,6 +390,9 @@ subroutine releaseMemoryPart2
   call vecDestroy(psi_like2,PETScIerr)
   call EChk(PETScIerr, __FILE__, __LINE__)
 
+  call vecDestroy(psi_like3,PETScIerr)
+  call EChk(PETScIerr, __FILE__, __LINE__)
+
   call vecDestroy(x_like,PETScIerr)
   call EChk(PETScIerr, __FILE__, __LINE__)
 

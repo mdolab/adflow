@@ -69,21 +69,21 @@
        ! stresses, in case the pressure must be corrected.
 
        if( correctForK ) then
-         do k=2,kl
-           do j=2,jl
-             do i=2,il
+         do k=1,ke
+           do j=1,je
+             do i=1,ie
                p(i,j,k) = p(i,j,k) - twoThird*w(i,j,k,irho)*w(i,j,k,itu1)
              enddo
            enddo
          enddo
        endif
 
-       ! Loop over the owned cells of this block and compute the
-       ! laminar viscosity ratio.
+       ! Loop over the owned cells *AND* first level halos of this
+       ! block and compute the laminar viscosity ratio.
 
-       do k=2,kl
-         do j=2,jl
-           do i=2,il
+       do k=1,ke
+         do j=1,je
+           do i=1,ie
 
              ! Compute the nonDimensional temperature and the
              ! nonDimensional laminar viscosity.
@@ -100,9 +100,9 @@
        ! corrected earlier.
 
        if( correctForK ) then
-         do k=2,kl
-           do j=2,jl
-             do i=2,il
+         do k=1,ke
+           do j=1,je
+             do i=1,ie
                p(i,j,k) = p(i,j,k) + twoThird*w(i,j,k,irho)*w(i,j,k,itu1)
              enddo
            enddo

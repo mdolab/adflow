@@ -242,9 +242,9 @@
        ! Loop over the cells of this block and compute the eddy viscosity.
        ! Do not include halo's.
 
-       do k=2,kl
-         do j=2,jl
-           do i=2,il
+       do k=1,ke
+         do j=1,je
+           do i=1,ie
              rnuSA      = w(i,j,k,itu1)*w(i,j,k,irho)
              chi        = rnuSA/rlv(i,j,k)
              chi3       = chi**3

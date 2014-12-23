@@ -81,7 +81,7 @@ subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useSta
   lengthrefd = zero
   prefd = zero
   tempfreestreamd = zero
-
+  reynoldsd = zero
   if (useSpatial) then 
      ! Here we set the spatial and extra seeds if necessary.
      ii = 0
@@ -125,6 +125,8 @@ subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useSta
           Prefd = extraDot(nDesignPressure+1)
      if (nDesignTemperature >= 0) &
           Tempfreestreamd = extraDot(nDesignTemperature+1)
+     if (nDesignReynolds >= 0) &
+          reynoldsd= extraDot(nDesignReynolds+1)
      if (nDesignPointRefX >= 0) &
           pointrefd(1) = extraDot(nDesignPointRefX+1)
      if (nDesignPointRefY >= 0) &
@@ -274,7 +276,7 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
   ! Place output arrays in psi_like and x_like vectors if necessary
   wbar = zero
   if (useState) then 
-     call VecPlaceArray(psi_like1, wbar, ierr)
+     call VecPlaceArray(psi_like3, wbar, ierr)
      call EChk(ierr,__FILE__,__LINE__)
   end if
 
@@ -387,6 +389,8 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
                    extraLocalBar(nDesignPressure+1) = extraLocalBar(nDesignPressure+1) + prefb
               if (nDesignTemperature >= 0) &
                    extraLocalBar(nDesignTemperature+1) = extraLocalBar(nDesignTemperature+1) + tempfreestreamb
+              if (nDesignReynolds >= 0) &
+                   extraLocalBar(nDesignReynolds+1) = extraLocalBar(nDesignReynolds+1) + reynoldsb
               if (nDesignPointRefX >= 0) &
                    extraLocalBar(nDesignPointRefX+1) = extraLocalBar(nDesignPointRefX+1) + pointrefb(1)
               if (nDesignPointRefY >= 0) &
@@ -402,7 +406,7 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
                        do l=1,nw
                           irow = flowDoms(nn, 1, sps2)%globalCell(i,j,k)*nw + l -1
                           if (irow >= 0) then 
-                             call VecSetValues(psi_like1, 1, (/irow/), &
+                             call VecSetValues(psi_like3, 1, (/irow/), &
                                   (/flowdomsb(nn, level, sps)%w(i, j, k, l)/), ADD_VALUES, ierr)
                              call EChk(ierr,__FILE__,__LINE__)
                           end if
@@ -426,13 +430,13 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
 
   ! And perform assembly on the w and x vectors if necessary
   if (useState) then 
-     call VecAssemblyBegin(psi_like1, ierr)
+     call VecAssemblyBegin(psi_like3, ierr)
      call EChk(ierr,__FILE__,__LINE__)
      
-     call VecAssemblyEnd(psi_like1, ierr)
+     call VecAssemblyEnd(psi_like3, ierr)
      call EChk(ierr,__FILE__,__LINE__)
      
-     call VecResetArray(psi_like1, ierr)
+     call VecResetArray(psi_like3, ierr)
      call EChk(ierr,__FILE__,__LINE__)
   end if
 

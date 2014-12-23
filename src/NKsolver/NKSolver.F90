@@ -150,11 +150,13 @@ subroutine NKsolver
         
         if (norm / totalRStart < L2ConvRel) then
            routineFailed = .False.
+           print *, 'exit2'
            exit NonLinearLoop
         end if
      else ! Unsteady
         if (norm / totalRStart < L2ConvRel) then
            routineFailed = .False.
+           print *, 'exit3'
            exit NonLinearLoop
         end if
      end if
@@ -273,7 +275,7 @@ subroutine LSCubic(x, f, g, y, w, fnorm, ynorm, gnorm, nfevals, flag)
 
   ! Set some defaults:
   alpha		= 1.e-2_realType
-  minlambda     = 1.e-5_realType
+  minlambda     = 1.e-7_realType
   nfevals = 0
   flag = .True. 
 

@@ -253,7 +253,10 @@ subroutine alloc_derivative_values(level)
   end do
   
   ! Also allocate a "color" array for the derivative calcs. Only do
-  ! this on flowDomsd, only on the 1st timeInstance
+  ! this on flowDomsd, only on the 1st timeInstance. This goes from
+  ! 0:{i,j,k}b which is necessary for the double halo cells. The same
+  ! array is used for the nodal colors, however, in that case only the
+  ! 0:{i,j,k}e entries are needed. 
   do nn=1,nDom
      call setPointers(nn, level, 1)
      allocate(flowDomsd(nn,1,1)%color(0:ib,0:jb,0:kb),stat=ierr)
