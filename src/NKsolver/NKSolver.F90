@@ -150,13 +150,11 @@ subroutine NKsolver
         
         if (norm / totalRStart < L2ConvRel) then
            routineFailed = .False.
-           print *, 'exit2'
            exit NonLinearLoop
         end if
      else ! Unsteady
         if (norm / totalRStart < L2ConvRel) then
            routineFailed = .False.
-           print *, 'exit3'
            exit NonLinearLoop
         end if
      end if
