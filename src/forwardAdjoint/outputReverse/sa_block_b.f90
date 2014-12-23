@@ -49,11 +49,29 @@
    !      *                                                                *
    !      ******************************************************************
    ! Set the arrays for the boundary condition treatment.
+   CALL PUSHREAL8ARRAY(bmtj2, SIZE(bmtj2, 1)*SIZE(bmtj2, 2)*SIZE(bmtj2, 3&
+   &               )*SIZE(bmtj2, 4))
+   CALL PUSHREAL8ARRAY(bmtj1, SIZE(bmtj1, 1)*SIZE(bmtj1, 2)*SIZE(bmtj1, 3&
+   &               )*SIZE(bmtj1, 4))
+   CALL PUSHREAL8ARRAY(bmti2, SIZE(bmti2, 1)*SIZE(bmti2, 2)*SIZE(bmti2, 3&
+   &               )*SIZE(bmti2, 4))
+   CALL PUSHREAL8ARRAY(bmti1, SIZE(bmti1, 1)*SIZE(bmti1, 2)*SIZE(bmti1, 3&
+   &               )*SIZE(bmti1, 4))
+   CALL PUSHREAL8ARRAY(bmtk2, SIZE(bmtk2, 1)*SIZE(bmtk2, 2)*SIZE(bmtk2, 3&
+   &               )*SIZE(bmtk2, 4))
+   CALL PUSHREAL8ARRAY(bmtk1, SIZE(bmtk1, 1)*SIZE(bmtk1, 2)*SIZE(bmtk1, 3&
+   &               )*SIZE(bmtk1, 4))
    CALL BCTURBTREATMENT()
    ! Solve the transport equation for nuTilde.
    ! The eddy viscosity and the boundary conditions are only
    ! applied if an actual update has been computed in saSolve.
    IF (.NOT.resonly) THEN
+   bvti2b = 0.0_8
+   bvti1b = 0.0_8
+   bvtk2b = 0.0_8
+   bvtk1b = 0.0_8
+   bvtj2b = 0.0_8
+   bvtj1b = 0.0_8
    CALL APPLYALLTURBBCTHISBLOCK_B(.true.)
    CALL SAEDDYVISCOSITY_B()
    ELSE
@@ -65,5 +83,17 @@
    bvti2b = 0.0_8
    END IF
    CALL SASOLVE_B(resonly)
+   CALL POPREAL8ARRAY(bmtk1, SIZE(bmtk1, 1)*SIZE(bmtk1, 2)*SIZE(bmtk1, 3)&
+   &              *SIZE(bmtk1, 4))
+   CALL POPREAL8ARRAY(bmtk2, SIZE(bmtk2, 1)*SIZE(bmtk2, 2)*SIZE(bmtk2, 3)&
+   &              *SIZE(bmtk2, 4))
+   CALL POPREAL8ARRAY(bmti1, SIZE(bmti1, 1)*SIZE(bmti1, 2)*SIZE(bmti1, 3)&
+   &              *SIZE(bmti1, 4))
+   CALL POPREAL8ARRAY(bmti2, SIZE(bmti2, 1)*SIZE(bmti2, 2)*SIZE(bmti2, 3)&
+   &              *SIZE(bmti2, 4))
+   CALL POPREAL8ARRAY(bmtj1, SIZE(bmtj1, 1)*SIZE(bmtj1, 2)*SIZE(bmtj1, 3)&
+   &              *SIZE(bmtj1, 4))
+   CALL POPREAL8ARRAY(bmtj2, SIZE(bmtj2, 1)*SIZE(bmtj2, 2)*SIZE(bmtj2, 3)&
+   &              *SIZE(bmtj2, 4))
    CALL BCTURBTREATMENT_B()
    END SUBROUTINE SA_BLOCK_B

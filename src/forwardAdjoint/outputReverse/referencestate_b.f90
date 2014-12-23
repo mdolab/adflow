@@ -5,8 +5,8 @@
    !   gradient     of useful results: veldirfreestream machcoef gammainf
    !                pinf timeref rhoinf muref rhoinfdim tref muinf
    !                uinf rgas pinfdim pref
-   !   with respect to varying inputs: mach tempfreestream veldirfreestream
-   !                machcoef pref
+   !   with respect to varying inputs: mach tempfreestream reynolds
+   !                veldirfreestream machcoef pref
    !
    !      ******************************************************************
    !      *                                                                *
@@ -50,7 +50,7 @@
    INTEGER(kind=inttype) :: sps, nn, mm
    REAL(kind=realtype) :: gm1, ratio, tmp
    REAL(kind=realtype) :: mx, my, mz, re, v, tinfdim
-   REAL(kind=realtype) :: mxb, myb, mzb, vb, tinfdimb
+   REAL(kind=realtype) :: mxb, myb, mzb, reb, vb, tinfdimb
    REAL(kind=realtype), DIMENSION(3) :: dirloc, dirglob
    REAL(kind=realtype), DIMENSION(5) :: valloc, valglob
    TYPE(BCDATATYPE), DIMENSION(:), POINTER :: bcdata
@@ -202,6 +202,7 @@
    CALL POPCONTROL2B(branch)
    IF (branch .EQ. 0) THEN
    tempfreestreamb = 0.0_8
+   reynoldsb = 0.0_8
    tinfdimb = 0.0_8
    ELSE
    IF (branch .EQ. 1) THEN
@@ -219,9 +220,9 @@
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    rhoinfdimb = rhoinfdimb + rgasdim*tempfreestream*pinfdimb
-   tempb3 = re*rhoinfdimb/v
-   mudimb = mudimb + tempb3
-   vb = -(mudim*tempb3/v)
+   tempb3 = rhoinfdimb/v
+   mudimb = mudimb + re*tempb3
+   vb = -(re*mudim*tempb3/v)
    temp = mx**2 + my**2 + mz**2
    IF (rgasdim*(temp*(gammainf*tempfreestream)) .EQ. 0.0_8) THEN
    tempb2 = 0.0
@@ -237,11 +238,13 @@
    &       tinfdimb
    CALL POPREAL8(pinfdim)
    tinfdim = tempfreestream
+   reb = mudim*tempb3
    tempb4 = gammainf*tempfreestream*tempb2
    mxb = 2*mx*tempb4
    myb = 2*my*tempb4
    mzb = 2*mz*tempb4
    gammainfb = gammainfb + temp*tempfreestream*tempb2
+   reynoldsb = reb/reynoldslength
    machcoefb = machcoefb + veldirfreestream(2)*myb + veldirfreestream&
    &       (1)*mxb + veldirfreestream(3)*mzb
    veldirfreestreamb(3) = veldirfreestreamb(3) + machcoef*mzb
@@ -253,6 +256,7 @@
    tinfdimb = 0.0_8
    ELSE
    tempfreestreamb = 0.0_8
+   reynoldsb = 0.0_8
    END IF
    CALL COMPUTEGAMMA_B(tempfreestream, tempfreestreamb, gammainf, &
    &                 gammainfb, 1)

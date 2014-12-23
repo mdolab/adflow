@@ -100,6 +100,7 @@
    REAL(kind=realtype) :: mach, machcoef, machgrid
    REAL(kind=realtype) :: machd, machcoefd, machgridd
    REAL(kind=realtype) :: reynolds, reynoldslength
+   REAL(kind=realtype) :: reynoldsd
    REAL(kind=realtype) :: tempfreestream, gammaconstant, rgasdim
    REAL(kind=realtype) :: tempfreestreamd
    REAL(kind=realtype) :: prandtl, prandtlturb, pklim, walloffset

@@ -4,8 +4,8 @@
    !  Differentiation of referencestate in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: gammainf pinf timeref rhoinf
    !                muref rhoinfdim tref muinf uinf rgas pinfdim pref
-   !   with respect to varying inputs: mach tempfreestream veldirfreestream
-   !                machcoef pref
+   !   with respect to varying inputs: mach tempfreestream reynolds
+   !                veldirfreestream machcoef pref
    !
    !      ******************************************************************
    !      *                                                                *
@@ -49,7 +49,7 @@
    INTEGER(kind=inttype) :: sps, nn, mm
    REAL(kind=realtype) :: gm1, ratio, tmp
    REAL(kind=realtype) :: mx, my, mz, re, v, tinfdim
-   REAL(kind=realtype) :: mxd, myd, mzd, vd, tinfdimd
+   REAL(kind=realtype) :: mxd, myd, mzd, red, vd, tinfdimd
    REAL(kind=realtype), DIMENSION(3) :: dirloc, dirglob
    REAL(kind=realtype), DIMENSION(5) :: valloc, valglob
    TYPE(BCDATATYPE), DIMENSION(:), POINTER :: bcdata
@@ -122,6 +122,7 @@
    mz = machcoef*veldirfreestream(3)
    ! Reynolds number per meter, the viscosity using sutherland's
    ! law and the free stream velocity relative to the body.
+   red = reynoldsd/reynoldslength
    re = reynolds/reynoldslength
    mudimd = musuthdim*((tsuthdim+ssuthdim)*1.5*(tempfreestream/&
    &       tsuthdim)**0.5*tempfreestreamd/((tempfreestream+ssuthdim)*&
@@ -141,7 +142,7 @@
    v = SQRT(arg1)
    ! Compute the free stream density and pressure.
    ! Set TInfDim to tempFreestream.
-   rhoinfdimd = (re*mudimd*v-re*mudim*vd)/v**2
+   rhoinfdimd = ((red*mudim+re*mudimd)*v-re*mudim*vd)/v**2
    rhoinfdim = re*mudim/v
    pinfdimd = rgasdim*(rhoinfdimd*tempfreestream+rhoinfdim*&
    &       tempfreestreamd)

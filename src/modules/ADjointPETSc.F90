@@ -58,7 +58,7 @@ module ADjointPETSc
   Vec      overArea, fCell, fNode
 
   ! These are empty vectors
-  Vec     w_like1, w_like2, psi_like1, psi_like2, x_like
+  Vec     w_like1, w_like2, psi_like1, psi_like2, psi_like3, x_like
   Vec     fVec1, fVec2
   VecScatter dRdaTpsi_scatter
   PetscErrorCode PETScIerr

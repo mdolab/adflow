@@ -151,15 +151,15 @@
    CALL PUSHCONTROL1B(1)
    END IF
    IF (eddymodel) THEN
-   CALL PUSHCONTROL1B(0)
-   ELSE
    CALL PUSHCONTROL1B(1)
+   ELSE
+   CALL PUSHCONTROL1B(0)
    END IF
-   idim = 1
-   ddim = 0
    END DO
    END DO
    CALL PUSHCONTROL3B(1)
+   idim = 1
+   ddim = 0
    CASE (imax) 
    DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
    DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
@@ -200,15 +200,15 @@
    CALL PUSHCONTROL1B(1)
    END IF
    IF (eddymodel) THEN
-   CALL PUSHCONTROL1B(0)
-   ELSE
    CALL PUSHCONTROL1B(1)
+   ELSE
+   CALL PUSHCONTROL1B(0)
    END IF
-   idim = 1
-   ddim = ib
    END DO
    END DO
    CALL PUSHCONTROL3B(2)
+   idim = 1
+   ddim = ib
    CASE (jmin) 
    DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
    DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
@@ -241,15 +241,15 @@
    CALL PUSHCONTROL1B(1)
    END IF
    IF (eddymodel) THEN
-   CALL PUSHCONTROL1B(0)
-   ELSE
    CALL PUSHCONTROL1B(1)
+   ELSE
+   CALL PUSHCONTROL1B(0)
    END IF
-   idim = 2
-   ddim = 0
    END DO
    END DO
    CALL PUSHCONTROL3B(3)
+   idim = 2
+   ddim = 0
    CASE (jmax) 
    DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
    DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
@@ -290,15 +290,15 @@
    CALL PUSHCONTROL1B(1)
    END IF
    IF (eddymodel) THEN
-   CALL PUSHCONTROL1B(0)
-   ELSE
    CALL PUSHCONTROL1B(1)
+   ELSE
+   CALL PUSHCONTROL1B(0)
    END IF
-   idim = 2
-   ddim = jb
    END DO
    END DO
    CALL PUSHCONTROL3B(4)
+   idim = 2
+   ddim = jb
    CASE (kmin) 
    DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
    DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
@@ -331,15 +331,15 @@
    CALL PUSHCONTROL1B(1)
    END IF
    IF (eddymodel) THEN
-   CALL PUSHCONTROL1B(0)
-   ELSE
    CALL PUSHCONTROL1B(1)
+   ELSE
+   CALL PUSHCONTROL1B(0)
    END IF
-   idim = 3
-   ddim = 0
    END DO
    END DO
    CALL PUSHCONTROL3B(5)
+   idim = 3
+   ddim = 0
    CASE (kmax) 
    DO j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
    DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
@@ -411,7 +411,7 @@
    DO j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
    DO i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
    CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
+   IF (branch .NE. 0) THEN
    revb(1, i, j) = revb(1, i, j) + revb(0, i, j)
    revb(0, i, j) = 0.0_8
    END IF
@@ -460,7 +460,7 @@
    DO j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
    DO i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
    CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
+   IF (branch .NE. 0) THEN
    tmpb8 = revb(ib, i, j)
    revb(ib, i, j) = 0.0_8
    revb(ie, i, j) = revb(ie, i, j) + tmpb8
@@ -520,7 +520,7 @@
    DO j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
    DO i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
    CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
+   IF (branch .NE. 0) THEN
    revb(i, 1, j) = revb(i, 1, j) + revb(i, 0, j)
    revb(i, 0, j) = 0.0_8
    END IF
@@ -568,7 +568,7 @@
    DO j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
    DO i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
    CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
+   IF (branch .NE. 0) THEN
    tmpb18 = revb(i, jb, j)
    revb(i, jb, j) = 0.0_8
    revb(i, je, j) = revb(i, je, j) + tmpb18
@@ -626,7 +626,7 @@
    DO j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
    DO i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
    CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
+   IF (branch .NE. 0) THEN
    revb(i, j, 1) = revb(i, j, 1) + revb(i, j, 0)
    revb(i, j, 0) = 0.0_8
    END IF

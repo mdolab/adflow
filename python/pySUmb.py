@@ -1344,8 +1344,8 @@ class SUMB(AeroSolver):
             strLvl = nLevels
 
         self.sumb.inputiteration.mgstartlevel = strLvl
-        self.sumb.inputiteration.groundlevel = strLvl
-        self.sumb.inputiteration.currentlevel = strLvl
+        self.sumb.iteration.groundlevel = strLvl
+        self.sumb.iteration.currentlevel = strLvl
         self.sumb.monitor.niterold = 0
         self.sumb.monitor.nitercur = 0
         self.sumb.iteration.itertot = 0
@@ -1354,6 +1354,7 @@ class SUMB(AeroSolver):
         self.sumb.killsignals.routinefailed =  False
         self.sumb.killsignals.fatalfail = False
         self.sumb.nksolvervars.freestreamresset = False
+
     def getSolution(self, sps=1, groupName=None):
         """ Retrieve the solution variables from the solver. Note this
         is a collective function and must be called on all processors
@@ -1631,7 +1632,7 @@ class SUMB(AeroSolver):
             rho = AP.rho
             V = AP.V
             mu = AP.mu
-
+            
         # Do some checking here for things that MUST be specified:
         if AP.mach is None:
             raise Error("'mach' number must be specified in the aeroProblem"
@@ -1672,10 +1673,6 @@ class SUMB(AeroSolver):
         self.sumb.adjustinflowangle(alpha*dToR, beta*dToR, liftIndex)
         if self.getOption('printIterations') and self.comm.rank == 0:
             print('-> Alpha... %f '% numpy.real(alpha))
-
-        #update the flow vars
-        if not firstCall:
-            self.sumb.updateflow()
 
         # 2. Reference Points:
         self.sumb.inputphysics.pointref = [xRef, yRef, zRef]
@@ -1763,11 +1760,11 @@ class SUMB(AeroSolver):
             self.sumb.inputmotion.coscoeffouryrot = AP.cosCoefFourier
             self.sumb.inputmotion.sincoeffouryrot = AP.sinCoefFourier
             self.sumb.inputmotion.gridmotionspecified = True
-        # end if
 
         if not firstCall:
             self.sumb.referencestate()
             self.sumb.setflowinfinitystate()
+            self.sumb.iteration.groundlevel = 1
             self.sumb.updateperiodicinfoalllevels()
             self.sumb.updategridvelocitiesalllevels()
 
@@ -1903,16 +1900,20 @@ class SUMB(AeroSolver):
         # solver is not used...a safeguard check is done in Fortran
         self.sumb.destroynksolver()
         self._setAeroDVs()
-        # For now, just create all the petsc variables
+
         if not self.adjointSetup or reform:
-            self.releaseAdjointMemory()
+
+            # Create any PETSc variables if necessary
             self.sumb.createpetscvars()
 
             if self.getOption('useReverseModeAD'):
-                self.sumb.setupallresidualmatrices()
-            else:
-                self.sumb.setupallresidualmatricesfwd()
+                raise Error('The old reverse mode AD routines have been '
+                            'deprecated.')
 
+            # Setup all required matrices in forward mode. (possibly none
+            # of them)
+            self.sumb.setupallresidualmatricesfwd()
+        
             # Create coupling matrix struct whether we need it or not
             [npts, ncells] = self.sumb.getforcesize()
             nTS = self.sumb.inputtimespectral.ntimeintervalsspectral
@@ -1921,20 +1922,10 @@ class SUMB(AeroSolver):
                 forcePoints[i] = self.getForcePoints(TS=i)
 
             self.sumb.setupcouplingmatrixstruct(forcePoints.T)
-
-            # Setup the KSP object
-            self.sumb.setuppetscksp()
-
-            # Set the flag
             self.adjointSetup = True
 
-    def printMatrixInfo(self, dRdwT=False, dRdwPre=False, dRdx=False,
-                        dRda=False, dSdw=False, dSdx=False,
-                        printLocal=False, printSum=False, printMax=False):
-
-        # Call sumb matrixinfo function
-        self.sumb.matrixinfo(dRdwT, dRdwPre, dRdx, dRda, dSdw, dSdx,
-                             printLocal, printSum, printMax)
+        # Setup the KSP object
+        self.sumb.setuppetscksp()
 
     def releaseAdjointMemory(self):
         """
@@ -2016,24 +2007,48 @@ class SUMB(AeroSolver):
 
         DVsRequired = list(self.curAP.DVNames.keys())
         for dv in DVsRequired:
-            if dv in self.possibleAeroDVs:
-                funcsSens[self.curAP.DVNames[dv]] = res[self.aeroDVs[dv]]
-                if dv == 'alpha':
-                    funcsSens[self.curAP.DVNames[dv]] *= numpy.pi/180.0
-            elif dv in ['altitude']:
+            if dv.lower() in ['altitude', 'mach', 'P', 'T', 'reynolds']:
+                # These design variables are *special*! The issue is
+                # that SUmb takes as effective input P, T, mach and
+                # reynolds and these are *not* the typical values we
+                # use from the aeroproblem. So to ensure generic
+                # treatment of the derivatives we have already added
+                # P, T, mach and Reynolds to SUmb as "design
+                # variables" --- this means we get the sensitivity of
+                # the objective with respect to these 4
+                # variables. Next we compute the derivatives of
+                # P,T,mach,rho,V, and mu with respect to the actual
+                # aeroproblem design variable 'dv'. We then chain rule
+                # them together, along with the linearization fo
+                # Re=rho*V/mu. 
+                tmp = {}
+	        self.curAP.evalFunctionsSens(tmp, ['P', 'T', 'mach', 'rho','V', 'mu'])
+
                 # Extract the derivatives wrt the independent
                 # parameters in SUmb       
                 dIdP = res[self.aeroDVs['P']]
                 dIdT = res[self.aeroDVs['T']]
+                dIdMach = res[self.aeroDVs['mach']]
+                # Chain rule the reynolds dependance back to what came from aeroproblem:
+                dIdReynolds = res[self.aeroDVs['reynolds']]
+                dIdV = self.curAP.rho/self.curAP.mu*dIdReynolds
+                dIdrho = self.curAP.V/self.curAP.mu*dIdReynolds
+                dIdmu = -self.curAP.rho*self.curAP.V/self.curAP.mu**2 * dIdReynolds
 
-		# Get the derivative of THESE values with respect
-                # to the altitude:
-		tmp = {}
-	        self.curAP.evalFunctionsSens(tmp, ['P', 'T'])
                 # Chain-rule to get the final derivative:
                 funcsSens[self.curAP.DVNames[dv]] = (
-                    tmp[self.curAP['P']][self.curAP.DVNames['altitude']]*dIdP +
-                    tmp[self.curAP['T']][self.curAP.DVNames['altitude']]*dIdT)
+                    tmp[self.curAP['P']][self.curAP.DVNames[dv]]*dIdP +
+                    tmp[self.curAP['T']][self.curAP.DVNames[dv]]*dIdT +
+                    tmp[self.curAP['mach']][self.curAP.DVNames[dv]]*dIdMach + 
+                    tmp[self.curAP['rho']][self.curAP.DVNames[dv]]*dIdrho + 
+                    tmp[self.curAP['V']][self.curAP.DVNames[dv]]*dIdV + 
+                    tmp[self.curAP['mu']][self.curAP.DVNames[dv]]*dIdmu)
+
+            elif dv in self.possibleAeroDVs:
+                if dv in self.possibleAeroDVs:
+                    funcsSens[self.curAP.DVNames[dv]] = res[self.aeroDVs[dv]]
+                    if dv == 'alpha':
+                        funcsSens[self.curAP.DVNames[dv]] *= numpy.pi/180.0
      
 	return funcsSens
 
@@ -2044,12 +2059,14 @@ class SUMB(AeroSolver):
         DVsRequired = list(self.curAP.DVNames.keys())
         DVMap = {}
         for dv in DVsRequired:
-            if dv in self.possibleAeroDVs:
-                self._addAeroDV(dv)
-            elif dv.lower() in ['altitude']:
-                # We internally need to add the following:
-                self._addAeroDV('T')
+            if dv.lower() in ['altitude', 'mach', 'P', 'T', 'reynolds']:
+                # All these variables need to be compined 
                 self._addAeroDV('P')
+                self._addAeroDV('mach')
+                self._addAeroDV('reynolds')
+                self._addAeroDV('T')
+            elif dv in self.possibleAeroDVs:
+                self._addAeroDV(dv)
             else:
                 raise Error("The design variable '%s' as specified in the"
                             " aeroProblem cannot be used with SUmb."% dv)
@@ -2068,47 +2085,6 @@ class SUMB(AeroSolver):
                       '= %d'% self.aeroDVs[adv]
             # Leave this zero-based since we only need to use it in petsc
             exec(execStr)
-
-        # Run the small amount of fortran code for adjoint initialization
-        self.sumb.preprocessingadjoint()
-
-    def _totalAeroDerivative(self, objective):
-        """
-        This function computes the total aerodynamic derivatives for
-        the given objective. It returns a flattened array of the
-        aerodynamic variables which may more may not be actually the
-        DV's that the user wants.
-
-        The adjoint vector is now calculated. This function computes
-        dI/dX_aero = pI/pX_aero - dR/dX_aero^T * psi. The "aero"
-        variables are intrinsic ONLY to the aero discipline. Nothing
-        in the structural process should depend on these functions
-        directly.
-        """
-
-        obj, aeroObj = self._getObjective(objective)
-
-        if obj in self.curAP.sumbData.adjoints:
-            psi = self.curAP.sumbData.adjoints[obj]
-        else:
-            raise Error("%s adjoint for current aeroProblem "
-                        "%s is not computed."% obj)
-
-        # Direct partial derivative contibution
-        dIda_1 = self.getdIda(objective)
-
-        # dIda contribution for drda^T * psi
-        dIda_2 = self.getdRdaPsi(psi)
-
-        # Total derivative of the obective wrt aero-only DVs
-        dIda = dIda_1 - dIda_2
-
-        # Alpha derivative needs to be scaled to degrees to be
-        # consistent:
-        if self.sumb.adjointvars.ndesignaoa != -1:
-            dIda[self.sumb.adjointvars.ndesignaoa] *= numpy.pi/180.0
-
-        return dIda
 
     def solveAdjointForRHS(self, inVec, relTol=None):
         """
@@ -2150,48 +2126,22 @@ class SUMB(AeroSolver):
 
         return outVec
 
-    def saveAdjointMatrix(self, fileName):
+    def saveAdjointMatrix(self, baseFileName):
         """ Save the adjoint matrix to a binary petsc file for
         possible future external testing
 
         Parameters
         ----------
-        fileName : str
-            Filename to use.
+        basefileName : str
+            Filename to use. The Adjoint matrix, PC matrix(if it exists)
+            and RHS  will be written
         """
-        if self.adjointSetup:
-            self.sumb.saveadjointmatrix(fileName)
-        else:
-            raise Error('Cannot save matrix since adjoint not setup.')
-
-    def saveAdjointPC(self, fileName):
-        """ Save the adjoint preconditioning matrix to a binary petsc
-        file for possible future external testing
-
-        Parameters
-        ----------
-        fileName : str
-            Filename to use.
-        """
-
-        if self.adjointSetup and self.getOption('approxpc'):
-            self.sumb.saveadjointpc(fileName)
-        else:
-            raise Error('Cannot save PC matrix since adjoint not setup.')
-
-    def saveAdjointRHS(self, fileName):
-        """ Save the adjoint RHS to a binary petsc
-        file for possible future external testing
-
-        Parameters
-        ----------
-        fileName : str
-            Filename to use.
-        """
-        if self.adjointSetup:
-            self.sumb.saveadjointrhs(fileName)
-        else:
-            raise Error('Cannot save RHS since adjoint not setup.')
+        adjointMatrixName = baseFileNmae + '_drdw.bin'
+        pcMatrixName = baseFileNmae + '_drdwPre.bin'
+        rhsName = baseFileName + '_rsh.bin'
+        self.sumb.saveadjointmatrix(adjointMatrixName)
+        self.sumb.saveadjointpc(pcMatrixName)
+        self.sumb.saveadjointrhs(rhsName)
 
     def computeStabilityParameters(self):
         """
@@ -2312,16 +2262,7 @@ class SUMB(AeroSolver):
         else:
             return False
 
-    def getdRdaPsi(self,  psi):
-
-        if self.nDVAero > 0:
-            dIda = self.sumb.getdrdapsi(self.nDVAero, psi)
-        else:
-            dIda = numpy.zeros((0))
-
-        return dIda
-
-    def getdRdwTVec(self, inVec, outVec):
+    def getdRdwTVec(self, inVec):
         """ Compute the result: outVec = dRdw^T * inVec
 
         Parameters
@@ -2331,7 +2272,21 @@ class SUMB(AeroSolver):
         outVec : array
             Ouput result. Same size as inVec.
         """
-        outVec = self.sumb.getdrdwtvec(inVec, outVec)
+        outVec = self.sumb.getdrdwtvec(inVec)
+
+        return outVec
+
+    def getdRdwVec(self, inVec):
+        """ Compute the result: outVec = dRdw * inVec
+
+        Parameters
+        ----------
+        inVec : arrary
+            Arrary of size getAdjointStateSize()
+        outVec : array
+            Ouput result. Same size as inVec.
+        """
+        outVec = self.sumb.getdrdwvec(inVec)
 
         return outVec
 
@@ -2464,55 +2419,71 @@ class SUMB(AeroSolver):
             # Call the fortran version
             return self.sumb.getdidw(obj, self.getAdjointStateSize())
 
+    # =========================================================================
+    #   The following routines two routines are the workhorse of the
+    #   forward and reverse mode routines. These can compute *ANY*
+    #   product that is possible from the solver. 
+    #   =========================================================================
 
-    def computeMatrixFreeProductFwd(self, xDVdot=None, Xvdot=None, wDot=None, 
-                                    residualDeriv=None, funcDeriv=None):
+    def computeMatrixFreeProductFwd(self, xDvDot=None, wDot=None, 
+                                    residualDeriv=True, funcDeriv=True):
+        """This the main python gateway for producing forward mode jacobian
+        vector products. It is not generally called by the user by
+        rather internally or from another solver. A DVGeo object and a
+        mesh object must both be set for this routine.
         
-        if xDVdot is None and wDot is None and Xvdot is None:
-            raise Error('computeMatrixFreeProductFwd: xDVdot and wDot cannot both be None')
+        Parameters
+        ----------
+        xDvDot : dict 
+            Perturbation on the geometric design variables defined in DVGeo. 
+        wDot : numpy array
+            Perturbation the state variables
+        residualDeriv : bool
+            Flag specifiying if the residualDerivative (dwDot) should be returned
+        funcDeriv : bool
+            Flag specifiying if the derviative of the cost functions 
+            (as defined in the current aeroproblem) should be returned. 
+
+        Returns
+        -------
+        dwdot, funcsdot : array, dict
+            One or both of these are returned depending on the residualDeriv, 
+            and funcDeriv flag 
+        """
+
+        if xDvdot is None and wDot is None:
+            raise Error('computeMatrixFreeProductFwd: xDvDot and wDot cannot '
+                        'both be None')
         
         self._setAeroDVs()
 
-        # Set some defaults:
-        xvdot = numpy.zeros(self.getSpatialSize())
-        wdot = numpy.zeros(self.getStateSize())
-        if self.nDVAero > 0:
-            extradot = numpy.zeros(self.nDVAero)
-        else:
-            extradot = numpy.zeros(1)
-        useState = False
-        useSpatial = False
-
-        # Error checking
-        if xDVdot is not None and Xvdot is not None:
-            raise Error('xDVdot and Xvdot cannot be specified at the same time!')
-
-        # Design variable dict supplied:
-        if xDVdot is not None:
-            # Do the sptatial design variables -> Go through the geometry + mesh warp
-            xsdot = self.DVGeo.totalSensitivityProd(xDVdot, self.curAP.ptSetName)
+        if xDvDot is not None:
+            # Do the sptatial design variables -> Go through the
+            # geometry + mesh warp
+            xsdot = self.DVGeo.totalSensitivityProd(xDvDot, self.curAP.ptSetName)
             xvdot = self.mesh.warpDerivFwd(xsdot)
             # Do the aerodynamic design variables
-            if self.nDVAero > 0:
-                extradot = numpy.zeros(self.nDVAero)
-                for key in self.aeroDVs:
-                    execStr = 'mapping = self.sumb.%s'%self.possibleAeroDVs[key.lower()]
-                    exec(execStr)
-                    if key == 'alpha':
-                        # convert angle of attack to radians
-                        extradot[mapping] = xDVdot[key]*(numpy.pi/180.0)
-                    else:
-                        extradot[mapping] = xDVdot[key]
-            useSpatial = True
-        # state perturbation
-        if wDot is not None:
-            wdot = wDot
-            useState = True
+            extradot = numpy.zeros(self.nDVAero)
+            for key in self.aeroDVs:
+                execStr = 'mapping = self.sumb.%s'%self.possibleAeroDVs[key.lower()]
+                exec(execStr)
+                if key == 'alpha':
+                    # convert angle of attack to radians
+                    extradot[mapping] = xDvDot[key]*(numpy.pi/180.0)
+                else:
+                    extradot[mapping] = xDvDot[key]
 
-        # grid vector perturbation
-        if Xvdot is not None:
-            xvdot = Xvdot
             useSpatial = True
+        else:
+            xvdot = numpy.zeros(self.getSpatialSize())
+            extradot = numpy.zeros(self.nDVAero)
+            useSpatial = False
+
+        if wDot is not None:
+            useState = True
+        else:
+            wDot = numpy.zeros(self.getStateSize())
+            useState = False
 
         costSize = self.sumb.costfunctions.ncostfunction
         dwdot, tmp = self.sumb.computematrixfreeproductfwd(
@@ -2563,8 +2534,8 @@ class SUMB(AeroSolver):
         if resBar is None and funcsBar is None:
             raise Error("computeMatrixFreeProductBwd: resBar and funcsBar"
                         " cannot both be None")
-        if wDeriv is None and xVDeriv is None and xDvDerivAero is None:
-            raise Error("computeMatrixFreeProductBwd: rxDeriv, xVDeriv and "
+        if wDeriv is None and xVDeriv is None and xDvDeriv is None and xDvDerivAero is None:
+            raise Error("computeMatrixFreeProductBwd: wDeriv, xVDeriv and "
                         "xDvDeriv cannot all be None")
             
         if resBar is None:
@@ -2630,65 +2601,6 @@ class SUMB(AeroSolver):
             return returns[0], returns[1], returns[2]
         else:
             return returns[0], returns[1], returns[2], returns[3]
-
-
-    # def computeMatrixFreeProductBwd(self, resBar=None, funcsBar=None, wDeriv=True, xDvDeriv=True):
-
-    #     if resBar is None and funcsBar is None:
-    #         raise Error("computeMatrixFreeProductBwd: resBar and funcsBar"
-    #                     " cannot both be None")
-        
-    #     if resBar is None:
-    #         resBar = numpy.zeros(self.getStateSize())
-
-    #     if funcsBar is None:
-    #         funcsBar = numpy.zeros(self.sumb.costfunctions.ncostfunction)
-    #     else:
-    #         tmp = numpy.zeros(self.sumb.costfunctions.ncostfunction)
-    #         # Extract out the seeds
-    #         for f in funcsBar:
-    #             mapping = self.sumbCostFunctions[f.lower()]
-    #             tmp[mapping-1] = funcsBar[f]
-    #         funcsBar = tmp
-
-    #     useSpatial = False
-    #     useState = False
-    #     if wDeriv:
-    #         useState = True
-    #     if xDvDeriv:
-    #         useSpatial = True
-            
-    #     if self.nDVAero > 0:
-    #         aeroDVsize = self.nDVAero
-    #     else:
-    #         aeroDVsize = 1
-        
-    #     xvbar, extrabar, wbar = self.sumb.computematrixfreeproductbwd(
-    #         resBar, funcsBar, useSpatial, useState, self.getSpatialSize(), aeroDVsize)
-            
-    #     if xDvDeriv:
-    #         xdvbar = {}
-    #         self.mesh.warpDeriv(xvbar)
-    #         xsbar = self.mesh.getdXs('all')
-    #         xdvbar.update(self.DVGeo.totalSensitivity(xsbar, 
-    #             self.curAP.ptSetName, self.comm, config=self.curAP.name))
-               
-    #         # We also need to add in the aero derivatives here
-    #         for key in self.aeroDVs:
-    #             execStr = 'mapping = self.sumb.%s'%self.possibleAeroDVs[key]
-    #             exec(execStr)
-    #             if key == 'alpha':
-    #                 # convert angle of attack to degrees
-    #                 xdvbar[key] = extrabar[mapping]*(numpy.pi/180.0)
-    #             else:
-    #                 xdvbar[key] = extrabar[mapping]
-            
-    #     if wDeriv and xDvDeriv:
-    #         return wbar, xdvbar
-    #     elif wDeriv:
-    #         return wbar
-    #     else:
-    #         return xdvbar
 
     def sectionVectorByFamily(self, *args, **kwargs):
         return self.mesh.sectionVectorByFamily(*args, **kwargs)

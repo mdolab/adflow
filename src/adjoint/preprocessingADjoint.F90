@@ -14,7 +14,7 @@ subroutine preprocessingADjoint
   use inputTimeSpectral
   use inputAdjoint
   use ADjointPETSc, only: w_like1, w_like2, fvec1, fvec2, PETScIerr, &
-       psi_like1, psi_like2, x_like
+       psi_like1, psi_like2, x_like, psi_like3
   implicit none
 
 #ifndef USE_NO_PETSC
@@ -74,6 +74,10 @@ subroutine preprocessingADjoint
           PETSC_NULL_SCALAR,psi_like2,PETScIerr)
      call EChk(PETScIerr,__FILE__,__LINE__)
 
+     call VecCreateMPIWithArray(SUMB_COMM_WORLD,ndimPsi,PETSC_DECIDE, &
+          PETSC_NULL_SCALAR,psi_like3,PETScIerr)
+     call EChk(PETScIerr,__FILE__,__LINE__)
+
      call VecCreateMPIWithArray(SUMB_COMM_WORLD,ndimX,PETSC_DECIDE, &
           PETSC_NULL_SCALAR,x_like,PETScIerr)
      call EChk(PETScIerr,__FILE__,__LINE__)
@@ -103,6 +107,10 @@ subroutine preprocessingADjoint
 
      call VecCreateMPIWithArray(SUMB_COMM_WORLD,nstate,ndimPsi,PETSC_DECIDE, &
           PETSC_NULL_SCALAR,psi_like2,PETScIerr)
+     call EChk(PETScIerr,__FILE__,__LINE__)
+
+     call VecCreateMPIWithArray(SUMB_COMM_WORLD,nstate,ndimPsi,PETSC_DECIDE, &
+          PETSC_NULL_SCALAR,psi_like3,PETScIerr)
      call EChk(PETScIerr,__FILE__,__LINE__)
 
      call VecCreateMPIWithArray(SUMB_COMM_WORLD,3,ndimX,PETSC_DECIDE, &

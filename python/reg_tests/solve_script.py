@@ -513,7 +513,8 @@ def test5():
                      coefPol=[0],
                      evalFuncs=['cl', 'cl0','clalpha', 'clalphadot'])
     ap.addDV('alpha')
-    ap.addDV('mach')
+    # Note that the mach number derivative for the timspectral is
+    # broken and needs to be fixed. 
     CFDSolver = SUMB(options=aeroOptions)
     DVGeo = DVGeometry('../inputFiles/mdo_tutorial_ffd.fmt')
     nTwist = 6

@@ -76,9 +76,9 @@
    ! Substract 2/3 rho k, which is a part of the normal turbulent
    ! stresses, in case the pressure must be corrected.
    IF (correctfork) THEN
-   DO k=2,kl
-   DO j=2,jl
-   DO i=2,il
+   DO k=1,ke
+   DO j=1,je
+   DO i=1,ie
    pd(i, j, k) = pd(i, j, k) - twothird*(wd(i, j, k, irho)*w(i&
    &             , j, k, itu1)+w(i, j, k, irho)*wd(i, j, k, itu1))
    p(i, j, k) = p(i, j, k) - twothird*w(i, j, k, irho)*w(i, j, &
@@ -90,11 +90,11 @@
    ELSE
    rlvd = 0.0_8
    END IF
-   ! Loop over the owned cells of this block and compute the
-   ! laminar viscosity ratio.
-   DO k=2,kl
-   DO j=2,jl
-   DO i=2,il
+   ! Loop over the owned cells *AND* first level halos of this
+   ! block and compute the laminar viscosity ratio.
+   DO k=1,ke
+   DO j=1,je
+   DO i=1,ie
    ! Compute the nonDimensional temperature and the
    ! nonDimensional laminar viscosity.
    td = (pd(i, j, k)*rgas*w(i, j, k, irho)-p(i, j, k)*(rgasd*w(i&
@@ -114,9 +114,9 @@
    ! Add the 2/3 rho k again to the pressure if the pressure was
    ! corrected earlier.
    IF (correctfork) THEN
-   DO k=2,kl
-   DO j=2,jl
-   DO i=2,il
+   DO k=1,ke
+   DO j=1,je
+   DO i=1,ie
    pd(i, j, k) = pd(i, j, k) + twothird*(wd(i, j, k, irho)*w(i&
    &             , j, k, itu1)+w(i, j, k, irho)*wd(i, j, k, itu1))
    p(i, j, k) = p(i, j, k) + twothird*w(i, j, k, irho)*w(i, j, &

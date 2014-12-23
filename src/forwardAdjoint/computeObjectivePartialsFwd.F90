@@ -1,5 +1,5 @@
 subroutine getdIdw(costFunction, dIdw, nState)
-
+#ifndef USE_COMPLEX
   ! Return the derivative: 'dIdw' of size 'nState' for the objective
   ! number 'costFunction'.
 
@@ -88,11 +88,11 @@ subroutine getdIdw(costFunction, dIdw, nState)
   ! Reset array
   call VecResetArray(psi_like1, ierr)
   call EChk(ierr, __FILE__, __LINE__)
-
+#endif
 end subroutine getdIdw
 
 subroutine getdIdx(costFunction, dIdx, nSpatial)
-  
+#ifndef USE_COMPLEX
   ! Return the derivative: 'dIdx' of size 'nSpatial' for the objective
   ! number 'costFunction'.
 
@@ -179,11 +179,11 @@ subroutine getdIdx(costFunction, dIdx, nSpatial)
 
   call VecResetArray(x_like, ierr)
   call EChk(ierr, __FILE__, __LINE__)
-
+#endif
 end subroutine getdIdx
 
 subroutine getdIda(costFunction)
-
+#ifndef USE_COMPLEX
   ! Return the derivative: 'dIda' for the objective number 'costFunction'
   ! Result is stored in the dIda variable in the ADjointVars Module.
 
@@ -255,6 +255,10 @@ subroutine getdIda(costFunction)
 
         if (nDesignTemperature >= 0) then 
            dIda(nDesignTemperature + 1) = dIda(nDesignTemperature+1) + tempfreestreamb
+        end if
+
+        if (nDesignReynolds >= 0) then 
+           dIda(nDesignReynolds + 1) = dIda(nDesignTemperature+1) + reynoldsb
         end if
 
         if (nDesignLengthRef >= 0) then
@@ -357,8 +361,20 @@ subroutine getdIda(costFunction)
            end do
         end do
      end if
-  end if
 
+     if (nDesignReynolds >= 0) then
+        do sps=1, nTimeIntervalsSpectral
+           do idim=1,3
+              dIda(nDesignReynolds+1) = dIda(nDesignReynolds+1) + &
+                   dFMdExtra(idim, nDesignReynolds+1, sps)*forceb(idim, sps)
+              dIda(nDesignReynolds+1) = dIda(nDesignReynolds+1) + &
+                   dFMdExtra(idim+3, nDesignReynolds+1, sps)*momentb(idim, sps)
+           end do
+        end do
+     end if
+
+  end if
+#endif
 end subroutine getdIda
 
 

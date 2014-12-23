@@ -120,9 +120,9 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   !  Apply all BC's
   call applyAllBC_block(.True.)
  
-  ! if (equations == RANSequations) then 
-  !    call applyAllTurbBCThisBLock(.True.)
-  ! end if
+  if (equations == RANSequations) then 
+     call applyAllTurbBCThisBLock(.True.)
+  end if
 
   ! Compute skin_friction Velocity (only for wall Functions)
 ! #ifndef TAPENADE_REVERSE
