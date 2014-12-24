@@ -838,7 +838,6 @@ python module libsumb
          logical :: frozenturbulence
          logical :: usediagtspc
          logical :: restartadjoint
-         logical :: solveadjoint
          logical :: setmonitor
          logical :: printtiming
          logical :: firstrun
