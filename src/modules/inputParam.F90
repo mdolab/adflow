@@ -162,7 +162,6 @@
 
 
        logical :: useApproxWallDistance
-       logical :: updateWallAssociation
        logical :: lowSpeedPreconditioner
        end module inputDiscretization
 

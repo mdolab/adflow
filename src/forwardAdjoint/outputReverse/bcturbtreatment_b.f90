@@ -3,11 +3,12 @@
    !
    !  Differentiation of bcturbtreatment in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
    !   gradient     of useful results: *bvtj1 *bvtj2 *w *rlv *bvtk1
-   !                *bvtk2 *bvti1 *bvti2 winf
+   !                *bvtk2 *d2wall *bvti1 *bvti2 winf
    !   with respect to varying inputs: *bvtj1 *bvtj2 *w *rlv *bvtk1
-   !                *bvtk2 *bvti1 *bvti2 winf
+   !                *bvtk2 *d2wall *bvti1 *bvti2 winf
    !   Plus diff mem management of: bvtj1:in bvtj2:in w:in rlv:in
-   !                bvtk1:in bvtk2:in bvti1:in bvti2:in bcdata:in
+   !                bvtk1:in bvtk2:in d2wall:in bvti1:in bvti2:in
+   !                bcdata:in
    !
    !      ******************************************************************
    !      *                                                                *

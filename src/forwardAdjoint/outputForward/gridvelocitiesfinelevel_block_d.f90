@@ -3,8 +3,8 @@
    !
    !  Differentiation of gridvelocitiesfinelevel_block in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *sfacei *sfacej *s *sfacek
-   !   with respect to varying inputs: veldirfreestream machgrid *x
-   !                *si *sj *sk gammainf pinf timeref rhoinf
+   !   with respect to varying inputs: *x *si *sj *sk veldirfreestream
+   !                machgrid gammainf pinf timeref rhoinf
    !   Plus diff mem management of: sfacei:in sfacej:in s:in sfacek:in
    !                x:in si:in sj:in sk:in
    !

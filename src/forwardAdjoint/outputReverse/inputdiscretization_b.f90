@@ -107,6 +107,5 @@
    LOGICAL :: vortexcorr, dirscaling, hscalinginlet
    LOGICAL :: radiineededfine, radiineededcoarse
    LOGICAL :: useapproxwalldistance
-   LOGICAL :: updatewallassociation
    LOGICAL :: lowspeedpreconditioner
    END MODULE INPUTDISCRETIZATION_B

@@ -5,11 +5,11 @@
    !   gradient     of useful results: *rev *dw *w *rlv *vol *si *sj
    !                *sk (global)timeref (global)winf[1:10]
    !   with respect to varying inputs: *rev *bvtj1 *bvtj2 *dw *w *rlv
-   !                *bvtk1 *bvtk2 *vol *si *sj *sk *bvti1 *bvti2 (global)timeref
-   !                (global)winf[1:10]
+   !                *bvtk1 *bvtk2 *vol *d2wall *si *sj *sk *bvti1
+   !                *bvti2 (global)timeref (global)winf[1:10]
    !   Plus diff mem management of: rev:in bvtj1:in bvtj2:in dw:in
-   !                w:in rlv:in bvtk1:in bvtk2:in vol:in si:in sj:in
-   !                sk:in bvti1:in bvti2:in bcdata:in
+   !                w:in rlv:in bvtk1:in bvtk2:in vol:in d2wall:in
+   !                si:in sj:in sk:in bvti1:in bvti2:in bcdata:in
    !
    !      ******************************************************************
    !      *                                                                *

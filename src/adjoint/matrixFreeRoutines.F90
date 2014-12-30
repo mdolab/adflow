@@ -38,6 +38,7 @@ subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useSta
   real(kind=realType) :: alphad, betad, forced(3), momentd(3), sepSensord
   integer(kind=intType) ::  level, irow, liftIndex
   real(kind=realType), dimension(costSize) :: funcsLocalDot
+
   logical :: resetToRans
 
 #ifndef USE_COMPLEX
@@ -251,6 +252,7 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
   use ADjointPETSc
   use adjointvars
   use costfunctions
+  use walldistancedata, only : xSurfVec, xSurfVecb, xSurf, xSurfb, wallScatter
   implicit none
 
   ! Input Variables
@@ -271,6 +273,7 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
   integer(kind=intType) ::  level, irow, liftIndex
   logical :: resetToRans
   real(kind=realType), dimension(extraSize) :: extraLocalBar
+  real(kind=realType), dimension(:), allocatable :: xSurfbSum
 #ifndef USE_COMPLEX
 
   ! Place output arrays in psi_like and x_like vectors if necessary
@@ -324,6 +327,16 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
   funcValuesb = zero
   call getDirAngle(velDirFreestream, liftDirection, liftIndex, alpha, beta)
 
+  ! Now extract the vector of the surface data we need
+  call VecGetArrayF90(xSurfVec(level), xSurf, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  ! And it's derivative
+  call VecGetArrayF90(xSurfVecb, xSurfb, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+  allocate(xSurfbSum(size(xSurfb)))
+  xSurfbSum = zero
+
   ! Zero out extraLocal
   extraLocalBar = zero
   
@@ -376,6 +389,9 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
                  end do
               end do
 
+              ! We need to acculumate the contribution from this block into xSurfbSum
+              xSurfbSum = xSurfbSum + xSurfb
+
               ! Also need the extra variables, those are zero-based:
               if (nDesignAoA >= 0) &
                    extraLocalBar(nDesignAoA+1) = extraLocalBar(nDesignAoA+1) + alphab
@@ -419,7 +435,6 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
      end do
   end do domainLoopAD
  
-  call dealloc_derivative_values_bwd(level)
 
   ! Finally we have to do an mpi all reduce on the local parts:
   if (useSpatial) then 
@@ -428,7 +443,22 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
      call EChk(ierr,__FILE__,__LINE__)
   end if
 
-  ! And perform assembly on the w and x vectors if necessary
+
+  ! Copy the Sum value back to xSurfb which is actually the PETSc
+  ! array. And now we are done with the xSurfBSum value
+  xSurfb = xSurfbSum
+  deallocate(xsurfbSum)
+
+  ! These arrays need to be restored before we can do the spatial scatter below:
+  call VecRestoreArrayF90(xSurfVec(level), xSurf, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  ! And it's derivative
+  call VecRestoreArrayF90(xSurfVecb, xSurfb, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+
+  ! And perform assembly on the w vectors if 
   if (useState) then 
      call VecAssemblyBegin(psi_like3, ierr)
      call EChk(ierr,__FILE__,__LINE__)
@@ -441,16 +471,26 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
   end if
 
   if (useSpatial) then 
-     ! And performa assembly on the w and x vectors
+     ! And perform assembly on the x vectors
      call VecAssemblyBegin(x_like, ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
      call VecAssemblyEnd(x_like, ierr)
      call EChk(ierr,__FILE__,__LINE__)
      
+     ! Now scatter the xsurb contribution back into x_like
+       ! Perform the scatter from the global x vector to xSurf
+     call VecScatterBegin(wallScatter(1), xSurfVecb, x_like, ADD_VALUES, SCATTER_REVERSE, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     
+     call VecScatterEnd(wallScatter(1), xSurfVecb, x_like, ADD_VALUES, SCATTER_REVERSE, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
      call VecResetArray(x_like, ierr)
      call EChk(ierr,__FILE__,__LINE__)
   end if
+
+  call dealloc_derivative_values_bwd(level)
 
   ! Reset the correct equation parameters if we were useing the frozen
   ! Turbulent 

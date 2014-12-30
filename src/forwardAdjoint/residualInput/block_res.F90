@@ -25,6 +25,7 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   use inputADjoint
   use diffSizes
   use costFunctions
+  use wallDistanceData
   implicit none
 
   ! Input Arguments:
@@ -76,6 +77,13 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
 
      call xhalo_block
      call metric_block
+
+#ifdef TAPENADE_REVERSE
+     if (equations == RANSEquations) then 
+        call updateWallDistancesQuickly(nn, 1, sps)
+     end if
+#endif
+
 #ifndef TAPENADE_REVERSE
      ! -------------------------------------
      ! These functions are required for TS
@@ -145,7 +153,6 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
      select case (turbModel)
         
      case (spalartAllmaras)
-        !call determineDistance2(1, sps)
         call sa_block(.true.)
         
      case default

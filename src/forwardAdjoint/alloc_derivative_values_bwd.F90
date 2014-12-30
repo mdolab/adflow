@@ -13,6 +13,8 @@ subroutine alloc_derivative_values_bwd(level)
   use paramTurb
   use turbMod
   use inputADjoint
+  use wallDistanceData
+
   implicit none
 
   ! Input parameters
@@ -48,6 +50,10 @@ subroutine alloc_derivative_values_bwd(level)
 
   ! winfd hasn't be allocated so we'll do it here
   allocate(winfb(10),stat=ierr) 
+  call EChk(ierr,__FILE__,__LINE__)
+
+  ! Duplicate the PETSc Xsurf Vec, but only on the first level:
+  call VecDuplicate(xSurfVec(1), xSurfVecb, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
   do nn=1,nDom
