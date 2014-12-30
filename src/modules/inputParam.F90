@@ -997,7 +997,6 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       ! solveADjoint : Whether or not the adjoint equations should be solved
        ! Monitor      : Whether or not to enable the monitor for the KSP 
        !                contexts.
        ! ApproxPC     : Whether or not to use the approximate jacobian 
@@ -1010,7 +1009,7 @@
        !                 from the previous solution
        ! useDiagTSPC   : Whether or not the off time instance terms are
        !                 included in the TS preconditioner.
-       logical :: solveADjoint, setMonitor, ApproxPC, restartADjoint, useDiagTSPC
+       logical ::  setMonitor, ApproxPC, restartADjoint, useDiagTSPC
        logical :: frozenTurbulence, viscPC, ADPC
 
        ! ADjointSolverType: Type of linear solver for the ADjoint
