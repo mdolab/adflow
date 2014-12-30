@@ -209,10 +209,10 @@ def test1():
          'nCycles':10000,
          'monitorvariables':['resrho','cl','cd','cmz','totalr'],
          'useNKSolver':True,
-         'L2Convergence':1e-12,
+         'L2Convergence':1e-14,
          'L2ConvergenceCoarse':1e-2,
          'nkswitchtol':1e-2,
-         'adjointl2convergence': 1e-12,
+         'adjointl2convergence': 1e-14,
      }
     )
 
@@ -330,10 +330,10 @@ def test2():
          'nCycles':10000,
          'monitorvariables':['resrho','cl','cd','cmz','totalr'],
          'useNKSolver':True,
-         'L2Convergence':1e-12,
+         'L2Convergence':1e-14,
          'L2ConvergenceCoarse':1e-2,
          'nkswitchtol':1e-2,
-         'adjointl2convergence': 1e-12,
+         'adjointl2convergence': 1e-14,
      }
     )
 
@@ -396,7 +396,7 @@ def test3():
          'monitorvariables':['resrho','cl','cd','cmz','totalr'],
          'L2Convergence':1e-12,
          'L2ConvergenceCoarse':1e-2,
-         'adjointl2convergence': 1e-12,
+         'adjointl2convergence': 1e-14,
      }
     )
 
@@ -435,9 +435,9 @@ def test4():
              'nCyclesCoarse':250,
              'nCycles':10000,
              'monitorvariables':['resrho','cl','cd','cmz','totalr'],
-             'L2Convergence':1e-12,
+             'L2Convergence':1e-14,
              'L2ConvergenceCoarse':1e-2,
-             'adjointl2convergence': 1e-12,
+             'adjointl2convergence': 1e-14,
              'useNKSolver':True,
              'NKSwitchTol':1e-2,
          }
@@ -495,9 +495,9 @@ def test5():
          'nCyclesCoarse':250,
          'nCycles':10000,
          'monitorvariables':['resrho','cl','cd','cmz','totalr'],
-         'L2Convergence':1e-12,
+         'L2Convergence':1e-14,
          'L2ConvergenceCoarse':1e-2,
-         'adjointl2convergence': 1e-12,
+         'adjointl2convergence': 1e-14,
          'timeIntervals':3,
          'equationMode':'Time Spectral',
          'tsstability':True,
@@ -573,10 +573,10 @@ def test6():
          'nCycles':10000,
          'monitorvariables':['resrho','resturb','cl','cd','cmz','yplus','totalr'],
          'useNKSolver':True,
-         'L2Convergence':1e-12,
+         'L2Convergence':1e-14,
          'L2ConvergenceCoarse':1e-2,
          'nkswitchtol':1e-2,
-         'adjointl2convergence': 1e-12,
+         'adjointl2convergence': 1e-14,
      }
     )
 
@@ -642,10 +642,10 @@ def test7():
          'nCycles':1000,
          'monitorvariables':['resrho','resturb','cl','cd','cmz','yplus','totalr'],
          'useNKSolver':True,
-         'L2Convergence':1e-15,
+         'L2Convergence':1e-14,
          'L2ConvergenceCoarse':1e-4,
          'nkswitchtol':1e-3,
-         'adjointl2convergence': 1e-13,
+         'adjointl2convergence': 1e-14,
          'frozenTurbulence':False,
      }
     )
@@ -710,10 +710,10 @@ def test8():
          'nCycles':1000,
          'monitorvariables':['resrho','resturb','cl','cd','cmz','yplus','totalr'],
          'useNKSolver':True,
-         'L2Convergence':1e-15,
+         'L2Convergence':1e-14,
          'L2ConvergenceCoarse':1e-4,
          'nkswitchtol':1e-3,
-         'adjointl2convergence': 1e-13,
+         'adjointl2convergence': 1e-14,
          'frozenTurbulence':False,
      }
     )
@@ -774,10 +774,10 @@ def test9():
          'nCycles':1000,
          'monitorvariables':['resrho','cl','cd','cmy','yplus','totalr'],
          'useNKSolver':True,
-         'L2Convergence':1e-12,
+         'L2Convergence':1e-14,
          'L2ConvergenceCoarse':1e-4,
          'nkswitchtol':1e-1,
-         'adjointl2convergence': 1e-12,
+         'adjointl2convergence': 1e-14,
          'liftIndex':3,
      }
     )
