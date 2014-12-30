@@ -34,7 +34,8 @@ if mode == 'train':
     except OSError:
         pass
 
-    # Run script
+    # Run script: Note that the reference values are actually the
+    # *REAL* values not the CS ones. 
     os.system('%s -np 4 python solve_script_cs.py >> %s_reg.ref 2>&1'%(
         mpiexec, module_name))
             
@@ -47,7 +48,7 @@ else:
         pass
 
     # Run script
-    os.system('%s -np 4 python solve_script_cs.py >> %s_reg 2>&1'%(
+    os.system('%s -np 4 python solve_script_cs.py complex >> %s_reg 2>&1'%(
         mpiexec, module_name))
 
     # Do the comparison (reference file must be first)

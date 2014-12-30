@@ -40,80 +40,14 @@
    LOGICAL :: err
    REAL(kind=realtype) :: length, dot
    REAL(kind=realtype) :: dotd
-   LOGICAL :: imininternal, jmininternal, kmininternal
-   LOGICAL :: imaxinternal, jmaxinternal, kmaxinternal
    REAL(kind=realtype), DIMENSION(3) :: v1, v2, norm
    REAL(kind=realtype), DIMENSION(3) :: v1d
    INTRINSIC SQRT
    REAL(kind=realtype) :: arg1
-   !
-   !          **************************************************************
-   !          *                                                            *
-   !          * Extrapolation of the coordinates. First extrapolation in   *
-   !          * i-direction, without halo's, followed by extrapolation in  *
-   !          * j-direction, with i-halo's and finally extrapolation in    *
-   !          * k-direction, with both i- and j-halo's. In this way also   *
-   !          * the indirect halo's get a value, albeit a bit arbitrary.   *
-   !          *                                                            *
-   !          **************************************************************
-   !
-   imininternal = .false.
-   jmininternal = .false.
-   kmininternal = .false.
-   imaxinternal = .false.
-   jmaxinternal = .false.
-   kmaxinternal = .false.
-   ! Loop over all the subfaces to determine which ones do NOT need to be extrapolated.
-   loopsubface:DO mm=1,nsubface
-   IF (bctype(mm) .EQ. b2bmatch) THEN
-   SELECT CASE  (bcfaceid(mm)) 
-   CASE (imin) 
-   imininternal = .true.
-   CASE (imax) 
-   imaxinternal = .true.
-   CASE (jmin) 
-   jmininternal = .true.
-   CASE (jmax) 
-   jmaxinternal = .true.
-   CASE (kmin) 
-   kmininternal = .true.
-   CASE (kmax) 
-   kmaxinternal = .true.
-   END SELECT
-   END IF
-   END DO loopsubface
-   ! Re-loop back over and see if any subface that is NOT B2BMatch is
-   ! on the same logical face as a Block2Block. We cannot deal with
-   ! properly so will print an error and quit
-   err = .false.
-   loopsubface2:DO mm=1,nsubface
-   IF (bctype(mm) .NE. b2bmatch) THEN
-   SELECT CASE  (bcfaceid(mm)) 
-   CASE (imin) 
-   IF (imininternal) err = .true.
-   CASE (imax) 
-   IF (imaxinternal) err = .true.
-   CASE (jmin) 
-   IF (jmininternal) err = .true.
-   CASE (jmax) 
-   IF (jmaxinternal) err = .true.
-   CASE (kmin) 
-   IF (kmininternal) err = .true.
-   CASE (kmax) 
-   IF (kmaxinternal) err = .true.
-   END SELECT
-   END IF
-   END DO loopsubface2
-   IF (err) THEN
-   PRINT*, &
-   &   'Detected a block-to-block boundary condition on the same face'
-   PRINT*, 'as another boundary condition. This is not supported.'
-   STOP
-   ELSE
    ! Extrapolation in i-direction.
    DO k=1,kl
    DO j=1,jl
-   IF (.NOT.imininternal) THEN
+   IF (globalnode(0, j, k) .LT. 0) THEN
    xd(0, j, k, 1) = two*xd(1, j, k, 1) - xd(2, j, k, 1)
    x(0, j, k, 1) = two*x(1, j, k, 1) - x(2, j, k, 1)
    xd(0, j, k, 2) = two*xd(1, j, k, 2) - xd(2, j, k, 2)
@@ -121,7 +55,7 @@
    xd(0, j, k, 3) = two*xd(1, j, k, 3) - xd(2, j, k, 3)
    x(0, j, k, 3) = two*x(1, j, k, 3) - x(2, j, k, 3)
    END IF
-   IF (.NOT.imaxinternal) THEN
+   IF (globalnode(ie, j, k) .LT. 0) THEN
    xd(ie, j, k, 1) = two*xd(il, j, k, 1) - xd(nx, j, k, 1)
    x(ie, j, k, 1) = two*x(il, j, k, 1) - x(nx, j, k, 1)
    xd(ie, j, k, 2) = two*xd(il, j, k, 2) - xd(nx, j, k, 2)
@@ -134,7 +68,7 @@
    ! Extrapolation in j-direction.
    DO k=1,kl
    DO i=0,ie
-   IF (.NOT.jmininternal) THEN
+   IF (globalnode(i, 0, k) .LT. 0) THEN
    xd(i, 0, k, 1) = two*xd(i, 1, k, 1) - xd(i, 2, k, 1)
    x(i, 0, k, 1) = two*x(i, 1, k, 1) - x(i, 2, k, 1)
    xd(i, 0, k, 2) = two*xd(i, 1, k, 2) - xd(i, 2, k, 2)
@@ -142,7 +76,7 @@
    xd(i, 0, k, 3) = two*xd(i, 1, k, 3) - xd(i, 2, k, 3)
    x(i, 0, k, 3) = two*x(i, 1, k, 3) - x(i, 2, k, 3)
    END IF
-   IF (.NOT.jmaxinternal) THEN
+   IF (globalnode(i, je, k) .LT. 0) THEN
    xd(i, je, k, 1) = two*xd(i, jl, k, 1) - xd(i, ny, k, 1)
    x(i, je, k, 1) = two*x(i, jl, k, 1) - x(i, ny, k, 1)
    xd(i, je, k, 2) = two*xd(i, jl, k, 2) - xd(i, ny, k, 2)
@@ -155,7 +89,7 @@
    ! Extrapolation in k-direction.
    DO j=0,je
    DO i=0,ie
-   IF (.NOT.kmininternal) THEN
+   IF (globalnode(i, j, 0) .LT. 0) THEN
    xd(i, j, 0, 1) = two*xd(i, j, 1, 1) - xd(i, j, 2, 1)
    x(i, j, 0, 1) = two*x(i, j, 1, 1) - x(i, j, 2, 1)
    xd(i, j, 0, 2) = two*xd(i, j, 1, 2) - xd(i, j, 2, 2)
@@ -163,7 +97,7 @@
    xd(i, j, 0, 3) = two*xd(i, j, 1, 3) - xd(i, j, 2, 3)
    x(i, j, 0, 3) = two*x(i, j, 1, 3) - x(i, j, 2, 3)
    END IF
-   IF (.NOT.kmaxinternal) THEN
+   IF (globalnode(i, j, ke) .LT. 0) THEN
    xd(i, j, ke, 1) = two*xd(i, j, kl, 1) - xd(i, j, nz, 1)
    x(i, j, ke, 1) = two*x(i, j, kl, 1) - x(i, j, nz, 1)
    xd(i, j, ke, 2) = two*xd(i, j, kl, 2) - xd(i, j, nz, 2)
@@ -214,6 +148,7 @@
    IF (jend .EQ. jjmax) jend = jjmax + 1
    DO j=jbeg,jend
    DO i=ibeg,iend
+   IF (globalnode(0, i, j) .LT. 0) THEN
    v1d(1) = xd(1, i, j, 1) - xd(2, i, j, 1)
    v1(1) = x(1, i, j, 1) - x(2, i, j, 1)
    v1d(2) = xd(1, i, j, 2) - xd(2, i, j, 2)
@@ -229,6 +164,7 @@
    x(0, i, j, 2) = x(2, i, j, 2) + dot*norm(2)
    xd(0, i, j, 3) = xd(2, i, j, 3) + norm(3)*dotd
    x(0, i, j, 3) = x(2, i, j, 3) + dot*norm(3)
+   END IF
    END DO
    END DO
    CASE (imax) 
@@ -244,6 +180,7 @@
    IF (jend .EQ. jjmax) jend = jjmax + 1
    DO j=jbeg,jend
    DO i=ibeg,iend
+   IF (globalnode(ie, i, j) .LT. 0) THEN
    v1d(1) = xd(il, i, j, 1) - xd(nx, i, j, 1)
    v1(1) = x(il, i, j, 1) - x(nx, i, j, 1)
    v1d(2) = xd(il, i, j, 2) - xd(nx, i, j, 2)
@@ -259,6 +196,7 @@
    x(ie, i, j, 2) = x(nx, i, j, 2) + dot*norm(2)
    xd(ie, i, j, 3) = xd(nx, i, j, 3) + norm(3)*dotd
    x(ie, i, j, 3) = x(nx, i, j, 3) + dot*norm(3)
+   END IF
    END DO
    END DO
    CASE (jmin) 
@@ -274,6 +212,7 @@
    IF (jend .EQ. jjmax) jend = jjmax + 1
    DO j=jbeg,jend
    DO i=ibeg,iend
+   IF (globalnode(i, 0, j) .LT. 0) THEN
    v1d(1) = xd(i, 1, j, 1) - xd(i, 2, j, 1)
    v1(1) = x(i, 1, j, 1) - x(i, 2, j, 1)
    v1d(2) = xd(i, 1, j, 2) - xd(i, 2, j, 2)
@@ -289,6 +228,7 @@
    x(i, 0, j, 2) = x(i, 2, j, 2) + dot*norm(2)
    xd(i, 0, j, 3) = xd(i, 2, j, 3) + norm(3)*dotd
    x(i, 0, j, 3) = x(i, 2, j, 3) + dot*norm(3)
+   END IF
    END DO
    END DO
    CASE (jmax) 
@@ -304,6 +244,7 @@
    IF (jend .EQ. jjmax) jend = jjmax + 1
    DO j=jbeg,jend
    DO i=ibeg,iend
+   IF (globalnode(i, je, j) .LT. 0) THEN
    v1d(1) = xd(i, jl, j, 1) - xd(i, ny, j, 1)
    v1(1) = x(i, jl, j, 1) - x(i, ny, j, 1)
    v1d(2) = xd(i, jl, j, 2) - xd(i, ny, j, 2)
@@ -319,6 +260,7 @@
    x(i, je, j, 2) = x(i, ny, j, 2) + dot*norm(2)
    xd(i, je, j, 3) = xd(i, ny, j, 3) + norm(3)*dotd
    x(i, je, j, 3) = x(i, ny, j, 3) + dot*norm(3)
+   END IF
    END DO
    END DO
    CASE (kmin) 
@@ -334,6 +276,7 @@
    IF (jend .EQ. jjmax) jend = jjmax + 1
    DO j=jbeg,jend
    DO i=ibeg,iend
+   IF (globalnode(i, j, 0) .LT. 0) THEN
    v1d(1) = xd(i, j, 1, 1) - xd(i, j, 2, 1)
    v1(1) = x(i, j, 1, 1) - x(i, j, 2, 1)
    v1d(2) = xd(i, j, 1, 2) - xd(i, j, 2, 2)
@@ -349,6 +292,7 @@
    x(i, j, 0, 2) = x(i, j, 2, 2) + dot*norm(2)
    xd(i, j, 0, 3) = xd(i, j, 2, 3) + norm(3)*dotd
    x(i, j, 0, 3) = x(i, j, 2, 3) + dot*norm(3)
+   END IF
    END DO
    END DO
    CASE (kmax) 
@@ -364,6 +308,7 @@
    IF (jend .EQ. jjmax) jend = jjmax + 1
    DO j=jbeg,jend
    DO i=ibeg,iend
+   IF (globalnode(i, j, ke) .LT. 0) THEN
    v1d(1) = xd(i, j, kl, 1) - xd(i, j, nz, 1)
    v1(1) = x(i, j, kl, 1) - x(i, j, nz, 1)
    v1d(2) = xd(i, j, kl, 2) - xd(i, j, nz, 2)
@@ -379,11 +324,11 @@
    x(i, j, ke, 2) = x(i, j, nz, 2) + dot*norm(2)
    xd(i, j, ke, 3) = xd(i, j, nz, 3) + norm(3)*dotd
    x(i, j, ke, 3) = x(i, j, nz, 3) + dot*norm(3)
+   END IF
    END DO
    END DO
    END SELECT
    END IF
    END IF
    END DO loopbocos
-   END IF
    END SUBROUTINE XHALO_BLOCK_D

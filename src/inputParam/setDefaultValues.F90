@@ -423,7 +423,6 @@
        NKPCSetup     = .False.
        lumpedDiss    = .False.
        useApproxWallDistance = .False.
-       updateWallAssociation = .False.
        cflLimit = 3.0
        rhoResL1Start = -one
        adjointPETScVarsAllocated = .False.

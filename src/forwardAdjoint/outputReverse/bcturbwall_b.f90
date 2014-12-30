@@ -3,11 +3,12 @@
    !
    !  Differentiation of bcturbwall in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
    !   gradient     of useful results: *bvtj1 *bvtj2 *w *rlv *bvtk1
-   !                *bvtk2 *bvti1 *bvti2
+   !                *bvtk2 *d2wall *bvti1 *bvti2
    !   with respect to varying inputs: *bvtj1 *bvtj2 *w *rlv *bvtk1
-   !                *bvtk2 *bvti1 *bvti2
+   !                *bvtk2 *d2wall *bvti1 *bvti2
    !   Plus diff mem management of: bvtj1:in bvtj2:in w:in rlv:in
-   !                bvtk1:in bvtk2:in bvti1:in bvti2:in bcdata:in
+   !                bvtk1:in bvtk2:in d2wall:in bvti1:in bvti2:in
+   !                bcdata:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -46,28 +47,41 @@
    !
    INTEGER(kind=inttype) :: i, j, ii, jj, iimax, jjmax
    REAL(kind=realtype) :: tmpd, tmpe, tmpf, nu
-   REAL(kind=realtype) :: nub
+   REAL(kind=realtype) :: tmpdb, nub
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: bmt
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: bvt, ww2
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv2, dd2wall
    INTRINSIC MIN
    INTRINSIC MAX
+   INTEGER :: branch
    REAL(kind=realtype) :: temp3
    REAL(kind=realtype) :: temp2
    REAL(kind=realtype) :: temp1
    REAL(kind=realtype) :: temp0
+   REAL(kind=realtype) :: tempb4
+   REAL(kind=realtype) :: tempb3
+   REAL(kind=realtype) :: tempb2
+   REAL(kind=realtype) :: tempb1
+   REAL(kind=realtype) :: tempb0
+   REAL(kind=realtype) :: temp10
    INTEGER(kind=inttype) :: y12
    INTEGER(kind=inttype) :: y11
    INTEGER(kind=inttype) :: y10
+   REAL(kind=realtype) :: tempb
    INTEGER(kind=inttype) :: y9
    REAL(kind=realtype) :: temp
    INTEGER(kind=inttype) :: y8
    INTEGER(kind=inttype) :: y7
    INTEGER(kind=inttype) :: y6
+   REAL(kind=realtype) :: temp9
    INTEGER(kind=inttype) :: y5
+   REAL(kind=realtype) :: temp8
    INTEGER(kind=inttype) :: y4
+   REAL(kind=realtype) :: temp7
    INTEGER(kind=inttype) :: y3
+   REAL(kind=realtype) :: temp6
    INTEGER(kind=inttype) :: y2
+   REAL(kind=realtype) :: temp5
    INTEGER(kind=inttype) :: y1
    REAL(kind=realtype) :: temp4
    !
@@ -105,9 +119,13 @@
    y1 = j
    END IF
    IF (2 .LT. y1) THEN
+   CALL PUSHINTEGER4(jj)
    jj = y1
+   CALL PUSHCONTROL1B(0)
    ELSE
+   CALL PUSHINTEGER4(jj)
    jj = 2
+   CALL PUSHCONTROL1B(1)
    END IF
    DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
    IF (i .GT. iimax) THEN
@@ -116,24 +134,44 @@
    y2 = i
    END IF
    IF (2 .LT. y2) THEN
+   CALL PUSHINTEGER4(ii)
    ii = y2
+   CALL PUSHCONTROL1B(0)
    ELSE
+   CALL PUSHINTEGER4(ii)
    ii = 2
+   CALL PUSHCONTROL1B(1)
    END IF
-   CALL PUSHREAL8(tmpd)
-   tmpd = one/(rkwbeta1*d2wall(2, ii, jj)**2)
    END DO
    END DO
    DO j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
    DO i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
-   nub = two*60.0_realType*tmpd*bvti1b(i, j, itu2)
+   nu = rlv(2, i, j)/w(2, i, j, irho)
+   tmpd = one/(rkwbeta1*d2wall(2, ii, jj)**2)
+   tempb = two*60.0_realType*bvti1b(i, j, itu2)
+   nub = tmpd*tempb
+   tmpdb = nu*tempb
    bvti1b(i, j, itu2) = 0.0_8
-   CALL POPREAL8(tmpd)
+   temp0 = rkwbeta1*d2wall(2, ii, jj)**2
+   d2wallb(2, ii, jj) = d2wallb(2, ii, jj) - rkwbeta1*one*2*&
+   &           d2wall(2, ii, jj)*tmpdb/temp0**2
    temp = w(2, i, j, irho)
    rlvb(2, i, j) = rlvb(2, i, j) + nub/temp
    wb(2, i, j, irho) = wb(2, i, j, irho) - rlv(2, i, j)*nub/temp&
    &           **2
+   CALL POPCONTROL1B(branch)
+   IF (branch .EQ. 0) THEN
+   CALL POPINTEGER4(ii)
+   ELSE
+   CALL POPINTEGER4(ii)
+   END IF
    END DO
+   CALL POPCONTROL1B(branch)
+   IF (branch .EQ. 0) THEN
+   CALL POPINTEGER4(jj)
+   ELSE
+   CALL POPINTEGER4(jj)
+   END IF
    END DO
    CASE (imax) 
    iimax = jl
@@ -145,9 +183,13 @@
    y3 = j
    END IF
    IF (2 .LT. y3) THEN
+   CALL PUSHINTEGER4(jj)
    jj = y3
+   CALL PUSHCONTROL1B(0)
    ELSE
+   CALL PUSHINTEGER4(jj)
    jj = 2
+   CALL PUSHCONTROL1B(1)
    END IF
    DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
    IF (i .GT. iimax) THEN
@@ -156,24 +198,44 @@
    y4 = i
    END IF
    IF (2 .LT. y4) THEN
+   CALL PUSHINTEGER4(ii)
    ii = y4
+   CALL PUSHCONTROL1B(0)
    ELSE
+   CALL PUSHINTEGER4(ii)
    ii = 2
+   CALL PUSHCONTROL1B(1)
    END IF
-   CALL PUSHREAL8(tmpd)
-   tmpd = one/(rkwbeta1*d2wall(il, ii, jj)**2)
    END DO
    END DO
    DO j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
    DO i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
-   nub = two*60.0_realType*tmpd*bvti2b(i, j, itu2)
+   nu = rlv(jl, i, j)/w(il, i, j, irho)
+   tmpd = one/(rkwbeta1*d2wall(il, ii, jj)**2)
+   tempb0 = two*60.0_realType*bvti2b(i, j, itu2)
+   nub = tmpd*tempb0
+   tmpdb = nu*tempb0
    bvti2b(i, j, itu2) = 0.0_8
-   CALL POPREAL8(tmpd)
-   temp0 = w(il, i, j, irho)
-   rlvb(jl, i, j) = rlvb(jl, i, j) + nub/temp0
+   temp2 = rkwbeta1*d2wall(il, ii, jj)**2
+   d2wallb(il, ii, jj) = d2wallb(il, ii, jj) - rkwbeta1*one*2*&
+   &           d2wall(il, ii, jj)*tmpdb/temp2**2
+   temp1 = w(il, i, j, irho)
+   rlvb(jl, i, j) = rlvb(jl, i, j) + nub/temp1
    wb(il, i, j, irho) = wb(il, i, j, irho) - rlv(jl, i, j)*nub/&
-   &           temp0**2
+   &           temp1**2
+   CALL POPCONTROL1B(branch)
+   IF (branch .EQ. 0) THEN
+   CALL POPINTEGER4(ii)
+   ELSE
+   CALL POPINTEGER4(ii)
+   END IF
    END DO
+   CALL POPCONTROL1B(branch)
+   IF (branch .EQ. 0) THEN
+   CALL POPINTEGER4(jj)
+   ELSE
+   CALL POPINTEGER4(jj)
+   END IF
    END DO
    CASE (jmin) 
    iimax = il
@@ -185,9 +247,13 @@
    y5 = j
    END IF
    IF (2 .LT. y5) THEN
+   CALL PUSHINTEGER4(jj)
    jj = y5
+   CALL PUSHCONTROL1B(0)
    ELSE
+   CALL PUSHINTEGER4(jj)
    jj = 2
+   CALL PUSHCONTROL1B(1)
    END IF
    DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
    IF (i .GT. iimax) THEN
@@ -196,24 +262,44 @@
    y6 = i
    END IF
    IF (2 .LT. y6) THEN
+   CALL PUSHINTEGER4(ii)
    ii = y6
+   CALL PUSHCONTROL1B(0)
    ELSE
+   CALL PUSHINTEGER4(ii)
    ii = 2
+   CALL PUSHCONTROL1B(1)
    END IF
-   CALL PUSHREAL8(tmpd)
-   tmpd = one/(rkwbeta1*d2wall(ii, 2, jj)**2)
    END DO
    END DO
    DO j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
    DO i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
-   nub = two*60.0_realType*tmpd*bvtj1b(i, j, itu2)
+   nu = rlv(i, 2, j)/w(i, 2, j, irho)
+   tmpd = one/(rkwbeta1*d2wall(ii, 2, jj)**2)
+   tempb1 = two*60.0_realType*bvtj1b(i, j, itu2)
+   nub = tmpd*tempb1
+   tmpdb = nu*tempb1
    bvtj1b(i, j, itu2) = 0.0_8
-   CALL POPREAL8(tmpd)
-   temp1 = w(i, 2, j, irho)
-   rlvb(i, 2, j) = rlvb(i, 2, j) + nub/temp1
-   wb(i, 2, j, irho) = wb(i, 2, j, irho) - rlv(i, 2, j)*nub/temp1&
+   temp4 = rkwbeta1*d2wall(ii, 2, jj)**2
+   d2wallb(ii, 2, jj) = d2wallb(ii, 2, jj) - rkwbeta1*one*2*&
+   &           d2wall(ii, 2, jj)*tmpdb/temp4**2
+   temp3 = w(i, 2, j, irho)
+   rlvb(i, 2, j) = rlvb(i, 2, j) + nub/temp3
+   wb(i, 2, j, irho) = wb(i, 2, j, irho) - rlv(i, 2, j)*nub/temp3&
    &           **2
+   CALL POPCONTROL1B(branch)
+   IF (branch .EQ. 0) THEN
+   CALL POPINTEGER4(ii)
+   ELSE
+   CALL POPINTEGER4(ii)
+   END IF
    END DO
+   CALL POPCONTROL1B(branch)
+   IF (branch .EQ. 0) THEN
+   CALL POPINTEGER4(jj)
+   ELSE
+   CALL POPINTEGER4(jj)
+   END IF
    END DO
    CASE (jmax) 
    iimax = il
@@ -225,9 +311,13 @@
    y7 = j
    END IF
    IF (2 .LT. y7) THEN
+   CALL PUSHINTEGER4(jj)
    jj = y7
+   CALL PUSHCONTROL1B(0)
    ELSE
+   CALL PUSHINTEGER4(jj)
    jj = 2
+   CALL PUSHCONTROL1B(1)
    END IF
    DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
    IF (i .GT. iimax) THEN
@@ -236,24 +326,44 @@
    y8 = i
    END IF
    IF (2 .LT. y8) THEN
+   CALL PUSHINTEGER4(ii)
    ii = y8
+   CALL PUSHCONTROL1B(0)
    ELSE
+   CALL PUSHINTEGER4(ii)
    ii = 2
+   CALL PUSHCONTROL1B(1)
    END IF
-   CALL PUSHREAL8(tmpd)
-   tmpd = one/(rkwbeta1*d2wall(ii, jl, jj)**2)
    END DO
    END DO
    DO j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
    DO i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
-   nub = two*60.0_realType*tmpd*bvtj2b(i, j, itu2)
+   nu = rlv(i, jl, j)/w(i, jl, j, irho)
+   tmpd = one/(rkwbeta1*d2wall(ii, jl, jj)**2)
+   tempb2 = two*60.0_realType*bvtj2b(i, j, itu2)
+   nub = tmpd*tempb2
+   tmpdb = nu*tempb2
    bvtj2b(i, j, itu2) = 0.0_8
-   CALL POPREAL8(tmpd)
-   temp2 = w(i, jl, j, irho)
-   rlvb(i, jl, j) = rlvb(i, jl, j) + nub/temp2
+   temp6 = rkwbeta1*d2wall(ii, jl, jj)**2
+   d2wallb(ii, jl, jj) = d2wallb(ii, jl, jj) - rkwbeta1*one*2*&
+   &           d2wall(ii, jl, jj)*tmpdb/temp6**2
+   temp5 = w(i, jl, j, irho)
+   rlvb(i, jl, j) = rlvb(i, jl, j) + nub/temp5
    wb(i, jl, j, irho) = wb(i, jl, j, irho) - rlv(i, jl, j)*nub/&
-   &           temp2**2
+   &           temp5**2
+   CALL POPCONTROL1B(branch)
+   IF (branch .EQ. 0) THEN
+   CALL POPINTEGER4(ii)
+   ELSE
+   CALL POPINTEGER4(ii)
+   END IF
    END DO
+   CALL POPCONTROL1B(branch)
+   IF (branch .EQ. 0) THEN
+   CALL POPINTEGER4(jj)
+   ELSE
+   CALL POPINTEGER4(jj)
+   END IF
    END DO
    CASE (kmin) 
    iimax = il
@@ -265,9 +375,13 @@
    y9 = j
    END IF
    IF (2 .LT. y9) THEN
+   CALL PUSHINTEGER4(jj)
    jj = y9
+   CALL PUSHCONTROL1B(0)
    ELSE
+   CALL PUSHINTEGER4(jj)
    jj = 2
+   CALL PUSHCONTROL1B(1)
    END IF
    DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
    IF (i .GT. iimax) THEN
@@ -276,24 +390,44 @@
    y10 = i
    END IF
    IF (2 .LT. y10) THEN
+   CALL PUSHINTEGER4(ii)
    ii = y10
+   CALL PUSHCONTROL1B(0)
    ELSE
+   CALL PUSHINTEGER4(ii)
    ii = 2
+   CALL PUSHCONTROL1B(1)
    END IF
-   CALL PUSHREAL8(tmpd)
-   tmpd = one/(rkwbeta1*d2wall(ii, jj, 2)**2)
    END DO
    END DO
    DO j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
    DO i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
-   nub = two*60.0_realType*tmpd*bvtk1b(i, j, itu2)
+   nu = rlv(i, j, 2)/w(i, j, 2, irho)
+   tmpd = one/(rkwbeta1*d2wall(ii, jj, 2)**2)
+   tempb3 = two*60.0_realType*bvtk1b(i, j, itu2)
+   nub = tmpd*tempb3
+   tmpdb = nu*tempb3
    bvtk1b(i, j, itu2) = 0.0_8
-   CALL POPREAL8(tmpd)
-   temp3 = w(i, j, 2, irho)
-   rlvb(i, j, 2) = rlvb(i, j, 2) + nub/temp3
-   wb(i, j, 2, irho) = wb(i, j, 2, irho) - rlv(i, j, 2)*nub/temp3&
+   temp8 = rkwbeta1*d2wall(ii, jj, 2)**2
+   d2wallb(ii, jj, 2) = d2wallb(ii, jj, 2) - rkwbeta1*one*2*&
+   &           d2wall(ii, jj, 2)*tmpdb/temp8**2
+   temp7 = w(i, j, 2, irho)
+   rlvb(i, j, 2) = rlvb(i, j, 2) + nub/temp7
+   wb(i, j, 2, irho) = wb(i, j, 2, irho) - rlv(i, j, 2)*nub/temp7&
    &           **2
+   CALL POPCONTROL1B(branch)
+   IF (branch .EQ. 0) THEN
+   CALL POPINTEGER4(ii)
+   ELSE
+   CALL POPINTEGER4(ii)
+   END IF
    END DO
+   CALL POPCONTROL1B(branch)
+   IF (branch .EQ. 0) THEN
+   CALL POPINTEGER4(jj)
+   ELSE
+   CALL POPINTEGER4(jj)
+   END IF
    END DO
    CASE (kmax) 
    iimax = il
@@ -305,9 +439,13 @@
    y11 = j
    END IF
    IF (2 .LT. y11) THEN
+   CALL PUSHINTEGER4(jj)
    jj = y11
+   CALL PUSHCONTROL1B(0)
    ELSE
+   CALL PUSHINTEGER4(jj)
    jj = 2
+   CALL PUSHCONTROL1B(1)
    END IF
    DO i=bcdata(nn)%icbeg,bcdata(nn)%icend
    IF (i .GT. iimax) THEN
@@ -316,24 +454,44 @@
    y12 = i
    END IF
    IF (2 .LT. y12) THEN
+   CALL PUSHINTEGER4(ii)
    ii = y12
+   CALL PUSHCONTROL1B(0)
    ELSE
+   CALL PUSHINTEGER4(ii)
    ii = 2
+   CALL PUSHCONTROL1B(1)
    END IF
-   CALL PUSHREAL8(tmpd)
-   tmpd = one/(rkwbeta1*d2wall(ii, jj, kl)**2)
    END DO
    END DO
    DO j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
    DO i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
-   nub = two*60.0_realType*tmpd*bvtk2b(i, j, itu2)
+   nu = rlv(i, j, kl)/w(i, j, kl, irho)
+   tmpd = one/(rkwbeta1*d2wall(ii, jj, kl)**2)
+   tempb4 = two*60.0_realType*bvtk2b(i, j, itu2)
+   nub = tmpd*tempb4
+   tmpdb = nu*tempb4
    bvtk2b(i, j, itu2) = 0.0_8
-   CALL POPREAL8(tmpd)
-   temp4 = w(i, j, kl, irho)
-   rlvb(i, j, kl) = rlvb(i, j, kl) + nub/temp4
+   temp10 = rkwbeta1*d2wall(ii, jj, kl)**2
+   d2wallb(ii, jj, kl) = d2wallb(ii, jj, kl) - rkwbeta1*one*2*&
+   &           d2wall(ii, jj, kl)*tmpdb/temp10**2
+   temp9 = w(i, j, kl, irho)
+   rlvb(i, j, kl) = rlvb(i, j, kl) + nub/temp9
    wb(i, j, kl, irho) = wb(i, j, kl, irho) - rlv(i, j, kl)*nub/&
-   &           temp4**2
+   &           temp9**2
+   CALL POPCONTROL1B(branch)
+   IF (branch .EQ. 0) THEN
+   CALL POPINTEGER4(ii)
+   ELSE
+   CALL POPINTEGER4(ii)
+   END IF
    END DO
+   CALL POPCONTROL1B(branch)
+   IF (branch .EQ. 0) THEN
+   CALL POPINTEGER4(jj)
+   ELSE
+   CALL POPINTEGER4(jj)
+   END IF
    END DO
    END SELECT
    END SELECT

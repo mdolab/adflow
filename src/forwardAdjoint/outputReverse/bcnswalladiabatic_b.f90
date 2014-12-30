@@ -3,11 +3,13 @@
    !
    !  Differentiation of bcnswalladiabatic in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
    !   gradient     of useful results: *rev *bvtj1 *bvtj2 *p *gamma
-   !                *w *rlv *bvtk1 *bvtk2 *bvti1 *bvti2 tref rgas
-   !   with respect to varying inputs: *rev *p *w *rlv tref rgas
+   !                *w *rlv *bvtk1 *bvtk2 *d2wall *bvti1 *bvti2 tref
+   !                rgas
+   !   with respect to varying inputs: *rev *p *w *rlv *d2wall tref
+   !                rgas
    !   Plus diff mem management of: rev:in bvtj1:in bvtj2:in p:in
-   !                gamma:in w:in rlv:in bvtk1:in bvtk2:in bvti1:in
-   !                bvti2:in bcdata:in
+   !                gamma:in w:in rlv:in bvtk1:in bvtk2:in d2wall:in
+   !                bvti1:in bvti2:in bcdata:in
    !
    !      ******************************************************************
    !      *                                                                *

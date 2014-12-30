@@ -173,7 +173,6 @@ subroutine dealloc_derivative_values(level)
      end do
   end do
 
-
   ! Also dealloc winfd
   deallocate(winfd, stat=ierr)
   call EChk(ierr,__FILE__,__LINE__)
