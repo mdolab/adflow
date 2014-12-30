@@ -2,16 +2,15 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of forcesandmoments in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: lengthref machcoef pointref
-   !                *w *x *(*bcdata.fp) *(*bcdata.fv) *(*bcdata.m)
-   !                *(*bcdata.oarea) *(*bcdata.sepsensor) *(*bcdata.cavitation)
+   !   gradient     of useful results: *w *x *(*bcdata.fp) *(*bcdata.fv)
+   !                *(*bcdata.m) *(*bcdata.oarea) *(*bcdata.sepsensor)
+   !                *(*bcdata.cavitation) lengthref machcoef pointref
    !                gammainf pinf pref cfp cfv cmp cmv cavitation
    !                sepsensor
-   !   with respect to varying inputs: veldirfreestream lengthref
-   !                machcoef pointref *p *w *x *si *sj *sk *(*viscsubface.tau)
+   !   with respect to varying inputs: *p *w *x *si *sj *sk *(*viscsubface.tau)
    !                *(*bcdata.fp) *(*bcdata.fv) *(*bcdata.m) *(*bcdata.oarea)
-   !                *(*bcdata.sepsensor) *(*bcdata.cavitation) gammainf
-   !                pinf pref
+   !                *(*bcdata.sepsensor) *(*bcdata.cavitation) veldirfreestream
+   !                lengthref machcoef pointref gammainf pinf pref
    !   Plus diff mem management of: rev:in p:in w:in rlv:in x:in si:in
    !                sj:in sk:in viscsubface:in *viscsubface.tau:in
    !                bcdata:in *bcdata.fp:in *bcdata.fv:in *bcdata.m:in
@@ -510,7 +509,6 @@
    pinfb = pinfb + gammainf*tempb16
    machcoefb = machcoefb + scaledim*temp7*2*machcoef*tempb15
    scaledimb = temp7*machcoef**2*tempb15
-   veldirfreestreamb = 0.0_8
    pb = 0.0_8
    sib = 0.0_8
    sjb = 0.0_8
@@ -518,6 +516,7 @@
    DO ii1=1,SIZE(viscsubfaceb)
    viscsubfaceb(ii1)%tau = 0.0_8
    END DO
+   veldirfreestreamb = 0.0_8
    rho1b = 0.0_8
    rho2b = 0.0_8
    vb = 0.0_8

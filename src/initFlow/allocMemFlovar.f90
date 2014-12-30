@@ -160,11 +160,11 @@ subroutine allocMemFlovarPart1(sps,level)
         ! If this is the 1st spectral solution (note that we are
         ! already on the finest grid) and the rans equations are
         ! solved, allocate the memory for the arrays used for the
-        ! implicit boundary condition treatment.
+        ! implicit boundary condition treatment. Normally this should
+        ! only be allocated for RANS but the derivative calcs require
+        ! these be allocated.
 
-        sps1RansTest: if(sps == 1 .and. &
-             equations == RANSEquations) then
-
+        sps1RansTest: if(sps == 1) then 
            allocate(flowDoms(nn,level,sps)%bmti1(je,ke,nt1:nt2,nt1:nt2), &
                 flowDoms(nn,level,sps)%bmti2(je,ke,nt1:nt2,nt1:nt2), &
                 flowDoms(nn,level,sps)%bmtj1(ie,ke,nt1:nt2,nt1:nt2), &

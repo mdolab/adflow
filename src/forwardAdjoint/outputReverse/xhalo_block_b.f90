@@ -40,8 +40,6 @@
    LOGICAL :: err
    REAL(kind=realtype) :: length, dot
    REAL(kind=realtype) :: dotb
-   LOGICAL :: imininternal, jmininternal, kmininternal
-   LOGICAL :: imaxinternal, jmaxinternal, kmaxinternal
    REAL(kind=realtype), DIMENSION(3) :: v1, v2, norm
    REAL(kind=realtype), DIMENSION(3) :: v1b
    INTRINSIC SQRT
@@ -112,76 +110,15 @@
    REAL(kind=realtype) :: tmpb11
    REAL(kind=realtype) :: tempb
    REAL(kind=realtype) :: tmpb10
-   !
-   !          **************************************************************
-   !          *                                                            *
-   !          * Extrapolation of the coordinates. First extrapolation in   *
-   !          * i-direction, without halo's, followed by extrapolation in  *
-   !          * j-direction, with i-halo's and finally extrapolation in    *
-   !          * k-direction, with both i- and j-halo's. In this way also   *
-   !          * the indirect halo's get a value, albeit a bit arbitrary.   *
-   !          *                                                            *
-   !          **************************************************************
-   !
-   imininternal = .false.
-   jmininternal = .false.
-   kmininternal = .false.
-   imaxinternal = .false.
-   jmaxinternal = .false.
-   kmaxinternal = .false.
-   ! Loop over all the subfaces to determine which ones do NOT need to be extrapolated.
-   loopsubface:DO mm=1,nsubface
-   IF (bctype(mm) .EQ. b2bmatch) THEN
-   SELECT CASE  (bcfaceid(mm)) 
-   CASE (imin) 
-   imininternal = .true.
-   CASE (imax) 
-   imaxinternal = .true.
-   CASE (jmin) 
-   jmininternal = .true.
-   CASE (jmax) 
-   jmaxinternal = .true.
-   CASE (kmin) 
-   kmininternal = .true.
-   CASE (kmax) 
-   kmaxinternal = .true.
-   END SELECT
-   END IF
-   END DO loopsubface
-   ! Re-loop back over and see if any subface that is NOT B2BMatch is
-   ! on the same logical face as a Block2Block. We cannot deal with
-   ! properly so will print an error and quit
-   err = .false.
-   loopsubface2:DO mm=1,nsubface
-   IF (bctype(mm) .NE. b2bmatch) THEN
-   SELECT CASE  (bcfaceid(mm)) 
-   CASE (imin) 
-   IF (imininternal) err = .true.
-   CASE (imax) 
-   IF (imaxinternal) err = .true.
-   CASE (jmin) 
-   IF (jmininternal) err = .true.
-   CASE (jmax) 
-   IF (jmaxinternal) err = .true.
-   CASE (kmin) 
-   IF (kmininternal) err = .true.
-   CASE (kmax) 
-   IF (kmaxinternal) err = .true.
-   END SELECT
-   END IF
-   END DO loopsubface2
-   IF (err) THEN
-   STOP
-   ELSE
    ! Extrapolation in i-direction.
    DO k=1,kl
    DO j=1,jl
-   IF (.NOT.imininternal) THEN
+   IF (globalnode(0, j, k) .LT. 0) THEN
    CALL PUSHCONTROL1B(0)
    ELSE
    CALL PUSHCONTROL1B(1)
    END IF
-   IF (.NOT.imaxinternal) THEN
+   IF (globalnode(ie, j, k) .LT. 0) THEN
    CALL PUSHCONTROL1B(1)
    ELSE
    CALL PUSHCONTROL1B(0)
@@ -191,12 +128,12 @@
    ! Extrapolation in j-direction.
    DO k=1,kl
    DO i=0,ie
-   IF (.NOT.jmininternal) THEN
+   IF (globalnode(i, 0, k) .LT. 0) THEN
    CALL PUSHCONTROL1B(0)
    ELSE
    CALL PUSHCONTROL1B(1)
    END IF
-   IF (.NOT.jmaxinternal) THEN
+   IF (globalnode(i, je, k) .LT. 0) THEN
    CALL PUSHCONTROL1B(1)
    ELSE
    CALL PUSHCONTROL1B(0)
@@ -206,12 +143,12 @@
    ! Extrapolation in k-direction.
    DO j=0,je
    DO i=0,ie
-   IF (.NOT.kmininternal) THEN
+   IF (globalnode(i, j, 0) .LT. 0) THEN
    CALL PUSHCONTROL1B(0)
    ELSE
    CALL PUSHCONTROL1B(1)
    END IF
-   IF (.NOT.kmaxinternal) THEN
+   IF (globalnode(i, j, ke) .LT. 0) THEN
    CALL PUSHCONTROL1B(1)
    ELSE
    CALL PUSHCONTROL1B(0)
@@ -264,7 +201,13 @@
    ad_from0 = jbeg
    DO j=ad_from0,jend
    ad_from = ibeg
-   i = iend + 1
+   DO i=ad_from,iend
+   IF (globalnode(0, i, j) .LT. 0) THEN
+   CALL PUSHCONTROL1B(1)
+   ELSE
+   CALL PUSHCONTROL1B(0)
+   END IF
+   END DO
    CALL PUSHINTEGER4(i - 1)
    CALL PUSHINTEGER4(ad_from)
    END DO
@@ -285,7 +228,13 @@
    ad_from2 = jbeg
    DO j=ad_from2,jend
    ad_from1 = ibeg
-   i = iend + 1
+   DO i=ad_from1,iend
+   IF (globalnode(ie, i, j) .LT. 0) THEN
+   CALL PUSHCONTROL1B(1)
+   ELSE
+   CALL PUSHCONTROL1B(0)
+   END IF
+   END DO
    CALL PUSHINTEGER4(i - 1)
    CALL PUSHINTEGER4(ad_from1)
    END DO
@@ -306,7 +255,13 @@
    ad_from4 = jbeg
    DO j=ad_from4,jend
    ad_from3 = ibeg
-   i = iend + 1
+   DO i=ad_from3,iend
+   IF (globalnode(i, 0, j) .LT. 0) THEN
+   CALL PUSHCONTROL1B(1)
+   ELSE
+   CALL PUSHCONTROL1B(0)
+   END IF
+   END DO
    CALL PUSHINTEGER4(i - 1)
    CALL PUSHINTEGER4(ad_from3)
    END DO
@@ -327,7 +282,13 @@
    ad_from6 = jbeg
    DO j=ad_from6,jend
    ad_from5 = ibeg
-   i = iend + 1
+   DO i=ad_from5,iend
+   IF (globalnode(i, je, j) .LT. 0) THEN
+   CALL PUSHCONTROL1B(1)
+   ELSE
+   CALL PUSHCONTROL1B(0)
+   END IF
+   END DO
    CALL PUSHINTEGER4(i - 1)
    CALL PUSHINTEGER4(ad_from5)
    END DO
@@ -348,7 +309,13 @@
    ad_from8 = jbeg
    DO j=ad_from8,jend
    ad_from7 = ibeg
-   i = iend + 1
+   DO i=ad_from7,iend
+   IF (globalnode(i, j, 0) .LT. 0) THEN
+   CALL PUSHCONTROL1B(1)
+   ELSE
+   CALL PUSHCONTROL1B(0)
+   END IF
+   END DO
    CALL PUSHINTEGER4(i - 1)
    CALL PUSHINTEGER4(ad_from7)
    END DO
@@ -369,7 +336,13 @@
    ad_from10 = jbeg
    DO j=ad_from10,jend
    ad_from9 = ibeg
-   i = iend + 1
+   DO i=ad_from9,iend
+   IF (globalnode(i, j, ke) .LT. 0) THEN
+   CALL PUSHCONTROL1B(1)
+   ELSE
+   CALL PUSHCONTROL1B(0)
+   END IF
+   END DO
    CALL PUSHINTEGER4(i - 1)
    CALL PUSHINTEGER4(ad_from9)
    END DO
@@ -399,6 +372,8 @@
    CALL POPINTEGER4(ad_from9)
    CALL POPINTEGER4(ad_to9)
    DO i=ad_to9,ad_from9,-1
+   CALL POPCONTROL1B(branch)
+   IF (branch .NE. 0) THEN
    tmpb14 = xb(i, j, ke, 3)
    xb(i, j, ke, 3) = 0.0_8
    xb(i, j, nz, 3) = xb(i, j, nz, 3) + tmpb14
@@ -422,6 +397,7 @@
    xb(i, j, kl, 1) = xb(i, j, kl, 1) + v1b(1)
    xb(i, j, nz, 1) = xb(i, j, nz, 1) - v1b(1)
    v1b(1) = 0.0_8
+   END IF
    END DO
    END DO
    ELSE
@@ -431,6 +407,8 @@
    CALL POPINTEGER4(ad_from7)
    CALL POPINTEGER4(ad_to7)
    DO i=ad_to7,ad_from7,-1
+   CALL POPCONTROL1B(branch)
+   IF (branch .NE. 0) THEN
    xb(i, j, 2, 3) = xb(i, j, 2, 3) + xb(i, j, 0, 3)
    dotb = norm(3)*xb(i, j, 0, 3)
    xb(i, j, 0, 3) = 0.0_8
@@ -453,6 +431,7 @@
    xb(i, j, 1, 1) = xb(i, j, 1, 1) + v1b(1)
    xb(i, j, 2, 1) = xb(i, j, 2, 1) - v1b(1)
    v1b(1) = 0.0_8
+   END IF
    END DO
    END DO
    END IF
@@ -464,6 +443,8 @@
    CALL POPINTEGER4(ad_from5)
    CALL POPINTEGER4(ad_to5)
    DO i=ad_to5,ad_from5,-1
+   CALL POPCONTROL1B(branch)
+   IF (branch .NE. 0) THEN
    tmpb11 = xb(i, je, j, 3)
    xb(i, je, j, 3) = 0.0_8
    xb(i, ny, j, 3) = xb(i, ny, j, 3) + tmpb11
@@ -487,6 +468,7 @@
    xb(i, jl, j, 1) = xb(i, jl, j, 1) + v1b(1)
    xb(i, ny, j, 1) = xb(i, ny, j, 1) - v1b(1)
    v1b(1) = 0.0_8
+   END IF
    END DO
    END DO
    ELSE
@@ -496,6 +478,8 @@
    CALL POPINTEGER4(ad_from3)
    CALL POPINTEGER4(ad_to3)
    DO i=ad_to3,ad_from3,-1
+   CALL POPCONTROL1B(branch)
+   IF (branch .NE. 0) THEN
    xb(i, 2, j, 3) = xb(i, 2, j, 3) + xb(i, 0, j, 3)
    dotb = norm(3)*xb(i, 0, j, 3)
    xb(i, 0, j, 3) = 0.0_8
@@ -518,6 +502,7 @@
    xb(i, 1, j, 1) = xb(i, 1, j, 1) + v1b(1)
    xb(i, 2, j, 1) = xb(i, 2, j, 1) - v1b(1)
    v1b(1) = 0.0_8
+   END IF
    END DO
    END DO
    END IF
@@ -528,6 +513,8 @@
    CALL POPINTEGER4(ad_from1)
    CALL POPINTEGER4(ad_to1)
    DO i=ad_to1,ad_from1,-1
+   CALL POPCONTROL1B(branch)
+   IF (branch .NE. 0) THEN
    tmpb8 = xb(ie, i, j, 3)
    xb(ie, i, j, 3) = 0.0_8
    xb(nx, i, j, 3) = xb(nx, i, j, 3) + tmpb8
@@ -551,6 +538,7 @@
    xb(il, i, j, 1) = xb(il, i, j, 1) + v1b(1)
    xb(nx, i, j, 1) = xb(nx, i, j, 1) - v1b(1)
    v1b(1) = 0.0_8
+   END IF
    END DO
    END DO
    ELSE IF (branch .EQ. 7) THEN
@@ -560,6 +548,8 @@
    CALL POPINTEGER4(ad_from)
    CALL POPINTEGER4(ad_to)
    DO i=ad_to,ad_from,-1
+   CALL POPCONTROL1B(branch)
+   IF (branch .NE. 0) THEN
    xb(2, i, j, 3) = xb(2, i, j, 3) + xb(0, i, j, 3)
    dotb = norm(3)*xb(0, i, j, 3)
    xb(0, i, j, 3) = 0.0_8
@@ -582,6 +572,7 @@
    xb(1, i, j, 1) = xb(1, i, j, 1) + v1b(1)
    xb(2, i, j, 1) = xb(2, i, j, 1) - v1b(1)
    v1b(1) = 0.0_8
+   END IF
    END DO
    END DO
    END IF
@@ -685,5 +676,4 @@
    END IF
    END DO
    END DO
-   END IF
    END SUBROUTINE XHALO_BLOCK_B

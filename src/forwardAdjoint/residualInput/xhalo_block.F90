@@ -32,120 +32,38 @@ subroutine xhalo_block
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, iiMax, jjMax
   logical err
   real(kind=realType) :: length, dot
-  logical :: iMinInternal, jMinInternal, kMinInternal 
-  logical :: iMaxInternal, jMaxInternal, kMaxInternal
   real(kind=realType), dimension(3) :: v1, v2, norm
  
-  !
-  !          **************************************************************
-  !          *                                                            *
-  !          * Extrapolation of the coordinates. First extrapolation in   *
-  !          * i-direction, without halo's, followed by extrapolation in  *
-  !          * j-direction, with i-halo's and finally extrapolation in    *
-  !          * k-direction, with both i- and j-halo's. In this way also   *
-  !          * the indirect halo's get a value, albeit a bit arbitrary.   *
-  !          *                                                            *
-  !          **************************************************************
-  !
-
-
-  iMinInternal=.false.
-  jMinInternal=.false.
-  kMinInternal=.false.
-  iMaxInternal=.false.
-  jMaxInternal=.false.
-  kMaxInternal=.false.
-
-  ! Loop over all the subfaces to determine which ones do NOT need to be extrapolated.
-  loopSubface: do mm=1,nSubface
-     testInternal: if(BCType(mm) ==B2BMatch)then
-        select case (BCFaceID(mm))
-        case (iMin)
-           iMinInternal =.true.
-        case (iMax)
-           iMaxInternal =.true.
-        case (jMin)
-           jMinInternal =.true.
-        case (jMax)
-           jMaxInternal =.true. 
-        case (kMin)
-           kMinInternal =.true.
-        case (kMax)
-           kMaxInternal =.true.
-        end select
-     end if testInternal
-  end do loopSubface
-
-  ! Re-loop back over and see if any subface that is NOT B2BMatch is
-  ! on the same logical face as a Block2Block. We cannot deal with
-  ! properly so will print an error and quit
-  err = .False.
-  loopSubface2: do mm=1,nSubface
-     testNotInternal: if(BCType(mm) .ne. B2BMatch)then
-        select case (BCFaceID(mm))
-        case (iMin)
-           if (iMinInternal) then
-              err = .True.
-           end if
-        case (iMax)
-           if (iMaxInternal) then
-              err = .True.
-           end if
-        case (jMin)
-           if (jMinInternal) then
-              err = .True.
-           end if
-        case (jMax)
-           if (jMaxInternal) then
-              err = .True.
-           end if
-        case (kMin)
-           if (kMinInternal) then
-              err = .True.
-           end if
-        case (kMax)
-           if (kMaxInternal) then
-              err = .True.
-           end if
-        end select
-     end if testNotInternal
-  end do loopSubface2
-
-  if (err) then
-     print *,'Detected a block-to-block boundary condition on the same face'
-     print *,'as another boundary condition. This is not supported.'
-     stop
-  end if
 
   ! Extrapolation in i-direction.
 
   do k=1,kl
      do j=1,jl
-        if (.not. iMinInternal) then
+        if (globalNode(0,j,k) <  0) then 
            x(0,j,k,1) = two*x(1,j,k,1) - x(2,j,k,1)
            x(0,j,k,2) = two*x(1,j,k,2) - x(2,j,k,2)
            x(0,j,k,3) = two*x(1,j,k,3) - x(2,j,k,3)
         end if
-
-        if (.not. iMaxInternal) then
+        
+        if (globalNode(ie,j,k) < 0) then 
            x(ie,j,k,1) = two*x(il,j,k,1) - x(nx,j,k,1)
            x(ie,j,k,2) = two*x(il,j,k,2) - x(nx,j,k,2)
            x(ie,j,k,3) = two*x(il,j,k,3) - x(nx,j,k,3)
         end if
      enddo
   enddo
-
+  
   ! Extrapolation in j-direction.
 
   do k=1,kl
      do i=0,ie  
-        if (.not. jMinInternal) then
+        if (globalNode(i,0,k) < 0) then 
            x(i,0,k,1) = two*x(i,1,k,1) - x(i,2,k,1)
            x(i,0,k,2) = two*x(i,1,k,2) - x(i,2,k,2)
            x(i,0,k,3) = two*x(i,1,k,3) - x(i,2,k,3)
         end if
-
-        if (.not. jMaxInternal) then
+        
+        if (globalNode(i,je,k) < 0) then 
            x(i,je,k,1) = two*x(i,jl,k,1) - x(i,ny,k,1)
            x(i,je,k,2) = two*x(i,jl,k,2) - x(i,ny,k,2)
            x(i,je,k,3) = two*x(i,jl,k,3) - x(i,ny,k,3)
@@ -157,13 +75,13 @@ subroutine xhalo_block
 
   do j=0,je
      do i=0,ie
-        if (.not. kMinInternal) then
+        if (globalNode(i,j,0) < 0) then 
            x(i,j,0,1) = two*x(i,j,1,1) - x(i,j,2,1)
            x(i,j,0,2) = two*x(i,j,1,2) - x(i,j,2,2)
            x(i,j,0,3) = two*x(i,j,1,3) - x(i,j,2,3)
         end if
 
-        if (.not. kMaxInternal) then
+        if (globalNode(i,j,ke) < 0) then 
            x(i,j,ke,1) = two*x(i,j,kl,1) - x(i,j,nz,1)
            x(i,j,ke,2) = two*x(i,j,kl,2) - x(i,j,nz,2)
            x(i,j,ke,3) = two*x(i,j,kl,3) - x(i,j,nz,3)
@@ -216,14 +134,16 @@ subroutine xhalo_block
               
               do j=jBeg,jEnd
                  do i=iBeg,iEnd
-                    v1(1) = x(1, i,j,1) - x(2, i,j,1)
-                    v1(2) = x(1, i,j,2) - x(2, i,j,2)
-                    v1(3) = x(1, i,j,3) - x(2, i,j,3)
-                    dot = two*(v1(1)*norm(1) + v1(2)*norm(2) &
-                         +      v1(3)*norm(3))
-                    x(0,i,j,1) = x(2,i,j,1) + dot*norm(1)
-                    x(0,i,j,2) = x(2,i,j,2) + dot*norm(2)
-                    x(0,i,j,3) = x(2,i,j,3) + dot*norm(3)
+                    if (globalNode(0,i,j) < 0) then 
+                       v1(1) = x(1, i,j,1) - x(2, i,j,1)
+                       v1(2) = x(1, i,j,2) - x(2, i,j,2)
+                       v1(3) = x(1, i,j,3) - x(2, i,j,3)
+                       dot = two*(v1(1)*norm(1) + v1(2)*norm(2) &
+                            +      v1(3)*norm(3))
+                       x(0,i,j,1) = x(2,i,j,1) + dot*norm(1)
+                       x(0,i,j,2) = x(2,i,j,2) + dot*norm(2)
+                       x(0,i,j,3) = x(2,i,j,3) + dot*norm(3)
+                    end if
               enddo
            enddo
 
@@ -239,14 +159,16 @@ subroutine xhalo_block
            
            do j=jBeg,jEnd
               do i=iBeg,iEnd
-                 v1(1) = x(il, i,j,1) - x(nx, i,j,1)
-                 v1(2) = x(il, i,j,2) - x(nx, i,j,2)
-                 v1(3) = x(il, i,j,3) - x(nx, i,j,3)
-                 dot = two*(v1(1)*norm(1) + v1(2)*norm(2) &
-                      +      v1(3)*norm(3))
-                 x(ie,i,j,1) = x(nx,i,j,1) + dot*norm(1)
-                 x(ie,i,j,2) = x(nx,i,j,2) + dot*norm(2)
-                 x(ie,i,j,3) = x(nx,i,j,3) + dot*norm(3)
+                 if (globalNode(ie,i,j) < 0) then 
+                    v1(1) = x(il, i,j,1) - x(nx, i,j,1)
+                    v1(2) = x(il, i,j,2) - x(nx, i,j,2)
+                    v1(3) = x(il, i,j,3) - x(nx, i,j,3)
+                    dot = two*(v1(1)*norm(1) + v1(2)*norm(2) &
+                         +      v1(3)*norm(3))
+                    x(ie,i,j,1) = x(nx,i,j,1) + dot*norm(1)
+                    x(ie,i,j,2) = x(nx,i,j,2) + dot*norm(2)
+                    x(ie,i,j,3) = x(nx,i,j,3) + dot*norm(3)
+                 end if
               enddo
            enddo
            
@@ -262,14 +184,16 @@ subroutine xhalo_block
            
            do j=jBeg,jEnd
               do i=iBeg,iEnd
-                 v1(1) = x(i,1,j,1) - x(i,2,j,1)
-                 v1(2) = x(i,1,j,2) - x(i,2,j,2)
-                 v1(3) = x(i,1,j,3) - x(i,2,j,3)
-                 dot = two*(v1(1)*norm(1) + v1(2)*norm(2) &
-                      +      v1(3)*norm(3))
-                 x(i,0,j,1) = x(i,2,j,1) + dot*norm(1)
-                 x(i,0,j,2) = x(i,2,j,2) + dot*norm(2)
-                 x(i,0,j,3) = x(i,2,j,3) + dot*norm(3)
+                 if (globalNode(i,0,j) < 0) then 
+                    v1(1) = x(i,1,j,1) - x(i,2,j,1)
+                    v1(2) = x(i,1,j,2) - x(i,2,j,2)
+                    v1(3) = x(i,1,j,3) - x(i,2,j,3)
+                    dot = two*(v1(1)*norm(1) + v1(2)*norm(2) &
+                         +      v1(3)*norm(3))
+                    x(i,0,j,1) = x(i,2,j,1) + dot*norm(1)
+                    x(i,0,j,2) = x(i,2,j,2) + dot*norm(2)
+                    x(i,0,j,3) = x(i,2,j,3) + dot*norm(3)
+                 end if
               enddo
            enddo
 
@@ -285,14 +209,16 @@ subroutine xhalo_block
            
            do j=jBeg,jEnd
               do i=iBeg,iEnd
-                 v1(1) = x(i,jl,j,1) - x(i,ny,j,1)
-                 v1(2) = x(i,jl,j,2) - x(i,ny,j,2)
-                 v1(3) = x(i,jl,j,3) - x(i,ny,j,3)
-                 dot = two*(v1(1)*norm(1) + v1(2)*norm(2) &
-                      +      v1(3)*norm(3))
-                 x(i,je,j,1) = x(i,ny,j,1) + dot*norm(1)
-                 x(i,je,j,2) = x(i,ny,j,2) + dot*norm(2)
-                 x(i,je,j,3) = x(i,ny,j,3) + dot*norm(3)
+                 if (globalNode(i,je,j) < 0) then 
+                    v1(1) = x(i,jl,j,1) - x(i,ny,j,1)
+                    v1(2) = x(i,jl,j,2) - x(i,ny,j,2)
+                    v1(3) = x(i,jl,j,3) - x(i,ny,j,3)
+                    dot = two*(v1(1)*norm(1) + v1(2)*norm(2) &
+                         +      v1(3)*norm(3))
+                    x(i,je,j,1) = x(i,ny,j,1) + dot*norm(1)
+                    x(i,je,j,2) = x(i,ny,j,2) + dot*norm(2)
+                    x(i,je,j,3) = x(i,ny,j,3) + dot*norm(3)
+                 end if
               enddo
            enddo
 
@@ -308,14 +234,16 @@ subroutine xhalo_block
            
            do j=jBeg,jEnd
               do i=iBeg,iEnd
-                 v1(1) = x(i,j,1,1) - x(i,j,2,1)
-                 v1(2) = x(i,j,1,2) - x(i,j,2,2)
-                 v1(3) = x(i,j,1,3) - x(i,j,2,3)
-                 dot = two*(v1(1)*norm(1) + v1(2)*norm(2) &
-                      +      v1(3)*norm(3))
-                 x(i,j,0,1) = x(i,j,2,1) + dot*norm(1)
-                 x(i,j,0,2) = x(i,j,2,2) + dot*norm(2)
-                 x(i,j,0,3) = x(i,j,2,3) + dot*norm(3)
+                 if (globalNode(i,j,0) < 0) then 
+                    v1(1) = x(i,j,1,1) - x(i,j,2,1)
+                    v1(2) = x(i,j,1,2) - x(i,j,2,2)
+                    v1(3) = x(i,j,1,3) - x(i,j,2,3)
+                    dot = two*(v1(1)*norm(1) + v1(2)*norm(2) &
+                         +      v1(3)*norm(3))
+                    x(i,j,0,1) = x(i,j,2,1) + dot*norm(1)
+                    x(i,j,0,2) = x(i,j,2,2) + dot*norm(2)
+                    x(i,j,0,3) = x(i,j,2,3) + dot*norm(3)
+                 end if
               enddo
            enddo
 
@@ -331,14 +259,16 @@ subroutine xhalo_block
            
            do j=jBeg,jEnd
               do i=iBeg,iEnd
-                 v1(1) = x(i,j,kl,1) - x(i,j,nz,1)
-                 v1(2) = x(i,j,kl,2) - x(i,j,nz,2)
-                 v1(3) = x(i,j,kl,3) - x(i,j,nz,3)
-                 dot = two*(v1(1)*norm(1) + v1(2)*norm(2) &
-                      +      v1(3)*norm(3))
-                 x(i,j,ke,1) = x(i,j,nz,1) + dot*norm(1)
-                 x(i,j,ke,2) = x(i,j,nz,2) + dot*norm(2)
-                 x(i,j,ke,3) = x(i,j,nz,3) + dot*norm(3)
+                 if (globalNode(i,j,ke) < 0) then 
+                    v1(1) = x(i,j,kl,1) - x(i,j,nz,1)
+                    v1(2) = x(i,j,kl,2) - x(i,j,nz,2)
+                    v1(3) = x(i,j,kl,3) - x(i,j,nz,3)
+                    dot = two*(v1(1)*norm(1) + v1(2)*norm(2) &
+                         +      v1(3)*norm(3))
+                    x(i,j,ke,1) = x(i,j,nz,1) + dot*norm(1)
+                    x(i,j,ke,2) = x(i,j,nz,2) + dot*norm(2)
+                    x(i,j,ke,3) = x(i,j,nz,3) + dot*norm(3)
+                 end if
               enddo
            enddo
         end select
