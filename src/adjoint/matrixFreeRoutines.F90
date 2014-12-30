@@ -173,8 +173,8 @@ subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useSta
   ii = 0
   domainLoopAD: do nn=1,nDom
 
-     ! Just to get sizes
-     call setPointers(nn, 1_intType, 1)
+     ! Set pointers to the first timeInstance...just to getSizes
+     call setPointers(nn, level, 1)
      ! Set unknown sizes in diffSizes for AD routine
      ISIZE1OFDrfbcdata = nBocos
      ISIZE1OFDrfviscsubface = nViscBocos
@@ -478,14 +478,16 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
      call VecAssemblyEnd(x_like, ierr)
      call EChk(ierr,__FILE__,__LINE__)
      
-     ! Now scatter the xsurb contribution back into x_like
-       ! Perform the scatter from the global x vector to xSurf
-     call VecScatterBegin(wallScatter(1), xSurfVecb, x_like, ADD_VALUES, SCATTER_REVERSE, ierr)
-     call EChk(ierr,__FILE__,__LINE__)
-     
-     call VecScatterEnd(wallScatter(1), xSurfVecb, x_like, ADD_VALUES, SCATTER_REVERSE, ierr)
-     call EChk(ierr,__FILE__,__LINE__)
-
+     ! Now scatter the xsurb contribution back into x_like Perform the
+     ! scatter from the global x vector to xSurf...but only if
+     ! wallDistances were used
+     if (wallDistanceNeeded .and. useApproxWallDistance) then 
+        call VecScatterBegin(wallScatter(1), xSurfVecb, x_like, ADD_VALUES, SCATTER_REVERSE, ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+        
+        call VecScatterEnd(wallScatter(1), xSurfVecb, x_like, ADD_VALUES, SCATTER_REVERSE, ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+     end if
      call VecResetArray(x_like, ierr)
      call EChk(ierr,__FILE__,__LINE__)
   end if

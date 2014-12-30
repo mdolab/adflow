@@ -54,7 +54,7 @@
 !
        ! Check if the RANS equations are solved. If not, the wall
        ! distance is not needed and a return can be made.
-       
+
        if(equations /= RANSEquations) return
 
        ! If the turbulence model is wall distance free just compute the
@@ -105,20 +105,6 @@
          call deallocateTempMemory(.false.)
        endif
        
-       ! if (useApproxWallDistance) then
-       !    nLevels = ubound(flowDoms,2)
-
-       !    ! Check that unique_face_info is allocated:
-       !    if (.not. allocated(unique_face_info)) then
-       !       allocate(unique_face_info(nLevels,nTimeIntervalsSpectral))
-       !       do ll=1,nLevels
-       !          do sps=1,nTimeIntervalsSpectral
-       !             unique_face_info(ll,sps)%wallAssociated = .False.
-       !          end do
-       !       end do
-       !    end if
-       ! end if
-
        ! There are two different searches we can do: the original code
        ! always works and it capable to dealing with rotating/periodic
        ! geometries. It uses constant memory and is slow. The
