@@ -3,13 +3,15 @@
    !
    !  Differentiation of applyallbc_block in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
    !   gradient     of useful results: *rev *bvtj1 *bvtj2 *p *gamma
-   !                *w *rlv *bvtk1 *bvtk2 *si *sj *sk *bvti1 *bvti2
-   !                gammainf tref winf pinfcorr rgas
-   !   with respect to varying inputs: *rev *p *w *rlv *si *sj *sk
-   !                *(*bcdata.norm) gammainf tref winf pinfcorr rgas
+   !                *w *rlv *bvtk1 *bvtk2 *d2wall *si *sj *sk *bvti1
+   !                *bvti2 gammainf tref winf pinfcorr rgas
+   !   with respect to varying inputs: *rev *p *w *rlv *d2wall *si
+   !                *sj *sk *(*bcdata.norm) gammainf tref winf pinfcorr
+   !                rgas
    !   Plus diff mem management of: rev:in bvtj1:in bvtj2:in p:in
-   !                gamma:in w:in rlv:in bvtk1:in bvtk2:in si:in sj:in
-   !                sk:in bvti1:in bvti2:in bcdata:in *bcdata.norm:in
+   !                gamma:in w:in rlv:in bvtk1:in bvtk2:in d2wall:in
+   !                si:in sj:in sk:in bvti1:in bvti2:in bcdata:in
+   !                *bcdata.norm:in
    SUBROUTINE APPLYALLBC_BLOCK_B(secondhalo)
    ! Apply BC's for a single block
    USE BLOCKPOINTERS_B

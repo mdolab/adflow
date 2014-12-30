@@ -28,6 +28,7 @@
        use inputTimeSpectral
        use interfaceGroups
        use section
+       use wallDistanceData
        implicit none
 !
 !      Local variables.
@@ -189,6 +190,13 @@
        call cellRangeSubface
        call initBcdata
 
+       ! Allocate some data of size nLevels for the fast wall distance calc
+       allocate(xVolumeVec(nLevels), xSurfVec(nLevels), wallScatter(nLevels), &
+            wallDistanceDataAllocated(nLevels), updateWallAssociation(nLevels))
+       wallDistanceDataAllocated = .False.
+       updateWallAssociation = .True. 
+       
+
        ! Loop over the number of levels and perform a lot of tasks.
        ! See the corresponding subroutine header, although the
        ! names are pretty self-explaining
@@ -210,7 +218,6 @@
          call viscSubfaceInfo(level)
          call determineAreaLevel0Cooling(level)
          call determineNcellGlobal(level)
-         call wallDistance(level, .true.)
        enddo
 
        ! Before heading to the solver, set all the boundary iblanks
@@ -226,3 +233,22 @@
        end do
 
        end subroutine preprocessing
+
+
+       subroutine preprocessingPart2
+
+         ! This routine computes the wallDistance. It needs to be run
+         ! AFTER initFLow so it is in it's own routine.
+
+         use block
+         implicit none
+         integer(kind=intType) :: level, nLevels
+
+         nLevels = ubound(flowDoms,2)
+
+         do level=1,nLevels
+            call wallDistance(level, .True.)
+         end do
+
+       end subroutine preprocessingPart2
+         

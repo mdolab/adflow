@@ -34,6 +34,7 @@ subroutine releaseMemoryPart1
   use interfaceGroups
   use commSliding
   use commMixing
+  use wallDistanceData
   implicit none
   !
   !      Local variables
@@ -62,7 +63,7 @@ subroutine releaseMemoryPart1
      do level=2,nLevels
         do nn=1,nDom
            call deallocateBlock(nn, level, sps)
-        enddo
+       enddo
      enddo
 
      ! Release some memory of the fine grid, which is not needed
@@ -155,6 +156,11 @@ subroutine releaseMemoryPart1
   deallocate(sections)
   deallocate(myinterfaces)
 
+  ! Destroy wall distance stuff if necessary
+  do l=1,nLevels
+     call destroyWallDistanceData(l)
+  end do
+  deallocate(xSurfVec, xVolumeVec, wallScatter)
 
   ! From Communication Stuff
   do l=1,nLevels

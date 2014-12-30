@@ -8,14 +8,19 @@ from mpi4py import MPI
 from mdo_regression_helper import *
 from baseclasses import AeroProblem
 from pygeo import DVGeometry
-from pywarp import MBMesh_C as MBMesh
 import pyspline
 
 # ###################################################################
 # DO NOT USE THIS IMPORT STRATEGY! THIS IS ONLY USED FOR REGRESSION
 # SCRIPTS ONLY. Use 'from sumb import SUMB' for regular scripts.
 sys.path.append(os.path.abspath('../../'))
-from python.pySUmb_C import SUMB_C as SUMB
+if 'complex' in sys.argv:
+    from python.pySUmb_C import SUMB_C as SUMB
+    from pywarp import MBMesh_C as MBMesh
+else:
+    from pywarp import MBMesh
+    from python.pySUmb import SUMB
+
 # ###################################################################
 
 # First thing we will do is define a complete set of default options
@@ -174,7 +179,7 @@ defOpts = {
     'applyadjointpcsubspacesize': 20,
     'frozenturbulence': True,
     'usematrixfreedrdw': False,
-    'usematrixfreedrdx': False,
+    'usematrixfreedrdx': True,
 
     # ADjoint debugger
     'firstrun': True,
@@ -182,11 +187,6 @@ defOpts = {
     'verifyspatial': True,
     'verifyextra': True,
 }
-evalFuncs=['lift','drag','cl','cd','fx','fy','fz','cfx','cfy',
-           'cfz','mx','my','mz','cmx','cmy','cmz','sepsensor']
-# First thing we will test is the euler mesh of the MDO tutorial. This
-# is a very small mesh that can be run very quickly. We therefore do a
-# lot of testing with it.
 
 def printHeader(testName):
     if MPI.COMM_WORLD.rank == 0:
@@ -195,9 +195,11 @@ def printHeader(testName):
         print '+' + '-'*78 + '+'
 h = 1e-40
 
+
+
 def test1():
     # ****************************************************************************
-    printHeader('MDO tutorial Euler Mesh Alpha Perturbation')
+    printHeader('MDO tutorial Euler Aerodynamic Variables')
     # ****************************************************************************
     aeroOptions = copy.deepcopy(defOpts)
 
@@ -208,120 +210,137 @@ def test1():
          'CFL':1.5,
          'CFLCoarse':1.25,
          'nCyclesCoarse':250,
-         'nCycles':1000,
+         'nCycles':400,
          'monitorvariables':['resrho','cl','cd','cmz','totalr'],
          'useNKSolver':True,
-         'L2Convergence':1e-12,
+         'L2Convergence':1e-15,
          'L2ConvergenceCoarse':1e-2,
          'nkswitchtol':1e-2,
-         'adjointl2convergence': 1e-12,
-         'nkls':'none',
+         'adjointl2convergence': 1e-15,
+         'nkls':'non monotone',
      }
     )
 
-    # Setup aeroproblem, cfdsolver, mesh and geometry.
+    # Setup aeroproblem, cfdsolver
     ap = AeroProblem(name='mdo_tutorial', alpha=1.8+h*1j, mach=0.80,
                      altitude=10000.0, areaRef=45.5, chordRef=3.25,
-                     evalFuncs=evalFuncs)
+                     evalFuncs=['cd','lift','cmz'])
+    ap.addDV('alpha')
+    ap.addDV('mach')
+    ap.addDV('altitude')
     CFDSolver = SUMB(options=aeroOptions)
-    CFDSolver(ap,writeSolution=False)
-    sol = {}
-    CFDSolver.evalFunctions(ap,sol)
-    if MPI.COMM_WORLD.rank == 0:
-        for key in sorted(sol.keys()):
-            print 'sol[%s]:'%key
-            reg_write(numpy.real(sol[key]),1e-10,1e-10)
-            deriv = numpy.imag(sol[key])/h
-            reg_write(deriv,1e-6,1e-6)
-  
-    # Clean up:
+
+    if not 'complex' in sys.argv:
+        # Solve system
+        CFDSolver(ap, writeSolution=False)
+        funcs = {}
+        CFDSolver.evalFunctions(ap, funcs)
+        # Solve sensitivities
+        funcsSens = {}
+        CFDSolver.evalFunctionsSens(ap, funcsSens)
+
+        # Write values and derivatives out:
+        if MPI.COMM_WORLD.rank == 0:
+            for key in ['cd','cmz','lift']:
+                print 'funcs[%s]:'%key
+                reg_write(funcs['mdo_tutorial_%s'%key],1e-10,1e-10)
+            # Now write the derivatives in the same order the CS will do them:
+            print ('Alpha Derivatives:')
+            reg_write(funcsSens['mdo_tutorial_cd']['alpha_mdo_tutorial'], 1e-10,1e-10)
+            reg_write(funcsSens['mdo_tutorial_cmz']['alpha_mdo_tutorial'], 1e-10,1e-10)
+            reg_write(funcsSens['mdo_tutorial_lift']['alpha_mdo_tutorial'], 1e-10,1e-10)
+
+            print ('Mach Derivatives:')
+            reg_write(funcsSens['mdo_tutorial_cd']['mach_mdo_tutorial'], 1e-10,1e-10)
+            reg_write(funcsSens['mdo_tutorial_cmz']['mach_mdo_tutorial'], 1e-10,1e-10)
+            reg_write(funcsSens['mdo_tutorial_lift']['mach_mdo_tutorial'], 1e-10,1e-10)
+
+            print ('Altitude Derivatives:')
+            reg_write(funcsSens['mdo_tutorial_cd']['altitude_mdo_tutorial'], 1e-8,1e-8)
+            reg_write(funcsSens['mdo_tutorial_cmz']['altitude_mdo_tutorial'], 1e-8,1e-8)
+            reg_write(funcsSens['mdo_tutorial_lift']['altitude_mdo_tutorial'], 1e-8,1e-8)
+
+    else:
+        # For the complex....we just do successive perturbation
+        for ii in range(3):
+            ap.alpha = 1.8
+            ap.mach = 0.80
+            ap.altitude = 10000.0
+            if ii == 0:
+                ap.alpha += h*1j
+            elif ii == 1:
+                ap.mach += h*1j
+            else:
+                ap.altitude += h*1j
+
+            CFDSolver.resetFlow(ap)
+            CFDSolver(ap, writeSolution=False)
+            funcs = {}
+            CFDSolver.evalFunctions(ap, funcs)
+
+            if MPI.COMM_WORLD.rank == 0:
+                if ii == 0:
+                    for key in ['cd','cmz','lift']:
+                        print 'funcs[%s]:'%key
+                        reg_write(numpy.real(funcs['mdo_tutorial_%s'%key]),1e-10,1e-10)
+
+                if ii == 0:
+                    print ('Alpha Derivatives:')
+                    for key in ['cd','cmz','lift']:
+                        deriv = numpy.imag(funcs['mdo_tutorial_%s'%key])/h
+                        reg_write(deriv,1e-10,1e-10)
+
+                elif ii == 1:
+                    print ('Mach Derivatives:')
+                    for key in ['cd','cmz','lift']:
+                        deriv = numpy.imag(funcs['mdo_tutorial_%s'%key])/h
+                        reg_write(deriv,1e-10,1e-10)
+
+                elif ii == 2:
+                    print ('Altitude Derivatives:')
+                    for key in ['cd','cmz','lift']:
+                        deriv = numpy.imag(funcs['mdo_tutorial_%s'%key])/h
+                        reg_write(deriv,1e-8,1e-8)
+
+
+
     del CFDSolver
 
 def test2():
     # ****************************************************************************
-    printHeader('MDO tutorial Euler Mesh TS-Mode Alpha Perturbation')
+    printHeader('MDO tutorial Euler Geometric Variables')
     # ****************************************************************************
     aeroOptions = copy.deepcopy(defOpts)
 
     # Now set the options that need to be overwritten for this example:
     aeroOptions.update(
-        {'gridFile': '../inputFiles/mdo_tutorial_euler_l2.cgns',
-         'MGCycle':'sg',
+        {'gridFile': '../inputFiles/mdo_tutorial_euler.cgns',
+         'MGCycle':'2w',
          'CFL':1.5,
          'CFLCoarse':1.25,
          'nCyclesCoarse':250,
-         'nCycles':10000,
+         'nCycles':400,
          'monitorvariables':['resrho','cl','cd','cmz','totalr'],
-         'L2Convergence':1e-12,
-         'L2ConvergenceCoarse':1e-2,
-         'adjointl2convergence': 1e-12,
-         'timeIntervals':3,
-         'equationMode':'Time Spectral',
-         'tsstability':True,
-         'alphamode':True,
-         'useNKSolver':True,
-         'NKSwitchTol':1e-2,
-         'usediagtspc':False,
-         'asmoverlap':2,
-         'ilufill':3,
-         'adjointmaxiter':1000,
-     }
-    )
-    # Setup aeroproblem, cfdsolver, mesh and geometry.
-    ap = AeroProblem(name='mdo_tutorial', alpha=1.8+h*1j, mach=0.80, altitude=10000.0,
-                     areaRef=45.5, chordRef=3.25, 
-                     degreeFourier=1, omegaFourier=6.28, degreePol=0,
-                     cosCoefFourier=[0.0,0.0], sinCoefFourier=[0.01], 
-                     coefPol=[0],
-                     evalFuncs=['cl', 'cl0','clalpha', 'clalphadot'])
-    CFDSolver = SUMB(options=aeroOptions)
-    CFDSolver(ap,writeSolution=False)
-    sol = {}
-    CFDSolver.evalFunctions(ap,sol)
-    if MPI.COMM_WORLD.rank == 0:
-        for key in sorted(sol.keys()):
-            print 'sol[%s]:'%key
-            reg_write(numpy.real(sol[key]),1e-10,1e-10)
-            deriv = numpy.imag(sol[key])/h
-            reg_write(deriv,1e-6,1e-6)
-            
-    # Clean up:
-    del CFDSolver
-  
-def test3():
-    # ****************************************************************************
-    printHeader('MDO tutorial RANS Mesh Twist Perturbation')
-    # ****************************************************************************
-    aeroOptions = copy.deepcopy(defOpts)
-
-    # Now set the options that need to be overwritten for this example:
-    aeroOptions.update(
-        {'gridFile': '../inputFiles/mdo_tutorial_rans.cgns',
-         'MGCycle':'2w',
-         'equationType':'RANS',
-         'smoother':'dadi',
-         'CFL':1.5,
-         'CFLCoarse':1.25,
-         'resaveraging':'noresaveraging',
-         'nsubiter':3,
-         'nsubiterturb':3,
-         'nCyclesCoarse':100,
-         'nCycles':1000,
-         'monitorvariables':['resrho','resturb','cl','cd','cmz','yplus','totalr'],
          'useNKSolver':True,
          'L2Convergence':1e-15,
-         'L2ConvergenceCoarse':1e-4,
-         'nkswitchtol':1e-3,
-         'adjointl2convergence': 1e-13,
-         'frozenTurbulence':False,
+         'L2ConvergenceCoarse':1e-2,
+         'nkswitchtol':1e-2,
+         'adjointl2convergence': 1e-15,
+         'nkls':'non monotone',
      }
     )
 
-    # Setup aeroproblem, cfdsolver, mesh and geometry.
-    ap = AeroProblem(name='mdo_tutorial', alpha=1.8, mach=0.80, altitude=10000.0,
-                     areaRef=45.5, chordRef=3.25,evalFuncs=evalFuncs)
+    # Setup aeroproblem, cfdsolver
+    ap = AeroProblem(name='mdo_tutorial', alpha=1.8, mach=0.80,
+                     altitude=10000.0, areaRef=45.5, chordRef=3.25,
+                     evalFuncs=['cl','cmz','drag'])
+
     CFDSolver = SUMB(options=aeroOptions)
-    DVGeo = DVGeometry('../inputFiles/mdo_tutorial_ffd.fmt',complex=True)
+    if 'complex' in sys.argv:
+        DVGeo = DVGeometry('../inputFiles/mdo_tutorial_ffd.fmt', complex=True)
+    else:
+        DVGeo = DVGeometry('../inputFiles/mdo_tutorial_ffd.fmt', complex=False)
+
     nTwist = 2
     DVGeo.addRefAxis('wing', pyspline.Curve(x=numpy.linspace(5.0/4.0, 1.5/4.0+7.5, nTwist), 
                                             y=numpy.zeros(nTwist),
@@ -330,30 +349,340 @@ def test3():
         for i in xrange(nTwist):
             geo.rot_z['wing'].coef[i] = val[i]
 
+    def span(val, geo):
+        # Span
+        C = geo.extractCoef('wing')
+        s = geo.extractS('wing')
+        for i in xrange(len(C)-1):
+            C[-1, 2] = C[-1, 2] + val[0]
+        geo.restoreCoef(C, 'wing')
+
     DVGeo.addGeoDVGlobal('twist', [0]*nTwist, twist, lower=-10, upper=10, scale=1.0)
+    DVGeo.addGeoDVGlobal('span', [0], span, lower=-10, upper=10, scale=1.0)
+    DVGeo.addGeoDVLocal('shape', lower=-0.5, upper=0.5, axis='y', scale=10.0)
+    mesh = MBMesh(options={'gridFile':'../inputFiles/mdo_tutorial_euler.cgns'})
+    CFDSolver.setMesh(mesh)
+    CFDSolver.setDVGeo(DVGeo)
+    #Aeroproblem must be set before we can call DVGeo.setDesignVars
+    CFDSolver.setAeroProblem(ap)
+    if not 'complex' in sys.argv:
+        # Solve system
+        CFDSolver(ap, writeSolution=False)
+        funcs = {}
+        CFDSolver.evalFunctions(ap, funcs)
+        # Solve sensitivities
+        funcsSens = {}
+        CFDSolver.evalFunctionsSens(ap, funcsSens)
+
+        # Write values and derivatives out:
+        if MPI.COMM_WORLD.rank == 0:
+            for key in ['cl','cmz','drag']:
+                print 'funcs[%s]:'%key
+                reg_write(funcs['mdo_tutorial_%s'%key],1e-10,1e-10)
+            # Now write the derivatives in the same order the CS will do them:
+            print ('Twist[0] Derivatives:')
+            reg_write(funcsSens['mdo_tutorial_cl']['twist'][0][0], 1e-10,1e-10)
+            reg_write(funcsSens['mdo_tutorial_cmz']['twist'][0][0], 1e-10,1e-10)
+            reg_write(funcsSens['mdo_tutorial_drag']['twist'][0][0], 1e-10,1e-10)
+
+            print ('Span Derivatives:')
+            reg_write(funcsSens['mdo_tutorial_cl']['span'][0], 1e-10,1e-10)
+            reg_write(funcsSens['mdo_tutorial_cmz']['span'][0], 1e-10,1e-10)
+            reg_write(funcsSens['mdo_tutorial_drag']['span'][0], 1e-10,1e-10)
+
+            print ('shape[13] Derivatives:')
+            reg_write(funcsSens['mdo_tutorial_cl']['shape'][0][13], 1e-10,1e-10)
+            reg_write(funcsSens['mdo_tutorial_cmz']['shape'][0][13], 1e-10,1e-10)
+            reg_write(funcsSens['mdo_tutorial_drag']['shape'][0][13], 1e-10,1e-10)
+    else:
+        # For the complex....we just do successive perturbation
+        for ii in range(3):
+            xRef = {'twist':[0.0, 0.0], 'span':[0.0], 'shape':numpy.zeros(72, dtype='D')}
+            if ii == 0:
+                xRef['twist'][0] += h*1j
+            elif ii == 1:      
+                xRef['span'][0] += h*1j
+            else:
+                xRef['shape'][13] += h*1j
+
+            CFDSolver.resetFlow(ap)
+            DVGeo.setDesignVars(xRef)
+            CFDSolver(ap, writeSolution=False)
+            funcs = {}
+            CFDSolver.evalFunctions(ap, funcs)
+
+            if MPI.COMM_WORLD.rank == 0:
+                if ii == 0:
+                    for key in ['cl','cmz','drag']:
+                        print 'funcs[%s]:'%key
+                        reg_write(numpy.real(funcs['mdo_tutorial_%s'%key]),1e-10,1e-10)
+
+                if ii == 0:
+                    print ('Twist[0] Derivatives:')
+                elif ii == 1:
+                    print ('Span Derivatives:')
+                elif ii == 2:
+                    print ('shape[13] Derivatives:')
+
+                for key in ['cl','cmz','drag']:
+                    deriv = numpy.imag(funcs['mdo_tutorial_%s'%key])/h
+                    reg_write(deriv,1e-10,1e-10)
+    del CFDSolver
+    del mesh
+
+# Notes for the Viscous Derivatives: It appears that the CS derviative
+# itself flucuates in the 10 to 11 digit or so even when the residual
+# is bouncing around machine precision. This si the limit of what can
+# be verified wtih CS. This is the reason for putting the check
+# tolerance at 1e-8.
+
+def test3():
+    # ****************************************************************************
+    printHeader('MDO tutorial Viscous Aerodynamic Variables')
+    # ****************************************************************************
+    aeroOptions = copy.deepcopy(defOpts)
+
+    # Now set the options that need to be overwritten for this example:
+    aeroOptions.update(
+        {'gridFile': '../inputFiles/mdo_tutorial_rans.cgns',
+         'MGCycle':'2w',
+         'equationType':'Laminar NS',
+         'CFL':1.5,
+         'CFLCoarse':1.25,
+         'nCyclesCoarse':250,
+         'nCycles':500,
+         'monitorvariables':['resrho','resturb','cl','cd','cmz','yplus','totalr'],
+         'useNKSolver':True,
+         'L2Convergence':1e-15,
+         'L2ConvergenceCoarse':1e-2,
+         'nkswitchtol':1e-2,
+         'adjointl2convergence': 1e-15,
+         'nkls':'non monotone',
+     }
+    )
+
+    # Setup aeroproblem, cfdsolver
+    ap = AeroProblem(name='mdo_tutorial', alpha=1.8, mach=0.50, 
+                     reynolds=50000.0, reynoldsLength=3.25, T=293.15,
+                     areaRef=45.5, chordRef=3.25, evalFuncs=['cd','cmz','lift'])
+    ap.addDV('alpha')
+    ap.addDV('mach')
+
+    CFDSolver = SUMB(options=aeroOptions)
+
+    if not 'complex' in sys.argv:
+        # Solve system
+        CFDSolver(ap, writeSolution=False)
+        funcs = {}
+        CFDSolver.evalFunctions(ap, funcs)
+        # Solve sensitivities
+        funcsSens = {}
+        CFDSolver.evalFunctionsSens(ap, funcsSens)
+
+        # Write values and derivatives out:
+        if MPI.COMM_WORLD.rank == 0:
+            for key in ['cd','cmz','lift']:
+                print 'funcs[%s]:'%key
+                reg_write(funcs['mdo_tutorial_%s'%key],1e-8,1e-8)
+            # Now write the derivatives in the same order the CS will do them:
+            print ('Alpha Derivatives:')
+            reg_write(funcsSens['mdo_tutorial_cd']['alpha_mdo_tutorial'], 1e-8,1e-8)
+            reg_write(funcsSens['mdo_tutorial_cmz']['alpha_mdo_tutorial'], 1e-8,1e-8)
+            reg_write(funcsSens['mdo_tutorial_lift']['alpha_mdo_tutorial'], 1e-8,1e-8)
+
+            print ('Mach Derivatives:')
+            reg_write(funcsSens['mdo_tutorial_cd']['mach_mdo_tutorial'], 1e-8,1e-8)
+            reg_write(funcsSens['mdo_tutorial_cmz']['mach_mdo_tutorial'], 1e-8,1e-8)
+            reg_write(funcsSens['mdo_tutorial_lift']['mach_mdo_tutorial'], 1e-8,1e-8)
+
+    else:
+        # For the complex....we just do successive perturbation
+        for ii in range(2):
+            ap.alpha = 1.8
+            ap.mach = 0.50
+
+            if ii == 0:
+                ap.alpha += h*1j
+            elif ii == 1:
+                ap.mach += h*1j
+
+            CFDSolver.resetFlow(ap)
+            CFDSolver(ap, writeSolution=False)
+            funcs = {}
+            CFDSolver.evalFunctions(ap, funcs)
+
+            if MPI.COMM_WORLD.rank == 0:
+                if ii == 0:
+                    for key in ['cd','cmz','lift']:
+                        print 'funcs[%s]:'%key
+                        reg_write(numpy.real(funcs['mdo_tutorial_%s'%key]),1e-8,1e-8)
+
+                if ii == 0:
+                    print ('Alpha Derivatives:')
+                elif ii == 1:
+                    print ('Mach Derivatives:')
+
+                for key in ['cd','cmz','lift']:
+                    deriv = numpy.imag(funcs['mdo_tutorial_%s'%key])/h
+                    reg_write(deriv,1e-8,1e-8)
+
+    del CFDSolver
+
+def test4():
+    # ****************************************************************************
+    printHeader('MDO tutorial Viscous Geometric Variables')
+    # ****************************************************************************
+    aeroOptions = copy.deepcopy(defOpts)
+
+    # Now set the options that need to be overwritten for this example:
+    aeroOptions.update(
+        {'gridFile': '../inputFiles/mdo_tutorial_rans.cgns',
+         'MGCycle':'2w',
+         'equationType':'Laminar NS',
+         'CFL':1.5,
+         'CFLCoarse':1.25,
+         'nCyclesCoarse':250,
+         'nCycles':500,
+         'monitorvariables':['resrho','resturb','cl','cd','cmz','yplus','totalr'],
+         'useNKSolver':True,
+         'L2Convergence':1e-15,
+         'L2ConvergenceCoarse':1e-2,
+         'nkswitchtol':1e-2,
+         'adjointl2convergence': 1e-15,
+         'nkls':'non monotone',
+     }
+    )
+
+    # Setup aeroproblem, cfdsolver
+    ap = AeroProblem(name='mdo_tutorial', alpha=1.8, mach=0.50, 
+                     reynolds=50000.0, reynoldsLength=3.25, T=293.15,
+                     areaRef=45.5, chordRef=3.25, evalFuncs=['cl','cmz','drag'])
+
+    CFDSolver = SUMB(options=aeroOptions)
+    if 'complex' in sys.argv:
+        DVGeo = DVGeometry('../inputFiles/mdo_tutorial_ffd.fmt', complex=True)
+    else:
+        DVGeo = DVGeometry('../inputFiles/mdo_tutorial_ffd.fmt', complex=False)
+
+    nTwist = 2
+    DVGeo.addRefAxis('wing', pyspline.Curve(x=numpy.linspace(5.0/4.0, 1.5/4.0+7.5, nTwist), 
+                                            y=numpy.zeros(nTwist),
+                                            z=numpy.linspace(0,14, nTwist), k=2))
+    def twist(val, geo):
+        for i in xrange(nTwist):
+            geo.rot_z['wing'].coef[i] = val[i]
+
+    def span(val, geo):
+        # Span
+        C = geo.extractCoef('wing')
+        s = geo.extractS('wing')
+        for i in xrange(len(C)-1):
+            C[-1, 2] = C[-1, 2] + val[0]
+        geo.restoreCoef(C, 'wing')
+
+    DVGeo.addGeoDVGlobal('twist', [0]*nTwist, twist, lower=-10, upper=10, scale=1.0)
+    DVGeo.addGeoDVGlobal('span', [0], span, lower=-10, upper=10, scale=1.0)
     DVGeo.addGeoDVLocal('shape', lower=-0.5, upper=0.5, axis='y', scale=10.0)
     mesh = MBMesh(options={'gridFile':'../inputFiles/mdo_tutorial_rans.cgns'})
     CFDSolver.setMesh(mesh)
     CFDSolver.setDVGeo(DVGeo)
-    # Aeroproblem must be set before we can call DVGeo.setDesignVars
+    #Aeroproblem must be set before we can call DVGeo.setDesignVars
     CFDSolver.setAeroProblem(ap)
-    DVGeo.setDesignVars({'twist':[0,h*1j]})
-    CFDSolver(ap,writeSolution=False)
-    sol = {}
-    CFDSolver.evalFunctions(ap,sol)
-    if MPI.COMM_WORLD.rank == 0:
-        for key in sorted(sol.keys()):
-            print 'sol[%s]:'%key
-            reg_write(numpy.real(sol[key]),1e-10,1e-10)
-            deriv = numpy.imag(sol[key])/h
-            reg_write(deriv,1e-6,1e-6)
+    if not 'complex' in sys.argv:
+        # Solve system
+        CFDSolver(ap, writeSolution=False)
+        funcs = {}
+        CFDSolver.evalFunctions(ap, funcs)
+        # Solve sensitivities
+        funcsSens = {}
+        CFDSolver.evalFunctionsSens(ap, funcsSens)
+
+        # Write values and derivatives out:
+        if MPI.COMM_WORLD.rank == 0:
+            for key in ['cl','cmz','drag']:
+                print 'funcs[%s]:'%key
+                reg_write(funcs['mdo_tutorial_%s'%key],1e-8,1e-8)
+            # Now write the derivatives in the same order the CS will do them:
+            print ('Twist[0] Derivatives:')
+            reg_write(funcsSens['mdo_tutorial_cl']['twist'][0][0], 1e-8,1e-8)
+            reg_write(funcsSens['mdo_tutorial_cmz']['twist'][0][0], 1e-8,1e-8)
+            reg_write(funcsSens['mdo_tutorial_drag']['twist'][0][0], 1e-8,1e-8)
+
+            print ('Span Derivatives:')
+            reg_write(funcsSens['mdo_tutorial_cl']['span'][0], 1e-8,1e-8)
+            reg_write(funcsSens['mdo_tutorial_cmz']['span'][0], 1e-8,1e-8)
+            reg_write(funcsSens['mdo_tutorial_drag']['span'][0], 1e-8,1e-8)
+
+            print ('shape[13] Derivatives:')
+            reg_write(funcsSens['mdo_tutorial_cl']['shape'][0][13], 1e-8,1e-8)
+            reg_write(funcsSens['mdo_tutorial_cmz']['shape'][0][13], 1e-8,1e-8)
+            reg_write(funcsSens['mdo_tutorial_drag']['shape'][0][13], 1e-8,1e-8)
+    else:
+        # For the complex....we just do successive perturbation
+        for ii in range(3):
+            xRef = {'twist':[0.0, 0.0], 'span':[0.0], 'shape':numpy.zeros(72, dtype='D')}
+            if ii == 0:
+                xRef['twist'][0] += h*1j
+            elif ii == 1:      
+                xRef['span'][0] += h*1j
+            else:
+                xRef['shape'][13] += h*1j
+
+            CFDSolver.resetFlow(ap)
+            DVGeo.setDesignVars(xRef)
+            CFDSolver(ap, writeSolution=False)
+            funcs = {}
+            CFDSolver.evalFunctions(ap, funcs)
+
+            if MPI.COMM_WORLD.rank == 0:
+                if ii == 0:
+                    for key in ['cl','cmz','drag']:
+                        print 'funcs[%s]:'%key
+                        reg_write(numpy.real(funcs['mdo_tutorial_%s'%key]),1e-8,1e-8)
+
+                if ii == 0:
+                    print ('Twist[0] Derivatives:')
+                elif ii == 1:
+                    print ('Span Derivatives:')
+                elif ii == 2:
+                    print ('shape[13] Derivatives:')
+
+                for key in ['cl','cmz','drag']:
+                    deriv = numpy.imag(funcs['mdo_tutorial_%s'%key])/h
+                    reg_write(deriv,1e-8,1e-8)
+
     del CFDSolver
     del mesh
-    del DVGeo
 
-def test4():
+# Notes for the RANS Derivatives: It appears that the CS derviative
+# itself flucuates in the 10 to 11 digit or so even when the residual
+# is bouncing around machine precision. This si the limit of what can
+# be verified wtih CS. This is the reason for putting the check
+# tolerance at 1e-8. However, the altidue derivatives seem to be quite
+# a bit less accurate, but this thought to be caused by the fact that
+# they so small in magniude. These are only requried to match to 1e-4.
+# Note that the NKJacobian lag is set to 2 which is much lower than is
+# norally used. The reason for this is with the RANS analysis,
+# sometimes the CS derivative will "blow up -- increase by 6 or 7
+# orders of magnitude during the solution. It eventually comes back to
+# the right order of magnitude, but it now quite inaccurate.
+# Futhermore, the intel compiler does a *TERRIBLE* job with accuracy
+# with complex variables. It really is awful. When you are playing
+# around with verifying derivatives it really is important to use
+# -fp-model precise. For the verification, we can only reliably get
+# about 8 digits since the actual values won't match much better than
+# that. You should be able to get 10 digits+ if you are using the
+# precise fp model. Also, the reason for doing the aerodynamic and
+# geometric derivatives separately is that the when the nodes are
+# embedded in the FFD there may be slight differences which will
+# result in differences on the order of ~1e-12. This way, the
+# aerodynamic derivatives can be tested independent of the goemetric
+# ones.
+
+
+def test5():
     # ****************************************************************************
-    printHeader('MDO tutorial RANS Mesh Alpha Perturbation')
+    printHeader('MDO tutorial RANS Aerodynamic Variables')
     # ****************************************************************************
     aeroOptions = copy.deepcopy(defOpts)
 
@@ -362,46 +691,241 @@ def test4():
         {'gridFile': '../inputFiles/mdo_tutorial_rans.cgns',
          'MGCycle':'2w',
          'equationType':'RANS',
-         'smoother':'dadi',
          'CFL':1.5,
          'CFLCoarse':1.25,
-         'resaveraging':'noresaveraging',
-         'nsubiter':3,
-         'nsubiterturb':3,
-         'nCyclesCoarse':100,
-         'nCycles':1000,
+         'nCyclesCoarse':250,
+         'nCycles':750,
          'monitorvariables':['resrho','resturb','cl','cd','cmz','yplus','totalr'],
          'useNKSolver':True,
-         'L2Convergence':1e-15,
-         'L2ConvergenceCoarse':1e-4,
+         'L2Convergence':1e-17,
+         'L2ConvergenceCoarse':1e-2,
          'nkswitchtol':1e-3,
-         'adjointl2convergence': 1e-13,
-         'frozenTurbulence':False,
+         'adjointl2convergence': 1e-16,
+         'nkls': 'non monotone',
+         'frozenturbulence':False,
+         'nkjacobianlag':2,
      }
     )
 
-    # Setup aeroproblem, cfdsolver, mesh and geometry.
-    ap = AeroProblem(name='mdo_tutorial', alpha=1.8+h*1j, mach=0.80, altitude=10000.0,
-                     areaRef=45.5, chordRef=3.25,evalFuncs=evalFuncs)
-    CFDSolver = SUMB(options=aeroOptions)
+    # Setup aeroproblem, cfdsolver
+    ap = AeroProblem(name='mdo_tutorial', alpha=1.8, mach=0.80, 
+                     altitude=10000.0, areaRef=45.5, chordRef=3.25, evalFuncs=['cd','cmz','lift'])
+    ap.addDV('alpha')
+    ap.addDV('mach')
+    ap.addDV('altitude')
+    CFDSolver = SUMB(options=aeroOptions,debug=True)
 
-    CFDSolver(ap,writeSolution=False)
-    sol = {}
-    CFDSolver.evalFunctions(ap,sol)
-    if MPI.COMM_WORLD.rank == 0:
-        for key in sorted(sol.keys()):
-            print 'sol[%s]:'%key
-            reg_write(numpy.real(sol[key]),1e-10,1e-10)
-            deriv = numpy.imag(sol[key])/h
-            reg_write(deriv,1e-6,1e-6)
+    if not 'complex' in sys.argv:
+        # Solve system
+        CFDSolver(ap, writeSolution=False)
+        funcs = {}
+        CFDSolver.evalFunctions(ap, funcs)
+        # Solve sensitivities
+        funcsSens = {}
+        CFDSolver.evalFunctionsSens(ap, funcsSens)
+
+        # Write values and derivatives out:
+        if MPI.COMM_WORLD.rank == 0:
+            for key in ['cd','cmz','lift']:
+                print 'funcs[%s]:'%key
+                reg_write(funcs['mdo_tutorial_%s'%key],1e-8,1e-8)
+            # Now write the derivatives in the same order the CS will do them:
+            print ('Alpha Derivatives:')
+            reg_write(funcsSens['mdo_tutorial_cd']['alpha_mdo_tutorial'], 1e-8,1e-8)
+            reg_write(funcsSens['mdo_tutorial_cmz']['alpha_mdo_tutorial'], 1e-8,1e-8)
+            reg_write(funcsSens['mdo_tutorial_lift']['alpha_mdo_tutorial'], 1e-8,1e-8)
+
+            print ('Mach Derivatives:')
+            reg_write(funcsSens['mdo_tutorial_cd']['mach_mdo_tutorial'], 1e-8,1e-8)
+            reg_write(funcsSens['mdo_tutorial_cmz']['mach_mdo_tutorial'], 1e-8,1e-8)
+            reg_write(funcsSens['mdo_tutorial_lift']['mach_mdo_tutorial'], 1e-8,1e-8)
+
+            print ('Altitude Derivatives:')
+            reg_write(funcsSens['mdo_tutorial_cd']['altitude_mdo_tutorial'], 1e-4,1e-4)
+            reg_write(funcsSens['mdo_tutorial_cmz']['altitude_mdo_tutorial'], 1e-4,1e-4)
+            reg_write(funcsSens['mdo_tutorial_lift']['altitude_mdo_tutorial'], 1e-4,1e-4)
+
+    else:
+        # For the complex....we just do successive perturbation
+        for ii in range(3):
+            ap.alpha = 1.8
+            ap.mach = 0.80
+            ap.altitude = 10000.0
+            if ii == 0:
+                ap.alpha += h*1j
+            elif ii == 1:
+                ap.mach += h*1j
+            else:
+                ap.altitude += h*1j
+
+            CFDSolver.resetFlow(ap)
+            CFDSolver(ap, writeSolution=False)
+            funcs = {}
+            CFDSolver.evalFunctions(ap, funcs)
+
+            if MPI.COMM_WORLD.rank == 0:
+                if ii == 0:
+                    for key in ['cd','cmz','lift']:
+                        print 'funcs[%s]:'%key
+                        reg_write(numpy.real(funcs['mdo_tutorial_%s'%key]),1e-8,1e-8)
+
+                if ii == 0:
+                    print ('Alpha Derivatives:')
+                    for key in ['cd','cmz','lift']:
+                        deriv = numpy.imag(funcs['mdo_tutorial_%s'%key])/h
+                        reg_write(deriv,1e-8,1e-8)
+
+                elif ii == 1:
+                    print ('Mach Derivatives:')
+                    for key in ['cd','cmz','lift']:
+                        deriv = numpy.imag(funcs['mdo_tutorial_%s'%key])/h
+                        reg_write(deriv,1e-8,1e-8)
+
+                else:
+                    print ('AltitudeDerivatives:')
+                    for key in ['cd','cmz','lift']:
+                        deriv = numpy.imag(funcs['mdo_tutorial_%s'%key])/h
+                        reg_write(deriv,1e-4,1e-4)
+
+
     del CFDSolver
- 
+
+def test6():
+    # ****************************************************************************
+    printHeader('MDO tutorial RANS Geometric Variables')
+    # ****************************************************************************
+    aeroOptions = copy.deepcopy(defOpts)
+
+    # Now set the options that need to be overwritten for this example:
+    aeroOptions.update(
+        {'gridFile': '../inputFiles/mdo_tutorial_rans.cgns',
+         'MGCycle':'2w',
+         'equationType':'RANS',
+         'CFL':1.5,
+         'CFLCoarse':1.25,
+         'nCyclesCoarse':250,
+         'nCycles':750,
+         'monitorvariables':['resrho','resturb','cl','cd','cmz','yplus','totalr'],
+         'useNKSolver':True,
+         'L2Convergence':1e-17,
+         'L2ConvergenceCoarse':1e-2,
+         'nkswitchtol':1e-3,
+         'adjointl2convergence': 1e-16,
+         'nkls': 'non monotone',
+         'frozenturbulence':False,
+         'nkjacobianlag':2,
+     }
+    )
+
+    # Setup aeroproblem, cfdsolver
+    ap = AeroProblem(name='mdo_tutorial', alpha=1.8, mach=0.80, 
+                     altitude=40000.0, areaRef=45.5, chordRef=3.25, evalFuncs=['cl','cmz','drag'])
+
+    ap.addDV('alpha')
+    CFDSolver = SUMB(options=aeroOptions)
+    if 'complex' in sys.argv:
+        DVGeo = DVGeometry('../inputFiles/mdo_tutorial_ffd.fmt', complex=True)
+    else:
+        DVGeo = DVGeometry('../inputFiles/mdo_tutorial_ffd.fmt', complex=False)
+
+    nTwist = 2
+    DVGeo.addRefAxis('wing', pyspline.Curve(x=numpy.linspace(5.0/4.0, 1.5/4.0+7.5, nTwist), 
+                                            y=numpy.zeros(nTwist),
+                                            z=numpy.linspace(0,14, nTwist), k=2))
+    def twist(val, geo):
+        for i in xrange(nTwist):
+            geo.rot_z['wing'].coef[i] = val[i]
+
+    def span(val, geo):
+        # Span
+        C = geo.extractCoef('wing')
+        s = geo.extractS('wing')
+        for i in xrange(len(C)-1):
+            C[-1, 2] = C[-1, 2] + val[0]
+        geo.restoreCoef(C, 'wing')
+
+    DVGeo.addGeoDVGlobal('twist', [0]*nTwist, twist, lower=-10, upper=10, scale=1.0)
+    DVGeo.addGeoDVGlobal('span', [0], span, lower=-10, upper=10, scale=1.0)
+    DVGeo.addGeoDVLocal('shape', lower=-0.5, upper=0.5, axis='y', scale=10.0)
+    mesh = MBMesh(options={'gridFile':'../inputFiles/mdo_tutorial_rans.cgns'})
+    CFDSolver.setMesh(mesh)
+    CFDSolver.setDVGeo(DVGeo)
+    #Aeroproblem must be set before we can call DVGeo.setDesignVars
+    CFDSolver.setAeroProblem(ap)
+    if not 'complex' in sys.argv:
+        # Solve system
+        CFDSolver(ap, writeSolution=False)
+        funcs = {}
+        CFDSolver.evalFunctions(ap, funcs)
+        # Solve sensitivities
+        funcsSens = {}
+        CFDSolver.evalFunctionsSens(ap, funcsSens)
+
+        # Write values and derivatives out:
+        if MPI.COMM_WORLD.rank == 0:
+            for key in ['cl','cmz','drag']:
+                print 'funcs[%s]:'%key
+                reg_write(funcs['mdo_tutorial_%s'%key],1e-8,1e-8)
+            # Now write the derivatives in the same order the CS will do them:
+            print ('Twist[0] Derivatives:')
+            reg_write(funcsSens['mdo_tutorial_cl']['twist'][0][0], 1e-8,1e-8)
+            reg_write(funcsSens['mdo_tutorial_cmz']['twist'][0][0], 1e-8,1e-8)
+            reg_write(funcsSens['mdo_tutorial_drag']['twist'][0][0], 1e-8,1e-8)
+
+            print ('Span Derivatives:')
+            reg_write(funcsSens['mdo_tutorial_cl']['span'][0], 1e-8,1e-8)
+            reg_write(funcsSens['mdo_tutorial_cmz']['span'][0], 1e-8,1e-8)
+            reg_write(funcsSens['mdo_tutorial_drag']['span'][0], 1e-8,1e-8)
+
+            print ('shape[13] Derivatives:')
+            reg_write(funcsSens['mdo_tutorial_cl']['shape'][0][13], 1e-8,1e-8)
+            reg_write(funcsSens['mdo_tutorial_cmz']['shape'][0][13], 1e-8,1e-8)
+            reg_write(funcsSens['mdo_tutorial_drag']['shape'][0][13], 1e-8,1e-8)
+    else:
+        # For the complex....we just do successive perturbation
+        for ii in range(3):
+            xRef = {'twist':[0.0, 0.0], 'span':[0.0], 'shape':numpy.zeros(72, dtype='D')}
+            if ii == 0:
+                xRef['twist'][0] += h*1j
+            elif ii == 1:      
+                xRef['span'][0] += h*1j
+            else:
+                xRef['shape'][13] += h*1j
+
+            CFDSolver.resetFlow(ap)
+            DVGeo.setDesignVars(xRef)
+            CFDSolver(ap, writeSolution=False)
+            funcs = {}
+            CFDSolver.evalFunctions(ap, funcs)
+
+            if MPI.COMM_WORLD.rank == 0:
+                if ii == 0:
+                    for key in ['cl','cmz','drag']:
+                        print 'funcs[%s]:'%key
+                        reg_write(numpy.real(funcs['mdo_tutorial_%s'%key]),1e-8,1e-8)
+
+                if ii == 0:
+                    print ('Twist[0] Derivatives:')
+                elif ii == 1:
+                    print ('Span Derivatives:')
+                elif ii == 2:
+                    print ('shape[13] Derivatives:')
+
+                for key in ['cl','cmz','drag']:
+                    deriv = numpy.imag(funcs['mdo_tutorial_%s'%key])/h
+                    reg_write(deriv,1e-8,1e-8)
+
+    del CFDSolver
+    del mesh
+
 if __name__ == '__main__':
-    if len(sys.argv) == 1:
+    if len(sys.argv) == 1 or (len(sys.argv) == 2 and 'complex' in sys.argv):
         test1()
         test2()
         test3()
         test4()
+        test5()
+        test6()
     else:
         # Run individual ones
         if 'test1' in sys.argv:
@@ -412,4 +936,9 @@ if __name__ == '__main__':
             test3()
         if 'test4' in sys.argv:
             test4()
+        if 'test5' in sys.argv:
+            test5()
+        if 'test6' in sys.argv:
+            test6()
 
+            

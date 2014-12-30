@@ -20,7 +20,7 @@
 !      * computed; the nearest wall point may lie in a periodic domain. *
 !      *                                                                *
 !      ******************************************************************
-!
+       use blockPointers
        use communication
        use constants
        use inputPhysics
@@ -29,6 +29,7 @@
        use iteration
        use inputDiscretization
        use block
+       use wallDistanceData
        implicit none
 !
 !      Subroutine arguments.
@@ -38,7 +39,7 @@
 !
 !      Local variables.
 !
-       integer :: ierr
+       integer :: ierr, i, j, k, nn, ii, l
 
        integer(kind=intType) :: sps, sps2, ll, nLevels
        logical :: tempLogical 
@@ -53,7 +54,7 @@
 !
        ! Check if the RANS equations are solved. If not, the wall
        ! distance is not needed and a return can be made.
-       
+
        if(equations /= RANSEquations) return
 
        ! If the turbulence model is wall distance free just compute the
@@ -81,10 +82,6 @@
 
        write(integerString,"(i2)") level
        integerString = adjustl(integerString)
-!        if(myID == 0) then
-!          print 101, trim(integerString)
-!        endif
-!  101   format("# Start wall distances level",1X,A)
 
        ! Store the start time.
 
@@ -108,20 +105,6 @@
          call deallocateTempMemory(.false.)
        endif
        
-       if (useApproxWallDistance) then
-          nLevels = ubound(flowDoms,2)
-
-          ! Check that unique_face_info is allocated:
-          if (.not. allocated(unique_face_info)) then
-             allocate(unique_face_info(nLevels,nTimeIntervalsSpectral))
-             do ll=1,nLevels
-                do sps=1,nTimeIntervalsSpectral
-                   unique_face_info(ll,sps)%wallAssociated = .False.
-                end do
-             end do
-          end if
-       end if
-
        ! There are two different searches we can do: the original code
        ! always works and it capable to dealing with rotating/periodic
        ! geometries. It uses constant memory and is slow. The
@@ -132,13 +115,12 @@
        ! updating the wall distances between iterations of
        ! aerostructural solutions. 
 
-       ! Loop over the number of spectral solutions.
 
-       spectralLoop: do sps=1,nTimeIntervalsSpectral
-
-          ! Normal, original wall distance calc
-          if (.not. useApproxWallDistance) then 
-          
+       ! Normal, original wall distance calc
+       if (.not. useApproxWallDistance) then 
+          ! Loop over the number of spectral solutions.
+          spectralLoop: do sps=1,nTimeIntervalsSpectral
+             
              ! Initialize the wall distances.
              
              call initWallDistance(level, sps, allocMem)
@@ -164,54 +146,42 @@
                 ! Determine the wall distances for the owned cells.
                 call determineDistance(level, sps)
              end if
+          end do spectralLoop
+       else ! The user wants to use approx wall distance calcs:
 
-          else ! The user want to use approx wall distnace calcs:
+          if (updateWallAssociation(level)) then 
+             ! Initialize the wall distance
+             spectralLoop2: do sps=1,nTimeIntervalsSpectral
+                call initWallDistance(level, sps, allocMem)
+             end do spectralLoop2
+             ! Destroy the PETSc wall distance data if necessary
+             call destroyWallDistanceData(level)
 
-             ! Initialize the wall distances.
-             
-             call initWallDistance(level, sps, allocMem)
-             
-             ! Build the viscous surface mesh.
-             
-             call viscousSurfaceMesh(level, sps)
-
-             if (.not. unique_face_info(level,sps)%wallAssociated) then
-                ! Run association if required
-                call determineDistance2(level, sps)   
-                unique_face_info(level,sps)%wallAssociated = .True. 
-             else
-                ! Otherwise do fast calculation
-                call determineDistance3(level, sps)
-             end if
-
-             ! Check to see if we've reset all %wallAssociated
-             ! values. If we have, we can then set
-             ! updateWallAssociation to .False. 
-             
-             if (updateWallAssociation) then
-                tempLogical = .True. 
-                do ll=1,nLevels
-                   do sps2=1,nTimeIntervalsSpectral
-                      tempLogical = tempLogical .and. &
-                           unique_face_info(ll,sps2)%wallAssociated
-                   end do
-                end do
-                
-                ! If tempLogical is still True, we've updated all
-                ! levels/sps and set the master updateWallAssociation
-                ! flag to flase. It will then remain false until the
-                ! user sets it to true
-
-                if (tempLogical) then
-                   updateWallAssociation = .False. 
-                end if
-
-             end if
-
+             ! Do the associtaion. This allocates the data destroyed
+             ! in the destroyWallDistanceData call
+             call determineWallAssociation(level)
+             updateWallAssociation(level) = .False.
           end if
 
-       enddo spectralLoop
-              
+          ! Update the xsurf vector from X
+          call updateXSurf(level)
+
+          ! Now extract the vector of the surface data we need
+          call VecGetArrayF90(xSurfVec(level), xSurf, ierr)
+          call EChk(ierr,__FILE__,__LINE__)
+          
+          ! Call the actual update routine, on each of the sps instances and blocks
+          do sps=1,nTimeIntervalsSpectral
+             do nn=1,nDom
+                call setPointers(nn, level, sps)
+                call updateWallDistancesQuickly(nn, level, sps)
+             end do
+          end do
+
+          call VecRestoreArrayF90(xSurfVec(level), xSurf, ierr)
+          call EChk(ierr,__FILE__,__LINE__)
+       end if
+                     
        ! Allocate the temporarily released memory again. For more info
        ! see the comments at the beginning of this routine.
 
@@ -241,3 +211,29 @@
  103   format("# Wall clock time:",E12.5," sec.")
 
        end subroutine wallDistance
+
+
+subroutine destroyWallDistanceData(level)
+
+  use precision
+  use wallDistanceData
+
+  ! Subroutine arguments
+  integer(kind=intType), intent(in) :: level
+  integer(kind=intType) :: ierr
+
+  ! Determine if we need to deallocate the PETSc data for
+  ! this level
+  if (wallDistanceDataAllocated(level)) then 
+     call VecDestroy(xVolumeVec(level), ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     call VecDestroy(xSurfVec(level), ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     
+     call VecScatterDestroy(wallScatter(level), ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     wallDistanceDataAllocated(level) = .False.
+  end if
+end subroutine destroyWallDistanceData

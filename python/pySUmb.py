@@ -211,6 +211,7 @@ class SUMB(AeroSolver):
         self.sumb.partitionandreadgrid()
         self.sumb.preprocessing()
         self.sumb.initflow()
+        self.sumb.preprocessingpart2()
         self.sumb.preprocessingadjoint()
 
     def setMesh(self, mesh):
@@ -2251,6 +2252,10 @@ class SUMB(AeroSolver):
         else:
             return dXvSolver
 
+    def getdRdXvVec(self, inVec):
+        """Routine for completeness. Not normally used"""
+        return self.sumb.getdrdxvpsi(inVec, self.getStateSize())
+
     def _prescribedTSMotion(self):
         """Determine if we have prescribed motion timespectral analysis"""
 
@@ -2412,12 +2417,8 @@ class SUMB(AeroSolver):
         if not aeroObj:
             return numpy.zeros(self.getAdjointStateSize())
 
-        if self.getOption('usematrixfreedrdw'):
-            funcsBar = {objective.lower():1.0}
-            return self.computeMatrixFreeProductBwd(funcsBar=funcsBar, wDeriv=True)
-        else:
-            # Call the fortran version
-            return self.sumb.getdidw(obj, self.getAdjointStateSize())
+        funcsBar = {objective.lower():1.0}
+        return self.computeMatrixFreeProductBwd(funcsBar=funcsBar, wDeriv=True)
 
     # =========================================================================
     #   The following routines two routines are the workhorse of the
@@ -2425,8 +2426,8 @@ class SUMB(AeroSolver):
     #   product that is possible from the solver. 
     #   =========================================================================
 
-    def computeMatrixFreeProductFwd(self, xDvDot=None, wDot=None, 
-                                    residualDeriv=True, funcDeriv=True):
+    def computeMatrixFreeProductFwd(self, xDvDot=None, wDot=None, xVDot=None,
+                                    residualDeriv=False, funcDeriv=False):
         """This the main python gateway for producing forward mode jacobian
         vector products. It is not generally called by the user by
         rather internally or from another solver. A DVGeo object and a
@@ -2451,19 +2452,21 @@ class SUMB(AeroSolver):
             and funcDeriv flag 
         """
 
-        if xDvdot is None and wDot is None:
-            raise Error('computeMatrixFreeProductFwd: xDvDot and wDot cannot '
-                        'both be None')
-        
+        if xDvDot is None and wDot is None and xVDot is None:
+            raise Error('computeMatrixFreeProductFwd: xDvDot, xVDot and wDot cannot '
+                        'all be None')
+        if xDvDot is not None and xVDot is not None:
+            raise Error('computeMatrixFreeProductFwd: xDvDot and xVDot cannot be both '
+                        'specified.')
+            
         self._setAeroDVs()
-
+        extradot = numpy.zeros(max(1, self.nDVAero))
         if xDvDot is not None:
             # Do the sptatial design variables -> Go through the
             # geometry + mesh warp
             xsdot = self.DVGeo.totalSensitivityProd(xDvDot, self.curAP.ptSetName)
             xvdot = self.mesh.warpDerivFwd(xsdot)
             # Do the aerodynamic design variables
-            extradot = numpy.zeros(self.nDVAero)
             for key in self.aeroDVs:
                 execStr = 'mapping = self.sumb.%s'%self.possibleAeroDVs[key.lower()]
                 exec(execStr)
@@ -2474,9 +2477,11 @@ class SUMB(AeroSolver):
                     extradot[mapping] = xDvDot[key]
 
             useSpatial = True
+        elif xVDot is not None:
+            xvdot = xVDot
+            useSpatial = True
         else:
             xvdot = numpy.zeros(self.getSpatialSize())
-            extradot = numpy.zeros(self.nDVAero)
             useSpatial = False
 
         if wDot is not None:
@@ -2558,10 +2563,10 @@ class SUMB(AeroSolver):
             useState = True
         if xDvDeriv or xVDeriv or xDvDerivAero:
             useSpatial = True
-        
+
         # Do actual call. 
         xvbar, extrabar, wbar = self.sumb.computematrixfreeproductbwd(
-            resBar, funcsBar, useSpatial, useState, self.getSpatialSize(), self.nDVAero)
+            resBar, funcsBar, useSpatial, useState, self.getSpatialSize(), max(1, self.nDVAero))
      
         # Stack up the possible returns:
         returns = []
@@ -2574,6 +2579,7 @@ class SUMB(AeroSolver):
         if xDvDeriv:
             self.mesh.warpDeriv(xvbar)
             xsbar = self.mesh.getdXs('all')
+            xdvbar = {}
             xdvbar.update(self.DVGeo.totalSensitivity(xsbar, 
                 self.curAP.ptSetName, self.comm, config=self.curAP.name))
 
@@ -3075,7 +3081,7 @@ class SUMB(AeroSolver):
             'applyadjointpcsubspacesize':[int, 20],
             'frozenturbulence':[bool, True],
             'usematrixfreedrdw':[bool, False],
-            'usematrixfreedrdx':[bool, False],
+            'usematrixfreedrdx':[bool, True],
 
             # ADjoint debugger
             'firstrun':[bool, True],
