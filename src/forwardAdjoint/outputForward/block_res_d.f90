@@ -63,6 +63,7 @@
    USE DIFFSIZES
    USE COSTFUNCTIONS
    USE WALLDISTANCEDATA
+   USE INPUTDISCRETIZATION
    USE DIFFSIZES
    !  Hint: ISIZE1OFDrfbcdata should be the size of dimension 1 of array *bcdata
    IMPLICIT NONE
@@ -305,9 +306,7 @@
    END IF
    !  Actual residual calc
    CALL RESIDUAL_BLOCK_D()
-   ! Note that there are some error introduced by viscousflux from fw
-   ! The error only show up in the rho term in some cells
-   ! Divide through by the volume
+   ! Divide through by the reference volume
    DO sps2=1,ntimeintervalsspectral
    DO l=1,nwf
    DO k=2,kl

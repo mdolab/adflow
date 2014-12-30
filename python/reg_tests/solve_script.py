@@ -174,7 +174,7 @@ defOpts = {
     'applyadjointpcsubspacesize': 20,
     'frozenturbulence': True,
     'usematrixfreedrdw': False,
-    'usematrixfreedrdx': False,
+    'usematrixfreedrdx': True,
 
     # ADjoint debugger
     'firstrun': True,
@@ -263,10 +263,15 @@ def test1():
 
     # Get the forces...these are the sumb forces:
     forces = CFDSolver.getForces()
-    reg_par_write(numpy.sum(forces),1e-10, 1e-10)
+    forces = MPI.COMM_WORLD.allreduce(numpy.sum(forces), MPI.SUM)
+    if MPI.COMM_WORLD.rank == 0:
+        reg_write(forces,1e-10, 1e-10)
     CFDSolver.setOption('forcesAsTractions', False)
+
     forces = CFDSolver.getForces()
-    reg_par_write(numpy.sum(forces),1e-10, 1e-10)
+    forces = MPI.COMM_WORLD.allreduce(numpy.sum(forces), MPI.SUM)
+    if MPI.COMM_WORLD.rank == 0:
+        reg_write(forces,1e-10, 1e-10)
     CFDSolver.writeForceFile('forces.txt')
 
     # Now test the different discretization options:
@@ -475,6 +480,7 @@ def test4():
         os.system('rm -fr *.cgns *.dat')
 
 def test5():
+    # THIS TEST NEEDS TO BE VERIFIED WITH CS AND IT IS NEEDS TO BE READDED TO REGRESSIONS
     # ****************************************************************************
     printHeader('MDO tutorial Euler Time Spectral Test')
     # ****************************************************************************
@@ -649,7 +655,7 @@ def test7():
                      areaRef=45.5, chordRef=3.25, evalFuncs=['cd','lift','cmz'])
     ap.addDV('alpha')
     ap.addDV('mach')
-    CFDSolver = SUMB(options=aeroOptions, debug=True)
+    CFDSolver = SUMB(options=aeroOptions)
     DVGeo = DVGeometry('../inputFiles/mdo_tutorial_ffd.fmt')
     nTwist = 6
     DVGeo.addRefAxis('wing', pyspline.Curve(x=numpy.linspace(5.0/4.0, 1.5/4.0+7.5, nTwist), 
@@ -881,7 +887,6 @@ if __name__ == '__main__':
         test2()
         test3()
         test4()
-        test5()
         test6()
         test7()
         test8()

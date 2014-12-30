@@ -177,7 +177,11 @@ subroutine dealloc_derivative_values_bwd(level)
   deallocate(flowdomsb,stat=ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  ! And the petsc vector
+  ! And the petsc vector(s)
+  if (.not. wallDistanceNeeded) then 
+     call VecDestroy(xSurfVec(1), ierr)
+  end if
+
   call VecDestroy(xSurfVecb, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 

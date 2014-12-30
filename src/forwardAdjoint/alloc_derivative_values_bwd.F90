@@ -4,7 +4,7 @@
 subroutine alloc_derivative_values_bwd(level)
 
   use blockPointers_b ! This modules includes blockPointers
-
+  use communication
   use inputtimespectral
   use flowvarrefstate
   use inputPhysics
@@ -14,7 +14,7 @@ subroutine alloc_derivative_values_bwd(level)
   use turbMod
   use inputADjoint
   use wallDistanceData
-
+  use inputDIscretization
   implicit none
 
   ! Input parameters
@@ -52,7 +52,12 @@ subroutine alloc_derivative_values_bwd(level)
   allocate(winfb(10),stat=ierr) 
   call EChk(ierr,__FILE__,__LINE__)
 
-  ! Duplicate the PETSc Xsurf Vec, but only on the first level:
+  ! If we are not using RANS with wallDistance create a dummy xSurfVec
+  ! since one doesn't exist yet
+  if (.not. wallDistanceNeeded .or. .not. useApproxWallDistance) then 
+     call VecCreateMPI(SUMB_COMM_WORLD, 1, PETSC_DETERMINE, xSurfVec(1), ierr)
+  end if
+
   call VecDuplicate(xSurfVec(1), xSurfVecb, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
