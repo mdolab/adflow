@@ -72,6 +72,11 @@
 
        call initFlow
 
+       ! Perform preprocessing tasks that must be done after flow is
+       ! initialized
+       
+       call preprocessingPart2
+
        ! Solve the equations.
 
        call solver
