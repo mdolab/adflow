@@ -64,6 +64,7 @@
    USE DIFFSIZES
    USE COSTFUNCTIONS
    USE WALLDISTANCEDATA
+   USE INPUTDISCRETIZATION
    IMPLICIT NONE
    ! Input Arguments:
    INTEGER(kind=inttype), INTENT(IN) :: nn, sps
@@ -146,7 +147,7 @@
    CALL PUSHREAL8ARRAY(si, SIZE(si, 1)*SIZE(si, 2)*SIZE(si, 3)*SIZE(si&
    &                 , 4))
    CALL METRIC_BLOCK()
-   IF (equations .EQ. ransequations) THEN
+   IF (equations .EQ. ransequations .AND. useapproxwalldistance) THEN
    CALL UPDATEWALLDISTANCESQUICKLY(nn, 1, sps)
    CALL PUSHCONTROL2B(0)
    ELSE
@@ -398,9 +399,7 @@
    END DO
    END DO
    CALL RESIDUAL_BLOCK()
-   ! Note that there are some error introduced by viscousflux from fw
-   ! The error only show up in the rho term in some cells
-   ! Divide through by the volume
+   ! Divide through by the reference volume
    DO sps2=1,ntimeintervalsspectral
    DO l=1,nwf
    DO k=2,kl

@@ -179,7 +179,7 @@ defOpts = {
     'applyadjointpcsubspacesize': 20,
     'frozenturbulence': True,
     'usematrixfreedrdw': False,
-    'usematrixfreedrdx': False,
+    'usematrixfreedrdx': True,
 
     # ADjoint debugger
     'firstrun': True,
@@ -256,9 +256,9 @@ def test1():
             reg_write(funcsSens['mdo_tutorial_lift']['mach_mdo_tutorial'], 1e-10,1e-10)
 
             print ('Altitude Derivatives:')
-            reg_write(funcsSens['mdo_tutorial_cd']['altitude_mdo_tutorial'], 1e-10,1e-10)
-            reg_write(funcsSens['mdo_tutorial_cmz']['altitude_mdo_tutorial'], 1e-10,1e-10)
-            reg_write(funcsSens['mdo_tutorial_lift']['altitude_mdo_tutorial'], 1e-10,1e-10)
+            reg_write(funcsSens['mdo_tutorial_cd']['altitude_mdo_tutorial'], 1e-8,1e-8)
+            reg_write(funcsSens['mdo_tutorial_cmz']['altitude_mdo_tutorial'], 1e-8,1e-8)
+            reg_write(funcsSens['mdo_tutorial_lift']['altitude_mdo_tutorial'], 1e-8,1e-8)
 
     else:
         # For the complex....we just do successive perturbation
@@ -286,14 +286,23 @@ def test1():
 
                 if ii == 0:
                     print ('Alpha Derivatives:')
+                    for key in ['cd','cmz','lift']:
+                        deriv = numpy.imag(funcs['mdo_tutorial_%s'%key])/h
+                        reg_write(deriv,1e-10,1e-10)
+
                 elif ii == 1:
                     print ('Mach Derivatives:')
+                    for key in ['cd','cmz','lift']:
+                        deriv = numpy.imag(funcs['mdo_tutorial_%s'%key])/h
+                        reg_write(deriv,1e-10,1e-10)
+
                 elif ii == 2:
                     print ('Altitude Derivatives:')
+                    for key in ['cd','cmz','lift']:
+                        deriv = numpy.imag(funcs['mdo_tutorial_%s'%key])/h
+                        reg_write(deriv,1e-8,1e-8)
 
-                for key in ['cd','cmz','lift']:
-                    deriv = numpy.imag(funcs['mdo_tutorial_%s'%key])/h
-                    reg_write(deriv,1e-10,1e-10)
+
 
     del CFDSolver
 
@@ -695,7 +704,6 @@ def test5():
          'nkls': 'non monotone',
          'frozenturbulence':False,
          'nkjacobianlag':2,
-         'useapproxwalldistance':False,
      }
     )
 
@@ -705,7 +713,7 @@ def test5():
     ap.addDV('alpha')
     ap.addDV('mach')
     ap.addDV('altitude')
-    CFDSolver = SUMB(options=aeroOptions)
+    CFDSolver = SUMB(options=aeroOptions,debug=True)
 
     if not 'complex' in sys.argv:
         # Solve system
@@ -806,7 +814,6 @@ def test6():
          'nkls': 'non monotone',
          'frozenturbulence':False,
          'nkjacobianlag':2,
-         'useMatrixFreedRdx':True,
      }
     )
 
@@ -815,7 +822,7 @@ def test6():
                      altitude=40000.0, areaRef=45.5, chordRef=3.25, evalFuncs=['cl','cmz','drag'])
 
     ap.addDV('alpha')
-    CFDSolver = SUMB(options=aeroOptions,debug=True)
+    CFDSolver = SUMB(options=aeroOptions)
     if 'complex' in sys.argv:
         DVGeo = DVGeometry('../inputFiles/mdo_tutorial_ffd.fmt', complex=True)
     else:

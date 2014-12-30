@@ -26,6 +26,7 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   use diffSizes
   use costFunctions
   use wallDistanceData
+  use inputDiscretization 
   implicit none
 
   ! Input Arguments:
@@ -79,7 +80,7 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
      call metric_block
 
 #ifdef TAPENADE_REVERSE
-     if (equations == RANSEquations) then 
+     if (equations == RANSEquations .and. useApproxWallDistance) then 
         call updateWallDistancesQuickly(nn, 1, sps)
      end if
 #endif
@@ -222,10 +223,7 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   !  Actual residual calc
   call residual_block
 
-  ! Note that there are some error introduced by viscousflux from fw
-  ! The error only show up in the rho term in some cells
-
-  ! Divide through by the volume
+  ! Divide through by the reference volume
   do sps2 = 1,nTimeIntervalsSpectral
      do l=1, nwf
         do k=2, kl
