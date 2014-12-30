@@ -4,10 +4,10 @@
    !  Differentiation of sasolve in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
    !   gradient     of useful results: *dw *w *rlv *vol *si *sj *sk
    !                (global)timeref
-   !   with respect to varying inputs: *dw *w *rlv *vol *si *sj *sk
-   !                (global)timeref
-   !   Plus diff mem management of: dw:in w:in rlv:in vol:in si:in
-   !                sj:in sk:in
+   !   with respect to varying inputs: *dw *w *rlv *vol *d2wall *si
+   !                *sj *sk (global)timeref
+   !   Plus diff mem management of: dw:in w:in rlv:in vol:in d2wall:in
+   !                si:in sj:in sk:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -54,7 +54,7 @@
    REAL(kind=realtype) :: fv1, fv2, ft2
    REAL(kind=realtype) :: fv1b, fv2b, ft2b
    REAL(kind=realtype) :: ss, sst, nu, dist2inv, chi, chi2, chi3
-   REAL(kind=realtype) :: ssb, sstb, nub, chib, chi2b, chi3b
+   REAL(kind=realtype) :: ssb, sstb, nub, dist2invb, chib, chi2b, chi3b
    REAL(kind=realtype) :: rr, gg, gg6, termfw, fwsa, term1, term2
    REAL(kind=realtype) :: rrb, ggb, gg6b, termfwb, fwsab, term1b, term2b
    REAL(kind=realtype) :: dfv1, dfv2, dft2, drr, dgg, dfw
@@ -109,6 +109,7 @@
    REAL(kind=realtype) :: tmpb
    REAL(kind=realtype) :: tempb11
    REAL(kind=realtype) :: tempb10
+   REAL(kind=realtype) :: temp17
    REAL(kind=realtype) :: temp16
    REAL(kind=realtype) :: temp15
    REAL(kind=realtype) :: temp14
@@ -672,22 +673,22 @@
    nutmb = ttm*(one+rsacb2)*tempb25
    ttmb = cnud*camb + (num+(one+rsacb2)*nutm)*tempb25
    CALL POPREAL8(nup)
-   temp16 = w(i+1, j, k, irho)
-   tempb26 = half*nupb/temp16
+   temp17 = w(i+1, j, k, irho)
+   tempb26 = half*nupb/temp17
    rlvb(i+1, j, k) = rlvb(i+1, j, k) + tempb26
    wb(i+1, j, k, irho) = wb(i+1, j, k, irho) - rlv(i+1, j, k)*&
-   &         tempb26/temp16
+   &         tempb26/temp17
    nub = half*numb + half*nupb
    CALL POPREAL8(num)
-   temp15 = w(i-1, j, k, irho)
-   tempb27 = half*numb/temp15
+   temp16 = w(i-1, j, k, irho)
+   tempb27 = half*numb/temp16
    rlvb(i-1, j, k) = rlvb(i-1, j, k) + tempb27
    wb(i-1, j, k, irho) = wb(i-1, j, k, irho) - rlv(i-1, j, k)*&
-   &         tempb27/temp15
+   &         tempb27/temp16
    CALL POPREAL8(nu)
-   temp14 = w(i, j, k, irho)
-   rlvb(i, j, k) = rlvb(i, j, k) + nub/temp14
-   wb(i, j, k, irho) = wb(i, j, k, irho) - rlv(i, j, k)*nub/temp14&
+   temp15 = w(i, j, k, irho)
+   rlvb(i, j, k) = rlvb(i, j, k) + nub/temp15
+   wb(i, j, k, irho) = wb(i, j, k, irho) - rlv(i, j, k)*nub/temp15&
    &         **2
    CALL POPREAL8(nutp)
    wb(i+1, j, k, itu1) = wb(i+1, j, k, itu1) + half*nutpb
@@ -741,13 +742,13 @@
    CALL POPREAL8(xm)
    sib(i-1, j, k, 1) = sib(i-1, j, k, 1) + volmi*xmb
    CALL POPREAL8(volpi)
-   temp13 = vol(i, j, k) + vol(i+1, j, k)
-   tempb31 = -(two*volpib/temp13**2)
+   temp14 = vol(i, j, k) + vol(i+1, j, k)
+   tempb31 = -(two*volpib/temp14**2)
    volb(i, j, k) = volb(i, j, k) + tempb31
    volb(i+1, j, k) = volb(i+1, j, k) + tempb31
    CALL POPREAL8(volmi)
-   temp12 = vol(i, j, k) + vol(i-1, j, k)
-   tempb32 = -(two*volmib/temp12**2)
+   temp13 = vol(i, j, k) + vol(i-1, j, k)
+   tempb32 = -(two*volmib/temp13**2)
    volb(i, j, k) = volb(i, j, k) + tempb32
    volb(i-1, j, k) = volb(i-1, j, k) + tempb32
    CALL POPREAL8(voli)
@@ -798,23 +799,23 @@
    nutmb = ttm*(one+rsacb2)*tempb16
    ttmb = cnud*camb + (num+(one+rsacb2)*nutm)*tempb16
    CALL POPREAL8(nup)
-   temp11 = w(i, j+1, k, irho)
-   tempb17 = half*nupb/temp11
+   temp12 = w(i, j+1, k, irho)
+   tempb17 = half*nupb/temp12
    rlvb(i, j+1, k) = rlvb(i, j+1, k) + tempb17
    wb(i, j+1, k, irho) = wb(i, j+1, k, irho) - rlv(i, j+1, k)*&
-   &         tempb17/temp11
+   &         tempb17/temp12
    nub = half*numb + half*nupb
    CALL POPREAL8(num)
-   temp10 = w(i, j-1, k, irho)
-   tempb18 = half*numb/temp10
+   temp11 = w(i, j-1, k, irho)
+   tempb18 = half*numb/temp11
    rlvb(i, j-1, k) = rlvb(i, j-1, k) + tempb18
    wb(i, j-1, k, irho) = wb(i, j-1, k, irho) - rlv(i, j-1, k)*&
-   &         tempb18/temp10
+   &         tempb18/temp11
    CALL POPREAL8(nu)
-   temp9 = w(i, j, k, irho)
-   rlvb(i, j, k) = rlvb(i, j, k) + nub/temp9
-   wb(i, j, k, irho) = wb(i, j, k, irho) - rlv(i, j, k)*nub/temp9**&
-   &         2
+   temp10 = w(i, j, k, irho)
+   rlvb(i, j, k) = rlvb(i, j, k) + nub/temp10
+   wb(i, j, k, irho) = wb(i, j, k, irho) - rlv(i, j, k)*nub/temp10&
+   &         **2
    CALL POPREAL8(nutp)
    wb(i, j+1, k, itu1) = wb(i, j+1, k, itu1) + half*nutpb
    wb(i, j, k, itu1) = wb(i, j, k, itu1) + half*nutpb
@@ -867,13 +868,13 @@
    CALL POPREAL8(xm)
    sjb(i, j-1, k, 1) = sjb(i, j-1, k, 1) + volmi*xmb
    CALL POPREAL8(volpi)
-   temp8 = vol(i, j, k) + vol(i, j+1, k)
-   tempb22 = -(two*volpib/temp8**2)
+   temp9 = vol(i, j, k) + vol(i, j+1, k)
+   tempb22 = -(two*volpib/temp9**2)
    volb(i, j, k) = volb(i, j, k) + tempb22
    volb(i, j+1, k) = volb(i, j+1, k) + tempb22
    CALL POPREAL8(volmi)
-   temp7 = vol(i, j, k) + vol(i, j-1, k)
-   tempb23 = -(two*volmib/temp7**2)
+   temp8 = vol(i, j, k) + vol(i, j-1, k)
+   tempb23 = -(two*volmib/temp8**2)
    volb(i, j, k) = volb(i, j, k) + tempb23
    volb(i, j-1, k) = volb(i, j-1, k) + tempb23
    CALL POPREAL8(voli)
@@ -924,22 +925,22 @@
    nutmb = ttm*(one+rsacb2)*tempb7
    ttmb = cnud*camb + (num+(one+rsacb2)*nutm)*tempb7
    CALL POPREAL8(nup)
-   temp6 = w(i, j, k+1, irho)
-   tempb8 = half*nupb/temp6
+   temp7 = w(i, j, k+1, irho)
+   tempb8 = half*nupb/temp7
    rlvb(i, j, k+1) = rlvb(i, j, k+1) + tempb8
    wb(i, j, k+1, irho) = wb(i, j, k+1, irho) - rlv(i, j, k+1)*&
-   &         tempb8/temp6
+   &         tempb8/temp7
    nub = half*numb + half*nupb
    CALL POPREAL8(num)
-   temp5 = w(i, j, k-1, irho)
-   tempb9 = half*numb/temp5
+   temp6 = w(i, j, k-1, irho)
+   tempb9 = half*numb/temp6
    rlvb(i, j, k-1) = rlvb(i, j, k-1) + tempb9
    wb(i, j, k-1, irho) = wb(i, j, k-1, irho) - rlv(i, j, k-1)*&
-   &         tempb9/temp5
+   &         tempb9/temp6
    CALL POPREAL8(nu)
-   temp4 = w(i, j, k, irho)
-   rlvb(i, j, k) = rlvb(i, j, k) + nub/temp4
-   wb(i, j, k, irho) = wb(i, j, k, irho) - rlv(i, j, k)*nub/temp4**&
+   temp5 = w(i, j, k, irho)
+   rlvb(i, j, k) = rlvb(i, j, k) + nub/temp5
+   wb(i, j, k, irho) = wb(i, j, k, irho) - rlv(i, j, k)*nub/temp5**&
    &         2
    CALL POPREAL8(nutp)
    wb(i, j, k+1, itu1) = wb(i, j, k+1, itu1) + half*nutpb
@@ -993,13 +994,13 @@
    CALL POPREAL8(xm)
    skb(i, j, k-1, 1) = skb(i, j, k-1, 1) + volmi*xmb
    CALL POPREAL8(volpi)
-   temp3 = vol(i, j, k) + vol(i, j, k+1)
-   tempb13 = -(two*volpib/temp3**2)
+   temp4 = vol(i, j, k) + vol(i, j, k+1)
+   tempb13 = -(two*volpib/temp4**2)
    volb(i, j, k) = volb(i, j, k) + tempb13
    volb(i, j, k+1) = volb(i, j, k+1) + tempb13
    CALL POPREAL8(volmi)
-   temp2 = vol(i, j, k) + vol(i, j, k-1)
-   tempb14 = -(two*volmib/temp2**2)
+   temp3 = vol(i, j, k) + vol(i, j, k-1)
+   tempb14 = -(two*volmib/temp3**2)
    volb(i, j, k) = volb(i, j, k) + tempb14
    volb(i, j, k-1) = volb(i, j, k-1) + tempb14
    CALL POPREAL8(voli)
@@ -1011,6 +1012,7 @@
    CALL POPREAL8ARRAY(dw, SIZE(dw, 1)*SIZE(dw, 2)*SIZE(dw, 3)*SIZE(dw, 4)&
    &             )
    CALL TURBADVECTION_B(1_intType, 1_intType, nn, qq)
+   d2wallb = 0.0_8
    DO k=kl,2,-1
    DO j=jl,2,-1
    DO i=il,2,-1
@@ -1025,40 +1027,45 @@
    term1 = rsacb1*(one-ft2)*ss
    CALL POPREAL8(dw(i, j, k, idvt))
    tempb4 = w(i, j, k, itu1)*dwb(i, j, k, idvt)
-   temp1 = w(i, j, k, itu1)
+   temp2 = w(i, j, k, itu1)
    term1b = tempb4
-   term2b = temp1*tempb4
-   wb(i, j, k, itu1) = wb(i, j, k, itu1) + (term1+term2*temp1)*dwb(&
+   term2b = temp2*tempb4
+   wb(i, j, k, itu1) = wb(i, j, k, itu1) + (term1+term2*temp2)*dwb(&
    &         i, j, k, idvt) + term2*tempb4
    dwb(i, j, k, idvt) = 0.0_8
    tempb5 = dist2inv*kar2inv*rsacb1*term2b
+   dist2invb = (kar2inv*rsacb1*((one-ft2)*fv2+ft2)-rsacw1*fwsa)*&
+   &         term2b
    ft2b = (1.0_8-fv2)*tempb5 - ss*rsacb1*term1b
    fv2b = (one-ft2)*tempb5
    fwsab = -(dist2inv*rsacw1*term2b)
    ssb = rsacb1*(one-ft2)*term1b
    termfwb = gg*fwsab
-   temp0 = (one+cw36)/(cw36+gg6)
-   IF (temp0 .LE. 0.0_8 .AND. (sixth .EQ. 0.0_8 .OR. sixth .NE. INT&
+   temp1 = (one+cw36)/(cw36+gg6)
+   IF (temp1 .LE. 0.0_8 .AND. (sixth .EQ. 0.0_8 .OR. sixth .NE. INT&
    &           (sixth))) THEN
    gg6b = 0.0
    ELSE
-   gg6b = -(sixth*temp0**(sixth-1)*temp0*termfwb/(cw36+gg6))
+   gg6b = -(sixth*temp1**(sixth-1)*temp1*termfwb/(cw36+gg6))
    END IF
    ggb = 6*gg**5*gg6b + termfw*fwsab
    rrb = (rsacw2*6*rr**5-rsacw2+1.0_8)*ggb
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) rrb = 0.0_8
    CALL POPREAL8(rr)
-   tempb3 = kar2inv*dist2inv*rrb/sst
-   wb(i, j, k, itu1) = wb(i, j, k, itu1) + tempb3
-   sstb = -(w(i, j, k, itu1)*tempb3/sst)
+   tempb3 = w(i, j, k, itu1)*kar2inv*rrb/sst
+   wb(i, j, k, itu1) = wb(i, j, k, itu1) + kar2inv*dist2inv*rrb/sst
+   dist2invb = dist2invb + tempb3
+   sstb = -(dist2inv*tempb3/sst)
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) sstb = 0.0_8
    CALL POPREAL8(sst)
-   tempb = kar2inv*dist2inv*sstb
+   tempb = kar2inv*w(i, j, k, itu1)*sstb
    ssb = ssb + sstb
-   wb(i, j, k, itu1) = wb(i, j, k, itu1) + fv2*tempb
-   fv2b = fv2b + w(i, j, k, itu1)*tempb
+   wb(i, j, k, itu1) = wb(i, j, k, itu1) + kar2inv*fv2*dist2inv*&
+   &         sstb
+   fv2b = fv2b + dist2inv*tempb
+   dist2invb = dist2invb + fv2*tempb
    CALL POPREAL8(ft2)
    tempb0 = -(fv2b/(one+chi*fv1))
    tempb1 = -(chi*tempb0/(one+chi*fv1))
@@ -1073,6 +1080,8 @@
    CALL POPREAL8(chi)
    wb(i, j, k, itu1) = wb(i, j, k, itu1) + chib/nu
    nub = -(w(i, j, k, itu1)*chib/nu**2)
+   temp0 = d2wall(i, j, k)
+   d2wallb(i, j, k) = d2wallb(i, j, k) - one*2*dist2invb/temp0**3
    CALL POPREAL8(nu)
    temp = w(i, j, k, irho)
    rlvb(i, j, k) = rlvb(i, j, k) + nub/temp

@@ -107,6 +107,7 @@ FF90_OBJECTS =  \
 		bcturbfarfield_b.o\
 		turbbcnswall_b.o\
 		unsteadyturbspectral_block_b.o\
+		updatewalldistancesquickly_b.o\
 
 
 #      ******************************************************************

@@ -78,6 +78,7 @@ FF90_OBJECTS_4 = ADjointVars.o\
 	         blockpointers_d.o\
 		 blockpointers_b.o\
 	         diffSizes.o\
+		 wallDistanceData.o\
 
 FILES_TO_COMPLEXIFY =  precision.F90\
 		 bleedFlows.f90\
@@ -113,6 +114,7 @@ FILES_TO_COMPLEXIFY =  precision.F90\
 	         blockpointers_t.f90\
 	         blockpointers_b.f90\
 	         diffSizes.f90\
+		 wallDistanceData.F90\
 
 FILES_TO_COPY = su_cgns.F90 \
 		complexify.f90 

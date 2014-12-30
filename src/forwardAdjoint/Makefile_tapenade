@@ -46,7 +46,7 @@ TAPENADE_PRECISION = -i4 -dr8 -r8
 TAPENADE_RES_OUTVARS = "flowdoms%dw  BCData%Fp BCData%Fv BCData%M  BCData%sepSensor BCData%Cavitation BCData%oArea flowdoms%w flowdoms%x force moment sepSensor Cavitation funcValues"
 
 # Independent input variables (separator: white space, default: all)
-TAPENADE_RES_VARS = "flowdoms%w flowdoms%x alpha beta mach machgrid machcoef pointref lengthRef Pref tempFreeStream Reynolds"
+TAPENADE_RES_VARS = "flowdoms%w flowdoms%x xsurf alpha beta mach machgrid machcoef pointref lengthRef Pref tempFreeStream Reynolds"
 
 # Name of the top routine
 TAPENADE_RES_HEADROUTINE = "block_res"
@@ -74,6 +74,7 @@ ALL_RES_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.F90\
 		$(SRC)/modules/blockPointers.F90 \
 		$(SRC)/modules/flowVarRefState.F90 \
 		$(SRC)/modules/costFunctions.F90\
+		$(SRC)/modules/wallDistanceData.F90\
 		$(SRC)/solver/inviscidCentralFlux.F90\
 		$(SRC)/solver/inviscidDissFluxMatrix.F90\
 		$(SRC)/solver/inviscidDissFluxScalar.F90\
@@ -166,7 +167,9 @@ ALL_RES_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.F90\
 		$(SRC)/utils/computeEtot.f90\
 		$(SRC)/utils/setPointers.f90\
 		$(SRC)/utils/terminate.F90\
-		$(SRC)/bendingMomentAnalysis/rootBendingMomentAnalysis.f90
+		$(SRC)/bendingMomentAnalysis/rootBendingMomentAnalysis.f90\
+		$(SRC)/wallDistance/determineDistanceQuickly.F90
+
 
 # intermediate residual files.
 I_RES_FILES := $(ALL_RES_FILES:%=%.f90)

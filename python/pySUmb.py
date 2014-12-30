@@ -211,6 +211,7 @@ class SUMB(AeroSolver):
         self.sumb.partitionandreadgrid()
         self.sumb.preprocessing()
         self.sumb.initflow()
+        self.sumb.preprocessingpart2()
         self.sumb.preprocessingadjoint()
 
     def setMesh(self, mesh):
@@ -2558,7 +2559,7 @@ class SUMB(AeroSolver):
             useState = True
         if xDvDeriv or xVDeriv or xDvDerivAero:
             useSpatial = True
-        
+
         # Do actual call. 
         xvbar, extrabar, wbar = self.sumb.computematrixfreeproductbwd(
             resBar, funcsBar, useSpatial, useState, self.getSpatialSize(), self.nDVAero)

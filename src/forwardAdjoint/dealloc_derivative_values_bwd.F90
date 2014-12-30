@@ -9,6 +9,7 @@ subroutine dealloc_derivative_values_bwd(level)
   use inputPhysics
   use cgnsGrid
   use BCTypes
+  use wallDistanceData
   implicit none
 
   ! Input Parameters
@@ -174,6 +175,10 @@ subroutine dealloc_derivative_values_bwd(level)
  
   ! Finally deallocate flowdomsb
   deallocate(flowdomsb,stat=ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  ! And the petsc vector
+  call VecDestroy(xSurfVecb, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
 end subroutine dealloc_derivative_values_bwd

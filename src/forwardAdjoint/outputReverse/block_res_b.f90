@@ -2,41 +2,42 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of block_res in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: funcvalues *(flowdoms.x) *(flowdoms.w)
+   !   gradient     of useful results: *(flowdoms.x) *(flowdoms.w)
    !                *(flowdoms.dw) *(*bcdata.fp) *(*bcdata.fv) *(*bcdata.m)
    !                *(*bcdata.oarea) *(*bcdata.sepsensor) *(*bcdata.cavitation)
-   !                moment force cavitation sepsensor
-   !   with respect to varying inputs: funcvalues mach tempfreestream
-   !                reynolds machgrid lengthref machcoef pointref
-   !                *(flowdoms.x) *(flowdoms.w) *(flowdoms.dw) *(*bcdata.fp)
-   !                *(*bcdata.fv) *(*bcdata.m) *(*bcdata.oarea) *(*bcdata.sepsensor)
-   !                *(*bcdata.cavitation) pref moment alpha force
-   !                beta cavitation sepsensor
-   !   RW status of diff variables: funcvalues:in-zero mach:out tempfreestream:out
-   !                reynolds:out veldirfreestream:(loc) machgrid:out
-   !                lengthref:out machcoef:out dragdirection:(loc)
-   !                liftdirection:(loc) pointref:out *(flowdoms.x):in-out
+   !                funcvalues moment force cavitation sepsensor
+   !   with respect to varying inputs: *xsurf *(flowdoms.x) *(flowdoms.w)
+   !                *(flowdoms.dw) *(*bcdata.fp) *(*bcdata.fv) *(*bcdata.m)
+   !                *(*bcdata.oarea) *(*bcdata.sepsensor) *(*bcdata.cavitation)
+   !                funcvalues mach tempfreestream reynolds machgrid
+   !                lengthref machcoef pointref pref moment alpha
+   !                force beta cavitation sepsensor
+   !   RW status of diff variables: *xsurf:out *(flowdoms.x):in-out
    !                *(flowdoms.vol):(loc) *(flowdoms.w):in-out *(flowdoms.dw):in-out
    !                *rev:(loc) *bvtj1:(loc) *bvtj2:(loc) *p:(loc)
    !                *gamma:(loc) *rlv:(loc) *bvtk1:(loc) *bvtk2:(loc)
-   !                *si:(loc) *sj:(loc) *sk:(loc) *bvti1:(loc) *bvti2:(loc)
-   !                *fw:(loc) *(*viscsubface.tau):(loc) *(*bcdata.norm):(loc)
-   !                *(*bcdata.fp):in-out *(*bcdata.fv):in-out *(*bcdata.m):in-out
-   !                *(*bcdata.oarea):in-out *(*bcdata.sepsensor):in-out
+   !                *d2wall:(loc) *si:(loc) *sj:(loc) *sk:(loc) *bvti1:(loc)
+   !                *bvti2:(loc) *fw:(loc) *(*viscsubface.tau):(loc)
+   !                *(*bcdata.norm):(loc) *(*bcdata.fp):in-out *(*bcdata.fv):in-out
+   !                *(*bcdata.m):in-out *(*bcdata.oarea):in-out *(*bcdata.sepsensor):in-out
    !                *(*bcdata.cavitation):in-out *radi:(loc) *radj:(loc)
-   !                *radk:(loc) mudim:(loc) gammainf:(loc) pinf:(loc)
-   !                timeref:(loc) rhoinf:(loc) muref:(loc) rhoinfdim:(loc)
-   !                tref:(loc) winf:(loc) muinf:(loc) uinf:(loc) pinfcorr:(loc)
-   !                rgas:(loc) pinfdim:(loc) pref:out rhoref:(loc)
-   !                moment:in-zero alpha:out force:in-zero beta:out
-   !                cavitation:in-zero sepsensor:in-zero
-   !   Plus diff mem management of: flowdoms.x:in flowdoms.vol:in
+   !                *radk:(loc) funcvalues:in-zero mach:out tempfreestream:out
+   !                reynolds:out veldirfreestream:(loc) machgrid:out
+   !                lengthref:out machcoef:out dragdirection:(loc)
+   !                liftdirection:(loc) pointref:out mudim:(loc) gammainf:(loc)
+   !                pinf:(loc) timeref:(loc) rhoinf:(loc) muref:(loc)
+   !                rhoinfdim:(loc) tref:(loc) winf:(loc) muinf:(loc)
+   !                uinf:(loc) pinfcorr:(loc) rgas:(loc) pinfdim:(loc)
+   !                pref:out rhoref:(loc) moment:in-zero alpha:out
+   !                force:in-zero beta:out cavitation:in-zero sepsensor:in-zero
+   !   Plus diff mem management of: xsurf:in flowdoms.x:in flowdoms.vol:in
    !                flowdoms.w:in flowdoms.dw:in rev:in bvtj1:in bvtj2:in
-   !                p:in gamma:in rlv:in bvtk1:in bvtk2:in si:in sj:in
-   !                sk:in bvti1:in bvti2:in fw:in viscsubface:in *viscsubface.tau:in
-   !                bcdata:in *bcdata.norm:in *bcdata.fp:in *bcdata.fv:in
-   !                *bcdata.m:in *bcdata.oarea:in *bcdata.sepsensor:in
-   !                *bcdata.cavitation:in radi:in radj:in radk:in
+   !                p:in gamma:in rlv:in bvtk1:in bvtk2:in d2wall:in
+   !                si:in sj:in sk:in bvti1:in bvti2:in fw:in viscsubface:in
+   !                *viscsubface.tau:in bcdata:in *bcdata.norm:in
+   !                *bcdata.fp:in *bcdata.fv:in *bcdata.m:in *bcdata.oarea:in
+   !                *bcdata.sepsensor:in *bcdata.cavitation:in radi:in
+   !                radj:in radk:in
    ! This is a super-combined function that combines the original
    ! functionality of: 
    ! Pressure Computation
@@ -62,6 +63,7 @@
    USE INPUTADJOINT
    USE DIFFSIZES
    USE COSTFUNCTIONS
+   USE WALLDISTANCEDATA
    IMPLICIT NONE
    ! Input Arguments:
    INTEGER(kind=inttype), INTENT(IN) :: nn, sps
@@ -144,9 +146,14 @@
    CALL PUSHREAL8ARRAY(si, SIZE(si, 1)*SIZE(si, 2)*SIZE(si, 3)*SIZE(si&
    &                 , 4))
    CALL METRIC_BLOCK()
-   CALL PUSHCONTROL1B(0)
+   IF (equations .EQ. ransequations) THEN
+   CALL UPDATEWALLDISTANCESQUICKLY(nn, 1, sps)
+   CALL PUSHCONTROL2B(0)
    ELSE
-   CALL PUSHCONTROL1B(1)
+   CALL PUSHCONTROL2B(1)
+   END IF
+   ELSE
+   CALL PUSHCONTROL2B(2)
    END IF
    ! ------------------------------------------------
    !        Normal Residual Computation
@@ -248,7 +255,6 @@
    ! call unsteadyTurbSpectral_block(itu1, itu1, nn, sps)
    SELECT CASE  (turbmodel) 
    CASE (spalartallmaras) 
-   !call determineDistance2(1, sps)
    CALL PUSHREAL8ARRAY(bmtj2, SIZE(bmtj2, 1)*SIZE(bmtj2, 2)*SIZE(&
    &                   bmtj2, 3)*SIZE(bmtj2, 4))
    CALL PUSHREAL8ARRAY(bmtj1, SIZE(bmtj1, 1)*SIZE(bmtj1, 2)*SIZE(&
@@ -726,6 +732,7 @@
    bvtj2b = 0.0_8
    bvtk1b = 0.0_8
    bvtk2b = 0.0_8
+   d2wallb = 0.0_8
    bvti1b = 0.0_8
    bvti2b = 0.0_8
    ELSE
@@ -733,6 +740,7 @@
    bvtj2b = 0.0_8
    bvtk1b = 0.0_8
    bvtk2b = 0.0_8
+   d2wallb = 0.0_8
    bvti1b = 0.0_8
    bvti2b = 0.0_8
    END IF
@@ -815,18 +823,24 @@
    END DO
    END DO
    END DO
-   CALL POPCONTROL1B(branch)
+   CALL POPCONTROL2B(branch)
    IF (branch .EQ. 0) THEN
-   CALL POPREAL8ARRAY(si, SIZE(si, 1)*SIZE(si, 2)*SIZE(si, 3)*SIZE(si, &
-   &                4))
-   CALL POPREAL8ARRAY(sj, SIZE(sj, 1)*SIZE(sj, 2)*SIZE(sj, 3)*SIZE(sj, &
-   &                4))
-   CALL POPREAL8ARRAY(sk, SIZE(sk, 1)*SIZE(sk, 2)*SIZE(sk, 3)*SIZE(sk, &
-   &                4))
+   CALL UPDATEWALLDISTANCESQUICKLY_B(nn, 1, sps)
+   ELSE IF (branch .EQ. 1) THEN
+   xsurfb = 0.0_8
+   ELSE
+   xsurfb = 0.0_8
+   GOTO 100
+   END IF
+   CALL POPREAL8ARRAY(si, SIZE(si, 1)*SIZE(si, 2)*SIZE(si, 3)*SIZE(si, 4)&
+   &             )
+   CALL POPREAL8ARRAY(sj, SIZE(sj, 1)*SIZE(sj, 2)*SIZE(sj, 3)*SIZE(sj, 4)&
+   &             )
+   CALL POPREAL8ARRAY(sk, SIZE(sk, 1)*SIZE(sk, 2)*SIZE(sk, 3)*SIZE(sk, 4)&
+   &             )
    CALL METRIC_BLOCK_B()
    CALL XHALO_BLOCK_B()
-   END IF
-   CALL SETFLOWINFINITYSTATE_B()
+   100 CALL SETFLOWINFINITYSTATE_B()
    CALL POPREAL8(gammainf)
    CALL POPREAL8(tref)
    CALL POPREAL8(pref)

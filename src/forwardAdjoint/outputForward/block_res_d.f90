@@ -2,17 +2,14 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of block_res in forward (tangent) mode (with options i4 dr8 r8):
-   !   variations   of useful results: funcvalues *(flowdoms.x) *(flowdoms.w)
+   !   variations   of useful results: *(flowdoms.x) *(flowdoms.w)
    !                *(flowdoms.dw) *(*bcdata.fp) *(*bcdata.fv) *(*bcdata.m)
    !                *(*bcdata.oarea) *(*bcdata.sepsensor) *(*bcdata.cavitation)
-   !                pref moment force cavitation sepsensor
-   !   with respect to varying inputs: mach tempfreestream reynolds
-   !                machgrid lengthref machcoef pointref *(flowdoms.x)
-   !                *(flowdoms.w) pref alpha beta
-   !   RW status of diff variables: funcvalues:out mach:in tempfreestream:in
-   !                reynolds:in veldirfreestream:(loc) machgrid:in
-   !                lengthref:in machcoef:in dragdirection:(loc) liftdirection:(loc)
-   !                pointref:in *(flowdoms.x):in-out *(flowdoms.vol):(loc)
+   !                funcvalues pref moment force cavitation sepsensor
+   !   with respect to varying inputs: *(flowdoms.x) *(flowdoms.w)
+   !                mach tempfreestream reynolds machgrid lengthref
+   !                machcoef pointref pref alpha beta
+   !   RW status of diff variables: *(flowdoms.x):in-out *(flowdoms.vol):(loc)
    !                *(flowdoms.w):in-out *(flowdoms.dw):out *rev:(loc)
    !                *bvtj1:(loc) *bvtj2:(loc) *p:(loc) *sfacei:(loc)
    !                *sfacej:(loc) *s:(loc) *gamma:(loc) *sfacek:(loc)
@@ -22,12 +19,15 @@
    !                *(*bcdata.rface):(loc) *(*bcdata.fp):out *(*bcdata.fv):out
    !                *(*bcdata.m):out *(*bcdata.oarea):out *(*bcdata.sepsensor):out
    !                *(*bcdata.cavitation):out *(*bcdata.uslip):(loc)
-   !                *radi:(loc) *radj:(loc) *radk:(loc) mudim:(loc)
-   !                gammainf:(loc) pinf:(loc) timeref:(loc) rhoinf:(loc)
-   !                muref:(loc) rhoinfdim:(loc) tref:(loc) winf:(loc)
-   !                muinf:(loc) uinf:(loc) pinfcorr:(loc) rgas:(loc)
-   !                pinfdim:(loc) pref:in-out rhoref:(loc) moment:out
-   !                alpha:in force:out beta:in cavitation:out sepsensor:out
+   !                *radi:(loc) *radj:(loc) *radk:(loc) funcvalues:out
+   !                mach:in tempfreestream:in reynolds:in veldirfreestream:(loc)
+   !                machgrid:in lengthref:in machcoef:in dragdirection:(loc)
+   !                liftdirection:(loc) pointref:in mudim:(loc) gammainf:(loc)
+   !                pinf:(loc) timeref:(loc) rhoinf:(loc) muref:(loc)
+   !                rhoinfdim:(loc) tref:(loc) winf:(loc) muinf:(loc)
+   !                uinf:(loc) pinfcorr:(loc) rgas:(loc) pinfdim:(loc)
+   !                pref:in-out rhoref:(loc) moment:out alpha:in force:out
+   !                beta:in cavitation:out sepsensor:out
    !   Plus diff mem management of: flowdoms.x:in flowdoms.vol:in
    !                flowdoms.w:in flowdoms.dw:in rev:in bvtj1:in bvtj2:in
    !                p:in sfacei:in sfacej:in s:in gamma:in sfacek:in
@@ -62,6 +62,7 @@
    USE INPUTADJOINT
    USE DIFFSIZES
    USE COSTFUNCTIONS
+   USE WALLDISTANCEDATA
    USE DIFFSIZES
    !  Hint: ISIZE1OFDrfbcdata should be the size of dimension 1 of array *bcdata
    IMPLICIT NONE
@@ -212,7 +213,6 @@
    ! call unsteadyTurbSpectral_block(itu1, itu1, nn, sps)
    SELECT CASE  (turbmodel) 
    CASE (spalartallmaras) 
-   !call determineDistance2(1, sps)
    CALL SA_BLOCK_D(.true.)
    CASE DEFAULT
    CALL TERMINATE('turbResidual', &

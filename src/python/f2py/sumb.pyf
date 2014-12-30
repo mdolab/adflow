@@ -94,6 +94,9 @@ python module libsumb
 
        subroutine preprocessing ! in :sumb:../../preprocessing/preprocessing.f90
        end subroutine preprocessing
+
+       subroutine preprocessingpart2 ! in :sumb:../../preprocessing/preprocessing.f90
+       end subroutine preprocessingpart2
      
        subroutine initflow ! in :sumb:../../initFlow/initFlow.f90
        end subroutine initflow
@@ -608,7 +611,6 @@ python module libsumb
          logical :: lumpeddiss
          real(kind=realtype) :: sigma
          logical :: useapproxwalldistance
-         logical :: updatewallassociation
          logical :: lowspeedpreconditioner
        end module inputdiscretization
 

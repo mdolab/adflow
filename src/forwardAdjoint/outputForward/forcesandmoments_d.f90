@@ -6,9 +6,9 @@
    !                *(*bcdata.m) *(*bcdata.oarea) *(*bcdata.sepsensor)
    !                *(*bcdata.cavitation) cfp cfv cmp cmv cavitation
    !                sepsensor
-   !   with respect to varying inputs: veldirfreestream lengthref
-   !                machcoef pointref *p *w *x *si *sj *sk *(*viscsubface.tau)
-   !                gammainf pinf pref
+   !   with respect to varying inputs: *p *w *x *si *sj *sk *(*viscsubface.tau)
+   !                veldirfreestream lengthref machcoef pointref gammainf
+   !                pinf pref
    !   Plus diff mem management of: viscsubface:in *viscsubface.tau:in
    !                bcdata:in *bcdata.fp:in *bcdata.fv:in *bcdata.m:in
    !                *bcdata.oarea:in *bcdata.sepsensor:in *bcdata.cavitation:in

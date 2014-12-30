@@ -571,7 +571,7 @@ contains
     ! local variables
     integer(kind=intType) :: i, j
     logical :: zeroFlag
-
+    zeroFlag = .False.
 #ifndef USE_COMPLEX
     ! Check if the blk is all zeros
 
