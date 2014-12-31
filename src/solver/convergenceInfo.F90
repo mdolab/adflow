@@ -269,11 +269,14 @@
                            mpi_sum, 0, SUmb_comm_world, ierr)
 
          ! Idem for the maximum monitoring variables.
-
+#ifndef USE_COMPLEX
           if(nMonMax > 0) &
                call mpi_reduce(monLoc(nMonSum+1), monGlob(nMonSum+1), &
                nMonMax, sumb_real, mpi_max, 0,        &
                SUmb_comm_world, ierr)
+#else
+          monGlob(nMonSum+1) = zero
+#endif
 !
 ! ---- eran-massf ---
 !
