@@ -275,7 +275,8 @@
                nMonMax, sumb_real, mpi_max, 0,        &
                SUmb_comm_world, ierr)
 #else
-          monGlob(nMonSum+1) = zero
+          if (nMonMax < 0) & 
+               monGlob(nMonSum+1) = zero
 #endif
 !
 ! ---- eran-massf ---
