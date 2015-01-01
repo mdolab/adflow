@@ -208,11 +208,6 @@ subroutine alloc_derivative_values_bwd(level)
            
         end if
         
-        allocate(flowDomsb(nn,1,sps)%d2Wall(2:il,2:jl,2:kl), &
-             stat=ierr)
-        flowDomsb(nn,1,sps)%d2wall = zero
-        call EChk(ierr,__FILE__,__LINE__)
-        
         allocate(flowDomsb(nn,1,sps)%viscSubface(nviscBocos), &
              stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
