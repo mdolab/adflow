@@ -32,7 +32,7 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    USE CGNSGRID
    USE FLOWVARREFSTATE
    USE INPUTMOTION

@@ -15,7 +15,7 @@
    !      ******************************************************************
    SUBROUTINE SETSS_D(nn, ssi, ssid, ssj, ssjd, ssk, sskd, ss, ssd)
    USE BCTYPES
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    IMPLICIT NONE
    !
    !      Subroutine arguments.

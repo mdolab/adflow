@@ -30,7 +30,7 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   USE BLOCKPOINTERS_B
+   USE BLOCKPOINTERS
    USE INPUTTIMESPECTRAL
    USE ITERATION
    IMPLICIT NONE
@@ -66,21 +66,21 @@
    ! The eddy viscosity and the boundary conditions are only
    ! applied if an actual update has been computed in saSolve.
    IF (.NOT.resonly) THEN
-   bvti2b = 0.0_8
-   bvti1b = 0.0_8
-   bvtk2b = 0.0_8
-   bvtk1b = 0.0_8
-   bvtj2b = 0.0_8
-   bvtj1b = 0.0_8
+   bvti2d = 0.0_8
+   bvti1d = 0.0_8
+   bvtk2d = 0.0_8
+   bvtk1d = 0.0_8
+   bvtj2d = 0.0_8
+   bvtj1d = 0.0_8
    CALL APPLYALLTURBBCTHISBLOCK_B(.true.)
    CALL SAEDDYVISCOSITY_B()
    ELSE
-   bvtj1b = 0.0_8
-   bvtj2b = 0.0_8
-   bvtk1b = 0.0_8
-   bvtk2b = 0.0_8
-   bvti1b = 0.0_8
-   bvti2b = 0.0_8
+   bvtj1d = 0.0_8
+   bvtj2d = 0.0_8
+   bvtk1d = 0.0_8
+   bvtk2d = 0.0_8
+   bvti1d = 0.0_8
+   bvti2d = 0.0_8
    END IF
    CALL SASOLVE_B(resonly)
    CALL POPREAL8ARRAY(bmtk1, SIZE(bmtk1, 1)*SIZE(bmtk1, 2)*SIZE(bmtk1, 3)&

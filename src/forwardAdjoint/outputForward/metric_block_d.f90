@@ -11,7 +11,7 @@
    ! since there is debugging stuff in the original that is not
    ! necessary for AD.
    USE BCTYPES
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    USE CGNSGRID
    USE COMMUNICATION
    USE INPUTTIMESPECTRAL
@@ -39,14 +39,14 @@
    INTERFACE 
    SUBROUTINE SETSSMETRIC(nn, ss)
    USE BCTYPES
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    IMPLICIT NONE
    INTEGER(kind=inttype), INTENT(IN) :: nn
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ss
    END SUBROUTINE SETSSMETRIC
    SUBROUTINE RESETSSMETRIC(nn, ss)
    USE BCTYPES
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    IMPLICIT NONE
    INTEGER(kind=inttype), INTENT(IN) :: nn
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ss
@@ -55,7 +55,7 @@
       INTERFACE 
    SUBROUTINE SETSSMETRIC_D(nn, ss, ssd)
    USE BCTYPES
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    IMPLICIT NONE
    INTEGER(kind=inttype), INTENT(IN) :: nn
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ss

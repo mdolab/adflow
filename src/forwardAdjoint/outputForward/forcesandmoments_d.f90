@@ -37,7 +37,7 @@
    !      * here.                                                          *
    !      ******************************************************************
    !
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    USE BCTYPES
    USE FLOWVARREFSTATE
    USE INPUTPHYSICS
@@ -88,7 +88,7 @@
    SUBROUTINE SETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
    &       rev1, rev2, offset)
    USE BCTYPES
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
    IMPLICIT NONE
    INTEGER(kind=inttype), INTENT(IN) :: nn, offset
@@ -100,7 +100,7 @@
    SUBROUTINE RESETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
    &       rev1, rev2, offset)
    USE BCTYPES
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
    IMPLICIT NONE
    INTEGER(kind=inttype), INTENT(IN) :: nn, offset
@@ -111,7 +111,7 @@
    END SUBROUTINE RESETBCPOINTERS
    SUBROUTINE SETXXSSRHODD2WALL(nn, xx, ss, rho1, rho2, dd2wall)
    USE BCTYPES
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
    USE INPUTPHYSICS
    IMPLICIT NONE
@@ -122,7 +122,7 @@
    END SUBROUTINE SETXXSSRHODD2WALL
    SUBROUTINE RESETXXSSRHODD2WALL(nn, xx, ss, rho1, rho2, dd2wall)
    USE BCTYPES
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
    USE INPUTPHYSICS
    IMPLICIT NONE
@@ -137,7 +137,7 @@
    &       pp2, pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev1d, rev2, rev2d, &
    &       offset)
    USE BCTYPES
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
    IMPLICIT NONE
    INTEGER(kind=inttype), INTENT(IN) :: nn, offset
@@ -153,7 +153,7 @@
    SUBROUTINE SETXXSSRHODD2WALL_D(nn, xx, xxd, ss, ssd, rho1, rho1d, &
    &       rho2, rho2d, dd2wall)
    USE BCTYPES
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
    USE INPUTPHYSICS
    IMPLICIT NONE

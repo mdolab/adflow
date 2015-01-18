@@ -12,7 +12,7 @@
    ! reverse mode AD routines, but NOT the forward mode. Since it is
    ! done on a per-block basis, it is assumed that the required block
    ! pointers are already set. 
-   USE BLOCKPOINTERS_B
+   USE BLOCKPOINTERS
    USE WALLDISTANCEDATA
    IMPLICIT NONE
    ! Subroutine arguments
@@ -20,15 +20,15 @@
    ! Local Variables
    INTEGER(kind=inttype) :: i, j, k, faceid
    REAL(kind=realtype) :: xp(3), xc(3), u, v
-   REAL(kind=realtype) :: xpb(3), xcb(3)
+   REAL(kind=realtype) :: xpd(3), xcd(3)
    INTRINSIC SQRT
-   REAL(kind=realtype) :: tempb5
-   REAL(kind=realtype) :: tempb4
-   REAL(kind=realtype) :: tempb3
-   REAL(kind=realtype) :: tempb2
-   REAL(kind=realtype) :: tempb1
-   REAL(kind=realtype) :: tempb0
-   REAL(kind=realtype) :: tempb
+   REAL(kind=realtype) :: tempd
+   REAL(kind=realtype) :: tempd5
+   REAL(kind=realtype) :: tempd4
+   REAL(kind=realtype) :: tempd3
+   REAL(kind=realtype) :: tempd2
+   REAL(kind=realtype) :: tempd1
+   REAL(kind=realtype) :: tempd0
    DO k=2,kl
    DO j=2,jl
    DO i=2,il
@@ -62,74 +62,74 @@
    END DO
    END DO
    END DO
-   xsurfb = 0.0_8
-   xcb = 0.0_8
+   xsurfd = 0.0_8
+   xcd = 0.0_8
    DO k=kl,2,-1
    DO j=jl,2,-1
    DO i=il,2,-1
-   xpb = 0.0_8
+   xpd = 0.0_8
    IF ((xc(1)-xp(1))**2 + (xc(2)-xp(2))**2 + (xc(3)-xp(3))**2 .EQ. &
    &           0.0_8) THEN
-   tempb = 0.0
+   tempd = 0.0
    ELSE
-   tempb = d2wallb(i, j, k)/(2.0*SQRT((xc(1)-xp(1))**2+(xc(2)-xp(&
+   tempd = d2walld(i, j, k)/(2.0*SQRT((xc(1)-xp(1))**2+(xc(2)-xp(&
    &           2))**2+(xc(3)-xp(3))**2))
    END IF
-   tempb0 = 2*(xc(1)-xp(1))*tempb
-   tempb1 = 2*(xc(2)-xp(2))*tempb
-   tempb2 = 2*(xc(3)-xp(3))*tempb
-   xcb(1) = xcb(1) + tempb0
-   xpb(1) = xpb(1) - tempb0
-   xcb(2) = xcb(2) + tempb1
-   xpb(2) = xpb(2) - tempb1
-   xcb(3) = xcb(3) + tempb2
-   xpb(3) = xpb(3) - tempb2
-   d2wallb(i, j, k) = 0.0_8
+   tempd0 = 2*(xc(1)-xp(1))*tempd
+   tempd1 = 2*(xc(2)-xp(2))*tempd
+   tempd2 = 2*(xc(3)-xp(3))*tempd
+   xcd(1) = xcd(1) + tempd0
+   xpd(1) = xpd(1) - tempd0
+   xcd(2) = xcd(2) + tempd1
+   xpd(2) = xpd(2) - tempd1
+   xcd(3) = xcd(3) + tempd2
+   xpd(3) = xpd(3) - tempd2
+   d2walld(i, j, k) = 0.0_8
    CALL POPREAL8(xc(3))
-   tempb3 = eighth*xcb(3)
-   xb(i-1, j-1, k-1, 3) = xb(i-1, j-1, k-1, 3) + tempb3
-   xb(i, j-1, k-1, 3) = xb(i, j-1, k-1, 3) + tempb3
-   xb(i-1, j, k-1, 3) = xb(i-1, j, k-1, 3) + tempb3
-   xb(i, j, k-1, 3) = xb(i, j, k-1, 3) + tempb3
-   xb(i-1, j-1, k, 3) = xb(i-1, j-1, k, 3) + tempb3
-   xb(i, j-1, k, 3) = xb(i, j-1, k, 3) + tempb3
-   xb(i-1, j, k, 3) = xb(i-1, j, k, 3) + tempb3
-   xb(i, j, k, 3) = xb(i, j, k, 3) + tempb3
-   xcb(3) = 0.0_8
+   tempd3 = eighth*xcd(3)
+   xd(i-1, j-1, k-1, 3) = xd(i-1, j-1, k-1, 3) + tempd3
+   xd(i, j-1, k-1, 3) = xd(i, j-1, k-1, 3) + tempd3
+   xd(i-1, j, k-1, 3) = xd(i-1, j, k-1, 3) + tempd3
+   xd(i, j, k-1, 3) = xd(i, j, k-1, 3) + tempd3
+   xd(i-1, j-1, k, 3) = xd(i-1, j-1, k, 3) + tempd3
+   xd(i, j-1, k, 3) = xd(i, j-1, k, 3) + tempd3
+   xd(i-1, j, k, 3) = xd(i-1, j, k, 3) + tempd3
+   xd(i, j, k, 3) = xd(i, j, k, 3) + tempd3
+   xcd(3) = 0.0_8
    CALL POPREAL8(xc(2))
-   tempb4 = eighth*xcb(2)
-   xb(i-1, j-1, k-1, 2) = xb(i-1, j-1, k-1, 2) + tempb4
-   xb(i, j-1, k-1, 2) = xb(i, j-1, k-1, 2) + tempb4
-   xb(i-1, j, k-1, 2) = xb(i-1, j, k-1, 2) + tempb4
-   xb(i, j, k-1, 2) = xb(i, j, k-1, 2) + tempb4
-   xb(i-1, j-1, k, 2) = xb(i-1, j-1, k, 2) + tempb4
-   xb(i, j-1, k, 2) = xb(i, j-1, k, 2) + tempb4
-   xb(i-1, j, k, 2) = xb(i-1, j, k, 2) + tempb4
-   xb(i, j, k, 2) = xb(i, j, k, 2) + tempb4
-   xcb(2) = 0.0_8
+   tempd4 = eighth*xcd(2)
+   xd(i-1, j-1, k-1, 2) = xd(i-1, j-1, k-1, 2) + tempd4
+   xd(i, j-1, k-1, 2) = xd(i, j-1, k-1, 2) + tempd4
+   xd(i-1, j, k-1, 2) = xd(i-1, j, k-1, 2) + tempd4
+   xd(i, j, k-1, 2) = xd(i, j, k-1, 2) + tempd4
+   xd(i-1, j-1, k, 2) = xd(i-1, j-1, k, 2) + tempd4
+   xd(i, j-1, k, 2) = xd(i, j-1, k, 2) + tempd4
+   xd(i-1, j, k, 2) = xd(i-1, j, k, 2) + tempd4
+   xd(i, j, k, 2) = xd(i, j, k, 2) + tempd4
+   xcd(2) = 0.0_8
    CALL POPREAL8(xc(1))
-   tempb5 = eighth*xcb(1)
-   xb(i-1, j-1, k-1, 1) = xb(i-1, j-1, k-1, 1) + tempb5
-   xb(i, j-1, k-1, 1) = xb(i, j-1, k-1, 1) + tempb5
-   xb(i-1, j, k-1, 1) = xb(i-1, j, k-1, 1) + tempb5
-   xb(i, j, k-1, 1) = xb(i, j, k-1, 1) + tempb5
-   xb(i-1, j-1, k, 1) = xb(i-1, j-1, k, 1) + tempb5
-   xb(i, j-1, k, 1) = xb(i, j-1, k, 1) + tempb5
-   xb(i-1, j, k, 1) = xb(i-1, j, k, 1) + tempb5
-   xb(i, j, k, 1) = xb(i, j, k, 1) + tempb5
-   xcb(1) = 0.0_8
+   tempd5 = eighth*xcd(1)
+   xd(i-1, j-1, k-1, 1) = xd(i-1, j-1, k-1, 1) + tempd5
+   xd(i, j-1, k-1, 1) = xd(i, j-1, k-1, 1) + tempd5
+   xd(i-1, j, k-1, 1) = xd(i-1, j, k-1, 1) + tempd5
+   xd(i, j, k-1, 1) = xd(i, j, k-1, 1) + tempd5
+   xd(i-1, j-1, k, 1) = xd(i-1, j-1, k, 1) + tempd5
+   xd(i, j-1, k, 1) = xd(i, j-1, k, 1) + tempd5
+   xd(i-1, j, k, 1) = xd(i-1, j, k, 1) + tempd5
+   xd(i, j, k, 1) = xd(i, j, k, 1) + tempd5
+   xcd(1) = 0.0_8
    u = flowdoms(nn, level, sps)%uv(1, i, j, k)
    v = flowdoms(nn, level, sps)%uv(2, i, j, k)
    faceid = flowdoms(nn, level, sps)%elemid(i, j, k)
    CALL POPREAL8ARRAY(xp, 3)
-   xsurfb(12*(faceid-1)+1:12*(faceid-1)+3) = xsurfb(12*(faceid-1)+1&
-   &         :12*(faceid-1)+3) + (one-u)*(one-v)*xpb
-   xsurfb(12*(faceid-1)+4:12*(faceid-1)+6) = xsurfb(12*(faceid-1)+4&
-   &         :12*(faceid-1)+6) + u*(one-v)*xpb
-   xsurfb(12*(faceid-1)+7:12*(faceid-1)+9) = xsurfb(12*(faceid-1)+7&
-   &         :12*(faceid-1)+9) + u*v*xpb
-   xsurfb(12*(faceid-1)+10:12*(faceid-1)+12) = xsurfb(12*(faceid-1)&
-   &         +10:12*(faceid-1)+12) + (one-u)*v*xpb
+   xsurfd(12*(faceid-1)+1:12*(faceid-1)+3) = xsurfd(12*(faceid-1)+1&
+   &         :12*(faceid-1)+3) + (one-u)*(one-v)*xpd
+   xsurfd(12*(faceid-1)+4:12*(faceid-1)+6) = xsurfd(12*(faceid-1)+4&
+   &         :12*(faceid-1)+6) + u*(one-v)*xpd
+   xsurfd(12*(faceid-1)+7:12*(faceid-1)+9) = xsurfd(12*(faceid-1)+7&
+   &         :12*(faceid-1)+9) + u*v*xpd
+   xsurfd(12*(faceid-1)+10:12*(faceid-1)+12) = xsurfd(12*(faceid-1)&
+   &         +10:12*(faceid-1)+12) + (one-u)*v*xpd
    END DO
    END DO
    END DO

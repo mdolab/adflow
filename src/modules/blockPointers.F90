@@ -191,4 +191,73 @@ module blockPointers
   real(kind=realType), dimension(:,:,:,:), pointer :: w_offTimeInstance
   real(kind=realType), dimension(:,:,:), pointer :: vol_offTimeInstance
 
+#ifndef USE_TAPENADE
+  TYPE(VISCSUBFACETYPE), DIMENSION(:), POINTER :: viscsubfaced
+
+  REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: xd
+  REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: sid, sjd, skd
+
+  real(kind=realType), dimension(:,:,:),   pointer ::vold
+  
+  REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: rotmatrixid
+  REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: rotmatrixjd
+  REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: rotmatrixkd
+
+  REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: sfaceid
+  REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: sfacejd
+  REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: sfacekd
+
+  REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: wd
+  REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: woldd
+
+  REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: uxd
+  REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: uyd
+  REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: uzd
+
+  REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: vxd
+  REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: vyd
+  REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: vzd
+
+  REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: wxd
+  REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: wyd
+  REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: wzd
+
+  REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: qxd
+  REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: qyd
+  REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: qzd
+
+  REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: pd, gammad
+  REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: rlvd, revd
+
+  REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: sd
+
+  REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: dwd, fwd
+  REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: w1d, wrd
+
+  REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: wnd
+
+  REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: dtld
+  REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: radid
+  REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: radjd
+  REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: radkd
+
+  REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: bmti1d
+  REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: bmti2d
+  REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: bmtj1d
+  REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: bmtj2d
+  REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: bmtk1d
+  REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: bmtk2d
+
+  REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: bvti1d, bvti2d
+  REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: bvtj1d, bvtj2d
+  REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: bvtk1d, bvtk2d
+
+  REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: d2walld
+
+  real(kind=realType), dimension(:,:,:,:), pointer :: w_offTimeInstanced
+  real(kind=realType), dimension(:,:,:), pointer :: vol_offTimeInstanced
+  
+  type(BCDataType),      dimension(:), pointer :: BCDatad
+#endif
+
 end module blockPointers

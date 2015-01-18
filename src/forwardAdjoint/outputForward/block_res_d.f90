@@ -55,7 +55,7 @@
    SUBROUTINE BLOCK_RES_D(nn, sps, usespatial, alpha, alphad, beta, betad, &
    & liftindex, force, forced, moment, momentd, sepsensor, sepsensord, &
    & cavitation, cavitationd)
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
    USE INPUTPHYSICS
    USE INPUTITERATION

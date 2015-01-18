@@ -17,9 +17,9 @@
    !     *                                                                *
    !     ******************************************************************
    !
-   SUBROUTINE COMPUTETSDERIVATIVES_B(force, forceb, moment, momentb, &
-   & liftindex, coef0, coef0b, dcdalpha, dcdalphab, dcdalphadot, &
-   & dcdalphadotb, dcdq, dcdqdot)
+   SUBROUTINE COMPUTETSDERIVATIVES_B(force, forced, moment, momentd, &
+   & liftindex, coef0, coef0d, dcdalpha, dcdalphad, dcdalphadot, &
+   & dcdalphadotd, dcdq, dcdqdot)
    !
    !     ******************************************************************
    !     *                                                                *
@@ -43,23 +43,23 @@
    !
    REAL(kind=realtype), DIMENSION(3, ntimeintervalsspectral) :: force, &
    & moment
-   REAL(kind=realtype), DIMENSION(3, ntimeintervalsspectral) :: forceb, &
-   & momentb
+   REAL(kind=realtype), DIMENSION(3, ntimeintervalsspectral) :: forced, &
+   & momentd
    REAL(kind=realtype), DIMENSION(8) :: dcdq, dcdqdot
    REAL(kind=realtype), DIMENSION(8) :: dcdalpha, dcdalphadot
-   REAL(kind=realtype), DIMENSION(8) :: dcdalphab, dcdalphadotb
+   REAL(kind=realtype), DIMENSION(8) :: dcdalphad, dcdalphadotd
    REAL(kind=realtype), DIMENSION(8) :: coef0
-   REAL(kind=realtype), DIMENSION(8) :: coef0b
+   REAL(kind=realtype), DIMENSION(8) :: coef0d
    INTEGER(kind=inttype) :: liftindex
    ! Working Variables
    REAL(kind=realtype), DIMENSION(ntimeintervalsspectral, 8) :: basecoef
-   REAL(kind=realtype), DIMENSION(ntimeintervalsspectral, 8) :: basecoefb
+   REAL(kind=realtype), DIMENSION(ntimeintervalsspectral, 8) :: basecoefd
    REAL(kind=realtype), DIMENSION(8) :: coef0dot
-   REAL(kind=realtype), DIMENSION(8) :: coef0dotb
+   REAL(kind=realtype), DIMENSION(8) :: coef0dotd
    REAL(kind=realtype), DIMENSION(ntimeintervalsspectral, 8) :: &
    & resbasecoef
    REAL(kind=realtype), DIMENSION(ntimeintervalsspectral, 8) :: &
-   & resbasecoefb
+   & resbasecoefd
    REAL(kind=realtype), DIMENSION(ntimeintervalsspectral) :: &
    & intervalalpha, intervalalphadot
    REAL(kind=realtype), DIMENSION(ntimeintervalsspectral) :: intervalmach&
@@ -69,9 +69,9 @@
    INTEGER(kind=inttype) :: i, sps, nn
    !speed of sound: for normalization of q derivatives
    REAL(kind=realtype) :: a
-   REAL(kind=realtype) :: ab
+   REAL(kind=realtype) :: ad
    REAL(kind=realtype) :: scaledim, fact, factmoment
-   REAL(kind=realtype) :: scaledimb, factb, factmomentb
+   REAL(kind=realtype) :: scaledimd, factd, factmomentd
    ! Functions
    REAL(kind=realtype), DIMENSION(ntimeintervalsspectral) :: dphix, dphiy&
    & , dphiz
@@ -85,14 +85,14 @@
    REAL(kind=realtype) :: temp2
    REAL(kind=realtype) :: temp1
    REAL(kind=realtype) :: temp0
-   REAL(kind=realtype) :: tempb6
-   REAL(kind=realtype) :: tempb5
-   REAL(kind=realtype) :: tempb4(8)
-   REAL(kind=realtype) :: tempb3
-   REAL(kind=realtype) :: tempb2
-   REAL(kind=realtype) :: tempb1
-   REAL(kind=realtype) :: tempb0
-   REAL(kind=realtype) :: tempb
+   REAL(kind=realtype) :: tempd
+   REAL(kind=realtype) :: tempd6
+   REAL(kind=realtype) :: tempd5
+   REAL(kind=realtype) :: tempd4(8)
+   REAL(kind=realtype) :: tempd3
+   REAL(kind=realtype) :: tempd2
+   REAL(kind=realtype) :: tempd1
+   REAL(kind=realtype) :: tempd0
    REAL(kind=realtype) :: temp
    !
    !     ******************************************************************
@@ -201,116 +201,116 @@
    &                                       dcdalphadot(i), coef0dot(i))
    END DO
    a = SQRT(gammainf*pinfdim/rhoinfdim)
-   tempb4 = 2*a*dcdalphadotb/lengthref
-   tempb5 = 2*SUM(dcdalphadot*machgrid*dcdalphadotb)/lengthref
-   machgridb = SUM(dcdalphadot*tempb4)
-   ab = tempb5
-   lengthrefb = lengthrefb - a*tempb5/lengthref
-   dcdalphadotb = machgrid*tempb4
+   tempd4 = 2*a*dcdalphadotd/lengthref
+   tempd5 = 2*SUM(dcdalphadot*machgrid*dcdalphadotd)/lengthref
+   machgridd = SUM(dcdalphadot*tempd4)
+   ad = tempd5
+   lengthrefd = lengthrefd - a*tempd5/lengthref
+   dcdalphadotd = machgrid*tempd4
    temp2 = gammainf*pinfdim/rhoinfdim
    IF (temp2 .EQ. 0.0_8) THEN
-   tempb6 = 0.0
+   tempd6 = 0.0
    ELSE
-   tempb6 = ab/(2.0*SQRT(temp2)*rhoinfdim)
+   tempd6 = ad/(2.0*SQRT(temp2)*rhoinfdim)
    END IF
-   gammainfb = pinfdim*tempb6
-   pinfdimb = gammainf*tempb6
-   rhoinfdimb = -(temp2*tempb6)
-   resbasecoefb = 0.0_8
+   gammainfd = pinfdim*tempd6
+   pinfdimd = gammainf*tempd6
+   rhoinfdimd = -(temp2*tempd6)
+   resbasecoefd = 0.0_8
    DO i=8,1,-1
-   coef0dotb = 0.0_8
+   coef0dotd = 0.0_8
    CALL COMPUTELEASTSQUARESREGRESSION_B(resbasecoef(:, i), &
-   &                                      resbasecoefb(:, i), &
+   &                                      resbasecoefd(:, i), &
    &                                      intervalalphadot, &
    &                                      ntimeintervalsspectral, &
-   &                                      dcdalphadot(i), dcdalphadotb(i), &
-   &                                      coef0dot(i), coef0dotb(i))
-   dcdalphadotb(i) = 0.0_8
-   coef0dotb(i) = 0.0_8
+   &                                      dcdalphadot(i), dcdalphadotd(i), &
+   &                                      coef0dot(i), coef0dotd(i))
+   dcdalphadotd(i) = 0.0_8
+   coef0dotd(i) = 0.0_8
    END DO
-   basecoefb = 0.0_8
+   basecoefd = 0.0_8
    DO i=8,1,-1
    DO sps=ntimeintervalsspectral,1,-1
-   basecoefb(sps, i) = basecoefb(sps, i) + resbasecoefb(sps, i)
-   dcdalphab(i) = dcdalphab(i) - intervalalpha(sps)*resbasecoefb(&
+   basecoefd(sps, i) = basecoefd(sps, i) + resbasecoefd(sps, i)
+   dcdalphad(i) = dcdalphad(i) - intervalalpha(sps)*resbasecoefd(&
    &           sps, i)
-   coef0b(i) = coef0b(i) - resbasecoefb(sps, i)
-   resbasecoefb(sps, i) = 0.0_8
+   coef0d(i) = coef0d(i) - resbasecoefd(sps, i)
+   resbasecoefd(sps, i) = 0.0_8
    END DO
    END DO
    DO i=8,1,-1
-   CALL COMPUTELEASTSQUARESREGRESSION_B(basecoef(:, i), basecoefb(:&
+   CALL COMPUTELEASTSQUARESREGRESSION_B(basecoef(:, i), basecoefd(:&
    &                                      , i), intervalalpha, &
    &                                      ntimeintervalsspectral, dcdalpha(&
-   &                                      i), dcdalphab(i), coef0(i), &
-   &                                      coef0b(i))
-   dcdalphab(i) = 0.0_8
-   coef0b(i) = 0.0_8
+   &                                      i), dcdalphad(i), coef0(i), &
+   &                                      coef0d(i))
+   dcdalphad(i) = 0.0_8
+   coef0d(i) = 0.0_8
    END DO
-   factmomentb = 0.0_8
-   factb = 0.0_8
+   factmomentd = 0.0_8
+   factd = 0.0_8
    DO sps=ntimeintervalsspectral,1,-1
-   momentb(3, sps) = momentb(3, sps) + factmoment*basecoefb(sps, 8)
-   factmomentb = factmomentb + moment(3, sps)*basecoefb(sps, 8)
-   basecoefb(sps, 8) = 0.0_8
-   momentb(2, sps) = momentb(2, sps) + factmoment*basecoefb(sps, 7)
-   factmomentb = factmomentb + moment(2, sps)*basecoefb(sps, 7)
-   basecoefb(sps, 7) = 0.0_8
-   momentb(1, sps) = momentb(1, sps) + factmoment*basecoefb(sps, 6)
-   factmomentb = factmomentb + moment(1, sps)*basecoefb(sps, 6)
-   basecoefb(sps, 6) = 0.0_8
-   forceb(3, sps) = forceb(3, sps) + fact*basecoefb(sps, 5)
-   factb = factb + force(3, sps)*basecoefb(sps, 5)
-   basecoefb(sps, 5) = 0.0_8
-   forceb(2, sps) = forceb(2, sps) + fact*basecoefb(sps, 4)
-   factb = factb + force(2, sps)*basecoefb(sps, 4)
-   basecoefb(sps, 4) = 0.0_8
-   forceb(1, sps) = forceb(1, sps) + fact*basecoefb(sps, 3)
-   factb = factb + force(1, sps)*basecoefb(sps, 3)
-   basecoefb(sps, 3) = 0.0_8
-   tempb2 = fact*basecoefb(sps, 2)
-   factb = factb + (force(1, sps)*dragdirection(1)+force(2, sps)*&
-   &         dragdirection(2)+force(3, sps)*dragdirection(3))*basecoefb(sps&
+   momentd(3, sps) = momentd(3, sps) + factmoment*basecoefd(sps, 8)
+   factmomentd = factmomentd + moment(3, sps)*basecoefd(sps, 8)
+   basecoefd(sps, 8) = 0.0_8
+   momentd(2, sps) = momentd(2, sps) + factmoment*basecoefd(sps, 7)
+   factmomentd = factmomentd + moment(2, sps)*basecoefd(sps, 7)
+   basecoefd(sps, 7) = 0.0_8
+   momentd(1, sps) = momentd(1, sps) + factmoment*basecoefd(sps, 6)
+   factmomentd = factmomentd + moment(1, sps)*basecoefd(sps, 6)
+   basecoefd(sps, 6) = 0.0_8
+   forced(3, sps) = forced(3, sps) + fact*basecoefd(sps, 5)
+   factd = factd + force(3, sps)*basecoefd(sps, 5)
+   basecoefd(sps, 5) = 0.0_8
+   forced(2, sps) = forced(2, sps) + fact*basecoefd(sps, 4)
+   factd = factd + force(2, sps)*basecoefd(sps, 4)
+   basecoefd(sps, 4) = 0.0_8
+   forced(1, sps) = forced(1, sps) + fact*basecoefd(sps, 3)
+   factd = factd + force(1, sps)*basecoefd(sps, 3)
+   basecoefd(sps, 3) = 0.0_8
+   tempd2 = fact*basecoefd(sps, 2)
+   factd = factd + (force(1, sps)*dragdirection(1)+force(2, sps)*&
+   &         dragdirection(2)+force(3, sps)*dragdirection(3))*basecoefd(sps&
    &         , 2)
-   forceb(1, sps) = forceb(1, sps) + dragdirection(1)*tempb2
-   dragdirectionb(1) = dragdirectionb(1) + force(1, sps)*tempb2
-   forceb(2, sps) = forceb(2, sps) + dragdirection(2)*tempb2
-   dragdirectionb(2) = dragdirectionb(2) + force(2, sps)*tempb2
-   forceb(3, sps) = forceb(3, sps) + dragdirection(3)*tempb2
-   dragdirectionb(3) = dragdirectionb(3) + force(3, sps)*tempb2
-   basecoefb(sps, 2) = 0.0_8
-   tempb3 = fact*basecoefb(sps, 1)
-   factb = factb + (force(1, sps)*liftdirection(1)+force(2, sps)*&
-   &         liftdirection(2)+force(3, sps)*liftdirection(3))*basecoefb(sps&
+   forced(1, sps) = forced(1, sps) + dragdirection(1)*tempd2
+   dragdirectiond(1) = dragdirectiond(1) + force(1, sps)*tempd2
+   forced(2, sps) = forced(2, sps) + dragdirection(2)*tempd2
+   dragdirectiond(2) = dragdirectiond(2) + force(2, sps)*tempd2
+   forced(3, sps) = forced(3, sps) + dragdirection(3)*tempd2
+   dragdirectiond(3) = dragdirectiond(3) + force(3, sps)*tempd2
+   basecoefd(sps, 2) = 0.0_8
+   tempd3 = fact*basecoefd(sps, 1)
+   factd = factd + (force(1, sps)*liftdirection(1)+force(2, sps)*&
+   &         liftdirection(2)+force(3, sps)*liftdirection(3))*basecoefd(sps&
    &         , 1)
-   forceb(1, sps) = forceb(1, sps) + liftdirection(1)*tempb3
-   liftdirectionb(1) = liftdirectionb(1) + force(1, sps)*tempb3
-   forceb(2, sps) = forceb(2, sps) + liftdirection(2)*tempb3
-   liftdirectionb(2) = liftdirectionb(2) + force(2, sps)*tempb3
-   forceb(3, sps) = forceb(3, sps) + liftdirection(3)*tempb3
-   liftdirectionb(3) = liftdirectionb(3) + force(3, sps)*tempb3
-   basecoefb(sps, 1) = 0.0_8
+   forced(1, sps) = forced(1, sps) + liftdirection(1)*tempd3
+   liftdirectiond(1) = liftdirectiond(1) + force(1, sps)*tempd3
+   forced(2, sps) = forced(2, sps) + liftdirection(2)*tempd3
+   liftdirectiond(2) = liftdirectiond(2) + force(2, sps)*tempd3
+   forced(3, sps) = forced(3, sps) + liftdirection(3)*tempd3
+   liftdirectiond(3) = liftdirectiond(3) + force(3, sps)*tempd3
+   basecoefd(sps, 1) = 0.0_8
    END DO
    ELSE
-   machgridb = 0.0_8
-   gammainfb = 0.0_8
-   rhoinfdimb = 0.0_8
-   pinfdimb = 0.0_8
-   factmomentb = 0.0_8
-   factb = 0.0_8
+   machgridd = 0.0_8
+   gammainfd = 0.0_8
+   rhoinfdimd = 0.0_8
+   pinfdimd = 0.0_8
+   factmomentd = 0.0_8
+   factd = 0.0_8
    END IF
-   tempb = factmomentb/(lref*lengthref)
-   factb = factb + tempb
-   lengthrefb = lengthrefb - fact*tempb/lengthref
+   tempd = factmomentd/(lref*lengthref)
+   factd = factd + tempd
+   lengthrefd = lengthrefd - fact*tempd/lengthref
    temp1 = machcoef**2*scaledim
    temp0 = surfaceref*lref**2
    temp = temp0*gammainf*pinf
-   tempb0 = -(two*factb/(temp**2*temp1**2))
-   tempb1 = temp1*temp0*tempb0
-   gammainfb = gammainfb + pinf*tempb1
-   machcoefb = scaledim*temp*2*machcoef*tempb0
-   scaledimb = temp*machcoef**2*tempb0
-   pinfb = gammainf*tempb1 - pref*scaledimb/pinf**2
-   prefb = scaledimb/pinf
+   tempd0 = -(two*factd/(temp**2*temp1**2))
+   tempd1 = temp1*temp0*tempd0
+   gammainfd = gammainfd + pinf*tempd1
+   machcoefd = scaledim*temp*2*machcoef*tempd0
+   scaledimd = temp*machcoef**2*tempd0
+   pinfd = gammainf*tempd1 - pref*scaledimd/pinf**2
+   prefd = scaledimd/pinf
    END IF
    END SUBROUTINE COMPUTETSDERIVATIVES_B
