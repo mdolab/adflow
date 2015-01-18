@@ -8,7 +8,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       subroutine partitionAndReadGrid
+       subroutine partitionAndReadGrid(partitionOnly)
 !
 !      ******************************************************************
 !      *                                                                *
@@ -29,6 +29,8 @@
        use IOModule
        use partitionMod
        implicit none
+
+       logical, intent(in) :: partitionOnly
 !
 !      Local variables
 !
@@ -79,6 +81,11 @@
        ! time spectral modes.
 
        call setChangingOverset
+
+       ! If we are just doing a partition test, return
+       if (partitionOnly) then 
+          return
+       end if
 
        ! Determine the number of blocks to be stored on this processor
        ! and the relation to the original grid. Remember that blocks

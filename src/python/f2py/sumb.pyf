@@ -89,7 +89,8 @@ python module libsumb
        subroutine dummyreadparamfile ! in :sumb:../../inputParam/readParamFile.f90
        end subroutine dummyreadparamfile
        
-       subroutine partitionandreadgrid ! in :sumb:../../partitioning/partitionAndReadGrid.f90
+       subroutine partitionandreadgrid(partitiononly) ! in :sumb:../../partitioning/partitionAndReadGrid.f90
+         logical :: partitiononly
        end subroutine partitionandreadgrid
 
        subroutine preprocessing ! in :sumb:../../preprocessing/preprocessing.f90
@@ -1128,6 +1129,7 @@ python module libsumb
          integer(kind=inttype) :: nrkreset
          integer(kind=inttype) :: applypcsubspacesize
          logical :: freestreamresset
+         integer(kind=inttype) :: nksolvecount
        end module nksolvervars
       
        ! ############################################################################
