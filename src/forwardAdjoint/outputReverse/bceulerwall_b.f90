@@ -54,8 +54,8 @@
    REAL(kind=realtype) :: rxjb, ryjb, rzjb, rxkb, rykb, rzkb
    REAL(kind=realtype) :: dpj, dpk, ri, rj, rk, qj, qk, vn
    REAL(kind=realtype) :: dpjb, dpkb, rib, rjb, rkb, qjb, qkb, vnb
-   REAL(kind=realtype) :: ux, uy, uz
-   REAL(kind=realtype) :: uxb, uyb, uzb
+   REAL(kind=realtype) :: uux, uuy, uuz
+   REAL(kind=realtype) :: uuxb, uuyb, uuzb
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, nw) :: ww1, ww2
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, nw) :: ww1b, ww2b
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: pp1, pp2
@@ -328,27 +328,27 @@
    &             )*skya + bcdata(nn)%norm(j, k, 3)*skza
    ! Store the velocity components in ux, uy and uz and
    ! subtract the mesh velocity if the face is moving.
-   CALL PUSHREAL8(ux)
-   ux = ww2(j, k, ivx)
-   CALL PUSHREAL8(uy)
-   uy = ww2(j, k, ivy)
-   CALL PUSHREAL8(uz)
-   uz = ww2(j, k, ivz)
+   CALL PUSHREAL8(uux)
+   uux = ww2(j, k, ivx)
+   CALL PUSHREAL8(uuy)
+   uuy = ww2(j, k, ivy)
+   CALL PUSHREAL8(uuz)
+   uuz = ww2(j, k, ivz)
    IF (addgridvelocities) THEN
-   ux = ux - ss(j, k, 1)
-   uy = uy - ss(j, k, 2)
-   uz = uz - ss(j, k, 3)
+   uux = uux - ss(j, k, 1)
+   uuy = uuy - ss(j, k, 2)
+   uuz = uuz - ss(j, k, 3)
    END IF
    ! Compute the velocity components in j and
    ! k-direction.
-   qj = ux*sjxa + uy*sjya + uz*sjza
-   qk = ux*skxa + uy*skya + uz*skza
+   qj = uux*sjxa + uuy*sjya + uuz*sjza
+   qk = uux*skxa + uuy*skya + uuz*skza
    ! Compute the pressure gradient, which is stored
    ! in pp1. I'm not entirely sure whether this
    ! formulation is correct for moving meshes. It could
    ! be that an additional term is needed there.
-   pp1(j, k) = ((qj*(ux*rxj+uy*ryj+uz*rzj)+qk*(ux*rxk+uy*ryk+uz&
-   &             *rzk))*ww2(j, k, irho)-rj*dpj-rk*dpk)/ri
+   pp1(j, k) = ((qj*(uux*rxj+uuy*ryj+uuz*rzj)+qk*(uux*rxk+uuy*&
+   &             ryk+uuz*rzk))*ww2(j, k, irho)-rj*dpj-rk*dpk)/ri
    END DO
    CALL PUSHINTEGER4(j - 1)
    CALL PUSHINTEGER4(ad_from5)
@@ -516,8 +516,8 @@
    CALL POPINTEGER4(ad_from5)
    CALL POPINTEGER4(ad_to5)
    DO j=ad_to5,ad_from5,-1
-   qj = ux*sjxa + uy*sjya + uz*sjza
-   qk = ux*skxa + uy*skya + uz*skza
+   qj = uux*sjxa + uuy*sjya + uuz*sjza
+   qk = uux*skxa + uuy*skya + uuz*skza
    ryj = a1*(bcdata(nn)%norm(jp1, k, 2)-bcdata(nn)%norm(jm1, &
    &               k, 2))
    ryk = b1*(bcdata(nn)%norm(j, kp1, 2)-bcdata(nn)%norm(j, &
@@ -532,22 +532,22 @@
    &               km1, 1))
    tempb = pp1b(j, k)/ri
    tempb0 = ww2(j, k, irho)*tempb
-   temp0 = ux*rxj + uy*ryj + uz*rzj
+   temp0 = uux*rxj + uuy*ryj + uuz*rzj
    tempb1 = qj*tempb0
-   temp1 = ux*rxk + uy*ryk + uz*rzk
+   temp1 = uux*rxk + uuy*ryk + uuz*rzk
    tempb2 = qk*tempb0
    temp = qj*temp0 + qk*temp1
    qjb = temp0*tempb0
-   rxjb = ux*tempb1
-   ryjb = uy*tempb1
-   rzjb = uz*tempb1
+   rxjb = uux*tempb1
+   ryjb = uuy*tempb1
+   rzjb = uuz*tempb1
    qkb = temp1*tempb0
-   uxb = skxa*qkb + sjxa*qjb + rxk*tempb2 + rxj*tempb1
-   uyb = skya*qkb + sjya*qjb + ryk*tempb2 + ryj*tempb1
-   uzb = skza*qkb + sjza*qjb + rzk*tempb2 + rzj*tempb1
-   rxkb = ux*tempb2
-   rykb = uy*tempb2
-   rzkb = uz*tempb2
+   uuxb = skxa*qkb + sjxa*qjb + rxk*tempb2 + rxj*tempb1
+   uuyb = skya*qkb + sjya*qjb + ryk*tempb2 + ryj*tempb1
+   uuzb = skza*qkb + sjza*qjb + rzk*tempb2 + rzj*tempb1
+   rxkb = uux*tempb2
+   rykb = uuy*tempb2
+   rzkb = uuz*tempb2
    ww2b(j, k, irho) = ww2b(j, k, irho) + temp*tempb
    rjb = -(dpj*tempb)
    dpjb = -(rj*tempb)
@@ -555,18 +555,18 @@
    dpkb = -(rk*tempb)
    rib = -((temp*ww2(j, k, irho)-rj*dpj-rk*dpk)*tempb/ri)
    pp1b(j, k) = 0.0_8
-   skxab = ux*qkb
-   skyab = uy*qkb
-   skzab = uz*qkb
-   sjxab = ux*qjb
-   sjyab = uy*qjb
-   sjzab = uz*qjb
-   CALL POPREAL8(uz)
-   ww2b(j, k, ivz) = ww2b(j, k, ivz) + uzb
-   CALL POPREAL8(uy)
-   ww2b(j, k, ivy) = ww2b(j, k, ivy) + uyb
-   CALL POPREAL8(ux)
-   ww2b(j, k, ivx) = ww2b(j, k, ivx) + uxb
+   skxab = uux*qkb
+   skyab = uuy*qkb
+   skzab = uuz*qkb
+   sjxab = uux*qjb
+   sjyab = uuy*qjb
+   sjzab = uuz*qjb
+   CALL POPREAL8(uuz)
+   ww2b(j, k, ivz) = ww2b(j, k, ivz) + uuzb
+   CALL POPREAL8(uuy)
+   ww2b(j, k, ivy) = ww2b(j, k, ivy) + uuyb
+   CALL POPREAL8(uux)
+   ww2b(j, k, ivx) = ww2b(j, k, ivx) + uuxb
    CALL POPREAL8(rk)
    bcdatab(nn)%norm(j, k, 1) = bcdatab(nn)%norm(j, k, 1) + &
    &               skxa*rkb

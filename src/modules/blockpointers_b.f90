@@ -32,6 +32,22 @@
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: wb
    REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: woldb
 
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: uxb
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: uyb
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: uzb
+   
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: vxb
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: vyb
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: vzb
+   
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: wxb
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: wyb
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: wzb
+   
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: qxb
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: qyb
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: qzb
+
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: pb, gammab
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: rlvb, revb
 

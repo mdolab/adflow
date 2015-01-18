@@ -39,7 +39,7 @@
        integer(kind=intType) :: i, j, k, nn, mm, po, ip, jp, kp
        integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
 
-       real(kind=realType) :: vx, vy, vz, dummyK, pres, rhoInv
+       real(kind=realType) :: vvx, vvy, vvz, dummyK, pres, rhoInv
 !
 !      Function definitions.
 !
@@ -136,11 +136,11 @@
                do i=iBeg,iEnd
                  ip = i+po
                  rhoInv = one/w(ip,jp,kp,irho)
-                 vx     = w(ip,jp,kp,imx)*rhoInv
-                 vy     = w(ip,jp,kp,imy)*rhoInv
-                 vz     = w(ip,jp,kp,imz)*rhoInv
+                 vvx     = w(ip,jp,kp,imx)*rhoInv
+                 vvy     = w(ip,jp,kp,imy)*rhoInv
+                 vvz     = w(ip,jp,kp,imz)*rhoInv
                  pres   = buffer(i,j,k)*pScale
-                 call etotArray(w(ip,jp,kp,irho), vx, vy, vz, pres,  &
+                 call etotArray(w(ip,jp,kp,irho), vvx, vvy, vvz, pres,  &
                                 w(ip,jp,kp,itu1), w(ip,jp,kp,irhoE), &
                                 kPresent, 1_intType)
                enddo
@@ -158,11 +158,11 @@
                do i=iBeg,iEnd
                  ip = i+po
                  rhoInv = one/w(ip,jp,kp,irho)
-                 vx     = w(ip,jp,kp,imx)*rhoInv
-                 vy     = w(ip,jp,kp,imy)*rhoInv
-                 vz     = w(ip,jp,kp,imz)*rhoInv
+                 vvx     = w(ip,jp,kp,imx)*rhoInv
+                 vvy     = w(ip,jp,kp,imy)*rhoInv
+                 vvz     = w(ip,jp,kp,imz)*rhoInv
                  pres   = buffer(i,j,k)*pScale
-                 call etotArray(w(ip,jp,kp,irho), vx, vy, vz, pres, &
+                 call etotArray(w(ip,jp,kp,irho), vvx, vvy, vvz, pres, &
                                 dummyK, w(ip,jp,kp,irhoE),          &
                                 kPresent, 1_intType)
                enddo

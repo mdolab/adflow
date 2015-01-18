@@ -14,10 +14,12 @@
    !                force beta cavitation sepsensor
    !   RW status of diff variables: *xsurf:out *(flowdoms.x):in-out
    !                *(flowdoms.vol):(loc) *(flowdoms.w):in-out *(flowdoms.dw):in-out
-   !                *rev:(loc) *bvtj1:(loc) *bvtj2:(loc) *p:(loc)
-   !                *gamma:(loc) *rlv:(loc) *bvtk1:(loc) *bvtk2:(loc)
-   !                *d2wall:(loc) *si:(loc) *sj:(loc) *sk:(loc) *bvti1:(loc)
-   !                *bvti2:(loc) *fw:(loc) *(*viscsubface.tau):(loc)
+   !                *rev:(loc) *bvtj1:(loc) *bvtj2:(loc) *wx:(loc)
+   !                *wy:(loc) *wz:(loc) *p:(loc) *gamma:(loc) *rlv:(loc)
+   !                *qx:(loc) *qy:(loc) *qz:(loc) *bvtk1:(loc) *bvtk2:(loc)
+   !                *ux:(loc) *uy:(loc) *uz:(loc) *d2wall:(loc) *si:(loc)
+   !                *sj:(loc) *sk:(loc) *bvti1:(loc) *bvti2:(loc)
+   !                *vx:(loc) *vy:(loc) *vz:(loc) *fw:(loc) *(*viscsubface.tau):(loc)
    !                *(*bcdata.norm):(loc) *(*bcdata.fp):in-out *(*bcdata.fv):in-out
    !                *(*bcdata.m):in-out *(*bcdata.oarea):in-out *(*bcdata.sepsensor):in-out
    !                *(*bcdata.cavitation):in-out *radi:(loc) *radj:(loc)
@@ -32,12 +34,13 @@
    !                force:in-zero beta:out cavitation:in-zero sepsensor:in-zero
    !   Plus diff mem management of: xsurf:in flowdoms.x:in flowdoms.vol:in
    !                flowdoms.w:in flowdoms.dw:in rev:in bvtj1:in bvtj2:in
-   !                p:in gamma:in rlv:in bvtk1:in bvtk2:in d2wall:in
-   !                si:in sj:in sk:in bvti1:in bvti2:in fw:in viscsubface:in
-   !                *viscsubface.tau:in bcdata:in *bcdata.norm:in
-   !                *bcdata.fp:in *bcdata.fv:in *bcdata.m:in *bcdata.oarea:in
-   !                *bcdata.sepsensor:in *bcdata.cavitation:in radi:in
-   !                radj:in radk:in
+   !                wx:in wy:in wz:in p:in gamma:in rlv:in qx:in qy:in
+   !                qz:in bvtk1:in bvtk2:in ux:in uy:in uz:in d2wall:in
+   !                si:in sj:in sk:in bvti1:in bvti2:in vx:in vy:in
+   !                vz:in fw:in viscsubface:in *viscsubface.tau:in
+   !                bcdata:in *bcdata.norm:in *bcdata.fp:in *bcdata.fv:in
+   !                *bcdata.m:in *bcdata.oarea:in *bcdata.sepsensor:in
+   !                *bcdata.cavitation:in radi:in radj:in radk:in
    ! This is a super-combined function that combines the original
    ! functionality of: 
    ! Pressure Computation

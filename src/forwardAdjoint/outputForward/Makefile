@@ -35,7 +35,8 @@ include ${SUMB_RULES_FILE}
 #      ******************************************************************
 
 vpath %.o $(SUMB_OBJDIR)
-FF90_OBJECTS =  viscousflux_d.o \
+FF90_OBJECTS =  allnodalgradients_d.o\
+		viscousflux_d.o \
 		viscousfluxapprox_d.o\
 	        sa_block_d.o\
 		sasolve_d.o\
@@ -59,7 +60,6 @@ FF90_OBJECTS =  viscousflux_d.o \
 		bcturbwall_d.o\
 		dim_d.o\
 		inviscidupwindflux_d.o  \
-		utauwf_d.o \
 		bcnswalladiabatic_d.o \
 		block_res_d.o  \
 		residual_block_d.o \

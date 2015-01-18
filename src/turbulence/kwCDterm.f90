@@ -26,7 +26,7 @@
 !      Local variables.
 !
        integer(kind=intType) :: i, j, k
-       real(kind=realType)   :: kx, ky, kz, wx, wy, wz
+       real(kind=realType)   :: kx, ky, kz, wwx, wwy, wwz
        real(kind=realType)   :: lnwip1, lnwim1, lnwjp1, lnwjm1
        real(kind=realType)   :: lnwkp1, lnwkm1
 !
@@ -72,20 +72,20 @@
 
              ! Compute the scaled gradient of ln omega.
 
-             wx = lnwip1*si(i,j,k,1) - lnwim1*si(i-1,j,k,1) &
+             wwx = lnwip1*si(i,j,k,1) - lnwim1*si(i-1,j,k,1) &
                 + lnwjp1*sj(i,j,k,1) - lnwjm1*sj(i,j-1,k,1) &
                 + lnwkp1*sk(i,j,k,1) - lnwkm1*sk(i,j,k-1,1)
-             wy = lnwip1*si(i,j,k,2) - lnwim1*si(i-1,j,k,2) &
+             wwy = lnwip1*si(i,j,k,2) - lnwim1*si(i-1,j,k,2) &
                 + lnwjp1*sj(i,j,k,2) - lnwjm1*sj(i,j-1,k,2) &
                 + lnwkp1*sk(i,j,k,2) - lnwkm1*sk(i,j,k-1,2)
-             wz = lnwip1*si(i,j,k,3) - lnwim1*si(i-1,j,k,3) &
+             wwz = lnwip1*si(i,j,k,3) - lnwim1*si(i-1,j,k,3) &
                 + lnwjp1*sj(i,j,k,3) - lnwjm1*sj(i,j-1,k,3) &
                 + lnwkp1*sk(i,j,k,3) - lnwkm1*sk(i,j,k-1,3)
 
              ! Compute the dot product grad k grad ln omega.
              ! Multiply it by the correct scaling factor and store it.
 
-             kwCD(i,j,k) = fourth*(kx*wx + ky*wy + kz*wz)/(vol(i,j,k)**2)
+             kwCD(i,j,k) = fourth*(kx*wwx + ky*wwy + kz*wwz)/(vol(i,j,k)**2)
 
            enddo
          enddo

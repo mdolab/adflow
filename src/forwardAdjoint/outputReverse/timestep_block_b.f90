@@ -55,8 +55,8 @@
    INTEGER(kind=inttype) :: i, j, k
    REAL(kind=realtype) :: plim, rlim, clim2
    REAL(kind=realtype) :: clim2b
-   REAL(kind=realtype) :: ux, uy, uz, cc2, qs, sx, sy, sz, rmu
-   REAL(kind=realtype) :: uxb, uyb, uzb, cc2b, qsb, sxb, syb, szb
+   REAL(kind=realtype) :: uux, uuy, uuz, cc2, qs, sx, sy, sz, rmu
+   REAL(kind=realtype) :: uuxb, uuyb, uuzb, cc2b, qsb, sxb, syb, szb
    REAL(kind=realtype) :: ri, rj, rk, rij, rjk, rki
    REAL(kind=realtype) :: rib, rjb, rkb, rijb, rjkb, rkib
    REAL(kind=realtype) :: vsi, vsj, vsk, rfl, dpi, dpj, dpk
@@ -130,9 +130,9 @@
    DO j=1,je
    DO i=1,ie
    ! Compute the velocities and speed of sound squared.
-   ux = w(i, j, k, ivx)
-   uy = w(i, j, k, ivy)
-   uz = w(i, j, k, ivz)
+   uux = w(i, j, k, ivx)
+   uuy = w(i, j, k, ivy)
+   uuz = w(i, j, k, ivz)
    CALL PUSHREAL8(cc2)
    cc2 = gamma(i, j, k)*p(i, j, k)/w(i, j, k, irho)
    IF (cc2 .LT. clim2) THEN
@@ -152,7 +152,7 @@
    sx = si(i-1, j, k, 1) + si(i, j, k, 1)
    sy = si(i-1, j, k, 2) + si(i, j, k, 2)
    sz = si(i-1, j, k, 3) + si(i, j, k, 3)
-   qs = ux*sx + uy*sy + uz*sz - sface
+   qs = uux*sx + uuy*sy + uuz*sz - sface
    IF (qs .GE. 0.) THEN
    abs0 = qs
    CALL PUSHCONTROL1B(0)
@@ -168,7 +168,7 @@
    sx = sj(i, j-1, k, 1) + sj(i, j, k, 1)
    sy = sj(i, j-1, k, 2) + sj(i, j, k, 2)
    sz = sj(i, j-1, k, 3) + sj(i, j, k, 3)
-   qs = ux*sx + uy*sy + uz*sz - sface
+   qs = uux*sx + uuy*sy + uuz*sz - sface
    IF (qs .GE. 0.) THEN
    abs1 = qs
    CALL PUSHCONTROL1B(0)
@@ -184,7 +184,7 @@
    sx = sk(i, j, k-1, 1) + sk(i, j, k, 1)
    sy = sk(i, j, k-1, 2) + sk(i, j, k, 2)
    sz = sk(i, j, k-1, 3) + sk(i, j, k, 3)
-   qs = ux*sx + uy*sy + uz*sz - sface
+   qs = uux*sx + uuy*sy + uuz*sz - sface
    IF (qs .GE. 0.) THEN
    abs2 = qs
    CALL PUSHCONTROL1B(0)
@@ -361,15 +361,15 @@
    ELSE
    qsb = -abs2b
    END IF
-   ux = w(i, j, k, ivx)
-   uy = w(i, j, k, ivy)
-   uz = w(i, j, k, ivz)
-   uxb = sx*qsb
-   sxb = sxb + ux*qsb
-   uyb = sy*qsb
-   syb = syb + uy*qsb
-   uzb = sz*qsb
-   szb = szb + uz*qsb
+   uux = w(i, j, k, ivx)
+   uuy = w(i, j, k, ivy)
+   uuz = w(i, j, k, ivz)
+   uuxb = sx*qsb
+   sxb = sxb + uux*qsb
+   uuyb = sy*qsb
+   syb = syb + uuy*qsb
+   uuzb = sz*qsb
+   szb = szb + uuz*qsb
    skb(i, j, k-1, 3) = skb(i, j, k-1, 3) + szb
    skb(i, j, k, 3) = skb(i, j, k, 3) + szb
    skb(i, j, k-1, 2) = skb(i, j, k-1, 2) + syb
@@ -398,12 +398,12 @@
    ELSE
    qsb = -abs1b
    END IF
-   uxb = uxb + sx*qsb
-   sxb = sxb + ux*qsb
-   uyb = uyb + sy*qsb
-   syb = syb + uy*qsb
-   uzb = uzb + sz*qsb
-   szb = szb + uz*qsb
+   uuxb = uuxb + sx*qsb
+   sxb = sxb + uux*qsb
+   uuyb = uuyb + sy*qsb
+   syb = syb + uuy*qsb
+   uuzb = uuzb + sz*qsb
+   szb = szb + uuz*qsb
    sjb(i, j-1, k, 3) = sjb(i, j-1, k, 3) + szb
    sjb(i, j, k, 3) = sjb(i, j, k, 3) + szb
    sjb(i, j-1, k, 2) = sjb(i, j-1, k, 2) + syb
@@ -432,12 +432,12 @@
    ELSE
    qsb = -abs0b
    END IF
-   uxb = uxb + sx*qsb
-   sxb = sxb + ux*qsb
-   uyb = uyb + sy*qsb
-   syb = syb + uy*qsb
-   uzb = uzb + sz*qsb
-   szb = szb + uz*qsb
+   uuxb = uuxb + sx*qsb
+   sxb = sxb + uux*qsb
+   uuyb = uuyb + sy*qsb
+   syb = syb + uuy*qsb
+   uuzb = uuzb + sz*qsb
+   szb = szb + uuz*qsb
    sib(i-1, j, k, 3) = sib(i-1, j, k, 3) + szb
    sib(i, j, k, 3) = sib(i, j, k, 3) + szb
    sib(i-1, j, k, 2) = sib(i-1, j, k, 2) + syb
@@ -456,9 +456,9 @@
    pb(i, j, k) = pb(i, j, k) + gamma(i, j, k)*tempb0
    wb(i, j, k, irho) = wb(i, j, k, irho) - gamma(i, j, k)*p(i&
    &               , j, k)*tempb0/temp
-   wb(i, j, k, ivz) = wb(i, j, k, ivz) + uzb
-   wb(i, j, k, ivy) = wb(i, j, k, ivy) + uyb
-   wb(i, j, k, ivx) = wb(i, j, k, ivx) + uxb
+   wb(i, j, k, ivz) = wb(i, j, k, ivz) + uuzb
+   wb(i, j, k, ivy) = wb(i, j, k, ivy) + uuyb
+   wb(i, j, k, ivx) = wb(i, j, k, ivx) + uuxb
    END DO
    END DO
    END DO
