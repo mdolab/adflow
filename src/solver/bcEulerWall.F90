@@ -41,7 +41,7 @@
        real(kind=realType) :: skxa, skya, skza, a1, b1
        real(kind=realType) :: rxj, ryj, rzj, rxk, ryk, rzk
        real(kind=realType) :: dpj, dpk, ri, rj, rk, qj, qk, vn
-       real(kind=realType) :: ux, uy, uz
+       real(kind=realType) :: uux, uuy, uuz
 
 #ifndef TAPENADE_REVERSE
        real(kind=realType), dimension(:,:,:), pointer :: ww1, ww2
@@ -355,29 +355,29 @@
                    ! Store the velocity components in ux, uy and uz and
                    ! subtract the mesh velocity if the face is moving.
 
-                   ux = ww2(j,k,ivx)
-                   uy = ww2(j,k,ivy)
-                   uz = ww2(j,k,ivz)
+                   uux = ww2(j,k,ivx)
+                   uuy = ww2(j,k,ivy)
+                   uuz = ww2(j,k,ivz)
 
                    if( addGridVelocities ) then
-                     ux = ux - ss(j,k,1)
-                     uy = uy - ss(j,k,2)
-                     uz = uz - ss(j,k,3)
+                     uux = uux - ss(j,k,1)
+                     uuy = uuy - ss(j,k,2)
+                     uuz = uuz - ss(j,k,3)
                    endif
 
                    ! Compute the velocity components in j and
                    ! k-direction.
 
-                   qj = ux*sjxa + uy*sjya + uz*sjza
-                   qk = ux*skxa + uy*skya + uz*skza
+                   qj = uux*sjxa + uuy*sjya + uuz*sjza
+                   qk = uux*skxa + uuy*skya + uuz*skza
 
                    ! Compute the pressure gradient, which is stored
                    ! in pp1. I'm not entirely sure whether this
                    ! formulation is correct for moving meshes. It could
                    ! be that an additional term is needed there.
 
-                   pp1(j,k) = ((qj*(ux*rxj + uy*ryj + uz*rzj)      &
-                            +   qk*(ux*rxk + uy*ryk + uz*rzk))     &
+                   pp1(j,k) = ((qj*(uux*rxj + uuy*ryj + uuz*rzj)      &
+                            +   qk*(uux*rxk + uuy*ryk + uuz*rzk))     &
                             *  ww2(j,k,irho) - rj*dpj - rk*dpk)/ri
                  enddo
                enddo

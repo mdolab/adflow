@@ -54,8 +54,8 @@
    REAL(kind=realtype) :: rxjd, ryjd, rzjd, rxkd, rykd, rzkd
    REAL(kind=realtype) :: dpj, dpk, ri, rj, rk, qj, qk, vn
    REAL(kind=realtype) :: dpjd, dpkd, rid, rjd, rkd, qjd, qkd, vnd
-   REAL(kind=realtype) :: ux, uy, uz
-   REAL(kind=realtype) :: uxd, uyd, uzd
+   REAL(kind=realtype) :: uux, uuy, uuz
+   REAL(kind=realtype) :: uuxd, uuyd, uuzd
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1d, ww2d
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1, pp2
@@ -388,41 +388,42 @@
    &             )*skya + bcdata(nn)%norm(j, k, 3)*skza
    ! Store the velocity components in ux, uy and uz and
    ! subtract the mesh velocity if the face is moving.
-   uxd = ww2d(j, k, ivx)
-   ux = ww2(j, k, ivx)
-   uyd = ww2d(j, k, ivy)
-   uy = ww2(j, k, ivy)
-   uzd = ww2d(j, k, ivz)
-   uz = ww2(j, k, ivz)
+   uuxd = ww2d(j, k, ivx)
+   uux = ww2(j, k, ivx)
+   uuyd = ww2d(j, k, ivy)
+   uuy = ww2(j, k, ivy)
+   uuzd = ww2d(j, k, ivz)
+   uuz = ww2(j, k, ivz)
    IF (addgridvelocities) THEN
-   uxd = uxd - ssd(j, k, 1)
-   ux = ux - ss(j, k, 1)
-   uyd = uyd - ssd(j, k, 2)
-   uy = uy - ss(j, k, 2)
-   uzd = uzd - ssd(j, k, 3)
-   uz = uz - ss(j, k, 3)
+   uuxd = uuxd - ssd(j, k, 1)
+   uux = uux - ss(j, k, 1)
+   uuyd = uuyd - ssd(j, k, 2)
+   uuy = uuy - ss(j, k, 2)
+   uuzd = uuzd - ssd(j, k, 3)
+   uuz = uuz - ss(j, k, 3)
    END IF
    ! Compute the velocity components in j and
    ! k-direction.
-   qjd = uxd*sjxa + ux*sjxad + uyd*sjya + uy*sjyad + uzd*sjza +&
-   &             uz*sjzad
-   qj = ux*sjxa + uy*sjya + uz*sjza
-   qkd = uxd*skxa + ux*skxad + uyd*skya + uy*skyad + uzd*skza +&
-   &             uz*skzad
-   qk = ux*skxa + uy*skya + uz*skza
+   qjd = uuxd*sjxa + uux*sjxad + uuyd*sjya + uuy*sjyad + uuzd*&
+   &             sjza + uuz*sjzad
+   qj = uux*sjxa + uuy*sjya + uuz*sjza
+   qkd = uuxd*skxa + uux*skxad + uuyd*skya + uuy*skyad + uuzd*&
+   &             skza + uuz*skzad
+   qk = uux*skxa + uuy*skya + uuz*skza
    ! Compute the pressure gradient, which is stored
    ! in pp1. I'm not entirely sure whether this
    ! formulation is correct for moving meshes. It could
    ! be that an additional term is needed there.
-   pp1d(j, k) = (((qjd*(ux*rxj+uy*ryj+uz*rzj)+qj*(uxd*rxj+ux*&
-   &             rxjd+uyd*ryj+uy*ryjd+uzd*rzj+uz*rzjd)+qkd*(ux*rxk+uy*ryk+&
-   &             uz*rzk)+qk*(uxd*rxk+ux*rxkd+uyd*ryk+uy*rykd+uzd*rzk+uz*&
-   &             rzkd))*ww2(j, k, irho)+(qj*(ux*rxj+uy*ryj+uz*rzj)+qk*(ux*&
-   &             rxk+uy*ryk+uz*rzk))*ww2d(j, k, irho)-rjd*dpj-rj*dpjd-rkd*&
-   &             dpk-rk*dpkd)*ri-((qj*(ux*rxj+uy*ryj+uz*rzj)+qk*(ux*rxk+uy*&
-   &             ryk+uz*rzk))*ww2(j, k, irho)-rj*dpj-rk*dpk)*rid)/ri**2
-   pp1(j, k) = ((qj*(ux*rxj+uy*ryj+uz*rzj)+qk*(ux*rxk+uy*ryk+uz&
-   &             *rzk))*ww2(j, k, irho)-rj*dpj-rk*dpk)/ri
+   pp1d(j, k) = (((qjd*(uux*rxj+uuy*ryj+uuz*rzj)+qj*(uuxd*rxj+&
+   &             uux*rxjd+uuyd*ryj+uuy*ryjd+uuzd*rzj+uuz*rzjd)+qkd*(uux*rxk&
+   &             +uuy*ryk+uuz*rzk)+qk*(uuxd*rxk+uux*rxkd+uuyd*ryk+uuy*rykd+&
+   &             uuzd*rzk+uuz*rzkd))*ww2(j, k, irho)+(qj*(uux*rxj+uuy*ryj+&
+   &             uuz*rzj)+qk*(uux*rxk+uuy*ryk+uuz*rzk))*ww2d(j, k, irho)-&
+   &             rjd*dpj-rj*dpjd-rkd*dpk-rk*dpkd)*ri-((qj*(uux*rxj+uuy*ryj+&
+   &             uuz*rzj)+qk*(uux*rxk+uuy*ryk+uuz*rzk))*ww2(j, k, irho)-rj*&
+   &             dpj-rk*dpk)*rid)/ri**2
+   pp1(j, k) = ((qj*(uux*rxj+uuy*ryj+uuz*rzj)+qk*(uux*rxk+uuy*&
+   &             ryk+uuz*rzk))*ww2(j, k, irho)-rj*dpj-rk*dpk)/ri
    END DO
    END DO
    CALL RESETSS(nn, ssi, ssj, ssk, ss)

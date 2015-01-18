@@ -38,13 +38,35 @@
    !      Local variables.
    !
    INTEGER(kind=inttype) :: i, j, k, ind
+   INTEGER(kind=inttype) :: istart, iend, isize, ii
+   INTEGER(kind=inttype) :: jstart, jend, jsize
+   INTEGER(kind=inttype) :: kstart, kend, ksize
    REAL(kind=realtype) :: qsp, qsm, rqsp, rqsm, porvel, porflux
    REAL(kind=realtype) :: qspb, qsmb, rqspb, rqsmb
    REAL(kind=realtype) :: pa, fs, sface, vnp, vnm
    REAL(kind=realtype) :: pab, fsb, vnpb, vnmb
-   REAL(kind=realtype) :: wx, wy, wz, rvol
-   REAL(kind=realtype) :: wxb, wyb, wzb, rvolb
+   REAL(kind=realtype) :: wwx, wwy, wwz, rvol
+   REAL(kind=realtype) :: wwxb, wwyb, wwzb, rvolb
+   INTRINSIC MOD
    INTEGER :: branch
+   INTEGER :: ad_from
+   INTEGER :: ad_to
+   INTEGER :: ad_from0
+   INTEGER :: ad_to0
+   INTEGER :: ad_from1
+   INTEGER :: ad_to1
+   INTEGER :: ad_from2
+   INTEGER :: ad_to2
+   INTEGER :: ad_from3
+   INTEGER :: ad_to3
+   INTEGER :: ad_from4
+   INTEGER :: ad_to4
+   INTEGER :: ad_from5
+   INTEGER :: ad_to5
+   INTEGER :: ad_from6
+   INTEGER :: ad_to6
+   INTEGER :: ad_from7
+   INTEGER :: ad_to7
    REAL(kind=realtype) :: temp3
    REAL(kind=realtype) :: temp2
    REAL(kind=realtype) :: temp1
@@ -65,9 +87,18 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   DO k=2,kl
-   DO j=2,jl
-   DO i=1,il
+   istart = 1
+   iend = il
+   jstart = 2
+   jend = jl
+   kstart = 2
+   kend = kl
+   ad_from1 = kstart
+   DO k=ad_from1,kend
+   ad_from0 = jstart
+   DO j=ad_from0,jend
+   ad_from = istart
+   DO i=ad_from,iend
    ! Set the dot product of the grid velocity and the
    ! normal in i-direction for a moving face.
    IF (addgridvelocities) sface = sfacei(i, j, k)
@@ -115,8 +146,14 @@
    ! i,j,k and i+1,j,k. Store the density flux in the
    ! mass flow of the appropriate sliding mesh interface.
    END DO
+   CALL PUSHINTEGER4(i - 1)
+   CALL PUSHINTEGER4(ad_from)
    END DO
+   CALL PUSHINTEGER4(j - 1)
+   CALL PUSHINTEGER4(ad_from0)
    END DO
+   CALL PUSHINTEGER4(k - 1)
+   CALL PUSHINTEGER4(ad_from1)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -124,9 +161,18 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   DO k=2,kl
-   DO j=1,jl
-   DO i=2,il
+   istart = 2
+   iend = il
+   jstart = 1
+   jend = jl
+   kstart = 2
+   kend = kl
+   ad_from4 = kstart
+   DO k=ad_from4,kend
+   ad_from3 = jstart
+   DO j=ad_from3,jend
+   ad_from2 = istart
+   DO i=ad_from2,iend
    ! Set the dot product of the grid velocity and the
    ! normal in j-direction for a moving face.
    IF (addgridvelocities) sface = sfacej(i, j, k)
@@ -174,8 +220,14 @@
    ! i,j,k and i,j+1,k. Store the density flux in the
    ! mass flow of the appropriate sliding mesh interface.
    END DO
+   CALL PUSHINTEGER4(i - 1)
+   CALL PUSHINTEGER4(ad_from2)
    END DO
+   CALL PUSHINTEGER4(j - 1)
+   CALL PUSHINTEGER4(ad_from3)
    END DO
+   CALL PUSHINTEGER4(k - 1)
+   CALL PUSHINTEGER4(ad_from4)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -183,9 +235,18 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   DO k=1,kl
-   DO j=2,jl
-   DO i=2,il
+   istart = 2
+   iend = il
+   jstart = 2
+   jend = jl
+   kstart = 1
+   kend = kl
+   ad_from7 = kstart
+   DO k=ad_from7,kend
+   ad_from6 = jstart
+   DO j=ad_from6,jend
+   ad_from5 = istart
+   DO i=ad_from5,iend
    ! Set the dot product of the grid velocity and the
    ! normal in k-direction for a moving face.
    IF (addgridvelocities) sface = sfacek(i, j, k)
@@ -233,8 +294,14 @@
    ! i,j,k and i,j,k+1. Store the density flux in the
    ! mass flow of the appropriate sliding mesh interface.
    END DO
+   CALL PUSHINTEGER4(i - 1)
+   CALL PUSHINTEGER4(ad_from5)
    END DO
+   CALL PUSHINTEGER4(j - 1)
+   CALL PUSHINTEGER4(ad_from6)
    END DO
+   CALL PUSHINTEGER4(k - 1)
+   CALL PUSHINTEGER4(ad_from7)
    ! Add the rotational source terms for a moving block in a
    ! steady state computation. These source terms account for the
    ! centrifugal acceleration and the coriolis term. However, as
@@ -243,50 +310,66 @@
    ! normally find in a text book.
    IF (blockismoving .AND. equationmode .EQ. steady) THEN
    ! Compute the three nonDimensional angular velocities.
-   wx = timeref*cgnsdoms(nbkglobal)%rotrate(1)
-   wy = timeref*cgnsdoms(nbkglobal)%rotrate(2)
-   wz = timeref*cgnsdoms(nbkglobal)%rotrate(3)
-   wxb = 0.0_8
-   wyb = 0.0_8
-   wzb = 0.0_8
-   DO k=kl,2,-1
-   DO j=jl,2,-1
-   DO i=il,2,-1
+   wwx = timeref*cgnsdoms(nbkglobal)%rotrate(1)
+   wwy = timeref*cgnsdoms(nbkglobal)%rotrate(2)
+   wwz = timeref*cgnsdoms(nbkglobal)%rotrate(3)
+   ! Loop over the internal cells of this block to compute the
+   ! rotational terms for the momentum equations.
+   istart = 2
+   iend = il
+   isize = iend - istart + 1
+   jstart = 2
+   jend = jl
+   jsize = jend - jstart + 1
+   kstart = 2
+   kend = kl
+   ksize = kend - kstart + 1
+   wwxb = 0.0_8
+   wwyb = 0.0_8
+   wwzb = 0.0_8
+   DO ii=0,isize*jsize*ksize-1
+   i = MOD(ii, isize) + istart
+   j = MOD(ii/isize, jsize) + jstart
+   k = ii/(isize*jsize) + kstart
    rvol = w(i, j, k, irho)*vol(i, j, k)
    temp4 = w(i, j, k, ivx)
    temp3 = w(i, j, k, ivy)
    tempb2 = rvol*dwb(i, j, k, imz)
-   rvolb = (wx*temp3-wy*temp4)*dwb(i, j, k, imz)
-   wb(i, j, k, ivy) = wb(i, j, k, ivy) + wx*tempb2
-   wb(i, j, k, ivx) = wb(i, j, k, ivx) - wy*tempb2
+   rvolb = (wwx*temp3-wwy*temp4)*dwb(i, j, k, imz)
+   wb(i, j, k, ivy) = wb(i, j, k, ivy) + wwx*tempb2
+   wb(i, j, k, ivx) = wb(i, j, k, ivx) - wwy*tempb2
    temp2 = w(i, j, k, ivz)
    temp1 = w(i, j, k, ivx)
    tempb3 = rvol*dwb(i, j, k, imy)
-   wxb = wxb + temp3*tempb2 - temp2*tempb3
-   rvolb = rvolb + (wz*temp1-wx*temp2)*dwb(i, j, k, imy)
-   wb(i, j, k, ivx) = wb(i, j, k, ivx) + wz*tempb3
-   wb(i, j, k, ivz) = wb(i, j, k, ivz) - wx*tempb3
+   wwxb = wwxb + temp3*tempb2 - temp2*tempb3
+   rvolb = rvolb + (wwz*temp1-wwx*temp2)*dwb(i, j, k, imy)
+   wb(i, j, k, ivx) = wb(i, j, k, ivx) + wwz*tempb3
+   wb(i, j, k, ivz) = wb(i, j, k, ivz) - wwx*tempb3
    temp0 = w(i, j, k, ivy)
    temp = w(i, j, k, ivz)
    tempb4 = rvol*dwb(i, j, k, imx)
-   wyb = wyb + temp*tempb4 - temp4*tempb2
-   wzb = wzb + temp1*tempb3 - temp0*tempb4
-   rvolb = rvolb + (wy*temp-wz*temp0)*dwb(i, j, k, imx)
-   wb(i, j, k, ivz) = wb(i, j, k, ivz) + wy*tempb4
-   wb(i, j, k, ivy) = wb(i, j, k, ivy) - wz*tempb4
+   wwyb = wwyb + temp*tempb4 - temp4*tempb2
+   wwzb = wwzb + temp1*tempb3 - temp0*tempb4
+   rvolb = rvolb + (wwy*temp-wwz*temp0)*dwb(i, j, k, imx)
+   wb(i, j, k, ivz) = wb(i, j, k, ivz) + wwy*tempb4
+   wb(i, j, k, ivy) = wb(i, j, k, ivy) - wwz*tempb4
    wb(i, j, k, irho) = wb(i, j, k, irho) + vol(i, j, k)*rvolb
    volb(i, j, k) = volb(i, j, k) + w(i, j, k, irho)*rvolb
    END DO
-   END DO
-   END DO
-   timerefb = cgnsdoms(nbkglobal)%rotrate(2)*wyb + cgnsdoms(nbkglobal)%&
-   &     rotrate(1)*wxb + cgnsdoms(nbkglobal)%rotrate(3)*wzb
+   timerefb = cgnsdoms(nbkglobal)%rotrate(2)*wwyb + cgnsdoms(nbkglobal)&
+   &     %rotrate(1)*wwxb + cgnsdoms(nbkglobal)%rotrate(3)*wwzb
    ELSE
    timerefb = 0.0_8
    END IF
-   DO k=kl,1,-1
-   DO j=jl,2,-1
-   DO i=il,2,-1
+   CALL POPINTEGER4(ad_from7)
+   CALL POPINTEGER4(ad_to7)
+   DO k=ad_to7,ad_from7,-1
+   CALL POPINTEGER4(ad_from6)
+   CALL POPINTEGER4(ad_to6)
+   DO j=ad_to6,ad_from6,-1
+   CALL POPINTEGER4(ad_from5)
+   CALL POPINTEGER4(ad_to5)
+   DO i=ad_to5,ad_from5,-1
    fsb = dwb(i, j, k, irhoe) - dwb(i, j, k+1, irhoe)
    tempb1 = porflux*fsb
    qspb = w(i, j, k+1, irhoe)*fsb
@@ -356,9 +439,15 @@
    END DO
    END DO
    END DO
-   DO k=kl,2,-1
-   DO j=jl,1,-1
-   DO i=il,2,-1
+   CALL POPINTEGER4(ad_from4)
+   CALL POPINTEGER4(ad_to4)
+   DO k=ad_to4,ad_from4,-1
+   CALL POPINTEGER4(ad_from3)
+   CALL POPINTEGER4(ad_to3)
+   DO j=ad_to3,ad_from3,-1
+   CALL POPINTEGER4(ad_from2)
+   CALL POPINTEGER4(ad_to2)
+   DO i=ad_to2,ad_from2,-1
    fsb = dwb(i, j, k, irhoe) - dwb(i, j+1, k, irhoe)
    tempb0 = porflux*fsb
    qspb = w(i, j+1, k, irhoe)*fsb
@@ -428,9 +517,15 @@
    END DO
    END DO
    END DO
-   DO k=kl,2,-1
-   DO j=jl,2,-1
-   DO i=il,1,-1
+   CALL POPINTEGER4(ad_from1)
+   CALL POPINTEGER4(ad_to1)
+   DO k=ad_to1,ad_from1,-1
+   CALL POPINTEGER4(ad_from0)
+   CALL POPINTEGER4(ad_to0)
+   DO j=ad_to0,ad_from0,-1
+   CALL POPINTEGER4(ad_from)
+   CALL POPINTEGER4(ad_to)
+   DO i=ad_to,ad_from,-1
    fsb = dwb(i, j, k, irhoe) - dwb(i+1, j, k, irhoe)
    tempb = porflux*fsb
    qspb = w(i+1, j, k, irhoe)*fsb

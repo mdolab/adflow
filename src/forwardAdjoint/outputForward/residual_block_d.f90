@@ -7,10 +7,12 @@
    !                *sfacek *dw *w *rlv *x *vol *si *sj *sk *radi
    !                *radj *radk gammainf timeref rhoinf tref winf
    !                pinfcorr rgas
-   !   Plus diff mem management of: rev:in p:in sfacei:in sfacej:in
-   !                gamma:in sfacek:in dw:in w:in rlv:in x:in vol:in
-   !                si:in sj:in sk:in fw:in viscsubface:in *viscsubface.tau:in
-   !                radi:in radj:in radk:in
+   !   Plus diff mem management of: rev:in wx:in wy:in wz:in p:in
+   !                sfacei:in sfacej:in gamma:in sfacek:in dw:in w:in
+   !                rlv:in x:in qx:in qy:in qz:in ux:in vol:in uy:in
+   !                uz:in si:in sj:in sk:in vx:in vy:in vz:in fw:in
+   !                viscsubface:in *viscsubface.tau:in radi:in radj:in
+   !                radk:in
    !
    !      ******************************************************************
    !      *                                                                *

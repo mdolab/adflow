@@ -82,7 +82,7 @@ subroutine timeStep_block(onlyRadii)
   integer(kind=intType) :: i, j, k
 
   real(kind=realType) :: plim, rlim, clim2
-  real(kind=realType) :: ux, uy, uz, cc2, qs, sx, sy, sz, rmu
+  real(kind=realType) :: uux, uuy, uuz, cc2, qs, sx, sy, sz, rmu
   real(kind=realType) :: ri, rj, rk, rij, rjk, rki
   real(kind=realType) :: vsi, vsj, vsk, rfl, dpi, dpj, dpk
   real(kind=realType) :: sFace, tmp
@@ -140,9 +140,9 @@ subroutine timeStep_block(onlyRadii)
 
               ! Compute the velocities and speed of sound squared.
 
-              ux  = w(i,j,k,ivx)
-              uy  = w(i,j,k,ivy)
-              uz  = w(i,j,k,ivz)
+              uux  = w(i,j,k,ivx)
+              uuy  = w(i,j,k,ivy)
+              uuz  = w(i,j,k,ivz)
               cc2 = gamma(i,j,k)*p(i,j,k)/w(i,j,k,irho)
               cc2 = max(cc2,clim2)
 
@@ -160,7 +160,7 @@ subroutine timeStep_block(onlyRadii)
               sy = si(i-1,j,k,2) + si(i,j,k,2)
               sz = si(i-1,j,k,3) + si(i,j,k,3)
 
-              qs = ux*sx + uy*sy + uz*sz - sFace
+              qs = uux*sx + uuy*sy + uuz*sz - sFace
 
               radi(i,j,k) = half*(abs(qs) &
                    +       sqrt(cc2*(sx**2 + sy**2 + sz**2)))
@@ -176,7 +176,7 @@ subroutine timeStep_block(onlyRadii)
               sy = sj(i,j-1,k,2) + sj(i,j,k,2)
               sz = sj(i,j-1,k,3) + sj(i,j,k,3)
 
-              qs = ux*sx + uy*sy + uz*sz - sFace
+              qs = uux*sx + uuy*sy + uuz*sz - sFace
 
               radJ(i,j,k) = half*(abs(qs) &
                    +       sqrt(cc2*(sx**2 + sy**2 + sz**2)))
@@ -192,7 +192,7 @@ subroutine timeStep_block(onlyRadii)
               sy = sk(i,j,k-1,2) + sk(i,j,k,2)
               sz = sk(i,j,k-1,3) + sk(i,j,k,3)
 
-              qs = ux*sx + uy*sy + uz*sz - sFace
+              qs = uux*sx + uuy*sy + uuz*sz - sFace
 
               radK(i,j,k) = half*(abs(qs) &
                    +       sqrt(cc2*(sx**2 + sy**2 + sz**2)))
