@@ -476,11 +476,13 @@ python module libsumb
          real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: vec_out
        end subroutine getdfdxtvec
 
-       subroutine agumentrhs(ndof,phi) ! in :test:agumentRHS.f90
-         integer(kind=inttype) optional,intent(in),check(len(phi)>=ndof),depend(phi) :: ndof=len(phi)
+       subroutine agumentrhs(ndof,phi,adjdof,agument) ! in :test:adjointPythonInterfaceFunctions.F90
+         integer(kind=inttype), optional,intent(in),check(len(phi)>=ndof),depend(phi) :: ndof=len(phi)
          real(kind=realtype) dimension(ndof),intent(in) :: phi
+         integer(kind=inttype) intent(in) :: adjdof
+         real(kind=realtype) dimension(adjdof),intent(out),depend(adjdof) :: agument
        end subroutine agumentrhs
-      
+
        ! ############################################################################
        ! Newton-Krylov Solver Routines
        ! ############################################################################
@@ -1076,8 +1078,11 @@ python module libsumb
          integer(kind=inttype) :: ndesignpressure
          integer(kind=inttype) :: ndesigntemperature
          integer(kind=inttype) :: ndesignreynolds
-
        end module adjointvars
+
+       module adjointpetsc
+         real(kind=realtype) :: adjresinit, adjresstart, adjresfinal
+       end module adjointpetsc
 
        module inputtsstabderiv ! in :test:inputParam.f90
          logical :: usewindaxis
