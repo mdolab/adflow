@@ -455,94 +455,106 @@ subroutine getdFdxTVec(ndof, vec_in, vec_out)
 #endif
 end subroutine getdFdxTVec
 
-subroutine agumentRHS(ndof, phi)
+subroutine agumentRHS(ndof, phi, adjdof, agument)
 
-  ! use ADjointPETSc 
-  ! use ADjointVars 
-  ! use communication
-  ! use inputADjoint
+  use ADjointPETSc 
+  use ADjointVars 
+  use communication
+  use inputADjoint
 
-  ! implicit none
+  implicit none
 
-  ! ! Input Variables
-  ! integer(kind=intType), intent(in) :: ndof
-  ! real(kind=realType), intent(in) :: phi(ndof)
-  ! integer(kind=intType) :: ierr
+  ! Input Variables
+  integer(kind=intType), intent(in) :: ndof, adjdof
+  real(kind=realType), intent(in) :: phi(ndof)
+  real(kind=realType), intent(out) :: agument(adjdof)
+  integer(kind=intType) :: ierr
 
-  ! call VecPlaceArray(fVec1, phi, ierr)
+  call VecPlaceArray(fVec1, phi, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+  ! ------------- OLD Code using explit dFdw ---------
+  ! ! Dump the result into adjointRHS
+  ! call MatMultTranspose(dFdw, fVec1, adjointRHS, ierr)
   ! call EChk(ierr, __FILE__, __LINE__)
+  ! -------------------------------------------------
 
-  ! ! ------------- OLD Code using explit dFdw ---------
-  ! ! ! Dump the result into adjointRHS
-  ! ! call MatMultTranspose(dFdw, fVec1, adjointRHS, ierr)
-  ! ! call EChk(ierr, __FILE__, __LINE__)
-  ! ! -------------------------------------------------
+  call VecPlaceArray(psi_like1, agument, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
 
-  ! ! New code using dFcdw computation from forward mode Assembly. This
-  ! ! function requires the use of forward mode AD
+  ! New code using dFcdw computation from forward mode Assembly. This
+  ! function requires the use of forward mode AD
 
-  ! !w = x * y : VecPointwiseMult(Vec w, Vec x,Vec y)
-  ! call VecPointwiseMult(fNode, fVec1, overArea, ierr)
-  ! call EChk(ierr, __FILE__, __LINE__)
+  !w = x * y : VecPointwiseMult(Vec w, Vec x,Vec y)
+  call VecPointwiseMult(fNode, fVec1, overArea, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
 
-  ! call MatMultTranspose(dFndFc, fNode, fCell, ierr)
-  ! call EChk(ierr, __FILE__, __LINE__)
+  call MatMultTranspose(dFndFc, fNode, fCell, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
 
-  ! call MatMultTranspose(dFcdw, fCell, adjointRHS, ierr)
-  ! call EChk(ierr, __FILE__, __LINE__)
+  call MatMultTranspose(dFcdw, fCell, psi_like1, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
 
-  ! call vecResetArray(fVec1, ierr)
-  ! call EChk(ierr, __FILE__, __LINE__)
+  call vecResetArray(fVec1, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+  call VecResetArray(psi_like1, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
 
 end subroutine agumentRHS
 
+
 subroutine getdFdwTVec(in_vec, in_dof, out_vec, out_dof)
 
-  ! use ADjointPETSc
-  ! use communication
+  use ADjointPETSc, only : fVec1, psi_like1, fNode, dFndFc, dFcdw, fCell, overArea
+  use constants
+  use communication
 
-  ! implicit none
+  implicit none
 
-  ! ! Input/Ouput
-  ! integer(kind=intType), intent(in) :: in_dof, out_dof
-  ! real(kind=realType), intent(in) :: in_vec(in_dof)
-  ! real(kind=realType), intent(inout) :: out_vec(out_dof)
+  ! Input/Ouput
+  integer(kind=intType), intent(in) :: in_dof, out_dof
+  real(kind=realType), intent(in) :: in_vec(in_dof)
+  real(kind=realType), intent(inout) :: out_vec(out_dof)
 
-  ! ! Working
-  ! integer(kind=intType) :: ierr
-
-  ! ! Put petsc wrapper around arrays
-  ! call VecPlaceArray(fVec1, in_vec, ierr)
-  ! call EChk(ierr, __FILE__, __LINE__)
+  ! Working
+  integer(kind=intType) :: ierr
+  Vec tmp
+  ! Put petsc wrapper around arrays
+  call VecPlaceArray(fVec1, in_vec, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
   
-  ! call VecPlaceArray(psi_like1, out_vec, ierr)
+  call VecPlaceArray(psi_like1, out_vec, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+  call VecDuplicate(psi_like1, tmp, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  ! Dump the result into adjointRHS since the we want to ADD this
+  ! result to psi_like1 below
+
+  ! ------------ OldMethod
+  ! call MatMultTranspose(dFdw, fVec1, adjointRHS, ierr)
   ! call EChk(ierr, __FILE__, __LINE__)
 
-  ! ! Dump the result into adjointRHS since the we want to ADD this
-  ! ! result to psi_like1 below
+  ! ------------ New Method
+  call VecPointwiseMult(fNode, fVec1, overArea, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
 
-  ! ! ------------ OldMethod
-  ! ! call MatMultTranspose(dFdw, fVec1, adjointRHS, ierr)
-  ! ! call EChk(ierr, __FILE__, __LINE__)
+  call MatMultTranspose(dFndFc, fNode, fCell, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
 
-  ! ! ------------ New Method
-  ! call VecPointwiseMult(fNode, fVec1, overArea, ierr)
-  ! call EChk(ierr, __FILE__, __LINE__)
-
-  ! call MatMultTranspose(dFndFc, fNode, fCell, ierr)
-  ! call EChk(ierr, __FILE__, __LINE__)
-
-  ! call MatMultTranspose(dFcdw, fCell, adjointRHS, ierr)
-  ! call EChk(ierr, __FILE__, __LINE__)
+  call MatMultTranspose(dFcdw, fCell, tmp, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
  
-  ! ! do: psi_like1 = psi_like1 + adjointRHS
-  ! call VecAxpy(psi_like1, one, adjointRHS, ierr)
-  ! call EChk(ierr, __FILE__, __LINE__)
+  ! do: psi_like1 = psi_like1 + tmp
+  call VecAxpy(psi_like1, one, tmp, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
 
-  ! call vecResetArray(fVec1, ierr)
-  ! call EChk(ierr, __FILE__, __LINE__)
+  call vecResetArray(fVec1, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
 
-  ! call VecResetArray(psi_like1, ierr)
-  ! call EChk(ierr, __FILE__, __LINE__)
+  call VecResetArray(psi_like1, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
 
 end subroutine getdFdwTVec

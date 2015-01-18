@@ -530,8 +530,9 @@ class SUMB(AeroSolver):
         if releaseAdjointMemory:
             self.releaseAdjointMemory()
 
-        # Save aeroProblem, and other information into the current flow case
-        self.curAP.sumbData.adjointRHS = None
+        # Clear out any saved adjoint RHS since they are now out of
+        # data. Also increment the counter for this case.
+        self.curAP.sumbData.adjointRHS = {}
         self.curAP.sumbData.callCounter += 1
 
         # --------------------------------------------------------------
@@ -1905,7 +1906,6 @@ class SUMB(AeroSolver):
         self._setAeroDVs()
 
         if not self.adjointSetup or reform:
-
             # Create any PETSc variables if necessary
             self.sumb.createpetscvars()
 
@@ -1925,10 +1925,8 @@ class SUMB(AeroSolver):
                 forcePoints[i] = self.getForcePoints(TS=i)
 
             self.sumb.setupcouplingmatrixstruct(forcePoints.T)
+            self.sumb.setuppetscksp()
             self.adjointSetup = True
-
-        # Setup the KSP object
-        self.sumb.setuppetscksp()
 
     def releaseAdjointMemory(self):
         """
@@ -1940,7 +1938,6 @@ class SUMB(AeroSolver):
 
     def solveAdjoint(self, aeroProblem, objective, forcePoints=None,
                       structAdjoint=None, groupName=None):
-
         # May be switching aeroProblems here
         self.setAeroProblem(aeroProblem)
 
@@ -1950,7 +1947,11 @@ class SUMB(AeroSolver):
         self._setupAdjoint()
 
         # # Check to see if the RHS Partials have been computed
-        RHS = self.getdIdw(objective)
+        if obj not in self.curAP.sumbData.adjointRHS:
+            RHS = self.getdIdw(objective)
+            self.curAP.sumbData.adjointRHS[obj] = RHS.copy()
+        else:
+            RHS = self.curAP.sumbData.adjointRHS[obj].copy()
 
         # Check to see if we need to agument the RHS with a structural
         # adjoint:
@@ -1960,7 +1961,8 @@ class SUMB(AeroSolver):
                 "aerostructural analysis. Use Forward mode AD for the adjoint")
 
             phi = self.mesh.expandVectorByFamily(groupName, structAdjoint)
-            self.sumb.agumentrhs(numpy.ravel(phi))
+            agument = self.sumb.agumentrhs(numpy.ravel(phi), self.getAdjointStateSize())
+            RHS -= agument
 
         # Check if objective is python 'allocated':
         if obj not in self.curAP.sumbData.adjoints:
@@ -2089,6 +2091,13 @@ class SUMB(AeroSolver):
             # Leave this zero-based since we only need to use it in petsc
             exec(execStr)
 
+    def getNAeroDV(self):
+        """
+        Return the number of aerodynamic variables
+        """
+        self._setAeroDVs()
+        return self.nDVAero
+
     def solveAdjointForRHS(self, inVec, relTol=None):
         """
         Solve the adjoint system with an arbitary RHS vector.
@@ -2179,16 +2188,16 @@ class SUMB(AeroSolver):
     def getAdjointResNorms(self):
         '''
         Return the following adjoint residual norms:
-        initCFD Norm: Norm the adjoint starts with (zero adjoint)
-        startCFD Norm: Norm at the start of adjoint call
-        finalCFD Norm: Norm at the end of adjoint call
+        initRes Norm: Norm the adjoint RHS
+        startRes Norm: Norm at the start of adjoint call (with possible non-zero restart)
+        finalCFD Norm: Norm at the end of adjoint solve
         '''
-        startRes = self.sumb.adjointpetsc.adjreshist[0]
-        finalIt  = self.sumb.adjointpetsc.adjconvits
-        finalRes = self.sumb.adjointpetsc.adjreshist[finalIt-1]
+        initRes  = self.sumb.adjointpetsc.adjresinit
+        startRes = self.sumb.adjointpetsc.adjresstart
+        finalRes = self.sumb.adjointpetsc.adjresfinal
         fail = self.sumb.killsignals.adjointfailed
 
-        return startRes, finalRes, fail
+        return initRes, startRes, finalRes, fail
 
     def getResNorms(self):
         """Return the initial, starting and final Res Norms. Typically
@@ -2340,9 +2349,6 @@ class SUMB(AeroSolver):
             else:
                 #self.sumb.computeobjectivepartialsfwd(objNum)
                 pass
-
-            # Store the current RHS
-            self.curAP.sumbData.adjointRHS = obj
         else:
             self.sumb.zeroobjpartials(True, True)
 
@@ -2544,7 +2550,8 @@ class SUMB(AeroSolver):
         if wDeriv is None and xVDeriv is None and xDvDeriv is None and xDvDerivAero is None:
             raise Error("computeMatrixFreeProductBwd: wDeriv, xVDeriv and "
                         "xDvDeriv cannot all be None")
-            
+        self._setAeroDVs()
+
         if resBar is None:
             resBar = numpy.zeros(self.getStateSize())
 
@@ -2600,7 +2607,6 @@ class SUMB(AeroSolver):
         # Return the raw extrabar if required:
         if xDvDerivAero:
             returns.append(extrabar)
-        
         if len(returns) == 1:
             return returns[0]
         elif len(returns) == 2:
@@ -2688,7 +2694,6 @@ class SUMB(AeroSolver):
 
     def setAdjoint(self, adjoint, objective=None):
         """Sets the adjoint vector externally. Used in coupled solver"""
-        self.sumb.setadjoint(adjoint)
         if objective is not None:
             obj, aeroObj = self._getObjective(objective)
             self.curAP.sumbData.adjoints[obj] = adjoint.copy()
@@ -3458,7 +3463,8 @@ class sumbFlowCase(object):
     def __init__(self):
         self.stateInfo = None
         self.adjoints = {}
+        self.adjointRHS = {}
         self.coords = None
         self.callCounter = -1
-        self.adjointRHS = None
+
 
