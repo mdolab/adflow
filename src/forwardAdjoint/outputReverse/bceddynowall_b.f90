@@ -27,7 +27,7 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   USE BLOCKPOINTERS_B
+   USE BLOCKPOINTERS
    USE BCTYPES
    IMPLICIT NONE
    !
@@ -41,9 +41,9 @@
    REAL(kind=realtype) :: tmp
    REAL(kind=realtype) :: tmp0
    REAL(kind=realtype) :: tmp1
-   REAL(kind=realtype) :: tmpb
-   REAL(kind=realtype) :: tmpb1
-   REAL(kind=realtype) :: tmpb0
+   REAL(kind=realtype) :: tmpd
+   REAL(kind=realtype) :: tmpd1
+   REAL(kind=realtype) :: tmpd0
    !
    !      ******************************************************************
    !      *                                                                *
@@ -56,46 +56,46 @@
    CASE (imin) 
    DO j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
    DO i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
-   revb(2, i, j) = revb(2, i, j) + revb(1, i, j)
-   revb(1, i, j) = 0.0_8
+   revd(2, i, j) = revd(2, i, j) + revd(1, i, j)
+   revd(1, i, j) = 0.0_8
    END DO
    END DO
    CASE (imax) 
    DO j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
    DO i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
-   tmpb = revb(ie, i, j)
-   revb(ie, i, j) = 0.0_8
-   revb(il, i, j) = revb(il, i, j) + tmpb
+   tmpd = revd(ie, i, j)
+   revd(ie, i, j) = 0.0_8
+   revd(il, i, j) = revd(il, i, j) + tmpd
    END DO
    END DO
    CASE (jmin) 
    DO j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
    DO i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
-   revb(i, 2, j) = revb(i, 2, j) + revb(i, 1, j)
-   revb(i, 1, j) = 0.0_8
+   revd(i, 2, j) = revd(i, 2, j) + revd(i, 1, j)
+   revd(i, 1, j) = 0.0_8
    END DO
    END DO
    CASE (jmax) 
    DO j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
    DO i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
-   tmpb0 = revb(i, je, j)
-   revb(i, je, j) = 0.0_8
-   revb(i, jl, j) = revb(i, jl, j) + tmpb0
+   tmpd0 = revd(i, je, j)
+   revd(i, je, j) = 0.0_8
+   revd(i, jl, j) = revd(i, jl, j) + tmpd0
    END DO
    END DO
    CASE (kmin) 
    DO j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
    DO i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
-   revb(i, j, 2) = revb(i, j, 2) + revb(i, j, 1)
-   revb(i, j, 1) = 0.0_8
+   revd(i, j, 2) = revd(i, j, 2) + revd(i, j, 1)
+   revd(i, j, 1) = 0.0_8
    END DO
    END DO
    CASE (kmax) 
    DO j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
    DO i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
-   tmpb1 = revb(i, j, ke)
-   revb(i, j, ke) = 0.0_8
-   revb(i, j, kl) = revb(i, j, kl) + tmpb1
+   tmpd1 = revd(i, j, ke)
+   revd(i, j, ke) = 0.0_8
+   revd(i, j, kl) = revd(i, j, kl) + tmpd1
    END DO
    END DO
    END SELECT

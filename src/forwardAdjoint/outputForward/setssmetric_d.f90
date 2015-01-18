@@ -14,7 +14,7 @@
    !      ******************************************************************
    SUBROUTINE SETSSMETRIC_D(nn, ss, ssd)
    USE BCTYPES
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    IMPLICIT NONE
    !
    !      Subroutine arguments.

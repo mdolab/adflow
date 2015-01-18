@@ -703,7 +703,7 @@
    TYPE(BLOCKTYPE), DIMENSION(nn:nn, 1, ntimeintervalsspectral) :: &
    & flowdoms
    TYPE(BLOCKTYPE_B), DIMENSION(nn:nn, 1, ntimeintervalsspectral) :: &
-   & flowdomsb
+   & flowdomsd
    !
    !      ******************************************************************
    !      *                                                                *

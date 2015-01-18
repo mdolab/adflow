@@ -14,7 +14,7 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   SUBROUTINE COMPUTEGAMMA_B(t, tb, gamma, gammab, mm)
+   SUBROUTINE COMPUTEGAMMA_B(t, td, gamma, gammad, mm)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -32,20 +32,20 @@
    !      Subroutine arguments.
    !
    REAL(kind=realtype), DIMENSION(mm), INTENT(IN) :: t
-   REAL(kind=realtype), DIMENSION(mm) :: tb
+   REAL(kind=realtype), DIMENSION(mm) :: td
    REAL(kind=realtype), DIMENSION(mm) :: gamma
-   REAL(kind=realtype), DIMENSION(mm) :: gammab
+   REAL(kind=realtype), DIMENSION(mm) :: gammad
    !
    !      Local variables.
    !
    INTEGER(kind=inttype) :: i, ii, nn, start
    REAL(kind=realtype) :: cp, t2
-   REAL(kind=realtype) :: cpb, t2b
+   REAL(kind=realtype) :: cpd, t2d
    INTEGER :: ad_count
    INTEGER :: i0
    INTEGER :: branch
    INTEGER :: ad_to
-   REAL(kind=realtype) :: tempb
+   REAL(kind=realtype) :: tempd
    !
    !      ******************************************************************
    !      *                                                                *
@@ -107,17 +107,17 @@
    DO i=mm,1,-1
    CALL POPCONTROL2B(branch)
    IF (branch .EQ. 0) THEN
-   tempb = gammab(i)/(cp-one)
-   cpb = (1.0_8-cp/(cp-one))*tempb
-   gammab(i) = 0.0_8
+   tempd = gammad(i)/(cp-one)
+   cpd = (1.0_8-cp/(cp-one))*tempd
+   gammad(i) = 0.0_8
    CALL POPINTEGER4(ad_to)
    DO ii=ad_to,1,-1
-   t2b = cptempfit(nn)%constants(ii)*cpb
+   t2d = cptempfit(nn)%constants(ii)*cpd
    IF (.NOT.(t(i) .LE. 0.0_8 .AND. (cptempfit(nn)%exponents(ii) &
    &             .EQ. 0.0_8 .OR. cptempfit(nn)%exponents(ii) .NE. INT(&
-   &             cptempfit(nn)%exponents(ii))))) tb(i) = tb(i) + cptempfit(&
+   &             cptempfit(nn)%exponents(ii))))) td(i) = td(i) + cptempfit(&
    &             nn)%exponents(ii)*t(i)**(cptempfit(nn)%exponents(ii)-1)*&
-   &             t2b
+   &             t2d
    END DO
    CALL POPREAL8(cp)
    CALL POPINTEGER4(ad_count)
@@ -126,9 +126,9 @@
    CALL POPINTEGER4(nn)
    END DO
    ELSE IF (branch .EQ. 1) THEN
-   gammab(i) = 0.0_8
+   gammad(i) = 0.0_8
    ELSE
-   gammab(i) = 0.0_8
+   gammad(i) = 0.0_8
    END IF
    END DO
    END SELECT

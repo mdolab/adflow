@@ -322,6 +322,7 @@ ad_reverse:
 	-outvars $(TAPENADE_RES_OUTVARS) \
 	-vars $(TAPENADE_RES_VARS) \
 	-head $(TAPENADE_RES_HEADROUTINE)  \
+	-adjvarname %d \
 	-reverse 	 -msglevel 30 $(TAPENADE_PRECISION) \
 	-noisize \
 	-O temp_reverse $(I_RES_FILES)
@@ -333,10 +334,10 @@ ad_reverse:
 	make -f Makefile_tapenade cleanpreprocess_res
 
 # Fix the AD bugs
-	sed -i 's/   DO ii1=1,SIZE(viscsubfaceb(ii1)%tau, 1)/   DO ii1=1,SIZE(viscsubfaceb)/' outputReverse/forcesandmoments_b.f90
+	sed -i 's/   DO ii1=1,SIZE(viscsubfaced(ii1)%tau, 1)/   DO ii1=1,SIZE(viscsubfaced)/' outputReverse/forcesandmoments_b.f90
 	sed -i 's/   DO ii1=1,SIZE(bcdata(ii1)%oarea, 1)/   DO ii1=1,SIZE(bcdata)/' outputReverse/block_res_b.f90
 	sed -i 's/   DO ii1=SIZE(bcdata(ii1)%oarea, 1),1,-1/    DO ii1=SIZE(bcdata),1,-1/' outputReverse/block_res_b.f90
-	sed -i 's/   DO ii1=1,SIZE(bcdatab(ii1)%norm, 1)/   DO ii1=1,SIZE(bcdatab)/' outputReverse/bceulerwall_b.f90
+	sed -i 's/   DO ii1=1,SIZE(bcdatad(ii1)%norm, 1)/   DO ii1=1,SIZE(bcdatad)/' outputReverse/bceulerwall_b.f90
 
 
 ad_forward_debugTGT:

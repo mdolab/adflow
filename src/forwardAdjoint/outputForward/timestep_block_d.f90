@@ -31,7 +31,7 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    USE CONSTANTS
    USE FLOWVARREFSTATE
    USE INPUTDISCRETIZATION

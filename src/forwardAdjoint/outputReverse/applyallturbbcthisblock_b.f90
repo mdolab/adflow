@@ -20,7 +20,7 @@
    !      ******************************************************************
    !
    USE BCTYPES
-   USE BLOCKPOINTERS_B
+   USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
    USE INPUTPHYSICS
    IMPLICIT NONE
@@ -62,9 +62,9 @@
    INTEGER :: ad_from10
    INTEGER :: ad_to10
    INTEGER :: branch
-   REAL(kind=realtype) :: tmpb
-   REAL(kind=realtype) :: tmpb1
-   REAL(kind=realtype) :: tmpb0
+   REAL(kind=realtype) :: tmpd
+   REAL(kind=realtype) :: tmpd1
+   REAL(kind=realtype) :: tmpd0
    !
    !      ******************************************************************
    !      *                                                                *
@@ -192,11 +192,11 @@
    DO i=ad_to,ad_from,-1
    DO l=nt2,nt1,-1
    DO m=nt2,nt1,-1
-   wb(2, i, j, m) = wb(2, i, j, m) - bmti1(i, j, l, m)*wb&
+   wd(2, i, j, m) = wd(2, i, j, m) - bmti1(i, j, l, m)*wd&
    &                   (1, i, j, l)
    END DO
-   bvti1b(i, j, l) = bvti1b(i, j, l) + wb(1, i, j, l)
-   wb(1, i, j, l) = 0.0_8
+   bvti1d(i, j, l) = bvti1d(i, j, l) + wd(1, i, j, l)
+   wd(1, i, j, l) = 0.0_8
    END DO
    END DO
    END DO
@@ -209,13 +209,13 @@
    DO i=ad_to1,ad_from1,-1
    DO l=nt2,nt1,-1
    DO m=nt2,nt1,-1
-   tmpb = wb(ie, i, j, l)
-   wb(ie, i, j, l) = tmpb
-   wb(il, i, j, m) = wb(il, i, j, m) - bmti2(i, j, l, m)*&
-   &                   tmpb
+   tmpd = wd(ie, i, j, l)
+   wd(ie, i, j, l) = tmpd
+   wd(il, i, j, m) = wd(il, i, j, m) - bmti2(i, j, l, m)*&
+   &                   tmpd
    END DO
-   bvti2b(i, j, l) = bvti2b(i, j, l) + wb(ie, i, j, l)
-   wb(ie, i, j, l) = 0.0_8
+   bvti2d(i, j, l) = bvti2d(i, j, l) + wd(ie, i, j, l)
+   wd(ie, i, j, l) = 0.0_8
    END DO
    END DO
    END DO
@@ -231,11 +231,11 @@
    DO i=ad_to3,ad_from3,-1
    DO l=nt2,nt1,-1
    DO m=nt2,nt1,-1
-   wb(i, 2, j, m) = wb(i, 2, j, m) - bmtj1(i, j, l, m)*wb(i&
+   wd(i, 2, j, m) = wd(i, 2, j, m) - bmtj1(i, j, l, m)*wd(i&
    &                 , 1, j, l)
    END DO
-   bvtj1b(i, j, l) = bvtj1b(i, j, l) + wb(i, 1, j, l)
-   wb(i, 1, j, l) = 0.0_8
+   bvtj1d(i, j, l) = bvtj1d(i, j, l) + wd(i, 1, j, l)
+   wd(i, 1, j, l) = 0.0_8
    END DO
    END DO
    END DO
@@ -248,13 +248,13 @@
    DO i=ad_to5,ad_from5,-1
    DO l=nt2,nt1,-1
    DO m=nt2,nt1,-1
-   tmpb0 = wb(i, je, j, l)
-   wb(i, je, j, l) = tmpb0
-   wb(i, jl, j, m) = wb(i, jl, j, m) - bmtj2(i, j, l, m)*&
-   &                 tmpb0
+   tmpd0 = wd(i, je, j, l)
+   wd(i, je, j, l) = tmpd0
+   wd(i, jl, j, m) = wd(i, jl, j, m) - bmtj2(i, j, l, m)*&
+   &                 tmpd0
    END DO
-   bvtj2b(i, j, l) = bvtj2b(i, j, l) + wb(i, je, j, l)
-   wb(i, je, j, l) = 0.0_8
+   bvtj2d(i, j, l) = bvtj2d(i, j, l) + wd(i, je, j, l)
+   wd(i, je, j, l) = 0.0_8
    END DO
    END DO
    END DO
@@ -268,11 +268,11 @@
    DO i=ad_to7,ad_from7,-1
    DO l=nt2,nt1,-1
    DO m=nt2,nt1,-1
-   wb(i, j, 2, m) = wb(i, j, 2, m) - bmtk1(i, j, l, m)*wb(i, &
+   wd(i, j, 2, m) = wd(i, j, 2, m) - bmtk1(i, j, l, m)*wd(i, &
    &               j, 1, l)
    END DO
-   bvtk1b(i, j, l) = bvtk1b(i, j, l) + wb(i, j, 1, l)
-   wb(i, j, 1, l) = 0.0_8
+   bvtk1d(i, j, l) = bvtk1d(i, j, l) + wd(i, j, 1, l)
+   wd(i, j, 1, l) = 0.0_8
    END DO
    END DO
    END DO
@@ -285,13 +285,13 @@
    DO i=ad_to9,ad_from9,-1
    DO l=nt2,nt1,-1
    DO m=nt2,nt1,-1
-   tmpb1 = wb(i, j, ke, l)
-   wb(i, j, ke, l) = tmpb1
-   wb(i, j, kl, m) = wb(i, j, kl, m) - bmtk2(i, j, l, m)*&
-   &               tmpb1
+   tmpd1 = wd(i, j, ke, l)
+   wd(i, j, ke, l) = tmpd1
+   wd(i, j, kl, m) = wd(i, j, kl, m) - bmtk2(i, j, l, m)*&
+   &               tmpd1
    END DO
-   bvtk2b(i, j, l) = bvtk2b(i, j, l) + wb(i, j, ke, l)
-   wb(i, j, ke, l) = 0.0_8
+   bvtk2d(i, j, l) = bvtk2d(i, j, l) + wd(i, j, ke, l)
+   wd(i, j, ke, l) = 0.0_8
    END DO
    END DO
    END DO

@@ -27,7 +27,7 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    USE BCTYPES
    USE COMMUNICATION
    USE INPUTTIMESPECTRAL

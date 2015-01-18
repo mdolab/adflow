@@ -15,9 +15,9 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   SUBROUTINE RESETSSBWD_B(nn, ssi, ssib, ssj, ssjb, ssk, sskb, ss)
+   SUBROUTINE RESETSSBWD_B(nn, ssi, ssid, ssj, ssjd, ssk, sskd, ss)
    USE BCTYPES
-   USE BLOCKPOINTERS_B
+   USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
    IMPLICIT NONE
    !
@@ -25,8 +25,8 @@
    !
    INTEGER(kind=inttype), INTENT(IN) :: nn
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, 3) :: ssi, ssj, ssk
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, 3) :: ssib, ssjb, &
-   & sskb
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, 3) :: ssid, ssjd, &
+   & sskd
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, 3) :: ss
    !
    !      ******************************************************************
@@ -39,68 +39,68 @@
    ! the pointers accordinly.
    SELECT CASE  (bcfaceid(nn)) 
    CASE (imin) 
-   sskb = 0.0_8
-   sskb(1:je, 0:ke, :) = sskb(1:je, 0:ke, :) + skb(2, 1:je, 0:ke, :)
-   skb(2, 1:je, 0:ke, :) = 0.0_8
-   ssjb = 0.0_8
-   ssjb(0:je, 1:ke, :) = ssjb(0:je, 1:ke, :) + sjb(2, 0:je, 1:ke, :)
-   sjb(2, 0:je, 1:ke, :) = 0.0_8
-   ssib = 0.0_8
-   ssib(1:je, 1:ke, :) = ssib(1:je, 1:ke, :) + sib(1, 1:je, 1:ke, :)
-   sib(1, 1:je, 1:ke, :) = 0.0_8
+   sskd = 0.0_8
+   sskd(1:je, 0:ke, :) = sskd(1:je, 0:ke, :) + skd(2, 1:je, 0:ke, :)
+   skd(2, 1:je, 0:ke, :) = 0.0_8
+   ssjd = 0.0_8
+   ssjd(0:je, 1:ke, :) = ssjd(0:je, 1:ke, :) + sjd(2, 0:je, 1:ke, :)
+   sjd(2, 0:je, 1:ke, :) = 0.0_8
+   ssid = 0.0_8
+   ssid(1:je, 1:ke, :) = ssid(1:je, 1:ke, :) + sid(1, 1:je, 1:ke, :)
+   sid(1, 1:je, 1:ke, :) = 0.0_8
    CASE (imax) 
-   sskb = 0.0_8
-   sskb(1:je, 0:ke, :) = sskb(1:je, 0:ke, :) + skb(il, 1:je, 0:ke, :)
-   skb(il, 1:je, 0:ke, :) = 0.0_8
-   ssjb = 0.0_8
-   ssjb(0:je, 1:ke, :) = ssjb(0:je, 1:ke, :) + sjb(il, 0:je, 1:ke, :)
-   sjb(il, 0:je, 1:ke, :) = 0.0_8
-   ssib = 0.0_8
-   ssib(1:je, 1:ke, :) = ssib(1:je, 1:ke, :) + sib(il, 1:je, 1:ke, :)
-   sib(il, 1:je, 1:ke, :) = 0.0_8
+   sskd = 0.0_8
+   sskd(1:je, 0:ke, :) = sskd(1:je, 0:ke, :) + skd(il, 1:je, 0:ke, :)
+   skd(il, 1:je, 0:ke, :) = 0.0_8
+   ssjd = 0.0_8
+   ssjd(0:je, 1:ke, :) = ssjd(0:je, 1:ke, :) + sjd(il, 0:je, 1:ke, :)
+   sjd(il, 0:je, 1:ke, :) = 0.0_8
+   ssid = 0.0_8
+   ssid(1:je, 1:ke, :) = ssid(1:je, 1:ke, :) + sid(il, 1:je, 1:ke, :)
+   sid(il, 1:je, 1:ke, :) = 0.0_8
    CASE (jmin) 
-   sskb = 0.0_8
-   sskb(1:ie, 0:ke, :) = sskb(1:ie, 0:ke, :) + skb(1:ie, 2, 0:ke, :)
-   skb(1:ie, 2, 0:ke, :) = 0.0_8
-   ssjb = 0.0_8
-   ssjb(1:ie, 1:ke, :) = ssjb(1:ie, 1:ke, :) + sib(1:ie, 2, 1:ke, :)
-   sib(1:ie, 2, 1:ke, :) = 0.0_8
-   ssib = 0.0_8
-   ssib(0:ie, 1:ke, :) = ssib(0:ie, 1:ke, :) + sjb(0:ie, 1, 1:ke, :)
-   sjb(0:ie, 1, 1:ke, :) = 0.0_8
+   sskd = 0.0_8
+   sskd(1:ie, 0:ke, :) = sskd(1:ie, 0:ke, :) + skd(1:ie, 2, 0:ke, :)
+   skd(1:ie, 2, 0:ke, :) = 0.0_8
+   ssjd = 0.0_8
+   ssjd(1:ie, 1:ke, :) = ssjd(1:ie, 1:ke, :) + sid(1:ie, 2, 1:ke, :)
+   sid(1:ie, 2, 1:ke, :) = 0.0_8
+   ssid = 0.0_8
+   ssid(0:ie, 1:ke, :) = ssid(0:ie, 1:ke, :) + sjd(0:ie, 1, 1:ke, :)
+   sjd(0:ie, 1, 1:ke, :) = 0.0_8
    CASE (jmax) 
-   sskb = 0.0_8
-   sskb(1:ie, 0:ke, :) = sskb(1:ie, 0:ke, :) + skb(1:ie, jl, 0:ke, :)
-   skb(1:ie, jl, 0:ke, :) = 0.0_8
-   ssjb = 0.0_8
-   ssjb(1:ie, 1:ke, :) = ssjb(1:ie, 1:ke, :) + sib(1:ie, jl, 1:ke, :)
-   sib(1:ie, jl, 1:ke, :) = 0.0_8
-   ssib = 0.0_8
-   ssib(0:ie, 1:ke, :) = ssib(0:ie, 1:ke, :) + sjb(0:ie, jl, 1:ke, :)
-   sjb(0:ie, jl, 1:ke, :) = 0.0_8
+   sskd = 0.0_8
+   sskd(1:ie, 0:ke, :) = sskd(1:ie, 0:ke, :) + skd(1:ie, jl, 0:ke, :)
+   skd(1:ie, jl, 0:ke, :) = 0.0_8
+   ssjd = 0.0_8
+   ssjd(1:ie, 1:ke, :) = ssjd(1:ie, 1:ke, :) + sid(1:ie, jl, 1:ke, :)
+   sid(1:ie, jl, 1:ke, :) = 0.0_8
+   ssid = 0.0_8
+   ssid(0:ie, 1:ke, :) = ssid(0:ie, 1:ke, :) + sjd(0:ie, jl, 1:ke, :)
+   sjd(0:ie, jl, 1:ke, :) = 0.0_8
    CASE (kmin) 
-   sskb = 0.0_8
-   sskb(1:ie, 1:je, :) = sskb(1:ie, 1:je, :) + sjb(1:ie, 1:je, 2, :)
-   sjb(1:ie, 1:je, 2, :) = 0.0_8
-   ssjb = 0.0_8
-   ssjb(1:ie, 0:je, :) = ssjb(1:ie, 0:je, :) + sib(1:ie, 0:je, 2, :)
-   sib(1:ie, 0:je, 2, :) = 0.0_8
-   ssib = 0.0_8
-   ssib(0:ie, 1:je, :) = ssib(0:ie, 1:je, :) + skb(0:ie, 1:je, 1, :)
-   skb(0:ie, 1:je, 1, :) = 0.0_8
+   sskd = 0.0_8
+   sskd(1:ie, 1:je, :) = sskd(1:ie, 1:je, :) + sjd(1:ie, 1:je, 2, :)
+   sjd(1:ie, 1:je, 2, :) = 0.0_8
+   ssjd = 0.0_8
+   ssjd(1:ie, 0:je, :) = ssjd(1:ie, 0:je, :) + sid(1:ie, 0:je, 2, :)
+   sid(1:ie, 0:je, 2, :) = 0.0_8
+   ssid = 0.0_8
+   ssid(0:ie, 1:je, :) = ssid(0:ie, 1:je, :) + skd(0:ie, 1:je, 1, :)
+   skd(0:ie, 1:je, 1, :) = 0.0_8
    CASE (kmax) 
-   sskb = 0.0_8
-   sskb(1:ie, 1:je, :) = sskb(1:ie, 1:je, :) + sjb(1:ie, 1:je, kl, :)
-   sjb(1:ie, 1:je, kl, :) = 0.0_8
-   ssjb = 0.0_8
-   ssjb(1:ie, 0:je, :) = ssjb(1:ie, 0:je, :) + sib(1:ie, 0:je, kl, :)
-   sib(1:ie, 0:je, kl, :) = 0.0_8
-   ssib = 0.0_8
-   ssib(0:ie, 1:je, :) = ssib(0:ie, 1:je, :) + skb(0:ie, 1:je, kl, :)
-   skb(0:ie, 1:je, kl, :) = 0.0_8
+   sskd = 0.0_8
+   sskd(1:ie, 1:je, :) = sskd(1:ie, 1:je, :) + sjd(1:ie, 1:je, kl, :)
+   sjd(1:ie, 1:je, kl, :) = 0.0_8
+   ssjd = 0.0_8
+   ssjd(1:ie, 0:je, :) = ssjd(1:ie, 0:je, :) + sid(1:ie, 0:je, kl, :)
+   sid(1:ie, 0:je, kl, :) = 0.0_8
+   ssid = 0.0_8
+   ssid(0:ie, 1:je, :) = ssid(0:ie, 1:je, :) + skd(0:ie, 1:je, kl, :)
+   skd(0:ie, 1:je, kl, :) = 0.0_8
    CASE DEFAULT
-   ssib = 0.0_8
-   ssjb = 0.0_8
-   sskb = 0.0_8
+   ssid = 0.0_8
+   ssjd = 0.0_8
+   sskd = 0.0_8
    END SELECT
    END SUBROUTINE RESETSSBWD_B

@@ -30,7 +30,7 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    USE INPUTTIMESPECTRAL
    USE ITERATION
    IMPLICIT NONE

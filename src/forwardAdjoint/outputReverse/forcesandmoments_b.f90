@@ -25,8 +25,8 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   SUBROUTINE FORCESANDMOMENTS_B(cfp, cfpb, cfv, cfvb, cmp, cmpb, cmv, cmvb&
-   & , yplusmax, sepsensor, sepsensorb, cavitation, cavitationb)
+   SUBROUTINE FORCESANDMOMENTS_B(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd&
+   & , yplusmax, sepsensor, sepsensord, cavitation, cavitationd)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -40,7 +40,7 @@
    !      * here.                                                          *
    !      ******************************************************************
    !
-   USE BLOCKPOINTERS_B
+   USE BLOCKPOINTERS
    USE BCTYPES
    USE FLOWVARREFSTATE
    USE INPUTPHYSICS
@@ -49,48 +49,48 @@
    !      Subroutine arguments
    !
    REAL(kind=realtype), DIMENSION(3) :: cfp, cfv
-   REAL(kind=realtype), DIMENSION(3) :: cfpb, cfvb
+   REAL(kind=realtype), DIMENSION(3) :: cfpd, cfvd
    REAL(kind=realtype), DIMENSION(3) :: cmp, cmv
-   REAL(kind=realtype), DIMENSION(3) :: cmpb, cmvb
+   REAL(kind=realtype), DIMENSION(3) :: cmpd, cmvd
    REAL(kind=realtype) :: yplusmax, sepsensor, cavitation
-   REAL(kind=realtype) :: sepsensorb, cavitationb
+   REAL(kind=realtype) :: sepsensord, cavitationd
    !
    !      Local variables.
    !
    INTEGER(kind=inttype) :: nn, i, j
    REAL(kind=realtype) :: pm1, fx, fy, fz, fn, sigma
-   REAL(kind=realtype) :: pm1b, fxb, fyb, fzb
+   REAL(kind=realtype) :: pm1d, fxd, fyd, fzd
    REAL(kind=realtype) :: xc, yc, zc
-   REAL(kind=realtype) :: xcb, ycb, zcb
+   REAL(kind=realtype) :: xcd, ycd, zcd
    REAL(kind=realtype) :: fact, rho, mul, yplus, dwall
-   REAL(kind=realtype) :: factb
+   REAL(kind=realtype) :: factd
    REAL(kind=realtype) :: scaledim, v(3), sensor, sensor1, cp, tmp, &
    & plocal
-   REAL(kind=realtype) :: scaledimb, vb(3), sensorb, sensor1b, cpb, tmpb&
-   & , plocalb
+   REAL(kind=realtype) :: scaledimd, vd(3), sensord, sensor1d, cpd, tmpd&
+   & , plocald
    REAL(kind=realtype) :: tauxx, tauyy, tauzz
-   REAL(kind=realtype) :: tauxxb, tauyyb, tauzzb
+   REAL(kind=realtype) :: tauxxd, tauyyd, tauzzd
    REAL(kind=realtype) :: tauxy, tauxz, tauyz
-   REAL(kind=realtype) :: tauxyb, tauxzb, tauyzb
+   REAL(kind=realtype) :: tauxyd, tauxzd, tauyzd
    REAL(kind=realtype), DIMENSION(3) :: refpoint
-   REAL(kind=realtype), DIMENSION(3) :: refpointb
+   REAL(kind=realtype), DIMENSION(3) :: refpointd
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, nw) :: ww1, ww2
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, nw) :: ww1b, ww2b
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, nw) :: ww1d, ww2d
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: pp1, pp2
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: pp1b, pp2b
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: pp1d, pp2d
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rho2, rho1
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rho2b, rho1b
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rho2d, rho1d
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rlv1, rlv2
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rlv1b, rlv2b
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rlv1d, rlv2d
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rev1, rev2
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rev1b, rev2b
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rev1d, rev2d
    REAL(kind=realtype), DIMENSION(imaxdim - 2, jmaxdim - 2) :: dd2wall
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, 3) :: ss
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, 3) :: ssb
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, 3) :: ssd
    REAL(kind=realtype), DIMENSION(imaxdim + 1, jmaxdim + 1, 3) :: xx
-   REAL(kind=realtype), DIMENSION(imaxdim+1, jmaxdim+1, 3) :: xxb
+   REAL(kind=realtype), DIMENSION(imaxdim+1, jmaxdim+1, 3) :: xxd
    REAL(kind=realtype) :: mx, my, mz, qa
-   REAL(kind=realtype) :: mxb, myb, mzb, qab
+   REAL(kind=realtype) :: mxd, myd, mzd, qad
    LOGICAL :: viscoussubface
    INTRINSIC SQRT
    INTRINSIC EXP
@@ -110,28 +110,26 @@
    INTEGER :: ad_to4
    INTEGER :: branch
    REAL(kind=realtype) :: temp3
+   REAL(kind=realtype) :: tempd14
    REAL(kind=realtype) :: temp2
+   REAL(kind=realtype) :: tempd13
    REAL(kind=realtype) :: temp1
+   REAL(kind=realtype) :: tempd12
    REAL(kind=realtype) :: temp0
-   REAL(kind=realtype) :: tempb9
-   REAL(kind=realtype) :: tempb8
-   REAL(kind=realtype) :: tempb7
-   REAL(kind=realtype) :: tempb6
-   REAL(kind=realtype) :: tempb5
-   REAL(kind=realtype) :: tempb4
-   REAL(kind=realtype) :: tempb3
-   REAL(kind=realtype) :: tempb2(3)
-   REAL(kind=realtype) :: tempb1
-   REAL(kind=realtype) :: tempb16
-   REAL(kind=realtype) :: tempb0
-   REAL(kind=realtype) :: tempb15
-   REAL(kind=realtype) :: tempb14
-   REAL(kind=realtype) :: tempb13
-   REAL(kind=realtype) :: tempb12
-   REAL(kind=realtype) :: tempb11
-   REAL(kind=realtype) :: tmpb0(3)
-   REAL(kind=realtype) :: tempb10
-   REAL(kind=realtype) :: tempb
+   REAL(kind=realtype) :: tempd11
+   REAL(kind=realtype) :: tempd10
+   REAL(kind=realtype) :: tempd9
+   REAL(kind=realtype) :: tempd
+   REAL(kind=realtype) :: tempd8
+   REAL(kind=realtype) :: tempd7
+   REAL(kind=realtype) :: tempd6
+   REAL(kind=realtype) :: tempd5
+   REAL(kind=realtype) :: tempd4
+   REAL(kind=realtype) :: tempd3
+   REAL(kind=realtype) :: tempd2(3)
+   REAL(kind=realtype) :: tempd1
+   REAL(kind=realtype) :: tempd0
+   REAL(kind=realtype) :: tmpd0(3)
    INTEGER :: ii1
    REAL(kind=realtype) :: temp
    REAL(kind=realtype) :: temp9
@@ -139,7 +137,9 @@
    REAL(kind=realtype) :: temp7
    REAL(kind=realtype) :: temp6
    REAL(kind=realtype) :: temp5
+   REAL(kind=realtype) :: tempd16
    REAL(kind=realtype) :: temp4
+   REAL(kind=realtype) :: tempd15
    !
    !      ******************************************************************
    !      *                                                                *
@@ -466,63 +466,63 @@
    cmv(1) = cmv(1)*fact
    CALL PUSHREAL8(cmv(2))
    cmv(2) = cmv(2)*fact
-   factb = cmv(3)*cmvb(3)
-   cmvb(3) = fact*cmvb(3)
+   factd = cmv(3)*cmvd(3)
+   cmvd(3) = fact*cmvd(3)
    CALL POPREAL8(cmv(2))
-   factb = factb + cmv(2)*cmvb(2)
-   cmvb(2) = fact*cmvb(2)
+   factd = factd + cmv(2)*cmvd(2)
+   cmvd(2) = fact*cmvd(2)
    CALL POPREAL8(cmv(1))
-   factb = factb + cmp(3)*cmpb(3) + cmv(1)*cmvb(1)
-   cmvb(1) = fact*cmvb(1)
-   cmpb(3) = fact*cmpb(3)
+   factd = factd + cmp(3)*cmpd(3) + cmv(1)*cmvd(1)
+   cmvd(1) = fact*cmvd(1)
+   cmpd(3) = fact*cmpd(3)
    CALL POPREAL8(cmp(2))
-   factb = factb + cmp(2)*cmpb(2)
-   cmpb(2) = fact*cmpb(2)
+   factd = factd + cmp(2)*cmpd(2)
+   cmpd(2) = fact*cmpd(2)
    CALL POPREAL8(cmp(1))
-   factb = factb + cmp(1)*cmpb(1)
-   cmpb(1) = fact*cmpb(1)
+   factd = factd + cmp(1)*cmpd(1)
+   cmpd(1) = fact*cmpd(1)
    CALL POPREAL8(fact)
-   tempb14 = factb/(lref*lengthref)
-   lengthrefb = lengthrefb - fact*tempb14/lengthref
-   factb = cfv(3)*cfvb(3) + tempb14
-   cfvb(3) = fact*cfvb(3)
+   tempd14 = factd/(lref*lengthref)
+   lengthrefd = lengthrefd - fact*tempd14/lengthref
+   factd = cfv(3)*cfvd(3) + tempd14
+   cfvd(3) = fact*cfvd(3)
    CALL POPREAL8(cfv(2))
-   factb = factb + cfv(2)*cfvb(2)
-   cfvb(2) = fact*cfvb(2)
+   factd = factd + cfv(2)*cfvd(2)
+   cfvd(2) = fact*cfvd(2)
    CALL POPREAL8(cfv(1))
-   factb = factb + cfp(3)*cfpb(3) + cfv(1)*cfvb(1)
-   cfvb(1) = fact*cfvb(1)
-   cfpb(3) = fact*cfpb(3)
+   factd = factd + cfp(3)*cfpd(3) + cfv(1)*cfvd(1)
+   cfvd(1) = fact*cfvd(1)
+   cfpd(3) = fact*cfpd(3)
    CALL POPREAL8(cfp(2))
-   factb = factb + cfp(2)*cfpb(2)
-   cfpb(2) = fact*cfpb(2)
+   factd = factd + cfp(2)*cfpd(2)
+   cfpd(2) = fact*cfpd(2)
    CALL POPREAL8(cfp(1))
-   factb = factb + cfp(1)*cfpb(1)
-   cfpb(1) = fact*cfpb(1)
+   factd = factd + cfp(1)*cfpd(1)
+   cfpd(1) = fact*cfpd(1)
    CALL POPREAL8(fact)
    temp9 = machcoef**2*scaledim
    temp8 = surfaceref*lref**2
    temp7 = temp8*gammainf*pinf
-   tempb15 = -(two*factb/(temp7**2*temp9**2))
-   tempb16 = temp9*temp8*tempb15
-   gammainfb = gammainfb + pinf*tempb16
-   pinfb = pinfb + gammainf*tempb16
-   machcoefb = machcoefb + scaledim*temp7*2*machcoef*tempb15
-   scaledimb = temp7*machcoef**2*tempb15
-   pb = 0.0_8
-   sib = 0.0_8
-   sjb = 0.0_8
-   skb = 0.0_8
-   DO ii1=1,SIZE(viscsubfaceb)
-   viscsubfaceb(ii1)%tau = 0.0_8
+   tempd15 = -(two*factd/(temp7**2*temp9**2))
+   tempd16 = temp9*temp8*tempd15
+   gammainfd = gammainfd + pinf*tempd16
+   pinfd = pinfd + gammainf*tempd16
+   machcoefd = machcoefd + scaledim*temp7*2*machcoef*tempd15
+   scaledimd = temp7*machcoef**2*tempd15
+   pd = 0.0_8
+   sid = 0.0_8
+   sjd = 0.0_8
+   skd = 0.0_8
+   DO ii1=1,SIZE(viscsubfaced)
+   viscsubfaced(ii1)%tau = 0.0_8
    END DO
-   veldirfreestreamb = 0.0_8
-   rho1b = 0.0_8
-   rho2b = 0.0_8
-   vb = 0.0_8
-   refpointb = 0.0_8
-   xxb = 0.0_8
-   ssb = 0.0_8
+   veldirfreestreamd = 0.0_8
+   rho1d = 0.0_8
+   rho2d = 0.0_8
+   vd = 0.0_8
+   refpointd = 0.0_8
+   xxd = 0.0_8
+   ssd = 0.0_8
    DO nn=nbocos,1,-1
    CALL POPCONTROL1B(branch)
    IF (branch .NE. 0) THEN
@@ -535,15 +535,15 @@
    &                  , 4))
    CALL POPREAL8ARRAY(sk, SIZE(sk, 1)*SIZE(sk, 2)*SIZE(sk, 3)*SIZE(sk&
    &                  , 4))
-   CALL RESETXXSSRHODD2WALLBWD_B(nn, xx, xxb, ss, ssb, rho1, rho1b, &
-   &                             rho2, rho2b, dd2wall)
+   CALL RESETXXSSRHODD2WALLBWD_B(nn, xx, xxd, ss, ssd, rho1, rho1d, &
+   &                             rho2, rho2d, dd2wall)
    CALL POPREAL8ARRAY(rev, SIZE(rev, 1)*SIZE(rev, 2)*SIZE(rev, 3))
    CALL POPREAL8ARRAY(rlv, SIZE(rlv, 1)*SIZE(rlv, 2)*SIZE(rlv, 3))
-   rlvb = 0.0_8
-   revb = 0.0_8
-   CALL RESETBCPOINTERSBWD_B(nn, ww1, ww1b, ww2, ww2b, pp1, pp1b, pp2&
-   &                         , pp2b, rlv1, rlv1b, rlv2, rlv2b, rev1, rev1b&
-   &                         , rev2, rev2b, 0)
+   rlvd = 0.0_8
+   revd = 0.0_8
+   CALL RESETBCPOINTERSBWD_B(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, pp2&
+   &                         , pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev1d&
+   &                         , rev2, rev2d, 0)
    CALL POPINTEGER4(ad_from4)
    CALL POPINTEGER4(ad_to4)
    DO j=ad_to4,ad_from4,-1
@@ -552,13 +552,13 @@
    DO i=ad_to3,ad_from3,-1
    CALL POPREAL8(bcdata(nn)%oarea(i, j))
    temp6 = bcdata(nn)%oarea(i, j)
-   bcdatab(nn)%oarea(i, j) = -(one*bcdatab(nn)%oarea(i, j)/temp6&
+   bcdatad(nn)%oarea(i, j) = -(one*bcdatad(nn)%oarea(i, j)/temp6&
    &           **2)
    END DO
    END DO
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   bcdatab(nn)%fv = 0.0_8
+   bcdatad(nn)%fv = 0.0_8
    ELSE
    CALL POPINTEGER4(ad_from2)
    CALL POPINTEGER4(ad_to2)
@@ -569,82 +569,82 @@
    tauxx = viscsubface(nn)%tau(i, j, 1)
    tauyy = viscsubface(nn)%tau(i, j, 2)
    tauxy = viscsubface(nn)%tau(i, j, 4)
-   mzb = cmvb(3) + bcdatab(nn)%m(i, j, 3)
-   myb = cmvb(2) + bcdatab(nn)%m(i, j, 2)
-   mxb = cmvb(1) + bcdatab(nn)%m(i, j, 1)
-   xcb = fy*mzb - fz*myb
-   ycb = fz*mxb - fx*mzb
-   zcb = fx*myb - fy*mxb
-   fzb = yc*mxb + bcdatab(nn)%fv(i, j, 3) - xc*myb
-   bcdatab(nn)%fv(i, j, 3) = 0.0_8
-   fyb = bcdatab(nn)%fv(i, j, 2) - zc*mxb + xc*mzb
-   bcdatab(nn)%fv(i, j, 2) = 0.0_8
-   fxb = zc*myb + bcdatab(nn)%fv(i, j, 1) - yc*mzb
-   bcdatab(nn)%fv(i, j, 1) = 0.0_8
-   fzb = fzb + cfvb(3)
-   fyb = fyb + cfvb(2)
-   fxb = fxb + cfvb(1)
+   mzd = cmvd(3) + bcdatad(nn)%m(i, j, 3)
+   myd = cmvd(2) + bcdatad(nn)%m(i, j, 2)
+   mxd = cmvd(1) + bcdatad(nn)%m(i, j, 1)
+   xcd = fy*mzd - fz*myd
+   ycd = fz*mxd - fx*mzd
+   zcd = fx*myd - fy*mxd
+   fzd = yc*mxd + bcdatad(nn)%fv(i, j, 3) - xc*myd
+   bcdatad(nn)%fv(i, j, 3) = 0.0_8
+   fyd = bcdatad(nn)%fv(i, j, 2) - zc*mxd + xc*mzd
+   bcdatad(nn)%fv(i, j, 2) = 0.0_8
+   fxd = zc*myd + bcdatad(nn)%fv(i, j, 1) - yc*mzd
+   bcdatad(nn)%fv(i, j, 1) = 0.0_8
+   fzd = fzd + cfvd(3)
+   fyd = fyd + cfvd(2)
+   fxd = fxd + cfvd(1)
    CALL POPREAL8(zc)
-   tempb8 = fourth*zcb
-   xxb(i, j, 3) = xxb(i, j, 3) + tempb8
-   xxb(i+1, j, 3) = xxb(i+1, j, 3) + tempb8
-   xxb(i, j+1, 3) = xxb(i, j+1, 3) + tempb8
-   xxb(i+1, j+1, 3) = xxb(i+1, j+1, 3) + tempb8
-   refpointb(3) = refpointb(3) - zcb
+   tempd8 = fourth*zcd
+   xxd(i, j, 3) = xxd(i, j, 3) + tempd8
+   xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd8
+   xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd8
+   xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd8
+   refpointd(3) = refpointd(3) - zcd
    CALL POPREAL8(yc)
-   tempb9 = fourth*ycb
-   xxb(i, j, 2) = xxb(i, j, 2) + tempb9
-   xxb(i+1, j, 2) = xxb(i+1, j, 2) + tempb9
-   xxb(i, j+1, 2) = xxb(i, j+1, 2) + tempb9
-   xxb(i+1, j+1, 2) = xxb(i+1, j+1, 2) + tempb9
-   refpointb(2) = refpointb(2) - ycb
+   tempd9 = fourth*ycd
+   xxd(i, j, 2) = xxd(i, j, 2) + tempd9
+   xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd9
+   xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd9
+   xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd9
+   refpointd(2) = refpointd(2) - ycd
    CALL POPREAL8(xc)
-   tempb10 = fourth*xcb
-   xxb(i, j, 1) = xxb(i, j, 1) + tempb10
-   xxb(i+1, j, 1) = xxb(i+1, j, 1) + tempb10
-   xxb(i, j+1, 1) = xxb(i, j+1, 1) + tempb10
-   xxb(i+1, j+1, 1) = xxb(i+1, j+1, 1) + tempb10
-   refpointb(1) = refpointb(1) - xcb
+   tempd10 = fourth*xcd
+   xxd(i, j, 1) = xxd(i, j, 1) + tempd10
+   xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd10
+   xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd10
+   xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd10
+   refpointd(1) = refpointd(1) - xcd
    tauzz = viscsubface(nn)%tau(i, j, 3)
    tauxz = viscsubface(nn)%tau(i, j, 5)
    tauyz = viscsubface(nn)%tau(i, j, 6)
    CALL POPREAL8(fz)
-   tempb11 = -(fact*scaledim*fzb)
-   ssb(i, j, 1) = ssb(i, j, 1) + tauxz*tempb11
-   ssb(i, j, 2) = ssb(i, j, 2) + tauyz*tempb11
-   tauzzb = ss(i, j, 3)*tempb11
-   ssb(i, j, 3) = ssb(i, j, 3) + tauzz*tempb11
-   scaledimb = scaledimb - fact*(tauxy*ss(i, j, 1)+tauyy*ss(i, &
-   &             j, 2)+tauyz*ss(i, j, 3))*fyb - fact*(tauxx*ss(i, j, 1)+&
-   &             tauxy*ss(i, j, 2)+tauxz*ss(i, j, 3))*fxb - fact*(tauxz*ss(&
-   &             i, j, 1)+tauyz*ss(i, j, 2)+tauzz*ss(i, j, 3))*fzb
+   tempd11 = -(fact*scaledim*fzd)
+   ssd(i, j, 1) = ssd(i, j, 1) + tauxz*tempd11
+   ssd(i, j, 2) = ssd(i, j, 2) + tauyz*tempd11
+   tauzzd = ss(i, j, 3)*tempd11
+   ssd(i, j, 3) = ssd(i, j, 3) + tauzz*tempd11
+   scaledimd = scaledimd - fact*(tauxy*ss(i, j, 1)+tauyy*ss(i, &
+   &             j, 2)+tauyz*ss(i, j, 3))*fyd - fact*(tauxx*ss(i, j, 1)+&
+   &             tauxy*ss(i, j, 2)+tauxz*ss(i, j, 3))*fxd - fact*(tauxz*ss(&
+   &             i, j, 1)+tauyz*ss(i, j, 2)+tauzz*ss(i, j, 3))*fzd
    CALL POPREAL8(fy)
-   tempb13 = -(fact*scaledim*fyb)
-   tauyzb = ss(i, j, 3)*tempb13 + ss(i, j, 2)*tempb11
-   ssb(i, j, 1) = ssb(i, j, 1) + tauxy*tempb13
-   tauyyb = ss(i, j, 2)*tempb13
-   ssb(i, j, 2) = ssb(i, j, 2) + tauyy*tempb13
-   ssb(i, j, 3) = ssb(i, j, 3) + tauyz*tempb13
+   tempd13 = -(fact*scaledim*fyd)
+   tauyzd = ss(i, j, 3)*tempd13 + ss(i, j, 2)*tempd11
+   ssd(i, j, 1) = ssd(i, j, 1) + tauxy*tempd13
+   tauyyd = ss(i, j, 2)*tempd13
+   ssd(i, j, 2) = ssd(i, j, 2) + tauyy*tempd13
+   ssd(i, j, 3) = ssd(i, j, 3) + tauyz*tempd13
    CALL POPREAL8(fx)
-   tempb12 = -(fact*scaledim*fxb)
-   tauxzb = ss(i, j, 3)*tempb12 + ss(i, j, 1)*tempb11
-   tauxyb = ss(i, j, 2)*tempb12 + ss(i, j, 1)*tempb13
-   tauxxb = ss(i, j, 1)*tempb12
-   ssb(i, j, 1) = ssb(i, j, 1) + tauxx*tempb12
-   ssb(i, j, 2) = ssb(i, j, 2) + tauxy*tempb12
-   ssb(i, j, 3) = ssb(i, j, 3) + tauxz*tempb12
-   viscsubfaceb(nn)%tau(i, j, 6) = viscsubfaceb(nn)%tau(i, j, 6&
-   &             ) + tauyzb
-   viscsubfaceb(nn)%tau(i, j, 5) = viscsubfaceb(nn)%tau(i, j, 5&
-   &             ) + tauxzb
-   viscsubfaceb(nn)%tau(i, j, 4) = viscsubfaceb(nn)%tau(i, j, 4&
-   &             ) + tauxyb
-   viscsubfaceb(nn)%tau(i, j, 3) = viscsubfaceb(nn)%tau(i, j, 3&
-   &             ) + tauzzb
-   viscsubfaceb(nn)%tau(i, j, 2) = viscsubfaceb(nn)%tau(i, j, 2&
-   &             ) + tauyyb
-   viscsubfaceb(nn)%tau(i, j, 1) = viscsubfaceb(nn)%tau(i, j, 1&
-   &             ) + tauxxb
+   tempd12 = -(fact*scaledim*fxd)
+   tauxzd = ss(i, j, 3)*tempd12 + ss(i, j, 1)*tempd11
+   tauxyd = ss(i, j, 2)*tempd12 + ss(i, j, 1)*tempd13
+   tauxxd = ss(i, j, 1)*tempd12
+   ssd(i, j, 1) = ssd(i, j, 1) + tauxx*tempd12
+   ssd(i, j, 2) = ssd(i, j, 2) + tauxy*tempd12
+   ssd(i, j, 3) = ssd(i, j, 3) + tauxz*tempd12
+   viscsubfaced(nn)%tau(i, j, 6) = viscsubfaced(nn)%tau(i, j, 6&
+   &             ) + tauyzd
+   viscsubfaced(nn)%tau(i, j, 5) = viscsubfaced(nn)%tau(i, j, 5&
+   &             ) + tauxzd
+   viscsubfaced(nn)%tau(i, j, 4) = viscsubfaced(nn)%tau(i, j, 4&
+   &             ) + tauxyd
+   viscsubfaced(nn)%tau(i, j, 3) = viscsubfaced(nn)%tau(i, j, 3&
+   &             ) + tauzzd
+   viscsubfaced(nn)%tau(i, j, 2) = viscsubfaced(nn)%tau(i, j, 2&
+   &             ) + tauyyd
+   viscsubfaced(nn)%tau(i, j, 1) = viscsubfaced(nn)%tau(i, j, 1&
+   &             ) + tauxxd
    END DO
    END DO
    END IF
@@ -654,143 +654,143 @@
    CALL POPINTEGER4(ad_from)
    CALL POPINTEGER4(ad_to)
    DO i=ad_to,ad_from,-1
-   mzb = bcdatab(nn)%m(i, j, 3)
-   bcdatab(nn)%m(i, j, 3) = 0.0_8
-   myb = bcdatab(nn)%m(i, j, 2)
-   bcdatab(nn)%m(i, j, 2) = 0.0_8
-   mxb = bcdatab(nn)%m(i, j, 1)
-   bcdatab(nn)%m(i, j, 1) = 0.0_8
-   mzb = mzb + cmpb(3)
-   myb = myb + cmpb(2)
-   mxb = mxb + cmpb(1)
-   xcb = fy*mzb - fz*myb
-   fyb = cfpb(2) - zc*mxb + xc*mzb
-   ycb = fz*mxb - fx*mzb
-   fxb = zc*myb + cfpb(1) - yc*mzb
-   zcb = fx*myb - fy*mxb
-   fzb = yc*mxb + cfpb(3) - xc*myb
-   sensor1b = bcdatab(nn)%cavitation(i, j)
-   bcdatab(nn)%cavitation(i, j) = 0.0_8
-   sensor1b = sensor1b + cavitationb
-   qab = four*sensor1*sensor1b
-   sensor1b = four*qa*sensor1b
+   mzd = bcdatad(nn)%m(i, j, 3)
+   bcdatad(nn)%m(i, j, 3) = 0.0_8
+   myd = bcdatad(nn)%m(i, j, 2)
+   bcdatad(nn)%m(i, j, 2) = 0.0_8
+   mxd = bcdatad(nn)%m(i, j, 1)
+   bcdatad(nn)%m(i, j, 1) = 0.0_8
+   mzd = mzd + cmpd(3)
+   myd = myd + cmpd(2)
+   mxd = mxd + cmpd(1)
+   xcd = fy*mzd - fz*myd
+   fyd = cfpd(2) - zc*mxd + xc*mzd
+   ycd = fz*mxd - fx*mzd
+   fxd = zc*myd + cfpd(1) - yc*mzd
+   zcd = fx*myd - fy*mxd
+   fzd = yc*mxd + cfpd(3) - xc*myd
+   sensor1d = bcdatad(nn)%cavitation(i, j)
+   bcdatad(nn)%cavitation(i, j) = 0.0_8
+   sensor1d = sensor1d + cavitationd
+   qad = four*sensor1*sensor1d
+   sensor1d = four*qa*sensor1d
    CALL POPREAL8(sensor1)
    temp5 = -(10*2*sensor1)
    temp4 = one + EXP(temp5)
-   sensor1b = EXP(temp5)*one*10*2*sensor1b/temp4**2
+   sensor1d = EXP(temp5)*one*10*2*sensor1d/temp4**2
    CALL POPREAL8(sensor1)
-   cpb = -sensor1b
-   tmpb = (plocal-pinf)*cpb
-   plocalb = tmp*cpb
+   cpd = -sensor1d
+   tmpd = (plocal-pinf)*cpd
+   plocald = tmp*cpd
    temp3 = gammainf*pinf*machcoef**2
-   tempb0 = -(two*tmpb/temp3**2)
-   tempb = machcoef**2*tempb0
-   pinfb = pinfb + gammainf*tempb - tmp*cpb
+   tempd0 = -(two*tmpd/temp3**2)
+   tempd = machcoef**2*tempd0
+   pinfd = pinfd + gammainf*tempd - tmp*cpd
    CALL POPREAL8(tmp)
-   gammainfb = gammainfb + pinf*tempb
-   machcoefb = machcoefb + gammainf*pinf*2*machcoef*tempb0
+   gammainfd = gammainfd + pinf*tempd
+   machcoefd = machcoefd + gammainf*pinf*2*machcoef*tempd0
    CALL POPREAL8(plocal)
-   sensorb = bcdatab(nn)%sepsensor(i, j)
-   bcdatab(nn)%sepsensor(i, j) = 0.0_8
-   sensorb = sensorb + sepsensorb
-   qab = qab + four*sensor*sensorb
-   sensorb = four*qa*sensorb
+   sensord = bcdatad(nn)%sepsensor(i, j)
+   bcdatad(nn)%sepsensor(i, j) = 0.0_8
+   sensord = sensord + sepsensord
+   qad = qad + four*sensor*sensord
+   sensord = four*qa*sensord
    CALL POPREAL8(sensor)
    temp2 = -(10*2*sensor)
    temp1 = one + EXP(temp2)
-   sensorb = EXP(temp2)*one*10*2*sensorb/temp1**2
+   sensord = EXP(temp2)*one*10*2*sensord/temp1**2
    CALL POPREAL8(sensor)
-   vb(1) = vb(1) - veldirfreestream(1)*sensorb
-   veldirfreestreamb(1) = veldirfreestreamb(1) - v(1)*sensorb
-   vb(2) = vb(2) - veldirfreestream(2)*sensorb
-   veldirfreestreamb(2) = veldirfreestreamb(2) - v(2)*sensorb
-   vb(3) = vb(3) - veldirfreestream(3)*sensorb
-   veldirfreestreamb(3) = veldirfreestreamb(3) - v(3)*sensorb
+   vd(1) = vd(1) - veldirfreestream(1)*sensord
+   veldirfreestreamd(1) = veldirfreestreamd(1) - v(1)*sensord
+   vd(2) = vd(2) - veldirfreestream(2)*sensord
+   veldirfreestreamd(2) = veldirfreestreamd(2) - v(2)*sensord
+   vd(3) = vd(3) - veldirfreestream(3)*sensord
+   veldirfreestreamd(3) = veldirfreestreamd(3) - v(3)*sensord
    CALL POPREAL8ARRAY(v, 3)
-   tmpb0 = vb
+   tmpd0 = vd
    temp = v(1)**2 + v(2)**2 + v(3)**2
    temp0 = SQRT(temp)
-   tempb2 = tmpb0/(temp0+1e-16)
-   vb = tempb2
+   tempd2 = tmpd0/(temp0+1e-16)
+   vd = tempd2
    IF (temp .EQ. 0.0_8) THEN
-   tempb3 = 0.0
+   tempd3 = 0.0
    ELSE
-   tempb3 = SUM(-(v*tempb2/(temp0+1e-16)))/(2.0*temp0)
+   tempd3 = SUM(-(v*tempd2/(temp0+1e-16)))/(2.0*temp0)
    END IF
-   vb(1) = vb(1) + 2*v(1)*tempb3
-   vb(2) = vb(2) + 2*v(2)*tempb3
-   vb(3) = vb(3) + 2*v(3)*tempb3
+   vd(1) = vd(1) + 2*v(1)*tempd3
+   vd(2) = vd(2) + 2*v(2)*tempd3
+   vd(3) = vd(3) + 2*v(3)*tempd3
    CALL POPREAL8(v(3))
-   ww2b(i, j, ivz) = ww2b(i, j, ivz) + vb(3)
-   vb(3) = 0.0_8
+   ww2d(i, j, ivz) = ww2d(i, j, ivz) + vd(3)
+   vd(3) = 0.0_8
    CALL POPREAL8(v(2))
-   ww2b(i, j, ivy) = ww2b(i, j, ivy) + vb(2)
-   vb(2) = 0.0_8
+   ww2d(i, j, ivy) = ww2d(i, j, ivy) + vd(2)
+   vd(2) = 0.0_8
    CALL POPREAL8(v(1))
-   ww2b(i, j, ivx) = ww2b(i, j, ivx) + vb(1)
-   vb(1) = 0.0_8
+   ww2d(i, j, ivx) = ww2d(i, j, ivx) + vd(1)
+   vd(1) = 0.0_8
    CALL POPREAL8(bcdata(nn)%oarea(i, j))
-   qab = qab + bcdatab(nn)%oarea(i-1, j) + bcdatab(nn)%oarea(i-1&
-   &           , j-1) + bcdatab(nn)%oarea(i, j-1) + bcdatab(nn)%oarea(i, j)
+   qad = qad + bcdatad(nn)%oarea(i-1, j) + bcdatad(nn)%oarea(i-1&
+   &           , j-1) + bcdatad(nn)%oarea(i, j-1) + bcdatad(nn)%oarea(i, j)
    CALL POPREAL8(bcdata(nn)%oarea(i-1, j))
    CALL POPREAL8(bcdata(nn)%oarea(i, j-1))
    CALL POPREAL8(bcdata(nn)%oarea(i-1, j-1))
    CALL POPREAL8(qa)
    IF (ss(i, j, 1)**2 + ss(i, j, 2)**2 + ss(i, j, 3)**2 .EQ. &
    &             0.0_8) THEN
-   tempb4 = 0.0
+   tempd4 = 0.0
    ELSE
-   tempb4 = fourth*qab/(2.0*SQRT(ss(i, j, 1)**2+ss(i, j, 2)**2+&
+   tempd4 = fourth*qad/(2.0*SQRT(ss(i, j, 1)**2+ss(i, j, 2)**2+&
    &             ss(i, j, 3)**2))
    END IF
-   ssb(i, j, 1) = ssb(i, j, 1) + 2*ss(i, j, 1)*tempb4
-   ssb(i, j, 2) = ssb(i, j, 2) + 2*ss(i, j, 2)*tempb4
-   fzb = fzb + bcdatab(nn)%fp(i, j, 3)
-   ssb(i, j, 3) = ssb(i, j, 3) + pm1*fzb + 2*ss(i, j, 3)*tempb4
-   bcdatab(nn)%fp(i, j, 3) = 0.0_8
-   fyb = fyb + bcdatab(nn)%fp(i, j, 2)
-   bcdatab(nn)%fp(i, j, 2) = 0.0_8
-   fxb = fxb + bcdatab(nn)%fp(i, j, 1)
-   bcdatab(nn)%fp(i, j, 1) = 0.0_8
+   ssd(i, j, 1) = ssd(i, j, 1) + 2*ss(i, j, 1)*tempd4
+   ssd(i, j, 2) = ssd(i, j, 2) + 2*ss(i, j, 2)*tempd4
+   fzd = fzd + bcdatad(nn)%fp(i, j, 3)
+   ssd(i, j, 3) = ssd(i, j, 3) + pm1*fzd + 2*ss(i, j, 3)*tempd4
+   bcdatad(nn)%fp(i, j, 3) = 0.0_8
+   fyd = fyd + bcdatad(nn)%fp(i, j, 2)
+   bcdatad(nn)%fp(i, j, 2) = 0.0_8
+   fxd = fxd + bcdatad(nn)%fp(i, j, 1)
+   bcdatad(nn)%fp(i, j, 1) = 0.0_8
    CALL POPREAL8(fz)
-   pm1b = ss(i, j, 2)*fyb + ss(i, j, 1)*fxb + ss(i, j, 3)*fzb
+   pm1d = ss(i, j, 2)*fyd + ss(i, j, 1)*fxd + ss(i, j, 3)*fzd
    CALL POPREAL8(fy)
-   ssb(i, j, 2) = ssb(i, j, 2) + pm1*fyb
+   ssd(i, j, 2) = ssd(i, j, 2) + pm1*fyd
    CALL POPREAL8(fx)
-   ssb(i, j, 1) = ssb(i, j, 1) + pm1*fxb
+   ssd(i, j, 1) = ssd(i, j, 1) + pm1*fxd
    CALL POPREAL8(zc)
-   tempb5 = fourth*zcb
-   xxb(i, j, 3) = xxb(i, j, 3) + tempb5
-   xxb(i+1, j, 3) = xxb(i+1, j, 3) + tempb5
-   xxb(i, j+1, 3) = xxb(i, j+1, 3) + tempb5
-   xxb(i+1, j+1, 3) = xxb(i+1, j+1, 3) + tempb5
-   refpointb(3) = refpointb(3) - zcb
+   tempd5 = fourth*zcd
+   xxd(i, j, 3) = xxd(i, j, 3) + tempd5
+   xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd5
+   xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd5
+   xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd5
+   refpointd(3) = refpointd(3) - zcd
    CALL POPREAL8(yc)
-   tempb6 = fourth*ycb
-   xxb(i, j, 2) = xxb(i, j, 2) + tempb6
-   xxb(i+1, j, 2) = xxb(i+1, j, 2) + tempb6
-   xxb(i, j+1, 2) = xxb(i, j+1, 2) + tempb6
-   xxb(i+1, j+1, 2) = xxb(i+1, j+1, 2) + tempb6
-   refpointb(2) = refpointb(2) - ycb
+   tempd6 = fourth*ycd
+   xxd(i, j, 2) = xxd(i, j, 2) + tempd6
+   xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd6
+   xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd6
+   xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd6
+   refpointd(2) = refpointd(2) - ycd
    CALL POPREAL8(xc)
-   tempb7 = fourth*xcb
-   xxb(i, j, 1) = xxb(i, j, 1) + tempb7
-   xxb(i+1, j, 1) = xxb(i+1, j, 1) + tempb7
-   xxb(i, j+1, 1) = xxb(i, j+1, 1) + tempb7
-   xxb(i+1, j+1, 1) = xxb(i+1, j+1, 1) + tempb7
-   refpointb(1) = refpointb(1) - xcb
+   tempd7 = fourth*xcd
+   xxd(i, j, 1) = xxd(i, j, 1) + tempd7
+   xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd7
+   xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd7
+   xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd7
+   refpointd(1) = refpointd(1) - xcd
    CALL POPREAL8(pm1)
-   tempb1 = fact*scaledim*pm1b
-   pp2b(i, j) = pp2b(i, j) + half*tempb1 + plocalb
-   pp1b(i, j) = pp1b(i, j) + half*tempb1
-   pinfb = pinfb - tempb1
-   scaledimb = scaledimb + fact*(half*(pp2(i, j)+pp1(i, j))-pinf)&
-   &           *pm1b
+   tempd1 = fact*scaledim*pm1d
+   pp2d(i, j) = pp2d(i, j) + half*tempd1 + plocald
+   pp1d(i, j) = pp1d(i, j) + half*tempd1
+   pinfd = pinfd - tempd1
+   scaledimd = scaledimd + fact*(half*(pp2(i, j)+pp1(i, j))-pinf)&
+   &           *pm1d
    END DO
    END DO
    CALL POPREAL8ARRAY(bcdata(nn)%oarea, SIZE(bcdata(nn)%oarea, 1)*&
    &                  SIZE(bcdata(nn)%oarea, 2))
-   bcdatab(nn)%oarea = 0.0_8
+   bcdatad(nn)%oarea = 0.0_8
    CALL POPCONTROL3B(branch)
    IF (branch .LT. 3) THEN
    IF (branch .NE. 0) THEN
@@ -812,26 +812,26 @@
    CALL POPREAL8(fact)
    END IF
    CALL POPREAL8ARRAY(ss, imaxdim*jmaxdim*3)
-   CALL SETXXSSRHODD2WALLBWD_B(nn, xx, xxb, ss, ssb, rho1, rho1b, &
-   &                           rho2, rho2b, dd2wall)
+   CALL SETXXSSRHODD2WALLBWD_B(nn, xx, xxd, ss, ssd, rho1, rho1d, &
+   &                           rho2, rho2d, dd2wall)
    CALL POPREAL8ARRAY(pp1, imaxdim*jmaxdim)
    CALL POPREAL8ARRAY(pp2, imaxdim*jmaxdim)
-   rlv1b = 0.0_8
-   rlv2b = 0.0_8
-   rev1b = 0.0_8
-   rev2b = 0.0_8
-   rlvb = 0.0_8
-   revb = 0.0_8
-   CALL SETBCPOINTERSBWD_B(nn, ww1, ww1b, ww2, ww2b, pp1, pp1b, pp2, &
-   &                       pp2b, rlv1, rlv1b, rlv2, rlv2b, rev1, rev1b, &
-   &                       rev2, rev2b, 0)
+   rlv1d = 0.0_8
+   rlv2d = 0.0_8
+   rev1d = 0.0_8
+   rev2d = 0.0_8
+   rlvd = 0.0_8
+   revd = 0.0_8
+   CALL SETBCPOINTERSBWD_B(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, pp2, &
+   &                       pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev1d, &
+   &                       rev2, rev2d, 0)
    END IF
    END DO
-   pointrefb(3) = pointrefb(3) + lref*refpointb(3)
-   refpointb(3) = 0.0_8
-   pointrefb(2) = pointrefb(2) + lref*refpointb(2)
-   refpointb(2) = 0.0_8
-   pointrefb(1) = pointrefb(1) + lref*refpointb(1)
-   prefb = prefb + scaledimb/pinf
-   pinfb = pinfb - pref*scaledimb/pinf**2
+   pointrefd(3) = pointrefd(3) + lref*refpointd(3)
+   refpointd(3) = 0.0_8
+   pointrefd(2) = pointrefd(2) + lref*refpointd(2)
+   refpointd(2) = 0.0_8
+   pointrefd(1) = pointrefd(1) + lref*refpointd(1)
+   prefd = prefd + scaledimd/pinf
+   pinfd = pinfd - pref*scaledimd/pinf**2
    END SUBROUTINE FORCESANDMOMENTS_B

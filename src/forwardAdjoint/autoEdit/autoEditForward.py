@@ -8,16 +8,13 @@ autoEdit - A Python tool to automatically edit a set of files
            2) Rename module names in subroutines
 
 Written by Andre C. Marta          Last updated: Apr 6, 2007
-
 """
 
 # Import modules
-
 import os, sys
 import string
 
 # Specify file extension
-
 EXT = '_d.f90' 
 
 DIR_ORI = sys.argv[1]
@@ -31,66 +28,49 @@ STR_OLD = ['_D' ]
 STR_NEW = [''   ]
 
 STR_REPLACE_ALL = {'_CD':''}
-# Also, entirely ignore lines with these strings:
-LINE_IGNORE = ['USE BLOCKPOINTERS_D']
-
-FILE_IGNORE = ['blockpointers_d.f90']
-# Some feedback
 
 print "Directory of input source files  :", DIR_ORI
 print "Directory of output source files :", DIR_MOD
 
 for f in os.listdir(DIR_ORI):
-    if not f in FILE_IGNORE:
-        if f.endswith(EXT):
-            # open original file in read mode
-            file_object_ori = open(DIR_ORI + '/' + f,'r')
-            print "\nParsing input file", file_object_ori.name
+    if f.endswith(EXT):
+        # open original file in read mode
+        file_object_ori = open(DIR_ORI + '/' + f,'r')
+        print "\nParsing input file", file_object_ori.name
 
-            # read to whole file to string and reposition the pointer
-            # at the first byte for future reading
-            all_src = file_object_ori.read()
-            file_object_ori.seek(0)
+        # read to whole file to string and reposition the pointer
+        # at the first byte for future reading
+        all_src = file_object_ori.read()
+        file_object_ori.seek(0)
 
-            # open modified file in write mode
-            file_object_mod = open(DIR_MOD + '/' + f,'w')
+        # open modified file in write mode
+        file_object_mod = open(DIR_MOD + '/' + f,'w')
 
-            # read the original file, line-by-line
-            nEdits = len(LINE_ID)
-            nIgnores = len(LINE_IGNORE)
+        # read the original file, line-by-line
+        nEdits = len(LINE_ID)
 
-            for line in file_object_ori:
+        for line in file_object_ori:
+            # parse original line for relevante identifier
+            # and replace the string
+            line_mod = line.lstrip() # Strip out Left-hand leading spaces
 
-                # parse original line for relevante identifier
-                # and replace the string
-                line_mod = line.lstrip() # Strip out Left-hand leading spaces
+            for i in xrange(nEdits):
+                if line_mod[0:len(LINE_ID[i])] == LINE_ID[i]:
+                    line_mod = string.replace(line_mod, STR_OLD[i], STR_NEW[i])
 
-                found_ignore = False
-                for i in xrange(nIgnores):
-                    if line_mod.find(LINE_IGNORE[i]) >=0:
-                        found_ignore = True
-                    # end if
-                # end for
+            for key in STR_REPLACE_ALL:
+                line_mod = string.replace(line_mod,key,STR_REPLACE_ALL[key])
 
-                if not found_ignore:
+            # write the modified line to new file
+            file_object_mod.write('   '+ line_mod)
 
-                    for i in xrange(nEdits):
-                        if line_mod[0:len(LINE_ID[i])] == LINE_ID[i]:
-                            line_mod = string.replace(line_mod, STR_OLD[i], STR_NEW[i])
-                        # end if
-                    # end for
-                # end if
+        # close the files
+        file_object_ori.close()
+        file_object_mod.close()
 
-                for key in STR_REPLACE_ALL:
-                    line_mod = string.replace(line_mod,key,STR_REPLACE_ALL[key])
-                # end for
+        # success message
+        print " Modified file saved", file_object_mod.name
 
-                # write the modified line to new file
-                file_object_mod.write('   '+ line_mod)
 
-            # close the files
-            file_object_ori.close()
-            file_object_mod.close()
 
-            # success message
-            print " Modified file saved", file_object_mod.name
+

@@ -44,5 +44,5 @@
    & costfuncbendingcoef=37, costfuncsepsensor=38, costfunccavitation=39
    REAL(kind=realtype), DIMENSION(:), ALLOCATABLE :: functionvalue
    REAL(kind=realtype), DIMENSION(ncostfunction) :: funcvalues
-   REAL(kind=realtype), DIMENSION(ncostfunction) :: funcvaluesb
+   REAL(kind=realtype), DIMENSION(ncostfunction) :: funcvaluesd
    END MODULE COSTFUNCTIONS_B
