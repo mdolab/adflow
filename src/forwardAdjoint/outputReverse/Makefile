@@ -37,7 +37,8 @@ include ${SUMB_RULES_FILE}
 vpath %.o $(SUMB_OBJDIR)
 
 FF90_OBJECTS =  \
-	adjustinflowangle_b.o\
+		allnodalgradients_b.o\
+		adjustinflowangle_b.o\
 		getdirvector_b.o\
 		referencestate_b.o\
 		vectorrotation_b.o\

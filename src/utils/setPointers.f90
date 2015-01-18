@@ -202,6 +202,23 @@
        rev   => flowDoms(nn,mm,ll)%rev
        s     => flowDoms(nn,mm,ll)%s
 
+       ux => flowDoms(nn,mm,ll)%ux
+       uy => flowDoms(nn,mm,ll)%uy
+       uz => flowDoms(nn,mm,ll)%uz
+
+       vx => flowDoms(nn,mm,ll)%vx
+       vy => flowDoms(nn,mm,ll)%vy
+       vz => flowDoms(nn,mm,ll)%vz
+
+       wx => flowDoms(nn,mm,ll)%wx
+       wy => flowDoms(nn,mm,ll)%wy
+       wz => flowDoms(nn,mm,ll)%wz
+
+       qx => flowDoms(nn,mm,ll)%qx
+       qy => flowDoms(nn,mm,ll)%qy
+       qz => flowDoms(nn,mm,ll)%qz
+
+
        ! Residual and multigrid variables. The residual point to the
        ! finest grid entry, the multigrid variables to their own level.
 

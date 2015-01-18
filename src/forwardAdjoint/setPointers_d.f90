@@ -48,6 +48,22 @@ subroutine setPointers_d(nn, level, sps)
   revd   => flowDomsd(nn,1,sps)%rev
   sd     => flowDomsd(nn,1,sps)%s
 
+  uxd => flowDomsd(nn,1,sps)%ux
+  uyd => flowDomsd(nn,1,sps)%uy
+  uzd => flowDomsd(nn,1,sps)%uz
+  
+  vxd => flowDomsd(nn,1,sps)%vx
+  vyd => flowDomsd(nn,1,sps)%vy
+  vzd => flowDomsd(nn,1,sps)%vz
+  
+  wxd => flowDomsd(nn,1,sps)%wx
+  wyd => flowDomsd(nn,1,sps)%wy
+  wzd => flowDomsd(nn,1,sps)%wz
+  
+  qxd => flowDomsd(nn,1,sps)%qx
+  qyd => flowDomsd(nn,1,sps)%qy
+  qzd => flowDomsd(nn,1,sps)%qz
+
   ! Residual and multigrid variables. The residual point to the
   ! finest grid entry, the multigrid variables to their own level.
 

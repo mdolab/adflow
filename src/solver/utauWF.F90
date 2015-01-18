@@ -34,7 +34,7 @@
        real(kind=realType) :: fact
        real(kind=realType) :: tauxx, tauyy, tauzz
        real(kind=realType) :: tauxy, tauxz, tauyz
-       real(kind=realType) :: rbar, ubar, vbar, wbar, vx, vy, vz
+       real(kind=realType) :: rbar, ubar, vbar, wbar, vvx, vvy, vvz
        real(kind=realType) :: fmx, fmy, fmz, frhoe
        real(kind=realType) :: veln, velnx, velny, velnz, tx, ty, tz
        real(kind=realType) :: veltx, velty, veltz, veltmag
@@ -159,13 +159,13 @@
              ! Compute the velocity difference between the internal cell
              ! and the wall.
 
-             vx = ww2(i,j,ivx) - ubar
-             vy = ww2(i,j,ivy) - vbar
-             vz = ww2(i,j,ivz) - wbar
+             vvx = ww2(i,j,ivx) - ubar
+             vvy = ww2(i,j,ivy) - vbar
+             vvz = ww2(i,j,ivz) - wbar
 
              ! Compute the normal velocity of the internal cell.
 
-             veln  = vx*norm(i,j,1) + vy*norm(i,j,2) + vz*norm(i,j,3)
+             veln  = vvx*norm(i,j,1) + vvy*norm(i,j,2) + vvz*norm(i,j,3)
              velnx = veln*norm(i,j,1)
              velny = veln*norm(i,j,2)
              velnz = veln*norm(i,j,3)
@@ -173,9 +173,9 @@
              ! Compute the tangential velocity, its magnitude and its
              ! unit vector of the internal cell.
 
-             veltx = vx - velnx
-             velty = vy - velny
-             veltz = vz - velnz
+             veltx = vvx - velnx
+             velty = vvy - velny
+             veltz = vvz - velnz
 
              veltmag = max(eps,sqrt(veltx**2 + velty**2 + veltz**2))
 

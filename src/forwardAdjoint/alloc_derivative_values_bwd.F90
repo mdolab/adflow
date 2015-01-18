@@ -104,6 +104,22 @@ subroutine alloc_derivative_values_bwd(level)
              flowDomsb(nn,1,sps)%gamma(0:ib,0:jb,0:kb), stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
 
+        allocate(&
+        flowDomsb(nn,1,sps)%ux(il,jl,kl), &
+        flowDomsb(nn,1,sps)%uy(il,jl,kl), &
+        flowDomsb(nn,1,sps)%uz(il,jl,kl), &
+        flowDomsb(nn,1,sps)%vx(il,jl,kl), &
+        flowDomsb(nn,1,sps)%vy(il,jl,kl), &
+        flowDomsb(nn,1,sps)%vz(il,jl,kl), &
+        flowDomsb(nn,1,sps)%wx(il,jl,kl), &
+        flowDomsb(nn,1,sps)%wy(il,jl,kl), &
+        flowDomsb(nn,1,sps)%wz(il,jl,kl), &
+        flowDomsb(nn,1,sps)%qx(il,jl,kl), &
+        flowDomsb(nn,1,sps)%qy(il,jl,kl), &
+        flowDomsb(nn,1,sps)%qz(il,jl,kl), stat=ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+
+
         ! Nominally we would only need these if visous is True, but
         ! tapende INSISTS on puting rlvd = 0 and rev = 0, it will
         ! segfault if we don't allocate it.

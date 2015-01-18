@@ -97,7 +97,21 @@ subroutine dealloc_derivative_values_bwd(level)
              flowDomsb(nn,1,sps)%radJ,     &
              flowDomsb(nn,1,sps)%radK,stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
-        
+        deallocate(&
+        flowDomsb(nn,1,sps)%ux, &
+        flowDomsb(nn,1,sps)%uy, &
+        flowDomsb(nn,1,sps)%uz, &
+        flowDomsb(nn,1,sps)%vx, &
+        flowDomsb(nn,1,sps)%vy, &
+        flowDomsb(nn,1,sps)%vz, &
+        flowDomsb(nn,1,sps)%wx, &
+        flowDomsb(nn,1,sps)%wy, &
+        flowDomsb(nn,1,sps)%wz, &
+        flowDomsb(nn,1,sps)%qx, &
+        flowDomsb(nn,1,sps)%qy, &
+        flowDomsb(nn,1,sps)%qz, stat=ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+
         ! Deallocate allocated boundayr data
         do mm=1,nBocos
            deallocate(flowDomsb(nn,1,sps)%BCData(mm)%norm,stat=ierr)

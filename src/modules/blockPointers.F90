@@ -149,7 +149,11 @@ module blockPointers
   real(kind=realType), dimension(:,:,:,:),   pointer :: dw, fw
   real(kind=realType), dimension(:,:,:,:,:), pointer :: dwOldRK
   real(kind=realType), dimension(:,:,:,:),   pointer :: w1, wr
-
+  real(kind=realType), dimension(:, :, :), pointer:: ux, uy, uz
+  real(kind=realType), dimension(:, :, :), pointer:: vx, vy, vz 
+  real(kind=realType), dimension(:, :, :), pointer:: wx, wy, wz 
+  real(kind=realType), dimension(:, :, :), pointer:: qx, qy, qz 
+  
   integer(kind=intType), dimension(:,:), pointer :: mgIFine
   integer(kind=intType), dimension(:,:), pointer :: mgJFine
   integer(kind=intType), dimension(:,:), pointer :: mgKFine

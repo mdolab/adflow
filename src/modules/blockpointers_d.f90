@@ -36,6 +36,22 @@ MODULE BLOCKPOINTERS_D
   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: wd
   REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: woldd
 
+  REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: uxd
+  REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: uyd
+  REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: uzd
+
+  REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: vxd
+  REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: vyd
+  REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: vzd
+
+  REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: wxd
+  REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: wyd
+  REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: wzd
+
+  REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: qxd
+  REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: qyd
+  REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: qzd
+
   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: pd, gammad
   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: rlvd, revd
 
