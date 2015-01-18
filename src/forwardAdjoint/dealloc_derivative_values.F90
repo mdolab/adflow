@@ -3,12 +3,14 @@
 
 subroutine dealloc_derivative_values(level)
 
-  use blockPointers_d ! This modules includes blockPointers
+  use blockPointers
   use inputtimespectral
   use flowvarrefstate
   use inputPhysics
   use cgnsGrid
   use BCTypes
+  use communication
+  use wallDistanceData
   implicit none
 
   ! Input Parameters
@@ -196,4 +198,11 @@ subroutine dealloc_derivative_values(level)
   deallocate(flowdomsd,stat=ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
+  ! And the petsc vector(s)
+  if (.not. wallDistanceNeeded) then 
+     call VecDestroy(xSurfVec(1), ierr)
+  end if
+
+  call VecDestroy(xSurfVecd, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
 end subroutine dealloc_derivative_values

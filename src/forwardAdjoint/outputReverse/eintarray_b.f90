@@ -5,7 +5,7 @@
    !   gradient     of useful results: tref rgas p eint rho
    !   with respect to varying inputs: tref rgas k p eint rho
    !      ==================================================================
-   SUBROUTINE EINTARRAY_B(rho, rhob, p, pb, k, kb, eint, eintb, correctfork&
+   SUBROUTINE EINTARRAY_B(rho, rhod, p, pd, k, kd, eint, eintd, correctfork&
    & , kk)
    !
    !      ******************************************************************
@@ -30,9 +30,9 @@
    !      Subroutine arguments.
    !
    REAL(kind=realtype), DIMENSION(kk), INTENT(IN) :: rho, p, k
-   REAL(kind=realtype), DIMENSION(kk) :: rhob, pb, kb
+   REAL(kind=realtype), DIMENSION(kk) :: rhod, pd, kd
    REAL(kind=realtype), DIMENSION(kk) :: eint
-   REAL(kind=realtype), DIMENSION(kk) :: eintb
+   REAL(kind=realtype), DIMENSION(kk) :: eintd
    LOGICAL, INTENT(IN) :: correctfork
    !
    !      Local parameter.
@@ -43,15 +43,15 @@
    !
    INTEGER(kind=inttype) :: i, nn, mm, ii, start
    REAL(kind=realtype) :: ovgm1, factk, pp, t, t2, scale
-   REAL(kind=realtype) :: ppb, tb, t2b, scaleb
+   REAL(kind=realtype) :: ppd, td, t2d, scaled
    INTRINSIC LOG
    INTEGER :: ad_count
    INTEGER :: i0
    INTEGER :: branch
    INTEGER :: ad_to
-   REAL(kind=realtype) :: tempb1
-   REAL(kind=realtype) :: tempb0
-   REAL(kind=realtype) :: tempb
+   REAL(kind=realtype) :: tempd
+   REAL(kind=realtype) :: tempd1
+   REAL(kind=realtype) :: tempd0
    !
    !      ******************************************************************
    !      *                                                                *
@@ -68,18 +68,18 @@
    ! energy is present.
    IF (correctfork) THEN
    factk = ovgm1*(five*third-gammaconstant)
-   kb = 0.0_8
+   kd = 0.0_8
    DO i=kk,1,-1
-   kb(i) = kb(i) - factk*eintb(i)
+   kd(i) = kd(i) - factk*eintd(i)
    END DO
    ELSE
-   kb = 0.0_8
+   kd = 0.0_8
    END IF
    DO i=kk,1,-1
-   tempb = ovgm1*eintb(i)/rho(i)
-   pb(i) = pb(i) + tempb
-   rhob(i) = rhob(i) - p(i)*tempb/rho(i)
-   eintb(i) = 0.0_8
+   tempd = ovgm1*eintd(i)/rho(i)
+   pd(i) = pd(i) + tempd
+   rhod(i) = rhod(i) - p(i)*tempd/rho(i)
+   eintd(i) = 0.0_8
    END DO
    CASE (cptempcurvefits) 
    !        ================================================================
@@ -157,66 +157,66 @@
    CALL PUSHCONTROL1B(0)
    END IF
    END DO
-   kb = 0.0_8
-   scaleb = 0.0_8
+   kd = 0.0_8
+   scaled = 0.0_8
    DO i=kk,1,-1
    CALL POPCONTROL1B(branch)
-   IF (branch .NE. 0) kb(i) = kb(i) + eintb(i)
+   IF (branch .NE. 0) kd(i) = kd(i) + eintd(i)
    CALL POPCONTROL2B(branch)
    IF (branch .EQ. 0) THEN
    t = tref*pp/(rgas*rho(i))
-   scaleb = scaleb + (cpeint(0)+cv0*(t-cptrange(0)))*eintb(i)
-   tb = scale*cv0*eintb(i)
-   eintb(i) = 0.0_8
+   scaled = scaled + (cpeint(0)+cv0*(t-cptrange(0)))*eintd(i)
+   td = scale*cv0*eintd(i)
+   eintd(i) = 0.0_8
    ELSE IF (branch .EQ. 1) THEN
    t = tref*pp/(rgas*rho(i))
-   scaleb = scaleb + (cpeint(cpnparts)+cvn*(t-cptrange(cpnparts)))*&
-   &         eintb(i)
-   tb = scale*cvn*eintb(i)
-   eintb(i) = 0.0_8
+   scaled = scaled + (cpeint(cpnparts)+cvn*(t-cptrange(cpnparts)))*&
+   &         eintd(i)
+   td = scale*cvn*eintd(i)
+   eintd(i) = 0.0_8
    ELSE
-   scaleb = scaleb + eint(i)*eintb(i)
-   eintb(i) = scale*eintb(i)
+   scaled = scaled + eint(i)*eintd(i)
+   eintd(i) = scale*eintd(i)
    t = tref*pp/(rgas*rho(i))
-   tb = 0.0_8
+   td = 0.0_8
    CALL POPINTEGER4(ad_to)
    DO ii=ad_to,1,-1
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   t2b = cptempfit(nn)%constants(ii)*eintb(i)/mm
+   t2d = cptempfit(nn)%constants(ii)*eintd(i)/mm
    IF (.NOT.(t .LE. 0.0_8 .AND. (mm .EQ. 0.0_8 .OR. mm .NE. INT&
-   &               (mm)))) tb = tb + mm*t**(mm-1)*t2b
+   &               (mm)))) td = td + mm*t**(mm-1)*t2d
    CALL POPINTEGER4(mm)
    ELSE
-   tb = tb + cptempfit(nn)%constants(ii)*eintb(i)/t
+   td = td + cptempfit(nn)%constants(ii)*eintd(i)/t
    END IF
    END DO
    CALL POPREAL8(eint(i))
-   tb = tb - eintb(i)
-   eintb(i) = 0.0_8
+   td = td - eintd(i)
+   eintd(i) = 0.0_8
    CALL POPINTEGER4(ad_count)
    DO i0=1,ad_count
    IF (i0 .NE. 1) CALL POPCONTROL1B(branch)
    CALL POPINTEGER4(nn)
    END DO
    END IF
-   tempb0 = tb/(rgas*rho(i))
-   tempb1 = -(tref*pp*tempb0/(rgas*rho(i)))
-   trefb = trefb + pp*tempb0
-   ppb = tref*tempb0
-   rgasb = rgasb + rho(i)*tempb1
-   rhob(i) = rhob(i) + rgas*tempb1
+   tempd0 = td/(rgas*rho(i))
+   tempd1 = -(tref*pp*tempd0/(rgas*rho(i)))
+   trefd = trefd + pp*tempd0
+   ppd = tref*tempd0
+   rgasd = rgasd + rho(i)*tempd1
+   rhod(i) = rhod(i) + rgas*tempd1
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   rhob(i) = rhob(i) - twothird*k(i)*ppb
-   kb(i) = kb(i) - twothird*rho(i)*ppb
+   rhod(i) = rhod(i) - twothird*k(i)*ppd
+   kd(i) = kd(i) - twothird*rho(i)*ppd
    END IF
    CALL POPREAL8(pp)
-   pb(i) = pb(i) + ppb
+   pd(i) = pd(i) + ppd
    END DO
-   rgasb = rgasb + scaleb/tref
-   trefb = trefb - rgas*scaleb/tref**2
+   rgasd = rgasd + scaled/tref
+   trefd = trefd - rgas*scaled/tref**2
    CASE DEFAULT
-   kb = 0.0_8
+   kd = 0.0_8
    END SELECT
    END SUBROUTINE EINTARRAY_B

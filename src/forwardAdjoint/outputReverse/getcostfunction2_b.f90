@@ -8,8 +8,8 @@
    !                dragdirection liftdirection pointref gammainf
    !                pinf rhoinfdim pinfdim pref moment force cavitation
    !                sepsensor
-   SUBROUTINE GETCOSTFUNCTION2_B(force, forceb, moment, momentb, sepsensor&
-   & , sepsensorb, cavitation, cavitationb, alpha, beta, liftindex)
+   SUBROUTINE GETCOSTFUNCTION2_B(force, forced, moment, momentd, sepsensor&
+   & , sepsensord, cavitation, cavitationd, alpha, beta, liftindex)
    ! Compute the value of the actual objective function based on the
    ! (summed) forces and moments and any other "extra" design
    ! variables. The index of the objective is determined by 'iDV'. This
@@ -24,23 +24,23 @@
    INTEGER(kind=inttype), INTENT(IN) :: liftindex
    REAL(kind=realtype), DIMENSION(3, ntimeintervalsspectral), INTENT(IN) &
    & :: force, moment
-   REAL(kind=realtype), DIMENSION(3, ntimeintervalsspectral) :: forceb, &
-   & momentb
+   REAL(kind=realtype), DIMENSION(3, ntimeintervalsspectral) :: forced, &
+   & momentd
    REAL(kind=realtype), INTENT(IN) :: sepsensor, cavitation
-   REAL(kind=realtype) :: sepsensorb, cavitationb
+   REAL(kind=realtype) :: sepsensord, cavitationd
    REAL(kind=realtype), INTENT(IN) :: alpha, beta
    ! Working
    REAL(kind=realtype) :: fact, factmoment, scaledim, ovrnts
-   REAL(kind=realtype) :: factb, factmomentb, scaledimb
+   REAL(kind=realtype) :: factd, factmomentd, scaledimd
    REAL(kind=realtype), DIMENSION(3) :: cf, cm
-   REAL(kind=realtype), DIMENSION(3) :: cfb, cmb
+   REAL(kind=realtype), DIMENSION(3) :: cfd, cmd
    REAL(kind=realtype) :: elasticmomentx, elasticmomenty, elasticmomentz
    REAL(kind=realtype), DIMENSION(ntimeintervalsspectral, 8) :: basecoef
    REAL(kind=realtype), DIMENSION(8) :: coef0, dcdalpha, dcdalphadot, &
    & dcdq, dcdqdot
-   REAL(kind=realtype), DIMENSION(8) :: coef0b, dcdalphab, dcdalphadotb
+   REAL(kind=realtype), DIMENSION(8) :: coef0d, dcdalphad, dcdalphadotd
    REAL(kind=realtype) :: bendingmoment
-   REAL(kind=realtype) :: bendingmomentb
+   REAL(kind=realtype) :: bendingmomentd
    INTEGER(kind=inttype) :: sps
    REAL(kind=realtype) :: tmp
    REAL(kind=realtype) :: tmp0
@@ -55,19 +55,19 @@
    INTEGER :: branch
    REAL(kind=realtype) :: temp1
    REAL(kind=realtype) :: temp0
-   REAL(kind=realtype) :: tmpb8
-   REAL(kind=realtype) :: tmpb7
-   REAL(kind=realtype) :: tempb1
-   REAL(kind=realtype) :: tmpb6
-   REAL(kind=realtype) :: tempb0
-   REAL(kind=realtype) :: tmpb5
-   REAL(kind=realtype) :: tmpb4
-   REAL(kind=realtype) :: tmpb3
-   REAL(kind=realtype) :: tmpb
-   REAL(kind=realtype) :: tmpb2
-   REAL(kind=realtype) :: tmpb1
-   REAL(kind=realtype) :: tmpb0
-   REAL(kind=realtype) :: tempb
+   REAL(kind=realtype) :: tmpd
+   REAL(kind=realtype) :: tempd
+   REAL(kind=realtype) :: tmpd8
+   REAL(kind=realtype) :: tmpd7
+   REAL(kind=realtype) :: tempd1
+   REAL(kind=realtype) :: tmpd6
+   REAL(kind=realtype) :: tempd0
+   REAL(kind=realtype) :: tmpd5
+   REAL(kind=realtype) :: tmpd4
+   REAL(kind=realtype) :: tmpd3
+   REAL(kind=realtype) :: tmpd2
+   REAL(kind=realtype) :: tmpd1
+   REAL(kind=realtype) :: tmpd0
    REAL(kind=realtype) :: temp
    ! Generate constants
    scaledim = pref/pinf
@@ -141,156 +141,156 @@
    CALL PUSHREAL8(funcvalues(costfuncliftcoef))
    funcvalues(costfuncliftcoef) = tmp7
    ! -------------------- Time Spectral Objectives ------------------
-   funcvaluesb(costfunccmzqdot) = 0.0_8
-   funcvaluesb(costfunccdqdot) = 0.0_8
-   funcvaluesb(costfuncclqdot) = 0.0_8
-   funcvaluesb(costfunccmzq) = 0.0_8
-   funcvaluesb(costfunccdq) = 0.0_8
-   funcvaluesb(costfuncclq) = 0.0_8
-   dcdalphadotb = 0.0_8
-   dcdalphadotb(8) = dcdalphadotb(8) + funcvaluesb(costfunccmzalphadot)
-   funcvaluesb(costfunccmzalphadot) = 0.0_8
-   dcdalphadotb(2) = dcdalphadotb(2) + funcvaluesb(costfunccdalphadot)
-   funcvaluesb(costfunccdalphadot) = 0.0_8
-   dcdalphadotb(1) = dcdalphadotb(1) + funcvaluesb(costfuncclalphadot)
-   funcvaluesb(costfuncclalphadot) = 0.0_8
-   dcdalphab = 0.0_8
-   dcdalphab(8) = dcdalphab(8) + funcvaluesb(costfunccmzalpha)
-   funcvaluesb(costfunccmzalpha) = 0.0_8
-   dcdalphab(2) = dcdalphab(2) + funcvaluesb(costfunccdalpha)
-   funcvaluesb(costfunccdalpha) = 0.0_8
-   dcdalphab(1) = dcdalphab(1) + funcvaluesb(costfuncclalpha)
-   funcvaluesb(costfuncclalpha) = 0.0_8
-   coef0b = 0.0_8
-   coef0b(8) = coef0b(8) + funcvaluesb(costfunccm0)
-   funcvaluesb(costfunccm0) = 0.0_8
-   coef0b(2) = coef0b(2) + funcvaluesb(costfunccd0)
-   funcvaluesb(costfunccd0) = 0.0_8
-   coef0b(1) = coef0b(1) + funcvaluesb(costfunccl0)
-   funcvaluesb(costfunccl0) = 0.0_8
-   tmpb = funcvaluesb(costfuncdragcoef)
-   funcvaluesb(costfuncdragcoef) = 0.0_8
-   funcvaluesb(costfuncdrag) = funcvaluesb(costfuncdrag) + fact*tmpb
-   factb = funcvalues(costfuncdrag)*tmpb
+   funcvaluesd(costfunccmzqdot) = 0.0_8
+   funcvaluesd(costfunccdqdot) = 0.0_8
+   funcvaluesd(costfuncclqdot) = 0.0_8
+   funcvaluesd(costfunccmzq) = 0.0_8
+   funcvaluesd(costfunccdq) = 0.0_8
+   funcvaluesd(costfuncclq) = 0.0_8
+   dcdalphadotd = 0.0_8
+   dcdalphadotd(8) = dcdalphadotd(8) + funcvaluesd(costfunccmzalphadot)
+   funcvaluesd(costfunccmzalphadot) = 0.0_8
+   dcdalphadotd(2) = dcdalphadotd(2) + funcvaluesd(costfunccdalphadot)
+   funcvaluesd(costfunccdalphadot) = 0.0_8
+   dcdalphadotd(1) = dcdalphadotd(1) + funcvaluesd(costfuncclalphadot)
+   funcvaluesd(costfuncclalphadot) = 0.0_8
+   dcdalphad = 0.0_8
+   dcdalphad(8) = dcdalphad(8) + funcvaluesd(costfunccmzalpha)
+   funcvaluesd(costfunccmzalpha) = 0.0_8
+   dcdalphad(2) = dcdalphad(2) + funcvaluesd(costfunccdalpha)
+   funcvaluesd(costfunccdalpha) = 0.0_8
+   dcdalphad(1) = dcdalphad(1) + funcvaluesd(costfuncclalpha)
+   funcvaluesd(costfuncclalpha) = 0.0_8
+   coef0d = 0.0_8
+   coef0d(8) = coef0d(8) + funcvaluesd(costfunccm0)
+   funcvaluesd(costfunccm0) = 0.0_8
+   coef0d(2) = coef0d(2) + funcvaluesd(costfunccd0)
+   funcvaluesd(costfunccd0) = 0.0_8
+   coef0d(1) = coef0d(1) + funcvaluesd(costfunccl0)
+   funcvaluesd(costfunccl0) = 0.0_8
+   tmpd = funcvaluesd(costfuncdragcoef)
+   funcvaluesd(costfuncdragcoef) = 0.0_8
+   funcvaluesd(costfuncdrag) = funcvaluesd(costfuncdrag) + fact*tmpd
+   factd = funcvalues(costfuncdrag)*tmpd
    CALL POPREAL8(funcvalues(costfuncliftcoef))
-   tmpb0 = funcvaluesb(costfuncliftcoef)
-   funcvaluesb(costfuncliftcoef) = 0.0_8
-   funcvaluesb(costfunclift) = funcvaluesb(costfunclift) + fact*tmpb0
-   factb = factb + funcvalues(costfunclift)*tmpb0
-   dragdirectionb = 0.0_8
+   tmpd0 = funcvaluesd(costfuncliftcoef)
+   funcvaluesd(costfuncliftcoef) = 0.0_8
+   funcvaluesd(costfunclift) = funcvaluesd(costfunclift) + fact*tmpd0
+   factd = factd + funcvalues(costfunclift)*tmpd0
+   dragdirectiond = 0.0_8
    CALL POPREAL8(funcvalues(costfuncdrag))
-   tmpb1 = funcvaluesb(costfuncdrag)
-   funcvaluesb(costfuncdrag) = 0.0_8
-   dragdirectionb = 0.0_8
-   funcvaluesb(costfuncforcex) = funcvaluesb(costfuncforcex) + &
-   &   dragdirection(1)*tmpb1
-   dragdirectionb(1) = dragdirectionb(1) + funcvalues(costfuncforcex)*&
-   &   tmpb1
-   funcvaluesb(costfuncforcey) = funcvaluesb(costfuncforcey) + &
-   &   dragdirection(2)*tmpb1
-   dragdirectionb(2) = dragdirectionb(2) + funcvalues(costfuncforcey)*&
-   &   tmpb1
-   funcvaluesb(costfuncforcez) = funcvaluesb(costfuncforcez) + &
-   &   dragdirection(3)*tmpb1
-   dragdirectionb(3) = dragdirectionb(3) + funcvalues(costfuncforcez)*&
-   &   tmpb1
-   liftdirectionb = 0.0_8
+   tmpd1 = funcvaluesd(costfuncdrag)
+   funcvaluesd(costfuncdrag) = 0.0_8
+   dragdirectiond = 0.0_8
+   funcvaluesd(costfuncforcex) = funcvaluesd(costfuncforcex) + &
+   &   dragdirection(1)*tmpd1
+   dragdirectiond(1) = dragdirectiond(1) + funcvalues(costfuncforcex)*&
+   &   tmpd1
+   funcvaluesd(costfuncforcey) = funcvaluesd(costfuncforcey) + &
+   &   dragdirection(2)*tmpd1
+   dragdirectiond(2) = dragdirectiond(2) + funcvalues(costfuncforcey)*&
+   &   tmpd1
+   funcvaluesd(costfuncforcez) = funcvaluesd(costfuncforcez) + &
+   &   dragdirection(3)*tmpd1
+   dragdirectiond(3) = dragdirectiond(3) + funcvalues(costfuncforcez)*&
+   &   tmpd1
+   liftdirectiond = 0.0_8
    CALL POPREAL8(funcvalues(costfunclift))
-   tmpb2 = funcvaluesb(costfunclift)
-   funcvaluesb(costfunclift) = 0.0_8
-   liftdirectionb = 0.0_8
-   funcvaluesb(costfuncforcex) = funcvaluesb(costfuncforcex) + &
-   &   liftdirection(1)*tmpb2
-   liftdirectionb(1) = liftdirectionb(1) + funcvalues(costfuncforcex)*&
-   &   tmpb2
-   funcvaluesb(costfuncforcey) = funcvaluesb(costfuncforcey) + &
-   &   liftdirection(2)*tmpb2
-   liftdirectionb(2) = liftdirectionb(2) + funcvalues(costfuncforcey)*&
-   &   tmpb2
-   funcvaluesb(costfuncforcez) = funcvaluesb(costfuncforcez) + &
-   &   liftdirection(3)*tmpb2
-   liftdirectionb(3) = liftdirectionb(3) + funcvalues(costfuncforcez)*&
-   &   tmpb2
+   tmpd2 = funcvaluesd(costfunclift)
+   funcvaluesd(costfunclift) = 0.0_8
+   liftdirectiond = 0.0_8
+   funcvaluesd(costfuncforcex) = funcvaluesd(costfuncforcex) + &
+   &   liftdirection(1)*tmpd2
+   liftdirectiond(1) = liftdirectiond(1) + funcvalues(costfuncforcex)*&
+   &   tmpd2
+   funcvaluesd(costfuncforcey) = funcvaluesd(costfuncforcey) + &
+   &   liftdirection(2)*tmpd2
+   liftdirectiond(2) = liftdirectiond(2) + funcvalues(costfuncforcey)*&
+   &   tmpd2
+   funcvaluesd(costfuncforcez) = funcvaluesd(costfuncforcez) + &
+   &   liftdirection(3)*tmpd2
+   liftdirectiond(3) = liftdirectiond(3) + funcvalues(costfuncforcez)*&
+   &   tmpd2
    CALL POPREAL8(funcvalues(costfuncmomzcoef))
-   tmpb3 = funcvaluesb(costfuncmomzcoef)
-   funcvaluesb(costfuncmomzcoef) = 0.0_8
-   funcvaluesb(costfuncmomz) = funcvaluesb(costfuncmomz) + factmoment*&
-   &   tmpb3
-   factmomentb = funcvalues(costfuncmomz)*tmpb3
+   tmpd3 = funcvaluesd(costfuncmomzcoef)
+   funcvaluesd(costfuncmomzcoef) = 0.0_8
+   funcvaluesd(costfuncmomz) = funcvaluesd(costfuncmomz) + factmoment*&
+   &   tmpd3
+   factmomentd = funcvalues(costfuncmomz)*tmpd3
    CALL POPREAL8(funcvalues(costfuncmomycoef))
-   tmpb4 = funcvaluesb(costfuncmomycoef)
-   funcvaluesb(costfuncmomycoef) = 0.0_8
-   funcvaluesb(costfuncmomy) = funcvaluesb(costfuncmomy) + factmoment*&
-   &   tmpb4
-   factmomentb = factmomentb + funcvalues(costfuncmomy)*tmpb4
+   tmpd4 = funcvaluesd(costfuncmomycoef)
+   funcvaluesd(costfuncmomycoef) = 0.0_8
+   funcvaluesd(costfuncmomy) = funcvaluesd(costfuncmomy) + factmoment*&
+   &   tmpd4
+   factmomentd = factmomentd + funcvalues(costfuncmomy)*tmpd4
    CALL POPREAL8(funcvalues(costfuncmomxcoef))
-   tmpb5 = funcvaluesb(costfuncmomxcoef)
-   funcvaluesb(costfuncmomxcoef) = 0.0_8
-   funcvaluesb(costfuncmomx) = funcvaluesb(costfuncmomx) + factmoment*&
-   &   tmpb5
-   factmomentb = factmomentb + funcvalues(costfuncmomx)*tmpb5
+   tmpd5 = funcvaluesd(costfuncmomxcoef)
+   funcvaluesd(costfuncmomxcoef) = 0.0_8
+   funcvaluesd(costfuncmomx) = funcvaluesd(costfuncmomx) + factmoment*&
+   &   tmpd5
+   factmomentd = factmomentd + funcvalues(costfuncmomx)*tmpd5
    CALL POPREAL8(funcvalues(costfuncforcezcoef))
-   tmpb6 = funcvaluesb(costfuncforcezcoef)
-   funcvaluesb(costfuncforcezcoef) = 0.0_8
-   funcvaluesb(costfuncforcez) = funcvaluesb(costfuncforcez) + fact*tmpb6
-   factb = factb + funcvalues(costfuncforcez)*tmpb6
+   tmpd6 = funcvaluesd(costfuncforcezcoef)
+   funcvaluesd(costfuncforcezcoef) = 0.0_8
+   funcvaluesd(costfuncforcez) = funcvaluesd(costfuncforcez) + fact*tmpd6
+   factd = factd + funcvalues(costfuncforcez)*tmpd6
    CALL POPREAL8(funcvalues(costfuncforceycoef))
-   tmpb7 = funcvaluesb(costfuncforceycoef)
-   funcvaluesb(costfuncforceycoef) = 0.0_8
-   funcvaluesb(costfuncforcey) = funcvaluesb(costfuncforcey) + fact*tmpb7
-   factb = factb + funcvalues(costfuncforcey)*tmpb7
+   tmpd7 = funcvaluesd(costfuncforceycoef)
+   funcvaluesd(costfuncforceycoef) = 0.0_8
+   funcvaluesd(costfuncforcey) = funcvaluesd(costfuncforcey) + fact*tmpd7
+   factd = factd + funcvalues(costfuncforcey)*tmpd7
    CALL POPREAL8(funcvalues(costfuncforcexcoef))
-   tmpb8 = funcvaluesb(costfuncforcexcoef)
-   funcvaluesb(costfuncforcexcoef) = 0.0_8
-   funcvaluesb(costfuncforcex) = funcvaluesb(costfuncforcex) + fact*tmpb8
-   factb = factb + funcvalues(costfuncforcex)*tmpb8
-   lengthrefb = 0.0_8
-   pointrefb = 0.0_8
+   tmpd8 = funcvaluesd(costfuncforcexcoef)
+   funcvaluesd(costfuncforcexcoef) = 0.0_8
+   funcvaluesd(costfuncforcex) = funcvaluesd(costfuncforcex) + fact*tmpd8
+   factd = factd + funcvalues(costfuncforcex)*tmpd8
+   lengthrefd = 0.0_8
+   pointrefd = 0.0_8
    DO sps=ntimeintervalsspectral,1,-1
-   bendingmomentb = ovrnts*funcvaluesb(costfuncbendingcoef)
+   bendingmomentd = ovrnts*funcvaluesd(costfuncbendingcoef)
    cf = fact*force(:, sps)
    cm = factmoment*moment(:, sps)
-   CALL COMPUTEROOTBENDINGMOMENT_B(cf, cfb, cm, cmb, liftindex, &
-   &                             bendingmoment, bendingmomentb)
-   factb = factb + SUM(force(:, sps)*cfb)
-   forceb(:, sps) = forceb(:, sps) + fact*cfb
-   factmomentb = factmomentb + SUM(moment(:, sps)*cmb)
-   momentb(:, sps) = momentb(:, sps) + factmoment*cmb
-   cavitationb = cavitationb + ovrnts*funcvaluesb(costfunccavitation)
-   sepsensorb = sepsensorb + ovrnts*funcvaluesb(costfuncsepsensor)
-   momentb(3, sps) = momentb(3, sps) + ovrnts*funcvaluesb(costfuncmomz)
-   momentb(2, sps) = momentb(2, sps) + ovrnts*funcvaluesb(costfuncmomy)
-   momentb(1, sps) = momentb(1, sps) + ovrnts*funcvaluesb(costfuncmomx)
-   forceb(3, sps) = forceb(3, sps) + ovrnts*funcvaluesb(costfuncforcez)
-   forceb(2, sps) = forceb(2, sps) + ovrnts*funcvaluesb(costfuncforcey)
-   forceb(1, sps) = forceb(1, sps) + ovrnts*funcvaluesb(costfuncforcex)
+   CALL COMPUTEROOTBENDINGMOMENT_B(cf, cfd, cm, cmd, liftindex, &
+   &                             bendingmoment, bendingmomentd)
+   factd = factd + SUM(force(:, sps)*cfd)
+   forced(:, sps) = forced(:, sps) + fact*cfd
+   factmomentd = factmomentd + SUM(moment(:, sps)*cmd)
+   momentd(:, sps) = momentd(:, sps) + factmoment*cmd
+   cavitationd = cavitationd + ovrnts*funcvaluesd(costfunccavitation)
+   sepsensord = sepsensord + ovrnts*funcvaluesd(costfuncsepsensor)
+   momentd(3, sps) = momentd(3, sps) + ovrnts*funcvaluesd(costfuncmomz)
+   momentd(2, sps) = momentd(2, sps) + ovrnts*funcvaluesd(costfuncmomy)
+   momentd(1, sps) = momentd(1, sps) + ovrnts*funcvaluesd(costfuncmomx)
+   forced(3, sps) = forced(3, sps) + ovrnts*funcvaluesd(costfuncforcez)
+   forced(2, sps) = forced(2, sps) + ovrnts*funcvaluesd(costfuncforcey)
+   forced(1, sps) = forced(1, sps) + ovrnts*funcvaluesd(costfuncforcex)
    END DO
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    CALL POPINTEGER4(liftindex)
-   CALL COMPUTETSDERIVATIVES_B(force, forceb, moment, momentb, &
-   &                         liftindex, coef0, coef0b, dcdalpha, dcdalphab&
-   &                         , dcdalphadot, dcdalphadotb, dcdq, dcdqdot)
+   CALL COMPUTETSDERIVATIVES_B(force, forced, moment, momentd, &
+   &                         liftindex, coef0, coef0d, dcdalpha, dcdalphad&
+   &                         , dcdalphadot, dcdalphadotd, dcdq, dcdqdot)
    ELSE
-   machgridb = 0.0_8
-   machcoefb = 0.0_8
-   gammainfb = 0.0_8
-   pinfb = 0.0_8
-   rhoinfdimb = 0.0_8
-   pinfdimb = 0.0_8
-   prefb = 0.0_8
+   machgridd = 0.0_8
+   machcoefd = 0.0_8
+   gammainfd = 0.0_8
+   pinfd = 0.0_8
+   rhoinfdimd = 0.0_8
+   pinfdimd = 0.0_8
+   prefd = 0.0_8
    END IF
-   tempb = factmomentb/(lref*lengthref)
-   factb = factb + tempb
-   lengthrefb = lengthrefb - fact*tempb/lengthref
+   tempd = factmomentd/(lref*lengthref)
+   factd = factd + tempd
+   lengthrefd = lengthrefd - fact*tempd/lengthref
    temp1 = machcoef**2*scaledim
    temp0 = surfaceref*lref**2
    temp = temp0*gammainf*pinf
-   tempb0 = -(two*factb/(temp**2*temp1**2))
-   tempb1 = temp1*temp0*tempb0
-   gammainfb = gammainfb + pinf*tempb1
-   machcoefb = machcoefb + scaledim*temp*2*machcoef*tempb0
-   scaledimb = temp*machcoef**2*tempb0
-   pinfb = pinfb + gammainf*tempb1 - pref*scaledimb/pinf**2
-   prefb = prefb + scaledimb/pinf
+   tempd0 = -(two*factd/(temp**2*temp1**2))
+   tempd1 = temp1*temp0*tempd0
+   gammainfd = gammainfd + pinf*tempd1
+   machcoefd = machcoefd + scaledim*temp*2*machcoef*tempd0
+   scaledimd = temp*machcoef**2*tempd0
+   pinfd = pinfd + gammainf*tempd1 - pref*scaledimd/pinf**2
+   prefd = prefd + scaledimd/pinf
    END SUBROUTINE GETCOSTFUNCTION2_B

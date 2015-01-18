@@ -56,7 +56,6 @@ FF90_OBJECTS =  \
 		bcnswallisothermal_b.o\
 		bcnswalladiabatic_b.o\
 		invisciddissfluxscalar_b.o\
-		invisciddissfluxscalarcoarse_b.o\
 		dim_b.o\
 		block_res_b.o  \
 		viscousflux_b.o \
@@ -71,8 +70,6 @@ FF90_OBJECTS =  \
 		resetssmetricbwd_b.o\
 		setgammabwd_b.o\
 		resetgammabwd_b.o\
-                setww0pp0rlv0rev0bwd_b.o\
-		resetww0pp0rlv0rev0bwd_b.o\
                 setxxssrhodd2wallbwd_b.o\
                 resetxxssrhodd2wallbwd_b.o\
                 resetbcpointersbwd_b.o\
@@ -107,9 +104,7 @@ FF90_OBJECTS =  \
 		bcturbwall_b.o\
 		bcturbfarfield_b.o\
 		turbbcnswall_b.o\
-		unsteadyturbspectral_block_b.o\
 		updatewalldistancesquickly_b.o\
-
 
 #      ******************************************************************
 #      *                                                                *

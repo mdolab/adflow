@@ -2,7 +2,7 @@
 ! Set the pointers for the derivative values AND the normal pointers
 subroutine setPointers_d(nn, level, sps)
 
-  use blockPointers_d
+  use blockPointers
   implicit none
   !
   !      Subroutine arguments

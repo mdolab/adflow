@@ -14,7 +14,7 @@
    !                *bcdata.norm:in
    SUBROUTINE APPLYALLBC_BLOCK_B(secondhalo)
    ! Apply BC's for a single block
-   USE BLOCKPOINTERS_B
+   USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
    USE INPUTDISCRETIZATION
    USE INPUTTIMESPECTRAL

@@ -31,7 +31,7 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    USE BCTYPES
    USE CONSTANTS
    USE FLOWVARREFSTATE
@@ -60,7 +60,7 @@
    SUBROUTINE SETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
    &       rev1, rev2, offset)
    USE BCTYPES
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
    IMPLICIT NONE
    INTEGER(kind=inttype), INTENT(IN) :: nn, offset
@@ -72,7 +72,7 @@
    SUBROUTINE RESETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
    &       rev1, rev2, offset)
    USE BCTYPES
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
    IMPLICIT NONE
    INTEGER(kind=inttype), INTENT(IN) :: nn, offset
@@ -83,7 +83,7 @@
    END SUBROUTINE RESETBCPOINTERS
    SUBROUTINE SETGAMMA(nn, gamma1, gamma2)
    USE BCTYPES
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
    IMPLICIT NONE
    INTEGER(kind=inttype), INTENT(IN) :: nn
@@ -91,7 +91,7 @@
    END SUBROUTINE SETGAMMA
    SUBROUTINE RESETGAMMA(nn, gamma1, gamma2)
    USE BCTYPES
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
    IMPLICIT NONE
    INTEGER(kind=inttype), INTENT(IN) :: nn
@@ -103,7 +103,7 @@
    &       pp2, pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev1d, rev2, rev2d, &
    &       offset)
    USE BCTYPES
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
    IMPLICIT NONE
    INTEGER(kind=inttype), INTENT(IN) :: nn, offset
@@ -118,7 +118,7 @@
    END SUBROUTINE SETBCPOINTERS_D
    SUBROUTINE SETGAMMA_D(nn, gamma1, gamma1d, gamma2, gamma2d)
    USE BCTYPES
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
    IMPLICIT NONE
    INTEGER(kind=inttype), INTENT(IN) :: nn

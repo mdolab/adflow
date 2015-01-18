@@ -39,7 +39,7 @@
    !      ******************************************************************
    !
    USE BCTYPES
-   USE BLOCKPOINTERS_B
+   USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
    IMPLICIT NONE
    !
@@ -72,24 +72,24 @@
    DO j=je,1,-1
    DO i=ie,1,-1
    DO l=nt2,nt1,-1
-   bvtk2b(i, j, l) = 0.0_8
-   bvtk1b(i, j, l) = 0.0_8
+   bvtk2d(i, j, l) = 0.0_8
+   bvtk1d(i, j, l) = 0.0_8
    END DO
    END DO
    END DO
    DO k=ke,1,-1
    DO i=ie,1,-1
    DO l=nt2,nt1,-1
-   bvtj2b(i, k, l) = 0.0_8
-   bvtj1b(i, k, l) = 0.0_8
+   bvtj2d(i, k, l) = 0.0_8
+   bvtj1d(i, k, l) = 0.0_8
    END DO
    END DO
    END DO
    DO k=ke,1,-1
    DO j=je,1,-1
    DO l=nt2,nt1,-1
-   bvti2b(j, k, l) = 0.0_8
-   bvti1b(j, k, l) = 0.0_8
+   bvti2d(j, k, l) = 0.0_8
+   bvti1d(j, k, l) = 0.0_8
    END DO
    END DO
    END DO

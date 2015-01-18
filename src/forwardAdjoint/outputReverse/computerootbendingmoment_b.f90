@@ -13,8 +13,8 @@
    !   Date Modified: July 10,2011
    !
    !****************************************************
-   SUBROUTINE COMPUTEROOTBENDINGMOMENT_B(cf, cfb, cm, cmb, liftindex, &
-   & bendingmoment, bendingmomentb)
+   SUBROUTINE COMPUTEROOTBENDINGMOMENT_B(cf, cfd, cm, cmd, liftindex, &
+   & bendingmoment, bendingmomentd)
    !*******************************************************
    !                                                      *
    ! Compute a normalized bending moment coefficient from *
@@ -30,29 +30,29 @@
    IMPLICIT NONE
    !input/output variables
    REAL(kind=realtype), DIMENSION(3), INTENT(IN) :: cf, cm
-   REAL(kind=realtype), DIMENSION(3) :: cfb, cmb
+   REAL(kind=realtype), DIMENSION(3) :: cfd, cmd
    INTEGER(kind=inttype), INTENT(IN) :: liftindex
    REAL(kind=realtype) :: bendingmoment
-   REAL(kind=realtype) :: bendingmomentb
+   REAL(kind=realtype) :: bendingmomentd
    !Subroutine Variables
    REAL(kind=realtype) :: elasticmomentx, elasticmomenty, elasticmomentz
-   REAL(kind=realtype) :: elasticmomentxb, elasticmomentyb, &
-   & elasticmomentzb
+   REAL(kind=realtype) :: elasticmomentxd, elasticmomentyd, &
+   & elasticmomentzd
    INTRINSIC SQRT
    REAL(kind=realtype) :: temp3
    REAL(kind=realtype) :: temp2
    REAL(kind=realtype) :: temp1
    REAL(kind=realtype) :: temp0
-   REAL(kind=realtype) :: tempb8
-   REAL(kind=realtype) :: tempb7
-   REAL(kind=realtype) :: tempb6
-   REAL(kind=realtype) :: tempb5
-   REAL(kind=realtype) :: tempb4
-   REAL(kind=realtype) :: tempb3
-   REAL(kind=realtype) :: tempb2
-   REAL(kind=realtype) :: tempb1
-   REAL(kind=realtype) :: tempb0
-   REAL(kind=realtype) :: tempb
+   REAL(kind=realtype) :: tempd
+   REAL(kind=realtype) :: tempd8
+   REAL(kind=realtype) :: tempd7
+   REAL(kind=realtype) :: tempd6
+   REAL(kind=realtype) :: tempd5
+   REAL(kind=realtype) :: tempd4
+   REAL(kind=realtype) :: tempd3
+   REAL(kind=realtype) :: tempd2
+   REAL(kind=realtype) :: tempd1
+   REAL(kind=realtype) :: tempd0
    REAL(kind=realtype) :: temp
    REAL(kind=realtype) :: temp6
    REAL(kind=realtype) :: temp5
@@ -65,34 +65,34 @@
    &     + cf(1)*(pointrefec(2)-pointref(2))/lengthref
    temp0 = cf(3)/lengthref
    IF (elasticmomentx**2 + elasticmomentz**2 .EQ. 0.0_8) THEN
-   tempb = 0.0
+   tempd = 0.0
    ELSE
-   tempb = bendingmomentb/(2.0*SQRT(elasticmomentx**2+elasticmomentz&
+   tempd = bendingmomentd/(2.0*SQRT(elasticmomentx**2+elasticmomentz&
    &       **2))
    END IF
-   elasticmomentxb = 2*elasticmomentx*tempb
-   elasticmomentzb = 2*elasticmomentz*tempb
-   cfb = 0.0_8
-   cmb = 0.0_8
-   tempb0 = -((pointrefec(1)-pointref(1))*elasticmomentzb/lengthref)
+   elasticmomentxd = 2*elasticmomentx*tempd
+   elasticmomentzd = 2*elasticmomentz*tempd
+   cfd = 0.0_8
+   cmd = 0.0_8
+   tempd0 = -((pointrefec(1)-pointref(1))*elasticmomentzd/lengthref)
    temp1 = cf(2)/lengthref
-   tempb1 = (pointrefec(2)-pointref(2))*elasticmomentzb/lengthref
+   tempd1 = (pointrefec(2)-pointref(2))*elasticmomentzd/lengthref
    temp2 = cf(1)/lengthref
-   cmb(3) = cmb(3) + elasticmomentzb
-   cfb(2) = cfb(2) + tempb0
-   pointrefb(1) = pointrefb(1) + temp1*elasticmomentzb
-   cfb(1) = cfb(1) + tempb1
-   pointrefb(2) = pointrefb(2) - temp2*elasticmomentzb
-   tempb2 = (pointrefec(3)-pointref(3))*elasticmomentxb/lengthref
+   cmd(3) = cmd(3) + elasticmomentzd
+   cfd(2) = cfd(2) + tempd0
+   pointrefd(1) = pointrefd(1) + temp1*elasticmomentzd
+   cfd(1) = cfd(1) + tempd1
+   pointrefd(2) = pointrefd(2) - temp2*elasticmomentzd
+   tempd2 = (pointrefec(3)-pointref(3))*elasticmomentxd/lengthref
    temp = cf(2)/lengthref
-   tempb3 = -((pointrefec(2)-pointref(2))*elasticmomentxb/lengthref)
-   lengthrefb = lengthrefb - temp*tempb2 - temp0*tempb3 - temp2*tempb1 &
-   &     - temp1*tempb0
-   cmb(1) = cmb(1) + elasticmomentxb
-   cfb(2) = cfb(2) + tempb2
-   pointrefb(3) = pointrefb(3) - temp*elasticmomentxb
-   cfb(3) = cfb(3) + tempb3
-   pointrefb(2) = pointrefb(2) + temp0*elasticmomentxb
+   tempd3 = -((pointrefec(2)-pointref(2))*elasticmomentxd/lengthref)
+   lengthrefd = lengthrefd - temp*tempd2 - temp0*tempd3 - temp2*tempd1 &
+   &     - temp1*tempd0
+   cmd(1) = cmd(1) + elasticmomentxd
+   cfd(2) = cfd(2) + tempd2
+   pointrefd(3) = pointrefd(3) - temp*elasticmomentxd
+   cfd(3) = cfd(3) + tempd3
+   pointrefd(2) = pointrefd(2) + temp0*elasticmomentxd
    ELSE IF (liftindex .EQ. 3) THEN
    !y out wing sum momentx,momenty
    elasticmomentx = cm(1) + cf(3)*(pointrefec(2)-pointref(2))/lengthref&
@@ -101,35 +101,35 @@
    &     + cf(1)*(pointrefec(3)-pointref(3))/lengthref
    temp4 = cf(3)/lengthref
    IF (elasticmomentx**2 + elasticmomenty**2 .EQ. 0.0_8) THEN
-   tempb4 = 0.0
+   tempd4 = 0.0
    ELSE
-   tempb4 = bendingmomentb/(2.0*SQRT(elasticmomentx**2+elasticmomenty&
+   tempd4 = bendingmomentd/(2.0*SQRT(elasticmomentx**2+elasticmomenty&
    &       **2))
    END IF
-   elasticmomentxb = 2*elasticmomentx*tempb4
-   elasticmomentyb = 2*elasticmomenty*tempb4
-   cfb = 0.0_8
-   cmb = 0.0_8
-   tempb5 = (pointrefec(1)-pointref(1))*elasticmomentyb/lengthref
+   elasticmomentxd = 2*elasticmomentx*tempd4
+   elasticmomentyd = 2*elasticmomenty*tempd4
+   cfd = 0.0_8
+   cmd = 0.0_8
+   tempd5 = (pointrefec(1)-pointref(1))*elasticmomentyd/lengthref
    temp5 = cf(3)/lengthref
-   tempb6 = (pointrefec(3)-pointref(3))*elasticmomentyb/lengthref
+   tempd6 = (pointrefec(3)-pointref(3))*elasticmomentyd/lengthref
    temp6 = cf(1)/lengthref
-   cmb(2) = cmb(2) + elasticmomentyb
-   cfb(3) = cfb(3) + tempb5
-   pointrefb(1) = pointrefb(1) - temp5*elasticmomentyb
-   cfb(1) = cfb(1) + tempb6
-   pointrefb(3) = pointrefb(3) - temp6*elasticmomentyb
-   tempb7 = (pointrefec(2)-pointref(2))*elasticmomentxb/lengthref
+   cmd(2) = cmd(2) + elasticmomentyd
+   cfd(3) = cfd(3) + tempd5
+   pointrefd(1) = pointrefd(1) - temp5*elasticmomentyd
+   cfd(1) = cfd(1) + tempd6
+   pointrefd(3) = pointrefd(3) - temp6*elasticmomentyd
+   tempd7 = (pointrefec(2)-pointref(2))*elasticmomentxd/lengthref
    temp3 = cf(3)/lengthref
-   tempb8 = (pointrefec(3)-pointref(3))*elasticmomentxb/lengthref
-   lengthrefb = lengthrefb - temp3*tempb7 - temp4*tempb8 - temp6*tempb6&
-   &     - temp5*tempb5
-   cmb(1) = cmb(1) + elasticmomentxb
-   cfb(3) = cfb(3) + tempb8 + tempb7
-   pointrefb(2) = pointrefb(2) - temp3*elasticmomentxb
-   pointrefb(3) = pointrefb(3) - temp4*elasticmomentxb
+   tempd8 = (pointrefec(3)-pointref(3))*elasticmomentxd/lengthref
+   lengthrefd = lengthrefd - temp3*tempd7 - temp4*tempd8 - temp6*tempd6&
+   &     - temp5*tempd5
+   cmd(1) = cmd(1) + elasticmomentxd
+   cfd(3) = cfd(3) + tempd8 + tempd7
+   pointrefd(2) = pointrefd(2) - temp3*elasticmomentxd
+   pointrefd(3) = pointrefd(3) - temp4*elasticmomentxd
    ELSE
-   cfb = 0.0_8
-   cmb = 0.0_8
+   cfd = 0.0_8
+   cmd = 0.0_8
    END IF
    END SUBROUTINE COMPUTEROOTBENDINGMOMENT_B

@@ -28,7 +28,7 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   USE BLOCKPOINTERS_B
+   USE BLOCKPOINTERS
    USE BCTYPES
    USE CONSTANTS
    USE FLOWVARREFSTATE
@@ -47,28 +47,28 @@
    INTEGER(kind=inttype) :: jm1, jp1, km1, kp1
    INTEGER(kind=inttype) :: walltreatment
    REAL(kind=realtype) :: sixa, siya, siza, sjxa, sjya, sjza
-   REAL(kind=realtype) :: sixab, siyab, sizab, sjxab, sjyab, sjzab
+   REAL(kind=realtype) :: sixad, siyad, sizad, sjxad, sjyad, sjzad
    REAL(kind=realtype) :: skxa, skya, skza, a1, b1
-   REAL(kind=realtype) :: skxab, skyab, skzab
+   REAL(kind=realtype) :: skxad, skyad, skzad
    REAL(kind=realtype) :: rxj, ryj, rzj, rxk, ryk, rzk
-   REAL(kind=realtype) :: rxjb, ryjb, rzjb, rxkb, rykb, rzkb
+   REAL(kind=realtype) :: rxjd, ryjd, rzjd, rxkd, rykd, rzkd
    REAL(kind=realtype) :: dpj, dpk, ri, rj, rk, qj, qk, vn
-   REAL(kind=realtype) :: dpjb, dpkb, rib, rjb, rkb, qjb, qkb, vnb
+   REAL(kind=realtype) :: dpjd, dpkd, rid, rjd, rkd, qjd, qkd, vnd
    REAL(kind=realtype) :: uux, uuy, uuz
-   REAL(kind=realtype) :: uuxb, uuyb, uuzb
+   REAL(kind=realtype) :: uuxd, uuyd, uuzd
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, nw) :: ww1, ww2
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, nw) :: ww1b, ww2b
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, nw) :: ww1d, ww2d
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: pp1, pp2
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: pp1b, pp2b
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: pp1d, pp2d
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: pp3, pp4
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: pp3b, pp4b
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: pp3d, pp4d
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rlv1, rlv2
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rlv1b, rlv2b
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rlv1d, rlv2d
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rev1, rev2
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rev1b, rev2b
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rev1d, rev2d
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, 3) :: ssi, ssj, ssk
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, 3) :: ssib, ssjb, &
-   & sskb
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, 3) :: ssid, ssjd, &
+   & sskd
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, 3) :: ss
    INTRINSIC MAX
    INTRINSIC MIN
@@ -97,12 +97,12 @@
    INTEGER :: ad_to8
    REAL(kind=realtype) :: temp1
    REAL(kind=realtype) :: temp0
-   REAL(kind=realtype) :: tempb3
-   REAL(kind=realtype) :: tempb2
-   REAL(kind=realtype) :: tempb1
-   REAL(kind=realtype) :: tempb0
-   REAL(kind=realtype) :: tmpb
-   REAL(kind=realtype) :: tempb
+   REAL(kind=realtype) :: tmpd
+   REAL(kind=realtype) :: tempd
+   REAL(kind=realtype) :: tempd3
+   REAL(kind=realtype) :: tempd2
+   REAL(kind=realtype) :: tempd1
+   REAL(kind=realtype) :: tempd0
    INTEGER :: ii1
    REAL(kind=realtype) :: temp
    INTEGER(kind=inttype) :: max2
@@ -428,11 +428,11 @@
    CALL PUSHCONTROL2B(0)
    END IF
    END DO bocos
-   DO ii1=1,SIZE(bcdatab)
-   bcdatab(ii1)%norm = 0.0_8
+   DO ii1=1,SIZE(bcdatad)
+   bcdatad(ii1)%norm = 0.0_8
    END DO
-   pp3b = 0.0_8
-   pp4b = 0.0_8
+   pp3d = 0.0_8
+   pp4d = 0.0_8
    DO nn=nbocos,1,-1
    CALL POPCONTROL2B(branch)
    IF (branch .NE. 0) THEN
@@ -446,9 +446,9 @@
    CALL COMPUTEETOT_B(icbeg(nn), icend(nn), jcbeg(nn), jcend(nn), &
    &                  kcbeg(nn), kcend(nn), correctfork)
    CALL POPREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
-   CALL RESETBCPOINTERSBWD_B(nn, ww1, ww1b, ww2, ww2b, pp1, pp1b, pp2&
-   &                         , pp2b, rlv1, rlv1b, rlv2, rlv2b, rev1, rev1b&
-   &                         , rev2, rev2b, 0)
+   CALL RESETBCPOINTERSBWD_B(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, pp2&
+   &                         , pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev1d&
+   &                         , rev2, rev2d, 0)
    CALL POPINTEGER4(ad_from8)
    CALL POPINTEGER4(ad_to8)
    DO k=ad_to8,ad_from8,-1
@@ -457,59 +457,59 @@
    DO j=ad_to7,ad_from7,-1
    CALL POPCONTROL1B(branch)
    IF (branch .NE. 0) THEN
-   rev2b(j, k) = rev2b(j, k) + rev1b(j, k)
-   rev1b(j, k) = 0.0_8
+   rev2d(j, k) = rev2d(j, k) + rev1d(j, k)
+   rev1d(j, k) = 0.0_8
    END IF
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   rlv2b(j, k) = rlv2b(j, k) + rlv1b(j, k)
-   rlv1b(j, k) = 0.0_8
+   rlv2d(j, k) = rlv2d(j, k) + rlv1d(j, k)
+   rlv1d(j, k) = 0.0_8
    END IF
    DO l=nt2mg,nt1mg,-1
-   ww2b(j, k, l) = ww2b(j, k, l) + ww1b(j, k, l)
-   ww1b(j, k, l) = 0.0_8
+   ww2d(j, k, l) = ww2d(j, k, l) + ww1d(j, k, l)
+   ww1d(j, k, l) = 0.0_8
    END DO
-   ww2b(j, k, ivz) = ww2b(j, k, ivz) + ww1b(j, k, ivz)
-   vnb = bcdata(nn)%norm(j, k, 3)*ww1b(j, k, ivz)
-   bcdatab(nn)%norm(j, k, 3) = bcdatab(nn)%norm(j, k, 3) + vn*&
-   &           ww1b(j, k, ivz)
-   ww1b(j, k, ivz) = 0.0_8
-   ww2b(j, k, ivy) = ww2b(j, k, ivy) + ww1b(j, k, ivy)
-   vnb = vnb + bcdata(nn)%norm(j, k, 2)*ww1b(j, k, ivy)
-   bcdatab(nn)%norm(j, k, 2) = bcdatab(nn)%norm(j, k, 2) + vn*&
-   &           ww1b(j, k, ivy)
-   ww1b(j, k, ivy) = 0.0_8
-   ww2b(j, k, ivx) = ww2b(j, k, ivx) + ww1b(j, k, ivx)
-   vnb = vnb + bcdata(nn)%norm(j, k, 1)*ww1b(j, k, ivx)
-   bcdatab(nn)%norm(j, k, 1) = bcdatab(nn)%norm(j, k, 1) + vn*&
-   &           ww1b(j, k, ivx)
-   ww1b(j, k, ivx) = 0.0_8
-   ww2b(j, k, irho) = ww2b(j, k, irho) + ww1b(j, k, irho)
-   ww1b(j, k, irho) = 0.0_8
+   ww2d(j, k, ivz) = ww2d(j, k, ivz) + ww1d(j, k, ivz)
+   vnd = bcdata(nn)%norm(j, k, 3)*ww1d(j, k, ivz)
+   bcdatad(nn)%norm(j, k, 3) = bcdatad(nn)%norm(j, k, 3) + vn*&
+   &           ww1d(j, k, ivz)
+   ww1d(j, k, ivz) = 0.0_8
+   ww2d(j, k, ivy) = ww2d(j, k, ivy) + ww1d(j, k, ivy)
+   vnd = vnd + bcdata(nn)%norm(j, k, 2)*ww1d(j, k, ivy)
+   bcdatad(nn)%norm(j, k, 2) = bcdatad(nn)%norm(j, k, 2) + vn*&
+   &           ww1d(j, k, ivy)
+   ww1d(j, k, ivy) = 0.0_8
+   ww2d(j, k, ivx) = ww2d(j, k, ivx) + ww1d(j, k, ivx)
+   vnd = vnd + bcdata(nn)%norm(j, k, 1)*ww1d(j, k, ivx)
+   bcdatad(nn)%norm(j, k, 1) = bcdatad(nn)%norm(j, k, 1) + vn*&
+   &           ww1d(j, k, ivx)
+   ww1d(j, k, ivx) = 0.0_8
+   ww2d(j, k, irho) = ww2d(j, k, irho) + ww1d(j, k, irho)
+   ww1d(j, k, irho) = 0.0_8
    CALL POPREAL8(vn)
-   tempb3 = two*vnb
-   ww2b(j, k, ivx) = ww2b(j, k, ivx) - bcdata(nn)%norm(j, k, 1)*&
-   &           tempb3
-   bcdatab(nn)%norm(j, k, 1) = bcdatab(nn)%norm(j, k, 1) - ww2(j&
-   &           , k, ivx)*tempb3
-   ww2b(j, k, ivy) = ww2b(j, k, ivy) - bcdata(nn)%norm(j, k, 2)*&
-   &           tempb3
-   bcdatab(nn)%norm(j, k, 2) = bcdatab(nn)%norm(j, k, 2) - ww2(j&
-   &           , k, ivy)*tempb3
-   ww2b(j, k, ivz) = ww2b(j, k, ivz) - bcdata(nn)%norm(j, k, 3)*&
-   &           tempb3
-   bcdatab(nn)%norm(j, k, 3) = bcdatab(nn)%norm(j, k, 3) - ww2(j&
-   &           , k, ivz)*tempb3
+   tempd3 = two*vnd
+   ww2d(j, k, ivx) = ww2d(j, k, ivx) - bcdata(nn)%norm(j, k, 1)*&
+   &           tempd3
+   bcdatad(nn)%norm(j, k, 1) = bcdatad(nn)%norm(j, k, 1) - ww2(j&
+   &           , k, ivx)*tempd3
+   ww2d(j, k, ivy) = ww2d(j, k, ivy) - bcdata(nn)%norm(j, k, 2)*&
+   &           tempd3
+   bcdatad(nn)%norm(j, k, 2) = bcdatad(nn)%norm(j, k, 2) - ww2(j&
+   &           , k, ivy)*tempd3
+   ww2d(j, k, ivz) = ww2d(j, k, ivz) - bcdata(nn)%norm(j, k, 3)*&
+   &           tempd3
+   bcdatad(nn)%norm(j, k, 3) = bcdatad(nn)%norm(j, k, 3) - ww2(j&
+   &           , k, ivz)*tempd3
    CALL POPREAL8(pp1(j, k))
-   tmpb = pp1b(j, k)
-   pp1b(j, k) = 0.0_8
-   CALL DIM_B(pp2(j, k), pp2b(j, k), pp1(j, k), pp1b(j, k), tmpb)
+   tmpd = pp1d(j, k)
+   pp1d(j, k) = 0.0_8
+   CALL DIM_B(pp2(j, k), pp2d(j, k), pp1(j, k), pp1d(j, k), tmpd)
    END DO
    END DO
    CALL POPCONTROL3B(branch)
    IF (branch .LT. 2) THEN
    IF (branch .EQ. 0) THEN
-   CALL RESETSSBWD_B(nn, ssi, ssib, ssj, ssjb, ssk, sskb, ss)
+   CALL RESETSSBWD_B(nn, ssi, ssid, ssj, ssjd, ssk, sskd, ss)
    CALL POPINTEGER4(ad_from6)
    CALL POPINTEGER4(ad_to6)
    DO k=ad_to6,ad_from6,-1
@@ -530,127 +530,127 @@
    &               k, 1))
    rxk = b1*(bcdata(nn)%norm(j, kp1, 1)-bcdata(nn)%norm(j, &
    &               km1, 1))
-   tempb = pp1b(j, k)/ri
-   tempb0 = ww2(j, k, irho)*tempb
+   tempd = pp1d(j, k)/ri
+   tempd0 = ww2(j, k, irho)*tempd
    temp0 = uux*rxj + uuy*ryj + uuz*rzj
-   tempb1 = qj*tempb0
+   tempd1 = qj*tempd0
    temp1 = uux*rxk + uuy*ryk + uuz*rzk
-   tempb2 = qk*tempb0
+   tempd2 = qk*tempd0
    temp = qj*temp0 + qk*temp1
-   qjb = temp0*tempb0
-   rxjb = uux*tempb1
-   ryjb = uuy*tempb1
-   rzjb = uuz*tempb1
-   qkb = temp1*tempb0
-   uuxb = skxa*qkb + sjxa*qjb + rxk*tempb2 + rxj*tempb1
-   uuyb = skya*qkb + sjya*qjb + ryk*tempb2 + ryj*tempb1
-   uuzb = skza*qkb + sjza*qjb + rzk*tempb2 + rzj*tempb1
-   rxkb = uux*tempb2
-   rykb = uuy*tempb2
-   rzkb = uuz*tempb2
-   ww2b(j, k, irho) = ww2b(j, k, irho) + temp*tempb
-   rjb = -(dpj*tempb)
-   dpjb = -(rj*tempb)
-   rkb = -(dpk*tempb)
-   dpkb = -(rk*tempb)
-   rib = -((temp*ww2(j, k, irho)-rj*dpj-rk*dpk)*tempb/ri)
-   pp1b(j, k) = 0.0_8
-   skxab = uux*qkb
-   skyab = uuy*qkb
-   skzab = uuz*qkb
-   sjxab = uux*qjb
-   sjyab = uuy*qjb
-   sjzab = uuz*qjb
+   qjd = temp0*tempd0
+   rxjd = uux*tempd1
+   ryjd = uuy*tempd1
+   rzjd = uuz*tempd1
+   qkd = temp1*tempd0
+   uuxd = skxa*qkd + sjxa*qjd + rxk*tempd2 + rxj*tempd1
+   uuyd = skya*qkd + sjya*qjd + ryk*tempd2 + ryj*tempd1
+   uuzd = skza*qkd + sjza*qjd + rzk*tempd2 + rzj*tempd1
+   rxkd = uux*tempd2
+   rykd = uuy*tempd2
+   rzkd = uuz*tempd2
+   ww2d(j, k, irho) = ww2d(j, k, irho) + temp*tempd
+   rjd = -(dpj*tempd)
+   dpjd = -(rj*tempd)
+   rkd = -(dpk*tempd)
+   dpkd = -(rk*tempd)
+   rid = -((temp*ww2(j, k, irho)-rj*dpj-rk*dpk)*tempd/ri)
+   pp1d(j, k) = 0.0_8
+   skxad = uux*qkd
+   skyad = uuy*qkd
+   skzad = uuz*qkd
+   sjxad = uux*qjd
+   sjyad = uuy*qjd
+   sjzad = uuz*qjd
    CALL POPREAL8(uuz)
-   ww2b(j, k, ivz) = ww2b(j, k, ivz) + uuzb
+   ww2d(j, k, ivz) = ww2d(j, k, ivz) + uuzd
    CALL POPREAL8(uuy)
-   ww2b(j, k, ivy) = ww2b(j, k, ivy) + uuyb
+   ww2d(j, k, ivy) = ww2d(j, k, ivy) + uuyd
    CALL POPREAL8(uux)
-   ww2b(j, k, ivx) = ww2b(j, k, ivx) + uuxb
+   ww2d(j, k, ivx) = ww2d(j, k, ivx) + uuxd
    CALL POPREAL8(rk)
-   bcdatab(nn)%norm(j, k, 1) = bcdatab(nn)%norm(j, k, 1) + &
-   &               skxa*rkb
-   skxab = skxab + bcdata(nn)%norm(j, k, 1)*rkb
-   bcdatab(nn)%norm(j, k, 2) = bcdatab(nn)%norm(j, k, 2) + &
-   &               skya*rkb
-   skyab = skyab + bcdata(nn)%norm(j, k, 2)*rkb
-   bcdatab(nn)%norm(j, k, 3) = bcdatab(nn)%norm(j, k, 3) + &
-   &               skza*rkb
-   skzab = skzab + bcdata(nn)%norm(j, k, 3)*rkb
+   bcdatad(nn)%norm(j, k, 1) = bcdatad(nn)%norm(j, k, 1) + &
+   &               skxa*rkd
+   skxad = skxad + bcdata(nn)%norm(j, k, 1)*rkd
+   bcdatad(nn)%norm(j, k, 2) = bcdatad(nn)%norm(j, k, 2) + &
+   &               skya*rkd
+   skyad = skyad + bcdata(nn)%norm(j, k, 2)*rkd
+   bcdatad(nn)%norm(j, k, 3) = bcdatad(nn)%norm(j, k, 3) + &
+   &               skza*rkd
+   skzad = skzad + bcdata(nn)%norm(j, k, 3)*rkd
    CALL POPREAL8(rj)
-   bcdatab(nn)%norm(j, k, 1) = bcdatab(nn)%norm(j, k, 1) + &
-   &               sjxa*rjb
-   sjxab = sjxab + bcdata(nn)%norm(j, k, 1)*rjb
-   bcdatab(nn)%norm(j, k, 2) = bcdatab(nn)%norm(j, k, 2) + &
-   &               sjya*rjb
-   sjyab = sjyab + bcdata(nn)%norm(j, k, 2)*rjb
-   bcdatab(nn)%norm(j, k, 3) = bcdatab(nn)%norm(j, k, 3) + &
-   &               sjza*rjb
-   sjzab = sjzab + bcdata(nn)%norm(j, k, 3)*rjb
+   bcdatad(nn)%norm(j, k, 1) = bcdatad(nn)%norm(j, k, 1) + &
+   &               sjxa*rjd
+   sjxad = sjxad + bcdata(nn)%norm(j, k, 1)*rjd
+   bcdatad(nn)%norm(j, k, 2) = bcdatad(nn)%norm(j, k, 2) + &
+   &               sjya*rjd
+   sjyad = sjyad + bcdata(nn)%norm(j, k, 2)*rjd
+   bcdatad(nn)%norm(j, k, 3) = bcdatad(nn)%norm(j, k, 3) + &
+   &               sjza*rjd
+   sjzad = sjzad + bcdata(nn)%norm(j, k, 3)*rjd
    CALL POPREAL8(ri)
-   bcdatab(nn)%norm(j, k, 1) = bcdatab(nn)%norm(j, k, 1) + &
-   &               sixa*rib
-   sixab = bcdata(nn)%norm(j, k, 1)*rib
-   bcdatab(nn)%norm(j, k, 2) = bcdatab(nn)%norm(j, k, 2) + &
-   &               siya*rib
-   siyab = bcdata(nn)%norm(j, k, 2)*rib
-   bcdatab(nn)%norm(j, k, 3) = bcdatab(nn)%norm(j, k, 3) + &
-   &               siza*rib
-   sizab = bcdata(nn)%norm(j, k, 3)*rib
+   bcdatad(nn)%norm(j, k, 1) = bcdatad(nn)%norm(j, k, 1) + &
+   &               sixa*rid
+   sixad = bcdata(nn)%norm(j, k, 1)*rid
+   bcdatad(nn)%norm(j, k, 2) = bcdatad(nn)%norm(j, k, 2) + &
+   &               siya*rid
+   siyad = bcdata(nn)%norm(j, k, 2)*rid
+   bcdatad(nn)%norm(j, k, 3) = bcdatad(nn)%norm(j, k, 3) + &
+   &               siza*rid
+   sizad = bcdata(nn)%norm(j, k, 3)*rid
    CALL POPREAL8(dpk)
-   pp2b(j, kp1) = pp2b(j, kp1) + b1*dpkb
-   pp2b(j, km1) = pp2b(j, km1) - b1*dpkb
-   bcdatab(nn)%norm(j, kp1, 3) = bcdatab(nn)%norm(j, kp1, 3) &
-   &               + b1*rzkb
-   bcdatab(nn)%norm(j, km1, 3) = bcdatab(nn)%norm(j, km1, 3) &
-   &               - b1*rzkb
-   bcdatab(nn)%norm(j, kp1, 2) = bcdatab(nn)%norm(j, kp1, 2) &
-   &               + b1*rykb
-   bcdatab(nn)%norm(j, km1, 2) = bcdatab(nn)%norm(j, km1, 2) &
-   &               - b1*rykb
-   bcdatab(nn)%norm(j, kp1, 1) = bcdatab(nn)%norm(j, kp1, 1) &
-   &               + b1*rxkb
-   bcdatab(nn)%norm(j, km1, 1) = bcdatab(nn)%norm(j, km1, 1) &
-   &               - b1*rxkb
+   pp2d(j, kp1) = pp2d(j, kp1) + b1*dpkd
+   pp2d(j, km1) = pp2d(j, km1) - b1*dpkd
+   bcdatad(nn)%norm(j, kp1, 3) = bcdatad(nn)%norm(j, kp1, 3) &
+   &               + b1*rzkd
+   bcdatad(nn)%norm(j, km1, 3) = bcdatad(nn)%norm(j, km1, 3) &
+   &               - b1*rzkd
+   bcdatad(nn)%norm(j, kp1, 2) = bcdatad(nn)%norm(j, kp1, 2) &
+   &               + b1*rykd
+   bcdatad(nn)%norm(j, km1, 2) = bcdatad(nn)%norm(j, km1, 2) &
+   &               - b1*rykd
+   bcdatad(nn)%norm(j, kp1, 1) = bcdatad(nn)%norm(j, kp1, 1) &
+   &               + b1*rxkd
+   bcdatad(nn)%norm(j, km1, 1) = bcdatad(nn)%norm(j, km1, 1) &
+   &               - b1*rxkd
    CALL POPREAL8(dpj)
-   pp2b(jp1, k) = pp2b(jp1, k) + a1*dpjb
-   pp2b(jm1, k) = pp2b(jm1, k) - a1*dpjb
-   bcdatab(nn)%norm(jp1, k, 3) = bcdatab(nn)%norm(jp1, k, 3) &
-   &               + a1*rzjb
-   bcdatab(nn)%norm(jm1, k, 3) = bcdatab(nn)%norm(jm1, k, 3) &
-   &               - a1*rzjb
-   bcdatab(nn)%norm(jp1, k, 2) = bcdatab(nn)%norm(jp1, k, 2) &
-   &               + a1*ryjb
-   bcdatab(nn)%norm(jm1, k, 2) = bcdatab(nn)%norm(jm1, k, 2) &
-   &               - a1*ryjb
-   bcdatab(nn)%norm(jp1, k, 1) = bcdatab(nn)%norm(jp1, k, 1) &
-   &               + a1*rxjb
-   bcdatab(nn)%norm(jm1, k, 1) = bcdatab(nn)%norm(jm1, k, 1) &
-   &               - a1*rxjb
+   pp2d(jp1, k) = pp2d(jp1, k) + a1*dpjd
+   pp2d(jm1, k) = pp2d(jm1, k) - a1*dpjd
+   bcdatad(nn)%norm(jp1, k, 3) = bcdatad(nn)%norm(jp1, k, 3) &
+   &               + a1*rzjd
+   bcdatad(nn)%norm(jm1, k, 3) = bcdatad(nn)%norm(jm1, k, 3) &
+   &               - a1*rzjd
+   bcdatad(nn)%norm(jp1, k, 2) = bcdatad(nn)%norm(jp1, k, 2) &
+   &               + a1*ryjd
+   bcdatad(nn)%norm(jm1, k, 2) = bcdatad(nn)%norm(jm1, k, 2) &
+   &               - a1*ryjd
+   bcdatad(nn)%norm(jp1, k, 1) = bcdatad(nn)%norm(jp1, k, 1) &
+   &               + a1*rxjd
+   bcdatad(nn)%norm(jm1, k, 1) = bcdatad(nn)%norm(jm1, k, 1) &
+   &               - a1*rxjd
    CALL POPREAL8(skza)
-   sskb(j, k, 3) = sskb(j, k, 3) + skzab
-   sskb(j, k+1, 3) = sskb(j, k+1, 3) + skzab
+   sskd(j, k, 3) = sskd(j, k, 3) + skzad
+   sskd(j, k+1, 3) = sskd(j, k+1, 3) + skzad
    CALL POPREAL8(skya)
-   sskb(j, k, 2) = sskb(j, k, 2) + skyab
-   sskb(j, k+1, 2) = sskb(j, k+1, 2) + skyab
+   sskd(j, k, 2) = sskd(j, k, 2) + skyad
+   sskd(j, k+1, 2) = sskd(j, k+1, 2) + skyad
    CALL POPREAL8(skxa)
-   sskb(j, k, 1) = sskb(j, k, 1) + skxab
-   sskb(j, k+1, 1) = sskb(j, k+1, 1) + skxab
+   sskd(j, k, 1) = sskd(j, k, 1) + skxad
+   sskd(j, k+1, 1) = sskd(j, k+1, 1) + skxad
    CALL POPREAL8(sjza)
-   ssjb(j, k, 3) = ssjb(j, k, 3) + sjzab
-   ssjb(j+1, k, 3) = ssjb(j+1, k, 3) + sjzab
+   ssjd(j, k, 3) = ssjd(j, k, 3) + sjzad
+   ssjd(j+1, k, 3) = ssjd(j+1, k, 3) + sjzad
    CALL POPREAL8(sjya)
-   ssjb(j, k, 2) = ssjb(j, k, 2) + sjyab
-   ssjb(j+1, k, 2) = ssjb(j+1, k, 2) + sjyab
+   ssjd(j, k, 2) = ssjd(j, k, 2) + sjyad
+   ssjd(j+1, k, 2) = ssjd(j+1, k, 2) + sjyad
    CALL POPREAL8(sjxa)
-   ssjb(j, k, 1) = ssjb(j, k, 1) + sjxab
-   ssjb(j+1, k, 1) = ssjb(j+1, k, 1) + sjxab
+   ssjd(j, k, 1) = ssjd(j, k, 1) + sjxad
+   ssjd(j+1, k, 1) = ssjd(j+1, k, 1) + sjxad
    CALL POPREAL8(siza)
-   ssib(j, k, 3) = ssib(j, k, 3) + two*sizab
+   ssid(j, k, 3) = ssid(j, k, 3) + two*sizad
    CALL POPREAL8(siya)
-   ssib(j, k, 2) = ssib(j, k, 2) + two*siyab
+   ssid(j, k, 2) = ssid(j, k, 2) + two*siyad
    CALL POPREAL8(sixa)
-   ssib(j, k, 1) = ssib(j, k, 1) + two*sixab
+   ssid(j, k, 1) = ssid(j, k, 1) + two*sixad
    CALL POPREAL8(a1)
    CALL POPINTEGER4(jp1)
    CALL POPINTEGER4(jm1)
@@ -659,39 +659,39 @@
    CALL POPINTEGER4(kp1)
    CALL POPINTEGER4(km1)
    END DO
-   CALL SETSSBWD_B(nn, ssi, ssib, ssj, ssjb, ssk, sskb, ss)
+   CALL SETSSBWD_B(nn, ssi, ssid, ssj, ssjd, ssk, sskd, ss)
    ELSE
    CALL POPREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
-   CALL RESETPP3PP4BWD_B(nn, pp3, pp3b, pp4, pp4b)
+   CALL RESETPP3PP4BWD_B(nn, pp3, pp3d, pp4, pp4d)
    CALL POPINTEGER4(ad_from4)
    CALL POPINTEGER4(ad_to4)
    DO k=ad_to4,ad_from4,-1
    CALL POPINTEGER4(ad_from3)
    CALL POPINTEGER4(ad_to3)
    DO j=ad_to3,ad_from3,-1
-   pp3b(j, k) = pp3b(j, k) + two*pp1b(j, k)
-   pp2b(j, k) = pp2b(j, k) - 1.5_realType*pp1b(j, k)
-   pp4b(j, k) = pp4b(j, k) - half*pp1b(j, k)
-   pp1b(j, k) = 0.0_8
+   pp3d(j, k) = pp3d(j, k) + two*pp1d(j, k)
+   pp2d(j, k) = pp2d(j, k) - 1.5_realType*pp1d(j, k)
+   pp4d(j, k) = pp4d(j, k) - half*pp1d(j, k)
+   pp1d(j, k) = 0.0_8
    END DO
    END DO
-   CALL SETPP3PP4BWD_B(nn, pp3, pp3b, pp4, pp4b)
+   CALL SETPP3PP4BWD_B(nn, pp3, pp3d, pp4, pp4d)
    END IF
    ELSE IF (branch .EQ. 2) THEN
    CALL POPREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
-   CALL RESETPP3PP4BWD_B(nn, pp3, pp3b, pp4, pp4b)
+   CALL RESETPP3PP4BWD_B(nn, pp3, pp3d, pp4, pp4d)
    CALL POPINTEGER4(ad_from2)
    CALL POPINTEGER4(ad_to2)
    DO k=ad_to2,ad_from2,-1
    CALL POPINTEGER4(ad_from1)
    CALL POPINTEGER4(ad_to1)
    DO j=ad_to1,ad_from1,-1
-   pp3b(j, k) = pp3b(j, k) + pp1b(j, k)
-   pp2b(j, k) = pp2b(j, k) - pp1b(j, k)
-   pp1b(j, k) = 0.0_8
+   pp3d(j, k) = pp3d(j, k) + pp1d(j, k)
+   pp2d(j, k) = pp2d(j, k) - pp1d(j, k)
+   pp1d(j, k) = 0.0_8
    END DO
    END DO
-   CALL SETPP3PP4BWD_B(nn, pp3, pp3b, pp4, pp4b)
+   CALL SETPP3PP4BWD_B(nn, pp3, pp3d, pp4, pp4d)
    ELSE IF (branch .EQ. 3) THEN
    CALL POPINTEGER4(ad_from0)
    CALL POPINTEGER4(ad_to0)
@@ -699,15 +699,15 @@
    CALL POPINTEGER4(ad_from)
    CALL POPINTEGER4(ad_to)
    DO j=ad_to,ad_from,-1
-   pp1b(j, k) = 0.0_8
+   pp1d(j, k) = 0.0_8
    END DO
    END DO
    END IF
    CALL POPREAL8ARRAY(ww2, imaxdim*jmaxdim*nw)
    CALL POPREAL8ARRAY(pp2, imaxdim*jmaxdim)
-   CALL SETBCPOINTERSBWD_B(nn, ww1, ww1b, ww2, ww2b, pp1, pp1b, pp2, &
-   &                       pp2b, rlv1, rlv1b, rlv2, rlv2b, rev1, rev1b, &
-   &                       rev2, rev2b, 0)
+   CALL SETBCPOINTERSBWD_B(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, pp2, &
+   &                       pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev1d, &
+   &                       rev2, rev2d, 0)
    END IF
    END DO
    END SUBROUTINE BCEULERWALL_B

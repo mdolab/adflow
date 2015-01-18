@@ -30,7 +30,7 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
    USE INPUTPHYSICS
    IMPLICIT NONE

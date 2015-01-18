@@ -13,7 +13,7 @@ subroutine verifyAD
   !     ******************************************************************
   !
   use BCTypes
-  use blockPointers_d      
+  use blockPointers
   use inputDiscretization 
   use inputTimeSpectral 
   use inputPhysics

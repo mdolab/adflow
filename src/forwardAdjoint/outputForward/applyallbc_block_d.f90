@@ -13,7 +13,7 @@
    !                *bcdata.rface:in *bcdata.uslip:in
    SUBROUTINE APPLYALLBC_BLOCK_D(secondhalo)
    ! Apply BC's for a single block
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
    USE INPUTDISCRETIZATION
    USE INPUTTIMESPECTRAL

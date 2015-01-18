@@ -28,7 +28,7 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    USE BCTYPES
    USE CONSTANTS
    USE FLOWVARREFSTATE
@@ -74,7 +74,7 @@
    SUBROUTINE SETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
    &       rev1, rev2, offset)
    USE BCTYPES
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
    IMPLICIT NONE
    INTEGER(kind=inttype), INTENT(IN) :: nn, offset
@@ -86,7 +86,7 @@
    SUBROUTINE RESETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
    &       rev1, rev2, offset)
    USE BCTYPES
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
    IMPLICIT NONE
    INTEGER(kind=inttype), INTENT(IN) :: nn, offset
@@ -97,21 +97,21 @@
    END SUBROUTINE RESETBCPOINTERS
    SUBROUTINE SETPP3PP4(nn, pp3, pp4)
    USE BCTYPES
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    IMPLICIT NONE
    INTEGER(kind=inttype), INTENT(IN) :: nn
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp3, pp4
    END SUBROUTINE SETPP3PP4
    SUBROUTINE RESETPP3PP4(nn, pp3, pp4)
    USE BCTYPES
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    IMPLICIT NONE
    INTEGER(kind=inttype), INTENT(IN) :: nn
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp3, pp4
    END SUBROUTINE RESETPP3PP4
    SUBROUTINE SETSS(nn, ssi, ssj, ssk, ss)
    USE BCTYPES
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    IMPLICIT NONE
    INTEGER(kind=inttype), INTENT(IN) :: nn
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ssi, ssj, &
@@ -120,7 +120,7 @@
    END SUBROUTINE SETSS
    SUBROUTINE RESETSS(nn, ssi, ssj, ssk, ss)
    USE BCTYPES
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    IMPLICIT NONE
    INTEGER(kind=inttype), INTENT(IN) :: nn
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ssi, ssj, &
@@ -133,7 +133,7 @@
    &       pp2, pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev1d, rev2, rev2d, &
    &       offset)
    USE BCTYPES
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
    IMPLICIT NONE
    INTEGER(kind=inttype), INTENT(IN) :: nn, offset
@@ -148,7 +148,7 @@
    END SUBROUTINE SETBCPOINTERS_D
    SUBROUTINE SETPP3PP4_D(nn, pp3, pp3d, pp4, pp4d)
    USE BCTYPES
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    IMPLICIT NONE
    INTEGER(kind=inttype), INTENT(IN) :: nn
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp3, pp4
@@ -156,7 +156,7 @@
    END SUBROUTINE SETPP3PP4_D
    SUBROUTINE SETSS_D(nn, ssi, ssid, ssj, ssjd, ssk, sskd, ss, ssd)
    USE BCTYPES
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    IMPLICIT NONE
    INTEGER(kind=inttype), INTENT(IN) :: nn
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ssi, ssj, &

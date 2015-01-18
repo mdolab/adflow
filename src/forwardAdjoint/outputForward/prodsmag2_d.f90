@@ -28,7 +28,7 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    USE TURBMOD
    IMPLICIT NONE
    !

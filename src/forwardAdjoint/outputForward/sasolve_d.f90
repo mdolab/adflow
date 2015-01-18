@@ -29,7 +29,7 @@
    !      ******************************************************************
    !
    USE BCTYPES
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    USE CONSTANTS
    USE INPUTITERATION
    USE INPUTPHYSICS
