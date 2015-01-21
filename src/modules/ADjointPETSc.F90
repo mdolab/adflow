@@ -67,6 +67,10 @@ module ADjointPETSc
   !adjointKSP   Linear solver (Krylov subspace method) context
   KSP     adjointKSP
 
+  ! Initial, start and final adjoint residuals
+  real(kind=realType) :: adjResInit
+  real(kind=realType) :: adjResStart
+  real(kind=realType) :: adjResFinal
 
   ! Data for dRda and dFMdExtra
   real(kind=realType), allocatable, dimension(:,:) :: dRda_data

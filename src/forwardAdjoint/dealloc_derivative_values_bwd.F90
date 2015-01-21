@@ -10,6 +10,7 @@ subroutine dealloc_derivative_values_bwd(level)
   use cgnsGrid
   use BCTypes
   use wallDistanceData
+  use inputDIscretization
   implicit none
 
   ! Input Parameters
@@ -178,8 +179,9 @@ subroutine dealloc_derivative_values_bwd(level)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! And the petsc vector(s)
-  if (.not. wallDistanceNeeded) then 
+  if (.not. wallDistanceNeeded .or. .not. useApproxWallDistance) then 
      call VecDestroy(xSurfVec(1), ierr)
+     call EChk(ierr,__FILE__,__LINE__)
   end if
 
   call VecDestroy(xSurfVecb, ierr)
