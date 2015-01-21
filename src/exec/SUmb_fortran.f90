@@ -62,7 +62,7 @@
 
        ! Partition the blocks and read the grid.
 
-       call partitionAndReadGrid
+       call partitionAndReadGrid(.False.)
 
        ! Perform the preprocessing task.
 

@@ -215,7 +215,7 @@ subroutine determineWallAssociation(level)
 
      call adtBuildSurfaceADT(nTria, nFaceVisc, nNodeVisc,&
           nodesVisc, connTria,  connVisc, &
-          dummy,    .false.,   SUmb_comm_self, &
+          dummy,    .false.,   MPI_comm_self, &
           viscAdt)
 
      ! Fill up the center of the owned cells we need to find the distance of

@@ -25,7 +25,9 @@ subroutine solveAdjoint(RHS, psi, checkSolution, nState)
   !     ******************************************************************
   !
 
-  use ADjointPETSc, only : dRdwT, psi_like1, psi_like2, adjointKSP
+  use ADjointPETSc, only : dRdwT, psi_like1, psi_like2, adjointKSP, &
+       adjResInit, adjResStart, adjResFinal
+ 
 
   use killsignals
   use inputADjoint
@@ -42,7 +44,8 @@ subroutine solveAdjoint(RHS, psi, checkSolution, nState)
   !     Local variables.
   real(kind=realType)   :: norm
   real(kind=realType), dimension(2) :: time
-  real(kind=realType)               :: timeAdjLocal, timeAdj,l2abs,curRes
+  real(kind=realType)               :: timeAdjLocal, timeAdj
+  real(kind=realType) :: l2abs, l2rel
   integer(kind=intType) :: ierr
   integer(kind=intType) :: adjConvIts
   KSPConvergedReason adjointConvergedReason
@@ -72,6 +75,10 @@ subroutine solveAdjoint(RHS, psi, checkSolution, nState)
      call EChk(ierr,__FILE__,__LINE__)
   end if
 
+  ! Get the RHS norm....this is the 'init' norm:
+  call VecNorm(psi_like2, NORM_2, adjResInit, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
   ! Get Current Residual -- we always solve for the delta
   call MatMult(dRdWT, psi_like1, adjointRes, ierr)
   call EChk(ierr,__FILE__,__LINE__)
@@ -81,11 +88,17 @@ subroutine solveAdjoint(RHS, psi, checkSolution, nState)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Norm of adjoint Residual
-  call VecNorm(adjointRes, NORM_2, curRes,ierr)
+  call VecNorm(adjointRes, NORM_2, adjResStart,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
+  ! The way we use tolerances are as follows: The residual must
+  ! statify:
+  ! res < adjRelTol * adjResInit OR 
+  ! res < adjRelTolRel * adjResStart OR
+  ! res < adjAbsTol
+
   ! L2Abs is used to stipulate an exit criteria for adjreltolrel
-  L2abs = curRes * adjreltolrel
+  L2abs = adjResStart * adjreltolrel
 
   ! If L2Abs is less that what we actually want as the absolute
   ! tolerance, clip it
@@ -93,8 +106,14 @@ subroutine solveAdjoint(RHS, psi, checkSolution, nState)
      L2abs = adjabstol
   end if
 
+  ! L2Rel is a little tricky since if the start residual is *larger*
+  ! than the init residual, it won't converge enough. While this seems
+  ! strange this is *always* the case for restarted RANS-based
+  ! adjoints.
+  L2Rel = (adjReltol * adjResInit) / adjResStart
+
   ! Set the tolerances
-  call KSPSetTolerances(adjointKSP, adjRelTol, L2Abs, adjDivTol, &
+  call KSPSetTolerances(adjointKSP, L2Rel, L2Abs, adjDivTol, &
        adjMaxIter, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
@@ -126,6 +145,7 @@ subroutine solveAdjoint(RHS, psi, checkSolution, nState)
      
      call VecNorm(adjointRes, NORM_2, norm,ierr)
      call EChk(ierr,__FILE__,__LINE__)
+     adjResFinal = norm
 
      call KSPGetIterationNumber(adjointKSP,adjConvIts,ierr)
      call EChk(ierr,__FILE__,__LINE__)

@@ -661,23 +661,24 @@ def test4():
 # tolerance at 1e-8. However, the altidue derivatives seem to be quite
 # a bit less accurate, but this thought to be caused by the fact that
 # they so small in magniude. These are only requried to match to 1e-4.
-# Note that the NKJacobian lag is set to 2 which is much lower than is
+# Note that the NKJacobian lag is set to 5 which is much lower than is
 # norally used. The reason for this is with the RANS analysis,
 # sometimes the CS derivative will "blow up -- increase by 6 or 7
 # orders of magnitude during the solution. It eventually comes back to
-# the right order of magnitude, but it now quite inaccurate.
-# Futhermore, the intel compiler does a *TERRIBLE* job with accuracy
-# with complex variables. It really is awful. When you are playing
-# around with verifying derivatives it really is important to use
-# -fp-model precise. For the verification, we can only reliably get
-# about 8 digits since the actual values won't match much better than
-# that. You should be able to get 10 digits+ if you are using the
-# precise fp model. Also, the reason for doing the aerodynamic and
-# geometric derivatives separately is that the when the nodes are
-# embedded in the FFD there may be slight differences which will
-# result in differences on the order of ~1e-12. This way, the
-# aerodynamic derivatives can be tested independent of the goemetric
-# ones.
+# the right order of magnitude, but it now quite inaccurate. It can
+# also happen if the the nkswtich tol is too large. It is now 1e4
+# which seems to work ok. Futhermore, the intel compiler does a
+# *TERRIBLE* job with accuracy with complex variables. It really is
+# awful. When you are playing around with verifying derivatives it
+# really is important to use -fp-model precise. For the verification,
+# we can only reliably get about 8 digits since the actual values
+# won't match much better than that. You should be able to get 10
+# digits+ if you are using the precise fp model. Also, the reason for
+# doing the aerodynamic and geometric derivatives separately is that
+# the when the nodes are embedded in the FFD there may be slight
+# differences which will result in differences on the order of
+# ~1e-12. This way, the aerodynamic derivatives can be tested
+# independent of the goemetric ones.
 
 
 def test5():
@@ -691,6 +692,9 @@ def test5():
         {'gridFile': '../inputFiles/mdo_tutorial_rans.cgns',
          'MGCycle':'2w',
          'equationType':'RANS',
+         'smoother':'dadi',
+         'nsubiterturb':3,
+         'nsubiter':3,
          'CFL':1.5,
          'CFLCoarse':1.25,
          'nCyclesCoarse':250,
@@ -699,7 +703,7 @@ def test5():
          'useNKSolver':True,
          'L2Convergence':1e-17,
          'L2ConvergenceCoarse':1e-2,
-         'nkswitchtol':1e-3,
+         'nkswitchtol':1e-4,
          'adjointl2convergence': 1e-16,
          'nkls': 'non monotone',
          'frozenturbulence':False,
@@ -801,6 +805,9 @@ def test6():
         {'gridFile': '../inputFiles/mdo_tutorial_rans.cgns',
          'MGCycle':'2w',
          'equationType':'RANS',
+         'smoother':'dadi',
+         'nsubiterturb':3,
+         'nsubiter':3,
          'CFL':1.5,
          'CFLCoarse':1.25,
          'nCyclesCoarse':250,
@@ -809,7 +816,7 @@ def test6():
          'useNKSolver':True,
          'L2Convergence':1e-17,
          'L2ConvergenceCoarse':1e-2,
-         'nkswitchtol':1e-3,
+         'nkswitchtol':1e-4,
          'adjointl2convergence': 1e-16,
          'nkls': 'non monotone',
          'frozenturbulence':False,
@@ -819,8 +826,8 @@ def test6():
 
     # Setup aeroproblem, cfdsolver
     ap = AeroProblem(name='mdo_tutorial', alpha=1.8, mach=0.80, 
-                     altitude=40000.0, areaRef=45.5, chordRef=3.25, evalFuncs=['cl','cmz','drag'])
-
+                     altitude=10000.0, areaRef=45.5, chordRef=3.25, evalFuncs=['cl','cmz','drag'])
+    
     ap.addDV('alpha')
     CFDSolver = SUMB(options=aeroOptions)
     if 'complex' in sys.argv:
