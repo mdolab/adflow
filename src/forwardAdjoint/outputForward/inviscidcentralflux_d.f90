@@ -37,10 +37,7 @@
    !
    !      Local variables.
    !
-   INTEGER(kind=inttype) :: i, j, k, ind
-   INTEGER(kind=inttype) :: istart, iend, isize, ii
-   INTEGER(kind=inttype) :: jstart, jend, jsize
-   INTEGER(kind=inttype) :: kstart, kend, ksize
+   INTEGER(kind=inttype) :: i, j, k, ind, ii
    REAL(kind=realtype) :: qsp, qsm, rqsp, rqsm, porvel, porflux
    REAL(kind=realtype) :: qspd, qsmd, rqspd, rqsmd
    REAL(kind=realtype) :: pa, fs, sface, vnp, vnm
@@ -48,7 +45,17 @@
    REAL(kind=realtype) :: wwx, wwy, wwz, rvol
    REAL(kind=realtype) :: wwxd, wwyd, wwzd, rvold
    INTRINSIC MOD
+   !
+   !      ******************************************************************
+   !      *                                                                *
+   !      * Begin execution                                                *
+   !      *                                                                *
+   !      ******************************************************************
+   !
+   ! Initialize sFace to zero. This value will be used if the
+   ! block is not moving.
    sface = zero
+   sfaced = 0.0_8
    !
    !      ******************************************************************
    !      *                                                                *
@@ -56,19 +63,9 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   istart = 1
-   iend = il
-   isize = iend - istart + 1
-   jstart = 2
-   jend = jl
-   jsize = jend - jstart + 1
-   kstart = 2
-   kend = kl
-   ksize = kend - kstart + 1
-   sfaced = 0.0_8
-   DO k=kstart,kend
-   DO j=jstart,jend
-   DO i=istart,iend
+   DO k=2,kl
+   DO j=2,jl
+   DO i=1,il
    ! Set the dot product of the grid velocity and the
    ! normal in i-direction for a moving face.
    IF (addgridvelocities) THEN
@@ -179,18 +176,9 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   istart = 2
-   iend = il
-   isize = iend - istart + 1
-   jstart = 1
-   jend = jl
-   jsize = jend - jstart + 1
-   kstart = 2
-   kend = kl
-   ksize = kend - kstart + 1
-   DO k=kstart,kend
-   DO j=jstart,jend
-   DO i=istart,iend
+   DO k=2,kl
+   DO j=1,jl
+   DO i=2,il
    ! Set the dot product of the grid velocity and the
    ! normal in j-direction for a moving face.
    IF (addgridvelocities) THEN
@@ -301,18 +289,9 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   istart = 2
-   iend = il
-   isize = iend - istart + 1
-   jstart = 2
-   jend = jl
-   jsize = jend - jstart + 1
-   kstart = 1
-   kend = kl
-   ksize = kend - kstart + 1
-   DO k=kstart,kend
-   DO j=jstart,jend
-   DO i=istart,iend
+   DO k=1,kl
+   DO j=2,jl
+   DO i=2,il
    ! Set the dot product of the grid velocity and the
    ! normal in k-direction for a moving face.
    IF (addgridvelocities) THEN
@@ -432,19 +411,10 @@
    wwz = timeref*cgnsdoms(nbkglobal)%rotrate(3)
    ! Loop over the internal cells of this block to compute the
    ! rotational terms for the momentum equations.
-   istart = 2
-   iend = il
-   isize = iend - istart + 1
-   jstart = 2
-   jend = jl
-   jsize = jend - jstart + 1
-   kstart = 2
-   kend = kl
-   ksize = kend - kstart + 1
-   DO ii=0,isize*jsize*ksize-1
-   i = MOD(ii, isize) + istart
-   j = MOD(ii/isize, jsize) + jstart
-   k = ii/(isize*jsize) + kstart
+   DO ii=0,nx*ny*nz-1
+   i = MOD(ii, nx) + 2
+   j = MOD(ii/nx, ny) + 2
+   k = ii/(nx*ny) + 2
    rvold = wd(i, j, k, irho)*vol(i, j, k) + w(i, j, k, irho)*vold(i, &
    &       j, k)
    rvol = w(i, j, k, irho)*vol(i, j, k)
@@ -465,14 +435,4 @@
    &       wwy*w(i, j, k, ivx))
    END DO
    END IF
-   !
-   !      ******************************************************************
-   !      *                                                                *
-   !      * Begin execution                                                *
-   !      *                                                                *
-   !      ******************************************************************
-   !
-   ! Initialize sFace to zero. This value will be used if the
-   ! block is not moving.
-   40 FORMAT(1x,i4,i4,i4,e20.6)
    END SUBROUTINE INVISCIDCENTRALFLUX_D

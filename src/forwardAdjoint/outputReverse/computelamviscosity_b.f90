@@ -39,19 +39,27 @@
    !
    !      Local variables.
    !
-   INTEGER(kind=inttype) :: i, j, k
-   REAL(kind=realtype) :: musuth, tsuth, ssuth, t
-   REAL(kind=realtype) :: musuthd, tsuthd, ssuthd, td
+   INTEGER(kind=inttype) :: i, j, k, ii
+   REAL(kind=realtype) :: musuth, tsuth, ssuth, t, pp
+   REAL(kind=realtype) :: musuthd, tsuthd, ssuthd, td, ppd
    LOGICAL :: correctfork
-   INTEGER :: branch
+   INTRINSIC MOD
+   REAL(kind=realtype) :: temp3
    REAL(kind=realtype) :: temp2
    REAL(kind=realtype) :: temp1
    REAL(kind=realtype) :: temp0
    REAL(kind=realtype) :: tempd
+   REAL(kind=realtype) :: tempd6
+   REAL(kind=realtype) :: tempd5
+   REAL(kind=realtype) :: tempd4
+   REAL(kind=realtype) :: tempd3
    REAL(kind=realtype) :: tempd2
    REAL(kind=realtype) :: tempd1
    REAL(kind=realtype) :: tempd0
    REAL(kind=realtype) :: temp
+   REAL(kind=realtype) :: temp6
+   REAL(kind=realtype) :: temp5
+   REAL(kind=realtype) :: temp4
    !
    !      ******************************************************************
    !      *                                                                *
@@ -81,39 +89,15 @@
    ! Substract 2/3 rho k, which is a part of the normal turbulent
    ! stresses, in case the pressure must be corrected.
    IF (correctfork) THEN
-   DO k=1,ke
-   DO j=1,je
-   DO i=1,ie
-   p(i, j, k) = p(i, j, k) - twothird*w(i, j, k, irho)*w(i, j, &
-   &             k, itu1)
-   END DO
-   END DO
-   END DO
-   CALL PUSHCONTROL1B(1)
-   ELSE
-   CALL PUSHCONTROL1B(0)
-   END IF
-   ! Add the 2/3 rho k again to the pressure if the pressure was
-   ! corrected earlier.
-   IF (correctfork) THEN
-   DO k=ke,1,-1
-   DO j=je,1,-1
-   DO i=ie,1,-1
-   wd(i, j, k, irho) = wd(i, j, k, irho) + twothird*w(i, j, k, &
-   &             itu1)*pd(i, j, k)
-   wd(i, j, k, itu1) = wd(i, j, k, itu1) + twothird*w(i, j, k, &
-   &             irho)*pd(i, j, k)
-   END DO
-   END DO
-   END DO
-   END IF
    ssuthd = 0.0_8
    musuthd = 0.0_8
    tsuthd = 0.0_8
-   DO k=ke,1,-1
-   DO j=je,1,-1
-   DO i=ie,1,-1
-   t = p(i, j, k)/(rgas*w(i, j, k, irho))
+   DO ii=0,ie*je*ke-1
+   i = MOD(ii, ie) + 1
+   j = MOD(ii/ie, je) + 1
+   k = ii/(ie*je) + 1
+   pp = p(i, j, k) - twothird*w(i, j, k, irho)*w(i, j, k, itu1)
+   t = pp/(rgas*w(i, j, k, irho))
    temp2 = t/tsuth
    tempd = temp2**1.5_realType*rlvd(i, j, k)/(t+ssuth)
    temp1 = musuth*(tsuth+ssuth)/(t+ssuth)
@@ -126,24 +110,43 @@
    rlvd(i, j, k) = 0.0_8
    temp0 = w(i, j, k, irho)
    temp = rgas*temp0
-   tempd2 = -(p(i, j, k)*td/temp**2)
-   pd(i, j, k) = pd(i, j, k) + td/temp
+   tempd2 = -(pp*td/temp**2)
+   ppd = td/temp
    rgasd = rgasd + temp0*tempd2
    wd(i, j, k, irho) = wd(i, j, k, irho) + rgas*tempd2
+   pd(i, j, k) = pd(i, j, k) + ppd
+   wd(i, j, k, irho) = wd(i, j, k, irho) - twothird*w(i, j, k, itu1&
+   &         )*ppd
+   wd(i, j, k, itu1) = wd(i, j, k, itu1) - twothird*w(i, j, k, irho&
+   &         )*ppd
    END DO
-   END DO
-   END DO
-   CALL POPCONTROL1B(branch)
-   IF (branch .NE. 0) THEN
-   DO k=ke,1,-1
-   DO j=je,1,-1
-   DO i=ie,1,-1
-   wd(i, j, k, irho) = wd(i, j, k, irho) - twothird*w(i, j, k, &
-   &             itu1)*pd(i, j, k)
-   wd(i, j, k, itu1) = wd(i, j, k, itu1) - twothird*w(i, j, k, &
-   &             irho)*pd(i, j, k)
-   END DO
-   END DO
+   ELSE
+   ssuthd = 0.0_8
+   musuthd = 0.0_8
+   tsuthd = 0.0_8
+   DO ii=0,ie*je*ke-1
+   i = MOD(ii, ie) + 1
+   j = MOD(ii/ie, je) + 1
+   k = ii/(ie*je) + 1
+   ! Compute the nonDimensional temperature and the
+   ! nonDimensional laminar viscosity.
+   t = p(i, j, k)/(rgas*w(i, j, k, irho))
+   temp6 = t/tsuth
+   tempd3 = temp6**1.5_realType*rlvd(i, j, k)/(t+ssuth)
+   temp5 = musuth*(tsuth+ssuth)/(t+ssuth)
+   tempd4 = -(temp5*tempd3)
+   tempd5 = 1.5_realType*temp6**0.5*temp5*rlvd(i, j, k)/tsuth
+   musuthd = musuthd + (tsuth+ssuth)*tempd3
+   tsuthd = tsuthd + musuth*tempd3 - temp6*tempd5
+   ssuthd = ssuthd + tempd4 + musuth*tempd3
+   td = tempd5 + tempd4
+   rlvd(i, j, k) = 0.0_8
+   temp4 = w(i, j, k, irho)
+   temp3 = rgas*temp4
+   tempd6 = -(p(i, j, k)*td/temp3**2)
+   pd(i, j, k) = pd(i, j, k) + td/temp3
+   rgasd = rgasd + temp4*tempd6
+   wd(i, j, k, irho) = wd(i, j, k, irho) + rgas*tempd6
    END DO
    END IF
    trefd = trefd - tsuthdim*tsuthd/tref**2 - ssuthdim*ssuthd/tref**2

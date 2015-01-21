@@ -59,7 +59,7 @@ FILES_TO_COMPLEXIFY = \
 	       convergenceInfo.F90\
 	       computedwD3ADI.f90\
 	       computeInletMassFlowFullWheel.f90\
-	       computeLamViscosity.f90\
+	       computeLamViscosity.F90\
 	       computeUtau.f90\
 	       componentsBreakDownPrintout.f90\
 	       DADISmoother.f90\
@@ -108,7 +108,7 @@ FILES_TO_COMPLEXIFY = \
                solverUnsteadyImplicitRK.F90\
 	       solverUnsteadyBDF.F90\
 	       solverUnsteadyMD.F90\
-	       timeStep.f90\
+	       timeStep.F90\
 	       transferToCoarseGrid.f90\
 	       transferToFineGrid.f90\
 	       unsteadyHeader.f90\

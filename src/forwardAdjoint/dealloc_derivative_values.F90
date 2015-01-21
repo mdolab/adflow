@@ -169,24 +169,22 @@ subroutine dealloc_derivative_values(level)
            call EChk(ierr,__FILE__,__LINE__)
         end if
         
-        if (viscous) then
-           deallocate(flowDomsd(nn,1,sps)%d2Wall, &
-                stat=ierr)
-           call EChk(ierr,__FILE__,__LINE__)
+        deallocate(flowDomsd(nn,1,sps)%d2Wall, &
+             stat=ierr)
+        call EChk(ierr,__FILE__,__LINE__)
         
-           viscbocoLoop: do mm=1,nviscBocos
-              deallocate(flowDomsd(nn,1,sps)%viscSubface(mm)%tau, stat=ierr)
-              call EChk(ierr,__FILE__,__LINE__)
-              
-              deallocate(flowDomsd(nn,1,sps)%viscSubface(mm)%q, stat=ierr)
-              call EChk(ierr,__FILE__,__LINE__)
-              
-           end do viscbocoLoop
-           
-           deallocate(flowDomsd(nn,1,sps)%viscSubFace, stat=ierr)
+        viscbocoLoop: do mm=1,nViscBocos
+           deallocate(flowDomsd(nn,1,sps)%viscSubface(mm)%tau, stat=ierr)
            call EChk(ierr,__FILE__,__LINE__)
            
-        end if
+           deallocate(flowDomsd(nn,1,sps)%viscSubface(mm)%q, stat=ierr)
+           call EChk(ierr,__FILE__,__LINE__)
+           
+        end do viscbocoLoop
+        
+        deallocate(flowDomsd(nn,1,sps)%viscSubFace, stat=ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+           
      end do
   end do
 

@@ -231,8 +231,6 @@
    ! Standard scalar dissipation scheme.
    IF (finegrid) THEN
    IF (.NOT.lumpeddiss) THEN
-   CALL PUSHREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, &
-   &                     4))
    CALL INVISCIDDISSFLUXSCALAR()
    CALL PUSHCONTROL3B(0)
    ELSE
@@ -876,8 +874,6 @@
    IF (branch .LT. 4) THEN
    IF (branch .LT. 2) THEN
    IF (branch .EQ. 0) THEN
-   CALL POPREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4&
-   &                    ))
    CALL INVISCIDDISSFLUXSCALAR_B()
    ELSE
    CALL POPREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4&
