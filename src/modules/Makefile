@@ -75,8 +75,6 @@ FF90_OBJECTS_4 = ADjointVars.o\
 		 paramTurb.o\
 		 section.o\
 		 stencils.o\
-	         blockpointers_d.o\
-		 blockpointers_b.o\
 	         diffSizes.o\
 		 wallDistanceData.o\
 

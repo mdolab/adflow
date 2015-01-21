@@ -12,7 +12,7 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
   !
   use ADjointPetsc, only : FMx, dFcdx, doAdx, nFM, iSepSensor, iCavitation
   use BCTypes
-  use blockPointers_d      
+  use blockPointers
   use inputDiscretization 
   use inputTimeSpectral 
   use inputPhysics

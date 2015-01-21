@@ -410,6 +410,7 @@
    ! s(1:ie,1:je,1:ke,3)          - Mesh velocities of the cell
    !                                centers; only for moving mesh
    !                                problems.
+   ! Nodal Fluxes: ux,uy,uz,vx,vy,vz,wx,wy,wz,qx,qy,qz(il, jl, kl)
    !
    !        ****************************************************************
    !        *                                                              *
@@ -632,6 +633,10 @@
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: rlv, rev
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: s
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: shocksensor
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ux, uy, uz
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: vx, vy, vz
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: wx, wy, wz
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: qx, qy, qz
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: p1
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: dw, fw
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: dwtmp, &
@@ -698,7 +703,7 @@
    TYPE(BLOCKTYPE), DIMENSION(nn:nn, 1, ntimeintervalsspectral) :: &
    & flowdoms
    TYPE(BLOCKTYPE_B), DIMENSION(nn:nn, 1, ntimeintervalsspectral) :: &
-   & flowdomsb
+   & flowdomsd
    !
    !      ******************************************************************
    !      *                                                                *

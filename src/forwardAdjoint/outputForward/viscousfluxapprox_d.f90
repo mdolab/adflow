@@ -8,7 +8,7 @@
    !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
    !                x:in si:in sj:in sk:in fw:in
    SUBROUTINE VISCOUSFLUXAPPROX_D()
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
    USE INPUTPHYSICS
    USE ITERATION

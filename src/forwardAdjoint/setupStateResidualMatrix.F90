@@ -21,7 +21,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   !
   use ADjointPetsc, only : FMw, dFcdW, nFM, iSepSensor, iCavitation
   use BCTypes
-  use blockPointers_d      
+  use blockPointers
   use inputDiscretization 
   use inputTimeSpectral 
   use inputPhysics

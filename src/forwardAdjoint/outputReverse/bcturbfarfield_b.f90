@@ -31,7 +31,7 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   USE BLOCKPOINTERS_B
+   USE BLOCKPOINTERS
    USE BCTYPES
    USE CONSTANTS
    USE FLOWVARREFSTATE
@@ -99,26 +99,26 @@
    CALL POPCONTROL3B(branch)
    IF (branch .LT. 3) THEN
    IF (branch .EQ. 0) THEN
-   winfb(l) = winfb(l) + bvtk2b(i, j, l)
-   bvtk2b(i, j, l) = 0.0_8
+   winfd(l) = winfd(l) + bvtk2d(i, j, l)
+   bvtk2d(i, j, l) = 0.0_8
    ELSE IF (branch .EQ. 1) THEN
-   winfb(l) = winfb(l) + bvtk1b(i, j, l)
-   bvtk1b(i, j, l) = 0.0_8
+   winfd(l) = winfd(l) + bvtk1d(i, j, l)
+   bvtk1d(i, j, l) = 0.0_8
    ELSE
-   winfb(l) = winfb(l) + bvtj2b(i, j, l)
-   bvtj2b(i, j, l) = 0.0_8
+   winfd(l) = winfd(l) + bvtj2d(i, j, l)
+   bvtj2d(i, j, l) = 0.0_8
    END IF
    ELSE IF (branch .LT. 5) THEN
    IF (branch .EQ. 3) THEN
-   winfb(l) = winfb(l) + bvtj1b(i, j, l)
-   bvtj1b(i, j, l) = 0.0_8
+   winfd(l) = winfd(l) + bvtj1d(i, j, l)
+   bvtj1d(i, j, l) = 0.0_8
    ELSE
-   winfb(l) = winfb(l) + bvti2b(i, j, l)
-   bvti2b(i, j, l) = 0.0_8
+   winfd(l) = winfd(l) + bvti2d(i, j, l)
+   bvti2d(i, j, l) = 0.0_8
    END IF
    ELSE IF (branch .EQ. 5) THEN
-   winfb(l) = winfb(l) + bvti1b(i, j, l)
-   bvti1b(i, j, l) = 0.0_8
+   winfd(l) = winfd(l) + bvti1d(i, j, l)
+   bvti1d(i, j, l) = 0.0_8
    END IF
    END DO
    END IF

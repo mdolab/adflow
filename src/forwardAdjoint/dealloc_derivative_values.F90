@@ -3,12 +3,14 @@
 
 subroutine dealloc_derivative_values(level)
 
-  use blockPointers_d ! This modules includes blockPointers
+  use blockPointers
   use inputtimespectral
   use flowvarrefstate
   use inputPhysics
   use cgnsGrid
   use BCTypes
+  use communication
+  use wallDistanceData
   implicit none
 
   ! Input Parameters
@@ -100,7 +102,22 @@ subroutine dealloc_derivative_values(level)
              flowDomsd(nn,1,sps)%radJ,     &
              flowDomsd(nn,1,sps)%radK,stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
-        
+
+        deallocate(&
+        flowDomsd(nn,1,sps)%ux, &
+        flowDomsd(nn,1,sps)%uy, &
+        flowDomsd(nn,1,sps)%uz, &
+        flowDomsd(nn,1,sps)%vx, &
+        flowDomsd(nn,1,sps)%vy, &
+        flowDomsd(nn,1,sps)%vz, &
+        flowDomsd(nn,1,sps)%wx, &
+        flowDomsd(nn,1,sps)%wy, &
+        flowDomsd(nn,1,sps)%wz, &
+        flowDomsd(nn,1,sps)%qx, &
+        flowDomsd(nn,1,sps)%qy, &
+        flowDomsd(nn,1,sps)%qz, stat=ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+
         ! Deallocate allocated boundayr data
         do mm=1,nBocos
            deallocate(flowDomsd(nn,1,sps)%BCData(mm)%norm,stat=ierr)
@@ -181,4 +198,11 @@ subroutine dealloc_derivative_values(level)
   deallocate(flowdomsd,stat=ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
+  ! And the petsc vector(s)
+  if (.not. wallDistanceNeeded) then 
+     call VecDestroy(xSurfVec(1), ierr)
+  end if
+
+  call VecDestroy(xSurfVecd, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
 end subroutine dealloc_derivative_values

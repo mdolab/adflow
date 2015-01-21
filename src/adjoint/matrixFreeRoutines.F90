@@ -6,7 +6,6 @@ subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useSta
   use communication
   use costfunctions
   use blockPointers
-  use blockPointers_d
   use inputDiscretization 
   use inputTimeSpectral 
   use inputPhysics
@@ -241,7 +240,6 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
   use constants
   use communication
   use blockPointers
-  use blockPointers_b
   use inputDiscretization 
   use inputTimeSpectral 
   use inputPhysics
@@ -252,7 +250,7 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
   use ADjointPETSc
   use adjointvars
   use costfunctions
-  use walldistancedata, only : xSurfVec, xSurfVecb, xSurf, xSurfb, wallScatter
+  use walldistancedata, only : xSurfVec, xSurfVecd, xSurf, xSurfd, wallScatter
   implicit none
 
   ! Input Variables
@@ -269,7 +267,7 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
   ! Working variables
   integer(kind=intType) :: ierr,nn,sps,i,j,k,l,ii, sps2
   real(kind=realType) :: alpha, beta, force(3), moment(3), sepSensor, cavitation
-  real(kind=realType) :: alphab, betab, forceb(3), momentb(3), sepSensorb, cavitationb
+  real(kind=realType) :: alphad, betad, forced(3), momentd(3), sepSensord, cavitationd
   integer(kind=intType) ::  level, irow, liftIndex
   logical :: resetToRans
   real(kind=realType), dimension(extraSize) :: extraLocalBar
@@ -317,14 +315,14 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
   end if
 
   ! Allocate the memory for reverse
-  call alloc_derivative_values_bwd(level)
+  call alloc_derivative_values(level)!_bwd(level)
 
   ! Zero the function seeds
-  forceb = zero
-  momentb = zero
-  sepSensorb = zero
-  cavitationb = zero
-  funcValuesb = zero
+  forced= zero
+  momentd= zero
+  sepSensord= zero
+  cavitationd= zero
+  funcValuesd= zero
   call getDirAngle(velDirFreestream, liftDirection, liftIndex, alpha, beta)
 
   ! Now extract the vector of the surface data we need
@@ -332,9 +330,9 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
   call EChk(ierr,__FILE__,__LINE__)
 
   ! And it's derivative
-  call VecGetArrayF90(xSurfVecb, xSurfb, ierr)
+  call VecGetArrayF90(xSurfVecd, xSurfd, ierr)
   call EChk(ierr,__FILE__,__LINE__)
-  allocate(xSurfbSum(size(xSurfb)))
+  allocate(xSurfbSum(size(xSurfd)))
   xSurfbSum = zero
 
   ! Zero out extraLocal
@@ -349,7 +347,7 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
 
      do sps=1,nTimeIntervalsSpectral
         ! Set pointers and derivative pointers
-        call setPointers_b(nn, level, sps)
+        call setPointers_d(nn, level, sps)
 
         ! Set the dw seeds
         do k=2, kl
@@ -357,18 +355,18 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
               do i=2,il
                  do l=1,nw
                     ii = ii + 1
-                    flowdomsb(nn, level, sps)%dw(i, j, k, l) = dwbar(ii)
+                    flowdomsd(nn, level, sps)%dw(i, j, k, l) = dwbar(ii)
                  end do
               end do
            end do
         end do
 
         ! And the function value seeds
-        funcValuesb = funcsBar
+        funcValuesd = funcsBar
 
-        call BLOCK_RES_B(nn, 1, useSpatial, alpha, alphab, beta, betab, &
-             & liftindex, force, forceb, moment, momentb, sepsensor, sepsensorb, &
-             & cavitation, cavitationb)
+        call BLOCK_RES_B(nn, 1, useSpatial, alpha, alphad, beta, betad, &
+             & liftindex, force, forced, moment, momentd, sepsensor, sepsensord, &
+             & cavitation, cavitationd)
 
         ! Assmeble the vectors requested:
         
@@ -381,7 +379,7 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
                           irow = flowDoms(nn, 1, sps2)%globalNode(i,j,k)*3 + l -1
                           if (irow >= 0) then 
                              call VecSetValues(x_like, 1, (/irow/), &
-                                  (/flowdomsb(nn, level, sps)%x(i, j, k, l)/), ADD_VALUES, ierr)
+                                  (/flowdomsd(nn, level, sps)%x(i, j, k, l)/), ADD_VALUES, ierr)
                              call EChk(ierr,__FILE__,__LINE__)
                           end if
                        end do
@@ -390,29 +388,29 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
               end do
 
               ! We need to acculumate the contribution from this block into xSurfbSum
-              xSurfbSum = xSurfbSum + xSurfb
+              xSurfbSum = xSurfbSum + xSurfd
 
               ! Also need the extra variables, those are zero-based:
               if (nDesignAoA >= 0) &
-                   extraLocalBar(nDesignAoA+1) = extraLocalBar(nDesignAoA+1) + alphab
+                   extraLocalBar(nDesignAoA+1) = extraLocalBar(nDesignAoA+1) + alphad
               if (nDesignSSA >= 0) &
-                   extraLocalBar(nDesignSSA+1) = extraLocalBar(nDesignSSA+1) + alphab
+                   extraLocalBar(nDesignSSA+1) = extraLocalBar(nDesignSSA+1) + alphad
               if (nDesignMach  >= 0) &
-                   extraLocalBar(nDesignMach+1) = extraLocalBar(nDesignMach+1) + machb + machcoefb
+                   extraLocalBar(nDesignMach+1) = extraLocalBar(nDesignMach+1) + machd + machcoefd
               if (nDesignMachGrid >= 0) &
-                   extraLocalBar(nDesignMachGrid+1) = extraLocalBar(nDesignMachGrid+1) + machgridb + machcoefb
+                   extraLocalBar(nDesignMachGrid+1) = extraLocalBar(nDesignMachGrid+1) + machgridd + machcoefd
               if (nDesignPressure >= 0) &
-                   extraLocalBar(nDesignPressure+1) = extraLocalBar(nDesignPressure+1) + prefb
+                   extraLocalBar(nDesignPressure+1) = extraLocalBar(nDesignPressure+1) + prefd
               if (nDesignTemperature >= 0) &
-                   extraLocalBar(nDesignTemperature+1) = extraLocalBar(nDesignTemperature+1) + tempfreestreamb
+                   extraLocalBar(nDesignTemperature+1) = extraLocalBar(nDesignTemperature+1) + tempfreestreamd
               if (nDesignReynolds >= 0) &
-                   extraLocalBar(nDesignReynolds+1) = extraLocalBar(nDesignReynolds+1) + reynoldsb
+                   extraLocalBar(nDesignReynolds+1) = extraLocalBar(nDesignReynolds+1) + reynoldsd
               if (nDesignPointRefX >= 0) &
-                   extraLocalBar(nDesignPointRefX+1) = extraLocalBar(nDesignPointRefX+1) + pointrefb(1)
+                   extraLocalBar(nDesignPointRefX+1) = extraLocalBar(nDesignPointRefX+1) + pointrefd(1)
               if (nDesignPointRefY >= 0) &
-                   extraLocalBar(nDesignPointRefY+1) = extraLocalBar(nDesignPointRefY+1) + pointrefb(2)
+                   extraLocalBar(nDesignPointRefY+1) = extraLocalBar(nDesignPointRefY+1) + pointrefd(2)
               if (nDesignPointRefZ >= 0) &
-                   extraLocalBar(nDesignPointRefZ+1) = extraLocalBar(nDesignPointRefZ+1) + pointrefb(3)
+                   extraLocalBar(nDesignPointRefZ+1) = extraLocalBar(nDesignPointRefZ+1) + pointrefd(3)
            end if
 
            if (useState) then 
@@ -423,7 +421,7 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
                           irow = flowDoms(nn, 1, sps2)%globalCell(i,j,k)*nw + l -1
                           if (irow >= 0) then 
                              call VecSetValues(psi_like3, 1, (/irow/), &
-                                  (/flowdomsb(nn, level, sps)%w(i, j, k, l)/), ADD_VALUES, ierr)
+                                  (/flowdomsd(nn, level, sps)%w(i, j, k, l)/), ADD_VALUES, ierr)
                              call EChk(ierr,__FILE__,__LINE__)
                           end if
                        end do
@@ -446,7 +444,7 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
 
   ! Copy the Sum value back to xSurfb which is actually the PETSc
   ! array. And now we are done with the xSurfBSum value
-  xSurfb = xSurfbSum
+  xSurfd = xSurfbSum
   deallocate(xsurfbSum)
 
   ! These arrays need to be restored before we can do the spatial scatter below:
@@ -454,7 +452,7 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
   call EChk(ierr,__FILE__,__LINE__)
 
   ! And it's derivative
-  call VecRestoreArrayF90(xSurfVecb, xSurfb, ierr)
+  call VecRestoreArrayF90(xSurfVecd, xSurfd, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
 
@@ -482,17 +480,17 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
      ! scatter from the global x vector to xSurf...but only if
      ! wallDistances were used
      if (wallDistanceNeeded .and. useApproxWallDistance) then 
-        call VecScatterBegin(wallScatter(1), xSurfVecb, x_like, ADD_VALUES, SCATTER_REVERSE, ierr)
+        call VecScatterBegin(wallScatter(1), xSurfVecd, x_like, ADD_VALUES, SCATTER_REVERSE, ierr)
         call EChk(ierr,__FILE__,__LINE__)
         
-        call VecScatterEnd(wallScatter(1), xSurfVecb, x_like, ADD_VALUES, SCATTER_REVERSE, ierr)
+        call VecScatterEnd(wallScatter(1), xSurfVecd, x_like, ADD_VALUES, SCATTER_REVERSE, ierr)
         call EChk(ierr,__FILE__,__LINE__)
      end if
      call VecResetArray(x_like, ierr)
      call EChk(ierr,__FILE__,__LINE__)
   end if
 
-  call dealloc_derivative_values_bwd(level)
+  call dealloc_derivative_values(level)!_bwd(level)
 
   ! Reset the correct equation parameters if we were useing the frozen
   ! Turbulent 

@@ -11,32 +11,36 @@
    !                machcoef pointref pref alpha beta
    !   RW status of diff variables: *(flowdoms.x):in-out *(flowdoms.vol):(loc)
    !                *(flowdoms.w):in-out *(flowdoms.dw):out *rev:(loc)
-   !                *bvtj1:(loc) *bvtj2:(loc) *p:(loc) *sfacei:(loc)
-   !                *sfacej:(loc) *s:(loc) *gamma:(loc) *sfacek:(loc)
-   !                *rlv:(loc) *bvtk1:(loc) *bvtk2:(loc) *si:(loc)
-   !                *sj:(loc) *sk:(loc) *bvti1:(loc) *bvti2:(loc)
-   !                *fw:(loc) *(*viscsubface.tau):(loc) *(*bcdata.norm):(loc)
-   !                *(*bcdata.rface):(loc) *(*bcdata.fp):out *(*bcdata.fv):out
-   !                *(*bcdata.m):out *(*bcdata.oarea):out *(*bcdata.sepsensor):out
-   !                *(*bcdata.cavitation):out *(*bcdata.uslip):(loc)
-   !                *radi:(loc) *radj:(loc) *radk:(loc) funcvalues:out
-   !                mach:in tempfreestream:in reynolds:in veldirfreestream:(loc)
-   !                machgrid:in lengthref:in machcoef:in dragdirection:(loc)
-   !                liftdirection:(loc) pointref:in mudim:(loc) gammainf:(loc)
-   !                pinf:(loc) timeref:(loc) rhoinf:(loc) muref:(loc)
-   !                rhoinfdim:(loc) tref:(loc) winf:(loc) muinf:(loc)
-   !                uinf:(loc) pinfcorr:(loc) rgas:(loc) pinfdim:(loc)
-   !                pref:in-out rhoref:(loc) moment:out alpha:in force:out
-   !                beta:in cavitation:out sepsensor:out
+   !                *bvtj1:(loc) *bvtj2:(loc) *wx:(loc) *wy:(loc)
+   !                *wz:(loc) *p:(loc) *sfacei:(loc) *sfacej:(loc)
+   !                *s:(loc) *gamma:(loc) *sfacek:(loc) *rlv:(loc)
+   !                *qx:(loc) *qy:(loc) *qz:(loc) *bvtk1:(loc) *bvtk2:(loc)
+   !                *ux:(loc) *uy:(loc) *uz:(loc) *si:(loc) *sj:(loc)
+   !                *sk:(loc) *bvti1:(loc) *bvti2:(loc) *vx:(loc)
+   !                *vy:(loc) *vz:(loc) *fw:(loc) *(*viscsubface.tau):(loc)
+   !                *(*bcdata.norm):(loc) *(*bcdata.rface):(loc) *(*bcdata.fp):out
+   !                *(*bcdata.fv):out *(*bcdata.m):out *(*bcdata.oarea):out
+   !                *(*bcdata.sepsensor):out *(*bcdata.cavitation):out
+   !                *(*bcdata.uslip):(loc) *radi:(loc) *radj:(loc)
+   !                *radk:(loc) funcvalues:out mach:in tempfreestream:in
+   !                reynolds:in veldirfreestream:(loc) machgrid:in
+   !                lengthref:in machcoef:in dragdirection:(loc) liftdirection:(loc)
+   !                pointref:in mudim:(loc) gammainf:(loc) pinf:(loc)
+   !                timeref:(loc) rhoinf:(loc) muref:(loc) rhoinfdim:(loc)
+   !                tref:(loc) winf:(loc) muinf:(loc) uinf:(loc) pinfcorr:(loc)
+   !                rgas:(loc) pinfdim:(loc) pref:in-out rhoref:(loc)
+   !                moment:out alpha:in force:out beta:in cavitation:out
+   !                sepsensor:out
    !   Plus diff mem management of: flowdoms.x:in flowdoms.vol:in
    !                flowdoms.w:in flowdoms.dw:in rev:in bvtj1:in bvtj2:in
-   !                p:in sfacei:in sfacej:in s:in gamma:in sfacek:in
-   !                rlv:in bvtk1:in bvtk2:in si:in sj:in sk:in bvti1:in
-   !                bvti2:in fw:in viscsubface:in *viscsubface.tau:in
-   !                bcdata:in *bcdata.norm:in *bcdata.rface:in *bcdata.fp:in
-   !                *bcdata.fv:in *bcdata.m:in *bcdata.oarea:in *bcdata.sepsensor:in
-   !                *bcdata.cavitation:in *bcdata.uslip:in radi:in
-   !                radj:in radk:in
+   !                wx:in wy:in wz:in p:in sfacei:in sfacej:in s:in
+   !                gamma:in sfacek:in rlv:in qx:in qy:in qz:in bvtk1:in
+   !                bvtk2:in ux:in uy:in uz:in si:in sj:in sk:in bvti1:in
+   !                bvti2:in vx:in vy:in vz:in fw:in viscsubface:in
+   !                *viscsubface.tau:in bcdata:in *bcdata.norm:in
+   !                *bcdata.rface:in *bcdata.fp:in *bcdata.fv:in *bcdata.m:in
+   !                *bcdata.oarea:in *bcdata.sepsensor:in *bcdata.cavitation:in
+   !                *bcdata.uslip:in radi:in radj:in radk:in
    ! This is a super-combined function that combines the original
    ! functionality of: 
    ! Pressure Computation
@@ -51,7 +55,7 @@
    SUBROUTINE BLOCK_RES_D(nn, sps, usespatial, alpha, alphad, beta, betad, &
    & liftindex, force, forced, moment, momentd, sepsensor, sepsensord, &
    & cavitation, cavitationd)
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
    USE INPUTPHYSICS
    USE INPUTITERATION

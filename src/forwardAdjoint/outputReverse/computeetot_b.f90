@@ -30,7 +30,7 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   USE BLOCKPOINTERS_B
+   USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
    USE INPUTPHYSICS
    IMPLICIT NONE
@@ -45,14 +45,14 @@
    !
    INTEGER(kind=inttype) :: i, j, k
    REAL(kind=realtype) :: ovgm1, factk, scale
-   REAL(kind=realtype) :: scaleb
+   REAL(kind=realtype) :: scaled
    REAL(kind=realtype) :: tmp
    REAL(kind=realtype) :: tmp0
    REAL(kind=realtype) :: temp1
    REAL(kind=realtype) :: temp0
-   REAL(kind=realtype) :: tmpb
-   REAL(kind=realtype) :: tmpb0
-   REAL(kind=realtype) :: tempb
+   REAL(kind=realtype) :: tmpd
+   REAL(kind=realtype) :: tempd
+   REAL(kind=realtype) :: tmpd0
    REAL(kind=realtype) :: temp
    !      ******************************************************************
    !      *                                                                *
@@ -96,12 +96,12 @@
    DO j=jend,jstart,-1
    DO i=iend,istart,-1
    CALL POPREAL8(w(i, j, k, irhoe))
-   tmpb0 = wb(i, j, k, irhoe)
-   wb(i, j, k, irhoe) = tmpb0
-   wb(i, j, k, irho) = wb(i, j, k, irho) - factk*w(i, j, k, &
-   &             itu1)*tmpb0
-   wb(i, j, k, itu1) = wb(i, j, k, itu1) - factk*w(i, j, k, &
-   &             irho)*tmpb0
+   tmpd0 = wd(i, j, k, irhoe)
+   wd(i, j, k, irhoe) = tmpd0
+   wd(i, j, k, irho) = wd(i, j, k, irho) - factk*w(i, j, k, &
+   &             itu1)*tmpd0
+   wd(i, j, k, itu1) = wd(i, j, k, itu1) - factk*w(i, j, k, &
+   &             irho)*tmpd0
    END DO
    END DO
    END DO
@@ -110,18 +110,18 @@
    DO j=jend,jstart,-1
    DO i=iend,istart,-1
    CALL POPREAL8(w(i, j, k, irhoe))
-   tmpb = wb(i, j, k, irhoe)
-   wb(i, j, k, irhoe) = 0.0_8
+   tmpd = wd(i, j, k, irhoe)
+   wd(i, j, k, irhoe) = 0.0_8
    temp1 = w(i, j, k, ivz)
    temp0 = w(i, j, k, ivy)
    temp = w(i, j, k, ivx)
-   tempb = half*w(i, j, k, irho)*tmpb
-   pb(i, j, k) = pb(i, j, k) + ovgm1*tmpb
-   wb(i, j, k, irho) = wb(i, j, k, irho) + half*(temp**2+temp0**2&
-   &           +temp1**2)*tmpb
-   wb(i, j, k, ivx) = wb(i, j, k, ivx) + 2*temp*tempb
-   wb(i, j, k, ivy) = wb(i, j, k, ivy) + 2*temp0*tempb
-   wb(i, j, k, ivz) = wb(i, j, k, ivz) + 2*temp1*tempb
+   tempd = half*w(i, j, k, irho)*tmpd
+   pd(i, j, k) = pd(i, j, k) + ovgm1*tmpd
+   wd(i, j, k, irho) = wd(i, j, k, irho) + half*(temp**2+temp0**2&
+   &           +temp1**2)*tmpd
+   wd(i, j, k, ivx) = wd(i, j, k, ivx) + 2*temp*tempd
+   wd(i, j, k, ivy) = wd(i, j, k, ivy) + 2*temp0*tempd
+   wd(i, j, k, ivz) = wd(i, j, k, ivz) + 2*temp1*tempd
    END DO
    END DO
    END DO
@@ -141,19 +141,19 @@
    END DO
    END DO
    END DO
-   scaleb = 0.0_8
+   scaled = 0.0_8
    DO k=kend,kstart,-1
    DO j=jend,jstart,-1
    DO i=iend,istart,-1
    CALL POPREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w&
    &                      , 4))
-   CALL COMPUTEETOTCELLCPFIT_B(i, j, k, scale, scaleb, &
+   CALL COMPUTEETOTCELLCPFIT_B(i, j, k, scale, scaled, &
    &                               correctfork)
    END DO
    END DO
    END DO
-   rgasb = rgasb + scaleb/tref
-   trefb = trefb - rgas*scaleb/tref**2
+   rgasd = rgasd + scaled/tref
+   trefd = trefd - rgas*scaled/tref**2
    END SELECT
    !
    40 FORMAT(1x,i4,i4,i4,e20.6)

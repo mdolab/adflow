@@ -14,8 +14,8 @@
    !     *                                                                *
    !     ******************************************************************
    !
-   SUBROUTINE GETDIRVECTOR_B(refdirection, alpha, alphab, beta, betab, &
-   & winddirection, winddirectionb, liftindex)
+   SUBROUTINE GETDIRVECTOR_B(refdirection, alpha, alphad, beta, betad, &
+   & winddirection, winddirectiond, liftindex)
    !(xb,yb,zb,alpha,beta,xw,yw,zw)
    !
    !     ******************************************************************
@@ -47,17 +47,17 @@
    !
    REAL(kind=realtype), DIMENSION(3), INTENT(IN) :: refdirection
    REAL(kind=realtype) :: alpha, beta
-   REAL(kind=realtype) :: alphab, betab
+   REAL(kind=realtype) :: alphad, betad
    REAL(kind=realtype), DIMENSION(3) :: winddirection
-   REAL(kind=realtype), DIMENSION(3) :: winddirectionb
+   REAL(kind=realtype), DIMENSION(3) :: winddirectiond
    INTEGER(kind=inttype) :: liftindex
    !
    !     Local variables.
    !
    REAL(kind=realtype) :: rnorm, x1, y1, z1, xbn, ybn, zbn, xw, yw, zw
-   REAL(kind=realtype) :: x1b, y1b, z1b, xbnb, ybnb, zbnb, xwb, ywb, zwb
+   REAL(kind=realtype) :: x1d, y1d, z1d, xbnd, ybnd, zbnd, xwd, ywd, zwd
    REAL(kind=realtype) :: tmp
-   REAL(kind=realtype) :: tmpb
+   REAL(kind=realtype) :: tmpd
    INTRINSIC SQRT
    INTEGER :: branch
    !     ******************************************************************
@@ -104,26 +104,26 @@
    ELSE
    CALL PUSHCONTROL2B(2)
    END IF
-   zwb = winddirectionb(3)
-   winddirectionb(3) = 0.0_8
-   ywb = winddirectionb(2)
-   winddirectionb(2) = 0.0_8
-   xwb = winddirectionb(1)
+   zwd = winddirectiond(3)
+   winddirectiond(3) = 0.0_8
+   ywd = winddirectiond(2)
+   winddirectiond(2) = 0.0_8
+   xwd = winddirectiond(1)
    CALL POPCONTROL2B(branch)
    IF (branch .EQ. 0) THEN
-   tmpb = 0.0_8
-   CALL VECTORROTATION_B(xw, xwb, yw, ywb, zw, zwb, 2, tmp, tmpb, x1, &
-   &                   x1b, y1, y1b, z1, z1b)
-   betab = betab - tmpb
+   tmpd = 0.0_8
+   CALL VECTORROTATION_B(xw, xwd, yw, ywd, zw, zwd, 2, tmp, tmpd, x1, &
+   &                   x1d, y1, y1d, z1, z1d)
+   betad = betad - tmpd
    tmp = -alpha
-   tmpb = 0.0_8
-   CALL VECTORROTATION_B(x1, x1b, y1, y1b, z1, z1b, 3, tmp, tmpb, xbn, &
-   &                   xbnb, ybn, ybnb, zbn, zbnb)
-   alphab = alphab - tmpb
+   tmpd = 0.0_8
+   CALL VECTORROTATION_B(x1, x1d, y1, y1d, z1, z1d, 3, tmp, tmpd, xbn, &
+   &                   xbnd, ybn, ybnd, zbn, zbnd)
+   alphad = alphad - tmpd
    ELSE IF (branch .EQ. 1) THEN
-   CALL VECTORROTATION_B(xw, xwb, yw, ywb, zw, zwb, 3, beta, betab, x1&
-   &                   , x1b, y1, y1b, z1, z1b)
-   CALL VECTORROTATION_B(x1, x1b, y1, y1b, z1, z1b, 2, alpha, alphab, &
-   &                   xbn, xbnb, ybn, ybnb, zbn, zbnb)
+   CALL VECTORROTATION_B(xw, xwd, yw, ywd, zw, zwd, 3, beta, betad, x1&
+   &                   , x1d, y1, y1d, z1, z1d)
+   CALL VECTORROTATION_B(x1, x1d, y1, y1d, z1, z1d, 2, alpha, alphad, &
+   &                   xbn, xbnd, ybn, ybnd, zbn, zbnd)
    END IF
    END SUBROUTINE GETDIRVECTOR_B

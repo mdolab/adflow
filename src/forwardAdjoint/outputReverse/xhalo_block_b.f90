@@ -27,7 +27,7 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   USE BLOCKPOINTERS_B
+   USE BLOCKPOINTERS
    USE BCTYPES
    USE COMMUNICATION
    USE INPUTTIMESPECTRAL
@@ -39,9 +39,9 @@
    INTEGER(kind=inttype) :: ibeg, iend, jbeg, jend, iimax, jjmax
    LOGICAL :: err
    REAL(kind=realtype) :: length, dot
-   REAL(kind=realtype) :: dotb
+   REAL(kind=realtype) :: dotd
    REAL(kind=realtype), DIMENSION(3) :: v1, v2, norm
-   REAL(kind=realtype), DIMENSION(3) :: v1b
+   REAL(kind=realtype), DIMENSION(3) :: v1d
    INTRINSIC SQRT
    REAL(kind=realtype) :: tmp
    REAL(kind=realtype) :: tmp0
@@ -86,30 +86,30 @@
    INTEGER :: ad_to9
    INTEGER :: ad_from10
    INTEGER :: ad_to10
-   REAL(kind=realtype) :: tmpb9
-   REAL(kind=realtype) :: tempb4
-   REAL(kind=realtype) :: tmpb8
-   REAL(kind=realtype) :: tempb3
-   REAL(kind=realtype) :: tmpb7
-   REAL(kind=realtype) :: tempb2
-   REAL(kind=realtype) :: tmpb6
-   REAL(kind=realtype) :: tempb1
-   REAL(kind=realtype) :: tmpb5
-   REAL(kind=realtype) :: tempb0
-   REAL(kind=realtype) :: tmpb4
-   REAL(kind=realtype) :: tmpb3
-   REAL(kind=realtype) :: tmpb
-   REAL(kind=realtype) :: tmpb2
-   REAL(kind=realtype) :: tmpb1
-   REAL(kind=realtype) :: tmpb0
-   REAL(kind=realtype) :: tmpb16
-   REAL(kind=realtype) :: tmpb15
-   REAL(kind=realtype) :: tmpb14
-   REAL(kind=realtype) :: tmpb13
-   REAL(kind=realtype) :: tmpb12
-   REAL(kind=realtype) :: tmpb11
-   REAL(kind=realtype) :: tempb
-   REAL(kind=realtype) :: tmpb10
+   REAL(kind=realtype) :: tmpd
+   REAL(kind=realtype) :: tmpd16
+   REAL(kind=realtype) :: tmpd15
+   REAL(kind=realtype) :: tmpd14
+   REAL(kind=realtype) :: tmpd13
+   REAL(kind=realtype) :: tmpd12
+   REAL(kind=realtype) :: tmpd11
+   REAL(kind=realtype) :: tmpd10
+   REAL(kind=realtype) :: tempd
+   REAL(kind=realtype) :: tmpd9
+   REAL(kind=realtype) :: tempd4
+   REAL(kind=realtype) :: tmpd8
+   REAL(kind=realtype) :: tempd3
+   REAL(kind=realtype) :: tmpd7
+   REAL(kind=realtype) :: tempd2
+   REAL(kind=realtype) :: tmpd6
+   REAL(kind=realtype) :: tempd1
+   REAL(kind=realtype) :: tmpd5
+   REAL(kind=realtype) :: tempd0
+   REAL(kind=realtype) :: tmpd4
+   REAL(kind=realtype) :: tmpd3
+   REAL(kind=realtype) :: tmpd2
+   REAL(kind=realtype) :: tmpd1
+   REAL(kind=realtype) :: tmpd0
    ! Extrapolation in i-direction.
    DO k=1,kl
    DO j=1,jl
@@ -359,7 +359,7 @@
    CALL PUSHCONTROL4B(0)
    END IF
    END DO loopbocos
-   v1b = 0.0_8
+   v1d = 0.0_8
    DO 100 mm=nbocos,1,-1
    CALL POPCONTROL4B(branch)
    IF (branch .LT. 4) THEN
@@ -374,29 +374,29 @@
    DO i=ad_to9,ad_from9,-1
    CALL POPCONTROL1B(branch)
    IF (branch .NE. 0) THEN
-   tmpb14 = xb(i, j, ke, 3)
-   xb(i, j, ke, 3) = 0.0_8
-   xb(i, j, nz, 3) = xb(i, j, nz, 3) + tmpb14
-   tmpb15 = xb(i, j, ke, 2)
-   xb(i, j, ke, 2) = 0.0_8
-   xb(i, j, nz, 2) = xb(i, j, nz, 2) + tmpb15
-   tmpb16 = xb(i, j, ke, 1)
-   dotb = norm(2)*tmpb15 + norm(1)*tmpb16 + norm(3)*tmpb14
-   xb(i, j, ke, 1) = 0.0_8
-   xb(i, j, nz, 1) = xb(i, j, nz, 1) + tmpb16
-   tempb4 = two*dotb
-   v1b(1) = v1b(1) + norm(1)*tempb4
-   v1b(2) = v1b(2) + norm(2)*tempb4
-   v1b(3) = v1b(3) + norm(3)*tempb4
-   xb(i, j, kl, 3) = xb(i, j, kl, 3) + v1b(3)
-   xb(i, j, nz, 3) = xb(i, j, nz, 3) - v1b(3)
-   v1b(3) = 0.0_8
-   xb(i, j, kl, 2) = xb(i, j, kl, 2) + v1b(2)
-   xb(i, j, nz, 2) = xb(i, j, nz, 2) - v1b(2)
-   v1b(2) = 0.0_8
-   xb(i, j, kl, 1) = xb(i, j, kl, 1) + v1b(1)
-   xb(i, j, nz, 1) = xb(i, j, nz, 1) - v1b(1)
-   v1b(1) = 0.0_8
+   tmpd14 = xd(i, j, ke, 3)
+   xd(i, j, ke, 3) = 0.0_8
+   xd(i, j, nz, 3) = xd(i, j, nz, 3) + tmpd14
+   tmpd15 = xd(i, j, ke, 2)
+   xd(i, j, ke, 2) = 0.0_8
+   xd(i, j, nz, 2) = xd(i, j, nz, 2) + tmpd15
+   tmpd16 = xd(i, j, ke, 1)
+   dotd = norm(2)*tmpd15 + norm(1)*tmpd16 + norm(3)*tmpd14
+   xd(i, j, ke, 1) = 0.0_8
+   xd(i, j, nz, 1) = xd(i, j, nz, 1) + tmpd16
+   tempd4 = two*dotd
+   v1d(1) = v1d(1) + norm(1)*tempd4
+   v1d(2) = v1d(2) + norm(2)*tempd4
+   v1d(3) = v1d(3) + norm(3)*tempd4
+   xd(i, j, kl, 3) = xd(i, j, kl, 3) + v1d(3)
+   xd(i, j, nz, 3) = xd(i, j, nz, 3) - v1d(3)
+   v1d(3) = 0.0_8
+   xd(i, j, kl, 2) = xd(i, j, kl, 2) + v1d(2)
+   xd(i, j, nz, 2) = xd(i, j, nz, 2) - v1d(2)
+   v1d(2) = 0.0_8
+   xd(i, j, kl, 1) = xd(i, j, kl, 1) + v1d(1)
+   xd(i, j, nz, 1) = xd(i, j, nz, 1) - v1d(1)
+   v1d(1) = 0.0_8
    END IF
    END DO
    END DO
@@ -409,28 +409,28 @@
    DO i=ad_to7,ad_from7,-1
    CALL POPCONTROL1B(branch)
    IF (branch .NE. 0) THEN
-   xb(i, j, 2, 3) = xb(i, j, 2, 3) + xb(i, j, 0, 3)
-   dotb = norm(3)*xb(i, j, 0, 3)
-   xb(i, j, 0, 3) = 0.0_8
-   xb(i, j, 2, 2) = xb(i, j, 2, 2) + xb(i, j, 0, 2)
-   dotb = dotb + norm(2)*xb(i, j, 0, 2)
-   xb(i, j, 0, 2) = 0.0_8
-   xb(i, j, 2, 1) = xb(i, j, 2, 1) + xb(i, j, 0, 1)
-   dotb = dotb + norm(1)*xb(i, j, 0, 1)
-   xb(i, j, 0, 1) = 0.0_8
-   tempb3 = two*dotb
-   v1b(1) = v1b(1) + norm(1)*tempb3
-   v1b(2) = v1b(2) + norm(2)*tempb3
-   v1b(3) = v1b(3) + norm(3)*tempb3
-   xb(i, j, 1, 3) = xb(i, j, 1, 3) + v1b(3)
-   xb(i, j, 2, 3) = xb(i, j, 2, 3) - v1b(3)
-   v1b(3) = 0.0_8
-   xb(i, j, 1, 2) = xb(i, j, 1, 2) + v1b(2)
-   xb(i, j, 2, 2) = xb(i, j, 2, 2) - v1b(2)
-   v1b(2) = 0.0_8
-   xb(i, j, 1, 1) = xb(i, j, 1, 1) + v1b(1)
-   xb(i, j, 2, 1) = xb(i, j, 2, 1) - v1b(1)
-   v1b(1) = 0.0_8
+   xd(i, j, 2, 3) = xd(i, j, 2, 3) + xd(i, j, 0, 3)
+   dotd = norm(3)*xd(i, j, 0, 3)
+   xd(i, j, 0, 3) = 0.0_8
+   xd(i, j, 2, 2) = xd(i, j, 2, 2) + xd(i, j, 0, 2)
+   dotd = dotd + norm(2)*xd(i, j, 0, 2)
+   xd(i, j, 0, 2) = 0.0_8
+   xd(i, j, 2, 1) = xd(i, j, 2, 1) + xd(i, j, 0, 1)
+   dotd = dotd + norm(1)*xd(i, j, 0, 1)
+   xd(i, j, 0, 1) = 0.0_8
+   tempd3 = two*dotd
+   v1d(1) = v1d(1) + norm(1)*tempd3
+   v1d(2) = v1d(2) + norm(2)*tempd3
+   v1d(3) = v1d(3) + norm(3)*tempd3
+   xd(i, j, 1, 3) = xd(i, j, 1, 3) + v1d(3)
+   xd(i, j, 2, 3) = xd(i, j, 2, 3) - v1d(3)
+   v1d(3) = 0.0_8
+   xd(i, j, 1, 2) = xd(i, j, 1, 2) + v1d(2)
+   xd(i, j, 2, 2) = xd(i, j, 2, 2) - v1d(2)
+   v1d(2) = 0.0_8
+   xd(i, j, 1, 1) = xd(i, j, 1, 1) + v1d(1)
+   xd(i, j, 2, 1) = xd(i, j, 2, 1) - v1d(1)
+   v1d(1) = 0.0_8
    END IF
    END DO
    END DO
@@ -445,29 +445,29 @@
    DO i=ad_to5,ad_from5,-1
    CALL POPCONTROL1B(branch)
    IF (branch .NE. 0) THEN
-   tmpb11 = xb(i, je, j, 3)
-   xb(i, je, j, 3) = 0.0_8
-   xb(i, ny, j, 3) = xb(i, ny, j, 3) + tmpb11
-   tmpb12 = xb(i, je, j, 2)
-   xb(i, je, j, 2) = 0.0_8
-   xb(i, ny, j, 2) = xb(i, ny, j, 2) + tmpb12
-   tmpb13 = xb(i, je, j, 1)
-   dotb = norm(2)*tmpb12 + norm(1)*tmpb13 + norm(3)*tmpb11
-   xb(i, je, j, 1) = 0.0_8
-   xb(i, ny, j, 1) = xb(i, ny, j, 1) + tmpb13
-   tempb2 = two*dotb
-   v1b(1) = v1b(1) + norm(1)*tempb2
-   v1b(2) = v1b(2) + norm(2)*tempb2
-   v1b(3) = v1b(3) + norm(3)*tempb2
-   xb(i, jl, j, 3) = xb(i, jl, j, 3) + v1b(3)
-   xb(i, ny, j, 3) = xb(i, ny, j, 3) - v1b(3)
-   v1b(3) = 0.0_8
-   xb(i, jl, j, 2) = xb(i, jl, j, 2) + v1b(2)
-   xb(i, ny, j, 2) = xb(i, ny, j, 2) - v1b(2)
-   v1b(2) = 0.0_8
-   xb(i, jl, j, 1) = xb(i, jl, j, 1) + v1b(1)
-   xb(i, ny, j, 1) = xb(i, ny, j, 1) - v1b(1)
-   v1b(1) = 0.0_8
+   tmpd11 = xd(i, je, j, 3)
+   xd(i, je, j, 3) = 0.0_8
+   xd(i, ny, j, 3) = xd(i, ny, j, 3) + tmpd11
+   tmpd12 = xd(i, je, j, 2)
+   xd(i, je, j, 2) = 0.0_8
+   xd(i, ny, j, 2) = xd(i, ny, j, 2) + tmpd12
+   tmpd13 = xd(i, je, j, 1)
+   dotd = norm(2)*tmpd12 + norm(1)*tmpd13 + norm(3)*tmpd11
+   xd(i, je, j, 1) = 0.0_8
+   xd(i, ny, j, 1) = xd(i, ny, j, 1) + tmpd13
+   tempd2 = two*dotd
+   v1d(1) = v1d(1) + norm(1)*tempd2
+   v1d(2) = v1d(2) + norm(2)*tempd2
+   v1d(3) = v1d(3) + norm(3)*tempd2
+   xd(i, jl, j, 3) = xd(i, jl, j, 3) + v1d(3)
+   xd(i, ny, j, 3) = xd(i, ny, j, 3) - v1d(3)
+   v1d(3) = 0.0_8
+   xd(i, jl, j, 2) = xd(i, jl, j, 2) + v1d(2)
+   xd(i, ny, j, 2) = xd(i, ny, j, 2) - v1d(2)
+   v1d(2) = 0.0_8
+   xd(i, jl, j, 1) = xd(i, jl, j, 1) + v1d(1)
+   xd(i, ny, j, 1) = xd(i, ny, j, 1) - v1d(1)
+   v1d(1) = 0.0_8
    END IF
    END DO
    END DO
@@ -480,28 +480,28 @@
    DO i=ad_to3,ad_from3,-1
    CALL POPCONTROL1B(branch)
    IF (branch .NE. 0) THEN
-   xb(i, 2, j, 3) = xb(i, 2, j, 3) + xb(i, 0, j, 3)
-   dotb = norm(3)*xb(i, 0, j, 3)
-   xb(i, 0, j, 3) = 0.0_8
-   xb(i, 2, j, 2) = xb(i, 2, j, 2) + xb(i, 0, j, 2)
-   dotb = dotb + norm(2)*xb(i, 0, j, 2)
-   xb(i, 0, j, 2) = 0.0_8
-   xb(i, 2, j, 1) = xb(i, 2, j, 1) + xb(i, 0, j, 1)
-   dotb = dotb + norm(1)*xb(i, 0, j, 1)
-   xb(i, 0, j, 1) = 0.0_8
-   tempb1 = two*dotb
-   v1b(1) = v1b(1) + norm(1)*tempb1
-   v1b(2) = v1b(2) + norm(2)*tempb1
-   v1b(3) = v1b(3) + norm(3)*tempb1
-   xb(i, 1, j, 3) = xb(i, 1, j, 3) + v1b(3)
-   xb(i, 2, j, 3) = xb(i, 2, j, 3) - v1b(3)
-   v1b(3) = 0.0_8
-   xb(i, 1, j, 2) = xb(i, 1, j, 2) + v1b(2)
-   xb(i, 2, j, 2) = xb(i, 2, j, 2) - v1b(2)
-   v1b(2) = 0.0_8
-   xb(i, 1, j, 1) = xb(i, 1, j, 1) + v1b(1)
-   xb(i, 2, j, 1) = xb(i, 2, j, 1) - v1b(1)
-   v1b(1) = 0.0_8
+   xd(i, 2, j, 3) = xd(i, 2, j, 3) + xd(i, 0, j, 3)
+   dotd = norm(3)*xd(i, 0, j, 3)
+   xd(i, 0, j, 3) = 0.0_8
+   xd(i, 2, j, 2) = xd(i, 2, j, 2) + xd(i, 0, j, 2)
+   dotd = dotd + norm(2)*xd(i, 0, j, 2)
+   xd(i, 0, j, 2) = 0.0_8
+   xd(i, 2, j, 1) = xd(i, 2, j, 1) + xd(i, 0, j, 1)
+   dotd = dotd + norm(1)*xd(i, 0, j, 1)
+   xd(i, 0, j, 1) = 0.0_8
+   tempd1 = two*dotd
+   v1d(1) = v1d(1) + norm(1)*tempd1
+   v1d(2) = v1d(2) + norm(2)*tempd1
+   v1d(3) = v1d(3) + norm(3)*tempd1
+   xd(i, 1, j, 3) = xd(i, 1, j, 3) + v1d(3)
+   xd(i, 2, j, 3) = xd(i, 2, j, 3) - v1d(3)
+   v1d(3) = 0.0_8
+   xd(i, 1, j, 2) = xd(i, 1, j, 2) + v1d(2)
+   xd(i, 2, j, 2) = xd(i, 2, j, 2) - v1d(2)
+   v1d(2) = 0.0_8
+   xd(i, 1, j, 1) = xd(i, 1, j, 1) + v1d(1)
+   xd(i, 2, j, 1) = xd(i, 2, j, 1) - v1d(1)
+   v1d(1) = 0.0_8
    END IF
    END DO
    END DO
@@ -515,29 +515,29 @@
    DO i=ad_to1,ad_from1,-1
    CALL POPCONTROL1B(branch)
    IF (branch .NE. 0) THEN
-   tmpb8 = xb(ie, i, j, 3)
-   xb(ie, i, j, 3) = 0.0_8
-   xb(nx, i, j, 3) = xb(nx, i, j, 3) + tmpb8
-   tmpb9 = xb(ie, i, j, 2)
-   xb(ie, i, j, 2) = 0.0_8
-   xb(nx, i, j, 2) = xb(nx, i, j, 2) + tmpb9
-   tmpb10 = xb(ie, i, j, 1)
-   dotb = norm(2)*tmpb9 + norm(1)*tmpb10 + norm(3)*tmpb8
-   xb(ie, i, j, 1) = 0.0_8
-   xb(nx, i, j, 1) = xb(nx, i, j, 1) + tmpb10
-   tempb0 = two*dotb
-   v1b(1) = v1b(1) + norm(1)*tempb0
-   v1b(2) = v1b(2) + norm(2)*tempb0
-   v1b(3) = v1b(3) + norm(3)*tempb0
-   xb(il, i, j, 3) = xb(il, i, j, 3) + v1b(3)
-   xb(nx, i, j, 3) = xb(nx, i, j, 3) - v1b(3)
-   v1b(3) = 0.0_8
-   xb(il, i, j, 2) = xb(il, i, j, 2) + v1b(2)
-   xb(nx, i, j, 2) = xb(nx, i, j, 2) - v1b(2)
-   v1b(2) = 0.0_8
-   xb(il, i, j, 1) = xb(il, i, j, 1) + v1b(1)
-   xb(nx, i, j, 1) = xb(nx, i, j, 1) - v1b(1)
-   v1b(1) = 0.0_8
+   tmpd8 = xd(ie, i, j, 3)
+   xd(ie, i, j, 3) = 0.0_8
+   xd(nx, i, j, 3) = xd(nx, i, j, 3) + tmpd8
+   tmpd9 = xd(ie, i, j, 2)
+   xd(ie, i, j, 2) = 0.0_8
+   xd(nx, i, j, 2) = xd(nx, i, j, 2) + tmpd9
+   tmpd10 = xd(ie, i, j, 1)
+   dotd = norm(2)*tmpd9 + norm(1)*tmpd10 + norm(3)*tmpd8
+   xd(ie, i, j, 1) = 0.0_8
+   xd(nx, i, j, 1) = xd(nx, i, j, 1) + tmpd10
+   tempd0 = two*dotd
+   v1d(1) = v1d(1) + norm(1)*tempd0
+   v1d(2) = v1d(2) + norm(2)*tempd0
+   v1d(3) = v1d(3) + norm(3)*tempd0
+   xd(il, i, j, 3) = xd(il, i, j, 3) + v1d(3)
+   xd(nx, i, j, 3) = xd(nx, i, j, 3) - v1d(3)
+   v1d(3) = 0.0_8
+   xd(il, i, j, 2) = xd(il, i, j, 2) + v1d(2)
+   xd(nx, i, j, 2) = xd(nx, i, j, 2) - v1d(2)
+   v1d(2) = 0.0_8
+   xd(il, i, j, 1) = xd(il, i, j, 1) + v1d(1)
+   xd(nx, i, j, 1) = xd(nx, i, j, 1) - v1d(1)
+   v1d(1) = 0.0_8
    END IF
    END DO
    END DO
@@ -550,28 +550,28 @@
    DO i=ad_to,ad_from,-1
    CALL POPCONTROL1B(branch)
    IF (branch .NE. 0) THEN
-   xb(2, i, j, 3) = xb(2, i, j, 3) + xb(0, i, j, 3)
-   dotb = norm(3)*xb(0, i, j, 3)
-   xb(0, i, j, 3) = 0.0_8
-   xb(2, i, j, 2) = xb(2, i, j, 2) + xb(0, i, j, 2)
-   dotb = dotb + norm(2)*xb(0, i, j, 2)
-   xb(0, i, j, 2) = 0.0_8
-   xb(2, i, j, 1) = xb(2, i, j, 1) + xb(0, i, j, 1)
-   dotb = dotb + norm(1)*xb(0, i, j, 1)
-   xb(0, i, j, 1) = 0.0_8
-   tempb = two*dotb
-   v1b(1) = v1b(1) + norm(1)*tempb
-   v1b(2) = v1b(2) + norm(2)*tempb
-   v1b(3) = v1b(3) + norm(3)*tempb
-   xb(1, i, j, 3) = xb(1, i, j, 3) + v1b(3)
-   xb(2, i, j, 3) = xb(2, i, j, 3) - v1b(3)
-   v1b(3) = 0.0_8
-   xb(1, i, j, 2) = xb(1, i, j, 2) + v1b(2)
-   xb(2, i, j, 2) = xb(2, i, j, 2) - v1b(2)
-   v1b(2) = 0.0_8
-   xb(1, i, j, 1) = xb(1, i, j, 1) + v1b(1)
-   xb(2, i, j, 1) = xb(2, i, j, 1) - v1b(1)
-   v1b(1) = 0.0_8
+   xd(2, i, j, 3) = xd(2, i, j, 3) + xd(0, i, j, 3)
+   dotd = norm(3)*xd(0, i, j, 3)
+   xd(0, i, j, 3) = 0.0_8
+   xd(2, i, j, 2) = xd(2, i, j, 2) + xd(0, i, j, 2)
+   dotd = dotd + norm(2)*xd(0, i, j, 2)
+   xd(0, i, j, 2) = 0.0_8
+   xd(2, i, j, 1) = xd(2, i, j, 1) + xd(0, i, j, 1)
+   dotd = dotd + norm(1)*xd(0, i, j, 1)
+   xd(0, i, j, 1) = 0.0_8
+   tempd = two*dotd
+   v1d(1) = v1d(1) + norm(1)*tempd
+   v1d(2) = v1d(2) + norm(2)*tempd
+   v1d(3) = v1d(3) + norm(3)*tempd
+   xd(1, i, j, 3) = xd(1, i, j, 3) + v1d(3)
+   xd(2, i, j, 3) = xd(2, i, j, 3) - v1d(3)
+   v1d(3) = 0.0_8
+   xd(1, i, j, 2) = xd(1, i, j, 2) + v1d(2)
+   xd(2, i, j, 2) = xd(2, i, j, 2) - v1d(2)
+   v1d(2) = 0.0_8
+   xd(1, i, j, 1) = xd(1, i, j, 1) + v1d(1)
+   xd(2, i, j, 1) = xd(2, i, j, 1) - v1d(1)
+   v1d(1) = 0.0_8
    END IF
    END DO
    END DO
@@ -587,30 +587,30 @@
    DO i=ie,0,-1
    CALL POPCONTROL1B(branch)
    IF (branch .NE. 0) THEN
-   tmpb5 = xb(i, j, ke, 3)
-   xb(i, j, ke, 3) = 0.0_8
-   xb(i, j, kl, 3) = xb(i, j, kl, 3) + two*tmpb5
-   xb(i, j, nz, 3) = xb(i, j, nz, 3) - tmpb5
-   tmpb6 = xb(i, j, ke, 2)
-   xb(i, j, ke, 2) = 0.0_8
-   xb(i, j, kl, 2) = xb(i, j, kl, 2) + two*tmpb6
-   xb(i, j, nz, 2) = xb(i, j, nz, 2) - tmpb6
-   tmpb7 = xb(i, j, ke, 1)
-   xb(i, j, ke, 1) = 0.0_8
-   xb(i, j, kl, 1) = xb(i, j, kl, 1) + two*tmpb7
-   xb(i, j, nz, 1) = xb(i, j, nz, 1) - tmpb7
+   tmpd5 = xd(i, j, ke, 3)
+   xd(i, j, ke, 3) = 0.0_8
+   xd(i, j, kl, 3) = xd(i, j, kl, 3) + two*tmpd5
+   xd(i, j, nz, 3) = xd(i, j, nz, 3) - tmpd5
+   tmpd6 = xd(i, j, ke, 2)
+   xd(i, j, ke, 2) = 0.0_8
+   xd(i, j, kl, 2) = xd(i, j, kl, 2) + two*tmpd6
+   xd(i, j, nz, 2) = xd(i, j, nz, 2) - tmpd6
+   tmpd7 = xd(i, j, ke, 1)
+   xd(i, j, ke, 1) = 0.0_8
+   xd(i, j, kl, 1) = xd(i, j, kl, 1) + two*tmpd7
+   xd(i, j, nz, 1) = xd(i, j, nz, 1) - tmpd7
    END IF
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   xb(i, j, 1, 3) = xb(i, j, 1, 3) + two*xb(i, j, 0, 3)
-   xb(i, j, 2, 3) = xb(i, j, 2, 3) - xb(i, j, 0, 3)
-   xb(i, j, 0, 3) = 0.0_8
-   xb(i, j, 1, 2) = xb(i, j, 1, 2) + two*xb(i, j, 0, 2)
-   xb(i, j, 2, 2) = xb(i, j, 2, 2) - xb(i, j, 0, 2)
-   xb(i, j, 0, 2) = 0.0_8
-   xb(i, j, 1, 1) = xb(i, j, 1, 1) + two*xb(i, j, 0, 1)
-   xb(i, j, 2, 1) = xb(i, j, 2, 1) - xb(i, j, 0, 1)
-   xb(i, j, 0, 1) = 0.0_8
+   xd(i, j, 1, 3) = xd(i, j, 1, 3) + two*xd(i, j, 0, 3)
+   xd(i, j, 2, 3) = xd(i, j, 2, 3) - xd(i, j, 0, 3)
+   xd(i, j, 0, 3) = 0.0_8
+   xd(i, j, 1, 2) = xd(i, j, 1, 2) + two*xd(i, j, 0, 2)
+   xd(i, j, 2, 2) = xd(i, j, 2, 2) - xd(i, j, 0, 2)
+   xd(i, j, 0, 2) = 0.0_8
+   xd(i, j, 1, 1) = xd(i, j, 1, 1) + two*xd(i, j, 0, 1)
+   xd(i, j, 2, 1) = xd(i, j, 2, 1) - xd(i, j, 0, 1)
+   xd(i, j, 0, 1) = 0.0_8
    END IF
    END DO
    END DO
@@ -618,30 +618,30 @@
    DO i=ie,0,-1
    CALL POPCONTROL1B(branch)
    IF (branch .NE. 0) THEN
-   tmpb2 = xb(i, je, k, 3)
-   xb(i, je, k, 3) = 0.0_8
-   xb(i, jl, k, 3) = xb(i, jl, k, 3) + two*tmpb2
-   xb(i, ny, k, 3) = xb(i, ny, k, 3) - tmpb2
-   tmpb3 = xb(i, je, k, 2)
-   xb(i, je, k, 2) = 0.0_8
-   xb(i, jl, k, 2) = xb(i, jl, k, 2) + two*tmpb3
-   xb(i, ny, k, 2) = xb(i, ny, k, 2) - tmpb3
-   tmpb4 = xb(i, je, k, 1)
-   xb(i, je, k, 1) = 0.0_8
-   xb(i, jl, k, 1) = xb(i, jl, k, 1) + two*tmpb4
-   xb(i, ny, k, 1) = xb(i, ny, k, 1) - tmpb4
+   tmpd2 = xd(i, je, k, 3)
+   xd(i, je, k, 3) = 0.0_8
+   xd(i, jl, k, 3) = xd(i, jl, k, 3) + two*tmpd2
+   xd(i, ny, k, 3) = xd(i, ny, k, 3) - tmpd2
+   tmpd3 = xd(i, je, k, 2)
+   xd(i, je, k, 2) = 0.0_8
+   xd(i, jl, k, 2) = xd(i, jl, k, 2) + two*tmpd3
+   xd(i, ny, k, 2) = xd(i, ny, k, 2) - tmpd3
+   tmpd4 = xd(i, je, k, 1)
+   xd(i, je, k, 1) = 0.0_8
+   xd(i, jl, k, 1) = xd(i, jl, k, 1) + two*tmpd4
+   xd(i, ny, k, 1) = xd(i, ny, k, 1) - tmpd4
    END IF
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   xb(i, 1, k, 3) = xb(i, 1, k, 3) + two*xb(i, 0, k, 3)
-   xb(i, 2, k, 3) = xb(i, 2, k, 3) - xb(i, 0, k, 3)
-   xb(i, 0, k, 3) = 0.0_8
-   xb(i, 1, k, 2) = xb(i, 1, k, 2) + two*xb(i, 0, k, 2)
-   xb(i, 2, k, 2) = xb(i, 2, k, 2) - xb(i, 0, k, 2)
-   xb(i, 0, k, 2) = 0.0_8
-   xb(i, 1, k, 1) = xb(i, 1, k, 1) + two*xb(i, 0, k, 1)
-   xb(i, 2, k, 1) = xb(i, 2, k, 1) - xb(i, 0, k, 1)
-   xb(i, 0, k, 1) = 0.0_8
+   xd(i, 1, k, 3) = xd(i, 1, k, 3) + two*xd(i, 0, k, 3)
+   xd(i, 2, k, 3) = xd(i, 2, k, 3) - xd(i, 0, k, 3)
+   xd(i, 0, k, 3) = 0.0_8
+   xd(i, 1, k, 2) = xd(i, 1, k, 2) + two*xd(i, 0, k, 2)
+   xd(i, 2, k, 2) = xd(i, 2, k, 2) - xd(i, 0, k, 2)
+   xd(i, 0, k, 2) = 0.0_8
+   xd(i, 1, k, 1) = xd(i, 1, k, 1) + two*xd(i, 0, k, 1)
+   xd(i, 2, k, 1) = xd(i, 2, k, 1) - xd(i, 0, k, 1)
+   xd(i, 0, k, 1) = 0.0_8
    END IF
    END DO
    END DO
@@ -649,30 +649,30 @@
    DO j=jl,1,-1
    CALL POPCONTROL1B(branch)
    IF (branch .NE. 0) THEN
-   tmpb = xb(ie, j, k, 3)
-   xb(ie, j, k, 3) = 0.0_8
-   xb(il, j, k, 3) = xb(il, j, k, 3) + two*tmpb
-   xb(nx, j, k, 3) = xb(nx, j, k, 3) - tmpb
-   tmpb0 = xb(ie, j, k, 2)
-   xb(ie, j, k, 2) = 0.0_8
-   xb(il, j, k, 2) = xb(il, j, k, 2) + two*tmpb0
-   xb(nx, j, k, 2) = xb(nx, j, k, 2) - tmpb0
-   tmpb1 = xb(ie, j, k, 1)
-   xb(ie, j, k, 1) = 0.0_8
-   xb(il, j, k, 1) = xb(il, j, k, 1) + two*tmpb1
-   xb(nx, j, k, 1) = xb(nx, j, k, 1) - tmpb1
+   tmpd = xd(ie, j, k, 3)
+   xd(ie, j, k, 3) = 0.0_8
+   xd(il, j, k, 3) = xd(il, j, k, 3) + two*tmpd
+   xd(nx, j, k, 3) = xd(nx, j, k, 3) - tmpd
+   tmpd0 = xd(ie, j, k, 2)
+   xd(ie, j, k, 2) = 0.0_8
+   xd(il, j, k, 2) = xd(il, j, k, 2) + two*tmpd0
+   xd(nx, j, k, 2) = xd(nx, j, k, 2) - tmpd0
+   tmpd1 = xd(ie, j, k, 1)
+   xd(ie, j, k, 1) = 0.0_8
+   xd(il, j, k, 1) = xd(il, j, k, 1) + two*tmpd1
+   xd(nx, j, k, 1) = xd(nx, j, k, 1) - tmpd1
    END IF
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   xb(1, j, k, 3) = xb(1, j, k, 3) + two*xb(0, j, k, 3)
-   xb(2, j, k, 3) = xb(2, j, k, 3) - xb(0, j, k, 3)
-   xb(0, j, k, 3) = 0.0_8
-   xb(1, j, k, 2) = xb(1, j, k, 2) + two*xb(0, j, k, 2)
-   xb(2, j, k, 2) = xb(2, j, k, 2) - xb(0, j, k, 2)
-   xb(0, j, k, 2) = 0.0_8
-   xb(1, j, k, 1) = xb(1, j, k, 1) + two*xb(0, j, k, 1)
-   xb(2, j, k, 1) = xb(2, j, k, 1) - xb(0, j, k, 1)
-   xb(0, j, k, 1) = 0.0_8
+   xd(1, j, k, 3) = xd(1, j, k, 3) + two*xd(0, j, k, 3)
+   xd(2, j, k, 3) = xd(2, j, k, 3) - xd(0, j, k, 3)
+   xd(0, j, k, 3) = 0.0_8
+   xd(1, j, k, 2) = xd(1, j, k, 2) + two*xd(0, j, k, 2)
+   xd(2, j, k, 2) = xd(2, j, k, 2) - xd(0, j, k, 2)
+   xd(0, j, k, 2) = 0.0_8
+   xd(1, j, k, 1) = xd(1, j, k, 1) + two*xd(0, j, k, 1)
+   xd(2, j, k, 1) = xd(2, j, k, 1) - xd(0, j, k, 1)
+   xd(0, j, k, 1) = 0.0_8
    END IF
    END DO
    END DO

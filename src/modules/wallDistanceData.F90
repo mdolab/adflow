@@ -55,10 +55,10 @@
        logical, dimension(:), allocatable ::  updateWallAssociation
 
 #ifndef USE_TAPENADE
-       real(kind=realType), dimension(:), pointer :: xSurfb
+       real(kind=realType), dimension(:), pointer :: xSurfd
        Vec , dimension(:), allocatable :: xVolumeVec
        Vec , dimension(:), allocatable :: xSurfVec
-       Vec :: xSurfVecb
+       Vec :: xSurfVecd
        VecScatter, dimension(:), allocatable :: wallScatter
        IS IS1, IS2
        type(faceList), dimension(:), allocatable :: indicesForSPS

@@ -41,7 +41,7 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   USE BLOCKPOINTERS_B
+   USE BLOCKPOINTERS
    USE TURBMOD
    IMPLICIT NONE
    !
@@ -55,9 +55,9 @@
    !
    INTEGER(kind=inttype) :: i, j, k, ii, jj, kk
    REAL(kind=realtype) :: qs, voli, xa, ya, za
-   REAL(kind=realtype) :: qsb, volib, xab, yab, zab
+   REAL(kind=realtype) :: qsd, volid, xad, yad, zad
    REAL(kind=realtype) :: uu, dwt, dwtm1, dwtp1, dwti, dwtj, dwtk
-   REAL(kind=realtype) :: uub, dwtb, dwtm1b, dwtp1b, dwtib, dwtjb, dwtkb
+   REAL(kind=realtype) :: uud, dwtd, dwtm1d, dwtp1d, dwtid, dwtjd, dwtkd
    REAL(kind=realtype), DIMENSION(madv) :: impl
    INTRINSIC ABS
    INTRINSIC MAX
@@ -627,94 +627,94 @@
    END DO
    END DO
    END DO
-   qsb = 0.0_8
+   qsd = 0.0_8
    DO k=kl,2,-1
    DO j=jl,2,-1
    DO i=il,2,-1
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   uub = 0.0_8
+   uud = 0.0_8
    DO 100 ii=nadv,1,-1
-   uub = uub - dwti*dwb(i, j, k, idvt+ii-1)
-   dwtib = -(uu*dwb(i, j, k, idvt+ii-1))
+   uud = uud - dwti*dwd(i, j, k, idvt+ii-1)
+   dwtid = -(uu*dwd(i, j, k, idvt+ii-1))
    jj = ii + offset
    CALL POPCONTROL2B(branch)
    IF (branch .LT. 2) THEN
    IF (branch .EQ. 0) THEN
-   dwtb = half*dwtib
-   dwtm1b = 0.0_8
+   dwtd = half*dwtid
+   dwtm1d = 0.0_8
    ELSE
-   dwtm1b = half*dwtib
-   dwtb = 0.0_8
+   dwtm1d = half*dwtid
+   dwtd = 0.0_8
    END IF
    ELSE IF (branch .EQ. 2) THEN
-   dwtb = 0.0_8
-   dwtm1b = 0.0_8
+   dwtd = 0.0_8
+   dwtm1d = 0.0_8
    ELSE
    CALL POPREAL8(dwti)
-   wb(i+1, j, k, jj) = wb(i+1, j, k, jj) + dwtib
-   wb(i, j, k, jj) = wb(i, j, k, jj) - dwtib
+   wd(i+1, j, k, jj) = wd(i+1, j, k, jj) + dwtid
+   wd(i, j, k, jj) = wd(i, j, k, jj) - dwtid
    GOTO 100
    END IF
    CALL POPCONTROL2B(branch)
    IF (branch .EQ. 0) THEN
-   dwtb = dwtb - half*dwtib
-   dwtp1b = 0.0_8
+   dwtd = dwtd - half*dwtid
+   dwtp1d = 0.0_8
    ELSE IF (branch .EQ. 1) THEN
-   dwtp1b = -(half*dwtib)
+   dwtp1d = -(half*dwtid)
    ELSE
-   dwtp1b = 0.0_8
+   dwtp1d = 0.0_8
    END IF
    CALL POPREAL8(dwti)
-   dwtb = dwtb + dwtib
-   wb(i+2, j, k, jj) = wb(i+2, j, k, jj) + dwtp1b
-   wb(i+1, j, k, jj) = wb(i+1, j, k, jj) - dwtp1b
-   wb(i+1, j, k, jj) = wb(i+1, j, k, jj) + dwtb
-   wb(i, j, k, jj) = wb(i, j, k, jj) - dwtb
-   wb(i, j, k, jj) = wb(i, j, k, jj) + dwtm1b
-   wb(i-1, j, k, jj) = wb(i-1, j, k, jj) - dwtm1b
+   dwtd = dwtd + dwtid
+   wd(i+2, j, k, jj) = wd(i+2, j, k, jj) + dwtp1d
+   wd(i+1, j, k, jj) = wd(i+1, j, k, jj) - dwtp1d
+   wd(i+1, j, k, jj) = wd(i+1, j, k, jj) + dwtd
+   wd(i, j, k, jj) = wd(i, j, k, jj) - dwtd
+   wd(i, j, k, jj) = wd(i, j, k, jj) + dwtm1d
+   wd(i-1, j, k, jj) = wd(i-1, j, k, jj) - dwtm1d
    100      CONTINUE
    ELSE
-   uub = 0.0_8
+   uud = 0.0_8
    DO 110 ii=nadv,1,-1
-   uub = uub - dwti*dwb(i, j, k, idvt+ii-1)
-   dwtib = -(uu*dwb(i, j, k, idvt+ii-1))
+   uud = uud - dwti*dwd(i, j, k, idvt+ii-1)
+   dwtid = -(uu*dwd(i, j, k, idvt+ii-1))
    jj = ii + offset
    CALL POPCONTROL2B(branch)
    IF (branch .LT. 2) THEN
    IF (branch .EQ. 0) THEN
-   dwtb = -(half*dwtib)
-   dwtm1b = 0.0_8
+   dwtd = -(half*dwtid)
+   dwtm1d = 0.0_8
    ELSE
-   dwtm1b = -(half*dwtib)
-   dwtb = 0.0_8
+   dwtm1d = -(half*dwtid)
+   dwtd = 0.0_8
    END IF
    ELSE IF (branch .EQ. 2) THEN
-   dwtb = 0.0_8
-   dwtm1b = 0.0_8
+   dwtd = 0.0_8
+   dwtm1d = 0.0_8
    ELSE
    CALL POPREAL8(dwti)
-   wb(i, j, k, jj) = wb(i, j, k, jj) + dwtib
-   wb(i-1, j, k, jj) = wb(i-1, j, k, jj) - dwtib
+   wd(i, j, k, jj) = wd(i, j, k, jj) + dwtid
+   wd(i-1, j, k, jj) = wd(i-1, j, k, jj) - dwtid
    GOTO 110
    END IF
    CALL POPCONTROL2B(branch)
    IF (branch .EQ. 0) THEN
-   dwtb = dwtb + half*dwtib
-   dwtp1b = 0.0_8
+   dwtd = dwtd + half*dwtid
+   dwtp1d = 0.0_8
    ELSE IF (branch .EQ. 1) THEN
-   dwtp1b = half*dwtib
+   dwtp1d = half*dwtid
    ELSE
-   dwtp1b = 0.0_8
+   dwtp1d = 0.0_8
    END IF
    CALL POPREAL8(dwti)
-   dwtb = dwtb + dwtib
-   wb(i+1, j, k, jj) = wb(i+1, j, k, jj) + dwtp1b
-   wb(i, j, k, jj) = wb(i, j, k, jj) - dwtp1b
-   wb(i, j, k, jj) = wb(i, j, k, jj) + dwtb
-   wb(i-1, j, k, jj) = wb(i-1, j, k, jj) - dwtb
-   wb(i-1, j, k, jj) = wb(i-1, j, k, jj) + dwtm1b
-   wb(i-2, j, k, jj) = wb(i-2, j, k, jj) - dwtm1b
+   dwtd = dwtd + dwtid
+   wd(i+1, j, k, jj) = wd(i+1, j, k, jj) + dwtp1d
+   wd(i, j, k, jj) = wd(i, j, k, jj) - dwtp1d
+   wd(i, j, k, jj) = wd(i, j, k, jj) + dwtd
+   wd(i-1, j, k, jj) = wd(i-1, j, k, jj) - dwtd
+   wd(i-1, j, k, jj) = wd(i-1, j, k, jj) + dwtm1d
+   wd(i-2, j, k, jj) = wd(i-2, j, k, jj) - dwtm1d
    110      CONTINUE
    END IF
    voli = half/vol(i, j, k)
@@ -722,27 +722,27 @@
    ya = (si(i, j, k, 2)+si(i-1, j, k, 2))*voli
    za = (si(i, j, k, 3)+si(i-1, j, k, 3))*voli
    CALL POPREAL8(uu)
-   xab = w(i, j, k, ivx)*uub
-   wb(i, j, k, ivx) = wb(i, j, k, ivx) + xa*uub
-   yab = w(i, j, k, ivy)*uub
-   wb(i, j, k, ivy) = wb(i, j, k, ivy) + ya*uub
-   zab = w(i, j, k, ivz)*uub
-   wb(i, j, k, ivz) = wb(i, j, k, ivz) + za*uub
-   qsb = qsb - uub
-   sib(i, j, k, 3) = sib(i, j, k, 3) + voli*zab
-   sib(i-1, j, k, 3) = sib(i-1, j, k, 3) + voli*zab
-   volib = (si(i, j, k, 2)+si(i-1, j, k, 2))*yab + (si(i, j, k, 1)+&
-   &         si(i-1, j, k, 1))*xab + (si(i, j, k, 3)+si(i-1, j, k, 3))*zab
-   sib(i, j, k, 2) = sib(i, j, k, 2) + voli*yab
-   sib(i-1, j, k, 2) = sib(i-1, j, k, 2) + voli*yab
-   sib(i, j, k, 1) = sib(i, j, k, 1) + voli*xab
-   sib(i-1, j, k, 1) = sib(i-1, j, k, 1) + voli*xab
+   xad = w(i, j, k, ivx)*uud
+   wd(i, j, k, ivx) = wd(i, j, k, ivx) + xa*uud
+   yad = w(i, j, k, ivy)*uud
+   wd(i, j, k, ivy) = wd(i, j, k, ivy) + ya*uud
+   zad = w(i, j, k, ivz)*uud
+   wd(i, j, k, ivz) = wd(i, j, k, ivz) + za*uud
+   qsd = qsd - uud
+   sid(i, j, k, 3) = sid(i, j, k, 3) + voli*zad
+   sid(i-1, j, k, 3) = sid(i-1, j, k, 3) + voli*zad
+   volid = (si(i, j, k, 2)+si(i-1, j, k, 2))*yad + (si(i, j, k, 1)+&
+   &         si(i-1, j, k, 1))*xad + (si(i, j, k, 3)+si(i-1, j, k, 3))*zad
+   sid(i, j, k, 2) = sid(i, j, k, 2) + voli*yad
+   sid(i-1, j, k, 2) = sid(i-1, j, k, 2) + voli*yad
+   sid(i, j, k, 1) = sid(i, j, k, 1) + voli*xad
+   sid(i-1, j, k, 1) = sid(i-1, j, k, 1) + voli*xad
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   volib = volib + (sfacei(i, j, k)+sfacei(i-1, j, k))*qsb
-   qsb = 0.0_8
+   volid = volid + (sfacei(i, j, k)+sfacei(i-1, j, k))*qsd
+   qsd = 0.0_8
    END IF
-   volb(i, j, k) = volb(i, j, k) - half*volib/vol(i, j, k)**2
+   vold(i, j, k) = vold(i, j, k) - half*volid/vol(i, j, k)**2
    END DO
    END DO
    END DO
@@ -751,88 +751,88 @@
    DO i=il,2,-1
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   uub = 0.0_8
+   uud = 0.0_8
    DO 120 ii=nadv,1,-1
-   uub = uub - dwtj*dwb(i, j, k, idvt+ii-1)
-   dwtjb = -(uu*dwb(i, j, k, idvt+ii-1))
+   uud = uud - dwtj*dwd(i, j, k, idvt+ii-1)
+   dwtjd = -(uu*dwd(i, j, k, idvt+ii-1))
    jj = ii + offset
    CALL POPCONTROL2B(branch)
    IF (branch .LT. 2) THEN
    IF (branch .EQ. 0) THEN
-   dwtb = half*dwtjb
-   dwtm1b = 0.0_8
+   dwtd = half*dwtjd
+   dwtm1d = 0.0_8
    ELSE
-   dwtm1b = half*dwtjb
-   dwtb = 0.0_8
+   dwtm1d = half*dwtjd
+   dwtd = 0.0_8
    END IF
    ELSE IF (branch .EQ. 2) THEN
-   dwtb = 0.0_8
-   dwtm1b = 0.0_8
+   dwtd = 0.0_8
+   dwtm1d = 0.0_8
    ELSE
    CALL POPREAL8(dwtj)
-   wb(i, j+1, k, jj) = wb(i, j+1, k, jj) + dwtjb
-   wb(i, j, k, jj) = wb(i, j, k, jj) - dwtjb
+   wd(i, j+1, k, jj) = wd(i, j+1, k, jj) + dwtjd
+   wd(i, j, k, jj) = wd(i, j, k, jj) - dwtjd
    GOTO 120
    END IF
    CALL POPCONTROL2B(branch)
    IF (branch .EQ. 0) THEN
-   dwtb = dwtb - half*dwtjb
-   dwtp1b = 0.0_8
+   dwtd = dwtd - half*dwtjd
+   dwtp1d = 0.0_8
    ELSE IF (branch .EQ. 1) THEN
-   dwtp1b = -(half*dwtjb)
+   dwtp1d = -(half*dwtjd)
    ELSE
-   dwtp1b = 0.0_8
+   dwtp1d = 0.0_8
    END IF
    CALL POPREAL8(dwtj)
-   dwtb = dwtb + dwtjb
-   wb(i, j+2, k, jj) = wb(i, j+2, k, jj) + dwtp1b
-   wb(i, j+1, k, jj) = wb(i, j+1, k, jj) - dwtp1b
-   wb(i, j+1, k, jj) = wb(i, j+1, k, jj) + dwtb
-   wb(i, j, k, jj) = wb(i, j, k, jj) - dwtb
-   wb(i, j, k, jj) = wb(i, j, k, jj) + dwtm1b
-   wb(i, j-1, k, jj) = wb(i, j-1, k, jj) - dwtm1b
+   dwtd = dwtd + dwtjd
+   wd(i, j+2, k, jj) = wd(i, j+2, k, jj) + dwtp1d
+   wd(i, j+1, k, jj) = wd(i, j+1, k, jj) - dwtp1d
+   wd(i, j+1, k, jj) = wd(i, j+1, k, jj) + dwtd
+   wd(i, j, k, jj) = wd(i, j, k, jj) - dwtd
+   wd(i, j, k, jj) = wd(i, j, k, jj) + dwtm1d
+   wd(i, j-1, k, jj) = wd(i, j-1, k, jj) - dwtm1d
    120      CONTINUE
    ELSE
-   uub = 0.0_8
+   uud = 0.0_8
    DO 130 ii=nadv,1,-1
-   uub = uub - dwtj*dwb(i, j, k, idvt+ii-1)
-   dwtjb = -(uu*dwb(i, j, k, idvt+ii-1))
+   uud = uud - dwtj*dwd(i, j, k, idvt+ii-1)
+   dwtjd = -(uu*dwd(i, j, k, idvt+ii-1))
    jj = ii + offset
    CALL POPCONTROL2B(branch)
    IF (branch .LT. 2) THEN
    IF (branch .EQ. 0) THEN
-   dwtb = -(half*dwtjb)
-   dwtm1b = 0.0_8
+   dwtd = -(half*dwtjd)
+   dwtm1d = 0.0_8
    ELSE
-   dwtm1b = -(half*dwtjb)
-   dwtb = 0.0_8
+   dwtm1d = -(half*dwtjd)
+   dwtd = 0.0_8
    END IF
    ELSE IF (branch .EQ. 2) THEN
-   dwtb = 0.0_8
-   dwtm1b = 0.0_8
+   dwtd = 0.0_8
+   dwtm1d = 0.0_8
    ELSE
    CALL POPREAL8(dwtj)
-   wb(i, j, k, jj) = wb(i, j, k, jj) + dwtjb
-   wb(i, j-1, k, jj) = wb(i, j-1, k, jj) - dwtjb
+   wd(i, j, k, jj) = wd(i, j, k, jj) + dwtjd
+   wd(i, j-1, k, jj) = wd(i, j-1, k, jj) - dwtjd
    GOTO 130
    END IF
    CALL POPCONTROL2B(branch)
    IF (branch .EQ. 0) THEN
-   dwtb = dwtb + half*dwtjb
-   dwtp1b = 0.0_8
+   dwtd = dwtd + half*dwtjd
+   dwtp1d = 0.0_8
    ELSE IF (branch .EQ. 1) THEN
-   dwtp1b = half*dwtjb
+   dwtp1d = half*dwtjd
    ELSE
-   dwtp1b = 0.0_8
+   dwtp1d = 0.0_8
    END IF
    CALL POPREAL8(dwtj)
-   dwtb = dwtb + dwtjb
-   wb(i, j+1, k, jj) = wb(i, j+1, k, jj) + dwtp1b
-   wb(i, j, k, jj) = wb(i, j, k, jj) - dwtp1b
-   wb(i, j, k, jj) = wb(i, j, k, jj) + dwtb
-   wb(i, j-1, k, jj) = wb(i, j-1, k, jj) - dwtb
-   wb(i, j-1, k, jj) = wb(i, j-1, k, jj) + dwtm1b
-   wb(i, j-2, k, jj) = wb(i, j-2, k, jj) - dwtm1b
+   dwtd = dwtd + dwtjd
+   wd(i, j+1, k, jj) = wd(i, j+1, k, jj) + dwtp1d
+   wd(i, j, k, jj) = wd(i, j, k, jj) - dwtp1d
+   wd(i, j, k, jj) = wd(i, j, k, jj) + dwtd
+   wd(i, j-1, k, jj) = wd(i, j-1, k, jj) - dwtd
+   wd(i, j-1, k, jj) = wd(i, j-1, k, jj) + dwtm1d
+   wd(i, j-2, k, jj) = wd(i, j-2, k, jj) - dwtm1d
    130      CONTINUE
    END IF
    voli = half/vol(i, j, k)
@@ -840,27 +840,27 @@
    ya = (sj(i, j, k, 2)+sj(i, j-1, k, 2))*voli
    za = (sj(i, j, k, 3)+sj(i, j-1, k, 3))*voli
    CALL POPREAL8(uu)
-   xab = w(i, j, k, ivx)*uub
-   wb(i, j, k, ivx) = wb(i, j, k, ivx) + xa*uub
-   yab = w(i, j, k, ivy)*uub
-   wb(i, j, k, ivy) = wb(i, j, k, ivy) + ya*uub
-   zab = w(i, j, k, ivz)*uub
-   wb(i, j, k, ivz) = wb(i, j, k, ivz) + za*uub
-   qsb = qsb - uub
-   sjb(i, j, k, 3) = sjb(i, j, k, 3) + voli*zab
-   sjb(i, j-1, k, 3) = sjb(i, j-1, k, 3) + voli*zab
-   volib = (sj(i, j, k, 2)+sj(i, j-1, k, 2))*yab + (sj(i, j, k, 1)+&
-   &         sj(i, j-1, k, 1))*xab + (sj(i, j, k, 3)+sj(i, j-1, k, 3))*zab
-   sjb(i, j, k, 2) = sjb(i, j, k, 2) + voli*yab
-   sjb(i, j-1, k, 2) = sjb(i, j-1, k, 2) + voli*yab
-   sjb(i, j, k, 1) = sjb(i, j, k, 1) + voli*xab
-   sjb(i, j-1, k, 1) = sjb(i, j-1, k, 1) + voli*xab
+   xad = w(i, j, k, ivx)*uud
+   wd(i, j, k, ivx) = wd(i, j, k, ivx) + xa*uud
+   yad = w(i, j, k, ivy)*uud
+   wd(i, j, k, ivy) = wd(i, j, k, ivy) + ya*uud
+   zad = w(i, j, k, ivz)*uud
+   wd(i, j, k, ivz) = wd(i, j, k, ivz) + za*uud
+   qsd = qsd - uud
+   sjd(i, j, k, 3) = sjd(i, j, k, 3) + voli*zad
+   sjd(i, j-1, k, 3) = sjd(i, j-1, k, 3) + voli*zad
+   volid = (sj(i, j, k, 2)+sj(i, j-1, k, 2))*yad + (sj(i, j, k, 1)+&
+   &         sj(i, j-1, k, 1))*xad + (sj(i, j, k, 3)+sj(i, j-1, k, 3))*zad
+   sjd(i, j, k, 2) = sjd(i, j, k, 2) + voli*yad
+   sjd(i, j-1, k, 2) = sjd(i, j-1, k, 2) + voli*yad
+   sjd(i, j, k, 1) = sjd(i, j, k, 1) + voli*xad
+   sjd(i, j-1, k, 1) = sjd(i, j-1, k, 1) + voli*xad
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   volib = volib + (sfacej(i, j, k)+sfacej(i, j-1, k))*qsb
-   qsb = 0.0_8
+   volid = volid + (sfacej(i, j, k)+sfacej(i, j-1, k))*qsd
+   qsd = 0.0_8
    END IF
-   volb(i, j, k) = volb(i, j, k) - half*volib/vol(i, j, k)**2
+   vold(i, j, k) = vold(i, j, k) - half*volid/vol(i, j, k)**2
    END DO
    END DO
    END DO
@@ -869,88 +869,88 @@
    DO i=il,2,-1
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   uub = 0.0_8
+   uud = 0.0_8
    DO 140 ii=nadv,1,-1
-   uub = uub - dwtk*dwb(i, j, k, idvt+ii-1)
-   dwtkb = -(uu*dwb(i, j, k, idvt+ii-1))
+   uud = uud - dwtk*dwd(i, j, k, idvt+ii-1)
+   dwtkd = -(uu*dwd(i, j, k, idvt+ii-1))
    jj = ii + offset
    CALL POPCONTROL2B(branch)
    IF (branch .LT. 2) THEN
    IF (branch .EQ. 0) THEN
-   dwtb = half*dwtkb
-   dwtm1b = 0.0_8
+   dwtd = half*dwtkd
+   dwtm1d = 0.0_8
    ELSE
-   dwtm1b = half*dwtkb
-   dwtb = 0.0_8
+   dwtm1d = half*dwtkd
+   dwtd = 0.0_8
    END IF
    ELSE IF (branch .EQ. 2) THEN
-   dwtb = 0.0_8
-   dwtm1b = 0.0_8
+   dwtd = 0.0_8
+   dwtm1d = 0.0_8
    ELSE
    CALL POPREAL8(dwtk)
-   wb(i, j, k+1, jj) = wb(i, j, k+1, jj) + dwtkb
-   wb(i, j, k, jj) = wb(i, j, k, jj) - dwtkb
+   wd(i, j, k+1, jj) = wd(i, j, k+1, jj) + dwtkd
+   wd(i, j, k, jj) = wd(i, j, k, jj) - dwtkd
    GOTO 140
    END IF
    CALL POPCONTROL2B(branch)
    IF (branch .EQ. 0) THEN
-   dwtb = dwtb - half*dwtkb
-   dwtp1b = 0.0_8
+   dwtd = dwtd - half*dwtkd
+   dwtp1d = 0.0_8
    ELSE IF (branch .EQ. 1) THEN
-   dwtp1b = -(half*dwtkb)
+   dwtp1d = -(half*dwtkd)
    ELSE
-   dwtp1b = 0.0_8
+   dwtp1d = 0.0_8
    END IF
    CALL POPREAL8(dwtk)
-   dwtb = dwtb + dwtkb
-   wb(i, j, k+2, jj) = wb(i, j, k+2, jj) + dwtp1b
-   wb(i, j, k+1, jj) = wb(i, j, k+1, jj) - dwtp1b
-   wb(i, j, k+1, jj) = wb(i, j, k+1, jj) + dwtb
-   wb(i, j, k, jj) = wb(i, j, k, jj) - dwtb
-   wb(i, j, k, jj) = wb(i, j, k, jj) + dwtm1b
-   wb(i, j, k-1, jj) = wb(i, j, k-1, jj) - dwtm1b
+   dwtd = dwtd + dwtkd
+   wd(i, j, k+2, jj) = wd(i, j, k+2, jj) + dwtp1d
+   wd(i, j, k+1, jj) = wd(i, j, k+1, jj) - dwtp1d
+   wd(i, j, k+1, jj) = wd(i, j, k+1, jj) + dwtd
+   wd(i, j, k, jj) = wd(i, j, k, jj) - dwtd
+   wd(i, j, k, jj) = wd(i, j, k, jj) + dwtm1d
+   wd(i, j, k-1, jj) = wd(i, j, k-1, jj) - dwtm1d
    140      CONTINUE
    ELSE
-   uub = 0.0_8
+   uud = 0.0_8
    DO 150 ii=nadv,1,-1
-   uub = uub - dwtk*dwb(i, j, k, idvt+ii-1)
-   dwtkb = -(uu*dwb(i, j, k, idvt+ii-1))
+   uud = uud - dwtk*dwd(i, j, k, idvt+ii-1)
+   dwtkd = -(uu*dwd(i, j, k, idvt+ii-1))
    jj = ii + offset
    CALL POPCONTROL2B(branch)
    IF (branch .LT. 2) THEN
    IF (branch .EQ. 0) THEN
-   dwtb = -(half*dwtkb)
-   dwtm1b = 0.0_8
+   dwtd = -(half*dwtkd)
+   dwtm1d = 0.0_8
    ELSE
-   dwtm1b = -(half*dwtkb)
-   dwtb = 0.0_8
+   dwtm1d = -(half*dwtkd)
+   dwtd = 0.0_8
    END IF
    ELSE IF (branch .EQ. 2) THEN
-   dwtb = 0.0_8
-   dwtm1b = 0.0_8
+   dwtd = 0.0_8
+   dwtm1d = 0.0_8
    ELSE
    CALL POPREAL8(dwtk)
-   wb(i, j, k, jj) = wb(i, j, k, jj) + dwtkb
-   wb(i, j, k-1, jj) = wb(i, j, k-1, jj) - dwtkb
+   wd(i, j, k, jj) = wd(i, j, k, jj) + dwtkd
+   wd(i, j, k-1, jj) = wd(i, j, k-1, jj) - dwtkd
    GOTO 150
    END IF
    CALL POPCONTROL2B(branch)
    IF (branch .EQ. 0) THEN
-   dwtb = dwtb + half*dwtkb
-   dwtp1b = 0.0_8
+   dwtd = dwtd + half*dwtkd
+   dwtp1d = 0.0_8
    ELSE IF (branch .EQ. 1) THEN
-   dwtp1b = half*dwtkb
+   dwtp1d = half*dwtkd
    ELSE
-   dwtp1b = 0.0_8
+   dwtp1d = 0.0_8
    END IF
    CALL POPREAL8(dwtk)
-   dwtb = dwtb + dwtkb
-   wb(i, j, k+1, jj) = wb(i, j, k+1, jj) + dwtp1b
-   wb(i, j, k, jj) = wb(i, j, k, jj) - dwtp1b
-   wb(i, j, k, jj) = wb(i, j, k, jj) + dwtb
-   wb(i, j, k-1, jj) = wb(i, j, k-1, jj) - dwtb
-   wb(i, j, k-1, jj) = wb(i, j, k-1, jj) + dwtm1b
-   wb(i, j, k-2, jj) = wb(i, j, k-2, jj) - dwtm1b
+   dwtd = dwtd + dwtkd
+   wd(i, j, k+1, jj) = wd(i, j, k+1, jj) + dwtp1d
+   wd(i, j, k, jj) = wd(i, j, k, jj) - dwtp1d
+   wd(i, j, k, jj) = wd(i, j, k, jj) + dwtd
+   wd(i, j, k-1, jj) = wd(i, j, k-1, jj) - dwtd
+   wd(i, j, k-1, jj) = wd(i, j, k-1, jj) + dwtm1d
+   wd(i, j, k-2, jj) = wd(i, j, k-2, jj) - dwtm1d
    150      CONTINUE
    END IF
    voli = half/vol(i, j, k)
@@ -958,27 +958,27 @@
    ya = (sk(i, j, k, 2)+sk(i, j, k-1, 2))*voli
    za = (sk(i, j, k, 3)+sk(i, j, k-1, 3))*voli
    CALL POPREAL8(uu)
-   xab = w(i, j, k, ivx)*uub
-   wb(i, j, k, ivx) = wb(i, j, k, ivx) + xa*uub
-   yab = w(i, j, k, ivy)*uub
-   wb(i, j, k, ivy) = wb(i, j, k, ivy) + ya*uub
-   zab = w(i, j, k, ivz)*uub
-   wb(i, j, k, ivz) = wb(i, j, k, ivz) + za*uub
-   qsb = qsb - uub
-   skb(i, j, k, 3) = skb(i, j, k, 3) + voli*zab
-   skb(i, j, k-1, 3) = skb(i, j, k-1, 3) + voli*zab
-   volib = (sk(i, j, k, 2)+sk(i, j, k-1, 2))*yab + (sk(i, j, k, 1)+&
-   &         sk(i, j, k-1, 1))*xab + (sk(i, j, k, 3)+sk(i, j, k-1, 3))*zab
-   skb(i, j, k, 2) = skb(i, j, k, 2) + voli*yab
-   skb(i, j, k-1, 2) = skb(i, j, k-1, 2) + voli*yab
-   skb(i, j, k, 1) = skb(i, j, k, 1) + voli*xab
-   skb(i, j, k-1, 1) = skb(i, j, k-1, 1) + voli*xab
+   xad = w(i, j, k, ivx)*uud
+   wd(i, j, k, ivx) = wd(i, j, k, ivx) + xa*uud
+   yad = w(i, j, k, ivy)*uud
+   wd(i, j, k, ivy) = wd(i, j, k, ivy) + ya*uud
+   zad = w(i, j, k, ivz)*uud
+   wd(i, j, k, ivz) = wd(i, j, k, ivz) + za*uud
+   qsd = qsd - uud
+   skd(i, j, k, 3) = skd(i, j, k, 3) + voli*zad
+   skd(i, j, k-1, 3) = skd(i, j, k-1, 3) + voli*zad
+   volid = (sk(i, j, k, 2)+sk(i, j, k-1, 2))*yad + (sk(i, j, k, 1)+&
+   &         sk(i, j, k-1, 1))*xad + (sk(i, j, k, 3)+sk(i, j, k-1, 3))*zad
+   skd(i, j, k, 2) = skd(i, j, k, 2) + voli*yad
+   skd(i, j, k-1, 2) = skd(i, j, k-1, 2) + voli*yad
+   skd(i, j, k, 1) = skd(i, j, k, 1) + voli*xad
+   skd(i, j, k-1, 1) = skd(i, j, k-1, 1) + voli*xad
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   volib = volib + (sfacek(i, j, k)+sfacek(i, j, k-1))*qsb
-   qsb = 0.0_8
+   volid = volid + (sfacek(i, j, k)+sfacek(i, j, k-1))*qsd
+   qsd = 0.0_8
    END IF
-   volb(i, j, k) = volb(i, j, k) - half*volib/vol(i, j, k)**2
+   vold(i, j, k) = vold(i, j, k) - half*volid/vol(i, j, k)**2
    END DO
    END DO
    END DO

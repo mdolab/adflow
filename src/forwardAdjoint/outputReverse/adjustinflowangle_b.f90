@@ -15,13 +15,13 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   SUBROUTINE ADJUSTINFLOWANGLE_B(alpha, alphab, beta, betab, liftindex)
+   SUBROUTINE ADJUSTINFLOWANGLE_B(alpha, alphad, beta, betad, liftindex)
    USE CONSTANTS
    USE INPUTPHYSICS
    IMPLICIT NONE
    !Subroutine Vars
    REAL(kind=realtype), INTENT(IN) :: alpha, beta
-   REAL(kind=realtype) :: alphab, betab
+   REAL(kind=realtype) :: alphad, betad
    INTEGER(kind=inttype), INTENT(IN) :: liftindex
    !Local Vars
    REAL(kind=realtype), DIMENSION(3) :: refdirection
@@ -45,14 +45,14 @@
    CALL PUSHREAL8ARRAY(refdirection, 3)
    refdirection(:) = zero
    refdirection(liftindex) = one
-   alphab = 0.0_8
-   betab = 0.0_8
-   CALL GETDIRVECTOR_B(refdirection, alpha, alphab, beta, betab, &
-   &               liftdirection, liftdirectionb, liftindex)
+   alphad = 0.0_8
+   betad = 0.0_8
+   CALL GETDIRVECTOR_B(refdirection, alpha, alphad, beta, betad, &
+   &               liftdirection, liftdirectiond, liftindex)
    CALL POPREAL8ARRAY(refdirection, 3)
-   CALL GETDIRVECTOR_B(refdirection, alpha, alphab, beta, betab, &
-   &               dragdirection, dragdirectionb, liftindex)
+   CALL GETDIRVECTOR_B(refdirection, alpha, alphad, beta, betad, &
+   &               dragdirection, dragdirectiond, liftindex)
    CALL POPREAL8ARRAY(refdirection, 3)
-   CALL GETDIRVECTOR_B(refdirection, alpha, alphab, beta, betab, &
-   &               veldirfreestream, veldirfreestreamb, liftindex)
+   CALL GETDIRVECTOR_B(refdirection, alpha, alphad, beta, betad, &
+   &               veldirfreestream, veldirfreestreamd, liftindex)
    END SUBROUTINE ADJUSTINFLOWANGLE_B

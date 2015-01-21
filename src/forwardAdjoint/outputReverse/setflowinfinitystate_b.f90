@@ -37,28 +37,28 @@
    !
    INTEGER(kind=inttype) :: ierr
    REAL(kind=realtype) :: nuinf, ktmp, uinf2
-   REAL(kind=realtype) :: nuinfb, ktmpb, uinf2b
+   REAL(kind=realtype) :: nuinfd, ktmpd, uinf2d
    !
    !      Function definition
    !
    REAL(kind=realtype) :: SANUKNOWNEDDYRATIO
    ! Dummy parameters
    REAL(kind=realtype) :: vinf, zinf
-   REAL(kind=realtype) :: vinfb, zinfb
+   REAL(kind=realtype) :: vinfd, zinfd
    REAL(kind=realtype) :: tmp
    REAL(kind=realtype) :: tmp0
    REAL(kind=realtype) :: tmp1
    REAL(kind=realtype) :: tmp2
    INTEGER :: branch
-   REAL(kind=realtype) :: tempb3
-   REAL(kind=realtype) :: tempb2
-   REAL(kind=realtype) :: tempb1
-   REAL(kind=realtype) :: tempb0
-   REAL(kind=realtype) :: tmpb
-   REAL(kind=realtype) :: tmpb2
-   REAL(kind=realtype) :: tmpb1
-   REAL(kind=realtype) :: tmpb0
-   REAL(kind=realtype) :: tempb
+   REAL(kind=realtype) :: tmpd
+   REAL(kind=realtype) :: tempd
+   REAL(kind=realtype) :: tempd3
+   REAL(kind=realtype) :: tempd2
+   REAL(kind=realtype) :: tempd1
+   REAL(kind=realtype) :: tempd0
+   REAL(kind=realtype) :: tmpd2
+   REAL(kind=realtype) :: tmpd1
+   REAL(kind=realtype) :: tmpd0
    REAL(kind=realtype) :: temp
    !
    !      ******************************************************************
@@ -140,84 +140,84 @@
    END IF
    vinf = zero
    zinf = zero
-   CALL ETOTARRAY_B(rhoinf, rhoinfb, uinf, uinfb, vinf, vinfb, zinf, &
-   &            zinfb, pinfcorr, pinfcorrb, ktmp, ktmpb, winf(irhoe), winfb&
+   CALL ETOTARRAY_B(rhoinf, rhoinfd, uinf, uinfd, vinf, vinfd, zinf, &
+   &            zinfd, pinfcorr, pinfcorrd, ktmp, ktmpd, winf(irhoe), winfd&
    &            (irhoe), kpresent, 1)
    CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) winfb(itu1) = winfb(itu1) + ktmpb
+   IF (branch .EQ. 0) winfd(itu1) = winfd(itu1) + ktmpd
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   tempb3 = two*third*pinfcorrb
-   pinfb = pinfb + pinfcorrb
-   rhoinfb = rhoinfb + winf(itu1)*tempb3
-   winfb(itu1) = winfb(itu1) + rhoinf*tempb3
-   pinfcorrb = 0.0_8
+   tempd3 = two*third*pinfcorrd
+   pinfd = pinfd + pinfcorrd
+   rhoinfd = rhoinfd + winf(itu1)*tempd3
+   winfd(itu1) = winfd(itu1) + rhoinf*tempd3
+   pinfcorrd = 0.0_8
    END IF
-   pinfb = pinfb + pinfcorrb
+   pinfd = pinfd + pinfcorrd
    CALL POPCONTROL3B(branch)
    IF (branch .LT. 3) THEN
    IF (branch .EQ. 0) THEN
-   uinf2b = 0.0_8
-   nuinfb = 0.0_8
+   uinf2d = 0.0_8
+   nuinfd = 0.0_8
    ELSE IF (branch .EQ. 1) THEN
-   CALL SANUKNOWNEDDYRATIO_B(eddyvisinfratio, nuinf, nuinfb, winfb(&
+   CALL SANUKNOWNEDDYRATIO_B(eddyvisinfratio, nuinf, nuinfd, winfd(&
    &                         itu1))
-   winfb(itu1) = 0.0_8
-   uinf2b = 0.0_8
+   winfd(itu1) = 0.0_8
+   uinf2d = 0.0_8
    ELSE
    CALL POPREAL8(winf(itu2))
-   tmpb = winfb(itu2)
-   winfb(itu2) = 0.0_8
-   tempb0 = tmpb/(eddyvisinfratio*nuinf)
-   winfb(itu1) = winfb(itu1) + tempb0
-   nuinfb = -(winf(itu1)*tempb0/nuinf)
-   uinf2b = turbintensityinf**2*1.5_realType*winfb(itu1)
-   winfb(itu1) = 0.0_8
+   tmpd = winfd(itu2)
+   winfd(itu2) = 0.0_8
+   tempd0 = tmpd/(eddyvisinfratio*nuinf)
+   winfd(itu1) = winfd(itu1) + tempd0
+   nuinfd = -(winf(itu1)*tempd0/nuinf)
+   uinf2d = turbintensityinf**2*1.5_realType*winfd(itu1)
+   winfd(itu1) = 0.0_8
    END IF
    ELSE IF (branch .EQ. 3) THEN
    CALL POPREAL8(winf(itu2))
-   tmpb0 = winfb(itu2)
-   winfb(itu2) = 0.0_8
-   tempb1 = eddyvisinfratio*tmpb0/winf(itu1)
-   nuinfb = tempb1
-   winfb(itu1) = winfb(itu1) - nuinf*tempb1/winf(itu1)
-   uinf2b = turbintensityinf**2*1.5_realType*winfb(itu1)
-   winfb(itu1) = 0.0_8
+   tmpd0 = winfd(itu2)
+   winfd(itu2) = 0.0_8
+   tempd1 = eddyvisinfratio*tmpd0/winf(itu1)
+   nuinfd = tempd1
+   winfd(itu1) = winfd(itu1) - nuinf*tempd1/winf(itu1)
+   uinf2d = turbintensityinf**2*1.5_realType*winfd(itu1)
+   winfd(itu1) = 0.0_8
    ELSE IF (branch .EQ. 4) THEN
    CALL POPREAL8(winf(itu4))
-   winfb(itu4) = 0.0_8
+   winfd(itu4) = 0.0_8
    CALL POPREAL8(winf(itu3))
-   tmpb1 = winfb(itu3)
-   winfb(itu3) = 0.0_8
-   winfb(itu1) = winfb(itu1) + 0.666666_realType*tmpb1
+   tmpd1 = winfd(itu3)
+   winfd(itu3) = 0.0_8
+   winfd(itu1) = winfd(itu1) + 0.666666_realType*tmpd1
    CALL POPREAL8(winf(itu2))
-   tmpb2 = winfb(itu2)
-   winfb(itu2) = 0.0_8
-   tempb2 = 0.09_realType*tmpb2/(eddyvisinfratio*nuinf)
-   winfb(itu1) = winfb(itu1) + 2*winf(itu1)*tempb2
-   nuinfb = -(winf(itu1)**2*tempb2/nuinf)
-   uinf2b = turbintensityinf**2*1.5_realType*winfb(itu1)
-   winfb(itu1) = 0.0_8
+   tmpd2 = winfd(itu2)
+   winfd(itu2) = 0.0_8
+   tempd2 = 0.09_realType*tmpd2/(eddyvisinfratio*nuinf)
+   winfd(itu1) = winfd(itu1) + 2*winf(itu1)*tempd2
+   nuinfd = -(winf(itu1)**2*tempd2/nuinf)
+   uinf2d = turbintensityinf**2*1.5_realType*winfd(itu1)
+   winfd(itu1) = 0.0_8
    ELSE
-   muinfb = 0.0_8
-   uinf2b = 0.0_8
+   muinfd = 0.0_8
+   uinf2d = 0.0_8
    GOTO 100
    END IF
-   muinfb = nuinfb/rhoinf
-   rhoinfb = rhoinfb - muinf*nuinfb/rhoinf**2
+   muinfd = nuinfd/rhoinf
+   rhoinfd = rhoinfd - muinf*nuinfd/rhoinf**2
    100 temp = machcoef**2/rhoinf
-   tempb = gammainf*pinf*uinf2b/rhoinf
-   uinfb = uinfb + veldirfreestream(3)*winfb(ivz)
-   veldirfreestreamb(3) = veldirfreestreamb(3) + uinf*winfb(ivz)
-   winfb(ivz) = 0.0_8
-   uinfb = uinfb + veldirfreestream(2)*winfb(ivy)
-   veldirfreestreamb(2) = veldirfreestreamb(2) + uinf*winfb(ivy)
-   winfb(ivy) = 0.0_8
-   uinfb = uinfb + veldirfreestream(1)*winfb(ivx)
-   veldirfreestreamb(1) = veldirfreestreamb(1) + uinf*winfb(ivx)
-   winfb(ivx) = 0.0_8
-   rhoinfb = rhoinfb + winfb(irho) - temp*tempb
-   machcoefb = machcoefb + 2*machcoef*tempb
-   gammainfb = gammainfb + temp*pinf*uinf2b
-   pinfb = pinfb + temp*gammainf*uinf2b
+   tempd = gammainf*pinf*uinf2d/rhoinf
+   uinfd = uinfd + veldirfreestream(3)*winfd(ivz)
+   veldirfreestreamd(3) = veldirfreestreamd(3) + uinf*winfd(ivz)
+   winfd(ivz) = 0.0_8
+   uinfd = uinfd + veldirfreestream(2)*winfd(ivy)
+   veldirfreestreamd(2) = veldirfreestreamd(2) + uinf*winfd(ivy)
+   winfd(ivy) = 0.0_8
+   uinfd = uinfd + veldirfreestream(1)*winfd(ivx)
+   veldirfreestreamd(1) = veldirfreestreamd(1) + uinf*winfd(ivx)
+   winfd(ivx) = 0.0_8
+   rhoinfd = rhoinfd + winfd(irho) - temp*tempd
+   machcoefd = machcoefd + 2*machcoef*tempd
+   gammainfd = gammainfd + temp*pinf*uinf2d
+   pinfd = pinfd + temp*gammainf*uinf2d
    END SUBROUTINE SETFLOWINFINITYSTATE_B

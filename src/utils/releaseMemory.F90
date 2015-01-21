@@ -889,6 +889,54 @@ subroutine deallocateBlock(nn, level, sps)
        deallocate(flowDoms(nn,level,sps)%gamma, stat=ierr)
   if(ierr /= 0) deallocationFailure = .true.
 
+  if( associated(flowDoms(nn,level,sps)%ux) ) &
+       deallocate(flowDoms(nn,level,sps)%ux, stat=ierr)
+  if(ierr /= 0) deallocationFailure = .true.
+
+  if( associated(flowDoms(nn,level,sps)%uy) ) &
+       deallocate(flowDoms(nn,level,sps)%uy, stat=ierr)
+  if(ierr /= 0) deallocationFailure = .true.
+
+  if( associated(flowDoms(nn,level,sps)%uz) ) &
+       deallocate(flowDoms(nn,level,sps)%uz, stat=ierr)
+  if(ierr /= 0) deallocationFailure = .true.
+
+  if( associated(flowDoms(nn,level,sps)%vx) ) &
+       deallocate(flowDoms(nn,level,sps)%vx, stat=ierr)
+  if(ierr /= 0) deallocationFailure = .true.
+
+  if( associated(flowDoms(nn,level,sps)%vy) ) &
+       deallocate(flowDoms(nn,level,sps)%vy, stat=ierr)
+  if(ierr /= 0) deallocationFailure = .true.
+
+  if( associated(flowDoms(nn,level,sps)%vz) ) &
+       deallocate(flowDoms(nn,level,sps)%vz, stat=ierr)
+  if(ierr /= 0) deallocationFailure = .true.
+
+  if( associated(flowDoms(nn,level,sps)%wx) ) &
+       deallocate(flowDoms(nn,level,sps)%wx, stat=ierr)
+  if(ierr /= 0) deallocationFailure = .true.
+
+  if( associated(flowDoms(nn,level,sps)%wy) ) &
+       deallocate(flowDoms(nn,level,sps)%wy, stat=ierr)
+  if(ierr /= 0) deallocationFailure = .true.
+
+  if( associated(flowDoms(nn,level,sps)%wz) ) &
+       deallocate(flowDoms(nn,level,sps)%wz, stat=ierr)
+  if(ierr /= 0) deallocationFailure = .true.
+
+  if( associated(flowDoms(nn,level,sps)%qx) ) &
+       deallocate(flowDoms(nn,level,sps)%qx, stat=ierr)
+  if(ierr /= 0) deallocationFailure = .true.
+
+  if( associated(flowDoms(nn,level,sps)%qy) ) &
+       deallocate(flowDoms(nn,level,sps)%qy, stat=ierr)
+  if(ierr /= 0) deallocationFailure = .true.
+
+  if( associated(flowDoms(nn,level,sps)%qz) ) &
+       deallocate(flowDoms(nn,level,sps)%qz, stat=ierr)
+  if(ierr /= 0) deallocationFailure = .true.
+
   if( associated(flowDoms(nn,level,sps)%rlv) ) &
        deallocate(flowDoms(nn,level,sps)%rlv, stat=ierr)
   if(ierr /= 0) deallocationFailure = .true.

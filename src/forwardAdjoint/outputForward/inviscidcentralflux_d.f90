@@ -28,7 +28,7 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    USE CGNSGRID
    USE CONSTANTS
    USE FLOWVARREFSTATE
@@ -38,14 +38,17 @@
    !      Local variables.
    !
    INTEGER(kind=inttype) :: i, j, k, ind
+   INTEGER(kind=inttype) :: istart, iend, isize, ii
+   INTEGER(kind=inttype) :: jstart, jend, jsize
+   INTEGER(kind=inttype) :: kstart, kend, ksize
    REAL(kind=realtype) :: qsp, qsm, rqsp, rqsm, porvel, porflux
    REAL(kind=realtype) :: qspd, qsmd, rqspd, rqsmd
    REAL(kind=realtype) :: pa, fs, sface, vnp, vnm
    REAL(kind=realtype) :: pad, fsd, sfaced, vnpd, vnmd
-   REAL(kind=realtype) :: wx, wy, wz, rvol
-   REAL(kind=realtype) :: wxd, wyd, wzd, rvold
+   REAL(kind=realtype) :: wwx, wwy, wwz, rvol
+   REAL(kind=realtype) :: wwxd, wwyd, wwzd, rvold
+   INTRINSIC MOD
    sface = zero
-   sfaced = 0.0_8
    !
    !      ******************************************************************
    !      *                                                                *
@@ -53,9 +56,19 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   DO k=2,kl
-   DO j=2,jl
-   DO i=1,il
+   istart = 1
+   iend = il
+   isize = iend - istart + 1
+   jstart = 2
+   jend = jl
+   jsize = jend - jstart + 1
+   kstart = 2
+   kend = kl
+   ksize = kend - kstart + 1
+   sfaced = 0.0_8
+   DO k=kstart,kend
+   DO j=jstart,jend
+   DO i=istart,iend
    ! Set the dot product of the grid velocity and the
    ! normal in i-direction for a moving face.
    IF (addgridvelocities) THEN
@@ -166,9 +179,18 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   DO k=2,kl
-   DO j=1,jl
-   DO i=2,il
+   istart = 2
+   iend = il
+   isize = iend - istart + 1
+   jstart = 1
+   jend = jl
+   jsize = jend - jstart + 1
+   kstart = 2
+   kend = kl
+   ksize = kend - kstart + 1
+   DO k=kstart,kend
+   DO j=jstart,jend
+   DO i=istart,iend
    ! Set the dot product of the grid velocity and the
    ! normal in j-direction for a moving face.
    IF (addgridvelocities) THEN
@@ -279,9 +301,18 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   DO k=1,kl
-   DO j=2,jl
-   DO i=2,il
+   istart = 2
+   iend = il
+   isize = iend - istart + 1
+   jstart = 2
+   jend = jl
+   jsize = jend - jstart + 1
+   kstart = 1
+   kend = kl
+   ksize = kend - kstart + 1
+   DO k=kstart,kend
+   DO j=jstart,jend
+   DO i=istart,iend
    ! Set the dot product of the grid velocity and the
    ! normal in k-direction for a moving face.
    IF (addgridvelocities) THEN
@@ -393,37 +424,45 @@
    ! normally find in a text book.
    IF (blockismoving .AND. equationmode .EQ. steady) THEN
    ! Compute the three nonDimensional angular velocities.
-   wxd = cgnsdoms(nbkglobal)%rotrate(1)*timerefd
-   wx = timeref*cgnsdoms(nbkglobal)%rotrate(1)
-   wyd = cgnsdoms(nbkglobal)%rotrate(2)*timerefd
-   wy = timeref*cgnsdoms(nbkglobal)%rotrate(2)
-   wzd = cgnsdoms(nbkglobal)%rotrate(3)*timerefd
-   wz = timeref*cgnsdoms(nbkglobal)%rotrate(3)
+   wwxd = cgnsdoms(nbkglobal)%rotrate(1)*timerefd
+   wwx = timeref*cgnsdoms(nbkglobal)%rotrate(1)
+   wwyd = cgnsdoms(nbkglobal)%rotrate(2)*timerefd
+   wwy = timeref*cgnsdoms(nbkglobal)%rotrate(2)
+   wwzd = cgnsdoms(nbkglobal)%rotrate(3)*timerefd
+   wwz = timeref*cgnsdoms(nbkglobal)%rotrate(3)
    ! Loop over the internal cells of this block to compute the
    ! rotational terms for the momentum equations.
-   DO k=2,kl
-   DO j=2,jl
-   DO i=2,il
-   rvold = wd(i, j, k, irho)*vol(i, j, k) + w(i, j, k, irho)*vold&
-   &           (i, j, k)
+   istart = 2
+   iend = il
+   isize = iend - istart + 1
+   jstart = 2
+   jend = jl
+   jsize = jend - jstart + 1
+   kstart = 2
+   kend = kl
+   ksize = kend - kstart + 1
+   DO ii=0,isize*jsize*ksize-1
+   i = MOD(ii, isize) + istart
+   j = MOD(ii/isize, jsize) + jstart
+   k = ii/(isize*jsize) + kstart
+   rvold = wd(i, j, k, irho)*vol(i, j, k) + w(i, j, k, irho)*vold(i, &
+   &       j, k)
    rvol = w(i, j, k, irho)*vol(i, j, k)
-   dwd(i, j, k, imx) = dwd(i, j, k, imx) + rvold*(wy*w(i, j, k, &
-   &           ivz)-wz*w(i, j, k, ivy)) + rvol*(wyd*w(i, j, k, ivz)+wy*wd(i&
-   &           , j, k, ivz)-wzd*w(i, j, k, ivy)-wz*wd(i, j, k, ivy))
-   dw(i, j, k, imx) = dw(i, j, k, imx) + rvol*(wy*w(i, j, k, ivz)&
-   &           -wz*w(i, j, k, ivy))
-   dwd(i, j, k, imy) = dwd(i, j, k, imy) + rvold*(wz*w(i, j, k, &
-   &           ivx)-wx*w(i, j, k, ivz)) + rvol*(wzd*w(i, j, k, ivx)+wz*wd(i&
-   &           , j, k, ivx)-wxd*w(i, j, k, ivz)-wx*wd(i, j, k, ivz))
-   dw(i, j, k, imy) = dw(i, j, k, imy) + rvol*(wz*w(i, j, k, ivx)&
-   &           -wx*w(i, j, k, ivz))
-   dwd(i, j, k, imz) = dwd(i, j, k, imz) + rvold*(wx*w(i, j, k, &
-   &           ivy)-wy*w(i, j, k, ivx)) + rvol*(wxd*w(i, j, k, ivy)+wx*wd(i&
-   &           , j, k, ivy)-wyd*w(i, j, k, ivx)-wy*wd(i, j, k, ivx))
-   dw(i, j, k, imz) = dw(i, j, k, imz) + rvol*(wx*w(i, j, k, ivy)&
-   &           -wy*w(i, j, k, ivx))
-   END DO
-   END DO
+   dwd(i, j, k, imx) = dwd(i, j, k, imx) + rvold*(wwy*w(i, j, k, ivz)&
+   &       -wwz*w(i, j, k, ivy)) + rvol*(wwyd*w(i, j, k, ivz)+wwy*wd(i, j, &
+   &       k, ivz)-wwzd*w(i, j, k, ivy)-wwz*wd(i, j, k, ivy))
+   dw(i, j, k, imx) = dw(i, j, k, imx) + rvol*(wwy*w(i, j, k, ivz)-&
+   &       wwz*w(i, j, k, ivy))
+   dwd(i, j, k, imy) = dwd(i, j, k, imy) + rvold*(wwz*w(i, j, k, ivx)&
+   &       -wwx*w(i, j, k, ivz)) + rvol*(wwzd*w(i, j, k, ivx)+wwz*wd(i, j, &
+   &       k, ivx)-wwxd*w(i, j, k, ivz)-wwx*wd(i, j, k, ivz))
+   dw(i, j, k, imy) = dw(i, j, k, imy) + rvol*(wwz*w(i, j, k, ivx)-&
+   &       wwx*w(i, j, k, ivz))
+   dwd(i, j, k, imz) = dwd(i, j, k, imz) + rvold*(wwx*w(i, j, k, ivy)&
+   &       -wwy*w(i, j, k, ivx)) + rvol*(wwxd*w(i, j, k, ivy)+wwx*wd(i, j, &
+   &       k, ivy)-wwyd*w(i, j, k, ivx)-wwy*wd(i, j, k, ivx))
+   dw(i, j, k, imz) = dw(i, j, k, imz) + rvol*(wwx*w(i, j, k, ivy)-&
+   &       wwy*w(i, j, k, ivx))
    END DO
    END IF
    !
