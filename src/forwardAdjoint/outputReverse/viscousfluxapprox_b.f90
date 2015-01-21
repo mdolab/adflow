@@ -9,7 +9,7 @@
    !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
    !                x:in si:in sj:in sk:in fw:in
    SUBROUTINE VISCOUSFLUXAPPROX_B()
-   USE BLOCKPOINTERS_B
+   USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
    USE INPUTPHYSICS
    USE ITERATION
@@ -24,59 +24,59 @@
    INTEGER(kind=inttype) :: i, j, k
    INTEGER(kind=inttype) :: ii, jj, kk
    REAL(kind=realtype) :: rfilv, por, mul, mue, mut, heatcoef
-   REAL(kind=realtype) :: mulb, mueb, mutb, heatcoefb
+   REAL(kind=realtype) :: muld, mued, mutd, heatcoefd
    REAL(kind=realtype) :: gm1, factlamheat, factturbheat
-   REAL(kind=realtype) :: gm1b, factlamheatb, factturbheatb
+   REAL(kind=realtype) :: gm1d, factlamheatd, factturbheatd
    REAL(kind=realtype) :: u_x, u_y, u_z, v_x, v_y, v_z, w_x, w_y, w_z
-   REAL(kind=realtype) :: u_xb, u_yb, u_zb, v_xb, v_yb, v_zb, w_xb, w_yb&
-   & , w_zb
+   REAL(kind=realtype) :: u_xd, u_yd, u_zd, v_xd, v_yd, v_zd, w_xd, w_yd&
+   & , w_zd
    REAL(kind=realtype) :: q_x, q_y, q_z, ubar, vbar, wbar
-   REAL(kind=realtype) :: q_xb, q_yb, q_zb, ubarb, vbarb, wbarb
+   REAL(kind=realtype) :: q_xd, q_yd, q_zd, ubard, vbard, wbard
    REAL(kind=realtype) :: corr, ssx, ssy, ssz, ss, fracdiv
-   REAL(kind=realtype) :: ssxb, ssyb, sszb, ssb, fracdivb
+   REAL(kind=realtype) :: ssxd, ssyd, sszd, ssd, fracdivd
    REAL(kind=realtype) :: tauxx, tauyy, tauzz
-   REAL(kind=realtype) :: tauxxb, tauyyb, tauzzb
+   REAL(kind=realtype) :: tauxxd, tauyyd, tauzzd
    REAL(kind=realtype) :: tauxy, tauxz, tauyz
-   REAL(kind=realtype) :: tauxyb, tauxzb, tauyzb
+   REAL(kind=realtype) :: tauxyd, tauxzd, tauyzd
    REAL(kind=realtype) :: fmx, fmy, fmz, frhoe
-   REAL(kind=realtype) :: fmxb, fmyb, fmzb, frhoeb
+   REAL(kind=realtype) :: fmxd, fmyd, fmzd, frhoed
    REAL(kind=realtype) :: dd
-   REAL(kind=realtype) :: ddb
+   REAL(kind=realtype) :: ddd
    LOGICAL :: correctfork
    INTRINSIC ABS
    INTEGER :: branch
+   REAL(kind=realtype) :: tempd14
    REAL(kind=realtype) :: temp3
+   REAL(kind=realtype) :: tempd13
    REAL(kind=realtype) :: temp2
    REAL(kind=realtype) :: temp1
+   REAL(kind=realtype) :: tempd12
    REAL(kind=realtype) :: temp0
-   REAL(kind=realtype) :: tempb9
-   REAL(kind=realtype) :: tempb8
-   REAL(kind=realtype) :: tempb7
-   REAL(kind=realtype) :: tempb6
-   REAL(kind=realtype) :: tempb5
-   REAL(kind=realtype) :: tempb4
-   REAL(kind=realtype) :: tempb19
-   REAL(kind=realtype) :: tempb3
-   REAL(kind=realtype) :: tempb18
-   REAL(kind=realtype) :: tempb2
-   REAL(kind=realtype) :: tempb17
-   REAL(kind=realtype) :: tempb1
-   REAL(kind=realtype) :: tempb16
-   REAL(kind=realtype) :: tempb0
-   REAL(kind=realtype) :: tempb15
-   REAL(kind=realtype) :: tempb14
-   REAL(kind=realtype) :: tempb13
-   REAL(kind=realtype) :: tempb12
-   REAL(kind=realtype) :: tempb11
-   REAL(kind=realtype) :: tempb10
-   REAL(kind=realtype) :: tempb
+   REAL(kind=realtype) :: tempd11
+   REAL(kind=realtype) :: tempd10
+   REAL(kind=realtype) :: tempd9
+   REAL(kind=realtype) :: tempd
+   REAL(kind=realtype) :: tempd8
+   REAL(kind=realtype) :: tempd7
+   REAL(kind=realtype) :: tempd6
+   REAL(kind=realtype) :: tempd5
+   REAL(kind=realtype) :: tempd4
+   REAL(kind=realtype) :: tempd3
+   REAL(kind=realtype) :: tempd2
+   REAL(kind=realtype) :: tempd1
+   REAL(kind=realtype) :: tempd0
+   REAL(kind=realtype) :: tempd24
+   REAL(kind=realtype) :: tempd23
+   REAL(kind=realtype) :: tempd22
+   REAL(kind=realtype) :: tempd21
+   REAL(kind=realtype) :: tempd20
    REAL(kind=realtype) :: abs0
    REAL(kind=realtype) :: temp
-   REAL(kind=realtype) :: tempb24
-   REAL(kind=realtype) :: tempb23
-   REAL(kind=realtype) :: tempb22
-   REAL(kind=realtype) :: tempb21
-   REAL(kind=realtype) :: tempb20
+   REAL(kind=realtype) :: tempd19
+   REAL(kind=realtype) :: tempd18
+   REAL(kind=realtype) :: tempd17
+   REAL(kind=realtype) :: tempd16
+   REAL(kind=realtype) :: tempd15
    REAL(kind=realtype) :: temp4
    ! Set rFilv to rFil to indicate that this is the viscous part.
    ! If rFilv == 0 the viscous residuals need not to be computed
@@ -88,8 +88,8 @@
    abs0 = -rfilv
    END IF
    IF (abs0 .LT. thresholdreal) THEN
-   revb = 0.0_8
-   rlvb = 0.0_8
+   revd = 0.0_8
+   rlvd = 0.0_8
    ELSE
    ! Determine whether or not the pressure must be corrected
    ! for the presence of the turbulent kinetic energy.
@@ -410,10 +410,10 @@
    DO k=ke,1,-1
    DO j=je,1,-1
    DO i=ie,1,-1
-   wb(i, j, k, irho) = wb(i, j, k, irho) + twothird*w(i, j, k, &
-   &             itu1)*pb(i, j, k)
-   wb(i, j, k, itu1) = wb(i, j, k, itu1) + twothird*w(i, j, k, &
-   &             irho)*pb(i, j, k)
+   wd(i, j, k, irho) = wd(i, j, k, irho) + twothird*w(i, j, k, &
+   &             itu1)*pd(i, j, k)
+   wd(i, j, k, itu1) = wd(i, j, k, itu1) + twothird*w(i, j, k, &
+   &             irho)*pd(i, j, k)
    END DO
    END DO
    END DO
@@ -424,23 +424,23 @@
    CALL POPREAL8(p(i, j, k))
    temp4 = gamma(i, j, k)
    temp3 = p(i, j, k)/temp4
-   tempb24 = w(i, j, k, irho)*pb(i, j, k)/temp4
-   wb(i, j, k, irho) = wb(i, j, k, irho) + temp3*pb(i, j, k)
-   gammab(i, j, k) = gammab(i, j, k) - temp3*tempb24
-   pb(i, j, k) = tempb24
+   tempd24 = w(i, j, k, irho)*pd(i, j, k)/temp4
+   wd(i, j, k, irho) = wd(i, j, k, irho) + temp3*pd(i, j, k)
+   gammad(i, j, k) = gammad(i, j, k) - temp3*tempd24
+   pd(i, j, k) = tempd24
    END DO
    END DO
    END DO
-   revb = 0.0_8
-   rlvb = 0.0_8
-   mueb = 0.0_8
+   revd = 0.0_8
+   rlvd = 0.0_8
+   mued = 0.0_8
    DO k=kl,1,-1
    DO j=jl,2,-1
    DO i=il,2,-1
-   frhoeb = fwb(i, j, k+1, irhoe) - fwb(i, j, k, irhoe)
-   fmzb = fwb(i, j, k+1, imz) - fwb(i, j, k, imz)
-   fmyb = fwb(i, j, k+1, imy) - fwb(i, j, k, imy)
-   fmxb = fwb(i, j, k+1, imx) - fwb(i, j, k, imx)
+   frhoed = fwd(i, j, k+1, irhoe) - fwd(i, j, k, irhoe)
+   fmzd = fwd(i, j, k+1, imz) - fwd(i, j, k, imz)
+   fmyd = fwd(i, j, k+1, imy) - fwd(i, j, k, imy)
+   fmxd = fwd(i, j, k+1, imx) - fwd(i, j, k, imx)
    mul = por*(rlv(i, j, k)+rlv(i, j, k+1))
    mut = mul + mue
    tauzz = mut*(two*w_z-fracdiv)
@@ -452,45 +452,45 @@
    ubar = half*(w(i, j, k, ivx)+w(i, j, k+1, ivx))
    tauyy = mut*(two*v_y-fracdiv)
    tauyz = mut*(v_z+w_y)
-   tempb20 = sk(i, j, k, 1)*frhoeb
-   tempb21 = sk(i, j, k, 2)*frhoeb
-   tempb22 = sk(i, j, k, 3)*frhoeb
-   ubarb = tauxz*tempb22 + tauxy*tempb21 + tauxx*tempb20
-   tauxxb = sk(i, j, k, 1)*fmxb + ubar*tempb20
-   vbarb = tauyz*tempb22 + tauyy*tempb21 + tauxy*tempb20
-   tauxyb = sk(i, j, k, 1)*fmyb + sk(i, j, k, 2)*fmxb + ubar*&
-   &           tempb21 + vbar*tempb20
-   wbarb = tauzz*tempb22 + tauyz*tempb21 + tauxz*tempb20
-   tauxzb = sk(i, j, k, 1)*fmzb + sk(i, j, k, 3)*fmxb + ubar*&
-   &           tempb22 + wbar*tempb20
-   skb(i, j, k, 1) = skb(i, j, k, 1) + (ubar*tauxx-q_x+vbar*tauxy&
-   &           +wbar*tauxz)*frhoeb
-   tauyyb = sk(i, j, k, 2)*fmyb + vbar*tempb21
-   tauyzb = sk(i, j, k, 2)*fmzb + sk(i, j, k, 3)*fmyb + vbar*&
-   &           tempb22 + wbar*tempb21
-   skb(i, j, k, 2) = skb(i, j, k, 2) + (ubar*tauxy-q_y+vbar*tauyy&
-   &           +wbar*tauyz)*frhoeb
-   tauzzb = sk(i, j, k, 3)*fmzb + wbar*tempb22
-   skb(i, j, k, 3) = skb(i, j, k, 3) + (ubar*tauxz-q_z+vbar*tauyz&
-   &           +wbar*tauzz)*frhoeb
-   q_xb = -(sk(i, j, k, 1)*frhoeb)
-   q_yb = -(sk(i, j, k, 2)*frhoeb)
-   q_zb = -(sk(i, j, k, 3)*frhoeb)
-   skb(i, j, k, 1) = skb(i, j, k, 1) + tauxz*fmzb
-   skb(i, j, k, 2) = skb(i, j, k, 2) + tauyz*fmzb
-   skb(i, j, k, 3) = skb(i, j, k, 3) + tauzz*fmzb
-   skb(i, j, k, 1) = skb(i, j, k, 1) + tauxy*fmyb
-   skb(i, j, k, 2) = skb(i, j, k, 2) + tauyy*fmyb
-   skb(i, j, k, 3) = skb(i, j, k, 3) + tauyz*fmyb
-   skb(i, j, k, 1) = skb(i, j, k, 1) + tauxx*fmxb
-   skb(i, j, k, 2) = skb(i, j, k, 2) + tauxy*fmxb
-   skb(i, j, k, 3) = skb(i, j, k, 3) + tauxz*fmxb
-   wb(i, j, k, ivz) = wb(i, j, k, ivz) + half*wbarb
-   wb(i, j, k+1, ivz) = wb(i, j, k+1, ivz) + half*wbarb
-   wb(i, j, k, ivy) = wb(i, j, k, ivy) + half*vbarb
-   wb(i, j, k+1, ivy) = wb(i, j, k+1, ivy) + half*vbarb
-   wb(i, j, k, ivx) = wb(i, j, k, ivx) + half*ubarb
-   wb(i, j, k+1, ivx) = wb(i, j, k+1, ivx) + half*ubarb
+   tempd20 = sk(i, j, k, 1)*frhoed
+   tempd21 = sk(i, j, k, 2)*frhoed
+   tempd22 = sk(i, j, k, 3)*frhoed
+   ubard = tauxz*tempd22 + tauxy*tempd21 + tauxx*tempd20
+   tauxxd = sk(i, j, k, 1)*fmxd + ubar*tempd20
+   vbard = tauyz*tempd22 + tauyy*tempd21 + tauxy*tempd20
+   tauxyd = sk(i, j, k, 1)*fmyd + sk(i, j, k, 2)*fmxd + ubar*&
+   &           tempd21 + vbar*tempd20
+   wbard = tauzz*tempd22 + tauyz*tempd21 + tauxz*tempd20
+   tauxzd = sk(i, j, k, 1)*fmzd + sk(i, j, k, 3)*fmxd + ubar*&
+   &           tempd22 + wbar*tempd20
+   skd(i, j, k, 1) = skd(i, j, k, 1) + (ubar*tauxx-q_x+vbar*tauxy&
+   &           +wbar*tauxz)*frhoed
+   tauyyd = sk(i, j, k, 2)*fmyd + vbar*tempd21
+   tauyzd = sk(i, j, k, 2)*fmzd + sk(i, j, k, 3)*fmyd + vbar*&
+   &           tempd22 + wbar*tempd21
+   skd(i, j, k, 2) = skd(i, j, k, 2) + (ubar*tauxy-q_y+vbar*tauyy&
+   &           +wbar*tauyz)*frhoed
+   tauzzd = sk(i, j, k, 3)*fmzd + wbar*tempd22
+   skd(i, j, k, 3) = skd(i, j, k, 3) + (ubar*tauxz-q_z+vbar*tauyz&
+   &           +wbar*tauzz)*frhoed
+   q_xd = -(sk(i, j, k, 1)*frhoed)
+   q_yd = -(sk(i, j, k, 2)*frhoed)
+   q_zd = -(sk(i, j, k, 3)*frhoed)
+   skd(i, j, k, 1) = skd(i, j, k, 1) + tauxz*fmzd
+   skd(i, j, k, 2) = skd(i, j, k, 2) + tauyz*fmzd
+   skd(i, j, k, 3) = skd(i, j, k, 3) + tauzz*fmzd
+   skd(i, j, k, 1) = skd(i, j, k, 1) + tauxy*fmyd
+   skd(i, j, k, 2) = skd(i, j, k, 2) + tauyy*fmyd
+   skd(i, j, k, 3) = skd(i, j, k, 3) + tauyz*fmyd
+   skd(i, j, k, 1) = skd(i, j, k, 1) + tauxx*fmxd
+   skd(i, j, k, 2) = skd(i, j, k, 2) + tauxy*fmxd
+   skd(i, j, k, 3) = skd(i, j, k, 3) + tauxz*fmxd
+   wd(i, j, k, ivz) = wd(i, j, k, ivz) + half*wbard
+   wd(i, j, k+1, ivz) = wd(i, j, k+1, ivz) + half*wbard
+   wd(i, j, k, ivy) = wd(i, j, k, ivy) + half*vbard
+   wd(i, j, k+1, ivy) = wd(i, j, k+1, ivy) + half*vbard
+   wd(i, j, k, ivx) = wd(i, j, k, ivx) + half*ubard
+   wd(i, j, k+1, ivx) = wd(i, j, k+1, ivx) + half*ubard
    dd = p(i, j, k+1) - p(i, j, k)
    gm1 = half*(gamma(i, j, k)+gamma(i, j, k+1)) - one
    factlamheat = one/(prandtl*gm1)
@@ -499,133 +499,133 @@
    CALL POPREAL8(q_z)
    CALL POPREAL8(q_y)
    CALL POPREAL8(q_x)
-   heatcoefb = q_y*q_yb + q_x*q_xb + q_z*q_zb
-   q_zb = heatcoef*q_zb
-   q_yb = heatcoef*q_yb
-   q_xb = heatcoef*q_xb
-   mutb = (u_z+w_x)*tauxzb + (two*w_z-fracdiv)*tauzzb + (two*u_x-&
-   &           fracdiv)*tauxxb + (two*v_y-fracdiv)*tauyyb + (u_y+v_x)*&
-   &           tauxyb + (v_z+w_y)*tauyzb
-   v_zb = mut*tauyzb
-   w_yb = mut*tauyzb
-   u_zb = mut*tauxzb
-   w_xb = mut*tauxzb
-   u_yb = mut*tauxyb
-   v_xb = mut*tauxyb
-   fracdivb = -(mut*tauyyb) - mut*tauxxb - mut*tauzzb
+   heatcoefd = q_y*q_yd + q_x*q_xd + q_z*q_zd
+   q_zd = heatcoef*q_zd
+   q_yd = heatcoef*q_yd
+   q_xd = heatcoef*q_xd
+   mutd = (u_z+w_x)*tauxzd + (two*w_z-fracdiv)*tauzzd + (two*u_x-&
+   &           fracdiv)*tauxxd + (two*v_y-fracdiv)*tauyyd + (u_y+v_x)*&
+   &           tauxyd + (v_z+w_y)*tauyzd
+   v_zd = mut*tauyzd
+   w_yd = mut*tauyzd
+   u_zd = mut*tauxzd
+   w_xd = mut*tauxzd
+   u_yd = mut*tauxyd
+   v_xd = mut*tauxyd
+   fracdivd = -(mut*tauyyd) - mut*tauxxd - mut*tauzzd
    CALL POPREAL8(fracdiv)
-   tempb23 = twothird*fracdivb
-   w_zb = tempb23 + mut*two*tauzzb
-   v_yb = tempb23 + mut*two*tauyyb
-   u_xb = tempb23 + mut*two*tauxxb
-   mulb = mutb + factlamheat*heatcoefb
-   factlamheatb = mul*heatcoefb
-   mueb = mueb + mutb + factturbheat*heatcoefb
-   factturbheatb = mue*heatcoefb
-   gm1b = -(one*factlamheatb/(prandtl*gm1**2)) - one*&
-   &           factturbheatb/(prandtlturb*gm1**2)
-   gammab(i, j, k) = gammab(i, j, k) + half*gm1b
-   gammab(i, j, k+1) = gammab(i, j, k+1) + half*gm1b
+   tempd23 = twothird*fracdivd
+   w_zd = tempd23 + mut*two*tauzzd
+   v_yd = tempd23 + mut*two*tauyyd
+   u_xd = tempd23 + mut*two*tauxxd
+   muld = mutd + factlamheat*heatcoefd
+   factlamheatd = mul*heatcoefd
+   mued = mued + mutd + factturbheat*heatcoefd
+   factturbheatd = mue*heatcoefd
+   gm1d = -(one*factlamheatd/(prandtl*gm1**2)) - one*&
+   &           factturbheatd/(prandtlturb*gm1**2)
+   gammad(i, j, k) = gammad(i, j, k) + half*gm1d
+   gammad(i, j, k+1) = gammad(i, j, k+1) + half*gm1d
    CALL POPREAL8(mut)
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    CALL POPREAL8(mue)
-   revb(i, j, k) = revb(i, j, k) + por*mueb
-   revb(i, j, k+1) = revb(i, j, k+1) + por*mueb
-   mueb = 0.0_8
+   revd(i, j, k) = revd(i, j, k) + por*mued
+   revd(i, j, k+1) = revd(i, j, k+1) + por*mued
+   mued = 0.0_8
    END IF
-   rlvb(i, j, k) = rlvb(i, j, k) + por*mulb
-   rlvb(i, j, k+1) = rlvb(i, j, k+1) + por*mulb
+   rlvd(i, j, k) = rlvd(i, j, k) + por*muld
+   rlvd(i, j, k+1) = rlvd(i, j, k+1) + por*muld
    CALL POPREAL8(por)
    CALL POPREAL8(q_z)
-   ddb = -(ssy*q_yb) - ssx*q_xb - ssz*q_zb
-   sszb = -(dd*q_zb)
+   ddd = -(ssy*q_yd) - ssx*q_xd - ssz*q_zd
+   sszd = -(dd*q_zd)
    CALL POPREAL8(q_y)
-   ssyb = -(dd*q_yb)
+   ssyd = -(dd*q_yd)
    CALL POPREAL8(q_x)
-   ssxb = -(dd*q_xb)
-   pb(i, j, k+1) = pb(i, j, k+1) + ddb
-   pb(i, j, k) = pb(i, j, k) - ddb
+   ssxd = -(dd*q_xd)
+   pd(i, j, k+1) = pd(i, j, k+1) + ddd
+   pd(i, j, k) = pd(i, j, k) - ddd
    dd = w(i, j, k+1, ivz) - w(i, j, k, ivz)
    CALL POPREAL8(w_z)
-   ddb = ssy*w_yb + ssx*w_xb + ssz*w_zb
-   sszb = sszb + dd*w_zb
+   ddd = ssy*w_yd + ssx*w_xd + ssz*w_zd
+   sszd = sszd + dd*w_zd
    CALL POPREAL8(w_y)
-   ssyb = ssyb + dd*w_yb
+   ssyd = ssyd + dd*w_yd
    CALL POPREAL8(w_x)
-   ssxb = ssxb + dd*w_xb
-   wb(i, j, k+1, ivz) = wb(i, j, k+1, ivz) + ddb
-   wb(i, j, k, ivz) = wb(i, j, k, ivz) - ddb
+   ssxd = ssxd + dd*w_xd
+   wd(i, j, k+1, ivz) = wd(i, j, k+1, ivz) + ddd
+   wd(i, j, k, ivz) = wd(i, j, k, ivz) - ddd
    dd = w(i, j, k+1, ivy) - w(i, j, k, ivy)
    CALL POPREAL8(v_z)
-   ddb = ssy*v_yb + ssx*v_xb + ssz*v_zb
-   sszb = sszb + dd*v_zb
+   ddd = ssy*v_yd + ssx*v_xd + ssz*v_zd
+   sszd = sszd + dd*v_zd
    CALL POPREAL8(v_y)
-   ssyb = ssyb + dd*v_yb
+   ssyd = ssyd + dd*v_yd
    CALL POPREAL8(v_x)
-   ssxb = ssxb + dd*v_xb
-   wb(i, j, k+1, ivy) = wb(i, j, k+1, ivy) + ddb
-   wb(i, j, k, ivy) = wb(i, j, k, ivy) - ddb
+   ssxd = ssxd + dd*v_xd
+   wd(i, j, k+1, ivy) = wd(i, j, k+1, ivy) + ddd
+   wd(i, j, k, ivy) = wd(i, j, k, ivy) - ddd
    dd = w(i, j, k+1, ivx) - w(i, j, k, ivx)
    CALL POPREAL8(u_z)
-   ddb = ssy*u_yb + ssx*u_xb + ssz*u_zb
-   sszb = sszb + dd*u_zb
+   ddd = ssy*u_yd + ssx*u_xd + ssz*u_zd
+   sszd = sszd + dd*u_zd
    CALL POPREAL8(u_y)
-   ssyb = ssyb + dd*u_yb
+   ssyd = ssyd + dd*u_yd
    CALL POPREAL8(u_x)
-   ssxb = ssxb + dd*u_xb
-   wb(i, j, k+1, ivx) = wb(i, j, k+1, ivx) + ddb
-   wb(i, j, k, ivx) = wb(i, j, k, ivx) - ddb
+   ssxd = ssxd + dd*u_xd
+   wd(i, j, k+1, ivx) = wd(i, j, k+1, ivx) + ddd
+   wd(i, j, k, ivx) = wd(i, j, k, ivx) - ddd
    CALL POPREAL8(ssz)
    CALL POPREAL8(ssy)
    CALL POPREAL8(ssx)
-   ssb = ssy*ssyb + ssx*ssxb + ssz*sszb
+   ssd = ssy*ssyd + ssx*ssxd + ssz*sszd
    temp2 = ssx**2 + ssy**2 + ssz**2
-   tempb16 = -(one*ssb/temp2**2)
-   sszb = 2*ssz*tempb16 + ss*sszb
-   ssyb = 2*ssy*tempb16 + ss*ssyb
-   ssxb = 2*ssx*tempb16 + ss*ssxb
+   tempd16 = -(one*ssd/temp2**2)
+   sszd = 2*ssz*tempd16 + ss*sszd
+   ssyd = 2*ssy*tempd16 + ss*ssyd
+   ssxd = 2*ssx*tempd16 + ss*ssxd
    CALL POPREAL8(ss)
    CALL POPREAL8(ssz)
-   tempb17 = eighth*sszb
-   xb(i-1, j-1, k+1, 3) = xb(i-1, j-1, k+1, 3) + tempb17
-   xb(i-1, j-1, k-1, 3) = xb(i-1, j-1, k-1, 3) - tempb17
-   xb(i-1, j, k+1, 3) = xb(i-1, j, k+1, 3) + tempb17
-   xb(i-1, j, k-1, 3) = xb(i-1, j, k-1, 3) - tempb17
-   xb(i, j-1, k+1, 3) = xb(i, j-1, k+1, 3) + tempb17
-   xb(i, j-1, k-1, 3) = xb(i, j-1, k-1, 3) - tempb17
-   xb(i, j, k+1, 3) = xb(i, j, k+1, 3) + tempb17
-   xb(i, j, k-1, 3) = xb(i, j, k-1, 3) - tempb17
+   tempd17 = eighth*sszd
+   xd(i-1, j-1, k+1, 3) = xd(i-1, j-1, k+1, 3) + tempd17
+   xd(i-1, j-1, k-1, 3) = xd(i-1, j-1, k-1, 3) - tempd17
+   xd(i-1, j, k+1, 3) = xd(i-1, j, k+1, 3) + tempd17
+   xd(i-1, j, k-1, 3) = xd(i-1, j, k-1, 3) - tempd17
+   xd(i, j-1, k+1, 3) = xd(i, j-1, k+1, 3) + tempd17
+   xd(i, j-1, k-1, 3) = xd(i, j-1, k-1, 3) - tempd17
+   xd(i, j, k+1, 3) = xd(i, j, k+1, 3) + tempd17
+   xd(i, j, k-1, 3) = xd(i, j, k-1, 3) - tempd17
    CALL POPREAL8(ssy)
-   tempb18 = eighth*ssyb
-   xb(i-1, j-1, k+1, 2) = xb(i-1, j-1, k+1, 2) + tempb18
-   xb(i-1, j-1, k-1, 2) = xb(i-1, j-1, k-1, 2) - tempb18
-   xb(i-1, j, k+1, 2) = xb(i-1, j, k+1, 2) + tempb18
-   xb(i-1, j, k-1, 2) = xb(i-1, j, k-1, 2) - tempb18
-   xb(i, j-1, k+1, 2) = xb(i, j-1, k+1, 2) + tempb18
-   xb(i, j-1, k-1, 2) = xb(i, j-1, k-1, 2) - tempb18
-   xb(i, j, k+1, 2) = xb(i, j, k+1, 2) + tempb18
-   xb(i, j, k-1, 2) = xb(i, j, k-1, 2) - tempb18
+   tempd18 = eighth*ssyd
+   xd(i-1, j-1, k+1, 2) = xd(i-1, j-1, k+1, 2) + tempd18
+   xd(i-1, j-1, k-1, 2) = xd(i-1, j-1, k-1, 2) - tempd18
+   xd(i-1, j, k+1, 2) = xd(i-1, j, k+1, 2) + tempd18
+   xd(i-1, j, k-1, 2) = xd(i-1, j, k-1, 2) - tempd18
+   xd(i, j-1, k+1, 2) = xd(i, j-1, k+1, 2) + tempd18
+   xd(i, j-1, k-1, 2) = xd(i, j-1, k-1, 2) - tempd18
+   xd(i, j, k+1, 2) = xd(i, j, k+1, 2) + tempd18
+   xd(i, j, k-1, 2) = xd(i, j, k-1, 2) - tempd18
    CALL POPREAL8(ssx)
-   tempb19 = eighth*ssxb
-   xb(i-1, j-1, k+1, 1) = xb(i-1, j-1, k+1, 1) + tempb19
-   xb(i-1, j-1, k-1, 1) = xb(i-1, j-1, k-1, 1) - tempb19
-   xb(i-1, j, k+1, 1) = xb(i-1, j, k+1, 1) + tempb19
-   xb(i-1, j, k-1, 1) = xb(i-1, j, k-1, 1) - tempb19
-   xb(i, j-1, k+1, 1) = xb(i, j-1, k+1, 1) + tempb19
-   xb(i, j-1, k-1, 1) = xb(i, j-1, k-1, 1) - tempb19
-   xb(i, j, k+1, 1) = xb(i, j, k+1, 1) + tempb19
-   xb(i, j, k-1, 1) = xb(i, j, k-1, 1) - tempb19
+   tempd19 = eighth*ssxd
+   xd(i-1, j-1, k+1, 1) = xd(i-1, j-1, k+1, 1) + tempd19
+   xd(i-1, j-1, k-1, 1) = xd(i-1, j-1, k-1, 1) - tempd19
+   xd(i-1, j, k+1, 1) = xd(i-1, j, k+1, 1) + tempd19
+   xd(i-1, j, k-1, 1) = xd(i-1, j, k-1, 1) - tempd19
+   xd(i, j-1, k+1, 1) = xd(i, j-1, k+1, 1) + tempd19
+   xd(i, j-1, k-1, 1) = xd(i, j-1, k-1, 1) - tempd19
+   xd(i, j, k+1, 1) = xd(i, j, k+1, 1) + tempd19
+   xd(i, j, k-1, 1) = xd(i, j, k-1, 1) - tempd19
    END DO
    END DO
    END DO
    DO k=kl,2,-1
    DO j=jl,1,-1
    DO i=il,2,-1
-   frhoeb = fwb(i, j+1, k, irhoe) - fwb(i, j, k, irhoe)
-   fmzb = fwb(i, j+1, k, imz) - fwb(i, j, k, imz)
-   fmyb = fwb(i, j+1, k, imy) - fwb(i, j, k, imy)
-   fmxb = fwb(i, j+1, k, imx) - fwb(i, j, k, imx)
+   frhoed = fwd(i, j+1, k, irhoe) - fwd(i, j, k, irhoe)
+   fmzd = fwd(i, j+1, k, imz) - fwd(i, j, k, imz)
+   fmyd = fwd(i, j+1, k, imy) - fwd(i, j, k, imy)
+   fmxd = fwd(i, j+1, k, imx) - fwd(i, j, k, imx)
    mul = por*(rlv(i, j, k)+rlv(i, j+1, k))
    mut = mul + mue
    tauzz = mut*(two*w_z-fracdiv)
@@ -637,45 +637,45 @@
    ubar = half*(w(i, j, k, ivx)+w(i, j+1, k, ivx))
    tauyy = mut*(two*v_y-fracdiv)
    tauyz = mut*(v_z+w_y)
-   tempb12 = sj(i, j, k, 1)*frhoeb
-   tempb13 = sj(i, j, k, 2)*frhoeb
-   tempb14 = sj(i, j, k, 3)*frhoeb
-   ubarb = tauxz*tempb14 + tauxy*tempb13 + tauxx*tempb12
-   tauxxb = sj(i, j, k, 1)*fmxb + ubar*tempb12
-   vbarb = tauyz*tempb14 + tauyy*tempb13 + tauxy*tempb12
-   tauxyb = sj(i, j, k, 1)*fmyb + sj(i, j, k, 2)*fmxb + ubar*&
-   &           tempb13 + vbar*tempb12
-   wbarb = tauzz*tempb14 + tauyz*tempb13 + tauxz*tempb12
-   tauxzb = sj(i, j, k, 1)*fmzb + sj(i, j, k, 3)*fmxb + ubar*&
-   &           tempb14 + wbar*tempb12
-   sjb(i, j, k, 1) = sjb(i, j, k, 1) + (ubar*tauxx-q_x+vbar*tauxy&
-   &           +wbar*tauxz)*frhoeb
-   tauyyb = sj(i, j, k, 2)*fmyb + vbar*tempb13
-   tauyzb = sj(i, j, k, 2)*fmzb + sj(i, j, k, 3)*fmyb + vbar*&
-   &           tempb14 + wbar*tempb13
-   sjb(i, j, k, 2) = sjb(i, j, k, 2) + (ubar*tauxy-q_y+vbar*tauyy&
-   &           +wbar*tauyz)*frhoeb
-   tauzzb = sj(i, j, k, 3)*fmzb + wbar*tempb14
-   sjb(i, j, k, 3) = sjb(i, j, k, 3) + (ubar*tauxz-q_z+vbar*tauyz&
-   &           +wbar*tauzz)*frhoeb
-   q_xb = -(sj(i, j, k, 1)*frhoeb)
-   q_yb = -(sj(i, j, k, 2)*frhoeb)
-   q_zb = -(sj(i, j, k, 3)*frhoeb)
-   sjb(i, j, k, 1) = sjb(i, j, k, 1) + tauxz*fmzb
-   sjb(i, j, k, 2) = sjb(i, j, k, 2) + tauyz*fmzb
-   sjb(i, j, k, 3) = sjb(i, j, k, 3) + tauzz*fmzb
-   sjb(i, j, k, 1) = sjb(i, j, k, 1) + tauxy*fmyb
-   sjb(i, j, k, 2) = sjb(i, j, k, 2) + tauyy*fmyb
-   sjb(i, j, k, 3) = sjb(i, j, k, 3) + tauyz*fmyb
-   sjb(i, j, k, 1) = sjb(i, j, k, 1) + tauxx*fmxb
-   sjb(i, j, k, 2) = sjb(i, j, k, 2) + tauxy*fmxb
-   sjb(i, j, k, 3) = sjb(i, j, k, 3) + tauxz*fmxb
-   wb(i, j, k, ivz) = wb(i, j, k, ivz) + half*wbarb
-   wb(i, j+1, k, ivz) = wb(i, j+1, k, ivz) + half*wbarb
-   wb(i, j, k, ivy) = wb(i, j, k, ivy) + half*vbarb
-   wb(i, j+1, k, ivy) = wb(i, j+1, k, ivy) + half*vbarb
-   wb(i, j, k, ivx) = wb(i, j, k, ivx) + half*ubarb
-   wb(i, j+1, k, ivx) = wb(i, j+1, k, ivx) + half*ubarb
+   tempd12 = sj(i, j, k, 1)*frhoed
+   tempd13 = sj(i, j, k, 2)*frhoed
+   tempd14 = sj(i, j, k, 3)*frhoed
+   ubard = tauxz*tempd14 + tauxy*tempd13 + tauxx*tempd12
+   tauxxd = sj(i, j, k, 1)*fmxd + ubar*tempd12
+   vbard = tauyz*tempd14 + tauyy*tempd13 + tauxy*tempd12
+   tauxyd = sj(i, j, k, 1)*fmyd + sj(i, j, k, 2)*fmxd + ubar*&
+   &           tempd13 + vbar*tempd12
+   wbard = tauzz*tempd14 + tauyz*tempd13 + tauxz*tempd12
+   tauxzd = sj(i, j, k, 1)*fmzd + sj(i, j, k, 3)*fmxd + ubar*&
+   &           tempd14 + wbar*tempd12
+   sjd(i, j, k, 1) = sjd(i, j, k, 1) + (ubar*tauxx-q_x+vbar*tauxy&
+   &           +wbar*tauxz)*frhoed
+   tauyyd = sj(i, j, k, 2)*fmyd + vbar*tempd13
+   tauyzd = sj(i, j, k, 2)*fmzd + sj(i, j, k, 3)*fmyd + vbar*&
+   &           tempd14 + wbar*tempd13
+   sjd(i, j, k, 2) = sjd(i, j, k, 2) + (ubar*tauxy-q_y+vbar*tauyy&
+   &           +wbar*tauyz)*frhoed
+   tauzzd = sj(i, j, k, 3)*fmzd + wbar*tempd14
+   sjd(i, j, k, 3) = sjd(i, j, k, 3) + (ubar*tauxz-q_z+vbar*tauyz&
+   &           +wbar*tauzz)*frhoed
+   q_xd = -(sj(i, j, k, 1)*frhoed)
+   q_yd = -(sj(i, j, k, 2)*frhoed)
+   q_zd = -(sj(i, j, k, 3)*frhoed)
+   sjd(i, j, k, 1) = sjd(i, j, k, 1) + tauxz*fmzd
+   sjd(i, j, k, 2) = sjd(i, j, k, 2) + tauyz*fmzd
+   sjd(i, j, k, 3) = sjd(i, j, k, 3) + tauzz*fmzd
+   sjd(i, j, k, 1) = sjd(i, j, k, 1) + tauxy*fmyd
+   sjd(i, j, k, 2) = sjd(i, j, k, 2) + tauyy*fmyd
+   sjd(i, j, k, 3) = sjd(i, j, k, 3) + tauyz*fmyd
+   sjd(i, j, k, 1) = sjd(i, j, k, 1) + tauxx*fmxd
+   sjd(i, j, k, 2) = sjd(i, j, k, 2) + tauxy*fmxd
+   sjd(i, j, k, 3) = sjd(i, j, k, 3) + tauxz*fmxd
+   wd(i, j, k, ivz) = wd(i, j, k, ivz) + half*wbard
+   wd(i, j+1, k, ivz) = wd(i, j+1, k, ivz) + half*wbard
+   wd(i, j, k, ivy) = wd(i, j, k, ivy) + half*vbard
+   wd(i, j+1, k, ivy) = wd(i, j+1, k, ivy) + half*vbard
+   wd(i, j, k, ivx) = wd(i, j, k, ivx) + half*ubard
+   wd(i, j+1, k, ivx) = wd(i, j+1, k, ivx) + half*ubard
    dd = p(i, j+1, k) - p(i, j, k)
    gm1 = half*(gamma(i, j, k)+gamma(i, j+1, k)) - one
    factlamheat = one/(prandtl*gm1)
@@ -684,133 +684,133 @@
    CALL POPREAL8(q_z)
    CALL POPREAL8(q_y)
    CALL POPREAL8(q_x)
-   heatcoefb = q_y*q_yb + q_x*q_xb + q_z*q_zb
-   q_zb = heatcoef*q_zb
-   q_yb = heatcoef*q_yb
-   q_xb = heatcoef*q_xb
-   mutb = (u_z+w_x)*tauxzb + (two*w_z-fracdiv)*tauzzb + (two*u_x-&
-   &           fracdiv)*tauxxb + (two*v_y-fracdiv)*tauyyb + (u_y+v_x)*&
-   &           tauxyb + (v_z+w_y)*tauyzb
-   v_zb = mut*tauyzb
-   w_yb = mut*tauyzb
-   u_zb = mut*tauxzb
-   w_xb = mut*tauxzb
-   u_yb = mut*tauxyb
-   v_xb = mut*tauxyb
-   fracdivb = -(mut*tauyyb) - mut*tauxxb - mut*tauzzb
+   heatcoefd = q_y*q_yd + q_x*q_xd + q_z*q_zd
+   q_zd = heatcoef*q_zd
+   q_yd = heatcoef*q_yd
+   q_xd = heatcoef*q_xd
+   mutd = (u_z+w_x)*tauxzd + (two*w_z-fracdiv)*tauzzd + (two*u_x-&
+   &           fracdiv)*tauxxd + (two*v_y-fracdiv)*tauyyd + (u_y+v_x)*&
+   &           tauxyd + (v_z+w_y)*tauyzd
+   v_zd = mut*tauyzd
+   w_yd = mut*tauyzd
+   u_zd = mut*tauxzd
+   w_xd = mut*tauxzd
+   u_yd = mut*tauxyd
+   v_xd = mut*tauxyd
+   fracdivd = -(mut*tauyyd) - mut*tauxxd - mut*tauzzd
    CALL POPREAL8(fracdiv)
-   tempb15 = twothird*fracdivb
-   w_zb = tempb15 + mut*two*tauzzb
-   v_yb = tempb15 + mut*two*tauyyb
-   u_xb = tempb15 + mut*two*tauxxb
-   mulb = mutb + factlamheat*heatcoefb
-   factlamheatb = mul*heatcoefb
-   mueb = mueb + mutb + factturbheat*heatcoefb
-   factturbheatb = mue*heatcoefb
-   gm1b = -(one*factlamheatb/(prandtl*gm1**2)) - one*&
-   &           factturbheatb/(prandtlturb*gm1**2)
-   gammab(i, j, k) = gammab(i, j, k) + half*gm1b
-   gammab(i, j+1, k) = gammab(i, j+1, k) + half*gm1b
+   tempd15 = twothird*fracdivd
+   w_zd = tempd15 + mut*two*tauzzd
+   v_yd = tempd15 + mut*two*tauyyd
+   u_xd = tempd15 + mut*two*tauxxd
+   muld = mutd + factlamheat*heatcoefd
+   factlamheatd = mul*heatcoefd
+   mued = mued + mutd + factturbheat*heatcoefd
+   factturbheatd = mue*heatcoefd
+   gm1d = -(one*factlamheatd/(prandtl*gm1**2)) - one*&
+   &           factturbheatd/(prandtlturb*gm1**2)
+   gammad(i, j, k) = gammad(i, j, k) + half*gm1d
+   gammad(i, j+1, k) = gammad(i, j+1, k) + half*gm1d
    CALL POPREAL8(mut)
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    CALL POPREAL8(mue)
-   revb(i, j, k) = revb(i, j, k) + por*mueb
-   revb(i, j+1, k) = revb(i, j+1, k) + por*mueb
-   mueb = 0.0_8
+   revd(i, j, k) = revd(i, j, k) + por*mued
+   revd(i, j+1, k) = revd(i, j+1, k) + por*mued
+   mued = 0.0_8
    END IF
-   rlvb(i, j, k) = rlvb(i, j, k) + por*mulb
-   rlvb(i, j+1, k) = rlvb(i, j+1, k) + por*mulb
+   rlvd(i, j, k) = rlvd(i, j, k) + por*muld
+   rlvd(i, j+1, k) = rlvd(i, j+1, k) + por*muld
    CALL POPREAL8(por)
    CALL POPREAL8(q_z)
-   ddb = -(ssy*q_yb) - ssx*q_xb - ssz*q_zb
-   sszb = -(dd*q_zb)
+   ddd = -(ssy*q_yd) - ssx*q_xd - ssz*q_zd
+   sszd = -(dd*q_zd)
    CALL POPREAL8(q_y)
-   ssyb = -(dd*q_yb)
+   ssyd = -(dd*q_yd)
    CALL POPREAL8(q_x)
-   ssxb = -(dd*q_xb)
-   pb(i, j+1, k) = pb(i, j+1, k) + ddb
-   pb(i, j, k) = pb(i, j, k) - ddb
+   ssxd = -(dd*q_xd)
+   pd(i, j+1, k) = pd(i, j+1, k) + ddd
+   pd(i, j, k) = pd(i, j, k) - ddd
    dd = w(i, j+1, k, ivz) - w(i, j, k, ivz)
    CALL POPREAL8(w_z)
-   ddb = ssy*w_yb + ssx*w_xb + ssz*w_zb
-   sszb = sszb + dd*w_zb
+   ddd = ssy*w_yd + ssx*w_xd + ssz*w_zd
+   sszd = sszd + dd*w_zd
    CALL POPREAL8(w_y)
-   ssyb = ssyb + dd*w_yb
+   ssyd = ssyd + dd*w_yd
    CALL POPREAL8(w_x)
-   ssxb = ssxb + dd*w_xb
-   wb(i, j+1, k, ivz) = wb(i, j+1, k, ivz) + ddb
-   wb(i, j, k, ivz) = wb(i, j, k, ivz) - ddb
+   ssxd = ssxd + dd*w_xd
+   wd(i, j+1, k, ivz) = wd(i, j+1, k, ivz) + ddd
+   wd(i, j, k, ivz) = wd(i, j, k, ivz) - ddd
    dd = w(i, j+1, k, ivy) - w(i, j, k, ivy)
    CALL POPREAL8(v_z)
-   ddb = ssy*v_yb + ssx*v_xb + ssz*v_zb
-   sszb = sszb + dd*v_zb
+   ddd = ssy*v_yd + ssx*v_xd + ssz*v_zd
+   sszd = sszd + dd*v_zd
    CALL POPREAL8(v_y)
-   ssyb = ssyb + dd*v_yb
+   ssyd = ssyd + dd*v_yd
    CALL POPREAL8(v_x)
-   ssxb = ssxb + dd*v_xb
-   wb(i, j+1, k, ivy) = wb(i, j+1, k, ivy) + ddb
-   wb(i, j, k, ivy) = wb(i, j, k, ivy) - ddb
+   ssxd = ssxd + dd*v_xd
+   wd(i, j+1, k, ivy) = wd(i, j+1, k, ivy) + ddd
+   wd(i, j, k, ivy) = wd(i, j, k, ivy) - ddd
    dd = w(i, j+1, k, ivx) - w(i, j, k, ivx)
    CALL POPREAL8(u_z)
-   ddb = ssy*u_yb + ssx*u_xb + ssz*u_zb
-   sszb = sszb + dd*u_zb
+   ddd = ssy*u_yd + ssx*u_xd + ssz*u_zd
+   sszd = sszd + dd*u_zd
    CALL POPREAL8(u_y)
-   ssyb = ssyb + dd*u_yb
+   ssyd = ssyd + dd*u_yd
    CALL POPREAL8(u_x)
-   ssxb = ssxb + dd*u_xb
-   wb(i, j+1, k, ivx) = wb(i, j+1, k, ivx) + ddb
-   wb(i, j, k, ivx) = wb(i, j, k, ivx) - ddb
+   ssxd = ssxd + dd*u_xd
+   wd(i, j+1, k, ivx) = wd(i, j+1, k, ivx) + ddd
+   wd(i, j, k, ivx) = wd(i, j, k, ivx) - ddd
    CALL POPREAL8(ssz)
    CALL POPREAL8(ssy)
    CALL POPREAL8(ssx)
-   ssb = ssy*ssyb + ssx*ssxb + ssz*sszb
+   ssd = ssy*ssyd + ssx*ssxd + ssz*sszd
    temp1 = ssx**2 + ssy**2 + ssz**2
-   tempb8 = -(one*ssb/temp1**2)
-   sszb = 2*ssz*tempb8 + ss*sszb
-   ssyb = 2*ssy*tempb8 + ss*ssyb
-   ssxb = 2*ssx*tempb8 + ss*ssxb
+   tempd8 = -(one*ssd/temp1**2)
+   sszd = 2*ssz*tempd8 + ss*sszd
+   ssyd = 2*ssy*tempd8 + ss*ssyd
+   ssxd = 2*ssx*tempd8 + ss*ssxd
    CALL POPREAL8(ss)
    CALL POPREAL8(ssz)
-   tempb9 = eighth*sszb
-   xb(i-1, j+1, k-1, 3) = xb(i-1, j+1, k-1, 3) + tempb9
-   xb(i-1, j-1, k-1, 3) = xb(i-1, j-1, k-1, 3) - tempb9
-   xb(i-1, j+1, k, 3) = xb(i-1, j+1, k, 3) + tempb9
-   xb(i-1, j-1, k, 3) = xb(i-1, j-1, k, 3) - tempb9
-   xb(i, j+1, k-1, 3) = xb(i, j+1, k-1, 3) + tempb9
-   xb(i, j-1, k-1, 3) = xb(i, j-1, k-1, 3) - tempb9
-   xb(i, j+1, k, 3) = xb(i, j+1, k, 3) + tempb9
-   xb(i, j-1, k, 3) = xb(i, j-1, k, 3) - tempb9
+   tempd9 = eighth*sszd
+   xd(i-1, j+1, k-1, 3) = xd(i-1, j+1, k-1, 3) + tempd9
+   xd(i-1, j-1, k-1, 3) = xd(i-1, j-1, k-1, 3) - tempd9
+   xd(i-1, j+1, k, 3) = xd(i-1, j+1, k, 3) + tempd9
+   xd(i-1, j-1, k, 3) = xd(i-1, j-1, k, 3) - tempd9
+   xd(i, j+1, k-1, 3) = xd(i, j+1, k-1, 3) + tempd9
+   xd(i, j-1, k-1, 3) = xd(i, j-1, k-1, 3) - tempd9
+   xd(i, j+1, k, 3) = xd(i, j+1, k, 3) + tempd9
+   xd(i, j-1, k, 3) = xd(i, j-1, k, 3) - tempd9
    CALL POPREAL8(ssy)
-   tempb10 = eighth*ssyb
-   xb(i-1, j+1, k-1, 2) = xb(i-1, j+1, k-1, 2) + tempb10
-   xb(i-1, j-1, k-1, 2) = xb(i-1, j-1, k-1, 2) - tempb10
-   xb(i-1, j+1, k, 2) = xb(i-1, j+1, k, 2) + tempb10
-   xb(i-1, j-1, k, 2) = xb(i-1, j-1, k, 2) - tempb10
-   xb(i, j+1, k-1, 2) = xb(i, j+1, k-1, 2) + tempb10
-   xb(i, j-1, k-1, 2) = xb(i, j-1, k-1, 2) - tempb10
-   xb(i, j+1, k, 2) = xb(i, j+1, k, 2) + tempb10
-   xb(i, j-1, k, 2) = xb(i, j-1, k, 2) - tempb10
+   tempd10 = eighth*ssyd
+   xd(i-1, j+1, k-1, 2) = xd(i-1, j+1, k-1, 2) + tempd10
+   xd(i-1, j-1, k-1, 2) = xd(i-1, j-1, k-1, 2) - tempd10
+   xd(i-1, j+1, k, 2) = xd(i-1, j+1, k, 2) + tempd10
+   xd(i-1, j-1, k, 2) = xd(i-1, j-1, k, 2) - tempd10
+   xd(i, j+1, k-1, 2) = xd(i, j+1, k-1, 2) + tempd10
+   xd(i, j-1, k-1, 2) = xd(i, j-1, k-1, 2) - tempd10
+   xd(i, j+1, k, 2) = xd(i, j+1, k, 2) + tempd10
+   xd(i, j-1, k, 2) = xd(i, j-1, k, 2) - tempd10
    CALL POPREAL8(ssx)
-   tempb11 = eighth*ssxb
-   xb(i-1, j+1, k-1, 1) = xb(i-1, j+1, k-1, 1) + tempb11
-   xb(i-1, j-1, k-1, 1) = xb(i-1, j-1, k-1, 1) - tempb11
-   xb(i-1, j+1, k, 1) = xb(i-1, j+1, k, 1) + tempb11
-   xb(i-1, j-1, k, 1) = xb(i-1, j-1, k, 1) - tempb11
-   xb(i, j+1, k-1, 1) = xb(i, j+1, k-1, 1) + tempb11
-   xb(i, j-1, k-1, 1) = xb(i, j-1, k-1, 1) - tempb11
-   xb(i, j+1, k, 1) = xb(i, j+1, k, 1) + tempb11
-   xb(i, j-1, k, 1) = xb(i, j-1, k, 1) - tempb11
+   tempd11 = eighth*ssxd
+   xd(i-1, j+1, k-1, 1) = xd(i-1, j+1, k-1, 1) + tempd11
+   xd(i-1, j-1, k-1, 1) = xd(i-1, j-1, k-1, 1) - tempd11
+   xd(i-1, j+1, k, 1) = xd(i-1, j+1, k, 1) + tempd11
+   xd(i-1, j-1, k, 1) = xd(i-1, j-1, k, 1) - tempd11
+   xd(i, j+1, k-1, 1) = xd(i, j+1, k-1, 1) + tempd11
+   xd(i, j-1, k-1, 1) = xd(i, j-1, k-1, 1) - tempd11
+   xd(i, j+1, k, 1) = xd(i, j+1, k, 1) + tempd11
+   xd(i, j-1, k, 1) = xd(i, j-1, k, 1) - tempd11
    END DO
    END DO
    END DO
    DO k=kl,2,-1
    DO j=jl,2,-1
    DO i=il,1,-1
-   frhoeb = fwb(i+1, j, k, irhoe) - fwb(i, j, k, irhoe)
-   fmzb = fwb(i+1, j, k, imz) - fwb(i, j, k, imz)
-   fmyb = fwb(i+1, j, k, imy) - fwb(i, j, k, imy)
-   fmxb = fwb(i+1, j, k, imx) - fwb(i, j, k, imx)
+   frhoed = fwd(i+1, j, k, irhoe) - fwd(i, j, k, irhoe)
+   fmzd = fwd(i+1, j, k, imz) - fwd(i, j, k, imz)
+   fmyd = fwd(i+1, j, k, imy) - fwd(i, j, k, imy)
+   fmxd = fwd(i+1, j, k, imx) - fwd(i, j, k, imx)
    mul = por*(rlv(i, j, k)+rlv(i+1, j, k))
    mut = mul + mue
    tauzz = mut*(two*w_z-fracdiv)
@@ -822,45 +822,45 @@
    ubar = half*(w(i, j, k, ivx)+w(i+1, j, k, ivx))
    tauyy = mut*(two*v_y-fracdiv)
    tauyz = mut*(v_z+w_y)
-   tempb4 = si(i, j, k, 1)*frhoeb
-   tempb5 = si(i, j, k, 2)*frhoeb
-   tempb6 = si(i, j, k, 3)*frhoeb
-   ubarb = tauxz*tempb6 + tauxy*tempb5 + tauxx*tempb4
-   tauxxb = si(i, j, k, 1)*fmxb + ubar*tempb4
-   vbarb = tauyz*tempb6 + tauyy*tempb5 + tauxy*tempb4
-   tauxyb = si(i, j, k, 1)*fmyb + si(i, j, k, 2)*fmxb + ubar*&
-   &           tempb5 + vbar*tempb4
-   wbarb = tauzz*tempb6 + tauyz*tempb5 + tauxz*tempb4
-   tauxzb = si(i, j, k, 1)*fmzb + si(i, j, k, 3)*fmxb + ubar*&
-   &           tempb6 + wbar*tempb4
-   sib(i, j, k, 1) = sib(i, j, k, 1) + (ubar*tauxx-q_x+vbar*tauxy&
-   &           +wbar*tauxz)*frhoeb
-   tauyyb = si(i, j, k, 2)*fmyb + vbar*tempb5
-   tauyzb = si(i, j, k, 2)*fmzb + si(i, j, k, 3)*fmyb + vbar*&
-   &           tempb6 + wbar*tempb5
-   sib(i, j, k, 2) = sib(i, j, k, 2) + (ubar*tauxy-q_y+vbar*tauyy&
-   &           +wbar*tauyz)*frhoeb
-   tauzzb = si(i, j, k, 3)*fmzb + wbar*tempb6
-   sib(i, j, k, 3) = sib(i, j, k, 3) + (ubar*tauxz-q_z+vbar*tauyz&
-   &           +wbar*tauzz)*frhoeb
-   q_xb = -(si(i, j, k, 1)*frhoeb)
-   q_yb = -(si(i, j, k, 2)*frhoeb)
-   q_zb = -(si(i, j, k, 3)*frhoeb)
-   sib(i, j, k, 1) = sib(i, j, k, 1) + tauxz*fmzb
-   sib(i, j, k, 2) = sib(i, j, k, 2) + tauyz*fmzb
-   sib(i, j, k, 3) = sib(i, j, k, 3) + tauzz*fmzb
-   sib(i, j, k, 1) = sib(i, j, k, 1) + tauxy*fmyb
-   sib(i, j, k, 2) = sib(i, j, k, 2) + tauyy*fmyb
-   sib(i, j, k, 3) = sib(i, j, k, 3) + tauyz*fmyb
-   sib(i, j, k, 1) = sib(i, j, k, 1) + tauxx*fmxb
-   sib(i, j, k, 2) = sib(i, j, k, 2) + tauxy*fmxb
-   sib(i, j, k, 3) = sib(i, j, k, 3) + tauxz*fmxb
-   wb(i, j, k, ivz) = wb(i, j, k, ivz) + half*wbarb
-   wb(i+1, j, k, ivz) = wb(i+1, j, k, ivz) + half*wbarb
-   wb(i, j, k, ivy) = wb(i, j, k, ivy) + half*vbarb
-   wb(i+1, j, k, ivy) = wb(i+1, j, k, ivy) + half*vbarb
-   wb(i, j, k, ivx) = wb(i, j, k, ivx) + half*ubarb
-   wb(i+1, j, k, ivx) = wb(i+1, j, k, ivx) + half*ubarb
+   tempd4 = si(i, j, k, 1)*frhoed
+   tempd5 = si(i, j, k, 2)*frhoed
+   tempd6 = si(i, j, k, 3)*frhoed
+   ubard = tauxz*tempd6 + tauxy*tempd5 + tauxx*tempd4
+   tauxxd = si(i, j, k, 1)*fmxd + ubar*tempd4
+   vbard = tauyz*tempd6 + tauyy*tempd5 + tauxy*tempd4
+   tauxyd = si(i, j, k, 1)*fmyd + si(i, j, k, 2)*fmxd + ubar*&
+   &           tempd5 + vbar*tempd4
+   wbard = tauzz*tempd6 + tauyz*tempd5 + tauxz*tempd4
+   tauxzd = si(i, j, k, 1)*fmzd + si(i, j, k, 3)*fmxd + ubar*&
+   &           tempd6 + wbar*tempd4
+   sid(i, j, k, 1) = sid(i, j, k, 1) + (ubar*tauxx-q_x+vbar*tauxy&
+   &           +wbar*tauxz)*frhoed
+   tauyyd = si(i, j, k, 2)*fmyd + vbar*tempd5
+   tauyzd = si(i, j, k, 2)*fmzd + si(i, j, k, 3)*fmyd + vbar*&
+   &           tempd6 + wbar*tempd5
+   sid(i, j, k, 2) = sid(i, j, k, 2) + (ubar*tauxy-q_y+vbar*tauyy&
+   &           +wbar*tauyz)*frhoed
+   tauzzd = si(i, j, k, 3)*fmzd + wbar*tempd6
+   sid(i, j, k, 3) = sid(i, j, k, 3) + (ubar*tauxz-q_z+vbar*tauyz&
+   &           +wbar*tauzz)*frhoed
+   q_xd = -(si(i, j, k, 1)*frhoed)
+   q_yd = -(si(i, j, k, 2)*frhoed)
+   q_zd = -(si(i, j, k, 3)*frhoed)
+   sid(i, j, k, 1) = sid(i, j, k, 1) + tauxz*fmzd
+   sid(i, j, k, 2) = sid(i, j, k, 2) + tauyz*fmzd
+   sid(i, j, k, 3) = sid(i, j, k, 3) + tauzz*fmzd
+   sid(i, j, k, 1) = sid(i, j, k, 1) + tauxy*fmyd
+   sid(i, j, k, 2) = sid(i, j, k, 2) + tauyy*fmyd
+   sid(i, j, k, 3) = sid(i, j, k, 3) + tauyz*fmyd
+   sid(i, j, k, 1) = sid(i, j, k, 1) + tauxx*fmxd
+   sid(i, j, k, 2) = sid(i, j, k, 2) + tauxy*fmxd
+   sid(i, j, k, 3) = sid(i, j, k, 3) + tauxz*fmxd
+   wd(i, j, k, ivz) = wd(i, j, k, ivz) + half*wbard
+   wd(i+1, j, k, ivz) = wd(i+1, j, k, ivz) + half*wbard
+   wd(i, j, k, ivy) = wd(i, j, k, ivy) + half*vbard
+   wd(i+1, j, k, ivy) = wd(i+1, j, k, ivy) + half*vbard
+   wd(i, j, k, ivx) = wd(i, j, k, ivx) + half*ubard
+   wd(i+1, j, k, ivx) = wd(i+1, j, k, ivx) + half*ubard
    dd = p(i+1, j, k) - p(i, j, k)
    gm1 = half*(gamma(i, j, k)+gamma(i+1, j, k)) - one
    factlamheat = one/(prandtl*gm1)
@@ -869,123 +869,123 @@
    CALL POPREAL8(q_z)
    CALL POPREAL8(q_y)
    CALL POPREAL8(q_x)
-   heatcoefb = q_y*q_yb + q_x*q_xb + q_z*q_zb
-   q_zb = heatcoef*q_zb
-   q_yb = heatcoef*q_yb
-   q_xb = heatcoef*q_xb
-   mutb = (u_z+w_x)*tauxzb + (two*w_z-fracdiv)*tauzzb + (two*u_x-&
-   &           fracdiv)*tauxxb + (two*v_y-fracdiv)*tauyyb + (u_y+v_x)*&
-   &           tauxyb + (v_z+w_y)*tauyzb
-   v_zb = mut*tauyzb
-   w_yb = mut*tauyzb
-   u_zb = mut*tauxzb
-   w_xb = mut*tauxzb
-   u_yb = mut*tauxyb
-   v_xb = mut*tauxyb
-   fracdivb = -(mut*tauyyb) - mut*tauxxb - mut*tauzzb
+   heatcoefd = q_y*q_yd + q_x*q_xd + q_z*q_zd
+   q_zd = heatcoef*q_zd
+   q_yd = heatcoef*q_yd
+   q_xd = heatcoef*q_xd
+   mutd = (u_z+w_x)*tauxzd + (two*w_z-fracdiv)*tauzzd + (two*u_x-&
+   &           fracdiv)*tauxxd + (two*v_y-fracdiv)*tauyyd + (u_y+v_x)*&
+   &           tauxyd + (v_z+w_y)*tauyzd
+   v_zd = mut*tauyzd
+   w_yd = mut*tauyzd
+   u_zd = mut*tauxzd
+   w_xd = mut*tauxzd
+   u_yd = mut*tauxyd
+   v_xd = mut*tauxyd
+   fracdivd = -(mut*tauyyd) - mut*tauxxd - mut*tauzzd
    CALL POPREAL8(fracdiv)
-   tempb7 = twothird*fracdivb
-   w_zb = tempb7 + mut*two*tauzzb
-   v_yb = tempb7 + mut*two*tauyyb
-   u_xb = tempb7 + mut*two*tauxxb
-   mulb = mutb + factlamheat*heatcoefb
-   factlamheatb = mul*heatcoefb
-   mueb = mueb + mutb + factturbheat*heatcoefb
-   factturbheatb = mue*heatcoefb
-   gm1b = -(one*factlamheatb/(prandtl*gm1**2)) - one*&
-   &           factturbheatb/(prandtlturb*gm1**2)
-   gammab(i, j, k) = gammab(i, j, k) + half*gm1b
-   gammab(i+1, j, k) = gammab(i+1, j, k) + half*gm1b
+   tempd7 = twothird*fracdivd
+   w_zd = tempd7 + mut*two*tauzzd
+   v_yd = tempd7 + mut*two*tauyyd
+   u_xd = tempd7 + mut*two*tauxxd
+   muld = mutd + factlamheat*heatcoefd
+   factlamheatd = mul*heatcoefd
+   mued = mued + mutd + factturbheat*heatcoefd
+   factturbheatd = mue*heatcoefd
+   gm1d = -(one*factlamheatd/(prandtl*gm1**2)) - one*&
+   &           factturbheatd/(prandtlturb*gm1**2)
+   gammad(i, j, k) = gammad(i, j, k) + half*gm1d
+   gammad(i+1, j, k) = gammad(i+1, j, k) + half*gm1d
    CALL POPREAL8(mut)
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    CALL POPREAL8(mue)
-   revb(i, j, k) = revb(i, j, k) + por*mueb
-   revb(i+1, j, k) = revb(i+1, j, k) + por*mueb
-   mueb = 0.0_8
+   revd(i, j, k) = revd(i, j, k) + por*mued
+   revd(i+1, j, k) = revd(i+1, j, k) + por*mued
+   mued = 0.0_8
    END IF
-   rlvb(i, j, k) = rlvb(i, j, k) + por*mulb
-   rlvb(i+1, j, k) = rlvb(i+1, j, k) + por*mulb
+   rlvd(i, j, k) = rlvd(i, j, k) + por*muld
+   rlvd(i+1, j, k) = rlvd(i+1, j, k) + por*muld
    CALL POPREAL8(por)
    CALL POPREAL8(q_z)
-   ddb = -(ssy*q_yb) - ssx*q_xb - ssz*q_zb
-   sszb = -(dd*q_zb)
+   ddd = -(ssy*q_yd) - ssx*q_xd - ssz*q_zd
+   sszd = -(dd*q_zd)
    CALL POPREAL8(q_y)
-   ssyb = -(dd*q_yb)
+   ssyd = -(dd*q_yd)
    CALL POPREAL8(q_x)
-   ssxb = -(dd*q_xb)
-   pb(i+1, j, k) = pb(i+1, j, k) + ddb
-   pb(i, j, k) = pb(i, j, k) - ddb
+   ssxd = -(dd*q_xd)
+   pd(i+1, j, k) = pd(i+1, j, k) + ddd
+   pd(i, j, k) = pd(i, j, k) - ddd
    dd = w(i+1, j, k, ivz) - w(i, j, k, ivz)
    CALL POPREAL8(w_z)
-   ddb = ssy*w_yb + ssx*w_xb + ssz*w_zb
-   sszb = sszb + dd*w_zb
+   ddd = ssy*w_yd + ssx*w_xd + ssz*w_zd
+   sszd = sszd + dd*w_zd
    CALL POPREAL8(w_y)
-   ssyb = ssyb + dd*w_yb
+   ssyd = ssyd + dd*w_yd
    CALL POPREAL8(w_x)
-   ssxb = ssxb + dd*w_xb
-   wb(i+1, j, k, ivz) = wb(i+1, j, k, ivz) + ddb
-   wb(i, j, k, ivz) = wb(i, j, k, ivz) - ddb
+   ssxd = ssxd + dd*w_xd
+   wd(i+1, j, k, ivz) = wd(i+1, j, k, ivz) + ddd
+   wd(i, j, k, ivz) = wd(i, j, k, ivz) - ddd
    dd = w(i+1, j, k, ivy) - w(i, j, k, ivy)
    CALL POPREAL8(v_z)
-   ddb = ssy*v_yb + ssx*v_xb + ssz*v_zb
-   sszb = sszb + dd*v_zb
+   ddd = ssy*v_yd + ssx*v_xd + ssz*v_zd
+   sszd = sszd + dd*v_zd
    CALL POPREAL8(v_y)
-   ssyb = ssyb + dd*v_yb
+   ssyd = ssyd + dd*v_yd
    CALL POPREAL8(v_x)
-   ssxb = ssxb + dd*v_xb
-   wb(i+1, j, k, ivy) = wb(i+1, j, k, ivy) + ddb
-   wb(i, j, k, ivy) = wb(i, j, k, ivy) - ddb
+   ssxd = ssxd + dd*v_xd
+   wd(i+1, j, k, ivy) = wd(i+1, j, k, ivy) + ddd
+   wd(i, j, k, ivy) = wd(i, j, k, ivy) - ddd
    dd = w(i+1, j, k, ivx) - w(i, j, k, ivx)
    CALL POPREAL8(u_z)
-   ddb = ssy*u_yb + ssx*u_xb + ssz*u_zb
-   sszb = sszb + dd*u_zb
+   ddd = ssy*u_yd + ssx*u_xd + ssz*u_zd
+   sszd = sszd + dd*u_zd
    CALL POPREAL8(u_y)
-   ssyb = ssyb + dd*u_yb
+   ssyd = ssyd + dd*u_yd
    CALL POPREAL8(u_x)
-   ssxb = ssxb + dd*u_xb
-   wb(i+1, j, k, ivx) = wb(i+1, j, k, ivx) + ddb
-   wb(i, j, k, ivx) = wb(i, j, k, ivx) - ddb
+   ssxd = ssxd + dd*u_xd
+   wd(i+1, j, k, ivx) = wd(i+1, j, k, ivx) + ddd
+   wd(i, j, k, ivx) = wd(i, j, k, ivx) - ddd
    CALL POPREAL8(ssz)
    CALL POPREAL8(ssy)
    CALL POPREAL8(ssx)
-   ssb = ssy*ssyb + ssx*ssxb + ssz*sszb
+   ssd = ssy*ssyd + ssx*ssxd + ssz*sszd
    temp0 = ssx**2 + ssy**2 + ssz**2
-   tempb0 = -(one*ssb/temp0**2)
-   sszb = 2*ssz*tempb0 + ss*sszb
-   ssyb = 2*ssy*tempb0 + ss*ssyb
-   ssxb = 2*ssx*tempb0 + ss*ssxb
+   tempd0 = -(one*ssd/temp0**2)
+   sszd = 2*ssz*tempd0 + ss*sszd
+   ssyd = 2*ssy*tempd0 + ss*ssyd
+   ssxd = 2*ssx*tempd0 + ss*ssxd
    CALL POPREAL8(ss)
    CALL POPREAL8(ssz)
-   tempb1 = eighth*sszb
-   xb(i+1, j-1, k-1, 3) = xb(i+1, j-1, k-1, 3) + tempb1
-   xb(i-1, j-1, k-1, 3) = xb(i-1, j-1, k-1, 3) - tempb1
-   xb(i+1, j-1, k, 3) = xb(i+1, j-1, k, 3) + tempb1
-   xb(i-1, j-1, k, 3) = xb(i-1, j-1, k, 3) - tempb1
-   xb(i+1, j, k-1, 3) = xb(i+1, j, k-1, 3) + tempb1
-   xb(i-1, j, k-1, 3) = xb(i-1, j, k-1, 3) - tempb1
-   xb(i+1, j, k, 3) = xb(i+1, j, k, 3) + tempb1
-   xb(i-1, j, k, 3) = xb(i-1, j, k, 3) - tempb1
+   tempd1 = eighth*sszd
+   xd(i+1, j-1, k-1, 3) = xd(i+1, j-1, k-1, 3) + tempd1
+   xd(i-1, j-1, k-1, 3) = xd(i-1, j-1, k-1, 3) - tempd1
+   xd(i+1, j-1, k, 3) = xd(i+1, j-1, k, 3) + tempd1
+   xd(i-1, j-1, k, 3) = xd(i-1, j-1, k, 3) - tempd1
+   xd(i+1, j, k-1, 3) = xd(i+1, j, k-1, 3) + tempd1
+   xd(i-1, j, k-1, 3) = xd(i-1, j, k-1, 3) - tempd1
+   xd(i+1, j, k, 3) = xd(i+1, j, k, 3) + tempd1
+   xd(i-1, j, k, 3) = xd(i-1, j, k, 3) - tempd1
    CALL POPREAL8(ssy)
-   tempb2 = eighth*ssyb
-   xb(i+1, j-1, k-1, 2) = xb(i+1, j-1, k-1, 2) + tempb2
-   xb(i-1, j-1, k-1, 2) = xb(i-1, j-1, k-1, 2) - tempb2
-   xb(i+1, j-1, k, 2) = xb(i+1, j-1, k, 2) + tempb2
-   xb(i-1, j-1, k, 2) = xb(i-1, j-1, k, 2) - tempb2
-   xb(i+1, j, k-1, 2) = xb(i+1, j, k-1, 2) + tempb2
-   xb(i-1, j, k-1, 2) = xb(i-1, j, k-1, 2) - tempb2
-   xb(i+1, j, k, 2) = xb(i+1, j, k, 2) + tempb2
-   xb(i-1, j, k, 2) = xb(i-1, j, k, 2) - tempb2
+   tempd2 = eighth*ssyd
+   xd(i+1, j-1, k-1, 2) = xd(i+1, j-1, k-1, 2) + tempd2
+   xd(i-1, j-1, k-1, 2) = xd(i-1, j-1, k-1, 2) - tempd2
+   xd(i+1, j-1, k, 2) = xd(i+1, j-1, k, 2) + tempd2
+   xd(i-1, j-1, k, 2) = xd(i-1, j-1, k, 2) - tempd2
+   xd(i+1, j, k-1, 2) = xd(i+1, j, k-1, 2) + tempd2
+   xd(i-1, j, k-1, 2) = xd(i-1, j, k-1, 2) - tempd2
+   xd(i+1, j, k, 2) = xd(i+1, j, k, 2) + tempd2
+   xd(i-1, j, k, 2) = xd(i-1, j, k, 2) - tempd2
    CALL POPREAL8(ssx)
-   tempb3 = eighth*ssxb
-   xb(i+1, j-1, k-1, 1) = xb(i+1, j-1, k-1, 1) + tempb3
-   xb(i-1, j-1, k-1, 1) = xb(i-1, j-1, k-1, 1) - tempb3
-   xb(i+1, j-1, k, 1) = xb(i+1, j-1, k, 1) + tempb3
-   xb(i-1, j-1, k, 1) = xb(i-1, j-1, k, 1) - tempb3
-   xb(i+1, j, k-1, 1) = xb(i+1, j, k-1, 1) + tempb3
-   xb(i-1, j, k-1, 1) = xb(i-1, j, k-1, 1) - tempb3
-   xb(i+1, j, k, 1) = xb(i+1, j, k, 1) + tempb3
-   xb(i-1, j, k, 1) = xb(i-1, j, k, 1) - tempb3
+   tempd3 = eighth*ssxd
+   xd(i+1, j-1, k-1, 1) = xd(i+1, j-1, k-1, 1) + tempd3
+   xd(i-1, j-1, k-1, 1) = xd(i-1, j-1, k-1, 1) - tempd3
+   xd(i+1, j-1, k, 1) = xd(i+1, j-1, k, 1) + tempd3
+   xd(i-1, j-1, k, 1) = xd(i-1, j-1, k, 1) - tempd3
+   xd(i+1, j, k-1, 1) = xd(i+1, j, k-1, 1) + tempd3
+   xd(i-1, j, k-1, 1) = xd(i-1, j, k-1, 1) - tempd3
+   xd(i+1, j, k, 1) = xd(i+1, j, k, 1) + tempd3
+   xd(i-1, j, k, 1) = xd(i-1, j, k, 1) - tempd3
    END DO
    END DO
    END DO
@@ -994,18 +994,18 @@
    DO i=ie,1,-1
    CALL POPREAL8(p(i, j, k))
    temp = w(i, j, k, irho)
-   tempb = pb(i, j, k)/temp
-   gammab(i, j, k) = gammab(i, j, k) + p(i, j, k)*tempb
-   wb(i, j, k, irho) = wb(i, j, k, irho) - gamma(i, j, k)*p(i, j&
-   &           , k)*tempb/temp
-   pb(i, j, k) = gamma(i, j, k)*tempb
+   tempd = pd(i, j, k)/temp
+   gammad(i, j, k) = gammad(i, j, k) + p(i, j, k)*tempd
+   wd(i, j, k, irho) = wd(i, j, k, irho) - gamma(i, j, k)*p(i, j&
+   &           , k)*tempd/temp
+   pd(i, j, k) = gamma(i, j, k)*tempd
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    CALL POPREAL8(p(i, j, k))
-   wb(i, j, k, irho) = wb(i, j, k, irho) - twothird*w(i, j, k, &
-   &             itu1)*pb(i, j, k)
-   wb(i, j, k, itu1) = wb(i, j, k, itu1) - twothird*w(i, j, k, &
-   &             irho)*pb(i, j, k)
+   wd(i, j, k, irho) = wd(i, j, k, irho) - twothird*w(i, j, k, &
+   &             itu1)*pd(i, j, k)
+   wd(i, j, k, itu1) = wd(i, j, k, itu1) - twothird*w(i, j, k, &
+   &             irho)*pd(i, j, k)
    END IF
    END DO
    END DO

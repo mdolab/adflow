@@ -14,7 +14,7 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   SUBROUTINE COMPUTELEASTSQUARESREGRESSION_B(y, yb, x, npts, m, mb, b, bb)
+   SUBROUTINE COMPUTELEASTSQUARESREGRESSION_B(y, yd, x, npts, m, md, b, bd)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -28,15 +28,15 @@
    !Subroutine arguments 
    INTEGER(kind=inttype) :: npts
    REAL(kind=realtype), DIMENSION(npts) :: x, y
-   REAL(kind=realtype), DIMENSION(npts) :: yb
+   REAL(kind=realtype), DIMENSION(npts) :: yd
    REAL(kind=realtype) :: m, b
-   REAL(kind=realtype) :: mb, bb
+   REAL(kind=realtype) :: md, bd
    !local variables
    REAL(kind=realtype) :: sumx, sumy, sumx2, sumxy
-   REAL(kind=realtype) :: sumyb, sumxyb
+   REAL(kind=realtype) :: sumyd, sumxyd
    INTEGER(kind=inttype) :: i
-   REAL(kind=realtype) :: tempb0
-   REAL(kind=realtype) :: tempb
+   REAL(kind=realtype) :: tempd
+   REAL(kind=realtype) :: tempd0
    !begin execution
    sumx = 0.0
    sumx2 = 0.0
@@ -44,11 +44,11 @@
    sumx = sumx + x(i)
    sumx2 = sumx2 + x(i)*x(i)
    END DO
-   tempb0 = mb/(npts*sumx2-sumx**2)
-   tempb = bb/(npts*sumx2-sumx**2)
-   sumyb = sumx2*tempb - sumx*tempb0
-   sumxyb = npts*tempb0 - sumx*tempb
+   tempd0 = md/(npts*sumx2-sumx**2)
+   tempd = bd/(npts*sumx2-sumx**2)
+   sumyd = sumx2*tempd - sumx*tempd0
+   sumxyd = npts*tempd0 - sumx*tempd
    DO i=npts,1,-1
-   yb(i) = yb(i) + sumyb + x(i)*sumxyb
+   yd(i) = yd(i) + sumyd + x(i)*sumxyd
    END DO
    END SUBROUTINE COMPUTELEASTSQUARESREGRESSION_B

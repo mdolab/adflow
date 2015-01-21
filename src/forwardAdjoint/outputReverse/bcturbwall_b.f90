@@ -31,7 +31,7 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   USE BLOCKPOINTERS_B
+   USE BLOCKPOINTERS
    USE BCTYPES
    USE FLOWVARREFSTATE
    USE INPUTPHYSICS
@@ -47,7 +47,7 @@
    !
    INTEGER(kind=inttype) :: i, j, ii, jj, iimax, jjmax
    REAL(kind=realtype) :: tmpd, tmpe, tmpf, nu
-   REAL(kind=realtype) :: tmpdb, nub
+   REAL(kind=realtype) :: tmpdd, nud
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: bmt
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: bvt, ww2
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv2, dd2wall
@@ -58,16 +58,16 @@
    REAL(kind=realtype) :: temp2
    REAL(kind=realtype) :: temp1
    REAL(kind=realtype) :: temp0
-   REAL(kind=realtype) :: tempb4
-   REAL(kind=realtype) :: tempb3
-   REAL(kind=realtype) :: tempb2
-   REAL(kind=realtype) :: tempb1
-   REAL(kind=realtype) :: tempb0
    REAL(kind=realtype) :: temp10
    INTEGER(kind=inttype) :: y12
    INTEGER(kind=inttype) :: y11
    INTEGER(kind=inttype) :: y10
-   REAL(kind=realtype) :: tempb
+   REAL(kind=realtype) :: tempd
+   REAL(kind=realtype) :: tempd4
+   REAL(kind=realtype) :: tempd3
+   REAL(kind=realtype) :: tempd2
+   REAL(kind=realtype) :: tempd1
+   REAL(kind=realtype) :: tempd0
    INTEGER(kind=inttype) :: y9
    REAL(kind=realtype) :: temp
    INTEGER(kind=inttype) :: y8
@@ -148,16 +148,16 @@
    DO i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
    nu = rlv(2, i, j)/w(2, i, j, irho)
    tmpd = one/(rkwbeta1*d2wall(2, ii, jj)**2)
-   tempb = two*60.0_realType*bvti1b(i, j, itu2)
-   nub = tmpd*tempb
-   tmpdb = nu*tempb
-   bvti1b(i, j, itu2) = 0.0_8
+   tempd = two*60.0_realType*bvti1d(i, j, itu2)
+   nud = tmpd*tempd
+   tmpdd = nu*tempd
+   bvti1d(i, j, itu2) = 0.0_8
    temp0 = rkwbeta1*d2wall(2, ii, jj)**2
-   d2wallb(2, ii, jj) = d2wallb(2, ii, jj) - rkwbeta1*one*2*&
-   &           d2wall(2, ii, jj)*tmpdb/temp0**2
+   d2walld(2, ii, jj) = d2walld(2, ii, jj) - rkwbeta1*one*2*&
+   &           d2wall(2, ii, jj)*tmpdd/temp0**2
    temp = w(2, i, j, irho)
-   rlvb(2, i, j) = rlvb(2, i, j) + nub/temp
-   wb(2, i, j, irho) = wb(2, i, j, irho) - rlv(2, i, j)*nub/temp&
+   rlvd(2, i, j) = rlvd(2, i, j) + nud/temp
+   wd(2, i, j, irho) = wd(2, i, j, irho) - rlv(2, i, j)*nud/temp&
    &           **2
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
@@ -212,16 +212,16 @@
    DO i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
    nu = rlv(jl, i, j)/w(il, i, j, irho)
    tmpd = one/(rkwbeta1*d2wall(il, ii, jj)**2)
-   tempb0 = two*60.0_realType*bvti2b(i, j, itu2)
-   nub = tmpd*tempb0
-   tmpdb = nu*tempb0
-   bvti2b(i, j, itu2) = 0.0_8
+   tempd0 = two*60.0_realType*bvti2d(i, j, itu2)
+   nud = tmpd*tempd0
+   tmpdd = nu*tempd0
+   bvti2d(i, j, itu2) = 0.0_8
    temp2 = rkwbeta1*d2wall(il, ii, jj)**2
-   d2wallb(il, ii, jj) = d2wallb(il, ii, jj) - rkwbeta1*one*2*&
-   &           d2wall(il, ii, jj)*tmpdb/temp2**2
+   d2walld(il, ii, jj) = d2walld(il, ii, jj) - rkwbeta1*one*2*&
+   &           d2wall(il, ii, jj)*tmpdd/temp2**2
    temp1 = w(il, i, j, irho)
-   rlvb(jl, i, j) = rlvb(jl, i, j) + nub/temp1
-   wb(il, i, j, irho) = wb(il, i, j, irho) - rlv(jl, i, j)*nub/&
+   rlvd(jl, i, j) = rlvd(jl, i, j) + nud/temp1
+   wd(il, i, j, irho) = wd(il, i, j, irho) - rlv(jl, i, j)*nud/&
    &           temp1**2
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
@@ -276,16 +276,16 @@
    DO i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
    nu = rlv(i, 2, j)/w(i, 2, j, irho)
    tmpd = one/(rkwbeta1*d2wall(ii, 2, jj)**2)
-   tempb1 = two*60.0_realType*bvtj1b(i, j, itu2)
-   nub = tmpd*tempb1
-   tmpdb = nu*tempb1
-   bvtj1b(i, j, itu2) = 0.0_8
+   tempd1 = two*60.0_realType*bvtj1d(i, j, itu2)
+   nud = tmpd*tempd1
+   tmpdd = nu*tempd1
+   bvtj1d(i, j, itu2) = 0.0_8
    temp4 = rkwbeta1*d2wall(ii, 2, jj)**2
-   d2wallb(ii, 2, jj) = d2wallb(ii, 2, jj) - rkwbeta1*one*2*&
-   &           d2wall(ii, 2, jj)*tmpdb/temp4**2
+   d2walld(ii, 2, jj) = d2walld(ii, 2, jj) - rkwbeta1*one*2*&
+   &           d2wall(ii, 2, jj)*tmpdd/temp4**2
    temp3 = w(i, 2, j, irho)
-   rlvb(i, 2, j) = rlvb(i, 2, j) + nub/temp3
-   wb(i, 2, j, irho) = wb(i, 2, j, irho) - rlv(i, 2, j)*nub/temp3&
+   rlvd(i, 2, j) = rlvd(i, 2, j) + nud/temp3
+   wd(i, 2, j, irho) = wd(i, 2, j, irho) - rlv(i, 2, j)*nud/temp3&
    &           **2
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
@@ -340,16 +340,16 @@
    DO i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
    nu = rlv(i, jl, j)/w(i, jl, j, irho)
    tmpd = one/(rkwbeta1*d2wall(ii, jl, jj)**2)
-   tempb2 = two*60.0_realType*bvtj2b(i, j, itu2)
-   nub = tmpd*tempb2
-   tmpdb = nu*tempb2
-   bvtj2b(i, j, itu2) = 0.0_8
+   tempd2 = two*60.0_realType*bvtj2d(i, j, itu2)
+   nud = tmpd*tempd2
+   tmpdd = nu*tempd2
+   bvtj2d(i, j, itu2) = 0.0_8
    temp6 = rkwbeta1*d2wall(ii, jl, jj)**2
-   d2wallb(ii, jl, jj) = d2wallb(ii, jl, jj) - rkwbeta1*one*2*&
-   &           d2wall(ii, jl, jj)*tmpdb/temp6**2
+   d2walld(ii, jl, jj) = d2walld(ii, jl, jj) - rkwbeta1*one*2*&
+   &           d2wall(ii, jl, jj)*tmpdd/temp6**2
    temp5 = w(i, jl, j, irho)
-   rlvb(i, jl, j) = rlvb(i, jl, j) + nub/temp5
-   wb(i, jl, j, irho) = wb(i, jl, j, irho) - rlv(i, jl, j)*nub/&
+   rlvd(i, jl, j) = rlvd(i, jl, j) + nud/temp5
+   wd(i, jl, j, irho) = wd(i, jl, j, irho) - rlv(i, jl, j)*nud/&
    &           temp5**2
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
@@ -404,16 +404,16 @@
    DO i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
    nu = rlv(i, j, 2)/w(i, j, 2, irho)
    tmpd = one/(rkwbeta1*d2wall(ii, jj, 2)**2)
-   tempb3 = two*60.0_realType*bvtk1b(i, j, itu2)
-   nub = tmpd*tempb3
-   tmpdb = nu*tempb3
-   bvtk1b(i, j, itu2) = 0.0_8
+   tempd3 = two*60.0_realType*bvtk1d(i, j, itu2)
+   nud = tmpd*tempd3
+   tmpdd = nu*tempd3
+   bvtk1d(i, j, itu2) = 0.0_8
    temp8 = rkwbeta1*d2wall(ii, jj, 2)**2
-   d2wallb(ii, jj, 2) = d2wallb(ii, jj, 2) - rkwbeta1*one*2*&
-   &           d2wall(ii, jj, 2)*tmpdb/temp8**2
+   d2walld(ii, jj, 2) = d2walld(ii, jj, 2) - rkwbeta1*one*2*&
+   &           d2wall(ii, jj, 2)*tmpdd/temp8**2
    temp7 = w(i, j, 2, irho)
-   rlvb(i, j, 2) = rlvb(i, j, 2) + nub/temp7
-   wb(i, j, 2, irho) = wb(i, j, 2, irho) - rlv(i, j, 2)*nub/temp7&
+   rlvd(i, j, 2) = rlvd(i, j, 2) + nud/temp7
+   wd(i, j, 2, irho) = wd(i, j, 2, irho) - rlv(i, j, 2)*nud/temp7&
    &           **2
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
@@ -468,16 +468,16 @@
    DO i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
    nu = rlv(i, j, kl)/w(i, j, kl, irho)
    tmpd = one/(rkwbeta1*d2wall(ii, jj, kl)**2)
-   tempb4 = two*60.0_realType*bvtk2b(i, j, itu2)
-   nub = tmpd*tempb4
-   tmpdb = nu*tempb4
-   bvtk2b(i, j, itu2) = 0.0_8
+   tempd4 = two*60.0_realType*bvtk2d(i, j, itu2)
+   nud = tmpd*tempd4
+   tmpdd = nu*tempd4
+   bvtk2d(i, j, itu2) = 0.0_8
    temp10 = rkwbeta1*d2wall(ii, jj, kl)**2
-   d2wallb(ii, jj, kl) = d2wallb(ii, jj, kl) - rkwbeta1*one*2*&
-   &           d2wall(ii, jj, kl)*tmpdb/temp10**2
+   d2walld(ii, jj, kl) = d2walld(ii, jj, kl) - rkwbeta1*one*2*&
+   &           d2wall(ii, jj, kl)*tmpdd/temp10**2
    temp9 = w(i, j, kl, irho)
-   rlvb(i, j, kl) = rlvb(i, j, kl) + nub/temp9
-   wb(i, j, kl, irho) = wb(i, j, kl, irho) - rlv(i, j, kl)*nub/&
+   rlvd(i, j, kl) = rlvd(i, j, kl) + nud/temp9
+   wd(i, j, kl, irho) = wd(i, j, kl, irho) - rlv(i, j, kl)*nud/&
    &           temp9**2
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN

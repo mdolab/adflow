@@ -15,9 +15,9 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   SUBROUTINE RESETGAMMABWD_B(nn, gamma1, gamma1b, gamma2, gamma2b)
+   SUBROUTINE RESETGAMMABWD_B(nn, gamma1, gamma1d, gamma2, gamma2d)
    USE BCTYPES
-   USE BLOCKPOINTERS_B
+   USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
    IMPLICIT NONE
    !
@@ -25,7 +25,7 @@
    !
    INTEGER(kind=inttype), INTENT(IN) :: nn
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: gamma1, gamma2
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: gamma1b, gamma2b
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: gamma1d, gamma2d
    !
    !      ******************************************************************
    !      *                                                                *
@@ -37,34 +37,34 @@
    ! the pointers accordinly.
    SELECT CASE  (bcfaceid(nn)) 
    CASE (imin) 
-   gamma2b(1:je, 1:ke) = gamma2b(1:je, 1:ke) + gammab(2, 1:je, 1:ke)
-   gammab(2, 1:je, 1:ke) = 0.0_8
-   gamma1b(1:je, 1:ke) = gamma1b(1:je, 1:ke) + gammab(1, 1:je, 1:ke)
-   gammab(1, 1:je, 1:ke) = 0.0_8
+   gamma2d(1:je, 1:ke) = gamma2d(1:je, 1:ke) + gammad(2, 1:je, 1:ke)
+   gammad(2, 1:je, 1:ke) = 0.0_8
+   gamma1d(1:je, 1:ke) = gamma1d(1:je, 1:ke) + gammad(1, 1:je, 1:ke)
+   gammad(1, 1:je, 1:ke) = 0.0_8
    CASE (imax) 
-   gamma2b(1:je, 1:ke) = gamma2b(1:je, 1:ke) + gammab(il, 1:je, 1:ke)
-   gammab(il, 1:je, 1:ke) = 0.0_8
-   gamma1b(1:je, 1:ke) = gamma1b(1:je, 1:ke) + gammab(ie, 1:je, 1:ke)
-   gammab(ie, 1:je, 1:ke) = 0.0_8
+   gamma2d(1:je, 1:ke) = gamma2d(1:je, 1:ke) + gammad(il, 1:je, 1:ke)
+   gammad(il, 1:je, 1:ke) = 0.0_8
+   gamma1d(1:je, 1:ke) = gamma1d(1:je, 1:ke) + gammad(ie, 1:je, 1:ke)
+   gammad(ie, 1:je, 1:ke) = 0.0_8
    CASE (jmin) 
-   gamma2b(1:ie, 1:ke) = gamma2b(1:ie, 1:ke) + gammab(1:ie, 2, 1:ke)
-   gammab(1:ie, 2, 1:ke) = 0.0_8
-   gamma1b(1:ie, 1:ke) = gamma1b(1:ie, 1:ke) + gammab(1:ie, 1, 1:ke)
-   gammab(1:ie, 1, 1:ke) = 0.0_8
+   gamma2d(1:ie, 1:ke) = gamma2d(1:ie, 1:ke) + gammad(1:ie, 2, 1:ke)
+   gammad(1:ie, 2, 1:ke) = 0.0_8
+   gamma1d(1:ie, 1:ke) = gamma1d(1:ie, 1:ke) + gammad(1:ie, 1, 1:ke)
+   gammad(1:ie, 1, 1:ke) = 0.0_8
    CASE (jmax) 
-   gamma2b(1:ie, 1:ke) = gamma2b(1:ie, 1:ke) + gammab(1:ie, jl, 1:ke)
-   gammab(1:ie, jl, 1:ke) = 0.0_8
-   gamma1b(1:ie, 1:ke) = gamma1b(1:ie, 1:ke) + gammab(1:ie, je, 1:ke)
-   gammab(1:ie, je, 1:ke) = 0.0_8
+   gamma2d(1:ie, 1:ke) = gamma2d(1:ie, 1:ke) + gammad(1:ie, jl, 1:ke)
+   gammad(1:ie, jl, 1:ke) = 0.0_8
+   gamma1d(1:ie, 1:ke) = gamma1d(1:ie, 1:ke) + gammad(1:ie, je, 1:ke)
+   gammad(1:ie, je, 1:ke) = 0.0_8
    CASE (kmin) 
-   gamma2b(1:ie, 1:je) = gamma2b(1:ie, 1:je) + gammab(1:ie, 1:je, 2)
-   gammab(1:ie, 1:je, 2) = 0.0_8
-   gamma1b(1:ie, 1:je) = gamma1b(1:ie, 1:je) + gammab(1:ie, 1:je, 1)
-   gammab(1:ie, 1:je, 1) = 0.0_8
+   gamma2d(1:ie, 1:je) = gamma2d(1:ie, 1:je) + gammad(1:ie, 1:je, 2)
+   gammad(1:ie, 1:je, 2) = 0.0_8
+   gamma1d(1:ie, 1:je) = gamma1d(1:ie, 1:je) + gammad(1:ie, 1:je, 1)
+   gammad(1:ie, 1:je, 1) = 0.0_8
    CASE (kmax) 
-   gamma2b(1:ie, 1:je) = gamma2b(1:ie, 1:je) + gammab(1:ie, 1:je, kl)
-   gammab(1:ie, 1:je, kl) = 0.0_8
-   gamma1b(1:ie, 1:je) = gamma1b(1:ie, 1:je) + gammab(1:ie, 1:je, ke)
-   gammab(1:ie, 1:je, ke) = 0.0_8
+   gamma2d(1:ie, 1:je) = gamma2d(1:ie, 1:je) + gammad(1:ie, 1:je, kl)
+   gammad(1:ie, 1:je, kl) = 0.0_8
+   gamma1d(1:ie, 1:je) = gamma1d(1:ie, 1:je) + gammad(1:ie, 1:je, ke)
+   gammad(1:ie, 1:je, ke) = 0.0_8
    END SELECT
    END SUBROUTINE RESETGAMMABWD_B

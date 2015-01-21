@@ -37,7 +37,7 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   USE BLOCKPOINTERS_B
+   USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
    USE INPUTPHYSICS
    USE INPUTTIMESPECTRAL
@@ -57,9 +57,9 @@
    !
    INTEGER(kind=inttype) :: i, j, k, ii, jj, nn
    REAL(kind=realtype) :: oneoverdt, tmp
-   REAL(kind=realtype) :: oneoverdtb, tmpb
+   REAL(kind=realtype) :: oneoverdtd, tmpd
    REAL(kind=realtype) :: tmp0
-   REAL(kind=realtype) :: tmpb0
+   REAL(kind=realtype) :: tmpd0
    !
    !      ******************************************************************
    !      *                                                                *
@@ -105,21 +105,21 @@
    END DO
    END DO
    END DO nadvloopunsteady
-   oneoverdtb = 0.0_8
+   oneoverdtd = 0.0_8
    DO ii=nadv,1,-1
    DO k=kl,2,-1
    DO j=jl,2,-1
    DO i=il,2,-1
-   oneoverdtb = oneoverdtb - tmp*dwb(i, j, k, idvt+ii-1)
-   tmpb = -(oneoverdt*dwb(i, j, k, idvt+ii-1))
+   oneoverdtd = oneoverdtd - tmp*dwd(i, j, k, idvt+ii-1)
+   tmpd = -(oneoverdt*dwd(i, j, k, idvt+ii-1))
    CALL POPREAL8(tmp)
-   wb(i, j, k, jj) = wb(i, j, k, jj) + coeftime(0)*tmpb
+   wd(i, j, k, jj) = wd(i, j, k, jj) + coeftime(0)*tmpd
    END DO
    END DO
    END DO
    CALL POPINTEGER4(jj)
    END DO
-   timerefb = timerefb + oneoverdtb/deltat
+   timerefd = timerefd + oneoverdtd/deltat
    END SELECT
    CASE (timespectral) 
    !===============================================================
@@ -144,9 +144,9 @@
    DO k=kl,2,-1
    DO j=jl,2,-1
    DO i=il,2,-1
-   tmpb0 = dwb(i, j, k, idvt+ii-1)
-   dwb(i, j, k, idvt+ii-1) = tmpb0
-   dwb(i, j, k, jj) = dwb(i, j, k, jj) - tmpb0
+   tmpd0 = dwd(i, j, k, idvt+ii-1)
+   dwd(i, j, k, idvt+ii-1) = tmpd0
+   dwd(i, j, k, jj) = dwd(i, j, k, jj) - tmpd0
    END DO
    END DO
    END DO

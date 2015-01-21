@@ -119,6 +119,22 @@
        nullify(flowDoms(nn,level,sps)%s)
        nullify(flowDoms(nn,level,sps)%dadidata)
 
+       nullify(flowDoms(nn,level,sps)%ux)
+       nullify(flowDoms(nn,level,sps)%uy)
+       nullify(flowDoms(nn,level,sps)%uz)
+
+       nullify(flowDoms(nn,level,sps)%vx)
+       nullify(flowDoms(nn,level,sps)%vy)
+       nullify(flowDoms(nn,level,sps)%vz)
+
+       nullify(flowDoms(nn,level,sps)%wx)
+       nullify(flowDoms(nn,level,sps)%wy)
+       nullify(flowDoms(nn,level,sps)%wz)
+
+       nullify(flowDoms(nn,level,sps)%qx)
+       nullify(flowDoms(nn,level,sps)%qy)
+       nullify(flowDoms(nn,level,sps)%qz)
+
        nullify(flowDoms(nn,level,sps)%dw)
        nullify(flowDoms(nn,level,sps)%fw)
 

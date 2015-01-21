@@ -31,7 +31,7 @@
 !
        integer(kind=intType) :: i, j, nn, mm, l, sps
 
-       real(kind=realType) :: rho, vx, vy, vz, pres, vtotInv
+       real(kind=realType) :: rho, vvx, vvy, vvz, pres, vtotInv
 
        real(kind=realType), dimension(:,:,:), pointer :: ww1,  ww2
        real(kind=realType), dimension(:,:),   pointer :: pp1,  pp2
@@ -195,27 +195,27 @@
                      ! Store the variables a bit easier.
 
                      rho  = ww2(i,j,irho)
-                     vx   = ww2(i,j,ivx)
-                     vy   = ww2(i,j,ivy)
-                     vz   = ww2(i,j,ivz)
+                     vvx   = ww2(i,j,ivx)
+                     vvy   = ww2(i,j,ivy)
+                     vvz   = ww2(i,j,ivz)
                      pres = pp2(i,j)
 
                      ! Compute the total pressure, total temperature
                      ! and total entahlpy.
 
-                     call computePtot(rho, vx, vy, vz, pres, &
+                     call computePtot(rho, vvx, vvy, vvz, pres, &
                                       BCData(mm)%ptInlet(i,j), 1_intType)
-                     call computeTtot(rho, vx, vy, vz, pres, &
+                     call computeTtot(rho, vvx, vvy, vvz, pres, &
                                       BCData(mm)%ttInlet(i,j), 1_intType)
                      BCData(mm)%htInlet(i,j) = (ww2(i,j,irhoE) + pres) &
                                              / rho
 
                      ! Determine the velocity direction.
 
-                     vtotInv = one/max(eps,sqrt(vx*vx + vy*vy + vz*vz))
-                     BCData(mm)%flowXdirInlet(i,j) = vx*vtotInv
-                     BCData(mm)%flowYdirInlet(i,j) = vy*vtotInv
-                     BCData(mm)%flowZdirInlet(i,j) = vz*vtotInv
+                     vtotInv = one/max(eps,sqrt(vvx*vvx + vvy*vvy + vvz*vvz))
+                     BCData(mm)%flowXdirInlet(i,j) = vvx*vtotInv
+                     BCData(mm)%flowYdirInlet(i,j) = vvy*vtotInv
+                     BCData(mm)%flowZdirInlet(i,j) = vvz*vtotInv
 
                      ! Simply extrapolate the turbulence variables.
 

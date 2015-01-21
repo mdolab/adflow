@@ -16,10 +16,10 @@
    !      * Last modified: 10-28-2014                                      *
    !      *                                                                *
    !      ******************************************************************
-   SUBROUTINE RESETXXSSRHODD2WALLBWD_B(nn, xx, xxb, ss, ssb, rho1, rho1b, &
-   & rho2, rho2b, dd2wall)
+   SUBROUTINE RESETXXSSRHODD2WALLBWD_B(nn, xx, xxd, ss, ssd, rho1, rho1d, &
+   & rho2, rho2d, dd2wall)
    USE BCTYPES
-   USE BLOCKPOINTERS_B
+   USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
    USE INPUTPHYSICS
    IMPLICIT NONE
@@ -28,12 +28,12 @@
    !
    INTEGER(kind=inttype), INTENT(IN) :: nn
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rho2, rho1
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rho2b, rho1b
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rho2d, rho1d
    REAL(kind=realtype), DIMENSION(imaxdim - 2, jmaxdim - 2) :: dd2wall
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, 3) :: ss
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, 3) :: ssb
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, 3) :: ssd
    REAL(kind=realtype), DIMENSION(imaxdim + 1, jmaxdim + 1, 3) :: xx
-   REAL(kind=realtype), DIMENSION(imaxdim+1, jmaxdim+1, 3) :: xxb
+   REAL(kind=realtype), DIMENSION(imaxdim+1, jmaxdim+1, 3) :: xxd
    !
    !      ******************************************************************
    !      *                                                                *
@@ -45,64 +45,64 @@
    ! the pointers accordinly.
    SELECT CASE  (bcfaceid(nn)) 
    CASE (imin) 
-   xxb(1:je+1, 1:ke+1, :) = xxb(1:je+1, 1:ke+1, :) + xb(1, 0:je, 0:ke, &
+   xxd(1:je+1, 1:ke+1, :) = xxd(1:je+1, 1:ke+1, :) + xd(1, 0:je, 0:ke, &
    &     :)
-   xb(1, 0:je, 0:ke, :) = 0.0_8
-   ssb(1:je, 1:ke, :) = ssb(1:je, 1:ke, :) + sib(1, 1:je, 1:ke, :)
-   sib(1, 1:je, 1:ke, :) = 0.0_8
-   rho1b(1:je, 1:ke) = rho1b(1:je, 1:ke) + wb(1, 1:je, 1:ke, irho)
-   wb(1, 1:je, 1:ke, irho) = 0.0_8
-   rho2b(1:je, 1:ke) = rho2b(1:je, 1:ke) + wb(2, 1:je, 1:ke, irho)
-   wb(2, 1:je, 1:ke, irho) = 0.0_8
+   xd(1, 0:je, 0:ke, :) = 0.0_8
+   ssd(1:je, 1:ke, :) = ssd(1:je, 1:ke, :) + sid(1, 1:je, 1:ke, :)
+   sid(1, 1:je, 1:ke, :) = 0.0_8
+   rho1d(1:je, 1:ke) = rho1d(1:je, 1:ke) + wd(1, 1:je, 1:ke, irho)
+   wd(1, 1:je, 1:ke, irho) = 0.0_8
+   rho2d(1:je, 1:ke) = rho2d(1:je, 1:ke) + wd(2, 1:je, 1:ke, irho)
+   wd(2, 1:je, 1:ke, irho) = 0.0_8
    CASE (imax) 
-   xxb(1:je+1, 1:ke+1, :) = xxb(1:je+1, 1:ke+1, :) + xb(il, 0:je, 0:ke&
+   xxd(1:je+1, 1:ke+1, :) = xxd(1:je+1, 1:ke+1, :) + xd(il, 0:je, 0:ke&
    &     , :)
-   xb(il, 0:je, 0:ke, :) = 0.0_8
-   ssb(1:je, 1:ke, :) = ssb(1:je, 1:ke, :) + sib(il, 1:je, 1:ke, :)
-   sib(il, 1:je, 1:ke, :) = 0.0_8
-   rho1b(1:je, 1:ke) = rho1b(1:je, 1:ke) + wb(ie, 1:je, 1:ke, irho)
-   wb(ie, 1:je, 1:ke, irho) = 0.0_8
-   rho2b(1:je, 1:ke) = rho2b(1:je, 1:ke) + wb(il, 1:je, 1:ke, irho)
-   wb(il, 1:je, 1:ke, irho) = 0.0_8
+   xd(il, 0:je, 0:ke, :) = 0.0_8
+   ssd(1:je, 1:ke, :) = ssd(1:je, 1:ke, :) + sid(il, 1:je, 1:ke, :)
+   sid(il, 1:je, 1:ke, :) = 0.0_8
+   rho1d(1:je, 1:ke) = rho1d(1:je, 1:ke) + wd(ie, 1:je, 1:ke, irho)
+   wd(ie, 1:je, 1:ke, irho) = 0.0_8
+   rho2d(1:je, 1:ke) = rho2d(1:je, 1:ke) + wd(il, 1:je, 1:ke, irho)
+   wd(il, 1:je, 1:ke, irho) = 0.0_8
    CASE (jmin) 
-   xxb(1:ie+1, 1:ke+1, :) = xxb(1:ie+1, 1:ke+1, :) + xb(0:ie, 1, 0:ke, &
+   xxd(1:ie+1, 1:ke+1, :) = xxd(1:ie+1, 1:ke+1, :) + xd(0:ie, 1, 0:ke, &
    &     :)
-   xb(0:ie, 1, 0:ke, :) = 0.0_8
-   ssb(1:ie, 1:ke, :) = ssb(1:ie, 1:ke, :) + sjb(1:ie, 1, 1:ke, :)
-   sjb(1:ie, 1, 1:ke, :) = 0.0_8
-   rho1b(1:ie, 1:ke) = rho1b(1:ie, 1:ke) + wb(1:ie, 1, 1:ke, irho)
-   wb(1:ie, 1, 1:ke, irho) = 0.0_8
-   rho2b(1:ie, 1:ke) = rho2b(1:ie, 1:ke) + wb(1:ie, 2, 1:ke, irho)
-   wb(1:ie, 2, 1:ke, irho) = 0.0_8
+   xd(0:ie, 1, 0:ke, :) = 0.0_8
+   ssd(1:ie, 1:ke, :) = ssd(1:ie, 1:ke, :) + sjd(1:ie, 1, 1:ke, :)
+   sjd(1:ie, 1, 1:ke, :) = 0.0_8
+   rho1d(1:ie, 1:ke) = rho1d(1:ie, 1:ke) + wd(1:ie, 1, 1:ke, irho)
+   wd(1:ie, 1, 1:ke, irho) = 0.0_8
+   rho2d(1:ie, 1:ke) = rho2d(1:ie, 1:ke) + wd(1:ie, 2, 1:ke, irho)
+   wd(1:ie, 2, 1:ke, irho) = 0.0_8
    CASE (jmax) 
-   xxb(1:ie+1, 1:ke+1, :) = xxb(1:ie+1, 1:ke+1, :) + xb(0:ie, jl, 0:ke&
+   xxd(1:ie+1, 1:ke+1, :) = xxd(1:ie+1, 1:ke+1, :) + xd(0:ie, jl, 0:ke&
    &     , :)
-   xb(0:ie, jl, 0:ke, :) = 0.0_8
-   ssb(1:ie, 1:ke, :) = ssb(1:ie, 1:ke, :) + sjb(1:ie, jl, 1:ke, :)
-   sjb(1:ie, jl, 1:ke, :) = 0.0_8
-   rho1b(1:ie, 1:ke) = rho1b(1:ie, 1:ke) + wb(1:ie, je, 1:ke, irho)
-   wb(1:ie, je, 1:ke, irho) = 0.0_8
-   rho2b(1:ie, 1:ke) = rho2b(1:ie, 1:ke) + wb(1:ie, jl, 1:ke, irho)
-   wb(1:ie, jl, 1:ke, irho) = 0.0_8
+   xd(0:ie, jl, 0:ke, :) = 0.0_8
+   ssd(1:ie, 1:ke, :) = ssd(1:ie, 1:ke, :) + sjd(1:ie, jl, 1:ke, :)
+   sjd(1:ie, jl, 1:ke, :) = 0.0_8
+   rho1d(1:ie, 1:ke) = rho1d(1:ie, 1:ke) + wd(1:ie, je, 1:ke, irho)
+   wd(1:ie, je, 1:ke, irho) = 0.0_8
+   rho2d(1:ie, 1:ke) = rho2d(1:ie, 1:ke) + wd(1:ie, jl, 1:ke, irho)
+   wd(1:ie, jl, 1:ke, irho) = 0.0_8
    CASE (kmin) 
-   xxb(1:ie+1, 1:je+1, :) = xxb(1:ie+1, 1:je+1, :) + xb(0:ie, 0:je, 1, &
+   xxd(1:ie+1, 1:je+1, :) = xxd(1:ie+1, 1:je+1, :) + xd(0:ie, 0:je, 1, &
    &     :)
-   xb(0:ie, 0:je, 1, :) = 0.0_8
-   ssb(1:ie, 1:je, :) = ssb(1:ie, 1:je, :) + skb(1:ie, 1:je, 1, :)
-   skb(1:ie, 1:je, 1, :) = 0.0_8
-   rho1b(1:ie, 1:je) = rho1b(1:ie, 1:je) + wb(1:ie, 1:je, 1, irho)
-   wb(1:ie, 1:je, 1, irho) = 0.0_8
-   rho2b(1:ie, 1:je) = rho2b(1:ie, 1:je) + wb(1:ie, 1:je, 2, irho)
-   wb(1:ie, 1:je, 2, irho) = 0.0_8
+   xd(0:ie, 0:je, 1, :) = 0.0_8
+   ssd(1:ie, 1:je, :) = ssd(1:ie, 1:je, :) + skd(1:ie, 1:je, 1, :)
+   skd(1:ie, 1:je, 1, :) = 0.0_8
+   rho1d(1:ie, 1:je) = rho1d(1:ie, 1:je) + wd(1:ie, 1:je, 1, irho)
+   wd(1:ie, 1:je, 1, irho) = 0.0_8
+   rho2d(1:ie, 1:je) = rho2d(1:ie, 1:je) + wd(1:ie, 1:je, 2, irho)
+   wd(1:ie, 1:je, 2, irho) = 0.0_8
    CASE (kmax) 
-   xxb(1:ie+1, 1:je+1, :) = xxb(1:ie+1, 1:je+1, :) + xb(0:ie, 0:je, kl&
+   xxd(1:ie+1, 1:je+1, :) = xxd(1:ie+1, 1:je+1, :) + xd(0:ie, 0:je, kl&
    &     , :)
-   xb(0:ie, 0:je, kl, :) = 0.0_8
-   ssb(1:ie, 1:je, :) = ssb(1:ie, 1:je, :) + skb(1:ie, 1:je, kl, :)
-   skb(1:ie, 1:je, kl, :) = 0.0_8
-   rho1b(1:ie, 1:je) = rho1b(1:ie, 1:je) + wb(1:ie, 1:je, ke, irho)
-   wb(1:ie, 1:je, ke, irho) = 0.0_8
-   rho2b(1:ie, 1:je) = rho2b(1:ie, 1:je) + wb(1:ie, 1:je, kl, irho)
-   wb(1:ie, 1:je, kl, irho) = 0.0_8
+   xd(0:ie, 0:je, kl, :) = 0.0_8
+   ssd(1:ie, 1:je, :) = ssd(1:ie, 1:je, :) + skd(1:ie, 1:je, kl, :)
+   skd(1:ie, 1:je, kl, :) = 0.0_8
+   rho1d(1:ie, 1:je) = rho1d(1:ie, 1:je) + wd(1:ie, 1:je, ke, irho)
+   wd(1:ie, 1:je, ke, irho) = 0.0_8
+   rho2d(1:ie, 1:je) = rho2d(1:ie, 1:je) + wd(1:ie, 1:je, kl, irho)
+   wd(1:ie, 1:je, kl, irho) = 0.0_8
    END SELECT
    END SUBROUTINE RESETXXSSRHODD2WALLBWD_B

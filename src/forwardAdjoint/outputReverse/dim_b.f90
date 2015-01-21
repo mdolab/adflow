@@ -4,15 +4,15 @@
    !  Differentiation of dim in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
    !   gradient     of useful results: x y dim
    !   with respect to varying inputs: x y
-   SUBROUTINE DIM_B(x, xb, y, yb, dimb)
+   SUBROUTINE DIM_B(x, xd, y, yd, dimd)
    USE PRECISION
    IMPLICIT NONE
    REAL(kind=realtype) :: x, y, z
-   REAL(kind=realtype) :: xb, yb
+   REAL(kind=realtype) :: xd, yd
    REAL(kind=realtype) :: dim
-   REAL(kind=realtype) :: dimb
+   REAL(kind=realtype) :: dimd
    dim = x - y
-   IF (dim .LT. 0.0) dimb = 0.0_8
-   xb = xb + dimb
-   yb = yb - dimb
+   IF (dim .LT. 0.0) dimd = 0.0_8
+   xd = xd + dimd
+   yd = yd - dimd
    END SUBROUTINE DIM_B

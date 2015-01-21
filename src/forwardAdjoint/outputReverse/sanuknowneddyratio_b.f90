@@ -14,8 +14,8 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   SUBROUTINE SANUKNOWNEDDYRATIO_B(eddyratio, nulam, nulamb, &
-   & sanuknowneddyratiob)
+   SUBROUTINE SANUKNOWNEDDYRATIO_B(eddyratio, nulam, nulamd, &
+   & sanuknowneddyratiod)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -31,12 +31,12 @@
    !      Function type.
    !
    REAL(kind=realtype) :: sanuknowneddyratio
-   REAL(kind=realtype) :: sanuknowneddyratiob
+   REAL(kind=realtype) :: sanuknowneddyratiod
    !
    !      Function arguments.
    !
    REAL(kind=realtype), INTENT(IN) :: eddyratio, nulam
-   REAL(kind=realtype) :: nulamb
+   REAL(kind=realtype) :: nulamd
    !
    !      Local variables.
    !
@@ -52,7 +52,7 @@
    !
    ! Take care of the exceptional cases.
    IF (eddyratio .LE. zero) THEN
-   nulamb = 0.0_8
+   nulamd = 0.0_8
    ELSE
    ! Set the value of cv1^3, which is the constant appearing in the
    ! sa function fv1 to compute the eddy viscosity
@@ -85,6 +85,6 @@
    END IF
    ! Condition to exit the loop.
    IF (abs0 .GT. thresholdreal) GOTO 100
-   nulamb = chi*sanuknowneddyratiob
+   nulamd = chi*sanuknowneddyratiod
    END IF
    END SUBROUTINE SANUKNOWNEDDYRATIO_B

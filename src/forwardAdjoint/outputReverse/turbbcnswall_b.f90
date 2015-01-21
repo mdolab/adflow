@@ -31,7 +31,7 @@
    !      ******************************************************************
    !
    USE BCTYPES
-   USE BLOCKPOINTERS_B
+   USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
    IMPLICIT NONE
    !
@@ -79,18 +79,18 @@
    INTEGER :: ad_to9
    INTEGER :: ad_from10
    INTEGER :: ad_to10
-   REAL(kind=realtype) :: tmpb9
-   REAL(kind=realtype) :: tmpb8
-   REAL(kind=realtype) :: tmpb7
-   REAL(kind=realtype) :: tmpb6
-   REAL(kind=realtype) :: tmpb5
-   REAL(kind=realtype) :: tmpb4
-   REAL(kind=realtype) :: tmpb3
-   REAL(kind=realtype) :: tmpb
-   REAL(kind=realtype) :: tmpb2
-   REAL(kind=realtype) :: tmpb1
-   REAL(kind=realtype) :: tmpb0
-   REAL(kind=realtype) :: tmpb10
+   REAL(kind=realtype) :: tmpd
+   REAL(kind=realtype) :: tmpd10
+   REAL(kind=realtype) :: tmpd9
+   REAL(kind=realtype) :: tmpd8
+   REAL(kind=realtype) :: tmpd7
+   REAL(kind=realtype) :: tmpd6
+   REAL(kind=realtype) :: tmpd5
+   REAL(kind=realtype) :: tmpd4
+   REAL(kind=realtype) :: tmpd3
+   REAL(kind=realtype) :: tmpd2
+   REAL(kind=realtype) :: tmpd1
+   REAL(kind=realtype) :: tmpd0
    !
    !      ******************************************************************
    !      *                                                                *
@@ -359,32 +359,32 @@
    CALL POPCONTROL2B(branch)
    IF (branch .NE. 0) THEN
    IF (branch .NE. 1) THEN
-   tmpb10 = revb(i, j, kb)
-   revb(i, j, kb) = 0.0_8
-   revb(i, j, ke) = revb(i, j, ke) + tmpb10
+   tmpd10 = revd(i, j, kb)
+   revd(i, j, kb) = 0.0_8
+   revd(i, j, ke) = revd(i, j, ke) + tmpd10
    END IF
-   tmpb9 = revb(i, j, ke)
-   revb(i, j, ke) = 0.0_8
-   revb(i, j, kl) = revb(i, j, kl) - tmpb9
+   tmpd9 = revd(i, j, ke)
+   revd(i, j, ke) = 0.0_8
+   revd(i, j, kl) = revd(i, j, kl) - tmpd9
    END IF
    DO l=nt2,nt1,-1
    CALL POPCONTROL1B(branch)
    IF (branch .NE. 0) THEN
    CALL POPREAL8(w(i, j, kb, l))
-   tmpb8 = wb(i, j, kb, l)
-   wb(i, j, kb, l) = 0.0_8
-   wb(i, j, ke, l) = wb(i, j, ke, l) + tmpb8
+   tmpd8 = wd(i, j, kb, l)
+   wd(i, j, kb, l) = 0.0_8
+   wd(i, j, ke, l) = wd(i, j, ke, l) + tmpd8
    END IF
    DO m=nt2,nt1,-1
    CALL POPREAL8(w(i, j, ke, l))
-   tmpb7 = wb(i, j, ke, l)
-   wb(i, j, ke, l) = tmpb7
-   wb(i, j, kl, m) = wb(i, j, kl, m) - bmtk2(i, j, l, m)*&
-   &                 tmpb7
+   tmpd7 = wd(i, j, ke, l)
+   wd(i, j, ke, l) = tmpd7
+   wd(i, j, kl, m) = wd(i, j, kl, m) - bmtk2(i, j, l, m)*&
+   &                 tmpd7
    END DO
    CALL POPREAL8(w(i, j, ke, l))
-   bvtk2b(i, j, l) = bvtk2b(i, j, l) + wb(i, j, ke, l)
-   wb(i, j, ke, l) = 0.0_8
+   bvtk2d(i, j, l) = bvtk2d(i, j, l) + wd(i, j, ke, l)
+   wd(i, j, ke, l) = 0.0_8
    END DO
    END DO
    END DO
@@ -398,27 +398,27 @@
    CALL POPCONTROL2B(branch)
    IF (branch .NE. 0) THEN
    IF (branch .NE. 1) THEN
-   revb(i, j, 1) = revb(i, j, 1) + revb(i, j, 0)
-   revb(i, j, 0) = 0.0_8
+   revd(i, j, 1) = revd(i, j, 1) + revd(i, j, 0)
+   revd(i, j, 0) = 0.0_8
    END IF
-   revb(i, j, 2) = revb(i, j, 2) - revb(i, j, 1)
-   revb(i, j, 1) = 0.0_8
+   revd(i, j, 2) = revd(i, j, 2) - revd(i, j, 1)
+   revd(i, j, 1) = 0.0_8
    END IF
    DO l=nt2,nt1,-1
    CALL POPCONTROL1B(branch)
    IF (branch .NE. 0) THEN
    CALL POPREAL8(w(i, j, 0, l))
-   wb(i, j, 1, l) = wb(i, j, 1, l) + wb(i, j, 0, l)
-   wb(i, j, 0, l) = 0.0_8
+   wd(i, j, 1, l) = wd(i, j, 1, l) + wd(i, j, 0, l)
+   wd(i, j, 0, l) = 0.0_8
    END IF
    DO m=nt2,nt1,-1
    CALL POPREAL8(w(i, j, 1, l))
-   wb(i, j, 2, m) = wb(i, j, 2, m) - bmtk1(i, j, l, m)*wb(i&
+   wd(i, j, 2, m) = wd(i, j, 2, m) - bmtk1(i, j, l, m)*wd(i&
    &                 , j, 1, l)
    END DO
    CALL POPREAL8(w(i, j, 1, l))
-   bvtk1b(i, j, l) = bvtk1b(i, j, l) + wb(i, j, 1, l)
-   wb(i, j, 1, l) = 0.0_8
+   bvtk1d(i, j, l) = bvtk1d(i, j, l) + wd(i, j, 1, l)
+   wd(i, j, 1, l) = 0.0_8
    END DO
    END DO
    END DO
@@ -432,32 +432,32 @@
    CALL POPCONTROL2B(branch)
    IF (branch .NE. 0) THEN
    IF (branch .NE. 1) THEN
-   tmpb6 = revb(i, jb, j)
-   revb(i, jb, j) = 0.0_8
-   revb(i, je, j) = revb(i, je, j) + tmpb6
+   tmpd6 = revd(i, jb, j)
+   revd(i, jb, j) = 0.0_8
+   revd(i, je, j) = revd(i, je, j) + tmpd6
    END IF
-   tmpb5 = revb(i, je, j)
-   revb(i, je, j) = 0.0_8
-   revb(i, jl, j) = revb(i, jl, j) - tmpb5
+   tmpd5 = revd(i, je, j)
+   revd(i, je, j) = 0.0_8
+   revd(i, jl, j) = revd(i, jl, j) - tmpd5
    END IF
    DO l=nt2,nt1,-1
    CALL POPCONTROL1B(branch)
    IF (branch .NE. 0) THEN
    CALL POPREAL8(w(i, jb, j, l))
-   tmpb4 = wb(i, jb, j, l)
-   wb(i, jb, j, l) = 0.0_8
-   wb(i, je, j, l) = wb(i, je, j, l) + tmpb4
+   tmpd4 = wd(i, jb, j, l)
+   wd(i, jb, j, l) = 0.0_8
+   wd(i, je, j, l) = wd(i, je, j, l) + tmpd4
    END IF
    DO m=nt2,nt1,-1
    CALL POPREAL8(w(i, je, j, l))
-   tmpb3 = wb(i, je, j, l)
-   wb(i, je, j, l) = tmpb3
-   wb(i, jl, j, m) = wb(i, jl, j, m) - bmtj2(i, j, l, m)*&
-   &                 tmpb3
+   tmpd3 = wd(i, je, j, l)
+   wd(i, je, j, l) = tmpd3
+   wd(i, jl, j, m) = wd(i, jl, j, m) - bmtj2(i, j, l, m)*&
+   &                 tmpd3
    END DO
    CALL POPREAL8(w(i, je, j, l))
-   bvtj2b(i, j, l) = bvtj2b(i, j, l) + wb(i, je, j, l)
-   wb(i, je, j, l) = 0.0_8
+   bvtj2d(i, j, l) = bvtj2d(i, j, l) + wd(i, je, j, l)
+   wd(i, je, j, l) = 0.0_8
    END DO
    END DO
    END DO
@@ -473,27 +473,27 @@
    CALL POPCONTROL2B(branch)
    IF (branch .NE. 0) THEN
    IF (branch .NE. 1) THEN
-   revb(i, 1, j) = revb(i, 1, j) + revb(i, 0, j)
-   revb(i, 0, j) = 0.0_8
+   revd(i, 1, j) = revd(i, 1, j) + revd(i, 0, j)
+   revd(i, 0, j) = 0.0_8
    END IF
-   revb(i, 2, j) = revb(i, 2, j) - revb(i, 1, j)
-   revb(i, 1, j) = 0.0_8
+   revd(i, 2, j) = revd(i, 2, j) - revd(i, 1, j)
+   revd(i, 1, j) = 0.0_8
    END IF
    DO l=nt2,nt1,-1
    CALL POPCONTROL1B(branch)
    IF (branch .NE. 0) THEN
    CALL POPREAL8(w(i, 0, j, l))
-   wb(i, 1, j, l) = wb(i, 1, j, l) + wb(i, 0, j, l)
-   wb(i, 0, j, l) = 0.0_8
+   wd(i, 1, j, l) = wd(i, 1, j, l) + wd(i, 0, j, l)
+   wd(i, 0, j, l) = 0.0_8
    END IF
    DO m=nt2,nt1,-1
    CALL POPREAL8(w(i, 1, j, l))
-   wb(i, 2, j, m) = wb(i, 2, j, m) - bmtj1(i, j, l, m)*wb(i&
+   wd(i, 2, j, m) = wd(i, 2, j, m) - bmtj1(i, j, l, m)*wd(i&
    &                 , 1, j, l)
    END DO
    CALL POPREAL8(w(i, 1, j, l))
-   bvtj1b(i, j, l) = bvtj1b(i, j, l) + wb(i, 1, j, l)
-   wb(i, 1, j, l) = 0.0_8
+   bvtj1d(i, j, l) = bvtj1d(i, j, l) + wd(i, 1, j, l)
+   wd(i, 1, j, l) = 0.0_8
    END DO
    END DO
    END DO
@@ -507,32 +507,32 @@
    CALL POPCONTROL2B(branch)
    IF (branch .NE. 0) THEN
    IF (branch .NE. 1) THEN
-   tmpb2 = revb(ib, i, j)
-   revb(ib, i, j) = 0.0_8
-   revb(ie, i, j) = revb(ie, i, j) + tmpb2
+   tmpd2 = revd(ib, i, j)
+   revd(ib, i, j) = 0.0_8
+   revd(ie, i, j) = revd(ie, i, j) + tmpd2
    END IF
-   tmpb1 = revb(ie, i, j)
-   revb(ie, i, j) = 0.0_8
-   revb(il, i, j) = revb(il, i, j) - tmpb1
+   tmpd1 = revd(ie, i, j)
+   revd(ie, i, j) = 0.0_8
+   revd(il, i, j) = revd(il, i, j) - tmpd1
    END IF
    DO l=nt2,nt1,-1
    CALL POPCONTROL1B(branch)
    IF (branch .NE. 0) THEN
    CALL POPREAL8(w(ib, i, j, l))
-   tmpb0 = wb(ib, i, j, l)
-   wb(ib, i, j, l) = 0.0_8
-   wb(ie, i, j, l) = wb(ie, i, j, l) + tmpb0
+   tmpd0 = wd(ib, i, j, l)
+   wd(ib, i, j, l) = 0.0_8
+   wd(ie, i, j, l) = wd(ie, i, j, l) + tmpd0
    END IF
    DO m=nt2,nt1,-1
    CALL POPREAL8(w(ie, i, j, l))
-   tmpb = wb(ie, i, j, l)
-   wb(ie, i, j, l) = tmpb
-   wb(il, i, j, m) = wb(il, i, j, m) - bmti2(i, j, l, m)*&
-   &                 tmpb
+   tmpd = wd(ie, i, j, l)
+   wd(ie, i, j, l) = tmpd
+   wd(il, i, j, m) = wd(il, i, j, m) - bmti2(i, j, l, m)*&
+   &                 tmpd
    END DO
    CALL POPREAL8(w(ie, i, j, l))
-   bvti2b(i, j, l) = bvti2b(i, j, l) + wb(ie, i, j, l)
-   wb(ie, i, j, l) = 0.0_8
+   bvti2d(i, j, l) = bvti2d(i, j, l) + wd(ie, i, j, l)
+   wd(ie, i, j, l) = 0.0_8
    END DO
    END DO
    END DO
@@ -547,27 +547,27 @@
    CALL POPCONTROL2B(branch)
    IF (branch .NE. 0) THEN
    IF (branch .NE. 1) THEN
-   revb(1, i, j) = revb(1, i, j) + revb(0, i, j)
-   revb(0, i, j) = 0.0_8
+   revd(1, i, j) = revd(1, i, j) + revd(0, i, j)
+   revd(0, i, j) = 0.0_8
    END IF
-   revb(2, i, j) = revb(2, i, j) - revb(1, i, j)
-   revb(1, i, j) = 0.0_8
+   revd(2, i, j) = revd(2, i, j) - revd(1, i, j)
+   revd(1, i, j) = 0.0_8
    END IF
    DO l=nt2,nt1,-1
    CALL POPCONTROL1B(branch)
    IF (branch .NE. 0) THEN
    CALL POPREAL8(w(0, i, j, l))
-   wb(1, i, j, l) = wb(1, i, j, l) + wb(0, i, j, l)
-   wb(0, i, j, l) = 0.0_8
+   wd(1, i, j, l) = wd(1, i, j, l) + wd(0, i, j, l)
+   wd(0, i, j, l) = 0.0_8
    END IF
    DO m=nt2,nt1,-1
    CALL POPREAL8(w(1, i, j, l))
-   wb(2, i, j, m) = wb(2, i, j, m) - bmti1(i, j, l, m)*wb(1, &
+   wd(2, i, j, m) = wd(2, i, j, m) - bmti1(i, j, l, m)*wd(1, &
    &               i, j, l)
    END DO
    CALL POPREAL8(w(1, i, j, l))
-   bvti1b(i, j, l) = bvti1b(i, j, l) + wb(1, i, j, l)
-   wb(1, i, j, l) = 0.0_8
+   bvti1d(i, j, l) = bvti1d(i, j, l) + wd(1, i, j, l)
+   wd(1, i, j, l) = 0.0_8
    END DO
    END DO
    END DO

@@ -31,7 +31,7 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   USE BLOCKPOINTERS_B
+   USE BLOCKPOINTERS
    USE BCTYPES
    USE CONSTANTS
    USE FLOWVARREFSTATE
@@ -46,22 +46,22 @@
    !
    INTEGER(kind=inttype) :: kk, mm, nn, i, j, l
    REAL(kind=realtype) :: vn, nnx, nny, nnz
-   REAL(kind=realtype) :: vnb
+   REAL(kind=realtype) :: vnd
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, nw) :: ww1, ww2
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, nw) :: ww1b, ww2b
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, nw) :: ww1d, ww2d
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: pp1, pp2
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: pp1b, pp2b
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: pp1d, pp2d
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: gamma1, gamma2
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rlv1, rlv2
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rlv1b, rlv2b
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rlv1d, rlv2d
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rev1, rev2
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rev1b, rev2b
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rev1d, rev2d
    INTEGER :: branch
    INTEGER :: ad_from
    INTEGER :: ad_to
    INTEGER :: ad_from0
    INTEGER :: ad_to0
-   REAL(kind=realtype) :: tempb
+   REAL(kind=realtype) :: tempd
    !
    !      ******************************************************************
    !      *                                                                *
@@ -158,9 +158,9 @@
    CALL POPREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4&
    &                    ))
    CALL POPREAL8ARRAY(rlv, SIZE(rlv, 1)*SIZE(rlv, 2)*SIZE(rlv, 3))
-   CALL RESETBCPOINTERSBWD_B(nn, ww1, ww1b, ww2, ww2b, pp1, pp1b, &
-   &                           pp2, pp2b, rlv1, rlv1b, rlv2, rlv2b, rev1, &
-   &                           rev1b, rev2, rev2b, mm)
+   CALL RESETBCPOINTERSBWD_B(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, &
+   &                           pp2, pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, &
+   &                           rev1d, rev2, rev2d, mm)
    CALL POPINTEGER4(ad_from0)
    CALL POPINTEGER4(ad_to0)
    DO j=ad_to0,ad_from0,-1
@@ -169,59 +169,59 @@
    DO i=ad_to,ad_from,-1
    CALL POPCONTROL1B(branch)
    IF (branch .NE. 0) THEN
-   rev2b(i, j) = rev2b(i, j) + rev1b(i, j)
-   rev1b(i, j) = 0.0_8
+   rev2d(i, j) = rev2d(i, j) + rev1d(i, j)
+   rev1d(i, j) = 0.0_8
    END IF
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   rlv2b(i, j) = rlv2b(i, j) + rlv1b(i, j)
-   rlv1b(i, j) = 0.0_8
+   rlv2d(i, j) = rlv2d(i, j) + rlv1d(i, j)
+   rlv1d(i, j) = 0.0_8
    END IF
-   pp2b(i, j) = pp2b(i, j) + pp1b(i, j)
-   pp1b(i, j) = 0.0_8
+   pp2d(i, j) = pp2d(i, j) + pp1d(i, j)
+   pp1d(i, j) = 0.0_8
    DO l=nt2mg,nt1mg,-1
-   ww2b(i, j, l) = ww2b(i, j, l) + ww1b(i, j, l)
-   ww1b(i, j, l) = 0.0_8
+   ww2d(i, j, l) = ww2d(i, j, l) + ww1d(i, j, l)
+   ww1d(i, j, l) = 0.0_8
    END DO
-   ww2b(i, j, irhoe) = ww2b(i, j, irhoe) + ww1b(i, j, irhoe)
-   ww1b(i, j, irhoe) = 0.0_8
-   ww2b(i, j, ivz) = ww2b(i, j, ivz) + ww1b(i, j, ivz)
-   vnb = -(bcdata(nn)%norm(i, j, 3)*ww1b(i, j, ivz))
-   bcdatab(nn)%norm(i, j, 3) = bcdatab(nn)%norm(i, j, 3) - vn*&
-   &             ww1b(i, j, ivz)
-   ww1b(i, j, ivz) = 0.0_8
-   ww2b(i, j, ivy) = ww2b(i, j, ivy) + ww1b(i, j, ivy)
-   vnb = vnb - bcdata(nn)%norm(i, j, 2)*ww1b(i, j, ivy)
-   bcdatab(nn)%norm(i, j, 2) = bcdatab(nn)%norm(i, j, 2) - vn*&
-   &             ww1b(i, j, ivy)
-   ww1b(i, j, ivy) = 0.0_8
-   ww2b(i, j, ivx) = ww2b(i, j, ivx) + ww1b(i, j, ivx)
-   vnb = vnb - bcdata(nn)%norm(i, j, 1)*ww1b(i, j, ivx)
-   bcdatab(nn)%norm(i, j, 1) = bcdatab(nn)%norm(i, j, 1) - vn*&
-   &             ww1b(i, j, ivx)
-   ww1b(i, j, ivx) = 0.0_8
-   ww2b(i, j, irho) = ww2b(i, j, irho) + ww1b(i, j, irho)
-   ww1b(i, j, irho) = 0.0_8
+   ww2d(i, j, irhoe) = ww2d(i, j, irhoe) + ww1d(i, j, irhoe)
+   ww1d(i, j, irhoe) = 0.0_8
+   ww2d(i, j, ivz) = ww2d(i, j, ivz) + ww1d(i, j, ivz)
+   vnd = -(bcdata(nn)%norm(i, j, 3)*ww1d(i, j, ivz))
+   bcdatad(nn)%norm(i, j, 3) = bcdatad(nn)%norm(i, j, 3) - vn*&
+   &             ww1d(i, j, ivz)
+   ww1d(i, j, ivz) = 0.0_8
+   ww2d(i, j, ivy) = ww2d(i, j, ivy) + ww1d(i, j, ivy)
+   vnd = vnd - bcdata(nn)%norm(i, j, 2)*ww1d(i, j, ivy)
+   bcdatad(nn)%norm(i, j, 2) = bcdatad(nn)%norm(i, j, 2) - vn*&
+   &             ww1d(i, j, ivy)
+   ww1d(i, j, ivy) = 0.0_8
+   ww2d(i, j, ivx) = ww2d(i, j, ivx) + ww1d(i, j, ivx)
+   vnd = vnd - bcdata(nn)%norm(i, j, 1)*ww1d(i, j, ivx)
+   bcdatad(nn)%norm(i, j, 1) = bcdatad(nn)%norm(i, j, 1) - vn*&
+   &             ww1d(i, j, ivx)
+   ww1d(i, j, ivx) = 0.0_8
+   ww2d(i, j, irho) = ww2d(i, j, irho) + ww1d(i, j, irho)
+   ww1d(i, j, irho) = 0.0_8
    CALL POPREAL8(vn)
-   tempb = two*vnb
-   ww2b(i, j, ivx) = ww2b(i, j, ivx) + bcdata(nn)%norm(i, j, 1)&
-   &             *tempb
-   bcdatab(nn)%norm(i, j, 1) = bcdatab(nn)%norm(i, j, 1) + ww2(&
-   &             i, j, ivx)*tempb
-   ww2b(i, j, ivy) = ww2b(i, j, ivy) + bcdata(nn)%norm(i, j, 2)&
-   &             *tempb
-   bcdatab(nn)%norm(i, j, 2) = bcdatab(nn)%norm(i, j, 2) + ww2(&
-   &             i, j, ivy)*tempb
-   ww2b(i, j, ivz) = ww2b(i, j, ivz) + bcdata(nn)%norm(i, j, 3)&
-   &             *tempb
-   bcdatab(nn)%norm(i, j, 3) = bcdatab(nn)%norm(i, j, 3) + ww2(&
-   &             i, j, ivz)*tempb
+   tempd = two*vnd
+   ww2d(i, j, ivx) = ww2d(i, j, ivx) + bcdata(nn)%norm(i, j, 1)&
+   &             *tempd
+   bcdatad(nn)%norm(i, j, 1) = bcdatad(nn)%norm(i, j, 1) + ww2(&
+   &             i, j, ivx)*tempd
+   ww2d(i, j, ivy) = ww2d(i, j, ivy) + bcdata(nn)%norm(i, j, 2)&
+   &             *tempd
+   bcdatad(nn)%norm(i, j, 2) = bcdatad(nn)%norm(i, j, 2) + ww2(&
+   &             i, j, ivy)*tempd
+   ww2d(i, j, ivz) = ww2d(i, j, ivz) + bcdata(nn)%norm(i, j, 3)&
+   &             *tempd
+   bcdatad(nn)%norm(i, j, 3) = bcdatad(nn)%norm(i, j, 3) + ww2(&
+   &             i, j, ivz)*tempd
    END DO
    END DO
    CALL POPREAL8ARRAY(ww2, imaxdim*jmaxdim*nw)
-   CALL SETBCPOINTERSBWD_B(nn, ww1, ww1b, ww2, ww2b, pp1, pp1b, pp2&
-   &                         , pp2b, rlv1, rlv1b, rlv2, rlv2b, rev1, rev1b&
-   &                         , rev2, rev2b, mm)
+   CALL SETBCPOINTERSBWD_B(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, pp2&
+   &                         , pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev1d&
+   &                         , rev2, rev2d, mm)
    END IF
    END DO
    END DO

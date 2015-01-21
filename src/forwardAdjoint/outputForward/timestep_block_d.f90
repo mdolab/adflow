@@ -31,7 +31,7 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    USE CONSTANTS
    USE FLOWVARREFSTATE
    USE INPUTDISCRETIZATION
@@ -55,8 +55,8 @@
    INTEGER(kind=inttype) :: i, j, k
    REAL(kind=realtype) :: plim, rlim, clim2
    REAL(kind=realtype) :: clim2d
-   REAL(kind=realtype) :: ux, uy, uz, cc2, qs, sx, sy, sz, rmu
-   REAL(kind=realtype) :: uxd, uyd, uzd, cc2d, qsd, sxd, syd, szd
+   REAL(kind=realtype) :: uux, uuy, uuz, cc2, qs, sx, sy, sz, rmu
+   REAL(kind=realtype) :: uuxd, uuyd, uuzd, cc2d, qsd, sxd, syd, szd
    REAL(kind=realtype) :: ri, rj, rk, rij, rjk, rki
    REAL(kind=realtype) :: rid, rjd, rkd, rijd, rjkd, rkid
    REAL(kind=realtype) :: vsi, vsj, vsk, rfl, dpi, dpj, dpk
@@ -131,12 +131,12 @@
    DO j=1,je
    DO i=1,ie
    ! Compute the velocities and speed of sound squared.
-   uxd = wd(i, j, k, ivx)
-   ux = w(i, j, k, ivx)
-   uyd = wd(i, j, k, ivy)
-   uy = w(i, j, k, ivy)
-   uzd = wd(i, j, k, ivz)
-   uz = w(i, j, k, ivz)
+   uuxd = wd(i, j, k, ivx)
+   uux = w(i, j, k, ivx)
+   uuyd = wd(i, j, k, ivy)
+   uuy = w(i, j, k, ivy)
+   uuzd = wd(i, j, k, ivz)
+   uuz = w(i, j, k, ivz)
    cc2d = ((gammad(i, j, k)*p(i, j, k)+gamma(i, j, k)*pd(i, j, &
    &             k))*w(i, j, k, irho)-gamma(i, j, k)*p(i, j, k)*wd(i, j, k&
    &             , irho))/w(i, j, k, irho)**2
@@ -162,9 +162,9 @@
    sy = si(i-1, j, k, 2) + si(i, j, k, 2)
    szd = sid(i-1, j, k, 3) + sid(i, j, k, 3)
    sz = si(i-1, j, k, 3) + si(i, j, k, 3)
-   qsd = uxd*sx + ux*sxd + uyd*sy + uy*syd + uzd*sz + uz*szd - &
-   &             sfaced
-   qs = ux*sx + uy*sy + uz*sz - sface
+   qsd = uuxd*sx + uux*sxd + uuyd*sy + uuy*syd + uuzd*sz + uuz*&
+   &             szd - sfaced
+   qs = uux*sx + uuy*sy + uuz*sz - sface
    IF (qs .GE. 0.) THEN
    abs0d = qsd
    abs0 = qs
@@ -195,9 +195,9 @@
    sy = sj(i, j-1, k, 2) + sj(i, j, k, 2)
    szd = sjd(i, j-1, k, 3) + sjd(i, j, k, 3)
    sz = sj(i, j-1, k, 3) + sj(i, j, k, 3)
-   qsd = uxd*sx + ux*sxd + uyd*sy + uy*syd + uzd*sz + uz*szd - &
-   &             sfaced
-   qs = ux*sx + uy*sy + uz*sz - sface
+   qsd = uuxd*sx + uux*sxd + uuyd*sy + uuy*syd + uuzd*sz + uuz*&
+   &             szd - sfaced
+   qs = uux*sx + uuy*sy + uuz*sz - sface
    IF (qs .GE. 0.) THEN
    abs1d = qsd
    abs1 = qs
@@ -228,9 +228,9 @@
    sy = sk(i, j, k-1, 2) + sk(i, j, k, 2)
    szd = skd(i, j, k-1, 3) + skd(i, j, k, 3)
    sz = sk(i, j, k-1, 3) + sk(i, j, k, 3)
-   qsd = uxd*sx + ux*sxd + uyd*sy + uy*syd + uzd*sz + uz*szd - &
-   &             sfaced
-   qs = ux*sx + uy*sy + uz*sz - sface
+   qsd = uuxd*sx + uux*sxd + uuyd*sy + uuy*syd + uuzd*sz + uuz*&
+   &             szd - sfaced
+   qs = uux*sx + uuy*sy + uuz*sz - sface
    IF (qs .GE. 0.) THEN
    abs2d = qsd
    abs2 = qs

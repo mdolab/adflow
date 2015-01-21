@@ -14,8 +14,8 @@
    !     *                                                                *
    !     ******************************************************************
    !
-   SUBROUTINE VECTORROTATION_B(xp, xpb, yp, ypb, zp, zpb, iaxis, angle, &
-   & angleb, x, xb, y, yb, z, zb)
+   SUBROUTINE VECTORROTATION_B(xp, xpd, yp, ypd, zp, zpd, iaxis, angle, &
+   & angled, x, xd, y, yd, z, zd)
    !
    !     ****************************************************************
    !     *                                                              *
@@ -38,9 +38,9 @@
    !
    INTEGER(kind=inttype), INTENT(IN) :: iaxis
    REAL(kind=realtype), INTENT(IN) :: angle, x, y, z
-   REAL(kind=realtype) :: angleb, xb, yb, zb
+   REAL(kind=realtype) :: angled, xd, yd, zd
    REAL(kind=realtype) :: xp, yp, zp
-   REAL(kind=realtype) :: xpb, ypb, zpb
+   REAL(kind=realtype) :: xpd, ypd, zpd
    INTRINSIC COS
    INTRINSIC SIN
    !
@@ -53,23 +53,23 @@
    ! rotation about specified axis by specified angle
    SELECT CASE  (iaxis) 
    CASE (1) 
-   xb = xpb
-   angleb = angleb + (z*COS(angle)-y*SIN(angle))*ypb + (-(z*SIN(angle))&
-   &     -y*COS(angle))*zpb
-   yb = COS(angle)*ypb - SIN(angle)*zpb
-   zb = SIN(angle)*ypb + COS(angle)*zpb
+   xd = xpd
+   angled = angled + (z*COS(angle)-y*SIN(angle))*ypd + (-(z*SIN(angle))&
+   &     -y*COS(angle))*zpd
+   yd = COS(angle)*ypd - SIN(angle)*zpd
+   zd = SIN(angle)*ypd + COS(angle)*zpd
    CASE (2) 
-   angleb = angleb + (-(z*COS(angle))-x*SIN(angle))*xpb + (x*COS(angle)&
-   &     -z*SIN(angle))*zpb
-   xb = COS(angle)*xpb + SIN(angle)*zpb
-   yb = ypb
-   zb = COS(angle)*zpb - SIN(angle)*xpb
+   angled = angled + (-(z*COS(angle))-x*SIN(angle))*xpd + (x*COS(angle)&
+   &     -z*SIN(angle))*zpd
+   xd = COS(angle)*xpd + SIN(angle)*zpd
+   yd = ypd
+   zd = COS(angle)*zpd - SIN(angle)*xpd
    CASE (3) 
-   xb = COS(angle)*xpb - SIN(angle)*ypb
-   yb = COS(angle)*ypb + SIN(angle)*xpb
-   zb = zpb
-   angleb = angleb + (y*COS(angle)-x*SIN(angle))*xpb + (-(x*COS(angle))&
-   &     -y*SIN(angle))*ypb
+   xd = COS(angle)*xpd - SIN(angle)*ypd
+   yd = COS(angle)*ypd + SIN(angle)*xpd
+   zd = zpd
+   angled = angled + (y*COS(angle)-x*SIN(angle))*xpd + (-(x*COS(angle))&
+   &     -y*SIN(angle))*ypd
    CASE DEFAULT
    STOP
    END SELECT

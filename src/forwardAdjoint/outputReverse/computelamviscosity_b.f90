@@ -26,7 +26,7 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   USE BLOCKPOINTERS_B
+   USE BLOCKPOINTERS
    USE CONSTANTS
    USE FLOWVARREFSTATE
    USE INPUTPHYSICS
@@ -41,16 +41,16 @@
    !
    INTEGER(kind=inttype) :: i, j, k
    REAL(kind=realtype) :: musuth, tsuth, ssuth, t
-   REAL(kind=realtype) :: musuthb, tsuthb, ssuthb, tb
+   REAL(kind=realtype) :: musuthd, tsuthd, ssuthd, td
    LOGICAL :: correctfork
    INTEGER :: branch
    REAL(kind=realtype) :: temp2
    REAL(kind=realtype) :: temp1
    REAL(kind=realtype) :: temp0
-   REAL(kind=realtype) :: tempb2
-   REAL(kind=realtype) :: tempb1
-   REAL(kind=realtype) :: tempb0
-   REAL(kind=realtype) :: tempb
+   REAL(kind=realtype) :: tempd
+   REAL(kind=realtype) :: tempd2
+   REAL(kind=realtype) :: tempd1
+   REAL(kind=realtype) :: tempd0
    REAL(kind=realtype) :: temp
    !
    !      ******************************************************************
@@ -61,7 +61,7 @@
    !
    ! Return immediately if no laminar viscosity needs to be computed.
    IF (.NOT.viscous) THEN
-   murefb = 0.0_8
+   murefd = 0.0_8
    ELSE
    ! Determine whether or not the pressure must be corrected
    ! for the presence of the turbulent kinetic energy.
@@ -99,37 +99,37 @@
    DO k=ke,1,-1
    DO j=je,1,-1
    DO i=ie,1,-1
-   wb(i, j, k, irho) = wb(i, j, k, irho) + twothird*w(i, j, k, &
-   &             itu1)*pb(i, j, k)
-   wb(i, j, k, itu1) = wb(i, j, k, itu1) + twothird*w(i, j, k, &
-   &             irho)*pb(i, j, k)
+   wd(i, j, k, irho) = wd(i, j, k, irho) + twothird*w(i, j, k, &
+   &             itu1)*pd(i, j, k)
+   wd(i, j, k, itu1) = wd(i, j, k, itu1) + twothird*w(i, j, k, &
+   &             irho)*pd(i, j, k)
    END DO
    END DO
    END DO
    END IF
-   ssuthb = 0.0_8
-   musuthb = 0.0_8
-   tsuthb = 0.0_8
+   ssuthd = 0.0_8
+   musuthd = 0.0_8
+   tsuthd = 0.0_8
    DO k=ke,1,-1
    DO j=je,1,-1
    DO i=ie,1,-1
    t = p(i, j, k)/(rgas*w(i, j, k, irho))
    temp2 = t/tsuth
-   tempb = temp2**1.5_realType*rlvb(i, j, k)/(t+ssuth)
+   tempd = temp2**1.5_realType*rlvd(i, j, k)/(t+ssuth)
    temp1 = musuth*(tsuth+ssuth)/(t+ssuth)
-   tempb0 = -(temp1*tempb)
-   tempb1 = 1.5_realType*temp2**0.5*temp1*rlvb(i, j, k)/tsuth
-   musuthb = musuthb + (tsuth+ssuth)*tempb
-   tsuthb = tsuthb + musuth*tempb - temp2*tempb1
-   ssuthb = ssuthb + tempb0 + musuth*tempb
-   tb = tempb1 + tempb0
-   rlvb(i, j, k) = 0.0_8
+   tempd0 = -(temp1*tempd)
+   tempd1 = 1.5_realType*temp2**0.5*temp1*rlvd(i, j, k)/tsuth
+   musuthd = musuthd + (tsuth+ssuth)*tempd
+   tsuthd = tsuthd + musuth*tempd - temp2*tempd1
+   ssuthd = ssuthd + tempd0 + musuth*tempd
+   td = tempd1 + tempd0
+   rlvd(i, j, k) = 0.0_8
    temp0 = w(i, j, k, irho)
    temp = rgas*temp0
-   tempb2 = -(p(i, j, k)*tb/temp**2)
-   pb(i, j, k) = pb(i, j, k) + tb/temp
-   rgasb = rgasb + temp0*tempb2
-   wb(i, j, k, irho) = wb(i, j, k, irho) + rgas*tempb2
+   tempd2 = -(p(i, j, k)*td/temp**2)
+   pd(i, j, k) = pd(i, j, k) + td/temp
+   rgasd = rgasd + temp0*tempd2
+   wd(i, j, k, irho) = wd(i, j, k, irho) + rgas*tempd2
    END DO
    END DO
    END DO
@@ -138,15 +138,15 @@
    DO k=ke,1,-1
    DO j=je,1,-1
    DO i=ie,1,-1
-   wb(i, j, k, irho) = wb(i, j, k, irho) - twothird*w(i, j, k, &
-   &             itu1)*pb(i, j, k)
-   wb(i, j, k, itu1) = wb(i, j, k, itu1) - twothird*w(i, j, k, &
-   &             irho)*pb(i, j, k)
+   wd(i, j, k, irho) = wd(i, j, k, irho) - twothird*w(i, j, k, &
+   &             itu1)*pd(i, j, k)
+   wd(i, j, k, itu1) = wd(i, j, k, itu1) - twothird*w(i, j, k, &
+   &             irho)*pd(i, j, k)
    END DO
    END DO
    END DO
    END IF
-   trefb = trefb - tsuthdim*tsuthb/tref**2 - ssuthdim*ssuthb/tref**2
-   murefb = -(musuthdim*musuthb/muref**2)
+   trefd = trefd - tsuthdim*tsuthd/tref**2 - ssuthdim*ssuthd/tref**2
+   murefd = -(musuthdim*musuthd/muref**2)
    END IF
    END SUBROUTINE COMPUTELAMVISCOSITY_B

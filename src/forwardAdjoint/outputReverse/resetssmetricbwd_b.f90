@@ -15,9 +15,9 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   SUBROUTINE RESETSSMETRICBWD_B(nn, ss, ssb)
+   SUBROUTINE RESETSSMETRICBWD_B(nn, ss, ssd)
    USE BCTYPES
-   USE BLOCKPOINTERS_B
+   USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
    IMPLICIT NONE
    !
@@ -25,7 +25,7 @@
    !
    INTEGER(kind=inttype), INTENT(IN) :: nn
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, 3) :: ss
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, 3) :: ssb
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, 3) :: ssd
    !
    !      ******************************************************************
    !      *                                                                *
@@ -37,22 +37,22 @@
    ! the pointers accordinly.
    SELECT CASE  (bcfaceid(nn)) 
    CASE (imin) 
-   ssb(1:je, 1:ke, :) = ssb(1:je, 1:ke, :) + sib(1, 1:je, 1:ke, :)
-   sib(1, 1:je, 1:ke, :) = 0.0_8
+   ssd(1:je, 1:ke, :) = ssd(1:je, 1:ke, :) + sid(1, 1:je, 1:ke, :)
+   sid(1, 1:je, 1:ke, :) = 0.0_8
    CASE (imax) 
-   ssb(1:je, 1:ke, :) = ssb(1:je, 1:ke, :) + sib(il, 1:je, 1:ke, :)
-   sib(il, 1:je, 1:ke, :) = 0.0_8
+   ssd(1:je, 1:ke, :) = ssd(1:je, 1:ke, :) + sid(il, 1:je, 1:ke, :)
+   sid(il, 1:je, 1:ke, :) = 0.0_8
    CASE (jmin) 
-   ssb(1:ie, 1:ke, :) = ssb(1:ie, 1:ke, :) + sjb(1:ie, 1, 1:ke, :)
-   sjb(1:ie, 1, 1:ke, :) = 0.0_8
+   ssd(1:ie, 1:ke, :) = ssd(1:ie, 1:ke, :) + sjd(1:ie, 1, 1:ke, :)
+   sjd(1:ie, 1, 1:ke, :) = 0.0_8
    CASE (jmax) 
-   ssb(1:ie, 1:ke, :) = ssb(1:ie, 1:ke, :) + sjb(1:ie, jl, 1:ke, :)
-   sjb(1:ie, jl, 1:ke, :) = 0.0_8
+   ssd(1:ie, 1:ke, :) = ssd(1:ie, 1:ke, :) + sjd(1:ie, jl, 1:ke, :)
+   sjd(1:ie, jl, 1:ke, :) = 0.0_8
    CASE (kmin) 
-   ssb(1:ie, 1:je, :) = ssb(1:ie, 1:je, :) + skb(1:ie, 1:je, 1, :)
-   skb(1:ie, 1:je, 1, :) = 0.0_8
+   ssd(1:ie, 1:je, :) = ssd(1:ie, 1:je, :) + skd(1:ie, 1:je, 1, :)
+   skd(1:ie, 1:je, 1, :) = 0.0_8
    CASE (kmax) 
-   ssb(1:ie, 1:je, :) = ssb(1:ie, 1:je, :) + skb(1:ie, 1:je, kl, :)
-   skb(1:ie, 1:je, kl, :) = 0.0_8
+   ssd(1:ie, 1:je, :) = ssd(1:ie, 1:je, :) + skd(1:ie, 1:je, kl, :)
+   skd(1:ie, 1:je, kl, :) = 0.0_8
    END SELECT
    END SUBROUTINE RESETSSMETRICBWD_B

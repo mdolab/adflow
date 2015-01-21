@@ -18,7 +18,7 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   USE BLOCKPOINTERS_B
+   USE BLOCKPOINTERS
    USE CONSTANTS
    USE PARAMTURB
    IMPLICIT NONE
@@ -27,9 +27,9 @@
    !
    INTEGER(kind=inttype) :: i, j, k
    REAL(kind=realtype) :: chi, chi3, fv1, rnusa, cv13
-   REAL(kind=realtype) :: chib, chi3b, fv1b, rnusab
-   REAL(kind=realtype) :: tempb0
-   REAL(kind=realtype) :: tempb
+   REAL(kind=realtype) :: chid, chi3d, fv1d, rnusad
+   REAL(kind=realtype) :: tempd
+   REAL(kind=realtype) :: tempd0
    !
    !      ******************************************************************
    !      *                                                                *
@@ -46,16 +46,16 @@
    chi = rnusa/rlv(i, j, k)
    chi3 = chi**3
    fv1 = chi3/(chi3+cv13)
-   fv1b = rnusa*revb(i, j, k)
-   tempb0 = fv1b/(cv13+chi3)
-   chi3b = (1.0_8-chi3/(cv13+chi3))*tempb0
-   chib = 3*chi**2*chi3b
-   tempb = chib/rlv(i, j, k)
-   rnusab = tempb + fv1*revb(i, j, k)
-   revb(i, j, k) = 0.0_8
-   rlvb(i, j, k) = rlvb(i, j, k) - rnusa*tempb/rlv(i, j, k)
-   wb(i, j, k, itu1) = wb(i, j, k, itu1) + w(i, j, k, irho)*rnusab
-   wb(i, j, k, irho) = wb(i, j, k, irho) + w(i, j, k, itu1)*rnusab
+   fv1d = rnusa*revd(i, j, k)
+   tempd0 = fv1d/(cv13+chi3)
+   chi3d = (1.0_8-chi3/(cv13+chi3))*tempd0
+   chid = 3*chi**2*chi3d
+   tempd = chid/rlv(i, j, k)
+   rnusad = tempd + fv1*revd(i, j, k)
+   revd(i, j, k) = 0.0_8
+   rlvd(i, j, k) = rlvd(i, j, k) - rnusa*tempd/rlv(i, j, k)
+   wd(i, j, k, itu1) = wd(i, j, k, itu1) + w(i, j, k, irho)*rnusad
+   wd(i, j, k, irho) = wd(i, j, k, irho) + w(i, j, k, itu1)*rnusad
    END DO
    END DO
    END DO

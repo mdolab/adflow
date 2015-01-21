@@ -50,7 +50,7 @@
    INTEGER(kind=inttype) :: sps, nn, mm
    REAL(kind=realtype) :: gm1, ratio, tmp
    REAL(kind=realtype) :: mx, my, mz, re, v, tinfdim
-   REAL(kind=realtype) :: mxb, myb, mzb, reb, vb, tinfdimb
+   REAL(kind=realtype) :: mxd, myd, mzd, red, vd, tinfdimd
    REAL(kind=realtype), DIMENSION(3) :: dirloc, dirglob
    REAL(kind=realtype), DIMENSION(5) :: valloc, valglob
    TYPE(BCDATATYPE), DIMENSION(:), POINTER :: bcdata
@@ -68,16 +68,16 @@
    INTEGER :: branch
    REAL(kind=realtype) :: temp1
    REAL(kind=realtype) :: temp0
-   REAL(kind=realtype) :: tempb8
-   REAL(kind=realtype) :: tempb7
-   REAL(kind=realtype) :: tempb6
-   REAL(kind=realtype) :: tempb5
-   REAL(kind=realtype) :: tempb4
-   REAL(kind=realtype) :: tempb3
-   REAL(kind=realtype) :: tempb2
-   REAL(kind=realtype) :: tempb1
-   REAL(kind=realtype) :: tempb0
-   REAL(kind=realtype) :: tempb
+   REAL(kind=realtype) :: tempd
+   REAL(kind=realtype) :: tempd8
+   REAL(kind=realtype) :: tempd7
+   REAL(kind=realtype) :: tempd6
+   REAL(kind=realtype) :: tempd5
+   REAL(kind=realtype) :: tempd4
+   REAL(kind=realtype) :: tempd3
+   REAL(kind=realtype) :: tempd2
+   REAL(kind=realtype) :: tempd1
+   REAL(kind=realtype) :: tempd0
    REAL(kind=realtype) :: temp
    !
    !      ******************************************************************
@@ -168,109 +168,109 @@
    ! viscosity and gas constant.
    pinf = pinfdim/pref
    rhoinf = rhoinfdim/rhoref
-   mudimb = muinfb/muref
-   murefb = murefb - mudim*muinfb/muref**2
-   tempb5 = rgasdim*rgasb/pref
-   trefb = trefb + rhoref*tempb5
+   mudimd = muinfd/muref
+   murefd = murefd - mudim*muinfd/muref**2
+   tempd5 = rgasdim*rgasd/pref
+   trefd = trefd + rhoref*tempd5
    temp0 = gammainf*pinf/rhoinf
    temp1 = SQRT(temp0)
    IF (temp0 .EQ. 0.0_8) THEN
-   tempb8 = 0.0
+   tempd8 = 0.0
    ELSE
-   tempb8 = mach*uinfb/(2.0*temp1*rhoinf)
+   tempd8 = mach*uinfd/(2.0*temp1*rhoinf)
    END IF
-   machb = temp1*uinfb
-   gammainfb = gammainfb + pinf*tempb8
-   pinfb = pinfb + gammainf*tempb8
-   rhoinfb = rhoinfb - temp0*tempb8
-   rhoinfdimb = rhoinfdimb + rhoinfb/rhoref
-   pinfdimb = pinfdimb + pinfb/pref
+   machd = temp1*uinfd
+   gammainfd = gammainfd + pinf*tempd8
+   pinfd = pinfd + gammainf*tempd8
+   rhoinfd = rhoinfd - temp0*tempd8
+   rhoinfdimd = rhoinfdimd + rhoinfd/rhoref
+   pinfdimd = pinfdimd + pinfd/pref
    IF (rhoref/pref .EQ. 0.0_8) THEN
-   tempb7 = 0.0
+   tempd7 = 0.0
    ELSE
-   tempb7 = timerefb/(2.0*SQRT(rhoref/pref)*pref)
+   tempd7 = timerefd/(2.0*SQRT(rhoref/pref)*pref)
    END IF
    IF (pref*rhoref .EQ. 0.0_8) THEN
-   tempb6 = 0.0
+   tempd6 = 0.0
    ELSE
-   tempb6 = murefb/(2.0*SQRT(pref*rhoref))
+   tempd6 = murefd/(2.0*SQRT(pref*rhoref))
    END IF
-   rhorefb = pref*tempb6 - rhoinfdim*rhoinfb/rhoref**2 + tempb7 + tref*&
-   &   tempb5
-   prefb = prefb + rhoref*tempb6 - pinfdim*pinfb/pref**2 - rhoref*tempb7/&
-   &   pref - rhoref*tref*tempb5/pref
+   rhorefd = pref*tempd6 - rhoinfdim*rhoinfd/rhoref**2 + tempd7 + tref*&
+   &   tempd5
+   prefd = prefd + rhoref*tempd6 - pinfdim*pinfd/pref**2 - rhoref*tempd7/&
+   &   pref - rhoref*tref*tempd5/pref
    CALL POPCONTROL2B(branch)
    IF (branch .EQ. 0) THEN
-   tempfreestreamb = 0.0_8
-   reynoldsb = 0.0_8
-   tinfdimb = 0.0_8
+   tempfreestreamd = 0.0_8
+   reynoldsd = 0.0_8
+   tinfdimd = 0.0_8
    ELSE
    IF (branch .EQ. 1) THEN
-   tinfdimb = trefb
+   tinfdimd = trefd
    ELSE
-   tinfdimb = 0.0_8
+   tinfdimd = 0.0_8
    END IF
    CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) rhoinfdimb = rhoinfdimb + rhorefb
+   IF (branch .EQ. 0) rhoinfdimd = rhoinfdimd + rhorefd
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   pinfdimb = pinfdimb + prefb
-   prefb = 0.0_8
+   pinfdimd = pinfdimd + prefd
+   prefd = 0.0_8
    END IF
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   rhoinfdimb = rhoinfdimb + rgasdim*tempfreestream*pinfdimb
-   tempb3 = rhoinfdimb/v
-   mudimb = mudimb + re*tempb3
-   vb = -(re*mudim*tempb3/v)
+   rhoinfdimd = rhoinfdimd + rgasdim*tempfreestream*pinfdimd
+   tempd3 = rhoinfdimd/v
+   mudimd = mudimd + re*tempd3
+   vd = -(re*mudim*tempd3/v)
    temp = mx**2 + my**2 + mz**2
    IF (rgasdim*(temp*(gammainf*tempfreestream)) .EQ. 0.0_8) THEN
-   tempb2 = 0.0
+   tempd2 = 0.0
    ELSE
-   tempb2 = rgasdim*vb/(2.0*SQRT(rgasdim*(temp*(gammainf*&
+   tempd2 = rgasdim*vd/(2.0*SQRT(rgasdim*(temp*(gammainf*&
    &         tempfreestream))))
    END IF
-   tempb1 = musuthdim*(tsuthdim+ssuthdim)*mudimb/(ssuthdim+&
+   tempd1 = musuthdim*(tsuthdim+ssuthdim)*mudimd/(ssuthdim+&
    &       tempfreestream)
-   tempfreestreamb = rgasdim*rhoinfdim*pinfdimb + (1.5*(&
+   tempfreestreamd = rgasdim*rhoinfdim*pinfdimd + (1.5*(&
    &       tempfreestream/tsuthdim)**0.5/tsuthdim-(tempfreestream/tsuthdim)&
-   &       **1.5/(ssuthdim+tempfreestream))*tempb1 + temp*gammainf*tempb2 +&
-   &       tinfdimb
+   &       **1.5/(ssuthdim+tempfreestream))*tempd1 + temp*gammainf*tempd2 +&
+   &       tinfdimd
    CALL POPREAL8(pinfdim)
    tinfdim = tempfreestream
-   reb = mudim*tempb3
-   tempb4 = gammainf*tempfreestream*tempb2
-   mxb = 2*mx*tempb4
-   myb = 2*my*tempb4
-   mzb = 2*mz*tempb4
-   gammainfb = gammainfb + temp*tempfreestream*tempb2
-   reynoldsb = reb/reynoldslength
-   machcoefb = machcoefb + veldirfreestream(2)*myb + veldirfreestream&
-   &       (1)*mxb + veldirfreestream(3)*mzb
-   veldirfreestreamb(3) = veldirfreestreamb(3) + machcoef*mzb
-   veldirfreestreamb(2) = veldirfreestreamb(2) + machcoef*myb
-   veldirfreestreamb(1) = veldirfreestreamb(1) + machcoef*mxb
-   mudimb = 0.0_8
-   rhoinfdimb = 0.0_8
-   pinfdimb = 0.0_8
-   tinfdimb = 0.0_8
+   red = mudim*tempd3
+   tempd4 = gammainf*tempfreestream*tempd2
+   mxd = 2*mx*tempd4
+   myd = 2*my*tempd4
+   mzd = 2*mz*tempd4
+   gammainfd = gammainfd + temp*tempfreestream*tempd2
+   reynoldsd = red/reynoldslength
+   machcoefd = machcoefd + veldirfreestream(2)*myd + veldirfreestream&
+   &       (1)*mxd + veldirfreestream(3)*mzd
+   veldirfreestreamd(3) = veldirfreestreamd(3) + machcoef*mzd
+   veldirfreestreamd(2) = veldirfreestreamd(2) + machcoef*myd
+   veldirfreestreamd(1) = veldirfreestreamd(1) + machcoef*mxd
+   mudimd = 0.0_8
+   rhoinfdimd = 0.0_8
+   pinfdimd = 0.0_8
+   tinfdimd = 0.0_8
    ELSE
-   tempfreestreamb = 0.0_8
-   reynoldsb = 0.0_8
+   tempfreestreamd = 0.0_8
+   reynoldsd = 0.0_8
    END IF
-   CALL COMPUTEGAMMA_B(tempfreestream, tempfreestreamb, gammainf, &
-   &                 gammainfb, 1)
+   CALL COMPUTEGAMMA_B(tempfreestream, tempfreestreamd, gammainf, &
+   &                 gammainfd, 1)
    END IF
-   tempb0 = rhoinfdimb/(rgasdim*tinfdim)
-   tempb = musuthdim*(tsuthdim+ssuthdim)*mudimb/(ssuthdim+tinfdim)
-   tinfdimb = tinfdimb + (1.5_realType*(tinfdim/tsuthdim)**0.5/tsuthdim-(&
-   &   tinfdim/tsuthdim)**1.5_realType/(ssuthdim+tinfdim))*tempb - pinfdim*&
-   &   tempb0/tinfdim
-   pinfdimb = pinfdimb + tempb0
-   tempfreestreamb = tempfreestreamb + tinfdimb
+   tempd0 = rhoinfdimd/(rgasdim*tinfdim)
+   tempd = musuthdim*(tsuthdim+ssuthdim)*mudimd/(ssuthdim+tinfdim)
+   tinfdimd = tinfdimd + (1.5_realType*(tinfdim/tsuthdim)**0.5/tsuthdim-(&
+   &   tinfdim/tsuthdim)**1.5_realType/(ssuthdim+tinfdim))*tempd - pinfdim*&
+   &   tempd0/tinfdim
+   pinfdimd = pinfdimd + tempd0
+   tempfreestreamd = tempfreestreamd + tinfdimd
    CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) pinfdimb = 0.0_8
-   prefb = prefb + pinfdimb
+   IF (branch .EQ. 0) pinfdimd = 0.0_8
+   prefd = prefd + pinfdimd
       CONTAINS
    !=================================================================
    !===============================================================

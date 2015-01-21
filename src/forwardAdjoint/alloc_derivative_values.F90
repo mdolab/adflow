@@ -3,8 +3,7 @@
 
 subroutine alloc_derivative_values(level)
 
-  use blockPointers_d ! This modules includes blockPointers
-
+  use blockPointers
   use inputtimespectral
   use flowvarrefstate
   use inputPhysics
@@ -14,6 +13,9 @@ subroutine alloc_derivative_values(level)
   use turbMod
   use inputADjoint
   use inputDiscretization
+  use communication
+  use wallDistanceData
+
   implicit none
 
   ! Input parameters
@@ -50,9 +52,25 @@ subroutine alloc_derivative_values(level)
   allocate(winfd(10),stat=ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
+  ! If we are not using RANS with walDistance create a dummy xSurfVec
+  ! since one does not yet exist
+  if (.not. wallDistanceNeeded .or. .not. useApproxWallDistance) then 
+     call VecCreateMPI(SUMB_COMM_WORLD, 1, PETSC_DETERMINE, xSurfVec(1), ierr)
+  end if
+
+  ! Duplicate the PETSc Xsurf Vec, but only on the first level:
+  call VecDuplicate(xSurfVec(1), xSurfVecd, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
   do nn=1,nDom
      do sps=1,nTimeIntervalsSpectral
         call setPointers(nn,level,sps)
+
+        ! Allocate d2wall if not already done so
+        if (.not. associated(flowDoms(nn, 1, sps)%d2wall)) then 
+           allocate(flowDoms(nn, 1, sps)%d2wall(2:il, 2:jl, 2:kl))
+           call EChk(ierr,__FILE__,__LINE__)
+        end if
 
         ! Allocate shockSensor in flowDoms *NOT* flowDomsd....and
         ! compute the value depending on equations/dissipation
@@ -127,6 +145,21 @@ subroutine alloc_derivative_values(level)
         
         allocate(flowDomsd(nn,1,sps)%p(0:ib,0:jb,0:kb), &
              flowDomsd(nn,1,sps)%gamma(0:ib,0:jb,0:kb), stat=ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+
+        allocate(&
+        flowDomsd(nn,1,sps)%ux(il,jl,kl), &
+        flowDomsd(nn,1,sps)%uy(il,jl,kl), &
+        flowDomsd(nn,1,sps)%uz(il,jl,kl), &
+        flowDomsd(nn,1,sps)%vx(il,jl,kl), &
+        flowDomsd(nn,1,sps)%vy(il,jl,kl), &
+        flowDomsd(nn,1,sps)%vz(il,jl,kl), &
+        flowDomsd(nn,1,sps)%wx(il,jl,kl), &
+        flowDomsd(nn,1,sps)%wy(il,jl,kl), &
+        flowDomsd(nn,1,sps)%wz(il,jl,kl), &
+        flowDomsd(nn,1,sps)%qx(il,jl,kl), &
+        flowDomsd(nn,1,sps)%qy(il,jl,kl), &
+        flowDomsd(nn,1,sps)%qz(il,jl,kl), stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
 
         ! Nominally we would only need these if visous is True, but
@@ -219,33 +252,31 @@ subroutine alloc_derivative_values(level)
            call EChk(ierr,__FILE__,__LINE__)
         end if
 
-        if (viscous) then
-           allocate(flowDomsd(nn,1,sps)%d2Wall(2:il,2:jl,2:kl), &
-                stat=ierr)
-           call EChk(ierr,__FILE__,__LINE__)
+        allocate(flowDomsd(nn,1,sps)%d2Wall(2:il,2:jl,2:kl), &
+             stat=ierr)
+        call EChk(ierr,__FILE__,__LINE__)
         
-           allocate(flowDomsd(nn,1,sps)%viscSubface(nviscBocos), &
+        allocate(flowDomsd(nn,1,sps)%viscSubface(nviscBocos), &
+             stat=ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+        
+        viscbocoLoop: do mm=1,nviscBocos
+           
+           iBeg = BCData(mm)%inBeg + 1
+           iEnd = BCData(mm)%inEnd
+           
+           jBeg = BCData(mm)%jnBeg + 1
+           jEnd = BCData(mm)%jnEnd
+           
+           allocate(flowDomsd(nn,1,sps)%viscSubface(mm)%tau(iBeg:iEnd,jBeg:jEnd,6), &
                 stat=ierr)
            call EChk(ierr,__FILE__,__LINE__)
            
-           viscbocoLoop: do mm=1,nviscBocos
+           allocate(flowDomsd(nn,1,sps)%viscSubface(mm)%q(iBeg:iEnd,jBeg:jEnd,6), &
+                stat=ierr)
+           call EChk(ierr,__FILE__,__LINE__)
            
-              iBeg = BCData(mm)%inBeg + 1
-              iEnd = BCData(mm)%inEnd
-              
-              jBeg = BCData(mm)%jnBeg + 1
-              jEnd = BCData(mm)%jnEnd
-        
-              allocate(flowDomsd(nn,1,sps)%viscSubface(mm)%tau(iBeg:iEnd,jBeg:jEnd,6), &
-                   stat=ierr)
-              call EChk(ierr,__FILE__,__LINE__)
-              
-              allocate(flowDomsd(nn,1,sps)%viscSubface(mm)%q(iBeg:iEnd,jBeg:jEnd,6), &
-                   stat=ierr)
-              call EChk(ierr,__FILE__,__LINE__)
-         
-           enddo viscbocoLoop
-        end if
+        enddo viscbocoLoop
 
         ! Zero out all the derivative values we've just allocated
         call zeroADSeeds(nn, 1, sps)

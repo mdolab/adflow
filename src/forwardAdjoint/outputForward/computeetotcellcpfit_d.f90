@@ -16,7 +16,7 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    USE CPCURVEFITS
    USE FLOWVARREFSTATE
    IMPLICIT NONE
