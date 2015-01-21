@@ -2,7 +2,7 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of computelamviscosity in forward (tangent) mode (with options i4 dr8 r8):
-   !   variations   of useful results: *p *rlv
+   !   variations   of useful results: *rlv
    !   with respect to varying inputs: *p *w muref tref rgas
    !   Plus diff mem management of: p:in w:in rlv:in
    !
@@ -39,9 +39,9 @@
    !
    !      Local variables.
    !
-   INTEGER(kind=inttype) :: i, j, k
-   REAL(kind=realtype) :: musuth, tsuth, ssuth, t
-   REAL(kind=realtype) :: musuthd, tsuthd, ssuthd, td
+   INTEGER(kind=inttype) :: i, j, k, ii
+   REAL(kind=realtype) :: musuth, tsuth, ssuth, t, pp
+   REAL(kind=realtype) :: musuthd, tsuthd, ssuthd, td, ppd
    LOGICAL :: correctfork
    !
    !      ******************************************************************
@@ -76,20 +76,28 @@
    ! Substract 2/3 rho k, which is a part of the normal turbulent
    ! stresses, in case the pressure must be corrected.
    IF (correctfork) THEN
+   rlvd = 0.0_8
    DO k=1,ke
    DO j=1,je
    DO i=1,ie
-   pd(i, j, k) = pd(i, j, k) - twothird*(wd(i, j, k, irho)*w(i&
-   &             , j, k, itu1)+w(i, j, k, irho)*wd(i, j, k, itu1))
-   p(i, j, k) = p(i, j, k) - twothird*w(i, j, k, irho)*w(i, j, &
-   &             k, itu1)
+   ppd = pd(i, j, k) - twothird*(wd(i, j, k, irho)*w(i, j, k, &
+   &             itu1)+w(i, j, k, irho)*wd(i, j, k, itu1))
+   pp = p(i, j, k) - twothird*w(i, j, k, irho)*w(i, j, k, itu1)
+   td = (ppd*rgas*w(i, j, k, irho)-pp*(rgasd*w(i, j, k, irho)+&
+   &             rgas*wd(i, j, k, irho)))/(rgas*w(i, j, k, irho))**2
+   t = pp/(rgas*w(i, j, k, irho))
+   rlvd(i, j, k) = (musuthd*(tsuth+ssuth)/(t+ssuth)+musuth*((&
+   &             tsuthd+ssuthd)*(t+ssuth)-(tsuth+ssuth)*(td+ssuthd))/(t+&
+   &             ssuth)**2)*(t/tsuth)**1.5_realType + musuth*(tsuth+ssuth)*&
+   &             1.5_realType*(t/tsuth)**0.5*(td*tsuth-t*tsuthd)/((t+ssuth)&
+   &             *tsuth**2)
+   rlv(i, j, k) = musuth*((tsuth+ssuth)/(t+ssuth))*(t/tsuth)**&
+   &             1.5_realType
    END DO
    END DO
    END DO
-   rlvd = 0.0_8
    ELSE
    rlvd = 0.0_8
-   END IF
    ! Loop over the owned cells *AND* first level halos of this
    ! block and compute the laminar viscosity ratio.
    DO k=1,ke
@@ -97,30 +105,17 @@
    DO i=1,ie
    ! Compute the nonDimensional temperature and the
    ! nonDimensional laminar viscosity.
-   td = (pd(i, j, k)*rgas*w(i, j, k, irho)-p(i, j, k)*(rgasd*w(i&
-   &           , j, k, irho)+rgas*wd(i, j, k, irho)))/(rgas*w(i, j, k, irho&
-   &           ))**2
+   td = (pd(i, j, k)*rgas*w(i, j, k, irho)-p(i, j, k)*(rgasd*w(&
+   &             i, j, k, irho)+rgas*wd(i, j, k, irho)))/(rgas*w(i, j, k, &
+   &             irho))**2
    t = p(i, j, k)/(rgas*w(i, j, k, irho))
    rlvd(i, j, k) = (musuthd*(tsuth+ssuth)/(t+ssuth)+musuth*((&
-   &           tsuthd+ssuthd)*(t+ssuth)-(tsuth+ssuth)*(td+ssuthd))/(t+ssuth&
-   &           )**2)*(t/tsuth)**1.5_realType + musuth*(tsuth+ssuth)*&
-   &           1.5_realType*(t/tsuth)**0.5*(td*tsuth-t*tsuthd)/((t+ssuth)*&
-   &           tsuth**2)
+   &             tsuthd+ssuthd)*(t+ssuth)-(tsuth+ssuth)*(td+ssuthd))/(t+&
+   &             ssuth)**2)*(t/tsuth)**1.5_realType + musuth*(tsuth+ssuth)*&
+   &             1.5_realType*(t/tsuth)**0.5*(td*tsuth-t*tsuthd)/((t+ssuth)&
+   &             *tsuth**2)
    rlv(i, j, k) = musuth*((tsuth+ssuth)/(t+ssuth))*(t/tsuth)**&
-   &           1.5_realType
-   END DO
-   END DO
-   END DO
-   ! Add the 2/3 rho k again to the pressure if the pressure was
-   ! corrected earlier.
-   IF (correctfork) THEN
-   DO k=1,ke
-   DO j=1,je
-   DO i=1,ie
-   pd(i, j, k) = pd(i, j, k) + twothird*(wd(i, j, k, irho)*w(i&
-   &             , j, k, itu1)+w(i, j, k, irho)*wd(i, j, k, itu1))
-   p(i, j, k) = p(i, j, k) + twothird*w(i, j, k, irho)*w(i, j, &
-   &             k, itu1)
+   &             1.5_realType
    END DO
    END DO
    END DO
