@@ -98,23 +98,23 @@
    LOGICAL :: rvfb
    LOGICAL :: wallfunctions, walldistanceneeded
    REAL(kind=realtype) :: mach, machcoef, machgrid
-   REAL(kind=realtype) :: machb, machcoefb, machgridb
+   REAL(kind=realtype) :: machd, machcoefd, machgridd
    REAL(kind=realtype) :: reynolds, reynoldslength
-   REAL(kind=realtype) :: reynoldsb
+   REAL(kind=realtype) :: reynoldsd
    REAL(kind=realtype) :: tempfreestream, gammaconstant, rgasdim
-   REAL(kind=realtype) :: tempfreestreamb
+   REAL(kind=realtype) :: tempfreestreamd
    REAL(kind=realtype) :: prandtl, prandtlturb, pklim, walloffset
    REAL(kind=realtype) :: eddyvisinfratio, turbintensityinf
    REAL(kind=realtype) :: surfaceref, lengthref
-   REAL(kind=realtype) :: lengthrefb
+   REAL(kind=realtype) :: lengthrefd
    REAL(kind=realtype), DIMENSION(3) :: veldirfreestream
-   REAL(kind=realtype), DIMENSION(3) :: veldirfreestreamb
+   REAL(kind=realtype), DIMENSION(3) :: veldirfreestreamd
    REAL(kind=realtype), DIMENSION(3) :: liftdirection
-   REAL(kind=realtype), DIMENSION(3) :: liftdirectionb
+   REAL(kind=realtype), DIMENSION(3) :: liftdirectiond
    REAL(kind=realtype), DIMENSION(3) :: dragdirection
-   REAL(kind=realtype), DIMENSION(3) :: dragdirectionb
+   REAL(kind=realtype), DIMENSION(3) :: dragdirectiond
    REAL(kind=realtype), DIMENSION(3) :: pointref
-   REAL(kind=realtype), DIMENSION(3) :: pointrefb
+   REAL(kind=realtype), DIMENSION(3) :: pointrefd
    REAL(kind=realtype), DIMENSION(3) :: pointrefec
    ! Return forces as tractions instead of forces:
    LOGICAL :: forcesastractions

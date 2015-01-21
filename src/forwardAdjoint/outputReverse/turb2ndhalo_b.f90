@@ -25,7 +25,7 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   USE BLOCKPOINTERS_B
+   USE BLOCKPOINTERS
    USE BCTYPES
    USE FLOWVARREFSTATE
    IMPLICIT NONE
@@ -44,12 +44,12 @@
    REAL(kind=realtype) :: tmp3
    REAL(kind=realtype) :: tmp4
    INTEGER :: branch
-   REAL(kind=realtype) :: tmpb4
-   REAL(kind=realtype) :: tmpb3
-   REAL(kind=realtype) :: tmpb
-   REAL(kind=realtype) :: tmpb2
-   REAL(kind=realtype) :: tmpb1
-   REAL(kind=realtype) :: tmpb0
+   REAL(kind=realtype) :: tmpd
+   REAL(kind=realtype) :: tmpd4
+   REAL(kind=realtype) :: tmpd3
+   REAL(kind=realtype) :: tmpd2
+   REAL(kind=realtype) :: tmpd1
+   REAL(kind=realtype) :: tmpd0
    !
    !      ******************************************************************
    !      *                                                                *
@@ -76,12 +76,12 @@
    DO i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
    CALL POPCONTROL1B(branch)
    IF (branch .NE. 0) THEN
-   revb(1, i, j) = revb(1, i, j) + revb(0, i, j)
-   revb(0, i, j) = 0.0_8
+   revd(1, i, j) = revd(1, i, j) + revd(0, i, j)
+   revd(0, i, j) = 0.0_8
    END IF
    DO l=nt2,nt1,-1
-   wb(1, i, j, l) = wb(1, i, j, l) + wb(0, i, j, l)
-   wb(0, i, j, l) = 0.0_8
+   wd(1, i, j, l) = wd(1, i, j, l) + wd(0, i, j, l)
+   wd(0, i, j, l) = 0.0_8
    END DO
    END DO
    END DO
@@ -100,14 +100,14 @@
    DO i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
    CALL POPCONTROL1B(branch)
    IF (branch .NE. 0) THEN
-   tmpb0 = revb(ib, i, j)
-   revb(ib, i, j) = 0.0_8
-   revb(ie, i, j) = revb(ie, i, j) + tmpb0
+   tmpd0 = revd(ib, i, j)
+   revd(ib, i, j) = 0.0_8
+   revd(ie, i, j) = revd(ie, i, j) + tmpd0
    END IF
    DO l=nt2,nt1,-1
-   tmpb = wb(ib, i, j, l)
-   wb(ib, i, j, l) = 0.0_8
-   wb(ie, i, j, l) = wb(ie, i, j, l) + tmpb
+   tmpd = wd(ib, i, j, l)
+   wd(ib, i, j, l) = 0.0_8
+   wd(ie, i, j, l) = wd(ie, i, j, l) + tmpd
    END DO
    END DO
    END DO
@@ -126,12 +126,12 @@
    DO i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
    CALL POPCONTROL1B(branch)
    IF (branch .NE. 0) THEN
-   revb(i, 1, j) = revb(i, 1, j) + revb(i, 0, j)
-   revb(i, 0, j) = 0.0_8
+   revd(i, 1, j) = revd(i, 1, j) + revd(i, 0, j)
+   revd(i, 0, j) = 0.0_8
    END IF
    DO l=nt2,nt1,-1
-   wb(i, 1, j, l) = wb(i, 1, j, l) + wb(i, 0, j, l)
-   wb(i, 0, j, l) = 0.0_8
+   wd(i, 1, j, l) = wd(i, 1, j, l) + wd(i, 0, j, l)
+   wd(i, 0, j, l) = 0.0_8
    END DO
    END DO
    END DO
@@ -150,14 +150,14 @@
    DO i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
    CALL POPCONTROL1B(branch)
    IF (branch .NE. 0) THEN
-   tmpb2 = revb(i, jb, j)
-   revb(i, jb, j) = 0.0_8
-   revb(i, je, j) = revb(i, je, j) + tmpb2
+   tmpd2 = revd(i, jb, j)
+   revd(i, jb, j) = 0.0_8
+   revd(i, je, j) = revd(i, je, j) + tmpd2
    END IF
    DO l=nt2,nt1,-1
-   tmpb1 = wb(i, jb, j, l)
-   wb(i, jb, j, l) = 0.0_8
-   wb(i, je, j, l) = wb(i, je, j, l) + tmpb1
+   tmpd1 = wd(i, jb, j, l)
+   wd(i, jb, j, l) = 0.0_8
+   wd(i, je, j, l) = wd(i, je, j, l) + tmpd1
    END DO
    END DO
    END DO
@@ -176,12 +176,12 @@
    DO i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
    CALL POPCONTROL1B(branch)
    IF (branch .NE. 0) THEN
-   revb(i, j, 1) = revb(i, j, 1) + revb(i, j, 0)
-   revb(i, j, 0) = 0.0_8
+   revd(i, j, 1) = revd(i, j, 1) + revd(i, j, 0)
+   revd(i, j, 0) = 0.0_8
    END IF
    DO l=nt2,nt1,-1
-   wb(i, j, 1, l) = wb(i, j, 1, l) + wb(i, j, 0, l)
-   wb(i, j, 0, l) = 0.0_8
+   wd(i, j, 1, l) = wd(i, j, 1, l) + wd(i, j, 0, l)
+   wd(i, j, 0, l) = 0.0_8
    END DO
    END DO
    END DO
@@ -200,14 +200,14 @@
    DO i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
    CALL POPCONTROL1B(branch)
    IF (branch .NE. 0) THEN
-   tmpb4 = revb(i, j, kb)
-   revb(i, j, kb) = 0.0_8
-   revb(i, j, ke) = revb(i, j, ke) + tmpb4
+   tmpd4 = revd(i, j, kb)
+   revd(i, j, kb) = 0.0_8
+   revd(i, j, ke) = revd(i, j, ke) + tmpd4
    END IF
    DO l=nt2,nt1,-1
-   tmpb3 = wb(i, j, kb, l)
-   wb(i, j, kb, l) = 0.0_8
-   wb(i, j, ke, l) = wb(i, j, ke, l) + tmpb3
+   tmpd3 = wd(i, j, kb, l)
+   wd(i, j, kb, l) = 0.0_8
+   wd(i, j, ke, l) = wd(i, j, ke, l) + tmpd3
    END DO
    END DO
    END DO

@@ -15,7 +15,7 @@
    !
    SUBROUTINE SETPP3PP4_D(nn, pp3, pp3d, pp4, pp4d)
    USE BCTYPES
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    IMPLICIT NONE
    !
    !      Subroutine arguments.

@@ -508,6 +508,16 @@ module block
      real(kind=realType), dimension(:,:,:),     pointer :: rlv, rev
      real(kind=realType), dimension(:,:,:,:),   pointer :: s
      real(kind=realType), dimension(:,:,:),   pointer :: shockSensor
+
+     ! Nodal Fluxes: ux,uy,uz,vx,vy,vz,wx,wy,wz,qx,qy,qz(il, jl, kl)
+     real(kind=realType), dimension(:, :, :), pointer:: ux, uy, uz
+     real(kind=realType), dimension(:, :, :), pointer:: vx, vy, vz 
+     real(kind=realType), dimension(:, :, :), pointer:: wx, wy, wz 
+     real(kind=realType), dimension(:, :, :), pointer:: qx, qy, qz 
+     
+
+
+
      !
      !        ****************************************************************
      !        *                                                              *

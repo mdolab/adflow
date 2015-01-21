@@ -28,7 +28,7 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   USE BLOCKPOINTERS_D
+   USE BLOCKPOINTERS
    USE TURBMOD
    IMPLICIT NONE
    !
@@ -39,8 +39,9 @@
    !      Local variables.
    !
    INTEGER(kind=inttype) :: i, j, k
-   REAL(kind=realtype) :: ux, uy, uz, vx, vy, vz, wx, wy, wz
-   REAL(kind=realtype) :: uxd, uyd, uzd, vxd, vyd, vzd, wxd, wyd, wzd
+   REAL(kind=realtype) :: uux, uuy, uuz, vvx, vvy, vvz, wwx, wwy, wwz
+   REAL(kind=realtype) :: uuxd, uuyd, uuzd, vvxd, vvyd, vvzd, wwxd, wwyd&
+   & , wwzd
    REAL(kind=realtype) :: div2, fact, sxx, syy, szz, sxy, sxz, syz
    REAL(kind=realtype) :: div2d, factd, sxxd, syyd, szzd, sxyd, sxzd, &
    & syzd
@@ -63,114 +64,114 @@
    ! of the fact that the surrounding normals sum up to zero,
    ! such that the cell i,j,k does not give a contribution.
    ! The gradient is scaled by the factor 2*vol.
-   uxd = wd(i+1, j, k, ivx)*si(i, j, k, 1) + w(i+1, j, k, ivx)*sid(&
-   &         i, j, k, 1) - wd(i-1, j, k, ivx)*si(i-1, j, k, 1) - w(i-1, j, &
-   &         k, ivx)*sid(i-1, j, k, 1) + wd(i, j+1, k, ivx)*sj(i, j, k, 1) &
-   &         + w(i, j+1, k, ivx)*sjd(i, j, k, 1) - wd(i, j-1, k, ivx)*sj(i&
-   &         , j-1, k, 1) - w(i, j-1, k, ivx)*sjd(i, j-1, k, 1) + wd(i, j, &
-   &         k+1, ivx)*sk(i, j, k, 1) + w(i, j, k+1, ivx)*skd(i, j, k, 1) -&
-   &         wd(i, j, k-1, ivx)*sk(i, j, k-1, 1) - w(i, j, k-1, ivx)*skd(i&
-   &         , j, k-1, 1)
-   ux = w(i+1, j, k, ivx)*si(i, j, k, 1) - w(i-1, j, k, ivx)*si(i-1&
-   &         , j, k, 1) + w(i, j+1, k, ivx)*sj(i, j, k, 1) - w(i, j-1, k, &
+   uuxd = wd(i+1, j, k, ivx)*si(i, j, k, 1) + w(i+1, j, k, ivx)*sid&
+   &         (i, j, k, 1) - wd(i-1, j, k, ivx)*si(i-1, j, k, 1) - w(i-1, j&
+   &         , k, ivx)*sid(i-1, j, k, 1) + wd(i, j+1, k, ivx)*sj(i, j, k, 1&
+   &         ) + w(i, j+1, k, ivx)*sjd(i, j, k, 1) - wd(i, j-1, k, ivx)*sj(&
+   &         i, j-1, k, 1) - w(i, j-1, k, ivx)*sjd(i, j-1, k, 1) + wd(i, j&
+   &         , k+1, ivx)*sk(i, j, k, 1) + w(i, j, k+1, ivx)*skd(i, j, k, 1)&
+   &         - wd(i, j, k-1, ivx)*sk(i, j, k-1, 1) - w(i, j, k-1, ivx)*skd(&
+   &         i, j, k-1, 1)
+   uux = w(i+1, j, k, ivx)*si(i, j, k, 1) - w(i-1, j, k, ivx)*si(i-&
+   &         1, j, k, 1) + w(i, j+1, k, ivx)*sj(i, j, k, 1) - w(i, j-1, k, &
    &         ivx)*sj(i, j-1, k, 1) + w(i, j, k+1, ivx)*sk(i, j, k, 1) - w(i&
    &         , j, k-1, ivx)*sk(i, j, k-1, 1)
-   uyd = wd(i+1, j, k, ivx)*si(i, j, k, 2) + w(i+1, j, k, ivx)*sid(&
-   &         i, j, k, 2) - wd(i-1, j, k, ivx)*si(i-1, j, k, 2) - w(i-1, j, &
-   &         k, ivx)*sid(i-1, j, k, 2) + wd(i, j+1, k, ivx)*sj(i, j, k, 2) &
-   &         + w(i, j+1, k, ivx)*sjd(i, j, k, 2) - wd(i, j-1, k, ivx)*sj(i&
-   &         , j-1, k, 2) - w(i, j-1, k, ivx)*sjd(i, j-1, k, 2) + wd(i, j, &
-   &         k+1, ivx)*sk(i, j, k, 2) + w(i, j, k+1, ivx)*skd(i, j, k, 2) -&
-   &         wd(i, j, k-1, ivx)*sk(i, j, k-1, 2) - w(i, j, k-1, ivx)*skd(i&
-   &         , j, k-1, 2)
-   uy = w(i+1, j, k, ivx)*si(i, j, k, 2) - w(i-1, j, k, ivx)*si(i-1&
-   &         , j, k, 2) + w(i, j+1, k, ivx)*sj(i, j, k, 2) - w(i, j-1, k, &
+   uuyd = wd(i+1, j, k, ivx)*si(i, j, k, 2) + w(i+1, j, k, ivx)*sid&
+   &         (i, j, k, 2) - wd(i-1, j, k, ivx)*si(i-1, j, k, 2) - w(i-1, j&
+   &         , k, ivx)*sid(i-1, j, k, 2) + wd(i, j+1, k, ivx)*sj(i, j, k, 2&
+   &         ) + w(i, j+1, k, ivx)*sjd(i, j, k, 2) - wd(i, j-1, k, ivx)*sj(&
+   &         i, j-1, k, 2) - w(i, j-1, k, ivx)*sjd(i, j-1, k, 2) + wd(i, j&
+   &         , k+1, ivx)*sk(i, j, k, 2) + w(i, j, k+1, ivx)*skd(i, j, k, 2)&
+   &         - wd(i, j, k-1, ivx)*sk(i, j, k-1, 2) - w(i, j, k-1, ivx)*skd(&
+   &         i, j, k-1, 2)
+   uuy = w(i+1, j, k, ivx)*si(i, j, k, 2) - w(i-1, j, k, ivx)*si(i-&
+   &         1, j, k, 2) + w(i, j+1, k, ivx)*sj(i, j, k, 2) - w(i, j-1, k, &
    &         ivx)*sj(i, j-1, k, 2) + w(i, j, k+1, ivx)*sk(i, j, k, 2) - w(i&
    &         , j, k-1, ivx)*sk(i, j, k-1, 2)
-   uzd = wd(i+1, j, k, ivx)*si(i, j, k, 3) + w(i+1, j, k, ivx)*sid(&
-   &         i, j, k, 3) - wd(i-1, j, k, ivx)*si(i-1, j, k, 3) - w(i-1, j, &
-   &         k, ivx)*sid(i-1, j, k, 3) + wd(i, j+1, k, ivx)*sj(i, j, k, 3) &
-   &         + w(i, j+1, k, ivx)*sjd(i, j, k, 3) - wd(i, j-1, k, ivx)*sj(i&
-   &         , j-1, k, 3) - w(i, j-1, k, ivx)*sjd(i, j-1, k, 3) + wd(i, j, &
-   &         k+1, ivx)*sk(i, j, k, 3) + w(i, j, k+1, ivx)*skd(i, j, k, 3) -&
-   &         wd(i, j, k-1, ivx)*sk(i, j, k-1, 3) - w(i, j, k-1, ivx)*skd(i&
-   &         , j, k-1, 3)
-   uz = w(i+1, j, k, ivx)*si(i, j, k, 3) - w(i-1, j, k, ivx)*si(i-1&
-   &         , j, k, 3) + w(i, j+1, k, ivx)*sj(i, j, k, 3) - w(i, j-1, k, &
+   uuzd = wd(i+1, j, k, ivx)*si(i, j, k, 3) + w(i+1, j, k, ivx)*sid&
+   &         (i, j, k, 3) - wd(i-1, j, k, ivx)*si(i-1, j, k, 3) - w(i-1, j&
+   &         , k, ivx)*sid(i-1, j, k, 3) + wd(i, j+1, k, ivx)*sj(i, j, k, 3&
+   &         ) + w(i, j+1, k, ivx)*sjd(i, j, k, 3) - wd(i, j-1, k, ivx)*sj(&
+   &         i, j-1, k, 3) - w(i, j-1, k, ivx)*sjd(i, j-1, k, 3) + wd(i, j&
+   &         , k+1, ivx)*sk(i, j, k, 3) + w(i, j, k+1, ivx)*skd(i, j, k, 3)&
+   &         - wd(i, j, k-1, ivx)*sk(i, j, k-1, 3) - w(i, j, k-1, ivx)*skd(&
+   &         i, j, k-1, 3)
+   uuz = w(i+1, j, k, ivx)*si(i, j, k, 3) - w(i-1, j, k, ivx)*si(i-&
+   &         1, j, k, 3) + w(i, j+1, k, ivx)*sj(i, j, k, 3) - w(i, j-1, k, &
    &         ivx)*sj(i, j-1, k, 3) + w(i, j, k+1, ivx)*sk(i, j, k, 3) - w(i&
    &         , j, k-1, ivx)*sk(i, j, k-1, 3)
    ! Idem for the gradient of v.
-   vxd = wd(i+1, j, k, ivy)*si(i, j, k, 1) + w(i+1, j, k, ivy)*sid(&
-   &         i, j, k, 1) - wd(i-1, j, k, ivy)*si(i-1, j, k, 1) - w(i-1, j, &
-   &         k, ivy)*sid(i-1, j, k, 1) + wd(i, j+1, k, ivy)*sj(i, j, k, 1) &
-   &         + w(i, j+1, k, ivy)*sjd(i, j, k, 1) - wd(i, j-1, k, ivy)*sj(i&
-   &         , j-1, k, 1) - w(i, j-1, k, ivy)*sjd(i, j-1, k, 1) + wd(i, j, &
-   &         k+1, ivy)*sk(i, j, k, 1) + w(i, j, k+1, ivy)*skd(i, j, k, 1) -&
-   &         wd(i, j, k-1, ivy)*sk(i, j, k-1, 1) - w(i, j, k-1, ivy)*skd(i&
-   &         , j, k-1, 1)
-   vx = w(i+1, j, k, ivy)*si(i, j, k, 1) - w(i-1, j, k, ivy)*si(i-1&
-   &         , j, k, 1) + w(i, j+1, k, ivy)*sj(i, j, k, 1) - w(i, j-1, k, &
+   vvxd = wd(i+1, j, k, ivy)*si(i, j, k, 1) + w(i+1, j, k, ivy)*sid&
+   &         (i, j, k, 1) - wd(i-1, j, k, ivy)*si(i-1, j, k, 1) - w(i-1, j&
+   &         , k, ivy)*sid(i-1, j, k, 1) + wd(i, j+1, k, ivy)*sj(i, j, k, 1&
+   &         ) + w(i, j+1, k, ivy)*sjd(i, j, k, 1) - wd(i, j-1, k, ivy)*sj(&
+   &         i, j-1, k, 1) - w(i, j-1, k, ivy)*sjd(i, j-1, k, 1) + wd(i, j&
+   &         , k+1, ivy)*sk(i, j, k, 1) + w(i, j, k+1, ivy)*skd(i, j, k, 1)&
+   &         - wd(i, j, k-1, ivy)*sk(i, j, k-1, 1) - w(i, j, k-1, ivy)*skd(&
+   &         i, j, k-1, 1)
+   vvx = w(i+1, j, k, ivy)*si(i, j, k, 1) - w(i-1, j, k, ivy)*si(i-&
+   &         1, j, k, 1) + w(i, j+1, k, ivy)*sj(i, j, k, 1) - w(i, j-1, k, &
    &         ivy)*sj(i, j-1, k, 1) + w(i, j, k+1, ivy)*sk(i, j, k, 1) - w(i&
    &         , j, k-1, ivy)*sk(i, j, k-1, 1)
-   vyd = wd(i+1, j, k, ivy)*si(i, j, k, 2) + w(i+1, j, k, ivy)*sid(&
-   &         i, j, k, 2) - wd(i-1, j, k, ivy)*si(i-1, j, k, 2) - w(i-1, j, &
-   &         k, ivy)*sid(i-1, j, k, 2) + wd(i, j+1, k, ivy)*sj(i, j, k, 2) &
-   &         + w(i, j+1, k, ivy)*sjd(i, j, k, 2) - wd(i, j-1, k, ivy)*sj(i&
-   &         , j-1, k, 2) - w(i, j-1, k, ivy)*sjd(i, j-1, k, 2) + wd(i, j, &
-   &         k+1, ivy)*sk(i, j, k, 2) + w(i, j, k+1, ivy)*skd(i, j, k, 2) -&
-   &         wd(i, j, k-1, ivy)*sk(i, j, k-1, 2) - w(i, j, k-1, ivy)*skd(i&
-   &         , j, k-1, 2)
-   vy = w(i+1, j, k, ivy)*si(i, j, k, 2) - w(i-1, j, k, ivy)*si(i-1&
-   &         , j, k, 2) + w(i, j+1, k, ivy)*sj(i, j, k, 2) - w(i, j-1, k, &
+   vvyd = wd(i+1, j, k, ivy)*si(i, j, k, 2) + w(i+1, j, k, ivy)*sid&
+   &         (i, j, k, 2) - wd(i-1, j, k, ivy)*si(i-1, j, k, 2) - w(i-1, j&
+   &         , k, ivy)*sid(i-1, j, k, 2) + wd(i, j+1, k, ivy)*sj(i, j, k, 2&
+   &         ) + w(i, j+1, k, ivy)*sjd(i, j, k, 2) - wd(i, j-1, k, ivy)*sj(&
+   &         i, j-1, k, 2) - w(i, j-1, k, ivy)*sjd(i, j-1, k, 2) + wd(i, j&
+   &         , k+1, ivy)*sk(i, j, k, 2) + w(i, j, k+1, ivy)*skd(i, j, k, 2)&
+   &         - wd(i, j, k-1, ivy)*sk(i, j, k-1, 2) - w(i, j, k-1, ivy)*skd(&
+   &         i, j, k-1, 2)
+   vvy = w(i+1, j, k, ivy)*si(i, j, k, 2) - w(i-1, j, k, ivy)*si(i-&
+   &         1, j, k, 2) + w(i, j+1, k, ivy)*sj(i, j, k, 2) - w(i, j-1, k, &
    &         ivy)*sj(i, j-1, k, 2) + w(i, j, k+1, ivy)*sk(i, j, k, 2) - w(i&
    &         , j, k-1, ivy)*sk(i, j, k-1, 2)
-   vzd = wd(i+1, j, k, ivy)*si(i, j, k, 3) + w(i+1, j, k, ivy)*sid(&
-   &         i, j, k, 3) - wd(i-1, j, k, ivy)*si(i-1, j, k, 3) - w(i-1, j, &
-   &         k, ivy)*sid(i-1, j, k, 3) + wd(i, j+1, k, ivy)*sj(i, j, k, 3) &
-   &         + w(i, j+1, k, ivy)*sjd(i, j, k, 3) - wd(i, j-1, k, ivy)*sj(i&
-   &         , j-1, k, 3) - w(i, j-1, k, ivy)*sjd(i, j-1, k, 3) + wd(i, j, &
-   &         k+1, ivy)*sk(i, j, k, 3) + w(i, j, k+1, ivy)*skd(i, j, k, 3) -&
-   &         wd(i, j, k-1, ivy)*sk(i, j, k-1, 3) - w(i, j, k-1, ivy)*skd(i&
-   &         , j, k-1, 3)
-   vz = w(i+1, j, k, ivy)*si(i, j, k, 3) - w(i-1, j, k, ivy)*si(i-1&
-   &         , j, k, 3) + w(i, j+1, k, ivy)*sj(i, j, k, 3) - w(i, j-1, k, &
+   vvzd = wd(i+1, j, k, ivy)*si(i, j, k, 3) + w(i+1, j, k, ivy)*sid&
+   &         (i, j, k, 3) - wd(i-1, j, k, ivy)*si(i-1, j, k, 3) - w(i-1, j&
+   &         , k, ivy)*sid(i-1, j, k, 3) + wd(i, j+1, k, ivy)*sj(i, j, k, 3&
+   &         ) + w(i, j+1, k, ivy)*sjd(i, j, k, 3) - wd(i, j-1, k, ivy)*sj(&
+   &         i, j-1, k, 3) - w(i, j-1, k, ivy)*sjd(i, j-1, k, 3) + wd(i, j&
+   &         , k+1, ivy)*sk(i, j, k, 3) + w(i, j, k+1, ivy)*skd(i, j, k, 3)&
+   &         - wd(i, j, k-1, ivy)*sk(i, j, k-1, 3) - w(i, j, k-1, ivy)*skd(&
+   &         i, j, k-1, 3)
+   vvz = w(i+1, j, k, ivy)*si(i, j, k, 3) - w(i-1, j, k, ivy)*si(i-&
+   &         1, j, k, 3) + w(i, j+1, k, ivy)*sj(i, j, k, 3) - w(i, j-1, k, &
    &         ivy)*sj(i, j-1, k, 3) + w(i, j, k+1, ivy)*sk(i, j, k, 3) - w(i&
    &         , j, k-1, ivy)*sk(i, j, k-1, 3)
    ! And for the gradient of w.
-   wxd = wd(i+1, j, k, ivz)*si(i, j, k, 1) + w(i+1, j, k, ivz)*sid(&
-   &         i, j, k, 1) - wd(i-1, j, k, ivz)*si(i-1, j, k, 1) - w(i-1, j, &
-   &         k, ivz)*sid(i-1, j, k, 1) + wd(i, j+1, k, ivz)*sj(i, j, k, 1) &
-   &         + w(i, j+1, k, ivz)*sjd(i, j, k, 1) - wd(i, j-1, k, ivz)*sj(i&
-   &         , j-1, k, 1) - w(i, j-1, k, ivz)*sjd(i, j-1, k, 1) + wd(i, j, &
-   &         k+1, ivz)*sk(i, j, k, 1) + w(i, j, k+1, ivz)*skd(i, j, k, 1) -&
-   &         wd(i, j, k-1, ivz)*sk(i, j, k-1, 1) - w(i, j, k-1, ivz)*skd(i&
-   &         , j, k-1, 1)
-   wx = w(i+1, j, k, ivz)*si(i, j, k, 1) - w(i-1, j, k, ivz)*si(i-1&
-   &         , j, k, 1) + w(i, j+1, k, ivz)*sj(i, j, k, 1) - w(i, j-1, k, &
+   wwxd = wd(i+1, j, k, ivz)*si(i, j, k, 1) + w(i+1, j, k, ivz)*sid&
+   &         (i, j, k, 1) - wd(i-1, j, k, ivz)*si(i-1, j, k, 1) - w(i-1, j&
+   &         , k, ivz)*sid(i-1, j, k, 1) + wd(i, j+1, k, ivz)*sj(i, j, k, 1&
+   &         ) + w(i, j+1, k, ivz)*sjd(i, j, k, 1) - wd(i, j-1, k, ivz)*sj(&
+   &         i, j-1, k, 1) - w(i, j-1, k, ivz)*sjd(i, j-1, k, 1) + wd(i, j&
+   &         , k+1, ivz)*sk(i, j, k, 1) + w(i, j, k+1, ivz)*skd(i, j, k, 1)&
+   &         - wd(i, j, k-1, ivz)*sk(i, j, k-1, 1) - w(i, j, k-1, ivz)*skd(&
+   &         i, j, k-1, 1)
+   wwx = w(i+1, j, k, ivz)*si(i, j, k, 1) - w(i-1, j, k, ivz)*si(i-&
+   &         1, j, k, 1) + w(i, j+1, k, ivz)*sj(i, j, k, 1) - w(i, j-1, k, &
    &         ivz)*sj(i, j-1, k, 1) + w(i, j, k+1, ivz)*sk(i, j, k, 1) - w(i&
    &         , j, k-1, ivz)*sk(i, j, k-1, 1)
-   wyd = wd(i+1, j, k, ivz)*si(i, j, k, 2) + w(i+1, j, k, ivz)*sid(&
-   &         i, j, k, 2) - wd(i-1, j, k, ivz)*si(i-1, j, k, 2) - w(i-1, j, &
-   &         k, ivz)*sid(i-1, j, k, 2) + wd(i, j+1, k, ivz)*sj(i, j, k, 2) &
-   &         + w(i, j+1, k, ivz)*sjd(i, j, k, 2) - wd(i, j-1, k, ivz)*sj(i&
-   &         , j-1, k, 2) - w(i, j-1, k, ivz)*sjd(i, j-1, k, 2) + wd(i, j, &
-   &         k+1, ivz)*sk(i, j, k, 2) + w(i, j, k+1, ivz)*skd(i, j, k, 2) -&
-   &         wd(i, j, k-1, ivz)*sk(i, j, k-1, 2) - w(i, j, k-1, ivz)*skd(i&
-   &         , j, k-1, 2)
-   wy = w(i+1, j, k, ivz)*si(i, j, k, 2) - w(i-1, j, k, ivz)*si(i-1&
-   &         , j, k, 2) + w(i, j+1, k, ivz)*sj(i, j, k, 2) - w(i, j-1, k, &
+   wwyd = wd(i+1, j, k, ivz)*si(i, j, k, 2) + w(i+1, j, k, ivz)*sid&
+   &         (i, j, k, 2) - wd(i-1, j, k, ivz)*si(i-1, j, k, 2) - w(i-1, j&
+   &         , k, ivz)*sid(i-1, j, k, 2) + wd(i, j+1, k, ivz)*sj(i, j, k, 2&
+   &         ) + w(i, j+1, k, ivz)*sjd(i, j, k, 2) - wd(i, j-1, k, ivz)*sj(&
+   &         i, j-1, k, 2) - w(i, j-1, k, ivz)*sjd(i, j-1, k, 2) + wd(i, j&
+   &         , k+1, ivz)*sk(i, j, k, 2) + w(i, j, k+1, ivz)*skd(i, j, k, 2)&
+   &         - wd(i, j, k-1, ivz)*sk(i, j, k-1, 2) - w(i, j, k-1, ivz)*skd(&
+   &         i, j, k-1, 2)
+   wwy = w(i+1, j, k, ivz)*si(i, j, k, 2) - w(i-1, j, k, ivz)*si(i-&
+   &         1, j, k, 2) + w(i, j+1, k, ivz)*sj(i, j, k, 2) - w(i, j-1, k, &
    &         ivz)*sj(i, j-1, k, 2) + w(i, j, k+1, ivz)*sk(i, j, k, 2) - w(i&
    &         , j, k-1, ivz)*sk(i, j, k-1, 2)
-   wzd = wd(i+1, j, k, ivz)*si(i, j, k, 3) + w(i+1, j, k, ivz)*sid(&
-   &         i, j, k, 3) - wd(i-1, j, k, ivz)*si(i-1, j, k, 3) - w(i-1, j, &
-   &         k, ivz)*sid(i-1, j, k, 3) + wd(i, j+1, k, ivz)*sj(i, j, k, 3) &
-   &         + w(i, j+1, k, ivz)*sjd(i, j, k, 3) - wd(i, j-1, k, ivz)*sj(i&
-   &         , j-1, k, 3) - w(i, j-1, k, ivz)*sjd(i, j-1, k, 3) + wd(i, j, &
-   &         k+1, ivz)*sk(i, j, k, 3) + w(i, j, k+1, ivz)*skd(i, j, k, 3) -&
-   &         wd(i, j, k-1, ivz)*sk(i, j, k-1, 3) - w(i, j, k-1, ivz)*skd(i&
-   &         , j, k-1, 3)
-   wz = w(i+1, j, k, ivz)*si(i, j, k, 3) - w(i-1, j, k, ivz)*si(i-1&
-   &         , j, k, 3) + w(i, j+1, k, ivz)*sj(i, j, k, 3) - w(i, j-1, k, &
+   wwzd = wd(i+1, j, k, ivz)*si(i, j, k, 3) + w(i+1, j, k, ivz)*sid&
+   &         (i, j, k, 3) - wd(i-1, j, k, ivz)*si(i-1, j, k, 3) - w(i-1, j&
+   &         , k, ivz)*sid(i-1, j, k, 3) + wd(i, j+1, k, ivz)*sj(i, j, k, 3&
+   &         ) + w(i, j+1, k, ivz)*sjd(i, j, k, 3) - wd(i, j-1, k, ivz)*sj(&
+   &         i, j-1, k, 3) - w(i, j-1, k, ivz)*sjd(i, j-1, k, 3) + wd(i, j&
+   &         , k+1, ivz)*sk(i, j, k, 3) + w(i, j, k+1, ivz)*skd(i, j, k, 3)&
+   &         - wd(i, j, k-1, ivz)*sk(i, j, k-1, 3) - w(i, j, k-1, ivz)*skd(&
+   &         i, j, k-1, 3)
+   wwz = w(i+1, j, k, ivz)*si(i, j, k, 3) - w(i-1, j, k, ivz)*si(i-&
+   &         1, j, k, 3) + w(i, j+1, k, ivz)*sj(i, j, k, 3) - w(i, j-1, k, &
    &         ivz)*sj(i, j-1, k, 3) + w(i, j, k+1, ivz)*sk(i, j, k, 3) - w(i&
    &         , j, k-1, ivz)*sk(i, j, k-1, 3)
    ! Compute the components of the stress tensor.
@@ -179,18 +180,18 @@
    ! leads to the factor 1/(4*vol).
    factd = -(fourth*vold(i, j, k)/vol(i, j, k)**2)
    fact = fourth/vol(i, j, k)
-   sxxd = two*(factd*ux+fact*uxd)
-   sxx = two*fact*ux
-   syyd = two*(factd*vy+fact*vyd)
-   syy = two*fact*vy
-   szzd = two*(factd*wz+fact*wzd)
-   szz = two*fact*wz
-   sxyd = factd*(uy+vx) + fact*(uyd+vxd)
-   sxy = fact*(uy+vx)
-   sxzd = factd*(uz+wx) + fact*(uzd+wxd)
-   sxz = fact*(uz+wx)
-   syzd = factd*(vz+wy) + fact*(vzd+wyd)
-   syz = fact*(vz+wy)
+   sxxd = two*(factd*uux+fact*uuxd)
+   sxx = two*fact*uux
+   syyd = two*(factd*vvy+fact*vvyd)
+   syy = two*fact*vvy
+   szzd = two*(factd*wwz+fact*wwzd)
+   szz = two*fact*wwz
+   sxyd = factd*(uuy+vvx) + fact*(uuyd+vvxd)
+   sxy = fact*(uuy+vvx)
+   sxzd = factd*(uuz+wwx) + fact*(uuzd+wwxd)
+   sxz = fact*(uuz+wwx)
+   syzd = factd*(vvz+wwy) + fact*(vvzd+wwyd)
+   syz = fact*(vvz+wwy)
    ! Compute 2/3 * divergence of velocity squared
    div2d = f23*2*(sxx+syy+szz)*(sxxd+syyd+szzd)
    div2 = f23*(sxx+syy+szz)**2

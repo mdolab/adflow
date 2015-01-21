@@ -14,10 +14,12 @@
    !                force beta cavitation sepsensor
    !   RW status of diff variables: *xsurf:out *(flowdoms.x):in-out
    !                *(flowdoms.vol):(loc) *(flowdoms.w):in-out *(flowdoms.dw):in-out
-   !                *rev:(loc) *bvtj1:(loc) *bvtj2:(loc) *p:(loc)
-   !                *gamma:(loc) *rlv:(loc) *bvtk1:(loc) *bvtk2:(loc)
-   !                *d2wall:(loc) *si:(loc) *sj:(loc) *sk:(loc) *bvti1:(loc)
-   !                *bvti2:(loc) *fw:(loc) *(*viscsubface.tau):(loc)
+   !                *rev:(loc) *bvtj1:(loc) *bvtj2:(loc) *wx:(loc)
+   !                *wy:(loc) *wz:(loc) *p:(loc) *gamma:(loc) *rlv:(loc)
+   !                *qx:(loc) *qy:(loc) *qz:(loc) *bvtk1:(loc) *bvtk2:(loc)
+   !                *ux:(loc) *uy:(loc) *uz:(loc) *d2wall:(loc) *si:(loc)
+   !                *sj:(loc) *sk:(loc) *bvti1:(loc) *bvti2:(loc)
+   !                *vx:(loc) *vy:(loc) *vz:(loc) *fw:(loc) *(*viscsubface.tau):(loc)
    !                *(*bcdata.norm):(loc) *(*bcdata.fp):in-out *(*bcdata.fv):in-out
    !                *(*bcdata.m):in-out *(*bcdata.oarea):in-out *(*bcdata.sepsensor):in-out
    !                *(*bcdata.cavitation):in-out *radi:(loc) *radj:(loc)
@@ -32,12 +34,13 @@
    !                force:in-zero beta:out cavitation:in-zero sepsensor:in-zero
    !   Plus diff mem management of: xsurf:in flowdoms.x:in flowdoms.vol:in
    !                flowdoms.w:in flowdoms.dw:in rev:in bvtj1:in bvtj2:in
-   !                p:in gamma:in rlv:in bvtk1:in bvtk2:in d2wall:in
-   !                si:in sj:in sk:in bvti1:in bvti2:in fw:in viscsubface:in
-   !                *viscsubface.tau:in bcdata:in *bcdata.norm:in
-   !                *bcdata.fp:in *bcdata.fv:in *bcdata.m:in *bcdata.oarea:in
-   !                *bcdata.sepsensor:in *bcdata.cavitation:in radi:in
-   !                radj:in radk:in
+   !                wx:in wy:in wz:in p:in gamma:in rlv:in qx:in qy:in
+   !                qz:in bvtk1:in bvtk2:in ux:in uy:in uz:in d2wall:in
+   !                si:in sj:in sk:in bvti1:in bvti2:in vx:in vy:in
+   !                vz:in fw:in viscsubface:in *viscsubface.tau:in
+   !                bcdata:in *bcdata.norm:in *bcdata.fp:in *bcdata.fv:in
+   !                *bcdata.m:in *bcdata.oarea:in *bcdata.sepsensor:in
+   !                *bcdata.cavitation:in radi:in radj:in radk:in
    ! This is a super-combined function that combines the original
    ! functionality of: 
    ! Pressure Computation
@@ -49,10 +52,10 @@
    ! it only operates on a single block at a time and as such the nominal
    ! block/sps loop is outside the calculation. This routine is suitable
    ! for forward mode AD with Tapenade
-   SUBROUTINE BLOCK_RES_B(nn, sps, usespatial, alpha, alphab, beta, betab, &
-   & liftindex, force, forceb, moment, momentb, sepsensor, sepsensorb, &
-   & cavitation, cavitationb)
-   USE BLOCKPOINTERS_B
+   SUBROUTINE BLOCK_RES_B(nn, sps, usespatial, alpha, alphad, beta, betad, &
+   & liftindex, force, forced, moment, momentd, sepsensor, sepsensord, &
+   & cavitation, cavitationd)
+   USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
    USE INPUTPHYSICS
    USE INPUTITERATION
@@ -70,41 +73,41 @@
    INTEGER(kind=inttype), INTENT(IN) :: nn, sps
    LOGICAL, INTENT(IN) :: usespatial
    REAL(kind=realtype), INTENT(IN) :: alpha, beta
-   REAL(kind=realtype) :: alphab, betab
+   REAL(kind=realtype) :: alphad, betad
    INTEGER(kind=inttype), INTENT(IN) :: liftindex
    ! Output Variables
    REAL(kind=realtype), DIMENSION(3, ntimeintervalsspectral) :: force, &
    & moment
-   REAL(kind=realtype), DIMENSION(3, ntimeintervalsspectral) :: forceb, &
-   & momentb
+   REAL(kind=realtype), DIMENSION(3, ntimeintervalsspectral) :: forced, &
+   & momentd
    REAL(kind=realtype) :: sepsensor, cavitation
-   REAL(kind=realtype) :: sepsensorb, cavitationb
+   REAL(kind=realtype) :: sepsensord, cavitationd
    ! Working Variables
    REAL(kind=realtype) :: gm1, v2, fact, tmp
-   REAL(kind=realtype) :: v2b, factb, tmpb
+   REAL(kind=realtype) :: v2d, factd, tmpd
    INTEGER(kind=inttype) :: i, j, k, sps2, mm, l, ii, ll, jj
    INTEGER(kind=inttype) :: nstate
    REAL(kind=realtype), DIMENSION(nsections) :: t
    LOGICAL :: useoldcoor
    REAL(kind=realtype), DIMENSION(3) :: cfp, cfv, cmp, cmv
-   REAL(kind=realtype), DIMENSION(3) :: cfpb, cfvb, cmpb, cmvb
+   REAL(kind=realtype), DIMENSION(3) :: cfpd, cfvd, cmpd, cmvd
    REAL(kind=realtype) :: yplusmax, scaledim
-   REAL(kind=realtype) :: scaledimb
+   REAL(kind=realtype) :: scaledimd
    INTRINSIC MAX
    INTEGER :: branch
    REAL(kind=realtype) :: temp3
    REAL(kind=realtype) :: temp2
    REAL(kind=realtype) :: temp1
    REAL(kind=realtype) :: temp0
-   REAL(kind=realtype) :: tempb7(3)
-   REAL(kind=realtype) :: tempb6
-   REAL(kind=realtype) :: tempb5(3)
-   REAL(kind=realtype) :: tempb4
-   REAL(kind=realtype) :: tempb3
-   REAL(kind=realtype) :: tempb2
-   REAL(kind=realtype) :: tempb1
-   REAL(kind=realtype) :: tempb0
-   REAL(kind=realtype) :: tempb
+   REAL(kind=realtype) :: tempd
+   REAL(kind=realtype) :: tempd7(3)
+   REAL(kind=realtype) :: tempd6
+   REAL(kind=realtype) :: tempd5(3)
+   REAL(kind=realtype) :: tempd4
+   REAL(kind=realtype) :: tempd3
+   REAL(kind=realtype) :: tempd2
+   REAL(kind=realtype) :: tempd1
+   REAL(kind=realtype) :: tempd0
    INTEGER :: ii3
    INTEGER :: ii2
    INTEGER :: ii1
@@ -117,13 +120,13 @@
    nstate = nw
    END IF
    ! Set pointers to input/output variables
-   wb => flowdomsb(nn, currentlevel, sps)%w
+   wd => flowdomsd(nn, currentlevel, sps)%w
    w => flowdoms(nn, currentlevel, sps)%w
-   dwb => flowdomsb(nn, 1, sps)%dw
+   dwd => flowdomsd(nn, 1, sps)%dw
    dw => flowdoms(nn, 1, sps)%dw
-   xb => flowdomsb(nn, currentlevel, sps)%x
+   xd => flowdomsd(nn, currentlevel, sps)%x
    x => flowdoms(nn, currentlevel, sps)%x
-   volb => flowdomsb(nn, currentlevel, sps)%vol
+   vold => flowdomsd(nn, currentlevel, sps)%vol
    vol => flowdoms(nn, currentlevel, sps)%vol
    ! ------------------------------------------------
    !        Additional 'Extra' Components
@@ -486,42 +489,42 @@
    DO sps2=1,ntimeintervalsspectral
    moment(:, sps2) = (cmp+cmv)/fact
    END DO
-   CALL GETCOSTFUNCTION2_B(force, forceb, moment, momentb, sepsensor, &
-   &                   sepsensorb, cavitation, cavitationb, alpha, beta, &
+   CALL GETCOSTFUNCTION2_B(force, forced, moment, momentd, sepsensor, &
+   &                   sepsensord, cavitation, cavitationd, alpha, beta, &
    &                   liftindex)
-   cmpb = 0.0_8
-   cmvb = 0.0_8
-   factb = 0.0_8
+   cmpd = 0.0_8
+   cmvd = 0.0_8
+   factd = 0.0_8
    DO sps2=ntimeintervalsspectral,1,-1
-   tempb7 = momentb(:, sps2)/fact
-   cmpb = cmpb + tempb7
-   cmvb = cmvb + tempb7
-   factb = factb + SUM(-((cmp+cmv)*tempb7/fact))
-   momentb(:, sps2) = 0.0_8
+   tempd7 = momentd(:, sps2)/fact
+   cmpd = cmpd + tempd7
+   cmvd = cmvd + tempd7
+   factd = factd + SUM(-((cmp+cmv)*tempd7/fact))
+   momentd(:, sps2) = 0.0_8
    END DO
    CALL POPREAL8(fact)
-   tempb6 = factb/(lref*lengthref)
-   lengthrefb = lengthrefb - fact*tempb6/lengthref
-   factb = tempb6
-   cfpb = 0.0_8
-   cfvb = 0.0_8
+   tempd6 = factd/(lref*lengthref)
+   lengthrefd = lengthrefd - fact*tempd6/lengthref
+   factd = tempd6
+   cfpd = 0.0_8
+   cfvd = 0.0_8
    DO sps2=ntimeintervalsspectral,1,-1
-   tempb5 = forceb(:, sps2)/fact
-   cfpb = cfpb + tempb5
-   cfvb = cfvb + tempb5
-   factb = factb + SUM(-((cfp+cfv)*tempb5/fact))
-   forceb(:, sps2) = 0.0_8
+   tempd5 = forced(:, sps2)/fact
+   cfpd = cfpd + tempd5
+   cfvd = cfvd + tempd5
+   factd = factd + SUM(-((cfp+cfv)*tempd5/fact))
+   forced(:, sps2) = 0.0_8
    END DO
    temp4 = machcoef**2*scaledim
    temp3 = surfaceref*lref**2
    temp2 = temp3*gammainf*pinf
-   tempb3 = -(two*factb/(temp2**2*temp4**2))
-   tempb4 = temp4*temp3*tempb3
-   gammainfb = gammainfb + pinf*tempb4
-   machcoefb = machcoefb + scaledim*temp2*2*machcoef*tempb3
-   scaledimb = temp2*machcoef**2*tempb3
-   pinfb = pinfb + gammainf*tempb4 - pref*scaledimb/pinf**2
-   prefb = prefb + scaledimb/pinf
+   tempd3 = -(two*factd/(temp2**2*temp4**2))
+   tempd4 = temp4*temp3*tempd3
+   gammainfd = gammainfd + pinf*tempd4
+   machcoefd = machcoefd + scaledim*temp2*2*machcoef*tempd3
+   scaledimd = temp2*machcoef**2*tempd3
+   pinfd = pinfd + gammainf*tempd4 - pref*scaledimd/pinf**2
+   prefd = prefd + scaledimd/pinf
    CALL POPREAL8ARRAY(cfp, 3)
    CALL POPREAL8ARRAY(cfv, 3)
    CALL POPREAL8ARRAY(cmp, 3)
@@ -561,13 +564,13 @@
    CALL POPREAL8ARRAY(bcdata(ii1)%oarea, SIZE(bcdata(ii1)%oarea, 1)*&
    &                SIZE(bcdata(ii1)%oarea, 2))
    END DO
-   CALL FORCESANDMOMENTS_B(cfp, cfpb, cfv, cfvb, cmp, cmpb, cmv, cmvb, &
-   &                   yplusmax, sepsensor, sepsensorb, cavitation, &
-   &                   cavitationb)
+   CALL FORCESANDMOMENTS_B(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd, &
+   &                   yplusmax, sepsensor, sepsensord, cavitation, &
+   &                   cavitationd)
    DO ii1=1,ntimeintervalsspectral
    DO ii2=1,1
    DO ii3=nn,nn
-   flowdomsb(ii3, ii2, ii1)%vol = 0.0_8
+   flowdomsd(ii3, ii2, ii1)%vol = 0.0_8
    END DO
    END DO
    END DO
@@ -578,12 +581,12 @@
    DO i=il,2,-1
    CALL POPREAL8(flowdoms(nn, 1, sps2)%dw(i, j, k, l))
    temp1 = flowdoms(nn, currentlevel, sps2)%vol(i, j, k)
-   tempb2 = turbresscale*flowdomsb(nn, 1, sps2)%dw(i, j, k, l)/&
+   tempd2 = turbresscale*flowdomsd(nn, 1, sps2)%dw(i, j, k, l)/&
    &             temp1
-   flowdomsb(nn, currentlevel, sps2)%vol(i, j, k) = flowdomsb(&
+   flowdomsd(nn, currentlevel, sps2)%vol(i, j, k) = flowdomsd(&
    &             nn, currentlevel, sps2)%vol(i, j, k) - flowdoms(nn, 1, &
-   &             sps2)%dw(i, j, k, l)*tempb2/temp1
-   flowdomsb(nn, 1, sps2)%dw(i, j, k, l) = tempb2
+   &             sps2)%dw(i, j, k, l)*tempd2/temp1
+   flowdomsd(nn, 1, sps2)%dw(i, j, k, l) = tempd2
    END DO
    END DO
    END DO
@@ -594,11 +597,11 @@
    DO i=il,2,-1
    CALL POPREAL8(flowdoms(nn, 1, sps2)%dw(i, j, k, l))
    temp0 = flowdoms(nn, currentlevel, sps2)%vol(i, j, k)
-   flowdomsb(nn, currentlevel, sps2)%vol(i, j, k) = flowdomsb(&
+   flowdomsd(nn, currentlevel, sps2)%vol(i, j, k) = flowdomsd(&
    &             nn, currentlevel, sps2)%vol(i, j, k) - flowdoms(nn, 1, &
-   &             sps2)%dw(i, j, k, l)*flowdomsb(nn, 1, sps2)%dw(i, j, k, l)&
+   &             sps2)%dw(i, j, k, l)*flowdomsd(nn, 1, sps2)%dw(i, j, k, l)&
    &             /temp0**2
-   flowdomsb(nn, 1, sps2)%dw(i, j, k, l) = flowdomsb(nn, 1, &
+   flowdomsd(nn, 1, sps2)%dw(i, j, k, l) = flowdomsd(nn, 1, &
    &             sps2)%dw(i, j, k, l)/temp0
    END DO
    END DO
@@ -631,7 +634,7 @@
    CALL RESIDUAL_BLOCK_B()
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   dwb(:, :, :, 1:nwf) = 0.0_8
+   dwd(:, :, :, 1:nwf) = 0.0_8
    ELSE
    DO sps2=ntimeintervalsspectral,1,-1
    DO mm=ntimeintervalsspectral,1,-1
@@ -641,14 +644,14 @@
    DO k=kl,2,-1
    DO j=jl,2,-1
    DO i=il,2,-1
-   tempb1 = dscalar(jj, sps2, mm)*flowdomsb(nn, 1, sps2)%&
+   tempd1 = dscalar(jj, sps2, mm)*flowdomsd(nn, 1, sps2)%&
    &                   dw(i, j, k, l)
-   flowdomsb(nn, 1, mm)%vol(i, j, k) = flowdomsb(nn, 1, &
+   flowdomsd(nn, 1, mm)%vol(i, j, k) = flowdomsd(nn, 1, &
    &                   mm)%vol(i, j, k) + flowdoms(nn, 1, mm)%w(i, j, k, l)&
-   &                   *tempb1
-   flowdomsb(nn, 1, mm)%w(i, j, k, l) = flowdomsb(nn, 1, &
+   &                   *tempd1
+   flowdomsd(nn, 1, mm)%w(i, j, k, l) = flowdomsd(nn, 1, &
    &                   mm)%w(i, j, k, l) + flowdoms(nn, 1, mm)%vol(i, j, k)&
-   &                   *tempb1
+   &                   *tempd1
    END DO
    END DO
    END DO
@@ -656,22 +659,22 @@
    DO k=kl,2,-1
    DO j=jl,2,-1
    DO i=il,2,-1
-   tempb0 = flowdoms(nn, 1, mm)%w(i, j, k, irho)*&
-   &                   flowdomsb(nn, 1, sps2)%dw(i, j, k, l)
+   tempd0 = flowdoms(nn, 1, mm)%w(i, j, k, irho)*&
+   &                   flowdomsd(nn, 1, sps2)%dw(i, j, k, l)
    temp = flowdoms(nn, 1, mm)%vol(i, j, k)
-   tmpb = temp*tempb0
-   flowdomsb(nn, 1, mm)%vol(i, j, k) = flowdomsb(nn, 1, &
-   &                   mm)%vol(i, j, k) + tmp*tempb0
-   flowdomsb(nn, 1, mm)%w(i, j, k, irho) = flowdomsb(nn, &
-   &                   1, mm)%w(i, j, k, irho) + tmp*temp*flowdomsb(nn, 1, &
+   tmpd = temp*tempd0
+   flowdomsd(nn, 1, mm)%vol(i, j, k) = flowdomsd(nn, 1, &
+   &                   mm)%vol(i, j, k) + tmp*tempd0
+   flowdomsd(nn, 1, mm)%w(i, j, k, irho) = flowdomsd(nn, &
+   &                   1, mm)%w(i, j, k, irho) + tmp*temp*flowdomsd(nn, 1, &
    &                   sps2)%dw(i, j, k, l)
    CALL POPREAL8(tmp)
-   flowdomsb(nn, 1, mm)%w(i, j, k, ivx) = flowdomsb(nn, 1&
-   &                   , mm)%w(i, j, k, ivx) + dvector(jj, ll, ii+1)*tmpb
-   flowdomsb(nn, 1, mm)%w(i, j, k, ivy) = flowdomsb(nn, 1&
-   &                   , mm)%w(i, j, k, ivy) + dvector(jj, ll, ii+2)*tmpb
-   flowdomsb(nn, 1, mm)%w(i, j, k, ivz) = flowdomsb(nn, 1&
-   &                   , mm)%w(i, j, k, ivz) + dvector(jj, ll, ii+3)*tmpb
+   flowdomsd(nn, 1, mm)%w(i, j, k, ivx) = flowdomsd(nn, 1&
+   &                   , mm)%w(i, j, k, ivx) + dvector(jj, ll, ii+1)*tmpd
+   flowdomsd(nn, 1, mm)%w(i, j, k, ivy) = flowdomsd(nn, 1&
+   &                   , mm)%w(i, j, k, ivy) + dvector(jj, ll, ii+2)*tmpd
+   flowdomsd(nn, 1, mm)%w(i, j, k, ivz) = flowdomsd(nn, 1&
+   &                   , mm)%w(i, j, k, ivz) + dvector(jj, ll, ii+3)*tmpd
    END DO
    END DO
    END DO
@@ -688,7 +691,7 @@
    CALL POPINTEGER4(jj)
    END DO
    DO sps2=ntimeintervalsspectral,1,-1
-   flowdomsb(nn, 1, sps2)%dw(:, :, :, 1:nwf) = 0.0_8
+   flowdomsd(nn, 1, sps2)%dw(:, :, :, 1:nwf) = 0.0_8
    END DO
    END IF
    CALL POPCONTROL2B(branch)
@@ -727,24 +730,24 @@
    &                3)*SIZE(bmtj2, 4))
    CALL SA_BLOCK_B(.true.)
    ELSE IF (branch .EQ. 1) THEN
-   bvtj1b = 0.0_8
-   bvtj2b = 0.0_8
-   bvtk1b = 0.0_8
-   bvtk2b = 0.0_8
-   d2wallb = 0.0_8
-   bvti1b = 0.0_8
-   bvti2b = 0.0_8
+   bvtj1d = 0.0_8
+   bvtj2d = 0.0_8
+   bvtk1d = 0.0_8
+   bvtk2d = 0.0_8
+   d2walld = 0.0_8
+   bvti1d = 0.0_8
+   bvti2d = 0.0_8
    ELSE
-   bvtj1b = 0.0_8
-   bvtj2b = 0.0_8
-   bvtk1b = 0.0_8
-   bvtk2b = 0.0_8
-   d2wallb = 0.0_8
-   bvti1b = 0.0_8
-   bvti2b = 0.0_8
+   bvtj1d = 0.0_8
+   bvtj2d = 0.0_8
+   bvtk1d = 0.0_8
+   bvtk2d = 0.0_8
+   d2walld = 0.0_8
+   bvti1d = 0.0_8
+   bvti2d = 0.0_8
    END IF
    DO sps2=ntimeintervalsspectral,1,-1
-   flowdomsb(nn, 1, sps2)%dw = 0.0_8
+   flowdomsd(nn, 1, sps2)%dw = 0.0_8
    END DO
    CALL POPREAL8ARRAY(radi, SIZE(radi, 1)*SIZE(radi, 2)*SIZE(radi, 3))
    CALL POPREAL8ARRAY(radj, SIZE(radj, 1)*SIZE(radj, 2)*SIZE(radj, 3))
@@ -807,18 +810,18 @@
    DO i=ib,0,-1
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   pinfcorrb = pinfcorrb + 1.e-4_realType*pb(i, j, k)
-   pb(i, j, k) = 0.0_8
+   pinfcorrd = pinfcorrd + 1.e-4_realType*pd(i, j, k)
+   pd(i, j, k) = 0.0_8
    END IF
-   tempb = gm1*pb(i, j, k)
-   wb(i, j, k, irhoe) = wb(i, j, k, irhoe) + tempb
-   wb(i, j, k, irho) = wb(i, j, k, irho) - half*v2*tempb
-   v2b = -(half*w(i, j, k, irho)*tempb)
-   pb(i, j, k) = 0.0_8
+   tempd = gm1*pd(i, j, k)
+   wd(i, j, k, irhoe) = wd(i, j, k, irhoe) + tempd
+   wd(i, j, k, irho) = wd(i, j, k, irho) - half*v2*tempd
+   v2d = -(half*w(i, j, k, irho)*tempd)
+   pd(i, j, k) = 0.0_8
    CALL POPREAL8(v2)
-   wb(i, j, k, ivx) = wb(i, j, k, ivx) + 2*w(i, j, k, ivx)*v2b
-   wb(i, j, k, ivy) = wb(i, j, k, ivy) + 2*w(i, j, k, ivy)*v2b
-   wb(i, j, k, ivz) = wb(i, j, k, ivz) + 2*w(i, j, k, ivz)*v2b
+   wd(i, j, k, ivx) = wd(i, j, k, ivx) + 2*w(i, j, k, ivx)*v2d
+   wd(i, j, k, ivy) = wd(i, j, k, ivy) + 2*w(i, j, k, ivy)*v2d
+   wd(i, j, k, ivz) = wd(i, j, k, ivz) + 2*w(i, j, k, ivz)*v2d
    END DO
    END DO
    END DO
@@ -826,9 +829,9 @@
    IF (branch .EQ. 0) THEN
    CALL UPDATEWALLDISTANCESQUICKLY_B(nn, 1, sps)
    ELSE IF (branch .EQ. 1) THEN
-   xsurfb = 0.0_8
+   xsurfd = 0.0_8
    ELSE
-   xsurfb = 0.0_8
+   xsurfd = 0.0_8
    GOTO 100
    END IF
    CALL POPREAL8ARRAY(si, SIZE(si, 1)*SIZE(si, 2)*SIZE(si, 3)*SIZE(si, 4)&
@@ -845,10 +848,10 @@
    CALL POPREAL8(pref)
    CALL POPREAL8(rhoref)
    CALL REFERENCESTATE_B()
-   CALL ADJUSTINFLOWANGLE_B(alpha, alphab, beta, betab, liftindex)
-   funcvaluesb = 0.0_8
-   momentb = 0.0_8
-   forceb = 0.0_8
-   cavitationb = 0.0_8
-   sepsensorb = 0.0_8
+   CALL ADJUSTINFLOWANGLE_B(alpha, alphad, beta, betad, liftindex)
+   funcvaluesd = 0.0_8
+   momentd = 0.0_8
+   forced = 0.0_8
+   cavitationd = 0.0_8
+   sepsensord = 0.0_8
    END SUBROUTINE BLOCK_RES_B

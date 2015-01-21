@@ -16,8 +16,8 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   SUBROUTINE SETBCPOINTERSBWD_B(nn, ww1, ww1b, ww2, ww2b, pp1, pp1b, pp2, &
-   & pp2b, rlv1, rlv1b, rlv2, rlv2b, rev1, rev1b, rev2, rev2b, offset)
+   SUBROUTINE SETBCPOINTERSBWD_B(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, pp2, &
+   & pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev1d, rev2, rev2d, offset)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -28,7 +28,7 @@
    !      ******************************************************************
    !
    USE BCTYPES
-   USE BLOCKPOINTERS_B
+   USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
    IMPLICIT NONE
    !
@@ -36,13 +36,13 @@
    !
    INTEGER(kind=inttype), INTENT(IN) :: nn, offset
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, nw) :: ww1, ww2
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, nw) :: ww1b, ww2b
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, nw) :: ww1d, ww2d
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: pp1, pp2
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: pp1b, pp2b
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: pp1d, pp2d
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rlv1, rlv2
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rlv1b, rlv2b
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rlv1d, rlv2d
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rev1, rev2
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rev1b, rev2b
+   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rev1d, rev2d
    !
    !      Local variables
    !
@@ -79,26 +79,26 @@
    DO j=je,1,-1
    CALL POPCONTROL1B(branch)
    IF (branch .NE. 0) THEN
-   revb(id, j, k) = revb(id, j, k) + rev2b(j, k)
-   rev2b(j, k) = 0.0_8
-   revb(ih, j, k) = revb(ih, j, k) + rev1b(j, k)
-   rev1b(j, k) = 0.0_8
+   revd(id, j, k) = revd(id, j, k) + rev2d(j, k)
+   rev2d(j, k) = 0.0_8
+   revd(ih, j, k) = revd(ih, j, k) + rev1d(j, k)
+   rev1d(j, k) = 0.0_8
    END IF
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   rlvb(id, j, k) = rlvb(id, j, k) + rlv2b(j, k)
-   rlv2b(j, k) = 0.0_8
-   rlvb(ih, j, k) = rlvb(ih, j, k) + rlv1b(j, k)
-   rlv1b(j, k) = 0.0_8
+   rlvd(id, j, k) = rlvd(id, j, k) + rlv2d(j, k)
+   rlv2d(j, k) = 0.0_8
+   rlvd(ih, j, k) = rlvd(ih, j, k) + rlv1d(j, k)
+   rlv1d(j, k) = 0.0_8
    END IF
-   pb(id, j, k) = pb(id, j, k) + pp2b(j, k)
-   pp2b(j, k) = 0.0_8
-   pb(ih, j, k) = pb(ih, j, k) + pp1b(j, k)
-   pp1b(j, k) = 0.0_8
-   wb(id, j, k, :) = wb(id, j, k, :) + ww2b(j, k, :)
-   ww2b(j, k, :) = 0.0_8
-   wb(ih, j, k, :) = wb(ih, j, k, :) + ww1b(j, k, :)
-   ww1b(j, k, :) = 0.0_8
+   pd(id, j, k) = pd(id, j, k) + pp2d(j, k)
+   pp2d(j, k) = 0.0_8
+   pd(ih, j, k) = pd(ih, j, k) + pp1d(j, k)
+   pp1d(j, k) = 0.0_8
+   wd(id, j, k, :) = wd(id, j, k, :) + ww2d(j, k, :)
+   ww2d(j, k, :) = 0.0_8
+   wd(ih, j, k, :) = wd(ih, j, k, :) + ww1d(j, k, :)
+   ww1d(j, k, :) = 0.0_8
    END DO
    END DO
    CASE (imax) 
@@ -123,26 +123,26 @@
    DO j=je,1,-1
    CALL POPCONTROL1B(branch)
    IF (branch .NE. 0) THEN
-   revb(id, j, k) = revb(id, j, k) + rev2b(j, k)
-   rev2b(j, k) = 0.0_8
-   revb(ih, j, k) = revb(ih, j, k) + rev1b(j, k)
-   rev1b(j, k) = 0.0_8
+   revd(id, j, k) = revd(id, j, k) + rev2d(j, k)
+   rev2d(j, k) = 0.0_8
+   revd(ih, j, k) = revd(ih, j, k) + rev1d(j, k)
+   rev1d(j, k) = 0.0_8
    END IF
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   rlvb(id, j, k) = rlvb(id, j, k) + rlv2b(j, k)
-   rlv2b(j, k) = 0.0_8
-   rlvb(ih, j, k) = rlvb(ih, j, k) + rlv1b(j, k)
-   rlv1b(j, k) = 0.0_8
+   rlvd(id, j, k) = rlvd(id, j, k) + rlv2d(j, k)
+   rlv2d(j, k) = 0.0_8
+   rlvd(ih, j, k) = rlvd(ih, j, k) + rlv1d(j, k)
+   rlv1d(j, k) = 0.0_8
    END IF
-   pb(id, j, k) = pb(id, j, k) + pp2b(j, k)
-   pp2b(j, k) = 0.0_8
-   pb(ih, j, k) = pb(ih, j, k) + pp1b(j, k)
-   pp1b(j, k) = 0.0_8
-   wb(id, j, k, :) = wb(id, j, k, :) + ww2b(j, k, :)
-   ww2b(j, k, :) = 0.0_8
-   wb(ih, j, k, :) = wb(ih, j, k, :) + ww1b(j, k, :)
-   ww1b(j, k, :) = 0.0_8
+   pd(id, j, k) = pd(id, j, k) + pp2d(j, k)
+   pp2d(j, k) = 0.0_8
+   pd(ih, j, k) = pd(ih, j, k) + pp1d(j, k)
+   pp1d(j, k) = 0.0_8
+   wd(id, j, k, :) = wd(id, j, k, :) + ww2d(j, k, :)
+   ww2d(j, k, :) = 0.0_8
+   wd(ih, j, k, :) = wd(ih, j, k, :) + ww1d(j, k, :)
+   ww1d(j, k, :) = 0.0_8
    END DO
    END DO
    CASE (jmin) 
@@ -167,26 +167,26 @@
    DO i=ie,1,-1
    CALL POPCONTROL1B(branch)
    IF (branch .NE. 0) THEN
-   revb(i, id, k) = revb(i, id, k) + rev2b(i, k)
-   rev2b(i, k) = 0.0_8
-   revb(i, ih, k) = revb(i, ih, k) + rev1b(i, k)
-   rev1b(i, k) = 0.0_8
+   revd(i, id, k) = revd(i, id, k) + rev2d(i, k)
+   rev2d(i, k) = 0.0_8
+   revd(i, ih, k) = revd(i, ih, k) + rev1d(i, k)
+   rev1d(i, k) = 0.0_8
    END IF
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   rlvb(i, id, k) = rlvb(i, id, k) + rlv2b(i, k)
-   rlv2b(i, k) = 0.0_8
-   rlvb(i, ih, k) = rlvb(i, ih, k) + rlv1b(i, k)
-   rlv1b(i, k) = 0.0_8
+   rlvd(i, id, k) = rlvd(i, id, k) + rlv2d(i, k)
+   rlv2d(i, k) = 0.0_8
+   rlvd(i, ih, k) = rlvd(i, ih, k) + rlv1d(i, k)
+   rlv1d(i, k) = 0.0_8
    END IF
-   pb(i, id, k) = pb(i, id, k) + pp2b(i, k)
-   pp2b(i, k) = 0.0_8
-   pb(i, ih, k) = pb(i, ih, k) + pp1b(i, k)
-   pp1b(i, k) = 0.0_8
-   wb(i, id, k, :) = wb(i, id, k, :) + ww2b(i, k, :)
-   ww2b(i, k, :) = 0.0_8
-   wb(i, ih, k, :) = wb(i, ih, k, :) + ww1b(i, k, :)
-   ww1b(i, k, :) = 0.0_8
+   pd(i, id, k) = pd(i, id, k) + pp2d(i, k)
+   pp2d(i, k) = 0.0_8
+   pd(i, ih, k) = pd(i, ih, k) + pp1d(i, k)
+   pp1d(i, k) = 0.0_8
+   wd(i, id, k, :) = wd(i, id, k, :) + ww2d(i, k, :)
+   ww2d(i, k, :) = 0.0_8
+   wd(i, ih, k, :) = wd(i, ih, k, :) + ww1d(i, k, :)
+   ww1d(i, k, :) = 0.0_8
    END DO
    END DO
    CASE (jmax) 
@@ -211,26 +211,26 @@
    DO i=ie,1,-1
    CALL POPCONTROL1B(branch)
    IF (branch .NE. 0) THEN
-   revb(i, id, k) = revb(i, id, k) + rev2b(i, k)
-   rev2b(i, k) = 0.0_8
-   revb(i, ih, k) = revb(i, ih, k) + rev1b(i, k)
-   rev1b(i, k) = 0.0_8
+   revd(i, id, k) = revd(i, id, k) + rev2d(i, k)
+   rev2d(i, k) = 0.0_8
+   revd(i, ih, k) = revd(i, ih, k) + rev1d(i, k)
+   rev1d(i, k) = 0.0_8
    END IF
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   rlvb(i, id, k) = rlvb(i, id, k) + rlv2b(i, k)
-   rlv2b(i, k) = 0.0_8
-   rlvb(i, ih, k) = rlvb(i, ih, k) + rlv1b(i, k)
-   rlv1b(i, k) = 0.0_8
+   rlvd(i, id, k) = rlvd(i, id, k) + rlv2d(i, k)
+   rlv2d(i, k) = 0.0_8
+   rlvd(i, ih, k) = rlvd(i, ih, k) + rlv1d(i, k)
+   rlv1d(i, k) = 0.0_8
    END IF
-   pb(i, id, k) = pb(i, id, k) + pp2b(i, k)
-   pp2b(i, k) = 0.0_8
-   pb(i, ih, k) = pb(i, ih, k) + pp1b(i, k)
-   pp1b(i, k) = 0.0_8
-   wb(i, id, k, :) = wb(i, id, k, :) + ww2b(i, k, :)
-   ww2b(i, k, :) = 0.0_8
-   wb(i, ih, k, :) = wb(i, ih, k, :) + ww1b(i, k, :)
-   ww1b(i, k, :) = 0.0_8
+   pd(i, id, k) = pd(i, id, k) + pp2d(i, k)
+   pp2d(i, k) = 0.0_8
+   pd(i, ih, k) = pd(i, ih, k) + pp1d(i, k)
+   pp1d(i, k) = 0.0_8
+   wd(i, id, k, :) = wd(i, id, k, :) + ww2d(i, k, :)
+   ww2d(i, k, :) = 0.0_8
+   wd(i, ih, k, :) = wd(i, ih, k, :) + ww1d(i, k, :)
+   ww1d(i, k, :) = 0.0_8
    END DO
    END DO
    CASE (kmin) 
@@ -255,26 +255,26 @@
    DO i=ie,1,-1
    CALL POPCONTROL1B(branch)
    IF (branch .NE. 0) THEN
-   revb(i, j, id) = revb(i, j, id) + rev2b(i, j)
-   rev2b(i, j) = 0.0_8
-   revb(i, j, ih) = revb(i, j, ih) + rev1b(i, j)
-   rev1b(i, j) = 0.0_8
+   revd(i, j, id) = revd(i, j, id) + rev2d(i, j)
+   rev2d(i, j) = 0.0_8
+   revd(i, j, ih) = revd(i, j, ih) + rev1d(i, j)
+   rev1d(i, j) = 0.0_8
    END IF
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   rlvb(i, j, id) = rlvb(i, j, id) + rlv2b(i, j)
-   rlv2b(i, j) = 0.0_8
-   rlvb(i, j, ih) = rlvb(i, j, ih) + rlv1b(i, j)
-   rlv1b(i, j) = 0.0_8
+   rlvd(i, j, id) = rlvd(i, j, id) + rlv2d(i, j)
+   rlv2d(i, j) = 0.0_8
+   rlvd(i, j, ih) = rlvd(i, j, ih) + rlv1d(i, j)
+   rlv1d(i, j) = 0.0_8
    END IF
-   pb(i, j, id) = pb(i, j, id) + pp2b(i, j)
-   pp2b(i, j) = 0.0_8
-   pb(i, j, ih) = pb(i, j, ih) + pp1b(i, j)
-   pp1b(i, j) = 0.0_8
-   wb(i, j, id, :) = wb(i, j, id, :) + ww2b(i, j, :)
-   ww2b(i, j, :) = 0.0_8
-   wb(i, j, ih, :) = wb(i, j, ih, :) + ww1b(i, j, :)
-   ww1b(i, j, :) = 0.0_8
+   pd(i, j, id) = pd(i, j, id) + pp2d(i, j)
+   pp2d(i, j) = 0.0_8
+   pd(i, j, ih) = pd(i, j, ih) + pp1d(i, j)
+   pp1d(i, j) = 0.0_8
+   wd(i, j, id, :) = wd(i, j, id, :) + ww2d(i, j, :)
+   ww2d(i, j, :) = 0.0_8
+   wd(i, j, ih, :) = wd(i, j, ih, :) + ww1d(i, j, :)
+   ww1d(i, j, :) = 0.0_8
    END DO
    END DO
    CASE (kmax) 
@@ -299,26 +299,26 @@
    DO i=ie,1,-1
    CALL POPCONTROL1B(branch)
    IF (branch .NE. 0) THEN
-   revb(i, j, id) = revb(i, j, id) + rev2b(i, j)
-   rev2b(i, j) = 0.0_8
-   revb(i, j, ih) = revb(i, j, ih) + rev1b(i, j)
-   rev1b(i, j) = 0.0_8
+   revd(i, j, id) = revd(i, j, id) + rev2d(i, j)
+   rev2d(i, j) = 0.0_8
+   revd(i, j, ih) = revd(i, j, ih) + rev1d(i, j)
+   rev1d(i, j) = 0.0_8
    END IF
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   rlvb(i, j, id) = rlvb(i, j, id) + rlv2b(i, j)
-   rlv2b(i, j) = 0.0_8
-   rlvb(i, j, ih) = rlvb(i, j, ih) + rlv1b(i, j)
-   rlv1b(i, j) = 0.0_8
+   rlvd(i, j, id) = rlvd(i, j, id) + rlv2d(i, j)
+   rlv2d(i, j) = 0.0_8
+   rlvd(i, j, ih) = rlvd(i, j, ih) + rlv1d(i, j)
+   rlv1d(i, j) = 0.0_8
    END IF
-   pb(i, j, id) = pb(i, j, id) + pp2b(i, j)
-   pp2b(i, j) = 0.0_8
-   pb(i, j, ih) = pb(i, j, ih) + pp1b(i, j)
-   pp1b(i, j) = 0.0_8
-   wb(i, j, id, :) = wb(i, j, id, :) + ww2b(i, j, :)
-   ww2b(i, j, :) = 0.0_8
-   wb(i, j, ih, :) = wb(i, j, ih, :) + ww1b(i, j, :)
-   ww1b(i, j, :) = 0.0_8
+   pd(i, j, id) = pd(i, j, id) + pp2d(i, j)
+   pp2d(i, j) = 0.0_8
+   pd(i, j, ih) = pd(i, j, ih) + pp1d(i, j)
+   pp1d(i, j) = 0.0_8
+   wd(i, j, id, :) = wd(i, j, id, :) + ww2d(i, j, :)
+   ww2d(i, j, :) = 0.0_8
+   wd(i, j, ih, :) = wd(i, j, ih, :) + ww1d(i, j, :)
+   ww1d(i, j, :) = 0.0_8
    END DO
    END DO
    END SELECT

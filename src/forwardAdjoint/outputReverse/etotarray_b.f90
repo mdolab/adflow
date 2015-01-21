@@ -6,8 +6,8 @@
    !   with respect to varying inputs: k p u v w etot rho (global)tref
    !                (global)rgas
    !      ==================================================================
-   SUBROUTINE ETOTARRAY_B(rho, rhob, u, ub, v, vb, w, wb, p, pb, k, kb, &
-   & etot, etotb, correctfork, kk)
+   SUBROUTINE ETOTARRAY_B(rho, rhod, u, ud, v, vd, w, wd, p, pd, k, kd, &
+   & etot, etotd, correctfork, kk)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -26,17 +26,17 @@
    !      Subroutine arguments.
    !
    REAL(kind=realtype), DIMENSION(kk), INTENT(IN) :: rho, p, k
-   REAL(kind=realtype), DIMENSION(kk) :: rhob, pb, kb
+   REAL(kind=realtype), DIMENSION(kk) :: rhod, pd, kd
    REAL(kind=realtype), DIMENSION(kk), INTENT(IN) :: u, v, w
-   REAL(kind=realtype), DIMENSION(kk) :: ub, vb, wb
+   REAL(kind=realtype), DIMENSION(kk) :: ud, vd, wd
    REAL(kind=realtype), DIMENSION(kk) :: etot
-   REAL(kind=realtype), DIMENSION(kk) :: etotb
+   REAL(kind=realtype), DIMENSION(kk) :: etotd
    LOGICAL, INTENT(IN) :: correctfork
    !
    !      Local variables.
    !
    INTEGER(kind=inttype) :: i
-   REAL(kind=realtype) :: tempb
+   REAL(kind=realtype) :: tempd
    !
    !      ******************************************************************
    !      *                                                                *
@@ -47,19 +47,19 @@
    ! Compute the internal energy for unit mass.
    CALL PUSHREAL8ARRAY(etot, kk)
    CALL EINTARRAY(rho, p, k, etot, correctfork, kk)
-   ub = 0.0_8
-   vb = 0.0_8
-   wb = 0.0_8
+   ud = 0.0_8
+   vd = 0.0_8
+   wd = 0.0_8
    DO i=kk,1,-1
-   tempb = rho(i)*half*etotb(i)
-   rhob(i) = rhob(i) + (etot(i)+half*(u(i)**2+v(i)**2+w(i)**2))*etotb(i&
+   tempd = rho(i)*half*etotd(i)
+   rhod(i) = rhod(i) + (etot(i)+half*(u(i)**2+v(i)**2+w(i)**2))*etotd(i&
    &     )
-   ub(i) = ub(i) + 2*u(i)*tempb
-   vb(i) = vb(i) + 2*v(i)*tempb
-   wb(i) = wb(i) + 2*w(i)*tempb
-   etotb(i) = rho(i)*etotb(i)
+   ud(i) = ud(i) + 2*u(i)*tempd
+   vd(i) = vd(i) + 2*v(i)*tempd
+   wd(i) = wd(i) + 2*w(i)*tempd
+   etotd(i) = rho(i)*etotd(i)
    END DO
    CALL POPREAL8ARRAY(etot, kk)
-   CALL EINTARRAY_B(rho, rhob, p, pb, k, kb, etot, etotb, correctfork, kk&
+   CALL EINTARRAY_B(rho, rhod, p, pd, k, kd, etot, etotd, correctfork, kk&
    &           )
    END SUBROUTINE ETOTARRAY_B

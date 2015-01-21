@@ -81,10 +81,25 @@ subroutine allocMemFlovarPart1(sps,level)
 
      ! Alloc mem for dadi
      allocate(flowDoms(nn,level,sps)%dadidata(ie,je,ke,10), stat=ierr)
-     
+
+     ! Alloc mem for viscous fluxes
+     allocate(flowDoms(nn,level,sps)%ux(il,jl,kl), stat=ierr)
+     allocate(flowDoms(nn,level,sps)%uy(il,jl,kl), stat=ierr)
+     allocate(flowDoms(nn,level,sps)%uz(il,jl,kl), stat=ierr)
+
+     allocate(flowDoms(nn,level,sps)%vx(il,jl,kl), stat=ierr)
+     allocate(flowDoms(nn,level,sps)%vy(il,jl,kl), stat=ierr)
+     allocate(flowDoms(nn,level,sps)%vz(il,jl,kl), stat=ierr)
+
+     allocate(flowDoms(nn,level,sps)%wx(il,jl,kl), stat=ierr)
+     allocate(flowDoms(nn,level,sps)%wy(il,jl,kl), stat=ierr)
+     allocate(flowDoms(nn,level,sps)%wz(il,jl,kl), stat=ierr)
+
+     allocate(flowDoms(nn,level,sps)%qx(il,jl,kl), stat=ierr)
+     allocate(flowDoms(nn,level,sps)%qy(il,jl,kl), stat=ierr)
+     allocate(flowDoms(nn,level,sps)%qz(il,jl,kl), stat=ierr)
 
      ! Allocate memory for the pressure.
-
      allocate(flowDoms(nn,level,sps)%p(0:ib,0:jb,0:kb), stat=ierr)
      if(ierr /= 0)                           &
           call terminate("allocMemFlovarPart1", &

@@ -35,12 +35,12 @@ include ${SUMB_RULES_FILE}
 #      ******************************************************************
 
 vpath %.o $(SUMB_OBJDIR)
-FF90_OBJECTS =  viscousflux_d.o \
+FF90_OBJECTS =  allnodalgradients_d.o\
+		viscousflux_d.o \
 		viscousfluxapprox_d.o\
 	        sa_block_d.o\
 		sasolve_d.o\
 		invisciddissfluxmatrix_d.o \
-		blockpointers_d.o\
 		diffSizes.o\
 		applyallbc_block_d.o\
 		bcsymm_d.o\
@@ -59,7 +59,6 @@ FF90_OBJECTS =  viscousflux_d.o \
 		bcturbwall_d.o\
 		dim_d.o\
 		inviscidupwindflux_d.o  \
-		utauwf_d.o \
 		bcnswalladiabatic_d.o \
 		block_res_d.o  \
 		residual_block_d.o \
@@ -67,9 +66,7 @@ FF90_OBJECTS =  viscousflux_d.o \
 		computeetotcellcpfit_d.o \
 		etotarray_d.o \
                 setbcpointers_d.o\
-                setww0pp0rlv0rev0_d.o\
                 setss_d.o\
-                setallx_d.o\
                 setssmetric_d.o\
                 setxxssrhodd2wall_d.o\
                 setgamma_d.o\
@@ -81,7 +78,6 @@ FF90_OBJECTS =  viscousflux_d.o \
                 bceddynowall_d.o\
                 bceddywall_d.o\
 		bcturbfarfield_d.o\
-		bcturbsymm_d.o\
 		eintarray_d.o  \
 		xhalo_block_d.o\
 		metric_block_d.o\
@@ -98,7 +94,6 @@ FF90_OBJECTS =  viscousflux_d.o \
 		derivativerigidrotangle_d.o\
 		computeeddyviscosity_d.o\
 		sanuknowneddyratio_d.o\
-		unsteadyturbspectral_block_d.o\
 		turb2ndhalo_d.o\
 		prodkatolaunder_d.o\
 		prodwmag2_d.o\
