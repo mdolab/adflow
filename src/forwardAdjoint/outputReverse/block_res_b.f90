@@ -183,7 +183,6 @@
    END DO
    END DO
    ! Compute Laminar/eddy viscosity if required
-   CALL PUSHREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
    CALL COMPUTELAMVISCOSITY()
    CALL COMPUTEEDDYVISCOSITY()
    !  Apply all BC's
@@ -803,7 +802,6 @@
    &              *SIZE(bmtj2, 4))
    CALL APPLYALLBC_BLOCK_B(.true.)
    CALL COMPUTEEDDYVISCOSITY_B()
-   CALL POPREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
    CALL COMPUTELAMVISCOSITY_B()
    DO k=kb,0,-1
    DO j=jb,0,-1

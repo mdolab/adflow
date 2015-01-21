@@ -6,8 +6,8 @@
    !                *radj *radk gammainf rhoinf pinfcorr
    !   with respect to varying inputs: *p *gamma *w *si *sj *sk gammainf
    !                rhoinf pinfcorr
-   !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
-   !                vol:in si:in sj:in sk:in radi:in radj:in radk:in
+   !   Plus diff mem management of: p:in gamma:in w:in si:in sj:in
+   !                sk:in radi:in radj:in radk:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -41,6 +41,8 @@
    USE ITERATION
    USE SECTION
    IMPLICIT NONE
+   ! The rest of this file can be skipped if only the spectral
+   ! radii need to be computed.
    !
    !      Subroutine argument.
    !
@@ -52,16 +54,19 @@
    !
    !      Local variables.
    !
-   INTEGER(kind=inttype) :: i, j, k
+   INTEGER(kind=inttype) :: i, j, k, ii
    REAL(kind=realtype) :: plim, rlim, clim2
    REAL(kind=realtype) :: clim2d
-   REAL(kind=realtype) :: uux, uuy, uuz, cc2, qs, sx, sy, sz, rmu
-   REAL(kind=realtype) :: uuxd, uuyd, uuzd, cc2d, qsd, sxd, syd, szd
+   REAL(kind=realtype) :: uux, uuy, uuz, cc2, qsi, qsj, qsk, sx, sy, sz, &
+   & rmu
+   REAL(kind=realtype) :: uuxd, uuyd, uuzd, cc2d, qsid, qsjd, qskd, sxd, &
+   & syd, szd
    REAL(kind=realtype) :: ri, rj, rk, rij, rjk, rki
    REAL(kind=realtype) :: rid, rjd, rkd, rijd, rjkd, rkid
    REAL(kind=realtype) :: vsi, vsj, vsk, rfl, dpi, dpj, dpk
    REAL(kind=realtype) :: sface, tmp
-   LOGICAL :: radiineeded
+   LOGICAL :: radiineeded, doscaling
+   INTRINSIC MOD
    INTRINSIC MAX
    INTRINSIC ABS
    INTRINSIC SQRT
@@ -85,9 +90,6 @@
    REAL(kind=realtype) :: tempd2
    REAL(kind=realtype) :: tempd1
    REAL(kind=realtype) :: tempd0
-   REAL(kind=realtype) :: abs5
-   REAL(kind=realtype) :: abs4
-   REAL(kind=realtype) :: abs3
    REAL(kind=realtype) :: abs2
    REAL(kind=realtype) :: abs2d
    REAL(kind=realtype) :: abs1
@@ -111,6 +113,7 @@
    ! the dimension of a pressure. Therefore a fraction of pInfCorr
    ! is used. Idem for rlim; compute clim2 as well.
    clim2 = 0.000001_realType*gammainf*pinfcorr/rhoinf
+   doscaling = dirscaling .AND. currentlevel .LE. groundlevel
    ! Initialize sFace to zero. This value will be used if the
    ! block is not moving.
    sface = zero
@@ -124,16 +127,15 @@
    !
    SELECT CASE  (precond) 
    CASE (noprecond) 
-   ! No preconditioner. Simply the standard spectral radius.
-   ! Loop over the cells, including the first level halo.
-   DO k=1,ke
-   DO j=1,je
-   DO i=1,ie
+   clim2d = 0.0_8
+   DO ii=0,ie*je*ke-1
+   i = MOD(ii, ie) + 1
+   j = MOD(ii/ie, je) + 1
+   k = ii/(ie*je) + 1
    ! Compute the velocities and speed of sound squared.
    uux = w(i, j, k, ivx)
    uuy = w(i, j, k, ivy)
    uuz = w(i, j, k, ivz)
-   CALL PUSHREAL8(cc2)
    cc2 = gamma(i, j, k)*p(i, j, k)/w(i, j, k, irho)
    IF (cc2 .LT. clim2) THEN
    cc2 = clim2
@@ -146,65 +148,54 @@
    ! normal in i-direction for a moving face. To avoid
    ! a number of multiplications by 0.5 simply the sum
    ! is taken.
-   IF (addgridvelocities) sface = sfacei(i-1, j, k) + sfacei(i&
-   &               , j, k)
+   IF (addgridvelocities) sface = sfacei(i-1, j, k) + sfacei(i, j, &
+   &           k)
    ! Spectral radius in i-direction.
    sx = si(i-1, j, k, 1) + si(i, j, k, 1)
    sy = si(i-1, j, k, 2) + si(i, j, k, 2)
    sz = si(i-1, j, k, 3) + si(i, j, k, 3)
-   qs = uux*sx + uuy*sy + uuz*sz - sface
-   IF (qs .GE. 0.) THEN
-   abs0 = qs
+   qsi = uux*sx + uuy*sy + uuz*sz - sface
+   IF (qsi .GE. 0.) THEN
+   abs0 = qsi
    CALL PUSHCONTROL1B(0)
    ELSE
-   abs0 = -qs
+   abs0 = -qsi
    CALL PUSHCONTROL1B(1)
    END IF
    radi(i, j, k) = half*(abs0+SQRT(cc2*(sx**2+sy**2+sz**2)))
    ! The grid velocity in j-direction.
-   IF (addgridvelocities) sface = sfacej(i, j-1, k) + sfacej(i&
-   &               , j, k)
+   IF (addgridvelocities) sface = sfacej(i, j-1, k) + sfacej(i, j, &
+   &           k)
    ! Spectral radius in j-direction.
    sx = sj(i, j-1, k, 1) + sj(i, j, k, 1)
    sy = sj(i, j-1, k, 2) + sj(i, j, k, 2)
    sz = sj(i, j-1, k, 3) + sj(i, j, k, 3)
-   qs = uux*sx + uuy*sy + uuz*sz - sface
-   IF (qs .GE. 0.) THEN
-   abs1 = qs
+   qsj = uux*sx + uuy*sy + uuz*sz - sface
+   IF (qsj .GE. 0.) THEN
+   abs1 = qsj
    CALL PUSHCONTROL1B(0)
    ELSE
-   abs1 = -qs
+   abs1 = -qsj
    CALL PUSHCONTROL1B(1)
    END IF
    radj(i, j, k) = half*(abs1+SQRT(cc2*(sx**2+sy**2+sz**2)))
    ! The grid velocity in k-direction.
-   IF (addgridvelocities) sface = sfacek(i, j, k-1) + sfacek(i&
-   &               , j, k)
+   IF (addgridvelocities) sface = sfacek(i, j, k-1) + sfacek(i, j, &
+   &           k)
    ! Spectral radius in k-direction.
    sx = sk(i, j, k-1, 1) + sk(i, j, k, 1)
    sy = sk(i, j, k-1, 2) + sk(i, j, k, 2)
    sz = sk(i, j, k-1, 3) + sk(i, j, k, 3)
-   qs = uux*sx + uuy*sy + uuz*sz - sface
-   IF (qs .GE. 0.) THEN
-   abs2 = qs
+   qsk = uux*sx + uuy*sy + uuz*sz - sface
+   IF (qsk .GE. 0.) THEN
+   abs2 = qsk
    CALL PUSHCONTROL1B(0)
    ELSE
-   abs2 = -qs
+   abs2 = -qsk
    CALL PUSHCONTROL1B(1)
    END IF
    radk(i, j, k) = half*(abs2+SQRT(cc2*(sx**2+sy**2+sz**2)))
    ! Compute the inviscid contribution to the time step.
-   END DO
-   END DO
-   END DO
-   CALL PUSHCONTROL2B(1)
-   CASE (turkel) 
-   CALL PUSHCONTROL2B(2)
-   CASE (choimerkle) 
-   CALL PUSHCONTROL2B(3)
-   CASE DEFAULT
-   CALL PUSHCONTROL2B(0)
-   END SELECT
    !
    !          **************************************************************
    !          *                                                            *
@@ -213,35 +204,25 @@
    !          *                                                            *
    !          **************************************************************
    !
-   IF (dirscaling .AND. currentlevel .LE. groundlevel) THEN
-   ! if( dirScaling ) then
-   DO k=1,ke
-   DO j=1,je
-   DO i=1,ie
+   IF (doscaling) THEN
    IF (radi(i, j, k) .LT. eps) THEN
-   CALL PUSHREAL8(ri)
-   ri = eps
    CALL PUSHCONTROL1B(0)
+   ri = eps
    ELSE
-   CALL PUSHREAL8(ri)
    ri = radi(i, j, k)
    CALL PUSHCONTROL1B(1)
    END IF
    IF (radj(i, j, k) .LT. eps) THEN
-   CALL PUSHREAL8(rj)
-   rj = eps
    CALL PUSHCONTROL1B(0)
+   rj = eps
    ELSE
-   CALL PUSHREAL8(rj)
    rj = radj(i, j, k)
    CALL PUSHCONTROL1B(1)
    END IF
    IF (radk(i, j, k) .LT. eps) THEN
-   CALL PUSHREAL8(rk)
-   rk = eps
    CALL PUSHCONTROL1B(0)
+   rk = eps
    ELSE
-   CALL PUSHREAL8(rk)
    rk = radk(i, j, k)
    CALL PUSHCONTROL1B(1)
    END IF
@@ -254,51 +235,30 @@
    ! Note that the multiplication is done with radi, radJ
    ! and radK, such that the influence of the clipping
    ! is negligible.
-   !   radi(i,j,k) = third*radi(i,j,k)*(one + one/rij + rki)
-   !   radJ(i,j,k) = third*radJ(i,j,k)*(one + one/rjk + rij)
-   !   radK(i,j,k) = third*radK(i,j,k)*(one + one/rki + rjk)
-   CALL PUSHREAL8(radi(i, j, k))
-   radi(i, j, k) = radi(i, j, k)*(one+one/rij+rki)
-   CALL PUSHREAL8(radj(i, j, k))
-   radj(i, j, k) = radj(i, j, k)*(one+one/rjk+rij)
-   CALL PUSHREAL8(radk(i, j, k))
-   radk(i, j, k) = radk(i, j, k)*(one+one/rki+rjk)
-   END DO
-   END DO
-   END DO
-   DO k=ke,1,-1
-   DO j=je,1,-1
-   DO i=ie,1,-1
-   rjk = (rj/rk)**adis
-   rki = (rk/ri)**adis
-   CALL POPREAL8(radk(i, j, k))
    tempd7 = radk(i, j, k)*radkd(i, j, k)
    radkd(i, j, k) = (one+one/rki+rjk)*radkd(i, j, k)
-   rij = (ri/rj)**adis
-   CALL POPREAL8(radj(i, j, k))
    tempd9 = radj(i, j, k)*radjd(i, j, k)
    rjkd = tempd7 - one*tempd9/rjk**2
    radjd(i, j, k) = (one+one/rjk+rij)*radjd(i, j, k)
-   CALL POPREAL8(radi(i, j, k))
    tempd8 = radi(i, j, k)*radid(i, j, k)
    rkid = tempd8 - one*tempd7/rki**2
    rijd = tempd9 - one*tempd8/rij**2
    radid(i, j, k) = (one+one/rij+rki)*radid(i, j, k)
-   IF (rk/ri .LE. 0.0_8 .AND. (adis .EQ. 0.0_8 .OR. adis .NE. &
-   &               INT(adis))) THEN
+   IF (rk/ri .LE. 0.0_8 .AND. (adis .EQ. 0.0_8 .OR. adis .NE. INT&
+   &             (adis))) THEN
    tempd10 = 0.0
    ELSE
    tempd10 = adis*(rk/ri)**(adis-1)*rkid/ri
    END IF
-   IF (rj/rk .LE. 0.0_8 .AND. (adis .EQ. 0.0_8 .OR. adis .NE. &
-   &               INT(adis))) THEN
+   IF (rj/rk .LE. 0.0_8 .AND. (adis .EQ. 0.0_8 .OR. adis .NE. INT&
+   &             (adis))) THEN
    tempd11 = 0.0
    ELSE
    tempd11 = adis*(rj/rk)**(adis-1)*rjkd/rk
    END IF
    rkd = tempd10 - rj*tempd11/rk
-   IF (ri/rj .LE. 0.0_8 .AND. (adis .EQ. 0.0_8 .OR. adis .NE. &
-   &               INT(adis))) THEN
+   IF (ri/rj .LE. 0.0_8 .AND. (adis .EQ. 0.0_8 .OR. adis .NE. INT&
+   &             (adis))) THEN
    tempd12 = 0.0
    ELSE
    tempd12 = adis*(ri/rj)**(adis-1)*rijd/rj
@@ -306,42 +266,12 @@
    rid = tempd12 - rk*tempd10/ri
    rjd = tempd11 - ri*tempd12/rj
    CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
-   CALL POPREAL8(rk)
-   ELSE
-   CALL POPREAL8(rk)
-   radkd(i, j, k) = radkd(i, j, k) + rkd
-   END IF
+   IF (branch .NE. 0) radkd(i, j, k) = radkd(i, j, k) + rkd
    CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
-   CALL POPREAL8(rj)
-   ELSE
-   CALL POPREAL8(rj)
-   radjd(i, j, k) = radjd(i, j, k) + rjd
-   END IF
+   IF (branch .NE. 0) radjd(i, j, k) = radjd(i, j, k) + rjd
    CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
-   CALL POPREAL8(ri)
-   ELSE
-   CALL POPREAL8(ri)
-   radid(i, j, k) = radid(i, j, k) + rid
+   IF (branch .NE. 0) radid(i, j, k) = radid(i, j, k) + rid
    END IF
-   END DO
-   END DO
-   END DO
-   END IF
-   CALL POPCONTROL2B(branch)
-   IF (branch .LT. 2) THEN
-   IF (branch .EQ. 0) THEN
-   clim2d = 0.0_8
-   ELSE
-   clim2d = 0.0_8
-   DO k=ke,1,-1
-   DO j=je,1,-1
-   DO i=ie,1,-1
-   sx = sk(i, j, k-1, 1) + sk(i, j, k, 1)
-   sy = sk(i, j, k-1, 2) + sk(i, j, k, 2)
-   sz = sk(i, j, k-1, 3) + sk(i, j, k, 3)
    temp2 = sx**2 + sy**2 + sz**2
    IF (cc2*temp2 .EQ. 0.0_8) THEN
    tempd5 = 0.0
@@ -357,19 +287,16 @@
    radkd(i, j, k) = 0.0_8
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   qsd = abs2d
+   qskd = abs2d
    ELSE
-   qsd = -abs2d
+   qskd = -abs2d
    END IF
-   uux = w(i, j, k, ivx)
-   uuy = w(i, j, k, ivy)
-   uuz = w(i, j, k, ivz)
-   uuxd = sx*qsd
-   sxd = sxd + uux*qsd
-   uuyd = sy*qsd
-   syd = syd + uuy*qsd
-   uuzd = sz*qsd
-   szd = szd + uuz*qsd
+   uuxd = sx*qskd
+   sxd = sxd + uux*qskd
+   uuyd = sy*qskd
+   syd = syd + uuy*qskd
+   uuzd = sz*qskd
+   szd = szd + uuz*qskd
    skd(i, j, k-1, 3) = skd(i, j, k-1, 3) + szd
    skd(i, j, k, 3) = skd(i, j, k, 3) + szd
    skd(i, j, k-1, 2) = skd(i, j, k-1, 2) + syd
@@ -394,16 +321,16 @@
    radjd(i, j, k) = 0.0_8
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   qsd = abs1d
+   qsjd = abs1d
    ELSE
-   qsd = -abs1d
+   qsjd = -abs1d
    END IF
-   uuxd = uuxd + sx*qsd
-   sxd = sxd + uux*qsd
-   uuyd = uuyd + sy*qsd
-   syd = syd + uuy*qsd
-   uuzd = uuzd + sz*qsd
-   szd = szd + uuz*qsd
+   uuxd = uuxd + sx*qsjd
+   sxd = sxd + uux*qsjd
+   uuyd = uuyd + sy*qsjd
+   syd = syd + uuy*qsjd
+   uuzd = uuzd + sz*qsjd
+   szd = szd + uuz*qsjd
    sjd(i, j-1, k, 3) = sjd(i, j-1, k, 3) + szd
    sjd(i, j, k, 3) = sjd(i, j, k, 3) + szd
    sjd(i, j-1, k, 2) = sjd(i, j-1, k, 2) + syd
@@ -428,16 +355,16 @@
    radid(i, j, k) = 0.0_8
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   qsd = abs0d
+   qsid = abs0d
    ELSE
-   qsd = -abs0d
+   qsid = -abs0d
    END IF
-   uuxd = uuxd + sx*qsd
-   sxd = sxd + uux*qsd
-   uuyd = uuyd + sy*qsd
-   syd = syd + uuy*qsd
-   uuzd = uuzd + sz*qsd
-   szd = szd + uuz*qsd
+   uuxd = uuxd + sx*qsid
+   sxd = sxd + uux*qsid
+   uuyd = uuyd + sy*qsid
+   syd = syd + uuy*qsid
+   uuzd = uuzd + sz*qsid
+   szd = szd + uuz*qsid
    sid(i-1, j, k, 3) = sid(i-1, j, k, 3) + szd
    sid(i, j, k, 3) = sid(i, j, k, 3) + szd
    sid(i-1, j, k, 2) = sid(i-1, j, k, 2) + syd
@@ -449,25 +376,23 @@
    clim2d = clim2d + cc2d
    cc2d = 0.0_8
    END IF
-   CALL POPREAL8(cc2)
    temp = w(i, j, k, irho)
    tempd0 = cc2d/temp
    gammad(i, j, k) = gammad(i, j, k) + p(i, j, k)*tempd0
    pd(i, j, k) = pd(i, j, k) + gamma(i, j, k)*tempd0
-   wd(i, j, k, irho) = wd(i, j, k, irho) - gamma(i, j, k)*p(i&
-   &               , j, k)*tempd0/temp
+   wd(i, j, k, irho) = wd(i, j, k, irho) - gamma(i, j, k)*p(i, j, k&
+   &         )*tempd0/temp
    wd(i, j, k, ivz) = wd(i, j, k, ivz) + uuzd
    wd(i, j, k, ivy) = wd(i, j, k, ivy) + uuyd
    wd(i, j, k, ivx) = wd(i, j, k, ivx) + uuxd
    END DO
-   END DO
-   END DO
-   END IF
-   ELSE IF (branch .EQ. 2) THEN
+   CASE (turkel) 
    clim2d = 0.0_8
-   ELSE
+   CASE (choimerkle) 
    clim2d = 0.0_8
-   END IF
+   CASE DEFAULT
+   clim2d = 0.0_8
+   END SELECT
    tempd = 0.000001_realType*clim2d/rhoinf
    gammainfd = gammainfd + pinfcorr*tempd
    pinfcorrd = pinfcorrd + gammainf*tempd

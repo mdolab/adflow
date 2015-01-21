@@ -2,7 +2,7 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of invisciddissfluxscalar in forward (tangent) mode (with options i4 dr8 r8):
-   !   variations   of useful results: *w *fw
+   !   variations   of useful results: *fw
    !   with respect to varying inputs: *p *gamma *w *radi *radj *radk
    !                gammainf rhoinf pinfcorr
    !   Plus diff mem management of: p:in gamma:in w:in fw:in radi:in
@@ -43,14 +43,16 @@
    !
    !      Local variables.
    !
-   INTEGER(kind=inttype) :: i, j, k, ind
+   INTEGER(kind=inttype) :: i, j, k, ind, ii
    REAL(kind=realtype) :: sslim, rhoi
-   REAL(kind=realtype) :: sslimd, rhoid
+   REAL(kind=realtype) :: sslimd
    REAL(kind=realtype) :: sfil, fis2, fis4
    REAL(kind=realtype) :: ppor, rrad, dis2, dis4
    REAL(kind=realtype) :: rradd, dis2d, dis4d
-   REAL(kind=realtype) :: dss1, dss2, ddw, fs
-   REAL(kind=realtype) :: dss1d, dss2d, ddwd, fsd
+   REAL(kind=realtype) :: ddw1, ddw2, ddw3, ddw4, ddw5, fs
+   REAL(kind=realtype) :: ddw1d, ddw2d, ddw3d, ddw4d, ddw5d, fsd
+   REAL(kind=realtype), DIMENSION(ie, je, ke, 3) :: dss
+   REAL(kind=realtype), DIMENSION(ie, je, ke, 3) :: dssd
    REAL(kind=realtype), DIMENSION(0:ib, 0:jb, 0:kb) :: ss
    REAL(kind=realtype), DIMENSION(0:ib, 0:jb, 0:kb) :: ssd
    INTRINSIC ABS
@@ -60,38 +62,20 @@
    REAL(kind=realtype) :: DIM_D
    REAL(kind=realtype) :: pwr1
    REAL(kind=realtype) :: pwr1d
-   REAL(kind=realtype) :: min5d
-   REAL(kind=realtype) :: x6d
-   REAL(kind=realtype) :: y4d
-   REAL(kind=realtype) :: min6
-   REAL(kind=realtype) :: min5
-   REAL(kind=realtype) :: min4
    REAL(kind=realtype) :: min3
    REAL(kind=realtype) :: min2
    REAL(kind=realtype) :: min1
-   REAL(kind=realtype) :: x6
-   REAL(kind=realtype) :: x5
    REAL(kind=realtype) :: min1d
-   REAL(kind=realtype) :: x4
    REAL(kind=realtype) :: x3
    REAL(kind=realtype) :: x2
    REAL(kind=realtype) :: x2d
    REAL(kind=realtype) :: x1
-   REAL(kind=realtype) :: min4d
-   REAL(kind=realtype) :: x5d
    REAL(kind=realtype) :: y3d
-   REAL(kind=realtype) :: y6d
    REAL(kind=realtype) :: x1d
    REAL(kind=realtype) :: min3d
-   REAL(kind=realtype) :: x4d
    REAL(kind=realtype) :: y2d
-   REAL(kind=realtype) :: min6d
-   REAL(kind=realtype) :: y5d
    REAL(kind=realtype) :: abs0
-   REAL(kind=realtype) :: y6
-   REAL(kind=realtype) :: y5
    REAL(kind=realtype) :: min2d
-   REAL(kind=realtype) :: y4
    REAL(kind=realtype) :: y3
    REAL(kind=realtype) :: y2
    REAL(kind=realtype) :: x3d
@@ -161,6 +145,7 @@
    ss(i, jb, k) = p(i, jb, k)
    END DO
    END DO
+   dssd = 0.0_8
    CASE (nsequations, ransequations) 
    !===============================================================
    ! Viscous case. Pressure switch is based on the entropy.
@@ -373,132 +358,65 @@
    ss(i, jb, k) = p(i, jb, k)/pwr1
    END DO
    END DO
+   dssd = 0.0_8
    CASE DEFAULT
    sslimd = 0.0_8
    ssd = 0.0_8
+   dssd = 0.0_8
    END SELECT
+   ! Compute the pressure sensor for each cell, in each direction:
+   DO k=1,ke
+   DO j=1,je
+   DO i=1,ie
+   x1d = ((ssd(i+1, j, k)-two*ssd(i, j, k)+ssd(i-1, j, k))*(ss(i+&
+   &           1, j, k)+two*ss(i, j, k)+ss(i-1, j, k)+sslim)-(ss(i+1, j, k)&
+   &           -two*ss(i, j, k)+ss(i-1, j, k))*(ssd(i+1, j, k)+two*ssd(i, j&
+   &           , k)+ssd(i-1, j, k)+sslimd))/(ss(i+1, j, k)+two*ss(i, j, k)+&
+   &           ss(i-1, j, k)+sslim)**2
+   x1 = (ss(i+1, j, k)-two*ss(i, j, k)+ss(i-1, j, k))/(ss(i+1, j&
+   &           , k)+two*ss(i, j, k)+ss(i-1, j, k)+sslim)
+   IF (x1 .GE. 0.) THEN
+   dssd(i, j, k, 1) = x1d
+   dss(i, j, k, 1) = x1
+   ELSE
+   dssd(i, j, k, 1) = -x1d
+   dss(i, j, k, 1) = -x1
+   END IF
+   x2d = ((ssd(i, j+1, k)-two*ssd(i, j, k)+ssd(i, j-1, k))*(ss(i&
+   &           , j+1, k)+two*ss(i, j, k)+ss(i, j-1, k)+sslim)-(ss(i, j+1, k&
+   &           )-two*ss(i, j, k)+ss(i, j-1, k))*(ssd(i, j+1, k)+two*ssd(i, &
+   &           j, k)+ssd(i, j-1, k)+sslimd))/(ss(i, j+1, k)+two*ss(i, j, k)&
+   &           +ss(i, j-1, k)+sslim)**2
+   x2 = (ss(i, j+1, k)-two*ss(i, j, k)+ss(i, j-1, k))/(ss(i, j+1&
+   &           , k)+two*ss(i, j, k)+ss(i, j-1, k)+sslim)
+   IF (x2 .GE. 0.) THEN
+   dssd(i, j, k, 2) = x2d
+   dss(i, j, k, 2) = x2
+   ELSE
+   dssd(i, j, k, 2) = -x2d
+   dss(i, j, k, 2) = -x2
+   END IF
+   x3d = ((ssd(i, j, k+1)-two*ssd(i, j, k)+ssd(i, j, k-1))*(ss(i&
+   &           , j, k+1)+two*ss(i, j, k)+ss(i, j, k-1)+sslim)-(ss(i, j, k+1&
+   &           )-two*ss(i, j, k)+ss(i, j, k-1))*(ssd(i, j, k+1)+two*ssd(i, &
+   &           j, k)+ssd(i, j, k-1)+sslimd))/(ss(i, j, k+1)+two*ss(i, j, k)&
+   &           +ss(i, j, k-1)+sslim)**2
+   x3 = (ss(i, j, k+1)-two*ss(i, j, k)+ss(i, j, k-1))/(ss(i, j, k&
+   &           +1)+two*ss(i, j, k)+ss(i, j, k-1)+sslim)
+   IF (x3 .GE. 0.) THEN
+   dssd(i, j, k, 3) = x3d
+   dss(i, j, k, 3) = x3
+   ELSE
+   dssd(i, j, k, 3) = -x3d
+   dss(i, j, k, 3) = -x3
+   END IF
+   END DO
+   END DO
+   END DO
    ! Set a couple of constants for the scheme.
    fis2 = rfil*vis2
    fis4 = rfil*vis4
    sfil = one - rfil
-   ! Replace the total energy by rho times the total enthalpy.
-   ! In this way the numerical solution is total enthalpy preserving
-   ! for the steady Euler equations. Also replace the velocities by
-   ! the momentum. Only done for the entries used in the
-   ! discretization, i.e. ignore the corner halo's.
-   DO k=0,kb
-   DO j=2,jl
-   DO i=2,il
-   wd(i, j, k, ivx) = wd(i, j, k, irho)*w(i, j, k, ivx) + w(i, j&
-   &           , k, irho)*wd(i, j, k, ivx)
-   w(i, j, k, ivx) = w(i, j, k, irho)*w(i, j, k, ivx)
-   wd(i, j, k, ivy) = wd(i, j, k, irho)*w(i, j, k, ivy) + w(i, j&
-   &           , k, irho)*wd(i, j, k, ivy)
-   w(i, j, k, ivy) = w(i, j, k, irho)*w(i, j, k, ivy)
-   wd(i, j, k, ivz) = wd(i, j, k, irho)*w(i, j, k, ivz) + w(i, j&
-   &           , k, irho)*wd(i, j, k, ivz)
-   w(i, j, k, ivz) = w(i, j, k, irho)*w(i, j, k, ivz)
-   wd(i, j, k, irhoe) = wd(i, j, k, irhoe) + pd(i, j, k)
-   w(i, j, k, irhoe) = w(i, j, k, irhoe) + p(i, j, k)
-   END DO
-   END DO
-   END DO
-   DO k=2,kl
-   DO j=2,jl
-   wd(0, j, k, ivx) = wd(0, j, k, irho)*w(0, j, k, ivx) + w(0, j, k&
-   &         , irho)*wd(0, j, k, ivx)
-   w(0, j, k, ivx) = w(0, j, k, irho)*w(0, j, k, ivx)
-   wd(0, j, k, ivy) = wd(0, j, k, irho)*w(0, j, k, ivy) + w(0, j, k&
-   &         , irho)*wd(0, j, k, ivy)
-   w(0, j, k, ivy) = w(0, j, k, irho)*w(0, j, k, ivy)
-   wd(0, j, k, ivz) = wd(0, j, k, irho)*w(0, j, k, ivz) + w(0, j, k&
-   &         , irho)*wd(0, j, k, ivz)
-   w(0, j, k, ivz) = w(0, j, k, irho)*w(0, j, k, ivz)
-   wd(0, j, k, irhoe) = wd(0, j, k, irhoe) + pd(0, j, k)
-   w(0, j, k, irhoe) = w(0, j, k, irhoe) + p(0, j, k)
-   wd(1, j, k, ivx) = wd(1, j, k, irho)*w(1, j, k, ivx) + w(1, j, k&
-   &         , irho)*wd(1, j, k, ivx)
-   w(1, j, k, ivx) = w(1, j, k, irho)*w(1, j, k, ivx)
-   wd(1, j, k, ivy) = wd(1, j, k, irho)*w(1, j, k, ivy) + w(1, j, k&
-   &         , irho)*wd(1, j, k, ivy)
-   w(1, j, k, ivy) = w(1, j, k, irho)*w(1, j, k, ivy)
-   wd(1, j, k, ivz) = wd(1, j, k, irho)*w(1, j, k, ivz) + w(1, j, k&
-   &         , irho)*wd(1, j, k, ivz)
-   w(1, j, k, ivz) = w(1, j, k, irho)*w(1, j, k, ivz)
-   wd(1, j, k, irhoe) = wd(1, j, k, irhoe) + pd(1, j, k)
-   w(1, j, k, irhoe) = w(1, j, k, irhoe) + p(1, j, k)
-   wd(ie, j, k, ivx) = wd(ie, j, k, irho)*w(ie, j, k, ivx) + w(ie, &
-   &         j, k, irho)*wd(ie, j, k, ivx)
-   w(ie, j, k, ivx) = w(ie, j, k, irho)*w(ie, j, k, ivx)
-   wd(ie, j, k, ivy) = wd(ie, j, k, irho)*w(ie, j, k, ivy) + w(ie, &
-   &         j, k, irho)*wd(ie, j, k, ivy)
-   w(ie, j, k, ivy) = w(ie, j, k, irho)*w(ie, j, k, ivy)
-   wd(ie, j, k, ivz) = wd(ie, j, k, irho)*w(ie, j, k, ivz) + w(ie, &
-   &         j, k, irho)*wd(ie, j, k, ivz)
-   w(ie, j, k, ivz) = w(ie, j, k, irho)*w(ie, j, k, ivz)
-   wd(ie, j, k, irhoe) = wd(ie, j, k, irhoe) + pd(ie, j, k)
-   w(ie, j, k, irhoe) = w(ie, j, k, irhoe) + p(ie, j, k)
-   wd(ib, j, k, ivx) = wd(ib, j, k, irho)*w(ib, j, k, ivx) + w(ib, &
-   &         j, k, irho)*wd(ib, j, k, ivx)
-   w(ib, j, k, ivx) = w(ib, j, k, irho)*w(ib, j, k, ivx)
-   wd(ib, j, k, ivy) = wd(ib, j, k, irho)*w(ib, j, k, ivy) + w(ib, &
-   &         j, k, irho)*wd(ib, j, k, ivy)
-   w(ib, j, k, ivy) = w(ib, j, k, irho)*w(ib, j, k, ivy)
-   wd(ib, j, k, ivz) = wd(ib, j, k, irho)*w(ib, j, k, ivz) + w(ib, &
-   &         j, k, irho)*wd(ib, j, k, ivz)
-   w(ib, j, k, ivz) = w(ib, j, k, irho)*w(ib, j, k, ivz)
-   wd(ib, j, k, irhoe) = wd(ib, j, k, irhoe) + pd(ib, j, k)
-   w(ib, j, k, irhoe) = w(ib, j, k, irhoe) + p(ib, j, k)
-   END DO
-   END DO
-   DO k=2,kl
-   DO i=2,il
-   wd(i, 0, k, ivx) = wd(i, 0, k, irho)*w(i, 0, k, ivx) + w(i, 0, k&
-   &         , irho)*wd(i, 0, k, ivx)
-   w(i, 0, k, ivx) = w(i, 0, k, irho)*w(i, 0, k, ivx)
-   wd(i, 0, k, ivy) = wd(i, 0, k, irho)*w(i, 0, k, ivy) + w(i, 0, k&
-   &         , irho)*wd(i, 0, k, ivy)
-   w(i, 0, k, ivy) = w(i, 0, k, irho)*w(i, 0, k, ivy)
-   wd(i, 0, k, ivz) = wd(i, 0, k, irho)*w(i, 0, k, ivz) + w(i, 0, k&
-   &         , irho)*wd(i, 0, k, ivz)
-   w(i, 0, k, ivz) = w(i, 0, k, irho)*w(i, 0, k, ivz)
-   wd(i, 0, k, irhoe) = wd(i, 0, k, irhoe) + pd(i, 0, k)
-   w(i, 0, k, irhoe) = w(i, 0, k, irhoe) + p(i, 0, k)
-   wd(i, 1, k, ivx) = wd(i, 1, k, irho)*w(i, 1, k, ivx) + w(i, 1, k&
-   &         , irho)*wd(i, 1, k, ivx)
-   w(i, 1, k, ivx) = w(i, 1, k, irho)*w(i, 1, k, ivx)
-   wd(i, 1, k, ivy) = wd(i, 1, k, irho)*w(i, 1, k, ivy) + w(i, 1, k&
-   &         , irho)*wd(i, 1, k, ivy)
-   w(i, 1, k, ivy) = w(i, 1, k, irho)*w(i, 1, k, ivy)
-   wd(i, 1, k, ivz) = wd(i, 1, k, irho)*w(i, 1, k, ivz) + w(i, 1, k&
-   &         , irho)*wd(i, 1, k, ivz)
-   w(i, 1, k, ivz) = w(i, 1, k, irho)*w(i, 1, k, ivz)
-   wd(i, 1, k, irhoe) = wd(i, 1, k, irhoe) + pd(i, 1, k)
-   w(i, 1, k, irhoe) = w(i, 1, k, irhoe) + p(i, 1, k)
-   wd(i, je, k, ivx) = wd(i, je, k, irho)*w(i, je, k, ivx) + w(i, &
-   &         je, k, irho)*wd(i, je, k, ivx)
-   w(i, je, k, ivx) = w(i, je, k, irho)*w(i, je, k, ivx)
-   wd(i, je, k, ivy) = wd(i, je, k, irho)*w(i, je, k, ivy) + w(i, &
-   &         je, k, irho)*wd(i, je, k, ivy)
-   w(i, je, k, ivy) = w(i, je, k, irho)*w(i, je, k, ivy)
-   wd(i, je, k, ivz) = wd(i, je, k, irho)*w(i, je, k, ivz) + w(i, &
-   &         je, k, irho)*wd(i, je, k, ivz)
-   w(i, je, k, ivz) = w(i, je, k, irho)*w(i, je, k, ivz)
-   wd(i, je, k, irhoe) = wd(i, je, k, irhoe) + pd(i, je, k)
-   w(i, je, k, irhoe) = w(i, je, k, irhoe) + p(i, je, k)
-   wd(i, jb, k, ivx) = wd(i, jb, k, irho)*w(i, jb, k, ivx) + w(i, &
-   &         jb, k, irho)*wd(i, jb, k, ivx)
-   w(i, jb, k, ivx) = w(i, jb, k, irho)*w(i, jb, k, ivx)
-   wd(i, jb, k, ivy) = wd(i, jb, k, irho)*w(i, jb, k, ivy) + w(i, &
-   &         jb, k, irho)*wd(i, jb, k, ivy)
-   w(i, jb, k, ivy) = w(i, jb, k, irho)*w(i, jb, k, ivy)
-   wd(i, jb, k, ivz) = wd(i, jb, k, irho)*w(i, jb, k, ivz) + w(i, &
-   &         jb, k, irho)*wd(i, jb, k, ivz)
-   w(i, jb, k, ivz) = w(i, jb, k, irho)*w(i, jb, k, ivz)
-   wd(i, jb, k, irhoe) = wd(i, jb, k, irhoe) + pd(i, jb, k)
-   w(i, jb, k, irhoe) = w(i, jb, k, irhoe) + p(i, jb, k)
-   END DO
-   END DO
    ! Initialize the dissipative residual to a certain times,
    ! possibly zero, the previously stored value. Owned cells
    ! only, because the halo values do not matter.
@@ -528,52 +446,18 @@
    !
    DO k=2,kl
    DO j=2,jl
-   x1d = ((ssd(2, j, k)-two*ssd(1, j, k)+ssd(0, j, k))*(ss(2, j, k)&
-   &         +two*ss(1, j, k)+ss(0, j, k)+sslim)-(ss(2, j, k)-two*ss(1, j, &
-   &         k)+ss(0, j, k))*(ssd(2, j, k)+two*ssd(1, j, k)+ssd(0, j, k)+&
-   &         sslimd))/(ss(2, j, k)+two*ss(1, j, k)+ss(0, j, k)+sslim)**2
-   x1 = (ss(2, j, k)-two*ss(1, j, k)+ss(0, j, k))/(ss(2, j, k)+two*&
-   &         ss(1, j, k)+ss(0, j, k)+sslim)
-   IF (x1 .GE. 0.) THEN
-   dss1d = x1d
-   dss1 = x1
-   ELSE
-   dss1d = -x1d
-   dss1 = -x1
-   END IF
-   ! Loop in i-direction.
    DO i=1,il
-   x2d = ((ssd(i+2, j, k)-two*ssd(i+1, j, k)+ssd(i, j, k))*(ss(i+&
-   &           2, j, k)+two*ss(i+1, j, k)+ss(i, j, k)+sslim)-(ss(i+2, j, k)&
-   &           -two*ss(i+1, j, k)+ss(i, j, k))*(ssd(i+2, j, k)+two*ssd(i+1&
-   &           , j, k)+ssd(i, j, k)+sslimd))/(ss(i+2, j, k)+two*ss(i+1, j, &
-   &           k)+ss(i, j, k)+sslim)**2
-   x2 = (ss(i+2, j, k)-two*ss(i+1, j, k)+ss(i, j, k))/(ss(i+2, j&
-   &           , k)+two*ss(i+1, j, k)+ss(i, j, k)+sslim)
-   IF (x2 .GE. 0.) THEN
-   dss2d = x2d
-   dss2 = x2
-   ELSE
-   dss2d = -x2d
-   dss2 = -x2
-   END IF
    ! Compute the dissipation coefficients for this face.
    ppor = zero
    IF (pori(i, j, k) .EQ. normalflux) ppor = half
    rradd = ppor*(radid(i, j, k)+radid(i+1, j, k))
    rrad = ppor*(radi(i, j, k)+radi(i+1, j, k))
-   ! Modification for FD Preconditioner Note: This lumping
-   ! actually still results in a greater than 3 cell stencil
-   ! in any direction. Since this seems to work slightly
-   ! better than the dis2=sigma*fis4*rrad, we will just use
-   ! a 5-cell stencil for doing the PC
-   IF (lumpeddiss) THEN
-   IF (dss1 .LT. dss2) THEN
-   y1d = dss2d
-   y1 = dss2
+   IF (dss(i, j, k, 1) .LT. dss(i+1, j, k, 1)) THEN
+   y1d = dssd(i+1, j, k, 1)
+   y1 = dss(i+1, j, k, 1)
    ELSE
-   y1d = dss1d
-   y1 = dss1
+   y1d = dssd(i, j, k, 1)
+   y1 = dss(i, j, k, 1)
    END IF
    IF (dssmax .GT. y1) THEN
    min1d = y1d
@@ -582,95 +466,89 @@
    min1 = dssmax
    min1d = 0.0_8
    END IF
-   dis2d = fis2*(rradd*min1+rrad*min1d) + sigma*fis4*rradd
-   dis2 = fis2*rrad*min1 + sigma*fis4*rrad
-   !dis2 = sigma*fis4*rrad 
-   dis4 = 0.0
-   dis4d = 0.0_8
-   ELSE
-   IF (dss1 .LT. dss2) THEN
-   y2d = dss2d
-   y2 = dss2
-   ELSE
-   y2d = dss1d
-   y2 = dss1
-   END IF
-   IF (dssmax .GT. y2) THEN
-   min2d = y2d
-   min2 = y2
-   ELSE
-   min2 = dssmax
-   min2d = 0.0_8
-   END IF
-   dis2d = fis2*(rradd*min2+rrad*min2d)
-   dis2 = fis2*rrad*min2
+   dis2d = fis2*(rradd*min1+rrad*min1d)
+   dis2 = fis2*rrad*min1
    dis4d = DIM_D(fis4*rrad, fis4*rradd, dis2, dis2d, dis4)
-   END IF
    ! Compute and scatter the dissipative flux.
    ! Density. Store it in the mass flow of the
    ! appropriate sliding mesh interface.
-   ddwd = wd(i+1, j, k, irho) - wd(i, j, k, irho)
-   ddw = w(i+1, j, k, irho) - w(i, j, k, irho)
-   fsd = dis2d*ddw + dis2*ddwd - dis4d*(w(i+2, j, k, irho)-w(i-1&
-   &           , j, k, irho)-three*ddw) - dis4*(wd(i+2, j, k, irho)-wd(i-1&
-   &           , j, k, irho)-three*ddwd)
-   fs = dis2*ddw - dis4*(w(i+2, j, k, irho)-w(i-1, j, k, irho)-&
-   &           three*ddw)
+   ddw1d = wd(i+1, j, k, irho) - wd(i, j, k, irho)
+   ddw1 = w(i+1, j, k, irho) - w(i, j, k, irho)
+   fsd = dis2d*ddw1 + dis2*ddw1d - dis4d*(w(i+2, j, k, irho)-w(i-&
+   &           1, j, k, irho)-three*ddw1) - dis4*(wd(i+2, j, k, irho)-wd(i-&
+   &           1, j, k, irho)-three*ddw1d)
+   fs = dis2*ddw1 - dis4*(w(i+2, j, k, irho)-w(i-1, j, k, irho)-&
+   &           three*ddw1)
    fwd(i+1, j, k, irho) = fwd(i+1, j, k, irho) + fsd
    fw(i+1, j, k, irho) = fw(i+1, j, k, irho) + fs
    fwd(i, j, k, irho) = fwd(i, j, k, irho) - fsd
    fw(i, j, k, irho) = fw(i, j, k, irho) - fs
    ! X-momentum.
-   ddwd = wd(i+1, j, k, ivx) - wd(i, j, k, ivx)
-   ddw = w(i+1, j, k, ivx) - w(i, j, k, ivx)
-   fsd = dis2d*ddw + dis2*ddwd - dis4d*(w(i+2, j, k, ivx)-w(i-1, &
-   &           j, k, ivx)-three*ddw) - dis4*(wd(i+2, j, k, ivx)-wd(i-1, j, &
-   &           k, ivx)-three*ddwd)
-   fs = dis2*ddw - dis4*(w(i+2, j, k, ivx)-w(i-1, j, k, ivx)-&
-   &           three*ddw)
+   ddw2d = wd(i+1, j, k, ivx)*w(i+1, j, k, irho) + w(i+1, j, k, &
+   &           ivx)*wd(i+1, j, k, irho) - wd(i, j, k, ivx)*w(i, j, k, irho)&
+   &           - w(i, j, k, ivx)*wd(i, j, k, irho)
+   ddw2 = w(i+1, j, k, ivx)*w(i+1, j, k, irho) - w(i, j, k, ivx)*&
+   &           w(i, j, k, irho)
+   fsd = dis2d*ddw2 + dis2*ddw2d - dis4d*(w(i+2, j, k, ivx)*w(i+2&
+   &           , j, k, irho)-w(i-1, j, k, ivx)*w(i-1, j, k, irho)-three*&
+   &           ddw2) - dis4*(wd(i+2, j, k, ivx)*w(i+2, j, k, irho)+w(i+2, j&
+   &           , k, ivx)*wd(i+2, j, k, irho)-wd(i-1, j, k, ivx)*w(i-1, j, k&
+   &           , irho)-w(i-1, j, k, ivx)*wd(i-1, j, k, irho)-three*ddw2d)
+   fs = dis2*ddw2 - dis4*(w(i+2, j, k, ivx)*w(i+2, j, k, irho)-w(&
+   &           i-1, j, k, ivx)*w(i-1, j, k, irho)-three*ddw2)
    fwd(i+1, j, k, imx) = fwd(i+1, j, k, imx) + fsd
    fw(i+1, j, k, imx) = fw(i+1, j, k, imx) + fs
    fwd(i, j, k, imx) = fwd(i, j, k, imx) - fsd
    fw(i, j, k, imx) = fw(i, j, k, imx) - fs
    ! Y-momentum.
-   ddwd = wd(i+1, j, k, ivy) - wd(i, j, k, ivy)
-   ddw = w(i+1, j, k, ivy) - w(i, j, k, ivy)
-   fsd = dis2d*ddw + dis2*ddwd - dis4d*(w(i+2, j, k, ivy)-w(i-1, &
-   &           j, k, ivy)-three*ddw) - dis4*(wd(i+2, j, k, ivy)-wd(i-1, j, &
-   &           k, ivy)-three*ddwd)
-   fs = dis2*ddw - dis4*(w(i+2, j, k, ivy)-w(i-1, j, k, ivy)-&
-   &           three*ddw)
+   ddw3d = wd(i+1, j, k, ivy)*w(i+1, j, k, irho) + w(i+1, j, k, &
+   &           ivy)*wd(i+1, j, k, irho) - wd(i, j, k, ivy)*w(i, j, k, irho)&
+   &           - w(i, j, k, ivy)*wd(i, j, k, irho)
+   ddw3 = w(i+1, j, k, ivy)*w(i+1, j, k, irho) - w(i, j, k, ivy)*&
+   &           w(i, j, k, irho)
+   fsd = dis2d*ddw3 + dis2*ddw3d - dis4d*(w(i+2, j, k, ivy)*w(i+2&
+   &           , j, k, irho)-w(i-1, j, k, ivy)*w(i-1, j, k, irho)-three*&
+   &           ddw3) - dis4*(wd(i+2, j, k, ivy)*w(i+2, j, k, irho)+w(i+2, j&
+   &           , k, ivy)*wd(i+2, j, k, irho)-wd(i-1, j, k, ivy)*w(i-1, j, k&
+   &           , irho)-w(i-1, j, k, ivy)*wd(i-1, j, k, irho)-three*ddw3d)
+   fs = dis2*ddw3 - dis4*(w(i+2, j, k, ivy)*w(i+2, j, k, irho)-w(&
+   &           i-1, j, k, ivy)*w(i-1, j, k, irho)-three*ddw3)
    fwd(i+1, j, k, imy) = fwd(i+1, j, k, imy) + fsd
    fw(i+1, j, k, imy) = fw(i+1, j, k, imy) + fs
    fwd(i, j, k, imy) = fwd(i, j, k, imy) - fsd
    fw(i, j, k, imy) = fw(i, j, k, imy) - fs
    ! Z-momentum.
-   ddwd = wd(i+1, j, k, ivz) - wd(i, j, k, ivz)
-   ddw = w(i+1, j, k, ivz) - w(i, j, k, ivz)
-   fsd = dis2d*ddw + dis2*ddwd - dis4d*(w(i+2, j, k, ivz)-w(i-1, &
-   &           j, k, ivz)-three*ddw) - dis4*(wd(i+2, j, k, ivz)-wd(i-1, j, &
-   &           k, ivz)-three*ddwd)
-   fs = dis2*ddw - dis4*(w(i+2, j, k, ivz)-w(i-1, j, k, ivz)-&
-   &           three*ddw)
+   ddw4d = wd(i+1, j, k, ivz)*w(i+1, j, k, irho) + w(i+1, j, k, &
+   &           ivz)*wd(i+1, j, k, irho) - wd(i, j, k, ivz)*w(i, j, k, irho)&
+   &           - w(i, j, k, ivz)*wd(i, j, k, irho)
+   ddw4 = w(i+1, j, k, ivz)*w(i+1, j, k, irho) - w(i, j, k, ivz)*&
+   &           w(i, j, k, irho)
+   fsd = dis2d*ddw4 + dis2*ddw4d - dis4d*(w(i+2, j, k, ivz)*w(i+2&
+   &           , j, k, irho)-w(i-1, j, k, ivz)*w(i-1, j, k, irho)-three*&
+   &           ddw4) - dis4*(wd(i+2, j, k, ivz)*w(i+2, j, k, irho)+w(i+2, j&
+   &           , k, ivz)*wd(i+2, j, k, irho)-wd(i-1, j, k, ivz)*w(i-1, j, k&
+   &           , irho)-w(i-1, j, k, ivz)*wd(i-1, j, k, irho)-three*ddw4d)
+   fs = dis2*ddw4 - dis4*(w(i+2, j, k, ivz)*w(i+2, j, k, irho)-w(&
+   &           i-1, j, k, ivz)*w(i-1, j, k, irho)-three*ddw4)
    fwd(i+1, j, k, imz) = fwd(i+1, j, k, imz) + fsd
    fw(i+1, j, k, imz) = fw(i+1, j, k, imz) + fs
    fwd(i, j, k, imz) = fwd(i, j, k, imz) - fsd
    fw(i, j, k, imz) = fw(i, j, k, imz) - fs
    ! Energy.
-   ddwd = wd(i+1, j, k, irhoe) - wd(i, j, k, irhoe)
-   ddw = w(i+1, j, k, irhoe) - w(i, j, k, irhoe)
-   fsd = dis2d*ddw + dis2*ddwd - dis4d*(w(i+2, j, k, irhoe)-w(i-1&
-   &           , j, k, irhoe)-three*ddw) - dis4*(wd(i+2, j, k, irhoe)-wd(i-&
-   &           1, j, k, irhoe)-three*ddwd)
-   fs = dis2*ddw - dis4*(w(i+2, j, k, irhoe)-w(i-1, j, k, irhoe)-&
-   &           three*ddw)
+   ddw5d = wd(i+1, j, k, irhoe) + pd(i+1, j, k) - wd(i, j, k, &
+   &           irhoe) - pd(i, j, k)
+   ddw5 = w(i+1, j, k, irhoe) + p(i+1, j, k) - (w(i, j, k, irhoe)&
+   &           +p(i, j, k))
+   fsd = dis2d*ddw5 + dis2*ddw5d - dis4d*(w(i+2, j, k, irhoe)+p(i&
+   &           +2, j, k)-(w(i-1, j, k, irhoe)+p(i-1, j, k))-three*ddw5) - &
+   &           dis4*(wd(i+2, j, k, irhoe)+pd(i+2, j, k)-wd(i-1, j, k, irhoe&
+   &           )-pd(i-1, j, k)-three*ddw5d)
+   fs = dis2*ddw5 - dis4*(w(i+2, j, k, irhoe)+p(i+2, j, k)-(w(i-1&
+   &           , j, k, irhoe)+p(i-1, j, k))-three*ddw5)
    fwd(i+1, j, k, irhoe) = fwd(i+1, j, k, irhoe) + fsd
    fw(i+1, j, k, irhoe) = fw(i+1, j, k, irhoe) + fs
    fwd(i, j, k, irhoe) = fwd(i, j, k, irhoe) - fsd
    fw(i, j, k, irhoe) = fw(i, j, k, irhoe) - fs
-   ! Set dss1 to dss2 for the next face.
-   dss1d = dss2d
-   dss1 = dss2
    END DO
    END DO
    END DO
@@ -682,146 +560,110 @@
    !      ******************************************************************
    !
    DO k=2,kl
-   DO i=2,il
-   x3d = ((ssd(i, 2, k)-two*ssd(i, 1, k)+ssd(i, 0, k))*(ss(i, 2, k)&
-   &         +two*ss(i, 1, k)+ss(i, 0, k)+sslim)-(ss(i, 2, k)-two*ss(i, 1, &
-   &         k)+ss(i, 0, k))*(ssd(i, 2, k)+two*ssd(i, 1, k)+ssd(i, 0, k)+&
-   &         sslimd))/(ss(i, 2, k)+two*ss(i, 1, k)+ss(i, 0, k)+sslim)**2
-   x3 = (ss(i, 2, k)-two*ss(i, 1, k)+ss(i, 0, k))/(ss(i, 2, k)+two*&
-   &         ss(i, 1, k)+ss(i, 0, k)+sslim)
-   IF (x3 .GE. 0.) THEN
-   dss1d = x3d
-   dss1 = x3
-   ELSE
-   dss1d = -x3d
-   dss1 = -x3
-   END IF
-   ! Loop in j-direction.
    DO j=1,jl
-   x4d = ((ssd(i, j+2, k)-two*ssd(i, j+1, k)+ssd(i, j, k))*(ss(i&
-   &           , j+2, k)+two*ss(i, j+1, k)+ss(i, j, k)+sslim)-(ss(i, j+2, k&
-   &           )-two*ss(i, j+1, k)+ss(i, j, k))*(ssd(i, j+2, k)+two*ssd(i, &
-   &           j+1, k)+ssd(i, j, k)+sslimd))/(ss(i, j+2, k)+two*ss(i, j+1, &
-   &           k)+ss(i, j, k)+sslim)**2
-   x4 = (ss(i, j+2, k)-two*ss(i, j+1, k)+ss(i, j, k))/(ss(i, j+2&
-   &           , k)+two*ss(i, j+1, k)+ss(i, j, k)+sslim)
-   IF (x4 .GE. 0.) THEN
-   dss2d = x4d
-   dss2 = x4
-   ELSE
-   dss2d = -x4d
-   dss2 = -x4
-   END IF
+   DO i=2,il
    ! Compute the dissipation coefficients for this face.
    ppor = zero
    IF (porj(i, j, k) .EQ. normalflux) ppor = half
    rradd = ppor*(radjd(i, j, k)+radjd(i, j+1, k))
    rrad = ppor*(radj(i, j, k)+radj(i, j+1, k))
-   ! Modification for FD Preconditioner
-   IF (lumpeddiss) THEN
-   IF (dss1 .LT. dss2) THEN
-   y3d = dss2d
-   y3 = dss2
+   IF (dss(i, j, k, 2) .LT. dss(i, j+1, k, 2)) THEN
+   y2d = dssd(i, j+1, k, 2)
+   y2 = dss(i, j+1, k, 2)
    ELSE
-   y3d = dss1d
-   y3 = dss1
+   y2d = dssd(i, j, k, 2)
+   y2 = dss(i, j, k, 2)
    END IF
-   IF (dssmax .GT. y3) THEN
-   min3d = y3d
-   min3 = y3
+   IF (dssmax .GT. y2) THEN
+   min2d = y2d
+   min2 = y2
    ELSE
-   min3 = dssmax
-   min3d = 0.0_8
+   min2 = dssmax
+   min2d = 0.0_8
    END IF
-   dis2d = fis2*(rradd*min3+rrad*min3d) + sigma*fis4*rradd
-   dis2 = fis2*rrad*min3 + sigma*fis4*rrad
-   !dis2 = sigma*fis4*rrad 
-   dis4 = 0.0
-   dis4d = 0.0_8
-   ELSE
-   IF (dss1 .LT. dss2) THEN
-   y4d = dss2d
-   y4 = dss2
-   ELSE
-   y4d = dss1d
-   y4 = dss1
-   END IF
-   IF (dssmax .GT. y4) THEN
-   min4d = y4d
-   min4 = y4
-   ELSE
-   min4 = dssmax
-   min4d = 0.0_8
-   END IF
-   dis2d = fis2*(rradd*min4+rrad*min4d)
-   dis2 = fis2*rrad*min4
+   dis2d = fis2*(rradd*min2+rrad*min2d)
+   dis2 = fis2*rrad*min2
    dis4d = DIM_D(fis4*rrad, fis4*rradd, dis2, dis2d, dis4)
-   END IF
    ! Compute and scatter the dissipative flux.
    ! Density. Store it in the mass flow of the
    ! appropriate sliding mesh interface.
-   ddwd = wd(i, j+1, k, irho) - wd(i, j, k, irho)
-   ddw = w(i, j+1, k, irho) - w(i, j, k, irho)
-   fsd = dis2d*ddw + dis2*ddwd - dis4d*(w(i, j+2, k, irho)-w(i, j&
-   &           -1, k, irho)-three*ddw) - dis4*(wd(i, j+2, k, irho)-wd(i, j-&
-   &           1, k, irho)-three*ddwd)
-   fs = dis2*ddw - dis4*(w(i, j+2, k, irho)-w(i, j-1, k, irho)-&
-   &           three*ddw)
+   ddw1d = wd(i, j+1, k, irho) - wd(i, j, k, irho)
+   ddw1 = w(i, j+1, k, irho) - w(i, j, k, irho)
+   fsd = dis2d*ddw1 + dis2*ddw1d - dis4d*(w(i, j+2, k, irho)-w(i&
+   &           , j-1, k, irho)-three*ddw1) - dis4*(wd(i, j+2, k, irho)-wd(i&
+   &           , j-1, k, irho)-three*ddw1d)
+   fs = dis2*ddw1 - dis4*(w(i, j+2, k, irho)-w(i, j-1, k, irho)-&
+   &           three*ddw1)
    fwd(i, j+1, k, irho) = fwd(i, j+1, k, irho) + fsd
    fw(i, j+1, k, irho) = fw(i, j+1, k, irho) + fs
    fwd(i, j, k, irho) = fwd(i, j, k, irho) - fsd
    fw(i, j, k, irho) = fw(i, j, k, irho) - fs
    ! X-momentum.
-   ddwd = wd(i, j+1, k, ivx) - wd(i, j, k, ivx)
-   ddw = w(i, j+1, k, ivx) - w(i, j, k, ivx)
-   fsd = dis2d*ddw + dis2*ddwd - dis4d*(w(i, j+2, k, ivx)-w(i, j-&
-   &           1, k, ivx)-three*ddw) - dis4*(wd(i, j+2, k, ivx)-wd(i, j-1, &
-   &           k, ivx)-three*ddwd)
-   fs = dis2*ddw - dis4*(w(i, j+2, k, ivx)-w(i, j-1, k, ivx)-&
-   &           three*ddw)
+   ddw2d = wd(i, j+1, k, ivx)*w(i, j+1, k, irho) + w(i, j+1, k, &
+   &           ivx)*wd(i, j+1, k, irho) - wd(i, j, k, ivx)*w(i, j, k, irho)&
+   &           - w(i, j, k, ivx)*wd(i, j, k, irho)
+   ddw2 = w(i, j+1, k, ivx)*w(i, j+1, k, irho) - w(i, j, k, ivx)*&
+   &           w(i, j, k, irho)
+   fsd = dis2d*ddw2 + dis2*ddw2d - dis4d*(w(i, j+2, k, ivx)*w(i, &
+   &           j+2, k, irho)-w(i, j-1, k, ivx)*w(i, j-1, k, irho)-three*&
+   &           ddw2) - dis4*(wd(i, j+2, k, ivx)*w(i, j+2, k, irho)+w(i, j+2&
+   &           , k, ivx)*wd(i, j+2, k, irho)-wd(i, j-1, k, ivx)*w(i, j-1, k&
+   &           , irho)-w(i, j-1, k, ivx)*wd(i, j-1, k, irho)-three*ddw2d)
+   fs = dis2*ddw2 - dis4*(w(i, j+2, k, ivx)*w(i, j+2, k, irho)-w(&
+   &           i, j-1, k, ivx)*w(i, j-1, k, irho)-three*ddw2)
    fwd(i, j+1, k, imx) = fwd(i, j+1, k, imx) + fsd
    fw(i, j+1, k, imx) = fw(i, j+1, k, imx) + fs
    fwd(i, j, k, imx) = fwd(i, j, k, imx) - fsd
    fw(i, j, k, imx) = fw(i, j, k, imx) - fs
    ! Y-momentum.
-   ddwd = wd(i, j+1, k, ivy) - wd(i, j, k, ivy)
-   ddw = w(i, j+1, k, ivy) - w(i, j, k, ivy)
-   fsd = dis2d*ddw + dis2*ddwd - dis4d*(w(i, j+2, k, ivy)-w(i, j-&
-   &           1, k, ivy)-three*ddw) - dis4*(wd(i, j+2, k, ivy)-wd(i, j-1, &
-   &           k, ivy)-three*ddwd)
-   fs = dis2*ddw - dis4*(w(i, j+2, k, ivy)-w(i, j-1, k, ivy)-&
-   &           three*ddw)
+   ddw3d = wd(i, j+1, k, ivy)*w(i, j+1, k, irho) + w(i, j+1, k, &
+   &           ivy)*wd(i, j+1, k, irho) - wd(i, j, k, ivy)*w(i, j, k, irho)&
+   &           - w(i, j, k, ivy)*wd(i, j, k, irho)
+   ddw3 = w(i, j+1, k, ivy)*w(i, j+1, k, irho) - w(i, j, k, ivy)*&
+   &           w(i, j, k, irho)
+   fsd = dis2d*ddw3 + dis2*ddw3d - dis4d*(w(i, j+2, k, ivy)*w(i, &
+   &           j+2, k, irho)-w(i, j-1, k, ivy)*w(i, j-1, k, irho)-three*&
+   &           ddw3) - dis4*(wd(i, j+2, k, ivy)*w(i, j+2, k, irho)+w(i, j+2&
+   &           , k, ivy)*wd(i, j+2, k, irho)-wd(i, j-1, k, ivy)*w(i, j-1, k&
+   &           , irho)-w(i, j-1, k, ivy)*wd(i, j-1, k, irho)-three*ddw3d)
+   fs = dis2*ddw3 - dis4*(w(i, j+2, k, ivy)*w(i, j+2, k, irho)-w(&
+   &           i, j-1, k, ivy)*w(i, j-1, k, irho)-three*ddw3)
    fwd(i, j+1, k, imy) = fwd(i, j+1, k, imy) + fsd
    fw(i, j+1, k, imy) = fw(i, j+1, k, imy) + fs
    fwd(i, j, k, imy) = fwd(i, j, k, imy) - fsd
    fw(i, j, k, imy) = fw(i, j, k, imy) - fs
    ! Z-momentum.
-   ddwd = wd(i, j+1, k, ivz) - wd(i, j, k, ivz)
-   ddw = w(i, j+1, k, ivz) - w(i, j, k, ivz)
-   fsd = dis2d*ddw + dis2*ddwd - dis4d*(w(i, j+2, k, ivz)-w(i, j-&
-   &           1, k, ivz)-three*ddw) - dis4*(wd(i, j+2, k, ivz)-wd(i, j-1, &
-   &           k, ivz)-three*ddwd)
-   fs = dis2*ddw - dis4*(w(i, j+2, k, ivz)-w(i, j-1, k, ivz)-&
-   &           three*ddw)
+   ddw4d = wd(i, j+1, k, ivz)*w(i, j+1, k, irho) + w(i, j+1, k, &
+   &           ivz)*wd(i, j+1, k, irho) - wd(i, j, k, ivz)*w(i, j, k, irho)&
+   &           - w(i, j, k, ivz)*wd(i, j, k, irho)
+   ddw4 = w(i, j+1, k, ivz)*w(i, j+1, k, irho) - w(i, j, k, ivz)*&
+   &           w(i, j, k, irho)
+   fsd = dis2d*ddw4 + dis2*ddw4d - dis4d*(w(i, j+2, k, ivz)*w(i, &
+   &           j+2, k, irho)-w(i, j-1, k, ivz)*w(i, j-1, k, irho)-three*&
+   &           ddw4) - dis4*(wd(i, j+2, k, ivz)*w(i, j+2, k, irho)+w(i, j+2&
+   &           , k, ivz)*wd(i, j+2, k, irho)-wd(i, j-1, k, ivz)*w(i, j-1, k&
+   &           , irho)-w(i, j-1, k, ivz)*wd(i, j-1, k, irho)-three*ddw4d)
+   fs = dis2*ddw4 - dis4*(w(i, j+2, k, ivz)*w(i, j+2, k, irho)-w(&
+   &           i, j-1, k, ivz)*w(i, j-1, k, irho)-three*ddw4)
    fwd(i, j+1, k, imz) = fwd(i, j+1, k, imz) + fsd
    fw(i, j+1, k, imz) = fw(i, j+1, k, imz) + fs
    fwd(i, j, k, imz) = fwd(i, j, k, imz) - fsd
    fw(i, j, k, imz) = fw(i, j, k, imz) - fs
    ! Energy.
-   ddwd = wd(i, j+1, k, irhoe) - wd(i, j, k, irhoe)
-   ddw = w(i, j+1, k, irhoe) - w(i, j, k, irhoe)
-   fsd = dis2d*ddw + dis2*ddwd - dis4d*(w(i, j+2, k, irhoe)-w(i, &
-   &           j-1, k, irhoe)-three*ddw) - dis4*(wd(i, j+2, k, irhoe)-wd(i&
-   &           , j-1, k, irhoe)-three*ddwd)
-   fs = dis2*ddw - dis4*(w(i, j+2, k, irhoe)-w(i, j-1, k, irhoe)-&
-   &           three*ddw)
+   ddw5d = wd(i, j+1, k, irhoe) + pd(i, j+1, k) - wd(i, j, k, &
+   &           irhoe) - pd(i, j, k)
+   ddw5 = w(i, j+1, k, irhoe) + p(i, j+1, k) - (w(i, j, k, irhoe)&
+   &           +p(i, j, k))
+   fsd = dis2d*ddw5 + dis2*ddw5d - dis4d*(w(i, j+2, k, irhoe)+p(i&
+   &           , j+2, k)-(w(i, j-1, k, irhoe)+p(i, j-1, k))-three*ddw5) - &
+   &           dis4*(wd(i, j+2, k, irhoe)+pd(i, j+2, k)-wd(i, j-1, k, irhoe&
+   &           )-pd(i, j-1, k)-three*ddw5d)
+   fs = dis2*ddw5 - dis4*(w(i, j+2, k, irhoe)+p(i, j+2, k)-(w(i, &
+   &           j-1, k, irhoe)+p(i, j-1, k))-three*ddw5)
    fwd(i, j+1, k, irhoe) = fwd(i, j+1, k, irhoe) + fsd
    fw(i, j+1, k, irhoe) = fw(i, j+1, k, irhoe) + fs
    fwd(i, j, k, irhoe) = fwd(i, j, k, irhoe) - fsd
    fw(i, j, k, irhoe) = fw(i, j, k, irhoe) - fs
-   ! Set dss1 to dss2 for the next face.
-   dss1d = dss2d
-   dss1 = dss2
    END DO
    END DO
    END DO
@@ -832,271 +674,112 @@
    !      *                                                                *
    !      ******************************************************************
    !
+   DO k=1,kl
    DO j=2,jl
    DO i=2,il
-   x5d = ((ssd(i, j, 2)-two*ssd(i, j, 1)+ssd(i, j, 0))*(ss(i, j, 2)&
-   &         +two*ss(i, j, 1)+ss(i, j, 0)+sslim)-(ss(i, j, 2)-two*ss(i, j, &
-   &         1)+ss(i, j, 0))*(ssd(i, j, 2)+two*ssd(i, j, 1)+ssd(i, j, 0)+&
-   &         sslimd))/(ss(i, j, 2)+two*ss(i, j, 1)+ss(i, j, 0)+sslim)**2
-   x5 = (ss(i, j, 2)-two*ss(i, j, 1)+ss(i, j, 0))/(ss(i, j, 2)+two*&
-   &         ss(i, j, 1)+ss(i, j, 0)+sslim)
-   IF (x5 .GE. 0.) THEN
-   dss1d = x5d
-   dss1 = x5
-   ELSE
-   dss1d = -x5d
-   dss1 = -x5
-   END IF
-   ! Loop in k-direction.
-   DO k=1,kl
-   x6d = ((ssd(i, j, k+2)-two*ssd(i, j, k+1)+ssd(i, j, k))*(ss(i&
-   &           , j, k+2)+two*ss(i, j, k+1)+ss(i, j, k)+sslim)-(ss(i, j, k+2&
-   &           )-two*ss(i, j, k+1)+ss(i, j, k))*(ssd(i, j, k+2)+two*ssd(i, &
-   &           j, k+1)+ssd(i, j, k)+sslimd))/(ss(i, j, k+2)+two*ss(i, j, k+&
-   &           1)+ss(i, j, k)+sslim)**2
-   x6 = (ss(i, j, k+2)-two*ss(i, j, k+1)+ss(i, j, k))/(ss(i, j, k&
-   &           +2)+two*ss(i, j, k+1)+ss(i, j, k)+sslim)
-   IF (x6 .GE. 0.) THEN
-   dss2d = x6d
-   dss2 = x6
-   ELSE
-   dss2d = -x6d
-   dss2 = -x6
-   END IF
    ! Compute the dissipation coefficients for this face.
    ppor = zero
    IF (pork(i, j, k) .EQ. normalflux) ppor = half
    rradd = ppor*(radkd(i, j, k)+radkd(i, j, k+1))
    rrad = ppor*(radk(i, j, k)+radk(i, j, k+1))
-   ! Modification for FD Preconditioner
-   IF (lumpeddiss) THEN
-   IF (dss1 .LT. dss2) THEN
-   y5d = dss2d
-   y5 = dss2
+   IF (dss(i, j, k, 3) .LT. dss(i, j, k+1, 3)) THEN
+   y3d = dssd(i, j, k+1, 3)
+   y3 = dss(i, j, k+1, 3)
    ELSE
-   y5d = dss1d
-   y5 = dss1
+   y3d = dssd(i, j, k, 3)
+   y3 = dss(i, j, k, 3)
    END IF
-   IF (dssmax .GT. y5) THEN
-   min5d = y5d
-   min5 = y5
+   IF (dssmax .GT. y3) THEN
+   min3d = y3d
+   min3 = y3
    ELSE
-   min5 = dssmax
-   min5d = 0.0_8
+   min3 = dssmax
+   min3d = 0.0_8
    END IF
-   dis2d = fis2*(rradd*min5+rrad*min5d) + sigma*fis4*rradd
-   dis2 = fis2*rrad*min5 + sigma*fis4*rrad
-   !dis2 = sigma*fis4*rrad 
-   dis4 = 0.0
-   dis4d = 0.0_8
-   ELSE
-   IF (dss1 .LT. dss2) THEN
-   y6d = dss2d
-   y6 = dss2
-   ELSE
-   y6d = dss1d
-   y6 = dss1
-   END IF
-   IF (dssmax .GT. y6) THEN
-   min6d = y6d
-   min6 = y6
-   ELSE
-   min6 = dssmax
-   min6d = 0.0_8
-   END IF
-   dis2d = fis2*(rradd*min6+rrad*min6d)
-   dis2 = fis2*rrad*min6
+   dis2d = fis2*(rradd*min3+rrad*min3d)
+   dis2 = fis2*rrad*min3
    dis4d = DIM_D(fis4*rrad, fis4*rradd, dis2, dis2d, dis4)
-   END IF
    ! Compute and scatter the dissipative flux.
    ! Density. Store it in the mass flow of the
    ! appropriate sliding mesh interface.
-   ddwd = wd(i, j, k+1, irho) - wd(i, j, k, irho)
-   ddw = w(i, j, k+1, irho) - w(i, j, k, irho)
-   fsd = dis2d*ddw + dis2*ddwd - dis4d*(w(i, j, k+2, irho)-w(i, j&
-   &           , k-1, irho)-three*ddw) - dis4*(wd(i, j, k+2, irho)-wd(i, j&
-   &           , k-1, irho)-three*ddwd)
-   fs = dis2*ddw - dis4*(w(i, j, k+2, irho)-w(i, j, k-1, irho)-&
-   &           three*ddw)
+   ddw1d = wd(i, j, k+1, irho) - wd(i, j, k, irho)
+   ddw1 = w(i, j, k+1, irho) - w(i, j, k, irho)
+   fsd = dis2d*ddw1 + dis2*ddw1d - dis4d*(w(i, j, k+2, irho)-w(i&
+   &           , j, k-1, irho)-three*ddw1) - dis4*(wd(i, j, k+2, irho)-wd(i&
+   &           , j, k-1, irho)-three*ddw1d)
+   fs = dis2*ddw1 - dis4*(w(i, j, k+2, irho)-w(i, j, k-1, irho)-&
+   &           three*ddw1)
    fwd(i, j, k+1, irho) = fwd(i, j, k+1, irho) + fsd
    fw(i, j, k+1, irho) = fw(i, j, k+1, irho) + fs
    fwd(i, j, k, irho) = fwd(i, j, k, irho) - fsd
    fw(i, j, k, irho) = fw(i, j, k, irho) - fs
    ! X-momentum.
-   ddwd = wd(i, j, k+1, ivx) - wd(i, j, k, ivx)
-   ddw = w(i, j, k+1, ivx) - w(i, j, k, ivx)
-   fsd = dis2d*ddw + dis2*ddwd - dis4d*(w(i, j, k+2, ivx)-w(i, j&
-   &           , k-1, ivx)-three*ddw) - dis4*(wd(i, j, k+2, ivx)-wd(i, j, k&
-   &           -1, ivx)-three*ddwd)
-   fs = dis2*ddw - dis4*(w(i, j, k+2, ivx)-w(i, j, k-1, ivx)-&
-   &           three*ddw)
+   ddw2d = wd(i, j, k+1, ivx)*w(i, j, k+1, irho) + w(i, j, k+1, &
+   &           ivx)*wd(i, j, k+1, irho) - wd(i, j, k, ivx)*w(i, j, k, irho)&
+   &           - w(i, j, k, ivx)*wd(i, j, k, irho)
+   ddw2 = w(i, j, k+1, ivx)*w(i, j, k+1, irho) - w(i, j, k, ivx)*&
+   &           w(i, j, k, irho)
+   fsd = dis2d*ddw2 + dis2*ddw2d - dis4d*(w(i, j, k+2, ivx)*w(i, &
+   &           j, k+2, irho)-w(i, j, k-1, ivx)*w(i, j, k-1, irho)-three*&
+   &           ddw2) - dis4*(wd(i, j, k+2, ivx)*w(i, j, k+2, irho)+w(i, j, &
+   &           k+2, ivx)*wd(i, j, k+2, irho)-wd(i, j, k-1, ivx)*w(i, j, k-1&
+   &           , irho)-w(i, j, k-1, ivx)*wd(i, j, k-1, irho)-three*ddw2d)
+   fs = dis2*ddw2 - dis4*(w(i, j, k+2, ivx)*w(i, j, k+2, irho)-w(&
+   &           i, j, k-1, ivx)*w(i, j, k-1, irho)-three*ddw2)
    fwd(i, j, k+1, imx) = fwd(i, j, k+1, imx) + fsd
    fw(i, j, k+1, imx) = fw(i, j, k+1, imx) + fs
    fwd(i, j, k, imx) = fwd(i, j, k, imx) - fsd
    fw(i, j, k, imx) = fw(i, j, k, imx) - fs
    ! Y-momentum.
-   ddwd = wd(i, j, k+1, ivy) - wd(i, j, k, ivy)
-   ddw = w(i, j, k+1, ivy) - w(i, j, k, ivy)
-   fsd = dis2d*ddw + dis2*ddwd - dis4d*(w(i, j, k+2, ivy)-w(i, j&
-   &           , k-1, ivy)-three*ddw) - dis4*(wd(i, j, k+2, ivy)-wd(i, j, k&
-   &           -1, ivy)-three*ddwd)
-   fs = dis2*ddw - dis4*(w(i, j, k+2, ivy)-w(i, j, k-1, ivy)-&
-   &           three*ddw)
+   ddw3d = wd(i, j, k+1, ivy)*w(i, j, k+1, irho) + w(i, j, k+1, &
+   &           ivy)*wd(i, j, k+1, irho) - wd(i, j, k, ivy)*w(i, j, k, irho)&
+   &           - w(i, j, k, ivy)*wd(i, j, k, irho)
+   ddw3 = w(i, j, k+1, ivy)*w(i, j, k+1, irho) - w(i, j, k, ivy)*&
+   &           w(i, j, k, irho)
+   fsd = dis2d*ddw3 + dis2*ddw3d - dis4d*(w(i, j, k+2, ivy)*w(i, &
+   &           j, k+2, irho)-w(i, j, k-1, ivy)*w(i, j, k-1, irho)-three*&
+   &           ddw3) - dis4*(wd(i, j, k+2, ivy)*w(i, j, k+2, irho)+w(i, j, &
+   &           k+2, ivy)*wd(i, j, k+2, irho)-wd(i, j, k-1, ivy)*w(i, j, k-1&
+   &           , irho)-w(i, j, k-1, ivy)*wd(i, j, k-1, irho)-three*ddw3d)
+   fs = dis2*ddw3 - dis4*(w(i, j, k+2, ivy)*w(i, j, k+2, irho)-w(&
+   &           i, j, k-1, ivy)*w(i, j, k-1, irho)-three*ddw3)
    fwd(i, j, k+1, imy) = fwd(i, j, k+1, imy) + fsd
    fw(i, j, k+1, imy) = fw(i, j, k+1, imy) + fs
    fwd(i, j, k, imy) = fwd(i, j, k, imy) - fsd
    fw(i, j, k, imy) = fw(i, j, k, imy) - fs
    ! Z-momentum.
-   ddwd = wd(i, j, k+1, ivz) - wd(i, j, k, ivz)
-   ddw = w(i, j, k+1, ivz) - w(i, j, k, ivz)
-   fsd = dis2d*ddw + dis2*ddwd - dis4d*(w(i, j, k+2, ivz)-w(i, j&
-   &           , k-1, ivz)-three*ddw) - dis4*(wd(i, j, k+2, ivz)-wd(i, j, k&
-   &           -1, ivz)-three*ddwd)
-   fs = dis2*ddw - dis4*(w(i, j, k+2, ivz)-w(i, j, k-1, ivz)-&
-   &           three*ddw)
+   ddw4d = wd(i, j, k+1, ivz)*w(i, j, k+1, irho) + w(i, j, k+1, &
+   &           ivz)*wd(i, j, k+1, irho) - wd(i, j, k, ivz)*w(i, j, k, irho)&
+   &           - w(i, j, k, ivz)*wd(i, j, k, irho)
+   ddw4 = w(i, j, k+1, ivz)*w(i, j, k+1, irho) - w(i, j, k, ivz)*&
+   &           w(i, j, k, irho)
+   fsd = dis2d*ddw4 + dis2*ddw4d - dis4d*(w(i, j, k+2, ivz)*w(i, &
+   &           j, k+2, irho)-w(i, j, k-1, ivz)*w(i, j, k-1, irho)-three*&
+   &           ddw4) - dis4*(wd(i, j, k+2, ivz)*w(i, j, k+2, irho)+w(i, j, &
+   &           k+2, ivz)*wd(i, j, k+2, irho)-wd(i, j, k-1, ivz)*w(i, j, k-1&
+   &           , irho)-w(i, j, k-1, ivz)*wd(i, j, k-1, irho)-three*ddw4d)
+   fs = dis2*ddw4 - dis4*(w(i, j, k+2, ivz)*w(i, j, k+2, irho)-w(&
+   &           i, j, k-1, ivz)*w(i, j, k-1, irho)-three*ddw4)
    fwd(i, j, k+1, imz) = fwd(i, j, k+1, imz) + fsd
    fw(i, j, k+1, imz) = fw(i, j, k+1, imz) + fs
    fwd(i, j, k, imz) = fwd(i, j, k, imz) - fsd
    fw(i, j, k, imz) = fw(i, j, k, imz) - fs
    ! Energy.
-   ddwd = wd(i, j, k+1, irhoe) - wd(i, j, k, irhoe)
-   ddw = w(i, j, k+1, irhoe) - w(i, j, k, irhoe)
-   fsd = dis2d*ddw + dis2*ddwd - dis4d*(w(i, j, k+2, irhoe)-w(i, &
-   &           j, k-1, irhoe)-three*ddw) - dis4*(wd(i, j, k+2, irhoe)-wd(i&
-   &           , j, k-1, irhoe)-three*ddwd)
-   fs = dis2*ddw - dis4*(w(i, j, k+2, irhoe)-w(i, j, k-1, irhoe)-&
-   &           three*ddw)
+   ddw5d = wd(i, j, k+1, irhoe) + pd(i, j, k+1) - wd(i, j, k, &
+   &           irhoe) - pd(i, j, k)
+   ddw5 = w(i, j, k+1, irhoe) + p(i, j, k+1) - (w(i, j, k, irhoe)&
+   &           +p(i, j, k))
+   fsd = dis2d*ddw5 + dis2*ddw5d - dis4d*(w(i, j, k+2, irhoe)+p(i&
+   &           , j, k+2)-(w(i, j, k-1, irhoe)+p(i, j, k-1))-three*ddw5) - &
+   &           dis4*(wd(i, j, k+2, irhoe)+pd(i, j, k+2)-wd(i, j, k-1, irhoe&
+   &           )-pd(i, j, k-1)-three*ddw5d)
+   fs = dis2*ddw5 - dis4*(w(i, j, k+2, irhoe)+p(i, j, k+2)-(w(i, &
+   &           j, k-1, irhoe)+p(i, j, k-1))-three*ddw5)
    fwd(i, j, k+1, irhoe) = fwd(i, j, k+1, irhoe) + fsd
    fw(i, j, k+1, irhoe) = fw(i, j, k+1, irhoe) + fs
    fwd(i, j, k, irhoe) = fwd(i, j, k, irhoe) - fsd
    fw(i, j, k, irhoe) = fw(i, j, k, irhoe) - fs
-   ! Set dss1 to dss2 for the next face.
-   dss1d = dss2d
-   dss1 = dss2
    END DO
-   END DO
-   END DO
-   ! Replace rho times the total enthalpy by the total energy and
-   ! store the velocities again instead of the momentum. Only for
-   ! those entries that have been altered, i.e. ignore the
-   ! corner halo's.
-   DO k=0,kb
-   DO j=2,jl
-   DO i=2,il
-   rhoid = -(one*wd(i, j, k, irho)/w(i, j, k, irho)**2)
-   rhoi = one/w(i, j, k, irho)
-   wd(i, j, k, ivx) = wd(i, j, k, ivx)*rhoi + w(i, j, k, ivx)*&
-   &           rhoid
-   w(i, j, k, ivx) = w(i, j, k, ivx)*rhoi
-   wd(i, j, k, ivy) = wd(i, j, k, ivy)*rhoi + w(i, j, k, ivy)*&
-   &           rhoid
-   w(i, j, k, ivy) = w(i, j, k, ivy)*rhoi
-   wd(i, j, k, ivz) = wd(i, j, k, ivz)*rhoi + w(i, j, k, ivz)*&
-   &           rhoid
-   w(i, j, k, ivz) = w(i, j, k, ivz)*rhoi
-   wd(i, j, k, irhoe) = wd(i, j, k, irhoe) - pd(i, j, k)
-   w(i, j, k, irhoe) = w(i, j, k, irhoe) - p(i, j, k)
-   END DO
-   END DO
-   END DO
-   DO k=2,kl
-   DO j=2,jl
-   rhoid = -(one*wd(0, j, k, irho)/w(0, j, k, irho)**2)
-   rhoi = one/w(0, j, k, irho)
-   wd(0, j, k, ivx) = wd(0, j, k, ivx)*rhoi + w(0, j, k, ivx)*rhoid
-   w(0, j, k, ivx) = w(0, j, k, ivx)*rhoi
-   wd(0, j, k, ivy) = wd(0, j, k, ivy)*rhoi + w(0, j, k, ivy)*rhoid
-   w(0, j, k, ivy) = w(0, j, k, ivy)*rhoi
-   wd(0, j, k, ivz) = wd(0, j, k, ivz)*rhoi + w(0, j, k, ivz)*rhoid
-   w(0, j, k, ivz) = w(0, j, k, ivz)*rhoi
-   wd(0, j, k, irhoe) = wd(0, j, k, irhoe) - pd(0, j, k)
-   w(0, j, k, irhoe) = w(0, j, k, irhoe) - p(0, j, k)
-   rhoid = -(one*wd(1, j, k, irho)/w(1, j, k, irho)**2)
-   rhoi = one/w(1, j, k, irho)
-   wd(1, j, k, ivx) = wd(1, j, k, ivx)*rhoi + w(1, j, k, ivx)*rhoid
-   w(1, j, k, ivx) = w(1, j, k, ivx)*rhoi
-   wd(1, j, k, ivy) = wd(1, j, k, ivy)*rhoi + w(1, j, k, ivy)*rhoid
-   w(1, j, k, ivy) = w(1, j, k, ivy)*rhoi
-   wd(1, j, k, ivz) = wd(1, j, k, ivz)*rhoi + w(1, j, k, ivz)*rhoid
-   w(1, j, k, ivz) = w(1, j, k, ivz)*rhoi
-   wd(1, j, k, irhoe) = wd(1, j, k, irhoe) - pd(1, j, k)
-   w(1, j, k, irhoe) = w(1, j, k, irhoe) - p(1, j, k)
-   rhoid = -(one*wd(ie, j, k, irho)/w(ie, j, k, irho)**2)
-   rhoi = one/w(ie, j, k, irho)
-   wd(ie, j, k, ivx) = wd(ie, j, k, ivx)*rhoi + w(ie, j, k, ivx)*&
-   &         rhoid
-   w(ie, j, k, ivx) = w(ie, j, k, ivx)*rhoi
-   wd(ie, j, k, ivy) = wd(ie, j, k, ivy)*rhoi + w(ie, j, k, ivy)*&
-   &         rhoid
-   w(ie, j, k, ivy) = w(ie, j, k, ivy)*rhoi
-   wd(ie, j, k, ivz) = wd(ie, j, k, ivz)*rhoi + w(ie, j, k, ivz)*&
-   &         rhoid
-   w(ie, j, k, ivz) = w(ie, j, k, ivz)*rhoi
-   wd(ie, j, k, irhoe) = wd(ie, j, k, irhoe) - pd(ie, j, k)
-   w(ie, j, k, irhoe) = w(ie, j, k, irhoe) - p(ie, j, k)
-   rhoid = -(one*wd(ib, j, k, irho)/w(ib, j, k, irho)**2)
-   rhoi = one/w(ib, j, k, irho)
-   wd(ib, j, k, ivx) = wd(ib, j, k, ivx)*rhoi + w(ib, j, k, ivx)*&
-   &         rhoid
-   w(ib, j, k, ivx) = w(ib, j, k, ivx)*rhoi
-   wd(ib, j, k, ivy) = wd(ib, j, k, ivy)*rhoi + w(ib, j, k, ivy)*&
-   &         rhoid
-   w(ib, j, k, ivy) = w(ib, j, k, ivy)*rhoi
-   wd(ib, j, k, ivz) = wd(ib, j, k, ivz)*rhoi + w(ib, j, k, ivz)*&
-   &         rhoid
-   w(ib, j, k, ivz) = w(ib, j, k, ivz)*rhoi
-   wd(ib, j, k, irhoe) = wd(ib, j, k, irhoe) - pd(ib, j, k)
-   w(ib, j, k, irhoe) = w(ib, j, k, irhoe) - p(ib, j, k)
-   END DO
-   END DO
-   DO k=2,kl
-   DO i=2,il
-   rhoid = -(one*wd(i, 0, k, irho)/w(i, 0, k, irho)**2)
-   rhoi = one/w(i, 0, k, irho)
-   wd(i, 0, k, ivx) = wd(i, 0, k, ivx)*rhoi + w(i, 0, k, ivx)*rhoid
-   w(i, 0, k, ivx) = w(i, 0, k, ivx)*rhoi
-   wd(i, 0, k, ivy) = wd(i, 0, k, ivy)*rhoi + w(i, 0, k, ivy)*rhoid
-   w(i, 0, k, ivy) = w(i, 0, k, ivy)*rhoi
-   wd(i, 0, k, ivz) = wd(i, 0, k, ivz)*rhoi + w(i, 0, k, ivz)*rhoid
-   w(i, 0, k, ivz) = w(i, 0, k, ivz)*rhoi
-   wd(i, 0, k, irhoe) = wd(i, 0, k, irhoe) - pd(i, 0, k)
-   w(i, 0, k, irhoe) = w(i, 0, k, irhoe) - p(i, 0, k)
-   rhoid = -(one*wd(i, 1, k, irho)/w(i, 1, k, irho)**2)
-   rhoi = one/w(i, 1, k, irho)
-   wd(i, 1, k, ivx) = wd(i, 1, k, ivx)*rhoi + w(i, 1, k, ivx)*rhoid
-   w(i, 1, k, ivx) = w(i, 1, k, ivx)*rhoi
-   wd(i, 1, k, ivy) = wd(i, 1, k, ivy)*rhoi + w(i, 1, k, ivy)*rhoid
-   w(i, 1, k, ivy) = w(i, 1, k, ivy)*rhoi
-   wd(i, 1, k, ivz) = wd(i, 1, k, ivz)*rhoi + w(i, 1, k, ivz)*rhoid
-   w(i, 1, k, ivz) = w(i, 1, k, ivz)*rhoi
-   wd(i, 1, k, irhoe) = wd(i, 1, k, irhoe) - pd(i, 1, k)
-   w(i, 1, k, irhoe) = w(i, 1, k, irhoe) - p(i, 1, k)
-   rhoid = -(one*wd(i, je, k, irho)/w(i, je, k, irho)**2)
-   rhoi = one/w(i, je, k, irho)
-   wd(i, je, k, ivx) = wd(i, je, k, ivx)*rhoi + w(i, je, k, ivx)*&
-   &         rhoid
-   w(i, je, k, ivx) = w(i, je, k, ivx)*rhoi
-   wd(i, je, k, ivy) = wd(i, je, k, ivy)*rhoi + w(i, je, k, ivy)*&
-   &         rhoid
-   w(i, je, k, ivy) = w(i, je, k, ivy)*rhoi
-   wd(i, je, k, ivz) = wd(i, je, k, ivz)*rhoi + w(i, je, k, ivz)*&
-   &         rhoid
-   w(i, je, k, ivz) = w(i, je, k, ivz)*rhoi
-   wd(i, je, k, irhoe) = wd(i, je, k, irhoe) - pd(i, je, k)
-   w(i, je, k, irhoe) = w(i, je, k, irhoe) - p(i, je, k)
-   rhoid = -(one*wd(i, jb, k, irho)/w(i, jb, k, irho)**2)
-   rhoi = one/w(i, jb, k, irho)
-   wd(i, jb, k, ivx) = wd(i, jb, k, ivx)*rhoi + w(i, jb, k, ivx)*&
-   &         rhoid
-   w(i, jb, k, ivx) = w(i, jb, k, ivx)*rhoi
-   wd(i, jb, k, ivy) = wd(i, jb, k, ivy)*rhoi + w(i, jb, k, ivy)*&
-   &         rhoid
-   w(i, jb, k, ivy) = w(i, jb, k, ivy)*rhoi
-   wd(i, jb, k, ivz) = wd(i, jb, k, ivz)*rhoi + w(i, jb, k, ivz)*&
-   &         rhoid
-   w(i, jb, k, ivz) = w(i, jb, k, ivz)*rhoi
-   wd(i, jb, k, irhoe) = wd(i, jb, k, irhoe) - pd(i, jb, k)
-   w(i, jb, k, irhoe) = w(i, jb, k, irhoe) - p(i, jb, k)
    END DO
    END DO
    END IF

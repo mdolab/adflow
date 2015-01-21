@@ -5,9 +5,9 @@
    !   variations   of useful results: *radi *radj *radk
    !   with respect to varying inputs: *p *sfacei *sfacej *gamma *sfacek
    !                *w *si *sj *sk gammainf rhoinf pinfcorr
-   !   Plus diff mem management of: rev:in p:in sfacei:in sfacej:in
-   !                gamma:in sfacek:in w:in rlv:in vol:in si:in sj:in
-   !                sk:in radi:in radj:in radk:in
+   !   Plus diff mem management of: p:in sfacei:in sfacej:in gamma:in
+   !                sfacek:in w:in si:in sj:in sk:in radi:in radj:in
+   !                radk:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -41,6 +41,8 @@
    USE ITERATION
    USE SECTION
    IMPLICIT NONE
+   ! The rest of this file can be skipped if only the spectral
+   ! radii need to be computed.
    !
    !      Subroutine argument.
    !
@@ -52,17 +54,19 @@
    !
    !      Local variables.
    !
-   INTEGER(kind=inttype) :: i, j, k
+   INTEGER(kind=inttype) :: i, j, k, ii
    REAL(kind=realtype) :: plim, rlim, clim2
    REAL(kind=realtype) :: clim2d
-   REAL(kind=realtype) :: uux, uuy, uuz, cc2, qs, sx, sy, sz, rmu
-   REAL(kind=realtype) :: uuxd, uuyd, uuzd, cc2d, qsd, sxd, syd, szd
+   REAL(kind=realtype) :: uux, uuy, uuz, cc2, qsi, qsj, qsk, sx, sy, sz, &
+   & rmu
+   REAL(kind=realtype) :: uuxd, uuyd, uuzd, cc2d, qsid, qsjd, qskd, sxd, &
+   & syd, szd
    REAL(kind=realtype) :: ri, rj, rk, rij, rjk, rki
    REAL(kind=realtype) :: rid, rjd, rkd, rijd, rjkd, rkid
    REAL(kind=realtype) :: vsi, vsj, vsk, rfl, dpi, dpj, dpk
    REAL(kind=realtype) :: sface, tmp
    REAL(kind=realtype) :: sfaced
-   LOGICAL :: radiineeded
+   LOGICAL :: radiineeded, doscaling
    INTRINSIC MAX
    INTRINSIC ABS
    INTRINSIC SQRT
@@ -74,9 +78,6 @@
    REAL(kind=realtype) :: pwx1d
    REAL(kind=realtype) :: abs1d
    REAL(kind=realtype) :: abs0d
-   REAL(kind=realtype) :: abs5
-   REAL(kind=realtype) :: abs4
-   REAL(kind=realtype) :: abs3
    REAL(kind=realtype) :: abs2
    REAL(kind=realtype) :: abs2d
    REAL(kind=realtype) :: abs1
@@ -108,6 +109,7 @@
    clim2d = (0.000001_realType*(gammainfd*pinfcorr+gammainf*pinfcorrd)*&
    &     rhoinf-0.000001_realType*gammainf*pinfcorr*rhoinfd)/rhoinf**2
    clim2 = 0.000001_realType*gammainf*pinfcorr/rhoinf
+   doscaling = dirscaling .AND. currentlevel .LE. groundlevel
    ! Initialize sFace to zero. This value will be used if the
    ! block is not moving.
    sface = zero
@@ -162,15 +164,15 @@
    sy = si(i-1, j, k, 2) + si(i, j, k, 2)
    szd = sid(i-1, j, k, 3) + sid(i, j, k, 3)
    sz = si(i-1, j, k, 3) + si(i, j, k, 3)
-   qsd = uuxd*sx + uux*sxd + uuyd*sy + uuy*syd + uuzd*sz + uuz*&
-   &             szd - sfaced
-   qs = uux*sx + uuy*sy + uuz*sz - sface
-   IF (qs .GE. 0.) THEN
-   abs0d = qsd
-   abs0 = qs
+   qsid = uuxd*sx + uux*sxd + uuyd*sy + uuy*syd + uuzd*sz + uuz&
+   &             *szd - sfaced
+   qsi = uux*sx + uuy*sy + uuz*sz - sface
+   IF (qsi .GE. 0.) THEN
+   abs0d = qsid
+   abs0 = qsi
    ELSE
-   abs0d = -qsd
-   abs0 = -qs
+   abs0d = -qsid
+   abs0 = -qsi
    END IF
    arg1d = cc2d*(sx**2+sy**2+sz**2) + cc2*(2*sx*sxd+2*sy*syd+2*&
    &             sz*szd)
@@ -195,15 +197,15 @@
    sy = sj(i, j-1, k, 2) + sj(i, j, k, 2)
    szd = sjd(i, j-1, k, 3) + sjd(i, j, k, 3)
    sz = sj(i, j-1, k, 3) + sj(i, j, k, 3)
-   qsd = uuxd*sx + uux*sxd + uuyd*sy + uuy*syd + uuzd*sz + uuz*&
-   &             szd - sfaced
-   qs = uux*sx + uuy*sy + uuz*sz - sface
-   IF (qs .GE. 0.) THEN
-   abs1d = qsd
-   abs1 = qs
+   qsjd = uuxd*sx + uux*sxd + uuyd*sy + uuy*syd + uuzd*sz + uuz&
+   &             *szd - sfaced
+   qsj = uux*sx + uuy*sy + uuz*sz - sface
+   IF (qsj .GE. 0.) THEN
+   abs1d = qsjd
+   abs1 = qsj
    ELSE
-   abs1d = -qsd
-   abs1 = -qs
+   abs1d = -qsjd
+   abs1 = -qsj
    END IF
    arg1d = cc2d*(sx**2+sy**2+sz**2) + cc2*(2*sx*sxd+2*sy*syd+2*&
    &             sz*szd)
@@ -228,15 +230,15 @@
    sy = sk(i, j, k-1, 2) + sk(i, j, k, 2)
    szd = skd(i, j, k-1, 3) + skd(i, j, k, 3)
    sz = sk(i, j, k-1, 3) + sk(i, j, k, 3)
-   qsd = uuxd*sx + uux*sxd + uuyd*sy + uuy*syd + uuzd*sz + uuz*&
-   &             szd - sfaced
-   qs = uux*sx + uuy*sy + uuz*sz - sface
-   IF (qs .GE. 0.) THEN
-   abs2d = qsd
-   abs2 = qs
+   qskd = uuxd*sx + uux*sxd + uuyd*sy + uuy*syd + uuzd*sz + uuz&
+   &             *szd - sfaced
+   qsk = uux*sx + uuy*sy + uuz*sz - sface
+   IF (qsk .GE. 0.) THEN
+   abs2d = qskd
+   abs2 = qsk
    ELSE
-   abs2d = -qsd
-   abs2 = -qs
+   abs2d = -qskd
+   abs2 = -qsk
    END IF
    arg1d = cc2d*(sx**2+sy**2+sz**2) + cc2*(2*sx*sxd+2*sy*syd+2*&
    &             sz*szd)
@@ -251,26 +253,6 @@
    radk(i, j, k) = half*(abs2+result1)
    ! Compute the inviscid contribution to the time step.
    dtl(i, j, k) = radi(i, j, k) + radj(i, j, k) + radk(i, j, k)
-   END DO
-   END DO
-   END DO
-   CASE (turkel) 
-   CALL TERMINATE('timeStep', &
-   &                 'Turkel preconditioner not implemented yet')
-   radid = 0.0_8
-   radjd = 0.0_8
-   radkd = 0.0_8
-   CASE (choimerkle) 
-   CALL TERMINATE('timeStep', &
-   &                 'choi merkle preconditioner not implemented yet')
-   radid = 0.0_8
-   radjd = 0.0_8
-   radkd = 0.0_8
-   CASE DEFAULT
-   radid = 0.0_8
-   radjd = 0.0_8
-   radkd = 0.0_8
-   END SELECT
    !
    !          **************************************************************
    !          *                                                            *
@@ -279,11 +261,7 @@
    !          *                                                            *
    !          **************************************************************
    !
-   IF (dirscaling .AND. currentlevel .LE. groundlevel) THEN
-   ! if( dirScaling ) then
-   DO k=1,ke
-   DO j=1,je
-   DO i=1,ie
+   IF (doscaling) THEN
    IF (radi(i, j, k) .LT. eps) THEN
    ri = eps
    rid = 0.0_8
@@ -310,7 +288,7 @@
    pwx1d = (rid*rj-ri*rjd)/rj**2
    pwx1 = ri/rj
    IF (pwx1 .GT. 0.0_8 .OR. (pwx1 .LT. 0.0_8 .AND. adis .EQ. &
-   &               INT(adis))) THEN
+   &                 INT(adis))) THEN
    rijd = adis*pwx1**(adis-1)*pwx1d
    ELSE IF (pwx1 .EQ. 0.0_8 .AND. adis .EQ. 1.0) THEN
    rijd = pwx1d
@@ -321,7 +299,7 @@
    pwx1d = (rjd*rk-rj*rkd)/rk**2
    pwx1 = rj/rk
    IF (pwx1 .GT. 0.0_8 .OR. (pwx1 .LT. 0.0_8 .AND. adis .EQ. &
-   &               INT(adis))) THEN
+   &                 INT(adis))) THEN
    rjkd = adis*pwx1**(adis-1)*pwx1d
    ELSE IF (pwx1 .EQ. 0.0_8 .AND. adis .EQ. 1.0) THEN
    rjkd = pwx1d
@@ -332,7 +310,7 @@
    pwx1d = (rkd*ri-rk*rid)/ri**2
    pwx1 = rk/ri
    IF (pwx1 .GT. 0.0_8 .OR. (pwx1 .LT. 0.0_8 .AND. adis .EQ. &
-   &               INT(adis))) THEN
+   &                 INT(adis))) THEN
    rkid = adis*pwx1**(adis-1)*pwx1d
    ELSE IF (pwx1 .EQ. 0.0_8 .AND. adis .EQ. 1.0) THEN
    rkid = pwx1d
@@ -344,117 +322,35 @@
    ! Note that the multiplication is done with radi, radJ
    ! and radK, such that the influence of the clipping
    ! is negligible.
-   !   radi(i,j,k) = third*radi(i,j,k)*(one + one/rij + rki)
-   !   radJ(i,j,k) = third*radJ(i,j,k)*(one + one/rjk + rij)
-   !   radK(i,j,k) = third*radK(i,j,k)*(one + one/rki + rjk)
-   radid(i, j, k) = radid(i, j, k)*(one+one/rij+rki) + radi(i, &
-   &             j, k)*(rkid-one*rijd/rij**2)
+   radid(i, j, k) = radid(i, j, k)*(one+one/rij+rki) + radi(i&
+   &               , j, k)*(rkid-one*rijd/rij**2)
    radi(i, j, k) = radi(i, j, k)*(one+one/rij+rki)
-   radjd(i, j, k) = radjd(i, j, k)*(one+one/rjk+rij) + radj(i, &
-   &             j, k)*(rijd-one*rjkd/rjk**2)
+   radjd(i, j, k) = radjd(i, j, k)*(one+one/rjk+rij) + radj(i&
+   &               , j, k)*(rijd-one*rjkd/rjk**2)
    radj(i, j, k) = radj(i, j, k)*(one+one/rjk+rij)
-   radkd(i, j, k) = radkd(i, j, k)*(one+one/rki+rjk) + radk(i, &
-   &             j, k)*(rjkd-one*rkid/rki**2)
+   radkd(i, j, k) = radkd(i, j, k)*(one+one/rki+rjk) + radk(i&
+   &               , j, k)*(rjkd-one*rkid/rki**2)
    radk(i, j, k) = radk(i, j, k)*(one+one/rki+rjk)
-   END DO
-   END DO
-   END DO
    END IF
-   ! The rest of this file can be skipped if only the spectral
-   ! radii need to be computed.
-   IF (.NOT.onlyradii) THEN
-   ! The viscous contribution, if needed.
-   IF (viscous) THEN
-   ! Loop over the owned cell centers.
-   DO k=2,kl
-   DO j=2,jl
-   DO i=2,il
-   ! Compute the effective viscosity coefficient. The
-   ! factor 0.5 is a combination of two things. In the
-   ! standard central discretization of a second
-   ! derivative there is a factor 2 multiplying the
-   ! central node. However in the code below not the
-   ! average but the sum of the left and the right face
-   ! is taken and squared. This leads to a factor 4.
-   ! Combining both effects leads to 0.5. Furthermore,
-   ! it is divided by the volume and density to obtain
-   ! the correct dimensions and multiplied by the
-   ! non-dimensional factor factVis.
-   rmu = rlv(i, j, k)
-   IF (eddymodel) rmu = rmu + rev(i, j, k)
-   rmu = half*rmu/(w(i, j, k, irho)*vol(i, j, k))
-   ! Add the viscous contribution in i-direction to the
-   ! (inverse) of the time step.
-   sx = si(i, j, k, 1) + si(i-1, j, k, 1)
-   sy = si(i, j, k, 2) + si(i-1, j, k, 2)
-   sz = si(i, j, k, 3) + si(i-1, j, k, 3)
-   vsi = rmu*(sx*sx+sy*sy+sz*sz)
-   dtl(i, j, k) = dtl(i, j, k) + vsi
-   ! Add the viscous contribution in j-direction to the
-   ! (inverse) of the time step.
-   sx = sj(i, j, k, 1) + sj(i, j-1, k, 1)
-   sy = sj(i, j, k, 2) + sj(i, j-1, k, 2)
-   sz = sj(i, j, k, 3) + sj(i, j-1, k, 3)
-   vsj = rmu*(sx*sx+sy*sy+sz*sz)
-   dtl(i, j, k) = dtl(i, j, k) + vsj
-   ! Add the viscous contribution in k-direction to the
-   ! (inverse) of the time step.
-   sx = sk(i, j, k, 1) + sk(i, j, k-1, 1)
-   sy = sk(i, j, k, 2) + sk(i, j, k-1, 2)
-   sz = sk(i, j, k, 3) + sk(i, j, k-1, 3)
-   vsk = rmu*(sx*sx+sy*sy+sz*sz)
-   dtl(i, j, k) = dtl(i, j, k) + vsk
    END DO
    END DO
    END DO
-   END IF
-   ! For the spectral mode an additional term term must be
-   ! taken into account, which corresponds to the contribution
-   ! of the highest frequency.
-   IF (equationmode .EQ. timespectral) THEN
-   tmp = ntimeintervalsspectral*pi*timeref/sections(sectionid)%&
-   &         timeperiod
-   ! Loop over the owned cell centers and add the term.
-   DO k=2,kl
-   DO j=2,jl
-   DO i=2,il
-   dtl(i, j, k) = dtl(i, j, k) + tmp*vol(i, j, k)
-   END DO
-   END DO
-   END DO
-   END IF
-   ! Currently the inverse of dt/vol is stored in dtl. Invert
-   ! this value such that the time step per unit cfl number is
-   ! stored and correct in cases of high gradients.
-   DO k=2,kl
-   DO j=2,jl
-   DO i=2,il
-   IF (p(i+1, j, k) - two*p(i, j, k) + p(i-1, j, k) .GE. 0.) &
-   &           THEN
-   abs3 = p(i+1, j, k) - two*p(i, j, k) + p(i-1, j, k)
-   ELSE
-   abs3 = -(p(i+1, j, k)-two*p(i, j, k)+p(i-1, j, k))
-   END IF
-   dpi = abs3/(p(i+1, j, k)+two*p(i, j, k)+p(i-1, j, k)+plim)
-   IF (p(i, j+1, k) - two*p(i, j, k) + p(i, j-1, k) .GE. 0.) &
-   &           THEN
-   abs4 = p(i, j+1, k) - two*p(i, j, k) + p(i, j-1, k)
-   ELSE
-   abs4 = -(p(i, j+1, k)-two*p(i, j, k)+p(i, j-1, k))
-   END IF
-   dpj = abs4/(p(i, j+1, k)+two*p(i, j, k)+p(i, j-1, k)+plim)
-   IF (p(i, j, k+1) - two*p(i, j, k) + p(i, j, k-1) .GE. 0.) &
-   &           THEN
-   abs5 = p(i, j, k+1) - two*p(i, j, k) + p(i, j, k-1)
-   ELSE
-   abs5 = -(p(i, j, k+1)-two*p(i, j, k)+p(i, j, k-1))
-   END IF
-   dpk = abs5/(p(i, j, k+1)+two*p(i, j, k)+p(i, j, k-1)+plim)
-   rfl = one/(one+b*(dpi+dpj+dpk))
-   dtl(i, j, k) = rfl/dtl(i, j, k)
-   END DO
-   END DO
-   END DO
-   END IF
+   CASE (turkel) 
+   CALL TERMINATE('timeStep', &
+   &                 'Turkel preconditioner not implemented yet')
+   radid = 0.0_8
+   radjd = 0.0_8
+   radkd = 0.0_8
+   CASE (choimerkle) 
+   CALL TERMINATE('timeStep', &
+   &                 'choi merkle preconditioner not implemented yet')
+   radid = 0.0_8
+   radjd = 0.0_8
+   radkd = 0.0_8
+   CASE DEFAULT
+   radid = 0.0_8
+   radjd = 0.0_8
+   radkd = 0.0_8
+   END SELECT
    END IF
    END SUBROUTINE TIMESTEP_BLOCK_D

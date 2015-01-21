@@ -28,11 +28,7 @@ subroutine inviscidCentralFlux
   !
   !      Local variables.
   !
-  integer(kind=intType) :: i, j, k, ind
-  integer(kind=intType) :: istart, iend, isize, ii
-  integer(kind=intType) :: jstart, jend, jsize
-  integer(kind=intType) :: kstart, kend, ksize
-
+  integer(kind=intType) :: i, j, k, ind, ii
   real(kind=realType) :: qsp, qsm, rqsp, rqsm, porVel, porFlux
   real(kind=realType) :: pa, fs, sFace, vnp, vnm
   real(kind=realType) :: wwx, wwy, wwz, rvol
@@ -45,9 +41,6 @@ subroutine inviscidCentralFlux
   !
   ! Initialize sFace to zero. This value will be used if the
   ! block is not moving.
-
-40 format(1x,I4,I4,I4,E20.6)
-
   sFace = zero
   !
   !      ******************************************************************
@@ -56,20 +49,16 @@ subroutine inviscidCentralFlux
   !      *                                                                *
   !      ******************************************************************
   !
-
-  istart = 1; iend = il; isize = (iend - istart) + 1
-  jstart = 2; jend = jl; jsize = (jend - jstart) + 1
-  kstart = 2; kend = kl; ksize = (kend - kstart) + 1
 #ifdef TAPENADE_FAST
   !$AD II-LOOP
-  do ii=0,isize*jsize*ksize-1
-     i = mod(ii, isize) + istart
-     j = mod(ii/isize, jsize) + jstart
-     k = ii/(isize*jsize) + kstart
+  do ii=0,il*ny*nz-1
+     i = mod(ii, il) + 1
+     j = mod(ii/il, ny) + 2
+     k = ii/(il*ny) + 2
 #else
-     do k=kstart, kend
-        do j=jstart, jend
-           do i=istart, iend
+     do k=2, kl
+        do j=2, jl
+           do i=1, il
 #endif             
               ! Set the dot product of the grid velocity and the
               ! normal in i-direction for a moving face.
@@ -168,19 +157,16 @@ subroutine inviscidCentralFlux
   !      *                                                                *
   !      ******************************************************************
   !
-  istart = 2; iend = il; isize = (iend - istart) + 1
-  jstart = 1; jend = jl; jsize = (jend - jstart) + 1
-  kstart = 2; kend = kl; ksize = (kend - kstart) + 1
 #ifdef TAPENADE_FAST
   !$AD II-LOOP
-  do ii=0,isize*jsize*ksize-1
-     i = mod(ii, isize) + istart
-     j = mod(ii/isize, jsize) + jstart
-     k = ii/(isize*jsize) + kstart
+  do ii=0,nx*jl*nz-1
+     i = mod(ii, nx) + 2
+     j = mod(ii/nx, jl) + 1
+     k = ii/(nx*jl) + 2
 #else
-     do k=kstart, kend
-        do j=jstart, jend
-           do i=istart, iend
+     do k=2,kl
+        do j=1,jl
+           do i=2,il
 #endif             
               ! Set the dot product of the grid velocity and the
               ! normal in j-direction for a moving face.
@@ -274,7 +260,6 @@ subroutine inviscidCentralFlux
      enddo
   enddo
 #endif   
-
   !
   !      ******************************************************************
   !      *                                                                *
@@ -282,19 +267,16 @@ subroutine inviscidCentralFlux
   !      *                                                                *
   !      ******************************************************************
   !
-  istart = 2; iend = il; isize = (iend - istart) + 1
-  jstart = 2; jend = jl; jsize = (jend - jstart) + 1
-  kstart = 1; kend = kl; ksize = (kend - kstart) + 1
 #ifdef TAPENADE_FAST
   !$AD II-LOOP
-  do ii=0,isize*jsize*ksize-1
-     i = mod(ii, isize) + istart
-     j = mod(ii/isize, jsize) + jstart
-     k = ii(isize*jsize) + kstart
+  do ii=0,nx*ny*kl-1
+     i = mod(ii, nx) + 2
+     j = mod(ii/nx, ny) + 2
+     k = ii/(nx*ny) + 1
 #else
-     do k=kstart, kend
-        do j=jstart, jend
-           do i=istart, iend
+     do k=1,kl
+        do j=2,jl
+           do i=2,il
 #endif             
               ! Set the dot product of the grid velocity and the
               ! normal in k-direction for a moving face.
@@ -406,14 +388,11 @@ subroutine inviscidCentralFlux
 
      ! Loop over the internal cells of this block to compute the
      ! rotational terms for the momentum equations.
-     istart = 2; iend = il; isize = (iend - istart) + 1
-     jstart = 2; jend = jl; jsize = (jend - jstart) + 1
-     kstart = 2; kend = kl; ksize = (kend - kstart) + 1
      !$AD II-LOOP
-     do ii=0,isize*jsize*ksize-1
-        i = mod(ii, isize) + istart
-        j = mod(ii/isize, jsize) + jstart
-        k = ii/(isize*jsize) + kstart
+     do ii=0,nx*ny*nz-1
+        i = mod(ii, nx) + 2
+        j = mod(ii/nx, ny) + 2
+        k = ii/(nx*ny) + 2
         rvol = w(i,j,k,irho)*vol(i,j,k)
 
         dw(i,j,k,imx) = dw(i,j,k,imx) &

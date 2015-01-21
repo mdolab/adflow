@@ -79,15 +79,15 @@ subroutine timeStep_block(onlyRadii)
   !
   !      Local variables.
   !
-  integer(kind=intType) :: i, j, k
+  integer(kind=intType) :: i, j, k, ii
 
   real(kind=realType) :: plim, rlim, clim2
-  real(kind=realType) :: uux, uuy, uuz, cc2, qs, sx, sy, sz, rmu
+  real(kind=realType) :: uux, uuy, uuz, cc2, qsi, qsj, qsk, sx, sy, sz, rmu
   real(kind=realType) :: ri, rj, rk, rij, rjk, rki
   real(kind=realType) :: vsi, vsj, vsk, rfl, dpi, dpj, dpk
   real(kind=realType) :: sFace, tmp
 
-  logical :: radiiNeeded
+  logical :: radiiNeeded, doScaling
   !
   !      ******************************************************************
   !      *                                                                *
@@ -114,6 +114,7 @@ subroutine timeStep_block(onlyRadii)
   rlim  = 0.001_realType*rhoInf
   clim2 = 0.000001_realType*gammaInf*pInfCorr/rhoInf
 
+  doScaling = (dirScaling .and. currentLevel <= groundLevel)
 
   ! Initialize sFace to zero. This value will be used if the
   ! block is not moving.
@@ -134,76 +135,120 @@ subroutine timeStep_block(onlyRadii)
      ! No preconditioner. Simply the standard spectral radius.
      ! Loop over the cells, including the first level halo.
 
-     do k=1,ke
-        do j=1,je
-           do i=1,ie
+#ifdef TAPENADE_FAST
+     !$AD II-LOOP
+     do ii=0,ie*je*ke-1
+        i = mod(ii, ie) + 1
+        j = mod(ii/ie, je) + 1
+        k = ii/(ie*je) + 1
+#else
+        do k=1,ke
+           do j=1,je
+              do i=1,ie
+#endif       
+        ! Compute the velocities and speed of sound squared.
+   
+                 uux  = w(i,j,k,ivx)
+                 uuy  = w(i,j,k,ivy)
+                 uuz  = w(i,j,k,ivz)
+                 cc2 = gamma(i,j,k)*p(i,j,k)/w(i,j,k,irho)
+                 cc2 = max(cc2,clim2)
+                 
+                 ! Set the dot product of the grid velocity and the
+                 ! normal in i-direction for a moving face. To avoid
+                 ! a number of multiplications by 0.5 simply the sum
+                 ! is taken.
 
-              ! Compute the velocities and speed of sound squared.
+                 if( addGridVelocities ) &
+                      sFace = sFaceI(i-1,j,k) + sFaceI(i,j,k)
+                 
+                 ! Spectral radius in i-direction.
+                 
+                 sx = si(i-1,j,k,1) + si(i,j,k,1)
+                 sy = si(i-1,j,k,2) + si(i,j,k,2)
+                 sz = si(i-1,j,k,3) + si(i,j,k,3)
 
-              uux  = w(i,j,k,ivx)
-              uuy  = w(i,j,k,ivy)
-              uuz  = w(i,j,k,ivz)
-              cc2 = gamma(i,j,k)*p(i,j,k)/w(i,j,k,irho)
-              cc2 = max(cc2,clim2)
+                 qsi = uux*sx + uuy*sy + uuz*sz - sFace
+                 
+                 radi(i,j,k) = half*(abs(qsi) &
+                      +       sqrt(cc2*(sx**2 + sy**2 + sz**2)))
+                 
+                 ! The grid velocity in j-direction.
+                 
+                 if( addGridVelocities ) &
+                      sFace = sFaceJ(i,j-1,k) + sFaceJ(i,j,k)
+                 
+                 ! Spectral radius in j-direction.
+                 
+                 sx = sj(i,j-1,k,1) + sj(i,j,k,1)
+                 sy = sj(i,j-1,k,2) + sj(i,j,k,2)
+                 sz = sj(i,j-1,k,3) + sj(i,j,k,3)
+                 
+                 qsj = uux*sx + uuy*sy + uuz*sz - sFace
+                 
+                 radJ(i,j,k) = half*(abs(qsj) &
+                      +       sqrt(cc2*(sx**2 + sy**2 + sz**2)))
+                 
+                 ! The grid velocity in k-direction.
+                 
+                 if( addGridVelocities ) &
+                      sFace = sFaceK(i,j,k-1) + sFaceK(i,j,k)
+                 
+                 ! Spectral radius in k-direction.
+                 
+                 sx = sk(i,j,k-1,1) + sk(i,j,k,1)
+                 sy = sk(i,j,k-1,2) + sk(i,j,k,2)
+                 sz = sk(i,j,k-1,3) + sk(i,j,k,3)
 
-              ! Set the dot product of the grid velocity and the
-              ! normal in i-direction for a moving face. To avoid
-              ! a number of multiplications by 0.5 simply the sum
-              ! is taken.
+                 qsk = uux*sx + uuy*sy + uuz*sz - sFace
+                 
+                 radK(i,j,k) = half*(abs(qsk) &
+                      +       sqrt(cc2*(sx**2 + sy**2 + sz**2)))
+                 
+                 ! Compute the inviscid contribution to the time step.
+                 
+                 dtl(i,j,k) = radi(i,j,k) + radJ(i,j,k) + radK(i,j,k)
 
-              if( addGridVelocities ) &
-                   sFace = sFaceI(i-1,j,k) + sFaceI(i,j,k)
+                 !
+                 !          **************************************************************
+                 !          *                                                            *
+                 !          * Adapt the spectral radii if directional scaling must be    *
+                 !          * applied.                                                   *
+                 !          *                                                            *
+                 !          **************************************************************
+                 !
+                 if(doScaling) then
 
-              ! Spectral radius in i-direction.
+                    ! Avoid division by zero by clipping radi, radJ and
+                    ! radK.
+                    
+                    ri = max(radi(i,j,k),eps)
+                    rj = max(radJ(i,j,k),eps)
+                    rk = max(radK(i,j,k),eps)
 
-              sx = si(i-1,j,k,1) + si(i,j,k,1)
-              sy = si(i-1,j,k,2) + si(i,j,k,2)
-              sz = si(i-1,j,k,3) + si(i,j,k,3)
+                    ! Compute the scaling in the three coordinate
+                    ! directions.
+                    
+                    rij = (ri/rj)**adis
+                    rjk = (rj/rk)**adis
+                    rki = (rk/ri)**adis
 
-              qs = uux*sx + uuy*sy + uuz*sz - sFace
-
-              radi(i,j,k) = half*(abs(qs) &
-                   +       sqrt(cc2*(sx**2 + sy**2 + sz**2)))
-
-              ! The grid velocity in j-direction.
-
-              if( addGridVelocities ) &
-                   sFace = sFaceJ(i,j-1,k) + sFaceJ(i,j,k)
-
-              ! Spectral radius in j-direction.
-
-              sx = sj(i,j-1,k,1) + sj(i,j,k,1)
-              sy = sj(i,j-1,k,2) + sj(i,j,k,2)
-              sz = sj(i,j-1,k,3) + sj(i,j,k,3)
-
-              qs = uux*sx + uuy*sy + uuz*sz - sFace
-
-              radJ(i,j,k) = half*(abs(qs) &
-                   +       sqrt(cc2*(sx**2 + sy**2 + sz**2)))
-
-              ! The grid velocity in k-direction.
-
-              if( addGridVelocities ) &
-                   sFace = sFaceK(i,j,k-1) + sFaceK(i,j,k)
-
-              ! Spectral radius in k-direction.
-
-              sx = sk(i,j,k-1,1) + sk(i,j,k,1)
-              sy = sk(i,j,k-1,2) + sk(i,j,k,2)
-              sz = sk(i,j,k-1,3) + sk(i,j,k,3)
-
-              qs = uux*sx + uuy*sy + uuz*sz - sFace
-
-              radK(i,j,k) = half*(abs(qs) &
-                   +       sqrt(cc2*(sx**2 + sy**2 + sz**2)))
-
-              ! Compute the inviscid contribution to the time step.
-
-              dtl(i,j,k) = radi(i,j,k) + radJ(i,j,k) + radK(i,j,k)
-
+                    ! Create the scaled versions of the aspect ratios.
+                    ! Note that the multiplication is done with radi, radJ
+                    ! and radK, such that the influence of the clipping
+                    ! is negligible.
+                    
+                    radi(i,j,k) = radi(i,j,k)*(one + one/rij + rki)
+                    radJ(i,j,k) = radJ(i,j,k)*(one + one/rjk + rij)
+                    radK(i,j,k) = radK(i,j,k)*(one + one/rki + rjk)
+                 end if
+#ifdef TAPENADE_FAST
+              end do
+#else
            enddo
         enddo
      enddo
+#endif  
 
   case (Turkel)
      call terminate("timeStep","Turkel preconditioner not implemented yet")
@@ -213,57 +258,11 @@ subroutine timeStep_block(onlyRadii)
      call terminate("timeStep", &
           "choi merkle preconditioner not implemented yet")
   end select
-  !
-  !          **************************************************************
-  !          *                                                            *
-  !          * Adapt the spectral radii if directional scaling must be    *
-  !          * applied.                                                   *
-  !          *                                                            *
-  !          **************************************************************
-  !
-  if(dirScaling .and. currentLevel <= groundLevel) then
-     ! if( dirScaling ) then
-
-     do k=1,ke
-        do j=1,je
-           do i=1,ie
-
-              ! Avoid division by zero by clipping radi, radJ and
-              ! radK.
-
-              ri = max(radi(i,j,k),eps)
-              rj = max(radJ(i,j,k),eps)
-              rk = max(radK(i,j,k),eps)
-
-              ! Compute the scaling in the three coordinate
-              ! directions.
-
-              rij = (ri/rj)**adis
-              rjk = (rj/rk)**adis
-              rki = (rk/ri)**adis
-
-              ! Create the scaled versions of the aspect ratios.
-              ! Note that the multiplication is done with radi, radJ
-              ! and radK, such that the influence of the clipping
-              ! is negligible.
-
-              !   radi(i,j,k) = third*radi(i,j,k)*(one + one/rij + rki)
-              !   radJ(i,j,k) = third*radJ(i,j,k)*(one + one/rjk + rij)
-              !   radK(i,j,k) = third*radK(i,j,k)*(one + one/rki + rjk)
-
-              radi(i,j,k) = radi(i,j,k)*(one + one/rij + rki)
-              radJ(i,j,k) = radJ(i,j,k)*(one + one/rjk + rij)
-              radK(i,j,k) = radK(i,j,k)*(one + one/rki + rjk)
-
-           enddo
-        enddo
-     enddo
-
-  endif
+ 
 
   ! The rest of this file can be skipped if only the spectral
   ! radii need to be computed.
-
+#ifndef USE_TAPENADE
   testRadiiOnly: if(.not. onlyRadii) then
 
      ! The viscous contribution, if needed.
@@ -370,5 +369,5 @@ subroutine timeStep_block(onlyRadii)
      enddo
 
   endif testRadiiOnly
-
+#endif
 end subroutine timeStep_block

@@ -81,9 +81,9 @@ ALL_RES_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.F90\
 		$(SRC)/solver/inviscidUpwindFlux.F90\
 		$(SRC)/solver/computeUtau.f90\
 		$(SRC)/solver/applyAllBC.F90\
-		$(SRC)/solver/timeStep.f90\
+		$(SRC)/solver/timeStep.F90\
 		$(SRC)/solver/residual.F90\
-		$(SRC)/solver/computeLamViscosity.f90\
+		$(SRC)/solver/computeLamViscosity.F90\
 		$(SRC)/solver/setCoefTimeIntegrator.f90\
 		$(SRC)/solver/derivativeRotMatrixRigid.f90\
 		$(SRC)/solver/adjustInflowAngle.f90\
@@ -434,7 +434,7 @@ preprocess_reverse:
 	@echo "Preprocessing all input files for reverse mode AD..."
 	@for file in $(ALL_RES_FILES); do \
 		echo Preprocessing $$file; \
-		cpp -DUSE_TAPENADE -DTAPENADE_REVERSE -traditional -P $(FF90_ALL_FLAGS) $$file $$file.f90; \
+		cpp -DUSE_TAPENADE -DTAPENADE_REVERSE -DTAPENADE_FAST -traditional -P $(FF90_ALL_FLAGS) $$file $$file.f90; \
 	done
 
 cleanpreprocess_res:
