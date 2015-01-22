@@ -47,6 +47,7 @@ FF90_OBJECTS =  allnodalgradients_d.o\
                 computeetot_d.o\
 		computegamma_d.o\
 		computelamviscosity_d.o\
+		computespeedofsoundsquared_d.o\
 		extrapolate2ndhalo_d.o\
 		timestep_block_d.o\
 		bceulerwall_d.o\

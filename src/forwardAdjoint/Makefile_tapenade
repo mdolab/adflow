@@ -167,6 +167,7 @@ ALL_RES_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.F90\
 		$(SRC)/utils/computeEtot.f90\
 		$(SRC)/utils/setPointers.f90\
 		$(SRC)/utils/terminate.F90\
+		$(SRC)/utils/computeSpeedOfSoundSquared.F90\
 		$(SRC)/bendingMomentAnalysis/rootBendingMomentAnalysis.f90\
 		$(SRC)/wallDistance/determineDistanceQuickly.F90
 

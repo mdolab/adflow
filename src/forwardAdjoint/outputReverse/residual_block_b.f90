@@ -7,10 +7,10 @@
    !   with respect to varying inputs: *rev *p *gamma *dw *w *rlv
    !                *x *vol *si *sj *sk *radi *radj *radk gammainf
    !                timeref rhoinf tref winf pinfcorr rgas
-   !   Plus diff mem management of: rev:in wx:in wy:in wz:in p:in
-   !                gamma:in dw:in w:in rlv:in x:in qx:in qy:in qz:in
-   !                ux:in vol:in uy:in uz:in si:in sj:in sk:in vx:in
-   !                vy:in vz:in fw:in viscsubface:in *viscsubface.tau:in
+   !   Plus diff mem management of: rev:in aa:in wx:in wy:in wz:in
+   !                p:in gamma:in dw:in w:in rlv:in x:in qx:in qy:in
+   !                qz:in ux:in vol:in uy:in uz:in si:in sj:in sk:in
+   !                vx:in vy:in vz:in fw:in viscsubface:in *viscsubface.tau:in
    !                radi:in radj:in radk:in
    !
    !      ******************************************************************
@@ -272,13 +272,13 @@
    IF (viscous) THEN
    ! not lumpedDiss means it isn't the PC...call the vicousFlux
    IF (.NOT.lumpeddiss) THEN
-   CALL PUSHREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
+   CALL PUSHREAL8ARRAY(aa, SIZE(aa, 1)*SIZE(aa, 2)*SIZE(aa, 3))
    CALL VISCOUSFLUX()
    CALL PUSHCONTROL2B(0)
    ELSE IF (viscpc) THEN
    ! This is a PC calc...only include viscous fluxes if viscPC
    ! is used
-   CALL PUSHREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
+   CALL PUSHREAL8ARRAY(aa, SIZE(aa, 1)*SIZE(aa, 2)*SIZE(aa, 3))
    CALL VISCOUSFLUX()
    CALL PUSHCONTROL2B(1)
    ELSE
@@ -857,10 +857,10 @@
    CALL POPCONTROL2B(branch)
    IF (branch .LT. 2) THEN
    IF (branch .EQ. 0) THEN
-   CALL POPREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
+   CALL POPREAL8ARRAY(aa, SIZE(aa, 1)*SIZE(aa, 2)*SIZE(aa, 3))
    CALL VISCOUSFLUX_B()
    ELSE
-   CALL POPREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
+   CALL POPREAL8ARRAY(aa, SIZE(aa, 1)*SIZE(aa, 2)*SIZE(aa, 3))
    CALL VISCOUSFLUX_B()
    END IF
    ELSE IF (branch .EQ. 2) THEN

@@ -885,6 +885,10 @@ subroutine deallocateBlock(nn, level, sps)
        deallocate(flowDoms(nn,level,sps)%p, stat=ierr)
   if(ierr /= 0) deallocationFailure = .true.
 
+  if( associated(flowDoms(nn,level,sps)%aa) ) &
+       deallocate(flowDoms(nn,level,sps)%aa, stat=ierr)
+  if(ierr /= 0) deallocationFailure = .true.
+
   if( associated(flowDoms(nn,level,sps)%gamma) ) &
        deallocate(flowDoms(nn,level,sps)%gamma, stat=ierr)
   if(ierr /= 0) deallocationFailure = .true.
