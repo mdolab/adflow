@@ -110,41 +110,11 @@
    ! set to a fraction of the free stream value.
    sslimd = 0.001_realType*pinfcorrd
    sslim = 0.001_realType*pinfcorr
-   ssd = 0.0_8
-   ! Copy the pressure in ss. Only fill the entries used in
-   ! the discretization, i.e. ignore the corner halo's.
-   DO k=0,kb
-   DO j=2,jl
-   DO i=2,il
-   ssd(i, j, k) = pd(i, j, k)
-   ss(i, j, k) = p(i, j, k)
-   END DO
-   END DO
-   END DO
-   DO k=2,kl
-   DO j=2,jl
-   ssd(0, j, k) = pd(0, j, k)
-   ss(0, j, k) = p(0, j, k)
-   ssd(1, j, k) = pd(1, j, k)
-   ss(1, j, k) = p(1, j, k)
-   ssd(ie, j, k) = pd(ie, j, k)
-   ss(ie, j, k) = p(ie, j, k)
-   ssd(ib, j, k) = pd(ib, j, k)
-   ss(ib, j, k) = p(ib, j, k)
-   END DO
-   END DO
-   DO k=2,kl
-   DO i=2,il
-   ssd(i, 0, k) = pd(i, 0, k)
-   ss(i, 0, k) = p(i, 0, k)
-   ssd(i, 1, k) = pd(i, 1, k)
-   ss(i, 1, k) = p(i, 1, k)
-   ssd(i, je, k) = pd(i, je, k)
-   ss(i, je, k) = p(i, je, k)
-   ssd(i, jb, k) = pd(i, jb, k)
-   ss(i, jb, k) = p(i, jb, k)
-   END DO
-   END DO
+   ! Copy the pressure in ss. Only need the entries used in the
+   ! discretization, i.e. not including the corner halo's, but we'll
+   ! just copy all anyway. 
+   ssd = pd
+   ss = p
    dssd = 0.0_8
    CASE (nsequations, ransequations) 
    !===============================================================
@@ -171,11 +141,10 @@
    &       pwr1d)/pwr1**2
    sslim = 0.001_realType*pinfcorr/pwr1
    ssd = 0.0_8
-   ! Store the entropy in ss. Only fill the entries used in
-   ! the discretization, i.e. ignore the corner halo's.
+   ! Store the entropy in ss. See above. 
    DO k=0,kb
-   DO j=2,jl
-   DO i=2,il
+   DO j=0,jb
+   DO i=0,ib
    IF (w(i, j, k, irho) .GT. 0.0_8) THEN
    pwr1d = w(i, j, k, irho)**gamma(i, j, k)*(LOG(w(i, j, k, &
    &               irho))*gammad(i, j, k)+gamma(i, j, k)*wd(i, j, k, irho)/&
@@ -196,166 +165,6 @@
    ssd(i, j, k) = (pd(i, j, k)*pwr1-p(i, j, k)*pwr1d)/pwr1**2
    ss(i, j, k) = p(i, j, k)/pwr1
    END DO
-   END DO
-   END DO
-   DO k=2,kl
-   DO j=2,jl
-   IF (w(0, j, k, irho) .GT. 0.0_8) THEN
-   pwr1d = w(0, j, k, irho)**gamma(0, j, k)*(LOG(w(0, j, k, &
-   &             irho))*gammad(0, j, k)+gamma(0, j, k)*wd(0, j, k, irho)/w(&
-   &             0, j, k, irho))
-   ELSE IF (w(0, j, k, irho) .EQ. 0.0_8) THEN
-   IF (gamma(0, j, k) .EQ. 1.0) THEN
-   pwr1d = wd(0, j, k, irho)
-   ELSE
-   pwr1d = 0.0_8
-   END IF
-   ELSE IF (gamma(0, j, k) .EQ. INT(gamma(0, j, k))) THEN
-   pwr1d = gamma(0, j, k)*w(0, j, k, irho)**(gamma(0, j, k)-1)*&
-   &             wd(0, j, k, irho)
-   ELSE
-   pwr1d = 0.0_8
-   END IF
-   pwr1 = w(0, j, k, irho)**gamma(0, j, k)
-   ssd(0, j, k) = (pd(0, j, k)*pwr1-p(0, j, k)*pwr1d)/pwr1**2
-   ss(0, j, k) = p(0, j, k)/pwr1
-   IF (w(1, j, k, irho) .GT. 0.0_8) THEN
-   pwr1d = w(1, j, k, irho)**gamma(1, j, k)*(LOG(w(1, j, k, &
-   &             irho))*gammad(1, j, k)+gamma(1, j, k)*wd(1, j, k, irho)/w(&
-   &             1, j, k, irho))
-   ELSE IF (w(1, j, k, irho) .EQ. 0.0_8) THEN
-   IF (gamma(1, j, k) .EQ. 1.0) THEN
-   pwr1d = wd(1, j, k, irho)
-   ELSE
-   pwr1d = 0.0_8
-   END IF
-   ELSE IF (gamma(1, j, k) .EQ. INT(gamma(1, j, k))) THEN
-   pwr1d = gamma(1, j, k)*w(1, j, k, irho)**(gamma(1, j, k)-1)*&
-   &             wd(1, j, k, irho)
-   ELSE
-   pwr1d = 0.0_8
-   END IF
-   pwr1 = w(1, j, k, irho)**gamma(1, j, k)
-   ssd(1, j, k) = (pd(1, j, k)*pwr1-p(1, j, k)*pwr1d)/pwr1**2
-   ss(1, j, k) = p(1, j, k)/pwr1
-   IF (w(ie, j, k, irho) .GT. 0.0_8) THEN
-   pwr1d = w(ie, j, k, irho)**gamma(ie, j, k)*(LOG(w(ie, j, k, &
-   &             irho))*gammad(ie, j, k)+gamma(ie, j, k)*wd(ie, j, k, irho)&
-   &             /w(ie, j, k, irho))
-   ELSE IF (w(ie, j, k, irho) .EQ. 0.0_8) THEN
-   IF (gamma(ie, j, k) .EQ. 1.0) THEN
-   pwr1d = wd(ie, j, k, irho)
-   ELSE
-   pwr1d = 0.0_8
-   END IF
-   ELSE IF (gamma(ie, j, k) .EQ. INT(gamma(ie, j, k))) THEN
-   pwr1d = gamma(ie, j, k)*w(ie, j, k, irho)**(gamma(ie, j, k)-&
-   &             1)*wd(ie, j, k, irho)
-   ELSE
-   pwr1d = 0.0_8
-   END IF
-   pwr1 = w(ie, j, k, irho)**gamma(ie, j, k)
-   ssd(ie, j, k) = (pd(ie, j, k)*pwr1-p(ie, j, k)*pwr1d)/pwr1**2
-   ss(ie, j, k) = p(ie, j, k)/pwr1
-   IF (w(ib, j, k, irho) .GT. 0.0_8) THEN
-   pwr1d = w(ib, j, k, irho)**gamma(ib, j, k)*(LOG(w(ib, j, k, &
-   &             irho))*gammad(ib, j, k)+gamma(ib, j, k)*wd(ib, j, k, irho)&
-   &             /w(ib, j, k, irho))
-   ELSE IF (w(ib, j, k, irho) .EQ. 0.0_8) THEN
-   IF (gamma(ib, j, k) .EQ. 1.0) THEN
-   pwr1d = wd(ib, j, k, irho)
-   ELSE
-   pwr1d = 0.0_8
-   END IF
-   ELSE IF (gamma(ib, j, k) .EQ. INT(gamma(ib, j, k))) THEN
-   pwr1d = gamma(ib, j, k)*w(ib, j, k, irho)**(gamma(ib, j, k)-&
-   &             1)*wd(ib, j, k, irho)
-   ELSE
-   pwr1d = 0.0_8
-   END IF
-   pwr1 = w(ib, j, k, irho)**gamma(ib, j, k)
-   ssd(ib, j, k) = (pd(ib, j, k)*pwr1-p(ib, j, k)*pwr1d)/pwr1**2
-   ss(ib, j, k) = p(ib, j, k)/pwr1
-   END DO
-   END DO
-   DO k=2,kl
-   DO i=2,il
-   IF (w(i, 0, k, irho) .GT. 0.0_8) THEN
-   pwr1d = w(i, 0, k, irho)**gamma(i, 0, k)*(LOG(w(i, 0, k, &
-   &             irho))*gammad(i, 0, k)+gamma(i, 0, k)*wd(i, 0, k, irho)/w(&
-   &             i, 0, k, irho))
-   ELSE IF (w(i, 0, k, irho) .EQ. 0.0_8) THEN
-   IF (gamma(i, 0, k) .EQ. 1.0) THEN
-   pwr1d = wd(i, 0, k, irho)
-   ELSE
-   pwr1d = 0.0_8
-   END IF
-   ELSE IF (gamma(i, 0, k) .EQ. INT(gamma(i, 0, k))) THEN
-   pwr1d = gamma(i, 0, k)*w(i, 0, k, irho)**(gamma(i, 0, k)-1)*&
-   &             wd(i, 0, k, irho)
-   ELSE
-   pwr1d = 0.0_8
-   END IF
-   pwr1 = w(i, 0, k, irho)**gamma(i, 0, k)
-   ssd(i, 0, k) = (pd(i, 0, k)*pwr1-p(i, 0, k)*pwr1d)/pwr1**2
-   ss(i, 0, k) = p(i, 0, k)/pwr1
-   IF (w(i, 1, k, irho) .GT. 0.0_8) THEN
-   pwr1d = w(i, 1, k, irho)**gamma(i, 1, k)*(LOG(w(i, 1, k, &
-   &             irho))*gammad(i, 1, k)+gamma(i, 1, k)*wd(i, 1, k, irho)/w(&
-   &             i, 1, k, irho))
-   ELSE IF (w(i, 1, k, irho) .EQ. 0.0_8) THEN
-   IF (gamma(i, 1, k) .EQ. 1.0) THEN
-   pwr1d = wd(i, 1, k, irho)
-   ELSE
-   pwr1d = 0.0_8
-   END IF
-   ELSE IF (gamma(i, 1, k) .EQ. INT(gamma(i, 1, k))) THEN
-   pwr1d = gamma(i, 1, k)*w(i, 1, k, irho)**(gamma(i, 1, k)-1)*&
-   &             wd(i, 1, k, irho)
-   ELSE
-   pwr1d = 0.0_8
-   END IF
-   pwr1 = w(i, 1, k, irho)**gamma(i, 1, k)
-   ssd(i, 1, k) = (pd(i, 1, k)*pwr1-p(i, 1, k)*pwr1d)/pwr1**2
-   ss(i, 1, k) = p(i, 1, k)/pwr1
-   IF (w(i, je, k, irho) .GT. 0.0_8) THEN
-   pwr1d = w(i, je, k, irho)**gamma(i, je, k)*(LOG(w(i, je, k, &
-   &             irho))*gammad(i, je, k)+gamma(i, je, k)*wd(i, je, k, irho)&
-   &             /w(i, je, k, irho))
-   ELSE IF (w(i, je, k, irho) .EQ. 0.0_8) THEN
-   IF (gamma(i, je, k) .EQ. 1.0) THEN
-   pwr1d = wd(i, je, k, irho)
-   ELSE
-   pwr1d = 0.0_8
-   END IF
-   ELSE IF (gamma(i, je, k) .EQ. INT(gamma(i, je, k))) THEN
-   pwr1d = gamma(i, je, k)*w(i, je, k, irho)**(gamma(i, je, k)-&
-   &             1)*wd(i, je, k, irho)
-   ELSE
-   pwr1d = 0.0_8
-   END IF
-   pwr1 = w(i, je, k, irho)**gamma(i, je, k)
-   ssd(i, je, k) = (pd(i, je, k)*pwr1-p(i, je, k)*pwr1d)/pwr1**2
-   ss(i, je, k) = p(i, je, k)/pwr1
-   IF (w(i, jb, k, irho) .GT. 0.0_8) THEN
-   pwr1d = w(i, jb, k, irho)**gamma(i, jb, k)*(LOG(w(i, jb, k, &
-   &             irho))*gammad(i, jb, k)+gamma(i, jb, k)*wd(i, jb, k, irho)&
-   &             /w(i, jb, k, irho))
-   ELSE IF (w(i, jb, k, irho) .EQ. 0.0_8) THEN
-   IF (gamma(i, jb, k) .EQ. 1.0) THEN
-   pwr1d = wd(i, jb, k, irho)
-   ELSE
-   pwr1d = 0.0_8
-   END IF
-   ELSE IF (gamma(i, jb, k) .EQ. INT(gamma(i, jb, k))) THEN
-   pwr1d = gamma(i, jb, k)*w(i, jb, k, irho)**(gamma(i, jb, k)-&
-   &             1)*wd(i, jb, k, irho)
-   ELSE
-   pwr1d = 0.0_8
-   END IF
-   pwr1 = w(i, jb, k, irho)**gamma(i, jb, k)
-   ssd(i, jb, k) = (pd(i, jb, k)*pwr1-p(i, jb, k)*pwr1d)/pwr1**2
-   ss(i, jb, k) = p(i, jb, k)/pwr1
    END DO
    END DO
    dssd = 0.0_8
@@ -420,22 +229,8 @@
    ! Initialize the dissipative residual to a certain times,
    ! possibly zero, the previously stored value. Owned cells
    ! only, because the halo values do not matter.
-   DO k=2,kl
-   DO j=2,jl
-   DO i=2,il
-   fwd(i, j, k, irho) = 0.0_8
-   fw(i, j, k, irho) = sfil*fw(i, j, k, irho)
-   fwd(i, j, k, imx) = 0.0_8
-   fw(i, j, k, imx) = sfil*fw(i, j, k, imx)
-   fwd(i, j, k, imy) = 0.0_8
-   fw(i, j, k, imy) = sfil*fw(i, j, k, imy)
-   fwd(i, j, k, imz) = 0.0_8
-   fw(i, j, k, imz) = sfil*fw(i, j, k, imz)
-   fwd(i, j, k, irhoe) = 0.0_8
-   fw(i, j, k, irhoe) = sfil*fw(i, j, k, irhoe)
-   END DO
-   END DO
-   END DO
+   fwd = 0.0_8
+   fw = sfil*fw
    fwd = 0.0_8
    !
    !      ******************************************************************

@@ -3,12 +3,13 @@
    !
    !  Differentiation of viscousflux in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *fw *(*viscsubface.tau)
-   !   with respect to varying inputs: *rev *p *gamma *w *rlv *x *vol
-   !                *si *sj *sk *fw
+   !   with respect to varying inputs: *rev *aa *wx *wy *wz *gamma
+   !                *w *rlv *x *qx *qy *qz *ux *uy *uz *si *sj *sk
+   !                *vx *vy *vz *fw
    !   Plus diff mem management of: rev:in aa:in wx:in wy:in wz:in
-   !                p:in gamma:in w:in rlv:in x:in qx:in qy:in qz:in
-   !                ux:in vol:in uy:in uz:in si:in sj:in sk:in vx:in
-   !                vy:in vz:in fw:in viscsubface:in *viscsubface.tau:in
+   !                gamma:in w:in rlv:in x:in qx:in qy:in qz:in ux:in
+   !                uy:in uz:in si:in sj:in sk:in vx:in vy:in vz:in
+   !                fw:in viscsubface:in *viscsubface.tau:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -37,6 +38,7 @@
    USE DIFFSIZES
    !  Hint: ISIZE1OFDrfviscsubface should be the size of dimension 1 of array *viscsubface
    IMPLICIT NONE
+   !$AD CHECKPOINT-END
    ! Possibly correct the wall shear stress.
    ! Wall function is not ADed
    !
@@ -94,17 +96,6 @@
    END DO
    RETURN
    ELSE
-   ! Determine whether or not the pressure must be corrected
-   ! for the presence of the turbulent kinetic energy.
-   IF (kpresent) THEN
-   IF (currentlevel .LE. groundlevel .OR. turbcoupled) THEN
-   correctfork = .true.
-   ELSE
-   correctfork = .false.
-   END IF
-   ELSE
-   correctfork = .false.
-   END IF
    ! Determine whether or not the wall stress tensor and wall heat
    ! flux must be stored for viscous walls.
    storewalltensor = .false.
@@ -113,10 +104,6 @@
    ELSE IF (rkstage .EQ. 0 .AND. currentlevel .EQ. groundlevel) THEN
    storewalltensor = .true.
    END IF
-   ! Compute the speed of sound squared
-   CALL COMPUTESPEEDOFSOUNDSQUARED_D(correctfork)
-   ! Compute all nodal gradients:
-   CALL ALLNODALGRADIENTS_D()
    !
    !        ****************************************************************
    !        *                                                              *
@@ -427,6 +414,8 @@
    !        *                                                              *
    !        ****************************************************************
    !
+   mue = zero
+   mued = 0.0_8
    DO k=2,kl
    DO j=1,jl
    DO i=2,il
@@ -720,6 +709,8 @@
    !        *                                                              *
    !        ****************************************************************
    !
+   mue = zero
+   mued = 0.0_8
    DO k=2,kl
    DO j=2,jl
    DO i=1,il

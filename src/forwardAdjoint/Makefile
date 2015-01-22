@@ -51,6 +51,7 @@ FILES_TO_COMPLEXIFY = \
 FILES_TO_COPY = setupStateResidualMatrix.F90\
 		setupSpatialResidualMatrix.F90\
 		verifyAD.F90\
+		test.F90\
 #		verifyOneValue.F90
 #		verifyMatProd.F90\
 
