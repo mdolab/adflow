@@ -4,8 +4,8 @@
    !  Differentiation of allnodalgradients in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *wx *wy *wz *qx *qy *qz *ux
    !                *uy *uz *vx *vy *vz
-   !   with respect to varying inputs: *p *w *vol *si *sj *sk
-   !   Plus diff mem management of: wx:in wy:in wz:in p:in w:in qx:in
+   !   with respect to varying inputs: *aa *w *vol *si *sj *sk
+   !   Plus diff mem management of: aa:in wx:in wy:in wz:in w:in qx:in
    !                qy:in qz:in ux:in vol:in uy:in uz:in si:in sj:in
    !                sk:in vx:in vy:in vz:in
    SUBROUTINE ALLNODALGRADIENTS_D()
@@ -15,10 +15,7 @@
    !        * nodalGradients computes the nodal velocity gradients and     *
    !        * minus the gradient of the speed of sound squared. The minus  *
    !        * sign is present, because this is the definition of the heat  *
-   !        * flux. These gradients are computed for the k-plane k. The    *
-   !        * results are stored in ux(:,:,k-1), etc. Here k1 is either 1   *
-   !        * or 2. The gradients have the intent(inout) label, because    *
-   !        * only the k1 elements are changed; the others remain the same.*
+   !        * flux. These gradients are computed for all nodes.            * 
    !        *                                                              *
    !        ****************************************************************
    !
@@ -78,14 +75,9 @@
    vxd = 0.0_8
    vyd = 0.0_8
    vzd = 0.0_8
-   ! istart = 1; iend = il; isize = (iend - istart) + 1
-   ! jstart = 1; jend = jl; jsize = (jend - jstart) + 1
-   ! kstart = 1; kend = ke; ksize = (kend - kstart) + 1
-   ! !$AD II-LOOP
-   ! do ii=0,isize*jsize*ksize-1
-   !    i = mod(ii, isize) + istart
-   !    j = mod(ii/isize, jsize) + jstart
-   !    k = ii/(isize*jsize) + kstart   
+   ! First part. Contribution in the k-direction.
+   ! The contribution is scattered to both the left and right node
+   ! in k-direction.
    DO k=1,ke
    DO j=1,jl
    DO i=1,il
@@ -125,10 +117,10 @@
    &         , ivz)+wd(i+1, j+1, k, ivz))
    wbar = fourth*(w(i, j, k, ivz)+w(i+1, j, k, ivz)+w(i, j+1, k, &
    &         ivz)+w(i+1, j+1, k, ivz))
-   a2d = fourth*(pd(i, j, k)+pd(i+1, j, k)+pd(i, j+1, k)+pd(i+1, j+&
-   &         1, k))
-   a2 = fourth*(p(i, j, k)+p(i+1, j, k)+p(i, j+1, k)+p(i+1, j+1, k)&
-   &         )
+   a2d = fourth*(aad(i, j, k)+aad(i+1, j, k)+aad(i, j+1, k)+aad(i+1&
+   &         , j+1, k))
+   a2 = fourth*(aa(i, j, k)+aa(i+1, j, k)+aa(i, j+1, k)+aa(i+1, j+1&
+   &         , k))
    ! Add the contributions to the surface integral to the node
    ! j-1 and substract it from the node j. For the heat flux it
    ! is reversed, because the negative of the gradient of the
@@ -191,14 +183,6 @@
    ! Second part. Contribution in the j-direction.
    ! The contribution is scattered to both the left and right node
    ! in j-direction.
-   ! istart = 1; iend = il; isize = (iend - istart) + 1
-   ! jstart = 1; jend = je; jsize = (jend - jstart) + 1
-   ! kstart = 1; kend = kl; ksize = (kend - kstart) + 1
-   ! !$AD II-LOOP
-   ! do ii=0,isize*jsize*ksize-1
-   !    i = mod(ii, isize) + istart
-   !    j = mod(ii/isize, jsize) + jstart
-   !    k = ii/(isize*jsize) + kstart   
    DO k=1,kl
    DO j=1,je
    DO i=1,il
@@ -238,10 +222,10 @@
    &         , ivz)+wd(i+1, j, k+1, ivz))
    wbar = fourth*(w(i, j, k, ivz)+w(i+1, j, k, ivz)+w(i, j, k+1, &
    &         ivz)+w(i+1, j, k+1, ivz))
-   a2d = fourth*(pd(i, j, k)+pd(i+1, j, k)+pd(i, j, k+1)+pd(i+1, j&
-   &         , k+1))
-   a2 = fourth*(p(i, j, k)+p(i+1, j, k)+p(i, j, k+1)+p(i+1, j, k+1)&
-   &         )
+   a2d = fourth*(aad(i, j, k)+aad(i+1, j, k)+aad(i, j, k+1)+aad(i+1&
+   &         , j, k+1))
+   a2 = fourth*(aa(i, j, k)+aa(i+1, j, k)+aa(i, j, k+1)+aa(i+1, j, &
+   &         k+1))
    ! Add the contributions to the surface integral to the node
    ! j-1 and substract it from the node j. For the heat flux it
    ! is reversed, because the negative of the gradient of the
@@ -304,14 +288,6 @@
    ! Third part. Contribution in the i-direction.
    ! The contribution is scattered to both the left and right node
    ! in i-direction.
-   ! istart = 1; iend = ie; isize = (iend - istart) + 1
-   ! jstart = 1; jend = jl; jsize = (jend - jstart) + 1
-   ! kstart = 1; kend = kl; ksize = (kend - kstart) + 1
-   ! !$AD II-LOOP
-   ! do ii=0,isize*jsize*ksize-1
-   !    i = mod(ii, isize) + istart
-   !    j = mod(ii/isize, jsize) + jstart
-   !    k = ii/(isize*jsize) + kstart   
    DO k=1,kl
    DO j=1,jl
    DO i=1,ie
@@ -351,10 +327,10 @@
    &         , ivz)+wd(i, j+1, k+1, ivz))
    wbar = fourth*(w(i, j, k, ivz)+w(i, j+1, k, ivz)+w(i, j, k+1, &
    &         ivz)+w(i, j+1, k+1, ivz))
-   a2d = fourth*(pd(i, j, k)+pd(i, j+1, k)+pd(i, j, k+1)+pd(i, j+1&
-   &         , k+1))
-   a2 = fourth*(p(i, j, k)+p(i, j+1, k)+p(i, j, k+1)+p(i, j+1, k+1)&
-   &         )
+   a2d = fourth*(aad(i, j, k)+aad(i, j+1, k)+aad(i, j, k+1)+aad(i, &
+   &         j+1, k+1))
+   a2 = fourth*(aa(i, j, k)+aa(i, j+1, k)+aa(i, j, k+1)+aa(i, j+1, &
+   &         k+1))
    ! Add the contributions to the surface integral to the node
    ! j-1 and substract it from the node j. For the heat flux it
    ! is reversed, because the negative of the gradient of the
@@ -415,14 +391,6 @@
    END DO
    END DO
    ! Divide by 8 times the volume to obtain the correct gradients.
-   ! istart = 1; iend = il; isize = (iend - istart) + 1
-   ! jstart = 1; jend = jl; jsize = (jend - jstart) + 1
-   ! kstart = 1; kend = kl; ksize = (kend - kstart) + 1
-   ! !$AD II-LOOP
-   ! do ii=0,isize*jsize*ksize-1
-   !    i = mod(ii, isize) + istart
-   !    j = mod(ii/isize, jsize) + jstart
-   !    k = ii/(isize*jsize) + kstart
    DO k=1,kl
    DO j=1,jl
    DO i=1,il

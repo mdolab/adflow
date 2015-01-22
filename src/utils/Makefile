@@ -43,6 +43,7 @@ FILES_TO_COMPLEXIFY =  \
 	       byteswap.f90\
 	       computeEtot.f90\
 	       computeGamma.f90\
+	       computeSpeedOfSoundSquared.F90\
 	       computePtot.f90\
 	       computeTtot.f90\
 	       convertToLowerCase.f90\

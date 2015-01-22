@@ -2,10 +2,10 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of allnodalgradients in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *wx *wy *wz *p *w *qx *qy *qz
-   !                *ux *vol *uy *uz *si *sj *sk *vx *vy *vz
-   !   with respect to varying inputs: *p *w *vol *si *sj *sk
-   !   Plus diff mem management of: wx:in wy:in wz:in p:in w:in qx:in
+   !   gradient     of useful results: *aa *wx *wy *wz *w *qx *qy
+   !                *qz *ux *vol *uy *uz *si *sj *sk *vx *vy *vz
+   !   with respect to varying inputs: *aa *w *vol *si *sj *sk
+   !   Plus diff mem management of: aa:in wx:in wy:in wz:in w:in qx:in
    !                qy:in qz:in ux:in vol:in uy:in uz:in si:in sj:in
    !                sk:in vx:in vy:in vz:in
    SUBROUTINE ALLNODALGRADIENTS_B()
@@ -15,10 +15,7 @@
    !        * nodalGradients computes the nodal velocity gradients and     *
    !        * minus the gradient of the speed of sound squared. The minus  *
    !        * sign is present, because this is the definition of the heat  *
-   !        * flux. These gradients are computed for the k-plane k. The    *
-   !        * results are stored in ux(:,:,k-1), etc. Here k1 is either 1   *
-   !        * or 2. The gradients have the intent(inout) label, because    *
-   !        * only the k1 elements are changed; the others remain the same.*
+   !        * flux. These gradients are computed for all nodes.            * 
    !        *                                                              *
    !        ****************************************************************
    !
@@ -34,6 +31,7 @@
    REAL(kind=realtype) :: oneovervd, ubard, vbard, wbard, a2d
    REAL(kind=realtype) :: sx, sx1, sy, sy1, sz, sz1
    REAL(kind=realtype) :: sxd, syd, szd
+   INTRINSIC MOD
    INTEGER :: branch
    REAL(kind=realtype) :: tempd11
    REAL(kind=realtype) :: tempd10
@@ -69,47 +67,36 @@
    qx = zero
    qy = zero
    qz = zero
-   ! istart = 1; iend = il; isize = (iend - istart) + 1
-   ! jstart = 1; jend = jl; jsize = (jend - jstart) + 1
-   ! kstart = 1; kend = ke; ksize = (kend - kstart) + 1
-   ! !$AD II-LOOP
-   ! do ii=0,isize*jsize*ksize-1
-   !    i = mod(ii, isize) + istart
-   !    j = mod(ii/isize, jsize) + jstart
-   !    k = ii/(isize*jsize) + kstart   
-   DO k=1,ke
-   DO j=1,jl
-   DO i=1,il
+   ! First part. Contribution in the k-direction.
+   ! The contribution is scattered to both the left and right node
+   ! in k-direction.
+   DO ii=0,il*jl*ke-1
+   i = MOD(ii, il) + 1
+   j = MOD(ii/il, jl) + 1
+   k = ii/(il*jl) + 1
    ! Compute 8 times the average normal for this part of
    ! the control volume. The factor 8 is taken care of later
    ! on when the division by the volume takes place.
-   CALL PUSHREAL8(sx)
-   sx = sk(i, j, k-1, 1) + sk(i+1, j, k-1, 1) + sk(i, j+1, k-1, 1) &
-   &         + sk(i+1, j+1, k-1, 1) + sk(i, j, k, 1) + sk(i+1, j, k, 1) + &
-   &         sk(i, j+1, k, 1) + sk(i+1, j+1, k, 1)
-   CALL PUSHREAL8(sy)
-   sy = sk(i, j, k-1, 2) + sk(i+1, j, k-1, 2) + sk(i, j+1, k-1, 2) &
-   &         + sk(i+1, j+1, k-1, 2) + sk(i, j, k, 2) + sk(i+1, j, k, 2) + &
-   &         sk(i, j+1, k, 2) + sk(i+1, j+1, k, 2)
-   CALL PUSHREAL8(sz)
-   sz = sk(i, j, k-1, 3) + sk(i+1, j, k-1, 3) + sk(i, j+1, k-1, 3) &
-   &         + sk(i+1, j+1, k-1, 3) + sk(i, j, k, 3) + sk(i+1, j, k, 3) + &
-   &         sk(i, j+1, k, 3) + sk(i+1, j+1, k, 3)
+   sx = sk(i, j, k-1, 1) + sk(i+1, j, k-1, 1) + sk(i, j+1, k-1, 1) + sk&
+   &     (i+1, j+1, k-1, 1) + sk(i, j, k, 1) + sk(i+1, j, k, 1) + sk(i, j+1&
+   &     , k, 1) + sk(i+1, j+1, k, 1)
+   sy = sk(i, j, k-1, 2) + sk(i+1, j, k-1, 2) + sk(i, j+1, k-1, 2) + sk&
+   &     (i+1, j+1, k-1, 2) + sk(i, j, k, 2) + sk(i+1, j, k, 2) + sk(i, j+1&
+   &     , k, 2) + sk(i+1, j+1, k, 2)
+   sz = sk(i, j, k-1, 3) + sk(i+1, j, k-1, 3) + sk(i, j+1, k-1, 3) + sk&
+   &     (i+1, j+1, k-1, 3) + sk(i, j, k, 3) + sk(i+1, j, k, 3) + sk(i, j+1&
+   &     , k, 3) + sk(i+1, j+1, k, 3)
    ! Compute the average velocities and speed of sound squared
    ! for this integration point. Node that these variables are
    ! stored in w(ivx), w(ivy), w(ivz) and p.
-   CALL PUSHREAL8(ubar)
-   ubar = fourth*(w(i, j, k, ivx)+w(i+1, j, k, ivx)+w(i, j+1, k, &
-   &         ivx)+w(i+1, j+1, k, ivx))
-   CALL PUSHREAL8(vbar)
-   vbar = fourth*(w(i, j, k, ivy)+w(i+1, j, k, ivy)+w(i, j+1, k, &
-   &         ivy)+w(i+1, j+1, k, ivy))
-   CALL PUSHREAL8(wbar)
-   wbar = fourth*(w(i, j, k, ivz)+w(i+1, j, k, ivz)+w(i, j+1, k, &
-   &         ivz)+w(i+1, j+1, k, ivz))
-   CALL PUSHREAL8(a2)
-   a2 = fourth*(p(i, j, k)+p(i+1, j, k)+p(i, j+1, k)+p(i+1, j+1, k)&
-   &         )
+   ubar = fourth*(w(i, j, k, ivx)+w(i+1, j, k, ivx)+w(i, j+1, k, ivx)+w&
+   &     (i+1, j+1, k, ivx))
+   vbar = fourth*(w(i, j, k, ivy)+w(i+1, j, k, ivy)+w(i, j+1, k, ivy)+w&
+   &     (i+1, j+1, k, ivy))
+   wbar = fourth*(w(i, j, k, ivz)+w(i+1, j, k, ivz)+w(i, j+1, k, ivz)+w&
+   &     (i+1, j+1, k, ivz))
+   a2 = fourth*(aa(i, j, k)+aa(i+1, j, k)+aa(i, j+1, k)+aa(i+1, j+1, k)&
+   &     )
    ! Add the contributions to the surface integral to the node
    ! j-1 and substract it from the node j. For the heat flux it
    ! is reversed, because the negative of the gradient of the
@@ -127,9 +114,6 @@
    qx(i, j, k-1) = qx(i, j, k-1) - a2*sx
    qy(i, j, k-1) = qy(i, j, k-1) - a2*sy
    qz(i, j, k-1) = qz(i, j, k-1) - a2*sz
-   CALL PUSHCONTROL1B(0)
-   ELSE
-   CALL PUSHCONTROL1B(1)
    END IF
    IF (k .LT. ke) THEN
    ux(i, j, k) = ux(i, j, k) - ubar*sx
@@ -144,57 +128,48 @@
    qx(i, j, k) = qx(i, j, k) + a2*sx
    qy(i, j, k) = qy(i, j, k) + a2*sy
    qz(i, j, k) = qz(i, j, k) + a2*sz
-   CALL PUSHCONTROL1B(1)
-   ELSE
-   CALL PUSHCONTROL1B(0)
    END IF
    END DO
-   END DO
-   END DO
+   CALL PUSHINTEGER4(i)
+   CALL PUSHINTEGER4(j)
+   CALL PUSHINTEGER4(k)
+   CALL PUSHREAL8(wbar)
+   CALL PUSHREAL8(vbar)
+   CALL PUSHREAL8(ubar)
+   CALL PUSHREAL8(a2)
+   CALL PUSHREAL8(sx)
+   CALL PUSHREAL8(sy)
+   CALL PUSHREAL8(sz)
    ! Second part. Contribution in the j-direction.
    ! The contribution is scattered to both the left and right node
    ! in j-direction.
-   ! istart = 1; iend = il; isize = (iend - istart) + 1
-   ! jstart = 1; jend = je; jsize = (jend - jstart) + 1
-   ! kstart = 1; kend = kl; ksize = (kend - kstart) + 1
-   ! !$AD II-LOOP
-   ! do ii=0,isize*jsize*ksize-1
-   !    i = mod(ii, isize) + istart
-   !    j = mod(ii/isize, jsize) + jstart
-   !    k = ii/(isize*jsize) + kstart   
-   DO k=1,kl
-   DO j=1,je
-   DO i=1,il
+   DO ii=0,il*je*kl-1
+   i = MOD(ii, il) + 1
+   j = MOD(ii/il, je) + 1
+   k = ii/(il*je) + 1
    ! Compute 8 times the average normal for this part of
    ! the control volume. The factor 8 is taken care of later
    ! on when the division by the volume takes place.
-   CALL PUSHREAL8(sx)
-   sx = sj(i, j-1, k, 1) + sj(i+1, j-1, k, 1) + sj(i, j-1, k+1, 1) &
-   &         + sj(i+1, j-1, k+1, 1) + sj(i, j, k, 1) + sj(i+1, j, k, 1) + &
-   &         sj(i, j, k+1, 1) + sj(i+1, j, k+1, 1)
-   CALL PUSHREAL8(sy)
-   sy = sj(i, j-1, k, 2) + sj(i+1, j-1, k, 2) + sj(i, j-1, k+1, 2) &
-   &         + sj(i+1, j-1, k+1, 2) + sj(i, j, k, 2) + sj(i+1, j, k, 2) + &
-   &         sj(i, j, k+1, 2) + sj(i+1, j, k+1, 2)
-   CALL PUSHREAL8(sz)
-   sz = sj(i, j-1, k, 3) + sj(i+1, j-1, k, 3) + sj(i, j-1, k+1, 3) &
-   &         + sj(i+1, j-1, k+1, 3) + sj(i, j, k, 3) + sj(i+1, j, k, 3) + &
-   &         sj(i, j, k+1, 3) + sj(i+1, j, k+1, 3)
+   sx = sj(i, j-1, k, 1) + sj(i+1, j-1, k, 1) + sj(i, j-1, k+1, 1) + sj&
+   &     (i+1, j-1, k+1, 1) + sj(i, j, k, 1) + sj(i+1, j, k, 1) + sj(i, j, &
+   &     k+1, 1) + sj(i+1, j, k+1, 1)
+   sy = sj(i, j-1, k, 2) + sj(i+1, j-1, k, 2) + sj(i, j-1, k+1, 2) + sj&
+   &     (i+1, j-1, k+1, 2) + sj(i, j, k, 2) + sj(i+1, j, k, 2) + sj(i, j, &
+   &     k+1, 2) + sj(i+1, j, k+1, 2)
+   sz = sj(i, j-1, k, 3) + sj(i+1, j-1, k, 3) + sj(i, j-1, k+1, 3) + sj&
+   &     (i+1, j-1, k+1, 3) + sj(i, j, k, 3) + sj(i+1, j, k, 3) + sj(i, j, &
+   &     k+1, 3) + sj(i+1, j, k+1, 3)
    ! Compute the average velocities and speed of sound squared
    ! for this integration point. Node that these variables are
    ! stored in w(ivx), w(ivy), w(ivz) and p.
-   CALL PUSHREAL8(ubar)
-   ubar = fourth*(w(i, j, k, ivx)+w(i+1, j, k, ivx)+w(i, j, k+1, &
-   &         ivx)+w(i+1, j, k+1, ivx))
-   CALL PUSHREAL8(vbar)
-   vbar = fourth*(w(i, j, k, ivy)+w(i+1, j, k, ivy)+w(i, j, k+1, &
-   &         ivy)+w(i+1, j, k+1, ivy))
-   CALL PUSHREAL8(wbar)
-   wbar = fourth*(w(i, j, k, ivz)+w(i+1, j, k, ivz)+w(i, j, k+1, &
-   &         ivz)+w(i+1, j, k+1, ivz))
-   CALL PUSHREAL8(a2)
-   a2 = fourth*(p(i, j, k)+p(i+1, j, k)+p(i, j, k+1)+p(i+1, j, k+1)&
-   &         )
+   ubar = fourth*(w(i, j, k, ivx)+w(i+1, j, k, ivx)+w(i, j, k+1, ivx)+w&
+   &     (i+1, j, k+1, ivx))
+   vbar = fourth*(w(i, j, k, ivy)+w(i+1, j, k, ivy)+w(i, j, k+1, ivy)+w&
+   &     (i+1, j, k+1, ivy))
+   wbar = fourth*(w(i, j, k, ivz)+w(i+1, j, k, ivz)+w(i, j, k+1, ivz)+w&
+   &     (i+1, j, k+1, ivz))
+   a2 = fourth*(aa(i, j, k)+aa(i+1, j, k)+aa(i, j, k+1)+aa(i+1, j, k+1)&
+   &     )
    ! Add the contributions to the surface integral to the node
    ! j-1 and substract it from the node j. For the heat flux it
    ! is reversed, because the negative of the gradient of the
@@ -212,9 +187,6 @@
    qx(i, j-1, k) = qx(i, j-1, k) - a2*sx
    qy(i, j-1, k) = qy(i, j-1, k) - a2*sy
    qz(i, j-1, k) = qz(i, j-1, k) - a2*sz
-   CALL PUSHCONTROL1B(0)
-   ELSE
-   CALL PUSHCONTROL1B(1)
    END IF
    IF (j .LT. je) THEN
    ux(i, j, k) = ux(i, j, k) - ubar*sx
@@ -229,57 +201,48 @@
    qx(i, j, k) = qx(i, j, k) + a2*sx
    qy(i, j, k) = qy(i, j, k) + a2*sy
    qz(i, j, k) = qz(i, j, k) + a2*sz
-   CALL PUSHCONTROL1B(1)
-   ELSE
-   CALL PUSHCONTROL1B(0)
    END IF
    END DO
-   END DO
-   END DO
+   CALL PUSHINTEGER4(i)
+   CALL PUSHINTEGER4(j)
+   CALL PUSHINTEGER4(k)
+   CALL PUSHREAL8(wbar)
+   CALL PUSHREAL8(vbar)
+   CALL PUSHREAL8(ubar)
+   CALL PUSHREAL8(a2)
+   CALL PUSHREAL8(sx)
+   CALL PUSHREAL8(sy)
+   CALL PUSHREAL8(sz)
    ! Third part. Contribution in the i-direction.
    ! The contribution is scattered to both the left and right node
    ! in i-direction.
-   ! istart = 1; iend = ie; isize = (iend - istart) + 1
-   ! jstart = 1; jend = jl; jsize = (jend - jstart) + 1
-   ! kstart = 1; kend = kl; ksize = (kend - kstart) + 1
-   ! !$AD II-LOOP
-   ! do ii=0,isize*jsize*ksize-1
-   !    i = mod(ii, isize) + istart
-   !    j = mod(ii/isize, jsize) + jstart
-   !    k = ii/(isize*jsize) + kstart   
-   DO k=1,kl
-   DO j=1,jl
-   DO i=1,ie
+   DO ii=0,ie*jl*kl-1
+   i = MOD(ii, ie) + 1
+   j = MOD(ii/ie, jl) + 1
+   k = ii/(ie*jl) + 1
    ! Compute 8 times the average normal for this part of
    ! the control volume. The factor 8 is taken care of later
    ! on when the division by the volume takes place.
-   CALL PUSHREAL8(sx)
-   sx = si(i-1, j, k, 1) + si(i-1, j+1, k, 1) + si(i-1, j, k+1, 1) &
-   &         + si(i-1, j+1, k+1, 1) + si(i, j, k, 1) + si(i, j+1, k, 1) + &
-   &         si(i, j, k+1, 1) + si(i, j+1, k+1, 1)
-   CALL PUSHREAL8(sy)
-   sy = si(i-1, j, k, 2) + si(i-1, j+1, k, 2) + si(i-1, j, k+1, 2) &
-   &         + si(i-1, j+1, k+1, 2) + si(i, j, k, 2) + si(i, j+1, k, 2) + &
-   &         si(i, j, k+1, 2) + si(i, j+1, k+1, 2)
-   CALL PUSHREAL8(sz)
-   sz = si(i-1, j, k, 3) + si(i-1, j+1, k, 3) + si(i-1, j, k+1, 3) &
-   &         + si(i-1, j+1, k+1, 3) + si(i, j, k, 3) + si(i, j+1, k, 3) + &
-   &         si(i, j, k+1, 3) + si(i, j+1, k+1, 3)
+   sx = si(i-1, j, k, 1) + si(i-1, j+1, k, 1) + si(i-1, j, k+1, 1) + si&
+   &     (i-1, j+1, k+1, 1) + si(i, j, k, 1) + si(i, j+1, k, 1) + si(i, j, &
+   &     k+1, 1) + si(i, j+1, k+1, 1)
+   sy = si(i-1, j, k, 2) + si(i-1, j+1, k, 2) + si(i-1, j, k+1, 2) + si&
+   &     (i-1, j+1, k+1, 2) + si(i, j, k, 2) + si(i, j+1, k, 2) + si(i, j, &
+   &     k+1, 2) + si(i, j+1, k+1, 2)
+   sz = si(i-1, j, k, 3) + si(i-1, j+1, k, 3) + si(i-1, j, k+1, 3) + si&
+   &     (i-1, j+1, k+1, 3) + si(i, j, k, 3) + si(i, j+1, k, 3) + si(i, j, &
+   &     k+1, 3) + si(i, j+1, k+1, 3)
    ! Compute the average velocities and speed of sound squared
    ! for this integration point. Node that these variables are
    ! stored in w(ivx), w(ivy), w(ivz) and p.
-   CALL PUSHREAL8(ubar)
-   ubar = fourth*(w(i, j, k, ivx)+w(i, j+1, k, ivx)+w(i, j, k+1, &
-   &         ivx)+w(i, j+1, k+1, ivx))
-   CALL PUSHREAL8(vbar)
-   vbar = fourth*(w(i, j, k, ivy)+w(i, j+1, k, ivy)+w(i, j, k+1, &
-   &         ivy)+w(i, j+1, k+1, ivy))
-   CALL PUSHREAL8(wbar)
-   wbar = fourth*(w(i, j, k, ivz)+w(i, j+1, k, ivz)+w(i, j, k+1, &
-   &         ivz)+w(i, j+1, k+1, ivz))
-   CALL PUSHREAL8(a2)
-   a2 = fourth*(p(i, j, k)+p(i, j+1, k)+p(i, j, k+1)+p(i, j+1, k+1)&
-   &         )
+   ubar = fourth*(w(i, j, k, ivx)+w(i, j+1, k, ivx)+w(i, j, k+1, ivx)+w&
+   &     (i, j+1, k+1, ivx))
+   vbar = fourth*(w(i, j, k, ivy)+w(i, j+1, k, ivy)+w(i, j, k+1, ivy)+w&
+   &     (i, j+1, k+1, ivy))
+   wbar = fourth*(w(i, j, k, ivz)+w(i, j+1, k, ivz)+w(i, j, k+1, ivz)+w&
+   &     (i, j+1, k+1, ivz))
+   a2 = fourth*(aa(i, j, k)+aa(i, j+1, k)+aa(i, j, k+1)+aa(i, j+1, k+1)&
+   &     )
    ! Add the contributions to the surface integral to the node
    ! j-1 and substract it from the node j. For the heat flux it
    ! is reversed, because the negative of the gradient of the
@@ -297,9 +260,6 @@
    qx(i-1, j, k) = qx(i-1, j, k) - a2*sx
    qy(i-1, j, k) = qy(i-1, j, k) - a2*sy
    qz(i-1, j, k) = qz(i-1, j, k) - a2*sz
-   CALL PUSHCONTROL1B(0)
-   ELSE
-   CALL PUSHCONTROL1B(1)
    END IF
    IF (i .LT. ie) THEN
    ux(i, j, k) = ux(i, j, k) - ubar*sx
@@ -314,102 +274,48 @@
    qx(i, j, k) = qx(i, j, k) + a2*sx
    qy(i, j, k) = qy(i, j, k) + a2*sy
    qz(i, j, k) = qz(i, j, k) + a2*sz
-   CALL PUSHCONTROL1B(1)
-   ELSE
-   CALL PUSHCONTROL1B(0)
    END IF
    END DO
-   END DO
-   END DO
-   ! Divide by 8 times the volume to obtain the correct gradients.
-   ! istart = 1; iend = il; isize = (iend - istart) + 1
-   ! jstart = 1; jend = jl; jsize = (jend - jstart) + 1
-   ! kstart = 1; kend = kl; ksize = (kend - kstart) + 1
-   ! !$AD II-LOOP
-   ! do ii=0,isize*jsize*ksize-1
-   !    i = mod(ii, isize) + istart
-   !    j = mod(ii/isize, jsize) + jstart
-   !    k = ii/(isize*jsize) + kstart
-   DO k=1,kl
-   DO j=1,jl
-   DO i=1,il
+   CALL PUSHINTEGER4(i)
+   CALL PUSHINTEGER4(j)
+   CALL PUSHINTEGER4(k)
+   DO ii=0,il*jl*kl-1
+   i = MOD(ii, il) + 1
+   j = MOD(ii/il, jl) + 1
+   k = ii/(il*jl) + 1
    ! Compute the inverse of 8 times the volume for this node.
-   CALL PUSHREAL8(oneoverv)
-   oneoverv = one/(vol(i, j, k)+vol(i, j, k+1)+vol(i+1, j, k)+vol(i&
-   &         +1, j, k+1)+vol(i, j+1, k)+vol(i, j+1, k+1)+vol(i+1, j+1, k)+&
-   &         vol(i+1, j+1, k+1))
+   oneoverv = one/(vol(i, j, k)+vol(i, j, k+1)+vol(i+1, j, k)+vol(i+1, &
+   &     j, k+1)+vol(i, j+1, k)+vol(i, j+1, k+1)+vol(i+1, j+1, k)+vol(i+1, &
+   &     j+1, k+1))
    ! Compute the correct velocity gradients and "unit" heat
    ! fluxes. The velocity gradients are stored in ux, etc.
-   CALL PUSHREAL8(ux(i, j, k))
-   ux(i, j, k) = ux(i, j, k)*oneoverv
-   CALL PUSHREAL8(uy(i, j, k))
-   uy(i, j, k) = uy(i, j, k)*oneoverv
-   CALL PUSHREAL8(uz(i, j, k))
-   uz(i, j, k) = uz(i, j, k)*oneoverv
-   CALL PUSHREAL8(vx(i, j, k))
-   vx(i, j, k) = vx(i, j, k)*oneoverv
-   CALL PUSHREAL8(vy(i, j, k))
-   vy(i, j, k) = vy(i, j, k)*oneoverv
-   CALL PUSHREAL8(vz(i, j, k))
-   vz(i, j, k) = vz(i, j, k)*oneoverv
-   CALL PUSHREAL8(wx(i, j, k))
-   wx(i, j, k) = wx(i, j, k)*oneoverv
-   CALL PUSHREAL8(wy(i, j, k))
-   wy(i, j, k) = wy(i, j, k)*oneoverv
-   CALL PUSHREAL8(wz(i, j, k))
-   wz(i, j, k) = wz(i, j, k)*oneoverv
-   CALL PUSHREAL8(qx(i, j, k))
-   qx(i, j, k) = qx(i, j, k)*oneoverv
-   CALL PUSHREAL8(qy(i, j, k))
-   qy(i, j, k) = qy(i, j, k)*oneoverv
-   CALL PUSHREAL8(qz(i, j, k))
-   qz(i, j, k) = qz(i, j, k)*oneoverv
-   END DO
-   END DO
-   END DO
-   DO k=kl,1,-1
-   DO j=jl,1,-1
-   DO i=il,1,-1
-   CALL POPREAL8(qz(i, j, k))
    oneovervd = qz(i, j, k)*qzd(i, j, k)
    qzd(i, j, k) = oneoverv*qzd(i, j, k)
-   CALL POPREAL8(qy(i, j, k))
    oneovervd = oneovervd + qy(i, j, k)*qyd(i, j, k)
    qyd(i, j, k) = oneoverv*qyd(i, j, k)
-   CALL POPREAL8(qx(i, j, k))
    oneovervd = oneovervd + qx(i, j, k)*qxd(i, j, k)
    qxd(i, j, k) = oneoverv*qxd(i, j, k)
-   CALL POPREAL8(wz(i, j, k))
    oneovervd = oneovervd + wz(i, j, k)*wzd(i, j, k)
    wzd(i, j, k) = oneoverv*wzd(i, j, k)
-   CALL POPREAL8(wy(i, j, k))
    oneovervd = oneovervd + wy(i, j, k)*wyd(i, j, k)
    wyd(i, j, k) = oneoverv*wyd(i, j, k)
-   CALL POPREAL8(wx(i, j, k))
    oneovervd = oneovervd + wx(i, j, k)*wxd(i, j, k)
    wxd(i, j, k) = oneoverv*wxd(i, j, k)
-   CALL POPREAL8(vz(i, j, k))
    oneovervd = oneovervd + vz(i, j, k)*vzd(i, j, k)
    vzd(i, j, k) = oneoverv*vzd(i, j, k)
-   CALL POPREAL8(vy(i, j, k))
    oneovervd = oneovervd + vy(i, j, k)*vyd(i, j, k)
    vyd(i, j, k) = oneoverv*vyd(i, j, k)
-   CALL POPREAL8(vx(i, j, k))
    oneovervd = oneovervd + vx(i, j, k)*vxd(i, j, k)
    vxd(i, j, k) = oneoverv*vxd(i, j, k)
-   CALL POPREAL8(uz(i, j, k))
    oneovervd = oneovervd + uz(i, j, k)*uzd(i, j, k)
    uzd(i, j, k) = oneoverv*uzd(i, j, k)
-   CALL POPREAL8(uy(i, j, k))
    oneovervd = oneovervd + uy(i, j, k)*uyd(i, j, k)
    uyd(i, j, k) = oneoverv*uyd(i, j, k)
-   CALL POPREAL8(ux(i, j, k))
    oneovervd = oneovervd + ux(i, j, k)*uxd(i, j, k)
    uxd(i, j, k) = oneoverv*uxd(i, j, k)
-   CALL POPREAL8(oneoverv)
-   temp = vol(i, j, k) + vol(i, j, k+1) + vol(i+1, j, k) + vol(i+1&
-   &         , j, k+1) + vol(i, j+1, k) + vol(i, j+1, k+1) + vol(i+1, j+1, &
-   &         k) + vol(i+1, j+1, k+1)
+   temp = vol(i, j, k) + vol(i, j, k+1) + vol(i+1, j, k) + vol(i+1, j, &
+   &     k+1) + vol(i, j+1, k) + vol(i, j+1, k+1) + vol(i+1, j+1, k) + vol(&
+   &     i+1, j+1, k+1)
    tempd11 = -(one*oneovervd/temp**2)
    vold(i, j, k) = vold(i, j, k) + tempd11
    vold(i, j, k+1) = vold(i, j, k+1) + tempd11
@@ -420,13 +326,57 @@
    vold(i+1, j+1, k) = vold(i+1, j+1, k) + tempd11
    vold(i+1, j+1, k+1) = vold(i+1, j+1, k+1) + tempd11
    END DO
-   END DO
-   END DO
-   DO k=kl,1,-1
-   DO j=jl,1,-1
-   DO i=ie,1,-1
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
+   CALL POPINTEGER4(k)
+   CALL POPINTEGER4(j)
+   CALL POPINTEGER4(i)
+   DO ii=0,ie*jl*kl-1
+   i = MOD(ii, ie) + 1
+   j = MOD(ii/ie, jl) + 1
+   k = ii/(ie*jl) + 1
+   ! Compute 8 times the average normal for this part of
+   ! the control volume. The factor 8 is taken care of later
+   ! on when the division by the volume takes place.
+   sx = si(i-1, j, k, 1) + si(i-1, j+1, k, 1) + si(i-1, j, k+1, 1) + si&
+   &     (i-1, j+1, k+1, 1) + si(i, j, k, 1) + si(i, j+1, k, 1) + si(i, j, &
+   &     k+1, 1) + si(i, j+1, k+1, 1)
+   sy = si(i-1, j, k, 2) + si(i-1, j+1, k, 2) + si(i-1, j, k+1, 2) + si&
+   &     (i-1, j+1, k+1, 2) + si(i, j, k, 2) + si(i, j+1, k, 2) + si(i, j, &
+   &     k+1, 2) + si(i, j+1, k+1, 2)
+   sz = si(i-1, j, k, 3) + si(i-1, j+1, k, 3) + si(i-1, j, k+1, 3) + si&
+   &     (i-1, j+1, k+1, 3) + si(i, j, k, 3) + si(i, j+1, k, 3) + si(i, j, &
+   &     k+1, 3) + si(i, j+1, k+1, 3)
+   ! Compute the average velocities and speed of sound squared
+   ! for this integration point. Node that these variables are
+   ! stored in w(ivx), w(ivy), w(ivz) and p.
+   ubar = fourth*(w(i, j, k, ivx)+w(i, j+1, k, ivx)+w(i, j, k+1, ivx)+w&
+   &     (i, j+1, k+1, ivx))
+   vbar = fourth*(w(i, j, k, ivy)+w(i, j+1, k, ivy)+w(i, j, k+1, ivy)+w&
+   &     (i, j+1, k+1, ivy))
+   wbar = fourth*(w(i, j, k, ivz)+w(i, j+1, k, ivz)+w(i, j, k+1, ivz)+w&
+   &     (i, j+1, k+1, ivz))
+   a2 = fourth*(aa(i, j, k)+aa(i, j+1, k)+aa(i, j, k+1)+aa(i, j+1, k+1)&
+   &     )
+   ! Add the contributions to the surface integral to the node
+   ! j-1 and substract it from the node j. For the heat flux it
+   ! is reversed, because the negative of the gradient of the
+   ! speed of sound must be computed.
+   IF (i .GT. 1) THEN
+   CALL PUSHCONTROL1B(0)
+   ELSE
+   CALL PUSHCONTROL1B(1)
+   END IF
+   IF (i .LT. ie) THEN
+   a2d = sy*qyd(i, j, k) + sx*qxd(i, j, k) + sz*qzd(i, j, k)
+   szd = a2*qzd(i, j, k) - ubar*uzd(i, j, k) - vbar*vzd(i, j, k) - &
+   &       wbar*wzd(i, j, k)
+   syd = a2*qyd(i, j, k) - ubar*uyd(i, j, k) - vbar*vyd(i, j, k) - &
+   &       wbar*wyd(i, j, k)
+   sxd = a2*qxd(i, j, k) - ubar*uxd(i, j, k) - vbar*vxd(i, j, k) - &
+   &       wbar*wxd(i, j, k)
+   wbard = -(sy*wyd(i, j, k)) - sx*wxd(i, j, k) - sz*wzd(i, j, k)
+   vbard = -(sy*vyd(i, j, k)) - sx*vxd(i, j, k) - sz*vzd(i, j, k)
+   ubard = -(sy*uyd(i, j, k)) - sx*uxd(i, j, k) - sz*uzd(i, j, k)
+   ELSE
    wbard = 0.0_8
    vbard = 0.0_8
    ubard = 0.0_8
@@ -434,60 +384,44 @@
    sxd = 0.0_8
    syd = 0.0_8
    szd = 0.0_8
-   ELSE
-   a2d = sy*qyd(i, j, k) + sx*qxd(i, j, k) + sz*qzd(i, j, k)
-   szd = a2*qzd(i, j, k) - ubar*uzd(i, j, k) - vbar*vzd(i, j, k) &
-   &           - wbar*wzd(i, j, k)
-   syd = a2*qyd(i, j, k) - ubar*uyd(i, j, k) - vbar*vyd(i, j, k) &
-   &           - wbar*wyd(i, j, k)
-   sxd = a2*qxd(i, j, k) - ubar*uxd(i, j, k) - vbar*vxd(i, j, k) &
-   &           - wbar*wxd(i, j, k)
-   wbard = -(sy*wyd(i, j, k)) - sx*wxd(i, j, k) - sz*wzd(i, j, k)
-   vbard = -(sy*vyd(i, j, k)) - sx*vxd(i, j, k) - sz*vzd(i, j, k)
-   ubard = -(sy*uyd(i, j, k)) - sx*uxd(i, j, k) - sz*uzd(i, j, k)
    END IF
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   a2d = a2d - sy*qyd(i-1, j, k) - sx*qxd(i-1, j, k) - sz*qzd(i-1&
-   &           , j, k)
-   szd = szd + wbar*wzd(i-1, j, k) + ubar*uzd(i-1, j, k) + vbar*&
-   &           vzd(i-1, j, k) - a2*qzd(i-1, j, k)
-   syd = syd + wbar*wyd(i-1, j, k) + ubar*uyd(i-1, j, k) + vbar*&
-   &           vyd(i-1, j, k) - a2*qyd(i-1, j, k)
-   sxd = sxd + wbar*wxd(i-1, j, k) + ubar*uxd(i-1, j, k) + vbar*&
-   &           vxd(i-1, j, k) - a2*qxd(i-1, j, k)
-   wbard = wbard + sy*wyd(i-1, j, k) + sx*wxd(i-1, j, k) + sz*wzd&
-   &           (i-1, j, k)
-   vbard = vbard + sy*vyd(i-1, j, k) + sx*vxd(i-1, j, k) + sz*vzd&
-   &           (i-1, j, k)
-   ubard = ubard + sy*uyd(i-1, j, k) + sx*uxd(i-1, j, k) + sz*uzd&
-   &           (i-1, j, k)
+   a2d = a2d - sy*qyd(i-1, j, k) - sx*qxd(i-1, j, k) - sz*qzd(i-1, j&
+   &       , k)
+   szd = szd + wbar*wzd(i-1, j, k) + ubar*uzd(i-1, j, k) + vbar*vzd(i&
+   &       -1, j, k) - a2*qzd(i-1, j, k)
+   syd = syd + wbar*wyd(i-1, j, k) + ubar*uyd(i-1, j, k) + vbar*vyd(i&
+   &       -1, j, k) - a2*qyd(i-1, j, k)
+   sxd = sxd + wbar*wxd(i-1, j, k) + ubar*uxd(i-1, j, k) + vbar*vxd(i&
+   &       -1, j, k) - a2*qxd(i-1, j, k)
+   wbard = wbard + sy*wyd(i-1, j, k) + sx*wxd(i-1, j, k) + sz*wzd(i-1&
+   &       , j, k)
+   vbard = vbard + sy*vyd(i-1, j, k) + sx*vxd(i-1, j, k) + sz*vzd(i-1&
+   &       , j, k)
+   ubard = ubard + sy*uyd(i-1, j, k) + sx*uxd(i-1, j, k) + sz*uzd(i-1&
+   &       , j, k)
    END IF
-   CALL POPREAL8(a2)
    tempd7 = fourth*a2d
-   pd(i, j, k) = pd(i, j, k) + tempd7
-   pd(i, j+1, k) = pd(i, j+1, k) + tempd7
-   pd(i, j, k+1) = pd(i, j, k+1) + tempd7
-   pd(i, j+1, k+1) = pd(i, j+1, k+1) + tempd7
-   CALL POPREAL8(wbar)
+   aad(i, j, k) = aad(i, j, k) + tempd7
+   aad(i, j+1, k) = aad(i, j+1, k) + tempd7
+   aad(i, j, k+1) = aad(i, j, k+1) + tempd7
+   aad(i, j+1, k+1) = aad(i, j+1, k+1) + tempd7
    tempd8 = fourth*wbard
    wd(i, j, k, ivz) = wd(i, j, k, ivz) + tempd8
    wd(i, j+1, k, ivz) = wd(i, j+1, k, ivz) + tempd8
    wd(i, j, k+1, ivz) = wd(i, j, k+1, ivz) + tempd8
    wd(i, j+1, k+1, ivz) = wd(i, j+1, k+1, ivz) + tempd8
-   CALL POPREAL8(vbar)
    tempd9 = fourth*vbard
    wd(i, j, k, ivy) = wd(i, j, k, ivy) + tempd9
    wd(i, j+1, k, ivy) = wd(i, j+1, k, ivy) + tempd9
    wd(i, j, k+1, ivy) = wd(i, j, k+1, ivy) + tempd9
    wd(i, j+1, k+1, ivy) = wd(i, j+1, k+1, ivy) + tempd9
-   CALL POPREAL8(ubar)
    tempd10 = fourth*ubard
    wd(i, j, k, ivx) = wd(i, j, k, ivx) + tempd10
    wd(i, j+1, k, ivx) = wd(i, j+1, k, ivx) + tempd10
    wd(i, j, k+1, ivx) = wd(i, j, k+1, ivx) + tempd10
    wd(i, j+1, k+1, ivx) = wd(i, j+1, k+1, ivx) + tempd10
-   CALL POPREAL8(sz)
    sid(i-1, j, k, 3) = sid(i-1, j, k, 3) + szd
    sid(i-1, j+1, k, 3) = sid(i-1, j+1, k, 3) + szd
    sid(i-1, j, k+1, 3) = sid(i-1, j, k+1, 3) + szd
@@ -496,7 +430,6 @@
    sid(i, j+1, k, 3) = sid(i, j+1, k, 3) + szd
    sid(i, j, k+1, 3) = sid(i, j, k+1, 3) + szd
    sid(i, j+1, k+1, 3) = sid(i, j+1, k+1, 3) + szd
-   CALL POPREAL8(sy)
    sid(i-1, j, k, 2) = sid(i-1, j, k, 2) + syd
    sid(i-1, j+1, k, 2) = sid(i-1, j+1, k, 2) + syd
    sid(i-1, j, k+1, 2) = sid(i-1, j, k+1, 2) + syd
@@ -505,7 +438,6 @@
    sid(i, j+1, k, 2) = sid(i, j+1, k, 2) + syd
    sid(i, j, k+1, 2) = sid(i, j, k+1, 2) + syd
    sid(i, j+1, k+1, 2) = sid(i, j+1, k+1, 2) + syd
-   CALL POPREAL8(sx)
    sid(i-1, j, k, 1) = sid(i-1, j, k, 1) + sxd
    sid(i-1, j+1, k, 1) = sid(i-1, j+1, k, 1) + sxd
    sid(i-1, j, k+1, 1) = sid(i-1, j, k+1, 1) + sxd
@@ -515,13 +447,64 @@
    sid(i, j, k+1, 1) = sid(i, j, k+1, 1) + sxd
    sid(i, j+1, k+1, 1) = sid(i, j+1, k+1, 1) + sxd
    END DO
-   END DO
-   END DO
-   DO k=kl,1,-1
-   DO j=je,1,-1
-   DO i=il,1,-1
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
+   CALL POPREAL8(sz)
+   CALL POPREAL8(sy)
+   CALL POPREAL8(sx)
+   CALL POPREAL8(a2)
+   CALL POPREAL8(ubar)
+   CALL POPREAL8(vbar)
+   CALL POPREAL8(wbar)
+   CALL POPINTEGER4(k)
+   CALL POPINTEGER4(j)
+   CALL POPINTEGER4(i)
+   DO ii=0,il*je*kl-1
+   i = MOD(ii, il) + 1
+   j = MOD(ii/il, je) + 1
+   k = ii/(il*je) + 1
+   ! Compute 8 times the average normal for this part of
+   ! the control volume. The factor 8 is taken care of later
+   ! on when the division by the volume takes place.
+   sx = sj(i, j-1, k, 1) + sj(i+1, j-1, k, 1) + sj(i, j-1, k+1, 1) + sj&
+   &     (i+1, j-1, k+1, 1) + sj(i, j, k, 1) + sj(i+1, j, k, 1) + sj(i, j, &
+   &     k+1, 1) + sj(i+1, j, k+1, 1)
+   sy = sj(i, j-1, k, 2) + sj(i+1, j-1, k, 2) + sj(i, j-1, k+1, 2) + sj&
+   &     (i+1, j-1, k+1, 2) + sj(i, j, k, 2) + sj(i+1, j, k, 2) + sj(i, j, &
+   &     k+1, 2) + sj(i+1, j, k+1, 2)
+   sz = sj(i, j-1, k, 3) + sj(i+1, j-1, k, 3) + sj(i, j-1, k+1, 3) + sj&
+   &     (i+1, j-1, k+1, 3) + sj(i, j, k, 3) + sj(i+1, j, k, 3) + sj(i, j, &
+   &     k+1, 3) + sj(i+1, j, k+1, 3)
+   ! Compute the average velocities and speed of sound squared
+   ! for this integration point. Node that these variables are
+   ! stored in w(ivx), w(ivy), w(ivz) and p.
+   ubar = fourth*(w(i, j, k, ivx)+w(i+1, j, k, ivx)+w(i, j, k+1, ivx)+w&
+   &     (i+1, j, k+1, ivx))
+   vbar = fourth*(w(i, j, k, ivy)+w(i+1, j, k, ivy)+w(i, j, k+1, ivy)+w&
+   &     (i+1, j, k+1, ivy))
+   wbar = fourth*(w(i, j, k, ivz)+w(i+1, j, k, ivz)+w(i, j, k+1, ivz)+w&
+   &     (i+1, j, k+1, ivz))
+   a2 = fourth*(aa(i, j, k)+aa(i+1, j, k)+aa(i, j, k+1)+aa(i+1, j, k+1)&
+   &     )
+   ! Add the contributions to the surface integral to the node
+   ! j-1 and substract it from the node j. For the heat flux it
+   ! is reversed, because the negative of the gradient of the
+   ! speed of sound must be computed.
+   IF (j .GT. 1) THEN
+   CALL PUSHCONTROL1B(0)
+   ELSE
+   CALL PUSHCONTROL1B(1)
+   END IF
+   IF (j .LT. je) THEN
+   a2d = sy*qyd(i, j, k) + sx*qxd(i, j, k) + sz*qzd(i, j, k)
+   szd = a2*qzd(i, j, k) - ubar*uzd(i, j, k) - vbar*vzd(i, j, k) - &
+   &       wbar*wzd(i, j, k)
+   syd = a2*qyd(i, j, k) - ubar*uyd(i, j, k) - vbar*vyd(i, j, k) - &
+   &       wbar*wyd(i, j, k)
+   sxd = a2*qxd(i, j, k) - ubar*uxd(i, j, k) - vbar*vxd(i, j, k) - &
+   &       wbar*wxd(i, j, k)
+   wbard = -(sy*wyd(i, j, k)) - sx*wxd(i, j, k) - sz*wzd(i, j, k)
+   vbard = -(sy*vyd(i, j, k)) - sx*vxd(i, j, k) - sz*vzd(i, j, k)
+   ubard = -(sy*uyd(i, j, k)) - sx*uxd(i, j, k) - sz*uzd(i, j, k)
+   ELSE
    wbard = 0.0_8
    vbard = 0.0_8
    ubard = 0.0_8
@@ -529,60 +512,44 @@
    sxd = 0.0_8
    syd = 0.0_8
    szd = 0.0_8
-   ELSE
-   a2d = sy*qyd(i, j, k) + sx*qxd(i, j, k) + sz*qzd(i, j, k)
-   szd = a2*qzd(i, j, k) - ubar*uzd(i, j, k) - vbar*vzd(i, j, k) &
-   &           - wbar*wzd(i, j, k)
-   syd = a2*qyd(i, j, k) - ubar*uyd(i, j, k) - vbar*vyd(i, j, k) &
-   &           - wbar*wyd(i, j, k)
-   sxd = a2*qxd(i, j, k) - ubar*uxd(i, j, k) - vbar*vxd(i, j, k) &
-   &           - wbar*wxd(i, j, k)
-   wbard = -(sy*wyd(i, j, k)) - sx*wxd(i, j, k) - sz*wzd(i, j, k)
-   vbard = -(sy*vyd(i, j, k)) - sx*vxd(i, j, k) - sz*vzd(i, j, k)
-   ubard = -(sy*uyd(i, j, k)) - sx*uxd(i, j, k) - sz*uzd(i, j, k)
    END IF
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   a2d = a2d - sy*qyd(i, j-1, k) - sx*qxd(i, j-1, k) - sz*qzd(i, &
-   &           j-1, k)
-   szd = szd + wbar*wzd(i, j-1, k) + ubar*uzd(i, j-1, k) + vbar*&
-   &           vzd(i, j-1, k) - a2*qzd(i, j-1, k)
-   syd = syd + wbar*wyd(i, j-1, k) + ubar*uyd(i, j-1, k) + vbar*&
-   &           vyd(i, j-1, k) - a2*qyd(i, j-1, k)
-   sxd = sxd + wbar*wxd(i, j-1, k) + ubar*uxd(i, j-1, k) + vbar*&
-   &           vxd(i, j-1, k) - a2*qxd(i, j-1, k)
-   wbard = wbard + sy*wyd(i, j-1, k) + sx*wxd(i, j-1, k) + sz*wzd&
-   &           (i, j-1, k)
-   vbard = vbard + sy*vyd(i, j-1, k) + sx*vxd(i, j-1, k) + sz*vzd&
-   &           (i, j-1, k)
-   ubard = ubard + sy*uyd(i, j-1, k) + sx*uxd(i, j-1, k) + sz*uzd&
-   &           (i, j-1, k)
+   a2d = a2d - sy*qyd(i, j-1, k) - sx*qxd(i, j-1, k) - sz*qzd(i, j-1&
+   &       , k)
+   szd = szd + wbar*wzd(i, j-1, k) + ubar*uzd(i, j-1, k) + vbar*vzd(i&
+   &       , j-1, k) - a2*qzd(i, j-1, k)
+   syd = syd + wbar*wyd(i, j-1, k) + ubar*uyd(i, j-1, k) + vbar*vyd(i&
+   &       , j-1, k) - a2*qyd(i, j-1, k)
+   sxd = sxd + wbar*wxd(i, j-1, k) + ubar*uxd(i, j-1, k) + vbar*vxd(i&
+   &       , j-1, k) - a2*qxd(i, j-1, k)
+   wbard = wbard + sy*wyd(i, j-1, k) + sx*wxd(i, j-1, k) + sz*wzd(i, &
+   &       j-1, k)
+   vbard = vbard + sy*vyd(i, j-1, k) + sx*vxd(i, j-1, k) + sz*vzd(i, &
+   &       j-1, k)
+   ubard = ubard + sy*uyd(i, j-1, k) + sx*uxd(i, j-1, k) + sz*uzd(i, &
+   &       j-1, k)
    END IF
-   CALL POPREAL8(a2)
    tempd3 = fourth*a2d
-   pd(i, j, k) = pd(i, j, k) + tempd3
-   pd(i+1, j, k) = pd(i+1, j, k) + tempd3
-   pd(i, j, k+1) = pd(i, j, k+1) + tempd3
-   pd(i+1, j, k+1) = pd(i+1, j, k+1) + tempd3
-   CALL POPREAL8(wbar)
+   aad(i, j, k) = aad(i, j, k) + tempd3
+   aad(i+1, j, k) = aad(i+1, j, k) + tempd3
+   aad(i, j, k+1) = aad(i, j, k+1) + tempd3
+   aad(i+1, j, k+1) = aad(i+1, j, k+1) + tempd3
    tempd4 = fourth*wbard
    wd(i, j, k, ivz) = wd(i, j, k, ivz) + tempd4
    wd(i+1, j, k, ivz) = wd(i+1, j, k, ivz) + tempd4
    wd(i, j, k+1, ivz) = wd(i, j, k+1, ivz) + tempd4
    wd(i+1, j, k+1, ivz) = wd(i+1, j, k+1, ivz) + tempd4
-   CALL POPREAL8(vbar)
    tempd5 = fourth*vbard
    wd(i, j, k, ivy) = wd(i, j, k, ivy) + tempd5
    wd(i+1, j, k, ivy) = wd(i+1, j, k, ivy) + tempd5
    wd(i, j, k+1, ivy) = wd(i, j, k+1, ivy) + tempd5
    wd(i+1, j, k+1, ivy) = wd(i+1, j, k+1, ivy) + tempd5
-   CALL POPREAL8(ubar)
    tempd6 = fourth*ubard
    wd(i, j, k, ivx) = wd(i, j, k, ivx) + tempd6
    wd(i+1, j, k, ivx) = wd(i+1, j, k, ivx) + tempd6
    wd(i, j, k+1, ivx) = wd(i, j, k+1, ivx) + tempd6
    wd(i+1, j, k+1, ivx) = wd(i+1, j, k+1, ivx) + tempd6
-   CALL POPREAL8(sz)
    sjd(i, j-1, k, 3) = sjd(i, j-1, k, 3) + szd
    sjd(i+1, j-1, k, 3) = sjd(i+1, j-1, k, 3) + szd
    sjd(i, j-1, k+1, 3) = sjd(i, j-1, k+1, 3) + szd
@@ -591,7 +558,6 @@
    sjd(i+1, j, k, 3) = sjd(i+1, j, k, 3) + szd
    sjd(i, j, k+1, 3) = sjd(i, j, k+1, 3) + szd
    sjd(i+1, j, k+1, 3) = sjd(i+1, j, k+1, 3) + szd
-   CALL POPREAL8(sy)
    sjd(i, j-1, k, 2) = sjd(i, j-1, k, 2) + syd
    sjd(i+1, j-1, k, 2) = sjd(i+1, j-1, k, 2) + syd
    sjd(i, j-1, k+1, 2) = sjd(i, j-1, k+1, 2) + syd
@@ -600,7 +566,6 @@
    sjd(i+1, j, k, 2) = sjd(i+1, j, k, 2) + syd
    sjd(i, j, k+1, 2) = sjd(i, j, k+1, 2) + syd
    sjd(i+1, j, k+1, 2) = sjd(i+1, j, k+1, 2) + syd
-   CALL POPREAL8(sx)
    sjd(i, j-1, k, 1) = sjd(i, j-1, k, 1) + sxd
    sjd(i+1, j-1, k, 1) = sjd(i+1, j-1, k, 1) + sxd
    sjd(i, j-1, k+1, 1) = sjd(i, j-1, k+1, 1) + sxd
@@ -610,13 +575,64 @@
    sjd(i, j, k+1, 1) = sjd(i, j, k+1, 1) + sxd
    sjd(i+1, j, k+1, 1) = sjd(i+1, j, k+1, 1) + sxd
    END DO
-   END DO
-   END DO
-   DO k=ke,1,-1
-   DO j=jl,1,-1
-   DO i=il,1,-1
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
+   CALL POPREAL8(sz)
+   CALL POPREAL8(sy)
+   CALL POPREAL8(sx)
+   CALL POPREAL8(a2)
+   CALL POPREAL8(ubar)
+   CALL POPREAL8(vbar)
+   CALL POPREAL8(wbar)
+   CALL POPINTEGER4(k)
+   CALL POPINTEGER4(j)
+   CALL POPINTEGER4(i)
+   DO ii=0,il*jl*ke-1
+   i = MOD(ii, il) + 1
+   j = MOD(ii/il, jl) + 1
+   k = ii/(il*jl) + 1
+   ! Compute 8 times the average normal for this part of
+   ! the control volume. The factor 8 is taken care of later
+   ! on when the division by the volume takes place.
+   sx = sk(i, j, k-1, 1) + sk(i+1, j, k-1, 1) + sk(i, j+1, k-1, 1) + sk&
+   &     (i+1, j+1, k-1, 1) + sk(i, j, k, 1) + sk(i+1, j, k, 1) + sk(i, j+1&
+   &     , k, 1) + sk(i+1, j+1, k, 1)
+   sy = sk(i, j, k-1, 2) + sk(i+1, j, k-1, 2) + sk(i, j+1, k-1, 2) + sk&
+   &     (i+1, j+1, k-1, 2) + sk(i, j, k, 2) + sk(i+1, j, k, 2) + sk(i, j+1&
+   &     , k, 2) + sk(i+1, j+1, k, 2)
+   sz = sk(i, j, k-1, 3) + sk(i+1, j, k-1, 3) + sk(i, j+1, k-1, 3) + sk&
+   &     (i+1, j+1, k-1, 3) + sk(i, j, k, 3) + sk(i+1, j, k, 3) + sk(i, j+1&
+   &     , k, 3) + sk(i+1, j+1, k, 3)
+   ! Compute the average velocities and speed of sound squared
+   ! for this integration point. Node that these variables are
+   ! stored in w(ivx), w(ivy), w(ivz) and p.
+   ubar = fourth*(w(i, j, k, ivx)+w(i+1, j, k, ivx)+w(i, j+1, k, ivx)+w&
+   &     (i+1, j+1, k, ivx))
+   vbar = fourth*(w(i, j, k, ivy)+w(i+1, j, k, ivy)+w(i, j+1, k, ivy)+w&
+   &     (i+1, j+1, k, ivy))
+   wbar = fourth*(w(i, j, k, ivz)+w(i+1, j, k, ivz)+w(i, j+1, k, ivz)+w&
+   &     (i+1, j+1, k, ivz))
+   a2 = fourth*(aa(i, j, k)+aa(i+1, j, k)+aa(i, j+1, k)+aa(i+1, j+1, k)&
+   &     )
+   ! Add the contributions to the surface integral to the node
+   ! j-1 and substract it from the node j. For the heat flux it
+   ! is reversed, because the negative of the gradient of the
+   ! speed of sound must be computed.
+   IF (k .GT. 1) THEN
+   CALL PUSHCONTROL1B(0)
+   ELSE
+   CALL PUSHCONTROL1B(1)
+   END IF
+   IF (k .LT. ke) THEN
+   a2d = sy*qyd(i, j, k) + sx*qxd(i, j, k) + sz*qzd(i, j, k)
+   szd = a2*qzd(i, j, k) - ubar*uzd(i, j, k) - vbar*vzd(i, j, k) - &
+   &       wbar*wzd(i, j, k)
+   syd = a2*qyd(i, j, k) - ubar*uyd(i, j, k) - vbar*vyd(i, j, k) - &
+   &       wbar*wyd(i, j, k)
+   sxd = a2*qxd(i, j, k) - ubar*uxd(i, j, k) - vbar*vxd(i, j, k) - &
+   &       wbar*wxd(i, j, k)
+   wbard = -(sy*wyd(i, j, k)) - sx*wxd(i, j, k) - sz*wzd(i, j, k)
+   vbard = -(sy*vyd(i, j, k)) - sx*vxd(i, j, k) - sz*vzd(i, j, k)
+   ubard = -(sy*uyd(i, j, k)) - sx*uxd(i, j, k) - sz*uzd(i, j, k)
+   ELSE
    wbard = 0.0_8
    vbard = 0.0_8
    ubard = 0.0_8
@@ -624,60 +640,44 @@
    sxd = 0.0_8
    syd = 0.0_8
    szd = 0.0_8
-   ELSE
-   a2d = sy*qyd(i, j, k) + sx*qxd(i, j, k) + sz*qzd(i, j, k)
-   szd = a2*qzd(i, j, k) - ubar*uzd(i, j, k) - vbar*vzd(i, j, k) &
-   &           - wbar*wzd(i, j, k)
-   syd = a2*qyd(i, j, k) - ubar*uyd(i, j, k) - vbar*vyd(i, j, k) &
-   &           - wbar*wyd(i, j, k)
-   sxd = a2*qxd(i, j, k) - ubar*uxd(i, j, k) - vbar*vxd(i, j, k) &
-   &           - wbar*wxd(i, j, k)
-   wbard = -(sy*wyd(i, j, k)) - sx*wxd(i, j, k) - sz*wzd(i, j, k)
-   vbard = -(sy*vyd(i, j, k)) - sx*vxd(i, j, k) - sz*vzd(i, j, k)
-   ubard = -(sy*uyd(i, j, k)) - sx*uxd(i, j, k) - sz*uzd(i, j, k)
    END IF
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   a2d = a2d - sy*qyd(i, j, k-1) - sx*qxd(i, j, k-1) - sz*qzd(i, &
-   &           j, k-1)
-   szd = szd + wbar*wzd(i, j, k-1) + ubar*uzd(i, j, k-1) + vbar*&
-   &           vzd(i, j, k-1) - a2*qzd(i, j, k-1)
-   syd = syd + wbar*wyd(i, j, k-1) + ubar*uyd(i, j, k-1) + vbar*&
-   &           vyd(i, j, k-1) - a2*qyd(i, j, k-1)
-   sxd = sxd + wbar*wxd(i, j, k-1) + ubar*uxd(i, j, k-1) + vbar*&
-   &           vxd(i, j, k-1) - a2*qxd(i, j, k-1)
-   wbard = wbard + sy*wyd(i, j, k-1) + sx*wxd(i, j, k-1) + sz*wzd&
-   &           (i, j, k-1)
-   vbard = vbard + sy*vyd(i, j, k-1) + sx*vxd(i, j, k-1) + sz*vzd&
-   &           (i, j, k-1)
-   ubard = ubard + sy*uyd(i, j, k-1) + sx*uxd(i, j, k-1) + sz*uzd&
-   &           (i, j, k-1)
+   a2d = a2d - sy*qyd(i, j, k-1) - sx*qxd(i, j, k-1) - sz*qzd(i, j, k&
+   &       -1)
+   szd = szd + wbar*wzd(i, j, k-1) + ubar*uzd(i, j, k-1) + vbar*vzd(i&
+   &       , j, k-1) - a2*qzd(i, j, k-1)
+   syd = syd + wbar*wyd(i, j, k-1) + ubar*uyd(i, j, k-1) + vbar*vyd(i&
+   &       , j, k-1) - a2*qyd(i, j, k-1)
+   sxd = sxd + wbar*wxd(i, j, k-1) + ubar*uxd(i, j, k-1) + vbar*vxd(i&
+   &       , j, k-1) - a2*qxd(i, j, k-1)
+   wbard = wbard + sy*wyd(i, j, k-1) + sx*wxd(i, j, k-1) + sz*wzd(i, &
+   &       j, k-1)
+   vbard = vbard + sy*vyd(i, j, k-1) + sx*vxd(i, j, k-1) + sz*vzd(i, &
+   &       j, k-1)
+   ubard = ubard + sy*uyd(i, j, k-1) + sx*uxd(i, j, k-1) + sz*uzd(i, &
+   &       j, k-1)
    END IF
-   CALL POPREAL8(a2)
    tempd = fourth*a2d
-   pd(i, j, k) = pd(i, j, k) + tempd
-   pd(i+1, j, k) = pd(i+1, j, k) + tempd
-   pd(i, j+1, k) = pd(i, j+1, k) + tempd
-   pd(i+1, j+1, k) = pd(i+1, j+1, k) + tempd
-   CALL POPREAL8(wbar)
+   aad(i, j, k) = aad(i, j, k) + tempd
+   aad(i+1, j, k) = aad(i+1, j, k) + tempd
+   aad(i, j+1, k) = aad(i, j+1, k) + tempd
+   aad(i+1, j+1, k) = aad(i+1, j+1, k) + tempd
    tempd0 = fourth*wbard
    wd(i, j, k, ivz) = wd(i, j, k, ivz) + tempd0
    wd(i+1, j, k, ivz) = wd(i+1, j, k, ivz) + tempd0
    wd(i, j+1, k, ivz) = wd(i, j+1, k, ivz) + tempd0
    wd(i+1, j+1, k, ivz) = wd(i+1, j+1, k, ivz) + tempd0
-   CALL POPREAL8(vbar)
    tempd1 = fourth*vbard
    wd(i, j, k, ivy) = wd(i, j, k, ivy) + tempd1
    wd(i+1, j, k, ivy) = wd(i+1, j, k, ivy) + tempd1
    wd(i, j+1, k, ivy) = wd(i, j+1, k, ivy) + tempd1
    wd(i+1, j+1, k, ivy) = wd(i+1, j+1, k, ivy) + tempd1
-   CALL POPREAL8(ubar)
    tempd2 = fourth*ubard
    wd(i, j, k, ivx) = wd(i, j, k, ivx) + tempd2
    wd(i+1, j, k, ivx) = wd(i+1, j, k, ivx) + tempd2
    wd(i, j+1, k, ivx) = wd(i, j+1, k, ivx) + tempd2
    wd(i+1, j+1, k, ivx) = wd(i+1, j+1, k, ivx) + tempd2
-   CALL POPREAL8(sz)
    skd(i, j, k-1, 3) = skd(i, j, k-1, 3) + szd
    skd(i+1, j, k-1, 3) = skd(i+1, j, k-1, 3) + szd
    skd(i, j+1, k-1, 3) = skd(i, j+1, k-1, 3) + szd
@@ -686,7 +686,6 @@
    skd(i+1, j, k, 3) = skd(i+1, j, k, 3) + szd
    skd(i, j+1, k, 3) = skd(i, j+1, k, 3) + szd
    skd(i+1, j+1, k, 3) = skd(i+1, j+1, k, 3) + szd
-   CALL POPREAL8(sy)
    skd(i, j, k-1, 2) = skd(i, j, k-1, 2) + syd
    skd(i+1, j, k-1, 2) = skd(i+1, j, k-1, 2) + syd
    skd(i, j+1, k-1, 2) = skd(i, j+1, k-1, 2) + syd
@@ -695,7 +694,6 @@
    skd(i+1, j, k, 2) = skd(i+1, j, k, 2) + syd
    skd(i, j+1, k, 2) = skd(i, j+1, k, 2) + syd
    skd(i+1, j+1, k, 2) = skd(i+1, j+1, k, 2) + syd
-   CALL POPREAL8(sx)
    skd(i, j, k-1, 1) = skd(i, j, k-1, 1) + sxd
    skd(i+1, j, k-1, 1) = skd(i+1, j, k-1, 1) + sxd
    skd(i, j+1, k-1, 1) = skd(i, j+1, k-1, 1) + sxd
@@ -704,7 +702,5 @@
    skd(i+1, j, k, 1) = skd(i+1, j, k, 1) + sxd
    skd(i, j+1, k, 1) = skd(i, j+1, k, 1) + sxd
    skd(i+1, j+1, k, 1) = skd(i+1, j+1, k, 1) + sxd
-   END DO
-   END DO
    END DO
    END SUBROUTINE ALLNODALGRADIENTS_B

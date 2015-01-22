@@ -113,6 +113,7 @@
        nullify(flowDoms(nn,level,sps)%w)
        nullify(flowDoms(nn,level,sps)%wOld)
        nullify(flowDoms(nn,level,sps)%p)
+       nullify(flowDoms(nn,level,sps)%aa)
        nullify(flowDoms(nn,level,sps)%gamma)
        nullify(flowDoms(nn,level,sps)%rlv)
        nullify(flowDoms(nn,level,sps)%rev)

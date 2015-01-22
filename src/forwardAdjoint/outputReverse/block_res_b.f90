@@ -14,11 +14,11 @@
    !                force beta cavitation sepsensor
    !   RW status of diff variables: *xsurf:out *(flowdoms.x):in-out
    !                *(flowdoms.vol):(loc) *(flowdoms.w):in-out *(flowdoms.dw):in-out
-   !                *rev:(loc) *bvtj1:(loc) *bvtj2:(loc) *wx:(loc)
-   !                *wy:(loc) *wz:(loc) *p:(loc) *gamma:(loc) *rlv:(loc)
-   !                *qx:(loc) *qy:(loc) *qz:(loc) *bvtk1:(loc) *bvtk2:(loc)
-   !                *ux:(loc) *uy:(loc) *uz:(loc) *d2wall:(loc) *si:(loc)
-   !                *sj:(loc) *sk:(loc) *bvti1:(loc) *bvti2:(loc)
+   !                *rev:(loc) *aa:(loc) *bvtj1:(loc) *bvtj2:(loc)
+   !                *wx:(loc) *wy:(loc) *wz:(loc) *p:(loc) *gamma:(loc)
+   !                *rlv:(loc) *qx:(loc) *qy:(loc) *qz:(loc) *bvtk1:(loc)
+   !                *bvtk2:(loc) *ux:(loc) *uy:(loc) *uz:(loc) *d2wall:(loc)
+   !                *si:(loc) *sj:(loc) *sk:(loc) *bvti1:(loc) *bvti2:(loc)
    !                *vx:(loc) *vy:(loc) *vz:(loc) *fw:(loc) *(*viscsubface.tau):(loc)
    !                *(*bcdata.norm):(loc) *(*bcdata.fp):in-out *(*bcdata.fv):in-out
    !                *(*bcdata.m):in-out *(*bcdata.oarea):in-out *(*bcdata.sepsensor):in-out
@@ -33,11 +33,11 @@
    !                pref:out rhoref:(loc) moment:in-zero alpha:out
    !                force:in-zero beta:out cavitation:in-zero sepsensor:in-zero
    !   Plus diff mem management of: xsurf:in flowdoms.x:in flowdoms.vol:in
-   !                flowdoms.w:in flowdoms.dw:in rev:in bvtj1:in bvtj2:in
-   !                wx:in wy:in wz:in p:in gamma:in rlv:in qx:in qy:in
-   !                qz:in bvtk1:in bvtk2:in ux:in uy:in uz:in d2wall:in
-   !                si:in sj:in sk:in bvti1:in bvti2:in vx:in vy:in
-   !                vz:in fw:in viscsubface:in *viscsubface.tau:in
+   !                flowdoms.w:in flowdoms.dw:in rev:in aa:in bvtj1:in
+   !                bvtj2:in wx:in wy:in wz:in p:in gamma:in rlv:in
+   !                qx:in qy:in qz:in bvtk1:in bvtk2:in ux:in uy:in
+   !                uz:in d2wall:in si:in sj:in sk:in bvti1:in bvti2:in
+   !                vx:in vy:in vz:in fw:in viscsubface:in *viscsubface.tau:in
    !                bcdata:in *bcdata.norm:in *bcdata.fp:in *bcdata.fv:in
    !                *bcdata.m:in *bcdata.oarea:in *bcdata.sepsensor:in
    !                *bcdata.cavitation:in radi:in radj:in radk:in
@@ -380,6 +380,7 @@
    CALL PUSHREAL8ARRAY(fw, SIZE(fw, 1)*SIZE(fw, 2)*SIZE(fw, 3)*SIZE(fw, 4&
    &               ))
    CALL PUSHREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
+   CALL PUSHREAL8ARRAY(aa, SIZE(aa, 1)*SIZE(aa, 2)*SIZE(aa, 3))
    DO ii1=1,ntimeintervalsspectral
    DO ii2=1,1
    DO ii3=nn,nn
@@ -627,6 +628,7 @@
    END DO
    END DO
    END DO
+   CALL POPREAL8ARRAY(aa, SIZE(aa, 1)*SIZE(aa, 2)*SIZE(aa, 3))
    CALL POPREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
    CALL POPREAL8ARRAY(fw, SIZE(fw, 1)*SIZE(fw, 2)*SIZE(fw, 3)*SIZE(fw, 4)&
    &             )

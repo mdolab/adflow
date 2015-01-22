@@ -2,13 +2,13 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of viscousflux in forward (tangent) mode (with options i4 dr8 r8):
-   !   variations   of useful results: *p *fw *(*viscsubface.tau)
+   !   variations   of useful results: *fw *(*viscsubface.tau)
    !   with respect to varying inputs: *rev *p *gamma *w *rlv *x *vol
    !                *si *sj *sk *fw
-   !   Plus diff mem management of: rev:in wx:in wy:in wz:in p:in
-   !                gamma:in w:in rlv:in x:in qx:in qy:in qz:in ux:in
-   !                vol:in uy:in uz:in si:in sj:in sk:in vx:in vy:in
-   !                vz:in fw:in viscsubface:in *viscsubface.tau:in
+   !   Plus diff mem management of: rev:in aa:in wx:in wy:in wz:in
+   !                p:in gamma:in w:in rlv:in x:in qx:in qy:in qz:in
+   !                ux:in vol:in uy:in uz:in si:in sj:in sk:in vx:in
+   !                vy:in vz:in fw:in viscsubface:in *viscsubface.tau:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -46,10 +46,7 @@
    !
    !      Local variables.
    !
-   INTEGER(kind=inttype) :: i, j, k
-   INTEGER(kind=inttype) :: istart, iend, isize, ii
-   INTEGER(kind=inttype) :: jstart, jend, jsize
-   INTEGER(kind=inttype) :: kstart, kend, ksize
+   INTEGER(kind=inttype) :: i, j, k, ii
    REAL(kind=realtype) :: rfilv, por, mul, mue, mut, heatcoef
    REAL(kind=realtype) :: muld, mued, mutd, heatcoefd
    REAL(kind=realtype) :: gm1, factlamheat, factturbheat
@@ -116,26 +113,8 @@
    ELSE IF (rkstage .EQ. 0 .AND. currentlevel .EQ. groundlevel) THEN
    storewalltensor = .true.
    END IF
-   ! Store the speed of sound squared instead of the pressure.
-   ! To be 100 percent correct, substract 2/3*rho*k (if present)
-   ! from the pressure to obtain the true presssure. First layer of
-   ! halo's, because that's what is needed by the viscous stencil.
-   DO k=1,ke
-   DO j=1,je
-   DO i=1,ie
-   IF (correctfork) THEN
-   pd(i, j, k) = pd(i, j, k) - twothird*(wd(i, j, k, irho)*w(i&
-   &             , j, k, itu1)+w(i, j, k, irho)*wd(i, j, k, itu1))
-   p(i, j, k) = p(i, j, k) - twothird*w(i, j, k, irho)*w(i, j, &
-   &             k, itu1)
-   END IF
-   pd(i, j, k) = ((gammad(i, j, k)*p(i, j, k)+gamma(i, j, k)*pd(i&
-   &           , j, k))*w(i, j, k, irho)-gamma(i, j, k)*p(i, j, k)*wd(i, j&
-   &           , k, irho))/w(i, j, k, irho)**2
-   p(i, j, k) = gamma(i, j, k)*p(i, j, k)/w(i, j, k, irho)
-   END DO
-   END DO
-   END DO
+   ! Compute the speed of sound squared
+   CALL COMPUTESPEEDOFSOUNDSQUARED_D(correctfork)
    ! Compute all nodal gradients:
    CALL ALLNODALGRADIENTS_D()
    !
@@ -305,10 +284,10 @@
    w_zd = w_zd - corrd*ssz - corr*sszd
    w_z = w_z - corr*ssz
    corrd = q_xd*ssx + q_x*ssxd + q_yd*ssy + q_y*ssyd + q_zd*ssz +&
-   &           q_z*sszd + (pd(i, j, k+1)-pd(i, j, k))*ss + (p(i, j, k+1)-p(&
-   &           i, j, k))*ssd
-   corr = q_x*ssx + q_y*ssy + q_z*ssz + (p(i, j, k+1)-p(i, j, k))&
-   &           *ss
+   &           q_z*sszd + (aad(i, j, k+1)-aad(i, j, k))*ss + (aa(i, j, k+1)&
+   &           -aa(i, j, k))*ssd
+   corr = q_x*ssx + q_y*ssy + q_z*ssz + (aa(i, j, k+1)-aa(i, j, k&
+   &           ))*ss
    q_xd = q_xd - corrd*ssx - corr*ssxd
    q_x = q_x - corr*ssx
    q_yd = q_yd - corrd*ssy - corr*ssyd
@@ -603,10 +582,10 @@
    w_zd = w_zd - corrd*ssz - corr*sszd
    w_z = w_z - corr*ssz
    corrd = q_xd*ssx + q_x*ssxd + q_yd*ssy + q_y*ssyd + q_zd*ssz +&
-   &           q_z*sszd + (pd(i, j+1, k)-pd(i, j, k))*ss + (p(i, j+1, k)-p(&
-   &           i, j, k))*ssd
-   corr = q_x*ssx + q_y*ssy + q_z*ssz + (p(i, j+1, k)-p(i, j, k))&
-   &           *ss
+   &           q_z*sszd + (aad(i, j+1, k)-aad(i, j, k))*ss + (aa(i, j+1, k)&
+   &           -aa(i, j, k))*ssd
+   corr = q_x*ssx + q_y*ssy + q_z*ssz + (aa(i, j+1, k)-aa(i, j, k&
+   &           ))*ss
    q_xd = q_xd - corrd*ssx - corr*ssxd
    q_x = q_x - corr*ssx
    q_yd = q_yd - corrd*ssy - corr*ssyd
@@ -896,10 +875,10 @@
    w_zd = w_zd - corrd*ssz - corr*sszd
    w_z = w_z - corr*ssz
    corrd = q_xd*ssx + q_x*ssxd + q_yd*ssy + q_y*ssyd + q_zd*ssz +&
-   &           q_z*sszd + (pd(i+1, j, k)-pd(i, j, k))*ss + (p(i+1, j, k)-p(&
-   &           i, j, k))*ssd
-   corr = q_x*ssx + q_y*ssy + q_z*ssz + (p(i+1, j, k)-p(i, j, k))&
-   &           *ss
+   &           q_z*sszd + (aad(i+1, j, k)-aad(i, j, k))*ss + (aa(i+1, j, k)&
+   &           -aa(i, j, k))*ssd
+   corr = q_x*ssx + q_y*ssy + q_z*ssz + (aa(i+1, j, k)-aa(i, j, k&
+   &           ))*ss
    q_xd = q_xd - corrd*ssx - corr*ssxd
    q_x = q_x - corr*ssx
    q_yd = q_yd - corrd*ssy - corr*ssyd
@@ -1029,29 +1008,5 @@
    END DO
    END DO
    END DO
-   ! Restore the pressure in p. Again only the first layer of
-   ! halo cells.
-   DO k=1,ke
-   DO j=1,je
-   DO i=1,ie
-   pd(i, j, k) = ((wd(i, j, k, irho)*p(i, j, k)+w(i, j, k, irho)*&
-   &           pd(i, j, k))*gamma(i, j, k)-w(i, j, k, irho)*p(i, j, k)*&
-   &           gammad(i, j, k))/gamma(i, j, k)**2
-   p(i, j, k) = w(i, j, k, irho)*p(i, j, k)/gamma(i, j, k)
-   END DO
-   END DO
-   END DO
-   IF (correctfork) THEN
-   DO k=1,ke
-   DO j=1,je
-   DO i=1,ie
-   pd(i, j, k) = pd(i, j, k) + twothird*(wd(i, j, k, irho)*w(i&
-   &             , j, k, itu1)+w(i, j, k, irho)*wd(i, j, k, itu1))
-   p(i, j, k) = p(i, j, k) + twothird*w(i, j, k, irho)*w(i, j, &
-   &             k, itu1)
-   END DO
-   END DO
-   END DO
-   END IF
    END IF
    END SUBROUTINE VISCOUSFLUX_D

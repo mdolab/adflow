@@ -44,6 +44,7 @@ FF90_OBJECTS =  \
 		vectorrotation_b.o\
 		computeetot_b.o\
 		computelamviscosity_b.o\
+		computespeedofsoundsquared_b.o\
 		extrapolate2ndhalo_b.o\
 		timestep_block_b.o\
 		metric_block_b.o\
