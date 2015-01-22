@@ -1228,7 +1228,7 @@ subroutine writeSlice(slc, fileID, nFields)
      write (fileID,*) "Nodes = ", 2, " Elements= ", 1, " ZONETYPE=FELINESEG"
      write (fileID,*) "DATAPACKING=POINT"
      do i=1,2
-        do j=1,3
+        do j=1,6
            write(fileID,13, advance='no') zero
         end do
 
