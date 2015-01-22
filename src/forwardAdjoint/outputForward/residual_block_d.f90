@@ -85,6 +85,7 @@
    REAL(kind=realtype) :: dwo(nwf)
    REAL(kind=realtype) :: dwod(nwf)
    LOGICAL :: finegrid
+   INTRINSIC ABS
    INTRINSIC SQRT
    INTRINSIC MAX
    INTRINSIC MIN
@@ -95,6 +96,7 @@
    REAL(kind=realtype) :: result1d
    REAL(kind=realtype) :: x1
    REAL(kind=realtype) :: x1d
+   REAL(kind=realtype) :: abs0
    INTEGER :: ii1
    !
    !      ******************************************************************
@@ -162,15 +164,31 @@
    END SELECT
    ! Compute the viscous flux in case of a viscous computation.
    IF (viscous) THEN
+   IF (rfil .GE. 0.) THEN
+   abs0 = rfil
+   ELSE
+   abs0 = -rfil
+   END IF
+   ! Only compute viscous fluxes if rFil > 0
+   IF (abs0 .GT. thresholdreal) THEN
    ! not lumpedDiss means it isn't the PC...call the vicousFlux
    IF (.NOT.lumpeddiss) THEN
+   CALL COMPUTESPEEDOFSOUNDSQUARED_D()
+   CALL ALLNODALGRADIENTS_D()
    CALL VISCOUSFLUX_D()
    ELSE IF (viscpc) THEN
    ! This is a PC calc...only include viscous fluxes if viscPC
    ! is used
+   CALL COMPUTESPEEDOFSOUNDSQUARED_D()
+   CALL ALLNODALGRADIENTS_D()
    CALL VISCOUSFLUX_D()
    ELSE
    CALL VISCOUSFLUXAPPROX_D()
+   DO ii1=1,ISIZE1OFDrfviscsubface
+   viscsubfaced(ii1)%tau = 0.0_8
+   END DO
+   END IF
+   ELSE
    DO ii1=1,ISIZE1OFDrfviscsubface
    viscsubfaced(ii1)%tau = 0.0_8
    END DO

@@ -197,7 +197,6 @@ subroutine getdRdXvTPsi(dXv, ndof, adjoint, nstate)
 #ifndef USE_NO_PETSC
  
 #define PETSC_AVOID_MPIF_H
-  use petscvec
   use ADjointPETSc, only: dRdx, x_like, psi_like1
   use blockPointers
   use inputTimeSpectral 
@@ -240,7 +239,6 @@ subroutine getdRdXvPsi(dXv, ndof, adjoint, nstate)
 #ifndef USE_NO_PETSC
  
 #define PETSC_AVOID_MPIF_H
-  use petscvec
   use ADjointPETSc, only: dRdx, x_like, psi_like1
   use blockPointers
   use inputTimeSpectral 

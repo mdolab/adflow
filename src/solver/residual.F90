@@ -183,16 +183,23 @@ subroutine residual_block
   ! Compute the viscous flux in case of a viscous computation.
 
   if( viscous ) then 
-     ! not lumpedDiss means it isn't the PC...call the vicousFlux
-     if (.not. lumpedDiss) then 
-        call viscousFlux
-     else
-        ! This is a PC calc...only include viscous fluxes if viscPC
-        ! is used
-        if (viscPC) then 
+     ! Only compute viscous fluxes if rFil > 0
+     if(abs(rFil) > thresholdReal) then 
+        ! not lumpedDiss means it isn't the PC...call the vicousFlux
+        if (.not. lumpedDiss) then 
+           call computeSpeedOfSoundSquared
+           call allNodalGradients
            call viscousFlux
         else
-           call viscousFluxApprox
+           ! This is a PC calc...only include viscous fluxes if viscPC
+           ! is used
+           if (viscPC) then
+              call computeSpeedOfSoundSquared
+              call allNodalGradients
+              call viscousFlux 
+           else
+              call viscousFluxApprox
+           end if
         end if
      end if
   end if

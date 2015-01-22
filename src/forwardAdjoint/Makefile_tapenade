@@ -280,33 +280,7 @@ ad_forward:
 	make -f Makefile_tapenade cleanpreprocess_res
 
 # Fix the AD bug in bcsymm_d.f90
-	mv outputForward/bcsymm_d.f90 outputForward/bcsymm_d.f90.bp
-	grep -v "   gamma1d(i, j) = 0.0_8" outputForward/bcsymm_d.f90.bp > outputForward/bcsymm_d.f90
-
-ad_forward_multi:
-# First delete the holding directory if it exists
-	rm -fr temp_forward_multi
-
-# Next create the holidng directory:
-	mkdir -p temp_forward_multi
-
-# Run preprocessor on all input files
-	make -f Makefile_tapenade preprocess_forward
-
-# The following is the single Tapenade command to run:
-	$(TAPENADE_HOME)/bin/tapenade -html \
-	-outvars $(TAPENADE_RES_OUTVARS) \
-	-vars $(TAPENADE_RES_VARS) \
-	-head $(TAPENADE_RES_HEADROUTINE)  \
-	-diffvarname dv \
-	-forward -multi $(TAPENADE_PRECISION) \
-	-O temp_forward_multi $(I_RES_FILES)
-
-# Run the auto-edit file:
-	python autoEdit/autoEditMulti.py temp_forward_multi outputForwardMulti
-
-# Remove preprocessor files
-	make -f Makefile_tapenade cleanpreprocess_res
+	sed -i 's/   gamma1d(i, j) = 0.0_8/  /' outputForward/bcsymm_d.f90
 
 ad_reverse:
 # First delete the holding directory if it exists
@@ -340,81 +314,46 @@ ad_reverse:
 	sed -i 's/   DO ii1=SIZE(bcdata(ii1)%oarea, 1),1,-1/    DO ii1=SIZE(bcdata),1,-1/' outputReverse/block_res_b.f90
 	sed -i 's/   DO ii1=1,SIZE(bcdatad(ii1)%norm, 1)/   DO ii1=1,SIZE(bcdatad)/' outputReverse/bceulerwall_b.f90
 
-
-ad_forward_debugTGT:
+ad_reverse_fast:
 # First delete the holding directory if it exists
-	rm -fr temp_forward_debugTGT
+	rm -fr temp_reverse_fast
 
 # Next create the holidng directory:
-	mkdir -p temp_forward_debugTGT
-
-# Run preprocessor on all input files
-	make -f Makefile_tapenade preprocess_forward
-
-# The following is the single Tapenade command to run:
-	$(TAPENADE_HOME)/bin/tapenade -html \
-	-difffuncname "%_T"  -debugTGT \
-	-outvars $(TAPENADE_RES_OUTVARS) \
-	-vars $(TAPENADE_RES_VARS) \
-	-head $(TAPENADE_RES_HEADROUTINE)  \
-	-forward $(TAPENADE_PRECISION) \
-	-O temp_forward_debugTGT $(I_RES_FILES)
-
-# Run the auto-edit file:
-	python autoEdit/autoEditForwardDebug.py temp_forward_debugTGT outputForwardTGT
-
-# Remove preprocessor files
-	make -f Makefile_tapenade cleanpreprocess_res
-
-ad_forward_debugADJ:
-# First delete the holding directory if it exists
-	rm -fr temp_forward_debugADJ
-
-# Next create the holidng directory:
-	mkdir -p temp_forward_debugADJ
-
-# Run preprocessor on all input files
-	make -f Makefile_tapenade preprocess_forward
-
-# The following is the single Tapenade command to run:
-	$(TAPENADE_HOME)/bin/tapenade -html \
-	-difffuncname "%_F"  -debugADJ \
-	-outvars $(TAPENADE_RES_OUTVARS) \
-	-vars $(TAPENADE_RES_VARS) \
-	-head $(TAPENADE_RES_HEADROUTINE)  \
-	-forward $(TAPENADE_PRECISION) \
-	-O temp_forward_debugADJ $(I_RES_FILES)
-
-# Run the auto-edit file:
-	python autoEdit/autoEditForwardDebugADJ.py temp_forward_debugADJ outputForwardADJ
-
-# Remove preprocessor files
-	make -f Makefile_tapenade cleanpreprocess_res
-
-ad_reverse_debugADJ:
-# First delete the holding directory if it exists
-	rm -fr temp_reverse_debugADJ
-
-# Next create the holidng directory:
-	mkdir -p temp_reverse_debugADJ
+	mkdir -p temp_reverse_fast
 
 # Run preprocessor on all input files
 	make -f Makefile_tapenade preprocess_reverse
 
 # The following is the single Tapenade command to run:
 	$(TAPENADE_HOME)/bin/tapenade -html \
-	-difffuncname "%_R"  -debugADJ \
-	-outvars $(TAPENADE_RES_OUTVARS) \
-	-vars $(TAPENADE_RES_VARS) \
-	-head $(TAPENADE_RES_HEADROUTINE)  \
-	-reverse 	 -msglevel 30 $(TAPENADE_PRECISION) \
-	-O temp_reverse_debugADJ $(I_RES_FILES)
+	-head "\
+	inviscidCentralFlux(w, p)>(w,p,dw) \
+	inviscidDissFluxScalar(p, w, radi, radj, radk)>(fw, w, p) \
+	timeStep_block(w, p)>(p, w, radi, radj, radk) \
+	viscousFlux(w, p, aa, rlv, rev, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz)>(fw,w,p,rlv,rev,aa) \
+	allNodalGradients(aa, w)>(w, aa, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz) \
+	computeSpeedOfSoundSquared(w, p)>(w, p, aa) \
+	computeLamViscosity(w, p)>(w, p, rlv) \
+	" \
+	-adjvarname %d \
+	-adjfuncname %_fast_b \
+	-reverse $(TAPENADE_PRECISION) \
+	-noisize \
+	-O temp_reverse_fast $(I_RES_FILES)
 
 # Run the auto-edit file:
-	python autoEdit/autoEditReverseDebugADJ.py temp_reverse_debugADJ outputReverseADJ
+	python autoEdit/autoEditReverse.py temp_reverse_fast outputReverseFast
 
 # Remove preprocessor files
 	make -f Makefile_tapenade cleanpreprocess_res
+
+# Fix the AD bugs
+#	sed -i 's/   DO ii1=1,SIZE(viscsubfaced(ii1)%tau, 1)/   DO ii1=1,SIZE(viscsubfaced)/' outputReverse/forcesandmoments_b.f90
+#	sed -i 's/   DO ii1=1,SIZE(bcdata(ii1)%oarea, 1)/   DO ii1=1,SIZE(bcdata)/' outputReverse/block_res_b.f90
+#	sed -i 's/   DO ii1=SIZE(bcdata(ii1)%oarea, 1),1,-1/    DO ii1=SIZE(bcdata),1,-1/' outputReverse/block_res_b.f90
+#	sed -i 's/   DO ii1=1,SIZE(bcdatad(ii1)%norm, 1)/   DO ii1=1,SIZE(bcdatad)/' outputReverse/bceulerwall_b.f90
+
+
 
 preprocess_cost:
 	@echo "Preprocessing all input files for cost AD..."
