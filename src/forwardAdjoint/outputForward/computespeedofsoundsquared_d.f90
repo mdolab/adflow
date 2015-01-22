@@ -15,7 +15,7 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   SUBROUTINE COMPUTESPEEDOFSOUNDSQUARED_D(correctfork)
+   SUBROUTINE COMPUTESPEEDOFSOUNDSQUARED_D()
    !
    !      ******************************************************************
    !      *                                                                *
@@ -25,18 +25,28 @@
    !
    USE BLOCKPOINTERS
    USE CONSTANTS
+   USE FLOWVARREFSTATE
+   USE INPUTPHYSICS
+   USE ITERATION
    IMPLICIT NONE
-   !
-   !      Input Parameters
-   !
-   LOGICAL, INTENT(IN) :: correctfork
    !
    !      Local variables.
    !
+   LOGICAL :: correctfork
    REAL(kind=realtype), PARAMETER :: twothird=two*third
    INTEGER(kind=inttype) :: i, j, k, ii
    REAL(kind=realtype) :: pp
    REAL(kind=realtype) :: ppd
+   ! Determine if we need to correct for K
+   IF (kpresent) THEN
+   IF (currentlevel .LE. groundlevel .OR. turbcoupled) THEN
+   correctfork = .true.
+   ELSE
+   correctfork = .false.
+   END IF
+   ELSE
+   correctfork = .false.
+   END IF
    IF (correctfork) THEN
    aad = 0.0_8
    DO k=1,ke

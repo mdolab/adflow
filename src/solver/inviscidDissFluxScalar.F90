@@ -42,8 +42,6 @@ subroutine inviscidDissFluxScalar
   real(kind=realType) :: ddw1,ddw2,ddw3,ddw4,ddw5,fs
   real(kind=realType),dimension(1:ie,1:je,1:ke,3) :: dss
   real(kind=realType), dimension(0:ib,0:jb,0:kb) :: ss
-
-
   !
   !      ******************************************************************
   !      *                                                                *
@@ -70,31 +68,11 @@ subroutine inviscidDissFluxScalar
 
      sslim = 0.001_realType*pInfCorr
 
-     ! Copy the pressure in ss. Only fill the entries used in
-     ! the discretization, i.e. ignore the corner halo's.
+     ! Copy the pressure in ss. Only need the entries used in the
+     ! discretization, i.e. not including the corner halo's, but we'll
+     ! just copy all anyway. 
 
-     do k=0,kb
-        do j=2,jl
-           do i=2,il
-              ss(i,j,k) = p(i,j,k)
-           enddo
-        enddo
-     enddo
-
-     do k=2,kl
-        do j=2,jl
-           ss(0, j,k) = p(0, j,k); ss(1, j,k) = p(1, j,k)
-           ss(ie,j,k) = p(ie,j,k); ss(ib,j,k) = p(ib,j,k)
-        enddo
-     enddo
-
-     do k=2,kl
-        do i=2,il
-           ss(i,0, k) = p(i,0, k); ss(i,1, k) = p(i,1, k)
-           ss(i,je,k) = p(i,je,k); ss(i,jb,k) = p(i,jb,k)
-        enddo
-     enddo
-
+     ss = P
      !===============================================================
 
   case (NSEquations, RANSEquations)
@@ -106,35 +84,27 @@ subroutine inviscidDissFluxScalar
 
      sslim = 0.001_realType*pInfCorr/(rhoInf**gammaInf)
 
-     ! Store the entropy in ss. Only fill the entries used in
-     ! the discretization, i.e. ignore the corner halo's.
+     ! Store the entropy in ss. See above. 
 
-     do k=0,kb
-        do j=2,jl
-           do i=2,il
-              ss(i,j,k) = p(i,j,k)/(w(i,j,k,irho)**gamma(i,j,k))
-           enddo
-        enddo
-     enddo
-
-     do k=2,kl
-        do j=2,jl
-           ss(0, j,k) = p(0, j,k)/(w(0, j,k,irho)**gamma(0, j,k))
-           ss(1, j,k) = p(1, j,k)/(w(1, j,k,irho)**gamma(1, j,k))
-           ss(ie,j,k) = p(ie,j,k)/(w(ie,j,k,irho)**gamma(ie,j,k))
-           ss(ib,j,k) = p(ib,j,k)/(w(ib,j,k,irho)**gamma(ib,j,k))
-        enddo
-     enddo
-
-     do k=2,kl
-        do i=2,il
-           ss(i,0, k) = p(i,0, k)/(w(i,0, k,irho)**gamma(i,0, k))
-           ss(i,1, k) = p(i,1, k)/(w(i,1, k,irho)**gamma(i,1, k))
-           ss(i,je,k) = p(i,je,k)/(w(i,je,k,irho)**gamma(i,je,k))
-           ss(i,jb,k) = p(i,jb,k)/(w(i,jb,k,irho)**gamma(i,jb,k))
-        enddo
-     enddo
-
+#ifdef TAPENADE_FAST
+     !$AD II-LOOP
+     do ii=0,(ib+1)*(jb+1)*(kb+1)-1
+        i = mod(ii, ib+1)
+        j = mod(ii/(ib+1), jb+1) 
+        k = ii/((ib+1)*(jb+1))
+#else
+        do k=0,kb
+           do j=0,jb
+              do i=0,ib
+#endif      
+                 ss(i,j,k) = p(i,j,k)/(w(i,j,k,irho)**gamma(i,j,k))
+#ifdef TAPENADE_FAST
+              end do
+#else
+           end do
+        end do
+     end do
+#endif
   end select
 
   ! Compute the pressure sensor for each cell, in each direction:
@@ -175,17 +145,7 @@ subroutine inviscidDissFluxScalar
   ! possibly zero, the previously stored value. Owned cells
   ! only, because the halo values do not matter.
 
-  do k=2,kl
-     do j=2,jl
-        do i=2,il
-           fw(i,j,k,irho)  = sfil*fw(i,j,k,irho)
-           fw(i,j,k,imx)   = sfil*fw(i,j,k,imx)
-           fw(i,j,k,imy)   = sfil*fw(i,j,k,imy)
-           fw(i,j,k,imz)   = sfil*fw(i,j,k,imz)
-           fw(i,j,k,irhoE) = sfil*fw(i,j,k,irhoE)
-        enddo
-     enddo
-  enddo
+  fw = sfil*fw
   !
   !      ******************************************************************
   !      *                                                                *

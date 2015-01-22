@@ -1168,6 +1168,9 @@ python module libsumb
          implicit none
        end subroutine SUmb_finalize
 
+       subroutine testrev
+       end subroutine testrev
+
     end interface 
 
 #ifdef USE_COMPLEX

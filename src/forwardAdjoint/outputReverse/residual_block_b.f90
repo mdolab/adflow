@@ -82,6 +82,7 @@
    REAL(kind=realtype) :: dwo(nwf)
    REAL(kind=realtype) :: dwod(nwf)
    LOGICAL :: finegrid
+   INTRINSIC ABS
    INTRINSIC SQRT
    INTRINSIC MAX
    INTRINSIC MIN
@@ -186,6 +187,7 @@
    REAL(kind=realtype) :: tempd52
    REAL(kind=realtype) :: tempd51
    REAL(kind=realtype) :: tempd50
+   REAL(kind=realtype) :: abs0
    REAL(kind=realtype) :: temp9
    REAL(kind=realtype) :: temp8
    REAL(kind=realtype) :: tempd19
@@ -270,24 +272,36 @@
    END SELECT
    ! Compute the viscous flux in case of a viscous computation.
    IF (viscous) THEN
+   IF (rfil .GE. 0.) THEN
+   abs0 = rfil
+   ELSE
+   abs0 = -rfil
+   END IF
+   ! Only compute viscous fluxes if rFil > 0
+   IF (abs0 .GT. thresholdreal) THEN
    ! not lumpedDiss means it isn't the PC...call the vicousFlux
    IF (.NOT.lumpeddiss) THEN
-   CALL PUSHREAL8ARRAY(aa, SIZE(aa, 1)*SIZE(aa, 2)*SIZE(aa, 3))
+   CALL COMPUTESPEEDOFSOUNDSQUARED()
+   CALL ALLNODALGRADIENTS()
    CALL VISCOUSFLUX()
-   CALL PUSHCONTROL2B(0)
+   CALL PUSHCONTROL3B(0)
    ELSE IF (viscpc) THEN
    ! This is a PC calc...only include viscous fluxes if viscPC
    ! is used
-   CALL PUSHREAL8ARRAY(aa, SIZE(aa, 1)*SIZE(aa, 2)*SIZE(aa, 3))
+   CALL COMPUTESPEEDOFSOUNDSQUARED()
+   CALL ALLNODALGRADIENTS()
    CALL VISCOUSFLUX()
-   CALL PUSHCONTROL2B(1)
+   CALL PUSHCONTROL3B(1)
    ELSE
    CALL PUSHREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
    CALL VISCOUSFLUXAPPROX()
-   CALL PUSHCONTROL2B(2)
+   CALL PUSHCONTROL3B(2)
    END IF
    ELSE
-   CALL PUSHCONTROL2B(3)
+   CALL PUSHCONTROL3B(3)
+   END IF
+   ELSE
+   CALL PUSHCONTROL3B(4)
    END IF
    ! Add the dissipative and possibly viscous fluxes to the
    ! Euler fluxes. Loop over the owned cells and add fw to dw.
@@ -854,18 +868,23 @@
    gammad = 0.0_8
    winfd = 0.0_8
    END IF
-   CALL POPCONTROL2B(branch)
+   CALL POPCONTROL3B(branch)
    IF (branch .LT. 2) THEN
    IF (branch .EQ. 0) THEN
-   CALL POPREAL8ARRAY(aa, SIZE(aa, 1)*SIZE(aa, 2)*SIZE(aa, 3))
    CALL VISCOUSFLUX_B()
+   CALL ALLNODALGRADIENTS_B()
+   CALL COMPUTESPEEDOFSOUNDSQUARED_B()
    ELSE
-   CALL POPREAL8ARRAY(aa, SIZE(aa, 1)*SIZE(aa, 2)*SIZE(aa, 3))
    CALL VISCOUSFLUX_B()
+   CALL ALLNODALGRADIENTS_B()
+   CALL COMPUTESPEEDOFSOUNDSQUARED_B()
    END IF
    ELSE IF (branch .EQ. 2) THEN
    CALL POPREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
    CALL VISCOUSFLUXAPPROX_B()
+   ELSE IF (branch .EQ. 3) THEN
+   revd = 0.0_8
+   rlvd = 0.0_8
    ELSE
    revd = 0.0_8
    rlvd = 0.0_8

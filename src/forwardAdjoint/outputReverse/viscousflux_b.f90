@@ -2,14 +2,15 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of viscousflux in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *p *gamma *w *x *vol *si *sj
-   !                *sk *fw *(*viscsubface.tau)
-   !   with respect to varying inputs: *rev *p *gamma *w *rlv *x *vol
-   !                *si *sj *sk *fw
+   !   gradient     of useful results: *gamma *w *x *si *sj *sk *fw
+   !                *(*viscsubface.tau)
+   !   with respect to varying inputs: *rev *aa *wx *wy *wz *gamma
+   !                *w *rlv *x *qx *qy *qz *ux *uy *uz *si *sj *sk
+   !                *vx *vy *vz *fw
    !   Plus diff mem management of: rev:in aa:in wx:in wy:in wz:in
-   !                p:in gamma:in w:in rlv:in x:in qx:in qy:in qz:in
-   !                ux:in vol:in uy:in uz:in si:in sj:in sk:in vx:in
-   !                vy:in vz:in fw:in viscsubface:in *viscsubface.tau:in
+   !                gamma:in w:in rlv:in x:in qx:in qy:in qz:in ux:in
+   !                uy:in uz:in si:in sj:in sk:in vx:in vy:in vz:in
+   !                fw:in viscsubface:in *viscsubface.tau:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -36,6 +37,7 @@
    USE INPUTPHYSICS
    USE ITERATION
    IMPLICIT NONE
+   !$AD CHECKPOINT-END
    ! Possibly correct the wall shear stress.
    ! Wall function is not ADed
    !
@@ -152,19 +154,21 @@
    END IF
    IF (abs0 .LT. thresholdreal) THEN
    revd = 0.0_8
+   aad = 0.0_8
+   wxd = 0.0_8
+   wyd = 0.0_8
+   wzd = 0.0_8
    rlvd = 0.0_8
+   qxd = 0.0_8
+   qyd = 0.0_8
+   qzd = 0.0_8
+   uxd = 0.0_8
+   uyd = 0.0_8
+   uzd = 0.0_8
+   vxd = 0.0_8
+   vyd = 0.0_8
+   vzd = 0.0_8
    ELSE
-   ! Determine whether or not the pressure must be corrected
-   ! for the presence of the turbulent kinetic energy.
-   IF (kpresent) THEN
-   IF (currentlevel .LE. groundlevel .OR. turbcoupled) THEN
-   correctfork = .true.
-   ELSE
-   correctfork = .false.
-   END IF
-   ELSE
-   correctfork = .false.
-   END IF
    ! Determine whether or not the wall stress tensor and wall heat
    ! flux must be stored for viscous walls.
    storewalltensor = .false.
@@ -173,173 +177,6 @@
    ELSE IF (rkstage .EQ. 0 .AND. currentlevel .EQ. groundlevel) THEN
    storewalltensor = .true.
    END IF
-   ! Compute the speed of sound squared
-   CALL COMPUTESPEEDOFSOUNDSQUARED(correctfork)
-   ! Compute all nodal gradients:
-   CALL ALLNODALGRADIENTS()
-   !
-   !        ****************************************************************
-   !        *                                                              *
-   !        * viscous fluxes in the k-direction.                           *
-   !        *                                                              *
-   !        ****************************************************************
-   !
-   mue = zero
-   CALL PUSHREAL8(mue)
-   DO ii=0,nx*ny*kl-1
-   i = MOD(ii, nx) + 2
-   j = MOD(ii/nx, ny) + 2
-   k = ii/(nx*ny) + 1
-   ! Set the value of the porosity. If not zero, it is set
-   ! to average the eddy-viscosity and to take the factor
-   ! rFilv into account.
-   por = half*rfilv
-   IF (pork(i, j, k) .EQ. noflux) por = zero
-   ! Compute the laminar and (if present) the eddy viscosities
-   ! multiplied by the porosity. Compute the factor in front of
-   ! the gradients of the speed of sound squared for the heat
-   ! flux.
-   mul = por*(rlv(i, j, k)+rlv(i, j, k+1))
-   IF (eddymodel) mue = por*(rev(i, j, k)+rev(i, j, k+1))
-   mut = mul + mue
-   gm1 = half*(gamma(i, j, k)+gamma(i, j, k+1)) - one
-   factlamheat = one/(prandtl*gm1)
-   factturbheat = one/(prandtlturb*gm1)
-   heatcoef = mul*factlamheat + mue*factturbheat
-   ! Compute the gradients at the face by averaging the four
-   ! nodal values.
-   u_x = fourth*(ux(i-1, j-1, k)+ux(i, j-1, k)+ux(i-1, j, k)+ux(i, j&
-   &       , k))
-   u_y = fourth*(uy(i-1, j-1, k)+uy(i, j-1, k)+uy(i-1, j, k)+uy(i, j&
-   &       , k))
-   u_z = fourth*(uz(i-1, j-1, k)+uz(i, j-1, k)+uz(i-1, j, k)+uz(i, j&
-   &       , k))
-   v_x = fourth*(vx(i-1, j-1, k)+vx(i, j-1, k)+vx(i-1, j, k)+vx(i, j&
-   &       , k))
-   v_y = fourth*(vy(i-1, j-1, k)+vy(i, j-1, k)+vy(i-1, j, k)+vy(i, j&
-   &       , k))
-   v_z = fourth*(vz(i-1, j-1, k)+vz(i, j-1, k)+vz(i-1, j, k)+vz(i, j&
-   &       , k))
-   w_x = fourth*(wx(i-1, j-1, k)+wx(i, j-1, k)+wx(i-1, j, k)+wx(i, j&
-   &       , k))
-   w_y = fourth*(wy(i-1, j-1, k)+wy(i, j-1, k)+wy(i-1, j, k)+wy(i, j&
-   &       , k))
-   w_z = fourth*(wz(i-1, j-1, k)+wz(i, j-1, k)+wz(i-1, j, k)+wz(i, j&
-   &       , k))
-   q_x = fourth*(qx(i-1, j-1, k)+qx(i, j-1, k)+qx(i-1, j, k)+qx(i, j&
-   &       , k))
-   q_y = fourth*(qy(i-1, j-1, k)+qy(i, j-1, k)+qy(i-1, j, k)+qy(i, j&
-   &       , k))
-   q_z = fourth*(qz(i-1, j-1, k)+qz(i, j-1, k)+qz(i-1, j, k)+qz(i, j&
-   &       , k))
-   ! The gradients in the normal direction are corrected, such
-   ! that no averaging takes places here.
-   ! First determine the vector in the direction from the
-   ! cell center k to cell center k+1.
-   ssx = eighth*(x(i-1, j-1, k+1, 1)-x(i-1, j-1, k-1, 1)+x(i-1, j, k+&
-   &       1, 1)-x(i-1, j, k-1, 1)+x(i, j-1, k+1, 1)-x(i, j-1, k-1, 1)+x(i&
-   &       , j, k+1, 1)-x(i, j, k-1, 1))
-   ssy = eighth*(x(i-1, j-1, k+1, 2)-x(i-1, j-1, k-1, 2)+x(i-1, j, k+&
-   &       1, 2)-x(i-1, j, k-1, 2)+x(i, j-1, k+1, 2)-x(i, j-1, k-1, 2)+x(i&
-   &       , j, k+1, 2)-x(i, j, k-1, 2))
-   ssz = eighth*(x(i-1, j-1, k+1, 3)-x(i-1, j-1, k-1, 3)+x(i-1, j, k+&
-   &       1, 3)-x(i-1, j, k-1, 3)+x(i, j-1, k+1, 3)-x(i, j-1, k-1, 3)+x(i&
-   &       , j, k+1, 3)-x(i, j, k-1, 3))
-   ! Determine the length of this vector and create the
-   ! unit normal.
-   ss = one/SQRT(ssx*ssx+ssy*ssy+ssz*ssz)
-   ssx = ss*ssx
-   ssy = ss*ssy
-   ssz = ss*ssz
-   ! Correct the gradients.
-   corr = u_x*ssx + u_y*ssy + u_z*ssz - (w(i, j, k+1, ivx)-w(i, j, k&
-   &       , ivx))*ss
-   u_x = u_x - corr*ssx
-   u_y = u_y - corr*ssy
-   u_z = u_z - corr*ssz
-   corr = v_x*ssx + v_y*ssy + v_z*ssz - (w(i, j, k+1, ivy)-w(i, j, k&
-   &       , ivy))*ss
-   v_x = v_x - corr*ssx
-   v_y = v_y - corr*ssy
-   v_z = v_z - corr*ssz
-   corr = w_x*ssx + w_y*ssy + w_z*ssz - (w(i, j, k+1, ivz)-w(i, j, k&
-   &       , ivz))*ss
-   w_x = w_x - corr*ssx
-   w_y = w_y - corr*ssy
-   w_z = w_z - corr*ssz
-   corr = q_x*ssx + q_y*ssy + q_z*ssz + (aa(i, j, k+1)-aa(i, j, k))*&
-   &       ss
-   q_x = q_x - corr*ssx
-   q_y = q_y - corr*ssy
-   q_z = q_z - corr*ssz
-   ! Compute the stress tensor and the heat flux vector.
-   fracdiv = twothird*(u_x+v_y+w_z)
-   tauxx = mut*(two*u_x-fracdiv)
-   tauyy = mut*(two*v_y-fracdiv)
-   tauzz = mut*(two*w_z-fracdiv)
-   tauxy = mut*(u_y+v_x)
-   tauxz = mut*(u_z+w_x)
-   tauyz = mut*(v_z+w_y)
-   q_x = heatcoef*q_x
-   q_y = heatcoef*q_y
-   q_z = heatcoef*q_z
-   ! Compute the average velocities for the face. Remember that
-   ! the velocities are stored and not the momentum.
-   ubar = half*(w(i, j, k, ivx)+w(i, j, k+1, ivx))
-   vbar = half*(w(i, j, k, ivy)+w(i, j, k+1, ivy))
-   wbar = half*(w(i, j, k, ivz)+w(i, j, k+1, ivz))
-   ! Compute the viscous fluxes for this k-face.
-   fmx = tauxx*sk(i, j, k, 1) + tauxy*sk(i, j, k, 2) + tauxz*sk(i, j&
-   &       , k, 3)
-   fmy = tauxy*sk(i, j, k, 1) + tauyy*sk(i, j, k, 2) + tauyz*sk(i, j&
-   &       , k, 3)
-   fmz = tauxz*sk(i, j, k, 1) + tauyz*sk(i, j, k, 2) + tauzz*sk(i, j&
-   &       , k, 3)
-   frhoe = (ubar*tauxx+vbar*tauxy+wbar*tauxz)*sk(i, j, k, 1)
-   frhoe = frhoe + (ubar*tauxy+vbar*tauyy+wbar*tauyz)*sk(i, j, k, 2)
-   frhoe = frhoe + (ubar*tauxz+vbar*tauyz+wbar*tauzz)*sk(i, j, k, 3)
-   frhoe = frhoe - q_x*sk(i, j, k, 1) - q_y*sk(i, j, k, 2) - q_z*sk(i&
-   &       , j, k, 3)
-   ! Update the residuals of cell k and k+1.
-   fw(i, j, k, imx) = fw(i, j, k, imx) - fmx
-   fw(i, j, k, imy) = fw(i, j, k, imy) - fmy
-   fw(i, j, k, imz) = fw(i, j, k, imz) - fmz
-   fw(i, j, k, irhoe) = fw(i, j, k, irhoe) - frhoe
-   fw(i, j, k+1, imx) = fw(i, j, k+1, imx) + fmx
-   fw(i, j, k+1, imy) = fw(i, j, k+1, imy) + fmy
-   fw(i, j, k+1, imz) = fw(i, j, k+1, imz) + fmz
-   fw(i, j, k+1, irhoe) = fw(i, j, k+1, irhoe) + frhoe
-   ! Store the stress tensor and the heat flux vector if this
-   ! face is part of a viscous subface. Both the cases k == 1
-   ! and k == kl must be tested.
-   IF (k .EQ. 1 .AND. storewalltensor .AND. visckminpointer(i, j) &
-   &         .GT. 0) THEN
-   ! We need to index viscSubface with viscKminPointer(i,j) 
-   ! since Tapenade does not like temporary indexes 
-   viscsubface(visckminpointer(i, j))%tau(i, j, 1) = tauxx
-   viscsubface(visckminpointer(i, j))%tau(i, j, 2) = tauyy
-   viscsubface(visckminpointer(i, j))%tau(i, j, 3) = tauzz
-   viscsubface(visckminpointer(i, j))%tau(i, j, 4) = tauxy
-   viscsubface(visckminpointer(i, j))%tau(i, j, 5) = tauxz
-   viscsubface(visckminpointer(i, j))%tau(i, j, 6) = tauyz
-   viscsubface(visckminpointer(i, j))%q(i, j, 1) = q_x
-   viscsubface(visckminpointer(i, j))%q(i, j, 2) = q_y
-   viscsubface(visckminpointer(i, j))%q(i, j, 3) = q_z
-   END IF
-   ! And the k == kl case.
-   IF (k .EQ. kl .AND. storewalltensor .AND. visckmaxpointer(i, j) &
-   &         .GT. 0) THEN
-   viscsubface(visckmaxpointer(i, j))%tau(i, j, 1) = tauxx
-   viscsubface(visckmaxpointer(i, j))%tau(i, j, 2) = tauyy
-   viscsubface(visckmaxpointer(i, j))%tau(i, j, 3) = tauzz
-   viscsubface(visckmaxpointer(i, j))%tau(i, j, 4) = tauxy
-   viscsubface(visckmaxpointer(i, j))%tau(i, j, 5) = tauxz
-   viscsubface(visckmaxpointer(i, j))%tau(i, j, 6) = tauyz
-   viscsubface(visckmaxpointer(i, j))%q(i, j, 1) = q_x
-   viscsubface(visckmaxpointer(i, j))%q(i, j, 2) = q_y
-   viscsubface(visckmaxpointer(i, j))%q(i, j, 3) = q_z
-   END IF
-   END DO
    CALL PUSHREAL8(ssx)
    CALL PUSHREAL8(ssy)
    CALL PUSHREAL8(ssz)
@@ -358,170 +195,10 @@
    CALL PUSHREAL8(v_x)
    CALL PUSHREAL8(v_y)
    CALL PUSHREAL8(v_z)
+   CALL PUSHREAL8(mue)
    CALL PUSHREAL8(ss)
    CALL PUSHREAL8(fracdiv)
    CALL PUSHREAL8(por)
-   CALL PUSHREAL8(mue)
-   !
-   !        ****************************************************************
-   !        *                                                              *
-   !        * Viscous fluxes in the j-direction.                           *
-   !        *                                                              *
-   !        ****************************************************************
-   !
-   DO ii=0,nx*jl*nz-1
-   i = MOD(ii, nx) + 2
-   j = MOD(ii/nx, jl) + 1
-   k = ii/(nx*jl) + 2
-   ! Set the value of the porosity. If not zero, it is set
-   ! to average the eddy-viscosity and to take the factor
-   ! rFilv into account.
-   por = half*rfilv
-   IF (porj(i, j, k) .EQ. noflux) por = zero
-   ! Compute the laminar and (if present) the eddy viscosities
-   ! multiplied by the porosity. Compute the factor in front of
-   ! the gradients of the speed of sound squared for the heat
-   ! flux.
-   mul = por*(rlv(i, j, k)+rlv(i, j+1, k))
-   IF (eddymodel) mue = por*(rev(i, j, k)+rev(i, j+1, k))
-   mut = mul + mue
-   gm1 = half*(gamma(i, j, k)+gamma(i, j+1, k)) - one
-   factlamheat = one/(prandtl*gm1)
-   factturbheat = one/(prandtlturb*gm1)
-   heatcoef = mul*factlamheat + mue*factturbheat
-   ! Compute the gradients at the face by averaging the four
-   ! nodal values.
-   u_x = fourth*(ux(i-1, j, k-1)+ux(i, j, k-1)+ux(i-1, j, k)+ux(i, j&
-   &       , k))
-   u_y = fourth*(uy(i-1, j, k-1)+uy(i, j, k-1)+uy(i-1, j, k)+uy(i, j&
-   &       , k))
-   u_z = fourth*(uz(i-1, j, k-1)+uz(i, j, k-1)+uz(i-1, j, k)+uz(i, j&
-   &       , k))
-   v_x = fourth*(vx(i-1, j, k-1)+vx(i, j, k-1)+vx(i-1, j, k)+vx(i, j&
-   &       , k))
-   v_y = fourth*(vy(i-1, j, k-1)+vy(i, j, k-1)+vy(i-1, j, k)+vy(i, j&
-   &       , k))
-   v_z = fourth*(vz(i-1, j, k-1)+vz(i, j, k-1)+vz(i-1, j, k)+vz(i, j&
-   &       , k))
-   w_x = fourth*(wx(i-1, j, k-1)+wx(i, j, k-1)+wx(i-1, j, k)+wx(i, j&
-   &       , k))
-   w_y = fourth*(wy(i-1, j, k-1)+wy(i, j, k-1)+wy(i-1, j, k)+wy(i, j&
-   &       , k))
-   w_z = fourth*(wz(i-1, j, k-1)+wz(i, j, k-1)+wz(i-1, j, k)+wz(i, j&
-   &       , k))
-   q_x = fourth*(qx(i-1, j, k-1)+qx(i, j, k-1)+qx(i-1, j, k)+qx(i, j&
-   &       , k))
-   q_y = fourth*(qy(i-1, j, k-1)+qy(i, j, k-1)+qy(i-1, j, k)+qy(i, j&
-   &       , k))
-   q_z = fourth*(qz(i-1, j, k-1)+qz(i, j, k-1)+qz(i-1, j, k)+qz(i, j&
-   &       , k))
-   ! The gradients in the normal direction are corrected, such
-   ! that no averaging takes places here.
-   ! First determine the vector in the direction from the
-   ! cell center j to cell center j+1.
-   ssx = eighth*(x(i-1, j+1, k-1, 1)-x(i-1, j-1, k-1, 1)+x(i-1, j+1, &
-   &       k, 1)-x(i-1, j-1, k, 1)+x(i, j+1, k-1, 1)-x(i, j-1, k-1, 1)+x(i&
-   &       , j+1, k, 1)-x(i, j-1, k, 1))
-   ssy = eighth*(x(i-1, j+1, k-1, 2)-x(i-1, j-1, k-1, 2)+x(i-1, j+1, &
-   &       k, 2)-x(i-1, j-1, k, 2)+x(i, j+1, k-1, 2)-x(i, j-1, k-1, 2)+x(i&
-   &       , j+1, k, 2)-x(i, j-1, k, 2))
-   ssz = eighth*(x(i-1, j+1, k-1, 3)-x(i-1, j-1, k-1, 3)+x(i-1, j+1, &
-   &       k, 3)-x(i-1, j-1, k, 3)+x(i, j+1, k-1, 3)-x(i, j-1, k-1, 3)+x(i&
-   &       , j+1, k, 3)-x(i, j-1, k, 3))
-   ! Determine the length of this vector and create the
-   ! unit normal.
-   ss = one/SQRT(ssx*ssx+ssy*ssy+ssz*ssz)
-   ssx = ss*ssx
-   ssy = ss*ssy
-   ssz = ss*ssz
-   ! Correct the gradients.
-   corr = u_x*ssx + u_y*ssy + u_z*ssz - (w(i, j+1, k, ivx)-w(i, j, k&
-   &       , ivx))*ss
-   u_x = u_x - corr*ssx
-   u_y = u_y - corr*ssy
-   u_z = u_z - corr*ssz
-   corr = v_x*ssx + v_y*ssy + v_z*ssz - (w(i, j+1, k, ivy)-w(i, j, k&
-   &       , ivy))*ss
-   v_x = v_x - corr*ssx
-   v_y = v_y - corr*ssy
-   v_z = v_z - corr*ssz
-   corr = w_x*ssx + w_y*ssy + w_z*ssz - (w(i, j+1, k, ivz)-w(i, j, k&
-   &       , ivz))*ss
-   w_x = w_x - corr*ssx
-   w_y = w_y - corr*ssy
-   w_z = w_z - corr*ssz
-   corr = q_x*ssx + q_y*ssy + q_z*ssz + (aa(i, j+1, k)-aa(i, j, k))*&
-   &       ss
-   q_x = q_x - corr*ssx
-   q_y = q_y - corr*ssy
-   q_z = q_z - corr*ssz
-   ! Compute the stress tensor and the heat flux vector.
-   fracdiv = twothird*(u_x+v_y+w_z)
-   tauxx = mut*(two*u_x-fracdiv)
-   tauyy = mut*(two*v_y-fracdiv)
-   tauzz = mut*(two*w_z-fracdiv)
-   tauxy = mut*(u_y+v_x)
-   tauxz = mut*(u_z+w_x)
-   tauyz = mut*(v_z+w_y)
-   q_x = heatcoef*q_x
-   q_y = heatcoef*q_y
-   q_z = heatcoef*q_z
-   ! Compute the average velocities for the face. Remember that
-   ! the velocities are stored and not the momentum.
-   ubar = half*(w(i, j, k, ivx)+w(i, j+1, k, ivx))
-   vbar = half*(w(i, j, k, ivy)+w(i, j+1, k, ivy))
-   wbar = half*(w(i, j, k, ivz)+w(i, j+1, k, ivz))
-   ! Compute the viscous fluxes for this j-face.
-   fmx = tauxx*sj(i, j, k, 1) + tauxy*sj(i, j, k, 2) + tauxz*sj(i, j&
-   &       , k, 3)
-   fmy = tauxy*sj(i, j, k, 1) + tauyy*sj(i, j, k, 2) + tauyz*sj(i, j&
-   &       , k, 3)
-   fmz = tauxz*sj(i, j, k, 1) + tauyz*sj(i, j, k, 2) + tauzz*sj(i, j&
-   &       , k, 3)
-   frhoe = (ubar*tauxx+vbar*tauxy+wbar*tauxz)*sj(i, j, k, 1) + (ubar*&
-   &       tauxy+vbar*tauyy+wbar*tauyz)*sj(i, j, k, 2) + (ubar*tauxz+vbar*&
-   &       tauyz+wbar*tauzz)*sj(i, j, k, 3) - q_x*sj(i, j, k, 1) - q_y*sj(i&
-   &       , j, k, 2) - q_z*sj(i, j, k, 3)
-   ! Update the residuals of cell j and j+1.
-   fw(i, j, k, imx) = fw(i, j, k, imx) - fmx
-   fw(i, j, k, imy) = fw(i, j, k, imy) - fmy
-   fw(i, j, k, imz) = fw(i, j, k, imz) - fmz
-   fw(i, j, k, irhoe) = fw(i, j, k, irhoe) - frhoe
-   fw(i, j+1, k, imx) = fw(i, j+1, k, imx) + fmx
-   fw(i, j+1, k, imy) = fw(i, j+1, k, imy) + fmy
-   fw(i, j+1, k, imz) = fw(i, j+1, k, imz) + fmz
-   fw(i, j+1, k, irhoe) = fw(i, j+1, k, irhoe) + frhoe
-   ! Store the stress tensor and the heat flux vector if this
-   ! face is part of a viscous subface. Both the cases j == 1
-   ! and j == jl must be tested.
-   IF (j .EQ. 1 .AND. storewalltensor .AND. viscjminpointer(i, k) &
-   &         .GT. 0) THEN
-   ! We need to index viscSubface with viscJminPointer(i,k) 
-   ! since Tapenade does not like temporary indexes 
-   viscsubface(viscjminpointer(i, k))%tau(i, k, 1) = tauxx
-   viscsubface(viscjminpointer(i, k))%tau(i, k, 2) = tauyy
-   viscsubface(viscjminpointer(i, k))%tau(i, k, 3) = tauzz
-   viscsubface(viscjminpointer(i, k))%tau(i, k, 4) = tauxy
-   viscsubface(viscjminpointer(i, k))%tau(i, k, 5) = tauxz
-   viscsubface(viscjminpointer(i, k))%tau(i, k, 6) = tauyz
-   viscsubface(viscjminpointer(i, k))%q(i, k, 1) = q_x
-   viscsubface(viscjminpointer(i, k))%q(i, k, 2) = q_y
-   viscsubface(viscjminpointer(i, k))%q(i, k, 3) = q_z
-   END IF
-   ! And the j == jl case.
-   IF (j .EQ. jl .AND. storewalltensor .AND. viscjmaxpointer(i, k) &
-   &         .GT. 0) THEN
-   viscsubface(viscjmaxpointer(i, k))%tau(i, k, 1) = tauxx
-   viscsubface(viscjmaxpointer(i, k))%tau(i, k, 2) = tauyy
-   viscsubface(viscjmaxpointer(i, k))%tau(i, k, 3) = tauzz
-   viscsubface(viscjmaxpointer(i, k))%tau(i, k, 4) = tauxy
-   viscsubface(viscjmaxpointer(i, k))%tau(i, k, 5) = tauxz
-   viscsubface(viscjmaxpointer(i, k))%tau(i, k, 6) = tauyz
-   viscsubface(viscjmaxpointer(i, k))%q(i, k, 1) = q_x
-   viscsubface(viscjmaxpointer(i, k))%q(i, k, 2) = q_y
-   viscsubface(viscjmaxpointer(i, k))%q(i, k, 3) = q_z
-   END IF
-   END DO
    CALL PUSHREAL8(ssx)
    CALL PUSHREAL8(ssy)
    CALL PUSHREAL8(ssz)
@@ -545,6 +222,23 @@
    CALL PUSHREAL8(ss)
    CALL PUSHREAL8(fracdiv)
    CALL PUSHREAL8(por)
+   revd = 0.0_8
+   aad = 0.0_8
+   wxd = 0.0_8
+   wyd = 0.0_8
+   wzd = 0.0_8
+   rlvd = 0.0_8
+   qxd = 0.0_8
+   qyd = 0.0_8
+   qzd = 0.0_8
+   uxd = 0.0_8
+   uyd = 0.0_8
+   uzd = 0.0_8
+   vxd = 0.0_8
+   vyd = 0.0_8
+   vzd = 0.0_8
+   mued = 0.0_8
+   mue = zero
    revd = 0.0_8
    aad = 0.0_8
    wxd = 0.0_8
@@ -1004,7 +698,9 @@
    CALL POPREAL8(ssz)
    CALL POPREAL8(ssy)
    CALL POPREAL8(ssx)
-   CALL LOOKREAL8(mue)
+   mued = 0.0_8
+   mue = zero
+   mued = 0.0_8
    DO ii=0,nx*jl*nz-1
    i = MOD(ii, nx) + 2
    j = MOD(ii/nx, jl) + 1
@@ -1425,10 +1121,10 @@
    rlvd(i, j, k) = rlvd(i, j, k) + por*muld
    rlvd(i, j+1, k) = rlvd(i, j+1, k) + por*muld
    END DO
-   CALL POPREAL8(mue)
    CALL POPREAL8(por)
    CALL POPREAL8(fracdiv)
    CALL POPREAL8(ss)
+   CALL POPREAL8(mue)
    CALL POPREAL8(v_z)
    CALL POPREAL8(v_y)
    CALL POPREAL8(v_x)
@@ -1447,7 +1143,16 @@
    CALL POPREAL8(ssz)
    CALL POPREAL8(ssy)
    CALL POPREAL8(ssx)
-   CALL POPREAL8(mue)
+   mued = 0.0_8
+   !
+   !        ****************************************************************
+   !        *                                                              *
+   !        * viscous fluxes in the k-direction.                           *
+   !        *                                                              *
+   !        ****************************************************************
+   !
+   mue = zero
+   mued = 0.0_8
    DO ii=0,nx*ny*kl-1
    i = MOD(ii, nx) + 2
    j = MOD(ii/nx, ny) + 2
@@ -1871,7 +1576,5 @@
    rlvd(i, j, k) = rlvd(i, j, k) + por*muld
    rlvd(i, j, k+1) = rlvd(i, j, k+1) + por*muld
    END DO
-   CALL ALLNODALGRADIENTS_B()
-   CALL COMPUTESPEEDOFSOUNDSQUARED_B(correctfork)
    END IF
    END SUBROUTINE VISCOUSFLUX_B

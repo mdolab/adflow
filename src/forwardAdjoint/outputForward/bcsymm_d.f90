@@ -198,6 +198,7 @@
    END DO
    ! Set the pressure and gamma and possibly the
    ! laminar and eddy viscosity in the halo.
+  
    gamma1(i, j) = gamma2(i, j)
    pp1d(i, j) = pp2d(i, j)
    pp1(i, j) = pp2(i, j)

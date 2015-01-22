@@ -58,19 +58,6 @@ subroutine viscousFlux
 
   if(abs(rFilv) < thresholdReal) return
 
-  ! Determine whether or not the pressure must be corrected
-  ! for the presence of the turbulent kinetic energy.
-
-  if( kPresent ) then
-     if((currentLevel <= groundLevel) .or. turbCoupled) then
-        correctForK = .true.
-     else
-        correctForK = .false.
-     endif
-  else
-     correctForK = .false.
-  endif
-
   ! Determine whether or not the wall stress tensor and wall heat
   ! flux must be stored for viscous walls.
 
@@ -81,12 +68,6 @@ subroutine viscousFlux
      storeWallTensor = .true.
   endif
 
-  ! Compute the speed of sound squared
-  call computeSpeedOfSoundSquared(correctForK)
-
-  ! Compute all nodal gradients:
-  call allNodalGradients
-
   !
   !        ****************************************************************
   !        *                                                              *
@@ -94,6 +75,8 @@ subroutine viscousFlux
   !        *                                                              *
   !        ****************************************************************
   !
+  continue
+  !$AD CHECKPOINT-START
   mue = zero
 #ifdef TAPENADE_FAST
   !$AD II-LOOP
@@ -303,6 +286,8 @@ subroutine viscousFlux
      enddo
   enddo
 #endif   
+  continue
+  !$AD CHECKPOINT-END
 
   !
   !        ****************************************************************
@@ -311,6 +296,9 @@ subroutine viscousFlux
   !        *                                                              *
   !        ****************************************************************
   !
+  continue
+  !$AD CHECKPOINT-START
+  mue = zero
 #ifdef TAPENADE_FAST
   !$AD II-LOOP
   do ii=0,nx*jl*nz-1
@@ -519,6 +507,11 @@ subroutine viscousFlux
      enddo
   enddo
 #endif 
+  continue
+  !$AD CHECKPOINT-END
+
+
+
   !
   !        ****************************************************************
   !        *                                                              *
@@ -526,6 +519,9 @@ subroutine viscousFlux
   !        *                                                              *
   !        ****************************************************************
   !
+  continue
+  !$AD CHECKPOINT-START
+  mue= zero
 #ifdef TAPENADE_FAST
   !$AD II-LOOP
   do ii=0,il*ny*nz-1
@@ -737,6 +733,8 @@ subroutine viscousFlux
      enddo
   enddo
 #endif 
+  continue
+  !$AD CHECKPOINT-END
 
   ! Possibly correct the wall shear stress.
   ! Wall function is not ADed
