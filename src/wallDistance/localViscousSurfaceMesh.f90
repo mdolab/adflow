@@ -40,7 +40,7 @@
 
        integer(kind=intType), dimension(3) :: ind
 
-       real(kind=realType) :: length, dot, xx, yy, zz, r1, r2, aa, bb
+       real(kind=realType) :: length, dot, xx, yy, zz, r1, r2, aaa, bbb
        real(kind=realType) :: theta, cosTheta, sinTheta
 
        real(kind=realType), dimension(3,3) :: a
@@ -96,12 +96,12 @@
 
            ! Find the largest value in the sub-matrix.
 
-           aa = abs(a(k,k)); row = k; col = k
+           aaa = abs(a(k,k)); row = k; col = k
            do j=k,3
              do i=k,3
-               bb = abs(a(i,j))
-               if(bb > aa) then
-                 aa  = bb
+               bbb = abs(a(i,j))
+               if(bbb > aaa) then
+                 aaa  = bbb
                  row = i
                  col = j
                endif
@@ -111,9 +111,9 @@
            ! Swap the rows k and row.
 
            do j=1,3
-             aa       = a(k,j)
+             aaa       = a(k,j)
              a(k,j)   = a(row,j)
-             a(row,j) = aa
+             a(row,j) = aaa
            enddo
 
            ! Swap the colums k and col; also swap ind(k) and ind(col).
@@ -122,19 +122,19 @@
            ind(k)   = ind(col)
            ind(col) = i
            do i=1,3
-             aa       = a(i,k)
+             aaa       = a(i,k)
              a(i,k)   = a(i,col)
-             a(i,col) = aa
+             a(i,col) = aaa
            enddo
 
            ! Perform gaussian eliMination, because now it's sure that
            ! the element (k,k) is non-zero.
 
-           aa = one/a(k,k)
+           aaa = one/a(k,k)
            do i=(k+1),3
-             bb = a(i,k)*aa
+             bbb = a(i,k)*aaa
              do j=k,3
-               a(i,j) = a(i,j) - bb*a(k,j)
+               a(i,j) = a(i,j) - bbb*a(k,j)
              enddo
            enddo
 

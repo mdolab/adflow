@@ -44,6 +44,7 @@ subroutine setPointers_d(nn, level, sps)
   pd     => flowDomsd(nn,1,sps)%p
 
   gammad => flowDomsd(nn,1,sps)%gamma
+  aad    => flowDomsd(nn,1,sps)%aa
   rlvd   => flowDomsd(nn,1,sps)%rlv
   revd   => flowDomsd(nn,1,sps)%rev
   sd     => flowDomsd(nn,1,sps)%s

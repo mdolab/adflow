@@ -11,8 +11,8 @@
    !                machcoef pointref pref alpha beta
    !   RW status of diff variables: *(flowdoms.x):in-out *(flowdoms.vol):(loc)
    !                *(flowdoms.w):in-out *(flowdoms.dw):out *rev:(loc)
-   !                *bvtj1:(loc) *bvtj2:(loc) *wx:(loc) *wy:(loc)
-   !                *wz:(loc) *p:(loc) *sfacei:(loc) *sfacej:(loc)
+   !                *aa:(loc) *bvtj1:(loc) *bvtj2:(loc) *wx:(loc)
+   !                *wy:(loc) *wz:(loc) *p:(loc) *sfacei:(loc) *sfacej:(loc)
    !                *s:(loc) *gamma:(loc) *sfacek:(loc) *rlv:(loc)
    !                *qx:(loc) *qy:(loc) *qz:(loc) *bvtk1:(loc) *bvtk2:(loc)
    !                *ux:(loc) *uy:(loc) *uz:(loc) *si:(loc) *sj:(loc)
@@ -32,12 +32,12 @@
    !                moment:out alpha:in force:out beta:in cavitation:out
    !                sepsensor:out
    !   Plus diff mem management of: flowdoms.x:in flowdoms.vol:in
-   !                flowdoms.w:in flowdoms.dw:in rev:in bvtj1:in bvtj2:in
-   !                wx:in wy:in wz:in p:in sfacei:in sfacej:in s:in
-   !                gamma:in sfacek:in rlv:in qx:in qy:in qz:in bvtk1:in
-   !                bvtk2:in ux:in uy:in uz:in si:in sj:in sk:in bvti1:in
-   !                bvti2:in vx:in vy:in vz:in fw:in viscsubface:in
-   !                *viscsubface.tau:in bcdata:in *bcdata.norm:in
+   !                flowdoms.w:in flowdoms.dw:in rev:in aa:in bvtj1:in
+   !                bvtj2:in wx:in wy:in wz:in p:in sfacei:in sfacej:in
+   !                s:in gamma:in sfacek:in rlv:in qx:in qy:in qz:in
+   !                bvtk1:in bvtk2:in ux:in uy:in uz:in si:in sj:in
+   !                sk:in bvti1:in bvti2:in vx:in vy:in vz:in fw:in
+   !                viscsubface:in *viscsubface.tau:in bcdata:in *bcdata.norm:in
    !                *bcdata.rface:in *bcdata.fp:in *bcdata.fv:in *bcdata.m:in
    !                *bcdata.oarea:in *bcdata.sepsensor:in *bcdata.cavitation:in
    !                *bcdata.uslip:in radi:in radj:in radk:in

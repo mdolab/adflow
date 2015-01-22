@@ -631,7 +631,7 @@
    REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: dw_deriv&
    &     , w_deriv
    REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: wold
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: p, ptmp, gamma
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: p, gamma, aa
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: rlv, rev
    REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: s
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: shocksensor

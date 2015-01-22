@@ -43,7 +43,7 @@
        real(kind=realType) :: gm1, ovg, ovgm1
        real(kind=realType) :: ptot, ttot, htot, a2tot, r, alpha, beta
        real(kind=realType) :: pExit, pInt, a, ac, ss, scaleFact
-       real(kind=realType) :: aa, bb, cc, dd, q, q2, a2, m2
+       real(kind=realType) :: aa2, bb, cc, dd, q, q2, a2, m2
        real(kind=realType) :: ssx, ssy, ssz, nnx, nny, nnz
        real(kind=realType) :: rho, velx, vely, velz
        real(kind=realType) :: ue, ve, we, qne, qnh
@@ -447,21 +447,21 @@
                  ! Compute the coefficients in the quadratic equation
                  ! for the magnitude of the velocity.
 
-                 aa =  half*gm1*alpha*alpha + one
+                 aa2 =  half*gm1*alpha*alpha + one
                  bb = -gm1*alpha*beta
                  cc =  half*gm1*beta*beta - two*ovgm1*a2tot
 
                  ! Solve the equation for the magnitude of the
-                 ! velocity. As this value must be positive and both aa
+                 ! velocity. As this value must be positive and both aa2
                  ! and bb are positive (alpha is negative and beta is
                  ! positive up till Mach = 5.0 or so, which is not
                  ! really subsonic anymore), it is clear which of the
                  ! two possible solutions must be taken. Some clipping
                  ! is present, but this is normally not active.
 
-                 dd = bb*bb - four*aa*cc
+                 dd = bb*bb - four*aa2*cc
                  dd = sqrt(max(zero,dd))
-                 q  = (-bb + dd)/(two*aa)
+                 q  = (-bb + dd)/(two*aa2)
                  q  = max(zero,q)
                  q2 = q*q
 

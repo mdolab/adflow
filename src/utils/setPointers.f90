@@ -196,6 +196,7 @@
        w     => flowDoms(nn,mm,ll)%w
        wOld  => flowDoms(nn,1, ll)%wOld
        p     => flowDoms(nn,mm,ll)%p
+       aa    => flowDoms(nn,mm,ll)%aa
 
        gamma => flowDoms(nn,1, ll)%gamma
        rlv   => flowDoms(nn,1, ll)%rlv

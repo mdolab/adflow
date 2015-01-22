@@ -141,7 +141,7 @@ module blockPointers
   real(kind=realType), dimension(:,:,:,:),   pointer :: w
   real(kind=realType), dimension(:,:,:,:,:), pointer :: wOld
 
-  real(kind=realType), dimension(:,:,:),     pointer :: p, gamma
+  real(kind=realType), dimension(:,:,:),     pointer :: p, gamma, aa
   real(kind=realType), dimension(:,:,:),     pointer :: shockSensor
   real(kind=realType), dimension(:,:,:),     pointer :: rlv, rev
   real(kind=realType), dimension(:,:,:,:),   pointer :: s
@@ -226,7 +226,7 @@ module blockPointers
   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: qyd
   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: qzd
 
-  REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: pd, gammad
+  REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: pd, gammad, aad
   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: rlvd, revd
 
   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: sd

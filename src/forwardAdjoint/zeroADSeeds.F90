@@ -31,6 +31,7 @@ subroutine zeroADSeeds(nn, level, sps)
   
   flowDomsd(nn, level, sps)%p = zero
   flowDomsd(nn, level, sps)%gamma = zero
+  flowDomsd(nn, level, sps)%aa = zero
   
   flowDomsd(nn, level, sps)%rlv = zero
   flowDomsd(nn, level, sps)%rev = zero
