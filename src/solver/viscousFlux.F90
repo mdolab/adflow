@@ -733,9 +733,8 @@ subroutine viscousFlux
      enddo
   enddo
 #endif 
-  continue
   !$AD CHECKPOINT-END
-
+  continue
   ! Possibly correct the wall shear stress.
   ! Wall function is not ADed
 #ifndef USE_TAPENADE       

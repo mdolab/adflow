@@ -58,88 +58,6 @@
    REAL(kind=realtype) :: tempd0
    REAL(kind=realtype) :: temp
    REAL(kind=realtype) :: temp4
-   !
-   !      ******************************************************************
-   !      *                                                                *
-   !      * Begin execution                                                *
-   !      *                                                                *
-   !      ******************************************************************
-   !
-   ! Initialize sFace to zero. This value will be used if the
-   ! block is not moving.
-   sface = zero
-   CALL PUSHREAL8(sface)
-   !
-   !      ******************************************************************
-   !      *                                                                *
-   !      * Advective fluxes in the i-direction.                           *
-   !      *                                                                *
-   !      ******************************************************************
-   !
-   DO ii=0,il*ny*nz-1
-   i = MOD(ii, il) + 1
-   j = MOD(ii/il, ny) + 2
-   k = ii/(il*ny) + 2
-   ! Set the dot product of the grid velocity and the
-   ! normal in i-direction for a moving face.
-   IF (addgridvelocities) sface = sfacei(i, j, k)
-   ! Compute the normal velocities of the left and right state.
-   vnp = w(i+1, j, k, ivx)*si(i, j, k, 1) + w(i+1, j, k, ivy)*si(i, j, &
-   &     k, 2) + w(i+1, j, k, ivz)*si(i, j, k, 3)
-   vnm = w(i, j, k, ivx)*si(i, j, k, 1) + w(i, j, k, ivy)*si(i, j, k, 2&
-   &     ) + w(i, j, k, ivz)*si(i, j, k, 3)
-   ! Set the values of the porosities for this face.
-   ! porVel defines the porosity w.r.t. velocity;
-   ! porFlux defines the porosity w.r.t. the entire flux.
-   ! The latter is only zero for a discontinuous block
-   ! boundary that must be treated conservatively.
-   ! The default value of porFlux is 0.5, such that the
-   ! correct central flux is scattered to both cells.
-   ! In case of a boundFlux the normal velocity is set
-   ! to sFace.
-   porvel = one
-   porflux = half
-   IF (pori(i, j, k) .EQ. noflux) porflux = zero
-   IF (pori(i, j, k) .EQ. boundflux) THEN
-   porvel = zero
-   vnp = sface
-   vnm = sface
-   END IF
-   ! Incorporate porFlux in porVel.
-   porvel = porvel*porflux
-   ! Compute the normal velocities relative to the grid for
-   ! the face as well as the mass fluxes.
-   qsp = (vnp-sface)*porvel
-   qsm = (vnm-sface)*porvel
-   rqsp = qsp*w(i+1, j, k, irho)
-   rqsm = qsm*w(i, j, k, irho)
-   ! Compute the sum of the pressure multiplied by porFlux.
-   ! For the default value of porFlux, 0.5, this leads to
-   ! the average pressure.
-   pa = porflux*(p(i+1, j, k)+p(i, j, k))
-   ! Compute the fluxes and scatter them to the cells
-   ! i,j,k and i+1,j,k. Store the density flux in the
-   ! mass flow of the appropriate sliding mesh interface.
-   fs = rqsp + rqsm
-   dw(i+1, j, k, irho) = dw(i+1, j, k, irho) - fs
-   dw(i, j, k, irho) = dw(i, j, k, irho) + fs
-   fs = rqsp*w(i+1, j, k, ivx) + rqsm*w(i, j, k, ivx) + pa*si(i, j, k, &
-   &     1)
-   dw(i+1, j, k, imx) = dw(i+1, j, k, imx) - fs
-   dw(i, j, k, imx) = dw(i, j, k, imx) + fs
-   fs = rqsp*w(i+1, j, k, ivy) + rqsm*w(i, j, k, ivy) + pa*si(i, j, k, &
-   &     2)
-   dw(i+1, j, k, imy) = dw(i+1, j, k, imy) - fs
-   dw(i, j, k, imy) = dw(i, j, k, imy) + fs
-   fs = rqsp*w(i+1, j, k, ivz) + rqsm*w(i, j, k, ivz) + pa*si(i, j, k, &
-   &     3)
-   dw(i+1, j, k, imz) = dw(i+1, j, k, imz) - fs
-   dw(i, j, k, imz) = dw(i, j, k, imz) + fs
-   fs = qsp*w(i+1, j, k, irhoe) + qsm*w(i, j, k, irhoe) + porflux*(vnp*&
-   &     p(i+1, j, k)+vnm*p(i, j, k))
-   dw(i+1, j, k, irhoe) = dw(i+1, j, k, irhoe) - fs
-   dw(i, j, k, irhoe) = dw(i, j, k, irhoe) + fs
-   END DO
    CALL PUSHINTEGER4(i)
    CALL PUSHINTEGER4(j)
    CALL PUSHREAL8(vnm)
@@ -148,78 +66,6 @@
    CALL PUSHREAL8(porvel)
    CALL PUSHREAL8(qsm)
    CALL PUSHREAL8(qsp)
-   CALL PUSHREAL8(sface)
-   !
-   !      ******************************************************************
-   !      *                                                                *
-   !      * Advective fluxes in the j-direction.                           *
-   !      *                                                                *
-   !      ******************************************************************
-   !
-   DO ii=0,nx*jl*nz-1
-   i = MOD(ii, nx) + 2
-   j = MOD(ii/nx, jl) + 1
-   k = ii/(nx*jl) + 2
-   ! Set the dot product of the grid velocity and the
-   ! normal in j-direction for a moving face.
-   IF (addgridvelocities) sface = sfacej(i, j, k)
-   ! Compute the normal velocities of the left and right state.
-   vnp = w(i, j+1, k, ivx)*sj(i, j, k, 1) + w(i, j+1, k, ivy)*sj(i, j, &
-   &     k, 2) + w(i, j+1, k, ivz)*sj(i, j, k, 3)
-   vnm = w(i, j, k, ivx)*sj(i, j, k, 1) + w(i, j, k, ivy)*sj(i, j, k, 2&
-   &     ) + w(i, j, k, ivz)*sj(i, j, k, 3)
-   ! Set the values of the porosities for this face.
-   ! porVel defines the porosity w.r.t. velocity;
-   ! porFlux defines the porosity w.r.t. the entire flux.
-   ! The latter is only zero for a discontinuous block
-   ! boundary that must be treated conservatively.
-   ! The default value of porFlux is 0.5, such that the
-   ! correct central flux is scattered to both cells.
-   ! In case of a boundFlux the normal velocity is set
-   ! to sFace.
-   porvel = one
-   porflux = half
-   IF (porj(i, j, k) .EQ. noflux) porflux = zero
-   IF (porj(i, j, k) .EQ. boundflux) THEN
-   porvel = zero
-   vnp = sface
-   vnm = sface
-   END IF
-   ! Incorporate porFlux in porVel.
-   porvel = porvel*porflux
-   ! Compute the normal velocities for the face as well as the
-   ! mass fluxes.
-   qsp = (vnp-sface)*porvel
-   qsm = (vnm-sface)*porvel
-   rqsp = qsp*w(i, j+1, k, irho)
-   rqsm = qsm*w(i, j, k, irho)
-   ! Compute the sum of the pressure multiplied by porFlux.
-   ! For the default value of porFlux, 0.5, this leads to
-   ! the average pressure.
-   pa = porflux*(p(i, j+1, k)+p(i, j, k))
-   ! Compute the fluxes and scatter them to the cells
-   ! i,j,k and i,j+1,k. Store the density flux in the
-   ! mass flow of the appropriate sliding mesh interface.
-   fs = rqsp + rqsm
-   dw(i, j+1, k, irho) = dw(i, j+1, k, irho) - fs
-   dw(i, j, k, irho) = dw(i, j, k, irho) + fs
-   fs = rqsp*w(i, j+1, k, ivx) + rqsm*w(i, j, k, ivx) + pa*sj(i, j, k, &
-   &     1)
-   dw(i, j+1, k, imx) = dw(i, j+1, k, imx) - fs
-   dw(i, j, k, imx) = dw(i, j, k, imx) + fs
-   fs = rqsp*w(i, j+1, k, ivy) + rqsm*w(i, j, k, ivy) + pa*sj(i, j, k, &
-   &     2)
-   dw(i, j+1, k, imy) = dw(i, j+1, k, imy) - fs
-   dw(i, j, k, imy) = dw(i, j, k, imy) + fs
-   fs = rqsp*w(i, j+1, k, ivz) + rqsm*w(i, j, k, ivz) + pa*sj(i, j, k, &
-   &     3)
-   dw(i, j+1, k, imz) = dw(i, j+1, k, imz) - fs
-   dw(i, j, k, imz) = dw(i, j, k, imz) + fs
-   fs = qsp*w(i, j+1, k, irhoe) + qsm*w(i, j, k, irhoe) + porflux*(vnp*&
-   &     p(i, j+1, k)+vnm*p(i, j, k))
-   dw(i, j+1, k, irhoe) = dw(i, j+1, k, irhoe) - fs
-   dw(i, j, k, irhoe) = dw(i, j, k, irhoe) + fs
-   END DO
    CALL PUSHINTEGER4(i)
    CALL PUSHINTEGER4(j)
    CALL PUSHREAL8(vnm)
@@ -228,19 +74,14 @@
    CALL PUSHREAL8(porvel)
    CALL PUSHREAL8(qsm)
    CALL PUSHREAL8(qsp)
-   ! Add the rotational source terms for a moving block in a
-   ! steady state computation. These source terms account for the
-   ! centrifugal acceleration and the coriolis term. However, as
-   ! the the equations are solved in the inertial frame and not
-   ! in the moving frame, the form is different than what you
-   ! normally find in a text book.
+   CALL PUSHINTEGER4(i)
+   CALL PUSHINTEGER4(j)
+   timerefd = 0.0_8
    IF (blockismoving .AND. equationmode .EQ. steady) THEN
    ! Compute the three nonDimensional angular velocities.
    wwx = timeref*cgnsdoms(nbkglobal)%rotrate(1)
    wwy = timeref*cgnsdoms(nbkglobal)%rotrate(2)
    wwz = timeref*cgnsdoms(nbkglobal)%rotrate(3)
-   CALL PUSHINTEGER4(i)
-   CALL PUSHINTEGER4(j)
    wwxd = 0.0_8
    wwyd = 0.0_8
    wwzd = 0.0_8
@@ -273,13 +114,14 @@
    wd(i, j, k, irho) = wd(i, j, k, irho) + vol(i, j, k)*rvold
    vold(i, j, k) = vold(i, j, k) + w(i, j, k, irho)*rvold
    END DO
-   CALL POPINTEGER4(j)
-   CALL POPINTEGER4(i)
    timerefd = cgnsdoms(nbkglobal)%rotrate(2)*wwyd + cgnsdoms(nbkglobal)&
    &     %rotrate(1)*wwxd + cgnsdoms(nbkglobal)%rotrate(3)*wwzd
    ELSE
    timerefd = 0.0_8
    END IF
+   CALL POPINTEGER4(j)
+   CALL POPINTEGER4(i)
+   sface = zero
    DO ii=0,nx*ny*kl-1
    i = MOD(ii, nx) + 2
    j = MOD(ii/nx, ny) + 2
@@ -393,7 +235,7 @@
    CALL POPREAL8(vnm)
    CALL POPINTEGER4(j)
    CALL POPINTEGER4(i)
-   CALL POPREAL8(sface)
+   sface = zero
    DO ii=0,nx*jl*nz-1
    i = MOD(ii, nx) + 2
    j = MOD(ii/nx, jl) + 1
@@ -507,7 +349,16 @@
    CALL POPREAL8(vnm)
    CALL POPINTEGER4(j)
    CALL POPINTEGER4(i)
-   CALL POPREAL8(sface)
+   !
+   !      ******************************************************************
+   !      *                                                                *
+   !      * Begin execution                                                *
+   !      *                                                                *
+   !      ******************************************************************
+   !
+   ! Initialize sFace to zero. This value will be used if the
+   ! block is not moving.
+   sface = zero
    DO ii=0,il*ny*nz-1
    i = MOD(ii, il) + 1
    j = MOD(ii/il, ny) + 2
