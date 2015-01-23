@@ -12,6 +12,6 @@ module myPushPopLib
   save
 
   integer(kind=intType) :: myIntStack(16)
-  integer(kind=intType) :: myIntStackPtr=0
+  integer(kind=intType) :: myIntPtr = 0
 
 end module myPushPopLib

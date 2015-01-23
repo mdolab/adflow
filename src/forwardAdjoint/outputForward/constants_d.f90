@@ -35,9 +35,9 @@
    REAL(kind=realtype), PARAMETER :: musuthdim=1.716e-5_realType
    REAL(kind=realtype), PARAMETER :: tsuthdim=273.15_realType
    ! Constants to define the porosity values
-   INTEGER(kind=portype), PARAMETER :: noflux=-1
-   INTEGER(kind=portype), PARAMETER :: boundflux=0
-   INTEGER(kind=portype), PARAMETER :: normalflux=1
+   INTEGER(kind=portype), PARAMETER :: noflux=-1_porType
+   INTEGER(kind=portype), PARAMETER :: boundflux=0_porType
+   INTEGER(kind=portype), PARAMETER :: normalflux=1_porType
    ! Indices in the array of independent variables
    ! Density
    INTEGER, PARAMETER :: irho=1

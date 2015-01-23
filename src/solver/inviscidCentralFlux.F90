@@ -39,6 +39,8 @@ subroutine inviscidCentralFlux
   !      *                                                                *
   !      ******************************************************************
   !
+  continue
+  !$AD CHECKPOINT-START
   ! Initialize sFace to zero. This value will be used if the
   ! block is not moving.
   sFace = zero
@@ -149,7 +151,10 @@ subroutine inviscidCentralFlux
         enddo
      enddo
   enddo
-#endif   
+#endif  
+  continue
+  !$AD CHECKPOINT-END
+
   !
   !      ******************************************************************
   !      *                                                                *
@@ -157,6 +162,9 @@ subroutine inviscidCentralFlux
   !      *                                                                *
   !      ******************************************************************
   !
+  continue
+  !$AD CHECKPOINT-START
+  sface = zero
 #ifdef TAPENADE_FAST
   !$AD II-LOOP
   do ii=0,nx*jl*nz-1
@@ -259,14 +267,19 @@ subroutine inviscidCentralFlux
         enddo
      enddo
   enddo
-#endif   
+#endif
+  continue
+  !$AD CHECKPOINT-END
+
   !
   !      ******************************************************************
   !      *                                                                *
   !      * Advective fluxes in the k-direction.                           *
   !      *                                                                *
   !      ******************************************************************
-  !
+  continue
+  !$AD CHECKPOINT-START
+  sface = zero
 #ifdef TAPENADE_FAST
   !$AD II-LOOP
   do ii=0,nx*ny*kl-1
@@ -370,6 +383,8 @@ subroutine inviscidCentralFlux
      enddo
   enddo
 #endif   
+  continue
+  !$AD CHECKPOINT-END
 
   ! Add the rotational source terms for a moving block in a
   ! steady state computation. These source terms account for the
@@ -378,6 +393,8 @@ subroutine inviscidCentralFlux
   ! in the moving frame, the form is different than what you
   ! normally find in a text book.
 
+  continue
+  !$AD CHECKPOINT-START
   rotation: if(blockIsMoving .and. equationMode == steady) then
 
      ! Compute the three nonDimensional angular velocities.
@@ -405,4 +422,6 @@ subroutine inviscidCentralFlux
 
   endif rotation
 
+  !$AD CHECKPOINT-END
+  continue
 end subroutine inviscidCentralFlux

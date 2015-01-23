@@ -39,6 +39,7 @@ vpath %.o $(SUMB_OBJDIR)
 FILES_TO_COMPLEXIFY = \
 	       adjustInflowAngle.f90\
 	       applyAllBC.F90\
+	       BCRoutines.F90\
 	       bcBleedInflow.f90\
 	       bcDomainInterface.f90\
 	       bcEulerWall.F90\

@@ -169,8 +169,7 @@ ALL_RES_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.F90\
 		$(SRC)/utils/terminate.F90\
 		$(SRC)/utils/computeSpeedOfSoundSquared.F90\
 		$(SRC)/bendingMomentAnalysis/rootBendingMomentAnalysis.f90\
-		$(SRC)/wallDistance/determineDistanceQuickly.F90
-
+		$(SRC)/wallDistance/determineDistanceQuickly.F90\
 
 # intermediate residual files.
 I_RES_FILES := $(ALL_RES_FILES:%=%.f90)
@@ -327,13 +326,16 @@ ad_reverse_fast:
 # The following is the single Tapenade command to run:
 	$(TAPENADE_HOME)/bin/tapenade -html \
 	-head "\
-	inviscidCentralFlux(w, p)>(w,p,dw) \
-	inviscidDissFluxScalar(p, w, radi, radj, radk)>(fw, w, p) \
-	timeStep_block(w, p)>(p, w, radi, radj, radk) \
-	viscousFlux(w, p, aa, rlv, rev, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz)>(fw,w,p,rlv,rev,aa) \
-	allNodalGradients(aa, w)>(w, aa, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz) \
-	computeSpeedOfSoundSquared(w, p)>(w, p, aa) \
-	computeLamViscosity(w, p)>(w, p, rlv) \
+	inviscidCentralFlux(w, p, dw)>(w, p, dw) \
+	inviscidDissFluxScalar(p, w, radi, radj, radk, fw)>(fw, w, p) \
+	timeStep_block(w, p, radi, radj, radk)>(p, w, radi, radj, radk) \
+	viscousFlux(w, aa, rlv, rev, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz, fw)>(fw, w, rlv, rev, aa) \
+	allNodalGradients(aa, w, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz) > \
+	         (aa, w, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz) \
+	computeSpeedOfSoundSquared(w, p, aa)>(w, p, aa) \
+	computeLamViscosity(w, p, rlv)>(w, p, rlv) \
+	BCRoutines%bcNSWallAdiabatic2(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2) > \
+	                             (ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2) \
 	" \
 	-adjvarname %d \
 	-adjfuncname %_fast_b \
@@ -341,8 +343,9 @@ ad_reverse_fast:
 	-noisize \
 	-O temp_reverse_fast $(I_RES_FILES)
 
+
 # Run the auto-edit file:
-	python autoEdit/autoEditReverse.py temp_reverse_fast outputReverseFast
+	python autoEdit/autoEditReverseFast.py temp_reverse_fast outputReverseFast
 
 # Remove preprocessor files
 	make -f Makefile_tapenade cleanpreprocess_res
