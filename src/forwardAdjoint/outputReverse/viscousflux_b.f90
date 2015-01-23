@@ -37,7 +37,6 @@
    USE INPUTPHYSICS
    USE ITERATION
    IMPLICIT NONE
-   !$AD CHECKPOINT-END
    ! Possibly correct the wall shear stress.
    ! Wall function is not ADed
    !

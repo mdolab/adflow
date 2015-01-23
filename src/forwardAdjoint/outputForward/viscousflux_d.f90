@@ -38,7 +38,6 @@
    USE DIFFSIZES
    !  Hint: ISIZE1OFDrfviscsubface should be the size of dimension 1 of array *viscsubface
    IMPLICIT NONE
-   !$AD CHECKPOINT-END
    ! Possibly correct the wall shear stress.
    ! Wall function is not ADed
    !

@@ -29,9 +29,9 @@
    IMPLICIT NONE
    SAVE 
    ! Parameters used for coarsening definition.
-   INTEGER(kind=portype), PARAMETER :: leftstarted=-1
-   INTEGER(kind=portype), PARAMETER :: regular=0
-   INTEGER(kind=portype), PARAMETER :: rightstarted=1
+   INTEGER(kind=portype), PARAMETER :: leftstarted=-1_porType
+   INTEGER(kind=portype), PARAMETER :: regular=0_porType
+   INTEGER(kind=portype), PARAMETER :: rightstarted=1_porType
    ! Parameters used for subsonic inlet bc treatment.
    INTEGER(kind=inttype), PARAMETER :: nosubinlet=0
    INTEGER(kind=inttype), PARAMETER :: totalconditions=1

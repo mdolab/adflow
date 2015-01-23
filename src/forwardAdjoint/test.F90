@@ -36,7 +36,6 @@ subroutine testRev
   else
      nState = nw
   endif
-
   ! Assembling matrix on coarser levels is not entirely implemented yet. 
   level = 1
   currentLevel = level
@@ -70,22 +69,35 @@ subroutine testRev
   call mpi_barrier(sumb_comm_world, ierr)
   timeA = mpi_wtime()
   do ii=1,10
-  do nn=1,nDom
-     ! Run the regular forward call:
+     call whalo2(1_intType, 1_intType, nw, .true., &
+          .true., .true.)
 
-     ! Set pointers to the first timeInstance...just to getSizes
-     call setPointers(nn, level, 1)
-     
-     !call applyallbc(.true.)
-      call computeLamViscosity
-       call timeStep_block(.False.)
-       call inviscidCentralFlux
-       call inviscidDissFluxScalar
-      call computespeedofsoundsquared
-      call allnodalgradients
-     call viscousFlux
+     do nn=1,nDom
+        ! Run the regular forward call:
+        
+        ! Set pointers to the first timeInstance...just to getSizes
+        call setPointers(nn, level, 1)
+        
+        call computeLamViscosity
+        ! call computeEddyViscosity
+        ! call applyAllBC_block(.True.)
+        ! if (equations == RANSequations) &
+        !    call applyAllTurbBCThisBLock(.True.)
+
+        call timeStep_block(.False.)
+
+        ! if (equations == RANSEquations)  then
+        !    call sa_block(.true.)
+        !   end if
+
+        call inviscidCentralFlux
+        call inviscidDissFluxScalar
+        call computespeedofsoundsquared
+        call allnodalgradients
+        call viscousFlux
+     end do
   end do
-end do
+
   call mpi_barrier(sumb_comm_world, ierr)
   timeB = mpi_wtime()
   fwdTime = timeB-timeA
@@ -95,24 +107,23 @@ end do
   call mpi_barrier(sumb_comm_world, ierr)
   timeA = mpi_wtime()
   do ii=1,10
-  do nn=1,nDom
-
-     !flowDomsd(nn,level,1)%dw = one
-     !flowDomsd(nn,level,1)%fw = one
-        
-     ! Set pointers and derivative pointers
-     call setPointers_d(nn, level, 1)
-     fwd = one
-     dwd = one
-     call viscousFlux_fast_b
-     call allnodalgradients_fast_b
-     call computespeedofsoundsquared_fast_b
-     call inviscidDissFluxScalar_fast_b
-     call inviscidcentralflux_fast_b
-      call timestep_block_fast_b(.False.)
-      call computelamviscosity_fast_b
+     call whalo2_b(1_intType, 1_intType, nw, .true., &
+          .true., .true.)
+     
+     do nn=1,nDom
+        ! Set pointers and derivative pointers
+        call setPointers_d(nn, level, 1)
+        fwd = one
+        dwd = one
+        call viscousFlux_fast_b
+        call allnodalgradients_fast_b
+        call computespeedofsoundsquared_fast_b
+        call inviscidDissFluxScalar_fast_b
+        call inviscidcentralflux_fast_b
+        call timestep_block_fast_b(.False.)
+        call computelamviscosity_fast_b
+     end do
   end do
-end do
   print *,sum(flowDomsd(1,1,1)%w)
   call mpi_barrier(sumb_comm_world, ierr)
   timeB = mpi_wtime()
