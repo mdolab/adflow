@@ -2,9 +2,8 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of setbcpointers in forward (tangent) mode (with options i4 dr8 r8):
-   !   Plus diff mem management of: rev:in p:in w:in rlv:in rev1:in-out
-   !                rev2:in-out pp1:in-out pp2:in-out rlv1:in-out
-   !                rlv2:in-out ww1:in-out ww2:in-out
+   !   Plus diff mem management of: p:in w:in pp1:in-out pp2:in-out
+   !                ww1:in-out ww2:in-out
    !
    !      ******************************************************************
    !      *                                                                *
@@ -16,7 +15,7 @@
    !      ******************************************************************
    !
    SUBROUTINE SETBCPOINTERS_D(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, pp2, &
-   & pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev1d, rev2, rev2d, offset)
+   & pp2d, rlv1, rlv2, rev1, rev2, offset)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -39,9 +38,7 @@
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1, pp2
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1d, pp2d
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1d, rlv2d
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1d, rev2d
    !
    !      Local variables
    !
@@ -68,15 +65,11 @@
    pp2d => pd(id, 1:, 1:)
    pp2 => p(id, 1:, 1:)
    IF (viscous) THEN
-   rlv1d => rlvd(ih, 1:, 1:)
    rlv1 => rlv(ih, 1:, 1:)
-   rlv2d => rlvd(id, 1:, 1:)
    rlv2 => rlv(id, 1:, 1:)
    END IF
    IF (eddymodel) THEN
-   rev1d => revd(ih, 1:, 1:)
    rev1 => rev(ih, 1:, 1:)
-   rev2d => revd(id, 1:, 1:)
    rev2 => rev(id, 1:, 1:)
    END IF
    CASE (imax) 
@@ -92,15 +85,11 @@
    pp2d => pd(id, 1:, 1:)
    pp2 => p(id, 1:, 1:)
    IF (viscous) THEN
-   rlv1d => rlvd(ih, 1:, 1:)
    rlv1 => rlv(ih, 1:, 1:)
-   rlv2d => rlvd(id, 1:, 1:)
    rlv2 => rlv(id, 1:, 1:)
    END IF
    IF (eddymodel) THEN
-   rev1d => revd(ih, 1:, 1:)
    rev1 => rev(ih, 1:, 1:)
-   rev2d => revd(id, 1:, 1:)
    rev2 => rev(id, 1:, 1:)
    END IF
    CASE (jmin) 
@@ -116,15 +105,11 @@
    pp2d => pd(1:, id, 1:)
    pp2 => p(1:, id, 1:)
    IF (viscous) THEN
-   rlv1d => rlvd(1:, ih, 1:)
    rlv1 => rlv(1:, ih, 1:)
-   rlv2d => rlvd(1:, id, 1:)
    rlv2 => rlv(1:, id, 1:)
    END IF
    IF (eddymodel) THEN
-   rev1d => revd(1:, ih, 1:)
    rev1 => rev(1:, ih, 1:)
-   rev2d => revd(1:, id, 1:)
    rev2 => rev(1:, id, 1:)
    END IF
    CASE (jmax) 
@@ -140,15 +125,11 @@
    pp2d => pd(1:, id, 1:)
    pp2 => p(1:, id, 1:)
    IF (viscous) THEN
-   rlv1d => rlvd(1:, ih, 1:)
    rlv1 => rlv(1:, ih, 1:)
-   rlv2d => rlvd(1:, id, 1:)
    rlv2 => rlv(1:, id, 1:)
    END IF
    IF (eddymodel) THEN
-   rev1d => revd(1:, ih, 1:)
    rev1 => rev(1:, ih, 1:)
-   rev2d => revd(1:, id, 1:)
    rev2 => rev(1:, id, 1:)
    END IF
    CASE (kmin) 
@@ -164,15 +145,11 @@
    pp2d => pd(1:, 1:, id)
    pp2 => p(1:, 1:, id)
    IF (viscous) THEN
-   rlv1d => rlvd(1:, 1:, ih)
    rlv1 => rlv(1:, 1:, ih)
-   rlv2d => rlvd(1:, 1:, id)
    rlv2 => rlv(1:, 1:, id)
    END IF
    IF (eddymodel) THEN
-   rev1d => revd(1:, 1:, ih)
    rev1 => rev(1:, 1:, ih)
-   rev2d => revd(1:, 1:, id)
    rev2 => rev(1:, 1:, id)
    END IF
    CASE (kmax) 
@@ -188,15 +165,11 @@
    pp2d => pd(1:, 1:, id)
    pp2 => p(1:, 1:, id)
    IF (viscous) THEN
-   rlv1d => rlvd(1:, 1:, ih)
    rlv1 => rlv(1:, 1:, ih)
-   rlv2d => rlvd(1:, 1:, id)
    rlv2 => rlv(1:, 1:, id)
    END IF
    IF (eddymodel) THEN
-   rev1d => revd(1:, 1:, ih)
    rev1 => rev(1:, 1:, ih)
-   rev2d => revd(1:, 1:, id)
    rev2 => rev(1:, 1:, id)
    END IF
    END SELECT

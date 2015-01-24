@@ -3,11 +3,10 @@
    !
    !  Differentiation of timestep_block in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *radi *radj *radk
-   !   with respect to varying inputs: *p *sfacei *sfacej *gamma *sfacek
-   !                *w *si *sj *sk gammainf rhoinf pinfcorr
-   !   Plus diff mem management of: p:in sfacei:in sfacej:in gamma:in
-   !                sfacek:in w:in si:in sj:in sk:in radi:in radj:in
-   !                radk:in
+   !   with respect to varying inputs: gammainf rhoinf pinfcorr *p
+   !                *sfacei *sfacej *sfacek *w *si *sj *sk
+   !   Plus diff mem management of: p:in sfacei:in sfacej:in sfacek:in
+   !                w:in si:in sj:in sk:in radi:in radj:in radk:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -139,9 +138,8 @@
    uuy = w(i, j, k, ivy)
    uuzd = wd(i, j, k, ivz)
    uuz = w(i, j, k, ivz)
-   cc2d = ((gammad(i, j, k)*p(i, j, k)+gamma(i, j, k)*pd(i, j, &
-   &             k))*w(i, j, k, irho)-gamma(i, j, k)*p(i, j, k)*wd(i, j, k&
-   &             , irho))/w(i, j, k, irho)**2
+   cc2d = (gamma(i, j, k)*pd(i, j, k)*w(i, j, k, irho)-gamma(i&
+   &             , j, k)*p(i, j, k)*wd(i, j, k, irho))/w(i, j, k, irho)**2
    cc2 = gamma(i, j, k)*p(i, j, k)/w(i, j, k, irho)
    IF (cc2 .LT. clim2) THEN
    cc2d = clim2d

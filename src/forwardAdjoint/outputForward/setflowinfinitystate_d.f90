@@ -3,8 +3,8 @@
    !
    !  Differentiation of setflowinfinitystate in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: winf pinfcorr
-   !   with respect to varying inputs: veldirfreestream machcoef gammainf
-   !                pinf rhoinf tref muinf uinf rgas
+   !   with respect to varying inputs: gammainf pinf rhoinf tref muinf
+   !                uinf rgas veldirfreestream machcoef
    !
    !      ******************************************************************
    !      *                                                                *
