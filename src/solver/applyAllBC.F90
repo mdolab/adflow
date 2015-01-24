@@ -20,6 +20,7 @@ subroutine applyAllBC(secondHalo)
   use blockPointers
   use inputTimeSpectral
   use iteration
+  use BCRoutines
   implicit none
   !
   !      Subroutine arguments.
@@ -48,7 +49,7 @@ subroutine applyAllBC(secondHalo)
 
         call setPointers(nn, currentLevel, sps)
 
-        call applyAllBC_block(secondHalo)
+        call applyAllBC_block2(secondHalo)
   
      enddo domains
   enddo spectralLoop

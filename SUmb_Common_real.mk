@@ -27,6 +27,7 @@
 
 INPUT_DIR   = $(SUMB_DIR)/src/inputParam
 TURB_DIR   = $(SUMB_DIR)/src/turbulence
+SOLVER_DIR = $(SUMB_DIR)/src/solver
 
 SUMB_MODDIR = $(SUMB_DIR)/mod
 SUMB_OBJDIR = $(SUMB_DIR)/obj
@@ -71,7 +72,7 @@ MAKE_CLEAN_ARGUMENTS = *~ *.o *.mod *.il *.stb
 #      *                                                                *
 #      ******************************************************************
 
-FF90_LOCAL_FLAGS = -I$(SUMB_MODDIR) -I$(INPUT_DIR) -I$(TURB_DIR)
+FF90_LOCAL_FLAGS = -I$(SUMB_MODDIR) -I$(INPUT_DIR) -I$(TURB_DIR) -I$(SOLVER_DIR)
 
 FF90_ALL_FLAGS   = $(FF90_LOCAL_FLAGS) $(CGNS_INCLUDE_FLAGS) \
 		   $(FF90_FLAGS) $(ADDITIONAL_FF90_FLAGS) $(PV3_FLAGS) \
