@@ -50,7 +50,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   integer(kind=intType) :: n_stencil, i_stencil, n_force_stencil
   integer(kind=intType), dimension(:, :), pointer :: stencil, force_stencil
   real(kind=realType) :: delta_x, one_over_dx
-
+  real(kind=realType), dimension(:,:), allocatable :: blk
 #ifdef USE_COMPLEX
   complex(kind=realType) :: alpha, beta, sepSensor, Cavitation
   complex(kind=realType) :: alphad, betad, sepSensord, Cavitationd
@@ -73,7 +73,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   else
      nState = nw
   endif
-  
+  allocate(blk(nState, nState))
   ! Exchange data and call the residual to make sure its up to date
   ! withe current w
   call whalo2(1_intType, 1_intType, nw, .True., .True., .True.)
@@ -478,25 +478,22 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
                                    ! If we're doing the PC and we want
                                    ! to use TS diagonal form, only set
                                    ! values for on-time insintance
-                                   call setBlock(&
-                                        flowDomsd(nn, 1, sps)%&
-                                        dw_deriv(i+ii, j+jj, k+kk, :, :))
+                                   blk = flowDomsd(nn, 1, sps)%dw_deriv(i+ii, j+jj, k+kk, :, :)
+                                   call setBlock(blk)
                                 else
                                    ! Otherwise loop over spectral
                                    ! instances and set all.
                                    do sps2=1, nTimeIntervalsSpectral
                                       irow = flowDoms(nn, level, sps2)%&
                                            globalCell(i+ii, j+jj, k+kk)
-                                      call setBlock(&
-                                           flowDomsd(nn, 1, sps2)%&
-                                           dw_deriv(i+ii, j+jj, k+kk, :, :))
+                                      blk = flowDomsd(nn, 1, sps2)%dw_deriv(i+ii, j+jj, k+kk, :, :)
+                                      call setBlock(blk)
                                    end do
                                 end if useDiagPC
                              else
                                 ! ALl other cells just set.
-                                call setBlock(&
-                                     flowDomsd(nn, 1, sps)%&
-                                     dw_deriv(i+ii, j+jj, k+kk, :, :))
+                                blk = flowDomsd(nn, 1, sps)%dw_deriv(i+ii, j+jj, k+kk, :, :)
+                                call setBlock(blk)
                              end if centerCell
                           end if onBlock
                        end do stencilLoop
@@ -555,6 +552,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
      restrictEddyVis = .false.
      if( eddyModel ) restrictEddyVis = .true.
   end if
+  deallocate(blk)
 
 contains
 
@@ -597,7 +595,8 @@ contains
 
     if (.not. zeroFlag) then
        if (useTranspose) then
-          call MatSetValuesBlocked(matrix, 1, icol, 1, irow, transpose(blk), &
+          blk = transpose(blk)
+          call MatSetValuesBlocked(matrix, 1, icol, 1, irow, blk, &
                ADD_VALUES, ierr)
           call EChk(ierr, __FILE__, __LINE__)
        else

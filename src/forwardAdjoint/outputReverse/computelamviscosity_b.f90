@@ -2,8 +2,8 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of computelamviscosity in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *p *w *rlv tref rgas
-   !   with respect to varying inputs: *p *w muref tref rgas
+   !   gradient     of useful results: tref rgas *p *w *rlv
+   !   with respect to varying inputs: muref tref rgas *p *w
    !   Plus diff mem management of: p:in w:in rlv:in
    !
    !      ******************************************************************

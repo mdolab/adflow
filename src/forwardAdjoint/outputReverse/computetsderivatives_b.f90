@@ -4,9 +4,9 @@
    !  Differentiation of computetsderivatives in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
    !   gradient     of useful results: lengthref dragdirection liftdirection
    !                moment dcdalphadot coef0 force dcdalpha
-   !   with respect to varying inputs: machgrid lengthref machcoef
-   !                dragdirection liftdirection gammainf pinf rhoinfdim
-   !                pinfdim pref moment force
+   !   with respect to varying inputs: gammainf pinf rhoinfdim pinfdim
+   !                pref machgrid lengthref machcoef dragdirection
+   !                liftdirection moment force
    !
    !     ******************************************************************
    !     *                                                                *
@@ -292,10 +292,10 @@
    basecoefd(sps, 1) = 0.0_8
    END DO
    ELSE
-   machgridd = 0.0_8
    gammainfd = 0.0_8
    rhoinfdimd = 0.0_8
    pinfdimd = 0.0_8
+   machgridd = 0.0_8
    factmomentd = 0.0_8
    factd = 0.0_8
    END IF

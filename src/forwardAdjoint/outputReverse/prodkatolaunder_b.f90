@@ -2,8 +2,10 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of prodkatolaunder in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *dw *w *vol *si *sj *sk timeref
-   !   with respect to varying inputs: *dw *w *vol *si *sj *sk timeref
+   !   gradient     of useful results: timeref *dw *w *vol *si *sj
+   !                *sk
+   !   with respect to varying inputs: timeref *dw *w *vol *si *sj
+   !                *sk
    !   Plus diff mem management of: dw:in w:in vol:in si:in sj:in
    !                sk:in
    !

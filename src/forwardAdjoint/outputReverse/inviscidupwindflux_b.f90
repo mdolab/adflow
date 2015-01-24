@@ -2,11 +2,9 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of inviscidupwindflux in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *p *gamma *w *si *sj *sk *fw
-   !   with respect to varying inputs: *p *gamma *w *si *sj *sk tref
-   !                rgas
-   !   Plus diff mem management of: p:in gamma:in w:in si:in sj:in
-   !                sk:in fw:in
+   !   gradient     of useful results: *p *w *si *sj *sk *fw
+   !   with respect to varying inputs: tref rgas *p *w *si *sj *sk
+   !   Plus diff mem management of: p:in w:in si:in sj:in sk:in fw:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -53,7 +51,7 @@
    INTEGER(kind=inttype) :: i, j, k, ind
    INTEGER(kind=inttype) :: limused, riemannused
    REAL(kind=realtype) :: sx, sy, sz, omk, opk, sfil, gammaface
-   REAL(kind=realtype) :: sxd, syd, szd, gammafaced
+   REAL(kind=realtype) :: sxd, syd, szd
    REAL(kind=realtype) :: factminmod, sface
    REAL(kind=realtype), DIMENSION(nw) :: left, right
    REAL(kind=realtype), DIMENSION(nw) :: leftd, rightd
@@ -358,8 +356,6 @@
    gammaface = half*(gamma(i, j, k)+gamma(i, j, k+1))
    por = pork(i, j, k)
    CALL RIEMANNFLUX_B(left, leftd, right, rightd, flux, fluxd)
-   gammad(i, j, k) = gammad(i, j, k) + half*gammafaced
-   gammad(i, j, k+1) = gammad(i, j, k+1) + half*gammafaced
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    CALL POPREAL8(right(itu1))
@@ -429,8 +425,6 @@
    gammaface = half*(gamma(i, j, k)+gamma(i, j+1, k))
    por = porj(i, j, k)
    CALL RIEMANNFLUX_B(left, leftd, right, rightd, flux, fluxd)
-   gammad(i, j, k) = gammad(i, j, k) + half*gammafaced
-   gammad(i, j+1, k) = gammad(i, j+1, k) + half*gammafaced
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    CALL POPREAL8(right(itu1))
@@ -500,8 +494,6 @@
    gammaface = half*(gamma(i, j, k)+gamma(i+1, j, k))
    por = pori(i, j, k)
    CALL RIEMANNFLUX_B(left, leftd, right, rightd, flux, fluxd)
-   gammad(i, j, k) = gammad(i, j, k) + half*gammafaced
-   gammad(i+1, j, k) = gammad(i+1, j, k) + half*gammafaced
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    CALL POPREAL8(right(itu1))
@@ -822,8 +814,6 @@
    gammaface = half*(gamma(i, j, k)+gamma(i, j, k+1))
    por = pork(i, j, k)
    CALL RIEMANNFLUX_B(left, leftd, right, rightd, flux, fluxd)
-   gammad(i, j, k) = gammad(i, j, k) + half*gammafaced
-   gammad(i, j, k+1) = gammad(i, j, k+1) + half*gammafaced
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) CALL POPREAL8(sface)
    CALL POPREAL8(sz)
@@ -930,8 +920,6 @@
    gammaface = half*(gamma(i, j, k)+gamma(i, j+1, k))
    por = porj(i, j, k)
    CALL RIEMANNFLUX_B(left, leftd, right, rightd, flux, fluxd)
-   gammad(i, j, k) = gammad(i, j, k) + half*gammafaced
-   gammad(i, j+1, k) = gammad(i, j+1, k) + half*gammafaced
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) CALL POPREAL8(sface)
    CALL POPREAL8(sz)
@@ -1038,8 +1026,6 @@
    gammaface = half*(gamma(i, j, k)+gamma(i+1, j, k))
    por = pori(i, j, k)
    CALL RIEMANNFLUX_B(left, leftd, right, rightd, flux, fluxd)
-   gammad(i, j, k) = gammad(i, j, k) + half*gammafaced
-   gammad(i+1, j, k) = gammad(i+1, j, k) + half*gammafaced
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) CALL POPREAL8(sface)
    CALL POPREAL8(sz)
@@ -2122,8 +2108,8 @@
    END SUBROUTINE LEFTRIGHTSTATE
    !  Differentiation of riemannflux in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
    !   gradient     of useful results: tref rgas flux left right
-   !   with respect to varying inputs: tref rgas gammaface sx sy sz
-   !                flux left right
+   !   with respect to varying inputs: tref rgas sx sy sz flux left
+   !                right
    !        ================================================================
    SUBROUTINE RIEMANNFLUX_B(left, leftd, right, rightd, flux, fluxd)
    IMPLICIT NONE
@@ -2150,7 +2136,6 @@
    REAL(kind=realtype) :: ovaavg, ova2avg, area, eta
    REAL(kind=realtype) :: ovaavgd, ova2avgd, aread, etad
    REAL(kind=realtype) :: gm1, gm53
-   REAL(kind=realtype) :: gm1d, gm53d
    REAL(kind=realtype) :: lam1, lam2, lam3
    REAL(kind=realtype) :: lam1d, lam2d, lam3d
    REAL(kind=realtype) :: abv1, abv2, abv3, abv4, abv5, abv6, abv7
@@ -2446,9 +2431,7 @@
    drud = sx*abv5d - uavg*tempd19 + lam3*tempd16
    uavgd = abv6*tempd16 - dru*tempd19
    drd = alphaavg*tempd19 - unavg*abv5d + lam3*tempd17
-   gm1d = (alphaavg*dr-uavg*dru-vavg*drv+dre-wavg*drw)*abv4d
    alphaavgd = dr*tempd19
-   gm53d = -(drk*abv4d)
    drkd = -(gm53*abv4d)
    abv1d = abv3d
    lam1d = half*abv1d + half*abv2d
@@ -2520,22 +2503,22 @@
    ELSE
    x2d = -abs2d
    END IF
-   temp1 = gammaface*left(irhoe)/left(irho)
-   IF (temp1 .EQ. 0.0_8) THEN
+   temp1 = left(irhoe)/left(irho)
+   IF (gammaface*temp1 .EQ. 0.0_8) THEN
    tempd9 = 0.0
    ELSE
-   tempd9 = x2d/(2.0*SQRT(temp1)*left(irho))
+   tempd9 = gammaface*x2d/(2.0*SQRT(gammaface*temp1)*left(irho))
    END IF
-   temp2 = gammaface*right(irhoe)/right(irho)
-   IF (temp2 .EQ. 0.0_8) THEN
+   temp2 = right(irhoe)/right(irho)
+   IF (gammaface*temp2 .EQ. 0.0_8) THEN
    tempd10 = 0.0
    ELSE
-   tempd10 = -(x2d/(2.0*SQRT(temp2)*right(irho)))
+   tempd10 = -(gammaface*x2d/(2.0*SQRT(gammaface*temp2)*right(&
+   &           irho)))
    END IF
-   gammafaced = right(irhoe)*tempd10 + left(irhoe)*tempd9
-   leftd(irhoe) = leftd(irhoe) + gammaface*tempd9
+   leftd(irhoe) = leftd(irhoe) + tempd9
    leftd(irho) = leftd(irho) - temp1*tempd9
-   rightd(irhoe) = rightd(irhoe) + gammaface*tempd10
+   rightd(irhoe) = rightd(irhoe) + tempd10
    rightd(irho) = rightd(irho) - temp2*tempd10
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
@@ -2571,15 +2554,11 @@
    szd = szd + wavg*unavgd
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   gm1d = gm1d + (havg-alphaavg)*a2avgd
    havgd = havgd + gm1*a2avgd
    alphaavgd = alphaavgd - gm1*a2avgd
-   gm53d = gm53d - kavg*a2avgd
    kavgd = -(gm53*a2avgd)
    ELSE
-   gm53d = gm53d + kavg*a2avgd
    kavgd = gm53*a2avgd
-   gm1d = gm1d - (havg-alphaavg)*a2avgd
    havgd = havgd - gm1*a2avgd
    alphaavgd = alphaavgd + gm1*a2avgd
    END IF
@@ -2691,50 +2670,31 @@
    IF (.NOT.left(irho) .EQ. 0.0_8) leftd(irho) = leftd(irho) + z1ld&
    &           /(2.0*SQRT(left(irho)))
    CASE (turkel) 
-   gammafaced = 0.0_8
    sxd = 0.0_8
    syd = 0.0_8
    szd = 0.0_8
-   gm1d = 0.0_8
-   gm53d = 0.0_8
    CASE (choimerkle) 
-   gammafaced = 0.0_8
    sxd = 0.0_8
    syd = 0.0_8
    szd = 0.0_8
-   gm1d = 0.0_8
-   gm53d = 0.0_8
    CASE DEFAULT
-   gammafaced = 0.0_8
    sxd = 0.0_8
    syd = 0.0_8
    szd = 0.0_8
-   gm1d = 0.0_8
-   gm53d = 0.0_8
    END SELECT
    CASE (vanleer) 
-   gammafaced = 0.0_8
    sxd = 0.0_8
    syd = 0.0_8
    szd = 0.0_8
-   gm1d = 0.0_8
-   gm53d = 0.0_8
    CASE (ausmdv) 
-   gammafaced = 0.0_8
    sxd = 0.0_8
    syd = 0.0_8
    szd = 0.0_8
-   gm1d = 0.0_8
-   gm53d = 0.0_8
    CASE DEFAULT
-   gammafaced = 0.0_8
    sxd = 0.0_8
    syd = 0.0_8
    szd = 0.0_8
-   gm1d = 0.0_8
-   gm53d = 0.0_8
    END SELECT
-   gammafaced = gammafaced + gm1d + gm53d
    END SUBROUTINE RIEMANNFLUX_B
    !        ================================================================
    SUBROUTINE RIEMANNFLUX(left, right, flux)

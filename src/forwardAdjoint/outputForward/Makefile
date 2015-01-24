@@ -100,21 +100,6 @@ FF90_OBJECTS2 = allnodalgradients_d.o\
                 setssmetric_d.o\
                 setxxssrhodd2wall_d.o\
 
-#		applyallbc_block_d.o\
-		bcsymm_d.o\
-		bceulerwall_d.o\
-                setbcpointers_d.o\
-                setss_d.o\
-                setssmetric_d.o\
-                setxxssrhodd2wall_d.o\
-                setgamma_d.o\
-                setpp3pp4_d.o\
-		bcfarfield_d.o\
-                computeetot_d.o\
-		extrapolate2ndhalo_d.o\
-		bcnswalladiabatic_d.o \
-		bcnswallisothermal_d.o \
-
 #      ******************************************************************
 #      *                                                                *
 #      * Targets for make.                                              *

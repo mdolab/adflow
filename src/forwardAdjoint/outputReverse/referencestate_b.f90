@@ -2,11 +2,11 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of referencestate in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: veldirfreestream machcoef gammainf
-   !                pinf timeref rhoinf muref rhoinfdim tref muinf
-   !                uinf rgas pinfdim pref
-   !   with respect to varying inputs: mach tempfreestream reynolds
-   !                veldirfreestream machcoef pref
+   !   gradient     of useful results: gammainf pinf timeref rhoinf
+   !                muref rhoinfdim tref muinf uinf rgas pinfdim pref
+   !                veldirfreestream machcoef
+   !   with respect to varying inputs: pref mach tempfreestream reynolds
+   !                veldirfreestream machcoef
    !
    !      ******************************************************************
    !      *                                                                *

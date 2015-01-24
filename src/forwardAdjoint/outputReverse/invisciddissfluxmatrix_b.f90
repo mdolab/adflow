@@ -2,10 +2,9 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of invisciddissfluxmatrix in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *p *gamma *w *si *sj *sk *fw
-   !   with respect to varying inputs: *p *gamma *w *si *sj *sk pinfcorr
-   !   Plus diff mem management of: p:in gamma:in w:in si:in sj:in
-   !                sk:in fw:in
+   !   gradient     of useful results: *p *w *si *sj *sk *fw
+   !   with respect to varying inputs: pinfcorr *p *w *si *sj *sk
+   !   Plus diff mem management of: p:in w:in si:in sj:in sk:in fw:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -53,7 +52,6 @@
    REAL(kind=realtype) :: plimd, sfaced
    REAL(kind=realtype) :: sfil, fis2, fis4
    REAL(kind=realtype) :: gammaavg, gm1, ovgm1, gm53
-   REAL(kind=realtype) :: gammaavgd, gm1d, ovgm1d, gm53d
    REAL(kind=realtype) :: ppor, rrad, dis2, dis4
    REAL(kind=realtype) :: rradd, dis2d, dis4d
    REAL(kind=realtype) :: dp1, dp2, ddw, tmp, fs
@@ -104,7 +102,6 @@
    REAL(kind=realtype) :: tempd45
    REAL(kind=realtype) :: temp22
    REAL(kind=realtype) :: tempd44
-   REAL(kind=realtype) :: temp59
    REAL(kind=realtype) :: temp21
    REAL(kind=realtype) :: tempd43
    REAL(kind=realtype) :: temp58
@@ -112,8 +109,8 @@
    REAL(kind=realtype) :: tempd42
    REAL(kind=realtype) :: temp57
    REAL(kind=realtype) :: abs1d
-   REAL(kind=realtype) :: temp56
    REAL(kind=realtype) :: tempd41
+   REAL(kind=realtype) :: temp56
    REAL(kind=realtype) :: min6
    REAL(kind=realtype) :: tempd40
    REAL(kind=realtype) :: temp55
@@ -169,8 +166,8 @@
    REAL(kind=realtype) :: temp45
    REAL(kind=realtype) :: temp44
    REAL(kind=realtype) :: max1d
-   REAL(kind=realtype) :: temp43
    REAL(kind=realtype) :: y6d
+   REAL(kind=realtype) :: temp43
    REAL(kind=realtype) :: temp42
    REAL(kind=realtype) :: temp41
    REAL(kind=realtype) :: temp40
@@ -225,19 +222,11 @@
    REAL(kind=realtype) :: temp31
    REAL(kind=realtype) :: abs3
    REAL(kind=realtype) :: temp30
-   REAL(kind=realtype) :: tempd52
    REAL(kind=realtype) :: abs2
    REAL(kind=realtype) :: abs2d
-   REAL(kind=realtype) :: tempd51
    REAL(kind=realtype) :: abs1
-   REAL(kind=realtype) :: tempd50
    REAL(kind=realtype) :: abs0
-   REAL(kind=realtype) :: temp64
-   REAL(kind=realtype) :: temp63
    REAL(kind=realtype) :: max3d
-   REAL(kind=realtype) :: temp62
-   REAL(kind=realtype) :: temp61
-   REAL(kind=realtype) :: temp60
    REAL(kind=realtype) :: abs5d
    REAL(kind=realtype) :: abs12d
    REAL(kind=realtype) :: temp
@@ -259,8 +248,8 @@
    REAL(kind=realtype) :: tempd17
    REAL(kind=realtype) :: y2
    REAL(kind=realtype) :: temp5
-   REAL(kind=realtype) :: tempd16
    REAL(kind=realtype) :: x3d
+   REAL(kind=realtype) :: tempd16
    REAL(kind=realtype) :: y1
    REAL(kind=realtype) :: y1d
    REAL(kind=realtype) :: temp4
@@ -451,16 +440,12 @@
    IF (correctfork) THEN
    ddw = w(i+1, j, k, irho)*w(i+1, j, k, itu1) - w(i, j, k, &
    &             irho)*w(i, j, k, itu1)
-   CALL PUSHREAL8(drk)
    drk = dis2*ddw - dis4*(w(i+2, j, k, irho)*w(i+2, j, k, itu1)&
    &             -w(i-1, j, k, irho)*w(i-1, j, k, itu1)-three*ddw)
-   CALL PUSHREAL8(kavg)
    kavg = half*(w(i, j, k, itu1)+w(i+1, j, k, itu1))
    CALL PUSHCONTROL1B(1)
    ELSE
-   CALL PUSHREAL8(drk)
    drk = zero
-   CALL PUSHREAL8(kavg)
    kavg = zero
    CALL PUSHCONTROL1B(0)
    END IF
@@ -468,6 +453,7 @@
    ! expressions in which it occurs.
    gammaavg = half*(gamma(i+1, j, k)+gamma(i, j, k))
    gm1 = gammaavg - one
+   ovgm1 = one/gm1
    gm53 = gammaavg - five*third
    ! Compute the average state at the interface.
    uavg = half*(w(i+1, j, k, ivx)+w(i, j, k, ivx))
@@ -501,6 +487,8 @@
    CALL PUSHREAL8(sz)
    sz = sz*tmp
    alphaavg = half*(uavg**2+vavg**2+wavg**2)
+   CALL PUSHREAL8(havg)
+   havg = alphaavg + ovgm1*(a2avg-gm53*kavg)
    CALL PUSHREAL8(aavg)
    aavg = SQRT(a2avg)
    unavg = uavg*sx + vavg*sy + wavg*sz
@@ -734,16 +722,12 @@
    IF (correctfork) THEN
    ddw = w(i, j+1, k, irho)*w(i, j+1, k, itu1) - w(i, j, k, &
    &             irho)*w(i, j, k, itu1)
-   CALL PUSHREAL8(drk)
    drk = dis2*ddw - dis4*(w(i, j+2, k, irho)*w(i, j+2, k, itu1)&
    &             -w(i, j-1, k, irho)*w(i, j-1, k, itu1)-three*ddw)
-   CALL PUSHREAL8(kavg)
    kavg = half*(w(i, j, k, itu1)+w(i, j+1, k, itu1))
    CALL PUSHCONTROL1B(1)
    ELSE
-   CALL PUSHREAL8(drk)
    drk = zero
-   CALL PUSHREAL8(kavg)
    kavg = zero
    CALL PUSHCONTROL1B(0)
    END IF
@@ -751,6 +735,7 @@
    ! expressions in which it occurs.
    gammaavg = half*(gamma(i, j+1, k)+gamma(i, j, k))
    gm1 = gammaavg - one
+   ovgm1 = one/gm1
    gm53 = gammaavg - five*third
    ! Compute the average state at the interface.
    uavg = half*(w(i, j+1, k, ivx)+w(i, j, k, ivx))
@@ -784,6 +769,8 @@
    CALL PUSHREAL8(sz)
    sz = sz*tmp
    alphaavg = half*(uavg**2+vavg**2+wavg**2)
+   CALL PUSHREAL8(havg)
+   havg = alphaavg + ovgm1*(a2avg-gm53*kavg)
    CALL PUSHREAL8(aavg)
    aavg = SQRT(a2avg)
    unavg = uavg*sx + vavg*sy + wavg*sz
@@ -1017,16 +1004,12 @@
    IF (correctfork) THEN
    ddw = w(i, j, k+1, irho)*w(i, j, k+1, itu1) - w(i, j, k, &
    &             irho)*w(i, j, k, itu1)
-   CALL PUSHREAL8(drk)
    drk = dis2*ddw - dis4*(w(i, j, k+2, irho)*w(i, j, k+2, itu1)&
    &             -w(i, j, k-1, irho)*w(i, j, k-1, itu1)-three*ddw)
-   CALL PUSHREAL8(kavg)
    kavg = half*(w(i, j, k+1, itu1)+w(i, j, k, itu1))
    CALL PUSHCONTROL1B(1)
    ELSE
-   CALL PUSHREAL8(drk)
    drk = zero
-   CALL PUSHREAL8(kavg)
    kavg = zero
    CALL PUSHCONTROL1B(0)
    END IF
@@ -1034,6 +1017,7 @@
    ! expressions in which it occurs.
    gammaavg = half*(gamma(i, j, k+1)+gamma(i, j, k))
    gm1 = gammaavg - one
+   ovgm1 = one/gm1
    gm53 = gammaavg - five*third
    ! Compute the average state at the interface.
    uavg = half*(w(i, j, k+1, ivx)+w(i, j, k, ivx))
@@ -1067,6 +1051,8 @@
    CALL PUSHREAL8(sz)
    sz = sz*tmp
    alphaavg = half*(uavg**2+vavg**2+wavg**2)
+   CALL PUSHREAL8(havg)
+   havg = alphaavg + ovgm1*(a2avg-gm53*kavg)
    CALL PUSHREAL8(aavg)
    aavg = SQRT(a2avg)
    unavg = uavg*sx + vavg*sy + wavg*sz
@@ -1161,20 +1147,14 @@
    dp2d = dp1d
    fsd = fwd(i, j, k+1, irhoe) - fwd(i, j, k, irhoe)
    wavg = half*(w(i, j, k+1, ivz)+w(i, j, k, ivz))
-   gammaavg = half*(gamma(i, j, k+1)+gamma(i, j, k))
-   gm1 = gammaavg - one
    vavg = half*(w(i, j, k+1, ivy)+w(i, j, k, ivy))
    uavg = half*(w(i, j, k+1, ivx)+w(i, j, k, ivx))
    unavg = uavg*sx + vavg*sy + wavg*sz
    abv5 = sx*dru + sy*drv + sz*drw - unavg*dr
-   gm53 = gammaavg - five*third
    ovaavg = one/aavg
    ova2avg = one/a2avg
    abv6 = abv3*abv4*ova2avg + abv2*abv5*ovaavg
    abv7 = abv2*abv4*ovaavg + abv3*abv5
-   ovgm1 = one/gm1
-   alphaavg = half*(uavg**2+vavg**2+wavg**2)
-   havg = alphaavg + ovgm1*(a2avg-gm53*kavg)
    lam3d = dre*fsd
    dred = lam3*fsd
    havgd = abv6*fsd
@@ -1215,19 +1195,21 @@
    syd = syd + drv*abv5d
    szd = szd + drw*abv5d
    unavgd = unavgd - dr*abv5d
+   gammaavg = half*(gamma(i, j, k+1)+gamma(i, j, k))
+   gm1 = gammaavg - one
+   gm53 = gammaavg - five*third
+   alphaavg = half*(uavg**2+vavg**2+wavg**2)
    CALL POPREAL8(abv4)
-   tempd52 = gm1*abv4d
-   drd = alphaavg*tempd52 - unavg*abv5d + lam3*fsd
-   drud = drud + sx*abv5d - uavg*tempd52
-   drvd = drvd + sy*abv5d - vavg*tempd52
-   drwd = drwd + sz*abv5d - wavg*tempd52
-   gm1d = (alphaavg*dr-uavg*dru-vavg*drv+dre-wavg*drw)*abv4d
-   alphaavgd = dr*tempd52
-   uavgd = uavgd - dru*tempd52
-   vavgd = vavgd - drv*tempd52
-   dred = dred + tempd52
-   wavgd = wavgd - drw*tempd52
-   gm53d = -(drk*abv4d)
+   tempd49 = gm1*abv4d
+   drd = alphaavg*tempd49 - unavg*abv5d + lam3*fsd
+   drud = drud + sx*abv5d - uavg*tempd49
+   drvd = drvd + sy*abv5d - vavg*tempd49
+   drwd = drwd + sz*abv5d - wavg*tempd49
+   alphaavgd = dr*tempd49
+   uavgd = uavgd - dru*tempd49
+   vavgd = vavgd - drv*tempd49
+   dred = dred + tempd49
+   wavgd = wavgd - drw*tempd49
    drkd = -(gm53*abv4d)
    CALL POPREAL8(abv3)
    abv1d = abv3d
@@ -1299,25 +1281,24 @@
    sfaced = 0.0_8
    END IF
    alphaavgd = alphaavgd + havgd
-   tempd51 = half*alphaavgd
-   tempd50 = ovgm1*havgd
+   tempd48 = half*alphaavgd
+   ovgm1 = one/gm1
    aavgd = aavgd - one*ovaavgd/aavg**2
    IF (a2avg .EQ. 0.0_8) THEN
-   a2avgd = tempd50 - one*ova2avgd/a2avg**2
+   a2avgd = ovgm1*havgd - one*ova2avgd/a2avg**2
    ELSE
-   a2avgd = aavgd/(2.0*SQRT(a2avg)) + tempd50 - one*ova2avgd/&
-   &             a2avg**2
+   a2avgd = aavgd/(2.0*SQRT(a2avg)) + ovgm1*havgd - one*&
+   &             ova2avgd/a2avg**2
    END IF
-   uavgd = uavgd + 2*uavg*tempd51 + sx*unavgd
+   uavgd = uavgd + 2*uavg*tempd48 + sx*unavgd
    sxd = sxd + uavg*unavgd
-   vavgd = vavgd + 2*vavg*tempd51 + sy*unavgd
+   vavgd = vavgd + 2*vavg*tempd48 + sy*unavgd
    syd = syd + vavg*unavgd
-   wavgd = wavgd + 2*wavg*tempd51 + sz*unavgd
+   wavgd = wavgd + 2*wavg*tempd48 + sz*unavgd
    szd = szd + wavg*unavgd
    CALL POPREAL8(aavg)
-   ovgm1d = (a2avg-gm53*kavg)*havgd
-   gm53d = gm53d - kavg*tempd50
-   kavgd = -(gm53*tempd50)
+   CALL POPREAL8(havg)
+   kavgd = -(ovgm1*gm53*havgd)
    CALL POPREAL8(sz)
    CALL POPREAL8(sy)
    CALL POPREAL8(sx)
@@ -1333,16 +1314,15 @@
    ELSE
    CALL POPREAL8(max3)
    END IF
-   gm1d = gm1d - one*ovgm1d/gm1**2
    CALL POPREAL8(area)
    IF (sx**2 + sy**2 + sz**2 .EQ. 0.0_8) THEN
-   tempd47 = 0.0
+   tempd45 = 0.0
    ELSE
-   tempd47 = aread/(2.0*SQRT(sx**2+sy**2+sz**2))
+   tempd45 = aread/(2.0*SQRT(sx**2+sy**2+sz**2))
    END IF
-   sxd = sxd + 2*sx*tempd47
-   syd = syd + 2*sy*tempd47
-   szd = szd + 2*sz*tempd47
+   sxd = sxd + 2*sx*tempd45
+   syd = syd + 2*sy*tempd45
+   szd = szd + 2*sz*tempd45
    CALL POPREAL8(sz)
    skd(i, j, k, 3) = skd(i, j, k, 3) + szd
    CALL POPREAL8(sy)
@@ -1350,52 +1330,41 @@
    CALL POPREAL8(sx)
    skd(i, j, k, 1) = skd(i, j, k, 1) + sxd
    CALL POPREAL8(a2avg)
-   temp64 = w(i, j, k, irho)
-   temp63 = w(i, j, k+1, irho)
-   temp62 = p(i, j, k+1)
-   temp61 = gamma(i, j, k+1)
-   tempd48 = half*a2avgd/temp63
-   tempd49 = half*a2avgd/temp64
-   gammad(i, j, k+1) = gammad(i, j, k+1) + temp62*tempd48
-   pd(i, j, k+1) = pd(i, j, k+1) + temp61*tempd48
-   wd(i, j, k+1, irho) = wd(i, j, k+1, irho) - temp61*temp62*&
-   &           tempd48/temp63
-   gammad(i, j, k) = gammad(i, j, k) + p(i, j, k)*tempd49
-   pd(i, j, k) = pd(i, j, k) + gamma(i, j, k)*tempd49
-   wd(i, j, k, irho) = wd(i, j, k, irho) - gamma(i, j, k)*p(i, j&
-   &           , k)*tempd49/temp64
+   temp58 = w(i, j, k, irho)
+   temp57 = w(i, j, k+1, irho)
+   tempd46 = gamma(i, j, k+1)*half*a2avgd/temp57
+   tempd47 = gamma(i, j, k)*half*a2avgd/temp58
+   pd(i, j, k+1) = pd(i, j, k+1) + tempd46
+   wd(i, j, k+1, irho) = wd(i, j, k+1, irho) - p(i, j, k+1)*&
+   &           tempd46/temp57
+   pd(i, j, k) = pd(i, j, k) + tempd47
+   wd(i, j, k, irho) = wd(i, j, k, irho) - p(i, j, k)*tempd47/&
+   &           temp58
    wd(i, j, k+1, ivz) = wd(i, j, k+1, ivz) + half*wavgd
    wd(i, j, k, ivz) = wd(i, j, k, ivz) + half*wavgd
    wd(i, j, k+1, ivy) = wd(i, j, k+1, ivy) + half*vavgd
    wd(i, j, k, ivy) = wd(i, j, k, ivy) + half*vavgd
    wd(i, j, k+1, ivx) = wd(i, j, k+1, ivx) + half*uavgd
    wd(i, j, k, ivx) = wd(i, j, k, ivx) + half*uavgd
-   gammaavgd = gm1d + gm53d
-   gammad(i, j, k+1) = gammad(i, j, k+1) + half*gammaavgd
-   gammad(i, j, k) = gammad(i, j, k) + half*gammaavgd
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   CALL POPREAL8(kavg)
-   CALL POPREAL8(drk)
    dis2d = 0.0_8
    dis4d = 0.0_8
    ELSE
-   CALL POPREAL8(kavg)
    wd(i, j, k+1, itu1) = wd(i, j, k+1, itu1) + half*kavgd
    wd(i, j, k, itu1) = wd(i, j, k, itu1) + half*kavgd
-   CALL POPREAL8(drk)
-   temp60 = w(i, j, k-1, itu1)
-   temp59 = w(i, j, k-1, irho)
-   temp58 = w(i, j, k+2, itu1)
-   temp57 = w(i, j, k+2, irho)
-   tempd46 = -(dis4*drkd)
+   temp56 = w(i, j, k-1, itu1)
+   temp55 = w(i, j, k-1, irho)
+   temp54 = w(i, j, k+2, itu1)
+   temp53 = w(i, j, k+2, irho)
+   tempd44 = -(dis4*drkd)
    dis2d = ddw*drkd
-   ddwd = dis2*drkd - three*tempd46
-   dis4d = -((temp57*temp58-temp59*temp60-three*ddw)*drkd)
-   wd(i, j, k+2, irho) = wd(i, j, k+2, irho) + temp58*tempd46
-   wd(i, j, k+2, itu1) = wd(i, j, k+2, itu1) + temp57*tempd46
-   wd(i, j, k-1, irho) = wd(i, j, k-1, irho) - temp60*tempd46
-   wd(i, j, k-1, itu1) = wd(i, j, k-1, itu1) - temp59*tempd46
+   ddwd = dis2*drkd - three*tempd44
+   dis4d = -((temp53*temp54-temp55*temp56-three*ddw)*drkd)
+   wd(i, j, k+2, irho) = wd(i, j, k+2, irho) + temp54*tempd44
+   wd(i, j, k+2, itu1) = wd(i, j, k+2, itu1) + temp53*tempd44
+   wd(i, j, k-1, irho) = wd(i, j, k-1, irho) - temp56*tempd44
+   wd(i, j, k-1, itu1) = wd(i, j, k-1, itu1) - temp55*tempd44
    wd(i, j, k+1, irho) = wd(i, j, k+1, irho) + w(i, j, k+1, &
    &             itu1)*ddwd
    wd(i, j, k+1, itu1) = wd(i, j, k+1, itu1) + w(i, j, k+1, &
@@ -1407,29 +1376,29 @@
    END IF
    ddw = w(i, j, k+1, irhoe) - w(i, j, k, irhoe)
    CALL POPREAL8(dre)
-   tempd41 = -(dis4*dred)
+   tempd39 = -(dis4*dred)
    dis2d = dis2d + ddw*dred
-   ddwd = dis2*dred - three*tempd41
+   ddwd = dis2*dred - three*tempd39
    dis4d = dis4d - (w(i, j, k+2, irhoe)-w(i, j, k-1, irhoe)-three&
    &           *ddw)*dred
-   wd(i, j, k+2, irhoe) = wd(i, j, k+2, irhoe) + tempd41
-   wd(i, j, k-1, irhoe) = wd(i, j, k-1, irhoe) - tempd41
+   wd(i, j, k+2, irhoe) = wd(i, j, k+2, irhoe) + tempd39
+   wd(i, j, k-1, irhoe) = wd(i, j, k-1, irhoe) - tempd39
    CALL POPREAL8(ddw)
    wd(i, j, k+1, irhoe) = wd(i, j, k+1, irhoe) + ddwd
    wd(i, j, k, irhoe) = wd(i, j, k, irhoe) - ddwd
    CALL POPREAL8(drw)
-   temp56 = w(i, j, k-1, ivz)
-   temp55 = w(i, j, k-1, irho)
-   temp54 = w(i, j, k+2, ivz)
-   temp53 = w(i, j, k+2, irho)
-   tempd42 = -(dis4*drwd)
+   temp52 = w(i, j, k-1, ivz)
+   temp51 = w(i, j, k-1, irho)
+   temp50 = w(i, j, k+2, ivz)
+   temp49 = w(i, j, k+2, irho)
+   tempd40 = -(dis4*drwd)
    dis2d = dis2d + ddw*drwd
-   ddwd = dis2*drwd - three*tempd42
-   dis4d = dis4d - (temp53*temp54-temp55*temp56-three*ddw)*drwd
-   wd(i, j, k+2, irho) = wd(i, j, k+2, irho) + temp54*tempd42
-   wd(i, j, k+2, ivz) = wd(i, j, k+2, ivz) + temp53*tempd42
-   wd(i, j, k-1, irho) = wd(i, j, k-1, irho) - temp56*tempd42
-   wd(i, j, k-1, ivz) = wd(i, j, k-1, ivz) - temp55*tempd42
+   ddwd = dis2*drwd - three*tempd40
+   dis4d = dis4d - (temp49*temp50-temp51*temp52-three*ddw)*drwd
+   wd(i, j, k+2, irho) = wd(i, j, k+2, irho) + temp50*tempd40
+   wd(i, j, k+2, ivz) = wd(i, j, k+2, ivz) + temp49*tempd40
+   wd(i, j, k-1, irho) = wd(i, j, k-1, irho) - temp52*tempd40
+   wd(i, j, k-1, ivz) = wd(i, j, k-1, ivz) - temp51*tempd40
    CALL POPREAL8(ddw)
    wd(i, j, k+1, irho) = wd(i, j, k+1, irho) + w(i, j, k+1, ivz)*&
    &           ddwd
@@ -1438,18 +1407,18 @@
    wd(i, j, k, irho) = wd(i, j, k, irho) - w(i, j, k, ivz)*ddwd
    wd(i, j, k, ivz) = wd(i, j, k, ivz) - w(i, j, k, irho)*ddwd
    CALL POPREAL8(drv)
-   temp52 = w(i, j, k-1, ivy)
-   temp51 = w(i, j, k-1, irho)
-   temp50 = w(i, j, k+2, ivy)
-   temp49 = w(i, j, k+2, irho)
-   tempd43 = -(dis4*drvd)
+   temp48 = w(i, j, k-1, ivy)
+   temp47 = w(i, j, k-1, irho)
+   temp46 = w(i, j, k+2, ivy)
+   temp45 = w(i, j, k+2, irho)
+   tempd41 = -(dis4*drvd)
    dis2d = dis2d + ddw*drvd
-   ddwd = dis2*drvd - three*tempd43
-   dis4d = dis4d - (temp49*temp50-temp51*temp52-three*ddw)*drvd
-   wd(i, j, k+2, irho) = wd(i, j, k+2, irho) + temp50*tempd43
-   wd(i, j, k+2, ivy) = wd(i, j, k+2, ivy) + temp49*tempd43
-   wd(i, j, k-1, irho) = wd(i, j, k-1, irho) - temp52*tempd43
-   wd(i, j, k-1, ivy) = wd(i, j, k-1, ivy) - temp51*tempd43
+   ddwd = dis2*drvd - three*tempd41
+   dis4d = dis4d - (temp45*temp46-temp47*temp48-three*ddw)*drvd
+   wd(i, j, k+2, irho) = wd(i, j, k+2, irho) + temp46*tempd41
+   wd(i, j, k+2, ivy) = wd(i, j, k+2, ivy) + temp45*tempd41
+   wd(i, j, k-1, irho) = wd(i, j, k-1, irho) - temp48*tempd41
+   wd(i, j, k-1, ivy) = wd(i, j, k-1, ivy) - temp47*tempd41
    CALL POPREAL8(ddw)
    wd(i, j, k+1, irho) = wd(i, j, k+1, irho) + w(i, j, k+1, ivy)*&
    &           ddwd
@@ -1458,18 +1427,18 @@
    wd(i, j, k, irho) = wd(i, j, k, irho) - w(i, j, k, ivy)*ddwd
    wd(i, j, k, ivy) = wd(i, j, k, ivy) - w(i, j, k, irho)*ddwd
    CALL POPREAL8(dru)
-   temp48 = w(i, j, k-1, ivx)
-   temp47 = w(i, j, k-1, irho)
-   temp46 = w(i, j, k+2, ivx)
-   temp45 = w(i, j, k+2, irho)
-   tempd44 = -(dis4*drud)
+   temp44 = w(i, j, k-1, ivx)
+   temp43 = w(i, j, k-1, irho)
+   temp42 = w(i, j, k+2, ivx)
+   temp41 = w(i, j, k+2, irho)
+   tempd42 = -(dis4*drud)
    dis2d = dis2d + ddw*drud
-   ddwd = dis2*drud - three*tempd44
-   dis4d = dis4d - (temp45*temp46-temp47*temp48-three*ddw)*drud
-   wd(i, j, k+2, irho) = wd(i, j, k+2, irho) + temp46*tempd44
-   wd(i, j, k+2, ivx) = wd(i, j, k+2, ivx) + temp45*tempd44
-   wd(i, j, k-1, irho) = wd(i, j, k-1, irho) - temp48*tempd44
-   wd(i, j, k-1, ivx) = wd(i, j, k-1, ivx) - temp47*tempd44
+   ddwd = dis2*drud - three*tempd42
+   dis4d = dis4d - (temp41*temp42-temp43*temp44-three*ddw)*drud
+   wd(i, j, k+2, irho) = wd(i, j, k+2, irho) + temp42*tempd42
+   wd(i, j, k+2, ivx) = wd(i, j, k+2, ivx) + temp41*tempd42
+   wd(i, j, k-1, irho) = wd(i, j, k-1, irho) - temp44*tempd42
+   wd(i, j, k-1, ivx) = wd(i, j, k-1, ivx) - temp43*tempd42
    wd(i, j, k+1, irho) = wd(i, j, k+1, irho) + w(i, j, k+1, ivx)*&
    &           ddwd
    wd(i, j, k+1, ivx) = wd(i, j, k+1, ivx) + w(i, j, k+1, irho)*&
@@ -1478,13 +1447,13 @@
    wd(i, j, k, ivx) = wd(i, j, k, ivx) - w(i, j, k, irho)*ddwd
    ddw = w(i, j, k+1, irho) - w(i, j, k, irho)
    CALL POPREAL8(dr)
-   tempd45 = -(dis4*drd)
+   tempd43 = -(dis4*drd)
    dis2d = dis2d + ddw*drd
-   ddwd = dis2*drd - three*tempd45
+   ddwd = dis2*drd - three*tempd43
    dis4d = dis4d - (w(i, j, k+2, irho)-w(i, j, k-1, irho)-three*&
    &           ddw)*drd
-   wd(i, j, k+2, irho) = wd(i, j, k+2, irho) + tempd45
-   wd(i, j, k-1, irho) = wd(i, j, k-1, irho) - tempd45
+   wd(i, j, k+2, irho) = wd(i, j, k+2, irho) + tempd43
+   wd(i, j, k-1, irho) = wd(i, j, k-1, irho) - tempd43
    CALL POPREAL8(ddw)
    wd(i, j, k+1, irho) = wd(i, j, k+1, irho) + ddwd
    wd(i, j, k, irho) = wd(i, j, k, irho) - ddwd
@@ -1534,18 +1503,18 @@
    ELSE
    x6d = -dp2d
    END IF
-   temp44 = omega*(p(i, j, k+2)+two*p(i, j, k+1)+p(i, j, k)) + &
+   temp40 = omega*(p(i, j, k+2)+two*p(i, j, k+1)+p(i, j, k)) + &
    &           oneminomega*(abs6+abs12) + plim
-   tempd38 = x6d/temp44
-   tempd39 = -((p(i, j, k+2)-two*p(i, j, k+1)+p(i, j, k))*tempd38&
-   &           /temp44)
-   tempd40 = omega*tempd39
-   pd(i, j, k+2) = pd(i, j, k+2) + tempd40 + tempd38
-   pd(i, j, k+1) = pd(i, j, k+1) + two*tempd40 - two*tempd38
-   pd(i, j, k) = pd(i, j, k) + tempd40 + tempd38
-   abs6d = oneminomega*tempd39
-   abs12d = oneminomega*tempd39
-   plimd = plimd + tempd39
+   tempd36 = x6d/temp40
+   tempd37 = -((p(i, j, k+2)-two*p(i, j, k+1)+p(i, j, k))*tempd36&
+   &           /temp40)
+   tempd38 = omega*tempd37
+   pd(i, j, k+2) = pd(i, j, k+2) + tempd38 + tempd36
+   pd(i, j, k+1) = pd(i, j, k+1) + two*tempd38 - two*tempd36
+   pd(i, j, k) = pd(i, j, k) + tempd38 + tempd36
+   abs6d = oneminomega*tempd37
+   abs12d = oneminomega*tempd37
+   plimd = plimd + tempd37
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    CALL POPREAL8(abs12)
@@ -1573,18 +1542,18 @@
    ELSE
    x5d = -dp1d
    END IF
-   temp43 = omega*(p(i, j, 2)+two*p(i, j, 1)+p(i, j, 0)) + &
+   temp39 = omega*(p(i, j, 2)+two*p(i, j, 1)+p(i, j, 0)) + &
    &         oneminomega*(abs5+abs11) + plim
-   tempd35 = x5d/temp43
-   tempd36 = -((p(i, j, 2)-two*p(i, j, 1)+p(i, j, 0))*tempd35/&
-   &         temp43)
-   tempd37 = omega*tempd36
-   pd(i, j, 2) = pd(i, j, 2) + tempd37 + tempd35
-   pd(i, j, 1) = pd(i, j, 1) + two*tempd37 - two*tempd35
-   pd(i, j, 0) = pd(i, j, 0) + tempd37 + tempd35
-   abs5d = oneminomega*tempd36
-   abs11d = oneminomega*tempd36
-   plimd = plimd + tempd36
+   tempd33 = x5d/temp39
+   tempd34 = -((p(i, j, 2)-two*p(i, j, 1)+p(i, j, 0))*tempd33/&
+   &         temp39)
+   tempd35 = omega*tempd34
+   pd(i, j, 2) = pd(i, j, 2) + tempd35 + tempd33
+   pd(i, j, 1) = pd(i, j, 1) + two*tempd35 - two*tempd33
+   pd(i, j, 0) = pd(i, j, 0) + tempd35 + tempd33
+   abs5d = oneminomega*tempd34
+   abs11d = oneminomega*tempd34
+   plimd = plimd + tempd34
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    CALL POPREAL8(abs11)
@@ -1614,20 +1583,14 @@
    dp2d = dp1d
    fsd = fwd(i, j+1, k, irhoe) - fwd(i, j, k, irhoe)
    wavg = half*(w(i, j+1, k, ivz)+w(i, j, k, ivz))
-   gammaavg = half*(gamma(i, j+1, k)+gamma(i, j, k))
-   gm1 = gammaavg - one
    vavg = half*(w(i, j+1, k, ivy)+w(i, j, k, ivy))
    uavg = half*(w(i, j+1, k, ivx)+w(i, j, k, ivx))
    unavg = uavg*sx + vavg*sy + wavg*sz
    abv5 = sx*dru + sy*drv + sz*drw - unavg*dr
-   gm53 = gammaavg - five*third
    ovaavg = one/aavg
    ova2avg = one/a2avg
    abv6 = abv3*abv4*ova2avg + abv2*abv5*ovaavg
    abv7 = abv2*abv4*ovaavg + abv3*abv5
-   ovgm1 = one/gm1
-   alphaavg = half*(uavg**2+vavg**2+wavg**2)
-   havg = alphaavg + ovgm1*(a2avg-gm53*kavg)
    lam3d = dre*fsd
    dred = lam3*fsd
    havgd = abv6*fsd
@@ -1668,19 +1631,21 @@
    syd = syd + drv*abv5d
    szd = szd + drw*abv5d
    unavgd = unavgd - dr*abv5d
+   gammaavg = half*(gamma(i, j+1, k)+gamma(i, j, k))
+   gm1 = gammaavg - one
+   gm53 = gammaavg - five*third
+   alphaavg = half*(uavg**2+vavg**2+wavg**2)
    CALL POPREAL8(abv4)
-   tempd34 = gm1*abv4d
-   drd = alphaavg*tempd34 - unavg*abv5d + lam3*fsd
-   drud = drud + sx*abv5d - uavg*tempd34
-   drvd = drvd + sy*abv5d - vavg*tempd34
-   drwd = drwd + sz*abv5d - wavg*tempd34
-   gm1d = (alphaavg*dr-uavg*dru-vavg*drv+dre-wavg*drw)*abv4d
-   alphaavgd = dr*tempd34
-   uavgd = uavgd - dru*tempd34
-   vavgd = vavgd - drv*tempd34
-   dred = dred + tempd34
-   wavgd = wavgd - drw*tempd34
-   gm53d = -(drk*abv4d)
+   tempd32 = gm1*abv4d
+   drd = alphaavg*tempd32 - unavg*abv5d + lam3*fsd
+   drud = drud + sx*abv5d - uavg*tempd32
+   drvd = drvd + sy*abv5d - vavg*tempd32
+   drwd = drwd + sz*abv5d - wavg*tempd32
+   alphaavgd = dr*tempd32
+   uavgd = uavgd - dru*tempd32
+   vavgd = vavgd - drv*tempd32
+   dred = dred + tempd32
+   wavgd = wavgd - drw*tempd32
    drkd = -(gm53*abv4d)
    CALL POPREAL8(abv3)
    abv1d = abv3d
@@ -1752,25 +1717,24 @@
    sfaced = 0.0_8
    END IF
    alphaavgd = alphaavgd + havgd
-   tempd33 = half*alphaavgd
-   tempd32 = ovgm1*havgd
+   tempd31 = half*alphaavgd
+   ovgm1 = one/gm1
    aavgd = aavgd - one*ovaavgd/aavg**2
    IF (a2avg .EQ. 0.0_8) THEN
-   a2avgd = tempd32 - one*ova2avgd/a2avg**2
+   a2avgd = ovgm1*havgd - one*ova2avgd/a2avg**2
    ELSE
-   a2avgd = aavgd/(2.0*SQRT(a2avg)) + tempd32 - one*ova2avgd/&
-   &             a2avg**2
+   a2avgd = aavgd/(2.0*SQRT(a2avg)) + ovgm1*havgd - one*&
+   &             ova2avgd/a2avg**2
    END IF
-   uavgd = uavgd + 2*uavg*tempd33 + sx*unavgd
+   uavgd = uavgd + 2*uavg*tempd31 + sx*unavgd
    sxd = sxd + uavg*unavgd
-   vavgd = vavgd + 2*vavg*tempd33 + sy*unavgd
+   vavgd = vavgd + 2*vavg*tempd31 + sy*unavgd
    syd = syd + vavg*unavgd
-   wavgd = wavgd + 2*wavg*tempd33 + sz*unavgd
+   wavgd = wavgd + 2*wavg*tempd31 + sz*unavgd
    szd = szd + wavg*unavgd
    CALL POPREAL8(aavg)
-   ovgm1d = (a2avg-gm53*kavg)*havgd
-   gm53d = gm53d - kavg*tempd32
-   kavgd = -(gm53*tempd32)
+   CALL POPREAL8(havg)
+   kavgd = -(ovgm1*gm53*havgd)
    CALL POPREAL8(sz)
    CALL POPREAL8(sy)
    CALL POPREAL8(sx)
@@ -1786,16 +1750,15 @@
    ELSE
    CALL POPREAL8(max2)
    END IF
-   gm1d = gm1d - one*ovgm1d/gm1**2
    CALL POPREAL8(area)
    IF (sx**2 + sy**2 + sz**2 .EQ. 0.0_8) THEN
-   tempd29 = 0.0
+   tempd28 = 0.0
    ELSE
-   tempd29 = aread/(2.0*SQRT(sx**2+sy**2+sz**2))
+   tempd28 = aread/(2.0*SQRT(sx**2+sy**2+sz**2))
    END IF
-   sxd = sxd + 2*sx*tempd29
-   syd = syd + 2*sy*tempd29
-   szd = szd + 2*sz*tempd29
+   sxd = sxd + 2*sx*tempd28
+   syd = syd + 2*sy*tempd28
+   szd = szd + 2*sz*tempd28
    CALL POPREAL8(sz)
    sjd(i, j, k, 3) = sjd(i, j, k, 3) + szd
    CALL POPREAL8(sy)
@@ -1803,52 +1766,41 @@
    CALL POPREAL8(sx)
    sjd(i, j, k, 1) = sjd(i, j, k, 1) + sxd
    CALL POPREAL8(a2avg)
-   temp42 = w(i, j, k, irho)
-   temp41 = w(i, j+1, k, irho)
-   temp40 = p(i, j+1, k)
-   temp39 = gamma(i, j+1, k)
-   tempd30 = half*a2avgd/temp41
-   tempd31 = half*a2avgd/temp42
-   gammad(i, j+1, k) = gammad(i, j+1, k) + temp40*tempd30
-   pd(i, j+1, k) = pd(i, j+1, k) + temp39*tempd30
-   wd(i, j+1, k, irho) = wd(i, j+1, k, irho) - temp39*temp40*&
-   &           tempd30/temp41
-   gammad(i, j, k) = gammad(i, j, k) + p(i, j, k)*tempd31
-   pd(i, j, k) = pd(i, j, k) + gamma(i, j, k)*tempd31
-   wd(i, j, k, irho) = wd(i, j, k, irho) - gamma(i, j, k)*p(i, j&
-   &           , k)*tempd31/temp42
+   temp38 = w(i, j, k, irho)
+   temp37 = w(i, j+1, k, irho)
+   tempd29 = gamma(i, j+1, k)*half*a2avgd/temp37
+   tempd30 = gamma(i, j, k)*half*a2avgd/temp38
+   pd(i, j+1, k) = pd(i, j+1, k) + tempd29
+   wd(i, j+1, k, irho) = wd(i, j+1, k, irho) - p(i, j+1, k)*&
+   &           tempd29/temp37
+   pd(i, j, k) = pd(i, j, k) + tempd30
+   wd(i, j, k, irho) = wd(i, j, k, irho) - p(i, j, k)*tempd30/&
+   &           temp38
    wd(i, j+1, k, ivz) = wd(i, j+1, k, ivz) + half*wavgd
    wd(i, j, k, ivz) = wd(i, j, k, ivz) + half*wavgd
    wd(i, j+1, k, ivy) = wd(i, j+1, k, ivy) + half*vavgd
    wd(i, j, k, ivy) = wd(i, j, k, ivy) + half*vavgd
    wd(i, j+1, k, ivx) = wd(i, j+1, k, ivx) + half*uavgd
    wd(i, j, k, ivx) = wd(i, j, k, ivx) + half*uavgd
-   gammaavgd = gm1d + gm53d
-   gammad(i, j+1, k) = gammad(i, j+1, k) + half*gammaavgd
-   gammad(i, j, k) = gammad(i, j, k) + half*gammaavgd
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   CALL POPREAL8(kavg)
-   CALL POPREAL8(drk)
    dis2d = 0.0_8
    dis4d = 0.0_8
    ELSE
-   CALL POPREAL8(kavg)
    wd(i, j, k, itu1) = wd(i, j, k, itu1) + half*kavgd
    wd(i, j+1, k, itu1) = wd(i, j+1, k, itu1) + half*kavgd
-   CALL POPREAL8(drk)
-   temp38 = w(i, j-1, k, itu1)
-   temp37 = w(i, j-1, k, irho)
-   temp36 = w(i, j+2, k, itu1)
-   temp35 = w(i, j+2, k, irho)
-   tempd28 = -(dis4*drkd)
+   temp36 = w(i, j-1, k, itu1)
+   temp35 = w(i, j-1, k, irho)
+   temp34 = w(i, j+2, k, itu1)
+   temp33 = w(i, j+2, k, irho)
+   tempd27 = -(dis4*drkd)
    dis2d = ddw*drkd
-   ddwd = dis2*drkd - three*tempd28
-   dis4d = -((temp35*temp36-temp37*temp38-three*ddw)*drkd)
-   wd(i, j+2, k, irho) = wd(i, j+2, k, irho) + temp36*tempd28
-   wd(i, j+2, k, itu1) = wd(i, j+2, k, itu1) + temp35*tempd28
-   wd(i, j-1, k, irho) = wd(i, j-1, k, irho) - temp38*tempd28
-   wd(i, j-1, k, itu1) = wd(i, j-1, k, itu1) - temp37*tempd28
+   ddwd = dis2*drkd - three*tempd27
+   dis4d = -((temp33*temp34-temp35*temp36-three*ddw)*drkd)
+   wd(i, j+2, k, irho) = wd(i, j+2, k, irho) + temp34*tempd27
+   wd(i, j+2, k, itu1) = wd(i, j+2, k, itu1) + temp33*tempd27
+   wd(i, j-1, k, irho) = wd(i, j-1, k, irho) - temp36*tempd27
+   wd(i, j-1, k, itu1) = wd(i, j-1, k, itu1) - temp35*tempd27
    wd(i, j+1, k, irho) = wd(i, j+1, k, irho) + w(i, j+1, k, &
    &             itu1)*ddwd
    wd(i, j+1, k, itu1) = wd(i, j+1, k, itu1) + w(i, j+1, k, &
@@ -1860,29 +1812,29 @@
    END IF
    ddw = w(i, j+1, k, irhoe) - w(i, j, k, irhoe)
    CALL POPREAL8(dre)
-   tempd23 = -(dis4*dred)
+   tempd22 = -(dis4*dred)
    dis2d = dis2d + ddw*dred
-   ddwd = dis2*dred - three*tempd23
+   ddwd = dis2*dred - three*tempd22
    dis4d = dis4d - (w(i, j+2, k, irhoe)-w(i, j-1, k, irhoe)-three&
    &           *ddw)*dred
-   wd(i, j+2, k, irhoe) = wd(i, j+2, k, irhoe) + tempd23
-   wd(i, j-1, k, irhoe) = wd(i, j-1, k, irhoe) - tempd23
+   wd(i, j+2, k, irhoe) = wd(i, j+2, k, irhoe) + tempd22
+   wd(i, j-1, k, irhoe) = wd(i, j-1, k, irhoe) - tempd22
    CALL POPREAL8(ddw)
    wd(i, j+1, k, irhoe) = wd(i, j+1, k, irhoe) + ddwd
    wd(i, j, k, irhoe) = wd(i, j, k, irhoe) - ddwd
    CALL POPREAL8(drw)
-   temp34 = w(i, j-1, k, ivz)
-   temp33 = w(i, j-1, k, irho)
-   temp32 = w(i, j+2, k, ivz)
-   temp31 = w(i, j+2, k, irho)
-   tempd24 = -(dis4*drwd)
+   temp32 = w(i, j-1, k, ivz)
+   temp31 = w(i, j-1, k, irho)
+   temp30 = w(i, j+2, k, ivz)
+   temp29 = w(i, j+2, k, irho)
+   tempd23 = -(dis4*drwd)
    dis2d = dis2d + ddw*drwd
-   ddwd = dis2*drwd - three*tempd24
-   dis4d = dis4d - (temp31*temp32-temp33*temp34-three*ddw)*drwd
-   wd(i, j+2, k, irho) = wd(i, j+2, k, irho) + temp32*tempd24
-   wd(i, j+2, k, ivz) = wd(i, j+2, k, ivz) + temp31*tempd24
-   wd(i, j-1, k, irho) = wd(i, j-1, k, irho) - temp34*tempd24
-   wd(i, j-1, k, ivz) = wd(i, j-1, k, ivz) - temp33*tempd24
+   ddwd = dis2*drwd - three*tempd23
+   dis4d = dis4d - (temp29*temp30-temp31*temp32-three*ddw)*drwd
+   wd(i, j+2, k, irho) = wd(i, j+2, k, irho) + temp30*tempd23
+   wd(i, j+2, k, ivz) = wd(i, j+2, k, ivz) + temp29*tempd23
+   wd(i, j-1, k, irho) = wd(i, j-1, k, irho) - temp32*tempd23
+   wd(i, j-1, k, ivz) = wd(i, j-1, k, ivz) - temp31*tempd23
    CALL POPREAL8(ddw)
    wd(i, j+1, k, irho) = wd(i, j+1, k, irho) + w(i, j+1, k, ivz)*&
    &           ddwd
@@ -1891,18 +1843,18 @@
    wd(i, j, k, irho) = wd(i, j, k, irho) - w(i, j, k, ivz)*ddwd
    wd(i, j, k, ivz) = wd(i, j, k, ivz) - w(i, j, k, irho)*ddwd
    CALL POPREAL8(drv)
-   temp30 = w(i, j-1, k, ivy)
-   temp29 = w(i, j-1, k, irho)
-   temp28 = w(i, j+2, k, ivy)
-   temp27 = w(i, j+2, k, irho)
-   tempd25 = -(dis4*drvd)
+   temp28 = w(i, j-1, k, ivy)
+   temp27 = w(i, j-1, k, irho)
+   temp26 = w(i, j+2, k, ivy)
+   temp25 = w(i, j+2, k, irho)
+   tempd24 = -(dis4*drvd)
    dis2d = dis2d + ddw*drvd
-   ddwd = dis2*drvd - three*tempd25
-   dis4d = dis4d - (temp27*temp28-temp29*temp30-three*ddw)*drvd
-   wd(i, j+2, k, irho) = wd(i, j+2, k, irho) + temp28*tempd25
-   wd(i, j+2, k, ivy) = wd(i, j+2, k, ivy) + temp27*tempd25
-   wd(i, j-1, k, irho) = wd(i, j-1, k, irho) - temp30*tempd25
-   wd(i, j-1, k, ivy) = wd(i, j-1, k, ivy) - temp29*tempd25
+   ddwd = dis2*drvd - three*tempd24
+   dis4d = dis4d - (temp25*temp26-temp27*temp28-three*ddw)*drvd
+   wd(i, j+2, k, irho) = wd(i, j+2, k, irho) + temp26*tempd24
+   wd(i, j+2, k, ivy) = wd(i, j+2, k, ivy) + temp25*tempd24
+   wd(i, j-1, k, irho) = wd(i, j-1, k, irho) - temp28*tempd24
+   wd(i, j-1, k, ivy) = wd(i, j-1, k, ivy) - temp27*tempd24
    CALL POPREAL8(ddw)
    wd(i, j+1, k, irho) = wd(i, j+1, k, irho) + w(i, j+1, k, ivy)*&
    &           ddwd
@@ -1911,18 +1863,18 @@
    wd(i, j, k, irho) = wd(i, j, k, irho) - w(i, j, k, ivy)*ddwd
    wd(i, j, k, ivy) = wd(i, j, k, ivy) - w(i, j, k, irho)*ddwd
    CALL POPREAL8(dru)
-   temp26 = w(i, j-1, k, ivx)
-   temp25 = w(i, j-1, k, irho)
-   temp24 = w(i, j+2, k, ivx)
-   temp23 = w(i, j+2, k, irho)
-   tempd26 = -(dis4*drud)
+   temp24 = w(i, j-1, k, ivx)
+   temp23 = w(i, j-1, k, irho)
+   temp22 = w(i, j+2, k, ivx)
+   temp21 = w(i, j+2, k, irho)
+   tempd25 = -(dis4*drud)
    dis2d = dis2d + ddw*drud
-   ddwd = dis2*drud - three*tempd26
-   dis4d = dis4d - (temp23*temp24-temp25*temp26-three*ddw)*drud
-   wd(i, j+2, k, irho) = wd(i, j+2, k, irho) + temp24*tempd26
-   wd(i, j+2, k, ivx) = wd(i, j+2, k, ivx) + temp23*tempd26
-   wd(i, j-1, k, irho) = wd(i, j-1, k, irho) - temp26*tempd26
-   wd(i, j-1, k, ivx) = wd(i, j-1, k, ivx) - temp25*tempd26
+   ddwd = dis2*drud - three*tempd25
+   dis4d = dis4d - (temp21*temp22-temp23*temp24-three*ddw)*drud
+   wd(i, j+2, k, irho) = wd(i, j+2, k, irho) + temp22*tempd25
+   wd(i, j+2, k, ivx) = wd(i, j+2, k, ivx) + temp21*tempd25
+   wd(i, j-1, k, irho) = wd(i, j-1, k, irho) - temp24*tempd25
+   wd(i, j-1, k, ivx) = wd(i, j-1, k, ivx) - temp23*tempd25
    wd(i, j+1, k, irho) = wd(i, j+1, k, irho) + w(i, j+1, k, ivx)*&
    &           ddwd
    wd(i, j+1, k, ivx) = wd(i, j+1, k, ivx) + w(i, j+1, k, irho)*&
@@ -1931,13 +1883,13 @@
    wd(i, j, k, ivx) = wd(i, j, k, ivx) - w(i, j, k, irho)*ddwd
    ddw = w(i, j+1, k, irho) - w(i, j, k, irho)
    CALL POPREAL8(dr)
-   tempd27 = -(dis4*drd)
+   tempd26 = -(dis4*drd)
    dis2d = dis2d + ddw*drd
-   ddwd = dis2*drd - three*tempd27
+   ddwd = dis2*drd - three*tempd26
    dis4d = dis4d - (w(i, j+2, k, irho)-w(i, j-1, k, irho)-three*&
    &           ddw)*drd
-   wd(i, j+2, k, irho) = wd(i, j+2, k, irho) + tempd27
-   wd(i, j-1, k, irho) = wd(i, j-1, k, irho) - tempd27
+   wd(i, j+2, k, irho) = wd(i, j+2, k, irho) + tempd26
+   wd(i, j-1, k, irho) = wd(i, j-1, k, irho) - tempd26
    CALL POPREAL8(ddw)
    wd(i, j+1, k, irho) = wd(i, j+1, k, irho) + ddwd
    wd(i, j, k, irho) = wd(i, j, k, irho) - ddwd
@@ -1987,18 +1939,18 @@
    ELSE
    x4d = -dp2d
    END IF
-   temp22 = omega*(p(i, j+2, k)+two*p(i, j+1, k)+p(i, j, k)) + &
+   temp20 = omega*(p(i, j+2, k)+two*p(i, j+1, k)+p(i, j, k)) + &
    &           oneminomega*(abs4+abs10) + plim
-   tempd20 = x4d/temp22
-   tempd21 = -((p(i, j+2, k)-two*p(i, j+1, k)+p(i, j, k))*tempd20&
-   &           /temp22)
-   tempd22 = omega*tempd21
-   pd(i, j+2, k) = pd(i, j+2, k) + tempd22 + tempd20
-   pd(i, j+1, k) = pd(i, j+1, k) + two*tempd22 - two*tempd20
-   pd(i, j, k) = pd(i, j, k) + tempd22 + tempd20
-   abs4d = oneminomega*tempd21
-   abs10d = oneminomega*tempd21
-   plimd = plimd + tempd21
+   tempd19 = x4d/temp20
+   tempd20 = -((p(i, j+2, k)-two*p(i, j+1, k)+p(i, j, k))*tempd19&
+   &           /temp20)
+   tempd21 = omega*tempd20
+   pd(i, j+2, k) = pd(i, j+2, k) + tempd21 + tempd19
+   pd(i, j+1, k) = pd(i, j+1, k) + two*tempd21 - two*tempd19
+   pd(i, j, k) = pd(i, j, k) + tempd21 + tempd19
+   abs4d = oneminomega*tempd20
+   abs10d = oneminomega*tempd20
+   plimd = plimd + tempd20
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    CALL POPREAL8(abs10)
@@ -2026,18 +1978,18 @@
    ELSE
    x3d = -dp1d
    END IF
-   temp21 = omega*(p(i, 2, k)+two*p(i, 1, k)+p(i, 0, k)) + &
+   temp19 = omega*(p(i, 2, k)+two*p(i, 1, k)+p(i, 0, k)) + &
    &         oneminomega*(abs3+abs9) + plim
-   tempd17 = x3d/temp21
-   tempd18 = -((p(i, 2, k)-two*p(i, 1, k)+p(i, 0, k))*tempd17/&
-   &         temp21)
-   tempd19 = omega*tempd18
-   pd(i, 2, k) = pd(i, 2, k) + tempd19 + tempd17
-   pd(i, 1, k) = pd(i, 1, k) + two*tempd19 - two*tempd17
-   pd(i, 0, k) = pd(i, 0, k) + tempd19 + tempd17
-   abs3d = oneminomega*tempd18
-   abs9d = oneminomega*tempd18
-   plimd = plimd + tempd18
+   tempd16 = x3d/temp19
+   tempd17 = -((p(i, 2, k)-two*p(i, 1, k)+p(i, 0, k))*tempd16/&
+   &         temp19)
+   tempd18 = omega*tempd17
+   pd(i, 2, k) = pd(i, 2, k) + tempd18 + tempd16
+   pd(i, 1, k) = pd(i, 1, k) + two*tempd18 - two*tempd16
+   pd(i, 0, k) = pd(i, 0, k) + tempd18 + tempd16
+   abs3d = oneminomega*tempd17
+   abs9d = oneminomega*tempd17
+   plimd = plimd + tempd17
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    CALL POPREAL8(abs9)
@@ -2067,20 +2019,14 @@
    dp2d = dp1d
    fsd = fwd(i+1, j, k, irhoe) - fwd(i, j, k, irhoe)
    wavg = half*(w(i+1, j, k, ivz)+w(i, j, k, ivz))
-   gammaavg = half*(gamma(i+1, j, k)+gamma(i, j, k))
-   gm1 = gammaavg - one
    vavg = half*(w(i+1, j, k, ivy)+w(i, j, k, ivy))
    uavg = half*(w(i+1, j, k, ivx)+w(i, j, k, ivx))
    unavg = uavg*sx + vavg*sy + wavg*sz
    abv5 = sx*dru + sy*drv + sz*drw - unavg*dr
-   gm53 = gammaavg - five*third
    ovaavg = one/aavg
    ova2avg = one/a2avg
    abv6 = abv3*abv4*ova2avg + abv2*abv5*ovaavg
    abv7 = abv2*abv4*ovaavg + abv3*abv5
-   ovgm1 = one/gm1
-   alphaavg = half*(uavg**2+vavg**2+wavg**2)
-   havg = alphaavg + ovgm1*(a2avg-gm53*kavg)
    lam3d = dre*fsd
    dred = lam3*fsd
    havgd = abv6*fsd
@@ -2121,19 +2067,21 @@
    syd = syd + drv*abv5d
    szd = szd + drw*abv5d
    unavgd = unavgd - dr*abv5d
+   gammaavg = half*(gamma(i+1, j, k)+gamma(i, j, k))
+   gm1 = gammaavg - one
+   gm53 = gammaavg - five*third
+   alphaavg = half*(uavg**2+vavg**2+wavg**2)
    CALL POPREAL8(abv4)
-   tempd16 = gm1*abv4d
-   drd = alphaavg*tempd16 - unavg*abv5d + lam3*fsd
-   drud = drud + sx*abv5d - uavg*tempd16
-   drvd = drvd + sy*abv5d - vavg*tempd16
-   drwd = drwd + sz*abv5d - wavg*tempd16
-   gm1d = (alphaavg*dr-uavg*dru-vavg*drv+dre-wavg*drw)*abv4d
-   alphaavgd = dr*tempd16
-   uavgd = uavgd - dru*tempd16
-   vavgd = vavgd - drv*tempd16
-   dred = dred + tempd16
-   wavgd = wavgd - drw*tempd16
-   gm53d = -(drk*abv4d)
+   tempd15 = gm1*abv4d
+   drd = alphaavg*tempd15 - unavg*abv5d + lam3*fsd
+   drud = drud + sx*abv5d - uavg*tempd15
+   drvd = drvd + sy*abv5d - vavg*tempd15
+   drwd = drwd + sz*abv5d - wavg*tempd15
+   alphaavgd = dr*tempd15
+   uavgd = uavgd - dru*tempd15
+   vavgd = vavgd - drv*tempd15
+   dred = dred + tempd15
+   wavgd = wavgd - drw*tempd15
    drkd = -(gm53*abv4d)
    CALL POPREAL8(abv3)
    abv1d = abv3d
@@ -2205,25 +2153,24 @@
    sfaced = 0.0_8
    END IF
    alphaavgd = alphaavgd + havgd
-   tempd15 = half*alphaavgd
-   tempd14 = ovgm1*havgd
+   tempd14 = half*alphaavgd
+   ovgm1 = one/gm1
    aavgd = aavgd - one*ovaavgd/aavg**2
    IF (a2avg .EQ. 0.0_8) THEN
-   a2avgd = tempd14 - one*ova2avgd/a2avg**2
+   a2avgd = ovgm1*havgd - one*ova2avgd/a2avg**2
    ELSE
-   a2avgd = aavgd/(2.0*SQRT(a2avg)) + tempd14 - one*ova2avgd/&
-   &             a2avg**2
+   a2avgd = aavgd/(2.0*SQRT(a2avg)) + ovgm1*havgd - one*&
+   &             ova2avgd/a2avg**2
    END IF
-   uavgd = uavgd + 2*uavg*tempd15 + sx*unavgd
+   uavgd = uavgd + 2*uavg*tempd14 + sx*unavgd
    sxd = sxd + uavg*unavgd
-   vavgd = vavgd + 2*vavg*tempd15 + sy*unavgd
+   vavgd = vavgd + 2*vavg*tempd14 + sy*unavgd
    syd = syd + vavg*unavgd
-   wavgd = wavgd + 2*wavg*tempd15 + sz*unavgd
+   wavgd = wavgd + 2*wavg*tempd14 + sz*unavgd
    szd = szd + wavg*unavgd
    CALL POPREAL8(aavg)
-   ovgm1d = (a2avg-gm53*kavg)*havgd
-   gm53d = gm53d - kavg*tempd14
-   kavgd = -(gm53*tempd14)
+   CALL POPREAL8(havg)
+   kavgd = -(ovgm1*gm53*havgd)
    CALL POPREAL8(sz)
    CALL POPREAL8(sy)
    CALL POPREAL8(sx)
@@ -2239,7 +2186,6 @@
    ELSE
    CALL POPREAL8(max1)
    END IF
-   gm1d = gm1d - one*ovgm1d/gm1**2
    CALL POPREAL8(area)
    IF (sx**2 + sy**2 + sz**2 .EQ. 0.0_8) THEN
    tempd11 = 0.0
@@ -2256,40 +2202,29 @@
    CALL POPREAL8(sx)
    sid(i, j, k, 1) = sid(i, j, k, 1) + sxd
    CALL POPREAL8(a2avg)
-   temp20 = w(i, j, k, irho)
-   temp19 = w(i+1, j, k, irho)
-   temp18 = p(i+1, j, k)
-   temp17 = gamma(i+1, j, k)
-   tempd12 = half*a2avgd/temp19
-   tempd13 = half*a2avgd/temp20
-   gammad(i+1, j, k) = gammad(i+1, j, k) + temp18*tempd12
-   pd(i+1, j, k) = pd(i+1, j, k) + temp17*tempd12
-   wd(i+1, j, k, irho) = wd(i+1, j, k, irho) - temp17*temp18*&
-   &           tempd12/temp19
-   gammad(i, j, k) = gammad(i, j, k) + p(i, j, k)*tempd13
-   pd(i, j, k) = pd(i, j, k) + gamma(i, j, k)*tempd13
-   wd(i, j, k, irho) = wd(i, j, k, irho) - gamma(i, j, k)*p(i, j&
-   &           , k)*tempd13/temp20
+   temp18 = w(i, j, k, irho)
+   temp17 = w(i+1, j, k, irho)
+   tempd12 = gamma(i+1, j, k)*half*a2avgd/temp17
+   tempd13 = gamma(i, j, k)*half*a2avgd/temp18
+   pd(i+1, j, k) = pd(i+1, j, k) + tempd12
+   wd(i+1, j, k, irho) = wd(i+1, j, k, irho) - p(i+1, j, k)*&
+   &           tempd12/temp17
+   pd(i, j, k) = pd(i, j, k) + tempd13
+   wd(i, j, k, irho) = wd(i, j, k, irho) - p(i, j, k)*tempd13/&
+   &           temp18
    wd(i+1, j, k, ivz) = wd(i+1, j, k, ivz) + half*wavgd
    wd(i, j, k, ivz) = wd(i, j, k, ivz) + half*wavgd
    wd(i+1, j, k, ivy) = wd(i+1, j, k, ivy) + half*vavgd
    wd(i, j, k, ivy) = wd(i, j, k, ivy) + half*vavgd
    wd(i+1, j, k, ivx) = wd(i+1, j, k, ivx) + half*uavgd
    wd(i, j, k, ivx) = wd(i, j, k, ivx) + half*uavgd
-   gammaavgd = gm1d + gm53d
-   gammad(i+1, j, k) = gammad(i+1, j, k) + half*gammaavgd
-   gammad(i, j, k) = gammad(i, j, k) + half*gammaavgd
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   CALL POPREAL8(kavg)
-   CALL POPREAL8(drk)
    dis2d = 0.0_8
    dis4d = 0.0_8
    ELSE
-   CALL POPREAL8(kavg)
    wd(i, j, k, itu1) = wd(i, j, k, itu1) + half*kavgd
    wd(i+1, j, k, itu1) = wd(i+1, j, k, itu1) + half*kavgd
-   CALL POPREAL8(drk)
    temp16 = w(i-1, j, k, itu1)
    temp15 = w(i-1, j, k, irho)
    temp14 = w(i+2, j, k, itu1)

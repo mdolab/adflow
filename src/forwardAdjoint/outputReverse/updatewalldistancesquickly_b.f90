@@ -3,8 +3,8 @@
    !
    !  Differentiation of updatewalldistancesquickly in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
    !   gradient     of useful results: *x *d2wall
-   !   with respect to varying inputs: *xsurf *x
-   !   Plus diff mem management of: xsurf:in x:in d2wall:in
+   !   with respect to varying inputs: *x *xsurf
+   !   Plus diff mem management of: x:in d2wall:in xsurf:in
    SUBROUTINE UPDATEWALLDISTANCESQUICKLY_B(nn, level, sps)
    ! This is the actual update routine that uses xSurf. It is done on
    ! block-level-sps basis.  This is the used to update the wall
