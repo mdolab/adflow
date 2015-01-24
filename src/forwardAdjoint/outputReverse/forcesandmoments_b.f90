@@ -2,19 +2,19 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of forcesandmoments in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *w *x *(*bcdata.fp) *(*bcdata.fv)
-   !                *(*bcdata.m) *(*bcdata.oarea) *(*bcdata.sepsensor)
+   !   gradient     of useful results: gammainf pinf pref *w *x *(*bcdata.fp)
+   !                *(*bcdata.fv) *(*bcdata.m) *(*bcdata.oarea) *(*bcdata.sepsensor)
    !                *(*bcdata.cavitation) lengthref machcoef pointref
-   !                gammainf pinf pref cfp cfv cmp cmv cavitation
-   !                sepsensor
-   !   with respect to varying inputs: *p *w *x *si *sj *sk *(*viscsubface.tau)
-   !                *(*bcdata.fp) *(*bcdata.fv) *(*bcdata.m) *(*bcdata.oarea)
-   !                *(*bcdata.sepsensor) *(*bcdata.cavitation) veldirfreestream
-   !                lengthref machcoef pointref gammainf pinf pref
-   !   Plus diff mem management of: rev:in p:in w:in rlv:in x:in si:in
-   !                sj:in sk:in viscsubface:in *viscsubface.tau:in
-   !                bcdata:in *bcdata.fp:in *bcdata.fv:in *bcdata.m:in
-   !                *bcdata.oarea:in *bcdata.sepsensor:in *bcdata.cavitation:in
+   !                cfp cfv cmp cmv cavitation sepsensor
+   !   with respect to varying inputs: gammainf pinf pref *p *w *x
+   !                *si *sj *sk *(*viscsubface.tau) *(*bcdata.fp)
+   !                *(*bcdata.fv) *(*bcdata.m) *(*bcdata.oarea) *(*bcdata.sepsensor)
+   !                *(*bcdata.cavitation) veldirfreestream lengthref
+   !                machcoef pointref
+   !   Plus diff mem management of: p:in w:in x:in si:in sj:in sk:in
+   !                viscsubface:in *viscsubface.tau:in bcdata:in *bcdata.fp:in
+   !                *bcdata.fv:in *bcdata.m:in *bcdata.oarea:in *bcdata.sepsensor:in
+   !                *bcdata.cavitation:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -81,9 +81,7 @@
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rho2, rho1
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rho2d, rho1d
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rlv1, rlv2
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rlv1d, rlv2d
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rev1, rev2
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rev1d, rev2d
    REAL(kind=realtype), DIMENSION(imaxdim - 2, jmaxdim - 2) :: dd2wall
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, 3) :: ss
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim, 3) :: ssd
@@ -539,11 +537,8 @@
    &                             rho2, rho2d, dd2wall)
    CALL POPREAL8ARRAY(rev, SIZE(rev, 1)*SIZE(rev, 2)*SIZE(rev, 3))
    CALL POPREAL8ARRAY(rlv, SIZE(rlv, 1)*SIZE(rlv, 2)*SIZE(rlv, 3))
-   rlvd = 0.0_8
-   revd = 0.0_8
    CALL RESETBCPOINTERSBWD_B(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, pp2&
-   &                         , pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev1d&
-   &                         , rev2, rev2d, 0)
+   &                         , pp2d, rlv1, rlv2, rev1, rev2, 0)
    CALL POPINTEGER4(ad_from4)
    CALL POPINTEGER4(ad_to4)
    DO j=ad_to4,ad_from4,-1
@@ -816,15 +811,8 @@
    &                           rho2, rho2d, dd2wall)
    CALL POPREAL8ARRAY(pp1, imaxdim*jmaxdim)
    CALL POPREAL8ARRAY(pp2, imaxdim*jmaxdim)
-   rlv1d = 0.0_8
-   rlv2d = 0.0_8
-   rev1d = 0.0_8
-   rev2d = 0.0_8
-   rlvd = 0.0_8
-   revd = 0.0_8
    CALL SETBCPOINTERSBWD_B(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, pp2, &
-   &                       pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev1d, &
-   &                       rev2, rev2d, 0)
+   &                       pp2d, rlv1, rlv2, rev1, rev2, 0)
    END IF
    END DO
    pointrefd(3) = pointrefd(3) + lref*refpointd(3)

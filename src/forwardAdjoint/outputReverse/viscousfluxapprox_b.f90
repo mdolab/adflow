@@ -2,12 +2,11 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of viscousfluxapprox in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *p *gamma *w *x *si *sj *sk
-   !                *fw
-   !   with respect to varying inputs: *rev *p *gamma *w *rlv *x *si
-   !                *sj *sk *fw
-   !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
-   !                x:in si:in sj:in sk:in fw:in
+   !   gradient     of useful results: *p *w *x *si *sj *sk *fw
+   !   with respect to varying inputs: *rev *p *w *rlv *x *si *sj
+   !                *sk *fw
+   !   Plus diff mem management of: rev:in p:in w:in rlv:in x:in si:in
+   !                sj:in sk:in fw:in
    SUBROUTINE VISCOUSFLUXAPPROX_B()
    USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
@@ -26,7 +25,6 @@
    REAL(kind=realtype) :: rfilv, por, mul, mue, mut, heatcoef
    REAL(kind=realtype) :: muld, mued, mutd, heatcoefd
    REAL(kind=realtype) :: gm1, factlamheat, factturbheat
-   REAL(kind=realtype) :: gm1d, factlamheatd, factturbheatd
    REAL(kind=realtype) :: u_x, u_y, u_z, v_x, v_y, v_z, w_x, w_y, w_z
    REAL(kind=realtype) :: u_xd, u_yd, u_zd, v_xd, v_yd, v_zd, w_xd, w_yd&
    & , w_zd
@@ -46,7 +44,6 @@
    INTRINSIC ABS
    INTEGER :: branch
    REAL(kind=realtype) :: tempd14
-   REAL(kind=realtype) :: temp3
    REAL(kind=realtype) :: tempd13
    REAL(kind=realtype) :: temp2
    REAL(kind=realtype) :: temp1
@@ -65,7 +62,6 @@
    REAL(kind=realtype) :: tempd2
    REAL(kind=realtype) :: tempd1
    REAL(kind=realtype) :: tempd0
-   REAL(kind=realtype) :: tempd24
    REAL(kind=realtype) :: tempd23
    REAL(kind=realtype) :: tempd22
    REAL(kind=realtype) :: tempd21
@@ -77,7 +73,6 @@
    REAL(kind=realtype) :: tempd17
    REAL(kind=realtype) :: tempd16
    REAL(kind=realtype) :: tempd15
-   REAL(kind=realtype) :: temp4
    ! Set rFilv to rFil to indicate that this is the viscous part.
    ! If rFilv == 0 the viscous residuals need not to be computed
    ! and a return can be made.
@@ -187,16 +182,17 @@
    ! flux.
    mul = por*(rlv(i, j, k)+rlv(i+1, j, k))
    IF (eddymodel) THEN
-   CALL PUSHREAL8(mue)
    mue = por*(rev(i, j, k)+rev(i+1, j, k))
    CALL PUSHCONTROL1B(0)
    ELSE
    CALL PUSHCONTROL1B(1)
    END IF
    CALL PUSHREAL8(mut)
+   mut = mul + mue
    gm1 = half*(gamma(i, j, k)+gamma(i+1, j, k)) - one
    factlamheat = one/(prandtl*gm1)
    factturbheat = one/(prandtlturb*gm1)
+   CALL PUSHREAL8(heatcoef)
    heatcoef = mul*factlamheat + mue*factturbheat
    ! Compute the stress tensor and the heat flux vector.
    CALL PUSHREAL8(fracdiv)
@@ -278,16 +274,17 @@
    ! flux.
    mul = por*(rlv(i, j, k)+rlv(i, j+1, k))
    IF (eddymodel) THEN
-   CALL PUSHREAL8(mue)
    mue = por*(rev(i, j, k)+rev(i, j+1, k))
    CALL PUSHCONTROL1B(0)
    ELSE
    CALL PUSHCONTROL1B(1)
    END IF
    CALL PUSHREAL8(mut)
+   mut = mul + mue
    gm1 = half*(gamma(i, j, k)+gamma(i, j+1, k)) - one
    factlamheat = one/(prandtl*gm1)
    factturbheat = one/(prandtlturb*gm1)
+   CALL PUSHREAL8(heatcoef)
    heatcoef = mul*factlamheat + mue*factturbheat
    ! Compute the stress tensor and the heat flux vector.
    CALL PUSHREAL8(fracdiv)
@@ -369,16 +366,17 @@
    ! flux.
    mul = por*(rlv(i, j, k)+rlv(i, j, k+1))
    IF (eddymodel) THEN
-   CALL PUSHREAL8(mue)
    mue = por*(rev(i, j, k)+rev(i, j, k+1))
    CALL PUSHCONTROL1B(0)
    ELSE
    CALL PUSHCONTROL1B(1)
    END IF
    CALL PUSHREAL8(mut)
+   mut = mul + mue
    gm1 = half*(gamma(i, j, k)+gamma(i, j, k+1)) - one
    factlamheat = one/(prandtl*gm1)
    factturbheat = one/(prandtlturb*gm1)
+   CALL PUSHREAL8(heatcoef)
    heatcoef = mul*factlamheat + mue*factturbheat
    ! Compute the stress tensor and the heat flux vector.
    CALL PUSHREAL8(fracdiv)
@@ -422,12 +420,9 @@
    DO j=je,1,-1
    DO i=ie,1,-1
    CALL POPREAL8(p(i, j, k))
-   temp4 = gamma(i, j, k)
-   temp3 = p(i, j, k)/temp4
-   tempd24 = w(i, j, k, irho)*pd(i, j, k)/temp4
-   wd(i, j, k, irho) = wd(i, j, k, irho) + temp3*pd(i, j, k)
-   gammad(i, j, k) = gammad(i, j, k) - temp3*tempd24
-   pd(i, j, k) = tempd24
+   wd(i, j, k, irho) = wd(i, j, k, irho) + p(i, j, k)*pd(i, j, k)&
+   &           /gamma(i, j, k)
+   pd(i, j, k) = w(i, j, k, irho)*pd(i, j, k)/gamma(i, j, k)
    END DO
    END DO
    END DO
@@ -441,8 +436,6 @@
    fmzd = fwd(i, j, k+1, imz) - fwd(i, j, k, imz)
    fmyd = fwd(i, j, k+1, imy) - fwd(i, j, k, imy)
    fmxd = fwd(i, j, k+1, imx) - fwd(i, j, k, imx)
-   mul = por*(rlv(i, j, k)+rlv(i, j, k+1))
-   mut = mul + mue
    tauzz = mut*(two*w_z-fracdiv)
    wbar = half*(w(i, j, k, ivz)+w(i, j, k+1, ivz))
    vbar = half*(w(i, j, k, ivy)+w(i, j, k+1, ivy))
@@ -492,10 +485,6 @@
    wd(i, j, k, ivx) = wd(i, j, k, ivx) + half*ubard
    wd(i, j, k+1, ivx) = wd(i, j, k+1, ivx) + half*ubard
    dd = p(i, j, k+1) - p(i, j, k)
-   gm1 = half*(gamma(i, j, k)+gamma(i, j, k+1)) - one
-   factlamheat = one/(prandtl*gm1)
-   factturbheat = one/(prandtlturb*gm1)
-   heatcoef = mul*factlamheat + mue*factturbheat
    CALL POPREAL8(q_z)
    CALL POPREAL8(q_y)
    CALL POPREAL8(q_x)
@@ -518,18 +507,15 @@
    w_zd = tempd23 + mut*two*tauzzd
    v_yd = tempd23 + mut*two*tauyyd
    u_xd = tempd23 + mut*two*tauxxd
+   gm1 = half*(gamma(i, j, k)+gamma(i, j, k+1)) - one
+   factlamheat = one/(prandtl*gm1)
+   factturbheat = one/(prandtlturb*gm1)
+   CALL POPREAL8(heatcoef)
    muld = mutd + factlamheat*heatcoefd
-   factlamheatd = mul*heatcoefd
    mued = mued + mutd + factturbheat*heatcoefd
-   factturbheatd = mue*heatcoefd
-   gm1d = -(one*factlamheatd/(prandtl*gm1**2)) - one*&
-   &           factturbheatd/(prandtlturb*gm1**2)
-   gammad(i, j, k) = gammad(i, j, k) + half*gm1d
-   gammad(i, j, k+1) = gammad(i, j, k+1) + half*gm1d
    CALL POPREAL8(mut)
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   CALL POPREAL8(mue)
    revd(i, j, k) = revd(i, j, k) + por*mued
    revd(i, j, k+1) = revd(i, j, k+1) + por*mued
    mued = 0.0_8
@@ -626,8 +612,6 @@
    fmzd = fwd(i, j+1, k, imz) - fwd(i, j, k, imz)
    fmyd = fwd(i, j+1, k, imy) - fwd(i, j, k, imy)
    fmxd = fwd(i, j+1, k, imx) - fwd(i, j, k, imx)
-   mul = por*(rlv(i, j, k)+rlv(i, j+1, k))
-   mut = mul + mue
    tauzz = mut*(two*w_z-fracdiv)
    wbar = half*(w(i, j, k, ivz)+w(i, j+1, k, ivz))
    vbar = half*(w(i, j, k, ivy)+w(i, j+1, k, ivy))
@@ -677,10 +661,6 @@
    wd(i, j, k, ivx) = wd(i, j, k, ivx) + half*ubard
    wd(i, j+1, k, ivx) = wd(i, j+1, k, ivx) + half*ubard
    dd = p(i, j+1, k) - p(i, j, k)
-   gm1 = half*(gamma(i, j, k)+gamma(i, j+1, k)) - one
-   factlamheat = one/(prandtl*gm1)
-   factturbheat = one/(prandtlturb*gm1)
-   heatcoef = mul*factlamheat + mue*factturbheat
    CALL POPREAL8(q_z)
    CALL POPREAL8(q_y)
    CALL POPREAL8(q_x)
@@ -703,18 +683,15 @@
    w_zd = tempd15 + mut*two*tauzzd
    v_yd = tempd15 + mut*two*tauyyd
    u_xd = tempd15 + mut*two*tauxxd
+   gm1 = half*(gamma(i, j, k)+gamma(i, j+1, k)) - one
+   factlamheat = one/(prandtl*gm1)
+   factturbheat = one/(prandtlturb*gm1)
+   CALL POPREAL8(heatcoef)
    muld = mutd + factlamheat*heatcoefd
-   factlamheatd = mul*heatcoefd
    mued = mued + mutd + factturbheat*heatcoefd
-   factturbheatd = mue*heatcoefd
-   gm1d = -(one*factlamheatd/(prandtl*gm1**2)) - one*&
-   &           factturbheatd/(prandtlturb*gm1**2)
-   gammad(i, j, k) = gammad(i, j, k) + half*gm1d
-   gammad(i, j+1, k) = gammad(i, j+1, k) + half*gm1d
    CALL POPREAL8(mut)
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   CALL POPREAL8(mue)
    revd(i, j, k) = revd(i, j, k) + por*mued
    revd(i, j+1, k) = revd(i, j+1, k) + por*mued
    mued = 0.0_8
@@ -811,8 +788,6 @@
    fmzd = fwd(i+1, j, k, imz) - fwd(i, j, k, imz)
    fmyd = fwd(i+1, j, k, imy) - fwd(i, j, k, imy)
    fmxd = fwd(i+1, j, k, imx) - fwd(i, j, k, imx)
-   mul = por*(rlv(i, j, k)+rlv(i+1, j, k))
-   mut = mul + mue
    tauzz = mut*(two*w_z-fracdiv)
    wbar = half*(w(i, j, k, ivz)+w(i+1, j, k, ivz))
    vbar = half*(w(i, j, k, ivy)+w(i+1, j, k, ivy))
@@ -862,10 +837,6 @@
    wd(i, j, k, ivx) = wd(i, j, k, ivx) + half*ubard
    wd(i+1, j, k, ivx) = wd(i+1, j, k, ivx) + half*ubard
    dd = p(i+1, j, k) - p(i, j, k)
-   gm1 = half*(gamma(i, j, k)+gamma(i+1, j, k)) - one
-   factlamheat = one/(prandtl*gm1)
-   factturbheat = one/(prandtlturb*gm1)
-   heatcoef = mul*factlamheat + mue*factturbheat
    CALL POPREAL8(q_z)
    CALL POPREAL8(q_y)
    CALL POPREAL8(q_x)
@@ -888,18 +859,15 @@
    w_zd = tempd7 + mut*two*tauzzd
    v_yd = tempd7 + mut*two*tauyyd
    u_xd = tempd7 + mut*two*tauxxd
+   gm1 = half*(gamma(i, j, k)+gamma(i+1, j, k)) - one
+   factlamheat = one/(prandtl*gm1)
+   factturbheat = one/(prandtlturb*gm1)
+   CALL POPREAL8(heatcoef)
    muld = mutd + factlamheat*heatcoefd
-   factlamheatd = mul*heatcoefd
    mued = mued + mutd + factturbheat*heatcoefd
-   factturbheatd = mue*heatcoefd
-   gm1d = -(one*factlamheatd/(prandtl*gm1**2)) - one*&
-   &           factturbheatd/(prandtlturb*gm1**2)
-   gammad(i, j, k) = gammad(i, j, k) + half*gm1d
-   gammad(i+1, j, k) = gammad(i+1, j, k) + half*gm1d
    CALL POPREAL8(mut)
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   CALL POPREAL8(mue)
    revd(i, j, k) = revd(i, j, k) + por*mued
    revd(i+1, j, k) = revd(i+1, j, k) + por*mued
    mued = 0.0_8
@@ -994,11 +962,9 @@
    DO i=ie,1,-1
    CALL POPREAL8(p(i, j, k))
    temp = w(i, j, k, irho)
-   tempd = pd(i, j, k)/temp
-   gammad(i, j, k) = gammad(i, j, k) + p(i, j, k)*tempd
-   wd(i, j, k, irho) = wd(i, j, k, irho) - gamma(i, j, k)*p(i, j&
-   &           , k)*tempd/temp
-   pd(i, j, k) = gamma(i, j, k)*tempd
+   tempd = gamma(i, j, k)*pd(i, j, k)/temp
+   wd(i, j, k, irho) = wd(i, j, k, irho) - p(i, j, k)*tempd/temp
+   pd(i, j, k) = tempd
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    CALL POPREAL8(p(i, j, k))

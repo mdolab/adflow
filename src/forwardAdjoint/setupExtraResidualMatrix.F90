@@ -51,7 +51,7 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
   real(kind=realType) :: alphad, betad, sepSensord, Cavitationd
   real(kind=realType), dimension(3, nTimeIntervalsSpectral) :: force, moment, forced, momentd
   integer(kind=intType) :: liftIndex
-  
+  real(kind=realType), dimension(:), allocatable :: blk
   !Reference values for FD
   real(kind=realType) :: alpharef, betaref, machref, machGridRef, machCoefRef
   real(kind=realType), dimension(3) :: rotRateRef,rotcenterRef
@@ -68,6 +68,7 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
   else
      nState = nw
   endif
+  allocate(blk(nState))
 
   rkStage = 0
   currentLevel =1 
@@ -272,7 +273,8 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
                     irow = flowDoms(nn,1,sps)%globalCell(i,j,k)
                     if ( irow >= 0) then
                        icol = icolor-1
-                       call setBlock(flowDomsd(nn, 1, sps)%dw_deriv(i, j, k, :, 1))
+                       blk = flowDomsd(nn, 1, sps)%dw_deriv(i, j, k, :, 1)
+                       call setBlock(blk)
                     end if ! Color If check
                  end do ! i loop
               end do ! j loop
@@ -300,7 +302,6 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
   ! Deallocate and reset Values
   call dealloc_derivative_values(level)
 
-
   ! PETSc Matrix Assembly and Options Set
   call MatAssemblyBegin(matrix, MAT_FINAL_ASSEMBLY, ierr)
   call EChk(ierr, __FILE__, __LINE__)
@@ -327,6 +328,7 @@ subroutine setupExtraResidualMatrix(matrix, useAD)
      restrictEddyVis = .false.
      if( eddyModel ) restrictEddyVis = .true.
   end if
+  deallocate(blk)
 contains
 
   subroutine setBlock(blk)
@@ -334,11 +336,11 @@ contains
     ! Sets a block at icol,irow with transpose of blk if useTranspose is True
 
     implicit none
-    real(kind=realType), dimension(nState,1) :: blk
+    real(kind=realType), dimension(nState) :: blk
     integer(kind=intType) :: iii
        
     do iii=1, nState
-       call MatSetValues(matrix, 1, irow*nState+iii-1, 1, icol,blk(iii,1), &
+       call MatSetValues(matrix, 1, irow*nState+iii-1, 1, icol,blk(iii), &
             ADD_VALUES, ierr)
        call EChk(ierr, __FILE__, __LINE__)
     end do

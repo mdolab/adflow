@@ -2,8 +2,8 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of unsteadyturbterm in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *dw *w timeref
-   !   with respect to varying inputs: *dw *w timeref
+   !   gradient     of useful results: timeref *dw *w
+   !   with respect to varying inputs: timeref *dw *w
    !   Plus diff mem management of: dw:in w:in
    !
    !      ******************************************************************

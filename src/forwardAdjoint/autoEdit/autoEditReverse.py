@@ -56,7 +56,8 @@ for f in os.listdir(DIR_ORI):
 
             for i in xrange(nEdits):
                 if line_mod[0:len(LINE_ID[i])] == LINE_ID[i]:
-                    line_mod = string.replace(line_mod, STR_OLD[i], STR_NEW[i])
+                    if "BCROUTINES" not in line_mod:
+                        line_mod = string.replace(line_mod, STR_OLD[i], STR_NEW[i])
 
             for key in STR_REPLACE_ALL:
                 line_mod = string.replace(line_mod,key,STR_REPLACE_ALL[key])

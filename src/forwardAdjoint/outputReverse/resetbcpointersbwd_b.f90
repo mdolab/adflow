@@ -2,10 +2,9 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of resetbcpointersbwd in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *rev *p *w *rlv
-   !   with respect to varying inputs: *rev *p *w *rlv rev1 rev2 pp1
-   !                pp2 rlv1 rlv2 ww1 ww2
-   !   Plus diff mem management of: rev:in p:in w:in rlv:in
+   !   gradient     of useful results: *p *w
+   !   with respect to varying inputs: *p *w pp1 pp2 ww1 ww2
+   !   Plus diff mem management of: p:in w:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -17,7 +16,7 @@
    !      ******************************************************************
    !
    SUBROUTINE RESETBCPOINTERSBWD_B(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, pp2&
-   & , pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev1d, rev2, rev2d, offset)
+   & , pp2d, rlv1, rlv2, rev1, rev2, offset)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -40,14 +39,11 @@
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: pp1, pp2
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: pp1d, pp2d
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rlv1, rlv2
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rlv1d, rlv2d
    REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rev1, rev2
-   REAL(kind=realtype), DIMENSION(imaxdim, jmaxdim) :: rev1d, rev2d
    !
    !      Local variables
    !
    INTEGER(kind=inttype) :: id, ih, ierr, i, j, k
-   INTEGER :: branch
    !
    !      ******************************************************************
    !      *                                                                *
@@ -60,44 +56,12 @@
    CASE (imin) 
    id = 2 + offset
    ih = 1 - offset
-   DO k=1,kl+1
-   DO j=1,jl+1
-   IF (viscous) THEN
-   CALL PUSHCONTROL1B(0)
-   ELSE
-   CALL PUSHCONTROL1B(1)
-   END IF
-   IF (eddymodel) THEN
-   CALL PUSHCONTROL1B(1)
-   ELSE
-   CALL PUSHCONTROL1B(0)
-   END IF
-   END DO
-   END DO
-   rev1d = 0.0_8
-   rev2d = 0.0_8
    pp1d = 0.0_8
    pp2d = 0.0_8
-   rlv1d = 0.0_8
-   rlv2d = 0.0_8
    ww1d = 0.0_8
    ww2d = 0.0_8
    DO k=kl+1,1,-1
    DO j=jl+1,1,-1
-   CALL POPCONTROL1B(branch)
-   IF (branch .NE. 0) THEN
-   rev2d(j, k) = rev2d(j, k) + revd(id, j, k)
-   revd(id, j, k) = 0.0_8
-   rev1d(j, k) = rev1d(j, k) + revd(ih, j, k)
-   revd(ih, j, k) = 0.0_8
-   END IF
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
-   rlv2d(j, k) = rlv2d(j, k) + rlvd(id, j, k)
-   rlvd(id, j, k) = 0.0_8
-   rlv1d(j, k) = rlv1d(j, k) + rlvd(ih, j, k)
-   rlvd(ih, j, k) = 0.0_8
-   END IF
    pp2d(j, k) = pp2d(j, k) + pd(id, j, k)
    pd(id, j, k) = 0.0_8
    pp1d(j, k) = pp1d(j, k) + pd(ih, j, k)
@@ -112,44 +76,12 @@
    !===============================================================
    id = il - offset
    ih = ie + offset
-   DO k=1,kl+1
-   DO j=1,jl+1
-   IF (viscous) THEN
-   CALL PUSHCONTROL1B(0)
-   ELSE
-   CALL PUSHCONTROL1B(1)
-   END IF
-   IF (eddymodel) THEN
-   CALL PUSHCONTROL1B(1)
-   ELSE
-   CALL PUSHCONTROL1B(0)
-   END IF
-   END DO
-   END DO
-   rev1d = 0.0_8
-   rev2d = 0.0_8
    pp1d = 0.0_8
    pp2d = 0.0_8
-   rlv1d = 0.0_8
-   rlv2d = 0.0_8
    ww1d = 0.0_8
    ww2d = 0.0_8
    DO k=kl+1,1,-1
    DO j=jl+1,1,-1
-   CALL POPCONTROL1B(branch)
-   IF (branch .NE. 0) THEN
-   rev2d(j, k) = rev2d(j, k) + revd(id, j, k)
-   revd(id, j, k) = 0.0_8
-   rev1d(j, k) = rev1d(j, k) + revd(ih, j, k)
-   revd(ih, j, k) = 0.0_8
-   END IF
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
-   rlv2d(j, k) = rlv2d(j, k) + rlvd(id, j, k)
-   rlvd(id, j, k) = 0.0_8
-   rlv1d(j, k) = rlv1d(j, k) + rlvd(ih, j, k)
-   rlvd(ih, j, k) = 0.0_8
-   END IF
    pp2d(j, k) = pp2d(j, k) + pd(id, j, k)
    pd(id, j, k) = 0.0_8
    pp1d(j, k) = pp1d(j, k) + pd(ih, j, k)
@@ -164,44 +96,12 @@
    !===============================================================
    id = 2 + offset
    ih = 1 - offset
-   DO k=1,kl+1
-   DO i=1,il+1
-   IF (viscous) THEN
-   CALL PUSHCONTROL1B(0)
-   ELSE
-   CALL PUSHCONTROL1B(1)
-   END IF
-   IF (eddymodel) THEN
-   CALL PUSHCONTROL1B(1)
-   ELSE
-   CALL PUSHCONTROL1B(0)
-   END IF
-   END DO
-   END DO
-   rev1d = 0.0_8
-   rev2d = 0.0_8
    pp1d = 0.0_8
    pp2d = 0.0_8
-   rlv1d = 0.0_8
-   rlv2d = 0.0_8
    ww1d = 0.0_8
    ww2d = 0.0_8
    DO k=kl+1,1,-1
    DO i=il+1,1,-1
-   CALL POPCONTROL1B(branch)
-   IF (branch .NE. 0) THEN
-   rev2d(i, k) = rev2d(i, k) + revd(i, id, k)
-   revd(i, id, k) = 0.0_8
-   rev1d(i, k) = rev1d(i, k) + revd(i, ih, k)
-   revd(i, ih, k) = 0.0_8
-   END IF
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
-   rlv2d(i, k) = rlv2d(i, k) + rlvd(i, id, k)
-   rlvd(i, id, k) = 0.0_8
-   rlv1d(i, k) = rlv1d(i, k) + rlvd(i, ih, k)
-   rlvd(i, ih, k) = 0.0_8
-   END IF
    pp2d(i, k) = pp2d(i, k) + pd(i, id, k)
    pd(i, id, k) = 0.0_8
    pp1d(i, k) = pp1d(i, k) + pd(i, ih, k)
@@ -216,44 +116,12 @@
    !===============================================================
    id = jl - offset
    ih = je + offset
-   DO k=1,kl+1
-   DO i=1,il+1
-   IF (viscous) THEN
-   CALL PUSHCONTROL1B(0)
-   ELSE
-   CALL PUSHCONTROL1B(1)
-   END IF
-   IF (eddymodel) THEN
-   CALL PUSHCONTROL1B(1)
-   ELSE
-   CALL PUSHCONTROL1B(0)
-   END IF
-   END DO
-   END DO
-   rev1d = 0.0_8
-   rev2d = 0.0_8
    pp1d = 0.0_8
    pp2d = 0.0_8
-   rlv1d = 0.0_8
-   rlv2d = 0.0_8
    ww1d = 0.0_8
    ww2d = 0.0_8
    DO k=kl+1,1,-1
    DO i=il+1,1,-1
-   CALL POPCONTROL1B(branch)
-   IF (branch .NE. 0) THEN
-   rev2d(i, k) = rev2d(i, k) + revd(i, id, k)
-   revd(i, id, k) = 0.0_8
-   rev1d(i, k) = rev1d(i, k) + revd(i, ih, k)
-   revd(i, ih, k) = 0.0_8
-   END IF
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
-   rlv2d(i, k) = rlv2d(i, k) + rlvd(i, id, k)
-   rlvd(i, id, k) = 0.0_8
-   rlv1d(i, k) = rlv1d(i, k) + rlvd(i, ih, k)
-   rlvd(i, ih, k) = 0.0_8
-   END IF
    pp2d(i, k) = pp2d(i, k) + pd(i, id, k)
    pd(i, id, k) = 0.0_8
    pp1d(i, k) = pp1d(i, k) + pd(i, ih, k)
@@ -268,44 +136,12 @@
    !===============================================================
    id = 2 + offset
    ih = 1 - offset
-   DO j=1,jl+1
-   DO i=1,il+1
-   IF (viscous) THEN
-   CALL PUSHCONTROL1B(0)
-   ELSE
-   CALL PUSHCONTROL1B(1)
-   END IF
-   IF (eddymodel) THEN
-   CALL PUSHCONTROL1B(1)
-   ELSE
-   CALL PUSHCONTROL1B(0)
-   END IF
-   END DO
-   END DO
-   rev1d = 0.0_8
-   rev2d = 0.0_8
    pp1d = 0.0_8
    pp2d = 0.0_8
-   rlv1d = 0.0_8
-   rlv2d = 0.0_8
    ww1d = 0.0_8
    ww2d = 0.0_8
    DO j=jl+1,1,-1
    DO i=il+1,1,-1
-   CALL POPCONTROL1B(branch)
-   IF (branch .NE. 0) THEN
-   rev2d(i, j) = rev2d(i, j) + revd(i, j, id)
-   revd(i, j, id) = 0.0_8
-   rev1d(i, j) = rev1d(i, j) + revd(i, j, ih)
-   revd(i, j, ih) = 0.0_8
-   END IF
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
-   rlv2d(i, j) = rlv2d(i, j) + rlvd(i, j, id)
-   rlvd(i, j, id) = 0.0_8
-   rlv1d(i, j) = rlv1d(i, j) + rlvd(i, j, ih)
-   rlvd(i, j, ih) = 0.0_8
-   END IF
    pp2d(i, j) = pp2d(i, j) + pd(i, j, id)
    pd(i, j, id) = 0.0_8
    pp1d(i, j) = pp1d(i, j) + pd(i, j, ih)
@@ -320,44 +156,12 @@
    !===============================================================
    id = kl - offset
    ih = ke + offset
-   DO j=1,jl+1
-   DO i=1,il+1
-   IF (viscous) THEN
-   CALL PUSHCONTROL1B(0)
-   ELSE
-   CALL PUSHCONTROL1B(1)
-   END IF
-   IF (eddymodel) THEN
-   CALL PUSHCONTROL1B(1)
-   ELSE
-   CALL PUSHCONTROL1B(0)
-   END IF
-   END DO
-   END DO
-   rev1d = 0.0_8
-   rev2d = 0.0_8
    pp1d = 0.0_8
    pp2d = 0.0_8
-   rlv1d = 0.0_8
-   rlv2d = 0.0_8
    ww1d = 0.0_8
    ww2d = 0.0_8
    DO j=jl+1,1,-1
    DO i=il+1,1,-1
-   CALL POPCONTROL1B(branch)
-   IF (branch .NE. 0) THEN
-   rev2d(i, j) = rev2d(i, j) + revd(i, j, id)
-   revd(i, j, id) = 0.0_8
-   rev1d(i, j) = rev1d(i, j) + revd(i, j, ih)
-   revd(i, j, ih) = 0.0_8
-   END IF
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
-   rlv2d(i, j) = rlv2d(i, j) + rlvd(i, j, id)
-   rlvd(i, j, id) = 0.0_8
-   rlv1d(i, j) = rlv1d(i, j) + rlvd(i, j, ih)
-   rlvd(i, j, ih) = 0.0_8
-   END IF
    pp2d(i, j) = pp2d(i, j) + pd(i, j, id)
    pd(i, j, id) = 0.0_8
    pp1d(i, j) = pp1d(i, j) + pd(i, j, ih)
@@ -369,12 +173,8 @@
    END DO
    END DO
    CASE DEFAULT
-   rev1d = 0.0_8
-   rev2d = 0.0_8
    pp1d = 0.0_8
    pp2d = 0.0_8
-   rlv1d = 0.0_8
-   rlv2d = 0.0_8
    ww1d = 0.0_8
    ww2d = 0.0_8
    END SELECT

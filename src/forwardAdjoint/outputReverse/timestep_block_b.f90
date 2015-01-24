@@ -2,12 +2,12 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of timestep_block in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *p *gamma *w *si *sj *sk *radi
-   !                *radj *radk gammainf rhoinf pinfcorr
-   !   with respect to varying inputs: *p *gamma *w *si *sj *sk gammainf
-   !                rhoinf pinfcorr
-   !   Plus diff mem management of: p:in gamma:in w:in si:in sj:in
-   !                sk:in radi:in radj:in radk:in
+   !   gradient     of useful results: gammainf rhoinf pinfcorr *p
+   !                *w *si *sj *sk *radi *radj *radk
+   !   with respect to varying inputs: gammainf rhoinf pinfcorr *p
+   !                *w *si *sj *sk
+   !   Plus diff mem management of: p:in w:in si:in sj:in sk:in radi:in
+   !                radj:in radk:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -377,11 +377,9 @@
    cc2d = 0.0_8
    END IF
    temp = w(i, j, k, irho)
-   tempd0 = cc2d/temp
-   gammad(i, j, k) = gammad(i, j, k) + p(i, j, k)*tempd0
-   pd(i, j, k) = pd(i, j, k) + gamma(i, j, k)*tempd0
-   wd(i, j, k, irho) = wd(i, j, k, irho) - gamma(i, j, k)*p(i, j, k&
-   &         )*tempd0/temp
+   tempd0 = gamma(i, j, k)*cc2d/temp
+   pd(i, j, k) = pd(i, j, k) + tempd0
+   wd(i, j, k, irho) = wd(i, j, k, irho) - p(i, j, k)*tempd0/temp
    wd(i, j, k, ivz) = wd(i, j, k, ivz) + uuzd
    wd(i, j, k, ivy) = wd(i, j, k, ivy) + uuyd
    wd(i, j, k, ivx) = wd(i, j, k, ivx) + uuxd

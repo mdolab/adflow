@@ -294,7 +294,7 @@ ad_reverse:
 # The following is the single Tapenade command to run:
 	$(TAPENADE_HOME)/bin/tapenade -html \
 	-head "block_res(flowdoms%w flowdoms%x xsurf alpha beta mach machgrid machcoef pointref lengthRef Pref tempFreeStream Reynolds ww0 ww1 ww2 ww3 pp0 pp1 pp2 pp3 rlv0 rlv1 rlv2 rlv3 rev0 rev1 rev2 rev3) > \
-		(flowdoms%dw  BCData%Fp BCData%Fv BCData%M  BCData%sepSensor BCData%Cavitation BCData%oArea flowdoms%w flowdoms%x force moment sepSensor Cavitation funcValues ww0 ww1 ww2 ww3 pp0 pp1 pp2 pp3 rlv0 rlv1 rlv2 rlv3 rev0 rev1 rev2 rev3) " \
+(flowdoms%dw  BCData%Fp BCData%Fv BCData%M  BCData%sepSensor BCData%Cavitation BCData%oArea flowdoms%w flowdoms%x force moment sepSensor Cavitation funcValues ww0 ww1 ww2 ww3 pp0 pp1 pp2 pp3 rlv0 rlv1 rlv2 rlv3 rev0 rev1 rev2 rev3)" \
 	-adjvarname %d \
 	-reverse 	 -msglevel 30 $(TAPENADE_PRECISION) \
 	-noisize \
@@ -310,7 +310,7 @@ ad_reverse:
 	sed -i 's/   DO ii1=1,SIZE(viscsubfaced(ii1)%tau, 1)/   DO ii1=1,SIZE(viscsubfaced)/' outputReverse/forcesandmoments_b.f90
 	sed -i 's/   DO ii1=1,SIZE(bcdata(ii1)%oarea, 1)/   DO ii1=1,SIZE(bcdata)/' outputReverse/block_res_b.f90
 	sed -i 's/   DO ii1=SIZE(bcdata(ii1)%oarea, 1),1,-1/    DO ii1=SIZE(bcdata),1,-1/' outputReverse/block_res_b.f90
-	sed -i 's/   DO ii1=1,SIZE(bcdatad(ii1)%norm, 1)/   DO ii1=1,SIZE(bcdatad)/' outputReverse/bceulerwall_b.f90
+	sed -i 's/   DO ii1=1,SIZE(bcdatad(ii1)%norm, 1)/   DO ii1=1,SIZE(bcdatad)/' outputReverse/bcroutines_b.f90
 
 ad_reverse_fast:
 # First delete the holding directory if it exists
