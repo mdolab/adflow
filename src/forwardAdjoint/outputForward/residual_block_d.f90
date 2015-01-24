@@ -3,16 +3,15 @@
    !
    !  Differentiation of residual_block in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *p *dw *w *(*viscsubface.tau)
-   !   with respect to varying inputs: *rev *p *sfacei *sfacej *gamma
-   !                *sfacek *dw *w *rlv *x *vol *si *sj *sk *radi
-   !                *radj *radk gammainf timeref rhoinf tref winf
-   !                pinfcorr rgas
+   !   with respect to varying inputs: gammainf timeref rhoinf tref
+   !                winf pinfcorr rgas *rev *p *sfacei *sfacej *sfacek
+   !                *dw *w *rlv *x *vol *si *sj *sk *radi *radj *radk
    !   Plus diff mem management of: rev:in aa:in wx:in wy:in wz:in
-   !                p:in sfacei:in sfacej:in gamma:in sfacek:in dw:in
-   !                w:in rlv:in x:in qx:in qy:in qz:in ux:in vol:in
-   !                uy:in uz:in si:in sj:in sk:in vx:in vy:in vz:in
-   !                fw:in viscsubface:in *viscsubface.tau:in radi:in
-   !                radj:in radk:in
+   !                p:in sfacei:in sfacej:in sfacek:in dw:in w:in
+   !                rlv:in x:in qx:in qy:in qz:in ux:in vol:in uy:in
+   !                uz:in si:in sj:in sk:in vx:in vy:in vz:in fw:in
+   !                viscsubface:in *viscsubface.tau:in radi:in radj:in
+   !                radk:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -208,9 +207,8 @@
    DO j=2,jl
    DO i=2,il
    !    Compute speed of sound
-   arg1d = ((gammad(i, j, k)*p(i, j, k)+gamma(i, j, k)*pd(i, j, k&
-   &           ))*w(i, j, k, irho)-gamma(i, j, k)*p(i, j, k)*wd(i, j, k, &
-   &           irho))/w(i, j, k, irho)**2
+   arg1d = (gamma(i, j, k)*pd(i, j, k)*w(i, j, k, irho)-gamma(i, &
+   &           j, k)*p(i, j, k)*wd(i, j, k, irho))/w(i, j, k, irho)**2
    arg1 = gamma(i, j, k)*p(i, j, k)/w(i, j, k, irho)
    IF (arg1 .EQ. 0.0_8) THEN
    sosd = 0.0_8
@@ -294,8 +292,7 @@
    a45d = (one*velzrho*2*sos*sosd-one*velzrhod*sos**2)/(sos**2)**&
    &           2
    a45 = zero + one*(-velzrho)/sos**2
-   a51d = one*((-gammad(i, j, k))/(gamma(i, j, k)-1)**2+2*resm*&
-   &           resmd/2)
+   a51d = one*resm*resmd
    a51 = one*(1/(gamma(i, j, k)-1)+resm**2/2)
    a52d = one*(wd(i, j, k, irho)*velxrho+w(i, j, k, irho)*&
    &           velxrhod)
@@ -308,165 +305,141 @@
    a54 = one*w(i, j, k, irho)*velzrho
    a55d = -(one*resm*resmd)
    a55 = one*((-(resm**2))/2)
-   b11d = ((a11d*q+a11*qd)*(gamma(i, j, k)-1)+a11*q*gammad(i, j, &
-   &           k))/2 + (a12*velxrho*wd(i, j, k, irho)-a12*velxrhod*w(i, j, &
-   &           k, irho))/w(i, j, k, irho)**2 + (a13*velyrho*wd(i, j, k, &
-   &           irho)-a13*velyrhod*w(i, j, k, irho))/w(i, j, k, irho)**2 + (&
-   &           a14*velzrho*wd(i, j, k, irho)-a14*velzrhod*w(i, j, k, irho))&
-   &           /w(i, j, k, irho)**2 + a15d*((gamma(i, j, k)-1)*q/2-sos**2) &
-   &           + a15*((gammad(i, j, k)*q+(gamma(i, j, k)-1)*qd)/2-2*sos*&
-   &           sosd)
+   b11d = (gamma(i, j, k)-1)*(a11d*q+a11*qd)/2 + (a12*velxrho*wd(&
+   &           i, j, k, irho)-a12*velxrhod*w(i, j, k, irho))/w(i, j, k, &
+   &           irho)**2 + (a13*velyrho*wd(i, j, k, irho)-a13*velyrhod*w(i, &
+   &           j, k, irho))/w(i, j, k, irho)**2 + (a14*velzrho*wd(i, j, k, &
+   &           irho)-a14*velzrhod*w(i, j, k, irho))/w(i, j, k, irho)**2 + &
+   &           a15d*((gamma(i, j, k)-1)*q/2-sos**2) + a15*((gamma(i, j, k)-&
+   &           1)*qd/2-2*sos*sosd)
    b11 = a11*(gamma(i, j, k)-1)*q/2 + a12*(-velxrho)/w(i, j, k, &
    &           irho) + a13*(-velyrho)/w(i, j, k, irho) + a14*(-velzrho)/w(i&
    &           , j, k, irho) + a15*((gamma(i, j, k)-1)*q/2-sos**2)
-   b12d = (a11d*velxrho+a11*velxrhod)*(1-gamma(i, j, k)) - a11*&
-   &           velxrho*gammad(i, j, k) - a12*wd(i, j, k, irho)/w(i, j, k, &
-   &           irho)**2 + (a15d*velxrho+a15*velxrhod)*(1-gamma(i, j, k)) - &
-   &           a15*velxrho*gammad(i, j, k)
+   b12d = (1-gamma(i, j, k))*(a11d*velxrho+a11*velxrhod) - a12*wd&
+   &           (i, j, k, irho)/w(i, j, k, irho)**2 + (1-gamma(i, j, k))*(&
+   &           a15d*velxrho+a15*velxrhod)
    b12 = a11*(1-gamma(i, j, k))*velxrho + a12*1/w(i, j, k, irho) &
    &           + a15*(1-gamma(i, j, k))*velxrho
-   b13d = (a11d*velyrho+a11*velyrhod)*(1-gamma(i, j, k)) - a11*&
-   &           velyrho*gammad(i, j, k) - a13*wd(i, j, k, irho)/w(i, j, k, &
-   &           irho)**2 + (a15d*velyrho+a15*velyrhod)*(1-gamma(i, j, k)) - &
-   &           a15*velyrho*gammad(i, j, k)
+   b13d = (1-gamma(i, j, k))*(a11d*velyrho+a11*velyrhod) - a13*wd&
+   &           (i, j, k, irho)/w(i, j, k, irho)**2 + (1-gamma(i, j, k))*(&
+   &           a15d*velyrho+a15*velyrhod)
    b13 = a11*(1-gamma(i, j, k))*velyrho + a13/w(i, j, k, irho) + &
    &           a15*(1-gamma(i, j, k))*velyrho
-   b14d = (a11d*velzrho+a11*velzrhod)*(1-gamma(i, j, k)) - a11*&
-   &           velzrho*gammad(i, j, k) - a14*wd(i, j, k, irho)/w(i, j, k, &
-   &           irho)**2 + (a15d*velzrho+a15*velzrhod)*(1-gamma(i, j, k)) - &
-   &           a15*velzrho*gammad(i, j, k)
+   b14d = (1-gamma(i, j, k))*(a11d*velzrho+a11*velzrhod) - a14*wd&
+   &           (i, j, k, irho)/w(i, j, k, irho)**2 + (1-gamma(i, j, k))*(&
+   &           a15d*velzrho+a15*velzrhod)
    b14 = a11*(1-gamma(i, j, k))*velzrho + a14/w(i, j, k, irho) + &
    &           a15*(1-gamma(i, j, k))*velzrho
-   b15d = a11d*(gamma(i, j, k)-1) + a11*gammad(i, j, k) + a15d*(&
-   &           gamma(i, j, k)-1) + a15*gammad(i, j, k)
+   b15d = (gamma(i, j, k)-1)*a11d + (gamma(i, j, k)-1)*a15d
    b15 = a11*(gamma(i, j, k)-1) + a15*(gamma(i, j, k)-1)
-   b21d = ((a21d*q+a21*qd)*(gamma(i, j, k)-1)+a21*q*gammad(i, j, &
-   &           k))/2 + ((-(a22d*velxrho)-a22*velxrhod)*w(i, j, k, irho)+a22&
-   &           *velxrho*wd(i, j, k, irho))/w(i, j, k, irho)**2 + (a23*&
-   &           velyrho*wd(i, j, k, irho)-a23*velyrhod*w(i, j, k, irho))/w(i&
-   &           , j, k, irho)**2 + (a24*velzrho*wd(i, j, k, irho)-a24*&
-   &           velzrhod*w(i, j, k, irho))/w(i, j, k, irho)**2 + a25d*((&
-   &           gamma(i, j, k)-1)*q/2-sos**2) + a25*((gammad(i, j, k)*q+(&
-   &           gamma(i, j, k)-1)*qd)/2-2*sos*sosd)
+   b21d = (gamma(i, j, k)-1)*(a21d*q+a21*qd)/2 + ((-(a22d*velxrho&
+   &           )-a22*velxrhod)*w(i, j, k, irho)+a22*velxrho*wd(i, j, k, &
+   &           irho))/w(i, j, k, irho)**2 + (a23*velyrho*wd(i, j, k, irho)-&
+   &           a23*velyrhod*w(i, j, k, irho))/w(i, j, k, irho)**2 + (a24*&
+   &           velzrho*wd(i, j, k, irho)-a24*velzrhod*w(i, j, k, irho))/w(i&
+   &           , j, k, irho)**2 + a25d*((gamma(i, j, k)-1)*q/2-sos**2) + &
+   &           a25*((gamma(i, j, k)-1)*qd/2-2*sos*sosd)
    b21 = a21*(gamma(i, j, k)-1)*q/2 + a22*(-velxrho)/w(i, j, k, &
    &           irho) + a23*(-velyrho)/w(i, j, k, irho) + a24*(-velzrho)/w(i&
    &           , j, k, irho) + a25*((gamma(i, j, k)-1)*q/2-sos**2)
-   b22d = (a21d*velxrho+a21*velxrhod)*(1-gamma(i, j, k)) - a21*&
-   &           velxrho*gammad(i, j, k) + (a22d*w(i, j, k, irho)-a22*wd(i, j&
-   &           , k, irho))/w(i, j, k, irho)**2 + (a25d*velxrho+a25*velxrhod&
-   &           )*(1-gamma(i, j, k)) - a25*velxrho*gammad(i, j, k)
+   b22d = (1-gamma(i, j, k))*(a21d*velxrho+a21*velxrhod) + (a22d*&
+   &           w(i, j, k, irho)-a22*wd(i, j, k, irho))/w(i, j, k, irho)**2 &
+   &           + (1-gamma(i, j, k))*(a25d*velxrho+a25*velxrhod)
    b22 = a21*(1-gamma(i, j, k))*velxrho + a22/w(i, j, k, irho) + &
    &           a25*(1-gamma(i, j, k))*velxrho
-   b23d = (a21d*velyrho+a21*velyrhod)*(1-gamma(i, j, k)) - a21*&
-   &           velyrho*gammad(i, j, k) - a23*wd(i, j, k, irho)/w(i, j, k, &
-   &           irho)**2 + (a25d*velyrho+a25*velyrhod)*(1-gamma(i, j, k)) - &
-   &           a25*velyrho*gammad(i, j, k)
+   b23d = (1-gamma(i, j, k))*(a21d*velyrho+a21*velyrhod) - a23*wd&
+   &           (i, j, k, irho)/w(i, j, k, irho)**2 + (1-gamma(i, j, k))*(&
+   &           a25d*velyrho+a25*velyrhod)
    b23 = a21*(1-gamma(i, j, k))*velyrho + a23*1/w(i, j, k, irho) &
    &           + a25*(1-gamma(i, j, k))*velyrho
-   b24d = (a21d*velzrho+a21*velzrhod)*(1-gamma(i, j, k)) - a21*&
-   &           velzrho*gammad(i, j, k) - a24*wd(i, j, k, irho)/w(i, j, k, &
-   &           irho)**2 + (a25d*velzrho+a25*velzrhod)*(1-gamma(i, j, k)) - &
-   &           a25*velzrho*gammad(i, j, k)
+   b24d = (1-gamma(i, j, k))*(a21d*velzrho+a21*velzrhod) - a24*wd&
+   &           (i, j, k, irho)/w(i, j, k, irho)**2 + (1-gamma(i, j, k))*(&
+   &           a25d*velzrho+a25*velzrhod)
    b24 = a21*(1-gamma(i, j, k))*velzrho + a24*1/w(i, j, k, irho) &
    &           + a25*(1-gamma(i, j, k))*velzrho
-   b25d = a21d*(gamma(i, j, k)-1) + a21*gammad(i, j, k) + a25d*(&
-   &           gamma(i, j, k)-1) + a25*gammad(i, j, k)
+   b25d = (gamma(i, j, k)-1)*a21d + (gamma(i, j, k)-1)*a25d
    b25 = a21*(gamma(i, j, k)-1) + a25*(gamma(i, j, k)-1)
-   b31d = ((a31d*q+a31*qd)*(gamma(i, j, k)-1)+a31*q*gammad(i, j, &
-   &           k))/2 + (a32*velxrho*wd(i, j, k, irho)-a32*velxrhod*w(i, j, &
-   &           k, irho))/w(i, j, k, irho)**2 + ((-(a33d*velyrho)-a33*&
-   &           velyrhod)*w(i, j, k, irho)+a33*velyrho*wd(i, j, k, irho))/w(&
-   &           i, j, k, irho)**2 + (a34*velzrho*wd(i, j, k, irho)-a34*&
-   &           velzrhod*w(i, j, k, irho))/w(i, j, k, irho)**2 + a35d*((&
-   &           gamma(i, j, k)-1)*q/2-sos**2) + a35*((gammad(i, j, k)*q+(&
-   &           gamma(i, j, k)-1)*qd)/2-2*sos*sosd)
+   b31d = (gamma(i, j, k)-1)*(a31d*q+a31*qd)/2 + (a32*velxrho*wd(&
+   &           i, j, k, irho)-a32*velxrhod*w(i, j, k, irho))/w(i, j, k, &
+   &           irho)**2 + ((-(a33d*velyrho)-a33*velyrhod)*w(i, j, k, irho)+&
+   &           a33*velyrho*wd(i, j, k, irho))/w(i, j, k, irho)**2 + (a34*&
+   &           velzrho*wd(i, j, k, irho)-a34*velzrhod*w(i, j, k, irho))/w(i&
+   &           , j, k, irho)**2 + a35d*((gamma(i, j, k)-1)*q/2-sos**2) + &
+   &           a35*((gamma(i, j, k)-1)*qd/2-2*sos*sosd)
    b31 = a31*(gamma(i, j, k)-1)*q/2 + a32*(-velxrho)/w(i, j, k, &
    &           irho) + a33*(-velyrho)/w(i, j, k, irho) + a34*(-velzrho)/w(i&
    &           , j, k, irho) + a35*((gamma(i, j, k)-1)*q/2-sos**2)
-   b32d = (a31d*velxrho+a31*velxrhod)*(1-gamma(i, j, k)) - a31*&
-   &           velxrho*gammad(i, j, k) - a32*wd(i, j, k, irho)/w(i, j, k, &
-   &           irho)**2 + (a35d*velxrho+a35*velxrhod)*(1-gamma(i, j, k)) - &
-   &           a35*velxrho*gammad(i, j, k)
+   b32d = (1-gamma(i, j, k))*(a31d*velxrho+a31*velxrhod) - a32*wd&
+   &           (i, j, k, irho)/w(i, j, k, irho)**2 + (1-gamma(i, j, k))*(&
+   &           a35d*velxrho+a35*velxrhod)
    b32 = a31*(1-gamma(i, j, k))*velxrho + a32/w(i, j, k, irho) + &
    &           a35*(1-gamma(i, j, k))*velxrho
-   b33d = (a31d*velyrho+a31*velyrhod)*(1-gamma(i, j, k)) - a31*&
-   &           velyrho*gammad(i, j, k) + (a33d*w(i, j, k, irho)-a33*wd(i, j&
-   &           , k, irho))/w(i, j, k, irho)**2 + (a35d*velyrho+a35*velyrhod&
-   &           )*(1-gamma(i, j, k)) - a35*velyrho*gammad(i, j, k)
+   b33d = (1-gamma(i, j, k))*(a31d*velyrho+a31*velyrhod) + (a33d*&
+   &           w(i, j, k, irho)-a33*wd(i, j, k, irho))/w(i, j, k, irho)**2 &
+   &           + (1-gamma(i, j, k))*(a35d*velyrho+a35*velyrhod)
    b33 = a31*(1-gamma(i, j, k))*velyrho + a33*1/w(i, j, k, irho) &
    &           + a35*(1-gamma(i, j, k))*velyrho
-   b34d = (a31d*velzrho+a31*velzrhod)*(1-gamma(i, j, k)) - a31*&
-   &           velzrho*gammad(i, j, k) - a34*wd(i, j, k, irho)/w(i, j, k, &
-   &           irho)**2 + (a35d*velzrho+a35*velzrhod)*(1-gamma(i, j, k)) - &
-   &           a35*velzrho*gammad(i, j, k)
+   b34d = (1-gamma(i, j, k))*(a31d*velzrho+a31*velzrhod) - a34*wd&
+   &           (i, j, k, irho)/w(i, j, k, irho)**2 + (1-gamma(i, j, k))*(&
+   &           a35d*velzrho+a35*velzrhod)
    b34 = a31*(1-gamma(i, j, k))*velzrho + a34*1/w(i, j, k, irho) &
    &           + a35*(1-gamma(i, j, k))*velzrho
-   b35d = a31d*(gamma(i, j, k)-1) + a31*gammad(i, j, k) + a35d*(&
-   &           gamma(i, j, k)-1) + a35*gammad(i, j, k)
+   b35d = (gamma(i, j, k)-1)*a31d + (gamma(i, j, k)-1)*a35d
    b35 = a31*(gamma(i, j, k)-1) + a35*(gamma(i, j, k)-1)
-   b41d = ((a41d*q+a41*qd)*(gamma(i, j, k)-1)+a41*q*gammad(i, j, &
-   &           k))/2 + (a42*velxrho*wd(i, j, k, irho)-a42*velxrhod*w(i, j, &
-   &           k, irho))/w(i, j, k, irho)**2 + (a43*velyrho*wd(i, j, k, &
-   &           irho)-a43*velyrhod*w(i, j, k, irho))/w(i, j, k, irho)**2 + (&
-   &           (-(a44d*velzrho)-a44*velzrhod)*w(i, j, k, irho)+a44*velzrho*&
-   &           wd(i, j, k, irho))/w(i, j, k, irho)**2 + a45d*((gamma(i, j, &
-   &           k)-1)*q/2-sos**2) + a45*((gammad(i, j, k)*q+(gamma(i, j, k)-&
-   &           1)*qd)/2-2*sos*sosd)
+   b41d = (gamma(i, j, k)-1)*(a41d*q+a41*qd)/2 + (a42*velxrho*wd(&
+   &           i, j, k, irho)-a42*velxrhod*w(i, j, k, irho))/w(i, j, k, &
+   &           irho)**2 + (a43*velyrho*wd(i, j, k, irho)-a43*velyrhod*w(i, &
+   &           j, k, irho))/w(i, j, k, irho)**2 + ((-(a44d*velzrho)-a44*&
+   &           velzrhod)*w(i, j, k, irho)+a44*velzrho*wd(i, j, k, irho))/w(&
+   &           i, j, k, irho)**2 + a45d*((gamma(i, j, k)-1)*q/2-sos**2) + &
+   &           a45*((gamma(i, j, k)-1)*qd/2-2*sos*sosd)
    b41 = a41*(gamma(i, j, k)-1)*q/2 + a42*(-velxrho)/w(i, j, k, &
    &           irho) + a43*(-velyrho)/w(i, j, k, irho) + a44*(-velzrho)/w(i&
    &           , j, k, irho) + a45*((gamma(i, j, k)-1)*q/2-sos**2)
-   b42d = (a41d*velxrho+a41*velxrhod)*(1-gamma(i, j, k)) - a41*&
-   &           velxrho*gammad(i, j, k) - a42*wd(i, j, k, irho)/w(i, j, k, &
-   &           irho)**2 + (a45d*velxrho+a45*velxrhod)*(1-gamma(i, j, k)) - &
-   &           a45*velxrho*gammad(i, j, k)
+   b42d = (1-gamma(i, j, k))*(a41d*velxrho+a41*velxrhod) - a42*wd&
+   &           (i, j, k, irho)/w(i, j, k, irho)**2 + (1-gamma(i, j, k))*(&
+   &           a45d*velxrho+a45*velxrhod)
    b42 = a41*(1-gamma(i, j, k))*velxrho + a42/w(i, j, k, irho) + &
    &           a45*(1-gamma(i, j, k))*velxrho
-   b43d = (a41d*velyrho+a41*velyrhod)*(1-gamma(i, j, k)) - a41*&
-   &           velyrho*gammad(i, j, k) - a43*wd(i, j, k, irho)/w(i, j, k, &
-   &           irho)**2 + (a45d*velyrho+a45*velyrhod)*(1-gamma(i, j, k)) - &
-   &           a45*velyrho*gammad(i, j, k)
+   b43d = (1-gamma(i, j, k))*(a41d*velyrho+a41*velyrhod) - a43*wd&
+   &           (i, j, k, irho)/w(i, j, k, irho)**2 + (1-gamma(i, j, k))*(&
+   &           a45d*velyrho+a45*velyrhod)
    b43 = a41*(1-gamma(i, j, k))*velyrho + a43*1/w(i, j, k, irho) &
    &           + a45*(1-gamma(i, j, k))*velyrho
-   b44d = (a41d*velzrho+a41*velzrhod)*(1-gamma(i, j, k)) - a41*&
-   &           velzrho*gammad(i, j, k) + (a44d*w(i, j, k, irho)-a44*wd(i, j&
-   &           , k, irho))/w(i, j, k, irho)**2 + (a45d*velzrho+a45*velzrhod&
-   &           )*(1-gamma(i, j, k)) - a45*velzrho*gammad(i, j, k)
+   b44d = (1-gamma(i, j, k))*(a41d*velzrho+a41*velzrhod) + (a44d*&
+   &           w(i, j, k, irho)-a44*wd(i, j, k, irho))/w(i, j, k, irho)**2 &
+   &           + (1-gamma(i, j, k))*(a45d*velzrho+a45*velzrhod)
    b44 = a41*(1-gamma(i, j, k))*velzrho + a44*1/w(i, j, k, irho) &
    &           + a45*(1-gamma(i, j, k))*velzrho
-   b45d = a41d*(gamma(i, j, k)-1) + a41*gammad(i, j, k) + a45d*(&
-   &           gamma(i, j, k)-1) + a45*gammad(i, j, k)
+   b45d = (gamma(i, j, k)-1)*a41d + (gamma(i, j, k)-1)*a45d
    b45 = a41*(gamma(i, j, k)-1) + a45*(gamma(i, j, k)-1)
-   b51d = ((a51d*q+a51*qd)*(gamma(i, j, k)-1)+a51*q*gammad(i, j, &
-   &           k))/2 + ((-(a52d*velxrho)-a52*velxrhod)*w(i, j, k, irho)+a52&
-   &           *velxrho*wd(i, j, k, irho))/w(i, j, k, irho)**2 + ((-(a53d*&
-   &           velyrho)-a53*velyrhod)*w(i, j, k, irho)+a53*velyrho*wd(i, j&
-   &           , k, irho))/w(i, j, k, irho)**2 + ((-(a54d*velzrho)-a54*&
-   &           velzrhod)*w(i, j, k, irho)+a54*velzrho*wd(i, j, k, irho))/w(&
-   &           i, j, k, irho)**2 + a55d*((gamma(i, j, k)-1)*q/2-sos**2) + &
-   &           a55*((gammad(i, j, k)*q+(gamma(i, j, k)-1)*qd)/2-2*sos*sosd)
+   b51d = (gamma(i, j, k)-1)*(a51d*q+a51*qd)/2 + ((-(a52d*velxrho&
+   &           )-a52*velxrhod)*w(i, j, k, irho)+a52*velxrho*wd(i, j, k, &
+   &           irho))/w(i, j, k, irho)**2 + ((-(a53d*velyrho)-a53*velyrhod)&
+   &           *w(i, j, k, irho)+a53*velyrho*wd(i, j, k, irho))/w(i, j, k, &
+   &           irho)**2 + ((-(a54d*velzrho)-a54*velzrhod)*w(i, j, k, irho)+&
+   &           a54*velzrho*wd(i, j, k, irho))/w(i, j, k, irho)**2 + a55d*((&
+   &           gamma(i, j, k)-1)*q/2-sos**2) + a55*((gamma(i, j, k)-1)*qd/2&
+   &           -2*sos*sosd)
    b51 = a51*(gamma(i, j, k)-1)*q/2 + a52*(-velxrho)/w(i, j, k, &
    &           irho) + a53*(-velyrho)/w(i, j, k, irho) + a54*(-velzrho)/w(i&
    &           , j, k, irho) + a55*((gamma(i, j, k)-1)*q/2-sos**2)
-   b52d = (a51d*velxrho+a51*velxrhod)*(1-gamma(i, j, k)) - a51*&
-   &           velxrho*gammad(i, j, k) + (a52d*w(i, j, k, irho)-a52*wd(i, j&
-   &           , k, irho))/w(i, j, k, irho)**2 + (a55d*velxrho+a55*velxrhod&
-   &           )*(1-gamma(i, j, k)) - a55*velxrho*gammad(i, j, k)
+   b52d = (1-gamma(i, j, k))*(a51d*velxrho+a51*velxrhod) + (a52d*&
+   &           w(i, j, k, irho)-a52*wd(i, j, k, irho))/w(i, j, k, irho)**2 &
+   &           + (1-gamma(i, j, k))*(a55d*velxrho+a55*velxrhod)
    b52 = a51*(1-gamma(i, j, k))*velxrho + a52/w(i, j, k, irho) + &
    &           a55*(1-gamma(i, j, k))*velxrho
-   b53d = (a51d*velyrho+a51*velyrhod)*(1-gamma(i, j, k)) - a51*&
-   &           velyrho*gammad(i, j, k) + (a53d*w(i, j, k, irho)-a53*wd(i, j&
-   &           , k, irho))/w(i, j, k, irho)**2 + (a55d*velyrho+a55*velyrhod&
-   &           )*(1-gamma(i, j, k)) - a55*velyrho*gammad(i, j, k)
+   b53d = (1-gamma(i, j, k))*(a51d*velyrho+a51*velyrhod) + (a53d*&
+   &           w(i, j, k, irho)-a53*wd(i, j, k, irho))/w(i, j, k, irho)**2 &
+   &           + (1-gamma(i, j, k))*(a55d*velyrho+a55*velyrhod)
    b53 = a51*(1-gamma(i, j, k))*velyrho + a53*1/w(i, j, k, irho) &
    &           + a55*(1-gamma(i, j, k))*velyrho
-   b54d = (a51d*velzrho+a51*velzrhod)*(1-gamma(i, j, k)) - a51*&
-   &           velzrho*gammad(i, j, k) + (a54d*w(i, j, k, irho)-a54*wd(i, j&
-   &           , k, irho))/w(i, j, k, irho)**2 + (a55d*velzrho+a55*velzrhod&
-   &           )*(1-gamma(i, j, k)) - a55*velzrho*gammad(i, j, k)
+   b54d = (1-gamma(i, j, k))*(a51d*velzrho+a51*velzrhod) + (a54d*&
+   &           w(i, j, k, irho)-a54*wd(i, j, k, irho))/w(i, j, k, irho)**2 &
+   &           + (1-gamma(i, j, k))*(a55d*velzrho+a55*velzrhod)
    b54 = a51*(1-gamma(i, j, k))*velzrho + a54*1/w(i, j, k, irho) &
    &           + a55*(1-gamma(i, j, k))*velzrho
-   b55d = a51d*(gamma(i, j, k)-1) + a51*gammad(i, j, k) + a55d*(&
-   &           gamma(i, j, k)-1) + a55*gammad(i, j, k)
+   b55d = (gamma(i, j, k)-1)*a51d + (gamma(i, j, k)-1)*a55d
    b55 = a51*(gamma(i, j, k)-1) + a55*(gamma(i, j, k)-1)
    ! dwo is the orginal redisual
    DO l=1,nwf

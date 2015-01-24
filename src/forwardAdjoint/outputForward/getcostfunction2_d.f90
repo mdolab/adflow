@@ -3,9 +3,9 @@
    !
    !  Differentiation of getcostfunction2 in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: funcvalues
-   !   with respect to varying inputs: machgrid lengthref machcoef
-   !                dragdirection liftdirection pointref gammainf
-   !                pinf rhoinfdim pinfdim pref moment force cavitation
+   !   with respect to varying inputs: gammainf pinf rhoinfdim pinfdim
+   !                pref machgrid lengthref machcoef dragdirection
+   !                liftdirection pointref moment force cavitation
    !                sepsensor
    SUBROUTINE GETCOSTFUNCTION2_D(force, forced, moment, momentd, sepsensor&
    & , sepsensord, cavitation, cavitationd, alpha, beta, liftindex)

@@ -3,10 +3,10 @@
    !
    !  Differentiation of viscousfluxapprox in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *p *fw
-   !   with respect to varying inputs: *rev *p *gamma *w *rlv *x *si
-   !                *sj *sk *fw
-   !   Plus diff mem management of: rev:in p:in gamma:in w:in rlv:in
-   !                x:in si:in sj:in sk:in fw:in
+   !   with respect to varying inputs: *rev *p *w *rlv *x *si *sj
+   !                *sk *fw
+   !   Plus diff mem management of: rev:in p:in w:in rlv:in x:in si:in
+   !                sj:in sk:in fw:in
    SUBROUTINE VISCOUSFLUXAPPROX_D()
    USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
@@ -25,7 +25,6 @@
    REAL(kind=realtype) :: rfilv, por, mul, mue, mut, heatcoef
    REAL(kind=realtype) :: muld, mued, mutd, heatcoefd
    REAL(kind=realtype) :: gm1, factlamheat, factturbheat
-   REAL(kind=realtype) :: gm1d, factlamheatd, factturbheatd
    REAL(kind=realtype) :: u_x, u_y, u_z, v_x, v_y, v_z, w_x, w_y, w_z
    REAL(kind=realtype) :: u_xd, u_yd, u_zd, v_xd, v_yd, v_zd, w_xd, w_yd&
    & , w_zd
@@ -80,9 +79,9 @@
    p(i, j, k) = p(i, j, k) - twothird*w(i, j, k, irho)*w(i, j, &
    &             k, itu1)
    END IF
-   pd(i, j, k) = ((gammad(i, j, k)*p(i, j, k)+gamma(i, j, k)*pd(i&
-   &           , j, k))*w(i, j, k, irho)-gamma(i, j, k)*p(i, j, k)*wd(i, j&
-   &           , k, irho))/w(i, j, k, irho)**2
+   pd(i, j, k) = (gamma(i, j, k)*pd(i, j, k)*w(i, j, k, irho)-&
+   &           gamma(i, j, k)*p(i, j, k)*wd(i, j, k, irho))/w(i, j, k, irho&
+   &           )**2
    p(i, j, k) = gamma(i, j, k)*p(i, j, k)/w(i, j, k, irho)
    END DO
    END DO
@@ -169,14 +168,10 @@
    END IF
    mutd = muld + mued
    mut = mul + mue
-   gm1d = half*(gammad(i, j, k)+gammad(i+1, j, k))
    gm1 = half*(gamma(i, j, k)+gamma(i+1, j, k)) - one
-   factlamheatd = -(one*prandtl*gm1d/(prandtl*gm1)**2)
    factlamheat = one/(prandtl*gm1)
-   factturbheatd = -(one*prandtlturb*gm1d/(prandtlturb*gm1)**2)
    factturbheat = one/(prandtlturb*gm1)
-   heatcoefd = muld*factlamheat + mul*factlamheatd + mued*&
-   &           factturbheat + mue*factturbheatd
+   heatcoefd = factlamheat*muld + factturbheat*mued
    heatcoef = mul*factlamheat + mue*factturbheat
    ! Compute the stress tensor and the heat flux vector.
    fracdivd = twothird*(u_xd+v_yd+w_zd)
@@ -337,14 +332,10 @@
    END IF
    mutd = muld + mued
    mut = mul + mue
-   gm1d = half*(gammad(i, j, k)+gammad(i, j+1, k))
    gm1 = half*(gamma(i, j, k)+gamma(i, j+1, k)) - one
-   factlamheatd = -(one*prandtl*gm1d/(prandtl*gm1)**2)
    factlamheat = one/(prandtl*gm1)
-   factturbheatd = -(one*prandtlturb*gm1d/(prandtlturb*gm1)**2)
    factturbheat = one/(prandtlturb*gm1)
-   heatcoefd = muld*factlamheat + mul*factlamheatd + mued*&
-   &           factturbheat + mue*factturbheatd
+   heatcoefd = factlamheat*muld + factturbheat*mued
    heatcoef = mul*factlamheat + mue*factturbheat
    ! Compute the stress tensor and the heat flux vector.
    fracdivd = twothird*(u_xd+v_yd+w_zd)
@@ -505,14 +496,10 @@
    END IF
    mutd = muld + mued
    mut = mul + mue
-   gm1d = half*(gammad(i, j, k)+gammad(i, j, k+1))
    gm1 = half*(gamma(i, j, k)+gamma(i, j, k+1)) - one
-   factlamheatd = -(one*prandtl*gm1d/(prandtl*gm1)**2)
    factlamheat = one/(prandtl*gm1)
-   factturbheatd = -(one*prandtlturb*gm1d/(prandtlturb*gm1)**2)
    factturbheat = one/(prandtlturb*gm1)
-   heatcoefd = muld*factlamheat + mul*factlamheatd + mued*&
-   &           factturbheat + mue*factturbheatd
+   heatcoefd = factlamheat*muld + factturbheat*mued
    heatcoef = mul*factlamheat + mue*factturbheat
    ! Compute the stress tensor and the heat flux vector.
    fracdivd = twothird*(u_xd+v_yd+w_zd)
@@ -598,9 +585,8 @@
    DO k=1,ke
    DO j=1,je
    DO i=1,ie
-   pd(i, j, k) = ((wd(i, j, k, irho)*p(i, j, k)+w(i, j, k, irho)*&
-   &           pd(i, j, k))*gamma(i, j, k)-w(i, j, k, irho)*p(i, j, k)*&
-   &           gammad(i, j, k))/gamma(i, j, k)**2
+   pd(i, j, k) = (wd(i, j, k, irho)*p(i, j, k)+w(i, j, k, irho)*&
+   &           pd(i, j, k))/gamma(i, j, k)
    p(i, j, k) = w(i, j, k, irho)*p(i, j, k)/gamma(i, j, k)
    END DO
    END DO

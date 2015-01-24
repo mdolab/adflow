@@ -3,10 +3,10 @@
    !
    !  Differentiation of invisciddissfluxmatrix in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *fw
-   !   with respect to varying inputs: *p *sfacei *sfacej *gamma *sfacek
-   !                *w *si *sj *sk pinfcorr
-   !   Plus diff mem management of: p:in sfacei:in sfacej:in gamma:in
-   !                sfacek:in w:in si:in sj:in sk:in fw:in
+   !   with respect to varying inputs: pinfcorr *p *sfacei *sfacej
+   !                *sfacek *w *si *sj *sk
+   !   Plus diff mem management of: p:in sfacei:in sfacej:in sfacek:in
+   !                w:in si:in sj:in sk:in fw:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -54,7 +54,6 @@
    REAL(kind=realtype) :: plimd, sfaced
    REAL(kind=realtype) :: sfil, fis2, fis4
    REAL(kind=realtype) :: gammaavg, gm1, ovgm1, gm53
-   REAL(kind=realtype) :: gammaavgd, gm1d, ovgm1d, gm53d
    REAL(kind=realtype) :: ppor, rrad, dis2, dis4
    REAL(kind=realtype) :: rradd, dis2d, dis4d
    REAL(kind=realtype) :: dp1, dp2, ddw, tmp, fs
@@ -399,13 +398,9 @@
    END IF
    ! Compute the average value of gamma and compute some
    ! expressions in which it occurs.
-   gammaavgd = half*(gammad(i+1, j, k)+gammad(i, j, k))
    gammaavg = half*(gamma(i+1, j, k)+gamma(i, j, k))
-   gm1d = gammaavgd
    gm1 = gammaavg - one
-   ovgm1d = -(one*gm1d/gm1**2)
    ovgm1 = one/gm1
-   gm53d = gammaavgd
    gm53 = gammaavg - five*third
    ! Compute the average state at the interface.
    uavgd = half*(wd(i+1, j, k, ivx)+wd(i, j, k, ivx))
@@ -414,10 +409,9 @@
    vavg = half*(w(i+1, j, k, ivy)+w(i, j, k, ivy))
    wavgd = half*(wd(i+1, j, k, ivz)+wd(i, j, k, ivz))
    wavg = half*(w(i+1, j, k, ivz)+w(i, j, k, ivz))
-   a2avgd = half*(((gammad(i+1, j, k)*p(i+1, j, k)+gamma(i+1, j, &
-   &           k)*pd(i+1, j, k))*w(i+1, j, k, irho)-gamma(i+1, j, k)*p(i+1&
-   &           , j, k)*wd(i+1, j, k, irho))/w(i+1, j, k, irho)**2+((gammad(&
-   &           i, j, k)*p(i, j, k)+gamma(i, j, k)*pd(i, j, k))*w(i, j, k, &
+   a2avgd = half*((gamma(i+1, j, k)*pd(i+1, j, k)*w(i+1, j, k, &
+   &           irho)-gamma(i+1, j, k)*p(i+1, j, k)*wd(i+1, j, k, irho))/w(i&
+   &           +1, j, k, irho)**2+(gamma(i, j, k)*pd(i, j, k)*w(i, j, k, &
    &           irho)-gamma(i, j, k)*p(i, j, k)*wd(i, j, k, irho))/w(i, j, k&
    &           , irho)**2)
    a2avg = half*(gamma(i+1, j, k)*p(i+1, j, k)/w(i+1, j, k, irho)&
@@ -453,8 +447,7 @@
    sz = sz*tmp
    alphaavgd = half*(2*uavg*uavgd+2*vavg*vavgd+2*wavg*wavgd)
    alphaavg = half*(uavg**2+vavg**2+wavg**2)
-   havgd = alphaavgd + ovgm1d*(a2avg-gm53*kavg) + ovgm1*(a2avgd-&
-   &           gm53d*kavg-gm53*kavgd)
+   havgd = alphaavgd + ovgm1*(a2avgd-gm53*kavgd)
    havg = alphaavg + ovgm1*(a2avg-gm53*kavg)
    IF (a2avg .EQ. 0.0_8) THEN
    aavgd = 0.0_8
@@ -532,9 +525,8 @@
    abv2 = half*(lam1-lam2)
    abv3d = abv1d - lam3d
    abv3 = abv1 - lam3
-   abv4d = gm1d*(alphaavg*dr-uavg*dru-vavg*drv-wavg*drw+dre) + &
-   &           gm1*(alphaavgd*dr+alphaavg*drd-uavgd*dru-uavg*drud-vavgd*drv&
-   &           -vavg*drvd-wavgd*drw-wavg*drwd+dred) - gm53d*drk - gm53*drkd
+   abv4d = gm1*(alphaavgd*dr+alphaavg*drd-uavgd*dru-uavg*drud-&
+   &           vavgd*drv-vavg*drvd-wavgd*drw-wavg*drwd+dred) - gm53*drkd
    abv4 = gm1*(alphaavg*dr-uavg*dru-vavg*drv-wavg*drw+dre) - gm53&
    &           *drk
    abv5d = sxd*dru + sx*drud + syd*drv + sy*drvd + szd*drw + sz*&
@@ -783,13 +775,9 @@
    END IF
    ! Compute the average value of gamma and compute some
    ! expressions in which it occurs.
-   gammaavgd = half*(gammad(i, j+1, k)+gammad(i, j, k))
    gammaavg = half*(gamma(i, j+1, k)+gamma(i, j, k))
-   gm1d = gammaavgd
    gm1 = gammaavg - one
-   ovgm1d = -(one*gm1d/gm1**2)
    ovgm1 = one/gm1
-   gm53d = gammaavgd
    gm53 = gammaavg - five*third
    ! Compute the average state at the interface.
    uavgd = half*(wd(i, j+1, k, ivx)+wd(i, j, k, ivx))
@@ -798,10 +786,9 @@
    vavg = half*(w(i, j+1, k, ivy)+w(i, j, k, ivy))
    wavgd = half*(wd(i, j+1, k, ivz)+wd(i, j, k, ivz))
    wavg = half*(w(i, j+1, k, ivz)+w(i, j, k, ivz))
-   a2avgd = half*(((gammad(i, j+1, k)*p(i, j+1, k)+gamma(i, j+1, &
-   &           k)*pd(i, j+1, k))*w(i, j+1, k, irho)-gamma(i, j+1, k)*p(i, j&
-   &           +1, k)*wd(i, j+1, k, irho))/w(i, j+1, k, irho)**2+((gammad(i&
-   &           , j, k)*p(i, j, k)+gamma(i, j, k)*pd(i, j, k))*w(i, j, k, &
+   a2avgd = half*((gamma(i, j+1, k)*pd(i, j+1, k)*w(i, j+1, k, &
+   &           irho)-gamma(i, j+1, k)*p(i, j+1, k)*wd(i, j+1, k, irho))/w(i&
+   &           , j+1, k, irho)**2+(gamma(i, j, k)*pd(i, j, k)*w(i, j, k, &
    &           irho)-gamma(i, j, k)*p(i, j, k)*wd(i, j, k, irho))/w(i, j, k&
    &           , irho)**2)
    a2avg = half*(gamma(i, j+1, k)*p(i, j+1, k)/w(i, j+1, k, irho)&
@@ -837,8 +824,7 @@
    sz = sz*tmp
    alphaavgd = half*(2*uavg*uavgd+2*vavg*vavgd+2*wavg*wavgd)
    alphaavg = half*(uavg**2+vavg**2+wavg**2)
-   havgd = alphaavgd + ovgm1d*(a2avg-gm53*kavg) + ovgm1*(a2avgd-&
-   &           gm53d*kavg-gm53*kavgd)
+   havgd = alphaavgd + ovgm1*(a2avgd-gm53*kavgd)
    havg = alphaavg + ovgm1*(a2avg-gm53*kavg)
    IF (a2avg .EQ. 0.0_8) THEN
    aavgd = 0.0_8
@@ -916,9 +902,8 @@
    abv2 = half*(lam1-lam2)
    abv3d = abv1d - lam3d
    abv3 = abv1 - lam3
-   abv4d = gm1d*(alphaavg*dr-uavg*dru-vavg*drv-wavg*drw+dre) + &
-   &           gm1*(alphaavgd*dr+alphaavg*drd-uavgd*dru-uavg*drud-vavgd*drv&
-   &           -vavg*drvd-wavgd*drw-wavg*drwd+dred) - gm53d*drk - gm53*drkd
+   abv4d = gm1*(alphaavgd*dr+alphaavg*drd-uavgd*dru-uavg*drud-&
+   &           vavgd*drv-vavg*drvd-wavgd*drw-wavg*drwd+dred) - gm53*drkd
    abv4 = gm1*(alphaavg*dr-uavg*dru-vavg*drv-wavg*drw+dre) - gm53&
    &           *drk
    abv5d = sxd*dru + sx*drud + syd*drv + sy*drvd + szd*drw + sz*&
@@ -1167,13 +1152,9 @@
    END IF
    ! Compute the average value of gamma and compute some
    ! expressions in which it occurs.
-   gammaavgd = half*(gammad(i, j, k+1)+gammad(i, j, k))
    gammaavg = half*(gamma(i, j, k+1)+gamma(i, j, k))
-   gm1d = gammaavgd
    gm1 = gammaavg - one
-   ovgm1d = -(one*gm1d/gm1**2)
    ovgm1 = one/gm1
-   gm53d = gammaavgd
    gm53 = gammaavg - five*third
    ! Compute the average state at the interface.
    uavgd = half*(wd(i, j, k+1, ivx)+wd(i, j, k, ivx))
@@ -1182,10 +1163,9 @@
    vavg = half*(w(i, j, k+1, ivy)+w(i, j, k, ivy))
    wavgd = half*(wd(i, j, k+1, ivz)+wd(i, j, k, ivz))
    wavg = half*(w(i, j, k+1, ivz)+w(i, j, k, ivz))
-   a2avgd = half*(((gammad(i, j, k+1)*p(i, j, k+1)+gamma(i, j, k+&
-   &           1)*pd(i, j, k+1))*w(i, j, k+1, irho)-gamma(i, j, k+1)*p(i, j&
-   &           , k+1)*wd(i, j, k+1, irho))/w(i, j, k+1, irho)**2+((gammad(i&
-   &           , j, k)*p(i, j, k)+gamma(i, j, k)*pd(i, j, k))*w(i, j, k, &
+   a2avgd = half*((gamma(i, j, k+1)*pd(i, j, k+1)*w(i, j, k+1, &
+   &           irho)-gamma(i, j, k+1)*p(i, j, k+1)*wd(i, j, k+1, irho))/w(i&
+   &           , j, k+1, irho)**2+(gamma(i, j, k)*pd(i, j, k)*w(i, j, k, &
    &           irho)-gamma(i, j, k)*p(i, j, k)*wd(i, j, k, irho))/w(i, j, k&
    &           , irho)**2)
    a2avg = half*(gamma(i, j, k+1)*p(i, j, k+1)/w(i, j, k+1, irho)&
@@ -1221,8 +1201,7 @@
    sz = sz*tmp
    alphaavgd = half*(2*uavg*uavgd+2*vavg*vavgd+2*wavg*wavgd)
    alphaavg = half*(uavg**2+vavg**2+wavg**2)
-   havgd = alphaavgd + ovgm1d*(a2avg-gm53*kavg) + ovgm1*(a2avgd-&
-   &           gm53d*kavg-gm53*kavgd)
+   havgd = alphaavgd + ovgm1*(a2avgd-gm53*kavgd)
    havg = alphaavg + ovgm1*(a2avg-gm53*kavg)
    IF (a2avg .EQ. 0.0_8) THEN
    aavgd = 0.0_8
@@ -1300,9 +1279,8 @@
    abv2 = half*(lam1-lam2)
    abv3d = abv1d - lam3d
    abv3 = abv1 - lam3
-   abv4d = gm1d*(alphaavg*dr-uavg*dru-vavg*drv-wavg*drw+dre) + &
-   &           gm1*(alphaavgd*dr+alphaavg*drd-uavgd*dru-uavg*drud-vavgd*drv&
-   &           -vavg*drvd-wavgd*drw-wavg*drwd+dred) - gm53d*drk - gm53*drkd
+   abv4d = gm1*(alphaavgd*dr+alphaavg*drd-uavgd*dru-uavg*drud-&
+   &           vavgd*drv-vavg*drvd-wavgd*drw-wavg*drwd+dred) - gm53*drkd
    abv4 = gm1*(alphaavg*dr-uavg*dru-vavg*drv-wavg*drw+dre) - gm53&
    &           *drk
    abv5d = sxd*dru + sx*drud + syd*drv + sy*drvd + szd*drw + sz*&

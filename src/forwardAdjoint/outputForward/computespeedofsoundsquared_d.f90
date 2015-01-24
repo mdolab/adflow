@@ -3,8 +3,8 @@
    !
    !  Differentiation of computespeedofsoundsquared in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *aa
-   !   with respect to varying inputs: *p *gamma *w
-   !   Plus diff mem management of: aa:in p:in gamma:in w:in
+   !   with respect to varying inputs: *p *w
+   !   Plus diff mem management of: aa:in p:in w:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -55,9 +55,8 @@
    ppd = pd(i, j, k) - twothird*(wd(i, j, k, irho)*w(i, j, k, &
    &           itu1)+w(i, j, k, irho)*wd(i, j, k, itu1))
    pp = p(i, j, k) - twothird*w(i, j, k, irho)*w(i, j, k, itu1)
-   aad(i, j, k) = ((gammad(i, j, k)*pp+gamma(i, j, k)*ppd)*w(i, j&
-   &           , k, irho)-gamma(i, j, k)*pp*wd(i, j, k, irho))/w(i, j, k, &
-   &           irho)**2
+   aad(i, j, k) = (gamma(i, j, k)*ppd*w(i, j, k, irho)-gamma(i, j&
+   &           , k)*pp*wd(i, j, k, irho))/w(i, j, k, irho)**2
    aa(i, j, k) = gamma(i, j, k)*pp/w(i, j, k, irho)
    END DO
    END DO
@@ -67,9 +66,9 @@
    DO k=1,ke
    DO j=1,je
    DO i=1,ie
-   aad(i, j, k) = ((gammad(i, j, k)*p(i, j, k)+gamma(i, j, k)*pd(&
-   &           i, j, k))*w(i, j, k, irho)-gamma(i, j, k)*p(i, j, k)*wd(i, j&
-   &           , k, irho))/w(i, j, k, irho)**2
+   aad(i, j, k) = (gamma(i, j, k)*pd(i, j, k)*w(i, j, k, irho)-&
+   &           gamma(i, j, k)*p(i, j, k)*wd(i, j, k, irho))/w(i, j, k, irho&
+   &           )**2
    aa(i, j, k) = gamma(i, j, k)*p(i, j, k)/w(i, j, k, irho)
    END DO
    END DO

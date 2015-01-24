@@ -3,13 +3,13 @@
    !
    !  Differentiation of viscousflux in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *fw *(*viscsubface.tau)
-   !   with respect to varying inputs: *rev *aa *wx *wy *wz *gamma
-   !                *w *rlv *x *qx *qy *qz *ux *uy *uz *si *sj *sk
-   !                *vx *vy *vz *fw
+   !   with respect to varying inputs: *rev *aa *wx *wy *wz *w *rlv
+   !                *x *qx *qy *qz *ux *uy *uz *si *sj *sk *vx *vy
+   !                *vz *fw
    !   Plus diff mem management of: rev:in aa:in wx:in wy:in wz:in
-   !                gamma:in w:in rlv:in x:in qx:in qy:in qz:in ux:in
-   !                uy:in uz:in si:in sj:in sk:in vx:in vy:in vz:in
-   !                fw:in viscsubface:in *viscsubface.tau:in
+   !                w:in rlv:in x:in qx:in qy:in qz:in ux:in uy:in
+   !                uz:in si:in sj:in sk:in vx:in vy:in vz:in fw:in
+   !                viscsubface:in *viscsubface.tau:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -51,7 +51,6 @@
    REAL(kind=realtype) :: rfilv, por, mul, mue, mut, heatcoef
    REAL(kind=realtype) :: muld, mued, mutd, heatcoefd
    REAL(kind=realtype) :: gm1, factlamheat, factturbheat
-   REAL(kind=realtype) :: gm1d, factlamheatd, factturbheatd
    REAL(kind=realtype) :: u_x, u_y, u_z, v_x, v_y, v_z, w_x, w_y, w_z
    REAL(kind=realtype) :: u_xd, u_yd, u_zd, v_xd, v_yd, v_zd, w_xd, w_yd&
    & , w_zd
@@ -135,14 +134,10 @@
    END IF
    mutd = muld + mued
    mut = mul + mue
-   gm1d = half*(gammad(i, j, k)+gammad(i, j, k+1))
    gm1 = half*(gamma(i, j, k)+gamma(i, j, k+1)) - one
-   factlamheatd = -(one*prandtl*gm1d/(prandtl*gm1)**2)
    factlamheat = one/(prandtl*gm1)
-   factturbheatd = -(one*prandtlturb*gm1d/(prandtlturb*gm1)**2)
    factturbheat = one/(prandtlturb*gm1)
-   heatcoefd = muld*factlamheat + mul*factlamheatd + mued*&
-   &           factturbheat + mue*factturbheatd
+   heatcoefd = factlamheat*muld + factturbheat*mued
    heatcoef = mul*factlamheat + mue*factturbheat
    ! Compute the gradients at the face by averaging the four
    ! nodal values.
@@ -435,14 +430,10 @@
    END IF
    mutd = muld + mued
    mut = mul + mue
-   gm1d = half*(gammad(i, j, k)+gammad(i, j+1, k))
    gm1 = half*(gamma(i, j, k)+gamma(i, j+1, k)) - one
-   factlamheatd = -(one*prandtl*gm1d/(prandtl*gm1)**2)
    factlamheat = one/(prandtl*gm1)
-   factturbheatd = -(one*prandtlturb*gm1d/(prandtlturb*gm1)**2)
    factturbheat = one/(prandtlturb*gm1)
-   heatcoefd = muld*factlamheat + mul*factlamheatd + mued*&
-   &           factturbheat + mue*factturbheatd
+   heatcoefd = factlamheat*muld + factturbheat*mued
    heatcoef = mul*factlamheat + mue*factturbheat
    ! Compute the gradients at the face by averaging the four
    ! nodal values.
@@ -730,14 +721,10 @@
    END IF
    mutd = muld + mued
    mut = mul + mue
-   gm1d = half*(gammad(i, j, k)+gammad(i+1, j, k))
    gm1 = half*(gamma(i, j, k)+gamma(i+1, j, k)) - one
-   factlamheatd = -(one*prandtl*gm1d/(prandtl*gm1)**2)
    factlamheat = one/(prandtl*gm1)
-   factturbheatd = -(one*prandtlturb*gm1d/(prandtlturb*gm1)**2)
    factturbheat = one/(prandtlturb*gm1)
-   heatcoefd = muld*factlamheat + mul*factlamheatd + mued*&
-   &           factturbheat + mue*factturbheatd
+   heatcoefd = factlamheat*muld + factturbheat*mued
    heatcoef = mul*factlamheat + mue*factturbheat
    ! Compute the gradients at the face by averaging the four
    ! nodal values.

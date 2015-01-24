@@ -13,7 +13,7 @@
 
 subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment, sepSensor, &
      Cavitation)
-
+  use BCRoutines
   use blockPointers       
   use flowVarRefState     
   use inputPhysics 
@@ -127,7 +127,7 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   call computeEddyViscosity 
 
   !  Apply all BC's
-  call applyAllBC_block(.True.)
+  call applyAllBC_block2(.True.)
  
   if (equations == RANSequations) then 
      call applyAllTurbBCThisBLock(.True.)
