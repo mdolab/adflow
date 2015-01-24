@@ -2,9 +2,9 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of invisciddissfluxscalarapprox in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *p *w *fw gammainf
-   !   with respect to varying inputs: *p *w *radi *radj *radk gammainf
-   !                rhoinf pinfcorr
+   !   gradient     of useful results: gammainf *p *w *fw
+   !   with respect to varying inputs: gammainf rhoinf pinfcorr *p
+   !                *w *radi *radj *radk
    !   Plus diff mem management of: p:in w:in fw:in radi:in radj:in
    !                radk:in
    !
@@ -167,11 +167,11 @@
    ! Check if rFil == 0. If so, the dissipative flux needs not to
    ! be computed.
    IF (abs0 .LT. thresholdreal) THEN
+   rhoinfd = 0.0_8
+   pinfcorrd = 0.0_8
    radid = 0.0_8
    radjd = 0.0_8
    radkd = 0.0_8
-   rhoinfd = 0.0_8
-   pinfcorrd = 0.0_8
    ELSE
    ! Determine the variables used to compute the switch.
    ! For the inviscid case this is the pressure; for the viscous

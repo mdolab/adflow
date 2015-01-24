@@ -5,17 +5,24 @@
    !   gradient     of useful results: *(flowdoms.x) *(flowdoms.w)
    !                *(flowdoms.dw) *(*bcdata.fp) *(*bcdata.fv) *(*bcdata.m)
    !                *(*bcdata.oarea) *(*bcdata.sepsensor) *(*bcdata.cavitation)
-   !                funcvalues moment force cavitation sepsensor
-   !   with respect to varying inputs: *xsurf *(flowdoms.x) *(flowdoms.w)
+   !                *rev0 *rev1 *rev2 *rev3 *pp0 *pp1 *pp2 *pp3 *rlv0
+   !                *rlv1 *rlv2 *rlv3 *ww0 *ww1 *ww2 *ww3 funcvalues
+   !                moment force cavitation sepsensor
+   !   with respect to varying inputs: pref *(flowdoms.x) *(flowdoms.w)
    !                *(flowdoms.dw) *(*bcdata.fp) *(*bcdata.fv) *(*bcdata.m)
    !                *(*bcdata.oarea) *(*bcdata.sepsensor) *(*bcdata.cavitation)
-   !                funcvalues mach tempfreestream reynolds machgrid
-   !                lengthref machcoef pointref pref moment alpha
-   !                force beta cavitation sepsensor
-   !   RW status of diff variables: *xsurf:out *(flowdoms.x):in-out
-   !                *(flowdoms.vol):(loc) *(flowdoms.w):in-out *(flowdoms.dw):in-out
-   !                *rev:(loc) *aa:(loc) *bvtj1:(loc) *bvtj2:(loc)
-   !                *wx:(loc) *wy:(loc) *wz:(loc) *p:(loc) *gamma:(loc)
+   !                mach tempfreestream reynolds machgrid lengthref
+   !                machcoef pointref *rev0 *rev1 *rev2 *rev3 *pp0
+   !                *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3 *ww0 *ww1
+   !                *ww2 *ww3 *xsurf funcvalues moment alpha force
+   !                beta cavitation sepsensor
+   !   RW status of diff variables: mudim:(loc) gammainf:(loc) pinf:(loc)
+   !                timeref:(loc) rhoinf:(loc) muref:(loc) rhoinfdim:(loc)
+   !                tref:(loc) winf:(loc) muinf:(loc) uinf:(loc) pinfcorr:(loc)
+   !                rgas:(loc) pinfdim:(loc) pref:out rhoref:(loc)
+   !                *(flowdoms.x):in-out *(flowdoms.vol):(loc) *(flowdoms.w):in-out
+   !                *(flowdoms.dw):in-out *rev:(loc) *aa:(loc) *bvtj1:(loc)
+   !                *bvtj2:(loc) *wx:(loc) *wy:(loc) *wz:(loc) *p:(loc)
    !                *rlv:(loc) *qx:(loc) *qy:(loc) *qz:(loc) *bvtk1:(loc)
    !                *bvtk2:(loc) *ux:(loc) *uy:(loc) *uz:(loc) *d2wall:(loc)
    !                *si:(loc) *sj:(loc) *sk:(loc) *bvti1:(loc) *bvti2:(loc)
@@ -23,24 +30,28 @@
    !                *(*bcdata.norm):(loc) *(*bcdata.fp):in-out *(*bcdata.fv):in-out
    !                *(*bcdata.m):in-out *(*bcdata.oarea):in-out *(*bcdata.sepsensor):in-out
    !                *(*bcdata.cavitation):in-out *radi:(loc) *radj:(loc)
-   !                *radk:(loc) funcvalues:in-zero mach:out tempfreestream:out
-   !                reynolds:out veldirfreestream:(loc) machgrid:out
-   !                lengthref:out machcoef:out dragdirection:(loc)
-   !                liftdirection:(loc) pointref:out mudim:(loc) gammainf:(loc)
-   !                pinf:(loc) timeref:(loc) rhoinf:(loc) muref:(loc)
-   !                rhoinfdim:(loc) tref:(loc) winf:(loc) muinf:(loc)
-   !                uinf:(loc) pinfcorr:(loc) rgas:(loc) pinfdim:(loc)
-   !                pref:out rhoref:(loc) moment:in-zero alpha:out
-   !                force:in-zero beta:out cavitation:in-zero sepsensor:in-zero
-   !   Plus diff mem management of: xsurf:in flowdoms.x:in flowdoms.vol:in
+   !                *radk:(loc) mach:out tempfreestream:out reynolds:out
+   !                veldirfreestream:(loc) machgrid:out lengthref:out
+   !                machcoef:out dragdirection:(loc) liftdirection:(loc)
+   !                pointref:out *rev0:in-out *rev1:in-out *rev2:in-out
+   !                *rev3:in-out *pp0:in-out *pp1:in-out *pp2:in-out
+   !                *pp3:in-out *rlv0:in-out *rlv1:in-out *rlv2:in-out
+   !                *rlv3:in-out *ww0:in-out *ww1:in-out *ww2:in-out
+   !                *ww3:in-out *xsurf:out funcvalues:in-zero moment:in-zero
+   !                alpha:out force:in-zero beta:out cavitation:in-zero
+   !                sepsensor:in-zero
+   !   Plus diff mem management of: flowdoms.x:in flowdoms.vol:in
    !                flowdoms.w:in flowdoms.dw:in rev:in aa:in bvtj1:in
-   !                bvtj2:in wx:in wy:in wz:in p:in gamma:in rlv:in
-   !                qx:in qy:in qz:in bvtk1:in bvtk2:in ux:in uy:in
-   !                uz:in d2wall:in si:in sj:in sk:in bvti1:in bvti2:in
-   !                vx:in vy:in vz:in fw:in viscsubface:in *viscsubface.tau:in
+   !                bvtj2:in wx:in wy:in wz:in p:in rlv:in qx:in qy:in
+   !                qz:in bvtk1:in bvtk2:in ux:in uy:in uz:in d2wall:in
+   !                si:in sj:in sk:in bvti1:in bvti2:in vx:in vy:in
+   !                vz:in fw:in viscsubface:in *viscsubface.tau:in
    !                bcdata:in *bcdata.norm:in *bcdata.fp:in *bcdata.fv:in
    !                *bcdata.m:in *bcdata.oarea:in *bcdata.sepsensor:in
    !                *bcdata.cavitation:in radi:in radj:in radk:in
+   !                rev0:in rev1:in rev2:in rev3:in pp0:in pp1:in
+   !                pp2:in pp3:in rlv0:in rlv1:in rlv2:in rlv3:in
+   !                ww0:in ww1:in ww2:in ww3:in xsurf:in
    ! This is a super-combined function that combines the original
    ! functionality of: 
    ! Pressure Computation
@@ -55,6 +66,7 @@
    SUBROUTINE BLOCK_RES_B(nn, sps, usespatial, alpha, alphad, beta, betad, &
    & liftindex, force, forced, moment, momentd, sepsensor, sepsensord, &
    & cavitation, cavitationd)
+   USE BCROUTINES_B
    USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
    USE INPUTPHYSICS
@@ -186,6 +198,26 @@
    CALL COMPUTELAMVISCOSITY()
    CALL COMPUTEEDDYVISCOSITY()
    !  Apply all BC's
+   CALL PUSHREAL8ARRAY(ww3, SIZE(ww3, 1)*SIZE(ww3, 2)*SIZE(ww3, 3))
+   CALL PUSHREAL8ARRAY(ww2, SIZE(ww2, 1)*SIZE(ww2, 2)*SIZE(ww2, 3))
+   CALL PUSHREAL8ARRAY(ww1, SIZE(ww1, 1)*SIZE(ww1, 2)*SIZE(ww1, 3))
+   CALL PUSHREAL8ARRAY(ww0, SIZE(ww0, 1)*SIZE(ww0, 2)*SIZE(ww0, 3))
+   CALL PUSHREAL8ARRAY(rlv3, SIZE(rlv3, 1)*SIZE(rlv3, 2))
+   CALL PUSHREAL8ARRAY(rlv2, SIZE(rlv2, 1)*SIZE(rlv2, 2))
+   CALL PUSHREAL8ARRAY(rlv1, SIZE(rlv1, 1)*SIZE(rlv1, 2))
+   CALL PUSHREAL8ARRAY(rlv0, SIZE(rlv0, 1)*SIZE(rlv0, 2))
+   CALL PUSHREAL8ARRAY(pp3, SIZE(pp3, 1)*SIZE(pp3, 2))
+   CALL PUSHREAL8ARRAY(pp2, SIZE(pp2, 1)*SIZE(pp2, 2))
+   CALL PUSHREAL8ARRAY(pp1, SIZE(pp1, 1)*SIZE(pp1, 2))
+   CALL PUSHREAL8ARRAY(pp0, SIZE(pp0, 1)*SIZE(pp0, 2))
+   CALL PUSHREAL8ARRAY(rev3, SIZE(rev3, 1)*SIZE(rev3, 2))
+   CALL PUSHREAL8ARRAY(rev2, SIZE(rev2, 1)*SIZE(rev2, 2))
+   CALL PUSHREAL8ARRAY(rev1, SIZE(rev1, 1)*SIZE(rev1, 2))
+   CALL PUSHREAL8ARRAY(rev0, SIZE(rev0, 1)*SIZE(rev0, 2))
+   CALL PUSHREAL8ARRAY(gamma3, SIZE(gamma3, 1)*SIZE(gamma3, 2))
+   CALL PUSHREAL8ARRAY(gamma2, SIZE(gamma2, 1)*SIZE(gamma2, 2))
+   CALL PUSHREAL8ARRAY(gamma1, SIZE(gamma1, 1)*SIZE(gamma1, 2))
+   CALL PUSHREAL8ARRAY(gamma0, SIZE(gamma0, 1)*SIZE(gamma0, 2))
    CALL PUSHREAL8ARRAY(bmtj2, SIZE(bmtj2, 1)*SIZE(bmtj2, 2)*SIZE(bmtj2, 3&
    &               )*SIZE(bmtj2, 4))
    CALL PUSHREAL8ARRAY(bmtj1, SIZE(bmtj1, 1)*SIZE(bmtj1, 2)*SIZE(bmtj1, 3&
@@ -193,12 +225,6 @@
    CALL PUSHREAL8ARRAY(bvti2, SIZE(bvti2, 1)*SIZE(bvti2, 2)*SIZE(bvti2, 3&
    &               ))
    CALL PUSHREAL8ARRAY(bvti1, SIZE(bvti1, 1)*SIZE(bvti1, 2)*SIZE(bvti1, 3&
-   &               ))
-   CALL PUSHREAL8ARRAY(sk, SIZE(sk, 1)*SIZE(sk, 2)*SIZE(sk, 3)*SIZE(sk, 4&
-   &               ))
-   CALL PUSHREAL8ARRAY(sj, SIZE(sj, 1)*SIZE(sj, 2)*SIZE(sj, 3)*SIZE(sj, 4&
-   &               ))
-   CALL PUSHREAL8ARRAY(si, SIZE(si, 1)*SIZE(si, 2)*SIZE(si, 3)*SIZE(si, 4&
    &               ))
    CALL PUSHREAL8ARRAY(bmti2, SIZE(bmti2, 1)*SIZE(bmti2, 2)*SIZE(bmti2, 3&
    &               )*SIZE(bmti2, 4))
@@ -215,7 +241,6 @@
    &               )*SIZE(bmtk1, 4))
    CALL PUSHREAL8ARRAY(gamma, SIZE(gamma, 1)*SIZE(gamma, 2)*SIZE(gamma, 3&
    &               ))
-   CALL PUSHREAL8ARRAY(s, SIZE(s, 1)*SIZE(s, 2)*SIZE(s, 3)*SIZE(s, 4))
    CALL PUSHREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
    CALL PUSHREAL8ARRAY(bvtj2, SIZE(bvtj2, 1)*SIZE(bvtj2, 2)*SIZE(bvtj2, 3&
    &               ))
@@ -232,7 +257,7 @@
    END DO
    END DO
    END DO
-   CALL APPLYALLBC_BLOCK(.true.)
+   CALL APPLYALLBC_BLOCK2(.true.)
    IF (equations .EQ. ransequations) THEN
    CALL APPLYALLTURBBCTHISBLOCK(.true.)
    CALL PUSHCONTROL1B(0)
@@ -772,7 +797,6 @@
    CALL POPREAL8ARRAY(bvtj2, SIZE(bvtj2, 1)*SIZE(bvtj2, 2)*SIZE(bvtj2, 3)&
    &             )
    CALL POPREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
-   CALL POPREAL8ARRAY(s, SIZE(s, 1)*SIZE(s, 2)*SIZE(s, 3)*SIZE(s, 4))
    CALL POPREAL8ARRAY(gamma, SIZE(gamma, 1)*SIZE(gamma, 2)*SIZE(gamma, 3)&
    &             )
    CALL POPREAL8ARRAY(bmtk1, SIZE(bmtk1, 1)*SIZE(bmtk1, 2)*SIZE(bmtk1, 3)&
@@ -788,12 +812,6 @@
    &              *SIZE(bmti1, 4))
    CALL POPREAL8ARRAY(bmti2, SIZE(bmti2, 1)*SIZE(bmti2, 2)*SIZE(bmti2, 3)&
    &              *SIZE(bmti2, 4))
-   CALL POPREAL8ARRAY(si, SIZE(si, 1)*SIZE(si, 2)*SIZE(si, 3)*SIZE(si, 4)&
-   &             )
-   CALL POPREAL8ARRAY(sj, SIZE(sj, 1)*SIZE(sj, 2)*SIZE(sj, 3)*SIZE(sj, 4)&
-   &             )
-   CALL POPREAL8ARRAY(sk, SIZE(sk, 1)*SIZE(sk, 2)*SIZE(sk, 3)*SIZE(sk, 4)&
-   &             )
    CALL POPREAL8ARRAY(bvti1, SIZE(bvti1, 1)*SIZE(bvti1, 2)*SIZE(bvti1, 3)&
    &             )
    CALL POPREAL8ARRAY(bvti2, SIZE(bvti2, 1)*SIZE(bvti2, 2)*SIZE(bvti2, 3)&
@@ -802,7 +820,27 @@
    &              *SIZE(bmtj1, 4))
    CALL POPREAL8ARRAY(bmtj2, SIZE(bmtj2, 1)*SIZE(bmtj2, 2)*SIZE(bmtj2, 3)&
    &              *SIZE(bmtj2, 4))
-   CALL APPLYALLBC_BLOCK_B(.true.)
+   CALL POPREAL8ARRAY(gamma0, SIZE(gamma0, 1)*SIZE(gamma0, 2))
+   CALL POPREAL8ARRAY(gamma1, SIZE(gamma1, 1)*SIZE(gamma1, 2))
+   CALL POPREAL8ARRAY(gamma2, SIZE(gamma2, 1)*SIZE(gamma2, 2))
+   CALL POPREAL8ARRAY(gamma3, SIZE(gamma3, 1)*SIZE(gamma3, 2))
+   CALL POPREAL8ARRAY(rev0, SIZE(rev0, 1)*SIZE(rev0, 2))
+   CALL POPREAL8ARRAY(rev1, SIZE(rev1, 1)*SIZE(rev1, 2))
+   CALL POPREAL8ARRAY(rev2, SIZE(rev2, 1)*SIZE(rev2, 2))
+   CALL POPREAL8ARRAY(rev3, SIZE(rev3, 1)*SIZE(rev3, 2))
+   CALL POPREAL8ARRAY(pp0, SIZE(pp0, 1)*SIZE(pp0, 2))
+   CALL POPREAL8ARRAY(pp1, SIZE(pp1, 1)*SIZE(pp1, 2))
+   CALL POPREAL8ARRAY(pp2, SIZE(pp2, 1)*SIZE(pp2, 2))
+   CALL POPREAL8ARRAY(pp3, SIZE(pp3, 1)*SIZE(pp3, 2))
+   CALL POPREAL8ARRAY(rlv0, SIZE(rlv0, 1)*SIZE(rlv0, 2))
+   CALL POPREAL8ARRAY(rlv1, SIZE(rlv1, 1)*SIZE(rlv1, 2))
+   CALL POPREAL8ARRAY(rlv2, SIZE(rlv2, 1)*SIZE(rlv2, 2))
+   CALL POPREAL8ARRAY(rlv3, SIZE(rlv3, 1)*SIZE(rlv3, 2))
+   CALL POPREAL8ARRAY(ww0, SIZE(ww0, 1)*SIZE(ww0, 2)*SIZE(ww0, 3))
+   CALL POPREAL8ARRAY(ww1, SIZE(ww1, 1)*SIZE(ww1, 2)*SIZE(ww1, 3))
+   CALL POPREAL8ARRAY(ww2, SIZE(ww2, 1)*SIZE(ww2, 2)*SIZE(ww2, 3))
+   CALL POPREAL8ARRAY(ww3, SIZE(ww3, 1)*SIZE(ww3, 2)*SIZE(ww3, 3))
+   CALL APPLYALLBC_BLOCK2_B(.true.)
    CALL COMPUTEEDDYVISCOSITY_B()
    CALL COMPUTELAMVISCOSITY_B()
    DO k=kb,0,-1

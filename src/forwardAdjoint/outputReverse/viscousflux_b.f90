@@ -2,15 +2,14 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of viscousflux in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *gamma *w *x *si *sj *sk *fw
-   !                *(*viscsubface.tau)
-   !   with respect to varying inputs: *rev *aa *wx *wy *wz *gamma
-   !                *w *rlv *x *qx *qy *qz *ux *uy *uz *si *sj *sk
-   !                *vx *vy *vz *fw
+   !   gradient     of useful results: *w *x *si *sj *sk *fw *(*viscsubface.tau)
+   !   with respect to varying inputs: *rev *aa *wx *wy *wz *w *rlv
+   !                *x *qx *qy *qz *ux *uy *uz *si *sj *sk *vx *vy
+   !                *vz *fw
    !   Plus diff mem management of: rev:in aa:in wx:in wy:in wz:in
-   !                gamma:in w:in rlv:in x:in qx:in qy:in qz:in ux:in
-   !                uy:in uz:in si:in sj:in sk:in vx:in vy:in vz:in
-   !                fw:in viscsubface:in *viscsubface.tau:in
+   !                w:in rlv:in x:in qx:in qy:in qz:in ux:in uy:in
+   !                uz:in si:in sj:in sk:in vx:in vy:in vz:in fw:in
+   !                viscsubface:in *viscsubface.tau:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -50,7 +49,6 @@
    REAL(kind=realtype) :: rfilv, por, mul, mue, mut, heatcoef
    REAL(kind=realtype) :: muld, mued, mutd, heatcoefd
    REAL(kind=realtype) :: gm1, factlamheat, factturbheat
-   REAL(kind=realtype) :: gm1d, factlamheatd, factturbheatd
    REAL(kind=realtype) :: u_x, u_y, u_z, v_x, v_y, v_z, w_x, w_y, w_z
    REAL(kind=realtype) :: u_xd, u_yd, u_zd, v_xd, v_yd, v_zd, w_xd, w_yd&
    & , w_zd
@@ -184,6 +182,7 @@
    CALL PUSHREAL8(u_z)
    CALL PUSHINTEGER4(i)
    CALL PUSHINTEGER4(j)
+   CALL PUSHINTEGER4(k)
    CALL PUSHREAL8(w_x)
    CALL PUSHREAL8(w_y)
    CALL PUSHREAL8(w_z)
@@ -194,10 +193,11 @@
    CALL PUSHREAL8(v_x)
    CALL PUSHREAL8(v_y)
    CALL PUSHREAL8(v_z)
-   CALL PUSHREAL8(mue)
+   CALL PUSHREAL8(heatcoef)
    CALL PUSHREAL8(ss)
    CALL PUSHREAL8(fracdiv)
    CALL PUSHREAL8(por)
+   CALL PUSHREAL8(mut)
    CALL PUSHREAL8(ssx)
    CALL PUSHREAL8(ssy)
    CALL PUSHREAL8(ssz)
@@ -217,10 +217,11 @@
    CALL PUSHREAL8(v_x)
    CALL PUSHREAL8(v_y)
    CALL PUSHREAL8(v_z)
-   CALL PUSHREAL8(mue)
+   CALL PUSHREAL8(heatcoef)
    CALL PUSHREAL8(ss)
    CALL PUSHREAL8(fracdiv)
    CALL PUSHREAL8(por)
+   CALL PUSHREAL8(mut)
    revd = 0.0_8
    aad = 0.0_8
    wxd = 0.0_8
@@ -658,13 +659,7 @@
    uxd(i, j-1, k) = uxd(i, j-1, k) + tempd58
    uxd(i, j, k) = uxd(i, j, k) + tempd58
    muld = mutd + factlamheat*heatcoefd
-   factlamheatd = mul*heatcoefd
    mued = mued + mutd + factturbheat*heatcoefd
-   factturbheatd = mue*heatcoefd
-   gm1d = -(one*factlamheatd/(prandtl*gm1**2)) - one*factturbheatd/(&
-   &       prandtlturb*gm1**2)
-   gammad(i, j, k) = gammad(i, j, k) + half*gm1d
-   gammad(i+1, j, k) = gammad(i+1, j, k) + half*gm1d
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    revd(i, j, k) = revd(i, j, k) + por*mued
@@ -674,10 +669,11 @@
    rlvd(i, j, k) = rlvd(i, j, k) + por*muld
    rlvd(i+1, j, k) = rlvd(i+1, j, k) + por*muld
    END DO
+   CALL POPREAL8(mut)
    CALL POPREAL8(por)
    CALL POPREAL8(fracdiv)
    CALL POPREAL8(ss)
-   CALL POPREAL8(mue)
+   CALL POPREAL8(heatcoef)
    CALL POPREAL8(v_z)
    CALL POPREAL8(v_y)
    CALL POPREAL8(v_x)
@@ -1104,13 +1100,7 @@
    uxd(i-1, j, k) = uxd(i-1, j, k) + tempd38
    uxd(i, j, k) = uxd(i, j, k) + tempd38
    muld = mutd + factlamheat*heatcoefd
-   factlamheatd = mul*heatcoefd
    mued = mued + mutd + factturbheat*heatcoefd
-   factturbheatd = mue*heatcoefd
-   gm1d = -(one*factlamheatd/(prandtl*gm1**2)) - one*factturbheatd/(&
-   &       prandtlturb*gm1**2)
-   gammad(i, j, k) = gammad(i, j, k) + half*gm1d
-   gammad(i, j+1, k) = gammad(i, j+1, k) + half*gm1d
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    revd(i, j, k) = revd(i, j, k) + por*mued
@@ -1120,10 +1110,11 @@
    rlvd(i, j, k) = rlvd(i, j, k) + por*muld
    rlvd(i, j+1, k) = rlvd(i, j+1, k) + por*muld
    END DO
+   CALL POPREAL8(mut)
    CALL POPREAL8(por)
    CALL POPREAL8(fracdiv)
    CALL POPREAL8(ss)
-   CALL POPREAL8(mue)
+   CALL POPREAL8(heatcoef)
    CALL POPREAL8(v_z)
    CALL POPREAL8(v_y)
    CALL POPREAL8(v_x)
@@ -1134,6 +1125,7 @@
    CALL POPREAL8(w_z)
    CALL POPREAL8(w_y)
    CALL POPREAL8(w_x)
+   CALL POPINTEGER4(k)
    CALL POPINTEGER4(j)
    CALL POPINTEGER4(i)
    CALL POPREAL8(u_z)
@@ -1559,13 +1551,7 @@
    uxd(i-1, j, k) = uxd(i-1, j, k) + tempd18
    uxd(i, j, k) = uxd(i, j, k) + tempd18
    muld = mutd + factlamheat*heatcoefd
-   factlamheatd = mul*heatcoefd
    mued = mued + mutd + factturbheat*heatcoefd
-   factturbheatd = mue*heatcoefd
-   gm1d = -(one*factlamheatd/(prandtl*gm1**2)) - one*factturbheatd/(&
-   &       prandtlturb*gm1**2)
-   gammad(i, j, k) = gammad(i, j, k) + half*gm1d
-   gammad(i, j, k+1) = gammad(i, j, k+1) + half*gm1d
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    revd(i, j, k) = revd(i, j, k) + por*mued

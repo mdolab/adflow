@@ -15,7 +15,7 @@ subroutine alloc_derivative_values(level)
   use inputDiscretization
   use communication
   use wallDistanceData
-
+  use bcroutines_b
   implicit none
 
   ! Input parameters
@@ -23,7 +23,7 @@ subroutine alloc_derivative_values(level)
 
   ! Local variables
   integer(kind=intType) :: sps,ierr,i,j,k,l, mm, nState, nn
-  integer(kind=intType) :: iBeg, jBeg, iEnd, jEnd
+  integer(kind=intType) :: iBeg, jBeg, iEnd, jEnd, isizemax, jsizemax
   integer(kind=intType) :: massShape(2), max_face_size
 
   real(kind=realType) :: alpha, beta, force(3, nTimeINtervalsSpectral), moment(3, nTimeIntervalsSpectral), sepSensor, Cavitation
@@ -360,4 +360,59 @@ subroutine alloc_derivative_values(level)
         end do
      end do allocspectralLoop
   end do
+
+  ! Finally allocate space for the BC pointers
+  isizemax = 0
+  jsizemax = 0
+  do nn=1,nDom
+     isizemax = max(isizemax, flowDoms(nn, 1, 1)%ie)
+     isizemax = max(isizemax, flowDoms(nn, 1, 1)%je)
+
+     jsizemax = max(jsizemax, flowDoms(nn, 1, 1)%je)
+     jsizemax = max(jsizemax, flowDoms(nn, 1, 1)%ke)
+  end do
+
+  allocate(&
+       ww0d(isizemax, jsizemax, nw), ww1d(isizemax, jsizemax, nw), &
+       ww2d(isizemax, jsizemax, nw), ww3d(isizemax, jsizemax, nw), &
+       pp0d(isizemax, jsizemax), pp1d(isizemax, jsizemax), &
+       pp2d(isizemax, jsizemax), pp3d(isizemax, jsizemax), &
+       rlv0d(isizemax, jsizemax), rlv1d(isizemax, jsizemax), &
+       rlv2d(isizemax, jsizemax), rlv3d(isizemax, jsizemax), &
+       rev0d(isizemax, jsizemax), rev1d(isizemax, jsizemax), &
+       rev2d(isizemax, jsizemax), rev3d(isizemax, jsizemax), stat=ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+  allocate(&
+       ww0(isizemax, jsizemax, nw), ww1(isizemax, jsizemax, nw), &
+       ww2(isizemax, jsizemax, nw), ww3(isizemax, jsizemax, nw), &
+       pp0(isizemax, jsizemax), pp1(isizemax, jsizemax), &
+       pp2(isizemax, jsizemax), pp3(isizemax, jsizemax), &
+       rlv0(isizemax, jsizemax), rlv1(isizemax, jsizemax), &
+       rlv2(isizemax, jsizemax), rlv3(isizemax, jsizemax), &
+       rev0(isizemax, jsizemax), rev1(isizemax, jsizemax), &
+       rev2(isizemax, jsizemax), rev3(isizemax, jsizemax), &
+       gamma0(isizemax, jsizemax), gamma1(isizemax, jsizemax), &
+       gamma2(isizemax, jsizemax), gamma3(isizemax, jsizemax), stat=ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  ww0d = zero
+  ww1d = zero
+  ww2d = zero
+  ww3d = zero
+
+  pp0d = zero
+  pp1d = zero
+  pp2d = zero
+  pp3d = zero
+
+  rlv0d = zero
+  rlv1d = zero
+  rlv2d = zero
+  rlv3d = zero
+
+  rev0d = zero
+  rev1d = zero
+  rev2d = zero
+  rev3d = zero
+
 end subroutine alloc_derivative_values

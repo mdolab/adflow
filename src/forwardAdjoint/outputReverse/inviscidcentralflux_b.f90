@@ -3,8 +3,8 @@
    !
    !  Differentiation of inviscidcentralflux in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
    !   gradient     of useful results: *p *dw *w *vol *si *sj *sk
-   !   with respect to varying inputs: *p *dw *w *vol *si *sj *sk
-   !                timeref
+   !   with respect to varying inputs: timeref *p *dw *w *vol *si
+   !                *sj *sk
    !   Plus diff mem management of: p:in dw:in w:in vol:in si:in sj:in
    !                sk:in
    !

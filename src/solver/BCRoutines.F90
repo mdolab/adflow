@@ -84,6 +84,7 @@ contains
        if (bcType(nn) == symm) then 
           call setBCPointers2(nn)
           call bcSymm2(nn, secondHalo)
+          call resetBCPointers2(nn)
        end if
     end do
 
@@ -96,6 +97,7 @@ contains
        if (bcType(nn) == symmPolar) then
           call setBCPointers2(nn)
           call bcSymmPolar(nn, secondHalo)
+          call resetBCPointers2(nn)
        end if
     end do
 #endif
@@ -108,6 +110,7 @@ contains
        if (bcType(nn) == NSWallAdiabatic) then 
           call setBCPointers2(nn)
           call bcNSWallAdiabatic2(nn, secondHalo, correctForK)
+          call resetBCPointers2(nn)
        end if
     end do
 
@@ -119,6 +122,7 @@ contains
        if (bcType(nn) == NSWallIsoThermal) then 
           call setBCPointers2(nn)
           call bcNSWallIsothermal2(nn, secondHalo, correctForK)
+          call resetBCPointers2(nn)
        end if
     end do
 
@@ -134,6 +138,7 @@ contains
        if (bcType(nn) == farField) then
           call setBCPointers2(nn)
           call bcFarField2(nn, secondHalo, correctForK)
+          call resetBCPointers2(nn)
        end if
     end do
 
@@ -146,6 +151,7 @@ contains
             bcType(nn) == MassBleedOutflow) then 
           call setBCPointers2(nn)
           call bcSubSonicOutFlow2(nn, secondHalo, correctForK)
+          call resetBCPointers2(nn)
        end if
     end do
 
@@ -156,6 +162,7 @@ contains
        if (bcType(nn) == subSonicInFlow) then 
           call setBCPointers2(nn)
           call bcSubSonicInflow2(nn, secondHalo, correctForK)
+          call resetBCPointers2(nn)
        end if
     end do
 
@@ -166,6 +173,7 @@ contains
        if (bcType(nn) == MassBleedInflow) then
           call setBCPointers2(nn)
           call bcBleedInflow2(nn, secondHalo, correctForK)
+          call resetBCPointers2(nn)
        end if
     end do
 
@@ -176,6 +184,7 @@ contains
        if (bcType(nn) == mdot) then 
           call setBCPointers2(nn)
           call bcMDot2(nn, secondHalo, correctForK)
+          call resetBCPointers2(nn)
        end if
     end do
 
@@ -186,6 +195,7 @@ contains
        if (bcType(nn) == thrust) then 
           call setBCPointers2(nn)
           call bcThrust2(nn, secondHalo, correctForK)
+          call resetBCPointers2(nn)
        end if
     end do
 
@@ -203,6 +213,7 @@ contains
             bcType(nn) == SupersonicOutFlow) then 
           call setBCPointers2(nn)
           call bcExtrap2(nn, secondHalo, correctForK)
+          call resetBCPointers2(nn)
        end if
     end do
 #endif
@@ -215,6 +226,7 @@ contains
        if (bcType(nn) == EulerWall) then
           call setBCPointers2(nn)
           call bcEulerWall2(nn, secondHalo, correctForK)
+          call resetBCPointers2(nn)
        end if
     end do
 
@@ -230,6 +242,7 @@ contains
             bcType(nn) == DomainInterfaceTotal) then
           call setBCPointers2(nn)
           call bcDomainInterface2(nn, secondHalo, correctForK)
+          call resetBCPointers2(nn)
        end if
     end do
 
@@ -240,6 +253,7 @@ contains
        if (bcType(nn) == SupersonicInflow) then 
           call setBCPointers2(nn)
           call bcSupersonicInflow2(nn, secondHalo, correctForK)
+          call resetBCPointers2(nn)
        end if
     end do
 #endif
@@ -1211,7 +1225,7 @@ contains
           k = ii/isize + 1
           grad(j,k) = pp3(j,k) - pp2(j,k)
        end do
-
+#ifndef TAPENADE_REVERSE
     case (normalMomentum)
 
        ! Pressure gradient is computed using the normal momentum
@@ -1326,6 +1340,7 @@ contains
                +   qk*(uux*rxk + uuy*ryk + uuz*rzk))     &
                *  ww2(j,k,irho) - rj*dpj - rk*dpk)/ri
        enddo
+#endif
     end select BCTreatment
 
     ! Determine the state in the halo cell. Again loop over
@@ -2859,25 +2874,25 @@ contains
        ww1(1:isize,1:jsize,:) = w(iStart:iEnd, jStart:jend, 1, :)
        ww0(1:isize,1:jsize,:) = w(iStart:iEnd, jStart:jend, 0, :)
 
-       pp3 = p(iStart:iEnd, jStart:jend, 3)
-       pp2 = p(iStart:iEnd, jStart:jend, 2)
-       pp1 = p(iStart:iEnd, jStart:jend, 1)
-       pp0 = p(iStart:iEnd, jStart:jend, 0)
+       pp3(1:isize,1:jsize) = p(iStart:iEnd, jStart:jend, 3)
+       pp2(1:isize,1:jsize) = p(iStart:iEnd, jStart:jend, 2)
+       pp1(1:isize,1:jsize) = p(iStart:iEnd, jStart:jend, 1)
+       pp0(1:isize,1:jsize) = p(iStart:iEnd, jStart:jend, 0)
 
-       rlv3 = rlv(iStart:iEnd, jStart:jend, 3)
-       rlv2 = rlv(iStart:iEnd, jStart:jend, 2)
-       rlv1 = rlv(iStart:iEnd, jStart:jend, 1)
-       rlv0 = rlv(iStart:iEnd, jStart:jend, 0)
+       rlv3(1:isize,1:jsize) = rlv(iStart:iEnd, jStart:jend, 3)
+       rlv2(1:isize,1:jsize) = rlv(iStart:iEnd, jStart:jend, 2)
+       rlv1(1:isize,1:jsize) = rlv(iStart:iEnd, jStart:jend, 1)
+       rlv0(1:isize,1:jsize) = rlv(iStart:iEnd, jStart:jend, 0)
 
-       rev3 = rev(iStart:iEnd, jStart:jend, 3)
-       rev2 = rev(iStart:iEnd, jStart:jend, 2)
-       rev1 = rev(iStart:iEnd, jStart:jend, 1)
-       rev0 = rev(iStart:iEnd, jStart:jend, 0)
+       rev3(1:isize,1:jsize) = rev(iStart:iEnd, jStart:jend, 3)
+       rev2(1:isize,1:jsize) = rev(iStart:iEnd, jStart:jend, 2)
+       rev1(1:isize,1:jsize) = rev(iStart:iEnd, jStart:jend, 1)
+       rev0(1:isize,1:jsize) = rev(iStart:iEnd, jStart:jend, 0)
 
-       gamma3 = gamma(iStart:iEnd, jStart:jend, 3)
-       gamma2 = gamma(iStart:iEnd, jStart:jend, 2)
-       gamma1 = gamma(iStart:iEnd, jStart:jend, 1)
-       gamma0 = gamma(iStart:iEnd, jStart:jend, 0)
+       gamma3(1:isize,1:jsize) = gamma(iStart:iEnd, jStart:jend, 3)
+       gamma2(1:isize,1:jsize) = gamma(iStart:iEnd, jStart:jend, 2)
+       gamma1(1:isize,1:jsize) = gamma(iStart:iEnd, jStart:jend, 1)
+       gamma0(1:isize,1:jsize) = gamma(iStart:iEnd, jStart:jend, 0)
 
        !===============================================================
 
@@ -2938,15 +2953,18 @@ contains
 
     ! Determine the face id on which the subface is located and set
     ! the pointers accordinly.
-#ifndef TAPENADE_REVERSE
 
-    nullify(ww0, ww1, ww2, ww3)
-    nullify(pp0, pp1, pp2, pp3)
-    nullify(rlv0, rlv1, rlv2, rlv3)
-    nullify(rev0, rev1, rev2, rev3)
-    nullify(gamma0, gamma1, gamma2, gamma3)
-    nullify(ssi, ssj, ssk, ss)
-    nullify(xline)
+    iStart = BCData(nn)%icBeg
+    iEnd   = BCData(nn)%icEnd
+    jStart = BCData(nn)%jcBeg
+    jEnd   = BCData(nn)%jcEnd
+
+    ! Set the size of the subface
+    isize = iEnd-iStart + 1
+    jsize = jEnd-jStart + 1
+
+#ifndef TAPENADE_REVERSE
+    ! This is just a no-opt
 #else
     select case (BCFaceID(nn))
 

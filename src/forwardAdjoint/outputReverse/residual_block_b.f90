@@ -2,15 +2,15 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of residual_block in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *p *dw *w *x *vol *si *sj *sk
-   !                *(*viscsubface.tau) gammainf
-   !   with respect to varying inputs: *rev *p *gamma *dw *w *rlv
-   !                *x *vol *si *sj *sk *radi *radj *radk gammainf
-   !                timeref rhoinf tref winf pinfcorr rgas
+   !   gradient     of useful results: gammainf *p *dw *w *x *vol
+   !                *si *sj *sk *(*viscsubface.tau)
+   !   with respect to varying inputs: gammainf timeref rhoinf tref
+   !                winf pinfcorr rgas *rev *p *dw *w *rlv *x *vol
+   !                *si *sj *sk *radi *radj *radk
    !   Plus diff mem management of: rev:in aa:in wx:in wy:in wz:in
-   !                p:in gamma:in dw:in w:in rlv:in x:in qx:in qy:in
-   !                qz:in ux:in vol:in uy:in uz:in si:in sj:in sk:in
-   !                vx:in vy:in vz:in fw:in viscsubface:in *viscsubface.tau:in
+   !                p:in dw:in w:in rlv:in x:in qx:in qy:in qz:in
+   !                ux:in vol:in uy:in uz:in si:in sj:in sk:in vx:in
+   !                vy:in vz:in fw:in viscsubface:in *viscsubface.tau:in
    !                radi:in radj:in radk:in
    !
    !      ******************************************************************
@@ -138,13 +138,6 @@
    REAL(kind=realtype) :: tempd32
    REAL(kind=realtype) :: tempd31
    REAL(kind=realtype) :: tempd30
-   REAL(kind=realtype) :: tempd64
-   REAL(kind=realtype) :: temp41
-   REAL(kind=realtype) :: tempd63
-   REAL(kind=realtype) :: temp40
-   REAL(kind=realtype) :: tempd62
-   REAL(kind=realtype) :: tempd61
-   REAL(kind=realtype) :: tempd60
    REAL(kind=realtype) :: tempd9
    REAL(kind=realtype) :: tempd
    REAL(kind=realtype) :: tempd8
@@ -456,9 +449,8 @@
    END DO
    END DO
    END DO
-   gammad = 0.0_8
-   fwd = 0.0_8
    winfd = 0.0_8
+   fwd = 0.0_8
    dwod = 0.0_8
    DO k=kl,2,-1
    DO j=jl,2,-1
@@ -538,39 +530,39 @@
    dwd(i, j, k, 1) = 0.0_8
    DO l=nwf,1,-1
    CALL POPREAL8(dwo(l))
-   tempd63 = REAL(iblank(i, j, k), realtype)*dwod(l)
-   dwd(i, j, k, l) = dwd(i, j, k, l) + tempd63
-   fwd(i, j, k, l) = fwd(i, j, k, l) + tempd63
+   tempd58 = REAL(iblank(i, j, k), realtype)*dwod(l)
+   dwd(i, j, k, l) = dwd(i, j, k, l) + tempd58
+   fwd(i, j, k, l) = fwd(i, j, k, l) + tempd58
    dwod(l) = 0.0_8
    END DO
+   temp3 = sos**4
    temp4 = sos**4
-   temp5 = sos**4
-   temp8 = gamma(i, j, k) - 1
-   tempd60 = (gamma(i, j, k)-1)*b11d
+   temp6 = gamma(i, j, k) - 1
+   tempd56 = (gamma(i, j, k)-1)*b11d
    tempd46 = (1-gamma(i, j, k))*b12d
    tempd47 = (1-gamma(i, j, k))*b12d
    tempd31 = (1-gamma(i, j, k))*b13d
    tempd32 = (1-gamma(i, j, k))*b13d
    tempd16 = (1-gamma(i, j, k))*b14d
    tempd17 = (1-gamma(i, j, k))*b14d
-   temp15 = gamma(i, j, k) - 1
-   tempd57 = (gamma(i, j, k)-1)*b21d
+   temp13 = gamma(i, j, k) - 1
+   tempd55 = (gamma(i, j, k)-1)*b21d
    tempd48 = (1-gamma(i, j, k))*b22d
    tempd49 = (1-gamma(i, j, k))*b22d
    tempd33 = (1-gamma(i, j, k))*b23d
    tempd34 = (1-gamma(i, j, k))*b23d
    tempd18 = (1-gamma(i, j, k))*b24d
    tempd19 = (1-gamma(i, j, k))*b24d
-   temp22 = gamma(i, j, k) - 1
-   tempd62 = (gamma(i, j, k)-1)*b31d
+   temp20 = gamma(i, j, k) - 1
+   tempd57 = (gamma(i, j, k)-1)*b31d
    tempd50 = (1-gamma(i, j, k))*b32d
    tempd51 = (1-gamma(i, j, k))*b32d
    tempd35 = (1-gamma(i, j, k))*b33d
    tempd36 = (1-gamma(i, j, k))*b33d
    tempd20 = (1-gamma(i, j, k))*b34d
    tempd21 = (1-gamma(i, j, k))*b34d
-   temp29 = gamma(i, j, k) - 1
-   tempd55 = (gamma(i, j, k)-1)*b41d
+   temp27 = gamma(i, j, k) - 1
+   tempd54 = (gamma(i, j, k)-1)*b41d
    tempd52 = (1-gamma(i, j, k))*b42d
    tempd53 = (1-gamma(i, j, k))*b42d
    tempd37 = (1-gamma(i, j, k))*b43d
@@ -579,69 +571,65 @@
    tempd23 = (1-gamma(i, j, k))*b44d
    q = velxrho**2 + velyrho**2 + velzrho**2
    tempd4 = (gamma(i, j, k)-1)*b51d
-   temp38 = w(i, j, k, irho)
-   tempd39 = -(b51d/temp38)
-   temp37 = w(i, j, k, irho)
-   tempd24 = -(b51d/temp37)
-   temp36 = gamma(i, j, k) - 1
+   temp36 = w(i, j, k, irho)
+   tempd39 = -(b51d/temp36)
    temp35 = w(i, j, k, irho)
-   tempd9 = -(b51d/temp35)
-   a41d = velzrho*tempd23 + velxrho*tempd53 + q*tempd55/2 + &
+   tempd24 = -(b51d/temp35)
+   temp34 = gamma(i, j, k) - 1
+   temp33 = w(i, j, k, irho)
+   tempd9 = -(b51d/temp33)
+   a41d = velzrho*tempd23 + velxrho*tempd53 + q*tempd54/2 + &
    &           velyrho*tempd38 + (gamma(i, j, k)-1)*b45d
-   a45d = velzrho*tempd22 + velxrho*tempd52 + (temp29*(q/2)-sos**&
+   a45d = velzrho*tempd22 + velxrho*tempd52 + (temp27*(q/2)-sos**&
    &           2)*b41d + velyrho*tempd37 + (gamma(i, j, k)-1)*b45d
    a44 = one*w(i, j, k, irho)
    a43 = zero
    a42 = zero
-   temp31 = w(i, j, k, irho)
-   tempd40 = -(a42*b41d/temp31)
-   temp30 = w(i, j, k, irho)
-   tempd25 = -(a43*b41d/temp30)
-   tempd56 = a45*b41d
+   temp29 = w(i, j, k, irho)
+   tempd40 = -(a42*b41d/temp29)
    temp28 = w(i, j, k, irho)
-   tempd10 = -(b41d/temp28)
-   a31d = velzrho*tempd21 + velxrho*tempd51 + q*tempd62/2 + &
+   tempd25 = -(a43*b41d/temp28)
+   temp26 = w(i, j, k, irho)
+   tempd10 = -(b41d/temp26)
+   a31d = velzrho*tempd21 + velxrho*tempd51 + q*tempd57/2 + &
    &           velyrho*tempd36 + (gamma(i, j, k)-1)*b35d
-   a35d = velzrho*tempd20 + velxrho*tempd50 + (temp22*(q/2)-sos**&
+   a35d = velzrho*tempd20 + velxrho*tempd50 + (temp20*(q/2)-sos**&
    &           2)*b31d + velyrho*tempd35 + (gamma(i, j, k)-1)*b35d
    a34 = zero
    a33 = one*w(i, j, k, irho)
    a32 = zero
-   temp24 = w(i, j, k, irho)
-   tempd41 = -(a32*b31d/temp24)
-   temp23 = w(i, j, k, irho)
-   tempd26 = -(b31d/temp23)
-   tempd61 = a35*b31d
+   temp22 = w(i, j, k, irho)
+   tempd41 = -(a32*b31d/temp22)
    temp21 = w(i, j, k, irho)
-   tempd11 = -(a34*b31d/temp21)
-   a21d = velzrho*tempd19 + velxrho*tempd49 + q*tempd57/2 + &
+   tempd26 = -(b31d/temp21)
+   temp19 = w(i, j, k, irho)
+   tempd11 = -(a34*b31d/temp19)
+   a21d = velzrho*tempd19 + velxrho*tempd49 + q*tempd55/2 + &
    &           velyrho*tempd34 + (gamma(i, j, k)-1)*b25d
-   a25d = velzrho*tempd18 + velxrho*tempd48 + (temp15*(q/2)-sos**&
+   a25d = velzrho*tempd18 + velxrho*tempd48 + (temp13*(q/2)-sos**&
    &           2)*b21d + velyrho*tempd33 + (gamma(i, j, k)-1)*b25d
    a24 = zero
    a23 = zero
    a22 = one*w(i, j, k, irho)
-   temp17 = w(i, j, k, irho)
-   tempd42 = -(b21d/temp17)
-   temp16 = w(i, j, k, irho)
-   tempd27 = -(a23*b21d/temp16)
-   tempd58 = a25*b21d
+   temp15 = w(i, j, k, irho)
+   tempd42 = -(b21d/temp15)
    temp14 = w(i, j, k, irho)
-   tempd12 = -(a24*b21d/temp14)
-   a11d = velzrho*tempd17 + velxrho*tempd47 + q*tempd60/2 + &
+   tempd27 = -(a23*b21d/temp14)
+   temp12 = w(i, j, k, irho)
+   tempd12 = -(a24*b21d/temp12)
+   a11d = velzrho*tempd17 + velxrho*tempd47 + q*tempd56/2 + &
    &           velyrho*tempd32 + (gamma(i, j, k)-1)*b15d
-   a15d = velzrho*tempd16 + velxrho*tempd46 + (temp8*(q/2)-sos**2&
+   a15d = velzrho*tempd16 + velxrho*tempd46 + (temp6*(q/2)-sos**2&
    &           )*b11d + velyrho*tempd31 + (gamma(i, j, k)-1)*b15d
    a14 = zero
    a13 = zero
    a12 = zero
-   temp10 = w(i, j, k, irho)
-   tempd43 = -(a12*b11d/temp10)
-   temp9 = w(i, j, k, irho)
-   tempd28 = -(a13*b11d/temp9)
-   tempd59 = a15*b11d
+   temp8 = w(i, j, k, irho)
+   tempd43 = -(a12*b11d/temp8)
    temp7 = w(i, j, k, irho)
-   tempd13 = -(a14*b11d/temp7)
+   tempd28 = -(a13*b11d/temp7)
+   temp5 = w(i, j, k, irho)
+   tempd13 = -(a14*b11d/temp5)
    tempd14 = -(one*a45d/sos**2)
    tempd15 = one*a41d/sos**2
    tempd29 = -(one*a35d/sos**2)
@@ -656,152 +644,111 @@
    tempd2 = (1-gamma(i, j, k))*b54d
    a51d = velzrho*tempd2 + velxrho*tempd3 + q*tempd4/2 + velyrho*&
    &           tempd5 + (gamma(i, j, k)-1)*b55d
-   gammad(i, j, k) = gammad(i, j, k) + (a55+a51)*b55d
-   a55d = velzrho*tempd6 + velxrho*tempd7 + (temp36*(q/2)-sos**2)&
+   a55d = velzrho*tempd6 + velxrho*tempd7 + (temp34*(q/2)-sos**2)&
    &           *b51d + velyrho*tempd8 + (gamma(i, j, k)-1)*b55d
    a54 = one*w(i, j, k, irho)*velzrho
    CALL POPREAL8(b54)
-   temp41 = w(i, j, k, irho)
-   gammad(i, j, k) = gammad(i, j, k) + (-(a55*velzrho)-a51*&
-   &           velzrho)*b54d
-   a54d = velzrho*tempd9 + b54d/temp41
+   temp39 = w(i, j, k, irho)
+   a54d = velzrho*tempd9 + b54d/temp39
    velzrhod = a54*tempd9 + a44*tempd10 + tempd11 + tempd12 + &
    &           tempd13 + tempd14 + tempd15 + one*w(i, j, k, irho)*a54d + &
    &           a15*tempd16 + a11*tempd17 + a25*tempd18 + a21*tempd19 + a35*&
    &           tempd20 + a31*tempd21 + a45*tempd22 + a41*tempd23 + a55*&
    &           tempd6 + a51*tempd2
-   wd(i, j, k, irho) = wd(i, j, k, irho) - a54*b54d/temp41**2
+   wd(i, j, k, irho) = wd(i, j, k, irho) - a54*b54d/temp39**2
    a53 = one*w(i, j, k, irho)*velyrho
    CALL POPREAL8(b53)
-   temp40 = w(i, j, k, irho)
-   gammad(i, j, k) = gammad(i, j, k) + (-(a55*velyrho)-a51*&
-   &           velyrho)*b53d
-   a53d = velyrho*tempd24 + b53d/temp40
+   temp38 = w(i, j, k, irho)
+   a53d = velyrho*tempd24 + b53d/temp38
    velyrhod = a53*tempd24 + tempd25 + a33*tempd26 + tempd27 + &
    &           tempd28 + tempd29 + tempd30 + one*w(i, j, k, irho)*a53d + &
    &           a15*tempd31 + a11*tempd32 + a25*tempd33 + a21*tempd34 + a35*&
    &           tempd35 + a31*tempd36 + a45*tempd37 + a41*tempd38 + a55*&
    &           tempd8 + a51*tempd5
-   wd(i, j, k, irho) = wd(i, j, k, irho) - a53*b53d/temp40**2
+   wd(i, j, k, irho) = wd(i, j, k, irho) - a53*b53d/temp38**2
    a52 = one*w(i, j, k, irho)*velxrho
    CALL POPREAL8(b52)
-   temp39 = w(i, j, k, irho)
-   gammad(i, j, k) = gammad(i, j, k) + (-(a55*velxrho)-a51*&
-   &           velxrho)*b52d
-   a52d = velxrho*tempd39 + b52d/temp39
+   temp37 = w(i, j, k, irho)
+   a52d = velxrho*tempd39 + b52d/temp37
    velxrhod = a52*tempd39 + tempd40 + tempd41 + a22*tempd42 + &
    &           tempd43 + tempd44 + tempd45 + one*w(i, j, k, irho)*a52d + &
    &           a15*tempd46 + a11*tempd47 + a25*tempd48 + a21*tempd49 + a35*&
    &           tempd50 + a31*tempd51 + a45*tempd52 + a41*tempd53 + a55*&
    &           tempd7 + a51*tempd3
-   wd(i, j, k, irho) = wd(i, j, k, irho) - a52*b52d/temp39**2
+   wd(i, j, k, irho) = wd(i, j, k, irho) - a52*b52d/temp37**2
    CALL POPREAL8(b51)
-   tempd54 = a55*b51d
-   qd = a41*tempd55/2 + temp29*tempd56/2 + a21*tempd57/2 + temp15&
-   &           *tempd58/2 + temp8*tempd59/2 + a11*tempd60/2 + temp22*&
-   &           tempd61/2 + a31*tempd62/2 + temp36*tempd54/2 + a51*tempd4/2
-   gammad(i, j, k) = gammad(i, j, k) + q*tempd54/2 + a51*q*b51d/2
+   qd = a41*tempd54/2 + temp27*a45*b41d/2 + a21*tempd55/2 + &
+   &           temp13*a25*b21d/2 + temp6*a15*b11d/2 + a11*tempd56/2 + &
+   &           temp20*a35*b31d/2 + a31*tempd57/2 + temp34*a55*b51d/2 + a51*&
+   &           tempd4/2
    wd(i, j, k, irho) = wd(i, j, k, irho) - a54*velzrho*tempd9/&
-   &           temp35 - a53*velyrho*tempd24/temp37 - a52*velxrho*tempd39/&
-   &           temp38
-   sosd = betamr2*4*sos**3*a15d/temp5**2 - 2*sos*tempd58 - &
+   &           temp33 - a53*velyrho*tempd24/temp35 - a52*velxrho*tempd39/&
+   &           temp36
+   sosd = betamr2*4*sos**3*a15d/temp4**2 - a25*2*sos*b21d - &
    &           velzrho*2*tempd14/sos - velyrho*2*tempd29/sos - velxrho*2*&
-   &           tempd44/sos - 2*sos*tempd56 - betamr2*4*sos**3*a11d/temp4**2&
-   &           - velxrho*2*tempd45/sos - velyrho*2*tempd30/sos - velzrho*2*&
-   &           tempd15/sos - 2*sos*tempd59 - 2*sos*tempd61 - 2*sos*tempd54
-   gammad(i, j, k) = gammad(i, j, k) + (a45+a41)*b45d
+   &           tempd44/sos - a45*2*sos*b41d - betamr2*4*sos**3*a11d/temp3**&
+   &           2 - velxrho*2*tempd45/sos - velyrho*2*tempd30/sos - velzrho*&
+   &           2*tempd15/sos - a15*2*sos*b11d - a35*2*sos*b31d - a55*2*sos*&
+   &           b51d
    CALL POPREAL8(b44)
-   temp34 = w(i, j, k, irho)
-   gammad(i, j, k) = gammad(i, j, k) + (-(a45*velzrho)-a41*&
-   &           velzrho)*b44d
-   a44d = velzrho*tempd10 + b44d/temp34
-   wd(i, j, k, irho) = wd(i, j, k, irho) - a44*b44d/temp34**2
-   CALL POPREAL8(b43)
-   temp33 = w(i, j, k, irho)
-   gammad(i, j, k) = gammad(i, j, k) + (-(a45*velyrho)-a41*&
-   &           velyrho)*b43d
-   wd(i, j, k, irho) = wd(i, j, k, irho) - a43*b43d/temp33**2
-   CALL POPREAL8(b42)
    temp32 = w(i, j, k, irho)
-   gammad(i, j, k) = gammad(i, j, k) + (-(a45*velxrho)-a41*&
-   &           velxrho)*b42d
-   wd(i, j, k, irho) = wd(i, j, k, irho) - a42*b42d/temp32**2
+   a44d = velzrho*tempd10 + b44d/temp32
+   wd(i, j, k, irho) = wd(i, j, k, irho) - a44*b44d/temp32**2
+   CALL POPREAL8(b43)
+   temp31 = w(i, j, k, irho)
+   wd(i, j, k, irho) = wd(i, j, k, irho) - a43*b43d/temp31**2
+   CALL POPREAL8(b42)
+   temp30 = w(i, j, k, irho)
+   wd(i, j, k, irho) = wd(i, j, k, irho) - a42*b42d/temp30**2
    CALL POPREAL8(b41)
-   gammad(i, j, k) = gammad(i, j, k) + q*tempd56/2 + a41*q*b41d/2
    wd(i, j, k, irho) = wd(i, j, k, irho) - a44*velzrho*tempd10/&
-   &           temp28 - velyrho*tempd25/temp30 - velxrho*tempd40/temp31
-   gammad(i, j, k) = gammad(i, j, k) + (a35+a31)*b35d
+   &           temp26 - velyrho*tempd25/temp28 - velxrho*tempd40/temp29
    CALL POPREAL8(b34)
-   temp27 = w(i, j, k, irho)
-   gammad(i, j, k) = gammad(i, j, k) + (-(a35*velzrho)-a31*&
-   &           velzrho)*b34d
-   wd(i, j, k, irho) = wd(i, j, k, irho) - a34*b34d/temp27**2
-   CALL POPREAL8(b33)
-   temp26 = w(i, j, k, irho)
-   gammad(i, j, k) = gammad(i, j, k) + (-(a35*velyrho)-a31*&
-   &           velyrho)*b33d
-   a33d = velyrho*tempd26 + b33d/temp26
-   wd(i, j, k, irho) = wd(i, j, k, irho) - a33*b33d/temp26**2
-   CALL POPREAL8(b32)
    temp25 = w(i, j, k, irho)
-   gammad(i, j, k) = gammad(i, j, k) + (-(a35*velxrho)-a31*&
-   &           velxrho)*b32d
-   wd(i, j, k, irho) = wd(i, j, k, irho) - a32*b32d/temp25**2
+   wd(i, j, k, irho) = wd(i, j, k, irho) - a34*b34d/temp25**2
+   CALL POPREAL8(b33)
+   temp24 = w(i, j, k, irho)
+   a33d = velyrho*tempd26 + b33d/temp24
+   wd(i, j, k, irho) = wd(i, j, k, irho) - a33*b33d/temp24**2
+   CALL POPREAL8(b32)
+   temp23 = w(i, j, k, irho)
+   wd(i, j, k, irho) = wd(i, j, k, irho) - a32*b32d/temp23**2
    CALL POPREAL8(b31)
-   gammad(i, j, k) = gammad(i, j, k) + q*tempd61/2 + a31*q*b31d/2
-   wd(i, j, k, irho) = wd(i, j, k, irho) - velzrho*tempd11/temp21&
-   &           - a33*velyrho*tempd26/temp23 - velxrho*tempd41/temp24
-   gammad(i, j, k) = gammad(i, j, k) + (a25+a21)*b25d
+   wd(i, j, k, irho) = wd(i, j, k, irho) - velzrho*tempd11/temp19&
+   &           - a33*velyrho*tempd26/temp21 - velxrho*tempd41/temp22
    CALL POPREAL8(b24)
-   temp20 = w(i, j, k, irho)
-   gammad(i, j, k) = gammad(i, j, k) + (-(a25*velzrho)-a21*&
-   &           velzrho)*b24d
-   wd(i, j, k, irho) = wd(i, j, k, irho) - a24*b24d/temp20**2
-   CALL POPREAL8(b23)
-   temp19 = w(i, j, k, irho)
-   gammad(i, j, k) = gammad(i, j, k) + (-(a25*velyrho)-a21*&
-   &           velyrho)*b23d
-   wd(i, j, k, irho) = wd(i, j, k, irho) - a23*b23d/temp19**2
-   CALL POPREAL8(b22)
    temp18 = w(i, j, k, irho)
-   gammad(i, j, k) = gammad(i, j, k) + (-(a25*velxrho)-a21*&
-   &           velxrho)*b22d
-   a22d = velxrho*tempd42 + b22d/temp18
-   wd(i, j, k, irho) = wd(i, j, k, irho) - a22*b22d/temp18**2
+   wd(i, j, k, irho) = wd(i, j, k, irho) - a24*b24d/temp18**2
+   CALL POPREAL8(b23)
+   temp17 = w(i, j, k, irho)
+   wd(i, j, k, irho) = wd(i, j, k, irho) - a23*b23d/temp17**2
+   CALL POPREAL8(b22)
+   temp16 = w(i, j, k, irho)
+   a22d = velxrho*tempd42 + b22d/temp16
+   wd(i, j, k, irho) = wd(i, j, k, irho) - a22*b22d/temp16**2
    CALL POPREAL8(b21)
-   gammad(i, j, k) = gammad(i, j, k) + q*tempd58/2 + a21*q*b21d/2
-   wd(i, j, k, irho) = wd(i, j, k, irho) - velzrho*tempd12/temp14&
-   &           - velyrho*tempd27/temp16 - a22*velxrho*tempd42/temp17
-   gammad(i, j, k) = gammad(i, j, k) + (a15+a11)*b15d
+   wd(i, j, k, irho) = wd(i, j, k, irho) - velzrho*tempd12/temp12&
+   &           - velyrho*tempd27/temp14 - a22*velxrho*tempd42/temp15
    CALL POPREAL8(b14)
-   temp13 = w(i, j, k, irho)
-   gammad(i, j, k) = gammad(i, j, k) + (-(a15*velzrho)-a11*&
-   &           velzrho)*b14d
-   wd(i, j, k, irho) = wd(i, j, k, irho) - a14*b14d/temp13**2
-   CALL POPREAL8(b13)
-   temp12 = w(i, j, k, irho)
-   gammad(i, j, k) = gammad(i, j, k) + (-(a15*velyrho)-a11*&
-   &           velyrho)*b13d
-   wd(i, j, k, irho) = wd(i, j, k, irho) - a13*b13d/temp12**2
-   CALL POPREAL8(b12)
    temp11 = w(i, j, k, irho)
-   gammad(i, j, k) = gammad(i, j, k) + (-(a15*velxrho)-a11*&
-   &           velxrho)*b12d
-   wd(i, j, k, irho) = wd(i, j, k, irho) - a12*b12d/temp11**2
+   wd(i, j, k, irho) = wd(i, j, k, irho) - a14*b14d/temp11**2
+   CALL POPREAL8(b13)
+   temp10 = w(i, j, k, irho)
+   wd(i, j, k, irho) = wd(i, j, k, irho) - a13*b13d/temp10**2
+   CALL POPREAL8(b12)
+   temp9 = w(i, j, k, irho)
+   wd(i, j, k, irho) = wd(i, j, k, irho) - a12*b12d/temp9**2
    CALL POPREAL8(b11)
-   gammad(i, j, k) = gammad(i, j, k) + q*tempd59/2 + a11*q*b11d/2
-   wd(i, j, k, irho) = wd(i, j, k, irho) - velzrho*tempd13/temp7 &
-   &           - velyrho*tempd28/temp9 - velxrho*tempd43/temp10
+   wd(i, j, k, irho) = wd(i, j, k, irho) - velzrho*tempd13/temp5 &
+   &           - velyrho*tempd28/temp7 - velxrho*tempd43/temp8
    resmd = one*resm*a51d - one*resm*a55d
    wd(i, j, k, irho) = wd(i, j, k, irho) + one*velzrho*a54d
    wd(i, j, k, irho) = wd(i, j, k, irho) + one*velyrho*a53d
    wd(i, j, k, irho) = wd(i, j, k, irho) + one*velxrho*a52d
-   temp6 = gamma(i, j, k) - 1
-   gammad(i, j, k) = gammad(i, j, k) - one*a51d/temp6**2
    wd(i, j, k, irho) = wd(i, j, k, irho) + one*a44d
    wd(i, j, k, irho) = wd(i, j, k, irho) + one*a33d
    wd(i, j, k, irho) = wd(i, j, k, irho) + one*a22d
-   betamr2d = a11d/temp4 - a15d/temp5
+   betamr2d = a11d/temp3 - a15d/temp4
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    CALL POPREAL8(betamr2)
@@ -828,9 +775,9 @@
    CALL POPREAL8(k3)
    resmd = resmd + (1-k1*m0**2)*2*resm*k3d/m0**4
    CALL POPREAL8(resm)
-   temp3 = SQRT(q)
-   IF (.NOT.q .EQ. 0.0_8) qd = qd + resmd/(sos*2.0*temp3)
-   sosd = sosd - temp3*resmd/sos**2
+   temp2 = SQRT(q)
+   IF (.NOT.q .EQ. 0.0_8) qd = qd + resmd/(sos*2.0*temp2)
+   sosd = sosd - temp2*resmd/sos**2
    velxrhod = velxrhod + 2*velxrho*qd
    velyrhod = velyrhod + 2*velyrho*qd
    velzrhod = velzrhod + 2*velzrho*qd
@@ -838,16 +785,15 @@
    wd(i, j, k, ivy) = wd(i, j, k, ivy) + velyrhod
    wd(i, j, k, ivx) = wd(i, j, k, ivx) + velxrhod
    CALL POPREAL8(sos)
-   temp2 = w(i, j, k, irho)
-   temp1 = gamma(i, j, k)*p(i, j, k)
-   temp0 = temp1/temp2
-   IF (temp0 .EQ. 0.0_8) THEN
+   temp1 = w(i, j, k, irho)
+   temp0 = p(i, j, k)/temp1
+   IF (gamma(i, j, k)*temp0 .EQ. 0.0_8) THEN
    tempd = 0.0
    ELSE
-   tempd = sosd/(2.0*SQRT(temp0)*temp2)
+   tempd = gamma(i, j, k)*sosd/(2.0*SQRT(gamma(i, j, k)*temp0)*&
+   &             temp1)
    END IF
-   gammad(i, j, k) = gammad(i, j, k) + p(i, j, k)*tempd
-   pd(i, j, k) = pd(i, j, k) + gamma(i, j, k)*tempd
+   pd(i, j, k) = pd(i, j, k) + tempd
    wd(i, j, k, irho) = wd(i, j, k, irho) - temp0*tempd
    END DO
    END DO
@@ -858,14 +804,13 @@
    DO k=kl,2,-1
    DO j=jl,2,-1
    DO i=il,2,-1
-   tempd64 = REAL(iblank(i, j, k), realtype)*dwd(i, j, k, l)
-   fwd(i, j, k, l) = fwd(i, j, k, l) + tempd64
-   dwd(i, j, k, l) = tempd64
+   tempd59 = REAL(iblank(i, j, k), realtype)*dwd(i, j, k, l)
+   fwd(i, j, k, l) = fwd(i, j, k, l) + tempd59
+   dwd(i, j, k, l) = tempd59
    END DO
    END DO
    END DO
    END DO
-   gammad = 0.0_8
    winfd = 0.0_8
    END IF
    CALL POPCONTROL3B(branch)
@@ -900,11 +845,11 @@
    CALL INVISCIDDISSFLUXSCALARAPPROX_B()
    END IF
    ELSE IF (branch .EQ. 2) THEN
+   rhoinfd = 0.0_8
+   pinfcorrd = 0.0_8
    radid = 0.0_8
    radjd = 0.0_8
    radkd = 0.0_8
-   rhoinfd = 0.0_8
-   pinfcorrd = 0.0_8
    ELSE
    CALL INVISCIDDISSFLUXMATRIX_B()
    GOTO 100
@@ -920,28 +865,28 @@
    END IF
    ELSE
    IF (branch .EQ. 6) THEN
-   radid = 0.0_8
-   radjd = 0.0_8
-   radkd = 0.0_8
    rhoinfd = 0.0_8
    trefd = 0.0_8
    pinfcorrd = 0.0_8
    rgasd = 0.0_8
-   ELSE
-   CALL INVISCIDUPWINDFLUX_B(finegrid)
    radid = 0.0_8
    radjd = 0.0_8
    radkd = 0.0_8
+   ELSE
+   CALL INVISCIDUPWINDFLUX_B(finegrid)
    rhoinfd = 0.0_8
    pinfcorrd = 0.0_8
+   radid = 0.0_8
+   radjd = 0.0_8
+   radkd = 0.0_8
    END IF
    GOTO 110
    END IF
-   100 radid = 0.0_8
-   radjd = 0.0_8
-   radkd = 0.0_8
-   rhoinfd = 0.0_8
+   100 rhoinfd = 0.0_8
    trefd = 0.0_8
    rgasd = 0.0_8
+   radid = 0.0_8
+   radjd = 0.0_8
+   radkd = 0.0_8
    110 CALL INVISCIDCENTRALFLUX_B()
    END SUBROUTINE RESIDUAL_BLOCK_B
