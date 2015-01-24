@@ -3,10 +3,10 @@
    !
    !  Differentiation of invisciddissfluxscalar in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *fw
-   !   with respect to varying inputs: *p *gamma *w *radi *radj *radk
-   !                gammainf rhoinf pinfcorr
-   !   Plus diff mem management of: p:in gamma:in w:in fw:in radi:in
-   !                radj:in radk:in
+   !   with respect to varying inputs: gammainf rhoinf pinfcorr *p
+   !                *w *radi *radj *radk
+   !   Plus diff mem management of: p:in w:in fw:in radi:in radj:in
+   !                radk:in
    !
    !      ******************************************************************
    !      *                                                                *
@@ -145,19 +145,14 @@
    DO k=0,kb
    DO j=0,jb
    DO i=0,ib
-   IF (w(i, j, k, irho) .GT. 0.0_8) THEN
-   pwr1d = w(i, j, k, irho)**gamma(i, j, k)*(LOG(w(i, j, k, &
-   &               irho))*gammad(i, j, k)+gamma(i, j, k)*wd(i, j, k, irho)/&
-   &               w(i, j, k, irho))
-   ELSE IF (w(i, j, k, irho) .EQ. 0.0_8) THEN
-   IF (gamma(i, j, k) .EQ. 1.0) THEN
-   pwr1d = wd(i, j, k, irho)
-   ELSE
-   pwr1d = 0.0_8
-   END IF
-   ELSE IF (gamma(i, j, k) .EQ. INT(gamma(i, j, k))) THEN
+   IF (w(i, j, k, irho) .GT. 0.0_8 .OR. (w(i, j, k, irho) .LT. &
+   &               0.0_8 .AND. gamma(i, j, k) .EQ. INT(gamma(i, j, k)))) &
+   &           THEN
    pwr1d = gamma(i, j, k)*w(i, j, k, irho)**(gamma(i, j, k)-1&
    &               )*wd(i, j, k, irho)
+   ELSE IF (w(i, j, k, irho) .EQ. 0.0_8 .AND. gamma(i, j, k) &
+   &               .EQ. 1.0) THEN
+   pwr1d = wd(i, j, k, irho)
    ELSE
    pwr1d = 0.0_8
    END IF

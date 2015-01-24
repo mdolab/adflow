@@ -3,8 +3,8 @@
    !
    !  Differentiation of invisciddissfluxscalarapprox in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *w *fw
-   !   with respect to varying inputs: *p *w *radi *radj *radk gammainf
-   !                rhoinf pinfcorr
+   !   with respect to varying inputs: gammainf rhoinf pinfcorr *p
+   !                *w *radi *radj *radk
    !   Plus diff mem management of: p:in w:in fw:in radi:in radj:in
    !                radk:in
    !

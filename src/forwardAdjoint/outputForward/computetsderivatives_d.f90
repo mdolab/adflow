@@ -3,9 +3,9 @@
    !
    !  Differentiation of computetsderivatives in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: dcdalphadot coef0 dcdalpha
-   !   with respect to varying inputs: machgrid lengthref machcoef
-   !                dragdirection liftdirection gammainf pinf rhoinfdim
-   !                pinfdim pref moment force
+   !   with respect to varying inputs: gammainf pinf rhoinfdim pinfdim
+   !                pref machgrid lengthref machcoef dragdirection
+   !                liftdirection moment force
    !
    !     ******************************************************************
    !     *                                                                *

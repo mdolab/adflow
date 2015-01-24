@@ -6,9 +6,9 @@
    !                *(*bcdata.m) *(*bcdata.oarea) *(*bcdata.sepsensor)
    !                *(*bcdata.cavitation) cfp cfv cmp cmv cavitation
    !                sepsensor
-   !   with respect to varying inputs: *p *w *x *si *sj *sk *(*viscsubface.tau)
-   !                veldirfreestream lengthref machcoef pointref gammainf
-   !                pinf pref
+   !   with respect to varying inputs: gammainf pinf pref *p *w *x
+   !                *si *sj *sk *(*viscsubface.tau) veldirfreestream
+   !                lengthref machcoef pointref
    !   Plus diff mem management of: viscsubface:in *viscsubface.tau:in
    !                bcdata:in *bcdata.fp:in *bcdata.fv:in *bcdata.m:in
    !                *bcdata.oarea:in *bcdata.sepsensor:in *bcdata.cavitation:in
@@ -134,8 +134,7 @@
    END INTERFACE
       INTERFACE 
    SUBROUTINE SETBCPOINTERS_D(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, &
-   &       pp2, pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev1d, rev2, rev2d, &
-   &       offset)
+   &       pp2, pp2d, rlv1, rlv2, rev1, rev2, offset)
    USE BCTYPES
    USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
@@ -146,9 +145,7 @@
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1, pp2
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1d, pp2d
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1d, rlv2d
    REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1d, rev2d
    END SUBROUTINE SETBCPOINTERS_D
    SUBROUTINE SETXXSSRHODD2WALL_D(nn, xx, xxd, ss, ssd, rho1, rho1d, &
    &       rho2, rho2d, dd2wall)
@@ -177,11 +174,7 @@
    REAL(kind=realtype) :: result1d
    REAL(kind=realtype) :: arg2
    REAL(kind=realtype) :: result2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv2d
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1d
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev2d
    INTEGER :: ii1
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1d
    !
    !      ******************************************************************
    !      *                                                                *
@@ -266,8 +259,7 @@
    ! a generic treatment possible. The routine setBcPointers
    ! is not used, because quite a few other ones are needed.
    CALL SETBCPOINTERS_D(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, pp2, &
-   &                    pp2d, rlv1, rlv1d, rlv2, rlv2d, rev1, rev1d, rev2, &
-   &                    rev2d, 0)
+   &                    pp2d, rlv1, rlv2, rev1, rev2, 0)
    CALL SETXXSSRHODD2WALL_D(nn, xx, xxd, ss, ssd, rho1, rho1d, rho2, &
    &                        rho2d, dd2wall)
    SELECT CASE  (bcfaceid(nn)) 
