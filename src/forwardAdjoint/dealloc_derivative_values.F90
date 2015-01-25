@@ -208,8 +208,8 @@ subroutine dealloc_derivative_values(level)
 
   ! Deallocate reverse mode space for bcpointers
   deallocate(ww0, ww1, ww2, ww3, pp0, pp1, pp2, pp3, rlv0, rlv1, rlv2, rlv3, &
-       rev0, rev1, rev2, rev3, gamma0, gamma1, gamma2, gamma3)
+       rev0, rev1, rev2, rev3, gamma0, gamma1, gamma2, gamma3, ssi, xx)
   deallocate(ww0d, ww1d, ww2d, ww3d, pp0d, pp1d, pp2d, pp3d, rlv0d, rlv1d, rlv2d, rlv3d, &
-       rev0d, rev1d, rev2d, rev3d)
+       rev0d, rev1d, rev2d, rev3d, ssid, xxd)
 
 end subroutine dealloc_derivative_values

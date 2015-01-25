@@ -47,35 +47,19 @@ FF90_OBJECTS2 =  \
 		computeetot_b.o\
 		computelamviscosity_b.o\
 		computespeedofsoundsquared_b.o\
-		extrapolate2ndhalo_b.o\
 		timestep_block_b.o\
 		metric_block_b.o\
 		xhalo_block_b.o\
 		applyallbc_block_b.o\
 		residual_block_b.o\
-		bceulerwall_b.o\
-		bcfarfield_b.o\
-		bcsymm_b.o\
-		bcnswallisothermal_b.o\
-		bcnswalladiabatic_b.o\
 		invisciddissfluxscalar_b.o\
 		dim_b.o\
 		block_res_b.o  \
 		viscousflux_b.o \
 		viscousfluxapprox_b.o\
 		computeetotcellcpfit_b.o \
-                setbcpointersbwd_b.o\
-		setssbwd_b.o\
-		resetssbwd_b.o\
-		setpp3pp4bwd_b.o\
-		resetpp3pp4bwd_b.o\
 		setssmetricbwd_b.o\
 		resetssmetricbwd_b.o\
-		setgammabwd_b.o\
-		resetgammabwd_b.o\
-                setxxssrhodd2wallbwd_b.o\
-                resetxxssrhodd2wallbwd_b.o\
-                resetbcpointersbwd_b.o\
 	        sa_block_b.o\
 	        inviscidcentralflux_b.o\
                 saeddyviscosity_b.o\

@@ -23,7 +23,7 @@ subroutine alloc_derivative_values(level)
 
   ! Local variables
   integer(kind=intType) :: sps,ierr,i,j,k,l, mm, nState, nn
-  integer(kind=intType) :: iBeg, jBeg, iEnd, jEnd, isizemax, jsizemax
+  integer(kind=intType) :: iBeg, jBeg, iStop, jStop, isizemax, jsizemax
   integer(kind=intType) :: massShape(2), max_face_size
 
   real(kind=realType) :: alpha, beta, force(3, nTimeINtervalsSpectral), moment(3, nTimeIntervalsSpectral), sepSensor, Cavitation
@@ -190,13 +190,13 @@ subroutine alloc_derivative_values(level)
            ! Store the cell range of the boundary subface
            ! a bit easier.
            
-           iBeg = BCData(mm)%icbeg; iEnd = BCData(mm)%icend
-           jBeg = BCData(mm)%jcbeg; jEnd = BCData(mm)%jcend
+           iBeg = BCData(mm)%icbeg; iStop = BCData(mm)%icend
+           jBeg = BCData(mm)%jcbeg; jStop = BCData(mm)%jcend
 
-           allocate(flowDomsd(nn,1,sps)%BCData(mm)%norm(iBeg:iEnd,jBeg:jEnd,3), stat=ierr)
+           allocate(flowDomsd(nn,1,sps)%BCData(mm)%norm(iBeg:iStop,jBeg:jStop,3), stat=ierr)
            call EChk(ierr,__FILE__,__LINE__)
            
-           allocate(flowDomsd(nn,1,sps)%BCData(mm)%rface(iBeg:iEnd,jBeg:jEnd), stat=ierr)
+           allocate(flowDomsd(nn,1,sps)%BCData(mm)%rface(iBeg:iStop,jBeg:jStop), stat=ierr)
            call EChk(ierr,__FILE__,__LINE__)
            
            allocate(flowDomsd(nn,1,sps)%BCData(mm)%Fp(&
@@ -229,10 +229,10 @@ subroutine alloc_derivative_values(level)
                 bcData(mm)%jnbeg:bcData(mm)%jnEnd), stat=ierr)
            call EChk(ierr,__FILE__,__LINE__)
 
-           allocate(flowDomsd(nn,1,sps)%BCData(mm)%uSlip(iBeg:iEnd,jBeg:jEnd,3), stat=ierr)
+           allocate(flowDomsd(nn,1,sps)%BCData(mm)%uSlip(iBeg:iStop,jBeg:jStop,3), stat=ierr)
            call EChk(ierr,__FILE__,__LINE__)
 
-           allocate(flowDomsd(nn,1,sps)%BCData(mm)%TNS_Wall(iBeg:iEnd,jBeg:jEnd), stat=ierr)
+           allocate(flowDomsd(nn,1,sps)%BCData(mm)%TNS_Wall(iBeg:iStop,jBeg:jStop), stat=ierr)
            call EChk(ierr,__FILE__,__LINE__)
         end do bocoLoop
         
@@ -264,16 +264,16 @@ subroutine alloc_derivative_values(level)
         viscbocoLoop: do mm=1,nviscBocos
            
            iBeg = BCData(mm)%inBeg + 1
-           iEnd = BCData(mm)%inEnd
+           iStop = BCData(mm)%inEnd
            
            jBeg = BCData(mm)%jnBeg + 1
-           jEnd = BCData(mm)%jnEnd
+           jStop = BCData(mm)%jnEnd
            
-           allocate(flowDomsd(nn,1,sps)%viscSubface(mm)%tau(iBeg:iEnd,jBeg:jEnd,6), &
+           allocate(flowDomsd(nn,1,sps)%viscSubface(mm)%tau(iBeg:iStop,jBeg:jStop,6), &
                 stat=ierr)
            call EChk(ierr,__FILE__,__LINE__)
            
-           allocate(flowDomsd(nn,1,sps)%viscSubface(mm)%q(iBeg:iEnd,jBeg:jEnd,6), &
+           allocate(flowDomsd(nn,1,sps)%viscSubface(mm)%q(iBeg:iStop,jBeg:jStop,6), &
                 stat=ierr)
            call EChk(ierr,__FILE__,__LINE__)
            
@@ -380,7 +380,8 @@ subroutine alloc_derivative_values(level)
        rlv0d(isizemax, jsizemax), rlv1d(isizemax, jsizemax), &
        rlv2d(isizemax, jsizemax), rlv3d(isizemax, jsizemax), &
        rev0d(isizemax, jsizemax), rev1d(isizemax, jsizemax), &
-       rev2d(isizemax, jsizemax), rev3d(isizemax, jsizemax), stat=ierr)
+       rev2d(isizemax, jsizemax), rev3d(isizemax, jsizemax), &
+       ssid(isizemax, jsizemax,3), xxd(isizemax+1, jsizemax+1,3), stat=ierr)
   call EChk(ierr,__FILE__,__LINE__)
   allocate(&
        ww0(isizemax, jsizemax, nw), ww1(isizemax, jsizemax, nw), &
@@ -392,9 +393,11 @@ subroutine alloc_derivative_values(level)
        rev0(isizemax, jsizemax), rev1(isizemax, jsizemax), &
        rev2(isizemax, jsizemax), rev3(isizemax, jsizemax), &
        gamma0(isizemax, jsizemax), gamma1(isizemax, jsizemax), &
-       gamma2(isizemax, jsizemax), gamma3(isizemax, jsizemax), stat=ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+       gamma2(isizemax, jsizemax), gamma3(isizemax, jsizemax), &
+       ssi(isizemax, jsizemax,3), xx(isizemax+1, jsizemax+1,3), stat=ierr)
+  call EChk(ierr,__FILE__,__LINE__) 
 
+  ! Now zero these
   ww0d = zero
   ww1d = zero
   ww2d = zero
@@ -414,5 +417,7 @@ subroutine alloc_derivative_values(level)
   rev1d = zero
   rev2d = zero
   rev3d = zero
-
+  ssid = zero
+  xxd = zero
+ 
 end subroutine alloc_derivative_values

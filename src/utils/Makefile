@@ -68,38 +68,6 @@ FILES_TO_COMPLEXIFY =  \
 	       rigidRotAngle.f90\
 	       rotMatrixRigidBody.f90\
 	       secondDerivativeRigidRotAngle.f90\
-	       setBCPointers.F90\
-	       resetBCPointers.F90\
-	       setss.f90\
-	       resetss.f90\
-	       setallx.f90\
-	       resetallx.f90\
-	       setssMetric.f90\
-	       resetssMetric.f90\
-	       setpp3pp4.f90\
-	       resetpp3pp4.f90\
-	       setgamma.f90\
-	       resetgamma.f90\
-	       setxxssrhodd2Wall.f90\
-	       resetxxssrhodd2Wall.f90\
-	       setww0pp0rlv0rev0.f90\
-	       resetww0pp0rlv0rev0.f90\
-	       setBCPointersBwd.F90\
-	       resetBCPointersBwd.F90\
-	       setssBwd.f90\
-	       resetssBwd.f90\
-	       setallxBwd.f90\
-	       resetallxBwd.f90\
-	       setssMetricBwd.f90\
-	       resetssMetricBwd.f90\
-	       setpp3pp4Bwd.f90\
-	       resetpp3pp4Bwd.f90\
-	       setgammaBwd.f90\
-	       resetgammaBwd.f90\
-	       setxxssrhodd2WallBwd.f90\
-	       resetxxssrhodd2WallBwd.f90\
-	       setww0pp0rlv0rev0Bwd.f90\
-	       resetww0pp0rlv0rev0Bwd.f90\
 	       setBufferSizes.f90\
 	       setCGNSRealType.F90\
 	       setPointers.f90\
@@ -130,7 +98,11 @@ FILES_TO_COMPLEXIFY =  \
 	       whaloSliding.f90\
 	       wOverset.f90\
 	       writeVarsToBuffer.f90\
-	       getLiftDirFromSymmetry.F90
+	       getLiftDirFromSymmetry.F90\
+	       setssMetric.f90\
+	       resetssMetric.f90\
+	       setssMetricBwd.f90\
+	       resetssMetricBwd.f90\
 
 FILES_TO_COPY = myIsNaNC.c\
 		f77flush.c\

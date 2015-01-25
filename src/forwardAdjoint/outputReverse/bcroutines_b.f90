@@ -43,24 +43,28 @@
    & rev2d, rev3d
    REAL(kind=realtype), DIMENSION(:, :), ALLOCATABLE :: gamma0, gamma1, &
    & gamma2, gamma3
-   INTEGER(kind=inttype) :: isize, jsize
+   REAL(kind=realtype), DIMENSION(:, :, :), ALLOCATABLE :: ssi, xx
+   REAL(kind=realtype), DIMENSION(:, :, :), ALLOCATABLE :: ssid, xxd
+   INTEGER(kind=inttype) :: istart, iend, isize
+   INTEGER(kind=inttype) :: jstart, jend, jsize
       CONTAINS
-   !  Differentiation of applyallbc_block2 in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
+   !  Differentiation of applyallbc_block in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
    !   gradient     of useful results: gammainf winf pinfcorr rgas
-   !                *rev *bvtj1 *bvtj2 *p *w *rlv *bvtk1 *bvtk2 *d2wall
-   !                *bvti1 *bvti2 *rev0 *rev1 *rev2 *rev3 *pp0 *pp1
-   !                *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3 *ww0 *ww1 *ww2
-   !                *ww3
+   !                *rev *bvtj1 *bvtj2 *p *w *rlv *x *bvtk1 *bvtk2
+   !                *d2wall *si *sj *sk *bvti1 *bvti2 *xx *rev0 *rev1
+   !                *rev2 *rev3 *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2
+   !                *rlv3 *ssi *ww0 *ww1 *ww2 *ww3
    !   with respect to varying inputs: gammainf winf pinfcorr rgas
-   !                *rev *p *w *rlv *d2wall *(*bcdata.norm) *rev0
-   !                *rev1 *rev2 *rev3 *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1
-   !                *rlv2 *rlv3 *ww0 *ww1 *ww2 *ww3
+   !                *rev *p *w *rlv *x *d2wall *si *sj *sk *(*bcdata.norm)
+   !                *xx *rev0 *rev1 *rev2 *rev3 *pp0 *pp1 *pp2 *pp3
+   !                *rlv0 *rlv1 *rlv2 *rlv3 *ssi *ww0 *ww1 *ww2 *ww3
    !   Plus diff mem management of: rev:in bvtj1:in bvtj2:in p:in
-   !                w:in rlv:in bvtk1:in bvtk2:in d2wall:in bvti1:in
-   !                bvti2:in bcdata:in *bcdata.norm:in rev0:in rev1:in
-   !                rev2:in rev3:in pp0:in pp1:in pp2:in pp3:in rlv0:in
-   !                rlv1:in rlv2:in rlv3:in ww0:in ww1:in ww2:in ww3:in
-   SUBROUTINE APPLYALLBC_BLOCK2_B(secondhalo)
+   !                w:in rlv:in x:in bvtk1:in bvtk2:in d2wall:in si:in
+   !                sj:in sk:in bvti1:in bvti2:in bcdata:in *bcdata.norm:in
+   !                xx:in rev0:in rev1:in rev2:in rev3:in pp0:in pp1:in
+   !                pp2:in pp3:in rlv0:in rlv1:in rlv2:in rlv3:in
+   !                ssi:in ww0:in ww1:in ww2:in ww3:in
+   SUBROUTINE APPLYALLBC_BLOCK_B(secondhalo)
    ! Apply BC's for a single block
    USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
@@ -93,6 +97,13 @@
    &                 , 3))
    CALL PUSHREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4))
    CALL PUSHREAL8ARRAY(rlv, SIZE(rlv, 1)*SIZE(rlv, 2)*SIZE(rlv, 3))
+   CALL PUSHREAL8ARRAY(x, SIZE(x, 1)*SIZE(x, 2)*SIZE(x, 3)*SIZE(x, 4))
+   CALL PUSHREAL8ARRAY(si, SIZE(si, 1)*SIZE(si, 2)*SIZE(si, 3)*SIZE(si&
+   &                 , 4))
+   CALL PUSHREAL8ARRAY(sj, SIZE(sj, 1)*SIZE(sj, 2)*SIZE(sj, 3)*SIZE(sj&
+   &                 , 4))
+   CALL PUSHREAL8ARRAY(sk, SIZE(sk, 1)*SIZE(sk, 2)*SIZE(sk, 3)*SIZE(sk&
+   &                 , 4))
    CALL PUSHREAL8ARRAY(ww2, SIZE(ww2, 1)*SIZE(ww2, 2)*SIZE(ww2, 3))
    CALL PUSHREAL8ARRAY(ww3, SIZE(ww3, 1)*SIZE(ww3, 2)*SIZE(ww3, 3))
    ! Apply all the boundary conditions. The order is important!  Only
@@ -102,11 +113,15 @@
    ! ------------------------------------
    DO nn=1,nbocos
    IF (bctype(nn) .EQ. symm) THEN
-   CALL SETBCPOINTERS2(nn)
-   CALL BCSYMM2(nn, secondhalo)
-   CALL RESETBCPOINTERS2(nn)
+   CALL SETBCPOINTERS(nn, .false.)
+   CALL BCSYMM(nn, secondhalo)
+   CALL RESETBCPOINTERS(nn, .false.)
    END IF
    END DO
+   CALL PUSHINTEGER4(jstart)
+   CALL PUSHINTEGER4(isize)
+   CALL PUSHINTEGER4(jsize)
+   CALL PUSHINTEGER4(istart)
    CALL PUSHREAL8ARRAY(ww3, SIZE(ww3, 1)*SIZE(ww3, 2)*SIZE(ww3, 3))
    CALL PUSHREAL8ARRAY(ww2, SIZE(ww2, 1)*SIZE(ww2, 2)*SIZE(ww2, 3))
    CALL PUSHREAL8ARRAY(rev, SIZE(rev, 1)*SIZE(rev, 2)*SIZE(rev, 3))
@@ -123,6 +138,7 @@
    CALL PUSHREAL8ARRAY(bmtk2, SIZE(bmtk2, 1)*SIZE(bmtk2, 2)*SIZE(bmtk2&
    &                 , 3)*SIZE(bmtk2, 4))
    CALL PUSHREAL8ARRAY(rlv, SIZE(rlv, 1)*SIZE(rlv, 2)*SIZE(rlv, 3))
+   CALL PUSHREAL8ARRAY(x, SIZE(x, 1)*SIZE(x, 2)*SIZE(x, 3)*SIZE(x, 4))
    CALL PUSHREAL8ARRAY(bvtk1, SIZE(bvtk1, 1)*SIZE(bvtk1, 2)*SIZE(bvtk1&
    &                 , 3))
    CALL PUSHREAL8ARRAY(bvtk2, SIZE(bvtk2, 1)*SIZE(bvtk2, 2)*SIZE(bvtk2&
@@ -131,6 +147,12 @@
    &                 , 3)*SIZE(bmti1, 4))
    CALL PUSHREAL8ARRAY(bmti2, SIZE(bmti2, 1)*SIZE(bmti2, 2)*SIZE(bmti2&
    &                 , 3)*SIZE(bmti2, 4))
+   CALL PUSHREAL8ARRAY(si, SIZE(si, 1)*SIZE(si, 2)*SIZE(si, 3)*SIZE(si&
+   &                 , 4))
+   CALL PUSHREAL8ARRAY(sj, SIZE(sj, 1)*SIZE(sj, 2)*SIZE(sj, 3)*SIZE(sj&
+   &                 , 4))
+   CALL PUSHREAL8ARRAY(sk, SIZE(sk, 1)*SIZE(sk, 2)*SIZE(sk, 3)*SIZE(sk&
+   &                 , 4))
    CALL PUSHREAL8ARRAY(bvti1, SIZE(bvti1, 1)*SIZE(bvti1, 2)*SIZE(bvti1&
    &                 , 3))
    CALL PUSHREAL8ARRAY(bvti2, SIZE(bvti2, 1)*SIZE(bvti2, 2)*SIZE(bvti2&
@@ -149,11 +171,15 @@
    ! ------------------------------------
    DO nn=1,nviscbocos
    IF (bctype(nn) .EQ. nswalladiabatic) THEN
-   CALL SETBCPOINTERS2(nn)
-   CALL BCNSWALLADIABATIC2(nn, secondhalo, correctfork)
-   CALL RESETBCPOINTERS2(nn)
+   CALL SETBCPOINTERS(nn, .false.)
+   CALL BCNSWALLADIABATIC(nn, secondhalo, correctfork)
+   CALL RESETBCPOINTERS(nn, .false.)
    END IF
    END DO
+   CALL PUSHINTEGER4(jstart)
+   CALL PUSHINTEGER4(isize)
+   CALL PUSHINTEGER4(jsize)
+   CALL PUSHINTEGER4(istart)
    CALL PUSHREAL8ARRAY(ww3, SIZE(ww3, 1)*SIZE(ww3, 2)*SIZE(ww3, 3))
    CALL PUSHREAL8ARRAY(pp2, SIZE(pp2, 1)*SIZE(pp2, 2))
    CALL PUSHREAL8ARRAY(ww2, SIZE(ww2, 1)*SIZE(ww2, 2)*SIZE(ww2, 3))
@@ -171,6 +197,7 @@
    CALL PUSHREAL8ARRAY(bmtk2, SIZE(bmtk2, 1)*SIZE(bmtk2, 2)*SIZE(bmtk2&
    &                 , 3)*SIZE(bmtk2, 4))
    CALL PUSHREAL8ARRAY(rlv, SIZE(rlv, 1)*SIZE(rlv, 2)*SIZE(rlv, 3))
+   CALL PUSHREAL8ARRAY(x, SIZE(x, 1)*SIZE(x, 2)*SIZE(x, 3)*SIZE(x, 4))
    CALL PUSHREAL8ARRAY(bvtk1, SIZE(bvtk1, 1)*SIZE(bvtk1, 2)*SIZE(bvtk1&
    &                 , 3))
    CALL PUSHREAL8ARRAY(bvtk2, SIZE(bvtk2, 1)*SIZE(bvtk2, 2)*SIZE(bvtk2&
@@ -179,6 +206,12 @@
    &                 , 3)*SIZE(bmti1, 4))
    CALL PUSHREAL8ARRAY(bmti2, SIZE(bmti2, 1)*SIZE(bmti2, 2)*SIZE(bmti2&
    &                 , 3)*SIZE(bmti2, 4))
+   CALL PUSHREAL8ARRAY(si, SIZE(si, 1)*SIZE(si, 2)*SIZE(si, 3)*SIZE(si&
+   &                 , 4))
+   CALL PUSHREAL8ARRAY(sj, SIZE(sj, 1)*SIZE(sj, 2)*SIZE(sj, 3)*SIZE(sj&
+   &                 , 4))
+   CALL PUSHREAL8ARRAY(sk, SIZE(sk, 1)*SIZE(sk, 2)*SIZE(sk, 3)*SIZE(sk&
+   &                 , 4))
    CALL PUSHREAL8ARRAY(bvti1, SIZE(bvti1, 1)*SIZE(bvti1, 2)*SIZE(bvti1&
    &                 , 3))
    CALL PUSHREAL8ARRAY(bvti2, SIZE(bvti2, 1)*SIZE(bvti2, 2)*SIZE(bvti2&
@@ -196,11 +229,15 @@
    ! ------------------------------------
    DO nn=1,nviscbocos
    IF (bctype(nn) .EQ. nswallisothermal) THEN
-   CALL SETBCPOINTERS2(nn)
-   CALL BCNSWALLISOTHERMAL2(nn, secondhalo, correctfork)
-   CALL RESETBCPOINTERS2(nn)
+   CALL SETBCPOINTERS(nn, .false.)
+   CALL BCNSWALLISOTHERMAL(nn, secondhalo, correctfork)
+   CALL RESETBCPOINTERS(nn, .false.)
    END IF
    END DO
+   CALL PUSHINTEGER4(jstart)
+   CALL PUSHINTEGER4(isize)
+   CALL PUSHINTEGER4(jsize)
+   CALL PUSHINTEGER4(istart)
    CALL PUSHREAL8ARRAY(ww3, SIZE(ww3, 1)*SIZE(ww3, 2)*SIZE(ww3, 3))
    CALL PUSHREAL8ARRAY(pp2, SIZE(pp2, 1)*SIZE(pp2, 2))
    CALL PUSHREAL8ARRAY(ww2, SIZE(ww2, 1)*SIZE(ww2, 2)*SIZE(ww2, 3))
@@ -210,6 +247,13 @@
    &                 , 3))
    CALL PUSHREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4))
    CALL PUSHREAL8ARRAY(rlv, SIZE(rlv, 1)*SIZE(rlv, 2)*SIZE(rlv, 3))
+   CALL PUSHREAL8ARRAY(x, SIZE(x, 1)*SIZE(x, 2)*SIZE(x, 3)*SIZE(x, 4))
+   CALL PUSHREAL8ARRAY(si, SIZE(si, 1)*SIZE(si, 2)*SIZE(si, 3)*SIZE(si&
+   &                 , 4))
+   CALL PUSHREAL8ARRAY(sj, SIZE(sj, 1)*SIZE(sj, 2)*SIZE(sj, 3)*SIZE(sj&
+   &                 , 4))
+   CALL PUSHREAL8ARRAY(sk, SIZE(sk, 1)*SIZE(sk, 2)*SIZE(sk, 3)*SIZE(sk&
+   &                 , 4))
    CALL PUSHREAL8ARRAY(gamma2, SIZE(gamma2, 1)*SIZE(gamma2, 2))
    CALL PUSHREAL8ARRAY(pp0, SIZE(pp0, 1)*SIZE(pp0, 2))
    CALL PUSHREAL8ARRAY(pp1, SIZE(pp1, 1)*SIZE(pp1, 2))
@@ -217,13 +261,17 @@
    CALL PUSHREAL8ARRAY(ww1, SIZE(ww1, 1)*SIZE(ww1, 2)*SIZE(ww1, 3))
    DO nn=1,nbocos
    IF (bctype(nn) .EQ. farfield) THEN
-   CALL SETBCPOINTERS2(nn)
-   CALL BCFARFIELD2(nn, secondhalo, correctfork)
-   CALL RESETBCPOINTERS2(nn)
+   CALL SETBCPOINTERS(nn, .false.)
+   CALL BCFARFIELD(nn, secondhalo, correctfork)
+   CALL RESETBCPOINTERS(nn, .false.)
    END IF
    END DO
    CALL PUSHREAL8ARRAY(gamma2, SIZE(gamma2, 1)*SIZE(gamma2, 2))
+   CALL PUSHINTEGER4(jstart)
    CALL PUSHREAL8ARRAY(pp2, SIZE(pp2, 1)*SIZE(pp2, 2))
+   CALL PUSHINTEGER4(isize)
+   CALL PUSHINTEGER4(jsize)
+   CALL PUSHINTEGER4(istart)
    CALL PUSHREAL8ARRAY(ww2, SIZE(ww2, 1)*SIZE(ww2, 2)*SIZE(ww2, 3))
    CALL PUSHREAL8ARRAY(ww3, SIZE(ww3, 1)*SIZE(ww3, 2)*SIZE(ww3, 3))
    DO ii1=1,SIZE(bcdatad)
@@ -231,21 +279,32 @@
    END DO
    DO nn=1,nbocos
    IF (bctype(nn) .EQ. eulerwall) THEN
-   CALL SETBCPOINTERS2(nn)
-   CALL RESETBCPOINTERS2_B(nn)
-   CALL BCEULERWALL2_B(nn, secondhalo, correctfork)
-   CALL SETBCPOINTERS2_B(nn)
+   CALL SETBCPOINTERS(nn, .true.)
+   CALL RESETBCPOINTERS_B(nn, .true.)
+   CALL BCEULERWALL_B(nn, secondhalo, correctfork)
+   CALL SETBCPOINTERS_B(nn, .true.)
    END IF
    END DO
    CALL POPREAL8ARRAY(ww3, SIZE(ww3, 1)*SIZE(ww3, 2)*SIZE(ww3, 3))
    CALL POPREAL8ARRAY(ww2, SIZE(ww2, 1)*SIZE(ww2, 2)*SIZE(ww2, 3))
+   CALL POPINTEGER4(istart)
+   CALL POPINTEGER4(jsize)
+   CALL POPINTEGER4(isize)
    CALL POPREAL8ARRAY(pp2, SIZE(pp2, 1)*SIZE(pp2, 2))
+   CALL POPINTEGER4(jstart)
    CALL POPREAL8ARRAY(gamma2, SIZE(gamma2, 1)*SIZE(gamma2, 2))
    CALL POPREAL8ARRAY(ww1, SIZE(ww1, 1)*SIZE(ww1, 2)*SIZE(ww1, 3))
    CALL POPREAL8ARRAY(ww0, SIZE(ww0, 1)*SIZE(ww0, 2)*SIZE(ww0, 3))
    CALL POPREAL8ARRAY(pp1, SIZE(pp1, 1)*SIZE(pp1, 2))
    CALL POPREAL8ARRAY(pp0, SIZE(pp0, 1)*SIZE(pp0, 2))
    CALL POPREAL8ARRAY(gamma2, SIZE(gamma2, 1)*SIZE(gamma2, 2))
+   CALL POPREAL8ARRAY(sk, SIZE(sk, 1)*SIZE(sk, 2)*SIZE(sk, 3)*SIZE(sk, &
+   &                4))
+   CALL POPREAL8ARRAY(sj, SIZE(sj, 1)*SIZE(sj, 2)*SIZE(sj, 3)*SIZE(sj, &
+   &                4))
+   CALL POPREAL8ARRAY(si, SIZE(si, 1)*SIZE(si, 2)*SIZE(si, 3)*SIZE(si, &
+   &                4))
+   CALL POPREAL8ARRAY(x, SIZE(x, 1)*SIZE(x, 2)*SIZE(x, 3)*SIZE(x, 4))
    CALL POPREAL8ARRAY(rlv, SIZE(rlv, 1)*SIZE(rlv, 2)*SIZE(rlv, 3))
    CALL POPREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4))
    CALL POPREAL8ARRAY(gamma, SIZE(gamma, 1)*SIZE(gamma, 2)*SIZE(gamma, &
@@ -256,15 +315,19 @@
    CALL LOOKREAL8ARRAY(pp2, SIZE(pp2, 1)*SIZE(pp2, 2))
    DO nn=1,nbocos
    IF (bctype(nn) .EQ. farfield) THEN
-   CALL SETBCPOINTERS2(nn)
-   CALL RESETBCPOINTERS2_B(nn)
-   CALL BCFARFIELD2_B(nn, secondhalo, correctfork)
-   CALL SETBCPOINTERS2_B(nn)
+   CALL SETBCPOINTERS(nn, .false.)
+   CALL RESETBCPOINTERS_B(nn, .false.)
+   CALL BCFARFIELD_B(nn, secondhalo, correctfork)
+   CALL SETBCPOINTERS_B(nn, .false.)
    END IF
    END DO
    CALL POPREAL8ARRAY(ww2, SIZE(ww2, 1)*SIZE(ww2, 2)*SIZE(ww2, 3))
    CALL POPREAL8ARRAY(pp2, SIZE(pp2, 1)*SIZE(pp2, 2))
    CALL POPREAL8ARRAY(ww3, SIZE(ww3, 1)*SIZE(ww3, 2)*SIZE(ww3, 3))
+   CALL POPINTEGER4(istart)
+   CALL POPINTEGER4(jsize)
+   CALL POPINTEGER4(isize)
+   CALL POPINTEGER4(jstart)
    CALL POPREAL8ARRAY(ww1, SIZE(ww1, 1)*SIZE(ww1, 2)*SIZE(ww1, 3))
    CALL POPREAL8ARRAY(ww0, SIZE(ww0, 1)*SIZE(ww0, 2)*SIZE(ww0, 3))
    CALL POPREAL8ARRAY(pp1, SIZE(pp1, 1)*SIZE(pp1, 2))
@@ -277,6 +340,12 @@
    &                3))
    CALL POPREAL8ARRAY(bvti1, SIZE(bvti1, 1)*SIZE(bvti1, 2)*SIZE(bvti1, &
    &                3))
+   CALL POPREAL8ARRAY(sk, SIZE(sk, 1)*SIZE(sk, 2)*SIZE(sk, 3)*SIZE(sk, &
+   &                4))
+   CALL POPREAL8ARRAY(sj, SIZE(sj, 1)*SIZE(sj, 2)*SIZE(sj, 3)*SIZE(sj, &
+   &                4))
+   CALL POPREAL8ARRAY(si, SIZE(si, 1)*SIZE(si, 2)*SIZE(si, 3)*SIZE(si, &
+   &                4))
    CALL POPREAL8ARRAY(bmti2, SIZE(bmti2, 1)*SIZE(bmti2, 2)*SIZE(bmti2, &
    &                3)*SIZE(bmti2, 4))
    CALL POPREAL8ARRAY(bmti1, SIZE(bmti1, 1)*SIZE(bmti1, 2)*SIZE(bmti1, &
@@ -285,6 +354,7 @@
    &                3))
    CALL POPREAL8ARRAY(bvtk1, SIZE(bvtk1, 1)*SIZE(bvtk1, 2)*SIZE(bvtk1, &
    &                3))
+   CALL POPREAL8ARRAY(x, SIZE(x, 1)*SIZE(x, 2)*SIZE(x, 3)*SIZE(x, 4))
    CALL POPREAL8ARRAY(rlv, SIZE(rlv, 1)*SIZE(rlv, 2)*SIZE(rlv, 3))
    CALL POPREAL8ARRAY(bmtk2, SIZE(bmtk2, 1)*SIZE(bmtk2, 2)*SIZE(bmtk2, &
    &                3)*SIZE(bmtk2, 4))
@@ -303,15 +373,19 @@
    CALL LOOKREAL8ARRAY(pp2, SIZE(pp2, 1)*SIZE(pp2, 2))
    DO nn=1,nviscbocos
    IF (bctype(nn) .EQ. nswallisothermal) THEN
-   CALL SETBCPOINTERS2(nn)
-   CALL RESETBCPOINTERS2_B(nn)
-   CALL BCNSWALLISOTHERMAL2_B(nn, secondhalo, correctfork)
-   CALL SETBCPOINTERS2_B(nn)
+   CALL SETBCPOINTERS(nn, .false.)
+   CALL RESETBCPOINTERS_B(nn, .false.)
+   CALL BCNSWALLISOTHERMAL_B(nn, secondhalo, correctfork)
+   CALL SETBCPOINTERS_B(nn, .false.)
    END IF
    END DO
    CALL POPREAL8ARRAY(ww2, SIZE(ww2, 1)*SIZE(ww2, 2)*SIZE(ww2, 3))
    CALL POPREAL8ARRAY(pp2, SIZE(pp2, 1)*SIZE(pp2, 2))
    CALL POPREAL8ARRAY(ww3, SIZE(ww3, 1)*SIZE(ww3, 2)*SIZE(ww3, 3))
+   CALL POPINTEGER4(istart)
+   CALL POPINTEGER4(jsize)
+   CALL POPINTEGER4(isize)
+   CALL POPINTEGER4(jstart)
    CALL POPREAL8ARRAY(ww1, SIZE(ww1, 1)*SIZE(ww1, 2)*SIZE(ww1, 3))
    CALL POPREAL8ARRAY(ww0, SIZE(ww0, 1)*SIZE(ww0, 2)*SIZE(ww0, 3))
    CALL POPREAL8ARRAY(pp2, SIZE(pp2, 1)*SIZE(pp2, 2))
@@ -325,6 +399,12 @@
    &                3))
    CALL POPREAL8ARRAY(bvti1, SIZE(bvti1, 1)*SIZE(bvti1, 2)*SIZE(bvti1, &
    &                3))
+   CALL POPREAL8ARRAY(sk, SIZE(sk, 1)*SIZE(sk, 2)*SIZE(sk, 3)*SIZE(sk, &
+   &                4))
+   CALL POPREAL8ARRAY(sj, SIZE(sj, 1)*SIZE(sj, 2)*SIZE(sj, 3)*SIZE(sj, &
+   &                4))
+   CALL POPREAL8ARRAY(si, SIZE(si, 1)*SIZE(si, 2)*SIZE(si, 3)*SIZE(si, &
+   &                4))
    CALL POPREAL8ARRAY(bmti2, SIZE(bmti2, 1)*SIZE(bmti2, 2)*SIZE(bmti2, &
    &                3)*SIZE(bmti2, 4))
    CALL POPREAL8ARRAY(bmti1, SIZE(bmti1, 1)*SIZE(bmti1, 2)*SIZE(bmti1, &
@@ -333,6 +413,7 @@
    &                3))
    CALL POPREAL8ARRAY(bvtk1, SIZE(bvtk1, 1)*SIZE(bvtk1, 2)*SIZE(bvtk1, &
    &                3))
+   CALL POPREAL8ARRAY(x, SIZE(x, 1)*SIZE(x, 2)*SIZE(x, 3)*SIZE(x, 4))
    CALL POPREAL8ARRAY(rlv, SIZE(rlv, 1)*SIZE(rlv, 2)*SIZE(rlv, 3))
    CALL POPREAL8ARRAY(bmtk2, SIZE(bmtk2, 1)*SIZE(bmtk2, 2)*SIZE(bmtk2, &
    &                3)*SIZE(bmtk2, 4))
@@ -350,16 +431,27 @@
    CALL LOOKREAL8ARRAY(ww2, SIZE(ww2, 1)*SIZE(ww2, 2)*SIZE(ww2, 3))
    DO nn=1,nviscbocos
    IF (bctype(nn) .EQ. nswalladiabatic) THEN
-   CALL SETBCPOINTERS2(nn)
-   CALL RESETBCPOINTERS2_B(nn)
-   CALL BCNSWALLADIABATIC2_B(nn, secondhalo, correctfork)
-   CALL SETBCPOINTERS2_B(nn)
+   CALL SETBCPOINTERS(nn, .false.)
+   CALL RESETBCPOINTERS_B(nn, .false.)
+   CALL BCNSWALLADIABATIC_B(nn, secondhalo, correctfork)
+   CALL SETBCPOINTERS_B(nn, .false.)
    END IF
    END DO
    CALL POPREAL8ARRAY(ww2, SIZE(ww2, 1)*SIZE(ww2, 2)*SIZE(ww2, 3))
    CALL POPREAL8ARRAY(ww3, SIZE(ww3, 1)*SIZE(ww3, 2)*SIZE(ww3, 3))
+   CALL POPINTEGER4(istart)
+   CALL POPINTEGER4(jsize)
+   CALL POPINTEGER4(isize)
+   CALL POPINTEGER4(jstart)
    CALL POPREAL8ARRAY(ww3, SIZE(ww3, 1)*SIZE(ww3, 2)*SIZE(ww3, 3))
    CALL POPREAL8ARRAY(ww2, SIZE(ww2, 1)*SIZE(ww2, 2)*SIZE(ww2, 3))
+   CALL POPREAL8ARRAY(sk, SIZE(sk, 1)*SIZE(sk, 2)*SIZE(sk, 3)*SIZE(sk, &
+   &                4))
+   CALL POPREAL8ARRAY(sj, SIZE(sj, 1)*SIZE(sj, 2)*SIZE(sj, 3)*SIZE(sj, &
+   &                4))
+   CALL POPREAL8ARRAY(si, SIZE(si, 1)*SIZE(si, 2)*SIZE(si, 3)*SIZE(si, &
+   &                4))
+   CALL POPREAL8ARRAY(x, SIZE(x, 1)*SIZE(x, 2)*SIZE(x, 3)*SIZE(x, 4))
    CALL POPREAL8ARRAY(rlv, SIZE(rlv, 1)*SIZE(rlv, 2)*SIZE(rlv, 3))
    CALL POPREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4))
    CALL POPREAL8ARRAY(gamma, SIZE(gamma, 1)*SIZE(gamma, 2)*SIZE(gamma, &
@@ -368,14 +460,14 @@
    CALL POPREAL8ARRAY(rev, SIZE(rev, 1)*SIZE(rev, 2)*SIZE(rev, 3))
    DO nn=1,nbocos
    IF (bctype(nn) .EQ. symm) THEN
-   CALL SETBCPOINTERS2(nn)
-   CALL RESETBCPOINTERS2_B(nn)
-   CALL BCSYMM2_B(nn, secondhalo)
-   CALL SETBCPOINTERS2_B(nn)
+   CALL SETBCPOINTERS(nn, .false.)
+   CALL RESETBCPOINTERS_B(nn, .false.)
+   CALL BCSYMM_B(nn, secondhalo)
+   CALL SETBCPOINTERS_B(nn, .false.)
    END IF
    END DO
-   END SUBROUTINE APPLYALLBC_BLOCK2_B
-   SUBROUTINE APPLYALLBC_BLOCK2(secondhalo)
+   END SUBROUTINE APPLYALLBC_BLOCK_B
+   SUBROUTINE APPLYALLBC_BLOCK(secondhalo)
    ! Apply BC's for a single block
    USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
@@ -408,9 +500,9 @@
    ! ------------------------------------
    DO nn=1,nbocos
    IF (bctype(nn) .EQ. symm) THEN
-   CALL SETBCPOINTERS2(nn)
-   CALL BCSYMM2(nn, secondhalo)
-   CALL RESETBCPOINTERS2(nn)
+   CALL SETBCPOINTERS(nn, .false.)
+   CALL BCSYMM(nn, secondhalo)
+   CALL RESETBCPOINTERS(nn, .false.)
    END IF
    END DO
    ! ------------------------------------
@@ -418,9 +510,9 @@
    ! ------------------------------------
    DO nn=1,nviscbocos
    IF (bctype(nn) .EQ. nswalladiabatic) THEN
-   CALL SETBCPOINTERS2(nn)
-   CALL BCNSWALLADIABATIC2(nn, secondhalo, correctfork)
-   CALL RESETBCPOINTERS2(nn)
+   CALL SETBCPOINTERS(nn, .false.)
+   CALL BCNSWALLADIABATIC(nn, secondhalo, correctfork)
+   CALL RESETBCPOINTERS(nn, .false.)
    END IF
    END DO
    ! ------------------------------------
@@ -428,9 +520,9 @@
    ! ------------------------------------
    DO nn=1,nviscbocos
    IF (bctype(nn) .EQ. nswallisothermal) THEN
-   CALL SETBCPOINTERS2(nn)
-   CALL BCNSWALLISOTHERMAL2(nn, secondhalo, correctfork)
-   CALL RESETBCPOINTERS2(nn)
+   CALL SETBCPOINTERS(nn, .false.)
+   CALL BCNSWALLISOTHERMAL(nn, secondhalo, correctfork)
+   CALL RESETBCPOINTERS(nn, .false.)
    END IF
    END DO
    ! ------------------------------------
@@ -442,9 +534,9 @@
    &           )
    DO nn=1,nbocos
    IF (bctype(nn) .EQ. farfield) THEN
-   CALL SETBCPOINTERS2(nn)
-   CALL BCFARFIELD2(nn, secondhalo, correctfork)
-   CALL RESETBCPOINTERS2(nn)
+   CALL SETBCPOINTERS(nn, .false.)
+   CALL BCFARFIELD(nn, secondhalo, correctfork)
+   CALL RESETBCPOINTERS(nn, .false.)
    END IF
    END DO
    ! ------------------------------------
@@ -452,13 +544,13 @@
    ! ------------------------------------
    DO nn=1,nbocos
    IF (bctype(nn) .EQ. eulerwall) THEN
-   CALL SETBCPOINTERS2(nn)
-   CALL BCEULERWALL2(nn, secondhalo, correctfork)
-   CALL RESETBCPOINTERS2(nn)
+   CALL SETBCPOINTERS(nn, .true.)
+   CALL BCEULERWALL(nn, secondhalo, correctfork)
+   CALL RESETBCPOINTERS(nn, .true.)
    END IF
    END DO
-   END SUBROUTINE APPLYALLBC_BLOCK2
-   !  Differentiation of bcsymm2 in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
+   END SUBROUTINE APPLYALLBC_BLOCK
+   !  Differentiation of bcsymm in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
    !   gradient     of useful results: *(*bcdata.norm) *rev0 *rev1
    !                *rev2 *rev3 *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2
    !                *rlv3 *ww0 *ww1 *ww2 *ww3
@@ -472,7 +564,7 @@
    ! ===================================================================
    !   Actual implementation of each of the boundary condition routines
    ! ===================================================================
-   SUBROUTINE BCSYMM2_B(nn, secondhalo)
+   SUBROUTINE BCSYMM_B(nn, secondhalo)
    !
    ! ******************************************************************
    ! *                                                                *
@@ -509,8 +601,8 @@
    CALL PUSHINTEGER4(j)
    CALL PUSHREAL8(vn)
    DO ii=0,isize*jsize-1
-   i = MOD(ii, isize) + 1
-   j = ii/isize + 1
+   i = MOD(ii, isize) + istart
+   j = ii/isize + jstart
    vn = two*(ww3(i, j, ivx)*bcdata(nn)%norm(i, j, 1)+ww3(i, j, ivy)&
    &         *bcdata(nn)%norm(i, j, 2)+ww3(i, j, ivz)*bcdata(nn)%norm(i, j&
    &         , 3))
@@ -575,8 +667,8 @@
    CALL POPINTEGER4(i)
    END IF
    DO ii=0,isize*jsize-1
-   i = MOD(ii, isize) + 1
-   j = ii/isize + 1
+   i = MOD(ii, isize) + istart
+   j = ii/isize + jstart
    ! Determine twice the normal velocity component,
    ! which must be substracted from the donor velocity
    ! to obtain the halo velocity.
@@ -636,11 +728,11 @@
    bcdatad(nn)%norm(i, j, 3) = bcdatad(nn)%norm(i, j, 3) + ww2(i, j, &
    &       ivz)*tempd
    END DO
-   END SUBROUTINE BCSYMM2_B
+   END SUBROUTINE BCSYMM_B
    ! ===================================================================
    !   Actual implementation of each of the boundary condition routines
    ! ===================================================================
-   SUBROUTINE BCSYMM2(nn, secondhalo)
+   SUBROUTINE BCSYMM(nn, secondhalo)
    !
    ! ******************************************************************
    ! *                                                                *
@@ -671,8 +763,8 @@
    ! Loop over the generic subface to set the state in the
    ! 1-st level halos 
    DO ii=0,isize*jsize-1
-   i = MOD(ii, isize) + 1
-   j = ii/isize + 1
+   i = MOD(ii, isize) + istart
+   j = ii/isize + jstart
    ! Determine twice the normal velocity component,
    ! which must be substracted from the donor velocity
    ! to obtain the halo velocity.
@@ -700,8 +792,8 @@
    ! If we need the second halo, do everything again, but using ww0,
    ! ww3 etc instead of ww2 and ww1. 
    DO ii=0,isize*jsize-1
-   i = MOD(ii, isize) + 1
-   j = ii/isize + 1
+   i = MOD(ii, isize) + istart
+   j = ii/isize + jstart
    vn = two*(ww3(i, j, ivx)*bcdata(nn)%norm(i, j, 1)+ww3(i, j, ivy)&
    &         *bcdata(nn)%norm(i, j, 2)+ww3(i, j, ivz)*bcdata(nn)%norm(i, j&
    &         , 3))
@@ -722,8 +814,8 @@
    IF (eddymodel) rev0(i, j) = rev3(i, j)
    END DO
    END IF
-   END SUBROUTINE BCSYMM2
-   !  Differentiation of bcnswalladiabatic2 in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
+   END SUBROUTINE BCSYMM
+   !  Differentiation of bcnswalladiabatic in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
    !   gradient     of useful results: *rev *bvtj1 *bvtj2 *w *rlv
    !                *bvtk1 *bvtk2 *d2wall *bvti1 *bvti2 *rev0 *rev1
    !                *rev2 *pp0 *pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1
@@ -736,7 +828,7 @@
    !                rlv:in bvtk1:in bvtk2:in d2wall:in bvti1:in bvti2:in
    !                bcdata:in rev0:in rev1:in rev2:in pp0:in pp1:in
    !                pp2:in rlv0:in rlv1:in rlv2:in ww0:in ww1:in ww2:in
-   SUBROUTINE BCNSWALLADIABATIC2_B(nn, secondhalo, correctfork)
+   SUBROUTINE BCNSWALLADIABATIC_B(nn, secondhalo, correctfork)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -774,8 +866,8 @@
    ! Loop over the generic subface to set the state in the
    ! halo cells.
    DO ii=0,isize*jsize-1
-   i = MOD(ii, isize) + 1
-   j = ii/isize + 1
+   i = MOD(ii, isize) + istart
+   j = ii/isize + jstart
    ! Set the value of rhok if a correcton must be applied.
    ! It probably does not matter too much, because k is very
    ! small near the wall.
@@ -798,16 +890,16 @@
    END DO
    ! Compute the energy for these halo's.
    CALL PUSHREAL8ARRAY(ww1, SIZE(ww1, 1)*SIZE(ww1, 2)*SIZE(ww1, 3))
-   CALL COMPUTEETOT2(ww1, pp1, correctfork)
+   CALL COMPUTEETOT(ww1, pp1, correctfork)
    ! Extrapolate the state vectors in case a second halo
    ! is needed.
-   IF (secondhalo) CALL EXTRAPOLATE2NDHALO2_B(correctfork)
+   IF (secondhalo) CALL EXTRAPOLATE2NDHALO_B(correctfork)
    CALL POPREAL8ARRAY(ww1, SIZE(ww1, 1)*SIZE(ww1, 2)*SIZE(ww1, 3))
-   CALL COMPUTEETOT2_B(ww1, ww1d, pp1, pp1d, correctfork)
+   CALL COMPUTEETOT_B(ww1, ww1d, pp1, pp1d, correctfork)
    rhokd = 0.0_8
    DO ii=0,isize*jsize-1
-   i = MOD(ii, isize) + 1
-   j = ii/isize + 1
+   i = MOD(ii, isize) + istart
+   j = ii/isize + jstart
    ! Set the value of rhok if a correcton must be applied.
    ! It probably does not matter too much, because k is very
    ! small near the wall.
@@ -850,8 +942,8 @@
    END DO
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) CALL TURBBCNSWALL_B(.false.)
-   END SUBROUTINE BCNSWALLADIABATIC2_B
-   SUBROUTINE BCNSWALLADIABATIC2(nn, secondhalo, correctfork)
+   END SUBROUTINE BCNSWALLADIABATIC_B
+   SUBROUTINE BCNSWALLADIABATIC(nn, secondhalo, correctfork)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -883,8 +975,8 @@
    ! Loop over the generic subface to set the state in the
    ! halo cells.
    DO ii=0,isize*jsize-1
-   i = MOD(ii, isize) + 1
-   j = ii/isize + 1
+   i = MOD(ii, isize) + istart
+   j = ii/isize + jstart
    ! Set the value of rhok if a correcton must be applied.
    ! It probably does not matter too much, because k is very
    ! small near the wall.
@@ -906,12 +998,12 @@
    IF (eddymodel) rev1(i, j) = -rev2(i, j)
    END DO
    ! Compute the energy for these halo's.
-   CALL COMPUTEETOT2(ww1, pp1, correctfork)
+   CALL COMPUTEETOT(ww1, pp1, correctfork)
    ! Extrapolate the state vectors in case a second halo
    ! is needed.
-   IF (secondhalo) CALL EXTRAPOLATE2NDHALO2(correctfork)
-   END SUBROUTINE BCNSWALLADIABATIC2
-   !  Differentiation of bcnswallisothermal2 in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
+   IF (secondhalo) CALL EXTRAPOLATE2NDHALO(correctfork)
+   END SUBROUTINE BCNSWALLADIABATIC
+   !  Differentiation of bcnswallisothermal in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
    !   gradient     of useful results: rgas *rev *bvtj1 *bvtj2 *w
    !                *rlv *bvtk1 *bvtk2 *d2wall *bvti1 *bvti2 *rev0
    !                *rev1 *rev2 *pp0 *pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0
@@ -924,7 +1016,7 @@
    !                rlv:in bvtk1:in bvtk2:in d2wall:in bvti1:in bvti2:in
    !                bcdata:in rev0:in rev1:in rev2:in pp0:in pp1:in
    !                pp2:in rlv0:in rlv1:in rlv2:in ww0:in ww1:in ww2:in
-   SUBROUTINE BCNSWALLISOTHERMAL2_B(nn, secondhalo, correctfork)
+   SUBROUTINE BCNSWALLISOTHERMAL_B(nn, secondhalo, correctfork)
    !
    ! ******************************************************************
    ! *                                                                *
@@ -972,8 +1064,8 @@
    ! Loop over the generic subface to set the state in the
    ! halo cells.
    DO ii=0,isize*jsize-1
-   i = MOD(ii, isize) + 1
-   j = ii/isize + 1
+   i = MOD(ii, isize) + istart
+   j = ii/isize + jstart
    ! Set the value of rhok if a correcton must be applied.
    ! It probably does not matter too much, because k is very
    ! small near the wall.
@@ -1010,18 +1102,18 @@
    END DO
    ! Compute the energy for these halo's.
    CALL PUSHREAL8ARRAY(ww1, SIZE(ww1, 1)*SIZE(ww1, 2)*SIZE(ww1, 3))
-   CALL COMPUTEETOT2(ww1, pp1, correctfork)
+   CALL COMPUTEETOT(ww1, pp1, correctfork)
    ! Extrapolate the state vectors in case a second halo
    ! is needed.
-   IF (secondhalo) CALL EXTRAPOLATE2NDHALO2_B(correctfork)
+   IF (secondhalo) CALL EXTRAPOLATE2NDHALO_B(correctfork)
    CALL POPREAL8ARRAY(ww1, SIZE(ww1, 1)*SIZE(ww1, 2)*SIZE(ww1, 3))
-   CALL COMPUTEETOT2_B(ww1, ww1d, pp1, pp1d, correctfork)
+   CALL COMPUTEETOT_B(ww1, ww1d, pp1, pp1d, correctfork)
    rhokd = 0.0_8
    CALL POPREAL8(rhok)
    CALL POPREAL8ARRAY(pp1, SIZE(pp1, 1)*SIZE(pp1, 2))
    DO ii=0,isize*jsize-1
-   i = MOD(ii, isize) + 1
-   j = ii/isize + 1
+   i = MOD(ii, isize) + istart
+   j = ii/isize + jstart
    ! Set the value of rhok if a correcton must be applied.
    ! It probably does not matter too much, because k is very
    ! small near the wall.
@@ -1098,8 +1190,8 @@
    END DO
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) CALL TURBBCNSWALL_B(.false.)
-   END SUBROUTINE BCNSWALLISOTHERMAL2_B
-   SUBROUTINE BCNSWALLISOTHERMAL2(nn, secondhalo, correctfork)
+   END SUBROUTINE BCNSWALLISOTHERMAL_B
+   SUBROUTINE BCNSWALLISOTHERMAL(nn, secondhalo, correctfork)
    !
    ! ******************************************************************
    ! *                                                                *
@@ -1135,8 +1227,8 @@
    ! Loop over the generic subface to set the state in the
    ! halo cells.
    DO ii=0,isize*jsize-1
-   i = MOD(ii, isize) + 1
-   j = ii/isize + 1
+   i = MOD(ii, isize) + istart
+   j = ii/isize + jstart
    ! Set the value of rhok if a correcton must be applied.
    ! It probably does not matter too much, because k is very
    ! small near the wall.
@@ -1172,12 +1264,12 @@
    IF (eddymodel) rev1(i, j) = -rev2(i, j)
    END DO
    ! Compute the energy for these halo's.
-   CALL COMPUTEETOT2(ww1, pp1, correctfork)
+   CALL COMPUTEETOT(ww1, pp1, correctfork)
    ! Extrapolate the state vectors in case a second halo
    ! is needed.
-   IF (secondhalo) CALL EXTRAPOLATE2NDHALO2(correctfork)
-   END SUBROUTINE BCNSWALLISOTHERMAL2
-   !  Differentiation of bceulerwall2 in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
+   IF (secondhalo) CALL EXTRAPOLATE2NDHALO(correctfork)
+   END SUBROUTINE BCNSWALLISOTHERMAL
+   !  Differentiation of bceulerwall in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
    !   gradient     of useful results: *(*bcdata.norm) *rev0 *rev1
    !                *rev2 *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *ww0
    !                *ww1 *ww2
@@ -1187,7 +1279,7 @@
    !   Plus diff mem management of: bcdata:in *bcdata.norm:in rev0:in
    !                rev1:in rev2:in pp0:in pp1:in pp2:in pp3:in rlv0:in
    !                rlv1:in rlv2:in ww0:in ww1:in ww2:in
-   SUBROUTINE BCEULERWALL2_B(nn, secondhalo, correctfork)
+   SUBROUTINE BCEULERWALL_B(nn, secondhalo, correctfork)
    !
    ! ******************************************************************
    ! *                                                                *
@@ -1244,8 +1336,8 @@
    CASE (linextrapolpressure) 
    ! Linear extrapolation. 
    DO ii=0,isize*jsize-1
-   j = MOD(ii, isize) + 1
-   k = ii/isize + 1
+   j = MOD(ii, isize) + istart
+   k = ii/isize + jstart
    grad(j, k) = pp3(j, k) - pp2(j, k)
    END DO
    CALL PUSHCONTROL1B(0)
@@ -1256,8 +1348,8 @@
    ! Determine the state in the halo cell. Again loop over
    ! the cell range for this subface.
    DO ii=0,isize*jsize-1
-   j = MOD(ii, isize) + 1
-   k = ii/isize + 1
+   j = MOD(ii, isize) + istart
+   k = ii/isize + jstart
    ! Compute the pressure density and velocity in the
    ! halo cell. Note that rface is the grid velocity
    ! component in the direction of norm, i.e. outward
@@ -1280,16 +1372,16 @@
    END DO
    ! Compute the energy for these halo's.
    CALL PUSHREAL8ARRAY(ww1, SIZE(ww1, 1)*SIZE(ww1, 2)*SIZE(ww1, 3))
-   CALL COMPUTEETOT2(ww1, pp1, correctfork)
+   CALL COMPUTEETOT(ww1, pp1, correctfork)
    ! Extrapolate the state vectors in case a second halo
    ! is needed.
-   IF (secondhalo) CALL EXTRAPOLATE2NDHALO2_B(correctfork)
+   IF (secondhalo) CALL EXTRAPOLATE2NDHALO_B(correctfork)
    CALL POPREAL8ARRAY(ww1, SIZE(ww1, 1)*SIZE(ww1, 2)*SIZE(ww1, 3))
-   CALL COMPUTEETOT2_B(ww1, ww1d, pp1, pp1d, correctfork)
+   CALL COMPUTEETOT_B(ww1, ww1d, pp1, pp1d, correctfork)
    gradd = 0.0_8
    DO ii=0,isize*jsize-1
-   j = MOD(ii, isize) + 1
-   k = ii/isize + 1
+   j = MOD(ii, isize) + istart
+   k = ii/isize + jstart
    ! Compute the pressure density and velocity in the
    ! halo cell. Note that rface is the grid velocity
    ! component in the direction of norm, i.e. outward
@@ -1351,15 +1443,15 @@
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    DO ii=0,isize*jsize-1
-   j = MOD(ii, isize) + 1
-   k = ii/isize + 1
+   j = MOD(ii, isize) + istart
+   k = ii/isize + jstart
    pp3d(j, k) = pp3d(j, k) + gradd(j, k)
    pp2d(j, k) = pp2d(j, k) - gradd(j, k)
    gradd(j, k) = 0.0_8
    END DO
    END IF
-   END SUBROUTINE BCEULERWALL2_B
-   SUBROUTINE BCEULERWALL2(nn, secondhalo, correctfork)
+   END SUBROUTINE BCEULERWALL_B
+   SUBROUTINE BCEULERWALL(nn, secondhalo, correctfork)
    !
    ! ******************************************************************
    ! *                                                                *
@@ -1411,16 +1503,16 @@
    CASE (linextrapolpressure) 
    ! Linear extrapolation. 
    DO ii=0,isize*jsize-1
-   j = MOD(ii, isize) + 1
-   k = ii/isize + 1
+   j = MOD(ii, isize) + istart
+   k = ii/isize + jstart
    grad(j, k) = pp3(j, k) - pp2(j, k)
    END DO
    END SELECT
    ! Determine the state in the halo cell. Again loop over
    ! the cell range for this subface.
    DO ii=0,isize*jsize-1
-   j = MOD(ii, isize) + 1
-   k = ii/isize + 1
+   j = MOD(ii, isize) + istart
+   k = ii/isize + jstart
    ! Compute the pressure density and velocity in the
    ! halo cell. Note that rface is the grid velocity
    ! component in the direction of norm, i.e. outward
@@ -1442,12 +1534,12 @@
    IF (eddymodel) rev1(j, k) = rev2(j, k)
    END DO
    ! Compute the energy for these halo's.
-   CALL COMPUTEETOT2(ww1, pp1, correctfork)
+   CALL COMPUTEETOT(ww1, pp1, correctfork)
    ! Extrapolate the state vectors in case a second halo
    ! is needed.
-   IF (secondhalo) CALL EXTRAPOLATE2NDHALO2(correctfork)
-   END SUBROUTINE BCEULERWALL2
-   !  Differentiation of bcfarfield2 in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
+   IF (secondhalo) CALL EXTRAPOLATE2NDHALO(correctfork)
+   END SUBROUTINE BCEULERWALL
+   !  Differentiation of bcfarfield in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
    !   gradient     of useful results: gammainf winf pinfcorr *(*bcdata.norm)
    !                *rev0 *rev1 *rev2 *pp0 *pp1 *pp2 *rlv0 *rlv1 *rlv2
    !                *ww0 *ww1 *ww2
@@ -1457,7 +1549,7 @@
    !   Plus diff mem management of: bcdata:in *bcdata.norm:in rev0:in
    !                rev1:in rev2:in pp0:in pp1:in pp2:in rlv0:in rlv1:in
    !                rlv2:in ww0:in ww1:in ww2:in
-   SUBROUTINE BCFARFIELD2_B(nn, secondhalo, correctfork)
+   SUBROUTINE BCFARFIELD_B(nn, secondhalo, correctfork)
    !      ******************************************************************
    !      *                                                                *
    !      * bcFarfield applies the farfield boundary condition to a block. *
@@ -1518,8 +1610,8 @@
    ! Loop over the generic subface to set the state in the
    ! halo cells.
    DO ii=0,isize*jsize-1
-   i = MOD(ii, isize) + 1
-   j = ii/isize + 1
+   i = MOD(ii, isize) + istart
+   j = ii/isize + jstart
    ! Compute the normal velocity of the free stream and
    ! substract the normal velocity of the mesh.
    qn0 = u0*bcdata(nn)%norm(i, j, 1) + v0*bcdata(nn)%norm(i, j, 2) + &
@@ -1592,12 +1684,12 @@
    END DO
    ! Compute the energy for these halo's.
    CALL PUSHREAL8ARRAY(ww1, SIZE(ww1, 1)*SIZE(ww1, 2)*SIZE(ww1, 3))
-   CALL COMPUTEETOT2(ww1, pp1, correctfork)
+   CALL COMPUTEETOT(ww1, pp1, correctfork)
    ! Extrapolate the state vectors in case a second halo
    ! is needed.
-   IF (secondhalo) CALL EXTRAPOLATE2NDHALO2_B(correctfork)
+   IF (secondhalo) CALL EXTRAPOLATE2NDHALO_B(correctfork)
    CALL POPREAL8ARRAY(ww1, SIZE(ww1, 1)*SIZE(ww1, 2)*SIZE(ww1, 3))
-   CALL COMPUTEETOT2_B(ww1, ww1d, pp1, pp1d, correctfork)
+   CALL COMPUTEETOT_B(ww1, ww1d, pp1, pp1d, correctfork)
    v0d = 0.0_8
    gm1d = 0.0_8
    s0d = 0.0_8
@@ -1607,8 +1699,8 @@
    ovgm1d = 0.0_8
    CALL POPREAL8ARRAY(ww1, SIZE(ww1, 1)*SIZE(ww1, 2)*SIZE(ww1, 3))
    DO ii=0,isize*jsize-1
-   i = MOD(ii, isize) + 1
-   j = ii/isize + 1
+   i = MOD(ii, isize) + istart
+   j = ii/isize + jstart
    ! Compute the normal velocity of the free stream and
    ! substract the normal velocity of the mesh.
    qn0 = u0*bcdata(nn)%norm(i, j, 1) + v0*bcdata(nn)%norm(i, j, 2) + &
@@ -1841,8 +1933,8 @@
    winfd(ivy) = winfd(ivy) + v0d
    winfd(ivx) = winfd(ivx) + u0d
    winfd(irho) = winfd(irho) - one*r0d/winf(irho)**2
-   END SUBROUTINE BCFARFIELD2_B
-   SUBROUTINE BCFARFIELD2(nn, secondhalo, correctfork)
+   END SUBROUTINE BCFARFIELD_B
+   SUBROUTINE BCFARFIELD(nn, secondhalo, correctfork)
    !      ******************************************************************
    !      *                                                                *
    !      * bcFarfield applies the farfield boundary condition to a block. *
@@ -1882,8 +1974,8 @@
    ! Loop over the generic subface to set the state in the
    ! halo cells.
    DO ii=0,isize*jsize-1
-   i = MOD(ii, isize) + 1
-   j = ii/isize + 1
+   i = MOD(ii, isize) + istart
+   j = ii/isize + jstart
    ! Compute the normal velocity of the free stream and
    ! substract the normal velocity of the mesh.
    qn0 = u0*bcdata(nn)%norm(i, j, 1) + v0*bcdata(nn)%norm(i, j, 2) + &
@@ -1955,19 +2047,19 @@
    IF (eddymodel) rev1(i, j) = rev2(i, j)
    END DO
    ! Compute the energy for these halo's.
-   CALL COMPUTEETOT2(ww1, pp1, correctfork)
+   CALL COMPUTEETOT(ww1, pp1, correctfork)
    ! Extrapolate the state vectors in case a second halo
    ! is needed.
-   IF (secondhalo) CALL EXTRAPOLATE2NDHALO2(correctfork)
-   END SUBROUTINE BCFARFIELD2
-   !  Differentiation of extrapolate2ndhalo2 in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
+   IF (secondhalo) CALL EXTRAPOLATE2NDHALO(correctfork)
+   END SUBROUTINE BCFARFIELD
+   !  Differentiation of extrapolate2ndhalo in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
    !   gradient     of useful results: *rev0 *rev1 *pp0 *pp1 *pp2
    !                *rlv0 *rlv1 *ww0 *ww1 *ww2
    !   with respect to varying inputs: *rev0 *rev1 *pp0 *pp1 *pp2
    !                *rlv0 *rlv1 *ww0 *ww1 *ww2
    !   Plus diff mem management of: rev0:in rev1:in pp0:in pp1:in
    !                pp2:in rlv0:in rlv1:in ww0:in ww1:in ww2:in
-   SUBROUTINE EXTRAPOLATE2NDHALO2_B(correctfork)
+   SUBROUTINE EXTRAPOLATE2NDHALO_B(correctfork)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -1994,8 +2086,8 @@
    ! Loop over the generic subface to set the state in the
    ! halo cells.
    DO ii=0,isize*jsize-1
-   i = MOD(ii, isize) + 1
-   j = ii/isize + 1
+   i = MOD(ii, isize) + istart
+   j = ii/isize + jstart
    ! Extrapolate the density, momentum and pressure.
    ! Make sure that a certain threshold is kept.
    ww0(i, j, irho) = two*ww1(i, j, irho) - ww2(i, j, irho)
@@ -2022,11 +2114,11 @@
    IF (viscous) rlv0(i, j) = rlv1(i, j)
    IF (eddymodel) rev0(i, j) = rev1(i, j)
    END DO
-   CALL COMPUTEETOT2_B(ww0, ww0d, pp0, pp0d, correctfork)
+   CALL COMPUTEETOT_B(ww0, ww0d, pp0, pp0d, correctfork)
    CALL POPREAL8ARRAY(ww0, SIZE(ww0, 1)*SIZE(ww0, 2)*SIZE(ww0, 3))
    DO ii=0,isize*jsize-1
-   i = MOD(ii, isize) + 1
-   j = ii/isize + 1
+   i = MOD(ii, isize) + istart
+   j = ii/isize + jstart
    ! Extrapolate the density, momentum and pressure.
    ! Make sure that a certain threshold is kept.
    ww0(i, j, irho) = two*ww1(i, j, irho) - ww2(i, j, irho)
@@ -2087,11 +2179,11 @@
    ww2d(i, j, irho) = ww2d(i, j, irho) - ww0d(i, j, irho)
    ww0d(i, j, irho) = 0.0_8
    END DO
-   END SUBROUTINE EXTRAPOLATE2NDHALO2_B
-   !  Differentiation of computeetot2 in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
+   END SUBROUTINE EXTRAPOLATE2NDHALO_B
+   !  Differentiation of computeetot in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
    !   gradient     of useful results: ww pp
    !   with respect to varying inputs: ww pp
-   SUBROUTINE COMPUTEETOT2_B(ww, wwd, pp, ppd, correctfork)
+   SUBROUTINE COMPUTEETOT_B(ww, wwd, pp, ppd, correctfork)
    ! Simplified total energy computation for boundary conditions.
    ! Only implements the constant cpModel
    USE CONSTANTS
@@ -2119,8 +2211,8 @@
    ovgm1 = one/(gammaconstant-one)
    factk = ovgm1*(five*third-gammaconstant)
    DO ii=0,isize*jsize-1
-   i = MOD(ii, isize) + 1
-   j = ii/isize + 1
+   i = MOD(ii, isize) + istart
+   j = ii/isize + jstart
    IF (.NOT.correctfork) THEN
    tmpd = wwd(i, j, irhoe)
    wwd(i, j, irhoe) = 0.0_8
@@ -2145,8 +2237,8 @@
    END IF
    END DO
    END SELECT
-   END SUBROUTINE COMPUTEETOT2_B
-   SUBROUTINE EXTRAPOLATE2NDHALO2(correctfork)
+   END SUBROUTINE COMPUTEETOT_B
+   SUBROUTINE EXTRAPOLATE2NDHALO(correctfork)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -2171,8 +2263,8 @@
    ! Loop over the generic subface to set the state in the
    ! halo cells.
    DO ii=0,isize*jsize-1
-   i = MOD(ii, isize) + 1
-   j = ii/isize + 1
+   i = MOD(ii, isize) + istart
+   j = ii/isize + jstart
    ! Extrapolate the density, momentum and pressure.
    ! Make sure that a certain threshold is kept.
    ww0(i, j, irho) = two*ww1(i, j, irho) - ww2(i, j, irho)
@@ -2200,9 +2292,9 @@
    IF (eddymodel) rev0(i, j) = rev1(i, j)
    END DO
    ! Compute the energy for this halo range.
-   CALL COMPUTEETOT2(ww0, pp0, correctfork)
-   END SUBROUTINE EXTRAPOLATE2NDHALO2
-   SUBROUTINE COMPUTEETOT2(ww, pp, correctfork)
+   CALL COMPUTEETOT(ww0, pp0, correctfork)
+   END SUBROUTINE EXTRAPOLATE2NDHALO
+   SUBROUTINE COMPUTEETOT(ww, pp, correctfork)
    ! Simplified total energy computation for boundary conditions.
    ! Only implements the constant cpModel
    USE CONSTANTS
@@ -2224,8 +2316,8 @@
    ! Loop over the given array and compute the energy, possibly
    ! correcting for K
    DO ii=0,isize*jsize-1
-   i = MOD(ii, isize) + 1
-   j = ii/isize + 1
+   i = MOD(ii, isize) + istart
+   j = ii/isize + jstart
    IF (.NOT.correctfork) THEN
    ww(i, j, irhoe) = ovgm1*pp(i, j) + half*ww(i, j, irho)*(ww(i, &
    &           j, ivx)**2+ww(i, j, ivy)**2+ww(i, j, ivz)**2)
@@ -2239,19 +2331,21 @@
    CALL TERMINATE('BCRoutines', &
    &                 'CPTempCurveFits not implemented yet.')
    END SELECT
-   END SUBROUTINE COMPUTEETOT2
-   !  Differentiation of setbcpointers2 in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *rev *p *w *rlv *rev0 *rev1
-   !                *rev2 *rev3 *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2
-   !                *rlv3 *ww0 *ww1 *ww2 *ww3
-   !   with respect to varying inputs: *rev *p *w *rlv *rev0 *rev1
-   !                *rev2 *rev3 *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2
-   !                *rlv3 *ww0 *ww1 *ww2 *ww3
-   !   Plus diff mem management of: rev:in p:in w:in rlv:in bcdata:in
-   !                rev0:in rev1:in rev2:in rev3:in pp0:in pp1:in
-   !                pp2:in pp3:in rlv0:in rlv1:in rlv2:in rlv3:in
-   !                ww0:in ww1:in ww2:in ww3:in
-   SUBROUTINE SETBCPOINTERS2_B(nn)
+   END SUBROUTINE COMPUTEETOT
+   !  Differentiation of setbcpointers in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
+   !   gradient     of useful results: *rev *p *w *rlv *x *si *sj
+   !                *sk *xx *rev0 *rev1 *rev2 *rev3 *pp0 *pp1 *pp2
+   !                *pp3 *rlv0 *rlv1 *rlv2 *rlv3 *ssi *ww0 *ww1 *ww2
+   !                *ww3
+   !   with respect to varying inputs: *rev *p *w *rlv *x *si *sj
+   !                *sk *xx *rev0 *rev1 *rev2 *rev3 *pp0 *pp1 *pp2
+   !                *pp3 *rlv0 *rlv1 *rlv2 *rlv3 *ssi *ww0 *ww1 *ww2
+   !                *ww3
+   !   Plus diff mem management of: rev:in p:in w:in rlv:in x:in si:in
+   !                sj:in sk:in bcdata:in xx:in rev0:in rev1:in rev2:in
+   !                rev3:in pp0:in pp1:in pp2:in pp3:in rlv0:in rlv1:in
+   !                rlv2:in rlv3:in ssi:in ww0:in ww1:in ww2:in ww3:in
+   SUBROUTINE SETBCPOINTERS_B(nn, spatialpointers)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -2265,321 +2359,315 @@
    USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
    IMPLICIT NONE
-   ! Note that the ss{i,j,}, ss and xline pointers are NOT included
-   ! here since they are not AD'ed. 
    ! Subroutine arguments.
    INTEGER(kind=inttype), INTENT(IN) :: nn
-   ! Local variables
-   INTEGER(kind=inttype) :: istart, iend, jstart, jend
+   LOGICAL, INTENT(IN) :: spatialpointers
+   INTEGER :: branch
    ! Determine the sizes of each face and point to just the range we
    ! need on each face. 
-   istart = bcdata(nn)%icbeg
-   iend = bcdata(nn)%icend
-   jstart = bcdata(nn)%jcbeg
-   jend = bcdata(nn)%jcend
    ! Set the size of the subface
-   isize = iend - istart + 1
-   jsize = jend - jstart + 1
    ! Determine the face id on which the subface is located and set
    ! the pointers accordinly.
    SELECT CASE  (bcfaceid(nn)) 
    CASE (imin) 
-   revd(0, istart:iend, jstart:jend) = revd(0, istart:iend, jstart:&
-   &       jend) + rev0d(1:isize, 1:jsize)
-   rev0d(1:isize, 1:jsize) = 0.0_8
-   revd(1, istart:iend, jstart:jend) = revd(1, istart:iend, jstart:&
-   &       jend) + rev1d(1:isize, 1:jsize)
-   rev1d(1:isize, 1:jsize) = 0.0_8
-   revd(2, istart:iend, jstart:jend) = revd(2, istart:iend, jstart:&
-   &       jend) + rev2d(1:isize, 1:jsize)
-   rev2d(1:isize, 1:jsize) = 0.0_8
-   revd(3, istart:iend, jstart:jend) = revd(3, istart:iend, jstart:&
-   &       jend) + rev3d(1:isize, 1:jsize)
-   rev3d(1:isize, 1:jsize) = 0.0_8
-   rlvd(0, istart:iend, jstart:jend) = rlvd(0, istart:iend, jstart:&
-   &       jend) + rlv0d(1:isize, 1:jsize)
-   rlv0d(1:isize, 1:jsize) = 0.0_8
-   rlvd(1, istart:iend, jstart:jend) = rlvd(1, istart:iend, jstart:&
-   &       jend) + rlv1d(1:isize, 1:jsize)
-   rlv1d(1:isize, 1:jsize) = 0.0_8
-   rlvd(2, istart:iend, jstart:jend) = rlvd(2, istart:iend, jstart:&
-   &       jend) + rlv2d(1:isize, 1:jsize)
-   rlv2d(1:isize, 1:jsize) = 0.0_8
-   rlvd(3, istart:iend, jstart:jend) = rlvd(3, istart:iend, jstart:&
-   &       jend) + rlv3d(1:isize, 1:jsize)
-   rlv3d(1:isize, 1:jsize) = 0.0_8
-   pd(0, istart:iend, jstart:jend) = pd(0, istart:iend, jstart:jend) &
-   &       + pp0d(1:isize, 1:jsize)
-   pp0d(1:isize, 1:jsize) = 0.0_8
-   pd(1, istart:iend, jstart:jend) = pd(1, istart:iend, jstart:jend) &
-   &       + pp1d(1:isize, 1:jsize)
-   pp1d(1:isize, 1:jsize) = 0.0_8
-   pd(2, istart:iend, jstart:jend) = pd(2, istart:iend, jstart:jend) &
-   &       + pp2d(1:isize, 1:jsize)
-   pp2d(1:isize, 1:jsize) = 0.0_8
-   pd(3, istart:iend, jstart:jend) = pd(3, istart:iend, jstart:jend) &
-   &       + pp3d(1:isize, 1:jsize)
-   pp3d(1:isize, 1:jsize) = 0.0_8
-   wd(0, istart:iend, jstart:jend, :) = wd(0, istart:iend, jstart:&
-   &       jend, :) + ww0d(1:isize, 1:jsize, :)
-   ww0d(1:isize, 1:jsize, :) = 0.0_8
-   wd(1, istart:iend, jstart:jend, :) = wd(1, istart:iend, jstart:&
-   &       jend, :) + ww1d(1:isize, 1:jsize, :)
-   ww1d(1:isize, 1:jsize, :) = 0.0_8
-   wd(2, istart:iend, jstart:jend, :) = wd(2, istart:iend, jstart:&
-   &       jend, :) + ww2d(1:isize, 1:jsize, :)
-   ww2d(1:isize, 1:jsize, :) = 0.0_8
-   wd(3, istart:iend, jstart:jend, :) = wd(3, istart:iend, jstart:&
-   &       jend, :) + ww3d(1:isize, 1:jsize, :)
-   ww3d(1:isize, 1:jsize, :) = 0.0_8
+   CALL PUSHCONTROL3B(1)
    CASE (imax) 
-   revd(ib, istart:iend, jstart:jend) = revd(ib, istart:iend, jstart:&
-   &       jend) + rev0d(1:isize, 1:jsize)
-   rev0d(1:isize, 1:jsize) = 0.0_8
-   revd(ie, istart:iend, jstart:jend) = revd(ie, istart:iend, jstart:&
-   &       jend) + rev1d(1:isize, 1:jsize)
-   rev1d(1:isize, 1:jsize) = 0.0_8
-   revd(il, istart:iend, jstart:jend) = revd(il, istart:iend, jstart:&
-   &       jend) + rev2d(1:isize, 1:jsize)
-   rev2d(1:isize, 1:jsize) = 0.0_8
-   revd(nx, istart:iend, jstart:jend) = revd(nx, istart:iend, jstart:&
-   &       jend) + rev3d(1:isize, 1:jsize)
-   rev3d(1:isize, 1:jsize) = 0.0_8
-   rlvd(ib, istart:iend, jstart:jend) = rlvd(ib, istart:iend, jstart:&
-   &       jend) + rlv0d(1:isize, 1:jsize)
-   rlv0d(1:isize, 1:jsize) = 0.0_8
-   rlvd(ie, istart:iend, jstart:jend) = rlvd(ie, istart:iend, jstart:&
-   &       jend) + rlv1d(1:isize, 1:jsize)
-   rlv1d(1:isize, 1:jsize) = 0.0_8
-   rlvd(il, istart:iend, jstart:jend) = rlvd(il, istart:iend, jstart:&
-   &       jend) + rlv2d(1:isize, 1:jsize)
-   rlv2d(1:isize, 1:jsize) = 0.0_8
-   rlvd(nx, istart:iend, jstart:jend) = rlvd(nx, istart:iend, jstart:&
-   &       jend) + rlv3d(1:isize, 1:jsize)
-   rlv3d(1:isize, 1:jsize) = 0.0_8
-   pd(ib, istart:iend, jstart:jend) = pd(ib, istart:iend, jstart:jend&
-   &       ) + pp0d(1:isize, 1:jsize)
-   pp0d(1:isize, 1:jsize) = 0.0_8
-   pd(ie, istart:iend, jstart:jend) = pd(ie, istart:iend, jstart:jend&
-   &       ) + pp1d(1:isize, 1:jsize)
-   pp1d(1:isize, 1:jsize) = 0.0_8
-   pd(il, istart:iend, jstart:jend) = pd(il, istart:iend, jstart:jend&
-   &       ) + pp2d(1:isize, 1:jsize)
-   pp2d(1:isize, 1:jsize) = 0.0_8
-   pd(nx, istart:iend, jstart:jend) = pd(nx, istart:iend, jstart:jend&
-   &       ) + pp3d(1:isize, 1:jsize)
-   pp3d(1:isize, 1:jsize) = 0.0_8
-   wd(ib, istart:iend, jstart:jend, :) = wd(ib, istart:iend, jstart:&
-   &       jend, :) + ww0d(1:isize, 1:jsize, :)
-   ww0d(1:isize, 1:jsize, :) = 0.0_8
-   wd(ie, istart:iend, jstart:jend, :) = wd(ie, istart:iend, jstart:&
-   &       jend, :) + ww1d(1:isize, 1:jsize, :)
-   ww1d(1:isize, 1:jsize, :) = 0.0_8
-   wd(il, istart:iend, jstart:jend, :) = wd(il, istart:iend, jstart:&
-   &       jend, :) + ww2d(1:isize, 1:jsize, :)
-   ww2d(1:isize, 1:jsize, :) = 0.0_8
-   wd(nx, istart:iend, jstart:jend, :) = wd(nx, istart:iend, jstart:&
-   &       jend, :) + ww3d(1:isize, 1:jsize, :)
-   ww3d(1:isize, 1:jsize, :) = 0.0_8
+   CALL PUSHCONTROL3B(2)
    CASE (jmin) 
-   revd(istart:iend, 0, jstart:jend) = revd(istart:iend, 0, jstart:&
-   &       jend) + rev0d(1:isize, 1:jsize)
-   rev0d(1:isize, 1:jsize) = 0.0_8
-   revd(istart:iend, 1, jstart:jend) = revd(istart:iend, 1, jstart:&
-   &       jend) + rev1d(1:isize, 1:jsize)
-   rev1d(1:isize, 1:jsize) = 0.0_8
-   revd(istart:iend, 2, jstart:jend) = revd(istart:iend, 2, jstart:&
-   &       jend) + rev2d(1:isize, 1:jsize)
-   rev2d(1:isize, 1:jsize) = 0.0_8
-   revd(istart:iend, 3, jstart:jend) = revd(istart:iend, 3, jstart:&
-   &       jend) + rev3d(1:isize, 1:jsize)
-   rev3d(1:isize, 1:jsize) = 0.0_8
-   rlvd(istart:iend, 0, jstart:jend) = rlvd(istart:iend, 0, jstart:&
-   &       jend) + rlv0d(1:isize, 1:jsize)
-   rlv0d(1:isize, 1:jsize) = 0.0_8
-   rlvd(istart:iend, 1, jstart:jend) = rlvd(istart:iend, 1, jstart:&
-   &       jend) + rlv1d(1:isize, 1:jsize)
-   rlv1d(1:isize, 1:jsize) = 0.0_8
-   rlvd(istart:iend, 2, jstart:jend) = rlvd(istart:iend, 2, jstart:&
-   &       jend) + rlv2d(1:isize, 1:jsize)
-   rlv2d(1:isize, 1:jsize) = 0.0_8
-   rlvd(istart:iend, 3, jstart:jend) = rlvd(istart:iend, 3, jstart:&
-   &       jend) + rlv3d(1:isize, 1:jsize)
-   rlv3d(1:isize, 1:jsize) = 0.0_8
-   pd(istart:iend, 0, jstart:jend) = pd(istart:iend, 0, jstart:jend) &
-   &       + pp0d(1:isize, 1:jsize)
-   pp0d(1:isize, 1:jsize) = 0.0_8
-   pd(istart:iend, 1, jstart:jend) = pd(istart:iend, 1, jstart:jend) &
-   &       + pp1d(1:isize, 1:jsize)
-   pp1d(1:isize, 1:jsize) = 0.0_8
-   pd(istart:iend, 2, jstart:jend) = pd(istart:iend, 2, jstart:jend) &
-   &       + pp2d(1:isize, 1:jsize)
-   pp2d(1:isize, 1:jsize) = 0.0_8
-   pd(istart:iend, 3, jstart:jend) = pd(istart:iend, 3, jstart:jend) &
-   &       + pp3d(1:isize, 1:jsize)
-   pp3d(1:isize, 1:jsize) = 0.0_8
-   wd(istart:iend, 0, jstart:jend, :) = wd(istart:iend, 0, jstart:&
-   &       jend, :) + ww0d(1:isize, 1:jsize, :)
-   ww0d(1:isize, 1:jsize, :) = 0.0_8
-   wd(istart:iend, 1, jstart:jend, :) = wd(istart:iend, 1, jstart:&
-   &       jend, :) + ww1d(1:isize, 1:jsize, :)
-   ww1d(1:isize, 1:jsize, :) = 0.0_8
-   wd(istart:iend, 2, jstart:jend, :) = wd(istart:iend, 2, jstart:&
-   &       jend, :) + ww2d(1:isize, 1:jsize, :)
-   ww2d(1:isize, 1:jsize, :) = 0.0_8
-   wd(istart:iend, 3, jstart:jend, :) = wd(istart:iend, 3, jstart:&
-   &       jend, :) + ww3d(1:isize, 1:jsize, :)
-   ww3d(1:isize, 1:jsize, :) = 0.0_8
+   CALL PUSHCONTROL3B(3)
    CASE (jmax) 
-   revd(istart:iend, jb, jstart:jend) = revd(istart:iend, jb, jstart:&
-   &       jend) + rev0d(1:isize, 1:jsize)
-   rev0d(1:isize, 1:jsize) = 0.0_8
-   revd(istart:iend, je, jstart:jend) = revd(istart:iend, je, jstart:&
-   &       jend) + rev1d(1:isize, 1:jsize)
-   rev1d(1:isize, 1:jsize) = 0.0_8
-   revd(istart:iend, jl, jstart:jend) = revd(istart:iend, jl, jstart:&
-   &       jend) + rev2d(1:isize, 1:jsize)
-   rev2d(1:isize, 1:jsize) = 0.0_8
-   revd(istart:iend, ny, jstart:jend) = revd(istart:iend, ny, jstart:&
-   &       jend) + rev3d(1:isize, 1:jsize)
-   rev3d(1:isize, 1:jsize) = 0.0_8
-   rlvd(istart:iend, jb, jstart:jend) = rlvd(istart:iend, jb, jstart:&
-   &       jend) + rlv0d(1:isize, 1:jsize)
-   rlv0d(1:isize, 1:jsize) = 0.0_8
-   rlvd(istart:iend, je, jstart:jend) = rlvd(istart:iend, je, jstart:&
-   &       jend) + rlv1d(1:isize, 1:jsize)
-   rlv1d(1:isize, 1:jsize) = 0.0_8
-   rlvd(istart:iend, jl, jstart:jend) = rlvd(istart:iend, jl, jstart:&
-   &       jend) + rlv2d(1:isize, 1:jsize)
-   rlv2d(1:isize, 1:jsize) = 0.0_8
-   rlvd(istart:iend, ny, jstart:jend) = rlvd(istart:iend, ny, jstart:&
-   &       jend) + rlv3d(1:isize, 1:jsize)
-   rlv3d(1:isize, 1:jsize) = 0.0_8
-   pd(istart:iend, jb, jstart:jend) = pd(istart:iend, jb, jstart:jend&
-   &       ) + pp0d(1:isize, 1:jsize)
-   pp0d(1:isize, 1:jsize) = 0.0_8
-   pd(istart:iend, je, jstart:jend) = pd(istart:iend, je, jstart:jend&
-   &       ) + pp1d(1:isize, 1:jsize)
-   pp1d(1:isize, 1:jsize) = 0.0_8
-   pd(istart:iend, jl, jstart:jend) = pd(istart:iend, jl, jstart:jend&
-   &       ) + pp2d(1:isize, 1:jsize)
-   pp2d(1:isize, 1:jsize) = 0.0_8
-   pd(istart:iend, ny, jstart:jend) = pd(istart:iend, ny, jstart:jend&
-   &       ) + pp3d(1:isize, 1:jsize)
-   pp3d(1:isize, 1:jsize) = 0.0_8
-   wd(istart:iend, jb, jstart:jend, :) = wd(istart:iend, jb, jstart:&
-   &       jend, :) + ww0d(1:isize, 1:jsize, :)
-   ww0d(1:isize, 1:jsize, :) = 0.0_8
-   wd(istart:iend, je, jstart:jend, :) = wd(istart:iend, je, jstart:&
-   &       jend, :) + ww1d(1:isize, 1:jsize, :)
-   ww1d(1:isize, 1:jsize, :) = 0.0_8
-   wd(istart:iend, jl, jstart:jend, :) = wd(istart:iend, jl, jstart:&
-   &       jend, :) + ww2d(1:isize, 1:jsize, :)
-   ww2d(1:isize, 1:jsize, :) = 0.0_8
-   wd(istart:iend, ny, jstart:jend, :) = wd(istart:iend, ny, jstart:&
-   &       jend, :) + ww3d(1:isize, 1:jsize, :)
-   ww3d(1:isize, 1:jsize, :) = 0.0_8
+   CALL PUSHCONTROL3B(4)
    CASE (kmin) 
-   revd(istart:iend, jstart:jend, 0) = revd(istart:iend, jstart:jend&
-   &       , 0) + rev0d(1:isize, 1:jsize)
-   rev0d(1:isize, 1:jsize) = 0.0_8
-   revd(istart:iend, jstart:jend, 1) = revd(istart:iend, jstart:jend&
-   &       , 1) + rev1d(1:isize, 1:jsize)
-   rev1d(1:isize, 1:jsize) = 0.0_8
-   revd(istart:iend, jstart:jend, 2) = revd(istart:iend, jstart:jend&
-   &       , 2) + rev2d(1:isize, 1:jsize)
-   rev2d(1:isize, 1:jsize) = 0.0_8
-   revd(istart:iend, jstart:jend, 3) = revd(istart:iend, jstart:jend&
-   &       , 3) + rev3d(1:isize, 1:jsize)
-   rev3d(1:isize, 1:jsize) = 0.0_8
-   rlvd(istart:iend, jstart:jend, 0) = rlvd(istart:iend, jstart:jend&
-   &       , 0) + rlv0d(1:isize, 1:jsize)
-   rlv0d(1:isize, 1:jsize) = 0.0_8
-   rlvd(istart:iend, jstart:jend, 1) = rlvd(istart:iend, jstart:jend&
-   &       , 1) + rlv1d(1:isize, 1:jsize)
-   rlv1d(1:isize, 1:jsize) = 0.0_8
-   rlvd(istart:iend, jstart:jend, 2) = rlvd(istart:iend, jstart:jend&
-   &       , 2) + rlv2d(1:isize, 1:jsize)
-   rlv2d(1:isize, 1:jsize) = 0.0_8
-   rlvd(istart:iend, jstart:jend, 3) = rlvd(istart:iend, jstart:jend&
-   &       , 3) + rlv3d(1:isize, 1:jsize)
-   rlv3d(1:isize, 1:jsize) = 0.0_8
-   pd(istart:iend, jstart:jend, 0) = pd(istart:iend, jstart:jend, 0) &
-   &       + pp0d(1:isize, 1:jsize)
-   pp0d(1:isize, 1:jsize) = 0.0_8
-   pd(istart:iend, jstart:jend, 1) = pd(istart:iend, jstart:jend, 1) &
-   &       + pp1d(1:isize, 1:jsize)
-   pp1d(1:isize, 1:jsize) = 0.0_8
-   pd(istart:iend, jstart:jend, 2) = pd(istart:iend, jstart:jend, 2) &
-   &       + pp2d(1:isize, 1:jsize)
-   pp2d(1:isize, 1:jsize) = 0.0_8
-   pd(istart:iend, jstart:jend, 3) = pd(istart:iend, jstart:jend, 3) &
-   &       + pp3d(1:isize, 1:jsize)
-   pp3d(1:isize, 1:jsize) = 0.0_8
-   wd(istart:iend, jstart:jend, 0, :) = wd(istart:iend, jstart:jend, &
-   &       0, :) + ww0d(1:isize, 1:jsize, :)
-   ww0d(1:isize, 1:jsize, :) = 0.0_8
-   wd(istart:iend, jstart:jend, 1, :) = wd(istart:iend, jstart:jend, &
-   &       1, :) + ww1d(1:isize, 1:jsize, :)
-   ww1d(1:isize, 1:jsize, :) = 0.0_8
-   wd(istart:iend, jstart:jend, 2, :) = wd(istart:iend, jstart:jend, &
-   &       2, :) + ww2d(1:isize, 1:jsize, :)
-   ww2d(1:isize, 1:jsize, :) = 0.0_8
-   wd(istart:iend, jstart:jend, 3, :) = wd(istart:iend, jstart:jend, &
-   &       3, :) + ww3d(1:isize, 1:jsize, :)
-   ww3d(1:isize, 1:jsize, :) = 0.0_8
+   CALL PUSHCONTROL3B(5)
    CASE (kmax) 
-   revd(istart:iend, jstart:jend, kb) = revd(istart:iend, jstart:jend&
-   &       , kb) + rev0d(1:isize, 1:jsize)
-   rev0d(1:isize, 1:jsize) = 0.0_8
-   revd(istart:iend, jstart:jend, ke) = revd(istart:iend, jstart:jend&
-   &       , ke) + rev1d(1:isize, 1:jsize)
-   rev1d(1:isize, 1:jsize) = 0.0_8
-   revd(istart:iend, jstart:jend, kl) = revd(istart:iend, jstart:jend&
-   &       , kl) + rev2d(1:isize, 1:jsize)
-   rev2d(1:isize, 1:jsize) = 0.0_8
-   revd(istart:iend, jstart:jend, nz) = revd(istart:iend, jstart:jend&
-   &       , nz) + rev3d(1:isize, 1:jsize)
-   rev3d(1:isize, 1:jsize) = 0.0_8
-   rlvd(istart:iend, jstart:jend, kb) = rlvd(istart:iend, jstart:jend&
-   &       , kb) + rlv0d(1:isize, 1:jsize)
-   rlv0d(1:isize, 1:jsize) = 0.0_8
-   rlvd(istart:iend, jstart:jend, ke) = rlvd(istart:iend, jstart:jend&
-   &       , ke) + rlv1d(1:isize, 1:jsize)
-   rlv1d(1:isize, 1:jsize) = 0.0_8
-   rlvd(istart:iend, jstart:jend, kl) = rlvd(istart:iend, jstart:jend&
-   &       , kl) + rlv2d(1:isize, 1:jsize)
-   rlv2d(1:isize, 1:jsize) = 0.0_8
-   rlvd(istart:iend, jstart:jend, nz) = rlvd(istart:iend, jstart:jend&
-   &       , nz) + rlv3d(1:isize, 1:jsize)
-   rlv3d(1:isize, 1:jsize) = 0.0_8
-   pd(istart:iend, jstart:jend, kb) = pd(istart:iend, jstart:jend, kb&
-   &       ) + pp0d(1:isize, 1:jsize)
-   pp0d(1:isize, 1:jsize) = 0.0_8
-   pd(istart:iend, jstart:jend, ke) = pd(istart:iend, jstart:jend, ke&
-   &       ) + pp1d(1:isize, 1:jsize)
-   pp1d(1:isize, 1:jsize) = 0.0_8
-   pd(istart:iend, jstart:jend, kl) = pd(istart:iend, jstart:jend, kl&
-   &       ) + pp2d(1:isize, 1:jsize)
-   pp2d(1:isize, 1:jsize) = 0.0_8
-   pd(istart:iend, jstart:jend, nz) = pd(istart:iend, jstart:jend, nz&
-   &       ) + pp3d(1:isize, 1:jsize)
-   pp3d(1:isize, 1:jsize) = 0.0_8
-   wd(istart:iend, jstart:jend, kb, :) = wd(istart:iend, jstart:jend&
-   &       , kb, :) + ww0d(1:isize, 1:jsize, :)
-   ww0d(1:isize, 1:jsize, :) = 0.0_8
-   wd(istart:iend, jstart:jend, ke, :) = wd(istart:iend, jstart:jend&
-   &       , ke, :) + ww1d(1:isize, 1:jsize, :)
-   ww1d(1:isize, 1:jsize, :) = 0.0_8
-   wd(istart:iend, jstart:jend, kl, :) = wd(istart:iend, jstart:jend&
-   &       , kl, :) + ww2d(1:isize, 1:jsize, :)
-   ww2d(1:isize, 1:jsize, :) = 0.0_8
-   wd(istart:iend, jstart:jend, nz, :) = wd(istart:iend, jstart:jend&
-   &       , nz, :) + ww3d(1:isize, 1:jsize, :)
-   ww3d(1:isize, 1:jsize, :) = 0.0_8
+   CALL PUSHCONTROL3B(6)
+   CASE DEFAULT
+   CALL PUSHCONTROL3B(0)
    END SELECT
-   END SUBROUTINE SETBCPOINTERS2_B
-   SUBROUTINE SETBCPOINTERS2(nn)
+   ! These spatial pointers are only required for
+   ! forcesAndMoments. Eulerwall normal moment is is reverse AD'ed.
+   IF (spatialpointers) THEN
+   SELECT CASE  (bcfaceid(nn)) 
+   CASE (imin) 
+   sid(1, 1:je, 1:ke, :) = sid(1, 1:je, 1:ke, :) + ssid(1:je, 1:ke&
+   &         , :)
+   ssid(1:je, 1:ke, :) = 0.0_8
+   xd(1, 0:je, 0:ke, :) = xd(1, 0:je, 0:ke, :) + xxd(1:je+1, 1:ke+1&
+   &         , :)
+   xxd(1:je+1, 1:ke+1, :) = 0.0_8
+   CASE (imax) 
+   sid(il, 1:je, 1:ke, :) = sid(il, 1:je, 1:ke, :) + ssid(1:je, 1:&
+   &         ke, :)
+   ssid(1:je, 1:ke, :) = 0.0_8
+   xd(il, 0:je, 0:ke, :) = xd(il, 0:je, 0:ke, :) + xxd(1:je+1, 1:ke&
+   &         +1, :)
+   xxd(1:je+1, 1:ke+1, :) = 0.0_8
+   CASE (jmin) 
+   sjd(1:ie, 1, 1:ke, :) = sjd(1:ie, 1, 1:ke, :) + ssid(1:ie, 1:ke&
+   &         , :)
+   ssid(1:ie, 1:ke, :) = 0.0_8
+   xd(0:ie, 1, 0:ke, :) = xd(0:ie, 1, 0:ke, :) + xxd(1:ie+1, 1:ke+1&
+   &         , :)
+   xxd(1:ie+1, 1:ke+1, :) = 0.0_8
+   CASE (jmax) 
+   sjd(1:ie, jl, 1:ke, :) = sjd(1:ie, jl, 1:ke, :) + ssid(1:ie, 1:&
+   &         ke, :)
+   ssid(1:ie, 1:ke, :) = 0.0_8
+   xd(0:ie, jl, 0:ke, :) = xd(0:ie, jl, 0:ke, :) + xxd(1:ie+1, 1:ke&
+   &         +1, :)
+   xxd(1:ie+1, 1:ke+1, :) = 0.0_8
+   CASE (kmin) 
+   skd(1:ie, 1:je, 1, :) = skd(1:ie, 1:je, 1, :) + ssid(1:ie, 1:je&
+   &         , :)
+   ssid(1:ie, 1:je, :) = 0.0_8
+   xd(0:ie, 0:je, 1, :) = xd(0:ie, 0:je, 1, :) + xxd(1:ie+1, 1:je+1&
+   &         , :)
+   xxd(1:ie+1, 1:je+1, :) = 0.0_8
+   CASE (kmax) 
+   skd(1:ie, 1:je, kl, :) = skd(1:ie, 1:je, kl, :) + ssid(1:ie, 1:&
+   &         je, :)
+   ssid(1:ie, 1:je, :) = 0.0_8
+   xd(0:ie, 0:je, kl, :) = xd(0:ie, 0:je, kl, :) + xxd(1:ie+1, 1:je&
+   &         +1, :)
+   xxd(1:ie+1, 1:je+1, :) = 0.0_8
+   END SELECT
+   END IF
+   CALL POPCONTROL3B(branch)
+   IF (branch .LT. 3) THEN
+   IF (branch .NE. 0) THEN
+   IF (branch .EQ. 1) THEN
+   revd(0, 1:je, 1:ke) = revd(0, 1:je, 1:ke) + rev0d(1:je, 1:ke)
+   rev0d(1:je, 1:ke) = 0.0_8
+   revd(1, 1:je, 1:ke) = revd(1, 1:je, 1:ke) + rev1d(1:je, 1:ke)
+   rev1d(1:je, 1:ke) = 0.0_8
+   revd(2, 1:je, 1:ke) = revd(2, 1:je, 1:ke) + rev2d(1:je, 1:ke)
+   rev2d(1:je, 1:ke) = 0.0_8
+   revd(3, 1:je, 1:ke) = revd(3, 1:je, 1:ke) + rev3d(1:je, 1:ke)
+   rev3d(1:je, 1:ke) = 0.0_8
+   rlvd(0, 1:je, 1:ke) = rlvd(0, 1:je, 1:ke) + rlv0d(1:je, 1:ke)
+   rlv0d(1:je, 1:ke) = 0.0_8
+   rlvd(1, 1:je, 1:ke) = rlvd(1, 1:je, 1:ke) + rlv1d(1:je, 1:ke)
+   rlv1d(1:je, 1:ke) = 0.0_8
+   rlvd(2, 1:je, 1:ke) = rlvd(2, 1:je, 1:ke) + rlv2d(1:je, 1:ke)
+   rlv2d(1:je, 1:ke) = 0.0_8
+   rlvd(3, 1:je, 1:ke) = rlvd(3, 1:je, 1:ke) + rlv3d(1:je, 1:ke)
+   rlv3d(1:je, 1:ke) = 0.0_8
+   pd(0, 1:je, 1:ke) = pd(0, 1:je, 1:ke) + pp0d(1:je, 1:ke)
+   pp0d(1:je, 1:ke) = 0.0_8
+   pd(1, 1:je, 1:ke) = pd(1, 1:je, 1:ke) + pp1d(1:je, 1:ke)
+   pp1d(1:je, 1:ke) = 0.0_8
+   pd(2, 1:je, 1:ke) = pd(2, 1:je, 1:ke) + pp2d(1:je, 1:ke)
+   pp2d(1:je, 1:ke) = 0.0_8
+   pd(3, 1:je, 1:ke) = pd(3, 1:je, 1:ke) + pp3d(1:je, 1:ke)
+   pp3d(1:je, 1:ke) = 0.0_8
+   wd(0, 1:je, 1:ke, :) = wd(0, 1:je, 1:ke, :) + ww0d(1:je, 1:ke&
+   &           , :)
+   ww0d(1:je, 1:ke, :) = 0.0_8
+   wd(1, 1:je, 1:ke, :) = wd(1, 1:je, 1:ke, :) + ww1d(1:je, 1:ke&
+   &           , :)
+   ww1d(1:je, 1:ke, :) = 0.0_8
+   wd(2, 1:je, 1:ke, :) = wd(2, 1:je, 1:ke, :) + ww2d(1:je, 1:ke&
+   &           , :)
+   ww2d(1:je, 1:ke, :) = 0.0_8
+   wd(3, 1:je, 1:ke, :) = wd(3, 1:je, 1:ke, :) + ww3d(1:je, 1:ke&
+   &           , :)
+   ww3d(1:je, 1:ke, :) = 0.0_8
+   ELSE
+   revd(ib, 1:je, 1:ke) = revd(ib, 1:je, 1:ke) + rev0d(1:je, 1:ke&
+   &           )
+   rev0d(1:je, 1:ke) = 0.0_8
+   revd(ie, 1:je, 1:ke) = revd(ie, 1:je, 1:ke) + rev1d(1:je, 1:ke&
+   &           )
+   rev1d(1:je, 1:ke) = 0.0_8
+   revd(il, 1:je, 1:ke) = revd(il, 1:je, 1:ke) + rev2d(1:je, 1:ke&
+   &           )
+   rev2d(1:je, 1:ke) = 0.0_8
+   revd(nx, 1:je, 1:ke) = revd(nx, 1:je, 1:ke) + rev3d(1:je, 1:ke&
+   &           )
+   rev3d(1:je, 1:ke) = 0.0_8
+   rlvd(ib, 1:je, 1:ke) = rlvd(ib, 1:je, 1:ke) + rlv0d(1:je, 1:ke&
+   &           )
+   rlv0d(1:je, 1:ke) = 0.0_8
+   rlvd(ie, 1:je, 1:ke) = rlvd(ie, 1:je, 1:ke) + rlv1d(1:je, 1:ke&
+   &           )
+   rlv1d(1:je, 1:ke) = 0.0_8
+   rlvd(il, 1:je, 1:ke) = rlvd(il, 1:je, 1:ke) + rlv2d(1:je, 1:ke&
+   &           )
+   rlv2d(1:je, 1:ke) = 0.0_8
+   rlvd(nx, 1:je, 1:ke) = rlvd(nx, 1:je, 1:ke) + rlv3d(1:je, 1:ke&
+   &           )
+   rlv3d(1:je, 1:ke) = 0.0_8
+   pd(ib, 1:je, 1:ke) = pd(ib, 1:je, 1:ke) + pp0d(1:je, 1:ke)
+   pp0d(1:je, 1:ke) = 0.0_8
+   pd(ie, 1:je, 1:ke) = pd(ie, 1:je, 1:ke) + pp1d(1:je, 1:ke)
+   pp1d(1:je, 1:ke) = 0.0_8
+   pd(il, 1:je, 1:ke) = pd(il, 1:je, 1:ke) + pp2d(1:je, 1:ke)
+   pp2d(1:je, 1:ke) = 0.0_8
+   pd(nx, 1:je, 1:ke) = pd(nx, 1:je, 1:ke) + pp3d(1:je, 1:ke)
+   pp3d(1:je, 1:ke) = 0.0_8
+   wd(ib, 1:je, 1:ke, :) = wd(ib, 1:je, 1:ke, :) + ww0d(1:je, 1:&
+   &           ke, :)
+   ww0d(1:je, 1:ke, :) = 0.0_8
+   wd(ie, 1:je, 1:ke, :) = wd(ie, 1:je, 1:ke, :) + ww1d(1:je, 1:&
+   &           ke, :)
+   ww1d(1:je, 1:ke, :) = 0.0_8
+   wd(il, 1:je, 1:ke, :) = wd(il, 1:je, 1:ke, :) + ww2d(1:je, 1:&
+   &           ke, :)
+   ww2d(1:je, 1:ke, :) = 0.0_8
+   wd(nx, 1:je, 1:ke, :) = wd(nx, 1:je, 1:ke, :) + ww3d(1:je, 1:&
+   &           ke, :)
+   ww3d(1:je, 1:ke, :) = 0.0_8
+   END IF
+   END IF
+   ELSE IF (branch .LT. 5) THEN
+   IF (branch .EQ. 3) THEN
+   revd(1:ie, 0, 1:ke) = revd(1:ie, 0, 1:ke) + rev0d(1:ie, 1:ke)
+   rev0d(1:ie, 1:ke) = 0.0_8
+   revd(1:ie, 1, 1:ke) = revd(1:ie, 1, 1:ke) + rev1d(1:ie, 1:ke)
+   rev1d(1:ie, 1:ke) = 0.0_8
+   revd(1:ie, 2, 1:ke) = revd(1:ie, 2, 1:ke) + rev2d(1:ie, 1:ke)
+   rev2d(1:ie, 1:ke) = 0.0_8
+   revd(1:ie, 3, 1:ke) = revd(1:ie, 3, 1:ke) + rev3d(1:ie, 1:ke)
+   rev3d(1:ie, 1:ke) = 0.0_8
+   rlvd(1:ie, 0, 1:ke) = rlvd(1:ie, 0, 1:ke) + rlv0d(1:ie, 1:ke)
+   rlv0d(1:ie, 1:ke) = 0.0_8
+   rlvd(1:ie, 1, 1:ke) = rlvd(1:ie, 1, 1:ke) + rlv1d(1:ie, 1:ke)
+   rlv1d(1:ie, 1:ke) = 0.0_8
+   rlvd(1:ie, 2, 1:ke) = rlvd(1:ie, 2, 1:ke) + rlv2d(1:ie, 1:ke)
+   rlv2d(1:ie, 1:ke) = 0.0_8
+   rlvd(1:ie, 3, 1:ke) = rlvd(1:ie, 3, 1:ke) + rlv3d(1:ie, 1:ke)
+   rlv3d(1:ie, 1:ke) = 0.0_8
+   pd(1:ie, 0, 1:ke) = pd(1:ie, 0, 1:ke) + pp0d(1:ie, 1:ke)
+   pp0d(1:ie, 1:ke) = 0.0_8
+   pd(1:ie, 1, 1:ke) = pd(1:ie, 1, 1:ke) + pp1d(1:ie, 1:ke)
+   pp1d(1:ie, 1:ke) = 0.0_8
+   pd(1:ie, 2, 1:ke) = pd(1:ie, 2, 1:ke) + pp2d(1:ie, 1:ke)
+   pp2d(1:ie, 1:ke) = 0.0_8
+   pd(1:ie, 3, 1:ke) = pd(1:ie, 3, 1:ke) + pp3d(1:ie, 1:ke)
+   pp3d(1:ie, 1:ke) = 0.0_8
+   wd(1:ie, 0, 1:ke, :) = wd(1:ie, 0, 1:ke, :) + ww0d(1:ie, 1:ke, :&
+   &         )
+   ww0d(1:ie, 1:ke, :) = 0.0_8
+   wd(1:ie, 1, 1:ke, :) = wd(1:ie, 1, 1:ke, :) + ww1d(1:ie, 1:ke, :&
+   &         )
+   ww1d(1:ie, 1:ke, :) = 0.0_8
+   wd(1:ie, 2, 1:ke, :) = wd(1:ie, 2, 1:ke, :) + ww2d(1:ie, 1:ke, :&
+   &         )
+   ww2d(1:ie, 1:ke, :) = 0.0_8
+   wd(1:ie, 3, 1:ke, :) = wd(1:ie, 3, 1:ke, :) + ww3d(1:ie, 1:ke, :&
+   &         )
+   ww3d(1:ie, 1:ke, :) = 0.0_8
+   ELSE
+   revd(1:ie, jb, 1:ke) = revd(1:ie, jb, 1:ke) + rev0d(1:ie, 1:ke)
+   rev0d(1:ie, 1:ke) = 0.0_8
+   revd(1:ie, je, 1:ke) = revd(1:ie, je, 1:ke) + rev1d(1:ie, 1:ke)
+   rev1d(1:ie, 1:ke) = 0.0_8
+   revd(1:ie, jl, 1:ke) = revd(1:ie, jl, 1:ke) + rev2d(1:ie, 1:ke)
+   rev2d(1:ie, 1:ke) = 0.0_8
+   revd(1:ie, ny, 1:ke) = revd(1:ie, ny, 1:ke) + rev3d(1:ie, 1:ke)
+   rev3d(1:ie, 1:ke) = 0.0_8
+   rlvd(1:ie, jb, 1:ke) = rlvd(1:ie, jb, 1:ke) + rlv0d(1:ie, 1:ke)
+   rlv0d(1:ie, 1:ke) = 0.0_8
+   rlvd(1:ie, je, 1:ke) = rlvd(1:ie, je, 1:ke) + rlv1d(1:ie, 1:ke)
+   rlv1d(1:ie, 1:ke) = 0.0_8
+   rlvd(1:ie, jl, 1:ke) = rlvd(1:ie, jl, 1:ke) + rlv2d(1:ie, 1:ke)
+   rlv2d(1:ie, 1:ke) = 0.0_8
+   rlvd(1:ie, ny, 1:ke) = rlvd(1:ie, ny, 1:ke) + rlv3d(1:ie, 1:ke)
+   rlv3d(1:ie, 1:ke) = 0.0_8
+   pd(1:ie, jb, 1:ke) = pd(1:ie, jb, 1:ke) + pp0d(1:ie, 1:ke)
+   pp0d(1:ie, 1:ke) = 0.0_8
+   pd(1:ie, je, 1:ke) = pd(1:ie, je, 1:ke) + pp1d(1:ie, 1:ke)
+   pp1d(1:ie, 1:ke) = 0.0_8
+   pd(1:ie, jl, 1:ke) = pd(1:ie, jl, 1:ke) + pp2d(1:ie, 1:ke)
+   pp2d(1:ie, 1:ke) = 0.0_8
+   pd(1:ie, ny, 1:ke) = pd(1:ie, ny, 1:ke) + pp3d(1:ie, 1:ke)
+   pp3d(1:ie, 1:ke) = 0.0_8
+   wd(1:ie, jb, 1:ke, :) = wd(1:ie, jb, 1:ke, :) + ww0d(1:ie, 1:ke&
+   &         , :)
+   ww0d(1:ie, 1:ke, :) = 0.0_8
+   wd(1:ie, je, 1:ke, :) = wd(1:ie, je, 1:ke, :) + ww1d(1:ie, 1:ke&
+   &         , :)
+   ww1d(1:ie, 1:ke, :) = 0.0_8
+   wd(1:ie, jl, 1:ke, :) = wd(1:ie, jl, 1:ke, :) + ww2d(1:ie, 1:ke&
+   &         , :)
+   ww2d(1:ie, 1:ke, :) = 0.0_8
+   wd(1:ie, ny, 1:ke, :) = wd(1:ie, ny, 1:ke, :) + ww3d(1:ie, 1:ke&
+   &         , :)
+   ww3d(1:ie, 1:ke, :) = 0.0_8
+   END IF
+   ELSE IF (branch .EQ. 5) THEN
+   revd(1:ie, 1:je, 0) = revd(1:ie, 1:je, 0) + rev0d(1:ie, 1:je)
+   rev0d(1:ie, 1:je) = 0.0_8
+   revd(1:ie, 1:je, 1) = revd(1:ie, 1:je, 1) + rev1d(1:ie, 1:je)
+   rev1d(1:ie, 1:je) = 0.0_8
+   revd(1:ie, 1:je, 2) = revd(1:ie, 1:je, 2) + rev2d(1:ie, 1:je)
+   rev2d(1:ie, 1:je) = 0.0_8
+   revd(1:ie, 1:je, 3) = revd(1:ie, 1:je, 3) + rev3d(1:ie, 1:je)
+   rev3d(1:ie, 1:je) = 0.0_8
+   rlvd(1:ie, 1:je, 0) = rlvd(1:ie, 1:je, 0) + rlv0d(1:ie, 1:je)
+   rlv0d(1:ie, 1:je) = 0.0_8
+   rlvd(1:ie, 1:je, 1) = rlvd(1:ie, 1:je, 1) + rlv1d(1:ie, 1:je)
+   rlv1d(1:ie, 1:je) = 0.0_8
+   rlvd(1:ie, 1:je, 2) = rlvd(1:ie, 1:je, 2) + rlv2d(1:ie, 1:je)
+   rlv2d(1:ie, 1:je) = 0.0_8
+   rlvd(1:ie, 1:je, 3) = rlvd(1:ie, 1:je, 3) + rlv3d(1:ie, 1:je)
+   rlv3d(1:ie, 1:je) = 0.0_8
+   pd(1:ie, 1:je, 0) = pd(1:ie, 1:je, 0) + pp0d(1:ie, 1:je)
+   pp0d(1:ie, 1:je) = 0.0_8
+   pd(1:ie, 1:je, 1) = pd(1:ie, 1:je, 1) + pp1d(1:ie, 1:je)
+   pp1d(1:ie, 1:je) = 0.0_8
+   pd(1:ie, 1:je, 2) = pd(1:ie, 1:je, 2) + pp2d(1:ie, 1:je)
+   pp2d(1:ie, 1:je) = 0.0_8
+   pd(1:ie, 1:je, 3) = pd(1:ie, 1:je, 3) + pp3d(1:ie, 1:je)
+   pp3d(1:ie, 1:je) = 0.0_8
+   wd(1:ie, 1:je, 0, :) = wd(1:ie, 1:je, 0, :) + ww0d(1:ie, 1:je, :)
+   ww0d(1:ie, 1:je, :) = 0.0_8
+   wd(1:ie, 1:je, 1, :) = wd(1:ie, 1:je, 1, :) + ww1d(1:ie, 1:je, :)
+   ww1d(1:ie, 1:je, :) = 0.0_8
+   wd(1:ie, 1:je, 2, :) = wd(1:ie, 1:je, 2, :) + ww2d(1:ie, 1:je, :)
+   ww2d(1:ie, 1:je, :) = 0.0_8
+   wd(1:ie, 1:je, 3, :) = wd(1:ie, 1:je, 3, :) + ww3d(1:ie, 1:je, :)
+   ww3d(1:ie, 1:je, :) = 0.0_8
+   ELSE
+   revd(1:ie, 1:je, kb) = revd(1:ie, 1:je, kb) + rev0d(1:ie, 1:je)
+   rev0d(1:ie, 1:je) = 0.0_8
+   revd(1:ie, 1:je, ke) = revd(1:ie, 1:je, ke) + rev1d(1:ie, 1:je)
+   rev1d(1:ie, 1:je) = 0.0_8
+   revd(1:ie, 1:je, kl) = revd(1:ie, 1:je, kl) + rev2d(1:ie, 1:je)
+   rev2d(1:ie, 1:je) = 0.0_8
+   revd(1:ie, 1:je, nz) = revd(1:ie, 1:je, nz) + rev3d(1:ie, 1:je)
+   rev3d(1:ie, 1:je) = 0.0_8
+   rlvd(1:ie, 1:je, kb) = rlvd(1:ie, 1:je, kb) + rlv0d(1:ie, 1:je)
+   rlv0d(1:ie, 1:je) = 0.0_8
+   rlvd(1:ie, 1:je, ke) = rlvd(1:ie, 1:je, ke) + rlv1d(1:ie, 1:je)
+   rlv1d(1:ie, 1:je) = 0.0_8
+   rlvd(1:ie, 1:je, kl) = rlvd(1:ie, 1:je, kl) + rlv2d(1:ie, 1:je)
+   rlv2d(1:ie, 1:je) = 0.0_8
+   rlvd(1:ie, 1:je, nz) = rlvd(1:ie, 1:je, nz) + rlv3d(1:ie, 1:je)
+   rlv3d(1:ie, 1:je) = 0.0_8
+   pd(1:ie, 1:je, kb) = pd(1:ie, 1:je, kb) + pp0d(1:ie, 1:je)
+   pp0d(1:ie, 1:je) = 0.0_8
+   pd(1:ie, 1:je, ke) = pd(1:ie, 1:je, ke) + pp1d(1:ie, 1:je)
+   pp1d(1:ie, 1:je) = 0.0_8
+   pd(1:ie, 1:je, kl) = pd(1:ie, 1:je, kl) + pp2d(1:ie, 1:je)
+   pp2d(1:ie, 1:je) = 0.0_8
+   pd(1:ie, 1:je, nz) = pd(1:ie, 1:je, nz) + pp3d(1:ie, 1:je)
+   pp3d(1:ie, 1:je) = 0.0_8
+   wd(1:ie, 1:je, kb, :) = wd(1:ie, 1:je, kb, :) + ww0d(1:ie, 1:je, :&
+   &       )
+   ww0d(1:ie, 1:je, :) = 0.0_8
+   wd(1:ie, 1:je, ke, :) = wd(1:ie, 1:je, ke, :) + ww1d(1:ie, 1:je, :&
+   &       )
+   ww1d(1:ie, 1:je, :) = 0.0_8
+   wd(1:ie, 1:je, kl, :) = wd(1:ie, 1:je, kl, :) + ww2d(1:ie, 1:je, :&
+   &       )
+   ww2d(1:ie, 1:je, :) = 0.0_8
+   wd(1:ie, 1:je, nz, :) = wd(1:ie, 1:je, nz, :) + ww3d(1:ie, 1:je, :&
+   &       )
+   ww3d(1:ie, 1:je, :) = 0.0_8
+   END IF
+   END SUBROUTINE SETBCPOINTERS_B
+   SUBROUTINE SETBCPOINTERS(nn, spatialpointers)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -2593,12 +2681,9 @@
    USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
    IMPLICIT NONE
-   ! Note that the ss{i,j,}, ss and xline pointers are NOT included
-   ! here since they are not AD'ed. 
    ! Subroutine arguments.
    INTEGER(kind=inttype), INTENT(IN) :: nn
-   ! Local variables
-   INTEGER(kind=inttype) :: istart, iend, jstart, jend
+   LOGICAL, INTENT(IN) :: spatialpointers
    ! Determine the sizes of each face and point to just the range we
    ! need on each face. 
    istart = bcdata(nn)%icbeg
@@ -2613,150 +2698,176 @@
    SELECT CASE  (bcfaceid(nn)) 
    CASE (imin) 
    !===============================================================
-   ww3(1:isize, 1:jsize, :) = w(3, istart:iend, jstart:jend, :)
-   ww2(1:isize, 1:jsize, :) = w(2, istart:iend, jstart:jend, :)
-   ww1(1:isize, 1:jsize, :) = w(1, istart:iend, jstart:jend, :)
-   ww0(1:isize, 1:jsize, :) = w(0, istart:iend, jstart:jend, :)
-   pp3(1:isize, 1:jsize) = p(3, istart:iend, jstart:jend)
-   pp2(1:isize, 1:jsize) = p(2, istart:iend, jstart:jend)
-   pp1(1:isize, 1:jsize) = p(1, istart:iend, jstart:jend)
-   pp0(1:isize, 1:jsize) = p(0, istart:iend, jstart:jend)
-   rlv3(1:isize, 1:jsize) = rlv(3, istart:iend, jstart:jend)
-   rlv2(1:isize, 1:jsize) = rlv(2, istart:iend, jstart:jend)
-   rlv1(1:isize, 1:jsize) = rlv(1, istart:iend, jstart:jend)
-   rlv0(1:isize, 1:jsize) = rlv(0, istart:iend, jstart:jend)
-   rev3(1:isize, 1:jsize) = rev(3, istart:iend, jstart:jend)
-   rev2(1:isize, 1:jsize) = rev(2, istart:iend, jstart:jend)
-   rev1(1:isize, 1:jsize) = rev(1, istart:iend, jstart:jend)
-   rev0(1:isize, 1:jsize) = rev(0, istart:iend, jstart:jend)
-   gamma3(1:isize, 1:jsize) = gamma(3, istart:iend, jstart:jend)
-   gamma2(1:isize, 1:jsize) = gamma(2, istart:iend, jstart:jend)
-   gamma1(1:isize, 1:jsize) = gamma(1, istart:iend, jstart:jend)
-   gamma0(1:isize, 1:jsize) = gamma(0, istart:iend, jstart:jend)
+   ww3(1:je, 1:ke, :) = w(3, 1:je, 1:ke, :)
+   ww2(1:je, 1:ke, :) = w(2, 1:je, 1:ke, :)
+   ww1(1:je, 1:ke, :) = w(1, 1:je, 1:ke, :)
+   ww0(1:je, 1:ke, :) = w(0, 1:je, 1:ke, :)
+   pp3(1:je, 1:ke) = p(3, 1:je, 1:ke)
+   pp2(1:je, 1:ke) = p(2, 1:je, 1:ke)
+   pp1(1:je, 1:ke) = p(1, 1:je, 1:ke)
+   pp0(1:je, 1:ke) = p(0, 1:je, 1:ke)
+   rlv3(1:je, 1:ke) = rlv(3, 1:je, 1:ke)
+   rlv2(1:je, 1:ke) = rlv(2, 1:je, 1:ke)
+   rlv1(1:je, 1:ke) = rlv(1, 1:je, 1:ke)
+   rlv0(1:je, 1:ke) = rlv(0, 1:je, 1:ke)
+   rev3(1:je, 1:ke) = rev(3, 1:je, 1:ke)
+   rev2(1:je, 1:ke) = rev(2, 1:je, 1:ke)
+   rev1(1:je, 1:ke) = rev(1, 1:je, 1:ke)
+   rev0(1:je, 1:ke) = rev(0, 1:je, 1:ke)
+   gamma3(1:je, 1:ke) = gamma(3, 1:je, 1:ke)
+   gamma2(1:je, 1:ke) = gamma(2, 1:je, 1:ke)
+   gamma1(1:je, 1:ke) = gamma(1, 1:je, 1:ke)
+   gamma0(1:je, 1:ke) = gamma(0, 1:je, 1:ke)
    CASE (imax) 
    !===============================================================
-   ww3(1:isize, 1:jsize, :) = w(nx, istart:iend, jstart:jend, :)
-   ww2(1:isize, 1:jsize, :) = w(il, istart:iend, jstart:jend, :)
-   ww1(1:isize, 1:jsize, :) = w(ie, istart:iend, jstart:jend, :)
-   ww0(1:isize, 1:jsize, :) = w(ib, istart:iend, jstart:jend, :)
-   pp3(1:isize, 1:jsize) = p(nx, istart:iend, jstart:jend)
-   pp2(1:isize, 1:jsize) = p(il, istart:iend, jstart:jend)
-   pp1(1:isize, 1:jsize) = p(ie, istart:iend, jstart:jend)
-   pp0(1:isize, 1:jsize) = p(ib, istart:iend, jstart:jend)
-   rlv3(1:isize, 1:jsize) = rlv(nx, istart:iend, jstart:jend)
-   rlv2(1:isize, 1:jsize) = rlv(il, istart:iend, jstart:jend)
-   rlv1(1:isize, 1:jsize) = rlv(ie, istart:iend, jstart:jend)
-   rlv0(1:isize, 1:jsize) = rlv(ib, istart:iend, jstart:jend)
-   rev3(1:isize, 1:jsize) = rev(nx, istart:iend, jstart:jend)
-   rev2(1:isize, 1:jsize) = rev(il, istart:iend, jstart:jend)
-   rev1(1:isize, 1:jsize) = rev(ie, istart:iend, jstart:jend)
-   rev0(1:isize, 1:jsize) = rev(ib, istart:iend, jstart:jend)
-   gamma3(1:isize, 1:jsize) = gamma(nx, istart:iend, jstart:jend)
-   gamma2(1:isize, 1:jsize) = gamma(il, istart:iend, jstart:jend)
-   gamma1(1:isize, 1:jsize) = gamma(ie, istart:iend, jstart:jend)
-   gamma0(1:isize, 1:jsize) = gamma(ib, istart:iend, jstart:jend)
+   ww3(1:je, 1:ke, :) = w(nx, 1:je, 1:ke, :)
+   ww2(1:je, 1:ke, :) = w(il, 1:je, 1:ke, :)
+   ww1(1:je, 1:ke, :) = w(ie, 1:je, 1:ke, :)
+   ww0(1:je, 1:ke, :) = w(ib, 1:je, 1:ke, :)
+   pp3(1:je, 1:ke) = p(nx, 1:je, 1:ke)
+   pp2(1:je, 1:ke) = p(il, 1:je, 1:ke)
+   pp1(1:je, 1:ke) = p(ie, 1:je, 1:ke)
+   pp0(1:je, 1:ke) = p(ib, 1:je, 1:ke)
+   rlv3(1:je, 1:ke) = rlv(nx, 1:je, 1:ke)
+   rlv2(1:je, 1:ke) = rlv(il, 1:je, 1:ke)
+   rlv1(1:je, 1:ke) = rlv(ie, 1:je, 1:ke)
+   rlv0(1:je, 1:ke) = rlv(ib, 1:je, 1:ke)
+   rev3(1:je, 1:ke) = rev(nx, 1:je, 1:ke)
+   rev2(1:je, 1:ke) = rev(il, 1:je, 1:ke)
+   rev1(1:je, 1:ke) = rev(ie, 1:je, 1:ke)
+   rev0(1:je, 1:ke) = rev(ib, 1:je, 1:ke)
+   gamma3(1:je, 1:ke) = gamma(nx, 1:je, 1:ke)
+   gamma2(1:je, 1:ke) = gamma(il, 1:je, 1:ke)
+   gamma1(1:je, 1:ke) = gamma(ie, 1:je, 1:ke)
+   gamma0(1:je, 1:ke) = gamma(ib, 1:je, 1:ke)
    CASE (jmin) 
    !===============================================================
-   ww3(1:isize, 1:jsize, :) = w(istart:iend, 3, jstart:jend, :)
-   ww2(1:isize, 1:jsize, :) = w(istart:iend, 2, jstart:jend, :)
-   ww1(1:isize, 1:jsize, :) = w(istart:iend, 1, jstart:jend, :)
-   ww0(1:isize, 1:jsize, :) = w(istart:iend, 0, jstart:jend, :)
-   pp3(1:isize, 1:jsize) = p(istart:iend, 3, jstart:jend)
-   pp2(1:isize, 1:jsize) = p(istart:iend, 2, jstart:jend)
-   pp1(1:isize, 1:jsize) = p(istart:iend, 1, jstart:jend)
-   pp0(1:isize, 1:jsize) = p(istart:iend, 0, jstart:jend)
-   rlv3(1:isize, 1:jsize) = rlv(istart:iend, 3, jstart:jend)
-   rlv2(1:isize, 1:jsize) = rlv(istart:iend, 2, jstart:jend)
-   rlv1(1:isize, 1:jsize) = rlv(istart:iend, 1, jstart:jend)
-   rlv0(1:isize, 1:jsize) = rlv(istart:iend, 0, jstart:jend)
-   rev3(1:isize, 1:jsize) = rev(istart:iend, 3, jstart:jend)
-   rev2(1:isize, 1:jsize) = rev(istart:iend, 2, jstart:jend)
-   rev1(1:isize, 1:jsize) = rev(istart:iend, 1, jstart:jend)
-   rev0(1:isize, 1:jsize) = rev(istart:iend, 0, jstart:jend)
-   gamma3(1:isize, 1:jsize) = gamma(istart:iend, 3, jstart:jend)
-   gamma2(1:isize, 1:jsize) = gamma(istart:iend, 2, jstart:jend)
-   gamma1(1:isize, 1:jsize) = gamma(istart:iend, 1, jstart:jend)
-   gamma0(1:isize, 1:jsize) = gamma(istart:iend, 0, jstart:jend)
+   ww3(1:ie, 1:ke, :) = w(1:ie, 3, 1:ke, :)
+   ww2(1:ie, 1:ke, :) = w(1:ie, 2, 1:ke, :)
+   ww1(1:ie, 1:ke, :) = w(1:ie, 1, 1:ke, :)
+   ww0(1:ie, 1:ke, :) = w(1:ie, 0, 1:ke, :)
+   pp3(1:ie, 1:ke) = p(1:ie, 3, 1:ke)
+   pp2(1:ie, 1:ke) = p(1:ie, 2, 1:ke)
+   pp1(1:ie, 1:ke) = p(1:ie, 1, 1:ke)
+   pp0(1:ie, 1:ke) = p(1:ie, 0, 1:ke)
+   rlv3(1:ie, 1:ke) = rlv(1:ie, 3, 1:ke)
+   rlv2(1:ie, 1:ke) = rlv(1:ie, 2, 1:ke)
+   rlv1(1:ie, 1:ke) = rlv(1:ie, 1, 1:ke)
+   rlv0(1:ie, 1:ke) = rlv(1:ie, 0, 1:ke)
+   rev3(1:ie, 1:ke) = rev(1:ie, 3, 1:ke)
+   rev2(1:ie, 1:ke) = rev(1:ie, 2, 1:ke)
+   rev1(1:ie, 1:ke) = rev(1:ie, 1, 1:ke)
+   rev0(1:ie, 1:ke) = rev(1:ie, 0, 1:ke)
+   gamma3(1:ie, 1:ke) = gamma(1:ie, 3, 1:ke)
+   gamma2(1:ie, 1:ke) = gamma(1:ie, 2, 1:ke)
+   gamma1(1:ie, 1:ke) = gamma(1:ie, 1, 1:ke)
+   gamma0(1:ie, 1:ke) = gamma(1:ie, 0, 1:ke)
    CASE (jmax) 
    !===============================================================
-   ww3(1:isize, 1:jsize, :) = w(istart:iend, ny, jstart:jend, :)
-   ww2(1:isize, 1:jsize, :) = w(istart:iend, jl, jstart:jend, :)
-   ww1(1:isize, 1:jsize, :) = w(istart:iend, je, jstart:jend, :)
-   ww0(1:isize, 1:jsize, :) = w(istart:iend, jb, jstart:jend, :)
-   pp3(1:isize, 1:jsize) = p(istart:iend, ny, jstart:jend)
-   pp2(1:isize, 1:jsize) = p(istart:iend, jl, jstart:jend)
-   pp1(1:isize, 1:jsize) = p(istart:iend, je, jstart:jend)
-   pp0(1:isize, 1:jsize) = p(istart:iend, jb, jstart:jend)
-   rlv3(1:isize, 1:jsize) = rlv(istart:iend, ny, jstart:jend)
-   rlv2(1:isize, 1:jsize) = rlv(istart:iend, jl, jstart:jend)
-   rlv1(1:isize, 1:jsize) = rlv(istart:iend, je, jstart:jend)
-   rlv0(1:isize, 1:jsize) = rlv(istart:iend, jb, jstart:jend)
-   rev3(1:isize, 1:jsize) = rev(istart:iend, ny, jstart:jend)
-   rev2(1:isize, 1:jsize) = rev(istart:iend, jl, jstart:jend)
-   rev1(1:isize, 1:jsize) = rev(istart:iend, je, jstart:jend)
-   rev0(1:isize, 1:jsize) = rev(istart:iend, jb, jstart:jend)
-   gamma3(1:isize, 1:jsize) = gamma(istart:iend, ny, jstart:jend)
-   gamma2(1:isize, 1:jsize) = gamma(istart:iend, jl, jstart:jend)
-   gamma1(1:isize, 1:jsize) = gamma(istart:iend, je, jstart:jend)
-   gamma0(1:isize, 1:jsize) = gamma(istart:iend, jb, jstart:jend)
+   ww3(1:ie, 1:ke, :) = w(1:ie, ny, 1:ke, :)
+   ww2(1:ie, 1:ke, :) = w(1:ie, jl, 1:ke, :)
+   ww1(1:ie, 1:ke, :) = w(1:ie, je, 1:ke, :)
+   ww0(1:ie, 1:ke, :) = w(1:ie, jb, 1:ke, :)
+   pp3(1:ie, 1:ke) = p(1:ie, ny, 1:ke)
+   pp2(1:ie, 1:ke) = p(1:ie, jl, 1:ke)
+   pp1(1:ie, 1:ke) = p(1:ie, je, 1:ke)
+   pp0(1:ie, 1:ke) = p(1:ie, jb, 1:ke)
+   rlv3(1:ie, 1:ke) = rlv(1:ie, ny, 1:ke)
+   rlv2(1:ie, 1:ke) = rlv(1:ie, jl, 1:ke)
+   rlv1(1:ie, 1:ke) = rlv(1:ie, je, 1:ke)
+   rlv0(1:ie, 1:ke) = rlv(1:ie, jb, 1:ke)
+   rev3(1:ie, 1:ke) = rev(1:ie, ny, 1:ke)
+   rev2(1:ie, 1:ke) = rev(1:ie, jl, 1:ke)
+   rev1(1:ie, 1:ke) = rev(1:ie, je, 1:ke)
+   rev0(1:ie, 1:ke) = rev(1:ie, jb, 1:ke)
+   gamma3(1:ie, 1:ke) = gamma(1:ie, ny, 1:ke)
+   gamma2(1:ie, 1:ke) = gamma(1:ie, jl, 1:ke)
+   gamma1(1:ie, 1:ke) = gamma(1:ie, je, 1:ke)
+   gamma0(1:ie, 1:ke) = gamma(1:ie, jb, 1:ke)
    CASE (kmin) 
    !===============================================================
-   ww3(1:isize, 1:jsize, :) = w(istart:iend, jstart:jend, 3, :)
-   ww2(1:isize, 1:jsize, :) = w(istart:iend, jstart:jend, 2, :)
-   ww1(1:isize, 1:jsize, :) = w(istart:iend, jstart:jend, 1, :)
-   ww0(1:isize, 1:jsize, :) = w(istart:iend, jstart:jend, 0, :)
-   pp3(1:isize, 1:jsize) = p(istart:iend, jstart:jend, 3)
-   pp2(1:isize, 1:jsize) = p(istart:iend, jstart:jend, 2)
-   pp1(1:isize, 1:jsize) = p(istart:iend, jstart:jend, 1)
-   pp0(1:isize, 1:jsize) = p(istart:iend, jstart:jend, 0)
-   rlv3(1:isize, 1:jsize) = rlv(istart:iend, jstart:jend, 3)
-   rlv2(1:isize, 1:jsize) = rlv(istart:iend, jstart:jend, 2)
-   rlv1(1:isize, 1:jsize) = rlv(istart:iend, jstart:jend, 1)
-   rlv0(1:isize, 1:jsize) = rlv(istart:iend, jstart:jend, 0)
-   rev3(1:isize, 1:jsize) = rev(istart:iend, jstart:jend, 3)
-   rev2(1:isize, 1:jsize) = rev(istart:iend, jstart:jend, 2)
-   rev1(1:isize, 1:jsize) = rev(istart:iend, jstart:jend, 1)
-   rev0(1:isize, 1:jsize) = rev(istart:iend, jstart:jend, 0)
-   gamma3(1:isize, 1:jsize) = gamma(istart:iend, jstart:jend, 3)
-   gamma2(1:isize, 1:jsize) = gamma(istart:iend, jstart:jend, 2)
-   gamma1(1:isize, 1:jsize) = gamma(istart:iend, jstart:jend, 1)
-   gamma0(1:isize, 1:jsize) = gamma(istart:iend, jstart:jend, 0)
+   ww3(1:ie, 1:je, :) = w(1:ie, 1:je, 3, :)
+   ww2(1:ie, 1:je, :) = w(1:ie, 1:je, 2, :)
+   ww1(1:ie, 1:je, :) = w(1:ie, 1:je, 1, :)
+   ww0(1:ie, 1:je, :) = w(1:ie, 1:je, 0, :)
+   pp3(1:ie, 1:je) = p(1:ie, 1:je, 3)
+   pp2(1:ie, 1:je) = p(1:ie, 1:je, 2)
+   pp1(1:ie, 1:je) = p(1:ie, 1:je, 1)
+   pp0(1:ie, 1:je) = p(1:ie, 1:je, 0)
+   rlv3(1:ie, 1:je) = rlv(1:ie, 1:je, 3)
+   rlv2(1:ie, 1:je) = rlv(1:ie, 1:je, 2)
+   rlv1(1:ie, 1:je) = rlv(1:ie, 1:je, 1)
+   rlv0(1:ie, 1:je) = rlv(1:ie, 1:je, 0)
+   rev3(1:ie, 1:je) = rev(1:ie, 1:je, 3)
+   rev2(1:ie, 1:je) = rev(1:ie, 1:je, 2)
+   rev1(1:ie, 1:je) = rev(1:ie, 1:je, 1)
+   rev0(1:ie, 1:je) = rev(1:ie, 1:je, 0)
+   gamma3(1:ie, 1:je) = gamma(1:ie, 1:je, 3)
+   gamma2(1:ie, 1:je) = gamma(1:ie, 1:je, 2)
+   gamma1(1:ie, 1:je) = gamma(1:ie, 1:je, 1)
+   gamma0(1:ie, 1:je) = gamma(1:ie, 1:je, 0)
    CASE (kmax) 
    !===============================================================
-   ww3(1:isize, 1:jsize, :) = w(istart:iend, jstart:jend, nz, :)
-   ww2(1:isize, 1:jsize, :) = w(istart:iend, jstart:jend, kl, :)
-   ww1(1:isize, 1:jsize, :) = w(istart:iend, jstart:jend, ke, :)
-   ww0(1:isize, 1:jsize, :) = w(istart:iend, jstart:jend, kb, :)
-   pp3(1:isize, 1:jsize) = p(istart:iend, jstart:jend, nz)
-   pp2(1:isize, 1:jsize) = p(istart:iend, jstart:jend, kl)
-   pp1(1:isize, 1:jsize) = p(istart:iend, jstart:jend, ke)
-   pp0(1:isize, 1:jsize) = p(istart:iend, jstart:jend, kb)
-   rlv3(1:isize, 1:jsize) = rlv(istart:iend, jstart:jend, nz)
-   rlv2(1:isize, 1:jsize) = rlv(istart:iend, jstart:jend, kl)
-   rlv1(1:isize, 1:jsize) = rlv(istart:iend, jstart:jend, ke)
-   rlv0(1:isize, 1:jsize) = rlv(istart:iend, jstart:jend, kb)
-   rev3(1:isize, 1:jsize) = rev(istart:iend, jstart:jend, nz)
-   rev2(1:isize, 1:jsize) = rev(istart:iend, jstart:jend, kl)
-   rev1(1:isize, 1:jsize) = rev(istart:iend, jstart:jend, ke)
-   rev0(1:isize, 1:jsize) = rev(istart:iend, jstart:jend, kb)
-   gamma3(1:isize, 1:jsize) = gamma(istart:iend, jstart:jend, nz)
-   gamma2(1:isize, 1:jsize) = gamma(istart:iend, jstart:jend, kl)
-   gamma1(1:isize, 1:jsize) = gamma(istart:iend, jstart:jend, ke)
-   gamma0(1:isize, 1:jsize) = gamma(istart:iend, jstart:jend, kb)
+   ww3(1:ie, 1:je, :) = w(1:ie, 1:je, nz, :)
+   ww2(1:ie, 1:je, :) = w(1:ie, 1:je, kl, :)
+   ww1(1:ie, 1:je, :) = w(1:ie, 1:je, ke, :)
+   ww0(1:ie, 1:je, :) = w(1:ie, 1:je, kb, :)
+   pp3(1:ie, 1:je) = p(1:ie, 1:je, nz)
+   pp2(1:ie, 1:je) = p(1:ie, 1:je, kl)
+   pp1(1:ie, 1:je) = p(1:ie, 1:je, ke)
+   pp0(1:ie, 1:je) = p(1:ie, 1:je, kb)
+   rlv3(1:ie, 1:je) = rlv(1:ie, 1:je, nz)
+   rlv2(1:ie, 1:je) = rlv(1:ie, 1:je, kl)
+   rlv1(1:ie, 1:je) = rlv(1:ie, 1:je, ke)
+   rlv0(1:ie, 1:je) = rlv(1:ie, 1:je, kb)
+   rev3(1:ie, 1:je) = rev(1:ie, 1:je, nz)
+   rev2(1:ie, 1:je) = rev(1:ie, 1:je, kl)
+   rev1(1:ie, 1:je) = rev(1:ie, 1:je, ke)
+   rev0(1:ie, 1:je) = rev(1:ie, 1:je, kb)
+   gamma3(1:ie, 1:je) = gamma(1:ie, 1:je, nz)
+   gamma2(1:ie, 1:je) = gamma(1:ie, 1:je, kl)
+   gamma1(1:ie, 1:je) = gamma(1:ie, 1:je, ke)
+   gamma0(1:ie, 1:je) = gamma(1:ie, 1:je, kb)
    END SELECT
-   END SUBROUTINE SETBCPOINTERS2
-   !  Differentiation of resetbcpointers2 in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *rev *p *w *rlv *rev0 *rev1
-   !                *rev2 *rev3 *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2
-   !                *rlv3 *ww0 *ww1 *ww2 *ww3
-   !   with respect to varying inputs: *rev *p *w *rlv *rev0 *rev1
-   !                *rev2 *rev3 *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2
-   !                *rlv3 *ww0 *ww1 *ww2 *ww3
-   !   Plus diff mem management of: rev:in p:in w:in rlv:in bcdata:in
-   !                rev0:in rev1:in rev2:in rev3:in pp0:in pp1:in
-   !                pp2:in pp3:in rlv0:in rlv1:in rlv2:in rlv3:in
-   !                ww0:in ww1:in ww2:in ww3:in
-   SUBROUTINE RESETBCPOINTERS2_B(nn)
+   ! These spatial pointers are only required for
+   ! forcesAndMoments. Eulerwall normal moment is is reverse AD'ed.
+   IF (spatialpointers) THEN
+   SELECT CASE  (bcfaceid(nn)) 
+   CASE (imin) 
+   xx(1:je+1, 1:ke+1, :) = x(1, 0:je, 0:ke, :)
+   ssi(1:je, 1:ke, :) = si(1, 1:je, 1:ke, :)
+   CASE (imax) 
+   xx(1:je+1, 1:ke+1, :) = x(il, 0:je, 0:ke, :)
+   ssi(1:je, 1:ke, :) = si(il, 1:je, 1:ke, :)
+   CASE (jmin) 
+   xx(1:ie+1, 1:ke+1, :) = x(0:ie, 1, 0:ke, :)
+   ssi(1:ie, 1:ke, :) = sj(1:ie, 1, 1:ke, :)
+   CASE (jmax) 
+   xx(1:ie+1, 1:ke+1, :) = x(0:ie, jl, 0:ke, :)
+   ssi(1:ie, 1:ke, :) = sj(1:ie, jl, 1:ke, :)
+   CASE (kmin) 
+   xx(1:ie+1, 1:je+1, :) = x(0:ie, 0:je, 1, :)
+   ssi(1:ie, 1:je, :) = sk(1:ie, 1:je, 1, :)
+   CASE (kmax) 
+   xx(1:ie+1, 1:je+1, :) = x(0:ie, 0:je, kl, :)
+   ssi(1:ie, 1:je, :) = sk(1:ie, 1:je, kl, :)
+   END SELECT
+   END IF
+   END SUBROUTINE SETBCPOINTERS
+   !  Differentiation of resetbcpointers in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
+   !   gradient     of useful results: *rev *p *w *rlv *x *si *sj
+   !                *sk *xx *rev0 *rev1 *rev2 *rev3 *pp0 *pp1 *pp2
+   !                *pp3 *rlv0 *rlv1 *rlv2 *rlv3 *ssi *ww0 *ww1 *ww2
+   !                *ww3
+   !   with respect to varying inputs: *rev *p *w *rlv *x *si *sj
+   !                *sk *xx *rev0 *rev1 *rev2 *rev3 *pp0 *pp1 *pp2
+   !                *pp3 *rlv0 *rlv1 *rlv2 *rlv3 *ssi *ww0 *ww1 *ww2
+   !                *ww3
+   !   Plus diff mem management of: rev:in p:in w:in rlv:in x:in si:in
+   !                sj:in sk:in xx:in rev0:in rev1:in rev2:in rev3:in
+   !                pp0:in pp1:in pp2:in pp3:in rlv0:in rlv1:in rlv2:in
+   !                rlv3:in ssi:in ww0:in ww1:in ww2:in ww3:in
+   SUBROUTINE RESETBCPOINTERS_B(nn, spatialpointers)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -2769,323 +2880,294 @@
    USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
    IMPLICIT NONE
-   ! Note that the ss{i,j,}, ss and xline pointers are NOT included
-   ! here since they are not AD'ed. 
    ! Subroutine arguments.
    INTEGER(kind=inttype), INTENT(IN) :: nn
-   ! Local variables
-   INTEGER(kind=inttype) :: istart, iend, jstart, jend
-   ! Determine the face id on which the subface is located and set
-   ! the pointers accordinly.
-   istart = bcdata(nn)%icbeg
-   iend = bcdata(nn)%icend
-   jstart = bcdata(nn)%jcbeg
-   jend = bcdata(nn)%jcend
-   ! Set the size of the subface
-   CALL PUSHINTEGER4(isize)
-   isize = iend - istart + 1
-   CALL PUSHINTEGER4(jsize)
-   jsize = jend - jstart + 1
+   LOGICAL, INTENT(IN) :: spatialpointers
+   INTEGER :: branch
    SELECT CASE  (bcfaceid(nn)) 
    CASE (imin) 
-   rev0d(1:isize, 1:jsize) = rev0d(1:isize, 1:jsize) + revd(0, istart&
-   &       :iend, jstart:jend)
-   revd(0, istart:iend, jstart:jend) = 0.0_8
-   rev1d(1:isize, 1:jsize) = rev1d(1:isize, 1:jsize) + revd(1, istart&
-   &       :iend, jstart:jend)
-   revd(1, istart:iend, jstart:jend) = 0.0_8
-   rev2d(1:isize, 1:jsize) = rev2d(1:isize, 1:jsize) + revd(2, istart&
-   &       :iend, jstart:jend)
-   revd(2, istart:iend, jstart:jend) = 0.0_8
-   rev3d(1:isize, 1:jsize) = rev3d(1:isize, 1:jsize) + revd(3, istart&
-   &       :iend, jstart:jend)
-   revd(3, istart:iend, jstart:jend) = 0.0_8
-   rlv0d(1:isize, 1:jsize) = rlv0d(1:isize, 1:jsize) + rlvd(0, istart&
-   &       :iend, jstart:jend)
-   rlvd(0, istart:iend, jstart:jend) = 0.0_8
-   rlv1d(1:isize, 1:jsize) = rlv1d(1:isize, 1:jsize) + rlvd(1, istart&
-   &       :iend, jstart:jend)
-   rlvd(1, istart:iend, jstart:jend) = 0.0_8
-   rlv2d(1:isize, 1:jsize) = rlv2d(1:isize, 1:jsize) + rlvd(2, istart&
-   &       :iend, jstart:jend)
-   rlvd(2, istart:iend, jstart:jend) = 0.0_8
-   rlv3d(1:isize, 1:jsize) = rlv3d(1:isize, 1:jsize) + rlvd(3, istart&
-   &       :iend, jstart:jend)
-   rlvd(3, istart:iend, jstart:jend) = 0.0_8
-   pp0d(1:isize, 1:jsize) = pp0d(1:isize, 1:jsize) + pd(0, istart:&
-   &       iend, jstart:jend)
-   pd(0, istart:iend, jstart:jend) = 0.0_8
-   pp1d(1:isize, 1:jsize) = pp1d(1:isize, 1:jsize) + pd(1, istart:&
-   &       iend, jstart:jend)
-   pd(1, istart:iend, jstart:jend) = 0.0_8
-   pp2d(1:isize, 1:jsize) = pp2d(1:isize, 1:jsize) + pd(2, istart:&
-   &       iend, jstart:jend)
-   pd(2, istart:iend, jstart:jend) = 0.0_8
-   pp3d(1:isize, 1:jsize) = pp3d(1:isize, 1:jsize) + pd(3, istart:&
-   &       iend, jstart:jend)
-   pd(3, istart:iend, jstart:jend) = 0.0_8
-   ww0d(1:isize, 1:jsize, :) = ww0d(1:isize, 1:jsize, :) + wd(0, &
-   &       istart:iend, jstart:jend, :)
-   wd(0, istart:iend, jstart:jend, :) = 0.0_8
-   ww1d(1:isize, 1:jsize, :) = ww1d(1:isize, 1:jsize, :) + wd(1, &
-   &       istart:iend, jstart:jend, :)
-   wd(1, istart:iend, jstart:jend, :) = 0.0_8
-   ww2d(1:isize, 1:jsize, :) = ww2d(1:isize, 1:jsize, :) + wd(2, &
-   &       istart:iend, jstart:jend, :)
-   wd(2, istart:iend, jstart:jend, :) = 0.0_8
-   ww3d(1:isize, 1:jsize, :) = ww3d(1:isize, 1:jsize, :) + wd(3, &
-   &       istart:iend, jstart:jend, :)
-   wd(3, istart:iend, jstart:jend, :) = 0.0_8
+   CALL PUSHCONTROL3B(1)
    CASE (imax) 
-   rev0d(1:isize, 1:jsize) = rev0d(1:isize, 1:jsize) + revd(ib, &
-   &       istart:iend, jstart:jend)
-   revd(ib, istart:iend, jstart:jend) = 0.0_8
-   rev1d(1:isize, 1:jsize) = rev1d(1:isize, 1:jsize) + revd(ie, &
-   &       istart:iend, jstart:jend)
-   revd(ie, istart:iend, jstart:jend) = 0.0_8
-   rev2d(1:isize, 1:jsize) = rev2d(1:isize, 1:jsize) + revd(il, &
-   &       istart:iend, jstart:jend)
-   revd(il, istart:iend, jstart:jend) = 0.0_8
-   rev3d(1:isize, 1:jsize) = rev3d(1:isize, 1:jsize) + revd(nx, &
-   &       istart:iend, jstart:jend)
-   revd(nx, istart:iend, jstart:jend) = 0.0_8
-   rlv0d(1:isize, 1:jsize) = rlv0d(1:isize, 1:jsize) + rlvd(ib, &
-   &       istart:iend, jstart:jend)
-   rlvd(ib, istart:iend, jstart:jend) = 0.0_8
-   rlv1d(1:isize, 1:jsize) = rlv1d(1:isize, 1:jsize) + rlvd(ie, &
-   &       istart:iend, jstart:jend)
-   rlvd(ie, istart:iend, jstart:jend) = 0.0_8
-   rlv2d(1:isize, 1:jsize) = rlv2d(1:isize, 1:jsize) + rlvd(il, &
-   &       istart:iend, jstart:jend)
-   rlvd(il, istart:iend, jstart:jend) = 0.0_8
-   rlv3d(1:isize, 1:jsize) = rlv3d(1:isize, 1:jsize) + rlvd(nx, &
-   &       istart:iend, jstart:jend)
-   rlvd(nx, istart:iend, jstart:jend) = 0.0_8
-   pp0d(1:isize, 1:jsize) = pp0d(1:isize, 1:jsize) + pd(ib, istart:&
-   &       iend, jstart:jend)
-   pd(ib, istart:iend, jstart:jend) = 0.0_8
-   pp1d(1:isize, 1:jsize) = pp1d(1:isize, 1:jsize) + pd(ie, istart:&
-   &       iend, jstart:jend)
-   pd(ie, istart:iend, jstart:jend) = 0.0_8
-   pp2d(1:isize, 1:jsize) = pp2d(1:isize, 1:jsize) + pd(il, istart:&
-   &       iend, jstart:jend)
-   pd(il, istart:iend, jstart:jend) = 0.0_8
-   pp3d(1:isize, 1:jsize) = pp3d(1:isize, 1:jsize) + pd(nx, istart:&
-   &       iend, jstart:jend)
-   pd(nx, istart:iend, jstart:jend) = 0.0_8
-   ww0d(1:isize, 1:jsize, :) = ww0d(1:isize, 1:jsize, :) + wd(ib, &
-   &       istart:iend, jstart:jend, :)
-   wd(ib, istart:iend, jstart:jend, :) = 0.0_8
-   ww1d(1:isize, 1:jsize, :) = ww1d(1:isize, 1:jsize, :) + wd(ie, &
-   &       istart:iend, jstart:jend, :)
-   wd(ie, istart:iend, jstart:jend, :) = 0.0_8
-   ww2d(1:isize, 1:jsize, :) = ww2d(1:isize, 1:jsize, :) + wd(il, &
-   &       istart:iend, jstart:jend, :)
-   wd(il, istart:iend, jstart:jend, :) = 0.0_8
-   ww3d(1:isize, 1:jsize, :) = ww3d(1:isize, 1:jsize, :) + wd(nx, &
-   &       istart:iend, jstart:jend, :)
-   wd(nx, istart:iend, jstart:jend, :) = 0.0_8
+   CALL PUSHCONTROL3B(2)
    CASE (jmin) 
-   rev0d(1:isize, 1:jsize) = rev0d(1:isize, 1:jsize) + revd(istart:&
-   &       iend, 0, jstart:jend)
-   revd(istart:iend, 0, jstart:jend) = 0.0_8
-   rev1d(1:isize, 1:jsize) = rev1d(1:isize, 1:jsize) + revd(istart:&
-   &       iend, 1, jstart:jend)
-   revd(istart:iend, 1, jstart:jend) = 0.0_8
-   rev2d(1:isize, 1:jsize) = rev2d(1:isize, 1:jsize) + revd(istart:&
-   &       iend, 2, jstart:jend)
-   revd(istart:iend, 2, jstart:jend) = 0.0_8
-   rev3d(1:isize, 1:jsize) = rev3d(1:isize, 1:jsize) + revd(istart:&
-   &       iend, 3, jstart:jend)
-   revd(istart:iend, 3, jstart:jend) = 0.0_8
-   rlv0d(1:isize, 1:jsize) = rlv0d(1:isize, 1:jsize) + rlvd(istart:&
-   &       iend, 0, jstart:jend)
-   rlvd(istart:iend, 0, jstart:jend) = 0.0_8
-   rlv1d(1:isize, 1:jsize) = rlv1d(1:isize, 1:jsize) + rlvd(istart:&
-   &       iend, 1, jstart:jend)
-   rlvd(istart:iend, 1, jstart:jend) = 0.0_8
-   rlv2d(1:isize, 1:jsize) = rlv2d(1:isize, 1:jsize) + rlvd(istart:&
-   &       iend, 2, jstart:jend)
-   rlvd(istart:iend, 2, jstart:jend) = 0.0_8
-   rlv3d(1:isize, 1:jsize) = rlv3d(1:isize, 1:jsize) + rlvd(istart:&
-   &       iend, 3, jstart:jend)
-   rlvd(istart:iend, 3, jstart:jend) = 0.0_8
-   pp0d(1:isize, 1:jsize) = pp0d(1:isize, 1:jsize) + pd(istart:iend, &
-   &       0, jstart:jend)
-   pd(istart:iend, 0, jstart:jend) = 0.0_8
-   pp1d(1:isize, 1:jsize) = pp1d(1:isize, 1:jsize) + pd(istart:iend, &
-   &       1, jstart:jend)
-   pd(istart:iend, 1, jstart:jend) = 0.0_8
-   pp2d(1:isize, 1:jsize) = pp2d(1:isize, 1:jsize) + pd(istart:iend, &
-   &       2, jstart:jend)
-   pd(istart:iend, 2, jstart:jend) = 0.0_8
-   pp3d(1:isize, 1:jsize) = pp3d(1:isize, 1:jsize) + pd(istart:iend, &
-   &       3, jstart:jend)
-   pd(istart:iend, 3, jstart:jend) = 0.0_8
-   ww0d(1:isize, 1:jsize, :) = ww0d(1:isize, 1:jsize, :) + wd(istart:&
-   &       iend, 0, jstart:jend, :)
-   wd(istart:iend, 0, jstart:jend, :) = 0.0_8
-   ww1d(1:isize, 1:jsize, :) = ww1d(1:isize, 1:jsize, :) + wd(istart:&
-   &       iend, 1, jstart:jend, :)
-   wd(istart:iend, 1, jstart:jend, :) = 0.0_8
-   ww2d(1:isize, 1:jsize, :) = ww2d(1:isize, 1:jsize, :) + wd(istart:&
-   &       iend, 2, jstart:jend, :)
-   wd(istart:iend, 2, jstart:jend, :) = 0.0_8
-   ww3d(1:isize, 1:jsize, :) = ww3d(1:isize, 1:jsize, :) + wd(istart:&
-   &       iend, 3, jstart:jend, :)
-   wd(istart:iend, 3, jstart:jend, :) = 0.0_8
+   CALL PUSHCONTROL3B(3)
    CASE (jmax) 
-   rev0d(1:isize, 1:jsize) = rev0d(1:isize, 1:jsize) + revd(istart:&
-   &       iend, jb, jstart:jend)
-   revd(istart:iend, jb, jstart:jend) = 0.0_8
-   rev1d(1:isize, 1:jsize) = rev1d(1:isize, 1:jsize) + revd(istart:&
-   &       iend, je, jstart:jend)
-   revd(istart:iend, je, jstart:jend) = 0.0_8
-   rev2d(1:isize, 1:jsize) = rev2d(1:isize, 1:jsize) + revd(istart:&
-   &       iend, jl, jstart:jend)
-   revd(istart:iend, jl, jstart:jend) = 0.0_8
-   rev3d(1:isize, 1:jsize) = rev3d(1:isize, 1:jsize) + revd(istart:&
-   &       iend, ny, jstart:jend)
-   revd(istart:iend, ny, jstart:jend) = 0.0_8
-   rlv0d(1:isize, 1:jsize) = rlv0d(1:isize, 1:jsize) + rlvd(istart:&
-   &       iend, jb, jstart:jend)
-   rlvd(istart:iend, jb, jstart:jend) = 0.0_8
-   rlv1d(1:isize, 1:jsize) = rlv1d(1:isize, 1:jsize) + rlvd(istart:&
-   &       iend, je, jstart:jend)
-   rlvd(istart:iend, je, jstart:jend) = 0.0_8
-   rlv2d(1:isize, 1:jsize) = rlv2d(1:isize, 1:jsize) + rlvd(istart:&
-   &       iend, jl, jstart:jend)
-   rlvd(istart:iend, jl, jstart:jend) = 0.0_8
-   rlv3d(1:isize, 1:jsize) = rlv3d(1:isize, 1:jsize) + rlvd(istart:&
-   &       iend, ny, jstart:jend)
-   rlvd(istart:iend, ny, jstart:jend) = 0.0_8
-   pp0d(1:isize, 1:jsize) = pp0d(1:isize, 1:jsize) + pd(istart:iend, &
-   &       jb, jstart:jend)
-   pd(istart:iend, jb, jstart:jend) = 0.0_8
-   pp1d(1:isize, 1:jsize) = pp1d(1:isize, 1:jsize) + pd(istart:iend, &
-   &       je, jstart:jend)
-   pd(istart:iend, je, jstart:jend) = 0.0_8
-   pp2d(1:isize, 1:jsize) = pp2d(1:isize, 1:jsize) + pd(istart:iend, &
-   &       jl, jstart:jend)
-   pd(istart:iend, jl, jstart:jend) = 0.0_8
-   pp3d(1:isize, 1:jsize) = pp3d(1:isize, 1:jsize) + pd(istart:iend, &
-   &       ny, jstart:jend)
-   pd(istart:iend, ny, jstart:jend) = 0.0_8
-   ww0d(1:isize, 1:jsize, :) = ww0d(1:isize, 1:jsize, :) + wd(istart:&
-   &       iend, jb, jstart:jend, :)
-   wd(istart:iend, jb, jstart:jend, :) = 0.0_8
-   ww1d(1:isize, 1:jsize, :) = ww1d(1:isize, 1:jsize, :) + wd(istart:&
-   &       iend, je, jstart:jend, :)
-   wd(istart:iend, je, jstart:jend, :) = 0.0_8
-   ww2d(1:isize, 1:jsize, :) = ww2d(1:isize, 1:jsize, :) + wd(istart:&
-   &       iend, jl, jstart:jend, :)
-   wd(istart:iend, jl, jstart:jend, :) = 0.0_8
-   ww3d(1:isize, 1:jsize, :) = ww3d(1:isize, 1:jsize, :) + wd(istart:&
-   &       iend, ny, jstart:jend, :)
-   wd(istart:iend, ny, jstart:jend, :) = 0.0_8
+   CALL PUSHCONTROL3B(4)
    CASE (kmin) 
-   rev0d(1:isize, 1:jsize) = rev0d(1:isize, 1:jsize) + revd(istart:&
-   &       iend, jstart:jend, 0)
-   revd(istart:iend, jstart:jend, 0) = 0.0_8
-   rev1d(1:isize, 1:jsize) = rev1d(1:isize, 1:jsize) + revd(istart:&
-   &       iend, jstart:jend, 1)
-   revd(istart:iend, jstart:jend, 1) = 0.0_8
-   rev2d(1:isize, 1:jsize) = rev2d(1:isize, 1:jsize) + revd(istart:&
-   &       iend, jstart:jend, 2)
-   revd(istart:iend, jstart:jend, 2) = 0.0_8
-   rev3d(1:isize, 1:jsize) = rev3d(1:isize, 1:jsize) + revd(istart:&
-   &       iend, jstart:jend, 3)
-   revd(istart:iend, jstart:jend, 3) = 0.0_8
-   rlv0d(1:isize, 1:jsize) = rlv0d(1:isize, 1:jsize) + rlvd(istart:&
-   &       iend, jstart:jend, 0)
-   rlvd(istart:iend, jstart:jend, 0) = 0.0_8
-   rlv1d(1:isize, 1:jsize) = rlv1d(1:isize, 1:jsize) + rlvd(istart:&
-   &       iend, jstart:jend, 1)
-   rlvd(istart:iend, jstart:jend, 1) = 0.0_8
-   rlv2d(1:isize, 1:jsize) = rlv2d(1:isize, 1:jsize) + rlvd(istart:&
-   &       iend, jstart:jend, 2)
-   rlvd(istart:iend, jstart:jend, 2) = 0.0_8
-   rlv3d(1:isize, 1:jsize) = rlv3d(1:isize, 1:jsize) + rlvd(istart:&
-   &       iend, jstart:jend, 3)
-   rlvd(istart:iend, jstart:jend, 3) = 0.0_8
-   pp0d(1:isize, 1:jsize) = pp0d(1:isize, 1:jsize) + pd(istart:iend, &
-   &       jstart:jend, 0)
-   pd(istart:iend, jstart:jend, 0) = 0.0_8
-   pp1d(1:isize, 1:jsize) = pp1d(1:isize, 1:jsize) + pd(istart:iend, &
-   &       jstart:jend, 1)
-   pd(istart:iend, jstart:jend, 1) = 0.0_8
-   pp2d(1:isize, 1:jsize) = pp2d(1:isize, 1:jsize) + pd(istart:iend, &
-   &       jstart:jend, 2)
-   pd(istart:iend, jstart:jend, 2) = 0.0_8
-   pp3d(1:isize, 1:jsize) = pp3d(1:isize, 1:jsize) + pd(istart:iend, &
-   &       jstart:jend, 3)
-   pd(istart:iend, jstart:jend, 3) = 0.0_8
-   ww0d(1:isize, 1:jsize, :) = ww0d(1:isize, 1:jsize, :) + wd(istart:&
-   &       iend, jstart:jend, 0, :)
-   wd(istart:iend, jstart:jend, 0, :) = 0.0_8
-   ww1d(1:isize, 1:jsize, :) = ww1d(1:isize, 1:jsize, :) + wd(istart:&
-   &       iend, jstart:jend, 1, :)
-   wd(istart:iend, jstart:jend, 1, :) = 0.0_8
-   ww2d(1:isize, 1:jsize, :) = ww2d(1:isize, 1:jsize, :) + wd(istart:&
-   &       iend, jstart:jend, 2, :)
-   wd(istart:iend, jstart:jend, 2, :) = 0.0_8
-   ww3d(1:isize, 1:jsize, :) = ww3d(1:isize, 1:jsize, :) + wd(istart:&
-   &       iend, jstart:jend, 3, :)
-   wd(istart:iend, jstart:jend, 3, :) = 0.0_8
+   CALL PUSHCONTROL3B(5)
    CASE (kmax) 
-   rev0d(1:isize, 1:jsize) = rev0d(1:isize, 1:jsize) + revd(istart:&
-   &       iend, jstart:jend, kb)
-   revd(istart:iend, jstart:jend, kb) = 0.0_8
-   rev1d(1:isize, 1:jsize) = rev1d(1:isize, 1:jsize) + revd(istart:&
-   &       iend, jstart:jend, ke)
-   revd(istart:iend, jstart:jend, ke) = 0.0_8
-   rev2d(1:isize, 1:jsize) = rev2d(1:isize, 1:jsize) + revd(istart:&
-   &       iend, jstart:jend, kl)
-   revd(istart:iend, jstart:jend, kl) = 0.0_8
-   rev3d(1:isize, 1:jsize) = rev3d(1:isize, 1:jsize) + revd(istart:&
-   &       iend, jstart:jend, nz)
-   revd(istart:iend, jstart:jend, nz) = 0.0_8
-   rlv0d(1:isize, 1:jsize) = rlv0d(1:isize, 1:jsize) + rlvd(istart:&
-   &       iend, jstart:jend, kb)
-   rlvd(istart:iend, jstart:jend, kb) = 0.0_8
-   rlv1d(1:isize, 1:jsize) = rlv1d(1:isize, 1:jsize) + rlvd(istart:&
-   &       iend, jstart:jend, ke)
-   rlvd(istart:iend, jstart:jend, ke) = 0.0_8
-   rlv2d(1:isize, 1:jsize) = rlv2d(1:isize, 1:jsize) + rlvd(istart:&
-   &       iend, jstart:jend, kl)
-   rlvd(istart:iend, jstart:jend, kl) = 0.0_8
-   rlv3d(1:isize, 1:jsize) = rlv3d(1:isize, 1:jsize) + rlvd(istart:&
-   &       iend, jstart:jend, nz)
-   rlvd(istart:iend, jstart:jend, nz) = 0.0_8
-   pp0d(1:isize, 1:jsize) = pp0d(1:isize, 1:jsize) + pd(istart:iend, &
-   &       jstart:jend, kb)
-   pd(istart:iend, jstart:jend, kb) = 0.0_8
-   pp1d(1:isize, 1:jsize) = pp1d(1:isize, 1:jsize) + pd(istart:iend, &
-   &       jstart:jend, ke)
-   pd(istart:iend, jstart:jend, ke) = 0.0_8
-   pp2d(1:isize, 1:jsize) = pp2d(1:isize, 1:jsize) + pd(istart:iend, &
-   &       jstart:jend, kl)
-   pd(istart:iend, jstart:jend, kl) = 0.0_8
-   pp3d(1:isize, 1:jsize) = pp3d(1:isize, 1:jsize) + pd(istart:iend, &
-   &       jstart:jend, nz)
-   pd(istart:iend, jstart:jend, nz) = 0.0_8
-   ww0d(1:isize, 1:jsize, :) = ww0d(1:isize, 1:jsize, :) + wd(istart:&
-   &       iend, jstart:jend, kb, :)
-   wd(istart:iend, jstart:jend, kb, :) = 0.0_8
-   ww1d(1:isize, 1:jsize, :) = ww1d(1:isize, 1:jsize, :) + wd(istart:&
-   &       iend, jstart:jend, ke, :)
-   wd(istart:iend, jstart:jend, ke, :) = 0.0_8
-   ww2d(1:isize, 1:jsize, :) = ww2d(1:isize, 1:jsize, :) + wd(istart:&
-   &       iend, jstart:jend, kl, :)
-   wd(istart:iend, jstart:jend, kl, :) = 0.0_8
-   ww3d(1:isize, 1:jsize, :) = ww3d(1:isize, 1:jsize, :) + wd(istart:&
-   &       iend, jstart:jend, nz, :)
-   wd(istart:iend, jstart:jend, nz, :) = 0.0_8
+   CALL PUSHCONTROL3B(6)
+   CASE DEFAULT
+   CALL PUSHCONTROL3B(0)
    END SELECT
-   CALL POPINTEGER4(jsize)
-   CALL POPINTEGER4(isize)
-   END SUBROUTINE RESETBCPOINTERS2_B
-   SUBROUTINE RESETBCPOINTERS2(nn)
+   ! These spatial pointers are only required for
+   ! forcesAndMoments. Eulerwall normal moment is is reverse AD'ed.
+   IF (spatialpointers) THEN
+   SELECT CASE  (bcfaceid(nn)) 
+   CASE (imin) 
+   ssid(1:je, 1:ke, :) = ssid(1:je, 1:ke, :) + sid(1, 1:je, 1:ke, :&
+   &         )
+   sid(1, 1:je, 1:ke, :) = 0.0_8
+   xxd(1:je+1, 1:ke+1, :) = xxd(1:je+1, 1:ke+1, :) + xd(1, 0:je, 0:&
+   &         ke, :)
+   xd(1, 0:je, 0:ke, :) = 0.0_8
+   CASE (imax) 
+   ssid(1:je, 1:ke, :) = ssid(1:je, 1:ke, :) + sid(il, 1:je, 1:ke, &
+   &         :)
+   sid(il, 1:je, 1:ke, :) = 0.0_8
+   xxd(1:je+1, 1:ke+1, :) = xxd(1:je+1, 1:ke+1, :) + xd(il, 0:je, 0&
+   &         :ke, :)
+   xd(il, 0:je, 0:ke, :) = 0.0_8
+   CASE (jmin) 
+   ssid(1:ie, 1:ke, :) = ssid(1:ie, 1:ke, :) + sjd(1:ie, 1, 1:ke, :&
+   &         )
+   sjd(1:ie, 1, 1:ke, :) = 0.0_8
+   xxd(1:ie+1, 1:ke+1, :) = xxd(1:ie+1, 1:ke+1, :) + xd(0:ie, 1, 0:&
+   &         ke, :)
+   xd(0:ie, 1, 0:ke, :) = 0.0_8
+   CASE (jmax) 
+   ssid(1:ie, 1:ke, :) = ssid(1:ie, 1:ke, :) + sjd(1:ie, jl, 1:ke, &
+   &         :)
+   sjd(1:ie, jl, 1:ke, :) = 0.0_8
+   xxd(1:ie+1, 1:ke+1, :) = xxd(1:ie+1, 1:ke+1, :) + xd(0:ie, jl, 0&
+   &         :ke, :)
+   xd(0:ie, jl, 0:ke, :) = 0.0_8
+   CASE (kmin) 
+   ssid(1:ie, 1:je, :) = ssid(1:ie, 1:je, :) + skd(1:ie, 1:je, 1, :&
+   &         )
+   skd(1:ie, 1:je, 1, :) = 0.0_8
+   xxd(1:ie+1, 1:je+1, :) = xxd(1:ie+1, 1:je+1, :) + xd(0:ie, 0:je&
+   &         , 1, :)
+   xd(0:ie, 0:je, 1, :) = 0.0_8
+   CASE (kmax) 
+   ssid(1:ie, 1:je, :) = ssid(1:ie, 1:je, :) + skd(1:ie, 1:je, kl, &
+   &         :)
+   skd(1:ie, 1:je, kl, :) = 0.0_8
+   xxd(1:ie+1, 1:je+1, :) = xxd(1:ie+1, 1:je+1, :) + xd(0:ie, 0:je&
+   &         , kl, :)
+   xd(0:ie, 0:je, kl, :) = 0.0_8
+   END SELECT
+   END IF
+   CALL POPCONTROL3B(branch)
+   IF (branch .LT. 3) THEN
+   IF (branch .NE. 0) THEN
+   IF (branch .EQ. 1) THEN
+   rev0d(1:je, 1:ke) = rev0d(1:je, 1:ke) + revd(0, 1:je, 1:ke)
+   revd(0, 1:je, 1:ke) = 0.0_8
+   rev1d(1:je, 1:ke) = rev1d(1:je, 1:ke) + revd(1, 1:je, 1:ke)
+   revd(1, 1:je, 1:ke) = 0.0_8
+   rev2d(1:je, 1:ke) = rev2d(1:je, 1:ke) + revd(2, 1:je, 1:ke)
+   revd(2, 1:je, 1:ke) = 0.0_8
+   rev3d(1:je, 1:ke) = rev3d(1:je, 1:ke) + revd(3, 1:je, 1:ke)
+   revd(3, 1:je, 1:ke) = 0.0_8
+   rlv0d(1:je, 1:ke) = rlv0d(1:je, 1:ke) + rlvd(0, 1:je, 1:ke)
+   rlvd(0, 1:je, 1:ke) = 0.0_8
+   rlv1d(1:je, 1:ke) = rlv1d(1:je, 1:ke) + rlvd(1, 1:je, 1:ke)
+   rlvd(1, 1:je, 1:ke) = 0.0_8
+   rlv2d(1:je, 1:ke) = rlv2d(1:je, 1:ke) + rlvd(2, 1:je, 1:ke)
+   rlvd(2, 1:je, 1:ke) = 0.0_8
+   rlv3d(1:je, 1:ke) = rlv3d(1:je, 1:ke) + rlvd(3, 1:je, 1:ke)
+   rlvd(3, 1:je, 1:ke) = 0.0_8
+   pp0d(1:je, 1:ke) = pp0d(1:je, 1:ke) + pd(0, 1:je, 1:ke)
+   pd(0, 1:je, 1:ke) = 0.0_8
+   pp1d(1:je, 1:ke) = pp1d(1:je, 1:ke) + pd(1, 1:je, 1:ke)
+   pd(1, 1:je, 1:ke) = 0.0_8
+   pp2d(1:je, 1:ke) = pp2d(1:je, 1:ke) + pd(2, 1:je, 1:ke)
+   pd(2, 1:je, 1:ke) = 0.0_8
+   pp3d(1:je, 1:ke) = pp3d(1:je, 1:ke) + pd(3, 1:je, 1:ke)
+   pd(3, 1:je, 1:ke) = 0.0_8
+   ww0d(1:je, 1:ke, :) = ww0d(1:je, 1:ke, :) + wd(0, 1:je, 1:ke, &
+   &           :)
+   wd(0, 1:je, 1:ke, :) = 0.0_8
+   ww1d(1:je, 1:ke, :) = ww1d(1:je, 1:ke, :) + wd(1, 1:je, 1:ke, &
+   &           :)
+   wd(1, 1:je, 1:ke, :) = 0.0_8
+   ww2d(1:je, 1:ke, :) = ww2d(1:je, 1:ke, :) + wd(2, 1:je, 1:ke, &
+   &           :)
+   wd(2, 1:je, 1:ke, :) = 0.0_8
+   ww3d(1:je, 1:ke, :) = ww3d(1:je, 1:ke, :) + wd(3, 1:je, 1:ke, &
+   &           :)
+   wd(3, 1:je, 1:ke, :) = 0.0_8
+   ELSE
+   rev0d(1:je, 1:ke) = rev0d(1:je, 1:ke) + revd(ib, 1:je, 1:ke)
+   revd(ib, 1:je, 1:ke) = 0.0_8
+   rev1d(1:je, 1:ke) = rev1d(1:je, 1:ke) + revd(ie, 1:je, 1:ke)
+   revd(ie, 1:je, 1:ke) = 0.0_8
+   rev2d(1:je, 1:ke) = rev2d(1:je, 1:ke) + revd(il, 1:je, 1:ke)
+   revd(il, 1:je, 1:ke) = 0.0_8
+   rev3d(1:je, 1:ke) = rev3d(1:je, 1:ke) + revd(nx, 1:je, 1:ke)
+   revd(nx, 1:je, 1:ke) = 0.0_8
+   rlv0d(1:je, 1:ke) = rlv0d(1:je, 1:ke) + rlvd(ib, 1:je, 1:ke)
+   rlvd(ib, 1:je, 1:ke) = 0.0_8
+   rlv1d(1:je, 1:ke) = rlv1d(1:je, 1:ke) + rlvd(ie, 1:je, 1:ke)
+   rlvd(ie, 1:je, 1:ke) = 0.0_8
+   rlv2d(1:je, 1:ke) = rlv2d(1:je, 1:ke) + rlvd(il, 1:je, 1:ke)
+   rlvd(il, 1:je, 1:ke) = 0.0_8
+   rlv3d(1:je, 1:ke) = rlv3d(1:je, 1:ke) + rlvd(nx, 1:je, 1:ke)
+   rlvd(nx, 1:je, 1:ke) = 0.0_8
+   pp0d(1:je, 1:ke) = pp0d(1:je, 1:ke) + pd(ib, 1:je, 1:ke)
+   pd(ib, 1:je, 1:ke) = 0.0_8
+   pp1d(1:je, 1:ke) = pp1d(1:je, 1:ke) + pd(ie, 1:je, 1:ke)
+   pd(ie, 1:je, 1:ke) = 0.0_8
+   pp2d(1:je, 1:ke) = pp2d(1:je, 1:ke) + pd(il, 1:je, 1:ke)
+   pd(il, 1:je, 1:ke) = 0.0_8
+   pp3d(1:je, 1:ke) = pp3d(1:je, 1:ke) + pd(nx, 1:je, 1:ke)
+   pd(nx, 1:je, 1:ke) = 0.0_8
+   ww0d(1:je, 1:ke, :) = ww0d(1:je, 1:ke, :) + wd(ib, 1:je, 1:ke&
+   &           , :)
+   wd(ib, 1:je, 1:ke, :) = 0.0_8
+   ww1d(1:je, 1:ke, :) = ww1d(1:je, 1:ke, :) + wd(ie, 1:je, 1:ke&
+   &           , :)
+   wd(ie, 1:je, 1:ke, :) = 0.0_8
+   ww2d(1:je, 1:ke, :) = ww2d(1:je, 1:ke, :) + wd(il, 1:je, 1:ke&
+   &           , :)
+   wd(il, 1:je, 1:ke, :) = 0.0_8
+   ww3d(1:je, 1:ke, :) = ww3d(1:je, 1:ke, :) + wd(nx, 1:je, 1:ke&
+   &           , :)
+   wd(nx, 1:je, 1:ke, :) = 0.0_8
+   END IF
+   END IF
+   ELSE IF (branch .LT. 5) THEN
+   IF (branch .EQ. 3) THEN
+   rev0d(1:ie, 1:ke) = rev0d(1:ie, 1:ke) + revd(1:ie, 0, 1:ke)
+   revd(1:ie, 0, 1:ke) = 0.0_8
+   rev1d(1:ie, 1:ke) = rev1d(1:ie, 1:ke) + revd(1:ie, 1, 1:ke)
+   revd(1:ie, 1, 1:ke) = 0.0_8
+   rev2d(1:ie, 1:ke) = rev2d(1:ie, 1:ke) + revd(1:ie, 2, 1:ke)
+   revd(1:ie, 2, 1:ke) = 0.0_8
+   rev3d(1:ie, 1:ke) = rev3d(1:ie, 1:ke) + revd(1:ie, 3, 1:ke)
+   revd(1:ie, 3, 1:ke) = 0.0_8
+   rlv0d(1:ie, 1:ke) = rlv0d(1:ie, 1:ke) + rlvd(1:ie, 0, 1:ke)
+   rlvd(1:ie, 0, 1:ke) = 0.0_8
+   rlv1d(1:ie, 1:ke) = rlv1d(1:ie, 1:ke) + rlvd(1:ie, 1, 1:ke)
+   rlvd(1:ie, 1, 1:ke) = 0.0_8
+   rlv2d(1:ie, 1:ke) = rlv2d(1:ie, 1:ke) + rlvd(1:ie, 2, 1:ke)
+   rlvd(1:ie, 2, 1:ke) = 0.0_8
+   rlv3d(1:ie, 1:ke) = rlv3d(1:ie, 1:ke) + rlvd(1:ie, 3, 1:ke)
+   rlvd(1:ie, 3, 1:ke) = 0.0_8
+   pp0d(1:ie, 1:ke) = pp0d(1:ie, 1:ke) + pd(1:ie, 0, 1:ke)
+   pd(1:ie, 0, 1:ke) = 0.0_8
+   pp1d(1:ie, 1:ke) = pp1d(1:ie, 1:ke) + pd(1:ie, 1, 1:ke)
+   pd(1:ie, 1, 1:ke) = 0.0_8
+   pp2d(1:ie, 1:ke) = pp2d(1:ie, 1:ke) + pd(1:ie, 2, 1:ke)
+   pd(1:ie, 2, 1:ke) = 0.0_8
+   pp3d(1:ie, 1:ke) = pp3d(1:ie, 1:ke) + pd(1:ie, 3, 1:ke)
+   pd(1:ie, 3, 1:ke) = 0.0_8
+   ww0d(1:ie, 1:ke, :) = ww0d(1:ie, 1:ke, :) + wd(1:ie, 0, 1:ke, :)
+   wd(1:ie, 0, 1:ke, :) = 0.0_8
+   ww1d(1:ie, 1:ke, :) = ww1d(1:ie, 1:ke, :) + wd(1:ie, 1, 1:ke, :)
+   wd(1:ie, 1, 1:ke, :) = 0.0_8
+   ww2d(1:ie, 1:ke, :) = ww2d(1:ie, 1:ke, :) + wd(1:ie, 2, 1:ke, :)
+   wd(1:ie, 2, 1:ke, :) = 0.0_8
+   ww3d(1:ie, 1:ke, :) = ww3d(1:ie, 1:ke, :) + wd(1:ie, 3, 1:ke, :)
+   wd(1:ie, 3, 1:ke, :) = 0.0_8
+   ELSE
+   rev0d(1:ie, 1:ke) = rev0d(1:ie, 1:ke) + revd(1:ie, jb, 1:ke)
+   revd(1:ie, jb, 1:ke) = 0.0_8
+   rev1d(1:ie, 1:ke) = rev1d(1:ie, 1:ke) + revd(1:ie, je, 1:ke)
+   revd(1:ie, je, 1:ke) = 0.0_8
+   rev2d(1:ie, 1:ke) = rev2d(1:ie, 1:ke) + revd(1:ie, jl, 1:ke)
+   revd(1:ie, jl, 1:ke) = 0.0_8
+   rev3d(1:ie, 1:ke) = rev3d(1:ie, 1:ke) + revd(1:ie, ny, 1:ke)
+   revd(1:ie, ny, 1:ke) = 0.0_8
+   rlv0d(1:ie, 1:ke) = rlv0d(1:ie, 1:ke) + rlvd(1:ie, jb, 1:ke)
+   rlvd(1:ie, jb, 1:ke) = 0.0_8
+   rlv1d(1:ie, 1:ke) = rlv1d(1:ie, 1:ke) + rlvd(1:ie, je, 1:ke)
+   rlvd(1:ie, je, 1:ke) = 0.0_8
+   rlv2d(1:ie, 1:ke) = rlv2d(1:ie, 1:ke) + rlvd(1:ie, jl, 1:ke)
+   rlvd(1:ie, jl, 1:ke) = 0.0_8
+   rlv3d(1:ie, 1:ke) = rlv3d(1:ie, 1:ke) + rlvd(1:ie, ny, 1:ke)
+   rlvd(1:ie, ny, 1:ke) = 0.0_8
+   pp0d(1:ie, 1:ke) = pp0d(1:ie, 1:ke) + pd(1:ie, jb, 1:ke)
+   pd(1:ie, jb, 1:ke) = 0.0_8
+   pp1d(1:ie, 1:ke) = pp1d(1:ie, 1:ke) + pd(1:ie, je, 1:ke)
+   pd(1:ie, je, 1:ke) = 0.0_8
+   pp2d(1:ie, 1:ke) = pp2d(1:ie, 1:ke) + pd(1:ie, jl, 1:ke)
+   pd(1:ie, jl, 1:ke) = 0.0_8
+   pp3d(1:ie, 1:ke) = pp3d(1:ie, 1:ke) + pd(1:ie, ny, 1:ke)
+   pd(1:ie, ny, 1:ke) = 0.0_8
+   ww0d(1:ie, 1:ke, :) = ww0d(1:ie, 1:ke, :) + wd(1:ie, jb, 1:ke, :&
+   &         )
+   wd(1:ie, jb, 1:ke, :) = 0.0_8
+   ww1d(1:ie, 1:ke, :) = ww1d(1:ie, 1:ke, :) + wd(1:ie, je, 1:ke, :&
+   &         )
+   wd(1:ie, je, 1:ke, :) = 0.0_8
+   ww2d(1:ie, 1:ke, :) = ww2d(1:ie, 1:ke, :) + wd(1:ie, jl, 1:ke, :&
+   &         )
+   wd(1:ie, jl, 1:ke, :) = 0.0_8
+   ww3d(1:ie, 1:ke, :) = ww3d(1:ie, 1:ke, :) + wd(1:ie, ny, 1:ke, :&
+   &         )
+   wd(1:ie, ny, 1:ke, :) = 0.0_8
+   END IF
+   ELSE IF (branch .EQ. 5) THEN
+   rev0d(1:ie, 1:je) = rev0d(1:ie, 1:je) + revd(1:ie, 1:je, 0)
+   revd(1:ie, 1:je, 0) = 0.0_8
+   rev1d(1:ie, 1:je) = rev1d(1:ie, 1:je) + revd(1:ie, 1:je, 1)
+   revd(1:ie, 1:je, 1) = 0.0_8
+   rev2d(1:ie, 1:je) = rev2d(1:ie, 1:je) + revd(1:ie, 1:je, 2)
+   revd(1:ie, 1:je, 2) = 0.0_8
+   rev3d(1:ie, 1:je) = rev3d(1:ie, 1:je) + revd(1:ie, 1:je, 3)
+   revd(1:ie, 1:je, 3) = 0.0_8
+   rlv0d(1:ie, 1:je) = rlv0d(1:ie, 1:je) + rlvd(1:ie, 1:je, 0)
+   rlvd(1:ie, 1:je, 0) = 0.0_8
+   rlv1d(1:ie, 1:je) = rlv1d(1:ie, 1:je) + rlvd(1:ie, 1:je, 1)
+   rlvd(1:ie, 1:je, 1) = 0.0_8
+   rlv2d(1:ie, 1:je) = rlv2d(1:ie, 1:je) + rlvd(1:ie, 1:je, 2)
+   rlvd(1:ie, 1:je, 2) = 0.0_8
+   rlv3d(1:ie, 1:je) = rlv3d(1:ie, 1:je) + rlvd(1:ie, 1:je, 3)
+   rlvd(1:ie, 1:je, 3) = 0.0_8
+   pp0d(1:ie, 1:je) = pp0d(1:ie, 1:je) + pd(1:ie, 1:je, 0)
+   pd(1:ie, 1:je, 0) = 0.0_8
+   pp1d(1:ie, 1:je) = pp1d(1:ie, 1:je) + pd(1:ie, 1:je, 1)
+   pd(1:ie, 1:je, 1) = 0.0_8
+   pp2d(1:ie, 1:je) = pp2d(1:ie, 1:je) + pd(1:ie, 1:je, 2)
+   pd(1:ie, 1:je, 2) = 0.0_8
+   pp3d(1:ie, 1:je) = pp3d(1:ie, 1:je) + pd(1:ie, 1:je, 3)
+   pd(1:ie, 1:je, 3) = 0.0_8
+   ww0d(1:ie, 1:je, :) = ww0d(1:ie, 1:je, :) + wd(1:ie, 1:je, 0, :)
+   wd(1:ie, 1:je, 0, :) = 0.0_8
+   ww1d(1:ie, 1:je, :) = ww1d(1:ie, 1:je, :) + wd(1:ie, 1:je, 1, :)
+   wd(1:ie, 1:je, 1, :) = 0.0_8
+   ww2d(1:ie, 1:je, :) = ww2d(1:ie, 1:je, :) + wd(1:ie, 1:je, 2, :)
+   wd(1:ie, 1:je, 2, :) = 0.0_8
+   ww3d(1:ie, 1:je, :) = ww3d(1:ie, 1:je, :) + wd(1:ie, 1:je, 3, :)
+   wd(1:ie, 1:je, 3, :) = 0.0_8
+   ELSE
+   rev0d(1:ie, 1:je) = rev0d(1:ie, 1:je) + revd(1:ie, 1:je, kb)
+   revd(1:ie, 1:je, kb) = 0.0_8
+   rev1d(1:ie, 1:je) = rev1d(1:ie, 1:je) + revd(1:ie, 1:je, ke)
+   revd(1:ie, 1:je, ke) = 0.0_8
+   rev2d(1:ie, 1:je) = rev2d(1:ie, 1:je) + revd(1:ie, 1:je, kl)
+   revd(1:ie, 1:je, kl) = 0.0_8
+   rev3d(1:ie, 1:je) = rev3d(1:ie, 1:je) + revd(1:ie, 1:je, nz)
+   revd(1:ie, 1:je, nz) = 0.0_8
+   rlv0d(1:ie, 1:je) = rlv0d(1:ie, 1:je) + rlvd(1:ie, 1:je, kb)
+   rlvd(1:ie, 1:je, kb) = 0.0_8
+   rlv1d(1:ie, 1:je) = rlv1d(1:ie, 1:je) + rlvd(1:ie, 1:je, ke)
+   rlvd(1:ie, 1:je, ke) = 0.0_8
+   rlv2d(1:ie, 1:je) = rlv2d(1:ie, 1:je) + rlvd(1:ie, 1:je, kl)
+   rlvd(1:ie, 1:je, kl) = 0.0_8
+   rlv3d(1:ie, 1:je) = rlv3d(1:ie, 1:je) + rlvd(1:ie, 1:je, nz)
+   rlvd(1:ie, 1:je, nz) = 0.0_8
+   pp0d(1:ie, 1:je) = pp0d(1:ie, 1:je) + pd(1:ie, 1:je, kb)
+   pd(1:ie, 1:je, kb) = 0.0_8
+   pp1d(1:ie, 1:je) = pp1d(1:ie, 1:je) + pd(1:ie, 1:je, ke)
+   pd(1:ie, 1:je, ke) = 0.0_8
+   pp2d(1:ie, 1:je) = pp2d(1:ie, 1:je) + pd(1:ie, 1:je, kl)
+   pd(1:ie, 1:je, kl) = 0.0_8
+   pp3d(1:ie, 1:je) = pp3d(1:ie, 1:je) + pd(1:ie, 1:je, nz)
+   pd(1:ie, 1:je, nz) = 0.0_8
+   ww0d(1:ie, 1:je, :) = ww0d(1:ie, 1:je, :) + wd(1:ie, 1:je, kb, :)
+   wd(1:ie, 1:je, kb, :) = 0.0_8
+   ww1d(1:ie, 1:je, :) = ww1d(1:ie, 1:je, :) + wd(1:ie, 1:je, ke, :)
+   wd(1:ie, 1:je, ke, :) = 0.0_8
+   ww2d(1:ie, 1:je, :) = ww2d(1:ie, 1:je, :) + wd(1:ie, 1:je, kl, :)
+   wd(1:ie, 1:je, kl, :) = 0.0_8
+   ww3d(1:ie, 1:je, :) = ww3d(1:ie, 1:je, :) + wd(1:ie, 1:je, nz, :)
+   wd(1:ie, 1:je, nz, :) = 0.0_8
+   END IF
+   END SUBROUTINE RESETBCPOINTERS_B
+   SUBROUTINE RESETBCPOINTERS(nn, spatialpointers)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -3098,150 +3180,166 @@
    USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
    IMPLICIT NONE
-   ! Note that the ss{i,j,}, ss and xline pointers are NOT included
-   ! here since they are not AD'ed. 
    ! Subroutine arguments.
    INTEGER(kind=inttype), INTENT(IN) :: nn
-   ! Local variables
-   INTEGER(kind=inttype) :: istart, iend, jstart, jend
-   ! Determine the face id on which the subface is located and set
-   ! the pointers accordinly.
-   istart = bcdata(nn)%icbeg
-   iend = bcdata(nn)%icend
-   jstart = bcdata(nn)%jcbeg
-   jend = bcdata(nn)%jcend
-   ! Set the size of the subface
-   isize = iend - istart + 1
-   jsize = jend - jstart + 1
+   LOGICAL, INTENT(IN) :: spatialpointers
    SELECT CASE  (bcfaceid(nn)) 
    CASE (imin) 
    !===============================================================
-   w(3, istart:iend, jstart:jend, :) = ww3(1:isize, 1:jsize, :)
-   w(2, istart:iend, jstart:jend, :) = ww2(1:isize, 1:jsize, :)
-   w(1, istart:iend, jstart:jend, :) = ww1(1:isize, 1:jsize, :)
-   w(0, istart:iend, jstart:jend, :) = ww0(1:isize, 1:jsize, :)
-   p(3, istart:iend, jstart:jend) = pp3(1:isize, 1:jsize)
-   p(2, istart:iend, jstart:jend) = pp2(1:isize, 1:jsize)
-   p(1, istart:iend, jstart:jend) = pp1(1:isize, 1:jsize)
-   p(0, istart:iend, jstart:jend) = pp0(1:isize, 1:jsize)
-   rlv(3, istart:iend, jstart:jend) = rlv3(1:isize, 1:jsize)
-   rlv(2, istart:iend, jstart:jend) = rlv2(1:isize, 1:jsize)
-   rlv(1, istart:iend, jstart:jend) = rlv1(1:isize, 1:jsize)
-   rlv(0, istart:iend, jstart:jend) = rlv0(1:isize, 1:jsize)
-   rev(3, istart:iend, jstart:jend) = rev3(1:isize, 1:jsize)
-   rev(2, istart:iend, jstart:jend) = rev2(1:isize, 1:jsize)
-   rev(1, istart:iend, jstart:jend) = rev1(1:isize, 1:jsize)
-   rev(0, istart:iend, jstart:jend) = rev0(1:isize, 1:jsize)
-   gamma(3, istart:iend, jstart:jend) = gamma3(1:isize, 1:jsize)
-   gamma(2, istart:iend, jstart:jend) = gamma2(1:isize, 1:jsize)
-   gamma(1, istart:iend, jstart:jend) = gamma1(1:isize, 1:jsize)
-   gamma(0, istart:iend, jstart:jend) = gamma0(1:isize, 1:jsize)
+   w(3, 1:je, 1:ke, :) = ww3(1:je, 1:ke, :)
+   w(2, 1:je, 1:ke, :) = ww2(1:je, 1:ke, :)
+   w(1, 1:je, 1:ke, :) = ww1(1:je, 1:ke, :)
+   w(0, 1:je, 1:ke, :) = ww0(1:je, 1:ke, :)
+   p(3, 1:je, 1:ke) = pp3(1:je, 1:ke)
+   p(2, 1:je, 1:ke) = pp2(1:je, 1:ke)
+   p(1, 1:je, 1:ke) = pp1(1:je, 1:ke)
+   p(0, 1:je, 1:ke) = pp0(1:je, 1:ke)
+   rlv(3, 1:je, 1:ke) = rlv3(1:je, 1:ke)
+   rlv(2, 1:je, 1:ke) = rlv2(1:je, 1:ke)
+   rlv(1, 1:je, 1:ke) = rlv1(1:je, 1:ke)
+   rlv(0, 1:je, 1:ke) = rlv0(1:je, 1:ke)
+   rev(3, 1:je, 1:ke) = rev3(1:je, 1:ke)
+   rev(2, 1:je, 1:ke) = rev2(1:je, 1:ke)
+   rev(1, 1:je, 1:ke) = rev1(1:je, 1:ke)
+   rev(0, 1:je, 1:ke) = rev0(1:je, 1:ke)
+   gamma(3, 1:je, 1:ke) = gamma3(1:je, 1:ke)
+   gamma(2, 1:je, 1:ke) = gamma2(1:je, 1:ke)
+   gamma(1, 1:je, 1:ke) = gamma1(1:je, 1:ke)
+   gamma(0, 1:je, 1:ke) = gamma0(1:je, 1:ke)
    CASE (imax) 
    !===============================================================
-   w(nx, istart:iend, jstart:jend, :) = ww3(1:isize, 1:jsize, :)
-   w(il, istart:iend, jstart:jend, :) = ww2(1:isize, 1:jsize, :)
-   w(ie, istart:iend, jstart:jend, :) = ww1(1:isize, 1:jsize, :)
-   w(ib, istart:iend, jstart:jend, :) = ww0(1:isize, 1:jsize, :)
-   p(nx, istart:iend, jstart:jend) = pp3(1:isize, 1:jsize)
-   p(il, istart:iend, jstart:jend) = pp2(1:isize, 1:jsize)
-   p(ie, istart:iend, jstart:jend) = pp1(1:isize, 1:jsize)
-   p(ib, istart:iend, jstart:jend) = pp0(1:isize, 1:jsize)
-   rlv(nx, istart:iend, jstart:jend) = rlv3(1:isize, 1:jsize)
-   rlv(il, istart:iend, jstart:jend) = rlv2(1:isize, 1:jsize)
-   rlv(ie, istart:iend, jstart:jend) = rlv1(1:isize, 1:jsize)
-   rlv(ib, istart:iend, jstart:jend) = rlv0(1:isize, 1:jsize)
-   rev(nx, istart:iend, jstart:jend) = rev3(1:isize, 1:jsize)
-   rev(il, istart:iend, jstart:jend) = rev2(1:isize, 1:jsize)
-   rev(ie, istart:iend, jstart:jend) = rev1(1:isize, 1:jsize)
-   rev(ib, istart:iend, jstart:jend) = rev0(1:isize, 1:jsize)
-   gamma(nx, istart:iend, jstart:jend) = gamma3(1:isize, 1:jsize)
-   gamma(il, istart:iend, jstart:jend) = gamma2(1:isize, 1:jsize)
-   gamma(ie, istart:iend, jstart:jend) = gamma1(1:isize, 1:jsize)
-   gamma(ib, istart:iend, jstart:jend) = gamma0(1:isize, 1:jsize)
+   w(nx, 1:je, 1:ke, :) = ww3(1:je, 1:ke, :)
+   w(il, 1:je, 1:ke, :) = ww2(1:je, 1:ke, :)
+   w(ie, 1:je, 1:ke, :) = ww1(1:je, 1:ke, :)
+   w(ib, 1:je, 1:ke, :) = ww0(1:je, 1:ke, :)
+   p(nx, 1:je, 1:ke) = pp3(1:je, 1:ke)
+   p(il, 1:je, 1:ke) = pp2(1:je, 1:ke)
+   p(ie, 1:je, 1:ke) = pp1(1:je, 1:ke)
+   p(ib, 1:je, 1:ke) = pp0(1:je, 1:ke)
+   rlv(nx, 1:je, 1:ke) = rlv3(1:je, 1:ke)
+   rlv(il, 1:je, 1:ke) = rlv2(1:je, 1:ke)
+   rlv(ie, 1:je, 1:ke) = rlv1(1:je, 1:ke)
+   rlv(ib, 1:je, 1:ke) = rlv0(1:je, 1:ke)
+   rev(nx, 1:je, 1:ke) = rev3(1:je, 1:ke)
+   rev(il, 1:je, 1:ke) = rev2(1:je, 1:ke)
+   rev(ie, 1:je, 1:ke) = rev1(1:je, 1:ke)
+   rev(ib, 1:je, 1:ke) = rev0(1:je, 1:ke)
+   gamma(nx, 1:je, 1:ke) = gamma3(1:je, 1:ke)
+   gamma(il, 1:je, 1:ke) = gamma2(1:je, 1:ke)
+   gamma(ie, 1:je, 1:ke) = gamma1(1:je, 1:ke)
+   gamma(ib, 1:je, 1:ke) = gamma0(1:je, 1:ke)
    CASE (jmin) 
    !===============================================================
-   w(istart:iend, 3, jstart:jend, :) = ww3(1:isize, 1:jsize, :)
-   w(istart:iend, 2, jstart:jend, :) = ww2(1:isize, 1:jsize, :)
-   w(istart:iend, 1, jstart:jend, :) = ww1(1:isize, 1:jsize, :)
-   w(istart:iend, 0, jstart:jend, :) = ww0(1:isize, 1:jsize, :)
-   p(istart:iend, 3, jstart:jend) = pp3(1:isize, 1:jsize)
-   p(istart:iend, 2, jstart:jend) = pp2(1:isize, 1:jsize)
-   p(istart:iend, 1, jstart:jend) = pp1(1:isize, 1:jsize)
-   p(istart:iend, 0, jstart:jend) = pp0(1:isize, 1:jsize)
-   rlv(istart:iend, 3, jstart:jend) = rlv3(1:isize, 1:jsize)
-   rlv(istart:iend, 2, jstart:jend) = rlv2(1:isize, 1:jsize)
-   rlv(istart:iend, 1, jstart:jend) = rlv1(1:isize, 1:jsize)
-   rlv(istart:iend, 0, jstart:jend) = rlv0(1:isize, 1:jsize)
-   rev(istart:iend, 3, jstart:jend) = rev3(1:isize, 1:jsize)
-   rev(istart:iend, 2, jstart:jend) = rev2(1:isize, 1:jsize)
-   rev(istart:iend, 1, jstart:jend) = rev1(1:isize, 1:jsize)
-   rev(istart:iend, 0, jstart:jend) = rev0(1:isize, 1:jsize)
-   gamma(istart:iend, 3, jstart:jend) = gamma3(1:isize, 1:jsize)
-   gamma(istart:iend, 2, jstart:jend) = gamma2(1:isize, 1:jsize)
-   gamma(istart:iend, 1, jstart:jend) = gamma1(1:isize, 1:jsize)
-   gamma(istart:iend, 0, jstart:jend) = gamma0(1:isize, 1:jsize)
+   w(1:ie, 3, 1:ke, :) = ww3(1:ie, 1:ke, :)
+   w(1:ie, 2, 1:ke, :) = ww2(1:ie, 1:ke, :)
+   w(1:ie, 1, 1:ke, :) = ww1(1:ie, 1:ke, :)
+   w(1:ie, 0, 1:ke, :) = ww0(1:ie, 1:ke, :)
+   p(1:ie, 3, 1:ke) = pp3(1:ie, 1:ke)
+   p(1:ie, 2, 1:ke) = pp2(1:ie, 1:ke)
+   p(1:ie, 1, 1:ke) = pp1(1:ie, 1:ke)
+   p(1:ie, 0, 1:ke) = pp0(1:ie, 1:ke)
+   rlv(1:ie, 3, 1:ke) = rlv3(1:ie, 1:ke)
+   rlv(1:ie, 2, 1:ke) = rlv2(1:ie, 1:ke)
+   rlv(1:ie, 1, 1:ke) = rlv1(1:ie, 1:ke)
+   rlv(1:ie, 0, 1:ke) = rlv0(1:ie, 1:ke)
+   rev(1:ie, 3, 1:ke) = rev3(1:ie, 1:ke)
+   rev(1:ie, 2, 1:ke) = rev2(1:ie, 1:ke)
+   rev(1:ie, 1, 1:ke) = rev1(1:ie, 1:ke)
+   rev(1:ie, 0, 1:ke) = rev0(1:ie, 1:ke)
+   gamma(1:ie, 3, 1:ke) = gamma3(1:ie, 1:ke)
+   gamma(1:ie, 2, 1:ke) = gamma2(1:ie, 1:ke)
+   gamma(1:ie, 1, 1:ke) = gamma1(1:ie, 1:ke)
+   gamma(1:ie, 0, 1:ke) = gamma0(1:ie, 1:ke)
    CASE (jmax) 
    !===============================================================
-   w(istart:iend, ny, jstart:jend, :) = ww3(1:isize, 1:jsize, :)
-   w(istart:iend, jl, jstart:jend, :) = ww2(1:isize, 1:jsize, :)
-   w(istart:iend, je, jstart:jend, :) = ww1(1:isize, 1:jsize, :)
-   w(istart:iend, jb, jstart:jend, :) = ww0(1:isize, 1:jsize, :)
-   p(istart:iend, ny, jstart:jend) = pp3(1:isize, 1:jsize)
-   p(istart:iend, jl, jstart:jend) = pp2(1:isize, 1:jsize)
-   p(istart:iend, je, jstart:jend) = pp1(1:isize, 1:jsize)
-   p(istart:iend, jb, jstart:jend) = pp0(1:isize, 1:jsize)
-   rlv(istart:iend, ny, jstart:jend) = rlv3(1:isize, 1:jsize)
-   rlv(istart:iend, jl, jstart:jend) = rlv2(1:isize, 1:jsize)
-   rlv(istart:iend, je, jstart:jend) = rlv1(1:isize, 1:jsize)
-   rlv(istart:iend, jb, jstart:jend) = rlv0(1:isize, 1:jsize)
-   rev(istart:iend, ny, jstart:jend) = rev3(1:isize, 1:jsize)
-   rev(istart:iend, jl, jstart:jend) = rev2(1:isize, 1:jsize)
-   rev(istart:iend, je, jstart:jend) = rev1(1:isize, 1:jsize)
-   rev(istart:iend, jb, jstart:jend) = rev0(1:isize, 1:jsize)
-   gamma(istart:iend, ny, jstart:jend) = gamma3(1:isize, 1:jsize)
-   gamma(istart:iend, jl, jstart:jend) = gamma2(1:isize, 1:jsize)
-   gamma(istart:iend, je, jstart:jend) = gamma1(1:isize, 1:jsize)
-   gamma(istart:iend, jb, jstart:jend) = gamma0(1:isize, 1:jsize)
+   w(1:ie, ny, 1:ke, :) = ww3(1:ie, 1:ke, :)
+   w(1:ie, jl, 1:ke, :) = ww2(1:ie, 1:ke, :)
+   w(1:ie, je, 1:ke, :) = ww1(1:ie, 1:ke, :)
+   w(1:ie, jb, 1:ke, :) = ww0(1:ie, 1:ke, :)
+   p(1:ie, ny, 1:ke) = pp3(1:ie, 1:ke)
+   p(1:ie, jl, 1:ke) = pp2(1:ie, 1:ke)
+   p(1:ie, je, 1:ke) = pp1(1:ie, 1:ke)
+   p(1:ie, jb, 1:ke) = pp0(1:ie, 1:ke)
+   rlv(1:ie, ny, 1:ke) = rlv3(1:ie, 1:ke)
+   rlv(1:ie, jl, 1:ke) = rlv2(1:ie, 1:ke)
+   rlv(1:ie, je, 1:ke) = rlv1(1:ie, 1:ke)
+   rlv(1:ie, jb, 1:ke) = rlv0(1:ie, 1:ke)
+   rev(1:ie, ny, 1:ke) = rev3(1:ie, 1:ke)
+   rev(1:ie, jl, 1:ke) = rev2(1:ie, 1:ke)
+   rev(1:ie, je, 1:ke) = rev1(1:ie, 1:ke)
+   rev(1:ie, jb, 1:ke) = rev0(1:ie, 1:ke)
+   gamma(1:ie, ny, 1:ke) = gamma3(1:ie, 1:ke)
+   gamma(1:ie, jl, 1:ke) = gamma2(1:ie, 1:ke)
+   gamma(1:ie, je, 1:ke) = gamma1(1:ie, 1:ke)
+   gamma(1:ie, jb, 1:ke) = gamma0(1:ie, 1:ke)
    CASE (kmin) 
    !===============================================================
-   w(istart:iend, jstart:jend, 3, :) = ww3(1:isize, 1:jsize, :)
-   w(istart:iend, jstart:jend, 2, :) = ww2(1:isize, 1:jsize, :)
-   w(istart:iend, jstart:jend, 1, :) = ww1(1:isize, 1:jsize, :)
-   w(istart:iend, jstart:jend, 0, :) = ww0(1:isize, 1:jsize, :)
-   p(istart:iend, jstart:jend, 3) = pp3(1:isize, 1:jsize)
-   p(istart:iend, jstart:jend, 2) = pp2(1:isize, 1:jsize)
-   p(istart:iend, jstart:jend, 1) = pp1(1:isize, 1:jsize)
-   p(istart:iend, jstart:jend, 0) = pp0(1:isize, 1:jsize)
-   rlv(istart:iend, jstart:jend, 3) = rlv3(1:isize, 1:jsize)
-   rlv(istart:iend, jstart:jend, 2) = rlv2(1:isize, 1:jsize)
-   rlv(istart:iend, jstart:jend, 1) = rlv1(1:isize, 1:jsize)
-   rlv(istart:iend, jstart:jend, 0) = rlv0(1:isize, 1:jsize)
-   rev(istart:iend, jstart:jend, 3) = rev3(1:isize, 1:jsize)
-   rev(istart:iend, jstart:jend, 2) = rev2(1:isize, 1:jsize)
-   rev(istart:iend, jstart:jend, 1) = rev1(1:isize, 1:jsize)
-   rev(istart:iend, jstart:jend, 0) = rev0(1:isize, 1:jsize)
-   gamma(istart:iend, jstart:jend, 3) = gamma3(1:isize, 1:jsize)
-   gamma(istart:iend, jstart:jend, 2) = gamma2(1:isize, 1:jsize)
-   gamma(istart:iend, jstart:jend, 1) = gamma1(1:isize, 1:jsize)
-   gamma(istart:iend, jstart:jend, 0) = gamma0(1:isize, 1:jsize)
+   w(1:ie, 1:je, 3, :) = ww3(1:ie, 1:je, :)
+   w(1:ie, 1:je, 2, :) = ww2(1:ie, 1:je, :)
+   w(1:ie, 1:je, 1, :) = ww1(1:ie, 1:je, :)
+   w(1:ie, 1:je, 0, :) = ww0(1:ie, 1:je, :)
+   p(1:ie, 1:je, 3) = pp3(1:ie, 1:je)
+   p(1:ie, 1:je, 2) = pp2(1:ie, 1:je)
+   p(1:ie, 1:je, 1) = pp1(1:ie, 1:je)
+   p(1:ie, 1:je, 0) = pp0(1:ie, 1:je)
+   rlv(1:ie, 1:je, 3) = rlv3(1:ie, 1:je)
+   rlv(1:ie, 1:je, 2) = rlv2(1:ie, 1:je)
+   rlv(1:ie, 1:je, 1) = rlv1(1:ie, 1:je)
+   rlv(1:ie, 1:je, 0) = rlv0(1:ie, 1:je)
+   rev(1:ie, 1:je, 3) = rev3(1:ie, 1:je)
+   rev(1:ie, 1:je, 2) = rev2(1:ie, 1:je)
+   rev(1:ie, 1:je, 1) = rev1(1:ie, 1:je)
+   rev(1:ie, 1:je, 0) = rev0(1:ie, 1:je)
+   gamma(1:ie, 1:je, 3) = gamma3(1:ie, 1:je)
+   gamma(1:ie, 1:je, 2) = gamma2(1:ie, 1:je)
+   gamma(1:ie, 1:je, 1) = gamma1(1:ie, 1:je)
+   gamma(1:ie, 1:je, 0) = gamma0(1:ie, 1:je)
    CASE (kmax) 
    !===============================================================
-   w(istart:iend, jstart:jend, nz, :) = ww3(1:isize, 1:jsize, :)
-   w(istart:iend, jstart:jend, kl, :) = ww2(1:isize, 1:jsize, :)
-   w(istart:iend, jstart:jend, ke, :) = ww1(1:isize, 1:jsize, :)
-   w(istart:iend, jstart:jend, kb, :) = ww0(1:isize, 1:jsize, :)
-   p(istart:iend, jstart:jend, nz) = pp3(1:isize, 1:jsize)
-   p(istart:iend, jstart:jend, kl) = pp2(1:isize, 1:jsize)
-   p(istart:iend, jstart:jend, ke) = pp1(1:isize, 1:jsize)
-   p(istart:iend, jstart:jend, kb) = pp0(1:isize, 1:jsize)
-   rlv(istart:iend, jstart:jend, nz) = rlv3(1:isize, 1:jsize)
-   rlv(istart:iend, jstart:jend, kl) = rlv2(1:isize, 1:jsize)
-   rlv(istart:iend, jstart:jend, ke) = rlv1(1:isize, 1:jsize)
-   rlv(istart:iend, jstart:jend, kb) = rlv0(1:isize, 1:jsize)
-   rev(istart:iend, jstart:jend, nz) = rev3(1:isize, 1:jsize)
-   rev(istart:iend, jstart:jend, kl) = rev2(1:isize, 1:jsize)
-   rev(istart:iend, jstart:jend, ke) = rev1(1:isize, 1:jsize)
-   rev(istart:iend, jstart:jend, kb) = rev0(1:isize, 1:jsize)
+   w(1:ie, 1:je, nz, :) = ww3(1:ie, 1:je, :)
+   w(1:ie, 1:je, kl, :) = ww2(1:ie, 1:je, :)
+   w(1:ie, 1:je, ke, :) = ww1(1:ie, 1:je, :)
+   w(1:ie, 1:je, kb, :) = ww0(1:ie, 1:je, :)
+   p(1:ie, 1:je, nz) = pp3(1:ie, 1:je)
+   p(1:ie, 1:je, kl) = pp2(1:ie, 1:je)
+   p(1:ie, 1:je, ke) = pp1(1:ie, 1:je)
+   p(1:ie, 1:je, kb) = pp0(1:ie, 1:je)
+   rlv(1:ie, 1:je, nz) = rlv3(1:ie, 1:je)
+   rlv(1:ie, 1:je, kl) = rlv2(1:ie, 1:je)
+   rlv(1:ie, 1:je, ke) = rlv1(1:ie, 1:je)
+   rlv(1:ie, 1:je, kb) = rlv0(1:ie, 1:je)
+   rev(1:ie, 1:je, nz) = rev3(1:ie, 1:je)
+   rev(1:ie, 1:je, kl) = rev2(1:ie, 1:je)
+   rev(1:ie, 1:je, ke) = rev1(1:ie, 1:je)
+   rev(1:ie, 1:je, kb) = rev0(1:ie, 1:je)
+   gamma(1:ie, 1:je, nz) = gamma3(1:ie, 1:je)
+   gamma(1:ie, 1:je, kl) = gamma2(1:ie, 1:je)
+   gamma(1:ie, 1:je, ke) = gamma1(1:ie, 1:je)
+   gamma(1:ie, 1:je, kb) = gamma0(1:ie, 1:je)
    END SELECT
-   END SUBROUTINE RESETBCPOINTERS2
+   ! These spatial pointers are only required for
+   ! forcesAndMoments. Eulerwall normal moment is is reverse AD'ed.
+   IF (spatialpointers) THEN
+   SELECT CASE  (bcfaceid(nn)) 
+   CASE (imin) 
+   x(1, 0:je, 0:ke, :) = xx(1:je+1, 1:ke+1, :)
+   si(1, 1:je, 1:ke, :) = ssi(1:je, 1:ke, :)
+   CASE (imax) 
+   x(il, 0:je, 0:ke, :) = xx(1:je+1, 1:ke+1, :)
+   si(il, 1:je, 1:ke, :) = ssi(1:je, 1:ke, :)
+   CASE (jmin) 
+   x(0:ie, 1, 0:ke, :) = xx(1:ie+1, 1:ke+1, :)
+   sj(1:ie, 1, 1:ke, :) = ssi(1:ie, 1:ke, :)
+   CASE (jmax) 
+   x(0:ie, jl, 0:ke, :) = xx(1:ie+1, 1:ke+1, :)
+   sj(1:ie, jl, 1:ke, :) = ssi(1:ie, 1:ke, :)
+   CASE (kmin) 
+   x(0:ie, 0:je, 1, :) = xx(1:ie+1, 1:je+1, :)
+   sk(1:ie, 1:je, 1, :) = ssi(1:ie, 1:je, :)
+   CASE (kmax) 
+   x(0:ie, 0:je, kl, :) = xx(1:ie+1, 1:je+1, :)
+   sk(1:ie, 1:je, kl, :) = ssi(1:ie, 1:je, :)
+   END SELECT
+   END IF
+   END SUBROUTINE RESETBCPOINTERS
    END MODULE BCROUTINES_B

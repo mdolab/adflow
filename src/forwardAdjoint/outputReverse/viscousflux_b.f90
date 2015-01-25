@@ -2,7 +2,8 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of viscousflux in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *w *x *si *sj *sk *fw *(*viscsubface.tau)
+   !   gradient     of useful results: *rev *w *rlv *x *si *sj *sk
+   !                *fw *(*viscsubface.tau)
    !   with respect to varying inputs: *rev *aa *wx *wy *wz *w *rlv
    !                *x *qx *qy *qz *ux *uy *uz *si *sj *sk *vx *vy
    !                *vz *fw
@@ -150,12 +151,10 @@
    abs0 = -rfilv
    END IF
    IF (abs0 .LT. thresholdreal) THEN
-   revd = 0.0_8
    aad = 0.0_8
    wxd = 0.0_8
    wyd = 0.0_8
    wzd = 0.0_8
-   rlvd = 0.0_8
    qxd = 0.0_8
    qyd = 0.0_8
    qzd = 0.0_8
@@ -222,12 +221,10 @@
    CALL PUSHREAL8(fracdiv)
    CALL PUSHREAL8(por)
    CALL PUSHREAL8(mut)
-   revd = 0.0_8
    aad = 0.0_8
    wxd = 0.0_8
    wyd = 0.0_8
    wzd = 0.0_8
-   rlvd = 0.0_8
    qxd = 0.0_8
    qyd = 0.0_8
    qzd = 0.0_8
@@ -239,12 +236,10 @@
    vzd = 0.0_8
    mued = 0.0_8
    mue = zero
-   revd = 0.0_8
    aad = 0.0_8
    wxd = 0.0_8
    wyd = 0.0_8
    wzd = 0.0_8
-   rlvd = 0.0_8
    qxd = 0.0_8
    qyd = 0.0_8
    qzd = 0.0_8

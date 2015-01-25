@@ -8,10 +8,15 @@
    !                sepsensor
    !   with respect to varying inputs: gammainf pinf pref *p *w *x
    !                *si *sj *sk *(*viscsubface.tau) veldirfreestream
-   !                lengthref machcoef pointref
+   !                lengthref machcoef pointref *xx *pp1 *pp2 *ssi
+   !                *ww2
    !   Plus diff mem management of: viscsubface:in *viscsubface.tau:in
    !                bcdata:in *bcdata.fp:in *bcdata.fv:in *bcdata.m:in
    !                *bcdata.oarea:in *bcdata.sepsensor:in *bcdata.cavitation:in
+   !                xx:in-out rev0:out rev1:out rev2:out rev3:out
+   !                pp0:out pp1:in-out pp2:in-out pp3:out rlv0:out
+   !                rlv1:out rlv2:out rlv3:out ss:out ssi:in-out ssj:out
+   !                ssk:out ww0:out ww1:in-out ww2:in-out ww3:out
    !
    !      ******************************************************************
    !      *                                                                *
@@ -41,6 +46,7 @@
    USE BCTYPES
    USE FLOWVARREFSTATE
    USE INPUTPHYSICS
+   USE BCROUTINES_D
    USE DIFFSIZES
    !  Hint: ISIZE1OFDrfbcdata should be the size of dimension 1 of array *bcdata
    IMPLICIT NONE
@@ -56,7 +62,7 @@
    !
    !      Local variables.
    !
-   INTEGER(kind=inttype) :: nn, i, j
+   INTEGER(kind=inttype) :: nn, i, j, ii
    REAL(kind=realtype) :: pm1, fx, fy, fz, fn, sigma
    REAL(kind=realtype) :: pm1d, fxd, fyd, fzd
    REAL(kind=realtype) :: xc, yc, zc
@@ -73,98 +79,10 @@
    REAL(kind=realtype) :: tauxyd, tauxzd, tauyzd
    REAL(kind=realtype), DIMENSION(3) :: refpoint
    REAL(kind=realtype), DIMENSION(3) :: refpointd
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp2, pp1
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp2d, pp1d
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rho2, rho1
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rho2d, rho1d
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv2, rlv1
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: dd2wall
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ss, xx
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ssd, xxd
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1d, ww2d
-   INTERFACE 
-   SUBROUTINE SETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
-   &       rev1, rev2, offset)
-   USE BCTYPES
-   USE BLOCKPOINTERS
-   USE FLOWVARREFSTATE
-   IMPLICIT NONE
-   INTEGER(kind=inttype), INTENT(IN) :: nn, offset
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1, pp2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
-   END SUBROUTINE SETBCPOINTERS
-   SUBROUTINE RESETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
-   &       rev1, rev2, offset)
-   USE BCTYPES
-   USE BLOCKPOINTERS
-   USE FLOWVARREFSTATE
-   IMPLICIT NONE
-   INTEGER(kind=inttype), INTENT(IN) :: nn, offset
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1, pp2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
-   END SUBROUTINE RESETBCPOINTERS
-   SUBROUTINE SETXXSSRHODD2WALL(nn, xx, ss, rho1, rho2, dd2wall)
-   USE BCTYPES
-   USE BLOCKPOINTERS
-   USE FLOWVARREFSTATE
-   USE INPUTPHYSICS
-   IMPLICIT NONE
-   INTEGER(kind=inttype), INTENT(IN) :: nn
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rho2, rho1
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: dd2wall
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ss, xx
-   END SUBROUTINE SETXXSSRHODD2WALL
-   SUBROUTINE RESETXXSSRHODD2WALL(nn, xx, ss, rho1, rho2, dd2wall)
-   USE BCTYPES
-   USE BLOCKPOINTERS
-   USE FLOWVARREFSTATE
-   USE INPUTPHYSICS
-   IMPLICIT NONE
-   INTEGER(kind=inttype), INTENT(IN) :: nn
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rho2, rho1
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: dd2wall
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ss, xx
-   END SUBROUTINE RESETXXSSRHODD2WALL
-   END INTERFACE
-      INTERFACE 
-   SUBROUTINE SETBCPOINTERS_D(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, &
-   &       pp2, pp2d, rlv1, rlv2, rev1, rev2, offset)
-   USE BCTYPES
-   USE BLOCKPOINTERS
-   USE FLOWVARREFSTATE
-   IMPLICIT NONE
-   INTEGER(kind=inttype), INTENT(IN) :: nn, offset
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1, ww2
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ww1d, ww2d
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1, pp2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: pp1d, pp2d
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rlv1, rlv2
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rev1, rev2
-   END SUBROUTINE SETBCPOINTERS_D
-   SUBROUTINE SETXXSSRHODD2WALL_D(nn, xx, xxd, ss, ssd, rho1, rho1d, &
-   &       rho2, rho2d, dd2wall)
-   USE BCTYPES
-   USE BLOCKPOINTERS
-   USE FLOWVARREFSTATE
-   USE INPUTPHYSICS
-   IMPLICIT NONE
-   INTEGER(kind=inttype), INTENT(IN) :: nn
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rho2, rho1
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: rho2d, rho1d
-   REAL(kind=realtype), DIMENSION(:, :), POINTER :: dd2wall
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ss, xx
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ssd, xxd
-   END SUBROUTINE SETXXSSRHODD2WALL_D
-   END INTERFACE
-      REAL(kind=realtype) :: mx, my, mz, qa
+   REAL(kind=realtype) :: mx, my, mz, qa
    REAL(kind=realtype) :: mxd, myd, mzd, qad
    LOGICAL :: viscoussubface
+   INTRINSIC MOD
    INTRINSIC SQRT
    INTRINSIC EXP
    INTRINSIC MAX
@@ -258,27 +176,19 @@
    ! Set a bunch of pointers depending on the face id to make
    ! a generic treatment possible. The routine setBcPointers
    ! is not used, because quite a few other ones are needed.
-   CALL SETBCPOINTERS_D(nn, ww1, ww1d, ww2, ww2d, pp1, pp1d, pp2, &
-   &                    pp2d, rlv1, rlv2, rev1, rev2, 0)
-   CALL SETXXSSRHODD2WALL_D(nn, xx, xxd, ss, ssd, rho1, rho1d, rho2, &
-   &                        rho2d, dd2wall)
+   CALL SETBCPOINTERS_D(nn, .true.)
    SELECT CASE  (bcfaceid(nn)) 
    CASE (imin) 
    fact = -one
    CASE (imax) 
-   !===========================================================
    fact = one
    CASE (jmin) 
-   !===========================================================
    fact = -one
    CASE (jmax) 
-   !===========================================================
    fact = one
    CASE (kmin) 
-   !===========================================================
    fact = -one
    CASE (kmax) 
-   !===========================================================
    fact = one
    END SELECT
    ! Loop over the quadrilateral faces of the subface. Note
@@ -288,8 +198,12 @@
    ! jnBeg refer to nodal ranges and not to cell ranges.
    bcdatad(nn)%oarea(:, :) = 0.0_8
    bcdata(nn)%oarea(:, :) = zero
-   DO j=bcdata(nn)%jnbeg+1,bcdata(nn)%jnend
-   DO i=bcdata(nn)%inbeg+1,bcdata(nn)%inend
+   DO ii=0,(bcdata(nn)%jnend-bcdata(nn)%jnbeg)*(bcdata(nn)%inend-&
+   &         bcdata(nn)%inbeg)-1
+   i = MOD(ii, bcdata(nn)%inend - bcdata(nn)%inbeg) + bcdata(nn)%&
+   &         inbeg + 1
+   j = ii/(bcdata(nn)%inend-bcdata(nn)%inbeg) + bcdata(nn)%jnbeg + &
+   &         1
    ! Compute the average pressure minus 1 and the coordinates
    ! of the centroid of the face relative from from the
    ! moment reference point. Due to the usage of pointers for
@@ -297,28 +211,28 @@
    ! offset of 1 must be used. The pressure is multipled by
    ! fact to account for the possibility of an inward or
    ! outward pointing normal.
-   pm1d = fact*((half*(pp2d(i, j)+pp1d(i, j))-pinfd)*scaledim+(&
-   &           half*(pp2(i, j)+pp1(i, j))-pinf)*scaledimd)
+   pm1d = fact*((half*(pp2d(i, j)+pp1d(i, j))-pinfd)*scaledim+(half&
+   &         *(pp2(i, j)+pp1(i, j))-pinf)*scaledimd)
    pm1 = fact*(half*(pp2(i, j)+pp1(i, j))-pinf)*scaledim
-   xcd = fourth*(xxd(i, j, 1)+xxd(i+1, j, 1)+xxd(i, j+1, 1)+xxd(i&
-   &           +1, j+1, 1)) - refpointd(1)
-   xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j&
-   &           +1, 1)) - refpoint(1)
-   ycd = fourth*(xxd(i, j, 2)+xxd(i+1, j, 2)+xxd(i, j+1, 2)+xxd(i&
-   &           +1, j+1, 2)) - refpointd(2)
-   yc = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j&
-   &           +1, 2)) - refpoint(2)
-   zcd = fourth*(xxd(i, j, 3)+xxd(i+1, j, 3)+xxd(i, j+1, 3)+xxd(i&
-   &           +1, j+1, 3)) - refpointd(3)
-   zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j&
-   &           +1, 3)) - refpoint(3)
+   xcd = fourth*(xxd(i, j, 1)+xxd(i+1, j, 1)+xxd(i, j+1, 1)+xxd(i+1&
+   &         , j+1, 1)) - refpointd(1)
+   xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1&
+   &         , 1)) - refpoint(1)
+   ycd = fourth*(xxd(i, j, 2)+xxd(i+1, j, 2)+xxd(i, j+1, 2)+xxd(i+1&
+   &         , j+1, 2)) - refpointd(2)
+   yc = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j+1&
+   &         , 2)) - refpoint(2)
+   zcd = fourth*(xxd(i, j, 3)+xxd(i+1, j, 3)+xxd(i, j+1, 3)+xxd(i+1&
+   &         , j+1, 3)) - refpointd(3)
+   zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1&
+   &         , 3)) - refpoint(3)
    ! Compute the force components.
-   fxd = pm1d*ss(i, j, 1) + pm1*ssd(i, j, 1)
-   fx = pm1*ss(i, j, 1)
-   fyd = pm1d*ss(i, j, 2) + pm1*ssd(i, j, 2)
-   fy = pm1*ss(i, j, 2)
-   fzd = pm1d*ss(i, j, 3) + pm1*ssd(i, j, 3)
-   fz = pm1*ss(i, j, 3)
+   fxd = pm1d*ssi(i, j, 1) + pm1*ssid(i, j, 1)
+   fx = pm1*ssi(i, j, 1)
+   fyd = pm1d*ssi(i, j, 2) + pm1*ssid(i, j, 2)
+   fy = pm1*ssi(i, j, 2)
+   fzd = pm1d*ssi(i, j, 3) + pm1*ssid(i, j, 3)
+   fz = pm1*ssi(i, j, 3)
    ! Store Force data on face
    bcdatad(nn)%fp(i, j, 1) = fxd
    bcdata(nn)%fp(i, j, 1) = fx
@@ -327,9 +241,9 @@
    bcdatad(nn)%fp(i, j, 3) = fzd
    bcdata(nn)%fp(i, j, 3) = fz
    ! Scatter a quarter of the area to each node:
-   arg1d = 2*ss(i, j, 1)*ssd(i, j, 1) + 2*ss(i, j, 2)*ssd(i, j, 2&
-   &           ) + 2*ss(i, j, 3)*ssd(i, j, 3)
-   arg1 = ss(i, j, 1)**2 + ss(i, j, 2)**2 + ss(i, j, 3)**2
+   arg1d = 2*ssi(i, j, 1)*ssid(i, j, 1) + 2*ssi(i, j, 2)*ssid(i, j&
+   &         , 2) + 2*ssi(i, j, 3)*ssid(i, j, 3)
+   arg1 = ssi(i, j, 1)**2 + ssi(i, j, 2)**2 + ssi(i, j, 3)**2
    IF (arg1 .EQ. 0.0_8) THEN
    result1d = 0.0_8
    ELSE
@@ -338,8 +252,7 @@
    result1 = SQRT(arg1)
    qad = fourth*result1d
    qa = fourth*result1
-   bcdatad(nn)%oarea(i-1, j-1) = bcdatad(nn)%oarea(i-1, j-1) + &
-   &           qad
+   bcdatad(nn)%oarea(i-1, j-1) = bcdatad(nn)%oarea(i-1, j-1) + qad
    bcdata(nn)%oarea(i-1, j-1) = bcdata(nn)%oarea(i-1, j-1) + qa
    bcdatad(nn)%oarea(i, j-1) = bcdatad(nn)%oarea(i, j-1) + qad
    bcdata(nn)%oarea(i, j-1) = bcdata(nn)%oarea(i, j-1) + qa
@@ -365,14 +278,14 @@
    vd = (vd*(result1+1e-16)-v*result1d)/(result1+1e-16)**2
    v = v/(result1+1e-16)
    ! Dot product with free stream
-   sensord = -(vd(1)*veldirfreestream(1)+v(1)*veldirfreestreamd(1&
-   &           )+vd(2)*veldirfreestream(2)+v(2)*veldirfreestreamd(2)+vd(3)*&
-   &           veldirfreestream(3)+v(3)*veldirfreestreamd(3))
-   sensor = -(v(1)*veldirfreestream(1)+v(2)*veldirfreestream(2)+v&
-   &           (3)*veldirfreestream(3))
+   sensord = -(vd(1)*veldirfreestream(1)+v(1)*veldirfreestreamd(1)+&
+   &         vd(2)*veldirfreestream(2)+v(2)*veldirfreestreamd(2)+vd(3)*&
+   &         veldirfreestream(3)+v(3)*veldirfreestreamd(3))
+   sensor = -(v(1)*veldirfreestream(1)+v(2)*veldirfreestream(2)+v(3&
+   &         )*veldirfreestream(3))
    !Now run through a smooth heaviside function:
-   sensord = -((-(one*2*10*sensord*EXP(-(2*10*sensor))))/(one+EXP&
-   &           (-(2*10*sensor)))**2)
+   sensord = -((-(one*2*10*sensord*EXP(-(2*10*sensor))))/(one+EXP(-&
+   &         (2*10*sensor)))**2)
    sensor = one/(one+EXP(-(2*10*sensor)))
    ! And integrate over the area of this cell and save:
    sensord = four*(sensord*qa+sensor*qad)
@@ -384,8 +297,8 @@
    plocald = pp2d(i, j)
    plocal = pp2(i, j)
    tmpd = -(two*((gammainfd*pinf+gammainf*pinfd)*machcoef**2+&
-   &           gammainf*pinf*(machcoefd*machcoef+machcoef*machcoefd))/(&
-   &           gammainf*pinf*machcoef*machcoef)**2)
+   &         gammainf*pinf*(machcoefd*machcoef+machcoef*machcoefd))/(&
+   &         gammainf*pinf*machcoef*machcoef)**2)
    tmp = two/(gammainf*pinf*machcoef*machcoef)
    cpd = tmpd*(plocal-pinf) + tmp*(plocald-pinfd)
    cp = tmp*(plocal-pinf)
@@ -398,7 +311,7 @@
    !Sensor = 0
    !END IF
    sensor1d = -((-(one*2*10*sensor1d*EXP(-(2*10*sensor1))))/(one+&
-   &           EXP(-(2*10*sensor1)))**2)
+   &         EXP(-(2*10*sensor1)))**2)
    sensor1 = one/(one+EXP(-(2*10*sensor1)))
    sensor1d = four*(sensor1d*qa+sensor1*qad)
    sensor1 = sensor1*four*qa
@@ -433,7 +346,6 @@
    bcdatad(nn)%m(i, j, 3) = mzd
    bcdata(nn)%m(i, j, 3) = mz
    END DO
-   END DO
    !
    !          **************************************************************
    !          *                                                            *
@@ -451,10 +363,12 @@
    ! Loop over the quadrilateral faces of the subface and
    ! compute the viscous contribution to the force and
    ! moment and update the maximum value of y+.
-   !DEC$ NOVECTOR
-   DO j=bcdata(nn)%jnbeg+1,bcdata(nn)%jnend
-   !DEC$ NOVECTOR
-   DO i=bcdata(nn)%inbeg+1,bcdata(nn)%inend
+   DO ii=0,(bcdata(nn)%jnend-bcdata(nn)%jnbeg)*(bcdata(nn)%inend-&
+   &           bcdata(nn)%inbeg)-1
+   i = MOD(ii, bcdata(nn)%inend - bcdata(nn)%inbeg) + bcdata(nn)%&
+   &           inbeg + 1
+   j = ii/(bcdata(nn)%inend-bcdata(nn)%inbeg) + bcdata(nn)%jnbeg &
+   &           + 1
    ! Store the viscous stress tensor a bit easier.
    tauxxd = viscsubfaced(nn)%tau(i, j, 1)
    tauxx = viscsubface(nn)%tau(i, j, 1)
@@ -470,40 +384,40 @@
    tauyz = viscsubface(nn)%tau(i, j, 6)
    ! Compute the viscous force on the face. A minus sign
    ! is now present, due to the definition of this force.
-   fxd = -(fact*((tauxxd*ss(i, j, 1)+tauxx*ssd(i, j, 1)+tauxyd*&
-   &             ss(i, j, 2)+tauxy*ssd(i, j, 2)+tauxzd*ss(i, j, 3)+tauxz*&
-   &             ssd(i, j, 3))*scaledim+(tauxx*ss(i, j, 1)+tauxy*ss(i, j, 2&
-   &             )+tauxz*ss(i, j, 3))*scaledimd))
-   fx = -(fact*(tauxx*ss(i, j, 1)+tauxy*ss(i, j, 2)+tauxz*ss(i&
-   &             , j, 3))*scaledim)
-   fyd = -(fact*((tauxyd*ss(i, j, 1)+tauxy*ssd(i, j, 1)+tauyyd*&
-   &             ss(i, j, 2)+tauyy*ssd(i, j, 2)+tauyzd*ss(i, j, 3)+tauyz*&
-   &             ssd(i, j, 3))*scaledim+(tauxy*ss(i, j, 1)+tauyy*ss(i, j, 2&
-   &             )+tauyz*ss(i, j, 3))*scaledimd))
-   fy = -(fact*(tauxy*ss(i, j, 1)+tauyy*ss(i, j, 2)+tauyz*ss(i&
-   &             , j, 3))*scaledim)
-   fzd = -(fact*((tauxzd*ss(i, j, 1)+tauxz*ssd(i, j, 1)+tauyzd*&
-   &             ss(i, j, 2)+tauyz*ssd(i, j, 2)+tauzzd*ss(i, j, 3)+tauzz*&
-   &             ssd(i, j, 3))*scaledim+(tauxz*ss(i, j, 1)+tauyz*ss(i, j, 2&
-   &             )+tauzz*ss(i, j, 3))*scaledimd))
-   fz = -(fact*(tauxz*ss(i, j, 1)+tauyz*ss(i, j, 2)+tauzz*ss(i&
-   &             , j, 3))*scaledim)
+   fxd = -(fact*((tauxxd*ssi(i, j, 1)+tauxx*ssid(i, j, 1)+tauxyd*&
+   &           ssi(i, j, 2)+tauxy*ssid(i, j, 2)+tauxzd*ssi(i, j, 3)+tauxz*&
+   &           ssid(i, j, 3))*scaledim+(tauxx*ssi(i, j, 1)+tauxy*ssi(i, j, &
+   &           2)+tauxz*ssi(i, j, 3))*scaledimd))
+   fx = -(fact*(tauxx*ssi(i, j, 1)+tauxy*ssi(i, j, 2)+tauxz*ssi(i&
+   &           , j, 3))*scaledim)
+   fyd = -(fact*((tauxyd*ssi(i, j, 1)+tauxy*ssid(i, j, 1)+tauyyd*&
+   &           ssi(i, j, 2)+tauyy*ssid(i, j, 2)+tauyzd*ssi(i, j, 3)+tauyz*&
+   &           ssid(i, j, 3))*scaledim+(tauxy*ssi(i, j, 1)+tauyy*ssi(i, j, &
+   &           2)+tauyz*ssi(i, j, 3))*scaledimd))
+   fy = -(fact*(tauxy*ssi(i, j, 1)+tauyy*ssi(i, j, 2)+tauyz*ssi(i&
+   &           , j, 3))*scaledim)
+   fzd = -(fact*((tauxzd*ssi(i, j, 1)+tauxz*ssid(i, j, 1)+tauyzd*&
+   &           ssi(i, j, 2)+tauyz*ssid(i, j, 2)+tauzzd*ssi(i, j, 3)+tauzz*&
+   &           ssid(i, j, 3))*scaledim+(tauxz*ssi(i, j, 1)+tauyz*ssi(i, j, &
+   &           2)+tauzz*ssi(i, j, 3))*scaledimd))
+   fz = -(fact*(tauxz*ssi(i, j, 1)+tauyz*ssi(i, j, 2)+tauzz*ssi(i&
+   &           , j, 3))*scaledim)
    ! Compute the coordinates of the centroid of the face
    ! relative from the moment reference point. Due to the
    ! usage of pointers for xx and offset of 1 is present,
    ! because x originally starts at 0.
-   xcd = fourth*(xxd(i, j, 1)+xxd(i+1, j, 1)+xxd(i, j+1, 1)+xxd&
-   &             (i+1, j+1, 1)) - refpointd(1)
-   xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1&
-   &             , j+1, 1)) - refpoint(1)
-   ycd = fourth*(xxd(i, j, 2)+xxd(i+1, j, 2)+xxd(i, j+1, 2)+xxd&
-   &             (i+1, j+1, 2)) - refpointd(2)
-   yc = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1&
-   &             , j+1, 2)) - refpoint(2)
-   zcd = fourth*(xxd(i, j, 3)+xxd(i+1, j, 3)+xxd(i, j+1, 3)+xxd&
-   &             (i+1, j+1, 3)) - refpointd(3)
-   zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1&
-   &             , j+1, 3)) - refpoint(3)
+   xcd = fourth*(xxd(i, j, 1)+xxd(i+1, j, 1)+xxd(i, j+1, 1)+xxd(i&
+   &           +1, j+1, 1)) - refpointd(1)
+   xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j&
+   &           +1, 1)) - refpoint(1)
+   ycd = fourth*(xxd(i, j, 2)+xxd(i+1, j, 2)+xxd(i, j+1, 2)+xxd(i&
+   &           +1, j+1, 2)) - refpointd(2)
+   yc = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j&
+   &           +1, 2)) - refpoint(2)
+   zcd = fourth*(xxd(i, j, 3)+xxd(i+1, j, 3)+xxd(i, j+1, 3)+xxd(i&
+   &           +1, j+1, 3)) - refpointd(3)
+   zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j&
+   &           +1, 3)) - refpoint(3)
    ! Update the viscous force and moment coefficients.
    cfvd(1) = cfvd(1) + fxd
    cfv(1) = cfv(1) + fx
@@ -543,21 +457,22 @@
    ! As later on only the magnitude of the tangential
    ! component is important, there is no need to take the
    ! sign into account (it should be a minus sign).
-   fx = tauxx*bcdata(nn)%norm(i, j, 1) + tauxy*bcdata(nn)%norm(&
-   &             i, j, 2) + tauxz*bcdata(nn)%norm(i, j, 3)
-   fy = tauxy*bcdata(nn)%norm(i, j, 1) + tauyy*bcdata(nn)%norm(&
-   &             i, j, 2) + tauyz*bcdata(nn)%norm(i, j, 3)
-   fz = tauxz*bcdata(nn)%norm(i, j, 1) + tauyz*bcdata(nn)%norm(&
-   &             i, j, 2) + tauzz*bcdata(nn)%norm(i, j, 3)
-   fn = fx*bcdata(nn)%norm(i, j, 1) + fy*bcdata(nn)%norm(i, j, &
-   &             2) + fz*bcdata(nn)%norm(i, j, 3)
+   fx = tauxx*bcdata(nn)%norm(i, j, 1) + tauxy*bcdata(nn)%norm(i&
+   &           , j, 2) + tauxz*bcdata(nn)%norm(i, j, 3)
+   fy = tauxy*bcdata(nn)%norm(i, j, 1) + tauyy*bcdata(nn)%norm(i&
+   &           , j, 2) + tauyz*bcdata(nn)%norm(i, j, 3)
+   fz = tauxz*bcdata(nn)%norm(i, j, 1) + tauyz*bcdata(nn)%norm(i&
+   &           , j, 2) + tauzz*bcdata(nn)%norm(i, j, 3)
+   fn = fx*bcdata(nn)%norm(i, j, 1) + fy*bcdata(nn)%norm(i, j, 2)&
+   &           + fz*bcdata(nn)%norm(i, j, 3)
    fx = fx - fn*bcdata(nn)%norm(i, j, 1)
    fy = fy - fn*bcdata(nn)%norm(i, j, 2)
    fz = fz - fn*bcdata(nn)%norm(i, j, 3)
    ! Compute the local value of y+. Due to the usage
    ! of pointers there is on offset of -1 in dd2Wall..
-   IF (equations .EQ. ransequations) dwall = dd2wall(i-1, j-1)
-   rho = half*(rho2(i, j)+rho1(i, j))
+   IF (equations .EQ. ransequations) THEN
+   dwall = dd2wall(i-1, j-1)
+   rho = half*(ww2(i, j, irho)+ww1(i, j, irho))
    mul = half*(rlv2(i, j)+rlv1(i, j))
    arg1 = fx*fx + fy*fy + fz*fz
    result1 = SQRT(arg1)
@@ -569,7 +484,7 @@
    ELSE
    yplusmax = yplusmax
    END IF
-   END DO
+   END IF
    END DO
    ELSE
    ! Zero the viscous force contribution
@@ -584,9 +499,7 @@
    bcdata(nn)%oarea(i, j) = one/bcdata(nn)%oarea(i, j)
    END DO
    END DO
-   CALL RESETBCPOINTERS(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, &
-   &                       rev2, 0)
-   CALL RESETXXSSRHODD2WALL(nn, xx, ss, rho1, rho2, dd2wall)
+   CALL RESETBCPOINTERS(nn, .true.)
    END IF
    END DO bocos
    ! Currently the coefficients only contain the surface integral

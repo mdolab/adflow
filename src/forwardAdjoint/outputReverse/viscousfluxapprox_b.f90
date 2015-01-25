@@ -2,7 +2,8 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of viscousfluxapprox in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *p *w *x *si *sj *sk *fw
+   !   gradient     of useful results: *rev *p *w *rlv *x *si *sj
+   !                *sk *fw
    !   with respect to varying inputs: *rev *p *w *rlv *x *si *sj
    !                *sk *fw
    !   Plus diff mem management of: rev:in p:in w:in rlv:in x:in si:in
@@ -82,10 +83,7 @@
    ELSE
    abs0 = -rfilv
    END IF
-   IF (abs0 .LT. thresholdreal) THEN
-   revd = 0.0_8
-   rlvd = 0.0_8
-   ELSE
+   IF (abs0 .GE. thresholdreal) THEN
    ! Determine whether or not the pressure must be corrected
    ! for the presence of the turbulent kinetic energy.
    IF (kpresent) THEN
@@ -426,8 +424,6 @@
    END DO
    END DO
    END DO
-   revd = 0.0_8
-   rlvd = 0.0_8
    mued = 0.0_8
    DO k=kl,1,-1
    DO j=jl,2,-1
