@@ -126,9 +126,8 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   call computeLamViscosity
   call computeEddyViscosity 
 
-  !  Apply all BC's
-  call applyAllBC_block2(.True.)
- 
+  call applyAllBC_block(.True.)
+
   if (equations == RANSequations) then 
      call applyAllTurbBCThisBLock(.True.)
   end if

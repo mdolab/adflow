@@ -8,6 +8,7 @@
 #      ******************************************************************
 
 SUBDIR_SRC    = src/modules       \
+	        src/solver        \
 		src/ADT           \
 		src/bcdata        \
 	        src/initFlow      \
@@ -19,7 +20,6 @@ SUBDIR_SRC    = src/modules       \
 	        src/partitioning  \
 	        src/preprocessing \
 	        src/slidingComm   \
-	        src/solver        \
 		src/NKsolver      \
 	        src/stabilityDerivatives \
 	        src/turbulence    \
@@ -38,7 +38,6 @@ SUBDIR_SRC    = src/modules       \
                 src/forwardAdjoint/outputReverseFast \
 		src/forwardAdjoint/costInput \
 		src/forwardAdjoint/outputCost\
-
 
 SUBDIR_EXEC   = src/exec
 SUBDIR_PV3    = src/pv3Interface

@@ -2,8 +2,8 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of residual_block in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: gammainf *p *dw *w *x *vol
-   !                *si *sj *sk *(*viscsubface.tau)
+   !   gradient     of useful results: gammainf *rev *p *dw *w *rlv
+   !                *x *vol *si *sj *sk *(*viscsubface.tau)
    !   with respect to varying inputs: gammainf timeref rhoinf tref
    !                winf pinfcorr rgas *rev *p *dw *w *rlv *x *vol
    !                *si *sj *sk *radi *radj *radk
@@ -827,12 +827,6 @@
    ELSE IF (branch .EQ. 2) THEN
    CALL POPREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
    CALL VISCOUSFLUXAPPROX_B()
-   ELSE IF (branch .EQ. 3) THEN
-   revd = 0.0_8
-   rlvd = 0.0_8
-   ELSE
-   revd = 0.0_8
-   rlvd = 0.0_8
    END IF
    CALL POPCONTROL3B(branch)
    IF (branch .LT. 4) THEN

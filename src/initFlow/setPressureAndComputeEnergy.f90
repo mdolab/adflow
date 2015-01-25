@@ -77,7 +77,7 @@
 
            ! Compute the total energy as well.
 
-           call computeEtot(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd, kPresent)
+           call computeEtotBlock(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd, kPresent)
          enddo
        enddo
 

@@ -9,9 +9,9 @@
    !                moment force cavitation sepsensor
    !   with respect to varying inputs: pref *(flowdoms.x) *(flowdoms.w)
    !                mach tempfreestream reynolds machgrid lengthref
-   !                machcoef pointref *rev0 *rev1 *rev2 *rev3 *pp0
-   !                *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3 *ss *ssi
-   !                *ssj *ssk *ww0 *ww1 *ww2 *ww3 alpha beta
+   !                machcoef pointref *xx *rev0 *rev1 *rev2 *rev3
+   !                *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3 *ss
+   !                *ssi *ssj *ssk *ww0 *ww1 *ww2 *ww3 alpha beta
    !   RW status of diff variables: mudim:(loc) gammainf:(loc) pinf:(loc)
    !                timeref:(loc) rhoinf:(loc) muref:(loc) rhoinfdim:(loc)
    !                tref:(loc) winf:(loc) muinf:(loc) uinf:(loc) pinfcorr:(loc)
@@ -31,7 +31,7 @@
    !                *radk:(loc) mach:in tempfreestream:in reynolds:in
    !                veldirfreestream:(loc) machgrid:in lengthref:in
    !                machcoef:in dragdirection:(loc) liftdirection:(loc)
-   !                pointref:in *rev0:in-out *rev1:in-out *rev2:in
+   !                pointref:in *xx:in *rev0:in-out *rev1:in-out *rev2:in
    !                *rev3:in *pp0:in-out *pp1:in-out *pp2:in *pp3:in
    !                *rlv0:in-out *rlv1:in-out *rlv2:in *rlv3:in *ss:in
    !                *ssi:in *ssj:in *ssk:in *ww0:in-out *ww1:in-out
@@ -46,11 +46,12 @@
    !                *viscsubface.tau:in bcdata:in *bcdata.norm:in
    !                *bcdata.rface:in *bcdata.fp:in *bcdata.fv:in *bcdata.m:in
    !                *bcdata.oarea:in *bcdata.sepsensor:in *bcdata.cavitation:in
-   !                *bcdata.uslip:in radi:in radj:in radk:in rev0:in-out
-   !                rev1:in-out rev2:in-out rev3:in-out pp0:in-out
-   !                pp1:in-out pp2:in-out pp3:in-out rlv0:in-out rlv1:in-out
-   !                rlv2:in-out rlv3:in-out ss:in-out ssi:in-out ssj:in-out
-   !                ssk:in-out ww0:in-out ww1:in-out ww2:in-out ww3:in-out
+   !                *bcdata.uslip:in radi:in radj:in radk:in xx:in-out
+   !                rev0:in-out rev1:in-out rev2:in-out rev3:in-out
+   !                pp0:in-out pp1:in-out pp2:in-out pp3:in-out rlv0:in-out
+   !                rlv1:in-out rlv2:in-out rlv3:in-out ss:in-out
+   !                ssi:in-out ssj:in-out ssk:in-out ww0:in-out ww1:in-out
+   !                ww2:in-out ww3:in-out
    ! This is a super-combined function that combines the original
    ! functionality of: 
    ! Pressure Computation
@@ -208,8 +209,7 @@
    ! Compute Laminar/eddy viscosity if required
    CALL COMPUTELAMVISCOSITY_D()
    CALL COMPUTEEDDYVISCOSITY_D()
-   !  Apply all BC's
-   CALL APPLYALLBC_BLOCK2_D(.true.)
+   CALL APPLYALLBC_BLOCK_D(.true.)
    IF (equations .EQ. ransequations) CALL APPLYALLTURBBCTHISBLOCK_D(&
    &                                                            .true.)
    ! Compute skin_friction Velocity (only for wall Functions)

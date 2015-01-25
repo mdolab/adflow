@@ -25,6 +25,7 @@
        use flowVarRefState
        use inputIteration
        use inputTimeSpectral
+       use BCRoutines
        implicit none
 !
 !      Local variables.
@@ -33,27 +34,6 @@
 
        real(kind=realType) :: rho, vvx, vvy, vvz, pres, vtotInv
 
-       real(kind=realType), dimension(:,:,:), pointer :: ww1,  ww2
-       real(kind=realType), dimension(:,:),   pointer :: pp1,  pp2
-       real(kind=realType), dimension(:,:),   pointer :: rlv1, rlv2
-       real(kind=realType), dimension(:,:),   pointer :: rev1, rev2
-!
-!      Interfaces
-!
-       interface
-         subroutine setBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
-                                  rev1, rev2, offset)
-           use blockPointers
-           implicit none
-
-           integer(kind=intType), intent(in) :: nn, offset
-           real(kind=realType), dimension(:,:,:), pointer :: ww1,  ww2
-           real(kind=realType), dimension(:,:),   pointer :: pp1,  pp2
-           real(kind=realType), dimension(:,:),   pointer :: rlv1, rlv2
-           real(kind=realType), dimension(:,:),   pointer :: rev1, rev2
-         end subroutine setBCPointers
-       end interface
-!
 !      ******************************************************************
 !      *                                                                *
 !      * Begin execution                                                *
@@ -83,9 +63,7 @@
                  ! All data must be prescribed. Nullify the pointers
                  ! and set them to the correct subface.
 
-                 nullify(ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2)
-                 call setBCPointers(mm, ww1, ww2, pp1, pp2, rlv1, &
-                                    rlv2, rev1, rev2, 0_intType)
+                  call setBCPointers(mm, .False.)
 
                  ! Loop over the generic subface and simply extrapolate
                  ! the state vector to set the prescribed state.
@@ -113,9 +91,7 @@
                  ! prescribed. Nullify the pointers and set them to the
                  ! correct subface.
 
-                 nullify(ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2)
-                 call setBCPointers(mm, ww1, ww2, pp1, pp2, rlv1, &
-                                    rlv2, rev1, rev2, 0_intType)
+                 call setBCPointers(mm, .False.)
 
                  ! Loop over the generic subface and simply extrapolate
                  ! the state vector to set the prescribed state.
@@ -141,9 +117,7 @@
                  ! Pressure must be prescribed. Nullify the pointers
                  ! and set them to the correct subface.
 
-                 nullify(ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2)
-                 call setBCPointers(mm, ww1, ww2, pp1, pp2, rlv1, &
-                                    rlv2, rev1, rev2, 0_intType)
+                 call setBCPointers(mm, .False.)
 
                  ! Loop over the generic subface and simply extrapolate
                  ! the pressure to set the prescribed value.
@@ -161,9 +135,7 @@
                  ! Density must be prescribed. Nullify the pointers
                  ! and set them to the correct subface.
 
-                 nullify(ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2)
-                 call setBCPointers(mm, ww1, ww2, pp1, pp2, rlv1, &
-                                    rlv2, rev1, rev2, 0_intType)
+                  call setBCPointers(mm, .False.)
 
                  ! Loop over the generic subface and simply extrapolate
                  ! the density to set the prescribed value.
@@ -181,9 +153,7 @@
                  ! Total conditions must be prescribed. Nullify the
                  ! pointers and set them to the correct subface.
 
-                 nullify(ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2)
-                 call setBCPointers(mm, ww1, ww2, pp1, pp2, rlv1, &
-                                    rlv2, rev1, rev2, 0_intType)
+                  call setBCPointers(mm, .False.)
 
                  ! Loop over the generic subface and simply extrapolate
                  ! the total conditions and the turbulence variables
