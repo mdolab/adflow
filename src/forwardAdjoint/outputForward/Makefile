@@ -77,7 +77,6 @@ FF90_OBJECTS2 = allnodalgradients_d.o\
 		derivativerigidrotangle_d.o\
 		computeeddyviscosity_d.o\
 		sanuknowneddyratio_d.o\
-		turb2ndhalo_d.o\
 		prodkatolaunder_d.o\
 		prodwmag2_d.o\
 		prodsmag2_d.o\
@@ -96,9 +95,8 @@ FF90_OBJECTS2 = allnodalgradients_d.o\
                 bceddynowall_d.o\
                 bceddywall_d.o\
 		bcturbfarfield_d.o\
-		setbcpointers_d.o\
                 setssmetric_d.o\
-                setxxssrhodd2wall_d.o\
+		turb2ndhalo_d.o\
 
 #      ******************************************************************
 #      *                                                                *

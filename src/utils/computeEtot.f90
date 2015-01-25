@@ -8,7 +8,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       subroutine computeEtot(iStart,iEnd, jStart,jEnd, kStart, kEnd, &
+       subroutine computeEtotBlock(iStart,iEnd, jStart,jEnd, kStart, kEnd, &
                               correctForK)
 !
 !      ******************************************************************
@@ -112,7 +112,7 @@
 
        end select
  
-       end subroutine computeEtot
+     end subroutine computeEtotBlock
  
 !      ==================================================================
 

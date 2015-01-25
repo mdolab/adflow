@@ -43,12 +43,13 @@
    & gamma2, gamma3
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ssi, ssj, ssk
    REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ssid, ssjd, sskd
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ss
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ssd
-   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: xline
-   INTEGER(kind=inttype) :: isize, jsize
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ss, xx
+   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: ssd, xxd
+   REAL(kind=realtype), DIMENSION(:, :), POINTER :: dd2wall
+   INTEGER(kind=inttype) :: istart, iend, isize
+   INTEGER(kind=inttype) :: jstart, jend, jsize
       CONTAINS
-   !  Differentiation of applyallbc_block2 in forward (tangent) mode (with options i4 dr8 r8):
+   !  Differentiation of applyallbc_block in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *rev *bvtj1 *bvtj2 *p *w *rlv
    !                *bvtk1 *bvtk2 *bvti1 *bvti2 *rev0 *rev1 *pp0 *pp1
    !                *rlv0 *rlv1 *ww0 *ww1
@@ -60,12 +61,12 @@
    !   Plus diff mem management of: rev:in bvtj1:in bvtj2:in p:in
    !                w:in rlv:in x:in bvtk1:in bvtk2:in si:in sj:in
    !                sk:in bvti1:in bvti2:in bcdata:in *bcdata.norm:in
-   !                *bcdata.rface:in *bcdata.uslip:in rev0:in-out
+   !                *bcdata.rface:in *bcdata.uslip:in xx:in-out rev0:in-out
    !                rev1:in-out rev2:in-out rev3:in-out pp0:in-out
    !                pp1:in-out pp2:in-out pp3:in-out rlv0:in-out rlv1:in-out
    !                rlv2:in-out rlv3:in-out ss:in-out ssi:in-out ssj:in-out
    !                ssk:in-out ww0:in-out ww1:in-out ww2:in-out ww3:in-out
-   SUBROUTINE APPLYALLBC_BLOCK2_D(secondhalo)
+   SUBROUTINE APPLYALLBC_BLOCK_D(secondhalo)
    ! Apply BC's for a single block
    USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
@@ -98,9 +99,9 @@
    ! ------------------------------------
    DO nn=1,nbocos
    IF (bctype(nn) .EQ. symm) THEN
-   CALL SETBCPOINTERS2_D(nn)
-   CALL BCSYMM2_D(nn, secondhalo)
-   CALL RESETBCPOINTERS2(nn)
+   CALL SETBCPOINTERS_D(nn, .false.)
+   CALL BCSYMM_D(nn, secondhalo)
+   CALL RESETBCPOINTERS(nn, .false.)
    END IF
    END DO
    bvtj1d = 0.0_8
@@ -114,9 +115,9 @@
    ! ------------------------------------
    DO nn=1,nviscbocos
    IF (bctype(nn) .EQ. nswalladiabatic) THEN
-   CALL SETBCPOINTERS2_D(nn)
-   CALL BCNSWALLADIABATIC2_D(nn, secondhalo, correctfork)
-   CALL RESETBCPOINTERS2(nn)
+   CALL SETBCPOINTERS_D(nn, .false.)
+   CALL BCNSWALLADIABATIC_D(nn, secondhalo, correctfork)
+   CALL RESETBCPOINTERS(nn, .false.)
    END IF
    END DO
    ! ------------------------------------
@@ -124,9 +125,9 @@
    ! ------------------------------------
    DO nn=1,nviscbocos
    IF (bctype(nn) .EQ. nswallisothermal) THEN
-   CALL SETBCPOINTERS2_D(nn)
-   CALL BCNSWALLISOTHERMAL2_D(nn, secondhalo, correctfork)
-   CALL RESETBCPOINTERS2(nn)
+   CALL SETBCPOINTERS_D(nn, .false.)
+   CALL BCNSWALLISOTHERMAL_D(nn, secondhalo, correctfork)
+   CALL RESETBCPOINTERS(nn, .false.)
    END IF
    END DO
    ! ------------------------------------
@@ -138,9 +139,9 @@
    &           )
    DO nn=1,nbocos
    IF (bctype(nn) .EQ. farfield) THEN
-   CALL SETBCPOINTERS2_D(nn)
-   CALL BCFARFIELD2_D(nn, secondhalo, correctfork)
-   CALL RESETBCPOINTERS2(nn)
+   CALL SETBCPOINTERS_D(nn, .false.)
+   CALL BCFARFIELD_D(nn, secondhalo, correctfork)
+   CALL RESETBCPOINTERS(nn, .false.)
    END IF
    END DO
    ! ------------------------------------
@@ -148,13 +149,13 @@
    ! ------------------------------------
    DO nn=1,nbocos
    IF (bctype(nn) .EQ. eulerwall) THEN
-   CALL SETBCPOINTERS2_D(nn)
-   CALL BCEULERWALL2_D(nn, secondhalo, correctfork)
-   CALL RESETBCPOINTERS2(nn)
+   CALL SETBCPOINTERS_D(nn, .true.)
+   CALL BCEULERWALL_D(nn, secondhalo, correctfork)
+   CALL RESETBCPOINTERS(nn, .true.)
    END IF
    END DO
-   END SUBROUTINE APPLYALLBC_BLOCK2_D
-   SUBROUTINE APPLYALLBC_BLOCK2(secondhalo)
+   END SUBROUTINE APPLYALLBC_BLOCK_D
+   SUBROUTINE APPLYALLBC_BLOCK(secondhalo)
    ! Apply BC's for a single block
    USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
@@ -187,9 +188,9 @@
    ! ------------------------------------
    DO nn=1,nbocos
    IF (bctype(nn) .EQ. symm) THEN
-   CALL SETBCPOINTERS2(nn)
-   CALL BCSYMM2(nn, secondhalo)
-   CALL RESETBCPOINTERS2(nn)
+   CALL SETBCPOINTERS(nn, .false.)
+   CALL BCSYMM(nn, secondhalo)
+   CALL RESETBCPOINTERS(nn, .false.)
    END IF
    END DO
    ! ------------------------------------
@@ -197,9 +198,9 @@
    ! ------------------------------------
    DO nn=1,nviscbocos
    IF (bctype(nn) .EQ. nswalladiabatic) THEN
-   CALL SETBCPOINTERS2(nn)
-   CALL BCNSWALLADIABATIC2(nn, secondhalo, correctfork)
-   CALL RESETBCPOINTERS2(nn)
+   CALL SETBCPOINTERS(nn, .false.)
+   CALL BCNSWALLADIABATIC(nn, secondhalo, correctfork)
+   CALL RESETBCPOINTERS(nn, .false.)
    END IF
    END DO
    ! ------------------------------------
@@ -207,9 +208,9 @@
    ! ------------------------------------
    DO nn=1,nviscbocos
    IF (bctype(nn) .EQ. nswallisothermal) THEN
-   CALL SETBCPOINTERS2(nn)
-   CALL BCNSWALLISOTHERMAL2(nn, secondhalo, correctfork)
-   CALL RESETBCPOINTERS2(nn)
+   CALL SETBCPOINTERS(nn, .false.)
+   CALL BCNSWALLISOTHERMAL(nn, secondhalo, correctfork)
+   CALL RESETBCPOINTERS(nn, .false.)
    END IF
    END DO
    ! ------------------------------------
@@ -221,9 +222,9 @@
    &           )
    DO nn=1,nbocos
    IF (bctype(nn) .EQ. farfield) THEN
-   CALL SETBCPOINTERS2(nn)
-   CALL BCFARFIELD2(nn, secondhalo, correctfork)
-   CALL RESETBCPOINTERS2(nn)
+   CALL SETBCPOINTERS(nn, .false.)
+   CALL BCFARFIELD(nn, secondhalo, correctfork)
+   CALL RESETBCPOINTERS(nn, .false.)
    END IF
    END DO
    ! ------------------------------------
@@ -231,13 +232,13 @@
    ! ------------------------------------
    DO nn=1,nbocos
    IF (bctype(nn) .EQ. eulerwall) THEN
-   CALL SETBCPOINTERS2(nn)
-   CALL BCEULERWALL2(nn, secondhalo, correctfork)
-   CALL RESETBCPOINTERS2(nn)
+   CALL SETBCPOINTERS(nn, .true.)
+   CALL BCEULERWALL(nn, secondhalo, correctfork)
+   CALL RESETBCPOINTERS(nn, .true.)
    END IF
    END DO
-   END SUBROUTINE APPLYALLBC_BLOCK2
-   !  Differentiation of bcsymm2 in forward (tangent) mode (with options i4 dr8 r8):
+   END SUBROUTINE APPLYALLBC_BLOCK
+   !  Differentiation of bcsymm in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *rev0 *rev1 *pp0 *pp1 *rlv0
    !                *rlv1 *ww0 *ww1
    !   with respect to varying inputs: *(*bcdata.norm) *rev0 *rev1
@@ -250,7 +251,7 @@
    ! ===================================================================
    !   Actual implementation of each of the boundary condition routines
    ! ===================================================================
-   SUBROUTINE BCSYMM2_D(nn, secondhalo)
+   SUBROUTINE BCSYMM_D(nn, secondhalo)
    !
    ! ******************************************************************
    ! *                                                                *
@@ -282,8 +283,8 @@
    ! Loop over the generic subface to set the state in the
    ! 1-st level halos 
    DO ii=0,isize*jsize-1
-   i = MOD(ii, isize) + 1
-   j = ii/isize + 1
+   i = MOD(ii, isize) + istart
+   j = ii/isize + jstart
    ! Determine twice the normal velocity component,
    ! which must be substracted from the donor velocity
    ! to obtain the halo velocity.
@@ -332,8 +333,8 @@
    ! If we need the second halo, do everything again, but using ww0,
    ! ww3 etc instead of ww2 and ww1. 
    DO ii=0,isize*jsize-1
-   i = MOD(ii, isize) + 1
-   j = ii/isize + 1
+   i = MOD(ii, isize) + istart
+   j = ii/isize + jstart
    vnd = two*(ww3d(i, j, ivx)*bcdata(nn)%norm(i, j, 1)+ww3(i, j, &
    &         ivx)*bcdatad(nn)%norm(i, j, 1)+ww3d(i, j, ivy)*bcdata(nn)%norm&
    &         (i, j, 2)+ww3(i, j, ivy)*bcdatad(nn)%norm(i, j, 2)+ww3d(i, j, &
@@ -375,11 +376,11 @@
    END IF
    END DO
    END IF
-   END SUBROUTINE BCSYMM2_D
+   END SUBROUTINE BCSYMM_D
    ! ===================================================================
    !   Actual implementation of each of the boundary condition routines
    ! ===================================================================
-   SUBROUTINE BCSYMM2(nn, secondhalo)
+   SUBROUTINE BCSYMM(nn, secondhalo)
    !
    ! ******************************************************************
    ! *                                                                *
@@ -410,8 +411,8 @@
    ! Loop over the generic subface to set the state in the
    ! 1-st level halos 
    DO ii=0,isize*jsize-1
-   i = MOD(ii, isize) + 1
-   j = ii/isize + 1
+   i = MOD(ii, isize) + istart
+   j = ii/isize + jstart
    ! Determine twice the normal velocity component,
    ! which must be substracted from the donor velocity
    ! to obtain the halo velocity.
@@ -439,8 +440,8 @@
    ! If we need the second halo, do everything again, but using ww0,
    ! ww3 etc instead of ww2 and ww1. 
    DO ii=0,isize*jsize-1
-   i = MOD(ii, isize) + 1
-   j = ii/isize + 1
+   i = MOD(ii, isize) + istart
+   j = ii/isize + jstart
    vn = two*(ww3(i, j, ivx)*bcdata(nn)%norm(i, j, 1)+ww3(i, j, ivy)&
    &         *bcdata(nn)%norm(i, j, 2)+ww3(i, j, ivz)*bcdata(nn)%norm(i, j&
    &         , 3))
@@ -461,8 +462,8 @@
    IF (eddymodel) rev0(i, j) = rev3(i, j)
    END DO
    END IF
-   END SUBROUTINE BCSYMM2
-   !  Differentiation of bcnswalladiabatic2 in forward (tangent) mode (with options i4 dr8 r8):
+   END SUBROUTINE BCSYMM
+   !  Differentiation of bcnswalladiabatic in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *rev *bvtj1 *bvtj2 *w *bvtk1
    !                *bvtk2 *bvti1 *bvti2 *rev0 *rev1 *pp0 *pp1 *rlv0
    !                *rlv1 *ww0 *ww1
@@ -475,7 +476,7 @@
    !                *bcdata.uslip:in rev0:in rev1:in rev2:in pp0:in
    !                pp1:in pp2:in rlv0:in rlv1:in rlv2:in ww0:in ww1:in
    !                ww2:in
-   SUBROUTINE BCNSWALLADIABATIC2_D(nn, secondhalo, correctfork)
+   SUBROUTINE BCNSWALLADIABATIC_D(nn, secondhalo, correctfork)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -509,8 +510,8 @@
    ! Loop over the generic subface to set the state in the
    ! halo cells.
    DO ii=0,isize*jsize-1
-   i = MOD(ii, isize) + 1
-   j = ii/isize + 1
+   i = MOD(ii, isize) + istart
+   j = ii/isize + jstart
    ! Set the value of rhok if a correcton must be applied.
    ! It probably does not matter too much, because k is very
    ! small near the wall.
@@ -545,12 +546,12 @@
    END IF
    END DO
    ! Compute the energy for these halo's.
-   CALL COMPUTEETOT2_D(ww1, ww1d, pp1, pp1d, correctfork)
+   CALL COMPUTEETOT_D(ww1, ww1d, pp1, pp1d, correctfork)
    ! Extrapolate the state vectors in case a second halo
    ! is needed.
-   IF (secondhalo) CALL EXTRAPOLATE2NDHALO2_D(correctfork)
-   END SUBROUTINE BCNSWALLADIABATIC2_D
-   SUBROUTINE BCNSWALLADIABATIC2(nn, secondhalo, correctfork)
+   IF (secondhalo) CALL EXTRAPOLATE2NDHALO_D(correctfork)
+   END SUBROUTINE BCNSWALLADIABATIC_D
+   SUBROUTINE BCNSWALLADIABATIC(nn, secondhalo, correctfork)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -582,8 +583,8 @@
    ! Loop over the generic subface to set the state in the
    ! halo cells.
    DO ii=0,isize*jsize-1
-   i = MOD(ii, isize) + 1
-   j = ii/isize + 1
+   i = MOD(ii, isize) + istart
+   j = ii/isize + jstart
    ! Set the value of rhok if a correcton must be applied.
    ! It probably does not matter too much, because k is very
    ! small near the wall.
@@ -605,12 +606,12 @@
    IF (eddymodel) rev1(i, j) = -rev2(i, j)
    END DO
    ! Compute the energy for these halo's.
-   CALL COMPUTEETOT2(ww1, pp1, correctfork)
+   CALL COMPUTEETOT(ww1, pp1, correctfork)
    ! Extrapolate the state vectors in case a second halo
    ! is needed.
-   IF (secondhalo) CALL EXTRAPOLATE2NDHALO2(correctfork)
-   END SUBROUTINE BCNSWALLADIABATIC2
-   !  Differentiation of bcnswallisothermal2 in forward (tangent) mode (with options i4 dr8 r8):
+   IF (secondhalo) CALL EXTRAPOLATE2NDHALO(correctfork)
+   END SUBROUTINE BCNSWALLADIABATIC
+   !  Differentiation of bcnswallisothermal in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *rev *bvtj1 *bvtj2 *w *bvtk1
    !                *bvtk2 *bvti1 *bvti2 *rev0 *rev1 *pp0 *pp1 *rlv0
    !                *rlv1 *ww0 *ww1
@@ -623,7 +624,7 @@
    !                *bcdata.uslip:in rev0:in rev1:in rev2:in pp0:in
    !                pp1:in pp2:in rlv0:in rlv1:in rlv2:in ww0:in ww1:in
    !                ww2:in
-   SUBROUTINE BCNSWALLISOTHERMAL2_D(nn, secondhalo, correctfork)
+   SUBROUTINE BCNSWALLISOTHERMAL_D(nn, secondhalo, correctfork)
    !
    ! ******************************************************************
    ! *                                                                *
@@ -661,8 +662,8 @@
    ! Loop over the generic subface to set the state in the
    ! halo cells.
    DO ii=0,isize*jsize-1
-   i = MOD(ii, isize) + 1
-   j = ii/isize + 1
+   i = MOD(ii, isize) + istart
+   j = ii/isize + jstart
    ! Set the value of rhok if a correcton must be applied.
    ! It probably does not matter too much, because k is very
    ! small near the wall.
@@ -717,12 +718,12 @@
    END IF
    END DO
    ! Compute the energy for these halo's.
-   CALL COMPUTEETOT2_D(ww1, ww1d, pp1, pp1d, correctfork)
+   CALL COMPUTEETOT_D(ww1, ww1d, pp1, pp1d, correctfork)
    ! Extrapolate the state vectors in case a second halo
    ! is needed.
-   IF (secondhalo) CALL EXTRAPOLATE2NDHALO2_D(correctfork)
-   END SUBROUTINE BCNSWALLISOTHERMAL2_D
-   SUBROUTINE BCNSWALLISOTHERMAL2(nn, secondhalo, correctfork)
+   IF (secondhalo) CALL EXTRAPOLATE2NDHALO_D(correctfork)
+   END SUBROUTINE BCNSWALLISOTHERMAL_D
+   SUBROUTINE BCNSWALLISOTHERMAL(nn, secondhalo, correctfork)
    !
    ! ******************************************************************
    ! *                                                                *
@@ -758,8 +759,8 @@
    ! Loop over the generic subface to set the state in the
    ! halo cells.
    DO ii=0,isize*jsize-1
-   i = MOD(ii, isize) + 1
-   j = ii/isize + 1
+   i = MOD(ii, isize) + istart
+   j = ii/isize + jstart
    ! Set the value of rhok if a correcton must be applied.
    ! It probably does not matter too much, because k is very
    ! small near the wall.
@@ -795,12 +796,12 @@
    IF (eddymodel) rev1(i, j) = -rev2(i, j)
    END DO
    ! Compute the energy for these halo's.
-   CALL COMPUTEETOT2(ww1, pp1, correctfork)
+   CALL COMPUTEETOT(ww1, pp1, correctfork)
    ! Extrapolate the state vectors in case a second halo
    ! is needed.
-   IF (secondhalo) CALL EXTRAPOLATE2NDHALO2(correctfork)
-   END SUBROUTINE BCNSWALLISOTHERMAL2
-   !  Differentiation of bceulerwall2 in forward (tangent) mode (with options i4 dr8 r8):
+   IF (secondhalo) CALL EXTRAPOLATE2NDHALO(correctfork)
+   END SUBROUTINE BCNSWALLISOTHERMAL
+   !  Differentiation of bceulerwall in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *rev0 *rev1 *pp0 *pp1 *rlv0
    !                *rlv1 *ww0 *ww1
    !   with respect to varying inputs: *(*bcdata.norm) *(*bcdata.rface)
@@ -810,7 +811,7 @@
    !                rev0:in rev1:in rev2:in pp0:in pp1:in pp2:in pp3:in
    !                rlv0:in rlv1:in rlv2:in ss:in ssi:in ssj:in ssk:in
    !                ww0:in ww1:in ww2:in
-   SUBROUTINE BCEULERWALL2_D(nn, secondhalo, correctfork)
+   SUBROUTINE BCEULERWALL_D(nn, secondhalo, correctfork)
    !
    ! ******************************************************************
    ! *                                                                *
@@ -875,8 +876,8 @@
    gradd = 0.0_8
    ! Linear extrapolation. 
    DO ii=0,isize*jsize-1
-   j = MOD(ii, isize) + 1
-   k = ii/isize + 1
+   j = MOD(ii, isize) + istart
+   k = ii/isize + jstart
    gradd(j, k) = pp3d(j, k) - pp2d(j, k)
    grad(j, k) = pp3(j, k) - pp2(j, k)
    END DO
@@ -891,21 +892,21 @@
    ! the code. For moving faces also the grid velocity of
    ! the 1st cell center from the wall is needed.
    DO ii=0,isize*jsize-1
-   j = MOD(ii, isize) + 1
-   k = ii/isize + 1
+   j = MOD(ii, isize) + istart
+   k = ii/isize + jstart
    ! Store the indices k+1, k-1 a bit easier and make
    ! sure that they do not exceed the range of the arrays.
    km1 = k - 1
-   IF (1 .LT. km1) THEN
+   IF (jstart .LT. km1) THEN
    km1 = km1
    ELSE
-   km1 = 1
+   km1 = jstart
    END IF
    kp1 = k + 1
-   IF (jsize .GT. kp1) THEN
+   IF (jend .GT. kp1) THEN
    kp1 = kp1
    ELSE
-   kp1 = jsize
+   kp1 = jend
    END IF
    IF (1_intType .LT. kp1 - km1) THEN
    max1 = kp1 - km1
@@ -918,16 +919,16 @@
    ! The indices j+1 and j-1. Make sure that they
    ! do not exceed the range of the arrays.
    jm1 = j - 1
-   IF (1 .LT. jm1) THEN
+   IF (istart .LT. jm1) THEN
    jm1 = jm1
    ELSE
-   jm1 = 1
+   jm1 = istart
    END IF
    jp1 = j + 1
-   IF (isize .GT. jp1) THEN
+   IF (iend .GT. jp1) THEN
    jp1 = jp1
    ELSE
-   jp1 = isize
+   jp1 = iend
    END IF
    IF (1_intType .LT. jp1 - jm1) THEN
    max2 = jp1 - jm1
@@ -1055,8 +1056,8 @@
    ! Determine the state in the halo cell. Again loop over
    ! the cell range for this subface.
    DO ii=0,isize*jsize-1
-   j = MOD(ii, isize) + 1
-   k = ii/isize + 1
+   j = MOD(ii, isize) + istart
+   k = ii/isize + jstart
    ! Compute the pressure density and velocity in the
    ! halo cell. Note that rface is the grid velocity
    ! component in the direction of norm, i.e. outward
@@ -1098,12 +1099,12 @@
    END IF
    END DO
    ! Compute the energy for these halo's.
-   CALL COMPUTEETOT2_D(ww1, ww1d, pp1, pp1d, correctfork)
+   CALL COMPUTEETOT_D(ww1, ww1d, pp1, pp1d, correctfork)
    ! Extrapolate the state vectors in case a second halo
    ! is needed.
-   IF (secondhalo) CALL EXTRAPOLATE2NDHALO2_D(correctfork)
-   END SUBROUTINE BCEULERWALL2_D
-   SUBROUTINE BCEULERWALL2(nn, secondhalo, correctfork)
+   IF (secondhalo) CALL EXTRAPOLATE2NDHALO_D(correctfork)
+   END SUBROUTINE BCEULERWALL_D
+   SUBROUTINE BCEULERWALL(nn, secondhalo, correctfork)
    !
    ! ******************************************************************
    ! *                                                                *
@@ -1159,8 +1160,8 @@
    CASE (linextrapolpressure) 
    ! Linear extrapolation. 
    DO ii=0,isize*jsize-1
-   j = MOD(ii, isize) + 1
-   k = ii/isize + 1
+   j = MOD(ii, isize) + istart
+   k = ii/isize + jstart
    grad(j, k) = pp3(j, k) - pp2(j, k)
    END DO
    CASE (normalmomentum) 
@@ -1173,21 +1174,21 @@
    ! the code. For moving faces also the grid velocity of
    ! the 1st cell center from the wall is needed.
    DO ii=0,isize*jsize-1
-   j = MOD(ii, isize) + 1
-   k = ii/isize + 1
+   j = MOD(ii, isize) + istart
+   k = ii/isize + jstart
    ! Store the indices k+1, k-1 a bit easier and make
    ! sure that they do not exceed the range of the arrays.
    km1 = k - 1
-   IF (1 .LT. km1) THEN
+   IF (jstart .LT. km1) THEN
    km1 = km1
    ELSE
-   km1 = 1
+   km1 = jstart
    END IF
    kp1 = k + 1
-   IF (jsize .GT. kp1) THEN
+   IF (jend .GT. kp1) THEN
    kp1 = kp1
    ELSE
-   kp1 = jsize
+   kp1 = jend
    END IF
    IF (1_intType .LT. kp1 - km1) THEN
    max1 = kp1 - km1
@@ -1200,16 +1201,16 @@
    ! The indices j+1 and j-1. Make sure that they
    ! do not exceed the range of the arrays.
    jm1 = j - 1
-   IF (1 .LT. jm1) THEN
+   IF (istart .LT. jm1) THEN
    jm1 = jm1
    ELSE
-   jm1 = 1
+   jm1 = istart
    END IF
    jp1 = j + 1
-   IF (isize .GT. jp1) THEN
+   IF (iend .GT. jp1) THEN
    jp1 = jp1
    ELSE
-   jp1 = isize
+   jp1 = iend
    END IF
    IF (1_intType .LT. jp1 - jm1) THEN
    max2 = jp1 - jm1
@@ -1283,8 +1284,8 @@
    ! Determine the state in the halo cell. Again loop over
    ! the cell range for this subface.
    DO ii=0,isize*jsize-1
-   j = MOD(ii, isize) + 1
-   k = ii/isize + 1
+   j = MOD(ii, isize) + istart
+   k = ii/isize + jstart
    ! Compute the pressure density and velocity in the
    ! halo cell. Note that rface is the grid velocity
    ! component in the direction of norm, i.e. outward
@@ -1306,12 +1307,12 @@
    IF (eddymodel) rev1(j, k) = rev2(j, k)
    END DO
    ! Compute the energy for these halo's.
-   CALL COMPUTEETOT2(ww1, pp1, correctfork)
+   CALL COMPUTEETOT(ww1, pp1, correctfork)
    ! Extrapolate the state vectors in case a second halo
    ! is needed.
-   IF (secondhalo) CALL EXTRAPOLATE2NDHALO2(correctfork)
-   END SUBROUTINE BCEULERWALL2
-   !  Differentiation of bcfarfield2 in forward (tangent) mode (with options i4 dr8 r8):
+   IF (secondhalo) CALL EXTRAPOLATE2NDHALO(correctfork)
+   END SUBROUTINE BCEULERWALL
+   !  Differentiation of bcfarfield in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *rev0 *rev1 *pp0 *pp1 *rlv0
    !                *rlv1 *ww0 *ww1
    !   with respect to varying inputs: gammainf winf pinfcorr *(*bcdata.norm)
@@ -1320,7 +1321,7 @@
    !   Plus diff mem management of: bcdata:in *bcdata.norm:in *bcdata.rface:in
    !                rev0:in rev1:in rev2:in pp0:in pp1:in pp2:in rlv0:in
    !                rlv1:in rlv2:in ww0:in ww1:in ww2:in
-   SUBROUTINE BCFARFIELD2_D(nn, secondhalo, correctfork)
+   SUBROUTINE BCFARFIELD_D(nn, secondhalo, correctfork)
    !      ******************************************************************
    !      *                                                                *
    !      * bcFarfield applies the farfield boundary condition to a block. *
@@ -1400,8 +1401,8 @@
    ! Loop over the generic subface to set the state in the
    ! halo cells.
    DO ii=0,isize*jsize-1
-   i = MOD(ii, isize) + 1
-   j = ii/isize + 1
+   i = MOD(ii, isize) + istart
+   j = ii/isize + jstart
    ! Compute the normal velocity of the free stream and
    ! substract the normal velocity of the mesh.
    qn0d = u0d*bcdata(nn)%norm(i, j, 1) + u0*bcdatad(nn)%norm(i, j, 1)&
@@ -1550,12 +1551,12 @@
    END IF
    END DO
    ! Compute the energy for these halo's.
-   CALL COMPUTEETOT2_D(ww1, ww1d, pp1, pp1d, correctfork)
+   CALL COMPUTEETOT_D(ww1, ww1d, pp1, pp1d, correctfork)
    ! Extrapolate the state vectors in case a second halo
    ! is needed.
-   IF (secondhalo) CALL EXTRAPOLATE2NDHALO2_D(correctfork)
-   END SUBROUTINE BCFARFIELD2_D
-   SUBROUTINE BCFARFIELD2(nn, secondhalo, correctfork)
+   IF (secondhalo) CALL EXTRAPOLATE2NDHALO_D(correctfork)
+   END SUBROUTINE BCFARFIELD_D
+   SUBROUTINE BCFARFIELD(nn, secondhalo, correctfork)
    !      ******************************************************************
    !      *                                                                *
    !      * bcFarfield applies the farfield boundary condition to a block. *
@@ -1600,8 +1601,8 @@
    ! Loop over the generic subface to set the state in the
    ! halo cells.
    DO ii=0,isize*jsize-1
-   i = MOD(ii, isize) + 1
-   j = ii/isize + 1
+   i = MOD(ii, isize) + istart
+   j = ii/isize + jstart
    ! Compute the normal velocity of the free stream and
    ! substract the normal velocity of the mesh.
    qn0 = u0*bcdata(nn)%norm(i, j, 1) + v0*bcdata(nn)%norm(i, j, 2) + &
@@ -1676,18 +1677,18 @@
    IF (eddymodel) rev1(i, j) = rev2(i, j)
    END DO
    ! Compute the energy for these halo's.
-   CALL COMPUTEETOT2(ww1, pp1, correctfork)
+   CALL COMPUTEETOT(ww1, pp1, correctfork)
    ! Extrapolate the state vectors in case a second halo
    ! is needed.
-   IF (secondhalo) CALL EXTRAPOLATE2NDHALO2(correctfork)
-   END SUBROUTINE BCFARFIELD2
-   !  Differentiation of extrapolate2ndhalo2 in forward (tangent) mode (with options i4 dr8 r8):
+   IF (secondhalo) CALL EXTRAPOLATE2NDHALO(correctfork)
+   END SUBROUTINE BCFARFIELD
+   !  Differentiation of extrapolate2ndhalo in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *rev0 *pp0 *rlv0 *ww0
    !   with respect to varying inputs: *rev0 *rev1 *pp0 *pp1 *pp2
    !                *rlv0 *rlv1 *ww0 *ww1 *ww2
    !   Plus diff mem management of: rev0:in rev1:in pp0:in pp1:in
    !                pp2:in rlv0:in rlv1:in ww0:in ww1:in ww2:in
-   SUBROUTINE EXTRAPOLATE2NDHALO2_D(correctfork)
+   SUBROUTINE EXTRAPOLATE2NDHALO_D(correctfork)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -1712,8 +1713,8 @@
    ! Loop over the generic subface to set the state in the
    ! halo cells.
    DO ii=0,isize*jsize-1
-   i = MOD(ii, isize) + 1
-   j = ii/isize + 1
+   i = MOD(ii, isize) + istart
+   j = ii/isize + jstart
    ! Extrapolate the density, momentum and pressure.
    ! Make sure that a certain threshold is kept.
    ww0d(i, j, irho) = two*ww1d(i, j, irho) - ww2d(i, j, irho)
@@ -1755,12 +1756,12 @@
    END IF
    END DO
    ! Compute the energy for this halo range.
-   CALL COMPUTEETOT2_D(ww0, ww0d, pp0, pp0d, correctfork)
-   END SUBROUTINE EXTRAPOLATE2NDHALO2_D
-   !  Differentiation of computeetot2 in forward (tangent) mode (with options i4 dr8 r8):
+   CALL COMPUTEETOT_D(ww0, ww0d, pp0, pp0d, correctfork)
+   END SUBROUTINE EXTRAPOLATE2NDHALO_D
+   !  Differentiation of computeetot in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: ww
    !   with respect to varying inputs: ww pp
-   SUBROUTINE COMPUTEETOT2_D(ww, wwd, pp, ppd, correctfork)
+   SUBROUTINE COMPUTEETOT_D(ww, wwd, pp, ppd, correctfork)
    ! Simplified total energy computation for boundary conditions.
    ! Only implements the constant cpModel
    USE CONSTANTS
@@ -1784,8 +1785,8 @@
    ! Loop over the given array and compute the energy, possibly
    ! correcting for K
    DO ii=0,isize*jsize-1
-   i = MOD(ii, isize) + 1
-   j = ii/isize + 1
+   i = MOD(ii, isize) + istart
+   j = ii/isize + jstart
    IF (.NOT.correctfork) THEN
    wwd(i, j, irhoe) = ovgm1*ppd(i, j) + half*(wwd(i, j, irho)*(ww&
    &           (i, j, ivx)**2+ww(i, j, ivy)**2+ww(i, j, ivz)**2)+ww(i, j, &
@@ -1808,8 +1809,8 @@
    CALL TERMINATE('BCRoutines', &
    &                 'CPTempCurveFits not implemented yet.')
    END SELECT
-   END SUBROUTINE COMPUTEETOT2_D
-   SUBROUTINE EXTRAPOLATE2NDHALO2(correctfork)
+   END SUBROUTINE COMPUTEETOT_D
+   SUBROUTINE EXTRAPOLATE2NDHALO(correctfork)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -1834,8 +1835,8 @@
    ! Loop over the generic subface to set the state in the
    ! halo cells.
    DO ii=0,isize*jsize-1
-   i = MOD(ii, isize) + 1
-   j = ii/isize + 1
+   i = MOD(ii, isize) + istart
+   j = ii/isize + jstart
    ! Extrapolate the density, momentum and pressure.
    ! Make sure that a certain threshold is kept.
    ww0(i, j, irho) = two*ww1(i, j, irho) - ww2(i, j, irho)
@@ -1863,9 +1864,9 @@
    IF (eddymodel) rev0(i, j) = rev1(i, j)
    END DO
    ! Compute the energy for this halo range.
-   CALL COMPUTEETOT2(ww0, pp0, correctfork)
-   END SUBROUTINE EXTRAPOLATE2NDHALO2
-   SUBROUTINE COMPUTEETOT2(ww, pp, correctfork)
+   CALL COMPUTEETOT(ww0, pp0, correctfork)
+   END SUBROUTINE EXTRAPOLATE2NDHALO
+   SUBROUTINE COMPUTEETOT(ww, pp, correctfork)
    ! Simplified total energy computation for boundary conditions.
    ! Only implements the constant cpModel
    USE CONSTANTS
@@ -1887,8 +1888,8 @@
    ! Loop over the given array and compute the energy, possibly
    ! correcting for K
    DO ii=0,isize*jsize-1
-   i = MOD(ii, isize) + 1
-   j = ii/isize + 1
+   i = MOD(ii, isize) + istart
+   j = ii/isize + jstart
    IF (.NOT.correctfork) THEN
    ww(i, j, irhoe) = ovgm1*pp(i, j) + half*ww(i, j, irho)*(ww(i, &
    &           j, ivx)**2+ww(i, j, ivy)**2+ww(i, j, ivz)**2)
@@ -1902,15 +1903,15 @@
    CALL TERMINATE('BCRoutines', &
    &                 'CPTempCurveFits not implemented yet.')
    END SELECT
-   END SUBROUTINE COMPUTEETOT2
-   !  Differentiation of setbcpointers2 in forward (tangent) mode (with options i4 dr8 r8):
+   END SUBROUTINE COMPUTEETOT
+   !  Differentiation of setbcpointers in forward (tangent) mode (with options i4 dr8 r8):
    !   Plus diff mem management of: rev:in p:in s:in w:in rlv:in x:in
-   !                si:in sj:in sk:in bcdata:in rev0:in-out rev1:in-out
-   !                rev2:in-out rev3:in-out pp0:in-out pp1:in-out
-   !                pp2:in-out pp3:in-out rlv0:in-out rlv1:in-out
+   !                si:in sj:in sk:in bcdata:in xx:in-out rev0:in-out
+   !                rev1:in-out rev2:in-out rev3:in-out pp0:in-out
+   !                pp1:in-out pp2:in-out pp3:in-out rlv0:in-out rlv1:in-out
    !                rlv2:in-out rlv3:in-out ss:in-out ssi:in-out ssj:in-out
    !                ssk:in-out ww0:in-out ww1:in-out ww2:in-out ww3:in-out
-   SUBROUTINE SETBCPOINTERS2_D(nn)
+   SUBROUTINE SETBCPOINTERS_D(nn, spatialpointers)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -1926,8 +1927,7 @@
    IMPLICIT NONE
    ! Subroutine arguments.
    INTEGER(kind=inttype), INTENT(IN) :: nn
-   ! Local variables
-   INTEGER(kind=inttype) :: istart, iend, jstart, jend
+   LOGICAL, INTENT(IN) :: spatialpointers
    ! Determine the sizes of each face and point to just the range we
    ! need on each face. 
    istart = bcdata(nn)%icbeg
@@ -1942,235 +1942,238 @@
    SELECT CASE  (bcfaceid(nn)) 
    CASE (imin) 
    !===============================================================
-   ww3d => wd(3, istart:iend, jstart:jend, :)
-   ww3 => w(3, istart:iend, jstart:jend, :)
-   ww2d => wd(2, istart:iend, jstart:jend, :)
-   ww2 => w(2, istart:iend, jstart:jend, :)
-   ww1d => wd(1, istart:iend, jstart:jend, :)
-   ww1 => w(1, istart:iend, jstart:jend, :)
-   ww0d => wd(0, istart:iend, jstart:jend, :)
-   ww0 => w(0, istart:iend, jstart:jend, :)
-   pp3d => pd(3, istart:iend, jstart:jend)
-   pp3 => p(3, istart:iend, jstart:jend)
-   pp2d => pd(2, istart:iend, jstart:jend)
-   pp2 => p(2, istart:iend, jstart:jend)
-   pp1d => pd(1, istart:iend, jstart:jend)
-   pp1 => p(1, istart:iend, jstart:jend)
-   pp0d => pd(0, istart:iend, jstart:jend)
-   pp0 => p(0, istart:iend, jstart:jend)
-   rlv3d => rlvd(3, istart:iend, jstart:jend)
-   rlv3 => rlv(3, istart:iend, jstart:jend)
-   rlv2d => rlvd(2, istart:iend, jstart:jend)
-   rlv2 => rlv(2, istart:iend, jstart:jend)
-   rlv1d => rlvd(1, istart:iend, jstart:jend)
-   rlv1 => rlv(1, istart:iend, jstart:jend)
-   rlv0d => rlvd(0, istart:iend, jstart:jend)
-   rlv0 => rlv(0, istart:iend, jstart:jend)
-   rev3d => revd(3, istart:iend, jstart:jend)
-   rev3 => rev(3, istart:iend, jstart:jend)
-   rev2d => revd(2, istart:iend, jstart:jend)
-   rev2 => rev(2, istart:iend, jstart:jend)
-   rev1d => revd(1, istart:iend, jstart:jend)
-   rev1 => rev(1, istart:iend, jstart:jend)
-   rev0d => revd(0, istart:iend, jstart:jend)
-   rev0 => rev(0, istart:iend, jstart:jend)
-   gamma3 => gamma(3, istart:iend, jstart:jend)
-   gamma2 => gamma(2, istart:iend, jstart:jend)
-   gamma1 => gamma(1, istart:iend, jstart:jend)
-   gamma0 => gamma(0, istart:iend, jstart:jend)
+   ww3d => wd(3, 1:, 1:, :)
+   ww3 => w(3, 1:, 1:, :)
+   ww2d => wd(2, 1:, 1:, :)
+   ww2 => w(2, 1:, 1:, :)
+   ww1d => wd(1, 1:, 1:, :)
+   ww1 => w(1, 1:, 1:, :)
+   ww0d => wd(0, 1:, 1:, :)
+   ww0 => w(0, 1:, 1:, :)
+   pp3d => pd(3, 1:, 1:)
+   pp3 => p(3, 1:, 1:)
+   pp2d => pd(2, 1:, 1:)
+   pp2 => p(2, 1:, 1:)
+   pp1d => pd(1, 1:, 1:)
+   pp1 => p(1, 1:, 1:)
+   pp0d => pd(0, 1:, 1:)
+   pp0 => p(0, 1:, 1:)
+   rlv3d => rlvd(3, 1:, 1:)
+   rlv3 => rlv(3, 1:, 1:)
+   rlv2d => rlvd(2, 1:, 1:)
+   rlv2 => rlv(2, 1:, 1:)
+   rlv1d => rlvd(1, 1:, 1:)
+   rlv1 => rlv(1, 1:, 1:)
+   rlv0d => rlvd(0, 1:, 1:)
+   rlv0 => rlv(0, 1:, 1:)
+   rev3d => revd(3, 1:, 1:)
+   rev3 => rev(3, 1:, 1:)
+   rev2d => revd(2, 1:, 1:)
+   rev2 => rev(2, 1:, 1:)
+   rev1d => revd(1, 1:, 1:)
+   rev1 => rev(1, 1:, 1:)
+   rev0d => revd(0, 1:, 1:)
+   rev0 => rev(0, 1:, 1:)
+   gamma3 => gamma(3, 1:, 1:)
+   gamma2 => gamma(2, 1:, 1:)
+   gamma1 => gamma(1, 1:, 1:)
+   gamma0 => gamma(0, 1:, 1:)
    CASE (imax) 
    !===============================================================
-   ww3d => wd(nx, istart:iend, jstart:jend, :)
-   ww3 => w(nx, istart:iend, jstart:jend, :)
-   ww2d => wd(il, istart:iend, jstart:jend, :)
-   ww2 => w(il, istart:iend, jstart:jend, :)
-   ww1d => wd(ie, istart:iend, jstart:jend, :)
-   ww1 => w(ie, istart:iend, jstart:jend, :)
-   ww0d => wd(ib, istart:iend, jstart:jend, :)
-   ww0 => w(ib, istart:iend, jstart:jend, :)
-   pp3d => pd(nx, istart:iend, jstart:jend)
-   pp3 => p(nx, istart:iend, jstart:jend)
-   pp2d => pd(il, istart:iend, jstart:jend)
-   pp2 => p(il, istart:iend, jstart:jend)
-   pp1d => pd(ie, istart:iend, jstart:jend)
-   pp1 => p(ie, istart:iend, jstart:jend)
-   pp0d => pd(ib, istart:iend, jstart:jend)
-   pp0 => p(ib, istart:iend, jstart:jend)
-   rlv3d => rlvd(nx, istart:iend, jstart:jend)
-   rlv3 => rlv(nx, istart:iend, jstart:jend)
-   rlv2d => rlvd(il, istart:iend, jstart:jend)
-   rlv2 => rlv(il, istart:iend, jstart:jend)
-   rlv1d => rlvd(ie, istart:iend, jstart:jend)
-   rlv1 => rlv(ie, istart:iend, jstart:jend)
-   rlv0d => rlvd(ib, istart:iend, jstart:jend)
-   rlv0 => rlv(ib, istart:iend, jstart:jend)
-   rev3d => revd(nx, istart:iend, jstart:jend)
-   rev3 => rev(nx, istart:iend, jstart:jend)
-   rev2d => revd(il, istart:iend, jstart:jend)
-   rev2 => rev(il, istart:iend, jstart:jend)
-   rev1d => revd(ie, istart:iend, jstart:jend)
-   rev1 => rev(ie, istart:iend, jstart:jend)
-   rev0d => revd(ib, istart:iend, jstart:jend)
-   rev0 => rev(ib, istart:iend, jstart:jend)
-   gamma3 => gamma(nx, istart:iend, jstart:jend)
-   gamma2 => gamma(il, istart:iend, jstart:jend)
-   gamma1 => gamma(ie, istart:iend, jstart:jend)
-   gamma0 => gamma(ib, istart:iend, jstart:jend)
+   ww3d => wd(nx, 1:, 1:, :)
+   ww3 => w(nx, 1:, 1:, :)
+   ww2d => wd(il, 1:, 1:, :)
+   ww2 => w(il, 1:, 1:, :)
+   ww1d => wd(ie, 1:, 1:, :)
+   ww1 => w(ie, 1:, 1:, :)
+   ww0d => wd(ib, 1:, 1:, :)
+   ww0 => w(ib, 1:, 1:, :)
+   pp3d => pd(nx, 1:, 1:)
+   pp3 => p(nx, 1:, 1:)
+   pp2d => pd(il, 1:, 1:)
+   pp2 => p(il, 1:, 1:)
+   pp1d => pd(ie, 1:, 1:)
+   pp1 => p(ie, 1:, 1:)
+   pp0d => pd(ib, 1:, 1:)
+   pp0 => p(ib, 1:, 1:)
+   rlv3d => rlvd(nx, 1:, 1:)
+   rlv3 => rlv(nx, 1:, 1:)
+   rlv2d => rlvd(il, 1:, 1:)
+   rlv2 => rlv(il, 1:, 1:)
+   rlv1d => rlvd(ie, 1:, 1:)
+   rlv1 => rlv(ie, 1:, 1:)
+   rlv0d => rlvd(ib, 1:, 1:)
+   rlv0 => rlv(ib, 1:, 1:)
+   rev3d => revd(nx, 1:, 1:)
+   rev3 => rev(nx, 1:, 1:)
+   rev2d => revd(il, 1:, 1:)
+   rev2 => rev(il, 1:, 1:)
+   rev1d => revd(ie, 1:, 1:)
+   rev1 => rev(ie, 1:, 1:)
+   rev0d => revd(ib, 1:, 1:)
+   rev0 => rev(ib, 1:, 1:)
+   gamma3 => gamma(nx, 1:, 1:)
+   gamma2 => gamma(il, 1:, 1:)
+   gamma1 => gamma(ie, 1:, 1:)
+   gamma0 => gamma(ib, 1:, 1:)
    CASE (jmin) 
    !===============================================================
-   ww3d => wd(istart:iend, 3, jstart:jend, :)
-   ww3 => w(istart:iend, 3, jstart:jend, :)
-   ww2d => wd(istart:iend, 2, jstart:jend, :)
-   ww2 => w(istart:iend, 2, jstart:jend, :)
-   ww1d => wd(istart:iend, 1, jstart:jend, :)
-   ww1 => w(istart:iend, 1, jstart:jend, :)
-   ww0d => wd(istart:iend, 0, jstart:jend, :)
-   ww0 => w(istart:iend, 0, jstart:jend, :)
-   pp3d => pd(istart:iend, 3, jstart:jend)
-   pp3 => p(istart:iend, 3, jstart:jend)
-   pp2d => pd(istart:iend, 2, jstart:jend)
-   pp2 => p(istart:iend, 2, jstart:jend)
-   pp1d => pd(istart:iend, 1, jstart:jend)
-   pp1 => p(istart:iend, 1, jstart:jend)
-   pp0d => pd(istart:iend, 0, jstart:jend)
-   pp0 => p(istart:iend, 0, jstart:jend)
-   rlv3d => rlvd(istart:iend, 3, jstart:jend)
-   rlv3 => rlv(istart:iend, 3, jstart:jend)
-   rlv2d => rlvd(istart:iend, 2, jstart:jend)
-   rlv2 => rlv(istart:iend, 2, jstart:jend)
-   rlv1d => rlvd(istart:iend, 1, jstart:jend)
-   rlv1 => rlv(istart:iend, 1, jstart:jend)
-   rlv0d => rlvd(istart:iend, 0, jstart:jend)
-   rlv0 => rlv(istart:iend, 0, jstart:jend)
-   rev3d => revd(istart:iend, 3, jstart:jend)
-   rev3 => rev(istart:iend, 3, jstart:jend)
-   rev2d => revd(istart:iend, 2, jstart:jend)
-   rev2 => rev(istart:iend, 2, jstart:jend)
-   rev1d => revd(istart:iend, 1, jstart:jend)
-   rev1 => rev(istart:iend, 1, jstart:jend)
-   rev0d => revd(istart:iend, 0, jstart:jend)
-   rev0 => rev(istart:iend, 0, jstart:jend)
-   gamma3 => gamma(istart:iend, 3, jstart:jend)
-   gamma2 => gamma(istart:iend, 2, jstart:jend)
-   gamma1 => gamma(istart:iend, 1, jstart:jend)
-   gamma0 => gamma(istart:iend, 0, jstart:jend)
+   ww3d => wd(1:, 3, 1:, :)
+   ww3 => w(1:, 3, 1:, :)
+   ww2d => wd(1:, 2, 1:, :)
+   ww2 => w(1:, 2, 1:, :)
+   ww1d => wd(1:, 1, 1:, :)
+   ww1 => w(1:, 1, 1:, :)
+   ww0d => wd(1:, 0, 1:, :)
+   ww0 => w(1:, 0, 1:, :)
+   pp3d => pd(1:, 3, 1:)
+   pp3 => p(1:, 3, 1:)
+   pp2d => pd(1:, 2, 1:)
+   pp2 => p(1:, 2, 1:)
+   pp1d => pd(1:, 1, 1:)
+   pp1 => p(1:, 1, 1:)
+   pp0d => pd(1:, 0, 1:)
+   pp0 => p(1:, 0, 1:)
+   rlv3d => rlvd(1:, 3, 1:)
+   rlv3 => rlv(1:, 3, 1:)
+   rlv2d => rlvd(1:, 2, 1:)
+   rlv2 => rlv(1:, 2, 1:)
+   rlv1d => rlvd(1:, 1, 1:)
+   rlv1 => rlv(1:, 1, 1:)
+   rlv0d => rlvd(1:, 0, 1:)
+   rlv0 => rlv(1:, 0, 1:)
+   rev3d => revd(1:, 3, 1:)
+   rev3 => rev(1:, 3, 1:)
+   rev2d => revd(1:, 2, 1:)
+   rev2 => rev(1:, 2, 1:)
+   rev1d => revd(1:, 1, 1:)
+   rev1 => rev(1:, 1, 1:)
+   rev0d => revd(1:, 0, 1:)
+   rev0 => rev(1:, 0, 1:)
+   gamma3 => gamma(1:, 3, 1:)
+   gamma2 => gamma(1:, 2, 1:)
+   gamma1 => gamma(1:, 1, 1:)
+   gamma0 => gamma(1:, 0, 1:)
    CASE (jmax) 
    !===============================================================
-   ww3d => wd(istart:iend, ny, jstart:jend, :)
-   ww3 => w(istart:iend, ny, jstart:jend, :)
-   ww2d => wd(istart:iend, jl, jstart:jend, :)
-   ww2 => w(istart:iend, jl, jstart:jend, :)
-   ww1d => wd(istart:iend, je, jstart:jend, :)
-   ww1 => w(istart:iend, je, jstart:jend, :)
-   ww0d => wd(istart:iend, jb, jstart:jend, :)
-   ww0 => w(istart:iend, jb, jstart:jend, :)
-   pp3d => pd(istart:iend, ny, jstart:jend)
-   pp3 => p(istart:iend, ny, jstart:jend)
-   pp2d => pd(istart:iend, jl, jstart:jend)
-   pp2 => p(istart:iend, jl, jstart:jend)
-   pp1d => pd(istart:iend, je, jstart:jend)
-   pp1 => p(istart:iend, je, jstart:jend)
-   pp0d => pd(istart:iend, jb, jstart:jend)
-   pp0 => p(istart:iend, jb, jstart:jend)
-   rlv3d => rlvd(istart:iend, ny, jstart:jend)
-   rlv3 => rlv(istart:iend, ny, jstart:jend)
-   rlv2d => rlvd(istart:iend, jl, jstart:jend)
-   rlv2 => rlv(istart:iend, jl, jstart:jend)
-   rlv1d => rlvd(istart:iend, je, jstart:jend)
-   rlv1 => rlv(istart:iend, je, jstart:jend)
-   rlv0d => rlvd(istart:iend, jb, jstart:jend)
-   rlv0 => rlv(istart:iend, jb, jstart:jend)
-   rev3d => revd(istart:iend, ny, jstart:jend)
-   rev3 => rev(istart:iend, ny, jstart:jend)
-   rev2d => revd(istart:iend, jl, jstart:jend)
-   rev2 => rev(istart:iend, jl, jstart:jend)
-   rev1d => revd(istart:iend, je, jstart:jend)
-   rev1 => rev(istart:iend, je, jstart:jend)
-   rev0d => revd(istart:iend, jb, jstart:jend)
-   rev0 => rev(istart:iend, jb, jstart:jend)
-   gamma3 => gamma(istart:iend, ny, jstart:jend)
-   gamma2 => gamma(istart:iend, jl, jstart:jend)
-   gamma1 => gamma(istart:iend, je, jstart:jend)
-   gamma0 => gamma(istart:iend, jb, jstart:jend)
+   ww3d => wd(1:, ny, 1:, :)
+   ww3 => w(1:, ny, 1:, :)
+   ww2d => wd(1:, jl, 1:, :)
+   ww2 => w(1:, jl, 1:, :)
+   ww1d => wd(1:, je, 1:, :)
+   ww1 => w(1:, je, 1:, :)
+   ww0d => wd(1:, jb, 1:, :)
+   ww0 => w(1:, jb, 1:, :)
+   pp3d => pd(1:, ny, 1:)
+   pp3 => p(1:, ny, 1:)
+   pp2d => pd(1:, jl, 1:)
+   pp2 => p(1:, jl, 1:)
+   pp1d => pd(1:, je, 1:)
+   pp1 => p(1:, je, 1:)
+   pp0d => pd(1:, jb, 1:)
+   pp0 => p(1:, jb, 1:)
+   rlv3d => rlvd(1:, ny, 1:)
+   rlv3 => rlv(1:, ny, 1:)
+   rlv2d => rlvd(1:, jl, 1:)
+   rlv2 => rlv(1:, jl, 1:)
+   rlv1d => rlvd(1:, je, 1:)
+   rlv1 => rlv(1:, je, 1:)
+   rlv0d => rlvd(1:, jb, 1:)
+   rlv0 => rlv(1:, jb, 1:)
+   rev3d => revd(1:, ny, 1:)
+   rev3 => rev(1:, ny, 1:)
+   rev2d => revd(1:, jl, 1:)
+   rev2 => rev(1:, jl, 1:)
+   rev1d => revd(1:, je, 1:)
+   rev1 => rev(1:, je, 1:)
+   rev0d => revd(1:, jb, 1:)
+   rev0 => rev(1:, jb, 1:)
+   gamma3 => gamma(1:, ny, 1:)
+   gamma2 => gamma(1:, jl, 1:)
+   gamma1 => gamma(1:, je, 1:)
+   gamma0 => gamma(1:, jb, 1:)
    CASE (kmin) 
    !===============================================================
-   ww3d => wd(istart:iend, jstart:jend, 3, :)
-   ww3 => w(istart:iend, jstart:jend, 3, :)
-   ww2d => wd(istart:iend, jstart:jend, 2, :)
-   ww2 => w(istart:iend, jstart:jend, 2, :)
-   ww1d => wd(istart:iend, jstart:jend, 1, :)
-   ww1 => w(istart:iend, jstart:jend, 1, :)
-   ww0d => wd(istart:iend, jstart:jend, 0, :)
-   ww0 => w(istart:iend, jstart:jend, 0, :)
-   pp3d => pd(istart:iend, jstart:jend, 3)
-   pp3 => p(istart:iend, jstart:jend, 3)
-   pp2d => pd(istart:iend, jstart:jend, 2)
-   pp2 => p(istart:iend, jstart:jend, 2)
-   pp1d => pd(istart:iend, jstart:jend, 1)
-   pp1 => p(istart:iend, jstart:jend, 1)
-   pp0d => pd(istart:iend, jstart:jend, 0)
-   pp0 => p(istart:iend, jstart:jend, 0)
-   rlv3d => rlvd(istart:iend, jstart:jend, 3)
-   rlv3 => rlv(istart:iend, jstart:jend, 3)
-   rlv2d => rlvd(istart:iend, jstart:jend, 2)
-   rlv2 => rlv(istart:iend, jstart:jend, 2)
-   rlv1d => rlvd(istart:iend, jstart:jend, 1)
-   rlv1 => rlv(istart:iend, jstart:jend, 1)
-   rlv0d => rlvd(istart:iend, jstart:jend, 0)
-   rlv0 => rlv(istart:iend, jstart:jend, 0)
-   rev3d => revd(istart:iend, jstart:jend, 3)
-   rev3 => rev(istart:iend, jstart:jend, 3)
-   rev2d => revd(istart:iend, jstart:jend, 2)
-   rev2 => rev(istart:iend, jstart:jend, 2)
-   rev1d => revd(istart:iend, jstart:jend, 1)
-   rev1 => rev(istart:iend, jstart:jend, 1)
-   rev0d => revd(istart:iend, jstart:jend, 0)
-   rev0 => rev(istart:iend, jstart:jend, 0)
-   gamma3 => gamma(istart:iend, jstart:jend, 3)
-   gamma2 => gamma(istart:iend, jstart:jend, 2)
-   gamma1 => gamma(istart:iend, jstart:jend, 1)
-   gamma0 => gamma(istart:iend, jstart:jend, 0)
+   ww3d => wd(1:, 1:, 3, :)
+   ww3 => w(1:, 1:, 3, :)
+   ww2d => wd(1:, 1:, 2, :)
+   ww2 => w(1:, 1:, 2, :)
+   ww1d => wd(1:, 1:, 1, :)
+   ww1 => w(1:, 1:, 1, :)
+   ww0d => wd(1:, 1:, 0, :)
+   ww0 => w(1:, 1:, 0, :)
+   pp3d => pd(1:, 1:, 3)
+   pp3 => p(1:, 1:, 3)
+   pp2d => pd(1:, 1:, 2)
+   pp2 => p(1:, 1:, 2)
+   pp1d => pd(1:, 1:, 1)
+   pp1 => p(1:, 1:, 1)
+   pp0d => pd(1:, 1:, 0)
+   pp0 => p(1:, 1:, 0)
+   rlv3d => rlvd(1:, 1:, 3)
+   rlv3 => rlv(1:, 1:, 3)
+   rlv2d => rlvd(1:, 1:, 2)
+   rlv2 => rlv(1:, 1:, 2)
+   rlv1d => rlvd(1:, 1:, 1)
+   rlv1 => rlv(1:, 1:, 1)
+   rlv0d => rlvd(1:, 1:, 0)
+   rlv0 => rlv(1:, 1:, 0)
+   rev3d => revd(1:, 1:, 3)
+   rev3 => rev(1:, 1:, 3)
+   rev2d => revd(1:, 1:, 2)
+   rev2 => rev(1:, 1:, 2)
+   rev1d => revd(1:, 1:, 1)
+   rev1 => rev(1:, 1:, 1)
+   rev0d => revd(1:, 1:, 0)
+   rev0 => rev(1:, 1:, 0)
+   gamma3 => gamma(1:, 1:, 3)
+   gamma2 => gamma(1:, 1:, 2)
+   gamma1 => gamma(1:, 1:, 1)
+   gamma0 => gamma(1:, 1:, 0)
    CASE (kmax) 
    !===============================================================
-   ww3d => wd(istart:iend, jstart:jend, nz, :)
-   ww3 => w(istart:iend, jstart:jend, nz, :)
-   ww2d => wd(istart:iend, jstart:jend, kl, :)
-   ww2 => w(istart:iend, jstart:jend, kl, :)
-   ww1d => wd(istart:iend, jstart:jend, ke, :)
-   ww1 => w(istart:iend, jstart:jend, ke, :)
-   ww0d => wd(istart:iend, jstart:jend, kb, :)
-   ww0 => w(istart:iend, jstart:jend, kb, :)
-   pp3d => pd(istart:iend, jstart:jend, nz)
-   pp3 => p(istart:iend, jstart:jend, nz)
-   pp2d => pd(istart:iend, jstart:jend, kl)
-   pp2 => p(istart:iend, jstart:jend, kl)
-   pp1d => pd(istart:iend, jstart:jend, ke)
-   pp1 => p(istart:iend, jstart:jend, ke)
-   pp0d => pd(istart:iend, jstart:jend, kb)
-   pp0 => p(istart:iend, jstart:jend, kb)
-   rlv3d => rlvd(istart:iend, jstart:jend, nz)
-   rlv3 => rlv(istart:iend, jstart:jend, nz)
-   rlv2d => rlvd(istart:iend, jstart:jend, kl)
-   rlv2 => rlv(istart:iend, jstart:jend, kl)
-   rlv1d => rlvd(istart:iend, jstart:jend, ke)
-   rlv1 => rlv(istart:iend, jstart:jend, ke)
-   rlv0d => rlvd(istart:iend, jstart:jend, kb)
-   rlv0 => rlv(istart:iend, jstart:jend, kb)
-   rev3d => revd(istart:iend, jstart:jend, nz)
-   rev3 => rev(istart:iend, jstart:jend, nz)
-   rev2d => revd(istart:iend, jstart:jend, kl)
-   rev2 => rev(istart:iend, jstart:jend, kl)
-   rev1d => revd(istart:iend, jstart:jend, ke)
-   rev1 => rev(istart:iend, jstart:jend, ke)
-   rev0d => revd(istart:iend, jstart:jend, kb)
-   rev0 => rev(istart:iend, jstart:jend, kb)
-   gamma3 => gamma(istart:iend, jstart:jend, nz)
-   gamma2 => gamma(istart:iend, jstart:jend, kl)
-   gamma1 => gamma(istart:iend, jstart:jend, ke)
-   gamma0 => gamma(istart:iend, jstart:jend, kb)
+   ww3d => wd(1:, 1:, nz, :)
+   ww3 => w(1:, 1:, nz, :)
+   ww2d => wd(1:, 1:, kl, :)
+   ww2 => w(1:, 1:, kl, :)
+   ww1d => wd(1:, 1:, ke, :)
+   ww1 => w(1:, 1:, ke, :)
+   ww0d => wd(1:, 1:, kb, :)
+   ww0 => w(1:, 1:, kb, :)
+   pp3d => pd(1:, 1:, nz)
+   pp3 => p(1:, 1:, nz)
+   pp2d => pd(1:, 1:, kl)
+   pp2 => p(1:, 1:, kl)
+   pp1d => pd(1:, 1:, ke)
+   pp1 => p(1:, 1:, ke)
+   pp0d => pd(1:, 1:, kb)
+   pp0 => p(1:, 1:, kb)
+   rlv3d => rlvd(1:, 1:, nz)
+   rlv3 => rlv(1:, 1:, nz)
+   rlv2d => rlvd(1:, 1:, kl)
+   rlv2 => rlv(1:, 1:, kl)
+   rlv1d => rlvd(1:, 1:, ke)
+   rlv1 => rlv(1:, 1:, ke)
+   rlv0d => rlvd(1:, 1:, kb)
+   rlv0 => rlv(1:, 1:, kb)
+   rev3d => revd(1:, 1:, nz)
+   rev3 => rev(1:, 1:, nz)
+   rev2d => revd(1:, 1:, kl)
+   rev2 => rev(1:, 1:, kl)
+   rev1d => revd(1:, 1:, ke)
+   rev1 => rev(1:, 1:, ke)
+   rev0d => revd(1:, 1:, kb)
+   rev0 => rev(1:, 1:, kb)
+   gamma3 => gamma(1:, 1:, nz)
+   gamma2 => gamma(1:, 1:, kl)
+   gamma1 => gamma(1:, 1:, ke)
+   gamma0 => gamma(1:, 1:, kb)
    END SELECT
+   IF (spatialpointers) THEN
    SELECT CASE  (bcfaceid(nn)) 
    CASE (imin) 
+   xxd => xd(1, :, :, :)
+   xx => x(1, :, :, :)
    ssid => sid(1, :, :, :)
    ssi => si(1, :, :, :)
    ssjd => sjd(2, :, :, :)
@@ -2179,7 +2182,10 @@
    ssk => sk(2, :, :, :)
    ssd => sd(2, :, :, :)
    ss => s(2, :, :, :)
+   dd2wall => d2wall(2, :, :)
    CASE (imax) 
+   xxd => xd(il, :, :, :)
+   xx => x(il, :, :, :)
    ssid => sid(il, :, :, :)
    ssi => si(il, :, :, :)
    ssjd => sjd(il, :, :, :)
@@ -2188,7 +2194,10 @@
    ssk => sk(il, :, :, :)
    ssd => sd(il, :, :, :)
    ss => s(il, :, :, :)
+   dd2wall => d2wall(il, :, :)
    CASE (jmin) 
+   xxd => xd(:, 1, :, :)
+   xx => x(:, 1, :, :)
    ssid => sjd(:, 1, :, :)
    ssi => sj(:, 1, :, :)
    ssjd => sid(:, 2, :, :)
@@ -2197,7 +2206,10 @@
    ssk => sk(:, 2, :, :)
    ssd => sd(:, 2, :, :)
    ss => s(:, 2, :, :)
+   dd2wall => d2wall(:, 2, :)
    CASE (jmax) 
+   xxd => xd(:, jl, :, :)
+   xx => x(:, jl, :, :)
    ssid => sjd(:, jl, :, :)
    ssi => sj(:, jl, :, :)
    ssjd => sid(:, jl, :, :)
@@ -2206,7 +2218,10 @@
    ssk => sk(:, jl, :, :)
    ssd => sd(:, jl, :, :)
    ss => s(:, jl, :, :)
+   dd2wall => d2wall(:, jl, :)
    CASE (kmin) 
+   xxd => xd(:, :, 1, :)
+   xx => x(:, :, 1, :)
    ssid => skd(:, :, 1, :)
    ssi => sk(:, :, 1, :)
    ssjd => sid(:, :, 2, :)
@@ -2215,7 +2230,10 @@
    ssk => sj(:, :, 2, :)
    ssd => sd(:, :, 2, :)
    ss => s(:, :, 2, :)
+   dd2wall => d2wall(:, :, 2)
    CASE (kmax) 
+   xxd => xd(:, :, kl, :)
+   xx => x(:, :, kl, :)
    ssid => skd(:, :, kl, :)
    ssi => sk(:, :, kl, :)
    ssjd => sid(:, :, kl, :)
@@ -2224,23 +2242,11 @@
    ssk => sj(:, :, kl, :)
    ssd => sd(:, :, kl, :)
    ss => s(:, :, kl, :)
+   dd2wall => d2wall(:, :, kl)
    END SELECT
-   SELECT CASE  (bcfaceid(nn)) 
-   CASE (imin) 
-   xline => x(1, :, :, :)
-   CASE (imax) 
-   xline => x(il, :, :, :)
-   CASE (jmin) 
-   xline => x(:, 1, :, :)
-   CASE (jmax) 
-   xline => x(:, jl, :, :)
-   CASE (kmin) 
-   xline => x(:, :, 1, :)
-   CASE (kmax) 
-   xline => x(:, :, kl, :)
-   END SELECT
-   END SUBROUTINE SETBCPOINTERS2_D
-   SUBROUTINE SETBCPOINTERS2(nn)
+   END IF
+   END SUBROUTINE SETBCPOINTERS_D
+   SUBROUTINE SETBCPOINTERS(nn, spatialpointers)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -2256,8 +2262,7 @@
    IMPLICIT NONE
    ! Subroutine arguments.
    INTEGER(kind=inttype), INTENT(IN) :: nn
-   ! Local variables
-   INTEGER(kind=inttype) :: istart, iend, jstart, jend
+   LOGICAL, INTENT(IN) :: spatialpointers
    ! Determine the sizes of each face and point to just the range we
    ! need on each face. 
    istart = bcdata(nn)%icbeg
@@ -2272,185 +2277,185 @@
    SELECT CASE  (bcfaceid(nn)) 
    CASE (imin) 
    !===============================================================
-   ww3 => w(3, istart:iend, jstart:jend, :)
-   ww2 => w(2, istart:iend, jstart:jend, :)
-   ww1 => w(1, istart:iend, jstart:jend, :)
-   ww0 => w(0, istart:iend, jstart:jend, :)
-   pp3 => p(3, istart:iend, jstart:jend)
-   pp2 => p(2, istart:iend, jstart:jend)
-   pp1 => p(1, istart:iend, jstart:jend)
-   pp0 => p(0, istart:iend, jstart:jend)
-   rlv3 => rlv(3, istart:iend, jstart:jend)
-   rlv2 => rlv(2, istart:iend, jstart:jend)
-   rlv1 => rlv(1, istart:iend, jstart:jend)
-   rlv0 => rlv(0, istart:iend, jstart:jend)
-   rev3 => rev(3, istart:iend, jstart:jend)
-   rev2 => rev(2, istart:iend, jstart:jend)
-   rev1 => rev(1, istart:iend, jstart:jend)
-   rev0 => rev(0, istart:iend, jstart:jend)
-   gamma3 => gamma(3, istart:iend, jstart:jend)
-   gamma2 => gamma(2, istart:iend, jstart:jend)
-   gamma1 => gamma(1, istart:iend, jstart:jend)
-   gamma0 => gamma(0, istart:iend, jstart:jend)
+   ww3 => w(3, 1:, 1:, :)
+   ww2 => w(2, 1:, 1:, :)
+   ww1 => w(1, 1:, 1:, :)
+   ww0 => w(0, 1:, 1:, :)
+   pp3 => p(3, 1:, 1:)
+   pp2 => p(2, 1:, 1:)
+   pp1 => p(1, 1:, 1:)
+   pp0 => p(0, 1:, 1:)
+   rlv3 => rlv(3, 1:, 1:)
+   rlv2 => rlv(2, 1:, 1:)
+   rlv1 => rlv(1, 1:, 1:)
+   rlv0 => rlv(0, 1:, 1:)
+   rev3 => rev(3, 1:, 1:)
+   rev2 => rev(2, 1:, 1:)
+   rev1 => rev(1, 1:, 1:)
+   rev0 => rev(0, 1:, 1:)
+   gamma3 => gamma(3, 1:, 1:)
+   gamma2 => gamma(2, 1:, 1:)
+   gamma1 => gamma(1, 1:, 1:)
+   gamma0 => gamma(0, 1:, 1:)
    CASE (imax) 
    !===============================================================
-   ww3 => w(nx, istart:iend, jstart:jend, :)
-   ww2 => w(il, istart:iend, jstart:jend, :)
-   ww1 => w(ie, istart:iend, jstart:jend, :)
-   ww0 => w(ib, istart:iend, jstart:jend, :)
-   pp3 => p(nx, istart:iend, jstart:jend)
-   pp2 => p(il, istart:iend, jstart:jend)
-   pp1 => p(ie, istart:iend, jstart:jend)
-   pp0 => p(ib, istart:iend, jstart:jend)
-   rlv3 => rlv(nx, istart:iend, jstart:jend)
-   rlv2 => rlv(il, istart:iend, jstart:jend)
-   rlv1 => rlv(ie, istart:iend, jstart:jend)
-   rlv0 => rlv(ib, istart:iend, jstart:jend)
-   rev3 => rev(nx, istart:iend, jstart:jend)
-   rev2 => rev(il, istart:iend, jstart:jend)
-   rev1 => rev(ie, istart:iend, jstart:jend)
-   rev0 => rev(ib, istart:iend, jstart:jend)
-   gamma3 => gamma(nx, istart:iend, jstart:jend)
-   gamma2 => gamma(il, istart:iend, jstart:jend)
-   gamma1 => gamma(ie, istart:iend, jstart:jend)
-   gamma0 => gamma(ib, istart:iend, jstart:jend)
+   ww3 => w(nx, 1:, 1:, :)
+   ww2 => w(il, 1:, 1:, :)
+   ww1 => w(ie, 1:, 1:, :)
+   ww0 => w(ib, 1:, 1:, :)
+   pp3 => p(nx, 1:, 1:)
+   pp2 => p(il, 1:, 1:)
+   pp1 => p(ie, 1:, 1:)
+   pp0 => p(ib, 1:, 1:)
+   rlv3 => rlv(nx, 1:, 1:)
+   rlv2 => rlv(il, 1:, 1:)
+   rlv1 => rlv(ie, 1:, 1:)
+   rlv0 => rlv(ib, 1:, 1:)
+   rev3 => rev(nx, 1:, 1:)
+   rev2 => rev(il, 1:, 1:)
+   rev1 => rev(ie, 1:, 1:)
+   rev0 => rev(ib, 1:, 1:)
+   gamma3 => gamma(nx, 1:, 1:)
+   gamma2 => gamma(il, 1:, 1:)
+   gamma1 => gamma(ie, 1:, 1:)
+   gamma0 => gamma(ib, 1:, 1:)
    CASE (jmin) 
    !===============================================================
-   ww3 => w(istart:iend, 3, jstart:jend, :)
-   ww2 => w(istart:iend, 2, jstart:jend, :)
-   ww1 => w(istart:iend, 1, jstart:jend, :)
-   ww0 => w(istart:iend, 0, jstart:jend, :)
-   pp3 => p(istart:iend, 3, jstart:jend)
-   pp2 => p(istart:iend, 2, jstart:jend)
-   pp1 => p(istart:iend, 1, jstart:jend)
-   pp0 => p(istart:iend, 0, jstart:jend)
-   rlv3 => rlv(istart:iend, 3, jstart:jend)
-   rlv2 => rlv(istart:iend, 2, jstart:jend)
-   rlv1 => rlv(istart:iend, 1, jstart:jend)
-   rlv0 => rlv(istart:iend, 0, jstart:jend)
-   rev3 => rev(istart:iend, 3, jstart:jend)
-   rev2 => rev(istart:iend, 2, jstart:jend)
-   rev1 => rev(istart:iend, 1, jstart:jend)
-   rev0 => rev(istart:iend, 0, jstart:jend)
-   gamma3 => gamma(istart:iend, 3, jstart:jend)
-   gamma2 => gamma(istart:iend, 2, jstart:jend)
-   gamma1 => gamma(istart:iend, 1, jstart:jend)
-   gamma0 => gamma(istart:iend, 0, jstart:jend)
+   ww3 => w(1:, 3, 1:, :)
+   ww2 => w(1:, 2, 1:, :)
+   ww1 => w(1:, 1, 1:, :)
+   ww0 => w(1:, 0, 1:, :)
+   pp3 => p(1:, 3, 1:)
+   pp2 => p(1:, 2, 1:)
+   pp1 => p(1:, 1, 1:)
+   pp0 => p(1:, 0, 1:)
+   rlv3 => rlv(1:, 3, 1:)
+   rlv2 => rlv(1:, 2, 1:)
+   rlv1 => rlv(1:, 1, 1:)
+   rlv0 => rlv(1:, 0, 1:)
+   rev3 => rev(1:, 3, 1:)
+   rev2 => rev(1:, 2, 1:)
+   rev1 => rev(1:, 1, 1:)
+   rev0 => rev(1:, 0, 1:)
+   gamma3 => gamma(1:, 3, 1:)
+   gamma2 => gamma(1:, 2, 1:)
+   gamma1 => gamma(1:, 1, 1:)
+   gamma0 => gamma(1:, 0, 1:)
    CASE (jmax) 
    !===============================================================
-   ww3 => w(istart:iend, ny, jstart:jend, :)
-   ww2 => w(istart:iend, jl, jstart:jend, :)
-   ww1 => w(istart:iend, je, jstart:jend, :)
-   ww0 => w(istart:iend, jb, jstart:jend, :)
-   pp3 => p(istart:iend, ny, jstart:jend)
-   pp2 => p(istart:iend, jl, jstart:jend)
-   pp1 => p(istart:iend, je, jstart:jend)
-   pp0 => p(istart:iend, jb, jstart:jend)
-   rlv3 => rlv(istart:iend, ny, jstart:jend)
-   rlv2 => rlv(istart:iend, jl, jstart:jend)
-   rlv1 => rlv(istart:iend, je, jstart:jend)
-   rlv0 => rlv(istart:iend, jb, jstart:jend)
-   rev3 => rev(istart:iend, ny, jstart:jend)
-   rev2 => rev(istart:iend, jl, jstart:jend)
-   rev1 => rev(istart:iend, je, jstart:jend)
-   rev0 => rev(istart:iend, jb, jstart:jend)
-   gamma3 => gamma(istart:iend, ny, jstart:jend)
-   gamma2 => gamma(istart:iend, jl, jstart:jend)
-   gamma1 => gamma(istart:iend, je, jstart:jend)
-   gamma0 => gamma(istart:iend, jb, jstart:jend)
+   ww3 => w(1:, ny, 1:, :)
+   ww2 => w(1:, jl, 1:, :)
+   ww1 => w(1:, je, 1:, :)
+   ww0 => w(1:, jb, 1:, :)
+   pp3 => p(1:, ny, 1:)
+   pp2 => p(1:, jl, 1:)
+   pp1 => p(1:, je, 1:)
+   pp0 => p(1:, jb, 1:)
+   rlv3 => rlv(1:, ny, 1:)
+   rlv2 => rlv(1:, jl, 1:)
+   rlv1 => rlv(1:, je, 1:)
+   rlv0 => rlv(1:, jb, 1:)
+   rev3 => rev(1:, ny, 1:)
+   rev2 => rev(1:, jl, 1:)
+   rev1 => rev(1:, je, 1:)
+   rev0 => rev(1:, jb, 1:)
+   gamma3 => gamma(1:, ny, 1:)
+   gamma2 => gamma(1:, jl, 1:)
+   gamma1 => gamma(1:, je, 1:)
+   gamma0 => gamma(1:, jb, 1:)
    CASE (kmin) 
    !===============================================================
-   ww3 => w(istart:iend, jstart:jend, 3, :)
-   ww2 => w(istart:iend, jstart:jend, 2, :)
-   ww1 => w(istart:iend, jstart:jend, 1, :)
-   ww0 => w(istart:iend, jstart:jend, 0, :)
-   pp3 => p(istart:iend, jstart:jend, 3)
-   pp2 => p(istart:iend, jstart:jend, 2)
-   pp1 => p(istart:iend, jstart:jend, 1)
-   pp0 => p(istart:iend, jstart:jend, 0)
-   rlv3 => rlv(istart:iend, jstart:jend, 3)
-   rlv2 => rlv(istart:iend, jstart:jend, 2)
-   rlv1 => rlv(istart:iend, jstart:jend, 1)
-   rlv0 => rlv(istart:iend, jstart:jend, 0)
-   rev3 => rev(istart:iend, jstart:jend, 3)
-   rev2 => rev(istart:iend, jstart:jend, 2)
-   rev1 => rev(istart:iend, jstart:jend, 1)
-   rev0 => rev(istart:iend, jstart:jend, 0)
-   gamma3 => gamma(istart:iend, jstart:jend, 3)
-   gamma2 => gamma(istart:iend, jstart:jend, 2)
-   gamma1 => gamma(istart:iend, jstart:jend, 1)
-   gamma0 => gamma(istart:iend, jstart:jend, 0)
+   ww3 => w(1:, 1:, 3, :)
+   ww2 => w(1:, 1:, 2, :)
+   ww1 => w(1:, 1:, 1, :)
+   ww0 => w(1:, 1:, 0, :)
+   pp3 => p(1:, 1:, 3)
+   pp2 => p(1:, 1:, 2)
+   pp1 => p(1:, 1:, 1)
+   pp0 => p(1:, 1:, 0)
+   rlv3 => rlv(1:, 1:, 3)
+   rlv2 => rlv(1:, 1:, 2)
+   rlv1 => rlv(1:, 1:, 1)
+   rlv0 => rlv(1:, 1:, 0)
+   rev3 => rev(1:, 1:, 3)
+   rev2 => rev(1:, 1:, 2)
+   rev1 => rev(1:, 1:, 1)
+   rev0 => rev(1:, 1:, 0)
+   gamma3 => gamma(1:, 1:, 3)
+   gamma2 => gamma(1:, 1:, 2)
+   gamma1 => gamma(1:, 1:, 1)
+   gamma0 => gamma(1:, 1:, 0)
    CASE (kmax) 
    !===============================================================
-   ww3 => w(istart:iend, jstart:jend, nz, :)
-   ww2 => w(istart:iend, jstart:jend, kl, :)
-   ww1 => w(istart:iend, jstart:jend, ke, :)
-   ww0 => w(istart:iend, jstart:jend, kb, :)
-   pp3 => p(istart:iend, jstart:jend, nz)
-   pp2 => p(istart:iend, jstart:jend, kl)
-   pp1 => p(istart:iend, jstart:jend, ke)
-   pp0 => p(istart:iend, jstart:jend, kb)
-   rlv3 => rlv(istart:iend, jstart:jend, nz)
-   rlv2 => rlv(istart:iend, jstart:jend, kl)
-   rlv1 => rlv(istart:iend, jstart:jend, ke)
-   rlv0 => rlv(istart:iend, jstart:jend, kb)
-   rev3 => rev(istart:iend, jstart:jend, nz)
-   rev2 => rev(istart:iend, jstart:jend, kl)
-   rev1 => rev(istart:iend, jstart:jend, ke)
-   rev0 => rev(istart:iend, jstart:jend, kb)
-   gamma3 => gamma(istart:iend, jstart:jend, nz)
-   gamma2 => gamma(istart:iend, jstart:jend, kl)
-   gamma1 => gamma(istart:iend, jstart:jend, ke)
-   gamma0 => gamma(istart:iend, jstart:jend, kb)
+   ww3 => w(1:, 1:, nz, :)
+   ww2 => w(1:, 1:, kl, :)
+   ww1 => w(1:, 1:, ke, :)
+   ww0 => w(1:, 1:, kb, :)
+   pp3 => p(1:, 1:, nz)
+   pp2 => p(1:, 1:, kl)
+   pp1 => p(1:, 1:, ke)
+   pp0 => p(1:, 1:, kb)
+   rlv3 => rlv(1:, 1:, nz)
+   rlv2 => rlv(1:, 1:, kl)
+   rlv1 => rlv(1:, 1:, ke)
+   rlv0 => rlv(1:, 1:, kb)
+   rev3 => rev(1:, 1:, nz)
+   rev2 => rev(1:, 1:, kl)
+   rev1 => rev(1:, 1:, ke)
+   rev0 => rev(1:, 1:, kb)
+   gamma3 => gamma(1:, 1:, nz)
+   gamma2 => gamma(1:, 1:, kl)
+   gamma1 => gamma(1:, 1:, ke)
+   gamma0 => gamma(1:, 1:, kb)
    END SELECT
+   IF (spatialpointers) THEN
    SELECT CASE  (bcfaceid(nn)) 
    CASE (imin) 
+   xx => x(1, :, :, :)
    ssi => si(1, :, :, :)
    ssj => sj(2, :, :, :)
    ssk => sk(2, :, :, :)
    ss => s(2, :, :, :)
+   dd2wall => d2wall(2, :, :)
    CASE (imax) 
+   xx => x(il, :, :, :)
    ssi => si(il, :, :, :)
    ssj => sj(il, :, :, :)
    ssk => sk(il, :, :, :)
    ss => s(il, :, :, :)
+   dd2wall => d2wall(il, :, :)
    CASE (jmin) 
+   xx => x(:, 1, :, :)
    ssi => sj(:, 1, :, :)
    ssj => si(:, 2, :, :)
    ssk => sk(:, 2, :, :)
    ss => s(:, 2, :, :)
+   dd2wall => d2wall(:, 2, :)
    CASE (jmax) 
+   xx => x(:, jl, :, :)
    ssi => sj(:, jl, :, :)
    ssj => si(:, jl, :, :)
    ssk => sk(:, jl, :, :)
    ss => s(:, jl, :, :)
+   dd2wall => d2wall(:, jl, :)
    CASE (kmin) 
+   xx => x(:, :, 1, :)
    ssi => sk(:, :, 1, :)
    ssj => si(:, :, 2, :)
    ssk => sj(:, :, 2, :)
    ss => s(:, :, 2, :)
+   dd2wall => d2wall(:, :, 2)
    CASE (kmax) 
+   xx => x(:, :, kl, :)
    ssi => sk(:, :, kl, :)
    ssj => si(:, :, kl, :)
    ssk => sj(:, :, kl, :)
    ss => s(:, :, kl, :)
+   dd2wall => d2wall(:, :, kl)
    END SELECT
-   SELECT CASE  (bcfaceid(nn)) 
-   CASE (imin) 
-   xline => x(1, :, :, :)
-   CASE (imax) 
-   xline => x(il, :, :, :)
-   CASE (jmin) 
-   xline => x(:, 1, :, :)
-   CASE (jmax) 
-   xline => x(:, jl, :, :)
-   CASE (kmin) 
-   xline => x(:, :, 1, :)
-   CASE (kmax) 
-   xline => x(:, :, kl, :)
-   END SELECT
-   END SUBROUTINE SETBCPOINTERS2
-   SUBROUTINE RESETBCPOINTERS2(nn)
+   END IF
+   END SUBROUTINE SETBCPOINTERS
+   SUBROUTINE RESETBCPOINTERS(nn, spatialpointers)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -2463,19 +2468,10 @@
    USE BLOCKPOINTERS
    USE FLOWVARREFSTATE
    IMPLICIT NONE
-   ! This is just a no-opt
+   ! For forward mode we are using pointers so we just don't do
+   ! anything.
    ! Subroutine arguments.
    INTEGER(kind=inttype), INTENT(IN) :: nn
-   ! Local variables
-   INTEGER(kind=inttype) :: istart, iend, jstart, jend
-   ! Determine the face id on which the subface is located and set
-   ! the pointers accordinly.
-   istart = bcdata(nn)%icbeg
-   iend = bcdata(nn)%icend
-   jstart = bcdata(nn)%jcbeg
-   jend = bcdata(nn)%jcend
-   ! Set the size of the subface
-   isize = iend - istart + 1
-   jsize = jend - jstart + 1
-   END SUBROUTINE RESETBCPOINTERS2
+   LOGICAL, INTENT(IN) :: spatialpointers
+   END SUBROUTINE RESETBCPOINTERS
    END MODULE BCROUTINES_D

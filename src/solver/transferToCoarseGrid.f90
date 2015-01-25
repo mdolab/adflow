@@ -273,8 +273,8 @@
            ! Compute the total energy, laminar viscosity and eddy viscosity
            ! for the owned cells of this block.
 
-           call computeEtot(2_intType,il, 2_intType,jl, &
-                            2_intType,kl, correctForK)
+           call computeEtotBlock(2_intType,il, 2_intType,jl, &
+                2_intType,kl, correctForK)
            call computeLamViscosity
            call computeEddyViscosity
 

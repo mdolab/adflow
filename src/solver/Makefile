@@ -40,22 +40,8 @@ FILES_TO_COMPLEXIFY1 = \
 	       BCRoutines.F90\
 
 FILES_TO_COMPLEXIFY2 = \
-	       adjustInflowAngle.f90\
 	       applyAllBC.F90\
-	       bcBleedInflow.f90\
-	       bcDomainInterface.f90\
-	       bcEulerWall.F90\
-	       bcExtrap.f90\
-	       bcFarfield.F90\
-	       bcMdot.f90\
-	       bcNSWallAdiabatic.F90\
-	       bcNSWallIsothermal.F90\
-	       bcSubsonicInflow.f90\
-	       bcSubsonicOutflow.f90\
-	       bcSupersonicInflow.f90\
-	       bcSymm.F90\
-	       bcSymmPolar.f90\
-	       bcThrust.f90\
+	       adjustInflowAngle.f90\
 	       bleedFlowParameters.f90\
 	       calMassFlux.f90\
 	       coeffConvergenceCheck.f90\
@@ -69,7 +55,6 @@ FILES_TO_COMPLEXIFY2 = \
 	       derivativeRotMatrixRigid.f90\
 	       eulerWallsPresent.f90\
 	       executeMGCycle.f90\
-	       extrapolate2ndHalo.F90\
                farFieldDrag.f90\
 	       farFieldInducedDrag.f90\
 	       forcesAndMoments.F90\
@@ -139,6 +124,7 @@ default: all
 
 all:
 	$(PMAKE) src1
+	cp -f *.mod $(SUMB_MODDIR)
 	$(PMAKE) src2
 clean:
 	@echo "        Making clean in solver... "
