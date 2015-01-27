@@ -52,8 +52,6 @@ module ADjointPETSc
   Mat     dRda, dRdx
   Mat     dFcdw, dFcdx, dFndFc
   Mat     dFdx, dFdw, doAdX
-  Vec, allocatable, dimension(:,:) :: FMw ! nFM by ntimespectral instance
-  Vec, allocatable, dimension(:,:) :: FMx ! nFM by ntimespectral instance
   Vec     dRdaTPsi, dRdaTPsi_local
   Vec      overArea, fCell, fNode
 

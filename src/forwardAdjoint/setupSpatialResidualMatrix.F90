@@ -10,7 +10,7 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
   !     *                                                                *
   !     ******************************************************************
   !
-  use ADjointPetsc, only : FMx, dFcdx, doAdx, nFM, iSepSensor, iCavitation
+  use ADjointPetsc, only : dFcdx, doAdx, nFM, iSepSensor, iCavitation
   use BCTypes
   use blockPointers
   use inputDiscretization 
@@ -106,14 +106,6 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
   ! Set delta_x
   delta_x = 1e-5
   one_over_dx = 1.0/delta_x
-  if (useObjective .and. useAD) then
-     do sps=1,nTimeIntervalsSpectral
-        do fmDim=1,nFM
-           call VecZeroEntries(FMx(fmDim, sps), ierr)
-           call EChk(ierr, __FILE__, __LINE__)
-        end do
-     end do
-  end if
      
   ! If we are computing the jacobian for the RANS equations, we need
   ! to make block_res think that we are evauluating the residual in a
@@ -242,12 +234,11 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
                       alpha, beta, liftIndex, force, moment, sepSensor, Cavitation)
               end if
 
-              ! If required, set values in the 6 vectors defined in
-              ! FMx.
+          
 
               if (useObjective .and. useAD) then
                  ! We need to loop over the faces on this block and
-                 ! set values in FMx
+                 ! set values
                  
                  bocos: do mm=1,nBocos
 
@@ -338,16 +329,6 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
                                      ind >=0) then
                                    ! This real node has been peturbed
                                    do fmDim = 1,3
-                                      call VecSetValues(FMx(fmDim, sps), 1, ind, &
-                                           bcDatad(mm)%Fp(i, j, fmDim)+ &
-                                           bcDatad(mm)%Fv(i, j, fmDim), &
-                                           ADD_VALUES, ierr) 
-                                      call EChk(ierr, __FILE__, __LINE__)
-
-                                      call VecSetValues(FMx(fmDim+3, sps), 1, ind, &
-                                           bcDatad(mm)%M(i,j,fmDim), &
-                                           ADD_VALUES, ierr) 
-                                      call EChk(ierr, __FILE__, __LINE__)
                                       
                                       ! While we are at it, we have
                                       ! all the info we need for dFcdx
@@ -364,15 +345,6 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
                                            bcDatad(mm)%oarea(i,j), ADD_VALUES, ierr)
                                       call EChk(ierr, __FILE__, __LINE__)
                                    end do
-
-                                   ! Now add in the additional functions
-                                   call VecSetValues(FMx(iSepSensor, sps), 1, ind, &
-                                        bcDatad(mm)%sepSensor(i, j), ADD_VALUES, ierr)
-                                   call EChk(ierr, __FILE__, __LINE__)
-
-                                   call VecSetValues(FMx(iCavitation, sps), 1, ind, &
-                                        bcDatad(mm)%Cavitation(i, j), ADD_VALUES, ierr)
-                                   call EChk(ierr, __FILE__, __LINE__)
                                 end if
                              end do forceStencilLoop
                           end do
@@ -485,19 +457,10 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
   call dealloc_derivative_values(level)
 
   if (useObjective .and. useAD) then
-     do sps=1,nTimeIntervalsSpectral
-        do fmDim=1,nFM
-           call VecAssemblyBegin(FMx(fmDim, sps), ierr)
-           call EChk(ierr, __FILE__, __LINE__)
-           call VecAssemblyEnd(FMx(fmDim, sps), ierr)
-           call EChk(ierr, __FILE__, __LINE__)
-        end do
-     end do
      call MatAssemblyBegin(dFcdx, MAT_FINAL_ASSEMBLY, ierr)
      call MatAssemblyEnd(dFcdx, MAT_FINAL_ASSEMBLY, ierr)
      call MatAssemblyBegin(doAdx, MAT_FINAL_ASSEMBLY, ierr)
      call MatAssemblyEnd(doAdx, MAT_FINAL_ASSEMBLY, ierr)
-
   end if
 
   ! PETSc Matrix Assembly and Options Set

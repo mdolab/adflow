@@ -50,23 +50,6 @@ subroutine destroyPETScVars
         call EChk(PETScIerr,__FILE__,__LINE__)
      end if
      
-     ! Vectors
-     do sps=1,nTimeIntervalsSpectral
-        do i=1,nFM
-           call VecDestroy(FMw(i, sps), PETScIerr)
-           call EChk(PETScIerr,__FILE__,__LINE__)
-        end do
-     end do
-     deallocate(FMw)
-       
-     do sps=1,ntimeIntervalsSpectral
-        do i=1,nFM
-           call VecDestroy(FMx(i, sps), PETScIerr)
-           call EChk(PETScIerr,__FILE__,__LINE__)
-        end do
-     end do
-     deallocate(FMx)
-     
      call vecDestroy(overArea, PETScIerr)
      call EChk(PETScIerr,__FILE__,__LINE__)
      
