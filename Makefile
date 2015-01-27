@@ -32,10 +32,10 @@ SUBDIR_SRC    = src/modules       \
                 src/adjoint/forcesOutput\
                 src/adjoint/forcesInput\
                 src/forwardAdjoint/outputReverse \
+                src/forwardAdjoint/outputReverseFast \
                 src/forwardAdjoint \
                 src/forwardAdjoint/residualInput \
                 src/forwardAdjoint/outputForward \
-                src/forwardAdjoint/outputReverseFast \
 		src/forwardAdjoint/costInput \
 		src/forwardAdjoint/outputCost\
 

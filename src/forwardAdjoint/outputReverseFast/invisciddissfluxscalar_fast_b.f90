@@ -357,6 +357,7 @@ myIntPtr = myIntPtr + 1
       wd(i, j, k-1, irho) = wd(i, j, k-1, irho) - tempd19
       wd(i, j, k+1, irho) = wd(i, j, k+1, irho) + ddw1d
       wd(i, j, k, irho) = wd(i, j, k, irho) - ddw1d
+      arg1d = 0.0_8
       call dim_fast_b(arg1, arg1d, dis2, dis2d, dis4d)
       rradd = fis2*min3*dis2d + fis4*arg1d
       min3d = fis2*rrad*dis2d
@@ -501,6 +502,7 @@ myIntPtr = myIntPtr + 1
       wd(i, j-1, k, irho) = wd(i, j-1, k, irho) - tempd14
       wd(i, j+1, k, irho) = wd(i, j+1, k, irho) + ddw1d
       wd(i, j, k, irho) = wd(i, j, k, irho) - ddw1d
+      arg1d = 0.0_8
       call dim_fast_b(arg1, arg1d, dis2, dis2d, dis4d)
       rradd = fis2*min2*dis2d + fis4*arg1d
       min2d = fis2*rrad*dis2d
@@ -645,6 +647,7 @@ myIntPtr = myIntPtr + 1
       wd(i-1, j, k, irho) = wd(i-1, j, k, irho) - tempd9
       wd(i+1, j, k, irho) = wd(i+1, j, k, irho) + ddw1d
       wd(i, j, k, irho) = wd(i, j, k, irho) - ddw1d
+      arg1d = 0.0_8
       call dim_fast_b(arg1, arg1d, dis2, dis2d, dis4d)
       rradd = fis2*min1*dis2d + fis4*arg1d
       min1d = fis2*rrad*dis2d

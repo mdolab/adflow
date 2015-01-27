@@ -98,7 +98,7 @@
    REAL(kind=realtype) :: sepsensord, cavitationd
    ! Working Variables
    REAL(kind=realtype) :: gm1, v2, fact, tmp
-   REAL(kind=realtype) :: v2d, factd, tmpd
+   REAL(kind=realtype) :: factd, tmpd
    INTEGER(kind=inttype) :: i, j, k, sps2, mm, l, ii, ll, jj
    INTEGER(kind=inttype) :: nstate
    REAL(kind=realtype), DIMENSION(nsections) :: t
@@ -108,7 +108,6 @@
    REAL(kind=realtype) :: yplusmax, scaledim
    REAL(kind=realtype) :: scaledimd
    INTRINSIC REAL
-   INTRINSIC MAX
    INTEGER :: ii3
    INTEGER :: ii2
    INTEGER :: ii1
@@ -184,34 +183,20 @@
    !        Normal Residual Computation
    ! ------------------------------------------------
    ! Compute the pressures
-   gm1 = gammaconstant - one
-   pd = 0.0_8
-   ! Compute P 
-   DO k=0,kb
-   DO j=0,jb
-   DO i=0,ib
-   v2d = 2*w(i, j, k, ivx)*wd(i, j, k, ivx) + 2*w(i, j, k, ivy)*wd(&
-   &         i, j, k, ivy) + 2*w(i, j, k, ivz)*wd(i, j, k, ivz)
-   v2 = w(i, j, k, ivx)**2 + w(i, j, k, ivy)**2 + w(i, j, k, ivz)**&
-   &         2
-   pd(i, j, k) = gm1*(wd(i, j, k, irhoe)-half*(wd(i, j, k, irho)*v2&
-   &         +w(i, j, k, irho)*v2d))
-   p(i, j, k) = gm1*(w(i, j, k, irhoe)-half*w(i, j, k, irho)*v2)
-   IF (p(i, j, k) .LT. 1.e-4_realType*pinfcorr) THEN
-   pd(i, j, k) = 1.e-4_realType*pinfcorrd
-   p(i, j, k) = 1.e-4_realType*pinfcorr
-   ELSE
-   p(i, j, k) = p(i, j, k)
-   END IF
-   END DO
-   END DO
-   END DO
+   CALL COMPUTEPRESSURESIMPLE_D()
    ! Compute Laminar/eddy viscosity if required
    CALL COMPUTELAMVISCOSITY_D()
    CALL COMPUTEEDDYVISCOSITY_D()
    CALL APPLYALLBC_BLOCK_D(.true.)
-   IF (equations .EQ. ransequations) CALL APPLYALLTURBBCTHISBLOCK_D(&
-   &                                                            .true.)
+   IF (equations .EQ. ransequations) THEN
+   bvti2d = 0.0_8
+   bvti1d = 0.0_8
+   bvtk2d = 0.0_8
+   bvtk1d = 0.0_8
+   bvtj2d = 0.0_8
+   bvtj1d = 0.0_8
+   CALL APPLYALLTURBBCTHISBLOCK_D(.true.)
+   END IF
    ! Compute skin_friction Velocity (only for wall Functions)
    ! #ifndef TAPENADE_REVERSE
    !   call computeUtau_block

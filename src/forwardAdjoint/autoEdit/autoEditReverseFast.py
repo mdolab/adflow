@@ -69,9 +69,10 @@ for f in os.listdir(DIR_ORI):
                 line = line.replace('_cb', '')
                 
             # Delete patterns
-            for p in del_patterns:
-                if p.match(line):
-                    line = ''
+            if not f.lower() == 'bcroutines_b.f90':
+                for p in del_patterns:
+                    if p.match(line):
+                        line = ''
                     
             # Push control 1b's
             m = patt_pushcontrol1b.match(line)

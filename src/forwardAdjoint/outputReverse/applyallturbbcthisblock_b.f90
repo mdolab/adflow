@@ -2,8 +2,7 @@
    !  Tapenade 3.10 (r5363) -  9 Sep 2014 09:53
    !
    !  Differentiation of applyallturbbcthisblock in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *rev *bvtj1 *bvtj2 *w *bvtk1
-   !                *bvtk2 *bvti1 *bvti2
+   !   gradient     of useful results: *rev *w
    !   with respect to varying inputs: *rev *bvtj1 *bvtj2 *w *bvtk1
    !                *bvtk2 *bvti1 *bvti2
    !   Plus diff mem management of: rev:in bvtj1:in bvtj2:in w:in
@@ -171,6 +170,12 @@
    CALL PUSHCONTROL1B(0)
    END IF
    END DO bocos
+   bvtj1d = 0.0_8
+   bvtj2d = 0.0_8
+   bvtk1d = 0.0_8
+   bvtk2d = 0.0_8
+   bvti1d = 0.0_8
+   bvti2d = 0.0_8
    DO nn=nbocos,1,-1
    CALL POPCONTROL1B(branch)
    IF (branch .NE. 0) CALL TURB2NDHALO_B(nn)
