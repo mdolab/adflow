@@ -2356,7 +2356,12 @@ class SUMB(AeroSolver):
     def getdIdx(self, objective, groupName=None):
         obj, aeroObj = self._getObjective(objective)
         if not aeroObj:
-            return numpy.zeros(self.getSpatialSize())
+            if groupName is None:
+                return numpy.zeros(self.getSpatialSize())
+            else:
+                dXv = numpy.zeros(self.getSpatialSize())
+                self.mesh.warpDeriv(dXv, surfOnly=True)
+                return self.mesh.getdXs(groupName)
 
         if self.getOption('usematrixfreedrdx'):
             funcsBar = {objective.lower():1.0}
@@ -2427,6 +2432,25 @@ class SUMB(AeroSolver):
 
         funcsBar = {objective.lower():1.0}
         return self.computeMatrixFreeProductBwd(funcsBar=funcsBar, wDeriv=True)
+        
+    def _isAeroObjective(self, objective):
+        """
+        This function takes in an external objective string and determines
+        if the string is a valid function in SUmb. The function returns
+        a boolean.
+
+        Parameters
+        ----------
+        objective: string
+            The objective to be tested.        
+
+        """
+
+        if objective.lower() in self.sumbCostFunctions.keys():
+            return True
+        else:
+            return False
+
 
     # =========================================================================
     #   The following routines two routines are the workhorse of the
