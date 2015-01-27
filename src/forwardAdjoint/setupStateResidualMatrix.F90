@@ -13,13 +13,13 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   !     *        full stencil jacobian                                   *
   !     * useTranspose: If true, the transpose of dRdw is assembled.     *
   !     *               For use with the adjoint this must be true.      *
-  !     * useObjective: If true, the derivative of Fx,Fy,Fz and Mx, My,Mz*
-  !     *               are assembled into the size FMw vectors          *
+  !     * useObjective: If true, the force matrix is assembled           *
+  !     *                                                                *
   !     * level : What level to use to form the matrix. Level 1 is       *
   !     *         always the finest level                                *         
   !     ******************************************************************
   !
-  use ADjointPetsc, only : FMw, dFcdW, nFM, iSepSensor, iCavitation
+  use ADjointPetsc, only : dFcdW, nFM, iSepSensor, iCavitation
   use BCTypes
   use blockPointers
   use inputDiscretization 
@@ -146,15 +146,6 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
 
   rkStage = 0
   
-  if (useObjective .and. useAD) then
-     do sps=1,nTimeIntervalsSpectral
-        do fmDim=1,nFM
-           call VecZeroEntries(FMw(fmDim, sps), ierr)
-           call EChk(ierr, __FILE__, __LINE__)
-        end do
-     end do
-  end if
-  
   ! If we are computing the jacobian for the RANS equations, we need
   ! to make block_res think that we are evauluating the residual in a
   ! fully coupled sense.  This is reset after this routine is
@@ -278,16 +269,15 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
                  sepSensor, Cavitation)
               end if
 
-              ! If required, set values in the
-              ! nFM*nTimeIntervalsSpectral vectors defined in FMw. We
-              ! have to be a little carful actually. What we have to
-              ! do is loop over subfaces where the cell centered
-              ! forces are defined. Then for each force, we loop over
-              ! its stencil. There should be at most 1 peturbed
-              ! cell/state in its stencil. Then, we can take the
-              ! derivatives out F and M defined on the face. The
-              ! derivatives are correct, since for objective we are
-              ! using a simple sum.
+              ! If required, set values in the force matrix.  We have
+              ! to be a little carful actually. What we have to do is
+              ! loop over subfaces where the cell centered forces are
+              ! defined. Then for each force, we loop over its
+              ! stencil. There should be at most 1 peturbed cell/state
+              ! in its stencil. Then, we can take the derivatives out
+              ! F and M defined on the face. The derivatives are
+              ! correct, since for objective we are using a simple
+              ! sum.
               sotreObjectivePartials: if (useObjective .and. useAD .and. .not. usePC) then
                  bocos: do mm=1,nBocos
                     if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic &
@@ -359,16 +349,6 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
                                      colInd >= 0) then
                                    ! This real cell has been peturbed!
                                    do fmDim = 1,3
-                                      call VecSetValues(FMw(fmDim, sps), 1, colInd, &
-                                           bcDatad(mm)%Fp(i, j, fmDim) + &
-                                           bcDatad(mm)%Fv(i, j, fmDim), &
-                                           ADD_VALUES, ierr) 
-                                      call EChk(ierr, __FILE__, __LINE__)
-
-                                      call VecSetValues(FMw(fmDim+3, sps), 1, Colind, &
-                                           bcDatad(mm)%M(i, j, fmDim), &
-                                           ADD_VALUES, ierr) 
-                                      call EChk(ierr, __FILE__, __LINE__)
                                       
                                       ! While we are at it, we have
                                       ! all the info we need for dFcdw
@@ -380,16 +360,6 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
                                           ADD_VALUES, ierr)
                                       call EChk(ierr, __FILE__, __LINE__)
                                    end do
-
-                                   ! Now add in the additional functions
-                                   call VecSetValues(FMw(iSepSensor, sps), 1, colInd, &
-                                        bcDatad(mm)%sepSensor(i, j), ADD_VALUES, ierr)
-                                   call EChk(ierr, __FILE__, __LINE__)
-
-                                   call VecSetValues(FMw(iCavitation, sps), 1, colInd, &
-                                        bcDatad(mm)%Cavitation(i, j), ADD_VALUES, ierr)
-                                   call EChk(ierr, __FILE__, __LINE__)
-
                                 end if
                              end do forceStencilLoop
                           end do
@@ -511,14 +481,6 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   call dealloc_derivative_values(level)
   
   if (useObjective .and. useAD) then
-     do sps=1,nTimeIntervalsSpectral
-        do fmDim=1,nFM
-           call VecAssemblyBegin(FMw(fmDim, sps), ierr) 
-           call EChk(ierr, __FILE__, __LINE__)
-           call VecAssemblyEnd(FMw(fmDim, sps), ierr)
-           call EChk(ierr, __FILE__, __LINE__)
-        end do
-     end do
      call MatAssemblyBegin(dFcdw, MAT_FINAL_ASSEMBLY, ierr)
      call MatAssemblyEnd(dFcdw, MAT_FINAL_ASSEMBLY, ierr)
   end if

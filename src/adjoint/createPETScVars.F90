@@ -8,8 +8,8 @@ subroutine createPETScVars
   !     *                                                                *
   !     ******************************************************************
   !
-  use ADjointPETSc, only: dRdwT, dRdwPreT, FMw, dFcdw, dFcdx, dFndFc, &
-       dFdx, dFdw, dRdx, FMx, dRda, adjointKSP, dFMdExtra, dRda_data, &
+  use ADjointPETSc, only: dRdwT, dRdwPreT, dFcdw, dFcdx, dFndFc, &
+       dFdx, dFdw, dRdx, dRda, adjointKSP, dFMdExtra, dRda_data, &
        overArea, fCell, fNode, doAdx, nFM, matfreectx, &
        x_like, psi_like1, adjointPETScVarsAllocated
   use ADjointVars   
@@ -122,16 +122,6 @@ subroutine createPETScVars
 
      deallocate(nnzDiagonal, nnzOffDiag)
   end if 
-
-  ! Create the nFM * nTimeIntervalsSpectral vectors for d{F,M}/dw plus
-  ! any additional functions 
-  allocate(FMw(nFM, nTimeIntervalsSpectral))
-  do sps=1,nTimeIntervalsSpectral
-     do i=1,nFM
-        call VecDuplicate(psi_like1, FMw(i, sps), ierr)
-        call EChk(ierr, __FILE__, __LINE__)
-     end do
-  end do
 
   ! Create dFcdw, dFcdx, dFcdx2, dFcdFn
 
@@ -286,14 +276,6 @@ subroutine createPETScVars
      call MatSetOption(dRdx, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE, ierr)
      call EChk(ierr, __FILE__, __LINE__)
   end if
-
-  allocate(FMx(nFM, nTimeIntervalsSpectral))
-  do sps=1,nTimeIntervalsSpectral
-     do i=1,nFM
-        call VecDuplicate(x_like, FMx(i, sps), ierr)
-        call EChk(ierr, __FILE__, __LINE__)
-     end do
-  end do
 
   ! Create the KSP Object
   call KSPCreate(SUMB_COMM_WORLD, adjointKSP, ierr)
