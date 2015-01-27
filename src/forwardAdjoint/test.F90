@@ -1,6 +1,7 @@
 
 
 subroutine testRev(dwbar, wbar, m)
+#ifndef USE_COMPLEX
   use BCTypes
   use blockPointers
   use inputDiscretization 
@@ -34,7 +35,6 @@ subroutine testRev(dwbar, wbar, m)
   real(kind=realType) :: timea, timeb, fwdTime, revTime, ovol
   logical :: resetToRANS
 
-#ifndef USE_COMPLEX
   call VecPlaceArray(psi_like3, wbar, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
