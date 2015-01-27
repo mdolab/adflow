@@ -45,7 +45,7 @@ ALL_RES_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.F90\
 		$(SRC)/forwardAdjoint/residualInput/inviscidDissFluxScalarApprox.F90\
 		$(SRC)/forwardAdjoint/residualInput/inviscidDissFluxMatrixApprox.F90\
 		$(SRC)/forwardAdjoint/residualInput/computePressureSimple.F90\
-		$(SRC)/forwardAdjoint/costInput/costFunction2.F90\
+		$(SRC)/forwardAdjoint/residualInput/costFunction2.F90\
 		$(SRC)/modules/monitor.f90\
 		$(SRC)/modules/diffSizes.f90\
 		$(SRC)/modules/block.F90\
@@ -133,52 +133,6 @@ ALL_RES_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.F90\
 I_RES_FILES := $(ALL_RES_FILES:%=%.f90)
 # ---------------------------------------------------------------------
 
-# -------------------- CostFunction AD Info----------------------------
-# Dependent output variables (separator: white space, default: all)
-TAPENADE_COST_OUTVARS = "objValue"
-
-# Independent input variables (separator: white space, default: all)
-TAPENADE_COST_VARS = "force moment sepsensor Cavitation alpha beta  machgrid machcoef pointref lengthref pRef tempFreeStream reynolds"
-
-# Name of the top routine
-TAPENADE_COST_HEADROUTINE = "getCostFunction"
-
-ALL_COST_FILES =$(SRC)/forwardAdjoint/costInput/costFunction.F90\
-		$(SRC)/solver/adjustInflowAngle.f90\
-		$(SRC)/stabilityDerivatives/computeTSDerivatives.f90\
-		$(SRC)/stabilityDerivatives/computeLeastSquaresRegression.f90\
-		$(SRC)/bendingMomentAnalysis/rootBendingMomentAnalysis.f90\
-		$(SRC)/modules/inputParam.F90\
-		$(SRC)/modules/monitor.f90\
-		$(SRC)/modules/diffSizes.f90\
-		$(SRC)/modules/block.F90\
-		$(SRC)/modules/constants.F90 \
-		$(SRC)/modules/precision_tapenade.f90\
-		$(SRC)/modules/iteration.f90\
-		$(SRC)/modules/section.f90\
-		$(SRC)/modules/communication.f90\
-		$(SRC)/modules/BCTypes.f90\
-		$(SRC)/modules/paramTurb.F90\
-		$(SRC)/modules/cgnsGrid.f90 \
-		$(SRC)/modules/CpCurveFits.f90\
-		$(SRC)/modules/blockPointers.F90 \
-		$(SRC)/modules/flowVarRefState.F90 \
-		$(SRC)/modules/costFunctions.F90\
-		$(SRC)/initFlow/referenceState.F90\
-		$(SRC)/utils/TSalpha.f90\
-		$(SRC)/utils/TSalphadot.f90\
-		$(SRC)/solver/getDirVector.f90\
-		$(SRC)/solver/getDirAngle.f90\
-		$(SRC)/solver/vectorRotation.f90\
-		$(SRC)/utils/derivativeRigidRotAngle.f90\
-		$(SRC)/utils/secondDerivativeRigidRotAngle.f90\
-		$(SRC)/utils/computeGamma.f90\
-
-# intermediate cost files
-I_COST_FILES := $(ALL_COST_FILES:%=%.f90)
-
-# ---------------------------------------------------------------------
-
 #     ******************************************************************
 #     *                                                                *
 #     * General targets.                                               *
@@ -186,31 +140,6 @@ I_COST_FILES := $(ALL_COST_FILES:%=%.f90)
 #     ******************************************************************
 
 default: ad_forward
-
-cost:
-# Differenate the cost functions in reverse
-	rm -fr tmp_cost
-
-# Next create the holidng directory:
-	mkdir -p temp_cost
-
-# Run preprocessor on all input files
-	make -f Makefile_tapenade preprocess_cost
-
-# The following is the single Tapenade command to run:
-	$(TAPENADE_HOME)/bin/tapenade -html \
-	-outvars $(TAPENADE_COST_OUTVARS) \
-	-vars $(TAPENADE_COST_VARS) \
-	-head $(TAPENADE_COST_HEADROUTINE)  \
-	-reverse $(TAPENADE_PRECISION) \
-	-O temp_cost $(I_COST_FILES)
-
-# Run the auto-edit file:
-	python autoEdit/autoEditReverse.py temp_cost outputCost
-
-# Remove preprocessor files
-	make -f Makefile_tapenade cleanpreprocess_cost
-
 
 ad_forward:
 # First delete the holding directory if it exists
