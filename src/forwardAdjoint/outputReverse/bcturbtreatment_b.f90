@@ -4,8 +4,7 @@
    !  Differentiation of bcturbtreatment in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
    !   gradient     of useful results: winf *bvtj1 *bvtj2 *w *rlv
    !                *bvtk1 *bvtk2 *d2wall *bvti1 *bvti2
-   !   with respect to varying inputs: winf *bvtj1 *bvtj2 *w *rlv
-   !                *bvtk1 *bvtk2 *d2wall *bvti1 *bvti2
+   !   with respect to varying inputs: winf *w *rlv *d2wall
    !   Plus diff mem management of: bvtj1:in bvtj2:in w:in rlv:in
    !                bvtk1:in bvtk2:in d2wall:in bvti1:in bvti2:in
    !                bcdata:in
@@ -68,29 +67,5 @@
    ELSE IF (branch .NE. 1) THEN
    CALL BCTURBWALL_B(nn)
    END IF
-   END DO
-   DO j=je,1,-1
-   DO i=ie,1,-1
-   DO l=nt2,nt1,-1
-   bvtk2d(i, j, l) = 0.0_8
-   bvtk1d(i, j, l) = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO k=ke,1,-1
-   DO i=ie,1,-1
-   DO l=nt2,nt1,-1
-   bvtj2d(i, k, l) = 0.0_8
-   bvtj1d(i, k, l) = 0.0_8
-   END DO
-   END DO
-   END DO
-   DO k=ke,1,-1
-   DO j=je,1,-1
-   DO l=nt2,nt1,-1
-   bvti2d(j, k, l) = 0.0_8
-   bvti1d(j, k, l) = 0.0_8
-   END DO
-   END DO
    END DO
    END SUBROUTINE BCTURBTREATMENT_B

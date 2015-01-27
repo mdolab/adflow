@@ -50,20 +50,18 @@
    INTEGER(kind=inttype) :: jstart, jend, jsize
       CONTAINS
    !  Differentiation of applyallbc_block in forward (tangent) mode (with options i4 dr8 r8):
-   !   variations   of useful results: *rev *bvtj1 *bvtj2 *p *w *rlv
-   !                *bvtk1 *bvtk2 *bvti1 *bvti2 *rev0 *rev1 *pp0 *pp1
-   !                *rlv0 *rlv1 *ww0 *ww1
+   !   variations   of useful results: *rev *p *w *rlv *rev0 *rev1
+   !                *pp0 *pp1 *rlv0 *rlv1 *ww0 *ww1
    !   with respect to varying inputs: gammainf winf pinfcorr rgas
    !                *rev *p *s *w *rlv *si *sj *sk *(*bcdata.norm)
    !                *(*bcdata.rface) *(*bcdata.uslip) *rev0 *rev1
    !                *rev2 *rev3 *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2
    !                *rlv3 *ss *ssi *ssj *ssk *ww0 *ww1 *ww2 *ww3
-   !   Plus diff mem management of: rev:in bvtj1:in bvtj2:in p:in
-   !                w:in rlv:in x:in bvtk1:in bvtk2:in si:in sj:in
-   !                sk:in bvti1:in bvti2:in bcdata:in *bcdata.norm:in
-   !                *bcdata.rface:in *bcdata.uslip:in xx:in-out rev0:in-out
-   !                rev1:in-out rev2:in-out rev3:in-out pp0:in-out
-   !                pp1:in-out pp2:in-out pp3:in-out rlv0:in-out rlv1:in-out
+   !   Plus diff mem management of: rev:in p:in w:in rlv:in x:in si:in
+   !                sj:in sk:in bcdata:in *bcdata.norm:in *bcdata.rface:in
+   !                *bcdata.uslip:in xx:in-out rev0:in-out rev1:in-out
+   !                rev2:in-out rev3:in-out pp0:in-out pp1:in-out
+   !                pp2:in-out pp3:in-out rlv0:in-out rlv1:in-out
    !                rlv2:in-out rlv3:in-out ss:in-out ssi:in-out ssj:in-out
    !                ssk:in-out ww0:in-out ww1:in-out ww2:in-out ww3:in-out
    SUBROUTINE APPLYALLBC_BLOCK_D(secondhalo)
@@ -104,12 +102,6 @@
    CALL RESETBCPOINTERS(nn, .false.)
    END IF
    END DO
-   bvtj1d = 0.0_8
-   bvtj2d = 0.0_8
-   bvtk1d = 0.0_8
-   bvtk2d = 0.0_8
-   bvti1d = 0.0_8
-   bvti2d = 0.0_8
    ! ------------------------------------
    !  Adibatic Wall Boundary Condition 
    ! ------------------------------------
@@ -464,18 +456,14 @@
    END IF
    END SUBROUTINE BCSYMM
    !  Differentiation of bcnswalladiabatic in forward (tangent) mode (with options i4 dr8 r8):
-   !   variations   of useful results: *rev *bvtj1 *bvtj2 *w *bvtk1
-   !                *bvtk2 *bvti1 *bvti2 *rev0 *rev1 *pp0 *pp1 *rlv0
+   !   variations   of useful results: *rev0 *rev1 *pp0 *pp1 *rlv0
    !                *rlv1 *ww0 *ww1
-   !   with respect to varying inputs: *rev *bvtj1 *bvtj2 *w *rlv
-   !                *bvtk1 *bvtk2 *bvti1 *bvti2 *(*bcdata.uslip) *rev0
-   !                *rev1 *rev2 *pp0 *pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0
-   !                *ww1 *ww2
-   !   Plus diff mem management of: rev:in bvtj1:in bvtj2:in w:in
-   !                rlv:in bvtk1:in bvtk2:in bvti1:in bvti2:in bcdata:in
-   !                *bcdata.uslip:in rev0:in rev1:in rev2:in pp0:in
-   !                pp1:in pp2:in rlv0:in rlv1:in rlv2:in ww0:in ww1:in
-   !                ww2:in
+   !   with respect to varying inputs: *(*bcdata.uslip) *rev0 *rev1
+   !                *rev2 *pp0 *pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1
+   !                *ww2
+   !   Plus diff mem management of: bcdata:in *bcdata.uslip:in rev0:in
+   !                rev1:in rev2:in pp0:in pp1:in pp2:in rlv0:in rlv1:in
+   !                rlv2:in ww0:in ww1:in ww2:in
    SUBROUTINE BCNSWALLADIABATIC_D(nn, secondhalo, correctfork)
    !
    !      ******************************************************************
@@ -502,7 +490,6 @@
    ! wall boundary conditions for the turbulent variables.
    ! No need to extrapolate the secondary halo's, because this
    ! is done in extrapolate2ndHalo.
-   IF (turbcoupled) CALL TURBBCNSWALL_D(.false.)
    ! Initialize rhok to zero. This will be overwritten if a
    ! correction for k must be applied.
    rhok = zero
@@ -576,7 +563,6 @@
    ! wall boundary conditions for the turbulent variables.
    ! No need to extrapolate the secondary halo's, because this
    ! is done in extrapolate2ndHalo.
-   IF (turbcoupled) CALL TURBBCNSWALL(.false.)
    ! Initialize rhok to zero. This will be overwritten if a
    ! correction for k must be applied.
    rhok = zero
@@ -612,18 +598,14 @@
    IF (secondhalo) CALL EXTRAPOLATE2NDHALO(correctfork)
    END SUBROUTINE BCNSWALLADIABATIC
    !  Differentiation of bcnswallisothermal in forward (tangent) mode (with options i4 dr8 r8):
-   !   variations   of useful results: *rev *bvtj1 *bvtj2 *w *bvtk1
-   !                *bvtk2 *bvti1 *bvti2 *rev0 *rev1 *pp0 *pp1 *rlv0
+   !   variations   of useful results: *rev0 *rev1 *pp0 *pp1 *rlv0
    !                *rlv1 *ww0 *ww1
-   !   with respect to varying inputs: rgas *rev *bvtj1 *bvtj2 *w
-   !                *rlv *bvtk1 *bvtk2 *bvti1 *bvti2 *(*bcdata.uslip)
-   !                *rev0 *rev1 *rev2 *pp0 *pp1 *pp2 *rlv0 *rlv1 *rlv2
-   !                *ww0 *ww1 *ww2
-   !   Plus diff mem management of: rev:in bvtj1:in bvtj2:in w:in
-   !                rlv:in bvtk1:in bvtk2:in bvti1:in bvti2:in bcdata:in
-   !                *bcdata.uslip:in rev0:in rev1:in rev2:in pp0:in
-   !                pp1:in pp2:in rlv0:in rlv1:in rlv2:in ww0:in ww1:in
-   !                ww2:in
+   !   with respect to varying inputs: rgas *(*bcdata.uslip) *rev0
+   !                *rev1 *rev2 *pp0 *pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0
+   !                *ww1 *ww2
+   !   Plus diff mem management of: bcdata:in *bcdata.uslip:in rev0:in
+   !                rev1:in rev2:in pp0:in pp1:in pp2:in rlv0:in rlv1:in
+   !                rlv2:in ww0:in ww1:in ww2:in
    SUBROUTINE BCNSWALLISOTHERMAL_D(nn, secondhalo, correctfork)
    !
    ! ******************************************************************
@@ -654,7 +636,6 @@
    ! wall boundary conditions for the turbulent variables.
    ! No need to extrapolate the secondary halo's, because this
    ! is done in extrapolate2ndHalo.
-   IF (turbcoupled) CALL TURBBCNSWALL_D(.false.)
    ! Initialize rhok to zero. This will be overwritten if a
    ! correction for k must be applied.
    rhok = zero
@@ -752,7 +733,6 @@
    ! wall boundary conditions for the turbulent variables.
    ! No need to extrapolate the secondary halo's, because this
    ! is done in extrapolate2ndHalo.
-   IF (turbcoupled) CALL TURBBCNSWALL(.false.)
    ! Initialize rhok to zero. This will be overwritten if a
    ! correction for k must be applied.
    rhok = zero

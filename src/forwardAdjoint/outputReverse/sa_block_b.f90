@@ -4,9 +4,8 @@
    !  Differentiation of sa_block in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
    !   gradient     of useful results: *rev *dw *w *rlv *vol *si *sj
    !                *sk (global)timeref (global)winf[1:10]
-   !   with respect to varying inputs: *rev *bvtj1 *bvtj2 *dw *w *rlv
-   !                *bvtk1 *bvtk2 *vol *d2wall *si *sj *sk *bvti1
-   !                *bvti2 (global)timeref (global)winf[1:10]
+   !   with respect to varying inputs: *rev *dw *w *rlv *vol *d2wall
+   !                *si *sj *sk (global)timeref (global)winf[1:10]
    !   Plus diff mem management of: rev:in bvtj1:in bvtj2:in dw:in
    !                w:in rlv:in bvtk1:in bvtk2:in vol:in d2wall:in
    !                si:in sj:in sk:in bvti1:in bvti2:in bcdata:in
@@ -66,12 +65,6 @@
    ! The eddy viscosity and the boundary conditions are only
    ! applied if an actual update has been computed in saSolve.
    IF (.NOT.resonly) THEN
-   bvti2d = 0.0_8
-   bvti1d = 0.0_8
-   bvtk2d = 0.0_8
-   bvtk1d = 0.0_8
-   bvtj2d = 0.0_8
-   bvtj1d = 0.0_8
    CALL APPLYALLTURBBCTHISBLOCK_B(.true.)
    CALL SAEDDYVISCOSITY_B()
    ELSE

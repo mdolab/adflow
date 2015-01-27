@@ -2,7 +2,7 @@
 !  tapenade 3.10 (r5363) -  9 sep 2014 09:53
 !
 !  differentiation of dim in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: y dim
+!   gradient     of useful results: x y dim
 !   with respect to varying inputs: x y
 subroutine dim_fast_b(x, xd, y, yd, dimd)
   use myPushPopLib
@@ -14,6 +14,6 @@ subroutine dim_fast_b(x, xd, y, yd, dimd)
   real(kind=realtype) :: dimd
   dim = x - y
   if (dim .lt. 0.0) dimd = 0.0_8
-  xd = dimd
+  xd = xd + dimd
   yd = yd - dimd
 end subroutine dim_fast_b

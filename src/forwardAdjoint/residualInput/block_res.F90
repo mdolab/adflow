@@ -109,23 +109,12 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   ! ------------------------------------------------
 
   ! Compute the pressures
-  gm1 = gammaConstant - one
-
-  ! Compute P 
-  do k=0, kb
-     do j=0, jb
-        do i=0, ib
-           v2 = w(i, j, k, ivx)**2 + w(i, j, k, ivy)**2 + w(i, j, k, ivz)**2
-           p(i, j, k) = gm1*(w(i, j, k, irhoE) - half*w( i, j, k, irho)*v2)
-           p(i, j, k) = max(p(i, j, k), 1.e-4_realType*pInfCorr)
-        enddo
-     enddo
-  enddo
+  call computePressureSimple
 
   ! Compute Laminar/eddy viscosity if required
   call computeLamViscosity
   call computeEddyViscosity 
-
+  
   call applyAllBC_block(.True.)
 
   if (equations == RANSequations) then 

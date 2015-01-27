@@ -48,6 +48,7 @@ FF90_OBJECTS2 = allnodalgradients_d.o\
 		computegamma_d.o\
 		computelamviscosity_d.o\
 		computespeedofsoundsquared_d.o\
+		computepressuresimple_d.o\
 		timestep_block_d.o\
 		curveupre_d.o\
 		invisciddissfluxscalar_d.o\

@@ -50,20 +50,18 @@
       CONTAINS
    !  Differentiation of applyallbc_block in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
    !   gradient     of useful results: gammainf winf pinfcorr rgas
-   !                *rev *bvtj1 *bvtj2 *p *w *rlv *x *bvtk1 *bvtk2
-   !                *d2wall *si *sj *sk *bvti1 *bvti2 *xx *rev0 *rev1
+   !                *rev *p *w *rlv *x *si *sj *sk *xx *rev0 *rev1
    !                *rev2 *rev3 *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2
    !                *rlv3 *ssi *ww0 *ww1 *ww2 *ww3
    !   with respect to varying inputs: gammainf winf pinfcorr rgas
-   !                *rev *p *w *rlv *x *d2wall *si *sj *sk *(*bcdata.norm)
+   !                *rev *p *w *rlv *x *si *sj *sk *(*bcdata.norm)
    !                *xx *rev0 *rev1 *rev2 *rev3 *pp0 *pp1 *pp2 *pp3
    !                *rlv0 *rlv1 *rlv2 *rlv3 *ssi *ww0 *ww1 *ww2 *ww3
-   !   Plus diff mem management of: rev:in bvtj1:in bvtj2:in p:in
-   !                w:in rlv:in x:in bvtk1:in bvtk2:in d2wall:in si:in
-   !                sj:in sk:in bvti1:in bvti2:in bcdata:in *bcdata.norm:in
-   !                xx:in rev0:in rev1:in rev2:in rev3:in pp0:in pp1:in
-   !                pp2:in pp3:in rlv0:in rlv1:in rlv2:in rlv3:in
-   !                ssi:in ww0:in ww1:in ww2:in ww3:in
+   !   Plus diff mem management of: rev:in p:in w:in rlv:in x:in si:in
+   !                sj:in sk:in bcdata:in *bcdata.norm:in xx:in rev0:in
+   !                rev1:in rev2:in rev3:in pp0:in pp1:in pp2:in pp3:in
+   !                rlv0:in rlv1:in rlv2:in rlv3:in ssi:in ww0:in
+   !                ww1:in ww2:in ww3:in
    SUBROUTINE APPLYALLBC_BLOCK_B(secondhalo)
    ! Apply BC's for a single block
    USE BLOCKPOINTERS
@@ -125,42 +123,18 @@
    CALL PUSHREAL8ARRAY(ww3, SIZE(ww3, 1)*SIZE(ww3, 2)*SIZE(ww3, 3))
    CALL PUSHREAL8ARRAY(ww2, SIZE(ww2, 1)*SIZE(ww2, 2)*SIZE(ww2, 3))
    CALL PUSHREAL8ARRAY(rev, SIZE(rev, 1)*SIZE(rev, 2)*SIZE(rev, 3))
-   CALL PUSHREAL8ARRAY(bvtj1, SIZE(bvtj1, 1)*SIZE(bvtj1, 2)*SIZE(bvtj1&
-   &                 , 3))
-   CALL PUSHREAL8ARRAY(bvtj2, SIZE(bvtj2, 1)*SIZE(bvtj2, 2)*SIZE(bvtj2&
-   &                 , 3))
    CALL PUSHREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
    CALL PUSHREAL8ARRAY(gamma, SIZE(gamma, 1)*SIZE(gamma, 2)*SIZE(gamma&
    &                 , 3))
-   CALL PUSHREAL8ARRAY(bmtk1, SIZE(bmtk1, 1)*SIZE(bmtk1, 2)*SIZE(bmtk1&
-   &                 , 3)*SIZE(bmtk1, 4))
    CALL PUSHREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4))
-   CALL PUSHREAL8ARRAY(bmtk2, SIZE(bmtk2, 1)*SIZE(bmtk2, 2)*SIZE(bmtk2&
-   &                 , 3)*SIZE(bmtk2, 4))
    CALL PUSHREAL8ARRAY(rlv, SIZE(rlv, 1)*SIZE(rlv, 2)*SIZE(rlv, 3))
    CALL PUSHREAL8ARRAY(x, SIZE(x, 1)*SIZE(x, 2)*SIZE(x, 3)*SIZE(x, 4))
-   CALL PUSHREAL8ARRAY(bvtk1, SIZE(bvtk1, 1)*SIZE(bvtk1, 2)*SIZE(bvtk1&
-   &                 , 3))
-   CALL PUSHREAL8ARRAY(bvtk2, SIZE(bvtk2, 1)*SIZE(bvtk2, 2)*SIZE(bvtk2&
-   &                 , 3))
-   CALL PUSHREAL8ARRAY(bmti1, SIZE(bmti1, 1)*SIZE(bmti1, 2)*SIZE(bmti1&
-   &                 , 3)*SIZE(bmti1, 4))
-   CALL PUSHREAL8ARRAY(bmti2, SIZE(bmti2, 1)*SIZE(bmti2, 2)*SIZE(bmti2&
-   &                 , 3)*SIZE(bmti2, 4))
    CALL PUSHREAL8ARRAY(si, SIZE(si, 1)*SIZE(si, 2)*SIZE(si, 3)*SIZE(si&
    &                 , 4))
    CALL PUSHREAL8ARRAY(sj, SIZE(sj, 1)*SIZE(sj, 2)*SIZE(sj, 3)*SIZE(sj&
    &                 , 4))
    CALL PUSHREAL8ARRAY(sk, SIZE(sk, 1)*SIZE(sk, 2)*SIZE(sk, 3)*SIZE(sk&
    &                 , 4))
-   CALL PUSHREAL8ARRAY(bvti1, SIZE(bvti1, 1)*SIZE(bvti1, 2)*SIZE(bvti1&
-   &                 , 3))
-   CALL PUSHREAL8ARRAY(bvti2, SIZE(bvti2, 1)*SIZE(bvti2, 2)*SIZE(bvti2&
-   &                 , 3))
-   CALL PUSHREAL8ARRAY(bmtj1, SIZE(bmtj1, 1)*SIZE(bmtj1, 2)*SIZE(bmtj1&
-   &                 , 3)*SIZE(bmtj1, 4))
-   CALL PUSHREAL8ARRAY(bmtj2, SIZE(bmtj2, 1)*SIZE(bmtj2, 2)*SIZE(bmtj2&
-   &                 , 3)*SIZE(bmtj2, 4))
    CALL PUSHREAL8ARRAY(pp0, SIZE(pp0, 1)*SIZE(pp0, 2))
    CALL PUSHREAL8ARRAY(pp1, SIZE(pp1, 1)*SIZE(pp1, 2))
    CALL PUSHREAL8ARRAY(pp2, SIZE(pp2, 1)*SIZE(pp2, 2))
@@ -184,42 +158,18 @@
    CALL PUSHREAL8ARRAY(pp2, SIZE(pp2, 1)*SIZE(pp2, 2))
    CALL PUSHREAL8ARRAY(ww2, SIZE(ww2, 1)*SIZE(ww2, 2)*SIZE(ww2, 3))
    CALL PUSHREAL8ARRAY(rev, SIZE(rev, 1)*SIZE(rev, 2)*SIZE(rev, 3))
-   CALL PUSHREAL8ARRAY(bvtj1, SIZE(bvtj1, 1)*SIZE(bvtj1, 2)*SIZE(bvtj1&
-   &                 , 3))
-   CALL PUSHREAL8ARRAY(bvtj2, SIZE(bvtj2, 1)*SIZE(bvtj2, 2)*SIZE(bvtj2&
-   &                 , 3))
    CALL PUSHREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
    CALL PUSHREAL8ARRAY(gamma, SIZE(gamma, 1)*SIZE(gamma, 2)*SIZE(gamma&
    &                 , 3))
-   CALL PUSHREAL8ARRAY(bmtk1, SIZE(bmtk1, 1)*SIZE(bmtk1, 2)*SIZE(bmtk1&
-   &                 , 3)*SIZE(bmtk1, 4))
    CALL PUSHREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4))
-   CALL PUSHREAL8ARRAY(bmtk2, SIZE(bmtk2, 1)*SIZE(bmtk2, 2)*SIZE(bmtk2&
-   &                 , 3)*SIZE(bmtk2, 4))
    CALL PUSHREAL8ARRAY(rlv, SIZE(rlv, 1)*SIZE(rlv, 2)*SIZE(rlv, 3))
    CALL PUSHREAL8ARRAY(x, SIZE(x, 1)*SIZE(x, 2)*SIZE(x, 3)*SIZE(x, 4))
-   CALL PUSHREAL8ARRAY(bvtk1, SIZE(bvtk1, 1)*SIZE(bvtk1, 2)*SIZE(bvtk1&
-   &                 , 3))
-   CALL PUSHREAL8ARRAY(bvtk2, SIZE(bvtk2, 1)*SIZE(bvtk2, 2)*SIZE(bvtk2&
-   &                 , 3))
-   CALL PUSHREAL8ARRAY(bmti1, SIZE(bmti1, 1)*SIZE(bmti1, 2)*SIZE(bmti1&
-   &                 , 3)*SIZE(bmti1, 4))
-   CALL PUSHREAL8ARRAY(bmti2, SIZE(bmti2, 1)*SIZE(bmti2, 2)*SIZE(bmti2&
-   &                 , 3)*SIZE(bmti2, 4))
    CALL PUSHREAL8ARRAY(si, SIZE(si, 1)*SIZE(si, 2)*SIZE(si, 3)*SIZE(si&
    &                 , 4))
    CALL PUSHREAL8ARRAY(sj, SIZE(sj, 1)*SIZE(sj, 2)*SIZE(sj, 3)*SIZE(sj&
    &                 , 4))
    CALL PUSHREAL8ARRAY(sk, SIZE(sk, 1)*SIZE(sk, 2)*SIZE(sk, 3)*SIZE(sk&
    &                 , 4))
-   CALL PUSHREAL8ARRAY(bvti1, SIZE(bvti1, 1)*SIZE(bvti1, 2)*SIZE(bvti1&
-   &                 , 3))
-   CALL PUSHREAL8ARRAY(bvti2, SIZE(bvti2, 1)*SIZE(bvti2, 2)*SIZE(bvti2&
-   &                 , 3))
-   CALL PUSHREAL8ARRAY(bmtj1, SIZE(bmtj1, 1)*SIZE(bmtj1, 2)*SIZE(bmtj1&
-   &                 , 3)*SIZE(bmtj1, 4))
-   CALL PUSHREAL8ARRAY(bmtj2, SIZE(bmtj2, 1)*SIZE(bmtj2, 2)*SIZE(bmtj2&
-   &                 , 3)*SIZE(bmtj2, 4))
    CALL PUSHREAL8ARRAY(pp0, SIZE(pp0, 1)*SIZE(pp0, 2))
    CALL PUSHREAL8ARRAY(pp1, SIZE(pp1, 1)*SIZE(pp1, 2))
    CALL PUSHREAL8ARRAY(ww0, SIZE(ww0, 1)*SIZE(ww0, 2)*SIZE(ww0, 3))
@@ -332,42 +282,18 @@
    CALL POPREAL8ARRAY(ww0, SIZE(ww0, 1)*SIZE(ww0, 2)*SIZE(ww0, 3))
    CALL POPREAL8ARRAY(pp1, SIZE(pp1, 1)*SIZE(pp1, 2))
    CALL POPREAL8ARRAY(pp0, SIZE(pp0, 1)*SIZE(pp0, 2))
-   CALL POPREAL8ARRAY(bmtj2, SIZE(bmtj2, 1)*SIZE(bmtj2, 2)*SIZE(bmtj2, &
-   &                3)*SIZE(bmtj2, 4))
-   CALL POPREAL8ARRAY(bmtj1, SIZE(bmtj1, 1)*SIZE(bmtj1, 2)*SIZE(bmtj1, &
-   &                3)*SIZE(bmtj1, 4))
-   CALL POPREAL8ARRAY(bvti2, SIZE(bvti2, 1)*SIZE(bvti2, 2)*SIZE(bvti2, &
-   &                3))
-   CALL POPREAL8ARRAY(bvti1, SIZE(bvti1, 1)*SIZE(bvti1, 2)*SIZE(bvti1, &
-   &                3))
    CALL POPREAL8ARRAY(sk, SIZE(sk, 1)*SIZE(sk, 2)*SIZE(sk, 3)*SIZE(sk, &
    &                4))
    CALL POPREAL8ARRAY(sj, SIZE(sj, 1)*SIZE(sj, 2)*SIZE(sj, 3)*SIZE(sj, &
    &                4))
    CALL POPREAL8ARRAY(si, SIZE(si, 1)*SIZE(si, 2)*SIZE(si, 3)*SIZE(si, &
    &                4))
-   CALL POPREAL8ARRAY(bmti2, SIZE(bmti2, 1)*SIZE(bmti2, 2)*SIZE(bmti2, &
-   &                3)*SIZE(bmti2, 4))
-   CALL POPREAL8ARRAY(bmti1, SIZE(bmti1, 1)*SIZE(bmti1, 2)*SIZE(bmti1, &
-   &                3)*SIZE(bmti1, 4))
-   CALL POPREAL8ARRAY(bvtk2, SIZE(bvtk2, 1)*SIZE(bvtk2, 2)*SIZE(bvtk2, &
-   &                3))
-   CALL POPREAL8ARRAY(bvtk1, SIZE(bvtk1, 1)*SIZE(bvtk1, 2)*SIZE(bvtk1, &
-   &                3))
    CALL POPREAL8ARRAY(x, SIZE(x, 1)*SIZE(x, 2)*SIZE(x, 3)*SIZE(x, 4))
    CALL POPREAL8ARRAY(rlv, SIZE(rlv, 1)*SIZE(rlv, 2)*SIZE(rlv, 3))
-   CALL POPREAL8ARRAY(bmtk2, SIZE(bmtk2, 1)*SIZE(bmtk2, 2)*SIZE(bmtk2, &
-   &                3)*SIZE(bmtk2, 4))
    CALL POPREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4))
-   CALL POPREAL8ARRAY(bmtk1, SIZE(bmtk1, 1)*SIZE(bmtk1, 2)*SIZE(bmtk1, &
-   &                3)*SIZE(bmtk1, 4))
    CALL POPREAL8ARRAY(gamma, SIZE(gamma, 1)*SIZE(gamma, 2)*SIZE(gamma, &
    &                3))
    CALL POPREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
-   CALL POPREAL8ARRAY(bvtj2, SIZE(bvtj2, 1)*SIZE(bvtj2, 2)*SIZE(bvtj2, &
-   &                3))
-   CALL POPREAL8ARRAY(bvtj1, SIZE(bvtj1, 1)*SIZE(bvtj1, 2)*SIZE(bvtj1, &
-   &                3))
    CALL POPREAL8ARRAY(rev, SIZE(rev, 1)*SIZE(rev, 2)*SIZE(rev, 3))
    CALL LOOKREAL8ARRAY(ww2, SIZE(ww2, 1)*SIZE(ww2, 2)*SIZE(ww2, 3))
    CALL LOOKREAL8ARRAY(pp2, SIZE(pp2, 1)*SIZE(pp2, 2))
@@ -391,42 +317,18 @@
    CALL POPREAL8ARRAY(pp2, SIZE(pp2, 1)*SIZE(pp2, 2))
    CALL POPREAL8ARRAY(pp1, SIZE(pp1, 1)*SIZE(pp1, 2))
    CALL POPREAL8ARRAY(pp0, SIZE(pp0, 1)*SIZE(pp0, 2))
-   CALL POPREAL8ARRAY(bmtj2, SIZE(bmtj2, 1)*SIZE(bmtj2, 2)*SIZE(bmtj2, &
-   &                3)*SIZE(bmtj2, 4))
-   CALL POPREAL8ARRAY(bmtj1, SIZE(bmtj1, 1)*SIZE(bmtj1, 2)*SIZE(bmtj1, &
-   &                3)*SIZE(bmtj1, 4))
-   CALL POPREAL8ARRAY(bvti2, SIZE(bvti2, 1)*SIZE(bvti2, 2)*SIZE(bvti2, &
-   &                3))
-   CALL POPREAL8ARRAY(bvti1, SIZE(bvti1, 1)*SIZE(bvti1, 2)*SIZE(bvti1, &
-   &                3))
    CALL POPREAL8ARRAY(sk, SIZE(sk, 1)*SIZE(sk, 2)*SIZE(sk, 3)*SIZE(sk, &
    &                4))
    CALL POPREAL8ARRAY(sj, SIZE(sj, 1)*SIZE(sj, 2)*SIZE(sj, 3)*SIZE(sj, &
    &                4))
    CALL POPREAL8ARRAY(si, SIZE(si, 1)*SIZE(si, 2)*SIZE(si, 3)*SIZE(si, &
    &                4))
-   CALL POPREAL8ARRAY(bmti2, SIZE(bmti2, 1)*SIZE(bmti2, 2)*SIZE(bmti2, &
-   &                3)*SIZE(bmti2, 4))
-   CALL POPREAL8ARRAY(bmti1, SIZE(bmti1, 1)*SIZE(bmti1, 2)*SIZE(bmti1, &
-   &                3)*SIZE(bmti1, 4))
-   CALL POPREAL8ARRAY(bvtk2, SIZE(bvtk2, 1)*SIZE(bvtk2, 2)*SIZE(bvtk2, &
-   &                3))
-   CALL POPREAL8ARRAY(bvtk1, SIZE(bvtk1, 1)*SIZE(bvtk1, 2)*SIZE(bvtk1, &
-   &                3))
    CALL POPREAL8ARRAY(x, SIZE(x, 1)*SIZE(x, 2)*SIZE(x, 3)*SIZE(x, 4))
    CALL POPREAL8ARRAY(rlv, SIZE(rlv, 1)*SIZE(rlv, 2)*SIZE(rlv, 3))
-   CALL POPREAL8ARRAY(bmtk2, SIZE(bmtk2, 1)*SIZE(bmtk2, 2)*SIZE(bmtk2, &
-   &                3)*SIZE(bmtk2, 4))
    CALL POPREAL8ARRAY(w, SIZE(w, 1)*SIZE(w, 2)*SIZE(w, 3)*SIZE(w, 4))
-   CALL POPREAL8ARRAY(bmtk1, SIZE(bmtk1, 1)*SIZE(bmtk1, 2)*SIZE(bmtk1, &
-   &                3)*SIZE(bmtk1, 4))
    CALL POPREAL8ARRAY(gamma, SIZE(gamma, 1)*SIZE(gamma, 2)*SIZE(gamma, &
    &                3))
    CALL POPREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
-   CALL POPREAL8ARRAY(bvtj2, SIZE(bvtj2, 1)*SIZE(bvtj2, 2)*SIZE(bvtj2, &
-   &                3))
-   CALL POPREAL8ARRAY(bvtj1, SIZE(bvtj1, 1)*SIZE(bvtj1, 2)*SIZE(bvtj1, &
-   &                3))
    CALL POPREAL8ARRAY(rev, SIZE(rev, 1)*SIZE(rev, 2)*SIZE(rev, 3))
    CALL LOOKREAL8ARRAY(ww2, SIZE(ww2, 1)*SIZE(ww2, 2)*SIZE(ww2, 3))
    DO nn=1,nviscbocos
@@ -816,18 +718,13 @@
    END IF
    END SUBROUTINE BCSYMM
    !  Differentiation of bcnswalladiabatic in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: *rev *bvtj1 *bvtj2 *w *rlv
-   !                *bvtk1 *bvtk2 *d2wall *bvti1 *bvti2 *rev0 *rev1
-   !                *rev2 *pp0 *pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1
-   !                *ww2
-   !   with respect to varying inputs: *rev *bvtj1 *bvtj2 *w *rlv
-   !                *bvtk1 *bvtk2 *d2wall *bvti1 *bvti2 *rev0 *rev1
-   !                *rev2 *pp0 *pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1
-   !                *ww2
-   !   Plus diff mem management of: rev:in bvtj1:in bvtj2:in w:in
-   !                rlv:in bvtk1:in bvtk2:in d2wall:in bvti1:in bvti2:in
-   !                bcdata:in rev0:in rev1:in rev2:in pp0:in pp1:in
-   !                pp2:in rlv0:in rlv1:in rlv2:in ww0:in ww1:in ww2:in
+   !   gradient     of useful results: *rev0 *rev1 *rev2 *pp0 *pp1
+   !                *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2
+   !   with respect to varying inputs: *rev0 *rev1 *rev2 *pp0 *pp1
+   !                *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2
+   !   Plus diff mem management of: bcdata:in rev0:in rev1:in rev2:in
+   !                pp0:in pp1:in pp2:in rlv0:in rlv1:in rlv2:in ww0:in
+   !                ww1:in ww2:in
    SUBROUTINE BCNSWALLADIABATIC_B(nn, secondhalo, correctfork)
    !
    !      ******************************************************************
@@ -855,11 +752,6 @@
    ! wall boundary conditions for the turbulent variables.
    ! No need to extrapolate the secondary halo's, because this
    ! is done in extrapolate2ndHalo.
-   IF (turbcoupled) THEN
-   CALL PUSHCONTROL1B(0)
-   ELSE
-   CALL PUSHCONTROL1B(1)
-   END IF
    ! Initialize rhok to zero. This will be overwritten if a
    ! correction for k must be applied.
    rhok = zero
@@ -940,8 +832,6 @@
    rhokd = 0.0_8
    END IF
    END DO
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) CALL TURBBCNSWALL_B(.false.)
    END SUBROUTINE BCNSWALLADIABATIC_B
    SUBROUTINE BCNSWALLADIABATIC(nn, secondhalo, correctfork)
    !
@@ -968,7 +858,6 @@
    ! wall boundary conditions for the turbulent variables.
    ! No need to extrapolate the secondary halo's, because this
    ! is done in extrapolate2ndHalo.
-   IF (turbcoupled) CALL TURBBCNSWALL(.false.)
    ! Initialize rhok to zero. This will be overwritten if a
    ! correction for k must be applied.
    rhok = zero
@@ -1004,18 +893,13 @@
    IF (secondhalo) CALL EXTRAPOLATE2NDHALO(correctfork)
    END SUBROUTINE BCNSWALLADIABATIC
    !  Differentiation of bcnswallisothermal in reverse (adjoint) mode (with options i4 dr8 r8 noISIZE):
-   !   gradient     of useful results: rgas *rev *bvtj1 *bvtj2 *w
-   !                *rlv *bvtk1 *bvtk2 *d2wall *bvti1 *bvti2 *rev0
-   !                *rev1 *rev2 *pp0 *pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0
-   !                *ww1 *ww2
-   !   with respect to varying inputs: rgas *rev *bvtj1 *bvtj2 *w
-   !                *rlv *bvtk1 *bvtk2 *d2wall *bvti1 *bvti2 *rev0
-   !                *rev1 *rev2 *pp0 *pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0
-   !                *ww1 *ww2
-   !   Plus diff mem management of: rev:in bvtj1:in bvtj2:in w:in
-   !                rlv:in bvtk1:in bvtk2:in d2wall:in bvti1:in bvti2:in
-   !                bcdata:in rev0:in rev1:in rev2:in pp0:in pp1:in
-   !                pp2:in rlv0:in rlv1:in rlv2:in ww0:in ww1:in ww2:in
+   !   gradient     of useful results: rgas *rev0 *rev1 *rev2 *pp0
+   !                *pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2
+   !   with respect to varying inputs: rgas *rev0 *rev1 *rev2 *pp0
+   !                *pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2
+   !   Plus diff mem management of: bcdata:in rev0:in rev1:in rev2:in
+   !                pp0:in pp1:in pp2:in rlv0:in rlv1:in rlv2:in ww0:in
+   !                ww1:in ww2:in
    SUBROUTINE BCNSWALLISOTHERMAL_B(nn, secondhalo, correctfork)
    !
    ! ******************************************************************
@@ -1051,11 +935,6 @@
    ! wall boundary conditions for the turbulent variables.
    ! No need to extrapolate the secondary halo's, because this
    ! is done in extrapolate2ndHalo.
-   IF (turbcoupled) THEN
-   CALL PUSHCONTROL1B(0)
-   ELSE
-   CALL PUSHCONTROL1B(1)
-   END IF
    ! Initialize rhok to zero. This will be overwritten if a
    ! correction for k must be applied.
    rhok = zero
@@ -1188,8 +1067,6 @@
    rhokd = 0.0_8
    END IF
    END DO
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) CALL TURBBCNSWALL_B(.false.)
    END SUBROUTINE BCNSWALLISOTHERMAL_B
    SUBROUTINE BCNSWALLISOTHERMAL(nn, secondhalo, correctfork)
    !
@@ -1220,7 +1097,6 @@
    ! wall boundary conditions for the turbulent variables.
    ! No need to extrapolate the secondary halo's, because this
    ! is done in extrapolate2ndHalo.
-   IF (turbcoupled) CALL TURBBCNSWALL(.false.)
    ! Initialize rhok to zero. This will be overwritten if a
    ! correction for k must be applied.
    rhok = zero

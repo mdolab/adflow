@@ -96,7 +96,7 @@
    REAL(kind=realtype) :: sepsensord, cavitationd
    ! Working Variables
    REAL(kind=realtype) :: gm1, v2, fact, tmp
-   REAL(kind=realtype) :: v2d, factd, tmpd
+   REAL(kind=realtype) :: factd, tmpd
    INTEGER(kind=inttype) :: i, j, k, sps2, mm, l, ii, ll, jj
    INTEGER(kind=inttype) :: nstate
    REAL(kind=realtype), DIMENSION(nsections) :: t
@@ -105,17 +105,15 @@
    REAL(kind=realtype), DIMENSION(3) :: cfpd, cfvd, cmpd, cmvd
    REAL(kind=realtype) :: yplusmax, scaledim
    REAL(kind=realtype) :: scaledimd
-   INTRINSIC MAX
    INTEGER :: branch
    REAL(kind=realtype) :: temp3
    REAL(kind=realtype) :: temp2
    REAL(kind=realtype) :: temp1
    REAL(kind=realtype) :: temp0
    REAL(kind=realtype) :: tempd
-   REAL(kind=realtype) :: tempd7(3)
-   REAL(kind=realtype) :: tempd6
-   REAL(kind=realtype) :: tempd5(3)
-   REAL(kind=realtype) :: tempd4
+   REAL(kind=realtype) :: tempd6(3)
+   REAL(kind=realtype) :: tempd5
+   REAL(kind=realtype) :: tempd4(3)
    REAL(kind=realtype) :: tempd3
    REAL(kind=realtype) :: tempd2
    REAL(kind=realtype) :: tempd1
@@ -175,25 +173,8 @@
    !        Normal Residual Computation
    ! ------------------------------------------------
    ! Compute the pressures
-   gm1 = gammaconstant - one
-   ! Compute P 
-   DO k=0,kb
-   DO j=0,jb
-   DO i=0,ib
-   CALL PUSHREAL8(v2)
-   v2 = w(i, j, k, ivx)**2 + w(i, j, k, ivy)**2 + w(i, j, k, ivz)**&
-   &         2
-   p(i, j, k) = gm1*(w(i, j, k, irhoe)-half*w(i, j, k, irho)*v2)
-   IF (p(i, j, k) .LT. 1.e-4_realType*pinfcorr) THEN
-   p(i, j, k) = 1.e-4_realType*pinfcorr
-   CALL PUSHCONTROL1B(0)
-   ELSE
-   CALL PUSHCONTROL1B(1)
-   p(i, j, k) = p(i, j, k)
-   END IF
-   END DO
-   END DO
-   END DO
+   CALL PUSHREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
+   CALL COMPUTEPRESSURESIMPLE()
    ! Compute Laminar/eddy viscosity if required
    CALL COMPUTELAMVISCOSITY()
    CALL COMPUTEEDDYVISCOSITY()
@@ -219,40 +200,16 @@
    CALL PUSHREAL8ARRAY(gamma2, SIZE(gamma2, 1)*SIZE(gamma2, 2))
    CALL PUSHREAL8ARRAY(gamma1, SIZE(gamma1, 1)*SIZE(gamma1, 2))
    CALL PUSHREAL8ARRAY(gamma0, SIZE(gamma0, 1)*SIZE(gamma0, 2))
-   CALL PUSHREAL8ARRAY(bmtj2, SIZE(bmtj2, 1)*SIZE(bmtj2, 2)*SIZE(bmtj2, 3&
-   &               )*SIZE(bmtj2, 4))
-   CALL PUSHREAL8ARRAY(bmtj1, SIZE(bmtj1, 1)*SIZE(bmtj1, 2)*SIZE(bmtj1, 3&
-   &               )*SIZE(bmtj1, 4))
-   CALL PUSHREAL8ARRAY(bvti2, SIZE(bvti2, 1)*SIZE(bvti2, 2)*SIZE(bvti2, 3&
-   &               ))
-   CALL PUSHREAL8ARRAY(bvti1, SIZE(bvti1, 1)*SIZE(bvti1, 2)*SIZE(bvti1, 3&
-   &               ))
    CALL PUSHREAL8ARRAY(sk, SIZE(sk, 1)*SIZE(sk, 2)*SIZE(sk, 3)*SIZE(sk, 4&
    &               ))
    CALL PUSHREAL8ARRAY(sj, SIZE(sj, 1)*SIZE(sj, 2)*SIZE(sj, 3)*SIZE(sj, 4&
    &               ))
    CALL PUSHREAL8ARRAY(si, SIZE(si, 1)*SIZE(si, 2)*SIZE(si, 3)*SIZE(si, 4&
    &               ))
-   CALL PUSHREAL8ARRAY(bmti2, SIZE(bmti2, 1)*SIZE(bmti2, 2)*SIZE(bmti2, 3&
-   &               )*SIZE(bmti2, 4))
-   CALL PUSHREAL8ARRAY(bmti1, SIZE(bmti1, 1)*SIZE(bmti1, 2)*SIZE(bmti1, 3&
-   &               )*SIZE(bmti1, 4))
-   CALL PUSHREAL8ARRAY(bvtk2, SIZE(bvtk2, 1)*SIZE(bvtk2, 2)*SIZE(bvtk2, 3&
-   &               ))
-   CALL PUSHREAL8ARRAY(bvtk1, SIZE(bvtk1, 1)*SIZE(bvtk1, 2)*SIZE(bvtk1, 3&
-   &               ))
    CALL PUSHREAL8ARRAY(rlv, SIZE(rlv, 1)*SIZE(rlv, 2)*SIZE(rlv, 3))
-   CALL PUSHREAL8ARRAY(bmtk2, SIZE(bmtk2, 1)*SIZE(bmtk2, 2)*SIZE(bmtk2, 3&
-   &               )*SIZE(bmtk2, 4))
-   CALL PUSHREAL8ARRAY(bmtk1, SIZE(bmtk1, 1)*SIZE(bmtk1, 2)*SIZE(bmtk1, 3&
-   &               )*SIZE(bmtk1, 4))
    CALL PUSHREAL8ARRAY(gamma, SIZE(gamma, 1)*SIZE(gamma, 2)*SIZE(gamma, 3&
    &               ))
    CALL PUSHREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
-   CALL PUSHREAL8ARRAY(bvtj2, SIZE(bvtj2, 1)*SIZE(bvtj2, 2)*SIZE(bvtj2, 3&
-   &               ))
-   CALL PUSHREAL8ARRAY(bvtj1, SIZE(bvtj1, 1)*SIZE(bvtj1, 2)*SIZE(bvtj1, 3&
-   &               ))
    CALL PUSHREAL8ARRAY(rev, SIZE(rev, 1)*SIZE(rev, 2)*SIZE(rev, 3))
    DO ii1=1,ntimeintervalsspectral
    DO ii2=1,1
@@ -560,34 +517,34 @@
    cmvd = 0.0_8
    factd = 0.0_8
    DO sps2=ntimeintervalsspectral,1,-1
-   tempd7 = momentd(:, sps2)/fact
-   cmpd = cmpd + tempd7
-   cmvd = cmvd + tempd7
-   factd = factd + SUM(-((cmp+cmv)*tempd7/fact))
+   tempd6 = momentd(:, sps2)/fact
+   cmpd = cmpd + tempd6
+   cmvd = cmvd + tempd6
+   factd = factd + SUM(-((cmp+cmv)*tempd6/fact))
    momentd(:, sps2) = 0.0_8
    END DO
    CALL POPREAL8(fact)
-   tempd6 = factd/(lref*lengthref)
-   lengthrefd = lengthrefd - fact*tempd6/lengthref
-   factd = tempd6
+   tempd5 = factd/(lref*lengthref)
+   lengthrefd = lengthrefd - fact*tempd5/lengthref
+   factd = tempd5
    cfpd = 0.0_8
    cfvd = 0.0_8
    DO sps2=ntimeintervalsspectral,1,-1
-   tempd5 = forced(:, sps2)/fact
-   cfpd = cfpd + tempd5
-   cfvd = cfvd + tempd5
-   factd = factd + SUM(-((cfp+cfv)*tempd5/fact))
+   tempd4 = forced(:, sps2)/fact
+   cfpd = cfpd + tempd4
+   cfvd = cfvd + tempd4
+   factd = factd + SUM(-((cfp+cfv)*tempd4/fact))
    forced(:, sps2) = 0.0_8
    END DO
    temp4 = machcoef**2*scaledim
    temp3 = surfaceref*lref**2
    temp2 = temp3*gammainf*pinf
-   tempd3 = -(two*factd/(temp2**2*temp4**2))
-   tempd4 = temp4*temp3*tempd3
-   gammainfd = gammainfd + pinf*tempd4
-   machcoefd = machcoefd + scaledim*temp2*2*machcoef*tempd3
-   scaledimd = temp2*machcoef**2*tempd3
-   pinfd = pinfd + gammainf*tempd4 - pref*scaledimd/pinf**2
+   tempd2 = -(two*factd/(temp2**2*temp4**2))
+   tempd3 = temp4*temp3*tempd2
+   gammainfd = gammainfd + pinf*tempd3
+   machcoefd = machcoefd + scaledim*temp2*2*machcoef*tempd2
+   scaledimd = temp2*machcoef**2*tempd2
+   pinfd = pinfd + gammainf*tempd3 - pref*scaledimd/pinf**2
    prefd = prefd + scaledimd/pinf
    CALL POPREAL8ARRAY(cfp, 3)
    CALL POPREAL8ARRAY(cfv, 3)
@@ -667,12 +624,12 @@
    DO i=il,2,-1
    CALL POPREAL8(flowdoms(nn, 1, sps2)%dw(i, j, k, l))
    temp1 = flowdoms(nn, currentlevel, sps2)%vol(i, j, k)
-   tempd2 = turbresscale*flowdomsd(nn, 1, sps2)%dw(i, j, k, l)/&
+   tempd1 = turbresscale*flowdomsd(nn, 1, sps2)%dw(i, j, k, l)/&
    &             temp1
    flowdomsd(nn, currentlevel, sps2)%vol(i, j, k) = flowdomsd(&
    &             nn, currentlevel, sps2)%vol(i, j, k) - flowdoms(nn, 1, &
-   &             sps2)%dw(i, j, k, l)*tempd2/temp1
-   flowdomsd(nn, 1, sps2)%dw(i, j, k, l) = tempd2
+   &             sps2)%dw(i, j, k, l)*tempd1/temp1
+   flowdomsd(nn, 1, sps2)%dw(i, j, k, l) = tempd1
    END DO
    END DO
    END DO
@@ -731,14 +688,14 @@
    DO k=kl,2,-1
    DO j=jl,2,-1
    DO i=il,2,-1
-   tempd1 = dscalar(jj, sps2, mm)*flowdomsd(nn, 1, sps2)%&
+   tempd0 = dscalar(jj, sps2, mm)*flowdomsd(nn, 1, sps2)%&
    &                   dw(i, j, k, l)
    flowdomsd(nn, 1, mm)%vol(i, j, k) = flowdomsd(nn, 1, &
    &                   mm)%vol(i, j, k) + flowdoms(nn, 1, mm)%w(i, j, k, l)&
-   &                   *tempd1
+   &                   *tempd0
    flowdomsd(nn, 1, mm)%w(i, j, k, l) = flowdomsd(nn, 1, &
    &                   mm)%w(i, j, k, l) + flowdoms(nn, 1, mm)%vol(i, j, k)&
-   &                   *tempd1
+   &                   *tempd0
    END DO
    END DO
    END DO
@@ -746,12 +703,12 @@
    DO k=kl,2,-1
    DO j=jl,2,-1
    DO i=il,2,-1
-   tempd0 = flowdoms(nn, 1, mm)%w(i, j, k, irho)*&
-   &                   flowdomsd(nn, 1, sps2)%dw(i, j, k, l)
+   tempd = flowdoms(nn, 1, mm)%w(i, j, k, irho)*flowdomsd&
+   &                   (nn, 1, sps2)%dw(i, j, k, l)
    temp = flowdoms(nn, 1, mm)%vol(i, j, k)
-   tmpd = temp*tempd0
+   tmpd = temp*tempd
    flowdomsd(nn, 1, mm)%vol(i, j, k) = flowdomsd(nn, 1, &
-   &                   mm)%vol(i, j, k) + tmp*tempd0
+   &                   mm)%vol(i, j, k) + tmp*tempd
    flowdomsd(nn, 1, mm)%w(i, j, k, irho) = flowdomsd(nn, &
    &                   1, mm)%w(i, j, k, irho) + tmp*temp*flowdomsd(nn, 1, &
    &                   sps2)%dw(i, j, k, l)
@@ -817,21 +774,9 @@
    &                3)*SIZE(bmtj2, 4))
    CALL SA_BLOCK_B(.true.)
    ELSE IF (branch .EQ. 1) THEN
-   bvtj1d = 0.0_8
-   bvtj2d = 0.0_8
-   bvtk1d = 0.0_8
-   bvtk2d = 0.0_8
    d2walld = 0.0_8
-   bvti1d = 0.0_8
-   bvti2d = 0.0_8
    ELSE
-   bvtj1d = 0.0_8
-   bvtj2d = 0.0_8
-   bvtk1d = 0.0_8
-   bvtk2d = 0.0_8
    d2walld = 0.0_8
-   bvti1d = 0.0_8
-   bvti2d = 0.0_8
    END IF
    DO sps2=ntimeintervalsspectral,1,-1
    flowdomsd(nn, 1, sps2)%dw = 0.0_8
@@ -863,40 +808,16 @@
    END DO
    END DO
    CALL POPREAL8ARRAY(rev, SIZE(rev, 1)*SIZE(rev, 2)*SIZE(rev, 3))
-   CALL POPREAL8ARRAY(bvtj1, SIZE(bvtj1, 1)*SIZE(bvtj1, 2)*SIZE(bvtj1, 3)&
-   &             )
-   CALL POPREAL8ARRAY(bvtj2, SIZE(bvtj2, 1)*SIZE(bvtj2, 2)*SIZE(bvtj2, 3)&
-   &             )
    CALL POPREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
    CALL POPREAL8ARRAY(gamma, SIZE(gamma, 1)*SIZE(gamma, 2)*SIZE(gamma, 3)&
    &             )
-   CALL POPREAL8ARRAY(bmtk1, SIZE(bmtk1, 1)*SIZE(bmtk1, 2)*SIZE(bmtk1, 3)&
-   &              *SIZE(bmtk1, 4))
-   CALL POPREAL8ARRAY(bmtk2, SIZE(bmtk2, 1)*SIZE(bmtk2, 2)*SIZE(bmtk2, 3)&
-   &              *SIZE(bmtk2, 4))
    CALL POPREAL8ARRAY(rlv, SIZE(rlv, 1)*SIZE(rlv, 2)*SIZE(rlv, 3))
-   CALL POPREAL8ARRAY(bvtk1, SIZE(bvtk1, 1)*SIZE(bvtk1, 2)*SIZE(bvtk1, 3)&
-   &             )
-   CALL POPREAL8ARRAY(bvtk2, SIZE(bvtk2, 1)*SIZE(bvtk2, 2)*SIZE(bvtk2, 3)&
-   &             )
-   CALL POPREAL8ARRAY(bmti1, SIZE(bmti1, 1)*SIZE(bmti1, 2)*SIZE(bmti1, 3)&
-   &              *SIZE(bmti1, 4))
-   CALL POPREAL8ARRAY(bmti2, SIZE(bmti2, 1)*SIZE(bmti2, 2)*SIZE(bmti2, 3)&
-   &              *SIZE(bmti2, 4))
    CALL POPREAL8ARRAY(si, SIZE(si, 1)*SIZE(si, 2)*SIZE(si, 3)*SIZE(si, 4)&
    &             )
    CALL POPREAL8ARRAY(sj, SIZE(sj, 1)*SIZE(sj, 2)*SIZE(sj, 3)*SIZE(sj, 4)&
    &             )
    CALL POPREAL8ARRAY(sk, SIZE(sk, 1)*SIZE(sk, 2)*SIZE(sk, 3)*SIZE(sk, 4)&
    &             )
-   CALL POPREAL8ARRAY(bvti1, SIZE(bvti1, 1)*SIZE(bvti1, 2)*SIZE(bvti1, 3)&
-   &             )
-   CALL POPREAL8ARRAY(bvti2, SIZE(bvti2, 1)*SIZE(bvti2, 2)*SIZE(bvti2, 3)&
-   &             )
-   CALL POPREAL8ARRAY(bmtj1, SIZE(bmtj1, 1)*SIZE(bmtj1, 2)*SIZE(bmtj1, 3)&
-   &              *SIZE(bmtj1, 4))
-   CALL POPREAL8ARRAY(bmtj2, SIZE(bmtj2, 1)*SIZE(bmtj2, 2)*SIZE(bmtj2, 3)&
-   &              *SIZE(bmtj2, 4))
    CALL POPREAL8ARRAY(gamma0, SIZE(gamma0, 1)*SIZE(gamma0, 2))
    CALL POPREAL8ARRAY(gamma1, SIZE(gamma1, 1)*SIZE(gamma1, 2))
    CALL POPREAL8ARRAY(gamma2, SIZE(gamma2, 1)*SIZE(gamma2, 2))
@@ -922,26 +843,8 @@
    CALL APPLYALLBC_BLOCK_B(.true.)
    CALL COMPUTEEDDYVISCOSITY_B()
    CALL COMPUTELAMVISCOSITY_B()
-   DO k=kb,0,-1
-   DO j=jb,0,-1
-   DO i=ib,0,-1
-   CALL POPCONTROL1B(branch)
-   IF (branch .EQ. 0) THEN
-   pinfcorrd = pinfcorrd + 1.e-4_realType*pd(i, j, k)
-   pd(i, j, k) = 0.0_8
-   END IF
-   tempd = gm1*pd(i, j, k)
-   wd(i, j, k, irhoe) = wd(i, j, k, irhoe) + tempd
-   wd(i, j, k, irho) = wd(i, j, k, irho) - half*v2*tempd
-   v2d = -(half*w(i, j, k, irho)*tempd)
-   pd(i, j, k) = 0.0_8
-   CALL POPREAL8(v2)
-   wd(i, j, k, ivx) = wd(i, j, k, ivx) + 2*w(i, j, k, ivx)*v2d
-   wd(i, j, k, ivy) = wd(i, j, k, ivy) + 2*w(i, j, k, ivy)*v2d
-   wd(i, j, k, ivz) = wd(i, j, k, ivz) + 2*w(i, j, k, ivz)*v2d
-   END DO
-   END DO
-   END DO
+   CALL POPREAL8ARRAY(p, SIZE(p, 1)*SIZE(p, 2)*SIZE(p, 3))
+   CALL COMPUTEPRESSURESIMPLE_B()
    CALL POPCONTROL2B(branch)
    IF (branch .EQ. 0) THEN
    CALL UPDATEWALLDISTANCESQUICKLY_B(nn, 1, sps)
