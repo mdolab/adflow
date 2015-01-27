@@ -15,7 +15,9 @@ subroutine alloc_derivative_values(level)
   use inputDiscretization
   use communication
   use wallDistanceData
+#ifndef USE_COMPLEX
   use bcroutines_b
+#endif
   implicit none
 
   ! Input parameters
@@ -361,6 +363,7 @@ subroutine alloc_derivative_values(level)
      end do allocspectralLoop
   end do
 
+#ifndef USE_COMPLEX
   ! Finally allocate space for the BC pointers
   isizemax = 0
   jsizemax = 0
@@ -419,5 +422,5 @@ subroutine alloc_derivative_values(level)
   rev3d = zero
   ssid = zero
   xxd = zero
- 
+#endif 
 end subroutine alloc_derivative_values

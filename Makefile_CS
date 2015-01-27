@@ -39,6 +39,7 @@ REAL_SRC    =	src/modules       \
 # These are the directories that will actually be compiled:
 SUBDIR_SRC    = src_cs/modules       \
 		src_cs/ADT           \
+		src_cs/solver        \
 		src_cs/bcdata        \
 	        src_cs/initFlow      \
 	        src_cs/metis-4.0     \
@@ -49,7 +50,6 @@ SUBDIR_SRC    = src_cs/modules       \
 	        src_cs/partitioning  \
 	        src_cs/preprocessing \
 	        src_cs/slidingComm   \
-	        src_cs/solver        \
 		src_cs/NKsolver      \
 	        src_cs/turbulence    \
 	        src_cs/utils         \
@@ -60,7 +60,6 @@ SUBDIR_SRC    = src_cs/modules       \
 		src_cs/forwardAdjoint/residualInput \
 		src_cs/bendingMomentAnalysis \
 	        src_cs/stabilityDerivatives \
-		src_cs/adjoint/residualInputTS \
 		src_cs/adjoint/forcesInput\
 		src_cs/adjoint/stabilityInput\
 
