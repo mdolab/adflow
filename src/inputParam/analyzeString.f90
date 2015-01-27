@@ -1350,8 +1350,6 @@
 !        *                                                              *
 !        ****************************************************************
 !
-        case ("solve adjoint")
-           solveADjoint = checkYesNo(value, keyword)
         case ("set monitor")
            setMonitor = checkYesNo(value, keyword)
         case ("use approximate preconditioner")
