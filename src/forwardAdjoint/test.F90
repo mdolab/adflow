@@ -1,6 +1,6 @@
 
 
-subroutine testRev
+subroutine testRev(dwbar, wbar, m)
   use BCTypes
   use blockPointers
   use inputDiscretization 
@@ -15,20 +15,28 @@ subroutine testRev
   use inputDiscretization
   use cgnsGrid
   use block
+  use adjointpetsc, only : psi_like3
+  use bcroutines_fast_b
   implicit none
 
   ! Input Variables
+  real(kind=realType), dimension(m), intent(in) :: dwbar
+  real(kind=realType), dimension(m), intent(out) :: wbar
+  integer(kind=intTYpe) :: m
+
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
   real(kind=realType),dimension(:),allocatable :: vec1, vec2 
 
   ! Local variables.
-  integer(kind=intType) :: i, j, k, l, nn, ii, ierr, jj
+  integer(kind=intType) :: i, j, k, l, nn, ii, ierr, jj, irow, sps
   integer(kind=intType) :: nState, level
-  real(kind=realType) :: timea, timeb, fwdTime, revTime
+  real(kind=realType) :: timea, timeb, fwdTime, revTime, ovol
   logical :: resetToRANS
 
 #ifndef USE_COMPLEX
+  call VecPlaceArray(psi_like3, wbar, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
 
   ! Setup number of state variable based on turbulence assumption
   if ( frozenTurbulence ) then
@@ -67,71 +75,53 @@ subroutine testRev
   !call alloc_derivative_values( level)
   call alloc_derivative_values(level)
   call mpi_barrier(sumb_comm_world, ierr)
+
+  ii = 0
+  sps = 1
   timeA = mpi_wtime()
-  do ii=1,10
-     call whalo2(1_intType, 1_intType, nw, .true., &
-          .true., .true.)
+  do nn=1,nDom
+     ! Set pointers and derivative pointers
+     call setPointers_d(nn, level, 1)
 
-     do nn=1,nDom
-        ! Run the regular forward call:
-        
-        ! Set pointers to the first timeInstance...just to getSizes
-        call setPointers(nn, level, 1)
-        
-        call computeLamViscosity
-        ! call computeEddyViscosity
-        ! call applyAllBC_block(.True.)
-        ! if (equations == RANSequations) &
-        !    call applyAllTurbBCThisBLock(.True.)
-
-        call timeStep_block(.False.)
-
-        ! if (equations == RANSEquations)  then
-        !    call sa_block(.true.)
-        !   end if
-
-        call inviscidCentralFlux
-        call inviscidDissFluxScalar
-        call computespeedofsoundsquared
-        call allnodalgradients
-        call viscousFlux
+     do k=2,kl
+        do j=2,jl
+           do i=2,il
+              ovol = one/vol(i,j,k)
+              do l=1,nw
+                 dwd(i,j,k,l) = dwbar(ii+ l)*ovol
+                 fwd(i,j,k,l) = dwd(i,j,k,l)
+              end do
+              ii = ii + nw
+           end do
+        end do
      end do
+   
+     call viscousFlux_fast_b
+     call allnodalgradients_fast_b
+     call computespeedofsoundsquared_fast_b
+     call inviscidDissFluxScalar_fast_b
+     call inviscidcentralflux_fast_b
+     call timestep_block_fast_b(.False.)
+     call applyallbc_block_fast_b(.True.)
+     call computelamviscosity_fast_b
+     call computepressuresimple_fast_b
+     do k=0, kb
+        do j=0,jb
+           do i=0,ib
+              do l=1,nw
+                 irow = flowDoms(nn, 1, sps)%globalCell(i,j,k)*nw + l -1
+                 if (irow >= 0) then 
+                    call VecSetValues(psi_like3, 1, (/irow/), &
+                         (/flowdomsd(nn, level, sps)%w(i, j, k, l)/), ADD_VALUES, ierr)
+                    call EChk(ierr,__FILE__,__LINE__)
+                 end if
+              end do
+           end do
+        end do
+     end do                     
   end do
-
-  call mpi_barrier(sumb_comm_world, ierr)
   timeB = mpi_wtime()
-  fwdTime = timeB-timeA
-  if (myid == 0) then   
-     print *,'Forward Time',fwdTime
-  end if
-  call mpi_barrier(sumb_comm_world, ierr)
-  timeA = mpi_wtime()
-  do ii=1,10
-     call whalo2_b(1_intType, 1_intType, nw, .true., &
-          .true., .true.)
-     
-     do nn=1,nDom
-        ! Set pointers and derivative pointers
-        call setPointers_d(nn, level, 1)
-        fwd = one
-        dwd = one
-        call viscousFlux_fast_b
-        call allnodalgradients_fast_b
-        call computespeedofsoundsquared_fast_b
-        call inviscidDissFluxScalar_fast_b
-        call inviscidcentralflux_fast_b
-        call timestep_block_fast_b(.False.)
-        call computelamviscosity_fast_b
-     end do
-  end do
-  print *,sum(flowDomsd(1,1,1)%w)
-  call mpi_barrier(sumb_comm_world, ierr)
-  timeB = mpi_wtime()
-  revTime = timeB-timeA
-  if (myid == 0) then   
-     print *,'Reverse Time:', revTime
-     print *,'Ratio:', revTime/fwdTime
-  end if
+  print *,'Fortran Time:', myid, timeB-timeA
   call dealloc_derivative_values(level)
 
   ! Reset the correct equation parameters if we were useing the frozen
@@ -152,5 +142,170 @@ subroutine testRev
      if( eddyModel ) restrictEddyVis = .true.
   end if
 
+  call VecAssemblyBegin(psi_like3, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+     
+  call VecAssemblyEnd(psi_like3, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+  
+  call VecResetArray(psi_like3, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
 #endif
 end subroutine testRev
+
+
+! subroutine testRev
+!   use BCTypes
+!   use blockPointers
+!   use inputDiscretization 
+!   use inputTimeSpectral 
+!   use inputPhysics
+!   use iteration         
+!   use flowVarRefState     
+!   use inputAdjoint       
+!   use communication
+!   use diffSizes
+!   use ADjointVars
+!   use inputDiscretization
+!   use cgnsGrid
+!   use block
+!   implicit none
+
+!   ! Input Variables
+! #define PETSC_AVOID_MPIF_H
+! #include "include/finclude/petsc.h"
+!   real(kind=realType),dimension(:),allocatable :: vec1, vec2 
+
+!   ! Local variables.
+!   integer(kind=intType) :: i, j, k, l, nn, ii, ierr, jj
+!   integer(kind=intType) :: nState, level
+!   real(kind=realType) :: timea, timeb, fwdTime, revTime
+!   logical :: resetToRANS
+
+! #ifndef USE_COMPLEX
+
+!   ! Setup number of state variable based on turbulence assumption
+!   if ( frozenTurbulence ) then
+!      nState = nwf
+!   else
+!      nState = nw
+!   endif
+!   ! Assembling matrix on coarser levels is not entirely implemented yet. 
+!   level = 1
+!   currentLevel = level
+!   groundLevel = level
+
+!   ! If we are computing the jacobian for the RANS equations, we need
+!   ! to make block_res think that we are evauluating the residual in a
+!   ! fully coupled sense.  This is reset after this routine is
+!   ! finished.
+!   if (equations == RANSEquations) then
+!      nMGVar = nw
+!      nt1MG = nt1
+!      nt2MG = nt2
+
+!      turbSegregated = .False.
+!      turbCoupled = .True.
+!   end if
+
+!   ! Determine if we want to use frozenTurbulent Adjoint
+!   resetToRANS = .False. 
+!   if (frozenTurbulence .and. equations == RANSEquations) then
+!      equations = NSEquations 
+!      resetToRANS = .True.
+!   end if
+
+
+!   ! Allocate the memory we need for this block to do the forward
+!   ! mode derivatives and copy reference values
+!   !call alloc_derivative_values( level)
+!   call alloc_derivative_values(level)
+!   call mpi_barrier(sumb_comm_world, ierr)
+!   timeA = mpi_wtime()
+!   do ii=1,10
+!      call whalo2(1_intType, 1_intType, nw, .true., &
+!           .true., .true.)
+
+!      do nn=1,nDom
+!         ! Run the regular forward call:
+        
+!         ! Set pointers to the first timeInstance...just to getSizes
+!         call setPointers(nn, level, 1)
+        
+!         call computeLamViscosity
+!         ! call computeEddyViscosity
+!         ! call applyAllBC_block(.True.)
+!         ! if (equations == RANSequations) &
+!         !    call applyAllTurbBCThisBLock(.True.)
+
+!         call timeStep_block(.False.)
+
+!         ! if (equations == RANSEquations)  then
+!         !    call sa_block(.true.)
+!         !   end if
+
+!         call inviscidCentralFlux
+!         call inviscidDissFluxScalar
+!         call computespeedofsoundsquared
+!         call allnodalgradients
+!         call viscousFlux
+!      end do
+!   end do
+
+!   call mpi_barrier(sumb_comm_world, ierr)
+!   timeB = mpi_wtime()
+!   fwdTime = timeB-timeA
+!   if (myid == 0) then   
+!      print *,'Forward Time',fwdTime
+!   end if
+!   call mpi_barrier(sumb_comm_world, ierr)
+!   timeA = mpi_wtime()
+!   do ii=1,10
+!      call whalo2_b(1_intType, 1_intType, nw, .true., &
+!           .true., .true.)
+     
+!      do nn=1,nDom
+!         ! Set pointers and derivative pointers
+!         call setPointers_d(nn, level, 1)
+!         fwd = one
+!         dwd = one
+!         call viscousFlux_fast_b
+!         call allnodalgradients_fast_b
+!         call computespeedofsoundsquared_fast_b
+!         call inviscidDissFluxScalar_fast_b
+!         call inviscidcentralflux_fast_b
+!         call timestep_block_fast_b(.False.)
+!         call computelamviscosity_fast_b
+!      end do
+!   end do
+!   print *,sum(flowDomsd(1,1,1)%w)
+!   call mpi_barrier(sumb_comm_world, ierr)
+!   timeB = mpi_wtime()
+!   revTime = timeB-timeA
+!   if (myid == 0) then   
+!      print *,'Reverse Time:', revTime
+!      print *,'Ratio:', revTime/fwdTime
+!   end if
+!   call dealloc_derivative_values(level)
+
+!   ! Reset the correct equation parameters if we were useing the frozen
+!   ! Turbulent 
+!   if (resetToRANS) then
+!      equations = RANSEquations
+!   end if
+
+!   ! Reset the paraters to use segrated turbulence solve. 
+!   if (equations == RANSEquations) then
+!      nMGVar = nwf
+!      nt1MG = nwf + 1
+!      nt2MG = nwf
+
+!      turbSegregated = .True.
+!      turbCoupled = .False.
+!      restrictEddyVis = .false.
+!      if( eddyModel ) restrictEddyVis = .true.
+!   end if
+
+! #endif
+! end subroutine testRev

@@ -4,8 +4,7 @@
    !  Differentiation of bcturbtreatment in forward (tangent) mode (with options i4 dr8 r8):
    !   variations   of useful results: *bvtj1 *bvtj2 *bvtk1 *bvtk2
    !                *bvti1 *bvti2
-   !   with respect to varying inputs: winf *bvtj1 *bvtj2 *w *rlv
-   !                *bvtk1 *bvtk2 *bvti1 *bvti2
+   !   with respect to varying inputs: winf *w *rlv
    !   Plus diff mem management of: bvtj1:in bvtj2:in w:in rlv:in
    !                bvtk1:in bvtk2:in bvti1:in bvti2:in bcdata:in
    !
@@ -97,6 +96,12 @@
    END DO
    END DO
    END DO
+   bvtj1d = 0.0_8
+   bvtj2d = 0.0_8
+   bvtk1d = 0.0_8
+   bvtk2d = 0.0_8
+   bvti1d = 0.0_8
+   bvti2d = 0.0_8
    ! Loop over the boundary condition subfaces of this block.
    bocos:DO nn=1,nbocos
    ! Determine the kind of boundary condition for this subface.

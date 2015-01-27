@@ -36,7 +36,9 @@ include ${SUMB_RULES_FILE}
 
 vpath %.o $(SUMB_OBJDIR)
 
-FF90_OBJECTS =  \
+FF90_OBJECTS1 = bcroutines_fast_b.o\
+
+FF90_OBJECTS2 =  \
 		allnodalgradients_fast_b.o\
 		computelamviscosity_fast_b.o\
 		computespeedofsoundsquared_fast_b.o\
@@ -45,7 +47,8 @@ FF90_OBJECTS =  \
 		dim_fast_b.o\
 		viscousflux_fast_b.o \
 	        inviscidcentralflux_fast_b.o\
-
+		computepressuresimple_fast_b.o\
+		BCExtra.o\
 #      ******************************************************************
 #      *                                                                *
 #      * Targets for make.                                              *
@@ -55,7 +58,9 @@ FF90_OBJECTS =  \
 default: all
 
 all:
-	$(PMAKE) src
+	$(PMAKE) src1
+	cp -f *.mod $(SUMB_MODDIR)
+	$(PMAKE) src2
 
 clean:
 	@echo "        Making clean in solver... "
@@ -67,4 +72,5 @@ clean:
 #      *                                                                *
 #      ******************************************************************
 
-src:   $(FF90_OBJECTS) 
+src1:   $(FF90_OBJECTS1) 
+src2:   $(FF90_OBJECTS2) 

@@ -23,7 +23,7 @@ module BCRoutines
   use constants
   implicit none
   save
-#ifndef TAPENADE_REVERSE
+#if !defined USE_TAPENADE || defined TAPENADE_POINTERS || defined TAPENADE_FORWARD
   real(kind=realType), dimension(:,:,:), pointer :: ww0, ww1, ww2, ww3
   real(kind=realType), dimension(:,:),   pointer :: pp0, pp1, pp2, pp3
   real(kind=realType), dimension(:,:),   pointer :: rlv0, rlv1, rlv2, rlv3
@@ -90,6 +90,7 @@ contains
        end if
     end do
 
+
 #ifndef USE_TAPENADE
     ! ------------------------------------
     !  Symmetry Polar Boundary Condition 
@@ -131,6 +132,7 @@ contains
     ! ------------------------------------
     !  Farfield Boundary Condition 
     ! ------------------------------------
+
     if (precond == Turkel .or. precond == ChoiMerkle) then 
        call terminate("applyAllBC", &
             "Farfield Turkel and Coid/Merkle preconditioners not implemented")
@@ -219,6 +221,7 @@ contains
        end if
     end do
 #endif
+
 
     ! ------------------------------------
     !  Euler Wall Boundary Condition 
@@ -553,9 +556,9 @@ contains
     ! wall boundary conditions for the turbulent variables.
     ! No need to extrapolate the secondary halo's, because this
     ! is done in extrapolate2ndHalo.
-
+#ifndef USE_TAPENADE
     if( turbCoupled ) call turbBCNSWall(.false.)
-
+#endif 
     ! Initialize rhok to zero. This will be overwritten if a
     ! correction for k must be applied.
 
@@ -637,9 +640,9 @@ contains
     ! wall boundary conditions for the turbulent variables.
     ! No need to extrapolate the secondary halo's, because this
     ! is done in extrapolate2ndHalo.
-
+#ifndef USE_TAPENADE
     if( turbCoupled ) call turbBCNSWall(.false.)
-
+#endif
     ! Initialize rhok to zero. This will be overwritten if a
     ! correction for k must be applied.
 
@@ -2523,7 +2526,7 @@ contains
 
     ! Determine the face id on which the subface is located and set
     ! the pointers accordinly.
-#ifndef TAPENADE_REVERSE
+#if !defined USE_TAPENADE || defined TAPENADE_POINTERS || defined TAPENADE_FORWARD
     select case (BCFaceID(nn))
 
        !===============================================================

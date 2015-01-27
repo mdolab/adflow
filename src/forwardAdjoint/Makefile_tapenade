@@ -12,24 +12,11 @@
 #     * ad_forward: Run in forward mode. Preprocessed output is in     *
 #     *             'foward' directory                                 *
 #     *                                                                *
-#     * ad_multi: Run in foward multi-directional mode. Preprocessed   *
-#     *           output is in the 'fowardMulti'directory              *
-#     *                                                                *
 #     * ad_reverse: Run in reverse mode. Preprocessed output is in the *
 #     *             'reverse' directory                                *
 #     *                                                                *
 #     * The following are commands that are used to produce tangent/   *
 #     * adjoint debug code.                                            *
-#     *                                                                *
-#     * ad_forward_debugTGT: Run in forward with debug commands        *
-#     *                      for debugging the FORWARD mode code.      *
-#     *                                                                *
-#     * ad_forward_debugADJ: Run in forward with debug commands        *
-#     *                      for debugging the REVERSE mode code.      *
-#     *                                                                *
-#     * ad_reverse_debugADJ: Run in reverse with debug commands        *
-#     *                      for debugging the REVERSE mode code.      *
-#     *                                                                *
 #     *                                                                *
 #     ******************************************************************
 
@@ -57,6 +44,7 @@ ALL_RES_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.F90\
 		$(SRC)/forwardAdjoint/residualInput/viscousFluxApprox.F90\
 		$(SRC)/forwardAdjoint/residualInput/inviscidDissFluxScalarApprox.F90\
 		$(SRC)/forwardAdjoint/residualInput/inviscidDissFluxMatrixApprox.F90\
+		$(SRC)/forwardAdjoint/residualInput/computePressureSimple.F90\
 		$(SRC)/forwardAdjoint/costInput/costFunction2.F90\
 		$(SRC)/modules/monitor.f90\
 		$(SRC)/modules/diffSizes.f90\
@@ -247,9 +235,6 @@ ad_forward:
 # Remove preprocessor files
 	make -f Makefile_tapenade cleanpreprocess_res
 
-# Fix the AD bug in bcsymm_d.f90
-	sed -i 's/   gamma1d(i, j) = 0.0_8/  /' outputForward/bcsymm_d.f90
-
 ad_reverse:
 # First delete the holding directory if it exists
 	rm -fr temp_reverse
@@ -291,7 +276,7 @@ ad_reverse_fast:
 	mkdir -p temp_reverse_fast
 
 # Run preprocessor on all input files
-	make -f Makefile_tapenade preprocess_reverse
+	make -f Makefile_tapenade preprocess_reverse_fast
 
 # The following is the single Tapenade command to run:
 	$(TAPENADE_HOME)/bin/tapenade -html \
@@ -304,10 +289,17 @@ ad_reverse_fast:
 	         (aa, w, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz) \
 	computeSpeedOfSoundSquared(w, p, aa)>(w, p, aa) \
 	computeLamViscosity(w, p, rlv)>(w, p, rlv) \
-	BCRoutines%bcNSWallAdiabatic2(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2) > \
+	BCRoutines%bcNSWallAdiabatic(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2) > \
+	                            (ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2) \
+	BCRoutines%bcNSWallIsothermal(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2) > \
 	                             (ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2) \
-	BCRoutines%bcFarField2(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2) > \
-	                      (ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2) \
+	BCRoutines%bcFarField(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2) > \
+			     (ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2) \
+	BCRoutines%bcSymm(ww0, ww1, ww2, ww3, pp0, pp1, pp2, pp3, rlv0, rlv1, rlv2, rlv3, rev0, rev1, rev2, rev3) > \
+			 (ww0, ww1, ww2, ww3, pp0, pp1, pp2, pp3, rlv0, rlv1, rlv2, rlv3, rev0, rev1, rev2, rev3) \
+	BCRoutines%bcEulerWall(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2) > \
+			      (ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2) \
+	computePressureSimple(w, p)>(w,p)\
 	" \
 	-adjvarname %d \
 	-adjfuncname %_fast_b \
@@ -315,20 +307,11 @@ ad_reverse_fast:
 	-noisize \
 	-O temp_reverse_fast $(I_RES_FILES)
 
-
 # Run the auto-edit file:
 	python autoEdit/autoEditReverseFast.py temp_reverse_fast outputReverseFast
 
 # Remove preprocessor files
 	make -f Makefile_tapenade cleanpreprocess_res
-
-# Fix the AD bugs
-#	sed -i 's/   DO ii1=1,SIZE(viscsubfaced(ii1)%tau, 1)/   DO ii1=1,SIZE(viscsubfaced)/' outputReverse/forcesandmoments_b.f90
-#	sed -i 's/   DO ii1=1,SIZE(bcdata(ii1)%oarea, 1)/   DO ii1=1,SIZE(bcdata)/' outputReverse/block_res_b.f90
-#	sed -i 's/   DO ii1=SIZE(bcdata(ii1)%oarea, 1),1,-1/    DO ii1=SIZE(bcdata),1,-1/' outputReverse/block_res_b.f90
-#	sed -i 's/   DO ii1=1,SIZE(bcdatad(ii1)%norm, 1)/   DO ii1=1,SIZE(bcdatad)/' outputReverse/bceulerwall_b.f90
-
-
 
 preprocess_cost:
 	@echo "Preprocessing all input files for cost AD..."
@@ -350,6 +333,13 @@ preprocess_reverse:
 	@for file in $(ALL_RES_FILES); do \
 		echo Preprocessing $$file; \
 		cpp -DUSE_TAPENADE -DTAPENADE_REVERSE -DTAPENADE_FAST -traditional -P $(FF90_ALL_FLAGS) $$file $$file.f90; \
+	done
+
+preprocess_reverse_fast:
+	@echo "Preprocessing all input files for reverse mode AD..."
+	@for file in $(ALL_RES_FILES); do \
+		echo Preprocessing $$file; \
+		cpp -DUSE_TAPENADE -DTAPENADE_REVERSE -DTAPENADE_FAST -DTAPENADE_POINTERS -traditional -P $(FF90_ALL_FLAGS) $$file $$file.f90; \
 	done
 
 cleanpreprocess_res:

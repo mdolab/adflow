@@ -47,6 +47,7 @@ FF90_OBJECTS2 =  \
 		computeetot_b.o\
 		computelamviscosity_b.o\
 		computespeedofsoundsquared_b.o\
+		computepressuresimple_b.o\
 		timestep_block_b.o\
 		metric_block_b.o\
 		xhalo_block_b.o\
