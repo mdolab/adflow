@@ -190,12 +190,12 @@ ad_reverse:
 	make -f Makefile_tapenade cleanpreprocess_res
 
 # Fix the AD bugs
-	sed -i 's/   DO ii1=1,SIZE(viscsubfaced(ii1)%tau, 1)/   DO ii1=1,SIZE(viscsubfaced)/' outputReverse/forcesandmoments_b.f90
-	sed -i 's/   DO ii1=1,SIZE(bcdata(ii1)%oarea, 1)/   DO ii1=1,SIZE(bcdata)/' outputReverse/forcesandmoments_b.f90
-	sed -i 's/   DO ii1=SIZE(bcdata(ii1)%oarea, 1),1,-1/    DO ii1=SIZE(bcdata),1,-1/' outputReverse/forcesandmoments_b.f90
-	sed -i 's/   DO ii1=1,SIZE(bcdata(ii1)%oarea, 1)/   DO ii1=1,SIZE(bcdata)/' outputReverse/block_res_b.f90
-	sed -i 's/   DO ii1=SIZE(bcdata(ii1)%oarea, 1),1,-1/    DO ii1=SIZE(bcdata),1,-1/' outputReverse/block_res_b.f90
-	sed -i 's/   DO ii1=1,SIZE(bcdatad(ii1)%norm, 1)/   DO ii1=1,SIZE(bcdatad)/' outputReverse/bcroutines_b.f90
+	sed -i 's/do ii1=1,size(viscsubfaced(ii1)%tau, 1)/do ii1=1,size(viscsubfaced)/' outputReverse/forcesandmoments_b.f90
+	sed -i 's/do ii1=1,size(bcdata(ii1)%oarea, 1)/do ii1=1,size(bcdata)/' outputReverse/forcesandmoments_b.f90
+	sed -i 's/do ii1=size(bcdata(ii1)%oarea, 1),1,-1/do ii1=size(bcdata),1,-1/' outputReverse/forcesandmoments_b.f90
+	sed -i 's/do ii1=1,size(bcdata(ii1)%oarea, 1)/do ii1=1,size(bcdata)/' outputReverse/block_res_b.f90
+	sed -i 's/do ii1=size(bcdata(ii1)%oarea, 1),1,-1/do ii1=size(bcdata),1,-1/' outputReverse/block_res_b.f90
+	sed -i 's/do ii1=1,size(bcdatad(ii1)%norm, 1)/do ii1=1,size(bcdatad)/' outputReverse/bcroutines_b.f90
 
 ad_reverse_fast:
 # First delete the holding directory if it exists

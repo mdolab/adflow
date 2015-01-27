@@ -2,18 +2,13 @@
 """
 autoEdit - A Python tool to automatically edit a set of files
            according to the specified user rules:
-
-           1) Discard module files
-
-           2) Rename module names in subroutines
-
-Written by Andre C. Marta          Last updated: Apr 6, 2007
+G. Kenway
 """
 
 # Import modules
 import os, sys
 import string
-
+import re
 # Specify file extension
 EXT = '_d.f90' 
 
@@ -21,21 +16,16 @@ DIR_ORI = sys.argv[1]
 DIR_MOD = sys.argv[2]
 
 # Specifiy the list of LINE ID's to find, what to replace and with what
-
-# First set: Find line with 'USE' and replace "_D" with ''
-LINE_ID = ['USE']
-STR_OLD = ['_D' ]
-STR_NEW = [''   ]
-
-STR_REPLACE_ALL = {'_CD':''}
-
+patt_modules = re.compile(r'(\s*use\s*\w*)(_d)\s*')
+patt_module = re.compile(r'\s*module\s\w*')
+patt_comment = re.compile(r'\s*!.*')
 print "Directory of input source files  :", DIR_ORI
 print "Directory of output source files :", DIR_MOD
 
 for f in os.listdir(DIR_ORI):
     if f.endswith(EXT):
         # open original file in read mode
-        file_object_ori = open(DIR_ORI + '/' + f,'r')
+        file_object_ori = open(os.path.join(DIR_ORI,f),'r')
         print "\nParsing input file", file_object_ori.name
 
         # read to whole file to string and reposition the pointer
@@ -43,27 +33,41 @@ for f in os.listdir(DIR_ORI):
         all_src = file_object_ori.read()
         file_object_ori.seek(0)
 
-        # open modified file in write mode
-        file_object_mod = open(DIR_MOD + '/' + f,'w')
-
-        # read the original file, line-by-line
-        nEdits = len(LINE_ID)
-
+        # First we want to dertmine if it is a module since we want to
+        # ignore all of those:
+        isModule = False
         for line in file_object_ori:
-            # parse original line for relevante identifier
-            # and replace the string
-            line_mod = line.lstrip() # Strip out Left-hand leading spaces
+            line = line.lower()
+            if patt_module.match(line):
+                if not 'bcroutines_d' in line:
+                    isModule = True
 
-            for i in xrange(nEdits):
-                if line_mod[0:len(LINE_ID[i])] == LINE_ID[i]:
-                    if 'BCROUTINES' not in line:
-                        line_mod = string.replace(line_mod, STR_OLD[i], STR_NEW[i])
+        # If we have a module, close the input and cycle to next file. 
+        if isModule:
+            file_object_ori.close()
+            continue
 
-            for key in STR_REPLACE_ALL:
-                line_mod = string.replace(line_mod,key,STR_REPLACE_ALL[key])
+        # open modified file in write mode
+        file_object_mod = open(os.path.join(DIR_MOD,f), 'w')
 
+        # Go back to the beginning
+        file_object_ori.seek(0)
+        for line in file_object_ori:
+            # Just deal with lower case string
+            line = line.lower()
+
+            # Replace _cb on calls
+            if '_cd' in line:
+                line = line.replace('_cd', '')
+                
+            # Replace _d modules with normal
+            m = patt_modules.match(line)
+            if m:
+                if not 'bcroutines_d' in line:
+                    line = line.replace('_d', '')
+            
             # write the modified line to new file
-            file_object_mod.write('   '+ line_mod)
+            file_object_mod.write(line)
 
         # close the files
         file_object_ori.close()
@@ -71,7 +75,3 @@ for f in os.listdir(DIR_ORI):
 
         # success message
         print " Modified file saved", file_object_mod.name
-
-
-
-
