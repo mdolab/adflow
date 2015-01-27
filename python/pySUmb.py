@@ -1956,10 +1956,6 @@ class SUMB(AeroSolver):
         # Check to see if we need to agument the RHS with a structural
         # adjoint:
         if structAdjoint is not None and groupName is not None:
-            if self.getOption('usereversemodead'):
-                raise Error("Reverse mode AD no longer supported with "
-                "aerostructural analysis. Use Forward mode AD for the adjoint")
-
             phi = self.mesh.expandVectorByFamily(groupName, structAdjoint)
             agument = self.sumb.agumentrhs(numpy.ravel(phi), self.getAdjointStateSize())
             RHS -= agument
@@ -2329,30 +2325,6 @@ class SUMB(AeroSolver):
 
         return vec
 
-    def computeObjPartials(self, objective, forcePoints=None):
-
-        obj, aeroObj = self._getObjective(objective)
-        if aeroObj:
-            objNum = self.sumbCostFunctions[obj]
-            if self.getOption('useReverseModeAD'):
-                # Note: Computeobjective partials MUST be called with the full
-                # force pt list.
-                if forcePoints is None:
-                    [npts, ncells] = self.sumb.getforcesize()
-                    nTS = self.sumb.inputtimespectral.ntimeintervalsspectral
-                    forcePoints = numpy.zeros((nTS, npts, 3), self.dtype)
-                    for i in xrange(nTS):
-                        forcePoints[i] = self.getForcePoints(TS=i)
-
-                self.sumb.computeobjpartials(
-                    objNum, forcePoints.T, True, True)
-            else:
-                #self.sumb.computeobjectivepartialsfwd(objNum)
-                pass
-        else:
-            self.sumb.zeroobjpartials(True, True)
-
-
     def getdIdx(self, objective, groupName=None):
         obj, aeroObj = self._getObjective(objective)
         if not aeroObj:
@@ -2363,11 +2335,8 @@ class SUMB(AeroSolver):
                 self.mesh.warpDeriv(dXv, surfOnly=True)
                 return self.mesh.getdXs(groupName)
 
-        if self.getOption('usematrixfreedrdx'):
-            funcsBar = {objective.lower():1.0}
-            dXv = self.computeMatrixFreeProductBwd(funcsBar=funcsBar, xVDeriv=True)
-        else:
-            dXv = self.sumb.getdidx(obj, self.getSpatialSize())
+        funcsBar = {objective.lower():1.0}
+        dXv = self.computeMatrixFreeProductBwd(funcsBar=funcsBar, xVDeriv=True)
         
         if self._prescribedTSMotion():
             ndof_1_instance = self.sumb.adjointvars.nnodeslocal[0]*3
@@ -2387,19 +2356,9 @@ class SUMB(AeroSolver):
 
         obj, aeroObj = self._getObjective(objective)        
 
-        if self.getOption('useMatrixFreedRdx'):
-            funcsBar = {objective.lower():1.0}
-            return self.computeMatrixFreeProductBwd(
-                funcsBar=funcsBar, xDvDerivAero=True)
-        else:
-            self.sumb.getdida(obj)
-            if aeroObj:
-                dIdaLocal = self.sumb.adjointvars.dida
-            else:
-                dIdaLocal = numpy.zeros_like(self.sumb.adjointvars.dida)
-
-            # We must MPI all reuduce
-            return self.comm.allreduce(dIdaLocal, op=MPI.SUM)
+        funcsBar = {objective.lower():1.0}
+        return self.computeMatrixFreeProductBwd(
+            funcsBar=funcsBar, xDvDerivAero=True)
 
     def getdRdaTPsi(self, objective):
         """Shortcut function to perform dRdXaT*vec operation with the adjoint

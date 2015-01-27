@@ -45,9 +45,11 @@ FF90_OBJECTS2 =  \
 		referencestate_b.o\
 		vectorrotation_b.o\
 		computeetot_b.o\
+		computegamma_b.o\
 		computelamviscosity_b.o\
 		computespeedofsoundsquared_b.o\
 		computepressuresimple_b.o\
+		getcostfunction2_b.o\
 		timestep_block_b.o\
 		metric_block_b.o\
 		xhalo_block_b.o\
