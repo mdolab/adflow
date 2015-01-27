@@ -50,15 +50,17 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   integer(kind=intType) :: n_stencil, i_stencil, n_force_stencil
   integer(kind=intType), dimension(:, :), pointer :: stencil, force_stencil
   real(kind=realType) :: delta_x, one_over_dx
-  real(kind=realType), dimension(:,:), allocatable :: blk
+
 #ifdef USE_COMPLEX
   complex(kind=realType) :: alpha, beta, sepSensor, Cavitation
   complex(kind=realType) :: alphad, betad, sepSensord, Cavitationd
   complex(kind=realType), dimension(3, nTimeIntervalsSpectral) :: force, moment, forced, momentd
+  complex(kind=realType), dimension(:,:), allocatable :: blk
 #else
   real(kind=realType) :: alpha, beta, sepSensor, Cavitation
   real(kind=realType) :: alphad, betad,  sepSensord, Cavitationd
   real(kind=realType), dimension(3, nTimeIntervalsSpectral) :: force, moment, forced, momentd
+  real(kind=realType), dimension(:,:), allocatable :: blk
 #endif
   integer(kind=intType) :: liftIndex
   integer(kind=intType), dimension(:,:), pointer ::  colorPtr1, colorPtr2
