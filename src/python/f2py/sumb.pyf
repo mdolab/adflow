@@ -331,18 +331,6 @@ python module libsumb
 
        ! -------- Partial Derivative Functions -----------
        
-       subroutine getdidw(costfunction,didw,nstate) ! in :test:computeObjectivePartialsFwd.F90
-         integer(kind=inttype) intent(in) :: costfunction
-         real(kind=realtype) dimension(nstate),intent(out) :: didw
-         integer(kind=inttype), intent(in) :: nstate
-       end subroutine getdidw
-
-       subroutine getdidx(costfunction,didx,nspatial) ! in :test:computeObjectivePartialsFwd.F90
-         integer(kind=inttype) intent(in) :: costfunction
-         real(kind=realtype) dimension(nspatial),intent(out) :: didx
-         integer(kind=inttype), intent(in) :: nspatial
-       end subroutine getdidx
-
        ! -------- Get/Set Functions --------------------
        subroutine getstates(states,ndimw) ! in :test:getADjoint.F90
          real(kind=realtype) dimension(ndimw),intent(out),depend(ndimw) :: states
@@ -421,10 +409,6 @@ python module libsumb
             integer(kind=inttype), optional,intent(in),check(len(funcsbar)>=costsize),depend(funcsbar) :: costsize=len(funcsbar)
         end subroutine computematrixfreeproductbwd
 
-        subroutine getdida(costfunction) ! in :test:computeObjectivePartialsFwd.F90
-          integer(kind=inttype) intent(in) :: costfunction
-        end subroutine getdida
-        
         subroutine getdrdatpsi(output,ndv,adjoint,nstate) ! in :test:getdRdaPsi.F90
           real(kind=realtype) dimension(ndv),intent(out),depend(ndv) :: output
           integer(kind=inttype) intent(in) :: ndv
