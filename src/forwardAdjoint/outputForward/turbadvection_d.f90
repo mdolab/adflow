@@ -54,7 +54,7 @@ subroutine turbadvection_d(madv, nadv, offset, qq)
 !
 !      local variables.
 !
-  integer(kind=inttype) :: i, j, k, ii, jj, kk
+  integer(kind=inttype) :: i, j, k, ii, jj, kk, iii
   real(kind=realtype) :: qs, voli, xa, ya, za
   real(kind=realtype) :: qsd, volid, xad, yad, zad
   real(kind=realtype) :: uu, dwt, dwtm1, dwtp1, dwti, dwtj, dwtk
@@ -235,7 +235,7 @@ subroutine turbadvection_d(madv, nadv, offset, qq)
           end do
         else
 ! velocity has a component in negative k-direction.
-! loop over the number of advection equations.
+! loop over the number of advection equations
           do ii=1,nadv
 ! set the value of jj such that it corresponds to the
 ! turbulent entry in w.
@@ -343,6 +343,8 @@ subroutine turbadvection_d(madv, nadv, offset, qq)
 !      *                                                                *
 !      ******************************************************************
 !
+  qs = zero
+  qsd = 0.0_8
   do k=2,kl
     do j=2,jl
       do i=2,il
@@ -578,6 +580,8 @@ subroutine turbadvection_d(madv, nadv, offset, qq)
 !      *                                                                *
 !      ******************************************************************
 !
+  qs = zero
+  qsd = 0.0_8
   do k=2,kl
     do j=2,jl
       do i=2,il
