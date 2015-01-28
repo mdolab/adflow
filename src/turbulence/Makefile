@@ -73,7 +73,7 @@ FILES_TO_COMPLEXIFY = \
 		 kw.f90\
 		 kwCDterm.f90\
 		 kwSolve.F90\
-		 prodKatoLaunder.f90\
+		 prodKatoLaunder.F90\
 		 prodSmag2.F90\
 		 prodWmag2.F90\
 		 saNuFromEddyRatio.f90\
@@ -81,7 +81,7 @@ FILES_TO_COMPLEXIFY = \
 		 SSTSolve.F90\
 		 tdia3.f90\
 		 turb2ndHalo.f90\
-		 turbAdvection.f90\
+		 turbAdvection.F90\
 		 turbBCNSWall.f90\
 		 turbResidual.F90\
 		 turbSolveSegregated.f90\
@@ -91,8 +91,7 @@ FILES_TO_COMPLEXIFY = \
 		 vfScale.f90\
 		 vfSolve.f90\
 		 writeLoglaw.f90\
-#		 sa.F90\
-		 saSolve.F90\
+
 
 FILES_TO_COPY = 
 
