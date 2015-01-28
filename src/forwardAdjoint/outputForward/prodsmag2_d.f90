@@ -38,7 +38,7 @@ subroutine prodsmag2_d()
 !
 !      local variables.
 !
-  integer(kind=inttype) :: i, j, k
+  integer(kind=inttype) :: i, j, k, ii
   real(kind=realtype) :: uux, uuy, uuz, vvx, vvy, vvz, wwx, wwy, wwz
   real(kind=realtype) :: uuxd, uuyd, uuzd, vvxd, vvyd, vvzd, wwxd, wwyd&
 & , wwzd

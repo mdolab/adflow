@@ -27,6 +27,7 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   use costFunctions
   use wallDistanceData
   use inputDiscretization 
+  use saModule
   implicit none
 
   ! Input Arguments:
@@ -118,6 +119,7 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   call applyAllBC_block(.True.)
 
   if (equations == RANSequations) then 
+     call bcTurbTreatment
      call applyAllTurbBCThisBLock(.True.)
   end if
 
@@ -143,7 +145,6 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
         
      case (spalartAllmaras)
         call sa_block(.true.)
-        
      case default
         call terminate("turbResidual", & 
              "Only SA turbulence adjoint implemented")

@@ -37,6 +37,7 @@ include ${SUMB_RULES_FILE}
 vpath %.o $(SUMB_OBJDIR)
 
 FF90_OBJECTS1 =  bcroutines_b.o\
+		 samodule_b.o\
 
 FF90_OBJECTS2 =  \
 		allnodalgradients_b.o\
@@ -63,11 +64,9 @@ FF90_OBJECTS2 =  \
 		computeetotcellcpfit_b.o \
 		setssmetricbwd_b.o\
 		resetssmetricbwd_b.o\
-	        sa_block_b.o\
 	        inviscidcentralflux_b.o\
                 saeddyviscosity_b.o\
 		computeeddyviscosity_b.o\
-		sasolve_b.o\
 		unsteadyturbterm_b.o\
 		prodkatolaunder_b.o\
 		prodwmag2_b.o\
@@ -93,7 +92,6 @@ FF90_OBJECTS2 =  \
 		bceddynowall_b.o\
 		bcturbwall_b.o\
 		bcturbfarfield_b.o\
-		turbbcnswall_b.o\
 		updatewalldistancesquickly_b.o\
 
 #      ******************************************************************

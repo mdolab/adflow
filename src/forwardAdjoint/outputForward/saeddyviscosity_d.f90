@@ -3,7 +3,7 @@
 !
 !  differentiation of saeddyviscosity in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *rev
-!   with respect to varying inputs: *rev *w *rlv
+!   with respect to varying inputs: *w *rlv
 !   plus diff mem management of: rev:in w:in rlv:in
 !      ==================================================================
 !      ==================================================================
@@ -25,7 +25,7 @@ subroutine saeddyviscosity_d()
 !
 !      local variables.
 !
-  integer(kind=inttype) :: i, j, k
+  integer(kind=inttype) :: i, j, k, ii
   real(kind=realtype) :: chi, chi3, fv1, rnusa, cv13
   real(kind=realtype) :: chid, chi3d, fv1d, rnusad
 !
@@ -37,6 +37,7 @@ subroutine saeddyviscosity_d()
 !
 ! store the cv1^3; cv1 is a constant of the spalart-allmaras model.
   cv13 = rsacv1**3
+  revd = 0.0_8
 ! loop over the cells of this block and compute the eddy viscosity.
 ! do not include halo's.
   do k=1,ke
