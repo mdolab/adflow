@@ -46,10 +46,10 @@
        ! readable. Also set the pointers for the production term,
        ! vorticity, strain and the time and lenght scale of v2f.
 
-       dvt     => dw(1:,1:,1:,idvt:)
-       prod    => dw(1:,1:,1:,iprod)
-       sct     => dw(1:,1:,1:,isct)
-       scl2    => dw(1:,1:,1:,iscl2)
+       dvt     => scratch(1:,1:,1:,idvt:)
+       prod    => scratch(1:,1:,1:,iprod)
+       sct     => scratch(1:,1:,1:,isct)
+       scl2    => scratch(1:,1:,1:,iscl2)
        vort    => prod
        strain2 => prod
 !

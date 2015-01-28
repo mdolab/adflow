@@ -2,9 +2,9 @@
 !  tapenade 3.10 (r5363) -  9 sep 2014 09:53
 !
 !  differentiation of unsteadyturbterm in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: timeref *dw *w
-!   with respect to varying inputs: timeref *dw *w
-!   plus diff mem management of: dw:in w:in
+!   gradient     of useful results: timeref *dw *w *scratch
+!   with respect to varying inputs: timeref *dw *w *scratch
+!   plus diff mem management of: dw:in w:in scratch:in
 !
 !      ******************************************************************
 !      *                                                                *
@@ -58,8 +58,6 @@ subroutine unsteadyturbterm_b(madv, nadv, offset, qq)
   integer(kind=inttype) :: i, j, k, ii, jj, nn
   real(kind=realtype) :: oneoverdt, tmp
   real(kind=realtype) :: oneoverdtd, tmpd
-  real(kind=realtype) :: tmp0
-  real(kind=realtype) :: tmpd0
 !
 !      ******************************************************************
 !      *                                                                *
@@ -111,8 +109,8 @@ nadvloopunsteady:do ii=1,nadv
         do k=kl,2,-1
           do j=jl,2,-1
             do i=il,2,-1
-              oneoverdtd = oneoverdtd - tmp*dwd(i, j, k, idvt+ii-1)
-              tmpd = -(oneoverdt*dwd(i, j, k, idvt+ii-1))
+              oneoverdtd = oneoverdtd - tmp*scratchd(i, j, k, idvt+ii-1)
+              tmpd = -(oneoverdt*scratchd(i, j, k, idvt+ii-1))
               call popreal8(tmp)
               wd(i, j, k, jj) = wd(i, j, k, jj) + coeftime(0)*tmpd
             end do
@@ -131,7 +129,7 @@ nadvloopspectral:do ii=1,nadv
       call pushinteger4(jj)
       jj = ii + offset
 ! the time derivative has been computed earlier in
-! unsteadyturbspectral and stored in entry jj of dw.
+! unsteadyturbspectral and stored in entry jj of scratch.
 ! substract this value for all owned cells. it must be
 ! substracted, because in the turbulent routines the
 ! residual is defined with an opposite sign compared to
@@ -145,9 +143,8 @@ nadvloopspectral:do ii=1,nadv
       do k=kl,2,-1
         do j=jl,2,-1
           do i=il,2,-1
-            tmpd0 = dwd(i, j, k, idvt+ii-1)
-            dwd(i, j, k, idvt+ii-1) = tmpd0
-            dwd(i, j, k, jj) = dwd(i, j, k, jj) - tmpd0
+            dwd(i, j, k, jj) = dwd(i, j, k, jj) - scratchd(i, j, k, idvt&
+&             +ii-1)
           end do
         end do
       end do

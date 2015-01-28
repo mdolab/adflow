@@ -2,9 +2,9 @@
 !  tapenade 3.10 (r5363) -  9 sep 2014 09:53
 !
 !  differentiation of unsteadyturbterm in forward (tangent) mode (with options i4 dr8 r8):
-!   variations   of useful results: *dw
-!   with respect to varying inputs: timeref *dw *w
-!   plus diff mem management of: dw:in w:in
+!   variations   of useful results: *scratch
+!   with respect to varying inputs: timeref *w *scratch
+!   plus diff mem management of: dw:in w:in scratch:in
 !
 !      ******************************************************************
 !      *                                                                *
@@ -106,10 +106,10 @@ nadvloopunsteady:do ii=1,nadv
 ! sign compared to the residual of the flow equations.
 ! therefore the time derivative must be substracted
 ! from dvt.
-              dwd(i, j, k, idvt+ii-1) = dwd(i, j, k, idvt+ii-1) - &
-&               oneoverdtd*tmp - oneoverdt*tmpd
-              dw(i, j, k, idvt+ii-1) = dw(i, j, k, idvt+ii-1) - &
-&               oneoverdt*tmp
+              scratchd(i, j, k, idvt+ii-1) = scratchd(i, j, k, idvt+ii-1&
+&               ) - oneoverdtd*tmp - oneoverdt*tmpd
+              scratch(i, j, k, idvt+ii-1) = scratch(i, j, k, idvt+ii-1) &
+&               - oneoverdt*tmp
 ! update the central jacobian.
               qq(i, j, k, ii, ii) = qq(i, j, k, ii, ii) + coeftime(0)*&
 &               oneoverdt
@@ -135,7 +135,7 @@ nadvloopspectral:do ii=1,nadv
 ! store the index of the current turbulent variable in jj.
       jj = ii + offset
 ! the time derivative has been computed earlier in
-! unsteadyturbspectral and stored in entry jj of dw.
+! unsteadyturbspectral and stored in entry jj of scratch.
 ! substract this value for all owned cells. it must be
 ! substracted, because in the turbulent routines the
 ! residual is defined with an opposite sign compared to
@@ -149,10 +149,8 @@ nadvloopspectral:do ii=1,nadv
       do k=2,kl
         do j=2,jl
           do i=2,il
-            dwd(i, j, k, idvt+ii-1) = dwd(i, j, k, idvt+ii-1) - dwd(i, j&
-&             , k, jj)
-            dw(i, j, k, idvt+ii-1) = dw(i, j, k, idvt+ii-1) - dw(i, j, k&
-&             , jj)
+            scratch(i, j, k, idvt+ii-1) = scratch(i, j, k, idvt+ii-1) - &
+&             dw(i, j, k, jj)
             qq(i, j, k, ii, ii) = qq(i, j, k, ii, ii) + tmp
           end do
         end do

@@ -138,6 +138,7 @@
 
        nullify(flowDoms(nn,level,sps)%dw)
        nullify(flowDoms(nn,level,sps)%fw)
+       nullify(flowDoms(nn,level,sps)%scratch)
 
        nullify(flowDoms(nn,level,sps)%dwOldRK)
 

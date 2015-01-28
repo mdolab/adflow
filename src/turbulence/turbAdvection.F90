@@ -163,7 +163,7 @@ subroutine turbAdvection(mAdv, nAdv, offset, qq)
                     ! substracted, because it appears on the other side of
                     ! the equation as the source and viscous terms.
 
-                    dw(i,j,k,idvt+ii-1) = dw(i,j,k,idvt+ii-1) - uu*dwtk
+                    scratch(i,j,k,idvt+ii-1) = scratch(i,j,k,idvt+ii-1) - uu*dwtk
 
                     ! Update the central jacobian. First the term which is
                     ! always present, i.e. uu.
@@ -249,7 +249,7 @@ subroutine turbAdvection(mAdv, nAdv, offset, qq)
                     ! substracted, because it appears on the other side
                     ! of the equation as the source and viscous terms.
 
-                    dw(i,j,k,idvt+ii-1) = dw(i,j,k,idvt+ii-1) - uu*dwtk
+                    scratch(i,j,k,idvt+ii-1) = scratch(i,j,k,idvt+ii-1) - uu*dwtk
 
                     ! Update the central jacobian. First the term which is
                     ! always present, i.e. -uu.
@@ -390,7 +390,7 @@ subroutine turbAdvection(mAdv, nAdv, offset, qq)
                     ! substracted, because it appears on the other side of
                     ! the equation as the source and viscous terms.
 
-                    dw(i,j,k,idvt+ii-1) = dw(i,j,k,idvt+ii-1) - uu*dwtj
+                    scratch(i,j,k,idvt+ii-1) = scratch(i,j,k,idvt+ii-1) - uu*dwtj
 
                     ! Update the central jacobian. First the term which is
                     ! always present, i.e. uu.
@@ -476,7 +476,7 @@ subroutine turbAdvection(mAdv, nAdv, offset, qq)
                     ! substracted, because it appears on the other side
                     ! of the equation as the source and viscous terms.
 
-                    dw(i,j,k,idvt+ii-1) = dw(i,j,k,idvt+ii-1) - uu*dwtj
+                    scratch(i,j,k,idvt+ii-1) = scratch(i,j,k,idvt+ii-1) - uu*dwtj
 
                     ! Update the central jacobian. First the term which is
                     ! always present, i.e. -uu.
@@ -618,7 +618,7 @@ subroutine turbAdvection(mAdv, nAdv, offset, qq)
                     ! substracted, because it appears on the other side of
                     ! the equation as the source and viscous terms.
 
-                    dw(i,j,k,idvt+ii-1) = dw(i,j,k,idvt+ii-1) - uu*dwti
+                    scratch(i,j,k,idvt+ii-1) = scratch(i,j,k,idvt+ii-1) - uu*dwti
 
                     ! Update the central jacobian. First the term which is
                     ! always present, i.e. uu.
@@ -704,7 +704,7 @@ subroutine turbAdvection(mAdv, nAdv, offset, qq)
                     ! substracted, because it appears on the other side
                     ! of the equation as the source and viscous terms.
 
-                    dw(i,j,k,idvt+ii-1) = dw(i,j,k,idvt+ii-1) - uu*dwti
+                    scratch(i,j,k,idvt+ii-1) = scratch(i,j,k,idvt+ii-1) - uu*dwti
 
                     ! Update the central jacobian. First the term which is
                     ! always present, i.e. -uu.

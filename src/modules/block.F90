@@ -559,12 +559,19 @@ module block
      !                               at least for the flow variables.
      ! shockSensor(0:ib,0:jb,0:kb)   Precomputed sensor value for shock 
      !                               that is *NOT* differentated. 
+     ! scratch(0:ib,0:jb,0:kb,5)     Scratch space for the turbulence
+     !                               models. NOMINALLY this could use
+     !                               dw and the code was nominally setup
+     !                               for this originally. However, this 
+     !                               complicates reverse mode sensitivities
+     !                               So we use this instead. 
 
      real(kind=realType), dimension(:,:,:),     pointer :: p1
      real(kind=realType), dimension(:,:,:,:),   pointer :: dw, fw
      real(kind=realType), dimension(:,:,:,:),   pointer :: dwtmp, dwtmp2
      real(kind=realType), dimension(:,:,:,:,:), pointer :: dwOldRK
      real(kind=realType), dimension(:,:,:,:),   pointer :: w1, wr
+     real(kind=realType), dimension(:,:,:,:),   pointer :: scratch
 
      ! mgIFine(2:il,2) - The two fine grid i-cells used for the
      !                   restriction of the solution and residual to

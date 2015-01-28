@@ -142,7 +142,9 @@ subroutine alloc_derivative_values(level)
         allocate(&
              flowDomsd(nn,1,sps)%w (0:ib,0:jb,0:kb,1:nw), &
              flowDomsd(nn,1,sps)%dw(0:ib,0:jb,0:kb,1:nw), &
-             flowDomsd(nn,1,sps)%fw(0:ib,0:jb,0:kb,1:nw), stat=ierr)
+             flowDomsd(nn,1,sps)%fw(0:ib,0:jb,0:kb,1:nw), &
+             flowDomsd(nn,1,sps)%scratch(0:ib,0:jb,0:kb,5), &
+             stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
         
         allocate(flowDomsd(nn,1,sps)%p(0:ib,0:jb,0:kb), &

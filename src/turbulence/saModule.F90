@@ -187,7 +187,7 @@ contains
                 ! First take the square root of the production term to
                 ! obtain the correct production term for spalart-allmaras.
 
-                ss = sqrt(dw(i,j,k,iprod))
+                ss = sqrt(scratch(i,j,k,iprod))
 
                 ! Compute the laminar kinematic viscosity, the inverse of
                 ! wall distance squared, the ratio chi (ratio of nuTilde
@@ -235,7 +235,7 @@ contains
                 term2 = dist2Inv*(kar2Inv*rsaCb1*((one-ft2)*fv2 + ft2) &
                      -           rsaCw1*fwSa)
 
-                dw(i,j,k,idvt) = (term1 + term2*w(i,j,k,itu1))*w(i,j,k,itu1)
+                scratch(i,j,k,idvt) = (term1 + term2*w(i,j,k,itu1))*w(i,j,k,itu1)
 
                 ! Compute some derivatives w.r.t. nuTilde. These will occur
                 ! in the left hand side, i.e. the matrix for the implicit
@@ -370,7 +370,7 @@ contains
                 ! Update the residual for this cell and store the possible
                 ! coefficients for the matrix in b1, c1 and d1.
 
-                dw(i,j,k,idvt) = dw(i,j,k,idvt)      + c1m*w(i,j,k-1,itu1) &
+                scratch(i,j,k,idvt) = scratch(i,j,k,idvt)      + c1m*w(i,j,k-1,itu1) &
                      - c10*w(i,j,k,itu1) + c1p*w(i,j,k+1,itu1)
 #ifndef USE_TAPENADE              
                 b1 = -c1m
@@ -473,7 +473,7 @@ contains
                 ! Update the residual for this cell and store the possible
                 ! coefficients for the matrix in b1, c1 and d1.
 
-                dw(i,j,k,idvt) = dw(i,j,k,idvt)      + c1m*w(i,j-1,k,itu1) &
+                scratch(i,j,k,idvt) = scratch(i,j,k,idvt)      + c1m*w(i,j-1,k,itu1) &
                      - c10*w(i,j,k,itu1) + c1p*w(i,j+1,k,itu1)
 #ifndef USE_TAPENADE
                 b1 = -c1m
@@ -576,7 +576,7 @@ contains
                 ! Update the residual for this cell and store the possible
                 ! coefficients for the matrix in b1, c1 and d1.
 
-                dw(i,j,k,idvt) = dw(i,j,k,idvt)      + c1m*w(i-1,j,k,itu1) &
+                scratch(i,j,k,idvt) = scratch(i,j,k,idvt)      + c1m*w(i-1,j,k,itu1) &
                      - c10*w(i,j,k,itu1) + c1p*w(i+1,j,k,itu1)
 #ifndef USE_TAPENADE
                 b1 = -c1m
@@ -642,7 +642,7 @@ contains
              do i=2, il
 #endif 
                 rblank = real(iblank(i,j,k), realType)
-                dw(i,j,k,itu1) = -vol(i,j,k)*dw(i,j,k,idvt)*rblank
+                dw(i,j,k,itu1) = -vol(i,j,k)*scratch(i,j,k,idvt)*rblank
 #ifdef TAPENADE_FAST
              end do
 #else
@@ -705,37 +705,37 @@ contains
           select case (BCFaceID(nn))
           case (iMin)
              flag    => flagI2
-             ddw     => dw(2,1:,1:,1:); ddvt => dw(2,1:,1:,idvt:)
+             ddw     => dw(2,1:,1:,1:); ddvt => scratch(2,1:,1:,idvt:)
              ww      => w(2,1:,1:,1:);  rrlv => rlv(2,1:,1:)
              dd2Wall => d2Wall(2,:,:)
 
           case (iMax)
              flag    => flagIl
-             ddw     => dw(il,1:,1:,1:); ddvt => dw(il,1:,1:,idvt:)
+             ddw     => dw(il,1:,1:,1:); ddvt => scratch(il,1:,1:,idvt:)
              ww      => w(il,1:,1:,1:);  rrlv => rlv(il,1:,1:)
              dd2Wall => d2Wall(il,:,:)
 
           case (jMin)
              flag    => flagJ2
-             ddw     => dw(1:,2,1:,1:); ddvt => dw(1:,2,1:,idvt:)
+             ddw     => dw(1:,2,1:,1:); ddvt => scratch(1:,2,1:,idvt:)
              ww      => w(1:,2,1:,1:);  rrlv => rlv(1:,2,1:)
              dd2Wall => d2Wall(:,2,:)
 
           case (jMax)
              flag    => flagJl
-             ddw     => dw(1:,jl,1:,1:); ddvt => dw(1:,jl,1:,idvt:)
+             ddw     => dw(1:,jl,1:,1:); ddvt => scratch(1:,jl,1:,idvt:)
              ww      => w(1:,jl,1:,1:);  rrlv => rlv(1:,jl,1:)
              dd2Wall => d2Wall(:,jl,:)
 
           case (kMin)
              flag    => flagK2
-             ddw     => dw(1:,1:,2,1:); ddvt => dw(1:,1:,2,idvt:)
+             ddw     => dw(1:,1:,2,1:); ddvt => scratch(1:,1:,2,idvt:)
              ww      => w(1:,1:,2,1:);  rrlv => rlv(1:,1:,2)
              dd2Wall => d2Wall(:,:,2)
 
           case (kMax)
              flag    => flagKl
-             ddw     => dw(1:,1:,kl,:); ddvt => dw(1:,1:,kl,idvt:)
+             ddw     => dw(1:,1:,kl,:); ddvt => scratch(1:,1:,kl,idvt:)
              ww      => w(1:,1:,kl,1:); rrlv => rlv(1:,1:,kl)
              dd2Wall => d2Wall(:,:,kl)
 
@@ -898,7 +898,7 @@ contains
              rblank = real(iblank(i,j,k), realType)
 
              cc(j) = qq(i,j,k)
-             ff(j) = dw(i,j,k,idvt)*rblank
+             ff(j) = scratch(i,j,k,idvt)*rblank
 
              bb(j) = bb(j)*rblank
              dd(j) = dd(j)*rblank
@@ -938,7 +938,7 @@ contains
           ! Determine the new rhs for the next direction.
 
           do j=2,jl
-             dw(i,j,k,idvt) = ff(j)*qq(i,j,k)
+             scratch(i,j,k,idvt) = ff(j)*qq(i,j,k)
           enddo
 
        enddo
@@ -1026,7 +1026,7 @@ contains
              rblank = real(iblank(i,j,k), realType)
 
              cc(i) = qq(i,j,k)
-             ff(i) = dw(i,j,k,idvt)*rblank
+             ff(i) = scratch(i,j,k,idvt)*rblank
 
              bb(i) = bb(i)*rblank
              dd(i) = dd(i)*rblank
@@ -1066,7 +1066,7 @@ contains
           ! Determine the new rhs for the next direction.
 
           do i=2,il
-             dw(i,j,k,idvt) = ff(i)*qq(i,j,k)
+             scratch(i,j,k,idvt) = ff(i)*qq(i,j,k)
           enddo
 
        enddo
@@ -1154,7 +1154,7 @@ contains
              rblank = real(iblank(i,j,k), realType)
 
              cc(k) = qq(i,j,k)
-             ff(k) = dw(i,j,k,idvt)*rblank
+             ff(k) = scratch(i,j,k,idvt)*rblank
 
              bb(k) = bb(k)*rblank
              dd(k) = dd(k)*rblank
@@ -1194,7 +1194,7 @@ contains
           ! Store the update in dvt.
 
           do k=2,kl
-             dw(i,j,k,idvt) = ff(k)
+             scratch(i,j,k,idvt) = ff(k)
           enddo
 
        enddo
@@ -1214,7 +1214,7 @@ contains
     do k=2,kl
        do j=2,jl
           do i=2,il
-             w(i,j,k,itu1) = w(i,j,k,itu1) + factor*dw(i,j,k,idvt)
+             w(i,j,k,itu1) = w(i,j,k,itu1) + factor*scratch(i,j,k,idvt)
              w(i,j,k,itu1) = max(w(i,j,k,itu1), zero)
           enddo
        enddo

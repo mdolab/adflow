@@ -147,6 +147,7 @@ module blockPointers
   real(kind=realType), dimension(:,:,:,:),   pointer :: s
   real(kind=realType), dimension(:,:,:),     pointer :: p1
   real(kind=realType), dimension(:,:,:,:),   pointer :: dw, fw
+  real(kind=realType), dimension(:,:,:,:),   pointer :: scratch
   real(kind=realType), dimension(:,:,:,:,:), pointer :: dwOldRK
   real(kind=realType), dimension(:,:,:,:),   pointer :: w1, wr
   real(kind=realType), dimension(:, :, :), pointer:: ux, uy, uz
@@ -233,8 +234,7 @@ module blockPointers
 
   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: dwd, fwd
   REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: w1d, wrd
-
-  REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: wnd
+  REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: scratchd
 
   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: dtld
   REAL(kind=realtype), DIMENSION(:, :, :), POINTER :: radid

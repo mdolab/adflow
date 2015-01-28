@@ -131,7 +131,7 @@ subroutine prodKatoLaunder
 
               ! Compute the production term.
 
-              dw(i,j,k, iprod) = two*sqrt(sijsij*oijoij)
+              scratch(i,j,k, iprod) = two*sqrt(sijsij*oijoij)
 #ifdef TAPENADE_FAST
            end do
 #else
