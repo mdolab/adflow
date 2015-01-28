@@ -53,12 +53,13 @@ subroutine turbadvection_b(madv, nadv, offset, qq)
 !
 !      local variables.
 !
-  integer(kind=inttype) :: i, j, k, ii, jj, kk
+  integer(kind=inttype) :: i, j, k, ii, jj, kk, iii
   real(kind=realtype) :: qs, voli, xa, ya, za
   real(kind=realtype) :: qsd, volid, xad, yad, zad
   real(kind=realtype) :: uu, dwt, dwtm1, dwtp1, dwti, dwtj, dwtk
   real(kind=realtype) :: uud, dwtd, dwtm1d, dwtp1d, dwtid, dwtjd, dwtkd
   real(kind=realtype), dimension(madv) :: impl
+  intrinsic mod
   intrinsic abs
   intrinsic max
   integer :: branch
@@ -86,6 +87,523 @@ subroutine turbadvection_b(madv, nadv, offset, qq)
   real(kind=realtype) :: abs2
   real(kind=realtype) :: abs1
   real(kind=realtype) :: abs0
+  call pushinteger4(i)
+  call pushinteger4(j)
+  call pushinteger4(k)
+  call pushreal8(uu)
+  call pushinteger4(i)
+  call pushinteger4(j)
+  call pushinteger4(k)
+  call pushreal8(uu)
+  qsd = 0.0_8
+  qs = zero
+  qsd = 0.0_8
+  do iii=0,nx*ny*nz-1
+    i = mod(iii, nx) + 2
+    j = mod(iii/nx, ny) + 2
+    k = iii/(nx*ny) + 2
+! compute the grid velocity if present.
+! it is taken as the average of i and i-1,
+    voli = half/vol(i, j, k)
+    if (addgridvelocities) then
+      qs = (sfacei(i, j, k)+sfacei(i-1, j, k))*voli
+      call pushcontrol1b(0)
+    else
+      call pushcontrol1b(1)
+    end if
+! compute the normal velocity, where the normal direction
+! is taken as the average of faces i and i-1.
+    xa = (si(i, j, k, 1)+si(i-1, j, k, 1))*voli
+    ya = (si(i, j, k, 2)+si(i-1, j, k, 2))*voli
+    za = (si(i, j, k, 3)+si(i-1, j, k, 3))*voli
+    uu = xa*w(i, j, k, ivx) + ya*w(i, j, k, ivy) + za*w(i, j, k, ivz) - &
+&     qs
+! determine the situation we are having here, i.e. positive
+! or negative normal velocity.
+    if (uu .gt. zero) then
+      uud = 0.0_8
+      do 100 ii=1,nadv
+! set the value of jj such that it corresponds to the
+! turbulent entry in w.
+        jj = ii + offset
+! check whether a first or a second order discretization
+! must be used.
+        if (secondord) then
+! second order; store the three differences for the
+! discretization of the derivative in i-direction.
+          dwtm1 = w(i-1, j, k, jj) - w(i-2, j, k, jj)
+          dwt = w(i, j, k, jj) - w(i-1, j, k, jj)
+          dwtp1 = w(i+1, j, k, jj) - w(i, j, k, jj)
+! construct the derivative in this cell center. this is
+! the first order upwind derivative with two nonlinear
+! corrections.
+          dwti = dwt
+          if (dwt*dwtp1 .gt. zero) then
+            if (dwt .ge. 0.) then
+              abs8 = dwt
+            else
+              abs8 = -dwt
+            end if
+            if (dwtp1 .ge. 0.) then
+              abs20 = dwtp1
+            else
+              abs20 = -dwtp1
+            end if
+            if (abs8 .lt. abs20) then
+              dwti = dwti + half*dwt
+              call pushcontrol2b(0)
+            else
+              dwti = dwti + half*dwtp1
+              call pushcontrol2b(1)
+            end if
+          else
+            call pushcontrol2b(2)
+          end if
+          if (dwt*dwtm1 .gt. zero) then
+            if (dwt .ge. 0.) then
+              abs9 = dwt
+            else
+              abs9 = -dwt
+            end if
+            if (dwtm1 .ge. 0.) then
+              abs21 = dwtm1
+            else
+              abs21 = -dwtm1
+            end if
+            if (abs9 .lt. abs21) then
+              dwti = dwti - half*dwt
+              call pushcontrol2b(0)
+            else
+              dwti = dwti - half*dwtm1
+              call pushcontrol2b(1)
+            end if
+          else
+            call pushcontrol2b(2)
+          end if
+        else
+! 1st order upwind scheme.
+          dwti = w(i, j, k, jj) - w(i-1, j, k, jj)
+          call pushcontrol2b(3)
+        end if
+        uud = uud - dwti*dwd(i, j, k, idvt+ii-1)
+        dwtid = -(uu*dwd(i, j, k, idvt+ii-1))
+        call popcontrol2b(branch)
+        if (branch .lt. 2) then
+          if (branch .eq. 0) then
+            dwtd = -(half*dwtid)
+            dwtm1d = 0.0_8
+          else
+            dwtm1d = -(half*dwtid)
+            dwtd = 0.0_8
+          end if
+        else if (branch .eq. 2) then
+          dwtd = 0.0_8
+          dwtm1d = 0.0_8
+        else
+          wd(i, j, k, jj) = wd(i, j, k, jj) + dwtid
+          wd(i-1, j, k, jj) = wd(i-1, j, k, jj) - dwtid
+          goto 100
+        end if
+        call popcontrol2b(branch)
+        if (branch .eq. 0) then
+          dwtd = dwtd + half*dwtid
+          dwtp1d = 0.0_8
+        else if (branch .eq. 1) then
+          dwtp1d = half*dwtid
+        else
+          dwtp1d = 0.0_8
+        end if
+        dwtd = dwtd + dwtid
+        wd(i+1, j, k, jj) = wd(i+1, j, k, jj) + dwtp1d
+        wd(i, j, k, jj) = wd(i, j, k, jj) - dwtp1d
+        wd(i, j, k, jj) = wd(i, j, k, jj) + dwtd
+        wd(i-1, j, k, jj) = wd(i-1, j, k, jj) - dwtd
+        wd(i-1, j, k, jj) = wd(i-1, j, k, jj) + dwtm1d
+        wd(i-2, j, k, jj) = wd(i-2, j, k, jj) - dwtm1d
+ 100  continue
+    else
+      uud = 0.0_8
+      do 110 ii=1,nadv
+! set the value of jj such that it corresponds to the
+! turbulent entry in w.
+        jj = ii + offset
+! check whether a first or a second order discretization
+! must be used.
+        if (secondord) then
+! second order; store the three differences for the
+! discretization of the derivative in i-direction.
+          dwtm1 = w(i, j, k, jj) - w(i-1, j, k, jj)
+          dwt = w(i+1, j, k, jj) - w(i, j, k, jj)
+          dwtp1 = w(i+2, j, k, jj) - w(i+1, j, k, jj)
+! construct the derivative in this cell center. this is
+! the first order upwind derivative with two nonlinear
+! corrections.
+          dwti = dwt
+          if (dwt*dwtp1 .gt. zero) then
+            if (dwt .ge. 0.) then
+              abs10 = dwt
+            else
+              abs10 = -dwt
+            end if
+            if (dwtp1 .ge. 0.) then
+              abs22 = dwtp1
+            else
+              abs22 = -dwtp1
+            end if
+            if (abs10 .lt. abs22) then
+              dwti = dwti - half*dwt
+              call pushcontrol2b(0)
+            else
+              dwti = dwti - half*dwtp1
+              call pushcontrol2b(1)
+            end if
+          else
+            call pushcontrol2b(2)
+          end if
+          if (dwt*dwtm1 .gt. zero) then
+            if (dwt .ge. 0.) then
+              abs11 = dwt
+            else
+              abs11 = -dwt
+            end if
+            if (dwtm1 .ge. 0.) then
+              abs23 = dwtm1
+            else
+              abs23 = -dwtm1
+            end if
+            if (abs11 .lt. abs23) then
+              dwti = dwti + half*dwt
+              call pushcontrol2b(0)
+            else
+              dwti = dwti + half*dwtm1
+              call pushcontrol2b(1)
+            end if
+          else
+            call pushcontrol2b(2)
+          end if
+        else
+! 1st order upwind scheme.
+          dwti = w(i+1, j, k, jj) - w(i, j, k, jj)
+          call pushcontrol2b(3)
+        end if
+        uud = uud - dwti*dwd(i, j, k, idvt+ii-1)
+        dwtid = -(uu*dwd(i, j, k, idvt+ii-1))
+        call popcontrol2b(branch)
+        if (branch .lt. 2) then
+          if (branch .eq. 0) then
+            dwtd = half*dwtid
+            dwtm1d = 0.0_8
+          else
+            dwtm1d = half*dwtid
+            dwtd = 0.0_8
+          end if
+        else if (branch .eq. 2) then
+          dwtd = 0.0_8
+          dwtm1d = 0.0_8
+        else
+          wd(i+1, j, k, jj) = wd(i+1, j, k, jj) + dwtid
+          wd(i, j, k, jj) = wd(i, j, k, jj) - dwtid
+          goto 110
+        end if
+        call popcontrol2b(branch)
+        if (branch .eq. 0) then
+          dwtd = dwtd - half*dwtid
+          dwtp1d = 0.0_8
+        else if (branch .eq. 1) then
+          dwtp1d = -(half*dwtid)
+        else
+          dwtp1d = 0.0_8
+        end if
+        dwtd = dwtd + dwtid
+        wd(i+2, j, k, jj) = wd(i+2, j, k, jj) + dwtp1d
+        wd(i+1, j, k, jj) = wd(i+1, j, k, jj) - dwtp1d
+        wd(i+1, j, k, jj) = wd(i+1, j, k, jj) + dwtd
+        wd(i, j, k, jj) = wd(i, j, k, jj) - dwtd
+        wd(i, j, k, jj) = wd(i, j, k, jj) + dwtm1d
+        wd(i-1, j, k, jj) = wd(i-1, j, k, jj) - dwtm1d
+ 110  continue
+    end if
+    xad = w(i, j, k, ivx)*uud
+    wd(i, j, k, ivx) = wd(i, j, k, ivx) + xa*uud
+    yad = w(i, j, k, ivy)*uud
+    wd(i, j, k, ivy) = wd(i, j, k, ivy) + ya*uud
+    zad = w(i, j, k, ivz)*uud
+    wd(i, j, k, ivz) = wd(i, j, k, ivz) + za*uud
+    qsd = qsd - uud
+    sid(i, j, k, 3) = sid(i, j, k, 3) + voli*zad
+    sid(i-1, j, k, 3) = sid(i-1, j, k, 3) + voli*zad
+    volid = (si(i, j, k, 2)+si(i-1, j, k, 2))*yad + (si(i, j, k, 1)+si(i&
+&     -1, j, k, 1))*xad + (si(i, j, k, 3)+si(i-1, j, k, 3))*zad
+    sid(i, j, k, 2) = sid(i, j, k, 2) + voli*yad
+    sid(i-1, j, k, 2) = sid(i-1, j, k, 2) + voli*yad
+    sid(i, j, k, 1) = sid(i, j, k, 1) + voli*xad
+    sid(i-1, j, k, 1) = sid(i-1, j, k, 1) + voli*xad
+    call popcontrol1b(branch)
+    if (branch .eq. 0) then
+      volid = volid + (sfacei(i, j, k)+sfacei(i-1, j, k))*qsd
+      qsd = 0.0_8
+    end if
+    vold(i, j, k) = vold(i, j, k) - half*volid/vol(i, j, k)**2
+  end do
+  call popreal8(uu)
+  call popinteger4(k)
+  call popinteger4(j)
+  call popinteger4(i)
+  qsd = 0.0_8
+  qs = zero
+  qsd = 0.0_8
+  do iii=0,nx*ny*nz-1
+    i = mod(iii, nx) + 2
+    j = mod(iii/nx, ny) + 2
+    k = iii/(nx*ny) + 2
+! compute the grid velocity if present.
+! it is taken as the average of j and j-1,
+    voli = half/vol(i, j, k)
+    if (addgridvelocities) then
+      qs = (sfacej(i, j, k)+sfacej(i, j-1, k))*voli
+      call pushcontrol1b(0)
+    else
+      call pushcontrol1b(1)
+    end if
+! compute the normal velocity, where the normal direction
+! is taken as the average of faces j and j-1.
+    xa = (sj(i, j, k, 1)+sj(i, j-1, k, 1))*voli
+    ya = (sj(i, j, k, 2)+sj(i, j-1, k, 2))*voli
+    za = (sj(i, j, k, 3)+sj(i, j-1, k, 3))*voli
+    uu = xa*w(i, j, k, ivx) + ya*w(i, j, k, ivy) + za*w(i, j, k, ivz) - &
+&     qs
+! determine the situation we are having here, i.e. positive
+! or negative normal velocity.
+    if (uu .gt. zero) then
+      uud = 0.0_8
+      do 120 ii=1,nadv
+! set the value of jj such that it corresponds to the
+! turbulent entry in w.
+        jj = ii + offset
+! check whether a first or a second order discretization
+! must be used.
+        if (secondord) then
+! second order; store the three differences for the
+! discretization of the derivative in j-direction.
+          dwtm1 = w(i, j-1, k, jj) - w(i, j-2, k, jj)
+          dwt = w(i, j, k, jj) - w(i, j-1, k, jj)
+          dwtp1 = w(i, j+1, k, jj) - w(i, j, k, jj)
+! construct the derivative in this cell center. this is
+! the first order upwind derivative with two nonlinear
+! corrections.
+          dwtj = dwt
+          if (dwt*dwtp1 .gt. zero) then
+            if (dwt .ge. 0.) then
+              abs4 = dwt
+            else
+              abs4 = -dwt
+            end if
+            if (dwtp1 .ge. 0.) then
+              abs16 = dwtp1
+            else
+              abs16 = -dwtp1
+            end if
+            if (abs4 .lt. abs16) then
+              dwtj = dwtj + half*dwt
+              call pushcontrol2b(0)
+            else
+              dwtj = dwtj + half*dwtp1
+              call pushcontrol2b(1)
+            end if
+          else
+            call pushcontrol2b(2)
+          end if
+          if (dwt*dwtm1 .gt. zero) then
+            if (dwt .ge. 0.) then
+              abs5 = dwt
+            else
+              abs5 = -dwt
+            end if
+            if (dwtm1 .ge. 0.) then
+              abs17 = dwtm1
+            else
+              abs17 = -dwtm1
+            end if
+            if (abs5 .lt. abs17) then
+              dwtj = dwtj - half*dwt
+              call pushcontrol2b(0)
+            else
+              dwtj = dwtj - half*dwtm1
+              call pushcontrol2b(1)
+            end if
+          else
+            call pushcontrol2b(2)
+          end if
+        else
+! 1st order upwind scheme.
+          dwtj = w(i, j, k, jj) - w(i, j-1, k, jj)
+          call pushcontrol2b(3)
+        end if
+        uud = uud - dwtj*dwd(i, j, k, idvt+ii-1)
+        dwtjd = -(uu*dwd(i, j, k, idvt+ii-1))
+        call popcontrol2b(branch)
+        if (branch .lt. 2) then
+          if (branch .eq. 0) then
+            dwtd = -(half*dwtjd)
+            dwtm1d = 0.0_8
+          else
+            dwtm1d = -(half*dwtjd)
+            dwtd = 0.0_8
+          end if
+        else if (branch .eq. 2) then
+          dwtd = 0.0_8
+          dwtm1d = 0.0_8
+        else
+          wd(i, j, k, jj) = wd(i, j, k, jj) + dwtjd
+          wd(i, j-1, k, jj) = wd(i, j-1, k, jj) - dwtjd
+          goto 120
+        end if
+        call popcontrol2b(branch)
+        if (branch .eq. 0) then
+          dwtd = dwtd + half*dwtjd
+          dwtp1d = 0.0_8
+        else if (branch .eq. 1) then
+          dwtp1d = half*dwtjd
+        else
+          dwtp1d = 0.0_8
+        end if
+        dwtd = dwtd + dwtjd
+        wd(i, j+1, k, jj) = wd(i, j+1, k, jj) + dwtp1d
+        wd(i, j, k, jj) = wd(i, j, k, jj) - dwtp1d
+        wd(i, j, k, jj) = wd(i, j, k, jj) + dwtd
+        wd(i, j-1, k, jj) = wd(i, j-1, k, jj) - dwtd
+        wd(i, j-1, k, jj) = wd(i, j-1, k, jj) + dwtm1d
+        wd(i, j-2, k, jj) = wd(i, j-2, k, jj) - dwtm1d
+ 120  continue
+    else
+      uud = 0.0_8
+      do 130 ii=1,nadv
+! set the value of jj such that it corresponds to the
+! turbulent entry in w.
+        jj = ii + offset
+! check whether a first or a second order discretization
+! must be used.
+        if (secondord) then
+! store the three differences for the discretization of
+! the derivative in j-direction.
+          dwtm1 = w(i, j, k, jj) - w(i, j-1, k, jj)
+          dwt = w(i, j+1, k, jj) - w(i, j, k, jj)
+          dwtp1 = w(i, j+2, k, jj) - w(i, j+1, k, jj)
+! construct the derivative in this cell center. this is
+! the first order upwind derivative with two nonlinear
+! corrections.
+          dwtj = dwt
+          if (dwt*dwtp1 .gt. zero) then
+            if (dwt .ge. 0.) then
+              abs6 = dwt
+            else
+              abs6 = -dwt
+            end if
+            if (dwtp1 .ge. 0.) then
+              abs18 = dwtp1
+            else
+              abs18 = -dwtp1
+            end if
+            if (abs6 .lt. abs18) then
+              dwtj = dwtj - half*dwt
+              call pushcontrol2b(0)
+            else
+              dwtj = dwtj - half*dwtp1
+              call pushcontrol2b(1)
+            end if
+          else
+            call pushcontrol2b(2)
+          end if
+          if (dwt*dwtm1 .gt. zero) then
+            if (dwt .ge. 0.) then
+              abs7 = dwt
+            else
+              abs7 = -dwt
+            end if
+            if (dwtm1 .ge. 0.) then
+              abs19 = dwtm1
+            else
+              abs19 = -dwtm1
+            end if
+            if (abs7 .lt. abs19) then
+              dwtj = dwtj + half*dwt
+              call pushcontrol2b(0)
+            else
+              dwtj = dwtj + half*dwtm1
+              call pushcontrol2b(1)
+            end if
+          else
+            call pushcontrol2b(2)
+          end if
+        else
+! 1st order upwind scheme.
+          dwtj = w(i, j+1, k, jj) - w(i, j, k, jj)
+          call pushcontrol2b(3)
+        end if
+        uud = uud - dwtj*dwd(i, j, k, idvt+ii-1)
+        dwtjd = -(uu*dwd(i, j, k, idvt+ii-1))
+        call popcontrol2b(branch)
+        if (branch .lt. 2) then
+          if (branch .eq. 0) then
+            dwtd = half*dwtjd
+            dwtm1d = 0.0_8
+          else
+            dwtm1d = half*dwtjd
+            dwtd = 0.0_8
+          end if
+        else if (branch .eq. 2) then
+          dwtd = 0.0_8
+          dwtm1d = 0.0_8
+        else
+          wd(i, j+1, k, jj) = wd(i, j+1, k, jj) + dwtjd
+          wd(i, j, k, jj) = wd(i, j, k, jj) - dwtjd
+          goto 130
+        end if
+        call popcontrol2b(branch)
+        if (branch .eq. 0) then
+          dwtd = dwtd - half*dwtjd
+          dwtp1d = 0.0_8
+        else if (branch .eq. 1) then
+          dwtp1d = -(half*dwtjd)
+        else
+          dwtp1d = 0.0_8
+        end if
+        dwtd = dwtd + dwtjd
+        wd(i, j+2, k, jj) = wd(i, j+2, k, jj) + dwtp1d
+        wd(i, j+1, k, jj) = wd(i, j+1, k, jj) - dwtp1d
+        wd(i, j+1, k, jj) = wd(i, j+1, k, jj) + dwtd
+        wd(i, j, k, jj) = wd(i, j, k, jj) - dwtd
+        wd(i, j, k, jj) = wd(i, j, k, jj) + dwtm1d
+        wd(i, j-1, k, jj) = wd(i, j-1, k, jj) - dwtm1d
+ 130  continue
+    end if
+    xad = w(i, j, k, ivx)*uud
+    wd(i, j, k, ivx) = wd(i, j, k, ivx) + xa*uud
+    yad = w(i, j, k, ivy)*uud
+    wd(i, j, k, ivy) = wd(i, j, k, ivy) + ya*uud
+    zad = w(i, j, k, ivz)*uud
+    wd(i, j, k, ivz) = wd(i, j, k, ivz) + za*uud
+    qsd = qsd - uud
+    sjd(i, j, k, 3) = sjd(i, j, k, 3) + voli*zad
+    sjd(i, j-1, k, 3) = sjd(i, j-1, k, 3) + voli*zad
+    volid = (sj(i, j, k, 2)+sj(i, j-1, k, 2))*yad + (sj(i, j, k, 1)+sj(i&
+&     , j-1, k, 1))*xad + (sj(i, j, k, 3)+sj(i, j-1, k, 3))*zad
+    sjd(i, j, k, 2) = sjd(i, j, k, 2) + voli*yad
+    sjd(i, j-1, k, 2) = sjd(i, j-1, k, 2) + voli*yad
+    sjd(i, j, k, 1) = sjd(i, j, k, 1) + voli*xad
+    sjd(i, j-1, k, 1) = sjd(i, j-1, k, 1) + voli*xad
+    call popcontrol1b(branch)
+    if (branch .eq. 0) then
+      volid = volid + (sfacej(i, j, k)+sfacej(i, j-1, k))*qsd
+      qsd = 0.0_8
+    end if
+    vold(i, j, k) = vold(i, j, k) - half*volid/vol(i, j, k)**2
+  end do
+  call popreal8(uu)
+  call popinteger4(k)
+  call popinteger4(j)
+  call popinteger4(i)
+  qsd = 0.0_8
 !
 !      ******************************************************************
 !      *                                                                *
@@ -96,890 +614,252 @@ subroutine turbadvection_b(madv, nadv, offset, qq)
 ! initialize the grid velocity to zero. this value will be used
 ! if the block is not moving.
   qs = zero
-!
-!      ******************************************************************
-!      *                                                                *
-!      * upwind discretization of the convective term in k (zeta)       *
-!      * direction. either the 1st order upwind or the second order     *
-!      * fully upwind interpolation scheme, kappa = -1, is used in      *
-!      * combination with the minmod limiter.                           *
-!      * the possible grid velocity must be taken into account.         *
-!      *                                                                *
-!      ******************************************************************
-!
-  do k=2,kl
-    do j=2,jl
-      do i=2,il
+  qsd = 0.0_8
+  do iii=0,nx*ny*nz-1
+    i = mod(iii, nx) + 2
+    j = mod(iii/nx, ny) + 2
+    k = iii/(nx*ny) + 2
 ! compute the grid velocity if present.
 ! it is taken as the average of k and k-1,
-        voli = half/vol(i, j, k)
-        if (addgridvelocities) then
-          qs = (sfacek(i, j, k)+sfacek(i, j, k-1))*voli
-          call pushcontrol1b(0)
-        else
-          call pushcontrol1b(1)
-        end if
+    voli = half/vol(i, j, k)
+    if (addgridvelocities) then
+      qs = (sfacek(i, j, k)+sfacek(i, j, k-1))*voli
+      call pushcontrol1b(0)
+    else
+      call pushcontrol1b(1)
+    end if
 ! compute the normal velocity, where the normal direction
 ! is taken as the average of faces k and k-1.
-        xa = (sk(i, j, k, 1)+sk(i, j, k-1, 1))*voli
-        ya = (sk(i, j, k, 2)+sk(i, j, k-1, 2))*voli
-        za = (sk(i, j, k, 3)+sk(i, j, k-1, 3))*voli
-        call pushreal8(uu)
-        uu = xa*w(i, j, k, ivx) + ya*w(i, j, k, ivy) + za*w(i, j, k, ivz&
-&         ) - qs
+    xa = (sk(i, j, k, 1)+sk(i, j, k-1, 1))*voli
+    ya = (sk(i, j, k, 2)+sk(i, j, k-1, 2))*voli
+    za = (sk(i, j, k, 3)+sk(i, j, k-1, 3))*voli
+    uu = xa*w(i, j, k, ivx) + ya*w(i, j, k, ivy) + za*w(i, j, k, ivz) - &
+&     qs
 ! determine the situation we are having here, i.e. positive
 ! or negative normal velocity.
-        if (uu .gt. zero) then
-! velocity has a component in positive k-direction.
-! loop over the number of advection equations.
-          do ii=1,nadv
+    if (uu .gt. zero) then
+      uud = 0.0_8
+      do 140 ii=1,nadv
 ! set the value of jj such that it corresponds to the
 ! turbulent entry in w.
-            jj = ii + offset
+        jj = ii + offset
 ! check whether a first or a second order discretization
 ! must be used.
-            if (secondord) then
+        if (secondord) then
 ! second order; store the three differences for the
 ! discretization of the derivative in k-direction.
-              dwtm1 = w(i, j, k-1, jj) - w(i, j, k-2, jj)
-              dwt = w(i, j, k, jj) - w(i, j, k-1, jj)
-              dwtp1 = w(i, j, k+1, jj) - w(i, j, k, jj)
+          dwtm1 = w(i, j, k-1, jj) - w(i, j, k-2, jj)
+          dwt = w(i, j, k, jj) - w(i, j, k-1, jj)
+          dwtp1 = w(i, j, k+1, jj) - w(i, j, k, jj)
 ! construct the derivative in this cell center. this
 ! is the first order upwind derivative with two
 ! nonlinear corrections.
-              call pushreal8(dwtk)
-              dwtk = dwt
-              if (dwt*dwtp1 .gt. zero) then
-                if (dwt .ge. 0.) then
-                  abs0 = dwt
-                else
-                  abs0 = -dwt
-                end if
-                if (dwtp1 .ge. 0.) then
-                  abs12 = dwtp1
-                else
-                  abs12 = -dwtp1
-                end if
-                if (abs0 .lt. abs12) then
-                  dwtk = dwtk + half*dwt
-                  call pushcontrol2b(0)
-                else
-                  dwtk = dwtk + half*dwtp1
-                  call pushcontrol2b(1)
-                end if
-              else
-                call pushcontrol2b(2)
-              end if
-              if (dwt*dwtm1 .gt. zero) then
-                if (dwt .ge. 0.) then
-                  abs1 = dwt
-                else
-                  abs1 = -dwt
-                end if
-                if (dwtm1 .ge. 0.) then
-                  abs13 = dwtm1
-                else
-                  abs13 = -dwtm1
-                end if
-                if (abs1 .lt. abs13) then
-                  dwtk = dwtk - half*dwt
-                  call pushcontrol2b(0)
-                else
-                  dwtk = dwtk - half*dwtm1
-                  call pushcontrol2b(1)
-                end if
-              else
-                call pushcontrol2b(2)
-              end if
+          dwtk = dwt
+          if (dwt*dwtp1 .gt. zero) then
+            if (dwt .ge. 0.) then
+              abs0 = dwt
             else
-! 1st order upwind scheme.
-              call pushreal8(dwtk)
-              dwtk = w(i, j, k, jj) - w(i, j, k-1, jj)
-              call pushcontrol2b(3)
+              abs0 = -dwt
             end if
-          end do
-          call pushcontrol1b(1)
+            if (dwtp1 .ge. 0.) then
+              abs12 = dwtp1
+            else
+              abs12 = -dwtp1
+            end if
+            if (abs0 .lt. abs12) then
+              dwtk = dwtk + half*dwt
+              call pushcontrol2b(0)
+            else
+              dwtk = dwtk + half*dwtp1
+              call pushcontrol2b(1)
+            end if
+          else
+            call pushcontrol2b(2)
+          end if
+          if (dwt*dwtm1 .gt. zero) then
+            if (dwt .ge. 0.) then
+              abs1 = dwt
+            else
+              abs1 = -dwt
+            end if
+            if (dwtm1 .ge. 0.) then
+              abs13 = dwtm1
+            else
+              abs13 = -dwtm1
+            end if
+            if (abs1 .lt. abs13) then
+              dwtk = dwtk - half*dwt
+              call pushcontrol2b(0)
+            else
+              dwtk = dwtk - half*dwtm1
+              call pushcontrol2b(1)
+            end if
+          else
+            call pushcontrol2b(2)
+          end if
         else
-! velocity has a component in negative k-direction.
-! loop over the number of advection equations.
-          do ii=1,nadv
+! 1st order upwind scheme.
+          dwtk = w(i, j, k, jj) - w(i, j, k-1, jj)
+          call pushcontrol2b(3)
+        end if
+        uud = uud - dwtk*dwd(i, j, k, idvt+ii-1)
+        dwtkd = -(uu*dwd(i, j, k, idvt+ii-1))
+        call popcontrol2b(branch)
+        if (branch .lt. 2) then
+          if (branch .eq. 0) then
+            dwtd = -(half*dwtkd)
+            dwtm1d = 0.0_8
+          else
+            dwtm1d = -(half*dwtkd)
+            dwtd = 0.0_8
+          end if
+        else if (branch .eq. 2) then
+          dwtd = 0.0_8
+          dwtm1d = 0.0_8
+        else
+          wd(i, j, k, jj) = wd(i, j, k, jj) + dwtkd
+          wd(i, j, k-1, jj) = wd(i, j, k-1, jj) - dwtkd
+          goto 140
+        end if
+        call popcontrol2b(branch)
+        if (branch .eq. 0) then
+          dwtd = dwtd + half*dwtkd
+          dwtp1d = 0.0_8
+        else if (branch .eq. 1) then
+          dwtp1d = half*dwtkd
+        else
+          dwtp1d = 0.0_8
+        end if
+        dwtd = dwtd + dwtkd
+        wd(i, j, k+1, jj) = wd(i, j, k+1, jj) + dwtp1d
+        wd(i, j, k, jj) = wd(i, j, k, jj) - dwtp1d
+        wd(i, j, k, jj) = wd(i, j, k, jj) + dwtd
+        wd(i, j, k-1, jj) = wd(i, j, k-1, jj) - dwtd
+        wd(i, j, k-1, jj) = wd(i, j, k-1, jj) + dwtm1d
+        wd(i, j, k-2, jj) = wd(i, j, k-2, jj) - dwtm1d
+ 140  continue
+    else
+      uud = 0.0_8
+      do 150 ii=1,nadv
 ! set the value of jj such that it corresponds to the
 ! turbulent entry in w.
-            jj = ii + offset
+        jj = ii + offset
 ! check whether a first or a second order discretization
 ! must be used.
-            if (secondord) then
+        if (secondord) then
 ! store the three differences for the discretization of
 ! the derivative in k-direction.
-              dwtm1 = w(i, j, k, jj) - w(i, j, k-1, jj)
-              dwt = w(i, j, k+1, jj) - w(i, j, k, jj)
-              dwtp1 = w(i, j, k+2, jj) - w(i, j, k+1, jj)
+          dwtm1 = w(i, j, k, jj) - w(i, j, k-1, jj)
+          dwt = w(i, j, k+1, jj) - w(i, j, k, jj)
+          dwtp1 = w(i, j, k+2, jj) - w(i, j, k+1, jj)
 ! construct the derivative in this cell center. this is
 ! the first order upwind derivative with two nonlinear
 ! corrections.
-              call pushreal8(dwtk)
-              dwtk = dwt
-              if (dwt*dwtp1 .gt. zero) then
-                if (dwt .ge. 0.) then
-                  abs2 = dwt
-                else
-                  abs2 = -dwt
-                end if
-                if (dwtp1 .ge. 0.) then
-                  abs14 = dwtp1
-                else
-                  abs14 = -dwtp1
-                end if
-                if (abs2 .lt. abs14) then
-                  dwtk = dwtk - half*dwt
-                  call pushcontrol2b(0)
-                else
-                  dwtk = dwtk - half*dwtp1
-                  call pushcontrol2b(1)
-                end if
-              else
-                call pushcontrol2b(2)
-              end if
-              if (dwt*dwtm1 .gt. zero) then
-                if (dwt .ge. 0.) then
-                  abs3 = dwt
-                else
-                  abs3 = -dwt
-                end if
-                if (dwtm1 .ge. 0.) then
-                  abs15 = dwtm1
-                else
-                  abs15 = -dwtm1
-                end if
-                if (abs3 .lt. abs15) then
-                  dwtk = dwtk + half*dwt
-                  call pushcontrol2b(0)
-                else
-                  dwtk = dwtk + half*dwtm1
-                  call pushcontrol2b(1)
-                end if
-              else
-                call pushcontrol2b(2)
-              end if
+          dwtk = dwt
+          if (dwt*dwtp1 .gt. zero) then
+            if (dwt .ge. 0.) then
+              abs2 = dwt
             else
+              abs2 = -dwt
+            end if
+            if (dwtp1 .ge. 0.) then
+              abs14 = dwtp1
+            else
+              abs14 = -dwtp1
+            end if
+            if (abs2 .lt. abs14) then
+              dwtk = dwtk - half*dwt
+              call pushcontrol2b(0)
+            else
+              dwtk = dwtk - half*dwtp1
+              call pushcontrol2b(1)
+            end if
+          else
+            call pushcontrol2b(2)
+          end if
+          if (dwt*dwtm1 .gt. zero) then
+            if (dwt .ge. 0.) then
+              abs3 = dwt
+            else
+              abs3 = -dwt
+            end if
+            if (dwtm1 .ge. 0.) then
+              abs15 = dwtm1
+            else
+              abs15 = -dwtm1
+            end if
+            if (abs3 .lt. abs15) then
+              dwtk = dwtk + half*dwt
+              call pushcontrol2b(0)
+            else
+              dwtk = dwtk + half*dwtm1
+              call pushcontrol2b(1)
+            end if
+          else
+            call pushcontrol2b(2)
+          end if
+        else
 ! 1st order upwind scheme.
-              call pushreal8(dwtk)
-              dwtk = w(i, j, k+1, jj) - w(i, j, k, jj)
-              call pushcontrol2b(3)
-            end if
-          end do
-          call pushcontrol1b(0)
+          dwtk = w(i, j, k+1, jj) - w(i, j, k, jj)
+          call pushcontrol2b(3)
         end if
-      end do
-    end do
-  end do
-!
-!      ******************************************************************
-!      *                                                                *
-!      * upwind discretization of the convective term in j (eta)        *
-!      * direction. either the 1st order upwind or the second order     *
-!      * fully upwind interpolation scheme, kappa = -1, is used in      *
-!      * combination with the minmod limiter.                           *
-!      * the possible grid velocity must be taken into account.         *
-!      *                                                                *
-!      ******************************************************************
-!
-  do k=2,kl
-    do j=2,jl
-      do i=2,il
-! compute the grid velocity if present.
-! it is taken as the average of j and j-1,
-        voli = half/vol(i, j, k)
-        if (addgridvelocities) then
-          qs = (sfacej(i, j, k)+sfacej(i, j-1, k))*voli
-          call pushcontrol1b(0)
+        uud = uud - dwtk*dwd(i, j, k, idvt+ii-1)
+        dwtkd = -(uu*dwd(i, j, k, idvt+ii-1))
+        call popcontrol2b(branch)
+        if (branch .lt. 2) then
+          if (branch .eq. 0) then
+            dwtd = half*dwtkd
+            dwtm1d = 0.0_8
+          else
+            dwtm1d = half*dwtkd
+            dwtd = 0.0_8
+          end if
+        else if (branch .eq. 2) then
+          dwtd = 0.0_8
+          dwtm1d = 0.0_8
         else
-          call pushcontrol1b(1)
+          wd(i, j, k+1, jj) = wd(i, j, k+1, jj) + dwtkd
+          wd(i, j, k, jj) = wd(i, j, k, jj) - dwtkd
+          goto 150
         end if
-! compute the normal velocity, where the normal direction
-! is taken as the average of faces j and j-1.
-        xa = (sj(i, j, k, 1)+sj(i, j-1, k, 1))*voli
-        ya = (sj(i, j, k, 2)+sj(i, j-1, k, 2))*voli
-        za = (sj(i, j, k, 3)+sj(i, j-1, k, 3))*voli
-        call pushreal8(uu)
-        uu = xa*w(i, j, k, ivx) + ya*w(i, j, k, ivy) + za*w(i, j, k, ivz&
-&         ) - qs
-! determine the situation we are having here, i.e. positive
-! or negative normal velocity.
-        if (uu .gt. zero) then
-! velocity has a component in positive j-direction.
-! loop over the number of advection equations.
-          do ii=1,nadv
-! set the value of jj such that it corresponds to the
-! turbulent entry in w.
-            jj = ii + offset
-! check whether a first or a second order discretization
-! must be used.
-            if (secondord) then
-! second order; store the three differences for the
-! discretization of the derivative in j-direction.
-              dwtm1 = w(i, j-1, k, jj) - w(i, j-2, k, jj)
-              dwt = w(i, j, k, jj) - w(i, j-1, k, jj)
-              dwtp1 = w(i, j+1, k, jj) - w(i, j, k, jj)
-! construct the derivative in this cell center. this is
-! the first order upwind derivative with two nonlinear
-! corrections.
-              call pushreal8(dwtj)
-              dwtj = dwt
-              if (dwt*dwtp1 .gt. zero) then
-                if (dwt .ge. 0.) then
-                  abs4 = dwt
-                else
-                  abs4 = -dwt
-                end if
-                if (dwtp1 .ge. 0.) then
-                  abs16 = dwtp1
-                else
-                  abs16 = -dwtp1
-                end if
-                if (abs4 .lt. abs16) then
-                  dwtj = dwtj + half*dwt
-                  call pushcontrol2b(0)
-                else
-                  dwtj = dwtj + half*dwtp1
-                  call pushcontrol2b(1)
-                end if
-              else
-                call pushcontrol2b(2)
-              end if
-              if (dwt*dwtm1 .gt. zero) then
-                if (dwt .ge. 0.) then
-                  abs5 = dwt
-                else
-                  abs5 = -dwt
-                end if
-                if (dwtm1 .ge. 0.) then
-                  abs17 = dwtm1
-                else
-                  abs17 = -dwtm1
-                end if
-                if (abs5 .lt. abs17) then
-                  dwtj = dwtj - half*dwt
-                  call pushcontrol2b(0)
-                else
-                  dwtj = dwtj - half*dwtm1
-                  call pushcontrol2b(1)
-                end if
-              else
-                call pushcontrol2b(2)
-              end if
-            else
-! 1st order upwind scheme.
-              call pushreal8(dwtj)
-              dwtj = w(i, j, k, jj) - w(i, j-1, k, jj)
-              call pushcontrol2b(3)
-            end if
-          end do
-          call pushcontrol1b(1)
-        else
-! velocity has a component in negative j-direction.
-! loop over the number of advection equations.
-          do ii=1,nadv
-! set the value of jj such that it corresponds to the
-! turbulent entry in w.
-            jj = ii + offset
-! check whether a first or a second order discretization
-! must be used.
-            if (secondord) then
-! store the three differences for the discretization of
-! the derivative in j-direction.
-              dwtm1 = w(i, j, k, jj) - w(i, j-1, k, jj)
-              dwt = w(i, j+1, k, jj) - w(i, j, k, jj)
-              dwtp1 = w(i, j+2, k, jj) - w(i, j+1, k, jj)
-! construct the derivative in this cell center. this is
-! the first order upwind derivative with two nonlinear
-! corrections.
-              call pushreal8(dwtj)
-              dwtj = dwt
-              if (dwt*dwtp1 .gt. zero) then
-                if (dwt .ge. 0.) then
-                  abs6 = dwt
-                else
-                  abs6 = -dwt
-                end if
-                if (dwtp1 .ge. 0.) then
-                  abs18 = dwtp1
-                else
-                  abs18 = -dwtp1
-                end if
-                if (abs6 .lt. abs18) then
-                  dwtj = dwtj - half*dwt
-                  call pushcontrol2b(0)
-                else
-                  dwtj = dwtj - half*dwtp1
-                  call pushcontrol2b(1)
-                end if
-              else
-                call pushcontrol2b(2)
-              end if
-              if (dwt*dwtm1 .gt. zero) then
-                if (dwt .ge. 0.) then
-                  abs7 = dwt
-                else
-                  abs7 = -dwt
-                end if
-                if (dwtm1 .ge. 0.) then
-                  abs19 = dwtm1
-                else
-                  abs19 = -dwtm1
-                end if
-                if (abs7 .lt. abs19) then
-                  dwtj = dwtj + half*dwt
-                  call pushcontrol2b(0)
-                else
-                  dwtj = dwtj + half*dwtm1
-                  call pushcontrol2b(1)
-                end if
-              else
-                call pushcontrol2b(2)
-              end if
-            else
-! 1st order upwind scheme.
-              call pushreal8(dwtj)
-              dwtj = w(i, j+1, k, jj) - w(i, j, k, jj)
-              call pushcontrol2b(3)
-            end if
-          end do
-          call pushcontrol1b(0)
-        end if
-      end do
-    end do
-  end do
-!
-!      ******************************************************************
-!      *                                                                *
-!      * upwind discretization of the convective term in i (xi)         *
-!      * direction. either the 1st order upwind or the second order     *
-!      * fully upwind interpolation scheme, kappa = -1, is used in      *
-!      * combination with the minmod limiter.                           *
-!      * the possible grid velocity must be taken into account.         *
-!      *                                                                *
-!      ******************************************************************
-!
-  do k=2,kl
-    do j=2,jl
-      do i=2,il
-! compute the grid velocity if present.
-! it is taken as the average of i and i-1,
-        voli = half/vol(i, j, k)
-        if (addgridvelocities) then
-          qs = (sfacei(i, j, k)+sfacei(i-1, j, k))*voli
-          call pushcontrol1b(0)
-        else
-          call pushcontrol1b(1)
-        end if
-! compute the normal velocity, where the normal direction
-! is taken as the average of faces i and i-1.
-        xa = (si(i, j, k, 1)+si(i-1, j, k, 1))*voli
-        ya = (si(i, j, k, 2)+si(i-1, j, k, 2))*voli
-        za = (si(i, j, k, 3)+si(i-1, j, k, 3))*voli
-        call pushreal8(uu)
-        uu = xa*w(i, j, k, ivx) + ya*w(i, j, k, ivy) + za*w(i, j, k, ivz&
-&         ) - qs
-! determine the situation we are having here, i.e. positive
-! or negative normal velocity.
-        if (uu .gt. zero) then
-! velocity has a component in positive i-direction.
-! loop over the number of advection equations.
-          do ii=1,nadv
-! set the value of jj such that it corresponds to the
-! turbulent entry in w.
-            jj = ii + offset
-! check whether a first or a second order discretization
-! must be used.
-            if (secondord) then
-! second order; store the three differences for the
-! discretization of the derivative in i-direction.
-              dwtm1 = w(i-1, j, k, jj) - w(i-2, j, k, jj)
-              dwt = w(i, j, k, jj) - w(i-1, j, k, jj)
-              dwtp1 = w(i+1, j, k, jj) - w(i, j, k, jj)
-! construct the derivative in this cell center. this is
-! the first order upwind derivative with two nonlinear
-! corrections.
-              call pushreal8(dwti)
-              dwti = dwt
-              if (dwt*dwtp1 .gt. zero) then
-                if (dwt .ge. 0.) then
-                  abs8 = dwt
-                else
-                  abs8 = -dwt
-                end if
-                if (dwtp1 .ge. 0.) then
-                  abs20 = dwtp1
-                else
-                  abs20 = -dwtp1
-                end if
-                if (abs8 .lt. abs20) then
-                  dwti = dwti + half*dwt
-                  call pushcontrol2b(0)
-                else
-                  dwti = dwti + half*dwtp1
-                  call pushcontrol2b(1)
-                end if
-              else
-                call pushcontrol2b(2)
-              end if
-              if (dwt*dwtm1 .gt. zero) then
-                if (dwt .ge. 0.) then
-                  abs9 = dwt
-                else
-                  abs9 = -dwt
-                end if
-                if (dwtm1 .ge. 0.) then
-                  abs21 = dwtm1
-                else
-                  abs21 = -dwtm1
-                end if
-                if (abs9 .lt. abs21) then
-                  dwti = dwti - half*dwt
-                  call pushcontrol2b(0)
-                else
-                  dwti = dwti - half*dwtm1
-                  call pushcontrol2b(1)
-                end if
-              else
-                call pushcontrol2b(2)
-              end if
-            else
-! 1st order upwind scheme.
-              call pushreal8(dwti)
-              dwti = w(i, j, k, jj) - w(i-1, j, k, jj)
-              call pushcontrol2b(3)
-            end if
-          end do
-          call pushcontrol1b(1)
-        else
-! velocity has a component in negative i-direction.
-! loop over the number of advection equations.
-          do ii=1,nadv
-! set the value of jj such that it corresponds to the
-! turbulent entry in w.
-            jj = ii + offset
-! check whether a first or a second order discretization
-! must be used.
-            if (secondord) then
-! second order; store the three differences for the
-! discretization of the derivative in i-direction.
-              dwtm1 = w(i, j, k, jj) - w(i-1, j, k, jj)
-              dwt = w(i+1, j, k, jj) - w(i, j, k, jj)
-              dwtp1 = w(i+2, j, k, jj) - w(i+1, j, k, jj)
-! construct the derivative in this cell center. this is
-! the first order upwind derivative with two nonlinear
-! corrections.
-              call pushreal8(dwti)
-              dwti = dwt
-              if (dwt*dwtp1 .gt. zero) then
-                if (dwt .ge. 0.) then
-                  abs10 = dwt
-                else
-                  abs10 = -dwt
-                end if
-                if (dwtp1 .ge. 0.) then
-                  abs22 = dwtp1
-                else
-                  abs22 = -dwtp1
-                end if
-                if (abs10 .lt. abs22) then
-                  dwti = dwti - half*dwt
-                  call pushcontrol2b(0)
-                else
-                  dwti = dwti - half*dwtp1
-                  call pushcontrol2b(1)
-                end if
-              else
-                call pushcontrol2b(2)
-              end if
-              if (dwt*dwtm1 .gt. zero) then
-                if (dwt .ge. 0.) then
-                  abs11 = dwt
-                else
-                  abs11 = -dwt
-                end if
-                if (dwtm1 .ge. 0.) then
-                  abs23 = dwtm1
-                else
-                  abs23 = -dwtm1
-                end if
-                if (abs11 .lt. abs23) then
-                  dwti = dwti + half*dwt
-                  call pushcontrol2b(0)
-                else
-                  dwti = dwti + half*dwtm1
-                  call pushcontrol2b(1)
-                end if
-              else
-                call pushcontrol2b(2)
-              end if
-            else
-! 1st order upwind scheme.
-              call pushreal8(dwti)
-              dwti = w(i+1, j, k, jj) - w(i, j, k, jj)
-              call pushcontrol2b(3)
-            end if
-          end do
-          call pushcontrol1b(0)
-        end if
-      end do
-    end do
-  end do
-  qsd = 0.0_8
-  do k=kl,2,-1
-    do j=jl,2,-1
-      do i=il,2,-1
-        call popcontrol1b(branch)
+        call popcontrol2b(branch)
         if (branch .eq. 0) then
-          uud = 0.0_8
-          do 100 ii=nadv,1,-1
-            uud = uud - dwti*dwd(i, j, k, idvt+ii-1)
-            dwtid = -(uu*dwd(i, j, k, idvt+ii-1))
-            jj = ii + offset
-            call popcontrol2b(branch)
-            if (branch .lt. 2) then
-              if (branch .eq. 0) then
-                dwtd = half*dwtid
-                dwtm1d = 0.0_8
-              else
-                dwtm1d = half*dwtid
-                dwtd = 0.0_8
-              end if
-            else if (branch .eq. 2) then
-              dwtd = 0.0_8
-              dwtm1d = 0.0_8
-            else
-              call popreal8(dwti)
-              wd(i+1, j, k, jj) = wd(i+1, j, k, jj) + dwtid
-              wd(i, j, k, jj) = wd(i, j, k, jj) - dwtid
-              goto 100
-            end if
-            call popcontrol2b(branch)
-            if (branch .eq. 0) then
-              dwtd = dwtd - half*dwtid
-              dwtp1d = 0.0_8
-            else if (branch .eq. 1) then
-              dwtp1d = -(half*dwtid)
-            else
-              dwtp1d = 0.0_8
-            end if
-            call popreal8(dwti)
-            dwtd = dwtd + dwtid
-            wd(i+2, j, k, jj) = wd(i+2, j, k, jj) + dwtp1d
-            wd(i+1, j, k, jj) = wd(i+1, j, k, jj) - dwtp1d
-            wd(i+1, j, k, jj) = wd(i+1, j, k, jj) + dwtd
-            wd(i, j, k, jj) = wd(i, j, k, jj) - dwtd
-            wd(i, j, k, jj) = wd(i, j, k, jj) + dwtm1d
-            wd(i-1, j, k, jj) = wd(i-1, j, k, jj) - dwtm1d
- 100      continue
+          dwtd = dwtd - half*dwtkd
+          dwtp1d = 0.0_8
+        else if (branch .eq. 1) then
+          dwtp1d = -(half*dwtkd)
         else
-          uud = 0.0_8
-          do 110 ii=nadv,1,-1
-            uud = uud - dwti*dwd(i, j, k, idvt+ii-1)
-            dwtid = -(uu*dwd(i, j, k, idvt+ii-1))
-            jj = ii + offset
-            call popcontrol2b(branch)
-            if (branch .lt. 2) then
-              if (branch .eq. 0) then
-                dwtd = -(half*dwtid)
-                dwtm1d = 0.0_8
-              else
-                dwtm1d = -(half*dwtid)
-                dwtd = 0.0_8
-              end if
-            else if (branch .eq. 2) then
-              dwtd = 0.0_8
-              dwtm1d = 0.0_8
-            else
-              call popreal8(dwti)
-              wd(i, j, k, jj) = wd(i, j, k, jj) + dwtid
-              wd(i-1, j, k, jj) = wd(i-1, j, k, jj) - dwtid
-              goto 110
-            end if
-            call popcontrol2b(branch)
-            if (branch .eq. 0) then
-              dwtd = dwtd + half*dwtid
-              dwtp1d = 0.0_8
-            else if (branch .eq. 1) then
-              dwtp1d = half*dwtid
-            else
-              dwtp1d = 0.0_8
-            end if
-            call popreal8(dwti)
-            dwtd = dwtd + dwtid
-            wd(i+1, j, k, jj) = wd(i+1, j, k, jj) + dwtp1d
-            wd(i, j, k, jj) = wd(i, j, k, jj) - dwtp1d
-            wd(i, j, k, jj) = wd(i, j, k, jj) + dwtd
-            wd(i-1, j, k, jj) = wd(i-1, j, k, jj) - dwtd
-            wd(i-1, j, k, jj) = wd(i-1, j, k, jj) + dwtm1d
-            wd(i-2, j, k, jj) = wd(i-2, j, k, jj) - dwtm1d
- 110      continue
+          dwtp1d = 0.0_8
         end if
-        voli = half/vol(i, j, k)
-        xa = (si(i, j, k, 1)+si(i-1, j, k, 1))*voli
-        ya = (si(i, j, k, 2)+si(i-1, j, k, 2))*voli
-        za = (si(i, j, k, 3)+si(i-1, j, k, 3))*voli
-        call popreal8(uu)
-        xad = w(i, j, k, ivx)*uud
-        wd(i, j, k, ivx) = wd(i, j, k, ivx) + xa*uud
-        yad = w(i, j, k, ivy)*uud
-        wd(i, j, k, ivy) = wd(i, j, k, ivy) + ya*uud
-        zad = w(i, j, k, ivz)*uud
-        wd(i, j, k, ivz) = wd(i, j, k, ivz) + za*uud
-        qsd = qsd - uud
-        sid(i, j, k, 3) = sid(i, j, k, 3) + voli*zad
-        sid(i-1, j, k, 3) = sid(i-1, j, k, 3) + voli*zad
-        volid = (si(i, j, k, 2)+si(i-1, j, k, 2))*yad + (si(i, j, k, 1)+&
-&         si(i-1, j, k, 1))*xad + (si(i, j, k, 3)+si(i-1, j, k, 3))*zad
-        sid(i, j, k, 2) = sid(i, j, k, 2) + voli*yad
-        sid(i-1, j, k, 2) = sid(i-1, j, k, 2) + voli*yad
-        sid(i, j, k, 1) = sid(i, j, k, 1) + voli*xad
-        sid(i-1, j, k, 1) = sid(i-1, j, k, 1) + voli*xad
-        call popcontrol1b(branch)
-        if (branch .eq. 0) then
-          volid = volid + (sfacei(i, j, k)+sfacei(i-1, j, k))*qsd
-          qsd = 0.0_8
-        end if
-        vold(i, j, k) = vold(i, j, k) - half*volid/vol(i, j, k)**2
-      end do
-    end do
-  end do
-  do k=kl,2,-1
-    do j=jl,2,-1
-      do i=il,2,-1
-        call popcontrol1b(branch)
-        if (branch .eq. 0) then
-          uud = 0.0_8
-          do 120 ii=nadv,1,-1
-            uud = uud - dwtj*dwd(i, j, k, idvt+ii-1)
-            dwtjd = -(uu*dwd(i, j, k, idvt+ii-1))
-            jj = ii + offset
-            call popcontrol2b(branch)
-            if (branch .lt. 2) then
-              if (branch .eq. 0) then
-                dwtd = half*dwtjd
-                dwtm1d = 0.0_8
-              else
-                dwtm1d = half*dwtjd
-                dwtd = 0.0_8
-              end if
-            else if (branch .eq. 2) then
-              dwtd = 0.0_8
-              dwtm1d = 0.0_8
-            else
-              call popreal8(dwtj)
-              wd(i, j+1, k, jj) = wd(i, j+1, k, jj) + dwtjd
-              wd(i, j, k, jj) = wd(i, j, k, jj) - dwtjd
-              goto 120
-            end if
-            call popcontrol2b(branch)
-            if (branch .eq. 0) then
-              dwtd = dwtd - half*dwtjd
-              dwtp1d = 0.0_8
-            else if (branch .eq. 1) then
-              dwtp1d = -(half*dwtjd)
-            else
-              dwtp1d = 0.0_8
-            end if
-            call popreal8(dwtj)
-            dwtd = dwtd + dwtjd
-            wd(i, j+2, k, jj) = wd(i, j+2, k, jj) + dwtp1d
-            wd(i, j+1, k, jj) = wd(i, j+1, k, jj) - dwtp1d
-            wd(i, j+1, k, jj) = wd(i, j+1, k, jj) + dwtd
-            wd(i, j, k, jj) = wd(i, j, k, jj) - dwtd
-            wd(i, j, k, jj) = wd(i, j, k, jj) + dwtm1d
-            wd(i, j-1, k, jj) = wd(i, j-1, k, jj) - dwtm1d
- 120      continue
-        else
-          uud = 0.0_8
-          do 130 ii=nadv,1,-1
-            uud = uud - dwtj*dwd(i, j, k, idvt+ii-1)
-            dwtjd = -(uu*dwd(i, j, k, idvt+ii-1))
-            jj = ii + offset
-            call popcontrol2b(branch)
-            if (branch .lt. 2) then
-              if (branch .eq. 0) then
-                dwtd = -(half*dwtjd)
-                dwtm1d = 0.0_8
-              else
-                dwtm1d = -(half*dwtjd)
-                dwtd = 0.0_8
-              end if
-            else if (branch .eq. 2) then
-              dwtd = 0.0_8
-              dwtm1d = 0.0_8
-            else
-              call popreal8(dwtj)
-              wd(i, j, k, jj) = wd(i, j, k, jj) + dwtjd
-              wd(i, j-1, k, jj) = wd(i, j-1, k, jj) - dwtjd
-              goto 130
-            end if
-            call popcontrol2b(branch)
-            if (branch .eq. 0) then
-              dwtd = dwtd + half*dwtjd
-              dwtp1d = 0.0_8
-            else if (branch .eq. 1) then
-              dwtp1d = half*dwtjd
-            else
-              dwtp1d = 0.0_8
-            end if
-            call popreal8(dwtj)
-            dwtd = dwtd + dwtjd
-            wd(i, j+1, k, jj) = wd(i, j+1, k, jj) + dwtp1d
-            wd(i, j, k, jj) = wd(i, j, k, jj) - dwtp1d
-            wd(i, j, k, jj) = wd(i, j, k, jj) + dwtd
-            wd(i, j-1, k, jj) = wd(i, j-1, k, jj) - dwtd
-            wd(i, j-1, k, jj) = wd(i, j-1, k, jj) + dwtm1d
-            wd(i, j-2, k, jj) = wd(i, j-2, k, jj) - dwtm1d
- 130      continue
-        end if
-        voli = half/vol(i, j, k)
-        xa = (sj(i, j, k, 1)+sj(i, j-1, k, 1))*voli
-        ya = (sj(i, j, k, 2)+sj(i, j-1, k, 2))*voli
-        za = (sj(i, j, k, 3)+sj(i, j-1, k, 3))*voli
-        call popreal8(uu)
-        xad = w(i, j, k, ivx)*uud
-        wd(i, j, k, ivx) = wd(i, j, k, ivx) + xa*uud
-        yad = w(i, j, k, ivy)*uud
-        wd(i, j, k, ivy) = wd(i, j, k, ivy) + ya*uud
-        zad = w(i, j, k, ivz)*uud
-        wd(i, j, k, ivz) = wd(i, j, k, ivz) + za*uud
-        qsd = qsd - uud
-        sjd(i, j, k, 3) = sjd(i, j, k, 3) + voli*zad
-        sjd(i, j-1, k, 3) = sjd(i, j-1, k, 3) + voli*zad
-        volid = (sj(i, j, k, 2)+sj(i, j-1, k, 2))*yad + (sj(i, j, k, 1)+&
-&         sj(i, j-1, k, 1))*xad + (sj(i, j, k, 3)+sj(i, j-1, k, 3))*zad
-        sjd(i, j, k, 2) = sjd(i, j, k, 2) + voli*yad
-        sjd(i, j-1, k, 2) = sjd(i, j-1, k, 2) + voli*yad
-        sjd(i, j, k, 1) = sjd(i, j, k, 1) + voli*xad
-        sjd(i, j-1, k, 1) = sjd(i, j-1, k, 1) + voli*xad
-        call popcontrol1b(branch)
-        if (branch .eq. 0) then
-          volid = volid + (sfacej(i, j, k)+sfacej(i, j-1, k))*qsd
-          qsd = 0.0_8
-        end if
-        vold(i, j, k) = vold(i, j, k) - half*volid/vol(i, j, k)**2
-      end do
-    end do
-  end do
-  do k=kl,2,-1
-    do j=jl,2,-1
-      do i=il,2,-1
-        call popcontrol1b(branch)
-        if (branch .eq. 0) then
-          uud = 0.0_8
-          do 140 ii=nadv,1,-1
-            uud = uud - dwtk*dwd(i, j, k, idvt+ii-1)
-            dwtkd = -(uu*dwd(i, j, k, idvt+ii-1))
-            jj = ii + offset
-            call popcontrol2b(branch)
-            if (branch .lt. 2) then
-              if (branch .eq. 0) then
-                dwtd = half*dwtkd
-                dwtm1d = 0.0_8
-              else
-                dwtm1d = half*dwtkd
-                dwtd = 0.0_8
-              end if
-            else if (branch .eq. 2) then
-              dwtd = 0.0_8
-              dwtm1d = 0.0_8
-            else
-              call popreal8(dwtk)
-              wd(i, j, k+1, jj) = wd(i, j, k+1, jj) + dwtkd
-              wd(i, j, k, jj) = wd(i, j, k, jj) - dwtkd
-              goto 140
-            end if
-            call popcontrol2b(branch)
-            if (branch .eq. 0) then
-              dwtd = dwtd - half*dwtkd
-              dwtp1d = 0.0_8
-            else if (branch .eq. 1) then
-              dwtp1d = -(half*dwtkd)
-            else
-              dwtp1d = 0.0_8
-            end if
-            call popreal8(dwtk)
-            dwtd = dwtd + dwtkd
-            wd(i, j, k+2, jj) = wd(i, j, k+2, jj) + dwtp1d
-            wd(i, j, k+1, jj) = wd(i, j, k+1, jj) - dwtp1d
-            wd(i, j, k+1, jj) = wd(i, j, k+1, jj) + dwtd
-            wd(i, j, k, jj) = wd(i, j, k, jj) - dwtd
-            wd(i, j, k, jj) = wd(i, j, k, jj) + dwtm1d
-            wd(i, j, k-1, jj) = wd(i, j, k-1, jj) - dwtm1d
- 140      continue
-        else
-          uud = 0.0_8
-          do 150 ii=nadv,1,-1
-            uud = uud - dwtk*dwd(i, j, k, idvt+ii-1)
-            dwtkd = -(uu*dwd(i, j, k, idvt+ii-1))
-            jj = ii + offset
-            call popcontrol2b(branch)
-            if (branch .lt. 2) then
-              if (branch .eq. 0) then
-                dwtd = -(half*dwtkd)
-                dwtm1d = 0.0_8
-              else
-                dwtm1d = -(half*dwtkd)
-                dwtd = 0.0_8
-              end if
-            else if (branch .eq. 2) then
-              dwtd = 0.0_8
-              dwtm1d = 0.0_8
-            else
-              call popreal8(dwtk)
-              wd(i, j, k, jj) = wd(i, j, k, jj) + dwtkd
-              wd(i, j, k-1, jj) = wd(i, j, k-1, jj) - dwtkd
-              goto 150
-            end if
-            call popcontrol2b(branch)
-            if (branch .eq. 0) then
-              dwtd = dwtd + half*dwtkd
-              dwtp1d = 0.0_8
-            else if (branch .eq. 1) then
-              dwtp1d = half*dwtkd
-            else
-              dwtp1d = 0.0_8
-            end if
-            call popreal8(dwtk)
-            dwtd = dwtd + dwtkd
-            wd(i, j, k+1, jj) = wd(i, j, k+1, jj) + dwtp1d
-            wd(i, j, k, jj) = wd(i, j, k, jj) - dwtp1d
-            wd(i, j, k, jj) = wd(i, j, k, jj) + dwtd
-            wd(i, j, k-1, jj) = wd(i, j, k-1, jj) - dwtd
-            wd(i, j, k-1, jj) = wd(i, j, k-1, jj) + dwtm1d
-            wd(i, j, k-2, jj) = wd(i, j, k-2, jj) - dwtm1d
- 150      continue
-        end if
-        voli = half/vol(i, j, k)
-        xa = (sk(i, j, k, 1)+sk(i, j, k-1, 1))*voli
-        ya = (sk(i, j, k, 2)+sk(i, j, k-1, 2))*voli
-        za = (sk(i, j, k, 3)+sk(i, j, k-1, 3))*voli
-        call popreal8(uu)
-        xad = w(i, j, k, ivx)*uud
-        wd(i, j, k, ivx) = wd(i, j, k, ivx) + xa*uud
-        yad = w(i, j, k, ivy)*uud
-        wd(i, j, k, ivy) = wd(i, j, k, ivy) + ya*uud
-        zad = w(i, j, k, ivz)*uud
-        wd(i, j, k, ivz) = wd(i, j, k, ivz) + za*uud
-        qsd = qsd - uud
-        skd(i, j, k, 3) = skd(i, j, k, 3) + voli*zad
-        skd(i, j, k-1, 3) = skd(i, j, k-1, 3) + voli*zad
-        volid = (sk(i, j, k, 2)+sk(i, j, k-1, 2))*yad + (sk(i, j, k, 1)+&
-&         sk(i, j, k-1, 1))*xad + (sk(i, j, k, 3)+sk(i, j, k-1, 3))*zad
-        skd(i, j, k, 2) = skd(i, j, k, 2) + voli*yad
-        skd(i, j, k-1, 2) = skd(i, j, k-1, 2) + voli*yad
-        skd(i, j, k, 1) = skd(i, j, k, 1) + voli*xad
-        skd(i, j, k-1, 1) = skd(i, j, k-1, 1) + voli*xad
-        call popcontrol1b(branch)
-        if (branch .eq. 0) then
-          volid = volid + (sfacek(i, j, k)+sfacek(i, j, k-1))*qsd
-          qsd = 0.0_8
-        end if
-        vold(i, j, k) = vold(i, j, k) - half*volid/vol(i, j, k)**2
-      end do
-    end do
+        dwtd = dwtd + dwtkd
+        wd(i, j, k+2, jj) = wd(i, j, k+2, jj) + dwtp1d
+        wd(i, j, k+1, jj) = wd(i, j, k+1, jj) - dwtp1d
+        wd(i, j, k+1, jj) = wd(i, j, k+1, jj) + dwtd
+        wd(i, j, k, jj) = wd(i, j, k, jj) - dwtd
+        wd(i, j, k, jj) = wd(i, j, k, jj) + dwtm1d
+        wd(i, j, k-1, jj) = wd(i, j, k-1, jj) - dwtm1d
+ 150  continue
+    end if
+    xad = w(i, j, k, ivx)*uud
+    wd(i, j, k, ivx) = wd(i, j, k, ivx) + xa*uud
+    yad = w(i, j, k, ivy)*uud
+    wd(i, j, k, ivy) = wd(i, j, k, ivy) + ya*uud
+    zad = w(i, j, k, ivz)*uud
+    wd(i, j, k, ivz) = wd(i, j, k, ivz) + za*uud
+    qsd = qsd - uud
+    skd(i, j, k, 3) = skd(i, j, k, 3) + voli*zad
+    skd(i, j, k-1, 3) = skd(i, j, k-1, 3) + voli*zad
+    volid = (sk(i, j, k, 2)+sk(i, j, k-1, 2))*yad + (sk(i, j, k, 1)+sk(i&
+&     , j, k-1, 1))*xad + (sk(i, j, k, 3)+sk(i, j, k-1, 3))*zad
+    skd(i, j, k, 2) = skd(i, j, k, 2) + voli*yad
+    skd(i, j, k-1, 2) = skd(i, j, k-1, 2) + voli*yad
+    skd(i, j, k, 1) = skd(i, j, k, 1) + voli*xad
+    skd(i, j, k-1, 1) = skd(i, j, k-1, 1) + voli*xad
+    call popcontrol1b(branch)
+    if (branch .eq. 0) then
+      volid = volid + (sfacek(i, j, k)+sfacek(i, j, k-1))*qsd
+      qsd = 0.0_8
+    end if
+    vold(i, j, k) = vold(i, j, k) - half*volid/vol(i, j, k)**2
   end do
 end subroutine turbadvection_b
