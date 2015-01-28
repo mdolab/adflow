@@ -38,9 +38,12 @@ include ${SUMB_RULES_FILE}
 #      ******************************************************************
 
 vpath %.o $(SUMB_OBJDIR)
-FF90_OBJECTS_1 = turbMod.o
+FF90_OBJECTS_1 = turbMod.o\
+		 saModule.o\
 
-FILES_TO_COMPLEXIFY = turbMod.F90\
+FILES_TO_COMPLEXIFY = \
+		 saModule.F90\
+		 turbMod.F90\
 		 applyAllTurbBC.F90\
 		 bcEddyNoWall.f90\
 		 bcEddyWall.f90\
@@ -71,11 +74,9 @@ FILES_TO_COMPLEXIFY = turbMod.F90\
 		 kwCDterm.f90\
 		 kwSolve.F90\
 		 prodKatoLaunder.f90\
-		 prodSmag2.f90\
-		 prodWmag2.f90\
-		 sa.F90\
+		 prodSmag2.F90\
+		 prodWmag2.F90\
 		 saNuFromEddyRatio.f90\
-		 saSolve.F90\
 		 SST.f90\
 		 SSTSolve.F90\
 		 tdia3.f90\
@@ -90,6 +91,8 @@ FILES_TO_COMPLEXIFY = turbMod.F90\
 		 vfScale.f90\
 		 vfSolve.f90\
 		 writeLoglaw.f90\
+#		 sa.F90\
+		 saSolve.F90\
 
 FILES_TO_COPY = 
 

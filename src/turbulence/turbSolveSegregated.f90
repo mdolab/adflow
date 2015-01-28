@@ -24,6 +24,7 @@
        use inputPhysics
        use iteration
        use turbMod
+       use saModule
        implicit none
 !
 !      Local variables.
@@ -66,7 +67,7 @@
              call bl(.false.)
 
            case (spalartAllmaras)
-             call sa(.false.)
+              call sa(.false.)
 
            case (komegaWilcox, komegaModified)
              call kw(.false.)

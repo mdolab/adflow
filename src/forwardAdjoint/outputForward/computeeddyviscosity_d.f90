@@ -60,7 +60,6 @@ subroutine computeeddyviscosity_d()
 ! routine to compute the eddy viscosity.
     select case  (turbmodel) 
     case (spalartallmaras, spalartallmarasedwards) 
-      revd = 0.0_8
       call saeddyviscosity_d()
     case default
       call terminate('computeeddyviscosity', &

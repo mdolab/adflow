@@ -80,6 +80,7 @@ subroutine block_res_d(nn, sps, usespatial, alpha, alphad, beta, betad, &
   use costfunctions
   use walldistancedata
   use inputdiscretization
+  use samodule_d
   use diffsizes
 !  hint: isize1ofdrfbcdata should be the size of dimension 1 of array *bcdata
   implicit none
@@ -189,12 +190,7 @@ subroutine block_res_d(nn, sps, usespatial, alpha, alphad, beta, betad, &
   call computeeddyviscosity_d()
   call applyallbc_block_d(.true.)
   if (equations .eq. ransequations) then
-    bvti2d = 0.0_8
-    bvti1d = 0.0_8
-    bvtk2d = 0.0_8
-    bvtk1d = 0.0_8
-    bvtj2d = 0.0_8
-    bvtj1d = 0.0_8
+    call bcturbtreatment_d()
     call applyallturbbcthisblock_d(.true.)
   end if
 ! compute skin_friction velocity (only for wall functions)

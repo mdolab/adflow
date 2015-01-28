@@ -37,12 +37,11 @@ include ${SUMB_RULES_FILE}
 vpath %.o $(SUMB_OBJDIR)
 
 FF90_OBJECTS1 = bcroutines_d.o\
+		samodule_d.o\
 
 FF90_OBJECTS2 = allnodalgradients_d.o\
 		viscousflux_d.o \
 		viscousfluxapprox_d.o\
-	        sa_block_d.o\
-		sasolve_d.o\
 		invisciddissfluxmatrix_d.o \
 		diffSizes.o\
 		computegamma_d.o\
@@ -89,7 +88,6 @@ FF90_OBJECTS2 = allnodalgradients_d.o\
 		computetsderivatives_d.o\
 		computeleastsquaresregression_d.o\
 		computerootbendingmoment_d.o\
-		turbbcnswall_d.o\
 		bcturbwall_d.o\
                 bcturbtreatment_d.o\
                 applyallturbbcthisblock_d.o\

@@ -36,7 +36,7 @@ subroutine prodwmag2_d()
 !
 !      local variables.
 !
-  integer :: i, j, k
+  integer :: i, j, k, ii
   real(kind=realtype) :: uuy, uuz, vvx, vvz, wwx, wwy
   real(kind=realtype) :: uuyd, uuzd, vvxd, vvzd, wwxd, wwyd
   real(kind=realtype) :: fact, vortx, vorty, vortz
