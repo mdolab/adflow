@@ -103,7 +103,7 @@ subroutine prodWmag2
 
               ! Compute the magnitude squared of the vorticity.
 
-              dw(i,j,k,ivort) = vortx**2 + vorty**2 + vortz**2
+              scratch(i,j,k,ivort) = vortx**2 + vorty**2 + vortz**2
 #ifdef TAPENADE_FAST
            end do
 #else

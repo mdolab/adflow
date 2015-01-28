@@ -2,11 +2,11 @@
 !  tapenade 3.10 (r5363) -  9 sep 2014 09:53
 !
 !  differentiation of turbadvection in forward (tangent) mode (with options i4 dr8 r8):
-!   variations   of useful results: *dw
-!   with respect to varying inputs: *sfacei *sfacej *sfacek *dw
-!                *w *vol *si *sj *sk
+!   variations   of useful results: *scratch
+!   with respect to varying inputs: *sfacei *sfacej *sfacek *w
+!                *scratch *vol *si *sj *sk
 !   plus diff mem management of: sfacei:in sfacej:in sfacek:in
-!                dw:in w:in vol:in si:in sj:in sk:in
+!                w:in scratch:in vol:in si:in sj:in sk:in
 !
 !      ******************************************************************
 !      *                                                                *
@@ -207,9 +207,10 @@ subroutine turbadvection_d(madv, nadv, offset, qq)
 ! update the residual. the convective term must be
 ! substracted, because it appears on the other side of
 ! the equation as the source and viscous terms.
-            dwd(i, j, k, idvt+ii-1) = dwd(i, j, k, idvt+ii-1) - uud*dwtk&
-&             - uu*dwtkd
-            dw(i, j, k, idvt+ii-1) = dw(i, j, k, idvt+ii-1) - uu*dwtk
+            scratchd(i, j, k, idvt+ii-1) = scratchd(i, j, k, idvt+ii-1) &
+&             - uud*dwtk - uu*dwtkd
+            scratch(i, j, k, idvt+ii-1) = scratch(i, j, k, idvt+ii-1) - &
+&             uu*dwtk
 ! update the central jacobian. first the term which is
 ! always present, i.e. uu.
             qq(i, j, k, ii, ii) = qq(i, j, k, ii, ii) + uu
@@ -302,9 +303,10 @@ subroutine turbadvection_d(madv, nadv, offset, qq)
 ! update the residual. the convective term must be
 ! substracted, because it appears on the other side
 ! of the equation as the source and viscous terms.
-            dwd(i, j, k, idvt+ii-1) = dwd(i, j, k, idvt+ii-1) - uud*dwtk&
-&             - uu*dwtkd
-            dw(i, j, k, idvt+ii-1) = dw(i, j, k, idvt+ii-1) - uu*dwtk
+            scratchd(i, j, k, idvt+ii-1) = scratchd(i, j, k, idvt+ii-1) &
+&             - uud*dwtk - uu*dwtkd
+            scratch(i, j, k, idvt+ii-1) = scratch(i, j, k, idvt+ii-1) - &
+&             uu*dwtk
 ! update the central jacobian. first the term which is
 ! always present, i.e. -uu.
             qq(i, j, k, ii, ii) = qq(i, j, k, ii, ii) - uu
@@ -444,9 +446,10 @@ subroutine turbadvection_d(madv, nadv, offset, qq)
 ! update the residual. the convective term must be
 ! substracted, because it appears on the other side of
 ! the equation as the source and viscous terms.
-            dwd(i, j, k, idvt+ii-1) = dwd(i, j, k, idvt+ii-1) - uud*dwtj&
-&             - uu*dwtjd
-            dw(i, j, k, idvt+ii-1) = dw(i, j, k, idvt+ii-1) - uu*dwtj
+            scratchd(i, j, k, idvt+ii-1) = scratchd(i, j, k, idvt+ii-1) &
+&             - uud*dwtj - uu*dwtjd
+            scratch(i, j, k, idvt+ii-1) = scratch(i, j, k, idvt+ii-1) - &
+&             uu*dwtj
 ! update the central jacobian. first the term which is
 ! always present, i.e. uu.
             qq(i, j, k, ii, ii) = qq(i, j, k, ii, ii) + uu
@@ -539,9 +542,10 @@ subroutine turbadvection_d(madv, nadv, offset, qq)
 ! update the residual. the convective term must be
 ! substracted, because it appears on the other side
 ! of the equation as the source and viscous terms.
-            dwd(i, j, k, idvt+ii-1) = dwd(i, j, k, idvt+ii-1) - uud*dwtj&
-&             - uu*dwtjd
-            dw(i, j, k, idvt+ii-1) = dw(i, j, k, idvt+ii-1) - uu*dwtj
+            scratchd(i, j, k, idvt+ii-1) = scratchd(i, j, k, idvt+ii-1) &
+&             - uud*dwtj - uu*dwtjd
+            scratch(i, j, k, idvt+ii-1) = scratch(i, j, k, idvt+ii-1) - &
+&             uu*dwtj
 ! update the central jacobian. first the term which is
 ! always present, i.e. -uu.
             qq(i, j, k, ii, ii) = qq(i, j, k, ii, ii) - uu
@@ -681,9 +685,10 @@ subroutine turbadvection_d(madv, nadv, offset, qq)
 ! update the residual. the convective term must be
 ! substracted, because it appears on the other side of
 ! the equation as the source and viscous terms.
-            dwd(i, j, k, idvt+ii-1) = dwd(i, j, k, idvt+ii-1) - uud*dwti&
-&             - uu*dwtid
-            dw(i, j, k, idvt+ii-1) = dw(i, j, k, idvt+ii-1) - uu*dwti
+            scratchd(i, j, k, idvt+ii-1) = scratchd(i, j, k, idvt+ii-1) &
+&             - uud*dwti - uu*dwtid
+            scratch(i, j, k, idvt+ii-1) = scratch(i, j, k, idvt+ii-1) - &
+&             uu*dwti
 ! update the central jacobian. first the term which is
 ! always present, i.e. uu.
             qq(i, j, k, ii, ii) = qq(i, j, k, ii, ii) + uu
@@ -776,9 +781,10 @@ subroutine turbadvection_d(madv, nadv, offset, qq)
 ! update the residual. the convective term must be
 ! substracted, because it appears on the other side
 ! of the equation as the source and viscous terms.
-            dwd(i, j, k, idvt+ii-1) = dwd(i, j, k, idvt+ii-1) - uud*dwti&
-&             - uu*dwtid
-            dw(i, j, k, idvt+ii-1) = dw(i, j, k, idvt+ii-1) - uu*dwti
+            scratchd(i, j, k, idvt+ii-1) = scratchd(i, j, k, idvt+ii-1) &
+&             - uud*dwti - uu*dwtid
+            scratch(i, j, k, idvt+ii-1) = scratch(i, j, k, idvt+ii-1) - &
+&             uu*dwti
 ! update the central jacobian. first the term which is
 ! always present, i.e. -uu.
             qq(i, j, k, ii, ii) = qq(i, j, k, ii, ii) - uu

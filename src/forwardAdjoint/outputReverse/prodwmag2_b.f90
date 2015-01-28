@@ -2,11 +2,10 @@
 !  tapenade 3.10 (r5363) -  9 sep 2014 09:53
 !
 !  differentiation of prodwmag2 in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: timeref *dw *w *vol *si *sj
-!                *sk
-!   with respect to varying inputs: timeref *dw *w *vol *si *sj
-!                *sk
-!   plus diff mem management of: dw:in w:in vol:in si:in sj:in
+!   gradient     of useful results: timeref *w *scratch *vol *si
+!                *sj *sk
+!   with respect to varying inputs: timeref *w *vol *si *sj *sk
+!   plus diff mem management of: w:in scratch:in vol:in si:in sj:in
 !                sk:in
 !
 !      ******************************************************************
@@ -101,10 +100,10 @@ subroutine prodwmag2_b()
     vorty = fact*(uuz-wwx) - two*omegay
     vortz = fact*(vvx-uuy) - two*omegaz
 ! compute the magnitude squared of the vorticity.
-    vortxd = 2*vortx*dwd(i, j, k, ivort)
-    vortyd = 2*vorty*dwd(i, j, k, ivort)
-    vortzd = 2*vortz*dwd(i, j, k, ivort)
-    dwd(i, j, k, ivort) = 0.0_8
+    vortxd = 2*vortx*scratchd(i, j, k, ivort)
+    vortyd = 2*vorty*scratchd(i, j, k, ivort)
+    vortzd = 2*vortz*scratchd(i, j, k, ivort)
+    scratchd(i, j, k, ivort) = 0.0_8
     factd = (uuz-wwx)*vortyd + (wwy-vvz)*vortxd + (vvx-uuy)*vortzd
     vvxd = fact*vortzd
     uuyd = -(fact*vortzd)

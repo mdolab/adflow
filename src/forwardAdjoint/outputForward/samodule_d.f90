@@ -49,8 +49,9 @@ domains:do nn=1,ndom
 !   with respect to varying inputs: *sfacei *sfacej *sfacek *w
 !                *rlv *vol *si *sj *sk (global)timeref
 !   plus diff mem management of: bvtj1:in bvtj2:in sfacei:in sfacej:in
-!                sfacek:in dw:in w:in rlv:in bvtk1:in bvtk2:in
-!                vol:in si:in sj:in sk:in bvti1:in bvti2:in bcdata:in
+!                sfacek:in dw:in w:in rlv:in scratch:in bvtk1:in
+!                bvtk2:in vol:in si:in sj:in sk:in bvti1:in bvti2:in
+!                bcdata:in
   subroutine sa_block_d(resonly)
 !
 !      ******************************************************************
@@ -99,7 +100,7 @@ domains:do nn=1,ndom
     case (katolaunder) 
       call prodkatolaunder_d()
     case default
-      dwd = 0.0_8
+      scratchd = 0.0_8
     end select
 ! alloc central jacobian memory
     allocate(qq(2:il, 2:jl, 2:kl))
@@ -184,9 +185,9 @@ domains:do nn=1,ndom
     deallocate(qq)
   end subroutine sa_block
 !  differentiation of sasource in forward (tangent) mode (with options i4 dr8 r8):
-!   variations   of useful results: *dw
-!   with respect to varying inputs: *dw *w *rlv
-!   plus diff mem management of: dw:in w:in rlv:in
+!   variations   of useful results: *scratch
+!   with respect to varying inputs: *w *rlv *scratch
+!   plus diff mem management of: w:in rlv:in scratch:in
   subroutine sasource_d()
 !
 ! ******************************************************************
@@ -230,12 +231,13 @@ domains:do nn=1,ndom
         do i=2,il
 ! first take the square root of the production term to
 ! obtain the correct production term for spalart-allmaras.
-          if (dw(i, j, k, iprod) .eq. 0.0_8) then
+          if (scratch(i, j, k, iprod) .eq. 0.0_8) then
             ssd = 0.0_8
           else
-            ssd = dwd(i, j, k, iprod)/(2.0*sqrt(dw(i, j, k, iprod)))
+            ssd = scratchd(i, j, k, iprod)/(2.0*sqrt(scratch(i, j, k, &
+&             iprod)))
           end if
-          ss = sqrt(dw(i, j, k, iprod))
+          ss = sqrt(scratch(i, j, k, iprod))
 ! compute the laminar kinematic viscosity, the inverse of
 ! wall distance squared, the ratio chi (ratio of nutilde
 ! and nu) and the functions fv1 and fv2. the latter corrects
@@ -311,11 +313,11 @@ domains:do nn=1,ndom
 &           ft2d)-rsacw1*fwsad)
           term2 = dist2inv*(kar2inv*rsacb1*((one-ft2)*fv2+ft2)-rsacw1*&
 &           fwsa)
-          dwd(i, j, k, idvt) = (term1d+term2d*w(i, j, k, itu1)+term2*wd(&
-&           i, j, k, itu1))*w(i, j, k, itu1) + (term1+term2*w(i, j, k, &
-&           itu1))*wd(i, j, k, itu1)
-          dw(i, j, k, idvt) = (term1+term2*w(i, j, k, itu1))*w(i, j, k, &
-&           itu1)
+          scratchd(i, j, k, idvt) = (term1d+term2d*w(i, j, k, itu1)+&
+&           term2*wd(i, j, k, itu1))*w(i, j, k, itu1) + (term1+term2*w(i&
+&           , j, k, itu1))*wd(i, j, k, itu1)
+          scratch(i, j, k, idvt) = (term1+term2*w(i, j, k, itu1))*w(i, j&
+&           , k, itu1)
 ! compute some derivatives w.r.t. nutilde. these will occur
 ! in the left hand side, i.e. the matrix for the implicit
 ! treatment.
@@ -368,7 +370,7 @@ domains:do nn=1,ndom
         do i=2,il
 ! first take the square root of the production term to
 ! obtain the correct production term for spalart-allmaras.
-          ss = sqrt(dw(i, j, k, iprod))
+          ss = sqrt(scratch(i, j, k, iprod))
 ! compute the laminar kinematic viscosity, the inverse of
 ! wall distance squared, the ratio chi (ratio of nutilde
 ! and nu) and the functions fv1 and fv2. the latter corrects
@@ -414,8 +416,8 @@ domains:do nn=1,ndom
           term1 = rsacb1*(one-ft2)*ss
           term2 = dist2inv*(kar2inv*rsacb1*((one-ft2)*fv2+ft2)-rsacw1*&
 &           fwsa)
-          dw(i, j, k, idvt) = (term1+term2*w(i, j, k, itu1))*w(i, j, k, &
-&           itu1)
+          scratch(i, j, k, idvt) = (term1+term2*w(i, j, k, itu1))*w(i, j&
+&           , k, itu1)
 ! compute some derivatives w.r.t. nutilde. these will occur
 ! in the left hand side, i.e. the matrix for the implicit
 ! treatment.
@@ -431,10 +433,11 @@ domains:do nn=1,ndom
     end do
   end subroutine sasource
 !  differentiation of saviscous in forward (tangent) mode (with options i4 dr8 r8):
-!   variations   of useful results: *dw
-!   with respect to varying inputs: *dw *w *rlv *vol *si *sj *sk
-!   plus diff mem management of: dw:in w:in rlv:in vol:in si:in
-!                sj:in sk:in
+!   variations   of useful results: *scratch
+!   with respect to varying inputs: *w *rlv *scratch *vol *si *sj
+!                *sk
+!   plus diff mem management of: w:in rlv:in scratch:in vol:in
+!                si:in sj:in sk:in
   subroutine saviscous_d()
 !
 ! ******************************************************************
@@ -563,12 +566,12 @@ domains:do nn=1,ndom
           c10 = c1m + c1p
 ! update the residual for this cell and store the possible
 ! coefficients for the matrix in b1, c1 and d1.
-          dwd(i, j, k, idvt) = dwd(i, j, k, idvt) + c1md*w(i, j, k-1, &
-&           itu1) + c1m*wd(i, j, k-1, itu1) - c10d*w(i, j, k, itu1) - &
-&           c10*wd(i, j, k, itu1) + c1pd*w(i, j, k+1, itu1) + c1p*wd(i, &
-&           j, k+1, itu1)
-          dw(i, j, k, idvt) = dw(i, j, k, idvt) + c1m*w(i, j, k-1, itu1)&
-&           - c10*w(i, j, k, itu1) + c1p*w(i, j, k+1, itu1)
+          scratchd(i, j, k, idvt) = scratchd(i, j, k, idvt) + c1md*w(i, &
+&           j, k-1, itu1) + c1m*wd(i, j, k-1, itu1) - c10d*w(i, j, k, &
+&           itu1) - c10*wd(i, j, k, itu1) + c1pd*w(i, j, k+1, itu1) + &
+&           c1p*wd(i, j, k+1, itu1)
+          scratch(i, j, k, idvt) = scratch(i, j, k, idvt) + c1m*w(i, j, &
+&           k-1, itu1) - c10*w(i, j, k, itu1) + c1p*w(i, j, k+1, itu1)
         end do
       end do
     end do
@@ -672,12 +675,12 @@ domains:do nn=1,ndom
           c10 = c1m + c1p
 ! update the residual for this cell and store the possible
 ! coefficients for the matrix in b1, c1 and d1.
-          dwd(i, j, k, idvt) = dwd(i, j, k, idvt) + c1md*w(i, j-1, k, &
-&           itu1) + c1m*wd(i, j-1, k, itu1) - c10d*w(i, j, k, itu1) - &
-&           c10*wd(i, j, k, itu1) + c1pd*w(i, j+1, k, itu1) + c1p*wd(i, &
-&           j+1, k, itu1)
-          dw(i, j, k, idvt) = dw(i, j, k, idvt) + c1m*w(i, j-1, k, itu1)&
-&           - c10*w(i, j, k, itu1) + c1p*w(i, j+1, k, itu1)
+          scratchd(i, j, k, idvt) = scratchd(i, j, k, idvt) + c1md*w(i, &
+&           j-1, k, itu1) + c1m*wd(i, j-1, k, itu1) - c10d*w(i, j, k, &
+&           itu1) - c10*wd(i, j, k, itu1) + c1pd*w(i, j+1, k, itu1) + &
+&           c1p*wd(i, j+1, k, itu1)
+          scratch(i, j, k, idvt) = scratch(i, j, k, idvt) + c1m*w(i, j-1&
+&           , k, itu1) - c10*w(i, j, k, itu1) + c1p*w(i, j+1, k, itu1)
         end do
       end do
     end do
@@ -781,12 +784,12 @@ domains:do nn=1,ndom
           c10 = c1m + c1p
 ! update the residual for this cell and store the possible
 ! coefficients for the matrix in b1, c1 and d1.
-          dwd(i, j, k, idvt) = dwd(i, j, k, idvt) + c1md*w(i-1, j, k, &
-&           itu1) + c1m*wd(i-1, j, k, itu1) - c10d*w(i, j, k, itu1) - &
-&           c10*wd(i, j, k, itu1) + c1pd*w(i+1, j, k, itu1) + c1p*wd(i+1&
-&           , j, k, itu1)
-          dw(i, j, k, idvt) = dw(i, j, k, idvt) + c1m*w(i-1, j, k, itu1)&
-&           - c10*w(i, j, k, itu1) + c1p*w(i+1, j, k, itu1)
+          scratchd(i, j, k, idvt) = scratchd(i, j, k, idvt) + c1md*w(i-1&
+&           , j, k, itu1) + c1m*wd(i-1, j, k, itu1) - c10d*w(i, j, k, &
+&           itu1) - c10*wd(i, j, k, itu1) + c1pd*w(i+1, j, k, itu1) + &
+&           c1p*wd(i+1, j, k, itu1)
+          scratch(i, j, k, idvt) = scratch(i, j, k, idvt) + c1m*w(i-1, j&
+&           , k, itu1) - c10*w(i, j, k, itu1) + c1p*w(i+1, j, k, itu1)
         end do
       end do
     end do
@@ -874,8 +877,8 @@ domains:do nn=1,ndom
           c10 = c1m + c1p
 ! update the residual for this cell and store the possible
 ! coefficients for the matrix in b1, c1 and d1.
-          dw(i, j, k, idvt) = dw(i, j, k, idvt) + c1m*w(i, j, k-1, itu1)&
-&           - c10*w(i, j, k, itu1) + c1p*w(i, j, k+1, itu1)
+          scratch(i, j, k, idvt) = scratch(i, j, k, idvt) + c1m*w(i, j, &
+&           k-1, itu1) - c10*w(i, j, k, itu1) + c1p*w(i, j, k+1, itu1)
         end do
       end do
     end do
@@ -940,8 +943,8 @@ domains:do nn=1,ndom
           c10 = c1m + c1p
 ! update the residual for this cell and store the possible
 ! coefficients for the matrix in b1, c1 and d1.
-          dw(i, j, k, idvt) = dw(i, j, k, idvt) + c1m*w(i, j-1, k, itu1)&
-&           - c10*w(i, j, k, itu1) + c1p*w(i, j+1, k, itu1)
+          scratch(i, j, k, idvt) = scratch(i, j, k, idvt) + c1m*w(i, j-1&
+&           , k, itu1) - c10*w(i, j, k, itu1) + c1p*w(i, j+1, k, itu1)
         end do
       end do
     end do
@@ -1006,16 +1009,16 @@ domains:do nn=1,ndom
           c10 = c1m + c1p
 ! update the residual for this cell and store the possible
 ! coefficients for the matrix in b1, c1 and d1.
-          dw(i, j, k, idvt) = dw(i, j, k, idvt) + c1m*w(i-1, j, k, itu1)&
-&           - c10*w(i, j, k, itu1) + c1p*w(i+1, j, k, itu1)
+          scratch(i, j, k, idvt) = scratch(i, j, k, idvt) + c1m*w(i-1, j&
+&           , k, itu1) - c10*w(i, j, k, itu1) + c1p*w(i+1, j, k, itu1)
         end do
       end do
     end do
   end subroutine saviscous
 !  differentiation of saresscale in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *dw
-!   with respect to varying inputs: *dw *vol
-!   plus diff mem management of: dw:in vol:in
+!   with respect to varying inputs: *scratch *vol
+!   plus diff mem management of: dw:in scratch:in vol:in
   subroutine saresscale_d()
 !
 ! ******************************************************************
@@ -1034,13 +1037,15 @@ domains:do nn=1,ndom
     integer(kind=inttype) :: i, j, k, ii
     real(kind=realtype) :: rblank
     intrinsic real
+    dwd = 0.0_8
     do k=2,kl
       do j=2,jl
         do i=2,il
           rblank = real(iblank(i, j, k), realtype)
-          dwd(i, j, k, itu1) = -(rblank*(vold(i, j, k)*dw(i, j, k, idvt)&
-&           +vol(i, j, k)*dwd(i, j, k, idvt)))
-          dw(i, j, k, itu1) = -(vol(i, j, k)*dw(i, j, k, idvt)*rblank)
+          dwd(i, j, k, itu1) = -(rblank*(vold(i, j, k)*scratch(i, j, k, &
+&           idvt)+vol(i, j, k)*scratchd(i, j, k, idvt)))
+          dw(i, j, k, itu1) = -(vol(i, j, k)*scratch(i, j, k, idvt)*&
+&           rblank)
         end do
       end do
     end do
@@ -1067,7 +1072,8 @@ domains:do nn=1,ndom
       do j=2,jl
         do i=2,il
           rblank = real(iblank(i, j, k), realtype)
-          dw(i, j, k, itu1) = -(vol(i, j, k)*dw(i, j, k, idvt)*rblank)
+          dw(i, j, k, itu1) = -(vol(i, j, k)*scratch(i, j, k, idvt)*&
+&           rblank)
         end do
       end do
     end do
@@ -1119,42 +1125,42 @@ bocos:do nn=1,nviscbocos
         case (imin) 
           flag => flagi2
           ddw => dw(2, 1:, 1:, 1:)
-          ddvt => dw(2, 1:, 1:, idvt:)
+          ddvt => scratch(2, 1:, 1:, idvt:)
           ww => w(2, 1:, 1:, 1:)
           rrlv => rlv(2, 1:, 1:)
           dd2wall => d2wall(2, :, :)
         case (imax) 
           flag => flagil
           ddw => dw(il, 1:, 1:, 1:)
-          ddvt => dw(il, 1:, 1:, idvt:)
+          ddvt => scratch(il, 1:, 1:, idvt:)
           ww => w(il, 1:, 1:, 1:)
           rrlv => rlv(il, 1:, 1:)
           dd2wall => d2wall(il, :, :)
         case (jmin) 
           flag => flagj2
           ddw => dw(1:, 2, 1:, 1:)
-          ddvt => dw(1:, 2, 1:, idvt:)
+          ddvt => scratch(1:, 2, 1:, idvt:)
           ww => w(1:, 2, 1:, 1:)
           rrlv => rlv(1:, 2, 1:)
           dd2wall => d2wall(:, 2, :)
         case (jmax) 
           flag => flagjl
           ddw => dw(1:, jl, 1:, 1:)
-          ddvt => dw(1:, jl, 1:, idvt:)
+          ddvt => scratch(1:, jl, 1:, idvt:)
           ww => w(1:, jl, 1:, 1:)
           rrlv => rlv(1:, jl, 1:)
           dd2wall => d2wall(:, jl, :)
         case (kmin) 
           flag => flagk2
           ddw => dw(1:, 1:, 2, 1:)
-          ddvt => dw(1:, 1:, 2, idvt:)
+          ddvt => scratch(1:, 1:, 2, idvt:)
           ww => w(1:, 1:, 2, 1:)
           rrlv => rlv(1:, 1:, 2)
           dd2wall => d2wall(:, :, 2)
         case (kmax) 
           flag => flagkl
           ddw => dw(1:, 1:, kl, :)
-          ddvt => dw(1:, 1:, kl, idvt:)
+          ddvt => scratch(1:, 1:, kl, idvt:)
           ww => w(1:, 1:, kl, 1:)
           rrlv => rlv(1:, 1:, kl)
           dd2wall => d2wall(:, :, kl)
@@ -1288,7 +1294,7 @@ bocos:do nn=1,nviscbocos
 ! value so the update determined for iblank = 0 is zero.
           rblank = real(iblank(i, j, k), realtype)
           cc(j) = qq(i, j, k)
-          ff(j) = dw(i, j, k, idvt)*rblank
+          ff(j) = scratch(i, j, k, idvt)*rblank
           bb(j) = bb(j)*rblank
           dd(j) = dd(j)*rblank
 ! set the off diagonal terms to zero if the wall is flagged.
@@ -1316,7 +1322,7 @@ bocos:do nn=1,nviscbocos
         end do
 ! determine the new rhs for the next direction.
         do j=2,jl
-          dw(i, j, k, idvt) = ff(j)*qq(i, j, k)
+          scratch(i, j, k, idvt) = ff(j)*qq(i, j, k)
         end do
       end do
     end do
@@ -1395,7 +1401,7 @@ bocos:do nn=1,nviscbocos
 ! value so the update determined for iblank = 0 is zero.
           rblank = real(iblank(i, j, k), realtype)
           cc(i) = qq(i, j, k)
-          ff(i) = dw(i, j, k, idvt)*rblank
+          ff(i) = scratch(i, j, k, idvt)*rblank
           bb(i) = bb(i)*rblank
           dd(i) = dd(i)*rblank
 ! set the off diagonal terms to zero if the wall is flagged.
@@ -1423,7 +1429,7 @@ bocos:do nn=1,nviscbocos
         end do
 ! determine the new rhs for the next direction.
         do i=2,il
-          dw(i, j, k, idvt) = ff(i)*qq(i, j, k)
+          scratch(i, j, k, idvt) = ff(i)*qq(i, j, k)
         end do
       end do
     end do
@@ -1502,7 +1508,7 @@ bocos:do nn=1,nviscbocos
 ! value so the update determined for iblank = 0 is zero.
           rblank = real(iblank(i, j, k), realtype)
           cc(k) = qq(i, j, k)
-          ff(k) = dw(i, j, k, idvt)*rblank
+          ff(k) = scratch(i, j, k, idvt)*rblank
           bb(k) = bb(k)*rblank
           dd(k) = dd(k)*rblank
 ! set the off diagonal terms to zero if the wall is flagged.
@@ -1530,7 +1536,7 @@ bocos:do nn=1,nviscbocos
         end do
 ! store the update in dvt.
         do k=2,kl
-          dw(i, j, k, idvt) = ff(k)
+          scratch(i, j, k, idvt) = ff(k)
         end do
       end do
     end do
@@ -1548,7 +1554,8 @@ bocos:do nn=1,nviscbocos
     do k=2,kl
       do j=2,jl
         do i=2,il
-          w(i, j, k, itu1) = w(i, j, k, itu1) + factor*dw(i, j, k, idvt)
+          w(i, j, k, itu1) = w(i, j, k, itu1) + factor*scratch(i, j, k, &
+&           idvt)
           if (w(i, j, k, itu1) .lt. zero) then
             w(i, j, k, itu1) = zero
           else

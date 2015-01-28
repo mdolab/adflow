@@ -2,9 +2,9 @@
 !  tapenade 3.10 (r5363) -  9 sep 2014 09:53
 !
 !  differentiation of prodsmag2 in forward (tangent) mode (with options i4 dr8 r8):
-!   variations   of useful results: *dw
+!   variations   of useful results: *scratch
 !   with respect to varying inputs: *w *vol *si *sj *sk
-!   plus diff mem management of: dw:in w:in vol:in si:in sj:in
+!   plus diff mem management of: w:in scratch:in vol:in si:in sj:in
 !                sk:in
 !
 !      ******************************************************************
@@ -45,7 +45,7 @@ subroutine prodsmag2_d()
   real(kind=realtype) :: div2, fact, sxx, syy, szz, sxy, sxz, syz
   real(kind=realtype) :: div2d, factd, sxxd, syyd, szzd, sxyd, sxzd, &
 & syzd
-  dwd = 0.0_8
+  scratchd = 0.0_8
 !
 !      ******************************************************************
 !      *                                                                *
@@ -196,10 +196,10 @@ subroutine prodsmag2_d()
         div2d = f23*2*(sxx+syy+szz)*(sxxd+syyd+szzd)
         div2 = f23*(sxx+syy+szz)**2
 ! store the square of strain as the production term.
-        dwd(i, j, k, iprod) = two*(two*(2*sxy*sxyd+2*sxz*sxzd+2*syz*syzd&
-&         )+2*sxx*sxxd+2*syy*syyd+2*szz*szzd) - div2d
-        dw(i, j, k, iprod) = two*(two*(sxy**2+sxz**2+syz**2)+sxx**2+syy&
-&         **2+szz**2) - div2
+        scratchd(i, j, k, iprod) = two*(two*(2*sxy*sxyd+2*sxz*sxzd+2*syz&
+&         *syzd)+2*sxx*sxxd+2*syy*syyd+2*szz*szzd) - div2d
+        scratch(i, j, k, iprod) = two*(two*(sxy**2+sxz**2+syz**2)+sxx**2&
+&         +syy**2+szz**2) - div2
       end do
     end do
   end do

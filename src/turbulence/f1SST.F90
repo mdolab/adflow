@@ -15,8 +15,8 @@
 !      *                                                                *
 !      * f1SST computes the blending function f1 in both the owned      *
 !      * cells and the first layer of halo's. The result is stored in   *
-!      * dw(:,:,:,if1SST). For the computation of f1 also the cross     *
-!      * diffusion term is needed. This is stored in dw(:,:,:,icd) such *
+!      * scratch(:,:,:,if1SST). For the computation of f1 also the cross     *
+!      * diffusion term is needed. This is stored in scratch(:,:,:,icd) such *
 !      * that it can be used in SSTSolve later on.                      *
 !      *                                                                *
 !      ******************************************************************
@@ -51,10 +51,10 @@
            call setPointers(mm, currentLevel, sps)
 
            ! Set the pointers for f1 and kwCD to the correct entries
-           ! in dw which are currently not used.
+           ! in scratch
 
-           f1   => dw(1:,1:,1:,if1SST)
-           kwCD => dw(1:,1:,1:,icd)
+           f1   => scratch(1:,1:,1:,if1SST)
+           kwCD => scratch(1:,1:,1:,icd)
 
            ! Compute the cross diffusion term.
 
@@ -173,7 +173,7 @@
 !      *                                                                *
 !      * exchangeF1SST1to1 communicates the 1st layer of halo values    *
 !      * for the blending function f1 of the SST model for 1 to 1       *
-!      * matching halo's. This variable is stored in dw(:,:,:,if1SST).  *
+!      * matching halo's. This variable is stored in scratch(:,:,:,if1SST).  *
 !      *                                                                *
 !      ******************************************************************
 !
@@ -230,7 +230,7 @@
              ! Store the value of f1 in the send buffer. Note that the
              ! level is 1 and not ll (= currentLevel).
 
-             sendBuffer(jj) = flowDoms(d1,1,sps)%dw(i1,j1,k1,if1SST)
+             sendBuffer(jj) = flowDoms(d1,1,sps)%scratch(i1,j1,k1,if1SST)
              jj = jj + 1
 
            enddo
@@ -291,8 +291,8 @@
            ! Copy the values. Note that level is 1 and not
            ! ll (= currentLevel).
 
-           flowDoms(d2,1,sps)%dw(i2,j2,k2,if1SST) = &
-                   flowDoms(d1,1,sps)%dw(i1,j1,k1,if1SST)
+           flowDoms(d2,1,sps)%scratch(i2,j2,k2,if1SST) = &
+                   flowDoms(d1,1,sps)%scratch(i1,j1,k1,if1SST)
 
          enddo localCopy
 
@@ -322,7 +322,7 @@
              ! And copy the data in the appropriate place in dw. Note
              ! that level == 1 and not ll (= currentLevel).
 
-             flowDoms(d2,1,sps)%dw(i2,j2,k2,if1SST) = recvBuffer(jj)
+             flowDoms(d2,1,sps)%scratch(i2,j2,k2,if1SST) = recvBuffer(jj)
              jj = jj + 1
 
            enddo
@@ -409,7 +409,7 @@
              ! Copy the data in the send buffer. Note that level == 1 and
              ! not currentLevel (== ll) for dw.
 
-             sendBuffer(jj) = flowDoms(d1,1,sps)%dw(i1,j1,k1,if1SST)
+             sendBuffer(jj) = flowDoms(d1,1,sps)%scratch(i1,j1,k1,if1SST)
              jj = jj + 1
 
            enddo
@@ -462,7 +462,7 @@
 
            ! And set f1 to zero. Again level == 1 for dw.
 
-           flowDoms(d2,1,sps)%dw(i2,j2,k2,if1SST) = zero
+           flowDoms(d2,1,sps)%scratch(i2,j2,k2,if1SST) = zero
 
          enddo initHalos
 
@@ -490,9 +490,9 @@
 
             ! Update f1 of the halo. Note that level == 1 for dw.
 
-            flowDoms(d2,1,sps)%dw(i2,j2,k2,if1SST) =     &
-                flowDoms(d2,1,sps)%dw(i2,j2,k2,if1SST) + &
-                     alp*flowDoms(d1,1,sps)%dw(i1,j1,k1,if1SST)
+            flowDoms(d2,1,sps)%scratch(i2,j2,k2,if1SST) =     &
+                flowDoms(d2,1,sps)%scratch(i2,j2,k2,if1SST) + &
+                     alp*flowDoms(d1,1,sps)%scratch(i1,j1,k1,if1SST)
 
          enddo localData
 
@@ -528,8 +528,8 @@
              ! Update f1 of the halo. Note that level == 1 and not
              ! currentLevel for dw.
 
-             flowDoms(d2,1,sps)%dw(i2,j2,k2,if1SST) =     &
-                 flowDoms(d2,1,sps)%dw(i2,j2,k2,if1SST) + &
+             flowDoms(d2,1,sps)%scratch(i2,j2,k2,if1SST) =     &
+                 flowDoms(d2,1,sps)%scratch(i2,j2,k2,if1SST) + &
                        alp*recvBuffer(jj)
 
            enddo
@@ -555,7 +555,7 @@
 !      *                                                                *
 !      * exchangeF1SSTOverset communicates the overset boundary values  *
 !      * for the blending function f1 of the SST model. This variable   *
-!      * is stored in dw(:,:,:,if1SST).                                 *
+!      * is stored in scratch(:,:,:,if1SST).                                 *
 !      *                                                                *
 !      ******************************************************************
 !
@@ -617,14 +617,14 @@
              ! level is 1 and not ll (= currentLevel).
 
              sendBuffer(jj) = &
-              weight(1)*flowDoms(d1,1,sps)%dw(i1  ,j1  ,k1  ,if1SST) + &
-              weight(2)*flowDoms(d1,1,sps)%dw(i1+1,j1  ,k1  ,if1SST) + &
-              weight(3)*flowDoms(d1,1,sps)%dw(i1  ,j1+1,k1  ,if1SST) + &
-              weight(4)*flowDoms(d1,1,sps)%dw(i1+1,j1+1,k1  ,if1SST) + &
-              weight(5)*flowDoms(d1,1,sps)%dw(i1  ,j1  ,k1+1,if1SST) + &
-              weight(6)*flowDoms(d1,1,sps)%dw(i1+1,j1  ,k1+1,if1SST) + &
-              weight(7)*flowDoms(d1,1,sps)%dw(i1  ,j1+1,k1+1,if1SST) + &
-              weight(8)*flowDoms(d1,1,sps)%dw(i1+1,j1+1,k1+1,if1SST)
+              weight(1)*flowDoms(d1,1,sps)%scratch(i1  ,j1  ,k1  ,if1SST) + &
+              weight(2)*flowDoms(d1,1,sps)%scratch(i1+1,j1  ,k1  ,if1SST) + &
+              weight(3)*flowDoms(d1,1,sps)%scratch(i1  ,j1+1,k1  ,if1SST) + &
+              weight(4)*flowDoms(d1,1,sps)%scratch(i1+1,j1+1,k1  ,if1SST) + &
+              weight(5)*flowDoms(d1,1,sps)%scratch(i1  ,j1  ,k1+1,if1SST) + &
+              weight(6)*flowDoms(d1,1,sps)%scratch(i1+1,j1  ,k1+1,if1SST) + &
+              weight(7)*flowDoms(d1,1,sps)%scratch(i1  ,j1+1,k1+1,if1SST) + &
+              weight(8)*flowDoms(d1,1,sps)%scratch(i1+1,j1+1,k1+1,if1SST)
              jj = jj + 1
 
            enddo
@@ -687,15 +687,15 @@
            ! Copy the values. Note that level is 1 and not
            ! ll (= currentLevel).
 
-           flowDoms(d2,1,sps)%dw(i2,j2,k2,if1SST) = &
-              weight(1)*flowDoms(d1,1,sps)%dw(i1  ,j1  ,k1  ,if1SST) + &
-              weight(2)*flowDoms(d1,1,sps)%dw(i1+1,j1  ,k1  ,if1SST) + &
-              weight(3)*flowDoms(d1,1,sps)%dw(i1  ,j1+1,k1  ,if1SST) + &
-              weight(4)*flowDoms(d1,1,sps)%dw(i1+1,j1+1,k1  ,if1SST) + &
-              weight(5)*flowDoms(d1,1,sps)%dw(i1  ,j1  ,k1+1,if1SST) + &
-              weight(6)*flowDoms(d1,1,sps)%dw(i1+1,j1  ,k1+1,if1SST) + &
-              weight(7)*flowDoms(d1,1,sps)%dw(i1  ,j1+1,k1+1,if1SST) + &
-              weight(8)*flowDoms(d1,1,sps)%dw(i1+1,j1+1,k1+1,if1SST)
+           flowDoms(d2,1,sps)%scratch(i2,j2,k2,if1SST) = &
+              weight(1)*flowDoms(d1,1,sps)%scratch(i1  ,j1  ,k1  ,if1SST) + &
+              weight(2)*flowDoms(d1,1,sps)%scratch(i1+1,j1  ,k1  ,if1SST) + &
+              weight(3)*flowDoms(d1,1,sps)%scratch(i1  ,j1+1,k1  ,if1SST) + &
+              weight(4)*flowDoms(d1,1,sps)%scratch(i1+1,j1+1,k1  ,if1SST) + &
+              weight(5)*flowDoms(d1,1,sps)%scratch(i1  ,j1  ,k1+1,if1SST) + &
+              weight(6)*flowDoms(d1,1,sps)%scratch(i1+1,j1  ,k1+1,if1SST) + &
+              weight(7)*flowDoms(d1,1,sps)%scratch(i1  ,j1+1,k1+1,if1SST) + &
+              weight(8)*flowDoms(d1,1,sps)%scratch(i1+1,j1+1,k1+1,if1SST)
 
          enddo localCopy
 
@@ -725,7 +725,7 @@
              ! And copy the data in the appropriate place in dw. Note
              ! that level == 1 and not ll (= currentLevel).
 
-             flowDoms(d2,1,sps)%dw(i2,j2,k2,if1SST) = recvBuffer(jj)
+             flowDoms(d2,1,sps)%scratch(i2,j2,k2,if1SST) = recvBuffer(jj)
              jj = jj + 1
 
            enddo

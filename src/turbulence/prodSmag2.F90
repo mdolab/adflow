@@ -117,7 +117,7 @@ subroutine prodSmag2
 
               ! Store the square of strain as the production term.
 
-              dw(i,j,k, iprod) = two*(two*(sxy**2 + sxz**2 + syz**2) &
+              scratch(i,j,k, iprod) = two*(two*(sxy**2 + sxz**2 + syz**2) &
                    +           sxx**2 + syy**2 + szz**2) - div2
 #ifdef TAPENADE_FAST
            end do

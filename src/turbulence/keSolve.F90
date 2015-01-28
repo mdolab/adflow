@@ -80,9 +80,9 @@
 
        ! Set the pointer dvt to the correct entries in dw.
 
-       dvt => dw(1:,1:,1:,idvt:)
-       sct => dw(1:,1:,1:,isct)
-       scl2=> dw(1:,1:,1:,iscl2)
+       dvt => scratch(1:,1:,1:,idvt:)
+       sct => scratch(1:,1:,1:,isct)
+       scl2=> scratch(1:,1:,1:,iscl2)
 !
 !      ******************************************************************
 !      *                                                                *

@@ -2,9 +2,9 @@
 !  tapenade 3.10 (r5363) -  9 sep 2014 09:53
 !
 !  differentiation of prodwmag2 in forward (tangent) mode (with options i4 dr8 r8):
-!   variations   of useful results: *dw
+!   variations   of useful results: *scratch
 !   with respect to varying inputs: timeref *w *vol *si *sj *sk
-!   plus diff mem management of: dw:in w:in vol:in si:in sj:in
+!   plus diff mem management of: w:in scratch:in vol:in si:in sj:in
 !                sk:in
 !
 !      ******************************************************************
@@ -57,7 +57,7 @@ subroutine prodwmag2_d()
   omegay = timeref*sections(sectionid)%rotrate(2)
   omegazd = sections(sectionid)%rotrate(3)*timerefd
   omegaz = timeref*sections(sectionid)%rotrate(3)
-  dwd = 0.0_8
+  scratchd = 0.0_8
 ! loop over the cell centers of the given block. it may be more
 ! efficient to loop over the faces and to scatter the gradient,
 ! but in that case the gradients for u, v and w must be stored.
@@ -154,9 +154,9 @@ subroutine prodwmag2_d()
         vortzd = factd*(vvx-uuy) + fact*(vvxd-uuyd) - two*omegazd
         vortz = fact*(vvx-uuy) - two*omegaz
 ! compute the magnitude squared of the vorticity.
-        dwd(i, j, k, ivort) = 2*vortx*vortxd + 2*vorty*vortyd + 2*vortz*&
-&         vortzd
-        dw(i, j, k, ivort) = vortx**2 + vorty**2 + vortz**2
+        scratchd(i, j, k, ivort) = 2*vortx*vortxd + 2*vorty*vortyd + 2*&
+&         vortz*vortzd
+        scratch(i, j, k, ivort) = vortx**2 + vorty**2 + vortz**2
       end do
     end do
   end do

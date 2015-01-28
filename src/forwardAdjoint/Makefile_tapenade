@@ -229,13 +229,13 @@ ad_reverse_fast:
 	BCRoutines%bcEulerWall(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2) > \
 			      (ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2) \
 	computePressureSimple(w, p)>(w,p) \
-	prodsmag2(w)>(dw, w) \
-	prodwmag2(w)>(dw, w) \
-	prodKatoLaunder(w)>(dw, w) \
-	saModule%saSource(dw,w,rlv)>(dw,w,rlv) \
-	saModule%saViscous(w,rlv)>(dw,w,rlv) \
-	saModule%saResScale(dw) \
-	turbAdvection(w)>(w,dw)" \
+	prodsmag2(w,scratch)>(w, scratch) \
+	prodwmag2(w,scratch)>(w, scratch) \
+	prodKatoLaunder(w,scratch)>(w, scratch) \
+	saModule%saSource(scratch,w,rlv)>(scratch,w,rlv) \
+	saModule%saViscous(scratch, w,rlv)>(scratch,w,rlv) \
+	saModule%saResScale(scratch)>(dw) \
+	turbAdvection(w,scratch)>(w,scratch)" \
 	-adjvarname %d \
 	-adjfuncname %_fast_b \
 	-reverse $(TAPENADE_PRECISION) \
@@ -255,7 +255,6 @@ preprocess_cost:
 		echo Preprocessing $$file; \
 		cpp -DUSE_TAPENADE -traditional -P  $$file $$file.f90; \
 	done
-
 
 preprocess_forward:
 	@echo "Preprocessing all input files for forward mode AD..."
@@ -281,12 +280,6 @@ preprocess_reverse_fast:
 cleanpreprocess_res:
 	@echo "Cleaning up residual preprocessed files..."
 	@for file in $(ALL_RES_FILES); do \
-		rm $$file.f90; \
-	done
-
-cleanpreprocess_cost:
-	@echo "Cleaning up cost preprocessed files..."
-	@for file in $(ALL_COST_FILES); do \
 		rm $$file.f90; \
 	done
 

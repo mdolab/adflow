@@ -361,7 +361,7 @@
 
              ! And compute the eddy viscosity.
 
-             vortMag    = sqrt(dw(i,j,k,iprod))
+             vortMag    = sqrt(scratch(i,j,k,iprod))
              rev(i,j,k) = w(i,j,k,irho)*rSSTA1*w(i,j,k,itu1) &
                         / max(rSSTA1*w(i,j,k,itu2), f2*vortMag)
 

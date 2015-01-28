@@ -2,9 +2,9 @@
 !  tapenade 3.10 (r5363) -  9 sep 2014 09:53
 !
 !  differentiation of prodkatolaunder in forward (tangent) mode (with options i4 dr8 r8):
-!   variations   of useful results: *dw
+!   variations   of useful results: *scratch
 !   with respect to varying inputs: timeref *w *vol *si *sj *sk
-!   plus diff mem management of: dw:in w:in vol:in si:in sj:in
+!   plus diff mem management of: w:in scratch:in vol:in si:in sj:in
 !                sk:in
 !
 !      ******************************************************************
@@ -68,7 +68,7 @@ subroutine prodkatolaunder_d()
   omegay = timeref*sections(sectionid)%rotrate(2)
   omegazd = sections(sectionid)%rotrate(3)*timerefd
   omegaz = timeref*sections(sectionid)%rotrate(3)
-  dwd = 0.0_8
+  scratchd = 0.0_8
 ! loop over the cell centers of the given block. it may be more
 ! efficient to loop over the faces and to scatter the gradient,
 ! but in that case the gradients for u, v and w must be stored.
@@ -228,8 +228,8 @@ subroutine prodkatolaunder_d()
           result1d = arg1d/(2.0*sqrt(arg1))
         end if
         result1 = sqrt(arg1)
-        dwd(i, j, k, iprod) = two*result1d
-        dw(i, j, k, iprod) = two*result1
+        scratchd(i, j, k, iprod) = two*result1d
+        scratch(i, j, k, iprod) = two*result1
       end do
     end do
   end do

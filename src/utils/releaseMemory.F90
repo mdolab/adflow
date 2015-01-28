@@ -73,6 +73,7 @@ subroutine releaseMemoryPart1
         deallocate(flowDoms(nn,1,sps)%dw,   flowDoms(nn,1,sps)%fw,   &
              flowDoms(nn,1,sps)%dtl,  flowDoms(nn,1,sps)%radI, &
              flowDoms(nn,1,sps)%radJ, flowDoms(nn,1,sps)%radK, &
+             flowDoms(nn,1,sps)%scratch, &
              stat=ierr)
         if(ierr /= 0)                          &
              call terminate("releaseMemoryPart1", &
@@ -88,6 +89,7 @@ subroutine releaseMemoryPart1
         nullify(flowDoms(nn,1,sps)%radI)
         nullify(flowDoms(nn,1,sps)%radJ)
         nullify(flowDoms(nn,1,sps)%radK)
+        nullify(flowDoms(nn,1,sps)%scratch)
 
         ! Check if the zeroth stage runge kutta memory has been
         ! allocated. If so deallocate it and nullify the pointers.

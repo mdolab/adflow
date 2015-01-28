@@ -2,9 +2,9 @@
 !  tapenade 3.10 (r5363) -  9 sep 2014 09:53
 !
 !  differentiation of prodsmag2 in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *dw *w *vol *si *sj *sk
-!   with respect to varying inputs: *dw *w *vol *si *sj *sk
-!   plus diff mem management of: dw:in w:in vol:in si:in sj:in
+!   gradient     of useful results: *w *scratch *vol *si *sj *sk
+!   with respect to varying inputs: *w *vol *si *sj *sk
+!   plus diff mem management of: w:in scratch:in vol:in si:in sj:in
 !                sk:in
 !
 !      ******************************************************************
@@ -108,9 +108,9 @@ subroutine prodsmag2_b()
     syz = fact*(vvz+wwy)
 ! compute 2/3 * divergence of velocity squared
 ! store the square of strain as the production term.
-    div2d = -dwd(i, j, k, iprod)
+    div2d = -scratchd(i, j, k, iprod)
     tempd1 = f23*2*(sxx+syy+szz)*div2d
-    tempd = two*dwd(i, j, k, iprod)
+    tempd = two*scratchd(i, j, k, iprod)
     tempd0 = two*tempd
     sxyd = 2*sxy*tempd0
     sxzd = 2*sxz*tempd0
@@ -118,7 +118,7 @@ subroutine prodsmag2_b()
     sxxd = tempd1 + 2*sxx*tempd
     syyd = tempd1 + 2*syy*tempd
     szzd = tempd1 + 2*szz*tempd
-    dwd(i, j, k, iprod) = 0.0_8
+    scratchd(i, j, k, iprod) = 0.0_8
     factd = (uuz+wwx)*sxzd + two*wwz*szzd + two*uux*sxxd + two*vvy*syyd &
 &     + (uuy+vvx)*sxyd + (vvz+wwy)*syzd
     vvzd = fact*syzd

@@ -79,10 +79,10 @@
        ! Set a couple of pointers to the correct entries in dw to
        ! make the code more readable.
 
-       dvt  => dw(1:,1:,1:,idvt:)
-       prod => dw(1:,1:,1:,iprod)
+       dvt  => scratch(1:,1:,1:,idvt:)
+       prod => scratch(1:,1:,1:,iprod)
        vort => prod
-       ktCD => dw(1:,1:,1:,icd)
+       ktCD => scratch(1:,1:,1:,icd)
 !
 !      ******************************************************************
 !      *                                                                *
