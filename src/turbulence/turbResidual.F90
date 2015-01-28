@@ -21,6 +21,7 @@
        use inputPhysics
        use iteration
        use turbMod
+       use saModule
        implicit none
 !
 !      ******************************************************************

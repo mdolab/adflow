@@ -226,7 +226,7 @@
 !
 !      Local variables.
 !
-       integer(kind=intType) :: i, j, k
+       integer(kind=intType) :: i, j, k, ii
        real(kind=realType)   :: chi, chi3, fv1, rnuSA, cv13
 !
 !      ******************************************************************
@@ -241,20 +241,30 @@
 
        ! Loop over the cells of this block and compute the eddy viscosity.
        ! Do not include halo's.
-
-       do k=1,ke
-         do j=1,je
-           do i=1,ie
-             rnuSA      = w(i,j,k,itu1)*w(i,j,k,irho)
-             chi        = rnuSA/rlv(i,j,k)
-             chi3       = chi**3
-             fv1        = chi3/(chi3+cv13)
-             rev(i,j,k) = fv1*rnuSA
-           enddo
-         enddo
+#ifdef TAPENADE_FAST
+       !$AD II-LOOP
+       do ii=0,ie*je*ke-1
+          i = mod(ii, ie) + 1
+          j = mod(ii/ie, je) + 1
+          k = ii/(ie*je) + 1
+#else
+          do k=1,ke
+             do j=1,je
+                do i=1,ie
+#endif   
+                   rnuSA      = w(i,j,k,itu1)*w(i,j,k,irho)
+                   chi        = rnuSA/rlv(i,j,k)
+                   chi3       = chi**3
+                   fv1        = chi3/(chi3+cv13)
+                   rev(i,j,k) = fv1*rnuSA
+#ifdef TAPENADE_FAST
+                end do
+#else
+             enddo
+          enddo
        enddo
-
-       end subroutine saEddyViscosity
+#endif 
+     end subroutine saEddyViscosity
 
 !      ==================================================================
        subroutine kwEddyViscosity
@@ -344,7 +354,7 @@
              t1 = two*sqrt(w(i,j,k,itu1)) &
                 / (0.09_realType*w(i,j,k,itu2)*d2Wall(i,j,k))
              t2 = 500.0_realType*rlv(i,j,k) &
-                / (w(i,j,k,irho)*w(i,j,k,itu2)*d2Wall(i,j,k)**2)
+                  / (w(i,j,k,irho)*w(i,j,k,itu2)*d2Wall(i,j,k)**2)
 
              arg2 = max(t1,t2)
              f2   = tanh(arg2**2)

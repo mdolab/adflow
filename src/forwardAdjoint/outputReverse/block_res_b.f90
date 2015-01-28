@@ -80,6 +80,7 @@ subroutine block_res_b(nn, sps, usespatial, alpha, alphad, beta, betad, &
   use costfunctions
   use walldistancedata
   use inputdiscretization
+  use samodule_b
   implicit none
 ! input arguments:
   integer(kind=inttype), intent(in) :: nn, sps
@@ -233,6 +234,17 @@ subroutine block_res_b(nn, sps, usespatial, alpha, alphad, beta, betad, &
   end do
   call applyallbc_block(.true.)
   if (equations .eq. ransequations) then
+    call bcturbtreatment()
+    do ii1=1,ntimeintervalsspectral
+      do ii2=1,1
+        do ii3=nn,nn
+          call pushreal8array(flowdoms(ii3, ii2, ii1)%w, size(flowdoms(&
+&                       ii3, ii2, ii1)%w, 1)*size(flowdoms(ii3, ii2, ii1&
+&                       )%w, 2)*size(flowdoms(ii3, ii2, ii1)%w, 3)*size(&
+&                       flowdoms(ii3, ii2, ii1)%w, 4))
+        end do
+      end do
+    end do
     call applyallturbbcthisblock(.true.)
     call pushcontrol1b(0)
   else
@@ -277,16 +289,6 @@ spectralloop0:do sps2=1,ntimeintervalsspectral
 &                         ii3, ii2, ii1)%dw, 2)*size(flowdoms(ii3, ii2, &
 &                         ii1)%dw, 3)*size(flowdoms(ii3, ii2, ii1)%dw, 4&
 &                         ))
-          end do
-        end do
-      end do
-      do ii1=1,ntimeintervalsspectral
-        do ii2=1,1
-          do ii3=nn,nn
-            call pushreal8array(flowdoms(ii3, ii2, ii1)%w, size(flowdoms&
-&                         (ii3, ii2, ii1)%w, 1)*size(flowdoms(ii3, ii2, &
-&                         ii1)%w, 2)*size(flowdoms(ii3, ii2, ii1)%w, 3)*&
-&                         size(flowdoms(ii3, ii2, ii1)%w, 4))
           end do
         end do
       end do
@@ -743,16 +745,6 @@ varloopfine:do l=1,nwf
     do ii1=ntimeintervalsspectral,1,-1
       do ii2=1,1,-1
         do ii3=nn,nn,-1
-          call popreal8array(flowdoms(ii3, ii2, ii1)%w, size(flowdoms(&
-&                      ii3, ii2, ii1)%w, 1)*size(flowdoms(ii3, ii2, ii1)&
-&                      %w, 2)*size(flowdoms(ii3, ii2, ii1)%w, 3)*size(&
-&                      flowdoms(ii3, ii2, ii1)%w, 4))
-        end do
-      end do
-    end do
-    do ii1=ntimeintervalsspectral,1,-1
-      do ii2=1,1,-1
-        do ii3=nn,nn,-1
           call popreal8array(flowdoms(ii3, ii2, ii1)%dw, size(flowdoms(&
 &                      ii3, ii2, ii1)%dw, 1)*size(flowdoms(ii3, ii2, ii1&
 &                      )%dw, 2)*size(flowdoms(ii3, ii2, ii1)%dw, 3)*size&
@@ -786,7 +778,20 @@ varloopfine:do l=1,nwf
   call popreal8array(radk, size(radk, 1)*size(radk, 2)*size(radk, 3))
   call timestep_block_b(.false.)
   call popcontrol1b(branch)
-  if (branch .eq. 0) call applyallturbbcthisblock_b(.true.)
+  if (branch .eq. 0) then
+    do ii1=ntimeintervalsspectral,1,-1
+      do ii2=1,1,-1
+        do ii3=nn,nn,-1
+          call popreal8array(flowdoms(ii3, ii2, ii1)%w, size(flowdoms(&
+&                      ii3, ii2, ii1)%w, 1)*size(flowdoms(ii3, ii2, ii1)&
+&                      %w, 2)*size(flowdoms(ii3, ii2, ii1)%w, 3)*size(&
+&                      flowdoms(ii3, ii2, ii1)%w, 4))
+        end do
+      end do
+    end do
+    call applyallturbbcthisblock_b(.true.)
+    call bcturbtreatment_b()
+  end if
   do ii1=ntimeintervalsspectral,1,-1
     do ii2=1,1,-1
       do ii3=nn,nn,-1

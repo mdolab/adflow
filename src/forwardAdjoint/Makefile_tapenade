@@ -92,11 +92,10 @@ ALL_RES_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.F90\
 		$(SRC)/turbulence/turbBCNSWall.f90\
 		$(SRC)/turbulence/turbMod.F90\
 		$(SRC)/turbulence/saNuFromEddyRatio.f90\
-		$(SRC)/turbulence/sa.F90\
-		$(SRC)/turbulence/saSolve.F90\
+		$(SRC)/turbulence/saModule.F90\
 		$(SRC)/turbulence/prodKatoLaunder.f90\
-		$(SRC)/turbulence/prodSmag2.f90\
-		$(SRC)/turbulence/prodWmag2.f90\
+		$(SRC)/turbulence/prodSmag2.F90\
+		$(SRC)/turbulence/prodWmag2.F90\
 		$(SRC)/turbulence/turbAdvection.f90\
 		$(SRC)/turbulence/unsteadyTurbTerm.f90\
 		$(SRC)/turbulence/bcTurbSymm.f90\
@@ -179,7 +178,7 @@ ad_reverse:
 	-head "block_res(flowdoms%w flowdoms%x xsurf alpha beta mach machgrid machcoef pointref lengthRef Pref tempFreeStream Reynolds ww0 ww1 ww2 ww3 pp0 pp1 pp2 pp3 rlv0 rlv1 rlv2 rlv3 rev0 rev1 rev2 rev3 xx ssi) > \
 (flowdoms%dw  BCData%Fp BCData%Fv BCData%M  BCData%sepSensor BCData%Cavitation BCData%oArea flowdoms%w flowdoms%x force moment sepSensor Cavitation funcValues ww0 ww1 ww2 ww3 pp0 pp1 pp2 pp3 rlv0 rlv1 rlv2 rlv3 rev0 rev1 rev2 rev3 xx ssi)" \
 	-adjvarname %d \
-	-reverse 	 -msglevel 30 $(TAPENADE_PRECISION) \
+	-reverse -msglevel 30 $(TAPENADE_PRECISION) \
 	-noisize \
 	-O temp_reverse $(I_RES_FILES)
 
@@ -196,6 +195,7 @@ ad_reverse:
 	sed -i 's/do ii1=1,size(bcdata(ii1)%oarea, 1)/do ii1=1,size(bcdata)/' outputReverse/block_res_b.f90
 	sed -i 's/do ii1=size(bcdata(ii1)%oarea, 1),1,-1/do ii1=size(bcdata),1,-1/' outputReverse/block_res_b.f90
 	sed -i 's/do ii1=1,size(bcdatad(ii1)%norm, 1)/do ii1=1,size(bcdatad)/' outputReverse/bcroutines_b.f90
+	sed -i 's/end subroutine sa_block_b/deallocate(qq)\nend subroutine sa_block_b/' outputReverse/samodule_b.f90
 
 ad_reverse_fast:
 # First delete the holding directory if it exists
@@ -229,7 +229,8 @@ ad_reverse_fast:
 	BCRoutines%bcEulerWall(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2) > \
 			      (ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2) \
 	computePressureSimple(w, p)>(w,p)\
-	" \
+	prodsmag2(dw, w)>(dw, w)\
+	"\
 	-adjvarname %d \
 	-adjfuncname %_fast_b \
 	-reverse $(TAPENADE_PRECISION) \

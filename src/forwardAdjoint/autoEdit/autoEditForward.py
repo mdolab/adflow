@@ -18,9 +18,12 @@ DIR_MOD = sys.argv[2]
 # Specifiy the list of LINE ID's to find, what to replace and with what
 patt_modules = re.compile(r'(\s*use\s*\w*)(_d)\s*')
 patt_module = re.compile(r'\s*module\s\w*')
+patt_subroutine = re.compile(r'\s*subroutine\s\w*')
 patt_comment = re.compile(r'\s*!.*')
 print "Directory of input source files  :", DIR_ORI
 print "Directory of output source files :", DIR_MOD
+
+useful_modules = ['samodule_d','bcroutines_d','turbbcroutines_d']
 
 for f in os.listdir(DIR_ORI):
     if f.endswith(EXT):
@@ -33,17 +36,20 @@ for f in os.listdir(DIR_ORI):
         all_src = file_object_ori.read()
         file_object_ori.seek(0)
 
-        # First we want to dertmine if it is a module since we want to
-        # ignore all of those:
+        # First we want to dertmine if it is a 'useful' module or a
+        # 'useless' module. A useful module is one that has
+        # subroutines in it. 
         isModule = False
+        hasSubroutine = False
         for line in file_object_ori:
             line = line.lower()
             if patt_module.match(line):
-                if not 'bcroutines_d' in line:
-                    isModule = True
+                isModule = True
+            if patt_subroutine.match(line):
+                hasSubroutine = True
 
         # If we have a module, close the input and cycle to next file. 
-        if isModule:
+        if isModule and not hasSubroutine:
             file_object_ori.close()
             continue
 
@@ -60,10 +66,15 @@ for f in os.listdir(DIR_ORI):
             if '_cd' in line:
                 line = line.replace('_cd', '')
                 
-            # Replace _d modules with normal
+            # Replace _d modules with normal -- except for the useful
+            # ones. 
             m = patt_modules.match(line)
             if m:
-                if not 'bcroutines_d' in line:
+                found = False
+                for m in useful_modules:
+                    if m in line:
+                        found = True
+                if not found:
                     line = line.replace('_d', '')
             
             # write the modified line to new file
