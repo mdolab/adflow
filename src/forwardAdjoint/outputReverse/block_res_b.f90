@@ -23,10 +23,11 @@
 !                *(flowdoms.x):in-out *(flowdoms.vol):(loc) *(flowdoms.w):in-out
 !                *(flowdoms.dw):in-out *rev:(loc) *aa:(loc) *bvtj1:(loc)
 !                *bvtj2:(loc) *wx:(loc) *wy:(loc) *wz:(loc) *p:(loc)
-!                *rlv:(loc) *qx:(loc) *qy:(loc) *qz:(loc) *bvtk1:(loc)
-!                *bvtk2:(loc) *ux:(loc) *uy:(loc) *uz:(loc) *d2wall:(loc)
-!                *si:(loc) *sj:(loc) *sk:(loc) *bvti1:(loc) *bvti2:(loc)
-!                *vx:(loc) *vy:(loc) *vz:(loc) *fw:(loc) *(*viscsubface.tau):(loc)
+!                *rlv:(loc) *qx:(loc) *qy:(loc) *qz:(loc) *scratch:(loc)
+!                *bvtk1:(loc) *bvtk2:(loc) *ux:(loc) *uy:(loc)
+!                *uz:(loc) *d2wall:(loc) *si:(loc) *sj:(loc) *sk:(loc)
+!                *bvti1:(loc) *bvti2:(loc) *vx:(loc) *vy:(loc)
+!                *vz:(loc) *fw:(loc) *(*viscsubface.tau):(loc)
 !                *(*bcdata.norm):(loc) *(*bcdata.fp):in-out *(*bcdata.fv):in-out
 !                *(*bcdata.m):in-out *(*bcdata.oarea):in-out *(*bcdata.sepsensor):in-out
 !                *(*bcdata.cavitation):in-out *radi:(loc) *radj:(loc)
@@ -43,9 +44,9 @@
 !   plus diff mem management of: flowdoms.x:in flowdoms.vol:in
 !                flowdoms.w:in flowdoms.dw:in rev:in aa:in bvtj1:in
 !                bvtj2:in wx:in wy:in wz:in p:in rlv:in qx:in qy:in
-!                qz:in bvtk1:in bvtk2:in ux:in uy:in uz:in d2wall:in
-!                si:in sj:in sk:in bvti1:in bvti2:in vx:in vy:in
-!                vz:in fw:in viscsubface:in *viscsubface.tau:in
+!                qz:in scratch:in bvtk1:in bvtk2:in ux:in uy:in
+!                uz:in d2wall:in si:in sj:in sk:in bvti1:in bvti2:in
+!                vx:in vy:in vz:in fw:in viscsubface:in *viscsubface.tau:in
 !                bcdata:in *bcdata.norm:in *bcdata.fp:in *bcdata.fv:in
 !                *bcdata.m:in *bcdata.oarea:in *bcdata.sepsensor:in
 !                *bcdata.cavitation:in radi:in radj:in radk:in
@@ -277,6 +278,8 @@ spectralloop0:do sps2=1,ntimeintervalsspectral
 &                   bmti2, 3)*size(bmti2, 4))
       call pushreal8array(bmti1, size(bmti1, 1)*size(bmti1, 2)*size(&
 &                   bmti1, 3)*size(bmti1, 4))
+      call pushreal8array(scratch, size(scratch, 1)*size(scratch, 2)*&
+&                   size(scratch, 3)*size(scratch, 4))
       call pushreal8array(bmtk2, size(bmtk2, 1)*size(bmtk2, 2)*size(&
 &                   bmtk2, 3)*size(bmtk2, 4))
       call pushreal8array(bmtk1, size(bmtk1, 1)*size(bmtk1, 2)*size(&
@@ -756,6 +759,8 @@ varloopfine:do l=1,nwf
 &                3)*size(bmtk1, 4))
     call popreal8array(bmtk2, size(bmtk2, 1)*size(bmtk2, 2)*size(bmtk2, &
 &                3)*size(bmtk2, 4))
+    call popreal8array(scratch, size(scratch, 1)*size(scratch, 2)*size(&
+&                scratch, 3)*size(scratch, 4))
     call popreal8array(bmti1, size(bmti1, 1)*size(bmti1, 2)*size(bmti1, &
 &                3)*size(bmti1, 4))
     call popreal8array(bmti2, size(bmti2, 1)*size(bmti2, 2)*size(bmti2, &

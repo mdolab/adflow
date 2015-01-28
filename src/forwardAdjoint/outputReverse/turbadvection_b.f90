@@ -2,9 +2,9 @@
 !  tapenade 3.10 (r5363) -  9 sep 2014 09:53
 !
 !  differentiation of turbadvection in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *dw *w *vol *si *sj *sk
-!   with respect to varying inputs: *dw *w *vol *si *sj *sk
-!   plus diff mem management of: dw:in w:in vol:in si:in sj:in
+!   gradient     of useful results: *w *scratch *vol *si *sj *sk
+!   with respect to varying inputs: *w *scratch *vol *si *sj *sk
+!   plus diff mem management of: w:in scratch:in vol:in si:in sj:in
 !                sk:in
 !
 !      ******************************************************************
@@ -185,8 +185,8 @@ subroutine turbadvection_b(madv, nadv, offset, qq)
           dwti = w(i, j, k, jj) - w(i-1, j, k, jj)
           call pushcontrol2b(3)
         end if
-        uud = uud - dwti*dwd(i, j, k, idvt+ii-1)
-        dwtid = -(uu*dwd(i, j, k, idvt+ii-1))
+        uud = uud - dwti*scratchd(i, j, k, idvt+ii-1)
+        dwtid = -(uu*scratchd(i, j, k, idvt+ii-1))
         call popcontrol2b(branch)
         if (branch .lt. 2) then
           if (branch .eq. 0) then
@@ -286,8 +286,8 @@ subroutine turbadvection_b(madv, nadv, offset, qq)
           dwti = w(i+1, j, k, jj) - w(i, j, k, jj)
           call pushcontrol2b(3)
         end if
-        uud = uud - dwti*dwd(i, j, k, idvt+ii-1)
-        dwtid = -(uu*dwd(i, j, k, idvt+ii-1))
+        uud = uud - dwti*scratchd(i, j, k, idvt+ii-1)
+        dwtid = -(uu*scratchd(i, j, k, idvt+ii-1))
         call popcontrol2b(branch)
         if (branch .lt. 2) then
           if (branch .eq. 0) then
@@ -439,8 +439,8 @@ subroutine turbadvection_b(madv, nadv, offset, qq)
           dwtj = w(i, j, k, jj) - w(i, j-1, k, jj)
           call pushcontrol2b(3)
         end if
-        uud = uud - dwtj*dwd(i, j, k, idvt+ii-1)
-        dwtjd = -(uu*dwd(i, j, k, idvt+ii-1))
+        uud = uud - dwtj*scratchd(i, j, k, idvt+ii-1)
+        dwtjd = -(uu*scratchd(i, j, k, idvt+ii-1))
         call popcontrol2b(branch)
         if (branch .lt. 2) then
           if (branch .eq. 0) then
@@ -540,8 +540,8 @@ subroutine turbadvection_b(madv, nadv, offset, qq)
           dwtj = w(i, j+1, k, jj) - w(i, j, k, jj)
           call pushcontrol2b(3)
         end if
-        uud = uud - dwtj*dwd(i, j, k, idvt+ii-1)
-        dwtjd = -(uu*dwd(i, j, k, idvt+ii-1))
+        uud = uud - dwtj*scratchd(i, j, k, idvt+ii-1)
+        dwtjd = -(uu*scratchd(i, j, k, idvt+ii-1))
         call popcontrol2b(branch)
         if (branch .lt. 2) then
           if (branch .eq. 0) then
@@ -702,8 +702,8 @@ subroutine turbadvection_b(madv, nadv, offset, qq)
           dwtk = w(i, j, k, jj) - w(i, j, k-1, jj)
           call pushcontrol2b(3)
         end if
-        uud = uud - dwtk*dwd(i, j, k, idvt+ii-1)
-        dwtkd = -(uu*dwd(i, j, k, idvt+ii-1))
+        uud = uud - dwtk*scratchd(i, j, k, idvt+ii-1)
+        dwtkd = -(uu*scratchd(i, j, k, idvt+ii-1))
         call popcontrol2b(branch)
         if (branch .lt. 2) then
           if (branch .eq. 0) then
@@ -803,8 +803,8 @@ subroutine turbadvection_b(madv, nadv, offset, qq)
           dwtk = w(i, j, k+1, jj) - w(i, j, k, jj)
           call pushcontrol2b(3)
         end if
-        uud = uud - dwtk*dwd(i, j, k, idvt+ii-1)
-        dwtkd = -(uu*dwd(i, j, k, idvt+ii-1))
+        uud = uud - dwtk*scratchd(i, j, k, idvt+ii-1)
+        dwtkd = -(uu*scratchd(i, j, k, idvt+ii-1))
         call popcontrol2b(branch)
         if (branch .lt. 2) then
           if (branch .eq. 0) then

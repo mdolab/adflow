@@ -78,10 +78,10 @@
        ! readable. Also set the pointers for the production term,
        ! vorticity and the cross diffusion term.
 
-       dvt  => dw(1:,1:,1:,idvt:)
-       prod => dw(1:,1:,1:,iprod)
+       dvt  => scratch(1:,1:,1:,idvt:)
+       prod => scratch(1:,1:,1:,iprod)
        vort => prod
-       kwCD => dw(1:,1:,1:,icd)
+       kwCD => scratch(1:,1:,1:,icd)
 !
 !      ******************************************************************
 !      *                                                                *

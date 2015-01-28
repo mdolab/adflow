@@ -50,8 +50,8 @@ domains:do nn=1,ndom
 !   with respect to varying inputs: *dw *w *rlv *vol *d2wall *si
 !                *sj *sk (global)timeref
 !   plus diff mem management of: bvtj1:in bvtj2:in dw:in w:in rlv:in
-!                bvtk1:in bvtk2:in vol:in d2wall:in si:in sj:in
-!                sk:in bvti1:in bvti2:in bcdata:in
+!                scratch:in bvtk1:in bvtk2:in vol:in d2wall:in
+!                si:in sj:in sk:in bvti1:in bvti2:in bcdata:in
   subroutine sa_block_b(resonly)
 !
 !      ******************************************************************
@@ -121,8 +121,8 @@ domains:do nn=1,ndom
 ! alloc central jacobian memory
     allocate(qq(2:il, 2:jl, 2:kl))
 ! source terms
-    call pushreal8array(dw, size(dw, 1)*size(dw, 2)*size(dw, 3)*size(dw&
-&                 , 4))
+    call pushreal8array(scratch, size(scratch, 1)*size(scratch, 2)*size(&
+&                 scratch, 3)*size(scratch, 4))
     call sasource()
 ! advection term
     nn = itu1 - 1
@@ -138,8 +138,8 @@ domains:do nn=1,ndom
     call saviscous_b()
     call unsteadyturbterm_b(1_inttype, 1_inttype, nn, qq)
     call turbadvection_b(1_inttype, 1_inttype, nn, qq)
-    call popreal8array(dw, size(dw, 1)*size(dw, 2)*size(dw, 3)*size(dw, &
-&                4))
+    call popreal8array(scratch, size(scratch, 1)*size(scratch, 2)*size(&
+&                scratch, 3)*size(scratch, 4))
     call sasource_b()
     call popcontrol2b(branch)
     if (branch .lt. 2) then
@@ -229,9 +229,9 @@ end subroutine sa_block_b
     deallocate(qq)
   end subroutine sa_block
 !  differentiation of sasource in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *dw *w *rlv
-!   with respect to varying inputs: *dw *w *rlv *d2wall
-!   plus diff mem management of: dw:in w:in rlv:in d2wall:in
+!   gradient     of useful results: *w *rlv *scratch
+!   with respect to varying inputs: *w *rlv *scratch *d2wall
+!   plus diff mem management of: w:in rlv:in scratch:in d2wall:in
   subroutine sasource_b()
 !
 ! ******************************************************************
@@ -288,7 +288,7 @@ end subroutine sa_block_b
       k = ii/(nx*ny) + 2
 ! first take the square root of the production term to
 ! obtain the correct production term for spalart-allmaras.
-      ss = sqrt(dw(i, j, k, iprod))
+      ss = sqrt(scratch(i, j, k, iprod))
 ! compute the laminar kinematic viscosity, the inverse of
 ! wall distance squared, the ratio chi (ratio of nutilde
 ! and nu) and the functions fv1 and fv2. the latter corrects
@@ -339,13 +339,13 @@ end subroutine sa_block_b
 ! compute some derivatives w.r.t. nutilde. these will occur
 ! in the left hand side, i.e. the matrix for the implicit
 ! treatment.
-      tempd4 = w(i, j, k, itu1)*dwd(i, j, k, idvt)
+      tempd4 = w(i, j, k, itu1)*scratchd(i, j, k, idvt)
       temp2 = w(i, j, k, itu1)
       term1d = tempd4
       term2d = temp2*tempd4
-      wd(i, j, k, itu1) = wd(i, j, k, itu1) + (term1+term2*temp2)*dwd(i&
-&       , j, k, idvt) + term2*tempd4
-      dwd(i, j, k, idvt) = 0.0_8
+      wd(i, j, k, itu1) = wd(i, j, k, itu1) + (term1+term2*temp2)*&
+&       scratchd(i, j, k, idvt) + term2*tempd4
+      scratchd(i, j, k, idvt) = 0.0_8
       tempd5 = dist2inv*kar2inv*rsacb1*term2d
       dist2invd = (kar2inv*rsacb1*((one-ft2)*fv2+ft2)-rsacw1*fwsa)*&
 &       term2d
@@ -390,8 +390,9 @@ end subroutine sa_block_b
       temp = w(i, j, k, irho)
       rlvd(i, j, k) = rlvd(i, j, k) + nud/temp
       wd(i, j, k, irho) = wd(i, j, k, irho) - rlv(i, j, k)*nud/temp**2
-      if (.not.dw(i, j, k, iprod) .eq. 0.0_8) dwd(i, j, k, iprod) = dwd(&
-&         i, j, k, iprod) + ssd/(2.0*sqrt(dw(i, j, k, iprod)))
+      if (.not.scratch(i, j, k, iprod) .eq. 0.0_8) scratchd(i, j, k, &
+&       iprod) = scratchd(i, j, k, iprod) + ssd/(2.0*sqrt(scratch(i, j, &
+&         k, iprod)))
     end do
   end subroutine sasource_b
   subroutine sasource()
@@ -433,7 +434,7 @@ end subroutine sa_block_b
       k = ii/(nx*ny) + 2
 ! first take the square root of the production term to
 ! obtain the correct production term for spalart-allmaras.
-      ss = sqrt(dw(i, j, k, iprod))
+      ss = sqrt(scratch(i, j, k, iprod))
 ! compute the laminar kinematic viscosity, the inverse of
 ! wall distance squared, the ratio chi (ratio of nutilde
 ! and nu) and the functions fv1 and fv2. the latter corrects
@@ -477,8 +478,8 @@ end subroutine sa_block_b
 ! linearization. the source term is stored in dvt.
       term1 = rsacb1*(one-ft2)*ss
       term2 = dist2inv*(kar2inv*rsacb1*((one-ft2)*fv2+ft2)-rsacw1*fwsa)
-      dw(i, j, k, idvt) = (term1+term2*w(i, j, k, itu1))*w(i, j, k, itu1&
-&       )
+      scratch(i, j, k, idvt) = (term1+term2*w(i, j, k, itu1))*w(i, j, k&
+&       , itu1)
 ! compute some derivatives w.r.t. nutilde. these will occur
 ! in the left hand side, i.e. the matrix for the implicit
 ! treatment.
@@ -491,10 +492,12 @@ end subroutine sa_block_b
     end do
   end subroutine sasource
 !  differentiation of saviscous in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *dw *w *rlv *vol *si *sj *sk
-!   with respect to varying inputs: *dw *w *rlv *vol *si *sj *sk
-!   plus diff mem management of: dw:in w:in rlv:in vol:in si:in
-!                sj:in sk:in
+!   gradient     of useful results: *w *rlv *scratch *vol *si *sj
+!                *sk
+!   with respect to varying inputs: *w *rlv *scratch *vol *si *sj
+!                *sk
+!   plus diff mem management of: w:in rlv:in scratch:in vol:in
+!                si:in sj:in sk:in
   subroutine saviscous_b()
 !
 ! ******************************************************************
@@ -676,12 +679,15 @@ end subroutine sa_block_b
       c10 = c1m + c1p
 ! update the residual for this cell and store the possible
 ! coefficients for the matrix in b1, c1 and d1.
-      c1md = w(i-1, j, k, itu1)*dwd(i, j, k, idvt)
-      wd(i-1, j, k, itu1) = wd(i-1, j, k, itu1) + c1m*dwd(i, j, k, idvt)
-      c1pd = w(i+1, j, k, itu1)*dwd(i, j, k, idvt)
-      wd(i+1, j, k, itu1) = wd(i+1, j, k, itu1) + c1p*dwd(i, j, k, idvt)
-      c10d = -(w(i, j, k, itu1)*dwd(i, j, k, idvt))
-      wd(i, j, k, itu1) = wd(i, j, k, itu1) - c10*dwd(i, j, k, idvt)
+      c1md = w(i-1, j, k, itu1)*scratchd(i, j, k, idvt)
+      wd(i-1, j, k, itu1) = wd(i-1, j, k, itu1) + c1m*scratchd(i, j, k, &
+&       idvt)
+      c1pd = w(i+1, j, k, itu1)*scratchd(i, j, k, idvt)
+      wd(i+1, j, k, itu1) = wd(i+1, j, k, itu1) + c1p*scratchd(i, j, k, &
+&       idvt)
+      c10d = -(w(i, j, k, itu1)*scratchd(i, j, k, idvt))
+      wd(i, j, k, itu1) = wd(i, j, k, itu1) - c10*scratchd(i, j, k, idvt&
+&       )
       c1md = c1md + c10d
       c1pd = c1pd + c10d
       call popcontrol1b(branch)
@@ -853,12 +859,15 @@ end subroutine sa_block_b
       c10 = c1m + c1p
 ! update the residual for this cell and store the possible
 ! coefficients for the matrix in b1, c1 and d1.
-      c1md = w(i, j-1, k, itu1)*dwd(i, j, k, idvt)
-      wd(i, j-1, k, itu1) = wd(i, j-1, k, itu1) + c1m*dwd(i, j, k, idvt)
-      c1pd = w(i, j+1, k, itu1)*dwd(i, j, k, idvt)
-      wd(i, j+1, k, itu1) = wd(i, j+1, k, itu1) + c1p*dwd(i, j, k, idvt)
-      c10d = -(w(i, j, k, itu1)*dwd(i, j, k, idvt))
-      wd(i, j, k, itu1) = wd(i, j, k, itu1) - c10*dwd(i, j, k, idvt)
+      c1md = w(i, j-1, k, itu1)*scratchd(i, j, k, idvt)
+      wd(i, j-1, k, itu1) = wd(i, j-1, k, itu1) + c1m*scratchd(i, j, k, &
+&       idvt)
+      c1pd = w(i, j+1, k, itu1)*scratchd(i, j, k, idvt)
+      wd(i, j+1, k, itu1) = wd(i, j+1, k, itu1) + c1p*scratchd(i, j, k, &
+&       idvt)
+      c10d = -(w(i, j, k, itu1)*scratchd(i, j, k, idvt))
+      wd(i, j, k, itu1) = wd(i, j, k, itu1) - c10*scratchd(i, j, k, idvt&
+&       )
       c1md = c1md + c10d
       c1pd = c1pd + c10d
       call popcontrol1b(branch)
@@ -1030,12 +1039,15 @@ end subroutine sa_block_b
       c10 = c1m + c1p
 ! update the residual for this cell and store the possible
 ! coefficients for the matrix in b1, c1 and d1.
-      c1md = w(i, j, k-1, itu1)*dwd(i, j, k, idvt)
-      wd(i, j, k-1, itu1) = wd(i, j, k-1, itu1) + c1m*dwd(i, j, k, idvt)
-      c1pd = w(i, j, k+1, itu1)*dwd(i, j, k, idvt)
-      wd(i, j, k+1, itu1) = wd(i, j, k+1, itu1) + c1p*dwd(i, j, k, idvt)
-      c10d = -(w(i, j, k, itu1)*dwd(i, j, k, idvt))
-      wd(i, j, k, itu1) = wd(i, j, k, itu1) - c10*dwd(i, j, k, idvt)
+      c1md = w(i, j, k-1, itu1)*scratchd(i, j, k, idvt)
+      wd(i, j, k-1, itu1) = wd(i, j, k-1, itu1) + c1m*scratchd(i, j, k, &
+&       idvt)
+      c1pd = w(i, j, k+1, itu1)*scratchd(i, j, k, idvt)
+      wd(i, j, k+1, itu1) = wd(i, j, k+1, itu1) + c1p*scratchd(i, j, k, &
+&       idvt)
+      c10d = -(w(i, j, k, itu1)*scratchd(i, j, k, idvt))
+      wd(i, j, k, itu1) = wd(i, j, k, itu1) - c10*scratchd(i, j, k, idvt&
+&       )
       c1md = c1md + c10d
       c1pd = c1pd + c10d
       call popcontrol1b(branch)
@@ -1209,8 +1221,8 @@ end subroutine sa_block_b
       c10 = c1m + c1p
 ! update the residual for this cell and store the possible
 ! coefficients for the matrix in b1, c1 and d1.
-      dw(i, j, k, idvt) = dw(i, j, k, idvt) + c1m*w(i, j, k-1, itu1) - &
-&       c10*w(i, j, k, itu1) + c1p*w(i, j, k+1, itu1)
+      scratch(i, j, k, idvt) = scratch(i, j, k, idvt) + c1m*w(i, j, k-1&
+&       , itu1) - c10*w(i, j, k, itu1) + c1p*w(i, j, k+1, itu1)
     end do
 !
 !      ******************************************************************
@@ -1274,8 +1286,8 @@ end subroutine sa_block_b
       c10 = c1m + c1p
 ! update the residual for this cell and store the possible
 ! coefficients for the matrix in b1, c1 and d1.
-      dw(i, j, k, idvt) = dw(i, j, k, idvt) + c1m*w(i, j-1, k, itu1) - &
-&       c10*w(i, j, k, itu1) + c1p*w(i, j+1, k, itu1)
+      scratch(i, j, k, idvt) = scratch(i, j, k, idvt) + c1m*w(i, j-1, k&
+&       , itu1) - c10*w(i, j, k, itu1) + c1p*w(i, j+1, k, itu1)
     end do
 !
 !      ******************************************************************
@@ -1339,14 +1351,14 @@ end subroutine sa_block_b
       c10 = c1m + c1p
 ! update the residual for this cell and store the possible
 ! coefficients for the matrix in b1, c1 and d1.
-      dw(i, j, k, idvt) = dw(i, j, k, idvt) + c1m*w(i-1, j, k, itu1) - &
-&       c10*w(i, j, k, itu1) + c1p*w(i+1, j, k, itu1)
+      scratch(i, j, k, idvt) = scratch(i, j, k, idvt) + c1m*w(i-1, j, k&
+&       , itu1) - c10*w(i, j, k, itu1) + c1p*w(i+1, j, k, itu1)
     end do
   end subroutine saviscous
 !  differentiation of saresscale in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *dw *vol
-!   with respect to varying inputs: *dw *vol
-!   plus diff mem management of: dw:in vol:in
+!   with respect to varying inputs: *dw *scratch *vol
+!   plus diff mem management of: dw:in scratch:in vol:in
   subroutine saresscale_b()
 !
 ! ******************************************************************
@@ -1366,17 +1378,17 @@ end subroutine sa_block_b
     real(kind=realtype) :: rblank
     intrinsic mod
     intrinsic real
-    real(kind=realtype) :: tmp
-    real(kind=realtype) :: tmpd
+    scratchd = 0.0_8
     do ii=0,nx*ny*nz-1
       i = mod(ii, nx) + 2
       j = mod(ii/nx, ny) + 2
       k = ii/(nx*ny) + 2
       rblank = real(iblank(i, j, k), realtype)
-      tmpd = dwd(i, j, k, itu1)
+      vold(i, j, k) = vold(i, j, k) - rblank*scratch(i, j, k, idvt)*dwd(&
+&       i, j, k, itu1)
+      scratchd(i, j, k, idvt) = scratchd(i, j, k, idvt) - rblank*vol(i, &
+&       j, k)*dwd(i, j, k, itu1)
       dwd(i, j, k, itu1) = 0.0_8
-      vold(i, j, k) = vold(i, j, k) - rblank*dw(i, j, k, idvt)*tmpd
-      dwd(i, j, k, idvt) = dwd(i, j, k, idvt) - rblank*vol(i, j, k)*tmpd
     end do
   end subroutine saresscale_b
   subroutine saresscale()
@@ -1403,7 +1415,7 @@ end subroutine sa_block_b
       j = mod(ii/nx, ny) + 2
       k = ii/(nx*ny) + 2
       rblank = real(iblank(i, j, k), realtype)
-      dw(i, j, k, itu1) = -(vol(i, j, k)*dw(i, j, k, idvt)*rblank)
+      dw(i, j, k, itu1) = -(vol(i, j, k)*scratch(i, j, k, idvt)*rblank)
     end do
   end subroutine saresscale
   subroutine sasolve2()
@@ -1453,42 +1465,42 @@ bocos:do nn=1,nviscbocos
         case (imin) 
           flag => flagi2
           ddw => dw(2, 1:, 1:, 1:)
-          ddvt => dw(2, 1:, 1:, idvt:)
+          ddvt => scratch(2, 1:, 1:, idvt:)
           ww => w(2, 1:, 1:, 1:)
           rrlv => rlv(2, 1:, 1:)
           dd2wall => d2wall(2, :, :)
         case (imax) 
           flag => flagil
           ddw => dw(il, 1:, 1:, 1:)
-          ddvt => dw(il, 1:, 1:, idvt:)
+          ddvt => scratch(il, 1:, 1:, idvt:)
           ww => w(il, 1:, 1:, 1:)
           rrlv => rlv(il, 1:, 1:)
           dd2wall => d2wall(il, :, :)
         case (jmin) 
           flag => flagj2
           ddw => dw(1:, 2, 1:, 1:)
-          ddvt => dw(1:, 2, 1:, idvt:)
+          ddvt => scratch(1:, 2, 1:, idvt:)
           ww => w(1:, 2, 1:, 1:)
           rrlv => rlv(1:, 2, 1:)
           dd2wall => d2wall(:, 2, :)
         case (jmax) 
           flag => flagjl
           ddw => dw(1:, jl, 1:, 1:)
-          ddvt => dw(1:, jl, 1:, idvt:)
+          ddvt => scratch(1:, jl, 1:, idvt:)
           ww => w(1:, jl, 1:, 1:)
           rrlv => rlv(1:, jl, 1:)
           dd2wall => d2wall(:, jl, :)
         case (kmin) 
           flag => flagk2
           ddw => dw(1:, 1:, 2, 1:)
-          ddvt => dw(1:, 1:, 2, idvt:)
+          ddvt => scratch(1:, 1:, 2, idvt:)
           ww => w(1:, 1:, 2, 1:)
           rrlv => rlv(1:, 1:, 2)
           dd2wall => d2wall(:, :, 2)
         case (kmax) 
           flag => flagkl
           ddw => dw(1:, 1:, kl, :)
-          ddvt => dw(1:, 1:, kl, idvt:)
+          ddvt => scratch(1:, 1:, kl, idvt:)
           ww => w(1:, 1:, kl, 1:)
           rrlv => rlv(1:, 1:, kl)
           dd2wall => d2wall(:, :, kl)
@@ -1622,7 +1634,7 @@ bocos:do nn=1,nviscbocos
 ! value so the update determined for iblank = 0 is zero.
           rblank = real(iblank(i, j, k), realtype)
           cc(j) = qq(i, j, k)
-          ff(j) = dw(i, j, k, idvt)*rblank
+          ff(j) = scratch(i, j, k, idvt)*rblank
           bb(j) = bb(j)*rblank
           dd(j) = dd(j)*rblank
 ! set the off diagonal terms to zero if the wall is flagged.
@@ -1650,7 +1662,7 @@ bocos:do nn=1,nviscbocos
         end do
 ! determine the new rhs for the next direction.
         do j=2,jl
-          dw(i, j, k, idvt) = ff(j)*qq(i, j, k)
+          scratch(i, j, k, idvt) = ff(j)*qq(i, j, k)
         end do
       end do
     end do
@@ -1729,7 +1741,7 @@ bocos:do nn=1,nviscbocos
 ! value so the update determined for iblank = 0 is zero.
           rblank = real(iblank(i, j, k), realtype)
           cc(i) = qq(i, j, k)
-          ff(i) = dw(i, j, k, idvt)*rblank
+          ff(i) = scratch(i, j, k, idvt)*rblank
           bb(i) = bb(i)*rblank
           dd(i) = dd(i)*rblank
 ! set the off diagonal terms to zero if the wall is flagged.
@@ -1757,7 +1769,7 @@ bocos:do nn=1,nviscbocos
         end do
 ! determine the new rhs for the next direction.
         do i=2,il
-          dw(i, j, k, idvt) = ff(i)*qq(i, j, k)
+          scratch(i, j, k, idvt) = ff(i)*qq(i, j, k)
         end do
       end do
     end do
@@ -1836,7 +1848,7 @@ bocos:do nn=1,nviscbocos
 ! value so the update determined for iblank = 0 is zero.
           rblank = real(iblank(i, j, k), realtype)
           cc(k) = qq(i, j, k)
-          ff(k) = dw(i, j, k, idvt)*rblank
+          ff(k) = scratch(i, j, k, idvt)*rblank
           bb(k) = bb(k)*rblank
           dd(k) = dd(k)*rblank
 ! set the off diagonal terms to zero if the wall is flagged.
@@ -1864,7 +1876,7 @@ bocos:do nn=1,nviscbocos
         end do
 ! store the update in dvt.
         do k=2,kl
-          dw(i, j, k, idvt) = ff(k)
+          scratch(i, j, k, idvt) = ff(k)
         end do
       end do
     end do
@@ -1882,7 +1894,8 @@ bocos:do nn=1,nviscbocos
     do k=2,kl
       do j=2,jl
         do i=2,il
-          w(i, j, k, itu1) = w(i, j, k, itu1) + factor*dw(i, j, k, idvt)
+          w(i, j, k, itu1) = w(i, j, k, itu1) + factor*scratch(i, j, k, &
+&           idvt)
           if (w(i, j, k, itu1) .lt. zero) then
             w(i, j, k, itu1) = zero
           else

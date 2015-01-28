@@ -40,7 +40,6 @@ subroutine setPointers_d(nn, level, sps)
   ! its values are obtained from the fine grid level.
 
   wd     => flowDomsd(nn,1,sps)%w
-  wOldd  => flowDomsd(nn,1,sps)%wOld
   pd     => flowDomsd(nn,1,sps)%p
 
   gammad => flowDomsd(nn,1,sps)%gamma
@@ -70,15 +69,10 @@ subroutine setPointers_d(nn, level, sps)
 
   dwd => flowDomsd(nn,1,sps)%dw
   fwd => flowDomsd(nn,1,sps)%fw
-
-  w1d => flowDomsd(nn,1,sps)%w1
-  wrd => flowDomsd(nn,1,sps)%wr
+  scratchd => flowDomsd(nn,1,sps)%scratch
 
   ! Time-stepping variables and spectral radIi.
   ! They asps point to the fine mesh entry.
-
-  wnd  => flowDomsd(nn,1,sps)%wn
-  dtld => flowDomsd(nn,1,sps)%dtl
 
   radId => flowDomsd(nn,1,sps)%radI
   radJd => flowDomsd(nn,1,sps)%radJ

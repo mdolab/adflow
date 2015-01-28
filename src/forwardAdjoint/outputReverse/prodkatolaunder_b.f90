@@ -2,11 +2,10 @@
 !  tapenade 3.10 (r5363) -  9 sep 2014 09:53
 !
 !  differentiation of prodkatolaunder in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: timeref *dw *w *vol *si *sj
-!                *sk
-!   with respect to varying inputs: timeref *dw *w *vol *si *sj
-!                *sk
-!   plus diff mem management of: dw:in w:in vol:in si:in sj:in
+!   gradient     of useful results: timeref *w *scratch *vol *si
+!                *sj *sk
+!   with respect to varying inputs: timeref *w *vol *si *sj *sk
+!   plus diff mem management of: w:in scratch:in vol:in si:in sj:in
 !                sk:in
 !
 !      ******************************************************************
@@ -143,11 +142,11 @@ subroutine prodkatolaunder_b()
     if (sijsij*oijoij .eq. 0.0_8) then
       tempd = 0.0
     else
-      tempd = two*dwd(i, j, k, iprod)/(2.0*sqrt(sijsij*oijoij))
+      tempd = two*scratchd(i, j, k, iprod)/(2.0*sqrt(sijsij*oijoij))
     end if
     sijsijd = oijoij*tempd
     oijoijd = sijsij*tempd
-    dwd(i, j, k, iprod) = 0.0_8
+    scratchd(i, j, k, iprod) = 0.0_8
     tempd0 = two*oijoijd
     oxyd = 2*oxy*tempd0
     oxzd = 2*oxz*tempd0

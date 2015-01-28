@@ -122,7 +122,7 @@
                        ! Therefore the time derivative must be substracted
                        ! from dvt.
 
-                       dw(i,j,k,idvt+ii-1) = dw(i,j,k,idvt+ii-1) - oneOverDt*tmp
+                       scratch(i,j,k,idvt+ii-1) = scratch(i,j,k,idvt+ii-1) - oneOverDt*tmp
 
                        ! Update the central jacobian.
 
@@ -167,7 +167,7 @@
              jj = ii + offset
 
              ! The time derivative has been computed earlier in
-             ! unsteadyTurbSpectral and stored in entry jj of dw.
+             ! unsteadyTurbSpectral and stored in entry jj of scratch.
              ! Substract this value for all owned cells. It must be
              ! substracted, because in the turbulent routines the
              ! residual is defined with an opposite sign compared to
@@ -183,8 +183,8 @@
              do k=2,kl
                do j=2,jl
                  do i=2,il
-                   dw(i,j,k,idvt+ii-1)   = dw(i,j,k,idvt+ii-1)   - dw(i,j,k,jj)
-                   qq(i,j,k,ii,ii) = qq(i,j,k,ii,ii) + tmp
+                    scratch(i,j,k,idvt+ii-1)   = scratch(i,j,k,idvt+ii-1)   - dw(i,j,k,jj)
+                    qq(i,j,k,ii,ii) = qq(i,j,k,ii,ii) + tmp
                  enddo
                enddo
              enddo
