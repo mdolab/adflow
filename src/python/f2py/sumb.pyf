@@ -409,20 +409,6 @@ python module libsumb
             integer(kind=inttype), optional,intent(in),check(len(funcsbar)>=costsize),depend(funcsbar) :: costsize=len(funcsbar)
         end subroutine computematrixfreeproductbwd
 
-        subroutine getdrdatpsi(output,ndv,adjoint,nstate) ! in :test:getdRdaPsi.F90
-          real(kind=realtype) dimension(ndv),intent(out),depend(ndv) :: output
-          integer(kind=inttype) intent(in) :: ndv
-          real(kind=realtype) dimension(nstate),intent(in) :: adjoint
-          integer(kind=inttype) optional,intent(in),check(len(adjoint)>=nstate),depend(adjoint) :: nstate=len(adjoint)
-        end subroutine getdrdatpsi
-
-        subroutine getdrdapsifwd(out_vec,nstate,in_vec,ndv) ! in :test:getdRdaPsi.F90
-            real(kind=realtype) dimension(nstate),intent(out),depend(nstate) :: out_vec
-            integer(kind=inttype) intent(in) :: nstate
-            real(kind=realtype) dimension(ndv),intent(in) :: in_vec
-            integer(kind=inttype) optional,intent(in),check(len(in_vec)>=ndv),depend(in_vec) :: ndv=len(in_vec)
-        end subroutine getdrdapsi
-
        ! ------------- Misc --------------------
  
 

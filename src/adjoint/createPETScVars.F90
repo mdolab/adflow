@@ -9,9 +9,8 @@ subroutine createPETScVars
   !     ******************************************************************
   !
   use ADjointPETSc, only: dRdwT, dRdwPreT, dFcdw, dFcdx, dFndFc, &
-       dFdx, dFdw, dRdx, dRda, adjointKSP, dFMdExtra, dRda_data, &
-       overArea, fCell, fNode, doAdx, nFM, matfreectx, &
-       x_like, psi_like1, adjointPETScVarsAllocated
+       dFdx, dFdw, dRdx, adjointKSP, overArea, fCell, fNode, &
+       doAdx, matfreectx, x_like, psi_like1, adjointPETScVarsAllocated
   use ADjointVars   
   use BCTypes
   use communication  
@@ -281,33 +280,8 @@ subroutine createPETScVars
   call KSPCreate(SUMB_COMM_WORLD, adjointKSP, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  if (allocated(dFMdExtra)) then
-     deallocate(dFMdExtra)
-  end if
-  allocate(dFMdExtra(nFM, nDesignExtra, nTimeIntervalsSpectral))
-  
-  ! Create dRdA if not using matrix-free mode:
-  if (.not. useMatrixFreedRdX) then 
-  
-     ! Once again, PETSC is royally screwed up. You CANNOT use PETSC_NULL
-     ! arguments. They simply do NOT work in Fortran. The PETSc
-     ! documentation lies to you. We have to allocate our own data. 
-     if (allocated(dRda_data)) then
-        deallocate(dRda_data)
-     end if
-     allocate(dRda_data(nDimw, nDesignExtra))
-         
-#if PETSC_VERSION_MINOR < 3 
-     call MatCreateMPIDense(SUMB_COMM_WORLD, nDimW, PETSC_DECIDE, &
-          PETSC_DETERMINE, nDesignExtra, dRda_data, dRda, ierr)
-#else
-     call MatCreateDense(SUMB_COMM_WORLD, nDimW, PETSC_DECIDE, &
-          PETSC_DETERMINE, nDesignExtra, dRda_data, dRda, ierr)
-#endif
-     call EChk(ierr, __FILE__, __LINE__)
-#endif
-  end if
   adjointPETScVarsAllocated = .True.
+#endif
 end subroutine createPETScVars
 
 subroutine myMatCreate(matrix, blockSize, m, n, nnzDiagonal, nnzOffDiag, &

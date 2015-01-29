@@ -1,4 +1,4 @@
-subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
+subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective, frozenTurb)
 #ifndef USE_NO_PETSC
   !     ******************************************************************
   !     *                                                                *
@@ -10,7 +10,7 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
   !     *                                                                *
   !     ******************************************************************
   !
-  use ADjointPetsc, only : dFcdx, doAdx, nFM, iSepSensor, iCavitation
+  use ADjointPetsc, only : dFcdx, doAdx
   use BCTypes
   use blockPointers
   use inputDiscretization 
@@ -30,7 +30,7 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
   Mat matrix
 
   ! Input Variables
-  logical, intent(in) :: useAD, useObjective
+  logical, intent(in) :: useAD, useObjective, frozenTurb
 
   ! Local variables.
   integer(kind=intType) :: ierr,nn,sps,sps2,i,j,k,l,ll,ii,jj,kk, mm
@@ -65,7 +65,7 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
   call getDirAngle(velDirFreestream, liftDirection, liftIndex, alpha, beta)
 
 ! Setup number of state variable based on turbulence assumption
-  if ( frozenTurbulence ) then
+  if ( frozenTurb ) then
      nState = nwf
   else
      nState = nw
@@ -122,7 +122,7 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
 
   ! Determine if we want to use frozenTurbulent Adjoint
   resetToRANS = .False. 
-  if (frozenTurbulence .and. equations == RANSEquations) then
+  if (frozenTurb .and. equations == RANSEquations) then
      equations = NSEquations 
      resetToRANS = .True.
   end if
@@ -224,14 +224,14 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
 #ifndef USE_COMPLEX
                  call block_res_d(nn, sps, .True., &
                       alpha, alphad, beta, betad, liftIndex, force, forced, &
-                      moment, momentd, sepSensor, sepSensord, Cavitation, Cavitationd)
+                      moment, momentd, sepSensor, sepSensord, Cavitation, Cavitationd, frozenTurb)
 #else
                  print *,'Forward AD routines are not complexified!'
                  stop
 #endif
               else
                  call block_res(nn, sps, .True., &
-                      alpha, beta, liftIndex, force, moment, sepSensor, Cavitation)
+                      alpha, beta, liftIndex, force, moment, sepSensor, Cavitation, frozenTurb)
               end if
 
           
@@ -433,14 +433,14 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
                                         globalCell(i+ii,j+jj,k+kk)
                                    call setBlock(&
                                         flowDomsd(nn,1,sps2)%&
-                                        dw_deriv(i+ii,j+jj,k+kk,:,:))
+                                        dw_deriv(i+ii,j+jj,k+kk,1:nstate,1:nstate))
                                 end do
                              else
                                 irow = flowDoms(nn,1,sps)%globalCell(&
                                      i+ii,j+jj,k+kk)
 
                                 call setBlock(flowDomsd(nn,1,sps)%&
-                                     dw_deriv(i+ii,j+jj,k+kk,:,:))
+                                     dw_deriv(i+ii,j+jj,k+kk,1:nstate,1:nstate))
                              end if
                           end if onBlock
                        end do stencilLoop

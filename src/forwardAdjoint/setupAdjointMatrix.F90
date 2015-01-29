@@ -31,7 +31,7 @@ subroutine setupAdjointMatrix
   useObjective = .True.
 
   call setupStateResidualMatrix(drdwt, useAD, usePC, useTranspose, useObjective, &
-       1_intType)
+       frozenTurbulence, 1_intType, frozenTurbulence)
 
   call cpu_time(time(2))
   timeAdjLocal = time(2)-time(1)

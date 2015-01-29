@@ -184,7 +184,7 @@ subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useSta
 
         call BLOCK_RES_D(nn, level, useSpatial, alpha, alphad, beta, betad, &
              & liftindex, force, forced, moment, momentd, sepsensor, sepsensord, &
-             & cavitation, cavitationd)
+             & cavitation, cavitationd, frozenTurbulence)
 
         ! Now extract dw
         do sps2=1,nTimeIntervalsSpectral
@@ -268,11 +268,17 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
   integer(kind=intType) :: ierr,nn,sps,i,j,k,l,ii, sps2
   real(kind=realType) :: alpha, beta, force(3), moment(3), sepSensor, cavitation
   real(kind=realType) :: alphad, betad, forced(3), momentd(3), sepSensord, cavitationd
-  integer(kind=intType) ::  level, irow, liftIndex
+  integer(kind=intType) ::  level, irow, liftIndex, nState
   logical :: resetToRans
   real(kind=realType), dimension(extraSize) :: extraLocalBar
   real(kind=realType), dimension(:), allocatable :: xSurfbSum
 #ifndef USE_COMPLEX
+  ! Setup number of state variable based on turbulence assumption
+  if ( frozenTurbulence ) then
+     nState = nwf
+  else
+     nState = nw
+  endif
 
   ! Place output arrays in psi_like and x_like vectors if necessary
   wbar = zero
@@ -315,7 +321,7 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
   end if
 
   ! Allocate the memory for reverse
-  call alloc_derivative_values(level)!_bwd(level)
+  call alloc_derivative_values(level)
 
   ! Zero the function seeds
   forced= zero
@@ -353,7 +359,7 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
         do k=2, kl
            do j=2,jl
               do i=2,il
-                 do l=1,nw
+                 do l=1,nState
                     ii = ii + 1
                     flowdomsd(nn, level, sps)%dw(i, j, k, l) = dwbar(ii)
                  end do
@@ -366,7 +372,7 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
 
         call BLOCK_RES_B(nn, 1, useSpatial, alpha, alphad, beta, betad, &
              & liftindex, force, forced, moment, momentd, sepsensor, sepsensord, &
-             & cavitation, cavitationd)
+             & cavitation, cavitationd, frozenTurbulence)
 
         ! Assmeble the vectors requested:
         
@@ -417,8 +423,8 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
               do k=0, kb
                  do j=0,jb
                     do i=0,ib
-                       do l=1,nw
-                          irow = flowDoms(nn, 1, sps2)%globalCell(i,j,k)*nw + l -1
+                       do l=1,nState
+                          irow = flowDoms(nn, 1, sps2)%globalCell(i,j,k)*nState + l -1
                           if (irow >= 0) then 
                              call VecSetValues(psi_like3, 1, (/irow/), &
                                   (/flowdomsd(nn, level, sps)%w(i, j, k, l)/), ADD_VALUES, ierr)

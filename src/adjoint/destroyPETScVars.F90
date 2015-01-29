@@ -45,9 +45,6 @@ subroutine destroyPETScVars
      if (.not. useMatrixFreedRdx) then
         call MatDestroy(dRdx, PETScIerr)
         call EChk(PETScIerr,__FILE__,__LINE__)
-        
-        call MatDestroy(dRda, PETScIerr)
-        call EChk(PETScIerr,__FILE__,__LINE__)
      end if
      
      call vecDestroy(overArea, PETScIerr)
@@ -58,10 +55,6 @@ subroutine destroyPETScVars
      
      call vecDestroy(fNode, PETScIerr)
      call EChk(PETScIerr,__FILE__,__LINE__)
-     
-     if (allocated(dRda_data)) then
-        deallocate(dRda_data)
-     end if
      
      call KSPDestroy(adjointKSP, PETScIerr)
      call EChk(PETScIerr,__FILE__,__LINE__)

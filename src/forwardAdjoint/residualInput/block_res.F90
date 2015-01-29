@@ -12,7 +12,7 @@
 ! for forward mode AD with Tapenade
 
 subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment, sepSensor, &
-     Cavitation)
+     Cavitation, frozenTurb)
   use BCRoutines
   use blockPointers       
   use flowVarRefState     
@@ -22,7 +22,6 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   use section
   use monitor
   use iteration
-  use inputADjoint
   use diffSizes
   use costFunctions
   use wallDistanceData
@@ -32,7 +31,7 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
 
   ! Input Arguments:
   integer(kind=intType), intent(in) :: nn, sps
-  logical, intent(in) :: useSpatial
+  logical, intent(in) :: useSpatial, frozenTurb
   real(kind=realType), intent(in) :: alpha, beta
   integer(kind=intType), intent(in) :: liftIndex
 
@@ -51,7 +50,7 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   useOldCoor = .False.
 
   ! Setup number of state variable based on turbulence assumption
-  if ( frozenTurbulence ) then
+  if ( frozenTurb ) then
      nState = nwf
   else
      nState = nw
