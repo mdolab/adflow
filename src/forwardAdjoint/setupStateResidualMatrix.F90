@@ -1,5 +1,5 @@
 subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
-     useObjective, level)
+     useObjective, frozenTurb, level)
 #ifndef USE_NO_PETSC
   !     ******************************************************************
   !     *                                                                *
@@ -19,7 +19,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   !     *         always the finest level                                *         
   !     ******************************************************************
   !
-  use ADjointPetsc, only : dFcdW, nFM, iSepSensor, iCavitation
+  use ADjointPetsc, only : dFcdW
   use BCTypes
   use blockPointers
   use inputDiscretization 
@@ -40,7 +40,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   Mat matrix
 
   ! Input Variables
-  logical, intent(in) :: useAD, usePC, useTranspose, useObjective
+  logical, intent(in) :: useAD, usePC, useTranspose, useObjective, frozenTurb
   integer(kind=intType), intent(in) :: level
 
   ! Local variables.
@@ -70,11 +70,12 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   logical :: resetToRANS
   real :: val
   ! Setup number of state variable based on turbulence assumption
-  if ( frozenTurbulence ) then
+  if ( frozenTurb ) then
      nState = nwf
   else
      nState = nw
   endif
+
   allocate(blk(nState, nState))
   ! Exchange data and call the residual to make sure its up to date
   ! withe current w
@@ -161,7 +162,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
 
   ! Determine if we want to use frozenTurbulent Adjoint
   resetToRANS = .False. 
-  if (frozenTurbulence .and. equations == RANSEquations) then
+  if (frozenTurb .and. equations == RANSEquations) then
      equations = NSEquations 
      resetToRANS = .True.
   end if
@@ -259,14 +260,14 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
 #ifndef USE_COMPLEX
                  call block_res_d(nn, sps, .False., &
                       alpha, alphad, beta, betad, liftIndex, force, forced, moment, momentd,&
-                      sepSensor, sepSensord, Cavitation, Cavitationd)
+                      sepSensor, sepSensord, Cavitation, Cavitationd, frozenTurb)
 #else
                  print *, 'Forward AD routines are not complexified'
                  stop
 #endif
               else
                  call block_res(nn, sps, .False., alpha, beta, liftIndex, force, moment, &
-                 sepSensor, Cavitation)
+                 sepSensor, Cavitation, frozenTurb)
               end if
 
               ! If required, set values in the force matrix.  We have
@@ -450,7 +451,8 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
                                    ! If we're doing the PC and we want
                                    ! to use TS diagonal form, only set
                                    ! values for on-time insintance
-                                   blk = flowDomsd(nn, 1, sps)%dw_deriv(i+ii, j+jj, k+kk, :, :)
+                                   blk = flowDomsd(nn, 1, sps)%dw_deriv(i+ii, j+jj, k+kk, &
+                                        1:nstate, 1:nstate)
                                    call setBlock(blk)
                                 else
                                    ! Otherwise loop over spectral
@@ -458,13 +460,15 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
                                    do sps2=1, nTimeIntervalsSpectral
                                       irow = flowDoms(nn, level, sps2)%&
                                            globalCell(i+ii, j+jj, k+kk)
-                                      blk = flowDomsd(nn, 1, sps2)%dw_deriv(i+ii, j+jj, k+kk, :, :)
+                                      blk = flowDomsd(nn, 1, sps2)%dw_deriv(i+ii, j+jj, k+kk, &
+                                           1:nstate, 1:nstate)
                                       call setBlock(blk)
                                    end do
                                 end if useDiagPC
                              else
                                 ! ALl other cells just set.
-                                blk = flowDomsd(nn, 1, sps)%dw_deriv(i+ii, j+jj, k+kk, :, :)
+                                blk = flowDomsd(nn, 1, sps)%dw_deriv(i+ii, j+jj, k+kk, &
+                                     1:nstate, 1:nstate)
                                 call setBlock(blk)
                              end if centerCell
                           end if onBlock

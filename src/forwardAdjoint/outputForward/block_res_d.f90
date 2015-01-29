@@ -65,7 +65,7 @@
 ! for forward mode ad with tapenade
 subroutine block_res_d(nn, sps, usespatial, alpha, alphad, beta, betad, &
 & liftindex, force, forced, moment, momentd, sepsensor, sepsensord, &
-& cavitation, cavitationd)
+& cavitation, cavitationd, frozenturb)
   use bcroutines_d
   use blockpointers
   use flowvarrefstate
@@ -75,7 +75,6 @@ subroutine block_res_d(nn, sps, usespatial, alpha, alphad, beta, betad, &
   use section
   use monitor
   use iteration
-  use inputadjoint
   use diffsizes
   use costfunctions
   use walldistancedata
@@ -86,7 +85,7 @@ subroutine block_res_d(nn, sps, usespatial, alpha, alphad, beta, betad, &
   implicit none
 ! input arguments:
   integer(kind=inttype), intent(in) :: nn, sps
-  logical, intent(in) :: usespatial
+  logical, intent(in) :: usespatial, frozenturb
   real(kind=realtype), intent(in) :: alpha, beta
   real(kind=realtype), intent(in) :: alphad, betad
   integer(kind=inttype), intent(in) :: liftindex
@@ -114,7 +113,7 @@ subroutine block_res_d(nn, sps, usespatial, alpha, alphad, beta, betad, &
   integer :: ii1
   useoldcoor = .false.
 ! setup number of state variable based on turbulence assumption
-  if (frozenturbulence) then
+  if (frozenturb) then
     nstate = nwf
   else
     nstate = nw
