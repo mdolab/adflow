@@ -37,6 +37,7 @@ include ${SUMB_RULES_FILE}
 vpath %.o $(SUMB_OBJDIR)
 
 FF90_OBJECTS1 = bcroutines_fast_b.o\
+		samodule_fast_b.o\
 
 FF90_OBJECTS2 =  \
 		allnodalgradients_fast_b.o\
@@ -49,6 +50,12 @@ FF90_OBJECTS2 =  \
 	        inviscidcentralflux_fast_b.o\
 		computepressuresimple_fast_b.o\
 		BCExtra.o\
+		prodsmag2_fast_b.o\
+		prodwmag2_fast_b.o\
+		prodkatolaunder_fast_b.o\
+		turbadvection_fast_b.o\
+		saeddyviscosity_fast_b.o\
+
 #      ******************************************************************
 #      *                                                                *
 #      * Targets for make.                                              *

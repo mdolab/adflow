@@ -25,7 +25,7 @@ subroutine prodKatoLaunder
   !
   !      Local variables.
   !
-  integer(kind=intType) :: i, j, k
+  integer(kind=intType) :: i, j, k, ii
 
   real(kind=realType) :: uux, uuy, uuz, vvx, vvy, vvz, wwx, wwy, wwz
   real(kind=realType) :: qxx, qyy, qzz, qxy, qxz, qyz, sijsij

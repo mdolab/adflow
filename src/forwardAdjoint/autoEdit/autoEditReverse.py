@@ -35,7 +35,6 @@ for f in os.listdir(DIR_ORI):
         all_src = file_object_ori.read()
         file_object_ori.seek(0)
 
-
         # First we want to dertmine if it is a 'useful' module or a
         # 'useless' module. A useful module is one that has
         # subroutines in it. 

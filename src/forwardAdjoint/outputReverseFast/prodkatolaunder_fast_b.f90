@@ -2,11 +2,10 @@
 !  tapenade 3.10 (r5363) -  9 sep 2014 09:53
 !
 !  differentiation of prodkatolaunder in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: timeref *w *scratch *vol *si
-!                *sj *sk
-!   with respect to varying inputs: timeref *w *vol *si *sj *sk
-!   plus diff mem management of: w:in scratch:in vol:in si:in sj:in
-!                sk:in
+!   gradient     of useful results: *w *scratch
+!   with respect to varying inputs: *w *scratch
+!   rw status of diff variables: *w:incr *scratch:in-out
+!   plus diff mem management of: w:in scratch:in
 !
 !      ******************************************************************
 !      *                                                                *
@@ -17,7 +16,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-subroutine prodkatolaunder_b()
+subroutine prodkatolaunder_fast_b()
 !
 !      ******************************************************************
 !      *                                                                *
@@ -26,6 +25,7 @@ subroutine prodkatolaunder_b()
 !      *                                                                *
 !      ******************************************************************
 !
+  use myPushPopLib
   use blockpointers
   use flowvarrefstate
   use section
@@ -34,7 +34,7 @@ subroutine prodkatolaunder_b()
 !
 !      local variables.
 !
-  integer(kind=inttype) :: i, j, k, ii
+  integer(kind=inttype) :: i, j, k
   real(kind=realtype) :: uux, uuy, uuz, vvx, vvy, vvz, wwx, wwy, wwz
   real(kind=realtype) :: uuxd, uuyd, uuzd, vvxd, vvyd, vvzd, wwxd, wwyd&
 & , wwzd
@@ -43,9 +43,9 @@ subroutine prodkatolaunder_b()
   real(kind=realtype) :: oxy, oxz, oyz, oijoij
   real(kind=realtype) :: oxyd, oxzd, oyzd, oijoijd
   real(kind=realtype) :: fact, omegax, omegay, omegaz
-  real(kind=realtype) :: factd, omegaxd, omegayd, omegazd
   intrinsic mod
   intrinsic sqrt
+  integer :: ii
   real(kind=realtype) :: tempd
   real(kind=realtype) :: tempd7
   real(kind=realtype) :: tempd6
@@ -72,9 +72,6 @@ subroutine prodkatolaunder_b()
   omegax = timeref*sections(sectionid)%rotrate(1)
   omegay = timeref*sections(sectionid)%rotrate(2)
   omegaz = timeref*sections(sectionid)%rotrate(3)
-  omegaxd = 0.0_8
-  omegayd = 0.0_8
-  omegazd = 0.0_8
   do ii=0,nx*ny*nz-1
     i = mod(ii, nx) + 2
     j = mod(ii/nx, ny) + 2
@@ -157,138 +154,74 @@ subroutine prodkatolaunder_b()
     qxxd = 2*qxx*sijsijd
     qyyd = 2*qyy*sijsijd
     qzzd = 2*qzz*sijsijd
-    tempd2 = half*oyzd
-    omegaxd = omegaxd - oyzd
-    tempd3 = half*oxzd
-    omegayd = omegayd - oxzd
-    tempd7 = half*oxyd
-    omegazd = omegazd - oxyd
-    tempd4 = half*qyzd
-    wwyd = fact*tempd4 + fact*tempd2
-    vvzd = fact*tempd4 - fact*tempd2
-    tempd6 = half*qxzd
-    uuzd = fact*tempd6 + fact*tempd3
-    wwxd = fact*tempd6 - fact*tempd3
-    tempd5 = half*qxyd
-    factd = (uuz-wwx)*tempd3 + (vvz+wwy)*tempd4 + (uuy+vvx)*tempd5 + vvy&
-&     *qyyd + uux*qxxd + wwz*qzzd + (uuz+wwx)*tempd6 + (vvx-uuy)*tempd7 &
-&     + (wwy-vvz)*tempd2
-    vvxd = fact*tempd5 + fact*tempd7
-    uuyd = fact*tempd5 - fact*tempd7
+    tempd2 = fact*half*oyzd
+    tempd4 = fact*half*oxzd
+    tempd6 = fact*half*oxyd
+    tempd3 = fact*half*qyzd
+    wwyd = tempd3 + tempd2
+    vvzd = tempd3 - tempd2
+    tempd5 = fact*half*qxzd
+    uuzd = tempd5 + tempd4
+    wwxd = tempd5 - tempd4
+    tempd7 = fact*half*qxyd
+    vvxd = tempd7 + tempd6
+    uuyd = tempd7 - tempd6
     wwzd = fact*qzzd
     vvyd = fact*qyyd
     uuxd = fact*qxxd
-    vold(i, j, k) = vold(i, j, k) - half*factd/vol(i, j, k)**2
     wd(i+1, j, k, ivz) = wd(i+1, j, k, ivz) + si(i, j, k, 3)*wwzd
-    sid(i, j, k, 3) = sid(i, j, k, 3) + w(i+1, j, k, ivz)*wwzd
     wd(i-1, j, k, ivz) = wd(i-1, j, k, ivz) - si(i-1, j, k, 3)*wwzd
-    sid(i-1, j, k, 3) = sid(i-1, j, k, 3) - w(i-1, j, k, ivz)*wwzd
     wd(i, j+1, k, ivz) = wd(i, j+1, k, ivz) + sj(i, j, k, 3)*wwzd
-    sjd(i, j, k, 3) = sjd(i, j, k, 3) + w(i, j+1, k, ivz)*wwzd
     wd(i, j, k+1, ivz) = wd(i, j, k+1, ivz) + sk(i, j, k, 3)*wwzd
-    skd(i, j, k, 3) = skd(i, j, k, 3) + w(i, j, k+1, ivz)*wwzd
     wd(i, j-1, k, ivz) = wd(i, j-1, k, ivz) - sj(i, j-1, k, 3)*wwzd
-    sjd(i, j-1, k, 3) = sjd(i, j-1, k, 3) - w(i, j-1, k, ivz)*wwzd
     wd(i, j, k-1, ivz) = wd(i, j, k-1, ivz) - sk(i, j, k-1, 3)*wwzd
-    skd(i, j, k-1, 3) = skd(i, j, k-1, 3) - w(i, j, k-1, ivz)*wwzd
     wd(i+1, j, k, ivz) = wd(i+1, j, k, ivz) + si(i, j, k, 2)*wwyd
-    sid(i, j, k, 2) = sid(i, j, k, 2) + w(i+1, j, k, ivz)*wwyd
     wd(i-1, j, k, ivz) = wd(i-1, j, k, ivz) - si(i-1, j, k, 2)*wwyd
-    sid(i-1, j, k, 2) = sid(i-1, j, k, 2) - w(i-1, j, k, ivz)*wwyd
     wd(i, j+1, k, ivz) = wd(i, j+1, k, ivz) + sj(i, j, k, 2)*wwyd
-    sjd(i, j, k, 2) = sjd(i, j, k, 2) + w(i, j+1, k, ivz)*wwyd
     wd(i, j, k+1, ivz) = wd(i, j, k+1, ivz) + sk(i, j, k, 2)*wwyd
-    skd(i, j, k, 2) = skd(i, j, k, 2) + w(i, j, k+1, ivz)*wwyd
     wd(i, j-1, k, ivz) = wd(i, j-1, k, ivz) - sj(i, j-1, k, 2)*wwyd
-    sjd(i, j-1, k, 2) = sjd(i, j-1, k, 2) - w(i, j-1, k, ivz)*wwyd
     wd(i, j, k-1, ivz) = wd(i, j, k-1, ivz) - sk(i, j, k-1, 2)*wwyd
-    skd(i, j, k-1, 2) = skd(i, j, k-1, 2) - w(i, j, k-1, ivz)*wwyd
     wd(i+1, j, k, ivz) = wd(i+1, j, k, ivz) + si(i, j, k, 1)*wwxd
-    sid(i, j, k, 1) = sid(i, j, k, 1) + w(i+1, j, k, ivz)*wwxd
     wd(i-1, j, k, ivz) = wd(i-1, j, k, ivz) - si(i-1, j, k, 1)*wwxd
-    sid(i-1, j, k, 1) = sid(i-1, j, k, 1) - w(i-1, j, k, ivz)*wwxd
     wd(i, j+1, k, ivz) = wd(i, j+1, k, ivz) + sj(i, j, k, 1)*wwxd
-    sjd(i, j, k, 1) = sjd(i, j, k, 1) + w(i, j+1, k, ivz)*wwxd
     wd(i, j, k+1, ivz) = wd(i, j, k+1, ivz) + sk(i, j, k, 1)*wwxd
-    skd(i, j, k, 1) = skd(i, j, k, 1) + w(i, j, k+1, ivz)*wwxd
     wd(i, j-1, k, ivz) = wd(i, j-1, k, ivz) - sj(i, j-1, k, 1)*wwxd
-    sjd(i, j-1, k, 1) = sjd(i, j-1, k, 1) - w(i, j-1, k, ivz)*wwxd
     wd(i, j, k-1, ivz) = wd(i, j, k-1, ivz) - sk(i, j, k-1, 1)*wwxd
-    skd(i, j, k-1, 1) = skd(i, j, k-1, 1) - w(i, j, k-1, ivz)*wwxd
     wd(i+1, j, k, ivy) = wd(i+1, j, k, ivy) + si(i, j, k, 3)*vvzd
-    sid(i, j, k, 3) = sid(i, j, k, 3) + w(i+1, j, k, ivy)*vvzd
     wd(i-1, j, k, ivy) = wd(i-1, j, k, ivy) - si(i-1, j, k, 3)*vvzd
-    sid(i-1, j, k, 3) = sid(i-1, j, k, 3) - w(i-1, j, k, ivy)*vvzd
     wd(i, j+1, k, ivy) = wd(i, j+1, k, ivy) + sj(i, j, k, 3)*vvzd
-    sjd(i, j, k, 3) = sjd(i, j, k, 3) + w(i, j+1, k, ivy)*vvzd
     wd(i, j, k+1, ivy) = wd(i, j, k+1, ivy) + sk(i, j, k, 3)*vvzd
-    skd(i, j, k, 3) = skd(i, j, k, 3) + w(i, j, k+1, ivy)*vvzd
     wd(i, j-1, k, ivy) = wd(i, j-1, k, ivy) - sj(i, j-1, k, 3)*vvzd
-    sjd(i, j-1, k, 3) = sjd(i, j-1, k, 3) - w(i, j-1, k, ivy)*vvzd
     wd(i, j, k-1, ivy) = wd(i, j, k-1, ivy) - sk(i, j, k-1, 3)*vvzd
-    skd(i, j, k-1, 3) = skd(i, j, k-1, 3) - w(i, j, k-1, ivy)*vvzd
     wd(i+1, j, k, ivy) = wd(i+1, j, k, ivy) + si(i, j, k, 2)*vvyd
-    sid(i, j, k, 2) = sid(i, j, k, 2) + w(i+1, j, k, ivy)*vvyd
     wd(i-1, j, k, ivy) = wd(i-1, j, k, ivy) - si(i-1, j, k, 2)*vvyd
-    sid(i-1, j, k, 2) = sid(i-1, j, k, 2) - w(i-1, j, k, ivy)*vvyd
     wd(i, j+1, k, ivy) = wd(i, j+1, k, ivy) + sj(i, j, k, 2)*vvyd
-    sjd(i, j, k, 2) = sjd(i, j, k, 2) + w(i, j+1, k, ivy)*vvyd
     wd(i, j, k+1, ivy) = wd(i, j, k+1, ivy) + sk(i, j, k, 2)*vvyd
-    skd(i, j, k, 2) = skd(i, j, k, 2) + w(i, j, k+1, ivy)*vvyd
     wd(i, j-1, k, ivy) = wd(i, j-1, k, ivy) - sj(i, j-1, k, 2)*vvyd
-    sjd(i, j-1, k, 2) = sjd(i, j-1, k, 2) - w(i, j-1, k, ivy)*vvyd
     wd(i, j, k-1, ivy) = wd(i, j, k-1, ivy) - sk(i, j, k-1, 2)*vvyd
-    skd(i, j, k-1, 2) = skd(i, j, k-1, 2) - w(i, j, k-1, ivy)*vvyd
     wd(i+1, j, k, ivy) = wd(i+1, j, k, ivy) + si(i, j, k, 1)*vvxd
-    sid(i, j, k, 1) = sid(i, j, k, 1) + w(i+1, j, k, ivy)*vvxd
     wd(i-1, j, k, ivy) = wd(i-1, j, k, ivy) - si(i-1, j, k, 1)*vvxd
-    sid(i-1, j, k, 1) = sid(i-1, j, k, 1) - w(i-1, j, k, ivy)*vvxd
     wd(i, j+1, k, ivy) = wd(i, j+1, k, ivy) + sj(i, j, k, 1)*vvxd
-    sjd(i, j, k, 1) = sjd(i, j, k, 1) + w(i, j+1, k, ivy)*vvxd
     wd(i, j, k+1, ivy) = wd(i, j, k+1, ivy) + sk(i, j, k, 1)*vvxd
-    skd(i, j, k, 1) = skd(i, j, k, 1) + w(i, j, k+1, ivy)*vvxd
     wd(i, j-1, k, ivy) = wd(i, j-1, k, ivy) - sj(i, j-1, k, 1)*vvxd
-    sjd(i, j-1, k, 1) = sjd(i, j-1, k, 1) - w(i, j-1, k, ivy)*vvxd
     wd(i, j, k-1, ivy) = wd(i, j, k-1, ivy) - sk(i, j, k-1, 1)*vvxd
-    skd(i, j, k-1, 1) = skd(i, j, k-1, 1) - w(i, j, k-1, ivy)*vvxd
     wd(i+1, j, k, ivx) = wd(i+1, j, k, ivx) + si(i, j, k, 3)*uuzd
-    sid(i, j, k, 3) = sid(i, j, k, 3) + w(i+1, j, k, ivx)*uuzd
     wd(i-1, j, k, ivx) = wd(i-1, j, k, ivx) - si(i-1, j, k, 3)*uuzd
-    sid(i-1, j, k, 3) = sid(i-1, j, k, 3) - w(i-1, j, k, ivx)*uuzd
     wd(i, j+1, k, ivx) = wd(i, j+1, k, ivx) + sj(i, j, k, 3)*uuzd
-    sjd(i, j, k, 3) = sjd(i, j, k, 3) + w(i, j+1, k, ivx)*uuzd
     wd(i, j, k+1, ivx) = wd(i, j, k+1, ivx) + sk(i, j, k, 3)*uuzd
-    skd(i, j, k, 3) = skd(i, j, k, 3) + w(i, j, k+1, ivx)*uuzd
     wd(i, j-1, k, ivx) = wd(i, j-1, k, ivx) - sj(i, j-1, k, 3)*uuzd
-    sjd(i, j-1, k, 3) = sjd(i, j-1, k, 3) - w(i, j-1, k, ivx)*uuzd
     wd(i, j, k-1, ivx) = wd(i, j, k-1, ivx) - sk(i, j, k-1, 3)*uuzd
-    skd(i, j, k-1, 3) = skd(i, j, k-1, 3) - w(i, j, k-1, ivx)*uuzd
     wd(i+1, j, k, ivx) = wd(i+1, j, k, ivx) + si(i, j, k, 2)*uuyd
-    sid(i, j, k, 2) = sid(i, j, k, 2) + w(i+1, j, k, ivx)*uuyd
     wd(i-1, j, k, ivx) = wd(i-1, j, k, ivx) - si(i-1, j, k, 2)*uuyd
-    sid(i-1, j, k, 2) = sid(i-1, j, k, 2) - w(i-1, j, k, ivx)*uuyd
     wd(i, j+1, k, ivx) = wd(i, j+1, k, ivx) + sj(i, j, k, 2)*uuyd
-    sjd(i, j, k, 2) = sjd(i, j, k, 2) + w(i, j+1, k, ivx)*uuyd
     wd(i, j, k+1, ivx) = wd(i, j, k+1, ivx) + sk(i, j, k, 2)*uuyd
-    skd(i, j, k, 2) = skd(i, j, k, 2) + w(i, j, k+1, ivx)*uuyd
     wd(i, j-1, k, ivx) = wd(i, j-1, k, ivx) - sj(i, j-1, k, 2)*uuyd
-    sjd(i, j-1, k, 2) = sjd(i, j-1, k, 2) - w(i, j-1, k, ivx)*uuyd
     wd(i, j, k-1, ivx) = wd(i, j, k-1, ivx) - sk(i, j, k-1, 2)*uuyd
-    skd(i, j, k-1, 2) = skd(i, j, k-1, 2) - w(i, j, k-1, ivx)*uuyd
     wd(i+1, j, k, ivx) = wd(i+1, j, k, ivx) + si(i, j, k, 1)*uuxd
-    sid(i, j, k, 1) = sid(i, j, k, 1) + w(i+1, j, k, ivx)*uuxd
     wd(i-1, j, k, ivx) = wd(i-1, j, k, ivx) - si(i-1, j, k, 1)*uuxd
-    sid(i-1, j, k, 1) = sid(i-1, j, k, 1) - w(i-1, j, k, ivx)*uuxd
     wd(i, j+1, k, ivx) = wd(i, j+1, k, ivx) + sj(i, j, k, 1)*uuxd
-    sjd(i, j, k, 1) = sjd(i, j, k, 1) + w(i, j+1, k, ivx)*uuxd
     wd(i, j, k+1, ivx) = wd(i, j, k+1, ivx) + sk(i, j, k, 1)*uuxd
-    skd(i, j, k, 1) = skd(i, j, k, 1) + w(i, j, k+1, ivx)*uuxd
     wd(i, j-1, k, ivx) = wd(i, j-1, k, ivx) - sj(i, j-1, k, 1)*uuxd
-    sjd(i, j-1, k, 1) = sjd(i, j-1, k, 1) - w(i, j-1, k, ivx)*uuxd
     wd(i, j, k-1, ivx) = wd(i, j, k-1, ivx) - sk(i, j, k-1, 1)*uuxd
-    skd(i, j, k-1, 1) = skd(i, j, k-1, 1) - w(i, j, k-1, ivx)*uuxd
   end do
-  timerefd = timerefd + sections(sectionid)%rotrate(2)*omegayd + &
-&   sections(sectionid)%rotrate(1)*omegaxd + sections(sectionid)%rotrate&
-&   (3)*omegazd
-end subroutine prodkatolaunder_b
+end subroutine prodkatolaunder_fast_b
