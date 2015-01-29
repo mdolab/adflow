@@ -41,7 +41,6 @@ FILES_TO_COMPLEXIFY = \
 		determineStencil.F90\
 		setupAllResidualMatricesFwd.F90\
 		setupColoring.F90\
-		setupExtraResidualMatrix.F90\
 		setPointers_d.f90\
 		setDiffSizes.F90\
 		writeMatrices.F90\

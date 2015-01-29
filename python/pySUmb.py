@@ -2378,11 +2378,8 @@ class SUMB(AeroSolver):
         if self.nDVAero <= 0:
             return numpy.zeros((0))
 
-        if self.getOption('useMatrixFreedRdx'):
-            return self.computeMatrixFreeProductBwd(
-                resBar=vec, xDvDerivAero=True)
-        else:
-            return self.sumb.getdrdatpsi(self.nDVAero, vec)
+        return self.computeMatrixFreeProductBwd(
+            resBar=vec, xDvDerivAero=True)
 
     def getdIdw(self, objective):
         obj, aeroObj = self._getObjective(objective)
@@ -2536,7 +2533,10 @@ class SUMB(AeroSolver):
         self._setAeroDVs()
 
         if resBar is None:
-            resBar = numpy.zeros(self.getStateSize())
+            if self.getOption('frozenTurbulence'):
+                resBar = numpy.zeros(self.getAdjointStateSize())
+            else:
+                resBar = numpy.zeros(self.getStateSize())
 
         if funcsBar is None:
             funcsBar = numpy.zeros(self.sumb.costfunctions.ncostfunction)

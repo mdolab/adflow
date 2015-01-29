@@ -24,20 +24,14 @@ subroutine alloc_derivative_values(level)
   integer(kind=intType) :: level
 
   ! Local variables
-  integer(kind=intType) :: sps,ierr,i,j,k,l, mm, nState, nn
+  integer(kind=intType) :: sps,ierr,i,j,k,l, mm, nn
   integer(kind=intType) :: iBeg, jBeg, iStop, jStop, isizemax, jsizemax
   integer(kind=intType) :: massShape(2), max_face_size
 
   real(kind=realType) :: alpha, beta, force(3, nTimeINtervalsSpectral), moment(3, nTimeIntervalsSpectral), sepSensor, Cavitation
   integer(kind=intType) :: liftIndex
   
-  ! Setup number of state variable based on turbulence assumption
-  if ( frozenTurbulence ) then
-     nState = nwf
-  else
-     nState = nw
-  endif
-  
+ 
   ! This routine will not use the extra variables to block_res or the
   ! extra outputs, so we must zero them here
 
@@ -307,7 +301,7 @@ subroutine alloc_derivative_values(level)
         call setPointers(nn,level,sps)
         shockSensor => flowDoms(nn,level,sps)%shockSensor
 
-        call block_res(nn, sps, .False., alpha, beta, liftIndex, force, moment, sepSensor, Cavitation)
+        call block_res(nn, sps, .False., alpha, beta, liftIndex, force, moment, sepSensor, Cavitation, .False.)
 
         allocate(flowDomsd(nn,1,sps)%wtmp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
@@ -321,7 +315,7 @@ subroutine alloc_derivative_values(level)
         allocate(flowDomsd(nn,1,sps)%xtmp(0:ie,0:je,0:ke,3),stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
         
-        allocate(flowDomsd(nn,1,sps)%dw_deriv(0:ib,0:jb,0:kb,1:nState,1:nState),stat=ierr)
+        allocate(flowDomsd(nn,1,sps)%dw_deriv(0:ib,0:jb,0:kb,1:nw,1:nw),stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
         
         flowDomsd(nn,1,sps)%dw_deriv(:,:,:,:,:) = 0.0
