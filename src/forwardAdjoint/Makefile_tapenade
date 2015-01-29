@@ -235,6 +235,7 @@ ad_reverse_fast:
 	saModule%saSource(scratch,w,rlv)>(scratch,w,rlv) \
 	saModule%saViscous(scratch, w,rlv)>(scratch,w,rlv) \
 	saModule%saResScale(scratch)>(dw) \
+	saEddyViscosity(w,rlv)>(w,rlv,rev) \
 	turbAdvection(w,scratch)>(w,scratch)" \
 	-adjvarname %d \
 	-adjfuncname %_fast_b \

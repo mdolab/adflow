@@ -104,7 +104,7 @@ subroutine whalo1to1_b(level, start, end, commPressure,       &
            ! The specific heat ratio, if needed. Note that level == 1.
 
            if( commVarGamma ) then
-              recvBuffer(jj) = flowDoms(d2,1,mm)%gamma(i2,j2,k2)
+              recvBuffer(jj) = flowDomsd(d2,1,mm)%gamma(i2,j2,k2)
               jj = jj + 1
            endif
 
@@ -112,7 +112,7 @@ subroutine whalo1to1_b(level, start, end, commPressure,       &
            ! Again level == 1.
 
            if( commLamVis ) then
-              recvBuffer(jj) = flowDoms(d2,1,mm)%rlv(i2,j2,k2)
+              recvBuffer(jj) = flowDomsd(d2,1,mm)%rlv(i2,j2,k2)
               jj = jj + 1
            endif
 
@@ -121,14 +121,13 @@ subroutine whalo1to1_b(level, start, end, commPressure,       &
            ! viscosity is allocated on all grid levels.
 
            if( commEddyVis ) then
-              recvBuffer(jj) = flowDoms(d2,level,mm)%rev(i2,j2,k2)
+              recvBuffer(jj) = flowDomsd(d2,level,mm)%rev(i2,j2,k2)
               jj = jj + 1
            endif
 
         enddo
 
         ! Send the data.
-
         call mpi_isend(recvBuffer(ii), size, sumb_real, procID,  &
              procID, SUmb_comm_world, recvRequests(i), &
              ierr)
@@ -180,7 +179,6 @@ subroutine whalo1to1_b(level, start, end, commPressure,       &
         k2 = internal(level)%haloIndices(i,3)
 
         ! Sum into the '1' values from the '2' values (halos). 
-
         do k=start,end
            flowDomsd(d1,level,mm)%w(i1,j1,k1,k) = flowDomsd(d1,level,mm)%w(i1,j1,k1,k) + &
                 flowDomsd(d2,level,mm)%w(i2,j2,k2,k)
@@ -211,8 +209,8 @@ subroutine whalo1to1_b(level, start, end, commPressure,       &
         ! viscosity is allocated on all grid levels.
 
         if( commEddyVis )                      &
-             flowDoms(d1,level,mm)%rev(i1,j1,k1) = flowDoms(d1,level,mm)%rev(i1,j1,k1) + &
-             flowDoms(d2,level,mm)%rev(i2,j2,k2)
+             flowDomsd(d1,level,mm)%rev(i1,j1,k1) = flowDomsd(d1,level,mm)%rev(i1,j1,k1) + &
+             flowDomsd(d2,level,mm)%rev(i2,j2,k2)
 
 
      enddo localCopy
@@ -230,7 +228,9 @@ subroutine whalo1to1_b(level, start, end, commPressure,       &
         ! ! Copy the data just arrived in the halo's.
 
         ii = index
+
         jj = nVar*commPattern(level)%nsendCum(ii-1)
+        
         do j=1,commPattern(level)%nsend(ii)
 
            ! Store the block and the indices of the halo a bit easier.

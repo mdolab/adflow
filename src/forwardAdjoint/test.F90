@@ -13,11 +13,14 @@ subroutine testRev(dwbar, wbar, m)
   use communication
   use diffSizes
   use ADjointVars
-  use inputDiscretization
   use cgnsGrid
   use block
+  use inputiteration
   use adjointpetsc, only : psi_like3
   use bcroutines_fast_b
+  use samodule_fast_b
+  !use samodule_b
+  use paramturb
   implicit none
 
   ! Input Variables
@@ -35,8 +38,8 @@ subroutine testRev(dwbar, wbar, m)
   real(kind=realType) :: timea, timeb, fwdTime, revTime, ovol
   logical :: resetToRANS
 
-  call VecPlaceArray(psi_like3, wbar, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+  ! call VecPlaceArray(psi_like3, wbar, ierr)
+  ! call EChk(ierr,__FILE__,__LINE__)
 
   ! Setup number of state variable based on turbulence assumption
   if ( frozenTurbulence ) then
@@ -75,7 +78,6 @@ subroutine testRev(dwbar, wbar, m)
   !call alloc_derivative_values( level)
   call alloc_derivative_values(level)
   call mpi_barrier(sumb_comm_world, ierr)
-
   ii = 0
   sps = 1
   timeA = mpi_wtime()
@@ -87,39 +89,74 @@ subroutine testRev(dwbar, wbar, m)
         do j=2,jl
            do i=2,il
               ovol = one/vol(i,j,k)
-              do l=1,nw
+              do l=1,nwf
                  dwd(i,j,k,l) = dwbar(ii+ l)*ovol
+                 fwd(i,j,k,l) = dwd(i,j,k,l)
+              end do
+              do l=nt1,nt2
+                 dwd(i,j,k,l) = dwbar(ii+ l)*ovol*turbresscale
                  fwd(i,j,k,l) = dwd(i,j,k,l)
               end do
               ii = ii + nw
            end do
         end do
      end do
-   
+
+     cv13 = rsacv1**3
+     kar2inv = one/rsak**2
+     cw36 = rsacw3**6
+     cb3inv = one/rsacb3
      call viscousFlux_fast_b
+
      call allnodalgradients_fast_b
      call computespeedofsoundsquared_fast_b
      call inviscidDissFluxScalar_fast_b
      call inviscidcentralflux_fast_b
+
+     ! Turblent sa stuff
+     call saresscale_fast_b()
+     call saviscous_fast_b()
+     call turbadvection_fast_b(1_inttype, 1_inttype, itu1-1, qq)
+     call sasource_fast_b()
+
+     select case  (turbprod) 
+     case (strain) 
+        call prodsmag2_fast_b()
+     case (vorticity) 
+        call prodwmag2_fast_b()
+     case (katolaunder) 
+        call prodkatolaunder_fast_b()
+     end select
+
      call timestep_block_fast_b(.False.)
+     call applyallturbbcthisblock_b(.true.)
+     call bcturbtreatment_b()
      call applyallbc_block_fast_b(.True.)
+  end do
+
+  call whalo2_b(1, 1, nw, .True., .True., .True.)
+  ii = 0
+  do nn=1,nDom
+     call setPointers_d(nn, level, 1)
+     call saeddyviscosity_b
      call computelamviscosity_fast_b
      call computepressuresimple_fast_b
-     do k=0, kb
-        do j=0,jb
-           do i=0,ib
+
+     ! We can put stuff directly into wbar with no assembly; the
+     ! whalo_b already takes care of it. 
+
+     do k=2, kl
+        do j=2,jl
+           do i=2,il
               do l=1,nw
-                 irow = flowDoms(nn, 1, sps)%globalCell(i,j,k)*nw + l -1
-                 if (irow >= 0) then 
-                    call VecSetValues(psi_like3, 1, (/irow/), &
-                         (/flowdomsd(nn, level, sps)%w(i, j, k, l)/), ADD_VALUES, ierr)
-                    call EChk(ierr,__FILE__,__LINE__)
-                 end if
+                 ii =ii + 1
+                 wbar(ii) = flowdomsd(nn, level, sps)%w(i,j,k,l)
               end do
            end do
         end do
-     end do                     
+     end do
   end do
+
   timeB = mpi_wtime()
   print *,'Fortran Time:', myid, timeB-timeA
   call dealloc_derivative_values(level)
@@ -142,14 +179,14 @@ subroutine testRev(dwbar, wbar, m)
      if( eddyModel ) restrictEddyVis = .true.
   end if
 
-  call VecAssemblyBegin(psi_like3, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-     
-  call VecAssemblyEnd(psi_like3, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-  
-  call VecResetArray(psi_like3, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+  ! call VecAssemblyBegin(psi_like3, ierr)
+  ! call EChk(ierr,__FILE__,__LINE__)
+
+  ! call VecAssemblyEnd(psi_like3, ierr)
+  ! call EChk(ierr,__FILE__,__LINE__)
+
+  ! call VecResetArray(psi_like3, ierr)
+  ! call EChk(ierr,__FILE__,__LINE__)
 
 #endif
 end subroutine testRev
@@ -229,10 +266,10 @@ end subroutine testRev
 
 !      do nn=1,nDom
 !         ! Run the regular forward call:
-        
+
 !         ! Set pointers to the first timeInstance...just to getSizes
 !         call setPointers(nn, level, 1)
-        
+
 !         call computeLamViscosity
 !         ! call computeEddyViscosity
 !         ! call applyAllBC_block(.True.)
@@ -264,7 +301,7 @@ end subroutine testRev
 !   do ii=1,10
 !      call whalo2_b(1_intType, 1_intType, nw, .true., &
 !           .true., .true.)
-     
+
 !      do nn=1,nDom
 !         ! Set pointers and derivative pointers
 !         call setPointers_d(nn, level, 1)

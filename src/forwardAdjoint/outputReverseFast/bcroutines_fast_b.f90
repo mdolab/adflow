@@ -98,6 +98,16 @@ contains
       end if
     end do
 ! ------------------------------------
+!  isotermal wall boundary condition 
+! ------------------------------------
+    do nn=1,nviscbocos
+      if (bctype(nn) .eq. nswallisothermal) then
+        call setbcpointers(nn, .false.)
+        call bcnswallisothermal(nn, secondhalo, correctfork)
+        call resetbcpointers(nn, .false.)
+      end if
+    end do
+! ------------------------------------
 !  farfield boundary condition 
 ! ------------------------------------
     if (precond .eq. turkel .or. precond .eq. choimerkle) call &
@@ -109,6 +119,16 @@ contains
         call setbcpointers(nn, .false.)
         call bcfarfield(nn, secondhalo, correctfork)
         call resetbcpointers(nn, .false.)
+      end if
+    end do
+! ------------------------------------
+!  euler wall boundary condition 
+! ------------------------------------
+    do nn=1,nbocos
+      if (bctype(nn) .eq. eulerwall) then
+        call setbcpointers(nn, .true.)
+        call bceulerwall(nn, secondhalo, correctfork)
+        call resetbcpointers(nn, .true.)
       end if
     end do
   end subroutine applyallbc_block
@@ -162,8 +182,6 @@ contains
     real(kind=realtype) :: tempd
     real(kind=realtype) :: tempd0
     if (secondhalo) then
-      call pushinteger4(i)
-      call pushinteger4(j)
       do ii=0,isize*jsize-1
         i = mod(ii, isize) + istart
         j = ii/isize + jstart
@@ -214,8 +232,6 @@ branch = myIntStack(myIntPtr)
         ww3d(i, j, ivz) = ww3d(i, j, ivz) + bcdata(nn)%norm(i, j, 3)*&
 &         tempd0
       end do
-      call popinteger4(j)
-      call popinteger4(i)
     end if
     do ii=0,isize*jsize-1
       i = mod(ii, isize) + istart
@@ -422,12 +438,10 @@ branch = myIntStack(myIntPtr)
       if (eddymodel) rev1(i, j) = -rev2(i, j)
     end do
 ! compute the energy for these halo's.
-    call pushreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
     call computeetot(ww1, pp1, correctfork)
 ! extrapolate the state vectors in case a second halo
 ! is needed.
     if (secondhalo) call extrapolate2ndhalo_fast_b(correctfork)
-    call popreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
     call computeetot_fast_b(ww1, ww1d, pp1, pp1d, correctfork)
     rhokd = 0.0_8
     do ii=0,isize*jsize-1
@@ -584,8 +598,6 @@ branch = myIntStack(myIntPtr)
 ! initialize rhok to zero. this will be overwritten if a
 ! correction for k must be applied.
     rhok = zero
-    call pushreal8array(pp1, size(pp1, 1)*size(pp1, 2))
-    call pushreal8(rhok)
 ! loop over the generic subface to set the state in the
 ! halo cells.
     do ii=0,isize*jsize-1
@@ -626,16 +638,12 @@ branch = myIntStack(myIntPtr)
       if (eddymodel) rev1(i, j) = -rev2(i, j)
     end do
 ! compute the energy for these halo's.
-    call pushreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
     call computeetot(ww1, pp1, correctfork)
 ! extrapolate the state vectors in case a second halo
 ! is needed.
     if (secondhalo) call extrapolate2ndhalo_fast_b(correctfork)
-    call popreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
     call computeetot_fast_b(ww1, ww1d, pp1, pp1d, correctfork)
     rhokd = 0.0_8
-    call popreal8(rhok)
-    call popreal8array(pp1, size(pp1, 1)*size(pp1, 2))
     do ii=0,isize*jsize-1
       i = mod(ii, isize) + istart
       j = ii/isize + jstart
@@ -876,7 +884,6 @@ myIntPtr = myIntPtr + 1
 myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 1
     end select
-    call pushinteger4(j)
 ! determine the state in the halo cell. again loop over
 ! the cell range for this subface.
     do ii=0,isize*jsize-1
@@ -903,12 +910,10 @@ myIntPtr = myIntPtr + 1
       if (eddymodel) rev1(j, k) = rev2(j, k)
     end do
 ! compute the energy for these halo's.
-    call pushreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
     call computeetot(ww1, pp1, correctfork)
 ! extrapolate the state vectors in case a second halo
 ! is needed.
     if (secondhalo) call extrapolate2ndhalo_fast_b(correctfork)
-    call popreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
     call computeetot_fast_b(ww1, ww1d, pp1, pp1d, correctfork)
     gradd = 0.0_8
     do ii=0,isize*jsize-1
@@ -959,7 +964,6 @@ branch = myIntStack(myIntPtr)
 &               pp1d(j, k))
       pp1d(j, k) = 0.0_8
     end do
-    call popinteger4(j)
 branch = myIntStack(myIntPtr)
  myIntPtr = myIntPtr - 1
     if (branch .eq. 0) then
@@ -1120,7 +1124,6 @@ branch = myIntStack(myIntPtr)
     w0 = winf(ivz)
     c0 = sqrt(gammainf*pinfcorr*r0)
     s0 = winf(irho)**gammainf/pinfcorr
-    call pushreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
 ! loop over the generic subface to set the state in the
 ! halo cells.
     do ii=0,isize*jsize-1
@@ -1197,14 +1200,11 @@ branch = myIntStack(myIntPtr)
       if (eddymodel) rev1(i, j) = rev2(i, j)
     end do
 ! compute the energy for these halo's.
-    call pushreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
     call computeetot(ww1, pp1, correctfork)
 ! extrapolate the state vectors in case a second halo
 ! is needed.
     if (secondhalo) call extrapolate2ndhalo_fast_b(correctfork)
-    call popreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
     call computeetot_fast_b(ww1, ww1d, pp1, pp1d, correctfork)
-    call popreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
     do ii=0,isize*jsize-1
       i = mod(ii, isize) + istart
       j = ii/isize + jstart
@@ -1534,7 +1534,6 @@ branch = myIntStack(myIntPtr)
     intrinsic mod
     intrinsic max
     integer :: branch
-    call pushreal8array(ww0, size(ww0, 1)*size(ww0, 2)*size(ww0, 3))
 ! loop over the generic subface to set the state in the
 ! halo cells.
     do ii=0,isize*jsize-1
@@ -1567,7 +1566,6 @@ branch = myIntStack(myIntPtr)
       if (eddymodel) rev0(i, j) = rev1(i, j)
     end do
     call computeetot_fast_b(ww0, ww0d, pp0, pp0d, correctfork)
-    call popreal8array(ww0, size(ww0, 1)*size(ww0, 2)*size(ww0, 3))
     do ii=0,isize*jsize-1
       i = mod(ii, isize) + istart
       j = ii/isize + jstart
