@@ -247,11 +247,14 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
   use flowVarRefState     
   use inputAdjoint       
   use diffSizes
-  use ADjointPETSc
+  use ADjointPETSc, only : x_like, psi_like3
   use adjointvars
   use costfunctions
   use walldistancedata, only : xSurfVec, xSurfVecd, xSurf, xSurfd, wallScatter
   implicit none
+#define PETSC_AVOID_MPIF_H
+#include "finclude/petsc.h"
+#include "finclude/petscvec.h90"
 
   ! Input Variables
   integer(kind=intType), intent(in) :: spatialSize, extraSize, stateSize, costSize

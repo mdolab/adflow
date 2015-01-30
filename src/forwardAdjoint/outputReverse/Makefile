@@ -62,8 +62,6 @@ FF90_OBJECTS2 =  \
 		viscousflux_b.o \
 		viscousfluxapprox_b.o\
 		computeetotcellcpfit_b.o \
-		setssmetricbwd_b.o\
-		resetssmetricbwd_b.o\
 	        inviscidcentralflux_b.o\
                 saeddyviscosity_b.o\
 		computeeddyviscosity_b.o\
@@ -93,7 +91,7 @@ FF90_OBJECTS2 =  \
 		bcturbwall_b.o\
 		bcturbfarfield_b.o\
 		updatewalldistancesquickly_b.o\
-
+		boundarynormals_b.o\
 #      ******************************************************************
 #      *                                                                *
 #      * Targets for make.                                              *

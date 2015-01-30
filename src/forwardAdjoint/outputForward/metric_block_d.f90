@@ -25,7 +25,7 @@ subroutine metric_block_d()
 !
 !      local variables.
 !
-  integer(kind=inttype) :: i, j, k, n, m, l
+  integer(kind=inttype) :: i, j, k, n, m, l, ii
   integer(kind=inttype) :: mm
   real(kind=realtype) :: fact, mult
   real(kind=realtype) :: factd
@@ -34,38 +34,9 @@ subroutine metric_block_d()
 & vp6d
   real(kind=realtype), dimension(3) :: v1, v2
   real(kind=realtype), dimension(3) :: v1d, v2d
-  real(kind=realtype), dimension(:, :, :), pointer :: ss
-  real(kind=realtype), dimension(:, :, :), pointer :: ssd
-  interface 
-      subroutine setssmetric(nn, ss)
-        use bctypes
-        use blockpointers
-        implicit none
-        integer(kind=inttype), intent(in) :: nn
-        real(kind=realtype), dimension(:, :, :), pointer :: ss
-      end subroutine setssmetric
-      subroutine resetssmetric(nn, ss)
-        use bctypes
-        use blockpointers
-        implicit none
-        integer(kind=inttype), intent(in) :: nn
-        real(kind=realtype), dimension(:, :, :), pointer :: ss
-      end subroutine resetssmetric
-  end interface
-
-  interface 
-      subroutine setssmetric_d(nn, ss, ssd)
-        use bctypes
-        use blockpointers
-        implicit none
-        integer(kind=inttype), intent(in) :: nn
-        real(kind=realtype), dimension(:, :, :), pointer :: ss
-        real(kind=realtype), dimension(:, :, :), pointer :: ssd
-      end subroutine setssmetric_d
-  end interface
-
   logical :: checkk, checkj, checki, checkall
   intrinsic abs
+  intrinsic mod
   intrinsic sqrt
   real(kind=realtype) :: arg1
   real(kind=realtype) :: arg1d
@@ -92,22 +63,15 @@ subroutine metric_block_d()
   vp4d = 0.0_8
   vp5d = 0.0_8
   vp6d = 0.0_8
+  xpd = 0.0_8
+  ypd = 0.0_8
+  zpd = 0.0_8
   do k=1,ke
-    n = k - 1
-    checkk = .true.
-    if (k .eq. 1 .or. k .eq. ke) checkk = .false.
     do j=1,je
-      m = j - 1
-      checkj = .true.
-      if (j .eq. 1 .or. j .eq. je) checkj = .false.
       do i=1,ie
+        n = k - 1
+        m = j - 1
         l = i - 1
-        checki = .true.
-        if (i .eq. 1 .or. i .eq. ie) checki = .false.
-! determine whether or not the voluem must be checked for
-! quality. only owned volumes are checked, not halo's.
-        checkall = .false.
-        if (checkk .and. checkj .and. checki) checkall = .true.
 ! compute the coordinates of the center of gravity.
         xpd = eighth*(xd(i, j, k, 1)+xd(i, m, k, 1)+xd(i, m, n, 1)+xd(i&
 &         , j, n, 1)+xd(l, j, k, 1)+xd(l, m, k, 1)+xd(l, m, n, 1)+xd(l, &
@@ -255,6 +219,7 @@ subroutine metric_block_d()
 !          **************************************************************
 !
 ! projected areas of cell faces in the i direction.
+! projected areas of cell faces in the i direction.
   do k=1,ke
     n = k - 1
     do j=1,je
@@ -361,7 +326,6 @@ subroutine metric_block_d()
   do ii1=1,isize1ofdrfbcdata
     bcdatad(ii1)%norm = 0.0_8
   end do
-!
 !          **************************************************************
 !          *                                                            *
 !          * the unit normals on the boundary faces. these always point *
@@ -372,56 +336,84 @@ subroutine metric_block_d()
 !
 ! loop over the boundary subfaces of this block.
 bocoloop:do mm=1,nbocos
-! determine the block face on which this subface is located
-! and set ss and mult accordingly.
-    call setssmetric_d(mm, ss, ssd)
-    select case  (bcfaceid(mm)) 
-    case (imin) 
-      mult = -one
-    case (imax) 
-      mult = one
-    case (jmin) 
-      mult = -one
-    case (jmax) 
-      mult = one
-    case (kmin) 
-      mult = -one
-    case (kmax) 
-      mult = one
-    end select
 ! loop over the boundary faces of the subface.
-    do j=bcdata(mm)%jcbeg,bcdata(mm)%jcend
-      do i=bcdata(mm)%icbeg,bcdata(mm)%icend
+    do ii=0,(bcdata(mm)%jcend-bcdata(mm)%jcbeg+1)*(bcdata(mm)%icend-&
+&       bcdata(mm)%icbeg+1)-1
+      i = mod(ii, bcdata(mm)%icend - bcdata(mm)%icbeg + 1) + bcdata(mm)%&
+&       icbeg
+      j = ii/(bcdata(mm)%icend-bcdata(mm)%icbeg+1) + bcdata(mm)%jcbeg
+      select case  (bcfaceid(mm)) 
+      case (imin) 
+        mult = -one
+        xpd = sid(1, i, j, 1)
+        xp = si(1, i, j, 1)
+        ypd = sid(1, i, j, 2)
+        yp = si(1, i, j, 2)
+        zpd = sid(1, i, j, 3)
+        zp = si(1, i, j, 3)
+      case (imax) 
+        mult = one
+        xpd = sid(il, i, j, 1)
+        xp = si(il, i, j, 1)
+        ypd = sid(il, i, j, 2)
+        yp = si(il, i, j, 2)
+        zpd = sid(il, i, j, 3)
+        zp = si(il, i, j, 3)
+      case (jmin) 
+        mult = -one
+        xpd = sjd(i, 1, j, 1)
+        xp = sj(i, 1, j, 1)
+        ypd = sjd(i, 1, j, 2)
+        yp = sj(i, 1, j, 2)
+        zpd = sjd(i, 1, j, 3)
+        zp = sj(i, 1, j, 3)
+      case (jmax) 
+        mult = one
+        xpd = sjd(i, jl, j, 1)
+        xp = sj(i, jl, j, 1)
+        ypd = sjd(i, jl, j, 2)
+        yp = sj(i, jl, j, 2)
+        zpd = sjd(i, jl, j, 3)
+        zp = sj(i, jl, j, 3)
+      case (kmin) 
+        mult = -one
+        xpd = skd(i, j, 1, 1)
+        xp = sk(i, j, 1, 1)
+        ypd = skd(i, j, 1, 2)
+        yp = sk(i, j, 1, 2)
+        zpd = skd(i, j, 1, 3)
+        zp = sk(i, j, 1, 3)
+      case (kmax) 
+        mult = one
+        xpd = skd(i, j, kl, 1)
+        xp = sk(i, j, kl, 1)
+        ypd = skd(i, j, kl, 2)
+        yp = sk(i, j, kl, 2)
+        zpd = skd(i, j, kl, 3)
+        zp = sk(i, j, kl, 3)
+      end select
 ! compute the inverse of the length of the normal vector
 ! and possibly correct for inward pointing.
-        xpd = ssd(i, j, 1)
-        xp = ss(i, j, 1)
-        ypd = ssd(i, j, 2)
-        yp = ss(i, j, 2)
-        zpd = ssd(i, j, 3)
-        zp = ss(i, j, 3)
-        arg1d = xpd*xp + xp*xpd + ypd*yp + yp*ypd + zpd*zp + zp*zpd
-        arg1 = xp*xp + yp*yp + zp*zp
-        if (arg1 .eq. 0.0_8) then
-          factd = 0.0_8
-        else
-          factd = arg1d/(2.0*sqrt(arg1))
-        end if
-        fact = sqrt(arg1)
-        if (fact .gt. zero) then
-          factd = -(mult*factd/fact**2)
-          fact = mult/fact
-        end if
+      arg1d = xpd*xp + xp*xpd + ypd*yp + yp*ypd + zpd*zp + zp*zpd
+      arg1 = xp*xp + yp*yp + zp*zp
+      if (arg1 .eq. 0.0_8) then
+        factd = 0.0_8
+      else
+        factd = arg1d/(2.0*sqrt(arg1))
+      end if
+      fact = sqrt(arg1)
+      if (fact .gt. zero) then
+        factd = -(mult*factd/fact**2)
+        fact = mult/fact
+      end if
 ! compute the unit normal.
-        bcdatad(mm)%norm(i, j, 1) = factd*xp + fact*xpd
-        bcdata(mm)%norm(i, j, 1) = fact*xp
-        bcdatad(mm)%norm(i, j, 2) = factd*yp + fact*ypd
-        bcdata(mm)%norm(i, j, 2) = fact*yp
-        bcdatad(mm)%norm(i, j, 3) = factd*zp + fact*zpd
-        bcdata(mm)%norm(i, j, 3) = fact*zp
-      end do
+      bcdatad(mm)%norm(i, j, 1) = factd*xp + fact*xpd
+      bcdata(mm)%norm(i, j, 1) = fact*xp
+      bcdatad(mm)%norm(i, j, 2) = factd*yp + fact*ypd
+      bcdata(mm)%norm(i, j, 2) = fact*yp
+      bcdatad(mm)%norm(i, j, 3) = factd*zp + fact*zpd
+      bcdata(mm)%norm(i, j, 3) = fact*zp
     end do
-    call resetssmetric(mm, ss)
   end do bocoloop
 
 contains
