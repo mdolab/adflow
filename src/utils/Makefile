@@ -99,10 +99,6 @@ FILES_TO_COMPLEXIFY =  \
 	       wOverset.f90\
 	       writeVarsToBuffer.f90\
 	       getLiftDirFromSymmetry.F90\
-	       setssMetric.f90\
-	       resetssMetric.f90\
-	       setssMetricBwd.f90\
-	       resetssMetricBwd.f90\
 
 FILES_TO_COPY = myIsNaNC.c\
 		f77flush.c\

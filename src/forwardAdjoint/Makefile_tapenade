@@ -1,3 +1,4 @@
+#    -*- makefile -*-
 #     ******************************************************************
 #     *                                                                *
 #     * File:          Makefile_tapenade                               *
@@ -21,8 +22,6 @@
 #     ******************************************************************
 
 # Define the required directories
-SUMB_DIR = ../..
-SUMB_COMMON_FILE = $(SUMB_DIR)/SUmb_Common.mk
 SRC = ..
 
 # Integer, double and real precision (bytes)
@@ -116,10 +115,6 @@ ALL_RES_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.F90\
 		$(SRC)/utils/rigidRotAngle.f90\
 		$(SRC)/utils/derivativeRigidRotAngle.f90\
 		$(SRC)/utils/dummy_dim.f90\
-		$(SRC)/utils/setssMetric.f90\
-		$(SRC)/utils/setssMetricBwd.f90\
-		$(SRC)/utils/resetssMetric.f90\
-		$(SRC)/utils/resetssMetricBwd.f90\
 		$(SRC)/utils/setPointers.f90\
 		$(SRC)/utils/terminate.F90\
 		$(SRC)/utils/computeEtot.f90\
@@ -243,19 +238,55 @@ ad_reverse_fast:
 	-noisize \
 	-O temp_reverse_fast $(I_RES_FILES)
 
-
 # Run the auto-edit file:
 	python autoEdit/autoEditReverseFast.py temp_reverse_fast outputReverseFast
 
 # Remove preprocessor files
 	make -f Makefile_tapenade cleanpreprocess_res
 
-preprocess_cost:
-	@echo "Preprocessing all input files for cost AD..."
-	@for file in $(ALL_COST_FILES); do \
-		echo Preprocessing $$file; \
-		cpp -DUSE_TAPENADE -traditional -P  $$file $$file.f90; \
-	done
+
+ad_reverse_spatial:
+# First delete the holding directory if it exists
+	rm -fr temp_reverse_spatial
+
+# Next create the holidng directory:
+	mkdir -p temp_reverse_spatial
+
+# Run preprocessor on all input files
+	make -f Makefile_tapenade preprocess_reverse_fast
+
+# The following is the single Tapenade command to run:
+	$(TAPENADE_HOME)/bin/tapenade -html \
+	-head "\
+	inviscidCentralFlux(vol, si, sj, sk)>(vol, si, sj, sk, dw) \
+	inviscidDissFluxScalar(radi, radj, radk, fw)>(fw, radi, radj, radk) \
+	timeStep_block(si, sj, sk, radi, radj, radk)>(si, sj, sk, radi, radj, radk) \
+	viscousFlux(ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz, fw, x, si, sj, sk)>(fw, x, si, sj, sk) \
+	allNodalGradients(x, vol, si, sj, sk)>(x, vol, si, sj, sk, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz) \
+	prodsmag2(vol, si, sj, sk, scratch)>(vol, si, sj, sk, scratch) \
+	prodwmag2(vol, si, sj, sk, scratch)>(vol, si, sj, sk, scratch) \
+	prodKatoLaunder(vol, si, sj, sk, scratch)>(vol, si, sj, sk, scratch) \
+	saModule%saSource(scratch,d2wall)>(scratch,d2wall) \
+	saModule%saViscous(scratch, vol, si, sj, sk)>(scratch, vol, si, sj, sk) \
+	saModule%saResScale(scratch, vol)>(dw) \
+	turbAdvection(vol, si, sj, sk, scratch)>(scratch, vol, si, sj, sk) \
+	metric_block(x, vol, si, sj, sk)>(x, vol, si, sj, sk) \
+	boundaryNormals(si, sj, sk)>(si, sj, sk BCData%norm) \
+	xhalo_block(x)>(x)" \
+	-adjvarname %d \
+	-adjfuncname %_spatial_b \
+	-reverse $(TAPENADE_PRECISION) \
+	-noisize \
+	-O temp_reverse_spatial $(I_RES_FILES)
+
+
+
+# Run the auto-edit file:
+#	python autoEdit/autoEditReverseFast.py temp_reverse_fast outputReverseFast
+
+# Remove preprocessor files
+	make -f Makefile_tapenade cleanpreprocess_res
+
 
 preprocess_forward:
 	@echo "Preprocessing all input files for forward mode AD..."
