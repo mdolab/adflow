@@ -161,6 +161,7 @@ subroutine block_res_b(nn, sps, usespatial, alpha, alphad, beta, betad, &
     call pushreal8array(si, size(si, 1)*size(si, 2)*size(si, 3)*size(si&
 &                 , 4))
     call metric_block()
+!call boundarynormals
     if (equations .eq. ransequations .and. useapproxwalldistance) then
       call updatewalldistancesquickly(nn, 1, sps)
       call pushcontrol2b(0)

@@ -18,45 +18,11 @@ subroutine metric_block
   !
   !      Local variables.
   !
-  integer(kind=intType) :: i, j, k, n, m, l
+  integer(kind=intType) :: i, j, k, n, m, l, ii
   integer(kind=intType) :: mm
   real(kind=realType) :: fact, mult
   real(kind=realType) :: xp, yp, zp, vp1, vp2, vp3, vp4, vp5, vp6
-
   real(kind=realType), dimension(3) :: v1, v2
-
-#ifndef TAPENADE_REVERSE
-  real(kind=realType), dimension(:,:,:), pointer :: ss
-
-    !
-!      Interfaces
-!
-       interface
-          subroutine setssMetric(nn, ss)
-
-           use BCTypes
-           use blockPointers
-           implicit none
-
-           integer(kind=intType), intent(in) :: nn
-           real(kind=realType), dimension(:,:,:), pointer :: ss
-         end subroutine setssMetric
-
-        subroutine resetssMetric(nn, ss)
-
-           use BCTypes
-           use blockPointers
-           implicit none
-
-           integer(kind=intType), intent(in) :: nn
-           real(kind=realType), dimension(:,:,:), pointer :: ss
-         end subroutine resetssMetric
-
-       end interface
-#else
-       real(kind=realType), dimension(imaxDim,jmaxDim,3) :: ss
-#endif
-
   logical :: checkK, checkJ, checkI, checkAll
 
   !
@@ -76,96 +42,82 @@ subroutine metric_block
 
   vol = zero
 
-  do k=1,ke
-     n = k -1
+  
+  do k=1, ke
+     do j=1, je
+        do i=1, ie
+           
+              n = k - 1
+              m = j - 1
+              l = i - 1
+              
+              ! Compute the coordinates of the center of gravity.
 
-     checkK = .true.
-     if(k == 1 .or. k == ke) checkK = .false.
-
-     do j=1,je
-        m = j -1
-
-        checkJ = .true.
-        if(j == 1 .or. j == je) checkJ = .false.
-
-        do i=1,ie
-           l = i -1
-
-           checkI = .true.
-           if(i == 1 .or. i == ie) checkI = .false.
-
-           ! Determine whether or not the voluem must be checked for
-           ! quality. Only owned volumes are checked, not halo's.
-
-           checkAll = .false.
-           if(checkK .and. checkJ .and. checkI) checkAll = .true.
-
-           ! Compute the coordinates of the center of gravity.
-
-           xp = eighth*(x(i,j,k,1) + x(i,m,k,1) &
-                +         x(i,m,n,1) + x(i,j,n,1) &
-                +         x(l,j,k,1) + x(l,m,k,1) &
-                +         x(l,m,n,1) + x(l,j,n,1))
-           yp = eighth*(x(i,j,k,2) + x(i,m,k,2) &
-                +         x(i,m,n,2) + x(i,j,n,2) &
-                +         x(l,j,k,2) + x(l,m,k,2) &
+              xp = eighth*(x(i,j,k,1) + x(i,m,k,1) &
+                   +         x(i,m,n,1) + x(i,j,n,1) &
+                   +         x(l,j,k,1) + x(l,m,k,1) &
+                   +         x(l,m,n,1) + x(l,j,n,1))
+              yp = eighth*(x(i,j,k,2) + x(i,m,k,2) &
+                   +         x(i,m,n,2) + x(i,j,n,2) &
+                   +         x(l,j,k,2) + x(l,m,k,2) &
                 +         x(l,m,n,2) + x(l,j,n,2))
-           zp = eighth*(x(i,j,k,3) + x(i,m,k,3) &
-                +         x(i,m,n,3) + x(i,j,n,3) &
-                +         x(l,j,k,3) + x(l,m,k,3) &
-                +         x(l,m,n,3) + x(l,j,n,3))
+              zp = eighth*(x(i,j,k,3) + x(i,m,k,3) &
+                   +         x(i,m,n,3) + x(i,j,n,3) &
+                   +         x(l,j,k,3) + x(l,m,k,3) &
+                   +         x(l,m,n,3) + x(l,j,n,3))
+              
+              
+              ! Compute the volumes of the 6 sub pyramids. The
+              ! arguments of volpym must be such that for a (regular)
+              ! right handed hexahedron all volumes are positive.
+              
+              call volpym(x(i,j,k,1), x(i,j,k,2), x(i,j,k,3), &
+                   x(i,j,n,1), x(i,j,n,2), x(i,j,n,3), &
+                   x(i,m,n,1), x(i,m,n,2), x(i,m,n,3), &
+                   x(i,m,k,1), x(i,m,k,2), x(i,m,k,3),vp1)
+              
+              call volpym(x(l,j,k,1), x(l,j,k,2), x(l,j,k,3), &
+                   x(l,m,k,1), x(l,m,k,2), x(l,m,k,3), &
+                   x(l,m,n,1), x(l,m,n,2), x(l,m,n,3), &
+                   x(l,j,n,1), x(l,j,n,2), x(l,j,n,3),vp2)
+              
+              call volpym(x(i,j,k,1), x(i,j,k,2), x(i,j,k,3), &
+                   x(l,j,k,1), x(l,j,k,2), x(l,j,k,3), &
+                   x(l,j,n,1), x(l,j,n,2), x(l,j,n,3), &
+                   x(i,j,n,1), x(i,j,n,2), x(i,j,n,3),vp3)
+              
+              call volpym(x(i,m,k,1), x(i,m,k,2), x(i,m,k,3), &
+                   x(i,m,n,1), x(i,m,n,2), x(i,m,n,3), &
+                   x(l,m,n,1), x(l,m,n,2), x(l,m,n,3), &
+                   x(l,m,k,1), x(l,m,k,2), x(l,m,k,3),vp4)
+              
+              call volpym(x(i,j,k,1), x(i,j,k,2), x(i,j,k,3), &
+                   x(i,m,k,1), x(i,m,k,2), x(i,m,k,3), &
+                   x(l,m,k,1), x(l,m,k,2), x(l,m,k,3), &
+                   x(l,j,k,1), x(l,j,k,2), x(l,j,k,3),vp5)
+              
+              call volpym(x(i,j,n,1), x(i,j,n,2), x(i,j,n,3), &
+                   x(l,j,n,1), x(l,j,n,2), x(l,j,n,3), &
+                   x(l,m,n,1), x(l,m,n,2), x(l,m,n,3), &
+                   x(i,m,n,1), x(i,m,n,2), x(i,m,n,3),vp6)
+              
+              ! Set the volume to 1/6 of the sum of the volumes of the
+              ! pyramid. Remember that volpym computes 6 times the
+              ! volume.
+              
+              vol(i,j,k) = sixth*(vp1 + vp2 + vp3 + vp4 + vp5 + vp6)
+              
+              ! Check the volume and update the number of positive
+              ! and negative volumes if needed.
 
-
-           ! Compute the volumes of the 6 sub pyramids. The
-           ! arguments of volpym must be such that for a (regular)
-           ! right handed hexahedron all volumes are positive.
-
-           call volpym(x(i,j,k,1), x(i,j,k,2), x(i,j,k,3), &
-                x(i,j,n,1), x(i,j,n,2), x(i,j,n,3), &
-                x(i,m,n,1), x(i,m,n,2), x(i,m,n,3), &
-                x(i,m,k,1), x(i,m,k,2), x(i,m,k,3),vp1)
-
-           call volpym(x(l,j,k,1), x(l,j,k,2), x(l,j,k,3), &
-                x(l,m,k,1), x(l,m,k,2), x(l,m,k,3), &
-                x(l,m,n,1), x(l,m,n,2), x(l,m,n,3), &
-                x(l,j,n,1), x(l,j,n,2), x(l,j,n,3),vp2)
-
-           call volpym(x(i,j,k,1), x(i,j,k,2), x(i,j,k,3), &
-                x(l,j,k,1), x(l,j,k,2), x(l,j,k,3), &
-                x(l,j,n,1), x(l,j,n,2), x(l,j,n,3), &
-                x(i,j,n,1), x(i,j,n,2), x(i,j,n,3),vp3)
-
-           call volpym(x(i,m,k,1), x(i,m,k,2), x(i,m,k,3), &
-                x(i,m,n,1), x(i,m,n,2), x(i,m,n,3), &
-                x(l,m,n,1), x(l,m,n,2), x(l,m,n,3), &
-                x(l,m,k,1), x(l,m,k,2), x(l,m,k,3),vp4)
-
-           call volpym(x(i,j,k,1), x(i,j,k,2), x(i,j,k,3), &
-                x(i,m,k,1), x(i,m,k,2), x(i,m,k,3), &
-                x(l,m,k,1), x(l,m,k,2), x(l,m,k,3), &
-                x(l,j,k,1), x(l,j,k,2), x(l,j,k,3),vp5)
-
-           call volpym(x(i,j,n,1), x(i,j,n,2), x(i,j,n,3), &
-                x(l,j,n,1), x(l,j,n,2), x(l,j,n,3), &
-                x(l,m,n,1), x(l,m,n,2), x(l,m,n,3), &
-                x(i,m,n,1), x(i,m,n,2), x(i,m,n,3),vp6)
-
-           ! Set the volume to 1/6 of the sum of the volumes of the
-           ! pyramid. Remember that volpym computes 6 times the
-           ! volume.
-
-           vol(i,j,k) = sixth*(vp1 + vp2 + vp3 + vp4 + vp5 + vp6)
-
-           ! Check the volume and update the number of positive
-           ! and negative volumes if needed.
-
-           ! Set the volume to the absolute value.
-
-           vol(i,j,k) = abs(vol(i,j,k))
+              ! Set the volume to the absolute value.
+              
+              vol(i,j,k) = abs(vol(i,j,k))
 
         enddo
      enddo
   enddo
+
 
   ! Some additional safety stuff for halo volumes.
 
@@ -221,6 +173,7 @@ subroutine metric_block
   !          *                                                            *
   !          **************************************************************
   !
+  ! Projected areas of cell faces in the i direction.
   ! Projected areas of cell faces in the i direction.
 
   do k=1,ke
@@ -310,7 +263,7 @@ subroutine metric_block
         enddo
      enddo
   enddo
-  !
+
   !          **************************************************************
   !          *                                                            *
   !          * The unit normals on the boundary faces. These always point *
@@ -320,70 +273,48 @@ subroutine metric_block
   !          **************************************************************
   !
   ! Loop over the boundary subfaces of this block.
-
-  bocoLoop: do mm=1,nBocos
-
-     ! Determine the block face on which this subface is located
-     ! and set ss and mult accordingly.
-
-#ifndef TAPENADE_REVERSE
-     call setssMetric(mm, ss)
-#else
-     call setssMetricBwd(mm, ss)
-#endif
-
-     select case (BCFaceID(mm))
-
-     case (iMin)
-        mult = -one
-
-     case (iMax)
-        mult = one
-
-     case (jMin)
-        mult = -one
-
-     case (jMax)
-        mult = one
-
-     case (kMin)
-        mult = -one
-
-     case (kMax)
-        mult = one
-
-     end select
-
-     ! Loop over the boundary faces of the subface.
-
-     do j=BCData(mm)%jcBeg, BCData(mm)%jcEnd
-        do i=BCData(mm)%icBeg, BCData(mm)%icEnd
-
-           ! Compute the inverse of the length of the normal vector
-           ! and possibly correct for inward pointing.
-
-           xp = ss(i,j,1);  yp = ss(i,j,2);  zp = ss(i,j,3)
-           fact = sqrt(xp*xp + yp*yp + zp*zp)
-           if(fact > zero) fact = mult/fact
-
-           ! Compute the unit normal.
-
-           BCData(mm)%norm(i,j,1) = fact*xp
-           BCData(mm)%norm(i,j,2) = fact*yp
-           BCData(mm)%norm(i,j,3) = fact*zp
-
-        enddo
-     enddo
-
-#ifndef TAPENADE_REVERSE
-     call resetssMetric(mm, ss)
-#else
-     call resetssMetricBwd(mm, ss)
-#endif
-
-  enddo bocoLoop
-
-
+    bocoLoop: do mm=1,nBocos
+       
+       ! Loop over the boundary faces of the subface.
+       !$AD II-LOOP
+       do ii=0,(BCData(mm)%jcEnd - bcData(mm)%jcBeg + 1)*(BCData(mm)%icEnd - BCData(mm)%icBeg + 1) - 1 
+          i = mod(ii, (BCData(mm)%icEnd - BCData(mm)%icBeg + 1)) + BCData(mm)%icBeg
+          j = ii/(BCData(mm)%icEnd - BCData(mm)%icBeg + 1) + BCData(mm)%jcBeg
+          
+          select case (BCFaceID(mm))
+          case (iMin)
+             mult = -one
+             xp = si(1,i,j,1);  yp = si(1,i,j,2);  zp = si(1,i,j,3)
+          case (iMax)
+             mult = one
+             xp = si(il,i,j,1);  yp = si(il,i,j,2);  zp = si(il,i,j,3)
+          case (jMin)
+             mult = -one
+             xp = sj(i,1,j,1);  yp = sj(i,1,j,2);  zp = sj(i,1,j,3)
+          case (jMax)
+             mult = one
+             xp = sj(i,jl,j,1);  yp = sj(i,jl,j,2);  zp = sj(i,jl,j,3)
+          case (kMin)
+             mult = -one
+             xp = sk(i,j,1,1);  yp = sk(i,j,1,2);  zp = sk(i,j,1,3)
+          case (kMax)
+             mult = one
+             xp = sk(i,j,kl,1);  yp = sk(i,j,kl,2);  zp = sk(i,j,kl,3)
+          end select
+        
+          ! Compute the inverse of the length of the normal vector
+          ! and possibly correct for inward pointing.
+          
+          fact = sqrt(xp*xp + yp*yp + zp*zp)
+          if(fact > zero) fact = mult/fact
+          
+          ! Compute the unit normal.
+        
+          BCData(mm)%norm(i,j,1) = fact*xp
+          BCData(mm)%norm(i,j,2) = fact*yp
+          BCData(mm)%norm(i,j,3) = fact*zp
+       end do
+    enddo bocoLoop
 contains
 
   !        ================================================================

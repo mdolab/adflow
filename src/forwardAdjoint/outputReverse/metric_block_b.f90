@@ -23,7 +23,7 @@ subroutine metric_block_b()
 !
 !      local variables.
 !
-  integer(kind=inttype) :: i, j, k, n, m, l
+  integer(kind=inttype) :: i, j, k, n, m, l, ii
   integer(kind=inttype) :: mm
   real(kind=realtype) :: fact, mult
   real(kind=realtype) :: factd
@@ -32,19 +32,14 @@ subroutine metric_block_b()
 & vp6d
   real(kind=realtype), dimension(3) :: v1, v2
   real(kind=realtype), dimension(3) :: v1d, v2d
-  real(kind=realtype), dimension(imaxdim, jmaxdim, 3) :: ss
-  real(kind=realtype), dimension(imaxdim, jmaxdim, 3) :: ssd
   logical :: checkk, checkj, checki, checkall
   intrinsic abs
+  intrinsic mod
   intrinsic sqrt
   real(kind=realtype) :: tmp
   real(kind=realtype) :: tmp0
   real(kind=realtype) :: tmp1
   integer :: branch
-  integer :: ad_from
-  integer :: ad_to
-  integer :: ad_from0
-  integer :: ad_to0
   real(kind=realtype) :: tempd12
   real(kind=realtype) :: tempd11
   real(kind=realtype) :: tempd10
@@ -77,12 +72,10 @@ subroutine metric_block_b()
 ! all the volumes are set to zero.
   vol = zero
   do k=1,ke
-    call pushinteger4(n)
-    n = k - 1
     do j=1,je
-      call pushinteger4(m)
-      m = j - 1
       do i=1,ie
+        n = k - 1
+        m = j - 1
         l = i - 1
 ! compute the coordinates of the center of gravity.
         call pushreal8(xp)
@@ -216,6 +209,7 @@ subroutine metric_block_b()
 !          **************************************************************
 !
 ! projected areas of cell faces in the i direction.
+! projected areas of cell faces in the i direction.
   do k=1,ke
     call pushinteger4(n)
     n = k - 1
@@ -303,7 +297,6 @@ subroutine metric_block_b()
       end do
     end do
   end do
-!
 !          **************************************************************
 !          *                                                            *
 !          * the unit normals on the boundary faces. these always point *
@@ -314,126 +307,204 @@ subroutine metric_block_b()
 !
 ! loop over the boundary subfaces of this block.
 bocoloop:do mm=1,nbocos
-! determine the block face on which this subface is located
-! and set ss and mult accordingly.
-    call setssmetricbwd(mm, ss)
-    select case  (bcfaceid(mm)) 
-    case (imin) 
-      call pushreal8(mult)
-      mult = -one
-      call pushcontrol3b(5)
-    case (imax) 
-      call pushreal8(mult)
-      mult = one
-      call pushcontrol3b(4)
-    case (jmin) 
-      call pushreal8(mult)
-      mult = -one
-      call pushcontrol3b(3)
-    case (jmax) 
-      call pushreal8(mult)
-      mult = one
-      call pushcontrol3b(2)
-    case (kmin) 
-      call pushreal8(mult)
-      mult = -one
-      call pushcontrol3b(1)
-    case (kmax) 
-      call pushreal8(mult)
-      mult = one
-      call pushcontrol3b(0)
-    case default
-      call pushcontrol3b(6)
-    end select
-    ad_from0 = bcdata(mm)%jcbeg
+    call pushinteger4(i)
+    call pushreal8(fact)
+    call pushreal8(mult)
+    call pushreal8(xp)
+    call pushreal8(yp)
+    call pushreal8(zp)
+    call pushinteger4(mm)
 ! loop over the boundary faces of the subface.
-    do j=ad_from0,bcdata(mm)%jcend
-      ad_from = bcdata(mm)%icbeg
-      do i=ad_from,bcdata(mm)%icend
+    do ii=0,(bcdata(mm)%jcend-bcdata(mm)%jcbeg+1)*(bcdata(mm)%icend-&
+&       bcdata(mm)%icbeg+1)-1
+      i = mod(ii, bcdata(mm)%icend - bcdata(mm)%icbeg + 1) + bcdata(mm)%&
+&       icbeg
+      j = ii/(bcdata(mm)%icend-bcdata(mm)%icbeg+1) + bcdata(mm)%jcbeg
+      select case  (bcfaceid(mm)) 
+      case (imin) 
+        mult = -one
+        xp = si(1, i, j, 1)
+        yp = si(1, i, j, 2)
+        zp = si(1, i, j, 3)
+      case (imax) 
+        mult = one
+        xp = si(il, i, j, 1)
+        yp = si(il, i, j, 2)
+        zp = si(il, i, j, 3)
+      case (jmin) 
+        mult = -one
+        xp = sj(i, 1, j, 1)
+        yp = sj(i, 1, j, 2)
+        zp = sj(i, 1, j, 3)
+      case (jmax) 
+        mult = one
+        xp = sj(i, jl, j, 1)
+        yp = sj(i, jl, j, 2)
+        zp = sj(i, jl, j, 3)
+      case (kmin) 
+        mult = -one
+        xp = sk(i, j, 1, 1)
+        yp = sk(i, j, 1, 2)
+        zp = sk(i, j, 1, 3)
+      case (kmax) 
+        mult = one
+        xp = sk(i, j, kl, 1)
+        yp = sk(i, j, kl, 2)
+        zp = sk(i, j, kl, 3)
+      end select
 ! compute the inverse of the length of the normal vector
 ! and possibly correct for inward pointing.
-        call pushreal8(xp)
-        xp = ss(i, j, 1)
-        call pushreal8(yp)
-        yp = ss(i, j, 2)
-        call pushreal8(zp)
-        zp = ss(i, j, 3)
-        call pushreal8(fact)
-        fact = sqrt(xp*xp + yp*yp + zp*zp)
-        if (fact .gt. zero) then
-          call pushreal8(fact)
-          fact = mult/fact
-          call pushcontrol1b(0)
-        else
-          call pushcontrol1b(1)
-        end if
-      end do
-      call pushinteger4(i - 1)
-      call pushinteger4(ad_from)
+      fact = sqrt(xp*xp + yp*yp + zp*zp)
+      if (fact .gt. zero) fact = mult/fact
+! compute the unit normal.
+      bcdata(mm)%norm(i, j, 1) = fact*xp
+      bcdata(mm)%norm(i, j, 2) = fact*yp
+      bcdata(mm)%norm(i, j, 3) = fact*zp
     end do
-    call pushinteger4(j - 1)
-    call pushinteger4(ad_from0)
-    call resetssmetricbwd(mm, ss)
   end do bocoloop
-  ssd = 0.0_8
+  xpd = 0.0_8
+  ypd = 0.0_8
+  zpd = 0.0_8
   do mm=nbocos,1,-1
-    call resetssmetricbwd_b(mm, ss, ssd)
-    call popinteger4(ad_from0)
-    call popinteger4(ad_to0)
-    do j=ad_to0,ad_from0,-1
-      call popinteger4(ad_from)
-      call popinteger4(ad_to)
-      do i=ad_to,ad_from,-1
-        factd = zp*bcdatad(mm)%norm(i, j, 3)
-        zpd = fact*bcdatad(mm)%norm(i, j, 3)
-        bcdatad(mm)%norm(i, j, 3) = 0.0_8
-        factd = factd + yp*bcdatad(mm)%norm(i, j, 2)
-        ypd = fact*bcdatad(mm)%norm(i, j, 2)
-        bcdatad(mm)%norm(i, j, 2) = 0.0_8
-        factd = factd + xp*bcdatad(mm)%norm(i, j, 1)
-        xpd = fact*bcdatad(mm)%norm(i, j, 1)
-        bcdatad(mm)%norm(i, j, 1) = 0.0_8
-        call popcontrol1b(branch)
-        if (branch .eq. 0) then
-          call popreal8(fact)
-          factd = -(mult*factd/fact**2)
-        end if
-        call popreal8(fact)
-        if (xp**2 + yp**2 + zp**2 .eq. 0.0_8) then
-          tempd12 = 0.0
-        else
-          tempd12 = factd/(2.0*sqrt(xp**2+yp**2+zp**2))
-        end if
-        xpd = xpd + 2*xp*tempd12
-        ypd = ypd + 2*yp*tempd12
-        zpd = zpd + 2*zp*tempd12
-        call popreal8(zp)
-        ssd(i, j, 3) = ssd(i, j, 3) + zpd
-        call popreal8(yp)
-        ssd(i, j, 2) = ssd(i, j, 2) + ypd
-        call popreal8(xp)
-        ssd(i, j, 1) = ssd(i, j, 1) + xpd
-      end do
-    end do
-    call popcontrol3b(branch)
-    if (branch .lt. 3) then
+    call popinteger4(mm)
+    call lookreal8(zp)
+    call lookreal8(yp)
+    call lookreal8(xp)
+    call lookreal8(mult)
+    do ii=0,(bcdata(mm)%jcend-bcdata(mm)%jcbeg+1)*(bcdata(mm)%icend-&
+&       bcdata(mm)%icbeg+1)-1
+      i = mod(ii, bcdata(mm)%icend - bcdata(mm)%icbeg + 1) + bcdata(mm)%&
+&       icbeg
+      j = ii/(bcdata(mm)%icend-bcdata(mm)%icbeg+1) + bcdata(mm)%jcbeg
+      select case  (bcfaceid(mm)) 
+      case (imin) 
+        mult = -one
+        xp = si(1, i, j, 1)
+        yp = si(1, i, j, 2)
+        zp = si(1, i, j, 3)
+        call pushcontrol3b(1)
+      case (imax) 
+        mult = one
+        xp = si(il, i, j, 1)
+        yp = si(il, i, j, 2)
+        zp = si(il, i, j, 3)
+        call pushcontrol3b(2)
+      case (jmin) 
+        mult = -one
+        xp = sj(i, 1, j, 1)
+        yp = sj(i, 1, j, 2)
+        zp = sj(i, 1, j, 3)
+        call pushcontrol3b(3)
+      case (jmax) 
+        mult = one
+        xp = sj(i, jl, j, 1)
+        yp = sj(i, jl, j, 2)
+        zp = sj(i, jl, j, 3)
+        call pushcontrol3b(4)
+      case (kmin) 
+        mult = -one
+        xp = sk(i, j, 1, 1)
+        yp = sk(i, j, 1, 2)
+        zp = sk(i, j, 1, 3)
+        call pushcontrol3b(5)
+      case (kmax) 
+        mult = one
+        xp = sk(i, j, kl, 1)
+        yp = sk(i, j, kl, 2)
+        zp = sk(i, j, kl, 3)
+        call pushcontrol3b(6)
+      case default
+        call pushcontrol3b(0)
+      end select
+! compute the inverse of the length of the normal vector
+! and possibly correct for inward pointing.
+      fact = sqrt(xp*xp + yp*yp + zp*zp)
+      if (fact .gt. zero) then
+        call pushreal8(fact)
+        fact = mult/fact
+        call pushcontrol1b(0)
+      else
+        call pushcontrol1b(1)
+      end if
+      factd = zp*bcdatad(mm)%norm(i, j, 3)
+      zpd = zpd + fact*bcdatad(mm)%norm(i, j, 3)
+      bcdatad(mm)%norm(i, j, 3) = 0.0_8
+      factd = factd + yp*bcdatad(mm)%norm(i, j, 2)
+      ypd = ypd + fact*bcdatad(mm)%norm(i, j, 2)
+      bcdatad(mm)%norm(i, j, 2) = 0.0_8
+      factd = factd + xp*bcdatad(mm)%norm(i, j, 1)
+      xpd = xpd + fact*bcdatad(mm)%norm(i, j, 1)
+      bcdatad(mm)%norm(i, j, 1) = 0.0_8
+      call popcontrol1b(branch)
       if (branch .eq. 0) then
-        call popreal8(mult)
-      else if (branch .eq. 1) then
-        call popreal8(mult)
-      else
-        call popreal8(mult)
+        call popreal8(fact)
+        factd = -(mult*factd/fact**2)
       end if
-    else if (branch .lt. 5) then
-      if (branch .eq. 3) then
-        call popreal8(mult)
+      if (xp**2 + yp**2 + zp**2 .eq. 0.0_8) then
+        tempd12 = 0.0
       else
-        call popreal8(mult)
+        tempd12 = factd/(2.0*sqrt(xp**2+yp**2+zp**2))
       end if
-    else if (branch .eq. 5) then
-      call popreal8(mult)
-    end if
-    call setssmetricbwd_b(mm, ss, ssd)
+      xpd = xpd + 2*xp*tempd12
+      ypd = ypd + 2*yp*tempd12
+      zpd = zpd + 2*zp*tempd12
+      call popcontrol3b(branch)
+      if (branch .lt. 3) then
+        if (branch .ne. 0) then
+          if (branch .eq. 1) then
+            sid(1, i, j, 3) = sid(1, i, j, 3) + zpd
+            sid(1, i, j, 2) = sid(1, i, j, 2) + ypd
+            sid(1, i, j, 1) = sid(1, i, j, 1) + xpd
+            xpd = 0.0_8
+            ypd = 0.0_8
+            zpd = 0.0_8
+          else
+            sid(il, i, j, 3) = sid(il, i, j, 3) + zpd
+            sid(il, i, j, 2) = sid(il, i, j, 2) + ypd
+            sid(il, i, j, 1) = sid(il, i, j, 1) + xpd
+            xpd = 0.0_8
+            ypd = 0.0_8
+            zpd = 0.0_8
+          end if
+        end if
+      else if (branch .lt. 5) then
+        if (branch .eq. 3) then
+          sjd(i, 1, j, 3) = sjd(i, 1, j, 3) + zpd
+          sjd(i, 1, j, 2) = sjd(i, 1, j, 2) + ypd
+          sjd(i, 1, j, 1) = sjd(i, 1, j, 1) + xpd
+          xpd = 0.0_8
+          ypd = 0.0_8
+          zpd = 0.0_8
+        else
+          sjd(i, jl, j, 3) = sjd(i, jl, j, 3) + zpd
+          sjd(i, jl, j, 2) = sjd(i, jl, j, 2) + ypd
+          sjd(i, jl, j, 1) = sjd(i, jl, j, 1) + xpd
+          xpd = 0.0_8
+          ypd = 0.0_8
+          zpd = 0.0_8
+        end if
+      else if (branch .eq. 5) then
+        skd(i, j, 1, 3) = skd(i, j, 1, 3) + zpd
+        skd(i, j, 1, 2) = skd(i, j, 1, 2) + ypd
+        skd(i, j, 1, 1) = skd(i, j, 1, 1) + xpd
+        xpd = 0.0_8
+        ypd = 0.0_8
+        zpd = 0.0_8
+      else
+        skd(i, j, kl, 3) = skd(i, j, kl, 3) + zpd
+        skd(i, j, kl, 2) = skd(i, j, kl, 2) + ypd
+        skd(i, j, kl, 1) = skd(i, j, kl, 1) + xpd
+        xpd = 0.0_8
+        ypd = 0.0_8
+        zpd = 0.0_8
+      end if
+    end do
+    call popreal8(zp)
+    call popreal8(yp)
+    call popreal8(xp)
+    call popreal8(mult)
+    call popreal8(fact)
+    call popinteger4(i)
   end do
   v1d = 0.0_8
   v2d = 0.0_8
@@ -646,9 +717,8 @@ bocoloop:do mm=1,nbocos
         vp6d = vp6d + tempd
         vold(i, j, k) = 0.0_8
         l = i - 1
-        zpd = 0.0_8
-        ypd = 0.0_8
-        xpd = 0.0_8
+        m = j - 1
+        n = k - 1
         call volpym_b(x(i, j, n, 1), xd(i, j, n, 1), x(i, j, n, 2), xd(i&
 &               , j, n, 2), x(i, j, n, 3), xd(i, j, n, 3), x(l, j, n, 1)&
 &               , xd(l, j, n, 1), x(l, j, n, 2), xd(l, j, n, 2), x(l, j&
@@ -727,10 +797,11 @@ bocoloop:do mm=1,nbocos
         xd(l, m, k, 1) = xd(l, m, k, 1) + tempd2
         xd(l, m, n, 1) = xd(l, m, n, 1) + tempd2
         xd(l, j, n, 1) = xd(l, j, n, 1) + tempd2
+        xpd = 0.0_8
+        ypd = 0.0_8
+        zpd = 0.0_8
       end do
-      call popinteger4(m)
     end do
-    call popinteger4(n)
   end do
 
 contains

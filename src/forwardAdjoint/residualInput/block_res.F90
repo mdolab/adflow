@@ -78,6 +78,7 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
 
      call xhalo_block
      call metric_block
+     !call boundaryNormals
 
 #ifdef TAPENADE_REVERSE
      if (equations == RANSEquations .and. useApproxWallDistance) then 
