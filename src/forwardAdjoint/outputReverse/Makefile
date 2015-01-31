@@ -54,7 +54,6 @@ FF90_OBJECTS2 =  \
 		timestep_block_b.o\
 		metric_block_b.o\
 		xhalo_block_b.o\
-		applyallbc_block_b.o\
 		residual_block_b.o\
 		invisciddissfluxscalar_b.o\
 		dim_b.o\
@@ -63,6 +62,7 @@ FF90_OBJECTS2 =  \
 		viscousfluxapprox_b.o\
 		computeetotcellcpfit_b.o \
 	        inviscidcentralflux_b.o\
+	        inviscidcentralflux_mod_b.o\
                 saeddyviscosity_b.o\
 		computeeddyviscosity_b.o\
 		unsteadyturbterm_b.o\
@@ -92,6 +92,7 @@ FF90_OBJECTS2 =  \
 		bcturbfarfield_b.o\
 		updatewalldistancesquickly_b.o\
 		boundarynormals_b.o\
+		volume_block_b.o\
 #      ******************************************************************
 #      *                                                                *
 #      * Targets for make.                                              *

@@ -34,7 +34,7 @@ subroutine prodkatolaunder_fast_b()
 !
 !      local variables.
 !
-  integer(kind=inttype) :: i, j, k
+  integer(kind=inttype) :: i, j, k, ii
   real(kind=realtype) :: uux, uuy, uuz, vvx, vvy, vvz, wwx, wwy, wwz
   real(kind=realtype) :: uuxd, uuyd, uuzd, vvxd, vvyd, vvzd, wwxd, wwyd&
 & , wwzd
@@ -45,7 +45,6 @@ subroutine prodkatolaunder_fast_b()
   real(kind=realtype) :: fact, omegax, omegay, omegaz
   intrinsic mod
   intrinsic sqrt
-  integer :: ii
   real(kind=realtype) :: tempd
   real(kind=realtype) :: tempd7
   real(kind=realtype) :: tempd6

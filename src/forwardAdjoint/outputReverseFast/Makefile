@@ -45,6 +45,7 @@ FF90_OBJECTS2 =  \
 		computespeedofsoundsquared_fast_b.o\
 		timestep_block_fast_b.o\
 		invisciddissfluxscalar_fast_b.o\
+		invisciddissfluxmatrix_fast_b.o\
 		dim_fast_b.o\
 		viscousflux_fast_b.o \
 	        inviscidcentralflux_fast_b.o\

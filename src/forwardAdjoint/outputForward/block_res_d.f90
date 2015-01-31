@@ -138,8 +138,9 @@ subroutine block_res_d(nn, sps, usespatial, alpha, alphad, beta, betad, &
 ! ------------------------------------------------
   if (usespatial) then
     call xhalo_block_d()
+    call volume_block_d()
     call metric_block_d()
-!call boundarynormals
+    call boundarynormals_d()
 ! -------------------------------------
 ! these functions are required for ts
 ! --------------------------------------

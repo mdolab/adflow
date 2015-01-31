@@ -154,14 +154,9 @@ subroutine block_res_b(nn, sps, usespatial, alpha, alphad, beta, betad, &
 ! ------------------------------------------------
   if (usespatial) then
     call xhalo_block()
-    call pushreal8array(sk, size(sk, 1)*size(sk, 2)*size(sk, 3)*size(sk&
-&                 , 4))
-    call pushreal8array(sj, size(sj, 1)*size(sj, 2)*size(sj, 3)*size(sj&
-&                 , 4))
-    call pushreal8array(si, size(si, 1)*size(si, 2)*size(si, 3)*size(si&
-&                 , 4))
+    call volume_block()
     call metric_block()
-!call boundarynormals
+    call boundarynormals()
     if (equations .eq. ransequations .and. useapproxwalldistance) then
       call updatewalldistancesquickly(nn, 1, sps)
       call pushcontrol2b(0)
@@ -864,13 +859,9 @@ varloopfine:do l=1,nwf
     xsurfd = 0.0_8
     goto 100
   end if
-  call popreal8array(si, size(si, 1)*size(si, 2)*size(si, 3)*size(si, 4)&
-&             )
-  call popreal8array(sj, size(sj, 1)*size(sj, 2)*size(sj, 3)*size(sj, 4)&
-&             )
-  call popreal8array(sk, size(sk, 1)*size(sk, 2)*size(sk, 3)*size(sk, 4)&
-&             )
+  call boundarynormals_b()
   call metric_block_b()
+  call volume_block_b()
   call xhalo_block_b()
  100 call setflowinfinitystate_b()
   call popreal8(gammainf)
