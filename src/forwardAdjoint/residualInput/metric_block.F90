@@ -1,4 +1,4 @@
-subroutine metric_block
+subroutine volume_block
   
   ! This is COPY of metric.f90. It was necessary to copy this file
   ! since there is debugging stuff in the original that is not
@@ -22,8 +22,8 @@ subroutine metric_block
   integer(kind=intType) :: mm
   real(kind=realType) :: fact, mult
   real(kind=realType) :: xp, yp, zp, vp1, vp2, vp3, vp4, vp5, vp6
+  real(kind=realType) :: xxp, yyp, zzp
   real(kind=realType), dimension(3) :: v1, v2
-  logical :: checkK, checkJ, checkI, checkAll
 
   !
   !      ******************************************************************
@@ -42,13 +42,12 @@ subroutine metric_block
 
   vol = zero
 
-  
   do k=1, ke
+     n = k - 1
      do j=1, je
+        m = j - 1
         do i=1, ie
-           
-              n = k - 1
-              m = j - 1
+
               l = i - 1
               
               ! Compute the coordinates of the center of gravity.
@@ -107,17 +106,11 @@ subroutine metric_block
               
               vol(i,j,k) = sixth*(vp1 + vp2 + vp3 + vp4 + vp5 + vp6)
               
-              ! Check the volume and update the number of positive
-              ! and negative volumes if needed.
-
               ! Set the volume to the absolute value.
-              
-              vol(i,j,k) = abs(vol(i,j,k))
-
+              vol(i, j, k) = abs(vol(i, j, k))
         enddo
      enddo
   enddo
-
 
   ! Some additional safety stuff for halo volumes.
 
@@ -142,182 +135,7 @@ subroutine metric_block
      enddo
   enddo
 
-  ! Set the factor in the surface normals computation. For a
-  ! left handed block this factor is negative, such that the
-  ! normals still point in the direction of increasing index.
-  ! The formulae used later on assume a right handed block
-  ! and fact is used to correct this for a left handed block,
-  ! as well as the scaling factor of 0.5
-
-  if (rightHanded) then
-     fact =  half
-  else
-     fact = -half
-  endif
-
-  ! Check if both positive and negative volumes occur. If so,
-  ! the block is bad and the counter nBlockBad is updated.
-
-  !
-  !          **************************************************************
-  !          *                                                            *
-  !          * Computation of the face normals in i-, j- and k-direction. *
-  !          * Formula's are valid for a right handed block; for a left   *
-  !          * handed block the correct orientation is obtained via fact. *
-  !          * The normals point in the direction of increasing index.    *
-  !          * The absolute value of fact is 0.5, because the cross       *
-  !          * product of the two diagonals is twice the normal vector.   *
-  !          *                                                            *
-  !          * Note that also the normals of the first level halo cells   *
-  !          * are computed. These are needed for the viscous fluxes.     *
-  !          *                                                            *
-  !          **************************************************************
-  !
-  ! Projected areas of cell faces in the i direction.
-  ! Projected areas of cell faces in the i direction.
-
-  do k=1,ke
-     n = k -1
-     do j=1,je
-        m = j -1
-        do i=0,ie
-
-           ! Determine the two diagonal vectors of the face.
-
-           v1(1) = x(i,j,n,1) - x(i,m,k,1)
-           v1(2) = x(i,j,n,2) - x(i,m,k,2)
-           v1(3) = x(i,j,n,3) - x(i,m,k,3)
-
-           v2(1) = x(i,j,k,1) - x(i,m,n,1)
-           v2(2) = x(i,j,k,2) - x(i,m,n,2)
-           v2(3) = x(i,j,k,3) - x(i,m,n,3)
-
-           ! The face normal, which is the cross product of the two
-           ! diagonal vectors times fact; remember that fact is
-           ! either -0.5 or 0.5.
-        
-           si(i,j,k,1) = fact*(v1(2)*v2(3) - v1(3)*v2(2))
-           si(i,j,k,2) = fact*(v1(3)*v2(1) - v1(1)*v2(3))
-           si(i,j,k,3) = fact*(v1(1)*v2(2) - v1(2)*v2(1))
-         
-        enddo
-     enddo
-  enddo
-
-  ! Projected areas of cell faces in the j direction.
-
-  do k=1,ke
-     n = k -1
-     do j=0,je
-        do i=1,ie
-           l = i -1
-
-           ! Determine the two diagonal vectors of the face.
-
-           v1(1) = x(i,j,n,1) - x(l,j,k,1)
-           v1(2) = x(i,j,n,2) - x(l,j,k,2)
-           v1(3) = x(i,j,n,3) - x(l,j,k,3)
-
-           v2(1) = x(l,j,n,1) - x(i,j,k,1)
-           v2(2) = x(l,j,n,2) - x(i,j,k,2)
-           v2(3) = x(l,j,n,3) - x(i,j,k,3)
-
-           ! The face normal, which is the cross product of the two
-           ! diagonal vectors times fact; remember that fact is
-           ! either -0.5 or 0.5.
-
-           sj(i,j,k,1) = fact*(v1(2)*v2(3) - v1(3)*v2(2))
-           sj(i,j,k,2) = fact*(v1(3)*v2(1) - v1(1)*v2(3))
-           sj(i,j,k,3) = fact*(v1(1)*v2(2) - v1(2)*v2(1))
-
-        enddo
-     enddo
-  enddo
-
-  ! Projected areas of cell faces in the k direction.
-
-  do k=0,ke
-     do j=1,je
-        m = j -1
-        do i=1,ie
-           l = i -1
-
-           ! Determine the two diagonal vectors of the face.
-
-           v1(1) = x(i,j,k,1) - x(l,m,k,1)
-           v1(2) = x(i,j,k,2) - x(l,m,k,2)
-           v1(3) = x(i,j,k,3) - x(l,m,k,3)
-
-           v2(1) = x(l,j,k,1) - x(i,m,k,1)
-           v2(2) = x(l,j,k,2) - x(i,m,k,2)
-           v2(3) = x(l,j,k,3) - x(i,m,k,3)
-
-           ! The face normal, which is the cross product of the two
-           ! diagonal vectors times fact; remember that fact is
-           ! either -0.5 or 0.5.
-
-           sk(i,j,k,1) = fact*(v1(2)*v2(3) - v1(3)*v2(2))
-           sk(i,j,k,2) = fact*(v1(3)*v2(1) - v1(1)*v2(3))
-           sk(i,j,k,3) = fact*(v1(1)*v2(2) - v1(2)*v2(1))
-
-        enddo
-     enddo
-  enddo
-
-  !          **************************************************************
-  !          *                                                            *
-  !          * The unit normals on the boundary faces. These always point *
-  !          * out of the domain, so a multiplication by -1 is needed for *
-  !          * the iMin, jMin and kMin boundaries.                        *
-  !          *                                                            *
-  !          **************************************************************
-  !
-  ! Loop over the boundary subfaces of this block.
-    bocoLoop: do mm=1,nBocos
-       
-       ! Loop over the boundary faces of the subface.
-       !$AD II-LOOP
-       do ii=0,(BCData(mm)%jcEnd - bcData(mm)%jcBeg + 1)*(BCData(mm)%icEnd - BCData(mm)%icBeg + 1) - 1 
-          i = mod(ii, (BCData(mm)%icEnd - BCData(mm)%icBeg + 1)) + BCData(mm)%icBeg
-          j = ii/(BCData(mm)%icEnd - BCData(mm)%icBeg + 1) + BCData(mm)%jcBeg
-          
-          select case (BCFaceID(mm))
-          case (iMin)
-             mult = -one
-             xp = si(1,i,j,1);  yp = si(1,i,j,2);  zp = si(1,i,j,3)
-          case (iMax)
-             mult = one
-             xp = si(il,i,j,1);  yp = si(il,i,j,2);  zp = si(il,i,j,3)
-          case (jMin)
-             mult = -one
-             xp = sj(i,1,j,1);  yp = sj(i,1,j,2);  zp = sj(i,1,j,3)
-          case (jMax)
-             mult = one
-             xp = sj(i,jl,j,1);  yp = sj(i,jl,j,2);  zp = sj(i,jl,j,3)
-          case (kMin)
-             mult = -one
-             xp = sk(i,j,1,1);  yp = sk(i,j,1,2);  zp = sk(i,j,1,3)
-          case (kMax)
-             mult = one
-             xp = sk(i,j,kl,1);  yp = sk(i,j,kl,2);  zp = sk(i,j,kl,3)
-          end select
-        
-          ! Compute the inverse of the length of the normal vector
-          ! and possibly correct for inward pointing.
-          
-          fact = sqrt(xp*xp + yp*yp + zp*zp)
-          if(fact > zero) fact = mult/fact
-          
-          ! Compute the unit normal.
-        
-          BCData(mm)%norm(i,j,1) = fact*xp
-          BCData(mm)%norm(i,j,2) = fact*yp
-          BCData(mm)%norm(i,j,3) = fact*zp
-       end do
-    enddo bocoLoop
 contains
-
-  !        ================================================================
 
   subroutine volpym(xa,ya,za,xb,yb,zb,xc,yc,zc,xd,yd,zd,volume)
     !
@@ -359,5 +177,200 @@ contains
          * ((xa - xc)*(yb - yd) - (ya - yc)*(xb - xd))
 
   end subroutine volpym
+end subroutine volume_block
 
+subroutine metric_block
+  
+  use blockPointers
+  implicit none
+
+  ! Local variables.
+  integer(kind=intType) :: i, j, k, n, m, l, ii
+  real(kind=realType) :: fact
+  real(kind=realType) :: xxp, yyp, zzp
+  real(kind=realType), dimension(3) :: v1, v2
+
+  ! Set the factor in the surface normals computation. For a
+  ! left handed block this factor is negative, such that the
+  ! normals still point in the direction of increasing index.
+  ! The formulae used later on assume a right handed block
+  ! and fact is used to correct this for a left handed block,
+  ! as well as the scaling factor of 0.5
+
+  if (rightHanded) then
+     fact =  half
+  else
+     fact = -half
+  endif
+
+  !
+  ! **************************************************************
+  ! *                                                            *
+  ! * Computation of the face normals in i-, j- and k-direction. *
+  ! * Formula's are valid for a right handed block; for a left   *
+  ! * handed block the correct orientation is obtained via fact. *
+  ! * The normals point in the direction of increasing index.    *
+  ! * The absolute value of fact is 0.5, because the cross       *
+  ! * product of the two diagonals is twice the normal vector.   *
+  ! *                                                            *
+  ! * Note that also the normals of the first level halo cells   *
+  ! * are computed. These are needed for the viscous fluxes.     *
+  ! *                                                            *
+  ! **************************************************************
+  !
+  ! Projected areas of cell faces in the i direction.
+  !$AD II-LOOP
+  do ii=0,ke*je*(ie+1)-1
+     i = mod(ii, ie+1) + 0 ! 0:ie
+     j = mod(ii/(ie+1), je) + 1 !1:je
+     k = ii/((ie+1)*je) + 1 !1:ke
+
+     n = k -1
+     m = j -1
+
+     ! Determine the two diagonal vectors of the face.
+
+     v1(1) = x(i,j,n,1) - x(i,m,k,1)
+     v1(2) = x(i,j,n,2) - x(i,m,k,2)
+     v1(3) = x(i,j,n,3) - x(i,m,k,3)
+     
+     v2(1) = x(i,j,k,1) - x(i,m,n,1)
+     v2(2) = x(i,j,k,2) - x(i,m,n,2)
+     v2(3) = x(i,j,k,3) - x(i,m,n,3)
+
+     ! The face normal, which is the cross product of the two
+     ! diagonal vectors times fact; remember that fact is
+     ! either -0.5 or 0.5.
+     
+     si(i,j,k,1) = fact*(v1(2)*v2(3) - v1(3)*v2(2))
+     si(i,j,k,2) = fact*(v1(3)*v2(1) - v1(1)*v2(3))
+     si(i,j,k,3) = fact*(v1(1)*v2(2) - v1(2)*v2(1))
+  enddo
+ 
+
+  ! Projected areas of cell faces in the j direction
+  !$AD II-LOOP
+  do ii=0,ke*(je+1)*ie-1
+     i = mod(ii, ie) + 1 ! 1:ie
+     j = mod(ii/ie, je+1) + 0 !0:je
+     k = ii/(ie*(je+1)) + 1 !1:ke
+     n = k -1
+     l = i -1
+
+     ! Determine the two diagonal vectors of the face.
+
+     v1(1) = x(i,j,n,1) - x(l,j,k,1)
+     v1(2) = x(i,j,n,2) - x(l,j,k,2)
+     v1(3) = x(i,j,n,3) - x(l,j,k,3)
+     
+     v2(1) = x(l,j,n,1) - x(i,j,k,1)
+     v2(2) = x(l,j,n,2) - x(i,j,k,2)
+     v2(3) = x(l,j,n,3) - x(i,j,k,3)
+
+     ! The face normal, which is the cross product of the two
+     ! diagonal vectors times fact; remember that fact is
+     ! either -0.5 or 0.5.
+     
+     sj(i,j,k,1) = fact*(v1(2)*v2(3) - v1(3)*v2(2))
+     sj(i,j,k,2) = fact*(v1(3)*v2(1) - v1(1)*v2(3))
+     sj(i,j,k,3) = fact*(v1(1)*v2(2) - v1(2)*v2(1))
+     
+  enddo
+
+  ! Projected areas of cell faces in the k direction.
+  !$AD II-LOOP
+  do ii=0,(ke+1)*je*ie-1
+     i = mod(ii, ie) + 1 ! 1:ie
+     j = mod(ii/ie, je) + 1 !1:je
+     k = ii/(ie*je) + 0 !0:ke
+     m = j -1
+     l = i -1
+
+     ! Determine the two diagonal vectors of the face.
+
+     v1(1) = x(i,j,k,1) - x(l,m,k,1)
+     v1(2) = x(i,j,k,2) - x(l,m,k,2)
+     v1(3) = x(i,j,k,3) - x(l,m,k,3)
+     
+     v2(1) = x(l,j,k,1) - x(i,m,k,1)
+     v2(2) = x(l,j,k,2) - x(i,m,k,2)
+     v2(3) = x(l,j,k,3) - x(i,m,k,3)
+     
+     ! The face normal, which is the cross product of the two
+     ! diagonal vectors times fact; remember that fact is
+     ! either -0.5 or 0.5.
+
+     sk(i,j,k,1) = fact*(v1(2)*v2(3) - v1(3)*v2(2))
+     sk(i,j,k,2) = fact*(v1(3)*v2(1) - v1(1)*v2(3))
+     sk(i,j,k,3) = fact*(v1(1)*v2(2) - v1(2)*v2(1))
+  enddo 
 end subroutine metric_block
+
+subroutine boundaryNormals
+
+  ! **************************************************************
+  ! *                                                            *
+  ! * The unit normals on the boundary faces. These always point *
+  ! * out of the domain, so a multiplication by -1 is needed for *
+  ! * the iMin, jMin and kMin boundaries.                        *
+  ! *                                                            *
+  ! **************************************************************
+  !
+  use BCTypes
+  use blockPointers
+  use cgnsGrid
+  use communication
+  use inputTimeSpectral
+  implicit none
+
+  ! Local variables.
+  integer(kind=intType) :: i, j, ii
+  integer(kind=intType) :: mm
+  real(kind=realType) :: fact, mult
+  real(kind=realType) :: xxp, yyp, zzp
+
+  !Loop over the boundary subfaces of this block.
+  !$AD II-LOOP
+  bocoLoop: do mm=1,nBocos
+    
+     ! Loop over the boundary faces of the subface.
+     !$AD II-LOOP
+     do ii=0,(BCData(mm)%jcEnd - bcData(mm)%jcBeg + 1)*(BCData(mm)%icEnd - BCData(mm)%icBeg + 1) - 1 
+        i = mod(ii, (BCData(mm)%icEnd - BCData(mm)%icBeg + 1)) + BCData(mm)%icBeg
+        j = ii/(BCData(mm)%icEnd - BCData(mm)%icBeg + 1) + BCData(mm)%jcBeg
+        
+        select case (BCFaceID(mm))
+        case (iMin)
+           mult = -one
+           xxp = si(1,i,j,1);  yyp = si(1,i,j,2);  zzp = si(1,i,j,3)
+        case (iMax)
+           mult = one
+           xxp = si(il,i,j,1);  yyp = si(il,i,j,2);  zzp = si(il,i,j,3)
+        case (jMin)
+           mult = -one
+           xxp = sj(i,1,j,1);  yyp = sj(i,1,j,2);  zzp = sj(i,1,j,3)
+        case (jMax)
+           mult = one
+           xxp = sj(i,jl,j,1);  yyp = sj(i,jl,j,2);  zzp = sj(i,jl,j,3)
+        case (kMin)
+           mult = -one
+           xxp = sk(i,j,1,1);  yyp = sk(i,j,1,2);  zzp = sk(i,j,1,3)
+        case (kMax)
+           mult = one
+           xxp = sk(i,j,kl,1);  yyp = sk(i,j,kl,2);  zzp = sk(i,j,kl,3)
+        end select
+        
+        ! Compute the inverse of the length of the normal vector
+        ! and possibly correct for inward pointing.
+        
+        fact = sqrt(xxp*xxp + yyp*yyp + zzp*zzp)
+        if(fact > zero) fact = mult/fact
+        
+        ! Compute the unit normal.
+        
+        BCData(mm)%norm(i,j,1) = fact*xxp
+        BCData(mm)%norm(i,j,2) = fact*yyp
+        BCData(mm)%norm(i,j,3) = fact*zzp
+     end do
+  enddo bocoLoop
+end subroutine boundaryNormals

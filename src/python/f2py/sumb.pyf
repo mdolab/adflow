@@ -1143,6 +1143,13 @@ python module libsumb
           integer(kind=inttype), optional,check(len(dwbar)>=statesize),depend(dwbar) :: statesize=len(dwbar)
         end subroutine testrev
 
+        subroutine testrevspatial(dwbar,xbar,statesize,spatialsize) ! in :test:test.F90
+            real(kind=realtype) dimension(statesize),intent(in) :: dwbar
+            real(kind=realtype) dimension(spatialsize),intent(out),depend(spatialsize) :: xbar
+            integer(kind=inttype), optional,check(len(dwbar)>=statesize),depend(dwbar) :: statesize=len(dwbar)
+            integer(kind=inttype) :: spatialsize
+        end subroutine testrevspatial
+
     end interface 
 
 #ifdef USE_COMPLEX

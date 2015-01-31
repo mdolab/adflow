@@ -6,35 +6,41 @@
 !   with respect to varying inputs: *si *sj *sk
 !   plus diff mem management of: si:in sj:in sk:in bcdata:in *bcdata.norm:in
 subroutine boundarynormals_b()
+! **************************************************************
+! *                                                            *
+! * the unit normals on the boundary faces. these always point *
+! * out of the domain, so a multiplication by -1 is needed for *
+! * the imin, jmin and kmin boundaries.                        *
+! *                                                            *
+! **************************************************************
 !
-!  **************************************************************
-!  *                                                            *
-!  * the unit normals on the boundary faces. these always point *
-!  * out of the domain, so a multiplication by -1 is needed for *
-!  * the imin, jmin and kmin boundaries.                        *
-!  *                                                            *
-!  **************************************************************
-!
-  use blockpointers
   use bctypes
+  use blockpointers
+  use cgnsgrid
+  use communication
+  use inputtimespectral
   implicit none
-  integer(kind=inttype) :: i, j, ii, mm
-  real(kind=realtype) :: xp, yp, zp, mult, fact
-  real(kind=realtype) :: xpd, ypd, zpd, factd
+! local variables.
+  integer(kind=inttype) :: i, j, ii
+  integer(kind=inttype) :: mm
+  real(kind=realtype) :: fact, mult
+  real(kind=realtype) :: factd
+  real(kind=realtype) :: xxp, yyp, zzp
+  real(kind=realtype) :: xxpd, yypd, zzpd
   intrinsic mod
   intrinsic sqrt
   integer :: branch
   real(kind=realtype) :: tempd
-  xpd = 0.0_8
-  ypd = 0.0_8
-  zpd = 0.0_8
+  zzpd = 0.0_8
+  yypd = 0.0_8
+  xxpd = 0.0_8
   do mm=1,nbocos
     call pushinteger4(i)
     call pushreal8(fact)
     call pushreal8(mult)
-    call pushreal8(xp)
-    call pushreal8(yp)
-    call pushreal8(zp)
+    call pushreal8(zzp)
+    call pushreal8(yyp)
+    call pushreal8(xxp)
     call pushinteger4(mm)
 ! loop over the boundary faces of the subface.
     do ii=0,(bcdata(mm)%jcend-bcdata(mm)%jcbeg+1)*(bcdata(mm)%icend-&
@@ -45,48 +51,48 @@ subroutine boundarynormals_b()
       select case  (bcfaceid(mm)) 
       case (imin) 
         mult = -one
-        xp = si(1, i, j, 1)
-        yp = si(1, i, j, 2)
-        zp = si(1, i, j, 3)
+        xxp = si(1, i, j, 1)
+        yyp = si(1, i, j, 2)
+        zzp = si(1, i, j, 3)
       case (imax) 
         mult = one
-        xp = si(il, i, j, 1)
-        yp = si(il, i, j, 2)
-        zp = si(il, i, j, 3)
+        xxp = si(il, i, j, 1)
+        yyp = si(il, i, j, 2)
+        zzp = si(il, i, j, 3)
       case (jmin) 
         mult = -one
-        xp = sj(i, 1, j, 1)
-        yp = sj(i, 1, j, 2)
-        zp = sj(i, 1, j, 3)
+        xxp = sj(i, 1, j, 1)
+        yyp = sj(i, 1, j, 2)
+        zzp = sj(i, 1, j, 3)
       case (jmax) 
         mult = one
-        xp = sj(i, jl, j, 1)
-        yp = sj(i, jl, j, 2)
-        zp = sj(i, jl, j, 3)
+        xxp = sj(i, jl, j, 1)
+        yyp = sj(i, jl, j, 2)
+        zzp = sj(i, jl, j, 3)
       case (kmin) 
         mult = -one
-        xp = sk(i, j, 1, 1)
-        yp = sk(i, j, 1, 2)
-        zp = sk(i, j, 1, 3)
+        xxp = sk(i, j, 1, 1)
+        yyp = sk(i, j, 1, 2)
+        zzp = sk(i, j, 1, 3)
       case (kmax) 
         mult = one
-        xp = sk(i, j, kl, 1)
-        yp = sk(i, j, kl, 2)
-        zp = sk(i, j, kl, 3)
+        xxp = sk(i, j, kl, 1)
+        yyp = sk(i, j, kl, 2)
+        zzp = sk(i, j, kl, 3)
       end select
 ! compute the inverse of the length of the normal vector
 ! and possibly correct for inward pointing.
-      fact = sqrt(xp*xp + yp*yp + zp*zp)
+      fact = sqrt(xxp*xxp + yyp*yyp + zzp*zzp)
       if (fact .gt. zero) fact = mult/fact
 ! compute the unit normal.
-      bcdata(mm)%norm(i, j, 1) = fact*xp
-      bcdata(mm)%norm(i, j, 2) = fact*yp
-      bcdata(mm)%norm(i, j, 3) = fact*zp
+      bcdata(mm)%norm(i, j, 1) = fact*xxp
+      bcdata(mm)%norm(i, j, 2) = fact*yyp
+      bcdata(mm)%norm(i, j, 3) = fact*zzp
     end do
     call popinteger4(mm)
-    call lookreal8(zp)
-    call lookreal8(yp)
-    call lookreal8(xp)
+    call lookreal8(xxp)
+    call lookreal8(yyp)
+    call lookreal8(zzp)
     call lookreal8(mult)
     do ii=0,(bcdata(mm)%jcend-bcdata(mm)%jcbeg+1)*(bcdata(mm)%icend-&
 &       bcdata(mm)%icbeg+1)-1
@@ -96,46 +102,46 @@ subroutine boundarynormals_b()
       select case  (bcfaceid(mm)) 
       case (imin) 
         mult = -one
-        xp = si(1, i, j, 1)
-        yp = si(1, i, j, 2)
-        zp = si(1, i, j, 3)
+        xxp = si(1, i, j, 1)
+        yyp = si(1, i, j, 2)
+        zzp = si(1, i, j, 3)
         call pushcontrol3b(1)
       case (imax) 
         mult = one
-        xp = si(il, i, j, 1)
-        yp = si(il, i, j, 2)
-        zp = si(il, i, j, 3)
+        xxp = si(il, i, j, 1)
+        yyp = si(il, i, j, 2)
+        zzp = si(il, i, j, 3)
         call pushcontrol3b(2)
       case (jmin) 
         mult = -one
-        xp = sj(i, 1, j, 1)
-        yp = sj(i, 1, j, 2)
-        zp = sj(i, 1, j, 3)
+        xxp = sj(i, 1, j, 1)
+        yyp = sj(i, 1, j, 2)
+        zzp = sj(i, 1, j, 3)
         call pushcontrol3b(3)
       case (jmax) 
         mult = one
-        xp = sj(i, jl, j, 1)
-        yp = sj(i, jl, j, 2)
-        zp = sj(i, jl, j, 3)
+        xxp = sj(i, jl, j, 1)
+        yyp = sj(i, jl, j, 2)
+        zzp = sj(i, jl, j, 3)
         call pushcontrol3b(4)
       case (kmin) 
         mult = -one
-        xp = sk(i, j, 1, 1)
-        yp = sk(i, j, 1, 2)
-        zp = sk(i, j, 1, 3)
+        xxp = sk(i, j, 1, 1)
+        yyp = sk(i, j, 1, 2)
+        zzp = sk(i, j, 1, 3)
         call pushcontrol3b(5)
       case (kmax) 
         mult = one
-        xp = sk(i, j, kl, 1)
-        yp = sk(i, j, kl, 2)
-        zp = sk(i, j, kl, 3)
+        xxp = sk(i, j, kl, 1)
+        yyp = sk(i, j, kl, 2)
+        zzp = sk(i, j, kl, 3)
         call pushcontrol3b(6)
       case default
         call pushcontrol3b(0)
       end select
 ! compute the inverse of the length of the normal vector
 ! and possibly correct for inward pointing.
-      fact = sqrt(xp*xp + yp*yp + zp*zp)
+      fact = sqrt(xxp*xxp + yyp*yyp + zzp*zzp)
       if (fact .gt. zero) then
         call pushreal8(fact)
         fact = mult/fact
@@ -143,82 +149,82 @@ subroutine boundarynormals_b()
       else
         call pushcontrol1b(1)
       end if
-      factd = zp*bcdatad(mm)%norm(i, j, 3)
-      zpd = zpd + fact*bcdatad(mm)%norm(i, j, 3)
+      factd = zzp*bcdatad(mm)%norm(i, j, 3)
+      zzpd = zzpd + fact*bcdatad(mm)%norm(i, j, 3)
       bcdatad(mm)%norm(i, j, 3) = 0.0_8
-      factd = factd + yp*bcdatad(mm)%norm(i, j, 2)
-      ypd = ypd + fact*bcdatad(mm)%norm(i, j, 2)
+      factd = factd + yyp*bcdatad(mm)%norm(i, j, 2)
+      yypd = yypd + fact*bcdatad(mm)%norm(i, j, 2)
       bcdatad(mm)%norm(i, j, 2) = 0.0_8
-      factd = factd + xp*bcdatad(mm)%norm(i, j, 1)
-      xpd = xpd + fact*bcdatad(mm)%norm(i, j, 1)
+      factd = factd + xxp*bcdatad(mm)%norm(i, j, 1)
+      xxpd = xxpd + fact*bcdatad(mm)%norm(i, j, 1)
       bcdatad(mm)%norm(i, j, 1) = 0.0_8
       call popcontrol1b(branch)
       if (branch .eq. 0) then
         call popreal8(fact)
         factd = -(mult*factd/fact**2)
       end if
-      if (xp**2 + yp**2 + zp**2 .eq. 0.0_8) then
+      if (xxp**2 + yyp**2 + zzp**2 .eq. 0.0_8) then
         tempd = 0.0
       else
-        tempd = factd/(2.0*sqrt(xp**2+yp**2+zp**2))
+        tempd = factd/(2.0*sqrt(xxp**2+yyp**2+zzp**2))
       end if
-      xpd = xpd + 2*xp*tempd
-      ypd = ypd + 2*yp*tempd
-      zpd = zpd + 2*zp*tempd
+      xxpd = xxpd + 2*xxp*tempd
+      yypd = yypd + 2*yyp*tempd
+      zzpd = zzpd + 2*zzp*tempd
       call popcontrol3b(branch)
       if (branch .lt. 3) then
         if (branch .ne. 0) then
           if (branch .eq. 1) then
-            sid(1, i, j, 3) = sid(1, i, j, 3) + zpd
-            sid(1, i, j, 2) = sid(1, i, j, 2) + ypd
-            sid(1, i, j, 1) = sid(1, i, j, 1) + xpd
-            xpd = 0.0_8
-            ypd = 0.0_8
-            zpd = 0.0_8
+            sid(1, i, j, 3) = sid(1, i, j, 3) + zzpd
+            sid(1, i, j, 2) = sid(1, i, j, 2) + yypd
+            sid(1, i, j, 1) = sid(1, i, j, 1) + xxpd
+            zzpd = 0.0_8
+            yypd = 0.0_8
+            xxpd = 0.0_8
           else
-            sid(il, i, j, 3) = sid(il, i, j, 3) + zpd
-            sid(il, i, j, 2) = sid(il, i, j, 2) + ypd
-            sid(il, i, j, 1) = sid(il, i, j, 1) + xpd
-            xpd = 0.0_8
-            ypd = 0.0_8
-            zpd = 0.0_8
+            sid(il, i, j, 3) = sid(il, i, j, 3) + zzpd
+            sid(il, i, j, 2) = sid(il, i, j, 2) + yypd
+            sid(il, i, j, 1) = sid(il, i, j, 1) + xxpd
+            zzpd = 0.0_8
+            yypd = 0.0_8
+            xxpd = 0.0_8
           end if
         end if
       else if (branch .lt. 5) then
         if (branch .eq. 3) then
-          sjd(i, 1, j, 3) = sjd(i, 1, j, 3) + zpd
-          sjd(i, 1, j, 2) = sjd(i, 1, j, 2) + ypd
-          sjd(i, 1, j, 1) = sjd(i, 1, j, 1) + xpd
-          xpd = 0.0_8
-          ypd = 0.0_8
-          zpd = 0.0_8
+          sjd(i, 1, j, 3) = sjd(i, 1, j, 3) + zzpd
+          sjd(i, 1, j, 2) = sjd(i, 1, j, 2) + yypd
+          sjd(i, 1, j, 1) = sjd(i, 1, j, 1) + xxpd
+          zzpd = 0.0_8
+          yypd = 0.0_8
+          xxpd = 0.0_8
         else
-          sjd(i, jl, j, 3) = sjd(i, jl, j, 3) + zpd
-          sjd(i, jl, j, 2) = sjd(i, jl, j, 2) + ypd
-          sjd(i, jl, j, 1) = sjd(i, jl, j, 1) + xpd
-          xpd = 0.0_8
-          ypd = 0.0_8
-          zpd = 0.0_8
+          sjd(i, jl, j, 3) = sjd(i, jl, j, 3) + zzpd
+          sjd(i, jl, j, 2) = sjd(i, jl, j, 2) + yypd
+          sjd(i, jl, j, 1) = sjd(i, jl, j, 1) + xxpd
+          zzpd = 0.0_8
+          yypd = 0.0_8
+          xxpd = 0.0_8
         end if
       else if (branch .eq. 5) then
-        skd(i, j, 1, 3) = skd(i, j, 1, 3) + zpd
-        skd(i, j, 1, 2) = skd(i, j, 1, 2) + ypd
-        skd(i, j, 1, 1) = skd(i, j, 1, 1) + xpd
-        xpd = 0.0_8
-        ypd = 0.0_8
-        zpd = 0.0_8
+        skd(i, j, 1, 3) = skd(i, j, 1, 3) + zzpd
+        skd(i, j, 1, 2) = skd(i, j, 1, 2) + yypd
+        skd(i, j, 1, 1) = skd(i, j, 1, 1) + xxpd
+        zzpd = 0.0_8
+        yypd = 0.0_8
+        xxpd = 0.0_8
       else
-        skd(i, j, kl, 3) = skd(i, j, kl, 3) + zpd
-        skd(i, j, kl, 2) = skd(i, j, kl, 2) + ypd
-        skd(i, j, kl, 1) = skd(i, j, kl, 1) + xpd
-        xpd = 0.0_8
-        ypd = 0.0_8
-        zpd = 0.0_8
+        skd(i, j, kl, 3) = skd(i, j, kl, 3) + zzpd
+        skd(i, j, kl, 2) = skd(i, j, kl, 2) + yypd
+        skd(i, j, kl, 1) = skd(i, j, kl, 1) + xxpd
+        zzpd = 0.0_8
+        yypd = 0.0_8
+        xxpd = 0.0_8
       end if
     end do
-    call popreal8(zp)
-    call popreal8(yp)
-    call popreal8(xp)
+    call popreal8(xxp)
+    call popreal8(yyp)
+    call popreal8(zzp)
     call popreal8(mult)
     call popreal8(fact)
     call popinteger4(i)

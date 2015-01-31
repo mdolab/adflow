@@ -2,9 +2,10 @@
 !  tapenade 3.10 (r5363) -  9 sep 2014 09:53
 !
 !  differentiation of invisciddissfluxmatrix in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *p *w *si *sj *sk *fw
-!   with respect to varying inputs: pinfcorr *p *w *si *sj *sk
-!   plus diff mem management of: p:in w:in si:in sj:in sk:in fw:in
+!   gradient     of useful results: *p *w *fw
+!   with respect to varying inputs: *p *w *fw
+!   rw status of diff variables: *p:incr *w:incr *fw:in-out
+!   plus diff mem management of: p:in w:in fw:in
 !
 !      ******************************************************************
 !      *                                                                *
@@ -15,7 +16,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-subroutine invisciddissfluxmatrix_b()
+subroutine invisciddissfluxmatrix_fast_b()
 !
 !      ******************************************************************
 !      *                                                                *
@@ -28,6 +29,7 @@ subroutine invisciddissfluxmatrix_b()
 !      *                                                                *
 !      ******************************************************************
 !
+  use myPushPopLib
   use blockpointers
   use cgnsgrid
   use constants
@@ -47,26 +49,24 @@ subroutine invisciddissfluxmatrix_b()
 !
 !      local variables.
 !
-  integer(kind=inttype) :: i, j, k, ind, ii
+  integer(kind=inttype) :: i, j, k, ind
   real(kind=realtype) :: plim, sface
-  real(kind=realtype) :: plimd, sfaced
   real(kind=realtype) :: sfil, fis2, fis4
   real(kind=realtype) :: gammaavg, gm1, ovgm1, gm53
   real(kind=realtype) :: ppor, rrad, dis2, dis4
   real(kind=realtype) :: rradd, dis2d, dis4d
   real(kind=realtype) :: dp1, dp2, tmp, fs
-  real(kind=realtype) :: tmpd, fsd
+  real(kind=realtype) :: fsd
   real(kind=realtype) :: ddw1, ddw2, ddw3, ddw4, ddw5, ddw6
   real(kind=realtype) :: ddw1d, ddw2d, ddw3d, ddw4d, ddw5d, ddw6d
   real(kind=realtype) :: dr, dru, drv, drw, dre, drk, sx, sy, sz
-  real(kind=realtype) :: drd, drud, drvd, drwd, dred, drkd, sxd, syd, &
-& szd
+  real(kind=realtype) :: drd, drud, drvd, drwd, dred, drkd
   real(kind=realtype) :: uavg, vavg, wavg, a2avg, aavg, havg
   real(kind=realtype) :: uavgd, vavgd, wavgd, a2avgd, aavgd, havgd
   real(kind=realtype) :: alphaavg, unavg, ovaavg, ova2avg
   real(kind=realtype) :: alphaavgd, unavgd, ovaavgd, ova2avgd
   real(kind=realtype) :: kavg, lam1, lam2, lam3, area
-  real(kind=realtype) :: kavgd, lam1d, lam2d, lam3d, aread
+  real(kind=realtype) :: kavgd, lam1d, lam2d, lam3d
   real(kind=realtype) :: abv1, abv2, abv3, abv4, abv5, abv6, abv7
   real(kind=realtype) :: abv1d, abv2d, abv3d, abv4d, abv5d, abv6d, abv7d
   real(kind=realtype), dimension(ie, je, ke, 3) :: dss
@@ -102,9 +102,7 @@ subroutine invisciddissfluxmatrix_b()
   real(kind=realtype) :: temp20
   real(kind=realtype) :: abs1d
   real(kind=realtype) :: temp55
-  real(kind=realtype) :: tempd40
   real(kind=realtype) :: temp54
-  real(kind=realtype) :: max2d
   real(kind=realtype) :: temp53
   real(kind=realtype) :: min3
   real(kind=realtype) :: temp52
@@ -121,9 +119,7 @@ subroutine invisciddissfluxmatrix_b()
   real(kind=realtype) :: temp19
   real(kind=realtype) :: temp18
   real(kind=realtype) :: temp17
-  real(kind=realtype) :: tempd39
   real(kind=realtype) :: temp16
-  real(kind=realtype) :: tempd38
   real(kind=realtype) :: temp15
   real(kind=realtype) :: tempd37
   real(kind=realtype) :: temp14
@@ -134,6 +130,7 @@ subroutine invisciddissfluxmatrix_b()
   real(kind=realtype) :: temp12
   real(kind=realtype) :: temp49
   real(kind=realtype) :: tempd34
+  integer :: ii
   real(kind=realtype) :: temp11
   real(kind=realtype) :: temp48
   real(kind=realtype) :: tempd33
@@ -145,7 +142,6 @@ subroutine invisciddissfluxmatrix_b()
   real(kind=realtype) :: temp45
   real(kind=realtype) :: tempd30
   real(kind=realtype) :: temp44
-  real(kind=realtype) :: max1d
   real(kind=realtype) :: temp43
   real(kind=realtype) :: temp42
   real(kind=realtype) :: temp41
@@ -164,8 +160,8 @@ subroutine invisciddissfluxmatrix_b()
   real(kind=realtype) :: tempd1
   real(kind=realtype) :: tempd0
   real(kind=realtype) :: x1d
-  real(kind=realtype) :: tempd29
   real(kind=realtype) :: min3d
+  real(kind=realtype) :: tempd29
   real(kind=realtype) :: tempd28
   real(kind=realtype) :: tempd27
   real(kind=realtype) :: tempd26
@@ -194,7 +190,6 @@ subroutine invisciddissfluxmatrix_b()
   real(kind=realtype) :: abs2d
   real(kind=realtype) :: abs1
   real(kind=realtype) :: abs0
-  real(kind=realtype) :: max3d
   real(kind=realtype) :: abs5d
   real(kind=realtype) :: temp
   real(kind=realtype) :: max3
@@ -231,9 +226,7 @@ subroutine invisciddissfluxmatrix_b()
 !
 ! check if rfil == 0. if so, the dissipative flux needs not to
 ! be computed.
-  if (abs0 .lt. thresholdreal) then
-    pinfcorrd = 0.0_8
-  else
+  if (abs0 .ge. thresholdreal) then
 ! set the value of plim. to be fully consistent this must have
 ! the dimension of a pressure. therefore a fraction of pinfcorr
 ! is used.
@@ -255,6 +248,7 @@ subroutine invisciddissfluxmatrix_b()
 ! set a couple of constants for the scheme.
     fis2 = rfil*vis2
     fis4 = rfil*vis4
+    sfil = one - rfil
 ! initialize the dissipative residual to a certain times,
 ! possibly zero, the previously stored value. 
 ! compute the pressure sensor for each cell, in each direction:
@@ -314,9 +308,6 @@ subroutine invisciddissfluxmatrix_b()
         dss(i, j, k, 3) = -x3
       end if
     end do
-    call pushinteger4(i)
-    call pushinteger4(j)
-    call pushreal8(sface)
 !
 !      ******************************************************************
 !      *                                                                *
@@ -479,32 +470,6 @@ subroutine invisciddissfluxmatrix_b()
       fw(i+1, j, k, irhoe) = fw(i+1, j, k, irhoe) + fs
       fw(i, j, k, irhoe) = fw(i, j, k, irhoe) - fs
     end do
-    call pushreal8(aavg)
-    call pushinteger4(i)
-    call pushinteger4(j)
-    call pushreal8(area)
-    call pushreal8(abv2)
-    call pushreal8(abv3)
-    call pushreal8(dr)
-    call pushreal8(abv4)
-    call pushreal8(dis2)
-    call pushreal8(dis4)
-    call pushreal8(dre)
-    call pushreal8(ddw2)
-    call pushreal8(ddw3)
-    call pushreal8(ddw4)
-    call pushreal8(havg)
-    call pushreal8(ddw6)
-    call pushreal8(dru)
-    call pushreal8(drv)
-    call pushreal8(drw)
-    call pushreal8(a2avg)
-    call pushreal8(lam3)
-    call pushreal8(ppor)
-    call pushreal8(sx)
-    call pushreal8(sy)
-    call pushreal8(sz)
-    call pushreal8(sface)
 !
 !      ******************************************************************
 !      *                                                                *
@@ -667,33 +632,7 @@ subroutine invisciddissfluxmatrix_b()
       fw(i, j+1, k, irhoe) = fw(i, j+1, k, irhoe) + fs
       fw(i, j, k, irhoe) = fw(i, j, k, irhoe) - fs
     end do
-    call pushreal8(aavg)
-    call pushinteger4(i)
-    call pushinteger4(j)
-    call pushreal8(area)
-    call pushreal8(abv2)
-    call pushreal8(abv3)
-    call pushreal8(dr)
-    call pushreal8(abv4)
-    call pushreal8(dis2)
-    call pushreal8(dis4)
-    call pushreal8(dre)
-    call pushreal8(ddw2)
-    call pushreal8(ddw3)
-    call pushreal8(ddw4)
-    call pushreal8(havg)
-    call pushreal8(ddw6)
-    call pushreal8(dru)
-    call pushreal8(drv)
-    call pushreal8(drw)
-    call pushreal8(a2avg)
-    call pushreal8(lam3)
-    call pushreal8(ppor)
-    call pushreal8(sx)
-    call pushreal8(sy)
-    call pushreal8(sz)
     dssd = 0.0_8
-    sfaced = 0.0_8
     do ii=0,nx*ny*kl-1
       i = mod(ii, nx) + 2
       j = mod(ii/nx, ny) + 2
@@ -703,17 +642,21 @@ subroutine invisciddissfluxmatrix_b()
       if (pork(i, j, k) .eq. normalflux) ppor = one
       if (dss(i, j, k, 3) .lt. dss(i, j, k+1, 3)) then
         y3 = dss(i, j, k+1, 3)
-        call pushcontrol1b(0)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
       else
         y3 = dss(i, j, k, 3)
-        call pushcontrol1b(1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
       end if
       if (dpmax .gt. y3) then
         min3 = y3
-        call pushcontrol1b(0)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
       else
         min3 = dpmax
-        call pushcontrol1b(1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
       end if
       dis2 = ppor*fis2*min3
       arg1 = ppor*fis4
@@ -748,11 +691,13 @@ subroutine invisciddissfluxmatrix_b()
         drk = dis2*ddw6 - dis4*(w(i, j, k+2, irho)*w(i, j, k+2, itu1)-w(&
 &         i, j, k-1, irho)*w(i, j, k-1, itu1)-three*ddw6)
         kavg = half*(w(i, j, k+1, itu1)+w(i, j, k, itu1))
-        call pushcontrol1b(1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
       else
         drk = zero
         kavg = zero
-        call pushcontrol1b(0)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
       end if
 ! compute the average value of gamma and compute some
 ! expressions in which it occurs.
@@ -772,17 +717,12 @@ subroutine invisciddissfluxmatrix_b()
       area = sqrt(sx**2 + sy**2 + sz**2)
       if (1.e-25_realtype .lt. area) then
         max3 = area
-        call pushcontrol1b(0)
       else
-        call pushcontrol1b(1)
         max3 = 1.e-25_realtype
       end if
       tmp = one/max3
-      call pushreal8(sx)
       sx = sx*tmp
-      call pushreal8(sy)
       sy = sy*tmp
-      call pushreal8(sz)
       sz = sz*tmp
       alphaavg = half*(uavg**2+vavg**2+wavg**2)
       havg = alphaavg + ovgm1*(a2avg-gm53*kavg)
@@ -792,62 +732,66 @@ subroutine invisciddissfluxmatrix_b()
       ova2avg = one/a2avg
 ! the mesh velocity if the face is moving. it must be
 ! divided by the area to obtain a true velocity.
-      if (addgridvelocities) then
-        sface = sfacek(i, j, k)*tmp
-        call pushcontrol1b(1)
-      else
-        call pushcontrol1b(0)
-      end if
+      if (addgridvelocities) sface = sfacek(i, j, k)*tmp
       if (unavg - sface + aavg .ge. 0.) then
         lam1 = unavg - sface + aavg
-        call pushcontrol1b(0)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
       else
         lam1 = -(unavg-sface+aavg)
-        call pushcontrol1b(1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
       end if
       if (unavg - sface - aavg .ge. 0.) then
         lam2 = unavg - sface - aavg
-        call pushcontrol1b(0)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
       else
         lam2 = -(unavg-sface-aavg)
-        call pushcontrol1b(1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
       end if
       if (unavg - sface .ge. 0.) then
         lam3 = unavg - sface
-        call pushcontrol1b(0)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
       else
         lam3 = -(unavg-sface)
-        call pushcontrol1b(1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
       end if
       rrad = lam3 + aavg
       if (lam1 .lt. epsacoustic*rrad) then
         lam1 = epsacoustic*rrad
-        call pushcontrol1b(0)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
       else
-        call pushcontrol1b(1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
         lam1 = lam1
       end if
       if (lam2 .lt. epsacoustic*rrad) then
         lam2 = epsacoustic*rrad
-        call pushcontrol1b(0)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
       else
-        call pushcontrol1b(1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
         lam2 = lam2
       end if
       if (lam3 .lt. epsshear*rrad) then
         lam3 = epsshear*rrad
-        call pushcontrol1b(0)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
       else
         lam3 = lam3
-        call pushcontrol1b(1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
       end if
 ! multiply the eigenvalues by the area to obtain
 ! the correct values for the dissipation term.
-      call pushreal8(lam1)
       lam1 = lam1*area
-      call pushreal8(lam2)
       lam2 = lam2*area
-      call pushreal8(lam3)
       lam3 = lam3*area
 ! some abbreviations, which occur quite often in the
 ! dissipation terms.
@@ -876,21 +820,18 @@ subroutine invisciddissfluxmatrix_b()
       drwd = lam3*fsd
       wavgd = abv6*fsd
       abv6d = abv6d + wavg*fsd
-      szd = abv7*fsd
       abv7d = abv7d + sz*fsd
       fsd = fwd(i, j, k+1, imy) - fwd(i, j, k, imy)
       lam3d = lam3d + drv*fsd
       drvd = lam3*fsd
       vavgd = abv6*fsd
       abv6d = abv6d + vavg*fsd
-      syd = abv7*fsd
       abv7d = abv7d + sy*fsd
       fsd = fwd(i, j, k+1, imx) - fwd(i, j, k, imx)
       lam3d = lam3d + dru*fsd
       drud = lam3*fsd
       uavgd = abv6*fsd
       abv6d = abv6d + uavg*fsd
-      sxd = abv7*fsd
       abv7d = abv7d + sx*fsd
       fsd = fwd(i, j, k+1, irho) - fwd(i, j, k, irho)
       abv6d = abv6d + fsd
@@ -901,87 +842,73 @@ subroutine invisciddissfluxmatrix_b()
       lam3d = lam3d + dr*fsd - abv3d
       abv5d = ovaavg*abv2*abv6d + abv3*abv7d
       ova2avgd = abv3*abv4*abv6d
-      sxd = sxd + dru*abv5d
-      syd = syd + drv*abv5d
-      szd = szd + drw*abv5d
       unavgd = unavgd - dr*abv5d
-      tempd40 = gm1*abv4d
-      drd = alphaavg*tempd40 - unavg*abv5d + lam3*fsd
-      drud = drud + sx*abv5d - uavg*tempd40
-      drvd = drvd + sy*abv5d - vavg*tempd40
-      drwd = drwd + sz*abv5d - wavg*tempd40
-      alphaavgd = dr*tempd40
-      uavgd = uavgd - dru*tempd40
-      vavgd = vavgd - drv*tempd40
-      dred = dred + tempd40
-      wavgd = wavgd - drw*tempd40
+      tempd37 = gm1*abv4d
+      drd = alphaavg*tempd37 - unavg*abv5d + lam3*fsd
+      drud = drud + sx*abv5d - uavg*tempd37
+      drvd = drvd + sy*abv5d - vavg*tempd37
+      drwd = drwd + sz*abv5d - wavg*tempd37
+      alphaavgd = dr*tempd37
+      uavgd = uavgd - dru*tempd37
+      vavgd = vavgd - drv*tempd37
+      dred = dred + tempd37
+      wavgd = wavgd - drw*tempd37
       drkd = -(gm53*abv4d)
       abv1d = abv3d
       lam1d = half*abv1d + half*abv2d
       lam2d = half*abv1d - half*abv2d
-      call popreal8(lam3)
-      call popreal8(lam2)
-      call popreal8(lam1)
-      aread = lam2*lam2d + lam1*lam1d + lam3*lam3d
       lam3d = area*lam3d
       lam2d = area*lam2d
       lam1d = area*lam1d
-      call popcontrol1b(branch)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
         rradd = epsshear*lam3d
         lam3d = 0.0_8
       else
         rradd = 0.0_8
       end if
-      call popcontrol1b(branch)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
         rradd = rradd + epsacoustic*lam2d
         lam2d = 0.0_8
       end if
-      call popcontrol1b(branch)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
         rradd = rradd + epsacoustic*lam1d
         lam1d = 0.0_8
       end if
       lam3d = lam3d + rradd
       aavgd = rradd
-      call popcontrol1b(branch)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
         unavgd = unavgd + lam3d
-        sfaced = sfaced - lam3d
       else
-        sfaced = sfaced + lam3d
         unavgd = unavgd - lam3d
       end if
-      call popcontrol1b(branch)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
         unavgd = unavgd + lam2d
-        sfaced = sfaced - lam2d
         aavgd = aavgd - lam2d
       else
-        sfaced = sfaced + lam2d
-        unavgd = unavgd - lam2d
         aavgd = aavgd + lam2d
+        unavgd = unavgd - lam2d
       end if
-      call popcontrol1b(branch)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
         unavgd = unavgd + lam1d
-        sfaced = sfaced - lam1d
         aavgd = aavgd + lam1d
       else
-        sfaced = sfaced + lam1d
         unavgd = unavgd - lam1d
         aavgd = aavgd - lam1d
       end if
-      call popcontrol1b(branch)
-      if (branch .eq. 0) then
-        tmpd = 0.0_8
-      else
-        tmpd = sfacek(i, j, k)*sfaced
-        sfaced = 0.0_8
-      end if
       alphaavgd = alphaavgd + havgd
-      tempd39 = half*alphaavgd
+      tempd36 = half*alphaavgd
       aavgd = aavgd - one*ovaavgd/aavg**2
       if (a2avg .eq. 0.0_8) then
         a2avgd = ovgm1*havgd - one*ova2avgd/a2avg**2
@@ -989,50 +916,27 @@ subroutine invisciddissfluxmatrix_b()
         a2avgd = aavgd/(2.0*sqrt(a2avg)) + ovgm1*havgd - one*ova2avgd/&
 &         a2avg**2
       end if
-      uavgd = uavgd + 2*uavg*tempd39 + sx*unavgd
-      sxd = sxd + uavg*unavgd
-      vavgd = vavgd + 2*vavg*tempd39 + sy*unavgd
-      syd = syd + vavg*unavgd
-      wavgd = wavgd + 2*wavg*tempd39 + sz*unavgd
-      szd = szd + wavg*unavgd
+      uavgd = uavgd + 2*uavg*tempd36 + sx*unavgd
+      vavgd = vavgd + 2*vavg*tempd36 + sy*unavgd
+      wavgd = wavgd + 2*wavg*tempd36 + sz*unavgd
       kavgd = -(ovgm1*gm53*havgd)
-      call popreal8(sz)
-      call popreal8(sy)
-      call popreal8(sx)
-      tmpd = tmpd + sy*syd + sx*sxd + sz*szd
-      szd = tmp*szd
-      syd = tmp*syd
-      sxd = tmp*sxd
-      max3d = -(one*tmpd/max3**2)
-      call popcontrol1b(branch)
-      if (branch .eq. 0) aread = aread + max3d
-      if (sx**2 + sy**2 + sz**2 .eq. 0.0_8) then
-        tempd36 = 0.0
-      else
-        tempd36 = aread/(2.0*sqrt(sx**2+sy**2+sz**2))
-      end if
-      sxd = sxd + 2*sx*tempd36
-      syd = syd + 2*sy*tempd36
-      szd = szd + 2*sz*tempd36
-      skd(i, j, k, 3) = skd(i, j, k, 3) + szd
-      skd(i, j, k, 2) = skd(i, j, k, 2) + syd
-      skd(i, j, k, 1) = skd(i, j, k, 1) + sxd
       temp55 = w(i, j, k, irho)
       temp54 = w(i, j, k+1, irho)
-      tempd37 = gamma(i, j, k+1)*half*a2avgd/temp54
-      tempd38 = gamma(i, j, k)*half*a2avgd/temp55
-      pd(i, j, k+1) = pd(i, j, k+1) + tempd37
-      wd(i, j, k+1, irho) = wd(i, j, k+1, irho) - p(i, j, k+1)*tempd37/&
+      tempd34 = gamma(i, j, k+1)*half*a2avgd/temp54
+      tempd35 = gamma(i, j, k)*half*a2avgd/temp55
+      pd(i, j, k+1) = pd(i, j, k+1) + tempd34
+      wd(i, j, k+1, irho) = wd(i, j, k+1, irho) - p(i, j, k+1)*tempd34/&
 &       temp54
-      pd(i, j, k) = pd(i, j, k) + tempd38
-      wd(i, j, k, irho) = wd(i, j, k, irho) - p(i, j, k)*tempd38/temp55
+      pd(i, j, k) = pd(i, j, k) + tempd35
+      wd(i, j, k, irho) = wd(i, j, k, irho) - p(i, j, k)*tempd35/temp55
       wd(i, j, k+1, ivz) = wd(i, j, k+1, ivz) + half*wavgd
       wd(i, j, k, ivz) = wd(i, j, k, ivz) + half*wavgd
       wd(i, j, k+1, ivy) = wd(i, j, k+1, ivy) + half*vavgd
       wd(i, j, k, ivy) = wd(i, j, k, ivy) + half*vavgd
       wd(i, j, k+1, ivx) = wd(i, j, k+1, ivx) + half*uavgd
       wd(i, j, k, ivx) = wd(i, j, k, ivx) + half*uavgd
-      call popcontrol1b(branch)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
         dis2d = 0.0_8
         dis4d = 0.0_8
@@ -1043,14 +947,14 @@ subroutine invisciddissfluxmatrix_b()
         temp52 = w(i, j, k-1, irho)
         temp51 = w(i, j, k+2, itu1)
         temp50 = w(i, j, k+2, irho)
-        tempd35 = -(dis4*drkd)
+        tempd33 = -(dis4*drkd)
         dis2d = ddw6*drkd
-        ddw6d = dis2*drkd - three*tempd35
+        ddw6d = dis2*drkd - three*tempd33
         dis4d = -((temp50*temp51-temp52*temp53-three*ddw6)*drkd)
-        wd(i, j, k+2, irho) = wd(i, j, k+2, irho) + temp51*tempd35
-        wd(i, j, k+2, itu1) = wd(i, j, k+2, itu1) + temp50*tempd35
-        wd(i, j, k-1, irho) = wd(i, j, k-1, irho) - temp53*tempd35
-        wd(i, j, k-1, itu1) = wd(i, j, k-1, itu1) - temp52*tempd35
+        wd(i, j, k+2, irho) = wd(i, j, k+2, irho) + temp51*tempd33
+        wd(i, j, k+2, itu1) = wd(i, j, k+2, itu1) + temp50*tempd33
+        wd(i, j, k-1, irho) = wd(i, j, k-1, irho) - temp53*tempd33
+        wd(i, j, k-1, itu1) = wd(i, j, k-1, itu1) - temp52*tempd33
         wd(i, j, k+1, irho) = wd(i, j, k+1, irho) + w(i, j, k+1, itu1)*&
 &         ddw6d
         wd(i, j, k+1, itu1) = wd(i, j, k+1, itu1) + w(i, j, k+1, irho)*&
@@ -1070,100 +974,76 @@ subroutine invisciddissfluxmatrix_b()
       temp47 = w(i, j, k+2, ivz)
       temp48 = w(i, j, k-1, irho)
       temp49 = w(i, j, k-1, ivz)
-      tempd30 = -(dis4*dred)
+      tempd28 = -(dis4*dred)
       dis2d = dis2d + ddw4*drwd + ddw2*drud + ddw1*drd + ddw3*drvd + &
 &       ddw5*dred
-      ddw5d = dis2*dred - three*tempd30
+      ddw5d = dis2*dred - three*tempd28
       dis4d = dis4d - (temp46*temp47-temp48*temp49-three*ddw4)*drwd - (&
 &       temp38*temp39-temp40*temp41-three*ddw2)*drud - (w(i, j, k+2, &
 &       irho)-w(i, j, k-1, irho)-three*ddw1)*drd - (temp42*temp43-temp44&
 &       *temp45-three*ddw3)*drvd - (w(i, j, k+2, irhoe)-w(i, j, k-1, &
 &       irhoe)-three*ddw5)*dred
-      wd(i, j, k+2, irhoe) = wd(i, j, k+2, irhoe) + tempd30
-      wd(i, j, k-1, irhoe) = wd(i, j, k-1, irhoe) - tempd30
+      wd(i, j, k+2, irhoe) = wd(i, j, k+2, irhoe) + tempd28
+      wd(i, j, k-1, irhoe) = wd(i, j, k-1, irhoe) - tempd28
       wd(i, j, k+1, irhoe) = wd(i, j, k+1, irhoe) + ddw5d
       wd(i, j, k, irhoe) = wd(i, j, k, irhoe) - ddw5d
-      tempd31 = -(dis4*drwd)
-      ddw4d = dis2*drwd - three*tempd31
-      wd(i, j, k+2, irho) = wd(i, j, k+2, irho) + temp47*tempd31
-      wd(i, j, k+2, ivz) = wd(i, j, k+2, ivz) + temp46*tempd31
-      wd(i, j, k-1, irho) = wd(i, j, k-1, irho) - temp49*tempd31
-      wd(i, j, k-1, ivz) = wd(i, j, k-1, ivz) - temp48*tempd31
+      tempd29 = -(dis4*drwd)
+      ddw4d = dis2*drwd - three*tempd29
+      wd(i, j, k+2, irho) = wd(i, j, k+2, irho) + temp47*tempd29
+      wd(i, j, k+2, ivz) = wd(i, j, k+2, ivz) + temp46*tempd29
+      wd(i, j, k-1, irho) = wd(i, j, k-1, irho) - temp49*tempd29
+      wd(i, j, k-1, ivz) = wd(i, j, k-1, ivz) - temp48*tempd29
       wd(i, j, k+1, irho) = wd(i, j, k+1, irho) + w(i, j, k+1, ivz)*&
 &       ddw4d
       wd(i, j, k+1, ivz) = wd(i, j, k+1, ivz) + w(i, j, k+1, irho)*ddw4d
       wd(i, j, k, irho) = wd(i, j, k, irho) - w(i, j, k, ivz)*ddw4d
       wd(i, j, k, ivz) = wd(i, j, k, ivz) - w(i, j, k, irho)*ddw4d
-      tempd32 = -(dis4*drvd)
-      ddw3d = dis2*drvd - three*tempd32
-      wd(i, j, k+2, irho) = wd(i, j, k+2, irho) + temp43*tempd32
-      wd(i, j, k+2, ivy) = wd(i, j, k+2, ivy) + temp42*tempd32
-      wd(i, j, k-1, irho) = wd(i, j, k-1, irho) - temp45*tempd32
-      wd(i, j, k-1, ivy) = wd(i, j, k-1, ivy) - temp44*tempd32
+      tempd30 = -(dis4*drvd)
+      ddw3d = dis2*drvd - three*tempd30
+      wd(i, j, k+2, irho) = wd(i, j, k+2, irho) + temp43*tempd30
+      wd(i, j, k+2, ivy) = wd(i, j, k+2, ivy) + temp42*tempd30
+      wd(i, j, k-1, irho) = wd(i, j, k-1, irho) - temp45*tempd30
+      wd(i, j, k-1, ivy) = wd(i, j, k-1, ivy) - temp44*tempd30
       wd(i, j, k+1, irho) = wd(i, j, k+1, irho) + w(i, j, k+1, ivy)*&
 &       ddw3d
       wd(i, j, k+1, ivy) = wd(i, j, k+1, ivy) + w(i, j, k+1, irho)*ddw3d
       wd(i, j, k, irho) = wd(i, j, k, irho) - w(i, j, k, ivy)*ddw3d
       wd(i, j, k, ivy) = wd(i, j, k, ivy) - w(i, j, k, irho)*ddw3d
-      tempd33 = -(dis4*drud)
-      ddw2d = dis2*drud - three*tempd33
-      wd(i, j, k+2, irho) = wd(i, j, k+2, irho) + temp39*tempd33
-      wd(i, j, k+2, ivx) = wd(i, j, k+2, ivx) + temp38*tempd33
-      wd(i, j, k-1, irho) = wd(i, j, k-1, irho) - temp41*tempd33
-      wd(i, j, k-1, ivx) = wd(i, j, k-1, ivx) - temp40*tempd33
+      tempd31 = -(dis4*drud)
+      ddw2d = dis2*drud - three*tempd31
+      wd(i, j, k+2, irho) = wd(i, j, k+2, irho) + temp39*tempd31
+      wd(i, j, k+2, ivx) = wd(i, j, k+2, ivx) + temp38*tempd31
+      wd(i, j, k-1, irho) = wd(i, j, k-1, irho) - temp41*tempd31
+      wd(i, j, k-1, ivx) = wd(i, j, k-1, ivx) - temp40*tempd31
       wd(i, j, k+1, irho) = wd(i, j, k+1, irho) + w(i, j, k+1, ivx)*&
 &       ddw2d
       wd(i, j, k+1, ivx) = wd(i, j, k+1, ivx) + w(i, j, k+1, irho)*ddw2d
       wd(i, j, k, irho) = wd(i, j, k, irho) - w(i, j, k, ivx)*ddw2d
       wd(i, j, k, ivx) = wd(i, j, k, ivx) - w(i, j, k, irho)*ddw2d
-      tempd34 = -(dis4*drd)
-      ddw1d = dis2*drd - three*tempd34
-      wd(i, j, k+2, irho) = wd(i, j, k+2, irho) + tempd34
-      wd(i, j, k-1, irho) = wd(i, j, k-1, irho) - tempd34
+      tempd32 = -(dis4*drd)
+      ddw1d = dis2*drd - three*tempd32
+      wd(i, j, k+2, irho) = wd(i, j, k+2, irho) + tempd32
+      wd(i, j, k-1, irho) = wd(i, j, k-1, irho) - tempd32
       wd(i, j, k+1, irho) = wd(i, j, k+1, irho) + ddw1d
       wd(i, j, k, irho) = wd(i, j, k, irho) - ddw1d
       arg1d = 0.0_8
-      call dim_b(arg1, arg1d, dis2, dis2d, dis4d)
+      call dim_fast_b(arg1, arg1d, dis2, dis2d, dis4d)
       min3d = ppor*fis2*dis2d
-      call popcontrol1b(branch)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
         y3d = min3d
       else
         y3d = 0.0_8
       end if
-      call popcontrol1b(branch)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
         dssd(i, j, k+1, 3) = dssd(i, j, k+1, 3) + y3d
       else
         dssd(i, j, k, 3) = dssd(i, j, k, 3) + y3d
       end if
     end do
-    call popreal8(sz)
-    call popreal8(sy)
-    call popreal8(sx)
-    call popreal8(ppor)
-    call popreal8(lam3)
-    call popreal8(a2avg)
-    call popreal8(drw)
-    call popreal8(drv)
-    call popreal8(dru)
-    call popreal8(ddw6)
-    call popreal8(havg)
-    call popreal8(ddw4)
-    call popreal8(ddw3)
-    call popreal8(ddw2)
-    call popreal8(dre)
-    call popreal8(dis4)
-    call popreal8(dis2)
-    call popreal8(abv4)
-    call popreal8(dr)
-    call popreal8(abv3)
-    call popreal8(abv2)
-    call popreal8(area)
-    call popinteger4(j)
-    call popinteger4(i)
-    call popreal8(aavg)
-    call popreal8(sface)
     do ii=0,nx*jl*nz-1
       i = mod(ii, nx) + 2
       j = mod(ii/nx, jl) + 1
@@ -1173,17 +1053,21 @@ subroutine invisciddissfluxmatrix_b()
       if (porj(i, j, k) .eq. normalflux) ppor = one
       if (dss(i, j, k, 2) .lt. dss(i, j+1, k, 2)) then
         y2 = dss(i, j+1, k, 2)
-        call pushcontrol1b(0)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
       else
         y2 = dss(i, j, k, 2)
-        call pushcontrol1b(1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
       end if
       if (dpmax .gt. y2) then
         min2 = y2
-        call pushcontrol1b(0)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
       else
         min2 = dpmax
-        call pushcontrol1b(1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
       end if
       dis2 = ppor*fis2*min2
       arg1 = ppor*fis4
@@ -1218,11 +1102,13 @@ subroutine invisciddissfluxmatrix_b()
         drk = dis2*ddw6 - dis4*(w(i, j+2, k, irho)*w(i, j+2, k, itu1)-w(&
 &         i, j-1, k, irho)*w(i, j-1, k, itu1)-three*ddw6)
         kavg = half*(w(i, j, k, itu1)+w(i, j+1, k, itu1))
-        call pushcontrol1b(1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
       else
         drk = zero
         kavg = zero
-        call pushcontrol1b(0)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
       end if
 ! compute the average value of gamma and compute some
 ! expressions in which it occurs.
@@ -1242,17 +1128,12 @@ subroutine invisciddissfluxmatrix_b()
       area = sqrt(sx**2 + sy**2 + sz**2)
       if (1.e-25_realtype .lt. area) then
         max2 = area
-        call pushcontrol1b(0)
       else
-        call pushcontrol1b(1)
         max2 = 1.e-25_realtype
       end if
       tmp = one/max2
-      call pushreal8(sx)
       sx = sx*tmp
-      call pushreal8(sy)
       sy = sy*tmp
-      call pushreal8(sz)
       sz = sz*tmp
       alphaavg = half*(uavg**2+vavg**2+wavg**2)
       havg = alphaavg + ovgm1*(a2avg-gm53*kavg)
@@ -1262,62 +1143,66 @@ subroutine invisciddissfluxmatrix_b()
       ova2avg = one/a2avg
 ! the mesh velocity if the face is moving. it must be
 ! divided by the area to obtain a true velocity.
-      if (addgridvelocities) then
-        sface = sfacej(i, j, k)*tmp
-        call pushcontrol1b(1)
-      else
-        call pushcontrol1b(0)
-      end if
+      if (addgridvelocities) sface = sfacej(i, j, k)*tmp
       if (unavg - sface + aavg .ge. 0.) then
         lam1 = unavg - sface + aavg
-        call pushcontrol1b(0)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
       else
         lam1 = -(unavg-sface+aavg)
-        call pushcontrol1b(1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
       end if
       if (unavg - sface - aavg .ge. 0.) then
         lam2 = unavg - sface - aavg
-        call pushcontrol1b(0)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
       else
         lam2 = -(unavg-sface-aavg)
-        call pushcontrol1b(1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
       end if
       if (unavg - sface .ge. 0.) then
         lam3 = unavg - sface
-        call pushcontrol1b(0)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
       else
         lam3 = -(unavg-sface)
-        call pushcontrol1b(1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
       end if
       rrad = lam3 + aavg
       if (lam1 .lt. epsacoustic*rrad) then
         lam1 = epsacoustic*rrad
-        call pushcontrol1b(0)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
       else
-        call pushcontrol1b(1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
         lam1 = lam1
       end if
       if (lam2 .lt. epsacoustic*rrad) then
         lam2 = epsacoustic*rrad
-        call pushcontrol1b(0)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
       else
-        call pushcontrol1b(1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
         lam2 = lam2
       end if
       if (lam3 .lt. epsshear*rrad) then
         lam3 = epsshear*rrad
-        call pushcontrol1b(0)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
       else
         lam3 = lam3
-        call pushcontrol1b(1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
       end if
 ! multiply the eigenvalues by the area to obtain
 ! the correct values for the dissipation term.
-      call pushreal8(lam1)
       lam1 = lam1*area
-      call pushreal8(lam2)
       lam2 = lam2*area
-      call pushreal8(lam3)
       lam3 = lam3*area
 ! some abbreviations, which occur quite often in the
 ! dissipation terms.
@@ -1346,21 +1231,18 @@ subroutine invisciddissfluxmatrix_b()
       drwd = lam3*fsd
       wavgd = abv6*fsd
       abv6d = abv6d + wavg*fsd
-      szd = abv7*fsd
       abv7d = abv7d + sz*fsd
       fsd = fwd(i, j+1, k, imy) - fwd(i, j, k, imy)
       lam3d = lam3d + drv*fsd
       drvd = lam3*fsd
       vavgd = abv6*fsd
       abv6d = abv6d + vavg*fsd
-      syd = abv7*fsd
       abv7d = abv7d + sy*fsd
       fsd = fwd(i, j+1, k, imx) - fwd(i, j, k, imx)
       lam3d = lam3d + dru*fsd
       drud = lam3*fsd
       uavgd = abv6*fsd
       abv6d = abv6d + uavg*fsd
-      sxd = abv7*fsd
       abv7d = abv7d + sx*fsd
       fsd = fwd(i, j+1, k, irho) - fwd(i, j, k, irho)
       abv6d = abv6d + fsd
@@ -1371,87 +1253,73 @@ subroutine invisciddissfluxmatrix_b()
       lam3d = lam3d + dr*fsd - abv3d
       abv5d = ovaavg*abv2*abv6d + abv3*abv7d
       ova2avgd = abv3*abv4*abv6d
-      sxd = sxd + dru*abv5d
-      syd = syd + drv*abv5d
-      szd = szd + drw*abv5d
       unavgd = unavgd - dr*abv5d
-      tempd29 = gm1*abv4d
-      drd = alphaavg*tempd29 - unavg*abv5d + lam3*fsd
-      drud = drud + sx*abv5d - uavg*tempd29
-      drvd = drvd + sy*abv5d - vavg*tempd29
-      drwd = drwd + sz*abv5d - wavg*tempd29
-      alphaavgd = dr*tempd29
-      uavgd = uavgd - dru*tempd29
-      vavgd = vavgd - drv*tempd29
-      dred = dred + tempd29
-      wavgd = wavgd - drw*tempd29
+      tempd27 = gm1*abv4d
+      drd = alphaavg*tempd27 - unavg*abv5d + lam3*fsd
+      drud = drud + sx*abv5d - uavg*tempd27
+      drvd = drvd + sy*abv5d - vavg*tempd27
+      drwd = drwd + sz*abv5d - wavg*tempd27
+      alphaavgd = dr*tempd27
+      uavgd = uavgd - dru*tempd27
+      vavgd = vavgd - drv*tempd27
+      dred = dred + tempd27
+      wavgd = wavgd - drw*tempd27
       drkd = -(gm53*abv4d)
       abv1d = abv3d
       lam1d = half*abv1d + half*abv2d
       lam2d = half*abv1d - half*abv2d
-      call popreal8(lam3)
-      call popreal8(lam2)
-      call popreal8(lam1)
-      aread = lam2*lam2d + lam1*lam1d + lam3*lam3d
       lam3d = area*lam3d
       lam2d = area*lam2d
       lam1d = area*lam1d
-      call popcontrol1b(branch)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
         rradd = epsshear*lam3d
         lam3d = 0.0_8
       else
         rradd = 0.0_8
       end if
-      call popcontrol1b(branch)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
         rradd = rradd + epsacoustic*lam2d
         lam2d = 0.0_8
       end if
-      call popcontrol1b(branch)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
         rradd = rradd + epsacoustic*lam1d
         lam1d = 0.0_8
       end if
       lam3d = lam3d + rradd
       aavgd = rradd
-      call popcontrol1b(branch)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
         unavgd = unavgd + lam3d
-        sfaced = sfaced - lam3d
       else
-        sfaced = sfaced + lam3d
         unavgd = unavgd - lam3d
       end if
-      call popcontrol1b(branch)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
         unavgd = unavgd + lam2d
-        sfaced = sfaced - lam2d
         aavgd = aavgd - lam2d
       else
-        sfaced = sfaced + lam2d
-        unavgd = unavgd - lam2d
         aavgd = aavgd + lam2d
+        unavgd = unavgd - lam2d
       end if
-      call popcontrol1b(branch)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
         unavgd = unavgd + lam1d
-        sfaced = sfaced - lam1d
         aavgd = aavgd + lam1d
       else
-        sfaced = sfaced + lam1d
         unavgd = unavgd - lam1d
         aavgd = aavgd - lam1d
       end if
-      call popcontrol1b(branch)
-      if (branch .eq. 0) then
-        tmpd = 0.0_8
-      else
-        tmpd = sfacej(i, j, k)*sfaced
-        sfaced = 0.0_8
-      end if
       alphaavgd = alphaavgd + havgd
-      tempd28 = half*alphaavgd
+      tempd26 = half*alphaavgd
       aavgd = aavgd - one*ovaavgd/aavg**2
       if (a2avg .eq. 0.0_8) then
         a2avgd = ovgm1*havgd - one*ova2avgd/a2avg**2
@@ -1459,50 +1327,27 @@ subroutine invisciddissfluxmatrix_b()
         a2avgd = aavgd/(2.0*sqrt(a2avg)) + ovgm1*havgd - one*ova2avgd/&
 &         a2avg**2
       end if
-      uavgd = uavgd + 2*uavg*tempd28 + sx*unavgd
-      sxd = sxd + uavg*unavgd
-      vavgd = vavgd + 2*vavg*tempd28 + sy*unavgd
-      syd = syd + vavg*unavgd
-      wavgd = wavgd + 2*wavg*tempd28 + sz*unavgd
-      szd = szd + wavg*unavgd
+      uavgd = uavgd + 2*uavg*tempd26 + sx*unavgd
+      vavgd = vavgd + 2*vavg*tempd26 + sy*unavgd
+      wavgd = wavgd + 2*wavg*tempd26 + sz*unavgd
       kavgd = -(ovgm1*gm53*havgd)
-      call popreal8(sz)
-      call popreal8(sy)
-      call popreal8(sx)
-      tmpd = tmpd + sy*syd + sx*sxd + sz*szd
-      szd = tmp*szd
-      syd = tmp*syd
-      sxd = tmp*sxd
-      max2d = -(one*tmpd/max2**2)
-      call popcontrol1b(branch)
-      if (branch .eq. 0) aread = aread + max2d
-      if (sx**2 + sy**2 + sz**2 .eq. 0.0_8) then
-        tempd25 = 0.0
-      else
-        tempd25 = aread/(2.0*sqrt(sx**2+sy**2+sz**2))
-      end if
-      sxd = sxd + 2*sx*tempd25
-      syd = syd + 2*sy*tempd25
-      szd = szd + 2*sz*tempd25
-      sjd(i, j, k, 3) = sjd(i, j, k, 3) + szd
-      sjd(i, j, k, 2) = sjd(i, j, k, 2) + syd
-      sjd(i, j, k, 1) = sjd(i, j, k, 1) + sxd
       temp37 = w(i, j, k, irho)
       temp36 = w(i, j+1, k, irho)
-      tempd26 = gamma(i, j+1, k)*half*a2avgd/temp36
-      tempd27 = gamma(i, j, k)*half*a2avgd/temp37
-      pd(i, j+1, k) = pd(i, j+1, k) + tempd26
-      wd(i, j+1, k, irho) = wd(i, j+1, k, irho) - p(i, j+1, k)*tempd26/&
+      tempd24 = gamma(i, j+1, k)*half*a2avgd/temp36
+      tempd25 = gamma(i, j, k)*half*a2avgd/temp37
+      pd(i, j+1, k) = pd(i, j+1, k) + tempd24
+      wd(i, j+1, k, irho) = wd(i, j+1, k, irho) - p(i, j+1, k)*tempd24/&
 &       temp36
-      pd(i, j, k) = pd(i, j, k) + tempd27
-      wd(i, j, k, irho) = wd(i, j, k, irho) - p(i, j, k)*tempd27/temp37
+      pd(i, j, k) = pd(i, j, k) + tempd25
+      wd(i, j, k, irho) = wd(i, j, k, irho) - p(i, j, k)*tempd25/temp37
       wd(i, j+1, k, ivz) = wd(i, j+1, k, ivz) + half*wavgd
       wd(i, j, k, ivz) = wd(i, j, k, ivz) + half*wavgd
       wd(i, j+1, k, ivy) = wd(i, j+1, k, ivy) + half*vavgd
       wd(i, j, k, ivy) = wd(i, j, k, ivy) + half*vavgd
       wd(i, j+1, k, ivx) = wd(i, j+1, k, ivx) + half*uavgd
       wd(i, j, k, ivx) = wd(i, j, k, ivx) + half*uavgd
-      call popcontrol1b(branch)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
         dis2d = 0.0_8
         dis4d = 0.0_8
@@ -1513,14 +1358,14 @@ subroutine invisciddissfluxmatrix_b()
         temp34 = w(i, j-1, k, irho)
         temp33 = w(i, j+2, k, itu1)
         temp32 = w(i, j+2, k, irho)
-        tempd24 = -(dis4*drkd)
+        tempd23 = -(dis4*drkd)
         dis2d = ddw6*drkd
-        ddw6d = dis2*drkd - three*tempd24
+        ddw6d = dis2*drkd - three*tempd23
         dis4d = -((temp32*temp33-temp34*temp35-three*ddw6)*drkd)
-        wd(i, j+2, k, irho) = wd(i, j+2, k, irho) + temp33*tempd24
-        wd(i, j+2, k, itu1) = wd(i, j+2, k, itu1) + temp32*tempd24
-        wd(i, j-1, k, irho) = wd(i, j-1, k, irho) - temp35*tempd24
-        wd(i, j-1, k, itu1) = wd(i, j-1, k, itu1) - temp34*tempd24
+        wd(i, j+2, k, irho) = wd(i, j+2, k, irho) + temp33*tempd23
+        wd(i, j+2, k, itu1) = wd(i, j+2, k, itu1) + temp32*tempd23
+        wd(i, j-1, k, irho) = wd(i, j-1, k, irho) - temp35*tempd23
+        wd(i, j-1, k, itu1) = wd(i, j-1, k, itu1) - temp34*tempd23
         wd(i, j+1, k, irho) = wd(i, j+1, k, irho) + w(i, j+1, k, itu1)*&
 &         ddw6d
         wd(i, j+1, k, itu1) = wd(i, j+1, k, itu1) + w(i, j+1, k, irho)*&
@@ -1540,100 +1385,76 @@ subroutine invisciddissfluxmatrix_b()
       temp29 = w(i, j+2, k, ivz)
       temp30 = w(i, j-1, k, irho)
       temp31 = w(i, j-1, k, ivz)
-      tempd19 = -(dis4*dred)
+      tempd18 = -(dis4*dred)
       dis2d = dis2d + ddw4*drwd + ddw2*drud + ddw1*drd + ddw3*drvd + &
 &       ddw5*dred
-      ddw5d = dis2*dred - three*tempd19
+      ddw5d = dis2*dred - three*tempd18
       dis4d = dis4d - (temp28*temp29-temp30*temp31-three*ddw4)*drwd - (&
 &       temp20*temp21-temp22*temp23-three*ddw2)*drud - (w(i, j+2, k, &
 &       irho)-w(i, j-1, k, irho)-three*ddw1)*drd - (temp24*temp25-temp26&
 &       *temp27-three*ddw3)*drvd - (w(i, j+2, k, irhoe)-w(i, j-1, k, &
 &       irhoe)-three*ddw5)*dred
-      wd(i, j+2, k, irhoe) = wd(i, j+2, k, irhoe) + tempd19
-      wd(i, j-1, k, irhoe) = wd(i, j-1, k, irhoe) - tempd19
+      wd(i, j+2, k, irhoe) = wd(i, j+2, k, irhoe) + tempd18
+      wd(i, j-1, k, irhoe) = wd(i, j-1, k, irhoe) - tempd18
       wd(i, j+1, k, irhoe) = wd(i, j+1, k, irhoe) + ddw5d
       wd(i, j, k, irhoe) = wd(i, j, k, irhoe) - ddw5d
-      tempd20 = -(dis4*drwd)
-      ddw4d = dis2*drwd - three*tempd20
-      wd(i, j+2, k, irho) = wd(i, j+2, k, irho) + temp29*tempd20
-      wd(i, j+2, k, ivz) = wd(i, j+2, k, ivz) + temp28*tempd20
-      wd(i, j-1, k, irho) = wd(i, j-1, k, irho) - temp31*tempd20
-      wd(i, j-1, k, ivz) = wd(i, j-1, k, ivz) - temp30*tempd20
+      tempd19 = -(dis4*drwd)
+      ddw4d = dis2*drwd - three*tempd19
+      wd(i, j+2, k, irho) = wd(i, j+2, k, irho) + temp29*tempd19
+      wd(i, j+2, k, ivz) = wd(i, j+2, k, ivz) + temp28*tempd19
+      wd(i, j-1, k, irho) = wd(i, j-1, k, irho) - temp31*tempd19
+      wd(i, j-1, k, ivz) = wd(i, j-1, k, ivz) - temp30*tempd19
       wd(i, j+1, k, irho) = wd(i, j+1, k, irho) + w(i, j+1, k, ivz)*&
 &       ddw4d
       wd(i, j+1, k, ivz) = wd(i, j+1, k, ivz) + w(i, j+1, k, irho)*ddw4d
       wd(i, j, k, irho) = wd(i, j, k, irho) - w(i, j, k, ivz)*ddw4d
       wd(i, j, k, ivz) = wd(i, j, k, ivz) - w(i, j, k, irho)*ddw4d
-      tempd21 = -(dis4*drvd)
-      ddw3d = dis2*drvd - three*tempd21
-      wd(i, j+2, k, irho) = wd(i, j+2, k, irho) + temp25*tempd21
-      wd(i, j+2, k, ivy) = wd(i, j+2, k, ivy) + temp24*tempd21
-      wd(i, j-1, k, irho) = wd(i, j-1, k, irho) - temp27*tempd21
-      wd(i, j-1, k, ivy) = wd(i, j-1, k, ivy) - temp26*tempd21
+      tempd20 = -(dis4*drvd)
+      ddw3d = dis2*drvd - three*tempd20
+      wd(i, j+2, k, irho) = wd(i, j+2, k, irho) + temp25*tempd20
+      wd(i, j+2, k, ivy) = wd(i, j+2, k, ivy) + temp24*tempd20
+      wd(i, j-1, k, irho) = wd(i, j-1, k, irho) - temp27*tempd20
+      wd(i, j-1, k, ivy) = wd(i, j-1, k, ivy) - temp26*tempd20
       wd(i, j+1, k, irho) = wd(i, j+1, k, irho) + w(i, j+1, k, ivy)*&
 &       ddw3d
       wd(i, j+1, k, ivy) = wd(i, j+1, k, ivy) + w(i, j+1, k, irho)*ddw3d
       wd(i, j, k, irho) = wd(i, j, k, irho) - w(i, j, k, ivy)*ddw3d
       wd(i, j, k, ivy) = wd(i, j, k, ivy) - w(i, j, k, irho)*ddw3d
-      tempd22 = -(dis4*drud)
-      ddw2d = dis2*drud - three*tempd22
-      wd(i, j+2, k, irho) = wd(i, j+2, k, irho) + temp21*tempd22
-      wd(i, j+2, k, ivx) = wd(i, j+2, k, ivx) + temp20*tempd22
-      wd(i, j-1, k, irho) = wd(i, j-1, k, irho) - temp23*tempd22
-      wd(i, j-1, k, ivx) = wd(i, j-1, k, ivx) - temp22*tempd22
+      tempd21 = -(dis4*drud)
+      ddw2d = dis2*drud - three*tempd21
+      wd(i, j+2, k, irho) = wd(i, j+2, k, irho) + temp21*tempd21
+      wd(i, j+2, k, ivx) = wd(i, j+2, k, ivx) + temp20*tempd21
+      wd(i, j-1, k, irho) = wd(i, j-1, k, irho) - temp23*tempd21
+      wd(i, j-1, k, ivx) = wd(i, j-1, k, ivx) - temp22*tempd21
       wd(i, j+1, k, irho) = wd(i, j+1, k, irho) + w(i, j+1, k, ivx)*&
 &       ddw2d
       wd(i, j+1, k, ivx) = wd(i, j+1, k, ivx) + w(i, j+1, k, irho)*ddw2d
       wd(i, j, k, irho) = wd(i, j, k, irho) - w(i, j, k, ivx)*ddw2d
       wd(i, j, k, ivx) = wd(i, j, k, ivx) - w(i, j, k, irho)*ddw2d
-      tempd23 = -(dis4*drd)
-      ddw1d = dis2*drd - three*tempd23
-      wd(i, j+2, k, irho) = wd(i, j+2, k, irho) + tempd23
-      wd(i, j-1, k, irho) = wd(i, j-1, k, irho) - tempd23
+      tempd22 = -(dis4*drd)
+      ddw1d = dis2*drd - three*tempd22
+      wd(i, j+2, k, irho) = wd(i, j+2, k, irho) + tempd22
+      wd(i, j-1, k, irho) = wd(i, j-1, k, irho) - tempd22
       wd(i, j+1, k, irho) = wd(i, j+1, k, irho) + ddw1d
       wd(i, j, k, irho) = wd(i, j, k, irho) - ddw1d
       arg1d = 0.0_8
-      call dim_b(arg1, arg1d, dis2, dis2d, dis4d)
+      call dim_fast_b(arg1, arg1d, dis2, dis2d, dis4d)
       min2d = ppor*fis2*dis2d
-      call popcontrol1b(branch)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
         y2d = min2d
       else
         y2d = 0.0_8
       end if
-      call popcontrol1b(branch)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
         dssd(i, j+1, k, 2) = dssd(i, j+1, k, 2) + y2d
       else
         dssd(i, j, k, 2) = dssd(i, j, k, 2) + y2d
       end if
     end do
-    call popreal8(sz)
-    call popreal8(sy)
-    call popreal8(sx)
-    call popreal8(ppor)
-    call popreal8(lam3)
-    call popreal8(a2avg)
-    call popreal8(drw)
-    call popreal8(drv)
-    call popreal8(dru)
-    call popreal8(ddw6)
-    call popreal8(havg)
-    call popreal8(ddw4)
-    call popreal8(ddw3)
-    call popreal8(ddw2)
-    call popreal8(dre)
-    call popreal8(dis4)
-    call popreal8(dis2)
-    call popreal8(abv4)
-    call popreal8(dr)
-    call popreal8(abv3)
-    call popreal8(abv2)
-    call popreal8(area)
-    call popinteger4(j)
-    call popinteger4(i)
-    call popreal8(aavg)
-    call popreal8(sface)
     do ii=0,il*ny*nz-1
       i = mod(ii, il) + 1
       j = mod(ii/il, ny) + 2
@@ -1643,17 +1464,21 @@ subroutine invisciddissfluxmatrix_b()
       if (pori(i, j, k) .eq. normalflux) ppor = one
       if (dss(i, j, k, 1) .lt. dss(i+1, j, k, 1)) then
         y1 = dss(i+1, j, k, 1)
-        call pushcontrol1b(0)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
       else
         y1 = dss(i, j, k, 1)
-        call pushcontrol1b(1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
       end if
       if (dpmax .gt. y1) then
         min1 = y1
-        call pushcontrol1b(0)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
       else
         min1 = dpmax
-        call pushcontrol1b(1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
       end if
       dis2 = ppor*fis2*min1
       arg1 = ppor*fis4
@@ -1688,11 +1513,13 @@ subroutine invisciddissfluxmatrix_b()
         drk = dis2*ddw6 - dis4*(w(i+2, j, k, irho)*w(i+2, j, k, itu1)-w(&
 &         i-1, j, k, irho)*w(i-1, j, k, itu1)-three*ddw6)
         kavg = half*(w(i, j, k, itu1)+w(i+1, j, k, itu1))
-        call pushcontrol1b(1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
       else
         drk = zero
         kavg = zero
-        call pushcontrol1b(0)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
       end if
 ! compute the average value of gamma and compute some
 ! expressions in which it occurs.
@@ -1712,17 +1539,12 @@ subroutine invisciddissfluxmatrix_b()
       area = sqrt(sx**2 + sy**2 + sz**2)
       if (1.e-25_realtype .lt. area) then
         max1 = area
-        call pushcontrol1b(0)
       else
-        call pushcontrol1b(1)
         max1 = 1.e-25_realtype
       end if
       tmp = one/max1
-      call pushreal8(sx)
       sx = sx*tmp
-      call pushreal8(sy)
       sy = sy*tmp
-      call pushreal8(sz)
       sz = sz*tmp
       alphaavg = half*(uavg**2+vavg**2+wavg**2)
       havg = alphaavg + ovgm1*(a2avg-gm53*kavg)
@@ -1732,62 +1554,66 @@ subroutine invisciddissfluxmatrix_b()
       ova2avg = one/a2avg
 ! the mesh velocity if the face is moving. it must be
 ! divided by the area to obtain a true velocity.
-      if (addgridvelocities) then
-        sface = sfacei(i, j, k)*tmp
-        call pushcontrol1b(1)
-      else
-        call pushcontrol1b(0)
-      end if
+      if (addgridvelocities) sface = sfacei(i, j, k)*tmp
       if (unavg - sface + aavg .ge. 0.) then
         lam1 = unavg - sface + aavg
-        call pushcontrol1b(0)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
       else
         lam1 = -(unavg-sface+aavg)
-        call pushcontrol1b(1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
       end if
       if (unavg - sface - aavg .ge. 0.) then
         lam2 = unavg - sface - aavg
-        call pushcontrol1b(0)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
       else
         lam2 = -(unavg-sface-aavg)
-        call pushcontrol1b(1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
       end if
       if (unavg - sface .ge. 0.) then
         lam3 = unavg - sface
-        call pushcontrol1b(0)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
       else
         lam3 = -(unavg-sface)
-        call pushcontrol1b(1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
       end if
       rrad = lam3 + aavg
       if (lam1 .lt. epsacoustic*rrad) then
         lam1 = epsacoustic*rrad
-        call pushcontrol1b(0)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
       else
-        call pushcontrol1b(1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
         lam1 = lam1
       end if
       if (lam2 .lt. epsacoustic*rrad) then
         lam2 = epsacoustic*rrad
-        call pushcontrol1b(0)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
       else
-        call pushcontrol1b(1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
         lam2 = lam2
       end if
       if (lam3 .lt. epsshear*rrad) then
         lam3 = epsshear*rrad
-        call pushcontrol1b(0)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
       else
         lam3 = lam3
-        call pushcontrol1b(1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
       end if
 ! multiply the eigenvalues by the area to obtain
 ! the correct values for the dissipation term.
-      call pushreal8(lam1)
       lam1 = lam1*area
-      call pushreal8(lam2)
       lam2 = lam2*area
-      call pushreal8(lam3)
       lam3 = lam3*area
 ! some abbreviations, which occur quite often in the
 ! dissipation terms.
@@ -1816,21 +1642,18 @@ subroutine invisciddissfluxmatrix_b()
       drwd = lam3*fsd
       wavgd = abv6*fsd
       abv6d = abv6d + wavg*fsd
-      szd = abv7*fsd
       abv7d = abv7d + sz*fsd
       fsd = fwd(i+1, j, k, imy) - fwd(i, j, k, imy)
       lam3d = lam3d + drv*fsd
       drvd = lam3*fsd
       vavgd = abv6*fsd
       abv6d = abv6d + vavg*fsd
-      syd = abv7*fsd
       abv7d = abv7d + sy*fsd
       fsd = fwd(i+1, j, k, imx) - fwd(i, j, k, imx)
       lam3d = lam3d + dru*fsd
       drud = lam3*fsd
       uavgd = abv6*fsd
       abv6d = abv6d + uavg*fsd
-      sxd = abv7*fsd
       abv7d = abv7d + sx*fsd
       fsd = fwd(i+1, j, k, irho) - fwd(i, j, k, irho)
       abv6d = abv6d + fsd
@@ -1841,87 +1664,73 @@ subroutine invisciddissfluxmatrix_b()
       lam3d = lam3d + dr*fsd - abv3d
       abv5d = ovaavg*abv2*abv6d + abv3*abv7d
       ova2avgd = abv3*abv4*abv6d
-      sxd = sxd + dru*abv5d
-      syd = syd + drv*abv5d
-      szd = szd + drw*abv5d
       unavgd = unavgd - dr*abv5d
-      tempd18 = gm1*abv4d
-      drd = alphaavg*tempd18 - unavg*abv5d + lam3*fsd
-      drud = drud + sx*abv5d - uavg*tempd18
-      drvd = drvd + sy*abv5d - vavg*tempd18
-      drwd = drwd + sz*abv5d - wavg*tempd18
-      alphaavgd = dr*tempd18
-      uavgd = uavgd - dru*tempd18
-      vavgd = vavgd - drv*tempd18
-      dred = dred + tempd18
-      wavgd = wavgd - drw*tempd18
+      tempd17 = gm1*abv4d
+      drd = alphaavg*tempd17 - unavg*abv5d + lam3*fsd
+      drud = drud + sx*abv5d - uavg*tempd17
+      drvd = drvd + sy*abv5d - vavg*tempd17
+      drwd = drwd + sz*abv5d - wavg*tempd17
+      alphaavgd = dr*tempd17
+      uavgd = uavgd - dru*tempd17
+      vavgd = vavgd - drv*tempd17
+      dred = dred + tempd17
+      wavgd = wavgd - drw*tempd17
       drkd = -(gm53*abv4d)
       abv1d = abv3d
       lam1d = half*abv1d + half*abv2d
       lam2d = half*abv1d - half*abv2d
-      call popreal8(lam3)
-      call popreal8(lam2)
-      call popreal8(lam1)
-      aread = lam2*lam2d + lam1*lam1d + lam3*lam3d
       lam3d = area*lam3d
       lam2d = area*lam2d
       lam1d = area*lam1d
-      call popcontrol1b(branch)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
         rradd = epsshear*lam3d
         lam3d = 0.0_8
       else
         rradd = 0.0_8
       end if
-      call popcontrol1b(branch)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
         rradd = rradd + epsacoustic*lam2d
         lam2d = 0.0_8
       end if
-      call popcontrol1b(branch)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
         rradd = rradd + epsacoustic*lam1d
         lam1d = 0.0_8
       end if
       lam3d = lam3d + rradd
       aavgd = rradd
-      call popcontrol1b(branch)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
         unavgd = unavgd + lam3d
-        sfaced = sfaced - lam3d
       else
-        sfaced = sfaced + lam3d
         unavgd = unavgd - lam3d
       end if
-      call popcontrol1b(branch)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
         unavgd = unavgd + lam2d
-        sfaced = sfaced - lam2d
         aavgd = aavgd - lam2d
       else
-        sfaced = sfaced + lam2d
-        unavgd = unavgd - lam2d
         aavgd = aavgd + lam2d
+        unavgd = unavgd - lam2d
       end if
-      call popcontrol1b(branch)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
         unavgd = unavgd + lam1d
-        sfaced = sfaced - lam1d
         aavgd = aavgd + lam1d
       else
-        sfaced = sfaced + lam1d
         unavgd = unavgd - lam1d
         aavgd = aavgd - lam1d
       end if
-      call popcontrol1b(branch)
-      if (branch .eq. 0) then
-        tmpd = 0.0_8
-      else
-        tmpd = sfacei(i, j, k)*sfaced
-        sfaced = 0.0_8
-      end if
       alphaavgd = alphaavgd + havgd
-      tempd17 = half*alphaavgd
+      tempd16 = half*alphaavgd
       aavgd = aavgd - one*ovaavgd/aavg**2
       if (a2avg .eq. 0.0_8) then
         a2avgd = ovgm1*havgd - one*ova2avgd/a2avg**2
@@ -1929,50 +1738,27 @@ subroutine invisciddissfluxmatrix_b()
         a2avgd = aavgd/(2.0*sqrt(a2avg)) + ovgm1*havgd - one*ova2avgd/&
 &         a2avg**2
       end if
-      uavgd = uavgd + 2*uavg*tempd17 + sx*unavgd
-      sxd = sxd + uavg*unavgd
-      vavgd = vavgd + 2*vavg*tempd17 + sy*unavgd
-      syd = syd + vavg*unavgd
-      wavgd = wavgd + 2*wavg*tempd17 + sz*unavgd
-      szd = szd + wavg*unavgd
+      uavgd = uavgd + 2*uavg*tempd16 + sx*unavgd
+      vavgd = vavgd + 2*vavg*tempd16 + sy*unavgd
+      wavgd = wavgd + 2*wavg*tempd16 + sz*unavgd
       kavgd = -(ovgm1*gm53*havgd)
-      call popreal8(sz)
-      call popreal8(sy)
-      call popreal8(sx)
-      tmpd = tmpd + sy*syd + sx*sxd + sz*szd
-      szd = tmp*szd
-      syd = tmp*syd
-      sxd = tmp*sxd
-      max1d = -(one*tmpd/max1**2)
-      call popcontrol1b(branch)
-      if (branch .eq. 0) aread = aread + max1d
-      if (sx**2 + sy**2 + sz**2 .eq. 0.0_8) then
-        tempd14 = 0.0
-      else
-        tempd14 = aread/(2.0*sqrt(sx**2+sy**2+sz**2))
-      end if
-      sxd = sxd + 2*sx*tempd14
-      syd = syd + 2*sy*tempd14
-      szd = szd + 2*sz*tempd14
-      sid(i, j, k, 3) = sid(i, j, k, 3) + szd
-      sid(i, j, k, 2) = sid(i, j, k, 2) + syd
-      sid(i, j, k, 1) = sid(i, j, k, 1) + sxd
       temp19 = w(i, j, k, irho)
       temp18 = w(i+1, j, k, irho)
-      tempd15 = gamma(i+1, j, k)*half*a2avgd/temp18
-      tempd16 = gamma(i, j, k)*half*a2avgd/temp19
-      pd(i+1, j, k) = pd(i+1, j, k) + tempd15
-      wd(i+1, j, k, irho) = wd(i+1, j, k, irho) - p(i+1, j, k)*tempd15/&
+      tempd14 = gamma(i+1, j, k)*half*a2avgd/temp18
+      tempd15 = gamma(i, j, k)*half*a2avgd/temp19
+      pd(i+1, j, k) = pd(i+1, j, k) + tempd14
+      wd(i+1, j, k, irho) = wd(i+1, j, k, irho) - p(i+1, j, k)*tempd14/&
 &       temp18
-      pd(i, j, k) = pd(i, j, k) + tempd16
-      wd(i, j, k, irho) = wd(i, j, k, irho) - p(i, j, k)*tempd16/temp19
+      pd(i, j, k) = pd(i, j, k) + tempd15
+      wd(i, j, k, irho) = wd(i, j, k, irho) - p(i, j, k)*tempd15/temp19
       wd(i+1, j, k, ivz) = wd(i+1, j, k, ivz) + half*wavgd
       wd(i, j, k, ivz) = wd(i, j, k, ivz) + half*wavgd
       wd(i+1, j, k, ivy) = wd(i+1, j, k, ivy) + half*vavgd
       wd(i, j, k, ivy) = wd(i, j, k, ivy) + half*vavgd
       wd(i+1, j, k, ivx) = wd(i+1, j, k, ivx) + half*uavgd
       wd(i, j, k, ivx) = wd(i, j, k, ivx) + half*uavgd
-      call popcontrol1b(branch)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
         dis2d = 0.0_8
         dis4d = 0.0_8
@@ -2063,83 +1849,98 @@ subroutine invisciddissfluxmatrix_b()
       wd(i+1, j, k, irho) = wd(i+1, j, k, irho) + ddw1d
       wd(i, j, k, irho) = wd(i, j, k, irho) - ddw1d
       arg1d = 0.0_8
-      call dim_b(arg1, arg1d, dis2, dis2d, dis4d)
+      call dim_fast_b(arg1, arg1d, dis2, dis2d, dis4d)
       min1d = ppor*fis2*dis2d
-      call popcontrol1b(branch)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
         y1d = min1d
       else
         y1d = 0.0_8
       end if
-      call popcontrol1b(branch)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
         dssd(i+1, j, k, 1) = dssd(i+1, j, k, 1) + y1d
       else
         dssd(i, j, k, 1) = dssd(i, j, k, 1) + y1d
       end if
     end do
-    call popinteger4(j)
-    call popinteger4(i)
-    plimd = 0.0_8
     do ii=0,ie*je*ke-1
       i = mod(ii, ie) + 1
       j = mod(ii/ie, je) + 1
       k = ii/(ie*je) + 1
       if (p(i+1, j, k) - p(i, j, k) .ge. 0.) then
         abs1 = p(i+1, j, k) - p(i, j, k)
-        call pushcontrol1b(1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
       else
         abs1 = -(p(i+1, j, k)-p(i, j, k))
-        call pushcontrol1b(0)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
       end if
       if (p(i, j, k) - p(i-1, j, k) .ge. 0.) then
         abs4 = p(i, j, k) - p(i-1, j, k)
-        call pushcontrol1b(0)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
       else
         abs4 = -(p(i, j, k)-p(i-1, j, k))
-        call pushcontrol1b(1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
       end if
       x1 = (p(i+1, j, k)-two*p(i, j, k)+p(i-1, j, k))/(omega*(p(i+1, j, &
 &       k)+two*p(i, j, k)+p(i-1, j, k))+oneminomega*(abs1+abs4)+plim)
       if (x1 .ge. 0.) then
-        call pushcontrol1b(0)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
       else
-        call pushcontrol1b(1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
       end if
       if (p(i, j+1, k) - p(i, j, k) .ge. 0.) then
         abs2 = p(i, j+1, k) - p(i, j, k)
-        call pushcontrol1b(1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
       else
         abs2 = -(p(i, j+1, k)-p(i, j, k))
-        call pushcontrol1b(0)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
       end if
       if (p(i, j, k) - p(i, j-1, k) .ge. 0.) then
         abs5 = p(i, j, k) - p(i, j-1, k)
-        call pushcontrol1b(0)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
       else
         abs5 = -(p(i, j, k)-p(i, j-1, k))
-        call pushcontrol1b(1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
       end if
       x2 = (p(i, j+1, k)-two*p(i, j, k)+p(i, j-1, k))/(omega*(p(i, j+1, &
 &       k)+two*p(i, j, k)+p(i, j-1, k))+oneminomega*(abs2+abs5)+plim)
       if (x2 .ge. 0.) then
-        call pushcontrol1b(0)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
       else
-        call pushcontrol1b(1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
       end if
       if (p(i, j, k+1) - p(i, j, k) .ge. 0.) then
         abs3 = p(i, j, k+1) - p(i, j, k)
-        call pushcontrol1b(1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
       else
         abs3 = -(p(i, j, k+1)-p(i, j, k))
-        call pushcontrol1b(0)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
       end if
       if (p(i, j, k) - p(i, j, k-1) .ge. 0.) then
         abs6 = p(i, j, k) - p(i, j, k-1)
-        call pushcontrol1b(0)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
       else
         abs6 = -(p(i, j, k)-p(i, j, k-1))
-        call pushcontrol1b(1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
       end if
       x3 = (p(i, j, k+1)-two*p(i, j, k)+p(i, j, k-1))/(omega*(p(i, j, k+&
 &       1)+two*p(i, j, k)+p(i, j, k-1))+oneminomega*(abs3+abs6)+plim)
@@ -2150,8 +1951,8 @@ subroutine invisciddissfluxmatrix_b()
         x3d = -dssd(i, j, k, 3)
         dssd(i, j, k, 3) = 0.0_8
       end if
-      temp1 = omega*(p(i, j, k+1)+two*p(i, j, k)+p(i, j, k-1)) + &
-&       oneminomega*(abs3+abs6) + plim
+      temp1 = plim + omega*(p(i, j, k+1)+two*p(i, j, k)+p(i, j, k-1)) + &
+&       oneminomega*(abs3+abs6)
       tempd5 = x3d/temp1
       tempd6 = -((p(i, j, k+1)-two*p(i, j, k)+p(i, j, k-1))*tempd5/temp1&
 &       )
@@ -2161,8 +1962,8 @@ subroutine invisciddissfluxmatrix_b()
       pd(i, j, k-1) = pd(i, j, k-1) + tempd7 + tempd5
       abs3d = oneminomega*tempd6
       abs6d = oneminomega*tempd6
-      plimd = plimd + tempd6
-      call popcontrol1b(branch)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
         pd(i, j, k) = pd(i, j, k) + abs6d
         pd(i, j, k-1) = pd(i, j, k-1) - abs6d
@@ -2170,7 +1971,8 @@ subroutine invisciddissfluxmatrix_b()
         pd(i, j, k-1) = pd(i, j, k-1) + abs6d
         pd(i, j, k) = pd(i, j, k) - abs6d
       end if
-      call popcontrol1b(branch)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
         pd(i, j, k) = pd(i, j, k) + abs3d
         pd(i, j, k+1) = pd(i, j, k+1) - abs3d
@@ -2178,7 +1980,8 @@ subroutine invisciddissfluxmatrix_b()
         pd(i, j, k+1) = pd(i, j, k+1) + abs3d
         pd(i, j, k) = pd(i, j, k) - abs3d
       end if
-      call popcontrol1b(branch)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
         x2d = dssd(i, j, k, 2)
         dssd(i, j, k, 2) = 0.0_8
@@ -2186,8 +1989,8 @@ subroutine invisciddissfluxmatrix_b()
         x2d = -dssd(i, j, k, 2)
         dssd(i, j, k, 2) = 0.0_8
       end if
-      temp0 = omega*(p(i, j+1, k)+two*p(i, j, k)+p(i, j-1, k)) + &
-&       oneminomega*(abs2+abs5) + plim
+      temp0 = plim + omega*(p(i, j+1, k)+two*p(i, j, k)+p(i, j-1, k)) + &
+&       oneminomega*(abs2+abs5)
       tempd2 = x2d/temp0
       tempd3 = -((p(i, j+1, k)-two*p(i, j, k)+p(i, j-1, k))*tempd2/temp0&
 &       )
@@ -2197,8 +2000,8 @@ subroutine invisciddissfluxmatrix_b()
       pd(i, j-1, k) = pd(i, j-1, k) + tempd4 + tempd2
       abs2d = oneminomega*tempd3
       abs5d = oneminomega*tempd3
-      plimd = plimd + tempd3
-      call popcontrol1b(branch)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
         pd(i, j, k) = pd(i, j, k) + abs5d
         pd(i, j-1, k) = pd(i, j-1, k) - abs5d
@@ -2206,7 +2009,8 @@ subroutine invisciddissfluxmatrix_b()
         pd(i, j-1, k) = pd(i, j-1, k) + abs5d
         pd(i, j, k) = pd(i, j, k) - abs5d
       end if
-      call popcontrol1b(branch)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
         pd(i, j, k) = pd(i, j, k) + abs2d
         pd(i, j+1, k) = pd(i, j+1, k) - abs2d
@@ -2214,7 +2018,8 @@ subroutine invisciddissfluxmatrix_b()
         pd(i, j+1, k) = pd(i, j+1, k) + abs2d
         pd(i, j, k) = pd(i, j, k) - abs2d
       end if
-      call popcontrol1b(branch)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
         x1d = dssd(i, j, k, 1)
         dssd(i, j, k, 1) = 0.0_8
@@ -2222,8 +2027,8 @@ subroutine invisciddissfluxmatrix_b()
         x1d = -dssd(i, j, k, 1)
         dssd(i, j, k, 1) = 0.0_8
       end if
-      temp = omega*(p(i+1, j, k)+two*p(i, j, k)+p(i-1, j, k)) + &
-&       oneminomega*(abs1+abs4) + plim
+      temp = plim + omega*(p(i+1, j, k)+two*p(i, j, k)+p(i-1, j, k)) + &
+&       oneminomega*(abs1+abs4)
       tempd = x1d/temp
       tempd0 = -((p(i+1, j, k)-two*p(i, j, k)+p(i-1, j, k))*tempd/temp)
       tempd1 = omega*tempd0
@@ -2232,8 +2037,8 @@ subroutine invisciddissfluxmatrix_b()
       pd(i-1, j, k) = pd(i-1, j, k) + tempd1 + tempd
       abs1d = oneminomega*tempd0
       abs4d = oneminomega*tempd0
-      plimd = plimd + tempd0
-      call popcontrol1b(branch)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
         pd(i, j, k) = pd(i, j, k) + abs4d
         pd(i-1, j, k) = pd(i-1, j, k) - abs4d
@@ -2241,7 +2046,8 @@ subroutine invisciddissfluxmatrix_b()
         pd(i-1, j, k) = pd(i-1, j, k) + abs4d
         pd(i, j, k) = pd(i, j, k) - abs4d
       end if
-      call popcontrol1b(branch)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
         pd(i, j, k) = pd(i, j, k) + abs1d
         pd(i+1, j, k) = pd(i+1, j, k) - abs1d
@@ -2250,6 +2056,6 @@ subroutine invisciddissfluxmatrix_b()
         pd(i, j, k) = pd(i, j, k) - abs1d
       end if
     end do
-    pinfcorrd = 0.001_realtype*plimd
+    fwd = sfil*fwd
   end if
-end subroutine invisciddissfluxmatrix_b
+end subroutine invisciddissfluxmatrix_fast_b

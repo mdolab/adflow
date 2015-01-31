@@ -6,23 +6,29 @@
 !   with respect to varying inputs: *si *sj *sk
 !   plus diff mem management of: si:in sj:in sk:in bcdata:in *bcdata.norm:in
 subroutine boundarynormals_d()
+! **************************************************************
+! *                                                            *
+! * the unit normals on the boundary faces. these always point *
+! * out of the domain, so a multiplication by -1 is needed for *
+! * the imin, jmin and kmin boundaries.                        *
+! *                                                            *
+! **************************************************************
 !
-!  **************************************************************
-!  *                                                            *
-!  * the unit normals on the boundary faces. these always point *
-!  * out of the domain, so a multiplication by -1 is needed for *
-!  * the imin, jmin and kmin boundaries.                        *
-!  *                                                            *
-!  **************************************************************
-!
-  use blockpointers
   use bctypes
+  use blockpointers
+  use cgnsgrid
+  use communication
+  use inputtimespectral
   use diffsizes
 !  hint: isize1ofdrfbcdata should be the size of dimension 1 of array *bcdata
   implicit none
-  integer(kind=inttype) :: i, j, ii, mm
-  real(kind=realtype) :: xp, yp, zp, mult, fact
-  real(kind=realtype) :: xpd, ypd, zpd, factd
+! local variables.
+  integer(kind=inttype) :: i, j, ii
+  integer(kind=inttype) :: mm
+  real(kind=realtype) :: fact, mult
+  real(kind=realtype) :: factd
+  real(kind=realtype) :: xxp, yyp, zzp
+  real(kind=realtype) :: xxpd, yypd, zzpd
   intrinsic mod
   intrinsic sqrt
   real(kind=realtype) :: arg1
@@ -31,10 +37,10 @@ subroutine boundarynormals_d()
   do ii1=1,isize1ofdrfbcdata
     bcdatad(ii1)%norm = 0.0_8
   end do
-  xpd = 0.0_8
-  ypd = 0.0_8
-  zpd = 0.0_8
-! loop over the boundary subfaces of this block.
+  zzpd = 0.0_8
+  yypd = 0.0_8
+  xxpd = 0.0_8
+!loop over the boundary subfaces of this block.
 bocoloop:do mm=1,nbocos
 ! loop over the boundary faces of the subface.
     do ii=0,(bcdata(mm)%jcend-bcdata(mm)%jcbeg+1)*(bcdata(mm)%icend-&
@@ -45,57 +51,58 @@ bocoloop:do mm=1,nbocos
       select case  (bcfaceid(mm)) 
       case (imin) 
         mult = -one
-        xpd = sid(1, i, j, 1)
-        xp = si(1, i, j, 1)
-        ypd = sid(1, i, j, 2)
-        yp = si(1, i, j, 2)
-        zpd = sid(1, i, j, 3)
-        zp = si(1, i, j, 3)
+        xxpd = sid(1, i, j, 1)
+        xxp = si(1, i, j, 1)
+        yypd = sid(1, i, j, 2)
+        yyp = si(1, i, j, 2)
+        zzpd = sid(1, i, j, 3)
+        zzp = si(1, i, j, 3)
       case (imax) 
         mult = one
-        xpd = sid(il, i, j, 1)
-        xp = si(il, i, j, 1)
-        ypd = sid(il, i, j, 2)
-        yp = si(il, i, j, 2)
-        zpd = sid(il, i, j, 3)
-        zp = si(il, i, j, 3)
+        xxpd = sid(il, i, j, 1)
+        xxp = si(il, i, j, 1)
+        yypd = sid(il, i, j, 2)
+        yyp = si(il, i, j, 2)
+        zzpd = sid(il, i, j, 3)
+        zzp = si(il, i, j, 3)
       case (jmin) 
         mult = -one
-        xpd = sjd(i, 1, j, 1)
-        xp = sj(i, 1, j, 1)
-        ypd = sjd(i, 1, j, 2)
-        yp = sj(i, 1, j, 2)
-        zpd = sjd(i, 1, j, 3)
-        zp = sj(i, 1, j, 3)
+        xxpd = sjd(i, 1, j, 1)
+        xxp = sj(i, 1, j, 1)
+        yypd = sjd(i, 1, j, 2)
+        yyp = sj(i, 1, j, 2)
+        zzpd = sjd(i, 1, j, 3)
+        zzp = sj(i, 1, j, 3)
       case (jmax) 
         mult = one
-        xpd = sjd(i, jl, j, 1)
-        xp = sj(i, jl, j, 1)
-        ypd = sjd(i, jl, j, 2)
-        yp = sj(i, jl, j, 2)
-        zpd = sjd(i, jl, j, 3)
-        zp = sj(i, jl, j, 3)
+        xxpd = sjd(i, jl, j, 1)
+        xxp = sj(i, jl, j, 1)
+        yypd = sjd(i, jl, j, 2)
+        yyp = sj(i, jl, j, 2)
+        zzpd = sjd(i, jl, j, 3)
+        zzp = sj(i, jl, j, 3)
       case (kmin) 
         mult = -one
-        xpd = skd(i, j, 1, 1)
-        xp = sk(i, j, 1, 1)
-        ypd = skd(i, j, 1, 2)
-        yp = sk(i, j, 1, 2)
-        zpd = skd(i, j, 1, 3)
-        zp = sk(i, j, 1, 3)
+        xxpd = skd(i, j, 1, 1)
+        xxp = sk(i, j, 1, 1)
+        yypd = skd(i, j, 1, 2)
+        yyp = sk(i, j, 1, 2)
+        zzpd = skd(i, j, 1, 3)
+        zzp = sk(i, j, 1, 3)
       case (kmax) 
         mult = one
-        xpd = skd(i, j, kl, 1)
-        xp = sk(i, j, kl, 1)
-        ypd = skd(i, j, kl, 2)
-        yp = sk(i, j, kl, 2)
-        zpd = skd(i, j, kl, 3)
-        zp = sk(i, j, kl, 3)
+        xxpd = skd(i, j, kl, 1)
+        xxp = sk(i, j, kl, 1)
+        yypd = skd(i, j, kl, 2)
+        yyp = sk(i, j, kl, 2)
+        zzpd = skd(i, j, kl, 3)
+        zzp = sk(i, j, kl, 3)
       end select
 ! compute the inverse of the length of the normal vector
 ! and possibly correct for inward pointing.
-      arg1d = xpd*xp + xp*xpd + ypd*yp + yp*ypd + zpd*zp + zp*zpd
-      arg1 = xp*xp + yp*yp + zp*zp
+      arg1d = xxpd*xxp + xxp*xxpd + yypd*yyp + yyp*yypd + zzpd*zzp + zzp&
+&       *zzpd
+      arg1 = xxp*xxp + yyp*yyp + zzp*zzp
       if (arg1 .eq. 0.0_8) then
         factd = 0.0_8
       else
@@ -107,12 +114,12 @@ bocoloop:do mm=1,nbocos
         fact = mult/fact
       end if
 ! compute the unit normal.
-      bcdatad(mm)%norm(i, j, 1) = factd*xp + fact*xpd
-      bcdata(mm)%norm(i, j, 1) = fact*xp
-      bcdatad(mm)%norm(i, j, 2) = factd*yp + fact*ypd
-      bcdata(mm)%norm(i, j, 2) = fact*yp
-      bcdatad(mm)%norm(i, j, 3) = factd*zp + fact*zpd
-      bcdata(mm)%norm(i, j, 3) = fact*zp
+      bcdatad(mm)%norm(i, j, 1) = factd*xxp + fact*xxpd
+      bcdata(mm)%norm(i, j, 1) = fact*xxp
+      bcdatad(mm)%norm(i, j, 2) = factd*yyp + fact*yypd
+      bcdata(mm)%norm(i, j, 2) = fact*yyp
+      bcdatad(mm)%norm(i, j, 3) = factd*zzp + fact*zzpd
+      bcdata(mm)%norm(i, j, 3) = fact*zzp
     end do
   end do bocoloop
 end subroutine boundarynormals_d

@@ -18,9 +18,10 @@ subroutine updatewalldistancesquickly_b(nn, level, sps)
 ! subroutine arguments
   integer(kind=inttype) :: nn, level, sps
 ! local variables
-  integer(kind=inttype) :: i, j, k, faceid
+  integer(kind=inttype) :: i, j, k, ii, faceid
   real(kind=realtype) :: xp(3), xc(3), u, v
   real(kind=realtype) :: xpd(3), xcd(3)
+  intrinsic mod
   intrinsic sqrt
   real(kind=realtype) :: tempd
   real(kind=realtype) :: tempd5
@@ -29,108 +30,90 @@ subroutine updatewalldistancesquickly_b(nn, level, sps)
   real(kind=realtype) :: tempd2
   real(kind=realtype) :: tempd1
   real(kind=realtype) :: tempd0
-  do k=2,kl
-    do j=2,jl
-      do i=2,il
-! extract elemid and u-v position for the association of
-! this cell:
-        faceid = flowdoms(nn, level, sps)%elemid(i, j, k)
-        u = flowdoms(nn, level, sps)%uv(1, i, j, k)
-        v = flowdoms(nn, level, sps)%uv(2, i, j, k)
-! now we have the 4 corners, use bi-linear shape
-! functions o to get target: (ccw ordering remember!)
-        call pushreal8array(xp, 3)
-        xp(:) = (one-u)*(one-v)*xsurf(12*(faceid-1)+1:12*(faceid-1)+3) +&
-&         u*(one-v)*xsurf(12*(faceid-1)+4:12*(faceid-1)+6) + u*v*xsurf(&
-&         12*(faceid-1)+7:12*(faceid-1)+9) + (one-u)*v*xsurf(12*(faceid-&
-&         1)+10:12*(faceid-1)+12)
-! get the cell center
-        call pushreal8(xc(1))
-        xc(1) = eighth*(x(i-1, j-1, k-1, 1)+x(i, j-1, k-1, 1)+x(i-1, j, &
-&         k-1, 1)+x(i, j, k-1, 1)+x(i-1, j-1, k, 1)+x(i, j-1, k, 1)+x(i-&
-&         1, j, k, 1)+x(i, j, k, 1))
-        call pushreal8(xc(2))
-        xc(2) = eighth*(x(i-1, j-1, k-1, 2)+x(i, j-1, k-1, 2)+x(i-1, j, &
-&         k-1, 2)+x(i, j, k-1, 2)+x(i-1, j-1, k, 2)+x(i, j-1, k, 2)+x(i-&
-&         1, j, k, 2)+x(i, j, k, 2))
-        call pushreal8(xc(3))
-        xc(3) = eighth*(x(i-1, j-1, k-1, 3)+x(i, j-1, k-1, 3)+x(i-1, j, &
-&         k-1, 3)+x(i, j, k-1, 3)+x(i-1, j-1, k, 3)+x(i, j-1, k, 3)+x(i-&
-&         1, j, k, 3)+x(i, j, k, 3))
-! now we have the two points...just take the norm of the
-! distance between them
-      end do
-    end do
-  end do
   xsurfd = 0.0_8
   xcd = 0.0_8
-  do k=kl,2,-1
-    do j=jl,2,-1
-      do i=il,2,-1
-        xpd = 0.0_8
-        if ((xc(1)-xp(1))**2 + (xc(2)-xp(2))**2 + (xc(3)-xp(3))**2 .eq. &
-&           0.0_8) then
-          tempd = 0.0
-        else
-          tempd = d2walld(i, j, k)/(2.0*sqrt((xc(1)-xp(1))**2+(xc(2)-xp(&
-&           2))**2+(xc(3)-xp(3))**2))
-        end if
-        tempd0 = 2*(xc(1)-xp(1))*tempd
-        tempd1 = 2*(xc(2)-xp(2))*tempd
-        tempd2 = 2*(xc(3)-xp(3))*tempd
-        xcd(1) = xcd(1) + tempd0
-        xpd(1) = xpd(1) - tempd0
-        xcd(2) = xcd(2) + tempd1
-        xpd(2) = xpd(2) - tempd1
-        xcd(3) = xcd(3) + tempd2
-        xpd(3) = xpd(3) - tempd2
-        d2walld(i, j, k) = 0.0_8
-        call popreal8(xc(3))
-        tempd3 = eighth*xcd(3)
-        xd(i-1, j-1, k-1, 3) = xd(i-1, j-1, k-1, 3) + tempd3
-        xd(i, j-1, k-1, 3) = xd(i, j-1, k-1, 3) + tempd3
-        xd(i-1, j, k-1, 3) = xd(i-1, j, k-1, 3) + tempd3
-        xd(i, j, k-1, 3) = xd(i, j, k-1, 3) + tempd3
-        xd(i-1, j-1, k, 3) = xd(i-1, j-1, k, 3) + tempd3
-        xd(i, j-1, k, 3) = xd(i, j-1, k, 3) + tempd3
-        xd(i-1, j, k, 3) = xd(i-1, j, k, 3) + tempd3
-        xd(i, j, k, 3) = xd(i, j, k, 3) + tempd3
-        xcd(3) = 0.0_8
-        call popreal8(xc(2))
-        tempd4 = eighth*xcd(2)
-        xd(i-1, j-1, k-1, 2) = xd(i-1, j-1, k-1, 2) + tempd4
-        xd(i, j-1, k-1, 2) = xd(i, j-1, k-1, 2) + tempd4
-        xd(i-1, j, k-1, 2) = xd(i-1, j, k-1, 2) + tempd4
-        xd(i, j, k-1, 2) = xd(i, j, k-1, 2) + tempd4
-        xd(i-1, j-1, k, 2) = xd(i-1, j-1, k, 2) + tempd4
-        xd(i, j-1, k, 2) = xd(i, j-1, k, 2) + tempd4
-        xd(i-1, j, k, 2) = xd(i-1, j, k, 2) + tempd4
-        xd(i, j, k, 2) = xd(i, j, k, 2) + tempd4
-        xcd(2) = 0.0_8
-        call popreal8(xc(1))
-        tempd5 = eighth*xcd(1)
-        xd(i-1, j-1, k-1, 1) = xd(i-1, j-1, k-1, 1) + tempd5
-        xd(i, j-1, k-1, 1) = xd(i, j-1, k-1, 1) + tempd5
-        xd(i-1, j, k-1, 1) = xd(i-1, j, k-1, 1) + tempd5
-        xd(i, j, k-1, 1) = xd(i, j, k-1, 1) + tempd5
-        xd(i-1, j-1, k, 1) = xd(i-1, j-1, k, 1) + tempd5
-        xd(i, j-1, k, 1) = xd(i, j-1, k, 1) + tempd5
-        xd(i-1, j, k, 1) = xd(i-1, j, k, 1) + tempd5
-        xd(i, j, k, 1) = xd(i, j, k, 1) + tempd5
-        xcd(1) = 0.0_8
-        u = flowdoms(nn, level, sps)%uv(1, i, j, k)
-        v = flowdoms(nn, level, sps)%uv(2, i, j, k)
-        faceid = flowdoms(nn, level, sps)%elemid(i, j, k)
-        call popreal8array(xp, 3)
-        xsurfd(12*(faceid-1)+1:12*(faceid-1)+3) = xsurfd(12*(faceid-1)+1&
-&         :12*(faceid-1)+3) + (one-u)*(one-v)*xpd
-        xsurfd(12*(faceid-1)+4:12*(faceid-1)+6) = xsurfd(12*(faceid-1)+4&
-&         :12*(faceid-1)+6) + u*(one-v)*xpd
-        xsurfd(12*(faceid-1)+7:12*(faceid-1)+9) = xsurfd(12*(faceid-1)+7&
-&         :12*(faceid-1)+9) + u*v*xpd
-        xsurfd(12*(faceid-1)+10:12*(faceid-1)+12) = xsurfd(12*(faceid-1)&
-&         +10:12*(faceid-1)+12) + (one-u)*v*xpd
-      end do
-    end do
+  do ii=0,nx*ny*nz-1
+    i = mod(ii, nx) + 2
+    j = mod(ii/nx, ny) + 2
+    k = ii/(nx*ny) + 2
+! extract elemid and u-v position for the association of
+! this cell:
+    faceid = flowdoms(nn, level, sps)%elemid(i, j, k)
+    u = flowdoms(nn, level, sps)%uv(1, i, j, k)
+    v = flowdoms(nn, level, sps)%uv(2, i, j, k)
+! now we have the 4 corners, use bi-linear shape
+! functions o to get target: (ccw ordering remember!)
+    xp(:) = (one-u)*(one-v)*xsurf(12*(faceid-1)+1:12*(faceid-1)+3) + u*(&
+&     one-v)*xsurf(12*(faceid-1)+4:12*(faceid-1)+6) + u*v*xsurf(12*(&
+&     faceid-1)+7:12*(faceid-1)+9) + (one-u)*v*xsurf(12*(faceid-1)+10:12&
+&     *(faceid-1)+12)
+! get the cell center
+    xc(1) = eighth*(x(i-1, j-1, k-1, 1)+x(i, j-1, k-1, 1)+x(i-1, j, k-1&
+&     , 1)+x(i, j, k-1, 1)+x(i-1, j-1, k, 1)+x(i, j-1, k, 1)+x(i-1, j, k&
+&     , 1)+x(i, j, k, 1))
+    xc(2) = eighth*(x(i-1, j-1, k-1, 2)+x(i, j-1, k-1, 2)+x(i-1, j, k-1&
+&     , 2)+x(i, j, k-1, 2)+x(i-1, j-1, k, 2)+x(i, j-1, k, 2)+x(i-1, j, k&
+&     , 2)+x(i, j, k, 2))
+    xc(3) = eighth*(x(i-1, j-1, k-1, 3)+x(i, j-1, k-1, 3)+x(i-1, j, k-1&
+&     , 3)+x(i, j, k-1, 3)+x(i-1, j-1, k, 3)+x(i, j-1, k, 3)+x(i-1, j, k&
+&     , 3)+x(i, j, k, 3))
+! now we have the two points...just take the norm of the
+! distance between them
+    xpd = 0.0_8
+    if ((xc(1)-xp(1))**2 + (xc(2)-xp(2))**2 + (xc(3)-xp(3))**2 .eq. &
+&       0.0_8) then
+      tempd = 0.0
+    else
+      tempd = d2walld(i, j, k)/(2.0*sqrt((xc(1)-xp(1))**2+(xc(2)-xp(2))&
+&       **2+(xc(3)-xp(3))**2))
+    end if
+    tempd0 = 2*(xc(1)-xp(1))*tempd
+    tempd1 = 2*(xc(2)-xp(2))*tempd
+    tempd2 = 2*(xc(3)-xp(3))*tempd
+    xcd(1) = xcd(1) + tempd0
+    xpd(1) = xpd(1) - tempd0
+    xcd(2) = xcd(2) + tempd1
+    xpd(2) = xpd(2) - tempd1
+    xcd(3) = xcd(3) + tempd2
+    xpd(3) = xpd(3) - tempd2
+    d2walld(i, j, k) = 0.0_8
+    tempd3 = eighth*xcd(3)
+    xd(i-1, j-1, k-1, 3) = xd(i-1, j-1, k-1, 3) + tempd3
+    xd(i, j-1, k-1, 3) = xd(i, j-1, k-1, 3) + tempd3
+    xd(i-1, j, k-1, 3) = xd(i-1, j, k-1, 3) + tempd3
+    xd(i, j, k-1, 3) = xd(i, j, k-1, 3) + tempd3
+    xd(i-1, j-1, k, 3) = xd(i-1, j-1, k, 3) + tempd3
+    xd(i, j-1, k, 3) = xd(i, j-1, k, 3) + tempd3
+    xd(i-1, j, k, 3) = xd(i-1, j, k, 3) + tempd3
+    xd(i, j, k, 3) = xd(i, j, k, 3) + tempd3
+    xcd(3) = 0.0_8
+    tempd4 = eighth*xcd(2)
+    xd(i-1, j-1, k-1, 2) = xd(i-1, j-1, k-1, 2) + tempd4
+    xd(i, j-1, k-1, 2) = xd(i, j-1, k-1, 2) + tempd4
+    xd(i-1, j, k-1, 2) = xd(i-1, j, k-1, 2) + tempd4
+    xd(i, j, k-1, 2) = xd(i, j, k-1, 2) + tempd4
+    xd(i-1, j-1, k, 2) = xd(i-1, j-1, k, 2) + tempd4
+    xd(i, j-1, k, 2) = xd(i, j-1, k, 2) + tempd4
+    xd(i-1, j, k, 2) = xd(i-1, j, k, 2) + tempd4
+    xd(i, j, k, 2) = xd(i, j, k, 2) + tempd4
+    xcd(2) = 0.0_8
+    tempd5 = eighth*xcd(1)
+    xd(i-1, j-1, k-1, 1) = xd(i-1, j-1, k-1, 1) + tempd5
+    xd(i, j-1, k-1, 1) = xd(i, j-1, k-1, 1) + tempd5
+    xd(i-1, j, k-1, 1) = xd(i-1, j, k-1, 1) + tempd5
+    xd(i, j, k-1, 1) = xd(i, j, k-1, 1) + tempd5
+    xd(i-1, j-1, k, 1) = xd(i-1, j-1, k, 1) + tempd5
+    xd(i, j-1, k, 1) = xd(i, j-1, k, 1) + tempd5
+    xd(i-1, j, k, 1) = xd(i-1, j, k, 1) + tempd5
+    xd(i, j, k, 1) = xd(i, j, k, 1) + tempd5
+    xcd(1) = 0.0_8
+    xsurfd(12*(faceid-1)+1:12*(faceid-1)+3) = xsurfd(12*(faceid-1)+1:12*&
+&     (faceid-1)+3) + (one-u)*(one-v)*xpd
+    xsurfd(12*(faceid-1)+4:12*(faceid-1)+6) = xsurfd(12*(faceid-1)+4:12*&
+&     (faceid-1)+6) + u*(one-v)*xpd
+    xsurfd(12*(faceid-1)+7:12*(faceid-1)+9) = xsurfd(12*(faceid-1)+7:12*&
+&     (faceid-1)+9) + u*v*xpd
+    xsurfd(12*(faceid-1)+10:12*(faceid-1)+12) = xsurfd(12*(faceid-1)+10:&
+&     12*(faceid-1)+12) + (one-u)*v*xpd
   end do
 end subroutine updatewalldistancesquickly_b
