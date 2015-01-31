@@ -96,6 +96,7 @@ FF90_OBJECTS2 = allnodalgradients_d.o\
 		bcturbfarfield_d.o\
 		turb2ndhalo_d.o\
 		boundarynormals_d.o\
+		volume_block_d.o\
 
 #      ******************************************************************
 #      *                                                                *

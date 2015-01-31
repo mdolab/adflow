@@ -207,21 +207,22 @@ ad_reverse_fast:
 	-head "\
 	inviscidCentralFlux(w, p, dw)>(w, p, dw) \
 	inviscidDissFluxScalar(p, w, radi, radj, radk, fw)>(fw, w, p) \
+	inviscidDissFluxMatrix(p, w, fw)>(fw, w, p) \
 	timeStep_block(w, p, radi, radj, radk)>(p, w, radi, radj, radk) \
 	viscousFlux(w, aa, rlv, rev, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz, fw)>(fw, w, rlv, rev, aa) \
-	allNodalGradients(aa, w, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz) > \
+	allNodalGradients(aa, w, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz)>\
 	         (aa, w, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz) \
 	computeSpeedOfSoundSquared(w, p, aa)>(w, p, aa) \
 	computeLamViscosity(w, p, rlv)>(w, p, rlv) \
-	BCRoutines%bcNSWallAdiabatic(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2) > \
+	BCRoutines%bcNSWallAdiabatic(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2)>\
 	                            (ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2) \
-	BCRoutines%bcNSWallIsothermal(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2) > \
+	BCRoutines%bcNSWallIsothermal(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2)>\
 	                             (ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2) \
-	BCRoutines%bcFarField(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2) > \
+	BCRoutines%bcFarField(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2)>\
 			     (ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2) \
-	BCRoutines%bcSymm(ww0, ww1, ww2, ww3, pp0, pp1, pp2, pp3, rlv0, rlv1, rlv2, rlv3, rev0, rev1, rev2, rev3) > \
+	BCRoutines%bcSymm(ww0, ww1, ww2, ww3, pp0, pp1, pp2, pp3, rlv0, rlv1, rlv2, rlv3, rev0, rev1, rev2, rev3)>\
 			 (ww0, ww1, ww2, ww3, pp0, pp1, pp2, pp3, rlv0, rlv1, rlv2, rlv3, rev0, rev1, rev2, rev3) \
-	BCRoutines%bcEulerWall(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2) > \
+	BCRoutines%bcEulerWall(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2)>\
 			      (ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2) \
 	computePressureSimple(w, p)>(w,p) \
 	prodsmag2(w,scratch)>(w, scratch) \
@@ -269,20 +270,18 @@ ad_reverse_spatial:
 	saModule%saSource(scratch,d2wall)>(scratch,d2wall) \
 	saModule%saViscous(scratch, vol, si, sj, sk)>(scratch, vol, si, sj, sk) \
 	saModule%saResScale(scratch, vol)>(dw) \
-	turbAdvection(vol, si, sj, sk, scratch)>(scratch, vol, si, sj, sk) \
-	metric_block(x, vol, si, sj, sk)>(x, vol, si, sj, sk) \
-	boundaryNormals(si, sj, sk)>(si, sj, sk BCData%norm) \
-	xhalo_block(x)>(x)" \
+	resScale(dw, fw, vol)>(dw) \
+	BCRoutines%bcSymm(ww2, ww3, pp2, pp3, rlv2, rlv3, rev2, rev3 bcData%norm)>\
+			 (ww0, ww1, pp0, pp1, rlv0, rlv1, rev0, rev1) \
+	turbAdvection(vol, si, sj, sk, scratch)>(scratch, vol, si, sj, sk)" \
 	-adjvarname %d \
 	-adjfuncname %_spatial_b \
 	-reverse $(TAPENADE_PRECISION) \
 	-noisize \
 	-O temp_reverse_spatial $(I_RES_FILES)
 
-
-
 # Run the auto-edit file:
-#	python autoEdit/autoEditReverseFast.py temp_reverse_fast outputReverseFast
+	python autoEdit/autoEditReverseSpatial.py temp_reverse_spatial outputReverseSpatial
 
 # Remove preprocessor files
 	make -f Makefile_tapenade cleanpreprocess_res

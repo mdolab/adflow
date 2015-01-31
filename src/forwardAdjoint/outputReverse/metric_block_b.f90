@@ -2,51 +2,20 @@
 !  tapenade 3.10 (r5363) -  9 sep 2014 09:53
 !
 !  differentiation of metric_block in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *x *vol *si *sj *sk *(*bcdata.norm)
+!   gradient     of useful results: *x *si *sj *sk
 !   with respect to varying inputs: *x
-!   plus diff mem management of: x:in vol:in si:in sj:in sk:in
-!                bcdata:in *bcdata.norm:in
+!   plus diff mem management of: x:in si:in sj:in sk:in
 subroutine metric_block_b()
-! this is copy of metric.f90. it was necessary to copy this file
-! since there is debugging stuff in the original that is not
-! necessary for ad.
-  use bctypes
   use blockpointers
-  use cgnsgrid
-  use communication
-  use inputtimespectral
   implicit none
-!
-!      local parameter.
-!
-  real(kind=realtype), parameter :: thresvolume=1.e-2_realtype
-!
-!      local variables.
-!
+! local variables.
   integer(kind=inttype) :: i, j, k, n, m, l, ii
-  integer(kind=inttype) :: mm
-  real(kind=realtype) :: fact, mult
-  real(kind=realtype) :: factd
-  real(kind=realtype) :: xp, yp, zp, vp1, vp2, vp3, vp4, vp5, vp6
-  real(kind=realtype) :: xpd, ypd, zpd, vp1d, vp2d, vp3d, vp4d, vp5d, &
-& vp6d
+  real(kind=realtype) :: fact
+  real(kind=realtype) :: xxp, yyp, zzp
   real(kind=realtype), dimension(3) :: v1, v2
   real(kind=realtype), dimension(3) :: v1d, v2d
-  logical :: checkk, checkj, checki, checkall
-  intrinsic abs
   intrinsic mod
-  intrinsic sqrt
-  real(kind=realtype) :: tmp
-  real(kind=realtype) :: tmp0
-  real(kind=realtype) :: tmp1
-  integer :: branch
-  real(kind=realtype) :: tempd12
-  real(kind=realtype) :: tempd11
-  real(kind=realtype) :: tempd10
-  real(kind=realtype) :: tmpd
-  real(kind=realtype) :: tempd9
   real(kind=realtype) :: tempd
-  real(kind=realtype) :: tempd8
   real(kind=realtype) :: tempd7
   real(kind=realtype) :: tempd6
   real(kind=realtype) :: tempd5
@@ -55,131 +24,6 @@ subroutine metric_block_b()
   real(kind=realtype) :: tempd2
   real(kind=realtype) :: tempd1
   real(kind=realtype) :: tempd0
-  real(kind=realtype) :: tmpd1
-  real(kind=realtype) :: tmpd0
-!
-!      ******************************************************************
-!      *                                                                *
-!      * begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
-! compute the volumes. the hexahedron is split into 6 pyramids
-! whose volumes are computed. the volume is positive for a
-! right handed block.
-! initialize the volumes to zero. the reasons is that the second
-! level halo's must be initialized to zero and for convenience
-! all the volumes are set to zero.
-  vol = zero
-  do k=1,ke
-    do j=1,je
-      do i=1,ie
-        n = k - 1
-        m = j - 1
-        l = i - 1
-! compute the coordinates of the center of gravity.
-        call pushreal8(xp)
-        xp = eighth*(x(i, j, k, 1)+x(i, m, k, 1)+x(i, m, n, 1)+x(i, j, n&
-&         , 1)+x(l, j, k, 1)+x(l, m, k, 1)+x(l, m, n, 1)+x(l, j, n, 1))
-        call pushreal8(yp)
-        yp = eighth*(x(i, j, k, 2)+x(i, m, k, 2)+x(i, m, n, 2)+x(i, j, n&
-&         , 2)+x(l, j, k, 2)+x(l, m, k, 2)+x(l, m, n, 2)+x(l, j, n, 2))
-        call pushreal8(zp)
-        zp = eighth*(x(i, j, k, 3)+x(i, m, k, 3)+x(i, m, n, 3)+x(i, j, n&
-&         , 3)+x(l, j, k, 3)+x(l, m, k, 3)+x(l, m, n, 3)+x(l, j, n, 3))
-! compute the volumes of the 6 sub pyramids. the
-! arguments of volpym must be such that for a (regular)
-! right handed hexahedron all volumes are positive.
-        call volpym(x(i, j, k, 1), x(i, j, k, 2), x(i, j, k, 3), x(i, j&
-&             , n, 1), x(i, j, n, 2), x(i, j, n, 3), x(i, m, n, 1), x(i&
-&             , m, n, 2), x(i, m, n, 3), x(i, m, k, 1), x(i, m, k, 2), x&
-&             (i, m, k, 3), vp1)
-        call volpym(x(l, j, k, 1), x(l, j, k, 2), x(l, j, k, 3), x(l, m&
-&             , k, 1), x(l, m, k, 2), x(l, m, k, 3), x(l, m, n, 1), x(l&
-&             , m, n, 2), x(l, m, n, 3), x(l, j, n, 1), x(l, j, n, 2), x&
-&             (l, j, n, 3), vp2)
-        call volpym(x(i, j, k, 1), x(i, j, k, 2), x(i, j, k, 3), x(l, j&
-&             , k, 1), x(l, j, k, 2), x(l, j, k, 3), x(l, j, n, 1), x(l&
-&             , j, n, 2), x(l, j, n, 3), x(i, j, n, 1), x(i, j, n, 2), x&
-&             (i, j, n, 3), vp3)
-        call volpym(x(i, m, k, 1), x(i, m, k, 2), x(i, m, k, 3), x(i, m&
-&             , n, 1), x(i, m, n, 2), x(i, m, n, 3), x(l, m, n, 1), x(l&
-&             , m, n, 2), x(l, m, n, 3), x(l, m, k, 1), x(l, m, k, 2), x&
-&             (l, m, k, 3), vp4)
-        call volpym(x(i, j, k, 1), x(i, j, k, 2), x(i, j, k, 3), x(i, m&
-&             , k, 1), x(i, m, k, 2), x(i, m, k, 3), x(l, m, k, 1), x(l&
-&             , m, k, 2), x(l, m, k, 3), x(l, j, k, 1), x(l, j, k, 2), x&
-&             (l, j, k, 3), vp5)
-        call volpym(x(i, j, n, 1), x(i, j, n, 2), x(i, j, n, 3), x(l, j&
-&             , n, 1), x(l, j, n, 2), x(l, j, n, 3), x(l, m, n, 1), x(l&
-&             , m, n, 2), x(l, m, n, 3), x(i, m, n, 1), x(i, m, n, 2), x&
-&             (i, m, n, 3), vp6)
-! set the volume to 1/6 of the sum of the volumes of the
-! pyramid. remember that volpym computes 6 times the
-! volume.
-        vol(i, j, k) = sixth*(vp1+vp2+vp3+vp4+vp5+vp6)
-        if (vol(i, j, k) .ge. 0.) then
-          call pushcontrol1b(0)
-          vol(i, j, k) = vol(i, j, k)
-        else
-          vol(i, j, k) = -vol(i, j, k)
-          call pushcontrol1b(1)
-        end if
-      end do
-    end do
-  end do
-! some additional safety stuff for halo volumes.
-  do k=2,kl
-    do j=2,jl
-      if (vol(1, j, k) .le. eps) then
-        vol(1, j, k) = vol(2, j, k)
-        call pushcontrol1b(0)
-      else
-        call pushcontrol1b(1)
-      end if
-      if (vol(ie, j, k) .le. eps) then
-        tmp = vol(il, j, k)
-        vol(ie, j, k) = tmp
-        call pushcontrol1b(1)
-      else
-        call pushcontrol1b(0)
-      end if
-    end do
-  end do
-  do k=2,kl
-    do i=1,ie
-      if (vol(i, 1, k) .le. eps) then
-        vol(i, 1, k) = vol(i, 2, k)
-        call pushcontrol1b(0)
-      else
-        call pushcontrol1b(1)
-      end if
-      if (vol(i, je, k) .le. eps) then
-        tmp0 = vol(i, jl, k)
-        vol(i, je, k) = tmp0
-        call pushcontrol1b(1)
-      else
-        call pushcontrol1b(0)
-      end if
-    end do
-  end do
-  do j=1,je
-    do i=1,ie
-      if (vol(i, j, 1) .le. eps) then
-        vol(i, j, 1) = vol(i, j, 2)
-        call pushcontrol1b(0)
-      else
-        call pushcontrol1b(1)
-      end if
-      if (vol(i, j, ke) .le. eps) then
-        tmp1 = vol(i, j, kl)
-        vol(i, j, ke) = tmp1
-        call pushcontrol1b(1)
-      else
-        call pushcontrol1b(0)
-      end if
-    end do
-  end do
 ! set the factor in the surface normals computation. for a
 ! left handed block this factor is negative, such that the
 ! normals still point in the direction of increasing index.
@@ -191,733 +35,257 @@ subroutine metric_block_b()
   else
     fact = -half
   end if
-! check if both positive and negative volumes occur. if so,
-! the block is bad and the counter nblockbad is updated.
+  call pushreal8array(v1, 3)
+  call pushreal8array(v2, 3)
 !
-!          **************************************************************
-!          *                                                            *
-!          * computation of the face normals in i-, j- and k-direction. *
-!          * formula's are valid for a right handed block; for a left   *
-!          * handed block the correct orientation is obtained via fact. *
-!          * the normals point in the direction of increasing index.    *
-!          * the absolute value of fact is 0.5, because the cross       *
-!          * product of the two diagonals is twice the normal vector.   *
-!          *                                                            *
-!          * note that also the normals of the first level halo cells   *
-!          * are computed. these are needed for the viscous fluxes.     *
-!          *                                                            *
-!          **************************************************************
+! **************************************************************
+! *                                                            *
+! * computation of the face normals in i-, j- and k-direction. *
+! * formula's are valid for a right handed block; for a left   *
+! * handed block the correct orientation is obtained via fact. *
+! * the normals point in the direction of increasing index.    *
+! * the absolute value of fact is 0.5, because the cross       *
+! * product of the two diagonals is twice the normal vector.   *
+! *                                                            *
+! * note that also the normals of the first level halo cells   *
+! * are computed. these are needed for the viscous fluxes.     *
+! *                                                            *
+! **************************************************************
 !
 ! projected areas of cell faces in the i direction.
-! projected areas of cell faces in the i direction.
-  do k=1,ke
-    call pushinteger4(n)
+  do ii=0,ke*je*(ie+1)-1
+! 0:ie
+    i = mod(ii, ie + 1) + 0
+!1:je
+    j = mod(ii/(ie+1), je) + 1
+!1:ke
+    k = ii/((ie+1)*je) + 1
     n = k - 1
-    do j=1,je
-      call pushinteger4(m)
-      m = j - 1
-      do i=0,ie
+    m = j - 1
 ! determine the two diagonal vectors of the face.
-        call pushreal8(v1(1))
-        v1(1) = x(i, j, n, 1) - x(i, m, k, 1)
-        call pushreal8(v1(2))
-        v1(2) = x(i, j, n, 2) - x(i, m, k, 2)
-        call pushreal8(v1(3))
-        v1(3) = x(i, j, n, 3) - x(i, m, k, 3)
-        call pushreal8(v2(1))
-        v2(1) = x(i, j, k, 1) - x(i, m, n, 1)
-        call pushreal8(v2(2))
-        v2(2) = x(i, j, k, 2) - x(i, m, n, 2)
-        call pushreal8(v2(3))
-        v2(3) = x(i, j, k, 3) - x(i, m, n, 3)
+    v1(1) = x(i, j, n, 1) - x(i, m, k, 1)
+    v1(2) = x(i, j, n, 2) - x(i, m, k, 2)
+    v1(3) = x(i, j, n, 3) - x(i, m, k, 3)
+    v2(1) = x(i, j, k, 1) - x(i, m, n, 1)
+    v2(2) = x(i, j, k, 2) - x(i, m, n, 2)
+    v2(3) = x(i, j, k, 3) - x(i, m, n, 3)
 ! the face normal, which is the cross product of the two
 ! diagonal vectors times fact; remember that fact is
 ! either -0.5 or 0.5.
-        si(i, j, k, 1) = fact*(v1(2)*v2(3)-v1(3)*v2(2))
-        si(i, j, k, 2) = fact*(v1(3)*v2(1)-v1(1)*v2(3))
-        si(i, j, k, 3) = fact*(v1(1)*v2(2)-v1(2)*v2(1))
-      end do
-    end do
+    si(i, j, k, 1) = fact*(v1(2)*v2(3)-v1(3)*v2(2))
+    si(i, j, k, 2) = fact*(v1(3)*v2(1)-v1(1)*v2(3))
+    si(i, j, k, 3) = fact*(v1(1)*v2(2)-v1(2)*v2(1))
   end do
-! projected areas of cell faces in the j direction.
-  do k=1,ke
-    call pushinteger4(n)
+  call pushinteger4(i)
+  call pushinteger4(j)
+  call pushreal8array(v1, 3)
+  call pushreal8array(v2, 3)
+! projected areas of cell faces in the j direction
+  do ii=0,ke*(je+1)*ie-1
+! 1:ie
+    i = mod(ii, ie) + 1
+!0:je
+    j = mod(ii/ie, je + 1) + 0
+!1:ke
+    k = ii/(ie*(je+1)) + 1
     n = k - 1
-    do j=0,je
-      do i=1,ie
-        l = i - 1
+    l = i - 1
 ! determine the two diagonal vectors of the face.
-        call pushreal8(v1(1))
-        v1(1) = x(i, j, n, 1) - x(l, j, k, 1)
-        call pushreal8(v1(2))
-        v1(2) = x(i, j, n, 2) - x(l, j, k, 2)
-        call pushreal8(v1(3))
-        v1(3) = x(i, j, n, 3) - x(l, j, k, 3)
-        call pushreal8(v2(1))
-        v2(1) = x(l, j, n, 1) - x(i, j, k, 1)
-        call pushreal8(v2(2))
-        v2(2) = x(l, j, n, 2) - x(i, j, k, 2)
-        call pushreal8(v2(3))
-        v2(3) = x(l, j, n, 3) - x(i, j, k, 3)
+    v1(1) = x(i, j, n, 1) - x(l, j, k, 1)
+    v1(2) = x(i, j, n, 2) - x(l, j, k, 2)
+    v1(3) = x(i, j, n, 3) - x(l, j, k, 3)
+    v2(1) = x(l, j, n, 1) - x(i, j, k, 1)
+    v2(2) = x(l, j, n, 2) - x(i, j, k, 2)
+    v2(3) = x(l, j, n, 3) - x(i, j, k, 3)
 ! the face normal, which is the cross product of the two
 ! diagonal vectors times fact; remember that fact is
 ! either -0.5 or 0.5.
-        sj(i, j, k, 1) = fact*(v1(2)*v2(3)-v1(3)*v2(2))
-        sj(i, j, k, 2) = fact*(v1(3)*v2(1)-v1(1)*v2(3))
-        sj(i, j, k, 3) = fact*(v1(1)*v2(2)-v1(2)*v2(1))
-      end do
-    end do
+    sj(i, j, k, 1) = fact*(v1(2)*v2(3)-v1(3)*v2(2))
+    sj(i, j, k, 2) = fact*(v1(3)*v2(1)-v1(1)*v2(3))
+    sj(i, j, k, 3) = fact*(v1(1)*v2(2)-v1(2)*v2(1))
   end do
-! projected areas of cell faces in the k direction.
-  do k=0,ke
-    do j=1,je
-      call pushinteger4(m)
-      m = j - 1
-      do i=1,ie
-        l = i - 1
-! determine the two diagonal vectors of the face.
-        call pushreal8(v1(1))
-        v1(1) = x(i, j, k, 1) - x(l, m, k, 1)
-        call pushreal8(v1(2))
-        v1(2) = x(i, j, k, 2) - x(l, m, k, 2)
-        call pushreal8(v1(3))
-        v1(3) = x(i, j, k, 3) - x(l, m, k, 3)
-        call pushreal8(v2(1))
-        v2(1) = x(l, j, k, 1) - x(i, m, k, 1)
-        call pushreal8(v2(2))
-        v2(2) = x(l, j, k, 2) - x(i, m, k, 2)
-        call pushreal8(v2(3))
-        v2(3) = x(l, j, k, 3) - x(i, m, k, 3)
-! the face normal, which is the cross product of the two
-! diagonal vectors times fact; remember that fact is
-! either -0.5 or 0.5.
-        sk(i, j, k, 1) = fact*(v1(2)*v2(3)-v1(3)*v2(2))
-        sk(i, j, k, 2) = fact*(v1(3)*v2(1)-v1(1)*v2(3))
-        sk(i, j, k, 3) = fact*(v1(1)*v2(2)-v1(2)*v2(1))
-      end do
-    end do
-  end do
-!          **************************************************************
-!          *                                                            *
-!          * the unit normals on the boundary faces. these always point *
-!          * out of the domain, so a multiplication by -1 is needed for *
-!          * the imin, jmin and kmin boundaries.                        *
-!          *                                                            *
-!          **************************************************************
-!
-! loop over the boundary subfaces of this block.
-bocoloop:do mm=1,nbocos
-    call pushinteger4(i)
-    call pushreal8(fact)
-    call pushreal8(mult)
-    call pushreal8(xp)
-    call pushreal8(yp)
-    call pushreal8(zp)
-    call pushinteger4(mm)
-! loop over the boundary faces of the subface.
-    do ii=0,(bcdata(mm)%jcend-bcdata(mm)%jcbeg+1)*(bcdata(mm)%icend-&
-&       bcdata(mm)%icbeg+1)-1
-      i = mod(ii, bcdata(mm)%icend - bcdata(mm)%icbeg + 1) + bcdata(mm)%&
-&       icbeg
-      j = ii/(bcdata(mm)%icend-bcdata(mm)%icbeg+1) + bcdata(mm)%jcbeg
-      select case  (bcfaceid(mm)) 
-      case (imin) 
-        mult = -one
-        xp = si(1, i, j, 1)
-        yp = si(1, i, j, 2)
-        zp = si(1, i, j, 3)
-      case (imax) 
-        mult = one
-        xp = si(il, i, j, 1)
-        yp = si(il, i, j, 2)
-        zp = si(il, i, j, 3)
-      case (jmin) 
-        mult = -one
-        xp = sj(i, 1, j, 1)
-        yp = sj(i, 1, j, 2)
-        zp = sj(i, 1, j, 3)
-      case (jmax) 
-        mult = one
-        xp = sj(i, jl, j, 1)
-        yp = sj(i, jl, j, 2)
-        zp = sj(i, jl, j, 3)
-      case (kmin) 
-        mult = -one
-        xp = sk(i, j, 1, 1)
-        yp = sk(i, j, 1, 2)
-        zp = sk(i, j, 1, 3)
-      case (kmax) 
-        mult = one
-        xp = sk(i, j, kl, 1)
-        yp = sk(i, j, kl, 2)
-        zp = sk(i, j, kl, 3)
-      end select
-! compute the inverse of the length of the normal vector
-! and possibly correct for inward pointing.
-      fact = sqrt(xp*xp + yp*yp + zp*zp)
-      if (fact .gt. zero) fact = mult/fact
-! compute the unit normal.
-      bcdata(mm)%norm(i, j, 1) = fact*xp
-      bcdata(mm)%norm(i, j, 2) = fact*yp
-      bcdata(mm)%norm(i, j, 3) = fact*zp
-    end do
-  end do bocoloop
-  xpd = 0.0_8
-  ypd = 0.0_8
-  zpd = 0.0_8
-  do mm=nbocos,1,-1
-    call popinteger4(mm)
-    call lookreal8(zp)
-    call lookreal8(yp)
-    call lookreal8(xp)
-    call lookreal8(mult)
-    do ii=0,(bcdata(mm)%jcend-bcdata(mm)%jcbeg+1)*(bcdata(mm)%icend-&
-&       bcdata(mm)%icbeg+1)-1
-      i = mod(ii, bcdata(mm)%icend - bcdata(mm)%icbeg + 1) + bcdata(mm)%&
-&       icbeg
-      j = ii/(bcdata(mm)%icend-bcdata(mm)%icbeg+1) + bcdata(mm)%jcbeg
-      select case  (bcfaceid(mm)) 
-      case (imin) 
-        mult = -one
-        xp = si(1, i, j, 1)
-        yp = si(1, i, j, 2)
-        zp = si(1, i, j, 3)
-        call pushcontrol3b(1)
-      case (imax) 
-        mult = one
-        xp = si(il, i, j, 1)
-        yp = si(il, i, j, 2)
-        zp = si(il, i, j, 3)
-        call pushcontrol3b(2)
-      case (jmin) 
-        mult = -one
-        xp = sj(i, 1, j, 1)
-        yp = sj(i, 1, j, 2)
-        zp = sj(i, 1, j, 3)
-        call pushcontrol3b(3)
-      case (jmax) 
-        mult = one
-        xp = sj(i, jl, j, 1)
-        yp = sj(i, jl, j, 2)
-        zp = sj(i, jl, j, 3)
-        call pushcontrol3b(4)
-      case (kmin) 
-        mult = -one
-        xp = sk(i, j, 1, 1)
-        yp = sk(i, j, 1, 2)
-        zp = sk(i, j, 1, 3)
-        call pushcontrol3b(5)
-      case (kmax) 
-        mult = one
-        xp = sk(i, j, kl, 1)
-        yp = sk(i, j, kl, 2)
-        zp = sk(i, j, kl, 3)
-        call pushcontrol3b(6)
-      case default
-        call pushcontrol3b(0)
-      end select
-! compute the inverse of the length of the normal vector
-! and possibly correct for inward pointing.
-      fact = sqrt(xp*xp + yp*yp + zp*zp)
-      if (fact .gt. zero) then
-        call pushreal8(fact)
-        fact = mult/fact
-        call pushcontrol1b(0)
-      else
-        call pushcontrol1b(1)
-      end if
-      factd = zp*bcdatad(mm)%norm(i, j, 3)
-      zpd = zpd + fact*bcdatad(mm)%norm(i, j, 3)
-      bcdatad(mm)%norm(i, j, 3) = 0.0_8
-      factd = factd + yp*bcdatad(mm)%norm(i, j, 2)
-      ypd = ypd + fact*bcdatad(mm)%norm(i, j, 2)
-      bcdatad(mm)%norm(i, j, 2) = 0.0_8
-      factd = factd + xp*bcdatad(mm)%norm(i, j, 1)
-      xpd = xpd + fact*bcdatad(mm)%norm(i, j, 1)
-      bcdatad(mm)%norm(i, j, 1) = 0.0_8
-      call popcontrol1b(branch)
-      if (branch .eq. 0) then
-        call popreal8(fact)
-        factd = -(mult*factd/fact**2)
-      end if
-      if (xp**2 + yp**2 + zp**2 .eq. 0.0_8) then
-        tempd12 = 0.0
-      else
-        tempd12 = factd/(2.0*sqrt(xp**2+yp**2+zp**2))
-      end if
-      xpd = xpd + 2*xp*tempd12
-      ypd = ypd + 2*yp*tempd12
-      zpd = zpd + 2*zp*tempd12
-      call popcontrol3b(branch)
-      if (branch .lt. 3) then
-        if (branch .ne. 0) then
-          if (branch .eq. 1) then
-            sid(1, i, j, 3) = sid(1, i, j, 3) + zpd
-            sid(1, i, j, 2) = sid(1, i, j, 2) + ypd
-            sid(1, i, j, 1) = sid(1, i, j, 1) + xpd
-            xpd = 0.0_8
-            ypd = 0.0_8
-            zpd = 0.0_8
-          else
-            sid(il, i, j, 3) = sid(il, i, j, 3) + zpd
-            sid(il, i, j, 2) = sid(il, i, j, 2) + ypd
-            sid(il, i, j, 1) = sid(il, i, j, 1) + xpd
-            xpd = 0.0_8
-            ypd = 0.0_8
-            zpd = 0.0_8
-          end if
-        end if
-      else if (branch .lt. 5) then
-        if (branch .eq. 3) then
-          sjd(i, 1, j, 3) = sjd(i, 1, j, 3) + zpd
-          sjd(i, 1, j, 2) = sjd(i, 1, j, 2) + ypd
-          sjd(i, 1, j, 1) = sjd(i, 1, j, 1) + xpd
-          xpd = 0.0_8
-          ypd = 0.0_8
-          zpd = 0.0_8
-        else
-          sjd(i, jl, j, 3) = sjd(i, jl, j, 3) + zpd
-          sjd(i, jl, j, 2) = sjd(i, jl, j, 2) + ypd
-          sjd(i, jl, j, 1) = sjd(i, jl, j, 1) + xpd
-          xpd = 0.0_8
-          ypd = 0.0_8
-          zpd = 0.0_8
-        end if
-      else if (branch .eq. 5) then
-        skd(i, j, 1, 3) = skd(i, j, 1, 3) + zpd
-        skd(i, j, 1, 2) = skd(i, j, 1, 2) + ypd
-        skd(i, j, 1, 1) = skd(i, j, 1, 1) + xpd
-        xpd = 0.0_8
-        ypd = 0.0_8
-        zpd = 0.0_8
-      else
-        skd(i, j, kl, 3) = skd(i, j, kl, 3) + zpd
-        skd(i, j, kl, 2) = skd(i, j, kl, 2) + ypd
-        skd(i, j, kl, 1) = skd(i, j, kl, 1) + xpd
-        xpd = 0.0_8
-        ypd = 0.0_8
-        zpd = 0.0_8
-      end if
-    end do
-    call popreal8(zp)
-    call popreal8(yp)
-    call popreal8(xp)
-    call popreal8(mult)
-    call popreal8(fact)
-    call popinteger4(i)
-  end do
+  call pushinteger4(i)
+  call pushinteger4(j)
+  call pushreal8array(v1, 3)
+  call pushreal8array(v2, 3)
+  call pushinteger4(l)
+  call pushinteger4(m)
   v1d = 0.0_8
   v2d = 0.0_8
-  do k=ke,0,-1
-    do j=je,1,-1
-      do i=ie,1,-1
-        tempd9 = fact*skd(i, j, k, 3)
-        v1d(1) = v1d(1) + v2(2)*tempd9
-        v2d(2) = v2d(2) + v1(1)*tempd9
-        v1d(2) = v1d(2) - v2(1)*tempd9
-        skd(i, j, k, 3) = 0.0_8
-        tempd10 = fact*skd(i, j, k, 2)
-        v2d(1) = v2d(1) + v1(3)*tempd10 - v1(2)*tempd9
-        v1d(3) = v1d(3) + v2(1)*tempd10
-        v1d(1) = v1d(1) - v2(3)*tempd10
-        skd(i, j, k, 2) = 0.0_8
-        tempd11 = fact*skd(i, j, k, 1)
-        v2d(3) = v2d(3) + v1(2)*tempd11 - v1(1)*tempd10
-        v1d(2) = v1d(2) + v2(3)*tempd11
-        v1d(3) = v1d(3) - v2(2)*tempd11
-        v2d(2) = v2d(2) - v1(3)*tempd11
-        skd(i, j, k, 1) = 0.0_8
-        l = i - 1
-        call popreal8(v2(3))
-        xd(l, j, k, 3) = xd(l, j, k, 3) + v2d(3)
-        xd(i, m, k, 3) = xd(i, m, k, 3) - v2d(3)
-        v2d(3) = 0.0_8
-        call popreal8(v2(2))
-        xd(l, j, k, 2) = xd(l, j, k, 2) + v2d(2)
-        xd(i, m, k, 2) = xd(i, m, k, 2) - v2d(2)
-        v2d(2) = 0.0_8
-        call popreal8(v2(1))
-        xd(l, j, k, 1) = xd(l, j, k, 1) + v2d(1)
-        xd(i, m, k, 1) = xd(i, m, k, 1) - v2d(1)
-        v2d(1) = 0.0_8
-        call popreal8(v1(3))
-        xd(i, j, k, 3) = xd(i, j, k, 3) + v1d(3)
-        xd(l, m, k, 3) = xd(l, m, k, 3) - v1d(3)
-        v1d(3) = 0.0_8
-        call popreal8(v1(2))
-        xd(i, j, k, 2) = xd(i, j, k, 2) + v1d(2)
-        xd(l, m, k, 2) = xd(l, m, k, 2) - v1d(2)
-        v1d(2) = 0.0_8
-        call popreal8(v1(1))
-        xd(i, j, k, 1) = xd(i, j, k, 1) + v1d(1)
-        xd(l, m, k, 1) = xd(l, m, k, 1) - v1d(1)
-        v1d(1) = 0.0_8
-      end do
-      call popinteger4(m)
-    end do
+  do ii=0,(ke+1)*je*ie-1
+! 1:ie
+    i = mod(ii, ie) + 1
+!1:je
+    j = mod(ii/ie, je) + 1
+!0:ke
+    k = ii/(ie*je) + 0
+    m = j - 1
+    l = i - 1
+! determine the two diagonal vectors of the face.
+    v1(1) = x(i, j, k, 1) - x(l, m, k, 1)
+    v1(2) = x(i, j, k, 2) - x(l, m, k, 2)
+    v1(3) = x(i, j, k, 3) - x(l, m, k, 3)
+    v2(1) = x(l, j, k, 1) - x(i, m, k, 1)
+    v2(2) = x(l, j, k, 2) - x(i, m, k, 2)
+    v2(3) = x(l, j, k, 3) - x(i, m, k, 3)
+! the face normal, which is the cross product of the two
+! diagonal vectors times fact; remember that fact is
+! either -0.5 or 0.5.
+    tempd5 = fact*skd(i, j, k, 3)
+    v1d(1) = v1d(1) + v2(2)*tempd5
+    v2d(2) = v2d(2) + v1(1)*tempd5
+    v1d(2) = v1d(2) - v2(1)*tempd5
+    skd(i, j, k, 3) = 0.0_8
+    tempd6 = fact*skd(i, j, k, 2)
+    v2d(1) = v2d(1) + v1(3)*tempd6 - v1(2)*tempd5
+    v1d(3) = v1d(3) + v2(1)*tempd6
+    v1d(1) = v1d(1) - v2(3)*tempd6
+    skd(i, j, k, 2) = 0.0_8
+    tempd7 = fact*skd(i, j, k, 1)
+    v2d(3) = v2d(3) + v1(2)*tempd7 - v1(1)*tempd6
+    v1d(2) = v1d(2) + v2(3)*tempd7
+    v1d(3) = v1d(3) - v2(2)*tempd7
+    v2d(2) = v2d(2) - v1(3)*tempd7
+    skd(i, j, k, 1) = 0.0_8
+    xd(l, j, k, 3) = xd(l, j, k, 3) + v2d(3)
+    xd(i, m, k, 3) = xd(i, m, k, 3) - v2d(3)
+    v2d(3) = 0.0_8
+    xd(l, j, k, 2) = xd(l, j, k, 2) + v2d(2)
+    xd(i, m, k, 2) = xd(i, m, k, 2) - v2d(2)
+    v2d(2) = 0.0_8
+    xd(l, j, k, 1) = xd(l, j, k, 1) + v2d(1)
+    xd(i, m, k, 1) = xd(i, m, k, 1) - v2d(1)
+    v2d(1) = 0.0_8
+    xd(i, j, k, 3) = xd(i, j, k, 3) + v1d(3)
+    xd(l, m, k, 3) = xd(l, m, k, 3) - v1d(3)
+    v1d(3) = 0.0_8
+    xd(i, j, k, 2) = xd(i, j, k, 2) + v1d(2)
+    xd(l, m, k, 2) = xd(l, m, k, 2) - v1d(2)
+    v1d(2) = 0.0_8
+    xd(i, j, k, 1) = xd(i, j, k, 1) + v1d(1)
+    xd(l, m, k, 1) = xd(l, m, k, 1) - v1d(1)
+    v1d(1) = 0.0_8
   end do
-  do k=ke,1,-1
-    do j=je,0,-1
-      do i=ie,1,-1
-        tempd6 = fact*sjd(i, j, k, 3)
-        v1d(1) = v1d(1) + v2(2)*tempd6
-        v2d(2) = v2d(2) + v1(1)*tempd6
-        v1d(2) = v1d(2) - v2(1)*tempd6
-        sjd(i, j, k, 3) = 0.0_8
-        tempd7 = fact*sjd(i, j, k, 2)
-        v2d(1) = v2d(1) + v1(3)*tempd7 - v1(2)*tempd6
-        v1d(3) = v1d(3) + v2(1)*tempd7
-        v1d(1) = v1d(1) - v2(3)*tempd7
-        sjd(i, j, k, 2) = 0.0_8
-        tempd8 = fact*sjd(i, j, k, 1)
-        v2d(3) = v2d(3) + v1(2)*tempd8 - v1(1)*tempd7
-        v1d(2) = v1d(2) + v2(3)*tempd8
-        v1d(3) = v1d(3) - v2(2)*tempd8
-        v2d(2) = v2d(2) - v1(3)*tempd8
-        sjd(i, j, k, 1) = 0.0_8
-        l = i - 1
-        call popreal8(v2(3))
-        xd(l, j, n, 3) = xd(l, j, n, 3) + v2d(3)
-        xd(i, j, k, 3) = xd(i, j, k, 3) - v2d(3)
-        v2d(3) = 0.0_8
-        call popreal8(v2(2))
-        xd(l, j, n, 2) = xd(l, j, n, 2) + v2d(2)
-        xd(i, j, k, 2) = xd(i, j, k, 2) - v2d(2)
-        v2d(2) = 0.0_8
-        call popreal8(v2(1))
-        xd(l, j, n, 1) = xd(l, j, n, 1) + v2d(1)
-        xd(i, j, k, 1) = xd(i, j, k, 1) - v2d(1)
-        v2d(1) = 0.0_8
-        call popreal8(v1(3))
-        xd(i, j, n, 3) = xd(i, j, n, 3) + v1d(3)
-        xd(l, j, k, 3) = xd(l, j, k, 3) - v1d(3)
-        v1d(3) = 0.0_8
-        call popreal8(v1(2))
-        xd(i, j, n, 2) = xd(i, j, n, 2) + v1d(2)
-        xd(l, j, k, 2) = xd(l, j, k, 2) - v1d(2)
-        v1d(2) = 0.0_8
-        call popreal8(v1(1))
-        xd(i, j, n, 1) = xd(i, j, n, 1) + v1d(1)
-        xd(l, j, k, 1) = xd(l, j, k, 1) - v1d(1)
-        v1d(1) = 0.0_8
-      end do
-    end do
-    call popinteger4(n)
+  call popinteger4(m)
+  call popinteger4(l)
+  call popreal8array(v2, 3)
+  call popreal8array(v1, 3)
+  call popinteger4(j)
+  call popinteger4(i)
+  call lookreal8array(v2, 3)
+  call lookreal8array(v1, 3)
+  do ii=0,ke*(je+1)*ie-1
+! 1:ie
+    i = mod(ii, ie) + 1
+!0:je
+    j = mod(ii/ie, je + 1) + 0
+!1:ke
+    k = ii/(ie*(je+1)) + 1
+    n = k - 1
+    l = i - 1
+! determine the two diagonal vectors of the face.
+    v1(1) = x(i, j, n, 1) - x(l, j, k, 1)
+    v1(2) = x(i, j, n, 2) - x(l, j, k, 2)
+    v1(3) = x(i, j, n, 3) - x(l, j, k, 3)
+    v2(1) = x(l, j, n, 1) - x(i, j, k, 1)
+    v2(2) = x(l, j, n, 2) - x(i, j, k, 2)
+    v2(3) = x(l, j, n, 3) - x(i, j, k, 3)
+! the face normal, which is the cross product of the two
+! diagonal vectors times fact; remember that fact is
+! either -0.5 or 0.5.
+    tempd2 = fact*sjd(i, j, k, 3)
+    v1d(1) = v1d(1) + v2(2)*tempd2
+    v2d(2) = v2d(2) + v1(1)*tempd2
+    v1d(2) = v1d(2) - v2(1)*tempd2
+    sjd(i, j, k, 3) = 0.0_8
+    tempd3 = fact*sjd(i, j, k, 2)
+    v2d(1) = v2d(1) + v1(3)*tempd3 - v1(2)*tempd2
+    v1d(3) = v1d(3) + v2(1)*tempd3
+    v1d(1) = v1d(1) - v2(3)*tempd3
+    sjd(i, j, k, 2) = 0.0_8
+    tempd4 = fact*sjd(i, j, k, 1)
+    v2d(3) = v2d(3) + v1(2)*tempd4 - v1(1)*tempd3
+    v1d(2) = v1d(2) + v2(3)*tempd4
+    v1d(3) = v1d(3) - v2(2)*tempd4
+    v2d(2) = v2d(2) - v1(3)*tempd4
+    sjd(i, j, k, 1) = 0.0_8
+    xd(l, j, n, 3) = xd(l, j, n, 3) + v2d(3)
+    xd(i, j, k, 3) = xd(i, j, k, 3) - v2d(3)
+    v2d(3) = 0.0_8
+    xd(l, j, n, 2) = xd(l, j, n, 2) + v2d(2)
+    xd(i, j, k, 2) = xd(i, j, k, 2) - v2d(2)
+    v2d(2) = 0.0_8
+    xd(l, j, n, 1) = xd(l, j, n, 1) + v2d(1)
+    xd(i, j, k, 1) = xd(i, j, k, 1) - v2d(1)
+    v2d(1) = 0.0_8
+    xd(i, j, n, 3) = xd(i, j, n, 3) + v1d(3)
+    xd(l, j, k, 3) = xd(l, j, k, 3) - v1d(3)
+    v1d(3) = 0.0_8
+    xd(i, j, n, 2) = xd(i, j, n, 2) + v1d(2)
+    xd(l, j, k, 2) = xd(l, j, k, 2) - v1d(2)
+    v1d(2) = 0.0_8
+    xd(i, j, n, 1) = xd(i, j, n, 1) + v1d(1)
+    xd(l, j, k, 1) = xd(l, j, k, 1) - v1d(1)
+    v1d(1) = 0.0_8
   end do
-  do k=ke,1,-1
-    do j=je,1,-1
-      do i=ie,0,-1
-        tempd3 = fact*sid(i, j, k, 3)
-        v1d(1) = v1d(1) + v2(2)*tempd3
-        v2d(2) = v2d(2) + v1(1)*tempd3
-        v1d(2) = v1d(2) - v2(1)*tempd3
-        sid(i, j, k, 3) = 0.0_8
-        tempd4 = fact*sid(i, j, k, 2)
-        v2d(1) = v2d(1) + v1(3)*tempd4 - v1(2)*tempd3
-        v1d(3) = v1d(3) + v2(1)*tempd4
-        v1d(1) = v1d(1) - v2(3)*tempd4
-        sid(i, j, k, 2) = 0.0_8
-        tempd5 = fact*sid(i, j, k, 1)
-        v2d(3) = v2d(3) + v1(2)*tempd5 - v1(1)*tempd4
-        v1d(2) = v1d(2) + v2(3)*tempd5
-        v1d(3) = v1d(3) - v2(2)*tempd5
-        v2d(2) = v2d(2) - v1(3)*tempd5
-        sid(i, j, k, 1) = 0.0_8
-        call popreal8(v2(3))
-        xd(i, j, k, 3) = xd(i, j, k, 3) + v2d(3)
-        xd(i, m, n, 3) = xd(i, m, n, 3) - v2d(3)
-        v2d(3) = 0.0_8
-        call popreal8(v2(2))
-        xd(i, j, k, 2) = xd(i, j, k, 2) + v2d(2)
-        xd(i, m, n, 2) = xd(i, m, n, 2) - v2d(2)
-        v2d(2) = 0.0_8
-        call popreal8(v2(1))
-        xd(i, j, k, 1) = xd(i, j, k, 1) + v2d(1)
-        xd(i, m, n, 1) = xd(i, m, n, 1) - v2d(1)
-        v2d(1) = 0.0_8
-        call popreal8(v1(3))
-        xd(i, j, n, 3) = xd(i, j, n, 3) + v1d(3)
-        xd(i, m, k, 3) = xd(i, m, k, 3) - v1d(3)
-        v1d(3) = 0.0_8
-        call popreal8(v1(2))
-        xd(i, j, n, 2) = xd(i, j, n, 2) + v1d(2)
-        xd(i, m, k, 2) = xd(i, m, k, 2) - v1d(2)
-        v1d(2) = 0.0_8
-        call popreal8(v1(1))
-        xd(i, j, n, 1) = xd(i, j, n, 1) + v1d(1)
-        xd(i, m, k, 1) = xd(i, m, k, 1) - v1d(1)
-        v1d(1) = 0.0_8
-      end do
-      call popinteger4(m)
-    end do
-    call popinteger4(n)
+  call popreal8array(v2, 3)
+  call popreal8array(v1, 3)
+  call popinteger4(j)
+  call popinteger4(i)
+  call popreal8array(v2, 3)
+  call popreal8array(v1, 3)
+  do ii=0,ke*je*(ie+1)-1
+! 0:ie
+    i = mod(ii, ie + 1) + 0
+!1:je
+    j = mod(ii/(ie+1), je) + 1
+!1:ke
+    k = ii/((ie+1)*je) + 1
+    n = k - 1
+    m = j - 1
+! determine the two diagonal vectors of the face.
+    v1(1) = x(i, j, n, 1) - x(i, m, k, 1)
+    v1(2) = x(i, j, n, 2) - x(i, m, k, 2)
+    v1(3) = x(i, j, n, 3) - x(i, m, k, 3)
+    v2(1) = x(i, j, k, 1) - x(i, m, n, 1)
+    v2(2) = x(i, j, k, 2) - x(i, m, n, 2)
+    v2(3) = x(i, j, k, 3) - x(i, m, n, 3)
+! the face normal, which is the cross product of the two
+! diagonal vectors times fact; remember that fact is
+! either -0.5 or 0.5.
+    tempd = fact*sid(i, j, k, 3)
+    v1d(1) = v1d(1) + v2(2)*tempd
+    v2d(2) = v2d(2) + v1(1)*tempd
+    v1d(2) = v1d(2) - v2(1)*tempd
+    sid(i, j, k, 3) = 0.0_8
+    tempd0 = fact*sid(i, j, k, 2)
+    v2d(1) = v2d(1) + v1(3)*tempd0 - v1(2)*tempd
+    v1d(3) = v1d(3) + v2(1)*tempd0
+    v1d(1) = v1d(1) - v2(3)*tempd0
+    sid(i, j, k, 2) = 0.0_8
+    tempd1 = fact*sid(i, j, k, 1)
+    v2d(3) = v2d(3) + v1(2)*tempd1 - v1(1)*tempd0
+    v1d(2) = v1d(2) + v2(3)*tempd1
+    v1d(3) = v1d(3) - v2(2)*tempd1
+    v2d(2) = v2d(2) - v1(3)*tempd1
+    sid(i, j, k, 1) = 0.0_8
+    xd(i, j, k, 3) = xd(i, j, k, 3) + v2d(3)
+    xd(i, m, n, 3) = xd(i, m, n, 3) - v2d(3)
+    v2d(3) = 0.0_8
+    xd(i, j, k, 2) = xd(i, j, k, 2) + v2d(2)
+    xd(i, m, n, 2) = xd(i, m, n, 2) - v2d(2)
+    v2d(2) = 0.0_8
+    xd(i, j, k, 1) = xd(i, j, k, 1) + v2d(1)
+    xd(i, m, n, 1) = xd(i, m, n, 1) - v2d(1)
+    v2d(1) = 0.0_8
+    xd(i, j, n, 3) = xd(i, j, n, 3) + v1d(3)
+    xd(i, m, k, 3) = xd(i, m, k, 3) - v1d(3)
+    v1d(3) = 0.0_8
+    xd(i, j, n, 2) = xd(i, j, n, 2) + v1d(2)
+    xd(i, m, k, 2) = xd(i, m, k, 2) - v1d(2)
+    v1d(2) = 0.0_8
+    xd(i, j, n, 1) = xd(i, j, n, 1) + v1d(1)
+    xd(i, m, k, 1) = xd(i, m, k, 1) - v1d(1)
+    v1d(1) = 0.0_8
   end do
-  do j=je,1,-1
-    do i=ie,1,-1
-      call popcontrol1b(branch)
-      if (branch .ne. 0) then
-        tmpd1 = vold(i, j, ke)
-        vold(i, j, ke) = 0.0_8
-        vold(i, j, kl) = vold(i, j, kl) + tmpd1
-      end if
-      call popcontrol1b(branch)
-      if (branch .eq. 0) then
-        vold(i, j, 2) = vold(i, j, 2) + vold(i, j, 1)
-        vold(i, j, 1) = 0.0_8
-      end if
-    end do
-  end do
-  do k=kl,2,-1
-    do i=ie,1,-1
-      call popcontrol1b(branch)
-      if (branch .ne. 0) then
-        tmpd0 = vold(i, je, k)
-        vold(i, je, k) = 0.0_8
-        vold(i, jl, k) = vold(i, jl, k) + tmpd0
-      end if
-      call popcontrol1b(branch)
-      if (branch .eq. 0) then
-        vold(i, 2, k) = vold(i, 2, k) + vold(i, 1, k)
-        vold(i, 1, k) = 0.0_8
-      end if
-    end do
-  end do
-  do k=kl,2,-1
-    do j=jl,2,-1
-      call popcontrol1b(branch)
-      if (branch .ne. 0) then
-        tmpd = vold(ie, j, k)
-        vold(ie, j, k) = 0.0_8
-        vold(il, j, k) = vold(il, j, k) + tmpd
-      end if
-      call popcontrol1b(branch)
-      if (branch .eq. 0) then
-        vold(2, j, k) = vold(2, j, k) + vold(1, j, k)
-        vold(1, j, k) = 0.0_8
-      end if
-    end do
-  end do
-  vp1d = 0.0_8
-  vp2d = 0.0_8
-  vp3d = 0.0_8
-  vp4d = 0.0_8
-  vp5d = 0.0_8
-  vp6d = 0.0_8
-  do k=ke,1,-1
-    do j=je,1,-1
-      do i=ie,1,-1
-        call popcontrol1b(branch)
-        if (branch .ne. 0) vold(i, j, k) = -vold(i, j, k)
-        tempd = sixth*vold(i, j, k)
-        vp1d = vp1d + tempd
-        vp2d = vp2d + tempd
-        vp3d = vp3d + tempd
-        vp4d = vp4d + tempd
-        vp5d = vp5d + tempd
-        vp6d = vp6d + tempd
-        vold(i, j, k) = 0.0_8
-        l = i - 1
-        m = j - 1
-        n = k - 1
-        call volpym_b(x(i, j, n, 1), xd(i, j, n, 1), x(i, j, n, 2), xd(i&
-&               , j, n, 2), x(i, j, n, 3), xd(i, j, n, 3), x(l, j, n, 1)&
-&               , xd(l, j, n, 1), x(l, j, n, 2), xd(l, j, n, 2), x(l, j&
-&               , n, 3), xd(l, j, n, 3), x(l, m, n, 1), xd(l, m, n, 1), &
-&               x(l, m, n, 2), xd(l, m, n, 2), x(l, m, n, 3), xd(l, m, n&
-&               , 3), x(i, m, n, 1), xd(i, m, n, 1), x(i, m, n, 2), xd(i&
-&               , m, n, 2), x(i, m, n, 3), xd(i, m, n, 3), vp6, vp6d)
-        vp6d = 0.0_8
-        call volpym_b(x(i, j, k, 1), xd(i, j, k, 1), x(i, j, k, 2), xd(i&
-&               , j, k, 2), x(i, j, k, 3), xd(i, j, k, 3), x(i, m, k, 1)&
-&               , xd(i, m, k, 1), x(i, m, k, 2), xd(i, m, k, 2), x(i, m&
-&               , k, 3), xd(i, m, k, 3), x(l, m, k, 1), xd(l, m, k, 1), &
-&               x(l, m, k, 2), xd(l, m, k, 2), x(l, m, k, 3), xd(l, m, k&
-&               , 3), x(l, j, k, 1), xd(l, j, k, 1), x(l, j, k, 2), xd(l&
-&               , j, k, 2), x(l, j, k, 3), xd(l, j, k, 3), vp5, vp5d)
-        vp5d = 0.0_8
-        call volpym_b(x(i, m, k, 1), xd(i, m, k, 1), x(i, m, k, 2), xd(i&
-&               , m, k, 2), x(i, m, k, 3), xd(i, m, k, 3), x(i, m, n, 1)&
-&               , xd(i, m, n, 1), x(i, m, n, 2), xd(i, m, n, 2), x(i, m&
-&               , n, 3), xd(i, m, n, 3), x(l, m, n, 1), xd(l, m, n, 1), &
-&               x(l, m, n, 2), xd(l, m, n, 2), x(l, m, n, 3), xd(l, m, n&
-&               , 3), x(l, m, k, 1), xd(l, m, k, 1), x(l, m, k, 2), xd(l&
-&               , m, k, 2), x(l, m, k, 3), xd(l, m, k, 3), vp4, vp4d)
-        vp4d = 0.0_8
-        call volpym_b(x(i, j, k, 1), xd(i, j, k, 1), x(i, j, k, 2), xd(i&
-&               , j, k, 2), x(i, j, k, 3), xd(i, j, k, 3), x(l, j, k, 1)&
-&               , xd(l, j, k, 1), x(l, j, k, 2), xd(l, j, k, 2), x(l, j&
-&               , k, 3), xd(l, j, k, 3), x(l, j, n, 1), xd(l, j, n, 1), &
-&               x(l, j, n, 2), xd(l, j, n, 2), x(l, j, n, 3), xd(l, j, n&
-&               , 3), x(i, j, n, 1), xd(i, j, n, 1), x(i, j, n, 2), xd(i&
-&               , j, n, 2), x(i, j, n, 3), xd(i, j, n, 3), vp3, vp3d)
-        vp3d = 0.0_8
-        call volpym_b(x(l, j, k, 1), xd(l, j, k, 1), x(l, j, k, 2), xd(l&
-&               , j, k, 2), x(l, j, k, 3), xd(l, j, k, 3), x(l, m, k, 1)&
-&               , xd(l, m, k, 1), x(l, m, k, 2), xd(l, m, k, 2), x(l, m&
-&               , k, 3), xd(l, m, k, 3), x(l, m, n, 1), xd(l, m, n, 1), &
-&               x(l, m, n, 2), xd(l, m, n, 2), x(l, m, n, 3), xd(l, m, n&
-&               , 3), x(l, j, n, 1), xd(l, j, n, 1), x(l, j, n, 2), xd(l&
-&               , j, n, 2), x(l, j, n, 3), xd(l, j, n, 3), vp2, vp2d)
-        vp2d = 0.0_8
-        call volpym_b(x(i, j, k, 1), xd(i, j, k, 1), x(i, j, k, 2), xd(i&
-&               , j, k, 2), x(i, j, k, 3), xd(i, j, k, 3), x(i, j, n, 1)&
-&               , xd(i, j, n, 1), x(i, j, n, 2), xd(i, j, n, 2), x(i, j&
-&               , n, 3), xd(i, j, n, 3), x(i, m, n, 1), xd(i, m, n, 1), &
-&               x(i, m, n, 2), xd(i, m, n, 2), x(i, m, n, 3), xd(i, m, n&
-&               , 3), x(i, m, k, 1), xd(i, m, k, 1), x(i, m, k, 2), xd(i&
-&               , m, k, 2), x(i, m, k, 3), xd(i, m, k, 3), vp1, vp1d)
-        vp1d = 0.0_8
-        call popreal8(zp)
-        tempd0 = eighth*zpd
-        xd(i, j, k, 3) = xd(i, j, k, 3) + tempd0
-        xd(i, m, k, 3) = xd(i, m, k, 3) + tempd0
-        xd(i, m, n, 3) = xd(i, m, n, 3) + tempd0
-        xd(i, j, n, 3) = xd(i, j, n, 3) + tempd0
-        xd(l, j, k, 3) = xd(l, j, k, 3) + tempd0
-        xd(l, m, k, 3) = xd(l, m, k, 3) + tempd0
-        xd(l, m, n, 3) = xd(l, m, n, 3) + tempd0
-        xd(l, j, n, 3) = xd(l, j, n, 3) + tempd0
-        call popreal8(yp)
-        tempd1 = eighth*ypd
-        xd(i, j, k, 2) = xd(i, j, k, 2) + tempd1
-        xd(i, m, k, 2) = xd(i, m, k, 2) + tempd1
-        xd(i, m, n, 2) = xd(i, m, n, 2) + tempd1
-        xd(i, j, n, 2) = xd(i, j, n, 2) + tempd1
-        xd(l, j, k, 2) = xd(l, j, k, 2) + tempd1
-        xd(l, m, k, 2) = xd(l, m, k, 2) + tempd1
-        xd(l, m, n, 2) = xd(l, m, n, 2) + tempd1
-        xd(l, j, n, 2) = xd(l, j, n, 2) + tempd1
-        call popreal8(xp)
-        tempd2 = eighth*xpd
-        xd(i, j, k, 1) = xd(i, j, k, 1) + tempd2
-        xd(i, m, k, 1) = xd(i, m, k, 1) + tempd2
-        xd(i, m, n, 1) = xd(i, m, n, 1) + tempd2
-        xd(i, j, n, 1) = xd(i, j, n, 1) + tempd2
-        xd(l, j, k, 1) = xd(l, j, k, 1) + tempd2
-        xd(l, m, k, 1) = xd(l, m, k, 1) + tempd2
-        xd(l, m, n, 1) = xd(l, m, n, 1) + tempd2
-        xd(l, j, n, 1) = xd(l, j, n, 1) + tempd2
-        xpd = 0.0_8
-        ypd = 0.0_8
-        zpd = 0.0_8
-      end do
-    end do
-  end do
-
-contains
-!  differentiation of volpym in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: xp yp zp xa xb xc xd ya yb
-!                yc yd za zb zc zd volume
-!   with respect to varying inputs: xp yp zp xa xb xc xd ya yb
-!                yc yd za zb zc zd
-!        ================================================================
-  subroutine volpym_b(xa, xad, ya, yad, za, zad, xb, xbd, yb, ybd, zb, &
-&   zbd, xc, xcd, yc, ycd, zc, zcd, xd, xdd, yd, ydd, zd, zdd, volume, &
-&   volumed)
-!
-!        ****************************************************************
-!        *                                                              *
-!        * volpym computes 6 times the volume of a pyramid. node p,     *
-!        * whose coordinates are set in the subroutine metric itself,   *
-!        * is the top node and a-b-c-d is the quadrilateral surface.    *
-!        * it is assumed that the cross product vca * vdb points in     *
-!        * the direction of the top node. here vca is the diagonal      *
-!        * running from node c to node a and vdb the diagonal from      *
-!        * node d to node b.                                            *
-!        *                                                              *
-!        ****************************************************************
-!
-    use precision
-    implicit none
-!
-!        function type.
-!
-    real(kind=realtype) :: volume
-    real(kind=realtype) :: volumed
-!
-!        function arguments.
-!
-    real(kind=realtype), intent(in) :: xa, ya, za, xb, yb, zb
-    real(kind=realtype) :: xad, yad, zad, xbd, ybd, zbd
-    real(kind=realtype), intent(in) :: xc, yc, zc, xd, yd, zd
-    real(kind=realtype) :: xcd, ycd, zcd, xdd, ydd, zdd
-!
-!        ****************************************************************
-!        *                                                              *
-!        * begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
-!
-    real(kind=realtype) :: tempd
-    real(kind=realtype) :: tempd7
-    real(kind=realtype) :: tempd6
-    real(kind=realtype) :: tempd5
-    real(kind=realtype) :: tempd4
-    real(kind=realtype) :: tempd3
-    real(kind=realtype) :: tempd2
-    real(kind=realtype) :: tempd1
-    real(kind=realtype) :: tempd0
-    tempd = ((ya-yc)*(zb-zd)-(za-zc)*(yb-yd))*volumed
-    tempd0 = -(fourth*tempd)
-    tempd1 = (xp-fourth*(xa+xb+xc+xd))*volumed
-    tempd2 = ((za-zc)*(xb-xd)-(xa-xc)*(zb-zd))*volumed
-    tempd3 = -(fourth*tempd2)
-    tempd4 = (yp-fourth*(ya+yb+yc+yd))*volumed
-    tempd5 = ((xa-xc)*(yb-yd)-(ya-yc)*(xb-xd))*volumed
-    tempd6 = -(fourth*tempd5)
-    tempd7 = (zp-fourth*(za+zb+zc+zd))*volumed
-    xpd = xpd + tempd
-    xad = xad + (yb-yd)*tempd7 - (zb-zd)*tempd4 + tempd0
-    xbd = xbd + (za-zc)*tempd4 - (ya-yc)*tempd7 + tempd0
-    xcd = xcd + (zb-zd)*tempd4 - (yb-yd)*tempd7 + tempd0
-    xdd = xdd + (ya-yc)*tempd7 - (za-zc)*tempd4 + tempd0
-    yad = yad + tempd3 - (xb-xd)*tempd7 + (zb-zd)*tempd1
-    ycd = ycd + (xb-xd)*tempd7 + tempd3 - (zb-zd)*tempd1
-    zbd = zbd + tempd6 - (xa-xc)*tempd4 + (ya-yc)*tempd1
-    zdd = zdd + tempd6 + (xa-xc)*tempd4 - (ya-yc)*tempd1
-    zad = zad + tempd6 + (xb-xd)*tempd4 - (yb-yd)*tempd1
-    zcd = zcd + tempd6 - (xb-xd)*tempd4 + (yb-yd)*tempd1
-    ybd = ybd + (xa-xc)*tempd7 + tempd3 - (za-zc)*tempd1
-    ydd = ydd + tempd3 - (xa-xc)*tempd7 + (za-zc)*tempd1
-    ypd = ypd + tempd2
-    zpd = zpd + tempd5
-  end subroutine volpym_b
-!        ================================================================
-  subroutine volpym(xa, ya, za, xb, yb, zb, xc, yc, zc, xd, yd, zd, &
-&   volume)
-!
-!        ****************************************************************
-!        *                                                              *
-!        * volpym computes 6 times the volume of a pyramid. node p,     *
-!        * whose coordinates are set in the subroutine metric itself,   *
-!        * is the top node and a-b-c-d is the quadrilateral surface.    *
-!        * it is assumed that the cross product vca * vdb points in     *
-!        * the direction of the top node. here vca is the diagonal      *
-!        * running from node c to node a and vdb the diagonal from      *
-!        * node d to node b.                                            *
-!        *                                                              *
-!        ****************************************************************
-!
-    use precision
-    implicit none
-!
-!        function type.
-!
-    real(kind=realtype) :: volume
-!
-!        function arguments.
-!
-    real(kind=realtype), intent(in) :: xa, ya, za, xb, yb, zb
-    real(kind=realtype), intent(in) :: xc, yc, zc, xd, yd, zd
-!
-!        ****************************************************************
-!        *                                                              *
-!        * begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
-!
-    volume = (xp-fourth*(xa+xb+xc+xd))*((ya-yc)*(zb-zd)-(za-zc)*(yb-yd))&
-&     + (yp-fourth*(ya+yb+yc+yd))*((za-zc)*(xb-xd)-(xa-xc)*(zb-zd)) + (&
-&     zp-fourth*(za+zb+zc+zd))*((xa-xc)*(yb-yd)-(ya-yc)*(xb-xd))
-  end subroutine volpym
 end subroutine metric_block_b

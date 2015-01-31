@@ -77,8 +77,9 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   if (useSpatial) then
 
      call xhalo_block
+     call volume_block
      call metric_block
-     !call boundaryNormals
+     call boundaryNormals
 
 #ifdef TAPENADE_REVERSE
      if (equations == RANSEquations .and. useApproxWallDistance) then 
@@ -266,3 +267,32 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   call getCostFunction2(force, moment, sepSensor, Cavitation, alpha, beta, liftIndex)
 #endif
 end subroutine block_res
+
+subroutine resScale
+  
+  use blockPointers
+  use flowVarRefState     
+  use inputIteration
+
+  implicit none
+
+  ! Local Variables
+  integer(kind=intType) :: i, j, k, l
+  real(kind=realType) :: ovol
+  
+ ! Divide through by the reference volume
+
+  do k=2, kl
+     do j=2, jl
+        do i=2, il
+           oVol = one/vol(i,j,k)
+           do l=1, nwf
+              dw(i, j, k, l) = (dw(i, j, k, l) + fw(i, j, k, l))* ovol
+           end do
+           do l=nwf, nt1
+              dw(i, j, k, l) = (dw(i, j, k, l) + fw(i, j, k, l))* ovol * turbResScale
+           end do
+        end do
+     end do
+  end do
+end subroutine resScale
