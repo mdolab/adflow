@@ -22,6 +22,7 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective, frozenTurb)
   use stencils
   use diffSizes
   use communication
+  use adjointVars
   implicit none
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
@@ -129,7 +130,15 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective, frozenTurb)
 
   ! Allocate the memory we need for this block to do the forward
   ! mode derivatives and copy reference values
-  call alloc_derivative_values(level)
+  if (.not. derivVarsAllocated) then 
+     call alloc_derivative_values(level)
+  end if
+  do nn=1,nDom
+     do sps=1,nTimeIntervalsSpectral
+        call setPointers(nn, level, sps)
+        call zeroADSeeds(nn,level, sps)
+     end do
+  end do
 
   ! Master Domain Loop
   domainLoopAD: do nn=1,nDom
@@ -450,11 +459,7 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective, frozenTurb)
            end do kLoop
         end do colorLoop
      end do spectralLoop
-
   end do domainLoopAD
-
-  ! Deallocate and reset Values
-  call dealloc_derivative_values(level)
 
   if (useObjective .and. useAD) then
      call MatAssemblyBegin(dFcdx, MAT_FINAL_ASSEMBLY, ierr)

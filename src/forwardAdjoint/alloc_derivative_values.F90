@@ -18,6 +18,7 @@ subroutine alloc_derivative_values(level)
 #ifndef USE_COMPLEX
   use bcroutines_b
 #endif
+  use adjointVars
   implicit none
 
   ! Input parameters
@@ -341,4 +342,5 @@ subroutine alloc_derivative_values(level)
   ssid = zero
   xxd = zero
 #endif 
+derivVarsAllocated = .True. 
 end subroutine alloc_derivative_values

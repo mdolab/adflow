@@ -35,6 +35,7 @@ subroutine releaseMemoryPart1
   use commSliding
   use commMixing
   use wallDistanceData
+  use adjointVars
   implicit none
   !
   !      Local variables
@@ -124,6 +125,11 @@ subroutine releaseMemoryPart1
      enddo
 
   enddo spectralLoop
+
+  ! derivative values
+  if (derivVarsAllocated) then 
+     call dealloc_derivative_values(1)
+  end if
 
   ! Bunch of extra sutff that hasn't been deallocated
   if (allocated(cycleStrategy)) then
