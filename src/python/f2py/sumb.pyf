@@ -1030,7 +1030,6 @@ python module libsumb
          integer(kind=inttype) :: ndesignrotcenz
          integer(kind=inttype) :: ndesignaoa
          integer(kind=inttype) :: ndesignrotceny
-         real(kind=realtype) allocatable,dimension(:) :: dida
          integer(kind=inttype) :: ndesignmachgrid
          integer(kind=inttype) :: ndesignmach
          integer(kind=inttype) :: ndesignlengthref
