@@ -32,6 +32,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   use diffSizes
   use NKSolverVars, only : diag
   use communication
+  use adjointVars
   implicit none
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
@@ -170,7 +171,16 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
 
   ! Allocate the additional memory we need for doing forward mode AD
   !  derivatives and copy any required reference values:
-  call alloc_derivative_values(level)
+  if (.not. derivVarsAllocated) then 
+     call alloc_derivative_values(level)
+  end if
+  do nn=1,nDom
+     do sps=1,nTimeIntervalsSpectral
+        call setPointers(nn, level, sps)
+        call zeroADSeeds(nn,level, sps)
+     end do
+  end do
+
   if (usePC) then 
      call referenceShockSensor
   end if
@@ -494,7 +504,6 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   if (.not. useAD) then 
      call resetFDReference(level)
   end if
-  call dealloc_derivative_values(level)
   
   if (useObjective .and. useAD) then
      call MatAssemblyBegin(dFcdw, MAT_FINAL_ASSEMBLY, ierr)

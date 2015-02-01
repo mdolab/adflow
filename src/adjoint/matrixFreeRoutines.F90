@@ -68,7 +68,16 @@ subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useSta
 
   ! Allocate the memory we need for this block to do the forward
   ! mode derivatives and copy reference values
-  call alloc_derivative_values(level)
+  ! Allocate the memory for reverse
+  if (.not. derivVarsAllocated) then 
+     call alloc_derivative_values(level)
+  end if
+  do nn=1,nDom
+     do sps=1,nTimeIntervalsSpectral
+        call setPointers(nn, level, sps)
+        call zeroADSeeds(nn,level, sps)
+     end do
+  end do
 
   ! All arrays are zeroed in alloc_deriv_values, but we still need to
   ! zero the extra variables here
@@ -210,9 +219,6 @@ subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useSta
   call mpi_allreduce(funcsLocalDot, funcsDot, costSize, sumb_real, mpi_sum, SUmb_comm_world, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  ! Finish up the tear-down of this routine
-  call dealloc_derivative_values(level)
-
   ! Reset the correct equation parameters if we were useing the frozen
   ! Turbulent 
   if (resetToRANS) then
@@ -324,7 +330,15 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
   end if
 
   ! Allocate the memory for reverse
-  call alloc_derivative_values(level)
+  if (.not. derivVarsAllocated) then 
+     call alloc_derivative_values(level)
+  end if
+  do nn=1,nDom
+     do sps=1,nTimeIntervalsSpectral
+        call setPointers(nn, level, sps)
+        call zeroADSeeds(nn,level, sps)
+     end do
+  end do
 
   ! Zero the function seeds
   forced= zero
@@ -498,8 +512,6 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
      call VecResetArray(x_like, ierr)
      call EChk(ierr,__FILE__,__LINE__)
   end if
-
-  call dealloc_derivative_values(level)
 
   ! Reset the correct equation parameters if we were useing the frozen
   ! Turbulent 

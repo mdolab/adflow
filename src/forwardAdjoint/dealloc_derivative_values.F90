@@ -14,6 +14,7 @@ subroutine dealloc_derivative_values(level)
 #ifndef USE_COMPLEX
   use bcroutines_b
 #endif
+  use adjointVars
   implicit none
 
   ! Input Parameters
@@ -203,4 +204,5 @@ subroutine dealloc_derivative_values(level)
   deallocate(ww0d, ww1d, ww2d, ww3d, pp0d, pp1d, pp2d, pp3d, rlv0d, rlv1d, rlv2d, rlv3d, &
        rev0d, rev1d, rev2d, rev3d, ssid, xxd)
 #endif
+derivVarsAllocated = .False.
 end subroutine dealloc_derivative_values
