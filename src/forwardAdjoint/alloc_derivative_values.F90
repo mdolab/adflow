@@ -73,45 +73,6 @@ subroutine alloc_derivative_values(level)
         ! type. Note we are just doing all cells including corners
         ! halos..those values are not used anyway. 
         allocate(flowDoms(nn,1,sps)%shockSensor(0:ib,0:jb,0:kb))
-        shockSensor => flowDoms(nn,1,sps)%shockSensor
-        if (equations == EulerEquations .or. spaceDiscr == dissMatrix) then 
-           !shockSensor is Pressure
-           do k=0,kb
-              do j=0,jb
-                 do i=0,ib
-                    shockSensor(i,j,k) = P(i,j,k)
-                 end do
-              end do
-           end do
-        else
-           ! Enthalpy is used instead
-           do k=0,kb
-              do j=2,jl
-                 do i=2,il
-                    shockSensor(i,j,k) = p(i,j,k)/(w(i,j,k,irho)**gamma(i,j,k))
-                 enddo
-              enddo
-           enddo
-           
-           do k=2,kl
-              do j=2,jl
-                 shockSensor(0, j,k) = p(0, j,k)/(w(0, j,k,irho)**gamma(0, j,k))
-                 shockSensor(1, j,k) = p(1, j,k)/(w(1, j,k,irho)**gamma(1, j,k))
-                 shockSensor(ie,j,k) = p(ie,j,k)/(w(ie,j,k,irho)**gamma(ie,j,k))
-                 shockSensor(ib,j,k) = p(ib,j,k)/(w(ib,j,k,irho)**gamma(ib,j,k))
-              enddo
-           enddo
-           
-           do k=2,kl
-              do i=2,il
-                 shockSensor(i,0, k) = p(i,0, k)/(w(i,0, k,irho)**gamma(i,0, k))
-                 shockSensor(i,1, k) = p(i,1, k)/(w(i,1, k,irho)**gamma(i,1, k))
-                 shockSensor(i,je,k) = p(i,je,k)/(w(i,je,k,irho)**gamma(i,je,k))
-                 shockSensor(i,jb,k) = p(i,jb,k)/(w(i,jb,k,irho)**gamma(i,jb,k))
-              enddo
-           enddo
-        end if
-
         allocate(flowDomsd(nn,1,sps)%x(0:ie,0:je,0:ke,3), stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
         
@@ -301,11 +262,10 @@ subroutine alloc_derivative_values(level)
         call setPointers(nn,level,sps)
         shockSensor => flowDoms(nn,level,sps)%shockSensor
 
-        call block_res(nn, sps, .False., alpha, beta, liftIndex, force, moment, sepSensor, Cavitation, .False.)
-
+   
         allocate(flowDomsd(nn,1,sps)%wtmp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
-
+        
         allocate(flowDomsd(nn,1,sps)%dwtmp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
         
@@ -317,45 +277,7 @@ subroutine alloc_derivative_values(level)
         
         allocate(flowDomsd(nn,1,sps)%dw_deriv(0:ib,0:jb,0:kb,1:nw,1:nw),stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
-        
-        flowDomsd(nn,1,sps)%dw_deriv(:,:,:,:,:) = 0.0
 
-        ! Set the values
-        do l=1,nw
-           do k=0,kb 
-              do j=0,jb
-                 do i=0,ib
-                    flowdomsd(nn,1,sps)%wtmp(i,j,k,l)  = w(i,j,k,l)
-                    flowdomsd(nn,1,sps)%dwtmp(i,j,k,l) = dw(i,j,k,l)
-                 end do
-              end do
-           end do
-        end do
-
-        do l=1,3
-           do k=0,ke
-              do j=0,je
-                 do i=0,ie
-                    flowdomsd(nn,1,sps)%xtmp(i,j,k,l)  = x(i,j,k,l)
-                 end do
-              end do
-           end do
-        end do
-             
-        call initRes_block(1, nwf, nn, sps)
-        
-        ! Note: we have to divide by the volume for dwtmp2 since
-        ! normally, dw would have been mulitpiled by 1/Vol in block_res 
-        
-        do l=1,nw
-           do k=0,kb 
-              do j=0,jb
-                 do i=0,ib
-                    flowdomsd(nn,1,sps)%dwtmp2(i,j,k,l) = dw(i,j,k,l)/vol(i,j,k)
-                 end do
-              end do
-           end do
-        end do
      end do allocspectralLoop
   end do
 

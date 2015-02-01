@@ -45,6 +45,8 @@ FILES_TO_COMPLEXIFY = \
 		setDiffSizes.F90\
 		writeMatrices.F90\
 		zeroADSeeds.F90\
+		setFDReference.F90\
+		referenceShockSensor.F90\
 
 FILES_TO_COPY = setupStateResidualMatrix.F90\
 		setupSpatialResidualMatrix.F90\
