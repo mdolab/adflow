@@ -62,7 +62,6 @@ FF90_OBJECTS2 =  \
 		viscousfluxapprox_b.o\
 		computeetotcellcpfit_b.o \
 	        inviscidcentralflux_b.o\
-	        inviscidcentralflux_mod_b.o\
                 saeddyviscosity_b.o\
 		computeeddyviscosity_b.o\
 		unsteadyturbterm_b.o\

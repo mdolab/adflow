@@ -33,18 +33,6 @@ subroutine dealloc_derivative_values(level)
      deallocatespectral: do sps=1,nTimeIntervalsSpectral
         call setPointers(nn,level,sps)
 
-        ! Reset w and dw                            
-        do l=1,nw
-           do k=0,kb 
-              do j=0,jb
-                 do i=0,ib
-                    w(i,j,k,l) = flowdomsd(nn,1,sps)%wtmp(i,j,k,l)
-                    dw(i,j,k,l) = flowdomsd(nn,1,sps)%dwtmp(i,j,k,l)
-                 end do
-              end do
-           end do
-        end do
-          
         ! Deallocate memtory
         deallocate(&
              flowDomsd(nn,1,sps)%wtmp, &
