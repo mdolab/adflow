@@ -69,6 +69,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, mm, colInd
   logical :: resetToRANS
   real :: val
+
   ! Setup number of state variable based on turbulence assumption
   if ( frozenTurb ) then
      nState = nwf
@@ -170,7 +171,13 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   ! Allocate the additional memory we need for doing forward mode AD
   !  derivatives and copy any required reference values:
   call alloc_derivative_values(level)
+  if (usePC) then 
+     call referenceShockSensor
+  end if
 
+  if (.not. useAD) then 
+     call setFDReference(level)
+  end if
   ! Master Domain Loop
   domainLoopAD: do nn=1, nDom
 
@@ -224,16 +231,18 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
 
               ! Reset All States and possibe AD seeds
               do sps2 = 1, nTimeIntervalsSpectral
-                 do ll=1,nw
-                    do k=0,kb
-                       do j=0,jb
-                          do i=0,ib
-                             flowDoms(nn, level, sps2)%w(i,j,k,ll) =  flowDomsd(nn, 1, sps2)%wtmp(i,j,k,ll)
+                 if (.not. useAD) then 
+                    do ll=1,nw
+                       do k=0,kb
+                          do j=0,jb
+                             do i=0,ib
+                                flowDoms(nn, level, sps2)%w(i,j,k,ll) =  flowDomsd(nn, 1, sps2)%wtmp(i,j,k,ll)
+                             end do
                           end do
                        end do
                     end do
-                 end do
-
+                 end if
+                 
                  if (useAD) then
                     flowdomsd(nn, 1, sps2)%w = zero ! This is actually w seed
                  end if
@@ -482,6 +491,9 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   end do domainLoopAD
 
   ! Deallocate and reset values 
+  if (.not. useAD) then 
+     call resetFDReference(level)
+  end if
   call dealloc_derivative_values(level)
   
   if (useObjective .and. useAD) then

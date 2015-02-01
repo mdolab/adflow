@@ -499,7 +499,7 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
      call EChk(ierr,__FILE__,__LINE__)
   end if
 
-  call dealloc_derivative_values(level)!_bwd(level)
+  call dealloc_derivative_values(level)
 
   ! Reset the correct equation parameters if we were useing the frozen
   ! Turbulent 
@@ -1050,7 +1050,7 @@ subroutine dRdwTMatMult(A, vecX,  vecY, ierr)
   real(kind=realType), pointer :: wb_pointer(:)
   real(kind=realType) :: funcsBar(nCostFunction)
   logical :: useState, useSpatial
-  real(kind=realType) :: extraBar
+  real(kind=realType) :: extraBar(0)
   integer(kind=intType) :: spatialSize, extraSize
   integer(kind=intType) :: stateSize, costSize
   real(kind=realType), dimension(:), allocatable :: Xvbar
