@@ -57,7 +57,7 @@ subroutine solveAdjoint(RHS, psi, checkSolution, nState)
        write(*,10) "Solving ADjoint Transpose with PETSc..."
 
   call cpu_time(time(1))
-
+  call computeresidualnk
   ! Dump psi into psi_like1 and RHS into psi_like2
   call VecPlaceArray(psi_like1, psi, ierr)
   call EChk(ierr,__FILE__,__LINE__)
