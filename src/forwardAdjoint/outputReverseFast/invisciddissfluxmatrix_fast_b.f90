@@ -49,7 +49,7 @@ subroutine invisciddissfluxmatrix_fast_b()
 !
 !      local variables.
 !
-  integer(kind=inttype) :: i, j, k, ind
+  integer(kind=inttype) :: i, j, k, ind, ii
   real(kind=realtype) :: plim, sface
   real(kind=realtype) :: sfil, fis2, fis4
   real(kind=realtype) :: gammaavg, gm1, ovgm1, gm53
@@ -130,7 +130,6 @@ subroutine invisciddissfluxmatrix_fast_b()
   real(kind=realtype) :: temp12
   real(kind=realtype) :: temp49
   real(kind=realtype) :: tempd34
-  integer :: ii
   real(kind=realtype) :: temp11
   real(kind=realtype) :: temp48
   real(kind=realtype) :: tempd33

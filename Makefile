@@ -27,12 +27,12 @@ SUBDIR_SRC    = src/modules       \
 	        src/wallDistance  \
 		src/warping       \
 		src/bendingMomentAnalysis \
-		src/adjoint               \
                 src/adjoint/ADFirstAidKit \
                 src/adjoint/forcesOutput\
                 src/adjoint/forcesInput\
                 src/forwardAdjoint/outputReverse \
                 src/forwardAdjoint/outputReverseFast \
+		src/adjoint               \
                 src/forwardAdjoint \
                 src/forwardAdjoint/residualInput \
                 src/forwardAdjoint/outputForward \

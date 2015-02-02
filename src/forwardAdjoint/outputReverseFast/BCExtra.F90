@@ -72,11 +72,19 @@ subroutine applyAllBC_block_fast_b(secondHalo)
        end if
     end do
 
+    do nn=1,nBocos
+       if (bcType(nn) == eulerWall) then
+          call setBCPointers_fast_b(nn, .False.)
+          call bcEulerWall_fast_b(nn, secondHalo, correctForK)
+       end if
+    end do
+
+
     ! And now do the reverse pass
     ! ------------------------------------
     !  Adibatic Wall Boundary Condition 
     ! ------------------------------------
-    DO nn=nviscbocos,1,-1
+    DO nn=1,nviscbocos
        IF (bctype(nn) .EQ. nswalladiabatic) THEN
           CALL SETBCPOINTERS_fast_b(nn, .false.)
           CALL BCNSWALLADIABATIC_FAST_B(nn, secondhalo, correctfork)
@@ -86,7 +94,7 @@ subroutine applyAllBC_block_fast_b(secondHalo)
     ! ------------------------------------
     !  Symmetry Boundary Condition 
     ! ------------------------------------
-    DO nn=nbocos,1,-1
+    DO nn=1,nbocos
        IF (bctype(nn) .EQ. symm) THEN
           CALL SETBCPOINTERS_fast_b(nn, .false.)
           CALL BCSYMM_fast_b(nn, secondhalo)

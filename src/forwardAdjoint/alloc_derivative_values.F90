@@ -319,28 +319,6 @@ subroutine alloc_derivative_values(level)
        ssi(isizemax, jsizemax,3), xx(isizemax+1, jsizemax+1,3), stat=ierr)
   call EChk(ierr,__FILE__,__LINE__) 
 
-  ! Now zero these
-  ww0d = zero
-  ww1d = zero
-  ww2d = zero
-  ww3d = zero
-
-  pp0d = zero
-  pp1d = zero
-  pp2d = zero
-  pp3d = zero
-
-  rlv0d = zero
-  rlv1d = zero
-  rlv2d = zero
-  rlv3d = zero
-
-  rev0d = zero
-  rev1d = zero
-  rev2d = zero
-  rev3d = zero
-  ssid = zero
-  xxd = zero
 #endif 
 derivVarsAllocated = .True. 
 end subroutine alloc_derivative_values

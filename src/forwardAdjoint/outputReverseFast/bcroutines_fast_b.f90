@@ -806,16 +806,16 @@ branch = myIntStack(myIntPtr)
   end subroutine bcnswallisothermal
 !  differentiation of bceulerwall in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *rev0 *rev1 *rev2 *pp0 *pp1
-!                *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2
+!                *pp2 *pp3 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2
 !   with respect to varying inputs: *rev0 *rev1 *rev2 *pp0 *pp1
-!                *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2
+!                *pp2 *pp3 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2
 !   rw status of diff variables: *rev0:in-out *rev1:in-out *rev2:incr
-!                *pp0:in-out *pp1:in-out *pp2:incr *rlv0:in-out
+!                *pp0:in-out *pp1:in-out *pp2:incr *pp3:incr *rlv0:in-out
 !                *rlv1:in-out *rlv2:incr *ww0:in-out *ww1:in-out
 !                *ww2:incr
 !   plus diff mem management of: rev0:in rev1:in rev2:in pp0:in
-!                pp1:in pp2:in rlv0:in rlv1:in rlv2:in ww0:in ww1:in
-!                ww2:in
+!                pp1:in pp2:in pp3:in rlv0:in rlv1:in rlv2:in ww0:in
+!                ww1:in ww2:in
   subroutine bceulerwall_fast_b(nn, secondhalo, correctfork)
 !
 ! ******************************************************************
@@ -970,6 +970,7 @@ branch = myIntStack(myIntPtr)
       do ii=0,isize*jsize-1
         j = mod(ii, isize) + istart
         k = ii/isize + jstart
+        pp3d(j, k) = pp3d(j, k) + gradd(j, k)
         pp2d(j, k) = pp2d(j, k) - gradd(j, k)
         gradd(j, k) = 0.0_8
       end do
