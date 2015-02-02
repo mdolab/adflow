@@ -1149,6 +1149,13 @@ python module libsumb
             integer(kind=inttype) :: spatialsize
         end subroutine testrevspatial
 
+        subroutine computematrixfreeproductbwdfast(dwbar,wbar,statesize) ! in :test:test.F90
+          real(kind=realtype) dimension(statesize),intent(in) :: dwbar
+          real(kind=realtype) dimension(statesize),intent(out),depend(statesize) :: wbar
+          integer(kind=inttype), optional,check(len(dwbar)>=statesize),depend(dwbar) :: statesize=len(dwbar)
+        end subroutine computematrixfreeproductbwdfast
+
+
     end interface 
 
 #ifdef USE_COMPLEX

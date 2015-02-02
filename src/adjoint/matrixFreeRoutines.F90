@@ -534,6 +534,261 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
 
 end subroutine computeMatrixFreeProductBwd
 
+subroutine computeMatrixFreeProductBwdFast(dwbar, wbar, stateSize)
+  ! This is the "Fast" ie. State variable only version of the reverse
+  ! mode computation. It is intended to compute dRdw^T product
+  ! ONLY. The main purpose is for fast matrix-vector products for the
+  ! actual adjoint solve. 
+  use blockPointers
+  use inputDiscretization
+  use inputTimeSpectral 
+  use inputPhysics
+  use flowVarRefState
+  use inputAdjoint       
+  use iteration
+  use inputIteration
+  use saModule_fast_b
+  use bcroutines_b
+  use adjointvars
+  use communication
+  use paramTurb
+  implicit none
+
+  ! Input Variables
+  integer(kind=intType), intent(in) :: stateSize
+  real(kind=realType), dimension(stateSize), intent(in) :: dwbar
+
+  ! Ouput Variables
+  real(kind=realType), dimension(stateSize), intent(out) :: wbar
+
+  ! Working variables
+  integer(kind=intType) :: ierr, nn, sps, i, j, k, l, ii
+  integer(kind=intType) :: nState, level
+  logical :: resetToRans
+  real(kind=realType) :: ovol, timea, timeb, totaltime
+
+  ! Setup number of state variable based on turbulence assumption
+  if ( frozenTurbulence ) then
+     nState = nwf
+  else
+     nState = nw
+  endif
+  ! Assembling matrix on coarser levels is not entirely implemented yet. 
+  level = 1
+  currentLevel = level
+  groundLevel = level
+
+  ! Determine if we want to use frozenTurbulent Adjoint
+  resetToRANS = .False. 
+  if (frozenTurbulence .and. equations == RANSEquations) then
+     equations = NSEquations 
+     resetToRANS = .True.
+  end if
+
+  ! Allocate the memory we need for this block to do the forward
+  ! mode derivatives and copy reference values
+  !call alloc_derivative_values( level)
+  if (.not. derivVarsAllocated) then 
+     call alloc_derivative_values(level)
+  end if 
+
+  do nn=1,nDom
+     do sps=1,nTimeIntervalsSpectral
+        flowDomsd(nn, level, sps)%w = zero
+        ! flowDomsd(nn, level, sps)%dw = zero
+        ! flowDomsd(nn, level, sps)%fw = zero
+        ! flowDomsd(nn, level, sps)%scratch = zero
+        
+        ! flowDomsd(nn, level, sps)%p = zero
+        ! flowDomsd(nn, level, sps)%aa = zero
+        
+        ! flowDomsd(nn, level, sps)%rlv = zero
+        ! flowDomsd(nn, level, sps)%rev = zero
+        
+        ! flowDomsd(nn, level, sps)%radI = zero
+        ! flowDomsd(nn, level, sps)%radJ = zero
+        ! flowDomsd(nn, level, sps)%radK = zero
+        
+        ! flowDomsd(nn, level, sps)%ux = zero
+        ! flowDomsd(nn, level, sps)%uy = zero
+        ! flowDomsd(nn, level, sps)%uz = zero
+        ! flowDomsd(nn, level, sps)%vx = zero
+        ! flowDomsd(nn, level, sps)%vy = zero
+        ! flowDomsd(nn, level, sps)%vz = zero
+        ! flowDomsd(nn, level, sps)%wx = zero
+        ! flowDomsd(nn, level, sps)%wy = zero
+        ! flowDomsd(nn, level, sps)%wz = zero
+        ! flowDomsd(nn, level, sps)%qx = zero
+        ! flowDomsd(nn, level, sps)%qy = zero
+        ! flowDomsd(nn, level, sps)%qz = zero
+        
+        ! if (sps == 1) then
+        !    flowDomsd(nn,1,sps)%bmti1 = zero
+        !    flowDomsd(nn,1,sps)%bmti2 = zero
+        !    flowDomsd(nn,1,sps)%bmtj1 = zero
+        !    flowDomsd(nn,1,sps)%bmtj2 = zero
+        !    flowDomsd(nn,1,sps)%bmtk1 = zero
+        !    flowDomsd(nn,1,sps)%bmtk2 = zero
+        !    flowDomsd(nn,1,sps)%bvti1 = zero
+        !    flowDomsd(nn,1,sps)%bvti2 = zero
+        !    flowDomsd(nn,1,sps)%bvtj1 = zero
+        !    flowDomsd(nn,1,sps)%bvtj2 = zero
+        !    flowDomsd(nn,1,sps)%bvtk1 = zero
+        !    flowDomsd(nn,1,sps)%bvtk2 = zero
+        ! end if
+     end do
+  end do
+
+  ! ! Now zero these
+  ! ww0d = zero
+  ! ww1d = zero
+  ! ww2d = zero
+  ! ww3d = zero
+
+  ! pp0d = zero
+  ! pp1d = zero
+  ! pp2d = zero
+  ! pp3d = zero
+
+  ! rlv0d = zero
+  ! rlv1d = zero
+  ! rlv2d = zero
+  ! rlv3d = zero
+
+  ! rev0d = zero
+  ! rev1d = zero
+  ! rev2d = zero
+  ! rev3d = zero
+
+  ii = 0
+  
+  do nn=1,nDom
+     do sps=1,nTimeIntervalsSpectral
+        ! Set pointers and derivative pointers
+        call setPointers_d(nn, level, sps)
+        do k=2,kl
+           do j=2,jl
+              do i=2,il
+                 ovol = one/vol(i,j,k)
+                 do l=1,nwf
+                    dwd(i,j,k,l) = dwbar(ii+ l)*ovol
+                    fwd(i,j,k,l) = dwd(i,j,k,l)
+                 end do
+                 do l=nt1,nState
+                    dwd(i,j,k,l) = dwbar(ii+ l)*ovol*turbresscale
+                    fwd(i,j,k,l) = dwd(i,j,k,l)
+                 end do
+                 ii = ii + nState
+              end do
+           end do
+        end do
+
+        call pushreal8array(radk, size(radk, 1)*size(radk, 2)*size(radk, 3))
+        call pushreal8array(radj, size(radj, 1)*size(radj, 2)*size(radj, 3))
+        call pushreal8array(radi, size(radi, 1)*size(radi, 2)*size(radi, 3))
+
+        if (viscous) then 
+           call viscousFlux_fast_b
+           call allnodalgradients_fast_b
+           call computespeedofsoundsquared_fast_b
+        end if
+        
+        select case (spaceDiscr)
+        case(dissScalar) 
+           call inviscidDissFluxScalar_fast_b
+        case(dissMatrix)
+           call inviscidDissFluxMatrix_fast_b
+        end select
+
+        call inviscidcentralflux_fast_b
+
+        if (equations == RANSEquations) then 
+           select case(turbModel)
+           case (spalartAllmaras)
+              cv13    = rsaCv1**3
+              kar2Inv = one/(rsaK**2)
+              cw36    = rsaCw3**6
+              cb3Inv  = one/rsaCb3
+              call saresscale_fast_b()
+              call saviscous_fast_b()
+              call turbadvection_fast_b(1_inttype, 1_inttype, itu1-1, qq)
+              call sasource_fast_b()
+           case default
+              call terminate("matrixFreeRoutines", &
+                   "Only SA turbulence adjoint implemented")
+           end select
+
+           ! Do the production term
+           select case  (turbprod) 
+           case (strain) 
+              call prodsmag2_fast_b()
+           case (vorticity) 
+              call prodwmag2_fast_b()
+           case (katolaunder) 
+              call prodkatolaunder_fast_b()
+           end select
+                 
+           ! And the turbulence BCs
+           call applyallturbbcthisblock_b(.true.)
+           call bcturbtreatment_b()
+        end if
+        
+        call timestep_block_fast_b(.False.)
+        !call applyallbc_block_b(.True.)
+        call applyAllBC_block_fast_b(.True.)
+        
+        call popreal8array(radi, size(radi, 1)*size(radi, 2)*size(radi, 3))
+        call popreal8array(radj, size(radj, 1)*size(radj, 2)*size(radj, 3))
+        call popreal8array(radk, size(radk, 1)*size(radk, 2)*size(radk, 3))
+
+     end do
+  end do
+  
+  ! Communicate all the derivative values in reverse
+  call whalo2_b(1, 1, nw, .True., .True., .True.)
+
+  ii = 0
+  do nn=1,nDom
+     do sps=1,nTimeIntervalsSpectral
+        call setPointers_d(nn, level, sps)
+
+        if (equations == RANSEquations) then 
+           select case(turbModel)
+           case (spalartAllmaras)
+              call saeddyviscosity_b
+           end select
+        end if
+
+        if (viscous) then 
+           call computelamviscosity_fast_b
+        end if
+        
+        call computepressuresimple_fast_b
+
+        ! We can put stuff directly into wbar with no assembly; the
+        ! whalo_b already takes care of it. 
+        do k=2, kl
+           do j=2,jl
+              do i=2,il
+                 do l=1,nState
+                    ii =ii + 1
+                    wbar(ii) = flowdomsd(nn, level, sps)%w(i,j,k,l)
+                 end do
+              end do
+           end do
+        end do
+     end do
+  end do
+  
+  ! Reset the correct equation parameters if we are using the frozen
+  ! Turbulent
+  if (resetToRANS) then
+     equations = RANSEquations
+  end if
+
+end subroutine computeMatrixFreeProductBwdFast
+
+
 subroutine whalo1to1d(level, start, end, commPressure,       &
      commVarGamma, commLamVis, commEddyVis, &
      commPattern, internal)
@@ -1060,12 +1315,12 @@ subroutine dRdwTMatMult(A, vecX,  vecY, ierr)
 
   real(kind=realType), pointer :: dwb_pointer(:)
   real(kind=realType), pointer :: wb_pointer(:)
-  real(kind=realType) :: funcsBar(nCostFunction)
-  logical :: useState, useSpatial
-  real(kind=realType) :: extraBar(0)
-  integer(kind=intType) :: spatialSize, extraSize
-  integer(kind=intType) :: stateSize, costSize
-  real(kind=realType), dimension(:), allocatable :: Xvbar
+  ! real(kind=realType) :: funcsBar(nCostFunction)
+  ! logical :: useState, useSpatial
+  ! real(kind=realType) :: extraBar
+  ! integer(kind=intType) :: spatialSize, extraSize
+  ! integer(kind=intType) :: stateSize, costSize
+  ! real(kind=realType), dimension(:), allocatable :: Xvbar
 #ifndef USE_COMPLEX
 
   call VecGetArrayF90(vecX, dwb_pointer, ierr)
@@ -1074,18 +1329,20 @@ subroutine dRdwTMatMult(A, vecX,  vecY, ierr)
   call VecGetArrayF90(VecY, wb_pointer, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  funcsBar = zero
-  useSpatial  = .False.
-  useState    = .True.
-  spatialSize =  3 * nNodesLocal(1_intType)*nTimeIntervalsSpectral
-  extraSize   = 0
-  stateSize   = size(wb_pointer)
-  costSize    = nCostFunction
-  allocate(xvbar(spatialSize))
-  call computeMatrixFreeProductBwd(dwb_pointer, funcsbar, &
-       useSpatial, useState, xvbar, extrabar, wb_pointer, &
-       spatialSize, extraSize, stateSize, costSize)
-  deallocate(xvbar)
+  ! funcsBar = zero
+  ! useSpatial  = .False.
+  ! useState    = .True.
+  ! spatialSize =  3 * nNodesLocal(1_intType)*nTimeIntervalsSpectral
+  ! extraSize   = 0
+  ! stateSize   = size(wb_pointer)
+  ! costSize    = nCostFunction
+  !allocate(xvbar(spatialSize))
+  call computeMatrixFreeProductBwdFast(dwb_pointer, wb_pointer, size(wb_pointer))
+  !call testREv(dwb_pointer, wb_pointer, size(wb_pointer))
+  ! call computeMatrixFreeProductBwd(dwb_pointer, funcsbar, &
+  !     useSpatial, useState, xvbar, extrabar, wb_pointer, &
+  !     spatialSize, extraSize, stateSize, costSize)
+  !deallocate(xvbar)
   call VecRestoreArrayF90(vecX, dwb_pointer, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
@@ -1094,6 +1351,7 @@ subroutine dRdwTMatMult(A, vecX,  vecY, ierr)
 
   ierr = 0
 #endif
+
 end subroutine dRdwTMatMult
 
 subroutine dRdwMatMult(A, vecX,  vecY, ierr)

@@ -17,7 +17,7 @@ subroutine testRev(dwbar, wbar, m)
   use block
   use inputiteration
   use adjointpetsc, only : psi_like3
-  use bcroutines_fast_b
+  use bcroutines_b
   use samodule_fast_b
   !use samodule_b
   use paramturb
@@ -75,9 +75,16 @@ subroutine testRev(dwbar, wbar, m)
 
   ! Allocate the memory we need for this block to do the forward
   ! mode derivatives and copy reference values
-  !call alloc_derivative_values( level)
-  call alloc_derivative_values(level)
-  call mpi_barrier(sumb_comm_world, ierr)
+  if (.not. derivVarsAllocated) then 
+     call alloc_derivative_values(level)
+  end if
+  do nn=1,nDom
+     do sps=1,nTimeIntervalsSpectral
+        call setPointers(nn, level, sps)
+        call zeroADSeeds(nn,level, sps)
+     end do
+  end do
+
   ii = 0
   sps = 1
   timeA = mpi_wtime()
@@ -106,10 +113,10 @@ subroutine testRev(dwbar, wbar, m)
      kar2inv = one/rsak**2
      cw36 = rsacw3**6
      cb3inv = one/rsacb3
-     call viscousFlux_fast_b
+     !call viscousFlux_fast_b
 
-     call allnodalgradients_fast_b
-     call computespeedofsoundsquared_fast_b
+     !call allnodalgradients_fast_b
+     !call computespeedofsoundsquared_fast_b
      call inviscidDissFluxScalar_fast_b
      call inviscidcentralflux_fast_b
 
@@ -128,10 +135,29 @@ subroutine testRev(dwbar, wbar, m)
      !    call prodkatolaunder_fast_b()
      ! end select
 
+     call pushreal8array(radk, size(radk, 1)*size(radk, 2)*size(radk, 3))
+     call pushreal8array(radj, size(radj, 1)*size(radj, 2)*size(radj, 3))
+     call pushreal8array(radi, size(radi, 1)*size(radi, 2)*size(radi, 3))
+
+     if (nn==1) then 
+        !print *,'radi before:', sum(radi), sum(w)
+     end if
+     !call timestep_block(.False.)
+     if (nn==1) then 
+        !print *,'radi middle:', sum(radi), sum(w)
+     end if
      call timestep_block_fast_b(.False.)
+     if (nn==1) then 
+        !print *,'radi after:', sum(radi), sum(w)
+     end if
+     !call timestep_block(.False.)
      !call applyallturbbcthisblock_b(.true.)
      !call bcturbtreatment_b()
-     call applyallbc_block_fast_b(.True.)
+     call applyallbc_block_b(.True.)
+  call popreal8array(radi, size(radi, 1)*size(radi, 2)*size(radi, 3))
+  call popreal8array(radj, size(radj, 1)*size(radj, 2)*size(radj, 3))
+  call popreal8array(radk, size(radk, 1)*size(radk, 2)*size(radk, 3))
+
   end do
 
   call whalo2_b(1, 1, nw, .True., .True., .True.)
@@ -139,7 +165,7 @@ subroutine testRev(dwbar, wbar, m)
   do nn=1,nDom
      call setPointers_d(nn, level, 1)
      !call saeddyviscosity_b
-     call computelamviscosity_fast_b
+     !call computelamviscosity_fast_b
      call computepressuresimple_fast_b
 
      ! We can put stuff directly into wbar with no assembly; the
@@ -158,8 +184,7 @@ subroutine testRev(dwbar, wbar, m)
   end do
 
   timeB = mpi_wtime()
-  print *,'Fortran Time:', myid, timeB-timeA
-  call dealloc_derivative_values(level)
+  !print *,'Fortran Time:', myid, timeB-timeA
 
   ! Reset the correct equation parameters if we were useing the frozen
   ! Turbulent 
@@ -378,7 +403,7 @@ subroutine testRevSpatial(dwbar, xbar, stateSize, spatialSize)
   call EChk(ierr,__FILE__,__LINE__)
 
   timeB = mpi_wtime()
-  print *,'Fortran Time:', myid, timeB-timeA
+  !print *,'Fortran Time:', myid, timeB-timeA
   call dealloc_derivative_values(level)
 
   ! Reset the correct equation parameters if we were useing the frozen
