@@ -391,6 +391,15 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
              & liftindex, force, forced, moment, momentd, sepsensor, sepsensord, &
              & cavitation, cavitationd, frozenTurbulence)
 
+        ! Currently these tapenade has decided the output values from
+        ! these routines do not matter, these need to be recomputed to
+        ! consistent.
+        call timestep_block(.false.)
+        if (viscous) then 
+           call allNodalGradients
+           call viscousflux
+        end if
+
         ! Assmeble the vectors requested:
         
         do sps2=1,nTimeIntervalsSpectral
@@ -595,70 +604,8 @@ subroutine computeMatrixFreeProductBwdFast(dwbar, wbar, stateSize)
   do nn=1,nDom
      do sps=1,nTimeIntervalsSpectral
         flowDomsd(nn, level, sps)%w = zero
-        ! flowDomsd(nn, level, sps)%dw = zero
-        ! flowDomsd(nn, level, sps)%fw = zero
-        ! flowDomsd(nn, level, sps)%scratch = zero
-        
-        ! flowDomsd(nn, level, sps)%p = zero
-        ! flowDomsd(nn, level, sps)%aa = zero
-        
-        ! flowDomsd(nn, level, sps)%rlv = zero
-        ! flowDomsd(nn, level, sps)%rev = zero
-        
-        ! flowDomsd(nn, level, sps)%radI = zero
-        ! flowDomsd(nn, level, sps)%radJ = zero
-        ! flowDomsd(nn, level, sps)%radK = zero
-        
-        ! flowDomsd(nn, level, sps)%ux = zero
-        ! flowDomsd(nn, level, sps)%uy = zero
-        ! flowDomsd(nn, level, sps)%uz = zero
-        ! flowDomsd(nn, level, sps)%vx = zero
-        ! flowDomsd(nn, level, sps)%vy = zero
-        ! flowDomsd(nn, level, sps)%vz = zero
-        ! flowDomsd(nn, level, sps)%wx = zero
-        ! flowDomsd(nn, level, sps)%wy = zero
-        ! flowDomsd(nn, level, sps)%wz = zero
-        ! flowDomsd(nn, level, sps)%qx = zero
-        ! flowDomsd(nn, level, sps)%qy = zero
-        ! flowDomsd(nn, level, sps)%qz = zero
-        
-        ! if (sps == 1) then
-        !    flowDomsd(nn,1,sps)%bmti1 = zero
-        !    flowDomsd(nn,1,sps)%bmti2 = zero
-        !    flowDomsd(nn,1,sps)%bmtj1 = zero
-        !    flowDomsd(nn,1,sps)%bmtj2 = zero
-        !    flowDomsd(nn,1,sps)%bmtk1 = zero
-        !    flowDomsd(nn,1,sps)%bmtk2 = zero
-        !    flowDomsd(nn,1,sps)%bvti1 = zero
-        !    flowDomsd(nn,1,sps)%bvti2 = zero
-        !    flowDomsd(nn,1,sps)%bvtj1 = zero
-        !    flowDomsd(nn,1,sps)%bvtj2 = zero
-        !    flowDomsd(nn,1,sps)%bvtk1 = zero
-        !    flowDomsd(nn,1,sps)%bvtk2 = zero
-        ! end if
-     end do
+      end do
   end do
-
-  ! ! Now zero these
-  ! ww0d = zero
-  ! ww1d = zero
-  ! ww2d = zero
-  ! ww3d = zero
-
-  ! pp0d = zero
-  ! pp1d = zero
-  ! pp2d = zero
-  ! pp3d = zero
-
-  ! rlv0d = zero
-  ! rlv1d = zero
-  ! rlv2d = zero
-  ! rlv3d = zero
-
-  ! rev0d = zero
-  ! rev1d = zero
-  ! rev2d = zero
-  ! rev3d = zero
 
   ii = 0
   
@@ -734,7 +681,6 @@ subroutine computeMatrixFreeProductBwdFast(dwbar, wbar, stateSize)
         end if
         
         call timestep_block_fast_b(.False.)
-        !call applyallbc_block_b(.True.)
         call applyAllBC_block_fast_b(.True.)
         
         call popreal8array(radi, size(radi, 1)*size(radi, 2)*size(radi, 3))
@@ -1294,7 +1240,7 @@ subroutine dRdwTMatMult(A, vecX,  vecY, ierr)
 
   ! PETSc user-defied call back function for computing the product of
   ! dRdwT with a vector. Here we just call the much more broadly
-  ! useful routine computeMatrixFreeProductBwd()
+  ! useful routine computeMatrixFreeProductBwdFast()
 
   use constants
   use communication
@@ -1315,12 +1261,7 @@ subroutine dRdwTMatMult(A, vecX,  vecY, ierr)
 
   real(kind=realType), pointer :: dwb_pointer(:)
   real(kind=realType), pointer :: wb_pointer(:)
-  ! real(kind=realType) :: funcsBar(nCostFunction)
-  ! logical :: useState, useSpatial
-  ! real(kind=realType) :: extraBar
-  ! integer(kind=intType) :: spatialSize, extraSize
-  ! integer(kind=intType) :: stateSize, costSize
-  ! real(kind=realType), dimension(:), allocatable :: Xvbar
+
 #ifndef USE_COMPLEX
 
   call VecGetArrayF90(vecX, dwb_pointer, ierr)
@@ -1329,20 +1270,8 @@ subroutine dRdwTMatMult(A, vecX,  vecY, ierr)
   call VecGetArrayF90(VecY, wb_pointer, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  ! funcsBar = zero
-  ! useSpatial  = .False.
-  ! useState    = .True.
-  ! spatialSize =  3 * nNodesLocal(1_intType)*nTimeIntervalsSpectral
-  ! extraSize   = 0
-  ! stateSize   = size(wb_pointer)
-  ! costSize    = nCostFunction
-  !allocate(xvbar(spatialSize))
   call computeMatrixFreeProductBwdFast(dwb_pointer, wb_pointer, size(wb_pointer))
-  !call testREv(dwb_pointer, wb_pointer, size(wb_pointer))
-  ! call computeMatrixFreeProductBwd(dwb_pointer, funcsbar, &
-  !     useSpatial, useState, xvbar, extrabar, wb_pointer, &
-  !     spatialSize, extraSize, stateSize, costSize)
-  !deallocate(xvbar)
+ 
   call VecRestoreArrayF90(vecX, dwb_pointer, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
