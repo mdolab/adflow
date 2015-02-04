@@ -70,13 +70,11 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   call referenceState
   call setFlowInfinityState
 
-
   ! ------------------------------------------------
   !        Additional Spatial Components
   ! ------------------------------------------------
   if (useSpatial) then
 
-     call xhalo_block
      call volume_block
      call metric_block
      call boundaryNormals

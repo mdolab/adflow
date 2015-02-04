@@ -133,7 +133,6 @@ subroutine alloc_derivative_values(level)
         call EChk(ierr,__FILE__,__LINE__)
         
         allocate(&
-             flowDomsd(nn,1,sps)%dtl (1:ie,1:je,1:ke), &
              flowDomsd(nn,1,sps)%radI(1:ie,1:je,1:ke),     &
              flowDomsd(nn,1,sps)%radJ(1:ie,1:je,1:ke),     &
              flowDomsd(nn,1,sps)%radK(1:ie,1:je,1:ke),stat=ierr)
