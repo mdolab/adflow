@@ -20,7 +20,6 @@ SUBDIR_SRC    = src/modules       \
 	        src/partitioning  \
 	        src/preprocessing \
 	        src/slidingComm   \
-		src/NKsolver      \
 	        src/stabilityDerivatives \
 	        src/turbulence    \
 	        src/utils         \
@@ -33,6 +32,7 @@ SUBDIR_SRC    = src/modules       \
                 src/forwardAdjoint/outputReverse \
                 src/forwardAdjoint/outputReverseFast \
 		src/adjoint               \
+		src/NKsolver      \
                 src/forwardAdjoint \
                 src/forwardAdjoint/residualInput \
                 src/forwardAdjoint/outputForward \

@@ -88,12 +88,12 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   alphad = zero
   betad  = zero
   machd  = zero
-  machcoefd = zero
   machGridd = zero
-  lengthRefd = zero
+  machcoefd = zero
   pointRefd  = zero
-  surfaceRefd = zero
-  reynoldslengthd = zero
+  lengthRefd = zero
+  prefd = zero
+  tempfreestreamd = zero
   reynoldsd = zero
   call getDirAngle(velDirFreestream, liftDirection, liftIndex, alpha, beta)
 
@@ -146,22 +146,8 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   ! Set delta_x
   delta_x = 1e-9_realType
   one_over_dx = one/delta_x
-
   rkStage = 0
   
-  ! If we are computing the jacobian for the RANS equations, we need
-  ! to make block_res think that we are evauluating the residual in a
-  ! fully coupled sense.  This is reset after this routine is
-  ! finished.
-  if (equations == RANSEquations) then
-     nMGVar = nwf
-     nt1MG = nt1
-     nt2MG = nt2
-
-     turbSegregated = .False.
-     turbCoupled = .True.
-  end if
-
   ! Determine if we want to use frozenTurbulent Adjoint
   resetToRANS = .False. 
   if (frozenTurb .and. equations == RANSEquations) then
@@ -530,17 +516,6 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
      equations = RANSEquations
   end if
 
-  ! Reset the paraters to use segrated turbulence solve. 
-  if (equations == RANSEquations) then
-     nMGVar = nwf
-     nt1MG = nwf + 1
-     nt2MG = nwf
-
-     turbSegregated = .True.
-     turbCoupled = .False.
-     restrictEddyVis = .false.
-     if( eddyModel ) restrictEddyVis = .true.
-  end if
   deallocate(blk)
 
 contains

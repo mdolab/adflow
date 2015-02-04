@@ -153,7 +153,6 @@ subroutine block_res_b(nn, sps, usespatial, alpha, alphad, beta, betad, &
 !        additional spatial components
 ! ------------------------------------------------
   if (usespatial) then
-    call xhalo_block()
     call volume_block()
     call metric_block()
     call boundarynormals()
@@ -862,7 +861,6 @@ varloopfine:do l=1,nwf
   call boundarynormals_b()
   call metric_block_b()
   call volume_block_b()
-  call xhalo_block_b()
  100 call setflowinfinitystate_b()
   call popreal8(gammainf)
   call popreal8(tref)

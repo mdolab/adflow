@@ -3070,7 +3070,7 @@ class SUMB(AeroSolver):
             'usereversemodead':[bool, False],
             'applyadjointpcsubspacesize':[int, 20],
             'frozenturbulence':[bool, True],
-            'usematrixfreedrdw':[bool, False],
+            'usematrixfreedrdw':[bool, True],
             'usematrixfreedrdx':[bool, True],
 
             # ADjoint debugger

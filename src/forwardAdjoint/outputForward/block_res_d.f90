@@ -2,10 +2,10 @@
 !  tapenade 3.10 (r5363) -  9 sep 2014 09:53
 !
 !  differentiation of block_res in forward (tangent) mode (with options i4 dr8 r8):
-!   variations   of useful results: pref *(flowdoms.x) *(flowdoms.w)
-!                *(flowdoms.dw) *(*bcdata.fp) *(*bcdata.fv) *(*bcdata.m)
-!                *(*bcdata.oarea) *(*bcdata.sepsensor) *(*bcdata.cavitation)
-!                *rev0 *rev1 *pp0 *pp1 *rlv0 *rlv1 *ww0 *ww1 funcvalues
+!   variations   of useful results: pref *(flowdoms.w) *(flowdoms.dw)
+!                *(*bcdata.fp) *(*bcdata.fv) *(*bcdata.m) *(*bcdata.oarea)
+!                *(*bcdata.sepsensor) *(*bcdata.cavitation) *rev0
+!                *rev1 *pp0 *pp1 *rlv0 *rlv1 *ww0 *ww1 funcvalues
 !                moment force cavitation sepsensor
 !   with respect to varying inputs: pref *(flowdoms.x) *(flowdoms.w)
 !                mach tempfreestream reynolds machgrid lengthref
@@ -16,7 +16,7 @@
 !                timeref:(loc) rhoinf:(loc) muref:(loc) rhoinfdim:(loc)
 !                tref:(loc) winf:(loc) muinf:(loc) uinf:(loc) pinfcorr:(loc)
 !                rgas:(loc) pinfdim:(loc) pref:in-out rhoref:(loc)
-!                *(flowdoms.x):in-out *(flowdoms.vol):(loc) *(flowdoms.w):in-out
+!                *(flowdoms.x):in *(flowdoms.vol):(loc) *(flowdoms.w):in-out
 !                *(flowdoms.dw):out *rev:(loc) *aa:(loc) *bvtj1:(loc)
 !                *bvtj2:(loc) *wx:(loc) *wy:(loc) *wz:(loc) *p:(loc)
 !                *sfacei:(loc) *sfacej:(loc) *s:(loc) *sfacek:(loc)
@@ -137,7 +137,6 @@ subroutine block_res_d(nn, sps, usespatial, alpha, alphad, beta, betad, &
 !        additional spatial components
 ! ------------------------------------------------
   if (usespatial) then
-    call xhalo_block_d()
     call volume_block_d()
     call metric_block_d()
     call boundarynormals_d()

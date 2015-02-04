@@ -4,7 +4,8 @@
 !  differentiation of xhalo_block in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *x
 !   with respect to varying inputs: *x
-!   plus diff mem management of: x:in bcdata:in
+!   rw status of diff variables: *x:in-out
+!   plus diff mem management of: x:in
 !
 !      ******************************************************************
 !      *                                                                *
@@ -61,7 +62,6 @@ subroutine xhalo_block_b()
   real(kind=realtype) :: tmp14
   real(kind=realtype) :: tmp15
   real(kind=realtype) :: tmp16
-  integer :: branch
   integer :: ad_from
   integer :: ad_to
   integer :: ad_from0
@@ -86,6 +86,7 @@ subroutine xhalo_block_b()
   integer :: ad_to9
   integer :: ad_from10
   integer :: ad_to10
+  integer :: branch
   real(kind=realtype) :: tmpd
   real(kind=realtype) :: tmpd16
   real(kind=realtype) :: tmpd15
@@ -110,51 +111,6 @@ subroutine xhalo_block_b()
   real(kind=realtype) :: tmpd2
   real(kind=realtype) :: tmpd1
   real(kind=realtype) :: tmpd0
-! extrapolation in i-direction.
-  do k=1,kl
-    do j=1,jl
-      if (globalnode(0, j, k) .lt. 0) then
-        call pushcontrol1b(0)
-      else
-        call pushcontrol1b(1)
-      end if
-      if (globalnode(ie, j, k) .lt. 0) then
-        call pushcontrol1b(1)
-      else
-        call pushcontrol1b(0)
-      end if
-    end do
-  end do
-! extrapolation in j-direction.
-  do k=1,kl
-    do i=0,ie
-      if (globalnode(i, 0, k) .lt. 0) then
-        call pushcontrol1b(0)
-      else
-        call pushcontrol1b(1)
-      end if
-      if (globalnode(i, je, k) .lt. 0) then
-        call pushcontrol1b(1)
-      else
-        call pushcontrol1b(0)
-      end if
-    end do
-  end do
-! extrapolation in k-direction.
-  do j=0,je
-    do i=0,ie
-      if (globalnode(i, j, 0) .lt. 0) then
-        call pushcontrol1b(0)
-      else
-        call pushcontrol1b(1)
-      end if
-      if (globalnode(i, j, ke) .lt. 0) then
-        call pushcontrol1b(1)
-      else
-        call pushcontrol1b(0)
-      end if
-    end do
-  end do
 !
 !          **************************************************************
 !          *                                                            *
@@ -201,13 +157,7 @@ loopbocos:do mm=1,nbocos
           ad_from0 = jbeg
           do j=ad_from0,jend
             ad_from = ibeg
-            do i=ad_from,iend
-              if (globalnode(0, i, j) .lt. 0) then
-                call pushcontrol1b(1)
-              else
-                call pushcontrol1b(0)
-              end if
-            end do
+            i = iend + 1
             call pushinteger4(i - 1)
             call pushinteger4(ad_from)
           end do
@@ -228,13 +178,7 @@ loopbocos:do mm=1,nbocos
           ad_from2 = jbeg
           do j=ad_from2,jend
             ad_from1 = ibeg
-            do i=ad_from1,iend
-              if (globalnode(ie, i, j) .lt. 0) then
-                call pushcontrol1b(1)
-              else
-                call pushcontrol1b(0)
-              end if
-            end do
+            i = iend + 1
             call pushinteger4(i - 1)
             call pushinteger4(ad_from1)
           end do
@@ -255,13 +199,7 @@ loopbocos:do mm=1,nbocos
           ad_from4 = jbeg
           do j=ad_from4,jend
             ad_from3 = ibeg
-            do i=ad_from3,iend
-              if (globalnode(i, 0, j) .lt. 0) then
-                call pushcontrol1b(1)
-              else
-                call pushcontrol1b(0)
-              end if
-            end do
+            i = iend + 1
             call pushinteger4(i - 1)
             call pushinteger4(ad_from3)
           end do
@@ -282,13 +220,7 @@ loopbocos:do mm=1,nbocos
           ad_from6 = jbeg
           do j=ad_from6,jend
             ad_from5 = ibeg
-            do i=ad_from5,iend
-              if (globalnode(i, je, j) .lt. 0) then
-                call pushcontrol1b(1)
-              else
-                call pushcontrol1b(0)
-              end if
-            end do
+            i = iend + 1
             call pushinteger4(i - 1)
             call pushinteger4(ad_from5)
           end do
@@ -309,13 +241,7 @@ loopbocos:do mm=1,nbocos
           ad_from8 = jbeg
           do j=ad_from8,jend
             ad_from7 = ibeg
-            do i=ad_from7,iend
-              if (globalnode(i, j, 0) .lt. 0) then
-                call pushcontrol1b(1)
-              else
-                call pushcontrol1b(0)
-              end if
-            end do
+            i = iend + 1
             call pushinteger4(i - 1)
             call pushinteger4(ad_from7)
           end do
@@ -336,13 +262,7 @@ loopbocos:do mm=1,nbocos
           ad_from10 = jbeg
           do j=ad_from10,jend
             ad_from9 = ibeg
-            do i=ad_from9,iend
-              if (globalnode(i, j, ke) .lt. 0) then
-                call pushcontrol1b(1)
-              else
-                call pushcontrol1b(0)
-              end if
-            end do
+            i = iend + 1
             call pushinteger4(i - 1)
             call pushinteger4(ad_from9)
           end do
@@ -372,32 +292,29 @@ loopbocos:do mm=1,nbocos
           call popinteger4(ad_from9)
           call popinteger4(ad_to9)
           do i=ad_to9,ad_from9,-1
-            call popcontrol1b(branch)
-            if (branch .ne. 0) then
-              tmpd14 = xd(i, j, ke, 3)
-              xd(i, j, ke, 3) = 0.0_8
-              xd(i, j, nz, 3) = xd(i, j, nz, 3) + tmpd14
-              tmpd15 = xd(i, j, ke, 2)
-              xd(i, j, ke, 2) = 0.0_8
-              xd(i, j, nz, 2) = xd(i, j, nz, 2) + tmpd15
-              tmpd16 = xd(i, j, ke, 1)
-              dotd = norm(2)*tmpd15 + norm(1)*tmpd16 + norm(3)*tmpd14
-              xd(i, j, ke, 1) = 0.0_8
-              xd(i, j, nz, 1) = xd(i, j, nz, 1) + tmpd16
-              tempd4 = two*dotd
-              v1d(1) = v1d(1) + norm(1)*tempd4
-              v1d(2) = v1d(2) + norm(2)*tempd4
-              v1d(3) = v1d(3) + norm(3)*tempd4
-              xd(i, j, kl, 3) = xd(i, j, kl, 3) + v1d(3)
-              xd(i, j, nz, 3) = xd(i, j, nz, 3) - v1d(3)
-              v1d(3) = 0.0_8
-              xd(i, j, kl, 2) = xd(i, j, kl, 2) + v1d(2)
-              xd(i, j, nz, 2) = xd(i, j, nz, 2) - v1d(2)
-              v1d(2) = 0.0_8
-              xd(i, j, kl, 1) = xd(i, j, kl, 1) + v1d(1)
-              xd(i, j, nz, 1) = xd(i, j, nz, 1) - v1d(1)
-              v1d(1) = 0.0_8
-            end if
+            tmpd14 = xd(i, j, ke, 3)
+            xd(i, j, ke, 3) = 0.0_8
+            xd(i, j, nz, 3) = xd(i, j, nz, 3) + tmpd14
+            tmpd15 = xd(i, j, ke, 2)
+            xd(i, j, ke, 2) = 0.0_8
+            xd(i, j, nz, 2) = xd(i, j, nz, 2) + tmpd15
+            tmpd16 = xd(i, j, ke, 1)
+            dotd = norm(2)*tmpd15 + norm(1)*tmpd16 + norm(3)*tmpd14
+            xd(i, j, ke, 1) = 0.0_8
+            xd(i, j, nz, 1) = xd(i, j, nz, 1) + tmpd16
+            tempd4 = two*dotd
+            v1d(1) = v1d(1) + norm(1)*tempd4
+            v1d(2) = v1d(2) + norm(2)*tempd4
+            v1d(3) = v1d(3) + norm(3)*tempd4
+            xd(i, j, kl, 3) = xd(i, j, kl, 3) + v1d(3)
+            xd(i, j, nz, 3) = xd(i, j, nz, 3) - v1d(3)
+            v1d(3) = 0.0_8
+            xd(i, j, kl, 2) = xd(i, j, kl, 2) + v1d(2)
+            xd(i, j, nz, 2) = xd(i, j, nz, 2) - v1d(2)
+            v1d(2) = 0.0_8
+            xd(i, j, kl, 1) = xd(i, j, kl, 1) + v1d(1)
+            xd(i, j, nz, 1) = xd(i, j, nz, 1) - v1d(1)
+            v1d(1) = 0.0_8
           end do
         end do
       else
@@ -407,31 +324,28 @@ loopbocos:do mm=1,nbocos
           call popinteger4(ad_from7)
           call popinteger4(ad_to7)
           do i=ad_to7,ad_from7,-1
-            call popcontrol1b(branch)
-            if (branch .ne. 0) then
-              xd(i, j, 2, 3) = xd(i, j, 2, 3) + xd(i, j, 0, 3)
-              dotd = norm(3)*xd(i, j, 0, 3)
-              xd(i, j, 0, 3) = 0.0_8
-              xd(i, j, 2, 2) = xd(i, j, 2, 2) + xd(i, j, 0, 2)
-              dotd = dotd + norm(2)*xd(i, j, 0, 2)
-              xd(i, j, 0, 2) = 0.0_8
-              xd(i, j, 2, 1) = xd(i, j, 2, 1) + xd(i, j, 0, 1)
-              dotd = dotd + norm(1)*xd(i, j, 0, 1)
-              xd(i, j, 0, 1) = 0.0_8
-              tempd3 = two*dotd
-              v1d(1) = v1d(1) + norm(1)*tempd3
-              v1d(2) = v1d(2) + norm(2)*tempd3
-              v1d(3) = v1d(3) + norm(3)*tempd3
-              xd(i, j, 1, 3) = xd(i, j, 1, 3) + v1d(3)
-              xd(i, j, 2, 3) = xd(i, j, 2, 3) - v1d(3)
-              v1d(3) = 0.0_8
-              xd(i, j, 1, 2) = xd(i, j, 1, 2) + v1d(2)
-              xd(i, j, 2, 2) = xd(i, j, 2, 2) - v1d(2)
-              v1d(2) = 0.0_8
-              xd(i, j, 1, 1) = xd(i, j, 1, 1) + v1d(1)
-              xd(i, j, 2, 1) = xd(i, j, 2, 1) - v1d(1)
-              v1d(1) = 0.0_8
-            end if
+            xd(i, j, 2, 3) = xd(i, j, 2, 3) + xd(i, j, 0, 3)
+            dotd = norm(3)*xd(i, j, 0, 3)
+            xd(i, j, 0, 3) = 0.0_8
+            xd(i, j, 2, 2) = xd(i, j, 2, 2) + xd(i, j, 0, 2)
+            dotd = dotd + norm(2)*xd(i, j, 0, 2)
+            xd(i, j, 0, 2) = 0.0_8
+            xd(i, j, 2, 1) = xd(i, j, 2, 1) + xd(i, j, 0, 1)
+            dotd = dotd + norm(1)*xd(i, j, 0, 1)
+            xd(i, j, 0, 1) = 0.0_8
+            tempd3 = two*dotd
+            v1d(1) = v1d(1) + norm(1)*tempd3
+            v1d(2) = v1d(2) + norm(2)*tempd3
+            v1d(3) = v1d(3) + norm(3)*tempd3
+            xd(i, j, 1, 3) = xd(i, j, 1, 3) + v1d(3)
+            xd(i, j, 2, 3) = xd(i, j, 2, 3) - v1d(3)
+            v1d(3) = 0.0_8
+            xd(i, j, 1, 2) = xd(i, j, 1, 2) + v1d(2)
+            xd(i, j, 2, 2) = xd(i, j, 2, 2) - v1d(2)
+            v1d(2) = 0.0_8
+            xd(i, j, 1, 1) = xd(i, j, 1, 1) + v1d(1)
+            xd(i, j, 2, 1) = xd(i, j, 2, 1) - v1d(1)
+            v1d(1) = 0.0_8
           end do
         end do
       end if
@@ -443,32 +357,29 @@ loopbocos:do mm=1,nbocos
           call popinteger4(ad_from5)
           call popinteger4(ad_to5)
           do i=ad_to5,ad_from5,-1
-            call popcontrol1b(branch)
-            if (branch .ne. 0) then
-              tmpd11 = xd(i, je, j, 3)
-              xd(i, je, j, 3) = 0.0_8
-              xd(i, ny, j, 3) = xd(i, ny, j, 3) + tmpd11
-              tmpd12 = xd(i, je, j, 2)
-              xd(i, je, j, 2) = 0.0_8
-              xd(i, ny, j, 2) = xd(i, ny, j, 2) + tmpd12
-              tmpd13 = xd(i, je, j, 1)
-              dotd = norm(2)*tmpd12 + norm(1)*tmpd13 + norm(3)*tmpd11
-              xd(i, je, j, 1) = 0.0_8
-              xd(i, ny, j, 1) = xd(i, ny, j, 1) + tmpd13
-              tempd2 = two*dotd
-              v1d(1) = v1d(1) + norm(1)*tempd2
-              v1d(2) = v1d(2) + norm(2)*tempd2
-              v1d(3) = v1d(3) + norm(3)*tempd2
-              xd(i, jl, j, 3) = xd(i, jl, j, 3) + v1d(3)
-              xd(i, ny, j, 3) = xd(i, ny, j, 3) - v1d(3)
-              v1d(3) = 0.0_8
-              xd(i, jl, j, 2) = xd(i, jl, j, 2) + v1d(2)
-              xd(i, ny, j, 2) = xd(i, ny, j, 2) - v1d(2)
-              v1d(2) = 0.0_8
-              xd(i, jl, j, 1) = xd(i, jl, j, 1) + v1d(1)
-              xd(i, ny, j, 1) = xd(i, ny, j, 1) - v1d(1)
-              v1d(1) = 0.0_8
-            end if
+            tmpd11 = xd(i, je, j, 3)
+            xd(i, je, j, 3) = 0.0_8
+            xd(i, ny, j, 3) = xd(i, ny, j, 3) + tmpd11
+            tmpd12 = xd(i, je, j, 2)
+            xd(i, je, j, 2) = 0.0_8
+            xd(i, ny, j, 2) = xd(i, ny, j, 2) + tmpd12
+            tmpd13 = xd(i, je, j, 1)
+            dotd = norm(2)*tmpd12 + norm(1)*tmpd13 + norm(3)*tmpd11
+            xd(i, je, j, 1) = 0.0_8
+            xd(i, ny, j, 1) = xd(i, ny, j, 1) + tmpd13
+            tempd2 = two*dotd
+            v1d(1) = v1d(1) + norm(1)*tempd2
+            v1d(2) = v1d(2) + norm(2)*tempd2
+            v1d(3) = v1d(3) + norm(3)*tempd2
+            xd(i, jl, j, 3) = xd(i, jl, j, 3) + v1d(3)
+            xd(i, ny, j, 3) = xd(i, ny, j, 3) - v1d(3)
+            v1d(3) = 0.0_8
+            xd(i, jl, j, 2) = xd(i, jl, j, 2) + v1d(2)
+            xd(i, ny, j, 2) = xd(i, ny, j, 2) - v1d(2)
+            v1d(2) = 0.0_8
+            xd(i, jl, j, 1) = xd(i, jl, j, 1) + v1d(1)
+            xd(i, ny, j, 1) = xd(i, ny, j, 1) - v1d(1)
+            v1d(1) = 0.0_8
           end do
         end do
       else
@@ -478,31 +389,28 @@ loopbocos:do mm=1,nbocos
           call popinteger4(ad_from3)
           call popinteger4(ad_to3)
           do i=ad_to3,ad_from3,-1
-            call popcontrol1b(branch)
-            if (branch .ne. 0) then
-              xd(i, 2, j, 3) = xd(i, 2, j, 3) + xd(i, 0, j, 3)
-              dotd = norm(3)*xd(i, 0, j, 3)
-              xd(i, 0, j, 3) = 0.0_8
-              xd(i, 2, j, 2) = xd(i, 2, j, 2) + xd(i, 0, j, 2)
-              dotd = dotd + norm(2)*xd(i, 0, j, 2)
-              xd(i, 0, j, 2) = 0.0_8
-              xd(i, 2, j, 1) = xd(i, 2, j, 1) + xd(i, 0, j, 1)
-              dotd = dotd + norm(1)*xd(i, 0, j, 1)
-              xd(i, 0, j, 1) = 0.0_8
-              tempd1 = two*dotd
-              v1d(1) = v1d(1) + norm(1)*tempd1
-              v1d(2) = v1d(2) + norm(2)*tempd1
-              v1d(3) = v1d(3) + norm(3)*tempd1
-              xd(i, 1, j, 3) = xd(i, 1, j, 3) + v1d(3)
-              xd(i, 2, j, 3) = xd(i, 2, j, 3) - v1d(3)
-              v1d(3) = 0.0_8
-              xd(i, 1, j, 2) = xd(i, 1, j, 2) + v1d(2)
-              xd(i, 2, j, 2) = xd(i, 2, j, 2) - v1d(2)
-              v1d(2) = 0.0_8
-              xd(i, 1, j, 1) = xd(i, 1, j, 1) + v1d(1)
-              xd(i, 2, j, 1) = xd(i, 2, j, 1) - v1d(1)
-              v1d(1) = 0.0_8
-            end if
+            xd(i, 2, j, 3) = xd(i, 2, j, 3) + xd(i, 0, j, 3)
+            dotd = norm(3)*xd(i, 0, j, 3)
+            xd(i, 0, j, 3) = 0.0_8
+            xd(i, 2, j, 2) = xd(i, 2, j, 2) + xd(i, 0, j, 2)
+            dotd = dotd + norm(2)*xd(i, 0, j, 2)
+            xd(i, 0, j, 2) = 0.0_8
+            xd(i, 2, j, 1) = xd(i, 2, j, 1) + xd(i, 0, j, 1)
+            dotd = dotd + norm(1)*xd(i, 0, j, 1)
+            xd(i, 0, j, 1) = 0.0_8
+            tempd1 = two*dotd
+            v1d(1) = v1d(1) + norm(1)*tempd1
+            v1d(2) = v1d(2) + norm(2)*tempd1
+            v1d(3) = v1d(3) + norm(3)*tempd1
+            xd(i, 1, j, 3) = xd(i, 1, j, 3) + v1d(3)
+            xd(i, 2, j, 3) = xd(i, 2, j, 3) - v1d(3)
+            v1d(3) = 0.0_8
+            xd(i, 1, j, 2) = xd(i, 1, j, 2) + v1d(2)
+            xd(i, 2, j, 2) = xd(i, 2, j, 2) - v1d(2)
+            v1d(2) = 0.0_8
+            xd(i, 1, j, 1) = xd(i, 1, j, 1) + v1d(1)
+            xd(i, 2, j, 1) = xd(i, 2, j, 1) - v1d(1)
+            v1d(1) = 0.0_8
           end do
         end do
       end if
@@ -513,32 +421,29 @@ loopbocos:do mm=1,nbocos
         call popinteger4(ad_from1)
         call popinteger4(ad_to1)
         do i=ad_to1,ad_from1,-1
-          call popcontrol1b(branch)
-          if (branch .ne. 0) then
-            tmpd8 = xd(ie, i, j, 3)
-            xd(ie, i, j, 3) = 0.0_8
-            xd(nx, i, j, 3) = xd(nx, i, j, 3) + tmpd8
-            tmpd9 = xd(ie, i, j, 2)
-            xd(ie, i, j, 2) = 0.0_8
-            xd(nx, i, j, 2) = xd(nx, i, j, 2) + tmpd9
-            tmpd10 = xd(ie, i, j, 1)
-            dotd = norm(2)*tmpd9 + norm(1)*tmpd10 + norm(3)*tmpd8
-            xd(ie, i, j, 1) = 0.0_8
-            xd(nx, i, j, 1) = xd(nx, i, j, 1) + tmpd10
-            tempd0 = two*dotd
-            v1d(1) = v1d(1) + norm(1)*tempd0
-            v1d(2) = v1d(2) + norm(2)*tempd0
-            v1d(3) = v1d(3) + norm(3)*tempd0
-            xd(il, i, j, 3) = xd(il, i, j, 3) + v1d(3)
-            xd(nx, i, j, 3) = xd(nx, i, j, 3) - v1d(3)
-            v1d(3) = 0.0_8
-            xd(il, i, j, 2) = xd(il, i, j, 2) + v1d(2)
-            xd(nx, i, j, 2) = xd(nx, i, j, 2) - v1d(2)
-            v1d(2) = 0.0_8
-            xd(il, i, j, 1) = xd(il, i, j, 1) + v1d(1)
-            xd(nx, i, j, 1) = xd(nx, i, j, 1) - v1d(1)
-            v1d(1) = 0.0_8
-          end if
+          tmpd8 = xd(ie, i, j, 3)
+          xd(ie, i, j, 3) = 0.0_8
+          xd(nx, i, j, 3) = xd(nx, i, j, 3) + tmpd8
+          tmpd9 = xd(ie, i, j, 2)
+          xd(ie, i, j, 2) = 0.0_8
+          xd(nx, i, j, 2) = xd(nx, i, j, 2) + tmpd9
+          tmpd10 = xd(ie, i, j, 1)
+          dotd = norm(2)*tmpd9 + norm(1)*tmpd10 + norm(3)*tmpd8
+          xd(ie, i, j, 1) = 0.0_8
+          xd(nx, i, j, 1) = xd(nx, i, j, 1) + tmpd10
+          tempd0 = two*dotd
+          v1d(1) = v1d(1) + norm(1)*tempd0
+          v1d(2) = v1d(2) + norm(2)*tempd0
+          v1d(3) = v1d(3) + norm(3)*tempd0
+          xd(il, i, j, 3) = xd(il, i, j, 3) + v1d(3)
+          xd(nx, i, j, 3) = xd(nx, i, j, 3) - v1d(3)
+          v1d(3) = 0.0_8
+          xd(il, i, j, 2) = xd(il, i, j, 2) + v1d(2)
+          xd(nx, i, j, 2) = xd(nx, i, j, 2) - v1d(2)
+          v1d(2) = 0.0_8
+          xd(il, i, j, 1) = xd(il, i, j, 1) + v1d(1)
+          xd(nx, i, j, 1) = xd(nx, i, j, 1) - v1d(1)
+          v1d(1) = 0.0_8
         end do
       end do
     else if (branch .eq. 7) then
@@ -548,31 +453,28 @@ loopbocos:do mm=1,nbocos
         call popinteger4(ad_from)
         call popinteger4(ad_to)
         do i=ad_to,ad_from,-1
-          call popcontrol1b(branch)
-          if (branch .ne. 0) then
-            xd(2, i, j, 3) = xd(2, i, j, 3) + xd(0, i, j, 3)
-            dotd = norm(3)*xd(0, i, j, 3)
-            xd(0, i, j, 3) = 0.0_8
-            xd(2, i, j, 2) = xd(2, i, j, 2) + xd(0, i, j, 2)
-            dotd = dotd + norm(2)*xd(0, i, j, 2)
-            xd(0, i, j, 2) = 0.0_8
-            xd(2, i, j, 1) = xd(2, i, j, 1) + xd(0, i, j, 1)
-            dotd = dotd + norm(1)*xd(0, i, j, 1)
-            xd(0, i, j, 1) = 0.0_8
-            tempd = two*dotd
-            v1d(1) = v1d(1) + norm(1)*tempd
-            v1d(2) = v1d(2) + norm(2)*tempd
-            v1d(3) = v1d(3) + norm(3)*tempd
-            xd(1, i, j, 3) = xd(1, i, j, 3) + v1d(3)
-            xd(2, i, j, 3) = xd(2, i, j, 3) - v1d(3)
-            v1d(3) = 0.0_8
-            xd(1, i, j, 2) = xd(1, i, j, 2) + v1d(2)
-            xd(2, i, j, 2) = xd(2, i, j, 2) - v1d(2)
-            v1d(2) = 0.0_8
-            xd(1, i, j, 1) = xd(1, i, j, 1) + v1d(1)
-            xd(2, i, j, 1) = xd(2, i, j, 1) - v1d(1)
-            v1d(1) = 0.0_8
-          end if
+          xd(2, i, j, 3) = xd(2, i, j, 3) + xd(0, i, j, 3)
+          dotd = norm(3)*xd(0, i, j, 3)
+          xd(0, i, j, 3) = 0.0_8
+          xd(2, i, j, 2) = xd(2, i, j, 2) + xd(0, i, j, 2)
+          dotd = dotd + norm(2)*xd(0, i, j, 2)
+          xd(0, i, j, 2) = 0.0_8
+          xd(2, i, j, 1) = xd(2, i, j, 1) + xd(0, i, j, 1)
+          dotd = dotd + norm(1)*xd(0, i, j, 1)
+          xd(0, i, j, 1) = 0.0_8
+          tempd = two*dotd
+          v1d(1) = v1d(1) + norm(1)*tempd
+          v1d(2) = v1d(2) + norm(2)*tempd
+          v1d(3) = v1d(3) + norm(3)*tempd
+          xd(1, i, j, 3) = xd(1, i, j, 3) + v1d(3)
+          xd(2, i, j, 3) = xd(2, i, j, 3) - v1d(3)
+          v1d(3) = 0.0_8
+          xd(1, i, j, 2) = xd(1, i, j, 2) + v1d(2)
+          xd(2, i, j, 2) = xd(2, i, j, 2) - v1d(2)
+          v1d(2) = 0.0_8
+          xd(1, i, j, 1) = xd(1, i, j, 1) + v1d(1)
+          xd(2, i, j, 1) = xd(2, i, j, 1) - v1d(1)
+          v1d(1) = 0.0_8
         end do
       end do
     end if
@@ -585,95 +487,77 @@ loopbocos:do mm=1,nbocos
  100 continue
   do j=je,0,-1
     do i=ie,0,-1
-      call popcontrol1b(branch)
-      if (branch .ne. 0) then
-        tmpd5 = xd(i, j, ke, 3)
-        xd(i, j, ke, 3) = 0.0_8
-        xd(i, j, kl, 3) = xd(i, j, kl, 3) + two*tmpd5
-        xd(i, j, nz, 3) = xd(i, j, nz, 3) - tmpd5
-        tmpd6 = xd(i, j, ke, 2)
-        xd(i, j, ke, 2) = 0.0_8
-        xd(i, j, kl, 2) = xd(i, j, kl, 2) + two*tmpd6
-        xd(i, j, nz, 2) = xd(i, j, nz, 2) - tmpd6
-        tmpd7 = xd(i, j, ke, 1)
-        xd(i, j, ke, 1) = 0.0_8
-        xd(i, j, kl, 1) = xd(i, j, kl, 1) + two*tmpd7
-        xd(i, j, nz, 1) = xd(i, j, nz, 1) - tmpd7
-      end if
-      call popcontrol1b(branch)
-      if (branch .eq. 0) then
-        xd(i, j, 1, 3) = xd(i, j, 1, 3) + two*xd(i, j, 0, 3)
-        xd(i, j, 2, 3) = xd(i, j, 2, 3) - xd(i, j, 0, 3)
-        xd(i, j, 0, 3) = 0.0_8
-        xd(i, j, 1, 2) = xd(i, j, 1, 2) + two*xd(i, j, 0, 2)
-        xd(i, j, 2, 2) = xd(i, j, 2, 2) - xd(i, j, 0, 2)
-        xd(i, j, 0, 2) = 0.0_8
-        xd(i, j, 1, 1) = xd(i, j, 1, 1) + two*xd(i, j, 0, 1)
-        xd(i, j, 2, 1) = xd(i, j, 2, 1) - xd(i, j, 0, 1)
-        xd(i, j, 0, 1) = 0.0_8
-      end if
+      tmpd5 = xd(i, j, ke, 3)
+      xd(i, j, ke, 3) = 0.0_8
+      xd(i, j, kl, 3) = xd(i, j, kl, 3) + two*tmpd5
+      xd(i, j, nz, 3) = xd(i, j, nz, 3) - tmpd5
+      tmpd6 = xd(i, j, ke, 2)
+      xd(i, j, ke, 2) = 0.0_8
+      xd(i, j, kl, 2) = xd(i, j, kl, 2) + two*tmpd6
+      xd(i, j, nz, 2) = xd(i, j, nz, 2) - tmpd6
+      tmpd7 = xd(i, j, ke, 1)
+      xd(i, j, ke, 1) = 0.0_8
+      xd(i, j, kl, 1) = xd(i, j, kl, 1) + two*tmpd7
+      xd(i, j, nz, 1) = xd(i, j, nz, 1) - tmpd7
+      xd(i, j, 1, 3) = xd(i, j, 1, 3) + two*xd(i, j, 0, 3)
+      xd(i, j, 2, 3) = xd(i, j, 2, 3) - xd(i, j, 0, 3)
+      xd(i, j, 0, 3) = 0.0_8
+      xd(i, j, 1, 2) = xd(i, j, 1, 2) + two*xd(i, j, 0, 2)
+      xd(i, j, 2, 2) = xd(i, j, 2, 2) - xd(i, j, 0, 2)
+      xd(i, j, 0, 2) = 0.0_8
+      xd(i, j, 1, 1) = xd(i, j, 1, 1) + two*xd(i, j, 0, 1)
+      xd(i, j, 2, 1) = xd(i, j, 2, 1) - xd(i, j, 0, 1)
+      xd(i, j, 0, 1) = 0.0_8
     end do
   end do
   do k=kl,1,-1
     do i=ie,0,-1
-      call popcontrol1b(branch)
-      if (branch .ne. 0) then
-        tmpd2 = xd(i, je, k, 3)
-        xd(i, je, k, 3) = 0.0_8
-        xd(i, jl, k, 3) = xd(i, jl, k, 3) + two*tmpd2
-        xd(i, ny, k, 3) = xd(i, ny, k, 3) - tmpd2
-        tmpd3 = xd(i, je, k, 2)
-        xd(i, je, k, 2) = 0.0_8
-        xd(i, jl, k, 2) = xd(i, jl, k, 2) + two*tmpd3
-        xd(i, ny, k, 2) = xd(i, ny, k, 2) - tmpd3
-        tmpd4 = xd(i, je, k, 1)
-        xd(i, je, k, 1) = 0.0_8
-        xd(i, jl, k, 1) = xd(i, jl, k, 1) + two*tmpd4
-        xd(i, ny, k, 1) = xd(i, ny, k, 1) - tmpd4
-      end if
-      call popcontrol1b(branch)
-      if (branch .eq. 0) then
-        xd(i, 1, k, 3) = xd(i, 1, k, 3) + two*xd(i, 0, k, 3)
-        xd(i, 2, k, 3) = xd(i, 2, k, 3) - xd(i, 0, k, 3)
-        xd(i, 0, k, 3) = 0.0_8
-        xd(i, 1, k, 2) = xd(i, 1, k, 2) + two*xd(i, 0, k, 2)
-        xd(i, 2, k, 2) = xd(i, 2, k, 2) - xd(i, 0, k, 2)
-        xd(i, 0, k, 2) = 0.0_8
-        xd(i, 1, k, 1) = xd(i, 1, k, 1) + two*xd(i, 0, k, 1)
-        xd(i, 2, k, 1) = xd(i, 2, k, 1) - xd(i, 0, k, 1)
-        xd(i, 0, k, 1) = 0.0_8
-      end if
+      tmpd2 = xd(i, je, k, 3)
+      xd(i, je, k, 3) = 0.0_8
+      xd(i, jl, k, 3) = xd(i, jl, k, 3) + two*tmpd2
+      xd(i, ny, k, 3) = xd(i, ny, k, 3) - tmpd2
+      tmpd3 = xd(i, je, k, 2)
+      xd(i, je, k, 2) = 0.0_8
+      xd(i, jl, k, 2) = xd(i, jl, k, 2) + two*tmpd3
+      xd(i, ny, k, 2) = xd(i, ny, k, 2) - tmpd3
+      tmpd4 = xd(i, je, k, 1)
+      xd(i, je, k, 1) = 0.0_8
+      xd(i, jl, k, 1) = xd(i, jl, k, 1) + two*tmpd4
+      xd(i, ny, k, 1) = xd(i, ny, k, 1) - tmpd4
+      xd(i, 1, k, 3) = xd(i, 1, k, 3) + two*xd(i, 0, k, 3)
+      xd(i, 2, k, 3) = xd(i, 2, k, 3) - xd(i, 0, k, 3)
+      xd(i, 0, k, 3) = 0.0_8
+      xd(i, 1, k, 2) = xd(i, 1, k, 2) + two*xd(i, 0, k, 2)
+      xd(i, 2, k, 2) = xd(i, 2, k, 2) - xd(i, 0, k, 2)
+      xd(i, 0, k, 2) = 0.0_8
+      xd(i, 1, k, 1) = xd(i, 1, k, 1) + two*xd(i, 0, k, 1)
+      xd(i, 2, k, 1) = xd(i, 2, k, 1) - xd(i, 0, k, 1)
+      xd(i, 0, k, 1) = 0.0_8
     end do
   end do
   do k=kl,1,-1
     do j=jl,1,-1
-      call popcontrol1b(branch)
-      if (branch .ne. 0) then
-        tmpd = xd(ie, j, k, 3)
-        xd(ie, j, k, 3) = 0.0_8
-        xd(il, j, k, 3) = xd(il, j, k, 3) + two*tmpd
-        xd(nx, j, k, 3) = xd(nx, j, k, 3) - tmpd
-        tmpd0 = xd(ie, j, k, 2)
-        xd(ie, j, k, 2) = 0.0_8
-        xd(il, j, k, 2) = xd(il, j, k, 2) + two*tmpd0
-        xd(nx, j, k, 2) = xd(nx, j, k, 2) - tmpd0
-        tmpd1 = xd(ie, j, k, 1)
-        xd(ie, j, k, 1) = 0.0_8
-        xd(il, j, k, 1) = xd(il, j, k, 1) + two*tmpd1
-        xd(nx, j, k, 1) = xd(nx, j, k, 1) - tmpd1
-      end if
-      call popcontrol1b(branch)
-      if (branch .eq. 0) then
-        xd(1, j, k, 3) = xd(1, j, k, 3) + two*xd(0, j, k, 3)
-        xd(2, j, k, 3) = xd(2, j, k, 3) - xd(0, j, k, 3)
-        xd(0, j, k, 3) = 0.0_8
-        xd(1, j, k, 2) = xd(1, j, k, 2) + two*xd(0, j, k, 2)
-        xd(2, j, k, 2) = xd(2, j, k, 2) - xd(0, j, k, 2)
-        xd(0, j, k, 2) = 0.0_8
-        xd(1, j, k, 1) = xd(1, j, k, 1) + two*xd(0, j, k, 1)
-        xd(2, j, k, 1) = xd(2, j, k, 1) - xd(0, j, k, 1)
-        xd(0, j, k, 1) = 0.0_8
-      end if
+      tmpd = xd(ie, j, k, 3)
+      xd(ie, j, k, 3) = 0.0_8
+      xd(il, j, k, 3) = xd(il, j, k, 3) + two*tmpd
+      xd(nx, j, k, 3) = xd(nx, j, k, 3) - tmpd
+      tmpd0 = xd(ie, j, k, 2)
+      xd(ie, j, k, 2) = 0.0_8
+      xd(il, j, k, 2) = xd(il, j, k, 2) + two*tmpd0
+      xd(nx, j, k, 2) = xd(nx, j, k, 2) - tmpd0
+      tmpd1 = xd(ie, j, k, 1)
+      xd(ie, j, k, 1) = 0.0_8
+      xd(il, j, k, 1) = xd(il, j, k, 1) + two*tmpd1
+      xd(nx, j, k, 1) = xd(nx, j, k, 1) - tmpd1
+      xd(1, j, k, 3) = xd(1, j, k, 3) + two*xd(0, j, k, 3)
+      xd(2, j, k, 3) = xd(2, j, k, 3) - xd(0, j, k, 3)
+      xd(0, j, k, 3) = 0.0_8
+      xd(1, j, k, 2) = xd(1, j, k, 2) + two*xd(0, j, k, 2)
+      xd(2, j, k, 2) = xd(2, j, k, 2) - xd(0, j, k, 2)
+      xd(0, j, k, 2) = 0.0_8
+      xd(1, j, k, 1) = xd(1, j, k, 1) + two*xd(0, j, k, 1)
+      xd(2, j, k, 1) = xd(2, j, k, 1) - xd(0, j, k, 1)
+      xd(0, j, k, 1) = 0.0_8
     end do
   end do
 end subroutine xhalo_block_b

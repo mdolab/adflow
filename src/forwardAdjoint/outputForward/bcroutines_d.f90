@@ -486,11 +486,13 @@ contains
     real(kind=realtype) :: rhok
     real(kind=realtype) :: rhokd
     intrinsic mod
-! apply the bcwall in case the turbulent transport equations are solved
-! together with the mean flow equations, aplly the viscous
-! wall boundary conditions for the turbulent variables.
-! no need to extrapolate the secondary halo's, because this
-! is done in extrapolate2ndhalo.
+! apply the bcwall in case the turbulent transport equations are
+! solved together with the mean flow equations, aplly the viscous
+! wall boundary conditions for the turbulent variables.  no need
+! to extrapolate the secondary halo's, because this is done in
+! extrapolate2ndhalo. this is only necesssary when correcting for
+! k. *this is not currently included in ad. it will be required
+! for the 2-equation turbulence models. 
 ! initialize rhok to zero. this will be overwritten if a
 ! correction for k must be applied.
     rhok = zero
@@ -559,11 +561,13 @@ contains
     integer(kind=inttype) :: i, j, ii
     real(kind=realtype) :: rhok
     intrinsic mod
-! apply the bcwall in case the turbulent transport equations are solved
-! together with the mean flow equations, aplly the viscous
-! wall boundary conditions for the turbulent variables.
-! no need to extrapolate the secondary halo's, because this
-! is done in extrapolate2ndhalo.
+! apply the bcwall in case the turbulent transport equations are
+! solved together with the mean flow equations, aplly the viscous
+! wall boundary conditions for the turbulent variables.  no need
+! to extrapolate the secondary halo's, because this is done in
+! extrapolate2ndhalo. this is only necesssary when correcting for
+! k. *this is not currently included in ad. it will be required
+! for the 2-equation turbulence models. 
 ! initialize rhok to zero. this will be overwritten if a
 ! correction for k must be applied.
     rhok = zero
