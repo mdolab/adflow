@@ -5,7 +5,9 @@ subroutine zeroADSeeds(nn, level, sps)
   use blockPointers
   use inputTimeSpectral
   use flowVarRefState
+#ifndef USE_COMPLEX
   use bcroutines_b
+#endif
   implicit none
 
   ! Input parameters
@@ -88,6 +90,7 @@ subroutine zeroADSeeds(nn, level, sps)
      flowDomsd(nn, level, sps)%viscSubface(mm)%q = zero
   end do viscbocoLoop
 
+#ifndef USE_COMPLEX
   ! Now zero these
   ww0d = zero
   ww1d = zero
@@ -110,5 +113,5 @@ subroutine zeroADSeeds(nn, level, sps)
   rev3d = zero
   ssid = zero
   xxd = zero
-
+#endif
 end subroutine zeroADSeeds
