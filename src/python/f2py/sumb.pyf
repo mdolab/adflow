@@ -381,7 +381,7 @@ python module libsumb
          real(kind=realtype) dimension(nout),intent(out),depend(nout) :: dxv
          integer(kind=inttype) intent(in) :: nout
        end subroutine spectralprecscribedmotion
-  
+#ifndef USE_COMPLEX
         subroutine computematrixfreeproductfwd(xvdot,extradot,wdot,usespatial,usestate,dwdot,funcsdot,spatialsize,extrasize,statesize,costsize) ! in :test:matrixFreeRoutines.F90
             real(kind=realtype) dimension(spatialsize),intent(in) :: xvdot
             real(kind=realtype) dimension(extrasize),intent(in) :: extradot
@@ -408,7 +408,12 @@ python module libsumb
             integer(kind=inttype), optional,intent(in),check(len(dwbar)>=statesize),depend(dwbar) :: statesize=len(dwbar)
             integer(kind=inttype), optional,intent(in),check(len(funcsbar)>=costsize),depend(funcsbar) :: costsize=len(funcsbar)
         end subroutine computematrixfreeproductbwd
-
+        subroutine computematrixfreeproductbwdfast(dwbar,wbar,statesize) ! in :test:test.F90
+          real(kind=realtype) dimension(statesize),intent(in) :: dwbar
+          real(kind=realtype) dimension(statesize),intent(out),depend(statesize) :: wbar
+          integer(kind=inttype), optional,check(len(dwbar)>=statesize),depend(dwbar) :: statesize=len(dwbar)
+        end subroutine computematrixfreeproductbwdfast
+#endif
        ! ------------- Misc --------------------
  
 
@@ -1148,13 +1153,6 @@ python module libsumb
             integer(kind=inttype), optional,check(len(dwbar)>=statesize),depend(dwbar) :: statesize=len(dwbar)
             integer(kind=inttype) :: spatialsize
         end subroutine testrevspatial
-
-        subroutine computematrixfreeproductbwdfast(dwbar,wbar,statesize) ! in :test:test.F90
-          real(kind=realtype) dimension(statesize),intent(in) :: dwbar
-          real(kind=realtype) dimension(statesize),intent(out),depend(statesize) :: wbar
-          integer(kind=inttype), optional,check(len(dwbar)>=statesize),depend(dwbar) :: statesize=len(dwbar)
-        end subroutine computematrixfreeproductbwdfast
-
 
     end interface 
 

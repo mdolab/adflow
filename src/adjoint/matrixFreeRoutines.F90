@@ -1,3 +1,4 @@
+#ifndef USE_COMPLEX
 subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useState, dwdot, funcsDot, &
      spatialSize, extraSize, stateSize, costSize)
 
@@ -39,8 +40,6 @@ subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useSta
   real(kind=realType), dimension(costSize) :: funcsLocalDot
 
   logical :: resetToRans
-
-#ifndef USE_COMPLEX
 
   ! Determine if we want to use frozenTurbulent Adjoint
   resetToRANS = .False. 
@@ -216,7 +215,6 @@ subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useSta
   if (resetToRANS) then
      equations = RANSEquations
   end if
-#endif
 
 end subroutine computeMatrixFreeProductFwd
 
@@ -237,6 +235,7 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
   use costfunctions
   use walldistancedata, only : xSurfVec, xSurfVecd, xSurf, xSurfd, wallScatter
   implicit none
+
 #define PETSC_AVOID_MPIF_H
 #include "finclude/petsc.h"
 #include "finclude/petscvec.h90"
@@ -260,7 +259,7 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
   logical :: resetToRans
   real(kind=realType), dimension(extraSize) :: extraLocalBar
   real(kind=realType), dimension(:), allocatable :: xSurfbSum
-#ifndef USE_COMPLEX
+
   ! Setup number of state variable based on turbulence assumption
   if ( frozenTurbulence ) then
      nState = nwf
@@ -505,7 +504,7 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
   if (resetToRANS) then
      equations = RANSEquations
   end if
-#endif
+
   do nn=1,nDom
      do sps=1,nTimeIntervalsSpectral
         call setPointers(nn, level, sps)
@@ -519,6 +518,7 @@ subroutine computeMatrixFreeProductBwdFast(dwbar, wbar, stateSize)
   ! mode computation. It is intended to compute dRdw^T product
   ! ONLY. The main purpose is for fast matrix-vector products for the
   ! actual adjoint solve. 
+
   use blockPointers
   use inputDiscretization
   use inputTimeSpectral 
@@ -702,9 +702,8 @@ subroutine computeMatrixFreeProductBwdFast(dwbar, wbar, stateSize)
   if (resetToRANS) then
      equations = RANSEquations
   end if
-
 end subroutine computeMatrixFreeProductBwdFast
-
+#endif ! if def for complex
 
 subroutine dRdwTMatMult(A, vecX,  vecY, ierr)
 
