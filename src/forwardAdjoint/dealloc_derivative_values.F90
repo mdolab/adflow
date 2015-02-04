@@ -91,7 +91,7 @@ subroutine dealloc_derivative_values(level)
         deallocate(flowDomsd(nn,1,sps)%rev,stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
         
-        deallocate(flowDomsd(nn,1,sps)%dtl, &
+        deallocate(&
              flowDomsd(nn,1,sps)%radI,     &
              flowDomsd(nn,1,sps)%radJ,     &
              flowDomsd(nn,1,sps)%radK,stat=ierr)

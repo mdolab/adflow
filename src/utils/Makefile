@@ -92,8 +92,10 @@ FILES_TO_COMPLEXIFY =  \
 	       unique.f90\
 	       whalo1to1.f90\
 	       whalo1to1_b.f90\
+	       whalo1to1_d.f90\
 	       whalo.f90\
 	       whalo_b.f90\
+	       whalo_d.f90\
 	       whaloMixing.f90\
 	       whaloSliding.f90\
 	       wOverset.f90\

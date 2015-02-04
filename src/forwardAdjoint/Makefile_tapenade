@@ -27,16 +27,6 @@ SRC = ..
 # Integer, double and real precision (bytes)
 TAPENADE_PRECISION = -i4 -dr8 -r8
 
-# -------------------- Residual AD Info---------------------------------
-# Dependent output variables (separator: white space, default: all)
-TAPENADE_RES_OUTVARS = "flowdoms%dw  BCData%Fp BCData%Fv BCData%M  BCData%sepSensor BCData%Cavitation BCData%oArea flowdoms%w flowdoms%x force moment sepSensor Cavitation funcValues"
-
-# Independent input variables (separator: white space, default: all)
-TAPENADE_RES_VARS = "flowdoms%w flowdoms%x xsurf alpha beta mach machgrid machcoef pointref lengthRef Pref tempFreeStream Reynolds"
-
-# Name of the top routine
-TAPENADE_RES_HEADROUTINE = "block_res"
-
 ALL_RES_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.F90\
 		$(SRC)/forwardAdjoint/residualInput/xhalo_block.F90\
 		$(SRC)/forwardAdjoint/residualInput/metric_block.F90\
@@ -148,7 +138,8 @@ ad_forward:
 # The following is the single Tapenade command to run:
 	$(TAPENADE_HOME)/bin/tapenade -html \
 	-head "block_res(flowdoms%w flowdoms%x xsurf alpha beta mach machgrid machcoef pointref lengthRef Pref tempFreeStream Reynolds ww0 ww1 ww2 ww3 pp0 pp1 pp2 pp3 rlv0 rlv1 rlv2 rlv3 rev0 rev1 rev2 rev3 ssi ssj ssk ss xx) > \
-(flowdoms%dw  BCData%Fp BCData%Fv BCData%M  BCData%sepSensor BCData%Cavitation BCData%oArea flowdoms%w flowdoms%x force moment sepSensor Cavitation funcValues)" \
+(flowdoms%dw  BCData%Fp BCData%Fv BCData%M  BCData%sepSensor BCData%Cavitation BCData%oArea flowdoms%w flowdoms%x force moment sepSensor Cavitation funcValues) \
+xhalo_block(x)>(x)" \
 	-forward $(TAPENADE_PRECISION) \
 	-O temp_forward $(I_RES_FILES)
 
@@ -171,7 +162,8 @@ ad_reverse:
 # The following is the single Tapenade command to run:
 	$(TAPENADE_HOME)/bin/tapenade -html \
 	-head "block_res(flowdoms%w flowdoms%x xsurf alpha beta mach machgrid machcoef pointref lengthRef Pref tempFreeStream Reynolds ww0 ww1 ww2 ww3 pp0 pp1 pp2 pp3 rlv0 rlv1 rlv2 rlv3 rev0 rev1 rev2 rev3 xx ssi) > \
-(flowdoms%dw  BCData%Fp BCData%Fv BCData%M  BCData%sepSensor BCData%Cavitation BCData%oArea flowdoms%w flowdoms%x force moment sepSensor Cavitation funcValues ww0 ww1 ww2 ww3 pp0 pp1 pp2 pp3 rlv0 rlv1 rlv2 rlv3 rev0 rev1 rev2 rev3 xx ssi)" \
+(flowdoms%dw  BCData%Fp BCData%Fv BCData%M  BCData%sepSensor BCData%Cavitation BCData%oArea flowdoms%w flowdoms%x force moment sepSensor Cavitation funcValues ww0 ww1 ww2 ww3 pp0 pp1 pp2 pp3 rlv0 rlv1 rlv2 rlv3 rev0 rev1 rev2 rev3 xx ssi) \
+xhalo_block(x)>(x)" \
 	-adjvarname %d \
 	-reverse -msglevel 30 $(TAPENADE_PRECISION) \
 	-noisize \

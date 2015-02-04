@@ -551,14 +551,17 @@ contains
     integer(kind=intType) :: i, j, ii
     real(kind=realType) :: rhok
 
-    ! Apply the BCWall In case the turbulent transport equations are solved
-    ! together with the mean flow equations, aplly the viscous
-    ! wall boundary conditions for the turbulent variables.
-    ! No need to extrapolate the secondary halo's, because this
-    ! is done in extrapolate2ndHalo.
+    ! Apply the BCWall In case the turbulent transport equations are
+    ! solved together with the mean flow equations, aplly the viscous
+    ! wall boundary conditions for the turbulent variables.  No need
+    ! to extrapolate the secondary halo's, because this is done in
+    ! extrapolate2ndHalo. This is only necesssary when correcting for
+    ! K. *THIS IS NOT CURRENTLY INCLUDED IN AD. IT WILL BE REQUIRED
+    ! FOR THE 2-EQUATION TURBULENCE MODELS. 
 #ifndef USE_TAPENADE
     if( turbCoupled ) call turbBCNSWall(.false.)
-#endif 
+#endif
+
     ! Initialize rhok to zero. This will be overwritten if a
     ! correction for k must be applied.
 
