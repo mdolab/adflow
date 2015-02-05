@@ -45,7 +45,7 @@ subroutine exchangeCoor_b(level)
         ! Store the processor id and the size of the message
         ! a bit easier.
 
-        procID = commPatternNode_1st(level)%sendProc(i)
+        procID = commPatternNode_1st(level)%recvProc(i)
         size   = 3*commPatternNode_1st(level)%nRecv(i)
 
         ! Copy the data in the correct part of the send buffer.
