@@ -73,7 +73,7 @@ subroutine whalo1to1_b(level, start, end, commPressure,       &
         ! Store the processor id and the size of the message
         ! a bit easier.
 
-        procID = commPattern(level)%sendProc(i)
+        procID = commPattern(level)%recvProc(i)
         size    = nVar*commPattern(level)%nrecv(i)
 
         ! Copy the data into the buffer
