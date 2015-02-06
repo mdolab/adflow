@@ -20,3 +20,4 @@ SUmb -- Stanford University MultiBlock -- is a structured multi-block 3D CFD sol
    meshing
    options
    pySUmb
+   performance
