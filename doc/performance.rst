@@ -42,17 +42,17 @@ orders of magnitude. This is equivalent of setting L2convergence=1e-8
 with the NKSolver. 
 
 For simple cases with good meshes (think isolated wing with a pyHyp)
-mesh and a modest number of cells (<1M), CPPH can exceed 2 million. As
+mesh and a modest number of cells (<1M), CPPH can exceed 1 million. As
 a concrete example:
 
 * 450k mesh
-* 16 processors
-* 40 sec solution time
-* CPPH = 2 530 000
+* 4 processors (Desktop machine)
+* 400 sec solution time
+* CPPH = 1 012 500
 
 For much larger and more difficult case, such as complete
 configuration: wing, body, nacelle, pylon, h-stab and v-stab, the CPPH
-may be an order or magnitude lower ~200\,000. Another example:
+may be much lower ~200\,000. Another example:
 
 * 5 200 000 cell mesh
 * 64 processors 
