@@ -696,6 +696,20 @@ class SUMB(AeroSolver):
                 if not ignoreMissing:
                     raise Error('Supplied function is not known to SUmb.')
 
+    def checkSolutionFailure(self, aeroProblem, funcs):
+        """
+        Take in a an aeroProblem and check for failure. Then append the fail
+        flag in funcs.
+    
+        Parameters
+        ----------
+        aeroProblem : pyAero_problem class
+            The aerodynamic problem to to get the solution for
+
+        funcs : dict
+            Dictionary into which the functions are saved.
+        """
+        self.setAeroProblem(aeroProblem)
         # We also add the fail flag into the funcs dictionary. If fail
         # is already there, we just logically 'or' what was
         # there. Otherwise we add a new entry. 
@@ -704,6 +718,7 @@ class SUMB(AeroSolver):
             funcs['fail'] = funcs['fail'] or failFlag
         else:
             funcs['fail'] = failFlag
+
 
     def evalFunctionsSens(self, aeroProblem, funcsSens, evalFuncs=None, sps=1):
         """
