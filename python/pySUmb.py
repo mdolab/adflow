@@ -737,10 +737,6 @@ class SUMB(AeroSolver):
         # out of sumb. If you want a derivative, it should come from
         # here.
 
-        # 'Extra' derivatives --- ie the aerodynamic/reference
-        # derivatives. We must provide the derivatives that have been
-        # asked for in the aeroProblem. Before we start, lets setup
-        # the aeroDVs we need
         self.setAeroProblem(aeroProblem)
 
         if evalFuncs is None:
@@ -764,29 +760,24 @@ class SUMB(AeroSolver):
             # Solve adjoint equation (if necessary)
             self.solveAdjoint(aeroProblem, f)
 
-            # Geometric derivatives
-            if self.DVGeo is not None and self.DVGeo.getNDV() > 0:
+            # Now, due to the use of the super combined
+            # computeMatrixFreeProductBwd() routine, we can complete
+            # the total derivative computation in a single call. We
+            # simply seed resBar with *NEGATIVE* of the adjoint we
+            # just computed along with 1.0 for the objective and then
+            # everything completely falls out. This saves doing 4
+            # individual calls to: getdRdXvTPsi, getdIdx, getdIda,
+            # getdIdaTPsi.
 
-                dIdXv_2 = self.getdRdXvTPsi(f, groupName=None)
-                dIdXv_1 = self.getdIdx(f, groupName=None)
+            obj, aeroObj = self._getObjective(f.lower())
 
-                # Total derivative of the obective with volume coordinates
-                dIdXv = dIdXv_1 - dIdXv_2
+            # These are the reverse mode seeds
+            psi = -self.curAP.sumbData.adjoints[obj]
+            funcsBar = {f.lower():1.0}
 
-                # Now get total derivative wrt surface cordinates
-                self.mesh.warpDeriv(dIdXv)
-                dIdXs = self.mesh.getdXs('all')
-
-                # Now get the total derivative wrt the design variables
-                dIdx = self.DVGeo.totalSensitivity(
-                    dIdXs, ptSetName=ptSetName, comm=self.comm, 
-                    config=self.curAP.name)
-
-                # Finally put derivatives into the dictionary
-                funcsSens[key].update(dIdx)
-
-            # Compute total aero derivatives
-            funcsSens[key].update(self.totalAeroDerivative(f))
+            # Compute everything and update into the dictionary
+            funcsSens[key].update(self.computeMatrixFreeProductBwd(
+                resBar=psi, funcsBar=funcsBar, xDvDeriv=True))
 
     def solveCL(self, aeroProblem, CLStar, alpha0=0,
                 delta=0.5, tol=1e-3, autoReset=True):
@@ -2002,8 +1993,14 @@ class SUMB(AeroSolver):
 	# Get the list of derivatives and then process:
         dIda_1 = self.getdIda(objective)
         dIda_2 = self.getdRdaTPsi(objective)
-        res = dIda_1-dIda_2
+        
+        return self._processAeroDerivatives(dIda_1 - dIda_2)
 
+    def _processAeroDerivatives(self, dIda):
+        """This internal furncion is used to convert the raw array ouput from
+        the matrix-free product bwd routine into the required
+        dictionary format."""
+        
 	funcsSens = {}
 
         DVsRequired = list(self.curAP.DVNames.keys())
@@ -2027,11 +2024,11 @@ class SUMB(AeroSolver):
 
                 # Extract the derivatives wrt the independent
                 # parameters in SUmb       
-                dIdP = res[self.aeroDVs['P']]
-                dIdT = res[self.aeroDVs['T']]
-                dIdMach = res[self.aeroDVs['mach']]
+                dIdP = dIda[self.aeroDVs['P']]
+                dIdT = dIda[self.aeroDVs['T']]
+                dIdMach = dIda[self.aeroDVs['mach']]
                 # Chain rule the reynolds dependance back to what came from aeroproblem:
-                dIdReynolds = res[self.aeroDVs['reynolds']]
+                dIdReynolds = dIda[self.aeroDVs['reynolds']]
                 dIdV = self.curAP.rho/self.curAP.mu*dIdReynolds
                 dIdrho = self.curAP.V/self.curAP.mu*dIdReynolds
                 dIdmu = -self.curAP.rho*self.curAP.V/self.curAP.mu**2 * dIdReynolds
@@ -2047,13 +2044,15 @@ class SUMB(AeroSolver):
 
             elif dv in self.possibleAeroDVs:
                 if dv in self.possibleAeroDVs:
-                    funcsSens[self.curAP.DVNames[dv]] = res[self.aeroDVs[dv]]
+                    funcsSens[self.curAP.DVNames[dv]] = dIda[self.aeroDVs[dv]]
                     if dv == 'alpha':
                         funcsSens[self.curAP.DVNames[dv]] *= numpy.pi/180.0
      
 	return funcsSens
 
+
     def _setAeroDVs(self):
+
         """ Do everything that is required to deal with aerodynamic
         design variables in SUmb"""
 
@@ -2569,24 +2568,18 @@ class SUMB(AeroSolver):
             
         # Process xvbar back to the geometric design variables if necessary
         if xDvDeriv:
-            self.mesh.warpDeriv(xvbar)
-            xsbar = self.mesh.getdXs('all')
-            xdvbar = {}
-            xdvbar.update(self.DVGeo.totalSensitivity(xsbar, 
-                self.curAP.ptSetName, self.comm, config=self.curAP.name))
+            # Process spatial derivatives if we have a mesh:
+            if self.mesh and self.DVGeo is not None and self.DVGeo.getNDV() > 0:
+                self.mesh.warpDeriv(xvbar)
+                xsbar = self.mesh.getdXs('all')
+                xdvbar = {}
+                xdvbar.update(self.DVGeo.totalSensitivity(
+                    xsbar, self.curAP.ptSetName, self.comm, config=self.curAP.name))
 
             # We also need to add in the aero derivatives here
-            for key in self.aeroDVs:
-                execStr = 'mapping = self.sumb.%s'%self.possibleAeroDVs[key]
-                exec(execStr)
-                if key == 'alpha':
-                    # convert angle of attack to degrees
-                    xdvbar[key] = extrabar[mapping]*(numpy.pi/180.0)
-                else:
-                    xdvbar[key] = extrabar[mapping]
-
+            xdvbar.update(self._processAeroDerivatives(extrabar))
             returns.append(xdvbar)
-
+       
         # Return the raw extrabar if required:
         if xDvDerivAero:
             returns.append(extrabar)
