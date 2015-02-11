@@ -35,53 +35,32 @@ include ${SUMB_RULES_FILE}
 #      ******************************************************************
 
 vpath %.o $(SUMB_OBJDIR)
-FF90_OBJECTS =  viscousflux_d.o \
+
+FF90_OBJECTS1 = bcroutines_d.o\
+		samodule_d.o\
+
+FF90_OBJECTS2 = allnodalgradients_d.o\
+		viscousflux_d.o \
 		viscousfluxapprox_d.o\
-	        sa_block_d.o\
-		sasolve_d.o\
 		invisciddissfluxmatrix_d.o \
-		blockpointers_d.o\
 		diffSizes.o\
-		applyallbc_block_d.o\
-		bcsymm_d.o\
-                computeetot_d.o\
 		computegamma_d.o\
 		computelamviscosity_d.o\
-		extrapolate2ndhalo_d.o\
+		computespeedofsoundsquared_d.o\
+		computepressuresimple_d.o\
 		timestep_block_d.o\
-		bceulerwall_d.o\
 		curveupre_d.o\
 		invisciddissfluxscalar_d.o\
 		invisciddissfluxscalarapprox_d.o\
 		invisciddissfluxmatrixapprox_d.o\
-		turbbcnswall_d.o\
-		bcfarfield_d.o\
-		bcturbwall_d.o\
 		dim_d.o\
 		inviscidupwindflux_d.o  \
-		utauwf_d.o \
-		bcnswalladiabatic_d.o \
 		block_res_d.o  \
 		residual_block_d.o \
-		bcnswallisothermal_d.o \
 		computeetotcellcpfit_d.o \
 		etotarray_d.o \
-                setbcpointers_d.o\
-                setww0pp0rlv0rev0_d.o\
-                setss_d.o\
-                setallx_d.o\
-                setssmetric_d.o\
-                setxxssrhodd2wall_d.o\
-                setgamma_d.o\
-                setpp3pp4_d.o\
 	        inviscidcentralflux_d.o\
                 saeddyviscosity_d.o\
-                bcturbtreatment_d.o\
-                applyallturbbcthisblock_d.o\
-                bceddynowall_d.o\
-                bceddywall_d.o\
-		bcturbfarfield_d.o\
-		bcturbsymm_d.o\
 		eintarray_d.o  \
 		xhalo_block_d.o\
 		metric_block_d.o\
@@ -98,8 +77,6 @@ FF90_OBJECTS =  viscousflux_d.o \
 		derivativerigidrotangle_d.o\
 		computeeddyviscosity_d.o\
 		sanuknowneddyratio_d.o\
-		unsteadyturbspectral_block_d.o\
-		turb2ndhalo_d.o\
 		prodkatolaunder_d.o\
 		prodwmag2_d.o\
 		prodsmag2_d.o\
@@ -111,6 +88,15 @@ FF90_OBJECTS =  viscousflux_d.o \
 		computetsderivatives_d.o\
 		computeleastsquaresregression_d.o\
 		computerootbendingmoment_d.o\
+		bcturbwall_d.o\
+                bcturbtreatment_d.o\
+                applyallturbbcthisblock_d.o\
+                bceddynowall_d.o\
+                bceddywall_d.o\
+		bcturbfarfield_d.o\
+		turb2ndhalo_d.o\
+		boundarynormals_d.o\
+		volume_block_d.o\
 
 #      ******************************************************************
 #      *                                                                *
@@ -121,7 +107,8 @@ FF90_OBJECTS =  viscousflux_d.o \
 default: all
 
 all:
-	$(PMAKE) src
+	$(PMAKE) src1
+	$(PMAKE) src2
 
 clean:
 	@echo "        Making clean in solver... "
@@ -133,4 +120,5 @@ clean:
 #      *                                                                *
 #      ******************************************************************
 
-src:   $(FF90_OBJECTS) 
+src1:   $(FF90_OBJECTS1) 
+src2:   $(FF90_OBJECTS2) 

@@ -348,7 +348,7 @@ subroutine executeDADIStep
         ! Compute the total energy and possibly the laminar and eddy
         ! viscosity in the owned cells.
 
-        call computeEtot(2_intType,il, 2_intType,jl, &
+        call computeEtotBlock(2_intType,il, 2_intType,jl, &
              2_intType,kl, correctForK)
         call computeLamViscosity
         call computeEddyViscosity

@@ -26,6 +26,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, Cavitation)
   use BCTypes
   use flowVarRefState
   use inputPhysics
+  use bcroutines
   implicit none
   !
   !      Subroutine arguments
@@ -37,7 +38,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, Cavitation)
   !
   !      Local variables.
   !
-  integer(kind=intType) :: nn, i, j
+  integer(kind=intType) :: nn, i, j, ii
 
   real(kind=realType) :: pm1, fx, fy, fz, fn, sigma
   real(kind=realType) :: xc, yc, zc
@@ -47,90 +48,6 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, Cavitation)
   real(kind=realType) :: tauXy, tauXz, tauYz
 
   real(kind=realType), dimension(3) :: refPoint
-
-#ifndef TAPENADE_REVERSE
-  real(kind=realType), dimension(:,:),   pointer :: pp2, pp1
-  real(kind=realType), dimension(:,:),   pointer :: rho2, rho1
-  real(kind=realType), dimension(:,:),   pointer :: rlv2, rlv1
-  real(kind=realType), dimension(:,:),   pointer :: rev1, rev2
-  real(kind=realType), dimension(:,:),   pointer :: dd2Wall
-  real(kind=realType), dimension(:,:,:), pointer :: ss, xx
-  real(kind=realType), dimension(:,:,:), pointer :: ww1, ww2
-  !real(kind=realType), dimension(:,:,:), pointer :: norm
-
-!
-!      Interfaces
-!
-  interface
-         subroutine setBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
-                                  rev1, rev2, offset)
-           use BCTypes
-           use blockPointers
-           use flowVarRefState
-           implicit none
-
-           integer(kind=intType), intent(in) :: nn, offset
-           real(kind=realType), dimension(:,:,:), pointer :: ww1, ww2
-           real(kind=realType), dimension(:,:),   pointer :: pp1, pp2
-           real(kind=realType), dimension(:,:),   pointer :: rlv1, rlv2
-           real(kind=realType), dimension(:,:),   pointer :: rev1, rev2
-         end subroutine setBCPointers
-
-         subroutine resetBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
-                                  rev1, rev2, offset)
-           use BCTypes
-           use blockPointers
-           use flowVarRefState
-           implicit none
-
-           integer(kind=intType), intent(in) :: nn, offset
-           real(kind=realType), dimension(:,:,:), pointer :: ww1, ww2
-           real(kind=realType), dimension(:,:),   pointer :: pp1, pp2
-           real(kind=realType), dimension(:,:),   pointer :: rlv1, rlv2
-           real(kind=realType), dimension(:,:),   pointer :: rev1, rev2
-         end subroutine resetBCPointers
-
-        subroutine setxxssrhodd2Wall(nn, xx, ss, rho1, rho2, dd2Wall)
-
-           use BCTypes
-           use blockPointers
-           use flowVarRefState
-           use inputPhysics
-           implicit none
-
-           integer(kind=intType), intent(in) :: nn
-           real(kind=realType), dimension(:,:),   pointer :: rho2, rho1
-           real(kind=realType), dimension(:,:),   pointer :: dd2Wall
-           real(kind=realType), dimension(:,:,:), pointer :: ss, xx
-         end subroutine setxxssrhodd2Wall
-
-        subroutine resetxxssrhodd2Wall(nn, xx, ss, rho1, rho2, dd2Wall)
-
-           use BCTypes
-           use blockPointers
-           use flowVarRefState
-           use inputPhysics
-           implicit none
-
-           integer(kind=intType), intent(in) :: nn
-           real(kind=realType), dimension(:,:),   pointer :: rho2, rho1
-           real(kind=realType), dimension(:,:),   pointer :: dd2Wall
-           real(kind=realType), dimension(:,:,:), pointer :: ss, xx
-         end subroutine resetxxssrhodd2Wall
-
-       end interface
-
-#else
-       real(kind=realType), dimension(imaxDim,jmaxDim,nw) :: ww1, ww2
-       real(kind=realType), dimension(imaxDim,jmaxDim) :: pp1, pp2
-       real(kind=realType), dimension(imaxDim,jmaxDim) :: rho2, rho1
-       real(kind=realType), dimension(imaxDim,jmaxDim) :: rlv1, rlv2
-       real(kind=realType), dimension(imaxDim,jmaxDim) :: rev1, rev2
-       real(kind=realType), dimension(imaxDim-2,jmaxDim-2) :: dd2Wall
-       real(kind=realType), dimension(imaxDim,jmaxDim,3) :: ss
-       real(kind=realType), dimension(imaxDim+1,jmaxDim+1,3) :: xx
-#endif
-
   real(kind=realType) :: mx, my, mz, qa
   logical :: viscousSubface
   !
@@ -177,7 +94,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, Cavitation)
      !        ****************************************************************
      !
 
-     invForce: if(BCType(nn) == EulerWall        .or. &
+     invForce: if(BCType(nn) == EulerWall .or. &
           BCType(nn) == NSWallAdiabatic .or. &
           BCType(nn) == NSWallIsothermal) then
 
@@ -189,47 +106,21 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, Cavitation)
         ! Set a bunch of pointers depending on the face id to make
         ! a generic treatment possible. The routine setBcPointers
         ! is not used, because quite a few other ones are needed.
-
-#ifndef TAPENADE_REVERSE
-           call setBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
-                              rev1, rev2, 0)
-           call setxxssrhodd2Wall(nn, xx, ss, rho1, rho2, dd2Wall)
-#else
-           call setBCPointersBwd(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
-                rev1, rev2, 0)
-           call setxxssrhodd2WallBwd(nn, xx, ss, rho1, rho2, dd2Wall)
-#endif
+        call setBCPointers(nn, .True.)
 
         select case (BCFaceID(nn))
-
         case (iMin)
            fact = -one
-
-           !===========================================================
-
         case (iMax)
            fact = one
-
-           !===========================================================
-
         case (jMin)
            fact = -one
-
-           !===========================================================
-
         case (jMax)
            fact = one
-
-           !===========================================================
-
         case (kMin)
            fact = -one
-
-           !===========================================================
-
         case (kMax)
            fact = one
-
         end select
 
         ! Loop over the quadrilateral faces of the subface. Note
@@ -239,9 +130,10 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, Cavitation)
         ! jnBeg refer to nodal ranges and not to cell ranges.
 
         bcData(nn)%oArea(:,:) = zero
-
-        do j=(BCData(nn)%jnBeg+1),BCData(nn)%jnEnd
-           do i=(BCData(nn)%inBeg+1),BCData(nn)%inEnd
+        !$AD II-LOOP
+        do ii=0,(BCData(nn)%jnEnd - bcData(nn)%jnBeg)*(bcData(nn)%inEnd - bcData(nn)%inBeg) -1 
+           i = mod(ii, (bcData(nn)%inEnd-bcData(nn)%inBeg)) + bcData(nn)%inBeg + 1
+           j = ii/(bcData(nn)%inEnd-bcData(nn)%inBeg) + bcData(nn)%jnBeg + 1
 
               ! Compute the average pressure minus 1 and the coordinates
               ! of the centroid of the face relative from from the
@@ -261,9 +153,9 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, Cavitation)
                    +         xx(i,j+1,3) + xx(i+1,j+1,3)) - refPoint(3)
 
               ! Compute the force components.
-              fx = pm1*ss(i,j,1)
-              fy = pm1*ss(i,j,2)
-              fz = pm1*ss(i,j,3)
+              fx = pm1*ssi(i,j,1)
+              fy = pm1*ssi(i,j,2)
+              fz = pm1*ssi(i,j,3)
 
               ! Store Force data on face
               BCData(nn)%Fp(i,j,1) = fx
@@ -271,7 +163,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, Cavitation)
               BCData(nn)%Fp(i,j,3) = fz
 
               ! Scatter a quarter of the area to each node:
-              qA = fourth*sqrt(ss(i, j, 1)**2 + ss(i, j, 2)**2 + ss(i, j, 3)**2)
+              qA = fourth*sqrt(ssi(i, j, 1)**2 + ssi(i, j, 2)**2 + ssi(i, j, 3)**2)
               BCData(nn)%oArea(i-1, j-1) = BCData(nn)%oArea(i-1, j-1) + qA
               BCData(nn)%oArea(i  , j-1) = BCData(nn)%oArea(i  , j-1) + qA
               BCData(nn)%oArea(i-1, j  ) = BCData(nn)%oArea(i-1, j  ) + qA
@@ -333,7 +225,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, Cavitation)
               BCData(nn)%M(i,j,2) = my
               BCData(nn)%M(i,j,3) = mz
               
-           enddo
+          
         enddo
         !
         !          **************************************************************
@@ -355,11 +247,11 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, Cavitation)
            ! Loop over the quadrilateral faces of the subface and
            ! compute the viscous contribution to the force and
            ! moment and update the maximum value of y+.
-           !DEC$ NOVECTOR
-           do j=(BCData(nn)%jnBeg+1),BCData(nn)%jnEnd
-              !DEC$ NOVECTOR
-              do i=(BCData(nn)%inBeg+1),BCData(nn)%inEnd
 
+           do ii=0,(BCData(nn)%jnEnd - bcData(nn)%jnBeg)*(bcData(nn)%inEnd - bcData(nn)%inBeg) -1 
+              i = mod(ii, (bcData(nn)%inEnd-bcData(nn)%inBeg)) + bcData(nn)%inBeg + 1
+              j = ii/(bcData(nn)%inEnd-bcData(nn)%inBeg) + bcData(nn)%jnBeg + 1
+              
                  ! Store the viscous stress tensor a bit easier.
 
                  tauXx = viscSubface(nn)%tau(i,j,1)
@@ -372,12 +264,12 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, Cavitation)
                  ! Compute the viscous force on the face. A minus sign
                  ! is now present, due to the definition of this force.
 
-                 fx = -fact*(tauXx*ss(i,j,1) + tauXy*ss(i,j,2) &
-                      +        tauXz*ss(i,j,3))*scaleDim
-                 fy = -fact*(tauXy*ss(i,j,1) + tauYy*ss(i,j,2) &
-                      +        tauYz*ss(i,j,3))*scaleDim
-                 fz = -fact*(tauXz*ss(i,j,1) + tauYz*ss(i,j,2) &
-                      +        tauZz*ss(i,j,3))*scaleDim
+                 fx = -fact*(tauXx*ssi(i,j,1) + tauXy*ssi(i,j,2) &
+                      +        tauXz*ssi(i,j,3))*scaleDim
+                 fy = -fact*(tauXy*ssi(i,j,1) + tauYy*ssi(i,j,2) &
+                      +        tauYz*ssi(i,j,3))*scaleDim
+                 fz = -fact*(tauXz*ssi(i,j,1) + tauYz*ssi(i,j,2) &
+                      +        tauZz*ssi(i,j,3))*scaleDim
 
                  ! Compute the coordinates of the centroid of the face
                  ! relative from the moment reference point. Due to the
@@ -435,25 +327,23 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, Cavitation)
                  fy = fy - fn*BCData(nn)%norm(i,j,2)
                  fz = fz - fn*BCData(nn)%norm(i,j,3)
 
-
-
                  ! Compute the local value of y+. Due to the usage
                  ! of pointers there is on offset of -1 in dd2Wall..
-
-                 if(equations == RANSEquations) dwall = dd2Wall(i-1,j-1)
-
-                 rho   = half*(rho2(i,j) + rho1(i,j))
-                 mul   = half*(rlv2(i,j) + rlv1(i,j))
-                 yplus = sqrt(rho*sqrt(fx*fx + fy*fy + fz*fz))*dwall/mul
-
-                 ! Store this value if this value is larger than the
-                 ! currently stored value.
-
-                 yplusMax = max(yplusMax, yplus)
-
+#ifndef TAPENADE_REVERSE                 
+                 if(equations == RANSEquations) then 
+                    dwall = dd2Wall(i-1,j-1)
+                    rho   = half*(ww2(i,j,irho) + ww1(i,j,irho))
+                    mul   = half*(rlv2(i,j) + rlv1(i,j))
+                    yplus = sqrt(rho*sqrt(fx*fx + fy*fy + fz*fz))*dwall/mul
+                    
+                    ! Store this value if this value is larger than the
+                    ! currently stored value.
+                    
+                    yplusMax = max(yplusMax, yplus)
+                 end if
+#endif
               enddo
-           enddo
-
+      
         else
            ! Zero the viscous force contribution
            BCData(nn)%Fv = zero
@@ -465,19 +355,9 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, Cavitation)
               bcData(nn)%oArea(i,j) = one/bcData(nn)%oArea(i,j)
            end do
         end do
-
-#ifndef TAPENADE_REVERSE
-        call resetBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
-             rev1, rev2, 0)
-        call resetxxssrhodd2Wall(nn, xx, ss, rho1, rho2, dd2Wall)
-#else
-        call resetBCPointersBwd(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
-             rev1, rev2, 0)
-        call resetxxssrhodd2WallBwd(nn, xx, ss, rho1, rho2, dd2Wall)
-#endif
+        call resetBCPointers(nn, .True.)
 
      endif invForce
-
   enddo bocos
 
   ! Currently the coefficients only contain the surface integral

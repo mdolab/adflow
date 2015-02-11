@@ -3,12 +3,18 @@
 
 subroutine dealloc_derivative_values(level)
 
-  use blockPointers_d ! This modules includes blockPointers
+  use blockPointers
   use inputtimespectral
   use flowvarrefstate
   use inputPhysics
   use cgnsGrid
   use BCTypes
+  use communication
+  use wallDistanceData
+#ifndef USE_COMPLEX
+  use bcroutines_b
+#endif
+  use adjointVars
   implicit none
 
   ! Input Parameters
@@ -28,18 +34,6 @@ subroutine dealloc_derivative_values(level)
      deallocatespectral: do sps=1,nTimeIntervalsSpectral
         call setPointers(nn,level,sps)
 
-        ! Reset w and dw                            
-        do l=1,nw
-           do k=0,kb 
-              do j=0,jb
-                 do i=0,ib
-                    w(i,j,k,l) = flowdomsd(nn,1,sps)%wtmp(i,j,k,l)
-                    dw(i,j,k,l) = flowdomsd(nn,1,sps)%dwtmp(i,j,k,l)
-                 end do
-              end do
-           end do
-        end do
-          
         ! Deallocate memtory
         deallocate(&
              flowDomsd(nn,1,sps)%wtmp, &
@@ -82,11 +76,13 @@ subroutine dealloc_derivative_values(level)
         deallocate(flowDomsd(nn,1,sps)%w, &
              flowDomsd(nn,1,sps)%dw, &
              flowDomsd(nn,1,sps)%fw, &
+             flowDomsd(nn,1,sps)%scratch, &
              stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
         
         deallocate(flowDomsd(nn,1,sps)%p, &
-             flowDomsd(nn,1,sps)%gamma, stat=ierr)
+             flowDomsd(nn,1,sps)%gamma, &
+             flowDomsd(nn,1,sps)%aa, stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
         
         deallocate(flowDomsd(nn,1,sps)%rlv, stat=ierr)
@@ -95,12 +91,27 @@ subroutine dealloc_derivative_values(level)
         deallocate(flowDomsd(nn,1,sps)%rev,stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
         
-        deallocate(flowDomsd(nn,1,sps)%dtl, &
+        deallocate(&
              flowDomsd(nn,1,sps)%radI,     &
              flowDomsd(nn,1,sps)%radJ,     &
              flowDomsd(nn,1,sps)%radK,stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
-        
+
+        deallocate(&
+        flowDomsd(nn,1,sps)%ux, &
+        flowDomsd(nn,1,sps)%uy, &
+        flowDomsd(nn,1,sps)%uz, &
+        flowDomsd(nn,1,sps)%vx, &
+        flowDomsd(nn,1,sps)%vy, &
+        flowDomsd(nn,1,sps)%vz, &
+        flowDomsd(nn,1,sps)%wx, &
+        flowDomsd(nn,1,sps)%wy, &
+        flowDomsd(nn,1,sps)%wz, &
+        flowDomsd(nn,1,sps)%qx, &
+        flowDomsd(nn,1,sps)%qy, &
+        flowDomsd(nn,1,sps)%qz, stat=ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+
         ! Deallocate allocated boundayr data
         do mm=1,nBocos
            deallocate(flowDomsd(nn,1,sps)%BCData(mm)%norm,stat=ierr)
@@ -152,24 +163,22 @@ subroutine dealloc_derivative_values(level)
            call EChk(ierr,__FILE__,__LINE__)
         end if
         
-        if (viscous) then
-           deallocate(flowDomsd(nn,1,sps)%d2Wall, &
-                stat=ierr)
-           call EChk(ierr,__FILE__,__LINE__)
+        deallocate(flowDomsd(nn,1,sps)%d2Wall, &
+             stat=ierr)
+        call EChk(ierr,__FILE__,__LINE__)
         
-           viscbocoLoop: do mm=1,nviscBocos
-              deallocate(flowDomsd(nn,1,sps)%viscSubface(mm)%tau, stat=ierr)
-              call EChk(ierr,__FILE__,__LINE__)
-              
-              deallocate(flowDomsd(nn,1,sps)%viscSubface(mm)%q, stat=ierr)
-              call EChk(ierr,__FILE__,__LINE__)
-              
-           end do viscbocoLoop
-           
-           deallocate(flowDomsd(nn,1,sps)%viscSubFace, stat=ierr)
+        viscbocoLoop: do mm=1,nViscBocos
+           deallocate(flowDomsd(nn,1,sps)%viscSubface(mm)%tau, stat=ierr)
            call EChk(ierr,__FILE__,__LINE__)
            
-        end if
+           deallocate(flowDomsd(nn,1,sps)%viscSubface(mm)%q, stat=ierr)
+           call EChk(ierr,__FILE__,__LINE__)
+           
+        end do viscbocoLoop
+        
+        deallocate(flowDomsd(nn,1,sps)%viscSubFace, stat=ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+           
      end do
   end do
 
@@ -181,4 +190,19 @@ subroutine dealloc_derivative_values(level)
   deallocate(flowdomsd,stat=ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
+  ! And the petsc vector(s)
+  if (.not. wallDistanceNeeded) then 
+     call VecDestroy(xSurfVec(1), ierr)
+  end if
+
+  call VecDestroy(xSurfVecd, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+#ifndef USE_COMPLEX
+  ! Deallocate reverse mode space for bcpointers
+  deallocate(ww0, ww1, ww2, ww3, pp0, pp1, pp2, pp3, rlv0, rlv1, rlv2, rlv3, &
+       rev0, rev1, rev2, rev3, gamma0, gamma1, gamma2, gamma3, ssi, xx)
+  deallocate(ww0d, ww1d, ww2d, ww3d, pp0d, pp1d, pp2d, pp3d, rlv0d, rlv1d, rlv2d, rlv3d, &
+       rev0d, rev1d, rev2d, rev3d, ssid, xxd)
+#endif
+derivVarsAllocated = .False.
 end subroutine dealloc_derivative_values

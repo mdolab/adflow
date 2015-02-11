@@ -25,7 +25,7 @@ subroutine setupAllResidualMatricesfwd
      end if
      time(1) = mpi_wtime()
      call setupStateResidualMatrix(drdwT, useAD, usePC, useTranspose, &
-          useObjective, 1_intType)
+          useObjective, frozenTurbulence, 1_intType)
      time(2) = mpi_wtime()
      timeAdjLocal = time(2)-time(1)
 
@@ -44,8 +44,7 @@ subroutine setupAllResidualMatricesfwd
         write(*, 10) "Assembling Spatial Residual Matrix in Forward mode..."
      end if
      time(1) = mpi_wtime()
-     call setupSpatialResidualMatrix(drdx, useAD, useObjective)
-     call setupExtraResidualMatrix(drda, useAD)
+     call setupSpatialResidualMatrix(drdx, useAD, useObjective, frozenTurbulence)
      time(2) = mpi_wtime()
      timeAdjLocal = time(2)-time(1)
 

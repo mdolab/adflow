@@ -3,6 +3,7 @@ subroutine FormJacobian()
 
   use NKSolverVars
   use inputADjoint, only : viscPC
+  use inputiteration
   implicit none
   ! Local Variables
   character(len=maxStringLen) :: preConSide, localPCType
@@ -22,8 +23,9 @@ subroutine FormJacobian()
   useObjective = .False.
   tmp = viscPC ! Save what is in viscPC and set to the NKvarible
   viscPC = NKViscPC
+
   call setupStateResidualMatrix(dRdwPre, useAD, usePC, useTranspose, &
-       useObjective, 1_intType)
+       useObjective, .False., 1_intType)
   ! Reset saved value
   viscPC = tmp
 

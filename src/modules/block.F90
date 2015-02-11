@@ -28,9 +28,9 @@ module block
 
   ! Parameters used for coarsening definition.
 
-  integer(kind=porType), parameter :: leftStarted  = -1
-  integer(kind=porType), parameter :: regular      =  0
-  integer(kind=porType), parameter :: rightStarted =  1
+  integer(kind=porType), parameter :: leftStarted  = -1_porType
+  integer(kind=porType), parameter :: regular      =  0_porType
+  integer(kind=porType), parameter :: rightStarted =  1_porType
 
   ! Parameters used for subsonic inlet bc treatment.
 
@@ -502,12 +502,22 @@ module block
      !                                problems.
 
      real(kind=realType), dimension(:,:,:,:),   pointer :: w, wtmp
-     real(kind=realType), dimension(:,:,:,:,:), pointer :: dw_deriv, w_deriv
+     real(kind=realType), dimension(:,:,:,:,:), pointer :: dw_deriv
      real(kind=realType), dimension(:,:,:,:,:), pointer :: wOld
-     real(kind=realType), dimension(:,:,:),     pointer :: p, ptmp, gamma
+     real(kind=realType), dimension(:,:,:),     pointer :: p, gamma, aa
      real(kind=realType), dimension(:,:,:),     pointer :: rlv, rev
      real(kind=realType), dimension(:,:,:,:),   pointer :: s
      real(kind=realType), dimension(:,:,:),   pointer :: shockSensor
+
+     ! Nodal Fluxes: ux,uy,uz,vx,vy,vz,wx,wy,wz,qx,qy,qz(il, jl, kl)
+     real(kind=realType), dimension(:, :, :), pointer:: ux, uy, uz
+     real(kind=realType), dimension(:, :, :), pointer:: vx, vy, vz 
+     real(kind=realType), dimension(:, :, :), pointer:: wx, wy, wz 
+     real(kind=realType), dimension(:, :, :), pointer:: qx, qy, qz 
+     
+
+
+
      !
      !        ****************************************************************
      !        *                                                              *
@@ -549,12 +559,19 @@ module block
      !                               at least for the flow variables.
      ! shockSensor(0:ib,0:jb,0:kb)   Precomputed sensor value for shock 
      !                               that is *NOT* differentated. 
+     ! scratch(0:ib,0:jb,0:kb,5)     Scratch space for the turbulence
+     !                               models. NOMINALLY this could use
+     !                               dw and the code was nominally setup
+     !                               for this originally. However, this 
+     !                               complicates reverse mode sensitivities
+     !                               So we use this instead. 
 
      real(kind=realType), dimension(:,:,:),     pointer :: p1
      real(kind=realType), dimension(:,:,:,:),   pointer :: dw, fw
      real(kind=realType), dimension(:,:,:,:),   pointer :: dwtmp, dwtmp2
      real(kind=realType), dimension(:,:,:,:,:), pointer :: dwOldRK
      real(kind=realType), dimension(:,:,:,:),   pointer :: w1, wr
+     real(kind=realType), dimension(:,:,:,:),   pointer :: scratch
 
      ! mgIFine(2:il,2) - The two fine grid i-cells used for the
      !                   restriction of the solution and residual to

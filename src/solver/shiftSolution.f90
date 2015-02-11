@@ -30,7 +30,7 @@
        integer(kind=intType) :: i, j, k, l, sps, nn, mm, ll
 
        real(kind=realType) :: tOld, tNew
-       real(kind=realType) :: vX, vY, vZ, vXi, vEta, vZeta
+       real(kind=realType) :: vvX, vvY, vvZ, vXi, vEta, vZeta
        real(kind=realType) :: t, angleX, angleY, angleZ
        real(kind=realType) :: phi, cosPhi, sinPhi
        real(kind=realType) :: xiX, xiY, xiZ, etaX, etaY, etaZ
@@ -124,19 +124,19 @@
            do k=2,kl
              do j=2,jl
                do i=2,il
-                 vX = w(i,j,k,ivx)
-                 vY = w(i,j,k,ivy)
-                 vZ = w(i,j,k,ivz)
+                 vvX = w(i,j,k,ivx)
+                 vvY = w(i,j,k,ivy)
+                 vvZ = w(i,j,k,ivz)
 
-                 w(i,j,k,ivx) = rotationMatrix(1,1)*vX &
-                              + rotationMatrix(1,2)*vY &
-                              + rotationMatrix(1,3)*vZ
-                 w(i,j,k,ivy) = rotationMatrix(2,1)*vX &
-                              + rotationMatrix(2,2)*vY &
-                              + rotationMatrix(2,3)*vZ
-                 w(i,j,k,ivz) = rotationMatrix(3,1)*vX &
-                              + rotationMatrix(3,2)*vY &
-                              + rotationMatrix(3,3)*vZ
+                 w(i,j,k,ivx) = rotationMatrix(1,1)*vvX &
+                              + rotationMatrix(1,2)*vvY &
+                              + rotationMatrix(1,3)*vvZ
+                 w(i,j,k,ivy) = rotationMatrix(2,1)*vvX &
+                              + rotationMatrix(2,2)*vvY &
+                              + rotationMatrix(2,3)*vvZ
+                 w(i,j,k,ivz) = rotationMatrix(3,1)*vvX &
+                              + rotationMatrix(3,2)*vvY &
+                              + rotationMatrix(3,3)*vvZ
                enddo
              enddo
            enddo
@@ -176,20 +176,20 @@
 
                    ! Abbreviate the velocity components a bit easier.
 
-                   vX = w(i,j,k,ivx)
-                   vY = w(i,j,k,ivy)
-                   vZ = w(i,j,k,ivz)
+                   vvX = w(i,j,k,ivx)
+                   vvY = w(i,j,k,ivy)
+                   vvZ = w(i,j,k,ivz)
 
                    ! Determine the component of the velocity vector
                    ! in xi direction and determine the direction eta,
                    ! the direction of the velocity when the xi component
                    ! is substracted.
 
-                   vXi = vX*xiX + vY*xiY + vZ*xiZ
+                   vXi = vvX*xiX + vvY*xiY + vvZ*xiZ
 
-                   etaX = vX - vXi*xiX
-                   etaY = vY - vXi*xiY
-                   etaZ = vZ - vXi*xiZ
+                   etaX = vvX - vXi*xiX
+                   etaY = vvY - vXi*xiY
+                   etaZ = vvZ - vXi*xiZ
 
                    t    = one/max(eps,sqrt(etaX**2 + etaY**2 + etaZ**2))
                    etaX = t*etaX
@@ -198,7 +198,7 @@
 
                    ! Determine the velocity component in eta direction.
 
-                   vEta = vX*etaX + vY*etaY + vZ*etaZ
+                   vEta = vvX*etaX + vvY*etaY + vvZ*etaZ
 
                    ! Determine the unit vector in zeta-direction. This is
                    ! the cross product of the unit vectors in xi and in

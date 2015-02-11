@@ -62,6 +62,9 @@ FILES_TO_COMPLEXIFY = \
 		 determineNcellGlobal.f90\
 		 determinePeriodicFaces.f90\
 		 exchangeCoor.f90\
+		 exchangeCoor_d.f90\
+		 exchangeCoor_b.f90\
+		 exchangeCoorNumbering.f90\
 		 faceRotationMatrices.f90\
 		 finalCommStructures.f90\
 		 indirectHalosPerLevel.f90\

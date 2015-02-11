@@ -223,7 +223,7 @@ def test1():
     ap.addDV('alpha')
     ap.addDV('mach')
     ap.addDV('altitude')
-    CFDSolver = SUMB(options=aeroOptions)
+    CFDSolver = SUMB(options=aeroOptions, debug=True)
     DVGeo = DVGeometry('../inputFiles/mdo_tutorial_ffd.fmt')
     nTwist = 6
     DVGeo.addRefAxis('wing', pyspline.Curve(x=numpy.linspace(5.0/4.0, 1.5/4.0+7.5, nTwist), 
@@ -235,7 +235,7 @@ def test1():
 
     DVGeo.addGeoDVGlobal('twist', [0]*nTwist, twist, lower=-10, upper=10, scale=1.0)
     DVGeo.addGeoDVLocal('shape', lower=-0.5, upper=0.5, axis='y', scale=10.0)
-    mesh = MBMesh(options={'gridFile':'../inputFiles/mdo_tutorial_euler.cgns'})
+    mesh = MBMesh(options={'gridFile':'../inputFiles/mdo_tutorial_euler.cgns'}, debug=True)
     CFDSolver.setMesh(mesh)
     CFDSolver.setDVGeo(DVGeo)
     CFDSolver.addLiftDistribution(10, 'z')
