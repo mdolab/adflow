@@ -18,22 +18,13 @@ subroutine computeResidualNK()
   use flowvarrefstate
   use iteration
   use inputPhysics 
+  use saModule
   implicit none
 
   ! Local Variables
   integer(kind=intType) :: i, j, k, sps,nn
   logical secondHalo
   real(kind=realType) :: gm1,v2
-
-  ! Setup a fully coupled residual calc
-  if (equations==ransEquations) then
-     turbSegregated = .False.
-     turbCoupled = .True.
-
-     nMGVar = nw
-     nt1MG = nt1
-     nt2MG = nt2
-  end if
 
   secondHalo = .True. 
   currentLevel = 1_intType
@@ -68,6 +59,16 @@ subroutine computeResidualNK()
   ! Apply BCs
   call applyAllBC(secondHalo)
 
+  if (equations == RANSequations) then 
+     do nn=1,nDom
+        do sps=1,nTimeIntervalsSpectral
+           call setPointers(nn, currentLevel, sps)
+           call bcTurbTreatment
+           call applyAllTurbBCThisBLock(.True.)
+        end do
+     end do
+  end if
+  
   ! Exchange halos
   call whalo2(1_intType, 1_intType, nw, .true., &
        .true., .true.)
@@ -81,7 +82,10 @@ subroutine computeResidualNK()
   ! Possible Turblent Equations
   if( equations == RANSEquations ) then
      call initres(nt1, nt2) ! Initialize only the Turblent Variables
-     call turbResidual
+     select case (turbModel)
+     case (spalartAllmaras)
+        call sa(.True.)
+     end select
   endif
 
   ! Initialize Flow residuals
@@ -89,15 +93,6 @@ subroutine computeResidualNK()
 
   ! Actual Residual Calc
   call residual 
-
-  ! Reset the segrated calc
-  if (equations==ransEquations) then
-     turbSegregated = .True.
-     turbCoupled = .False.
-     nMGVar = nwf
-     nt1MG  = nwf + 1
-     nt2MG  = nwf
-  end if
 
 end subroutine computeResidualNK
 

@@ -113,14 +113,32 @@
        nullify(flowDoms(nn,level,sps)%w)
        nullify(flowDoms(nn,level,sps)%wOld)
        nullify(flowDoms(nn,level,sps)%p)
+       nullify(flowDoms(nn,level,sps)%aa)
        nullify(flowDoms(nn,level,sps)%gamma)
        nullify(flowDoms(nn,level,sps)%rlv)
        nullify(flowDoms(nn,level,sps)%rev)
        nullify(flowDoms(nn,level,sps)%s)
        nullify(flowDoms(nn,level,sps)%dadidata)
 
+       nullify(flowDoms(nn,level,sps)%ux)
+       nullify(flowDoms(nn,level,sps)%uy)
+       nullify(flowDoms(nn,level,sps)%uz)
+
+       nullify(flowDoms(nn,level,sps)%vx)
+       nullify(flowDoms(nn,level,sps)%vy)
+       nullify(flowDoms(nn,level,sps)%vz)
+
+       nullify(flowDoms(nn,level,sps)%wx)
+       nullify(flowDoms(nn,level,sps)%wy)
+       nullify(flowDoms(nn,level,sps)%wz)
+
+       nullify(flowDoms(nn,level,sps)%qx)
+       nullify(flowDoms(nn,level,sps)%qy)
+       nullify(flowDoms(nn,level,sps)%qz)
+
        nullify(flowDoms(nn,level,sps)%dw)
        nullify(flowDoms(nn,level,sps)%fw)
+       nullify(flowDoms(nn,level,sps)%scratch)
 
        nullify(flowDoms(nn,level,sps)%dwOldRK)
 

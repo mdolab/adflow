@@ -35,6 +35,7 @@ subroutine releaseMemoryPart1
   use commSliding
   use commMixing
   use wallDistanceData
+  use adjointVars
   implicit none
   !
   !      Local variables
@@ -73,6 +74,7 @@ subroutine releaseMemoryPart1
         deallocate(flowDoms(nn,1,sps)%dw,   flowDoms(nn,1,sps)%fw,   &
              flowDoms(nn,1,sps)%dtl,  flowDoms(nn,1,sps)%radI, &
              flowDoms(nn,1,sps)%radJ, flowDoms(nn,1,sps)%radK, &
+             flowDoms(nn,1,sps)%scratch, &
              stat=ierr)
         if(ierr /= 0)                          &
              call terminate("releaseMemoryPart1", &
@@ -88,6 +90,7 @@ subroutine releaseMemoryPart1
         nullify(flowDoms(nn,1,sps)%radI)
         nullify(flowDoms(nn,1,sps)%radJ)
         nullify(flowDoms(nn,1,sps)%radK)
+        nullify(flowDoms(nn,1,sps)%scratch)
 
         ! Check if the zeroth stage runge kutta memory has been
         ! allocated. If so deallocate it and nullify the pointers.
@@ -122,6 +125,11 @@ subroutine releaseMemoryPart1
      enddo
 
   enddo spectralLoop
+
+  ! derivative values
+  if (derivVarsAllocated) then 
+     call dealloc_derivative_values(1)
+  end if
 
   ! Bunch of extra sutff that hasn't been deallocated
   if (allocated(cycleStrategy)) then
@@ -885,8 +893,60 @@ subroutine deallocateBlock(nn, level, sps)
        deallocate(flowDoms(nn,level,sps)%p, stat=ierr)
   if(ierr /= 0) deallocationFailure = .true.
 
+  if( associated(flowDoms(nn,level,sps)%aa) ) &
+       deallocate(flowDoms(nn,level,sps)%aa, stat=ierr)
+  if(ierr /= 0) deallocationFailure = .true.
+
   if( associated(flowDoms(nn,level,sps)%gamma) ) &
        deallocate(flowDoms(nn,level,sps)%gamma, stat=ierr)
+  if(ierr /= 0) deallocationFailure = .true.
+
+  if( associated(flowDoms(nn,level,sps)%ux) ) &
+       deallocate(flowDoms(nn,level,sps)%ux, stat=ierr)
+  if(ierr /= 0) deallocationFailure = .true.
+
+  if( associated(flowDoms(nn,level,sps)%uy) ) &
+       deallocate(flowDoms(nn,level,sps)%uy, stat=ierr)
+  if(ierr /= 0) deallocationFailure = .true.
+
+  if( associated(flowDoms(nn,level,sps)%uz) ) &
+       deallocate(flowDoms(nn,level,sps)%uz, stat=ierr)
+  if(ierr /= 0) deallocationFailure = .true.
+
+  if( associated(flowDoms(nn,level,sps)%vx) ) &
+       deallocate(flowDoms(nn,level,sps)%vx, stat=ierr)
+  if(ierr /= 0) deallocationFailure = .true.
+
+  if( associated(flowDoms(nn,level,sps)%vy) ) &
+       deallocate(flowDoms(nn,level,sps)%vy, stat=ierr)
+  if(ierr /= 0) deallocationFailure = .true.
+
+  if( associated(flowDoms(nn,level,sps)%vz) ) &
+       deallocate(flowDoms(nn,level,sps)%vz, stat=ierr)
+  if(ierr /= 0) deallocationFailure = .true.
+
+  if( associated(flowDoms(nn,level,sps)%wx) ) &
+       deallocate(flowDoms(nn,level,sps)%wx, stat=ierr)
+  if(ierr /= 0) deallocationFailure = .true.
+
+  if( associated(flowDoms(nn,level,sps)%wy) ) &
+       deallocate(flowDoms(nn,level,sps)%wy, stat=ierr)
+  if(ierr /= 0) deallocationFailure = .true.
+
+  if( associated(flowDoms(nn,level,sps)%wz) ) &
+       deallocate(flowDoms(nn,level,sps)%wz, stat=ierr)
+  if(ierr /= 0) deallocationFailure = .true.
+
+  if( associated(flowDoms(nn,level,sps)%qx) ) &
+       deallocate(flowDoms(nn,level,sps)%qx, stat=ierr)
+  if(ierr /= 0) deallocationFailure = .true.
+
+  if( associated(flowDoms(nn,level,sps)%qy) ) &
+       deallocate(flowDoms(nn,level,sps)%qy, stat=ierr)
+  if(ierr /= 0) deallocationFailure = .true.
+
+  if( associated(flowDoms(nn,level,sps)%qz) ) &
+       deallocate(flowDoms(nn,level,sps)%qz, stat=ierr)
   if(ierr /= 0) deallocationFailure = .true.
 
   if( associated(flowDoms(nn,level,sps)%rlv) ) &

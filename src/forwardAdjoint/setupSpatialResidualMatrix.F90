@@ -1,4 +1,4 @@
-subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
+subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective, frozenTurb)
 #ifndef USE_NO_PETSC
   !     ******************************************************************
   !     *                                                                *
@@ -10,9 +10,9 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
   !     *                                                                *
   !     ******************************************************************
   !
-  use ADjointPetsc, only : FMx, dFcdx, doAdx, nFM, iSepSensor, iCavitation
+  use ADjointPetsc, only : dFcdx, doAdx
   use BCTypes
-  use blockPointers_d      
+  use blockPointers
   use inputDiscretization 
   use inputTimeSpectral 
   use inputPhysics
@@ -22,6 +22,7 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
   use stencils
   use diffSizes
   use communication
+  use adjointVars
   implicit none
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
@@ -30,7 +31,7 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
   Mat matrix
 
   ! Input Variables
-  logical, intent(in) :: useAD, useObjective
+  logical, intent(in) :: useAD, useObjective, frozenTurb
 
   ! Local variables.
   integer(kind=intType) :: ierr,nn,sps,sps2,i,j,k,l,ll,ii,jj,kk, mm
@@ -65,7 +66,7 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
   call getDirAngle(velDirFreestream, liftDirection, liftIndex, alpha, beta)
 
 ! Setup number of state variable based on turbulence assumption
-  if ( frozenTurbulence ) then
+  if ( frozenTurb ) then
      nState = nwf
   else
      nState = nw
@@ -106,14 +107,6 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
   ! Set delta_x
   delta_x = 1e-5
   one_over_dx = 1.0/delta_x
-  if (useObjective .and. useAD) then
-     do sps=1,nTimeIntervalsSpectral
-        do fmDim=1,nFM
-           call VecZeroEntries(FMx(fmDim, sps), ierr)
-           call EChk(ierr, __FILE__, __LINE__)
-        end do
-     end do
-  end if
      
   ! If we are computing the jacobian for the RANS equations, we need
   ! to make block_res think that we are evauluating the residual in a
@@ -130,14 +123,22 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
 
   ! Determine if we want to use frozenTurbulent Adjoint
   resetToRANS = .False. 
-  if (frozenTurbulence .and. equations == RANSEquations) then
+  if (frozenTurb .and. equations == RANSEquations) then
      equations = NSEquations 
      resetToRANS = .True.
   end if
 
   ! Allocate the memory we need for this block to do the forward
   ! mode derivatives and copy reference values
-  call alloc_derivative_values(level)
+  if (.not. derivVarsAllocated) then 
+     call alloc_derivative_values(level)
+  end if
+  do nn=1,nDom
+     do sps=1,nTimeIntervalsSpectral
+        call setPointers(nn, level, sps)
+        call zeroADSeeds(nn,level, sps)
+     end do
+  end do
 
   ! Master Domain Loop
   domainLoopAD: do nn=1,nDom
@@ -232,22 +233,21 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
 #ifndef USE_COMPLEX
                  call block_res_d(nn, sps, .True., &
                       alpha, alphad, beta, betad, liftIndex, force, forced, &
-                      moment, momentd, sepSensor, sepSensord, Cavitation, Cavitationd)
+                      moment, momentd, sepSensor, sepSensord, Cavitation, Cavitationd, frozenTurb)
 #else
                  print *,'Forward AD routines are not complexified!'
                  stop
 #endif
               else
                  call block_res(nn, sps, .True., &
-                      alpha, beta, liftIndex, force, moment, sepSensor, Cavitation)
+                      alpha, beta, liftIndex, force, moment, sepSensor, Cavitation, frozenTurb)
               end if
 
-              ! If required, set values in the 6 vectors defined in
-              ! FMx.
+          
 
               if (useObjective .and. useAD) then
                  ! We need to loop over the faces on this block and
-                 ! set values in FMx
+                 ! set values
                  
                  bocos: do mm=1,nBocos
 
@@ -338,16 +338,6 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
                                      ind >=0) then
                                    ! This real node has been peturbed
                                    do fmDim = 1,3
-                                      call VecSetValues(FMx(fmDim, sps), 1, ind, &
-                                           bcDatad(mm)%Fp(i, j, fmDim)+ &
-                                           bcDatad(mm)%Fv(i, j, fmDim), &
-                                           ADD_VALUES, ierr) 
-                                      call EChk(ierr, __FILE__, __LINE__)
-
-                                      call VecSetValues(FMx(fmDim+3, sps), 1, ind, &
-                                           bcDatad(mm)%M(i,j,fmDim), &
-                                           ADD_VALUES, ierr) 
-                                      call EChk(ierr, __FILE__, __LINE__)
                                       
                                       ! While we are at it, we have
                                       ! all the info we need for dFcdx
@@ -364,15 +354,6 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
                                            bcDatad(mm)%oarea(i,j), ADD_VALUES, ierr)
                                       call EChk(ierr, __FILE__, __LINE__)
                                    end do
-
-                                   ! Now add in the additional functions
-                                   call VecSetValues(FMx(iSepSensor, sps), 1, ind, &
-                                        bcDatad(mm)%sepSensor(i, j), ADD_VALUES, ierr)
-                                   call EChk(ierr, __FILE__, __LINE__)
-
-                                   call VecSetValues(FMx(iCavitation, sps), 1, ind, &
-                                        bcDatad(mm)%Cavitation(i, j), ADD_VALUES, ierr)
-                                   call EChk(ierr, __FILE__, __LINE__)
                                 end if
                              end do forceStencilLoop
                           end do
@@ -461,14 +442,14 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
                                         globalCell(i+ii,j+jj,k+kk)
                                    call setBlock(&
                                         flowDomsd(nn,1,sps2)%&
-                                        dw_deriv(i+ii,j+jj,k+kk,:,:))
+                                        dw_deriv(i+ii,j+jj,k+kk,1:nstate,1:nstate))
                                 end do
                              else
                                 irow = flowDoms(nn,1,sps)%globalCell(&
                                      i+ii,j+jj,k+kk)
 
                                 call setBlock(flowDomsd(nn,1,sps)%&
-                                     dw_deriv(i+ii,j+jj,k+kk,:,:))
+                                     dw_deriv(i+ii,j+jj,k+kk,1:nstate,1:nstate))
                              end if
                           end if onBlock
                        end do stencilLoop
@@ -478,26 +459,13 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective)
            end do kLoop
         end do colorLoop
      end do spectralLoop
-
   end do domainLoopAD
 
-  ! Deallocate and reset Values
-  call dealloc_derivative_values(level)
-
   if (useObjective .and. useAD) then
-     do sps=1,nTimeIntervalsSpectral
-        do fmDim=1,nFM
-           call VecAssemblyBegin(FMx(fmDim, sps), ierr)
-           call EChk(ierr, __FILE__, __LINE__)
-           call VecAssemblyEnd(FMx(fmDim, sps), ierr)
-           call EChk(ierr, __FILE__, __LINE__)
-        end do
-     end do
      call MatAssemblyBegin(dFcdx, MAT_FINAL_ASSEMBLY, ierr)
      call MatAssemblyEnd(dFcdx, MAT_FINAL_ASSEMBLY, ierr)
      call MatAssemblyBegin(doAdx, MAT_FINAL_ASSEMBLY, ierr)
      call MatAssemblyEnd(doAdx, MAT_FINAL_ASSEMBLY, ierr)
-
   end if
 
   ! PETSc Matrix Assembly and Options Set

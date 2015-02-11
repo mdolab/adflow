@@ -77,7 +77,7 @@ Subroutine I_unirnk (XVALT, NVAL, IRNGT, NUNI)
       integer(kind=intType), Dimension (NVAL), Intent (Out) :: IRNGT
       integer(kind=intType), Intent (Out) :: NUNI
 ! __________________________________________________________
-      integer(kind=intType), Dimension (NVAL) :: JWRKT
+      integer(kind=intType), Dimension (:), allocatable :: JWRKT
       integer(kind=intType) :: LMTNA, LMTNC, IRNG, IRNG1, IRNG2
       integer(kind=intType) :: IIND, IWRKD, IWRK, IWRKF, JINDA, IINDA, IINDB
       integer(kind=intType) :: XTST, XVALA, XVALB
@@ -96,6 +96,7 @@ Subroutine I_unirnk (XVALT, NVAL, IRNGT, NUNI)
       Case Default
          Continue
       End Select
+      allocate(JWRKT(NVAL))
 !
 !  Fill-in the index array, creating ordered couples
 !
@@ -306,7 +307,7 @@ Subroutine I_unirnk (XVALT, NVAL, IRNGT, NUNI)
          End If
 !
       End Do
-!
+      deallocate(JWRKT)
       Return
 !
 End Subroutine I_unirnk
@@ -331,11 +332,12 @@ Subroutine I_uniinv (XDONT, NVAL, IGOEST)
       Integer(kind=IntType) :: XTST, XDONA, XDONB
 !
 ! __________________________________________________________
-      Integer(kind=IntType), Dimension (NVAL) :: JWRKT, IRNGT
+      Integer(kind=IntType), allocatable, Dimension (:) :: JWRKT, IRNGT
       Integer(kind=IntType) :: LMTNA, LMTNC, IRNG, IRNG1, IRNG2, NUNI
       Integer(kind=IntType) :: IIND, IWRKD, IWRK, IWRKF, JINDA, IINDA, IINDB
       integer(kind=intType) :: I_nearless
-  
+
+
 !
       Select Case (NVAL)
       Case (:0)
@@ -346,6 +348,7 @@ Subroutine I_uniinv (XDONT, NVAL, IGOEST)
       Case Default
          Continue
       End Select
+      allocate(JWRKT(NVAL), IRNGT(NVAL))
 !
 !  Fill-in the index array, creating ordered couples
 !
@@ -556,7 +559,7 @@ Subroutine I_uniinv (XDONT, NVAL, IGOEST)
          IGOEST (IRNG) = NUNI
 !
       End Do
-!
+      deallocate(JWRKT, IRNGT)
       Return
 !
 End Subroutine I_uniinv

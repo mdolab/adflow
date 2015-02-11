@@ -39,9 +39,9 @@
 
        ! Constants to define the porosity values
 
-       integer(kind=porType), parameter :: noFlux     = -1
-       integer(kind=porType), parameter :: boundFlux  =  0
-       integer(kind=porType), parameter :: normalFlux =  1
+       integer(kind=porType), parameter :: noFlux     = -1_porType
+       integer(kind=porType), parameter :: boundFlux  =  0_porType
+       integer(kind=porType), parameter :: normalFlux =  1_porType
 
        ! Indices in the array of independent variables
 

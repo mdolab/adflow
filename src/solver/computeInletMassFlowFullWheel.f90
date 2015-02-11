@@ -44,7 +44,7 @@
        integer(kind=intType) :: nSlices
 
        real(kind=realType) :: localMassFlow, fact
-       real(kind=realType) :: rho, ux, uy, uz, un
+       real(kind=realType) :: rho, uux, uuy, uuz, un
 
        real(kind=realType), dimension(:,:,:), pointer :: ww1, ww2, ss
 !
@@ -150,11 +150,11 @@
                  ! and update the local massflow.
 
                  rho = half*(ww1(i,j,irho) + ww2(i,j,irho))
-                 ux  = half*(ww1(i,j,ivx)  + ww2(i,j,ivx))
-                 uy  = half*(ww1(i,j,ivy)  + ww2(i,j,ivy))
-                 uz  = half*(ww1(i,j,ivz)  + ww2(i,j,ivz))
+                 uux  = half*(ww1(i,j,ivx)  + ww2(i,j,ivx))
+                 uuy  = half*(ww1(i,j,ivy)  + ww2(i,j,ivy))
+                 uuz  = half*(ww1(i,j,ivz)  + ww2(i,j,ivz))
 
-                 un = ux*ss(i,j,1) + uy*ss(i,j,2) + uz*ss(i,j,3)
+                 un = uux*ss(i,j,1) + uuy*ss(i,j,2) + uuz*ss(i,j,3)
                  localMassFlow = localMassFlow + fact*rho*un
 
                enddo

@@ -131,9 +131,9 @@
                  ! for the halo cells of this sliding interface subface.
 
                  call setPointers(nn,level,ll)
-                 call computeEtot(icBeg(mm), icEnd(mm), &
-                                  jcBeg(mm), jcEnd(mm), &
-                                  kcBeg(mm), kcEnd(mm), correctForK)
+                 call computeEtotBlock(icBeg(mm), icEnd(mm), &
+                      jcBeg(mm), jcEnd(mm), &
+                      kcBeg(mm), kcEnd(mm), correctForK)
                enddo
              endif
            enddo
@@ -303,7 +303,7 @@
 
                  ! Compute the total energy for the sliding mesh halo's
 
-                 call computeEtot(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd, &
+                 call computeEtotBlock(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd, &
                                   correctForK)
                enddo
              endif

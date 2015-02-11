@@ -4,7 +4,6 @@
 ! 1. setAdjoint: Set the petsc adjoint vector from variables stored in Python
 ! 2. getAdjoint: Returns the variables in petsc adjoint vector to Python
 ! 3. getdrdwTVec: Multiply vec_in by dRdw^T to produce vec_out
-! 4. getdRdaPsi: Multiply dRda^T*adjoint where adjoint is supplied, and output returned
 ! 5. getdRdxVTPsi: Compute product dRdXv^T*psi and return result in dXv
 ! 6. getdFdxVec: Multiply vec_in by dFdx to produce vec_out
 ! 7. getdFdxTVec: Multiple vec_in by dFdx^T to produce vec_out
@@ -75,129 +74,10 @@ subroutine getdRdwVec(in_vec, out_vec, ndof)
 
 end subroutine getdRdwVec
 
-subroutine getdRdaPsiFwd(out_vec, nstate, in_vec, ndv)
-
-  use communication
-  use ADjointPETSc, only : dRda, psi_like1
-  use ADjointVars
-  use blockPointers
-  use inputADjoint
-  use section
-  use inputTimeSpectral 
-  use monitor 
-  implicit none
-
-#define PETSC_AVOID_MPIF_H
-#include "finclude/petsc.h"
-
-  ! Input/Output Variables
-  integer(kind=intType), intent(in) :: ndv, nstate
-  real(kind=realType), intent(in) :: in_vec(ndv)
-  real(kind=realType), intent(out) :: out_vec(nstate)
-  integer(kind=intType) :: ierr, i
-  ! Local Variables
-  Vec                   :: a_like
-
-  
-  ! Create the result vector for dRda * psi
-  call VecCreateMPI(SUMB_COMM_WORLD, PETSC_DECIDE, ndv, a_like, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-
-  ! put input arry in a_like
-  call VecPlaceArray(a_like, in_vec, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-  
-  ! put output array in psi_like1
-  call VecPlaceArray(psi_like1, out_vec, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-
-  ! Do the Multiplication
-  call MatMult(dRda, a_like, psi_like1, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-  
-  ! memory cleanup
-  call VecDestroy(a_like, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-
-  call VecResetArray(psi_like1, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-
-end subroutine getdRdaPsiFwd
-
-subroutine getdRdaTPsi(output, ndv, adjoint, nstate)
-
-#ifndef USE_NO_PETSC
-
-  use communication
-  use ADjointPETSc
-  use ADjointVars
-  use blockPointers
-  use inputADjoint
-  use section
-  use inputTimeSpectral 
-  use monitor 
-
-  implicit none
-
-  ! Input/Output Variables
-  integer(kind=intType), intent(in) :: ndv, nstate
-  real(kind=realType), intent(in) :: adjoint(nstate)
-  real(kind=realType), intent(out) :: output(ndv)
-
-  ! Local Variables
-  integer(kind=intType) :: ierr, i
-
-  ! put adjoint arry in psi_like1
-  call VecPlaceArray(psi_like1, adjoint, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-
-  ! Create the result vector for dRda^T * psi
-  call VecCreateMPI(SUMB_COMM_WORLD, PETSC_DECIDE, ndv, dRdaTPsi, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-
-  ! Do the Multiplication
-  call MatMultTranspose(dRda, psi_like1, dRdaTPsi, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-
-  ! This is a little wonkly, since dRdaTPsi only contains a handful of
-  ! variables.
-  ! Use a proper vec scatter here:
-  call VecScatterCreateToAll(dRdaTPsi, dRdaTpsi_scatter, dRdaTPsi_local, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-
-  call VecScatterBegin(dRdaTpsi_scatter, dRdaTPsi, dRdaTpsi_local, &
-       INSERT_VALUES, SCATTER_FORWARD, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-  call VecScatterEnd (dRdaTpsi_scatter, dRdaTPsi, dRdaTpsi_local, &
-       INSERT_VALUES, SCATTER_FORWARD, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-
-  ! Now just pluck off the local values
-  do i=1, nDv
-     call VecGetValues(dRdaTPsi_local, 1, (/i-1/), output(i), ierr)
-     call EChk(ierr, __FILE__, __LINE__)
-  end do
-
-  ! No longer need vectors/scatter
-  call VecScatterDestroy(dRdaTpsi_scatter, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-
-  call VecDestroy(dRdaTPsi, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-
-  call VecDestroy(dRdaTpsi_local, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-
-  call VecResetArray(psi_like1, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-#endif
-end subroutine getdRdaTPsi
-!
 subroutine getdRdXvTPsi(dXv, ndof, adjoint, nstate)
 #ifndef USE_NO_PETSC
  
 #define PETSC_AVOID_MPIF_H
-  use petscvec
   use ADjointPETSc, only: dRdx, x_like, psi_like1
   use blockPointers
   use inputTimeSpectral 
@@ -240,7 +120,6 @@ subroutine getdRdXvPsi(dXv, ndof, adjoint, nstate)
 #ifndef USE_NO_PETSC
  
 #define PETSC_AVOID_MPIF_H
-  use petscvec
   use ADjointPETSc, only: dRdx, x_like, psi_like1
   use blockPointers
   use inputTimeSpectral 
@@ -503,7 +382,6 @@ subroutine agumentRHS(ndof, phi, adjdof, agument)
 
 end subroutine agumentRHS
 
-
 subroutine getdFdwTVec(in_vec, in_dof, out_vec, out_dof)
 
   use ADjointPETSc, only : fVec1, psi_like1, fNode, dFndFc, dFcdw, fCell, overArea
@@ -511,6 +389,10 @@ subroutine getdFdwTVec(in_vec, in_dof, out_vec, out_dof)
   use communication
 
   implicit none
+#define PETSC_AVOID_MPIF_H
+#include "finclude/petscsys.h"
+#include "finclude/petscvec.h"
+#include "finclude/petscvec.h90"
 
   ! Input/Ouput
   integer(kind=intType), intent(in) :: in_dof, out_dof

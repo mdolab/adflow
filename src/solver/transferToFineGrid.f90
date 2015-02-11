@@ -276,7 +276,7 @@
            ! If the solution must be interpolated, extrapolate the
            ! solution in the halo's.
 
-           call computeEtot(2_intType,il, 2_intType,jl, &
+           call computeEtotBlock(2_intType,il, 2_intType,jl, &
                             2_intType,kl, correctForK)
            if(.not. corrections) call extrapolateSolution
 

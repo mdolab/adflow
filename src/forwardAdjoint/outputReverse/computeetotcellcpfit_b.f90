@@ -6,7 +6,7 @@
    !   with respect to varying inputs: *p *gamma *w tref rgas scale
    !   Plus diff mem management of: p:in gamma:in w:in
    !      ==================================================================
-   SUBROUTINE COMPUTEETOTCELLCPFIT_B(i, j, k, scale, scaleb, correctfork)
+   SUBROUTINE COMPUTEETOTCELLCPFIT_B(i, j, k, scale, scaled, correctfork)
    !
    !      ******************************************************************
    !      *                                                                *
@@ -16,7 +16,7 @@
    !      *                                                                *
    !      ******************************************************************
    !
-   USE BLOCKPOINTERS_B
+   USE BLOCKPOINTERS
    USE CPCURVEFITS
    USE FLOWVARREFSTATE
    IMPLICIT NONE
@@ -29,14 +29,14 @@
    !
    INTEGER(kind=inttype), INTENT(IN) :: i, j, k
    REAL(kind=realtype), INTENT(IN) :: scale
-   REAL(kind=realtype) :: scaleb
+   REAL(kind=realtype) :: scaled
    LOGICAL, INTENT(IN) :: correctfork
    !
    !      Local variables.
    !
    INTEGER(kind=inttype) :: nn, mm, ii, start
    REAL(kind=realtype) :: pp, t, t2, cv, eint
-   REAL(kind=realtype) :: ppb, tb, t2b, cvb, eintb
+   REAL(kind=realtype) :: ppd, td, t2d, cvd, eintd
    INTRINSIC LOG
    REAL(kind=realtype) :: tmp
    REAL(kind=realtype) :: tmp0
@@ -45,12 +45,12 @@
    REAL(kind=realtype) :: temp2
    REAL(kind=realtype) :: temp1
    REAL(kind=realtype) :: temp0
-   REAL(kind=realtype) :: tempb2
-   REAL(kind=realtype) :: tempb1
-   REAL(kind=realtype) :: tempb0
-   REAL(kind=realtype) :: tmpb
-   REAL(kind=realtype) :: tmpb0
-   REAL(kind=realtype) :: tempb
+   REAL(kind=realtype) :: tmpd
+   REAL(kind=realtype) :: tempd
+   REAL(kind=realtype) :: tempd2
+   REAL(kind=realtype) :: tempd1
+   REAL(kind=realtype) :: tempd0
+   REAL(kind=realtype) :: tmpd0
    REAL(kind=realtype) :: temp
    !
    !      ******************************************************************
@@ -129,76 +129,76 @@
    CALL PUSHREAL8(w(i, j, k, irhoe))
    w(i, j, k, irhoe) = tmp
    IF (correctfork) THEN
-   tmpb0 = wb(i, j, k, irhoe)
-   wb(i, j, k, irhoe) = tmpb0
-   wb(i, j, k, irho) = wb(i, j, k, irho) + w(i, j, k, itu1)*tmpb0
-   wb(i, j, k, itu1) = wb(i, j, k, itu1) + w(i, j, k, irho)*tmpb0
+   tmpd0 = wd(i, j, k, irhoe)
+   wd(i, j, k, irhoe) = tmpd0
+   wd(i, j, k, irho) = wd(i, j, k, irho) + w(i, j, k, itu1)*tmpd0
+   wd(i, j, k, itu1) = wd(i, j, k, itu1) + w(i, j, k, irho)*tmpd0
    END IF
    CALL POPREAL8(w(i, j, k, irhoe))
-   tmpb = wb(i, j, k, irhoe)
-   wb(i, j, k, irhoe) = 0.0_8
+   tmpd = wd(i, j, k, irhoe)
+   wd(i, j, k, irhoe) = 0.0_8
    temp3 = w(i, j, k, ivz)
    temp2 = w(i, j, k, ivy)
    temp1 = w(i, j, k, ivx)
-   tempb1 = w(i, j, k, irho)*tmpb
-   tempb2 = half*tempb1
-   wb(i, j, k, irho) = wb(i, j, k, irho) + (eint+half*(temp1**2+temp2**2+&
-   &   temp3**2))*tmpb
-   eintb = tempb1
-   wb(i, j, k, ivx) = wb(i, j, k, ivx) + 2*temp1*tempb2
-   wb(i, j, k, ivy) = wb(i, j, k, ivy) + 2*temp2*tempb2
-   wb(i, j, k, ivz) = wb(i, j, k, ivz) + 2*temp3*tempb2
+   tempd1 = w(i, j, k, irho)*tmpd
+   tempd2 = half*tempd1
+   wd(i, j, k, irho) = wd(i, j, k, irho) + (eint+half*(temp1**2+temp2**2+&
+   &   temp3**2))*tmpd
+   eintd = tempd1
+   wd(i, j, k, ivx) = wd(i, j, k, ivx) + 2*temp1*tempd2
+   wd(i, j, k, ivy) = wd(i, j, k, ivy) + 2*temp2*tempd2
+   wd(i, j, k, ivz) = wd(i, j, k, ivz) + 2*temp3*tempd2
    CALL POPCONTROL2B(branch)
    IF (branch .EQ. 0) THEN
-   gammab(i, j, k) = 0.0_8
-   scaleb = scaleb + (cpeint(0)+cv0*(t-cptrange(0)))*eintb
-   tb = scale*cv0*eintb
+   gammad(i, j, k) = 0.0_8
+   scaled = scaled + (cpeint(0)+cv0*(t-cptrange(0)))*eintd
+   td = scale*cv0*eintd
    ELSE IF (branch .EQ. 1) THEN
-   gammab(i, j, k) = 0.0_8
-   scaleb = scaleb + (cpeint(cpnparts)+cvn*(t-cptrange(cpnparts)))*&
-   &     eintb
-   tb = scale*cvn*eintb
+   gammad(i, j, k) = 0.0_8
+   scaled = scaled + (cpeint(cpnparts)+cvn*(t-cptrange(cpnparts)))*&
+   &     eintd
+   td = scale*cvn*eintd
    ELSE
-   cvb = (1.0/cv-(one+cv)/cv**2)*gammab(i, j, k)
-   gammab(i, j, k) = 0.0_8
+   cvd = (1.0/cv-(one+cv)/cv**2)*gammad(i, j, k)
+   gammad(i, j, k) = 0.0_8
    CALL POPREAL8(eint)
-   scaleb = scaleb + eint*eintb
-   eintb = scale*eintb
-   tb = 0.0_8
+   scaled = scaled + eint*eintd
+   eintd = scale*eintd
+   td = 0.0_8
    DO ii=cptempfit(nn)%nterm,1,-1
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
    mm = cptempfit(nn)%exponents(ii) + 1
-   t2b = cptempfit(nn)%constants(ii)*eintb/mm
+   t2d = cptempfit(nn)%constants(ii)*eintd/mm
    CALL POPREAL8(t2)
-   tb = tb + t2*t2b
-   t2b = t*t2b
+   td = td + t2*t2d
+   t2d = t*t2d
    ELSE
-   tb = tb + cptempfit(nn)%constants(ii)*eintb/t
-   t2b = 0.0_8
+   td = td + cptempfit(nn)%constants(ii)*eintd/t
+   t2d = 0.0_8
    END IF
-   t2b = t2b + cptempfit(nn)%constants(ii)*cvb
+   t2d = t2d + cptempfit(nn)%constants(ii)*cvd
    IF (.NOT.(t .LE. 0.0_8 .AND. (cptempfit(nn)%exponents(ii) .EQ. &
    &         0.0_8 .OR. cptempfit(nn)%exponents(ii) .NE. INT(cptempfit(nn)%&
-   &         exponents(ii))))) tb = tb + cptempfit(nn)%exponents(ii)*t**(&
-   &         cptempfit(nn)%exponents(ii)-1)*t2b
+   &         exponents(ii))))) td = td + cptempfit(nn)%exponents(ii)*t**(&
+   &         cptempfit(nn)%exponents(ii)-1)*t2d
    END DO
-   tb = tb - eintb
+   td = td - eintd
    END IF
    temp0 = w(i, j, k, irho)
    temp = rgas*temp0
-   tempb = tb/temp
-   tempb0 = -(tref*pp*tempb/temp)
-   trefb = trefb + pp*tempb
-   ppb = tref*tempb
-   rgasb = rgasb + temp0*tempb0
-   wb(i, j, k, irho) = wb(i, j, k, irho) + rgas*tempb0
+   tempd = td/temp
+   tempd0 = -(tref*pp*tempd/temp)
+   trefd = trefd + pp*tempd
+   ppd = tref*tempd
+   rgasd = rgasd + temp0*tempd0
+   wd(i, j, k, irho) = wd(i, j, k, irho) + rgas*tempd0
    CALL POPCONTROL1B(branch)
    IF (branch .EQ. 0) THEN
-   wb(i, j, k, irho) = wb(i, j, k, irho) - twothird*w(i, j, k, itu1)*&
-   &     ppb
-   wb(i, j, k, itu1) = wb(i, j, k, itu1) - twothird*w(i, j, k, irho)*&
-   &     ppb
+   wd(i, j, k, irho) = wd(i, j, k, irho) - twothird*w(i, j, k, itu1)*&
+   &     ppd
+   wd(i, j, k, itu1) = wd(i, j, k, itu1) - twothird*w(i, j, k, irho)*&
+   &     ppd
    END IF
-   pb(i, j, k) = pb(i, j, k) + ppb
+   pd(i, j, k) = pd(i, j, k) + ppd
    END SUBROUTINE COMPUTEETOTCELLCPFIT_B

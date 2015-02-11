@@ -43,6 +43,8 @@ FILES_TO_COMPLEXIFY = \
 		viscousFluxApprox.F90\
 		inviscidDissFluxScalarApprox.F90\
 		inviscidDissFluxMatrixApprox.F90\
+		computePressureSimple.F90\
+		costFunction2.F90\
 
 FILES_TO_COPY = 
 

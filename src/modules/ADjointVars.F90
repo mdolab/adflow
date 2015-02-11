@@ -39,7 +39,6 @@
       integer(kind=intType) :: nDesignReynolds
       integer(kind=intType) :: nDesignReynoldsLength
       integer(kind=intType) :: nDesignExtra = 0
-      real(kind=realType),dimension(:),allocatable :: dIda
       
       ! nNodesGlobal  Total number of nodes on each level
       ! nNodesLocal   Number of nodes owned by the processor on each level
@@ -50,4 +49,5 @@
       integer(kind=intType), parameter :: maxLevels = 20
       integer(kind=intType), dimension(maxLevels) :: nNodesGlobal, nNodesLocal, nNodeOffsetLocal
       integer(kind=intType), dimension(maxLevels) :: nCellsGlobal, nCellsLocal, nCellOffsetLocal
+      logical :: derivVarsAllocated = .False.
     end module ADjointVars

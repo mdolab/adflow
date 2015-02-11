@@ -419,50 +419,62 @@ subroutine updateWallDistancesQuickly(nn, level, sps)
   integer(kind=intType) :: nn, level, sps
 
   ! Local Variables
-  integer(kind=intType) :: i,j,k, faceID
+  integer(kind=intType) :: i, j, k, ii, faceID
   real(kind=realType) :: xp(3), xc(3), u, v
 
-  do k=2,kl
-     do j=2,jl
-        do i=2,il
+#ifdef TAPENADE_FAST
+  !$AD II-LOOP
+  do ii=0,nx*ny*nz-1
+     i = mod(ii, nx) + 2
+     j = mod(ii/nx, ny) + 2
+     k = ii/(nx*ny) + 2
+#else
+     do k=2,kl
+        do j=2,jl
+           do i=2,il
+#endif
+              ! Extract elemID and u-v position for the association of
+              ! this cell:
+              faceID = flowDoms(nn,level,sps)%elemID(i,j,k)
+              u      = flowDoms(nn,level,sps)%uv(1,i,j,k)
+              v      = flowDoms(nn,level,sps)%uv(2,i,j,k)
 
-           ! Extract elemID and u-v position for the association of
-           ! this cell:
-           faceID = flowDoms(nn,level,sps)%elemID(i,j,k)
-           u      = flowDoms(nn,level,sps)%uv(1,i,j,k)
-           v      = flowDoms(nn,level,sps)%uv(2,i,j,k)
-
-           ! Now we have the 4 corners, use bi-linear shape
-           ! functions o to get target: (CCW ordering remember!)
-
-           xp(:) = &
-                (one-u)*(one-v)*xSurf(12*(faceID-1) + 1:12*(faceID-1) + 3) + &
-                (    u)*(one-v)*xSurf(12*(faceID-1) + 4:12*(faceID-1) + 6) + &
-                (    u)*(    v)*xSurf(12*(faceID-1) + 7:12*(faceID-1) + 9) + & 
-                (one-u)*(    v)*xSurf(12*(faceID-1) +10:12*(faceID-1) +12)
-
-           ! Get the cell center
-           xc(1) = eighth*(x(i-1,j-1,k-1,1) + x(i,j-1,k-1,1)  &
-                +         x(i-1,j,  k-1,1) + x(i,j,  k-1,1)  &
-                +         x(i-1,j-1,k,  1) + x(i,j-1,k,  1)  &
-                +         x(i-1,j,  k,  1) + x(i,j,  k,  1))
-
-           xc(2) = eighth*(x(i-1,j-1,k-1,2) + x(i,j-1,k-1,2)  &
-                +         x(i-1,j,  k-1,2) + x(i,j,  k-1,2)  &
-                +         x(i-1,j-1,k,  2) + x(i,j-1,k,  2)  &
-                +         x(i-1,j,  k,  2) + x(i,j,  k,  2))
-
-           xc(3) = eighth*(x(i-1,j-1,k-1,3) + x(i,j-1,k-1,3)  &
-                +         x(i-1,j,  k-1,3) + x(i,j,  k-1,3)  &
-                +         x(i-1,j-1,k,  3) + x(i,j-1,k,  3)  &
-                +         x(i-1,j,  k,  3) + x(i,j,  k,  3))
-
-           ! Now we have the two points...just take the norm of the
-           ! distance between them
-           
-           d2wall(i,j,k) = sqrt(&
-                (xc(1)-xp(1))**2 + (xc(2)-xp(2))**2 + (xc(3)-xp(3))**2)
-        end do
-     end do
-  end do
+              ! Now we have the 4 corners, use bi-linear shape
+              ! functions o to get target: (CCW ordering remember!)
+              
+              xp(:) = &
+                   (one-u)*(one-v)*xSurf(12*(faceID-1) + 1:12*(faceID-1) + 3) + &
+                   (    u)*(one-v)*xSurf(12*(faceID-1) + 4:12*(faceID-1) + 6) + &
+                   (    u)*(    v)*xSurf(12*(faceID-1) + 7:12*(faceID-1) + 9) + & 
+                   (one-u)*(    v)*xSurf(12*(faceID-1) +10:12*(faceID-1) +12)
+              
+              ! Get the cell center
+              xc(1) = eighth*(x(i-1,j-1,k-1,1) + x(i,j-1,k-1,1)  &
+                   +         x(i-1,j,  k-1,1) + x(i,j,  k-1,1)  &
+                   +         x(i-1,j-1,k,  1) + x(i,j-1,k,  1)  &
+                   +         x(i-1,j,  k,  1) + x(i,j,  k,  1))
+              
+              xc(2) = eighth*(x(i-1,j-1,k-1,2) + x(i,j-1,k-1,2)  &
+                   +         x(i-1,j,  k-1,2) + x(i,j,  k-1,2)  &
+                   +         x(i-1,j-1,k,  2) + x(i,j-1,k,  2)  &
+                   +         x(i-1,j,  k,  2) + x(i,j,  k,  2))
+              
+              xc(3) = eighth*(x(i-1,j-1,k-1,3) + x(i,j-1,k-1,3)  &
+                   +         x(i-1,j,  k-1,3) + x(i,j,  k-1,3)  &
+                   +         x(i-1,j-1,k,  3) + x(i,j-1,k,  3)  &
+                   +         x(i-1,j,  k,  3) + x(i,j,  k,  3))
+              
+              ! Now we have the two points...just take the norm of the
+              ! distance between them
+              
+              d2wall(i,j,k) = sqrt(&
+                   (xc(1)-xp(1))**2 + (xc(2)-xp(2))**2 + (xc(3)-xp(3))**2)
+#ifdef TAPENADE_FAST
+           end do
+#else
+        enddo
+     enddo
+  enddo
+#endif
+  
 end subroutine updateWallDistancesQuickly
