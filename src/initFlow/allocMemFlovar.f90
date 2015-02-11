@@ -81,11 +81,32 @@ subroutine allocMemFlovarPart1(sps,level)
 
      ! Alloc mem for dadi
      allocate(flowDoms(nn,level,sps)%dadidata(ie,je,ke,10), stat=ierr)
-     
+
+     ! Alloc mem for viscous fluxes
+     allocate(flowDoms(nn,level,sps)%ux(il,jl,kl), stat=ierr)
+     allocate(flowDoms(nn,level,sps)%uy(il,jl,kl), stat=ierr)
+     allocate(flowDoms(nn,level,sps)%uz(il,jl,kl), stat=ierr)
+
+     allocate(flowDoms(nn,level,sps)%vx(il,jl,kl), stat=ierr)
+     allocate(flowDoms(nn,level,sps)%vy(il,jl,kl), stat=ierr)
+     allocate(flowDoms(nn,level,sps)%vz(il,jl,kl), stat=ierr)
+
+     allocate(flowDoms(nn,level,sps)%wx(il,jl,kl), stat=ierr)
+     allocate(flowDoms(nn,level,sps)%wy(il,jl,kl), stat=ierr)
+     allocate(flowDoms(nn,level,sps)%wz(il,jl,kl), stat=ierr)
+
+     allocate(flowDoms(nn,level,sps)%qx(il,jl,kl), stat=ierr)
+     allocate(flowDoms(nn,level,sps)%qy(il,jl,kl), stat=ierr)
+     allocate(flowDoms(nn,level,sps)%qz(il,jl,kl), stat=ierr)
 
      ! Allocate memory for the pressure.
-
      allocate(flowDoms(nn,level,sps)%p(0:ib,0:jb,0:kb), stat=ierr)
+     if(ierr /= 0)                           &
+          call terminate("allocMemFlovarPart1", &
+          "Memory allocation failure for p")
+
+     ! Allocate memory for the speed of sound squared
+     allocate(flowDoms(nn,level,sps)%aa(0:ib,0:jb,0:kb), stat=ierr)
      if(ierr /= 0)                           &
           call terminate("allocMemFlovarPart1", &
           "Memory allocation failure for p")
@@ -285,6 +306,7 @@ subroutine allocMemFlovarPart2(sps, level)
              flowDoms(nn,level,sps)%radI(1:ie,1:je,1:ke),     &
              flowDoms(nn,level,sps)%radJ(1:ie,1:je,1:ke),     &
              flowDoms(nn,level,sps)%radK(1:ie,1:je,1:ke),     &
+             flowDoms(nn,level,sps)%scratch(0:ib,0:jb,0:kb,5), &
              stat=ierr)
         if(ierr /= 0)                              &
              call terminate("allocMemFlovarPart2", &

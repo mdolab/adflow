@@ -8,598 +8,384 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       subroutine inviscidDissFluxScalar
-!
-!      ******************************************************************
-!      *                                                                *
-!      * inviscidDissFluxScalar computes the scalar artificial          *
-!      * dissipation, see AIAA paper 81-1259, for a given block.        *
-!      * Therefore it is assumed that the pointers in  blockPointers    *
-!      * already point to the correct block.                            *
-!      *                                                                *
-!      ******************************************************************
-!
-       use blockPointers
-       use cgnsGrid
-       use constants
-       use flowVarRefState
-       use inputDiscretization
-       use inputPhysics
-       use iteration
-       implicit none
-!
-!      Local parameter.
-!
-       real(kind=realType), parameter :: dssMax = 0.25_realType
-!
-!      Local variables.
-!
-       integer(kind=intType) :: i, j, k, ind
+subroutine inviscidDissFluxScalar
+  !
+  !      ******************************************************************
+  !      *                                                                *
+  !      * inviscidDissFluxScalar computes the scalar artificial          *
+  !      * dissipation, see AIAA paper 81-1259, for a given block.        *
+  !      * Therefore it is assumed that the pointers in  blockPointers    *
+  !      * already point to the correct block.                            *
+  !      *                                                                *
+  !      ******************************************************************
+  !
+  use blockPointers
+  use cgnsGrid
+  use constants
+  use flowVarRefState
+  use inputDiscretization
+  use inputPhysics
+  use iteration
+  implicit none
+  !
+  !      Local parameter.
+  !
+  real(kind=realType), parameter :: dssMax = 0.25_realType
+  !
+  !      Local variables.
+  !
+  integer(kind=intType) :: i, j, k, ind, ii
 
-       real(kind=realType) :: sslim, rhoi
-       real(kind=realType) :: sfil, fis2, fis4
-       real(kind=realType) :: ppor, rrad, dis2, dis4
-       real(kind=realType) :: dss1, dss2, ddw, fs
+  real(kind=realType) :: sslim, rhoi
+  real(kind=realType) :: sfil, fis2, fis4
+  real(kind=realType) :: ppor, rrad, dis2, dis4
+  real(kind=realType) :: ddw1,ddw2,ddw3,ddw4,ddw5,fs
+  real(kind=realType),dimension(1:ie,1:je,1:ke,3) :: dss
+  real(kind=realType), dimension(0:ib,0:jb,0:kb) :: ss
+  !
+  !      ******************************************************************
+  !      *                                                                *
+  !      * Begin execution                                                *
+  !      *                                                                *
+  !      ******************************************************************
+  !
+  ! Check if rFil == 0. If so, the dissipative flux needs not to
+  ! be computed.
 
-       real(kind=realType), dimension(0:ib,0:jb,0:kb) :: ss
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
-       ! Check if rFil == 0. If so, the dissipative flux needs not to
-       ! be computed.
+  if(abs(rFil) < thresholdReal) return
 
-       if(abs(rFil) < thresholdReal) return
+  ! Determine the variables used to compute the switch.
+  ! For the inviscid case this is the pressure; for the viscous
+  ! case it is the entropy.
 
-       ! Determine the variables used to compute the switch.
-       ! For the inviscid case this is the pressure; for the viscous
-       ! case it is the entropy.
+  select case (equations)
+  case (EulerEquations)
 
-       select case (equations)
-         case (EulerEquations)
+     ! Inviscid case. Pressure switch is based on the pressure.
+     ! Also set the value of sslim. To be fully consistent this
+     ! must have the dimension of pressure and it is therefore
+     ! set to a fraction of the free stream value.
 
-           ! Inviscid case. Pressure switch is based on the pressure.
-           ! Also set the value of sslim. To be fully consistent this
-           ! must have the dimension of pressure and it is therefore
-           ! set to a fraction of the free stream value.
+     sslim = 0.001_realType*pInfCorr
 
-           sslim = 0.001_realType*pInfCorr
+     ! Copy the pressure in ss. Only need the entries used in the
+     ! discretization, i.e. not including the corner halo's, but we'll
+     ! just copy all anyway. 
 
-           ! Copy the pressure in ss. Only fill the entries used in
-           ! the discretization, i.e. ignore the corner halo's.
+     ss = P
+     !===============================================================
 
-           do k=0,kb
-             do j=2,jl
-               do i=2,il
-                 ss(i,j,k) = p(i,j,k)
-               enddo
-             enddo
-           enddo
+  case (NSEquations, RANSEquations)
 
-           do k=2,kl
-             do j=2,jl
-               ss(0, j,k) = p(0, j,k); ss(1, j,k) = p(1, j,k)
-               ss(ie,j,k) = p(ie,j,k); ss(ib,j,k) = p(ib,j,k)
-             enddo
-           enddo
+     ! Viscous case. Pressure switch is based on the entropy.
+     ! Also set the value of sslim. To be fully consistent this
+     ! must have the dimension of entropy and it is therefore
+     ! set to a fraction of the free stream value.
 
-           do k=2,kl
-             do i=2,il
-               ss(i,0, k) = p(i,0, k); ss(i,1, k) = p(i,1, k)
-               ss(i,je,k) = p(i,je,k); ss(i,jb,k) = p(i,jb,k)
-             enddo
-           enddo
+     sslim = 0.001_realType*pInfCorr/(rhoInf**gammaInf)
 
-         !===============================================================
+     ! Store the entropy in ss. See above. 
 
-         case (NSEquations, RANSEquations)
-
-           ! Viscous case. Pressure switch is based on the entropy.
-           ! Also set the value of sslim. To be fully consistent this
-           ! must have the dimension of entropy and it is therefore
-           ! set to a fraction of the free stream value.
-
-           sslim = 0.001_realType*pInfCorr/(rhoInf**gammaInf)
-
-           ! Store the entropy in ss. Only fill the entries used in
-           ! the discretization, i.e. ignore the corner halo's.
-
-           do k=0,kb
-             do j=2,jl
-               do i=2,il
+#ifdef TAPENADE_FAST
+     !$AD II-LOOP
+     do ii=0,(ib+1)*(jb+1)*(kb+1)-1
+        i = mod(ii, ib+1)
+        j = mod(ii/(ib+1), jb+1) 
+        k = ii/((ib+1)*(jb+1))
+#else
+        do k=0,kb
+           do j=0,jb
+              do i=0,ib
+#endif      
                  ss(i,j,k) = p(i,j,k)/(w(i,j,k,irho)**gamma(i,j,k))
-               enddo
-             enddo
-           enddo
+#ifdef TAPENADE_FAST
+              end do
+#else
+           end do
+        end do
+     end do
+#endif
+  end select
 
-           do k=2,kl
-             do j=2,jl
-               ss(0, j,k) = p(0, j,k)/(w(0, j,k,irho)**gamma(0, j,k))
-               ss(1, j,k) = p(1, j,k)/(w(1, j,k,irho)**gamma(1, j,k))
-               ss(ie,j,k) = p(ie,j,k)/(w(ie,j,k,irho)**gamma(ie,j,k))
-               ss(ib,j,k) = p(ib,j,k)/(w(ib,j,k,irho)**gamma(ib,j,k))
-             enddo
-           enddo
+  ! Compute the pressure sensor for each cell, in each direction:
+#ifdef TAPENADE_FAST
+  !$AD II-LOOP
+  do ii=0,ie*je*ke-1
+     i = mod(ii, ie) + 1
+     j = mod(ii/ie, je) + 1
+     k = ii/(ie*je) + 1
+#else
+     do k=1,ke
+        do j=1,je
+           do i=1,ie
+#endif             
+              dss(i,j,k,1) = abs((ss(i+1,j,k) - two*ss(i,j,k) + ss(i-1,j,k)) &
+                   /     (ss(i+1,j,k) + two*ss(i,j,k) + ss(i-1,j,k) + sslim))
 
-           do k=2,kl
-             do i=2,il
-               ss(i,0, k) = p(i,0, k)/(w(i,0, k,irho)**gamma(i,0, k))
-               ss(i,1, k) = p(i,1, k)/(w(i,1, k,irho)**gamma(i,1, k))
-               ss(i,je,k) = p(i,je,k)/(w(i,je,k,irho)**gamma(i,je,k))
-               ss(i,jb,k) = p(i,jb,k)/(w(i,jb,k,irho)**gamma(i,jb,k))
-             enddo
-           enddo
+              dss(i,j,k,2) = abs((ss(i,j+1,k) - two*ss(i,j,k) + ss(i,j-1,k)) &
+                   /     (ss(i,j+1,k) + two*ss(i,j,k) + ss(i,j-1,k) + sslim))
 
-       end select
+              dss(i,j,k,3) = abs((ss(i,j,k+1) - two*ss(i,j,k) + ss(i,j,k-1)) &
+                   /     (ss(i,j,k+1) + two*ss(i,j,k) + ss(i,j,k-1) + sslim))
+#ifdef TAPENADE_FAST
+           end do
+#else
+        end do
+     end do
+  end do
+#endif
 
-       ! Set a couple of constants for the scheme.
+  ! Set a couple of constants for the scheme.
 
-       fis2 = rFil*vis2
-       fis4 = rFil*vis4
-       sfil = one - rFil
+  fis2 = rFil*vis2
+  fis4 = rFil*vis4
+  sfil = one - rFil
 
-       ! Replace the total energy by rho times the total enthalpy.
-       ! In this way the numerical solution is total enthalpy preserving
-       ! for the steady Euler equations. Also replace the velocities by
-       ! the momentum. Only done for the entries used in the
-       ! discretization, i.e. ignore the corner halo's.
+  ! Initialize the dissipative residual to a certain times,
+  ! possibly zero, the previously stored value. Owned cells
+  ! only, because the halo values do not matter.
 
-       do k=0,kb
-         do j=2,jl
-           do i=2,il
-             w(i,j,k,ivx)   = w(i,j,k,irho)*w(i,j,k,ivx)
-             w(i,j,k,ivy)   = w(i,j,k,irho)*w(i,j,k,ivy)
-             w(i,j,k,ivz)   = w(i,j,k,irho)*w(i,j,k,ivz)
-             w(i,j,k,irhoE) = w(i,j,k,irhoE) + p(i,j,k)
-           enddo
-         enddo
-       enddo
-
-       do k=2,kl
-         do j=2,jl
-           w(0,j,k,ivx)   = w(0,j,k,irho)*w(0,j,k,ivx)
-           w(0,j,k,ivy)   = w(0,j,k,irho)*w(0,j,k,ivy)
-           w(0,j,k,ivz)   = w(0,j,k,irho)*w(0,j,k,ivz)
-           w(0,j,k,irhoE) = w(0,j,k,irhoE) + p(0,j,k)
-
-           w(1,j,k,ivx)   = w(1,j,k,irho)*w(1,j,k,ivx)
-           w(1,j,k,ivy)   = w(1,j,k,irho)*w(1,j,k,ivy)
-           w(1,j,k,ivz)   = w(1,j,k,irho)*w(1,j,k,ivz)
-           w(1,j,k,irhoE) = w(1,j,k,irhoE) + p(1,j,k)
-
-           w(ie,j,k,ivx)   = w(ie,j,k,irho)*w(ie,j,k,ivx)
-           w(ie,j,k,ivy)   = w(ie,j,k,irho)*w(ie,j,k,ivy)
-           w(ie,j,k,ivz)   = w(ie,j,k,irho)*w(ie,j,k,ivz)
-           w(ie,j,k,irhoE) = w(ie,j,k,irhoE) + p(ie,j,k)
-
-           w(ib,j,k,ivx)   = w(ib,j,k,irho)*w(ib,j,k,ivx)
-           w(ib,j,k,ivy)   = w(ib,j,k,irho)*w(ib,j,k,ivy)
-           w(ib,j,k,ivz)   = w(ib,j,k,irho)*w(ib,j,k,ivz)
-           w(ib,j,k,irhoE) = w(ib,j,k,irhoE) + p(ib,j,k)
-         enddo
-       enddo
-
-       do k=2,kl
-         do i=2,il
-           w(i,0,k,ivx)   = w(i,0,k,irho)*w(i,0,k,ivx)
-           w(i,0,k,ivy)   = w(i,0,k,irho)*w(i,0,k,ivy)
-           w(i,0,k,ivz)   = w(i,0,k,irho)*w(i,0,k,ivz)
-           w(i,0,k,irhoE) = w(i,0,k,irhoE) + p(i,0,k)
-
-           w(i,1,k,ivx)   = w(i,1,k,irho)*w(i,1,k,ivx)
-           w(i,1,k,ivy)   = w(i,1,k,irho)*w(i,1,k,ivy)
-           w(i,1,k,ivz)   = w(i,1,k,irho)*w(i,1,k,ivz)
-           w(i,1,k,irhoE) = w(i,1,k,irhoE) + p(i,1,k)
-
-           w(i,je,k,ivx)   = w(i,je,k,irho)*w(i,je,k,ivx)
-           w(i,je,k,ivy)   = w(i,je,k,irho)*w(i,je,k,ivy)
-           w(i,je,k,ivz)   = w(i,je,k,irho)*w(i,je,k,ivz)
-           w(i,je,k,irhoE) = w(i,je,k,irhoE) + p(i,je,k)
-
-           w(i,jb,k,ivx)   = w(i,jb,k,irho)*w(i,jb,k,ivx)
-           w(i,jb,k,ivy)   = w(i,jb,k,irho)*w(i,jb,k,ivy)
-           w(i,jb,k,ivz)   = w(i,jb,k,irho)*w(i,jb,k,ivz)
-           w(i,jb,k,irhoE) = w(i,jb,k,irhoE) + p(i,jb,k)
-         enddo
-       enddo
-
-       ! Initialize the dissipative residual to a certain times,
-       ! possibly zero, the previously stored value. Owned cells
-       ! only, because the halo values do not matter.
-
-       do k=2,kl
-         do j=2,jl
-           do i=2,il
-             fw(i,j,k,irho)  = sfil*fw(i,j,k,irho)
-             fw(i,j,k,imx)   = sfil*fw(i,j,k,imx)
-             fw(i,j,k,imy)   = sfil*fw(i,j,k,imy)
-             fw(i,j,k,imz)   = sfil*fw(i,j,k,imz)
-             fw(i,j,k,irhoE) = sfil*fw(i,j,k,irhoE)
-           enddo
-         enddo
-       enddo
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Dissipative fluxes in the i-direction.                         *
-!      *                                                                *
-!      ******************************************************************
-!
-       do k=2,kl
-         do j=2,jl
-
-           ! Compute the pressure sensor in the first cell, which
-           ! is a halo cell.
-
-           dss1 = abs((ss(2,j,k) - two*ss(1,j,k) + ss(0,j,k)) &
-                /     (ss(2,j,k) + two*ss(1,j,k) + ss(0,j,k) + sslim))
-
-           ! Loop in i-direction.
-
+  fw = sfil*fw
+  !
+  !      ******************************************************************
+  !      *                                                                *
+  !      * Dissipative fluxes in the i-direction.                         *
+  !      *                                                                *
+  !      ******************************************************************
+  !
+#ifdef TAPENADE_FAST
+  !$AD II-LOOP
+  do ii=0,il*ny*nz-1
+     i = mod(ii, il) + 1
+     j = mod(ii/il, ny) + 2
+     k = ii/(il*ny) + 2
+#else
+     do k=2,kl
+        do j=2,jl
            do i=1,il
+#endif             
+              ! Compute the dissipation coefficients for this face.
 
-             ! Compute the pressure sensor in the cell to the right
-             ! of the face.
+              ppor = zero
+              if(porI(i,j,k) == normalFlux) ppor = half
+              rrad = ppor*(radI(i,j,k) + radI(i+1,j,k))
 
-             dss2 = abs((ss(i+2,j,k) - two*ss(i+1,j,k) + ss(i,j,k)) &
-                  /     (ss(i+2,j,k) + two*ss(i+1,j,k) + ss(i,j,k) + sslim))
+              dis2 = fis2*rrad*min(dssMax, max(dss(i,j,k,1), dss(i+1,j,k,1)))
+              dis4 = dim(fis4*rrad, dis2)
 
-             ! Compute the dissipation coefficients for this face.
+              ! Compute and scatter the dissipative flux.
+              ! Density. Store it in the mass flow of the
+              ! appropriate sliding mesh interface.
 
-             ppor = zero
-             if(porI(i,j,k) == normalFlux) ppor = half
-             rrad = ppor*(radI(i,j,k) + radI(i+1,j,k))
+              ddw1 = w(i+1,j,k,irho) - w(i,j,k,irho)
+              fs  = dis2*ddw1 &
+                   - dis4*(w(i+2,j,k,irho) - w(i-1,j,k,irho) - three*ddw1)
 
-             ! Modification for FD Preconditioner Note: This lumping
-             ! actually still results in a greater than 3 cell stencil
-             ! in any direction. Since this seems to work slightly
-             ! better than the dis2=sigma*fis4*rrad, we will just use
-             ! a 5-cell stencil for doing the PC
-             if (lumpedDiss) then
-                dis2 = fis2*rrad*min(dssMax, max(dss1,dss2))+sigma*fis4*rrad
-                !dis2 = sigma*fis4*rrad 
-                dis4 = 0.0
-             else
-                dis2 = fis2*rrad*min(dssMax, max(dss1,dss2))
-                dis4 = dim(fis4*rrad, dis2)
-             end if
+              fw(i+1,j,k,irho) = fw(i+1,j,k,irho) + fs
+              fw(i,j,k,irho)   = fw(i,j,k,irho)   - fs
 
-             ! Compute and scatter the dissipative flux.
-             ! Density. Store it in the mass flow of the
-             ! appropriate sliding mesh interface.
+              ! X-momentum.
 
-             ddw = w(i+1,j,k,irho) - w(i,j,k,irho)
-             fs  = dis2*ddw &
-                 - dis4*(w(i+2,j,k,irho) - w(i-1,j,k,irho) - three*ddw)
+              ddw2 = w(i+1,j,k,ivx)*w(i+1,j,k,irho) - w(i,j,k,ivx)*w(i,j,k,irho)
+              fs  = dis2*ddw2 &
+                   - dis4*(w(i+2,j,k,ivx)*w(i+2,j,k,irho) - w(i-1,j,k,ivx)*w(i-1,j,k,irho) - three*ddw2)
 
-             fw(i+1,j,k,irho) = fw(i+1,j,k,irho) + fs
-             fw(i,j,k,irho)   = fw(i,j,k,irho)   - fs
-#ifndef USE_TAPENADE
-             ind = indFamilyI(i,j,k)
-             massFlowFamilyDiss(ind,spectralSol) =       &
-                     massFlowFamilyDiss(ind,spectralSol) &
-                                                  - factFamilyI(i,j,k)*fs
+              fw(i+1,j,k,imx) = fw(i+1,j,k,imx) + fs
+              fw(i,j,k,imx)   = fw(i,j,k,imx)   - fs
+
+              ! Y-momentum.
+
+              ddw3 = w(i+1,j,k,ivy)*w(i+1,j,k,irho) - w(i,j,k,ivy)*w(i,j,k,irho)
+              fs  = dis2*ddw3 &
+                   - dis4*(w(i+2,j,k,ivy)*w(i+2,j,k,irho) - w(i-1,j,k,ivy)*w(i-1,j,k,irho) - three*ddw3)
+
+              fw(i+1,j,k,imy) = fw(i+1,j,k,imy) + fs
+              fw(i,j,k,imy)   = fw(i,j,k,imy)   - fs
+
+              ! Z-momentum.
+
+              ddw4 = w(i+1,j,k,ivz)*w(i+1,j,k,irho) - w(i,j,k,ivz)*w(i,j,k,irho)
+              fs  = dis2*ddw4 &
+                   - dis4*(w(i+2,j,k,ivz)*w(i+2,j,k,irho) - w(i-1,j,k,ivz)*w(i-1,j,k,irho) - three*ddw4)
+
+              fw(i+1,j,k,imz) = fw(i+1,j,k,imz) + fs
+              fw(i,j,k,imz)   = fw(i,j,k,imz)   - fs
+
+              ! Energy.
+
+              ddw5 = (w(i+1,j,k,irhoE) + P(i+1,j,K))- (w(i,j,k,irhoE) + P(i,j,k))
+              fs  = dis2*ddw5 &
+                   - dis4*((w(i+2,j,k,irhoE) + P(i+2,j,k)) - (w(i-1,j,k,irhoE) + P(i-1,j,k)) - three*ddw5)
+
+              fw(i+1,j,k,irhoE) = fw(i+1,j,k,irhoE) + fs
+              fw(i,j,k,irhoE)   = fw(i,j,k,irhoE)   - fs
+#ifdef TAPENADE_FAST
+           end do
+#else
+        end do
+     end do
+  end do
 #endif
-             ! X-momentum.
 
-             ddw = w(i+1,j,k,ivx) - w(i,j,k,ivx)
-             fs  = dis2*ddw &
-                 - dis4*(w(i+2,j,k,ivx) - w(i-1,j,k,ivx) - three*ddw)
-
-             fw(i+1,j,k,imx) = fw(i+1,j,k,imx) + fs
-             fw(i,j,k,imx)   = fw(i,j,k,imx)   - fs
-
-             ! Y-momentum.
-
-             ddw = w(i+1,j,k,ivy) - w(i,j,k,ivy)
-             fs  = dis2*ddw &
-                 - dis4*(w(i+2,j,k,ivy) - w(i-1,j,k,ivy) - three*ddw)
-
-             fw(i+1,j,k,imy) = fw(i+1,j,k,imy) + fs
-             fw(i,j,k,imy)   = fw(i,j,k,imy)   - fs
-
-             ! Z-momentum.
-
-             ddw = w(i+1,j,k,ivz) - w(i,j,k,ivz)
-             fs  = dis2*ddw &
-                 - dis4*(w(i+2,j,k,ivz) - w(i-1,j,k,ivz) - three*ddw)
-
-             fw(i+1,j,k,imz) = fw(i+1,j,k,imz) + fs
-             fw(i,j,k,imz)   = fw(i,j,k,imz)   - fs
-
-             ! Energy.
-
-             ddw = w(i+1,j,k,irhoE) - w(i,j,k,irhoE)
-             fs  = dis2*ddw &
-                 - dis4*(w(i+2,j,k,irhoE) - w(i-1,j,k,irhoE) - three*ddw)
-
-             fw(i+1,j,k,irhoE) = fw(i+1,j,k,irhoE) + fs
-             fw(i,j,k,irhoE)   = fw(i,j,k,irhoE)   - fs
-
-             ! Set dss1 to dss2 for the next face.
-
-             dss1 = dss2
-
-           enddo
-         enddo
-       enddo
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Dissipative fluxes in the j-direction.                         *
-!      *                                                                *
-!      ******************************************************************
-!
-       do k=2,kl
-         do i=2,il
-
-           ! Compute the pressure sensor in the first cell, which
-           ! is a halo cell.
-
-           dss1 = abs((ss(i,2,k) - two*ss(i,1,k) + ss(i,0,k)) &
-                /     (ss(i,2,k) + two*ss(i,1,k) + ss(i,0,k) + sslim))
-
-           ! Loop in j-direction.
-
-           do j=1,jl
-
-             ! Compute the pressure sensor in the cell to the right
-             ! of the face.
-
-             dss2 = abs((ss(i,j+2,k) - two*ss(i,j+1,k) + ss(i,j,k)) &
-                  /     (ss(i,j+2,k) + two*ss(i,j+1,k) + ss(i,j,k) + sslim))
-
-             ! Compute the dissipation coefficients for this face.
-
-             ppor = zero
-             if(porJ(i,j,k) == normalFlux) ppor = half
-             rrad = ppor*(radJ(i,j,k) + radJ(i,j+1,k))
-
-             ! Modification for FD Preconditioner
-             if (lumpedDiss) then
-                dis2 = fis2*rrad*min(dssMax, max(dss1,dss2))+sigma*fis4*rrad
-                !dis2 = sigma*fis4*rrad 
-                dis4 = 0.0
-             else
-                dis2 = fis2*rrad*min(dssMax, max(dss1,dss2))
-                dis4 = dim(fis4*rrad, dis2)
-             end if
-
-             ! Compute and scatter the dissipative flux.
-             ! Density. Store it in the mass flow of the
-             ! appropriate sliding mesh interface.
-
-             ddw = w(i,j+1,k,irho) - w(i,j,k,irho)
-             fs  = dis2*ddw &
-                 - dis4*(w(i,j+2,k,irho) - w(i,j-1,k,irho) - three*ddw)
-
-             fw(i,j+1,k,irho) = fw(i,j+1,k,irho) + fs
-             fw(i,j,k,irho)   = fw(i,j,k,irho)   - fs
-#ifndef USE_TAPENADE
-             ind = indFamilyJ(i,j,k)
-             massFlowFamilyDiss(ind,spectralSol) =       &
-                     massFlowFamilyDiss(ind,spectralSol) &
-                                                  - factFamilyJ(i,j,k)*fs
-#endif
-             ! X-momentum.
-
-             ddw = w(i,j+1,k,ivx) - w(i,j,k,ivx)
-             fs  = dis2*ddw &
-                 - dis4*(w(i,j+2,k,ivx) - w(i,j-1,k,ivx) - three*ddw)
-
-             fw(i,j+1,k,imx) = fw(i,j+1,k,imx) + fs
-             fw(i,j,k,imx)   = fw(i,j,k,imx)   - fs
-
-             ! Y-momentum.
-
-             ddw = w(i,j+1,k,ivy) - w(i,j,k,ivy)
-             fs  = dis2*ddw &
-                 - dis4*(w(i,j+2,k,ivy) - w(i,j-1,k,ivy) - three*ddw)
-
-             fw(i,j+1,k,imy) = fw(i,j+1,k,imy) + fs
-             fw(i,j,k,imy)   = fw(i,j,k,imy)   - fs
-
-             ! Z-momentum.
-
-             ddw = w(i,j+1,k,ivz) - w(i,j,k,ivz)
-             fs  = dis2*ddw &
-                 - dis4*(w(i,j+2,k,ivz) - w(i,j-1,k,ivz) - three*ddw)
-
-             fw(i,j+1,k,imz) = fw(i,j+1,k,imz) + fs
-             fw(i,j,k,imz)   = fw(i,j,k,imz)   - fs
-
-             ! Energy.
-
-             ddw = w(i,j+1,k,irhoE) - w(i,j,k,irhoE)
-             fs  = dis2*ddw &
-                 - dis4*(w(i,j+2,k,irhoE) - w(i,j-1,k,irhoE) - three*ddw)
-
-             fw(i,j+1,k,irhoE) = fw(i,j+1,k,irhoE) + fs
-             fw(i,j,k,irhoE)   = fw(i,j,k,irhoE)   - fs
-
-             ! Set dss1 to dss2 for the next face.
-
-             dss1 = dss2
-
-           enddo
-         enddo
-       enddo
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Dissipative fluxes in the k-direction.                         *
-!      *                                                                *
-!      ******************************************************************
-!
-       do j=2,jl
-         do i=2,il
-
-           ! Compute the pressure sensor in the first cell, which
-           ! is a halo cell.
-
-           dss1 = abs((ss(i,j,2) - two*ss(i,j,1) + ss(i,j,0)) &
-                /     (ss(i,j,2) + two*ss(i,j,1) + ss(i,j,0) + sslim))
-
-           ! Loop in k-direction.
-
-           do k=1,kl
-
-             ! Compute the pressure sensor in the cell to the right
-             ! of the face.
-
-             dss2 = abs((ss(i,j,k+2) - two*ss(i,j,k+1) + ss(i,j,k)) &
-                  /     (ss(i,j,k+2) + two*ss(i,j,k+1) + ss(i,j,k) + sslim))
-
-             ! Compute the dissipation coefficients for this face.
-
-             ppor = zero
-             if(porK(i,j,k) == normalFlux) ppor = half
-             rrad = ppor*(radK(i,j,k) + radK(i,j,k+1))
-
-             ! Modification for FD Preconditioner
-             if (lumpedDiss) then
-                dis2 = fis2*rrad*min(dssMax, max(dss1,dss2))+sigma*fis4*rrad
-                !dis2 = sigma*fis4*rrad 
-                dis4 = 0.0
-             else
-                dis2 = fis2*rrad*min(dssMax, max(dss1,dss2))
-                dis4 = dim(fis4*rrad, dis2)
-             end if
-
-             ! Compute and scatter the dissipative flux.
-             ! Density. Store it in the mass flow of the
-             ! appropriate sliding mesh interface.
-
-             ddw = w(i,j,k+1,irho) - w(i,j,k,irho)
-             fs  = dis2*ddw &
-                 - dis4*(w(i,j,k+2,irho) - w(i,j,k-1,irho) - three*ddw)
-
-             fw(i,j,k+1,irho) = fw(i,j,k+1,irho) + fs
-             fw(i,j,k,irho)   = fw(i,j,k,irho)   - fs
-#ifndef USE_TAPENADE
-             ind = indFamilyK(i,j,k)
-             massFlowFamilyDiss(ind,spectralSol) =       &
-                     massFlowFamilyDiss(ind,spectralSol) &
-                                                  - factFamilyK(i,j,k)*fs
-#endif
-             ! X-momentum.
-
-             ddw = w(i,j,k+1,ivx) - w(i,j,k,ivx)
-             fs  = dis2*ddw &
-                 - dis4*(w(i,j,k+2,ivx) - w(i,j,k-1,ivx) - three*ddw)
-
-             fw(i,j,k+1,imx) = fw(i,j,k+1,imx) + fs
-             fw(i,j,k,imx)   = fw(i,j,k,imx)   - fs
-
-             ! Y-momentum.
-
-             ddw = w(i,j,k+1,ivy) - w(i,j,k,ivy)
-             fs  = dis2*ddw &
-                 - dis4*(w(i,j,k+2,ivy) - w(i,j,k-1,ivy) - three*ddw)
-
-             fw(i,j,k+1,imy) = fw(i,j,k+1,imy) + fs
-             fw(i,j,k,imy)   = fw(i,j,k,imy)   - fs
-
-             ! Z-momentum.
-
-             ddw = w(i,j,k+1,ivz) - w(i,j,k,ivz)
-             fs  = dis2*ddw &
-                 - dis4*(w(i,j,k+2,ivz) - w(i,j,k-1,ivz) - three*ddw)
-
-             fw(i,j,k+1,imz) = fw(i,j,k+1,imz) + fs
-             fw(i,j,k,imz)   = fw(i,j,k,imz)   - fs
-
-             ! Energy.
-
-             ddw = w(i,j,k+1,irhoE) - w(i,j,k,irhoE)
-             fs  = dis2*ddw &
-                 - dis4*(w(i,j,k+2,irhoE) - w(i,j,k-1,irhoE) - three*ddw)
-
-             fw(i,j,k+1,irhoE) = fw(i,j,k+1,irhoE) + fs
-             fw(i,j,k,irhoE)   = fw(i,j,k,irhoE)   - fs
-
-             ! Set dss1 to dss2 for the next face.
-
-             dss1 = dss2
-
-           enddo
-         enddo
-       enddo
-
-       ! Replace rho times the total enthalpy by the total energy and
-       ! store the velocities again instead of the momentum. Only for
-       ! those entries that have been altered, i.e. ignore the
-       ! corner halo's.
-
-       do k=0,kb
-         do j=2,jl
+  !
+  !      ******************************************************************
+  !      *                                                                *
+  !      * Dissipative fluxes in the j-direction.                         *
+  !      *                                                                *
+  !      ******************************************************************
+  !
+#ifdef TAPENADE_FAST
+  !$AD II-LOOP
+  do ii=0,nx*jl*nz-1
+     i = mod(ii, nx) + 2
+     j = mod(ii/nx, jl) + 1
+     k = ii/(nx*jl) + 2
+#else
+     do k=2,kl
+        do j=1,jl
            do i=2,il
-             rhoi           = one/w(i,j,k,irho)
-             w(i,j,k,ivx)   = w(i,j,k,ivx)*rhoi
-             w(i,j,k,ivy)   = w(i,j,k,ivy)*rhoi
-             w(i,j,k,ivz)   = w(i,j,k,ivz)*rhoi
-             w(i,j,k,irhoE) = w(i,j,k,irhoE) - p(i,j,k)
-           enddo
-         enddo
-       enddo
+#endif   
+              ! Compute the dissipation coefficients for this face.
 
-       do k=2,kl
-         do j=2,jl
-           rhoi           = one/w(0,j,k,irho)
-           w(0,j,k,ivx)   = w(0,j,k,ivx)*rhoi
-           w(0,j,k,ivy)   = w(0,j,k,ivy)*rhoi
-           w(0,j,k,ivz)   = w(0,j,k,ivz)*rhoi
-           w(0,j,k,irhoE) = w(0,j,k,irhoE) - p(0,j,k)
+              ppor = zero
+              if(porJ(i,j,k) == normalFlux) ppor = half
+              rrad = ppor*(radJ(i,j,k) + radJ(i,j+1,k))
 
-           rhoi           = one/w(1,j,k,irho)
-           w(1,j,k,ivx)   = w(1,j,k,ivx)*rhoi
-           w(1,j,k,ivy)   = w(1,j,k,ivy)*rhoi
-           w(1,j,k,ivz)   = w(1,j,k,ivz)*rhoi
-           w(1,j,k,irhoE) = w(1,j,k,irhoE) - p(1,j,k)
+              dis2 = fis2*rrad*min(dssMax, max(dss(i,j,k,2),dss(i,j+1,k,2)))
+              dis4 = dim(fis4*rrad, dis2)
 
-           rhoi            = one/w(ie,j,k,irho)
-           w(ie,j,k,ivx)   = w(ie,j,k,ivx)*rhoi
-           w(ie,j,k,ivy)   = w(ie,j,k,ivy)*rhoi
-           w(ie,j,k,ivz)   = w(ie,j,k,ivz)*rhoi
-           w(ie,j,k,irhoE) = w(ie,j,k,irhoE) - p(ie,j,k)
+              ! Compute and scatter the dissipative flux.
+              ! Density. Store it in the mass flow of the
+              ! appropriate sliding mesh interface.
 
-           rhoi            = one/w(ib,j,k,irho)
-           w(ib,j,k,ivx)   = w(ib,j,k,ivx)*rhoi
-           w(ib,j,k,ivy)   = w(ib,j,k,ivy)*rhoi
-           w(ib,j,k,ivz)   = w(ib,j,k,ivz)*rhoi
-           w(ib,j,k,irhoE) = w(ib,j,k,irhoE) - p(ib,j,k)
-         enddo
-       enddo
+              ddw1 = w(i,j+1,k,irho) - w(i,j,k,irho)
+              fs  = dis2*ddw1 &
+                   - dis4*(w(i,j+2,k,irho) - w(i,j-1,k,irho) - three*ddw1)
 
-       do k=2,kl
-         do i=2,il
-           rhoi           = one/w(i,0,k,irho)
-           w(i,0,k,ivx)   = w(i,0,k,ivx)*rhoi
-           w(i,0,k,ivy)   = w(i,0,k,ivy)*rhoi
-           w(i,0,k,ivz)   = w(i,0,k,ivz)*rhoi
-           w(i,0,k,irhoE) = w(i,0,k,irhoE) - p(i,0,k)
+              fw(i,j+1,k,irho) = fw(i,j+1,k,irho) + fs
+              fw(i,j,k,irho)   = fw(i,j,k,irho)   - fs
 
-           rhoi           = one/w(i,1,k,irho)
-           w(i,1,k,ivx)   = w(i,1,k,ivx)*rhoi
-           w(i,1,k,ivy)   = w(i,1,k,ivy)*rhoi
-           w(i,1,k,ivz)   = w(i,1,k,ivz)*rhoi
-           w(i,1,k,irhoE) = w(i,1,k,irhoE) - p(i,1,k)
+              ! X-momentum.
 
-           rhoi            = one/w(i,je,k,irho)
-           w(i,je,k,ivx)   = w(i,je,k,ivx)*rhoi
-           w(i,je,k,ivy)   = w(i,je,k,ivy)*rhoi
-           w(i,je,k,ivz)   = w(i,je,k,ivz)*rhoi
-           w(i,je,k,irhoE) = w(i,je,k,irhoE) - p(i,je,k)
+              ddw2 = w(i,j+1,k,ivx)*w(i,j+1,k,irho) - w(i,j,k,ivx)*w(i,j,k,irho)
+              fs  = dis2*ddw2 &
+                   - dis4*(w(i,j+2,k,ivx)*w(i,j+2,k,irho) - w(i,j-1,k,ivx)*w(i,j-1,k,irho) - three*ddw2)
 
-           rhoi            = one/w(i,jb,k,irho)
-           w(i,jb,k,ivx)   = w(i,jb,k,ivx)*rhoi
-           w(i,jb,k,ivy)   = w(i,jb,k,ivy)*rhoi
-           w(i,jb,k,ivz)   = w(i,jb,k,ivz)*rhoi
-           w(i,jb,k,irhoE) = w(i,jb,k,irhoE) - p(i,jb,k)
-         enddo
-       enddo
+              fw(i,j+1,k,imx) = fw(i,j+1,k,imx) + fs
+              fw(i,j,k,imx)   = fw(i,j,k,imx)   - fs
 
-       end subroutine inviscidDissFluxScalar
+              ! Y-momentum.
+
+              ddw3 = w(i,j+1,k,ivy)*w(i,j+1,k,irho) - w(i,j,k,ivy)*w(i,j,k,irho)
+              fs  = dis2*ddw3 &
+                   - dis4*(w(i,j+2,k,ivy)*w(i,j+2,k,irho) - w(i,j-1,k,ivy)*w(i,j-1,k,irho) - three*ddw3)
+
+              fw(i,j+1,k,imy) = fw(i,j+1,k,imy) + fs
+              fw(i,j,k,imy)   = fw(i,j,k,imy)   - fs
+
+              ! Z-momentum.
+
+              ddw4 = w(i,j+1,k,ivz)*w(i,j+1,k,irho) - w(i,j,k,ivz)*w(i,j,k,irho)
+              fs  = dis2*ddw4 &
+                   - dis4*(w(i,j+2,k,ivz)*w(i,j+2,k,irho) - w(i,j-1,k,ivz)*w(i,j-1,k,irho) - three*ddw4)
+
+              fw(i,j+1,k,imz) = fw(i,j+1,k,imz) + fs
+              fw(i,j,k,imz)   = fw(i,j,k,imz)   - fs
+
+              ! Energy.
+
+              ddw5 = (w(i,j+1,k,irhoE) + P(i,j+1,k)) - (w(i,j,k,irhoE) + P(i,j,k))
+              fs  = dis2*ddw5 &
+                   - dis4*((w(i,j+2,k,irhoE) + P(i,j+2,k)) - (w(i,j-1,k,irhoE) + P(i,j-1,k)) - three*ddw5)
+
+              fw(i,j+1,k,irhoE) = fw(i,j+1,k,irhoE) + fs
+              fw(i,j,k,irhoE)   = fw(i,j,k,irhoE)   - fs
+#ifdef TAPENADE_FAST
+           end do
+#else
+        end do
+     end do
+  end do
+#endif
+  !
+  !      ******************************************************************
+  !      *                                                                *
+  !      * Dissipative fluxes in the k-direction.                         *
+  !      *                                                                *
+  !      ******************************************************************
+  !
+#ifdef TAPENADE_FAST
+  !$AD II-LOOP
+  do ii=0,nx*ny*kl-1
+     i = mod(ii, nx) + 2
+     j = mod(ii/nx, ny) + 2
+     k = ii/(nx*ny) + 1
+#else
+     do k=1,kl
+        do j=2,jl
+           do i=2,il
+#endif     
+              ! Compute the dissipation coefficients for this face.
+
+              ppor = zero
+              if(porK(i,j,k) == normalFlux) ppor = half
+              rrad = ppor*(radK(i,j,k) + radK(i,j,k+1))
+
+              dis2 = fis2*rrad*min(dssMax, max(dss(i,j,k,3), dss(i,j,k+1,3)))
+              dis4 = dim(fis4*rrad, dis2)
+
+              ! Compute and scatter the dissipative flux.
+              ! Density. Store it in the mass flow of the
+              ! appropriate sliding mesh interface.
+
+              ddw1 = w(i,j,k+1,irho) - w(i,j,k,irho)
+              fs  = dis2*ddw1 &
+                   - dis4*(w(i,j,k+2,irho) - w(i,j,k-1,irho) - three*ddw1)
+
+              fw(i,j,k+1,irho) = fw(i,j,k+1,irho) + fs
+              fw(i,j,k,irho)   = fw(i,j,k,irho)   - fs
+
+              ! X-momentum.
+
+              ddw2 = w(i,j,k+1,ivx)*w(i,j,k+1,irho) - w(i,j,k,ivx)*w(i,j,k,irho)
+              fs  = dis2*ddw2 &
+                   - dis4*(w(i,j,k+2,ivx)*w(i,j,k+2,irho) - w(i,j,k-1,ivx)*w(i,j,k-1,irho) - three*ddw2)
+
+              fw(i,j,k+1,imx) = fw(i,j,k+1,imx) + fs
+              fw(i,j,k,imx)   = fw(i,j,k,imx)   - fs
+
+              ! Y-momentum.
+
+              ddw3 = w(i,j,k+1,ivy)*w(i,j,k+1,irho) - w(i,j,k,ivy)*w(i,j,k,irho)
+              fs  = dis2*ddw3 &
+                   - dis4*(w(i,j,k+2,ivy)*w(i,j,k+2,irho) - w(i,j,k-1,ivy)*w(i,j,k-1,irho) - three*ddw3)
+
+              fw(i,j,k+1,imy) = fw(i,j,k+1,imy) + fs
+              fw(i,j,k,imy)   = fw(i,j,k,imy)   - fs
+
+              ! Z-momentum.
+
+              ddw4 = w(i,j,k+1,ivz)*w(i,j,k+1,irho) - w(i,j,k,ivz)*w(i,j,k,irho)
+              fs  = dis2*ddw4 &
+                   - dis4*(w(i,j,k+2,ivz)*w(i,j,k+2,irho) - w(i,j,k-1,ivz)*w(i,j,k-1,irho) - three*ddw4)
+
+              fw(i,j,k+1,imz) = fw(i,j,k+1,imz) + fs
+              fw(i,j,k,imz)   = fw(i,j,k,imz)   - fs
+
+              ! Energy.
+
+              ddw5 = (w(i,j,k+1,irhoE) + P(i,j,k+1)) - (w(i,j,k,irhoE) + P(i,j,k))
+              fs  = dis2*ddw5 &
+                   - dis4*((w(i,j,k+2,irhoE) + P(i,j,k+2)) - (w(i,j,k-1,irhoE) + P(i,j,k-1)) - three*ddw5)
+
+              fw(i,j,k+1,irhoE) = fw(i,j,k+1,irhoE) + fs
+              fw(i,j,k,irhoE)   = fw(i,j,k,irhoE)   - fs
+
+#ifdef TAPENADE_FAST
+           end do
+#else
+        end do
+     end do
+  end do
+#endif
+end subroutine inviscidDissFluxScalar

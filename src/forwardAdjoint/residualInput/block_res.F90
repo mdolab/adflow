@@ -12,8 +12,8 @@
 ! for forward mode AD with Tapenade
 
 subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment, sepSensor, &
-     Cavitation)
-
+     Cavitation, frozenTurb)
+  use BCRoutines
   use blockPointers       
   use flowVarRefState     
   use inputPhysics 
@@ -22,16 +22,16 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   use section
   use monitor
   use iteration
-  use inputADjoint
   use diffSizes
   use costFunctions
   use wallDistanceData
   use inputDiscretization 
+  use saModule
   implicit none
 
   ! Input Arguments:
   integer(kind=intType), intent(in) :: nn, sps
-  logical, intent(in) :: useSpatial
+  logical, intent(in) :: useSpatial, frozenTurb
   real(kind=realType), intent(in) :: alpha, beta
   integer(kind=intType), intent(in) :: liftIndex
 
@@ -50,7 +50,7 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   useOldCoor = .False.
 
   ! Setup number of state variable based on turbulence assumption
-  if ( frozenTurbulence ) then
+  if ( frozenTurb ) then
      nState = nwf
   else
      nState = nw
@@ -70,14 +70,14 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   call referenceState
   call setFlowInfinityState
 
-
   ! ------------------------------------------------
   !        Additional Spatial Components
   ! ------------------------------------------------
   if (useSpatial) then
 
-     call xhalo_block
+     call volume_block
      call metric_block
+     call boundaryNormals
 
 #ifdef TAPENADE_REVERSE
      if (equations == RANSEquations .and. useApproxWallDistance) then 
@@ -109,27 +109,16 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   ! ------------------------------------------------
 
   ! Compute the pressures
-  gm1 = gammaConstant - one
-
-  ! Compute P 
-  do k=0, kb
-     do j=0, jb
-        do i=0, ib
-           v2 = w(i, j, k, ivx)**2 + w(i, j, k, ivy)**2 + w(i, j, k, ivz)**2
-           p(i, j, k) = gm1*(w(i, j, k, irhoE) - half*w( i, j, k, irho)*v2)
-           p(i, j, k) = max(p(i, j, k), 1.e-4_realType*pInfCorr)
-        enddo
-     enddo
-  enddo
+  call computePressureSimple
 
   ! Compute Laminar/eddy viscosity if required
   call computeLamViscosity
   call computeEddyViscosity 
-
-  !  Apply all BC's
+  
   call applyAllBC_block(.True.)
- 
+
   if (equations == RANSequations) then 
+     call bcTurbTreatment
      call applyAllTurbBCThisBLock(.True.)
   end if
 
@@ -155,7 +144,6 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
         
      case (spalartAllmaras)
         call sa_block(.true.)
-        
      case default
         call terminate("turbResidual", & 
              "Only SA turbulence adjoint implemented")
@@ -277,3 +265,32 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   call getCostFunction2(force, moment, sepSensor, Cavitation, alpha, beta, liftIndex)
 #endif
 end subroutine block_res
+
+subroutine resScale
+  
+  use blockPointers
+  use flowVarRefState     
+  use inputIteration
+
+  implicit none
+
+  ! Local Variables
+  integer(kind=intType) :: i, j, k, l
+  real(kind=realType) :: ovol
+  
+ ! Divide through by the reference volume
+
+  do k=2, kl
+     do j=2, jl
+        do i=2, il
+           oVol = one/vol(i,j,k)
+           do l=1, nwf
+              dw(i, j, k, l) = (dw(i, j, k, l) + fw(i, j, k, l))* ovol
+           end do
+           do l=nwf, nt1
+              dw(i, j, k, l) = (dw(i, j, k, l) + fw(i, j, k, l))* ovol * turbResScale
+           end do
+        end do
+     end do
+  end do
+end subroutine resScale

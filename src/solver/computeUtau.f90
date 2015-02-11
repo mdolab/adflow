@@ -63,7 +63,7 @@ subroutine computeUtau_block
   !
   integer(kind=intType) :: mm, i, j
 
-  real(kind=realType) :: re, vx, vy, vz, veln, veltmag
+  real(kind=realType) :: re, vvx, vvy, vvz, veln, veltmag
 
   real(kind=realType), dimension(:,:,:), pointer :: ww, norm, uSlip
   real(kind=realType), dimension(:,:),   pointer :: dd2Wall, rrlv
@@ -149,17 +149,17 @@ subroutine computeUtau_block
            ! Compute the velocity difference between the internal
            ! cell and the wall.
 
-           vx = ww(i,j,ivx) - uSlip(i,j,1)
-           vy = ww(i,j,ivy) - uSlip(i,j,2)
-           vz = ww(i,j,ivz) - uSlip(i,j,3)
+           vvx = ww(i,j,ivx) - uSlip(i,j,1)
+           vvy = ww(i,j,ivy) - uSlip(i,j,2)
+           vvz = ww(i,j,ivz) - uSlip(i,j,3)
 
            ! Compute the normal velocity of the internal cell.
 
-           veln  = vx*norm(i,j,1) + vy*norm(i,j,2) + vz*norm(i,j,3)
+           veln  = vvx*norm(i,j,1) + vvy*norm(i,j,2) + vvz*norm(i,j,3)
 
            ! Compute the magnitude of the tangential velocity.
 
-           veltmag = max(eps,sqrt(vx*vx + vy*vy + vz*vz - veln*veln))
+           veltmag = max(eps,sqrt(vvx*vvx + vvy*vvy + vvz*vvz - veln*veln))
 
            ! Compute the Reynolds number. Note that an offset of -1
            ! must be used in dd2Wall, because the original array

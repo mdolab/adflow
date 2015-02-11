@@ -36,37 +36,25 @@ include ${SUMB_RULES_FILE}
 
 vpath %.o $(SUMB_OBJDIR)
 
-FILES_TO_COMPLEXIFY = \
-	       adjustInflowAngle.f90\
+FILES_TO_COMPLEXIFY1 = \
+	       BCRoutines.F90\
+
+FILES_TO_COMPLEXIFY2 = \
 	       applyAllBC.F90\
-	       bcBleedInflow.f90\
-	       bcDomainInterface.f90\
-	       bcEulerWall.F90\
-	       bcExtrap.f90\
-	       bcFarfield.F90\
-	       bcMdot.f90\
-	       bcNSWallAdiabatic.F90\
-	       bcNSWallIsothermal.F90\
-	       bcSubsonicInflow.f90\
-	       bcSubsonicOutflow.f90\
-	       bcSupersonicInflow.f90\
-	       bcSymm.F90\
-	       bcSymmPolar.f90\
-	       bcThrust.f90\
+	       adjustInflowAngle.f90\
 	       bleedFlowParameters.f90\
 	       calMassFlux.f90\
 	       coeffConvergenceCheck.f90\
 	       convergenceInfo.F90\
 	       computedwD3ADI.f90\
 	       computeInletMassFlowFullWheel.f90\
-	       computeLamViscosity.f90\
+	       computeLamViscosity.F90\
 	       computeUtau.f90\
 	       componentsBreakDownPrintout.f90\
 	       DADISmoother.f90\
 	       derivativeRotMatrixRigid.f90\
 	       eulerWallsPresent.f90\
 	       executeMGCycle.f90\
-	       extrapolate2ndHalo.F90\
                farFieldDrag.f90\
 	       farFieldInducedDrag.f90\
 	       forcesAndMoments.F90\
@@ -108,7 +96,7 @@ FILES_TO_COMPLEXIFY = \
                solverUnsteadyImplicitRK.F90\
 	       solverUnsteadyBDF.F90\
 	       solverUnsteadyMD.F90\
-	       timeStep.f90\
+	       timeStep.F90\
 	       transferToCoarseGrid.f90\
 	       transferToFineGrid.f90\
 	       unsteadyHeader.f90\
@@ -120,8 +108,11 @@ FILES_TO_COMPLEXIFY = \
 FILES_TO_COPY = connect_signals.c\
 		convergenceHeader.f90\
 
-ALL_FILES = $(FILES_TO_COMPLEXIFY) $(FILES_TO_COPY)
-OFILES := $(ALL_FILES:%.f90=%.o) $(ALL_FILES:%.F90=%.o) $(ALL_FILES:%.c=%.o)
+ALL_FILES1 = $(FILES_TO_COMPLEXIFY1)
+ALL_FILES2 = $(FILES_TO_COMPLEXIFY2) $(FILES_TO_COPY)
+OFILES1 := $(ALL_FILES1:%.F90=%.o) $(ALL_FILES1:%.F90=%.o) $(ALL_FILES1:%.c=%.o)
+OFILES2 := $(ALL_FILES2:%.f90=%.o) $(ALL_FILES2:%.F90=%.o) $(ALL_FILES2:%.c=%.o)
+ALL_COMPLEXIFY = $(FILES_TO_COMPLEXIFY1) $(FILES_TO_COMPLEXIFY2)
 
 #      ******************************************************************
 #      *                                                                *
@@ -132,14 +123,15 @@ OFILES := $(ALL_FILES:%.f90=%.o) $(ALL_FILES:%.F90=%.o) $(ALL_FILES:%.c=%.o)
 default: all
 
 all:
-	$(PMAKE) src
-
+	$(PMAKE) src1
+	cp -f *.mod $(SUMB_MODDIR)
+	$(PMAKE) src2
 clean:
 	@echo "        Making clean in solver... "
 	rm -f $(MAKE_CLEAN_ARGUMENTS)
 
 complexify:
-	@for file in $(FILES_TO_COMPLEXIFY); do \
+	@for file in $(ALL_COMPLEXIFY); do \
 		echo Checking $$file; \
 		if [ $$file -nt ../../src_cs/solver/$$file -o ! -e ../../src_cs/solver/$$file ]; then \
 			python ../complexify.py $$file; \
@@ -161,4 +153,5 @@ complexify:
 #      *                                                                *
 #      ******************************************************************
 
-src:	$(OFILES)
+src1:	$(OFILES1)
+src2:	$(OFILES2)

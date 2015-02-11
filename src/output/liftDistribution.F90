@@ -588,6 +588,9 @@ subroutine initializeLiftDistributionData
         ! Allocate space for all nodes and cells only on root proc
         allocate(allNodes(3, nNodesTotal))
         allocate(allCells(4, nCellsTotal))
+     else
+        allocate(allNodes(1,1))
+        allocate(allCells(1,1))
      end if
 
      ! Gather the coordinates the connectivity
@@ -635,6 +638,8 @@ subroutine initializeLiftDistributionData
         allocate(globalData(nSliceVariables, nCellsTotal))
         allocate(uniqueData(nSliceVariables, nUnique))
         allocate(fc(nUnique), dualAreas(nUnique))
+     else
+        allocate(globalData(1,1), uniqueData(1,1), fc(1), dualAreas(1))
      end if
      ! Data for the marching squares method:
      ! Which edges are cut by the contour
@@ -686,6 +691,8 @@ subroutine destroyLiftDistributionData
         ! Free all data allocated only on root proc:
         deallocate(allNodes, allCells, link, uniqueNodes)
         deallocate(globalData, uniqueNodes, uniqueData, fc, dualAreas)
+     else
+        deallocate(allNodes, allCells, globalData, uniqueData, fc, dualAreas)
      end if
 
      ! Free data for localCells and Nodes

@@ -37,7 +37,7 @@ subroutine setupPETScKsp
      usePC = .True.
      useObjective = .False.
      call setupStateResidualMatrix(drdwpret, useAD, usePC, useTranspose, &
-          useObjective, 1_intType)
+          useObjective, frozenTurbulence, 1_intType)
 
 #if PETSC_VERSION_MINOR > 4
      call KSPSetOperators(adjointKSP, dRdwT, dRdWPreT, ierr)

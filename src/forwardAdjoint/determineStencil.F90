@@ -55,7 +55,7 @@ subroutine determineStencil(lumped)
   groundLevel = 1
   currentLevel = 1
   ! Get current dw
-  call block_res(nn, 1, .False., alpha, beta, liftIndex, force, moment, sepSensor, Cavitation)
+  call block_res(nn, 1, .False., alpha, beta, liftIndex, force, moment, sepSensor, Cavitation, .False.)
   
 ! Copy out dw
   do k=3,3
@@ -73,7 +73,7 @@ subroutine determineStencil(lumped)
   end do
 
   ! Re-run dw
-  call block_res(nn, 1, .False., alpha, beta, liftIndex, force, moment, sepSensor, Cavitation)
+  call block_res(nn, 1, .False., alpha, beta, liftIndex, force, moment, sepSensor, Cavitation, .False.)
  
   do i=3,3
      do j=3,3
@@ -127,8 +127,8 @@ subroutine determineStencil(lumped)
   currentLevel = 1
 
   ! Get current dw -> We can use the normal version here
-  call block_res(nn, 1, .True., alpha, beta, liftIndex, force, moment, sepSensor, Cavitation)
-  call block_res(nn, 1, .False., alpha, beta, liftIndex, force, moment, sepSensor, Cavitation)
+  call block_res(nn, 1, .True., alpha, beta, liftIndex, force, moment, sepSensor, Cavitation, .False.)
+  call block_res(nn, 1, .False., alpha, beta, liftIndex, force, moment, sepSensor, Cavitation, .False.)
   dw_0=zero
   ! Copy out dw
   do k=-3,3
@@ -144,9 +144,8 @@ subroutine determineStencil(lumped)
   x(inode,jnode,knode,2) = x(inode,jnode,knode,2) + delta_x
   x(inode,jnode,knode,3) = x(inode,jnode,knode,3) + delta_x
   
-
   ! Re-run dw
-  call block_res(nn, 1, .True., alpha, beta, liftIndex, force, moment, sepSensor, Cavitation)
+  call block_res(nn, 1, .True., alpha, beta, liftIndex, force, moment, sepSensor, Cavitation, .False.)
   do k=-3,3
      do j=-3,3
         do i=-3,3

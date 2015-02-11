@@ -286,15 +286,6 @@ python module libsumb
          logical :: lumped 
        end subroutine determinestencil
        
-       subroutine verifyad
-       end subroutine verifyad
-
-       subroutine verifyonevalue
-       end subroutine verifyonevalue
-
-       subroutine verifymatprod
-       end subroutine verifymatprod
-
        ! ############################################################################
        ! SUmb ADjoint Core Routines
        ! ############################################################################
@@ -340,18 +331,6 @@ python module libsumb
 
        ! -------- Partial Derivative Functions -----------
        
-       subroutine getdidw(costfunction,didw,nstate) ! in :test:computeObjectivePartialsFwd.F90
-         integer(kind=inttype) intent(in) :: costfunction
-         real(kind=realtype) dimension(nstate),intent(out) :: didw
-         integer(kind=inttype), intent(in) :: nstate
-       end subroutine getdidw
-
-       subroutine getdidx(costfunction,didx,nspatial) ! in :test:computeObjectivePartialsFwd.F90
-         integer(kind=inttype) intent(in) :: costfunction
-         real(kind=realtype) dimension(nspatial),intent(out) :: didx
-         integer(kind=inttype), intent(in) :: nspatial
-       end subroutine getdidx
-
        ! -------- Get/Set Functions --------------------
        subroutine getstates(states,ndimw) ! in :test:getADjoint.F90
          real(kind=realtype) dimension(ndimw),intent(out),depend(ndimw) :: states
@@ -402,7 +381,7 @@ python module libsumb
          real(kind=realtype) dimension(nout),intent(out),depend(nout) :: dxv
          integer(kind=inttype) intent(in) :: nout
        end subroutine spectralprecscribedmotion
-  
+#ifndef USE_COMPLEX
         subroutine computematrixfreeproductfwd(xvdot,extradot,wdot,usespatial,usestate,dwdot,funcsdot,spatialsize,extrasize,statesize,costsize) ! in :test:matrixFreeRoutines.F90
             real(kind=realtype) dimension(spatialsize),intent(in) :: xvdot
             real(kind=realtype) dimension(extrasize),intent(in) :: extradot
@@ -429,25 +408,12 @@ python module libsumb
             integer(kind=inttype), optional,intent(in),check(len(dwbar)>=statesize),depend(dwbar) :: statesize=len(dwbar)
             integer(kind=inttype), optional,intent(in),check(len(funcsbar)>=costsize),depend(funcsbar) :: costsize=len(funcsbar)
         end subroutine computematrixfreeproductbwd
-
-        subroutine getdida(costfunction) ! in :test:computeObjectivePartialsFwd.F90
-          integer(kind=inttype) intent(in) :: costfunction
-        end subroutine getdida
-        
-        subroutine getdrdatpsi(output,ndv,adjoint,nstate) ! in :test:getdRdaPsi.F90
-          real(kind=realtype) dimension(ndv),intent(out),depend(ndv) :: output
-          integer(kind=inttype) intent(in) :: ndv
-          real(kind=realtype) dimension(nstate),intent(in) :: adjoint
-          integer(kind=inttype) optional,intent(in),check(len(adjoint)>=nstate),depend(adjoint) :: nstate=len(adjoint)
-        end subroutine getdrdatpsi
-
-        subroutine getdrdapsifwd(out_vec,nstate,in_vec,ndv) ! in :test:getdRdaPsi.F90
-            real(kind=realtype) dimension(nstate),intent(out),depend(nstate) :: out_vec
-            integer(kind=inttype) intent(in) :: nstate
-            real(kind=realtype) dimension(ndv),intent(in) :: in_vec
-            integer(kind=inttype) optional,intent(in),check(len(in_vec)>=ndv),depend(in_vec) :: ndv=len(in_vec)
-        end subroutine getdrdapsi
-
+        subroutine computematrixfreeproductbwdfast(dwbar,wbar,statesize) ! in :test:test.F90
+          real(kind=realtype) dimension(statesize),intent(in) :: dwbar
+          real(kind=realtype) dimension(statesize),intent(out),depend(statesize) :: wbar
+          integer(kind=inttype), optional,check(len(dwbar)>=statesize),depend(dwbar) :: statesize=len(dwbar)
+        end subroutine computematrixfreeproductbwdfast
+#endif
        ! ------------- Misc --------------------
  
 
@@ -1069,7 +1035,6 @@ python module libsumb
          integer(kind=inttype) :: ndesignrotcenz
          integer(kind=inttype) :: ndesignaoa
          integer(kind=inttype) :: ndesignrotceny
-         real(kind=realtype) allocatable,dimension(:) :: dida
          integer(kind=inttype) :: ndesignmachgrid
          integer(kind=inttype) :: ndesignmach
          integer(kind=inttype) :: ndesignlengthref
@@ -1175,6 +1140,19 @@ python module libsumb
          use communication
          implicit none
        end subroutine SUmb_finalize
+
+        subroutine testrev(dwbar,wbar,statesize) ! in :test:test.F90
+          real(kind=realtype) dimension(statesize),intent(in) :: dwbar
+          real(kind=realtype) dimension(statesize),intent(out),depend(statesize) :: wbar
+          integer(kind=inttype), optional,check(len(dwbar)>=statesize),depend(dwbar) :: statesize=len(dwbar)
+        end subroutine testrev
+
+        subroutine testrevspatial(dwbar,xbar,statesize,spatialsize) ! in :test:test.F90
+            real(kind=realtype) dimension(statesize),intent(in) :: dwbar
+            real(kind=realtype) dimension(spatialsize),intent(out),depend(spatialsize) :: xbar
+            integer(kind=inttype), optional,check(len(dwbar)>=statesize),depend(dwbar) :: statesize=len(dwbar)
+            integer(kind=inttype) :: spatialsize
+        end subroutine testrevspatial
 
     end interface 
 

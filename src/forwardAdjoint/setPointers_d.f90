@@ -2,7 +2,7 @@
 ! Set the pointers for the derivative values AND the normal pointers
 subroutine setPointers_d(nn, level, sps)
 
-  use blockPointers_d
+  use blockPointers
   implicit none
   !
   !      Subroutine arguments
@@ -40,28 +40,39 @@ subroutine setPointers_d(nn, level, sps)
   ! its values are obtained from the fine grid level.
 
   wd     => flowDomsd(nn,1,sps)%w
-  wOldd  => flowDomsd(nn,1,sps)%wOld
   pd     => flowDomsd(nn,1,sps)%p
 
   gammad => flowDomsd(nn,1,sps)%gamma
+  aad    => flowDomsd(nn,1,sps)%aa
   rlvd   => flowDomsd(nn,1,sps)%rlv
   revd   => flowDomsd(nn,1,sps)%rev
   sd     => flowDomsd(nn,1,sps)%s
+
+  uxd => flowDomsd(nn,1,sps)%ux
+  uyd => flowDomsd(nn,1,sps)%uy
+  uzd => flowDomsd(nn,1,sps)%uz
+  
+  vxd => flowDomsd(nn,1,sps)%vx
+  vyd => flowDomsd(nn,1,sps)%vy
+  vzd => flowDomsd(nn,1,sps)%vz
+  
+  wxd => flowDomsd(nn,1,sps)%wx
+  wyd => flowDomsd(nn,1,sps)%wy
+  wzd => flowDomsd(nn,1,sps)%wz
+  
+  qxd => flowDomsd(nn,1,sps)%qx
+  qyd => flowDomsd(nn,1,sps)%qy
+  qzd => flowDomsd(nn,1,sps)%qz
 
   ! Residual and multigrid variables. The residual point to the
   ! finest grid entry, the multigrid variables to their own level.
 
   dwd => flowDomsd(nn,1,sps)%dw
   fwd => flowDomsd(nn,1,sps)%fw
-
-  w1d => flowDomsd(nn,1,sps)%w1
-  wrd => flowDomsd(nn,1,sps)%wr
+  scratchd => flowDomsd(nn,1,sps)%scratch
 
   ! Time-stepping variables and spectral radIi.
   ! They asps point to the fine mesh entry.
-
-  wnd  => flowDomsd(nn,1,sps)%wn
-  dtld => flowDomsd(nn,1,sps)%dtl
 
   radId => flowDomsd(nn,1,sps)%radI
   radJd => flowDomsd(nn,1,sps)%radJ

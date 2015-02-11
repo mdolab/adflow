@@ -36,50 +36,34 @@ include ${SUMB_RULES_FILE}
 
 vpath %.o $(SUMB_OBJDIR)
 
-FF90_OBJECTS =  \
-	adjustinflowangle_b.o\
+FF90_OBJECTS1 =  bcroutines_b.o\
+		 samodule_b.o\
+
+FF90_OBJECTS2 =  \
+		allnodalgradients_b.o\
+		adjustinflowangle_b.o\
 		getdirvector_b.o\
 		referencestate_b.o\
 		vectorrotation_b.o\
 		computeetot_b.o\
+		computegamma_b.o\
 		computelamviscosity_b.o\
-		extrapolate2ndhalo_b.o\
+		computespeedofsoundsquared_b.o\
+		computepressuresimple_b.o\
+		getcostfunction2_b.o\
 		timestep_block_b.o\
 		metric_block_b.o\
 		xhalo_block_b.o\
-		applyallbc_block_b.o\
 		residual_block_b.o\
-		bceulerwall_b.o\
-		bcfarfield_b.o\
-		bcsymm_b.o\
-		bcnswallisothermal_b.o\
-		bcnswalladiabatic_b.o\
 		invisciddissfluxscalar_b.o\
-		invisciddissfluxscalarcoarse_b.o\
 		dim_b.o\
 		block_res_b.o  \
 		viscousflux_b.o \
 		viscousfluxapprox_b.o\
 		computeetotcellcpfit_b.o \
-                setbcpointersbwd_b.o\
-		setssbwd_b.o\
-		resetssbwd_b.o\
-		setpp3pp4bwd_b.o\
-		resetpp3pp4bwd_b.o\
-		setssmetricbwd_b.o\
-		resetssmetricbwd_b.o\
-		setgammabwd_b.o\
-		resetgammabwd_b.o\
-                setww0pp0rlv0rev0bwd_b.o\
-		resetww0pp0rlv0rev0bwd_b.o\
-                setxxssrhodd2wallbwd_b.o\
-                resetxxssrhodd2wallbwd_b.o\
-                resetbcpointersbwd_b.o\
-	        sa_block_b.o\
 	        inviscidcentralflux_b.o\
                 saeddyviscosity_b.o\
 		computeeddyviscosity_b.o\
-		sasolve_b.o\
 		unsteadyturbterm_b.o\
 		prodkatolaunder_b.o\
 		prodwmag2_b.o\
@@ -105,11 +89,9 @@ FF90_OBJECTS =  \
 		bceddynowall_b.o\
 		bcturbwall_b.o\
 		bcturbfarfield_b.o\
-		turbbcnswall_b.o\
-		unsteadyturbspectral_block_b.o\
 		updatewalldistancesquickly_b.o\
-
-
+		boundarynormals_b.o\
+		volume_block_b.o\
 #      ******************************************************************
 #      *                                                                *
 #      * Targets for make.                                              *
@@ -119,7 +101,9 @@ FF90_OBJECTS =  \
 default: all
 
 all:
-	$(PMAKE) src
+	$(PMAKE) src1
+	cp -f *.mod $(SUMB_MODDIR)
+	$(PMAKE) src2
 
 clean:
 	@echo "        Making clean in solver... "
@@ -131,4 +115,5 @@ clean:
 #      *                                                                *
 #      ******************************************************************
 
-src:   $(FF90_OBJECTS) 
+src1:   $(FF90_OBJECTS1) 
+src2:	$(FF90_OBJECTS2)

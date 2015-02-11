@@ -13,3 +13,13 @@ config/config*
 src_cs/*
 src/forwardAdjoint/temp*
 *.orig
+*.cgns
+*.cgnsSpectral*
+*~
+.*~
+*.orig
+*.mod
+*.cgns
+doc/*
+*.fmt
+*.bak

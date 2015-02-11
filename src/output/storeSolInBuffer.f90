@@ -48,7 +48,7 @@
 !
        integer(kind=intType) :: i, j, k, ii, jj, kk, nn
 
-       real(kind=realType) :: uy, uz, vx, vz, wx, wy, tmp
+       real(kind=realType) :: uuy, uuz, vvx, vvz, wwx, wwy, tmp
        real(kind=realType) :: vortx, vorty, vortz, a2, ptotInf, ptot
        real(kind=realType) :: a, UovA(3), gradP(3)
 
@@ -309,49 +309,49 @@
              do j=jBeg,jEnd
                do i=iBeg,iEnd
                  tmp = half/vol(i,j,k)
-                 uy = si(i,  j,k,2)*w(i+1,j,k,ivx) &
+                 uuy = si(i,  j,k,2)*w(i+1,j,k,ivx) &
                     - si(i-1,j,k,2)*w(i-1,j,k,ivx) &
                     + sj(i,j,  k,2)*w(i,j+1,k,ivx) &
                     - sj(i,j-1,k,2)*w(i,j-1,k,ivx) &
                     + sk(i,j,k,  2)*w(i,j,k+1,ivx) &
                     - sk(i,j,k-1,2)*w(i,j,k-1,ivx)
 
-                 uz = si(i,  j,k,3)*w(i+1,j,k,ivx) &
+                 uuz = si(i,  j,k,3)*w(i+1,j,k,ivx) &
                     - si(i-1,j,k,3)*w(i-1,j,k,ivx) &
                     + sj(i,j,  k,3)*w(i,j+1,k,ivx) &
                     - sj(i,j-1,k,3)*w(i,j-1,k,ivx) &
                     + sk(i,j,k,  3)*w(i,j,k+1,ivx) &
                     - sk(i,j,k-1,3)*w(i,j,k-1,ivx)
 
-                 vx = si(i,  j,k,1)*w(i+1,j,k,ivy) &
+                 vvx = si(i,  j,k,1)*w(i+1,j,k,ivy) &
                     - si(i-1,j,k,1)*w(i-1,j,k,ivy) &
                     + sj(i,j,  k,1)*w(i,j+1,k,ivy) &
                     - sj(i,j-1,k,1)*w(i,j-1,k,ivy) &
                     + sk(i,j,k,  1)*w(i,j,k+1,ivy) &
                     - sk(i,j,k-1,1)*w(i,j,k-1,ivy)
 
-                 vz = si(i,  j,k,3)*w(i+1,j,k,ivy) &
+                 vvz = si(i,  j,k,3)*w(i+1,j,k,ivy) &
                     - si(i-1,j,k,3)*w(i-1,j,k,ivy) &
                     + sj(i,j,  k,3)*w(i,j+1,k,ivy) &
                     - sj(i,j-1,k,3)*w(i,j-1,k,ivy) &
                     + sk(i,j,k,  3)*w(i,j,k+1,ivy) &
                     - sk(i,j,k-1,3)*w(i,j,k-1,ivy)
 
-                 wx = si(i,  j,k,1)*w(i+1,j,k,ivz) &
+                 wwx = si(i,  j,k,1)*w(i+1,j,k,ivz) &
                     - si(i-1,j,k,1)*w(i-1,j,k,ivz) &
                     + sj(i,j,  k,1)*w(i,j+1,k,ivz) &
                     - sj(i,j-1,k,1)*w(i,j-1,k,ivz) &
                     + sk(i,j,k,  1)*w(i,j,k+1,ivz) &
                     - sk(i,j,k-1,1)*w(i,j,k-1,ivz)
 
-                 wy = si(i,  j,k,2)*w(i+1,j,k,ivz) &
+                 wwy = si(i,  j,k,2)*w(i+1,j,k,ivz) &
                     - si(i-1,j,k,2)*w(i-1,j,k,ivz) &
                     + sj(i,j,  k,2)*w(i,j+1,k,ivz) &
                     - sj(i,j-1,k,2)*w(i,j-1,k,ivz) &
                     + sk(i,j,k,  2)*w(i,j,k+1,ivz) &
                     - sk(i,j,k-1,2)*w(i,j,k-1,ivz)
 
-                 vortx = wy - vz; vorty = uz - wx; vortz = vx - uy
+                 vortx = wwy - vvz; vorty = uuz - wwx; vortz = vvx - uuy
 
                  wIO(i,j,k,1) = tmp*sqrt(vortx**2 + vorty**2 + vortz**2)
                enddo
@@ -364,21 +364,21 @@
              do j=jBeg,jEnd
                do i=iBeg,iEnd
                  tmp = half/vol(i,j,k)
-                 vz = si(i,  j,k,3)*w(i+1,j,k,ivy) &
-                    - si(i-1,j,k,3)*w(i-1,j,k,ivy) &
-                    + sj(i,j,  k,3)*w(i,j+1,k,ivy) &
-                    - sj(i,j-1,k,3)*w(i,j-1,k,ivy) &
-                    + sk(i,j,k,  3)*w(i,j,k+1,ivy) &
-                    - sk(i,j,k-1,3)*w(i,j,k-1,ivy)
+                 vvz = si(i,  j,k,3)*w(i+1,j,k,ivy) &
+                      - si(i-1,j,k,3)*w(i-1,j,k,ivy) &
+                      + sj(i,j,  k,3)*w(i,j+1,k,ivy) &
+                      - sj(i,j-1,k,3)*w(i,j-1,k,ivy) &
+                      + sk(i,j,k,  3)*w(i,j,k+1,ivy) &
+                      - sk(i,j,k-1,3)*w(i,j,k-1,ivy)
 
-                 wy = si(i,  j,k,2)*w(i+1,j,k,ivz) &
+                 wwy = si(i,  j,k,2)*w(i+1,j,k,ivz) &
                     - si(i-1,j,k,2)*w(i-1,j,k,ivz) &
                     + sj(i,j,  k,2)*w(i,j+1,k,ivz) &
                     - sj(i,j-1,k,2)*w(i,j-1,k,ivz) &
                     + sk(i,j,k,  2)*w(i,j,k+1,ivz) &
                     - sk(i,j,k-1,2)*w(i,j,k-1,ivz)
 
-                 wIO(i,j,k,1) = tmp*(wy - vz)
+                 wIO(i,j,k,1) = tmp*(wwy - vvz)
                enddo
              enddo
            enddo
@@ -389,21 +389,21 @@
              do j=jBeg,jEnd
                do i=iBeg,iEnd
                  tmp = half/vol(i,j,k)
-                 uz = si(i,  j,k,3)*w(i+1,j,k,ivx) &
+                 uuz = si(i,  j,k,3)*w(i+1,j,k,ivx) &
                     - si(i-1,j,k,3)*w(i-1,j,k,ivx) &
                     + sj(i,j,  k,3)*w(i,j+1,k,ivx) &
                     - sj(i,j-1,k,3)*w(i,j-1,k,ivx) &
                     + sk(i,j,k,  3)*w(i,j,k+1,ivx) &
                     - sk(i,j,k-1,3)*w(i,j,k-1,ivx)
 
-                 wx = si(i,  j,k,1)*w(i+1,j,k,ivz) &
+                 wwx = si(i,  j,k,1)*w(i+1,j,k,ivz) &
                     - si(i-1,j,k,1)*w(i-1,j,k,ivz) &
                     + sj(i,j,  k,1)*w(i,j+1,k,ivz) &
                     - sj(i,j-1,k,1)*w(i,j-1,k,ivz) &
                     + sk(i,j,k,  1)*w(i,j,k+1,ivz) &
                     - sk(i,j,k-1,1)*w(i,j,k-1,ivz)
 
-                 wIO(i,j,k,1) = tmp*(uz - wx)
+                 wIO(i,j,k,1) = tmp*(uuz - wwx)
                enddo
              enddo
            enddo
@@ -414,21 +414,21 @@
              do j=jBeg,jEnd
                do i=iBeg,iEnd
                  tmp = half/vol(i,j,k)
-                 uy = si(i,  j,k,2)*w(i+1,j,k,ivx) &
+                 uuy = si(i,  j,k,2)*w(i+1,j,k,ivx) &
                     - si(i-1,j,k,2)*w(i-1,j,k,ivx) &
                     + sj(i,j,  k,2)*w(i,j+1,k,ivx) &
                     - sj(i,j-1,k,2)*w(i,j-1,k,ivx) &
                     + sk(i,j,k,  2)*w(i,j,k+1,ivx) &
                     - sk(i,j,k-1,2)*w(i,j,k-1,ivx)
 
-                 vx = si(i,  j,k,1)*w(i+1,j,k,ivy) &
+                 vvx = si(i,  j,k,1)*w(i+1,j,k,ivy) &
                     - si(i-1,j,k,1)*w(i-1,j,k,ivy) &
                     + sj(i,j,  k,1)*w(i,j+1,k,ivy) &
                     - sj(i,j-1,k,1)*w(i,j-1,k,ivy) &
                     + sk(i,j,k,  1)*w(i,j,k+1,ivy) &
                     - sk(i,j,k-1,1)*w(i,j,k-1,ivy)
 
-                 wIO(i,j,k,1) = tmp*(vx - uy)
+                 wIO(i,j,k,1) = tmp*(vvx - uuy)
                enddo
              enddo
            enddo

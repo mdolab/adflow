@@ -37,26 +37,24 @@ include ${SUMB_RULES_FILE}
 vpath %.o $(SUMB_OBJDIR)
 FILES_TO_COMPLEXIFY = \
 		alloc_derivative_values.F90\
-		alloc_derivative_values_bwd.F90\
 		dealloc_derivative_values.F90\
-		dealloc_derivative_values_bwd.F90\
-		computeObjectivePartialsFwd.F90\
 		determineStencil.F90\
 		setupAllResidualMatricesFwd.F90\
 		setupColoring.F90\
-		setupExtraResidualMatrix.F90\
 		setPointers_d.f90\
-		setPointers_b.f90\
 		setDiffSizes.F90\
 		writeMatrices.F90\
 		zeroADSeeds.F90\
-		zeroADSeedsBwd.F90
+		setFDReference.F90\
+		referenceShockSensor.F90\
 
 FILES_TO_COPY = setupStateResidualMatrix.F90\
 		setupSpatialResidualMatrix.F90\
 		verifyAD.F90\
-		verifyMatProd.F90\
-		verifyOneValue.F90
+		test.F90\
+#		verifyOneValue.F90
+#		verifyMatProd.F90\
+
 
 ALL_FILES = $(FILES_TO_COMPLEXIFY) $(FILES_TO_COPY)
 OFILES := $(ALL_FILES:%.f90=%.o) $(ALL_FILES:%.F90=%.o) $(ALL_FILES:%.c=%.o)

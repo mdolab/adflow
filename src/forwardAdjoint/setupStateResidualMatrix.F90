@@ -1,5 +1,5 @@
 subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
-     useObjective, level)
+     useObjective, frozenTurb, level)
 #ifndef USE_NO_PETSC
   !     ******************************************************************
   !     *                                                                *
@@ -13,15 +13,15 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   !     *        full stencil jacobian                                   *
   !     * useTranspose: If true, the transpose of dRdw is assembled.     *
   !     *               For use with the adjoint this must be true.      *
-  !     * useObjective: If true, the derivative of Fx,Fy,Fz and Mx, My,Mz*
-  !     *               are assembled into the size FMw vectors          *
+  !     * useObjective: If true, the force matrix is assembled           *
+  !     *                                                                *
   !     * level : What level to use to form the matrix. Level 1 is       *
   !     *         always the finest level                                *         
   !     ******************************************************************
   !
-  use ADjointPetsc, only : FMw, dFcdW, nFM, iSepSensor, iCavitation
+  use ADjointPetsc, only : dFcdW
   use BCTypes
-  use blockPointers_d      
+  use blockPointers
   use inputDiscretization 
   use inputTimeSpectral 
   use inputPhysics
@@ -32,6 +32,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   use diffSizes
   use NKSolverVars, only : diag
   use communication
+  use adjointVars
   implicit none
 #define PETSC_AVOID_MPIF_H
 #include "include/finclude/petsc.h"
@@ -40,7 +41,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   Mat matrix
 
   ! Input Variables
-  logical, intent(in) :: useAD, usePC, useTranspose, useObjective
+  logical, intent(in) :: useAD, usePC, useTranspose, useObjective, frozenTurb
   integer(kind=intType), intent(in) :: level
 
   ! Local variables.
@@ -55,10 +56,12 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   complex(kind=realType) :: alpha, beta, sepSensor, Cavitation
   complex(kind=realType) :: alphad, betad, sepSensord, Cavitationd
   complex(kind=realType), dimension(3, nTimeIntervalsSpectral) :: force, moment, forced, momentd
+  complex(kind=realType), dimension(:,:), allocatable :: blk
 #else
   real(kind=realType) :: alpha, beta, sepSensor, Cavitation
   real(kind=realType) :: alphad, betad,  sepSensord, Cavitationd
   real(kind=realType), dimension(3, nTimeIntervalsSpectral) :: force, moment, forced, momentd
+  real(kind=realType), dimension(:,:), allocatable :: blk
 #endif
   integer(kind=intType) :: liftIndex
   integer(kind=intType), dimension(:,:), pointer ::  colorPtr1, colorPtr2
@@ -67,13 +70,15 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, mm, colInd
   logical :: resetToRANS
   real :: val
+
   ! Setup number of state variable based on turbulence assumption
-  if ( frozenTurbulence ) then
+  if ( frozenTurb ) then
      nState = nwf
   else
      nState = nw
   endif
-  
+
+  allocate(blk(nState, nState))
   ! Exchange data and call the residual to make sure its up to date
   ! withe current w
   call whalo2(1_intType, 1_intType, nw, .True., .True., .True.)
@@ -83,12 +88,12 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   alphad = zero
   betad  = zero
   machd  = zero
-  machcoefd = zero
   machGridd = zero
-  lengthRefd = zero
+  machcoefd = zero
   pointRefd  = zero
-  surfaceRefd = zero
-  reynoldslengthd = zero
+  lengthRefd = zero
+  prefd = zero
+  tempfreestreamd = zero
   reynoldsd = zero
   call getDirAngle(velDirFreestream, liftDirection, liftIndex, alpha, beta)
 
@@ -141,42 +146,34 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   ! Set delta_x
   delta_x = 1e-9_realType
   one_over_dx = one/delta_x
-
   rkStage = 0
   
-  if (useObjective .and. useAD) then
-     do sps=1,nTimeIntervalsSpectral
-        do fmDim=1,nFM
-           call VecZeroEntries(FMw(fmDim, sps), ierr)
-           call EChk(ierr, __FILE__, __LINE__)
-        end do
-     end do
-  end if
-  
-  ! If we are computing the jacobian for the RANS equations, we need
-  ! to make block_res think that we are evauluating the residual in a
-  ! fully coupled sense.  This is reset after this routine is
-  ! finished.
-  if (equations == RANSEquations) then
-     nMGVar = nwf
-     nt1MG = nt1
-     nt2MG = nt2
-
-     turbSegregated = .False.
-     turbCoupled = .True.
-  end if
-
   ! Determine if we want to use frozenTurbulent Adjoint
   resetToRANS = .False. 
-  if (frozenTurbulence .and. equations == RANSEquations) then
+  if (frozenTurb .and. equations == RANSEquations) then
      equations = NSEquations 
      resetToRANS = .True.
   end if
 
   ! Allocate the additional memory we need for doing forward mode AD
   !  derivatives and copy any required reference values:
-  call alloc_derivative_values(level)
+  if (.not. derivVarsAllocated) then 
+     call alloc_derivative_values(level)
+  end if
+  do nn=1,nDom
+     do sps=1,nTimeIntervalsSpectral
+        call setPointers(nn, level, sps)
+        call zeroADSeeds(nn,level, sps)
+     end do
+  end do
 
+  if (usePC) then 
+     call referenceShockSensor
+  end if
+
+  if (.not. useAD) then 
+     call setFDReference(level)
+  end if
   ! Master Domain Loop
   domainLoopAD: do nn=1, nDom
 
@@ -230,16 +227,18 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
 
               ! Reset All States and possibe AD seeds
               do sps2 = 1, nTimeIntervalsSpectral
-                 do ll=1,nw
-                    do k=0,kb
-                       do j=0,jb
-                          do i=0,ib
-                             flowDoms(nn, level, sps2)%w(i,j,k,ll) =  flowDomsd(nn, 1, sps2)%wtmp(i,j,k,ll)
+                 if (.not. useAD) then 
+                    do ll=1,nw
+                       do k=0,kb
+                          do j=0,jb
+                             do i=0,ib
+                                flowDoms(nn, level, sps2)%w(i,j,k,ll) =  flowDomsd(nn, 1, sps2)%wtmp(i,j,k,ll)
+                             end do
                           end do
                        end do
                     end do
-                 end do
-
+                 end if
+                 
                  if (useAD) then
                     flowdomsd(nn, 1, sps2)%w = zero ! This is actually w seed
                  end if
@@ -266,26 +265,25 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
 #ifndef USE_COMPLEX
                  call block_res_d(nn, sps, .False., &
                       alpha, alphad, beta, betad, liftIndex, force, forced, moment, momentd,&
-                      sepSensor, sepSensord, Cavitation, Cavitationd)
+                      sepSensor, sepSensord, Cavitation, Cavitationd, frozenTurb)
 #else
                  print *, 'Forward AD routines are not complexified'
                  stop
 #endif
               else
                  call block_res(nn, sps, .False., alpha, beta, liftIndex, force, moment, &
-                 sepSensor, Cavitation)
+                 sepSensor, Cavitation, frozenTurb)
               end if
 
-              ! If required, set values in the
-              ! nFM*nTimeIntervalsSpectral vectors defined in FMw. We
-              ! have to be a little carful actually. What we have to
-              ! do is loop over subfaces where the cell centered
-              ! forces are defined. Then for each force, we loop over
-              ! its stencil. There should be at most 1 peturbed
-              ! cell/state in its stencil. Then, we can take the
-              ! derivatives out F and M defined on the face. The
-              ! derivatives are correct, since for objective we are
-              ! using a simple sum.
+              ! If required, set values in the force matrix.  We have
+              ! to be a little carful actually. What we have to do is
+              ! loop over subfaces where the cell centered forces are
+              ! defined. Then for each force, we loop over its
+              ! stencil. There should be at most 1 peturbed cell/state
+              ! in its stencil. Then, we can take the derivatives out
+              ! F and M defined on the face. The derivatives are
+              ! correct, since for objective we are using a simple
+              ! sum.
               sotreObjectivePartials: if (useObjective .and. useAD .and. .not. usePC) then
                  bocos: do mm=1,nBocos
                     if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic &
@@ -357,16 +355,6 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
                                      colInd >= 0) then
                                    ! This real cell has been peturbed!
                                    do fmDim = 1,3
-                                      call VecSetValues(FMw(fmDim, sps), 1, colInd, &
-                                           bcDatad(mm)%Fp(i, j, fmDim) + &
-                                           bcDatad(mm)%Fv(i, j, fmDim), &
-                                           ADD_VALUES, ierr) 
-                                      call EChk(ierr, __FILE__, __LINE__)
-
-                                      call VecSetValues(FMw(fmDim+3, sps), 1, Colind, &
-                                           bcDatad(mm)%M(i, j, fmDim), &
-                                           ADD_VALUES, ierr) 
-                                      call EChk(ierr, __FILE__, __LINE__)
                                       
                                       ! While we are at it, we have
                                       ! all the info we need for dFcdw
@@ -378,16 +366,6 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
                                           ADD_VALUES, ierr)
                                       call EChk(ierr, __FILE__, __LINE__)
                                    end do
-
-                                   ! Now add in the additional functions
-                                   call VecSetValues(FMw(iSepSensor, sps), 1, colInd, &
-                                        bcDatad(mm)%sepSensor(i, j), ADD_VALUES, ierr)
-                                   call EChk(ierr, __FILE__, __LINE__)
-
-                                   call VecSetValues(FMw(iCavitation, sps), 1, colInd, &
-                                        bcDatad(mm)%Cavitation(i, j), ADD_VALUES, ierr)
-                                   call EChk(ierr, __FILE__, __LINE__)
-
                                 end if
                              end do forceStencilLoop
                           end do
@@ -478,25 +456,25 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
                                    ! If we're doing the PC and we want
                                    ! to use TS diagonal form, only set
                                    ! values for on-time insintance
-                                   call setBlock(&
-                                        flowDomsd(nn, 1, sps)%&
-                                        dw_deriv(i+ii, j+jj, k+kk, :, :))
+                                   blk = flowDomsd(nn, 1, sps)%dw_deriv(i+ii, j+jj, k+kk, &
+                                        1:nstate, 1:nstate)
+                                   call setBlock(blk)
                                 else
                                    ! Otherwise loop over spectral
                                    ! instances and set all.
                                    do sps2=1, nTimeIntervalsSpectral
                                       irow = flowDoms(nn, level, sps2)%&
                                            globalCell(i+ii, j+jj, k+kk)
-                                      call setBlock(&
-                                           flowDomsd(nn, 1, sps2)%&
-                                           dw_deriv(i+ii, j+jj, k+kk, :, :))
+                                      blk = flowDomsd(nn, 1, sps2)%dw_deriv(i+ii, j+jj, k+kk, &
+                                           1:nstate, 1:nstate)
+                                      call setBlock(blk)
                                    end do
                                 end if useDiagPC
                              else
                                 ! ALl other cells just set.
-                                call setBlock(&
-                                     flowDomsd(nn, 1, sps)%&
-                                     dw_deriv(i+ii, j+jj, k+kk, :, :))
+                                blk = flowDomsd(nn, 1, sps)%dw_deriv(i+ii, j+jj, k+kk, &
+                                     1:nstate, 1:nstate)
+                                call setBlock(blk)
                              end if centerCell
                           end if onBlock
                        end do stencilLoop
@@ -509,17 +487,11 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   end do domainLoopAD
 
   ! Deallocate and reset values 
-  call dealloc_derivative_values(level)
+  if (.not. useAD) then 
+     call resetFDReference(level)
+  end if
   
   if (useObjective .and. useAD) then
-     do sps=1,nTimeIntervalsSpectral
-        do fmDim=1,nFM
-           call VecAssemblyBegin(FMw(fmDim, sps), ierr) 
-           call EChk(ierr, __FILE__, __LINE__)
-           call VecAssemblyEnd(FMw(fmDim, sps), ierr)
-           call EChk(ierr, __FILE__, __LINE__)
-        end do
-     end do
      call MatAssemblyBegin(dFcdw, MAT_FINAL_ASSEMBLY, ierr)
      call MatAssemblyEnd(dFcdw, MAT_FINAL_ASSEMBLY, ierr)
   end if
@@ -544,17 +516,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
      equations = RANSEquations
   end if
 
-  ! Reset the paraters to use segrated turbulence solve. 
-  if (equations == RANSEquations) then
-     nMGVar = nwf
-     nt1MG = nwf + 1
-     nt2MG = nwf
-
-     turbSegregated = .True.
-     turbCoupled = .False.
-     restrictEddyVis = .false.
-     if( eddyModel ) restrictEddyVis = .true.
-  end if
+  deallocate(blk)
 
 contains
 
@@ -597,7 +559,8 @@ contains
 
     if (.not. zeroFlag) then
        if (useTranspose) then
-          call MatSetValuesBlocked(matrix, 1, icol, 1, irow, transpose(blk), &
+          blk = transpose(blk)
+          call MatSetValuesBlocked(matrix, 1, icol, 1, irow, blk, &
                ADD_VALUES, ierr)
           call EChk(ierr, __FILE__, __LINE__)
        else
