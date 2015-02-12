@@ -2,21 +2,18 @@
 !  tapenade 3.10 (r5363) -  9 sep 2014 09:53
 !
 !  differentiation of forcesandmoments in forward (tangent) mode (with options i4 dr8 r8):
-!   variations   of useful results: *(*bcdata.fp) *(*bcdata.fv)
-!                *(*bcdata.m) *(*bcdata.oarea) *(*bcdata.sepsensor)
-!                *(*bcdata.cavitation) cfp cfv cmp cmv cavitation
-!                sepsensor
+!   variations   of useful results: *(*bcdata.f) cfp cfv cmp cmv
+!                cavitation sepsensor
 !   with respect to varying inputs: gammainf pinf pref *p *w *x
 !                *si *sj *sk *(*viscsubface.tau) veldirfreestream
 !                lengthref machcoef pointref *xx *pp1 *pp2 *ssi
 !                *ww2
 !   plus diff mem management of: viscsubface:in *viscsubface.tau:in
-!                bcdata:in *bcdata.fp:in *bcdata.fv:in *bcdata.m:in
-!                *bcdata.oarea:in *bcdata.sepsensor:in *bcdata.cavitation:in
-!                xx:in-out rev0:out rev1:out rev2:out rev3:out
-!                pp0:out pp1:in-out pp2:in-out pp3:out rlv0:out
-!                rlv1:out rlv2:out rlv3:out ss:out ssi:in-out ssj:out
-!                ssk:out ww0:out ww1:in-out ww2:in-out ww3:out
+!                bcdata:in *bcdata.f:in *bcdata.dualarea:in xx:in-out
+!                rev0:out rev1:out rev2:out rev3:out pp0:out pp1:in-out
+!                pp2:in-out pp3:out rlv0:out rlv1:out rlv2:out
+!                rlv3:out ss:out ssi:in-out ssj:out ssk:out ww0:out
+!                ww1:in-out ww2:in-out ww3:out
 !
 !      ******************************************************************
 !      *                                                                *
@@ -65,7 +62,7 @@ subroutine forcesandmoments_d(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd&
   integer(kind=inttype) :: nn, i, j, ii
   real(kind=realtype) :: pm1, fx, fy, fz, fn, sigma
   real(kind=realtype) :: pm1d, fxd, fyd, fzd
-  real(kind=realtype) :: xc, yc, zc
+  real(kind=realtype) :: xc, yc, zc, qf(3)
   real(kind=realtype) :: xcd, ycd, zcd
   real(kind=realtype) :: fact, rho, mul, yplus, dwall
   real(kind=realtype) :: factd
@@ -130,22 +127,10 @@ subroutine forcesandmoments_d(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd&
   sepsensor = zero
   cavitation = zero
   do ii1=1,isize1ofdrfbcdata
-    bcdatad(ii1)%fp = 0.0_8
+    bcdatad(ii1)%f = 0.0_8
   end do
   do ii1=1,isize1ofdrfbcdata
-    bcdatad(ii1)%fv = 0.0_8
-  end do
-  do ii1=1,isize1ofdrfbcdata
-    bcdatad(ii1)%m = 0.0_8
-  end do
-  do ii1=1,isize1ofdrfbcdata
-    bcdatad(ii1)%oarea = 0.0_8
-  end do
-  do ii1=1,isize1ofdrfbcdata
-    bcdatad(ii1)%sepsensor = 0.0_8
-  end do
-  do ii1=1,isize1ofdrfbcdata
-    bcdatad(ii1)%cavitation = 0.0_8
+    bcdatad(ii1)%dualarea = 0.0_8
   end do
   cfpd = 0.0_8
   cfvd = 0.0_8
@@ -191,13 +176,19 @@ bocos:do nn=1,nbocos
       case (kmax) 
         fact = one
       end select
-! loop over the quadrilateral faces of the subface. note
-! that the nodal range of bcdata must be used and not the
-! cell range, because the latter may include the halo's in i
-! and j-direction. the offset +1 is there, because inbeg and
-! jnbeg refer to nodal ranges and not to cell ranges.
-      bcdatad(nn)%oarea(:, :) = 0.0_8
-      bcdata(nn)%oarea(:, :) = zero
+! loop over the quadrilateral faces of the subface. note that
+! the nodal range of bcdata must be used and not the cell
+! range, because the latter may include the halo's in i and
+! j-direction. the offset +1 is there, because inbeg and jnbeg
+! refer to nodal ranges and not to cell ranges. the loop
+! (without the ad stuff) would look like:
+!
+! do j=(bcdata(nn)%jnbeg+1),bcdata(nn)%jnend
+!    do i=(bcdata(nn)%inbeg+1),bcdata(nn)%inend
+      bcdatad(nn)%dualarea = 0.0_8
+      bcdata(nn)%dualarea = zero
+      bcdatad(nn)%f = 0.0_8
+      bcdata(nn)%f = zero
       do ii=0,(bcdata(nn)%jnend-bcdata(nn)%jnbeg)*(bcdata(nn)%inend-&
 &         bcdata(nn)%inbeg)-1
         i = mod(ii, bcdata(nn)%inend - bcdata(nn)%inbeg) + bcdata(nn)%&
@@ -233,13 +224,61 @@ bocos:do nn=1,nbocos
         fy = pm1*ssi(i, j, 2)
         fzd = pm1d*ssi(i, j, 3) + pm1*ssid(i, j, 3)
         fz = pm1*ssi(i, j, 3)
-! store force data on face
-        bcdatad(nn)%fp(i, j, 1) = fxd
+! update the inviscid force and moment coefficients.
+        cfpd(1) = cfpd(1) + fxd
+        cfp(1) = cfp(1) + fx
+        cfpd(2) = cfpd(2) + fyd
+        cfp(2) = cfp(2) + fy
+        cfpd(3) = cfpd(3) + fzd
+        cfp(3) = cfp(3) + fz
+        mxd = ycd*fz + yc*fzd - zcd*fy - zc*fyd
+        mx = yc*fz - zc*fy
+        myd = zcd*fx + zc*fxd - xcd*fz - xc*fzd
+        my = zc*fx - xc*fz
+        mzd = xcd*fy + xc*fyd - ycd*fx - yc*fxd
+        mz = xc*fy - yc*fx
+        cmpd(1) = cmpd(1) + mxd
+        cmp(1) = cmp(1) + mx
+        cmpd(2) = cmpd(2) + myd
+        cmp(2) = cmp(2) + my
+        cmpd(3) = cmpd(3) + mzd
+        cmp(3) = cmp(3) + mz
+! save the face based forces for the slice operations
         bcdata(nn)%fp(i, j, 1) = fx
-        bcdatad(nn)%fp(i, j, 2) = fyd
         bcdata(nn)%fp(i, j, 2) = fy
-        bcdatad(nn)%fp(i, j, 3) = fzd
         bcdata(nn)%fp(i, j, 3) = fz
+! divide by 4 so we can scatter
+        fxd = fourth*fxd
+        fx = fourth*fx
+        fyd = fourth*fyd
+        fy = fourth*fy
+        fzd = fourth*fzd
+        fz = fourth*fz
+! scatter 1/4 of the force to each of the nodes:
+        bcdatad(nn)%f(i-1, j-1, 1) = bcdatad(nn)%f(i-1, j-1, 1) + fxd
+        bcdata(nn)%f(i-1, j-1, 1) = bcdata(nn)%f(i-1, j-1, 1) + fx
+        bcdatad(nn)%f(i, j-1, 1) = bcdatad(nn)%f(i, j-1, 1) + fxd
+        bcdata(nn)%f(i, j-1, 1) = bcdata(nn)%f(i, j-1, 1) + fx
+        bcdatad(nn)%f(i-1, j, 1) = bcdatad(nn)%f(i-1, j, 1) + fxd
+        bcdata(nn)%f(i-1, j, 1) = bcdata(nn)%f(i-1, j, 1) + fx
+        bcdatad(nn)%f(i, j, 1) = bcdatad(nn)%f(i, j, 1) + fxd
+        bcdata(nn)%f(i, j, 1) = bcdata(nn)%f(i, j, 1) + fx
+        bcdatad(nn)%f(i-1, j-1, 2) = bcdatad(nn)%f(i-1, j-1, 2) + fyd
+        bcdata(nn)%f(i-1, j-1, 2) = bcdata(nn)%f(i-1, j-1, 2) + fy
+        bcdatad(nn)%f(i, j-1, 2) = bcdatad(nn)%f(i, j-1, 2) + fyd
+        bcdata(nn)%f(i, j-1, 2) = bcdata(nn)%f(i, j-1, 2) + fy
+        bcdatad(nn)%f(i-1, j, 2) = bcdatad(nn)%f(i-1, j, 2) + fyd
+        bcdata(nn)%f(i-1, j, 2) = bcdata(nn)%f(i-1, j, 2) + fy
+        bcdatad(nn)%f(i, j, 2) = bcdatad(nn)%f(i, j, 2) + fyd
+        bcdata(nn)%f(i, j, 2) = bcdata(nn)%f(i, j, 2) + fy
+        bcdatad(nn)%f(i-1, j-1, 3) = bcdatad(nn)%f(i-1, j-1, 3) + fzd
+        bcdata(nn)%f(i-1, j-1, 3) = bcdata(nn)%f(i-1, j-1, 3) + fz
+        bcdatad(nn)%f(i, j-1, 3) = bcdatad(nn)%f(i, j-1, 3) + fzd
+        bcdata(nn)%f(i, j-1, 3) = bcdata(nn)%f(i, j-1, 3) + fz
+        bcdatad(nn)%f(i-1, j, 3) = bcdatad(nn)%f(i-1, j, 3) + fzd
+        bcdata(nn)%f(i-1, j, 3) = bcdata(nn)%f(i-1, j, 3) + fz
+        bcdatad(nn)%f(i, j, 3) = bcdatad(nn)%f(i, j, 3) + fzd
+        bcdata(nn)%f(i, j, 3) = bcdata(nn)%f(i, j, 3) + fz
 ! scatter a quarter of the area to each node:
         arg1d = 2*ssi(i, j, 1)*ssid(i, j, 1) + 2*ssi(i, j, 2)*ssid(i, j&
 &         , 2) + 2*ssi(i, j, 3)*ssid(i, j, 3)
@@ -252,14 +291,18 @@ bocos:do nn=1,nbocos
         result1 = sqrt(arg1)
         qad = fourth*result1d
         qa = fourth*result1
-        bcdatad(nn)%oarea(i-1, j-1) = bcdatad(nn)%oarea(i-1, j-1) + qad
-        bcdata(nn)%oarea(i-1, j-1) = bcdata(nn)%oarea(i-1, j-1) + qa
-        bcdatad(nn)%oarea(i, j-1) = bcdatad(nn)%oarea(i, j-1) + qad
-        bcdata(nn)%oarea(i, j-1) = bcdata(nn)%oarea(i, j-1) + qa
-        bcdatad(nn)%oarea(i-1, j) = bcdatad(nn)%oarea(i-1, j) + qad
-        bcdata(nn)%oarea(i-1, j) = bcdata(nn)%oarea(i-1, j) + qa
-        bcdatad(nn)%oarea(i, j) = bcdatad(nn)%oarea(i, j) + qad
-        bcdata(nn)%oarea(i, j) = bcdata(nn)%oarea(i, j) + qa
+        bcdatad(nn)%dualarea(i-1, j-1) = bcdatad(nn)%dualarea(i-1, j-1) &
+&         + qad
+        bcdata(nn)%dualarea(i-1, j-1) = bcdata(nn)%dualarea(i-1, j-1) + &
+&         qa
+        bcdatad(nn)%dualarea(i, j-1) = bcdatad(nn)%dualarea(i, j-1) + &
+&         qad
+        bcdata(nn)%dualarea(i, j-1) = bcdata(nn)%dualarea(i, j-1) + qa
+        bcdatad(nn)%dualarea(i-1, j) = bcdatad(nn)%dualarea(i-1, j) + &
+&         qad
+        bcdata(nn)%dualarea(i-1, j) = bcdata(nn)%dualarea(i-1, j) + qa
+        bcdatad(nn)%dualarea(i, j) = bcdatad(nn)%dualarea(i, j) + qad
+        bcdata(nn)%dualarea(i, j) = bcdata(nn)%dualarea(i, j) + qa
 ! get normalized surface velocity:
         vd(1) = ww2d(i, j, ivx)
         v(1) = ww2(i, j, ivx)
@@ -292,8 +335,6 @@ bocos:do nn=1,nbocos
         sensor = sensor*four*qa
         sepsensord = sepsensord + sensord
         sepsensor = sepsensor + sensor
-        bcdatad(nn)%sepsensor(i, j) = sensord
-        bcdata(nn)%sepsensor(i, j) = sensor
         plocald = pp2d(i, j)
         plocal = pp2(i, j)
         tmpd = -(two*((gammainfd*pinf+gammainf*pinfd)*machcoef**2+&
@@ -305,11 +346,6 @@ bocos:do nn=1,nbocos
         sigma = 1.4
         sensor1d = -cpd
         sensor1 = -cp - sigma
-!if (sense >= 0) then
-!sensor = 1
-!else 
-!sensor = 0
-!end if
         sensor1d = -((-(one*2*10*sensor1d*exp(-(2*10*sensor1))))/(one+&
 &         exp(-(2*10*sensor1)))**2)
         sensor1 = one/(one+exp(-(2*10*sensor1)))
@@ -317,34 +353,6 @@ bocos:do nn=1,nbocos
         sensor1 = sensor1*four*qa
         cavitationd = cavitationd + sensor1d
         cavitation = cavitation + sensor1
-        bcdatad(nn)%cavitation(i, j) = sensor1d
-        bcdata(nn)%cavitation(i, j) = sensor1
-! update the inviscid force and moment coefficients.
-        cfpd(1) = cfpd(1) + fxd
-        cfp(1) = cfp(1) + fx
-        cfpd(2) = cfpd(2) + fyd
-        cfp(2) = cfp(2) + fy
-        cfpd(3) = cfpd(3) + fzd
-        cfp(3) = cfp(3) + fz
-        mxd = ycd*fz + yc*fzd - zcd*fy - zc*fyd
-        mx = yc*fz - zc*fy
-        myd = zcd*fx + zc*fxd - xcd*fz - xc*fzd
-        my = zc*fx - xc*fz
-        mzd = xcd*fy + xc*fyd - ycd*fx - yc*fxd
-        mz = xc*fy - yc*fx
-        cmpd(1) = cmpd(1) + mxd
-        cmp(1) = cmp(1) + mx
-        cmpd(2) = cmpd(2) + myd
-        cmp(2) = cmp(2) + my
-        cmpd(3) = cmpd(3) + mzd
-        cmp(3) = cmp(3) + mz
-! store moment data on face
-        bcdatad(nn)%m(i, j, 1) = mxd
-        bcdata(nn)%m(i, j, 1) = mx
-        bcdatad(nn)%m(i, j, 2) = myd
-        bcdata(nn)%m(i, j, 2) = my
-        bcdatad(nn)%m(i, j, 3) = mzd
-        bcdata(nn)%m(i, j, 3) = mz
       end do
 !
 !          **************************************************************
@@ -425,13 +433,6 @@ bocos:do nn=1,nbocos
           cfv(2) = cfv(2) + fy
           cfvd(3) = cfvd(3) + fzd
           cfv(3) = cfv(3) + fz
-! store force data on face
-          bcdatad(nn)%fv(i, j, 1) = fxd
-          bcdata(nn)%fv(i, j, 1) = fx
-          bcdatad(nn)%fv(i, j, 2) = fyd
-          bcdata(nn)%fv(i, j, 2) = fy
-          bcdatad(nn)%fv(i, j, 3) = fzd
-          bcdata(nn)%fv(i, j, 3) = fz
           mxd = ycd*fz + yc*fzd - zcd*fy - zc*fyd
           mx = yc*fz - zc*fy
           myd = zcd*fx + zc*fxd - xcd*fz - xc*fzd
@@ -444,13 +445,42 @@ bocos:do nn=1,nbocos
           cmv(2) = cmv(2) + my
           cmvd(3) = cmvd(3) + mzd
           cmv(3) = cmv(3) + mz
-! store moment data on face
-          bcdatad(nn)%m(i, j, 1) = bcdatad(nn)%m(i, j, 1) + mxd
-          bcdata(nn)%m(i, j, 1) = bcdata(nn)%m(i, j, 1) + mx
-          bcdatad(nn)%m(i, j, 2) = bcdatad(nn)%m(i, j, 2) + myd
-          bcdata(nn)%m(i, j, 2) = bcdata(nn)%m(i, j, 2) + my
-          bcdatad(nn)%m(i, j, 3) = bcdatad(nn)%m(i, j, 3) + mzd
-          bcdata(nn)%m(i, j, 3) = bcdata(nn)%m(i, j, 3) + mz
+! save the face based forces for the slice operations
+          bcdata(nn)%fv(i, j, 1) = fx
+          bcdata(nn)%fv(i, j, 2) = fy
+          bcdata(nn)%fv(i, j, 3) = fz
+! divide by 4 so we can scatter
+          fxd = fourth*fxd
+          fx = fourth*fx
+          fyd = fourth*fyd
+          fy = fourth*fy
+          fzd = fourth*fzd
+          fz = fourth*fz
+! scatter 1/4 of the force to each of the nodes:
+          bcdatad(nn)%f(i-1, j-1, 1) = bcdatad(nn)%f(i-1, j-1, 1) + fxd
+          bcdata(nn)%f(i-1, j-1, 1) = bcdata(nn)%f(i-1, j-1, 1) + fx
+          bcdatad(nn)%f(i, j-1, 1) = bcdatad(nn)%f(i, j-1, 1) + fxd
+          bcdata(nn)%f(i, j-1, 1) = bcdata(nn)%f(i, j-1, 1) + fx
+          bcdatad(nn)%f(i-1, j, 1) = bcdatad(nn)%f(i-1, j, 1) + fxd
+          bcdata(nn)%f(i-1, j, 1) = bcdata(nn)%f(i-1, j, 1) + fx
+          bcdatad(nn)%f(i, j, 1) = bcdatad(nn)%f(i, j, 1) + fxd
+          bcdata(nn)%f(i, j, 1) = bcdata(nn)%f(i, j, 1) + fx
+          bcdatad(nn)%f(i-1, j-1, 2) = bcdatad(nn)%f(i-1, j-1, 2) + fyd
+          bcdata(nn)%f(i-1, j-1, 2) = bcdata(nn)%f(i-1, j-1, 2) + fy
+          bcdatad(nn)%f(i, j-1, 2) = bcdatad(nn)%f(i, j-1, 2) + fyd
+          bcdata(nn)%f(i, j-1, 2) = bcdata(nn)%f(i, j-1, 2) + fy
+          bcdatad(nn)%f(i-1, j, 2) = bcdatad(nn)%f(i-1, j, 2) + fyd
+          bcdata(nn)%f(i-1, j, 2) = bcdata(nn)%f(i-1, j, 2) + fy
+          bcdatad(nn)%f(i, j, 2) = bcdatad(nn)%f(i, j, 2) + fyd
+          bcdata(nn)%f(i, j, 2) = bcdata(nn)%f(i, j, 2) + fy
+          bcdatad(nn)%f(i-1, j-1, 3) = bcdatad(nn)%f(i-1, j-1, 3) + fzd
+          bcdata(nn)%f(i-1, j-1, 3) = bcdata(nn)%f(i-1, j-1, 3) + fz
+          bcdatad(nn)%f(i, j-1, 3) = bcdatad(nn)%f(i, j-1, 3) + fzd
+          bcdata(nn)%f(i, j-1, 3) = bcdata(nn)%f(i, j-1, 3) + fz
+          bcdatad(nn)%f(i-1, j, 3) = bcdatad(nn)%f(i-1, j, 3) + fzd
+          bcdata(nn)%f(i-1, j, 3) = bcdata(nn)%f(i-1, j, 3) + fz
+          bcdatad(nn)%f(i, j, 3) = bcdatad(nn)%f(i, j, 3) + fzd
+          bcdata(nn)%f(i, j, 3) = bcdata(nn)%f(i, j, 3) + fz
 ! compute the tangential component of the stress tensor,
 ! which is needed to monitor y+. the result is stored
 ! in fx, fy, fz, although it is not really a force.
@@ -486,19 +516,19 @@ bocos:do nn=1,nbocos
             end if
           end if
         end do
-      else
-! zero the viscous force contribution
-        bcdatad(nn)%fv = 0.0_8
-        bcdata(nn)%fv = zero
       end if
-! we have to inverse the nodal areas
-      do j=bcdata(nn)%jnbeg,bcdata(nn)%jnend
-        do i=bcdata(nn)%inbeg,bcdata(nn)%inend
-          bcdatad(nn)%oarea(i, j) = -(one*bcdatad(nn)%oarea(i, j)/bcdata&
-&           (nn)%oarea(i, j)**2)
-          bcdata(nn)%oarea(i, j) = one/bcdata(nn)%oarea(i, j)
+! if forces are tractions we have to divide by the dual area:
+      if (forcesastractions) then
+        do j=bcdata(nn)%jnbeg,bcdata(nn)%jnend
+          do i=bcdata(nn)%inbeg,bcdata(nn)%inend
+            bcdatad(nn)%f(i, j, :) = (bcdatad(nn)%f(i, j, :)*bcdata(nn)%&
+&             dualarea(i, j)-bcdata(nn)%f(i, j, :)*bcdatad(nn)%dualarea(&
+&             i, j))/bcdata(nn)%dualarea(i, j)**2
+            bcdata(nn)%f(i, j, :) = bcdata(nn)%f(i, j, :)/bcdata(nn)%&
+&             dualarea(i, j)
+          end do
         end do
-      end do
+      end if
       call resetbcpointers(nn, .true.)
     end if
   end do bocos

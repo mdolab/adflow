@@ -92,9 +92,8 @@ module block
 
      real(kind=realType), dimension(:,:,:), pointer :: norm
      real(kind=realType), dimension(:,:),   pointer :: rface
-     real(kind=realType), dimension(:,:,:), pointer :: Fp, Fv, M
-     real(kind=realType), dimension(:,:), pointer :: oArea, sepSensor, Cavitation
-     integer(kind=intType), dimension(:,:), pointer :: FMNodeIndex, FMCellIndex
+     real(kind=realType), dimension(:,:,:), pointer :: F, Fv, Fp
+     real(kind=realType), dimension(:,:), pointer :: dualArea
 
      ! symNorm is the normal for (symmertry) boundary conditions.
      ! symNormSet is set to false until symNorm is computed at the

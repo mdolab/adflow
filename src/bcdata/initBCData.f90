@@ -118,14 +118,10 @@
 
                nullify(BCData(j)%norm)
                nullify(BCData(j)%rface)
-               nullify(BCData(j)%Fp)
+               nullify(BCData(j)%F)
                nullify(BCData(j)%Fv)
-               nullify(BCData(j)%M)
-               nullify(BCData(j)%oArea)
-               nullify(BCData(j)%FMNodeIndex)
-               nullify(BCData(j)%FMCellIndex)
-               nullify(BCData(j)%sepSensor)
-               nullify(BCData(j)%cavitation)
+               nullify(BCData(j)%Fp)
+               nullify(BCData(j)%dualArea)
                nullify(BCData(j)%uSlip)
                nullify(BCData(j)%TNS_Wall)
 

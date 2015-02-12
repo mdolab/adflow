@@ -784,10 +784,8 @@ class SUMB(AeroSolver):
             # individual calls to: getdRdXvTPsi, getdIdx, getdIda,
             # getdIdaTPsi.
 
-            obj, aeroObj = self._getObjective(f.lower())
-
             # These are the reverse mode seeds
-            psi = -self.curAP.sumbData.adjoints[obj]
+            psi = -self.getAdjoint(f)
             funcsBar = {f.lower():1.0}
 
             # Compute everything and update into the dictionary
@@ -1778,7 +1776,7 @@ class SUMB(AeroSolver):
             self.sumb.updateperiodicinfoalllevels()
             self.sumb.updategridvelocitiesalllevels()
 
-    def getForces(self, groupName=None, TS=0, pressure=True, viscous=True):
+    def getForces(self, groupName=None, TS=0):
         """ Return the forces on this processor.
 
         Parameters
@@ -1804,15 +1802,7 @@ class SUMB(AeroSolver):
 
         [npts, ncell] = self.sumb.getforcesize()
         if npts > 0:
-            forcesp, forcesv = self.sumb.getforces(npts, TS+1)
-            forcesp = forcesp.T
-            forcesv = forcesv.T
-
-            forces = numpy.zeros_like(forcesp)
-            if pressure:
-                forces += forcesp
-            if viscous:
-                forces += forcesv
+            forces = self.sumb.getforces(npts, TS+1).T
         else:
             forces = numpy.zeros((0,3),self.dtype)
 
@@ -1963,7 +1953,7 @@ class SUMB(AeroSolver):
         # adjoint:
         if structAdjoint is not None and groupName is not None:
             phi = self.mesh.expandVectorByFamily(groupName, structAdjoint)
-            agument = self.sumb.agumentrhs(numpy.ravel(phi), self.getAdjointStateSize())
+            agument = self.computeMatrixFreeProductBwd(fBar=phi, wDeriv=True)
             RHS -= agument
 
         # Check if objective is python 'allocated':
@@ -2006,10 +1996,15 @@ class SUMB(AeroSolver):
             """
 
 	# Get the list of derivatives and then process:
-        dIda_1 = self.getdIda(objective)
-        dIda_2 = self.getdRdaTPsi(objective)
-        
-        return self._processAeroDerivatives(dIda_1 - dIda_2)
+
+        psi = -self.getAdjoint(objective)
+        funcsBar = {objective.lower():1.0}
+
+        # Compute everything and update into the dictionary
+        funcsSens = self.computeMatrixFreeProductBwd(
+            resBar=psi, funcsBar=funcsBar, xDvDerivAero=True)
+
+        return funcsSens
 
     def _processAeroDerivatives(self, dIda):
         """This internal furncion is used to convert the raw array ouput from
@@ -2254,11 +2249,8 @@ class SUMB(AeroSolver):
             Family name to use to section out just part of dXs
             """
 
-        if self.getOption('useMatrixFreedRdx'):
-            dXvSolver = self.computeMatrixFreeProductBwd(resBar=inVec,
-                                                         xVDeriv=True)
-        else:
-            dXvSolver = self.sumb.getdrdxvtpsi(self.getSpatialSize(), inVec)
+        dXvSolver = self.computeMatrixFreeProductBwd(resBar=inVec,
+                                                     xVDeriv=True)
 
         # If we are doing a prescribed motion TS motion, we need to
         # convert this back to a single instance
@@ -2272,10 +2264,6 @@ class SUMB(AeroSolver):
             return self.mesh.getdXs(groupName)
         else:
             return dXvSolver
-
-    def getdRdXvVec(self, inVec):
-        """Routine for completeness. Not normally used"""
-        return self.sumb.getdrdxvpsi(inVec, self.getStateSize())
 
     def _prescribedTSMotion(self):
         """Determine if we have prescribed motion timespectral analysis"""
@@ -2302,20 +2290,6 @@ class SUMB(AeroSolver):
 
         return outVec
 
-    def getdRdwVec(self, inVec):
-        """ Compute the result: outVec = dRdw * inVec
-
-        Parameters
-        ----------
-        inVec : arrary
-            Arrary of size getAdjointStateSize()
-        outVec : array
-            Ouput result. Same size as inVec.
-        """
-        outVec = self.sumb.getdrdwvec(inVec)
-
-        return outVec
-
     def getdFdxAero(self, iDV, groupName=None):
         """Potential aerodynamic variable dependence on forces. This
         is zero for all aerodynamic variables in SUmb"""
@@ -2332,13 +2306,12 @@ class SUMB(AeroSolver):
 
     def getdFdxTVec(self, groupName, vec):
         # Calculate dFdx^T * vec and return the result
-        vec = self.mesh.expandVectorByFamily(groupName, vec)
-        if len(vec) > 0:
-            vec = self.sumb.getdfdxtvec(numpy.ravel(vec))
+        vec = self.computeMatrixFreeProductBwd(fBar=vec, xSDeriv=True, 
+                                                groupName=groupName)
         vec = self.mesh.sectionVectorByFamily(groupName, vec)
 
         return vec
-
+        
     def getdIdx(self, objective, groupName=None):
         obj, aeroObj = self._getObjective(objective)
         if not aeroObj:
@@ -2363,38 +2336,6 @@ class SUMB(AeroSolver):
             self.mesh.warpDeriv(dXv, surfOnly=True)
             return self.mesh.getdXs(groupName)
 
-    def getdIda(self, objective):
-
-        if self.nDVAero <= 0:
-            return {}
-
-        obj, aeroObj = self._getObjective(objective)        
-
-        funcsBar = {objective.lower():1.0}
-        return self.computeMatrixFreeProductBwd(
-            funcsBar=funcsBar, xDvDerivAero=True)
-
-    def getdRdaTPsi(self, objective):
-        """Shortcut function to perform dRdXaT*vec operation with the adjoint
-        vector corresponding to objective.
-        """
-        obj, aeroObj = self._getObjective(objective)        
-        try:
-            psi = self.curAP.sumbData.adjoints[obj]
-        except:
-            raise Error('%s adjoint for %s is not computed.'% obj)
-
-        return self.getdRdaTVec(psi)
-
-    def getdRdaTVec(self,  vec):
-        """Compute the vector product dRda^T * vec. """
-
-        if self.nDVAero <= 0:
-            return numpy.zeros((0))
-
-        return self.computeMatrixFreeProductBwd(
-            resBar=vec, xDvDerivAero=True)
-
     def getdIdw(self, objective):
         obj, aeroObj = self._getObjective(objective)
         if not aeroObj:
@@ -2413,14 +2354,11 @@ class SUMB(AeroSolver):
         ----------
         objective: string
             The objective to be tested.        
-
         """
-
         if objective.lower() in self.sumbCostFunctions.keys():
             return True
         else:
             return False
-
 
     # =========================================================================
     #   The following routines two routines are the workhorse of the
@@ -2508,50 +2446,75 @@ class SUMB(AeroSolver):
         else:
             return funcsdot
 
-    def computeMatrixFreeProductBwd(self, resBar=None, funcsBar=None, wDeriv=None,
-                                    xVDeriv=None, xDvDeriv=None, 
-                                    xDvDerivAero=None):
+    def computeMatrixFreeProductBwd(self, resBar=None, funcsBar=None, fBar=None, 
+                                    wDeriv=None, xVDeriv=None, xSDeriv=None, 
+                                    xDvDeriv=None, xDvDerivAero=None, groupName=None):
         """This the main python gateway for producing reverse mode jacobian
         vector products. It is not generally called by the user by
-        rather internally or from another solver. A DVGeo object and a
-        mesh object must both be set for this routine.
+        rather internally or from another solver. A mesh object must
+        be present for the xSDeriv=True flag and a mesh and DVGeo
+        object must be present for xDvDeriv=True flag. Note that more
+        than one of the specified return flags may be spcified. If
+        more than one return is specified, the 
         
         Parameters
         ----------
         resBar : numpy array
-            Seed for the residuals (dwb)
+            Seed for the residuals (dwb in sumb)
         funcsBar : dict
-            Dictionary of functions with reverse seeds
+            Dictionary of functions with reverse seeds. Only nonzero seeds 
+            need to be provided. All other seeds will be taken as zero. 
+        fBar : numpy array
+            Seed for the forces (or tractions depending on the option value) to use
+            in reverse mode. 
+
         wDeriv : bool
-            Flag specifiying if the state (w) derivative should be returned
+            Flag specifiying if the state (w) derivative (wb) should be returned
         xVDeriv : bool
             Flag specifiying if the volume node (xV) derivative should be returned
+        xSDeriv : bool
+            Flag specifiying if the surface node (xS) derivative should be returned. 
         xDvDeriv : bool
             Flag specifiying if the design variable (xDv) derviatives should
-            be returned
+            be returned. This will include both geometric *and* aerodynamic derivatives
         xDvDerivAero : bool
-            Flag to return aeroderivatives. If this is true and xDvDeriv is False,
-            *just* the aerodynamic derivatives are returned.
+            Flag to return *just* the aerodynamic derivatives. If this is True and 
+            xDvDeriv is False,*just* the aerodynamic derivatives are returned.
+
+        groupName : str
+            groupName for the fBar array if it isn't already the correct size. 
+
         Returns
         -------
-        wbar, xvbar, xdvbar : array, array, dict
-            One or more of these are returned depending on the wDeriv, xVDeriv, 
-            and xDvDeriv flags
+        wbar, xvbar, xsbar, xdvbar, xdvaerobar : array, array, array, dict, dict
+            One or more of these are returned depending on the *Deriv flags provided. 
         """
-        if resBar is None and funcsBar is None:
-            raise Error("computeMatrixFreeProductBwd: resBar and funcsBar"
-                        " cannot both be None")
-        if wDeriv is None and xVDeriv is None and xDvDeriv is None and xDvDerivAero is None:
-            raise Error("computeMatrixFreeProductBwd: wDeriv, xVDeriv and "
-                        "xDvDeriv cannot all be None")
+
+        # Error Checking
+        if resBar is None and funcsBar is None and fBar is None:
+            raise Error("computeMatrixFreeProductBwd: One of resBar, funcsBar and fBar"
+                        " must be given. resBar=%s, funcsBar=%s, fBar=%s"% (
+                            resBar, funcsBar, fBar))
+        if (wDeriv is None and xVDeriv is None and xDvDeriv is None and 
+            xSDeriv is None and xDvDerivAero is None):
+            raise Error("computeMatrixFreeProductBwd: One of wDeriv, xVDeriv, "
+                        "xDvDeriv and xDvDerivAero must be given as True. "
+                        "wDeriv=%s, xVDeriv=%s, xDvDeriv=%s, xSDeriv=%s xDvDerivAero=%s."%(
+                            wDeriv, xVDeriv, xDvDeriv, xSDeriv, xDvDerivAero))
         self._setAeroDVs()
 
+        # ---------------------
+        #  Check for resBar
+        # ---------------------
         if resBar is None:
             if self.getOption('frozenTurbulence'):
                 resBar = numpy.zeros(self.getAdjointStateSize())
             else:
                 resBar = numpy.zeros(self.getStateSize())
 
+        # ---------------------
+        #  Check for funcsBar
+        # ---------------------
         if funcsBar is None:
             funcsBar = numpy.zeros(self.sumb.costfunctions.ncostfunction)
         else:
@@ -2563,49 +2526,67 @@ class SUMB(AeroSolver):
                     tmp[mapping-1] = funcsBar[f]
             funcsBar = tmp
 
+        # -------------------------
+        #  Check for fBar (forces)
+        # -------------------------
+        if fBar is None:
+            [nPts, nCell] = self.sumb.getforcesize()
+            fBar = numpy.zeros((nPts, 3))
+        else:
+            # fBar is provided but we may need to expand according to groupName
+            if groupName is not None:
+                fBar = self.expandVectorByFamily(groupName, fBar)
+            
+        # Determine if we can do a cheaper state-variable only
+        # computation or if we need to include the spatial terms:
         useSpatial = False
         useState = False
         if wDeriv:
             useState = True
-        if xDvDeriv or xVDeriv or xDvDerivAero:
+        if xDvDeriv or xVDeriv or xSDeriv or xDvDerivAero:
             useSpatial = True
 
-        # Do actual call. 
+        # Do actual Fortran call. 
         xvbar, extrabar, wbar = self.sumb.computematrixfreeproductbwd(
-            resBar, funcsBar, useSpatial, useState, self.getSpatialSize(), max(1, self.nDVAero))
+            resBar, funcsBar, fBar.T, useSpatial, useState, self.getSpatialSize(), 
+            max(1, self.nDVAero))
      
-        # Stack up the possible returns:
+        # Assemble the possible returns the user has requested:
         returns = []
         if wDeriv:
             returns.append(wbar)
         if xVDeriv:
             returns.append(xvbar)
             
-        # Process xvbar back to the geometric design variables if necessary
-        if xDvDeriv:
-            # Process spatial derivatives if we have a mesh:
-            if self.mesh and self.DVGeo is not None and self.DVGeo.getNDV() > 0:
+        # Process xVbar back to the xS or xDV (geometric variables) if necessary
+        if xDvDeriv or xSDeriv:
+            if self.mesh is not None: 
                 self.mesh.warpDeriv(xvbar)
                 xsbar = self.mesh.getdXs('all')
-                xdvbar = {}
-                xdvbar.update(self.DVGeo.totalSensitivity(
-                    xsbar, self.curAP.ptSetName, self.comm, config=self.curAP.name))
 
-            # We also need to add in the aero derivatives here
-            xdvbar.update(self._processAeroDerivatives(extrabar))
-            returns.append(xdvbar)
-       
-        # Return the raw extrabar if required:
+                if xSDeriv:
+                    returns.append(xsbar)
+
+                # Process all the way back to the DVs, provided
+                # DVGeo exists
+                if xDvDeriv: 
+                    xdvbar = {}
+                    if self.DVGeo is not None and self.DVGeo.getNDV() > 0:
+                        xdvbar.update(self.DVGeo.totalSensitivity(
+                            xsbar, self.curAP.ptSetName, self.comm, config=self.curAP.name))
+
+                    # Include aero derivatives here:
+                    xdvbar.update(self._processAeroDerivatives(extrabar))
+                    returns.append(xdvbar)
+
+        # Include the aerodynamic variables if requested to do so.
         if xDvDerivAero:
-            returns.append(extrabar)
-        if len(returns) == 1:
-            return returns[0]
-        elif len(returns) == 2:
-            return returns[0], returns[1]
-        elif len(returns) == 3:
-            return returns[0], returns[1], returns[2]
-        else:
-            return returns[0], returns[1], returns[2], returns[3]
+            xdvaerobar = {}
+            xdvaerobar.update(self._processAeroDerivatives(extrabar))
+            returns.append(xdvaerobar)
+
+        # Single return (most frequent) is 'clean', otherwise a tuple.
+        return tuple(returns) if len(returns) > 1 else returns[0]
 
     def sectionVectorByFamily(self, *args, **kwargs):
         return self.mesh.sectionVectorByFamily(*args, **kwargs)
@@ -2711,11 +2692,10 @@ class SUMB(AeroSolver):
 
     def computedSdwTVec(self, inVec, outVec, groupName):
         """This function computes: outVec = outVec + dFdw^T*inVec"""
-        phi = self.mesh.expandVectorByFamily(groupName, inVec)
-        outVec = self.sumb.getdfdwtvec(numpy.ravel(phi), outVec)
-
+        outVec = outVec + self.computeMatrixFreeProductBwd(fBar=inVec, wDeriv=True, 
+                                                           groupName=groupName)
         return outVec
-
+     
     def computeArea(self, aeroProblem, funcs, axis, groupName=None, TS=0):
         """
         Compute the projected area of the surface mesh

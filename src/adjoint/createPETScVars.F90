@@ -8,9 +8,8 @@ subroutine createPETScVars
   !     *                                                                *
   !     ******************************************************************
   !
-  use ADjointPETSc, only: dRdwT, dRdwPreT, dFcdw, dFcdx, dFndFc, &
-       dFdx, dFdw, dRdx, adjointKSP, overArea, fCell, fNode, &
-       doAdx, matfreectx, x_like, psi_like1, adjointPETScVarsAllocated
+  use ADjointPETSc, only: dRdwT, dRdwPreT, dFdx, dRdx, &
+       adjointKSP, matfreectx, x_like, psi_like1, adjointPETScVarsAllocated
   use ADjointVars   
   use BCTypes
   use communication  
@@ -122,131 +121,8 @@ subroutine createPETScVars
      deallocate(nnzDiagonal, nnzOffDiag)
   end if 
 
-  ! Create dFcdw, dFcdx, dFcdx2, dFcdFn
-
-  ! dFcdw: Derivative of the face centered forces with respect
-  ! states. For Euler each face depends on the two cells above it so
-  ! have 2*nw non-zeros per row. For viscous, stecel is 3x3x2 where
-  ! two is in the off-wall direction. The larger stencil is due to the
-  ! evaluation of viscous fluxes
-
-  ! dFcdx: Derivative of the face centered forces with respect to the
-  ! nodes lying on the face. Euler has a stencil of 3x3 (face
-  ! only). For viscous forces, the stencil is also 3x3.
-
-  ! dFndFc: Derivative of the nodal forces with respect to the face
-  ! centered forces. This matrix will consist entirely of rows with 4
-  ! values each of which is exactly 1/4 
-
-  ! dFcdw
-  allocate( nnzDiagonal(nDimCell), nnzOffDiag(nDimCell))
-  if (.not. viscous) then
-     nnzDiagonal = 2 * nState
-
-     ! OffDiag is an overestimate...at most one cell is from neighbour
-     ! proc
-     nnzOffDiag  = 1 * nState 
-  else
-     nnzDiagonal = 3*3*2*nState
-
-     ! In general should not have much more than 6 cells on off
-     ! proc. If there is a malloc or two that isn't the end of the world
-     nnzOffDiag = 5*2*nState
-  end if
-
-  call myMatCreate(dFcdw, 1, nDimCell, nDimw, nnzDiagonal, nnzOffDiag, &
-       __FILE__, __LINE__)
-
-  ! dFcdx
-  if (.not. viscous) then
-     nnzDiagonal = 4 * 3
-     nnzOffDiag  = 1
-  else
-     nnzDiagonal = 4*4*3*3
-     nnzOffDiag = 7*3*3
-  end if
-
-  call myMatCreate(dFcdx, 1, nDimCell, nDimX, nnzDiagonal, nnzOffDiag, &
-       __FILE__, __LINE__)
-  deallocate(nnzDiagonal, nnzOffDiag)
-
-  ! doAdx -> Derviative of 1/area wrt the spatial nodes.
-  allocate( nnzDiagonal(nDimPt), nnzOffDiag(nDimPt))
-  nnzDiagonal = 3*3*3
-  nnzOffDiag = 0
-
-  call myMatCreate(doAdx, 1, nDimPt, nDimx, nnzDiagonal, nnzOffDiag, &
-       __FILE__, __LINE__)
-
-  deallocate(nnzDiagonal, nnzOffDiag)
-
-  ! Finally we need dFndFc
-  allocate( nnzDiagonal(nDimPt), nnzOffDiag(nDimPt))
-
-  nnzDiagonal = 4
-  nnzOffDiag  = 4 ! This should be enough...might get a couple of mallocs
-  call myMatCreate(dFndFc, 1, nDimPt, nDimCell, nnzDiagonal, nnzOffDiag, &
-       __FILE__, __LINE__)
-
-  deallocate(nnzDiagonal, nnzOffDiag)
-
-  ! Get a right hand and left hand vec. We need both:
-  call MatGetVecs(dFndFc, fCell, fNode, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-
-  call VecDuplicate(fNode, overArea, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-
-
-  ! We will also take this opportunity to assemble dFndFc. 
-  spectral: do sps=1,nTimeIntervalsSpectral
-     domains: do nn=1,nDom
-        call setPointers(nn,1_intType,sps)
-
-        ! Loop over the number of boundary subfaces of this block.
-        bocos: do mm=1,nBocos
-           if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic .or. &
-                BCType(mm) == NSWallIsothermal) then
-
-              jBeg = BCData(mm)%jnBeg + 1; jEnd = BCData(mm)%jnEnd
-              iBeg = BCData(mm)%inBeg + 1; iEnd = BCData(mm)%inEnd
-
-              do j=jBeg, jEnd ! Face Loop
-                 do i=iBeg, iEnd ! Face Loop
-                    do iDim = 0,2
-                       iCol = bcData(mm)%FMCellIndex(i,j)*3 + iDim 
-                       rows(1) = bcData(mm)%FMNodeIndex(i-1, j-1)*3 + iDim 
-                       rows(2) = bcData(mm)%FMNodeIndex(i  , j-1)*3 + iDim 
-                       rows(3) = bcData(mm)%FMNodeIndex(i-1, j  )*3 + iDim 
-                       rows(4) = bcData(mm)%FMNodeIndex(i  , j  )*3 + iDim 
-
-                       do ii=1,4
-                          call MatSetValues(dFndFc, 1, rows(ii), 1, iCol, &
-                               fourth, INSERT_VALUES, ierr) 
-                          call EChk(ierr, __FILE__, __LINE__)
-                       end do
-
-                    end do
-                 end do
-              end do
-           end if
-        end do bocos
-     end do domains
-  end do spectral
-
-  call MatAssemblyBegin(dFndFc, MAT_FINAL_ASSEMBLY, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-  call MatAssemblyEnd  (dFndFc, MAT_FINAL_ASSEMBLY, ierr)
-  call EChk(ierr,  __FILE__, __LINE__)
-
-  ! For now, leave dFdw, and dFdx in.
   allocate( nnzDiagonal(nDimPt), nnzOffDiag(nDimPt) )
-  nnzDiagonal = 8*nState
-  nnzOffDiag  = 8*nState! Make the off diagonal the same
-
-  call myMatCreate(dFdw, 1, nDimPt, nDimW, nnzDiagonal, nnzOffDiag, &
-       __FILE__, __LINE__)
-
+ 
   ! Create the matrix dFdx
   nnzDiagonal = 27
   nnzOffDiag = 27
