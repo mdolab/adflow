@@ -238,7 +238,7 @@ subroutine getForcePoints(points, npts, sps_in)
   
 end subroutine getForcePoints
 
-subroutine getForces(forcesP, forcesV, npts, sps_in)
+subroutine getForces(forces, npts, sps_in)
 
   use BCTypes
   use blockPointers
@@ -251,7 +251,7 @@ subroutine getForces(forcesP, forcesV, npts, sps_in)
   !      Local variables.
   !
   integer(kind=intType), intent(in) :: npts, sps_in
-  real(kind=realType), intent(out) :: forcesP(3,npts), forcesV(3, nPts)
+  real(kind=realType), intent(out) :: forces(3,npts)
 
     real(kind=realType) :: area(npts) ! Dual area's
   integer(kind=intType) :: mm, nn, i, j, ii, jj,sps
@@ -266,9 +266,6 @@ subroutine getForces(forcesP, forcesV, npts, sps_in)
   !      *                                                                *
   !      ******************************************************************
 
-  forcesp = zero
-  forcesv = zero
-  area = zero
   sps = sps_in
 
   ii = 0 
@@ -282,55 +279,13 @@ subroutine getForces(forcesP, forcesV, npts, sps_in)
         if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic .or. &
              BCType(mm) == NSWallIsothermal) then
 
-           jBeg = BCData(mm)%jnBeg + 1; jEnd = BCData(mm)%jnEnd
-           iBeg = BCData(mm)%inBeg + 1; iEnd = BCData(mm)%inEnd
-           
-           ! Compute the inviscid force on each of the faces and
-           ! scatter it to the 4 nodes, whose forces are updated.
-           
-           do j=jBeg, jEnd ! This is a face loop
-              do i=iBeg, iEnd ! This is a face loop 
-                 
-                 lower_left  = ii + (j-jBeg)*(iEnd-iBeg+2) + i-iBeg + 1
-                 lower_right = lower_left + 1
-                 upper_left  = lower_right + iend - ibeg + 1
-                 upper_right = upper_left + 1
-
-                 ! Assign the quarter of the pressure forces to each node
-                 qf = bcData(mm)%Fp(i, j, :) * fourth
-
-                 forcesp(:, lower_left)  = forcesp(:, lower_left)  + qf
-                 forcesp(:, lower_right) = forcesp(:, lower_right) + qf
-                 forcesp(:, upper_left)  = forcesp(:, upper_left)  + qf
-                 forcesp(:, upper_right) = forcesp(:, upper_right) + qf
-
-                 ! Assign the quarter of the viscous forces to each node
-                 qf = bcData(mm)%Fv(i, j, :) * fourth
-
-                 forcesv(:, lower_left)  = forcesv(:, lower_left)  + qf
-                 forcesv(:, lower_right) = forcesv(:, lower_right) + qf
-                 forcesv(:, upper_left)  = forcesv(:, upper_left)  + qf
-                 forcesv(:, upper_right) = forcesv(:, upper_right) + qf
-
+           ! This is easy, just copy out F in continuous ordering. 
+           do j=BCData(mm)%jnBeg,BCData(mm)%jnEnd
+              do i=BCData(mm)%inBeg,BCData(mm)%inEnd
+                 ii = ii + 1
+                 Forces(:, ii) = bcData(mm)%F(i, j, :)
               end do
            end do
-           
-           if (forcesAsTractions) then
-              jj = 1
-              do j=jBeg-1, jEnd ! This is a NODE loop
-                 do i=iBeg-1, iEnd ! This is a NODE loop 
-                    forcesp(:, ii + jj) = forcesp(:, ii + jj) * bcData(mm)%oArea(i, j)
-                    forcesv(:, ii + jj) = forcesv(:, ii + jj) * bcData(mm)%oArea(i, j)
-                    jj = jj + 1
-                 end do
-              end do
-           end if
-
-           ! Note how iBeg,iBeg is defined above... it is one MORE
-           ! then the starting node (used for looping over faces, not
-           ! nodes)
-           ii = ii + (jEnd-jBeg+2)*(iEnd-iBeg+2)
-           
         end if
      end do bocos
   end do domains

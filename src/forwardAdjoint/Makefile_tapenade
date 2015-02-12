@@ -138,7 +138,7 @@ ad_forward:
 # The following is the single Tapenade command to run:
 	$(TAPENADE_HOME)/bin/tapenade -html \
 	-head "block_res(flowdoms%w flowdoms%x xsurf alpha beta mach machgrid machcoef pointref lengthRef Pref tempFreeStream Reynolds ww0 ww1 ww2 ww3 pp0 pp1 pp2 pp3 rlv0 rlv1 rlv2 rlv3 rev0 rev1 rev2 rev3 ssi ssj ssk ss xx) > \
-(flowdoms%dw  BCData%Fp BCData%Fv BCData%M  BCData%sepSensor BCData%Cavitation BCData%oArea flowdoms%w flowdoms%x force moment sepSensor Cavitation funcValues) \
+(flowdoms%dw  bcData%F flowdoms%w flowdoms%x force moment sepSensor Cavitation funcValues) \
 xhalo_block(x)>(x)" \
 	-forward $(TAPENADE_PRECISION) \
 	-O temp_forward $(I_RES_FILES)
@@ -162,7 +162,7 @@ ad_reverse:
 # The following is the single Tapenade command to run:
 	$(TAPENADE_HOME)/bin/tapenade -html \
 	-head "block_res(flowdoms%w flowdoms%x xsurf alpha beta mach machgrid machcoef pointref lengthRef Pref tempFreeStream Reynolds ww0 ww1 ww2 ww3 pp0 pp1 pp2 pp3 rlv0 rlv1 rlv2 rlv3 rev0 rev1 rev2 rev3 xx ssi) > \
-(flowdoms%dw  BCData%Fp BCData%Fv BCData%M  BCData%sepSensor BCData%Cavitation BCData%oArea flowdoms%w flowdoms%x force moment sepSensor Cavitation funcValues ww0 ww1 ww2 ww3 pp0 pp1 pp2 pp3 rlv0 rlv1 rlv2 rlv3 rev0 rev1 rev2 rev3 xx ssi) \
+(flowdoms%dw  bcData%F flowdoms%w flowdoms%x force moment sepSensor Cavitation funcValues ww0 ww1 ww2 ww3 pp0 pp1 pp2 pp3 rlv0 rlv1 rlv2 rlv3 rev0 rev1 rev2 rev3 xx ssi) \
 xhalo_block(x)>(x)" \
 	-adjvarname %d \
 	-reverse -msglevel 30 $(TAPENADE_PRECISION) \
@@ -177,11 +177,26 @@ xhalo_block(x)>(x)" \
 
 # Fix the AD bugs
 	sed -i 's/do ii1=1,size(viscsubfaced(ii1)%tau, 1)/do ii1=1,size(viscsubfaced)/' outputReverse/forcesandmoments_b.f90
-	sed -i 's/do ii1=1,size(bcdata(ii1)%oarea, 1)/do ii1=1,size(bcdata)/' outputReverse/forcesandmoments_b.f90
-	sed -i 's/do ii1=size(bcdata(ii1)%oarea, 1),1,-1/do ii1=size(bcdata),1,-1/' outputReverse/forcesandmoments_b.f90
-	sed -i 's/do ii1=1,size(bcdata(ii1)%oarea, 1)/do ii1=1,size(bcdata)/' outputReverse/block_res_b.f90
-	sed -i 's/do ii1=size(bcdata(ii1)%oarea, 1),1,-1/do ii1=size(bcdata),1,-1/' outputReverse/block_res_b.f90
+
+	sed -i 's/do ii1=1,size(bcdatad(ii1)%norm, 1)/do ii1=1,size(bcdata)/' outputReverse/forcesandmoments_b.f90
+	sed -i 's/do ii1=size(bcdata(ii1)%norm, 1),1,-1/do ii1=size(bcdata),1,-1/' outputReverse/forcesandmoments_b.f90
+
+	sed -i 's/do ii1=1,size(bcdatad(ii1)%dualarea, 1)/do ii1=1,size(bcdata)/' outputReverse/forcesandmoments_b.f90
+	sed -i 's/do ii1=1,size(bcdata(ii1)%dualarea, 1)/do ii1=1,size(bcdata)/' outputReverse/forcesandmoments_b.f90
+	sed -i 's/do ii1=size(bcdata(ii1)%dualarea, 1),1,-1/do ii1=size(bcdata),1,-1/' outputReverse/forcesandmoments_b.f90
+
+	sed -i 's/do ii1=1,size(bcdatad(ii1)%f, 1)/do ii1=1,size(bcdata)/' outputReverse/forcesandmoments_b.f90
+	sed -i 's/do ii1=1,size(bcdata(ii1)%f, 1)/do ii1=1,size(bcdata)/' outputReverse/forcesandmoments_b.f90
+	sed -i 's/do ii1=size(bcdata(ii1)%f, 1),1,-1/do ii1=size(bcdata),1,-1/' outputReverse/forcesandmoments_b.f90
+
+	sed -i 's/do ii1=1,size(bcdata(ii1)%dualarea, 1)/do ii1=1,size(bcdata)/' outputReverse/block_res_b.f90
+	sed -i 's/do ii1=size(bcdata(ii1)%dualarea, 1),1,-1/do ii1=size(bcdata),1,-1/' outputReverse/block_res_b.f90
+
+	sed -i 's/do ii1=1,size(bcdata(ii1)%f, 1)/do ii1=1,size(bcdata)/' outputReverse/block_res_b.f90
+	sed -i 's/do ii1=size(bcdata(ii1)%f, 1),1,-1/do ii1=size(bcdata),1,-1/' outputReverse/block_res_b.f90
+
 	sed -i 's/do ii1=1,size(bcdatad(ii1)%norm, 1)/do ii1=1,size(bcdatad)/' outputReverse/bcroutines_b.f90
+
 	sed -i 's/end subroutine sa_block_b/deallocate(qq)\nend subroutine sa_block_b/' outputReverse/samodule_b.f90
 
 ad_reverse_fast:

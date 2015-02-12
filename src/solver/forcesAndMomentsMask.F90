@@ -207,7 +207,6 @@ subroutine forcesAndMomentsMask(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
         ! and j-direction. The offset +1 is there, because inBeg and
         ! jnBeg refer to nodal ranges and not to cell ranges.
 
-        bcData(nn)%oArea(:,:) = zero
         jsize = BCData(nn)%jnEnd - bcData(nn)%jnBeg
         isize = BCData(nn)%inEnd - bcData(nn)%inBeg
         do j=(BCData(nn)%jnBeg+1),BCData(nn)%jnEnd
@@ -239,37 +238,6 @@ subroutine forcesAndMomentsMask(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
               fy = pm1*ss(i,j,2)
               fz = pm1*ss(i,j,3)
 
-              ! Store Force data on face
-              BCData(nn)%Fp(i,j,1) = fx
-              BCData(nn)%Fp(i,j,2) = fy
-              BCData(nn)%Fp(i,j,3) = fz
-
-              ! Scatter a quarter of the area to each node:
-              qA = fourth*sqrt(ss(i, j, 1)**2 + ss(i, j, 2)**2 + ss(i, j, 3)**2)
-              BCData(nn)%oArea(i-1, j-1) = BCData(nn)%oArea(i-1, j-1) + qA
-              BCData(nn)%oArea(i  , j-1) = BCData(nn)%oArea(i  , j-1) + qA
-              BCData(nn)%oArea(i-1, j  ) = BCData(nn)%oArea(i-1, j  ) + qA
-              BCData(nn)%oArea(i  , j  ) = BCData(nn)%oArea(i  , j  ) + qA
-              
-              ! Get normalized surface velocity:
-              v(1) = ww2(i, j, ivx)
-              v(2) = ww2(i, j, ivy)
-              v(3) = ww2(i, j, ivz)
-              v = v / (sqrt(v(1)**2 + v(2)**2 + v(3)**2) + 1e-16)
-
-              ! Dot product with free stream
-              sensor = -(v(1)*velDirFreeStream(1) + &
-                         v(2)*velDirFreeStream(2) + &
-                         v(3)*velDirFreeStream(3))
-               
-              !Now run through a smooth heaviside function:
-              sensor = one/(one + exp(-2*10*sensor))
-                 
-              ! And integrate over the area of this cell and save:
-              sensor = sensor * four * qA
-              sepSensor = sepSensor + sensor
-              bcData(nn)%sepSensor(i, j) = sensor
-
               ! Update the inviscid force and moment coefficients.
               cFp(1) = cFp(1) + fx
               cFp(2) = cFp(2) + fy
@@ -283,11 +251,23 @@ subroutine forcesAndMomentsMask(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
               cMp(2) = cMp(2) + my
               cMp(3) = cMp(3) + mz
 
-              ! Store Moment data on face
-              BCData(nn)%M(i,j,1) = mx
-              BCData(nn)%M(i,j,2) = my
-              BCData(nn)%M(i,j,3) = mz
-              
+              ! Divide by 4 so we can scatter
+              fx = fourth*fx
+              fy = fourth*fy
+              fz = fourth*fz
+
+              ! Scatter 1/4 of the force to each of the nodes:
+              BCData(nn)%F(i-1,j-1,:) = (/fx, fy, fz/)
+              BCData(nn)%F(i  ,j-1,:) = (/fx, fy, fz/)
+              BCData(nn)%F(i-1,j  ,:) = (/fx, fy, fz/)
+              BCData(nn)%F(i  ,j  ,:) = (/fx, fy, fz/)
+
+              ! Scatter a quarter of the area to each node:
+              qA = fourth*sqrt(ss(i, j, 1)**2 + ss(i, j, 2)**2 + ss(i, j, 3)**2)
+              BCData(nn)%dualArea(i-1, j-1) = BCData(nn)%dualArea(i-1, j-1) + qA
+              BCData(nn)%dualArea(i  , j-1) = BCData(nn)%dualArea(i  , j-1) + qA
+              BCData(nn)%dualArea(i-1, j  ) = BCData(nn)%dualArea(i-1, j  ) + qA
+              BCData(nn)%dualArea(i  , j  ) = BCData(nn)%dualArea(i  , j  ) + qA
            enddo
         enddo
         !
@@ -360,23 +340,13 @@ subroutine forcesAndMomentsMask(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
                  cFv(2) = cFv(2) + fy
                  cFv(3) = cFv(3) + fz
 
-                 ! Store Force data on face
-                 BCData(nn)%Fv(i,j,1) = fx
-                 BCData(nn)%Fv(i,j,2) = fy
-                 BCData(nn)%Fv(i,j,3) = fz
-
                  mx = yc*fz - zc*fy
                  my = zc*fx - xc*fz
                  mz = xc*fy - yc*fx
-                 
+
                  cMv(1) = cMv(1) + mx
                  cMv(2) = cMv(2) + my
                  cMv(3) = cMv(3) + mz
-
-                 ! Store Moment data on face
-                 BCData(nn)%M(i,j,1) = BCData(nn)%M(i,j,1) + mx
-                 BCData(nn)%M(i,j,2) = BCData(nn)%M(i,j,2) + my
-                 BCData(nn)%M(i,j,3) = BCData(nn)%M(i,j,3) + mz
 
                  ! Compute the tangential component of the stress tensor,
                  ! which is needed to monitor y+. The result is stored
@@ -385,51 +355,56 @@ subroutine forcesAndMomentsMask(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
                  ! component is important, there is no need to take the
                  ! sign into account (it should be a minus sign).
 
-                 fx = tauXx*norm(i,j,1) + tauXy*norm(i,j,2) &
-                      + tauXz*norm(i,j,3)
-                 fy = tauXy*norm(i,j,1) + tauYy*norm(i,j,2) &
-                      + tauYz*norm(i,j,3)
-                 fz = tauXz*norm(i,j,1) + tauYz*norm(i,j,2) &
-                      + tauZz*norm(i,j,3)
+                 fx = tauXx*BCData(nn)%norm(i,j,1) + tauXy*BCData(nn)%norm(i,j,2) &
+                      + tauXz*BCData(nn)%norm(i,j,3)
+                 fy = tauXy*BCData(nn)%norm(i,j,1) + tauYy*BCData(nn)%norm(i,j,2) &
+                      + tauYz*BCData(nn)%norm(i,j,3)
+                 fz = tauXz*BCData(nn)%norm(i,j,1) + tauYz*BCData(nn)%norm(i,j,2) &
+                      + tauZz*BCData(nn)%norm(i,j,3)
 
-                 fn = fx*norm(i,j,1) + fy*norm(i,j,2) + fz*norm(i,j,3)
+                 fn = fx*BCData(nn)%norm(i,j,1) + fy*BCData(nn)%norm(i,j,2) + fz*BCData(nn)%norm(i,j,3)
 
-                 fx = fx - fn*norm(i,j,1)
-                 fy = fy - fn*norm(i,j,2)
-                 fz = fz - fn*norm(i,j,3)
-
+                 fx = fx - fn*BCData(nn)%norm(i,j,1)
+                 fy = fy - fn*BCData(nn)%norm(i,j,2)
+                 fz = fz - fn*BCData(nn)%norm(i,j,3)
 
                  ! Compute the local value of y+. Due to the usage
                  ! of pointers there is on offset of -1 in dd2Wall..
 
-                 if(equations == RANSEquations) dwall = dd2Wall(i-1,j-1)
+                 if(equations == RANSEquations) then 
+                    dwall = dd2Wall(i-1,j-1)
+                    rho   = half*(rho2(i,j) + rho1(i,j))
+                    mul   = half*(rlv2(i,j) + rlv1(i,j))
+                    yplus = sqrt(rho*sqrt(fx*fx + fy*fy + fz*fz))*dwall/mul
 
-                 rho   = half*(rho2(i,j) + rho1(i,j))
-                 mul   = half*(rlv2(i,j) + rlv1(i,j))
-                 yplus = sqrt(rho*sqrt(fx*fx + fy*fy + fz*fz))*dwall/mul
+                    ! Store this value if this value is larger than the
+                    ! currently stored value.
 
-                 ! Store this value if this value is larger than the
-                 ! currently stored value.
+                    yplusMax = max(yplusMax, yplus)
+                 end if
 
-                 yplusMax = max(yplusMax, yplus)
+                 ! Divide by 4 so we can scatter
+                 fx = fourth*fx
+                 fy = fourth*fy
+                 fz = fourth*fz
 
+                 ! Scatter 1/4 of the force to each of the nodes:
+                 BCData(nn)%F(i-1,j-1,:) = BCData(nn)%F(i-1,j-1,:) + (/fx, fy, fz/)
+                 BCData(nn)%F(i  ,j-1,:) = BCData(nn)%F(i  ,j-1,:) + (/fx, fy, fz/)
+                 BCData(nn)%F(i-1,j  ,:) = BCData(nn)%F(i-1,j  ,:) + (/fx, fy, fz/)
+                 BCData(nn)%F(i  ,j  ,:) = BCData(nn)%F(i  ,j  ,:) + (/fx, fy, fz/)
               enddo
-           enddo
-
-        else
-           ! Zero the viscous force contribution
-           BCData(nn)%Fv = zero
-        endif visForce
-
-        ! We have to inverse the nodal areas
-        do j=(BCData(nn)%jnBeg),BCData(nn)%jnEnd
-           do i=(BCData(nn)%inBeg),BCData(nn)%inEnd
-              bcData(nn)%oArea(i,j) = one/bcData(nn)%oArea(i,j)
            end do
-        end do
-
-     endif invForce
-
+           ! If forces are tractions we have to divide by the dual area:
+           if (forcesAsTractions) then
+              do j= BCData(nn)%jnBeg, BCData(nn)%jnEnd
+                 do i=BCData(nn)%inBeg, BCData(nn)%inEnd
+                    bcData(nn)%F(i, j, :) =  bcData(nn)%F(i, j, :) / bcData(nn)%dualArea(i, j)
+                 end do
+              end do
+           end if
+        endif visForce
+     end if invForce
   enddo bocos
 
   ! Currently the coefficients only contain the surface integral

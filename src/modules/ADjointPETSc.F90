@@ -26,9 +26,7 @@ module ADjointPETSc
 
   Mat     dRdWT, dRdWPreT
   Mat     dRdx
-  Mat     dFcdw, dFcdx, dFndFc
-  Mat     dFdx, dFdw, doAdX
-  Vec      overArea, fCell, fNode
+  Mat     dFdx 
 
   ! These are empty vectors
   Vec     w_like1, w_like2, psi_like1, psi_like2, psi_like3, x_like

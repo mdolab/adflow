@@ -507,36 +507,21 @@ subroutine deallocateBlock(nn, level, sps)
           deallocate(BCData(i)%norm, stat=ierr)
      if(ierr /= 0) deallocationFailure = .true.
 
-     if( associated(BCData(i)%Fp) ) &
-          deallocate(BCData(i)%Fp, stat=ierr)
+     if( associated(BCData(i)%dualArea) ) &
+          deallocate(BCData(i)%dualArea, stat=ierr)
+     if(ierr /= 0) deallocationFailure = .true.
+
+     if( associated(BCData(i)%F) ) &
+          deallocate(BCData(i)%F, stat=ierr)
      if(ierr /= 0) deallocationFailure = .true.
 
      if( associated(BCData(i)%Fv) ) &
           deallocate(BCData(i)%Fv, stat=ierr)
      if(ierr /= 0) deallocationFailure = .true.
 
-     if( associated(BCData(i)%M) ) &
-          deallocate(BCData(i)%M, stat=ierr)
+     if( associated(BCData(i)%Fp) ) &
+          deallocate(BCData(i)%Fp, stat=ierr)
      if(ierr /= 0) deallocationFailure = .true.
-
-     if( associated(BCData(i)%oArea) ) &
-          deallocate(BCData(i)%oArea, stat=ierr)
-     if(ierr /= 0) deallocationFailure = .true.
-
-     if( associated(BCData(i)%sepSensor) ) &
-          deallocate(BCData(i)%sepSensor, stat=ierr)
-     if(ierr /= 0) deallocationFailure = .true.
-
-     if( associated(BCData(i)%Cavitation) ) &
-          deallocate(BCData(i)%Cavitation, stat=ierr)
-     if(ierr /= 0) deallocationFailure = .true.
-
-     if( associated(BCData(i)%FMNodeIndex) ) &
-          deallocate(BCData(i)%FMNodeIndex, stat=ierr)
-     if(ierr /= 0) deallocationFailure = .true.
-
-     if( associated(BCData(i)%FMCellIndex) ) &
-          deallocate(BCData(i)%FMCellIndex, stat=ierr)
 
      if( associated(BCData(i)%rface) ) &
           deallocate(BCData(i)%rface, stat=ierr)

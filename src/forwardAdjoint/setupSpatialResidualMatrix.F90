@@ -10,7 +10,6 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective, frozenTurb)
   !     *                                                                *
   !     ******************************************************************
   !
-  use ADjointPetsc, only : dFcdx, doAdx
   use BCTypes
   use blockPointers
   use inputDiscretization 
@@ -45,10 +44,6 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective, frozenTurb)
   real(kind=realType) :: alphad, betad, sepSensord, Cavitationd
   real(kind=realType), dimension(3, nTimeIntervalsSpectral) :: force, moment, forced, momentd
   integer(kind=intType) :: liftIndex
-  integer(kind=intType), dimension(:,:), pointer ::  colorPtr0, colorPtr1, colorPtr2
-  integer(kind=intType), dimension(:,:), pointer ::  globalNodePtr, colorPtr
-  integer(kind=intType), dimension(:,:), pointer ::  globalNodePtr0, globalNodePtr1, globalNodePtr2
-  integer(kind=intType) :: fRow, oaRow
   logical :: resetToRANS
 
   ! This routine will not use the extra variables to block_res or the
@@ -243,124 +238,6 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective, frozenTurb)
                       alpha, beta, liftIndex, force, moment, sepSensor, Cavitation, frozenTurb)
               end if
 
-          
-
-              if (useObjective .and. useAD) then
-                 ! We need to loop over the faces on this block and
-                 ! set values
-                 
-                 bocos: do mm=1,nBocos
-
-                    if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic &
-                         .or. BCType(mm) == NSWallIsothermal) then
-
-                       ! Set the globalNodePtr depending on what face
-                       ! we are on:
-
-                       select case (BCFaceID(mm))
-                       case (iMin)
-                          colorPtr0 => flowDomsd(nn, 1, 1)%color(0, :, :)
-                          colorPtr1 => flowDomsd(nn, 1, 1)%color(1, :, :)
-                          colorPtr2 => flowDomsd(nn, 1, 1)%color(2, :, :)
-                          globalNodePtr0 => globalNode(0, :, :)
-                          globalNodePtr1 => globalNode(1, :, :)
-                          globalNodePtr2 => globalNode(2, :, :)
-                       case (iMax)
-                          colorPtr0 => flowDomsd(nn, 1, 1)%color(il+1, :, :)
-                          colorPtr1 => flowDomsd(nn, 1, 1)%color(il  , :, :)
-                          colorPtr2 => flowDomsd(nn, 1, 1)%color(il-1, :, :)
-                          globalNodePtr0 => globalNode(il+1, :, :)
-                          globalNodePtr1 => globalNode(il  , :, :)
-                          globalNodePtr2 => globalNode(il-1, :, :)
-                       case (jMin)
-                          colorPtr0 => flowDomsd(nn, 1, 1)%color(:, 0, :)
-                          colorPtr1 => flowDomsd(nn, 1, 1)%color(:, 1, :)
-                          colorPtr2 => flowDomsd(nn, 1, 1)%color(:, 2, :)
-                          globalNodePtr0 => globalNode(:, 0, :)
-                          globalNodePtr1 => globalNode(:, 1, :)
-                          globalNodePtr2 => globalNode(:, 2, :)
-                       case (jMax)
-                          colorPtr0 => flowDomsd(nn, 1, 1)%color(:, jl+1, :)
-                          colorPtr1 => flowDomsd(nn, 1, 1)%color(:, jl  , :)
-                          colorPtr2 => flowDomsd(nn, 1, 1)%color(:, jl-1, :)
-                          globalNodePtr0 => globalNode(:, jl+1, :)
-                          globalNodePtr1 => globalNode(:, jl  , :)
-                          globalNodePtr2 => globalNode(:, jl-1, :)
-                       case (kMin)
-                          colorPtr0 => flowDomsd(nn, 1, 1)%color(:, :, 0)
-                          colorPtr1 => flowDomsd(nn, 1, 1)%color(:, :, 1)
-                          colorPtr2 => flowDomsd(nn, 1, 1)%color(:, :, 2)
-                          globalNodePtr0 => globalNode(:, :, 0)
-                          globalNodePtr1 => globalNode(:, :, 1)
-                          globalNodePtr2 => globalNode(:, :, 2)
-                       case (kMax)
-                          colorPtr0 => flowDomsd(nn, 1, 1)%color(:, :, kl+1)
-                          colorPtr1 => flowDomsd(nn, 1, 1)%color(:, :, kl  )
-                          colorPtr2 => flowDomsd(nn, 1, 1)%color(:, :, kl-1)
-                          globalNodePtr0 => globalNode(:, :, kl+1)
-                          globalNodePtr1 => globalNode(:, :, kl  )
-                          globalNodePtr2 => globalNode(:, :, kl-1)
-                       end select
-
-                       ! These are the indices for the INTERNAL CELLS!
-                       jBeg = BCData(mm)%jnBeg+1; jEnd = BCData(mm)%jnEnd
-                       iBeg = BCData(mm)%inBeg+1; iEnd = BCData(mm)%inEnd
-                       
-                       do j=jBeg, jEnd ! This is a cell loop
-                          do i=iBeg, iEnd ! This is a cell loop
-                             ! Basically what we are doing is
-                             ! searching the force x stencil for this
-                             ! face to see if one of them has been
-                             ! petrubed. If one has, then we set the
-                             ! values appropriately
-                           
-                             forceStencilLoop: do i_stencil=1, n_force_stencil
-                                ii = force_stencil(i_stencil, 1)
-                                jj = force_stencil(i_stencil, 2)
-                                kk = force_stencil(i_stencil, 3)
-
-                                ! check which k level and set pointers
-                                if (kk == -1) then
-                                   colorPtr => colorPtr1
-                                   globalNodePtr => globalNodePtr0
-                                else if (kk==0) then
-                                   colorPtr => colorPtr1
-                                   globalNodePtr => globalNodePtr1
-                                else if (kk==1) then
-                                   colorPtr => colorPtr2
-                                   globalNodePtr => globalNodePtr2
-                                end if
-
-                                ! The +1 in the colorPtr is due to the
-                                ! pointer offset effect
-                                ind = globalNodePtr(i+1+ii, j+1+jj)*3 + l - 1
-                                if (colorPtr(i+1+ii, j+1+jj) == iColor .and.  &
-                                     ind >=0) then
-                                   ! This real node has been peturbed
-                                   do fmDim = 1,3
-                                      
-                                      ! While we are at it, we have
-                                      ! all the info we need for dFcdx
-                                      fRow = BCData(mm)%FMCellIndex(i,j)*3 + fmDim - 1
-                                      
-                                      call MatSetValues(dFcdx, 1, fRow, 1, ind, &
-                                           bcDatad(mm)%Fp(i, j, fmDim) + &
-                                           bcDatad(mm)%Fv(i, j, fmDim), &
-                                          ADD_VALUES, ierr)
-                                      call EChk(ierr, __FILE__, __LINE__)
-
-                                      oaRow = BCData(mm)%FMNodeIndex(i,j)*3 + fmDim - 1
-                                      call MatSetValues(doAdx, 1, oaRow, 1, ind, &
-                                           bcDatad(mm)%oarea(i,j), ADD_VALUES, ierr)
-                                      call EChk(ierr, __FILE__, __LINE__)
-                                   end do
-                                end if
-                             end do forceStencilLoop
-                          end do
-                       end do
-                    end if
-                 end do bocos
-              end if
               ! Set the computed residual in dw_deriv. If using FD,
               ! actually do the FD calculation if AD, just copy out dw
               ! in flowdomsd
@@ -460,13 +337,6 @@ subroutine setupSpatialResidualMatrix(matrix, useAD, useObjective, frozenTurb)
         end do colorLoop
      end do spectralLoop
   end do domainLoopAD
-
-  if (useObjective .and. useAD) then
-     call MatAssemblyBegin(dFcdx, MAT_FINAL_ASSEMBLY, ierr)
-     call MatAssemblyEnd(dFcdx, MAT_FINAL_ASSEMBLY, ierr)
-     call MatAssemblyBegin(doAdx, MAT_FINAL_ASSEMBLY, ierr)
-     call MatAssemblyEnd(doAdx, MAT_FINAL_ASSEMBLY, ierr)
-  end if
 
   ! PETSc Matrix Assembly and Options Set
   call MatAssemblyBegin(matrix, MAT_FINAL_ASSEMBLY, ierr)

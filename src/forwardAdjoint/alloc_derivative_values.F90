@@ -158,32 +158,12 @@ subroutine alloc_derivative_values(level)
            allocate(flowDomsd(nn,1,sps)%BCData(mm)%rface(iBeg:iStop,jBeg:jStop), stat=ierr)
            call EChk(ierr,__FILE__,__LINE__)
            
-           allocate(flowDomsd(nn,1,sps)%BCData(mm)%Fp(&
-                bcData(mm)%inBeg+1:bcData(mm)%inEnd, &
-                bcData(mm)%jnBeg+1:bcData(mm)%jnEnd, 3), stat=ierr)
-           call EChk(ierr,__FILE__,__LINE__)
- 
-           allocate(flowDomsd(nn,1,sps)%BCData(mm)%Fv(&
-                bcData(mm)%inBeg+1:bcData(mm)%inEnd, &
-                bcData(mm)%jnBeg+1:bcData(mm)%jnEnd, 3), stat=ierr)
-           call EChk(ierr,__FILE__,__LINE__)
-
-           allocate(flowDomsd(nn,1,sps)%BCData(mm)%M(&
-                bcData(mm)%inBeg+1:bcData(mm)%inEnd, &
-                bcData(mm)%jnBeg+1:bcData(mm)%jnEnd, 3), stat=ierr)
-           call EChk(ierr,__FILE__,__LINE__)
-
-           allocate(flowDomsd(nn,1,sps)%BCData(mm)%sepSensor(&
-                bcData(mm)%inBeg+1:bcData(mm)%inEnd, &
-                bcData(mm)%jnBeg+1:bcData(mm)%jnEnd), stat=ierr)
-           call EChk(ierr,__FILE__,__LINE__)
-
-           allocate(flowDomsd(nn,1,sps)%BCData(mm)%Cavitation(&
-                bcData(mm)%inBeg+1:bcData(mm)%inEnd, &
-                bcData(mm)%jnBeg+1:bcData(mm)%jnEnd), stat=ierr)
+           allocate(flowDomsd(nn,1,sps)%BCData(mm)%F(&
+                bcData(mm)%inBeg:bcData(mm)%inEnd, &
+                bcData(mm)%jnBeg:bcData(mm)%jnEnd, 3), stat=ierr)
            call EChk(ierr,__FILE__,__LINE__)
            
-           allocate(flowDomsd(nn,1,sps)%BCData(mm)%oArea(&
+           allocate(flowDomsd(nn,1,sps)%BCData(mm)%dualArea(&
                 bcData(mm)%inbeg:bcData(mm)%inEnd, &
                 bcData(mm)%jnbeg:bcData(mm)%jnEnd), stat=ierr)
            call EChk(ierr,__FILE__,__LINE__)
