@@ -69,7 +69,7 @@ subroutine setupCouplingMatrixStruct(pts,npts,nTS)
   refPoint(:) = 0.0
   refPointb(:)= 0.0
 
-  call MatGetOwnershipRange(dfdw,rowStart,rowEnd,ierr)
+  call MatGetOwnershipRange(dfdx,rowStart,rowEnd,ierr)
   call EChk(ierr,__FILE__,__LINE__)
   call MatGetOwnershipRangeColumn(dFdx,colStart_x,colEnd_x,ierr)
   call EChk(ierr,__FILE__,__LINE__)
@@ -250,23 +250,6 @@ subroutine setupCouplingMatrixStruct(pts,npts,nTS)
                        ! Set dFdw first
                        irow = rowStart + ii*3+idim-1+(sps-1)*npts*3
 
-                       do l=1,nState                   
-                          do kkk=1,2
-                             do iii=1,2
-                                do jjj=1,2
-                                   if (.not.(i+iii-2 < iBeg .or. i+iii-1 > iEnd .or. &
-                                        j+jjj-2 < jBeg .or. j+jjj-1 > jEnd)) then
-
-                                      call MatSetValue(dFdw,irow,&
-                                           w_ind(kkk,iii,jjj)*nState+l-1,&
-                                           wadjb(kkk,iii,jjj,l),&
-                                           INSERT_VALUES, ierr)
-                                      call EChk(ierr,__FILE__,__LINE__)
-                                   end if
-                                end do
-                             end do
-                          end do
-                       end do
                        ! Now Set dFdx
                        do jjj=1,3
                           do iii=1,3
@@ -289,10 +272,6 @@ subroutine setupCouplingMatrixStruct(pts,npts,nTS)
         end do bocos
      end do domains
   end do ! sps loop
-  call MatAssemblyBegin(dFdw,MAT_FINAL_ASSEMBLY,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-  call MatAssemblyEnd(dFdw,MAT_FINAL_ASSEMBLY,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
 
   call MatAssemblyBegin(dFdx,MAT_FINAL_ASSEMBLY,ierr)
   call EChk(ierr,__FILE__,__LINE__)
@@ -310,32 +289,6 @@ subroutine setupCouplingMatrixStruct(pts,npts,nTS)
   end if
 
 20 format(a,1x,f8.2)
-
-
-  ! Assemble the overArea Vector
-  do nn=1,nDom
-     call setPointers(nn, 1, 1)
-     bocos2: do mm=1,nBocos
-        wall: if(BCType(mm) == EulerWall        .or. &
-          BCType(mm) == NSWallAdiabatic .or. &
-          BCType(mm) == NSWallIsothermal) then
-           do j=BCData(mm)%jnBeg,BCData(mm)%jnEnd
-              do i=BCData(mm)%inBeg,BCData(mm)%inEnd
-                 do idim=1,3
-                    call VecSetValue(overArea, BCData(mm)%FMNodeIndex(i,j)*3+idim-1, &
-                         BCData(mm)%oArea(i,j), INSERT_VALUES, ierr)
-                    call EChk(ierr, __FILE__, __LINE__)
-                 end do
-              end do
-           end do
-        end if wall
-     end do bocos2
-  end do
-  call VecAssemblyBegin(overArea, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-
-  call VecAssemblyEnd(overArea, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
 
 
 #endif

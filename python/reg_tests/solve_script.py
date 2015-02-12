@@ -251,6 +251,7 @@ def test1():
     CFDSolver(ap)
     funcs = {}
     CFDSolver.evalFunctions(ap, funcs)
+    CFDSolver.checkSolutionFailure(ap, funcs)
     if MPI.COMM_WORLD.rank == 0:
         print 'Eval Functions:'
         reg_write_dict(funcs, 1e-10, 1e-10)
@@ -284,6 +285,7 @@ def test1():
     CFDSolver(ap)
     funcs = {}
     CFDSolver.evalFunctions(ap, funcs)
+    CFDSolver.checkSolutionFailure(ap, funcs)
     if MPI.COMM_WORLD.rank == 0:
         reg_write_dict(funcs, 1e-10, 1e-10)
 
@@ -294,6 +296,7 @@ def test1():
     CFDSolver(ap)
     funcs = {}
     CFDSolver.evalFunctions(ap, funcs)
+    CFDSolver.checkSolutionFailure(ap, funcs)
     if MPI.COMM_WORLD.rank == 0:
         reg_write_dict(funcs, 1e-10, 1e-10)
 
@@ -303,6 +306,7 @@ def test1():
     CFDSolver.solveCL(ap, 0.475, alpha0=0, delta=0.1, tol=1e-4, autoReset=True)
     funcs = {}
     CFDSolver.evalFunctions(ap, funcs, evalFuncs=['cl'])
+    CFDSolver.checkSolutionFailure(ap, funcs)
     if MPI.COMM_WORLD.rank == 0:
         print 'CL-CL*'
         reg_write(funcs['mdo_tutorial_cl'] - 0.475, 1e-4, 1e-4)
@@ -355,12 +359,14 @@ def test2():
 
     DVGeo.addGeoDVGlobal('twist', [0]*nTwist, twist, lower=-10, upper=10, scale=1.0)
     DVGeo.addGeoDVLocal('shape', lower=-0.5, upper=0.5, axis='y', scale=10.0)
+    
     mesh = MBMesh(options={'gridFile':'../inputFiles/mdo_tutorial_euler_random.cgns'})
     CFDSolver.setMesh(mesh)
     CFDSolver.setDVGeo(DVGeo)
     CFDSolver(ap)
     funcs = {}
     CFDSolver.evalFunctions(ap, funcs)
+    CFDSolver.checkSolutionFailure(ap, funcs)
     if MPI.COMM_WORLD.rank == 0:
         print 'Eval Functions:'
         reg_write_dict(funcs, 1e-10, 1e-10)
@@ -411,6 +417,7 @@ def test3():
     # Just check the functions
     funcs = {}
     CFDSolver.evalFunctions(ap, funcs)
+    CFDSolver.checkSolutionFailure(ap, funcs)
     if MPI.COMM_WORLD.rank == 0:
         print 'Eval Functions:'
         reg_write_dict(funcs, 1e-10, 1e-10)
@@ -467,6 +474,7 @@ def test4():
         print 'Eval Functions:'
         funcs = {}
         CFDSolver.evalFunctions(ap, funcs)
+        CFDSolver.checkSolutionFailure(ap, funcs)
         reg_write_dict(funcs, 1e-10, 1e-10)
         print 'Eval Functions Sens:'
         funcsSens = {}
@@ -540,6 +548,7 @@ def test5():
 
     funcs = {}
     CFDSolver.evalFunctions(ap, funcs)
+    CFDSolver.checkSolutionFailure(ap, funcs)
     if MPI.COMM_WORLD.rank == 0:
         print 'Eval Functions:'
         reg_write_dict(funcs, 1e-10, 1e-10)
@@ -605,6 +614,7 @@ def test6():
 
     funcs = {}
     CFDSolver.evalFunctions(ap, funcs)
+    CFDSolver.checkSolutionFailure(ap, funcs)
     if MPI.COMM_WORLD.rank == 0:
         print 'Eval Functions:'
         reg_write_dict(funcs, 1e-8, 1e-8)
@@ -674,6 +684,7 @@ def test7():
 
     funcs = {}
     CFDSolver.evalFunctions(ap, funcs)
+    CFDSolver.checkSolutionFailure(ap, funcs)
     if MPI.COMM_WORLD.rank == 0:
         print 'Eval Functions:'
         reg_write_dict(funcs, 1e-8, 1e-8)
@@ -743,6 +754,7 @@ def test8():
 
     funcs = {}
     CFDSolver.evalFunctions(ap, funcs)
+    CFDSolver.checkSolutionFailure(ap, funcs)
     if MPI.COMM_WORLD.rank == 0:
         print 'Eval Functions:'
         reg_write_dict(funcs, 1e-8, 1e-8)
@@ -866,6 +878,7 @@ def test9():
 
     funcs = {}
     CFDSolver.evalFunctions(ap, funcs)
+    CFDSolver.checkSolutionFailure(ap, funcs)
     if MPI.COMM_WORLD.rank == 0:
         print 'Eval Functions:'
         reg_write_dict(funcs, 1e-10, 1e-10)

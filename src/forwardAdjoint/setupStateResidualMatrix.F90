@@ -19,7 +19,6 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   !     *         always the finest level                                *         
   !     ******************************************************************
   !
-  use ADjointPetsc, only : dFcdW
   use BCTypes
   use blockPointers
   use inputDiscretization 
@@ -64,9 +63,6 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   real(kind=realType), dimension(:,:), allocatable :: blk
 #endif
   integer(kind=intType) :: liftIndex
-  integer(kind=intType), dimension(:,:), pointer ::  colorPtr1, colorPtr2
-  integer(kind=intType), dimension(:,:), pointer ::  globalCellPtr1, globalCellPtr2
-  integer(kind=intType), dimension(:,:), pointer ::  colorPtr, globalCellPtr
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, mm, colInd
   logical :: resetToRANS
   real :: val
@@ -275,104 +271,6 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
                  sepSensor, Cavitation, frozenTurb)
               end if
 
-              ! If required, set values in the force matrix.  We have
-              ! to be a little carful actually. What we have to do is
-              ! loop over subfaces where the cell centered forces are
-              ! defined. Then for each force, we loop over its
-              ! stencil. There should be at most 1 peturbed cell/state
-              ! in its stencil. Then, we can take the derivatives out
-              ! F and M defined on the face. The derivatives are
-              ! correct, since for objective we are using a simple
-              ! sum.
-              sotreObjectivePartials: if (useObjective .and. useAD .and. .not. usePC) then
-                 bocos: do mm=1,nBocos
-                    if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic &
-                         .or. BCType(mm) == NSWallIsothermal) then
-
-                       ! Set the globalNodePtr depending on what face
-                       ! we are on:
-
-                       select case (BCFaceID(mm))
-                       case (iMin)
-                          colorPtr1 => flowDomsd(nn, 1, 1)%color(2, :, :)
-                          colorPtr2 => flowDomsd(nn, 1, 1)%color(3, :, :)
-                          globalCellPtr1 => globalCell(2, :, :)
-                          globalCellPtr2 => globalCell(3, :, :)
-                       case (iMax)
-                          colorPtr1 => flowDomsd(nn, 1, 1)%color(il, :, :)
-                          colorPtr2 => flowDomsd(nn, 1, 1)%color(il-1, :, :)
-                          globalCellPtr1 => globalCell(il, :, :)
-                          globalCellPtr2 => globalCell(il-1, :, :)
-                       case (jMin)
-                          colorPtr1 => flowDomsd(nn, 1, 1)%color(:, 2, :)
-                          colorPtr2 => flowDomsd(nn, 1, 1)%color(:, 3, :)
-                          globalCellPtr1 => globalCell(:, 2, :)
-                          globalCellPtr2 => globalCell(:, 3, :)
-                       case (jMax)
-                          colorPtr1 => flowDomsd(nn, 1, 1)%color(:, jl, :)
-                          colorPtr2 => flowDomsd(nn, 1, 1)%color(:, jl-1, :)
-                          globalCellPtr1 => globalCell(:, jl, :)
-                          globalCellPtr2 => globalCell(:, jl-1, :)
-                       case (kMin)
-                          colorPtr1 => flowDomsd(nn, 1, 1)%color(:, :, 2)
-                          colorPtr2 => flowDomsd(nn, 1, 1)%color(:, :, 3)
-                          globalCellPtr1 => globalCell(:, :, 2)
-                          globalCellPtr2 => globalCell(:, :, 3)
-                       case (kMax)
-                          colorPtr1 => flowDomsd(nn, 1, 1)%color(:, :, kl)
-                          colorPtr2 => flowDomsd(nn, 1, 1)%color(:, :, kl-1)
-                          globalCellPtr1 => globalCell(:, :, kl)
-                          globalCellPtr2 => globalCell(:, :, kl-1)
-                       end select
-
-                       ! These are the indices for the INTERNAL CELLS!
-                       jBeg = BCData(mm)%jnBeg+1; jEnd = BCData(mm)%jnEnd
-                       iBeg = BCData(mm)%inBeg+1; iEnd = BCData(mm)%inEnd
-                       
-                       do j=jBeg, jEnd ! This is a cell loop
-                          do i=iBeg, iEnd ! This is a cell loop
-                             ! Basically what we are doing is
-                             ! searching the force stencil for this
-                             ! face to see if one of them has been
-                             ! petrubed. If one has, then we set the
-                             ! values appropriately
-                             forceStencilLoop: do i_stencil=1, n_force_stencil
-                                ii = force_stencil(i_stencil, 1)
-                                jj = force_stencil(i_stencil, 2)
-                                kk = force_stencil(i_stencil, 3)
-                     
-                                if (kk == 0) then
-                                   colorPtr => colorPtr1
-                                   globalCellPtr => globalCellPtr1
-                                else if (kk==1) then
-                                   colorPtr => colorPtr2
-                                   globalCellPtr => globalCellPtr2
-                                end if
-
-                                colInd = globalCellPtr(i+1+ii, j+1+jj)*nState + l -1
-                                ! The extra + 1 is due to the pointer offset       
-                                if (colorPtr(i+1+ii, j+1+jj) == iColor .and. &
-                                     colInd >= 0) then
-                                   ! This real cell has been peturbed!
-                                   do fmDim = 1,3
-                                      
-                                      ! While we are at it, we have
-                                      ! all the info we need for dFcdw
-                                      fRow = BCData(mm)%FMCellIndex(i,j)*3 + fmDim - 1
-                                      call MatSetValues(dFcdw, 1, &
-                                          fRow, 1, colInd, &
-                                          bcDatad(mm)%Fp(i, j, fmDim) + &
-                                          bcDatad(mm)%Fv(i, j, fmDim), &
-                                          ADD_VALUES, ierr)
-                                      call EChk(ierr, __FILE__, __LINE__)
-                                   end do
-                                end if
-                             end do forceStencilLoop
-                          end do
-                       end do
-                    end if
-                 end do bocos
-              end if sotreObjectivePartials
               ! Set the computed residual in dw_deriv. If using FD, 
               ! actually do the FD calculation if AD, just copy out dw
               ! in flowdomsd
@@ -491,11 +389,6 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
      call resetFDReference(level)
   end if
   
-  if (useObjective .and. useAD) then
-     call MatAssemblyBegin(dFcdw, MAT_FINAL_ASSEMBLY, ierr)
-     call MatAssemblyEnd(dFcdw, MAT_FINAL_ASSEMBLY, ierr)
-  end if
-
   ! PETSc Matrix Assembly and Options Set
   call MatAssemblyBegin(matrix, MAT_FINAL_ASSEMBLY, ierr)
   call EChk(ierr, __FILE__, __LINE__)

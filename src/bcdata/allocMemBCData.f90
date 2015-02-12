@@ -79,14 +79,10 @@
                     ! the NODES
 
                    allocate(BCData(mm)%uSlip(iBeg:iEnd,jBeg:jEnd,3), &
+                            BCData(mm)%F(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
+                            BCData(mm)%dualArea(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
                             BCData(mm)%Fp(iBeg:iEnd,jBeg:jEnd,3), &
                             BCData(mm)%Fv(iBeg:iEnd,jBeg:jEnd,3), &
-                            BCData(mm)%M(iBeg:iEnd,jBeg:jEnd,3), &
-                            BCData(mm)%oArea(inodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
-                            BCData(mm)%FMNodeIndex(inodeBeg:inodeEnd, jnodeBeg:jnodeEnd), &
-                            BCData(mm)%FMCellIndex(iBeg:iEnd, jBeg:jEnd), &
-                            BCData(mm)%sepSensor(iBeg:iEnd, jBeg:jEnd), &
-                            BCData(mm)%Cavitation(iBeg:iEnd, jBeg:jEnd), &
                             stat=ierr)
                    if(ierr /= 0)                      &
                      call terminate("allocMemBCData", &
@@ -101,14 +97,10 @@
                     ! the NODES
                    allocate(BCData(mm)%uSlip(iBeg:iEnd,jBeg:jEnd,3),  &
                             BCData(mm)%TNS_Wall(iBeg:iEnd,jBeg:jEnd), &
+                            BCData(mm)%F(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
+                            BCData(mm)%dualArea(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
                             BCData(mm)%Fp(iBeg:iEnd,jBeg:jEnd,3), &
                             BCData(mm)%Fv(iBeg:iEnd,jBeg:jEnd,3), &
-                            BCData(mm)%M(iBeg:iEnd,jBeg:jEnd,3), &
-                            BCData(mm)%oArea(inodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
-                            BCData(mm)%FMNodeIndex(inodeBeg:inodeEnd, jnodeBeg:jnodeEnd), &
-                            BCData(mm)%FMCellIndex(iBeg:iEnd, jBeg:jEnd), &
-                            BCData(mm)%sepSensor(iBeg:iEnd, jBeg:jEnd), &
-                            BCData(mm)%Cavitation(iBeg:iEnd, jBeg:jEnd), &
                             stat=ierr)
                    if(ierr /= 0)                      &
                      call terminate("allocMemBCData", &
@@ -121,15 +113,11 @@
 
                    ! Euler wall
 
-                   allocate(BCData(mm)%rface(iBeg:iEnd,jBeg:jEnd), &
+                    allocate(BCData(mm)%rface(iBeg:iEnd,jBeg:jEnd), &
+                            BCData(mm)%F(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
+                            BCData(mm)%dualArea(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
                             BCData(mm)%Fp(iBeg:iEnd,jBeg:jEnd,3), &
                             BCData(mm)%Fv(iBeg:iEnd,jBeg:jEnd,3), &
-                            BCData(mm)%M(iBeg:iEnd,jBeg:jEnd,3), &
-                            BCData(mm)%oArea(inodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
-                            BCData(mm)%FMNodeIndex(inodeBeg:inodeEnd, jnodeBeg:jnodeEnd), &
-                            BCData(mm)%FMCellIndex(iBeg:iEnd, jBeg:jEnd), &
-                            BCData(mm)%sepSensor(iBeg:iEnd, jBeg:jEnd), &
-                            BCData(mm)%Cavitation(iBeg:iEnd, jBeg:jEnd), &
                             stat=ierr)
                    if(ierr /= 0)                      &
                      call terminate("allocMemBCData", &
@@ -144,7 +132,9 @@
                    ! velocity.
 
                    allocate(BCData(mm)%rface(iBeg:iEnd,jBeg:jEnd), &
-                        BCData(mm)%oArea(inodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
+                            BCData(mm)%F(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
+                            BCData(mm)%dualArea(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
+
                         stat=ierr)
                    if(ierr /= 0)                      &
                      call terminate("allocMemBCData", &
@@ -158,8 +148,9 @@
                    ! but we need it for the reverse AD.
 
                    allocate(BCData(mm)%rface(iBeg:iEnd,jBeg:jEnd), &
-                        BCData(mm)%oArea(inodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
-                        stat=ierr)
+                            BCData(mm)%F(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
+                            BCData(mm)%dualArea(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
+                            stat=ierr)
                    if(ierr /= 0)                      &
                      call terminate("allocMemBCData", &
                                     "Memory allocation failure for &

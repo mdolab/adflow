@@ -218,9 +218,10 @@ subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useSta
 
 end subroutine computeMatrixFreeProductFwd
 
-subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xvbar, extrabar, wbar,&
-     spatialSize, extraSize, stateSize, costSize)
+subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, fbar, useSpatial, useState, xvbar, &
+     extrabar, wbar, spatialSize, extraSize, stateSize, costSize, fSize)
   use constants
+  use bcTypes
   use communication
   use blockPointers
   use inputDiscretization 
@@ -241,9 +242,10 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
 #include "finclude/petscvec.h90"
 
   ! Input Variables
-  integer(kind=intType), intent(in) :: spatialSize, extraSize, stateSize, costSize
+  integer(kind=intType), intent(in) :: spatialSize, extraSize, stateSize, costSize, fSize
   real(kind=realType), dimension(stateSize), intent(in) :: dwbar
   real(kind=realType), dimension(costSize), intent(in) :: funcsbar
+  real(kind=realType), dimension(3, fSize), intent(in) :: fBar
   logical, intent(in) :: useSpatial, useState
 
   ! Ouput Variables
@@ -252,7 +254,7 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
   real(kind=realType), dimension(spatialSize), intent(out) :: xvbar
 
   ! Working variables
-  integer(kind=intType) :: ierr,nn,sps,i,j,k,l,ii, sps2
+  integer(kind=intType) :: ierr,nn,mm,sps,i,j,k,l,ii,jj,sps2, idim
   real(kind=realType) :: alpha, beta, force(3), moment(3), sepSensor, cavitation
   real(kind=realType) :: alphad, betad, forced(3), momentd(3), sepSensord, cavitationd
   integer(kind=intType) ::  level, irow, liftIndex, nState
@@ -326,8 +328,8 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
   ! Zero out extraLocal
   extraLocalBar = zero
 
-  ii = 0
-
+  ii = 0 ! Residual bar counter
+  jj = 0 ! Force bar counter
   domainLoopAD: do nn=1,nDom
 
      ! Just to get sizes
@@ -352,6 +354,30 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
 
         ! And the function value seeds
         funcValuesd = funcsBar
+        
+        ! And the Force seeds is spatial is true
+      !  if (useSpatial) then 
+           bocos: do mm=1,nBocos
+              if (bctype(mm) .eq. eulerwall .or. &
+                   bctype(mm) .eq. nswalladiabatic  .or. &
+                   bctype(mm) .eq. nswallisothermal) then
+                 
+                 ! Loop over the nodes since that's where the forces get
+                 ! defined.
+                 do j=(BCData(mm)%jnBeg),BCData(mm)%jnEnd
+                    do i=(BCData(mm)%inBeg),BCData(mm)%inEnd
+                       jj = jj + 1
+                       do iDim=1,3
+                          ! Fp and Fv are seeded equally since they are
+                          ! nominally summed together. 
+                          bcDatad(mm)%F(i, j, iDim) = fBar(idim, jj)
+                       end do
+                    end do
+                 end do
+              end if
+           end do bocos
+      !  end if
+
         call BLOCK_RES_B(nn, sps, useSpatial, alpha, alphad, beta, betad, &
              & liftindex, force, forced, moment, momentd, sepsensor, sepsensord, &
              & cavitation, cavitationd, frozenTurbulence)
@@ -369,30 +395,33 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
         ! Assmeble the vectors requested:
         do sps2=1,nTimeIntervalsSpectral
 
-           ! We need to acculumate the contribution from this block into xSurfbSum
-           xSurfbSum = xSurfbSum + xSurfd
+           if (useSpatial) then 
+              ! We need to acculumate the contribution from this block into xSurfbSum
+              xSurfbSum = xSurfbSum + xSurfd
+              
+              ! Also need the extra variables, those are zero-based:
+              if (nDesignAoA >= 0) &
+                   extraLocalBar(nDesignAoA+1) = extraLocalBar(nDesignAoA+1) + alphad
+              if (nDesignSSA >= 0) &
+                   extraLocalBar(nDesignSSA+1) = extraLocalBar(nDesignSSA+1) + alphad
+              if (nDesignMach  >= 0) &
+                   extraLocalBar(nDesignMach+1) = extraLocalBar(nDesignMach+1) + machd + machcoefd
+              if (nDesignMachGrid >= 0) &
+                   extraLocalBar(nDesignMachGrid+1) = extraLocalBar(nDesignMachGrid+1) + machgridd + machcoefd
+              if (nDesignPressure >= 0) &
+                   extraLocalBar(nDesignPressure+1) = extraLocalBar(nDesignPressure+1) + prefd
+              if (nDesignTemperature >= 0) &
+                   extraLocalBar(nDesignTemperature+1) = extraLocalBar(nDesignTemperature+1) + tempfreestreamd
+              if (nDesignReynolds >= 0) &
+                   extraLocalBar(nDesignReynolds+1) = extraLocalBar(nDesignReynolds+1) + reynoldsd
+              if (nDesignPointRefX >= 0) &
+                   extraLocalBar(nDesignPointRefX+1) = extraLocalBar(nDesignPointRefX+1) + pointrefd(1)
+              if (nDesignPointRefY >= 0) &
+                   extraLocalBar(nDesignPointRefY+1) = extraLocalBar(nDesignPointRefY+1) + pointrefd(2)
+              if (nDesignPointRefZ >= 0) &
+                   extraLocalBar(nDesignPointRefZ+1) = extraLocalBar(nDesignPointRefZ+1) + pointrefd(3)
+           end if
 
-           ! Also need the extra variables, those are zero-based:
-           if (nDesignAoA >= 0) &
-                extraLocalBar(nDesignAoA+1) = extraLocalBar(nDesignAoA+1) + alphad
-           if (nDesignSSA >= 0) &
-                extraLocalBar(nDesignSSA+1) = extraLocalBar(nDesignSSA+1) + alphad
-           if (nDesignMach  >= 0) &
-                extraLocalBar(nDesignMach+1) = extraLocalBar(nDesignMach+1) + machd + machcoefd
-           if (nDesignMachGrid >= 0) &
-                extraLocalBar(nDesignMachGrid+1) = extraLocalBar(nDesignMachGrid+1) + machgridd + machcoefd
-           if (nDesignPressure >= 0) &
-                extraLocalBar(nDesignPressure+1) = extraLocalBar(nDesignPressure+1) + prefd
-           if (nDesignTemperature >= 0) &
-                extraLocalBar(nDesignTemperature+1) = extraLocalBar(nDesignTemperature+1) + tempfreestreamd
-           if (nDesignReynolds >= 0) &
-                extraLocalBar(nDesignReynolds+1) = extraLocalBar(nDesignReynolds+1) + reynoldsd
-           if (nDesignPointRefX >= 0) &
-                extraLocalBar(nDesignPointRefX+1) = extraLocalBar(nDesignPointRefX+1) + pointrefd(1)
-           if (nDesignPointRefY >= 0) &
-                extraLocalBar(nDesignPointRefY+1) = extraLocalBar(nDesignPointRefY+1) + pointrefd(2)
-           if (nDesignPointRefZ >= 0) &
-                extraLocalBar(nDesignPointRefZ+1) = extraLocalBar(nDesignPointRefZ+1) + pointrefd(3)
            if (useState) then 
               do k=0, kb
                  do j=0,jb
@@ -409,6 +438,7 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
                  end do
               end do
            end if
+
         end do
      end do
   end do domainLoopAD
@@ -464,7 +494,6 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
   call VecRestoreArrayF90(xSurfVecd, xSurfd, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-
   ! And perform assembly on the w vectors if 
   if (useState) then 
      call VecAssemblyBegin(psi_like3, ierr)
@@ -505,6 +534,7 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, useSpatial, useState, xv
      equations = RANSEquations
   end if
 
+  ! Just to be sure, we'll zero everything when we're done.
   do nn=1,nDom
      do sps=1,nTimeIntervalsSpectral
         call setPointers(nn, level, sps)

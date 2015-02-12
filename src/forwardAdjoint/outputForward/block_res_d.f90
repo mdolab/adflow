@@ -3,10 +3,8 @@
 !
 !  differentiation of block_res in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: pref *(flowdoms.w) *(flowdoms.dw)
-!                *(*bcdata.fp) *(*bcdata.fv) *(*bcdata.m) *(*bcdata.oarea)
-!                *(*bcdata.sepsensor) *(*bcdata.cavitation) *rev0
-!                *rev1 *pp0 *pp1 *rlv0 *rlv1 *ww0 *ww1 funcvalues
-!                moment force cavitation sepsensor
+!                *(*bcdata.f) *rev0 *rev1 *pp0 *pp1 *rlv0 *rlv1
+!                *ww0 *ww1 funcvalues moment force cavitation sepsensor
 !   with respect to varying inputs: pref *(flowdoms.x) *(flowdoms.w)
 !                mach tempfreestream reynolds machgrid lengthref
 !                machcoef pointref *xx *rev0 *rev1 *rev2 *rev3
@@ -25,12 +23,11 @@
 !                *uz:(loc) *si:(loc) *sj:(loc) *sk:(loc) *bvti1:(loc)
 !                *bvti2:(loc) *vx:(loc) *vy:(loc) *vz:(loc) *fw:(loc)
 !                *(*viscsubface.tau):(loc) *(*bcdata.norm):(loc)
-!                *(*bcdata.rface):(loc) *(*bcdata.fp):out *(*bcdata.fv):out
-!                *(*bcdata.m):out *(*bcdata.oarea):out *(*bcdata.sepsensor):out
-!                *(*bcdata.cavitation):out *(*bcdata.uslip):(loc)
-!                *radi:(loc) *radj:(loc) *radk:(loc) mach:in tempfreestream:in
-!                reynolds:in veldirfreestream:(loc) machgrid:in
-!                lengthref:in machcoef:in dragdirection:(loc) liftdirection:(loc)
+!                *(*bcdata.rface):(loc) *(*bcdata.f):out *(*bcdata.dualarea):(loc)
+!                *(*bcdata.uslip):(loc) *radi:(loc) *radj:(loc)
+!                *radk:(loc) mach:in tempfreestream:in reynolds:in
+!                veldirfreestream:(loc) machgrid:in lengthref:in
+!                machcoef:in dragdirection:(loc) liftdirection:(loc)
 !                pointref:in *xx:in *rev0:in-out *rev1:in-out *rev2:in
 !                *rev3:in *pp0:in-out *pp1:in-out *pp2:in *pp3:in
 !                *rlv0:in-out *rlv1:in-out *rlv2:in *rlv3:in *ss:in
@@ -44,8 +41,7 @@
 !                bvtk1:in bvtk2:in ux:in uy:in uz:in si:in sj:in
 !                sk:in bvti1:in bvti2:in vx:in vy:in vz:in fw:in
 !                viscsubface:in *viscsubface.tau:in bcdata:in *bcdata.norm:in
-!                *bcdata.rface:in *bcdata.fp:in *bcdata.fv:in *bcdata.m:in
-!                *bcdata.oarea:in *bcdata.sepsensor:in *bcdata.cavitation:in
+!                *bcdata.rface:in *bcdata.f:in *bcdata.dualarea:in
 !                *bcdata.uslip:in radi:in radj:in radk:in xx:in-out
 !                rev0:in-out rev1:in-out rev2:in-out rev3:in-out
 !                pp0:in-out pp1:in-out pp2:in-out pp3:in-out rlv0:in-out
