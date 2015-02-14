@@ -27,13 +27,12 @@ SUBDIR_SRC    = src/modules       \
 		src/warping       \
 		src/bendingMomentAnalysis \
                 src/adjoint/ADFirstAidKit \
-                src/forwardAdjoint/outputReverse \
-                src/forwardAdjoint/outputReverseFast \
-		src/adjoint               \
+                src/adjoint/outputReverse \
+                src/adjoint/outputReverseFast \
+                src/adjoint/outputForward \
+                src/adjoint/residualInput \
+		src/adjoint \
 		src/NKsolver      \
-                src/forwardAdjoint \
-                src/forwardAdjoint/residualInput \
-                src/forwardAdjoint/outputForward \
 
 SUBDIR_EXEC   = src/exec
 SUBDIR_PV3    = src/pv3Interface
