@@ -24,14 +24,6 @@ subroutine destroyPETScVars
         call EChk(PETScIerr,__FILE__,__LINE__)
      end if
      
-     call MatDestroy(dFdx, PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
-     
-     if (.not. useMatrixFreedRdx) then
-        call MatDestroy(dRdx, PETScIerr)
-        call EChk(PETScIerr,__FILE__,__LINE__)
-     end if
-     
      call KSPDestroy(adjointKSP, PETScIerr)
      call EChk(PETScIerr,__FILE__,__LINE__)
      adjointPETScVarsAllocated = .False.

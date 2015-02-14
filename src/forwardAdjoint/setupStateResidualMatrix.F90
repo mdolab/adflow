@@ -47,8 +47,8 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   integer(kind=intType) :: ierr, nn, sps, sps2, i, j, k, l, ll, ii, jj, kk
   integer(kind=intType) :: nColor, iColor, jColor, irow, icol, fmDim, frow
   integer(kind=intType) :: nTransfer, nState, tmp, icount
-  integer(kind=intType) :: n_stencil, i_stencil, n_force_stencil
-  integer(kind=intType), dimension(:, :), pointer :: stencil, force_stencil
+  integer(kind=intType) :: n_stencil, i_stencil
+  integer(kind=intType), dimension(:, :), pointer :: stencil
   real(kind=realType) :: delta_x, one_over_dx
 
 #ifdef USE_COMPLEX
@@ -117,13 +117,9 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
      if (viscous) then
         stencil => visc_drdw_stencil
         n_stencil = N_visc_drdw
-        force_stencil => visc_force_w_stencil
-        n_force_stencil = N_visc_force_w
      else
         stencil => euler_drdw_stencil
         n_stencil = N_euler_drdw
-        force_stencil => euler_force_w_stencil
-        n_force_stencil = N_euler_force_w
      end if
   end if
 

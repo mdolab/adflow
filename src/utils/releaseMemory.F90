@@ -386,11 +386,6 @@ subroutine releaseMemoryPart2
   ! be used in combination with adaptation.
 
   ! Destroy variables allocated in preprocessingAdjoint
-  call vecDestroy(fVec1,PETScIerr)
-  call EChk(PETScIerr, __FILE__, __LINE__)
-
-  call vecDestroy(fVec2,PETScIerr)
-  call EChk(PETScIerr, __FILE__, __LINE__)
 
   call vecDestroy(w_like1,PETScIerr)
   call EChk(PETScIerr, __FILE__, __LINE__)

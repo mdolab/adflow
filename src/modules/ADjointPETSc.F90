@@ -25,12 +25,9 @@ module ADjointPETSc
 #include "include/finclude/petsc.h"
 
   Mat     dRdWT, dRdWPreT
-  Mat     dRdx
-  Mat     dFdx 
 
   ! These are empty vectors
   Vec     w_like1, w_like2, psi_like1, psi_like2, psi_like3, x_like
-  Vec     fVec1, fVec2
   PetscErrorCode PETScIerr
   PetscFortranAddr   matfreectx(1)
 
