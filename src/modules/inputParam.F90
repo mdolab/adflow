@@ -1062,8 +1062,7 @@
        logical :: verifyExtra
 
        ! Logicals for specifiying if we are using matrix-free forms of
-       ! dRdx+dRda or dRdw
-       logical :: useMatrixFreedRdx
+       ! drdw
        logical :: useMatrixFreedRdw
 
      end module inputADjoint

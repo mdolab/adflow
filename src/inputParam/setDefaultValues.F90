@@ -427,6 +427,5 @@
        rhoResL1Start = -one
        adjointPETScVarsAllocated = .False.
        usematrixfreedrdw = .False.
-       usematrixfreedrdx = .False.
        nksolvecount = 0
        end subroutine setDefaultValues

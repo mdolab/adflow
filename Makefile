@@ -27,8 +27,6 @@ SUBDIR_SRC    = src/modules       \
 		src/warping       \
 		src/bendingMomentAnalysis \
                 src/adjoint/ADFirstAidKit \
-                src/adjoint/forcesOutput\
-                src/adjoint/forcesInput\
                 src/forwardAdjoint/outputReverse \
                 src/forwardAdjoint/outputReverseFast \
 		src/adjoint               \

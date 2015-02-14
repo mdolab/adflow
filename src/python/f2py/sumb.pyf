@@ -367,7 +367,7 @@ python module libsumb
          integer(kind=inttype) intent(in) :: nout
        end subroutine spectralprecscribedmotion
 #ifndef USE_COMPLEX
-        subroutine computematrixfreeproductfwd(xvdot,extradot,wdot,usespatial,usestate,dwdot,funcsdot,spatialsize,extrasize,statesize,costsize) ! in :test:matrixFreeRoutines.F90
+        subroutine computematrixfreeproductfwd(xvdot,extradot,wdot,usespatial,usestate,dwdot,funcsdot,fdot,spatialsize,extrasize,statesize,costsize,fsize) ! in :test:matrixFreeRoutines.F90
             real(kind=realtype) dimension(spatialsize),intent(in) :: xvdot
             real(kind=realtype) dimension(extrasize),intent(in) :: extradot
             real(kind=realtype) dimension(statesize),intent(in) :: wdot
@@ -375,10 +375,12 @@ python module libsumb
             logical intent(in) :: usestate
             real(kind=realtype) dimension(statesize),intent(out),depend(statesize) :: dwdot
             real(kind=realtype) dimension(costsize),intent(out),depend(costsize) :: funcsdot
+            real(kind=realtype) dimension(3,fsize),intent(out),depend(fsize) :: fdot
             integer(kind=inttype), optional,intent(in),check(len(xvdot)>=spatialsize),depend(xvdot) :: spatialsize=len(xvdot)
             integer(kind=inttype), optional,intent(in),check(len(extradot)>=extrasize),depend(extradot) :: extrasize=len(extradot)
             integer(kind=inttype), optional,intent(in),check(len(wdot)>=statesize),depend(wdot) :: statesize=len(wdot)
             integer(kind=inttype) intent(in) :: costsize
+            integer(kind=inttype) intent(in) :: fsize
         end subroutine computematrixfreeproductfwd
 
         subroutine computematrixfreeproductbwd(dwbar,funcsbar,fbar,usespatial,usestate,xvbar,extrabar,wbar,spatialsize,extrasize,statesize,costsize,fsize) ! in :test:matrixFreeRoutines.F90
@@ -405,26 +407,9 @@ python module libsumb
 #endif
        ! ------------- Misc --------------------
  
-
        subroutine getliftdirfromsymmetry(liftdir)
          integer(kind=inttype), intent(out) :: liftdir
        end subroutine getliftdirfromsymmetry
-      
-       ! ############################################################################
-       ! SUmb Adjoint Coupling Routines
-       ! ############################################################################
-
-       subroutine setupcouplingmatrixstruct(pts,npts,nts) ! in :sumb:../../adjoint/setupCouplingMatrixStruct.F90
-         real(kind=realtype) dimension(3,npts,nts),intent(in) :: pts
-         integer(kind=inttype) optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
-         integer(kind=inttype) optional,intent(in),check(shape(pts,2)==nts),depend(pts) :: nts=shape(pts,2)
-       end subroutine setupcouplingmatrixstruct
-
-       subroutine getdfdxvec(ndof,vec_in,vec_out) ! in :test:getdFdxVec.f90
-         integer(kind=inttype) optional,intent(in),check(len(vec_in)>=ndof),depend(vec_in) :: ndof=len(vec_in)
-         real(kind=realtype) dimension(ndof),intent(in) :: vec_in
-         real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: vec_out
-       end subroutine getdfdxvec
 
        ! ############################################################################
        ! Newton-Krylov Solver Routines
@@ -778,7 +763,6 @@ python module libsumb
          logical :: verifyspatial
          logical :: verifyextra
          logical :: usematrixfreedrdw
-         logical :: usematrixfreedrdx
          integer(kind=inttype) :: applyadjointpcsubspacesize
        end module inputadjoint
 

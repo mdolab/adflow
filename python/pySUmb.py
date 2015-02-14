@@ -719,7 +719,6 @@ class SUMB(AeroSolver):
         else:
             funcs['fail'] = failFlag
 
-
     def evalFunctionsSens(self, aeroProblem, funcsSens, evalFuncs=None, sps=1):
         """
         Evaluate the sensitivity of the desired functions given in
@@ -1912,15 +1911,6 @@ class SUMB(AeroSolver):
             # Setup all required matrices in forward mode. (possibly none
             # of them)
             self.sumb.setupallresidualmatricesfwd()
-        
-            # Create coupling matrix struct whether we need it or not
-            [npts, ncells] = self.sumb.getforcesize()
-            nTS = self.sumb.inputtimespectral.ntimeintervalsspectral
-            forcePoints = numpy.zeros((nTS, npts, 3), self.dtype)
-            for i in xrange(nTS):
-                forcePoints[i] = self.getForcePoints(TS=i)
-
-            self.sumb.setupcouplingmatrixstruct(forcePoints.T)
             self.sumb.setuppetscksp()
             self.adjointSetup = True
 
@@ -2298,18 +2288,15 @@ class SUMB(AeroSolver):
     def getdFdxVec(self, groupName, vec):
         # Calculate dFdx * vec and return the result
         vec = self.mesh.expandVectorByFamily(groupName, vec)
-        if len(vec) > 0:
-            vec = self.sumb.getdfdxvec(numpy.ravel(vec))
+        vec = self.computeMatrixFreeProductFwd(xSDot=vec, fDeriv=True)
         vec = self.mesh.sectionVectorByFamily(groupName, vec)
-
         return vec
 
     def getdFdxTVec(self, groupName, vec):
         # Calculate dFdx^T * vec and return the result
-        vec = self.computeMatrixFreeProductBwd(fBar=vec, xSDeriv=True, 
-                                                groupName=groupName)
+        vec = self.mesh.expandVectorByFamily(groupName, vec)
+        vec = self.computeMatrixFreeProductBwd(fBar=vec, xSDeriv=True)
         vec = self.mesh.sectionVectorByFamily(groupName, vec)
-
         return vec
         
     def getdIdx(self, objective, groupName=None):
@@ -2366,8 +2353,8 @@ class SUMB(AeroSolver):
     #   product that is possible from the solver. 
     #   =========================================================================
 
-    def computeMatrixFreeProductFwd(self, xDvDot=None, wDot=None, xVDot=None,
-                                    residualDeriv=False, funcDeriv=False):
+    def computeMatrixFreeProductFwd(self, xDvDot=None, xSDot=None, xVDot=None, wDot=None,
+                                    residualDeriv=False, funcDeriv=False, fDeriv=False):
         """This the main python gateway for producing forward mode jacobian
         vector products. It is not generally called by the user by
         rather internally or from another solver. A DVGeo object and a
@@ -2377,36 +2364,64 @@ class SUMB(AeroSolver):
         ----------
         xDvDot : dict 
             Perturbation on the geometric design variables defined in DVGeo. 
+        xSDot : numpy array
+            Perturbation on the surface
+        xVDot : numpy array
+            Perturbation on the volume
         wDot : numpy array
             Perturbation the state variables
+
         residualDeriv : bool
             Flag specifiying if the residualDerivative (dwDot) should be returned
         funcDeriv : bool
             Flag specifiying if the derviative of the cost functions 
             (as defined in the current aeroproblem) should be returned. 
+        Feriv : bool
+            Flag specifiying if the derviative of the surface forces (tractions)
+            should be returned
 
         Returns
         -------
-        dwdot, funcsdot : array, dict
-            One or both of these are returned depending on the residualDeriv, 
-            and funcDeriv flag 
+        dwdot, funcsdot, fDot : array, dict, array
+            One or more of the these are return depending ont he *Deriv flags
         """
 
-        if xDvDot is None and wDot is None and xVDot is None:
-            raise Error('computeMatrixFreeProductFwd: xDvDot, xVDot and wDot cannot '
+        if xDvDot is None and xSDot is None and xVDot is None and wDot is None:
+            raise Error('computeMatrixFreeProductFwd: xDvDot, xSDot, xVDot and wDot cannot '
                         'all be None')
-        if xDvDot is not None and xVDot is not None:
-            raise Error('computeMatrixFreeProductFwd: xDvDot and xVDot cannot be both '
-                        'specified.')
             
         self._setAeroDVs()
+
+        # Default flags
+        useState = False
+        useSpatial = False
+
+        # Process the Xs perturbation
+        if xSDot is None:
+            xsdot = numpy.zeros_like(self.coords0)
+            useSpatial = True
+        else:
+            xsdot = xSDot
+
+        # Process the Xv perturbation
+        if xVDot is None:
+            xvdot = numpy.zeros(self.getSpatialSize())
+            useSpatial = True
+        else:
+            xvdot = xVDot
+
+        # Process wDot perturbation
+        if wDot is None:
+            wdot = numpy.zeros(self.getStateSize())
+        else:
+            wdot = wDot
+            useState = True
+
+        # Process the extra variable perturbation....this comes from
+        # xDvDot
         extradot = numpy.zeros(max(1, self.nDVAero))
         if xDvDot is not None:
-            # Do the sptatial design variables -> Go through the
-            # geometry + mesh warp
-            xsdot = self.DVGeo.totalSensitivityProd(xDvDot, self.curAP.ptSetName)
-            xvdot = self.mesh.warpDerivFwd(xsdot)
-            # Do the aerodynamic design variables
+            useSpatial = True
             for key in self.aeroDVs:
                 execStr = 'mapping = self.sumb.%s'%self.possibleAeroDVs[key.lower()]
                 exec(execStr)
@@ -2416,39 +2431,41 @@ class SUMB(AeroSolver):
                 else:
                     extradot[mapping] = xDvDot[key]
 
+        # For the geometric xDvDot perturbation we accumulate into the
+        # already existing (and possibly nonzero) xsdot and xvdot
+        if xDvDot is not None or xSDot is not None:
+            if xDvDot is not None:
+                xsdot += self.DVGeo.totalSensitivityProd(xDvDot, self.curAP.ptSetName)
+            xvdot += self.mesh.warpDerivFwd(xsdot)
             useSpatial = True
-        elif xVDot is not None:
-            xvdot = xVDot
-            useSpatial = True
-        else:
-            xvdot = numpy.zeros(self.getSpatialSize())
-            useSpatial = False
 
-        if wDot is not None:
-            useState = True
-        else:
-            wDot = numpy.zeros(self.getStateSize())
-            useState = False
-
+        # Sizes for output arrays
         costSize = self.sumb.costfunctions.ncostfunction
-        dwdot, tmp = self.sumb.computematrixfreeproductfwd(
-            xvdot, extradot, wDot, useSpatial, useState, costSize)
+        fSize, nCell = self.sumb.getforcesize()
+        
+        dwdot,tmp,fdot = self.sumb.computematrixfreeproductfwd(
+            xvdot, extradot, wdot, useSpatial, useState, costSize, fSize)
 
+        # Process the derivative of the functions
         funcsdot = {}
         for f in self.curAP.evalFuncs:
             mapping = self.sumbCostFunctions[f.lower()]
             funcsdot[f] = tmp[mapping - 1]
-            
-        if residualDeriv and funcDeriv:
-            return dwdot, funcsdot
-        elif residualDeriv:
-            return dwdot
-        else:
-            return funcsdot
+        
+        # Assemble the returns
+        returns = []
+        if residualDeriv:
+            returns.append(dwdot)
+        if funcDeriv:
+            returns.append(funcsDot)
+        if fDeriv:
+            returns.append(fdot.T)
+
+        return tuple(returns) if len(returns) > 1 else returns[0]
 
     def computeMatrixFreeProductBwd(self, resBar=None, funcsBar=None, fBar=None, 
                                     wDeriv=None, xVDeriv=None, xSDeriv=None, 
-                                    xDvDeriv=None, xDvDerivAero=None, groupName=None):
+                                    xDvDeriv=None, xDvDerivAero=None):
         """This the main python gateway for producing reverse mode jacobian
         vector products. It is not generally called by the user by
         rather internally or from another solver. A mesh object must
@@ -2480,9 +2497,6 @@ class SUMB(AeroSolver):
         xDvDerivAero : bool
             Flag to return *just* the aerodynamic derivatives. If this is True and 
             xDvDeriv is False,*just* the aerodynamic derivatives are returned.
-
-        groupName : str
-            groupName for the fBar array if it isn't already the correct size. 
 
         Returns
         -------
@@ -2533,9 +2547,7 @@ class SUMB(AeroSolver):
             [nPts, nCell] = self.sumb.getforcesize()
             fBar = numpy.zeros((nPts, 3))
         else:
-            # fBar is provided but we may need to expand according to groupName
-            if groupName is not None:
-                fBar = self.expandVectorByFamily(groupName, fBar)
+            fBar = fBar
             
         # Determine if we can do a cheaper state-variable only
         # computation or if we need to include the spatial terms:
@@ -3059,7 +3071,6 @@ class SUMB(AeroSolver):
             'applyadjointpcsubspacesize':[int, 20],
             'frozenturbulence':[bool, True],
             'usematrixfreedrdw':[bool, True],
-            'usematrixfreedrdx':[bool, True],
 
             # ADjoint debugger
             'firstrun':[bool, True],
@@ -3314,7 +3325,6 @@ class SUMB(AeroSolver):
             'verifyspatial':{'location':'inputadjoint.verifyspatial'},
             'verifyextra':{'location':'inputadjoint.verifyextra'},
             'usematrixfreedrdw':{'location':'inputadjoint.usematrixfreedrdw'},
-            'usematrixfreedrdx':{'location':'inputadjoint.usematrixfreedrdx'},
             }
 
         return optionMap

@@ -174,7 +174,6 @@ defOpts = {
     'applyadjointpcsubspacesize': 20,
     'frozenturbulence': True,
     'usematrixfreedrdw': False,
-    'usematrixfreedrdx': True,
 
     # ADjoint debugger
     'firstrun': True,

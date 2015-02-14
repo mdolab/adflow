@@ -38,25 +38,6 @@ subroutine setupAllResidualMatricesfwd
     end if
   end if
 
-  if (.not. useMatrixFreedRdx) then 
-
-     if( myid ==0 ) then
-        write(*, 10) "Assembling Spatial Residual Matrix in Forward mode..."
-     end if
-     time(1) = mpi_wtime()
-     call setupSpatialResidualMatrix(drdx, useAD, useObjective, frozenTurbulence)
-     time(2) = mpi_wtime()
-     timeAdjLocal = time(2)-time(1)
-
-     call mpi_reduce(timeAdjLocal, timeAdj, 1, sumb_real, &
-          mpi_max, 0, SUMB_COMM_WORLD, ierr)
-     call EChk(ierr,  __FILE__, __LINE__)
-     
-     if(myid ==0)  then 
-        write(*, 20) "Assembling Spatial Residaul Matrices Fwd time (s) = ", timeAdj
-    end if
-  end if
-
   ! Output formats.
 10 format(a)
 20 format(a, 1x, f8.2)

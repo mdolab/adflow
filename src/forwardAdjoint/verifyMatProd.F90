@@ -21,7 +21,6 @@ subroutine verifyMatProd
   use inputDiscretization
   use cgnsGrid
   use inputMotion   
-  use ADjointPETSc, only: dRdx  
   implicit none
 
   ! Input Variables
@@ -189,62 +188,6 @@ subroutine verifyMatProd
         end do
      end do
      
-     call getdRdXvTPsi(vec2, nNodesLocal(1)*3, vec1, ncellslocal(1)*nState)
-     xvbarsum1 = sum(vec2)
-     ii = 0
-     jj = 0
-     do nn=1,ndom
-        print *, '******************** BLOCK ****************', nn
-        ! Set pointers to the first timeInstance...just to getSizes
-        call setPointers(nn, level, 1)
-        call setDiffSizes
-     
-        ! Set pointers and derivative pointers
-        call setPointers_b(nn, level, 1)
-
-        ! Reset All States and possibe AD seeds
-        flowdomsb(nn,1,1)%dw = zero 
-
-        funcvaluesb = zero
-        flowdomsb(nn,1,1)%x = zero
-        forceb = zero
-        momentb = zero
-        sepSensorb = zero
-        cavitationb = zero
-        funcValuesb = zero
-        do k=2, kl
-           do j=2,jl
-              do i=2,il
-                 do l = 1,5                
-                    ii = ii + 1
-                    flowdomsb(nn,1,1)%dw(i, j, k, l) = vec1(ii)
-                 end do
-              end do
-           end do
-        end do
-         
-        call BLOCK_RES_B(nn, 1, .True., alpha, alphab, beta, betab, &
-             & liftindex, force, forceb, moment, momentb, sepsensor, sepsensorb, &
-             & cavitation, cavitationb)
-     
-        do k=1, kl
-           do j=1,jl
-              do i=1,il
-                 do l = 1,3
-                    jj = jj + 1
-                    xvbarsum2 = xvbarsum2 + flowdomsb(nn,1,1)%X(i,j,k,l)
-                    if (abs(flowdomsb(nn,1,1)%x(i,j,k,l) - vec2(jj)) > 1e-11) then
-                       print *,'------',i,j,k,l
-                       print *, flowdomsb(nn,1,1)%x(i, j, k, l) - vec2(jj)
-                       print *, flowdomsb(nn,1,1)%x(i, j, k, l),  vec2(jj)
-                    end if
-              
-                 end do
-              end do
-           end do
-        end do
-        print *, 'spatial done'
-     end do
      deallocate(vec1, vec2)
      !call dealloc_derivative_values(nn, level)
      call dealloc_derivative_values_bwd(level)
