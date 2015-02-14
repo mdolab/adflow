@@ -37,14 +37,7 @@ FILES_TO_COMPLEXIFY = \
 		updateFlow.f90            \
 		updateReferencePoint.f90   \
 		updateRotationRate.f90     \
-		setupCouplingMatrixStruct.F90\
 		matrixFreeRoutines.F90\
-#		copyADjointStencil.f90    \
-		solverADjoint.F90         \
-		setupAllResidualMatrices.F90\
-		setupRestrictionMatrices.F90\
-		setupProlongationMatrix.F90\
-		computeObjPartials.F90\
 
 FILES_TO_COPY = \
 		solveADjointTransposePETSc.F90\

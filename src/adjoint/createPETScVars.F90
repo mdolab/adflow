@@ -8,7 +8,7 @@ subroutine createPETScVars
   !     *                                                                *
   !     ******************************************************************
   !
-  use ADjointPETSc, only: dRdwT, dRdwPreT, dFdx, dRdx, &
+  use ADjointPETSc, only: dRdwT, dRdwPreT, &
        adjointKSP, matfreectx, x_like, psi_like1, adjointPETScVarsAllocated
   use ADjointVars   
   use BCTypes
@@ -120,37 +120,6 @@ subroutine createPETScVars
 
      deallocate(nnzDiagonal, nnzOffDiag)
   end if 
-
-  allocate( nnzDiagonal(nDimPt), nnzOffDiag(nDimPt) )
- 
-  ! Create the matrix dFdx
-  nnzDiagonal = 27
-  nnzOffDiag = 27
-
-  call myMatCreate(dFdx, 1, nDimPt, nDimPt, nnzDiagonal, nnzOffDiag, &
-       __FILE__, __LINE__)
-  deallocate(nnzDiagonal, nnzOffDiag)
-
-  if (.not. useMatrixFreedRdx) then 
-     ! Create Matrix-based dRdx
-     allocate( nnzDiagonal(nDimX), nnzOffDiag(nDimX) )
-     ! Create the matrix dRdx.
-     level = 1_intType
-     call drdxPreAllocation(nnzDiagonal, nnzOffDiag, nDimX, level)
-     ! Sanity check on diagonal portion: For 2D cases nnzDiagon may be
-     ! too large because of the x-block corners:
-     do i=1, nDimx
-        nnzDiagonal(i) = min(nnzDiagonal(i), nDimw)
-     end do
-
-     ! Note we are creating the TRANPOSE of dRdx. It is size dDimX by nDimW
-     call myMatCreate(dRdx, 1, nDimX, nDimW, nnzDiagonal, nnzOffDiag, &
-          __FILE__, __LINE__)
-     deallocate( nnzDiagonal, nnzOffDiag )
-     
-     call MatSetOption(dRdx, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE, ierr)
-     call EChk(ierr, __FILE__, __LINE__)
-  end if
 
   ! Create the KSP Object
   call KSPCreate(SUMB_COMM_WORLD, adjointKSP, ierr)

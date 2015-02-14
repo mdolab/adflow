@@ -43,13 +43,11 @@ FILES_TO_COMPLEXIFY = \
 		setupColoring.F90\
 		setPointers_d.f90\
 		setDiffSizes.F90\
-		writeMatrices.F90\
 		zeroADSeeds.F90\
 		setFDReference.F90\
 		referenceShockSensor.F90\
 
 FILES_TO_COPY = setupStateResidualMatrix.F90\
-		setupSpatialResidualMatrix.F90\
 		verifyAD.F90\
 		test.F90\
 #		verifyOneValue.F90

@@ -1,9 +1,10 @@
 #ifndef USE_COMPLEX
 subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useState, dwdot, funcsDot, &
-     spatialSize, extraSize, stateSize, costSize)
+     fDot, spatialSize, extraSize, stateSize, costSize, fSize)
 
   ! This is the main matrix-free forward mode computation
   use constants
+  use bcTypes
   use communication
   use costfunctions
   use blockPointers
@@ -22,7 +23,7 @@ subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useSta
 #include "finclude/petsc.h"
 
   ! Input Variables
-  integer(kind=intType), intent(in) :: spatialSize, extraSize, stateSize, costSize
+  integer(kind=intType), intent(in) :: spatialSize, extraSize, stateSize, costSize, fSize
   real(kind=realType), dimension(spatialSize), intent(in) :: xvdot
   real(kind=realType), dimension(extraSize), intent(in) :: extradot
   real(kind=realType), dimension(stateSize), intent(in) :: wdot
@@ -31,14 +32,14 @@ subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useSta
   ! Ouput Variables
   real(kind=realType), dimension(stateSize), intent(out) :: dwDot
   real(kind=realType), dimension(costSize), intent(out) :: funcsDot
+  real(kind=realType), dimension(3, fSize), intent(out) :: fDot
 
   ! Working Variables
-  integer(kind=intType) :: ierr,nn,sps,i,j,k,l,ii, sps2
+  integer(kind=intType) :: ierr,nn,mm,sps,i,j,k,l,ii,jj,idim,sps2
   real(kind=realType) :: alpha, beta, force(3), moment(3), sepSensor, cavitation, cavitationd
   real(kind=realType) :: alphad, betad, forced(3), momentd(3), sepSensord
   integer(kind=intType) ::  level, irow, liftIndex
   real(kind=realType), dimension(costSize) :: funcsLocalDot
-
   logical :: resetToRans
 
   ! Determine if we want to use frozenTurbulent Adjoint
@@ -81,6 +82,7 @@ subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useSta
   prefd = zero
   tempfreestreamd = zero
   reynoldsd = zero
+
   if (useSpatial) then 
      ! Here we set the spatial and extra seeds if necessary.
      ii = 0
@@ -170,6 +172,7 @@ subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useSta
 
   ! Now we are ready to call block_res_d with all the correct seeds
   ii = 0
+  jj = 0
   domainLoopAD: do nn=1,nDom
 
      ! Set pointers to the first timeInstance...just to getSizes
@@ -203,6 +206,24 @@ subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useSta
         ! We need to SUM the funcs into the local array
         funcsLocalDot = funcsLocalDot + funcValuesd
 
+        ! And extract fDot
+        bocos: do mm=1,nBocos
+           if (bctype(mm) .eq. eulerwall .or. &
+               bctype(mm) .eq. nswalladiabatic  .or. &
+               bctype(mm) .eq. nswallisothermal) then
+                 
+              ! Loop over the nodes since that's where the forces get
+              ! defined.
+              do j=BCData(mm)%jnBeg,BCData(mm)%jnEnd
+                 do i=BCData(mm)%inBeg,BCData(mm)%inEnd
+                    jj = jj + 1
+                    do iDim=1,3
+                       fDot(idim, jj) = bcDatad(mm)%F(i, j, iDim)
+                    end do
+                 end do
+              end do
+           end if
+        end do bocos
      end do spectalLoopAD
   end do domainLoopAD
 
@@ -215,7 +236,6 @@ subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useSta
   if (resetToRANS) then
      equations = RANSEquations
   end if
-
 end subroutine computeMatrixFreeProductFwd
 
 subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, fbar, useSpatial, useState, xvbar, &
@@ -356,27 +376,23 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, fbar, useSpatial, useSta
         funcValuesd = funcsBar
         
         ! And the Force seeds is spatial is true
-      !  if (useSpatial) then 
-           bocos: do mm=1,nBocos
-              if (bctype(mm) .eq. eulerwall .or. &
-                   bctype(mm) .eq. nswalladiabatic  .or. &
-                   bctype(mm) .eq. nswallisothermal) then
-                 
-                 ! Loop over the nodes since that's where the forces get
-                 ! defined.
-                 do j=(BCData(mm)%jnBeg),BCData(mm)%jnEnd
-                    do i=(BCData(mm)%inBeg),BCData(mm)%inEnd
-                       jj = jj + 1
-                       do iDim=1,3
-                          ! Fp and Fv are seeded equally since they are
-                          ! nominally summed together. 
-                          bcDatad(mm)%F(i, j, iDim) = fBar(idim, jj)
-                       end do
+        bocos: do mm=1,nBocos
+           if (bctype(mm) .eq. eulerwall .or. &
+                bctype(mm) .eq. nswalladiabatic  .or. &
+                bctype(mm) .eq. nswallisothermal) then
+              
+              ! Loop over the nodes since that's where the forces get
+              ! defined.
+              do j=(BCData(mm)%jnBeg),BCData(mm)%jnEnd
+                 do i=(BCData(mm)%inBeg),BCData(mm)%inEnd
+                    jj = jj + 1
+                    do iDim=1,3
+                       bcDatad(mm)%F(i, j, iDim) = fBar(idim, jj)
                     end do
                  end do
-              end if
-           end do bocos
-      !  end if
+              end do
+           end if
+        end do bocos
 
         call BLOCK_RES_B(nn, sps, useSpatial, alpha, alphad, beta, betad, &
              & liftindex, force, forced, moment, momentd, sepsensor, sepsensord, &

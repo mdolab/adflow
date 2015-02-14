@@ -85,68 +85,6 @@ subroutine setup_dRdw_visc_coloring(nn, level, nColor)
 
 end subroutine setup_dRdw_visc_coloring
 
-subroutine setup_dRdx_euler_coloring(nn, level, nColor)
-  use blockPointers
-  use communication
-  implicit none
-
-  ! Input parameters
-  integer(kind=intType), intent(in) :: nn, level
-
-  ! Output parameters
-  integer(kind=intTYpe), intent(out) :: nColor
-
-  ! Working 
-  integer(kind=intType) :: i, j, k, k_plane
-
-  call setPointers(nn, level, 1) ! Just to get the correct sizes
-
-  do k=0, kb
-     do j=0, jb
-        do i=0, ib
-           ! Add the extra one for 1-based numbering (as opposed to zero-based)
-           flowDomsd(nn, 1, 1)%color(i, j, k) = &
-                mod( i + 7*j + 27*k, 38) + 1
-        end do
-     end do
-  end do
-  
-  nColor = 38
- 
-end subroutine setup_dRdx_euler_coloring
-
-subroutine setup_dRdx_visc_coloring(nn, level, nColor)
-  use blockPointers
-  use communication
-  implicit none
-
-  ! Input parameters
-  integer(kind=intType), intent(in) :: nn, level
-
-  ! Output parameters
-  integer(kind=intTYpe), intent(out) :: nColor
-
-  ! Working 
-  integer(kind=intType) :: i, j, k, modi, modj, modk
-
-  call setPointers(nn, level, 1) ! Just to get the correct sizes
-
-  do k=0, kb
-     do j=0, jb
-        do i=0, ib
-           ! Add the extra one for 1-based numbering (as opposed to zero-based)
-           modi = mod(i, 5)
-           modj = mod(j, 5)
-           modk = mod(k, 5)
-           
-           flowDomsd(nn, 1, 1)%color(i, j, k) = modi + 5*modj + 25*modk + 1
-           
-        end do
-     end do
-  end do
-  
-  nColor = 125
-end subroutine setup_dRdx_visc_coloring
 
 ! -------------------------------------------------------------
 !                   Debugging Color Colorings
