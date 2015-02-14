@@ -23,11 +23,3 @@ python autoEdit.py
 #change directories to:
 cd /src/forwardAdjoint/residualOutput
 
-#make the following manual corrections:
-eintarray_d.f90: comment out 3 instances of: eintd = 0.0
-
-block_res_d.f90: change all SETPOINTERSOFFTSINSTANCE calls to
-                            SETPOINTERSOFFTSINSTANCE_D
-
-
-the code should now compile and run
