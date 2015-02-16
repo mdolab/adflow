@@ -28,12 +28,9 @@ REAL_SRC    =	src/modules       \
 		src/warping       \
 		src/exec          \
 		src/adjoint       \
-		src/forwardAdjoint\
-		src/forwardAdjoint/residualInput\
+		src/adjoint/residualInput\
 		src/bendingMomentAnalysis \
 	        src/stabilityDerivatives \
-		src/adjoint/forcesInput\
-		src/adjoint/stabilityInput\
 
 # These are the directories that will actually be compiled:
 SUBDIR_SRC    = src_cs/modules       \
@@ -55,12 +52,9 @@ SUBDIR_SRC    = src_cs/modules       \
 	        src_cs/wallDistance  \
 		src_cs/warping       \
 		src_cs/adjoint               \
-		src_cs/forwardAdjoint \
-		src_cs/forwardAdjoint/residualInput\
+		src_cs/adjoint/residualInput\
 		src_cs/bendingMomentAnalysis \
 	        src_cs/stabilityDerivatives \
-		src_cs/adjoint/forcesInput\
-		src_cs/adjoint/stabilityInput\
 
 SUBDIR_EXEC   = src_cs/exec
 SUBDIR_PV3    = src_cs/pv3Interface

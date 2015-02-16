@@ -1967,35 +1967,6 @@ class SUMB(AeroSolver):
             self.curAP.sumbData.adjoints[obj] = psi
             self.adjointFailed = False
 
-    def totalAeroDerivative(self, objective, extraSens=None):
-        """
-        This function returns the total derivative of the obj with
-        respect to the aerodynamic variables defined the currently set
-        aeroproblem.
-
-        Parameters
-        ----------
-        objective : str
-            The objective to get derivatives for
-
-        Returns
-        -------
-        funcsSens : dict
-            The dictionary of the derivatives of obj wrt the aerodynamic
-            variables
-            """
-
-	# Get the list of derivatives and then process:
-
-        psi = -self.getAdjoint(objective)
-        funcsBar = {objective.lower():1.0}
-
-        # Compute everything and update into the dictionary
-        funcsSens = self.computeMatrixFreeProductBwd(
-            resBar=psi, funcsBar=funcsBar, xDvDerivAero=True)
-
-        return funcsSens
-
     def _processAeroDerivatives(self, dIda):
         """This internal furncion is used to convert the raw array ouput from
         the matrix-free product bwd routine into the required
@@ -2212,49 +2183,6 @@ class SUMB(AeroSolver):
         if finalNorm is not None:
             self.sumb.nksolvervars.finalNorm = finalNorm
 
-
-    def getdRdXvTPsi(self, objective, groupName=None):
-        """Shortcut function to perform dRdXvT*vec operation with the adjoint
-        vector corresponding to objective. Needed by the
-        aerosturctural solver only.
-        """
-        obj, aeroObj = self._getObjective(objective)        
-        try:
-            psi = self.curAP.sumbData.adjoints[obj]
-        except:
-            raise Error('%s adjoint for %s is not computed.'% obj)
-
-        return self.getdRdXvTVec(psi, groupName)
-        
-    def getdRdXvTVec(self, inVec, groupName=None):
-        """
-        Compute the product of (dXv/dXs)^T * (dR/dXv)^T * inVec. It is
-        assumed the mesh is present and groupName is defined.
-
-        Parameters
-        ----------
-        inVec : array
-            Array of size getStateAdjointSize()
-        groupName : str
-            Family name to use to section out just part of dXs
-            """
-
-        dXvSolver = self.computeMatrixFreeProductBwd(resBar=inVec,
-                                                     xVDeriv=True)
-
-        # If we are doing a prescribed motion TS motion, we need to
-        # convert this back to a single instance
-        if self._prescribedTSMotion():
-            ndof_1_instance = self.sumb.adjointvars.nnodeslocal[0]*3
-            dXvSolver = self.sumb.spectralprecscribedmotion(
-                dXvSolver, ndof_1_instance)
-
-        if groupName is not None:
-            self.mesh.warpDeriv(dXvSolver)
-            return self.mesh.getdXs(groupName)
-        else:
-            return dXvSolver
-
     def _prescribedTSMotion(self):
         """Determine if we have prescribed motion timespectral analysis"""
 
@@ -2266,39 +2194,11 @@ class SUMB(AeroSolver):
         else:
             return False
 
-    def getdRdwTVec(self, inVec):
-        """ Compute the result: outVec = dRdw^T * inVec
-
-        Parameters
-        ----------
-        inVec : arrary
-            Arrary of size getAdjointStateSize()
-        outVec : array
-            Ouput result. Same size as inVec.
-        """
-        outVec = self.sumb.getdrdwtvec(inVec)
-
-        return outVec
-
     def getdFdxAero(self, iDV, groupName=None):
         """Potential aerodynamic variable dependence on forces. This
         is zero for all aerodynamic variables in SUmb"""
         return None
 
-    def getdFdxVec(self, groupName, vec):
-        # Calculate dFdx * vec and return the result
-        vec = self.mesh.expandVectorByFamily(groupName, vec)
-        vec = self.computeMatrixFreeProductFwd(xSDot=vec, fDeriv=True)
-        vec = self.mesh.sectionVectorByFamily(groupName, vec)
-        return vec
-
-    def getdFdxTVec(self, groupName, vec):
-        # Calculate dFdx^T * vec and return the result
-        vec = self.mesh.expandVectorByFamily(groupName, vec)
-        vec = self.computeMatrixFreeProductBwd(fBar=vec, xSDeriv=True)
-        vec = self.mesh.sectionVectorByFamily(groupName, vec)
-        return vec
-        
     def getdIdx(self, objective, groupName=None):
         obj, aeroObj = self._getObjective(objective)
         if not aeroObj:
@@ -2503,7 +2403,6 @@ class SUMB(AeroSolver):
         wbar, xvbar, xsbar, xdvbar, xdvaerobar : array, array, array, dict, dict
             One or more of these are returned depending on the *Deriv flags provided. 
         """
-
         # Error Checking
         if resBar is None and funcsBar is None and fBar is None:
             raise Error("computeMatrixFreeProductBwd: One of resBar, funcsBar and fBar"

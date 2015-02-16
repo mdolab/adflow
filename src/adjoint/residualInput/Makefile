@@ -68,19 +68,19 @@ clean:
 
 complexify:
 	@for file in $(FILES_TO_COMPLEXIFY); do \
-		if [ $$file -nt ../../../src_cs/forwardAdjoint/residualInput/$$file -o ! -e ../../../src_cs/forwardAdjoint/residualInput/$$file ]; then \
+		if [ $$file -nt ../../../src_cs/adjoint/residualInput/$$file -o ! -e ../../../src_cs/forwardAdjoint/residualInput/$$file ]; then \
 			python ../../complexify.py $$file; \
-			mv c_$$file ../../../src_cs/forwardAdjoint/residualInput/$$file; \
+			mv c_$$file ../../../src_cs/adjoint/residualInput/$$file; \
 		fi;\
 		done
 	@for file in $(FILES_TO_COPY); do \
-		if [ $$file -nt ../../../src_cs/forwardAdjoint/residualInput/$$file -o ! -e ../../../src_cs/forwardAdjoint/residualInput/$$file ]; then \
+		if [ $$file -nt ../../../src_cs/adjoint/residualInput/$$file -o ! -e ../../../src_cs/forwardAdjoint/residualInput/$$file ]; then \
 			echo copying file $$file; \
-			cp $$file ../../../src_cs/forwardAdjoint/residualInput/$$file; \
+			cp $$file ../../../src_cs/adjoint/residualInput/$$file; \
 		fi;\
 		done
 
-	cp Makefile ../../../src_cs/forwardAdjoint/residualInput
+	cp Makefile ../../../src_cs/adjoint/residualInput
 
 
 #      ******************************************************************
