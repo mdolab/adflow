@@ -775,7 +775,7 @@ class SUMB(AeroSolver):
             self.solveAdjoint(aeroProblem, f)
 
             # Now, due to the use of the super combined
-            # computeMatrixFreeProductBwd() routine, we can complete
+            # computeJacobianVectorProductBwd() routine, we can complete
             # the total derivative computation in a single call. We
             # simply seed resBar with *NEGATIVE* of the adjoint we
             # just computed along with 1.0 for the objective and then
@@ -788,7 +788,7 @@ class SUMB(AeroSolver):
             funcsBar = {f.lower():1.0}
 
             # Compute everything and update into the dictionary
-            funcsSens[key].update(self.computeMatrixFreeProductBwd(
+            funcsSens[key].update(self.computeJacobianVectorProductBwd(
                 resBar=psi, funcsBar=funcsBar, xDvDeriv=True))
 
     def solveCL(self, aeroProblem, CLStar, alpha0=0,
@@ -1943,7 +1943,7 @@ class SUMB(AeroSolver):
         # adjoint:
         if structAdjoint is not None and groupName is not None:
             phi = self.mesh.expandVectorByFamily(groupName, structAdjoint)
-            agument = self.computeMatrixFreeProductBwd(fBar=phi, wDeriv=True)
+            agument = self.computeJacobianVectorProductBwd(fBar=phi, wDeriv=True)
             RHS -= agument
 
         # Check if objective is python 'allocated':
@@ -2194,10 +2194,10 @@ class SUMB(AeroSolver):
         else:
             return False
 
-    def getdFdxAero(self, iDV, groupName=None):
-        """Potential aerodynamic variable dependence on forces. This
-        is zero for all aerodynamic variables in SUmb"""
-        return None
+    # def getdFdxAero(self, iDV, groupName=None):
+    #     """Potential aerodynamic variable dependence on forces. This
+    #     is zero for all aerodynamic variables in SUmb"""
+    #     return None
 
     def getdIdx(self, objective, groupName=None):
         obj, aeroObj = self._getObjective(objective)
@@ -2210,7 +2210,7 @@ class SUMB(AeroSolver):
                 return self.mesh.getdXs(groupName)
 
         funcsBar = {objective.lower():1.0}
-        dXv = self.computeMatrixFreeProductBwd(funcsBar=funcsBar, xVDeriv=True)
+        dXv = self.computeJacobianVectorProductBwd(funcsBar=funcsBar, xVDeriv=True)
         
         if self._prescribedTSMotion():
             ndof_1_instance = self.sumb.adjointvars.nnodeslocal[0]*3
@@ -2229,7 +2229,7 @@ class SUMB(AeroSolver):
             return numpy.zeros(self.getAdjointStateSize())
 
         funcsBar = {objective.lower():1.0}
-        return self.computeMatrixFreeProductBwd(funcsBar=funcsBar, wDeriv=True)
+        return self.computeJacobianVectorProductBwd(funcsBar=funcsBar, wDeriv=True)
         
     def _isAeroObjective(self, objective):
         """
@@ -2253,7 +2253,7 @@ class SUMB(AeroSolver):
     #   product that is possible from the solver. 
     #   =========================================================================
 
-    def computeMatrixFreeProductFwd(self, xDvDot=None, xSDot=None, xVDot=None, wDot=None,
+    def computeJacobianVectorProductFwd(self, xDvDot=None, xSDot=None, xVDot=None, wDot=None,
                                     residualDeriv=False, funcDeriv=False, fDeriv=False):
         """This the main python gateway for producing forward mode jacobian
         vector products. It is not generally called by the user by
@@ -2276,7 +2276,7 @@ class SUMB(AeroSolver):
         funcDeriv : bool
             Flag specifiying if the derviative of the cost functions 
             (as defined in the current aeroproblem) should be returned. 
-        Feriv : bool
+        Fderiv : bool
             Flag specifiying if the derviative of the surface forces (tractions)
             should be returned
 
@@ -2287,7 +2287,7 @@ class SUMB(AeroSolver):
         """
 
         if xDvDot is None and xSDot is None and xVDot is None and wDot is None:
-            raise Error('computeMatrixFreeProductFwd: xDvDot, xSDot, xVDot and wDot cannot '
+            raise Error('computeJacobianVectorProductFwd: xDvDot, xSDot, xVDot and wDot cannot '
                         'all be None')
             
         self._setAeroDVs()
@@ -2363,7 +2363,7 @@ class SUMB(AeroSolver):
 
         return tuple(returns) if len(returns) > 1 else returns[0]
 
-    def computeMatrixFreeProductBwd(self, resBar=None, funcsBar=None, fBar=None, 
+    def computeJacobianVectorProductBwd(self, resBar=None, funcsBar=None, fBar=None, 
                                     wDeriv=None, xVDeriv=None, xSDeriv=None, 
                                     xDvDeriv=None, xDvDerivAero=None):
         """This the main python gateway for producing reverse mode jacobian
@@ -2372,7 +2372,8 @@ class SUMB(AeroSolver):
         be present for the xSDeriv=True flag and a mesh and DVGeo
         object must be present for xDvDeriv=True flag. Note that more
         than one of the specified return flags may be spcified. If
-        more than one return is specified, the 
+        more than one return is specified, the order of return is :
+        (wDeriv, xVDeriv, XsDeriv, xDvDeriv, dXdvDerivAero). 
         
         Parameters
         ----------
@@ -2401,16 +2402,17 @@ class SUMB(AeroSolver):
         Returns
         -------
         wbar, xvbar, xsbar, xdvbar, xdvaerobar : array, array, array, dict, dict
-            One or more of these are returned depending on the *Deriv flags provided. 
+            One or more of these are returned depending on the *Deriv flags provided.
+
         """
         # Error Checking
         if resBar is None and funcsBar is None and fBar is None:
-            raise Error("computeMatrixFreeProductBwd: One of resBar, funcsBar and fBar"
+            raise Error("computeJacobianVectorProductBwd: One of resBar, funcsBar and fBar"
                         " must be given. resBar=%s, funcsBar=%s, fBar=%s"% (
                             resBar, funcsBar, fBar))
         if (wDeriv is None and xVDeriv is None and xDvDeriv is None and 
             xSDeriv is None and xDvDerivAero is None):
-            raise Error("computeMatrixFreeProductBwd: One of wDeriv, xVDeriv, "
+            raise Error("computeJacobianVectorProductBwd: One of wDeriv, xVDeriv, "
                         "xDvDeriv and xDvDerivAero must be given as True. "
                         "wDeriv=%s, xVDeriv=%s, xDvDeriv=%s, xSDeriv=%s xDvDerivAero=%s."%(
                             wDeriv, xVDeriv, xDvDeriv, xSDeriv, xDvDerivAero))
@@ -2601,12 +2603,6 @@ class SUMB(AeroSolver):
 
         return res
 
-    def computedSdwTVec(self, inVec, outVec, groupName):
-        """This function computes: outVec = outVec + dFdw^T*inVec"""
-        outVec = outVec + self.computeMatrixFreeProductBwd(fBar=inVec, wDeriv=True, 
-                                                           groupName=groupName)
-        return outVec
-     
     def computeArea(self, aeroProblem, funcs, axis, groupName=None, TS=0):
         """
         Compute the projected area of the surface mesh
