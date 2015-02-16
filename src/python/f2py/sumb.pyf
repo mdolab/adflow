@@ -427,12 +427,6 @@ python module libsumb
          integer(kind=inttype) optional,check(len(in_vec)>=ndof),depend(in_vec) :: ndof=len(in_vec)
        end subroutine applyadjointpc
 
-       subroutine getdrdwtvec(in_vec,out_vec,ndof) ! in :test:NKsolver.F90
-         real(kind=realtype) dimension(ndof),intent(in) :: in_vec
-         real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: out_vec
-         integer(kind=inttype) optional,check(len(in_vec)>=ndof),depend(in_vec) :: n=len(in_vec)
-       end subroutine getdrdwtvec
-
        subroutine getcurrentresidual(rhores,totalrres)
          real(kind=realtype), intent(out) :: rhores
          real(kind=realtype), intent(out) :: totalrres
