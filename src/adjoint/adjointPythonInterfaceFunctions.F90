@@ -1,40 +1,7 @@
 ! This files contains several routines used for interfacing with the
 ! python level. The routines are as follows:
 
-! 3. getdrdwTVec: Multiply vec_in by dRdw^T to produce vec_out
 ! 6. getdFdxVec: Multiply vec_in by dFdx to produce vec_out
-
-subroutine getdRdwTVec(in_vec, out_vec, ndof)
-
-  use ADjointPETSc
-  implicit none
-
-  ! Input/Output
-  integer(kind=intType), intent(in) :: ndof
-  real(kind=realType), intent(in) :: in_vec(ndof)
-  real(kind=realType), intent(inout) :: out_vec(ndof)
-
-  ! Working Variables
-  integer(kind=intType) :: ierr
-
-  ! We will use empty generic vectors psi_like1, psi_like2
-
-  call VecPlaceArray(psi_like1, in_vec, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-
-  call VecPlaceArray(psi_like2, out_vec, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-  
-  call MatMult(dRdwT, psi_like1, psi_like2, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-
-  call VecResetArray(psi_like1, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-
-  call VecResetArray(psi_like2, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-
-end subroutine getdRdwTVec
 
 subroutine spectralPrecscribedMotion(input, nin, dXv, nout)
 
