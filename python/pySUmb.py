@@ -2194,43 +2194,6 @@ class SUMB(AeroSolver):
         else:
             return False
 
-    # def getdFdxAero(self, iDV, groupName=None):
-    #     """Potential aerodynamic variable dependence on forces. This
-    #     is zero for all aerodynamic variables in SUmb"""
-    #     return None
-
-    def getdIdx(self, objective, groupName=None):
-        obj, aeroObj = self._getObjective(objective)
-        if not aeroObj:
-            if groupName is None:
-                return numpy.zeros(self.getSpatialSize())
-            else:
-                dXv = numpy.zeros(self.getSpatialSize())
-                self.mesh.warpDeriv(dXv, surfOnly=True)
-                return self.mesh.getdXs(groupName)
-
-        funcsBar = {objective.lower():1.0}
-        dXv = self.computeJacobianVectorProductBwd(funcsBar=funcsBar, xVDeriv=True)
-        
-        if self._prescribedTSMotion():
-            ndof_1_instance = self.sumb.adjointvars.nnodeslocal[0]*3
-            dXv = self.sumb.spectralprecscribedmotion(
-                dXv, ndof_1_instance)
-
-        if groupName is None:
-            return dXv
-        else:
-            self.mesh.warpDeriv(dXv, surfOnly=True)
-            return self.mesh.getdXs(groupName)
-
-    def getdIdw(self, objective):
-        obj, aeroObj = self._getObjective(objective)
-        if not aeroObj:
-            return numpy.zeros(self.getAdjointStateSize())
-
-        funcsBar = {objective.lower():1.0}
-        return self.computeJacobianVectorProductBwd(funcsBar=funcsBar, wDeriv=True)
-        
     def _isAeroObjective(self, objective):
         """
         This function takes in an external objective string and determines
