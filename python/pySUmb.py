@@ -1934,7 +1934,8 @@ class SUMB(AeroSolver):
 
         # # Check to see if the RHS Partials have been computed
         if obj not in self.curAP.sumbData.adjointRHS:
-            RHS = self.getdIdw(objective)
+            RHS = self.computeJacobianVectorProductBwd(
+                funcsBar={objective.lower():1.0}, wDeriv=True)
             self.curAP.sumbData.adjointRHS[obj] = RHS.copy()
         else:
             RHS = self.curAP.sumbData.adjointRHS[obj].copy()
