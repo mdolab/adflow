@@ -217,9 +217,6 @@ subroutine alloc_derivative_values(level)
            call EChk(ierr,__FILE__,__LINE__)
            
         enddo viscbocoLoop
-
-        ! Zero out all the derivative values we've just allocated
-        call zeroADSeeds(nn, 1, sps)
      end do
   end do
   
