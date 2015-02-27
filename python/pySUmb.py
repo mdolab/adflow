@@ -2455,7 +2455,13 @@ class SUMB(AeroSolver):
                     # Include aero derivatives here:
                     xdvbar.update(self._processAeroDerivatives(extrabar))
                     returns.append(xdvbar)
-
+                else:
+                    raise Error("Could not complete requested xDvDeriv since"
+                                " no DVGeo object is present")
+            else:
+                raise Error("Could not complete requested xDvDeriv or xSDeriv "
+                            "derivatives since no mesh is present")
+                
         # Include the aerodynamic variables if requested to do so.
         if xDvDerivAero:
             xdvaerobar = {}
