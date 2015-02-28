@@ -2451,13 +2451,14 @@ class SUMB(AeroSolver):
                     if self.DVGeo is not None and self.DVGeo.getNDV() > 0:
                         xdvbar.update(self.DVGeo.totalSensitivity(
                             xsbar, self.curAP.ptSetName, self.comm, config=self.curAP.name))
+                    else:
+                        raise Error("Could not complete requested xDvDeriv since"
+                                    " no DVGeo object is present or it has no "
+                                    "design variables specified.")
 
                     # Include aero derivatives here:
                     xdvbar.update(self._processAeroDerivatives(extrabar))
                     returns.append(xdvbar)
-                else:
-                    raise Error("Could not complete requested xDvDeriv since"
-                                " no DVGeo object is present")
             else:
                 raise Error("Could not complete requested xDvDeriv or xSDeriv "
                             "derivatives since no mesh is present")
