@@ -217,7 +217,7 @@ class SUMB(AeroSolver):
         self.sumb.preprocessingpart2()
         self.sumb.preprocessingadjoint()
 
-    def setMesh(self, mesh):
+    def setMesh(self, mesh, groupName='all'):
         """
         Set the mesh object to SUmb to do geometric deformations
 
@@ -225,9 +225,13 @@ class SUMB(AeroSolver):
         ----------
         mesh : multiBlockMesh object
             The pyWarp mesh object for doing the warping
+        groupName : str
+            The group which SUmb will consider to include all surfaces
+            that will be manipulated by the geometry. 
         """
 
         self.mesh = mesh
+        self.groupName = groupName
 
         # Setup External Warping
         ndof_1_instance = self.sumb.adjointvars.nnodeslocal[0]*3
@@ -250,7 +254,7 @@ class SUMB(AeroSolver):
 
         self.mesh.setExternalSurface(patchnames, patchsizes, conn, pts)
         # Get a inital copy of coordinates and save
-        self.coords0 = self.getSurfaceCoordinates()
+        self.coords0 = self.getSurfaceCoordinates(self.groupName)
 
     def setDVGeo(self, DVGeo):
         """
@@ -1560,7 +1564,7 @@ class SUMB(AeroSolver):
                     self.DVGeo.addPointSet(self.coords0, ptSetName)
                 if not self.DVGeo.pointSetUpToDate(ptSetName):
                     self.setSurfaceCoordinates(
-                        self.DVGeo.update(ptSetName, config=self.curAP.name), 'all')
+                        self.DVGeo.update(ptSetName, config=self.curAP.name), self.groupName)
                     self.updateGeometryInfo()
             # Finally update other data
             self._setAeroProblemData()
@@ -1578,13 +1582,13 @@ class SUMB(AeroSolver):
         except AttributeError:
             aeroProblem.sumbData = sumbFlowCase()
             aeroProblem.ptSetName = ptSetName
-            aeroProblem.surfMesh = self.getSurfaceCoordinates('all')
+            aeroProblem.surfMesh = self.getSurfaceCoordinates(self.groupName)
 
         if self.curAP is not None:
             # If we have already solved something and are now
             # switching, save what we need:
             self.curAP.stateInfo = self._getInfo()
-            self.curAP.surfMesh = self.getSurfaceCoordinates('all')
+            self.curAP.surfMesh = self.getSurfaceCoordinates(self.groupName)
 
         # If not done so already, embed the coordinates:
         if self.DVGeo is not None and ptSetName not in self.DVGeo.points:
@@ -1602,11 +1606,11 @@ class SUMB(AeroSolver):
         # We have to update coordinates here as well:
         if self.DVGeo is not None:
             if not self.DVGeo.pointSetUpToDate(ptSetName):
-                self.setSurfaceCoordinates(self.DVGeo.update(ptSetName, config=self.curAP.name), 'all')
+                self.setSurfaceCoordinates(self.DVGeo.update(ptSetName, config=self.curAP.name), self.groupName)
             else:
-                self.setSurfaceCoordinates(self.curAP.surfMesh, 'all')
+                self.setSurfaceCoordinates(self.curAP.surfMesh, self.groupName)
         else:
-            self.setSurfaceCoordinates(self.curAP.surfMesh, 'all')
+            self.setSurfaceCoordinates(self.curAP.surfMesh, self.groupName)
 
         # Now we have to do a bunch of updates. This is fairly
         # expensive so switchign aeroProblems should not be done that
@@ -2451,7 +2455,7 @@ class SUMB(AeroSolver):
         if xDvDeriv or xSDeriv:
             if self.mesh is not None: 
                 self.mesh.warpDeriv(xvbar)
-                xsbar = self.mesh.getdXs('all')
+                xsbar = self.mesh.getdXs(self.groupName)
 
                 if xSDeriv:
                     returns.append(xsbar)
