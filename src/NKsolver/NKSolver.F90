@@ -57,7 +57,7 @@ subroutine NKsolver
      return
   end if
 
-  Mmax = 5
+  Mmax = 3
   iter_k = 1
   iter_m = 0
 
@@ -269,7 +269,7 @@ subroutine LSCubic(x, f, g, y, w, fnorm, ynorm, gnorm, nfevals, flag)
 #ifdef USE_COMPLEX
   complex(kind=realType) :: cinitslope
 #endif
-  integer(kind=intType) :: ierr
+  integer(kind=intType) :: ierr, iter
 
   ! Set some defaults:
   alpha		= 1.e-2_realType
@@ -315,6 +315,7 @@ subroutine LSCubic(x, f, g, y, w, fnorm, ynorm, gnorm, nfevals, flag)
   call VecWAXPY(w, -one, y, x, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 #endif
+
   ! Compute Function:
   call setW(w)
   call computeResidualNK()
@@ -324,6 +325,43 @@ subroutine LSCubic(x, f, g, y, w, fnorm, ynorm, gnorm, nfevals, flag)
 
   call VecNorm(g, NORM_2, gnorm, ierr)
   call EChk(ierr, __FILE__, __LINE__)
+
+  if (isnan(gnorm)) then 
+     ! Special testing for nans
+     lambda = 0.1
+     backtrack: do iter=1, 10
+        ! Compute new x value:
+#ifdef USE_COMPLEX
+        call VecWAXPY(w, cmplx(-lambda, 0.0), y, x, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+#else
+        call VecWAXPY(w, -lambda, y, x, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+#endif
+
+        call VecNorm(w, NORM_2, gnorm, ierr)
+        call zeroFW
+
+        ! Compute Function @ new x (w is the work vector
+        call setW(w)
+        call computeResidualNK()
+        call setRVec(g)
+        nfevals = nfevals + 1
+        
+        ! Compute the norm at the new trial location
+        call VecNorm(g, NORM_2, gnorm, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+        
+        if (isnan(gnorm)) then 
+           ! Just apply the step limit and keep going (back to the loop start)
+           lambda = lambda * .1
+        else
+           ! We don't care what the value is...its screwed anyway
+           exit backtrack
+        end if
+     end do backtrack
+     return
+  end if
 
   ! Sufficient reduction 
   if (0.5_realType*gnorm*gnorm <= 0.5_realType*fnorm*fnorm + alpha*initslope) then
@@ -338,7 +376,7 @@ subroutine LSCubic(x, f, g, y, w, fnorm, ynorm, gnorm, nfevals, flag)
   if (lambdatemp > 0.5_realType*lambda) then
      lambdatemp = 0.5_realType*lambda
   end if
-
+  
   if (lambdatemp <= .1_realType*lambda) then
      lambda = .1_realType*lambda
   else                 
@@ -374,7 +412,7 @@ subroutine LSCubic(x, f, g, y, w, fnorm, ynorm, gnorm, nfevals, flag)
 
   ! Fit points with cubic 
   cubic_loop: do while (.True.) 
-     
+
      if (lambda <= minlambda) then 
         flag = .False.
         exit cubic_loop
@@ -411,6 +449,7 @@ subroutine LSCubic(x, f, g, y, w, fnorm, ynorm, gnorm, nfevals, flag)
         flag = .False.
         exit cubic_loop
      end if
+
 #ifdef USE_COMPLEX
      call VecWAXPY(w, cmplx(-lambda, 0.0), y, x, ierr)
      call EChk(ierr, __FILE__, __LINE__)
@@ -628,3 +667,24 @@ subroutine getEWTol(iter, norm, old_norm, rtol_last, rtol)
   end if
 
 end subroutine getEWTol
+
+
+subroutine zerofw
+
+  use blockPointers
+  use inputTimeSpectral
+  use communication
+  implicit none
+
+  ! Local Variables
+  integer(kind=intType) :: nn, sps
+
+  do nn=1,nDom
+     do sps=1,nTimeIntervalsSpectral
+        flowDoms(nn,1,sps)%fw = zero
+        flowDoms(nn,1,sps)%dw = zero
+     end do
+  end do
+
+
+end subroutine zerofw
