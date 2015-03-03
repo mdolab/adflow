@@ -893,9 +893,11 @@ class SUMB(AeroSolver):
         trimStar : float
             The desired target moment value. Usually this is zero
         alpha0 : angle (deg)
-            Initial guess for angle of attach 
+            Initial guess for angle of attack. None is also acceptable and 
+            will use the current value in the aeroProblem
         tail0 : angle (deg)
-            Initial guess for tail-anlge design varaible 
+            Initial guess for tail-anlge design varaible. None is also acceptable 
+            and will use the current value in DVGeo.
         trimValue : str
             The SUmb function to use for moment. This will normally be either
             'cmy' or 'cmz' depending on the orientation. 
@@ -969,7 +971,10 @@ class SUMB(AeroSolver):
 
             # Solve Problem:
             self.__call__(aeroProblem, writeSolution=False)
-    
+            
+            # Don't count these solutions.
+            aeroProblem.sumbData.callCounter -= 1 
+
             # Extract Solution
             sol = self.getSolution()
 
@@ -978,6 +983,13 @@ class SUMB(AeroSolver):
 
             return F
         
+        # Check the '0' values:
+        if alpha0 is None:
+            alpha0 = aeroProblem.alpha
+        if tail0 is None:
+            x = self.DVGeo.getValues()
+            tail0 = x[trimDV][dvIndex]
+
         # Run Broyden search
         broyden3(function, [alpha0, tail0], tol, nIter)
 
