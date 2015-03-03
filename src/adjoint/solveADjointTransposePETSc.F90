@@ -112,6 +112,9 @@ subroutine solveAdjoint(RHS, psi, checkSolution, nState)
   ! adjoints.
   L2Rel = (adjReltol * adjResInit) / adjResStart
 
+  ! We need to clip L2Rel such that it can never be greater than one. 
+  L2Rel = min(L2Rel, 0.9)
+
   ! Set the tolerances
   call KSPSetTolerances(adjointKSP, L2Rel, L2Abs, adjDivTol, &
        adjMaxIter, ierr)
