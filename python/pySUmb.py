@@ -166,9 +166,10 @@ class SUMB(AeroSolver):
         self._updateGeomInfo = True
 
         # By Default we don't have an external mesh object or a
-        # geometric manipulation object
+        # geometric manipulation object, and the groupName is 'all'
         self.mesh = None
         self.DVGeo = None
+        self.groupName = 'all'
 
         # Matrix Setup Flag
         self.adjointSetup = False
