@@ -1535,7 +1535,23 @@ class SUMB(AeroSolver):
         if self.mesh is not None:
             return self.mesh.getSurfaceCoordinates(groupName)
         else:
-            return numpy.empty((0, 3), self.dtype)
+            raise Error('Must have a mesh object to use getSurfaceCoordinates.')  
+    
+    def getInitialSurfaceCoordinates(self, groupName='all'):
+        """
+        See MultiBlockMesh.py for more info
+        """
+        if self.mesh:
+            if self.DVGeo is not None:
+                # if we have a geometry object, return the undeflected
+                # shape generated directly from the design variables
+                return self.DVGeo.update(groupName)
+            else:
+                # otherwise, the initial mesh is the undeflected mesh, so 
+                # return that
+                return self.coords0
+        else:
+            raise Error('getInitialSurfaceCoordinateCoordinates requires a mesh object.')
 
     def setSurfaceCoordinates(self, coordinates, groupName='all'):
         """
