@@ -1545,7 +1545,11 @@ class SUMB(AeroSolver):
             if self.DVGeo is not None:
                 # if we have a geometry object, return the undeflected
                 # shape generated directly from the design variables
-                return self.DVGeo.update(groupName)
+                ptSetName = 'sumb_%s_coords'% self.curAP.name
+                self.setSurfaceCoordinates(
+                    self.DVGeo.update(ptSetName, config=self.curAP.name), groupName)
+                self.updateGeometryInfo()
+                return self.mesh.getSurfaceCoordinates(groupName)
             else:
                 # otherwise, the initial mesh is the undeflected mesh, so 
                 # return that
