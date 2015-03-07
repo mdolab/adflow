@@ -1541,13 +1541,14 @@ class SUMB(AeroSolver):
         """
         See MultiBlockMesh.py for more info
         """
-        if self.mesh:
+
+        if self.mesh is not None:
             if self.DVGeo is not None:
                 # if we have a geometry object, return the undeflected
                 # shape generated directly from the design variables
                 ptSetName = 'sumb_%s_coords'% self.curAP.name
                 self.setSurfaceCoordinates(
-                    self.DVGeo.update(ptSetName, config=self.curAP.name), groupName)
+                    self.DVGeo.update(ptSetName, config=self.curAP.name), self.groupName)
                 self.updateGeometryInfo()
                 return self.mesh.getSurfaceCoordinates(groupName)
             else:
