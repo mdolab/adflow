@@ -1599,13 +1599,16 @@ class SUMB(AeroSolver):
         except AttributeError:
             aeroProblem.sumbData = sumbFlowCase()
             aeroProblem.ptSetName = ptSetName
-            aeroProblem.surfMesh = self.getSurfaceCoordinates(self.groupName)
-
+            aeroProblem.surfMesh = None
+            if self.mesh is not None:
+                aeroProblem.surfMesh = self.getSurfaceCoordinates(self.groupName)
+                
         if self.curAP is not None:
             # If we have already solved something and are now
             # switching, save what we need:
             self.curAP.stateInfo = self._getInfo()
-            self.curAP.surfMesh = self.getSurfaceCoordinates(self.groupName)
+            if self.mesh is not None:
+                self.curAP.surfMesh = self.getSurfaceCoordinates(self.groupName)
 
         # If not done so already, embed the coordinates:
         if self.DVGeo is not None and ptSetName not in self.DVGeo.points:
