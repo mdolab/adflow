@@ -78,8 +78,11 @@ subroutine residual_block
   !
   !     Local variables
   !
-  real(kind=realType) :: K3, h, velXrho, velYrho, velZrho,SoS,hinf, resM,A11,A12,A13,A14,A15,A21,A22,A23,A24,A25,A31,A32,A33,A34,A35
-  real(kind=realType) :: A41,A42,A43,A44,A45,A51,A52,A53,A54,A55,B11,B12,B13,B14,B15,B21,B22,B23,B24,B25,B31,B32,B33,B34,B35
+  real(kind=realType) :: K3, h, velXrho, velYrho, velZrho,SoS,hinf
+  real(kind=realType) :: resM,A11,A12,A13,A14,A15,A21,A22,A23,A24
+  real(kind=realType) :: A25,A31,A32,A33,A34,A35
+  real(kind=realType) :: A41,A42,A43,A44,A45,A51,A52,A53,A54,A55,B11
+  real(kind=realType) :: B12,B13,B14,B15,B21,B22,B23,B24,B25,B31,B32,B33,B34,B35
   real(kind=realType) :: B41,B42,B43,B44,B45,B51,B52,B53,B54,B55
   real(kind=realType) :: rhoHdash, betaMr2
   real(kind=realType) :: G, q
