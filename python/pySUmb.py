@@ -882,121 +882,112 @@ class SUMB(AeroSolver):
         # Restore the min iter option
         self.setOption('minIterationNum', minIterSave)
 
-    def solveTrimCL(self, aeroProblem, CLStar, trimStar, alpha0, tail0, 
-                    trimValue, trimDV, dvIndex=0, tol=1e-3, nIter=10):
-        """Solve the trim-Cl problem: Find the angle of attack and
-        trim actuator value that satifies a given lift and moment
-        value. It is solved using a Broyden method. A DVGeometry and
-        mesh object must be set for this routine to be used. 
+    def solveTrimCL(self, aeroProblem, trimFunc, trimDV, dvIndex,
+                    CLStar, trimStar=0.0, alpha0=None, trim0=None, da=1e-3,
+                    deta=1e-2, tol=1e-4, nIter=10):
+        """Solve the trim-Cl problem using a Broyden method. 
 
-        Parameter
-        ---------
-        aeroProblem : pyAero_problem class
-            The aerodynamic problem to solve
-        CLStar : float
-            The desired target CL
-        trimStar : float
-            The desired target moment value. Usually this is zero
-        alpha0 : angle (deg)
-            Initial guess for angle of attack. None is also acceptable and 
-            will use the current value in the aeroProblem
-        tail0 : angle (deg)
-            Initial guess for tail-anlge design varaible. None is also acceptable 
-            and will use the current value in DVGeo.
-        trimValue : str
-            The SUmb function to use for moment. This will normally be either
-            'cmy' or 'cmz' depending on the orientation. 
+        Parameters
+        ----------
+        ASProblem : ASProblem instance
+            The aerostructural problem to be solved
+        trimFunc : str
+            Solution variable to use for trim. Usually 'cmy' or 'cmz'
         trimDV : str
-             DVGeo function name that is used for trimming
-        dvIndex : int 
-             Index of trimDV to use in DVGeo. By default this is 0 which means use
-             use the first DV in the DVGeo design variable.
+            Dame of DVGeo design variable to control trim
+        dvIndex : int
+            Index of the trimDV function to use for trim
+        CLStar : float
+             Desired CL value
+        trimStar : float
+            Desired trimFunc value
+        alpha0 : float or None
+            Starting alpha. If None, use what is in the aeroProblem
+        trim0 : float or NOne
+            Starting trim value. If None, use what is in the DVGeo object
+        da : float
+            Initial alpha step for jacobian
+        deta : float
+            Initial  stet in the 'eta' or trim dv function
         tol : float
-             Tolerance for broyden solution
+            Tolerance for trimCL solve solution
         nIter : int
-             Maximum number of iterations
-             
-        Returns
-        -------
-        None. However, the alpha value is updated in the aeroProblem and tail angle
-        variable is updated in DVGeo.
-           """
+            Maximum number of iterations. 
+            """
 
         self.setAeroProblem(aeroProblem)
-        
-        def broyden3(F, xin, tol, iter, alpha=0.4):
-            """Broyden's second method. See Scipy Documetation --> This is
-            copied verbatim. Modified to add tolerance"""
-            zy = []
-            def myF(F, xm):
-                return numpy.matrix(F(tuple(xm.flat))).T
 
-            def updateG(z, y):
-                "G:=G+z*y.T"
-                zy.append((z, y))
-
-            def norm(v):
-                """Returns an L2 norm of the vector."""
-                return numpy.sqrt(numpy.sum((numpy.array(v)**2).flat))
-        
-            def Gmul(f):
-                "G=-alpha*1+z*y.T+z*y.T ..."
-                s = -alpha*f
-                for z, y in zy:
-                    s = s+z*(y.T*f)
-                return s
-
-            xm = numpy.matrix(xin).T
-            Fxm = myF(F, xm)
-            #    Gm=-alpha*numpy.matrix(numpy.identity(len(xin)))
-            for n in range(iter):
-                #deltaxm=-Gm*Fxm
-                deltaxm = Gmul(-Fxm)
-                xm = xm+deltaxm
-                Fxm1 = myF(F, xm)
-                deltaFxm = Fxm1 - Fxm
-                Fxm = Fxm1
-                #Gm=Gm+(deltaxm-Gm*deltaFxm)*deltaFxm.T/norm(deltaFxm)**2
-                updateG(deltaxm-Gmul(deltaFxm), deltaFxm/norm(deltaFxm)**2)
-                if numpy.linalg.norm(Fxm) < tol:
-                    break
-
-            return xm.flat
-
-        def function(X):
-            if self.comm.rank == 0:
-                print ('X:',X)
-            # Set Alpha
-            self.curAP.alpha = X[0]
-
-            # Set Trim Anlge
-            xGeo = self.DVGeo.getValues()
-            xGeo[trimDV][dvIndex] = X[1]
-            self.DVGeo.setDesignVars(xGeo)
-
-            # Solve Problem:
-            self.__call__(aeroProblem, writeSolution=False)
-            
-            # Don't count these solutions.
-            aeroProblem.sumbData.callCounter -= 1 
-
-            # Extract Solution
-            sol = self.getSolution()
-
-            # Build 'F'
-            F = [sol['cl']-CLStar, sol[trimValue]-trimStar]
-
-            return F
-        
-        # Check the '0' values:
+        # Set defaults if they are not given.                                                                                               
         if alpha0 is None:
-            alpha0 = aeroProblem.alpha
-        if tail0 is None:
-            x = self.DVGeo.getValues()
-            tail0 = x[trimDV][dvIndex]
+            alpha0 = self.curAP.alpha
+        if trim0 is None:
+            trim0 = 0.0
 
-        # Run Broyden search
-        broyden3(function, [alpha0, tail0], tol, nIter)
+        def Func(Xn, CLs):
+            self.curAP.alpha = Xn[0]
+            xGeo = self.DVGeo.getValues()
+            xGeo[trimDV][dvIndex] = Xn[1]
+            self.DVGeo.setDesignVars(xGeo)
+            self.__call__(self.curAP)
+            funcs = {}
+            self.evalFunctions(self.curAP, funcs, evalFuncs=['cl',trimFunc])
+            sol = self.getSolution()
+            F = numpy.array([funcs['%s_cl'%self.curAP.name]-CLs, funcs['%s_%s'%(self.curAP.name, trimFunc)]])
+            return F, sol
+
+        # Generate initial point and jacobian
+
+        Xn = numpy.array([alpha0, trim0])
+        Fn, sol = Func(Xn, CLStar)
+
+        # Next we generate the jacobian                                                                                                     
+        J = numpy.zeros((2,2))
+
+        # Perturb alpha                                                                                                                     
+        Xn[0] += da
+        Fpda, sol = Func(Xn, CLStar)
+        J[:, 0] = (Fpda - Fn)/da
+        Xn[0] -= da
+        
+        # Perturb eta:                                                                                                                      
+        Xn[1] += deta
+        Fpdeta, sol = Func(Xn, CLStar)
+        J[:, 1] = (Fpdeta - Fn)/deta
+        Xn[1] -= deta
+
+        # Main iteration loop
+        for jj in range(nIter):
+            if self.comm.rank == 0:
+                print ('Fn:', Fn)
+
+            # We now have a point and a jacobian...Newton's Method!                                                                 
+            Xnp1 = Xn - numpy.linalg.solve(J, Fn)
+            if self.comm.rank == 0:
+                print ("Xnp1:", Xnp1)
+
+            # Solve the new Xnp1                                                                                                    
+            Fnp1, sol = Func(Xnp1, CLStar)
+            if self.comm.rank == 0:
+                print ("Fnp1:", Fnp1)
+
+            # Update the jacobian using Broyden's method                                                                            
+            dx = Xnp1 - Xn
+            dF = Fnp1 - Fn
+            J = J + numpy.outer((dF - numpy.dot(J, dx))/(numpy.linalg.norm(dx)**2), dx)
+
+            if self.comm.rank == 0:
+                print ("New J:", J)
+
+            # Shuffle the Fn and Xn backwards                                                                                       
+            Fn = Fnp1.copy()
+            Xn = Xnp1.copy()
+
+            # Check for convergence                                                                                                 
+            if numpy.linalg.norm(Fn) < tol:
+                if self.comm.rank == 0:
+                    print ('Converged!', jj, Fn, Xn)
+                break
+        return Xn
 
     def solveSep(self, aeroProblem, sepStar, alpha0=0,
                 delta=0.5, tol=1e-3, expansionRatio=1.2):
