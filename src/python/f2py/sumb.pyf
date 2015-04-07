@@ -17,6 +17,12 @@ python module libsumb
        ! ############################################################################
        ! SUmb Routines
        ! ############################################################################
+        subroutine openlog(filename) ! in :test:log.F90
+          character*(*) :: filename
+        end subroutine openlog
+        
+        subroutine closelog()
+        end subroutine closelog
 
        subroutine writeintromessage ! in :sumb:../../utils/initExec.F90
        end subroutine writeintromessage
