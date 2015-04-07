@@ -141,6 +141,12 @@ class SUMB(AeroSolver):
         AeroSolver.__init__(self, name, category, defOpts, informs,
                             options=options)
 
+        # Setup the log file if necessary:
+        self.logFile = None
+        if self.getOption('logfile') != '' and self.comm.rank == 0:
+            self.logFile = self.getOption('logfile')
+            self.sumb.openlog(self.logFile)
+
         # Initialize petec in case the user has not already
         self.sumb.initializepetsc()
 
@@ -2818,6 +2824,9 @@ class SUMB(AeroSolver):
         them out.
         """
         defOpts = {
+            # Log File instead of stdout
+            'logfile':[str, ''],
+
             # Common Paramters
             'gridfile':[str, 'default.cgns'],
             'restartfile':[str, 'default_restart.cgns'],
@@ -3246,7 +3255,8 @@ class SUMB(AeroSolver):
             'autoadjointretry',
             'usereversemodead',
             'partitiononly',
-            'liftindex'
+            'liftindex',
+            'logfile'
              ]
 
         # Deprecated options. These should not be used, but old
@@ -3333,6 +3343,9 @@ class SUMB(AeroSolver):
 
         return possibleAeroDVs, sumbCostFunctions
 
+    def __del__(self):
+        if self.logFile:
+            self.sumb.closeLog()
 
 class sumbFlowCase(object):
     """
