@@ -844,6 +844,7 @@ class SUMB(AeroSolver):
             print ('Current alpha is: ', aeroProblem.alpha)
 
         self.__call__(aeroProblem, writeSolution=False)
+        self.curAP.sumbData.callCounter -= 1
         sol = self.getSolution()
         fnm2 = sol['cl'] - CLStar
         if fnm2 < 0:
@@ -868,6 +869,7 @@ class SUMB(AeroSolver):
 
             # Solve for n-1 value (anm1)
             self.__call__(aeroProblem, writeSolution=False)
+            self.curAP.sumbData.callCounter -= 1
             sol = self.getSolution()
             fnm1 = sol['cl'] - CLStar
 
@@ -1582,8 +1584,11 @@ class SUMB(AeroSolver):
                     # DVGeo appeared and we have not embedded points!
                     self.DVGeo.addPointSet(self.coords0, ptSetName)
                 if not self.DVGeo.pointSetUpToDate(ptSetName):
-                    self.setSurfaceCoordinates(
-                        self.DVGeo.update(ptSetName, config=self.curAP.name), self.groupName)
+                    coords = self.DVGeo.update(ptSetName, config=self.curAP.name),
+                    if self.curAP.sumbData.disp is not None:
+                        coords += self.curAP.sumbData.disp
+                    self.setSurfaceCoordinates(coords, self.groupName)
+
                     self.updateGeometryInfo()
             # Finally update other data
             self._setAeroProblemData()
@@ -1628,7 +1633,10 @@ class SUMB(AeroSolver):
         # We have to update coordinates here as well:
         if self.DVGeo is not None:
             if not self.DVGeo.pointSetUpToDate(ptSetName):
-                self.setSurfaceCoordinates(self.DVGeo.update(ptSetName, config=self.curAP.name), self.groupName)
+                coords = self.DVGeo.update(ptSetName, config=self.curAP.name),
+                if self.curAP.sumbData.disp is not None:
+                    coords += self.curAP.sumbData.disp
+                self.setSurfaceCoordinates(coords, self.groupName)
             else:
                 self.setSurfaceCoordinates(self.curAP.surfMesh, self.groupName)
         else:
@@ -3358,5 +3366,5 @@ class sumbFlowCase(object):
         self.adjointRHS = {}
         self.coords = None
         self.callCounter = -1
-
+        self.disp = None
 
