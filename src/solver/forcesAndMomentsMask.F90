@@ -268,6 +268,25 @@ subroutine forcesAndMomentsMask(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
               BCData(nn)%dualArea(i  , j-1) = BCData(nn)%dualArea(i  , j-1) + qA
               BCData(nn)%dualArea(i-1, j  ) = BCData(nn)%dualArea(i-1, j  ) + qA
               BCData(nn)%dualArea(i  , j  ) = BCData(nn)%dualArea(i  , j  ) + qA
+
+              ! Get normalized surface velocity:
+              v(1) = ww2(i, j, ivx)
+              v(2) = ww2(i, j, ivy)
+              v(3) = ww2(i, j, ivz)
+              v = v / (sqrt(v(1)**2 + v(2)**2 + v(3)**2) + 1e-16)
+              
+              ! Dot product with free stream
+              sensor = -(v(1)*velDirFreeStream(1) + &
+                   v(2)*velDirFreeStream(2) + &
+                   v(3)*velDirFreeStream(3))
+              
+              !Now run through a smooth heaviside function:
+              sensor = one/(one + exp(-2*10*sensor))
+              
+              ! And integrate over the area of this cell and save:
+              sensor = sensor * four * qA
+              sepSensor = sepSensor + sensor
+
            enddo
         enddo
         !
