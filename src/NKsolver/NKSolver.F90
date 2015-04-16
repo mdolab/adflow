@@ -51,7 +51,7 @@ subroutine NKsolver
   old_norm=  zero
   rtol_last = zero
   nfevals = 0
-
+  routineFailed=.True.
   ! Make sure we want ot do at least 1 iteration.
   if (maxNonLinearIts < 1) then
      return
