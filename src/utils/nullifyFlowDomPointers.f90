@@ -189,5 +189,20 @@
        nullify(flowDoms(nn,level,sps)%globalNode)
        nullify(flowDOms(nn,level,sps)%elemID)
        nullify(flowDOms(nn,level,sps)%uv)
+
+
+       ! *******************************
+       ! Added by HDN
+       ! *******************************
+       nullify(flowDoms(nn,level,sps)%xALE)
+       nullify(flowDoms(nn,level,sps)%sIALE)
+       nullify(flowDoms(nn,level,sps)%sJALE)
+       nullify(flowDoms(nn,level,sps)%sKALE)
+       nullify(flowDoms(nn,level,sps)%sFaceIALE)
+       nullify(flowDoms(nn,level,sps)%sFaceJALE)
+       nullify(flowDoms(nn,level,sps)%sFaceKALE)
+       nullify(flowDoms(nn,level,sps)%dwALE)
+       nullify(flowDoms(nn,level,sps)%fwALE)
+
        
        end subroutine nullifyFlowDomPointers

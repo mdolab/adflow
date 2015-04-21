@@ -125,6 +125,13 @@
                nullify(BCData(j)%uSlip)
                nullify(BCData(j)%TNS_Wall)
 
+     ! *******************************
+     ! Added by HDN
+     ! *******************************
+               nullify(BCData(j)%normALE)
+               nullify(BCData(j)%rfaceALE)
+               nullify(BCData(j)%uSlipALE)
+
                nullify(BCData(j)%ptInlet)
                nullify(BCData(j)%ttInlet)
                nullify(BCData(j)%htInlet)

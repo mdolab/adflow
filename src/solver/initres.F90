@@ -159,7 +159,7 @@ subroutine initres_block(varStart, varEnd, nn, sps)
 
         !=======================================================
 
-     case (BDF)
+     case (MD,BDF) ! Modified by HDN
 
         ! Store the inverse of the physical nonDimensional
         ! time step a bit easier.

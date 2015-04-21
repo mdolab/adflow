@@ -290,4 +290,27 @@
 
        ifaceptb  =>flowDoms(nn,1,1)%ifaceptb
        iedgeptb  =>flowDoms(nn,1,1)%iedgeptb
-       end subroutine setPointers
+
+
+
+       ! *******************************
+       ! Added by HDN
+       ! Kept the same dim as their counterparts
+       ! *******************************
+       xALE      => flowDoms(nn,mm,ll)%xALE
+       sVeloIALE => flowDoms(nn,mm,ll)%sVeloIALE
+       sVeloJALE => flowDoms(nn,mm,ll)%sVeloJALE
+       sVeloKALE => flowDoms(nn,mm,ll)%sVeloKALE
+       sIALE     => flowDoms(nn,mm,ll)%sIALE
+       sJALE     => flowDoms(nn,mm,ll)%sJALE
+       sKALE     => flowDoms(nn,mm,ll)%sKALE
+       sFaceIALE => flowDoms(nn,mm,ll)%sFaceIALE
+       sFaceJALE => flowDoms(nn,mm,ll)%sFaceJALE
+       sFaceKALE => flowDoms(nn,mm,ll)%sFaceKALE
+       dwALE     => flowDoms(nn,1,ll)%dwALE
+       fwALE     => flowDoms(nn,1,ll)%fwALE
+
+
+
+
+     end subroutine setPointers
