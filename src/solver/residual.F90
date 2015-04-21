@@ -58,6 +58,7 @@ subroutine residual_block
   use inputIteration
   use inputDiscretization
   use inputTimeSpectral
+  use inputUnsteady ! Added by HDN
   use iteration
   use inputAdjoint
   implicit none
@@ -66,6 +67,7 @@ subroutine residual_block
   !
   integer(kind=intType) :: discr
   integer(kind=intType) :: i, j, k, l
+  integer(kind=intType) :: iale, jale, kale, lale, male ! For loops of ALE
   real(kind=realType), parameter :: K1 = 1.05_realType
   real(kind=realType), parameter :: K2 = 0.6_realType ! Random given number
   real(kind=realType), parameter :: M0 = 0.2_realType ! Mach number preconditioner activation
@@ -79,10 +81,9 @@ subroutine residual_block
   !     Local variables
   !
   real(kind=realType) :: K3, h, velXrho, velYrho, velZrho,SoS,hinf
-  real(kind=realType) :: resM,A11,A12,A13,A14,A15,A21,A22,A23,A24
-  real(kind=realType) :: A25,A31,A32,A33,A34,A35
-  real(kind=realType) :: A41,A42,A43,A44,A45,A51,A52,A53,A54,A55,B11
-  real(kind=realType) :: B12,B13,B14,B15,B21,B22,B23,B24,B25,B31,B32,B33,B34,B35
+  real(kind=realType) :: resM,A11,A12,A13,A14,A15,A21,A22,A23,A24,A25,A31,A32,A33,A34,A35
+  real(kind=realType) :: A41,A42,A43,A44,A45,A51,A52,A53,A54,A55,B11,B12,B13,B14,B15
+  real(kind=realType) :: B21,B22,B23,B24,B25,B31,B32,B33,B34,B35
   real(kind=realType) :: B41,B42,B43,B44,B45,B51,B52,B53,B54,B55
   real(kind=realType) :: rhoHdash, betaMr2
   real(kind=realType) :: G, q
@@ -127,10 +128,22 @@ subroutine residual_block
   fineGrid = .false.
   if(currentLevel == groundLevel) fineGrid = .true.
 
-  call inviscidCentralFlux
 
-  ! Compute the artificial dissipation fluxes.
-  ! This depends on the parameter discr.
+  ! ===========================================================
+  !
+  ! Assuming ALE has nothing to do with MG
+  ! The geometric data will be interpolated if in MD mode
+  !
+  ! ===========================================================
+  call interpLevelALE_block
+
+  ! ===========================================================
+  !
+  ! The fluxes are calculated as usual
+  !
+  ! ===========================================================
+
+  call inviscidCentralFlux
 
   select case (discr)
 
@@ -143,12 +156,11 @@ subroutine residual_block
            call inviscidDissFluxScalarApprox
         end if
      else
-#ifndef USE_TAPENADE        
+#ifndef USE_TAPENADE
         call inviscidDissFluxScalarCoarse
 #endif
      endif
 
-     
      !===========================================================
 
   case (dissMatrix) ! Matrix dissipation scheme.
@@ -180,10 +192,16 @@ subroutine residual_block
   case (upwind) ! Dissipation via an upwind scheme.
 
      call inviscidUpwindFlux(fineGrid)
-     
+
   end select
 
-  ! Compute the viscous flux in case of a viscous computation.
+  !-------------------------------------------------------
+  ! Lastly, recover the old s[I,J,K], sFace[I,J,K]
+  ! This shall be done before difussive and source terms
+  ! are computed.
+  !-------------------------------------------------------
+  call recoverLevelALE_block
+
 
   if( viscous ) then 
      ! Only compute viscous fluxes if rFil > 0
@@ -206,6 +224,9 @@ subroutine residual_block
         end if
      end if
   end if
+
+  !===========================================================
+
   ! Add the dissipative and possibly viscous fluxes to the
   ! Euler fluxes. Loop over the owned cells and add fw to dw.
   ! Also multiply by iblank so that no updates occur in holes
@@ -344,6 +365,5 @@ subroutine residual_block
         enddo
      enddo
   endif
-
 
 end subroutine residual_block

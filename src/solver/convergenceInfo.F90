@@ -510,7 +510,7 @@
 
                  !=======================================================
 
-               case (BDF,implicitRK)
+               case (MD,BDF,implicitRK)
 
                    ! An implicit scheme is used and therefore an
                    ! iterative algorithm within every time step.

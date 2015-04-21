@@ -612,10 +612,12 @@ class SUMB(AeroSolver):
 
         # Call the Solver or the MD callback solver
         MDCallBack = kwargs.pop('MDCallBack', None)
-        if MDCallBack is None:
+        # When callback is not given, or time integration scheme is not md/ale
+        # use normal solver instead
+        if MDCallBack is None or not self.getOption('timeIntegrationScheme') == 'md' :
             self.sumb.solver()
         else:
-            self.sumb.solverunsteadymd(MDCallBack)
+            self.sumb.solverunsteady_ale(MDCallBack)
 
         # Save the states into the aeroProblem
         self.curAP.sumbData.stateInfo = self._getInfo()
@@ -2886,6 +2888,7 @@ class SUMB(AeroSolver):
             'ntimestepscoarse':[int, 48],
             'ntimestepsfine':[int, 400],
             'deltat':[float, .010],
+            'useale':[bool, True],
 
             # Time Spectral Paramters
             'timeintervals': [int, 1],
@@ -3109,7 +3112,7 @@ class SUMB(AeroSolver):
             'ntimestepscoarse':{'location':'inputunsteady.ntimestepscoarse'},
             'ntimestepsfine':{'location':'inputunsteady.ntimestepsfine'},
             'deltat':{'location':'inputunsteady.deltat'},
-
+            'useale':{'location':'inputunsteady.useale'},
             # Time Spectral Paramters
             'timeintervals':{'location':'inputtimespectral.ntimeintervalsspectral'},
             'alphamode':{'location':'inputtsstabderiv.tsalphamode'},

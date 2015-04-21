@@ -119,6 +119,24 @@ module block
      real(kind=realType), dimension(:,:,:), pointer :: uSlip
      real(kind=realType), dimension(:,:),   pointer :: TNS_Wall
 
+
+
+     ! *******************************
+     ! Added by HDN
+     ! *******************************
+     ! normALE(0:nALEsteps,ie:ib,je:jb,3)
+     !                 - Storage of norm for intermediate meshes.
+     ! rFaceALE(0:nALEsteps,iBeg:iEnd,jBeg:jEnd)
+     !                 - Storage of rface for intermediate meshes.
+     ! uSlipALE(0:nALEsteps,iBeg:iEnd,jBeg:jEnd,3)
+     !                 - Storage of uSlip for intermediate meshes.
+     real(kind=realType), dimension(:,:,:,:), pointer :: normALE
+     real(kind=realType), dimension(:,:,:),   pointer :: rFaceALE
+     real(kind=realType), dimension(:,:,:,:), pointer :: uSlipALE
+
+
+
+
      ! ptInlet(:,:):       Total pressure at subsonic inlets.
      ! ttInlet(:,:):       Total temperature at subsonic inlets.
      ! htInlet(:,:):       Total enthalpy at subsonic inlets.
@@ -461,6 +479,34 @@ module block
      logical :: blockIsMoving, addGridVelocities
 
      real(kind=realType), dimension(:,:,:), pointer :: sFaceI, sFaceJ, sFaceK
+
+
+     ! *******************************
+     ! Added by HDN
+     ! *******************************
+     ! xALE(0:ie,0:je,0:ke,3)              - Temporary storage of x so that
+     !                                       intermediate meshes can be stored in
+     !                                       x directly
+     ! sVeloIALE(0:ie,1:je,1:ke,3)
+     ! sVeloJALE(1:ie,0:je,1:ke,3)
+     ! sVeloKALE(1:ie,1:je,0:ke,3)         - Storage of surface velocities at one
+     !                                       time step
+     ! sIALE(0:nALEsteps,0:ie,1:je,1:ke,3)
+     ! sJALE(0:nALEsteps,1:ie,0:je,1:ke,3)
+     ! sKALE(0:nALEsteps,1:ie,1:je,0:ke,3) - Storage of sI, sJ, sK for intermediate
+     !                                       meshes
+     ! sFaceIALE(0:nALEsteps,0:ie,je,ke)
+     ! sFaceJALE(0:nALEsteps,ie,0:je,ke)
+     ! sFaceKALE(0:nALEsteps,ie,je,0:ke)   - Storage of sFaceI, sFaceJ, sFaceK for
+     !                                       intermediate meshes
+     real(kind=realType), dimension(:,:,:,:),   pointer :: xALE
+     real(kind=realType), dimension(:,:,:,:),   pointer :: sVeloIALE, sVeloJALE, sVeloKALE
+     real(kind=realType), dimension(:,:,:,:,:), pointer :: sIALE, sJALE, sKALE
+     real(kind=realType), dimension(:,:,:,:),   pointer :: sFaceIALE, sFaceJALE, sFaceKALE
+
+
+
+
      !
      !        ****************************************************************
      !        *                                                              *
@@ -571,6 +617,20 @@ module block
      real(kind=realType), dimension(:,:,:,:,:), pointer :: dwOldRK
      real(kind=realType), dimension(:,:,:,:),   pointer :: w1, wr
      real(kind=realType), dimension(:,:,:,:),   pointer :: scratch
+
+
+     ! *******************************
+     ! Added by HDN
+     ! Used for ALE. Only allocated on the finest mesh.
+     ! Extra dim is used to store initial residuals
+     ! *******************************
+     ! dwALE(0:nALEsteps,0:ib,0:jb,0:kb,1:nw)   - Values of ONLY the convective flux
+     !                                            of intermediate meshes.
+     ! fwALE(0:nALEsteps,0:ib,0:jb,0:kb,1:nwf)  - values of ONLY the artificial
+     !                                            dissipation of intermediate meshes.
+     real(kind=realType), dimension(:,:,:,:,:),   pointer :: dwALE, fwALE
+
+
 
      ! mgIFine(2:il,2) - The two fine grid i-cells used for the
      !                   restriction of the solution and residual to

@@ -192,6 +192,16 @@ module blockPointers
   real(kind=realType), dimension(:,:,:,:), pointer :: w_offTimeInstance
   real(kind=realType), dimension(:,:,:), pointer :: vol_offTimeInstance
 
+  ! *******************************
+  ! Added by HDN
+  ! *******************************
+  real(kind=realType), dimension(:,:,:,:),   pointer :: xALE
+  real(kind=realType), dimension(:,:,:,:),   pointer :: sVeloIALE, sVeloJALE, sVeloKALE
+  real(kind=realType), dimension(:,:,:,:,:), pointer :: sIALE, sJALE, sKALE
+  real(kind=realType), dimension(:,:,:,:),   pointer :: sFaceIALE, sFaceJALE, sFaceKALE
+  real(kind=realType), dimension(:,:,:,:,:), pointer :: dwALE, fwALE
+  
+
 #ifndef USE_TAPENADE
   TYPE(VISCSUBFACETYPE), DIMENSION(:), POINTER :: viscsubfaced
 

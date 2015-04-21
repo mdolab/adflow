@@ -78,6 +78,7 @@ FILES_TO_COMPLEXIFY = \
 		 setFamilyInfoFaces.f90\
 		 setPorosities.f90\
 		 shiftCoorAndVolumes.f90\
+		 shiftCoorAndVolumes_ALE.f90\
 		 unitVectorsInAxialPlane.f90\
 		 update1to1Coarse.f90\
 		 updateCoorFineMesh.f90\

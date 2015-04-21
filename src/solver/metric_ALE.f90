@@ -1,13 +1,3 @@
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          metric.f90                                      *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 02-25-2003                                      *
-!      * Last modified: 08-23-2005                                      *
-!      *                                                                *
-!      ******************************************************************
-!
        module checkVolBlock
 !
 !      ******************************************************************
@@ -34,138 +24,7 @@
 
        end module checkVolBlock
 
-!      ==================================================================
-
-       subroutine allocateMetric(level)
-!
-!      ******************************************************************
-!      *                                                                *
-!      * allocateMetric allocates the memory for the metric variables   *
-!      * on the given grid level for all spectral solutions.            *
-!      *                                                                *
-!      ******************************************************************
-!
-       use block
-       use inputPhysics
-       use inputTimeSpectral
-       use iteration
-       implicit none
-!
-!      Subroutine arguments.
-!
-       integer(kind=intType), intent(in) :: level
-!
-!      Local variables.
-!
-       integer :: ierr
-
-       integer(kind=intType) :: nn, mm, sps
-       integer(kind=intType) :: il, jl, kl, ie, je, ke, ib, jb, kb
-
-       type(BCDataType), dimension(:), pointer :: BCData
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
-       ! Loop over the number of spectral solutions and local blocks.
-
-       spectral: do sps=1,nTimeIntervalsSpectral
-         domains: do nn=1,nDom
-
-           ! Store the the upper boundaries of the block a bit easier.
-
-           il = flowDoms(nn,level,sps)%il
-           jl = flowDoms(nn,level,sps)%jl
-           kl = flowDoms(nn,level,sps)%kl
-
-           ie = flowDoms(nn,level,sps)%ie
-           je = flowDoms(nn,level,sps)%je
-           ke = flowDoms(nn,level,sps)%ke
-
-           ib = flowDoms(nn,level,sps)%ib
-           jb = flowDoms(nn,level,sps)%jb
-           kb = flowDoms(nn,level,sps)%kb
-
-           ! Allocate the memory for the volumes and the face normals.
-
-           allocate(flowDoms(nn,level,sps)%si(0:ie,1:je,1:ke,3), &
-                    flowDoms(nn,level,sps)%sj(1:ie,0:je,1:ke,3), &
-                    flowDoms(nn,level,sps)%sk(1:ie,1:je,0:ke,3), &
-                    flowDoms(nn,level,sps)%vol(0:ib,0:jb,0:kb),  &
-                    stat=ierr)
-           if(ierr /= 0)                      &
-             call terminate("allocateMetric", &
-                            "Memory allocation failure for &
-                            &normals and volumes")
-
-           ! *******************************
-           ! Added by HDN
-           ! Added s[I,J,K]ALE
-           ! *******************************
-           allocate(flowDoms(nn,level,sps)%sIALE(0:nALEsteps,0:ie,1:je,1:ke,3), &
-                    flowDoms(nn,level,sps)%sJALE(0:nALEsteps,1:ie,0:je,1:ke,3), &
-                    flowDoms(nn,level,sps)%sKALE(0:nALEsteps,1:ie,1:je,0:ke,3), &
-                    stat=ierr)
-           if(ierr /= 0)                      &
-             call terminate("allocateMetric", &
-                            "Memory allocation failure for &
-                            &sIALE, sJALE, and sKALE")
-
-           ! Allocate the memory for the unit normals of the boundary
-           ! faces. First set the pointer to make it more readable.
-
-           BCData => flowDoms(nn,level,sps)%BCData
-
-           do mm=1,flowDoms(nn,level,sps)%nBocos
-
-             ! Store the size of the subface in ie:ib and je:jb, because
-             ! these variables are not needed anymore.
-
-             ie = BCData(mm)%icBeg
-             ib = BCData(mm)%icEnd
-             je = BCData(mm)%jcBeg
-             jb = BCData(mm)%jcEnd
-
-             ! Allocate the memory for the unit normals.
-
-           ! *******************************
-           ! Added by HDN
-           ! Added normALE
-           ! *******************************
-             allocate(                                           &
-                  BCData(mm)%norm(ie:ib,je:jb,3),                &
-                  BCData(mm)%normALE(0:nALEsteps,ie:ib,je:jb,3), &
-                  stat=ierr)
-             if(ierr /= 0)                      &
-               call terminate("allocateMetric", &
-                              "Memory allocation failure for norm")
-           enddo
-
-           ! Allocate the memory for the old volumes; only for unsteady
-           ! problems on deforming meshes on the finest grid level.
-
-           if(level == 1 .and. deforming_Grid .and. &
-              equationMode == unsteady) then
-
-             allocate(                                                   &
-               flowDoms(nn,level,sps)%volOld(nOldLevels,2:il,2:jl,2:kl), &
-               stat=ierr)
-             if(ierr /= 0)                      &
-               call terminate("allocateMetric", &
-                              "Memory allocation failure for volOld")
-           endif
-
-         enddo domains
-       enddo spectral
-
-       end subroutine allocateMetric
-
-!      ==================================================================
-
-       subroutine metric(level)
+       subroutine metric_ALE(level, idxALE)
 !
 !      ******************************************************************
 !      *                                                                *
@@ -194,6 +53,7 @@
 !      Subroutine arguments.
 !
        integer(kind=intType), intent(in) :: level
+       integer(kind=intType), intent(in) :: idxALE
 !
 !      Local parameter.
 !
@@ -510,6 +370,11 @@
                  si(i,j,k,1) = fact*(v1(2)*v2(3) - v1(3)*v2(2))
                  si(i,j,k,2) = fact*(v1(3)*v2(1) - v1(1)*v2(3))
                  si(i,j,k,3) = fact*(v1(1)*v2(2) - v1(2)*v2(1))
+                 
+
+                 sIALE(idxALE,i,j,k,1) = si(i,j,k,1)
+                 sIALE(idxALE,i,j,k,2) = si(i,j,k,2)
+                 sIALE(idxALE,i,j,k,3) = si(i,j,k,3)
 
                enddo
              enddo
@@ -540,7 +405,12 @@
                  sj(i,j,k,1) = fact*(v1(2)*v2(3) - v1(3)*v2(2))
                  sj(i,j,k,2) = fact*(v1(3)*v2(1) - v1(1)*v2(3))
                  sj(i,j,k,3) = fact*(v1(1)*v2(2) - v1(2)*v2(1))
+
  
+                 sJALE(idxALE,i,j,k,1) = sj(i,j,k,1)
+                 sJALE(idxALE,i,j,k,2) = sj(i,j,k,2)
+                 sJALE(idxALE,i,j,k,3) = sj(i,j,k,3)
+
                enddo
              enddo
            enddo
@@ -570,6 +440,10 @@
                  sk(i,j,k,1) = fact*(v1(2)*v2(3) - v1(3)*v2(2))
                  sk(i,j,k,2) = fact*(v1(3)*v2(1) - v1(1)*v2(3))
                  sk(i,j,k,3) = fact*(v1(1)*v2(2) - v1(2)*v2(1))
+
+                 sKALE(idxALE,i,j,k,1) = sk(i,j,k,1)
+                 sKALE(idxALE,i,j,k,2) = sk(i,j,k,2)
+                 sKALE(idxALE,i,j,k,3) = sk(i,j,k,3)
 
                enddo
              enddo
@@ -832,169 +706,4 @@
 
          end function volpym
 
-       end subroutine metric
-
-!      ==================================================================
-
-       subroutine writeNegVolumes(checkVolDoms)
-!
-!      ******************************************************************
-!      *                                                                *
-!      * writeNegVolumes writes the negative volumes of a block to      *
-!      * stdout. If a block is flagged to have negative volumes it is   *
-!      * assumed that the block is intended to be a right handed block. *
-!      *                                                                *
-!      ******************************************************************
-!
-       use blockPointers
-       use cgnsGrid
-       use communication
-       use inputPhysics
-       use inputTimeSpectral     
-       use checkVolBlock
-       implicit none
-!
-!      Subroutine arguments.
-!
-       type(checkVolBlockType), &
-       dimension(nDom,nTimeIntervalsSpectral), intent(in) :: checkVolDoms
-!
-!      Local variables.
-!
-       integer :: proc, ierr
-
-       integer(kind=intType) :: nn, sps, i, j, k
-
-       real(kind=realType), dimension(3) :: xc
-
-       character(len=10) :: intString1, intString2, intString3
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
-       ! Processor 0 prints a message that negative volumes are present
-       ! in the grid.
-
-       if(myID == 0) then
-         print "(a)", "#"
-         print "(a)", "#                      Error"
-         print "(a)", "# Negative volumes found in the grid."
-         print "(a)", "# A list of the negative volumes is &
-                      &printed below"
-         print "(a)", "#"
-       endif
-
-       ! Loop over the processors such that a clean output is obtained.
-       ! This may not be the most efficient solution, but that is not
-       ! an issue here.
-
-       procLoop: do proc=0,(nProc-1)
-
-         ! Test if I'm to one that must write my bad volumes.
-
-         testIWrite: if(proc == myID) then
-
-           ! Loop over the number of spectral solutions and local blocks.
-
-           spectral: do sps=1,nTimeIntervalsSpectral
-             domains: do nn=1,nDom
-
-               ! Test for a bad block.
-
-               testBad: if( checkVolDoms(nn,sps)%blockHasNegVol ) then
-
-                  ! Set the pointers for this block.
-
-                  call setPointers(nn, 1_intType, sps)
-
-                  ! Write the name of the block. The error message
-                  ! depends a bit on the case computed. For a time
-                  ! spectral solution also the spectral solution is
-                  ! mentioned, for steady and unsteady this is not
-                  ! the case, because there is only one.
-
-                  select case (equationMode)
-                    case (steady, unsteady)
-
-                      print "(a)", "#"
-                      print 100, trim(cgnsDoms(nbkGlobal)%zoneName)
- 100                  format("# Block",1x,a,1x,"contains the following &
-                             &negative volumes")
-                      print "(a)", "#=================================&
-                                   &==================================="
-                      print "(a)", "#"
-
-                    !====================================================
-
-                    case (timeSpectral)
-
-                     write(intString1,"(i10)") sps
-                     intString1 = adjustl(intString1)
-
-                      print "(a)", "#"
-                      print 101, trim(intString1), &
-                                 trim(cgnsDoms(nbkGlobal)%zoneName)
- 101                  format("# Spectral solution",1x,a, ":block", &
-                             1x,a,1x,"contains the following negative &
-                             &volumes")
-                      print "(a)", "#=================================&
-                                   &==================================="
-                      print "(a)", "#"
-
-                  end select
-
-                  ! Loop over the owned volumes and write the
-                  ! negative ones.
-
-                  do k=2,kl
-                    do j=2,jl
-                      do i=2,il
-                        if(checkVolDoms(nn,sps)%volumeIsNeg(i,j,k)) then
-
-                          xc(1:3) = eighth*(x(i-1,j-1,k-1,1:3) &
-                                  +         x(i,  j-1,k-1,1:3) &
-                                  +         x(i-1,j  ,k-1,1:3) &
-                                  +         x(i,  j  ,k-1,1:3) &
-                                  +         x(i-1,j-1,k  ,1:3) &
-                                  +         x(i,  j-1,k  ,1:3) &
-                                  +         x(i-1,j  ,k  ,1:3) &
-                                  +         x(i,  j  ,k  ,1:3)) 
-
-                          write(intString1,"(i10)") i
-                          write(intString2,"(i10)") j
-                          write(intString3,"(i10)") k
-
-                          intString1 = adjustl(intString1)
-                          intString2 = adjustl(intString2)
-                          intString3 = adjustl(intString3)
-
-                          print 102, trim(intString1), &
-                                     trim(intString2), &
-                                     trim(intString3), &
-                                     xc(1), xc(2), xc(3), -vol(i,j,k)
- 102                      format("# Indices (",a,",",a,",",a,"), &
-                                 &coordinates (",e10.3,",",e10.3,",", &
-                                  e10.3,"), Volume: ",e10.3)
-
-                        endif
-                      enddo
-                    enddo
-                  enddo
-
-
-               endif testBad
-             enddo domains
-           enddo spectral
-
-         endif testIWrite
-
-         ! Synchronize the processors to avoid a messy output.
-
-         call mpi_barrier(SUmb_comm_world, ierr)
-
-       enddo procLoop
-
-       end subroutine writeNegVolumes
+       end subroutine metric_ALE
