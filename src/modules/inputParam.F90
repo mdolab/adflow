@@ -886,6 +886,10 @@
 
        integer(kind=intType) :: nOldGridRead
 
+
+       ! useALE: Use the deforming mesh ale formuation. 
+       logical :: useALE
+
        ! updateWallDistanceUnsteady: Whether or not to update the wall
        !                             distance in unsteady mode. For a
        !                             RANS simulation on a changing grid
