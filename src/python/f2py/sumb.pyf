@@ -2,7 +2,7 @@
 python module solverunsteadyale__user__routines 
     interface solverunsteadyale_user_interface 
         subroutine alecallback_python(t) ! in :test:solverUnsteady_ALE.f90
-            real*8 :: t
+            real(kind=realtype) :: t
         end subroutine alecallback_python
     end interface solverunsteadyale_user_interface
 end python module solverunsteadyale__user__routines
@@ -202,7 +202,7 @@ python module libsumb
          integer(kind=inttype), optional,intent(in),check(len(mask)>=nmask),depend(mask) :: nmask=len(mask)
         end subroutine getsolutionmask
 
-       subroutine solverunsteady_ale(mdcallback_python) ! in :test:solverUnsteady_ALE.F90
+       subroutine solverunsteady_ale(alecallback_python) ! in :test:solverUnsteady_ALE.F90
          use solverunsteadyale__user__routines
          external alecallback_python
        end subroutine solverunsteady_ale

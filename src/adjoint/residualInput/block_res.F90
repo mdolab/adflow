@@ -27,6 +27,7 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   use wallDistanceData
   use inputDiscretization 
   use saModule
+  use inputUnsteady
   implicit none
 
   ! Input Arguments:
@@ -41,12 +42,12 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   
   ! Working Variables
   real(kind=realType) :: gm1, v2, fact, tmp
-  integer(kind=intType) :: i, j, k, sps2, mm, l, ii, ll, jj
+  integer(kind=intType) :: i, j, k, sps2, mm, l, ii, ll, jj, m
   integer(kind=intType) :: nState
   real(kind=realType), dimension(nSections) :: t
   logical :: useOldCoor
   real(kind=realType), dimension(3) :: cFp, cFv, cMp, cMv
-  real(kind=realType) :: yplusMax, scaleDim
+  real(kind=realType) :: yplusMax, scaleDim, oneOverDt
   useOldCoor = .False.
 
   ! Setup number of state variable based on turbulence assumption
@@ -157,10 +158,11 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   ! initRes. So only the necesary timespectral code has been copied
   ! here. See initres for more information and comments.
 
-  ! sps here is the on-spectral instance
-  if (nTimeIntervalsSpectral == 1) then
+  !call initres_block(1, nwf, nn, sps)
+
+  if (equationMode == Steady) then 
      dw(:,:,:,1:nwf) = zero
-  else
+  else if (equationMode == timeSpectral) then 
      ! Zero dw on all spectral instances
      spectralLoop1: do sps2=1,nTimeIntervalsSpectral
         flowDoms(nn, 1, sps2)%dw(:,:,:,1:nwf) = zero
@@ -206,6 +208,104 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
            end do varLoopFine
         end do timeLoopFine
      end do spectralLoop2
+  else if (equationMode == unsteady) then 
+     
+     ! Assume only MD or BDF types
+
+     ! Store the inverse of the physical nonDimensional
+     ! time step a bit easier.
+     
+     oneOverDt = timeRef/deltaT
+
+     ! Ground level of the multigrid cycle. Initialize the
+     ! owned cells to the unsteady source term. First the
+     ! term for the current time level. Note that in w the
+     ! velocities are stored and not the momentum variables.
+     ! Therefore the if-statement is present to correct this.
+
+     do l=1,nw
+        if(l == ivx .or. l == ivy .or. l == ivz) then
+           ! Momentum variables.
+           do k=2,kl
+              do j=2,jl
+                 do i=2,il
+                    flowDoms(nn, 1, sps)%dw(i,j,k,l) = coefTime(0)*vol(i,j,k) &
+                         * w(i,j,k,l)*w(i,j,k,irho)
+                 enddo
+              enddo
+           enddo
+        else
+           ! Non-momentum variables, for which the variable
+           ! to be solved is stored; for the flow equations this
+           ! is the conservative variable, for the turbulent
+           ! equations the primitive variable.
+           
+           do k=2,kl
+              do j=2,jl
+                 do i=2,il
+                    flowDoms(nn, 1, sps)%dw(i,j,k,l) = coefTime(0)*vol(i,j,k) &
+                         * w(i,j,k,l)
+                 enddo
+              enddo
+           enddo
+        end if
+     end do
+
+     ! The terms from the older time levels. Here the
+     ! conservative variables are stored. In case of a
+     ! deforming mesh, also the old volumes must be taken.
+     
+     deformingTest: if( deforming_Grid ) then
+        
+        ! Mesh is deforming and thus the volumes can change.
+        ! Use the old volumes as well.
+        
+        do m=1,nOldLevels
+           do l=1,nw
+              do k=2,kl
+                 do j=2,jl
+                    do i=2,il
+                       flowDoms(nn, 1, sps)%dw(i,j,k,l) = flowDoms(nn, 1, sps)%dw(i,j,k,l)                 &
+                            + coefTime(m)*volOld(m,i,j,k) &
+                            * wOld(m,i,j,k,l)
+                    enddo
+                 enddo
+              enddo
+           enddo
+        enddo
+     else deformingTest
+        ! Rigid mesh. The volumes remain constant.
+           
+        do m=1,nOldLevels
+           do l=1,nw
+              do k=2,kl
+                 do j=2,jl
+                    do i=2,il
+                       flowDoms(nn, 1, sps)%dw(i,j,k,l) = flowDoms(nn, 1, sps)%dw(i,j,k,l)            &
+                            + coefTime(m)*vol(i,j,k) &
+                            * wOld(m,i,j,k,l)
+                    enddo
+                 enddo
+              enddo
+           enddo
+        enddo
+     end if deformingTest
+
+     ! Multiply the time derivative by the inverse of the
+     ! time step to obtain the true time derivative.
+     ! This is done after the summation has been done, because
+     ! otherwise you run into finite accuracy problems for
+     ! very small time steps.
+        
+     do l=1,nw
+        do k=2,kl
+           do j=2,jl
+              do i=2,il
+                 flowDoms(nn, 1, sps)%dw(i,j,k,l) = oneOverDt*flowDoms(nn, 1, sps)%dw(i,j,k,l)
+              enddo
+           enddo
+        enddo
+     enddo
   end if
 
   !  Actual residual calc

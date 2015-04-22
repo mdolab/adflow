@@ -8,7 +8,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-subroutine solverUnsteady_ALE(mdcallback_python)
+subroutine solverUnsteady_ALE(alecallback_python)
   !
   !      ******************************************************************
   !      *                                                                *
@@ -39,7 +39,7 @@ subroutine solverUnsteady_ALE(mdcallback_python)
   logical :: EulerWallsPresent
   integer(kind=intType) :: iter, nTimeSteps
   integer(kind=intType) :: i,j,k,nn,kk
-  external mdcallback_python
+  external alecallback_python
 
   !      ******************************************************************
   !      *                                                                *
@@ -79,6 +79,7 @@ subroutine solverUnsteady_ALE(mdcallback_python)
   timeStepUnsteady = 0
 
   nTimeSteps = nTimeStepsCoarse
+
   if(groundLevel == 1) nTimeSteps = nTimeStepsFine
 
 
@@ -97,19 +98,18 @@ subroutine solverUnsteady_ALE(mdcallback_python)
      ! These are split into two, such that in python mode something
      ! could be added, i.e. an additional grid velocity.
 
-     call initTimeStepPart1_ALE(mdcallback_python)
+     call initTimeStepPart1_ALE(alecallback_python)
 
      call initTimeStepPart2_ALE
 
      ! Solve the state for the current time step and 
      ! update nOldSolAvail.
 
-
-
 !------------
 
 
      call solveState
+
      nOldSolAvail = nOldSolAvail + 1
 
      ! Determine whether or not solution files must be written.

@@ -135,8 +135,9 @@ subroutine residual_block
   ! The geometric data will be interpolated if in MD mode
   !
   ! ===========================================================
+#ifndef USE_TAPENADE
   call interpLevelALE_block
-
+#endif
   ! ===========================================================
   !
   ! The fluxes are calculated as usual
@@ -200,7 +201,9 @@ subroutine residual_block
   ! This shall be done before difussive and source terms
   ! are computed.
   !-------------------------------------------------------
+#ifndef USE_TAPENADE
   call recoverLevelALE_block
+#endif
 
 
   if( viscous ) then 
