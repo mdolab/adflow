@@ -76,6 +76,7 @@ subroutine block_res_d(nn, sps, usespatial, alpha, alphad, beta, betad, &
   use walldistancedata
   use inputdiscretization
   use samodule_d
+  use inputunsteady
   use diffsizes
 !  hint: isize1ofdrfbcdata should be the size of dimension 1 of array *bcdata
   implicit none
@@ -95,14 +96,14 @@ subroutine block_res_d(nn, sps, usespatial, alpha, alphad, beta, betad, &
 ! working variables
   real(kind=realtype) :: gm1, v2, fact, tmp
   real(kind=realtype) :: factd, tmpd
-  integer(kind=inttype) :: i, j, k, sps2, mm, l, ii, ll, jj
+  integer(kind=inttype) :: i, j, k, sps2, mm, l, ii, ll, jj, m
   integer(kind=inttype) :: nstate
   real(kind=realtype), dimension(nsections) :: t
   logical :: useoldcoor
   real(kind=realtype), dimension(3) :: cfp, cfv, cmp, cmv
   real(kind=realtype), dimension(3) :: cfpd, cfvd, cmpd, cmvd
-  real(kind=realtype) :: yplusmax, scaledim
-  real(kind=realtype) :: scaledimd
+  real(kind=realtype) :: yplusmax, scaledim, oneoverdt
+  real(kind=realtype) :: scaledimd, oneoverdtd
   intrinsic real
   integer :: ii3
   integer :: ii2
@@ -232,11 +233,11 @@ spectralloop0:do sps2=1,ntimeintervalsspectral
 ! where there is an n^2 dependance. there are issues with
 ! initres. so only the necesary timespectral code has been copied
 ! here. see initres for more information and comments.
-! sps here is the on-spectral instance
-  if (ntimeintervalsspectral .eq. 1) then
+!call initres_block(1, nwf, nn, sps)
+  if (equationmode .eq. steady) then
     dwd(:, :, :, 1:nwf) = 0.0_8
     dw(:, :, :, 1:nwf) = zero
-  else
+  else if (equationmode .eq. timespectral) then
 ! zero dw on all spectral instances
 spectralloop1:do sps2=1,ntimeintervalsspectral
       flowdomsd(nn, 1, sps2)%dw(:, :, :, 1:nwf) = 0.0_8
@@ -295,6 +296,105 @@ varloopfine:do l=1,nwf
         end do varloopfine
       end do timeloopfine
     end do spectralloop2
+  else if (equationmode .eq. unsteady) then
+! assume only md or bdf types
+! store the inverse of the physical nondimensional
+! time step a bit easier.
+    oneoverdtd = timerefd/deltat
+    oneoverdt = timeref/deltat
+! ground level of the multigrid cycle. initialize the
+! owned cells to the unsteady source term. first the
+! term for the current time level. note that in w the
+! velocities are stored and not the momentum variables.
+! therefore the if-statement is present to correct this.
+    do l=1,nw
+      if ((l .eq. ivx .or. l .eq. ivy) .or. l .eq. ivz) then
+! momentum variables.
+        do k=2,kl
+          do j=2,jl
+            do i=2,il
+              flowdomsd(nn, 1, sps)%dw(i, j, k, l) = coeftime(0)*((vold(&
+&               i, j, k)*w(i, j, k, l)+vol(i, j, k)*wd(i, j, k, l))*w(i&
+&               , j, k, irho)+vol(i, j, k)*w(i, j, k, l)*wd(i, j, k, &
+&               irho))
+              flowdoms(nn, 1, sps)%dw(i, j, k, l) = coeftime(0)*vol(i, j&
+&               , k)*w(i, j, k, l)*w(i, j, k, irho)
+            end do
+          end do
+        end do
+      else
+! non-momentum variables, for which the variable
+! to be solved is stored; for the flow equations this
+! is the conservative variable, for the turbulent
+! equations the primitive variable.
+        do k=2,kl
+          do j=2,jl
+            do i=2,il
+              flowdomsd(nn, 1, sps)%dw(i, j, k, l) = coeftime(0)*(vold(i&
+&               , j, k)*w(i, j, k, l)+vol(i, j, k)*wd(i, j, k, l))
+              flowdoms(nn, 1, sps)%dw(i, j, k, l) = coeftime(0)*vol(i, j&
+&               , k)*w(i, j, k, l)
+            end do
+          end do
+        end do
+      end if
+    end do
+! the terms from the older time levels. here the
+! conservative variables are stored. in case of a
+! deforming mesh, also the old volumes must be taken.
+    if (deforming_grid) then
+! mesh is deforming and thus the volumes can change.
+! use the old volumes as well.
+      do m=1,noldlevels
+        do l=1,nw
+          do k=2,kl
+            do j=2,jl
+              do i=2,il
+                flowdoms(nn, 1, sps)%dw(i, j, k, l) = flowdoms(nn, 1, &
+&                 sps)%dw(i, j, k, l) + coeftime(m)*volold(m, i, j, k)*&
+&                 wold(m, i, j, k, l)
+              end do
+            end do
+          end do
+        end do
+      end do
+    else
+! rigid mesh. the volumes remain constant.
+      do m=1,noldlevels
+        do l=1,nw
+          do k=2,kl
+            do j=2,jl
+              do i=2,il
+                flowdomsd(nn, 1, sps)%dw(i, j, k, l) = flowdomsd(nn, 1, &
+&                 sps)%dw(i, j, k, l) + coeftime(m)*wold(m, i, j, k, l)*&
+&                 vold(i, j, k)
+                flowdoms(nn, 1, sps)%dw(i, j, k, l) = flowdoms(nn, 1, &
+&                 sps)%dw(i, j, k, l) + coeftime(m)*vol(i, j, k)*wold(m&
+&                 , i, j, k, l)
+              end do
+            end do
+          end do
+        end do
+      end do
+    end if
+! multiply the time derivative by the inverse of the
+! time step to obtain the true time derivative.
+! this is done after the summation has been done, because
+! otherwise you run into finite accuracy problems for
+! very small time steps.
+    do l=1,nw
+      do k=2,kl
+        do j=2,jl
+          do i=2,il
+            flowdomsd(nn, 1, sps)%dw(i, j, k, l) = oneoverdtd*flowdoms(&
+&             nn, 1, sps)%dw(i, j, k, l) + oneoverdt*flowdomsd(nn, 1, &
+&             sps)%dw(i, j, k, l)
+            flowdoms(nn, 1, sps)%dw(i, j, k, l) = oneoverdt*flowdoms(nn&
+&             , 1, sps)%dw(i, j, k, l)
+          end do
+        end do
+      end do
+    end do
   end if
 !  actual residual calc
   call residual_block_d()
