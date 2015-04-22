@@ -37,6 +37,8 @@ subroutine residual_block_b()
   use inputiteration
   use inputdiscretization
   use inputtimespectral
+! added by hdn
+  use inputunsteady
   use iteration
   use inputadjoint
   implicit none
@@ -45,6 +47,8 @@ subroutine residual_block_b()
 !
   integer(kind=inttype) :: discr
   integer(kind=inttype) :: i, j, k, l
+! for loops of ale
+  integer(kind=inttype) :: iale, jale, kale, lale, male
   real(kind=realtype), parameter :: k1=1.05_realtype
 ! random given number
   real(kind=realtype), parameter :: k2=0.6_realtype
@@ -59,17 +63,20 @@ subroutine residual_block_b()
 !
 !     local variables
 !
-  real(kind=realtype) :: k3, h, velxrho, velyrho, velzrho, sos, hinf, &
-& resm, a11, a12, a13, a14, a15, a21, a22, a23, a24, a25, a31, a32, a33&
-& , a34, a35
-  real(kind=realtype) :: k3d, velxrhod, velyrhod, velzrhod, sosd, resmd&
-& , a11d, a15d, a21d, a22d, a25d, a31d, a33d, a35d
+  real(kind=realtype) :: k3, h, velxrho, velyrho, velzrho, sos, hinf
+  real(kind=realtype) :: k3d, velxrhod, velyrhod, velzrhod, sosd
+  real(kind=realtype) :: resm, a11, a12, a13, a14, a15, a21, a22, a23, &
+& a24, a25, a31, a32, a33, a34, a35
+  real(kind=realtype) :: resmd, a11d, a15d, a21d, a22d, a25d, a31d, a33d&
+& , a35d
   real(kind=realtype) :: a41, a42, a43, a44, a45, a51, a52, a53, a54, &
-& a55, b11, b12, b13, b14, b15, b21, b22, b23, b24, b25, b31, b32, b33, &
-& b34, b35
+& a55, b11, b12, b13, b14, b15
   real(kind=realtype) :: a41d, a44d, a45d, a51d, a52d, a53d, a54d, a55d&
-& , b11d, b12d, b13d, b14d, b15d, b21d, b22d, b23d, b24d, b25d, b31d, &
-& b32d, b33d, b34d, b35d
+& , b11d, b12d, b13d, b14d, b15d
+  real(kind=realtype) :: b21, b22, b23, b24, b25, b31, b32, b33, b34, &
+& b35
+  real(kind=realtype) :: b21d, b22d, b23d, b24d, b25d, b31d, b32d, b33d&
+& , b34d, b35d
   real(kind=realtype) :: b41, b42, b43, b44, b45, b51, b52, b53, b54, &
 & b55
   real(kind=realtype) :: b41d, b42d, b43d, b44d, b45d, b51d, b52d, b53d&
@@ -218,9 +225,20 @@ subroutine residual_block_b()
   if (currentlevel .eq. 1) discr = spacediscr
   finegrid = .false.
   if (currentlevel .eq. groundlevel) finegrid = .true.
+! ===========================================================
+!
+! assuming ale has nothing to do with mg
+! the geometric data will be interpolated if in md mode
+!
+! ===========================================================
+! ===========================================================
+!
+! the fluxes are calculated as usual
+!
+! ===========================================================
+  call pushreal8array(dw, size(dw, 1)*size(dw, 2)*size(dw, 3)*size(dw, 4&
+&               ))
   call inviscidcentralflux()
-! compute the artificial dissipation fluxes.
-! this depends on the parameter discr.
   select case  (discr) 
   case (dissscalar) 
 ! standard scalar dissipation scheme.
@@ -263,7 +281,11 @@ subroutine residual_block_b()
   case default
     call pushcontrol3b(6)
   end select
-! compute the viscous flux in case of a viscous computation.
+!-------------------------------------------------------
+! lastly, recover the old s[i,j,k], sface[i,j,k]
+! this shall be done before difussive and source terms
+! are computed.
+!-------------------------------------------------------
   if (viscous) then
     if (rfil .ge. 0.) then
       abs0 = rfil
@@ -296,6 +318,7 @@ subroutine residual_block_b()
   else
     call pushcontrol3b(4)
   end if
+!===========================================================
 ! add the dissipative and possibly viscous fluxes to the
 ! euler fluxes. loop over the owned cells and add fw to dw.
 ! also multiply by iblank so that no updates occur in holes
@@ -882,5 +905,7 @@ subroutine residual_block_b()
   radid = 0.0_8
   radjd = 0.0_8
   radkd = 0.0_8
- 110 call inviscidcentralflux_b()
+ 110 call popreal8array(dw, size(dw, 1)*size(dw, 2)*size(dw, 3)*size(dw&
+&                 , 4))
+  call inviscidcentralflux_b()
 end subroutine residual_block_b
