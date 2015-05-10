@@ -51,7 +51,7 @@ subroutine NKsolver
   old_norm=  zero
   rtol_last = zero
   nfevals = 0
-  routineFailed=.True.
+
   ! Make sure we want ot do at least 1 iteration.
   if (maxNonLinearIts < 1) then
      return
@@ -90,12 +90,14 @@ subroutine NKsolver
            ! We need to call convergence Info since this has the
            ! "approximate" convergence check
            call convergenceInfo
+           ! However, the routine has failed. 
+           routineFailed = .True.
            exit NonLinearLoop
         else
            call convergenceInfo
         end if
      end if
-
+     routineFailed = .True.
      ! Use the result from the last line search
      call vecCopy(g, rVec, ierr)
      call EChk(ierr, __FILE__, __LINE__)
