@@ -51,6 +51,7 @@ FILES_TO_COMPLEXIFY2 = \
 	       computeLamViscosity.F90\
 	       computeUtau.f90\
 	       componentsBreakDownPrintout.f90\
+               coorUtilsALE.F90\
 	       DADISmoother.f90\
 	       derivativeRotMatrixRigid.f90\
 	       eulerWallsPresent.f90\
@@ -61,10 +62,12 @@ FILES_TO_COMPLEXIFY2 = \
 	       forcesAndMomentsMask.F90\
 	       forcesAndMomentsCBD.f90\
 	       farFieldDrag.f90\
+               geomUtilsALE.F90\
 	       getDirAngle.f90\
 	       getDirVector.f90\
 	       gridVelocitiesCoarseLevels.f90\
 	       gridVelocitiesFineLevel.F90\
+	       gridVelocitiesFineLevel_ALE.F90\
 	       initres.F90\
 	       inviscidCentralFlux.F90\
 	       inviscidDissFluxCusp.f90\
@@ -78,24 +81,27 @@ FILES_TO_COMPLEXIFY2 = \
 	       level0CoolingModel.f90\
 	       maxEddyv.f90\
 	       maxHdiffMach.f90\
+	       metric_ALE.f90\
 	       normalVelocities.F90\
 	       residual.F90\
 	       residual2.f90\
 	       residualAveraging.f90\
 	       rungeKuttaSmoother.f90\
 	       setCoefTimeIntegrator.f90\
+	       setCoefTimeIntegrator_ALE.f90\
 	       setCornerRowHalos.f90\
 	       setCorrectionsCoarseHalos.f90\
 	       setCycleStrategy.f90\
 	       shiftSolution.f90\
 	       slipVelocities.f90\
+	       slipVelocities_ALE.f90\
 	       solveState.F90\
 	       solver.F90\
 	       solverSteady.f90\
                solverUnsteadyExplicitRK.F90\
                solverUnsteadyImplicitRK.F90\
 	       solverUnsteadyBDF.F90\
-	       solverUnsteadyMD.F90\
+	       solverUnsteady_ALE.F90\
 	       timeStep.F90\
 	       transferToCoarseGrid.f90\
 	       transferToFineGrid.f90\

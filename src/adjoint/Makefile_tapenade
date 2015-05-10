@@ -27,14 +27,14 @@ SRC = ..
 # Integer, double and real precision (bytes)
 TAPENADE_PRECISION = -i4 -dr8 -r8
 
-ALL_RES_FILES =	$(SRC)/forwardAdjoint/residualInput/block_res.F90\
-		$(SRC)/forwardAdjoint/residualInput/xhalo_block.F90\
-		$(SRC)/forwardAdjoint/residualInput/metric_block.F90\
-		$(SRC)/forwardAdjoint/residualInput/viscousFluxApprox.F90\
-		$(SRC)/forwardAdjoint/residualInput/inviscidDissFluxScalarApprox.F90\
-		$(SRC)/forwardAdjoint/residualInput/inviscidDissFluxMatrixApprox.F90\
-		$(SRC)/forwardAdjoint/residualInput/computePressureSimple.F90\
-		$(SRC)/forwardAdjoint/residualInput/costFunction2.F90\
+ALL_RES_FILES =	$(SRC)/adjoint/residualInput/block_res.F90\
+		$(SRC)/adjoint/residualInput/xhalo_block.F90\
+		$(SRC)/adjoint/residualInput/metric_block.F90\
+		$(SRC)/adjoint/residualInput/viscousFluxApprox.F90\
+		$(SRC)/adjoint/residualInput/inviscidDissFluxScalarApprox.F90\
+		$(SRC)/adjoint/residualInput/inviscidDissFluxMatrixApprox.F90\
+		$(SRC)/adjoint/residualInput/computePressureSimple.F90\
+		$(SRC)/adjoint/residualInput/costFunction2.F90\
 		$(SRC)/modules/monitor.f90\
 		$(SRC)/modules/diffSizes.f90\
 		$(SRC)/modules/block.F90\

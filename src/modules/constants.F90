@@ -96,6 +96,12 @@
        real(kind=realType), parameter :: sixth  = one/six
        real(kind=realType), parameter :: eighth = 0.125_realType
 
+       ! *******************************
+       ! Added by HDN
+       ! *******************************
+       real(kind=realType), parameter :: threefourth = 0.75_realType
+       real(kind=realType), parameter :: sqrtthree = 1.7320508075688772_realType
+
        ! Threshold parameter for real types; the value depends
        ! whether single or double precision is used.
 

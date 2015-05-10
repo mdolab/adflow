@@ -510,7 +510,7 @@
 
                  !=======================================================
 
-               case (BDF,implicitRK)
+               case (MD,BDF,implicitRK)
 
                    ! An implicit scheme is used and therefore an
                    ! iterative algorithm within every time step.
@@ -642,7 +642,7 @@
           ! python level...
           return
        endif
-       if((fromPython).and. (nIterCur==nCycles))then
+       if((fromPython).and. groundLevel ==1 .and. (nIterCur==nCycles))then
           
           !Check to see if residuals are diverging or stalled for python
           select case (equationMode)
