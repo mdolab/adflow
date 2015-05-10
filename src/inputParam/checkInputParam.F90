@@ -137,7 +137,7 @@
        if(newGridFile == "") then
          select case(fileFormatWrite)
            case (cgnsFormat)
-             newGridFile = "NewGrid.cgns"
+              newGridFile = "NewGrid.cgns"
            case (plot3DFormat)
              newGridFile = "NewGrid.xyz"
          end select
@@ -831,7 +831,7 @@
 !      ******************************************************************
 !
        select case (timeIntegrationScheme)
-         case (BDF)
+         case (BDF, MD)
 
            ! First check if the accuracy is okay.
 
@@ -846,7 +846,7 @@
 
              timeAccuracy = thirdOrder
            endif
-
+           
            ! Determine the accuracy and set nOldLevels accordingly.
 
            select case (timeAccuracy)
@@ -862,21 +862,50 @@
 
            ! Allocate the memory for coefTime.
            if( allocated(coefTime)) deallocate(coefTime)
-           allocate(coefTime(0:nOldLevels), stat=ierr)
+             allocate(coefTime(0:nOldLevels), stat=ierr)
            if(ierr /= 0)                       &
              call terminate("checkInputParam", &
                             "Memory allocation error for coefTime")
 
+           ! Determine the accuracy and set nOldLevels accordingly.
+           if (useALE) then 
+              select case (timeAccuracy)
+              case (firstOrder)
+                 nALEMeshes = 1
+                 nALESteps  = 2
+
+              case (secondOrder)
+                 nALEMeshes = 2
+                 nALESteps  = 4
+
+              case (thirdOrder)
+                 call terminate("checkInputParam", &
+                      "ALE can only use 1st and 2nd order time accuracy")
+              end select
+
+              if( allocated(coefTimeALE)) deallocate(coefTimeALE)
+              allocate(coefTimeALE(1:nALEsteps), stat=ierr)
+              if(ierr /= 0)                       &
+                   call terminate("checkInputParam", &
+                            "Memory allocation error for coefTimeALE")
+
+              if( allocated(coefMeshALE)) deallocate(coefMeshALE)
+              allocate(coefMeshALE(1:nALEMeshes,2), stat=ierr)
+              if(ierr /= 0)                       &
+                   call terminate("checkInputParam", &
+                   "Memory allocation error for coefMeshALE")
+           end if
+
          !===============================================================
 
-         case (explicitRK)
+        case (explicitRK)
            nOldLevels = 1
            call setStageCoeffExplicitRK
 
          case (implicitRK)
            nOldLevels = 1
            call setStageCoeffImplicitRK
-
+           
        end select
 
        ! Set the logicals whether or not the old solutions have been

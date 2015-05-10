@@ -49,7 +49,9 @@ subroutine applyAllBC(secondHalo)
 
         call setPointers(nn, currentLevel, sps)
 
+        call interpLevelALEBC_block
         call applyAllBC_block(secondHalo)
+        call recoverLevelALEBC_block
   
      enddo domains
   enddo spectralLoop

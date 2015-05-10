@@ -92,6 +92,19 @@
                             "Memory allocation failure for xOld")
          endif
 
+
+         ! *******************************
+         ! Added by HDN
+         ! *******************************
+         if(deforming_Grid .and. equationMode == unsteady) then
+            
+            allocate(flowDoms(nn,1,1)%xALE(0:ie,0:je,0:ke,3), &
+                 stat=ierr)
+            if(ierr /= 0)                         &
+                 call terminate("allocCoorFineGrid", &
+                 "Memory allocation failure for xALE")
+         endif
+
        enddo blockLoop
 
        ! Allocate the memory for IOVar.

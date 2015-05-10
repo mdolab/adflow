@@ -341,6 +341,8 @@
 
        deltaT = -one               ! Serves as a check later on.
 
+       useALE = .True.             ! Use the ALE scheme by default.
+
        updateWallDistanceUnsteady = .true.  ! This default value is
                                             ! overruled for models that
                                             ! are wall distance free.

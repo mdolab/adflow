@@ -123,6 +123,18 @@
        integer(kind=intType) :: nOldSolAvail, nOldLevels
        real(kind=realType), dimension(:), allocatable :: coefTime
 
+       ! *******************************
+       ! Added by HDN
+       ! *******************************
+       ! nALEMeshes:                Number of ALE levels for intermediate mesh
+       !                            between two steps
+       ! nALEsteps:                 Number of ALE steps at one time step
+       ! coefTimeALE(nALEsteps):    The weighting coefficients to average the fluxes
+       ! coefMeshALE(nALEmeshes,2): The coefficients to interpolate the mesh
+       integer(kind=intType)                            :: nALEMeshes, nALEsteps
+       real(kind=realType), dimension(:),   allocatable :: coefTimeALE
+       real(kind=realType), dimension(:,:), allocatable :: coefMeshALE
+
        ! timeSpectralGridsNotWritten: Whether or not grid files have
        !                              already been written in time
        !                              spectral mode. In this way
