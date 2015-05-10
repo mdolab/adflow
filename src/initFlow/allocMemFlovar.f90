@@ -176,6 +176,20 @@ subroutine allocMemFlovarPart1(sps,level)
            ! The actual values do not matter.
 
            flowDoms(nn,level,sps)%wOld = zero
+
+        ! *******************************
+        ! Added by HDN
+        ! *******************************
+        else if ( equationMode == unsteady .and. &
+             timeIntegrationScheme == MD) then
+           allocate( &
+                flowDoms(nn,level,sps)%wOld(nOldLevels,2:il,2:jl,2:kl,nw), &
+                stat=ierr)
+           if(ierr /= 0)                           &
+                call terminate("allocMemFlovarPart1", &
+                "Memory allocation failure for wOld")
+
+           flowDoms(nn,level,sps)%wOld = zero
         endif
 
         ! If this is the 1st spectral solution (note that we are
@@ -290,7 +304,23 @@ subroutine allocMemFlovarPart2(sps, level)
           call terminate("allocMemFlovarPart2", &
           "Memory allocation failure for s, &
           &sFaceI, sFaceJ and sFaceK.")
-     !endif
+
+     ! *******************************
+     ! Added by HDN
+     ! Added sVelo[I,J,K]ALE, sFace[I,J,K]ALE
+     ! *******************************
+     allocate( &
+          flowDoms(nn,level,sps)%sVeloIALE(0:ie,je,ke,3), &
+          flowDoms(nn,level,sps)%sVeloJALE(ie,0:je,ke,3), &
+          flowDoms(nn,level,sps)%sVeloKALE(ie,je,0:ke,3), &
+          flowDoms(nn,level,sps)%sFaceIALE(0:nALEsteps,0:ie,je,ke), &
+          flowDoms(nn,level,sps)%sFaceJALE(0:nALEsteps,ie,0:je,ke), &
+          flowDoms(nn,level,sps)%sFaceKALE(0:nALEsteps,ie,je,0:ke), stat=ierr)
+     if(ierr /= 0)                              &
+          call terminate("allocMemFlovarPart2", &
+          "Memory allocation failure for &
+          sVeloIALE, sVeloJALE and sVeloKALE; &
+          sFaceIALE, sFaceJALE and sFaceKALE.")
 
 
 
@@ -300,7 +330,8 @@ subroutine allocMemFlovarPart2(sps, level)
 
         ! Allocate the memory that must always be allocated.
 
-        allocate(flowDoms(nn,level,sps)%dw(0:ib,0:jb,0:kb,1:nw),  &
+        allocate( &
+             flowDoms(nn,level,sps)%dw(0:ib,0:jb,0:kb,1:nw),  &
              flowDoms(nn,level,sps)%fw(0:ib,0:jb,0:kb,1:nwf), &
              flowDoms(nn,level,sps)%dtl(1:ie,1:je,1:ke),      &
              flowDoms(nn,level,sps)%radI(1:ie,1:je,1:ke),     &
@@ -310,13 +341,29 @@ subroutine allocMemFlovarPart2(sps, level)
              stat=ierr)
         if(ierr /= 0)                              &
              call terminate("allocMemFlovarPart2", &
-             "Memory allocation failure for dw, fw, &
+             "Memory allocation failure for dw, fw, dwOld, fwOld, &
              &gamma, dtl and the spectral radii.")
 
         ! Initialize dw and fw to zero.
 
         flowDoms(nn,level,sps)%dw = zero
         flowDoms(nn,level,sps)%fw = zero
+
+
+        ! *******************************
+        ! Added by HDN
+        ! *******************************
+        allocate( &
+             flowDoms(nn,level,sps)%dwALE(0:nALEsteps,0:ib,0:jb,0:kb,1:nw),  &
+             flowDoms(nn,level,sps)%fwALE(0:nALEsteps,0:ib,0:jb,0:kb,1:nwf), &
+             stat=ierr)
+        if(ierr /= 0)                              &
+             call terminate("allocMemFlovarPart2", &
+             "Memory allocation failure for dwALE, fwALE.")
+
+        flowDoms(nn,level,sps)%dwALE = zero
+        flowDoms(nn,level,sps)%fwALE = zero
+
 
         ! Allocate the memory for the zeroth runge kutta stage
         ! if a runge kutta scheme must be used.

@@ -76,6 +76,7 @@ subroutine block_res_b(nn, sps, usespatial, alpha, alphad, beta, betad, &
   use walldistancedata
   use inputdiscretization
   use samodule_b
+  use inputunsteady
   implicit none
 ! input arguments:
   integer(kind=inttype), intent(in) :: nn, sps
@@ -93,23 +94,24 @@ subroutine block_res_b(nn, sps, usespatial, alpha, alphad, beta, betad, &
 ! working variables
   real(kind=realtype) :: gm1, v2, fact, tmp
   real(kind=realtype) :: factd, tmpd
-  integer(kind=inttype) :: i, j, k, sps2, mm, l, ii, ll, jj
+  integer(kind=inttype) :: i, j, k, sps2, mm, l, ii, ll, jj, m
   integer(kind=inttype) :: nstate
   real(kind=realtype), dimension(nsections) :: t
   logical :: useoldcoor
   real(kind=realtype), dimension(3) :: cfp, cfv, cmp, cmv
   real(kind=realtype), dimension(3) :: cfpd, cfvd, cmpd, cmvd
-  real(kind=realtype) :: yplusmax, scaledim
-  real(kind=realtype) :: scaledimd
+  real(kind=realtype) :: yplusmax, scaledim, oneoverdt
+  real(kind=realtype) :: scaledimd, oneoverdtd
   integer :: branch
   real(kind=realtype) :: temp3
   real(kind=realtype) :: temp2
   real(kind=realtype) :: temp1
   real(kind=realtype) :: temp0
   real(kind=realtype) :: tempd
-  real(kind=realtype) :: tempd6(3)
-  real(kind=realtype) :: tempd5
-  real(kind=realtype) :: tempd4(3)
+  real(kind=realtype) :: tempd7(3)
+  real(kind=realtype) :: tempd6
+  real(kind=realtype) :: tempd5(3)
+  real(kind=realtype) :: tempd4
   real(kind=realtype) :: tempd3
   real(kind=realtype) :: tempd2
   real(kind=realtype) :: tempd1
@@ -118,6 +120,7 @@ subroutine block_res_b(nn, sps, usespatial, alpha, alphad, beta, betad, &
   integer :: ii2
   integer :: ii1
   real(kind=realtype) :: temp
+  real(kind=realtype) :: temp5
   real(kind=realtype) :: temp4
 ! setup number of state variable based on turbulence assumption
   if (frozenturb) then
@@ -297,11 +300,11 @@ spectralloop0:do sps2=1,ntimeintervalsspectral
 ! where there is an n^2 dependance. there are issues with
 ! initres. so only the necesary timespectral code has been copied
 ! here. see initres for more information and comments.
-! sps here is the on-spectral instance
-  if (ntimeintervalsspectral .eq. 1) then
+!call initres_block(1, nwf, nn, sps)
+  if (equationmode .eq. steady) then
     dw(:, :, :, 1:nwf) = zero
-    call pushcontrol1b(0)
-  else
+    call pushcontrol2b(0)
+  else if (equationmode .eq. timespectral) then
 ! zero dw on all spectral instances
 spectralloop1:do sps2=1,ntimeintervalsspectral
       flowdoms(nn, 1, sps2)%dw(:, :, :, 1:nwf) = zero
@@ -367,7 +370,101 @@ varloopfine:do l=1,nwf
         end do varloopfine
       end do timeloopfine
     end do spectralloop2
-    call pushcontrol1b(1)
+    call pushcontrol2b(1)
+  else if (equationmode .eq. unsteady) then
+! assume only md or bdf types
+! store the inverse of the physical nondimensional
+! time step a bit easier.
+    oneoverdt = timeref/deltat
+! ground level of the multigrid cycle. initialize the
+! owned cells to the unsteady source term. first the
+! term for the current time level. note that in w the
+! velocities are stored and not the momentum variables.
+! therefore the if-statement is present to correct this.
+    do l=1,nw
+      if ((l .eq. ivx .or. l .eq. ivy) .or. l .eq. ivz) then
+! momentum variables.
+        do k=2,kl
+          do j=2,jl
+            do i=2,il
+              flowdoms(nn, 1, sps)%dw(i, j, k, l) = coeftime(0)*vol(i, j&
+&               , k)*w(i, j, k, l)*w(i, j, k, irho)
+            end do
+          end do
+        end do
+        call pushcontrol1b(1)
+      else
+! non-momentum variables, for which the variable
+! to be solved is stored; for the flow equations this
+! is the conservative variable, for the turbulent
+! equations the primitive variable.
+        do k=2,kl
+          do j=2,jl
+            do i=2,il
+              flowdoms(nn, 1, sps)%dw(i, j, k, l) = coeftime(0)*vol(i, j&
+&               , k)*w(i, j, k, l)
+            end do
+          end do
+        end do
+        call pushcontrol1b(0)
+      end if
+    end do
+! the terms from the older time levels. here the
+! conservative variables are stored. in case of a
+! deforming mesh, also the old volumes must be taken.
+    if (deforming_grid) then
+      call pushcontrol1b(1)
+! mesh is deforming and thus the volumes can change.
+! use the old volumes as well.
+      do m=1,noldlevels
+        do l=1,nw
+          do k=2,kl
+            do j=2,jl
+              do i=2,il
+                flowdoms(nn, 1, sps)%dw(i, j, k, l) = flowdoms(nn, 1, &
+&                 sps)%dw(i, j, k, l) + coeftime(m)*volold(m, i, j, k)*&
+&                 wold(m, i, j, k, l)
+              end do
+            end do
+          end do
+        end do
+      end do
+    else
+! rigid mesh. the volumes remain constant.
+      do m=1,noldlevels
+        do l=1,nw
+          do k=2,kl
+            do j=2,jl
+              do i=2,il
+                flowdoms(nn, 1, sps)%dw(i, j, k, l) = flowdoms(nn, 1, &
+&                 sps)%dw(i, j, k, l) + coeftime(m)*vol(i, j, k)*wold(m&
+&                 , i, j, k, l)
+              end do
+            end do
+          end do
+        end do
+      end do
+      call pushcontrol1b(0)
+    end if
+! multiply the time derivative by the inverse of the
+! time step to obtain the true time derivative.
+! this is done after the summation has been done, because
+! otherwise you run into finite accuracy problems for
+! very small time steps.
+    do l=1,nw
+      do k=2,kl
+        do j=2,jl
+          do i=2,il
+            call pushreal8(flowdoms(nn, 1, sps)%dw(i, j, k, l))
+            flowdoms(nn, 1, sps)%dw(i, j, k, l) = oneoverdt*flowdoms(nn&
+&             , 1, sps)%dw(i, j, k, l)
+          end do
+        end do
+      end do
+    end do
+    call pushcontrol2b(2)
+  else
+    call pushcontrol2b(3)
   end if
 !  actual residual calc
   call pushreal8array(fw, size(fw, 1)*size(fw, 2)*size(fw, 3)*size(fw, 4&
@@ -515,34 +612,34 @@ varloopfine:do l=1,nwf
   cmvd = 0.0_8
   factd = 0.0_8
   do sps2=ntimeintervalsspectral,1,-1
-    tempd6 = momentd(:, sps2)/fact
-    cmpd = cmpd + tempd6
-    cmvd = cmvd + tempd6
-    factd = factd + sum(-((cmp+cmv)*tempd6/fact))
+    tempd7 = momentd(:, sps2)/fact
+    cmpd = cmpd + tempd7
+    cmvd = cmvd + tempd7
+    factd = factd + sum(-((cmp+cmv)*tempd7/fact))
     momentd(:, sps2) = 0.0_8
   end do
   call popreal8(fact)
-  tempd5 = factd/(lref*lengthref)
-  lengthrefd = lengthrefd - fact*tempd5/lengthref
-  factd = tempd5
+  tempd6 = factd/(lref*lengthref)
+  lengthrefd = lengthrefd - fact*tempd6/lengthref
+  factd = tempd6
   cfpd = 0.0_8
   cfvd = 0.0_8
   do sps2=ntimeintervalsspectral,1,-1
-    tempd4 = forced(:, sps2)/fact
-    cfpd = cfpd + tempd4
-    cfvd = cfvd + tempd4
-    factd = factd + sum(-((cfp+cfv)*tempd4/fact))
+    tempd5 = forced(:, sps2)/fact
+    cfpd = cfpd + tempd5
+    cfvd = cfvd + tempd5
+    factd = factd + sum(-((cfp+cfv)*tempd5/fact))
     forced(:, sps2) = 0.0_8
   end do
-  temp4 = machcoef**2*scaledim
-  temp3 = surfaceref*lref**2
-  temp2 = temp3*gammainf*pinf
-  tempd2 = -(two*factd/(temp2**2*temp4**2))
-  tempd3 = temp4*temp3*tempd2
-  gammainfd = gammainfd + pinf*tempd3
-  machcoefd = machcoefd + scaledim*temp2*2*machcoef*tempd2
-  scaledimd = temp2*machcoef**2*tempd2
-  pinfd = pinfd + gammainf*tempd3 - pref*scaledimd/pinf**2
+  temp5 = machcoef**2*scaledim
+  temp4 = surfaceref*lref**2
+  temp3 = temp4*gammainf*pinf
+  tempd3 = -(two*factd/(temp3**2*temp5**2))
+  tempd4 = temp5*temp4*tempd3
+  gammainfd = gammainfd + pinf*tempd4
+  machcoefd = machcoefd + scaledim*temp3*2*machcoef*tempd3
+  scaledimd = temp3*machcoef**2*tempd3
+  pinfd = pinfd + gammainf*tempd4 - pref*scaledimd/pinf**2
   prefd = prefd + scaledimd/pinf
   call popreal8array(cfp, 3)
   call popreal8array(cfv, 3)
@@ -625,13 +722,13 @@ varloopfine:do l=1,nwf
         do j=jl,2,-1
           do i=il,2,-1
             call popreal8(flowdoms(nn, 1, sps2)%dw(i, j, k, l))
-            temp1 = flowdoms(nn, currentlevel, sps2)%vol(i, j, k)
-            tempd1 = turbresscale*flowdomsd(nn, 1, sps2)%dw(i, j, k, l)/&
-&             temp1
+            temp2 = flowdoms(nn, currentlevel, sps2)%vol(i, j, k)
+            tempd2 = turbresscale*flowdomsd(nn, 1, sps2)%dw(i, j, k, l)/&
+&             temp2
             flowdomsd(nn, currentlevel, sps2)%vol(i, j, k) = flowdomsd(&
 &             nn, currentlevel, sps2)%vol(i, j, k) - flowdoms(nn, 1, &
-&             sps2)%dw(i, j, k, l)*tempd1/temp1
-            flowdomsd(nn, 1, sps2)%dw(i, j, k, l) = tempd1
+&             sps2)%dw(i, j, k, l)*tempd2/temp2
+            flowdomsd(nn, 1, sps2)%dw(i, j, k, l) = tempd2
           end do
         end do
       end do
@@ -641,13 +738,13 @@ varloopfine:do l=1,nwf
         do j=jl,2,-1
           do i=il,2,-1
             call popreal8(flowdoms(nn, 1, sps2)%dw(i, j, k, l))
-            temp0 = flowdoms(nn, currentlevel, sps2)%vol(i, j, k)
+            temp1 = flowdoms(nn, currentlevel, sps2)%vol(i, j, k)
             flowdomsd(nn, currentlevel, sps2)%vol(i, j, k) = flowdomsd(&
 &             nn, currentlevel, sps2)%vol(i, j, k) - flowdoms(nn, 1, &
 &             sps2)%dw(i, j, k, l)*flowdomsd(nn, 1, sps2)%dw(i, j, k, l)&
-&             /temp0**2
+&             /temp1**2
             flowdomsd(nn, 1, sps2)%dw(i, j, k, l) = flowdomsd(nn, 1, &
-&             sps2)%dw(i, j, k, l)/temp0
+&             sps2)%dw(i, j, k, l)/temp1
           end do
         end do
       end do
@@ -678,67 +775,134 @@ varloopfine:do l=1,nwf
   call popreal8array(fw, size(fw, 1)*size(fw, 2)*size(fw, 3)*size(fw, 4)&
 &             )
   call residual_block_b()
-  call popcontrol1b(branch)
-  if (branch .eq. 0) then
-    dwd(:, :, :, 1:nwf) = 0.0_8
-  else
-    do sps2=ntimeintervalsspectral,1,-1
-      do mm=ntimeintervalsspectral,1,-1
-        do l=nwf,1,-1
-          call popcontrol1b(branch)
-          if (branch .eq. 0) then
-            do k=kl,2,-1
-              do j=jl,2,-1
-                do i=il,2,-1
-                  tempd0 = dscalar(jj, sps2, mm)*flowdomsd(nn, 1, sps2)%&
-&                   dw(i, j, k, l)
-                  flowdomsd(nn, 1, mm)%vol(i, j, k) = flowdomsd(nn, 1, &
-&                   mm)%vol(i, j, k) + flowdoms(nn, 1, mm)%w(i, j, k, l)&
-&                   *tempd0
-                  flowdomsd(nn, 1, mm)%w(i, j, k, l) = flowdomsd(nn, 1, &
-&                   mm)%w(i, j, k, l) + flowdoms(nn, 1, mm)%vol(i, j, k)&
-&                   *tempd0
+  call popcontrol2b(branch)
+  if (branch .lt. 2) then
+    if (branch .eq. 0) then
+      dwd(:, :, :, 1:nwf) = 0.0_8
+    else
+      do sps2=ntimeintervalsspectral,1,-1
+        do mm=ntimeintervalsspectral,1,-1
+          do l=nwf,1,-1
+            call popcontrol1b(branch)
+            if (branch .eq. 0) then
+              do k=kl,2,-1
+                do j=jl,2,-1
+                  do i=il,2,-1
+                    tempd0 = dscalar(jj, sps2, mm)*flowdomsd(nn, 1, sps2&
+&                     )%dw(i, j, k, l)
+                    flowdomsd(nn, 1, mm)%vol(i, j, k) = flowdomsd(nn, 1&
+&                     , mm)%vol(i, j, k) + flowdoms(nn, 1, mm)%w(i, j, k&
+&                     , l)*tempd0
+                    flowdomsd(nn, 1, mm)%w(i, j, k, l) = flowdomsd(nn, 1&
+&                     , mm)%w(i, j, k, l) + flowdoms(nn, 1, mm)%vol(i, j&
+&                     , k)*tempd0
+                  end do
                 end do
               end do
-            end do
-          else
-            do k=kl,2,-1
-              do j=jl,2,-1
-                do i=il,2,-1
-                  tempd = flowdoms(nn, 1, mm)%w(i, j, k, irho)*flowdomsd&
-&                   (nn, 1, sps2)%dw(i, j, k, l)
-                  temp = flowdoms(nn, 1, mm)%vol(i, j, k)
-                  tmpd = temp*tempd
-                  flowdomsd(nn, 1, mm)%vol(i, j, k) = flowdomsd(nn, 1, &
-&                   mm)%vol(i, j, k) + tmp*tempd
-                  flowdomsd(nn, 1, mm)%w(i, j, k, irho) = flowdomsd(nn, &
-&                   1, mm)%w(i, j, k, irho) + tmp*temp*flowdomsd(nn, 1, &
-&                   sps2)%dw(i, j, k, l)
-                  call popreal8(tmp)
-                  flowdomsd(nn, 1, mm)%w(i, j, k, ivx) = flowdomsd(nn, 1&
-&                   , mm)%w(i, j, k, ivx) + dvector(jj, ll, ii+1)*tmpd
-                  flowdomsd(nn, 1, mm)%w(i, j, k, ivy) = flowdomsd(nn, 1&
-&                   , mm)%w(i, j, k, ivy) + dvector(jj, ll, ii+2)*tmpd
-                  flowdomsd(nn, 1, mm)%w(i, j, k, ivz) = flowdomsd(nn, 1&
-&                   , mm)%w(i, j, k, ivz) + dvector(jj, ll, ii+3)*tmpd
+            else
+              do k=kl,2,-1
+                do j=jl,2,-1
+                  do i=il,2,-1
+                    tempd = flowdoms(nn, 1, mm)%w(i, j, k, irho)*&
+&                     flowdomsd(nn, 1, sps2)%dw(i, j, k, l)
+                    temp = flowdoms(nn, 1, mm)%vol(i, j, k)
+                    tmpd = temp*tempd
+                    flowdomsd(nn, 1, mm)%vol(i, j, k) = flowdomsd(nn, 1&
+&                     , mm)%vol(i, j, k) + tmp*tempd
+                    flowdomsd(nn, 1, mm)%w(i, j, k, irho) = flowdomsd(nn&
+&                     , 1, mm)%w(i, j, k, irho) + tmp*temp*flowdomsd(nn&
+&                     , 1, sps2)%dw(i, j, k, l)
+                    call popreal8(tmp)
+                    flowdomsd(nn, 1, mm)%w(i, j, k, ivx) = flowdomsd(nn&
+&                     , 1, mm)%w(i, j, k, ivx) + dvector(jj, ll, ii+1)*&
+&                     tmpd
+                    flowdomsd(nn, 1, mm)%w(i, j, k, ivy) = flowdomsd(nn&
+&                     , 1, mm)%w(i, j, k, ivy) + dvector(jj, ll, ii+2)*&
+&                     tmpd
+                    flowdomsd(nn, 1, mm)%w(i, j, k, ivz) = flowdomsd(nn&
+&                     , 1, mm)%w(i, j, k, ivz) + dvector(jj, ll, ii+3)*&
+&                     tmpd
+                  end do
                 end do
               end do
-            end do
-            call popcontrol1b(branch)
-            if (branch .ne. 0) call popinteger4(ll)
-            call popcontrol1b(branch)
-            if (branch .eq. 0) call popinteger4(ll)
-            call popcontrol1b(branch)
-            if (branch .eq. 0) call popinteger4(ll)
-          end if
+              call popcontrol1b(branch)
+              if (branch .ne. 0) call popinteger4(ll)
+              call popcontrol1b(branch)
+              if (branch .eq. 0) call popinteger4(ll)
+              call popcontrol1b(branch)
+              if (branch .eq. 0) call popinteger4(ll)
+            end if
+          end do
+          call popinteger4(ii)
         end do
-        call popinteger4(ii)
+        call popinteger4(jj)
       end do
-      call popinteger4(jj)
+      do sps2=ntimeintervalsspectral,1,-1
+        flowdomsd(nn, 1, sps2)%dw(:, :, :, 1:nwf) = 0.0_8
+      end do
+    end if
+  else if (branch .eq. 2) then
+    oneoverdtd = 0.0_8
+    do l=nw,1,-1
+      do k=kl,2,-1
+        do j=jl,2,-1
+          do i=il,2,-1
+            call popreal8(flowdoms(nn, 1, sps)%dw(i, j, k, l))
+            oneoverdtd = oneoverdtd + flowdoms(nn, 1, sps)%dw(i, j, k, l&
+&             )*flowdomsd(nn, 1, sps)%dw(i, j, k, l)
+            flowdomsd(nn, 1, sps)%dw(i, j, k, l) = oneoverdt*flowdomsd(&
+&             nn, 1, sps)%dw(i, j, k, l)
+          end do
+        end do
+      end do
     end do
-    do sps2=ntimeintervalsspectral,1,-1
-      flowdomsd(nn, 1, sps2)%dw(:, :, :, 1:nwf) = 0.0_8
+    call popcontrol1b(branch)
+    if (branch .eq. 0) then
+      do m=noldlevels,1,-1
+        do l=nw,1,-1
+          do k=kl,2,-1
+            do j=jl,2,-1
+              do i=il,2,-1
+                vold(i, j, k) = vold(i, j, k) + wold(m, i, j, k, l)*&
+&                 coeftime(m)*flowdomsd(nn, 1, sps)%dw(i, j, k, l)
+              end do
+            end do
+          end do
+        end do
+      end do
+    end if
+    do l=nw,1,-1
+      call popcontrol1b(branch)
+      if (branch .eq. 0) then
+        do k=kl,2,-1
+          do j=jl,2,-1
+            do i=il,2,-1
+              vold(i, j, k) = vold(i, j, k) + coeftime(0)*w(i, j, k, l)*&
+&               flowdomsd(nn, 1, sps)%dw(i, j, k, l)
+              wd(i, j, k, l) = wd(i, j, k, l) + coeftime(0)*vol(i, j, k)&
+&               *flowdomsd(nn, 1, sps)%dw(i, j, k, l)
+              flowdomsd(nn, 1, sps)%dw(i, j, k, l) = 0.0_8
+            end do
+          end do
+        end do
+      else
+        do k=kl,2,-1
+          do j=jl,2,-1
+            do i=il,2,-1
+              temp0 = w(i, j, k, l)
+              tempd1 = coeftime(0)*w(i, j, k, irho)*flowdomsd(nn, 1, sps&
+&               )%dw(i, j, k, l)
+              vold(i, j, k) = vold(i, j, k) + temp0*tempd1
+              wd(i, j, k, l) = wd(i, j, k, l) + vol(i, j, k)*tempd1
+              wd(i, j, k, irho) = wd(i, j, k, irho) + coeftime(0)*vol(i&
+&               , j, k)*temp0*flowdomsd(nn, 1, sps)%dw(i, j, k, l)
+              flowdomsd(nn, 1, sps)%dw(i, j, k, l) = 0.0_8
+            end do
+          end do
+        end do
+      end if
     end do
+    timerefd = timerefd + oneoverdtd/deltat
   end if
   call popcontrol2b(branch)
   if (branch .eq. 0) then
