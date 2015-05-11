@@ -175,7 +175,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, Cavitation)
            cMp(2) = cMp(2) + my
            cMp(3) = cMp(3) + mz
 
-#ifdef USE_TAPENADE           
+#ifndef USE_TAPENADE           
            ! Save the face based forces for the slice operations
            bcData(nn)%Fp(i, j, 1) = fx
            bcData(nn)%Fp(i, j, 2) = fy
@@ -306,7 +306,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, Cavitation)
               cMv(2) = cMv(2) + my
               cMv(3) = cMv(3) + mz
 
-#ifdef USE_TAPENADE           
+#ifndef USE_TAPENADE           
               ! Save the face based forces for the slice operations
               bcData(nn)%Fv(i, j, 1) = fx
               bcData(nn)%Fv(i, j, 2) = fy
