@@ -243,10 +243,6 @@ bocos:do nn=1,nbocos
         cmp(2) = cmp(2) + my
         cmpd(3) = cmpd(3) + mzd
         cmp(3) = cmp(3) + mz
-! save the face based forces for the slice operations
-        bcdata(nn)%fp(i, j, 1) = fx
-        bcdata(nn)%fp(i, j, 2) = fy
-        bcdata(nn)%fp(i, j, 3) = fz
 ! divide by 4 so we can scatter
         fxd = fourth*fxd
         fx = fourth*fx
@@ -445,10 +441,6 @@ bocos:do nn=1,nbocos
           cmv(2) = cmv(2) + my
           cmvd(3) = cmvd(3) + mzd
           cmv(3) = cmv(3) + mz
-! save the face based forces for the slice operations
-          bcdata(nn)%fv(i, j, 1) = fx
-          bcdata(nn)%fv(i, j, 2) = fy
-          bcdata(nn)%fv(i, j, 3) = fz
 ! divide by 4 so we can scatter
           fxd = fourth*fxd
           fx = fourth*fx
