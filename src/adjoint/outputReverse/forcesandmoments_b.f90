@@ -277,10 +277,6 @@ bocos:do nn=1,nbocos
         cmp(1) = cmp(1) + mx
         cmp(2) = cmp(2) + my
         cmp(3) = cmp(3) + mz
-! save the face based forces for the slice operations
-        bcdata(nn)%fp(i, j, 1) = fx
-        bcdata(nn)%fp(i, j, 2) = fy
-        bcdata(nn)%fp(i, j, 3) = fz
 ! divide by 4 so we can scatter
         fx = fourth*fx
         fy = fourth*fy
@@ -388,7 +384,6 @@ bocos:do nn=1,nbocos
           cmv(1) = cmv(1) + mx
           cmv(2) = cmv(2) + my
           cmv(3) = cmv(3) + mz
-! save the face based forces for the slice operations
 ! divide by 4 so we can scatter
           call pushreal8(fx)
           fx = fourth*fx
@@ -732,7 +727,6 @@ bocos:do nn=1,nbocos
         fy = pm1*ssi(i, j, 2)
         fz = pm1*ssi(i, j, 3)
 ! update the inviscid force and moment coefficients.
-! save the face based forces for the slice operations
 ! divide by 4 so we can scatter
 ! scatter 1/4 of the force to each of the nodes:
 ! scatter a quarter of the area to each node:
