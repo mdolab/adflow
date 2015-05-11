@@ -1586,11 +1586,8 @@ class SUMB(AeroSolver):
                     # DVGeo appeared and we have not embedded points!
                     self.DVGeo.addPointSet(self.coords0, ptSetName)
                 if not self.DVGeo.pointSetUpToDate(ptSetName):
-                    coords = self.DVGeo.update(ptSetName, config=self.curAP.name),
-                    if self.curAP.sumbData.disp is not None:
-                        coords += self.curAP.sumbData.disp
-                    self.setSurfaceCoordinates(coords, self.groupName)
-
+                    self.setSurfaceCoordinates(
+                        self.DVGeo.update(ptSetName, config=self.curAP.name), self.groupName)
                     self.updateGeometryInfo()
             # Finally update other data
             self._setAeroProblemData()
@@ -1635,10 +1632,7 @@ class SUMB(AeroSolver):
         # We have to update coordinates here as well:
         if self.DVGeo is not None:
             if not self.DVGeo.pointSetUpToDate(ptSetName):
-                coords = self.DVGeo.update(ptSetName, config=self.curAP.name),
-                if self.curAP.sumbData.disp is not None:
-                    coords += self.curAP.sumbData.disp
-                self.setSurfaceCoordinates(coords, self.groupName)
+                self.setSurfaceCoordinates(self.DVGeo.update(ptSetName, config=self.curAP.name), self.groupName)
             else:
                 self.setSurfaceCoordinates(self.curAP.surfMesh, self.groupName)
         else:
@@ -3305,9 +3299,9 @@ class SUMB(AeroSolver):
             'rotcenx':'adjointvars.ndesignrotcenx',
             'rotceny':'adjointvars.ndesignrotceny',
             'rotcenz':'adjointvars.ndesignrotcenz',
-            'pointrefx':'adjointvars.ndesignpointrefx',
-            'pointrefy':'adjointvars.ndesignpointrefy',
-            'pointrefz':'adjointvars.ndesignpointrefz',
+            'xRef':'adjointvars.ndesignpointrefx',
+            'yYef':'adjointvars.ndesignpointrefy',
+            'zRef':'adjointvars.ndesignpointrefz',
             'chordRef':'adjointvars.ndesignlengthref',
             'areaRef':'adjointvars.ndesignsurfaceref',
             'disserror':'adjointvars.ndesigndisserror'
@@ -3369,5 +3363,5 @@ class sumbFlowCase(object):
         self.adjointRHS = {}
         self.coords = None
         self.callCounter = -1
-        self.disp = None
+
 
