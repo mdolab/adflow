@@ -3297,9 +3297,9 @@ class SUMB(AeroSolver):
             'rotcenx':'adjointvars.ndesignrotcenx',
             'rotceny':'adjointvars.ndesignrotceny',
             'rotcenz':'adjointvars.ndesignrotcenz',
-            'pointrefx':'adjointvars.ndesignpointrefx',
-            'pointrefy':'adjointvars.ndesignpointrefy',
-            'pointrefz':'adjointvars.ndesignpointrefz',
+            'xRef':'adjointvars.ndesignpointrefx',
+            'yYef':'adjointvars.ndesignpointrefy',
+            'zRef':'adjointvars.ndesignpointrefz',
             'chordRef':'adjointvars.ndesignlengthref',
             'areaRef':'adjointvars.ndesignsurfaceref',
             'disserror':'adjointvars.ndesigndisserror'
