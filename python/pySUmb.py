@@ -645,6 +645,210 @@ class SUMB(AeroSolver):
         if self.getOption('TSStability'):
             self.computeStabilityParameters()
 
+    #======================================================
+    #
+    # Utilities for MD simulations
+    #
+    #======================================================
+
+    def initSolver(self, aeroProblem, **kwargs):
+        """
+        This is essentially first half of __call__, which initializes the solver.
+        Plus the routine that initializes first unsteady time step.
+        """
+        
+        # Get option about adjoint memory
+        releaseAdjointMemory = kwargs.pop('relaseAdjointMemory', True)
+
+        # Set the aeroProblem
+        self.setAeroProblem(aeroProblem, releaseAdjointMemory)
+
+        # If this problem has't been solved yet, reset flow to this
+        # flight condition
+        if self.curAP.sumbData.stateInfo is None:
+            self.resetFlow(aeroProblem, releaseAdjointMemory)
+
+        # Possibly release adjoint memory if not already done so.
+        if releaseAdjointMemory:
+            self.releaseAdjointMemory()
+
+        # Clear out any saved adjoint RHS since they are now out of
+        # data. Also increment the counter for this case.
+        self.curAP.sumbData.adjointRHS = {}
+        self.curAP.sumbData.callCounter += 1
+
+        # --------------------------------------------------------------
+        # Setup interation arrays ---- don't touch this unless you
+        # REALLY REALLY know what you're doing!
+        if self.sumb.monitor.niterold == 0 and \
+            self.sumb.monitor.nitercur == 0 and \
+            self.sumb.iteration.itertot == 0:
+            if self.myid == 0:
+                desiredSize = self.sumb.inputiteration.nsgstartup + \
+                    self.sumb.inputiteration.ncycles
+                self.sumb.allocconvarrays(desiredSize)
+        else:
+            # More Time Steps / Iterations OR a restart
+            # Reallocate convergence history array and time array
+            # with new size,  storing old values from previous runs
+            if self.getOption('storeHistory'):
+                currentSize = len(self.sumb.monitor.convarray)
+                desiredSize = currentSize + self.sumb.inputiteration.ncycles+1
+                self.sumb.monitor.niterold  = self.sumb.monitor.nitercur+1
+            else:
+                self.sumb.monitor.nitercur  = 0
+                self.sumb.monitor.niterold  = 1
+                desiredSize = self.sumb.inputiteration.nsgstartup + \
+                    self.sumb.inputiteration.ncycles +1
+
+            # Allocate Arrays
+            if self.myid == 0:
+                self.sumb.allocconvarrays(desiredSize)
+
+            self.sumb.inputiteration.mgstartlevel = 1
+            self.sumb.iteration.itertot = 0
+
+        # --------------------------------------------------------------
+
+        if self.getOption('equationMode') == 'unsteady':
+            self.sumb.alloctimearrays(self.getOption('nTimeStepsFine'))
+
+        # Mesh warp may have already failed:
+        if not self.sumb.killsignals.fatalfail:
+
+            if (self.getOption('equationMode').lower() == 'steady' or
+                self.getOption('equationMode').lower() == 'time spectral'):
+                self.updateGeometryInfo()
+
+                # Check to see if the above update routines failed.
+                self.sumb.killsignals.fatalfail = \
+                    self.comm.allreduce(
+                    bool(self.sumb.killsignals.fatalfail), op=MPI.LOR)
+
+        if self.sumb.killsignals.fatalfail:
+            print("Fatal failure during mesh warp! Bad mesh is "
+                  "written in output directory as failed_mesh.cgns")
+            fileName = os.path.join(self.getOption('outputDirectory'),
+                                    'failed_mesh.cgns')
+            self.writeMeshFile(fileName)
+            self.curAP.fatalFail = True
+            self.curAP.solveFailed = True
+            return
+
+        # We now know the mesh warping was ok so reset the flags:
+        self.sumb.killsignals.routinefailed =  False
+        self.sumb.killsignals.fatalfail = False
+        
+        # Initialize for solverUnsteady_ALE
+        self.sumb.solverunsteadywrapbegin()
+
+    def stepCounter(self, adv=1):
+        self.sumb.monitor.timestepunsteady = self.sumb.monitor.timestepunsteady + adv
+        self.sumb.monitor.timeunsteady     = self.sumb.monitor.timeunsteady     + \
+            adv*self.sumb.inputunsteady.deltat
+        return self.sumb.monitor.timeunsteady, self.sumb.monitor.timestepunsteady
+        
+    def timeStepping(self):
+        """
+        This advances the solver by one physical time step
+        """
+        
+        t1 = time.time()
+
+        # Call the unsteady solver
+        self.sumb.solverunsteadywrapinloop()
+
+        # # Save the states into the aeroProblem
+        # self.curAP.sumbData.stateInfo = self._getInfo()
+
+        # # Assign Fail Flags
+        # self.curAP.solveFailed = bool(self.sumb.killsignals.routinefailed)
+        # self.curAP.fatalFail = bool(self.sumb.killsignals.fatalfail)
+
+        # # Reset Flow if there's a fatal fail reset and return;
+        # # --> Do not write solution
+        # if self.curAP.fatalFail:
+        #     self.resetFlow(aeroProblem)
+        #     return
+
+        t2 = time.time()
+        solTime = t2 - t1
+
+        if self.getOption('printTiming') and self.comm.rank == 0:
+            print('Solution Time: %10.3f sec'% solTime)
+
+    def setDisplacement(self, coordinates, groupName='interface', ifShift=True):
+        if ifShift and self.sumb.iteration.deforming_grid:
+            self.sumb.shiftcoorandvolumes()
+            self.sumb.shiftlevelale()
+        self.setSurfaceCoordinates(coordinates, groupName)
+        if self._updateGeomInfo and self.mesh is not None:
+            timeA = time.time()
+            self.mesh.warpMesh()
+            newGrid = self.mesh.getSolverGrid()
+            self.sumb.killsignals.routinefailed = False
+            self.sumb.killsignals.fatalFail = False
+            self.updateTime = time.time()-timeA
+            if newGrid is not None:
+                self.sumb.setgrid(newGrid)
+            self._updateGeomInfo = False
+            self.sumb.killsignals.routinefailed = \
+                self.comm.allreduce(
+                bool(self.sumb.killsignals.routinefailed), op=MPI.LOR)
+            self.sumb.killsignals.fatalfail = self.sumb.killsignals.routinefailed
+
+    def getCurForce(self):
+    # Adapted from writeForceFile
+    # Returns current tractions on the interface
+        TS = 0
+        groupName = 'interface'
+
+        # Gather the data
+        pts = self.comm.gather(self.getForcePoints(TS, groupName), root=0)
+
+        # Forces are still evaluated on the displaced surface so do NOT pass in pts.
+        forces = self.comm.gather(self.getForces(groupName, TS=TS), root=0)
+        conn   = self.comm.gather(self.mesh.getSurfaceConnectivity(groupName), root=0)
+
+        # Get data only on root proc
+        f = [] # Tractions
+        x = [] # Coordinates
+        c = [] # Connectivity
+        if self.myid == 0:
+            # First sum up the total number of nodes and elements:
+            nPt = 0
+            nCell = 0
+            for iProc in xrange(len(pts)):
+                nPt += len(pts[iProc])
+                nCell += len(conn[iProc])//4
+
+            # Get the coordinates and surface tractions
+            for iProc in xrange(len(pts)):
+                for i in xrange(len(pts[iProc])):
+                    f.append([ numpy.real(forces[iProc][i, 0]), \
+                               numpy.real(forces[iProc][i, 1]), \
+                               numpy.real(forces[iProc][i, 2]) ])
+                    x.append([ numpy.real(pts[iProc][i, 0]), \
+                               numpy.real(pts[iProc][i, 1]), \
+                               numpy.real(pts[iProc][i, 2]) ])
+            
+            # Get the connectivity
+            nodeOffset = 0
+            for iProc in xrange(len(conn)):
+                for i in xrange(len(conn[iProc])//4):
+                    c.append([ int(conn[iProc][4*i+0]+nodeOffset), \
+                               int(conn[iProc][4*i+1]+nodeOffset), \
+                               int(conn[iProc][4*i+2]+nodeOffset), \
+                               int(conn[iProc][4*i+3]+nodeOffset) ])
+                nodeOffset += len(pts[iProc])
+        return [f,x,c]
+    
+    #======================================================
+    #
+    # End of utilities for MD simulations
+    #
+    #======================================================
+    
     def evalFunctions(self, aeroProblem, funcs, evalFuncs=None, sps=1,
                       ignoreMissing=False):
         """

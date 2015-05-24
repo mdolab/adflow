@@ -202,10 +202,29 @@ python module libsumb
          integer(kind=inttype), optional,intent(in),check(len(mask)>=nmask),depend(mask) :: nmask=len(mask)
         end subroutine getsolutionmask
 
+       ! ############################################################################
+       ! Added by HDN
+       ! ############################################################################
        subroutine solverunsteady_ale(alecallback_python) ! in :test:solverUnsteady_ALE.F90
          use solverunsteadyale__user__routines
          external alecallback_python
        end subroutine solverunsteady_ale
+
+       ! For operations related to mesh-warping
+       subroutine shiftcoorandvolumes ! in :sumb:../../preprocessing/shiftCoorAndVolumes.F90
+       end subroutine shiftcoorandvolumes
+
+       subroutine shiftlevelale ! in :sumb:../../sovler/geomUtilsALE.F90
+       end subroutine shiftlevelale
+
+       subroutine solverunsteadywrapbegin ! in :sumb:../../solver/solverUnsteadyWrap.F90
+       end subroutine solverunsteadyerapbegin
+
+       subroutine solverunsteadywrapinloop ! in :sumb:../../solver/solverUnsteadyWrap.F90
+       end subroutine solverunsteadywrapinloop
+
+       subroutine solverunsteadywrapend ! in :sumb:../../solver/solverUnsteadyWrap.F90
+       end subroutine solverunsteadywrapend
 
        ! ############################################################################
        ! SUmb Mesh/Forces Interface Routines

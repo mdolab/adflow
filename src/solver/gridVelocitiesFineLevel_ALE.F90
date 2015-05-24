@@ -235,7 +235,7 @@ subroutine gridVelocitiesFineLevelPart1_block(useOldCoor, t, sps)
      ! the inverse of the physical nonDimensional time step,
      ! divided by 4 and 8, a bit easier.
      
-     call setCoefTimeIntegrator_ALE
+     call setCoefTimeIntegrator
      oneOver4dt = fourth*timeRef/deltaT
      oneOver8dt = half*oneOver4dt
      !
