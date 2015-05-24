@@ -81,14 +81,12 @@ FILES_TO_COMPLEXIFY2 = \
 	       level0CoolingModel.f90\
 	       maxEddyv.f90\
 	       maxHdiffMach.f90\
-	       metric_ALE.f90\
 	       normalVelocities.F90\
 	       residual.F90\
 	       residual2.f90\
 	       residualAveraging.f90\
 	       rungeKuttaSmoother.f90\
 	       setCoefTimeIntegrator.f90\
-	       setCoefTimeIntegrator_ALE.f90\
 	       setCornerRowHalos.f90\
 	       setCorrectionsCoarseHalos.f90\
 	       setCycleStrategy.f90\
@@ -102,6 +100,7 @@ FILES_TO_COMPLEXIFY2 = \
                solverUnsteadyImplicitRK.F90\
 	       solverUnsteadyBDF.F90\
 	       solverUnsteady_ALE.F90\
+	       solverUnsteadyWrap.F90\
 	       timeStep.F90\
 	       transferToCoarseGrid.f90\
 	       transferToFineGrid.f90\
