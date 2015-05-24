@@ -25,3 +25,4 @@ doc/*
 *.bak
 syntax: glob
 src/python/f2py/sumb.old.pyf
+bin/SUmb_linux_gfortran_openmpi

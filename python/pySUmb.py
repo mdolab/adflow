@@ -654,7 +654,7 @@ class SUMB(AeroSolver):
     def initSolver(self, aeroProblem, **kwargs):
         """
         This is essentially first half of __call__, which initializes the solver.
-        Plus the routine that initializes first unsteady time step.
+        Plus the routine that initializes zeroth unsteady time step.
         """
         
         # Get option about adjoint memory
