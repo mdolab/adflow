@@ -23,3 +23,5 @@ src/forwardAdjoint/temp*
 doc/*
 *.fmt
 *.bak
+syntax: glob
+src/python/f2py/sumb.old.pyf

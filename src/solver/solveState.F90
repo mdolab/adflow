@@ -59,7 +59,6 @@ subroutine solveState
        call terminate("solveState", &
        "Memory allocation failure for cycling")
 
-
   ! Some initializations.
   
   writeVolume  = .false.
@@ -477,7 +476,7 @@ subroutine solveState
 
         ! Check if the bleed boundary conditions must be updated and
         ! do so if needed.
-        
+
         if(mod(iter, nUpdateBleeds) == 0) &
              call BCDataMassBleedOutflow(.false., .false.)
         
