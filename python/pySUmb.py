@@ -774,6 +774,14 @@ class SUMB(AeroSolver):
         t2 = time.time()
         solTime = t2 - t1
 
+        ts     = self.sumb.monitor.timestepunsteady
+        if self.getOption('writeVolumeSolution') and \
+          numpy.mod(ts, self.getOption('nsavevolume')) == 0 :
+            self.writeVolumeSolutionFile('V.cgns')
+        if self.getOption('writeSurfaceSolution') and \
+          numpy.mod(ts, self.getOption('nsavesurface')) == 0 :
+            self.writeSurfaceSolutionFile('S.cgns')
+
         if self.getOption('printTiming') and self.comm.rank == 0:
             print('Solution Time: %10.3f sec'% solTime)
 
@@ -3047,6 +3055,8 @@ class SUMB(AeroSolver):
             'writefarfield':[bool, False],
             'writesurfacesolution':[bool,True],
             'writevolumesolution':[bool,True],
+            'nsavevolume':[int,1],
+            'nsavesurface':[int,1],
             'solutionprecision':[str,'single'],
             'gridprecision':[str,'double'],
             'isosurface':[dict, {}],
@@ -3210,6 +3220,8 @@ class SUMB(AeroSolver):
             'storerindlayer':{'location':'inputio.storerindlayer'},
             'writesymmetry':{'location':'inputio.writesymmetry'},
             'writefarfield':{'location':'inputio.writefarfield'},
+            'nsavevolume':{'location':'inputiteration.nsavevolume'},
+            'nsavesurface':{'location':'inputiteration.nsavesurface'},
             'viscoussurfacevelocities':{'location':'inputio.viscoussurfacevelocities'},
             'solutionprecision':{'single':self.sumb.inputio.precisionsingle,
                                  'double':self.sumb.inputio.precisiondouble,
