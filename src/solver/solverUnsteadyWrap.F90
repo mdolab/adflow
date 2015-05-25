@@ -100,7 +100,8 @@ subroutine solverUnsteadyWrapInLoop
   nOldSolAvail = nOldSolAvail + 1
 
   ! Determine whether or not solution files must be written.
-  call checkWriteUnsteadyInLoop
+  ! This will be done in Python
+  ! call checkWriteUnsteadyInLoop
 
   ! --------------------------------
   ! Unnecessary since there is no loop
