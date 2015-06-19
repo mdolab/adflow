@@ -712,6 +712,10 @@
        ! lengthRef:           Reference length for the moments computation.
        ! pointRef(3):         Moment reference point.
        ! pointRefEC(3):       Elastic center. Bending moment refernce point
+       ! SSuthDim:            Sutherlands law temperature (SI Units)
+       ! muSuthDim:           Reference viscosity at reference temperature for Sutherlands law (SI Units)
+       ! TSuthDim:            Reference temperature for Sutherlands law (SI Units)
+
 
        integer(kind=intType) :: equations, equationMode, flowType
        integer(kind=intType) :: turbModel, cpModel, turbProd
@@ -730,6 +734,7 @@
        real(kind=realType), dimension(3) :: liftDirection
        real(kind=realType), dimension(3) :: dragDirection
        real(kind=realType), dimension(3) :: pointRef
+       real(kind=realType) :: SSuthDim, muSuthDim, TSuthDim
 
 #ifndef USE_TAPENADE
        real(kind=realType), dimension(3) :: velDirFreestreamd, velDirFreeStreamb

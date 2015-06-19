@@ -295,6 +295,10 @@
        pklim       = 20.0_realType
        wallOffset  = zero
 
+       SSuthDim    = 110.55_realType
+       muSuthDim   = 1.716e-5_realType
+       TSuthDim    = 273.15_realType
+
        rvfN = 1                             ! Version 1 of the v2f
                                             ! model is used.
        rvfB = .true.                        ! An upper bound is used

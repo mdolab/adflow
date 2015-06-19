@@ -108,6 +108,9 @@ python module libsumb
        subroutine initflow ! in :sumb:../../initFlow/initFlow.f90
        end subroutine initflow
 
+       subroutine updategamma
+       end subroutine updategamma
+
        subroutine updatecoordinatesalllevels ! in :sumb:../../preprocessing/mdUpdateRoutines.f90
        end subroutine updatecoordinatesalllevels
 
@@ -128,7 +131,7 @@ python module libsumb
 
        subroutine setflowinfinitystate
        end subroutine setflowinfinitystate
-       
+
        subroutine updatereferencepoint
        end subroutine updatereferencepoint
 
@@ -749,6 +752,9 @@ python module libsumb
          real(kind=realtype) dimension(3) :: pointref
          real(kind=realtype) dimension(3) :: pointrefec
          logical :: forcesastractions
+         real(kind=realtype) :: ssuthdim
+         real(kind=realtype) :: musuthdim
+         real(kind=realtype) :: tsuthdim
        end module inputphysics
 
        module inputadjoint ! in :sumb:../modules/inputParam.f90
