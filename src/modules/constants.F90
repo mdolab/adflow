@@ -31,12 +31,6 @@
        real(kind=realType), parameter :: eps   = 1.e-25_realType
        real(kind=realType), parameter :: large = 1.e+37_realType
 
-       ! Constant in Sutherland's law; SI-units.
-
-       real(kind=realType), parameter :: SSuthDim  = 110.55_realType
-       real(kind=realType), parameter :: muSuthDim = 1.716e-5_realType
-       real(kind=realType), parameter :: TSuthDim  = 273.15_realType
-
        ! Constants to define the porosity values
 
        integer(kind=porType), parameter :: noFlux     = -1_porType
