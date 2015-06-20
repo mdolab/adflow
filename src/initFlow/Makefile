@@ -99,8 +99,8 @@ FILES_TO_COMPLEXIFY= restartMod.f90\
 		 setPressureAndComputeEnergy.f90\
 		 setUniformFlow.f90\
 		 timeSpectralCoef.f90\
-		 timeSpectralMatrices.f90
-
+		 timeSpectralMatrices.f90\
+		 updateGamma.F90\
 ALL_FILES = $(FILES_TO_COMPLEXIFY) $(FILES_TO_COPY)
 OFILES := $(ALL_FILES:%.f90=%.o) $(ALL_FILES:%.F90=%.o) $(ALL_FILES:%.c=%.o)
 
