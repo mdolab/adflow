@@ -1887,12 +1887,26 @@ class SUMB(AeroSolver):
             rho = numpy.real(AP.rho)
             V = numpy.real(AP.V)
             mu = numpy.real(AP.mu)
+            
+            SSuthDim = numpy.real(AP.SSuthDim)
+            muSuthDim = numpy.real(AP.muSuthDim)
+            TSuthDim = numpy.real(AP.TSuthDim)
+            RGasDim = numpy.real(AP.R)
+            gammaConstant = numpy.real(AP.gamma)
+            Pr = numpy.real(AP.Pr)
         else:
             T = AP.T
             P = AP.P
             rho = AP.rho
             V = AP.V
             mu = AP.mu
+            
+            SSuthDim = AP.SSuthDim
+            muSuthDim = AP.muSuthDim
+            TSuthDim = AP.TSuthDim
+            RGasDim = AP.R
+            gammaConstant = AP.gamma
+            Pr = AP.Pr
             
         # Do some checking here for things that MUST be specified:
         if AP.mach is None:
@@ -1956,18 +1970,34 @@ class SUMB(AeroSolver):
 
         # Set reference state information:
         if self.getOption('equationType') != 'euler':
+            # RANS
             self.sumb.flowvarrefstate.pref = P
             self.sumb.flowvarrefstate.tref = T
             self.sumb.inputphysics.tempfreestream = T
             ReLength = 1.0
             self.sumb.inputphysics.reynolds = rho*V/mu
             self.sumb.inputphysics.reynoldslength = ReLength
+
+            self.sumb.inputphysics.ssuthdim = SSuthDim
+            self.sumb.inputphysics.musuthdim = muSuthDim
+            self.sumb.inputphysics.tsuthdim = TSuthDim
+            self.sumb.inputphysics.rgasdim = RGasDim            
+            self.sumb.inputphysics.gammaconstant = gammaConstant
+            self.sumb.updategamma() # NOTE! It is absolutely necessary to call this function, otherwise gamma is not properly updated.
+            self.sumb.inputphysics.prandtl = Pr            
         else:
+            # EULER
             self.sumb.flowvarrefstate.pref = P
             self.sumb.flowvarrefstate.tref = T
             self.sumb.inputphysics.tempfreestream = T
             self.sumb.inputphysics.reynolds = 1.0
             self.sumb.inputphysics.reynoldslength = 1.0
+
+            self.sumb.inputphysics.rgasdim = RGasDim            
+            self.sumb.inputphysics.gammaconstant = gammaConstant
+            self.sumb.updategamma() # NOTE! It is absolutely necessary to call this function, otherwise gamma is not properly updated.
+            self.sumb.inputphysics.prandtl = Pr
+
 
         # 4. Periodic Parameters --- These are not checked/verified
         # and come directly from aeroProblem. Make sure you specify
