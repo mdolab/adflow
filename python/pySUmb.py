@@ -1981,9 +1981,12 @@ class SUMB(AeroSolver):
             self.sumb.inputphysics.ssuthdim = SSuthDim
             self.sumb.inputphysics.musuthdim = muSuthDim
             self.sumb.inputphysics.tsuthdim = TSuthDim
-            self.sumb.inputphysics.rgasdim = RGasDim            
-            self.sumb.inputphysics.gammaconstant = gammaConstant
-            self.sumb.updategamma() # NOTE! It is absolutely necessary to call this function, otherwise gamma is not properly updated.
+            self.sumb.inputphysics.rgasdim = RGasDim
+            
+            # Update gamma only if it has changed from what currently is set
+            if abs(self.sumb.inputphysics.gammaconstant - gammaConstant) > 1.0e-12:
+                self.sumb.inputphysics.gammaconstant = gammaConstant
+                self.sumb.updategamma() # NOTE! It is absolutely necessary to call this function, otherwise gamma is not properly updated.
             self.sumb.inputphysics.prandtl = Pr            
         else:
             # EULER
@@ -1994,8 +1997,10 @@ class SUMB(AeroSolver):
             self.sumb.inputphysics.reynoldslength = 1.0
 
             self.sumb.inputphysics.rgasdim = RGasDim            
-            self.sumb.inputphysics.gammaconstant = gammaConstant
-            self.sumb.updategamma() # NOTE! It is absolutely necessary to call this function, otherwise gamma is not properly updated.
+            # Update gamma only if it has changed from what currently is set
+            if abs(self.sumb.inputphysics.gammaconstant - gammaConstant) > 1.0e-12:
+                self.sumb.inputphysics.gammaconstant = gammaConstant
+                self.sumb.updategamma() # NOTE! It is absolutely necessary to call this function, otherwise gamma is not properly updated.
             self.sumb.inputphysics.prandtl = Pr
 
 
