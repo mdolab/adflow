@@ -29,7 +29,14 @@ subroutine NKsolver
   use iteration
   implicit none
 #define PETSC_AVOID_MPIF_H
+
+#include "include/petscversion.h"
+#if PETSC_VERSION_MINOR > 5
+#include "petsc/finclude/petsc.h"
+#else
 #include "include/finclude/petsc.h"
+#endif
+
 
   ! Working Variables
   integer(kind=intType) :: iter, ierr, ksp_iterations
@@ -246,7 +253,14 @@ subroutine LSCubic(x, f, g, y, w, fnorm, ynorm, gnorm, nfevals, flag)
   use NKSolverVars, only: dRdw
   implicit none
 #define PETSC_AVOID_MPIF_H
+
+#include "include/petscversion.h"
+#if PETSC_VERSION_MINOR > 5
+#include "petsc/finclude/petsc.h"
+#else
 #include "include/finclude/petsc.h"
+#endif
+
 
   ! Input/Output
   Vec x, f, g, y, w
@@ -484,7 +498,14 @@ subroutine LSNone(x, f, g, y, w, nfevals, flag)
   implicit none
 
 #define PETSC_AVOID_MPIF_H
+
+#include "include/petscversion.h"
+#if PETSC_VERSION_MINOR > 5
+#include "petsc/finclude/petsc.h"
+#else
 #include "include/finclude/petsc.h"
+#endif
+
 
   ! Input/Output
   Vec x, f, g, y, w
@@ -521,7 +542,14 @@ subroutine LSNM(x, f, g, y, w, fnorm, ynorm, gnorm, nfevals, flag)
   use constants
   implicit none
 #define PETSC_AVOID_MPIF_H
+
+#include "include/petscversion.h"
+#if PETSC_VERSION_MINOR > 5
+#include "petsc/finclude/petsc.h"
+#else
 #include "include/finclude/petsc.h"
+#endif
+
 
   ! Input/Output
   Vec x, f, g, y, w

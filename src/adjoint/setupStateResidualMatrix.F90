@@ -34,8 +34,13 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   use adjointVars
   implicit none
 #define PETSC_AVOID_MPIF_H
-#include "include/finclude/petsc.h"
 
+#include "include/petscversion.h"
+#if PETSC_VERSION_MINOR > 5
+#include "petsc/finclude/petsc.h"
+#else
+#include "include/finclude/petsc.h"
+#endif
   ! PETSc Matrix Variable
   Mat matrix
 

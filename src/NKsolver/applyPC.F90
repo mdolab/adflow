@@ -92,15 +92,10 @@ subroutine applyAdjointPC(in_vec, out_vec, ndof)
   call EChk(ierr, __FILE__, __LINE__)
 
   ! This needs to be a bit better...
-#if PETSC_VERSION_MINOR > 4
+
      call KSPSetTolerances(adjointKSP, PETSC_DEFAULT_REAL, &
           PETSC_DEFAULT_REAL, PETSC_DEFAULT_REAL, &
           applyAdjointPCSubSpaceSize, ierr)
-#else
-     call KSPSetTolerances(adjointKSP, PETSC_DEFAULT_DOUBLE_PRECISION, &
-          PETSC_DEFAULT_DOUBLE_PRECISION, PETSC_DEFAULT_DOUBLE_PRECISION, &
-          applyAdjointPCSubSpaceSize, ierr)
-#endif
   call EChk(ierr, __FILE__, __LINE__)
 
   ! Actually do the Linear Krylov Solve
