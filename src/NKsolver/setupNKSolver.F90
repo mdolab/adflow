@@ -18,8 +18,14 @@ subroutine setupNKsolver
   use ADJointPetsc,  only: drdwpret
   implicit none
 #define PETSC_AVOID_MPIF_H
-#include "include/finclude/petsc.h"
+
 #include "include/petscversion.h"
+#if PETSC_VERSION_MINOR > 5
+#include "petsc/finclude/petsc.h"
+#else
+#include "include/finclude/petsc.h"
+#endif
+
   ! Working Variables
   integer(kind=intType) :: ierr, nDimw
   integer(kind=intType) , dimension(:), allocatable :: nnzDiagonal, nnzOffDiag
@@ -100,11 +106,8 @@ subroutine setupNKsolver
      call EChk(ierr, __FILE__, __LINE__)
 
      ! Set operators for the solver
-#if PETSC_VERSION_MINOR > 4
+
      call KSPSetOperators(newtonKrylovKSP, dRdw, dRdwPre, ierr)
-#else
-     call KSPSetOperators(newtonKrylovKSP, dRdw, dRdwPre, DIFFERENT_NONZERO_PATTERN, ierr)
-#endif
      call EChk(ierr, __FILE__, __LINE__)
 
      NKSolverSetup = .True.

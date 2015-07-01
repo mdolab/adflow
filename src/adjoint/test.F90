@@ -30,7 +30,14 @@ subroutine testRev(dwbar, wbar, m)
   integer(kind=intTYpe) :: m
 
 #define PETSC_AVOID_MPIF_H
+
+#include "include/petscversion.h"
+#if PETSC_VERSION_MINOR > 5
+#include "petsc/finclude/petsc.h"
+#else
 #include "include/finclude/petsc.h"
+#endif
+
   real(kind=realType),dimension(:),allocatable :: vec1, vec2 
 
   ! Local variables.
@@ -233,8 +240,15 @@ subroutine testRevSpatial(dwbar, xbar, stateSize, spatialSize)
   use walldistancedata, only : xSurfVec, xSurfVecd, xSurf, xSurfd, wallScatter
   implicit none
 #define PETSC_AVOID_MPIF_H
+
+#include "include/petscversion.h"
+#if PETSC_VERSION_MINOR > 5
+#include "petsc/finclude/petsc.h"
+#include "petsc/finclude/petscvec.h90"
+#else
 #include "include/finclude/petsc.h"
 #include "include/finclude/petscvec.h90"
+#endif
 
   ! Input Variables
   integer(kind=intTYpe) :: stateSize, SpatialSize
