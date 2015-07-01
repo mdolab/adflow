@@ -21,8 +21,14 @@ subroutine createPETScVars
   implicit none
 
 #define PETSC_AVOID_MPIF_H
-#include "include/finclude/petsc.h"
+
 #include "include/petscversion.h"
+#if PETSC_VERSION_MINOR > 5
+#include "petsc/finclude/petsc.h"
+#else
+#include "include/finclude/petsc.h"
+#endif
+
 
   !     Local variables.
   integer(kind=intType)  :: nDimW, nDimX, nDimPt, nDimCell
@@ -140,7 +146,12 @@ subroutine myMatCreate(matrix, blockSize, m, n, nnzDiagonal, nnzOffDiag, &
   implicit none
 
 #define PETSC_AVOID_MPIF_H
+#include "include/petscversion.h"
+#if PETSC_VERSION_MINOR > 5
+#include "petsc/finclude/petsc.h"
+#else
 #include "include/finclude/petsc.h"
+#endif
 
   Mat matrix
   integer(kind=intType), intent(in) :: blockSize, m, n
@@ -148,26 +159,13 @@ subroutine myMatCreate(matrix, blockSize, m, n, nnzDiagonal, nnzOffDiag, &
   character*(*) :: file
   integer(kind=intType) :: ierr, line
   if (blockSize > 1) then
-#if PETSC_VERSION_MINOR <  3
-     call MatCreateMPIBAIJ(SUMB_COMM_WORLD, blockSize, &
-          m, n, PETSC_DETERMINE, PETSC_DETERMINE, &
-          0, nnzDiagonal, 0, nnzOffDiag, matrix, ierr)
-#else
      call MatCreateBAIJ(SUMB_COMM_WORLD, blockSize, &
           m, n, PETSC_DETERMINE, PETSC_DETERMINE, &
           0, nnzDiagonal, 0, nnzOffDiag, matrix, ierr)
-#endif
-  else
-     
-#if PETSC_VERSION_MINOR <  3
-     call MatCreateMPIAIJ(SUMB_COMM_WORLD, &
-          m, n, PETSC_DETERMINE, PETSC_DETERMINE, &
-          0, nnzDiagonal, 0, nnzOffDiag, matrix, ierr)
-#else
+  else     
      call MatCreateAIJ(SUMB_COMM_WORLD,&
           m, n, PETSC_DETERMINE, PETSC_DETERMINE, &
           0, nnzDiagonal, 0, nnzOffDiag, matrix, ierr)
-#endif
      call EChk(ierr, file, line)
   end if
   

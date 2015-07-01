@@ -16,7 +16,13 @@ subroutine saveADjointMatrix(fileName)
 
 #ifndef USE_NO_PETSC
 #define PETSC_AVOID_MPIF_H
-#include "finclude/petsc.h"
+
+#include "include/petscversion.h"
+#if PETSC_VERSION_MINOR > 5
+#include "petsc/finclude/petsc.h"
+#else
+#include "include/finclude/petsc.h"
+#endif
 
   ! Input params
   character*(*), intent(in) :: fileName
@@ -44,7 +50,14 @@ subroutine saveAdjointPC(fileName)
 
 #ifndef USE_NO_PETSC
 #define PETSC_AVOID_MPIF_H
-#include "finclude/petsc.h"
+
+#include "include/petscversion.h"
+#if PETSC_VERSION_MINOR > 5
+#include "petsc/finclude/petsc.h"
+#else
+#include "include/finclude/petsc.h"
+#endif
+
   ! Input params
   character*(*), intent(in) :: fileName
 
