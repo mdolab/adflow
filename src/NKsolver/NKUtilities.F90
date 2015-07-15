@@ -23,9 +23,19 @@ subroutine setWVec(wVec)
 
   implicit none
 #define PETSC_AVOID_MPIF_H
-#include "finclude/petscsys.h"
-#include "finclude/petscvec.h"
-#include "finclude/petscvec.h90"
+
+
+#include "include/petscversion.h"
+#if PETSC_VERSION_MINOR > 5
+#include "petsc/finclude/petscsys.h"
+#include "petsc/finclude/petscvec.h"
+#include "petsc/finclude/petscvec.h90"
+#else
+#include "include/finclude/petscsys.h"
+#include "include/finclude/petscvec.h"
+#include "include/finclude/petscvec.h90"
+#endif
+
 
   Vec   wVec
   integer(kind=intType) :: ierr,nn,sps,i,j,k,l,ii
@@ -67,9 +77,18 @@ subroutine setRVec(rVec)
   use NKsolvervars, only: scalevec
   implicit none
 #define PETSC_AVOID_MPIF_H
-#include "finclude/petscsys.h"
-#include "finclude/petscvec.h"
-#include "finclude/petscvec.h90"
+
+#include "include/petscversion.h"
+#if PETSC_VERSION_MINOR > 5
+#include "petsc/finclude/petscsys.h"
+#include "petsc/finclude/petscvec.h"
+#include "petsc/finclude/petscvec.h90"
+#else
+#include "include/finclude/petscsys.h"
+#include "include/finclude/petscvec.h"
+#include "include/finclude/petscvec.h90"
+#endif
+
 
   Vec    rVec
   integer(kind=intType) :: ierr,nn,sps,i,j,k,l,ii
@@ -116,9 +135,17 @@ subroutine setRVec2(rVec)
   use NKsolvervars, only: scalevec
   implicit none
 #define PETSC_AVOID_MPIF_H
-#include "finclude/petscsys.h"
-#include "finclude/petscvec.h"
-#include "finclude/petscvec.h90"
+
+#include "include/petscversion.h"
+#if PETSC_VERSION_MINOR > 5
+#include "petsc/finclude/petscsys.h"
+#include "petsc/finclude/petscvec.h"
+#include "petsc/finclude/petscvec.h90"
+#else
+#include "include/finclude/petscsys.h"
+#include "include/finclude/petscvec.h"
+#include "include/finclude/petscvec.h90"
+#endif
 
   Vec    rVec
   integer(kind=intType) :: ierr,nn,sps,i,j,k,l,ii
@@ -159,9 +186,18 @@ subroutine setW(wVec)
 
   implicit none
 #define PETSC_AVOID_MPIF_H
-#include "finclude/petscsys.h"
-#include "finclude/petscvec.h"
-#include "finclude/petscvec.h90"
+
+#include "include/petscversion.h"
+#if PETSC_VERSION_MINOR > 5
+#include "petsc/finclude/petscsys.h"
+#include "petsc/finclude/petscvec.h"
+#include "petsc/finclude/petscvec.h90"
+#else
+#include "include/finclude/petscsys.h"
+#include "include/finclude/petscvec.h"
+#include "include/finclude/petscvec.h90"
+#endif
+
 
   Vec  wVec
   integer(kind=intType) :: ierr,nn,sps,i,j,k,l,ii
