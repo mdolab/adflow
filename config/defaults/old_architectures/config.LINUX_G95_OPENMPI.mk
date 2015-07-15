@@ -131,7 +131,8 @@ LINKER_FLAGS = $(FF90_OPTFLAGS)
 #PETSC_INCLUDE_FLAGS = -DUSE_NO_PETSC
 PETSC_DIR =/usr/lib/petscdir/3.0.0/
 
-#include ${PETSC_DIR}/conf/variables
+#include ${PETSC_DIR}/lib/petsc/conf/variables # PETSc 3.6
+#include ${PETSC_DIR}/conf/variables # PETSc 3.5
 
 #PETSC_INCLUDE_FLAGS=${PETSC_CC_INCLUDES} -I$(PETSC_DIR)
 #PETSC_LINKER_FLAGS=${PETSC_LIB}

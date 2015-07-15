@@ -20,7 +20,13 @@ subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useSta
 
   implicit none
 #define PETSC_AVOID_MPIF_H
-#include "finclude/petsc.h"
+
+#include "include/petscversion.h"
+#if PETSC_VERSION_MINOR > 5
+#include "petsc/finclude/petsc.h"
+#else
+#include "include/finclude/petsc.h"
+#endif
 
   ! Input Variables
   integer(kind=intType), intent(in) :: spatialSize, extraSize, stateSize, costSize, fSize
@@ -258,8 +264,16 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, fbar, useSpatial, useSta
   implicit none
 
 #define PETSC_AVOID_MPIF_H
-#include "finclude/petsc.h"
-#include "finclude/petscvec.h90"
+
+#include "include/petscversion.h"
+#if PETSC_VERSION_MINOR > 5
+#include "petsc/finclude/petsc.h"
+#include "petsc/finclude/petscvec.h90"
+#else
+#include "include/finclude/petsc.h"
+#include "include/finclude/petscvec.h90"
+#endif
+
 
   ! Input Variables
   integer(kind=intType), intent(in) :: spatialSize, extraSize, stateSize, costSize, fSize
@@ -767,8 +781,17 @@ subroutine dRdwTMatMult(A, vecX,  vecY, ierr)
   use inputTimeSpectral
   implicit none
 #define PETSC_AVOID_MPIF_H
-#include "finclude/petsc.h"
-#include "finclude/petscvec.h90"
+
+#include "include/petscversion.h"
+#if PETSC_VERSION_MINOR > 5
+#include "petsc/finclude/petsc.h"
+#include "petsc/finclude/petscvec.h90"
+#else
+#include "include/finclude/petsc.h"
+#include "include/finclude/petscvec.h90"
+#endif
+
+
   ! PETSc Arguments
   Mat   A
   Vec   vecX, vecY
@@ -815,8 +838,15 @@ subroutine dRdwMatMult(A, vecX,  vecY, ierr)
 
   implicit none
 #define PETSC_AVOID_MPIF_H
-#include "finclude/petsc.h"
-#include "finclude/petscvec.h90"
+
+#include "include/petscversion.h"
+#if PETSC_VERSION_MINOR > 5
+#include "petsc/finclude/petsc.h"
+#include "petsc/finclude/petscvec.h90"
+#else
+#include "include/finclude/petsc.h"
+#include "include/finclude/petscvec.h90"
+#endif
 
   ! PETSc Arguments
   Mat   A
