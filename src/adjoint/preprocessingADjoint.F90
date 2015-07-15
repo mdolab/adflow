@@ -19,7 +19,14 @@ subroutine preprocessingADjoint
 
 #ifndef USE_NO_PETSC
 #define PETSC_AVOID_MPIF_H
+
+#include "include/petscversion.h"
+#if PETSC_VERSION_MINOR > 5
+#include "petsc/finclude/petsc.h"
+#else
 #include "include/finclude/petsc.h"
+#endif
+
 #endif
 
   !     Local variables.
@@ -47,63 +54,31 @@ subroutine preprocessingADjoint
   nDimPsi = nState*  nCellsLocal(1_intType)*nTimeIntervalsSpectral
   nDimX = 3 * nNodesLocal(1_intType)*nTimeIntervalsSpectral
 
-  if (PETSC_VERSION_MINOR == 2) then
+  ! Two w-like vectors. 
+  call VecCreateMPIWithArray(SUMB_COMM_WORLD,nw,ndimW,PETSC_DECIDE, &
+       PETSC_NULL_SCALAR,w_like1,PETScIerr)
+  call EChk(PETScIerr,__FILE__,__LINE__)
 
-     ! Two w-like vectors. 
-     call VecCreateMPIWithArray(SUMB_COMM_WORLD,ndimW,PETSC_DECIDE, &
-          PETSC_NULL_SCALAR,w_like1,PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
+  call VecCreateMPIWithArray(SUMB_COMM_WORLD,nw,ndimW,PETSC_DECIDE, &
+       PETSC_NULL_SCALAR,w_like2,PETScIerr)
+  call EChk(PETScIerr,__FILE__,__LINE__)
 
-     call VecCreateMPIWithArray(SUMB_COMM_WORLD,ndimW,PETSC_DECIDE, &
-          PETSC_NULL_SCALAR,w_like2,PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
+  ! Two psi-like vectors. 
+  call VecCreateMPIWithArray(SUMB_COMM_WORLD,nState,ndimPsi,PETSC_DECIDE, &
+       PETSC_NULL_SCALAR,psi_like1,PETScIerr)
+  call EChk(PETScIerr,__FILE__,__LINE__)
 
-     ! Two psi-like vectors. 
-     call VecCreateMPIWithArray(SUMB_COMM_WORLD,ndimPsi,PETSC_DECIDE, &
-          PETSC_NULL_SCALAR,psi_like1,PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
+  call VecCreateMPIWithArray(SUMB_COMM_WORLD,nstate,ndimPsi,PETSC_DECIDE, &
+       PETSC_NULL_SCALAR,psi_like2,PETScIerr)
+  call EChk(PETScIerr,__FILE__,__LINE__)
 
-     call VecCreateMPIWithArray(SUMB_COMM_WORLD,ndimPsi,PETSC_DECIDE, &
-          PETSC_NULL_SCALAR,psi_like2,PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
+  call VecCreateMPIWithArray(SUMB_COMM_WORLD,nstate,ndimPsi,PETSC_DECIDE, &
+       PETSC_NULL_SCALAR,psi_like3,PETScIerr)
+  call EChk(PETScIerr,__FILE__,__LINE__)
 
-     call VecCreateMPIWithArray(SUMB_COMM_WORLD,ndimPsi,PETSC_DECIDE, &
-          PETSC_NULL_SCALAR,psi_like3,PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
-
-     call VecCreateMPIWithArray(SUMB_COMM_WORLD,ndimX,PETSC_DECIDE, &
-          PETSC_NULL_SCALAR,x_like,PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
-
-  else
-
-     ! Two w-like vectors. 
-     call VecCreateMPIWithArray(SUMB_COMM_WORLD,nw,ndimW,PETSC_DECIDE, &
-          PETSC_NULL_SCALAR,w_like1,PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
-
-     call VecCreateMPIWithArray(SUMB_COMM_WORLD,nw,ndimW,PETSC_DECIDE, &
-          PETSC_NULL_SCALAR,w_like2,PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
-
-     ! Two psi-like vectors. 
-     call VecCreateMPIWithArray(SUMB_COMM_WORLD,nState,ndimPsi,PETSC_DECIDE, &
-          PETSC_NULL_SCALAR,psi_like1,PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
-
-     call VecCreateMPIWithArray(SUMB_COMM_WORLD,nstate,ndimPsi,PETSC_DECIDE, &
-          PETSC_NULL_SCALAR,psi_like2,PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
-
-     call VecCreateMPIWithArray(SUMB_COMM_WORLD,nstate,ndimPsi,PETSC_DECIDE, &
-          PETSC_NULL_SCALAR,psi_like3,PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
-
-     call VecCreateMPIWithArray(SUMB_COMM_WORLD,3,ndimX,PETSC_DECIDE, &
-          PETSC_NULL_SCALAR,x_like,PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
-  end if
-
+  call VecCreateMPIWithArray(SUMB_COMM_WORLD,3,ndimX,PETSC_DECIDE, &
+       PETSC_NULL_SCALAR,x_like,PETScIerr)
+  call EChk(PETScIerr,__FILE__,__LINE__)
 
   ! Need to initialize the stencils as well, only once:
   call initialize_stencils
