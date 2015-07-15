@@ -186,9 +186,13 @@
 
                ! Check if BCData is allocated yet:
                if (.not. bcData(mm)%symNormSet) then
-                  bcData(mm)%symNorm(1) = norm(1)
-                  bcData(mm)%symNorm(2) = norm(2)
-                  bcData(mm)%symNorm(3) = norm(3)
+                  length = sqrt(norm(1)**2 + norm(2)**2 + norm(3)**2)
+                  if (length == 0) then 
+                     length = eps
+                  end if
+                  bcData(mm)%symNorm(1) = norm(1)/length
+                  bcData(mm)%symNorm(2) = norm(2)/length
+                  bcData(mm)%symNorm(3) = norm(3)/length
                   bcData(mm)%symNormSet = .True.
                else
 
@@ -197,7 +201,7 @@
                   length = sqrt(norm(1)**2 + norm(2)**2 + norm(3)**2)
                   if (length > eps) then
                      tmp = norm / length
-                     tmp2 = bcData(mm)%symNorm / length
+                     tmp2 = bcData(mm)%symNorm
                      dot = dot_product(tmp, tmp2)
                      if (abs(dot) < tolDotmin) then
                         print *, 'Symmetry Plane normal has changed from initial configuration. Resetting.'
