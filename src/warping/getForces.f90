@@ -142,15 +142,16 @@ subroutine getForceConnectivity(conn, ncell)
   ! Working
   integer(kind=intType) :: nn, mm, cellCount, nodeCount, ni, nj, i, j
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd
-  
+  logical regularOrdering
   cellCount = 0
   nodeCount = 0
 
   domains: do nn=1,nDom
-     call setPointers(nn,1_intType,1_intType)
+     call setPointers(nn, 1_intType, 1_intType)
      bocos: do mm=1,nBocos
-        if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic .or.&
-             BCType(mm) == NSWallIsothermal) then
+        if(BCType(mm) == EulerWall .or. &
+           BCType(mm) == NSWallAdiabatic .or. &
+           BCType(mm) == NSWallIsothermal) then
 
            jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
            iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
@@ -158,17 +159,70 @@ subroutine getForceConnectivity(conn, ncell)
            ni = iEnd - iBeg + 1
            nj = jEnd - jBeg + 1
            
-           ! Loop over generic face size...Note we are doing zero
-           ! based ordering!
-           do j=0,nj-2
-              do i=0,ni-2
-                 conn(4*cellCount+1) = nodeCount + (j  )*ni + i
-                 conn(4*cellCount+2) = nodeCount + (j  )*ni + i + 1
-                 conn(4*cellCount+3) = nodeCount + (j+1)*ni + i + 1
-                 conn(4*cellCount+4) = nodeCount + (j+1)*ni + i  
-                 cellCount = cellCount + 1
-              end do
-           end do
+           ! We want to ensure that all the normals of the faces are
+           ! consistent. To ensure this, we enforce that all normals
+           ! are "into" the domain. Therefore we must treat difference
+           ! faces of a block differently. For example for an iLow
+           ! face, when looping over j-k in the regular way, results
+           ! in in a domain inward pointing normal for iLow but
+           ! outward pointing normal for iHigh. The same is true for
+           ! kMin and kMax. However, it is reverse for the J-faces:
+           ! This is becuase the way the pointers are extracted i then
+           ! k is the reverse of what "should" be for consistency. The
+           ! other two, the pointers are cyclic consistent: i,j->k,
+           ! j,k (wrap) ->i, but for the j-direction is is i,k->j when
+           ! to be consistent with the others it should be
+           ! k,i->j. Hope that made sense. 
+
+           select case(BCFaceID(mm))
+           case(iMin, jMax, kMin)
+              regularOrdering = .True.
+           case default
+              regularOrdering = .False.
+           end select
+
+           ! Now this can be reversed *again* if we have a block that
+           ! is left handed. 
+           if (.not. rightHanded) then 
+              regularOrdering = .not. (regularOrdering)
+           end if
+
+           if (regularOrdering) then 
+                 ! Do regular ordering.
+                 
+                 ! Loop over generic face size...Note we are doing zero
+                 ! based ordering!
+
+                 ! This cartoon of a generic cell might help:
+                 !
+                 ! i, j+1 +-----+ i+1, j+1
+                 !   n4   |     | n3
+                 !        +-----+
+                 !       i,j    i+1, j
+                 !       n1     n2
+                 !
+
+                 do j=0,nj-2
+                    do i=0,ni-2
+                       conn(4*cellCount+1) = nodeCount + (j  )*ni + i     ! n1
+                       conn(4*cellCount+2) = nodeCount + (j  )*ni + i + 1 ! n2
+                       conn(4*cellCount+3) = nodeCount + (j+1)*ni + i + 1 ! n3
+                       conn(4*cellCount+4) = nodeCount + (j+1)*ni + i     ! n4
+                       cellCount = cellCount + 1
+                    end do
+                 end do
+              else
+                 ! Do reverse ordering:
+                 do j=0,nj-2
+                    do i=0,ni-2
+                       conn(4*cellCount+1) = nodeCount + (j  )*ni + i     ! n1
+                       conn(4*cellCount+2) = nodeCount + (j+1)*ni + i     ! n4
+                       conn(4*cellCount+3) = nodeCount + (j+1)*ni + i + 1 ! n3
+                       conn(4*cellCount+4) = nodeCount + (j  )*ni + i + 1 ! n2
+                       cellCount = cellCount + 1
+                    end do
+                 end do
+              end if
            nodeCount = nodeCount + ni*nj
         end if
      end do bocos
