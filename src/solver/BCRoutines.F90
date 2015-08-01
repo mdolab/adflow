@@ -1200,7 +1200,7 @@ contains
     real(kind=realType) :: rxj, ryj, rzj, rxk, ryk, rzk
     real(kind=realType) :: dpj, dpk, ri, rj, rk, qj, qk, vn
     real(kind=realType) :: uux, uuy, uuz
-    real(kind=realType), dimension(iSize, jSize) :: grad
+    real(kind=realType), dimension(iStart:iEnd, jStart:jEnd) :: grad
 
     ! Make sure that on the coarser grids the constant pressure
     ! boundary condition is used.

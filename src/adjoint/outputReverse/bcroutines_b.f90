@@ -1191,8 +1191,8 @@ contains
     real(kind=realtype) :: dpj, dpk, ri, rj, rk, qj, qk, vn
     real(kind=realtype) :: vnd
     real(kind=realtype) :: uux, uuy, uuz
-    real(kind=realtype), dimension(isize, jsize) :: grad
-    real(kind=realtype), dimension(isize, jsize) :: gradd
+    real(kind=realtype), dimension(istart:iend,jstart:jend) :: grad
+    real(kind=realtype), dimension(istart:iend,jstart:jend) :: gradd
     intrinsic mod
     real(kind=realtype) :: dim
     integer :: branch

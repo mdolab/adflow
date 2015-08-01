@@ -831,8 +831,8 @@ contains
     real(kind=realtype) :: dpjd, dpkd, rid, rjd, rkd, qjd, qkd, vnd
     real(kind=realtype) :: uux, uuy, uuz
     real(kind=realtype) :: uuxd, uuyd, uuzd
-    real(kind=realtype), dimension(isize, jsize) :: grad
-    real(kind=realtype), dimension(isize, jsize) :: gradd
+    real(kind=realtype), dimension(istart:iend,jstart:jend) :: grad
+    real(kind=realtype), dimension(istart:iend,jstart:jend) :: gradd
     intrinsic mod
     intrinsic max
     intrinsic min
@@ -1119,7 +1119,7 @@ contains
     real(kind=realtype) :: rxj, ryj, rzj, rxk, ryk, rzk
     real(kind=realtype) :: dpj, dpk, ri, rj, rk, qj, qk, vn
     real(kind=realtype) :: uux, uuy, uuz
-    real(kind=realtype), dimension(isize, jsize) :: grad
+    real(kind=realtype), dimension(istart:iend,jstart:jend) :: grad
     intrinsic mod
     intrinsic max
     intrinsic min
