@@ -62,7 +62,7 @@ subroutine convergenceHeader
 
      ! Add the number of characters needed for the actual variables.
 
-       nCharWrite = nCharWrite + nMon*(fieldWidth+1)
+       nCharWrite = nCharWrite + nMon*(fieldWidthLarge+1)
        if( showCPU ) nCharWrite = nCharWrite + fieldWidth + 1
        if(nOutflowSubsonic + nOutflowBleeds+ nInflowSubsonic > 0 ) &
             nCharWrite = nCharWrite +  fieldWidth + 1 ! eran-massf
@@ -104,97 +104,97 @@ subroutine convergenceHeader
          ! corresponding text.
          select case (monNames(i))
 
-        case ("totalR")
-           write(*,"(a)",advance="no") "  totalRes  |"
+           case ("totalR")
+             write(*,"(a)",advance="no") "        totalRes        |"
 
            case (cgnsL2resRho)
-             write(*,"(a)",advance="no") "   Res rho  |"
+             write(*,"(a)",advance="no") "        Res rho         |"
 
            case (cgnsL2resMomx)
-             write(*,"(a)",advance="no") "  Res rhou  |"
+             write(*,"(a)",advance="no") "        Res rhou        |"
 
            case (cgnsL2resMomy)
-             write(*,"(a)",advance="no") "  Res rhov  |"
+             write(*,"(a)",advance="no") "        Res rhov        |"
 
            case (cgnsL2resMomz)
-             write(*,"(a)",advance="no") "  Res rhow  |"
+             write(*,"(a)",advance="no") "        Res rhow        |"
 
            case (cgnsL2resRhoe)
-             write(*,"(a)",advance="no") "  Res rhoE  |"
+             write(*,"(a)",advance="no") "        Res rhoE        |"
 
            case (cgnsL2resNu)
-             write(*,"(a)",advance="no") " Res nuturb |"
+             write(*,"(a)",advance="no") "       Res nuturb       |"
 
            case (cgnsL2resK)
-             write(*,"(a)",advance="no") "  Res kturb |"
+             write(*,"(a)",advance="no") "       Res kturb        |"
 
            case (cgnsL2resOmega)
-             write(*,"(a)",advance="no") "  Res wturb |"
+             write(*,"(a)",advance="no") "       Res wturb        |"
 
            case (cgnsL2resTau)
-             write(*,"(a)",advance="no") " Res tauturb|"
+             write(*,"(a)",advance="no") "       Res tauturb      |"
 
            case (cgnsL2resEpsilon)
-             write(*,"(a)",advance="no") " Res epsturb|"
+             write(*,"(a)",advance="no") "       Res epsturb      |"
 
            case (cgnsL2resV2)
-             write(*,"(a)",advance="no") "  Res v2turb|"
+             write(*,"(a)",advance="no") "       Res v2turb       |"
 
            case (cgnsL2resF)
-             write(*,"(a)",advance="no") "  Res fturb |"
+             write(*,"(a)",advance="no") "       Res fturb        |"
 
            case (cgnsCl)
-             write(*,"(a)",advance="no") "   C_lift   |"
+             write(*,"(a)",advance="no") "         C_lift         |"
 
            case (cgnsClp)
-             write(*,"(a)",advance="no") "  C_lift_p  |"
+             write(*,"(a)",advance="no") "        C_lift_p        |"
 
            case (cgnsClv)
-             write(*,"(a)",advance="no") "  C_lift_v  |"
+             write(*,"(a)",advance="no") "        C_lift_v        |"
 
            case (cgnsCd)
-             write(*,"(a)",advance="no") "   C_drag   |"
+             write(*,"(a)",advance="no") "        C_drag          |"
 
            case (cgnsCdp)
-             write(*,"(a)",advance="no") "  C_drag_p  |"
+             write(*,"(a)",advance="no") "        C_drag_p        |"
 
            case (cgnsCdv)
-             write(*,"(a)",advance="no") "  C_drag_v  |"
+             write(*,"(a)",advance="no") "        C_drag_v        |"
 
            case (cgnsCfx)
-             write(*,"(a)",advance="no") "    C_Fx    |"
+             write(*,"(a)",advance="no") "          C_Fx          |"
 
            case (cgnsCfy)
-             write(*,"(a)",advance="no") "    C_Fy    |"
+             write(*,"(a)",advance="no") "          C_Fy          |"
 
            case (cgnsCfz)
-             write(*,"(a)",advance="no") "    C_Fz    |"
+             write(*,"(a)",advance="no") "          C_Fz          |"
 
            case (cgnsCmx)
-             write(*,"(a)",advance="no") "    C_Mx    |"
+             write(*,"(a)",advance="no") "          C_Mx          |"
 
            case (cgnsCmy)
-             write(*,"(a)",advance="no") "    C_My    |"
+             write(*,"(a)",advance="no") "          C_My          |"
 
            case (cgnsCmz)
-             write(*,"(a)",advance="no") "    C_Mz    |"
+             write(*,"(a)",advance="no") "          C_Mz          |"
 
            case (cgnsHdiffMax)
-             write(*,"(a)",advance="no") "  |H-H_inf| |"
+             write(*,"(a)",advance="no") "       |H-H_inf|        |"
 
            case (cgnsMachMax)
-             write(*,"(a)",advance="no") "  Mach_max  |"
+             write(*,"(a)",advance="no") "        Mach_max        |"
 
            case (cgnsYplusMax)
-             write(*,"(a)",advance="no") "   Y+_max   |"
+             write(*,"(a)",advance="no") "         Y+_max         |"
 
            case (cgnsEddyMax)
-             write(*,"(a)",advance="no") "  Eddyv_max |"
+             write(*,"(a)",advance="no") "        Eddyv_max       |"
 
           case (cgnsSepSensor)
-             write(*,"(a)",advance="no") "  SepSensor |"
+             write(*,"(a)",advance="no") "        SepSensor       |"
           case (cgnsCavitation)
-             write(*,"(a)",advance="no") "  Cavitation |"
+             write(*,"(a)",advance="no") "       Cavitation       |"
           end select
        enddo
 
@@ -237,11 +237,11 @@ subroutine convergenceHeader
          ! corresponding text.
         select case (monNames(i))
 
-        case (cgnsHdiffMax)
-           write(*,"(a)",advance="no") "     max    |"
+          case (cgnsHdiffMax)
+             write(*,"(a)",advance="no") "           max          |"
 
            case default
-             write(*,"(a)",advance="no") "            |"
+             write(*,"(a)",advance="no") "                        |"
 
 
          end select
@@ -250,7 +250,7 @@ subroutine convergenceHeader
    end if
 
    if(nOutflowSubsonic + nOutflowBleeds + nInflowSubsonic  > 0 ) & 
-        write(*,"(a)",advance="no") "               |" ! eran-massf
+        write(*,"(a)",advance="no") "                        |" ! eran-massf
 
    print "(1x)"
 
