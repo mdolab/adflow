@@ -27,6 +27,7 @@
 !      Parameters for the format to write the convergence to stdout.
 !
        integer, parameter :: fieldWidth   = 12
+       integer, parameter :: fieldWidthLarge   = 24
        integer, parameter :: decimalWidth =  5
 !
 !      ******************************************************************
