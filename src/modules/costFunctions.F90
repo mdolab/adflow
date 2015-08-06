@@ -74,6 +74,9 @@ module costFunctions
   real(kind=realType), dimension(nCostFunction)   :: funcValuesd
   real(kind=realType), dimension(nCostFunction)   :: funcValuesb
 #endif
+  
+  real(kind=realtype) :: sepSensorOffset, sepSensorSharpness
+
 end module costFunctions
 
 

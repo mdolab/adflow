@@ -44,6 +44,7 @@ subroutine forcesandmoments_d(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd&
   use flowvarrefstate
   use inputphysics
   use bcroutines_d
+  use costfunctions
   use diffsizes
 !  hint: isize1ofdrfbcdata should be the size of dimension 1 of array *bcdata
   implicit none
@@ -323,9 +324,10 @@ bocos:do nn=1,nbocos
         sensor = -(v(1)*veldirfreestream(1)+v(2)*veldirfreestream(2)+v(3&
 &         )*veldirfreestream(3))
 !now run through a smooth heaviside function:
-        sensord = -((-(one*2*10*sensord*exp(-(2*10*sensor))))/(one+exp(-&
-&         (2*10*sensor)))**2)
-        sensor = one/(one+exp(-(2*10*sensor)))
+        arg1d = -(2*sepsensorsharpness*sensord)
+        arg1 = -(2*sepsensorsharpness*(sensor-sepsensoroffset))
+        sensord = -(one*arg1d*exp(arg1)/(one+exp(arg1))**2)
+        sensor = one/(one+exp(arg1))
 ! and integrate over the area of this cell and save:
         sensord = four*(sensord*qa+sensor*qad)
         sensor = sensor*four*qa
