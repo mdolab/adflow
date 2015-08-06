@@ -3494,8 +3494,8 @@ class SUMB(AeroSolver):
             'usematrixfreedrdw':{'location':'inputadjoint.usematrixfreedrdw'},
 
             # Parameters for functions
-            'sepsensoroffset':{'location','costfunctions.sepsensoroffset'},
-            'sepsensorsharpness':{'location','costfunctions.sepsensorsharpness'},
+            'sepsensoroffset':{'location':'costfunctions.sepsensoroffset'},
+            'sepsensorsharpness':{'location':'costfunctions.sepsensorsharpness'},
             }
 
         return optionMap
