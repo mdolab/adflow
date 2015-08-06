@@ -48,6 +48,7 @@ subroutine forcesandmoments_b(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd&
   use flowvarrefstate
   use inputphysics
   use bcroutines_b
+  use costfunctions
   implicit none
 !
 !      subroutine arguments
@@ -311,7 +312,8 @@ bocos:do nn=1,nbocos
         sensor = -(v(1)*veldirfreestream(1)+v(2)*veldirfreestream(2)+v(3&
 &         )*veldirfreestream(3))
 !now run through a smooth heaviside function:
-        sensor = one/(one+exp(-(2*10*sensor)))
+        sensor = one/(one+exp(-(2*sepsensorsharpness*(sensor-&
+&         sepsensoroffset))))
 ! and integrate over the area of this cell and save:
         sensor = sensor*four*qa
         sepsensor = sepsensor + sensor
@@ -744,7 +746,8 @@ bocos:do nn=1,nbocos
 &         )*veldirfreestream(3))
 !now run through a smooth heaviside function:
         call pushreal8(sensor)
-        sensor = one/(one+exp(-(2*10*sensor)))
+        sensor = one/(one+exp(-(2*sepsensorsharpness*(sensor-&
+&         sepsensoroffset))))
 ! and integrate over the area of this cell and save:
         plocal = pp2(i, j)
         tmp = two/(gammainf*pinf*machcoef*machcoef)
@@ -776,9 +779,9 @@ bocos:do nn=1,nbocos
         pp2d(i, j) = pp2d(i, j) + plocald
         sensord = four*qa*sensord
         call popreal8(sensor)
-        temp6 = -(10*2*sensor)
+        temp6 = -(2*sepsensorsharpness*(sensor-sepsensoroffset))
         temp5 = one + exp(temp6)
-        sensord = exp(temp6)*one*10*2*sensord/temp5**2
+        sensord = exp(temp6)*one*sepsensorsharpness*2*sensord/temp5**2
         vd(1) = vd(1) - veldirfreestream(1)*sensord
         veldirfreestreamd(1) = veldirfreestreamd(1) - v(1)*sensord
         vd(2) = vd(2) - veldirfreestream(2)*sensord
