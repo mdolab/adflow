@@ -1191,8 +1191,8 @@ contains
     real(kind=realtype) :: dpj, dpk, ri, rj, rk, qj, qk, vn
     real(kind=realtype) :: vnd
     real(kind=realtype) :: uux, uuy, uuz
-    real(kind=realtype), dimension(istart:iend,jstart:jend) :: grad
-    real(kind=realtype), dimension(istart:iend,jstart:jend) :: gradd
+    real(kind=realtype), dimension(istart:iend, jstart:jend) :: grad
+    real(kind=realtype), dimension(istart:iend, jstart:jend) :: gradd
     intrinsic mod
     real(kind=realtype) :: dim
     integer :: branch
@@ -1362,7 +1362,7 @@ contains
     real(kind=realtype) :: rxj, ryj, rzj, rxk, ryk, rzk
     real(kind=realtype) :: dpj, dpk, ri, rj, rk, qj, qk, vn
     real(kind=realtype) :: uux, uuy, uuz
-    real(kind=realtype), dimension(isize, jsize) :: grad
+    real(kind=realtype), dimension(istart:iend, jstart:jend) :: grad
     intrinsic mod
     real(kind=realtype) :: dim
 ! make sure that on the coarser grids the constant pressure

@@ -33,6 +33,7 @@
        use inputIO
        use iteration ! eran-avf
        use communication 
+       use costFunctions
        implicit none
 !
 !      Subroutine arguments.
@@ -870,7 +871,7 @@
                sensor = -dot_product(v, velDirFreeStream)
                
                !Now run through a smooth heaviside function:
-               sensor = one/(one + exp(-2*10*sensor))
+               sensor = one/(one + exp(-2*sepSensorSharpness*(sensor - sepSensorOffset)))
                buffer(nn) = sensor
              enddo
            enddo

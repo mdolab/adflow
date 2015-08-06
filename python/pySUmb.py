@@ -3238,6 +3238,10 @@ class SUMB(AeroSolver):
             'verifystate':[bool, True],
             'verifyspatial':[bool, True],
             'verifyextra':[bool, True],
+
+            # Function parmeters
+            'sepsensoroffset':[float, 0.0],
+            'sepsensorsharpness':[float, 10.0],
             }
 
         return defOpts
@@ -3488,6 +3492,10 @@ class SUMB(AeroSolver):
             'verifyspatial':{'location':'inputadjoint.verifyspatial'},
             'verifyextra':{'location':'inputadjoint.verifyextra'},
             'usematrixfreedrdw':{'location':'inputadjoint.usematrixfreedrdw'},
+
+            # Parameters for functions
+            'sepsensoroffset':{'location','costfunctions.sepsensoroffset'},
+            'sepsensorsharpness':{'location','costfunctions.sepsensorsharpness'},
             }
 
         return optionMap

@@ -30,6 +30,7 @@
        use NKSolverVars
        use inputDiscretization
        use ADjointPETSc
+       use costFunctions
        implicit none
 !
 !      ******************************************************************
@@ -434,4 +435,6 @@
        adjointPETScVarsAllocated = .False.
        usematrixfreedrdw = .False.
        nksolvecount = 0
+       sepSensorOffset = zero
+       sepSensorSharpness = 10_realType
        end subroutine setDefaultValues

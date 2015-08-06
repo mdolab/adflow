@@ -27,6 +27,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, Cavitation)
   use flowVarRefState
   use inputPhysics
   use bcroutines
+  use costFunctions
   implicit none
   !
   !      Subroutine arguments
@@ -221,7 +222,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, Cavitation)
                 v(3)*velDirFreeStream(3))
 
            !Now run through a smooth heaviside function:
-           sensor = one/(one + exp(-2*10*sensor))
+           sensor = one/(one + exp(-2*sepSensorSharpness*(sensor-sepSensorOffset)))
 
            ! And integrate over the area of this cell and save:
            sensor = sensor * four * qA
