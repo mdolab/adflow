@@ -763,7 +763,8 @@ subroutine computeMatrixFreeProductBwdFast(dwbar, wbar, stateSize)
      equations = RANSEquations
   end if
 end subroutine computeMatrixFreeProductBwdFast
-#endif ! if def for complex
+#endif 
+! if def for complex
 
 subroutine dRdwTMatMult(A, vecX,  vecY, ierr)
 
@@ -802,17 +803,26 @@ subroutine dRdwTMatMult(A, vecX,  vecY, ierr)
 
 #ifndef USE_COMPLEX
 
+#if PETSC_VERSION_MINOR > 5
+  call VecGetArrayReadF90(vecX, dwb_pointer, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+#else
   call VecGetArrayF90(vecX, dwb_pointer, ierr)
   call EChk(ierr,__FILE__,__LINE__)
+#endif
 
   call VecGetArrayF90(VecY, wb_pointer, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
   call computeMatrixFreeProductBwdFast(dwb_pointer, wb_pointer, size(wb_pointer))
 
+#if PETSC_VERSION_MINOR > 5
+  call VecRestoreArrayReadF90(vecX, dwb_pointer, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+#else
   call VecRestoreArrayF90(vecX, dwb_pointer, ierr)
   call EChk(ierr,__FILE__,__LINE__)
-
+#endif
   call VecRestoreArrayF90(VecY, wb_pointer, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
@@ -859,14 +869,20 @@ subroutine dRdwMatMult(A, vecX,  vecY, ierr)
   logical :: useState, useSpatial
   real(kind=realType) :: extraBarDummy
   integer(kind=intType) :: spatialSize, extraSize
-  integer(kind=intType) :: stateSize, costSize
+  integer(kind=intType) :: stateSize, costSize, fSize, fSIzeCell
   real(kind=realType), dimension(:), allocatable :: Xvdot
+  real(kind=realType), dimension(:, :), allocatable :: fDot
   real(kind=realType) :: extraDot(nDesignExtra)
   real(kind=realType) ::funcsDot(nCostFunction)
 #ifndef USE_COMPLEX
 
+#if PETSC_VERSION_MINOR > 5
+  call VecGetArrayReadF90(vecX, wd_pointer, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+#else
   call VecGetArrayF90(vecX, wd_pointer, ierr)
   call EChk(ierr,__FILE__,__LINE__)
+#endif
 
   call VecGetArrayF90(VecY, dwd_pointer, ierr)
   call EChk(ierr,__FILE__,__LINE__)
@@ -878,18 +894,23 @@ subroutine dRdwMatMult(A, vecX,  vecY, ierr)
   extraSize   = size(extraDot)
   stateSize   = size(wd_pointer)
   costSize    = nCostFunction
-
+  call getForceSize(fSize, fSizeCell)
   allocate(xvdot(spatialSize))
+  allocate(fdot(3, fSize))
   xvdot = zero
   extradot = zero
+  fdot = zero
   call computeMatrixFreeProductFwd(xvdot, extradot, wd_pointer, &
-       useSpatial, useState, dwd_pointer, funcsDot, &
-       spatialSize, extraSize, stateSize, costSize)
+       useSpatial, useState, dwd_pointer, funcsDot, fDot, &
+       spatialSize, extraSize, stateSize, costSize, fSize)
   deallocate(xvdot)
-
+#if PETSC_VERSION_MINOR > 5
+  call VecRestoreArrayReadF90(vecX, wd_pointer, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+#else
   call VecRestoreArrayF90(vecX, wd_pointer, ierr)
   call EChk(ierr,__FILE__,__LINE__)
-
+#endif
   call VecRestoreArrayF90(VecY, dwd_pointer, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
