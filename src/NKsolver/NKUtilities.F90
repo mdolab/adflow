@@ -202,10 +202,14 @@ subroutine setW(wVec)
   Vec  wVec
   integer(kind=intType) :: ierr,nn,sps,i,j,k,l,ii
   real(kind=realType),pointer :: wvec_pointer(:)
-  
+
+#if PETSC_VERSION_MINOR > 5
+  call VecGetArrayReadF90(wVec,wvec_pointer,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+#else
   call VecGetArrayF90(wVec,wvec_pointer,ierr)
   call EChk(ierr,__FILE__,__LINE__)
-  
+#endif
   ii = 1
   do nn=1,nDom
      do sps=1,nTimeIntervalsSpectral
@@ -223,9 +227,13 @@ subroutine setW(wVec)
         end do
      end do
   end do
-
+#if PETSC_VERSION_MINOR > 5
+  call VecRestoreArrayReadF90(wVec,wvec_pointer,ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+#else
   call VecRestoreArrayF90(wVec,wvec_pointer,ierr)
   call EChk(ierr,__FILE__,__LINE__)
+#endif
 #endif
 end subroutine setW
 
