@@ -728,14 +728,6 @@ subroutine deallocateBlock(nn, level, sps)
        deallocate(flowDoms(nn,level,sps)%groupNum, stat=ierr)
   if(ierr /= 0) deallocationFailure = .true.
 
-  if( associated(flowDoms(nn,level,sps)%idWBC) ) &
-       deallocate(flowDoms(nn,level,sps)%idWBC, stat=ierr)
-  if(ierr /= 0) deallocationFailure = .true.              
-
-  if( associated(flowDoms(nn,level,sps)%contributeToForce) ) &
-       deallocate(flowDoms(nn,level,sps)%contributeToForce, stat=ierr) 
-  if(ierr /= 0) deallocationFailure = .true.              
-
   if( associated(flowDoms(nn,level,sps)%iblank) ) &
        deallocate(flowDoms(nn,level,sps)%iblank, stat=ierr)
   if(ierr /= 0) deallocationFailure = .true.

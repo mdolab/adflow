@@ -258,37 +258,32 @@ subroutine solveState
 101     format("# Grid",1X,I1,": Switching to multigrid iterations")
      endif
 
-     notCDB1 : if(.not.componentsBreakDown)then  !  eran-CBD
-        ! Write a message about the number of multigrid iterations
-        ! to be performed.
+     ! Write a message about the number of multigrid iterations
+     ! to be performed.
+     
+     write(numberString,"(i6)") nMGCycles		
+     numberString = adjustl(numberString)
+     numberString = trim(numberString)
+     if (printIterations) then
+        print "(a)", "#"
+        print 102, groundLevel, trim(numberString)
+        print "(a)", "#"
+     end if
+102  format("# Grid",1X,I1,": Performing",1X,A,1X, &
+          "multigrid iterations, unless converged earlier")
 
-        write(numberString,"(i6)") nMGCycles		
-        numberString = adjustl(numberString)
-        numberString = trim(numberString)
-        if (printIterations) then
-           print "(a)", "#"
-           print 102, groundLevel, trim(numberString)
-           print "(a)", "#"
-        end if
-102     format("# Grid",1X,I1,": Performing",1X,A,1X, &
-             "multigrid iterations, unless converged earlier")
-     end if notCDB1  !  eran-CBD
-  endif
-
-  notCDB2 : if(.not.componentsBreakDown)then  !  eran-CBD
 
      ! Write the sliding mesh mass flow parameters (not for unsteady)
      ! and the convergence header.
-
+     
      if(equationMode == steady .or. &
           equationMode == timeSpectral) call writeFamilyMassflow
-     if(myID == 0) then 
-        if (printIterations)  then
-           call convergenceHeader
-        end if
-     end if
-  end if	notCDB2 !  eran-CBD
 
+     if (printIterations)  then
+        call convergenceHeader
+     end if
+  end if
+     
   ! Determine and write the initial convergence info.
   ! Note that if single grid startup iterations were made, this
   ! value is printed twice.
@@ -303,11 +298,6 @@ subroutine solveState
      L2Conv = L2ConvSave
      return
   endif
-
-  !
-  !         In a components-break-down run, do not execute MG, but exit
-  !
-  if(componentsBreakDown)go to 99 !  eran-CBD
 
   ! Determine if we need to run the RK solver, the NK solver or Both.
 
@@ -528,28 +518,24 @@ subroutine solveState
   testSteady3: if(equationMode == steady .or. &
        equationMode == timeSpectral) then
 
-     notCBD : if(.not.componentsBreakDown)then   !  eran-CDB
-       if(standAloneMode .and. groundLevel == 1) then
-
-          writeVolume  = .not. writeVolume
-          writeSurface = .not. writeSurface
-
+     if(standAloneMode .and. groundLevel == 1) then
+        
+        writeVolume  = .not. writeVolume
+        writeSurface = .not. writeSurface
+        
         ! Make a distinction between steady and spectral
         ! mode. In the former case the grid will never
         ! be written; in the latter case when only when
         ! the volume is written.
-
-          writeGrid = .false.
-          if(equationMode == timeSpectral .and. writeVolume) &
+        
+        writeGrid = .false.
+        if(equationMode == timeSpectral .and. writeVolume) &
              writeGrid = .true.
+        
+        if(writeGrid .or. writeVolume .or. writeSurface) &
+             call writeSol
 
-          if(writeGrid .or. writeVolume .or. writeSurface) &
-               call writeSol
-
-
-	   if(genCBDOUT)call componentsBreakDownPrintout(1) ! eran-CBD
-       endif  ! standAloneMode .and. groundLevel 
-     end if notCBD    !   eran-CDB
+     endif  ! standAloneMode .and. groundLevel 
   endif testSteady3
 
 end subroutine solveState

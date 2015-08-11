@@ -88,9 +88,6 @@ module blockPointers
   integer(kind=intType), dimension(:), pointer :: l1, l2, l3
   integer(kind=intType), dimension(:), pointer :: groupNum
 
-  integer(kind=intType), dimension(:), pointer :: idWBC ! eran-CBD
-  logical , dimension(:), pointer ::  contributeToForce  ! eran-cbd
-
   integer(kind=intType) :: nCellsOverset, nCellsOversetAll
   integer(kind=intType) :: nHoles, nOrphans
 

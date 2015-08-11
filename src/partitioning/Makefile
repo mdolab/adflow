@@ -92,7 +92,6 @@ FILES_TO_COMPLEXIFY = allocCoorFineGrid.f90\
 		 splitBlock.f90\
 		 timePeriodSpectral.f90\
 		 timeRotMatricesSpectral.f90\
-		 wallComponentsAssignments.f90
 
 
 FILES_TO_COPY = partitionMod.f90\
