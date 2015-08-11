@@ -56,7 +56,7 @@ class SUMBWarning(object):
     """
     def __init__(self, message):
         msg = '\n+'+'-'*78+'+'+'\n' + '| pySUMB Warning: '
-        i = 18
+        i = 17
         for word in message.split():
             if len(word) + i + 1 > 78: # Finish line and start new one
                 msg += ' '*(78-i)+'|\n| ' + word + ' '
@@ -119,8 +119,13 @@ class SUMB(AeroSolver):
         self.ignoreOptions, self.deprecatedOptions, self.specialOptions = \
                            self._getSpecialOptionLists()
 
-        self.possibleAeroDVs, self.sumbCostFunctions = (
+        self.possibleAeroDVs, self.basicCostFunctions = (
             self._getObjectivesAndDVs())
+
+        # Now add the group for each of the "basic" cost functions:
+        self.sumbCostFunctions = {}
+        for key in self.basicCostFunctions:
+            self.sumbCostFunctions[key] = [None, key]
 
         # This is the real solver so dtype is 'd'
         self.dtype = 'd'
@@ -358,8 +363,7 @@ class SUMB(AeroSolver):
             every out put so is always exactly planar and always at the initial
             position the user indicated.
         groupName : str
-            The family (as defined in pyWarp) to use for the slices. Not
-            currently supported.
+            The family (as defined in pyWarp) to use for the slices.
             """
 
         if groupName is None:
@@ -406,7 +410,84 @@ class SUMB(AeroSolver):
 
         self.nSlice += N
 
+    def addFunction(self, funcName, groupName, name=None):
+        """Add a "new" function to SUmb by restricting the integration of an
+        existing SUmb function by a section of the mesh defined by
+        'groupName'. The function will be named 'funcName_groupName'
+        provided that the 'name' keyword argument is not given. It is
+        is, the function will be use that name. If necessary, this
+        routine may be used to "change the name" of a function. For
+        example,
+
+        >>> addFunction('cd', None, 'super_cd')
+    
+        will add a function that is the same as 'cd', but call 'super_cd'
+        supplied name 'name'.
+        
+        Parameters
+        ----------
+        funcName : str or list
+            The name of the built-in sumb function
+        groupName : str or list
+            The family (as defined in warping module) to use for 
+            the function.
+        Name : str or list
+            An overwrite name.
+
+        Returns
+        -------
+        names : list
+           The names if the functions that were added
+        """
+
+        # Just call the addFunctions() routine with lists
+        return self.addFunctions([funcName], [groupName], [name])[0]
+
+    def addFunctions(self, funcNames, groupNames, names=None):
+
+        """Add a series of new functions to SUmb. This is a vector version of
+        the addFunction() routine. See that routine for more documentation. """
+
+        if len(funcNames) != len(groupNames) or len(funcNames) != len(names):
+            raise Error("funcNames, groupNames, and names all have to be "
+                        "lists of the same length")
+
+        newFuncNames = []
+        for i in range(len(funcNames)):
+            funcName = funcNames[i]
+            groupName = groupNames[i]
+            name = names[i]
+
+            # First make sure the supplied function is already known to sumb
+            if funcName.lower() not in self.basicCostFunctions:
+                raise Error('Supplied function name is not known to SUmb')
+
+            # And make sure that the groupName is defined. 
+            if self.mesh is None:
+                raise Error("A mesh must be supplied to SUmb in order to use "
+                            "the 'addFunction' functionality")
+
+            # Check if the goupName has been added to the mesh.
+            if groupName is not None:
+                try:
+                    famList = self.mesh.familyGroup[groupName]['families']
+                except:
+                    raise Error("The supplied groupName='%s' has not been "
+                                "been added in the mesh"%groupName)
+            if name is None:
+                sumbFuncName = '%s_%s'%(funcName, groupName)
+            else:
+                sumbFuncName = name
+
+            # Now register the function into sumbCostFunctions
+            self.sumbCostFunctions[sumbFuncName] = [groupName, funcName]
+
+            newFuncNames.append(name)
+
+        return newFuncNames
+
     def setRotationRate(self, rotCenter, rotRate, cgnsBlocks=None):
+
         """
         Set the rotational rate for the grid:
 
@@ -531,6 +612,10 @@ class SUMB(AeroSolver):
 
         # Set the aeroProblem
         self.setAeroProblem(aeroProblem, releaseAdjointMemory)
+
+        # Set the full mask such that we get the full coefficients in
+        # the printout.
+        self.sumb.setfullmask()
 
         # If this problem has't been solved yet, reset flow to this
         # flight condition
@@ -908,18 +993,33 @@ class SUMB(AeroSolver):
         if evalFuncs is None:
             evalFuncs = self.curAP.evalFuncs
 
-        # Just call the regular getSolution() command and extract the
-        # ones we need:
-        res = self.getSolution(sps)
-
+        # We need to determine how many different masks we have, since
+        # we will have to call getSolution for each *unique* function
+        # mask. We can also do the error checking 
+        groupMap = {}
         for f in evalFuncs:
-            if f.lower() in self.sumbCostFunctions:
-                key = self.curAP.name + '_%s'% f
-                self.curAP.funcNames[f] = key
-                funcs[key] = res[f]
+            if f.lower() in self.sumbCostFunctions:            
+                group = self.sumbCostFunctions[f][0]
+                basicFunc = self.sumbCostFunctions[f][1]
+                if group not in groupMap:
+                    groupMap[group] = [[basicFunc, f]]
+                else:
+                    groupMap[group].append([basicFunc, f])
             else:
                 if not ignoreMissing:
-                    raise Error('Supplied function is not known to SUmb.')
+                    raise Error('Supplied function %s is not known to SUmb.'%f)
+
+        # Now we loop over the unique groups calling the required
+        # getSolution, there may be just one. No need for error
+        # checking here.
+        for group in groupMap:
+            res = self.getSolution(sps, groupName=group)
+            # g contains the "basic function" (index 0) and the actual
+            # function name (index 1)
+            for g in groupMap[group]:
+                key = self.curAP.name + '_%s'% g[1]
+                self.curAP.funcNames[g[1]] = key
+                funcs[key] = res[g[0]]
 
     def checkSolutionFailure(self, aeroProblem, funcs):
         """
@@ -987,6 +1087,7 @@ class SUMB(AeroSolver):
         for f in evalFuncs:
             if f.lower() not in self.sumbCostFunctions:
                 raise Error('Supplied %s function is not known to SUmb.'%f)
+
             if self.comm.rank == 0:
                 print('Solving adjoint: %s'%f)
 
@@ -996,7 +1097,7 @@ class SUMB(AeroSolver):
             # Set dict structure for this derivative
             funcsSens[key] = {}
 
-            # Solve adjoint equation (if necessary)
+            # Solve adjoint equation 
             self.solveAdjoint(aeroProblem, f)
 
             # Now, due to the use of the super combined
@@ -1015,6 +1116,7 @@ class SUMB(AeroSolver):
             # Compute everything and update into the dictionary
             funcsSens[key].update(self.computeJacobianVectorProductBwd(
                 resBar=psi, funcsBar=funcsBar, xDvDeriv=True))
+                
 
     def solveCL(self, aeroProblem, CLStar, alpha0=0,
                 delta=0.5, tol=1e-3, autoReset=True):
@@ -1592,17 +1694,36 @@ class SUMB(AeroSolver):
         self.sumb.killsignals.fatalfail = False
         self.sumb.nksolvervars.freestreamresset = False
 
+    def _setMask(self, groupName):
+        """Set the wall masks for the supplied groupName"""
+        
+        if groupName is None:
+            self.sumb.setfullmask()
+            return
+
+        try:
+            famList = self.mesh.familyGroup[groupName]['families']
+        except:
+            raise Error("The supplied family group name has not "
+                        "been added in the mesh object OR a mesh"
+                        "object has not been supplied to sumb")
+
+        # Set each of the families:
+        self.sumb.setnmaskfams(len(famList))
+        for i in range(len(famList)):
+            self.sumb.setmaskfam(i+1, famList[i].upper())
+        self.sumb.setmask()
+
     def getSolution(self, sps=1, groupName=None):
         """ Retrieve the solution variables from the solver. Note this
         is a collective function and must be called on all processors
         """
-
-        # Get the mask for the group
-        mask = self._getCellGroupMaskLocal(groupName)
+        # Set the mask for the group
+        self._setMask(groupName)        
         
         # We should return the list of results that is the same as the
         # possibleObjectives list
-        self.sumb.getsolutionmask(sps, mask)
+        self.sumb.getsolution(sps)
 
         funcVals = self.sumb.costfunctions.functionvalue
         SUmbsolution = {
@@ -1695,7 +1816,7 @@ class SUMB(AeroSolver):
             for i in range(self.comm.size):
                 globalMask.extend(tmp[i])
             globalMask = numpy.array(globalMask)
-
+            
         return globalMask
 
     def _getCellGroupMaskLocal(self, groupName=None):
@@ -1714,32 +1835,42 @@ class SUMB(AeroSolver):
         mask : numpy array of integers
             The mask. Returned on all procs. May be length 0.
             """
-        if groupName is None:
-            localMask = []
-            for i in xrange(self.sumb.getnpatches()):
-                patchsize = self.sumb.getpatchsize(i+1)
-                nCells = patchsize[0]*patchsize[1]
-                localMask.extend(numpy.ones(nCells, 'intc'))
-        else:
-            try:
-                famList = self.mesh.familyGroup[groupName]['families']
-            except:
-                raise Error("The supplied family group name has not "
-                            "been added in pyWarp.")
 
-            # Now we just go through each patch and see if it in our familyList
-            localMask = []
-            for i in xrange(self.sumb.getnpatches()):
-                tmp = numpy.zeros(256, 'c')
-                self.sumb.getpatchname(i+1, tmp)
-                patchname = ''.join([tmp[j] for j in range(256)]).lower().strip()
-                patchsize = self.sumb.getpatchsize(i+1)
-                nCells = (patchsize[0]-1)*(patchsize[1]-1)
-                if patchname in famList:
+        # See if we can save ourselves some work if the mask is
+        # already in the cache:
+        if groupName in self.maskCache:
+            return self.maskCache[groupName]
+        else:
+            if groupName is None:
+                localMask = []
+                for i in xrange(self.sumb.getnpatches()):
+                    patchsize = self.sumb.getpatchsize(i+1)
+                    nCells = patchsize[0]*patchsize[1]
                     localMask.extend(numpy.ones(nCells, 'intc'))
-                else:
-                    localMask.extend(numpy.zeros(nCells, 'intc'))
-        return localMask
+            else:
+                try:
+                    famList = self.mesh.familyGroup[groupName]['families']
+                except:
+                    raise Error("The supplied family group name has not "
+                                "been added in the mesh object.")
+
+                # Now we just go through each patch and see if it in our familyList
+                localMask = []
+                for i in xrange(self.sumb.getnpatches()):
+                    tmp = numpy.zeros(256, 'c')
+                    self.sumb.getpatchname(i+1, tmp)
+                    patchname = ''.join([tmp[j] for j in range(256)]).lower().strip()
+                    patchsize = self.sumb.getpatchsize(i+1)
+                    nCells = (patchsize[0]-1)*(patchsize[1]-1)
+                    if patchname in famList:
+                        localMask.extend(numpy.ones(nCells, 'intc'))
+                    else:
+                        localMask.extend(numpy.zeros(nCells, 'intc'))
+                
+            # Save in the cache for next time :-)
+            self.maskCache[groupName] = localMask
+
+            return localMask
 
     def getSurfaceCoordinates(self, groupName='all'):
         """
@@ -2087,6 +2218,8 @@ class SUMB(AeroSolver):
             options) on this processor. Note that N may be 0, and an
             empty array of shape (0, 3) can be returned.
         """
+        # Just to be sure, we'll set the mask
+        self._setMask(groupName)
 
         [npts, ncell] = self.sumb.getforcesize()
         if npts > 0:
@@ -2216,33 +2349,32 @@ class SUMB(AeroSolver):
         # May be switching aeroProblems here
         self.setAeroProblem(aeroProblem)
 
-        obj, aeroObj = self._getObjective(objective)
-
         # Possibly setup adjoint matrices/vector as required
         self._setupAdjoint()
 
         # # Check to see if the RHS Partials have been computed
-        if obj not in self.curAP.sumbData.adjointRHS:
+        if objective not in self.curAP.sumbData.adjointRHS:
             RHS = self.computeJacobianVectorProductBwd(
                 funcsBar={objective.lower():1.0}, wDeriv=True)
-            self.curAP.sumbData.adjointRHS[obj] = RHS.copy()
+            self.curAP.sumbData.adjointRHS[objective] = RHS.copy()
         else:
-            RHS = self.curAP.sumbData.adjointRHS[obj].copy()
+            RHS = self.curAP.sumbData.adjointRHS[objective].copy()
 
         # Check to see if we need to agument the RHS with a structural
         # adjoint:
         if structAdjoint is not None and groupName is not None:
             phi = self.mesh.expandVectorByFamily(groupName, structAdjoint)
-            agument = self.computeJacobianVectorProductBwd(fBar=phi, wDeriv=True)
+            agument = self.computeJacobianVectorProductBwd(
+                fBar=phi, wDeriv=True)
             RHS -= agument
 
         # Check if objective is python 'allocated':
-        if obj not in self.curAP.sumbData.adjoints:
-            self.curAP.sumbData.adjoints[obj] = (
+        if objective not in self.curAP.sumbData.adjoints:
+            self.curAP.sumbData.adjoints[objective] = (
                 numpy.zeros(self.getAdjointStateSize(), float))
 
         # Extract the psi:
-        psi = self.curAP.sumbData.adjoints[obj]
+        psi = self.curAP.sumbData.adjoints[objective]
 
         # Actually Solve the adjoint system...psi is updated with the
         # new solution.
@@ -2252,9 +2384,9 @@ class SUMB(AeroSolver):
         if self.sumb.killsignals.adjointfailed:
             self.adjointFailed = True
             # Reset stored adjoint
-            self.curAP.sumbData.adjoints[obj][:] = 0.0
+            self.curAP.sumbData.adjoints[objective][:] = 0.0
         else:
-            self.curAP.sumbData.adjoints[obj] = psi
+            self.curAP.sumbData.adjoints[objective] = psi
             self.adjointFailed = False
 
     def _processAeroDerivatives(self, dIda):
@@ -2683,15 +2815,39 @@ class SUMB(AeroSolver):
         # ---------------------
         #  Check for funcsBar
         # ---------------------
+        self.sumb.setfullmask()
         if funcsBar is None:
             funcsBar = numpy.zeros(self.sumb.costfunctions.ncostfunction)
         else:
             tmp = numpy.zeros(self.sumb.costfunctions.ncostfunction)
-            # Extract out the seeds
+
+            # We have to make sure that the user has supplied
+            # functions that have the same mask, otherwise, we can't
+            # do it
+            groupMasks = set()
+            
             for f in funcsBar:
                 if f.lower() in self.sumbCostFunctions:
-                    mapping = self.sumbCostFunctions[f.lower()]
+
+                    mask = self.sumbCostFunctions[f][0]
+                    basicFunc = self.sumbCostFunctions[f][1]
+                    groupMasks.add(mask)
+
+                    mapping = self.basicCostFunctions[basicFunc]
                     tmp[mapping-1] = funcsBar[f]
+
+            if len(groupMasks) == 1:
+                # We're ok..there was only one mask from the
+                # functions...just pop it out of the set and then set
+                # it.
+                self._setMask(groupMasks.pop())
+            elif len(groupMasks) > 1:
+                raise Error("Attemping to compute a jacobian vector product "
+                            "with multiple functions that have different "
+                            "masks. This is not allowed.")
+            
+            # If there wasn't any actual funcsBar, then tmp is still
+            # just zeros
             funcsBar = tmp
 
         # -------------------------
@@ -2741,9 +2897,10 @@ class SUMB(AeroSolver):
                         xdvbar.update(self.DVGeo.totalSensitivity(
                             xsbar, self.curAP.ptSetName, self.comm, config=self.curAP.name))
                     else:
-                        raise Error("Could not complete requested xDvDeriv since"
-                                    " no DVGeo object is present or it has no "
-                                    "design variables specified.")
+                        if self.comm.rank == 0:
+                            SUMBWarning("No DVGeo object is present or it has no "
+                                        "design variables specified. No geometric "
+                                        "derivatives computed.")
 
                     # Include aero derivatives here:
                     xdvbar.update(self._processAeroDerivatives(extrabar))
@@ -2833,23 +2990,20 @@ class SUMB(AeroSolver):
     def _setInfo(self, info):
         """Set the haloed state vector, pressure (and viscocities). Used to
         restore "state" between aeroProblems
-
         """
         self.sumb.setinfo(info)
 
     def setAdjoint(self, adjoint, objective=None):
         """Sets the adjoint vector externally. Used in coupled solver"""
         if objective is not None:
-            obj, aeroObj = self._getObjective(objective)
-            self.curAP.sumbData.adjoints[obj] = adjoint.copy()
+            self.curAP.sumbData.adjoints[objective] = adjoint.copy()
 
     def getAdjoint(self, objective):
         """ Return the adjoint values for objective if they
         exist. Otherwise just return zeros"""
-        obj, aeroObj = self._getObjective(objective)
 
-        if obj in self.curAP.sumbData.adjoints:
-            return self.curAP.sumbData.adjoints[obj]
+        if objective in self.curAP.sumbData.adjoints:
+            return self.curAP.sumbData.adjoints[objective]
         else:
             return numpy.zeros(self.getAdjointStateSize(), self.dtype)
 
@@ -2925,20 +3079,6 @@ class SUMB(AeroSolver):
         funcsSens[self.curAP.name + '_area'] = self.DVGeo.totalSensitivity(
             da, ptSetName=self.curAP.ptSetName, comm=self.comm, config=self.curAP.name)
 
-    def _getObjective(self, objective):
-        """Check to see if objective is one of the possible
-        objective. If it is, return the obj value for SUmb and
-        True. Otherwise simply return the objective string and
-        False"""
-        if objective.lower() in self.sumbCostFunctions:
-            obj = int(self.sumbCostFunctions[objective.lower()])
-            aeroObj = True
-        else:
-            obj = objective
-            aeroObj = False
-
-        return obj, aeroObj
-
     def setOption(self, name, value):
         """
         Set Solver Option Value
@@ -2962,7 +3102,7 @@ class SUMB(AeroSolver):
             return
 
         # Now we know the option exists, lets check if the type is ok:
-        if type(value) == self.options[name][0]:
+        if isinstance(value, self.options[name][0]):
             # Just set:
             self.options[name] = [type(value),value]
         else:
