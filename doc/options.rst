@@ -85,6 +85,17 @@ Parameter                                  Type       Default                   
 `turbulenceOrder`                        `str`       `first order`                                  The numerical order of accuracy of the turbulence model. Possible values are 
                                                                                                     `first order` or `second order`. Generally `first order` is recommended as the
                                                                                                     adjoints systems are much easier to solve with the first order discretization. 
+
+`turbresscalar`                          `Object`    `None`                                         This parameter affects how the total residual is scaled. It is set automatically, depending on what turbulence model you select. Defaults are usually sufficient. 
+                                                                                                    Values can be float scalar to a 4 element list of floats, depending on the turbulence model. Refer to the list of turbulence models below for the defaults of the `turbresscale` and type of input expected.
+                                                                                                    
+                                                                                                    * `sa` - Spalart Allmaras - Type: `float scalar` - Default: 10e4
+                                                                                                    * `sae` - Sparart Allmaras-Edward model - NOT IMPLEMENTED
+                                                                                                    * `k omega wilcox` - NOT IMPLEMENTED
+                                                                                                    * `k omega modified` - NOT IMPLEMENTED
+                                                                                                    * `ktau` - NOT IMPLEMENTED
+                                                                                                    * `menter sst` - Type: `float list` of 2 elements - Default: [10e3, 10e-6]
+                                                                                                    * `v2f` - NOT IMPLEMENTED
                                                           
 `useWallFunctions`                       `bool`      `False`                                        Flag specifying if wall functions are to be used. This is generally not recommended
                                                                                                     since they give (potentially very) poor drag estimates. Furthermore, the required 
@@ -182,7 +193,7 @@ Parameter                                  Type       Default                   
                                                                                                     * `bdf` - 2nd order backwards difference
                                                                                                     * `explicitrk` - explicit runge-kutta
                                                                                                     * `implicitrk` - implicit runge-kutta
-                                                                                                    * `md` - Multidisciplinary (md) / Augmented Lagrangian Euler (ALE)
+                                                                                                    * `md` - Multidisciplinary (md) / Arbitrary Lagrangian Eulerian (ALE)
                                                           
 `timeAccurary`                           `int`       2                                              Order of accuracy of the time integration scheme. Valid values are 1, 2, or 3. 
                                                           
