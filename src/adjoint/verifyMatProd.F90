@@ -133,8 +133,7 @@ subroutine verifyMatProd
      call getdRdwTVec(vec1, vec2, ncellslocal(1)*nState)
      
      call BLOCK_RES_B(nn, 1, .False., alpha, alphab, beta, betab, &
-          & liftindex, force, forceb, moment, momentb, sepsensor, sepsensorb, &
-          & cavitation, cavitationb)
+          & liftindex, frozenTurb)
      
 
      ii = 0
