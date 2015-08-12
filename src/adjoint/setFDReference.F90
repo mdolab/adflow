@@ -8,11 +8,9 @@ subroutine setFDReference(level)
 
   ! Input Parameters
   integer(kind=intType) :: level
-  
   ! Working Parameters
   integer(kind=intType) :: i, j, k, l, nn, sps, liftIndex
-  real(kind=realType) :: alpha, beta, sepSensor, Cavitation
-  real(kind=realType), dimension(3, nTimeIntervalsSpectral) :: force, moment
+  real(kind=realType) :: alpha, beta
 
   ! Compute the reference values for doing jacobian with FD
   call getDirAngle(velDirFreestream, liftDirection, liftIndex, alpha, beta)
@@ -22,8 +20,7 @@ subroutine setFDReference(level)
         call setPointers(nn,level,sps)
         shockSensor => flowDoms(nn,level,sps)%shockSensor
         
-        call block_res(nn, sps, .False., alpha, beta, liftIndex, force, moment, &
-             sepSensor, Cavitation, .False.)
+        call block_res(nn, sps, .False., alpha, beta, liftIndex, .False.)
 
         ! Set the values
         do l=1,nw
@@ -54,7 +51,6 @@ subroutine setFDReference(level)
      end do
   end do
 end subroutine setFDReference
-
 
 subroutine resetFDReference(level)
 

@@ -2,8 +2,8 @@
 !  tapenade 3.10 (r5363) -  9 sep 2014 09:53
 !
 !  differentiation of forcesandmoments in forward (tangent) mode (with options i4 dr8 r8):
-!   variations   of useful results: *(*bcdata.f) cfp cfv cmp cmv
-!                cavitation sepsensor
+!   variations   of useful results: *(*bcdata.f) sepsensoravg cfp
+!                cfv cmp cmv cavitation sepsensor
 !   with respect to varying inputs: gammainf pinf pref *p *w *x
 !                *si *sj *sk *(*viscsubface.tau) veldirfreestream
 !                lengthref machcoef pointref *xx *pp1 *pp2 *ssi
@@ -25,7 +25,8 @@
 !      ******************************************************************
 !
 subroutine forcesandmoments_d(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd&
-& , yplusmax, sepsensor, sepsensord, cavitation, cavitationd)
+& , yplusmax, sepsensor, sepsensord, sepsensoravg, sepsensoravgd, &
+& cavitation, cavitationd)
 !
 !      ******************************************************************
 !      *                                                                *
@@ -55,8 +56,10 @@ subroutine forcesandmoments_d(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd&
   real(kind=realtype), dimension(3), intent(out) :: cfpd, cfvd
   real(kind=realtype), dimension(3), intent(out) :: cmp, cmv
   real(kind=realtype), dimension(3), intent(out) :: cmpd, cmvd
-  real(kind=realtype), intent(out) :: yplusmax, sepsensor, cavitation
-  real(kind=realtype), intent(out) :: sepsensord, cavitationd
+  real(kind=realtype), intent(out) :: yplusmax, sepsensor
+  real(kind=realtype), intent(out) :: sepsensord
+  real(kind=realtype), intent(out) :: sepsensoravg(3), cavitation
+  real(kind=realtype), intent(out) :: sepsensoravgd(3), cavitationd
 !
 !      local variables.
 !
@@ -127,12 +130,14 @@ subroutine forcesandmoments_d(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd&
   yplusmax = zero
   sepsensor = zero
   cavitation = zero
+  sepsensoravg = zero
   do ii1=1,isize1ofdrfbcdata
     bcdatad(ii1)%f = 0.0_8
   end do
   do ii1=1,isize1ofdrfbcdata
     bcdatad(ii1)%dualarea = 0.0_8
   end do
+  sepsensoravgd = 0.0_8
   cfpd = 0.0_8
   cfvd = 0.0_8
   cmpd = 0.0_8
@@ -335,6 +340,16 @@ bocos:do nn=1,nbocos
           sensor = sensor*four*qa
           sepsensord = sepsensord + sensord
           sepsensor = sepsensor + sensor
+! also accumulate into the sepsensoravg
+          sepsensoravgd(1) = sepsensoravgd(1) + sepsensord*xc + &
+&           sepsensor*xcd
+          sepsensoravg(1) = sepsensoravg(1) + sepsensor*xc
+          sepsensoravgd(2) = sepsensoravgd(2) + sepsensord*yc + &
+&           sepsensor*ycd
+          sepsensoravg(2) = sepsensoravg(2) + sepsensor*yc
+          sepsensoravgd(3) = sepsensoravgd(3) + sepsensord*zc + &
+&           sepsensor*zcd
+          sepsensoravg(3) = sepsensoravg(3) + sepsensor*zc
           plocald = pp2d(i, j)
           plocal = pp2(i, j)
           tmpd = -(two*((gammainfd*pinf+gammainf*pinfd)*machcoef**2+&

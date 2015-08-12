@@ -5,8 +5,8 @@
 !   gradient     of useful results: gammainf pinf pref *w *x *(*bcdata.f)
 !                lengthref machcoef pointref *xx *rev0 *rev1 *rev2
 !                *rev3 *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3
-!                *ssi *ww0 *ww1 *ww2 *ww3 cfp cfv cmp cmv cavitation
-!                sepsensor
+!                *ssi *ww0 *ww1 *ww2 *ww3 sepsensoravg cfp cfv
+!                cmp cmv cavitation sepsensor
 !   with respect to varying inputs: gammainf pinf pref *rev *p
 !                *w *rlv *x *si *sj *sk *(*viscsubface.tau) *(*bcdata.f)
 !                veldirfreestream lengthref machcoef pointref *xx
@@ -29,7 +29,8 @@
 !      ******************************************************************
 !
 subroutine forcesandmoments_b(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd&
-& , yplusmax, sepsensor, sepsensord, cavitation, cavitationd)
+& , yplusmax, sepsensor, sepsensord, sepsensoravg, sepsensoravgd, &
+& cavitation, cavitationd)
 !
 !      ******************************************************************
 !      *                                                                *
@@ -57,8 +58,10 @@ subroutine forcesandmoments_b(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd&
   real(kind=realtype), dimension(3) :: cfpd, cfvd
   real(kind=realtype), dimension(3) :: cmp, cmv
   real(kind=realtype), dimension(3) :: cmpd, cmvd
-  real(kind=realtype) :: yplusmax, sepsensor, cavitation
-  real(kind=realtype) :: sepsensord, cavitationd
+  real(kind=realtype) :: yplusmax, sepsensor
+  real(kind=realtype) :: sepsensord
+  real(kind=realtype) :: sepsensoravg(3), cavitation
+  real(kind=realtype) :: sepsensoravgd(3), cavitationd
 !
 !      local variables.
 !
@@ -151,6 +154,7 @@ subroutine forcesandmoments_b(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd&
   cmv(1) = zero
   cmv(2) = zero
   cmv(3) = zero
+  sepsensor = zero
 ! loop over the boundary subfaces of this block.
 bocos:do nn=1,nbocos
 !
@@ -229,9 +233,9 @@ bocos:do nn=1,nbocos
         call pushreal8(plocal)
         call pushreal8(yc)
         call pushreal8(tmp)
-        call pushreal8(sensor)
         call pushreal8(zc)
         call pushreal8(sensor1)
+        call pushreal8(sepsensor)
         call pushreal8array(v, 3)
         do ii1=1,size(bcdata)
           call pushreal8array(bcdata(ii1)%f, size(bcdata(ii1)%f, 1)*size&
@@ -319,6 +323,10 @@ bocos:do nn=1,nbocos
 ! and integrate over the area of this cell and save:
           sensor = sensor*four*qa
           sepsensor = sepsensor + sensor
+! also accumulate into the sepsensoravg
+          sepsensoravg(1) = sepsensoravg(1) + sepsensor*xc
+          sepsensoravg(2) = sepsensoravg(2) + sepsensor*yc
+          sepsensoravg(3) = sepsensoravg(3) + sepsensor*zc
           plocal = pp2(i, j)
           tmp = two/(gammainf*pinf*machcoef*machcoef)
           cp = tmp*(plocal-pinf)
@@ -716,6 +724,7 @@ bocos:do nn=1,nbocos
 &                    bcdata(ii1)%f, 2)*size(bcdata(ii1)%f, 3))
       end do
       call lookreal8array(v, 3)
+      call lookreal8(sepsensor)
       do ii=0,(bcdata(nn)%jnend-bcdata(nn)%jnbeg)*(bcdata(nn)%inend-&
 &         bcdata(nn)%inbeg)-1
         i = mod(ii, bcdata(nn)%inend - bcdata(nn)%inbeg) + bcdata(nn)%&
@@ -761,6 +770,10 @@ bocos:do nn=1,nbocos
         sensor = one/(one+exp(-(2*sepsensorsharpness*(sensor-&
 &         sepsensoroffset))))
 ! and integrate over the area of this cell and save:
+        call pushreal8(sensor)
+        sensor = sensor*four*qa
+        sepsensor = sepsensor + sensor
+! also accumulate into the sepsensoravg
         plocal = pp2(i, j)
         tmp = two/(gammainf*pinf*machcoef*machcoef)
         cp = tmp*(plocal-pinf)
@@ -771,9 +784,8 @@ bocos:do nn=1,nbocos
         mxd = cmpd(1)
         myd = cmpd(2)
         mzd = cmpd(3)
-        sensord = sepsensord
         sensor1d = cavitationd
-        qad = four*sensor*sensord + four*sensor1*sensor1d
+        qad = four*sensor1*sensor1d
         sensor1d = four*qa*sensor1d
         call popreal8(sensor1)
         temp9 = -(10*2*sensor1)
@@ -789,6 +801,14 @@ bocos:do nn=1,nbocos
         gammainfd = gammainfd + pinf*tempd8
         machcoefd = machcoefd + gammainf*pinf*2*machcoef*tempd9
         pp2d(i, j) = pp2d(i, j) + plocald
+        sepsensord = sepsensord + yc*sepsensoravgd(2) + xc*sepsensoravgd&
+&         (1) + zc*sepsensoravgd(3)
+        zcd = fx*myd - fy*mxd + sepsensor*sepsensoravgd(3)
+        ycd = fz*mxd - fx*mzd + sepsensor*sepsensoravgd(2)
+        xcd = fy*mzd - fz*myd + sepsensor*sepsensoravgd(1)
+        sensord = sepsensord
+        call popreal8(sensor)
+        qad = qad + four*sensor*sensord
         sensord = four*qa*sensord
         call popreal8(sensor)
         temp6 = -(2*sepsensorsharpness*(sensor-sepsensoroffset))
@@ -842,9 +862,6 @@ bocos:do nn=1,nbocos
         fzd = cfpd(3) - xc*myd + yc*mxd + fourth*fzd
         fyd = xc*mzd + cfpd(2) - zc*mxd + fourth*fyd
         fxd = cfpd(1) - yc*mzd + zc*myd + fourth*fxd
-        xcd = fy*mzd - fz*myd
-        ycd = fz*mxd - fx*mzd
-        zcd = fx*myd - fy*mxd
         pm1d = ssi(i, j, 2)*fyd + ssi(i, j, 1)*fxd + ssi(i, j, 3)*fzd
         ssid(i, j, 3) = ssid(i, j, 3) + pm1*fzd
         ssid(i, j, 2) = ssid(i, j, 2) + pm1*fyd
@@ -875,9 +892,9 @@ bocos:do nn=1,nbocos
 &         pm1d
       end do
       call popreal8array(v, 3)
+      call popreal8(sepsensor)
       call popreal8(sensor1)
       call popreal8(zc)
-      call popreal8(sensor)
       call popreal8(tmp)
       call popreal8(yc)
       call popreal8(plocal)

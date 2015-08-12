@@ -11,8 +11,8 @@
 ! block/sps loop is outside the calculation. This routine is suitable
 ! for forward mode AD with Tapenade
 
-subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment, sepSensor, &
-     Cavitation, frozenTurb)
+subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, &
+     frozenTurb)
   use BCRoutines
   use blockPointers       
   use flowVarRefState     
@@ -38,7 +38,7 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
 
   ! Output Variables
   real(kind=realType), dimension(3, nTimeIntervalsSpectral) :: force, moment
-  real(kind=realType) :: sepSensor, Cavitation
+  real(kind=realType) :: sepSensor, Cavitation, sepSensorAvg(3)
   
   ! Working Variables
   real(kind=realType) :: gm1, v2, fact, tmp
@@ -145,8 +145,9 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
         
      case (spalartAllmaras)
         call sa_block(.true.)
-     case (menterSST)
-        call SST_block(.true.)
+     !case (menterSST)
+        ! Not implemented yet
+        !call SST_block(.true.)
      case default
         call terminate("turbResidual", & 
              "Only SA turbulence adjoint implemented")
@@ -342,7 +343,8 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
      end do
   end do
 
-  call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, Cavitation)
+  call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
+       sepSensorAvg, Cavitation)
 
   ! Convert back to actual forces. Note that even though we use
   ! MachCoef, Lref, and surfaceRef here, they are NOT differented,
@@ -364,7 +366,8 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
   end do
 
 #ifndef USE_COMPLEX  
-  call getCostFunction2(force, moment, sepSensor, Cavitation, alpha, beta, liftIndex)
+  call getCostFunction2(force, moment, sepSensor, sepSensorAvg, &
+       Cavitation, alpha, beta, liftIndex)
 #endif
 end subroutine block_res
 
