@@ -311,6 +311,7 @@ subroutine getForces(forces, npts, sps_in)
   integer(kind=intType) :: mm, nn, i, j, ii, jj,sps
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd
   real(kind=realType) :: sss(3),v2(3),v1(3), qa, sepSensor, Cavitation
+  real(kind=realType) :: sepSensorAvg(3)
   integer(kind=intType) :: lower_left,lower_right,upper_left,upper_right
   real(kind=realType) :: cFp(3), cFv(3), cMp(3), cMv(3), yplusmax, qf(3)
 
@@ -325,7 +326,8 @@ subroutine getForces(forces, npts, sps_in)
   ii = 0 
   domains: do nn=1,nDom
      call setPointers(nn,1_intType,sps)
-     call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, Cavitation)
+     call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, &
+          sepSensor, sepSensorAvg, Cavitation)
      
      ! Loop over the number of boundary subfaces of this block.
      bocos: do mm=1,nBocos
@@ -344,3 +346,118 @@ subroutine getForces(forces, npts, sps_in)
      end do bocos
   end do domains
 end subroutine getForces
+
+subroutine setFullMask
+
+  ! Shortcut routine to set all the boundary mask values to 1
+  use block
+  use inputTimeSpectral
+  implicit none
+
+  integer(kind=intType) :: sps, mm, nn
+
+  do sps=1,nTimeIntervalsSpectral
+     do nn=1,nDom
+        do mm=1,flowDoms(nn, 1, sps)%nBocos
+           flowDoms(nn, 1, sps)%bcData(mm)%mask = 1
+        end do
+     end do
+  end do
+end subroutine setFullMask
+
+subroutine setNMaskFams(n)
+
+  use costFunctions
+  implicit none
+  integer(kind=intType), intent(in) ::n
+
+  if (allocated(maskFams)) then 
+     deallocate(maskFams)
+  end if
+  allocate(maskFams(n))
+end subroutine setNMaskFams
+
+subroutine setMaskFam(i, fam)
+
+  use costFunctions
+  implicit none
+  integer(kind=intType), intent(in) :: i
+  character(len=maxCGNSNameLen), intent(in) :: fam
+  maskFams(i) = fam
+end subroutine setMaskFam
+
+subroutine setMask
+
+  ! Check if the family of each boundary condition is in the supplied list.
+
+  use block
+  use BCTypes
+  use inputTimeSpectral
+  use costFunctions
+  use cgnsGrid 
+  implicit none
+
+  integer(kind=intType) :: sps, mm, nn, kk, cgb, bc
+  character(len=maxCGNSNameLen) :: patchName
+  character(len=maxCGNSNameLen) :: StrUpCase
+  ! Note that we are not setting pointers here for the sake of
+  ! efficiency. 
+  do sps=1,nTimeIntervalsSpectral
+     do nn=1,nDom
+        do mm=1,flowDoms(nn, 1, sps)%nBocos
+           flowDoms(nn, 1, sps)%bcData(mm)%mask = 0
+           
+           ! This is an effiicent linear loop...it should be ok as
+           ! long as the number of familes isn't excessive.
+           bc = flowDoms(nn, 1, sps)%bcType(mm)
+           if(bc == EulerWall .or. &
+              bc == NSWallAdiabatic .or. &
+              bc == NSWallIsothermal) then
+
+              ! Indx of the original CGNS block
+              cgb = flowDoms(nn,1,1)%cgnsBlockID
+
+              ! CGNS Family name of this patch
+              patchName = cgnsDoms(cgb)%bocoInfo(flowDoms(nn,1,1)%cgnsSubface(mm))%wallBCName
+
+              ! ! Loop over the family names we 
+              do kk=1, size(maskFams)
+                 if (trim(StrUpCase(maskFams(kk)))  == &
+                     trim(StrUpCase(patchName))) then 
+                    flowDoms(nn, 1, sps)%bcData(mm)%mask = 1
+                 end if
+              end do
+           end if
+        end do
+     end do
+  end do
+end subroutine setMask
+
+FUNCTION StrUpCase ( Input_String ) RESULT ( Output_String )
+
+  ! Borrowed from: http://www.ssec.wisc.edu/~paulv/Fortran90/Utility/
+  use constants
+  implicit none
+  
+  ! -- Argument and result
+  CHARACTER(len=maxCGNSNameLen), INTENT( IN )     :: Input_String
+  CHARACTER(len=maxCGNSNameLen) :: Output_String
+  
+  ! -- Local variables
+  INTEGER(kind=intType) :: i, n
+
+  ! -- Copy input string
+  Output_String = Input_String
+  
+  ! -- Loop over string elements
+  DO i = 1, LEN( Output_String )
+
+     ! -- Find location of letter in lower case constant string
+     n = INDEX( LOWER_CASE, Output_String( i:i ) )
+     
+     ! -- If current substring is a lower case letter, make it upper case
+     IF ( n /= 0 ) Output_String( i:i ) = UPPER_CASE( n:n )
+     
+  END DO
+  
+END FUNCTION StrUpCase

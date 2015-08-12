@@ -5,10 +5,11 @@
 !   variations   of useful results: funcvalues
 !   with respect to varying inputs: gammainf pinf rhoinfdim pinfdim
 !                pref machgrid lengthref machcoef dragdirection
-!                liftdirection pointref moment force cavitation
-!                sepsensor
+!                liftdirection pointref moment sepsensoravg force
+!                cavitation sepsensor
 subroutine getcostfunction2_d(force, forced, moment, momentd, sepsensor&
-& , sepsensord, cavitation, cavitationd, alpha, beta, liftindex)
+& , sepsensord, sepsensoravg, sepsensoravgd, cavitation, cavitationd, &
+& alpha, beta, liftindex)
 ! compute the value of the actual objective function based on the
 ! (summed) forces and moments and any other "extra" design
 ! variables. the index of the objective is determined by 'idv'. this
@@ -25,8 +26,10 @@ subroutine getcostfunction2_d(force, forced, moment, momentd, sepsensor&
 & :: force, moment
   real(kind=realtype), dimension(3, ntimeintervalsspectral), intent(in) &
 & :: forced, momentd
-  real(kind=realtype), intent(in) :: sepsensor, cavitation
-  real(kind=realtype), intent(in) :: sepsensord, cavitationd
+  real(kind=realtype), intent(in) :: sepsensor, cavitation, sepsensoravg&
+& (3)
+  real(kind=realtype), intent(in) :: sepsensord, cavitationd, &
+& sepsensoravgd(3)
   real(kind=realtype), intent(in) :: alpha, beta
 ! working
   real(kind=realtype) :: fact, factmoment, scaledim, ovrnts
@@ -99,6 +102,18 @@ subroutine getcostfunction2_d(force, forced, moment, momentd, sepsensor&
 &     ovrnts*cavitationd
     funcvalues(costfunccavitation) = funcvalues(costfunccavitation) + &
 &     ovrnts*cavitation
+    funcvaluesd(costfuncsepsensoravgx) = funcvaluesd(&
+&     costfuncsepsensoravgx) + ovrnts*sepsensoravgd(1)
+    funcvalues(costfuncsepsensoravgx) = funcvalues(costfuncsepsensoravgx&
+&     ) + ovrnts*sepsensoravg(1)
+    funcvaluesd(costfuncsepsensoravgy) = funcvaluesd(&
+&     costfuncsepsensoravgy) + ovrnts*sepsensoravgd(2)
+    funcvalues(costfuncsepsensoravgy) = funcvalues(costfuncsepsensoravgy&
+&     ) + ovrnts*sepsensoravg(2)
+    funcvaluesd(costfuncsepsensoravgz) = funcvaluesd(&
+&     costfuncsepsensoravgz) + ovrnts*sepsensoravgd(3)
+    funcvalues(costfuncsepsensoravgz) = funcvalues(costfuncsepsensoravgz&
+&     ) + ovrnts*sepsensoravg(3)
 ! bending moment calc
     cmd = factmomentd*moment(:, sps) + factmoment*momentd(:, sps)
     cm = factmoment*moment(:, sps)

@@ -36,7 +36,8 @@ subroutine computeAeroCoef(globalCFVals,sps)
   integer(kind=intType) :: nn, ierr
   real(kind=realType) :: force(3), cforce(3), Lift, Drag, CL, CD
   real(kind=realType) :: Moment(3),cMoment(3), fact, scaleDim
-  real(kind=realType) :: cFp(3), cFv(3), cMp(3), cMv(3), yPlusMax, sepSensor, Cavitation
+  real(kind=realType) :: cFp(3), cFv(3), cMp(3), cMv(3), yPlusMax
+  real(Kind=realType) :: sepSensor, sepSensorAvg(3), Cavitation
   real(kind=realType), dimension(nCostFunction)::localCFVals
 
   !     ******************************************************************
@@ -51,7 +52,8 @@ subroutine computeAeroCoef(globalCFVals,sps)
   domains: do nn=1,nDom
      call setPointers(nn,1_intType,sps)
      
-     call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, Cavitation)
+     call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
+          sepSensorAvg, Cavitation)
      scaleDim = pRef/pInf
 
      ! Sum pressure and viscous contributions
@@ -95,6 +97,9 @@ subroutine computeAeroCoef(globalCFVals,sps)
      localCFVals(costFuncMomYCoef) = localCFVals(costFuncMomYCoef) + cmoment(2)
      localCFVals(costFuncMomZCoef) = localCFVals(costFuncMomZCoef) + cmoment(3)
      localCFVals(costFuncSepSensor) = localCFVals(costFuncSepSensor) + sepSensor
+     localCFVals(costFuncSepSensorAvgX) = localCFVals(costFuncSepSensorAvgX) + sepSensorAvg(1)
+     localCFVals(costFuncSepSensorAvgY) = localCFVals(costFuncSepSensorAvgY) + sepSensorAvg(2)
+     localCFVals(costFuncSepSensorAvgZ) = localCFVals(costFuncSepSensorAvgZ) + sepSensorAvg(3)
      localCFVals(costFuncCavitation) = localCFVals(costFuncCavitation) + Cavitation
   end do domains
 

@@ -112,8 +112,6 @@
        l2         => flowDoms(nn,mm,1)%l2
        l3         => flowDoms(nn,mm,1)%l3
        groupNum   => flowDoms(nn,mm,1)%groupNum
-       idWBC      => flowDoms(nn,mm,1)%idWBC  !-- eran-CBD
-       contributeToForce => flowDoms(nn,mm,1)%contributeToForce  !-- eran-CBD
 
        ! Overset boundary and hole info.
 
