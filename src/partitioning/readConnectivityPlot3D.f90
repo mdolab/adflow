@@ -133,14 +133,6 @@
 
        type(cgnsNonMatchAbuttingConnType), pointer, dimension(:) :: &
                                                             connNonMatch
-! eran-CBD  ----- start
-
-       integer(kind=intType)  :: iname, idWBCL
-       logical :: nameFound
-       character(len=maxCGNSNameLen)  :: LfamilyName
-
-! eran-CBD  ----- end
-
 !
 !      Function definitions.
 !
@@ -938,30 +930,6 @@
        ! Close the file.
 
        close(unit=readunit)
-
-!-  eran-cbd starts
-
-       do nn=1,cgnsNDom
-          bocoLoop: do ii=1,nBocos
-
-             select case (cgnsDoms(nn)%bocoInfo(ii)%BCTypeCGNS)
-
-                case(BCWall,BCWallInviscid,BCWallViscous,&
-                     BCWallViscousHeatFlux,BCWallViscousIsothermal)
-
-                   jj= cgnsDoms(nn)%bocoInfo(ii)%familyID
-                   LfamilyName = cgnsFamilies(jj)%familyName
-
-                   call  wallComponentsAssignment(nn,ii,LfamilyName)                 
-
-              end select
-          end do bocoLoop
-
-          call overwriteWallBCData(nn,nBocos) ! eran-cbd : set contributions
-
-       end do
-                      
-!-  eran-cbd ends 
 
        ! Format statements.
 
