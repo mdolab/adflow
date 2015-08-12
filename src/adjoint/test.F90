@@ -108,7 +108,7 @@ subroutine testRev(dwbar, wbar, m)
                  fwd(i,j,k,l) = dwd(i,j,k,l)
               end do
               do l=nt1,nt2
-                 dwd(i,j,k,l) = dwbar(ii+ l)*ovol*turbresscale
+                 dwd(i,j,k,l) = dwbar(ii+ l)*ovol*turbresscale(l-nt1+1)
                  fwd(i,j,k,l) = dwd(i,j,k,l)
               end do
               ii = ii + nw
@@ -332,7 +332,7 @@ subroutine testRevSpatial(dwbar, xbar, stateSize, spatialSize)
                  ovold = ovold + (dw(i,j,k,l))*dwbar(ii+l)
               end do
               do l=nt1,nt2
-                 dwd(i,j,k,l) = dwbar(ii+ l)*ovol*turbresscale
+                 dwd(i,j,k,l) = dwbar(ii+ l)*ovol*turbresscale(l-nt1+1)
                  fwd(i,j,k,l) = dwd(i,j,k,l)
               end do
               ii = ii + nw

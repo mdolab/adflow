@@ -409,7 +409,7 @@
        logical :: freezeTurbSource
        logical :: printIterations
        logical :: printWarnings
-       real(kind=realType) :: turbResScale
+       real(kind=realType), dimension(4) :: turbResScale
        end module inputIteration
 
 !      ==================================================================

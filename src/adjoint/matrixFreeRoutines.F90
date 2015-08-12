@@ -653,7 +653,7 @@ subroutine computeMatrixFreeProductBwdFast(dwbar, wbar, stateSize)
                     fwd(i,j,k,l) = dwd(i,j,k,l)
                  end do
                  do l=nt1,nState
-                    dwd(i,j,k,l) = dwbar(ii+ l)*ovol*turbresscale
+                    dwd(i,j,k,l) = dwbar(ii+ l)*ovol*turbresscale(l-nt1+1)
                     fwd(i,j,k,l) = dwd(i,j,k,l)
                  end do
                  ii = ii + nState
