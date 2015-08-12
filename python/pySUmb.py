@@ -3046,7 +3046,6 @@ class SUMB(AeroSolver):
                     else:
                         raise Error("Datatype for Option %-35s not valid. Expected data type is <type 'float'> or <type 'list'>. Received data type is %-47s"% (name, type(value)))
 
-                    print (value)
                     execStr = 'self.sumb.'+self.optionMap[name]['location'] + '=' + str(tmp_turbresscalar)
                     exec(execStr)   
 
@@ -3644,7 +3643,6 @@ class SUMB(AeroSolver):
         
         if self.getOption("turbresscale") is None:
             turbModel = self.getOption("turbulencemodel")
-            print ("#########################", turbModel)
             if turbModel == "sa":
                 self.setOption("turbresscale", 10000.0)
             elif turbModel == "menter sst":
