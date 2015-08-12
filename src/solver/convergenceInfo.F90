@@ -66,15 +66,6 @@
 !      ******************************************************************
 !
 !
-!----------eran-cbd  for CBD run- just go the CBD printout -----
-!
-       chCBD : if(componentsBreakDown)then
-          call componentsBreakDownPrintout(0)
-          return
-       end if chCBD
-!
-! -------eran-cbd ---------------------------------------------
-!
 
        ! Determine whether or not the iterations must be written.
 

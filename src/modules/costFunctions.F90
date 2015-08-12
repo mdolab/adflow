@@ -76,7 +76,7 @@ module costFunctions
 #endif
   
   real(kind=realtype) :: sepSensorOffset, sepSensorSharpness
-
+  character(len=maxCGNSNameLen), dimension(:), allocatable :: maskFams
 end module costFunctions
 
 
