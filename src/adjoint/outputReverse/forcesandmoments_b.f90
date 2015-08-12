@@ -98,12 +98,12 @@ subroutine forcesandmoments_b(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd&
   real(kind=realtype) :: temp3
   real(kind=realtype) :: tempd14
   real(kind=realtype) :: temp2
-  real(kind=realtype) :: tempd13
+  real(kind=realtype) :: tempd13(3)
   real(kind=realtype) :: temp1
   real(kind=realtype) :: tempd12
   real(kind=realtype) :: temp0
   real(kind=realtype) :: tempd11
-  real(kind=realtype) :: tempd10(3)
+  real(kind=realtype) :: tempd10
   real(kind=realtype) :: tempd9
   real(kind=realtype) :: tempd
   real(kind=realtype) :: tempd8
@@ -120,8 +120,11 @@ subroutine forcesandmoments_b(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd&
   real(kind=realtype) :: temp
   real(kind=realtype) :: temp9
   real(kind=realtype) :: temp8
+  real(kind=realtype) :: tempd19
   real(kind=realtype) :: temp7
+  real(kind=realtype) :: tempd18
   real(kind=realtype) :: temp6
+  real(kind=realtype) :: tempd17
   real(kind=realtype) :: temp5
   real(kind=realtype) :: tempd16
   real(kind=realtype) :: temp4
@@ -154,7 +157,6 @@ subroutine forcesandmoments_b(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd&
   cmv(1) = zero
   cmv(2) = zero
   cmv(3) = zero
-  sepsensor = zero
 ! loop over the boundary subfaces of this block.
 bocos:do nn=1,nbocos
 !
@@ -233,9 +235,9 @@ bocos:do nn=1,nbocos
         call pushreal8(plocal)
         call pushreal8(yc)
         call pushreal8(tmp)
+        call pushreal8(sensor)
         call pushreal8(zc)
         call pushreal8(sensor1)
-        call pushreal8(sepsensor)
         call pushreal8array(v, 3)
         do ii1=1,size(bcdata)
           call pushreal8array(bcdata(ii1)%f, size(bcdata(ii1)%f, 1)*size&
@@ -324,9 +326,15 @@ bocos:do nn=1,nbocos
           sensor = sensor*four*qa
           sepsensor = sepsensor + sensor
 ! also accumulate into the sepsensoravg
-          sepsensoravg(1) = sepsensoravg(1) + sepsensor*xc
-          sepsensoravg(2) = sepsensoravg(2) + sepsensor*yc
-          sepsensoravg(3) = sepsensoravg(3) + sepsensor*zc
+          xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j&
+&           +1, 1))
+          yc = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j&
+&           +1, 2))
+          zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j&
+&           +1, 3))
+          sepsensoravg(1) = sepsensoravg(1) + sensor*xc
+          sepsensoravg(2) = sepsensoravg(2) + sensor*yc
+          sepsensoravg(3) = sepsensoravg(3) + sensor*zc
           plocal = pp2(i, j)
           tmp = two/(gammainf*pinf*machcoef*machcoef)
           cp = tmp*(plocal-pinf)
@@ -724,7 +732,6 @@ bocos:do nn=1,nbocos
 &                    bcdata(ii1)%f, 2)*size(bcdata(ii1)%f, 3))
       end do
       call lookreal8array(v, 3)
-      call lookreal8(sepsensor)
       do ii=0,(bcdata(nn)%jnend-bcdata(nn)%jnbeg)*(bcdata(nn)%inend-&
 &         bcdata(nn)%inbeg)-1
         i = mod(ii, bcdata(nn)%inend - bcdata(nn)%inbeg) + bcdata(nn)%&
@@ -772,8 +779,16 @@ bocos:do nn=1,nbocos
 ! and integrate over the area of this cell and save:
         call pushreal8(sensor)
         sensor = sensor*four*qa
-        sepsensor = sepsensor + sensor
 ! also accumulate into the sepsensoravg
+        call pushreal8(xc)
+        xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1&
+&         , 1))
+        call pushreal8(yc)
+        yc = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j+1&
+&         , 2))
+        call pushreal8(zc)
+        zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1&
+&         , 3))
         plocal = pp2(i, j)
         tmp = two/(gammainf*pinf*machcoef*machcoef)
         cp = tmp*(plocal-pinf)
@@ -801,12 +816,29 @@ bocos:do nn=1,nbocos
         gammainfd = gammainfd + pinf*tempd8
         machcoefd = machcoefd + gammainf*pinf*2*machcoef*tempd9
         pp2d(i, j) = pp2d(i, j) + plocald
-        sepsensord = sepsensord + yc*sepsensoravgd(2) + xc*sepsensoravgd&
-&         (1) + zc*sepsensoravgd(3)
-        zcd = fx*myd - fy*mxd + sepsensor*sepsensoravgd(3)
-        ycd = fz*mxd - fx*mzd + sepsensor*sepsensoravgd(2)
-        xcd = fy*mzd - fz*myd + sepsensor*sepsensoravgd(1)
-        sensord = sepsensord
+        sensord = yc*sepsensoravgd(2) + sepsensord + xc*sepsensoravgd(1)&
+&         + zc*sepsensoravgd(3)
+        zcd = sensor*sepsensoravgd(3)
+        ycd = sensor*sepsensoravgd(2)
+        xcd = sensor*sepsensoravgd(1)
+        call popreal8(zc)
+        tempd10 = fourth*zcd
+        xxd(i, j, 3) = xxd(i, j, 3) + tempd10
+        xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd10
+        xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd10
+        xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd10
+        call popreal8(yc)
+        tempd11 = fourth*ycd
+        xxd(i, j, 2) = xxd(i, j, 2) + tempd11
+        xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd11
+        xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd11
+        xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd11
+        call popreal8(xc)
+        tempd12 = fourth*xcd
+        xxd(i, j, 1) = xxd(i, j, 1) + tempd12
+        xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd12
+        xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd12
+        xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd12
         call popreal8(sensor)
         qad = qad + four*sensor*sensord
         sensord = four*qa*sensord
@@ -824,16 +856,16 @@ bocos:do nn=1,nbocos
         tmpd0 = vd
         temp3 = v(1)**2 + v(2)**2 + v(3)**2
         temp4 = sqrt(temp3)
-        tempd10 = tmpd0/(temp4+1e-16)
-        vd = tempd10
+        tempd13 = tmpd0/(temp4+1e-16)
+        vd = tempd13
         if (temp3 .eq. 0.0_8) then
-          tempd11 = 0.0
+          tempd14 = 0.0
         else
-          tempd11 = sum(-(v*tempd10/(temp4+1e-16)))/(2.0*temp4)
+          tempd14 = sum(-(v*tempd13/(temp4+1e-16)))/(2.0*temp4)
         end if
-        vd(1) = vd(1) + 2*v(1)*tempd11
-        vd(2) = vd(2) + 2*v(2)*tempd11
-        vd(3) = vd(3) + 2*v(3)*tempd11
+        vd(1) = vd(1) + 2*v(1)*tempd14
+        vd(2) = vd(2) + 2*v(2)*tempd14
+        vd(3) = vd(3) + 2*v(3)*tempd14
         ww2d(i, j, ivz) = ww2d(i, j, ivz) + vd(3)
         vd(3) = 0.0_8
         ww2d(i, j, ivy) = ww2d(i, j, ivy) + vd(2)
@@ -845,14 +877,14 @@ bocos:do nn=1,nbocos
 &         dualarea(i, j)
         if (ssi(i, j, 1)**2 + ssi(i, j, 2)**2 + ssi(i, j, 3)**2 .eq. &
 &           0.0_8) then
-          tempd12 = 0.0
+          tempd15 = 0.0
         else
-          tempd12 = fourth*qad/(2.0*sqrt(ssi(i, j, 1)**2+ssi(i, j, 2)**2&
+          tempd15 = fourth*qad/(2.0*sqrt(ssi(i, j, 1)**2+ssi(i, j, 2)**2&
 &           +ssi(i, j, 3)**2))
         end if
-        ssid(i, j, 1) = ssid(i, j, 1) + 2*ssi(i, j, 1)*tempd12
-        ssid(i, j, 2) = ssid(i, j, 2) + 2*ssi(i, j, 2)*tempd12
-        ssid(i, j, 3) = ssid(i, j, 3) + 2*ssi(i, j, 3)*tempd12
+        ssid(i, j, 1) = ssid(i, j, 1) + 2*ssi(i, j, 1)*tempd15
+        ssid(i, j, 2) = ssid(i, j, 2) + 2*ssi(i, j, 2)*tempd15
+        ssid(i, j, 3) = ssid(i, j, 3) + 2*ssi(i, j, 3)*tempd15
         fzd = bcdatad(nn)%f(i-1, j, 3) + bcdatad(nn)%f(i-1, j-1, 3) + &
 &         bcdatad(nn)%f(i, j-1, 3) + bcdatad(nn)%f(i, j, 3)
         fyd = bcdatad(nn)%f(i-1, j, 2) + bcdatad(nn)%f(i-1, j-1, 2) + &
@@ -862,39 +894,42 @@ bocos:do nn=1,nbocos
         fzd = cfpd(3) - xc*myd + yc*mxd + fourth*fzd
         fyd = xc*mzd + cfpd(2) - zc*mxd + fourth*fyd
         fxd = cfpd(1) - yc*mzd + zc*myd + fourth*fxd
+        xcd = fy*mzd - fz*myd
+        ycd = fz*mxd - fx*mzd
+        zcd = fx*myd - fy*mxd
         pm1d = ssi(i, j, 2)*fyd + ssi(i, j, 1)*fxd + ssi(i, j, 3)*fzd
         ssid(i, j, 3) = ssid(i, j, 3) + pm1*fzd
         ssid(i, j, 2) = ssid(i, j, 2) + pm1*fyd
         ssid(i, j, 1) = ssid(i, j, 1) + pm1*fxd
-        tempd13 = fourth*zcd
-        xxd(i, j, 3) = xxd(i, j, 3) + tempd13
-        xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd13
-        xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd13
-        xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd13
+        tempd16 = fourth*zcd
+        xxd(i, j, 3) = xxd(i, j, 3) + tempd16
+        xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd16
+        xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd16
+        xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd16
         refpointd(3) = refpointd(3) - zcd
-        tempd14 = fourth*ycd
-        xxd(i, j, 2) = xxd(i, j, 2) + tempd14
-        xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd14
-        xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd14
-        xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd14
+        tempd17 = fourth*ycd
+        xxd(i, j, 2) = xxd(i, j, 2) + tempd17
+        xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd17
+        xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd17
+        xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd17
         refpointd(2) = refpointd(2) - ycd
-        tempd15 = fourth*xcd
-        xxd(i, j, 1) = xxd(i, j, 1) + tempd15
-        xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd15
-        xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd15
-        xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd15
+        tempd18 = fourth*xcd
+        xxd(i, j, 1) = xxd(i, j, 1) + tempd18
+        xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd18
+        xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd18
+        xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd18
         refpointd(1) = refpointd(1) - xcd
-        tempd16 = fact*scaledim*pm1d
-        pp2d(i, j) = pp2d(i, j) + half*tempd16
-        pp1d(i, j) = pp1d(i, j) + half*tempd16
-        pinfd = pinfd - tempd16
+        tempd19 = fact*scaledim*pm1d
+        pp2d(i, j) = pp2d(i, j) + half*tempd19
+        pp1d(i, j) = pp1d(i, j) + half*tempd19
+        pinfd = pinfd - tempd19
         scaledimd = scaledimd + fact*(half*(pp2(i, j)+pp1(i, j))-pinf)*&
 &         pm1d
       end do
       call popreal8array(v, 3)
-      call popreal8(sepsensor)
       call popreal8(sensor1)
       call popreal8(zc)
+      call popreal8(sensor)
       call popreal8(tmp)
       call popreal8(yc)
       call popreal8(plocal)
