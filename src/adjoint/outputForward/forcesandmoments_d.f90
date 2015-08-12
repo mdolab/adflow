@@ -341,15 +341,24 @@ bocos:do nn=1,nbocos
           sepsensord = sepsensord + sensord
           sepsensor = sepsensor + sensor
 ! also accumulate into the sepsensoravg
-          sepsensoravgd(1) = sepsensoravgd(1) + sepsensord*xc + &
-&           sepsensor*xcd
-          sepsensoravg(1) = sepsensoravg(1) + sepsensor*xc
-          sepsensoravgd(2) = sepsensoravgd(2) + sepsensord*yc + &
-&           sepsensor*ycd
-          sepsensoravg(2) = sepsensoravg(2) + sepsensor*yc
-          sepsensoravgd(3) = sepsensoravgd(3) + sepsensord*zc + &
-&           sepsensor*zcd
-          sepsensoravg(3) = sepsensoravg(3) + sepsensor*zc
+          xcd = fourth*(xxd(i, j, 1)+xxd(i+1, j, 1)+xxd(i, j+1, 1)+xxd(i&
+&           +1, j+1, 1))
+          xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j&
+&           +1, 1))
+          ycd = fourth*(xxd(i, j, 2)+xxd(i+1, j, 2)+xxd(i, j+1, 2)+xxd(i&
+&           +1, j+1, 2))
+          yc = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j&
+&           +1, 2))
+          zcd = fourth*(xxd(i, j, 3)+xxd(i+1, j, 3)+xxd(i, j+1, 3)+xxd(i&
+&           +1, j+1, 3))
+          zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j&
+&           +1, 3))
+          sepsensoravgd(1) = sepsensoravgd(1) + sensord*xc + sensor*xcd
+          sepsensoravg(1) = sepsensoravg(1) + sensor*xc
+          sepsensoravgd(2) = sepsensoravgd(2) + sensord*yc + sensor*ycd
+          sepsensoravg(2) = sepsensoravg(2) + sensor*yc
+          sepsensoravgd(3) = sepsensoravgd(3) + sensord*zc + sensor*zcd
+          sepsensoravg(3) = sepsensoravg(3) + sensor*zc
           plocald = pp2d(i, j)
           plocal = pp2(i, j)
           tmpd = -(two*((gammainfd*pinf+gammainf*pinfd)*machcoef**2+&

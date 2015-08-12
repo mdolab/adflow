@@ -235,9 +235,16 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
               sepSensor = sepSensor + sensor
 
               ! Also accumulate into the sepSensorAvg
-              sepSensorAvg(1) = sepSensorAvg(1)  + sepSensor * xc
-              sepSensorAvg(2) = sepSensorAvg(2)  + sepSensor * yc
-              sepSensorAvg(3) = sepSensorAvg(3)  + sepSensor * zc
+              xc = fourth*(xx(i,j,  1) + xx(i+1,j,  1) &
+                   +         xx(i,j+1,1) + xx(i+1,j+1,1))
+              yc = fourth*(xx(i,j,  2) + xx(i+1,j,  2) &
+                   +         xx(i,j+1,2) + xx(i+1,j+1,2))
+              zc = fourth*(xx(i,j,  3) + xx(i+1,j,  3) &
+                   +         xx(i,j+1,3) + xx(i+1,j+1,3))
+
+              sepSensorAvg(1) = sepSensorAvg(1)  + sensor * xc
+              sepSensorAvg(2) = sepSensorAvg(2)  + sensor * yc
+              sepSensorAvg(3) = sepSensorAvg(3)  + sensor * zc
 
               plocal = pp2(i,j)
               tmp = two/(gammaInf*pInf*MachCoef*MachCoef)

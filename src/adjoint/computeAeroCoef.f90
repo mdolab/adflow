@@ -97,6 +97,9 @@ subroutine computeAeroCoef(globalCFVals,sps)
      localCFVals(costFuncMomYCoef) = localCFVals(costFuncMomYCoef) + cmoment(2)
      localCFVals(costFuncMomZCoef) = localCFVals(costFuncMomZCoef) + cmoment(3)
      localCFVals(costFuncSepSensor) = localCFVals(costFuncSepSensor) + sepSensor
+     localCFVals(costFuncSepSensorAvgX) = localCFVals(costFuncSepSensorAvgX) + sepSensorAvg(1)
+     localCFVals(costFuncSepSensorAvgY) = localCFVals(costFuncSepSensorAvgY) + sepSensorAvg(2)
+     localCFVals(costFuncSepSensorAvgZ) = localCFVals(costFuncSepSensorAvgZ) + sepSensorAvg(3)
      localCFVals(costFuncCavitation) = localCFVals(costFuncCavitation) + Cavitation
   end do domains
 
