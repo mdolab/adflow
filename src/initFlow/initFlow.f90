@@ -198,7 +198,10 @@
 
        call initBCDataDomainInterfaces
 
+       end subroutine initFlow
+
+       subroutine initFlowPart2
        ! Initialize the dependent flow variables and the halo values.
        call initDepvarAndHalos(halosRead)
   
-     end subroutine initFlow
+       end subroutine initFlowPart2

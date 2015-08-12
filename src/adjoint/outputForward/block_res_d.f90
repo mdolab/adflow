@@ -422,14 +422,14 @@ varloopfine:do l=1,nwf
       do k=2,kl
         do j=2,jl
           do i=2,il
-            flowdomsd(nn, 1, sps2)%dw(i, j, k, l) = turbresscale*(&
-&             flowdomsd(nn, 1, sps2)%dw(i, j, k, l)*flowdoms(nn, &
+            flowdomsd(nn, 1, sps2)%dw(i, j, k, l) = turbresscale(l-nt1+1&
+&             )*(flowdomsd(nn, 1, sps2)%dw(i, j, k, l)*flowdoms(nn, &
 &             currentlevel, sps2)%vol(i, j, k)-flowdoms(nn, 1, sps2)%dw(&
 &             i, j, k, l)*flowdomsd(nn, currentlevel, sps2)%vol(i, j, k)&
 &             )/flowdoms(nn, currentlevel, sps2)%vol(i, j, k)**2
             flowdoms(nn, 1, sps2)%dw(i, j, k, l) = flowdoms(nn, 1, sps2)&
 &             %dw(i, j, k, l)/flowdoms(nn, currentlevel, sps2)%vol(i, j&
-&             , k)*turbresscale
+&             , k)*turbresscale(l-nt1+1)
           end do
         end do
       end do

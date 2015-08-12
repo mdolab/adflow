@@ -781,7 +781,9 @@
                  state_sum = state_sum + (dw(i,j,k,l)*ovv)**2
               end do
               do l=nt1,nt2
-                 state_sum = state_sum + (dw(i,j,k,l)*ovv*turbResScale)**2
+                 ! print *, "Value of:", l-nt1+1, "Turb:", turbResScale(l - nt1 + 1)
+                 ! l-nt1+1 will index the turbResScale properly
+                 state_sum = state_sum + (dw(i,j,k,l)*ovv*turbResScale(l-nt1+1))**2
               end do
               monLoc(mm) = monLoc(mm) + state_sum
 
