@@ -145,6 +145,8 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
         
      case (spalartAllmaras)
         call sa_block(.true.)
+     case (menterSST)
+        call SST_block(.true.)
      case default
         call terminate("turbResidual", & 
              "Only SA turbulence adjoint implemented")
@@ -333,7 +335,7 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, force, moment,
               do i=2, il
                  flowDoms(nn, 1, sps2)%dw(i, j, k, l)  = & 
                       flowDoms(nn, 1, sps2)%dw(i, j, k, l)  / &
-                      flowDoms(nn, currentLevel, sps2)%vol(i, j, k)*turbResScale
+                      flowDoms(nn, currentLevel, sps2)%vol(i, j, k)*turbResScale(l-nt1+1)
               end do
            end do
         end do
@@ -387,8 +389,8 @@ subroutine resScale
            do l=1, nwf
               dw(i, j, k, l) = (dw(i, j, k, l) + fw(i, j, k, l))* ovol
            end do
-           do l=nwf, nt1
-              dw(i, j, k, l) = (dw(i, j, k, l) + fw(i, j, k, l))* ovol * turbResScale
+           do l=nt1, nt2
+              dw(i, j, k, l) = (dw(i, j, k, l) + fw(i, j, k, l))* ovol * turbResScale(l-nt1+1)
            end do
         end do
      end do

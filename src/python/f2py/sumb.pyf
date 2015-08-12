@@ -108,6 +108,9 @@ python module libsumb
        subroutine initflow ! in :sumb:../../initFlow/initFlow.f90
        end subroutine initflow
 
+       subroutine initflowpart2 ! in :sumb:../../initFlow/initFlow.f90
+       end subroutine initflowpart2
+
        subroutine updategamma
        end subroutine updategamma
 
@@ -644,7 +647,7 @@ python module libsumb
          real(kind=realtype) :: epscoefconv
          real(kind=realtype) allocatable,dimension(:) :: etark
          real(kind=realtype) allocatable,dimension(:) :: cdisrk
-         real(kind=realtype) :: turbresscale
+         real(kind=realtype), dimension(4) :: turbresscale
          logical :: freezeturbsource
          logical :: printiterations
          logical :: printwarnings

@@ -147,6 +147,9 @@ class SUMB(AeroSolver):
             self.logFile = self.getOption('logfile')
             self.sumb.openlog(self.logFile)
 
+        # Update turbresscale depending on the turbulence model specified
+        self._updateTurbResScale()
+        
         # Initialize petec in case the user has not already
         self.sumb.initializepetsc()
 
@@ -222,6 +225,7 @@ class SUMB(AeroSolver):
         self.sumb.preprocessing()
         self.sumb.initflow()
         self.sumb.preprocessingpart2()
+        self.sumb.initflowpart2()
         self.sumb.preprocessingadjoint()
 
     def setMesh(self, mesh, groupName='all'):
@@ -2952,7 +2956,7 @@ class SUMB(AeroSolver):
                 SUMBWarning("Option '%-29s\' is a deprecated SUmb Option |"% name)
             return
 
-        # Try to the option in the option dictionary
+        # Try the option in the option dictionary to make sure we are setting a valid option
         defOptions = self.options['defaults']
         try:
             defOptions[name]
@@ -2962,7 +2966,7 @@ class SUMB(AeroSolver):
             return
 
         # Now we know the option exists, lets check if the type is ok:
-        if type(value) == self.options[name][0]:
+        if isinstance(value, self.options[name][0]):
             # Just set:
             self.options[name] = [type(value),value]
         else:
@@ -3021,6 +3025,30 @@ class SUMB(AeroSolver):
                 self.sumb.flowvarrefstate.lrefspecified = True
                 self.metricConversion = value
             # end if
+            
+
+            if name == "turbresscale":
+                # If value is None no value has been specified by the user. None is the default value.
+                # Do nothing as it will be updated with _updateTurbResScale from __init__                
+                if value is not None:
+                    tmp_turbresscalar = [0.0, 0.0, 0.0, 0.0]
+                    # Check type to handle the insert properly
+                    if type(value) is float:
+                        tmp_turbresscalar[0] = value
+                    elif type(value) is list:
+                        if  1 <= len(value) and len(value) <= 4:
+                            if type(value[0]) is float:
+                                tmp_turbresscalar[0:len(value)] = value[:]
+                            else:
+                                raise Error("Datatype for Option %-35s was not valid. Expected list of <type 'float'>. Received data type is %-47s"% (name, type(value[0])))
+                        else:
+                            raise Error("Option %-35s of %-35s contains %-35s elements. Min and max number of elements are 1 and 4 respectively"% (name, type(value), len(value)))
+                    else:
+                        raise Error("Datatype for Option %-35s not valid. Expected data type is <type 'float'> or <type 'list'>. Received data type is %-47s"% (name, type(value)))
+
+                    print (value)
+                    execStr = 'self.sumb.'+self.optionMap[name]['location'] + '=' + str(tmp_turbresscalar)
+                    exec(execStr)   
 
             return
         # end if
@@ -3061,7 +3089,7 @@ class SUMB(AeroSolver):
 
     def getOption(self, name):
         # Redefine the getOption def from the base class so we can
-        # mane sure the name is lowercase
+        # make sure the name is lowercase
 
         if name.lower() in self.options['defaults']:
             return self.options[name.lower()][1]
@@ -3108,6 +3136,7 @@ class SUMB(AeroSolver):
             'flowtype':[str, 'external'],
             'turbulencemodel':[str, 'sa'],
             'turbulenceorder':[str, 'first order'],
+            'turbresscale':[object, None],
             'usewallfunctions':[bool, False],
             'useapproxwalldistance':[bool, True],
             'walltreatment':[str, 'linear pressure extrapolation'],
@@ -3118,7 +3147,6 @@ class SUMB(AeroSolver):
             'restrictionrelaxation':[float, .80],
             'liftindex':[int, 2],
             'lowspeedpreconditioner':[bool, False],
-            'turbresscale':[float, 10000.0],
 
             # Common Paramters
             'ncycles':[int, 500],
@@ -3321,6 +3349,7 @@ class SUMB(AeroSolver):
             'turbulenceorder':{'first order':1,
                                'second order':2,
                                'location':'inputdiscretization.orderturb'},
+            'turbresscale':{'location':'inputiteration.turbresscale'},
             'usewallfunctions':{'location':'inputphysics.wallfunctions'},
             'useapproxwalldistance':{'location':'inputdiscretization.useapproxwalldistance'},
                     'reynoldsnumber':{'location':'inputphysics.reynolds'},
@@ -3341,7 +3370,7 @@ class SUMB(AeroSolver):
             'restrictionrelaxation':{'location':'inputiteration.fcoll'},
             'forcesastractions':{'location':'inputphysics.forcesastractions'},
             'lowspeedpreconditioner':{'location':'inputdiscretization.lowspeedpreconditioner'},
-            'turbresscale':{'location':'inputiteration.turbresscale'},
+
             # Common Paramters
             'ncycles':{'location':'inputiteration.ncycles'},
             'ncyclescoarse':{'location':'inputiteration.ncyclescoarse'},
@@ -3362,7 +3391,7 @@ class SUMB(AeroSolver):
             # Unsteady Params
             'timeintegrationscheme':{'bdf':self.sumb.inputunsteady.bdf,
                                      'explicitrk':self.sumb.inputunsteady.explicitrk,
-                                     'inplicitrk':self.sumb.inputunsteady.implicitrk,
+                                     'implicitrk':self.sumb.inputunsteady.implicitrk,
                                      'md':self.sumb.inputunsteady.md,
                                      'location':'inputunsteady.timeintegrationscheme'},
             'timeaccuracy':{'location':'inputunsteady.timeaccuracy'},
@@ -3538,6 +3567,7 @@ class SUMB(AeroSolver):
                           'outputdirectory',
                           'isovariables',
                           'isosurface',
+                          'turbresscale',
                           ]
 
         return ignoreOptions, deprecatedOptions, specialOptions
@@ -3606,6 +3636,22 @@ class SUMB(AeroSolver):
             }
 
         return possibleAeroDVs, sumbCostFunctions
+        
+    def _updateTurbResScale(self):
+        # If turbresscale is None it has not been set by the user in script 
+        # thus set default values depending on turbulence model;
+        # else do nothing since it already contains value specified by user
+        
+        if self.getOption("turbresscale") is None:
+            turbModel = self.getOption("turbulencemodel")
+            print ("#########################", turbModel)
+            if turbModel == "sa":
+                self.setOption("turbresscale", 10000.0)
+            elif turbModel == "menter sst":
+                self.setOption("turbresscale", [10e3, 10e-6])
+            else:
+                raise Error("Turbulence model %-35s does not have default values specified for turbresscale. Specify turbresscale manually or update the python interface"%(turbModel))
+
 
     def __del__(self):
         if self.logFile:

@@ -85,6 +85,8 @@ subroutine computeResidualNK()
      select case (turbModel)
      case (spalartAllmaras)
         call sa(.True.)
+     case (menterSST)
+        call SST(.True.)
      end select
   endif
 

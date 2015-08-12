@@ -515,7 +515,7 @@ varloopfine:do l=1,nwf
             call pushreal8(flowdoms(nn, 1, sps2)%dw(i, j, k, l))
             flowdoms(nn, 1, sps2)%dw(i, j, k, l) = flowdoms(nn, 1, sps2)&
 &             %dw(i, j, k, l)/flowdoms(nn, currentlevel, sps2)%vol(i, j&
-&             , k)*turbresscale
+&             , k)*turbresscale(l-nt1+1)
           end do
         end do
       end do
@@ -723,8 +723,8 @@ varloopfine:do l=1,nwf
           do i=il,2,-1
             call popreal8(flowdoms(nn, 1, sps2)%dw(i, j, k, l))
             temp2 = flowdoms(nn, currentlevel, sps2)%vol(i, j, k)
-            tempd2 = turbresscale*flowdomsd(nn, 1, sps2)%dw(i, j, k, l)/&
-&             temp2
+            tempd2 = turbresscale(l-nt1+1)*flowdomsd(nn, 1, sps2)%dw(i, &
+&             j, k, l)/temp2
             flowdomsd(nn, currentlevel, sps2)%vol(i, j, k) = flowdomsd(&
 &             nn, currentlevel, sps2)%vol(i, j, k) - flowdoms(nn, 1, &
 &             sps2)%dw(i, j, k, l)*tempd2/temp2

@@ -111,7 +111,7 @@ subroutine setRVec(rVec)
                     ii = ii + 1
                  end do
                  do l=nt1,nt2
-                    rvec_pointer(ii) = dw(i,j,k,l)*ovv*turbResScale
+                    rvec_pointer(ii) = dw(i,j,k,l)*ovv*turbResScale(l-nt1+1)
                     ii = ii + 1
                  end do
               end do
