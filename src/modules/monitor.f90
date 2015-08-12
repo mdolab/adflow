@@ -71,8 +71,6 @@
 
        logical :: monMachOrHMax
        logical :: showCPU
-       logical :: genCBDOUT             !eran-CBD
-       logical :: componentsBreakDown   !eran-CBD
 
        ! monMassSliding:  Whether or not to monitor the mass flow of
        !                  the sliding interfaces.

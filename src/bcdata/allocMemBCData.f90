@@ -68,6 +68,8 @@
                inodeBeg = BCData(mm)%inbeg; inodeEnd = BCData(mm)%inend
                jnodeBeg = BCData(mm)%jnbeg; jnodeEnd = BCData(mm)%jnend
 
+               ! Initialize all mask values to 1
+               bcData(mm)%mask = 1
 
                ! Determine the boundary condition we are having here
                ! and allocate the memory accordingly.
@@ -76,12 +78,6 @@
 
                  case (NSWallAdiabatic)
 
-                    ! Note the FMIndex is an INTEGER and Defined for
-                    ! the NODES
-
-     ! *******************************
-     ! Modified by HDN
-     ! *******************************
                    allocate(BCData(mm)%uSlip(iBeg:iEnd,jBeg:jEnd,3), &
                             BCData(mm)%uSlipALE(0:nALEsteps,iBeg:iEnd,jBeg:jEnd,3), &
                             BCData(mm)%F(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
@@ -98,12 +94,6 @@
 
                  case (NSWallIsothermal)
 
-                    ! Note the FMIndex is an INTEGER and Defined for
-                    ! the NODES
-
-     ! *******************************
-     ! Modified by HDN
-     ! *******************************
                    allocate(BCData(mm)%uSlip(iBeg:iEnd,jBeg:jEnd,3),  &
                             BCData(mm)%uSlipALE(0:nALEsteps,iBeg:iEnd,jBeg:jEnd,3), &
                             BCData(mm)%TNS_Wall(iBeg:iEnd,jBeg:jEnd), &
@@ -121,11 +111,6 @@
 
                  case (EulerWall)
 
-                   ! Euler wall
-
-     ! *******************************
-     ! Modified by HDN
-     ! *******************************
                    allocate(BCData(mm)%rface(iBeg:iEnd,jBeg:jEnd), &
                             BCData(mm)%rFaceALE(0:nALEsteps,iBeg:iEnd,jBeg:jEnd), &
                             BCData(mm)%F(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
@@ -145,9 +130,6 @@
                    ! Just allocate the memory for the normal mesh
                    ! velocity.
 
-     ! *******************************
-     ! Modified by HDN
-     ! *******************************
                    allocate(BCData(mm)%rface(iBeg:iEnd,jBeg:jEnd), &
                             BCData(mm)%rFaceALE(0:nALEsteps,iBeg:iEnd,jBeg:jEnd), &
                             BCData(mm)%F(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
