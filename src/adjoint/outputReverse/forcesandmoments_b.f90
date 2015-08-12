@@ -165,46 +165,48 @@ bocos:do nn=1,nbocos
 !        *                                                              *
 !        ****************************************************************
 !
-    if ((bctype(nn) .eq. eulerwall .or. bctype(nn) .eq. nswalladiabatic)&
-&       .or. bctype(nn) .eq. nswallisothermal) then
+! only include this patch if necessary
+    if (bcdata(nn)%mask .eq. 1) then
+      if ((bctype(nn) .eq. eulerwall .or. bctype(nn) .eq. &
+&         nswalladiabatic) .or. bctype(nn) .eq. nswallisothermal) then
 ! subface is a wall. check if it is a viscous wall.
-      viscoussubface = .true.
-      if (bctype(nn) .eq. eulerwall) viscoussubface = .false.
+        viscoussubface = .true.
+        if (bctype(nn) .eq. eulerwall) viscoussubface = .false.
 ! set a bunch of pointers depending on the face id to make
 ! a generic treatment possible. the routine setbcpointers
 ! is not used, because quite a few other ones are needed.
-      call pushreal8array(ssi, size(ssi, 1)*size(ssi, 2)*size(ssi, 3))
-      call pushreal8array(pp2, size(pp2, 1)*size(pp2, 2))
-      call pushreal8array(pp1, size(pp1, 1)*size(pp1, 2))
-      call setbcpointers(nn, .true.)
-      select case  (bcfaceid(nn)) 
-      case (imin) 
-        call pushreal8(fact)
-        fact = -one
-        call pushcontrol3b(1)
-      case (imax) 
-        call pushreal8(fact)
-        fact = one
-        call pushcontrol3b(2)
-      case (jmin) 
-        call pushreal8(fact)
-        fact = -one
-        call pushcontrol3b(3)
-      case (jmax) 
-        call pushreal8(fact)
-        fact = one
-        call pushcontrol3b(4)
-      case (kmin) 
-        call pushreal8(fact)
-        fact = -one
-        call pushcontrol3b(5)
-      case (kmax) 
-        call pushreal8(fact)
-        fact = one
-        call pushcontrol3b(6)
-      case default
-        call pushcontrol3b(0)
-      end select
+        call pushreal8array(ssi, size(ssi, 1)*size(ssi, 2)*size(ssi, 3))
+        call pushreal8array(pp2, size(pp2, 1)*size(pp2, 2))
+        call pushreal8array(pp1, size(pp1, 1)*size(pp1, 2))
+        call setbcpointers(nn, .true.)
+        select case  (bcfaceid(nn)) 
+        case (imin) 
+          call pushreal8(fact)
+          fact = -one
+          call pushcontrol3b(1)
+        case (imax) 
+          call pushreal8(fact)
+          fact = one
+          call pushcontrol3b(2)
+        case (jmin) 
+          call pushreal8(fact)
+          fact = -one
+          call pushcontrol3b(3)
+        case (jmax) 
+          call pushreal8(fact)
+          fact = one
+          call pushcontrol3b(4)
+        case (kmin) 
+          call pushreal8(fact)
+          fact = -one
+          call pushcontrol3b(5)
+        case (kmax) 
+          call pushreal8(fact)
+          fact = one
+          call pushcontrol3b(6)
+        case default
+          call pushcontrol3b(0)
+        end select
 ! loop over the quadrilateral faces of the subface. note that
 ! the nodal range of bcdata must be used and not the cell
 ! range, because the latter may include the halo's in i and
@@ -214,42 +216,42 @@ bocos:do nn=1,nbocos
 !
 ! do j=(bcdata(nn)%jnbeg+1),bcdata(nn)%jnend
 !    do i=(bcdata(nn)%inbeg+1),bcdata(nn)%inend
-      call pushreal8array(bcdata(nn)%dualarea, size(bcdata(nn)%dualarea&
-&                   , 1)*size(bcdata(nn)%dualarea, 2))
-      bcdata(nn)%dualarea = zero
-      call pushreal8array(bcdata(nn)%f, size(bcdata(nn)%f, 1)*size(&
-&                   bcdata(nn)%f, 2)*size(bcdata(nn)%f, 3))
-      bcdata(nn)%f = zero
-      call pushreal8(qa)
-      call pushinteger4(i)
-      call pushinteger4(j)
-      call pushreal8(xc)
-      call pushreal8(plocal)
-      call pushreal8(yc)
-      call pushreal8(tmp)
-      call pushreal8(sensor)
-      call pushreal8(zc)
-      call pushreal8(sensor1)
-      call pushreal8array(v, 3)
-      do ii1=1,size(bcdata)
-        call pushreal8array(bcdata(ii1)%f, size(bcdata(ii1)%f, 1)*size(&
-&                     bcdata(ii1)%f, 2)*size(bcdata(ii1)%f, 3))
-      end do
-      do ii1=1,size(bcdata)
-        call pushreal8array(bcdata(ii1)%dualarea, size(bcdata(ii1)%&
-&                     dualarea, 1)*size(bcdata(ii1)%dualarea, 2))
-      end do
-      call pushreal8array(xx, size(xx, 1)*size(xx, 2)*size(xx, 3))
-      call pushreal8array(pp1, size(pp1, 1)*size(pp1, 2))
-      call pushreal8array(pp2, size(pp2, 1)*size(pp2, 2))
-      call pushreal8array(ssi, size(ssi, 1)*size(ssi, 2)*size(ssi, 3))
-      call pushreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
-      do ii=0,(bcdata(nn)%jnend-bcdata(nn)%jnbeg)*(bcdata(nn)%inend-&
-&         bcdata(nn)%inbeg)-1
-        i = mod(ii, bcdata(nn)%inend - bcdata(nn)%inbeg) + bcdata(nn)%&
-&         inbeg + 1
-        j = ii/(bcdata(nn)%inend-bcdata(nn)%inbeg) + bcdata(nn)%jnbeg + &
-&         1
+        call pushreal8array(bcdata(nn)%dualarea, size(bcdata(nn)%&
+&                     dualarea, 1)*size(bcdata(nn)%dualarea, 2))
+        bcdata(nn)%dualarea = zero
+        call pushreal8array(bcdata(nn)%f, size(bcdata(nn)%f, 1)*size(&
+&                     bcdata(nn)%f, 2)*size(bcdata(nn)%f, 3))
+        bcdata(nn)%f = zero
+        call pushreal8(qa)
+        call pushinteger4(i)
+        call pushinteger4(j)
+        call pushreal8(xc)
+        call pushreal8(plocal)
+        call pushreal8(yc)
+        call pushreal8(tmp)
+        call pushreal8(sensor)
+        call pushreal8(zc)
+        call pushreal8(sensor1)
+        call pushreal8array(v, 3)
+        do ii1=1,size(bcdata)
+          call pushreal8array(bcdata(ii1)%f, size(bcdata(ii1)%f, 1)*size&
+&                       (bcdata(ii1)%f, 2)*size(bcdata(ii1)%f, 3))
+        end do
+        do ii1=1,size(bcdata)
+          call pushreal8array(bcdata(ii1)%dualarea, size(bcdata(ii1)%&
+&                       dualarea, 1)*size(bcdata(ii1)%dualarea, 2))
+        end do
+        call pushreal8array(xx, size(xx, 1)*size(xx, 2)*size(xx, 3))
+        call pushreal8array(pp1, size(pp1, 1)*size(pp1, 2))
+        call pushreal8array(pp2, size(pp2, 1)*size(pp2, 2))
+        call pushreal8array(ssi, size(ssi, 1)*size(ssi, 2)*size(ssi, 3))
+        call pushreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
+        do ii=0,(bcdata(nn)%jnend-bcdata(nn)%jnbeg)*(bcdata(nn)%inend-&
+&           bcdata(nn)%inbeg)-1
+          i = mod(ii, bcdata(nn)%inend - bcdata(nn)%inbeg) + bcdata(nn)%&
+&           inbeg + 1
+          j = ii/(bcdata(nn)%inend-bcdata(nn)%inbeg) + bcdata(nn)%jnbeg &
+&           + 1
 ! compute the average pressure minus 1 and the coordinates
 ! of the centroid of the face relative from from the
 ! moment reference point. due to the usage of pointers for
@@ -257,75 +259,75 @@ bocos:do nn=1,nbocos
 ! offset of 1 must be used. the pressure is multipled by
 ! fact to account for the possibility of an inward or
 ! outward pointing normal.
-        pm1 = fact*(half*(pp2(i, j)+pp1(i, j))-pinf)*scaledim
-        xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1&
-&         , 1)) - refpoint(1)
-        yc = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j+1&
-&         , 2)) - refpoint(2)
-        zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1&
-&         , 3)) - refpoint(3)
+          pm1 = fact*(half*(pp2(i, j)+pp1(i, j))-pinf)*scaledim
+          xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j&
+&           +1, 1)) - refpoint(1)
+          yc = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j&
+&           +1, 2)) - refpoint(2)
+          zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j&
+&           +1, 3)) - refpoint(3)
 ! compute the force components.
-        fx = pm1*ssi(i, j, 1)
-        fy = pm1*ssi(i, j, 2)
-        fz = pm1*ssi(i, j, 3)
+          fx = pm1*ssi(i, j, 1)
+          fy = pm1*ssi(i, j, 2)
+          fz = pm1*ssi(i, j, 3)
 ! update the inviscid force and moment coefficients.
-        cfp(1) = cfp(1) + fx
-        cfp(2) = cfp(2) + fy
-        cfp(3) = cfp(3) + fz
-        mx = yc*fz - zc*fy
-        my = zc*fx - xc*fz
-        mz = xc*fy - yc*fx
-        cmp(1) = cmp(1) + mx
-        cmp(2) = cmp(2) + my
-        cmp(3) = cmp(3) + mz
+          cfp(1) = cfp(1) + fx
+          cfp(2) = cfp(2) + fy
+          cfp(3) = cfp(3) + fz
+          mx = yc*fz - zc*fy
+          my = zc*fx - xc*fz
+          mz = xc*fy - yc*fx
+          cmp(1) = cmp(1) + mx
+          cmp(2) = cmp(2) + my
+          cmp(3) = cmp(3) + mz
 ! divide by 4 so we can scatter
-        fx = fourth*fx
-        fy = fourth*fy
-        fz = fourth*fz
+          fx = fourth*fx
+          fy = fourth*fy
+          fz = fourth*fz
 ! scatter 1/4 of the force to each of the nodes:
-        bcdata(nn)%f(i-1, j-1, 1) = bcdata(nn)%f(i-1, j-1, 1) + fx
-        bcdata(nn)%f(i, j-1, 1) = bcdata(nn)%f(i, j-1, 1) + fx
-        bcdata(nn)%f(i-1, j, 1) = bcdata(nn)%f(i-1, j, 1) + fx
-        bcdata(nn)%f(i, j, 1) = bcdata(nn)%f(i, j, 1) + fx
-        bcdata(nn)%f(i-1, j-1, 2) = bcdata(nn)%f(i-1, j-1, 2) + fy
-        bcdata(nn)%f(i, j-1, 2) = bcdata(nn)%f(i, j-1, 2) + fy
-        bcdata(nn)%f(i-1, j, 2) = bcdata(nn)%f(i-1, j, 2) + fy
-        bcdata(nn)%f(i, j, 2) = bcdata(nn)%f(i, j, 2) + fy
-        bcdata(nn)%f(i-1, j-1, 3) = bcdata(nn)%f(i-1, j-1, 3) + fz
-        bcdata(nn)%f(i, j-1, 3) = bcdata(nn)%f(i, j-1, 3) + fz
-        bcdata(nn)%f(i-1, j, 3) = bcdata(nn)%f(i-1, j, 3) + fz
-        bcdata(nn)%f(i, j, 3) = bcdata(nn)%f(i, j, 3) + fz
+          bcdata(nn)%f(i-1, j-1, 1) = bcdata(nn)%f(i-1, j-1, 1) + fx
+          bcdata(nn)%f(i, j-1, 1) = bcdata(nn)%f(i, j-1, 1) + fx
+          bcdata(nn)%f(i-1, j, 1) = bcdata(nn)%f(i-1, j, 1) + fx
+          bcdata(nn)%f(i, j, 1) = bcdata(nn)%f(i, j, 1) + fx
+          bcdata(nn)%f(i-1, j-1, 2) = bcdata(nn)%f(i-1, j-1, 2) + fy
+          bcdata(nn)%f(i, j-1, 2) = bcdata(nn)%f(i, j-1, 2) + fy
+          bcdata(nn)%f(i-1, j, 2) = bcdata(nn)%f(i-1, j, 2) + fy
+          bcdata(nn)%f(i, j, 2) = bcdata(nn)%f(i, j, 2) + fy
+          bcdata(nn)%f(i-1, j-1, 3) = bcdata(nn)%f(i-1, j-1, 3) + fz
+          bcdata(nn)%f(i, j-1, 3) = bcdata(nn)%f(i, j-1, 3) + fz
+          bcdata(nn)%f(i-1, j, 3) = bcdata(nn)%f(i-1, j, 3) + fz
+          bcdata(nn)%f(i, j, 3) = bcdata(nn)%f(i, j, 3) + fz
 ! scatter a quarter of the area to each node:
-        qa = fourth*sqrt(ssi(i, j, 1)**2+ssi(i, j, 2)**2+ssi(i, j, 3)**2&
-&         )
-        bcdata(nn)%dualarea(i-1, j-1) = bcdata(nn)%dualarea(i-1, j-1) + &
-&         qa
-        bcdata(nn)%dualarea(i, j-1) = bcdata(nn)%dualarea(i, j-1) + qa
-        bcdata(nn)%dualarea(i-1, j) = bcdata(nn)%dualarea(i-1, j) + qa
-        bcdata(nn)%dualarea(i, j) = bcdata(nn)%dualarea(i, j) + qa
+          qa = fourth*sqrt(ssi(i, j, 1)**2+ssi(i, j, 2)**2+ssi(i, j, 3)&
+&           **2)
+          bcdata(nn)%dualarea(i-1, j-1) = bcdata(nn)%dualarea(i-1, j-1) &
+&           + qa
+          bcdata(nn)%dualarea(i, j-1) = bcdata(nn)%dualarea(i, j-1) + qa
+          bcdata(nn)%dualarea(i-1, j) = bcdata(nn)%dualarea(i-1, j) + qa
+          bcdata(nn)%dualarea(i, j) = bcdata(nn)%dualarea(i, j) + qa
 ! get normalized surface velocity:
-        v(1) = ww2(i, j, ivx)
-        v(2) = ww2(i, j, ivy)
-        v(3) = ww2(i, j, ivz)
-        v = v/(sqrt(v(1)**2+v(2)**2+v(3)**2)+1e-16)
+          v(1) = ww2(i, j, ivx)
+          v(2) = ww2(i, j, ivy)
+          v(3) = ww2(i, j, ivz)
+          v = v/(sqrt(v(1)**2+v(2)**2+v(3)**2)+1e-16)
 ! dot product with free stream
-        sensor = -(v(1)*veldirfreestream(1)+v(2)*veldirfreestream(2)+v(3&
-&         )*veldirfreestream(3))
+          sensor = -(v(1)*veldirfreestream(1)+v(2)*veldirfreestream(2)+v&
+&           (3)*veldirfreestream(3))
 !now run through a smooth heaviside function:
-        sensor = one/(one+exp(-(2*sepsensorsharpness*(sensor-&
-&         sepsensoroffset))))
+          sensor = one/(one+exp(-(2*sepsensorsharpness*(sensor-&
+&           sepsensoroffset))))
 ! and integrate over the area of this cell and save:
-        sensor = sensor*four*qa
-        sepsensor = sepsensor + sensor
-        plocal = pp2(i, j)
-        tmp = two/(gammainf*pinf*machcoef*machcoef)
-        cp = tmp*(plocal-pinf)
-        sigma = 1.4
-        sensor1 = -cp - sigma
-        sensor1 = one/(one+exp(-(2*10*sensor1)))
-        sensor1 = sensor1*four*qa
-        cavitation = cavitation + sensor1
-      end do
+          sensor = sensor*four*qa
+          sepsensor = sepsensor + sensor
+          plocal = pp2(i, j)
+          tmp = two/(gammainf*pinf*machcoef*machcoef)
+          cp = tmp*(plocal-pinf)
+          sigma = 1.4
+          sensor1 = -cp - sigma
+          sensor1 = one/(one+exp(-(2*10*sensor1)))
+          sensor1 = sensor1*four*qa
+          cavitation = cavitation + sensor1
+        end do
 !
 !          **************************************************************
 !          *                                                            *
@@ -334,142 +336,148 @@ bocos:do nn=1,nbocos
 !          *                                                            *
 !          **************************************************************
 !
-      if (viscoussubface) then
+        if (viscoussubface) then
 ! replace norm with bcdata norm - peter lyu
 !norm => bcdata(nn)%norm
 ! loop over the quadrilateral faces of the subface and
 ! compute the viscous contribution to the force and
 ! moment and update the maximum value of y+.
-        do ii=0,(bcdata(nn)%jnend-bcdata(nn)%jnbeg)*(bcdata(nn)%inend-&
-&           bcdata(nn)%inbeg)-1
-          call pushinteger4(i)
-          i = mod(ii, bcdata(nn)%inend - bcdata(nn)%inbeg) + bcdata(nn)%&
-&           inbeg + 1
-          call pushinteger4(j)
-          j = ii/(bcdata(nn)%inend-bcdata(nn)%inbeg) + bcdata(nn)%jnbeg &
-&           + 1
+          do ii=0,(bcdata(nn)%jnend-bcdata(nn)%jnbeg)*(bcdata(nn)%inend-&
+&             bcdata(nn)%inbeg)-1
+            call pushinteger4(i)
+            i = mod(ii, bcdata(nn)%inend - bcdata(nn)%inbeg) + bcdata(nn&
+&             )%inbeg + 1
+            call pushinteger4(j)
+            j = ii/(bcdata(nn)%inend-bcdata(nn)%inbeg) + bcdata(nn)%&
+&             jnbeg + 1
 ! store the viscous stress tensor a bit easier.
-          tauxx = viscsubface(nn)%tau(i, j, 1)
-          tauyy = viscsubface(nn)%tau(i, j, 2)
-          tauzz = viscsubface(nn)%tau(i, j, 3)
-          tauxy = viscsubface(nn)%tau(i, j, 4)
-          tauxz = viscsubface(nn)%tau(i, j, 5)
-          tauyz = viscsubface(nn)%tau(i, j, 6)
+            tauxx = viscsubface(nn)%tau(i, j, 1)
+            tauyy = viscsubface(nn)%tau(i, j, 2)
+            tauzz = viscsubface(nn)%tau(i, j, 3)
+            tauxy = viscsubface(nn)%tau(i, j, 4)
+            tauxz = viscsubface(nn)%tau(i, j, 5)
+            tauyz = viscsubface(nn)%tau(i, j, 6)
 ! compute the viscous force on the face. a minus sign
 ! is now present, due to the definition of this force.
-          fx = -(fact*(tauxx*ssi(i, j, 1)+tauxy*ssi(i, j, 2)+tauxz*ssi(i&
-&           , j, 3))*scaledim)
-          fy = -(fact*(tauxy*ssi(i, j, 1)+tauyy*ssi(i, j, 2)+tauyz*ssi(i&
-&           , j, 3))*scaledim)
-          fz = -(fact*(tauxz*ssi(i, j, 1)+tauyz*ssi(i, j, 2)+tauzz*ssi(i&
-&           , j, 3))*scaledim)
+            fx = -(fact*(tauxx*ssi(i, j, 1)+tauxy*ssi(i, j, 2)+tauxz*ssi&
+&             (i, j, 3))*scaledim)
+            fy = -(fact*(tauxy*ssi(i, j, 1)+tauyy*ssi(i, j, 2)+tauyz*ssi&
+&             (i, j, 3))*scaledim)
+            fz = -(fact*(tauxz*ssi(i, j, 1)+tauyz*ssi(i, j, 2)+tauzz*ssi&
+&             (i, j, 3))*scaledim)
 ! compute the coordinates of the centroid of the face
 ! relative from the moment reference point. due to the
 ! usage of pointers for xx and offset of 1 is present,
 ! because x originally starts at 0.
-          call pushreal8(xc)
-          xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j&
-&           +1, 1)) - refpoint(1)
-          call pushreal8(yc)
-          yc = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j&
-&           +1, 2)) - refpoint(2)
-          call pushreal8(zc)
-          zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j&
-&           +1, 3)) - refpoint(3)
+            call pushreal8(xc)
+            xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1&
+&             , j+1, 1)) - refpoint(1)
+            call pushreal8(yc)
+            yc = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1&
+&             , j+1, 2)) - refpoint(2)
+            call pushreal8(zc)
+            zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1&
+&             , j+1, 3)) - refpoint(3)
 ! update the viscous force and moment coefficients.
-          cfv(1) = cfv(1) + fx
-          cfv(2) = cfv(2) + fy
-          cfv(3) = cfv(3) + fz
-          mx = yc*fz - zc*fy
-          my = zc*fx - xc*fz
-          mz = xc*fy - yc*fx
-          cmv(1) = cmv(1) + mx
-          cmv(2) = cmv(2) + my
-          cmv(3) = cmv(3) + mz
+            cfv(1) = cfv(1) + fx
+            cfv(2) = cfv(2) + fy
+            cfv(3) = cfv(3) + fz
+            mx = yc*fz - zc*fy
+            my = zc*fx - xc*fz
+            mz = xc*fy - yc*fx
+            cmv(1) = cmv(1) + mx
+            cmv(2) = cmv(2) + my
+            cmv(3) = cmv(3) + mz
 ! divide by 4 so we can scatter
-          call pushreal8(fx)
-          fx = fourth*fx
-          call pushreal8(fy)
-          fy = fourth*fy
-          call pushreal8(fz)
-          fz = fourth*fz
+            call pushreal8(fx)
+            fx = fourth*fx
+            call pushreal8(fy)
+            fy = fourth*fy
+            call pushreal8(fz)
+            fz = fourth*fz
 ! scatter 1/4 of the force to each of the nodes:
-          call pushreal8(bcdata(nn)%f(i-1, j-1, 1))
-          bcdata(nn)%f(i-1, j-1, 1) = bcdata(nn)%f(i-1, j-1, 1) + fx
-          call pushreal8(bcdata(nn)%f(i, j-1, 1))
-          bcdata(nn)%f(i, j-1, 1) = bcdata(nn)%f(i, j-1, 1) + fx
-          call pushreal8(bcdata(nn)%f(i-1, j, 1))
-          bcdata(nn)%f(i-1, j, 1) = bcdata(nn)%f(i-1, j, 1) + fx
-          call pushreal8(bcdata(nn)%f(i, j, 1))
-          bcdata(nn)%f(i, j, 1) = bcdata(nn)%f(i, j, 1) + fx
-          call pushreal8(bcdata(nn)%f(i-1, j-1, 2))
-          bcdata(nn)%f(i-1, j-1, 2) = bcdata(nn)%f(i-1, j-1, 2) + fy
-          call pushreal8(bcdata(nn)%f(i, j-1, 2))
-          bcdata(nn)%f(i, j-1, 2) = bcdata(nn)%f(i, j-1, 2) + fy
-          call pushreal8(bcdata(nn)%f(i-1, j, 2))
-          bcdata(nn)%f(i-1, j, 2) = bcdata(nn)%f(i-1, j, 2) + fy
-          call pushreal8(bcdata(nn)%f(i, j, 2))
-          bcdata(nn)%f(i, j, 2) = bcdata(nn)%f(i, j, 2) + fy
-          call pushreal8(bcdata(nn)%f(i-1, j-1, 3))
-          bcdata(nn)%f(i-1, j-1, 3) = bcdata(nn)%f(i-1, j-1, 3) + fz
-          call pushreal8(bcdata(nn)%f(i, j-1, 3))
-          bcdata(nn)%f(i, j-1, 3) = bcdata(nn)%f(i, j-1, 3) + fz
-          call pushreal8(bcdata(nn)%f(i-1, j, 3))
-          bcdata(nn)%f(i-1, j, 3) = bcdata(nn)%f(i-1, j, 3) + fz
-          call pushreal8(bcdata(nn)%f(i, j, 3))
-          bcdata(nn)%f(i, j, 3) = bcdata(nn)%f(i, j, 3) + fz
+            call pushreal8(bcdata(nn)%f(i-1, j-1, 1))
+            bcdata(nn)%f(i-1, j-1, 1) = bcdata(nn)%f(i-1, j-1, 1) + fx
+            call pushreal8(bcdata(nn)%f(i, j-1, 1))
+            bcdata(nn)%f(i, j-1, 1) = bcdata(nn)%f(i, j-1, 1) + fx
+            call pushreal8(bcdata(nn)%f(i-1, j, 1))
+            bcdata(nn)%f(i-1, j, 1) = bcdata(nn)%f(i-1, j, 1) + fx
+            call pushreal8(bcdata(nn)%f(i, j, 1))
+            bcdata(nn)%f(i, j, 1) = bcdata(nn)%f(i, j, 1) + fx
+            call pushreal8(bcdata(nn)%f(i-1, j-1, 2))
+            bcdata(nn)%f(i-1, j-1, 2) = bcdata(nn)%f(i-1, j-1, 2) + fy
+            call pushreal8(bcdata(nn)%f(i, j-1, 2))
+            bcdata(nn)%f(i, j-1, 2) = bcdata(nn)%f(i, j-1, 2) + fy
+            call pushreal8(bcdata(nn)%f(i-1, j, 2))
+            bcdata(nn)%f(i-1, j, 2) = bcdata(nn)%f(i-1, j, 2) + fy
+            call pushreal8(bcdata(nn)%f(i, j, 2))
+            bcdata(nn)%f(i, j, 2) = bcdata(nn)%f(i, j, 2) + fy
+            call pushreal8(bcdata(nn)%f(i-1, j-1, 3))
+            bcdata(nn)%f(i-1, j-1, 3) = bcdata(nn)%f(i-1, j-1, 3) + fz
+            call pushreal8(bcdata(nn)%f(i, j-1, 3))
+            bcdata(nn)%f(i, j-1, 3) = bcdata(nn)%f(i, j-1, 3) + fz
+            call pushreal8(bcdata(nn)%f(i-1, j, 3))
+            bcdata(nn)%f(i-1, j, 3) = bcdata(nn)%f(i-1, j, 3) + fz
+            call pushreal8(bcdata(nn)%f(i, j, 3))
+            bcdata(nn)%f(i, j, 3) = bcdata(nn)%f(i, j, 3) + fz
 ! compute the tangential component of the stress tensor,
 ! which is needed to monitor y+. the result is stored
 ! in fx, fy, fz, although it is not really a force.
 ! as later on only the magnitude of the tangential
 ! component is important, there is no need to take the
 ! sign into account (it should be a minus sign).
-        end do
-        call pushinteger4(ii - 1)
-        call pushcontrol1b(0)
-      else
-        call pushcontrol1b(1)
-      end if
+          end do
+          call pushinteger4(ii - 1)
+          call pushcontrol1b(0)
+        else
+          call pushcontrol1b(1)
+        end if
 ! compute the local value of y+. due to the usage
 ! of pointers there is on offset of -1 in dd2wall..
 ! if forces are tractions we have to divide by the dual area:
-      if (forcesastractions) then
-        ad_from0 = bcdata(nn)%jnbeg
-        call pushinteger4(j)
-        do j=ad_from0,bcdata(nn)%jnend
-          ad_from = bcdata(nn)%inbeg
-          call pushinteger4(i)
-          do i=ad_from,bcdata(nn)%inend
-            call pushreal8array(bcdata(nn)%f(i, j, :), size(bcdata(nn)%f&
-&                         , 3))
-            bcdata(nn)%f(i, j, :) = bcdata(nn)%f(i, j, :)/bcdata(nn)%&
-&             dualarea(i, j)
+        if (forcesastractions) then
+          ad_from0 = bcdata(nn)%jnbeg
+          call pushinteger4(j)
+          do j=ad_from0,bcdata(nn)%jnend
+            ad_from = bcdata(nn)%inbeg
+            call pushinteger4(i)
+            do i=ad_from,bcdata(nn)%inend
+              call pushreal8array(bcdata(nn)%f(i, j, :), size(bcdata(nn)&
+&                           %f, 3))
+              bcdata(nn)%f(i, j, :) = bcdata(nn)%f(i, j, :)/bcdata(nn)%&
+&               dualarea(i, j)
+            end do
+            call pushinteger4(i - 1)
+            call pushinteger4(ad_from)
           end do
-          call pushinteger4(i - 1)
-          call pushinteger4(ad_from)
-        end do
-        call pushinteger4(j - 1)
-        call pushinteger4(ad_from0)
-        call pushcontrol1b(0)
+          call pushinteger4(j - 1)
+          call pushinteger4(ad_from0)
+          call pushcontrol1b(0)
+        else
+          call pushcontrol1b(1)
+        end if
+        call pushreal8array(sk, size(sk, 1)*size(sk, 2)*size(sk, 3)*size&
+&                     (sk, 4))
+        call pushreal8array(sj, size(sj, 1)*size(sj, 2)*size(sj, 3)*size&
+&                     (sj, 4))
+        call pushreal8array(si, size(si, 1)*size(si, 2)*size(si, 3)*size&
+&                     (si, 4))
+        call pushreal8array(x, size(x, 1)*size(x, 2)*size(x, 3)*size(x, &
+&                     4))
+        call pushreal8array(rlv, size(rlv, 1)*size(rlv, 2)*size(rlv, 3))
+        call pushreal8array(gamma, size(gamma, 1)*size(gamma, 2)*size(&
+&                     gamma, 3))
+        call pushreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev, 3))
+        call resetbcpointers(nn, .true.)
+        call pushcontrol2b(2)
       else
-        call pushcontrol1b(1)
+        call pushcontrol2b(1)
       end if
-      call pushreal8array(sk, size(sk, 1)*size(sk, 2)*size(sk, 3)*size(&
-&                   sk, 4))
-      call pushreal8array(sj, size(sj, 1)*size(sj, 2)*size(sj, 3)*size(&
-&                   sj, 4))
-      call pushreal8array(si, size(si, 1)*size(si, 2)*size(si, 3)*size(&
-&                   si, 4))
-      call pushreal8array(x, size(x, 1)*size(x, 2)*size(x, 3)*size(x, 4)&
-&                  )
-      call pushreal8array(rlv, size(rlv, 1)*size(rlv, 2)*size(rlv, 3))
-      call pushreal8array(gamma, size(gamma, 1)*size(gamma, 2)*size(&
-&                   gamma, 3))
-      call pushreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev, 3))
-      call resetbcpointers(nn, .true.)
-      call pushcontrol1b(1)
     else
-      call pushcontrol1b(0)
+      call pushreal8array(bcdata(nn)%f, size(bcdata(nn)%f, 1)*size(&
+&                   bcdata(nn)%f, 2)*size(bcdata(nn)%f, 3))
+      bcdata(nn)%f = zero
+      call pushcontrol2b(0)
     end if
   end do bocos
 ! currently the coefficients only contain the surface integral
@@ -555,8 +563,12 @@ bocos:do nn=1,nbocos
   vd = 0.0_8
   refpointd = 0.0_8
   do nn=nbocos,1,-1
-    call popcontrol1b(branch)
-    if (branch .ne. 0) then
+    call popcontrol2b(branch)
+    if (branch .eq. 0) then
+      call popreal8array(bcdata(nn)%f, size(bcdata(nn)%f, 1)*size(bcdata&
+&                  (nn)%f, 2)*size(bcdata(nn)%f, 3))
+      bcdatad(nn)%f = 0.0_8
+    else if (branch .ne. 1) then
       call popreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev, 3))
       call popreal8array(gamma, size(gamma, 1)*size(gamma, 2)*size(gamma&
 &                  , 3))

@@ -69,8 +69,7 @@
                       blocks(i)%l3,          blocks(i)%groupNum,   &
                       blocks(i)%cgnsOver,    blocks(i)%ipntOver,   &
                       blocks(i)%neighOver,   blocks(i)%overComm,   &
-                      blocks(i)%idWBC, blocks(i)%contributeToForce,&
-                      stat=ierr) ! eran-cbd
+                      stat=ierr)
            if(ierr /= 0) &
              call terminate("determineComputeBlocks", &
                             "Deallocation error for subface info")
@@ -161,9 +160,7 @@
                     blocks(ii)%l2(nAlloc),          &
                     blocks(ii)%l3(nAlloc),          &
                     blocks(ii)%groupNum(nAlloc),    &
-                    blocks(ii)%idWBC(nAlloc),       &
-                    blocks(ii)%contributeToForce(nAlloc),  &
-                    stat=ierr) ! eran-cbd
+                    stat=ierr)
            if(ierr /= 0) &
              call terminate("determineComputeBlocks", &
                             "Memory allocation failure for &
@@ -373,20 +370,6 @@
 
            blocks(ii)%cgnsSubface(jj) = j
 
-!------ eran-cbd starts
-           if(blocks(ii)%BCType(jj) == EulerWall .or. &
-                blocks(ii)%BCType(jj) == NSWallAdiabatic .or. &
-                blocks(ii)%BCType(jj) == NSWallIsothermal)then
-
-              blocks(ii)%idWBC(jj) = cgnsDoms(cgnsID)%bocoInfo(j)%idWBC
-              blocks(ii)%contributeToForce(jj) = &
-                   cgnsDoms(cgnsID)%bocoInfo(j)%contributeToForce
-           else
-              blocks(ii)%idWBC(jj) = 0
-               blocks(ii)%contributeToForce(jj) = .false.
-           end if
-!-------eran-cbd ends
- 
            ! Check whether this is a valid boundary condition for
            ! the current simulation.
 
