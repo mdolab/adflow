@@ -90,6 +90,11 @@
        real(kind=realType), parameter :: sixth  = one/six
        real(kind=realType), parameter :: eighth = 0.125_realType
 
+       ! String constants
+       CHARACTER( * ), PARAMETER :: LOWER_CASE = 'abcdefghijklmnopqrstuvwxyz'
+       CHARACTER( * ), PARAMETER :: UPPER_CASE = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 
+
+
        ! *******************************
        ! Added by HDN
        ! *******************************

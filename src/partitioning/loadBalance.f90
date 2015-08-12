@@ -29,7 +29,6 @@ subroutine loadBalance
   use inputTimeSpectral
   use iteration
   use partitionMod
-  use monitor !  eran-CBD
   implicit none
   !
   !      Local variables.
@@ -45,7 +44,7 @@ subroutine loadBalance
 
   type(subblocksOfCGNSType), dimension(:), allocatable :: &
        subblocksOfCGNS
-  logical :: wallType  ! eran-cbd
+
   !
   !      ******************************************************************
   !      *                                                                *
@@ -198,8 +197,7 @@ subroutine loadBalance
              flowDoms(nn,1,1)%l2(j),          &
              flowDoms(nn,1,1)%l3(j),          &
              flowDoms(nn,1,1)%groupNum(j),    &
-             flowDoms(nn,1,1)%idWBC(j),       &
-             flowDoms(nn,1,1)%contributeToForce(j),stat=ierr) ! eran-CBD stat=ierr)
+             stat=ierr)
 
 
         if(ierr /= 0)                   &
@@ -270,22 +268,6 @@ subroutine loadBalance
            if(flowDoms(nn,1,1)%BCType(j) == NSWallAdiabatic .or. &
                 flowDoms(nn,1,1)%BCType(j) == NSWallIsothermal)    &
                 nViscBocos = nViscBocos + 1
-           !
-           !------------- eran-CBD start --
-           !
-           wallType = .false.
-           if(blocks(i)%BCType(k) == EulerWall .or. &
-                blocks(i)%BCType(k) == NSWallAdiabatic .or. &
-                blocks(i)%BCType(k) == NSWallIsothermal)wallType=.true.
-           if(j  <= blocks(i)%nBocos .and. wallType)then
-              flowDoms(nn,1,1)%idWBC(j) = blocks(i)%idWBC(k)
-              flowDoms(nn,1,1)%contributeToForce(j)=blocks(i)%contributeToForce(k) 
-           else
-              flowDoms(nn,1,1)%idWBC(j) = 0
-           end if
-           !
-           !------------- eran-CBD- end --------
-           !
         enddo
 
         flowDoms(nn,1,1:mm)%nViscBocos = nViscBocos
@@ -400,7 +382,6 @@ subroutine loadBalance
           blocks(i)%l3,          blocks(i)%groupNum,    &
           blocks(i)%cgnsOver,    blocks(i)%ipntOver,    &
           blocks(i)%neighOver,   blocks(i)%overComm,    &
-          blocks(i)%idWBC,       blocks(i)%contributeToForce, &
           stat=ierr)
      if(ierr /= 0)                   &
           call terminate("loadBalance", &

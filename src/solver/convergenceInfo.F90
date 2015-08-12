@@ -44,6 +44,7 @@
 
        real(kind=realType) :: hdiffMax, MachMax
        real(kind=realType) :: eddyvisMax, yplusMax, sepSensor, Cavitation
+       real(kind=realType) :: sepSensorAvg(3)
 
        real(kind=realType) :: L2ConvThisLevel
        real(kind=realType) :: L2ConvThisLevelRel
@@ -65,15 +66,6 @@
 !      *                                                                *
 !      ******************************************************************
 !
-!
-!----------eran-cbd  for CBD run- just go the CBD printout -----
-!
-       chCBD : if(componentsBreakDown)then
-          call componentsBreakDownPrintout(0)
-          return
-       end if chCBD
-!
-! -------eran-cbd ---------------------------------------------
 !
 
        ! Determine whether or not the iterations must be written.
@@ -141,7 +133,8 @@
 
            ! Compute the forces and moments for this block.
 
-             call forcesAndMoments(cfp, cfv, cmp, cmv, yplusMax, sepSensor, Cavitation)
+             call forcesAndMoments(cfp, cfv, cmp, cmv, yplusMax, sepSensor, &
+                  sepSensorAvg, Cavitation)
 
 
            ! Determine the maximum values of the monitoring variables

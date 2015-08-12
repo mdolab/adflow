@@ -57,14 +57,10 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   real(kind=realType) :: delta_x, one_over_dx
 
 #ifdef USE_COMPLEX
-  complex(kind=realType) :: alpha, beta, sepSensor, Cavitation
-  complex(kind=realType) :: alphad, betad, sepSensord, Cavitationd
-  complex(kind=realType), dimension(3, nTimeIntervalsSpectral) :: force, moment, forced, momentd
+  complex(kind=realType) :: alpha, beta, alphad, betad
   complex(kind=realType), dimension(:,:), allocatable :: blk
 #else
-  real(kind=realType) :: alpha, beta, sepSensor, Cavitation
-  real(kind=realType) :: alphad, betad,  sepSensord, Cavitationd
-  real(kind=realType), dimension(3, nTimeIntervalsSpectral) :: force, moment, forced, momentd
+  real(kind=realType) :: alpha, beta, alphad, betad
   real(kind=realType), dimension(:,:), allocatable :: blk
 #endif
   integer(kind=intType) :: liftIndex
@@ -261,15 +257,14 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
               if (useAD) then
 #ifndef USE_COMPLEX
                  call block_res_d(nn, sps, .False., &
-                      alpha, alphad, beta, betad, liftIndex, force, forced, moment, momentd,&
-                      sepSensor, sepSensord, Cavitation, Cavitationd, frozenTurb)
+                      alpha, alphad, beta, betad, liftIndex, frozenTurb)
 #else
                  print *, 'Forward AD routines are not complexified'
                  stop
 #endif
               else
-                 call block_res(nn, sps, .False., alpha, beta, liftIndex, force, moment, &
-                 sepSensor, Cavitation, frozenTurb)
+                 call block_res(nn, sps, .False., alpha, beta, &
+                      liftIndex, frozenTurb)
               end if
 
               ! Set the computed residual in dw_deriv. If using FD, 

@@ -42,8 +42,7 @@ subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useSta
 
   ! Working Variables
   integer(kind=intType) :: ierr,nn,mm,sps,i,j,k,l,ii,jj,idim,sps2
-  real(kind=realType) :: alpha, beta, force(3), moment(3), sepSensor, cavitation, cavitationd
-  real(kind=realType) :: alphad, betad, forced(3), momentd(3), sepSensord
+  real(kind=realType) :: alpha, beta, alphad, betad
   integer(kind=intType) ::  level, irow, liftIndex
   real(kind=realType), dimension(costSize) :: funcsLocalDot
   logical :: resetToRans
@@ -192,8 +191,7 @@ subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useSta
         call setPointers_d(nn, level, sps)
 
         call BLOCK_RES_D(nn, level, useSpatial, alpha, alphad, beta, betad, &
-             & liftindex, force, forced, moment, momentd, sepsensor, sepsensord, &
-             & cavitation, cavitationd, frozenTurbulence)
+             & liftindex, frozenTurbulence)
 
         ! Now extract dw
         do sps2=1,nTimeIntervalsSpectral
@@ -289,8 +287,7 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, fbar, useSpatial, useSta
 
   ! Working variables
   integer(kind=intType) :: ierr,nn,mm,sps,i,j,k,l,ii,jj,sps2, idim
-  real(kind=realType) :: alpha, beta, force(3), moment(3), sepSensor, cavitation
-  real(kind=realType) :: alphad, betad, forced(3), momentd(3), sepSensord, cavitationd
+  real(kind=realType) :: alpha, beta, alphad, betad
   integer(kind=intType) ::  level, irow, liftIndex, nState
   logical :: resetToRans
   real(kind=realType), dimension(extraSize) :: extraLocalBar
@@ -342,10 +339,6 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, fbar, useSpatial, useSta
   end do
 
   ! Zero the function seeds
-  forced= zero
-  momentd= zero
-  sepSensord= zero
-  cavitationd= zero
   funcValuesd= zero
   call getDirAngle(velDirFreestream, liftDirection, liftIndex, alpha, beta)
 
@@ -409,8 +402,7 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, fbar, useSpatial, useSta
         end do bocos
 
         call BLOCK_RES_B(nn, sps, useSpatial, alpha, alphad, beta, betad, &
-             & liftindex, force, forced, moment, momentd, sepsensor, sepsensord, &
-             & cavitation, cavitationd, frozenTurbulence)
+             & liftindex, frozenTurbulence)
 
         ! Currently these tapenade has decided the output values from
         ! these routines do not matter, these need to be recomputed to

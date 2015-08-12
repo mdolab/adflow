@@ -50,7 +50,6 @@ FILES_TO_COMPLEXIFY2 = \
 	       computeInletMassFlowFullWheel.f90\
 	       computeLamViscosity.F90\
 	       computeUtau.f90\
-	       componentsBreakDownPrintout.f90\
                coorUtilsALE.F90\
 	       DADISmoother.f90\
 	       derivativeRotMatrixRigid.f90\
@@ -59,8 +58,6 @@ FILES_TO_COMPLEXIFY2 = \
                farFieldDrag.f90\
 	       farFieldInducedDrag.f90\
 	       forcesAndMoments.F90\
-	       forcesAndMomentsMask.F90\
-	       forcesAndMomentsCBD.f90\
 	       farFieldDrag.f90\
                geomUtilsALE.F90\
 	       getDirAngle.f90\

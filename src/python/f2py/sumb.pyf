@@ -202,11 +202,24 @@ python module libsumb
        subroutine checkwriteunsteadyendloop ! in :sumb:../../solver/solverUnsteady.F90
        end subroutine checkwriteunsteadyendloop
 
-       subroutine getsolutionmask(sps,mask,nmask) ! in :test:getSolutionMask.f90
+       subroutine getsolution(sps) ! in :test:getSolution.f90
          integer(kind=inttype) :: sps
-         integer(kind=inttype) dimension(nmask),intent(in) :: mask
-         integer(kind=inttype), optional,intent(in),check(len(mask)>=nmask),depend(mask) :: nmask=len(mask)
-        end subroutine getsolutionmask
+        end subroutine getsolution
+
+        subroutine setfullmask
+        end subroutine setfullmask
+        
+        subroutine setmask
+        end subroutine setmask
+
+        subroutine setnmaskfams(n)
+          integer(kind=inttype), intent(in) :: n
+        end subroutine setnmaskfams
+        
+        subroutine setmaskfam(i, fam)
+          integer(kind=inttype), intent(in) :: i
+          character(32), intent(in) :: fam
+        end subroutine setmaskfam
 
        ! ############################################################################
        ! Added by HDN
@@ -989,7 +1002,10 @@ python module libsumb
             integer(kind=inttype) parameter,optional :: costfunccfyqdot=36
             integer(kind=inttype) parameter,optional :: costfuncbendingcoef=37
             integer(kind=inttype) parameter,optional :: costfuncsepsensor=38
-            integer(kind=inttype) parameter,optional :: costfunccavitation=39
+            integer(kind=inttype) parameter,optional :: costfuncsepsensoravgx=39
+            integer(kind=inttype) parameter,optional :: costfuncsepsensoravgy=40
+            integer(kind=inttype) parameter,optional :: costfuncsepsensoravgz=41
+            integer(kind=inttype) parameter,optional :: costfunccavitation=42
             real(kind=realtype) sepsensoroffset
             real(kind=realtype) sepsensorsharpness
        end module costfunctions

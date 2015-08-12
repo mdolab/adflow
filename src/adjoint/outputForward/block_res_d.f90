@@ -4,7 +4,7 @@
 !  differentiation of block_res in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: pref *(flowdoms.w) *(flowdoms.dw)
 !                *(*bcdata.f) *rev0 *rev1 *pp0 *pp1 *rlv0 *rlv1
-!                *ww0 *ww1 funcvalues moment force cavitation sepsensor
+!                *ww0 *ww1 funcvalues
 !   with respect to varying inputs: pref *(flowdoms.x) *(flowdoms.w)
 !                mach tempfreestream reynolds machgrid lengthref
 !                machcoef pointref *xx *rev0 *rev1 *rev2 *rev3
@@ -32,8 +32,7 @@
 !                *rev3:in *pp0:in-out *pp1:in-out *pp2:in *pp3:in
 !                *rlv0:in-out *rlv1:in-out *rlv2:in *rlv3:in *ss:in
 !                *ssi:in *ssj:in *ssk:in *ww0:in-out *ww1:in-out
-!                *ww2:in *ww3:in funcvalues:out moment:out alpha:in
-!                force:out beta:in cavitation:out sepsensor:out
+!                *ww2:in *ww3:in funcvalues:out alpha:in beta:in
 !   plus diff mem management of: flowdoms.x:in flowdoms.vol:in
 !                flowdoms.w:in flowdoms.dw:in rev:in aa:in bvtj1:in
 !                bvtj2:in wx:in wy:in wz:in p:in sfacei:in sfacej:in
@@ -60,8 +59,7 @@
 ! block/sps loop is outside the calculation. this routine is suitable
 ! for forward mode ad with tapenade
 subroutine block_res_d(nn, sps, usespatial, alpha, alphad, beta, betad, &
-& liftindex, force, forced, moment, momentd, sepsensor, sepsensord, &
-& cavitation, cavitationd, frozenturb)
+& liftindex, frozenturb)
   use bcroutines_d
   use blockpointers
   use flowvarrefstate
@@ -91,8 +89,8 @@ subroutine block_res_d(nn, sps, usespatial, alpha, alphad, beta, betad, &
 & moment
   real(kind=realtype), dimension(3, ntimeintervalsspectral) :: forced, &
 & momentd
-  real(kind=realtype) :: sepsensor, cavitation
-  real(kind=realtype) :: sepsensord, cavitationd
+  real(kind=realtype) :: sepsensor, cavitation, sepsensoravg(3)
+  real(kind=realtype) :: sepsensord, cavitationd, sepsensoravgd(3)
 ! working variables
   real(kind=realtype) :: gm1, v2, fact, tmp
   real(kind=realtype) :: factd, tmpd
@@ -209,6 +207,9 @@ spectralloop0:do sps2=1,ntimeintervalsspectral
     case (spalartallmaras) 
       call sa_block_d(.true.)
     case default
+!case (mentersst)
+! not implemented yet
+!call sst_block(.true.)
       call terminate('turbresidual', &
 &                 'only sa turbulence adjoint implemented')
       do ii1=1,ntimeintervalsspectral
@@ -436,8 +437,8 @@ varloopfine:do l=1,nwf
     end do
   end do
   call forcesandmoments_d(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd, &
-&                   yplusmax, sepsensor, sepsensord, cavitation, &
-&                   cavitationd)
+&                   yplusmax, sepsensor, sepsensord, sepsensoravg, &
+&                   sepsensoravgd, cavitation, cavitationd)
 ! convert back to actual forces. note that even though we use
 ! machcoef, lref, and surfaceref here, they are not differented,
 ! since f doesn't actually depend on them. ideally we would just get
@@ -466,6 +467,6 @@ varloopfine:do l=1,nwf
     moment(:, sps2) = (cmp+cmv)/fact
   end do
   call getcostfunction2_d(force, forced, moment, momentd, sepsensor, &
-&                   sepsensord, cavitation, cavitationd, alpha, beta, &
-&                   liftindex)
+&                   sepsensord, sepsensoravg, sepsensoravgd, cavitation&
+&                   , cavitationd, alpha, beta, liftindex)
 end subroutine block_res_d
