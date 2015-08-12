@@ -2,14 +2,14 @@
 !  tapenade 3.10 (r5363) -  9 sep 2014 09:53
 !
 !  differentiation of getcostfunction2 in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: funcvalues moment force cavitation
-!                sepsensor
+!   gradient     of useful results: funcvalues
 !   with respect to varying inputs: gammainf pinf rhoinfdim pinfdim
 !                pref machgrid lengthref machcoef dragdirection
-!                liftdirection pointref moment force cavitation
-!                sepsensor
+!                liftdirection pointref moment sepsensoravg force
+!                cavitation sepsensor
 subroutine getcostfunction2_b(force, forced, moment, momentd, sepsensor&
-& , sepsensord, cavitation, cavitationd, alpha, beta, liftindex)
+& , sepsensord, sepsensoravg, sepsensoravgd, cavitation, cavitationd, &
+& alpha, beta, liftindex)
 ! compute the value of the actual objective function based on the
 ! (summed) forces and moments and any other "extra" design
 ! variables. the index of the objective is determined by 'idv'. this
@@ -26,8 +26,9 @@ subroutine getcostfunction2_b(force, forced, moment, momentd, sepsensor&
 & :: force, moment
   real(kind=realtype), dimension(3, ntimeintervalsspectral) :: forced, &
 & momentd
-  real(kind=realtype), intent(in) :: sepsensor, cavitation
-  real(kind=realtype) :: sepsensord, cavitationd
+  real(kind=realtype), intent(in) :: sepsensor, cavitation, sepsensoravg&
+& (3)
+  real(kind=realtype) :: sepsensord, cavitationd, sepsensoravgd(3)
   real(kind=realtype), intent(in) :: alpha, beta
 ! working
   real(kind=realtype) :: fact, factmoment, scaledim, ovrnts
@@ -102,6 +103,12 @@ subroutine getcostfunction2_b(force, forced, moment, momentd, sepsensor&
 &     ovrnts*sepsensor
     funcvalues(costfunccavitation) = funcvalues(costfunccavitation) + &
 &     ovrnts*cavitation
+    funcvalues(costfuncsepsensoravgx) = funcvalues(costfuncsepsensoravgx&
+&     ) + ovrnts*sepsensoravg(1)
+    funcvalues(costfuncsepsensoravgy) = funcvalues(costfuncsepsensoravgy&
+&     ) + ovrnts*sepsensoravg(2)
+    funcvalues(costfuncsepsensoravgz) = funcvalues(costfuncsepsensoravgz&
+&     ) + ovrnts*sepsensoravg(3)
 ! bending moment calc
     cm = factmoment*moment(:, sps)
     cf = fact*force(:, sps)
@@ -246,6 +253,11 @@ subroutine getcostfunction2_b(force, forced, moment, momentd, sepsensor&
   factd = factd + funcvalues(costfuncforcex)*tmpd8
   lengthrefd = 0.0_8
   pointrefd = 0.0_8
+  momentd = 0.0_8
+  sepsensoravgd = 0.0_8
+  forced = 0.0_8
+  cavitationd = 0.0_8
+  sepsensord = 0.0_8
   do sps=ntimeintervalsspectral,1,-1
     bendingmomentd = ovrnts*funcvaluesd(costfuncbendingcoef)
     cf = fact*force(:, sps)
@@ -256,6 +268,12 @@ subroutine getcostfunction2_b(force, forced, moment, momentd, sepsensor&
     forced(:, sps) = forced(:, sps) + fact*cfd
     factmomentd = factmomentd + sum(moment(:, sps)*cmd)
     momentd(:, sps) = momentd(:, sps) + factmoment*cmd
+    sepsensoravgd(3) = sepsensoravgd(3) + ovrnts*funcvaluesd(&
+&     costfuncsepsensoravgz)
+    sepsensoravgd(2) = sepsensoravgd(2) + ovrnts*funcvaluesd(&
+&     costfuncsepsensoravgy)
+    sepsensoravgd(1) = sepsensoravgd(1) + ovrnts*funcvaluesd(&
+&     costfuncsepsensoravgx)
     cavitationd = cavitationd + ovrnts*funcvaluesd(costfunccavitation)
     sepsensord = sepsensord + ovrnts*funcvaluesd(costfuncsepsensor)
     momentd(3, sps) = momentd(3, sps) + ovrnts*funcvaluesd(costfuncmomz)

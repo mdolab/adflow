@@ -1765,6 +1765,9 @@ class SUMB(AeroSolver):
             'clq'        :funcVals[self.sumb.costfunctions.costfuncclq-1],
             'cbend'      :funcVals[self.sumb.costfunctions.costfuncbendingcoef-1],
             'sepsensor'  :funcVals[self.sumb.costfunctions.costfuncsepsensor-1],
+            'sepsensoravgx'  :funcVals[self.sumb.costfunctions.costfuncsepsensoravgx-1],
+            'sepsensoravgy'  :funcVals[self.sumb.costfunctions.costfuncsepsensoravgy-1],
+            'sepsensoravgz'  :funcVals[self.sumb.costfunctions.costfuncsepsensoravgz-1],
             'cavitation' :funcVals[self.sumb.costfunctions.costfunccavitation-1],
             }
 
@@ -1842,39 +1845,33 @@ class SUMB(AeroSolver):
 
         # See if we can save ourselves some work if the mask is
         # already in the cache:
-        if groupName in self.maskCache:
-            return self.maskCache[groupName]
+        if groupName is None:
+            localMask = []
+            for i in xrange(self.sumb.getnpatches()):
+                patchsize = self.sumb.getpatchsize(i+1)
+                nCells = patchsize[0]*patchsize[1]
+                localMask.extend(numpy.ones(nCells, 'intc'))
         else:
-            if groupName is None:
-                localMask = []
-                for i in xrange(self.sumb.getnpatches()):
-                    patchsize = self.sumb.getpatchsize(i+1)
-                    nCells = patchsize[0]*patchsize[1]
+            try:
+                famList = self.mesh.familyGroup[groupName]['families']
+            except:
+                raise Error("The supplied family group name has not "
+                            "been added in the mesh object.")
+
+            # Now we just go through each patch and see if it in our familyList
+            localMask = []
+            for i in xrange(self.sumb.getnpatches()):
+                tmp = numpy.zeros(256, 'c')
+                self.sumb.getpatchname(i+1, tmp)
+                patchname = ''.join([tmp[j] for j in range(256)]).lower().strip()
+                patchsize = self.sumb.getpatchsize(i+1)
+                nCells = (patchsize[0]-1)*(patchsize[1]-1)
+                if patchname in famList:
                     localMask.extend(numpy.ones(nCells, 'intc'))
-            else:
-                try:
-                    famList = self.mesh.familyGroup[groupName]['families']
-                except:
-                    raise Error("The supplied family group name has not "
-                                "been added in the mesh object.")
-
-                # Now we just go through each patch and see if it in our familyList
-                localMask = []
-                for i in xrange(self.sumb.getnpatches()):
-                    tmp = numpy.zeros(256, 'c')
-                    self.sumb.getpatchname(i+1, tmp)
-                    patchname = ''.join([tmp[j] for j in range(256)]).lower().strip()
-                    patchsize = self.sumb.getpatchsize(i+1)
-                    nCells = (patchsize[0]-1)*(patchsize[1]-1)
-                    if patchname in famList:
-                        localMask.extend(numpy.ones(nCells, 'intc'))
-                    else:
-                        localMask.extend(numpy.zeros(nCells, 'intc'))
+                else:
+                    localMask.extend(numpy.zeros(nCells, 'intc'))
                 
-            # Save in the cache for next time :-)
-            self.maskCache[groupName] = localMask
-
-            return localMask
+        return localMask
 
     def getSurfaceCoordinates(self, groupName='all'):
         """
@@ -3771,6 +3768,9 @@ class SUMB(AeroSolver):
             'clqdot':self.sumb.costfunctions.costfuncclqdot,
             'cbend':self.sumb.costfunctions.costfuncbendingcoef,
             'sepsensor':self.sumb.costfunctions.costfuncsepsensor,
+            'sepsensoravgx':self.sumb.costfunctions.costfuncsepsensoravgx,
+            'sepsensoravgy':self.sumb.costfunctions.costfuncsepsensoravgy,
+            'sepsensoravgz':self.sumb.costfunctions.costfuncsepsensoravgz,
             'cavitation':self.sumb.costfunctions.costfunccavitation,
             }
 

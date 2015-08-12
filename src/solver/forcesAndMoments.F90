@@ -8,7 +8,8 @@
 !      *                                                                *
 !      ******************************************************************
 !
-subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, Cavitation)
+subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
+     sepSensorAvg, Cavitation)
   !
   !      ******************************************************************
   !      *                                                                *
@@ -35,7 +36,8 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, Cavitation)
   real(kind=realType), dimension(3), intent(out) :: cFp, cFv
   real(kind=realType), dimension(3), intent(out) :: cMp, cMv
 
-  real(kind=realType), intent(out) :: yplusMax, sepSensor, Cavitation
+  real(kind=realType), intent(out) :: yplusMax, sepSensor
+  real(kind=realType), intent(out) :: sepSensorAvg(3), Cavitation
   !
   !      Local variables.
   !
@@ -79,6 +81,8 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, Cavitation)
   yplusMax = zero
   sepSensor = zero
   Cavitation = zero
+  sepSensorAvg = zero
+
   ! Loop over the boundary subfaces of this block.
 
   bocos: do nn=1,nBocos
@@ -229,6 +233,11 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, Cavitation)
               ! And integrate over the area of this cell and save:
               sensor = sensor * four * qA
               sepSensor = sepSensor + sensor
+
+              ! Also accumulate into the sepSensorAvg
+              sepSensorAvg(1) = sepSensorAvg(1)  + sepSensor * xc
+              sepSensorAvg(2) = sepSensorAvg(2)  + sepSensor * yc
+              sepSensorAvg(3) = sepSensorAvg(3)  + sepSensor * zc
 
               plocal = pp2(i,j)
               tmp = two/(gammaInf*pInf*MachCoef*MachCoef)

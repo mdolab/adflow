@@ -5,15 +5,13 @@
 !   gradient     of useful results: *(flowdoms.x) *(flowdoms.w)
 !                *(flowdoms.dw) *(*bcdata.f) *xx *rev0 *rev1 *rev2
 !                *rev3 *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3
-!                *ssi *ww0 *ww1 *ww2 *ww3 funcvalues moment force
-!                cavitation sepsensor
+!                *ssi *ww0 *ww1 *ww2 *ww3 funcvalues
 !   with respect to varying inputs: pref *(flowdoms.x) *(flowdoms.w)
 !                *(flowdoms.dw) *(*bcdata.f) mach tempfreestream
 !                reynolds machgrid lengthref machcoef pointref
 !                *xx *rev0 *rev1 *rev2 *rev3 *pp0 *pp1 *pp2 *pp3
 !                *rlv0 *rlv1 *rlv2 *rlv3 *ssi *ww0 *ww1 *ww2 *ww3
-!                *xsurf funcvalues moment alpha force beta cavitation
-!                sepsensor
+!                *xsurf funcvalues alpha beta
 !   rw status of diff variables: mudim:(loc) gammainf:(loc) pinf:(loc)
 !                timeref:(loc) rhoinf:(loc) muref:(loc) rhoinfdim:(loc)
 !                tref:(loc) winf:(loc) muinf:(loc) uinf:(loc) pinfcorr:(loc)
@@ -35,8 +33,7 @@
 !                *pp1:in-out *pp2:in-out *pp3:in-out *rlv0:in-out
 !                *rlv1:in-out *rlv2:in-out *rlv3:in-out *ssi:in-out
 !                *ww0:in-out *ww1:in-out *ww2:in-out *ww3:in-out
-!                *xsurf:out funcvalues:in-zero moment:in-zero alpha:out
-!                force:in-zero beta:out cavitation:in-zero sepsensor:in-zero
+!                *xsurf:out funcvalues:in-zero alpha:out beta:out
 !   plus diff mem management of: flowdoms.x:in flowdoms.vol:in
 !                flowdoms.w:in flowdoms.dw:in rev:in aa:in bvtj1:in
 !                bvtj2:in wx:in wy:in wz:in p:in rlv:in qx:in qy:in
@@ -60,8 +57,7 @@
 ! block/sps loop is outside the calculation. this routine is suitable
 ! for forward mode ad with tapenade
 subroutine block_res_b(nn, sps, usespatial, alpha, alphad, beta, betad, &
-& liftindex, force, forced, moment, momentd, sepsensor, sepsensord, &
-& cavitation, cavitationd, frozenturb)
+& liftindex, frozenturb)
   use bcroutines_b
   use blockpointers
   use flowvarrefstate
@@ -89,8 +85,8 @@ subroutine block_res_b(nn, sps, usespatial, alpha, alphad, beta, betad, &
 & moment
   real(kind=realtype), dimension(3, ntimeintervalsspectral) :: forced, &
 & momentd
-  real(kind=realtype) :: sepsensor, cavitation
-  real(kind=realtype) :: sepsensord, cavitationd
+  real(kind=realtype) :: sepsensor, cavitation, sepsensoravg(3)
+  real(kind=realtype) :: sepsensord, cavitationd, sepsensoravgd(3)
 ! working variables
   real(kind=realtype) :: gm1, v2, fact, tmp
   real(kind=realtype) :: factd, tmpd
@@ -587,7 +583,7 @@ varloopfine:do l=1,nwf
   call pushreal8array(cfv, 3)
   call pushreal8array(cfp, 3)
   call forcesandmoments(cfp, cfv, cmp, cmv, yplusmax, sepsensor, &
-&                    cavitation)
+&                    sepsensoravg, cavitation)
 ! convert back to actual forces. note that even though we use
 ! machcoef, lref, and surfaceref here, they are not differented,
 ! since f doesn't actually depend on them. ideally we would just get
@@ -606,8 +602,8 @@ varloopfine:do l=1,nwf
     moment(:, sps2) = (cmp+cmv)/fact
   end do
   call getcostfunction2_b(force, forced, moment, momentd, sepsensor, &
-&                   sepsensord, cavitation, cavitationd, alpha, beta, &
-&                   liftindex)
+&                   sepsensord, sepsensoravg, sepsensoravgd, cavitation&
+&                   , cavitationd, alpha, beta, liftindex)
   cmpd = 0.0_8
   cmvd = 0.0_8
   factd = 0.0_8
@@ -707,8 +703,8 @@ varloopfine:do l=1,nwf
   call popreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
   call popreal8array(ww3, size(ww3, 1)*size(ww3, 2)*size(ww3, 3))
   call forcesandmoments_b(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd, &
-&                   yplusmax, sepsensor, sepsensord, cavitation, &
-&                   cavitationd)
+&                   yplusmax, sepsensor, sepsensord, sepsensoravg, &
+&                   sepsensoravgd, cavitation, cavitationd)
   do ii1=1,ntimeintervalsspectral
     do ii2=1,1
       do ii3=nn,nn
@@ -1036,8 +1032,4 @@ varloopfine:do l=1,nwf
   call referencestate_b()
   call adjustinflowangle_b(alpha, alphad, beta, betad, liftindex)
   funcvaluesd = 0.0_8
-  momentd = 0.0_8
-  forced = 0.0_8
-  cavitationd = 0.0_8
-  sepsensord = 0.0_8
 end subroutine block_res_b
