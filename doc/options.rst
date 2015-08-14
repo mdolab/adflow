@@ -94,7 +94,7 @@ Parameter                                  Type       Default                   
                                                                                                     * `k omega wilcox` - NOT IMPLEMENTED
                                                                                                     * `k omega modified` - NOT IMPLEMENTED
                                                                                                     * `ktau` - NOT IMPLEMENTED
-                                                                                                    * `menter sst` - Type: `float list` of 2 elements - Default: [10e3, 10e-6]
+                                                                                                    * `menter sst` - Type: `float list` of 2 elements - Default: [1e3, 1e-6]
                                                                                                     * `v2f` - NOT IMPLEMENTED
                                                           
 `useWallFunctions`                       `bool`      `False`                                        Flag specifying if wall functions are to be used. This is generally not recommended
