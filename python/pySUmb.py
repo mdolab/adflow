@@ -3786,7 +3786,7 @@ class SUMB(AeroSolver):
             if turbModel == "sa":
                 self.setOption("turbresscale", 10000.0)
             elif turbModel == "menter sst":
-                self.setOption("turbresscale", [10e3, 10e-6])
+                self.setOption("turbresscale", [1e3, 1e-6])
             else:
                 raise Error("Turbulence model %-35s does not have default values specified for turbresscale. Specify turbresscale manually or update the python interface"%(turbModel))
 
