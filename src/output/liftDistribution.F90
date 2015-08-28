@@ -108,6 +108,11 @@ subroutine writeSlicesFile(fileName)
            do i=1,nSolVar
               write(file,"(a,a,a)",advance="no") """",trim(solNames(i)),""" "
            end do
+
+           write(file,"(a)",advance="no") " ""Tx"" "
+           write(file,"(a)",advance="no") " ""Ty"" "
+           write(file,"(a)",advance="no") " ""Tz"" "
+
            write(file,"(1x)")
            deallocate(solNames)
 
@@ -1196,7 +1201,7 @@ subroutine writeSlice(slc, fileID, nFields)
   
   ! Working Variables
   integer(kind=intType) :: i, j
-  real(kind=realType) :: tmp
+  real(kind=realType) :: tmp, tx, ty, tz
   write (fileID,"(a,a,a)") "Zone T= """,trim(slc%sliceName),""""
 
   ! IF we have nodes actually write:
@@ -1223,6 +1228,20 @@ subroutine writeSlice(slc, fileID, nFields)
            write(fileID,13, advance='no') &
                 slc%w(1,i)*uniqueData(j, slc%ind(1,i)) + slc%w(2,i)*uniqueData(j, slc%ind(2, i))
         end do
+
+        ! Also write tractions at each of the nodes
+        tx = slc%w(1,i)*(uniqueData(ifxp, slc%ind(1,i)) + uniqueData(ifxv, slc%ind(1, i))) + &
+             slc%w(2,i)*(uniqueData(ifxp, slc%ind(2,i)) + uniqueData(ifxv, slc%ind(2, i)))
+
+        ty = slc%w(1,i)*(uniqueData(ifyp, slc%ind(1,i)) + uniqueData(ifyv, slc%ind(1, i))) + &
+             slc%w(2,i)*(uniqueData(ifyp, slc%ind(2,i)) + uniqueData(ifyv, slc%ind(2, i)))
+
+        tz = slc%w(1,i)*(uniqueData(ifzp, slc%ind(1,i)) + uniqueData(ifzv, slc%ind(1, i))) + &
+             slc%w(2,i)*(uniqueData(ifzp, slc%ind(2,i)) + uniqueData(ifzv, slc%ind(2, i)))
+
+        write(fileID,13, advance='no') tz
+        write(fileID,13, advance='no') ty
+        write(fileID,13, advance='no') tx
         write(fileID,"(1x)")
      end do
 
@@ -1242,6 +1261,11 @@ subroutine writeSlice(slc, fileID, nFields)
         do j=ifzv+1,nFields
            write(fileID,13, advance='no') zero
         end do
+
+        do j=1,3
+           write(fileID,13, advance='no') zero
+        end do
+
         write(fileID,"(1x)")
      end do
      write(fileID, 15) 1, 2
