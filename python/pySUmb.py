@@ -293,6 +293,52 @@ class SUMB(AeroSolver):
 
         self.DVGeo = DVGeo
 
+    def setDisplacements(self, aeroProblem, dispFile):
+        """
+        This function allows the user to perform aerodyanmic
+        analysis/optimization while using a fixed set of displacements
+        computed from a previous structural analysis. Essentially this
+        allows the jig shape to designed, but performing anlysis on
+        the flying shape. Note that the fixed set of displacements do
+        not affect the sensitivities.
+        Parameters
+        ----------
+        aeroProblem : aeroProblem class
+           The AP object that the displacements should be applied to.
+        dispFile : str
+           The file contaning the displacments. This file should have
+           been obtained from TACS                                
+        """
+        self.setAeroProblem(aeroProblem)
+
+        # All processors read the file
+        f = open(dispFile,'r')
+        n = int(f.readline())
+        X = []
+        D = []
+        for i in range(n):
+            aux = f.readline().split()
+            X.append([float(aux[0]), float(aux[1]), float(aux[2])])
+            D.append([float(aux[3]), float(aux[4]), float(aux[5])])
+        f.close()
+
+        localX = self.getSurfaceCoordinates()
+        localD = numpy.zeros_like(localX)
+        # Now we need to search each localX in X to find the corresponding D
+        try:
+            from scipy.spatial import KDTree
+        except:
+            raise Error('scip.spatial must be available to use setDisplacements')
+        tree = KDTree(numpy.array(X))
+        d, index = tree.query(localX)
+        for j in range(len(localX)):
+            localD[j] = D[index[j]]
+
+        # Fianlly we have the local displacements for this processor we save
+        self.curAP.sumbData.disp = localD
+                        
+
+
     def addLiftDistribution(self, nSegments, direction,
                             groupName=None, description=''):
         """
@@ -1930,8 +1976,10 @@ class SUMB(AeroSolver):
                     # DVGeo appeared and we have not embedded points!
                     self.DVGeo.addPointSet(self.coords0, ptSetName)
                 if not self.DVGeo.pointSetUpToDate(ptSetName):
-                    self.setSurfaceCoordinates(
-                        self.DVGeo.update(ptSetName, config=self.curAP.name), self.groupName)
+                    coords = self.DVGeo.update(ptSetName, config = self.curAP.name)
+                    if self.curAP.sumbData.disp is not None:
+                        coords += self.curAP.sumbData.disp
+                    self.setSurfaceCoordinates(coords,self.groupname)
                     self.updateGeometryInfo()
             # Finally update other data
             self._setAeroProblemData()
@@ -1976,11 +2024,16 @@ class SUMB(AeroSolver):
         # We have to update coordinates here as well:
         if self.DVGeo is not None:
             if not self.DVGeo.pointSetUpToDate(ptSetName):
-                self.setSurfaceCoordinates(self.DVGeo.update(ptSetName, config=self.curAP.name), self.groupName)
+                coords = self.DVGeo.update(ptSetName, config=self.curAP.name)
             else:
-                self.setSurfaceCoordinates(self.curAP.surfMesh, self.groupName)
+                coords = self.curAP.surfMesh
         else:
-            self.setSurfaceCoordinates(self.curAP.surfMesh, self.groupName)
+            coords = self.curAP.surfMesh
+            
+        if self.curAP.sumbData.disp is not None:
+            coords += self.curAP.sumbData.disp
+
+        self.setSurfaceCoordinates(coords, self.groupName)
 
         # Now we have to do a bunch of updates. This is fairly
         # expensive so switchign aeroProblems should not be done that
@@ -3808,5 +3861,6 @@ class sumbFlowCase(object):
         self.adjointRHS = {}
         self.coords = None
         self.callCounter = -1
+        self.disp = None
 
 
