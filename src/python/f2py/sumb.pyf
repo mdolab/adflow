@@ -597,6 +597,7 @@ python module libsumb
          logical :: writesymmetry
          logical :: writefarfield
          logical :: viscoussurfacevelocities
+         logical :: slicefiletractions
          integer(kind=inttype) parameter,optional :: precisionsingle=1
          logical optional :: firstwrite=.true.
          integer(kind=inttype) :: fileformatwrite

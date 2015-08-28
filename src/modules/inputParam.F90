@@ -247,7 +247,9 @@
        !                      On systems with a limited amount of memory
        !                      the storage of this info could be a
        !                      bottleneck for memory.
-
+       ! sliceFileTractions:  Whether or not tractions will be included
+       !                      in the slice files.
+       
        integer(kind=intType) :: fileFormatRead, fileFormatWrite
        integer(kind=intType) :: precisionGrid, precisionSol
 
@@ -258,7 +260,7 @@
 
        logical :: storeRindLayer, restart, checkRestartSol
        logical :: autoParameterUpdate, writeCoorMeter
-       logical :: storeConvInnerIter
+       logical :: storeConvInnerIter, sliceFileTractions
 
        logical :: firstWrite = .true.
 
@@ -266,8 +268,9 @@
        ! writeFarfield        Flag to turn off writing of farfield surfaces
        logical :: writeSymmetry = .True. 
        logical :: writeFarfield = .False. 
-       logical:: viscousSurfaceVelocities = .True.
+       logical :: viscousSurfaceVelocities = .True.
 
+       
        end module inputIO
 
 !      ==================================================================
