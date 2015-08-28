@@ -312,6 +312,7 @@
 !      ******************************************************************
 !
        character(len=maxCGNSNameLen), parameter :: cgnsLift = "Lift"
+       character(len=maxCGNSNameLen), parameter :: cgnsDrag = "Drag"
        character(len=maxCGNSNameLen), parameter :: cgnsSepSensor = "SepSensor"
        character(len=maxCGNSNameLen), parameter :: cgnsCavitation = "Cavitation"
 !

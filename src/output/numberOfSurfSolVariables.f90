@@ -58,6 +58,7 @@
        if( surfWriteCfz )      nSolVar = nSolVar +1
        if( surfWriteBlank )    nSolVar = nSolVar +1
        if( surfWriteLift )     nSolVar = nSolVar +1
+       if( surfWriteDrag )     nSolVar = nSolVar +1
        if( surfWriteSepSensor )      nSolVar = nSolVar +1
        if( surfWriteCavitation )     nsolVar = nsolVar +1
        end subroutine numberOfSurfSolVariables

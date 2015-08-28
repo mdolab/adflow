@@ -561,7 +561,7 @@ subroutine computeSliceSurfaceData(sps, nFields)
                        localData(iVar, iFace) = real(min(iblank2(i,j), 1_intType), realType)
                     enddo
                  enddo
-              case (cgnsLift) 
+              case (cgnsLift, cgnsDrag) 
                  
                  ! This is not implemented so just put in zeros
                  do j= BCData(mm)%jnBeg+1, BCData(mm)%jnEnd
