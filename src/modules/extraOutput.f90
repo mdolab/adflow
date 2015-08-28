@@ -33,10 +33,12 @@
        logical :: surfWriteRho,   surfWriteP,        surfWriteTemp
        logical :: surfWriteVx,    surfWriteVy,       surfWriteVz
        logical :: surfWriteRVx,   surfWriteRVy,      surfWriteRVz
-       logical :: surfWriteCp,    surfWritePtotLoss, surfWriteMach, surfWriteRMach
+       logical :: surfWriteCp,    surfWritePtotLoss, surfWriteMach
+       logical :: surfWriteRMach
        logical :: surfWriteCf,    surfWriteCh,       surfWriteYPlus
        logical :: surfWriteCfx,   surfWriteCfy,      surfWriteCfz
-       logical :: surfWriteBlank, surfWriteLift,     surfWriteSepSensor, surfWriteCavitation
+       logical :: surfWriteBlank, surfWriteLift,     surfWriteSepSensor
+       logical :: surfWriteCavitation, surfWriteDrag
 !
 !      ******************************************************************
 !      *                                                                *

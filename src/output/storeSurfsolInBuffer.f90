@@ -784,7 +784,7 @@
              enddo
            enddo
 
-        case (cgnsLift) 
+        case (cgnsLift,cgnsDrag) 
 
            fact = fact*two/(gammaInf*pInf*MachCoef*MachCoef)
            scaleDim = pRef/pInf
@@ -847,9 +847,13 @@
                  fx = fx / a
                  fy = fy / a
                  fz = fz / a
-
-                 ! Take dot-product with lift vector
-                 buffer(nn) = fx*liftDirection(1) +fy*liftDirection(2) + fz*liftDirection(3)
+                 select case(solName)
+                 case (cgnsLift)
+                    ! Take dot-product with lift vector
+                    buffer(nn) = fx*liftDirection(1) +fy*liftDirection(2) + fz*liftDirection(3)
+                 case(cgnsDrag)
+                    buffer(nn) = fx*dragDirection(1) +fy*dragDirection(2) + fz*dragDirection(3)
+                 end select
               end do
            end do
 
