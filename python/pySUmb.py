@@ -3261,6 +3261,7 @@ class SUMB(AeroSolver):
             'isosurface':[dict, {}],
             'isovariables':[list, []],
             'viscoussurfacevelocities':[bool, True],
+            'slicefiletractions':[bool, False],
 
             # Physics Paramters
             'discretization':[str, 'central plus scalar dissipation'],
@@ -3423,6 +3424,7 @@ class SUMB(AeroSolver):
             'storerindlayer':{'location':'inputio.storerindlayer'},
             'writesymmetry':{'location':'inputio.writesymmetry'},
             'writefarfield':{'location':'inputio.writefarfield'},
+            'slicefiletractions':{'location':'inputio.slicefiletractions'},
             'nsavevolume':{'location':'inputiteration.nsavevolume'},
             'nsavesurface':{'location':'inputiteration.nsavesurface'},
             'viscoussurfacevelocities':{'location':'inputio.viscoussurfacevelocities'},

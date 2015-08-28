@@ -367,6 +367,8 @@ Parameter                                  Type       Default                   
                                                                                                     `resmom` (momentum residuals), `resrhoe` (total energy residual), `resturb` (turbulence residuals),
                                                                                                     `blank` (cell iblank values used for visualiztion or other post-processing).
 
+`sliceFileTractions`                     `bool`      False                                          Flag to set whether tractions (Tx,Ty,Tz) are writtten to slice files.
+
 `forcesAsTractions`                      `bool`      True                                           Flag to set whether to return tractive force instead forces.
 
 `adjointL2Convergence`                   `float`     1e-6                                           Adjoint solution convergence tolerance.
