@@ -1972,15 +1972,19 @@ class SUMB(AeroSolver):
         # reference; only check the DV changes
         if aeroProblem is self.curAP:
             if self.DVGeo is not None:
+
+                # DVGeo appeared and we have not embedded points!
                 if not ptSetName in self.DVGeo.points:
-                    # DVGeo appeared and we have not embedded points!
                     self.DVGeo.addPointSet(self.coords0, ptSetName)
+
                 if not self.DVGeo.pointSetUpToDate(ptSetName):
-                    coords = self.DVGeo.update(ptSetName, config = self.curAP.name)
+                    coords = self.DVGeo.update(ptSetName, config=self.curAP.name)
+
                     if self.curAP.sumbData.disp is not None:
                         coords += self.curAP.sumbData.disp
-                    self.setSurfaceCoordinates(coords,self.groupname)
+                    self.setSurfaceCoordinates(coords, self.groupName)
                     self.updateGeometryInfo()
+
             # Finally update other data
             self._setAeroProblemData()
 
