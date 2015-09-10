@@ -31,7 +31,6 @@
        use flowVarRefState
        use inputPhysics
        use inputIO
-       use iteration ! eran-avf
        use communication 
        use costFunctions
        implicit none
@@ -67,8 +66,6 @@
        real(kind=realType), dimension(:,:,:), pointer :: ww1, ww2
        real(kind=realType), dimension(:,:,:), pointer :: ss1, ss2, ss
        real(kind=realType), dimension(:,:),   pointer :: pp1, pp2
-
-       real(kind=realType), dimension(:,:),   pointer :: avpp1, avpp2
 
        real(kind=realType), dimension(:,:),   pointer :: gamma1, gamma2
        real(kind=realType), dimension(:,:),   pointer :: rlv1, rlv2
@@ -149,10 +146,6 @@
 !      ******************************************************************
 !
 
-!  eran-avf: for unsteady solution, instead of P on surface, Cp averaged is saved
-!            It was calculated in shiftSolution and saved in  wOld(noldLevels+1,i,j,k,irho)
-!
-
        select case (faceID)
 
          case (iMin)
@@ -163,16 +156,6 @@
            ww1    => w(1,1:,1:,:);   ww2    => w(2,1:,1:,:)
            pp1    => p(1,1:,1:);     pp2    => p(2,1:,1:)
            ss => si(1,:,:,:) ; fact = -one
-!  eran-avf starts
-
-           if(equationMode == unsteady)then
-
-              avpp1  => wOld(noldLevels+1,1,1:,1:,irho)
-              avpp2  => wOld(noldLevels+1,2,1:,1:,irho)
-
-           end if ! equationMode
-
-!  eran-avf ends
 
            pp1    => p(1,1:,1:);     pp2    => p(2,1:,1:)           
            gamma1 => gamma(1,1:,1:); gamma2 => gamma(2,1:,1:)
@@ -199,16 +182,6 @@
 
            ww1    => w(ie,1:,1:,:);   ww2    => w(il,1:,1:,:)
            ss => si(il,:,:,:) ; fact = one
-!  eran-avf starts
-
-           if(equationMode == unsteady)then
-
-              avpp1  => wOld(noldLevels+1,ie,1:,1:,irho)
-              avpp2  => wOld(noldLevels+1,il,1:,1:,irho)
-
-           end if ! equationMode
-
-!  eran-avf ends
 
            pp1    => p(ie,1:,1:);     pp2    => p(il,1:,1:)
            gamma1 => gamma(ie,1:,1:); gamma2 => gamma(il,1:,1:)
@@ -235,16 +208,6 @@
 
            ww1    => w(1:,1,1:,:);   ww2    => w(1:,2,1:,:)
            ss => sj(:,1,:,:) ; fact = -one
-!  eran-avf starts
-
-           if(equationMode == unsteady)then
-
-              avpp1  => wOld(noldLevels+1,1:,1,1:,irho)
-              avpp2  => wOld(noldLevels+1,1:,2,1:,irho)
-
-           end if ! equationMode
-
-!  eran-avf ends
 
            pp1    => p(1:,1,1:);     pp2    => p(1:,2,1:)
            gamma1 => gamma(1:,1,1:); gamma2 => gamma(1:,2,1:)
@@ -271,16 +234,6 @@
 
            ww1    => w(1:,je,1:,:);   ww2    => w(1:,jl,1:,:)
            ss => sj(:,jl,:,:); fact = one
-!  eran-avf starts
-
-           if(equationMode == unsteady)then
-
-              avpp1  => wOld(noldLevels+1,1:,je,1:,irho)
-              avpp2  => wOld(noldLevels+1,1:,jl,1:,irho)
-
-           end if ! equationMode
-
-!  eran-avf ends
 
            pp1    => p(1:,je,1:);     pp2    => p(1:,jl,1:)
            gamma1 => gamma(1:,je,1:); gamma2 => gamma(1:,jl,1:)
@@ -307,16 +260,6 @@
 
            ww1    => w(1:,1:,1,:);   ww2    => w(1:,1:,2,:)
            ss => sk(:,:,1,:);  fact = -one
-!  eran-avf starts
-
-           if(equationMode == unsteady)then
-
-              avpp1  => wOld(noldLevels+1,1:,1:,1,irho)
-              avpp2  => wOld(noldLevels+1,1:,1:,2,irho)
-
-           end if ! equationMode
-
-!  eran-avf ends
            
            pp1    => p(1:,1:,1);     pp2    => p(1:,1:,2)
            gamma1 => gamma(1:,1:,1); gamma2 => gamma(1:,1:,2)
@@ -343,16 +286,6 @@
 
            ww1    => w(1:,1:,ke,:);   ww2    => w(1:,1:,kl,:)
            ss => sk(:,:,kl,:);  fact = one
-           !  eran-avf starts
-
-           if(equationMode == unsteady)then
-
-              avpp1  => wOld(noldLevels+1,1:,1:,ke,irho)
-              avpp2  => wOld(noldLevels+1,1:,1:,kl,irho)
-
-           end if ! equationMode
-
-!  eran-avf ends
            
            pp1    => p(1:,1:,ke);     pp2    => p(1:,1:,kl)
            gamma1 => gamma(1:,1:,ke); gamma2 => gamma(1:,1:,kl)
@@ -396,31 +329,12 @@
 
          case (cgnsPressure)
 
-            !  eran-avf modification was bad....wold is not the same
-            !  size as w. This has been removed. 
-
-            ! if(equationMode == unsteady)then
-            !    do j=rangeFace(2,1), rangeFace(2,2)
-            !       do i=rangeFace(1,1), rangeFace(1,2)
-            !          nn = nn + 1
-            !          buffer(nn) = fact*(half*(avpp1(i,j) + avpp2(i,j)) - pInf)
-            !       enddo
-            !    enddo
-
-            ! else
-
-               ! ------ this is indeed P for SS solution
-
-               do j=rangeFace(2,1), rangeFace(2,2)
-                  do i=rangeFace(1,1), rangeFace(1,2)
-                     nn = nn + 1
-                     buffer(nn) = half*(pp1(i,j) + pp2(i,j))
-                  enddo
-               enddo
-
-!            end if ! equationMode
-
-! --------- eran-avf ends ---
+           do j=rangeFace(2,1), rangeFace(2,2)
+              do i=rangeFace(1,1), rangeFace(1,2)
+                 nn = nn + 1
+                 buffer(nn) = half*(pp1(i,j) + pp2(i,j))
+              enddo
+           enddo
 
          !===============================================================
 
