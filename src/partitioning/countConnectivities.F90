@@ -31,7 +31,7 @@
 !      Local variables.
 !
        integer :: i, ngeneral, ierr
-       integer :: n1to1, n1to1General, nNonMatch, nOverset
+       integer :: n1to1, n1to1General, nNonMatch
 
        integer :: location, connectType, ptsetType, npnts
        integer :: donorZoneType, donorPtsetType, donorDatatype
@@ -101,7 +101,6 @@
 
        n1to1General = 0
        nNonMatch    = 0
-       nOverset     = 0
 
        do i=1,ngeneral
 
@@ -189,29 +188,6 @@
 
             !============================================================
 
-            case (Overset)
-
-              if(location       == CellCenter   .and. &
-                 ptsetType      == PointList    .and. &
-                 donorZoneType  == Structured   .and. &
-                 donorPtsetType == CellListDonor) then
-
-                nOverset = nOverset + 1
-
-              else
-
-                ! CGNS format not supported.
-
-                write(errorMessage,103) trim(cgnsDoms(nZone)%zoneName), &
-                                        trim(connectName)
-                if(myID == 0) &
-                  call terminate("countConnectivities", errorMessage)
-                call mpi_barrier(SUmb_comm_world, ierr)
-
-              endif
-
-            !============================================================
-
             case default
 
               call terminate("countConnectivities", &
@@ -226,14 +202,12 @@
 
        n1to1 = n1to1 + n1to1General
 
-       ! Memory allocation for the 1 to 1 and overset connectivities.
+       ! Memory allocation for the 1 to 1 connectivities.
 
-       allocate(cgnsDoms(nZone)%conn1to1(n1to1), &
-                cgnsDoms(nZone)%connOver(nOverset), stat=ierr)
+       allocate(cgnsDoms(nZone)%conn1to1(n1to1), stat=ierr)
        if(ierr /= 0)                           &
          call terminate("countConnectivities", &
-                        "Memory allocation failure for conn1to1 and &
-                        &connOver")
+                        "Memory allocation failure for conn1to1")
 !
 !      ******************************************************************
 !      *                                                                *
@@ -374,7 +348,6 @@
        cgnsDoms(nZone)%n1to1             = n1to1
        cgnsDoms(nZone)%n1to1General      = n1to1General
        cgnsDoms(nZone)%nNonMatchAbutting = nNonMatch
-       cgnsDoms(nZone)%nOverset          = nOverset
 !
 !      ******************************************************************
 !      *                                                                *
@@ -386,8 +359,6 @@
               &this format of an abutting 1 to 1 connectivity")
  102   format("Zone",1x,a,", connectivity", 1x,a, ": No support for &
               &this format of a non-matching abutting connectivity")
- 103   format("Zone",1x,a,", connectivity", 1x,a, ": No support for &
-              &this format of an overset connectivity")
 
 #endif
 

@@ -190,7 +190,6 @@
            ! Add the dissipative and possibly viscous fluxes to the
            ! Euler fluxes. Loop over the owned cells and add fw to dw.
            ! Also multiply by iblank so that no updates occur in holes
-           ! or on the overset boundary.
 
            do l=1,nwf
              do k=2,kl

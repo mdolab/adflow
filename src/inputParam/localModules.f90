@@ -52,7 +52,6 @@
        use inputIO
        use inputIteration
        use inputMotion
-       use inputOverset
        use inputParallel
        use inputPhysics
        use inputTimeSpectral

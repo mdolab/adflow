@@ -33,8 +33,6 @@
        nullify(cgnsDoms(nn)%procStored)
        nullify(cgnsDoms(nn)%conn1to1)
        nullify(cgnsDoms(nn)%connNonMatchAbutting)
-       nullify(cgnsDoms(nn)%connOver)
-       nullify(cgnsDoms(nn)%hole)
        nullify(cgnsDoms(nn)%bocoInfo)
 
        end subroutine nullifyCGNSDomPointers

@@ -189,7 +189,6 @@ subroutine releaseMemoryPart1
      call deallocateInternalCommType(internalNode_1st(l))
 
      do sps=1,nTimeIntervalsSpectral
-        call deallocateCommType(commPatternOverset(l, sps))
         call deallocateSlidingCommType(commslidingCell_1st(l,sps))
         call deallocateSlidingCommType(commslidingCell_2nd(l,sps))
      end do
@@ -205,8 +204,7 @@ subroutine releaseMemoryPart1
   ! The remainder of the comms are just deallocated...these still need
   ! to be treated properly
   deallocate(commSlidingCell_1st, commSlidingCell_2nd, &
-       intSlidingCell_1st, intSlidingCell_2nd, commPatternMixing, &
-       commPatternOverSet, internalOverset)
+       intSlidingCell_1st, intSlidingCell_2nd, commPatternMixing)
 
   ! Send/recv buffer
   if (allocated(sendBuffer)) then
@@ -423,15 +421,6 @@ subroutine releaseMemoryPart2
 
      if (associated(cgnsDoms(nn)%connNonMatchAbutting)) &
         deallocate(cgnsDoms(nn)%connNonMatchAbutting)
-
-     if (associated(cgnsDoms(nn)%connOver)) &
-        deallocate(cgnsDoms(nn)%connOver)
-
-     if (associated(cgnsDoms(nn)%hole)) &
-        deallocate(cgnsDoms(nn)%hole)
-
-     if (associated(cgnsDoms(nn)%hole)) &
-        deallocate(cgnsDoms(nn)%hole)
 
      if (associated(cgnsDoms(nn)%bocoInfo)) &
         deallocate(cgnsDoms(nn)%bocoInfo)
@@ -730,26 +719,6 @@ subroutine deallocateBlock(nn, level, sps)
 
   if( associated(flowDoms(nn,level,sps)%iblank) ) &
        deallocate(flowDoms(nn,level,sps)%iblank, stat=ierr)
-  if(ierr /= 0) deallocationFailure = .true.
-
-  if( associated(flowDoms(nn,level,sps)%ibndry) ) &
-       deallocate(flowDoms(nn,level,sps)%ibndry, stat=ierr)
-  if(ierr /= 0) deallocationFailure = .true.
-
-  if( associated(flowDoms(nn,level,sps)%idonor) ) &
-       deallocate(flowDoms(nn,level,sps)%idonor, stat=ierr)
-  if(ierr /= 0) deallocationFailure = .true.
-
-  if( associated(flowDoms(nn,level,sps)%overint) ) &
-       deallocate(flowDoms(nn,level,sps)%overint, stat=ierr)
-  if(ierr /= 0) deallocationFailure = .true.
-
-  if( associated(flowDoms(nn,level,sps)%neighBlockOver) ) &
-       deallocate(flowDoms(nn,level,sps)%neighBlockOver, stat=ierr)
-  if(ierr /= 0) deallocationFailure = .true.
-
-  if( associated(flowDoms(nn,level,sps)%neighProcOver) ) &
-       deallocate(flowDoms(nn,level,sps)%neighProcOver, stat=ierr)
   if(ierr /= 0) deallocationFailure = .true.
 
   if( associated(flowDoms(nn,level,sps)%BCData) ) &

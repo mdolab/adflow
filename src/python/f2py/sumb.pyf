@@ -515,8 +515,6 @@ python module libsumb
          integer(kind=inttype) :: sendbuffersize
          integer(kind=inttype) :: recvbuffersize_1to1
          integer(kind=inttype) :: recvbuffersize
-         integer(kind=inttype) :: sendbuffersizeover
-         integer(kind=inttype) :: recvbuffersizeover
          real(kind=realtype) allocatable,dimension(:) :: sendbuffer
          real(kind=realtype) allocatable,dimension(:) :: recvbuffer
          integer allocatable,dimension(:) :: sendrequests
@@ -836,16 +834,6 @@ python module libsumb
          integer(kind=inttype) :: ntimestepscoarse
        end module inputunsteady
 
-       module inputoverset ! in :sumb:../../modules/inputParam.f90
-         use precison
-         integer(kind=inttype) parameter,optional :: trilinear=1_inttype
-         logical :: oversetdonorsareguesses
-         logical :: avgrestrictresforblanks
-         integer(kind=inttype) :: oversetinterptype
-         integer(kind=inttype) :: oversetinterptypecoarse
-         real(kind=realtype) :: allowabledonorquality
-       end module inputoverset
-
        module iteration ! in :sumb:../../modules/iteration.f90
          use precision
          integer(kind=inttype) :: groundlevel
@@ -867,7 +855,6 @@ python module libsumb
          logical :: standalonemode
          logical :: changing_grid
          logical :: deforming_grid
-         logical :: changingoverset
          logical optional :: pv3initialized=.false.
          integer(kind=inttype) :: noldsolavail
          integer(kind=inttype) :: noldlevels
