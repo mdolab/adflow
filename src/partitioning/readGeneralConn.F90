@@ -13,8 +13,8 @@
 !      ******************************************************************
 !      *                                                                *
 !      * readGeneralConn reads and converts the cgns general            *
-!      * connectivities.  Supported connectivites are 1-to-1,           *
-!      * non-matching abutting and overset types.                       *
+!      * connectivities.  Supported connectivites are 1-to-1 and        *
+!      * non-matching abutting.                                         *
 !      *                                                                *
 !      ******************************************************************
 !
@@ -22,7 +22,6 @@
        use cgnsGrid
        use communication
        use su_cgns
-       use inputOverset
        implicit none
 !
 !      Subroutine arguments
@@ -40,10 +39,10 @@
 !
        character(len=maxStringLen) :: errorMessage
 
-       integer :: i, j, nn, nGeneral, n1to1, nOver, ierr
+       integer :: i, j, nn, nGeneral, n1to1, ierr
        integer :: location, connectType, ptsetType, npnts
        integer :: donorZoneType, donorPtsetType, donorDatatype
-       integer :: nDataDonor, id, jj, realTypeCGNS
+       integer :: nDataDonor, id, jj
        integer :: nArrays, dataType, dataDim
 
        integer, dimension(2)   :: dimVector
@@ -62,7 +61,6 @@
        character(len=maxCGNSNameLen) :: connectName, donorName, arrayName
 
        type(cgns1to1ConnType),    pointer, dimension(:) :: conn1to1
-       type(cgnsOversetConnType), pointer, dimension(:) :: connOver
 
        type(cgnsNonMatchAbuttingConnType), pointer, dimension(:) :: &
                                                              connNonMatch
@@ -77,22 +75,16 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       ! Set the cgns real type for reading overset interpolants.
-
-       realTypeCGNS = setCGNSRealType()
-
        ! Set some pointers for the connectivities to make the code
        ! more readable.
 
        conn1to1     => cgnsDoms(nZone)%conn1to1
        connNonMatch => cgnsDoms(nZone)%connNonMatchAbutting
-       connOver     => cgnsDoms(nZone)%connOver
 
        ! Set the counter n1to1 to the currently stored number of 1 to 1
        ! block connectivities, and initialize other counters.
 
        n1to1 = cgnsDoms(nZone)%n1to1 - cgnsDoms(nZone)%n1to1General
-       nOver = 0
 
        ! Determine the number of general connectivities.
 
@@ -122,10 +114,6 @@
            map2NonMatch(nn,2) = j
          enddo
        enddo
-
-       ! Initialize the total number of overset cells to 0.
-
-       cgnsDoms(nZone)%nCellsOverset = 0
 
        ! Loop over the general connectivities.
 
@@ -427,151 +415,6 @@
              endif checkConsistency
 
            !=============================================================
-
-           case (Overset)
-!
-!            ************************************************************
-!            *                                                          *
-!            * Overset Connectivity. Note that the check for a valid    *
-!            * one has already been done in countConnectivities.        *
-!            *                                                          *
-!            ************************************************************
-!
-             ! Update the counter and store some info in connOverset.
-
-             nOver = nOver + 1
-
-             connOver(nover)%connectName = connectName
-             connOver(nover)%donorName   = donorName
-             connOver(nover)%npnts       = npnts
-
-             ! Update the number of overset cells for this block.
-
-             cgnsDoms(nZone)%ncellsOverset = &
-                                cgnsDoms(nZone)%ncellsOverset + npnts
-
-             ! Check to make sure that the number of donor points
-             ! equals the number of points for this zone to be
-             ! interpolated.
-
-             if(npnts /= ndataDonor)             &
-               call terminate("readGeneralConn", &
-                              "Number of donor and boundary points &
-                              &must equal for overset")
-
-             ! Allocate all the memory for this zone and donorData.
-
-             allocate(myData(3,npnts), donorData(3,npnts), &
-                      connOver(nover)%ibndry(3,npnts),     &
-                      connOver(nover)%idonor(3,npnts), stat=ierr)
-             if(ierr /= 0)                       &
-               call terminate("readGeneralConn", &
-                              "Memory allocation failure for &
-                              &overset data")
-
-             ! Read the indices of the connectivity.
-
-             call cg_conn_read_f(cgnsInd, cgnsBase, nZone, nn, &
-                                 myData, Integer, donorData, ierr)
-             if(ierr /= CG_OK)                  &
-               call terminate("readGeneralConn", &
-                              "Something wrong when calling &
-                              &cg_conn_read_f")
-
-             ! Store the indices of the boundary and donor cells.
-
-             connOver(nover)%ibndry = myData
-             connOver(nover)%idonor = donorData
-
-             ! Release the memory of the temporary data arrays.
-
-             deallocate(myData, donorData, stat=ierr)
-             if(ierr /= 0)                       &
-               call terminate("readGeneralConn", &
-                              "Deallocation error for temp &
-                              &overset data")
-
-             ! If the input donors are being treated as guesses,
-             ! the interpolants are ignored and the array is
-             ! allocated with zero size to avoid inconsistencies
-             ! in memory release.
-
-             checkReadInterp: if (oversetDonorsAreGuesses) then
-
-               allocate(connOver(nover)%interp(0,npnts), stat=ierr)
-               if(ierr /= 0)                       &
-                 call terminate("readGeneralConn", &
-                                "Memory allocation failure for interp")
-
-             else checkReadInterp
-
-               ! Goto this connectivity's node in the file and read
-               ! the number of data arrays.
-
-               call cg_goto_f(cgnsInd, cgnsBase, ierr, "Zone_t",  &
-                              nZone, "ZoneGridConnectivity_t", 1, &
-                              "GridConnectivity_t", nn, "end")
-               if(ierr /= CG_OK)                  &
-                 call terminate("readGeneralConn", &
-                                "Something wrong when calling cg_goto_f")
-
-               call cg_narrays_f(nArrays, ierr)
-               if(ierr /= CG_OK)                  &
-                 call terminate("readGeneralConn", &
-                                "Something wrong when calling &
-                                &cg_narrays_f")
-
-               ! Loop over the number of data arrays and look for
-               ! one with the "InterpolantsDonor" name per the SIDS.
-
-               do j = 1,nArrays
-                 call cg_array_info_f(j, arrayName, dataType, &
-                                      dataDim, dimVector, ierr)
-
-                 if (trim(arrayName) == "InterpolantsDonor") exit
-               enddo
-
-               ! If the interpolants array was not found print
-               ! an error.
-
-               if(j > nArrays) then
-                 write(errorMessage,102) trim(cgnsDoms(nZone)%zoneName), &
-                                         trim(connectName)
-                 if(myID == 0) &
-                   call terminate("readGeneralConn", errorMessage)
-                 call mpi_barrier(SUmb_comm_world, ierr)
-               endif
-
-               ! Check that the dimensions of the array are compatible
-               ! with the interpolation type and the size is correct.
-               ! Allocate memory for the interpolants an then read
-               ! them if it's okay, otherwise print an error.
-
-               if(dataDim == 2 .and. dimVector(2) == npnts .and.        &
-                 (dimVector(1) == nDonorWeights(oversetInterpType) .or. &
-                  dimVector(1) == 3)) then
-
-                 jj = dimVector(1)
-                 allocate(connOver(nover)%interp(jj,npnts), stat=ierr)
-                 if(ierr /= 0)                       &
-                   call terminate("readGeneralConn", &
-                                  "Memory allocation failure for &
-                                  &interpolants")
-
-                 call cg_array_read_as_f(j, realTypeCGNS, &
-                                         connOver(nover)%interp, ierr)
-                 if(ierr /= CG_OK)                  &
-                   call terminate("readGeneralConn", &
-                                  "Something wrong when calling &
-                                  &cg_array_read_as")
-               else
-                 write(errorMessage,103) trim(cgnsDoms(nZone)%zoneName), &
-                                         trim(connectName)
-                 if(myID == 0) &
-                   call terminate("readGeneralConn", errorMessage)
-                 call mpi_barrier(SUmb_comm_world, ierr)
-               endif
-             endif checkReadInterp
 
          end select connectivityType
 

@@ -267,25 +267,7 @@
                  call terminate("writeSolCGNSZone", &
                                 "Something wrong when calling &
                                 &cg_link_write_f")
-
-               ! If there are overset grids present, then also write a
-               ! link to the solution node containing the nodal iblanks.
-
-               if (oversetPresent) then
-
-                 linkName = cgnsBasename//"&
-                            &/"//cgnsDoms(zone)%zonename//"&
-                            &/"//"Nodal Blanks"
-
-                 call cg_link_write_f("Nodal Blanks", &
-                                      gridFileNames(ind), linkName, ierr)
-                 if(ierr /= CG_OK)                   &
-                   call terminate("writeSolCGNSZone", &
-                                  "Something wrong when calling &
-                                  &cg_link_write_f")
-
-               end if
-             endif writeLinkTest
+            endif writeLinkTest
 
            else createZoneTest
 
