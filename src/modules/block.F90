@@ -292,50 +292,7 @@ module block
      integer(kind=intType), dimension(:), pointer :: l1, l2, l3
      integer(kind=intType), dimension(:), pointer :: groupNum
 
-     !
-     !        ****************************************************************
-     !        *                                                              *
-     !        * Overset boundary (fringe) cells and blanked cells.           *
-     !        *                                                              *
-     !        ****************************************************************
-     !
-     !  iblank(0:Ib,0:jb,0:kb) - stores an integer for every cell of
-     !                           this block, including halos. The
-     !                           following convention is used:
-     !                           + field = 1
-     !                           + hole = 0
-     !                           + fringe >= 9 preprocessing
-     !                                     = 0 solver
-     !                           + oversetOuterBound boco = -1
-     !                           + any other boco halos = 2
-     !  nHoles                 - number of owned hole cells.
-     !  nCellsOverset          - number of owned overset cells with
-     !                           donors.
-     !  nCellsOversetAll       - total number of overset cells
-     !                           including fringe from 1-to-1 halos
-     !                           and orphans.
-     !  nOrphans               - number of orphans (boundary cells
-     !                           without donors).
-     !  ibndry(3,..)           - indices for each overset cell.
-     !  idonor(3,..)           - donor indices for each overset cell.
-     !  overint(3,..)          - interpolants for the donor stencil.
-     !  neighBlockOver(..)     - local block number to which donor
-     !                           cell belongs.
-     !  neighProcOver(..)      - processor number where the neighbor
-     !                           block is stored.
-
-     integer(kind=intType) :: nCellsOverset, nCellsOversetAll
-     integer(kind=intType) :: nHoles, nOrphans
-
      integer(kind=intType), dimension(:,:,:), pointer :: iblank
-
-     integer(kind=intType), dimension(:,:), pointer :: ibndry
-     integer(kind=intType), dimension(:,:), pointer :: idonor
-
-     real(kind=realType),   dimension(:,:), pointer :: overint
-
-     integer(kind=intType), dimension(:), pointer :: neighBlockOver
-     integer(kind=intType), dimension(:), pointer :: neighProcOver
      !
      !        ****************************************************************
      !        *                                                              *

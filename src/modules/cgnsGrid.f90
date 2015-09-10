@@ -215,76 +215,6 @@
 !
 !      ******************************************************************
 !      *                                                                *
-!      * The definition of the derived data type to store cgns overset  *
-!      * connectivity (i.e. overlapping grids to be handled via the     *
-!      * chimera approach).                                             *
-!      *                                                                *
-!      ******************************************************************
-!
-       type cgnsOversetConnType
-
-         ! Name of the interface.
-
-         character(len=maxCGNSNameLen) :: connectName
-
-         ! Name of the zone/block interfacing with the current zone/block.
-
-         character(len=maxCGNSNameLen) :: donorName
-
-         ! Zone/block id of the zone/block interfacing with the current
-         ! zone/block.
-
-         integer(kind=intType) :: donorBlock
-
-         ! Number of points to be interpolated (should equal the
-         ! number of points in the donor list.
-
-         integer(kind=intType) :: npnts
-
-         ! Indices for this block to be interpolated.
-         ! [dimension(3,npnts)]
-
-         integer(kind=intType), pointer, dimension(:,:) :: ibndry
-
-         ! Indices for donor block that provide information.
-         ! [dimension(3,npnts)]
-
-         integer(kind=intType), pointer, dimension(:,:) :: idonor
-
-         ! Interpolation weights for the donor stencil
-         ! [dimension(3,npnts)]
-
-         real(kind=realType), pointer, dimension(:,:) :: interp
-
-       end type cgnsOversetConnType
-!
-!      ******************************************************************
-!      *                                                                *
-!      * The definition of the derived data type to store cgns overset  *
-!      * holes. (these points are grouped together and ignored when     *
-!      * calculating residuals).                                        *
-!      *                                                                *
-!      ******************************************************************
-!
-       type cgnsHolesType
-
-         ! Name of the interface.
-
-         character(len=maxCGNSNameLen) :: holeName
-
-         ! Number of points in this hole set.
-
-         integer(kind=intType) :: npnts
-
-         ! Indices for the hole points.
-         ! [dimension(3,npnts)]
-
-         integer(kind=intType), pointer, dimension(:,:) :: indices
-
-       end type cgnsHolesType
-!
-!      ******************************************************************
-!      *                                                                *
 !      * The definition of the derived data type to store cgns block    *
 !      * boundary conditions.                                           *
 !      *                                                                *
@@ -476,23 +406,6 @@
          type(cgnsNonMatchAbuttingConnType), pointer, dimension(:) :: &
                                                    connNonMatchAbutting
 
-         ! Number of overset block to block connectivities, and the
-         ! total number of overset boundary cells.
-
-         integer(kind=intType) :: nOverset, nCellsOverset
-
-         ! Array of overset block to block connectivities.
-
-         type(cgnsOversetConnType), pointer, dimension(:) :: connOver
-
-         ! Number of overset hole sets for this block.
-
-         integer(kind=intType) :: nHoles
-
-         ! Array of overset hole sets.
-
-         type(cgnsHolesType), pointer, dimension(:) :: hole
-
          ! Number of boundary conditions for this block.
 
          integer(kind=intType) :: nBocos
@@ -631,10 +544,6 @@
        ! Name of the cgns base.
 
        character(len=maxCGNSNameLen) :: cgnsBaseName
-
-       ! Whether or not there are overset grids present.
-
-       logical :: oversetPresent
 
        ! massFlowFamilyInv(:,:):  Array to store the local contributions
        !                          from the central part of the flux to

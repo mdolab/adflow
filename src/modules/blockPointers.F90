@@ -88,13 +88,7 @@ module blockPointers
   integer(kind=intType), dimension(:), pointer :: l1, l2, l3
   integer(kind=intType), dimension(:), pointer :: groupNum
 
-  integer(kind=intType) :: nCellsOverset, nCellsOversetAll
-  integer(kind=intType) :: nHoles, nOrphans
-
   integer(kind=intType), dimension(:,:,:), pointer :: iblank
-
-  integer(kind=intType), dimension(:,:), pointer :: ibndry
-  integer(kind=intType), dimension(:,:), pointer :: idonor
 
   real(kind=realType),   dimension(:,:), pointer :: overint
 

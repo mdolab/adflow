@@ -75,10 +75,10 @@
        endif
 
        ! All grid information is stored on all processors, with the
-       ! exception of data which can vary in time or use a large amount
-       ! of memory, including the coordinates and the overset holes and
-       ! connectivities. Processor 0 writes this information first as a
-       ! frame for each file.
+       ! exception of data which can vary in time or use a large
+       ! amount of memory, including the coordinates and
+       ! connectivities. Processor 0 writes this information first as
+       ! a frame for each file.
 
        if(myID == 0) then
          do nn=1,nGridsToWrite
@@ -87,11 +87,10 @@
        endif
 
        ! Loop over the number of cgns blocks and write the coordinates
-       ! and the overset data one zone at a time to conserve memory.
+       ! one at a time to conserve memory.
 
        do nn=1,cgnsNDom
          call writeCoorCGNSZone(nn, cgnsZone(nn))
-         call writeOversetCGNSZone(nn, cgnsZone(nn))
        enddo
 
        ! Check if the solution must be written in a different file.

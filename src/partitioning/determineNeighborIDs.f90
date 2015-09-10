@@ -120,22 +120,6 @@
            enddo
          enddo
 
-         ! The overset connectivities.
-
-         do j=1,cgnsDoms(i)%nOverset
-
-           ! Determine the neighbor ID for this overset boundary.
-
-           ii = bsearchStrings(cgnsDoms(i)%connOver(j)%donorName, &
-                               zoneNames, cgnsNDom)
-           if(ii == 0)                              &
-             call terminate("determineNeighborIDs", &
-                            "donor name not found in sorted zone names")
-
-           cgnsDoms(i)%connOver(j)%donorBlock = zoneNumbers(ii)
-
-         enddo
-
        enddo domains
 
        end subroutine determineNeighborIDs
