@@ -68,15 +68,15 @@
  
        end select
 
- 100   format(a,1x,", k2 = ", e12.5, ", k4 = ", e12.5,".")
- 110   format(a)
- 111   format("Second order upwind scheme using linear reconstruction, &
-              &i.e. no limiter, kappa =", 1x,f7.3,".")
- 112   format("Second order upwind scheme with Van Albeda limiter, &
-              &kappa =", 1x,f7.3,".")
- 113   format("Second order upwind scheme with Minmod limiter, &
-              &kappa =", 1x,f7.3,".")
- 130   format(a,1x,a)
+ 100   format(1X, A,", k2 = ", e12.5, ", k4 = ", e12.5,".")
+ 110   format(1X, A)
+ 111   format(1X, "Second order upwind scheme using linear reconstruction, &
+              &i.e. no limiter, kappa =", 1X, f7.3,".")
+ 112   format(1X, "Second order upwind scheme with Van Albeda limiter, &
+              &kappa =", 1X, f7.3,".")
+ 113   format(1X, "Second order upwind scheme with Minmod limiter, &
+              &kappa =", 1X, f7.3,".")
+ 130   format(1X, A, 1X, A)
 
        ! In case of the scalar dissipation scheme, write whether or not
        ! directional scaling has been applied.
@@ -89,9 +89,9 @@
          endif
        endif
 
- 200   format(A,1X,"Directional scaling of dissipation with exponent", &
-              1x,e12.5, ".")
- 210   format(A,1X,"No directional scaling of dissipation.")
+ 200   format(1X, A, 1X, "Directional scaling of dissipation with exponent", &
+              1X,e12.5, ".")
+ 210   format(1X, A, 1X, "No directional scaling of dissipation.")
 
        ! For the Euler equations, write the inviscid wall boundary
        ! condition treatment.
@@ -112,10 +112,10 @@
            case (normalMomentum)
              write(string,300) trim(string), &
                                "Normal momentum equation used to &
-                               &determine pressure gradIent"
+                               &determine pressure gradient"
          end select
        endif
- 300   format(A,1X,A,1X,"for inviscid wall boundary conditions.")
+ 300   format(1X, A, 1X, A, 1X,"for inviscid wall boundary conditions.")
 
        ! If preconditioning is used, write the preconditioner.
 
@@ -127,7 +127,7 @@
            write(string,400) trim(string), &
                         "Choi Merkle preconditioner for inviscid fluxes."
        end select
- 400   format(a,1x,a)
+ 400   format(1X, A, 1X, A)
 
        ! For a viscous computation write that a central discretization
        ! is used for the viscous fluxes.
