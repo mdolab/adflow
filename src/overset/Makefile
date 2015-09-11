@@ -1,9 +1,9 @@
 #      ******************************************************************
 #      *                                                                *
 #      * File:          Makefile                                        *
-#      * Author:        Edwin van der Weide, Seonghyeon Hahn            *
-#      * Starting date: 12-10-2002                                      *
-#      * Last modified: 03-02-2006                                      *
+#      * Author:        Steve Repsher                                   *
+#      * Starting date: 04-06-2005                                      *
+#      * Last modified: 02-24-2006                                      *
 #      *                                                                *
 #      ******************************************************************
 
@@ -39,89 +39,14 @@ include ${SUMB_RULES_FILE}
 
 vpath %.o $(SUMB_OBJDIR)
 
-FF90_OBJECTS_0 = complexify.o\
+FILES_TO_COMPLEXIFY =  readInterpolation.F90 \
+		       writeGridsWithHalos.F90 \
+		       initializeOversetComm.F90 \
+		       oversetComm.F90 \
+		       exchangeIblanks.f90\
 
-FF90_OBJECTS_1 = precision.o\
-		 su_cgns.o
-
-FF90_OBJECTS_2 = bleedFlows.o\
-		 constants.o\
-		 coolingModelLevel0.o\
-		 killSignals.o\
-		 communication.o\
-
-FF90_OBJECTS_3 = NKsolverVars.o\
-		 block.o\
-		 IOModule.o\
-		 costFunctions.o\
-		 liftDistributionData.o\
-
-FF90_OBJECTS_4 = ADjointVars.o\
-		 ADjointPETSc.o\
-		 BCTypes.o\
-		 blockPointers.o\
-		 cgnsGrid.o\
-		 cgnsNames.o\
-		 commMixing.o\
-		 commSliding.o\
-		 couplerParam.o\
-		 CpCurveFits.o\
-		 extraOutput.o\
-		 flowVarRefState.o\
-		 inputParam.o\
-		 interfaceGroups.o\
-		 iteration.o\
-		 monitor.o\
-		 paramTurb.o\
-		 section.o\
-		 stencils.o\
-	         diffSizes.o\
-		 wallDistanceData.o\
-		 myPushPopLib.o\
-		 overset.o\
-
-FILES_TO_COMPLEXIFY =  precision.F90\
-		 bleedFlows.f90\
-		 constants.F90\
-		 coolingModelLevel0.f90\
-		 liftDistributionData.F90\
-		 killSignals.f90\
-		 communication.f90\
-		 NKsolverVars.F90\
-		 block.F90\
-		 IOModule.f90\
-		 costFunctions.F90\
-		 ADjointVars.F90\
-		 ADjointPETSc.F90\
-		 BCTypes.f90\
-		 blockPointers.F90\
-		 cgnsGrid.f90\
-		 cgnsNames.f90\
-		 commMixing.f90\
-		 commSliding.f90\
-		 couplerParam.f90\
-		 CpCurveFits.f90\
-		 extraOutput.f90\
-		 flowVarRefState.F90\
-		 inputParam.F90\
-		 interfaceGroups.f90\
-		 iteration.f90\
-		 monitor.f90\
-		 paramTurb.F90\
-		 section.f90\
-		 stencils.f90\
-	         blockpointers_d.f90\
-	         blockpointers_t.f90\
-	         blockpointers_b.f90\
-	         diffSizes.f90\
-		 wallDistanceData.F90\
-		 myPushPopLib.F90\
-		 overset.F90\
-
-FILES_TO_COPY = su_cgns.F90 \
-		complexify.f90 
-
-
+ALL_FILES = $(FILES_TO_COMPLEXIFY) $(FILES_TO_COPY)
+OFILES := $(ALL_FILES:%.f90=%.o) $(ALL_FILES:%.F90=%.o) $(ALL_FILES:%.c=%.o)
 
 #      ******************************************************************
 #      *                                                                *
@@ -132,43 +57,38 @@ FILES_TO_COPY = su_cgns.F90 \
 default: all
 
 all:
-	$(PMAKE) src_0
 	$(PMAKE) src_1
 	$(PMAKE) src_2
-	$(PMAKE) src_3
-	$(PMAKE) src_4
-	cp -f *.mod $(SUMB_MODDIR)
 
 clean:
-	@echo "        Making clean in modules... "
+	@echo "        Making clean in overset... "
 	rm -f $(MAKE_CLEAN_ARGUMENTS)
 
 complexify:
 	@for file in $(FILES_TO_COMPLEXIFY); do \
-		if [ $$file -nt ../../src_cs/modules/$$file -o ! -e ../../src_cs/modules/$$file ]; then \
+		echo Checking $$file; \
+		if [ $$file -nt ../../src_cs/overset/$$file -o ! -e ../../src_cs/overset/$$file ]; then \
 			python ../complexify.py $$file; \
-			mv c_$$file ../../src_cs/modules/$$file; \
+			mv c_$$file ../../src_cs/overset/$$file; \
 		fi;\
 		done
 	@for file in $(FILES_TO_COPY); do \
-		if [ $$file -nt ../../src_cs/modules/$$file -o ! -e ../../src_cs/modules/$$file ]; then \
+		if [ $$file -nt ../../src_cs/overset/$$file -o ! -e ../../src_cs/overset/$$file ]; then \
 			echo copying file $$file; \
-			cp $$file ../../src_cs/modules/$$file; \
+			cp $$file ../../src_cs/overset/$$file; \
 		fi;\
 		done
 
-	cp Makefile ../../src_cs/modules
+	cp Makefile ../../src_cs/overset
+
 
 #      ******************************************************************
 #      *                                                                *
 #      * Rules to make the individual parts; these are introduced to    *
 #      * have parallel make function correctly. The objects of src_1    *
-#      * are independent; the ones of src_2 depend on src_1, etc.       *
+#      * are independent; the ones of src_2 depend on src_1.            *
 #      *                                                                *
 #      ******************************************************************
 
-src_0:	$(FF90_OBJECTS_0)
-src_1:	$(FF90_OBJECTS_1)
-src_2:	$(FF90_OBJECTS_2)
-src_3:	$(FF90_OBJECTS_3)
-src_4:	$(FF90_OBJECTS_4)
+src_1:  $(FF90_OBJECTS_1)
+src_2:  $(OFILES)
