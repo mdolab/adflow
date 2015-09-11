@@ -292,7 +292,19 @@ module block
      integer(kind=intType), dimension(:), pointer :: l1, l2, l3
      integer(kind=intType), dimension(:), pointer :: groupNum
 
+     !
+     !        ****************************************************************
+     !        *                                                              *
+     !        * Overset interpolation information                            *
+     !        *                                                              *
+     !        ****************************************************************
+
      integer(kind=intType), dimension(:,:,:), pointer :: iblank
+     integer(kind=intType), dimension(:, :), pointer :: iDonor
+     integer(kind=intType), dimension(:, :), pointer :: iMesh
+     integer(kind=intType), dimension(:), pointer :: iBC
+     real(kind=realType), dimension(:, :), pointer :: frac
+     integer(kind=intTYpe) :: nDonor, nFringe
      !
      !        ****************************************************************
      !        *                                                              *

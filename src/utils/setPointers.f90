@@ -115,6 +115,11 @@
 
        ! Overset boundary and hole info.
        iblank => flowDoms(nn,mm,ll)%iblank
+       iDonor => flowDoms(nn,mm,ll)%iDonor
+       iMesh => flowDoms(nn,mm,ll)%iMesh
+       iBC => flowDoms(nn,mm,ll)%iBC
+       nDonor = flowDoms(nn,mm,ll)%nDonor
+       nFringe = flowDoms(nn,mm,ll)%nFringe
 
        ! The data for boundary subfaces.
 

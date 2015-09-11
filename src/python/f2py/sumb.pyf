@@ -175,6 +175,9 @@ python module libsumb
          real(kind=realtype) intent(out) :: face_inbalance
        end subroutine checkpartitioning
 
+       subroutine writegridswithhalos
+       end subroutine writegridswithhalos
+
        subroutine writesol ! in :sumb:../../output/writeSol.f90
        end subroutine writesol
 
