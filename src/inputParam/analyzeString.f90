@@ -1338,7 +1338,8 @@
         case ("ts altitude mode")
            TSAltitudeMode= checkYesNo(value, keyword)
            !print *,'Tsstability',TSStability
-
+        case ("ts following alpha") 
+           TSAlphaFollowing= checkYesNo(value, keyword)
         case ("use wind axes")
            useWindAxis = checkYesNo(value, keyword)
            
