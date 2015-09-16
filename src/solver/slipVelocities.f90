@@ -306,15 +306,19 @@ subroutine slipVelocitiesFineLevel_block(useOldCoor, t, sps)
 
            call rotMatrixRigidBody(tNew, tOld, rotationMatrix, rotationPoint)
 
-           velxgrid0 = rotationMatrix(1,1)*velxgrid0 &
-                + rotationMatrix(1,2)*velygrid0 &
-                + rotationMatrix(1,3)*velzgrid0
-           velygrid0 = rotationMatrix(2,1)*velxgrid0 &
-                + rotationMatrix(2,2)*velygrid0 &
-                + rotationMatrix(2,3)*velzgrid0
-           velzgrid0 = rotationMatrix(3,1)*velxgrid0 &
-                + rotationMatrix(3,2)*velygrid0 &
-                + rotationMatrix(3,3)*velzgrid0
+           if(TSAlphaFollowing) then
+
+             velxgrid0 = rotationMatrix(1,1)*velxgrid0 &
+                  + rotationMatrix(1,2)*velygrid0 &
+                  + rotationMatrix(1,3)*velzgrid0
+             velygrid0 = rotationMatrix(2,1)*velxgrid0 &
+                  + rotationMatrix(2,2)*velygrid0 &
+                  + rotationMatrix(2,3)*velzgrid0
+             velzgrid0 = rotationMatrix(3,1)*velxgrid0 &
+                  + rotationMatrix(3,2)*velygrid0 &
+                  + rotationMatrix(3,3)*velzgrid0
+
+           endif
         elseif(tsAlphaMode)then
            ! get the baseline alpha and determine the liftIndex
            call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha,beta)

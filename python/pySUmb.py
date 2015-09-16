@@ -3373,6 +3373,7 @@ class SUMB(AeroSolver):
             'rmode':[bool, False],
             'altitudemode':[bool, False],
             'windaxis':[bool, False],
+            'alphafollowing':[bool,True],
             'tsstability': [bool, False],
 
             # Convergence Paramters
@@ -3604,6 +3605,7 @@ class SUMB(AeroSolver):
             'rmode':{'location':'inputtsstabderiv.tsrmode'},
             'altitudemode':{'location':'inputtsstabderiv.tsaltitudemode'},
             'windaxis':{'location':'inputtsstabderiv.usewindaxis'},
+            'alphafollowing':{'location':'inputtsstabderiv.tsalphafollowing'}, 
             'tsstability':{'location':'inputtsstabderiv.tsstability'},
 
             # Convergence Paramters

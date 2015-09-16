@@ -1053,6 +1053,7 @@ python module libsumb
          logical :: tspmode
          logical :: tsqmode
          logical :: tsalphamode
+         logical :: tsalphafollowing 
        end module inputtsstabderiv
 
        module nksolvervars ! in :test:NKsolverVars.F90

@@ -1095,6 +1095,8 @@
        !               be computed
        logical:: TSStability,TSAlphaMode,TSBetaMode,TSpMode,&
             TSqMode,TSrMode,TSAltitudeMode,TSMachMode
+       ! TSAlphaFollowing : Whether or not alpha follows the body in p,q,r mode
+       logical:: TSAlphaFollowing
 
        ! useWindAxis : whether to rotate around the wind axis or the body
        !               axis...
