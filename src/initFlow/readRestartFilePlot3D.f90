@@ -8,7 +8,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       subroutine readRestartFilePlot3D(halosRead)
+       subroutine readRestartFilePlot3D()
 !
 !      ******************************************************************
 !      *                                                                *
@@ -29,10 +29,6 @@
        use monitor
        use restartMod
        implicit none
-!
-!      Subroutine arguments
-!
-       logical, intent(out) :: halosRead
 !
 !      Local variables.
 !

@@ -8,7 +8,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       subroutine readRestartFile(halosRead)
+       subroutine readRestartFile()
 !
 !      ******************************************************************
 !      *                                                                *
@@ -34,10 +34,6 @@
        use su_cgns
        use restartMod
        implicit none
-!
-!      Subroutine arguments
-!
-       logical, intent(out) :: halosRead
 !
 !      Local variables.
 !
