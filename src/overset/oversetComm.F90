@@ -28,7 +28,7 @@ subroutine wOverset(level, start, end, commPressure, commVarGamma, &
   logical, intent(in) :: commLamVis, commEddyVis
 
   ! Working variables
-  integer :: iVar, nn, l, id, ii, jj, kk, nComm, ierr, sps
+  integer :: iVar, nn, i, j,k, l, iFringe, ii, iCell, jCell, kCell, nComm, ierr, sps
   real(kind=realType), dimension(:), pointer :: donorPtr, fringePtr
   real(kind=realType) :: f1, f2, f3, f4, f5, f6, f7, f8
   real(kind=realType) :: di0, di1, dj0, dj1, dk0, dk1
@@ -39,7 +39,7 @@ subroutine wOverset(level, start, end, commPressure, commVarGamma, &
   ! Will do each of the required communications individually for now.
   
   ! Determine the number of variables to communicate  
-  iVar = 1
+  iVar = 0
   do l=start, end
      iVar = iVar + 1
   end do
@@ -68,31 +68,32 @@ subroutine wOverset(level, start, end, commPressure, commVarGamma, &
 
   ! Now set all the required pointers. We will need these when filling
   ! up the donors as well as when we set the fringes.
+
   do nn=1, nDom
-     iVar = 1
+     iVar = 0
      do l=start, end
-        variables(iVar, nn)%arr => w(:, :, :, l)
         iVar = iVar + 1
+        variables(iVar, nn)%arr => flowDoms(nn, level, sps)%w(:, :, :, l)
      end do
 
      if (commPressure) then 
-        variables(iVar, nn)%arr => P(:, :, :)
         iVar = iVar + 1
+        variables(iVar, nn)%arr => flowDoms(nn, level, sps)%P(:, :, :)
      end if
 
      if (commPressure) then 
-        variables(iVar, nn)%arr => gamma(:, :, :)
         iVar = iVar + 1
+        variables(iVar, nn)%arr => flowDoms(nn, level, sps)%gamma(:, :, :)
      end if
 
      if (commLamVis) then 
-        variables(iVar, nn)%arr => rlv(:, :, :)
         iVar = iVar + 1
+        variables(iVar, nn)%arr => flowDoms(nn, level, sps)%rlv(:, :, :)
      end if
      
      if (commEddyVis) then 
-        variables(iVar, nn)%arr => rev(:, :, :)
         iVar = iVar + 1
+        variables(iVar, nn)%arr => flowDoms(nn, level, sps)%rev(:, :, :)
      end if
   end do
 
@@ -107,47 +108,18 @@ subroutine wOverset(level, start, end, commPressure, commVarGamma, &
 
      ! Loop over the number of blocks on this processor
      do nn=1, nDom
-     
-        ! No setPointers here for speed
-
-        ! Loop of the number of donors on this block
-        do id=1, flowDoms(nn, level, sps)%nDonor
-           
-           ii = flowDoms(nn, level, sps)%idonor(1, id)
-           jj = flowDoms(nn, level, sps)%idonor(2, id)
-           kk = flowDoms(nn, level, sps)%idonor(3, id)
-          
-           ! Reconstruct the weights from the fractions. We are using
-           ! linear interpolation here
-           di0 = one - flowDoms(nn, level, sps)%frac(1, id)
-           dj0 = one - flowDoms(nn, level, sps)%frac(2, id)
-           dk0 = one - flowDoms(nn, level, sps)%frac(3, id)
-           
-           di1 = flowDoms(nn, level, sps)%frac(1, id)
-           dj1 = flowDoms(nn, level, sps)%frac(2, id)
-           dk1 = flowDoms(nn, level, sps)%frac(3, id)
-           
-           ! The corresponding linear weights
-           f1   = di0*dj0*dk0
-           f2   = di1*dj0*dk0
-           f3   = di0*dj1*dk0
-           f4   = di1*dj1*dk0
-           f5   = di0*dj0*dk1
-           f6   = di1*dj0*dk1
-           f7   = di0*dj1*dk1
-           f8   = di1*dj1*dk1
-     
-           ! Set this donor point into the arrary from the petsc vector
-           ii = ii + 1
-           donorPtr(ii) = &
-                f1*variables(iVar, nn)%arr(ii  , jj,   kk  ) + &
-                f2*variables(iVar, nn)%arr(ii+1, jj,   kk  ) + &
-                f3*variables(iVar, nn)%arr(ii  , jj+1, kk  ) + &
-                f4*variables(iVar, nn)%arr(ii+1, jj+1, kk  ) + &
-                f5*variables(iVar, nn)%arr(ii  , jj,   kk+1) + &
-                f6*variables(iVar, nn)%arr(ii+1, jj,   kk+1) + &
-                f7*variables(iVar, nn)%arr(ii  , jj+1, kk+1) + &
-                f8*variables(iVar, nn)%arr(ii+1, jj+1, kk+1)
+        ! We just have to put our required variable into donorPtr
+        call setPointers(nn, 1, 1)
+        do k=2, kl
+           do j=2, jl
+              do i=2, il 
+                 ii = ii + 1
+                 ! the plus a's are due to the pointer offset. All the
+                 ! interpolation variables are double haloed so they
+                 ! start at zero. 
+                 donorPtr(ii) = variables(iVar, nn)%arr(i+1, j+1, k+1)
+              end do
+           end do
         end do
      end do
 
@@ -157,6 +129,10 @@ subroutine wOverset(level, start, end, commPressure, commVarGamma, &
      
      ! Now perform the actual vec scatter
      call VecScatterBegin(oversetScatter, oversetDonors, oversetFringes, &
+          INSERT_VALUES, SCATTER_FORWARD, ierr)
+     call ECHK(ierr, __FILE__, __LINE__)
+
+     call VecScatterEnd(oversetScatter, oversetDonors, oversetFringes, &
           INSERT_VALUES, SCATTER_FORWARD, ierr)
      call ECHK(ierr, __FILE__, __LINE__)
 
@@ -171,21 +147,51 @@ subroutine wOverset(level, start, end, commPressure, commVarGamma, &
      ! Loop over the number of blocks on this processor
      do nn=1, nDom
      
-        ! No setPointers here for speed
 
-        ! Loop of the number of fringe points on this block
-        do id=1, flowDoms(nn, level, sps)%nFringe
-           
-           ii = flowDoms(nn, level, sps)%iMesh(1, id)
-           jj = flowDoms(nn, level, sps)%iMesh(2, id)
-           kk = flowDoms(nn, level, sps)%iMesh(3, id)
-                
-           ! Set this donor point into the arrary from the petsc vector
+        ! Here is where we actually do the overset interpolation. Loop
+        ! over the number of fringes on my block
+        
+        do iFringe=1, oBlocks(nn)%nFringe
            ii = ii + 1
-           variables(iVar, nn)%arr(ii, jj, kk) = fringePtr(ii)
+
+           di0 = one - oBlocks(nn)%donorFrac(1, iFringe)
+           dj0 = one - oBlocks(nn)%donorFrac(2, iFringe)
+           dk0 = one - oBlocks(nn)%donorFrac(3, iFringe)
+           
+           di1 = oBlocks(nn)%donorFrac(1, iFringe)
+           dj1 = oBlocks(nn)%donorFrac(2, iFringe)
+           dk1 = oBlocks(nn)%donorFrac(3, iFringe)
+
+
+           ! The corresponding linear weights
+           f1   = di0*dj0*dk0
+           f2   = di1*dj0*dk0
+           f3   = di0*dj1*dk0
+           f4   = di1*dj1*dk0
+           f5   = di0*dj0*dk1
+           f6   = di1*dj0*dk1
+           f7   = di0*dj1*dk1
+           f8   = di1*dj1*dk1
+
+           iCell = oBlocks(nn)%fringeIndices(1, iFringe)
+           jCell = oBlocks(nn)%fringeIndices(2, iFringe)
+           kCell = oBlocks(nn)%fringeIndices(3, iFringe)
+
+           ! The plus 1 is due to the pointer offset effect.
+           variables(iVar, nn)%arr(iCell+1, jCell+1, kCell+1) = &
+
+                f1*fringePtr(8*(ii-1)+1) + &
+                f2*fringePtr(8*(ii-1)+2) + &
+                f3*fringePtr(8*(ii-1)+3) + &
+                f4*fringePtr(8*(ii-1)+4) + &
+                f5*fringePtr(8*(ii-1)+5) + &
+                f6*fringePtr(8*(ii-1)+6) + &
+                f7*fringePtr(8*(ii-1)+7) + &
+                f8*fringePtr(8*(ii-1)+8)
+
         end do
      end do
-     
+
      call vecRestoreArrayF90(oversetFringes, fringePtr, ierr)
      call ECHK(ierr, __FILE__, __LINE__)
      

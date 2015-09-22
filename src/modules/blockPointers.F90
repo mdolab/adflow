@@ -93,7 +93,6 @@ module blockPointers
   integer(kind=intType), dimension(:, :), pointer :: iMesh
   integer(kind=intType), dimension(:), pointer :: iBC
   real(kind=realType), dimension(:, :), pointer :: frac
-  integer(kind=intType) :: nDonor, nFringe
 
   integer(kind=intType), dimension(:), pointer :: neighBlockOver
   integer(kind=intType), dimension(:), pointer :: neighProcOver
