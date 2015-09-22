@@ -202,6 +202,9 @@
 
        subroutine initFlowPart2
        ! Initialize the dependent flow variables and the halo values.
+
+         call computeOversetInterpolation
+         
        call initDepvarAndHalos(halosRead)
   
        end subroutine initFlowPart2

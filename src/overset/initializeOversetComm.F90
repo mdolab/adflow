@@ -6,19 +6,20 @@ subroutine initializeOversetComm
   use communication
   use overset
   use blockPointers
+  use ADJointPETSc, only : w_like1
+  use adjointVars
   implicit none
   ! Working Variables
-  integer(kind=intType) :: ii, i, nn, ierr
-  integer(kind=intType) :: nDonorProc, nFringeProc
+  integer(kind=intType) :: ii, i, j, nn, ierr
+  integer(kind=intType) :: nFringeProc
   integer(kind=intType), dimension(:), allocatable :: fringesProc
 
   ! First we determine the total number of donors and fringes on this block
-  nDonorProc = 0
   nFringeProc = 0
-  do nn=1,nDom
-     call setPointers(nn, 1, 1)
-     nDonorProc = nDonorProc + nDonor
-     nFringeProc = nFringeProc + nFringe
+  do nn=1, nDom
+     ! Count up the total number of fringes (times 8) I need. This is
+     ! quite inefficient but we'll fix later
+     nFringeProc = nFringeProc + 8*oBlocks(nn)%nFringe
   end do
   
   ! Allocate spaces for the fringes indices
@@ -27,19 +28,22 @@ subroutine initializeOversetComm
 
   ! Copy in the indices each block needs. 
   do nn=1, nDom
-     call setPointers(nn, 1, 1)
-     do i = 1, nFringe
-        ! We convert iBC which is in 1-based indexing to zero based
-        ! indexing  or petscc
-        ii = ii + 1
-        fringesProc(ii) = iBC(i) - 1
+     do i = 1, oBlocks(nn)%nFringe
+        do j=1,8
+           ii = ii + 1
+           ! Note that donorInidices are already zero-based and in
+           ! SUmb's global petsc ordering.
+           fringesProc(ii) = oBlocks(nn)%donorIndices(j, i)
+        end do
      end do
   end do
 
-  ! Create the two arrays needed for the overset comm
-  call VecCreateMPI(sumb_comm_world, nDonorProc, PETSC_DETERMINE, oversetDonors, ierr)
+  ! Create the two arrays needed for the overset comm. The first one
+  ! is just a scalar version of w. That is just the number of local cells. 
+  call VecCreateMPI(sumb_comm_world, nCellsLocal(1_intType), PETSC_DETERMINE, oversetDonors, ierr)
   call ECHK(ierr, __FILE__, __LINE__)
 
+  ! The second is equal to the 8*the number of fringes we have. 
   call VecCreateMPI(sumb_comm_world, nFringeProc, PETSC_DETERMINE, oversetFringes, ierr)
   call ECHK(ierr, __FILE__, __LINE__)
 

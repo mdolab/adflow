@@ -51,7 +51,7 @@ subroutine setGlobalCellsAndNodes(level)
   ! Local variables
   integer(kind=intType) :: nn, i, j, k, sps
   integer(kind=intType) :: ierr, istart
-  logical :: commPressure, commViscous, commGamma
+  logical :: commPressure, commLamVis, commEddyVis, commGamma
   integer(kind=intType), dimension(nProc) :: nNodes, nCells, nCellOffset, nNodeOffset
   integer(kind=intType), dimension(nDom) :: nCellBLockOffset,nNodeBLockOffset
   integer(kind=intType) :: npts
@@ -194,8 +194,11 @@ subroutine setGlobalCellsAndNodes(level)
   iend   = -1
   commPressure = .True.
   commGamma    = .False.
-  commViscous  = .False.
-  call wHalo2(level, istart, iend, commPressure, commGamma, commViscous)
+  commlamVis  = .False.
+  commEddyVis = .False.
+  call whalo1to1(level, istart, iend, commPressure, &
+       commGamma, commLamVis, commEddyVis, &
+       commPatternCell_2nd,  internalCell_2nd)
 
   ! Copy back out
   do sps=1, nTimeIntervalsSpectral
