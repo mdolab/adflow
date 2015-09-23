@@ -319,47 +319,6 @@ subroutine computeOversetInterpolation
     end do
  end do
 
- ! Dump out what we have to a dumb plot3d
- open(unit=1,file='vis.dat',form='formatted',status='unknown')
- write(1,*) "Variables = X Y Z fuck"
-
- do nn=1,nDom
-    call setPointers(nn, level, sps)
-
-    write(1,*) "ZONE I=", il,  " J=", jl , " K=", kl
-    write(1,*) "DATAPACKING=POINT"
-    allocate(iBlankTmp(1:il, 1:jl, 1:kl))
-    iBlankTmp = 1
-    do k=2,kl
-       do j=2,jl
-          do i=2,il
-             if (oBlocks(nn)%iBlank(i, j, k) <= 0) then  
-                tmp = oBlocks(nn)%iBlank(i, j, k)
-                ! Blank the 8 nodes around the blanked cell
-                iBlankTmp(i-1, j-1, k-1) = tmp
-                iBlankTmp(i  , j-1, k-1) = tmp
-                iBlankTmp(i-1, j  , k-1) = tmp
-                iBlankTmp(i  , j  , k-1) = tmp
-                iBlankTmp(i-1, j-1, k  ) = tmp
-                iBlankTmp(i  , j-1, k  ) = tmp
-                iBlankTmp(i-1, j  , k  ) = tmp
-                iBlankTmp(i  , j  , k  ) = tmp
-             end if
-          end do
-       end do
-    end do
-
-    do k=1,kl
-       do j=1,jl
-          do i=1,il
-             write(1, *) x(i,j,k,1), x(i, j, k, 2), x(i, j, k, 3), iblankTmp(i, j, k)
-          end do
-       end do
-    end do
-    deallocate(iBlankTmp)
- end do
- close(1)
-
  ! Copy the iblank in oBlocks to the real iblank
  do nn=1,nDom
     call setPointers(nn, level, sps)
