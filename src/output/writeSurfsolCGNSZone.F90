@@ -119,7 +119,7 @@
 
          if(cgnsDoms(zone)%bocoInfo(subface)%BCType == Extrap) return
 
-         ! Possibly do to write symmetry and farfield conditions
+         ! Possibly do not write symmetry and farfield conditions
          if (.not. writeSymmetry) then
             if(cgnsDoms(zone)%bocoInfo(subface)%BCType == Symm) then
                return
@@ -190,10 +190,9 @@
        end select
 
        ! Allocate the memory for buffer, which is used to communicate
-       ! the coordinates and solution. Assume that rind layers are
-       ! present, such that the solution uses most memory.
+       ! the coordinates and solution.
 
-       size = (il+1)*(jl+1)
+       size = (il)*(jl)
        allocate(buffer(size), stat=ierr)
        if(ierr /= 0)                            &
          call terminate("writeSurfsolCGNSZone", &
@@ -470,20 +469,6 @@
          cellRange(2,2,ii) = nodalRange(2,2,ii)
          cellRange(3,2,ii) = nodalRange(3,2,ii)
 
-         ! Step 2. Correct for possible rind layers.
-
-         if( storeRindLayer ) then
-
-           if(nodalRange(1,1,ii) == iBeg) cellRange(1,1,ii) = iBeg
-           if(nodalRange(2,1,ii) == jBeg) cellRange(2,1,ii) = jBeg
-           if(nodalRange(3,1,ii) == kBeg) cellRange(3,1,ii) = kBeg
-
-           if(nodalRange(1,2,ii) == iEnd) cellRange(1,2,ii) = iEnd +1
-           if(nodalRange(2,2,ii) == jEnd) cellRange(2,2,ii) = jEnd +1
-           if(nodalRange(3,2,ii) == kEnd) cellRange(3,2,ii) = kEnd +1
-
-         endif
-
          ! Step 3. Correct for the face ID.
 
          select case (faceID)
@@ -659,34 +644,10 @@
          ! Create the flow solution node.
 
          call cg_sol_write_f(cgnsInd, cgnsBase, cgnsZone, &
-                             "Flow solution", CellCenter, cgnsSol, ierr)
+                             "Flow solution", Vertex, cgnsSol, ierr)
          if(ierr /= CG_OK)                    &
            call terminate("createSurfaceZone", &
                           "Something wrong when calling cg_sol_write_f")
-
-         ! Create the rind layers. If rind layers must be stored put
-         ! 1 layer on every side of the subface; otherwise put 0 layers.
-         ! Use sizes as a buffer to store the rind data. The rind data
-         ! must be created under the just created solution node.
-
-         call cg_goto_f(cgnsInd, cgnsBase, ierr, "Zone_t", &
-                        cgnsZone, "FlowSolution_t", cgnsSol, "end")
-         if(ierr /= CG_OK)                    &
-           call terminate("createSurfaceZone", &
-                          "Something wrong when calling cg_goto_f")
-
-         if( storeRindLayer ) then
-           sizes(1) = 1; sizes(2) = 1
-           sizes(3) = 1; sizes(4) = 1
-         else
-           sizes(1) = 0; sizes(2) = 0
-           sizes(3) = 0; sizes(4) = 0
-         endif
-
-         call cg_rind_write_f(sizes, ierr)
-         if(ierr /= CG_OK)                    &
-           call terminate("createSurfaceZone", &
-                          "Something wrong when calling cg_rind_write_f")
 
          end subroutine createSurfaceZone
 
@@ -991,17 +952,17 @@
 
          if(myID == 0) then
 
-           iiBeg = rangeCell(1,1,1); iiEnd = rangeCell(1,2,1)
-           jjBeg = rangeCell(2,1,1); jjEnd = rangeCell(2,2,1)
-           kkBeg = rangeCell(3,1,1); kkEnd = rangeCell(3,2,1)
+           iiBeg = rangeNode(1,1,1); iiEnd = rangeNode(1,2,1)
+           jjBeg = rangeNode(2,1,1); jjEnd = rangeNode(2,2,1)
+           kkBeg = rangeNode(3,1,1); kkEnd = rangeNode(3,2,1)
            do ll=2,nSubfaces
-             iiBeg = min(iiBeg,rangeCell(1,1,ll))
-             jjBeg = min(jjBeg,rangeCell(2,1,ll))
-             kkBeg = min(kkBeg,rangeCell(3,1,ll))
+             iiBeg = min(iiBeg,rangeNode(1,1,ll))
+             jjBeg = min(jjBeg,rangeNode(2,1,ll))
+             kkBeg = min(kkBeg,rangeNode(3,1,ll))
 
-             iiEnd = max(iiEnd,rangeCell(1,2,ll))
-             jjEnd = max(jjEnd,rangeCell(2,2,ll))
-             kkEnd = max(kkEnd,rangeCell(3,2,ll))
+             iiEnd = max(iiEnd,rangeNode(1,2,ll))
+             jjEnd = max(jjEnd,rangeNode(2,2,ll))
+             kkEnd = max(kkEnd,rangeNode(3,2,ll))
            enddo
 
            mm = (kkEnd-kkBeg+1) * (jjEnd-jjBeg+1) * (iiEnd-iiBeg+1) &
@@ -1039,10 +1000,10 @@
                ! Store the surface solution for this contribution in
                ! buffer. Note that the counter jj is updated in the
                ! routine storeSurfsolInBuffer.
-               call storeSurfsolInBuffer(ind, buffer, jj, ii,       &
-                                         faceID, cellRange(1,1,kk), &
-                                         solNames(mm),              &
-                                         viscousSubface)
+               call storeSurfsolInBuffer2(ind, buffer, jj, ii,       &
+                    faceID, nodalRange(1,1,kk), cellRange(1,1,kk), &
+                    solNames(mm),              &
+                    viscousSubface)
              endif
            enddo
 
@@ -1067,7 +1028,7 @@
                  ! the correct processor id; the processor id's start
                  ! at 0.
 
-                 size   = (il+1)*(jl+1) - jj
+                 size   = il*jl - jj
                  source = ll -1
                  call mpi_recv(buffer(jj+1), size, sumb_real, source, &
                                source, SUmb_comm_world, status, ierr)
@@ -1092,20 +1053,20 @@
                                                    buffer(ii),          &
                                                    iiBeg, jjBeg, kkBeg, &
                                                    iiEnd, jjEnd, kkEnd, &
-                                                   rangeCell(1,1,kk))
+                                                   rangeNode(1,1,kk))
                  case (precisionDouble)
                    call copyDataBufDoublePrecision(writeBuffer,         &
                                                    buffer(ii),          &
                                                    iiBeg, jjBeg, kkBeg, &
                                                    iiEnd, jjEnd, kkEnd, &
-                                                   rangeCell(1,1,kk))
+                                                   rangeNode(1,1,kk))
                end select
 
                ! Update the counter ii for the next subface.
 
-               ii = ii + (rangeCell(1,2,kk) - rangeCell(1,1,kk) + 1) &
-                  *      (rangeCell(2,2,kk) - rangeCell(2,1,kk) + 1) &
-                  *      (rangeCell(3,2,kk) - rangeCell(3,1,kk) + 1)
+               ii = ii + (rangeNode(1,2,kk) - rangeNode(1,1,kk) + 1) &
+                  *      (rangeNode(2,2,kk) - rangeNode(2,1,kk) + 1) &
+                  *      (rangeNode(3,2,kk) - rangeNode(3,1,kk) + 1)
              enddo
 
              ! Write the solution variable to file. Source is just used

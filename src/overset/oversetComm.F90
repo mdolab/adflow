@@ -28,9 +28,10 @@ subroutine wOverset(level, start, end, commPressure, commVarGamma, &
   logical, intent(in) :: commLamVis, commEddyVis
 
   ! Working variables
-  integer :: iVar, nn, i, j,k, l, iFringe, ii, iCell, jCell, kCell, nComm, ierr, sps
+  integer(kind=intType) :: iVar, nn, i, j,k, l, ii, iFringe
+  integer(kind=intType) :: iCell, jCell, kCell, nComm, ierr, sps, gid
   real(kind=realType), dimension(:), pointer :: donorPtr, fringePtr
-  real(kind=realType) :: f1, f2, f3, f4, f5, f6, f7, f8
+  real(kind=realType) :: f(8)
   real(kind=realType) :: di0, di1, dj0, dj1, dk0, dk1
 
   ! Assume sps=1 for now
@@ -48,7 +49,7 @@ subroutine wOverset(level, start, end, commPressure, commVarGamma, &
      iVar = iVar + 1
   end if
 
-  if (commPressure) then 
+  if (commVarGamma) then 
      iVar = iVar + 1
   end if
 
@@ -63,7 +64,7 @@ subroutine wOverset(level, start, end, commPressure, commVarGamma, &
   ! Total number of required communiations
   nComm = iVar
 
-  ! Allocate the 2D "variables" derived tpe
+  ! Allocate the 2D "variables" derived type
   allocate(variables(nComm, nDom))
 
   ! Now set all the required pointers. We will need these when filling
@@ -81,7 +82,7 @@ subroutine wOverset(level, start, end, commPressure, commVarGamma, &
         variables(iVar, nn)%arr => flowDoms(nn, level, sps)%P(:, :, :)
      end if
 
-     if (commPressure) then 
+     if (commVarGamma) then 
         iVar = iVar + 1
         variables(iVar, nn)%arr => flowDoms(nn, level, sps)%gamma(:, :, :)
      end if
@@ -98,7 +99,7 @@ subroutine wOverset(level, start, end, commPressure, commVarGamma, &
   end do
 
   ! Master loop over the required number of communications
-  masterLoop: do iVar = 1, nComm
+  masterLoop: do iVar=1, nComm
 
      call VecGetArrayF90(oversetDonors, donorPtr, ierr)
      call ECHK(ierr, __FILE__, __LINE__)
@@ -115,9 +116,10 @@ subroutine wOverset(level, start, end, commPressure, commVarGamma, &
               do i=2, il 
                  ii = ii + 1
                  ! the plus a's are due to the pointer offset. All the
-                 ! interpolation variables are double haloed so they
-                 ! start at zero. 
+                 ! interpolation variables are double haloed and they
+                 ! start at zero.
                  donorPtr(ii) = variables(iVar, nn)%arr(i+1, j+1, k+1)
+
               end do
            end do
         end do
@@ -147,48 +149,44 @@ subroutine wOverset(level, start, end, commPressure, commVarGamma, &
      ! Loop over the number of blocks on this processor
      do nn=1, nDom
      
-
         ! Here is where we actually do the overset interpolation. Loop
         ! over the number of fringes on my block
         
         do iFringe=1, oBlocks(nn)%nFringe
            ii = ii + 1
-
-           di0 = one - oBlocks(nn)%donorFrac(1, iFringe)
-           dj0 = one - oBlocks(nn)%donorFrac(2, iFringe)
-           dk0 = one - oBlocks(nn)%donorFrac(3, iFringe)
-           
+          
            di1 = oBlocks(nn)%donorFrac(1, iFringe)
            dj1 = oBlocks(nn)%donorFrac(2, iFringe)
            dk1 = oBlocks(nn)%donorFrac(3, iFringe)
 
+           di0 = one - di1
+           dj0 = one - dj1
+           dk0 = one - dk1
 
            ! The corresponding linear weights
-           f1   = di0*dj0*dk0
-           f2   = di1*dj0*dk0
-           f3   = di0*dj1*dk0
-           f4   = di1*dj1*dk0
-           f5   = di0*dj0*dk1
-           f6   = di1*dj0*dk1
-           f7   = di0*dj1*dk1
-           f8   = di1*dj1*dk1
+           f(1)   = di0*dj0*dk0
+           f(2)   = di1*dj0*dk0
+           f(3)   = di0*dj1*dk0
+           f(4)   = di1*dj1*dk0
+           f(5)   = di0*dj0*dk1
+           f(6)   = di1*dj0*dk1
+           f(7)   = di0*dj1*dk1
+           f(8)   = di1*dj1*dk1
 
            iCell = oBlocks(nn)%fringeIndices(1, iFringe)
            jCell = oBlocks(nn)%fringeIndices(2, iFringe)
            kCell = oBlocks(nn)%fringeIndices(3, iFringe)
-
-           ! The plus 1 is due to the pointer offset effect.
+           
+           ! The +1 is due to the pointer offset
            variables(iVar, nn)%arr(iCell+1, jCell+1, kCell+1) = &
-
-                f1*fringePtr(8*(ii-1)+1) + &
-                f2*fringePtr(8*(ii-1)+2) + &
-                f3*fringePtr(8*(ii-1)+3) + &
-                f4*fringePtr(8*(ii-1)+4) + &
-                f5*fringePtr(8*(ii-1)+5) + &
-                f6*fringePtr(8*(ii-1)+6) + &
-                f7*fringePtr(8*(ii-1)+7) + &
-                f8*fringePtr(8*(ii-1)+8)
-
+                f(1)*fringePtr(8*ii-7) + &
+                f(2)*fringePtr(8*ii-6) + &
+                f(3)*fringePtr(8*ii-5) + &
+                f(4)*fringePtr(8*ii-4) + &
+                f(5)*fringePtr(8*ii-3) + &
+                f(6)*fringePtr(8*ii-2) + &
+                f(7)*fringePtr(8*ii-1) + &
+                f(8)*fringePtr(8*ii  ) 
         end do
      end do
 

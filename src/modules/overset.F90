@@ -29,9 +29,9 @@ module overset
      integer(kind=intType) :: ie, je, ke
      integer(kind=intType) :: il, jl, kl
      integer(kind=intType) :: nx, ny, nz
-     real(kind=realType), dimension(:, :, :, :), pointer :: x
      integer(kind=intType), dimension(:, :), pointer :: hexaConn
      real(kind=realType), dimension(:, :), pointer :: xDual, xSearch
+     real(kind=realType), dimension(:, :,:, :), pointer :: xDual2, xSearch2
      real(kind=realType), dimension(:, :), pointer :: qualDonor, qualRecv
      integer(kind=intType), dimension(:,:,:), pointer :: iblank
      integer(kind=intType), dimension(:, :, :), pointer :: globalCell
@@ -41,7 +41,9 @@ module overset
      integer(kind=intTYpe) :: nDonor
      integer(kind=intType), dimension(:, :), pointer :: fringeIndices
      integer(kind=intType), dimension(:, :), pointer :: donorIndices
-     integer(kind=intType), dimension(:, :), pointer :: donorFrac
+     integer(kind=intType), dimension(:, :, :), pointer :: donorIndices2
+     real(kind=realType), dimension(:, :), pointer :: donorFrac
+     integer(kind=intType), dimension(:, :), pointer :: ind
      
   end type oversetBlocK
 
