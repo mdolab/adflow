@@ -159,7 +159,7 @@
 
            pp1    => p(1,1:,1:);     pp2    => p(2,1:,1:)           
            gamma1 => gamma(1,1:,1:); gamma2 => gamma(2,1:,1:)
-           !print *,'block is moving imin',blockIsMoving
+
            if( blockIsMoving)then
               ss1    => s(1,1:,1:,:);   ss2    => s(2,1:,1:,:)
            end if
@@ -686,15 +686,12 @@
 
          case (cgnsBlank)
 
-           ! Loop over the given range of faces. Since iblanks are set
-           ! to 2 for boundary conditions and >= 10 for the boundary,
-           ! take the minimum of the value and 1, so that cells with
-           ! valid data always have an iblank of 1.
+           ! Loop over the given range of faces. 
 
            do j=rangeFace(2,1), rangeFace(2,2)
              do i=rangeFace(1,1), rangeFace(1,2)
                nn = nn + 1
-               buffer(nn) = real(min(iblank2(i,j), 1_intType), realType)
+               buffer(nn) = real(iblank2(i,j), realType)
              enddo
            enddo
 

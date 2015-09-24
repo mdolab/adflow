@@ -28,12 +28,13 @@ subroutine initializeOversetComm
 
   ! Copy in the indices each block needs. 
   do nn=1, nDom
-     do i = 1, oBlocks(nn)%nFringe
-        do j=1,8
+     do i=1, oBlocks(nn)%nFringe
+        do j=1, 8
            ii = ii + 1
            ! Note that donorInidices are already zero-based and in
            ! SUmb's global petsc ordering.
            fringesProc(ii) = oBlocks(nn)%donorIndices(j, i)
+          
         end do
      end do
   end do
