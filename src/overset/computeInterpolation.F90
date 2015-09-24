@@ -34,7 +34,8 @@ subroutine computeOversetInterpolation
   integer(kind=intType), parameter :: nPyra=0
   integer(kind=intType), parameter :: nTetra=0
   integer(kind=intType), parameter :: nPrisms=0
-  integer(kind=intType) :: nDualCells, nHexa, nSearchCells
+  integer(kind=intType) :: nDualNodes, nHexa, nSearchCells
+  integer(kind=intType) :: planeOffset
   real(kind=realType), dimension(3, 2) :: BBox
   logical :: useBBox
   character*40 :: tmpStr
@@ -44,7 +45,7 @@ subroutine computeOversetInterpolation
   ! Explictly set level and sps to 1. This will be removed in the future.
   level = 1
   sps =1 
-
+  print *,'doing overset interpolation'
   if (nProc > 1) then 
      print *,'Only in serial for now...'
      stop
@@ -133,24 +134,25 @@ subroutine computeOversetInterpolation
      oBlocks(nn)%ny = ny
      oBlocks(nn)%nz = nz
 
-     !nDualCells = The number of cells of the primal mesh to be used
+     !nDualNodes = The number of cells of the primal mesh to be used
      !to form the dual mesh
 
-     nDualCells = oBlocks(nn)%ie * oBLocks(nn)%je * oBlocks(nn)%ke
-     nHexa = oBlocks(nn)%il * oBlocks(nn)%jl * oBlocks(nn)%kl
+     nDualNodes   = oBlocks(nn)%ie * oBLocks(nn)%je * oBlocks(nn)%ke
+     nHexa        = oBlocks(nn)%il * oBlocks(nn)%jl * oBlocks(nn)%kl
      nSearchCells = oBlocks(nn)%nx * oBLocks(nn)%ny * oBlocks(nn)%nz
+     obLocks(nn)%globalID  = nn
      allocate( &
-          oBlocks(nn)%x(3, 0:ie, 0:je, 0:ke), &
-          oBlocks(nn)%xDual(3, nDualCells), &
+          oBlocks(nn)%xDual(3, nDualNodes), &
           oBlocks(nn)%xSearch(3, nSearchCells), &
-          oBlocks(nn)%qualDonor(1, nDualCells), &
+          oBlocks(nn)%qualDonor(1, nDualNodes), &
           oBlocks(nn)%qualRecv(1, nSearchCells), &
           oBlocks(nn)%iblank(1:ie, 1:je, 1:ke), &
           oBlocks(nn)%globalCell(1:ie, 1:je, 1:ke), &
           oBlocks(nn)%hexaConn(8, nHexa), &
-
+          oBlocks(nn)%ind(3, nDualNodes), &
           ! Maximum possible number of donors is total number of search cells. 
           oBlocks(nn)%donorIndices(8, nSearchCells), &
+          oBlocks(nn)%donorIndices2(9, 3, nSearchCells), &
           oBlocks(nn)%donorFrac(3, nSearchCells), &
           oBlocks(nn)%fringeIndices(3, nSearchCells))
 
@@ -176,6 +178,7 @@ subroutine computeOversetInterpolation
                       x(i-1, j  , k  , iDim) + &
                       x(i  , j  , k  , iDim))
               end do
+
               ! Just copy out the volumes
               oBlocks(nn)%qualDonor(1, mm) = vol(i,j,k)
         
@@ -185,7 +188,7 @@ subroutine computeOversetInterpolation
         end do
      end do
 
-     ! And get the search cells. DOES NOT INCLUDE HALOS
+     ! And get the search cells. *Does not include halos*
      mm =0
      do k=2 ,kl
         do j=2, jl
@@ -207,17 +210,6 @@ subroutine computeOversetInterpolation
         end do
      end do
      
-     ! Copy over the regular x too...may not need this 
-     do k=0, ke
-        do j=0, je
-           do i=0, ie
-              do iDim=1,3
-                 oBlocks(nn)%x(iDim, i, j, k) = x(i, j, k, iDim)
-              end do
-           end do
-        end do
-     end do
-
      ! Initialize al the iblanks to 1..everything is comptue until we
      ! determine otherwise. forceRecv is false until we look at the BCs.
      oBlocks(nn)%iBlank = 1
@@ -227,20 +219,21 @@ subroutine computeOversetInterpolation
      
      mm = 0
      ! These are the 'elements' of the dual mesh.
+     planeOffset = ie*je
      do k=2, ke
         do j=2, je
            do i=2, ie
               mm = mm + 1
               oBlocks(nn)%hexaConn(1, mm) = (k-2)*ie*je + (j-2)*ie + (i-2) + 1
-              oBlocks(nn)%hexaConn(2, mm) = (k-2)*ie*je + (j-2)*ie + (i-1) + 1
-              oBlocks(nn)%hexaConn(3, mm) = (k-2)*ie*je + (j-1)*ie + (i-1) + 1
-              oBlocks(nn)%hexaConn(4, mm) = (k-2)*ie*je + (j-1)*ie + (i-2) + 1
+              oBlocks(nn)%hexaConn(2, mm) = oBlocks(nn)%hexaConn(1, mm) + 1 
+              oBlocks(nn)%hexaConn(3, mm) = oBlocks(nn)%hexaConn(2, mm) + ie 
+              oBlocks(nn)%hexaConn(4, mm) = oBlocks(nn)%hexaConn(3, mm) - 1 
               
-              oBlocks(nn)%hexaConn(5, mm) = (k-1)*ie*je + (j-2)*ie + (i-2) + 1
-              oBlocks(nn)%hexaConn(6, mm) = (k-1)*ie*je + (j-2)*ie + (i-1) + 1
-              oBlocks(nn)%hexaConn(7, mm) = (k-1)*ie*je + (j-1)*ie + (i-1) + 1
-              oBlocks(nn)%hexaConn(8, mm) = (k-1)*ie*je + (j-1)*ie + (i-2) + 1
-              
+
+              oBlocks(nn)%hexaConn(5, mm) = oBlocks(nn)%hexaConn(1, mm) + planeOffset
+              oBlocks(nn)%hexaConn(6, mm) = oBlocks(nn)%hexaConn(2, mm) + planeOffset
+              oBlocks(nn)%hexaConn(7, mm) = oBlocks(nn)%hexaConn(3, mm) + planeOffset
+              oBlocks(nn)%hexaConn(8, mm) = oBlocks(nn)%hexaConn(4, mm) + planeOffset
            end do
         end do
      end do
@@ -253,7 +246,7 @@ subroutine computeOversetInterpolation
      tmpStr = adjustl(tmpStr)
      oBlocks(nn)%adtName = 'domain.'//tmpStr
 
-     call adtbuildVolumeADT(nTetra, nPyra, nPrisms, nHexa, nDualCells, &
+     call adtbuildVolumeADT(nTetra, nPyra, nPrisms, nHexa, nDualNodes, &
           oBlocks(nn)%xDual, tetraConn, pyraConn, prismsConn, &
           oBlocks(nn)%hexaConn, BBox,  useBBox, MPI_COMM_SELF, &
           oBlocks(nn)%adtName)
@@ -333,8 +326,82 @@ subroutine computeOversetInterpolation
 
  call exchangeIBlanks(level, sps, commPatternCell_2nd, internalCell_2nd)
 
-
  ! Compute the overset interpolation required. 
  call initializeOversetComm
  
 end subroutine computeOversetInterpolation
+
+
+! subroutine test
+
+
+! use overset
+!   use blockPointers
+! implicit none
+
+! integer(kind=intType) :: nn, i, j, k, mm
+! real(kind=realType) :: val1, val2
+! ! Put a scalar field  on domain 1 and interpolate to domain 2
+
+! !flowDoms(2, 1, 1)%w(:, :, :, 1) = one
+
+! do nn=1,nDom
+
+!    call setPointers(nn, 1, 1)
+!    mm = 0
+!    do k=1, ke
+!       do j=1, je
+!          do i=1, ie
+!             mm = mm + 1
+!             w(i, j, k, iVx) = oBlocks(nn)%xDual(1, mm) + &
+!                  2*oBlocks(nn)%xDual(2, mm)
+!          end do
+!       end do
+!    end do
+! end do
+
+! call wOverset(1, 2, 2, .False., .False., .False., .False.) 
+
+! ! Check things on the first domain
+
+! do nn=1,1
+!    call setPointers(nn, 1,1 )
+!    mm = 0
+!    do k=2, kl
+!       do j=2, jl
+!          do i=2, il
+!             mm = mm + 1
+!             val1 = w(i, j, k, ivx)
+!             val2 = oBlocks(nn)%xsearch(1, mM) + 2*oBlocks(nn)%xsearch(2, mm)
+
+!             if (abs(val1- val2) > 1e-8) then 
+!                print *, 'error:', i, j, k, val1, val2
+!             end if
+
+!          end do
+!       end do
+!    end do
+! end do
+! end subroutine test
+
+
+     ! open(unit=1,file='vis.dat',form='formatted',status='unknown')
+     ! write(1,*) "Variables = X Y Z"
+
+     ! write(1,*) "ZONE NODES=",ie*je*ke, " Elements=", il*jl*kl, "DATAPACKING=POINT, ZONETYPE=FEBRICK"
+     ! do mm=1,ie*je*ke
+     !    write(1, *) oBlocks(nn)%xdual(1, mm), &
+     !         oBlocks(nn)%xDual(2, mm), & 
+     !         oBlocks(nn)%xDual(3, mm)
+     ! end do
+     ! do mm=1,il*jl*kl
+     !    write(1, *) oBlocks(nn)%hexaConn(1, mm), &
+     !         oBlocks(nn)%hexaConn(2, mm), &
+     !         oBlocks(nn)%hexaConn(3, mm), &
+     !         oBlocks(nn)%hexaConn(4, mm), &
+     !         oBlocks(nn)%hexaConn(5, mm), &
+     !         oBlocks(nn)%hexaConn(6, mm), &
+     !         oBlocks(nn)%hexaConn(7, mm), &
+     !         oBlocks(nn)%hexaConn(8, mm)
+     ! end do
+     ! close(1)
