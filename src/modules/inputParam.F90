@@ -269,7 +269,7 @@
        logical :: writeSymmetry = .True. 
        logical :: writeFarfield = .False. 
        logical :: viscousSurfaceVelocities = .True.
-
+       logical :: nodalOutput = .True.
        
        end module inputIO
 
