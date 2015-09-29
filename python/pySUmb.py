@@ -3317,6 +3317,7 @@ class SUMB(AeroSolver):
             'gridprecision':[str,'double'],
             'isosurface':[dict, {}],
             'isovariables':[list, []],
+            'nodaloutput':[bool, True],
             'viscoussurfacevelocities':[bool, True],
             'slicefiletractions':[bool, False],
 
@@ -3481,6 +3482,7 @@ class SUMB(AeroSolver):
             'storerindlayer':{'location':'inputio.storerindlayer'},
             'writesymmetry':{'location':'inputio.writesymmetry'},
             'writefarfield':{'location':'inputio.writefarfield'},
+            'nodaloutput':{'location':'inputio.nodaloutput'},
             'slicefiletractions':{'location':'inputio.slicefiletractions'},
             'nsavevolume':{'location':'inputiteration.nsavevolume'},
             'nsavesurface':{'location':'inputiteration.nsavesurface'},

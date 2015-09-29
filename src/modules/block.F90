@@ -169,6 +169,9 @@ module block
 
   end type BCDataType
 
+  type surfaceNodeWeightArray
+     real(kind=realType), dimension(:, :, :), pointer :: weight
+  end type surfaceNodeWeightArray
 
   !      ******************************************************************
   !      *                                                                *
@@ -737,7 +740,7 @@ module block
      integer(kind=intType) :: cgnsBlockID, sectionID
      integer(kind=intType) :: iBegOr, iEndOr, jBegOr, jEndOr
      integer(kind=intType) :: kBegOr, kEndOr
-
+     type(surfaceNodeWeightArray) , dimension(6) :: nodalWeights 
      !
      !        ****************************************************************
      !        *                                                              *
