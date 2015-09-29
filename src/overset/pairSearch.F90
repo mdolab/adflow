@@ -22,6 +22,7 @@ subroutine pairSearch(A, B)
 
   integer(kind=intType), dimension(:), allocatable :: procID, elementID
   real(kind=realType), dimension(:, :), allocatable ::  uvw, arrInterpol
+  real(kind=realType), dimension(:, :), allocatable ::  arrDonor
   integer(kind=adtElementType), dimension(:), allocatable :: elementType
   real(kind=realType) :: donorQual, xINterp(3)
   real(kind=realType) :: timeA, timeB
@@ -37,8 +38,21 @@ subroutine pairSearch(A, B)
        arrInterpol(1, nCoor))
   nInterpol = 1 ! we get the ADT to compute the interpolated volume for us. 
 
+
+  allocate(arrDonor(1, B%ie*B%je*B%ke))
+  mm = 0
+  do k=1,B%ke
+     do j=1, B%je
+        do i=1, B%ie
+           mm = mm + 1
+           arrDonor(1, mm) = B%qualDonor(i, j, k)
+        end do
+     end do
+  end do
   call adtContainmentSearch(nCoor, A%xSearch, B%adtName, procID, elementType, &
-       elementID, uvw, nInterpol, B%qualDonor, arrInterpol)
+       elementID, uvw, nInterpol, arrDonor, arrInterpol)
+
+  deallocate(arrDonor)
 
   ! Check all the cells to see if we found anything:
   mm = 0
@@ -51,7 +65,7 @@ subroutine pairSearch(A, B)
 
               donorQual = arrInterpol(1, mm)
 
-              if (donorQual < .8*A%qualRecv(1, mm)) then 
+              if (donorQual < .9*A%qualRecv(i, j, k)) then 
                  elemID = elementID(mm)
                  
                  ! Increment the number of fringes on this block
@@ -65,9 +79,18 @@ subroutine pairSearch(A, B)
                  ! Donor is better than me: Flag myself as a fringe.
                  A%iBlank(i, j, k) = -1
 
+                 
+                 ! Unwind the element indices for the donor
+                 ! Remember we have (il, jl, kl) elements in the dual
+                 ! mesh. 
+                 tmp = elemID - 1
+                 ii = mod(tmp, B%il) + 1
+                 jj = mod(tmp/B%il, B%jl) + 1
+                 kk = tmp/(B%il*B%jl) + 1
+
                  ! Set my quality as a receiver as my donor
-                 A%qualRecv(1, mm) = donorQual
-                 B%qualDonor(1, elemID) = 1e-30
+                 A%qualRecv(i, j, k) = donorQual
+                 !B%qualDonor(ii, jj, kk) = 1e-30
 
                  ! Save the fractions. 
                  A%donorFrac(:, A%nFringe) = uvw(:, mm)
@@ -79,14 +102,7 @@ subroutine pairSearch(A, B)
                  ! i,j,k coordinates of the nodes, which are actually
                  ! the cells of the primal mesh. We can then index
                  ! into the globalCell array
-
-                 ! Remember we have (il, jl, kl) elements in the dual
-                 ! mesh. 
-                 tmp = elemID - 1
-                 ii = mod(tmp, B%il) + 1
-                 jj = mod(tmp/B%il, B%jl) + 1
-                 kk = tmp/(B%il*B%jl) + 1
-
+           
                  ! that unwinds our index. Now do the 2x2x2 loop and reassemble the index
                  A%donorIndices(1, A%nFringe) = B%globalCell(ii  , jj  , kk  )
                  A%donorIndices(2, A%nFringe) = B%globalCell(ii+1, jj  , kk  )

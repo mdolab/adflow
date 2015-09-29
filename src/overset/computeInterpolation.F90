@@ -144,8 +144,8 @@ subroutine computeOversetInterpolation
      allocate( &
           oBlocks(nn)%xDual(3, nDualNodes), &
           oBlocks(nn)%xSearch(3, nSearchCells), &
-          oBlocks(nn)%qualDonor(1, nDualNodes), &
-          oBlocks(nn)%qualRecv(1, nSearchCells), &
+          oBlocks(nn)%qualDonor(1:ie, 1:je, 1:ke), &
+          oBlocks(nn)%qualRecv(2:il, 2:jl, 2:kl), &
           oBlocks(nn)%iblank(1:ie, 1:je, 1:ke), &
           oBlocks(nn)%globalCell(1:ie, 1:je, 1:ke), &
           oBlocks(nn)%hexaConn(8, nHexa), &
@@ -180,7 +180,7 @@ subroutine computeOversetInterpolation
               end do
 
               ! Just copy out the volumes
-              oBlocks(nn)%qualDonor(1, mm) = vol(i,j,k)
+              oBlocks(nn)%qualDonor(i, j, k) = vol(i,j,k)
         
               ! And the global cell
               oBlocks(nn)%globalCell(i, j, k) = globalCell(i, j, k)
@@ -205,7 +205,7 @@ subroutine computeOversetInterpolation
                       x(i-1, j  , k  , iDim) + &
                       x(i  , j  , k  , iDim))
               end do
-              oBlocks(nn)%qualRecv(1, mm) = vol(i,j,k)
+              oBlocks(nn)%qualRecv(i, j, k) = vol(i,j,k)
            end do
         end do
      end do
@@ -261,13 +261,11 @@ subroutine computeOversetInterpolation
  ! iBlank = 0. For these cells. These cells cannot be a donor *or* a
  ! receiver. Adjust the quality measure on these cells accordingly. 
  do nn=1,nDom
-    mm = 0
     do k=1, oBlocks(nn)%ke
        do j=1, oBlocks(nn)%je
           do i=1, oBlocks(nn)%ie
-             mm = mm + 1
              if (oBlocks(nn)%iBlank(i, j, k) == 0) then 
-                oBlocks(nn)%qualDonor(1, mm) = 1e30 
+                oBlocks(nn)%qualDonor(i, j, k) = 1e30 
              end if
           end do
        end do
@@ -277,30 +275,30 @@ subroutine computeOversetInterpolation
     ! that we are setting three slabs: The last two levels of real
     ! cells as well as the first level of halos. 
     call setPointers(nn, level, sps)
-    ! do mm=1,nBocos
-    !    if(BCType(mm) == OversetOuterBound) then 
-    !       select case (BCFaceID(mm))
-    !       case (iMin)
-    !          oBlocks(nn)%qualRecv(1:3, :, :) = 1e30
-    !          oBlocks(nn)%qualDonor(1:3, :, :) = -1e30
-    !       case (iMax)
-    !          oBlocks(nn)%qualRecv(nx:ie, :, :) = 1e30
-    !          oBlocks(nn)%qualDonor(nx:ie, :, :) = -1e30
-    !       case (jMin)
-    !          oBlocks(nn)%qualRecv(:, 1:3, :) = 1e30
-    !          oBlocks(nn)%qualDonor(:, 1:3, :) = -1e30
-    !       case (jMax)
-    !          oBlocks(nn)%qualRecv(:, ny:je, :) = 1e30
-    !          oBlocks(nn)%qualDonor(:, ny:je, :) = -1e30
-    !       case (kMin)
-    !          oBlocks(nn)%qualRecv(:, :, 1:3) = 1e30
-    !          oBlocks(nn)%qualDonor(:, :, 1:3) = -1e30
-    !       case (kMax)
-    !          oBlocks(nn)%qualRecv(:, :, nz:ke) = 1e30
-    !          oBlocks(nn)%qualDonor(:, :, nz:ke) = -1e30
-    !       end select
-    !    end if
-    ! end do
+    do mm=1,nBocos
+       if(BCType(mm) == OversetOuterBound) then 
+          select case (BCFaceID(mm))
+          case (iMin)
+             oBlocks(nn)%qualRecv(2:3, :, :) = 1e30
+             oBlocks(nn)%qualDonor(1:3, :, :) = 1e30
+          case (iMax)
+             oBlocks(nn)%qualRecv(nx:il, :, :) = 1e30
+             oBlocks(nn)%qualDonor(nx:ie, :, :) = 1e30
+          case (jMin)
+             oBlocks(nn)%qualRecv(:, 2:3, :) = 1e30
+             oBlocks(nn)%qualDonor(:, 1:3, :) = 1e30
+          case (jMax)
+             oBlocks(nn)%qualRecv(:, ny:jl, :) = 1e30
+             oBlocks(nn)%qualDonor(:, ny:je, :) = 1e30
+          case (kMin)
+             oBlocks(nn)%qualRecv(:, :, 2:3) = 1e30
+             oBlocks(nn)%qualDonor(:, :, 1:3) = 1e30
+          case (kMax)
+             oBlocks(nn)%qualRecv(:, :, nz:kl) = 1e30
+             oBlocks(nn)%qualDonor(:, :, nz:ke) = 1e30
+          end select
+       end if
+    end do
  end do
 
  ! Master loop over the blocks...
@@ -383,6 +381,89 @@ end subroutine computeOversetInterpolation
 !    end do
 ! end do
 ! end subroutine test
+
+
+subroutine test_write
+  use overset
+  use blockPointers
+  implicit none
+
+  integer(kind=intType) :: i,j,k,nn,mm
+  real(Kind=realType) :: a2, tmp
+  open(unit=1,file='vis.dat',form='formatted',status='unknown')
+  write(1, *) "Variables = X Y Z Vx  Vy Mach iblank"
+  
+  do nn=1,nDOm
+     call setPointers(nn, 1, 1)
+     write(1,*) "ZONE I=", ie, " J=",je , "K=", ke
+     !write(1, *) "VARLOCATION=([1,2,3]=NODAL, [4,5,6]=CELLCENTERED)"
+     write(1, *) "DATAPACKING=BLOCK"
+     
+     ! We can cheat and use xdual since we already have that
+     
+     do mm=1,ie*je*ke
+        write(1, *) oBlocks(nn)%xdual(1, mm)
+     end do
+
+     do mm=1,ie*je*ke
+        write(1, *) oBlocks(nn)%xdual(2, mm)
+     end do
+     
+     do mm=1,ie*je*ke
+        write(1, *) oBlocks(nn)%xdual(3, mm)
+     end do
+
+     do k=1,ke
+        do j=1,je
+           do i=1,ie
+              write(1, *) w(i, j, k, ivx)
+           end do
+        end do
+     end do
+
+     do k=1,ke
+        do j=1,je
+           do i=1,ie
+              write(1, *) w(i, j, k, ivy)
+           end do
+        end do
+     end do
+
+     do k=1,ke
+        do j=1,je
+           do i=1,ie
+              a2 = gamma(i, j,k) * P(i,j,k)/w(i,j,k,irho)
+              tmp = (w(i,j,k,ivx)**2 + w(i,j,k,ivy)**2 &
+                   +  w(i,j,k,ivz)**2)/a2
+              write(1, *) sqrt(tmp)
+           end do
+        end do
+     end do
+
+     do k=1,ke
+        do j=1,je
+           do i=1,ie
+              write(1, *) real(iblank(i,j,k), realType)
+           end do
+        end do
+     end do
+  end do
+end subroutine test_write
+
+     !         oBlocks(nn)%xDual(2, mm), & 
+     !         oBlocks(nn)%xDual(3, mm)
+     ! end do
+     ! do mm=1,il*jl*kl
+     !    write(1, *) oBlocks(nn)%hexaConn(1, mm), &
+     !         oBlocks(nn)%hexaConn(2, mm), &
+     !         oBlocks(nn)%hexaConn(3, mm), &
+     !         oBlocks(nn)%hexaConn(4, mm), &
+     !         oBlocks(nn)%hexaConn(5, mm), &
+     !         oBlocks(nn)%hexaConn(6, mm), &
+     !         oBlocks(nn)%hexaConn(7, mm), &
+     !         oBlocks(nn)%hexaConn(8, mm)
+     ! end do
+     ! close(1)
 
 
      ! open(unit=1,file='vis.dat',form='formatted',status='unknown')

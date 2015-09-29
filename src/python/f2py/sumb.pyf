@@ -599,6 +599,7 @@ python module libsumb
          logical :: writefarfield
          logical :: viscoussurfacevelocities
          logical :: slicefiletractions
+         logical :: nodaloutput
          integer(kind=inttype) parameter,optional :: precisionsingle=1
          logical optional :: firstwrite=.true.
          integer(kind=inttype) :: fileformatwrite
@@ -1137,7 +1138,6 @@ python module libsumb
             integer(kind=inttype), optional,check(len(dwbar)>=statesize),depend(dwbar) :: statesize=len(dwbar)
             integer(kind=inttype) :: spatialsize
         end subroutine testrevspatial
-
     end interface 
 
 #ifdef USE_COMPLEX
