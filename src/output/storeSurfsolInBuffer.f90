@@ -73,6 +73,7 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
   real(kind=realType), dimension(:,:),   pointer :: dd2Wall
   real(kind=realType), dimension(:, :), allocatable :: tmpBuffer
   real(kind=realType), dimension(:, :, :), pointer :: nodeWeights
+  integer(kind=intType), dimension(:, :), allocatable :: iblankTmp
 
   !
   !      ******************************************************************
@@ -825,20 +826,77 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
   else
 
      ! For the nodal output we have to use the precomputed nodal
-     ! weights to average the values back to the nodes
+     ! weights to average the values back to the nodes. We have to do
+     ! the iblank variables slightly differently since averaging with
+     ! the weights makes no sense for that variable. 
 
-     do j=rangeFaceNode(2,1), rangeFaceNode(2,2)
-        do i=rangeFaceNode(1,1), rangeFaceNode(1,2)
-           nn = nn + 1
-           buffer(nn) = & 
-                nodeWeights(1, i, j) * tmpBuffer(i  , j  ) + &
-                nodeWeights(2, i, j) * tmpBuffer(i+1, j  ) + &
-                nodeWeights(3, i, j) * tmpBuffer(i  , j+1) + &
-                nodeWeights(4, i, j) * tmpBuffer(i+1, j+1) 
-        end do
-     end do
-  end if
+     varName2: select case (solName)
 
-  ! Cleanup the temporary buffer
+        case (cgnsBlank) 
+
+           ! This one is a litle tricker. The procedure is:
+           ! 1. Set all iblanks to 1
+           ! 2. Loop over REAL cells, check if cell iblank = 0, set all nodes around that cell to 0
+           ! 3. Loop over REAL cells, check if cell iblank = -1, set all nodes around that cell to -1
+
+           ! Note that in the loops below we have +1 on the low end
+           ! and -1 on the high end. This is because the cell indices
+           ! include the rind cells (due to requesting nodal output),
+           ! but here we want to loop only over the real cells. 
+  
+           allocate(iblankTmp(rangeFaceNode(1,1):rangeFaceNode(1,2), &
+                              rangeFaceNode(2,1):rangeFaceNode(2,2)))
+           iBlankTmp = 1
+
+           ! Loop over the cells checking for 0:
+           do j=rangeFace(2,1)+1, rangeFace(2,2)-1
+              do i=rangeFace(1,1)+1, rangeFace(1,2)-1
+                 if (iBlank2(i, j) == 0) then 
+                    iBlankTmp(i-1, j-1) = 0
+                    iBlankTmp(i  , j-1) = 0
+                    iBlankTmp(i-1, j  ) = 0
+                    iBlankTmp(i  , j  ) = 0
+                 end if
+              end do
+           end do
+           
+           ! Loop over the cells checking for -1
+           do j=rangeFace(2,1)+1, rangeFace(2,2)-1
+              do i=rangeFace(1,1)+1, rangeFace(1,2)-1
+                 if (iBlank2(i, j) == -1) then 
+                    iBlankTmp(i-1, j-1) = -1
+                    iBlankTmp(i  , j-1) = -1
+                    iBlankTmp(i-1, j  ) = -1
+                    iBlankTmp(i  , j  ) = -1
+                 end if
+              end do
+           end do
+           
+           ! We can now just copy in
+           do j=rangeFaceNode(2,1), rangeFaceNode(2,2)
+              do i=rangeFaceNode(1,1), rangeFaceNode(1,2)
+                 nn = nn + 1
+                 buffer(nn) = real(iBlankTmp(i, j), realType)
+              enddo
+           enddo
+
+           deallocate(iblankTmp)
+
+        case default
+
+           do j=rangeFaceNode(2,1), rangeFaceNode(2,2)
+              do i=rangeFaceNode(1,1), rangeFaceNode(1,2)
+                 nn = nn + 1
+                 buffer(nn) = & 
+                      nodeWeights(1, i, j) * tmpBuffer(i  , j  ) + &
+                      nodeWeights(2, i, j) * tmpBuffer(i+1, j  ) + &
+                      nodeWeights(3, i, j) * tmpBuffer(i  , j+1) + &
+                      nodeWeights(4, i, j) * tmpBuffer(i+1, j+1) 
+              end do
+           end do
+        end select varName2
+     end if
+
+     ! Cleanup the temporary buffer
   deallocate(tmpBuffer)
 end subroutine storeSurfsolInBuffer
