@@ -20,6 +20,7 @@ subroutine wOverset(level, start, end, commPressure, commVarGamma, &
   use communication
   use inputTimeSpectral
   use overset
+  use inputOverset
   implicit none
 
   ! Input variables
@@ -28,10 +29,10 @@ subroutine wOverset(level, start, end, commPressure, commVarGamma, &
   logical, intent(in) :: commLamVis, commEddyVis
 
   ! Working variables
-  integer(kind=intType) :: iVar, nn, i, j,k, l, ii, iFringe
+  integer(kind=intType) :: iVar, nn, i, j, k, l, ii, jj, iFringe
   integer(kind=intType) :: iCell, jCell, kCell, nComm, ierr, sps, gid
   real(kind=realType), dimension(:), pointer :: donorPtr, fringePtr
-  real(kind=realType) :: f(8)
+  real(kind=realType) :: f(8), ff(27), shp(3,3), psi(3)
   real(kind=realType) :: di0, di1, dj0, dj1, dk0, dk1
 
   ! Assume sps=1 for now
@@ -152,44 +153,114 @@ subroutine wOverset(level, start, end, commPressure, commVarGamma, &
         ! Here is where we actually do the overset interpolation. Loop
         ! over the number of fringes on my block
         
-        do iFringe=1, oBlocks(nn)%nFringe
-           ii = ii + 1
-          
-           di1 = oBlocks(nn)%donorFrac(1, iFringe)
-           dj1 = oBlocks(nn)%donorFrac(2, iFringe)
-           dk1 = oBlocks(nn)%donorFrac(3, iFringe)
+        if (oversetInterpolation == linear) then 
+           do iFringe=1, oBlocks(nn)%nFringe
+              ii = ii + 1
+              
+              di1 = oBlocks(nn)%donorFrac(1, iFringe)
+              dj1 = oBlocks(nn)%donorFrac(2, iFringe)
+              dk1 = oBlocks(nn)%donorFrac(3, iFringe)
+              
+              di0 = one - di1
+              dj0 = one - dj1
+              dk0 = one - dk1
 
-           di0 = one - di1
-           dj0 = one - dj1
-           dk0 = one - dk1
+              ! The corresponding linear weights
+              f(1)   = di0*dj0*dk0
+              f(2)   = di1*dj0*dk0
+              f(3)   = di0*dj1*dk0
+              f(4)   = di1*dj1*dk0
+              f(5)   = di0*dj0*dk1
+              f(6)   = di1*dj0*dk1
+              f(7)   = di0*dj1*dk1
+              f(8)   = di1*dj1*dk1
 
-           ! The corresponding linear weights
-           f(1)   = di0*dj0*dk0
-           f(2)   = di1*dj0*dk0
-           f(3)   = di0*dj1*dk0
-           f(4)   = di1*dj1*dk0
-           f(5)   = di0*dj0*dk1
-           f(6)   = di1*dj0*dk1
-           f(7)   = di0*dj1*dk1
-           f(8)   = di1*dj1*dk1
+              ! The +1 is due to the pointer offset              
+              iCell = oBlocks(nn)%fringeIndices(1, iFringe) + 1
+              jCell = oBlocks(nn)%fringeIndices(2, iFringe) + 1
+              kCell = oBlocks(nn)%fringeIndices(3, iFringe) + 1
+              
+              variables(iVar, nn)%arr(iCell, jCell, kCell) = &
+                   f(1)*fringePtr(8*ii-7) + &
+                   f(2)*fringePtr(8*ii-6) + &
+                   f(3)*fringePtr(8*ii-5) + &
+                   f(4)*fringePtr(8*ii-4) + &
+                   f(5)*fringePtr(8*ii-3) + &
+                   f(6)*fringePtr(8*ii-2) + &
+                   f(7)*fringePtr(8*ii-1) + &
+                   f(8)*fringePtr(8*ii  ) 
+           end do
+        else
+           do iFringe=1, oBlocks(nn)%nFringe
+              ii = ii + 1
+              ! We're doing the quadratic version. 
+              psi(1) = oBlocks(nn)%donorFrac(1, iFringe)
+              psi(2) = oBlocks(nn)%donorFrac(2, iFringe)
+              psi(3) = oBlocks(nn)%donorFrac(3, iFringe)
+              
+              ! Precopute the FE shape functions for each direction
+              do j=1,3
+                 shp(1, j) = half*psi(j)*(psi(j) - one)
+                 shp(2, j) = -(psi(j)**2-1)
+                 shp(3, j) = half*psi(j)*(psi(j) + one)
+              end do
+              
+              ! These are the 27 quadratic weights
+              ff(1 )   = shp(1, 1)*shp(1, 2)*shp(1, 3)
+              ff(2 )   = shp(2, 1)*shp(1, 2)*shp(1, 3)
+              ff(3 )   = shp(3, 1)*shp(1, 2)*shp(1, 3)
+              
+              ff(4 )   = shp(1, 1)*shp(2, 2)*shp(1, 3)
+              ff(5 )   = shp(2, 1)*shp(2, 2)*shp(1, 3)
+              ff(6 )   = shp(3, 1)*shp(2, 2)*shp(1, 3)
+              
+              ff(7 )   = shp(1, 1)*shp(3, 2)*shp(1, 3)
+              ff(8 )   = shp(2, 1)*shp(3, 2)*shp(1, 3)
+              ff(9 )   = shp(3, 1)*shp(3, 2)*shp(1, 3)
+              
+              ff(10)   = shp(1, 1)*shp(1, 2)*shp(2, 3)
+              ff(11)   = shp(2, 1)*shp(1, 2)*shp(2, 3)
+              ff(12)   = shp(3, 1)*shp(1, 2)*shp(2, 3)
+              
+              ff(13)   = shp(1, 1)*shp(2, 2)*shp(2, 3)
+              ff(14)   = shp(2, 1)*shp(2, 2)*shp(2, 3)
+              ff(15)   = shp(3, 1)*shp(2, 2)*shp(2, 3)
 
-           iCell = oBlocks(nn)%fringeIndices(1, iFringe)
-           jCell = oBlocks(nn)%fringeIndices(2, iFringe)
-           kCell = oBlocks(nn)%fringeIndices(3, iFringe)
-           
-           ! The +1 is due to the pointer offset
-           variables(iVar, nn)%arr(iCell+1, jCell+1, kCell+1) = &
-                f(1)*fringePtr(8*ii-7) + &
-                f(2)*fringePtr(8*ii-6) + &
-                f(3)*fringePtr(8*ii-5) + &
-                f(4)*fringePtr(8*ii-4) + &
-                f(5)*fringePtr(8*ii-3) + &
-                f(6)*fringePtr(8*ii-2) + &
-                f(7)*fringePtr(8*ii-1) + &
-                f(8)*fringePtr(8*ii  ) 
-        end do
+              ff(16)   = shp(1, 1)*shp(3, 2)*shp(2, 3)
+              ff(17)   = shp(2, 1)*shp(3, 2)*shp(2, 3)
+              ff(18)   = shp(3, 1)*shp(3, 2)*shp(2, 3)
+              
+              ff(19)   = shp(1, 1)*shp(1, 2)*shp(3, 3)
+              ff(20)   = shp(2, 1)*shp(1, 2)*shp(3, 3)
+              ff(21)   = shp(3, 1)*shp(1, 2)*shp(3, 3)
+
+              ff(22)   = shp(1, 1)*shp(2, 2)*shp(3, 3)
+              ff(23)   = shp(2, 1)*shp(2, 2)*shp(3, 3)
+              ff(24)   = shp(3, 1)*shp(2, 2)*shp(3, 3)
+              
+              ff(25)   = shp(1, 1)*shp(3, 2)*shp(3, 3)
+              ff(26)   = shp(2, 1)*shp(3, 2)*shp(3, 3)
+              ff(27)   = shp(3, 1)*shp(3, 2)*shp(3, 3)
+              iCell = oBlocks(nn)%fringeIndices(1, iFringe) + 1
+              jCell = oBlocks(nn)%fringeIndices(2, iFringe) + 1
+              kCell = oBlocks(nn)%fringeIndices(3, iFringe) + 1
+              
+              variables(iVar, nn)%arr(iCell, jCell, kCell) = zero
+              
+              do jj=1, 27
+                 variables(iVar, nn)%arr(iCell, jCell, kCell) = &
+                      variables(iVar, nn)%arr(iCell, jCell, kCell) + &
+                      ff(jj)*fringePtr(27*(ii-1) + jj)
+              end do
+
+              if (isnan(variables(iVar, nn)%arr(iCell, jCell, kCell))) then 
+                 print *,'Nan in transfer:', nn, iCell, jCell, kCell
+                 stop
+              end if
+
+           end do
+        end if
      end do
-
      call vecRestoreArrayF90(oversetFringes, fringePtr, ierr)
      call ECHK(ierr, __FILE__, __LINE__)
      
@@ -197,6 +268,6 @@ subroutine wOverset(level, start, end, commPressure, commVarGamma, &
 
   ! Free up the variables array...doesnt' have any data in it, just pointers
   deallocate(variables)
-
+  
 end subroutine wOverset
  

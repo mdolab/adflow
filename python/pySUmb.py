@@ -3405,6 +3405,10 @@ class SUMB(AeroSolver):
             'nkouterpreconits':[int, 1],
             'nkls':[str, 'cubic'],
             
+            # Overset parameters
+            'overlapfactor':[float, 0.8],
+            'oversetinterpolation':[str, 'linear'],
+
             # Load Balance/partitioning parameters
             'blocksplitting':[bool, True],
             'loadimbalance':[float, 0.1],
@@ -3659,6 +3663,12 @@ class SUMB(AeroSolver):
             'blocksplitting':{'location':'inputparallel.splitblocks'},
             'loadimbalance':{'location':'inputparallel.loadimbalance'},
             'loadbalanceiter':{'location':'inputparallel.loadbalanceiter'},
+
+            # Overset Parameters
+            'overlapfactor':{'location':'inputoverset.overlapfactor'},
+            'oversetinterpolation':{'linear':self.sumb.inputoverset.linear,
+                                    'quadratic':self.sumb.inputoverset.quadratic,
+                                    'location':'inputoverset.oversetinterpolation'},
 
             # Misc Paramters
             'printiterations':{'location':'inputiteration.printiterations'},

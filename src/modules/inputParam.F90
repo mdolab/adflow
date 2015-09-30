@@ -1040,5 +1040,32 @@
        ! useWindAxis : whether to rotate around the wind axis or the body
        !               axis...
        logical:: useWindAxis
-
      end module inputTSStabDeriv
+
+     module inputOverset
+       use constants
+       implicit none
+       save
+!
+!      ******************************************************************
+!      *                                                                *
+!      * Definition of parameters for the overset implementation        *
+!      *                                                                *
+!      ******************************************************************
+!
+       ! Overlapfactor : factor between 0 and 1 used to ensure sufficient overlap
+       !                 with implicit hole cutting. Usually between 0.8 and 0.9
+
+       ! oversetInterpolation: The degree of the overset
+       !                       interpolation. Currently only linear
+       !                       and quadratic are implemented
+
+       real(kind=realType) :: overlapFactor
+
+       integer(kind=intType) :: oversetInterpolation
+       integer(kind=intType), parameter :: linear=1, &
+                                           quadratic =2
+
+
+     end module inputOverset
+

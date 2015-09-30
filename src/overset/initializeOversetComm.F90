@@ -6,20 +6,26 @@ subroutine initializeOversetComm
   use communication
   use overset
   use blockPointers
-  use ADJointPETSc, only : w_like1
   use adjointVars
+  use inputOverset
   implicit none
   ! Working Variables
   integer(kind=intType) :: ii, i, j, nn, ierr
-  integer(kind=intType) :: nFringeProc
+  integer(kind=intType) :: nFringeProc, nDonorsPerCell
   integer(kind=intType), dimension(:), allocatable :: fringesProc
 
   ! First we determine the total number of donors and fringes on this block
   nFringeProc = 0
+  if (oversetInterpolation == linear) then 
+     nDonorsPerCell = 8
+  else
+     nDonorsPerCell = 27
+  end if
+
   do nn=1, nDom
      ! Count up the total number of fringes (times 8) I need. This is
      ! quite inefficient but we'll fix later
-     nFringeProc = nFringeProc + 8*oBlocks(nn)%nFringe
+     nFringeProc = nFringeProc + nDonorsPerCell*oBlocks(nn)%nFringe
   end do
   
   ! Allocate spaces for the fringes indices
@@ -29,7 +35,7 @@ subroutine initializeOversetComm
   ! Copy in the indices each block needs. 
   do nn=1, nDom
      do i=1, oBlocks(nn)%nFringe
-        do j=1, 8
+        do j=1, nDonorsPerCell
            ii = ii + 1
            ! Note that donorInidices are already zero-based and in
            ! SUmb's global petsc ordering.
