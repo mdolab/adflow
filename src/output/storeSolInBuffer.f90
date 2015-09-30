@@ -611,7 +611,7 @@
            
 
          case default
-           call terminate("storeSolInBuffer", &
+           call returnFail("storeSolInBuffer", &
                           "This should not happen")
 
        end select

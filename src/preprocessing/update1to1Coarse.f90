@@ -103,7 +103,7 @@
        ! The subface must be found on the fine grid. Check this.
 
        if(.not. subfaceFound)               &
-         call terminate("update1to1Coarse", &
+         call returnFail("update1to1Coarse", &
                         "Invalid fine grid 1 to 1 subface connectivity")
 
        ! Check the i-direction of the coarse grid subface to see if it

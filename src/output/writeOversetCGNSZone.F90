@@ -178,7 +178,7 @@
 
        allocate(buffer(7,nSend(1)), bufInt(nInterp,nSend(1)), stat=ierr)
        if(ierr /= 0)                             &
-         call terminate("gatherOversetCGNSZone", &
+         call returnFail("gatherOversetCGNSZone", &
                         "Memory allocation failure for buffers")
 
        ! Loop over the local boundaries for the blocks belonging to
@@ -252,7 +252,7 @@
          cgnsDoms(nn)%nOverset = j
          allocate(cgnsDoms(nn)%connOver(j), stat=ierr)
          if(ierr /= 0)                             &
-           call terminate("gatherOversetCGNSZone", &
+           call returnFail("gatherOversetCGNSZone", &
                           "Memory allocation failure for connOver")
 
          ! Fill in the donor zone name and number for each of the
@@ -276,7 +276,7 @@
          allocate(bufferGlobal(      7,nCellsGlobal), &
                   bufIntGlobal(nInterp,nCellsGlobal), stat=ierr)
          if(ierr /= 0)                             &
-           call terminate("gatherOversetCGNSZone", &
+           call returnFail("gatherOversetCGNSZone", &
                           "Memory allocation failure for global buffers")
 
          ! Determine the receive counts and displacements vectors for the
@@ -316,7 +316,7 @@
 
        deallocate(buffer, bufInt, stat=ierr)
        if(ierr /= 0)                             &
-         call terminate("gatherOversetCGNSZone", &
+         call returnFail("gatherOversetCGNSZone", &
                         "Deallocation failure for buffers")
 
        ! Process 0 again requires some extra work.
@@ -334,7 +334,7 @@
                     cgnsDoms(nn)%connOver(j)%interp(nInterp,i), &
                     stat=ierr)
            if(ierr /= 0)                             &
-             call terminate("gatherOversetCGNSZone", &
+             call returnFail("gatherOversetCGNSZone", &
                             "Memory allocation failure for conn. data")
            cgnsDoms(nn)%connOver(j)%npnts = 0
          end do
@@ -363,7 +363,7 @@
 
          deallocate(bufferGlobal, bufIntGlobal, stat=ierr)
          if(ierr /= 0)                             &
-           call terminate("gatherOversetCGNSZone", &
+           call returnFail("gatherOversetCGNSZone", &
                           "Deallocation failure for global buffers")
 
          ! Compute the global number of holes and allocate a buffer.
@@ -371,7 +371,7 @@
          nCellsGlobal = sum(nRecv(2,:))
          allocate(bufferGlobal(3,nCellsGlobal), stat=ierr)
          if(ierr /= 0)                             &
-           call terminate("gatherOversetCGNSZone", &
+           call returnFail("gatherOversetCGNSZone", &
                           "Memory allocation failure for global buffer")
 
          ! Determine the receive counts and displacements vectors for the
@@ -389,7 +389,7 @@
 
        allocate(buffer(3,nSend(2)), stat=ierr)
        if(ierr /= 0)                             &
-         call terminate("gatherOversetCGNSZone", &
+         call returnFail("gatherOversetCGNSZone", &
                         "Memory allocation failure for hole buffer")
 
        ! Loop over my local blocks for this CGNS zone again and extract
@@ -434,7 +434,7 @@
 
        deallocate(buffer, stat=ierr)
        if(ierr /= 0)                             &
-         call terminate("gatherOversetCGNSZone", &
+         call returnFail("gatherOversetCGNSZone", &
                         "Deallocation failure for hole buffer")
 
        ! One last time process 0 does more work.
@@ -448,7 +448,7 @@
          i = min(nCellsGlobal, 1_intType)
          allocate(cgnsDoms(nn)%hole(i), stat=ierr)
          if(ierr /= 0)                             &
-           call terminate("gatherOversetCGNSZone", &
+           call returnFail("gatherOversetCGNSZone", &
                           "Memory allocation failure for hole set")
 
          createdHoleSet: if (nCellsGlobal > 0) then
@@ -460,7 +460,7 @@
            allocate(cgnsDoms(nn)%hole(1)%indices(3,nCellsGlobal), &
                     stat=ierr)
            if(ierr /= 0)                             &
-             call terminate("gatherOversetCGNSZone", &
+             call returnFail("gatherOversetCGNSZone", &
                             "Memory allocation failure for hole indices")
 
            cgnsDoms(nn)%hole(1)%indices = bufferGlobal
@@ -471,7 +471,7 @@
 
          deallocate(bufferGlobal, stat=ierr)
          if(ierr /= 0)                             &
-           call terminate("gatherOversetCGNSZone", &
+           call returnFail("gatherOversetCGNSZone", &
                           "Deallocation failure for global buffer")
 
        end if rootProc4
@@ -522,7 +522,7 @@
 !
 #ifdef USE_NO_CGNS
 
-       call terminate("writeCGNSOversetConn", &
+       call returnFail("writeCGNSOversetConn", &
                       "Routine should not be called if no cgns support &
                       &is selected.")
 
@@ -544,7 +544,7 @@
          ii = cgnsDoms(nn)%connOver(mm)%npnts
          allocate(myData(3,ii), donorData(3,ii), stat=ierr)
          if(ierr /= 0)                            &
-           call terminate("writeCGNSOversetConn", &
+           call returnFail("writeCGNSOversetConn", &
                           "Memory allocation failure for overset data")
 
          myData    = cgnsDoms(nn)%connOver(mm)%ibndry
@@ -560,14 +560,14 @@
                               Structured, CellListDonor, Integer,    &
                               ii, donorData, jj, ierr)
          if(ierr /= CG_OK)                       &
-           call terminate("writeCGNSOversetConn", &
+           call returnFail("writeCGNSOversetConn", &
                           "Something wrong when calling cg_conn_write_f")
 
          ! Release the memory of the temporary data arrays.
 
          deallocate(myData, donorData, stat=ierr)
          if(ierr /= 0)                            &
-           call terminate("writeCGNSOversetConn", &
+           call returnFail("writeCGNSOversetConn", &
                           "Deallocation error for temp overset data")
 
          ! Goto this connectivity's node in the file and write the
@@ -577,7 +577,7 @@
                         cgnsZone, "ZoneGridConnectivity_t", 1,  &
                         "GridConnectivity_t", jj, "end")
          if(ierr /= CG_OK)                       &
-           call terminate("writeCGNSOversetConn", &
+           call returnFail("writeCGNSOversetConn", &
                           "Something wrong when calling cg_goto_f")
 
          dimVector(1) = ubound(cgnsDoms(nn)%connOver(mm)%interp, 1)
@@ -587,7 +587,7 @@
                                2, dimVector,                      &
                                cgnsDoms(nn)%connOver(mm)%interp, ierr)
          if(ierr /= CG_OK)                     &
-           call terminate("writeCGNSOversetConn", &
+           call returnFail("writeCGNSOversetConn", &
                          "Something wrong when calling cg_array_write_f")
 
        end do loopOverset
@@ -603,7 +603,7 @@
          ii = cgnsDoms(nn)%hole(mm)%npnts
          allocate(myData(3,ii), stat=ierr)
          if(ierr /= 0)                            &
-           call terminate("writeCGNSOversetConn", &
+           call returnFail("writeCGNSOversetConn", &
                           "Memory allocation failure for hole data")
 
          myData = cgnsDoms(nn)%hole(mm)%indices
@@ -615,12 +615,12 @@
                               CellCenter, PointList, 1,        &
                               ii, myData, jj, ierr)
          if(ierr /= CG_OK)                       &
-           call terminate("writeCGNSOversetConn", &
+           call returnFail("writeCGNSOversetConn", &
                           "Something wrong when calling cg_hole_write_f")
 
          deallocate(myData, stat=ierr)
          if(ierr /= 0)                            &
-           call terminate("writeCGNSOversetConn", &
+           call returnFail("writeCGNSOversetConn", &
                           "Deallocation error for temp hole data")
 
        end do loopHoles
@@ -671,7 +671,7 @@
 !
 #ifdef USE_NO_CGNS
 
-       call terminate("writeCGNSNodalIblank", &
+       call returnFail("writeCGNSNodalIblank", &
                       "Routine should not be called if no cgns support &
                       &is selected.")
 
@@ -688,7 +688,7 @@
                        cgnsDoms(nn)%jl, &
                        cgnsDoms(nn)%kl), stat=ierr)
        if(ierr /= 0)                            &
-         call terminate("writeCGNSNodalIblank", &
+         call returnFail("writeCGNSNodalIblank", &
                         "Memory allocation failure for iblank")
 
        iblank = 1
@@ -718,20 +718,20 @@
        call cg_sol_write_f(cgnsInd, cgnsBase, cgnsZone, &
                            "Nodal Blanks", Vertex, cgnsSol, ierr)
        if(ierr /= CG_OK)                       &
-         call terminate("writeCGNSNodalIblank", &
+         call returnFail("writeCGNSNodalIblank", &
                         "Something wrong when calling cg_sol_write_f")
 
        call cg_field_write_f(cgnsInd, cgnsBase, cgnsZone, cgnsSol, &
                              Integer, cgnsBlank, iblank, ii, ierr)
        if(ierr /= CG_OK)                       &
-         call terminate("writeCGNSNodalIblank", &
+         call returnFail("writeCGNSNodalIblank", &
                         "Something wrong when calling cg_field_write_f")
 
        ! Deallocate the iblank array.
 
        deallocate(iblank, stat=ierr)
        if(ierr /= 0)                            &
-         call terminate("writeCGNSNodalIblank", &
+         call returnFail("writeCGNSNodalIblank", &
                         "Deallocation failure for iblank")
 
 #endif

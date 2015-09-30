@@ -115,7 +115,7 @@
                 commPattern%rotMatHalo(nHalo,3,3), &
                 stat=ierr)
        if(ierr /= 0)                          &
-         call terminate("mixingHaloInterpol", &
+         call returnFail("mixingHaloInterpol", &
                         "Memory allocation failure for halo data.")
 
        ! Repeat the loop over the subfaces of the sliding mesh interface
@@ -173,7 +173,7 @@
 
              allocate(xFace(iBeg-1:iEnd,jBeg-1:jEnd,3), stat=ierr)
              if(ierr /= 0)                          &
-               call terminate("mixingHaloInterpol", &
+               call returnFail("mixingHaloInterpol", &
                               "Memory allocation failure for xFace.")
 
              call cylCoorNodesOnBlockFace(xFace,  iBeg-1, iEnd,  &
@@ -393,7 +393,7 @@
 
              deallocate(xFace, stat=ierr)
              if(ierr /= 0)                          &
-               call terminate("mixingHaloInterpol", &
+               call returnFail("mixingHaloInterpol", &
                               "Deallocation failure for xFace.")
 
            endif testInterface

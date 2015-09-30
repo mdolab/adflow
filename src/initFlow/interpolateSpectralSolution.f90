@@ -153,7 +153,7 @@
          do nn=1,nDom
            deallocate(IOVar(nn,sps)%w, stat=ierr)
            if(ierr /= 0) &
-             call terminate("interpolateSpectralSolution", &
+             call returnFail("interpolateSpectralSolution", &
                             "Deallocation failure for w.")
          enddo
        enddo

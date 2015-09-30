@@ -221,7 +221,7 @@
                                          &variable, ", trim(keyword), &
                                          ", specified"
              if(myID == 0) &
-               call terminate("volumeVariables", errorMessage)
+               call returnFail("volumeVariables", errorMessage)
              call mpi_barrier(SUmb_comm_world, pos)
 
          end select

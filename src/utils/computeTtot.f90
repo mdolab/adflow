@@ -66,7 +66,7 @@
            ! constant cp is not valid anymore and a more complicated
            ! procedure must be followed.
 
-           call terminate("computeTtot", &
+           call returnFail("computeTtot", &
                           "Variable cp formulation not implemented yet")
 
        end select

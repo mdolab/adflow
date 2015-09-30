@@ -113,7 +113,7 @@
 
        allocate(bufHeader(sizeHeader), stat=ierr)
        if(ierr /= 0)                           &
-         call terminate("writePlot3DGridFile", &
+         call returnFail("writePlot3DGridFile", &
                         "Memory allocation failure for bufHeader")
 
        ! Write the header to the character buffer. First the number of
@@ -202,7 +202,7 @@
            write(errorMessage,*) "File ", trim(gridFileNames(nn)), &
                                  " could not be opened for writing"
            if(myID == 0) &
-             call terminate("writePlot3DGridFile", errorMessage)
+             call returnFail("writePlot3DGridFile", errorMessage)
 
            call mpi_barrier(SUmb_comm_world, ierr)
          endif
@@ -244,7 +244,7 @@
 
        deallocate(bufHeader, IOVar, stat=ierr)
        if(ierr /= 0)                           &
-         call terminate("writePlot3DGridFile", &
+         call returnFail("writePlot3DGridFile", &
                         "Deallocation failure for bufHeader and IOVar")
 
        ! Write a message that the grid file(s) have been written.

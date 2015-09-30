@@ -298,7 +298,7 @@
        nStack = 100
        allocate(stack(nStack), stat=ierr)
        if(ierr /= 0)                             &
-         call terminate("qsortSortSubRangeType", &
+         call returnFail("qsortSortSubRangeType", &
                         "Memory allocation failure for stack")
 
        ! Initialize the variables that control the sorting.
@@ -416,7 +416,7 @@
 
              allocate(tmpStack(nStack), stat=ierr)
              if(ierr /= 0)                             &
-               call terminate("qsortSortSubRangeType", &
+               call returnFail("qsortSortSubRangeType", &
                               "Memory allocation error for tmpStack")
              tmpStack = stack
 
@@ -425,7 +425,7 @@
 
              deallocate(stack, stat=ierr)
              if(ierr /= 0)                             &
-               call terminate("qsortSortSubRangeType", &
+               call returnFail("qsortSortSubRangeType", &
                               "Deallocation error for stack")
              ii = nStack
              nStack = nStack + 100
@@ -435,7 +435,7 @@
 
              allocate(stack(nStack), stat=ierr)
              if(ierr /= 0)                             &
-               call terminate("qsortSortSubRangeType", &
+               call returnFail("qsortSortSubRangeType", &
                               "Memory reallocation error for stack")
              stack(1:ii) = tmpStack(1:ii)
 
@@ -443,7 +443,7 @@
 
              deallocate(tmpStack, stat=ierr)
              if(ierr /= 0)                             &
-               call terminate("qsortSortSubRangeType", &
+               call returnFail("qsortSortSubRangeType", &
                               "Deallocation error for tmpStack")
            endif
 
@@ -464,7 +464,7 @@
 
        deallocate(stack, stat=ierr)
        if(ierr /= 0)                             &
-         call terminate("qsortSortSubRangeType", &
+         call returnFail("qsortSortSubRangeType", &
                         "Deallocation error for stack")
 
        ! Check in debug mode whether the array is really sorted.
@@ -472,7 +472,7 @@
        if( debug ) then
          do i=1,(nn-1)
            if(arr(i+1) < arr(i))                     &
-             call terminate("qsortSortSubRangeType", &
+             call returnFail("qsortSortSubRangeType", &
                             "Array is not sorted correctly")
          enddo
        endif

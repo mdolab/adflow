@@ -134,7 +134,7 @@
          mm = bsearchIntegers(sectionID(mm), sorted, nSections)
 
          if( debug ) then
-           if(mm == 0) call terminate("determineSections", &
+           if(mm == 0) call returnFail("determineSections", &
                                       "Entry not found in sorted.")
          endif
 
@@ -153,7 +153,7 @@
 
        allocate(sections(nSections), stat=ierr)
        if(ierr /= 0)                         &
-         call terminate("determineSections", &
+         call returnFail("determineSections", &
                         "Memory allocation failure for sections.")
 
        ! Initialize the number of slices for each of the sections to 1,
@@ -178,7 +178,7 @@
 
          ii = bsearchIntegers(sectionID(nn), sorted, nSections)
          if( debug ) then
-           if(ii == 0) call terminate("determineSections", &
+           if(ii == 0) call returnFail("determineSections", &
                                       "Entry not found in sorted.")
          endif
 
@@ -296,7 +296,7 @@
 
          if(dAngle >= threshold) then
            if(myID == 0)                         &
-             call terminate("determineSections", &
+             call returnFail("determineSections", &
                             "Periodic angle not a integer divide of &
                             &360 degrees")
            call mpi_barrier(SUmb_comm_world, ierr)
@@ -373,7 +373,7 @@
          if((.not. sections(mm)%rotating) .and. &
             (.not. sections(nn)%rotating) ) then
            if(myID == 0)                         &
-             call terminate("determineSections", &
+             call returnFail("determineSections", &
                             "Encountered sliding interface between &
                             &two non-rotating sections")
            call mpi_barrier(SUmb_comm_world, ierr)

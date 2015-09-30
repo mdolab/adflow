@@ -81,6 +81,6 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       call terminate("blEddyViscosity", "Not implemented yet")
+       call returnFail("blEddyViscosity", "Not implemented yet")
 
        end subroutine blEddyViscosity

@@ -65,7 +65,7 @@
                   flowDoms(nn,level,1)%porJ(2:il,1:jl,2:kl), &
                   flowDoms(nn,level,1)%porK(2:il,2:jl,1:kl), stat=ierr)
          if(ierr /= 0)                     &
-           call terminate("setPorosities", &
+           call returnFail("setPorosities", &
                           "Memory allocation failure for porosities")
 
          ! Set the pointers for this block to make the source

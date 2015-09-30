@@ -32,7 +32,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       call terminate("initCurveFitDataKwMod", &
+       call returnFail("initCurveFitDataKwMod", &
                       "Not implemented yet")
 
        end subroutine initCurveFitDataKwMod

@@ -56,7 +56,7 @@
            mult = 0.0254_realType; trans = zero
 
          case default
-           call terminate("siVelocity", &
+           call returnFail("siVelocity", &
                           "No idea how to convert this length to &
                            &SI units")
 
@@ -70,7 +70,7 @@
            mult = mult
 
          case default
-           call terminate("siVelocity", &
+           call returnFail("siVelocity", &
                           "No idea how to convert this time to &
                            &SI units")
 

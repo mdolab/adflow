@@ -19,7 +19,7 @@
 !      ******************************************************************
 !
 #ifdef USE_NO_CGNS
-       call terminate("writeCGNSGridFile", &
+       call returnFail("writeCGNSGridFile", &
                       "Routine should not be called if no cgns support &
                       &is selected.")
 #else
@@ -62,7 +62,7 @@
        allocate(fileIDs(nGridsToWrite), cgnsBases(nGridsToWrite), &
                 stat=ierr)
        if(ierr /= 0)                         &
-         call terminate("writeCGNSGridFile", &
+         call returnFail("writeCGNSGridFile", &
                         "Memory allocation failure for fileIDs and &
                         &cgnsBases")
 
@@ -106,7 +106,7 @@
            do nn=1,nGridsToWrite
              call cg_close_f(fileIDs(nn), ierr)
              if(ierr /= CG_OK)                    &
-               call terminate("writeCGNSGridFile", &
+               call returnFail("writeCGNSGridFile", &
                               "Something wrong when calling cg_close_f")
            enddo
          endif
@@ -116,7 +116,7 @@
 
          deallocate(fileIDs, cgnsBases, stat=ierr)
          if(ierr /= 0)                         &
-           call terminate("writeCGNSGridFile", &
+           call returnFail("writeCGNSGridFile", &
                           "Deallocation failure for fileIDs and &
                           &cgnsBases")
 
@@ -126,7 +126,7 @@
 
        deallocate(IOVar, stat=ierr)
        if(ierr /= 0)                         &
-         call terminate("writeCGNSGridFile", &
+         call returnFail("writeCGNSGridFile", &
                         "Deallocation failure for IOVar")
 
        ! Wait until all processors (especially processor 0) reach

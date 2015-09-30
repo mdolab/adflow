@@ -128,7 +128,7 @@
                   distrSliding(nn)%procs2(tmp(nn,2)), stat=ierr)
 
          if(ierr /= 0)                   &
-           call terminate("procSliding", &
+           call returnFail("procSliding", &
                           "Memory allocation failure for procs1 &
                           &and procs2")
        enddo
@@ -138,7 +138,7 @@
        i = max(i,j)
        allocate(bufferRecv(i), stat=ierr)
        if(ierr /= 0)                   &
-         call terminate("procSliding", &
+         call returnFail("procSliding", &
                         "Memory allocation failure for bufferRecv")
 
        ! Loop over the two sides of a sliding mesh interface.
@@ -220,7 +220,7 @@
 
        deallocate(bufferRecv, stat=ierr)
        if(ierr /= 0)                   &
-         call terminate("procSliding", &
+         call returnFail("procSliding", &
                         "Deallocation failure for bufferRecv")
 
        end subroutine procSliding

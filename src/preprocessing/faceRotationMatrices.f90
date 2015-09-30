@@ -100,7 +100,7 @@
                       flowDoms(nn,1,sps)%rotMatrixK(2:il,2:jl,kl,3,3), &
                       stat=ierr)
              if(ierr /= 0)                            &
-               call terminate("faceRotationMatrices", &
+               call returnFail("faceRotationMatrices", &
                               "Memory allocation failure for the &
                               &rotation matrices.")
            endif

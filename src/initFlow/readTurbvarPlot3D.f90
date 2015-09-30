@@ -62,7 +62,7 @@
 
          case default
            if(myID == 0)                         &
-             call terminate("readTurbvarPlot3D", &
+             call returnFail("readTurbvarPlot3D", &
                             "Restart not implemented for this &
                             &turbulence model.")
            call mpi_barrier(SUmb_comm_world, ierr)

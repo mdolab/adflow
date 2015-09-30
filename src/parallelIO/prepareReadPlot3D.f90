@@ -142,7 +142,7 @@
        allocate(P3D_procRecv(P3D_nProcRecv), &
                 P3D_recvSize(0:P3D_nProcRecv), stat=ierr)
        if(ierr /= 0)                         &
-         call terminate("prepareReadPlot3D", &
+         call returnFail("prepareReadPlot3D", &
                         "Memory allocation failure for P3D_procRecv &
                         &and P3D_recvSize")
 
@@ -172,7 +172,7 @@
        ii = P3D_sendSize(P3D_nProcSend)
        allocate(sendBuf(5,ii), stat=ierr)
        if(ierr /= 0)                         &
-         call terminate("prepareReadPlot3D", &
+         call returnFail("prepareReadPlot3D", &
                         "Memory allocation failure for sendBuf")
 
        ! The routine which fill the actual send buffer.
@@ -214,7 +214,7 @@
        ii = P3D_recvSize(P3D_nProcRecv)
        allocate(recvBuf(5,ii), stat=ierr)
        if(ierr /= 0)                         &
-         call terminate("prepareReadPlot3D", &
+         call returnFail("prepareReadPlot3D", &
                         "Memory allocation failure for recvBuf")
 
        ! Post the receives.
@@ -273,7 +273,7 @@
 
        deallocate(sendBuf, stat=ierr)
        if(ierr /= 0)                         &
-         call terminate("prepareReadPlot3D", &
+         call returnFail("prepareReadPlot3D", &
                         "Deallocation failure for sendBuf")
 
        ! Set the values of nItemsLocal and nItemsNonLocal. Also set
@@ -294,7 +294,7 @@
                 P3D_commPart%posLocal(ii), &
                 P3D_commPart%indices(ii,3), stat=ierr)
        if(ierr /= 0)                         &
-         call terminate("prepareReadPlot3D", &
+         call returnFail("prepareReadPlot3D", &
                         "Memory allocation failure for blockID, etc.")
 
        ! Copy the data from the receive buffer into P3D_commPart.
@@ -314,7 +314,7 @@
 
        deallocate(recvBuf, stat=ierr)
        if(ierr /= 0)                         &
-         call terminate("prepareReadPlot3D", &
+         call returnFail("prepareReadPlot3D", &
                         "Deallocation failure for recvBuf")
 
        ! Correct P3D_sendSize and P3D_recvSize such that it corresponds

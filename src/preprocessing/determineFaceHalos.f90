@@ -170,7 +170,7 @@
 
                  if( debug ) then
                    if(cellIndex(nn)%entryList(i,j,k) /= 0) &
-                     call terminate("determineFaceHalos",  &
+                     call returnFail("determineFaceHalos",  &
                                     "boundary cell halo already stored")
                  endif
 
@@ -239,7 +239,7 @@
                                                        nPeriodicGlobal)
                if( debug ) then
                  if(indexPeriodic == 0)                 &
-                   call terminate("determineFaceHalos", &
+                   call returnFail("determineFaceHalos", &
                                   "Entry not found in periodicGlobal")
                endif
              endif
@@ -355,7 +355,7 @@
                  if(nodeHalo1st(ii)%nPeriodicSubfaces > 0) then
                    deallocate(nodeHalo1st(ii)%periodicSubfaces, stat=ierr)
                    if(ierr /= 0)                              &
-                     call terminate("determineFaceHalos",     &
+                     call returnFail("determineFaceHalos",     &
                                     "Deallocation failure for &
                                     &periodicSubfaces")
                    nullify(nodeHalo1st(ii)%periodicSubfaces)
@@ -369,7 +369,7 @@
                    allocate(nodeHalo1st(ii)%periodicSubfaces(1), &
                             stat=ierr)
                    if(ierr /= 0)                                   &
-                     call terminate("determineFaceHalos",          &
+                     call returnFail("determineFaceHalos",          &
                                     "Memory allocation failure for &
                                     &periodicSubfaces")
                    nodeHalo1st(ii)%periodicSubfaces(1) = indexPeriodic
@@ -433,7 +433,7 @@
 
                  if( debug ) then
                    if(cellIndex(nn)%entryList(i,j,k) /= 0) &
-                     call terminate("determineFaceHalos",  &
+                     call returnFail("determineFaceHalos",  &
                                     "internal cell halo already stored")
                  endif
 
@@ -490,7 +490,7 @@
                    allocate(cellHalo1st(ii)%periodicSubfaces(1), &
                             stat=ierr)
                    if(ierr /= 0)                                   &
-                     call terminate("determineFaceHalos",          &
+                     call returnFail("determineFaceHalos",          &
                                     "Memory allocation failure for &
                                     &periodicSubfaces")
                    cellHalo1st(ii)%periodicSubfaces(1) = indexPeriodic

@@ -64,7 +64,7 @@
 
        allocate(sendBufInt(6, nHaloBndryAdd + 1), stat=ierr)
        if(ierr /= 0)                               &
-         call terminate("buildCoarseBoundaryList", &
+         call returnFail("buildCoarseBoundaryList", &
                         "Memory allocation failure for send buffer")
  
        ! Loop over the receiving processors and lists for the 1st layer
@@ -158,7 +158,7 @@
        ii = commPatternCell_1st(level)%nProcSend
        allocate(nRecv(ii), stat=ierr)
        if(ierr /= 0)                               &
-         call terminate("buildCoarseBoundaryList", &
+         call returnFail("buildCoarseBoundaryList", &
                         "Memory allocation failure for nrecv")
 
        ! Now block and probe for messages from all the processors I
@@ -189,7 +189,7 @@
        ii = max(maxval(nRecv), 1_intType)
        allocate(recvBufInt(6,ii), stat=ierr)
        if(ierr /= 0)                               &
-         call terminate("buildCoarseBoundaryList", &
+         call returnFail("buildCoarseBoundaryList", &
                         "Memory allocation failure for recv buffer")
 
        ! Add the total cells being received to the total number of
@@ -206,7 +206,7 @@
  
        allocate(oversetHalo(nHaloOver), stat=ierr)
        if(ierr /= 0)                              &
-        call terminate("buildCoarseBoundaryList", &
+        call returnFail("buildCoarseBoundaryList", &
                        "Memory allocation failure for oversetHalo")
 
        ! Initialize the index for building the list to 0.
@@ -283,7 +283,7 @@
 
              allocate(oversetHalo(ihalo)%interp(3), stat=ierr)
              if(ierr /= 0)                              &
-              call terminate("buildCoarseBoundaryList", &
+              call returnFail("buildCoarseBoundaryList", &
                              "Memory allocation failure for interp")
 
              xc = sum(flowDoms(d1,level,sps)%x(i1-1:i1,j1-1:j1,k1-1:k1,1))
@@ -357,7 +357,7 @@
 
            allocate(oversetHalo(ihalo)%interp(3), stat=ierr)
            if(ierr /= 0)                              &
-            call terminate("buildCoarseBoundaryList", &
+            call returnFail("buildCoarseBoundaryList", &
                            "Memory allocation failure for interp")
 
            xc = sum(flowDoms(d1,level,sps)%x(i1-1:i1,j1-1:j1,k1-1:k1,1))
@@ -410,7 +410,7 @@
 
            allocate(oversetHalo(ihalo)%interp(3), stat=ierr)
            if(ierr /= 0)                              &
-            call terminate("buildCoarseBoundaryList", &
+            call returnFail("buildCoarseBoundaryList", &
                            "Memory allocation failure for interp")
 
            ! Compute 8 times the cell centroid using the external
@@ -455,7 +455,7 @@
          deallocate(flowDoms(nn,level,sps)%ibndry,  &
                     blockBndry(nn)%nearestBndry, stat=ierr)
          if(ierr /= 0)                              &
-          call terminate("buildCoarseBoundaryList", &
+          call returnFail("buildCoarseBoundaryList", &
                       "Deallocation failure for ibndry & nearestBndry")
 
          ! Calculate the new total number of boundary cells for this
@@ -474,7 +474,7 @@
        do i=ihalo+1,nHaloOver
          allocate(oversetHalo(i)%interp(3), stat=ierr)
          if(ierr /= 0)                               &
-           call terminate("buildCoarseBoundaryList", &
+           call returnFail("buildCoarseBoundaryList", &
                           "Memory allocation failure for interp")
        end do
 
@@ -491,7 +491,7 @@
 
        deallocate(sendBufInt, recvBufInt, nrecv, stat=ierr)
        if(ierr /= 0)                               &
-         call terminate("buildCoarseBoundaryList", &
+         call returnFail("buildCoarseBoundaryList", &
                         "Deallocation failure for buffers")
 
        end subroutine buildCoarseBoundaryList

@@ -82,7 +82,7 @@ subroutine releaseMemoryPart1
              flowDoms(nn,1,sps)%radJ,  flowDoms(nn,1,sps)%radK,  &
              stat=ierr)
         if(ierr /= 0)                          &
-             call terminate("releaseMemoryPart1", &
+             call returnFail("releaseMemoryPart1", &
              "Deallocation error for dw, fw, dwALE, fwALE, dtl and &
              &spectral radii.")
 
@@ -107,7 +107,7 @@ subroutine releaseMemoryPart1
            deallocate(flowDoms(nn,1,sps)%wn, flowDoms(nn,1,sps)%pn, &
                 stat=ierr)
            if(ierr /= 0)                          &
-                call terminate("releaseMemoryPart1", &
+                call returnFail("releaseMemoryPart1", &
                 "Deallocation error for wn and pn")
 
            nullify(flowDoms(nn,1,sps)%wn)
@@ -123,7 +123,7 @@ subroutine releaseMemoryPart1
 
            deallocate(flowDoms(nn,1,sps)%dwOldRK, stat=ierr)
            if(ierr /= 0)                          &
-                call terminate("releaseMemoryPart1", &
+                call returnFail("releaseMemoryPart1", &
                 "Deallocation error for dwOldRK,")
 
            nullify(flowDoms(nn,1,sps)%dwOldRK)
@@ -386,7 +386,7 @@ subroutine releaseMemoryPart2
   enddo
   deallocate(flowDoms, stat=ierr)
   if(ierr /= 0)                          &
-       call terminate("releaseMemoryPart2", &
+       call returnFail("releaseMemoryPart2", &
        "Deallocation failure for flowDoms")
 
   ! Some more memory should be deallocated if this code is to
@@ -485,7 +485,7 @@ subroutine deallocateBlock(nn, level, sps)
   deallocationFailure = .false.
 
   ! Set the pointer for viscSubface and deallocate the memory
-  ! stored in there. Initialize ierr to 0, such that the terminate
+  ! stored in there. Initialize ierr to 0, such that the returnFail
   ! routine is only called at the end if a memory deallocation
   ! failure occurs.
   ierr = 0
@@ -1174,7 +1174,7 @@ subroutine deallocateBlock(nn, level, sps)
   ! Check for errors in the deallocation.
 
   if( deallocationFailure ) &
-       call terminate("deallocateBlock", &
+       call returnFail("deallocateBlock", &
        "Something went wrong when deallocating memory")
 
   ! Nullify the pointers of this block.

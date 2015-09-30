@@ -62,7 +62,7 @@
 !
 #ifdef USE_NO_CGNS
 
-       call terminate("countConnectivities", &
+       call returnFail("countConnectivities", &
                       "Routine should not be called if no cgns support &
                       &is selected.")
 
@@ -72,7 +72,7 @@
 
        call cg_n1to1_f(cgnsInd, cgnsBase, nZone, i, ierr)
        if(ierr /= CG_OK)                      &
-         call terminate("countConnectivities", &
+         call returnFail("countConnectivities", &
                         "Something wrong when calling cg_n1to1_f")
 
        n1to1 = i
@@ -82,7 +82,7 @@
 
        call cg_nconns_f(cgnsInd, cgnsBase, nZone, ngeneral, ierr)
        if(ierr /= CG_OK)                      &
-         call terminate("countConnectivities", &
+         call returnFail("countConnectivities", &
                         "Something wrong when calling cg_nconns_f")
 
        ! Allocate the memory for connIDNonMatch and myRangeNonMatch. Note
@@ -92,7 +92,7 @@
        allocate(connIDNonMatch(ngeneral), &
                 myRangeNonMatch(3,2,ngeneral),stat=ierr)
        if(ierr /= CG_OK)                      &
-         call terminate("countConnectivities", &
+         call returnFail("countConnectivities", &
                         "Memory allocation failure for connIDNonMatch &
                         &and myRangeNonMatch")
 
@@ -112,7 +112,7 @@
                              donorName, donorZoneType, donorPtsetType, &
                              donorDatatype, ndataDonor, ierr)
          if(ierr /= CG_OK)                      &
-           call terminate("countConnectivities", &
+           call returnFail("countConnectivities", &
                           "Something wrong when calling cg_conn_info_f")
 
          ! Check if this is a supported structured connectivity.
@@ -135,7 +135,7 @@
                 write(errorMessage,101) trim(cgnsDoms(nZone)%zoneName), &
                                         trim(connectName)
                 if(myID == 0) &
-                  call terminate("countConnectivities", errorMessage)
+                  call returnFail("countConnectivities", errorMessage)
                 call mpi_barrier(SUmb_comm_world, ierr)
 
               endif
@@ -159,7 +159,7 @@
 
                 allocate(donorData(3,ndataDonor), stat=ierr)
                 if(ierr /= 0)                           &
-                  call terminate("countConnectivities", &
+                  call returnFail("countConnectivities", &
                                  "Memory allocation failure for &
                                  &donorData")
 
@@ -167,13 +167,13 @@
                                     myRangeNonMatch(1,1,nNonMatch), &
                                     Integer, donorData, ierr)
                 if(ierr /= CG_OK)                      &
-                  call terminate("countConnectivities", &
+                  call returnFail("countConnectivities", &
                                  "Something wrong when calling &
                                  &cg_conn_read_f")
 
                 deallocate(donorData, stat=ierr)
                 if(ierr /= 0)                           &
-                  call terminate("countConnectivities", &
+                  call returnFail("countConnectivities", &
                                  "Deallocation failure for donorData")
               else
 
@@ -182,7 +182,7 @@
                 write(errorMessage,102) trim(cgnsDoms(nZone)%zoneName), &
                                         trim(connectName)
                 if(myID == 0) &
-                  call terminate("countConnectivities", errorMessage)
+                  call returnFail("countConnectivities", errorMessage)
                 call mpi_barrier(SUmb_comm_world, ierr)
 
               endif
@@ -205,7 +205,7 @@
                 write(errorMessage,103) trim(cgnsDoms(nZone)%zoneName), &
                                         trim(connectName)
                 if(myID == 0) &
-                  call terminate("countConnectivities", errorMessage)
+                  call returnFail("countConnectivities", errorMessage)
                 call mpi_barrier(SUmb_comm_world, ierr)
 
               endif
@@ -214,7 +214,7 @@
 
             case default
 
-              call terminate("countConnectivities", &
+              call returnFail("countConnectivities", &
                              "Unsupportted general connectivity found")
 
          end select
@@ -231,7 +231,7 @@
        allocate(cgnsDoms(nZone)%conn1to1(n1to1), &
                 cgnsDoms(nZone)%connOver(nOverset), stat=ierr)
        if(ierr /= 0)                           &
-         call terminate("countConnectivities", &
+         call returnFail("countConnectivities", &
                         "Memory allocation failure for conn1to1 and &
                         &connOver")
 !
@@ -255,7 +255,7 @@
        allocate(subfaceNonMatch(nNonMatch), &
                 multSubfaces(nNonMatch), stat=ierr)
        if(ierr /= 0)                           &
-         call terminate("countConnectivities", &
+         call returnFail("countConnectivities", &
                         "Memory allocation failure for subfaceNonMatch")
 
        do i=1,nNonMatch
@@ -278,7 +278,7 @@
 
        deallocate(connIDNonMatch, myRangeNonMatch, stat=ierr)
        if(ierr /= 0)                           &
-         call terminate("countConnectivities", &
+         call returnFail("countConnectivities", &
                         "Deallocation failure for connIDNonMatch and &
                         &myRangeNonMatch")
 
@@ -310,7 +310,7 @@
        nNonMatch = nn
        allocate(cgnsDoms(nZone)%connNonMatchAbutting(nn), stat=ierr)
        if(ierr /= 0)                           &
-         call terminate("countConnectivities", &
+         call returnFail("countConnectivities", &
                         "Memory allocation failure for &
                         &connNonMatchAbutting")
 
@@ -334,7 +334,7 @@
                   connNonMatch(i)%donorBlocks(mm),  &
                   connNonMatch(i)%donorFaceIDs(mm), stat=ierr)
          if(ierr /= 0)                           &
-           call terminate("countConnectivities", &
+           call returnFail("countConnectivities", &
                           "Memory allocation failure for connectNames, &
                           &donorNames, donorBlocks and donorFaceIDs.")
 
@@ -362,7 +362,7 @@
 
        deallocate(subfaceNonMatch, stat=ierr)
        if(ierr /= 0)                           &
-         call terminate("countConnectivities", &
+         call returnFail("countConnectivities", &
                         "Deallocation failure for subfaceNonMatch")
 !
 !      ******************************************************************

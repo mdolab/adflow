@@ -211,9 +211,9 @@ subroutine gridVelocitiesFineLevelPart1_block(useOldCoor, t, sps)
         velzGrid0 = (aInf*(IntervalMach+machgrid))*(-velDirFreestream(3))
 
      elseif(TSAltitudeMode)then
-        call terminate('gridVelocityFineLevel','altitude motion not yet implemented...')
+        call returnFail('gridVelocityFineLevel','altitude motion not yet implemented...')
      else
-        call terminate('gridVelocityFineLevel','Not a recognized Stability Motion')
+        call returnFail('gridVelocityFineLevel','Not a recognized Stability Motion')
      end if
   endif
 

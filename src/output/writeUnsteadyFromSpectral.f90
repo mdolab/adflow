@@ -26,7 +26,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       call terminate("writeUnsteadyFromSpectral", &
+       call returnFail("writeUnsteadyFromSpectral", &
                       "Not implemented yet")
 
        end subroutine writeUnsteadyFromSpectral

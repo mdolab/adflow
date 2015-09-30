@@ -270,7 +270,7 @@
        allocate(convNames(nConv), convNamesSorted(nConv), &
                 sortedNames2Or(nConv), stat=ierr)
        if(ierr /= 0)                             &
-         call terminate("readConvHistoryPlot3D", &
+         call returnFail("readConvHistoryPlot3D", &
                         "Memory allocation failure for convNames, &
                         &convNamesSorted and sortedNames2Or")
 
@@ -286,7 +286,7 @@
        end select
 
        if(ierr /= 0)                             &
-         call terminate("readConvHistoryPlot3D", &
+         call returnFail("readConvHistoryPlot3D", &
                         "Memory allocation failure for either convBuf4 &
                         &or convBuf8")
 
@@ -299,7 +299,7 @@
 
        sizeRead = nConv*maxCGNSNameLen
        if(recordSize /= sizeRead)                &
-         call terminate("readConvHistoryPlot3D", &
+         call returnFail("readConvHistoryPlot3D", &
                         "Unexpected size for the convergence names")
 
        call mpi_file_read(fh, convNames, sizeRead, mpi_character, &
@@ -514,7 +514,7 @@
 
        deallocate(convNames, convNamesSorted, sortedNames2Or, stat=ierr)
        if(ierr /= 0)                             &
-         call terminate("readConvHistoryPlot3D", &
+         call returnFail("readConvHistoryPlot3D", &
                         "Deallocation failure for convNames, &
                         &convNamesSorted and sortedNames2Or")
 
@@ -527,7 +527,7 @@
        end select
 
        if(ierr /= 0)                             &
-         call terminate("readConvHistoryPlot3D", &
+         call returnFail("readConvHistoryPlot3D", &
                         "Deallocation failure for either convBuf4 &
                         &or convBuf8")
 

@@ -77,7 +77,7 @@
          slideInt(nn)%nIntersections = 0
          allocate(slideInt(nn)%intersections(0), stat=ierr)
          if(ierr /= 0)                            &
-           call terminate("slidingIntersections", &
+           call returnFail("slidingIntersections", &
                           "Memory allocation failure for intersections")
        enddo
 
@@ -109,7 +109,7 @@
        allocate(nIntersecting(0:cgnsNSliding), intersecting(ii), &
                 stat=ierr)
        if(ierr /= 0)                            &
-         call terminate("slidingIntersections", &
+         call returnFail("slidingIntersections", &
                         "Memory allocation failure for nIntersecting &
                         &and intersecting.")
 
@@ -131,7 +131,7 @@
        do nn=1,cgnsNSliding
          deallocate(slideInt(nn)%intersections, stat=ierr)
          if(ierr /= 0) &
-           call terminate("slidingIntersections", &
+           call returnFail("slidingIntersections", &
                           "Deallocation error for intersections.")
        enddo
 

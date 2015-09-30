@@ -46,7 +46,7 @@
            nRKStagesUnsteady = 3
 
          case default
-           call terminate("setStageCoeffExplicitRK", &
+           call returnFail("setStageCoeffExplicitRK", &
                           "No higher order stuff yet")
        end select
 
@@ -55,7 +55,7 @@
        allocate(betaRKUnsteady(nRKStagesUnsteady,nRKStagesUnsteady), &
                 gammaRKUnsteady(nRKStagesUnsteady), stat=ierr)
        if(ierr /= 0)                               &
-         call terminate("setStageCoeffExplicitRK", &
+         call returnFail("setStageCoeffExplicitRK", &
                         "Memory allocation failure for betaRKUnsteady &
                         &and gammaRKUnsteady.")
 
@@ -117,7 +117,7 @@
          !==============================================================
 
          case default
-           call terminate("setStageCoeffExplicitRK", &
+           call returnFail("setStageCoeffExplicitRK", &
                           "No higher order stuff yet")
        end select
 

@@ -51,7 +51,7 @@
                     tup2(nFit,nt1:nt2+1), tup3(nFit,nt1:nt2+1), &
                     tuLogFit(nt1:nt2+1),  stat=ierr)
            if(ierr /= 0)                          &
-             call terminate("initCurveFitDataVf", &
+             call returnFail("initCurveFitDataVf", &
                             "Memory allocation failure for curve fit &
                             &coefficients")
 
@@ -1014,7 +1014,7 @@
                     tup2(nFit,nt1:nt2+1), tup3(nFit,nt1:nt2+1), &
                     tuLogFit(nt1:nt2+1), stat=ierr)
            if(ierr /= 0)                              &
-             call terminate("initCurveFitDataVf", &
+             call returnFail("initCurveFitDataVf", &
                             "Memory allocation failure for curve fit &
                             &coefficients")
 

@@ -15,7 +15,7 @@
 !      * check1to1Subfaces checks if the 1 to 1 internal subfaces,      *
 !      * including the periodic ones, match up to a certain tolerance.  *
 !      * If not, a warning will be printed. The computation is not      *
-!      * terminated, because sometimes gaps are introduced on purpose,  *
+!      * returnFaild, because sometimes gaps are introduced on purpose,  *
 !      * e.g. near a wing tip in an H-topology in spanwise direction.   *
 !      *                                                                *
 !      ******************************************************************
@@ -141,7 +141,7 @@
 
        allocate(intBuf(10,nn), realBuf(3,mm), stat=ierr)
        if(ierr /= 0) &
-         call terminate("check1to1Subfaces", &
+         call returnFail("check1to1Subfaces", &
                         "Memory allocation failure for intBuf and &
                         &realBuf")
 
@@ -356,7 +356,7 @@
        nBad = 0
        allocate(badSubfaces(4,nFCheck), badDist(nFCheck), stat=ierr)
        if(ierr /= 0)                           &
-         call terminate("check1to1Subfaces", &
+         call returnFail("check1to1Subfaces", &
                         "Memory allocation failure for badSubfaces &
                         &and badDist")
 
@@ -397,7 +397,7 @@
 
          if( debug ) then
            if(size == mpi_undefined .or. mod(size,10) /= 0) &
-             call terminate("check1to1Subfaces",            &
+             call returnFail("check1to1Subfaces",            &
                             "Unexpected size of integer message")
          endif
 
@@ -407,7 +407,7 @@
          nn = size/10
          allocate(intRecv(10,nn), stat=ierr)
          if(ierr /= 0)                         &
-           call terminate("check1to1Subfaces", &
+           call returnFail("check1to1Subfaces", &
                           "Memory allocation failure for intRecv")
 
          ! Receive the integer buffer. Blocking receives can be used,
@@ -428,7 +428,7 @@
 
          if( debug ) then
            if(size == mpi_undefined .or. mod(size,3) /= 0) &
-             call terminate("check1to1Subfaces",           &
+             call returnFail("check1to1Subfaces",           &
                             "Unexpected size of real message")
          endif
 
@@ -438,7 +438,7 @@
          mm = size/3
          allocate(realRecv(3,mm), stat=ierr)
          if(ierr /= 0)                         &
-           call terminate("check1to1Subfaces", &
+           call returnFail("check1to1Subfaces", &
                           "Memory allocation failure for realRecv")
 
          ! Receive the real buffer. Blocking receives can be used,
@@ -457,7 +457,7 @@
 
          deallocate(intRecv, realRecv, stat=ierr)
          if(ierr /= 0)                         &
-           call terminate("check1to1Subfaces", &
+           call returnFail("check1to1Subfaces", &
                           "Deallocation failure for intRecv &
                           &and realRecv")
        enddo
@@ -474,7 +474,7 @@
 
        deallocate(intBuf, realBuf, stat=ierr)
        if(ierr /= 0)                           &
-         call terminate("check1to1Subfaces", &
+         call returnFail("check1to1Subfaces", &
                         "Deallocation failure for intBuf and realBuf")
 !
 !      ******************************************************************
@@ -507,7 +507,7 @@
        allocate(badGlobal(4,nBadGlobal), badDistGlobal(nBadGlobal), &
                 stat=ierr)
        if(ierr /= 0)                         &
-         call terminate("check1to1Subfaces", &
+         call returnFail("check1to1Subfaces", &
                         "Memory allocation failure for badGlobal &
                         &and badDistGlobal")
 
@@ -537,12 +537,12 @@
 
        ! Check for the presence of any internally created subfaces.
        ! This only occurs when something goes wrong in the block
-       ! splitting and therefore the program is terminated.
+       ! splitting and therefore the program is returnFaild.
 
        do nn=1,nBadGlobal
          if(badGlobal(2,nn) == 0) then
            if(myID == 0)                         &
-             call terminate("check1to1Subfaces", &
+             call returnFail("check1to1Subfaces", &
                             "Non-matching internally created &
                             &face found.")
            call mpi_barrier(SUmb_comm_world, ierr)
@@ -633,7 +633,7 @@
        deallocate(badSubfaces, badGlobal, badDist, badDistGlobal, &
                   stat=ierr)
        if(ierr /= 0)                         &
-         call terminate("check1to1Subfaces", &
+         call returnFail("check1to1Subfaces", &
                         "Deallocation failure for badSubfaces, &
                         &badGlobal, badDist and badDistGlobal")
 
@@ -837,7 +837,7 @@
 
          enddo
 
-         ! Check if a subface was found. If not terminate.
+         ! Check if a subface was found. If not returnFail.
 
          if(mm > n1to1) then
 
@@ -859,7 +859,7 @@
                     &seriously wrong with the zone connectivity.")
            endif
 
-           call terminate("checkSubfaceCoor", errorMessage)
+           call returnFail("checkSubfaceCoor", errorMessage)
 
          endif
 

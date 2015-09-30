@@ -132,7 +132,7 @@
        call numberOfVolSolVariables(nVolSolvar, nVolDiscrVar)
        allocate(solNames(nVolSolvar+nVolDiscrVar), stat=ierr)
        if(ierr /= 0)                            &
-         call terminate("writePlot3DVolumeSol", &
+         call returnFail("writePlot3DVolumeSol", &
                         "Memory allocation failure for solNames")
        call volSolNames(solNames)
 
@@ -148,7 +148,7 @@
 
        allocate(writeBuf(nn), stat=ierr)
        if(ierr /= 0)                            &
-         call terminate("writePlot3DVolumeSol", &
+         call returnFail("writePlot3DVolumeSol", &
                         "Memory allocation failure for writeBuf.")
 !
 !      ******************************************************************
@@ -180,7 +180,7 @@
            write(errorMessage,*) "File ", trim(volSolFileNames(nn)), &
                                  " could not be opened for writing"
            if(myID == 0) &
-             call terminate("writePlot3DVolumeSol", errorMessage)
+             call returnFail("writePlot3DVolumeSol", errorMessage)
 
            call mpi_barrier(SUmb_comm_world, ierr)
          endif
@@ -597,7 +597,7 @@
        do nn=1,nDom
          deallocate(IOVar(nn,1)%w, stat=ierr)
          if(ierr /= 0)                          &
-           call terminate("writeCGNSVolumeSol", &
+           call returnFail("writeCGNSVolumeSol", &
                           "Deallocation error for IOVar%w")
        enddo
 
@@ -605,7 +605,7 @@
 
        deallocate(IOVar, writeBuf, solNames, stat=ierr)
        if(ierr /= 0)                          &
-         call terminate("writeCGNSVolumeSol", &
+         call returnFail("writeCGNSVolumeSol", &
                         "Deallocation error for IOVar, writeBuf &
                         &and solNames")
 

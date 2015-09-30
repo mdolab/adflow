@@ -250,7 +250,7 @@
                                          &variable, ", trim(keyword), &
                                          ", specified"
              if(myID == 0) &
-               call terminate("isoVariables", errorMessage)
+               call returnFail("isoVariables", errorMessage)
              call mpi_barrier(SUmb_comm_world, pos)
 
          end select

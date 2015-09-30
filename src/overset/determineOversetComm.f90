@@ -160,7 +160,7 @@
          nDonorInfo = 0
          allocate(donorInfo(5,nDonorInfo), stat=ierr)
          if (ierr /= 0)                           &
-           call terminate("determineOversetComm", &
+           call returnFail("determineOversetComm", &
                           "Memory allocation failure for donorInfo")
 
          ! Initialize the number of failures (orphans). This is the total
@@ -308,7 +308,7 @@
 
          deallocate(donorInfo, stat=ierr)
          if (ierr /= 0)                           &
-           call terminate("determineOversetComm", &
+           call returnFail("determineOversetComm", &
                           "Deallocation failure for donorInfo")
 
          ! Initialize the number of orphans for each local block to 0.
@@ -412,7 +412,7 @@
 
          allocate(orphan(8,nHaloOver), stat=ierr)
          if (ierr /= 0)                           &
-           call terminate("determineOversetComm", &
+           call returnFail("determineOversetComm", &
                           "Memory allocation failure for orphan")
  
          ! Extract the orphans from the boundary list, and convert the
@@ -508,7 +508,7 @@
 
            allocate(orphanGlobal(8,nResFailGlobal(2)), stat=ierr)
            if (ierr /= 0)                           &
-             call terminate("determineOversetComm", &
+             call returnFail("determineOversetComm", &
                          "Memory allocation failure for orphanGlobal")
 
          end if
@@ -572,7 +572,7 @@
        do i = 1,ubound(oversetHalo,1)
          deallocate(oversetHalo(i)%interp, stat=ierr)
          if(ierr /= 0)                           &
-          call terminate("determineOversetComm", &
+          call returnFail("determineOversetComm", &
                          "Deallocation failure for interp")
        enddo
 
@@ -580,7 +580,7 @@
 
        deallocate(oversetHalo, stat=ierr)
        if(ierr /= 0)                           &
-        call terminate("determineOversetComm", &
+        call returnFail("determineOversetComm", &
                        "Deallocation error for oversetHalo")
  
        end subroutine determineOversetComm

@@ -181,7 +181,7 @@
 
            allocate(commSlidingCell%recvList(nn), stat=ierr)
            if(ierr /= 0)                                 &
-             call terminate("updateCommSlidingCellRecv", &
+             call returnFail("updateCommSlidingCellRecv", &
                             "Memory allocation failure for recvList.")
 
            ! Set the values of nCopy and the pointers back to the
@@ -214,7 +214,7 @@
 
            deallocate(tmpRecvList, stat=ierr)
            if(ierr /= 0)                                 &
-             call terminate("updateCommSlidingCellRecv", &
+             call returnFail("updateCommSlidingCellRecv", &
                             "Deallocation error for tmpRecvList.")
 
            ! Set the new value of nProcRecv.

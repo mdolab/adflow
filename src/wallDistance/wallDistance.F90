@@ -99,7 +99,7 @@
        if( allocMem ) then
          deallocate(sendBuffer, recvBuffer, stat=ierr)
          if(ierr /= 0)                    &
-           call terminate("wallDistance", &
+           call returnFail("wallDistance", &
                           "Deallocation error for communication buffers")
        else
          call deallocateTempMemory(.false.)
@@ -189,7 +189,7 @@
          allocate(sendBuffer(sendBufferSize), &
                   recvBuffer(recvBufferSize), stat=ierr)
          if(ierr /= 0)                    &
-           call terminate("wallDistance", &
+           call returnFail("wallDistance", &
                           "Memory allocation failure for comm buffers")
        else
          call allocateTempMemory(.false.)

@@ -390,7 +390,7 @@ subroutine bcturbwall_d(nn)
     end select
   case default
 !        ================================================================
-    call terminate('bcturbwall', &
+    call returnFail('bcturbwall', &
 &               'turbulence model not implemented yet')
   end select
 end subroutine bcturbwall_d

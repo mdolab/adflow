@@ -37,7 +37,7 @@
 !      ******************************************************************
 !
        ! Open the file for writing and checks if it was succesful. If not
-       ! terminate the program without writing the file.
+       ! returnFail the program without writing the file.
 
        open(unit=writeUnit, file=paramFile, status="new", &
             action="write", iostat=ios)
@@ -46,7 +46,7 @@
          write(string,"(3a)") "Template parameter file ", &
                               trim(paramFile),            &
                               " could not be opened for writing"
-         call terminate("createTemplate", string)
+         call returnFail("createTemplate", string)
 
        endif
 

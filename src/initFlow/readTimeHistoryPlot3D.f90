@@ -168,7 +168,7 @@
        allocate(convNames(nConv), convNamesSorted(nConv), &
                 sortedNames2Or(nConv), stat=ierr)
        if(ierr /= 0)                             &
-         call terminate("readTimeHistoryPlot3D", &
+         call returnFail("readTimeHistoryPlot3D", &
                         "Memory allocation failure for convNames, &
                         &convNamesSorted and sortedNames2Or")
 
@@ -184,7 +184,7 @@
        end select
 
        if(ierr /= 0)                             &
-         call terminate("readTimeHistoryPlot3D", &
+         call returnFail("readTimeHistoryPlot3D", &
                         "Memory allocation failure for either timeBuf4 &
                         &or timeBuf8")
 
@@ -197,7 +197,7 @@
 
        sizeRead = nConv*maxCGNSNameLen
        if(recordSize /= sizeRead)                &
-         call terminate("readTimeHistoryPlot3D", &
+         call returnFail("readTimeHistoryPlot3D", &
                         "Unexpected size for the convergence names")
 
        call mpi_file_read(fh, convNames, sizeRead, mpi_character, &
@@ -235,7 +235,7 @@
 
        sizeRead = nTimeStepsRestart*sizeP3D_Real
        if(recordSize /= sizeRead)                &
-         call terminate("readTimeHistoryPlot3D", &
+         call returnFail("readTimeHistoryPlot3D", &
                         "Unexpected size for the convergence names")
 
        select case (P3D_Precision)
@@ -366,7 +366,7 @@
 
        deallocate(convNames, convNamesSorted, sortedNames2Or, stat=ierr)
        if(ierr /= 0)                             &
-         call terminate("readTimeHistoryPlot3D", &
+         call returnFail("readTimeHistoryPlot3D", &
                         "Deallocation failure for convNames, &
                         &convNamesSorted and sortedNames2Or")
 
@@ -379,7 +379,7 @@
        end select
 
        if(ierr /= 0)                             &
-         call terminate("readTimeHistoryPlot3D", &
+         call returnFail("readTimeHistoryPlot3D", &
                         "Deallocation failure for either timeBuf4 &
                         &or timeBuf8")
 

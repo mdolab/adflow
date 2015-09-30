@@ -46,7 +46,7 @@
 
        else
 
-         call terminate("siDensity", &
+         call returnFail("siDensity", &
                         "No idea how to convert this to SI units")
 
        endif

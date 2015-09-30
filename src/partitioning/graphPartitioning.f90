@@ -99,7 +99,7 @@
        if( allocated(part) ) then
          deallocate(part, stat=ierr)
          if(ierr /= 0)                       &
-         call terminate("graphPartitioning", &
+         call returnFail("graphPartitioning", &
                         "Deallocation failure for part")
        endif
 
@@ -130,7 +130,7 @@
        allocate(xadj(0:nVertex), vwgt(nCon,nVertex), adjncy(nEdges), &
                 adjwgt(nEdges), part(nVertex), tmp(nEdgesMax), stat=ierr)
        if(ierr /= 0)                         &
-         call terminate("graphPartitioning", &
+         call returnFail("graphPartitioning", &
                         "Memory allocation failure for graph variables")
 
        ! Initialize xadj(0) to 0.
@@ -320,7 +320,7 @@
        
        deallocate(xadj, vwgt, adjncy, adjwgt, tmp, stat=ierr)
        if(ierr /= 0)                         &
-         call terminate("graphPartitioning", &
+         call returnFail("graphPartitioning", &
                         "Deallocation failure for graph variables")
 
        end subroutine graphPartitioning

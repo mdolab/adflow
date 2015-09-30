@@ -142,7 +142,7 @@
          allocate(P3D_IOParts(nn)%posComm(ii), &
                   P3D_IOParts(nn)%posNonLocal(ii), stat=ierr)
          if(ierr /= 0)                         &
-           call terminate("sendBufNonLocalIO", &
+           call returnFail("sendBufNonLocalIO", &
                           "Memory allocation failure for posComm and &
                           &posNonLocal")
 
@@ -245,7 +245,7 @@
 
          if( debug ) then
            if(kk /= P3D_IOParts(nn)%nItemsNonLocal) &
-             call terminate("sendBufNonLocalIO",    &
+             call returnFail("sendBufNonLocalIO",    &
                             "kk differs from nItemsNonLocal")
          endif
 

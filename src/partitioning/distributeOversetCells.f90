@@ -60,7 +60,7 @@
 
        allocate(ncells(splitInfo(cgnsId)%nsubblocks), stat=ierr)
        if(ierr /= 0) &
-         call terminate("distributeOversetCells", &
+         call returnFail("distributeOversetCells", &
                         "Memory allocation failure for ncells")
        ncells = 0
 
@@ -72,7 +72,7 @@
        allocate(cgnsOver(jj,ii), ipntOver(jj,ii), neighOver(jj,ii), &
                 stat=ierr)
        if(ierr /= 0) &
-         call terminate("distributeOversetCells", &
+         call returnFail("distributeOversetCells", &
                         "Memory allocation failure for cell data")
 
        ! Count the number of possible donor blocks and allocate
@@ -90,7 +90,7 @@
          ii = nsubPerCGNS(cgnsID - 1) + k
          allocate(blocks(ii)%overComm(jj,2), stat=ierr)
          if(ierr /= 0) &
-           call terminate("distributeOversetCells", &
+           call returnFail("distributeOversetCells", &
                         "Memory allocation failure for overComm")
          blocks(ii)%overComm(:,1) = ii
          blocks(ii)%overComm(:,2) = 0
@@ -159,7 +159,7 @@
                write(errorMessage,140) trim(zonename), trim(overName), i
  140           format("Zone",1X,A,", overset block connectivity",1X,A, &
                       ": Cell",1X,I5,1X,"could not be found.")
-               call terminate("distributeOversetCells", errorMessage)
+               call returnFail("distributeOversetCells", errorMessage)
              endif
 
              call mpi_barrier(SUmb_comm_world, ierr)
@@ -216,7 +216,7 @@
                write(errorMessage,150) trim(zonename), trim(overName), i
  150           format("Zone",1X,A,", overset block connectivity",1X,A, &
                       ": Donor",1X,I5,1X,"could not be found.")
-               call terminate("distributeOversetCells", errorMessage)
+               call returnFail("distributeOversetCells", errorMessage)
              endif
 
              call mpi_barrier(SUmb_comm_world, ierr)
@@ -241,7 +241,7 @@
                   blocks(ii)%ipntOver(ncells(k)),      &
                   blocks(ii)%neighOver(ncells(k)), stat=ierr)
          if(ierr /= 0) &
-           call terminate("distributeOversetCells", &
+           call returnFail("distributeOversetCells", &
                           "Memory allocation failure for block data")
 
          blocks(ii)%ncellsOverset = ncells(k)
@@ -256,7 +256,7 @@
        deallocate(ncells, cgnsOver, ipntOver, neighOver, &
                   stat=ierr)
        if(ierr /= 0) &
-         call terminate("distributeOversetCells", &
+         call returnFail("distributeOversetCells", &
                         "Memory release failure for cell data")
 
        end subroutine distributeOversetCells

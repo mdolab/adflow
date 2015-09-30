@@ -392,7 +392,7 @@ bocoloop1:do mm=1,nviscbocos
         xcd = 0.0_8
         xxcd = 0.0_8
       else if (tsaltitudemode) then
-        call terminate('gridvelocityfinelevel', &
+        call returnFail('gridvelocityfinelevel', &
 &                   'altitude motion not yet implemented...')
         do ii1=1,isize1ofdrfbcdata
           bcdatad(ii1)%uslip = 0.0_8
@@ -400,7 +400,7 @@ bocoloop1:do mm=1,nviscbocos
         xcd = 0.0_8
         xxcd = 0.0_8
       else
-        call terminate('gridvelocityfinelevel', &
+        call returnFail('gridvelocityfinelevel', &
 &                   'not a recognized stability motion')
         do ii1=1,isize1ofdrfbcdata
           bcdatad(ii1)%uslip = 0.0_8

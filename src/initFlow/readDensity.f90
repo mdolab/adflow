@@ -105,7 +105,7 @@
        ! Not able to determine the density.
        ! Print an error message and exit.
 
-       call terminate("readDensity", &
+       call returnFail("readDensity", &
                       "Not able to retrieve density from the &
                       &variables in the restart file.")
 

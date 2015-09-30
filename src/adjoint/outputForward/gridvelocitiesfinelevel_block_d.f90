@@ -217,10 +217,10 @@ subroutine gridvelocitiesfinelevel_block_d(useoldcoor, t, sps)
 &       veldirfreestreamd(3)
       velzgrid0 = ainf*(intervalmach+machgrid)*(-veldirfreestream(3))
     else if (tsaltitudemode) then
-      call terminate('gridvelocityfinelevel', &
+      call returnFail('gridvelocityfinelevel', &
 &                 'altitude motion not yet implemented...')
     else
-      call terminate('gridvelocityfinelevel', &
+      call returnFail('gridvelocityfinelevel', &
 &                 'not a recognized stability motion')
     end if
   end if

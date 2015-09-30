@@ -50,7 +50,7 @@
        allocate(timeArray(nTimeTot), &
                 timeDataArray(nTimeTot,nMon), stat=ierr)
        if(ierr /= 0)                       &
-         call terminate("allocTimeArrays", &
+         call returnFail("allocTimeArrays", &
                         "Memory allocation failure for timeArray &
                         &and timeDataArray")
        

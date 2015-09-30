@@ -111,7 +111,7 @@
        deallocate(gridFileNames, volSolFileNames, &
                   surfSolFileNames, stat=ierr)
        if(ierr /= 0)                &
-         call terminate("writeSol", &
+         call returnFail("writeSol", &
                         "Deallocation failure for the file names.")
 
        ! If blanks were written then change the iblank values on the

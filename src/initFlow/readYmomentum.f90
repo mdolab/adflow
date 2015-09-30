@@ -148,7 +148,7 @@
 
        ! Y-momentum could not be created. Terminate.
 
-       call terminate("readYmomentum", &
+       call returnFail("readYmomentum", &
                       "Y-Momentum could not be created")
 
        end subroutine readYmomentum

@@ -89,7 +89,7 @@
            write(errorMessage,100) trim(connectName), trim(zoneName)
  100       format("1 to 1 subface",1X,A,1X,"of zone",1X,A, &
                   ": No constant index found")
-           call terminate("checkTransform", errorMessage)
+           call returnFail("checkTransform", errorMessage)
          endif
 
          ! Make sure that other processors wait until they are killed.
@@ -108,7 +108,7 @@
            write(errorMessage,110) trim(connectName), trim(zoneName)
  110       format("1 to 1 subface",1X,A,1X,"of zone",1X,A, &
                   ": No constant index found for donor")
-           call terminate("checkTransform", errorMessage)
+           call returnFail("checkTransform", errorMessage)
          endif
 
          ! Make sure that other processors wait until they are killed.
@@ -139,7 +139,7 @@
  120         format("1 to 1 subface",1X,A,1X,"of zone",1X,A,  &
                     ": Something seriously wrong with the &
                     &transformation matrix")
-             call terminate("checkTransform", errorMessage)
+             call returnFail("checkTransform", errorMessage)
            endif
 
            ! Make sure that other processors wait until they are killed.
@@ -220,7 +220,7 @@
  140         format("1 to 1 subface",1X,A,1X,"of zone",1X,A,  &
                     ": Something seriously wrong with the &
                     &transformation matrix")
-           call terminate("checkTransform", errorMessage)
+           call returnFail("checkTransform", errorMessage)
          endif
 
          ! Make sure that other processors wait until they are killed.

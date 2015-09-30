@@ -65,7 +65,7 @@
            nSolsRead = 1
            allocate(solFiles(nSolsRead), stat=ierr)
            if(ierr /= 0)                              &
-             call terminate("determineGridFileNames", &
+             call returnFail("determineGridFileNames", &
                             "Memory allocation failure for solFiles")
 
            solFiles(1) = restartFile
@@ -96,7 +96,7 @@
              nSolsRead = 1
              allocate(solFiles(nSolsRead), stat=ierr)
              if(ierr /= 0)                             &
-               call terminate("determineSolFileNames", &
+               call returnFail("determineSolFileNames", &
                               "Memory allocation failure for solFiles")
 
              solFiles(1) = restartFile
@@ -113,7 +113,7 @@
              nSolsRead = nOldLevels
              allocate(solFiles(nSolsRead), stat=ierr)
              if(ierr /= 0)                             &
-               call terminate("determineSolFileNames", &
+               call returnFail("determineSolFileNames", &
                               "Memory allocation failure for solFiles")
 
              do nn=1,nSolsRead
@@ -135,7 +135,7 @@
            ! Possibly correct nSolsRead. Take nOldGridRead if
            ! a deforming mesh computation is performed.
            ! If nSolsRead == 0, i.e. not a valid solution is found,
-           ! print an error message and terminate.
+           ! print an error message and returnFail.
 
            nSolsRead = nn - 1
            if( deforming_Grid ) &
@@ -143,7 +143,7 @@
 
            if(nSolsRead == 0) then
              if(myID == 0)                             &
-               call terminate("determineSolFileNames", &
+               call returnFail("determineSolFileNames", &
                               "Solution file(s) could not be opened")
              call mpi_barrier(SUmb_comm_world, ierr)
            endif
@@ -198,7 +198,7 @@
              nSolsRead = 1
              allocate(solFiles(nSolsRead), stat=ierr)
              if(ierr /= 0)                             &
-               call terminate("determineSolFileNames", &
+               call returnFail("determineSolFileNames", &
                               "Memory allocation failure for solFiles")
 
              solfiles(1) = restartFile
@@ -232,7 +232,7 @@
              nSolsRead = max(nn, 1_intType)
              allocate(solFiles(nSolsRead), stat=ierr)
              if(ierr /= 0)                             &
-               call terminate("determineSolFileNames", &
+               call returnFail("determineSolFileNames", &
                               "Memory allocation failure for solFiles")
 
              if(nn == 0) then

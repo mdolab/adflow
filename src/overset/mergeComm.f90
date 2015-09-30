@@ -155,7 +155,7 @@
 
            allocate(commPattern1%sendList(k), stat=ierr)
            if(ierr /= 0)                  &
-             call terminate("mergeComm", &
+             call returnFail("mergeComm", &
                             "Memory allocation failure for sendList.")
 
            ! Set the pointers back to the original list.
@@ -179,7 +179,7 @@
 
            deallocate(tmpSendList, stat=ierr)
            if(ierr /= 0)                  &
-             call terminate("mergeComm", &
+             call returnFail("mergeComm", &
                             "Deallocation error for tmpSendList.")
 
            ! Modify the processor parameters for the pattern.
@@ -263,7 +263,7 @@
 
            allocate(commPattern1%recvList(k), stat=ierr)
            if(ierr /= 0)                  &
-             call terminate("mergeComm", &
+             call returnFail("mergeComm", &
                             "Memory allocation failure for recvList.")
 
            ! Set the pointers back to the original list.
@@ -286,7 +286,7 @@
 
            deallocate(tmpRecvList, stat=ierr)
            if(ierr /= 0)                  &
-             call terminate("mergeComm", &
+             call returnFail("mergeComm", &
                             "Deallocation error for tmpRecvList.")
 
            ! Modify the processor parameters for the pattern.

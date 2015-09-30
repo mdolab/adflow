@@ -18,7 +18,7 @@
 !      * search) based on the 3 parametric interpolants, which are      *
 !      * determined via Newton iterations. The starting indices are     *
 !      * given by the vector ind. Flag output possibilities are:        *
-!      * - flag >= 0:  search terminated on a 1-to-1 block boundary.    *
+!      * - flag >= 0:  search returnFaild on a 1-to-1 block boundary.    *
 !      *               New restart indices, local block, and processor  *
 !      *               are given by ind, blk, and flag respectively.    *
 !      * - StopAtBoco: search terminiated on block boundary with last   *

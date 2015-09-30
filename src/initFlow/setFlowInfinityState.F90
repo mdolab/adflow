@@ -56,7 +56,7 @@
       
        allocate(wInf(nw), stat=ierr)
        if(ierr /= 0)                             &
-         call terminate("setFlowReferenceState", &
+         call returnFail("setFlowReferenceState", &
                         "Memory allocation failure for wInf")
 #endif
 

@@ -42,7 +42,7 @@
        nn = max(nMGLevels, mgStartlevel)
        allocate(flowDoms(nDom, nn, nTimeIntervalsSpectral), stat=ierr)
        if(ierr /= 0)                    &
-         call terminate("initFlowDoms", &
+         call returnFail("initFlowDoms", &
                         "Memory allocation failure for flowDoms")
 
        ! Loop over all the blocks and initialize its pointers to the

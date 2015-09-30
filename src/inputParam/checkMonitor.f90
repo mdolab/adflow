@@ -105,7 +105,7 @@
        allocate(sortNumber(nMon), tmpNumber(nMon), tmpNames(nMon), &
                 stat=ierr)
        if(ierr /= 0)                    &
-         call terminate("checkMonitor", &
+         call returnFail("checkMonitor", &
                         "Memory allocation failure for sortNumber, etc.")
 
        ! Loop over the monitoring variables, copy the name into tmpName
@@ -300,7 +300,7 @@
              endif
 
            case default
-              call terminate("checkMonitor", "This should not happen")
+              call returnFail("checkMonitor", "This should not happen")
          end select
 
        enddo
@@ -331,14 +331,14 @@
 
        deallocate(sortNumber, tmpNumber, tmpNames, stat=ierr)
        if(ierr /= 0)                    &
-         call terminate("checkMonitor", &
+         call returnFail("checkMonitor", &
                         "Deallocation error for sortNumber, etc.")
 
        ! Allocate the memory for the monitoring variables.
 
        allocate(monLoc(nMon), monGlob(nMon), monRef(nMon), stat=ierr)
        if(ierr /= 0)                    &
-         call terminate("checkMonitor", &
+         call returnFail("checkMonitor", &
                         "Memory allocation for monitoring variables")
 
        ! Check if the maximum Mach number or the maximum total enthalpy

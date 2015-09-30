@@ -110,7 +110,7 @@
        if (mm /= 0 .and. mm /= nProc) then
 
          if (myID == 0) &
-           call terminate("setChangingOverset", &
+           call returnFail("setChangingOverset", &
                           "There was a discrepancy in the value of &
                           &changingOverset among the processes.")
 
@@ -118,10 +118,10 @@
        end if
 
        ! If the code was compiled in stand-alone mode, there is no 
-       ! support yet for updating the overset assembly so terminate.
+       ! support yet for updating the overset assembly so returnFail.
 
        if (standAloneMode .and. changingOverset) &
-         call terminate("setChangingOverset", &
+         call returnFail("setChangingOverset", &
                         "Cannot currently update overset connectivity &
                         &in stand-alone mode")
 

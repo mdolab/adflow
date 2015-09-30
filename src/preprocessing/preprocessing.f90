@@ -58,7 +58,7 @@
            equationMode == timeSpectral) .and. nsMin < nsMax) then
 
          if(myID == 0)                     &
-           call terminate("preprocessing", &
+           call returnFail("preprocessing", &
                           "Different rotational periodicity encountered &
                           &for time accurate computation")
          call mpi_barrier(SUmb_comm_world, ierr)
@@ -78,7 +78,7 @@
                 internalCell_2nd(nn),    internalNode_1st(nn),    &
                 nCellGlobal(nn),         stat=ierr)
        if(ierr /= 0)                     &
-         call terminate("preprocessing", &
+         call returnFail("preprocessing", &
                         "Memory allocation failure for commPatterns")
 
        ! Set the sizes here so that we know how to dealloc the stuff
@@ -112,7 +112,7 @@
                 intSlidingCell_1st(nn,mm),  &
                 intSlidingCell_2nd(nn,mm),  stat=ierr)
        if(ierr /= 0)                     &
-         call terminate("preprocessing", &
+         call returnFail("preprocessing", &
                         "Memory allocation failure for &
                         &slidingCommPatterns")
 
@@ -124,7 +124,7 @@
        mm = nInterfaceGroups
        allocate(commPatternMixing(nn,mm,2), stat=ierr)
        if(ierr /= 0)                     &
-         call terminate("preprocessing", &
+         call returnFail("preprocessing", &
                         "Memory allocation failure for &
                         &commPatternMixing")
 
@@ -136,7 +136,7 @@
        allocate(commPatternOverset(nn,mm), internalOverset(nn,mm), &
                 stat=ierr)
        if(ierr /= 0)                     &
-         call terminate("preprocessing", &
+         call returnFail("preprocessing", &
                         "Memory allocation failure for commOverset")
 
        ! Determine the fine grid 1 to 1 matching communication pattern.
@@ -179,7 +179,7 @@
        allocate(sendBuffer(sendBufferSize), &
                 recvBuffer(recvBufferSize), stat=ierr)
        if(ierr /= 0)                     &
-         call terminate("preprocessing", &
+         call returnFail("preprocessing", &
                         "Memory allocation failure for sendBuffer &
                         &and recvBuffer")
 

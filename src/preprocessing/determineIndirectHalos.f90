@@ -138,7 +138,7 @@
        allocate(nHaloPerLev(0:nlevOfInd), nHaloPerProc(0:nProc), &
                 stat=ierr)
        if(ierr /= 0)                                          &
-         call terminate("determineIndirectHalos",             &
+         call returnFail("determineIndirectHalos",             &
                         "Allocation error for nHaloPerLev and &
                         &nHaloPerProc")
 
@@ -172,7 +172,7 @@
 
        deallocate(indHalo, nHaloPerLev, nHaloPerProc, stat=ierr)
        if(ierr /= 0) &
-         call terminate("determineIndirectHalos",        &
+         call returnFail("determineIndirectHalos",        &
                         "Deallocation error for indHalo, &
                         &nHaloPerLev and nHaloPerProc")
 
@@ -180,7 +180,7 @@
 
        if( debug ) then
          if(iihalo /= nHalo)                        &
-           call terminate("determineIndirectHalos", &
+           call returnFail("determineIndirectHalos", &
                           "iihalo differs from nHalo")
        endif
 

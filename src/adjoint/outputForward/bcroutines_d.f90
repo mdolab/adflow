@@ -127,7 +127,7 @@ contains
 !  farfield boundary condition 
 ! ------------------------------------
     if (precond .eq. turkel .or. precond .eq. choimerkle) call &
-&     terminate('applyallbc', &
+&     returnFail('applyallbc', &
 &      'farfield turkel and coid/merkle preconditioners not implemented'&
 &           )
     do nn=1,nbocos
@@ -210,7 +210,7 @@ contains
 !  farfield boundary condition 
 ! ------------------------------------
     if (precond .eq. turkel .or. precond .eq. choimerkle) call &
-&     terminate('applyallbc', &
+&     returnFail('applyallbc', &
 &      'farfield turkel and coid/merkle preconditioners not implemented'&
 &           )
     do nn=1,nbocos
@@ -1791,7 +1791,7 @@ contains
         end if
       end do
     case (cptempcurvefits) 
-      call terminate('bcroutines', &
+      call returnFail('bcroutines', &
 &                 'cptempcurvefits not implemented yet.')
     end select
   end subroutine computeetot_d
@@ -1885,7 +1885,7 @@ contains
         end if
       end do
     case (cptempcurvefits) 
-      call terminate('bcroutines', &
+      call returnFail('bcroutines', &
 &                 'cptempcurvefits not implemented yet.')
     end select
   end subroutine computeetot

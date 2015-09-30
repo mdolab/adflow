@@ -82,7 +82,7 @@
          write(errorMessage,101) &
                trim(cgnsDoms(nbkGlobal)%zonename), &
                trim(cgnsDoms(nbkGlobal)%bocoInfo(cgnsBoco)%bocoName)
-         call terminate("cart1D_InterpolSubface", errorMessage)
+         call returnFail("cart1D_InterpolSubface", errorMessage)
  101     format("Zone",1X,A,", subface",1X,A,": Multidimensional &
                 &radially varying data specified. Only 1d data possible")
        endif
@@ -104,7 +104,7 @@
          write(errorMessage,102) &
                trim(cgnsDoms(nbkGlobal)%zonename), &
                trim(cgnsDoms(nbkGlobal)%bocoInfo(cgnsBoco)%bocoName)
-         call terminate("cart1D_InterpolSubface", errorMessage)
+         call returnFail("cart1D_InterpolSubface", errorMessage)
  102     format("Zone",1X,A,", subface",1X,A,": Data should be &
                 &specified for increasing coordinate values.")
        endif

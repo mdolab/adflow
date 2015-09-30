@@ -53,7 +53,7 @@
                 donorInfo%indices(nn,3), donorInfo%weight(nn), &
                 stat=ierr)
        if(ierr /= 0)                      &
-         call terminate("volumeInterpol", &
+         call returnFail("volumeInterpol", &
                         "Memory allocation failure for the member &
                         &variables of donorInfo.")
 

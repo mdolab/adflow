@@ -72,7 +72,7 @@
            call ktEddyViscosity
 #endif
          case default
-           call terminate("computeEddyViscosity", &
+           call returnFail("computeEddyViscosity", &
                           "Turbulence model not implemented yet")
        end select
 

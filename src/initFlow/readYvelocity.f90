@@ -149,7 +149,7 @@
        ! Not able to determine the y-velocity.
        ! Print an error message and exit.
 
-       call terminate("readYvelocity", &
+       call returnFail("readYvelocity", &
                       "Not able to retrieve y-velocity from the &
                       &variables in the restart file.")
 

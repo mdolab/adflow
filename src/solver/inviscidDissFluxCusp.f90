@@ -31,6 +31,6 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       call terminate("inviscidDissFluxCusp", "not implemented yet")
+       call returnFail("inviscidDissFluxCusp", "not implemented yet")
 
        end subroutine inviscidDissFluxCusp

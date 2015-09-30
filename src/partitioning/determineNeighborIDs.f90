@@ -70,7 +70,7 @@
          ! zone names.
 
          if(zoneNumbers(ii) /= -1)                &
-           call terminate("determineNeighborIDs", &
+           call returnFail("determineNeighborIDs", &
                           "Error occurs only when two identical zone &
                           &names are present")
 
@@ -93,7 +93,7 @@
            ii = bsearchStrings(cgnsDoms(i)%conn1to1(j)%donorName, &
                                zoneNames, cgnsNDom)
            if(ii == 0)                              &
-             call terminate("determineNeighborIDs", &
+             call returnFail("determineNeighborIDs", &
                             "donor name not found in sorted zone names")
 
            cgnsDoms(i)%conn1to1(j)%donorBlock = zoneNumbers(ii)
@@ -112,7 +112,7 @@
                     cgnsDoms(i)%connNonMatchAbutting(j)%donorNames(k), &
                     zoneNames, cgnsNDom)
              if(ii == 0)                              &
-               call terminate("determineNeighborIDs", &
+               call returnFail("determineNeighborIDs", &
                               "donor name not found in sorted zone names")
 
              cgnsDoms(i)%connNonMatchAbutting(j)%donorBlocks(k) = &
@@ -129,7 +129,7 @@
            ii = bsearchStrings(cgnsDoms(i)%connOver(j)%donorName, &
                                zoneNames, cgnsNDom)
            if(ii == 0)                              &
-             call terminate("determineNeighborIDs", &
+             call returnFail("determineNeighborIDs", &
                             "donor name not found in sorted zone names")
 
            cgnsDoms(i)%connOver(j)%donorBlock = zoneNumbers(ii)

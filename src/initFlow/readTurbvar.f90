@@ -66,7 +66,7 @@
 
          case default
            if(myID == 0) &
-             call terminate("readTurbvar", "Restart not implemented &
+             call returnFail("readTurbvar", "Restart not implemented &
                             &for this turbulence model.")
            call mpi_barrier(SUmb_comm_world, ierr)
 

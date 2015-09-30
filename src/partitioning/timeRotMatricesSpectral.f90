@@ -54,7 +54,7 @@
        allocate(rotMatrixSpectral(nSections,3,3), stat=ierr)
 
        if(ierr /= 0)                               &
-         call terminate("timeRotMatricesSpectral", &
+         call returnFail("timeRotMatricesSpectral", &
                         "Memory allocation failure for &
                         &rotMatrixSpectral")
 

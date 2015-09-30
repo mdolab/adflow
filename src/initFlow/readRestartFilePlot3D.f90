@@ -110,7 +110,7 @@
                                       trim(solFiles(solID)), &
                                       " not found"
            if(myID == 0) &
-             call terminate("readRestartFilePlot3D", errorMessage)
+             call returnFail("readRestartFilePlot3D", errorMessage)
            call mpi_barrier(SUmb_comm_world, ierr)
          endif
 
@@ -155,7 +155,7 @@
                                       &file ", &
                                       trim(solFiles(solID)), "."
            if(myID == 0) &
-             call terminate("readRestartFilePlot3D", errorMessage)
+             call returnFail("readRestartFilePlot3D", errorMessage)
            call mpi_barrier(SUmb_comm_world, ierr)
          endif
 
@@ -168,7 +168,7 @@
                                       " differs from the number in &
                                       &the grid file."
            if(myID == 0) &
-             call terminate("readRestartFilePlot3D", errorMessage)
+             call returnFail("readRestartFilePlot3D", errorMessage)
            call mpi_barrier(SUmb_comm_world, ierr)
          endif
 
@@ -205,7 +205,7 @@
                                       &reference state in file ", &
                                       trim(solFiles(solID)), "."
            if(myID == 0) &
-             call terminate("readRestartFilePlot3D", errorMessage)
+             call returnFail("readRestartFilePlot3D", errorMessage)
            call mpi_barrier(SUmb_comm_world, ierr)
          endif
 
@@ -261,7 +261,7 @@
          allocate(namesVar(nVar), varNames(nVar), sorted2Or(nVar), &
                   stat=ierr)
          if(ierr /= 0)                             &
-           call terminate("readRestartFilePlot3D", &
+           call returnFail("readRestartFilePlot3D", &
                           "Memory allocation failure for namesVar, etc.")
 
          ! Read the record size, check it and read the variable names.
@@ -281,7 +281,7 @@
                                       &file ", &
                                       trim(solFiles(solID)), "."
            if(myID == 0) &
-             call terminate("readRestartFilePlot3D", errorMessage)
+             call returnFail("readRestartFilePlot3D", errorMessage)
            call mpi_barrier(SUmb_comm_world, ierr)
          endif
 
@@ -312,7 +312,7 @@
                                         &solution file ",   &
                                         trim(solFiles(solID)), "."
              if(myID == 0) &
-               call terminate("readRestartFilePlot3D", errorMessage)
+               call returnFail("readRestartFilePlot3D", errorMessage)
              call mpi_barrier(SUmb_comm_world, ierr)
            endif
 
@@ -323,7 +323,7 @@
 
          allocate(blockDim(3,cgnsNDom), stat=ierr)
          if(ierr /= 0)                             &
-           call terminate("readRestartFilePlot3D", &
+           call returnFail("readRestartFilePlot3D", &
                           "Memory allocation failure for blockDim")
 
          ! Check the size of the record and read the dimensions of
@@ -341,7 +341,7 @@
                                       &file ", &
                                       trim(solFiles(solID)), "."
            if(myID == 0) &
-             call terminate("readRestartFilePlot3D", errorMessage)
+             call returnFail("readRestartFilePlot3D", errorMessage)
            call mpi_barrier(SUmb_comm_world, ierr)
          endif
 
@@ -386,7 +386,7 @@
                                         &solution file ", &
                                         trim(solFiles(solID)), "."
              if(myID == 0) &
-               call terminate("readRestartFilePlot3D", errorMessage)
+               call returnFail("readRestartFilePlot3D", errorMessage)
              call mpi_barrier(SUmb_comm_world, ierr)
            endif
          enddo
@@ -417,7 +417,7 @@
 
          deallocate(blockDim, stat=ierr)
          if(ierr /= 0)                             &
-           call terminate("readRestartFilePlot3D", &
+           call returnFail("readRestartFilePlot3D", &
                           "Deallocation failure for blockDim")
 !
 !        ****************************************************************
@@ -469,7 +469,7 @@
 
          deallocate(namesVar, varNames, sorted2Or, stat=ierr)
          if(ierr /= 0)                             &
-           call terminate("readRestartFilePlot3D", &
+           call returnFail("readRestartFilePlot3D", &
                           "Deallocation failure for namesVar, etc.")
 !
 !        ****************************************************************

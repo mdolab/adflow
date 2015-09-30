@@ -75,12 +75,12 @@
 
            call createTemplate
 
-           ! Create the error message and terminate the program.
+           ! Create the error message and returnFail the program.
 
            write(errorMessage,*) "Parameter file ", trim(paramFile), &
                                  " not found. A template file has &
                                  &been created"
-           call terminate("readParamFile", errorMessage)
+           call returnFail("readParamFile", errorMessage)
 
          endif
 

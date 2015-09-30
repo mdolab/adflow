@@ -44,7 +44,7 @@
 
        allocate(IOVar(nDom,nSolsRead), stat=ierr)
        if(ierr /= 0)                &
-         call terminate("setIOVar", &
+         call returnFail("setIOVar", &
                         "Memory allocation failure for solRead")
 
        ! Determine the equation mode we are solving and set the pointers
@@ -109,7 +109,7 @@
 
                  allocate(IOVar(nn,mm)%w(2:il,2:jl,2:kl,nw), stat=ierr)
                  if(ierr /= 0)                &
-                   call terminate("setIOVar", &
+                   call returnFail("setIOVar", &
                                   "Memory allocation failure for w")
                enddo
 

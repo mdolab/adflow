@@ -52,7 +52,7 @@
 !
 #ifdef USE_NO_CGNS
 
-       call terminate("writeCGNSHeader", &
+       call returnFail("writeCGNSHeader", &
                       "Routine should not be called if no cgns support &
                       &is selected.")
 
@@ -66,7 +66,7 @@
 
        call cg_goto_f(cgnsInd, base, ierr, "end")
        if(ierr /= CG_OK)                    &
-           call terminate("writeCGNSHeader", &
+           call returnFail("writeCGNSHeader", &
                           "Something wrong when calling cg_goto_f")
 
        ! Create a data class type node to indicate that nonDimensional
@@ -75,7 +75,7 @@
 
        call cg_dataclass_write_f(NormalizedByDimensional,ierr)
        if(ierr /= CG_OK)                  &
-         call terminate("writeCGNSHeader", &
+         call returnFail("writeCGNSHeader", &
                         "Something wrong when calling &
                         &cg_dataclass_write_f")
 
@@ -84,7 +84,7 @@
        call cg_descriptor_write_f("SolverInfo", &
                                   "SUmb multiblock code", ierr)
        if(ierr /= CG_OK)                  &
-         call terminate("writeCGNSHeader", &
+         call returnFail("writeCGNSHeader", &
                         "Something wrong when calling &
                         &cg_descriptor_write_f")
 
@@ -94,7 +94,7 @@
        call describeScheme(message)
        call cg_descriptor_write_f("DiscretizationScheme", message, ierr)
        if(ierr /= CG_OK)                  &
-         call terminate("writeCGNSHeader", &
+         call returnFail("writeCGNSHeader", &
                         "Something wrong when calling &
                         &cg_descriptor_write_f")
 
@@ -109,7 +109,7 @@
            call cg_simulation_type_write_f(cgnsInd, base, &
                                            nonTimeaccurate, ierr)
            if(ierr /= CG_OK)                  &
-             call terminate("writeCGNSHeader", &
+             call returnFail("writeCGNSHeader", &
                             "Something wrong when calling &
                             &cg_simulation_type_write_f")
 
@@ -122,7 +122,7 @@
            call cg_simulation_type_write_f(cgnsInd, base, &
                                            timeaccurate, ierr)
            if(ierr /= CG_OK)                  &
-             call terminate("writeCGNSHeader", &
+             call returnFail("writeCGNSHeader", &
                             "Something wrong when calling &
                             &cg_simulation_type_write_f")
 
@@ -145,7 +145,7 @@
 
            call cg_descriptor_write_f("UnsteadyInfo", message, ierr)
            if(ierr /= CG_OK)                  &
-             call terminate("writeCGNSHeader", &
+             call returnFail("writeCGNSHeader", &
                             "Something wrong when calling &
                             &cg_descriptor_write_f")
 
@@ -159,7 +159,7 @@
            call cg_simulation_type_write_f(cgnsInd, base, &
                                            UserDefined, ierr)
            if(ierr /= CG_OK)                  &
-             call terminate("writeCGNSHeader", &
+             call returnFail("writeCGNSHeader", &
                             "Something wrong when calling &
                             &cg_simulation_type_write_f")
 
@@ -177,7 +177,7 @@
 
            call cg_descriptor_write_f("PeriodicInfo", message, ierr)
            if(ierr /= CG_OK)                  &
-             call terminate("writeCGNSHeader", &
+             call returnFail("writeCGNSHeader", &
                             "Something wrong when calling &
                             &cg_descriptor_write_f")
        end select
@@ -186,14 +186,14 @@
 
        call cg_goto_f(cgnsInd, base, ierr, "end")
        if(ierr /= CG_OK)                    &
-           call terminate("writeCGNSHeader", &
+           call returnFail("writeCGNSHeader", &
                           "Something wrong when calling cg_goto_f")
 
        ! Create a flow equation set.
 
        call cg_equationset_write_f(cgnsPhysDim, ierr)
        if(ierr /= CG_OK)                    &
-           call terminate("writeCGNSHeader", &
+           call returnFail("writeCGNSHeader", &
                           "Something wrong when calling &
                           &cg_equationset_write_f")
 
@@ -203,7 +203,7 @@
        call cg_goto_f(cgnsInd, base, ierr, &
                       "FlowEquationSet_t", 1, "end")
        if(ierr /= CG_OK)                  &
-         call terminate("writeCGNSHeader", &
+         call returnFail("writeCGNSHeader", &
                         "Something wrong when calling cg_goto_f")
 
        ! Write the governing equations solved.
@@ -220,7 +220,7 @@
        end select
 
        if(ierr /= CG_OK)                  &
-         call terminate("writeCGNSHeader", &
+         call returnFail("writeCGNSHeader", &
                         "Something wrong when calling &
                         &cg_governing_write_f")
 
@@ -235,7 +235,7 @@
 
            call cg_model_write_f("GasModel_t", Ideal, ierr)
            if(ierr /= CG_OK)                &
-           call terminate("writeCGNSHeader", &
+           call returnFail("writeCGNSHeader", &
                           "Something wrong when calling &
                           &cg_model_write_f")
 
@@ -245,14 +245,14 @@
            call cg_goto_f(cgnsInd, base, ierr, "FlowEquationSet_t", &
                           1, "GasModel_t", 1, "end")
            if(ierr /= CG_OK)                  &
-             call terminate("writeCGNSHeader", &
+             call returnFail("writeCGNSHeader", &
                             "Something wrong when calling cg_goto_f")
 
            val = gammaConstant
            call cg_array_write_f(cgnsHeatRatio, realTypeCGNS, &
                                    1, 1, val, ierr)
            if(ierr /= CG_OK)                  &
-             call terminate("writeCGNSHeader", &
+             call returnFail("writeCGNSHeader", &
                             "Something wrong when calling &
                             &cg_array_write_f")
 
@@ -263,12 +263,12 @@
                           "FlowEquationSet_t", 1,    &
                           "GasModel_t", 1, "DataArray_t", 1,"end")
            if(ierr /= CG_OK)                  &
-             call terminate("writeCGNSHeader", &
+             call returnFail("writeCGNSHeader", &
                             "Something wrong when calling cg_goto_f")
 
            call cg_dataclass_write_f(NonDimensionalParameter,ierr)
            if(ierr /= CG_OK)                  &
-             call terminate("writeCGNSHeader", &
+             call returnFail("writeCGNSHeader", &
                             "Something wrong when calling &
                             &cg_dataclass_write_f")
 
@@ -280,7 +280,7 @@
 
            call cg_model_write_f("GasModel_t", ThermallyPerfect, ierr)
            if(ierr /= CG_OK)                  &
-             call terminate("writeCGNSHeader", &
+             call returnFail("writeCGNSHeader", &
                             "Something wrong when calling &
                             &cg_model_write_f")
 
@@ -297,12 +297,12 @@
          call cg_goto_f(cgnsInd, base, ierr, &
                         "FlowEquationSet_t", 1, "end")
          if(ierr /= CG_OK)                  &
-           call terminate("writeCGNSHeader", &
+           call returnFail("writeCGNSHeader", &
                           "Something wrong when calling cg_goto_f")
 
          call cg_model_write_f("ViscosityModel_t", sutherlandlaw, ierr)
          if(ierr /= CG_OK)                  &
-           call terminate("writeCGNSHeader", &
+           call returnFail("writeCGNSHeader", &
                           "Something wrong when calling &
                           &cg_model_write_f")
 
@@ -312,21 +312,21 @@
          call cg_model_write_f("ThermalConductivityModel_t", &
                                constantPrandtl, ierr)
          if(ierr /= CG_OK)                  &
-           call terminate("writeCGNSHeader", &
+           call returnFail("writeCGNSHeader", &
                           "Something wrong when calling &
                           &cg_model_write_f")
 
          call cg_goto_f(cgnsInd, base, ierr, "FlowEquationSet_t", 1,&
                         "ThermalConductivityModel_t", 1, "end")
          if(ierr /= CG_OK)                  &
-           call terminate("writeCGNSHeader", &
+           call returnFail("writeCGNSHeader", &
                           "Something wrong when calling cg_goto_f")
 
          val = prandtl
          call cg_array_write_f(cgnsPrandtl, realTypeCGNS, 1, 1, &
                                val, ierr)
          if(ierr /= CG_OK)                  &
-           call terminate("writeCGNSHeader", &
+           call returnFail("writeCGNSHeader", &
                           "Something wrong when calling &
                           &cg_array_write_f")
 
@@ -337,12 +337,12 @@
                         1, "ThermalConductivityModel_t", 1,       &
                         "DataArray_t", 1,"end")
          if(ierr /= CG_OK)                  &
-           call terminate("writeCGNSHeader", &
+           call returnFail("writeCGNSHeader", &
                           "Something wrong when calling cg_goto_f")
 
          call cg_dataclass_write_f(NonDimensionalParameter,ierr)
          if(ierr /= CG_OK)                  &
-           call terminate("writeCGNSHeader", &
+           call returnFail("writeCGNSHeader", &
                           "Something wrong when calling &
                           &cg_dataclass_write_f")
 

@@ -49,7 +49,7 @@
 !
 #ifdef USE_NO_CGNS
 
-       call terminate("writeReferenceState", &
+       call returnFail("writeReferenceState", &
                       "Routine should not be called if no cgns support &
                       &is selected.")
 
@@ -62,7 +62,7 @@
 
        call cg_goto_f(cgnsInd, cgnsBase, ierr, "end")
        if(ierr /= CG_OK)                      &
-         call terminate("writeReferenceState", &
+         call returnFail("writeReferenceState", &
                         "Something wrong when calling cg_goto_f")
 
        ! Create the reference state node with a nice description.
@@ -72,7 +72,7 @@
                              &nonDimensionalized using the reference &
                              &density, pressure and temperature.", ierr)
        if(ierr /= CG_OK)                      &
-         call terminate("writeReferenceState", &
+         call returnFail("writeReferenceState", &
                         "Something wrong when calling cg_state_write_f")
 
        ! The actual data should be written below the reference state
@@ -81,7 +81,7 @@
        call cg_goto_f(cgnsInd, cgnsBase, ierr, &
                       "ReferenceState_t", 1, "end")
        if(ierr /= CG_OK)                      &
-         call terminate("writeReferenceState", &
+         call returnFail("writeReferenceState", &
                         "Something wrong when calling cg_goto_f")
 
        ! Write the Mach number and indicate that it is a nonDimensional
@@ -90,19 +90,19 @@
        val = Mach
        call cg_array_write_f(cgnsMach, realTypeCGNS, 1, 1, val, ierr)
        if(ierr /= CG_OK)                      &
-         call terminate("writeReferenceState", &
+         call returnFail("writeReferenceState", &
                         "Something wrong when calling cg_array_write_f")
 
        ii = 1
        call cg_goto_f(cgnsInd, cgnsBase, ierr, "ReferenceState_t", 1, &
                       "DataArray_t", ii, "end")
        if(ierr /= CG_OK)                      &
-         call terminate("writeReferenceState", &
+         call returnFail("writeReferenceState", &
                         "Something wrong when calling cg_goto_f")
 
        call cg_dataclass_write_f(NonDimensionalParameter, ierr)
        if(ierr /= CG_OK)                      &
-         call terminate("writeReferenceState", &
+         call returnFail("writeReferenceState", &
                         "Something wrong when calling &
                         &cg_dataclass_write_f")
 
@@ -115,7 +115,7 @@
          call cg_goto_f(cgnsInd, cgnsBase, ierr, &
                         "ReferenceState_t", 1, "end")
          if(ierr /= CG_OK)                      &
-           call terminate("writeReferenceState", &
+           call returnFail("writeReferenceState", &
                           "Something wrong when calling cg_goto_f")
 
          ! Store component i of the direction in val.
@@ -138,7 +138,7 @@
          end select
 
          if(ierr /= CG_OK)                      &
-           call terminate("writeReferenceState", &
+           call returnFail("writeReferenceState", &
                           "Something wrong when calling &
                           &cg_array_write_f")
 
@@ -148,12 +148,12 @@
          call cg_goto_f(cgnsInd, cgnsBase, ierr, "ReferenceState_t", 1, &
                         "DataArray_t", ii, "end")
          if(ierr /= CG_OK)                      &
-           call terminate("writeReferenceState", &
+           call returnFail("writeReferenceState", &
                           "Something wrong when calling cg_goto_f")
 
          call cg_dataclass_write_f(NonDimensionalParameter, ierr)
          if(ierr /= CG_OK)                      &
-           call terminate("writeReferenceState", &
+           call returnFail("writeReferenceState", &
                           "Something wrong when calling &
                           &cg_dataclass_write_f")
 
@@ -168,14 +168,14 @@
          call cg_goto_f(cgnsInd, cgnsBase, ierr, &
                         "ReferenceState_t", 1, "end")
          if(ierr /= CG_OK)                      &
-           call terminate("writeReferenceState", &
+           call returnFail("writeReferenceState", &
                           "Something wrong when calling cg_goto_f")
 
          val = Reynolds
          call cg_array_write_f(cgnsReyn, realTypeCGNS, 1, 1, &
                                val, ierr)
          if(ierr /= CG_OK)                      &
-           call terminate("writeReferenceState", &
+           call returnFail("writeReferenceState", &
                           "Something wrong when calling &
                           &cg_array_write_f")
 
@@ -183,12 +183,12 @@
          call cg_goto_f(cgnsInd, cgnsBase, ierr, "ReferenceState_t", 1, &
                         "DataArray_t", ii, "end")
          if(ierr /= CG_OK)                      &
-           call terminate("writeReferenceState", &
+           call returnFail("writeReferenceState", &
                           "Something wrong when calling cg_goto_f")
 
          call cg_dataclass_write_f(NonDimensionalParameter, ierr)
          if(ierr /= CG_OK)                      &
-           call terminate("writeReferenceState", &
+           call returnFail("writeReferenceState", &
                           "Something wrong when calling &
                           &cg_dataclass_write_f")
 
@@ -198,14 +198,14 @@
          call cg_goto_f(cgnsInd, cgnsBase, ierr, &
                         "ReferenceState_t", 1, "end")
          if(ierr /= CG_OK)                      &
-           call terminate("writeReferenceState", &
+           call returnFail("writeReferenceState", &
                           "Something wrong when calling cg_goto_f")
 
          val = ReynoldsLength
          call cg_array_write_f(cgnsReynLen, realTypeCGNS, &
                                1, 1, val, ierr)
          if(ierr /= CG_OK)                      &
-           call terminate("writeReferenceState", &
+           call returnFail("writeReferenceState", &
                           "Something wrong when calling &
                           &cg_array_write_f")
 
@@ -213,12 +213,12 @@
          call cg_goto_f(cgnsInd, cgnsBase, ierr, "ReferenceState_t", 1, &
                         "DataArray_t", ii, "end")
          if(ierr /= CG_OK)                      &
-           call terminate("writeReferenceState", &
+           call returnFail("writeReferenceState", &
                           "Something wrong when calling cg_goto_f")
 
          call cg_dataclass_write_f(NormalizedByDimensional, ierr)
          if(ierr /= CG_OK)                      &
-           call terminate("writeReferenceState", &
+           call returnFail("writeReferenceState", &
                           "Something wrong when calling &
                           &cg_dataclass_write_f")
 
@@ -234,7 +234,7 @@
          call cg_goto_f(cgnsInd, cgnsBase, ierr, &
                         "ReferenceState_t", 1, "end")
          if(ierr /= CG_OK)                      &
-           call terminate("writeReferenceState", &
+           call returnFail("writeReferenceState", &
                           "Something wrong when calling cg_goto_f")
 
          ! Write a value, depending on i.
@@ -266,7 +266,7 @@
          end select
 
          if(ierr /= CG_OK)                      &
-           call terminate("writeReferenceState", &
+           call returnFail("writeReferenceState", &
                           "Something wrong when calling &
                           &cg_array_write_f")
 
@@ -277,19 +277,19 @@
          call cg_goto_f(cgnsInd, cgnsBase, ierr, "ReferenceState_t", 1, &
                         "DataArray_t", ii, "end")
          if(ierr /= CG_OK)                      &
-           call terminate("writeReferenceState", &
+           call returnFail("writeReferenceState", &
                           "Something wrong when calling cg_goto_f")
 
          call cg_dataclass_write_f(Dimensional, ierr)
          if(ierr /= CG_OK)                      &
-           call terminate("writeReferenceState", &
+           call returnFail("writeReferenceState", &
                           "Something wrong when calling &
                           &cg_dataclass_write_f")
 
          call cg_units_write_f(Kilogram, Meter, Second, Kelvin, &
                                Null, ierr)
          if(ierr /= CG_OK)                      &
-           call terminate("writeReferenceState", &
+           call returnFail("writeReferenceState", &
                           "Something wrong when calling &
                           &cg_units_write_f")
 

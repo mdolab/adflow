@@ -232,7 +232,7 @@
                write(errorMessage,100) &
             trim(cgnsDoms(nbkGlobal)%zonename), &
             trim(cgnsDoms(nbkGlobal)%bocoInfo(cgnsBoco)%bocoName)
-               call terminate("extractFromDataSet", errorMessage)
+               call returnFail("extractFromDataSet", errorMessage)
              endif
 
              ! Check what kind of interpolation must be used.
@@ -254,7 +254,7 @@
 
                case (2_intType, 3_intType)
 
-                  call terminate("extractFromDataSet", &
+                  call returnFail("extractFromDataSet", &
                                  "Multi-D Cartesian interpolation &
                                  &not implemented yet")
 
@@ -269,7 +269,7 @@
              write(errorMessage,101) &
             trim(cgnsDoms(nbkGlobal)%zonename), &
             trim(cgnsDoms(nbkGlobal)%bocoInfo(cgnsBoco)%bocoName)
-               call terminate("extractFromDataSet", errorMessage)
+               call returnFail("extractFromDataSet", errorMessage)
 
            endif
 
@@ -391,7 +391,7 @@
             trim(cgnsDoms(nbkGlobal)%zonename), &
             trim(cgnsDoms(nbkGlobal)%bocoInfo(cgnsBoco)%bocoName), &
             trim(bcVarNames(m))
-                   call terminate("extractFromDataSet", errorMessage)
+                   call returnFail("extractFromDataSet", errorMessage)
                  endif
 
                  ! Check what kind of interpolation must be used.
@@ -413,7 +413,7 @@
 
                    case (2_intType, 3_intType)
 
-                      call terminate("extractFromDataSet", &
+                      call returnFail("extractFromDataSet", &
                                      "Multi-D Cartesian interpolation &
                                      &not implemented yet")
 
@@ -430,7 +430,7 @@
             trim(cgnsDoms(nbkGlobal)%zonename), &
             trim(cgnsDoms(nbkGlobal)%bocoInfo(cgnsBoco)%bocoName), &
             trim(bcVarNames(m))
-                   call terminate("extractFromDataSet", &
+                   call returnFail("extractFromDataSet", &
                                   errorMessage)
                endif
 

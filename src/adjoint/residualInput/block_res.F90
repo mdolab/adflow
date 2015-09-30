@@ -149,7 +149,7 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, &
         ! Not implemented yet
         !call SST_block(.true.)
      case default
-        call terminate("turbResidual", & 
+        call returnFail("turbResidual", & 
              "Only SA turbulence adjoint implemented")
      end select
   endif

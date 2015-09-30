@@ -62,7 +62,7 @@
                 sendBufInt(nInterp,ii), recvBufInt(nInterp,jj), &
                 sendRequests2(i),       recvRequests2(j), stat=ierr)
        if(ierr /= 0)                           &
-         call terminate("setBlockOversetData", &
+         call returnFail("setBlockOversetData", &
                         "Memory allocation failure for buffers")
  
        ! Loop over the processors i need to send to and their lists.
@@ -145,7 +145,7 @@
                   flowDoms(n,level,sps)%overint(nInterp,i), &
                   stat=ierr)
          if(ierr /= 0)                           &
-           call terminate("setBlockOversetData", &
+           call returnFail("setBlockOversetData", &
                           "Memory allocation failure for block data")
  
        end do
@@ -224,7 +224,7 @@
        deallocate(sendBuf, recvBuf, sendBufInt, recvBufInt, &
                   sendRequests2, recvRequests2, stat=ierr)
        if(ierr /= 0)                        &
-         call terminate("setBlockOversetData", &
+         call returnFail("setBlockOversetData", &
                         "Deallocation failure for buffers")
 
        end subroutine setBlockOversetData
