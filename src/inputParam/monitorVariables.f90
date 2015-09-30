@@ -56,7 +56,7 @@
 
        if( allocated(monNames) ) then
          deallocate(monNames, stat=ierr)
-         if(ierr /= 0) call terminate("monitorVariables", &
+         if(ierr /= 0) call returnFail("monitorVariables", &
                                       "Deallocation error for monNames")
        endif
 
@@ -201,7 +201,7 @@
              write(errorMessage,"(3a)") "Unknown monitoring variable, ", &
                                         trim(keyword), ", specified"
              if(myID == 0) &
-               call terminate("monitorVariables", errorMessage)
+               call returnFail("monitorVariables", errorMessage)
              call mpi_barrier(SUmb_comm_world, ierr)
 
          end select
@@ -223,7 +223,7 @@
        if( monDturb ) pos = nMon + 4
        allocate(monNames(pos), stat=ierr)
        if(ierr /= 0)                         &
-         call terminate("monitorVariables", &
+         call returnFail("monitorVariables", &
                         "Memory allocation failure for monNames")
 
        ! Copy the monitoring names into monNames.

@@ -77,7 +77,7 @@
 
          if(nn == 0) then
            if(myID == 0)                        &
-             call terminate("readEnergyPlot3D", &
+             call returnFail("readEnergyPlot3D", &
                             "Neither total energy nor pressure present &
                             &in the restart file")
            call mpi_barrier(SUmb_comm_world, ierr)

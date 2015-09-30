@@ -102,7 +102,7 @@
          
          
       else
-         call terminate('getDirVector', 'Invalid Lift Direction')
+         call returnFail('getDirVector', 'Invalid Lift Direction')
          
       endif
       

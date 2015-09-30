@@ -251,11 +251,11 @@ subroutine timeStep_block(onlyRadii)
 #endif  
 
   case (Turkel)
-     call terminate("timeStep","Turkel preconditioner not implemented yet")
+     call returnFail("timeStep","Turkel preconditioner not implemented yet")
 
 
   case (ChoiMerkle)
-     call terminate("timeStep", &
+     call returnFail("timeStep", &
           "choi merkle preconditioner not implemented yet")
   end select
  

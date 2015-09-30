@@ -76,7 +76,7 @@
 
          if(nn == 0) then
            if(myID == 0)                           &
-             call terminate("readZmomentumPlot3D", &
+             call returnFail("readZmomentumPlot3D", &
                             "Neither z-velocity nor z-momentum present &
                             &in the restart file")
            call mpi_barrier(SUmb_comm_world, ierr)

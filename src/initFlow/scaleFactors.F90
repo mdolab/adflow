@@ -17,7 +17,7 @@
 !      * given cgns file or they are simply set to 1.0; the latter      *
 !      * occurs if the input parameter checkRestartSol is .false.       *
 !      * If no reference state is present checkRestartSol is .true.     *
-!      * An error message will be printed and the program terminates.   *
+!      * An error message will be printed and the program returnFails.   *
 !      *                                                                *
 !      ******************************************************************
 !
@@ -34,7 +34,7 @@
        integer, dimension(nSolsRead), intent(in) :: fileIDs
 
 #ifdef USE_NO_CGNS
-       call terminate("scaleFactors", &
+       call returnFail("scaleFactors", &
                       "Routine should not be called if no cgns support &
                       &is selected.")
 #else
@@ -89,7 +89,7 @@
 
        call cg_goto_f(cgnsInd, cgnsBase, ierr, "end")
        if(ierr /= all_ok)                &
-         call terminate("scaleFactors", &
+         call returnFail("scaleFactors", &
                         "Something wrong when calling cg_goto_f")
 
        ! Try to determine the size of the string describing the reference
@@ -101,13 +101,13 @@
 
          ! Reference state does not exist. Check if the restart solution
          ! must be checked. If not, return; otherwise print an error
-         ! message and terminate the execution. This error message is
+         ! message and returnFail the execution. This error message is
          ! only printed by processor 0 to avoid a messy output.
 
          if(.not. checkRestartSol) return
 
          if(myId == 0)                    &
-           call terminate("scaleFactors", &
+           call returnFail("scaleFactors", &
                           "Reference state not presented in restart &
                           &file. Scaling factors cannot be determined.")
 
@@ -122,14 +122,14 @@
        call cg_goto_f(cgnsInd, cgnsBase, ierr, &
                       "ReferenceState_t", 1, "end")
        if(ierr /= all_ok)                &
-         call terminate("scaleFactors", &
+         call returnFail("scaleFactors", &
                         "Something wrong when calling cg_goto_f")
 
        ! Found out how many reference variables are stored.
 
        call cg_narrays_f(nRef, ierr)
        if(ierr /= all_ok)               &
-         call terminate("scaleFactors", &
+         call returnFail("scaleFactors", &
                         "Something wrong when calling cg_narrays_f")
 
        ! Allocate the memory for refNames, tmpNames and ind.
@@ -137,7 +137,7 @@
        allocate(refNames(nRef), tmpNames(nRef), ind(nRef), &
                 stat=ierr)
        if(ierr /= 0)                     &
-         call terminate("scaleFactors", &
+         call returnFail("scaleFactors", &
                         "Memory allocation failure for refNames, etc.")
 
        ! Read the names of the reference variables. Store them in
@@ -147,7 +147,7 @@
          call cg_array_info_f(i, refNames(i), typeCGNS, nDim, &
                               nsize, ierr)
          if(ierr /= all_ok)                &
-           call terminate("scaleFactors", &
+           call returnFail("scaleFactors", &
                           "Something wrong when calling cg_array_info_f")
 
          ! Check the dimension and the size of the array.
@@ -183,7 +183,7 @@
          ii = bsearchStrings(cgnsDensity, refNames, nn)
          if(ii == 0) then
            if(myId == 0)                    &
-             call terminate("scaleFactors", &
+             call returnFail("scaleFactors", &
                             "No reference density found in restart file")
 
            ! The other processors will wait until they are killed.
@@ -194,7 +194,7 @@
          i = ind(ii)
          call cg_array_read_as_f(i, realTypeCGNS, tmpScale, ierr)
          if(ierr /= all_ok)               &
-           call terminate("scaleFactors", &
+           call returnFail("scaleFactors", &
                           "Something wrong when calling &
                           &cg_array_read_as_f")
          rhoScale = tmpScale
@@ -204,7 +204,7 @@
          ii = bsearchStrings(cgnsPressure, refNames, nn)
          if(ii == 0) then
            if(myId == 0)                    &
-             call terminate("scaleFactors", &
+             call returnFail("scaleFactors", &
                             "No reference pressure found in &
                             &restart file")
 
@@ -216,7 +216,7 @@
          i = ind(ii)
          call cg_array_read_as_f(i, realTypeCGNS, tmpScale, ierr)
          if(ierr /= all_ok)                &
-           call terminate("scaleFactors", &
+           call returnFail("scaleFactors", &
                           "Something wrong when calling &
                           &cg_array_read_as_f")
          pScale = tmpScale
@@ -226,7 +226,7 @@
          ii = bsearchStrings(cgnsVelocity, refNames, nn)
          if(ii == 0) then
            if(myId == 0)                    &
-             call terminate("scaleFactors", &
+             call returnFail("scaleFactors", &
                             "No reference velocity found in &
                             &restart file")
 
@@ -238,7 +238,7 @@
          i = ind(ii)
          call cg_array_read_as_f(i, realTypeCGNS, tmpScale, ierr)
          if(ierr /= all_ok)                &
-           call terminate("scaleFactors", &
+           call returnFail("scaleFactors", &
                           "Something wrong when calling &
                           &cg_array_read_as_f")
          velScale = tmpScale
@@ -256,7 +256,7 @@
            i = ind(ii)
            call cg_array_read_as_f(i, realTypeCGNS, tmpScale, ierr)
            if(ierr /= all_ok)                &
-             call terminate("scaleFactors", &
+             call returnFail("scaleFactors", &
                             "Something wrong when calling &
                             &cg_array_read_as_f")
            muScale = tmpScale
@@ -274,7 +274,7 @@
              i = ind(ii)
              call cg_array_read_as_f(i, realTypeCGNS, tmpScale, ierr)
              if(ierr /= all_ok)                &
-               call terminate("scaleFactors", &
+               call returnFail("scaleFactors", &
                               "Something wrong when calling &
                               &cg_array_read_as_f")
 
@@ -293,7 +293,7 @@
                i = ind(ii)
                call cg_array_read_as_f(i, realTypeCGNS, tmpScale, ierr)
                if(ierr /= all_ok)               &
-                 call terminate("scaleFactors", &
+                 call returnFail("scaleFactors", &
                                 "Something wrong when calling &
                                 &cg_array_read_as_f")
 
@@ -324,7 +324,7 @@
 
        deallocate(refNames, tmpNames, ind, stat=ierr)
        if(ierr /= 0)                    &
-         call terminate("scaleFactors", &
+         call returnFail("scaleFactors", &
                         "Deallocation error for convNames, etc.")
 
 #endif

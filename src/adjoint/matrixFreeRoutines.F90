@@ -684,7 +684,7 @@ subroutine computeMatrixFreeProductBwdFast(dwbar, wbar, stateSize)
               call turbadvection_fast_b(1_inttype, 1_inttype, itu1-1, qq)
               call sasource_fast_b()
            case default
-              call terminate("matrixFreeRoutines", &
+              call returnFail("matrixFreeRoutines", &
                    "Only SA turbulence adjoint implemented")
            end select
 

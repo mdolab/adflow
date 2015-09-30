@@ -98,7 +98,7 @@
 
          allocate(P3D_IOParts(P3D_nIOParts), stat=ierr)
          if(ierr /= 0)                            &
-           call terminate("determineCommSizesIO", &
+           call returnFail("determineCommSizesIO", &
                           "Memory allocation failure for P3D_IOParts")
 
          ! Dummy allocations for the processor ID's and message sizes
@@ -110,7 +110,7 @@
            allocate(P3D_procSend(P3D_nProcSend), &
                     P3D_sendSize(0:P3D_nProcSend), stat=ierr)
            if(ierr /= 0)                            &
-             call terminate("determineCommSizesIO", &
+             call returnFail("determineCommSizesIO", &
                             "Memory allocation failure for P3D_procSend &
                             &and P3D_sendSize")
            P3D_sendSize(0) = 0
@@ -120,7 +120,7 @@
            allocate(P3D_procRecv(P3D_nProcRecv), &
                   P3D_recvSize(0:P3D_nProcRecv), stat=ierr)
            if(ierr /= 0)                            &
-             call terminate("determineCommSizesIO", &
+             call returnFail("determineCommSizesIO", &
                             "Memory allocation failure for P3D_procRecv &
                             &and P3D_recvSize")
            P3D_recvSize(0) = 0
@@ -184,7 +184,7 @@
 
        allocate(P3D_IOParts(P3D_nIOParts), stat=ierr)
        if(ierr /= 0)                            &
-         call terminate("determineCommSizesIO", &
+         call returnFail("determineCommSizesIO", &
                         "Memory allocation failure for P3D_IOParts")
 
        ! Nullify the pointers of P3D_IOParts.
@@ -429,7 +429,7 @@
          allocate(P3D_procSend(P3D_nProcSend), &
                   P3D_sendSize(0:P3D_nProcSend), stat=ierr)
          if(ierr /= 0)                            &
-           call terminate("determineCommSizesIO", &
+           call returnFail("determineCommSizesIO", &
                           "Memory allocation failure for P3D_procSend &
                           &and P3D_sendSize")
 
@@ -461,7 +461,7 @@
          allocate(P3D_procRecv(P3D_nProcRecv), &
                   P3D_recvSize(0:P3D_nProcRecv), stat=ierr)
          if(ierr /= 0)                            &
-           call terminate("determineCommSizesIO", &
+           call returnFail("determineCommSizesIO", &
                           "Memory allocation failure for P3D_procRecv &
                           &and P3D_recvSize")
 

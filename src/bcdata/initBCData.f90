@@ -56,7 +56,7 @@
              j = flowDoms(i,level,sps)%nBocos
              allocate(flowDoms(i,level,sps)%BCData(j), stat=ierr)
              if(ierr /= 0)                   &
-               call terminate("initBCData", &
+               call returnFail("initBCData", &
                               "Memory allocation failure for BCData")
 
              ! Set the pointers to make it more readable.

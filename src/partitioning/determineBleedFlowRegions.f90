@@ -60,7 +60,7 @@
        allocate( inflowBleeds( nInflowBleeds), &
                 outflowBleeds(nOutflowBleeds), stat=ierr)
        if(ierr /= 0)                                 &
-         call terminate("determineBleedFlowRegions", &
+         call returnFail("determineBleedFlowRegions", &
                         "Memory allocation failure for inflowBleeds &
                         &and outflowBleeds")
 
@@ -112,7 +112,7 @@
 !      * getMassFlux extracts the relative mass flux from the           *
 !      * prescribed data for the given family. If not present           *
 !      * processor 0 will print an error message and the computation    *
-!      * terminates.                                                    *
+!      * returnFails.                                                    *
 !      *                                                                *
 !      ******************************************************************
 !
@@ -165,13 +165,13 @@
 
        ! Check if the mass flux was prescribed.
        ! If not, processor 0 prints an error message and the
-       ! program terminates.
+       ! program returnFails.
 
        if(nn > nDataSet) then
          write(errorMessage,100) trim(cgnsFamilies(famID)%familyName)
  100     format("Family ", a, ": No mass flow prescribed for &
                 &a bleed flow region")
-         if(myID == 0) call terminate("getMassFlux", errorMessage)
+         if(myID == 0) call returnFail("getMassFlux", errorMessage)
          call mpi_barrier(SUmb_comm_world, ierr)
        endif
 

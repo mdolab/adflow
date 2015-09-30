@@ -143,7 +143,7 @@
 
        deallocate(fileIDs, gridFiles, IOVar, stat=ierr)
        if(ierr /= 0)                            &
-         call terminate("partitionAndReadGrid", &
+         call returnFail("partitionAndReadGrid", &
                         "Deallocation failure for fileIDs, gridFiles &
                         &and IOVar")
 

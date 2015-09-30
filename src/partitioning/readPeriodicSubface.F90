@@ -37,7 +37,7 @@
        real(kind=realType), dimension(3), intent(out) :: translation
 #ifdef USE_NO_CGNS
 
-       call terminate("readPeriodicSubface", &
+       call returnFail("readPeriodicSubface", &
                       "Routine should not be called if no cgns support &
                       &is selected.")
 #else
@@ -75,12 +75,12 @@
                         "GridConnectivityProperty_t", 1,         &
                         "Periodic_t", 1, "DataArray_t", 2, "end")
          if(ierr /= CG_OK)                      &
-           call terminate("readPeriodicSubface", &
+           call returnFail("readPeriodicSubface", &
                           "Something wrong when calling cg_goto_f")
 
          call cg_units_read_f(mass, len, time, temp, angle, ierr)
          if(ierr == error)                   &
-           call terminate("readPeriodicSubface", &
+           call returnFail("readPeriodicSubface", &
                           "Something wrong when calling cg_units_read_f")
 
          ! Check if the angle dimensions were specified.

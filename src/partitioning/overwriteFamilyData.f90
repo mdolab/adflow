@@ -81,7 +81,7 @@
          if(myID == 0) then
            write(errorMessage,*) "Parameter file ", trim(paramFile), &
                                  " not found anymore."
-           call terminate("overwriteFamilyData", errorMessage)
+           call returnFail("overwriteFamilyData", errorMessage)
          endif
 
          call mpi_barrier(SUmb_comm_world, ierr)
@@ -353,7 +353,7 @@
                                       &be either yes or no in the &
                                       &parameter file."
                  if(myID == 0) &
-                   call terminate("overwriteBoundaryInfo", string)
+                   call returnFail("overwriteBoundaryInfo", string)
                  call mpi_barrier(SUmb_comm_world, ierr)
              end select
 
@@ -405,7 +405,7 @@
            if(ios /= 0) then
              if(myID == 0) then
                write(string,100) trim(cgnsFamilies(nn)%familyName)
-               call terminate("overwriteBoundaryInfo", string)
+               call returnFail("overwriteBoundaryInfo", string)
              endif
              call mpi_barrier(SUmb_comm_world, ierr)
            endif
@@ -438,7 +438,7 @@
          if(pos == 0) then
            if(myID == 0) then
              write(string,100) trim(cgnsFamilies(nn)%familyName)
-             call terminate("overwriteBoundaryInfo", string)
+             call returnFail("overwriteBoundaryInfo", string)
            endif
            call mpi_barrier(SUmb_comm_world, ierr)
          endif
@@ -481,7 +481,7 @@
          if(nDim == 0) then
            if(myID == 0) then
              write(string,100) trim(cgnsFamilies(nn)%familyName)
-             call terminate("overwriteBoundaryInfo", string)
+             call returnFail("overwriteBoundaryInfo", string)
            endif
            call mpi_barrier(SUmb_comm_world, ierr)
          endif
@@ -493,7 +493,7 @@
 
          allocate(cgnsFamilies(nn)%dataSet(nVar), stat=ierr)
          if(ierr /= 0) &
-           call terminate("overwriteBoundaryInfo", &
+           call returnFail("overwriteBoundaryInfo", &
                           "Memory allocation failure for dataSet")
 
          dataSet => cgnsFamilies(nn)%dataSet
@@ -536,7 +536,7 @@
 
              allocate(dataSet(i)%dirichletArrays(1), stat=ierr)
              if(ierr /= 0)                               &
-               call terminate("overwriteBoundaryInfo", &
+               call returnFail("overwriteBoundaryInfo", &
                               "Memory allocation failure for &
                               &dirichletArrays")
 
@@ -547,7 +547,7 @@
 
              allocate(dataSet(i)%neumannArrays(1), stat=ierr)
              if(ierr /= 0)                               &
-               call terminate("overwriteBoundaryInfo", &
+               call returnFail("overwriteBoundaryInfo", &
                               "Memory allocation failure for &
                               &neumannArrays")
 
@@ -583,7 +583,7 @@
 
            allocate(BCData(1)%dataArr(nTot), stat=ierr)
            if(ierr /= 0) &
-           call terminate("overwriteBoundaryInfo", &
+           call returnFail("overwriteBoundaryInfo", &
                           "Memory allocation failure for dataArr")
          enddo
 
@@ -600,7 +600,7 @@
              if(ios /= 0) then
                if(myID == 0) then
                  write(string,100) trim(cgnsFamilies(nn)%familyName)
-                 call terminate("overwriteBoundaryInfo", string)
+                 call returnFail("overwriteBoundaryInfo", string)
                endif
                call mpi_barrier(SUmb_comm_world, ierr)
              endif
@@ -647,7 +647,7 @@
              if(ios /= 0) then
                if(myID == 0) then
                  write(string,101) trim(cgnsFamilies(nn)%familyName)
-                 call terminate("overwriteBoundaryInfo", string)
+                 call returnFail("overwriteBoundaryInfo", string)
                endif
                call mpi_barrier(SUmb_comm_world, ierr)
              endif
@@ -665,7 +665,7 @@
              if(pos == 0) then
                if(myID == 0) then
                  write(string,100) trim(cgnsFamilies(nn)%familyName)
-                 call terminate("overwriteBoundaryInfo", string)
+                 call returnFail("overwriteBoundaryInfo", string)
                endif
                call mpi_barrier(SUmb_comm_world, ierr)
              endif

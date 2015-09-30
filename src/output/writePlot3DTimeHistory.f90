@@ -63,7 +63,7 @@
        end select
 
        if(ierr /= 0)                              &
-         call terminate("writePlot3DTimeHistory", &
+         call returnFail("writePlot3DTimeHistory", &
                         "Memory allocation failure for either buf4 &
                         &or buf8")
 
@@ -85,7 +85,7 @@
 
        allocate(writeBuf(sizeBuf), stat=ierr)
        if(ierr /= 0)                              &
-         call terminate("writePlot3DTimeHistory", &
+         call returnFail("writePlot3DTimeHistory", &
                         "Memory allocation failure for writeBuf")
 
        ! Write the convergence header to the write buffer.
@@ -274,12 +274,12 @@
        end select
 
        if(ierr /= 0)                              &
-         call terminate("writePlot3DTimeHistory", &
+         call returnFail("writePlot3DTimeHistory", &
                         "Deallocation failure for either buf4 or buf8")
 
        deallocate(writeBuf, stat=ierr)
        if(ierr /= 0)                              &
-         call terminate("writePlot3DTimeHistory", &
+         call returnFail("writePlot3DTimeHistory", &
                         "Deallocation failure for writeBuf")
 
        end subroutine writePlot3DTimeHistory

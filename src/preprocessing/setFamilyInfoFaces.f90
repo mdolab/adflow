@@ -100,7 +100,7 @@
          allocate(massFlowFamilyInv(0:mm,nn), &
                   massFlowFamilyDiss(0:mm,nn), stat=ierr)
          if(ierr /= 0) &
-           call terminate("setFamilyInfoFaces", &
+           call returnFail("setFamilyInfoFaces", &
                           "Memory allocation failure for &
                            &massFlowFamilyInv and massFlowFamilyDiss")
        endif
@@ -123,7 +123,7 @@
                   flowDoms(nn,level,1)%factFamilyK(2:il,2:jl,1:kl), &
                   stat=ierr)
          if(ierr /= 0)                          &
-           call terminate("setFamilyInfoFaces", &
+           call returnFail("setFamilyInfoFaces", &
                           "Memory allocation failure for indFamily &
                           &and factFamily")
 

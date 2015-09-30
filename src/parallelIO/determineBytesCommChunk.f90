@@ -172,7 +172,7 @@
 
        if((sizeAvg + 10*sizeP3D_Real) >= maxSizeIO) then
          if(myID == 0)                               &
-           call terminate("determineBytesCommChunk", &
+           call returnFail("determineBytesCommChunk", &
                           "Amount of data to read per processor is &
                           &too much. Increase the number of processors")
          call mpi_barrier(SUmb_comm_world, ierr)

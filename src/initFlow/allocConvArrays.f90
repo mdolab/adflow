@@ -53,14 +53,14 @@ subroutine allocConvArrays(nIterTot)
 
      deallocate(convArray,stat=ierr)
      if(ierr /= 0) then
-        call terminate("allocConvArrays", &
+        call returnFail("allocConvArrays", &
              "Memory deallocation failure for convArrya")
      end if
    
 
      allocate(convArray(0:nIterTot,nTimeIntervalsSpectral,nMon), stat=ierr)
      if(ierr /= 0) then
-        call terminate("allocConvArrays", &
+        call returnFail("allocConvArrays", &
              "Memory allocation failure for convArray")
      end if
      convArray = zero
@@ -70,7 +70,7 @@ subroutine allocConvArrays(nIterTot)
 
      allocate(convArray(0:nIterTot,nTimeIntervalsSpectral,nMon), stat=ierr)
      if(ierr /= 0) then
-        call terminate("allocConvArrays", &
+        call returnFail("allocConvArrays", &
              "Memory allocation failure for convArray")
      end if
 

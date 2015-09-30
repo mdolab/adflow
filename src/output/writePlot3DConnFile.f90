@@ -46,7 +46,7 @@
        if(.not. writePlot3DConn) return
        if(myID /= 0)             return
 
-       call terminate("writePlot3DConnFile", "Not implemented yet")
+       call returnFail("writePlot3DConnFile", "Not implemented yet")
 
        ! Open the plot3D connectivity file for writing and check if it
        ! went okay.
@@ -55,7 +55,7 @@
             action="write", iostat=ierr)
        if(ierr /= 0) then
          write(string,101) trim(plot3DConnFile)
-         call terminate("writePlot3DConnFile", string)
+         call returnFail("writePlot3DConnFile", string)
        endif
 
 

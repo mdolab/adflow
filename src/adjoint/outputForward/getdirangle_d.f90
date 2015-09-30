@@ -187,7 +187,7 @@ subroutine getdirangle_d(freestreamaxis, freestreamaxisd, liftaxis, &
 &     2)**2+freestreamaxisnorm(1)**2)
     beta = atan2(freestreamaxisnorm(2), freestreamaxisnorm(1))
   else
-    call terminate('getdirangle', 'invalid lift direction')
+    call returnFail('getdirangle', 'invalid lift direction')
     alphad = 0.0_8
     betad = 0.0_8
   end if

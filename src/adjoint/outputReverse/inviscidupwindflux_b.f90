@@ -2906,17 +2906,17 @@ contains
 !          flux(imy)   = -porflux*(tmp*drv)
 !          flux(imz)   = -porflux*(tmp*drw)
 !          flux(irhoe) = -porflux*(tmp*dre)
-        call terminate('riemannflux', &
+        call returnFail('riemannflux', &
 &                   'turkel preconditioner not implemented yet')
       case (choimerkle) 
-        call terminate('riemannflux', &
+        call returnFail('riemannflux', &
 &                   'choi merkle preconditioner not implemented yet')
       end select
     case (vanleer) 
-      call terminate('riemannflux', &
+      call returnFail('riemannflux', &
 &                 'van leer fvs not implemented yet')
     case (ausmdv) 
-      call terminate('riemannflux', 'ausmdv fvs not implemented yet')
+      call returnFail('riemannflux', 'ausmdv fvs not implemented yet')
     end select
   end subroutine riemannflux
 end subroutine inviscidupwindflux_b

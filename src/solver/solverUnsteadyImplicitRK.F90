@@ -26,7 +26,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       call terminate("solverUnsteadyImplicitRK", &
+       call returnFail("solverUnsteadyImplicitRK", &
                       "Not implemented yet")
 
        end subroutine solverUnsteadyImplicitRK

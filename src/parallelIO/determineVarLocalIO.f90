@@ -122,7 +122,7 @@
                   P3D_IOParts(nn)%posLocal(ii), &
                   P3D_IOParts(nn)%indices(ii,3), stat=ierr)
          if(ierr /= 0)                           &
-           call terminate("determineVarLocalIO", &
+           call returnFail("determineVarLocalIO", &
                           "Memory allocation failure for blockID, etc.")
 !
 !        ****************************************************************
@@ -222,7 +222,7 @@
 
          if( debug ) then
            if(kk /= P3D_IOParts(nn)%nItemsLocal)   &
-             call terminate("determineVarLocalIO", &
+             call returnFail("determineVarLocalIO", &
                             "kk differs from nItemsLocal")
          endif
 

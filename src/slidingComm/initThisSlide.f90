@@ -161,7 +161,7 @@
                    integerString = adjustl(integerString)
                    write(errorMessage,100) trim(integerString)
 
-                   call terminate("initThisSlide", errorMessage)
+                   call returnFail("initThisSlide", errorMessage)
 
                  endif
 
@@ -176,7 +176,7 @@
                     integerString = adjustl(integerString)
                     write(errorMessage,101) trim(integerString)
 
-                    call terminate("initThisSlide", errorMessage)
+                    call returnFail("initThisSlide", errorMessage)
 
                  endif
                endif
@@ -233,7 +233,7 @@
            integerString = adjustl(integerString)
            write(errorMessage,102) trim(integerString)
 
-           call terminate("initThisSlide", errorMessage)
+           call returnFail("initThisSlide", errorMessage)
 
          endif
 
@@ -256,7 +256,7 @@
            integerString = adjustl(integerString)
            write(errorMessage,100) trim(integerString)
 
-           call terminate("initThisSlide", errorMessage)
+           call returnFail("initThisSlide", errorMessage)
 
          endif
        endif
@@ -282,7 +282,7 @@
            integerString = adjustl(integerString)
            write(errorMessage,103) trim(integerString)
 
-           call terminate("initThisSlide", errorMessage)
+           call returnFail("initThisSlide", errorMessage)
 
          endif
 
@@ -305,7 +305,7 @@
            integerString = adjustl(integerString)
            write(errorMessage,101) trim(integerString)
 
-           call terminate("initThisSlide", errorMessage)
+           call returnFail("initThisSlide", errorMessage)
 
          endif
        endif

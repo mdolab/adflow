@@ -48,7 +48,7 @@
 !
 #ifdef USE_NO_CGNS
 
-       call terminate("readFamilyInfo", &
+       call returnFail("readFamilyInfo", &
                       "Routine should not be called if no cgns support &
                       &is selected.")
 
@@ -57,7 +57,7 @@
 
        call cg_nfamilies_f(cgnsInd, cgnsBase, nn, ierr)
        if(ierr /= CG_OK)                 &
-         call terminate("readFamilyInfo", &
+         call returnFail("readFamilyInfo", &
                         "Something wrong when calling cg_nfamilies_f")
        cgnsNFamilies = nn
 	
@@ -65,7 +65,7 @@
 
        allocate(cgnsFamilies(nn), stat=ierr)
        if(ierr /= 0)                      &
-         call terminate("readFamilyInfo", &
+         call returnFail("readFamilyInfo", &
                         "Memory allocation failure for cgnsFamilies")
 
        ! Loop over the number of families and read the info.
@@ -95,7 +95,7 @@
                                nFamBC, nGeo, ierr)
 	
          if(ierr /= CG_OK)               &
-         call terminate("readFamilyInfo", &
+         call returnFail("readFamilyInfo", &
                         "Something wrong when calling cg_family_read_f")
 
          ! Determine the boundary condition for this family, if specified.
@@ -115,7 +115,7 @@
                                   cgnsFamilies(nn)%bcName,   &
                                   cgnsFamilies(nn)%BCTypeCGNS, ierr)
              if(ierr /= CG_OK)                 &
-               call terminate("readFamilyInfo", &
+               call returnFail("readFamilyInfo", &
                               "Something wrong when calling &
                               &cg_fambc_read_f")
 
@@ -132,12 +132,12 @@
                call cg_goto_f(cgnsInd, cgnsBase, ierr, &
                               "Family_t", nn, "end")
                if(ierr /= CG_OK)                 &
-                 call terminate("readFamilyInfo", &
+                 call returnFail("readFamilyInfo", &
                                 "Something wrong when calling cg_goto_f")
 
                call cg_nuser_data_f(nUserData, ierr)
                if(ierr /= CG_OK)                 &
-                 call terminate("readFamilyInfo", &
+                 call returnFail("readFamilyInfo", &
                                 "Something wrong when calling &
                                 &cg_nuser_data_f")
 
@@ -146,7 +146,7 @@
                if(nUserData /= 1) then
                  write(errorMessage,101) trim(cgnsFamilies(nn)%familyName)
                  if(myID == 0) &
-                   call terminate("readFamilyInfo", errorMessage)
+                   call returnFail("readFamilyInfo", errorMessage)
                  call mpi_barrier(SUmb_comm_world, ierr)
                endif
 
@@ -156,7 +156,7 @@
                                         cgnsFamilies(nn)%userDefinedName, &
                                         ierr)
                if(ierr /= CG_OK)                 &
-                 call terminate("readFamilyInfo", &
+                 call returnFail("readFamilyInfo", &
                                 "Something wrong when calling &
                                 &cg_user_data_read_f")
 
@@ -180,7 +180,7 @@
            case default
              write(errorMessage,201) trim(cgnsFamilies(nn)%familyName)
              if(myID == 0) &
-               call terminate("readFamilyInfo", errorMessage)
+               call returnFail("readFamilyInfo", errorMessage)
              call mpi_barrier(SUmb_comm_world, ierr)
 
          end select

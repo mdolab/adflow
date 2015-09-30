@@ -93,10 +93,10 @@
                case (DADI)
                   call DADISmoother
                case (nlLusgs)
-                 call terminate("executeMGCycle", &
+                 call returnFail("executeMGCycle", &
                                 "nlLusgs smoother not implemented yet")
                case (nlLusgsLine)
-                 call terminate("executeMGCycle", &
+                 call returnFail("executeMGCycle", &
                                 "nlLusgsLine smoother not implemented &
                                 &yet")
              end select

@@ -71,7 +71,7 @@
                       blocks(i)%neighOver,   blocks(i)%overComm,   &
                       stat=ierr)
            if(ierr /= 0) &
-             call terminate("determineComputeBlocks", &
+             call returnFail("determineComputeBlocks", &
                             "Deallocation error for subface info")
          enddo
 
@@ -79,7 +79,7 @@
 
          deallocate(blocks, stat=ierr)
          if(ierr /= 0) &
-           call terminate("determineComputeBlocks", &
+           call returnFail("determineComputeBlocks", &
                           "Deallocation error for blocks")
        endif
 
@@ -87,7 +87,7 @@
 
        allocate(blocks(nBlocks), stat=ierr)
        if(ierr /= 0) &
-         call terminate("determineComputeBlocks", &
+         call returnFail("determineComputeBlocks", &
                         "Memory allocation failure for blocks")
 
        ! Set the counter ii for the global computational block number
@@ -162,7 +162,7 @@
                     blocks(ii)%groupNum(nAlloc),    &
                     stat=ierr)
            if(ierr /= 0) &
-             call terminate("determineComputeBlocks", &
+             call returnFail("determineComputeBlocks", &
                             "Memory allocation failure for &
                             &subface info")
 
@@ -304,7 +304,7 @@
                write(errorMessage,100) trim(zoneName), trim(subName)
  100           format("Zone",1X,A,", boundary subface",1X,A, &
                       ": No constant index found for subface")
-               call terminate("BCFacesSubblock", errorMessage)
+               call returnFail("BCFacesSubblock", errorMessage)
              endif
 
              call mpi_barrier(SUmb_comm_world, ierr)
@@ -376,7 +376,7 @@
            if(blocks(ii)%BCType(jj) == BCNotValid) then
 
              ! To avoid a messy output only processor 0 calls
-             ! terminate. The other processors will wait until
+             ! returnFail. The other processors will wait until
              ! they are killed.
 
              if(myID == 0) then
@@ -399,7 +399,7 @@
                         &external flow")
                endif
 
-               call terminate("BCFacesSubblock", errorMessage)
+               call returnFail("BCFacesSubblock", errorMessage)
              endif
 
              call mpi_barrier(SUmb_comm_world, ierr)
@@ -556,7 +556,7 @@
                write(errorMessage,140) trim(zoneName), trim(subName)
  140           format("Zone",1X,A,", 1 to 1 block connectivity",1X,A, &
                       ": No constant index found for subface")
-               call terminate("externalFacesSubblock", errorMessage)
+               call returnFail("externalFacesSubblock", errorMessage)
              endif
 
              call mpi_barrier(SUmb_comm_world, ierr)

@@ -238,7 +238,7 @@
 
                  case (itu2)  ! epsilon cannot be fitted logarithmically.
                    if( tuLogFit(mm) ) then
-                      call terminate(&
+                      call returnFail(&
                            "curveTupYp", &
                            "Check curveFit, epsilon cannot be fitted with log")
                    else
@@ -257,7 +257,7 @@
                  case (itu4)
                    if( tuLogFit(mm) ) then
                       if(rvfN == 1) &
-                        call terminate(&
+                        call returnFail(&
                         "curveTupYp", &
                         "Check curveFit, f cannot be fitted with log")
                       if(rvfN == 6) tup(mm) = exp(tup(mm))*x

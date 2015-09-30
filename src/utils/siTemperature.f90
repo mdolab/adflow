@@ -73,7 +73,7 @@
 
            ! Unknown temperature unit.
 
-           call terminate("siTemperature", &
+           call returnFail("siTemperature", &
                           "No idea how to convert this to SI units")
 
        end select

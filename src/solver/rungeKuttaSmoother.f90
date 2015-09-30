@@ -245,7 +245,7 @@
                ! Compute the turbulent updates, if needed.
 
                if( turbCoupled ) then
-                 call terminate("executeRkStage", &
+                 call returnFail("executeRkStage", &
                                 "turbulent updates not implemented yet")
                endif
 
@@ -305,7 +305,7 @@
                ! Compute the turbulent updates, if needed.
 
                if( turbCoupled ) then
-                 call terminate("executeRkStage", &
+                 call returnFail("executeRkStage", &
                                 "turbulent updates not implemented yet")
                endif
 

@@ -54,7 +54,7 @@
 
          allocate(tmp(nFreestreamSubfaces,3), stat=ierr)
          if(ierr /= 0)                              &
-           call terminate("storeFreestreamSubface", &
+           call returnFail("storeFreestreamSubface", &
                           "Memory allocation failure for tmp")
 
          tmp = freestreamSubfaces
@@ -64,7 +64,7 @@
 
          deallocate(freestreamSubfaces, stat=ierr)
          if(ierr /= 0)                              &
-           call terminate("storeFreestreamSubface", &
+           call returnFail("storeFreestreamSubface", &
                           "Deallocation failure for freestreamSubfaces")
 
          nFreestreamSubfaces = nFreestreamSubfaces + 1
@@ -72,7 +72,7 @@
          allocate(freestreamSubfaces(nFreestreamSubfaces,3), &
                   stat=ierr)
          if(ierr /= 0)                              &
-           call terminate("storeFreestreamSubface", &
+           call returnFail("storeFreestreamSubface", &
                           "Memory allocation failure for &
                           &freestreamSubfaces")
 
@@ -87,7 +87,7 @@
 
          deallocate(tmp, stat=ierr)
          if(ierr /= 0)                              &
-           call terminate("storeFreestreamSubface", &
+           call returnFail("storeFreestreamSubface", &
                           "Deallocation failure for tmp")
 
        else testAllocated
@@ -100,7 +100,7 @@
          allocate(freestreamSubfaces(nFreestreamSubfaces,3), &
                   stat=ierr)
          if(ierr /= 0)                              &
-           call terminate("storeFreestreamSubface", &
+           call returnFail("storeFreestreamSubface", &
                           "Memory allocation failure for &
                           &freestreamSubfaces")
 

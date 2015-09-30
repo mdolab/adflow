@@ -62,7 +62,7 @@
 
            allocate(volSolFileNames(1), stat=ierr)
            if(ierr /= 0)                            &
-             call terminate("volSolFileNamesWrite", &
+             call returnFail("volSolFileNamesWrite", &
                             "Memory allocation failure for &
                             &volSolFileNames")
 
@@ -97,7 +97,7 @@
 
            allocate(volSolFileNames(nAvail), stat=ierr)
            if(ierr /= 0)                            &
-             call terminate("volSolFileNamesWrite", &
+             call returnFail("volSolFileNamesWrite", &
                             "Memory allocation failure for &
                             &volSolFileNames")
 
@@ -146,7 +146,7 @@
 
            allocate(volSolFileNames(nTimeIntervalsSpectral), stat=ierr)
            if(ierr /= 0)                            &
-             call terminate("volSolFileNamesWrite", &
+             call returnFail("volSolFileNamesWrite", &
                             "Memory allocation failure for &
                             &volSolFileNames")
 
@@ -184,7 +184,7 @@
 
          allocate(IOVar(nDom,nVolSolToWrite), stat=ierr)
          if(ierr /= 0)                            &
-           call terminate("volSolFileNamesWrite", &
+           call returnFail("volSolFileNamesWrite", &
                           "Memory allocation failure for IOVar")
 
          ! As the writing normally involves other variables than just
@@ -203,7 +203,7 @@
 
              allocate(IOVar(nn,1)%w(iEnd,jEnd,kEnd,1), stat=ierr)
              if(ierr /= 0)                            &
-               call terminate("volSolFileNamesWrite", &
+               call returnFail("volSolFileNamesWrite", &
                               "Memory allocation failure for IOVar%w")
            enddo
          else
@@ -216,7 +216,7 @@
 
              allocate(IOVar(nn,1)%w(2:iEnd,2:jEnd,2:kEnd,1), stat=ierr)
              if(ierr /= 0)                            &
-               call terminate("volSolFileNamesWrite", &
+               call returnFail("volSolFileNamesWrite", &
                               "Memory allocation failure for IOVar%w")
            enddo
          endif

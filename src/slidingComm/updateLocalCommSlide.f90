@@ -53,7 +53,7 @@
        deallocate(donorInfo%indBuf,  donorInfo%block, &
                   donorInfo%indices, donorInfo%weight, stat=ierr)
        if(ierr /= 0)                            &
-         call terminate("updateLocalCommSlide", &
+         call returnFail("updateLocalCommSlide", &
                         "Deallocation error for the member variables &
                         &of donorInfo.")
 

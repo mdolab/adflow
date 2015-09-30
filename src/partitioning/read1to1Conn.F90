@@ -43,7 +43,7 @@
 !
 #ifdef USE_NO_CGNS
 
-       call terminate("read1to1Conn", &
+       call returnFail("read1to1Conn", &
                       "Routine should not be called if no cgns support &
                       &is selected.")
 
@@ -65,7 +65,7 @@
                              cgnsDoms(nZone)%conn1to1(i)%donorName,   &
                              zoneRange, donorRange, transform, ierr)
          if(ierr /= CG_OK)                 &
-           call terminate("read1to1Conn", &
+           call returnFail("read1to1Conn", &
                           "Something wrong when calling cg_1to1_read_f")
 
          ! Store the zone range and donor range in cgnsDoms.

@@ -71,7 +71,7 @@
 
        allocate(subface1to1(nSubface1to1), coarseInfo(nDom), stat=ierr)
        if(ierr /= 0)                            &
-         call terminate("createCoarseBlocks", &
+         call returnFail("createCoarseBlocks", &
                         "Memory allocation failure for subface1to1 &
                         &and coarseInfo")
 
@@ -113,7 +113,7 @@
                   flowDoms(nn,levm1,1)%kCo(kkl), &
                   coarseInfo(nn)%coarseIs1to1(ii), stat=ierr)
          if(ierr /= 0)                          &
-           call terminate("createCoarseBlocks", &
+           call returnFail("createCoarseBlocks", &
                           "Memory allocation failure for iCo, jCo, kCo &
                           &and coarseIs1to1")
 
@@ -279,7 +279,7 @@
                   flowDoms(nn,levm1,1)%mgJCoarse(2:jjl,2), &
                   flowDoms(nn,levm1,1)%mgKCoarse(2:kkl,2), stat=ierr)
          if(ierr /= 0)                            &
-           call terminate("createCoarseBlocks", &
+           call returnFail("createCoarseBlocks", &
                           "Memory allocation failure for interpolation &
                           &variables")
 
@@ -420,7 +420,7 @@
          allocate(imap(iil), jmap(jjl), kmap(kkl), &
                   iimap(il), jjmap(jl), kkmap(kl), stat=ierr)
          if(ierr /= 0)                          &
-           call terminate("createCoarseBlocks", &
+           call returnFail("createCoarseBlocks", &
                           "Memory allocation failure for imap, etc")
 
          ! Set the values of imap and iimap.
@@ -496,7 +496,7 @@
                   flowDoms(nn,level,1)%l3(mm),          &
                   stat=ierr)
          if(ierr /= 0)                          &
-           call terminate("createCoarseBlocks", &
+           call returnFail("createCoarseBlocks", &
                           "Memory allocation failure for subface info")
 
          ! Loop over the subfaces.
@@ -621,7 +621,7 @@
              end select
 
              if(ierr /= 0)                          &
-               call terminate("createCoarseBlocks", &
+               call returnFail("createCoarseBlocks", &
                               "Memory allocation failure for idfine")
 
              ii = 1
@@ -658,7 +658,7 @@
              end select
 
              if(ierr /= 0)                          &
-               call terminate("createCoarseBlocks", &
+               call returnFail("createCoarseBlocks", &
                               "Memory allocation failure for jdfine")
 
              jj = 1
@@ -695,7 +695,7 @@
              end select
 
              if(ierr /= 0)                          &
-               call terminate("createCoarseBlocks", &
+               call returnFail("createCoarseBlocks", &
                               "Memory allocation failure for kdfine")
 
              kk = 1
@@ -713,7 +713,7 @@
 
          deallocate(imap, jmap, kmap, iimap, jjmap, kkmap, stat=ierr)
          if(ierr /= 0)                          &
-           call terminate("createCoarseBlocks", &
+           call returnFail("createCoarseBlocks", &
                           "Deallocation error for imap, iimap, etc.")
 
          ! Allocate the memory for the coordinates of all time spectral
@@ -726,7 +726,7 @@
          do mm=1,nTimeIntervalsSpectral
            allocate(flowDoms(nn,level,mm)%x(0:ii,0:jj,0:kk,3), stat=ierr)
            if(ierr /= 0)                          &
-             call terminate("createCoarseBlocks", &
+             call returnFail("createCoarseBlocks", &
                             "Memory allocation failure for x")
          enddo
 
@@ -790,13 +790,13 @@
        do nn=1,nDom
          deallocate(coarseInfo(nn)%coarseIs1to1, stat=ierr)
          if(ierr /= 0)                          &
-           call terminate("createCoarseBlocks", &
+           call returnFail("createCoarseBlocks", &
                           "Deallocation error for coarseIs1to1")
        enddo
 
        deallocate(coarseInfo, stat=ierr)
        if(ierr /= 0)                          &
-         call terminate("createCoarseBlocks", &
+         call returnFail("createCoarseBlocks", &
                         "Deallocation error for coarseInfo")
 
        end subroutine createCoarseBlocks

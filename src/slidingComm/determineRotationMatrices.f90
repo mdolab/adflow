@@ -63,7 +63,7 @@
 
        allocate(rotSliding(nRotSliding,3,3), stat=ierr)
        if(ierr /= 0)                                 &
-         call terminate("determineRotationMatrices", &
+         call returnFail("determineRotationMatrices", &
                         "Memory allocation failure for rotSliding.")
 
        ! Loop over the number of nInterfaceGroups to store the rotation

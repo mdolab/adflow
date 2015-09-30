@@ -166,7 +166,7 @@
          if(myID == 0) then
            write(errorMessage,*) "Parameter file ", trim(paramFile), &
                                  " not found anymore."
-           call terminate("readLevel0CoolingParameters", errorMessage)
+           call returnFail("readLevel0CoolingParameters", errorMessage)
          endif
 
          call mpi_barrier(SUmb_comm_world, ierr)
@@ -223,7 +223,7 @@
        allocate(level0Cooling(nPlanesLevel0CoolingModel, nLevels), &
                 stat=ierr)
        if(ierr /= 0)                                   &
-         call terminate("readLevel0CoolingParameters", &
+         call returnFail("readLevel0CoolingParameters", &
                         "Memory allocation failure for level0Cooling")
 !
 !      ******************************************************************
@@ -237,12 +237,12 @@
        coolingLoop: do nn=1,nPlanesLevel0CoolingModel
 
          ! Find the line with the number of subfaces for this plane.
-         ! If not successful, terminate.
+         ! If not successful, returnFail.
 
          call getNextInfoLineCooling(string)
          if(ios /= 0) then
            if(myID == 0) &
-             call terminate("readLevel0CoolingParameters", &
+             call returnFail("readLevel0CoolingParameters", &
                             "Number of subfaces not found for &
                             &cooling model")
            call mpi_barrier(SUmb_comm_world, ierr)
@@ -257,12 +257,12 @@
          keyword = trim(keyword)
 
          ! Check if the line corresponds to the keyword for the
-         ! number of subfaces for the cooling plane. If not terminate.
+         ! number of subfaces for the cooling plane. If not returnFail.
 
          call convertToLowerCase(keyword)
          if(keyword /= "number of subfaces cooling plane") then
            if(myID == 0) &
-             call terminate("readLevel0CoolingParameters", &
+             call returnFail("readLevel0CoolingParameters", &
                             "Number of subfaces not found for &
                             &cooling model")
            call mpi_barrier(SUmb_comm_world, ierr)
@@ -276,7 +276,7 @@
 
          allocate(strings(nSubfaces), stat=ierr)
          if(ierr /= 0)                                   &
-           call terminate("readLevel0CoolingParameters", &
+           call returnFail("readLevel0CoolingParameters", &
                           "Memory allocation failure for strings")
 
          ! Find the next line with info, which should contain the
@@ -285,7 +285,7 @@
          call getNextInfoLineCooling(string)
          if(ios /= 0) then
            if(myID == 0) &
-             call terminate("readLevel0CoolingParameters", &
+             call returnFail("readLevel0CoolingParameters", &
                             "Parameters not found for cooling model")
            call mpi_barrier(SUmb_comm_world, ierr)
          endif
@@ -306,7 +306,7 @@
            call getNextInfoLineCooling(strings(mm))
            if(ios /= 0) then
              if(myID == 0) &
-               call terminate("readLevel0CoolingParameters", &
+               call returnFail("readLevel0CoolingParameters", &
                               "Parameters not found for cooling model")
              call mpi_barrier(SUmb_comm_world, ierr)
            endif
@@ -330,7 +330,7 @@
                                               dirDownStream
                if(ios /= 0) then
                  if(myID == 0)                                   &
-                   call terminate("readLevel0CoolingParameters", &
+                   call returnFail("readLevel0CoolingParameters", &
                                   "Something wrong when reading &
                                   &subface parameters.")
                  call mpi_barrier(SUmb_comm_world, ierr)
@@ -359,7 +359,7 @@
                                               dirDownStream
                if(ios /= 0) then
                  if(myID == 0)                                   &
-                   call terminate("readLevel0CoolingParameters", &
+                   call returnFail("readLevel0CoolingParameters", &
                                   "Something wrong when reading &
                                   &subface parameters.")
                  call mpi_barrier(SUmb_comm_world, ierr)
@@ -393,7 +393,7 @@
                   level0Cooling(nn,1)%icEnd(kk),    &
                   stat=ierr)
          if(ierr /= 0)                                   &
-           call terminate("readLevel0CoolingParameters", &
+           call returnFail("readLevel0CoolingParameters", &
                           "Memory allocation failure for subface data")
 
          ! Repeat the loop over the number of global subfaces for the
@@ -449,7 +449,7 @@
 
          deallocate(strings, stat=ierr)
          if(ierr /= 0)                                   &
-           call terminate("readLevel0CoolingParameters", &
+           call returnFail("readLevel0CoolingParameters", &
                           "Deallocation failure for strings")
 
        enddo coolingLoop
@@ -617,10 +617,10 @@
              else
 
                ! No constant index found for subface. Processor 0
-               ! prints an error message and the code terminates.
+               ! prints an error message and the code returnFails.
 
                if(myID == 0)                                    &
-                 call terminate("nLocalSubfacesCoolingSubface", &
+                 call returnFail("nLocalSubfacesCoolingSubface", &
                                 "No constant index found for cooling &
                                 &subface.")
                  call mpi_barrier(SUmb_comm_world, ierr)

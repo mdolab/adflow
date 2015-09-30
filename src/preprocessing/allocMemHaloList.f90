@@ -47,7 +47,7 @@
        allocate(cellHalo1st(nCellHalo1st), &
                 nodeHalo1st(nNodeHalo1st), stat=ierr)
        if(ierr /= 0)                                               &
-         call terminate("allocMemHaloList",                        &
+         call returnFail("allocMemHaloList",                        &
                         "Memory allocation failure for cellHalo1st &
                         &and nodeHalo1st")
 
@@ -80,7 +80,7 @@
        allocate(transformCell(nCellHalo1st,3), &
                 transformNode(nNodeHalo1st,3), stat=ierr)
        if(ierr /= 0)                                                 &
-         call terminate("allocMemHaloList"  ,                        &
+         call returnFail("allocMemHaloList"  ,                        &
                         "Memory allocation failure for transformCell &
                         &and transformNode")
 
@@ -89,7 +89,7 @@
 
        allocate(nodeIndex(nDom), cellIndex(nDom), stat=ierr)
        if(ierr /= 0)                                             &
-         call terminate("allocMemHaloList",                      &
+         call returnFail("allocMemHaloList",                      &
                         "Memory allocation failure for nodeIndex &
                         &and cellIndex")
 
@@ -113,7 +113,7 @@
          allocate(nodeIndex(i)%entryList(0:ie,0:je,0:ke), &
                   cellIndex(i)%entryList(0:ib,0:jb,0:kb), stat=ierr)
          if(ierr /= 0)                        &
-           call terminate("allocMemHaloList", &
+           call returnFail("allocMemHaloList", &
                           "Memory allocation failure for entryList")
 
          ! Initialize entryList to zero. This serves as a check later

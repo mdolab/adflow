@@ -30,7 +30,7 @@
 !
 #ifdef USE_NO_CGNS
 
-       call terminate("setCGNSRealType", &
+       call returnFail("setCGNSRealType", &
                       "Function should not be called if no cgns support &
                       &is selected.")
 

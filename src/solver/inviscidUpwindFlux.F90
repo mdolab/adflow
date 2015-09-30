@@ -1144,21 +1144,21 @@
       !          flux(irhoE) = -porFlux*(tmp*drE)
 
                case (Turkel)
-                 call terminate(&
+                 call returnFail(&
                       "riemannFlux",&
                       "Turkel preconditioner not implemented yet")
 
                case (ChoiMerkle)
-                 call terminate("riemannFlux",&
+                 call returnFail("riemannFlux",&
                       "choi merkle preconditioner not implemented yet")
 
              end select
 
            case (vanLeer)
-             call terminate("riemannFlux", "van leer fvs not implemented yet")
+             call returnFail("riemannFlux", "van leer fvs not implemented yet")
 
            case (ausmdv)
-             call terminate("riemannFlux","ausmdv fvs not implemented yet")
+             call returnFail("riemannFlux","ausmdv fvs not implemented yet")
 
          end select
 

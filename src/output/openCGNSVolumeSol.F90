@@ -42,7 +42,7 @@
 !
 #ifdef USE_NO_CGNS
 
-       call terminate("openCGNSVolumeSol", &
+       call returnFail("openCGNSVolumeSol", &
                       "Routine should not be called if no cgns support &
                       &is selected.")
 
@@ -66,7 +66,7 @@
        allocate(fileIDs(nVolSolToWrite), cgnsBases(nVolSolToWrite), &
                 stat=ierr)
        if(ierr /= 0)                         &
-         call terminate("openCGNSVolumeSol", &
+         call returnFail("openCGNSVolumeSol", &
                         "Memory allocation failure for fileIDs and &
                         &cgnsBases")
 
@@ -84,7 +84,7 @@
              write(errorMessage,*) "File ", trim(volSolFileNames(nn)), &
                                    " could not be opened by CGNS&
                                    & for writing"
-             call terminate("openCGNSVolumeSol", errorMessage)
+             call returnFail("openCGNSVolumeSol", errorMessage)
            endif
 
            ! Create the base.
@@ -92,7 +92,7 @@
            call cg_base_write_f(fileIDs(nn), cgnsBaseName, cgnsCelldim, &
                                 cgnsPhysdim, cgnsBases(nn), ierr)
            if(ierr /= CG_OK)                    &
-             call terminate("openCGNSVolumeSol", &
+             call returnFail("openCGNSVolumeSol", &
                             "Something wrong when calling &
                             &cg_base_write_f")
          enddo
@@ -111,7 +111,7 @@
              write(errorMessage,*) "File ", trim(volSolFileNames(nn)), &
                                    " could not be opened by CGNS&
                                    & for writing"
-             call terminate("openCGNSVolumeSol", errorMessage)
+             call returnFail("openCGNSVolumeSol", errorMessage)
            endif
 
            ! Simply set the base IDs to 1.

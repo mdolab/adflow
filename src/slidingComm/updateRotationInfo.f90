@@ -268,7 +268,7 @@
 
            deallocate(mySubfaces(nn)%nRotations, stat=ierr)
            if(ierr /= 0)                          &
-             call terminate("updateRotationInfo", &
+             call returnFail("updateRotationInfo", &
                             "Deallocation error for nRotations of &
                             &mySubfaces.")
          enddo subfaceLoop

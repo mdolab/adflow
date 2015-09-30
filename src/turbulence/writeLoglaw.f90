@@ -102,7 +102,7 @@
                  rtu4F  = w(i,j,k,itu4)*rlv(i,j,k)/w(i,j,k,irho)/utauF**2
  
                case default
-                 call terminate("writeLoglaw", &
+                 call returnFail("writeLoglaw", &
                                 "Turbulence model not implemented yet")
 
              end select

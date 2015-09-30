@@ -76,7 +76,7 @@
 
          nMGSteps = 1
          allocate(cycleStrategy(1), stat=error)
-         if(error /= 0) call terminate("extractMgInfo", &
+         if(error /= 0) call returnFail("extractMgInfo", &
                                        "allocation error for 1 integer")
          cycleStrategy(1) = 0
 
@@ -92,7 +92,7 @@
          if(.not. digitsOnlyInString(mgDescription(:stringLen-1))) then
            write(errorMessage,*) "Invalid cycle strategy, ", &
                                   mgDescription(:stringLen), ", specified"
-           if(myID == 0) call terminate("extractMgInfo", errorMessage)
+           if(myID == 0) call returnFail("extractMgInfo", errorMessage)
          endif
 
          ! Read the number of levels in the cycle.
@@ -108,7 +108,7 @@
            write(errorMessage,*) "Allocation error for", nMGSteps, &
                                   "integers for the v-cycle ",       &
                                   mgDescription(:stringLen)
-           call terminate("extractMgInfo", errorMessage)
+           call returnFail("extractMgInfo", errorMessage)
          endif
 
          ! Set the values of cycleStrategy.
@@ -134,7 +134,7 @@
          if(.not. digitsOnlyInString(mgDescription(:stringLen-1))) then
            write(errorMessage,*) "Invalid cycle strategy, ", &
                                   mgDescription(:stringLen), ", specified"
-           if(myID == 0) call terminate("extractMgInfo", errorMessage)
+           if(myID == 0) call returnFail("extractMgInfo", errorMessage)
          endif
 
          ! Read the number of levels in the cycle.
@@ -150,7 +150,7 @@
            write(errorMessage,*) "Allocation error for", nMGSteps, &
                                   "integers for the w-cycle ",       &
                                   mgDescription(:stringLen)
-           call terminate("extractMgInfo", errorMessage)
+           call returnFail("extractMgInfo", errorMessage)
          endif
 
          ! Set the values of cycleStrategy.
@@ -183,7 +183,7 @@
          if(error /= 0) then
            write(errorMessage,*) "Allocation error for", nMGSteps, &
                                   "integers for the cycle strategy"
-           call terminate("extractMgInfo", errorMessage)
+           call returnFail("extractMgInfo", errorMessage)
          endif
 
          ! Determine the entries for cycleStrategy.
@@ -208,7 +208,7 @@
                                       mgDescription(ii:i), &
                                       ", in the string describing &
                                       &cycling strategy"
-               if(myID == 0) call terminate("extractMgInfo", errorMessage)
+               if(myID == 0) call returnFail("extractMgInfo", errorMessage)
            end select
 
            ! Update i and nn
@@ -233,7 +233,7 @@
          nMGLevels = nMGLevels + 1
 
          if(nn /= 0 .and. myID == 0) &
-           call terminate("extractMgInfo", &
+           call returnFail("extractMgInfo", &
                      "sum of coefficients in cycle strategy is not 0")
        endif
 
@@ -376,7 +376,7 @@
  
        if(nLevels < 2) then
          write(errorMessage,*) "Wrong value of nLevels", nLevels
-         if(myID == 0) call terminate("computeNstepsWcycle", errorMessage)
+         if(myID == 0) call returnFail("computeNstepsWcycle", errorMessage)
        else if(nLevels == 2) then
          nSteps = 4
        else
@@ -423,7 +423,7 @@
        if(nLevels < 2) then
 
          write(errorMessage,*) "Wrong value of nLevels", nLevels
-         if(myID == 0) call terminate("setEntriesWcycle", errorMessage)
+         if(myID == 0) call returnFail("setEntriesWcycle", errorMessage)
 
        else if(nLevels == 2) then
 

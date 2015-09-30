@@ -121,7 +121,7 @@ subroutine determineWallAssociation(level)
        elementID(nCell), uvw(3, nCell), dist2(nCell), elemInverse(nCell), &
        stat=ierr)
   if(ierr /= 0)                         &
-       call terminate("determineDistance", &
+       call returnFail("determineDistance", &
        "Memory allocation failure for the variables &
        &needed by the adt.")
 

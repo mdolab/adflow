@@ -95,7 +95,7 @@
 
        deallocate(freestreamSubfaces, stat=ierr)
        if(ierr /= 0)                                    &
-         call terminate("setSupersonicInletFreeStream", &
+         call returnFail("setSupersonicInletFreeStream", &
                         "Deallocation failure for freestreamSubfaces")
 
        end subroutine setSupersonicInletFreeStream

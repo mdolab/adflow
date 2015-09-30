@@ -47,7 +47,7 @@
        allocate(nBlocksCGNSblock(0:cgnsNDom), blocksCGNSblock(nDom), &
                 stat=ierr)
        if(ierr /= 0)                               &
-         call terminate("setHelpVariablesWriting", &
+         call returnFail("setHelpVariablesWriting", &
                         "Memory allocation failure for &
                         &nBlocksCGNSblock and blocksCGNSblock.")
 
@@ -86,7 +86,7 @@
 
          allocate(nDomPerProc(0:nProc), stat=ierr)
          if(ierr /= 0)                               &
-           call terminate("setHelpVariablesWriting", &
+           call returnFail("setHelpVariablesWriting", &
                           "Memory allocation failure for nDomPerProc")
 
          nDomPerProc(0) = 0
@@ -104,7 +104,7 @@
 
          allocate(IDsBegOrAllDoms(4,nDomPerProc(nProc)), stat=ierr)
          if(ierr /= 0)                               &
-           call terminate("setHelpVariablesWriting", &
+           call returnFail("setHelpVariablesWriting", &
                           "Memory allocation failure for &
                           &IDsBegOrAllDoms")
 

@@ -77,7 +77,7 @@
                   level0Cooling(nn,level)%icEnd(mm),    &
                   stat=ierr)
          if(ierr /= 0)                                     &
-           call terminate("coarseLevel0CoolingParameters", &
+           call returnFail("coarseLevel0CoolingParameters", &
                           "Memory allocation failure for subface data")
 
          ! Loop over the number of subfaces for this cooling plane.

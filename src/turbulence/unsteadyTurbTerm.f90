@@ -147,7 +147,7 @@
 
              case (implicitRK)
 
-               call terminate("unsteadyTurbTerm", &
+               call returnFail("unsteadyTurbTerm", &
                               "Implicit RK not implemented yet")
 
            end select

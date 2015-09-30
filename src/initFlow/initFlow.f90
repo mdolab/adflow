@@ -130,7 +130,7 @@
 
          deallocate(solFiles, IOVar, stat=ierr)
          if(ierr /= 0)                &
-           call terminate("initFlow", &
+           call returnFail("initFlow", &
                           "Deallocation failure for solFiles and IOVar")
 
          ! At the moment the pressure is stored at the location of the

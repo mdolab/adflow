@@ -27,7 +27,7 @@
 
 #ifdef USE_NO_CGNS
 
-       call terminate("readOversetHoles", &
+       call returnFail("readOversetHoles", &
                       "Routine should not be called if no cgns support &
                       &is selected.")
 
@@ -52,7 +52,7 @@
 
        call cg_nholes_f(cgnsInd, cgnsBase, nZone, nholes, ierr)
        if(ierr /= CG_OK)                   &
-         call terminate("readOversetHoles", &
+         call returnFail("readOversetHoles", &
                         "Something wrong when calling cg_nholes_f")
 
        ! Copy the number of holes to the cgns type.
@@ -64,7 +64,7 @@
        allocate(cgnsDoms(nZone)%hole(cgnsDoms(nZone)%nholes), &
                 stat=ierr)
        if(ierr /= 0) &
-         call terminate("readOversetHoles", &
+         call returnFail("readOversetHoles", &
                         "Memory allocation failure for hole")
 
        ! Loop over the holes.
@@ -76,7 +76,7 @@
          call cg_hole_info_f(cgnsInd, cgnsBase, nZone, i, holeName,  &
                              location, ptsetType, npntsets, npnts, ierr)
          if(ierr /= CG_OK)                   &
-           call terminate("readOversetHoles", &
+           call returnFail("readOversetHoles", &
                           "Something wrong when calling cg_hole_info_f")
 
          ! Check if this is a valid hole.
@@ -95,7 +95,7 @@
                     cgnsDoms(nZone)%hole(i)%indices(3,npnts), &
                     stat=ierr)
            if(ierr /= 0)                            &
-             call terminate("readOversetHoles", &
+             call returnFail("readOversetHoles", &
                             "Memory allocation failure for hole data")
 
            ! Read the indices of the hole.
@@ -103,7 +103,7 @@
            call cg_hole_read_f(cgnsInd, cgnsBase, nZone, i, myData, &
                                ierr)
            if(ierr /= CG_OK)                   &
-             call terminate("readOversetHoles", &
+             call returnFail("readOversetHoles", &
                           "Something wrong when calling cg_hole_read_f")
 
            ! Store the indices of the current hole.
@@ -114,14 +114,14 @@
 
            deallocate(myData, stat=ierr)
            if(ierr /= 0)                            &
-             call terminate("readOversetHoles", &
+             call returnFail("readOversetHoles", &
                             "Deallocation error for hole data")
 
          else testHole
 
            ! Something wrong with overset cgns data
 
-           call terminate("readOversetHoles", &
+           call returnFail("readOversetHoles", &
                       "Something wrong with overset holes")
 
          endif testHole

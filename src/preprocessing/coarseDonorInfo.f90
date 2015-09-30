@@ -101,7 +101,7 @@
 
        allocate(sendBuf(size2proc(nProc)), stat=ierr)
        if(ierr /= 0)                       &
-         call terminate("coarseDonorInfo", &
+         call returnFail("coarseDonorInfo", &
                         "Memory allocation failure for sendBuf")
 
        ! Loop over the number of 1 to 1 subfaces to fill the send buffer.
@@ -217,13 +217,13 @@
          deallocate(subface1to1(nn)%idfine, subface1to1(nn)%jdfine, &
                     subface1to1(nn)%kdfine, stat=ierr)
          if(ierr /= 0)                       &
-           call terminate("coarseDonorInfo", &
+           call returnFail("coarseDonorInfo", &
                           "Deallocation error for idfine, etc")
        enddo
 
        deallocate(subface1to1, stat=ierr)
        if(ierr /= 0)                       &
-         call terminate("coarseDonorInfo", &
+         call returnFail("coarseDonorInfo", &
                         "Deallocation error for subface1to1")
 
        ! Loop over the number of messages i must receive to determine
@@ -246,7 +246,7 @@
 
          if( debug ) then
            if(size == mpi_undefined)             &
-             call terminate("coarseDonorInfo", &
+             call returnFail("coarseDonorInfo", &
                             "Unexpected size of message")
          endif
 
@@ -254,7 +254,7 @@
 
          allocate(recvBuf(size), stat=ierr)
          if(ierr /= 0)                         &
-           call terminate("coarseDonorInfo", &
+           call returnFail("coarseDonorInfo", &
                           "Memory allocation failure for recvBuf")
 
          ! Receive the messsage. As it has already arrived a blocking
@@ -310,7 +310,7 @@
 
          deallocate(recvBuf, stat=ierr)
          if(ierr /= 0)                       &
-           call terminate("coarseDonorInfo", &
+           call returnFail("coarseDonorInfo", &
                           "Deallocation failure for recvBuf")
 
        enddo receives
@@ -326,7 +326,7 @@
 
        deallocate(sendBuf, stat=ierr)
        if(ierr /= 0)                       &
-         call terminate("coarseDonorInfo", &
+         call returnFail("coarseDonorInfo", &
                         "Deallocation failure for sendBuf")
 
        ! Synchronize the processors, because wild cards have been used.

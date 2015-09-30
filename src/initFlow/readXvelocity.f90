@@ -149,7 +149,7 @@
        ! Not able to determine the x-velocity.
        ! Print an error message and exit.
 
-       call terminate("readXvelocity", &
+       call returnFail("readXvelocity", &
                       "Not able to retrieve x-velocity from the &
                       &variables in the restart file.")
 

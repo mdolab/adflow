@@ -62,7 +62,7 @@
          if(ios /= 0) then
            write(errorMessage,*) "Parameter file ", trim(paramFile), &
                                  " could not be updated"
-           call terminate("updateParamfile", errorMessage)
+           call returnFail("updateParamfile", errorMessage)
          endif
 
          ! Write a new line, such that the output looks nicer.

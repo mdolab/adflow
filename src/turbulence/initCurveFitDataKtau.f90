@@ -31,7 +31,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       call terminate("initCurveFitDataKtau", &
+       call returnFail("initCurveFitDataKtau", &
                       "Not implemented yet")
 
        end subroutine initCurveFitDataKtau

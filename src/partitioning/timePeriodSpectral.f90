@@ -209,7 +209,7 @@
              tt = abs(tt-timePeriod)/timePeriod
              if(tt > tol) then
                if(myID == 0)                          &
-                 call terminate("timePeriodSpectral", &
+                 call returnFail("timePeriodSpectral", &
                                 "Rotational frequencies of the rotating &
                                  &sections are not identical.")
                call mpi_barrier(SUmb_comm_world, ierr)
@@ -242,7 +242,7 @@
        ! message and exit.
 
        if(myID == 0)                          &
-         call terminate("timePeriodSpectral", &
+         call returnFail("timePeriodSpectral", &
                         "Not possible to determine the periodic time &
                         &for the time spectral method")
        call mpi_barrier(SUmb_comm_world, ierr)
@@ -311,7 +311,7 @@
 
        if(n1 > nMax) then
          if(myID == 0)                          &
-           call terminate("commonTimeSpectral", &
+           call returnFail("commonTimeSpectral", &
                           "No common time periodic time found. &
                           &Problem may not be periodic")
          call mpi_barrier(SUmb_comm_world, ierr)

@@ -75,7 +75,7 @@
 
        allocate(bcVarArray(iBeg:iEnd,jBeg:jEnd,nbcVar), stat=ierr)
        if(ierr /= 0)                                &
-         call terminate("BCDataSupersonicInflow", &
+         call returnFail("BCDataSupersonicInflow", &
                         "Memory allocation failure for bcVarArray")
 
        bcVarNames(1) = cgnsDensity
@@ -136,7 +136,7 @@
  100         format("Zone ",a,", boundary subface ",a, &
                     ": Not enough data specified for supersonic inlet")
 
-             call terminate("BCDataSupersonicInflow", errorMessage)
+             call returnFail("BCDataSupersonicInflow", errorMessage)
 
            !=============================================================
 
@@ -188,7 +188,7 @@
 
        deallocate(bcVarArray, stat=ierr)
        if(ierr /= 0)                              &
-         call terminate("BCDataSupersonicInflow", &
+         call returnFail("BCDataSupersonicInflow", &
                         "Deallocation failure for bcVarArray")
 
        ! Check if the prescribed velocity is an inflow. No halo's
@@ -215,7 +215,7 @@
  102     format("Zone ",a,", supersonic inlet boundary subface ",a, &
                 ": Velocity points out of the domain for some faces.")
 
-         call terminate("BCDataSupersonicInflow", errorMessage)
+         call returnFail("BCDataSupersonicInflow", errorMessage)
        endif
 
        !=================================================================

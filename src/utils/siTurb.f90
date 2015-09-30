@@ -48,7 +48,7 @@
 
        else
 
-         call terminate("siTurb", &
+         call returnFail("siTurb", &
                         "No idea how to convert this to SI units")
 
        endif

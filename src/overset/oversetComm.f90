@@ -55,7 +55,7 @@
        if( firstTime ) then
          deallocate(sendBuffer, recvBuffer, stat=ierr)
          if(ierr /= 0)                   &
-           call terminate("oversetComm", &
+           call returnFail("oversetComm", &
                          "Deallocation error for communication buffers")
        else
          call deallocateTempMemory(.false.)
@@ -67,7 +67,7 @@
        if (coarseLevel) then
          allocate(blockBndry(nDom), stat=ierr)
          if(ierr /= 0)                   &
-           call terminate("oversetComm", &
+           call returnFail("oversetComm", &
                          "Allocation failure for blockBndry")
        end if
 
@@ -248,7 +248,7 @@
        if (coarseLevel) then
          deallocate(blockBndry, stat=ierr)
          if(ierr /= 0)                   &
-           call terminate("oversetComm", &
+           call returnFail("oversetComm", &
                          "Deallocation error for blockBndry")
        end if
  
@@ -259,7 +259,7 @@
          allocate(sendBuffer(sendBufferSize), &
                   recvBuffer(recvBufferSize), stat=ierr)
          if(ierr /= 0)                    &
-           call terminate("oversetComm", &
+           call returnFail("oversetComm", &
                           "Memory allocation failure for comm buffers")
        else
          call allocateTempMemory(.false.)

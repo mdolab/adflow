@@ -151,7 +151,7 @@
 
          allocate(nodeFlag(nPoint), nodeDupl(nPoint), stat=ierr)
          if(ierr /= 0)                          &
-           call terminate("localNodesAndQuads", &
+           call returnFail("localNodesAndQuads", &
                           "Memory allocation failure for nodeFlag &
                           &and nodeDupl.")
          nodeFlag = 0
@@ -378,10 +378,10 @@
                    if(coorPoint(ii,3) <= -half*pi) exit
                  enddo
 
-                 ! Check if the search was successful. If not terminate.
+                 ! Check if the search was successful. If not returnFail.
 
                  if(n2 > 4 .or. n3 > 4)                 &
-                   call terminate("localNodesAndQuads", &
+                   call returnFail("localNodesAndQuads", &
                                   "No points in second or third &
                                   &quadrant for polar singular quad")
 
@@ -536,7 +536,7 @@
 
          deallocate(nodeFlag, nodeDupl, stat=ierr)
          if(ierr /= 0)                          &
-           call terminate("localNodesAndQuads", &
+           call returnFail("localNodesAndQuads", &
                           "Deallocation error for nodeFlag &
                           &and nodeDupl.")
 
@@ -547,11 +547,11 @@
        if( debug ) then
 
          if(nQuad /= iQuad) &
-           call terminate("localNodesAndQuads", &
+           call returnFail("localNodesAndQuads", &
                           "nQuad and iQuad differ")
 
          if(nNode /= iNode) &
-           call terminate("localNodesAndQuads", &
+           call returnFail("localNodesAndQuads", &
                           "nNode and iNode differ")
 
        endif

@@ -66,7 +66,7 @@
 
        deallocate(mixingPoints, mixingCells, stat=ierr)
        if(ierr /= 0)                           &
-         call terminate("mixingPlaneInterpol", &
+         call returnFail("mixingPlaneInterpol", &
                         "Deallocation failure for mixingPoints and &
                         &mixingCells.")
 

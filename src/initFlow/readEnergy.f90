@@ -179,7 +179,7 @@
 
        ! Energy could not be created. Terminate.
 
-       call terminate("readEnergy", &
+       call returnFail("readEnergy", &
                       "Energy could not be created")
 
        end subroutine readEnergy

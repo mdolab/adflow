@@ -43,7 +43,7 @@
                 tup2(nFit,nt1:nt2), tup3(nFit,nt1:nt2),       &
                 tuLogFit(nt1:nt2), stat=ierr)
        if(ierr /= 0)                          &
-         call terminate("initCurveFitDataSa", &
+         call returnFail("initCurveFitDataSa", &
                         "Memory allocation failure for curve fit &
                         &coefficients")
 

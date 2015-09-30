@@ -195,7 +195,7 @@ subroutine computeTSDerivatives(force, moment, liftIndex, coef0, dcdalpha, &
      dcdalphadot = dcdalphadot*2*(machGrid*a)/lengthRef
 
   else
-     call terminate('computeTSDerivatives','Not a valid stability motion')
+     call returnFail('computeTSDerivatives','Not a valid stability motion')
   endif
 
 end subroutine computeTSDerivatives

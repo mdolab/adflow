@@ -61,7 +61,7 @@
 
          allocate(intArray(ll:newSize+ll-1), stat=ierr)
          if(ierr /= 0)                         &
-           call terminate("reallocateInteger", &
+           call returnFail("reallocateInteger", &
                           "Memory allocation failure for intArray")
          do i=ll,ll+nn-1
            intArray(i) = tmp(i)
@@ -74,7 +74,7 @@
        if(oldSize > 0 .or. alwaysFreeMem) then
          deallocate(tmp, stat=ierr)
          if(ierr /= 0)                         &
-           call terminate("reallocateInteger", &
+           call returnFail("reallocateInteger", &
                           "Deallocation error for tmp")
        endif
 
@@ -136,7 +136,7 @@
 
          allocate(intArray(ll:newSize+ll-1), stat=ierr)
          if(ierr /= 0)                                      &
-           call terminate("reallocateMpiOffsetKindInteger", &
+           call returnFail("reallocateMpiOffsetKindInteger", &
                           "Memory allocation failure for intArray")
          do i=ll,ll+nn-1
            intArray(i) = tmp(i)
@@ -149,7 +149,7 @@
        if(oldSize > 0 .or. alwaysFreeMem) then
          deallocate(tmp, stat=ierr)
          if(ierr /= 0)                                      &
-           call terminate("reallocateMpiOffsetKindInteger", &
+           call returnFail("reallocateMpiOffsetKindInteger", &
                           "Deallocation error for tmp")
        endif
 
@@ -222,7 +222,7 @@
        if(newSize > 0 .or. alwaysFreeMem) then
          allocate(intArray(newSize1,newSize2), stat=ierr)
          if(ierr /= 0)                          &
-           call terminate("reallocateInteger2", &
+           call returnFail("reallocateInteger2", &
                           "Memory allocation failure for intArray")
          do j=1,nn2
            do i=1,nn1
@@ -237,7 +237,7 @@
        if(oldSize > 0 .or. alwaysFreeMem) then
          deallocate(tmp, stat=ierr)
          if(ierr /= 0)                          &
-           call terminate("reallocateInteger2", &
+           call returnFail("reallocateInteger2", &
                           "Deallocation error for tmp")
        endif
 

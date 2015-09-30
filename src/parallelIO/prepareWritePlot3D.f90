@@ -135,7 +135,7 @@
        allocate(P3D_procSend(P3D_nProcSend), &
                 P3D_sendSize(0:P3D_nProcSend), stat=ierr)
        if(ierr /= 0)                          &
-         call terminate("prepareWritePlot3D", &
+         call returnFail("prepareWritePlot3D", &
                         "Memory allocation failure for P3D_procSend &
                         &and P3D_sendSize")
 
@@ -165,7 +165,7 @@
        ii = P3D_recvSize(P3D_nProcRecv)
        allocate(sendBuf(5,ii), stat=ierr)
        if(ierr /= 0)                          &
-         call terminate("prepareWritePlot3D", &
+         call returnFail("prepareWritePlot3D", &
                         "Memory allocation failure for sendBuf")
 
        ! The routine which fill the actual send buffer.
@@ -212,7 +212,7 @@
        ii = P3D_sendSize(P3D_nProcSend)
        allocate(recvBuf(5,ii), stat=ierr)
        if(ierr /= 0)                          &
-         call terminate("prepareWritePlot3D", &
+         call returnFail("prepareWritePlot3D", &
                         "Memory allocation failure for recvBuf")
 
        ! Post the receives.
@@ -273,7 +273,7 @@
 
        deallocate(sendBuf, stat=ierr)
        if(ierr /= 0)                          &
-         call terminate("prepareWritePlot3D", &
+         call returnFail("prepareWritePlot3D", &
                         "Deallocation failure for sendBuf")
 
        ! Set the values of nItemsLocal and nItemsNonLocal. Also set
@@ -294,7 +294,7 @@
                 P3D_commPart%posLocal(ii), &
                 P3D_commPart%indices(ii,3), stat=ierr)
        if(ierr /= 0)                          &
-         call terminate("prepareWritePlot3D", &
+         call returnFail("prepareWritePlot3D", &
                         "Memory allocation failure for blockID, etc.")
 
        ! Copy the data from the receive buffer into P3D_commPart.
@@ -314,7 +314,7 @@
 
        deallocate(recvBuf, stat=ierr)
        if(ierr /= 0)                          &
-         call terminate("prepareWritePlot3D", &
+         call returnFail("prepareWritePlot3D", &
                         "Deallocation failure for recvBuf")
 !
 !      ******************************************************************
@@ -346,7 +346,7 @@
        allocate(P3D_recordIntegersWrite(P3D_nRecordIntegersWrite), &
                 P3D_recordPosition(P3D_nRecordIntegersWrite), stat=ierr)
        if(ierr /= 0)                          &
-         call terminate("prepareWritePlot3D", &
+         call returnFail("prepareWritePlot3D", &
                         "Memory allocation failure for &
                         &P3D_recordIntegersWrite and P3D_recordPosition")
 

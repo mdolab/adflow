@@ -18,7 +18,7 @@
 !      ******************************************************************
 !
 #ifdef USE_NO_CGNS
-       call terminate("writeCGNSConvInfo", &
+       call returnFail("writeCGNSConvInfo", &
                       "Routine should not be called if no cgns support &
                       &is selected.")
 #else
@@ -72,7 +72,7 @@
        end select
 
        if(ierr /= 0)                         &
-         call terminate("writeCGNSConvInfo", &
+         call returnFail("writeCGNSConvInfo", &
                         "Memory allocation failure for either buf4 &
                         &or buf8")
 
@@ -102,7 +102,7 @@
 
          call cg_goto_f(cgnsInd, base, ierr, "end")
          if(ierr /= CG_OK)                    &
-           call terminate("writeCGNSConvInfo", &
+           call returnFail("writeCGNSConvInfo", &
                           "Something wrong when calling cg_goto_f")
 
          ! Create the convergence history node. Add a small description.
@@ -113,7 +113,7 @@
                                         &residuals and the total number &
                                         &of cells in the grid.", ierr)
          if(ierr /= CG_OK)                    &
-           call terminate("writeCGNSConvInfo", &
+           call returnFail("writeCGNSConvInfo", &
                           "Something wrong when calling &
                           &cg_convergence_write_f")
 
@@ -123,7 +123,7 @@
          call cg_goto_f(cgnsInd, base, ierr, &
                         "ConvergenceHistory_t", 1, "end")
          if(ierr /= CG_OK)                    &
-           call terminate("writeCGNSConvInfo", &
+           call returnFail("writeCGNSConvInfo", &
                           "Something wrong when calling cg_goto_f")
 
          ! Loop over the number of monitoring variables.
@@ -154,7 +154,7 @@
            end select
 
            if(ierr /= CG_OK)                    &
-             call terminate("writeCGNSConvInfo", &
+             call returnFail("writeCGNSConvInfo", &
                             "Something wrong when calling &
                             &cg_array_write_f")
          enddo monLoop
@@ -171,7 +171,7 @@
        end select
 
        if(ierr /= 0)                         &
-         call terminate("writeCGNSConvInfo", &
+         call returnFail("writeCGNSConvInfo", &
                         "Deallocation failure for either buf4 or buf8")
 
 #endif

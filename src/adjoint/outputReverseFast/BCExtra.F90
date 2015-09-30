@@ -116,7 +116,7 @@ subroutine applyAllBC_block_fast_b(secondHalo)
     ! !  Farfield Boundary Condition 
     ! ! ------------------------------------
     ! if (precond == Turkel .or. precond == ChoiMerkle) then 
-    !    call terminate("applyAllBC", &
+    !    call returnFail("applyAllBC", &
     !         "Farfield Turkel and Coid/Merkle preconditioners not implemented")
     ! end if
     ! do nn=nBocos,1,-1

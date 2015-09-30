@@ -66,7 +66,7 @@
 
              if(BCType(mm) == MassBleedInflow) then
 
-               call terminate("initBleedsFromHalos", &
+               call returnFail("initBleedsFromHalos", &
                               "No inflow bleeds yet")
 
              endif

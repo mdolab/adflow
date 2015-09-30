@@ -156,7 +156,7 @@
 
            case default
 
-             call terminate("bcTurbTreatment", &
+             call returnFail("bcTurbTreatment", &
                             "Unknown boundary condition")
 
          end select typeBC

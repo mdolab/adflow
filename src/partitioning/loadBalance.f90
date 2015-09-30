@@ -59,7 +59,7 @@ subroutine loadBalance
 
   call blockDistribution
   !enddo
-  !call terminate("loadBalance","Hack for distribution test")
+  !call returnFail("loadBalance","Hack for distribution test")
   !
   !      ******************************************************************
   !      *                                                                *
@@ -201,7 +201,7 @@ subroutine loadBalance
 
 
         if(ierr /= 0)                   &
-             call terminate("loadBalance", &
+             call returnFail("loadBalance", &
              "Memory allocation failure for subface info")
 
         ! Determine the new numbering of the boundary subfaces, such
@@ -210,7 +210,7 @@ subroutine loadBalance
 
         allocate(oldSubfaceID(blocks(i)%nBocos), stat=ierr)
         if(ierr /= 0)                   &
-             call terminate("loadBalance", &
+             call returnFail("loadBalance", &
              "Memory allocation failure for oldSubfaceID")
 
         call sortSubfaces(oldSubfaceID, blocks(i))
@@ -287,7 +287,7 @@ subroutine loadBalance
 
         deallocate(oldSubfaceID, stat=ierr)
         if(ierr /= 0)                   &
-             call terminate("loadBalance", &
+             call returnFail("loadBalance", &
              "Deallocation error for oldSubfaceID")
 
         ! Allocate memory for the overset boundary info. Note the
@@ -307,7 +307,7 @@ subroutine loadBalance
              flowDoms(nn,1,1)%neighBlockOver(j),  &
              stat=ierr)
         if(ierr /= 0)                   &
-             call terminate("loadBalance", &
+             call returnFail("loadBalance", &
              "Memory allocation failure for overset info")
 
         ! Find the neighboring processor and the local block id
@@ -384,7 +384,7 @@ subroutine loadBalance
           blocks(i)%neighOver,   blocks(i)%overComm,    &
           stat=ierr)
      if(ierr /= 0)                   &
-          call terminate("loadBalance", &
+          call returnFail("loadBalance", &
           "Deallocation error for boundary info")
   enddo domains
 
@@ -402,7 +402,7 @@ subroutine loadBalance
 
   allocate(subblocksOfCGNS(nBlocks), stat=ierr)
   if(ierr /= 0)                   &
-       call terminate("loadBalance", &
+       call returnFail("loadBalance", &
        "Memory allocation failure for subblocksOfCGNS")
 
   ! Copy the data into subblocksOfCGNS.
@@ -454,7 +454,7 @@ subroutine loadBalance
           cgnsDoms(nn)%procStored(k),                           &
           cgnsDoms(nn)%localBlockID(k), stat=ierr)
      if(ierr /= 0)                   &
-          call terminate("loadBalance", &
+          call returnFail("loadBalance", &
           "Memory allocation failure for procStored, &
           &localBlockID, iBegOr, iEndOr, etc.")
 
@@ -484,7 +484,7 @@ subroutine loadBalance
 
   deallocate(blocks, part, subblocksOfCGNS, stat=ierr)
   if(ierr /= 0)                   &
-       call terminate("loadBalance", &
+       call returnFail("loadBalance", &
        "Deallocation error for blocks, part and &
        &subblocksOfCGNS")
 

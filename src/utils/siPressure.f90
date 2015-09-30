@@ -46,7 +46,7 @@
 
        else
 
-         call terminate("siPressure", &
+         call returnFail("siPressure", &
                         "No idea how to convert this to SI units")
 
        endif

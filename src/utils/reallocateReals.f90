@@ -57,7 +57,7 @@
        if(newSize > 0 .or. alwaysFreeMem) then
          allocate(realArray(newSize), stat=ierr)
          if(ierr /= 0)                       &
-           call terminate("reallocateReal", &
+           call returnFail("reallocateReal", &
                           "Memory allocation failure for realArray")
          do i=1,nn
            realArray(i) = tmp(i)
@@ -70,7 +70,7 @@
        if(oldSize > 0 .or. alwaysFreeMem) then
          deallocate(tmp, stat=ierr)
          if(ierr /= 0)                       &
-           call terminate("reallocateReal", &
+           call returnFail("reallocateReal", &
                           "Deallocation error for tmp")
        endif
 
@@ -143,7 +143,7 @@
        if(newSize > 0 .or. alwaysFreeMem) then
          allocate(realArray(newSize1,newSize2), stat=ierr)
          if(ierr /= 0)                           &
-           call terminate("reallocateReal2", &
+           call returnFail("reallocateReal2", &
                           "Memory allocation failure for realArray")
          do j=1,nn2
            do i=1,nn1
@@ -158,7 +158,7 @@
        if(oldSize > 0 .or. alwaysFreeMem) then
          deallocate(tmp, stat=ierr)
          if(ierr /= 0)                           &
-           call terminate("reallocateReal2", &
+           call returnFail("reallocateReal2", &
                           "Deallocation error for tmp")
        endif
 

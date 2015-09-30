@@ -48,7 +48,7 @@
        allocate(commSlidingCell%nSendCum(0:nn), &
                 commSlidingCell%nRecvCum(0:mm), stat=ierr)
        if(ierr /= 0)                                 &
-         call terminate("cumulativeNSendReceives", &
+         call returnFail("cumulativeNSendReceives", &
                         "Memory allocation failure for nSendCum &
                         &and nRecvCum.")
 

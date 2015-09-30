@@ -54,7 +54,7 @@
            mult = 0.0254_realType; trans = zero
 
          case default
-           call terminate("siLen", &
+           call returnFail("siLen", &
                           "No idea how to convert this to SI units")
 
        end select

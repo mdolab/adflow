@@ -94,7 +94,7 @@
 
        allocate(sendBuf(6,ii), sendBufInt(nInterp,ii), stat=ierr)
        if(ierr /= 0)                          &
-         call terminate("addHalosToBoundary", &
+         call returnFail("addHalosToBoundary", &
                         "Memory allocation failure for send buffers")
  
        ! Loop over the sending processors and lists for the 2nd level
@@ -184,7 +184,7 @@
        ii = commPatternCell_2nd(level)%nProcRecv
        allocate(nRecv(ii), stat=ierr)
        if(ierr /= 0)                          &
-         call terminate("addHalosToBoundary", &
+         call returnFail("addHalosToBoundary", &
                         "Memory allocation failure for nRecv")
 
        ! Now block and probe for messages from all the processors I
@@ -219,7 +219,7 @@
        allocate(recvBuf(6,ii), recvBufInt(nInterp,ii), &
                 oversetHalo(nHaloOver), stat=ierr)
        if(ierr /= 0)                          &
-         call terminate("addHalosToBoundary", &
+         call returnFail("addHalosToBoundary", &
                         "Memory allocation failure for recv buffers &
                         &and halo list")
 
@@ -272,7 +272,7 @@
 
            allocate(oversetHalo(ihalo)%interp(nInterp), stat=ierr)
            if(ierr /= 0)                           &
-              call terminate("addHalosToBoundary", &
+              call returnFail("addHalosToBoundary", &
                              "Memory allocation failure for interp")
 
            oversetHalo(ihalo)%interp = &
@@ -327,7 +327,7 @@
 
            allocate(oversetHalo(ihalo)%interp(nInterp), stat=ierr)
            if(ierr /= 0)                           &
-              call terminate("addHalosToBoundary", &
+              call returnFail("addHalosToBoundary", &
                              "Memory allocation failure for interp")
 
            oversetHalo(ihalo)%interp = recvBufInt(:,j)
@@ -371,7 +371,7 @@
        deallocate(sendBuf, recvBuf, nRecv, &
                   sendBufInt, recvBufInt, stat=ierr)
        if(ierr /= 0)                          &
-         call terminate("addHalosToBoundary", &
+         call returnFail("addHalosToBoundary", &
                         "Deallocation failure for buffers")
 
        ! Sort the boundary list in increasing order, build the 
@@ -403,7 +403,7 @@
 
          deallocate(oversetHalo(i)%interp, stat=ierr)
          if(ierr /= 0)                          &
-           call terminate("addHalosToBoundary", &
+           call returnFail("addHalosToBoundary", &
                           "Deallocation failure for interp")
        end do
 
@@ -411,7 +411,7 @@
 
        deallocate(oversetHalo, stat=ierr)
        if(ierr /= 0)                          &
-         call terminate("addHalosToBoundary", &
+         call returnFail("addHalosToBoundary", &
                         "Deallocation failure for oversetHalo")
 
        end subroutine addHalosToBoundary

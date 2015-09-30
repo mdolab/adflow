@@ -229,7 +229,7 @@ subroutine writeIsoSurface(isoName , sps, nIsoSurfVar, isoSurfSolNames)
         if (ierr .eq. CG_ERROR) call cg_error_exit_f
         
         if(ierr /= CG_OK)                    &
-             call terminate("writeIsoSurface", &
+             call returnFail("writeIsoSurface", &
              "Something wrong when calling cg_zone_write_f")
      end if
 
@@ -310,7 +310,7 @@ subroutine writeIsoSurface(isoName , sps, nIsoSurfVar, isoSurfSolNames)
                 buffer(2*nPtsProc(iProc+1)+1:3*nPtsProc(iProc+1)), coordID, ierr)
 
            if(ierr /= CG_OK)                    &
-                call terminate("writeIsoSurface", &
+                call returnFail("writeIsoSurface", &
                 "Something wrong when calling cg_coord_write_f")
            
            ! Increment by the number of nodes on this proc
@@ -393,7 +393,7 @@ subroutine writeIsoSurface(isoName , sps, nIsoSurfVar, isoSurfSolNames)
      call cg_section_write_f(cgnsInd, cgnsBase, cgnsZone, "ELEM", TRI_3, &
           1, sum(nConnProc), 0, allConn, secID, ierr)
      if(ierr /= CG_OK)                    &
-          call terminate("writeIsoSurface", &
+          call returnFail("writeIsoSurface", &
           "Something wrong when calling cg_section_partial_write_f")
 
      ! Also free allConn
@@ -409,7 +409,7 @@ subroutine writeIsoSurface(isoName , sps, nIsoSurfVar, isoSurfSolNames)
   if (myid == 0) then
      call cg_sol_write_f(cgnsInd, cgnsBase, cgnsZone, "isoSurfSolution", Vertex, solID, ierr)
      if(ierr /= CG_OK)                    &
-          call terminate("writeIsoSurface", &
+          call returnFail("writeIsoSurface", &
           "Something wrong when calling cg_sol_write_f")
   end if
 
@@ -475,7 +475,7 @@ subroutine writeIsoSurface(isoName , sps, nIsoSurfVar, isoSurfSolNames)
                    buffer, fieldID, ierr)
               
               if(ierr /= CG_OK)                    &
-                   call terminate("writeIsoSurface", &
+                   call returnFail("writeIsoSurface", &
                    "Something wrong when calling cg_field_partial_write_f")
               
               ! Increment by the number of nodes on this proc

@@ -224,7 +224,7 @@
 
        deallocate(nIntersecting, intersecting, stat=ierr)
        if(ierr /= 0)                         &
-         call terminate("slidingMeshGroups", &
+         call returnFail("slidingMeshGroups", &
                         "Deallocation error for nIntersecting &
                         &and intersecting")
 
@@ -244,7 +244,7 @@
 
        allocate(myInterfaces(nInterfaceGroups), stat=ierr)
        if(ierr /= 0)                         &
-         call terminate("slidingMeshGroups", &
+         call returnFail("slidingMeshGroups", &
                         "Memory allocation failure for myInterfaces")
 
        ! Determine for each color whether or not this processor
@@ -310,7 +310,7 @@
                       myInterfaces(mm)%procs2(myInterfaces(mm)%nProcs2), &
                       stat=ierr)
              if(ierr /= 0)                         &
-               call terminate("slidingMeshGroups", &
+               call returnFail("slidingMeshGroups", &
                               "Memory allocation failure for procIDs")
 
              ! Copy the processor numbers.
@@ -339,7 +339,7 @@
          deallocate(distrSliding(mm)%procs1, &
                     distrSliding(mm)%procs2, stat=ierr)
          if(ierr /= 0)                         &
-           call terminate("slidingMeshGroups", &
+           call returnFail("slidingMeshGroups", &
                           "Deallocation failure for procs1 and procs2")
        enddo
 

@@ -136,7 +136,7 @@
 
          allocate(IOVar(nn,1)%w(il,jl,kl,3), stat=ierr)
          if(ierr /= 0)                            &
-           call terminate("fineGridSpectralCoor", &
+           call returnFail("fineGridSpectralCoor", &
                           "Memory allocation failure for &
                           &IOVar(nn,1)%w")
 
@@ -214,7 +214,7 @@
        ! Interpolate the displacements and add them to the currently
        ! stored coordinates.
 
-       call terminate("fineGridSpectralCoor", &
+       call returnFail("fineGridSpectralCoor", &
                       "Arti should do this interpolation stuff")
 
        ! Release the memory of the variable w in IOVar.
@@ -223,7 +223,7 @@
          do ll=1,nGridsRead
            deallocate(IOVar(nn,ll)%w, stat=ierr)
            if(ierr /= 0)                            &
-             call terminate("fineGridSpectralCoor", &
+             call returnFail("fineGridSpectralCoor", &
                             "Deallocation failure for IOVar%w")
          enddo
        enddo

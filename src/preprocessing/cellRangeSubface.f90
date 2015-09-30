@@ -61,7 +61,7 @@
                     flowDoms(nn,level,1)%jcEnd(mm), &
                     flowDoms(nn,level,1)%kcEnd(mm), stat=ierr)
            if(ierr /= 0)                        &
-             call terminate("cellRangeSubface", &
+             call returnFail("cellRangeSubface", &
                             "Memory allocation failure for &
                             &cell subranges")
 

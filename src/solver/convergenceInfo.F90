@@ -605,7 +605,7 @@
           endif testRootProc
        enddo spectralLoop
 
-       ! Check if a NaN occured. If so the computation is terminated,
+       ! Check if a NaN occured. If so the computation is returnFaild,
        ! such that possible solution files written earlier are not
        ! corrupted.
        
@@ -626,7 +626,7 @@
           mgStartLevel = tempMGStartLevel
           currentLevel = tempCurrentLevel
   
-          call terminate("convergenceInfo", &
+          call returnFail("convergenceInfo", &
                "A NaN occurred during the computation.")
 
           ! in a normal computation, code will simply exit.

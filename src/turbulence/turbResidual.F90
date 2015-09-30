@@ -70,7 +70,7 @@
            call vf(.true.)
 
          case default
-           call terminate("turbResidual", &
+           call returnFail("turbResidual", &
                           "Turbulence model not implemented yet")
 
        end select

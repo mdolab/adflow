@@ -26,7 +26,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       call terminate("writeInterpolFromSpectral", &
+       call returnFail("writeInterpolFromSpectral", &
                       "Not implemented yet")
 
        end subroutine writeInterpolFromSpectral

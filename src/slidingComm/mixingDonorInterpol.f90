@@ -119,7 +119,7 @@
 
        allocate(subRange(nSubSlide,2,2), stat=ierr)
        if(ierr /= 0) &
-         call terminate("mixingDonorInterpol", &
+         call returnFail("mixingDonorInterpol", &
                         "Memory allocation failure for subRange.")
 
        ! Repeat the loop over the subfaces, but now determine the
@@ -191,7 +191,7 @@
 
                do j=jjBeg,jjEnd
                  if(haloInfo(iiBeg-1,j) /= haloInfo(iiBeg-1,jjBeg)) &
-                   call terminate("mixingDonorInterpol",            &
+                   call returnFail("mixingDonorInterpol",            &
                                   "Inconsistent halo info for iBeg &
                                   &boundary.")
                enddo
@@ -210,7 +210,7 @@
 
                do j=jjBeg,jjEnd
                  if(haloInfo(iiEnd+1,j) /= haloInfo(iiEnd+1,jjBeg)) &
-                   call terminate("mixingDonorInterpol",            &
+                   call returnFail("mixingDonorInterpol",            &
                                   "Inconsistent halo info for iEnd &
                                   &boundary.")
                enddo
@@ -229,7 +229,7 @@
 
                do i=iiBeg,iiEnd
                  if(haloInfo(i,jjBeg-1) /= haloInfo(iiBeg,jjBeg-1)) &
-                   call terminate("mixingDonorInterpol",            &
+                   call returnFail("mixingDonorInterpol",            &
                                   "Inconsistent halo info for jBeg &
                                   &boundary.")
                enddo
@@ -248,7 +248,7 @@
 
                do i=iiBeg,iiEnd
                  if(haloInfo(i,jjEnd+1) /= haloInfo(iiBeg,jjEnd+1)) &
-                   call terminate("mixingDonorInterpol",            &
+                   call returnFail("mixingDonorInterpol",            &
                                   "Inconsistent halo info for jEnd &
                                   &boundary.")
                enddo
@@ -294,7 +294,7 @@
                 commPattern%indListDonor(nAlloc),          &
                 commPattern%weightDonor(nAlloc), stat=ierr)
        if(ierr /= 0) &
-         call terminate("mixingDonorInterpol", &
+         call returnFail("mixingDonorInterpol", &
                         "Memory allocation failure for donor data.")
 
        ! Set some pointers to make the code more readable.
@@ -344,7 +344,7 @@
 
              allocate(xFace(iBeg-1:iEnd,jBeg-1:jEnd,3), stat=ierr)
              if(ierr /= 0) &
-               call terminate("mixingDonorInterpol", &
+               call returnFail("mixingDonorInterpol", &
                               "Memory allocation failure for xFace.")
 
              call cylCoorNodesOnBlockFace(xFace,  iBeg-1, iEnd,  &
@@ -864,7 +864,7 @@
                  ! interval. If not print an error message and exit.
 
               !  if(jj == nIntervalsDonor(ii-1))         &
-              !    call terminate("mixingDonorInterpol", &
+              !    call returnFail("mixingDonorInterpol", &
               !                   "Face does not contribute to a &
               !                   &single interval.")
 
@@ -879,7 +879,7 @@
 
              deallocate(xFace, stat=ierr)
              if(ierr /= 0)                           &
-               call terminate("mixingDonorInterpol", &
+               call returnFail("mixingDonorInterpol", &
                               "Deallocation failure for xFace.")
 
            endif testInterface2
@@ -890,7 +890,7 @@
 
        deallocate(subRange, stat=ierr)
        if(ierr /= 0)                           &
-         call terminate("mixingDonorInterpol", &
+         call returnFail("mixingDonorInterpol", &
                         "Deallocation failure for subRange.")
 
        ! Reallocate the memory for the donor interpolation info, such
@@ -989,7 +989,7 @@
          allocate(commPattern%indListDonor(nAlloc), &
                   commPattern%weightDonor(nAlloc), stat=ierr)
          if(ierr /= 0) &
-           call terminate("reallocDonorInterpolInfo", &
+           call returnFail("reallocDonorInterpolInfo", &
                           "Memory allocation failure for indListDonor &
                           &and weightDonor.")
 
@@ -1003,7 +1003,7 @@
 
          deallocate(indListDonor, weightDonor, stat=ierr)
          if(ierr /= 0)                                &
-           call terminate("reallocDonorInterpolInfo", &
+           call returnFail("reallocDonorInterpolInfo", &
                           "Deallocation failure for indListDonor &
                           &and weightDonor.")
 

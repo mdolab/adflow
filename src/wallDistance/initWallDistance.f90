@@ -53,7 +53,7 @@
            allocate(flowDoms(nn,level,sps)%d2Wall(2:il,2:jl,2:kl), &
                     stat=ierr)
            if(ierr /= 0)                          &
-             call terminate("initWallDistance", &
+             call returnFail("initWallDistance", &
                             "Memory allocation failure for d2Wall")
          endif
 

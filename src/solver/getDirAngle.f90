@@ -107,6 +107,6 @@ subroutine getDirAngle(freeStreamAxis,liftAxis,liftIndex,alpha,beta)
 
      beta  = atan2(freeStreamAxisNorm(2),freeStreamAxisNorm(1))
   else
-     call terminate('getDirAngle', 'Invalid Lift Direction')
+     call returnFail('getDirAngle', 'Invalid Lift Direction')
   endif
 end subroutine getDirAngle

@@ -202,7 +202,7 @@
 
            allocate(tmp(nTurbFreestreamSubfaces,3), stat=ierr)
            if(ierr /= 0)                                  &
-             call terminate("storeTurbFreestreamSubface", &
+             call returnFail("storeTurbFreestreamSubface", &
                             "Memory allocation failure for tmp")
 
            tmp = turbFreestreamSubfaces
@@ -212,7 +212,7 @@
 
            deallocate(turbFreestreamSubfaces, stat=ierr)
            if(ierr /= 0)                                  &
-             call terminate("storeTurbFreestreamSubface", &
+             call returnFail("storeTurbFreestreamSubface", &
                             "Deallocation failure for &
                             &turbFreestreamSubfaces")
 
@@ -221,7 +221,7 @@
            allocate(turbFreestreamSubfaces(nTurbFreestreamSubfaces,3), &
                     stat=ierr)
            if(ierr /= 0)                                  &
-             call terminate("storeTurbFreestreamSubface", &
+             call returnFail("storeTurbFreestreamSubface", &
                             "Memory allocation failure for &
                             &turbFreestreamSubfaces")
 
@@ -236,7 +236,7 @@
 
            deallocate(tmp, stat=ierr)
            if(ierr /= 0)                                  &
-             call terminate("storeTurbFreestreamSubface", &
+             call returnFail("storeTurbFreestreamSubface", &
                             "Deallocation failure for tmp")
 
          else testAllocated
@@ -249,7 +249,7 @@
            allocate(turbFreestreamSubfaces(nTurbFreestreamSubfaces,3), &
                     stat=ierr)
            if(ierr /= 0)                                  &
-             call terminate("storeTurbFreestreamSubface", &
+             call returnFail("storeTurbFreestreamSubface", &
                             "Memory allocation failure for &
                             &turbFreestreamSubfaces")
 
