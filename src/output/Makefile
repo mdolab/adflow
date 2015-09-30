@@ -60,7 +60,6 @@ FILES_TO_COMPLEXIFY = outputMod.f90\
 		 storeOldSolInBuffer.f90\
 		 storeSolInBuffer.f90\
 		 storeSurfsolInBuffer.f90\
-		 storeSurfsolInBuffer2.f90\
 		 surfSolFileNamesWrite.f90\
 		 surfSolNames.f90\
 		 updateParamfile.f90\

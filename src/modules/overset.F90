@@ -30,8 +30,7 @@ module overset
      integer(kind=intType) :: il, jl, kl
      integer(kind=intType) :: nx, ny, nz
      integer(kind=intType), dimension(:, :), pointer :: hexaConn
-     real(kind=realType), dimension(:, :), pointer :: xDual, xSearch
-     real(kind=realType), dimension(:, :,:, :), pointer :: xDual2, xSearch2
+     real(kind=realType), dimension(:, :), pointer :: xDual, xSearch, xPrimal
      real(kind=realType), dimension(:, :, :), pointer :: qualDonor, qualRecv
      integer(kind=intType), dimension(:,:,:), pointer :: iblank
      integer(kind=intType), dimension(:, :, :), pointer :: globalCell
