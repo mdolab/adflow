@@ -2510,6 +2510,7 @@ contains
     use BCTypes
     use blockPointers
     use flowVarRefState
+    use inputPhysics
     implicit none
 
     ! Subroutine arguments.
@@ -2715,44 +2716,59 @@ contains
           ssj => sj(2,:,:,:)
           ssk => sk(2,:,:,:)
           ss  => s (2,:,:,:)
-          dd2Wall => d2Wall(2,:,:)
        case (iMax)
           xx => x(il,:,:,:)
           ssi => si(il,:,:,:)
           ssj => sj(il,:,:,:)
           ssk => sk(il,:,:,:)
           ss  =>  s(il,:,:,:)
-          dd2Wall => d2Wall(il,:,:)
        case (jMin)
           xx => x(:,1,:,:)
           ssi => sj(:,1,:,:)
           ssj => si(:,2,:,:)
           ssk => sk(:,2,:,:)
           ss   => s(:,2,:,:)
-          dd2Wall => d2Wall(:,2,:)
        case (jMax)
           xx => x(:,jl,:,:)
           ssi => sj(:,jl,:,:)
           ssj => si(:,jl,:,:)
           ssk => sk(:,jl,:,:)
           ss  =>  s(:,jl,:,:)
-          dd2Wall => d2Wall(:,jl,:)
        case (kMin)
           xx => x(:,:,1,:)
           ssi => sk(:,:,1,:)
           ssj => si(:,:,2,:)
           ssk => sj(:,:,2,:)
           ss  =>  s(:,:,2,:)
-          dd2Wall => d2Wall(:,:,2)
        case (kMax)
           xx => x(:,:,kl,:)
           ssi => sk(:,:,kl,:)
           ssj => si(:,:,kl,:)
           ssk => sj(:,:,kl,:)
           ss  =>  s(:,:,kl,:)
-          dd2Wall => d2Wall(:,:,kl)
        end select
+
+       if(equations == RANSEquations) then
+          select case (BCFaceID(nn))
+          case (iMin)
+             dd2Wall => d2Wall(2,:,:)
+          case (iMax)
+             dd2Wall => d2Wall(il,:,:)
+          case (jMin)
+             dd2Wall => d2Wall(:,2,:)
+          case (jMax)
+             dd2Wall => d2Wall(:,jl,:)
+          case (kMin)
+             dd2Wall => d2Wall(:,:,2)
+          case (kMax)
+             dd2Wall => d2Wall(:,:,kl)
+          end select
+       end if
     end if
+
+
+
+
 #else
     select case (BCFaceID(nn))
 
