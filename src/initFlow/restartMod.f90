@@ -29,10 +29,13 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       ! halosRead:Determines if the halos where read or not.
        ! nVar:     Number of variables stored in the solution file.
        ! solID:    Loop variables for the number of solutions to be read.
        ! varNames: Variable names, sorted in increasing order,
        !           of the variables.
+
+       logical :: halosRead
 
        integer :: nVar
        integer(kind=intType) :: solID

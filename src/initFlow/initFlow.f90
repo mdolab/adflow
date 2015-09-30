@@ -35,7 +35,6 @@
 
        integer(kind=intType) :: sps, level, nLevels
 
-       logical :: halosRead
 !
 !      ******************************************************************
 !      *                                                                *
@@ -112,13 +111,15 @@
          call setIOVar
 
          ! Determine the format of the files and read them.
+         ! Note that halosRead is possibly overwritten in the
+         ! folloing select case statement below
 
          select case (fileFormatRead)
            case (cgnsFormat)
-             call readRestartFile(halosRead)
+             call readRestartFile()
 
            case (plot3DFormat)
-             call readRestartFilePlot3D(halosRead)
+             call readRestartFilePlot3D()
          end select
 
          ! Copy or interpolate the spectral solution, if needed.
@@ -201,6 +202,10 @@
        end subroutine initFlow
 
        subroutine initFlowPart2
+
+       use restartMod
+       implicit none
+
        ! Initialize the dependent flow variables and the halo values.
        call initDepvarAndHalos(halosRead)
   
