@@ -23,7 +23,7 @@
 !      ******************************************************************
 !
 #ifdef USE_NO_CGNS
-       call terminate("getSortedZoneNumbers", &
+       call returnFail("getSortedZoneNumbers", &
                       "Routine should not be called if no cgns support &
                       &is selected.")
 #else
@@ -63,7 +63,7 @@
 
        allocate(zoneNames(cgnsNdom), zoneNumbers(cgnsNdom), stat=ierr)
        if(ierr /= 0)                            &
-         call terminate("getSortedZoneNumbers", &
+         call returnFail("getSortedZoneNumbers", &
                         "Memory allocation failure for zoneNames &
                         &and zoneNumbers")
 
@@ -80,7 +80,7 @@
          zone = nn
          call cg_zone_type_f(cgnsInd, cgnsBase, zone, zonetype, ierr)
          if(ierr /= all_ok)                       &
-           call terminate("getSortedZoneNumbers", &
+           call returnFail("getSortedZoneNumbers", &
                           "Something wrong when calling cg_zone_type_f")
 
          if(zonetype /= structured) then
@@ -93,7 +93,7 @@
            write(errorMessage,100) trim(int1String), trim(int2String)
  100       format("Base",1X,A,": Zone",1X,A, " of the cgns restart &
                   &file is not structured")
-           call terminate("getSortedZoneNumbers", errorMessage)
+           call returnFail("getSortedZoneNumbers", errorMessage)
 
          endif
 
@@ -101,7 +101,7 @@
 
          call cg_ncoords_f(cgnsInd, cgnsBase, zone, ncoords, ierr)
          if(ierr /= all_ok)                       &
-           call terminate("getSortedZoneNumbers", &
+           call returnFail("getSortedZoneNumbers", &
                           "Something wrong when calling cg_ncoords_f")
 
          ! If ncoords == 3, there are coordinates present. Then check if
@@ -114,14 +114,14 @@
            call cg_goto_f(cgnsInd, cgnsBase, ierr, "Zone_t", zone, &
                           "GridCoordinates_t", 1, "end")
            if(ierr /= all_ok)                       &
-             call terminate("getSortedZoneNumbers", &
+             call returnFail("getSortedZoneNumbers", &
                             "Something wrong when calling cg_goto_f")
 
            ! Check if this node is a link.
 
            call cg_is_link_f(pathLength, ierr)
            if(ierr /= all_ok)                       &
-             call terminate("getSortedZoneNumbers", &
+             call returnFail("getSortedZoneNumbers", &
                             "Something wrong when calling cg_is_link_f")
 
            if(pathLength > 0) then
@@ -130,7 +130,7 @@
 
              call cg_link_read_f(errorMessage, linkPath, ierr)
              if(ierr /= all_ok)                       &
-               call terminate("getSortedZoneNumbers", &
+               call returnFail("getSortedZoneNumbers", &
                               "Something wrong when calling &
                               &cg_link_read_f")
 
@@ -164,7 +164,7 @@
            call cg_zone_read_f(cgnsInd, cgnsBase, zone, &
                                zoneNames(nn), sizesBlock, ierr)
            if(ierr /= all_ok)                       &
-             call terminate("getSortedZoneNumbers", &
+             call returnFail("getSortedZoneNumbers", &
                             "Something wrong when calling &
                             &cg_zone_read_f")
          endif
@@ -198,7 +198,7 @@
          ! case, this means that two identical zone names are present.
 
          if(zoneNumbers(ii) /= -1)                &
-           call terminate("getSortedZoneNumbers", &
+           call returnFail("getSortedZoneNumbers", &
                           "Error occurs only when two identical zone &
                           &names are present")
 

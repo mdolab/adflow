@@ -52,7 +52,7 @@
          write(errorMessage,*) "Cp curve fit file ", trim(cpFile), &
                                " not found."
          if(myID == 0) &
-           call terminate("readCpTempCurveFits", errorMessage)
+           call returnFail("readCpTempCurveFits", errorMessage)
 
          call mpi_barrier(SUmb_comm_world, ierr)
        endif
@@ -65,7 +65,7 @@
 
        if(cpNparts <= 0) then
          if(myID == 0)                           &
-           call terminate("readCpTempCurveFits", &
+           call returnFail("readCpTempCurveFits", &
                           "Wrong number of temperature ranges in &
                           &Cp curve fit file.")
          call mpi_barrier(SUmb_comm_world, ierr)
@@ -78,7 +78,7 @@
                 cpHint(0:cpNparts),   cpTempFit(cpNparts), &
                 stat=ierr)
        if(ierr /= 0)                           &
-         call terminate("readCpTempCurveFits", &
+         call returnFail("readCpTempCurveFits", &
                         "Memory allocation failure for cpTrange, &
                         &cpEint, cpHint and cpTempFit")
 
@@ -104,7 +104,7 @@
 
            if(T1 /= cpTrange(nn-1)) then
              if(myID == 0)                           &
-               call terminate("readCpTempCurveFits", &
+               call returnFail("readCpTempCurveFits", &
                               "Curve fit boundary not continuous")
              call mpi_barrier(SUmb_comm_world, ierr)
            endif
@@ -121,7 +121,7 @@
          allocate(cpTempFit(nn)%exponents(ii), &
                   cpTempFit(nn)%constants(ii), stat=ierr)
          if(ierr /= 0)                           &
-           call terminate("readCpTempCurveFits", &
+           call returnFail("readCpTempCurveFits", &
                           "Memory allocation failure for exponents and &
                           &constants")
 
@@ -145,7 +145,7 @@
                string = trim(string)
              else
                if(myID == 0)                           &
-                 call terminate("readCpTempCurveFits", &
+                 call returnFail("readCpTempCurveFits", &
                                 "Not enough exponents on line; &
                                 &Cp curve fit file not valid.")
                call mpi_barrier(SUmb_comm_world, ierr)
@@ -173,7 +173,7 @@
                string = trim(string)
              else
                if(myID == 0)                           &
-                 call terminate("readCpTempCurveFits", &
+                 call returnFail("readCpTempCurveFits", &
                                 "Not enough constants on line; &
                                 &Cp curve fit file not valid.")
                call mpi_barrier(SUmb_comm_world, ierr)
@@ -421,7 +421,7 @@
 
          if(ios /= 0) then
            if(myID == 0)                        &
-             call terminate("findNextInfoLine", &
+             call returnFail("findNextInfoLine", &
                             "Unexpected end of Cp curve fit file")
            call mpi_barrier(SUmb_comm_world, ierr)
          endif

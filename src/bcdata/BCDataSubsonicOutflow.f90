@@ -49,7 +49,7 @@
        nbcVar = 1
        allocate(bcVarArray(iBeg:iEnd,jBeg:jEnd,nbcVar), stat=ierr)
        if(ierr /= 0)                             &
-         call terminate("BCDataSubsonicOutflow", &
+         call returnFail("BCDataSubsonicOutflow", &
                         "Memory allocation failure for bcVarArray")
 
        bcVarNames(1) = cgnsPressure
@@ -58,7 +58,7 @@
 
        call extractFromDataSet(BCFaceID(boco))
 
-       ! Write an error message and terminate if it was not
+       ! Write an error message and returnFail if it was not
        ! possible to determine the static pressure.
 
        if(.not. bcVarPresent(1)) then
@@ -69,7 +69,7 @@
  100     format("Zone ",a,", boundary subface ",a, &
                 ": Static pressure not specified for subsonic outlet")
 
-         call terminate("BCDataSubsonicOutflow", errorMessage)
+         call returnFail("BCDataSubsonicOutflow", errorMessage)
 
        endif
 
@@ -87,7 +87,7 @@
 
        deallocate(bcVarArray, stat=ierr)
        if(ierr /= 0)                               &
-         call terminate("BCDataSubsonicOutflow", &
+         call returnFail("BCDataSubsonicOutflow", &
                         "Deallocation failure for bcVarArray")
 
        end subroutine BCDataSubsonicOutflow

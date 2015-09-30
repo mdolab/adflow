@@ -45,7 +45,7 @@
 
        allocate(surfSolFileNames(nTimeIntervalsSpectral), stat=ierr)
        if(ierr /= 0)                             &
-         call terminate("surfSolFileNamesWrite", &
+         call returnFail("surfSolFileNamesWrite", &
                         "Memory allocation failure for surfSolFileNames")
 
        ! Set the number of surface solution files to be written.

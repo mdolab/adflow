@@ -134,7 +134,7 @@ contains
     ! ------------------------------------
 
     if (precond == Turkel .or. precond == ChoiMerkle) then 
-       call terminate("applyAllBC", &
+       call returnFail("applyAllBC", &
             "Farfield Turkel and Coid/Merkle preconditioners not implemented")
     end if
     !$AD II-LOOP
@@ -1113,7 +1113,7 @@ contains
     logical, intent(in) :: secondHalo, correctForK
     integer(kind=intType), intent(in) :: nn
 
-    call terminate("bcBleedInflow", "Not implemented yet")
+    call returnFail("bcBleedInflow", "Not implemented yet")
 
   end subroutine bcBleedInflow
 
@@ -1138,7 +1138,7 @@ contains
     logical, intent(in) :: secondHalo, correctForK
     integer(kind=intType), intent(in) :: nn
 
-    call terminate("bcMdot", "Not implemented yet")
+    call returnFail("bcMdot", "Not implemented yet")
 
   end subroutine bcMDot
 
@@ -1162,7 +1162,7 @@ contains
     logical, intent(in) :: secondHalo, correctForK
     integer(kind=intType), intent(in) :: nn
 
-    call terminate("bcThrust", "Not implemented yet")
+    call returnFail("bcThrust", "Not implemented yet")
 
   end subroutine bcThrust
 #endif
@@ -1649,7 +1649,7 @@ contains
 
     case (DomainInterfaceRho)
 
-       call terminate("analyzeString", &
+       call returnFail("analyzeString", &
             "DomainInterfaceRho not implemented yet")
 
        !============================================================
@@ -2433,7 +2433,7 @@ contains
 
     case (cpTempCurveFits)
 
-       call terminate("BCRoutines", "CPTempCurveFits not implemented yet.")
+       call returnFail("BCRoutines", "CPTempCurveFits not implemented yet.")
     end select
   end subroutine computeEtot
 

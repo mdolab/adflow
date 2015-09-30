@@ -65,7 +65,7 @@
        nPerHalos = nn
        allocate(periodic(nn), stat=ierr)
        if(ierr /= 0)                             &
-         call terminate("determinePeriodicData", &
+         call returnFail("determinePeriodicData", &
                         "Memory allocation failure for periodic")
 
        nn = 0
@@ -141,7 +141,7 @@
 
        deallocate(periodic, stat=ierr)
        if(ierr /= 0)                             &
-         call terminate("determinePeriodicData", &
+         call returnFail("determinePeriodicData", &
                         "Deallocation failure for periodic")
 
        !=================================================================
@@ -235,7 +235,7 @@
 
          allocate(periodicData(nn), stat=ierr)
          if(ierr /= 0)                       &
-           call terminate("setPeriodicData", &
+           call returnFail("setPeriodicData", &
                           "Memory allocation failure for periodicData")
 
          ! Loop over the number of periodic transformations.
@@ -252,7 +252,7 @@
            allocate(periodicData(nn)%block(mm), &
                     periodicData(nn)%indices(mm,3), stat=ierr)
            if(ierr /= 0)                       &
-             call terminate("setPeriodicData", &
+             call returnFail("setPeriodicData", &
                             "Memory allocation failure for block &
                             &and indices.")
 

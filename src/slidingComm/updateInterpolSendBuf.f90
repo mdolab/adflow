@@ -124,7 +124,7 @@
 
          if( debug ) then
            if(mm == 0)                               &
-             call terminate("updateInterpolSendBuf", &
+             call returnFail("updateInterpolSendBuf", &
                             "Entry not found in sortedDonors.")
          endif
 
@@ -147,7 +147,7 @@
        deallocate(donorInfo%indBuf,  donorInfo%block, &
                   donorInfo%indices, donorInfo%weight, stat=ierr)
        if(ierr /= 0)                             &
-         call terminate("updateInterpolSendBuf", &
+         call returnFail("updateInterpolSendBuf", &
                         "Deallocation error for the member variables &
                         &of donorInfo.")
 
@@ -265,7 +265,7 @@
 
            allocate(commSlidingCell%sendList(nn), stat=ierr)
            if(ierr /= 0)                                 &
-             call terminate("updateCommSlidingCellSend", &
+             call returnFail("updateCommSlidingCellSend", &
                             "Memory allocation failure for sendList.")
 
            ! Set the pointers back for the previously stored data
@@ -288,7 +288,7 @@
 
            deallocate(tmpSendList, stat=ierr)
            if(ierr /= 0)                                 &
-             call terminate("updateCommSlidingCellSend", &
+             call returnFail("updateCommSlidingCellSend", &
                             "Deallocation error for tmpSendList.")
 
            ! Set the new value of nProcSend.

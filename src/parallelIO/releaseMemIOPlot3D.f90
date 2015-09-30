@@ -44,14 +44,14 @@
                     P3D_IOParts(nn)%posComm,  &
                     P3D_IOParts(nn)%posNonLocal, stat=ierr)
          if(ierr /= 0)                          &
-           call terminate("releaseMemIOPlot3D", &
+           call returnFail("releaseMemIOPlot3D", &
                           "Deallocation failure for the member &
                           &variables of P3D_IOParts(nn)")
        enddo
 
        deallocate(P3D_IOParts, stat=ierr)
        if(ierr /= 0)                          &
-         call terminate("releaseMemIOPlot3D", &
+         call returnFail("releaseMemIOPlot3D", &
                         "Deallocation failure for P3D_IOParts")
 
        ! Release the memory of P3D_commPart. Note that posComm and
@@ -62,7 +62,7 @@
                   P3D_commPart%posLocal, &
                   P3D_commPart%indices, stat=ierr)
        if(ierr /= 0)                          &
-         call terminate("releaseMemIOPlot3D", &
+         call returnFail("releaseMemIOPlot3D", &
                         "Deallocation failure for the member &
                         &variables of P3D_commPart")
 
@@ -71,7 +71,7 @@
        deallocate(P3D_procSend, P3D_procRecv, &
                   P3D_sendSize, P3D_recvSize, stat=ierr)
        if(ierr /= 0)                          &
-         call terminate("releaseMemIOPlot3D", &
+         call returnFail("releaseMemIOPlot3D", &
                         "Deallocation failure for the communication &
                         &arrays")
 
@@ -82,7 +82,7 @@
          deallocate(P3D_recordIntegersWrite, &
                     P3D_recordPosition, stat=ierr)
          if(ierr /= 0)                          &
-           call terminate("releaseMemIOPlot3D", &
+           call returnFail("releaseMemIOPlot3D", &
                           "Deallocation failure for &
                           &P3D_recordIntegersWrite and &
                           &P3D_recordPosition")

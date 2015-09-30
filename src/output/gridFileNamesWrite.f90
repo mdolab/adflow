@@ -60,7 +60,7 @@
 
            allocate(gridFileNames(1), stat=ierr)
            if(ierr /= 0)                          &
-             call terminate("gridFileNamesWrite", &
+             call returnFail("gridFileNamesWrite", &
                             "Memory allocation failure for grid &
                             &file names")
 
@@ -93,7 +93,7 @@
 
            allocate(gridFileNames(nAvail), stat=ierr)
            if(ierr /= 0)                          &
-             call terminate("gridFileNamesWrite", &
+             call returnFail("gridFileNamesWrite", &
                             "Memory allocation failure for &
                             &gridFileNames")
 
@@ -151,7 +151,7 @@
 
            allocate(gridFileNames(nTimeIntervalsSpectral), stat=ierr)
            if(ierr /= 0)                          &
-             call terminate("gridFileNamesWrite", &
+             call returnFail("gridFileNamesWrite", &
                             "Memory allocation failure for &
                             &gridFileNames")
 
@@ -261,7 +261,7 @@
 
          allocate(IOVar(nDom,nGridsToWrite), stat=ierr)
          if(ierr /= 0)                          &
-           call terminate("gridFileNamesWrite", &
+           call returnFail("gridFileNamesWrite", &
                           "Memory allocation failure for IOVar")
 
          ! Set the pointer w of IOVar to the correct coordinates.

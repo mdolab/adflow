@@ -75,13 +75,13 @@
                     cgnsDoms(nn)%connOver(i)%idonor, &
                     cgnsDoms(nn)%connOver(i)%interp, stat=ierr)
          if(ierr /= 0) &
-           call terminate("releaseOversetCGNSZone", &
+           call returnFail("releaseOversetCGNSZone", &
                           "Deallocation failure for connectivity data")
        end do
 
        deallocate(cgnsDoms(nn)%connOver, stat=ierr)
        if(ierr /= 0) &
-         call terminate("releaseOversetCGNSZone", &
+         call returnFail("releaseOversetCGNSZone", &
                         "Deallocation failure for connectivities")
 
        ! Deallocate all of the hole sets.
@@ -89,13 +89,13 @@
        do i = 1,cgnsDoms(nn)%nHoles
          deallocate(cgnsDoms(nn)%hole(i)%indices, stat=ierr)
          if(ierr /= 0) &
-           call terminate("releaseOversetCGNSZone", &
+           call returnFail("releaseOversetCGNSZone", &
                           "Deallocation failure for hole indices")
        end do
 
        deallocate(cgnsDoms(nn)%hole, stat=ierr)
        if(ierr /= 0) &
-         call terminate("releaseOversetCGNSZone", &
+         call returnFail("releaseOversetCGNSZone", &
                         "Deallocation failure for hole sets")
 
        ! Set some variables to 0 to be consistent.

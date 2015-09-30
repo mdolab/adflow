@@ -152,7 +152,7 @@
        ! Not able to determine the pressure.
        ! Print an error message and exit.
 
-       call terminate("readPressure", &
+       call returnFail("readPressure", &
                       "Not able to retrieve the pressure from &
                       &the variables in the restart file.")
 

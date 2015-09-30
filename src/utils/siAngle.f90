@@ -52,7 +52,7 @@
 
        else
 
-         call terminate("siAngle", &
+         call returnFail("siAngle", &
                         "No idea how to convert this to SI units")
 
        endif

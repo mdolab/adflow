@@ -108,7 +108,7 @@
 
          allocate(nodeFlag(nPoint), stat=ierr)
          if(ierr /= 0)                           &
-           call terminate("nLocalNodesAndQuads", &
+           call returnFail("nLocalNodesAndQuads", &
                           "Memory allocation failure for nodeFlag.")
 
          nodeFlag = 0
@@ -175,7 +175,7 @@
 
          deallocate(nodeFlag, stat=ierr)
          if(ierr /= 0)                           &
-           call terminate("nLocalNodesAndQuads", &
+           call returnFail("nLocalNodesAndQuads", &
                           "Deallocation error for nodeFlag.")
 
        enddo loopSubfaces

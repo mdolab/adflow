@@ -82,7 +82,7 @@
                  execName(:lenExec),          &
                  "<parameter file>"
 
-           call terminate("initExec", errorMessage)
+           call returnFail("initExec", errorMessage)
 
          endif
 
@@ -103,7 +103,7 @@
 
        ! Check if the size of the C and fortran integers match.
        ! If not, processor 0 writes an error message and the
-       ! program terminates.
+       ! program returnFails.
 
        if(sizeCInt /= sizeOfInteger) then
 
@@ -111,7 +111,7 @@
  101     format("Inconsistent size of C and Fortran integers: ", &
                 i2," vs ", i2," bytes.")
 
-         if(myID == 0) call terminate("initExec", errorMessage)
+         if(myID == 0) call returnFail("initExec", errorMessage)
          call mpi_barrier(SUmb_comm_world, ierr)
 
        endif
@@ -121,7 +121,7 @@
        allocate(sendRequests(nProc), &
                 recvRequests(nProc), stat=ierr)
        if(ierr /= 0)                &
-         call terminate("initExec", &
+         call returnFail("initExec", &
                         "Memory allocation failure for sendRequests &
                         &and recvRequests")
 

@@ -27,6 +27,6 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       call terminate("setStageCoeffImplicitRK", "Not implemented yet.")
+       call returnFail("setStageCoeffImplicitRK", "Not implemented yet.")
 
        end subroutine setStageCoeffImplicitRK

@@ -597,7 +597,7 @@ subroutine computeIsoVariable(solName, sps, isoVal)
         enddo
 
      case default
-        call terminate("computeIsoVariable", &
+        call returnFail("computeIsoVariable", &
              "This should not happen")
 
      end select

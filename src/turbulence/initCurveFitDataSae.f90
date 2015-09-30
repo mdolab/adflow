@@ -32,7 +32,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       call terminate("initCurveFitDataSae", &
+       call returnFail("initCurveFitDataSae", &
                       "Not implemented yet")
 
        end subroutine initCurveFitDataSae

@@ -72,7 +72,7 @@
        allocate(mySubfaces1(nMySubfaces1), &
                 mySubfaces2(nMySubfaces2), stat=ierr)
        if(ierr /= 0)                       &
-         call terminate("mySubfacesSlide", &
+         call returnFail("mySubfacesSlide", &
                         "Memory allocation failure for mySubfaces1 &
                         &and mySubfaces2.")
 
@@ -298,7 +298,7 @@
                       nodeInfo(iBeg-1:iEnd,jBeg-1:jEnd),    &
                       stat = ierr)
              if(ierr /= 0)                                &
-               call terminate("storeMySubfaceInfoSlide",  &
+               call returnFail("storeMySubfaceInfoSlide",  &
                               "Memory allocation failure for &
                               &mySubfaces and nodeInfo.")
 
@@ -474,7 +474,7 @@
 
                    case default
 
-                     call terminate("storeMySubfaceInfoSlide", &
+                     call returnFail("storeMySubfaceInfoSlide", &
                                     "This should not happen")
 
                  end select
@@ -614,7 +614,7 @@
 
              deallocate(nodeInfo, stat=ierr)
              if(ierr /= 0)                             &
-               call terminate("storeSubfaceInfoSlide", &
+               call returnFail("storeSubfaceInfoSlide", &
                               "Deallocation error for nodeInfo.")
            endif interfaceTest
 

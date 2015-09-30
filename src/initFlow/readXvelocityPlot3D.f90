@@ -75,7 +75,7 @@
 
          if(nn == 0) then
            if(myID == 0)                           &
-             call terminate("readXvelocityPlot3D", &
+             call returnFail("readXvelocityPlot3D", &
                             "Neither x-velocity nor x-momentum present &
                             &in the restart file")
            call mpi_barrier(SUmb_comm_world, ierr)

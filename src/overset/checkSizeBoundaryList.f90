@@ -55,13 +55,13 @@
 
        allocate(tmp(nStored), stat=ierr)
        if (ierr /= 0)                            &
-         call terminate("checkSizeBoundaryList", &
+         call returnFail("checkSizeBoundaryList", &
                         "Memory allocation failure for tmp")
 
        do i=1,nStored
          allocate(tmp(i)%interp(3), stat=ierr)
          if (ierr /= 0)                            &
-           call terminate("checkSizeBoundaryList", &
+           call returnFail("checkSizeBoundaryList", &
                           "Memory allocation failure for interp")
 
          tmp(i) = oversetHalo(i)
@@ -72,13 +72,13 @@
        do i=1,currentSize
          deallocate(oversetHalo(i)%interp, stat=ierr)
          if (ierr /= 0)                            &
-           call terminate("checkSizeBoundaryList", &
+           call returnFail("checkSizeBoundaryList", &
                           "Deallocation failure for interp")
        end do
 
        deallocate(oversetHalo, stat=ierr)
        if (ierr /= 0)                            &
-         call terminate("checkSizeBoundaryList", &
+         call returnFail("checkSizeBoundaryList", &
                         "Deallocation failure for oversetHalo")
 
        ! Set the new size of the boundary list and reallocate. Note the
@@ -89,13 +89,13 @@
 
        allocate(oversetHalo(newSize), stat=ierr)
        if (ierr /= 0)                            &
-         call terminate("checkSizeBoundaryList", &
+         call returnFail("checkSizeBoundaryList", &
                         "Memory allocation failure for oversetHalo")
 
        do i=1,newSize
          allocate(oversetHalo(i)%interp(3), stat=ierr)
          if (ierr /= 0)                            &
-           call terminate("checkSizeBoundaryList", &
+           call returnFail("checkSizeBoundaryList", &
                           "Memory allocation failure for interp")
        end do
 
@@ -110,13 +110,13 @@
        do i=1,nStored
          deallocate(tmp(i)%interp, stat=ierr)
          if (ierr /= 0)                            &
-           call terminate("checkSizeBoundaryList", &
+           call returnFail("checkSizeBoundaryList", &
                           "Deallocation failure for interp")
        end do
 
        deallocate(tmp, stat=ierr)
        if (ierr /= 0)                            &
-         call terminate("checkSizeBoundaryList", &
+         call returnFail("checkSizeBoundaryList", &
                         "Deallocation failure for tmp")
 
        end subroutine checkSizeBoundaryList

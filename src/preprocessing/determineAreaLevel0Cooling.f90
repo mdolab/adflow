@@ -113,7 +113,7 @@
            if(nSlices == 0) then
              nSlices = j
            else if(nSlices /= j) then
-             call terminate("determineAreaLevel0Cooling", &
+             call returnFail("determineAreaLevel0Cooling", &
                             "Different periodicity encountered for &
                             &cooling plane.")
            endif

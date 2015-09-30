@@ -148,7 +148,7 @@
 
        ! Z-momentum could not be created. Terminate.
 
-       call terminate("readZmomentum", &
+       call returnFail("readZmomentum", &
                       "Z-Momentum could not be created")
 
        end subroutine readZmomentum

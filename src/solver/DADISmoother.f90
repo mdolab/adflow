@@ -195,7 +195,7 @@ subroutine executeDADIStep
            ! Compute the turbulent updates, if needed.
 
            if( turbCoupled ) then
-              call terminate("executeDADIstep", &
+              call returnFail("executeDADIstep", &
                    "turbulent updates not implemented yet")
            endif
 
@@ -250,7 +250,7 @@ subroutine executeDADIStep
            ! Compute the turbulent updates, if needed.
 
            if( turbCoupled ) then
-              call terminate("executeRkStage", &
+              call returnFail("executeRkStage", &
                    "turbulent updates not implemented yet")
            endif
 

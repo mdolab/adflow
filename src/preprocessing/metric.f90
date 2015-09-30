@@ -97,7 +97,7 @@
                     flowDoms(nn,level,sps)%vol(0:ib,0:jb,0:kb),  &
                     stat=ierr)
            if(ierr /= 0)                      &
-             call terminate("allocateMetric", &
+             call returnFail("allocateMetric", &
                             "Memory allocation failure for &
                             &normals and volumes")
 
@@ -110,7 +110,7 @@
                     flowDoms(nn,level,sps)%sKALE(0:nALEsteps,1:ie,1:je,0:ke,3), &
                     stat=ierr)
            if(ierr /= 0)                      &
-             call terminate("allocateMetric", &
+             call returnFail("allocateMetric", &
                             "Memory allocation failure for &
                             &sIALE, sJALE, and sKALE")
 
@@ -140,7 +140,7 @@
                   BCData(mm)%normALE(0:nALEsteps,ie:ib,je:jb,3), &
                   stat=ierr)
              if(ierr /= 0)                      &
-               call terminate("allocateMetric", &
+               call returnFail("allocateMetric", &
                               "Memory allocation failure for norm")
            enddo
 
@@ -154,7 +154,7 @@
                flowDoms(nn,level,sps)%volOld(nOldLevels,2:il,2:jl,2:kl), &
                stat=ierr)
              if(ierr /= 0)                      &
-               call terminate("allocateMetric", &
+               call returnFail("allocateMetric", &
                               "Memory allocation failure for volOld")
            endif
 
@@ -251,7 +251,7 @@
            allocate(checkVolDoms(nn,sps)%volumeIsNeg(2:il,2:jl,2:kl), &
                     stat=ierr)
            if(ierr /= 0)              &
-             call terminate("metric", &
+             call returnFail("metric", &
                             "Memory allocation failure for volumeIsNeg")
            volumeIsNeg => checkVolDoms(nn,sps)%volumeIsNeg
 !
@@ -435,7 +435,7 @@
            ! volumes; on the coarse levels the corresponding fine level
            ! value is taken. If both positive and negative volumes are
            ! present it is assumed that the block was intended to be
-           ! right handed. The code will terminate later on anyway.
+           ! right handed. The code will returnFail later on anyway.
 
            if(level == 1) then
              if(nVolPos == 0) then       ! Left handed block.
@@ -699,7 +699,7 @@
                    if(v1(1) > thresholdReal .or. &
                       v1(2) > thresholdReal .or. &
                       v1(3) > thresholdReal)     &
-                     call terminate("metric", &
+                     call returnFail("metric", &
                                     "Normals do not sum up to 0")
 
                  enddo
@@ -724,12 +724,12 @@
          if(level == 1) then
 
            ! Negative volumes present on the fine grid level. Print a
-           ! list of the bad volumes and terminate executation.
+           ! list of the bad volumes and returnFail executation.
 
            call writeNegVolumes(checkVolDoms)
 
            if(myID == 0) &
-             call terminate("metric", "Negative volumes present in grid")
+             call returnFail("metric", "Negative volumes present in grid")
            call mpi_barrier(SUmb_comm_world, ierr)
 
          else
@@ -782,7 +782,7 @@
          do nn=1,nDom
            deallocate(checkVolDoms(nn,sps)%volumeIsNeg, stat=ierr)
            if(ierr /= 0)              &
-             call terminate("metric", &
+             call returnFail("metric", &
                             "Deallocation failure for volumeIsNeg")
          enddo
        enddo

@@ -153,7 +153,7 @@
                                       &be first order or second order, &
                                       &not ", trim(value)
                if(myID == 0) &
-                 call terminate("analyzeString", errorMessage)
+                 call returnFail("analyzeString", errorMessage)
                call mpi_barrier(SUmb_comm_world, pos)
            end select
 
@@ -182,7 +182,7 @@
                write(errorMessage,*) "Unknown limiter, ", &
                                       trim(value), ", specified"
                if(myID == 0) &
-                 call terminate("analyzeString", errorMessage)
+                 call returnFail("analyzeString", errorMessage)
                call mpi_barrier(SUmb_comm_world, pos)
            end select
 
@@ -203,7 +203,7 @@
                write(errorMessage,*) "Unknown preconditioner, ", &
                                       trim(value), ", specified"
                if(myID == 0) &
-                 call terminate("analyzeString", errorMessage)
+                 call returnFail("analyzeString", errorMessage)
                call mpi_barrier(SUmb_comm_world, pos)
            end select
 
@@ -227,7 +227,7 @@
                                       &treatment, ", &
                                       trim(value), ", specified"
                if(myID == 0) &
-                 call terminate("analyzeString", errorMessage)
+                 call returnFail("analyzeString", errorMessage)
                call mpi_barrier(SUmb_comm_world, pos)
            end select
 
@@ -247,7 +247,7 @@
                                       &treatment, ", &
                                       trim(value), ", specified"
                if(myID == 0) &
-                 call terminate("analyzeString", errorMessage)
+                 call returnFail("analyzeString", errorMessage)
                call mpi_barrier(SUmb_comm_world, pos)
            end select
 
@@ -267,7 +267,7 @@
                                       &block treatment, ", &
                                       trim(value), ", specified"
                if(myID == 0) &
-                 call terminate("analyzeString", errorMessage)
+                 call returnFail("analyzeString", errorMessage)
                call mpi_barrier(SUmb_comm_world, pos)
            end select
 
@@ -343,7 +343,7 @@
                                      &grid, ", trim(value), &
                                      ", specified"
                if(myID == 0) &
-                 call terminate("analyzeString", errorMessage)
+                 call returnFail("analyzeString", errorMessage)
                call mpi_barrier(SUmb_comm_world, pos)
            end select
 
@@ -358,7 +358,7 @@
                                      &solution, ", trim(value), &
                                      ", specified"
                if(myID == 0) &
-                 call terminate("analyzeString", errorMessage)
+                 call returnFail("analyzeString", errorMessage)
                call mpi_barrier(SUmb_comm_world, pos)
            end select
 
@@ -403,7 +403,7 @@
                write(errorMessage,*) "Unknown smoother, ", &
                                       trim(value), ", specified"
                if(myID == 0) &
-                 call terminate("analyzeString", errorMessage)
+                 call returnFail("analyzeString", errorMessage)
                call mpi_barrier(SUmb_comm_world, pos)
            end select
 
@@ -423,7 +423,7 @@
                                       &equations, ", trim(value),  &
                                       ", specified"
                if(myID == 0) &
-                 call terminate("analyzeString", errorMessage)
+                 call returnFail("analyzeString", errorMessage)
                call mpi_barrier(SUmb_comm_world, pos)
            end select
 
@@ -442,7 +442,7 @@
                write(errorMessage,*) "Unknown turbulent smoother, ", &
                                       trim(value), ", specified"
                if(myID == 0) &
-                 call terminate("analyzeString", errorMessage)
+                 call returnFail("analyzeString", errorMessage)
                call mpi_barrier(SUmb_comm_world, pos)
            end select
 
@@ -473,7 +473,7 @@
                write(errorMessage,*) "Unknown turbulent relaxation, ", &
                                       trim(value), ", specified"
                if(myID == 0) &
-                 call terminate("analyzeString", errorMessage)
+                 call returnFail("analyzeString", errorMessage)
                call mpi_barrier(SUmb_comm_world, pos)
            end select
 
@@ -494,7 +494,7 @@
                write(errorMessage,*) "Unknown residual averaging, ", &
                                       trim(value), ", specified"
                if(myID == 0) &
-                 call terminate("analyzeString", errorMessage)
+                 call returnFail("analyzeString", errorMessage)
                call mpi_barrier(SUmb_comm_world, pos)
            end select
 
@@ -555,7 +555,7 @@
                                       &multigrid corrections, ",  &
                                       trim(value), ", specified"
                if(myID == 0) &
-                 call terminate("analyzeString", errorMessage)
+                 call returnFail("analyzeString", errorMessage)
                call mpi_barrier(SUmb_comm_world, pos)
            end select
 
@@ -597,7 +597,7 @@
          case ("polynomial coefficients x-rotation")
            nn = max(degreePolXRot,0_intType)
            allocate(coefPolXRot(0:nn), stat=ierr)
-           if(ierr /= 0) call terminate("analyzeString", &
+           if(ierr /= 0) call returnFail("analyzeString", &
                                         "Memory allocation failure for &
                                         &coefPolXRot")
 
@@ -609,7 +609,7 @@
          case ("polynomial coefficients y-rotation")
            nn = max(degreePolYRot,0_intType)
            allocate(coefPolYRot(0:nn), stat=ierr)
-           if(ierr /= 0) call terminate("analyzeString", &
+           if(ierr /= 0) call returnFail("analyzeString", &
                                         "Memory allocation failure for &
                                         &coefPolYRot")
 
@@ -622,7 +622,7 @@
          case ("polynomial coefficients z-rotation")
            nn = max(degreePolZRot,0_intType)
            allocate(coefPolZRot(0:nn), stat=ierr)
-           if(ierr /= 0) call terminate("analyzeString", &
+           if(ierr /= 0) call returnFail("analyzeString", &
                                         "Memory allocation failure for &
                                         &coefPolZRot")
 
@@ -654,7 +654,7 @@
          case ("fourier cosine coefficients x-rotation")
            nn = max(degreeFourXRot,0_intType)
            allocate(cosCoefFourXRot(0:nn), stat=ierr)
-           if(ierr /= 0) call terminate("analyzeString", &
+           if(ierr /= 0) call returnFail("analyzeString", &
                                         "Memory allocation failure for &
                                         &cosCoefFourXRot")
 
@@ -666,7 +666,7 @@
          case ("fourier sine coefficients x-rotation")
            nn = max(degreeFourXRot,1_intType)
            allocate(sinCoefFourXRot(1:nn), stat=ierr)
-           if(ierr /= 0) call terminate("analyzeString", &
+           if(ierr /= 0) call returnFail("analyzeString", &
                                         "Memory allocation failure for &
                                         &sinCoefFourXRot")
 
@@ -678,7 +678,7 @@
          case ("fourier cosine coefficients y-rotation")
            nn = max(degreeFourYRot,0_intType)
            allocate(cosCoefFourYRot(0:nn), stat=ierr)
-           if(ierr /= 0) call terminate("analyzeString", &
+           if(ierr /= 0) call returnFail("analyzeString", &
                                         "Memory allocation failure for &
                                         &cosCoefFourYRot")
 
@@ -690,7 +690,7 @@
          case ("fourier sine coefficients y-rotation")
            nn = max(degreeFourYRot,1_intType)
            allocate(sinCoefFourYRot(1:nn), stat=ierr)
-           if(ierr /= 0) call terminate("analyzeString", &
+           if(ierr /= 0) call returnFail("analyzeString", &
                                         "Memory allocation failure for &
                                         &sinCoefFourYRot")
 
@@ -702,7 +702,7 @@
          case ("fourier cosine coefficients z-rotation")
            nn = max(degreeFourZRot,0_intType)
            allocate(cosCoefFourZRot(0:nn), stat=ierr)
-           if(ierr /= 0) call terminate("analyzeString", &
+           if(ierr /= 0) call returnFail("analyzeString", &
                                         "Memory allocation failure for &
                                         &cosCoefFourZRot")
 
@@ -714,7 +714,7 @@
          case ("fourier sine coefficients z-rotation")
            nn = max(degreeFourZRot,1_intType)
            allocate(sinCoefFourZRot(1:nn), stat=ierr)
-           if(ierr /= 0) call terminate("analyzeString", &
+           if(ierr /= 0) call returnFail("analyzeString", &
                                         "Memory allocation failure for &
                                         &sinCoefFourZRot")
 
@@ -732,7 +732,7 @@
          case ("polynomial coefficients mach")
            nn = max(degreePolMach,0_intType)
            allocate(coefPolMach(0:nn), stat=ierr)
-           if(ierr /= 0) call terminate("analyzeString", &
+           if(ierr /= 0) call returnFail("analyzeString", &
                                         "Memory allocation failure for &
                                         &coefPolMach")
 
@@ -752,7 +752,7 @@
          case ("fourier cosine coefficients mach")
            nn = max(degreeFourMach,0_intType)
            allocate(cosCoefFourMach(0:nn), stat=ierr)
-           if(ierr /= 0) call terminate("analyzeString", &
+           if(ierr /= 0) call returnFail("analyzeString", &
                                         "Memory allocation failure for &
                                         &cosCoefFourMach")
 
@@ -764,7 +764,7 @@
          case ("fourier sine coefficients mach")
            nn = max(degreeFourMach,1_intType)
            allocate(sinCoefFourMach(1:nn), stat=ierr)
-           if(ierr /= 0) call terminate("analyzeString", &
+           if(ierr /= 0) call returnFail("analyzeString", &
                                         "Memory allocation failure for &
                                         &sinCoefFourMach")
 
@@ -781,7 +781,7 @@
         case ("polynomial coefficients alpha")
            nn = max(degreePolAlpha,0_intType)
            allocate(coefPolAlpha(0:nn), stat=ierr)
-           if(ierr /= 0) call terminate("analyzeString", &
+           if(ierr /= 0) call returnFail("analyzeString", &
                 "Memory allocation failure for &
                 &coefPolAlpha")
            
@@ -802,7 +802,7 @@
         case ("fourier cosine coefficients alpha")
            nn = max(degreeFourAlpha,0_intType)
            allocate(cosCoefFourAlpha(0:nn), stat=ierr)
-           if(ierr /= 0) call terminate("analyzeString", &
+           if(ierr /= 0) call returnFail("analyzeString", &
                                         "Memory allocation failure for &
                                         &cosCoefFourAlpha")
 
@@ -814,7 +814,7 @@
          case ("fourier sine coefficients alpha")
            nn = max(degreeFourAlpha,1_intType)
            allocate(sinCoefFourAlpha(1:nn), stat=ierr)
-           if(ierr /= 0) call terminate("analyzeString", &
+           if(ierr /= 0) call returnFail("analyzeString", &
                                         "Memory allocation failure for &
                                         &sinCoefFourAlpha")
 
@@ -831,7 +831,7 @@
         case ("polynomial coefficients beta")
            nn = max(degreePolBeta,0_intType)
            allocate(coefPolBeta(0:nn), stat=ierr)
-           if(ierr /= 0) call terminate("analyzeString", &
+           if(ierr /= 0) call returnFail("analyzeString", &
                                         "Memory allocation failure for &
                                         &coefPolBeta")
 
@@ -851,7 +851,7 @@
          case ("fourier cosine coefficients beta")
            nn = max(degreeFourBeta,0_intType)
            allocate(cosCoefFourBeta(0:nn), stat=ierr)
-           if(ierr /= 0) call terminate("analyzeString", &
+           if(ierr /= 0) call returnFail("analyzeString", &
                                         "Memory allocation failure for &
                                         &cosCoefFourBeta")
 
@@ -863,7 +863,7 @@
          case ("fourier sine coefficients beta")
            nn = max(degreeFourBeta,1_intType)
            allocate(sinCoefFourBeta(1:nn), stat=ierr)
-           if(ierr /= 0) call terminate("analyzeString", &
+           if(ierr /= 0) call returnFail("analyzeString", &
                                         "Memory allocation failure for &
                                         &sinCoefFourBeta")
 
@@ -910,7 +910,7 @@
                write(errorMessage,*) "Unknown equations, ", &
                                       trim(value), ", specified"
                if(myID == 0) &
-                 call terminate("analyzeString", errorMessage)
+                 call returnFail("analyzeString", errorMessage)
                call mpi_barrier(SUmb_comm_world, pos)
            end select
 
@@ -931,7 +931,7 @@
                write(errorMessage,*) "Unknown mode, ", &
                                       trim(value), ", specified"
                if(myID == 0) &
-                 call terminate("analyzeString", errorMessage)
+                 call returnFail("analyzeString", errorMessage)
                call mpi_barrier(SUmb_comm_world, pos)
            end select
 
@@ -951,7 +951,7 @@
                write(errorMessage,*) "Unknown flow type, ", &
                                       trim(value), ", specified"
                if(myID == 0) &
-                 call terminate("analyzeString", errorMessage)
+                 call returnFail("analyzeString", errorMessage)
                call mpi_barrier(SUmb_comm_world, pos)
            end select
 
@@ -973,7 +973,7 @@
                write(errorMessage,*) "Unknown Cp model, ", &
                                       trim(value), ", specified"
                if(myID == 0) &
-                 call terminate("analyzeString", errorMessage)
+                 call returnFail("analyzeString", errorMessage)
                call mpi_barrier(SUmb_comm_world, pos)
            end select
 
@@ -1004,7 +1004,7 @@
                write(errorMessage,*) "Unknown turbulence model, ", &
                                       trim(value), ", specified"
                if(myID == 0) &
-                 call terminate("analyzeString", errorMessage)
+                 call returnFail("analyzeString", errorMessage)
                call mpi_barrier(SUmb_comm_world, pos)
            end select
 
@@ -1014,7 +1014,7 @@
              write(errorMessage,*) "v2f version must be either &
                                     &1 or 6, not ", trim(value)
              if(myID == 0) &
-               call terminate("analyzeString", errorMessage)
+               call returnFail("analyzeString", errorMessage)
              call mpi_barrier(SUmb_comm_world, pos)
            endif
 
@@ -1039,7 +1039,7 @@
                                       &term, ", trim(value), &
                                       ", specified"
                if(myID == 0) &
-                 call terminate("analyzeString", errorMessage)
+                 call returnFail("analyzeString", errorMessage)
                call mpi_barrier(SUmb_comm_world, pos)
            end select
 
@@ -1163,7 +1163,7 @@
                                      &scheme, ", trim(value),  &
                                      ", specified"
                if(myID == 0) &
-                 call terminate("analyzeString", errorMessage)
+                 call returnFail("analyzeString", errorMessage)
                call mpi_barrier(SUmb_comm_world, pos)
            end select
 
@@ -1188,7 +1188,7 @@
                write(errorMessage,*) "Unknown time accuracy unsteady, ", &
                                       trim(value), ", specified"
                if(myID == 0) &
-                 call terminate("analyzeString", errorMessage)
+                 call returnFail("analyzeString", errorMessage)
                call mpi_barrier(SUmb_comm_world, pos)
            end select
 
@@ -1282,7 +1282,7 @@
                                      &type, ", &
                                      trim(value), ", specified"
                if(myID == 0) &
-                 call terminate("analyzeString", errorMessage)
+                 call returnFail("analyzeString", errorMessage)
                call mpi_barrier(SUmb_comm_world, pos)
            end select
 
@@ -1300,7 +1300,7 @@
                                      &type coarse grid, ", &
                                      trim(value), ", specified"
                if(myID == 0) &
-                 call terminate("analyzeString", errorMessage)
+                 call returnFail("analyzeString", errorMessage)
                call mpi_barrier(SUmb_comm_world, pos)
            end select
 
@@ -1480,7 +1480,7 @@
            write(errorMessage,*) trim(keyword), " must be yes or no, &
                                  &not ", trim(value)
            if(myID == 0) &
-             call terminate("checkYesNo", errorMessage)
+             call returnFail("checkYesNo", errorMessage)
            call mpi_barrier(SUmb_comm_world, error)
        end select
 
@@ -1544,7 +1544,7 @@
            write(errorMessage,*) "Unknown ", trim(keyword), &
                                  ", ", trim(value), ", specified"
            if(myID == 0) &
-             call terminate("determineDicretization", errorMessage)
+             call returnFail("determineDicretization", errorMessage)
            call mpi_barrier(SUmb_comm_world, error)
        end select
 
@@ -1600,7 +1600,7 @@
            write(errorMessage,*) "Unknown ", trim(keyword), &
                                  ", ", trim(value), ", specified"
            if(myID == 0) &
-             call terminate("determineFileFormat", errorMessage)
+             call returnFail("determineFileFormat", errorMessage)
            call mpi_barrier(SUmb_comm_world, error)
        end select
 
@@ -1661,7 +1661,7 @@
            write(errorMessage,*) "Unknown ", trim(keyword), &
                                  ", ", trim(value), ", specified"
            if(myID == 0) &
-             call terminate("determineRiemann", errorMessage)
+             call returnFail("determineRiemann", errorMessage)
            call mpi_barrier(SUmb_comm_world, error)
        end select
 
@@ -1716,7 +1716,7 @@
          ! wait to get killed.
 
          if(myID == 0)                       &
-           call terminate("readMotionCoef", &
+           call returnFail("readMotionCoef", &
                           "Order of motion coefficients not known yet &
                           &when the coefficients are specified")
          call mpi_barrier(SUmb_comm_world, pos)
@@ -1732,7 +1732,7 @@
 
          if(len_trim(string) == 0) then
            if(myID == 0)                       &
-             call terminate("readMotionCoef", &
+             call returnFail("readMotionCoef", &
                             "Not enough coefficients specified")
            call mpi_barrier(SUmb_comm_world, pos)
          endif

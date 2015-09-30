@@ -83,7 +83,7 @@
                                   BCData(mm)%vely, BCData(mm)%velz, &
                                   stat=ierr)
                        if(ierr /= 0) &
-                          call terminate("releaseExtraMemBCs", &
+                          call returnFail("releaseExtraMemBCs", &
                                          "Deallocation failure for rho, &
                                          &velx, vely and velz")
 
@@ -108,7 +108,7 @@
                                   BCData(mm)%flowYdirInlet, &
                                   BCData(mm)%flowZdirInlet, stat=ierr)
                        if(ierr /= 0) &
-                          call terminate("releaseExtraMemBCs", &
+                          call returnFail("releaseExtraMemBCs", &
                                          "Deallocation failure for the &
                                          &total conditions.")
 

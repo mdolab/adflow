@@ -63,7 +63,7 @@
  
        allocate(sendBufInt(ii), recvBufInt(jj), stat=ierr)
        if(ierr /= 0)                       &
-         call terminate("exchangeIblank", &
+         call returnFail("exchangeIblank", &
                         "Memory allocation failure for buffers")
  
        ! Send the variables. The data is first copied into
@@ -201,7 +201,7 @@
  
        deallocate(sendBufInt, recvBufInt, stat=ierr)
        if(ierr /= 0)                       &
-         call terminate("exchangeIblank", &
+         call returnFail("exchangeIblank", &
                         "Deallocation failure for buffers")
  
        end subroutine exchangeIblanks

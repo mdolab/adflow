@@ -55,7 +55,7 @@
          ! to get killed.
 
          if(myID == 0)                         &
-           call terminate("blockDistribution", &
+           call returnFail("blockDistribution", &
                           "Number of processors is larger than number &
                           &of blocks, but it is not allowed to split &
                           &blocks")
@@ -80,7 +80,7 @@
 
          allocate(splitInfo(nn)%ranges(1,3,2), stat=ierr)
          if(ierr /= 0)                         &
-           call terminate("blockDistribution", &
+           call returnFail("blockDistribution", &
                           "Memory allocation failure for ranges")
 
          splitInfo(nn)%ranges(1,1,1) = 1
@@ -182,7 +182,7 @@
        do nn=1,cgnsNDom
          deallocate(splitInfo(nn)%ranges, stat=ierr)
          if(ierr /= 0)                         &
-           call terminate("blockDistribution", &
+           call returnFail("blockDistribution", &
                           "Deallocation failure for ranges")
        enddo
 
@@ -191,7 +191,7 @@
 
        if( emptyPartitions ) then
          if(myID == 0)                         &
-           call terminate("blockDistribution", &
+           call returnFail("blockDistribution", &
                           "Empty partitions present")
          call mpi_barrier(SUmb_comm_world, ierr)
        endif
@@ -337,7 +337,7 @@
          ! Check whether it is allowed to split blocks.
 
          if(.not. splitBlocks)                        &
-           call terminate("splitBlockInitialization", &
+           call returnFail("splitBlockInitialization", &
                           "Block must be split for load balance, &
                           &but I am not allowed to do so")
  
@@ -382,7 +382,7 @@
                   tmpBlock%knBeg(nSub),  tmpBlock%knEnd(nSub),    &
                   stat=ierr)
          if(ierr /= 0) &
-           call terminate("splitBlockInitialization", &
+           call returnFail("splitBlockInitialization", &
                           "Deallocation failure for the subface &
                           &info in tmpBlock")
 
@@ -454,12 +454,12 @@
 
          deallocate(splitInfo(cgnsID)%ranges, stat=ierr)
          if(ierr /= 0) &
-           call terminate("splitBlockInitialization", &
+           call returnFail("splitBlockInitialization", &
                           "Deallocation failure for ranges")
 
          allocate(tmpRange(nSub,3,2), stat=ierr)
          if(ierr /= 0) &
-           call terminate("splitBlockInitialization", &
+           call returnFail("splitBlockInitialization", &
                           "Memory allocation failure for tmpRange")
 
          ! Split the block into the subblocks. It is possible that
@@ -472,7 +472,7 @@
 
          allocate(splitInfo(cgnsID)%ranges(nSub,3,2), stat=ierr)
          if(ierr /= 0) &
-           call terminate("splitBlockInitialization", &
+           call returnFail("splitBlockInitialization", &
                           "Memory allocation failure for ranges")
 
          ! Determine the new number of computational blocks. This is
@@ -503,7 +503,7 @@
                     tmpBlock%knBeg,  tmpBlock%knEnd,    &
                     tmpRange, stat=ierr)
          if(ierr /= 0) &
-           call terminate("splitBlockInitialization", &
+           call returnFail("splitBlockInitialization", &
                           "Deallocation failure for tmpBlock &
                           &and tmpRange")
 
@@ -724,7 +724,7 @@
 
              allocate(tmpRange(nSub,3,2), stat=ierr)
              if(ierr /= 0)                              &
-               call terminate("splitBlocksLoadBalance", &
+               call returnFail("splitBlocksLoadBalance", &
                               "Memory allocation failure for tmpRange")
 
              ! Split computational block into the desired number of
@@ -745,7 +745,7 @@
              k = splitInfo(cgnsID)%nSubBlocks
              allocate(splitInfo(cgnsID)%ranges(k,3,2), stat=ierr)
              if(ierr /= 0)                              &
-               call terminate("splitBlocksLoadBalance", &
+               call returnFail("splitBlocksLoadBalance", &
                               "Memory allocation failure for ranges")
 
              ! Determine the new number of computational blocks.
@@ -795,7 +795,7 @@
 
              deallocate(oldRanges, tmpRange, stat=ierr)
              if(ierr /= 0)                                 &
-               call terminate("splitBlocksLoadBalance", &
+               call returnFail("splitBlocksLoadBalance", &
                               "Deallocation failure for oldRanges and &
                               &tmpRange")
 

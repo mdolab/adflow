@@ -62,7 +62,7 @@
    !      call kt(.true.)
    !   case (v2f)
    !      call vf(.true.)
-   CALL TERMINATE('turbResidual', &
+   CALL returnFail('turbResidual', &
    &                'Turbulence model not implemented yet')
    END SELECT
    END SUBROUTINE TURBRESIDUAL_BLOCK_D

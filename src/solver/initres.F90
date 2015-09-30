@@ -154,7 +154,7 @@ subroutine initres_block(varStart, varEnd, nn, sps)
         !=======================================================
 
      case (implicitRK)
-        call terminate("initRes", &
+        call returnFail("initRes", &
              "Implicit RK not implemented yet")
 
         !=======================================================

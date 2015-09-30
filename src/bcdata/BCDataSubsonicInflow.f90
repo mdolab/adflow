@@ -76,7 +76,7 @@
 
        allocate(bcVarArray(iBeg:iEnd,jBeg:jEnd,nbcVar), stat=ierr)
        if(ierr /= 0)                            &
-         call terminate("BCDataSubsonicInflow", &
+         call returnFail("BCDataSubsonicInflow", &
                         "Memory allocation failure for bcVarArray")
 
        bcVarNames(1)  = cgnsPtot
@@ -176,7 +176,7 @@
  100     format("Zone ",a,", boundary subface ",a, &
                 ": Not enough data specified for subsonic inlet")
 
-         call terminate("BCDataSubsonicInflow", errorMessage)
+         call returnFail("BCDataSubsonicInflow", errorMessage)
 
        endif
 
@@ -192,7 +192,7 @@
 
        deallocate(bcVarArray, stat=ierr)
        if(ierr /= 0)                            &
-         call terminate("BCDataSubsonicInflow", &
+         call returnFail("BCDataSubsonicInflow", &
                         "Deallocation failure for bcVarArray")
 
        !=================================================================
@@ -527,7 +527,7 @@
                   ": Flow direction points out of the domain for &
                   &some faces.")
 
-           call terminate("totalSubsonicInlet", errorMessage)
+           call returnFail("totalSubsonicInlet", errorMessage)
          endif
 
          end subroutine totalSubsonicInlet
@@ -723,7 +723,7 @@
  300       format("Zone ",a,", subsonic inlet boundary subface ",a, &
                   ": Velocity points out of the domain for some faces.")
 
-           call terminate("massflowSubsonicInlet", errorMessage)
+           call returnFail("massflowSubsonicInlet", errorMessage)
          endif
 
          end subroutine massflowSubsonicInlet

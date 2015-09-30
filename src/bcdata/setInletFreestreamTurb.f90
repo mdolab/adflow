@@ -91,7 +91,7 @@
 
        deallocate(turbFreestreamSubfaces, stat=ierr)
        if(ierr /= 0) &
-         call terminate("setInletFreestreamTurb", &
+         call returnFail("setInletFreestreamTurb", &
                         "Deallocation failure for &
                         &turbFreestreamSubfaces")
 

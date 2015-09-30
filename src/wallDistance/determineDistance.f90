@@ -99,7 +99,7 @@
                 elementID(nCell), uvw(3,nCell), dist2(nCell),      &
                 coorPer(3,nCellPer), dist2Per(nCellPer), stat=ierr)
        if(ierr /= 0)                         &
-         call terminate("determineDistance", &
+         call returnFail("determineDistance", &
                         "Memory allocation failure for the variables &
                         &needed by the adt.")
 !
@@ -406,7 +406,7 @@
 
        deallocate(connVisc, coorVisc, rotMatrixSections, stat=ierr)
        if(ierr /= 0)                         &
-         call terminate("determineDistance", &
+         call returnFail("determineDistance", &
                          "Deallocation error for the arrays &
                          &of viscSurface")
 
@@ -415,7 +415,7 @@
        deallocate(coor, procID, elementType, elementID, uvw, dist2, &
                   coorPer, dist2Per, stat=ierr)
        if(ierr /= 0)                          &
-         call terminate("determineDistance", &
+         call returnFail("determineDistance", &
                         "Deallocation failure for the variables &
                         &needed by the adt.")
 

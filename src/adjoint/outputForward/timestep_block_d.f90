@@ -334,13 +334,13 @@ subroutine timestep_block_d(onlyradii)
         end do
       end do
     case (turkel) 
-      call terminate('timestep', &
+      call returnFail('timestep', &
 &                 'turkel preconditioner not implemented yet')
       radid = 0.0_8
       radjd = 0.0_8
       radkd = 0.0_8
     case (choimerkle) 
-      call terminate('timestep', &
+      call returnFail('timestep', &
 &                 'choi merkle preconditioner not implemented yet')
       radid = 0.0_8
       radjd = 0.0_8

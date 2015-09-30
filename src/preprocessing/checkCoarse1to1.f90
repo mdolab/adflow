@@ -185,7 +185,7 @@
                     "...Support not implemented yet.")
              ll = flowDoms(nn,1,1)%cgnsBlockID
              write(errorMessage,101) cgnsDoms(ll)%zoneName
-             call terminate("checkCoarse1to1", errorMessage)
+             call returnFail("checkCoarse1to1", errorMessage)
 
            endif is1to1
 

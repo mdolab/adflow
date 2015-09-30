@@ -144,7 +144,7 @@
    CASE (itu2) 
    ! epsilon cannot be fitted logarithmically.
    IF (tulogfit(mm)) THEN
-   CALL TERMINATE('curveTupYp', &
+   CALL returnFail('curveTupYp', &
    &                    'Check curveFit, epsilon cannot be fitted with log'&
    &                      )
    ELSE
@@ -163,7 +163,7 @@
    END IF
    CASE (itu4) 
    IF (tulogfit(mm)) THEN
-   IF (rvfn .EQ. 1) CALL TERMINATE('curveTupYp', &
+   IF (rvfn .EQ. 1) CALL returnFail('curveTupYp', &
    &                          'Check curveFit, f cannot be fitted with log'&
    &                                       )
    IF (rvfn .EQ. 6) THEN

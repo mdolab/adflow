@@ -85,7 +85,7 @@
          enddo
 
          if(thisLevel /= 0) &
-           call terminate("setCyleStrategy", "Invalid strategy created")
+           call returnFail("setCyleStrategy", "Invalid strategy created")
 
        endif
 

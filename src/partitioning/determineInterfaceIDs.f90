@@ -112,7 +112,7 @@
 
        if(standAloneMode .and. cgnsNDomainInterfaces > 0) then
          if(myID == 0) &
-           call terminate("determineInterfaceIDs", &
+           call returnFail("determineInterfaceIDs", &
                           "Domain interfaces are not allowed in &
                           &stand alone mode.")
          call mpi_barrier(SUmb_comm_world, ierr)
@@ -124,7 +124,7 @@
        nSliding = nSlidingFam + nSlidingBC
        if(mod(nSliding,2) == 1) then
          if(myID == 0)                              &
-           call terminate("determineInterfaceIDs", &
+           call returnFail("determineInterfaceIDs", &
                           "Odd number of sliding mesh families found")
          call mpi_barrier(SUmb_comm_world, ierr)
        endif
@@ -137,7 +137,7 @@
                 orID(nSliding), famSlidingID(nSlidingFam),     &
                 bcSlidingID(2,nSlidingBC), stat=ierr)
        if(ierr /= 0) &
-         call terminate("determineInterfaceIDs", &
+         call returnFail("determineInterfaceIDs", &
                         "Memory allocation failure for names, IDs")
 
        ! Loop back over the families again and store the names and
@@ -215,7 +215,7 @@
 
            write(errorMessage,101) trim(namesSliding(ii))
            if(myID == 0) &
-             call terminate("determineInterfaceIDs", errorMessage)
+             call returnFail("determineInterfaceIDs", errorMessage)
            call mpi_barrier(SUmb_comm_world, ierr)
 
          endif
@@ -232,7 +232,7 @@
        cgnsNSliding = nSliding/2
        allocate(famIDsSliding(cgnsNSliding,2), stat=ierr)
        if(ierr /= 0) &
-         call terminate("determineInterfaceIDs", &
+         call returnFail("determineInterfaceIDs", &
                         "Memory allocation failure for famIDsSliding")
 
        ! Check if the sorted family names indeed form a
@@ -273,7 +273,7 @@
            write(errorMessage,102) trim(namesSliding(nn)), &
                                    trim(namesSliding(mm))
            if(myID == 0) &
-             call terminate("determineInterfaceIDs", errorMessage)
+             call returnFail("determineInterfaceIDs", errorMessage)
            call mpi_barrier(SUmb_comm_world, ierr)
          endif
 
@@ -324,7 +324,7 @@
        deallocate(namesSliding, namesSorted, orID, &
                   famSlidingID, bcSlidingID, stat=ierr)
        if(ierr /= 0) &
-         call terminate("determineInterfaceIDs", &
+         call returnFail("determineInterfaceIDs", &
                         "Deallocation failure for names, IDs")
 
        ! Format statements.

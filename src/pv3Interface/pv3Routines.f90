@@ -348,9 +348,9 @@
 !      Input value of PV3Status is addition of:
 !
 !      0 - do not wait for server to be started
-!          do not terminate when server is stopped
+!          do not returnFail when server is stopped
 !      1 - wait for the server to startup to proceed with calculation
-!      2 - terminte computation when server terminates
+!      2 - terminte computation when server returnFails
 !      4 - non time-accurate mode
 !
        PV3Status = 0
@@ -1207,7 +1207,7 @@
 
          allocate(wtemp(il,jl,kl, nw), tmp(il,jl,kl), stat=ierr)
          if(ierr /= 0)              &
-           call terminate("pvscal", &
+           call returnFail("pvscal", &
                           "Memory allocation failure for wtemp &
                           &and tmp")
 
@@ -1253,7 +1253,7 @@
 
            allocate(lv(il,jl,kl), stat=ierr)
            if(ierr /= 0)              &
-             call terminate("pvscal", &
+             call returnFail("pvscal", &
                             "Memory allocation failure for lv")
 
            do k=1,kl
@@ -1276,7 +1276,7 @@
 
            allocate(ev(il,jl,kl), stat=ierr)
            if(ierr /= 0)              &
-             call terminate("pvscal", &
+             call returnFail("pvscal", &
                             "Memory allocation failure for ev")
 
            do k=1,kl
@@ -1749,7 +1749,7 @@
          ! Deallocate the temp memory for this block.
 
          deallocate(wtemp, tmp, stat=ierr)
-         if(ierr /= 0) call terminate("pvscal", &
+         if(ierr /= 0) call returnFail("pvscal", &
                                       "Deallocation failure for wtemp &
                                       &and tmp")
 
@@ -1758,7 +1758,7 @@
 
            deallocate(lv, stat=ierr)
            if(ierr /= 0)              &
-             call terminate("pvscal", &
+             call returnFail("pvscal", &
                             "Deallocation failure for lv")
          endif
 
@@ -1766,7 +1766,7 @@
 
            deallocate(ev, stat=ierr)
            if(ierr /= 0)              &
-             call terminate("pvscal", &
+             call returnFail("pvscal", &
                             "Deallocation failure for ev")
          endif
 
@@ -1824,7 +1824,7 @@
          allocate(vx(il,jl,kl),  vy(il,jl,kl), vz(il,jl,kl), &
                   rho(il,jl,kl), stat=ierr)
          if(ierr /= 0) &
-           call terminate("pvvect", &
+           call returnFail("pvvect", &
                           "Memory allocation failure for rho, vx, &
                           &vy and vz")
 
@@ -1894,7 +1894,7 @@
 
          deallocate(vx, vy, vz, rho, stat=ierr)
          if(ierr /= 0)              &
-           call terminate("pvvect", &
+           call returnFail("pvvect", &
                           "Deallocation failure for rho, vx, &
                           &vy and vz")
 

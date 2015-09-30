@@ -50,7 +50,7 @@
 
        allocate(donorDoms(nDom), stat=ierr)
        if(ierr /= 0)                        &
-         call terminate("statusDonorCells", &
+         call returnFail("statusDonorCells", &
                         "Memory allocation failure for donorDoms")
 
        ! Loop over the domains to allocate and initialize haloInfo.
@@ -63,7 +63,7 @@
 
          allocate(donorDoms(ii)%haloInfo(ie,je,ke), stat=ierr)
          if(ierr /= 0)                        &
-           call terminate("statusDonorCells", &
+           call returnFail("statusDonorCells", &
                           "Memory allocation failure for haloInfo")
 
          donorDoms(ii)%haloInfo = internalCell

@@ -168,7 +168,7 @@
              if(nSlices == 0) then
                nSlices = j
              else if(nSlices /= j) then
-               call terminate("computeInletMassFlowFullWheelnSlices", &
+               call returnFail("computeInletMassFlowFullWheelnSlices", &
                               "Different periodicity encountered for &
                               &inlet mass flow.")
              endif

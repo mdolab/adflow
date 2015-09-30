@@ -44,7 +44,7 @@
 !
 #ifdef USE_NO_CGNS
 
-       call terminate("readRestartVariable", &
+       call returnFail("readRestartVariable", &
                       "Routine should not be called if no cgns support &
                       &is selected.")
 
@@ -63,7 +63,7 @@
                               cgnsVarName, realTypeCGNS, rangeMin,  &
                               rangeMax, buffer, ierr)
          if(ierr /= all_ok)                        &
-           call terminate("readRestartVariable", &
+           call returnFail("readRestartVariable", &
                           "Something wrong when calling cg_field_read_f")
        else locationTest
 
@@ -74,7 +74,7 @@
                               cgnsVarName, realTypeCGNS, rangeMin, &
                               rangeMax, bufferVertex, ierr)
          if(ierr /= all_ok)                        &
-           call terminate("readRestartVariable", &
+           call returnFail("readRestartVariable", &
                           "Something wrong when calling cg_field_read_f")
 
          ! Create the cell centered values by averaging the vertex values.

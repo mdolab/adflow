@@ -166,7 +166,7 @@
 
            ! Possibly correct nGridsRead and set nOldGridRead.
            ! If nOldGridRead == 0, i.e. not a valid grid is found,
-           ! print an error message and terminate.
+           ! print an error message and returnFail.
 
            nGridsRead   = nn - 1
            nOldGridRead = nGridsRead

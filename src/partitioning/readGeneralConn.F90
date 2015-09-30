@@ -31,7 +31,7 @@
 
 #ifdef USE_NO_CGNS
 
-       call terminate("readGeneralConn", &
+       call returnFail("readGeneralConn", &
                       "Routine should not be called if no cgns support &
                       &is selected.")
 #else
@@ -98,7 +98,7 @@
 
        call cg_nconns_f(cgnsInd, cgnsBase, nZone, ngeneral, ierr)
        if(ierr /= CG_OK)                  &
-         call terminate("readGeneralConn", &
+         call returnFail("readGeneralConn", &
                         "Something wrong when calling cg_nconns_f")
 
        ! Determine the mapping from the general connectivities to the
@@ -112,7 +112,7 @@
 
        allocate(map2NonMatch(ngeneral,2), stat=ierr)
        if(ierr /= CG_OK)                  &
-         call terminate("readGeneralConn", &
+         call returnFail("readGeneralConn", &
                         "Memory allocation failure for map2NonMatch")
 
        do i=1,cgnsDoms(nZone)%nNonMatchAbutting
@@ -138,7 +138,7 @@
                              donorName, donorZoneType, donorPtsetType,  &
                              donorDatatype, ndataDonor, ierr)
          if(ierr /= CG_OK)                  &
-           call terminate("readGeneralConn", &
+           call returnFail("readGeneralConn", &
                           "Something wrong when calling cg_conn_info_f")
 
          ! Read the data based on the type of connectivity.
@@ -166,7 +166,7 @@
 
              allocate(donorData(3,ndataDonor), stat=ierr)
              if(ierr /= 0)                       &
-               call terminate("readGeneralConn", &
+               call returnFail("readGeneralConn", &
                               "Memory allocation failure for donorData")
 
              ! Read the ranges of the connectivities.
@@ -174,7 +174,7 @@
              call cg_conn_read_f(cgnsInd, cgnsBase, nZone, nn, &
                                  myRange, Integer, donorData, ierr)
              if(ierr /= CG_OK)                  &
-               call terminate("readGeneralConn", &
+               call returnFail("readGeneralConn", &
                               "Something wrong when calling &
                               &cg_conn_read_f")
 
@@ -247,7 +247,7 @@
 
              deallocate(donorData, stat=ierr)
              if(ierr /= 0)                       &
-               call terminate("readGeneralConn", &
+               call returnFail("readGeneralConn", &
                               "Deallocation error for donorData")
 
              ! Determine the correct third direction of the
@@ -296,7 +296,7 @@
 
              allocate(donorData(3,ndataDonor), stat=ierr)
              if(ierr /= 0)                       &
-               call terminate("readGeneralConn", &
+               call returnFail("readGeneralConn", &
                               "Memory allocation failure for donorData")
 
              ! Read the ranges of the connectivities.
@@ -304,7 +304,7 @@
              call cg_conn_read_f(cgnsInd, cgnsBase, nZone, nn, &
                                  myRange, Integer, donorData, ierr)
              if(ierr /= CG_OK)                  &
-               call terminate("readGeneralConn", &
+               call returnFail("readGeneralConn", &
                               "Something wrong when calling &
                               &cg_conn_read_f")
 
@@ -341,7 +341,7 @@
                write(errorMessage,100) trim(cgnsDoms(nZone)%zoneName), &
                                        trim(connectName)
                if(myID == 0) &
-                 call terminate("readGeneralConn", errorMessage)
+                 call returnFail("readGeneralConn", errorMessage)
                call mpi_barrier(SUmb_comm_world, ierr)
 
              endif
@@ -350,7 +350,7 @@
 
              deallocate(donorData, stat=ierr)
              if(ierr /= 0)                       &
-               call terminate("readGeneralConn", &
+               call returnFail("readGeneralConn", &
                               "Deallocation error for donorData")
 
              ! Read the periodic info if this is a periodic boundary.
@@ -421,7 +421,7 @@
                                        trim(connectName),              &
                                        trim(connNonMatch(i)%connectNames(1))
                if(myID == 0) &
-                 call terminate("readGeneralConn", errorMessage)
+                 call returnFail("readGeneralConn", errorMessage)
                call mpi_barrier(SUmb_comm_world, ierr)
 
              endif checkConsistency
@@ -455,7 +455,7 @@
              ! interpolated.
 
              if(npnts /= ndataDonor)             &
-               call terminate("readGeneralConn", &
+               call returnFail("readGeneralConn", &
                               "Number of donor and boundary points &
                               &must equal for overset")
 
@@ -465,7 +465,7 @@
                       connOver(nover)%ibndry(3,npnts),     &
                       connOver(nover)%idonor(3,npnts), stat=ierr)
              if(ierr /= 0)                       &
-               call terminate("readGeneralConn", &
+               call returnFail("readGeneralConn", &
                               "Memory allocation failure for &
                               &overset data")
 
@@ -474,7 +474,7 @@
              call cg_conn_read_f(cgnsInd, cgnsBase, nZone, nn, &
                                  myData, Integer, donorData, ierr)
              if(ierr /= CG_OK)                  &
-               call terminate("readGeneralConn", &
+               call returnFail("readGeneralConn", &
                               "Something wrong when calling &
                               &cg_conn_read_f")
 
@@ -487,7 +487,7 @@
 
              deallocate(myData, donorData, stat=ierr)
              if(ierr /= 0)                       &
-               call terminate("readGeneralConn", &
+               call returnFail("readGeneralConn", &
                               "Deallocation error for temp &
                               &overset data")
 
@@ -500,7 +500,7 @@
 
                allocate(connOver(nover)%interp(0,npnts), stat=ierr)
                if(ierr /= 0)                       &
-                 call terminate("readGeneralConn", &
+                 call returnFail("readGeneralConn", &
                                 "Memory allocation failure for interp")
 
              else checkReadInterp
@@ -512,12 +512,12 @@
                               nZone, "ZoneGridConnectivity_t", 1, &
                               "GridConnectivity_t", nn, "end")
                if(ierr /= CG_OK)                  &
-                 call terminate("readGeneralConn", &
+                 call returnFail("readGeneralConn", &
                                 "Something wrong when calling cg_goto_f")
 
                call cg_narrays_f(nArrays, ierr)
                if(ierr /= CG_OK)                  &
-                 call terminate("readGeneralConn", &
+                 call returnFail("readGeneralConn", &
                                 "Something wrong when calling &
                                 &cg_narrays_f")
 
@@ -538,7 +538,7 @@
                  write(errorMessage,102) trim(cgnsDoms(nZone)%zoneName), &
                                          trim(connectName)
                  if(myID == 0) &
-                   call terminate("readGeneralConn", errorMessage)
+                   call returnFail("readGeneralConn", errorMessage)
                  call mpi_barrier(SUmb_comm_world, ierr)
                endif
 
@@ -554,21 +554,21 @@
                  jj = dimVector(1)
                  allocate(connOver(nover)%interp(jj,npnts), stat=ierr)
                  if(ierr /= 0)                       &
-                   call terminate("readGeneralConn", &
+                   call returnFail("readGeneralConn", &
                                   "Memory allocation failure for &
                                   &interpolants")
 
                  call cg_array_read_as_f(j, realTypeCGNS, &
                                          connOver(nover)%interp, ierr)
                  if(ierr /= CG_OK)                  &
-                   call terminate("readGeneralConn", &
+                   call returnFail("readGeneralConn", &
                                   "Something wrong when calling &
                                   &cg_array_read_as")
                else
                  write(errorMessage,103) trim(cgnsDoms(nZone)%zoneName), &
                                          trim(connectName)
                  if(myID == 0) &
-                   call terminate("readGeneralConn", errorMessage)
+                   call returnFail("readGeneralConn", errorMessage)
                  call mpi_barrier(SUmb_comm_world, ierr)
                endif
              endif checkReadInterp
@@ -581,7 +581,7 @@
 
        deallocate(map2NonMatch, stat=ierr)
        if(ierr /= CG_OK)                  &
-         call terminate("readGeneralConn", &
+         call returnFail("readGeneralConn", &
                         "Deallocation failure for map2NonMatch")
 
        ! Format statements.

@@ -48,7 +48,7 @@
 
        allocate(periodicGlobal(nPeriodicGlobal), stat=ierr)
        if(ierr /= 0)                              &
-         call terminate("determinePeriodicFaces", &
+         call returnFail("determinePeriodicFaces", &
                         "Memory allocation failure for periodicGlobal")
 
        ! Repeat the loop over the faces of the cgns grid and store the

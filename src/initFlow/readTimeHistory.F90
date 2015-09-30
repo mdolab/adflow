@@ -32,7 +32,7 @@
 
 #ifdef USE_NO_CGNS
 
-       call terminate("readTimeHistory", &
+       call returnFail("readTimeHistory", &
                       "Routine should not be called if no cgns support &
                       &is selected.")
 
@@ -110,14 +110,14 @@
        call cg_goto_f(cgnsInd, cgnsBase, ierr, &
                       "BaseIterativeData_t", 1, "end")
        if(ierr /= all_ok)                  &
-         call terminate("readTimeHistory", &
+         call returnFail("readTimeHistory", &
                         "Something wrong when calling cg_goto_f")
 
        ! Find out how many convergence variables are stored.
 
        call cg_narrays_f(nConv, ierr)
        if(ierr /= all_ok)                  &
-         call terminate("readTimeHistory", &
+         call returnFail("readTimeHistory", &
                         "Something wrong when calling cg_narrays_f")
 
        ! Allocate the memory for convNames, tmpNames and ind.
@@ -125,7 +125,7 @@
        allocate(convNames(nConv), tmpNames(nConv), ind(nConv), &
                 stat=ierr)
        if(ierr /= 0)                       &
-         call terminate("readTimeHistory", &
+         call returnFail("readTimeHistory", &
                         "Memory allocation failure for convNames, etc.")
 
        ! Read the names of the convergence variables. Store them in
@@ -136,7 +136,7 @@
          call cg_array_info_f(i, convNames(i), dummyInt, nDim, &
                               nSize, ierr)
          if(ierr /= all_ok)                  &
-           call terminate("readConvHistory", &
+           call returnFail("readConvHistory", &
                           "Something wrong when calling cg_array_info_f")
 
          if(nDim /= 1) then
@@ -216,7 +216,7 @@
        i = ind(ii)
        call cg_array_read_as_f(i, realTypeCGNS, timeArray, ierr)
        if(ierr /= all_ok)                  &
-         call terminate("readTimeHistory", &
+         call returnFail("readTimeHistory", &
                         "Something wrong when calling &
                         &cg_array_read_as_f")
 
@@ -259,7 +259,7 @@
            call cg_array_read_as_f(i, realTypeCGNS, &
                                    timeDataArray(1,j), ierr)
            if(ierr /= all_ok)                  &
-             call terminate("readTimeHistory", &
+             call returnFail("readTimeHistory", &
                             "Something wrong when calling &
                             &cg_array_read_as_f")
          endif
@@ -286,7 +286,7 @@
 
        deallocate(convNames, tmpNames, ind, stat=ierr)
        if(ierr /= 0)                       &
-         call terminate("readTimeHistory", &
+         call returnFail("readTimeHistory", &
                         "Deallocation error for convNames, etc.")
 
 #endif

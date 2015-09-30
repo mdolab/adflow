@@ -149,7 +149,7 @@
        ! Not able to determine the z-velocity.
        ! Print an error message and exit.
 
-       call terminate("readZvelocity", &
+       call returnFail("readZvelocity", &
                       "Not able to retrieve z-velocity from the &
                       &variables in the restart file.")
 

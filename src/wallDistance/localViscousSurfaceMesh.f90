@@ -355,7 +355,7 @@
 
        allocate(rotMatrixSections(nSections,3,3), stat=ierr)
        if(ierr /= 0)                                  &
-         call terminate("localViscousSurfaceMesh", &
+         call returnFail("localViscousSurfaceMesh", &
                         "Memory allocation failure for &
                         &rotMatrixSections")
 !

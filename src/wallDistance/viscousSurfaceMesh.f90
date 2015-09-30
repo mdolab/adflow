@@ -117,7 +117,7 @@
        allocate(connVisc(4,nquadVisc), coorVisc(3,nNodeVisc), &
                 stat=ierr)
        if(ierr /= 0)                            &
-         call terminate("viscousSurfaceMesh", &
+         call returnFail("viscousSurfaceMesh", &
                         "Memory allocation failure for connVisc &
                         &and coorVisc.")
 

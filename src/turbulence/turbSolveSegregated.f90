@@ -82,7 +82,7 @@
              call vf(.false.)
 
            case default
-             call terminate("turbSolveSegregated", &
+             call returnFail("turbSolveSegregated", &
                             "Turbulence model not implemented yet")
 
          end select

@@ -125,7 +125,7 @@ bocos:do nn=1,nbocos
     case default
 !=============================================================
 !=============================================================
-      call terminate('bcturbtreatment', 'unknown boundary condition')
+      call returnFail('bcturbtreatment', 'unknown boundary condition')
     end select
   end do bocos
 end subroutine bcturbtreatment_d

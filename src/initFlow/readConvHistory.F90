@@ -34,7 +34,7 @@
        integer, dimension(nSolsRead), intent(in) :: fileIDs
 
 #ifdef USE_NO_CGNS
-       call terminate("readConvHistory", &
+       call returnFail("readConvHistory", &
                       "Routine should not be called if no cgns support &
                       &is selected.")
 #else
@@ -113,7 +113,7 @@
 
          call cg_goto_f(cgnsInd, base, ierr, "end")
          if(ierr /= all_ok)                  &
-           call terminate("readConvHistory", &
+           call returnFail("readConvHistory", &
                           "Something wrong when calling cg_goto_f")
 
          ! Check if a convergence history is present by trying to read
@@ -184,14 +184,14 @@
          call cg_goto_f(cgnsInd, base, ierr, &
                         "ConvergenceHistory_t", 1, "end")
          if(ierr /= all_ok)                  &
-           call terminate("readConvHistory", &
+           call returnFail("readConvHistory", &
                           "Something wrong when calling cg_goto_f")
 
          ! Find out how many convergence variables are stored.
 
          call cg_narrays_f(nConv, ierr)
          if(ierr /= all_ok)                  &
-           call terminate("readConvHistory", &
+           call returnFail("readConvHistory", &
                           "Something wrong when calling cg_narrays_f")
 
          ! Allocate the memory for convNames, tmpNames and ind.
@@ -199,7 +199,7 @@
          allocate(convNames(nConv), tmpNames(nConv), ind(nConv), &
                   stat=ierr)
          if(ierr /= 0)                       &
-           call terminate("readConvHistory", &
+           call returnFail("readConvHistory", &
                           "Memory allocation failure for convNames, &
                           &etc.")
 
@@ -211,7 +211,7 @@
            call cg_array_info_f(i, convNames(i), dummyInt, nDim, &
                                 nSize, ierr)
            if(ierr /= all_ok)                  &
-             call terminate("readConvHistory", &
+             call returnFail("readConvHistory", &
                             "Something wrong when calling &
                             &cg_array_info_f")
 
@@ -373,7 +373,7 @@
              call cg_array_read_as_f(i, realTypeCGNS, &
                                      convArray(0,sol,j), ierr)
              if(ierr /= all_ok)                  &
-               call terminate("readConvHistory", &
+               call returnFail("readConvHistory", &
                               "Something wrong when calling &
                               &cg_array_read_as_f")
            endif
@@ -436,7 +436,7 @@
 
          deallocate(convNames, tmpNames, ind, stat=ierr)
          if(ierr /= 0)                       &
-           call terminate("readConvHistory", &
+           call returnFail("readConvHistory", &
                           "Deallocation error for convNames, etc.")
 
        enddo solLoop

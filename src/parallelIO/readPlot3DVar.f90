@@ -77,7 +77,7 @@
 
        allocate(readBuf(ii), sendBuf(nn), recvBuf(mm), stat=ierr)
        if(ierr /= 0)                     &
-         call terminate("readPlot3DVar", &
+         call returnFail("readPlot3DVar", &
                         "Memory allocation failure for readBuf, &
                         &sendBuf and recvBuf")
 
@@ -205,7 +205,7 @@
 
        deallocate(readBuf, stat=ierr)
        if(ierr /= 0)                     &
-         call terminate("readPlot3DVar", &
+         call returnFail("readPlot3DVar", &
                         "Deallocation failure for readBuf")
 !
 !      ******************************************************************
@@ -248,7 +248,7 @@
 
        deallocate(sendBuf, recvBuf, stat=ierr)
        if(ierr /= 0)                     &
-         call terminate("readPlot3DVar", &
+         call returnFail("readPlot3DVar", &
                         "Deallocation failure for sendBuf and recvBuf")
 
        end subroutine readPlot3DVar

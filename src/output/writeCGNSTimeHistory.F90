@@ -19,7 +19,7 @@
 !      ******************************************************************
 !
 #ifdef USE_NO_CGNS
-       call terminate("writeCGNSTimeHistory", &
+       call returnFail("writeCGNSTimeHistory", &
                       "Routine should not be called if no cgns support &
                       &is selected.")
 #else
@@ -74,7 +74,7 @@
        end select
 
        if(ierr /= 0)                            &
-         call terminate("writeCGNSTimeHistory", &
+         call returnFail("writeCGNSTimeHistory", &
                         "Memory allocation failure for either buf4 &
                         &or buf8")
 
@@ -82,7 +82,7 @@
 
        call cg_goto_f(cgnsInd, base, ierr, "end")
        if(ierr /= CG_OK)                       &
-         call terminate("writeCGNSTimeHistory", &
+         call returnFail("writeCGNSTimeHistory", &
                         "Something wrong when calling cg_goto_f")
 
        ! Create the name of the base iterative data node.
@@ -94,7 +94,7 @@
 
        call cg_biter_write_f(cgnsInd, base, cgnsName, nn, ierr)
        if(ierr /= CG_OK)                       &
-         call terminate("writeCGNSTimeHistory", &
+         call returnFail("writeCGNSTimeHistory", &
                         "Something wrong when calling cg_biter_write_f")
 
        ! The time history must be written under the node just created.
@@ -103,7 +103,7 @@
        call cg_goto_f(cgnsInd, base, ierr, &
                       "BaseIterativeData_t" , 1, "end")
        if(ierr /= CG_OK)                          &
-         call terminate("writeCGNSTimeHistory", &
+         call returnFail("writeCGNSTimeHistory", &
                         "Something wrong when calling cg_goto_f")
 
        ! Write the time values.
@@ -112,7 +112,7 @@
        call cg_array_write_f(cgnsName, realTypeCGNS, 1, nn, &
                              timeArray, ierr)
        if(ierr /= CG_OK)                       &
-         call terminate("writeCGNSTimeHistory", &
+         call returnFail("writeCGNSTimeHistory", &
                         "Something wrong when calling cg_array_write_f")
 
        ! Loop over the number of monitoring variables and write
@@ -144,7 +144,7 @@
          end select
 
          if(ierr /= CG_OK)                       &
-           call terminate("writeCGNSTimeHistory", &
+           call returnFail("writeCGNSTimeHistory", &
                           "Something wrong when calling &
                           &cg_array_write_f")
        enddo monLoop
@@ -160,7 +160,7 @@
        end select
 
        if(ierr /= 0)                            &
-         call terminate("writeCGNSTimeHistory", &
+         call returnFail("writeCGNSTimeHistory", &
                         "Deallocation failure for either buf4 or buf8") 
 
 #endif

@@ -15,7 +15,7 @@
 !      * checkFaces determines whether or not a boundary condition or   *
 !      * a connectivity has been specified for all block faces. If this *
 !      * is not the case, the corresponding blocks are printed and the  *
-!      * code terminates.                                               *
+!      * code returnFails.                                               *
 !      *                                                                *
 !      ******************************************************************
 !
@@ -114,7 +114,7 @@
 
        allocate(badGlobal(4,nBadGlobal), stat=ierr)
        if(ierr /= 0)                  &
-         call terminate("checkFaces", &
+         call returnFail("checkFaces", &
                         "Memory allocation failure for badGlobal")
 
        ! Gather the data.
@@ -130,7 +130,7 @@
 
        call sortBadEntities(nBadGlobal, badGlobal, dummy, .false.)
 
-       ! If bad blocks are present, print them to stdout and terminate.
+       ! If bad blocks are present, print them to stdout and returnFail.
 
        testBadPresent: if(nBadGlobal > 0) then
 
@@ -238,7 +238,7 @@
 
            ! Terminate.
 
-           call terminate("checkFaces", &
+           call returnFail("checkFaces", &
                           "Wrong block boundary info found")
 
          endif testRootProc
@@ -253,7 +253,7 @@
 
        deallocate(badGlobal, stat=ierr)
        if(ierr /= 0)                   &
-         call terminate("checkFaces", &
+         call returnFail("checkFaces", &
                         "Deallocation failure for badGlobal")
 
        end subroutine checkFaces

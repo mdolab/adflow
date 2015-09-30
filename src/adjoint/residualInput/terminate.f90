@@ -1,19 +1,19 @@
 !
 !      ******************************************************************
 !      *                                                                *
-!      * File:          terminate.f90                                   *
+!      * File:          returnFail.f90                                   *
 !      * Author:        Edwin van der Weide                             *
 !      * Starting date: 12-10-2002                                      *
 !      * Last modified: 10-14-2005                                      *
 !      *                                                                *
 !      ******************************************************************
 !
-subroutine terminate(routineName, errorMessage)
+subroutine returnFail(routineName, errorMessage)
   !
   !      ******************************************************************
   !      *                                                                *
-  !      * terminate writes an error message to standard output and       *
-  !      * terminates the execution of the program.                       *
+  !      * returnFail writes an error message to standard output and       *
+  !      * returnFails the execution of the program.                       *
   !      *                                                                *
   !      ******************************************************************
   !
@@ -27,4 +27,4 @@ subroutine terminate(routineName, errorMessage)
   character(len=*), intent(in) :: routineName
   character(len=*), intent(in) :: errorMessage
 
-end subroutine terminate
+end subroutine returnFail

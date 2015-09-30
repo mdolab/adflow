@@ -60,7 +60,7 @@
 
        allocate(sendBuf(6,n1to1HaloAdd+1), recvBuf(6,ii), stat=ierr)
        if(ierr /= 0)                              &
-         call terminate("scan1to1HalosForFringe", &
+         call returnFail("scan1to1HalosForFringe", &
                         "Memory allocation failure for buffers")
  
        ! Loop over the receiving processors and lists for the 1to1 halos.
@@ -296,7 +296,7 @@
  
        deallocate(sendBuf, recvBuf, stat=ierr)
        if (ierr /= 0)                             &
-         call terminate("scan1to1HalosForFringe", &
+         call returnFail("scan1to1HalosForFringe", &
                         "Deallocation failure for buffers")
 
        end subroutine scan1to1HalosForFringe

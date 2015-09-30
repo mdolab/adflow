@@ -56,7 +56,7 @@ subroutine solveState
 
   allocate(cycling(nMGSteps), stat=ierr)
   if(ierr /= 0)                  &
-       call terminate("solveState", &
+       call returnFail("solveState", &
        "Memory allocation failure for cycling")
 
   ! Some initializations.
@@ -292,7 +292,7 @@ subroutine solveState
      ! Release the memory of cycling.
      deallocate(cycling, stat=ierr)
      if(ierr /= 0)                 &
-          call terminate("solveState", &
+          call returnFail("solveState", &
           "Deallocation failure for cycling")
      ! Reset the L2Convergence in case it had been changed above
      L2Conv = L2ConvSave
@@ -401,7 +401,7 @@ subroutine solveState
            ! Release the memory of cycling.
            deallocate(cycling, stat=ierr)
            if(ierr /= 0)                 &
-                call terminate("solveState", &
+                call returnFail("solveState", &
                 "Deallocation failure for cycling")
            ! Reset the L2Convergence in case it had been changed above
            L2Conv = L2ConvSave
@@ -503,7 +503,7 @@ subroutine solveState
 
 99 deallocate(cycling, stat=ierr)
   if(ierr /= 0)                 &
-       call terminate("solveState", &
+       call returnFail("solveState", &
        "Deallocation failure for cycling")
 
   ! Write the final values of the sliding mesh mass flow.

@@ -104,7 +104,7 @@
            allocate(flowDoms(n,level,sps)%iblank(0:i,0:j,0:k), &
                     stat=ierr)
            if (ierr /= 0)                           &
-             call terminate("createCoarseBoundary", &
+             call returnFail("createCoarseBoundary", &
                             "Memory allocation failure for iblank")
          end if
 
@@ -117,7 +117,7 @@
 
          allocate(flowDoms(n,level,sps)%ibndry(3,i), stat=ierr)
          if (ierr /= 0)                           &
-           call terminate("createCoarseBoundary", &
+           call returnFail("createCoarseBoundary", &
                           "Memory allocation failure for ibndry")
 
          ! Set pointers to make things readable.
@@ -263,7 +263,7 @@
  
          allocate(blockBndry(n)%nearestBndry(i:j), stat=ierr)
          if (ierr /= 0)                           &
-           call terminate("createCoarseBoundary", &
+           call returnFail("createCoarseBoundary", &
                           "Memory allocation failure for nearest")
  
          ! Loop over the boundary already created and do the checks for

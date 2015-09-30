@@ -74,7 +74,7 @@
                 matrixCoefSpectral(nSections,kk,3,3), &
                 diagMatCoefSpectral(nSections,3,3), stat=ierr)
        if(ierr /= 0)                              &
-         call terminate("timeSpectralMatrices", &
+         call returnFail("timeSpectralMatrices", &
                         "Memory allocation failure for the matrices of &
                         &the spectral time derivatives.")
 
@@ -210,7 +210,7 @@
        deallocate(coefSpectral, matrixCoefSpectral, &
                   diagMatCoefSpectral, stat=ierr)
        if(ierr /= 0)                            &
-         call terminate("timeSpectralMatrices", &
+         call returnFail("timeSpectralMatrices", &
                         "Deallocation failure for the help variables.")
 
        end subroutine timeSpectralMatrices

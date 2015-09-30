@@ -29,7 +29,7 @@
 !      *                                                                *
 !      * The results of all processors are gathered and if even 1 bad   *
 !      * entity is found an error message is printed and the program    *
-!      * will terminate.                                                *
+!      * will returnFail.                                                *
 !      *                                                                *
 !      ******************************************************************
 !
@@ -84,7 +84,7 @@
  
        allocate(bad(ncom,nDom), stat=ierr)
        if(ierr /= 0)                    &
-         call terminate("checkOverset", &
+         call returnFail("checkOverset", &
                         "Memory allocation failure for bad")
  
        ! Initialize the bad block and cell counters and index to 0.
@@ -273,7 +273,7 @@
 
        allocate(badGlobal(ncom,nbadGlobal), stat=ierr)
        if(ierr /= 0)                   &
-         call terminate("checkOverset", &
+         call returnFail("checkOverset", &
                         "Memory allocation failure for badGlobal")
 
        ! Gather the data.
@@ -283,7 +283,7 @@
                            recvcounts, displs, sumb_integer,   &
                            SUmb_comm_world, ierr)
  
-       ! If bad blocks are present, print them to stdout and terminate.
+       ! If bad blocks are present, print them to stdout and returnFail.
 
        testBadPresent: if(nbadGlobal > 0) then
 
@@ -344,7 +344,7 @@
 
            ! Terminate.
 
-           call terminate("checkOverset", &
+           call returnFail("checkOverset", &
                           "Bad holes or overset data present")
 
          endif testRootProc
@@ -359,7 +359,7 @@
 
        deallocate(bad, badGlobal, stat=ierr)
        if(ierr /= 0)                   &
-         call terminate("checkOverset", &
+         call returnFail("checkOverset", &
                         "Deallocation failure for bad,badGlobal")
 
        end subroutine checkOverset

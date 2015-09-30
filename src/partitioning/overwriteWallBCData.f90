@@ -67,7 +67,7 @@
          if(myID == 0) then
            write(errorMessage,*) "Parameter file ", trim(paramFile), &
                                  " not found anymore."
-           call terminate("overwriteWallBCData", errorMessage)
+           call returnFail("overwriteWallBCData", errorMessage)
          endif
 
          call mpi_barrier(SUmb_comm_world, ierr)

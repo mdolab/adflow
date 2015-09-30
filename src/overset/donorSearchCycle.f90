@@ -73,7 +73,7 @@
 
        allocate(sendBuf(6,ii), recvBuf(6,jj), stat=ierr)
        if(ierr /= 0)                        &
-         call terminate("donorSearchCycle", &
+         call returnFail("donorSearchCycle", &
                         "Memory allocation failure for buffers")
  
        ! Loop over the processors i need to send to and try to find the
@@ -91,7 +91,7 @@
          j = commPattern%nSend(i)
          allocate(commPattern%sendList(i)%interp(j,nInterp), stat=ierr)
          if(ierr /= 0)                        &
-           call terminate("donorSearchCycle", &
+           call returnFail("donorSearchCycle", &
                           "Memory allocation failure for interp")
 
          ! Loop over each point in the list.
@@ -197,7 +197,7 @@
 
          deallocate(coor, stat=ierr)
          if(ierr /= 0)                        &
-           call terminate("donorSearchCycle", &
+           call returnFail("donorSearchCycle", &
                           "Deallocation failure for coor")
 
        end do sends
@@ -240,7 +240,7 @@
        j = internal%nCopy
        allocate(internal%donorInterp(j,nInterp), stat=ierr)
        if(ierr /= 0)                        &
-         call terminate("donorSearchCycle", &
+         call returnFail("donorSearchCycle", &
                         "Memory allocation failure for donorInterp")
 
        ! Loop over the cells in the list.
@@ -389,7 +389,7 @@
 
        deallocate(coor, stat=ierr)
        if(ierr /= 0)                        &
-         call terminate("donorSearchCycle", &
+         call returnFail("donorSearchCycle", &
                         "Deallocation failure for coor")
 
        ! Aloocate the mask keep used to determine which parts of each
@@ -398,7 +398,7 @@
        ii = maxval(commPattern%nRecv)
        allocate(keep(ii), stat=ierr)
        if(ierr /= 0)                        &
-         call terminate("donorSearchCycle", &
+         call returnFail("donorSearchCycle", &
                         "Memory allocation failure for keep")
 
        ! Complete the nonblocking receives in an arbitrary sequence.
@@ -559,7 +559,7 @@
  
        deallocate(sendBuf, recvBuf, keep, stat=ierr)
        if(ierr /= 0)                        &
-         call terminate("donorSearchCycle", &
+         call returnFail("donorSearchCycle", &
                         "Deallocation failure for buffers and keep")
 
        ! Some of the fringe added due to bad donors may have been 1-to-1

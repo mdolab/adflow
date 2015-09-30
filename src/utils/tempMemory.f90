@@ -45,7 +45,7 @@
 
        deallocate(sendBuffer, recvBuffer, stat=ierr)
        if(ierr /= 0)                              &
-         call terminate("deallocateTempMemory", &
+         call returnFail("deallocateTempMemory", &
                         "Deallocation error for communication buffers")
 
        ! Loop over the spectral modes and domains. Note that only memory
@@ -69,7 +69,7 @@
                         flowDoms(nn,1,mm)%radJ, flowDoms(nn,1,mm)%radK, &
                         stat=ierr)
              if(ierr /= 0)                            &
-               call terminate("deallocateTempMemory", &
+               call returnFail("deallocateTempMemory", &
                               "Deallocation error for dw, fw, dtl and &
                               &spectral radii.")
            endif
@@ -82,7 +82,7 @@
              deallocate(flowDoms(nn,1,mm)%wn, flowDoms(nn,1,mm)%pn, &
                         stat=ierr)
              if(ierr /= 0)                            &
-               call terminate("deallocateTempMemory", &
+               call returnFail("deallocateTempMemory", &
                               "Deallocation error for wn and pn")
            endif
 
@@ -133,7 +133,7 @@
        allocate(sendBuffer(sendBufferSize), &
                 recvBuffer(recvBufferSize), stat=ierr)
        if(ierr /= 0)                          &
-         call terminate("allocateTempMemory", &
+         call returnFail("allocateTempMemory", &
                         "Memory allocation failure for comm buffers")
 
        ! Loop over the spectral modes and domains. Note that only memory
@@ -172,7 +172,7 @@
                       flowDoms(nn,1,mm)%radJ(1:ie,1:je,1:ke),     &
                       flowDoms(nn,1,mm)%radK(1:ie,1:je,1:ke), stat=ierr)
              if(ierr /= 0)                            &
-               call terminate("allocateTempMemory", &
+               call returnFail("allocateTempMemory", &
                               "Memory allocation failure for dw, fw, &
                               &dtl and the spectral radii.")
 
@@ -192,7 +192,7 @@
              allocate(flowDoms(nn,1,mm)%wn(2:il,2:jl,2:kl,1:nMGVar), &
                       flowDoms(nn,1,mm)%pn(2:il,2:jl,2:kl), stat=ierr)
              if(ierr /= 0)                            &
-               call terminate("allocateTempMemory", &
+               call returnFail("allocateTempMemory", &
                               "Memory allocation failure for wn and pn")
            endif
 

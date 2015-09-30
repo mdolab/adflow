@@ -86,7 +86,7 @@
                             BCData(mm)%Fv(iBeg:iEnd,jBeg:jEnd,3), &
                             stat=ierr)
                    if(ierr /= 0)                      &
-                     call terminate("allocMemBCData", &
+                     call returnFail("allocMemBCData", &
                                     "Memory allocation failure for &
                                     &an adiabatic wall")
 
@@ -103,7 +103,7 @@
                             BCData(mm)%Fv(iBeg:iEnd,jBeg:jEnd,3), &
                             stat=ierr)
                    if(ierr /= 0)                      &
-                     call terminate("allocMemBCData", &
+                     call returnFail("allocMemBCData", &
                                     "Memory allocation failure for &
                                     &an isothermal wall")
 
@@ -119,7 +119,7 @@
                             BCData(mm)%Fv(iBeg:iEnd,jBeg:jEnd,3), &
                             stat=ierr)
                    if(ierr /= 0)                      &
-                     call terminate("allocMemBCData", &
+                     call returnFail("allocMemBCData", &
                                     "Memory allocation failure for &
                                     &an Euler wall")
 
@@ -137,7 +137,7 @@
 
                         stat=ierr)
                    if(ierr /= 0)                      &
-                     call terminate("allocMemBCData", &
+                     call returnFail("allocMemBCData", &
                                     "Memory allocation failure for &
                                     &a farfield")
                    !=======================================================
@@ -156,7 +156,7 @@
                             BCData(mm)%dualArea(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
                             stat=ierr)
                    if(ierr /= 0)                      &
-                     call terminate("allocMemBCData", &
+                     call returnFail("allocMemBCData", &
                                     "Memory allocation failure for &
                                     &a symm")
 
@@ -175,7 +175,7 @@
                             BCData(mm)%ps(iBeg:iEnd,jBeg:jEnd),    &
                             stat=ierr)
                    if(ierr /= 0)                      &
-                     call terminate("allocMemBCData", &
+                     call returnFail("allocMemBCData", &
                                     "Memory allocation failure for &
                                     &a supersonic inflow")
 
@@ -187,7 +187,7 @@
                       BCData(mm)%turbInlet(iBeg:iEnd,jBeg:jEnd,nt1:nt2), &
                       stat=ierr)
                      if(ierr /= 0)                      &
-                       call terminate("allocMemBCData", &
+                       call returnFail("allocMemBCData", &
                                       "Memory allocation failure for &
                                       &turbInlet for a supersonic &
                                       &inflow")
@@ -213,7 +213,7 @@
                             BCData(mm)%velz(iBeg:iEnd,jBeg:jEnd),          &
                             stat=ierr)
                    if(ierr /= 0)                      &
-                     call terminate("allocMemBCData", &
+                     call returnFail("allocMemBCData", &
                                     "Memory allocation failure for &
                                     &a subsonic inflow")
 
@@ -225,7 +225,7 @@
                       BCData(mm)%turbInlet(iBeg:iEnd,jBeg:jEnd,nt1:nt2), &
                       stat=ierr)
                      if(ierr /= 0)                      &
-                       call terminate("allocMemBCData", &
+                       call returnFail("allocMemBCData", &
                                       "Memory allocation failure for &
                                       &turbInlet for a subsonic inflow")
                    endif
@@ -242,7 +242,7 @@
                    allocate(BCData(mm)%ps(iBeg:iEnd,jBeg:jEnd), &
                             stat=ierr)
                    if(ierr /= 0)                      &
-                     call terminate("allocMemBCData", &
+                     call returnFail("allocMemBCData", &
                                     "Memory allocation failure for &
                                     &a subsonic outflow, outflow mass &
                                     &bleed or domain interface with &
@@ -267,7 +267,7 @@
                             BCData(mm)%velz(iBeg:iEnd,jBeg:jEnd), &
                             stat=ierr)
                    if(ierr /= 0)                      &
-                     call terminate("allocMemBCData", &
+                     call returnFail("allocMemBCData", &
                                     "Memory allocation failure for &
                                     &a domain interface with a &
                                     &prescribed mass flow")
@@ -280,7 +280,7 @@
                       BCData(mm)%turbInlet(iBeg:iEnd,jBeg:jEnd,nt1:nt2), &
                       stat=ierr)
                      if(ierr /= 0)                      &
-                       call terminate("allocMemBCData", &
+                       call returnFail("allocMemBCData", &
                                       "Memory allocation failure for &
                                       &turbInlet for a domain interface &
                                       &with a prescribed mass flow")
@@ -301,7 +301,7 @@
                             BCData(mm)%htInlet(iBeg:iEnd,jBeg:jEnd),       &
                             stat=ierr)
                    if(ierr /= 0)                      &
-                     call terminate("allocMemBCData", &
+                     call returnFail("allocMemBCData", &
                                     "Memory allocation failure for &
                                     &a domain interface with total &
                                     &conditions")
@@ -314,7 +314,7 @@
                       BCData(mm)%turbInlet(iBeg:iEnd,jBeg:jEnd,nt1:nt2), &
                       stat=ierr)
                      if(ierr /= 0)                      &
-                       call terminate("allocMemBCData", &
+                       call returnFail("allocMemBCData", &
                                       "Memory allocation failure for &
                                       &turbInlet for a domain interface &
                                       &with a prescribed mass flow")
@@ -330,7 +330,7 @@
                    allocate(BCData(mm)%rho(iBeg:iEnd,jBeg:jEnd), &
                             stat=ierr)
                    if(ierr /= 0)                      &
-                     call terminate("allocMemBCData", &
+                     call returnFail("allocMemBCData", &
                                     "Memory allocation failure for &
                                     &a domain interface")
 

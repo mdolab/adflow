@@ -148,7 +148,7 @@
 
        ! X-momentum could not be created. Terminate.
 
-       call terminate("readXmomentum", &
+       call returnFail("readXmomentum", &
                       "X-Momentum could not be created")
 
        end subroutine readXmomentum

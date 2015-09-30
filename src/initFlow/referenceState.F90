@@ -226,11 +226,11 @@
            ! Not enough boundary data is present for initialization.
            ! This typically occurs when running the code in coupled
            ! mode with another CFD code from which it gets the data.
-           ! If the code is run in stand alone mode, terminate.
+           ! If the code is run in stand alone mode, returnFail.
 
            if( standAloneMode ) then
              if(myID == 0)                      &
-               call terminate("referenceState", &
+               call returnFail("referenceState", &
                "Not enough boundary data is present to define a well posed &
                problem for an internal flow computation")
              call mpi_barrier(SUmb_comm_world, ierr)

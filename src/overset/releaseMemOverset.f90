@@ -58,7 +58,7 @@
                       flowDoms(nn,level,sps)%idonor,         &
                       flowDoms(nn,level,sps)%overint, stat=ierr)
            if (ierr /= 0) &
-             call terminate("releaseMemOverset", &
+             call returnFail("releaseMemOverset", &
                             "Deallocation failure for block data")
 
          end do
@@ -102,7 +102,7 @@
                     commPattern%sendList(nn)%indices, &
                     commPattern%sendList(nn)%interp,  &
                     stat=ierr)
-         if(ierr /= 0) call terminate("releaseCommPattern", &
+         if(ierr /= 0) call returnFail("releaseCommPattern", &
                                       "Deallocation error for sendList")
        enddo
 
@@ -111,7 +111,7 @@
          deallocate(commPattern%recvList(nn)%block,   &
                     commPattern%recvList(nn)%indices, &
                     stat=ierr)
-         if(ierr /= 0) call terminate("releaseCommPattern", &
+         if(ierr /= 0) call returnFail("releaseCommPattern", &
                                       "Deallocation error for recvList")
 
        enddo
@@ -128,7 +128,7 @@
                   commPattern%recvList,       &
                   stat=ierr)
        if(ierr /= 0)                                 &
-         call terminate("releaseCommPattern", &
+         call returnFail("releaseCommPattern", &
                         "Deallocation error for commPattern")
 
        end subroutine releaseCommPattern
@@ -169,7 +169,7 @@
                   internal%haloIndices,  &
                   stat=ierr)
        if(ierr /= 0)                                &
-         call terminate("releaseInternalComm", &
+         call returnFail("releaseInternalComm", &
                         "Deallocation error for internal")
 
        end subroutine releaseInternalComm

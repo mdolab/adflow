@@ -44,7 +44,7 @@
 !
 #ifdef USE_NO_CGNS
 
-       call terminate("writeCGNSBaldwinLomaxInfo", &
+       call returnFail("writeCGNSBaldwinLomaxInfo", &
                       "Routine should not be called if no cgns support &
                       &is selected.")
 
@@ -59,7 +59,7 @@
        call cg_goto_f(cgnsInd, cgnsBase, ierr, &
                       "FlowEquationSet_t", 1, "end")
        if(ierr /= CG_OK)                            &
-         call terminate("writeCGNSBaldwinLomaxInfo", &
+         call returnFail("writeCGNSBaldwinLomaxInfo", &
                         "Something wrong when calling cg_goto_f")
 
        ! Write that the baldwin lomax model is used.
@@ -67,14 +67,14 @@
        call cg_model_write_f("TurbulenceModel_t", &
                              Algebraic_BaldwinLomax, ierr)
        if(ierr /= CG_OK)                            &
-         call terminate("writeCGNSBaldwinLomaxInfo", &
+         call returnFail("writeCGNSBaldwinLomaxInfo", &
                         "Something wrong when calling cg_model_write_f")
 
        ! Write the turbulent closure type.
 
        call cg_model_write_f("TurbulenceClosure_t", EddyViscosity, ierr)
        if(ierr /= CG_OK)                            &
-         call terminate("writeCGNSBaldwinLomaxInfo", &
+         call returnFail("writeCGNSBaldwinLomaxInfo", &
                         "Something wrong when calling cg_model_write_f")
 
        ! Write the details of the turbulence model under the turbulent
@@ -83,7 +83,7 @@
        call cg_goto_f(cgnsInd, cgnsBase, ierr, "FlowEquationSet_t", 1,&
                       "TurbulenceClosure_t", 1, "end")
        if(ierr /= CG_OK)                            &
-         call terminate("writeCGNSBaldwinLomaxInfo", &
+         call returnFail("writeCGNSBaldwinLomaxInfo", &
                         "Something wrong when calling cg_goto_f")
 
        ! Write the value of the turbulent prandtl number.
@@ -92,7 +92,7 @@
        call cg_array_write_f(cgnsPrandtlTurb, realTypeCGNS, &
                              1, 1, val,ierr)
        if(ierr /= CG_OK)                            &
-         call terminate("writeCGNSBaldwinLomaxInfo", &
+         call returnFail("writeCGNSBaldwinLomaxInfo", &
                         "Something wrong when calling cg_array_write_f")
 
        ! Indicate that this is a nonDimensional parameter.
@@ -100,12 +100,12 @@
        call cg_goto_f(cgnsInd, cgnsBase, ierr, "FlowEquationSet_t", 1,&
                       "TurbulenceClosure_t", 1, "DataArray_t", 1,"end")
        if(ierr /= CG_OK)                                &
-         call terminate("writeCGNSBaldwinLomaxInfo", &
+         call returnFail("writeCGNSBaldwinLomaxInfo", &
                         "Something wrong when calling cg_goto_f")
 
        call cg_dataclass_write_f(NonDimensionalParameter,ierr)
        if(ierr /= CG_OK)                            &
-         call terminate("writeCGNSBaldwinLomaxInfo", &
+         call returnFail("writeCGNSBaldwinLomaxInfo", &
                         "Something wrong when calling &
                         &cg_dataclass_write_f")
 

@@ -55,7 +55,7 @@
 
        allocate(oversetHalo(nHaloOver), stat=ierr)
        if(ierr /= 0)                            &
-        call terminate("buildFineBoundaryList", &
+        call returnFail("buildFineBoundaryList", &
                        "Memory allocation failure for oversetHalo")
 
        ! Initialize the total halo counter and loop over the blocks.
@@ -107,7 +107,7 @@
 
              allocate(oversetHalo(ihalo)%interp(3), stat=ierr)
              if(ierr /= 0)                            &
-              call terminate("buildFineBoundaryList", &
+              call returnFail("buildFineBoundaryList", &
                              "Memory allocation failure for interp")
 
              i = oversetHalo(ihalo)%myI
@@ -126,7 +126,7 @@
              i = nDonorWeights(oversetInterpType)
              allocate(oversetHalo(ihalo)%interp(i), stat=ierr)
              if(ierr /= 0)                            &
-              call terminate("buildFineBoundaryList", &
+              call returnFail("buildFineBoundaryList", &
                              "Memory allocation failure for interp")
 
              oversetHalo(ihalo)%interp = overint(:,m)
@@ -171,7 +171,7 @@
 
              allocate(oversetHalo(ihalo)%interp(3), stat=ierr)
              if(ierr /= 0)                            &
-              call terminate("buildFineBoundaryList", &
+              call returnFail("buildFineBoundaryList", &
                              "Memory allocation failure for interp")
 
              i = oversetHalo(ihalo)%myI
@@ -190,7 +190,7 @@
              i = nDonorWeights(oversetInterpType)
              allocate(oversetHalo(ihalo)%interp(i), stat=ierr)
              if(ierr /= 0)                            &
-              call terminate("buildFineBoundaryList", &
+              call returnFail("buildFineBoundaryList", &
                              "Memory allocation failure for interp")
 
              oversetHalo(ihalo)%interp = zero
@@ -214,7 +214,7 @@
                       flowDoms(nn,level,sps)%neighProcOver,  &
                       stat=ierr)
            if(ierr /= 0)                            &
-            call terminate("buildFineBoundaryList", &
+            call returnFail("buildFineBoundaryList", &
                            "Deallocation failure for overset info")
 
            flowDoms(nn,level,sps)%nCellsOverset = nCellsOverset &
