@@ -47,6 +47,8 @@ FILES_TO_COMPLEXIFY =  readInterpolation.F90 \
 		       computeHolesInsideBody.F90\
 		       computeInterpolation.F90\
 		       pairSearch.F90 \
+		       computeQuadraticWeights.F90 \
+		       matrixinv3by3.F90 \
 
 ALL_FILES = $(FILES_TO_COMPLEXIFY) $(FILES_TO_COPY)
 OFILES := $(ALL_FILES:%.f90=%.o) $(ALL_FILES:%.F90=%.o) $(ALL_FILES:%.c=%.o)
