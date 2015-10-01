@@ -225,7 +225,7 @@ subroutine pairSearch(A, B)
                     ! of 1/2
                     uvwQuadratic = uvw(:, mm) - half
                     
-                    !call computeQuadraticWeights(xSearch(:, mm), xElem, uvwQuadratic)
+                    call computeQuadraticWeights(A%xSearch(:, mm), xElem, uvwQuadratic)
 
                     ! Now that we know the uvw coefficients in the
                     ! quadratic element we can set the weights and
