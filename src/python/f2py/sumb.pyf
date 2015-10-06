@@ -669,7 +669,7 @@ python module libsumb
 
        module inputmotion ! in :sumb:../../modules/inputParam.f90
          use precision
-         real(kind=realType), dimension(3) :: rotpoint
+         real(kind=realtype), dimension(3) :: rotpoint
          real(kind=realtype) allocatable,dimension(:) :: coscoeffouryrot
          real(kind=realtype) allocatable,dimension(:) :: coscoeffourxrot
          integer(kind=inttype) :: degreefourxrot
@@ -885,12 +885,12 @@ python module libsumb
          integer :: nmon
          real(kind=realtype) allocatable,dimension(:) :: monloc
          real(kind=realtype) allocatable,dimension(:) :: monglob
-         real(kind=realtype) allocatable,dimension(:) :: monRef
+         real(kind=realtype) allocatable,dimension(:) :: monref
          character(len=32) allocatable,dimension(:) :: monnames
          logical :: monmachorhmax
          logical :: showcpu
-         logical :: monMassSliding
-         logical :: monMassFamilies
+         logical :: monmasssliding
+         logical :: monmassfamilies
          integer :: niterold
          integer :: nitercur
          real(kind=realtype) allocatable,dimension(:,:,:) :: convarray
@@ -1129,12 +1129,12 @@ python module libsumb
        subroutine sumb_init ! in :sumb:../../utils/SUmb_init.f90
          use communication
          implicit none
-       end subroutine SUmb_init
+       end subroutine sumb_init
 
        subroutine sumb_finalize ! in :sumb:../../utils/SUmb_finalize.f90
          use communication
          implicit none
-       end subroutine SUmb_finalize
+       end subroutine sumb_finalize
 
         subroutine testrev(dwbar,wbar,statesize) ! in :test:test.F90
           real(kind=realtype) dimension(statesize),intent(in) :: dwbar
@@ -1157,7 +1157,4 @@ end python module libsumb_cs
 end python module libsumb
 #endif
 
-! This file was auto-generated with f2py (version:2.39.235_1700).
-! See http://cens.ioc.ee/projects/f2py2e/
-!
-! File manually edited by Andre C. Marta and Seonghyeon Hahn on Aug.26,2005
+
