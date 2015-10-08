@@ -616,13 +616,13 @@ def test6():
     CFDSolver.checkSolutionFailure(ap, funcs)
     if MPI.COMM_WORLD.rank == 0:
         print 'Eval Functions:'
-        reg_write_dict(funcs, 1e-8, 1e-8)
+        reg_write_dict(funcs, 1e-10, 1e-10)
 
     funcsSens = {}
     CFDSolver.evalFunctionsSens(ap, funcsSens)
     if MPI.COMM_WORLD.rank == 0:
         print 'Eval Functions Sens:'
-        reg_write_dict(funcsSens, 1e-8, 1e-8)
+        reg_write_dict(funcsSens, 1e-10, 1e-10)
 
     # Clean up:
     del CFDSolver
@@ -686,12 +686,12 @@ def test7():
     CFDSolver.checkSolutionFailure(ap, funcs)
     if MPI.COMM_WORLD.rank == 0:
         print 'Eval Functions:'
-        reg_write_dict(funcs, 1e-8, 1e-8)
+        reg_write_dict(funcs, 1e-10, 1e-10)
     funcsSens = {}
     CFDSolver.evalFunctionsSens(ap, funcsSens)
     if MPI.COMM_WORLD.rank == 0:
         print 'Eval Functions Sens:'
-        reg_write_dict(funcsSens, 1e-8, 1e-8)
+        reg_write_dict(funcsSens, 1e-10, 1e-10)
 
     # Clean up:
     del CFDSolver
@@ -756,12 +756,12 @@ def test8():
     CFDSolver.checkSolutionFailure(ap, funcs)
     if MPI.COMM_WORLD.rank == 0:
         print 'Eval Functions:'
-        reg_write_dict(funcs, 1e-8, 1e-8)
+        reg_write_dict(funcs, 1e-10, 1e-10)
     funcsSens = {}
     CFDSolver.evalFunctionsSens(ap, funcsSens)
     if MPI.COMM_WORLD.rank == 0:
         print 'Eval Functions Sens:'
-        reg_write_dict(funcsSens, 1e-8, 1e-8)
+        reg_write_dict(funcsSens, 1e-10, 1e-10)
 
     # Clean up:
     del CFDSolver

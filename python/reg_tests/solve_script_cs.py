@@ -179,7 +179,6 @@ defOpts = {
     'applyadjointpcsubspacesize': 20,
     'frozenturbulence': True,
     'usematrixfreedrdw': False,
-    'usematrixfreedrdx': True,
 
     # ADjoint debugger
     'firstrun': True,
@@ -430,11 +429,7 @@ def test2():
     del CFDSolver
     del mesh
 
-# Notes for the Viscous Derivatives: It appears that the CS derviative
-# itself flucuates in the 10 to 11 digit or so even when the residual
-# is bouncing around machine precision. This si the limit of what can
-# be verified wtih CS. This is the reason for putting the check
-# tolerance at 1e-8.
+# Notes for the Viscous Derivatives:
 
 def test3():
     # ****************************************************************************
@@ -483,17 +478,17 @@ def test3():
         if MPI.COMM_WORLD.rank == 0:
             for key in ['cd','cmz','lift']:
                 print 'funcs[%s]:'%key
-                reg_write(funcs['mdo_tutorial_%s'%key],1e-8,1e-8)
+                reg_write(funcs['mdo_tutorial_%s'%key],1e-10,1e-10)
             # Now write the derivatives in the same order the CS will do them:
             print ('Alpha Derivatives:')
-            reg_write(funcsSens['mdo_tutorial_cd']['alpha_mdo_tutorial'], 1e-8,1e-8)
-            reg_write(funcsSens['mdo_tutorial_cmz']['alpha_mdo_tutorial'], 1e-8,1e-8)
-            reg_write(funcsSens['mdo_tutorial_lift']['alpha_mdo_tutorial'], 1e-8,1e-8)
+            reg_write(funcsSens['mdo_tutorial_cd']['alpha_mdo_tutorial'], 1e-10,1e-10)
+            reg_write(funcsSens['mdo_tutorial_cmz']['alpha_mdo_tutorial'], 1e-10,1e-10)
+            reg_write(funcsSens['mdo_tutorial_lift']['alpha_mdo_tutorial'], 1e-10,1e-10)
 
             print ('Mach Derivatives:')
-            reg_write(funcsSens['mdo_tutorial_cd']['mach_mdo_tutorial'], 1e-8,1e-8)
-            reg_write(funcsSens['mdo_tutorial_cmz']['mach_mdo_tutorial'], 1e-8,1e-8)
-            reg_write(funcsSens['mdo_tutorial_lift']['mach_mdo_tutorial'], 1e-8,1e-8)
+            reg_write(funcsSens['mdo_tutorial_cd']['mach_mdo_tutorial'], 1e-10,1e-10)
+            reg_write(funcsSens['mdo_tutorial_cmz']['mach_mdo_tutorial'], 1e-10,1e-10)
+            reg_write(funcsSens['mdo_tutorial_lift']['mach_mdo_tutorial'], 1e-10,1e-10)
 
     else:
         # For the complex....we just do successive perturbation
@@ -515,7 +510,7 @@ def test3():
                 if ii == 0:
                     for key in ['cd','cmz','lift']:
                         print 'funcs[%s]:'%key
-                        reg_write(numpy.real(funcs['mdo_tutorial_%s'%key]),1e-8,1e-8)
+                        reg_write(numpy.real(funcs['mdo_tutorial_%s'%key]),1e-10,1e-10)
 
                 if ii == 0:
                     print ('Alpha Derivatives:')
@@ -524,7 +519,7 @@ def test3():
 
                 for key in ['cd','cmz','lift']:
                     deriv = numpy.imag(funcs['mdo_tutorial_%s'%key])/h
-                    reg_write(deriv,1e-8,1e-8)
+                    reg_write(deriv,1e-10,1e-10)
 
     del CFDSolver
 
@@ -601,22 +596,22 @@ def test4():
         if MPI.COMM_WORLD.rank == 0:
             for key in ['cl','cmz','drag']:
                 print 'funcs[%s]:'%key
-                reg_write(funcs['mdo_tutorial_%s'%key],1e-8,1e-8)
+                reg_write(funcs['mdo_tutorial_%s'%key],1e-10,1e-10)
             # Now write the derivatives in the same order the CS will do them:
             print ('Twist[0] Derivatives:')
-            reg_write(funcsSens['mdo_tutorial_cl']['twist'][0][0], 1e-8,1e-8)
-            reg_write(funcsSens['mdo_tutorial_cmz']['twist'][0][0], 1e-8,1e-8)
-            reg_write(funcsSens['mdo_tutorial_drag']['twist'][0][0], 1e-8,1e-8)
+            reg_write(funcsSens['mdo_tutorial_cl']['twist'][0][0], 1e-10,1e-10)
+            reg_write(funcsSens['mdo_tutorial_cmz']['twist'][0][0], 1e-10,1e-10)
+            reg_write(funcsSens['mdo_tutorial_drag']['twist'][0][0], 1e-10,1e-10)
 
             print ('Span Derivatives:')
-            reg_write(funcsSens['mdo_tutorial_cl']['span'][0], 1e-8,1e-8)
-            reg_write(funcsSens['mdo_tutorial_cmz']['span'][0], 1e-8,1e-8)
-            reg_write(funcsSens['mdo_tutorial_drag']['span'][0], 1e-8,1e-8)
+            reg_write(funcsSens['mdo_tutorial_cl']['span'][0], 1e-10,1e-10)
+            reg_write(funcsSens['mdo_tutorial_cmz']['span'][0], 1e-10,1e-10)
+            reg_write(funcsSens['mdo_tutorial_drag']['span'][0], 1e-10,1e-10)
 
             print ('shape[13] Derivatives:')
-            reg_write(funcsSens['mdo_tutorial_cl']['shape'][0][13], 1e-8,1e-8)
-            reg_write(funcsSens['mdo_tutorial_cmz']['shape'][0][13], 1e-8,1e-8)
-            reg_write(funcsSens['mdo_tutorial_drag']['shape'][0][13], 1e-8,1e-8)
+            reg_write(funcsSens['mdo_tutorial_cl']['shape'][0][13], 1e-10,1e-10)
+            reg_write(funcsSens['mdo_tutorial_cmz']['shape'][0][13], 1e-10,1e-10)
+            reg_write(funcsSens['mdo_tutorial_drag']['shape'][0][13], 1e-10,1e-10)
     else:
         # For the complex....we just do successive perturbation
         for ii in range(3):
@@ -638,7 +633,7 @@ def test4():
                 if ii == 0:
                     for key in ['cl','cmz','drag']:
                         print 'funcs[%s]:'%key
-                        reg_write(numpy.real(funcs['mdo_tutorial_%s'%key]),1e-8,1e-8)
+                        reg_write(numpy.real(funcs['mdo_tutorial_%s'%key]),1e-10,1e-10)
 
                 if ii == 0:
                     print ('Twist[0] Derivatives:')
@@ -649,10 +644,13 @@ def test4():
 
                 for key in ['cl','cmz','drag']:
                     deriv = numpy.imag(funcs['mdo_tutorial_%s'%key])/h
-                    reg_write(deriv,1e-8,1e-8)
+                    reg_write(deriv,1e-10,1e-10)
 
     del CFDSolver
     del mesh
+
+# ----------- Most of this has been supersceeded. Derivatives are now
+# ----------- accurate to 1e-10 across multiple compilers (gfortran/intel)
 
 # Notes for the RANS Derivatives: It appears that the CS derviative
 # itself flucuates in the 10 to 11 digit or so even when the residual
@@ -732,22 +730,22 @@ def test5():
         if MPI.COMM_WORLD.rank == 0:
             for key in ['cd','cmz','lift']:
                 print 'funcs[%s]:'%key
-                reg_write(funcs['mdo_tutorial_%s'%key],1e-8,1e-8)
+                reg_write(funcs['mdo_tutorial_%s'%key],1e-10,1e-10)
             # Now write the derivatives in the same order the CS will do them:
             print ('Alpha Derivatives:')
-            reg_write(funcsSens['mdo_tutorial_cd']['alpha_mdo_tutorial'], 1e-8,1e-8)
-            reg_write(funcsSens['mdo_tutorial_cmz']['alpha_mdo_tutorial'], 1e-8,1e-8)
-            reg_write(funcsSens['mdo_tutorial_lift']['alpha_mdo_tutorial'], 1e-8,1e-8)
+            reg_write(funcsSens['mdo_tutorial_cd']['alpha_mdo_tutorial'], 1e-10,1e-10)
+            reg_write(funcsSens['mdo_tutorial_cmz']['alpha_mdo_tutorial'], 1e-10,1e-10)
+            reg_write(funcsSens['mdo_tutorial_lift']['alpha_mdo_tutorial'], 1e-10,1e-10)
 
             print ('Mach Derivatives:')
-            reg_write(funcsSens['mdo_tutorial_cd']['mach_mdo_tutorial'], 1e-8,1e-8)
-            reg_write(funcsSens['mdo_tutorial_cmz']['mach_mdo_tutorial'], 1e-8,1e-8)
-            reg_write(funcsSens['mdo_tutorial_lift']['mach_mdo_tutorial'], 1e-8,1e-8)
+            reg_write(funcsSens['mdo_tutorial_cd']['mach_mdo_tutorial'], 1e-10,1e-10)
+            reg_write(funcsSens['mdo_tutorial_cmz']['mach_mdo_tutorial'], 1e-10,1e-10)
+            reg_write(funcsSens['mdo_tutorial_lift']['mach_mdo_tutorial'], 1e-10,1e-10)
 
             print ('Altitude Derivatives:')
-            reg_write(funcsSens['mdo_tutorial_cd']['altitude_mdo_tutorial'], 1e-4,1e-4)
-            reg_write(funcsSens['mdo_tutorial_cmz']['altitude_mdo_tutorial'], 1e-4,1e-4)
-            reg_write(funcsSens['mdo_tutorial_lift']['altitude_mdo_tutorial'], 1e-4,1e-4)
+            reg_write(funcsSens['mdo_tutorial_cd']['altitude_mdo_tutorial'], 1e-8,1e-8)
+            reg_write(funcsSens['mdo_tutorial_cmz']['altitude_mdo_tutorial'], 1e-8,1e-8)
+            reg_write(funcsSens['mdo_tutorial_lift']['altitude_mdo_tutorial'], 1e-8,1e-8)
 
     else:
         # For the complex....we just do successive perturbation
@@ -771,25 +769,25 @@ def test5():
                 if ii == 0:
                     for key in ['cd','cmz','lift']:
                         print 'funcs[%s]:'%key
-                        reg_write(numpy.real(funcs['mdo_tutorial_%s'%key]),1e-8,1e-8)
+                        reg_write(numpy.real(funcs['mdo_tutorial_%s'%key]),1e-10,1e-10)
 
                 if ii == 0:
                     print ('Alpha Derivatives:')
                     for key in ['cd','cmz','lift']:
                         deriv = numpy.imag(funcs['mdo_tutorial_%s'%key])/h
-                        reg_write(deriv,1e-8,1e-8)
+                        reg_write(deriv,1e-10,1e-10)
 
                 elif ii == 1:
                     print ('Mach Derivatives:')
                     for key in ['cd','cmz','lift']:
                         deriv = numpy.imag(funcs['mdo_tutorial_%s'%key])/h
-                        reg_write(deriv,1e-8,1e-8)
+                        reg_write(deriv,1e-10,1e-10)
 
                 else:
                     print ('AltitudeDerivatives:')
                     for key in ['cd','cmz','lift']:
                         deriv = numpy.imag(funcs['mdo_tutorial_%s'%key])/h
-                        reg_write(deriv,1e-4,1e-4)
+                        reg_write(deriv,1e-10,1e-10)
 
 
     del CFDSolver
@@ -872,22 +870,22 @@ def test6():
         if MPI.COMM_WORLD.rank == 0:
             for key in ['cl','cmz','drag']:
                 print 'funcs[%s]:'%key
-                reg_write(funcs['mdo_tutorial_%s'%key],1e-8,1e-8)
+                reg_write(funcs['mdo_tutorial_%s'%key],1e-10,1e-10)
             # Now write the derivatives in the same order the CS will do them:
             print ('Twist[0] Derivatives:')
-            reg_write(funcsSens['mdo_tutorial_cl']['twist'][0][0], 1e-8,1e-8)
-            reg_write(funcsSens['mdo_tutorial_cmz']['twist'][0][0], 1e-8,1e-8)
-            reg_write(funcsSens['mdo_tutorial_drag']['twist'][0][0], 1e-8,1e-8)
+            reg_write(funcsSens['mdo_tutorial_cl']['twist'][0][0], 1e-10,1e-10)
+            reg_write(funcsSens['mdo_tutorial_cmz']['twist'][0][0], 1e-10,1e-10)
+            reg_write(funcsSens['mdo_tutorial_drag']['twist'][0][0], 1e-10,1e-10)
 
             print ('Span Derivatives:')
-            reg_write(funcsSens['mdo_tutorial_cl']['span'][0], 1e-8,1e-8)
-            reg_write(funcsSens['mdo_tutorial_cmz']['span'][0], 1e-8,1e-8)
-            reg_write(funcsSens['mdo_tutorial_drag']['span'][0], 1e-8,1e-8)
+            reg_write(funcsSens['mdo_tutorial_cl']['span'][0], 1e-10,1e-10)
+            reg_write(funcsSens['mdo_tutorial_cmz']['span'][0], 1e-10,1e-10)
+            reg_write(funcsSens['mdo_tutorial_drag']['span'][0], 1e-10,1e-10)
 
             print ('shape[13] Derivatives:')
-            reg_write(funcsSens['mdo_tutorial_cl']['shape'][0][13], 1e-8,1e-8)
-            reg_write(funcsSens['mdo_tutorial_cmz']['shape'][0][13], 1e-8,1e-8)
-            reg_write(funcsSens['mdo_tutorial_drag']['shape'][0][13], 1e-8,1e-8)
+            reg_write(funcsSens['mdo_tutorial_cl']['shape'][0][13], 1e-10,1e-10)
+            reg_write(funcsSens['mdo_tutorial_cmz']['shape'][0][13], 1e-10,1e-10)
+            reg_write(funcsSens['mdo_tutorial_drag']['shape'][0][13], 1e-10,1e-10)
     else:
         # For the complex....we just do successive perturbation
         for ii in range(3):
@@ -909,7 +907,7 @@ def test6():
                 if ii == 0:
                     for key in ['cl','cmz','drag']:
                         print 'funcs[%s]:'%key
-                        reg_write(numpy.real(funcs['mdo_tutorial_%s'%key]),1e-8,1e-8)
+                        reg_write(numpy.real(funcs['mdo_tutorial_%s'%key]),1e-10,1e-10)
 
                 if ii == 0:
                     print ('Twist[0] Derivatives:')
@@ -920,7 +918,7 @@ def test6():
 
                 for key in ['cl','cmz','drag']:
                     deriv = numpy.imag(funcs['mdo_tutorial_%s'%key])/h
-                    reg_write(deriv,1e-8,1e-8)
+                    reg_write(deriv,1e-10,1e-10)
 
     del CFDSolver
     del mesh
