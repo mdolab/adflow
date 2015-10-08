@@ -46,6 +46,9 @@ all:
 	@echo f2py root directory: $(F2PY_ROOT)
 	@echo "#------------------------------------------------------#"
 
+# Check the consistency of the pyf file. All carachters (except comments and preprocessor tags) need to be lower case!!!
+	python checkPyfForUpperCase.py
+
 # Run the preprocessor on the pyf file:
 	python pyf_preprocessor.py real sumb.pyf 
 
