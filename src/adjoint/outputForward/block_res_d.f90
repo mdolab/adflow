@@ -210,8 +210,8 @@ spectralloop0:do sps2=1,ntimeintervalsspectral
 !case (mentersst)
 ! not implemented yet
 !call sst_block(.true.)
-      call returnFail('turbresidual', &
-&                 'only sa turbulence adjoint implemented')
+      call returnfail('turbresidual', &
+&                  'only sa turbulence adjoint implemented')
       do ii1=1,ntimeintervalsspectral
         do ii2=1,1
           do ii3=nn,nn

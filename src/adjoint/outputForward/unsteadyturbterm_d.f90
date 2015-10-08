@@ -124,8 +124,8 @@ nadvloopunsteady:do ii=1,nadv
       return
     case (implicitrk) 
 !===========================================================
-      call returnFail('unsteadyturbterm', &
-&                 'implicit rk not implemented yet')
+      call returnfail('unsteadyturbterm', &
+&                  'implicit rk not implemented yet')
     end select
   case (timespectral) 
 !===============================================================
