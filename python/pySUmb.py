@@ -2948,11 +2948,20 @@ class SUMB(AeroSolver):
 
                 if xSDeriv:
                     returns.append(xsbar)
-
-                # Process all the way back to the DVs, provided
-                # DVGeo exists
-                if xDvDeriv: 
-                    xdvbar = {}
+            else:
+                # Only an error if xSDeriv is requested...since we
+                # can't do it. xDVDeriv may be specified even when no
+                # mesh is present.
+                if xSDeriv:
+                    raise Error("Could not complete requested xSDeriv "
+                                "derivatives since no mesh is present")
+     
+            # Process all the way back to the DVs:
+            if xDvDeriv:
+                xdvbar = {}
+                if self.mesh is not None: # Include geometric
+                                          # derivatives if mesh is
+                                          # present
                     if self.DVGeo is not None and self.DVGeo.getNDV() > 0:
                         xdvbar.update(self.DVGeo.totalSensitivity(
                             xsbar, self.curAP.ptSetName, self.comm, config=self.curAP.name))
@@ -2961,14 +2970,16 @@ class SUMB(AeroSolver):
                             SUMBWarning("No DVGeo object is present or it has no "
                                         "design variables specified. No geometric "
                                         "derivatives computed.")
+                else:
+                    if self.comm.rank == 0:
+                        SUMBWarning("No mesh object is present. No geometric "
+                                    "derivatives computed.")
+                    
+                # Include aero derivatives here:
+                xdvbar.update(self._processAeroDerivatives(extrabar))
+                returns.append(xdvbar)
 
-                    # Include aero derivatives here:
-                    xdvbar.update(self._processAeroDerivatives(extrabar))
-                    returns.append(xdvbar)
-            else:
-                raise Error("Could not complete requested xDvDeriv or xSDeriv "
-                            "derivatives since no mesh is present")
-                
+                   
         # Include the aerodynamic variables if requested to do so.
         if xDvDerivAero:
             xdvaerobar = {}
