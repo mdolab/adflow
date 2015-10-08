@@ -134,18 +134,20 @@ subroutine gridvelocitiesfinelevel_block_d(useoldcoor, t, sps)
 ! to rigid body translation.
       call rotmatrixrigidbody(tnew, told, rotationmatrix, &
 &                          rotationpoint)
-      velxgrid0d = rotationmatrix(1, 1)*velxgrid0d + rotationmatrix(1, 2&
-&       )*velygrid0d + rotationmatrix(1, 3)*velzgrid0d
-      velxgrid0 = rotationmatrix(1, 1)*velxgrid0 + rotationmatrix(1, 2)*&
-&       velygrid0 + rotationmatrix(1, 3)*velzgrid0
-      velygrid0d = rotationmatrix(2, 1)*velxgrid0d + rotationmatrix(2, 2&
-&       )*velygrid0d + rotationmatrix(2, 3)*velzgrid0d
-      velygrid0 = rotationmatrix(2, 1)*velxgrid0 + rotationmatrix(2, 2)*&
-&       velygrid0 + rotationmatrix(2, 3)*velzgrid0
-      velzgrid0d = rotationmatrix(3, 1)*velxgrid0d + rotationmatrix(3, 2&
-&       )*velygrid0d + rotationmatrix(3, 3)*velzgrid0d
-      velzgrid0 = rotationmatrix(3, 1)*velxgrid0 + rotationmatrix(3, 2)*&
-&       velygrid0 + rotationmatrix(3, 3)*velzgrid0
+      if (tsalphafollowing) then
+        velxgrid0d = rotationmatrix(1, 1)*velxgrid0d + rotationmatrix(1&
+&         , 2)*velygrid0d + rotationmatrix(1, 3)*velzgrid0d
+        velxgrid0 = rotationmatrix(1, 1)*velxgrid0 + rotationmatrix(1, 2&
+&         )*velygrid0 + rotationmatrix(1, 3)*velzgrid0
+        velygrid0d = rotationmatrix(2, 1)*velxgrid0d + rotationmatrix(2&
+&         , 2)*velygrid0d + rotationmatrix(2, 3)*velzgrid0d
+        velygrid0 = rotationmatrix(2, 1)*velxgrid0 + rotationmatrix(2, 2&
+&         )*velygrid0 + rotationmatrix(2, 3)*velzgrid0
+        velzgrid0d = rotationmatrix(3, 1)*velxgrid0d + rotationmatrix(3&
+&         , 2)*velygrid0d + rotationmatrix(3, 3)*velzgrid0d
+        velzgrid0 = rotationmatrix(3, 1)*velxgrid0 + rotationmatrix(3, 2&
+&         )*velygrid0 + rotationmatrix(3, 3)*velzgrid0
+      end if
     else if (tsalphamode) then
 ! get the baseline alpha and determine the liftindex
       call getdirangle_d(veldirfreestream, veldirfreestreamd, &
@@ -217,11 +219,11 @@ subroutine gridvelocitiesfinelevel_block_d(useoldcoor, t, sps)
 &       veldirfreestreamd(3)
       velzgrid0 = ainf*(intervalmach+machgrid)*(-veldirfreestream(3))
     else if (tsaltitudemode) then
-      call returnFail('gridvelocityfinelevel', &
-&                 'altitude motion not yet implemented...')
+      call returnfail('gridvelocityfinelevel', &
+&                  'altitude motion not yet implemented...')
     else
-      call returnFail('gridvelocityfinelevel', &
-&                 'not a recognized stability motion')
+      call returnfail('gridvelocityfinelevel', &
+&                  'not a recognized stability motion')
     end if
   end if
   if (blockismoving) then

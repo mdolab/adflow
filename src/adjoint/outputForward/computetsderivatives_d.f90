@@ -244,8 +244,8 @@ subroutine computetsderivatives_d(force, forced, moment, momentd, &
 &     lengthrefd)/lengthref**2
     dcdalphadot = dcdalphadot*2*(machgrid*a)/lengthref
   else
-    call returnFail('computetsderivatives', &
-&               'not a valid stability motion')
+    call returnfail('computetsderivatives', &
+&                'not a valid stability motion')
     dcdalphadotd = 0.0_8
     coef0d = 0.0_8
     dcdalphad = 0.0_8

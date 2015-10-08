@@ -19,6 +19,7 @@ subroutine volume_block_b()
 !      local parameter.
 !
   real(kind=realtype), parameter :: thresvolume=1.e-2_realtype
+  real(kind=realtype), parameter :: halocellratio=1e-10_realtype
 !
 !      local variables.
 !
@@ -118,13 +119,13 @@ subroutine volume_block_b()
 ! some additional safety stuff for halo volumes.
   do k=2,kl
     do j=2,jl
-      if (vol(1, j, k) .le. eps) then
+      if (vol(1, j, k)/vol(2, j, k) .lt. halocellratio) then
         vol(1, j, k) = vol(2, j, k)
         call pushcontrol1b(0)
       else
         call pushcontrol1b(1)
       end if
-      if (vol(ie, j, k) .le. eps) then
+      if (vol(ie, j, k)/vol(il, j, k) .lt. halocellratio) then
         tmp = vol(il, j, k)
         vol(ie, j, k) = tmp
         call pushcontrol1b(1)
@@ -135,13 +136,13 @@ subroutine volume_block_b()
   end do
   do k=2,kl
     do i=1,ie
-      if (vol(i, 1, k) .le. eps) then
+      if (vol(i, 1, k)/vol(i, 2, k) .lt. halocellratio) then
         vol(i, 1, k) = vol(i, 2, k)
         call pushcontrol1b(0)
       else
         call pushcontrol1b(1)
       end if
-      if (vol(i, je, k) .le. eps) then
+      if (vol(i, je, k)/vol(i, jl, k) .lt. halocellratio) then
         tmp0 = vol(i, jl, k)
         vol(i, je, k) = tmp0
         call pushcontrol1b(1)
@@ -152,13 +153,13 @@ subroutine volume_block_b()
   end do
   do j=1,je
     do i=1,ie
-      if (vol(i, j, 1) .le. eps) then
+      if (vol(i, j, 1)/vol(i, j, 2) .lt. halocellratio) then
         vol(i, j, 1) = vol(i, j, 2)
         call pushcontrol1b(0)
       else
         call pushcontrol1b(1)
       end if
-      if (vol(i, j, ke) .le. eps) then
+      if (vol(i, j, ke)/vol(i, j, kl) .lt. halocellratio) then
         tmp1 = vol(i, j, kl)
         vol(i, j, ke) = tmp1
         call pushcontrol1b(1)
