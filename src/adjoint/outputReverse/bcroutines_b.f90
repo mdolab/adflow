@@ -432,9 +432,9 @@ contains
 !  farfield boundary condition 
 ! ------------------------------------
     if (precond .eq. turkel .or. precond .eq. choimerkle) call &
-&     returnFail('applyallbc', &
+&     returnfail('applyallbc', &
 &      'farfield turkel and coid/merkle preconditioners not implemented'&
-&           )
+&            )
     do nn=1,nbocos
       if (bctype(nn) .eq. farfield) then
         call setbcpointers(nn, .false.)
@@ -2209,8 +2209,8 @@ contains
         end if
       end do
     case (cptempcurvefits) 
-      call returnFail('bcroutines', &
-&                 'cptempcurvefits not implemented yet.')
+      call returnfail('bcroutines', &
+&                  'cptempcurvefits not implemented yet.')
     end select
   end subroutine computeetot
 !  differentiation of setbcpointers in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
@@ -2239,6 +2239,7 @@ contains
     use bctypes
     use blockpointers
     use flowvarrefstate
+    use inputphysics
     implicit none
 ! subroutine arguments.
     integer(kind=inttype), intent(in) :: nn
@@ -2561,6 +2562,7 @@ contains
     use bctypes
     use blockpointers
     use flowvarrefstate
+    use inputphysics
     implicit none
 ! subroutine arguments.
     integer(kind=inttype), intent(in) :: nn

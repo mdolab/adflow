@@ -62,8 +62,8 @@ subroutine computeeddyviscosity_d()
     case (spalartallmaras, spalartallmarasedwards) 
       call saeddyviscosity_d()
     case default
-      call returnFail('computeeddyviscosity', &
-&                 'turbulence model not implemented yet')
+      call returnfail('computeeddyviscosity', &
+&                  'turbulence model not implemented yet')
       revd = 0.0_8
     end select
   end if

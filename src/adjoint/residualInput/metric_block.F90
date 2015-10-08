@@ -15,6 +15,7 @@ subroutine volume_block
   !      Local parameter.
   !
   real(kind=realType), parameter :: thresVolume = 1.e-2_realType
+  real(kind=realType), parameter :: haloCellRatio = 1e-10_realType
   !
   !      Local variables.
   !
@@ -113,27 +114,40 @@ subroutine volume_block
   enddo
 
   ! Some additional safety stuff for halo volumes.
-
+  
   do k=2,kl
      do j=2,jl
-        if(vol(1, j,k) <= eps) vol(1, j,k) = vol(2, j,k)
-        if(vol(ie,j,k) <= eps) vol(ie,j,k) = vol(il,j,k)
+        if(vol(1, j,k)/vol(2, j, k) < haloCellRatio) then 
+           vol(1, j,k) = vol(2, j,k)
+        end if
+        if(vol(ie,j,k)/vol(il,j,k)  < haloCellRatio) then 
+           vol(ie,j,k) = vol(il,j,k)
+        end if
      enddo
   enddo
 
   do k=2,kl
      do i=1,ie
-        if(vol(i,1, k) <= eps) vol(i,1, k) = vol(i,2, k)
-        if(vol(i,je,k) <= eps) vol(i,je,k) = vol(i,jl,k)
+        if(vol(i,1, k)/vol(i,2,k) < haloCellRatio) then 
+           vol(i,1, k) = vol(i,2, k)
+        end if
+        if(vol(i,je,k)/voL(i,jl,k) < haloCellRatio) then 
+           vol(i,je,k) = vol(i,jl,k)
+        end if
+     enddo
+  enddo
+  
+  do j=1,je
+     do i=1,ie
+        if(vol(i,j,1)/vol(i,j,2)  < haloCellRatio) then 
+           vol(i,j,1)  = vol(i,j,2)
+        end if
+        if(vol(i,j,ke)/vol(i,j,kl) < haloCellRatio) then 
+           vol(i,j,ke) = vol(i,j,kl)
+        end if
      enddo
   enddo
 
-  do j=1,je
-     do i=1,ie
-        if(vol(i,j,1)  <= eps) vol(i,j,1)  = vol(i,j,2)
-        if(vol(i,j,ke) <= eps) vol(i,j,ke) = vol(i,j,kl)
-     enddo
-  enddo
 
 contains
 

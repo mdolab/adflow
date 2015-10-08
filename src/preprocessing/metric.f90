@@ -97,7 +97,7 @@
                     flowDoms(nn,level,sps)%vol(0:ib,0:jb,0:kb),  &
                     stat=ierr)
            if(ierr /= 0)                      &
-             call returnFail("allocateMetric", &
+             call terminate("allocateMetric", &
                             "Memory allocation failure for &
                             &normals and volumes")
 
@@ -110,7 +110,7 @@
                     flowDoms(nn,level,sps)%sKALE(0:nALEsteps,1:ie,1:je,0:ke,3), &
                     stat=ierr)
            if(ierr /= 0)                      &
-             call returnFail("allocateMetric", &
+             call terminate("allocateMetric", &
                             "Memory allocation failure for &
                             &sIALE, sJALE, and sKALE")
 
@@ -140,7 +140,7 @@
                   BCData(mm)%normALE(0:nALEsteps,ie:ib,je:jb,3), &
                   stat=ierr)
              if(ierr /= 0)                      &
-               call returnFail("allocateMetric", &
+               call terminate("allocateMetric", &
                               "Memory allocation failure for norm")
            enddo
 
@@ -154,7 +154,7 @@
                flowDoms(nn,level,sps)%volOld(nOldLevels,2:il,2:jl,2:kl), &
                stat=ierr)
              if(ierr /= 0)                      &
-               call returnFail("allocateMetric", &
+               call terminate("allocateMetric", &
                               "Memory allocation failure for volOld")
            endif
 
@@ -198,6 +198,7 @@
 !      Local parameter.
 !
        real(kind=realType), parameter :: thresVolume = 1.e-2_realType
+       real(kind=realType), parameter :: haloCellRatio = 1e-10_realType
 !
 !      Local variables.
 !
@@ -251,7 +252,7 @@
            allocate(checkVolDoms(nn,sps)%volumeIsNeg(2:il,2:jl,2:kl), &
                     stat=ierr)
            if(ierr /= 0)              &
-             call returnFail("metric", &
+             call terminate("metric", &
                             "Memory allocation failure for volumeIsNeg")
            volumeIsNeg => checkVolDoms(nn,sps)%volumeIsNeg
 !
@@ -411,22 +412,34 @@
 
            do k=2,kl
              do j=2,jl
-               if(vol(1, j,k) <= eps) vol(1, j,k) = vol(2, j,k)
-               if(vol(ie,j,k) <= eps) vol(ie,j,k) = vol(il,j,k)
+               if(vol(1, j,k)/vol(2, j, k) < haloCellRatio) then 
+                  vol(1, j,k) = vol(2, j,k)
+               end if
+               if(vol(ie,j,k)/vol(il,j,k)  < haloCellRatio) then 
+                  vol(ie,j,k) = vol(il,j,k)
+               end if
              enddo
            enddo
 
            do k=2,kl
              do i=1,ie
-               if(vol(i,1, k) <= eps) vol(i,1, k) = vol(i,2, k)
-               if(vol(i,je,k) <= eps) vol(i,je,k) = vol(i,jl,k)
+               if(vol(i,1, k)/vol(i,2,k) < haloCellRatio) then 
+                  vol(i,1, k) = vol(i,2, k)
+               end if
+               if(vol(i,je,k)/voL(i,jl,k) < haloCellRatio) then 
+                  vol(i,je,k) = vol(i,jl,k)
+               end if
              enddo
            enddo
 
            do j=1,je
              do i=1,ie
-               if(vol(i,j,1)  <= eps) vol(i,j,1)  = vol(i,j,2)
-               if(vol(i,j,ke) <= eps) vol(i,j,ke) = vol(i,j,kl)
+               if(vol(i,j,1)/vol(i,j,2)  < haloCellRatio) then 
+                  vol(i,j,1)  = vol(i,j,2)
+               end if
+               if(vol(i,j,ke)/vol(i,j,kl) < haloCellRatio) then 
+                  vol(i,j,ke) = vol(i,j,kl)
+               end if
              enddo
            enddo
 
@@ -435,7 +448,7 @@
            ! volumes; on the coarse levels the corresponding fine level
            ! value is taken. If both positive and negative volumes are
            ! present it is assumed that the block was intended to be
-           ! right handed. The code will returnFail later on anyway.
+           ! right handed. The code will terminate later on anyway.
 
            if(level == 1) then
              if(nVolPos == 0) then       ! Left handed block.
@@ -699,7 +712,7 @@
                    if(v1(1) > thresholdReal .or. &
                       v1(2) > thresholdReal .or. &
                       v1(3) > thresholdReal)     &
-                     call returnFail("metric", &
+                     call terminate("metric", &
                                     "Normals do not sum up to 0")
 
                  enddo
@@ -724,12 +737,12 @@
          if(level == 1) then
 
            ! Negative volumes present on the fine grid level. Print a
-           ! list of the bad volumes and returnFail executation.
+           ! list of the bad volumes and terminate executation.
 
            call writeNegVolumes(checkVolDoms)
 
            if(myID == 0) &
-             call returnFail("metric", "Negative volumes present in grid")
+             call terminate("metric", "Negative volumes present in grid")
            call mpi_barrier(SUmb_comm_world, ierr)
 
          else
@@ -782,7 +795,7 @@
          do nn=1,nDom
            deallocate(checkVolDoms(nn,sps)%volumeIsNeg, stat=ierr)
            if(ierr /= 0)              &
-             call returnFail("metric", &
+             call terminate("metric", &
                             "Deallocation failure for volumeIsNeg")
          enddo
        enddo
