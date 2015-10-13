@@ -203,6 +203,21 @@ class SUMB(AeroSolver):
         # had we read in a param file
         self.sumb.iteration.deforming_grid = True
 
+
+        if self.getOption('writevolumesolution'):
+            self.sumb.monitor.writevolume = True
+        else:
+            self.sumb.monitor.writevolume = False
+            
+        if self.getOption('writesurfacesolution'):
+            self.sumb.monitor.writesurface = True
+        else:
+            self.sumb.monitor.writesurface = False
+        
+        self.sumb.monitor.writegrid = False
+
+        print (self.sumb.monitor.writevolume, self.sumb.monitor.writesurface)
+    
         # In order to properly initialize we need to have mach number
         # and a few other things set. Just create a dummy aeroproblem,
         # use it, and then it will be deleted.
@@ -2067,6 +2082,9 @@ class SUMB(AeroSolver):
         beta = AP.beta
         beta = AP.beta
         mach = AP.mach
+        machRef = AP.machRef
+        machGrid = AP.machGrid
+        
         xRef = AP.xRef; yRef = AP.yRef; zRef = AP.zRef
         xRot = AP.xRot; yRot = AP.yRot; zRot = AP.zRot
         areaRef = AP.areaRef
@@ -2128,6 +2146,21 @@ class SUMB(AeroSolver):
         if zRot is None:
             zRot = 0.0
 
+        # Set mach defaults if user did not specified any machRef or machGrid values
+        
+        # If the user is running time spectral but did not specify
+        # machGrid then default it to be equal to mach. 
+
+        if machRef is None:
+            machRef = mach
+        
+        if machGrid is None:
+            if self.getOption('equationMode').lower()=='time spectral':
+                machGrid = mach
+            else:
+                # Steady, unsteady
+                machGrid = 0.0
+
         if T is None or P is None or rho is None or V is None or mu is None:
             raise Error("Insufficient information is given in the "
                         "aeroProblem to determine physical state. "
@@ -2149,15 +2182,16 @@ class SUMB(AeroSolver):
         self.sumb.inputphysics.lengthref = chordRef
 
         # 4. Set mach numbers
+        # Mach number for time spectral needs to be set to set to zero
+        # If time-spectral (TS) then mach = 0, machcoef = mach, machgrid = mach
+        # If Steady-State (SS), time-accurate (TA) then mach = mach, machcoef = mach, machgrid = 0
         if self.getOption('equationMode').lower()=='time spectral':
             self.sumb.inputphysics.mach = 0.0
-            self.sumb.inputphysics.machcoef = mach
-            self.sumb.inputphysics.machgrid = mach
-            self.sumb.inputmotion.gridmotionspecified = True
         else:
             self.sumb.inputphysics.mach = mach
-            self.sumb.inputphysics.machcoef = mach
-            self.sumb.inputphysics.machgrid = 0.0
+        
+        self.sumb.inputphysics.machcoef = machRef
+        self.sumb.inputphysics.machgrid = machGrid
 
         # Set reference state information:
         if self.getOption('equationType') != 'euler':
@@ -2205,7 +2239,6 @@ class SUMB(AeroSolver):
             self.sumb.inputmotion.degreefouralpha  = AP.degreeFourier
             self.sumb.inputmotion.coscoeffouralpha = AP.cosCoefFourier
             self.sumb.inputmotion.sincoeffouralpha = AP.sinCoefFourier
-            self.sumb.inputmotion.gridmotionspecified = True
         elif  self.getOption('betaMode'):
             self.sumb.inputmotion.degreepolmach = int(AP.degreePol)
             self.sumb.inputmotion.coefpolmach = AP.coefPol
@@ -2213,7 +2246,6 @@ class SUMB(AeroSolver):
             self.sumb.inputmotion.degreefourbeta  = AP.degreeFourier
             self.sumb.inputmotion.coscoeffourbeta = AP.cosCoefFourier
             self.sumb.inputmotion.sincoeffourbeta = AP.sinCoefFourier
-            self.sumb.inputmotion.gridmotionspecified = True
         elif self.getOption('machMode'):
             self.sumb.inputmotion.degreepolmach = int(AP.degreePol)
             self.sumb.inputmotion.coefpolmach = AP.coefPol
@@ -2221,7 +2253,6 @@ class SUMB(AeroSolver):
             self.sumb.inputmotion.degreefourmach  = AP.degreeFourier
             self.sumb.inputmotion.coscoeffourmach = AP.cosCoefFourier
             self.sumb.inputmotion.sincoeffourmach = AP.sinCoefFourier
-            self.sumb.inputmotion.gridmotionspecified = True
         elif  self.getOption('pMode'):
             ### add in lift axis dependence
             self.sumb.inputmotion.degreepolxrot = int(AP.degreePol)
@@ -2230,7 +2261,6 @@ class SUMB(AeroSolver):
             self.sumb.inputmotion.degreefourxrot  = AP.degreeFourier
             self.sumb.inputmotion.coscoeffourxrot = AP.cosCoefFourier
             self.sumb.inputmotion.sincoeffourxrot = AP.sinCoefFourier
-            self.sumb.inputmotion.gridmotionspecified = True
         elif self.getOption('qMode'):
             self.sumb.inputmotion.degreepolzrot = int(AP.degreePol)
             self.sumb.inputmotion.coefpolzrot = AP.coefPol
@@ -2238,7 +2268,6 @@ class SUMB(AeroSolver):
             self.sumb.inputmotion.degreefourzrot  = AP.degreeFourier
             self.sumb.inputmotion.coscoeffourzrot = AP.cosCoefFourier
             self.sumb.inputmotion.sincoeffourzrot = AP.sinCoefFourier
-            self.sumb.inputmotion.gridmotionspecified = True
         elif self.getOption('rMode'):
             self.sumb.inputmotion.degreepolyrot = int(AP.degreePol)
             self.sumb.inputmotion.coefpolyrot = AP.coefPol
@@ -2246,7 +2275,6 @@ class SUMB(AeroSolver):
             self.sumb.inputmotion.degreefouryrot  = AP.degreeFourier
             self.sumb.inputmotion.coscoeffouryrot = AP.cosCoefFourier
             self.sumb.inputmotion.sincoeffouryrot = AP.sinCoefFourier
-            self.sumb.inputmotion.gridmotionspecified = True
 
         if not firstCall:
             self.sumb.referencestate()
@@ -3375,6 +3403,7 @@ class SUMB(AeroSolver):
             'ntimestepsfine':[int, 400],
             'deltat':[float, .010],
             'useale':[bool, True],
+            'usegridmotion':[bool, False],
 
             # Time Spectral Paramters
             'timeintervals': [int, 1],
@@ -3608,6 +3637,11 @@ class SUMB(AeroSolver):
             'ntimestepsfine':{'location':'inputunsteady.ntimestepsfine'},
             'deltat':{'location':'inputunsteady.deltat'},
             'useale':{'location':'inputunsteady.useale'},
+            
+            # Grid motion Params
+            'usegridmotion':{'location':'inputmotion.gridmotionspecified'},
+             
+            
             # Time Spectral Paramters
             'timeintervals':{'location':'inputtimespectral.ntimeintervalsspectral'},
             'alphamode':{'location':'inputtsstabderiv.tsalphamode'},
