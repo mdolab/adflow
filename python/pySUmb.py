@@ -923,7 +923,7 @@ class SUMB(AeroSolver):
         t2 = time.time()
         solTime = t2 - t1
 
-        ts     = self.sumb.monitor.timestepunsteady
+        ts = self.sumb.monitor.timestepunsteady
         if self.getOption('writeVolumeSolution') and \
           numpy.mod(ts, self.getOption('nsavevolume')) == 0 :
             self.writeVolumeSolutionFile('V.cgns')
@@ -954,37 +954,36 @@ class SUMB(AeroSolver):
                 bool(self.sumb.killsignals.routinefailed), op=MPI.LOR)
             self.sumb.killsignals.fatalfail = self.sumb.killsignals.routinefailed
 
-    def getCurForce(self):
-    # Adapted from writeForceFile
-    # Returns current tractions on the interface
+    def setTemperature(self, tnsw, groupName='interface'):
+        TS = 1
+        self._setMask(groupName)
+        self.sumb.settnswall(numpy.ravel(tnsw), TS)
+        
+        self.sumb.killsignals.routinefailed = False
+        self.sumb.killsignals.fatalFail = False
+        self.sumb.killsignals.routinefailed = \
+            self.comm.allreduce(
+            bool(self.sumb.killsignals.routinefailed), op=MPI.LOR)
+        self.sumb.killsignals.fatalfail = self.sumb.killsignals.routinefailed
+
+    def getCurTopo(self):
         TS = 0
         groupName = 'interface'
 
-        # Gather the data
-        pts = self.comm.gather(self.getForcePoints(TS, groupName), root=0)
+        if self.mesh is None:
+            print("MBMesh object not set!")
 
-        # Forces are still evaluated on the displaced surface so do NOT pass in pts.
-        forces = self.comm.gather(self.getForces(groupName, TS=TS), root=0)
-        conn   = self.comm.gather(self.mesh.getSurfaceConnectivity(groupName), root=0)
+        # Gather coordinates and connectivity
+        pts  = self.comm.gather(self.getForcePoints(TS, groupName), root=0)
+        conn = self.comm.gather(self.mesh.getSurfaceConnectivity(groupName), root=0)
 
         # Get data only on root proc
-        f = [] # Tractions
         x = [] # Coordinates
         c = [] # Connectivity
         if self.myid == 0:
-            # First sum up the total number of nodes and elements:
-            nPt = 0
-            nCell = 0
-            for iProc in xrange(len(pts)):
-                nPt += len(pts[iProc])
-                nCell += len(conn[iProc])//4
-
             # Get the coordinates and surface tractions
             for iProc in xrange(len(pts)):
                 for i in xrange(len(pts[iProc])):
-                    f.append([ numpy.real(forces[iProc][i, 0]), \
-                               numpy.real(forces[iProc][i, 1]), \
-                               numpy.real(forces[iProc][i, 2]) ])
                     x.append([ numpy.real(pts[iProc][i, 0]), \
                                numpy.real(pts[iProc][i, 1]), \
                                numpy.real(pts[iProc][i, 2]) ])
@@ -998,7 +997,92 @@ class SUMB(AeroSolver):
                                int(conn[iProc][4*i+2]+nodeOffset), \
                                int(conn[iProc][4*i+3]+nodeOffset) ])
                 nodeOffset += len(pts[iProc])
+        return [x,c]
+        
+    def getCurForce(self):
+    # Returns current tractions on the interface
+        [x,c] = self.getCurTopo()
+        f     = self._getCurForce()
         return [f,x,c]
+
+    def getCurHFlux(self):
+    # Returns current surface heat flux on the interface
+        [x,c] = self.getCurTopo()
+        q     = self._getCurHFlux()
+        return [q,x,c]
+
+    def _getCurForce(self):
+    # Adapted from writeForceFile
+    # Returns current tractions on the interface
+        TS = 0
+        groupName = 'interface'
+
+        if self.mesh is None:
+            print("MBMesh object not set!")
+
+        # Gather the data
+        pts    = self.comm.gather(self.getForcePoints(TS, groupName), root=0)
+        forces = self.comm.gather(self.getForces(groupName, TS=TS), root=0)
+
+        # Get data only on root proc
+        f = [] # Tractions
+        if self.myid == 0:
+            # Get the coordinates and surface tractions
+            for iProc in xrange(len(pts)):
+                for i in xrange(len(pts[iProc])):
+                    f.append([ numpy.real(forces[iProc][i, 0]), \
+                               numpy.real(forces[iProc][i, 1]), \
+                               numpy.real(forces[iProc][i, 2]) ])
+        return f
+
+    def _getCurHFlux(self):
+    # Returns current surface heat flux on the interface
+        TS = 0
+        groupName = 'interface'
+
+        if self.mesh is None:
+            print("MBMesh object not set!")
+
+        # Gather the data
+        pts  = self.comm.gather(self.getForcePoints(TS, groupName), root=0)
+        flux = self.comm.gather(self._getHeatFlux(groupName, TS=TS), root=0)
+
+        # Get data only on root proc
+        q = [] # Heat flux
+        if self.myid == 0:
+            # Get the coordinates and surface tractions
+            for iProc in xrange(len(pts)):
+                for i in xrange(len(pts[iProc])):
+                    q.append([ numpy.real(flux[iProc][i]) ])
+        return q
+
+    def _getHeatFlux(self, groupName=None, TS=0):
+        """ Return the heat fluxes on this processor.
+        Adapted from getForces
+
+        Parameters
+        ----------
+        groupName : str
+            Group identifier to get only forces cooresponding to the
+            desired group.  The group must have been added with
+            addFamilyGroup in the mesh object.
+        TS : int
+            Spectral instance for which to get the forces
+
+        Returns
+        -------
+        hflux : array (N)
+        """
+        # Just to be sure, we'll set the mask
+        self._setMask(groupName)
+
+        [npts, ncell] = self.sumb.getforcesize()
+        if npts > 0:
+            hflux = self.sumb.getheatflux(npts, TS+1).T
+        else:
+            hflux = numpy.zeros((0,),self.dtype)
+
+        return hflux
     
     #======================================================
     #

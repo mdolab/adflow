@@ -130,9 +130,12 @@ module block
      !                 - Storage of rface for intermediate meshes.
      ! uSlipALE(0:nALEsteps,iBeg:iEnd,jBeg:jEnd,3)
      !                 - Storage of uSlip for intermediate meshes.
+     ! sHeatFlux(0:nALEsteps,iBeg:iEnd,jBeg:jEnd,3)
+     !                 - Surface heat flux.
      real(kind=realType), dimension(:,:,:,:), pointer :: normALE
      real(kind=realType), dimension(:,:,:),   pointer :: rFaceALE
      real(kind=realType), dimension(:,:,:,:), pointer :: uSlipALE
+     real(kind=realType), dimension(:,:),     pointer :: sHeatFlux
 
 
 

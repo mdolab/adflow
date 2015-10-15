@@ -614,10 +614,14 @@ subroutine deallocateBlock(nn, level, sps)
      if( associated(BCData(i)%uSlipALE) ) &
           deallocate(BCData(i)%uSlipALE, stat=ierr)
      if(ierr /= 0) deallocationFailure = .true.
+     if( associated(BCData(i)%sHeatFlux) ) &
+          deallocate(BCData(i)%sHeatFlux, stat=ierr)
+     if(ierr /= 0) deallocationFailure = .true.
 
      nullify(BCData(i)%normALE)
      nullify(BCData(i)%rFaceALE)
      nullify(BCData(i)%uSlipALE)
+     nullify(BCData(i)%sHeatFlux)
   enddo
 
   if( associated(flowDoms(nn,level,sps)%BCType) ) &
