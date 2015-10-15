@@ -20,166 +20,181 @@ from python.pySUmb import SUMB
 
 # First thing we will do is define a complete set of default options
 # that will be reused as we do differnt tests.  These are the default
-# options as Dec 8, 2014.
+# options as Oct 14, 2015.
 
 defOpts = {
+    # Log File instead of stdout
+    'logfile':'',
+
     # Common Paramters
-    'gridfile': 'default.cgns',
-    'restartfile': 'default_restart.cgns',
-    'solrestart': False,
+    'gridfile':'default.cgns',
+    'restartfile':'default_restart.cgns',
+    'solrestart':False,
 
     # Output Parameters
-    'storerindlayer': True,
-    'outputdirectory': './',
-    'writesymmetry': True,
-    'writefarfield': False,
+    'storerindlayer':True,
+    'outputdirectory':'./',
+    'writesymmetry':True,
+    'writefarfield':False,
     'writesurfacesolution':True,
     'writevolumesolution':True,
+    'nsavevolume':1,
+    'nsavesurface':1,
     'solutionprecision':'single',
     'gridprecision':'double',
-    'isosurface': {},
-    'isovariables': [],
-    'viscoussurfacevelocities': True,
+    'isosurface':{},
+    'isovariables':[],
+    'viscoussurfacevelocities':True,
+    'slicefiletractions':False,
 
     # Physics Paramters
-    'discretization': 'central plus scalar dissipation',
-    'coarsediscretization': 'central plus scalar dissipation',
-    'limiter': 'vanalbeda',
-    'smoother': 'runge kutta',
-    'equationtype':  'euler',
-    'equationmode':  'steady',
-    'flowtype': 'external',
-    'turbulencemodel': 'sa',
-    'turbulenceorder': 'first order',
-    'usewallfunctions': False,
-    'useapproxwalldistance': True,
-    'walltreatment': 'linear pressure extrapolation',
-    'dissipationscalingexponent': 0.67,
-    'vis4': 0.0156,
-    'vis2': 0.25,
-    'vis2coarse': 0.5,
-    'restrictionrelaxation': .80,
-    'liftindex': 2,
-    'lowspeedpreconditioner': False,
-    'turbresscale': 10000.0,
+    'discretization':'central plus scalar dissipation',
+    'coarsediscretization':'central plus scalar dissipation',
+    'limiter':'vanalbeda',
+    'smoother':'runge kutta',
+    'equationtype':'euler',
+    'equationmode':'steady',
+    'flowtype':'external',
+    'turbulencemodel':'sa',
+    'turbulenceorder':'first order',
+    'turbresscale':10000.0,
+    'usewallfunctions':False,
+    'useapproxwalldistance':True,
+    'walltreatment':'linear pressure extrapolation',
+    'dissipationscalingexponent':0.67,
+    'vis4':0.0156,
+    'vis2':0.25,
+    'vis2coarse':0.5,
+    'restrictionrelaxation':.80,
+    'liftindex':2,
+    'lowspeedpreconditioner':False,
 
     # Common Paramters
-    'ncycles': 500,
-    'ncyclescoarse': 500,
-    'nsubiterturb': 1,
-    'nsubiter': 1,
-    'cfl': 1.7,
-    'cflcoarse': 1.0,
-    'mgcycle': '3w',
-    'mgstartlevel': -1,
+    'ncycles':500,
+    'ncyclescoarse':500,
+    'nsubiterturb':1,
+    'nsubiter':1,
+    'cfl':1.7,
+    'cflcoarse':1.0,
+    'mgcycle':'3w',
+    'mgstartlevel':-1,
     'resaveraging':'alternateresaveraging',
-    'smoothparameter': 1.5,
-    'cfllimit': 1.5,
+    'smoothparameter':1.5,
+    'cfllimit':1.5,
 
     # Unsteady Paramters
-    'timeintegrationscheme': 'bdf',
-    'timeaccuracy': 2,
-    'ntimestepscoarse': 48,
-    'ntimestepsfine': 400,
-    'deltat': .010,
-    
+    'timeintegrationscheme':'bdf',
+    'timeaccuracy':2,
+    'ntimestepscoarse':48,
+    'ntimestepsfine':400,
+    'deltat':.010,
+
+    # Grid motion parameters
+    'useale':True,
+    'usegridmotion':False,
+
     # Time Spectral Paramters
-    'timeintervals':  1,
-    'alphamode': False,
-    'betamode': False,
-    'machmode': False,
-    'pmode': False,
-    'qmode': False,
-    'rmode': False,
-    'altitudemode': False,
-    'windaxis': False,
-    'tsstability':  False,
+    'timeintervals':1,
+    'alphamode':False,
+    'betamode':False,
+    'machmode':False,
+    'pmode':False,
+    'qmode':False,
+    'rmode':False,
+    'altitudemode':False,
+    'windaxis':False,
+    'alphafollowing':True,
+    'tsstability':False,
 
     # Convergence Paramters
-    'l2convergence': 1e-6,
-    'l2convergencerel': 1e-16,
-    'l2convergencecoarse': 1e-2,
-    'maxl2deviationfactor': 1.0,
-    'coeffconvcheck': False,
-    'miniterationnum': 0,
+    'l2convergence':1e-6,
+    'l2convergencerel':1e-16,
+    'l2convergencecoarse':1e-2,
+    'maxl2deviationfactor':1.0,
+    'coeffconvcheck':False,
+    'miniterationnum':0,
 
     # Newton-Krylov Paramters
-    'usenksolver': False,
-    'nklinearsolver': 'gmres',
-    'nkswitchtol': 2.5e-4,
-    'nksubspacesize': 60,
-    'nklinearsolvetol': 0.3,
-    'nkuseew': True,
-    'nkpc': 'additive schwartz',
-    'nkadpc': False,
-    'nkviscpc': False,
-    'nkasmoverlap': 1,
-    'nkpcilufill': 2,
-    'nklocalpcordering': 'rcm',
-    'nkjacobianlag': 20,
-    'rkreset': False,
-    'nrkreset': 5,
-    'applypcsubspacesize': 10,
-    'nkinnerpreconits': 1,
-    'nkouterpreconits': 1,
-    'nkls': 'cubic',
-    
-    # Load Balance/partitioning parameters
-    'blocksplitting': True,
-    'loadimbalance': 0.1,
-    'loadbalanceiter': 10,
-    'partitiononly': False,
+    'usenksolver':False,
+    'nklinearsolver':'gmres',
+    'nkswitchtol':2.5e-4,
+    'nksubspacesize':60,
+    'nklinearsolvetol':0.3,
+    'nkuseew':True,
+    'nkpc':'additive schwartz',
+    'nkadpc':False,
+    'nkviscpc':False,
+    'nkasmoverlap':1,
+    'nkpcilufill':2,
+    'nklocalpcordering':'rcm',
+    'nkjacobianlag':20,
+    'rkreset':False,
+    'nrkreset':5,
+    'applypcsubspacesize':10,
+    'nkinnerpreconits':1,
+    'nkouterpreconits':1,
+    'nkls':'cubic',
+
+    # LoadBalance/partitioning Parameters
+    'blocksplitting':True,
+    'loadimbalance':0.1,
+    'loadbalanceiter':10,
+    'partitiononly':False,
 
     # Misc Paramters
-    'metricconversion': 1.0,
-    'autosolveretry': False,
-    'autoadjointretry': False,
-    'storehistory': False,
-    'numbersolutions': True,
-    'printiterations': True,
-    'printtiming': True,
-    'setmonitor': True,
-    'printwarnings': True,
-    'monitorvariables': ['cpu','resrho','cl', 'cd'],
-    'surfacevariables': ['cp','vx', 'vy','vz', 'mach'],
-    'volumevariables': ['resrho'],
-    
+    'metricconversion':1.0,
+    'autosolveretry':False,
+    'autoadjointretry':False,
+    'storehistory':False,
+    'numbersolutions':True,
+    'printiterations':True,
+    'printtiming':True,
+    'setmonitor':True,
+    'printwarnings':True,
+    'monitorvariables':['cpu','resrho','cl','cd'],
+    'surfacevariables':['cp','vx','vy','vz','mach'],
+    'volumevariables':['resrho'],
+
     # Multidisciplinary Coupling Parameters:
-    'forcesastractions': True,
+    'forcesastractions':True,
 
     # Adjoint Paramters
-    'adjointl2convergence': 1e-6,
-    'adjointl2convergencerel': 1e-16,
-    'adjointl2convergenceabs': 1e-16,
-    'adjointdivtol': 1e5,
-    'approxpc':  True,
-    'adpc':  False,
+    'adjointl2convergence':1e-6,
+    'adjointl2convergencerel':1e-16,
+    'adjointl2convergenceabs':1e-16,
+    'adjointdivtol':1e5,
+    'approxpc':True,
+    'adpc':False,
     'viscpc':False,
-    'usediagtspc': True,
-    'restartadjoint': True,
-    'adjointsolver':  'gmres',
-    'adjointmaxiter':  500,
-    'adjointsubspacesize' :  100,
-    'adjointmonitorstep':  10,
-    'dissipationlumpingparameter': 6.0,
-    'preconditionerside':  'right',
-    'matrixordering':  'rcm',
+    'usediagtspc':True,
+    'restartadjoint':True,
+    'adjointsolver':'gmres',
+    'adjointmaxiter':500,
+    'adjointsubspacesize':100,
+    'adjointmonitorstep':10,
+    'dissipationlumpingparameter':6.0,
+    'preconditionerside':'right',
+    'matrixordering':'rcm',
     'globalpreconditioner':  'additive schwartz',
-    'localpreconditioner' :  'ilu',
-    'ilufill':  2,
-    'asmoverlap' :  1,
-    'innerpreconits': 1,
-    'outerpreconits': 3,
-    'usereversemodead': False,
-    'applyadjointpcsubspacesize': 20,
-    'frozenturbulence': True,
-    'usematrixfreedrdw': False,
+    'localpreconditioner':'ilu',
+    'ilufill':2,
+    'asmoverlap':1,
+    'innerpreconits':1,
+    'outerpreconits':3,
+    'usereversemodead':False,
+    'applyadjointpcsubspacesize':20,
+    'frozenturbulence':True,
+    'usematrixfreedrdw':True,
 
     # ADjoint debugger
-    'firstrun': True,
-    'verifystate': True,
-    'verifyspatial': True,
-    'verifyextra': True,
+    'firstrun':True,
+    'verifystate':True,
+    'verifyspatial':True,
+    'verifyextra':True,
+
+    # Function Parmeters
+    'sepsensoroffset':0.0,
+    'sepsensorsharpness':10.0,
 }
 
 # First thing we will test is the euler mesh of the MDO tutorial. This
@@ -893,6 +908,181 @@ def test9():
     del DVGeo
     os.system('rm -fr *.cgns *.dat')
 
+def test10():
+    # ****************************************************************************
+    printHeader('NACA 0012 2D Time-Accurate, Forced motion, Rigid Rotation of Mesh - DADI Smoother')
+    # ****************************************************************************
+    
+    # THIS TEST NEEDS TO BE REFINED. NEED TO
+    # * check values at each timestep
+    # * drive the residual for each timestep further down using the newton solver 
+    #   and compare more digits
+    # * add better mesh
+    
+    aeroOptions = copy.deepcopy(defOpts)
+
+    k = 0.0808
+    M = 0.6
+    gamma = 1.4
+    R = 287.085
+    T = 280.0
+    c = 1.0
+    alpha_m = 2.77 # 2.89 #2.77 #Modified numbers
+    alpha_0 = 2.34 # 2.41 #2.34
+    
+    omega = 2*M*numpy.sqrt(gamma*R*T)*k/c 
+    deltaAlpha = -alpha_0*numpy.pi/180.0 
+    
+    # Set forcing frequency and other information
+    f = 10.0 # [Hz] Forcing frequency of the flow
+    period = 1.0/f # [sec]
+    nStepPerPeriod = 8
+    nPeriods = 1
+    nfineSteps = nStepPerPeriod*nPeriods
+    dt = period / nStepPerPeriod # [s] The actual timestep
+    
+    name = '0012pitching'
+
+    # Now set the options that need to be overwritten for this example:
+    aeroOptions.update(
+        {'gridFile': '../inputFiles/naca0012_rans-L2.cgns',
+         'writevolumesolution':False,
+         'vis4':.025,
+         'vis2':0.5,
+         'restrictionRelaxation':.5,
+         'smoother':'dadi',
+         
+         'equationType':'RANS',
+         'equationMode':'unsteady',
+         'timeIntegrationScheme':'bdf',
+         'nTimeStepsFine':nfineSteps,
+         'deltaT':dt,
+         'nsubiterturb':10,
+         'nsubiter':5,         
+         'useALE':False,
+         'usegridmotion':True,
+         'CFL':2.5,
+         'CFLCoarse':1.2,
+         'nCycles':2000,            
+         'MGCycle':'3w',
+         'MGStartLevel':1,
+         'monitorvariables':['cpu','resrho','cl','cd','cmz'],                            
+         'useNKSolver':False,
+         'L2Convergence':1e-6,
+         'L2ConvergenceCoarse':1e-4,
+         'qmode':True,
+         'alphaFollowing': False,
+     }
+    )
+
+    ap = AeroProblem(name=name, alpha=alpha_m,  mach=M, machRef=M, reynolds=4800000.0,reynoldsLength=c, T=T, R=R,
+                     areaRef=1.0, chordRef=c, evalFuncs=['cl','cd','cmz'],xRef=0.25,xRot=0.25,
+                     degreePol=0,coefPol=[0.0],degreeFourier=1,omegaFourier=omega,
+                     cosCoefFourier=[0.0,0.0],sinCoefFourier=[deltaAlpha])
+
+    CFDSolver = SUMB(options=aeroOptions)
+    CFDSolver.addSlices('z',[0.5])
+    CFDSolver(ap)
+
+    funcs = {}
+    CFDSolver.evalFunctions(ap, funcs)
+    CFDSolver.checkSolutionFailure(ap, funcs)
+    if MPI.COMM_WORLD.rank == 0:
+        print 'Eval Functions:'
+        reg_write_dict(funcs, 1e-6, 1e-6)
+
+    # Clean up:
+    del CFDSolver
+    os.system('rm -fr *.cgns *.dat *.cgns*')
+        
+
+def test11():
+    # ****************************************************************************
+    printHeader('BSCW 3D Time-Accurate Rigid Rotation - Case 1 of AePW-2')
+    # ****************************************************************************
+
+    # DISABLED FOR NOW SINCE THIS TAKES TO LONG TO RUN.
+
+    # Set forcing frequency and other information
+    f = 10.0 # [Hz] Forcing frequency of the flow
+    period = 1.0/f # [sec]
+    nStepPerPeriod = 64
+    nPeriods = 4
+    nfineSteps = nStepPerPeriod*nPeriods
+    dt = period / nStepPerPeriod # [s] The actual timestep
+
+    aeroOptions = copy.deepcopy(defOpts)
+
+    # Now set the options that need to be overwritten for this example:
+    aeroOptions.update(
+        {'gridFile': '../inputFiles/bscw_rans_finer_L3.cgns',
+         'liftindex':3,
+         'writevolumesolution':False,
+         'useNKSolver':False,
+         'equationType':'RANS',
+         'equationMode':'unsteady',
+         'timeIntegrationScheme':'bdf',
+         'nTimeStepsFine':nfineSteps,
+         'deltaT':dt,
+         'smoother':'dadi',
+         'nsubiterturb':3, 
+         'nsubiter':5, 
+         'useALE':False,
+         'usegridmotion':True,
+         'CFL':1.5,
+         'CFLCoarse':1.25,
+         'MGCycle':'2w',
+         'MGStartLevel':1,
+         'nCycles': 30, 
+         'monitorvariables':['cpu', 'resrho','resturb','cl','cd','cdp','cdv','cmy','yplus','totalr'],
+         'L2Convergence':1e-8,
+         'rmode':True,  
+         'alphaFollowing': False,
+     }
+    )
+
+    meshOptions = {
+        'gridFile':'../inputFiles/bscw_rans_finer_L3.cgns',
+        }
+
+    ap = AeroProblem(name='bscw', alpha=3.0, mach=0.7,
+                     areaRef=512*0.0254**2, chordRef=16*0.0254, 
+                     reynoldsLength=16*0.0254, reynolds=4.56e6,
+                     evalFuncs=['cl','cd','cmy'],
+                     gamma=1.113, Pr=0.683, T=302.9788888889,
+                     R=84.3517245542, SSuthDim=243.3722222222, muSuthDim=1.12E-005, TSuthDim=273.0,
+                     xRef=0.3*16*0.0254, yRef=0.0, zRef=0.0,
+                     xRot=0.3*16*0.0254, yRot=0.0, zRot=0.0,
+                     degreePol=0, coefPol=[0.0], degreeFourier=1, omegaFourier=2*numpy.pi*f,
+                     cosCoefFourier=[0.0,0.0], sinCoefFourier=[-1.0*numpy.pi/180.0])
+                     
+    # Generate a mesh object
+    Mesh = MBMesh(options=meshOptions)
+    Mesh.addFamilyGroup("upperSurface",["upperSurface"])
+    Mesh.addFamilyGroup("lowerSurface",["lowerSurface"])
+                     
+    # Create solver
+    CFDSolver = SUMB(options=aeroOptions)
+    CFDSolver.setMesh(Mesh)
+    CFDSolver.addSlices('y', [.48768, .77216], groupName="upperSurface")
+    CFDSolver.addSlices('y', [.48768, .77216], groupName="lowerSurface")
+
+    # Solve
+    CFDSolver(ap)
+
+    funcs = {}
+    CFDSolver.evalFunctions(ap, funcs)
+    CFDSolver.checkSolutionFailure(ap, funcs)
+    if MPI.COMM_WORLD.rank == 0:
+        print 'Eval Functions:'
+        reg_write_dict(funcs, 1e-10, 1e-10)    
+
+    # Clean up:
+    del CFDSolver
+    del mesh
+    os.system('rm -fr *.cgns *.dat')
+
+
 if __name__ == '__main__':
     if len(sys.argv) == 1:
         test1()
@@ -903,6 +1093,7 @@ if __name__ == '__main__':
         test7()
         test8()
         test9()
+        test10()
     else:
         # Run individual ones
         if 'test1' in sys.argv:
@@ -923,3 +1114,5 @@ if __name__ == '__main__':
             test8()
         if 'test9' in sys.argv:
             test9()
+        if 'test10' in sys.argv:
+            test10()            
