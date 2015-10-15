@@ -80,8 +80,10 @@
 
                    allocate(BCData(mm)%uSlip(iBeg:iEnd,jBeg:jEnd,3), &
                             BCData(mm)%uSlipALE(0:nALEsteps,iBeg:iEnd,jBeg:jEnd,3), &
+                            BCData(mm)%TNS_Wall(iBeg:iEnd,jBeg:jEnd), &
                             BCData(mm)%F(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
                             BCData(mm)%dualArea(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
+                            BCData(mm)%sHeatFlux(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
                             BCData(mm)%Fp(iBeg:iEnd,jBeg:jEnd,3), &
                             BCData(mm)%Fv(iBeg:iEnd,jBeg:jEnd,3), &
                             stat=ierr)
@@ -99,6 +101,7 @@
                             BCData(mm)%TNS_Wall(iBeg:iEnd,jBeg:jEnd), &
                             BCData(mm)%F(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
                             BCData(mm)%dualArea(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
+                            BCData(mm)%sHeatFlux(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
                             BCData(mm)%Fp(iBeg:iEnd,jBeg:jEnd,3), &
                             BCData(mm)%Fv(iBeg:iEnd,jBeg:jEnd,3), &
                             stat=ierr)
@@ -113,8 +116,10 @@
 
                    allocate(BCData(mm)%rface(iBeg:iEnd,jBeg:jEnd), &
                             BCData(mm)%rFaceALE(0:nALEsteps,iBeg:iEnd,jBeg:jEnd), &
+                            BCData(mm)%TNS_Wall(iBeg:iEnd,jBeg:jEnd), &
                             BCData(mm)%F(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
                             BCData(mm)%dualArea(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
+                            BCData(mm)%sHeatFlux(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
                             BCData(mm)%Fp(iBeg:iEnd,jBeg:jEnd,3), &
                             BCData(mm)%Fv(iBeg:iEnd,jBeg:jEnd,3), &
                             stat=ierr)
@@ -133,6 +138,7 @@
                    allocate(BCData(mm)%rface(iBeg:iEnd,jBeg:jEnd), &
                             BCData(mm)%rFaceALE(0:nALEsteps,iBeg:iEnd,jBeg:jEnd), &
                             BCData(mm)%F(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
+                            BCData(mm)%sHeatFlux(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
                             BCData(mm)%dualArea(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
 
                         stat=ierr)
@@ -153,6 +159,7 @@
                    allocate(BCData(mm)%rface(iBeg:iEnd,jBeg:jEnd), &
                             BCData(mm)%rFaceALE(0:nALEsteps,iBeg:iEnd,jBeg:jEnd), &
                             BCData(mm)%F(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
+                            BCData(mm)%sHeatFlux(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
                             BCData(mm)%dualArea(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
                             stat=ierr)
                    if(ierr /= 0)                      &
@@ -173,6 +180,8 @@
                             BCData(mm)%vely(iBeg:iEnd,jBeg:jEnd),  &
                             BCData(mm)%velz(iBeg:iEnd,jBeg:jEnd),  &
                             BCData(mm)%ps(iBeg:iEnd,jBeg:jEnd),    &
+                            BCData(mm)%F(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
+                            BCData(mm)%sHeatFlux(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
                             stat=ierr)
                    if(ierr /= 0)                      &
                      call returnFail("allocMemBCData", &
@@ -195,6 +204,24 @@
 
                  !=======================================================
 
+     ! *******************************
+     ! Added by HDN
+     ! *******************************
+                 case (SupersonicOutflow)
+                   ! No state is needed for this boco
+                   ! To avoid seg fault during force and heat flux extraction,
+                   ! F and sHeatFlux are allocated
+
+                   allocate(BCData(mm)%F(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
+                            BCData(mm)%sHeatFlux(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
+                            stat=ierr)
+                   if(ierr /= 0)                      &
+                     call terminate("allocMemBCData", &
+                                    "Memory allocation failure for &
+                                    &a supersonic outflow")
+
+                 !=======================================================
+
                  case (SubsonicInflow)
 
                    ! Subsonic inflow. Allocate the memory for the
@@ -211,6 +238,8 @@
                             BCData(mm)%velx(iBeg:iEnd,jBeg:jEnd),          &
                             BCData(mm)%vely(iBeg:iEnd,jBeg:jEnd),          &
                             BCData(mm)%velz(iBeg:iEnd,jBeg:jEnd),          &
+                            BCData(mm)%F(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
+                            BCData(mm)%sHeatFlux(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
                             stat=ierr)
                    if(ierr /= 0)                      &
                      call returnFail("allocMemBCData", &
@@ -240,6 +269,8 @@
                    ! memory for the static pressure.
 
                    allocate(BCData(mm)%ps(iBeg:iEnd,jBeg:jEnd), &
+                            BCData(mm)%F(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
+                            BCData(mm)%sHeatFlux(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
                             stat=ierr)
                    if(ierr /= 0)                      &
                      call returnFail("allocMemBCData", &

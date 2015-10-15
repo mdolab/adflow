@@ -242,8 +242,23 @@ python module libsumb
        subroutine solverunsteadywrapinloop ! in :sumb:../../solver/solverUnsteadyWrap.F90
        end subroutine solverunsteadywrapinloop
 
-       ! subroutine solverunsteadywrapend ! in :sumb:../../solver/solverUnsteadyWrap.F90
-       ! end subroutine solverunsteadywrapend
+       subroutine solverunsteadywrapend ! in :sumb:../../solver/solverUnsteadyWrap.F90
+       end subroutine solverunsteadywrapend
+     
+       subroutine getheatflux(hflux,npts,sps_in) ! in :test:getHeatFlux.f90
+         real(kind=realtype) dimension(npts),intent(out),depend(npts) :: hflux
+         integer(kind=inttype) intent(in) :: npts
+         integer(kind=inttype) intent(in) :: sps_in
+       end subroutine getheatflux
+
+       subroutine heatfluxes ! in :test:getHeatFlux.f90
+       end subroutine heatfluxes
+
+       subroutine settnswall(tnsw,npts,sps_in) ! in :test:setTNSWall.f90
+         real(kind=realtype) dimension(npts),intent(in) :: tnsw
+         integer(kind=inttype) optional,intent(in),check(len(tnsw)>=npts),depend(tnsw) :: npts=len(tnsw)
+         integer(kind=inttype) intent(in) :: sps_in
+       end subroutine settnswall
 
        ! ############################################################################
        ! SUmb Mesh/Forces Interface Routines

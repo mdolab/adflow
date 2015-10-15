@@ -163,10 +163,8 @@ subroutine initTimeStepWrap
      ! --------------------------------
 
 
-     ! --------------------------------
-     ! Assuming this subroutine is irrelevant to ALE
-     ! --------------------------------
-     ! call updateCoorFineMesh(deltaTSec, 1_intType)
+     ! Added 100915
+     call updateCoorFineMesh(deltaTSec, 1_intType)
 
      ! Adapt the geometric info on all grid levels needed for the
      ! current ground level and multigrid cycle.
@@ -184,9 +182,10 @@ subroutine initTimeStepWrap
           call updateWallDistanceAllLevels
 
      if(changingOverset) call updateOversetAllLevels
-     ! To be done in ALE loop
-     ! call updateSlidingAllLevels
-     ! call updateMetricsAllLevels
+
+     ! Added 100915
+     call updateSlidingAllLevels
+     call updateMetricsAllLevels
 
      ! --------------------------------
      ! Next do a loop to interpolated mesh for intermediate configurations
@@ -218,11 +217,20 @@ subroutine initTimeStepWrap
         call interpCoor(lale)
 
         ! Update s[I,J,K], norm
-        call metric(currentLevel)
+        ! call metric(currentLevel)
+        call metric(groundLevel)
+
         ! Update sFace[I,J,K]
         call gridVelocitiesFineLevelPart2(deforming_Grid, tNewSec, 1_intType)
         ! Update uSlip
         call slipVelocitiesFineLevel_ALE(deforming_Grid, tNewSec, 1_intType) ! Maybe Unnecessary - to be verified
+
+        ! Added 101115
+        call gridVelocitiesCoarseLevels(1_intType)
+        call slipVelocitiesCoarseLevels(1_intType)
+
+
+
         ! Update rFace
         call normalVelocitiesAllLevels(1_intType)
 
@@ -236,11 +244,14 @@ subroutine initTimeStepWrap
      ! --------------------------------
      call recoverCoor
 
-     call metric(currentLevel)
+     ! call metric(currentLevel)
+     call metric(groundLevel)
      call gridVelocitiesFineLevelPart2(deforming_Grid, tNewSec, 1_intType)
      call slipVelocitiesFineLevel_ALE(deforming_Grid, tNewSec, 1_intType) ! Maybe Unnecessary - to be verified
      ! call slipVelocitiesFineLevel(deforming_Grid, tNewSec, 1_intType)
-     call normalVelocitiesAllLevels(1_intType)
+
+     ! Moved down
+     ! call normalVelocitiesAllLevels(1_intType)
 
      ! Determine the velocities of the cell centers and faces and
      ! the slip velocities on the coarse grid levels . Note that the
@@ -248,6 +259,8 @@ subroutine initTimeStepWrap
 
      call gridVelocitiesCoarseLevels(1_intType)
      call slipVelocitiesCoarseLevels(1_intType)
+     call normalVelocitiesAllLevels(1_intType)
+
 
      ! Compute the normal velocities of the boundaries, if
      ! needed for the corresponding boundary condition.
