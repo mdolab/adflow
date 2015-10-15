@@ -131,6 +131,7 @@
                nullify(BCData(j)%normALE)
                nullify(BCData(j)%rfaceALE)
                nullify(BCData(j)%uSlipALE)
+               nullify(BCData(j)%sHeatFlux)
 
                nullify(BCData(j)%ptInlet)
                nullify(BCData(j)%ttInlet)
