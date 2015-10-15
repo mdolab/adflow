@@ -216,7 +216,6 @@ class SUMB(AeroSolver):
         
         self.sumb.monitor.writegrid = False
 
-        print (self.sumb.monitor.writevolume, self.sumb.monitor.writesurface)
     
         # In order to properly initialize we need to have mach number
         # and a few other things set. Just create a dummy aeroproblem,
