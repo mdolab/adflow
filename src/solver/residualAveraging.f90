@@ -141,7 +141,7 @@
            do j=2,jl
              do i=2,nx
                 r = rfl0*(rfl(i,j) +rfl(i+1,j))
-                epz(i,j) = fourth*smoop*dim(r*r,one)*iblank(i,j,k)
+                epz(i,j) = fourth*smoop*dim(r*r,one)*max(real(iblank(i,j,k), realType), zero)
              end do
            end do
        
@@ -216,7 +216,7 @@
            do j=2,ny
              do i=2,il
                r = rfl0*(rfl(i,j) +rfl(i,j+1))
-               epz(i,j) = fourth*smoop*dim(r*r,one)*iblank(i,j,k)
+               epz(i,j) = fourth*smoop*dim(r*r,one)*max(real(iblank(i,j,k), realType), zero)
              end do
            end do
 
@@ -291,7 +291,7 @@
            do k=2,nz
              do i=2,il
                r = rfl0*(rfl(i,k) +rfl(i,k+1))
-               epz(i,k) = fourth*smoop*dim(r*r,one)*iblank(i,j,k)
+               epz(i,k) = fourth*smoop*dim(r*r,one)*max(real(iblank(i,j,k), realType), zero)
              end do
            end do
 
