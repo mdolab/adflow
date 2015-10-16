@@ -47,7 +47,7 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
   !
   !      Local variables.
   !
-  integer(kind=intType) :: i, j, k, bufSize
+  integer(kind=intType) :: i, j, k, bufSize, im1, jm1
   integer(kind=intType) :: ii, jj, mm, ll, iiMax, jjMax, offVis
 
   integer(kind=intType), dimension(2,2) :: rangeFace, rangeFaceNode
@@ -73,7 +73,7 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
   real(kind=realType), dimension(:,:),   pointer :: dd2Wall
   real(kind=realType), dimension(:, :), allocatable :: tmpBuffer
   real(kind=realType), dimension(:, :, :), pointer :: nodeWeights
-  integer(kind=intType), dimension(:, :), allocatable :: iblankTmp
+  integer(kind=intType), dimension(:, :), allocatable :: iBlanktmp
 
   !
   !      ******************************************************************
@@ -100,7 +100,7 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
   ! nodeRange contains the range of the current block in the
   ! original cgns block. Substract the offset and store the local
   ! range in rangeNode.
-  
+
   rangeNode(1,1) = nodeRange(1,1) - iBegor + 1
   rangeNode(1,2) = nodeRange(1,2) - iBegor + 1
 
@@ -203,7 +203,7 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
      rangeFaceNode(1,1:2) = rangeNode(1,1:2)
      rangeFaceNode(2,1:2) = rangeNode(3,1:2)
      iiMax = il; jjMax = kl
-   
+
      ww1    => w(1:,1,1:,:);   ww2    => w(1:,2,1:,:)
      ss => sj(:,1,:,:) ; fact = -one
 
@@ -310,9 +310,14 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
   end select
 
   ! Allocate space for the temporary buffer
+  ! allocate(tmpBuffer(&
+  !      rangeFace(1,1):rangeFace(1,2), &
+  !      rangeFace(2,1):rangeFace(2,2)))
+
   allocate(tmpBuffer(&
-       rangeFace(1,1):rangeFace(1,2), &
-       rangeFace(2,1):rangeFace(2,2)))
+       rangeFaceNode(1,1):rangeFaceNode(1,2)+1, &
+       rangeFaceNode(2,1):rangeFaceNode(2,2)+1))
+
 
   !
   !      ******************************************************************
@@ -328,8 +333,8 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
 
   case (cgnsDensity)
 
-     do j=rangeFace(2,1), rangeFace(2,2)
-        do i=rangeFace(1,1), rangeFace(1,2)
+     do j=rangeFaceNode(2,1), rangeFaceNode(2,2)+1
+        do i=rangeFaceNode(1,1), rangeFaceNode(1,2)+1
            tmpBuffer(i, j) = half*(ww1(i,j,irho) + ww2(i,j,irho))
         enddo
      enddo
@@ -338,8 +343,8 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
 
   case (cgnsPressure)
 
-     do j=rangeFace(2,1), rangeFace(2,2)
-        do i=rangeFace(1,1), rangeFace(1,2)
+     do j=rangeFaceNode(2,1), rangeFaceNode(2,2)+1
+        do i=rangeFaceNode(1,1), rangeFaceNode(1,2)+1
            tmpBuffer(i, j) = half*(pp1(i,j) + pp2(i,j))
         enddo
      enddo
@@ -348,8 +353,8 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
 
   case (cgnsTemp)
 
-     do j=rangeFace(2,1), rangeFace(2,2)
-        do i=rangeFace(1,1), rangeFace(1,2)
+     do j=rangeFaceNode(2,1), rangeFaceNode(2,2)+1
+        do i=rangeFaceNode(1,1), rangeFaceNode(1,2)+1
            tmpBuffer(i, j) = (pp1(i,j) + pp2(i,j)) &
                 / (RGas*(ww1(i,j,irho) + ww2(i,j,irho)))
         enddo
@@ -359,8 +364,8 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
 
   case (cgnsVelx)
 
-     do j=rangeFace(2,1), rangeFace(2,2)
-        do i=rangeFace(1,1), rangeFace(1,2)
+     do j=rangeFaceNode(2,1), rangeFaceNode(2,2)+1
+        do i=rangeFaceNode(1,1), rangeFaceNode(1,2)+1
            if (viscousSurfaceVelocities .and. viscous) then
               tmpBuffer(i, j) = ww2(i,j,ivx)
            else
@@ -373,8 +378,8 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
 
   case (cgnsVely)
 
-     do j=rangeFace(2,1), rangeFace(2,2)
-        do i=rangeFace(1,1), rangeFace(1,2)
+     do j=rangeFaceNode(2,1), rangeFaceNode(2,2)+1
+        do i=rangeFaceNode(1,1), rangeFaceNode(1,2)+1
            if (viscousSurfaceVelocities .and. viscous) then
               tmpBuffer(i, j) = ww2(i,j,ivy)
            else
@@ -387,8 +392,8 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
 
   case (cgnsVelz)
 
-     do j=rangeFace(2,1), rangeFace(2,2)
-        do i=rangeFace(1,1), rangeFace(1,2)
+     do j=rangeFaceNode(2,1), rangeFaceNode(2,2)+1
+        do i=rangeFaceNode(1,1), rangeFaceNode(1,2)+1
            if (viscousSurfaceVelocities .and. viscous) then
               tmpBuffer(i, j) = ww2(i,j,ivz)
            else
@@ -401,8 +406,8 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
      !===============================================================
 
   case (cgnsRelVelx)
-     do j=rangeFace(2,1), rangeFace(2,2)
-        do i=rangeFace(1,1), rangeFace(1,2)
+     do j=rangeFaceNode(2,1), rangeFaceNode(2,2)+1
+        do i=rangeFaceNode(1,1), rangeFaceNode(1,2)+1
            if (viscousSurfaceVelocities .and. viscous) then
               tmpBuffer(i, j) = ww2(i,j,ivx) - ss2(i,j,1)
            else
@@ -414,8 +419,8 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
      !===============================================================
 
   case (cgnsRelVely)
-     do j=rangeFace(2,1), rangeFace(2,2)
-        do i=rangeFace(1,1), rangeFace(1,2)
+     do j=rangeFaceNode(2,1), rangeFaceNode(2,2)+1
+        do i=rangeFaceNode(1,1), rangeFaceNode(1,2)+1
            if (viscousSurfaceVelocities .and. viscous) then
               tmpBuffer(i, j) = ww2(i,j,ivy) - ss2(i,j,2)
            else
@@ -427,8 +432,8 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
      !===============================================================
 
   case (cgnsRelVelz)
-     do j=rangeFace(2,1), rangeFace(2,2)
-        do i=rangeFace(1,1), rangeFace(1,2)
+     do j=rangeFaceNode(2,1), rangeFaceNode(2,2)+1
+        do i=rangeFaceNode(1,1), rangeFaceNode(1,2)+1
            if (viscousSurfaceVelocities .and. viscous) then
               tmpBuffer(i, j) = ww2(i,j,ivz) - ss2(i,j,3)
            else
@@ -446,8 +451,8 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
 
      fact = two/(gammaInf*pInf*MachCoef*MachCoef)
 
-     do j=rangeFace(2,1), rangeFace(2,2)
-        do i=rangeFace(1,1), rangeFace(1,2)
+     do j=rangeFaceNode(2,1), rangeFaceNode(2,2)+1
+        do i=rangeFaceNode(1,1), rangeFaceNode(1,2)+1
            tmpBuffer(i, j) = fact*(half*(pp1(i,j) + pp2(i,j)) - pInf)
         enddo
      enddo
@@ -464,8 +469,8 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
 
      ! Loop over the faces and compute the total pressure loss.
 
-     do j=rangeFace(2,1), rangeFace(2,2)
-        do i=rangeFace(1,1), rangeFace(1,2)
+     do j=rangeFaceNode(2,1), rangeFaceNode(2,2)+1
+        do i=rangeFaceNode(1,1), rangeFaceNode(1,2)+1
 
            psurf = half*(pp1(i,j) + pp2(i,j))
            rsurf = half*(ww1(i,j,irho) + ww2(i,j,irho))
@@ -484,8 +489,8 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
 
   case (cgnsMach)
 
-     do j=rangeFace(2,1), rangeFace(2,2)
-        do i=rangeFace(1,1), rangeFace(1,2)
+     do j=rangeFaceNode(2,1), rangeFaceNode(2,2)+1
+        do i=rangeFaceNode(1,1), rangeFaceNode(1,2)+1
 
            psurf  = half*(pp1(i,j) + pp2(i,j))
            rsurf  = half*(ww1(i,j,irho) + ww2(i,j,irho))
@@ -503,8 +508,8 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
 
   case (cgnsRelMach)
 
-     do j=rangeFace(2,1), rangeFace(2,2)
-        do i=rangeFace(1,1), rangeFace(1,2)
+     do j=rangeFaceNode(2,1), rangeFaceNode(2,2)+1
+        do i=rangeFaceNode(1,1), rangeFaceNode(1,2)+1
 
            psurf  = half*(pp1(i,j) + pp2(i,j))
            rsurf  = half*(ww1(i,j,irho) + ww2(i,j,irho))
@@ -523,8 +528,8 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
        cgnsSkinFx, cgnsSkinFy, cgnsSkinFz)
 
      viscSubface1: if(.not. viscousSubface) then
-        do j=rangeFace(2,1), rangeFace(2,2)
-           do i=rangeFace(1,1), rangeFace(1,2)
+        do j=rangeFaceNode(2,1), rangeFaceNode(2,2)+1
+           do i=rangeFaceNode(1,1), rangeFaceNode(1,2)+1
               tmpBuffer(i, j) = zero
            end do
         end do
@@ -543,7 +548,7 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
         ! are set equal to the nearest physical face. Therefore the
         ! working indices are ii and jj.
 
-        do j=rangeFace(2,1), rangeFace(2,2)
+        do j=rangeFaceNode(2,1), rangeFaceNode(2,2)+1
            if(j == rangeFace(2,1)) then
               jj = j + offVis
            else if(j == rangeFace(2,2)) then
@@ -552,7 +557,7 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
               jj = j
            endif
 
-           do i=rangeFace(1,1), rangeFace(1,2)
+           do i=rangeFaceNode(1,1), rangeFaceNode(1,2)+1
               if(i == rangeFace(1,1)) then
                  ii = i + offVis
               else if(i == rangeFace(1,2)) then
@@ -629,8 +634,8 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
   case (cgnsStanton)
 
      viscSubface2: if(.not. viscousSubface) then
-        do j=rangeFace(2,1), rangeFace(2,2)
-           do i=rangeFace(1,1), rangeFace(1,2)
+        do j=rangeFaceNode(2,1), rangeFaceNode(2,2)+1
+           do i=rangeFaceNode(1,1), rangeFaceNode(1,2)+1
               tmpBuffer(i, j) = zero
            end do
         end do
@@ -647,7 +652,7 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
         ! are set equal to the nearest physical face. Therefore the
         ! working indices are ii and jj.
 
-        do j=rangeFace(2,1), rangeFace(2,2)
+        do j=rangeFaceNode(2,1), rangeFaceNode(2,2)+1
            if(j == rangeFace(2,1)) then
               jj = j + offVis
            else if(j == rangeFace(2,2)) then
@@ -656,7 +661,7 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
               jj = j
            endif
 
-           do i=rangeFace(1,1), rangeFace(1,2)
+           do i=rangeFaceNode(1,1), rangeFaceNode(1,2)+1
               if(i == rangeFace(1,1)) then
                  ii = i + offVis
               else if(i == rangeFace(1,2)) then
@@ -695,8 +700,8 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
 
      ! Loop over the given range of faces. 
 
-     do j=rangeFace(2,1), rangeFace(2,2)
-        do i=rangeFace(1,1), rangeFace(1,2)
+     do j=rangeFaceNode(2,1), rangeFaceNode(2,2)+1
+        do i=rangeFaceNode(1,1), rangeFaceNode(1,2)+1
            tmpBuffer(i, j) = real(iblank2(i,j), realType)
         enddo
      enddo
@@ -705,7 +710,7 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
 
      fact = fact*two/(gammaInf*pInf*MachCoef*MachCoef)
      scaleDim = pRef/pInf
-     do j=rangeFace(2,1), rangeFace(2,2)
+     do j=rangeFaceNode(2,1), rangeFaceNode(2,2)+1
         if(j == rangeFace(2,1)) then
            jj = j + offVis
         else if(j == rangeFace(2,2)) then
@@ -714,7 +719,7 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
            jj = j
         endif
 
-        do i=rangeFace(1,1), rangeFace(1,2)
+        do i=rangeFaceNode(1,1), rangeFaceNode(1,2)+1
            if(i == rangeFace(1,1)) then
               ii = i + offVis
            else if(i == rangeFace(1,2)) then
@@ -774,8 +779,8 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
 
   case (cgnsSepSensor)
 
-     do j=rangeFace(2,1), rangeFace(2,2)
-        do i=rangeFace(1,1), rangeFace(1,2)
+     do j=rangeFaceNode(2,1), rangeFaceNode(2,2)+1
+        do i=rangeFaceNode(1,1), rangeFaceNode(1,2)+1
 
            ! Get normalized surface velocity:
            v(1) = ww2(i, j, ivx)
@@ -796,8 +801,8 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
 
   case (cgnsCavitation)
      fact = two/(gammaInf*pInf*MachCoef*MachCoef)
-     do j=rangeFace(2,1), rangeFace(2,2)
-        do i=rangeFace(1,1), rangeFace(1,2)
+     do j=rangeFaceNode(2,1), rangeFaceNode(2,2)+1
+        do i=rangeFaceNode(1,1), rangeFaceNode(1,2)+1
 
            ! Get local pressure
            plocal = half*(pp1(i,j) + pp2(i,j))
@@ -814,7 +819,8 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
 
   ! We have now computed the cell centered values in tmpBuf. If this
   ! is what we want, we can simply copy the values into the actual
-  ! buffer:
+  ! buffer. Note that iBlank is always cellCentered. It is the only
+  ! way it makes sense for a cell-centered scheme.
 
   if (.not. nodalOutput) then 
      do j=rangeFace(2,1), rangeFace(2,2)
@@ -826,48 +832,58 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
   else
 
      ! For the nodal output we have to use the precomputed nodal
-     ! weights to average the values back to the nodes. We have to do
-     ! the iblank variables slightly differently since averaging with
-     ! the weights makes no sense for that variable. 
-
+     ! weights to average the values back to the nodes.
      varName2: select case (solName)
 
-        case (cgnsBlank) 
+     case (cgnsBlank) 
 
-           ! This one is a litle tricker. The procedure is:
-           ! 1. Set all iblanks to 1
-           ! 2. Loop over REAL cells, check if cell iblank = 0, set all nodes around that cell to 0
-           ! 3. Loop over REAL cells, check if cell iblank = -1, set all nodes around that cell to -1
+        ! This one is a litle tricker. The procedure is:
+        ! 1. Set all iblanks to 1
+        ! 2. Loop over HALOED cells, check if cell iblank = 0, set all nodes around that cell to 0, clipping to nodal range
+        ! 3. Loop over HALOED cells, check if cell iblank = -1, set all nodes around that cell to -1, clipping to nodal range
 
-           ! Note that in the loops below we have +1 on the low end
-           ! and -1 on the high end. This is because the cell indices
-           ! include the rind cells (due to requesting nodal output),
-           ! but here we want to loop only over the real cells. 
-  
-           allocate(iblankTmp(rangeFaceNode(1,1):rangeFaceNode(1,2), &
-                              rangeFaceNode(2,1):rangeFaceNode(2,2)))
+        ! Note that in the loops below we have +1 on the low end
+        ! and -1 on the high end. This is because the cell indices
+        ! include the rind cells (due to requesting nodal output),
+        ! but here we want to loop only over the real cells. 
+
+        allocate(iblankTmp(rangeFaceNode(1,1):rangeFaceNode(1,2), &
+             rangeFaceNode(2,1):rangeFaceNode(2,2)))
            iBlankTmp = 1
 
            ! Loop over the cells checking for 0:
-           do j=rangeFace(2,1)+1, rangeFace(2,2)-1
-              do i=rangeFace(1,1)+1, rangeFace(1,2)-1
+           do j=rangeFaceNode(2,1), rangeFaceNode(2,2)+1
+              do i=rangeFaceNode(1,1), rangeFaceNode(1,2)+1
+                 
+                 im1 = max(i-1, rangeFaceNode(1, 1))
+                 jm1 = max(j-1, rangeFaceNode(2, 1))
+
+                 ii  = min(i  , rangeFaceNode(1, 2))
+                 jj  = min(j  , rangeFaceNode(2, 2))
+
                  if (iBlank2(i, j) == 0) then 
-                    iBlankTmp(i-1, j-1) = 0
-                    iBlankTmp(i  , j-1) = 0
-                    iBlankTmp(i-1, j  ) = 0
-                    iBlankTmp(i  , j  ) = 0
+                    iBlankTmp(im1, jm1) = 0
+                    iBlankTmp(ii , jm1) = 0
+                    iBlankTmp(im1, jj ) = 0
+                    iBlankTmp(ii , jj ) = 0
                  end if
               end do
            end do
            
            ! Loop over the cells checking for -1
-           do j=rangeFace(2,1)+1, rangeFace(2,2)-1
-              do i=rangeFace(1,1)+1, rangeFace(1,2)-1
+           do j=rangeFaceNode(2,1), rangeFaceNode(2,2)+1
+              do i=rangeFaceNode(1,1), rangeFaceNode(1,2)+1
                  if (iBlank2(i, j) == -1) then 
-                    iBlankTmp(i-1, j-1) = -1
-                    iBlankTmp(i  , j-1) = -1
-                    iBlankTmp(i-1, j  ) = -1
-                    iBlankTmp(i  , j  ) = -1
+                    im1 = max(i-1, rangeFaceNode(1, 1))
+                    jm1 = max(j-1, rangeFaceNode(2, 1))
+
+                    ii  = min(i  , rangeFaceNode(1, 2))
+                    jj  = min(j  , rangeFaceNode(2, 2))
+
+                    iBlankTmp(im1, jm1) = -1
+                    iBlankTmp(ii , jm1) = -1
+                    iBlankTmp(im1, jj ) = -1
+                    iBlankTmp(ii , jj ) = -1
                  end if
               end do
            end do
@@ -882,21 +898,23 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
 
            deallocate(iblankTmp)
 
-        case default
 
-           do j=rangeFaceNode(2,1), rangeFaceNode(2,2)
-              do i=rangeFaceNode(1,1), rangeFaceNode(1,2)
-                 nn = nn + 1
-                 buffer(nn) = & 
-                      nodeWeights(1, i, j) * tmpBuffer(i  , j  ) + &
-                      nodeWeights(2, i, j) * tmpBuffer(i+1, j  ) + &
-                      nodeWeights(3, i, j) * tmpBuffer(i  , j+1) + &
-                      nodeWeights(4, i, j) * tmpBuffer(i+1, j+1) 
-              end do
+     case default
+        do j=rangeFaceNode(2,1), rangeFaceNode(2,2)
+           do i=rangeFaceNode(1,1), rangeFaceNode(1,2)
+              nn = nn + 1
+              buffer(nn) = & 
+                   nodeWeights(1, i, j) * tmpBuffer(i  , j  ) + &
+                   nodeWeights(2, i, j) * tmpBuffer(i+1, j  ) + &
+                   nodeWeights(3, i, j) * tmpBuffer(i  , j+1) + &
+                   nodeWeights(4, i, j) * tmpBuffer(i+1, j+1) 
            end do
-        end select varName2
-     end if
+        end do
 
-     ! Cleanup the temporary buffer
+     end select varName2
+  end if
+
+
+  ! Cleanup the temporary buffer
   deallocate(tmpBuffer)
 end subroutine storeSurfsolInBuffer

@@ -33,7 +33,7 @@ subroutine wOverset(level, start, end, commPressure, commVarGamma, &
   integer(kind=intType) :: iCell, jCell, kCell, nComm, ierr, sps, gid
   real(kind=realType), dimension(:), pointer :: donorPtr, fringePtr
   real(kind=realType) :: f(8), ff(27), shp(3,3), psi(3)
-  real(kind=realType) :: di0, di1, dj0, dj1, dk0, dk1
+  real(kind=realType) :: di0, di1, dj0, dj1, dk0, dk1, newVar
 
   ! Assume sps=1 for now
   sps = 1
@@ -111,10 +111,10 @@ subroutine wOverset(level, start, end, commPressure, commVarGamma, &
      ! Loop over the number of blocks on this processor
      do nn=1, nDom
         ! We just have to put our required variable into donorPtr
-        call setPointers(nn, 1, 1)
-        do k=2, kl
-           do j=2, jl
-              do i=2, il 
+        call setPointers(nn, level, sps)
+        do k=1, ke
+           do j=1, je
+              do i=1, ie
                  ii = ii + 1
                  ! the plus a's are due to the pointer offset. All the
                  ! interpolation variables are double haloed and they
@@ -139,6 +139,8 @@ subroutine wOverset(level, start, end, commPressure, commVarGamma, &
           INSERT_VALUES, SCATTER_FORWARD, ierr)
      call ECHK(ierr, __FILE__, __LINE__)
 
+     !call VecView(oversetDonors, 	PETSC_VIEWER_STDOUT_WORLD, ierr)
+     !ocall vecScatterView(oversetScatter, 	PETSC_VIEWER_STDOUT_WORLD, ierr)
      ! Now we pull out a pointer from oversetFringe and set the
      ! required data back into the required array
      call VecGetArrayF90(oversetFringes, fringePtr, ierr)
@@ -150,16 +152,18 @@ subroutine wOverset(level, start, end, commPressure, commVarGamma, &
      ! Loop over the number of blocks on this processor
      do nn=1, nDom
      
+        call setPointers(nn, level, sps)
+
         ! Here is where we actually do the overset interpolation. Loop
         ! over the number of fringes on my block
-        
+
         if (oversetInterpolation == linear) then 
-           do iFringe=1, oBlocks(nn)%nFringe
+           do iFringe=1, nFringe
               ii = ii + 1
               
-              di1 = oBlocks(nn)%donorFrac(1, iFringe)
-              dj1 = oBlocks(nn)%donorFrac(2, iFringe)
-              dk1 = oBlocks(nn)%donorFrac(3, iFringe)
+              di1 = fringeFrac(1, iFringe)
+              dj1 = fringeFrac(2, iFringe)
+              dk1 = fringeFrac(3, iFringe)
               
               di0 = one - di1
               dj0 = one - dj1
@@ -176,12 +180,11 @@ subroutine wOverset(level, start, end, commPressure, commVarGamma, &
               f(8)   = di1*dj1*dk1
 
               ! The +1 is due to the pointer offset              
-              iCell = oBlocks(nn)%fringeIndices(1, iFringe) + 1
-              jCell = oBlocks(nn)%fringeIndices(2, iFringe) + 1
-              kCell = oBlocks(nn)%fringeIndices(3, iFringe) + 1
-              
-              variables(iVar, nn)%arr(iCell, jCell, kCell) = &
-                   f(1)*fringePtr(8*ii-7) + &
+              iCell = fringeIndices(6, iFringe) + 1
+              jCell = fringeIndices(7, iFringe) + 1
+              kCell = fringeIndices(8, iFringe) + 1
+       
+              newVar = f(1)*fringePtr(8*ii-7) + &
                    f(2)*fringePtr(8*ii-6) + &
                    f(3)*fringePtr(8*ii-5) + &
                    f(4)*fringePtr(8*ii-4) + &
@@ -189,6 +192,8 @@ subroutine wOverset(level, start, end, commPressure, commVarGamma, &
                    f(6)*fringePtr(8*ii-2) + &
                    f(7)*fringePtr(8*ii-1) + &
                    f(8)*fringePtr(8*ii  ) 
+
+              variables(iVar, nn)%arr(iCell, jCell, kCell) = newVar
            end do
         else
            do iFringe=1, oBlocks(nn)%nFringe
@@ -252,12 +257,6 @@ subroutine wOverset(level, start, end, commPressure, commVarGamma, &
                       variables(iVar, nn)%arr(iCell, jCell, kCell) + &
                       ff(jj)*fringePtr(27*(ii-1) + jj)
               end do
-
-              if (isnan(variables(iVar, nn)%arr(iCell, jCell, kCell))) then 
-                 print *,'Nan in transfer:', nn, iCell, jCell, kCell
-                 stop
-              end if
-
            end do
         end if
      end do
@@ -266,7 +265,8 @@ subroutine wOverset(level, start, end, commPressure, commVarGamma, &
      
   end do masterLoop
 
-  ! Free up the variables array...doesnt' have any data in it, just pointers
+  ! Free up the variables array...does not have any data in it, just
+  ! pointers
   deallocate(variables)
   
 end subroutine wOverset
