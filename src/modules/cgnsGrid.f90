@@ -426,6 +426,9 @@
 
          logical :: BCFamilies
 
+         ! Cluster indentifier of multiblock "cluser" in overset mesh
+         integer(kind=intType) :: cluster
+
        end type cgnsBlockInfoType
 !
 !      ******************************************************************

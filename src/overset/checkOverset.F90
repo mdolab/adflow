@@ -1,0 +1,53 @@
+subroutine checkOverset 
+
+  !
+  !      ******************************************************************
+  !      *                                                                *
+  !      * CheckOverset checks the integrity of the overset connectivity  *
+  !      * and holes. For every comptue cell (iblank = 1) it checks that  *
+  !      * every cell in its stencil are not blanked. If even 1 cell is   *
+  !      * found with an incomplete stencil it is a fatal error. 
+  !      *                                                                *
+  !      ******************************************************************
+
+  use overset
+  use blockPointers
+  use stencils
+  implicit none
+
+  integer(kind=intType) :: i, j, k, nn, ii, jj, kk
+  integer(kind=intType) :: magic, ibval
+  integer(kind=intType) :: i_stencil
+
+  magic = 33
+  do nn=1, nDom
+     call setPointers(nn, 1_intType, 1_intType)
+
+     do k=2, kl
+        do j=2, jl
+           do i=2, il
+              if (iblank(i,j,k) == 1) then 
+
+                 ibval = 0
+
+                 stencilLoop: do i_stencil=1, N_visc_drdw
+                    ii = visc_drdw_stencil(i_stencil, 1) + i
+                    jj = visc_drdw_stencil(i_stencil, 2) + j
+                    kk = visc_drdw_stencil(i_stencil, 3) + k
+
+                    ! This abs works here since fringes with -1
+                    ! count ok. It is only holes with iblank=0 that
+                    ! we have to avoid.
+                    ibval = ibval + abs(iblank(ii, jj, kk))
+
+                 end do stencilLoop
+                 if (ibval /= magic) then
+                    print *,'Error in connectivity: ', nn, i, j, k, ibval
+                    !stop
+                 end if
+              end if
+           end do
+        end do
+     end do
+  end do
+end subroutine checkOverset
