@@ -334,9 +334,9 @@ subroutine computedwDADI
               bbj(je,n)=zero
               ddj(1 ,n)=zero
               do j=2,jl
-                 bbj(j,n)=bbj(j,n)*dual_dt(i,j,k)
-                 ddj(j,n)=ddj(j,n)*dual_dt(i,j,k)
-                 ccj(j,n)=one+ccj(j,n)*dual_dt(i,j,k)+spectral_i(i,j,k)+spectral_k(i,j,k)
+                 bbj(j,n)=bbj(j,n)*dual_dt(i,j,k)*max(real(iblank(i,j,k),realType),zero)
+                 ddj(j,n)=ddj(j,n)*dual_dt(i,j,k)*max(real(iblank(i,j,k),realType),zero)
+                 ccj(j,n)=one+ccj(j,n)*dual_dt(i,j,k)*max(real(iblank(i,j,k),realType),zero)+spectral_i(i,j,k)+spectral_k(i,j,k)
                  ffj(j,n)=dw(i,j,k,n)
               enddo
            enddo
@@ -471,9 +471,9 @@ subroutine computedwDADI
               bbi(ie ,n)=zero
               ddi(1 ,n)=zero
               do i=2,il
-                 bbi(i,n)=bbi(i,n)*dual_dt(i,j,k)
-                 ddi(i,n)=ddi(i,n)*dual_dt(i,j,k)
-                 cci(i,n)=one+cci(i,n)*dual_dt(i,j,k)+spectral_j(i,j,k)+spectral_k(i,j,k)
+                 bbi(i,n)=bbi(i,n)*dual_dt(i,j,k)*max(real(iblank(i,j,k),realType),zero)
+                 ddi(i,n)=ddi(i,n)*dual_dt(i,j,k)*max(real(iblank(i,j,k),realType),zero)
+                 cci(i,n)=one+cci(i,n)*dual_dt(i,j,k)*max(real(iblank(i,j,k),realType),zero)+spectral_j(i,j,k)+spectral_k(i,j,k)
                  ffi(i,n)=dw(i,j,k,n)
               enddo
            enddo
@@ -607,9 +607,9 @@ subroutine computedwDADI
               bbk(ke,n)=zero
               ddk(1 ,n)=zero
               do k=2,kl
-                 bbk(k,n)=bbk(k,n)*dual_dt(i,j,k)
-                 ddk(k,n)=ddk(k,n)*dual_dt(i,j,k)
-                 cck(k,n)=one+cck(k,n)*dual_dt(i,j,k)+spectral_i(i,j,k)+spectral_j(i,j,k)
+                 bbk(k,n)=bbk(k,n)*dual_dt(i,j,k)*max(real(iblank(i,j,k),realType),zero)
+                 ddk(k,n)=ddk(k,n)*dual_dt(i,j,k)*max(real(iblank(i,j,k),realType),zero)
+                 cck(k,n)=one+cck(k,n)*dual_dt(i,j,k)*max(real(iblank(i,j,k),realType),zero)+spectral_i(i,j,k)+spectral_j(i,j,k)
                  ffk(k,n)=dw(i,j,k,n)
               enddo
            enddo

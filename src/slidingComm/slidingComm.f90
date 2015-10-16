@@ -114,7 +114,7 @@
 
            ! Determine the new size of the communication buffers.
 
-           call setBufferSizes(level, sps, .false., .true., .false.)
+           call setBufferSizes(level, sps, .false., .true.)
 
          !===============================================================
 
@@ -153,7 +153,7 @@
 
              ! Determine the new size of the communication buffers.
 
-             call setBufferSizes(level, sps, .false., .true., .false.)
+             call setBufferSizes(level, sps, .false., .true.)
 
            enddo spectralLoop
 

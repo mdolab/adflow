@@ -220,7 +220,6 @@
 
        nDoubleBoundFaces = 0
        noUnits           = .false.
-       oversetPresent    = .false.
 
        ! Loop over the number of zones.
 
@@ -236,18 +235,11 @@
 
          call countConnectivities(cgnsInd, cgnsBase, nZone)
 
-         ! If there are any overset connectivities, reset
-         ! oversetPresent.
-
-         if (cgnsDoms(nZone)%nOverset > 0) oversetPresent = .true.
-
          ! For this zone, read the 1-to-1 block connectivity, the
-         ! general connectivities, the overset holes, and the
-         ! boundary conditions.
+         ! general connectivities, and the boundary conditions.
 
          call read1to1Conn(cgnsInd, cgnsBase, nZone)
          call readGeneralConn(cgnsInd, cgnsBase, nZone)
-         call readOversetHoles(cgnsInd, cgnsBase, nZone)
          call readBocos(cgnsInd, cgnsBase, nZone, &
                         ndoubleBoundFaces, sortedFamName, famId)
 
