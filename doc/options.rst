@@ -335,37 +335,74 @@ Parameter                                  Type       Default                   
 `setMonitor`                             `bool`      True                                           Flag to set whether to monitor the adjoint iterations.
 
 `monitorVariables`                       `list`      ['cpu','resrho', 'cl', 'cd']                   List of the variables whose convergence should be monitored. The possible monitoring variables
-                                                                                                    are `resrho` (density residual), `resmom` (momentum residuals), `resrhoe` (total energy residual),
-                                                                                                    `resturb` (turbulence residuals), `cl` (lift coefficient), `clp` (pressure part of cl),
-                                                                                                    `clv` (viscous part of cl), `cd` (drag coefficient), `cdp` (pressure part of cd),
-                                                                                                    `cdv` (viscous part of cd), `cfx` (force coefficient in x-direction), 
-                                                                                                    `cfy` (force coefficient in y-direction), `cfz` (force coefficient in z-direction),
-                                                                                                    `cmx` (moment coefficient in x-direction), `cmy` (moment coefficient in y-direction),
-                                                                                                    `cmz` (moment coefficient in z-direction), `hdiff` (maximum relative difference between H and Hinf),
-                                                                                                    `mach` (maximum mach number), `yplus` (maximum y+ value), 
-                                                                                                    `eddyv` (maximum ratio of eddy viscosity and laminar viscosity).
+                                                                                                    are 
+                                                                                                    
+                                                                                                    * `resrho` (density residual), 
+                                                                                                    * `resmom` (momentum residuals), 
+                                                                                                    * `resrhoe` (total energy residual),
+                                                                                                    * `resturb` (turbulence residuals),
+                                                                                                    * `cl` (lift coefficient),
+                                                                                                    * `clp` (pressure part of cl),
+                                                                                                    * `clv` (viscous part of cl), 
+                                                                                                    * `cd` (drag coefficient),
+                                                                                                    * `cdp` (pressure part of cd),
+                                                                                                    * `cdv` (viscous part of cd),
+                                                                                                    * `cfx` (force coefficient in x-direction), 
+                                                                                                    * `cfy` (force coefficient in y-direction),
+                                                                                                    * `cfz` (force coefficient in z-direction),
+                                                                                                    * `cmx` (moment coefficient in x-direction), 
+                                                                                                    * `cmy` (moment coefficient in y-direction),
+                                                                                                    * `cmz` (moment coefficient in z-direction),
+                                                                                                    * `hdiff` (maximum relative difference between H and Hinf),
+                                                                                                    * `mach` (maximum mach number),
+                                                                                                    * `yplus` (maximum y+ value), 
+                                                                                                    * `eddyv` (maximum ratio of eddy viscosity and laminar viscosity).
 
                                                                                         
 `surfaceVariables`                       `list`     ['cp','vx', 'vy', 'vz', 'mach']                 The variables which are written to the CGNS surface solution file. The available keywords are:
-                                                                                                    `rho` (density), `p` (pressure), `temp` (temperature), `vx` (velocity in x-direction),
-                                                                                                    `vy` (velocity in y-direction), `vz` (velocity in z-direction), `cp` (pressure coefficient),
-                                                                                                    `ptloss` (relative total pressure loss), `mach` (mach number), `cf` (magnitude of the skin friction),
-                                                                                                    `cfx` (x-component of the skin friction), `cfy` (y-component of the skin friction),
-                                                                                                    `cfz` (z-component of the skin friction), `ch` (Stanton number), 
-                                                                                                    `yplus` (y+ value of the cell center of the first cell), `lift` (lift force),
-                                                                                                    `blank` (cell iblank values used for visualiztion or other post-processing).
+                                                                                                    
+                                                                                                    * `rho` (density), 
+                                                                                                    * `p` (pressure), 
+                                                                                                    * `temp` (temperature), 
+                                                                                                    * `vx` (velocity in x-direction),
+                                                                                                    * `vy` (velocity in y-direction), 
+                                                                                                    * `vz` (velocity in z-direction), 
+                                                                                                    * `cp` (pressure coefficient),
+                                                                                                    * `ptloss` (relative total pressure loss), 
+                                                                                                    * `mach` (mach number), 
+                                                                                                    * `cf` (magnitude of the skin friction),
+                                                                                                    * `cfx` (x-component of the skin friction), 
+                                                                                                    * `cfy` (y-component of the skin friction),
+                                                                                                    * `cfz` (z-component of the skin friction), 
+                                                                                                    * `ch` (Stanton number), 
+                                                                                                    * `yplus` (y+ value of the cell center of the first cell), 
+                                                                                                    * `lift` (lift force),
+                                                                                                    * `blank` (cell iblank values used for visualiztion or other post-processing).
 
 `volumeVariables`                        `list`     ['resrho']                                      The variables which are, additionally to the variables needed for the restart, written
-                                                                                                    to the CGNS volume solution file. The available keywords are: `mx` (momentum in x-direction),
-                                                                                                    `my` (momentum in y-direction), `mz` (momentum in z-direction), `rhoe` (total energy),
-                                                                                                    `temp` (temperature), `vort` (magnitude of the vorticity), `vortx` (x-component of the vorticity),
-                                                                                                    `vorty` (y-component of the vorticity), `vortz` (z-component of the vorticity), 
-                                                                                                    `cp` (pressure coefficient), `mach` (Mach number), `macht` (turbulent Mach number),
-                                                                                                    `ptloss` (relative total pressure loss), `eddy` (eddy viscosity),
-                                                                                                    `eddyratio` (ratio of eddy viscosity and laminar viscosity),
-                                                                                                    `dist` (wall distance to the nearest viscous wall, `resrho` (density residual),
-                                                                                                    `resmom` (momentum residuals), `resrhoe` (total energy residual), `resturb` (turbulence residuals),
-                                                                                                    `blank` (cell iblank values used for visualiztion or other post-processing).
+                                                                                                    to the CGNS volume solution file. The available keywords are: 
+                                                                                                    
+                                                                                                    * `mx` (momentum in x-direction),
+                                                                                                    * `my` (momentum in y-direction),
+                                                                                                    * `mz` (momentum in z-direction), 
+                                                                                                    * `rhoe` (total energy),
+                                                                                                    * `temp` (temperature),
+                                                                                                    * `vort` (magnitude of the vorticity), 
+                                                                                                    * `vortx` (x-component of the vorticity),
+                                                                                                    * `vorty` (y-component of the vorticity), 
+                                                                                                    * `vortz` (z-component of the vorticity), 
+                                                                                                    * `cp` (pressure coefficient), 
+                                                                                                    * `mach` (Mach number), 
+                                                                                                    * `macht` (turbulent Mach number),
+                                                                                                    * `ptloss` (relative total pressure loss), 
+                                                                                                    * `eddy` (eddy viscosity),
+                                                                                                    * `eddyratio` (ratio of eddy viscosity and laminar viscosity),
+                                                                                                    * `dist` (wall distance to the nearest viscous wall, 
+                                                                                                    * `resrho` (density residual),
+                                                                                                    * `resmom` (momentum residuals), 
+                                                                                                    * `resrhoe` (total energy residual), 
+                                                                                                    * `resturb` (turbulence residuals),
+                                                                                                    * `blank` (cell iblank values used for visualiztion or other post-processing).
 
 `sliceFileTractions`                     `bool`      False                                          Flag to set whether tractions (Tx,Ty,Tz) are writtten to slice files.
 
