@@ -214,7 +214,7 @@ class SUMB(AeroSolver):
         else:
             self.sumb.monitor.writesurface = False
         
-        self.sumb.monitor.writegrid = False
+        self.sumb.monitor.writegrid = True
 
     
         # In order to properly initialize we need to have mach number
@@ -728,7 +728,7 @@ class SUMB(AeroSolver):
 
         # --------------------------------------------------------------
 
-        if self.getOption('equationMode') == 'unsteady':
+        if self.getOption('equationMode').lower() == 'unsteady':
             self.sumb.alloctimearrays(self.getOption('nTimeStepsFine'))
 
         # Mesh warp may have already failed:
@@ -787,7 +787,9 @@ class SUMB(AeroSolver):
         if self.getOption('printTiming') and self.comm.rank == 0:
             print('Solution Time: %10.3f sec'% solTime)
 
-        # Post-Processing -- Write Solutions is requested
+        # Post-Processing
+        # --------------------------------------------------------------
+        # Solution is written if writeSolution argument true or does not exist
         if kwargs.pop('writeSolution', True):
             self.writeSolution()
 
@@ -859,7 +861,7 @@ class SUMB(AeroSolver):
 
         # --------------------------------------------------------------
 
-        if self.getOption('equationMode') == 'unsteady':
+        if self.getOption('equationMode').lower() == 'unsteady':
             self.sumb.alloctimearrays(self.getOption('nTimeStepsFine'))
 
         # Mesh warp may have already failed:
@@ -1573,7 +1575,7 @@ class SUMB(AeroSolver):
 
         baseName: Use this supplied string for the base filename. Typically
                   only used from an external solver.
-        number: Use the user spplied number to index solutino. Again, only
+        number: Use the user supplied number to index solution. Again, only
                 typically used from an external solver.
                 """
         if outputDir is None:
