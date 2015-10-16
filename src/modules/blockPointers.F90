@@ -89,10 +89,9 @@ module blockPointers
   integer(kind=intType), dimension(:), pointer :: groupNum
 
   integer(kind=intType), dimension(:,:,:), pointer :: iblank
-  integer(kind=intType), dimension(:, :), pointer :: iDonor
-  integer(kind=intType), dimension(:, :), pointer :: iMesh
-  integer(kind=intType), dimension(:), pointer :: iBC
-  real(kind=realType), dimension(:, :), pointer :: frac
+  real(kind=realType), dimension(:, :), pointer :: fringeFrac
+  integer(kind=intType), dimension(:, :), pointer :: fringeIndices
+  integer(kind=intType) :: nFringe
 
   integer(kind=intType), dimension(:), pointer :: neighBlockOver
   integer(kind=intType), dimension(:), pointer :: neighProcOver

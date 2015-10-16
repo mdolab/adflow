@@ -42,6 +42,8 @@ vpath %.o $(SUMB_OBJDIR)
 FILES_TO_COMPLEXIFY =  readInterpolation.F90 \
 		       writeGridsWithHalos.F90 \
 		       initializeOversetComm.F90 \
+		       determineClusters.F90 \
+		       checkOverset.F90 \
 		       oversetComm.F90 \
 		       exchangeIblanks.f90\
 		       computeHolesInsideBody.F90\
