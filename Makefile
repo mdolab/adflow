@@ -15,7 +15,7 @@ SUBDIR_SRC    = src/modules       \
 	        src/inputParam    \
 	        src/metis-4.0     \
 	        src/output        \
-	        src/overset       \
+		src/overset       \
 		src/parallelIO    \
 	        src/partitioning  \
 	        src/preprocessing \
@@ -35,9 +35,8 @@ SUBDIR_SRC    = src/modules       \
 		src/NKsolver      \
 
 SUBDIR_EXEC   = src/exec
-SUBDIR_PV3    = src/pv3Interface
-SUMB_SUBDIRS       = $(SUBDIR_SRC) $(PV3_INT_SRC_DIR)
-SUMB_CLEAN_SUBDIRS = $(SUBDIR_SRC)  $(SUBDIR_PV3) $(SUBDIR_EXEC)
+SUMB_SUBDIRS       = $(SUBDIR_SRC) 
+SUMB_CLEAN_SUBDIRS = $(SUBDIR_SRC) $(SUBDIR_EXEC)
 
 default:
 # Check if the config.mk file is in the config dir.

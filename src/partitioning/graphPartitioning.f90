@@ -109,7 +109,7 @@
        nEdges = 0
        nEdgesMax = 0
        do i=1,nBlocks
-         ii        = blocks(i)%n1to1 + ubound(blocks(i)%overComm,1)
+         ii        = blocks(i)%n1to1 
          nEdges    = nedges + ii
          nEdgesMax = max(nedgesMax, ii)
        enddo
@@ -163,13 +163,6 @@
            endif
          enddo
 
-         do j = 1,ubound(blocks(i)%overComm,1)
-           if(blocks(i)%overComm(j,1) /= i) then
-             nedges = nedges +1
-             tmp(nedges) = blocks(i)%overComm(j,1)
-           endif
-         enddo
-
          ! Sort tmp in increasing order and get rid of the possible
          ! multiple entries.
 
@@ -218,30 +211,6 @@
            endif
 
          enddo Edges1to1
-
-         ! Repeat the loop over the overset edges.
-
-         EdgesOverset: do j = 1, ubound(blocks(i)%overComm,1)
-
-           if(blocks(i)%overComm(j,1) /= i) then
-
-             ! Search for the block ID and add the offset of xadj(i-1)
-             ! to obtain the correct index to store the edge info.
-             ! The -1 to the adjncy is present because C-numbering
-             ! is used when calling Metis.
-
-             jj = xadj(i-1) &
-                + bsearchIntegers(blocks(i)%overComm(j,1), tmp, nedges)
-             adjncy(jj) = blocks(i)%overComm(j,1) - 1
-
-             ! The weight equals the number overset cells being
-             ! communicated to this block. The weights are
-             ! accumulated in case of repeats.
-
-             adjwgt(jj) = adjwgt(jj) + blocks(i)%overComm(j,2)
-           endif
-
-         enddo EdgesOverset
 
        enddo graphVertex
 

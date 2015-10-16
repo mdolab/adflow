@@ -128,37 +128,6 @@
 !
 !        ****************************************************************
 !        *                                                              *
-!        * Overset boundary (fringe) cells and blanked cells.           *
-!        *                                                              *
-!        * Note that the local and donor indices and the interpolants   *
-!        * are not stored here to conserve memory since the blocks have *
-!        * not been partitioned yet. The info here is used to copy the  *
-!        * necessary indices and interpolants into the flowDoms.        *
-!        *                                                              *
-!        ****************************************************************
-!
-         !  nCellsOverset       - total number of overset cells.
-         !  cgnsOver(:)         - index into connOver for cgnsDoms.
-         !  ipntOver(:)         - point number which is the index into
-         !                         all data for each cell.
-         !  neighOver(:)        - block number to which each donor
-         !                         cell belongs.
-         !  overComm(:,:)       - amount of overset communication to
-         !                         to this block. The 1st dimension is
-         !                         the block number of the donor and the
-         !                         2nd is the number of cells
-         !                         interpolating from that donor.
-
-         integer(kind=intType) :: nCellsOverset
-
-         integer(kind=intType), dimension(:), pointer :: cgnsOver
-         integer(kind=intType), dimension(:), pointer :: ipntOver
-         integer(kind=intType), dimension(:), pointer :: neighOver
-
-         integer(kind=intType), dimension(:,:), pointer :: overComm
-!
-!        ****************************************************************
-!        *                                                              *
 !        * Relation to the original cgns grid.                          *
 !        *                                                              *
 !        ****************************************************************
