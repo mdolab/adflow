@@ -202,20 +202,7 @@ class SUMB(AeroSolver):
         # Do the remainder of the operations that would have been done
         # had we read in a param file
         self.sumb.iteration.deforming_grid = True
-
-
-        if self.getOption('writevolumesolution'):
-            self.sumb.monitor.writevolume = True
-        else:
-            self.sumb.monitor.writevolume = False
-            
-        if self.getOption('writesurfacesolution'):
-            self.sumb.monitor.writesurface = True
-        else:
-            self.sumb.monitor.writesurface = False
         
-        self.sumb.monitor.writegrid = True
-
     
         # In order to properly initialize we need to have mach number
         # and a few other things set. Just create a dummy aeroproblem,
@@ -730,6 +717,7 @@ class SUMB(AeroSolver):
 
         if self.getOption('equationMode').lower() == 'unsteady':
             self.sumb.alloctimearrays(self.getOption('nTimeStepsFine'))
+            self._setUnsteadyFileParameters()
 
         # Mesh warp may have already failed:
         if not self.sumb.killsignals.fatalfail:
@@ -924,17 +912,11 @@ class SUMB(AeroSolver):
 
         t2 = time.time()
         solTime = t2 - t1
-
-        ts = self.sumb.monitor.timestepunsteady
-        if self.getOption('writeVolumeSolution') and \
-          numpy.mod(ts, self.getOption('nsavevolume')) == 0 :
-            self.writeVolumeSolutionFile('V.cgns')
-        if self.getOption('writeSurfaceSolution') and \
-          numpy.mod(ts, self.getOption('nsavesurface')) == 0 :
-            self.writeSurfaceSolutionFile('S.cgns')
-
         if self.getOption('printTiming') and self.comm.rank == 0:
-            print('Solution Time: %10.3f sec'% solTime)
+            print('Timestep solution time: %10.3f sec'% solTime)
+
+        self.writeSolution()
+  
 
     def setDisplacement(self, coordinates, groupName='interface', ifShift=True):
         if ifShift and self.sumb.iteration.deforming_grid:
@@ -1598,14 +1580,33 @@ class SUMB(AeroSolver):
         # Join to get the actual filename root
         base = os.path.join(outputDir, baseName)
 
-        # Now call each of the 4 routines with the appropriate file name:
-        if self.getOption('writevolumesolution'):
+        # Get the timestep if this is time dependent solution, else we default
+        # to the same values as the nsave values (which is 1) for steady 
+        # and time-spectral solution to be written,
+        if self.getOption('equationMode').lower() == 'unsteady':            
+            ts = self.sumb.monitor.timestepunsteady
+        else:
+            ts = 1
+        
+        # Now call each of the 4 routines with the appropriate file name:    
+        if self.getOption('writevolumesolution') and \
+          numpy.mod(ts, self.getOption('nsavevolume')) == 0 :
             self.writeVolumeSolutionFile(base + '_vol.cgns')
-        if self.getOption('writesurfacesolution'):
-            self.writeSurfaceSolutionFile(base + '_surf.cgns')
+            
+        if self.getOption('writesurfacesolution') and \
+          numpy.mod(ts, self.getOption('nsavesurface')) == 0 :
+            self.writeSurfaceSolutionFile(base + '_surf.cgns')   
+         
+        # ADD NSAVE TEST AROUND THESE AS WELL BUT
+        # THIS IS SMALL COMPARED TO OTHER. REFACTOR
+        if self.getOption('equationMode').lower() == 'unsteady':            
+            self.writeLiftDistributionFile(base + '_lift_Timestep%4.4d.dat'% ts)
+            self.writeSlicesFile(base + '_slices_Timestep%4.4d.dat'% ts)
+        else:
+            self.writeLiftDistributionFile(base + '_lift.dat')
+            self.writeSlicesFile(base + '_slices.dat')
 
-        self.writeLiftDistributionFile(base + '_lift.dat')
-        self.writeSlicesFile(base + '_slices.dat')
+
 
     def writeMeshFile(self, fileName):
         """Write the current mesh to a CGNS file. This call isn't used
@@ -1647,6 +1648,9 @@ class SUMB(AeroSolver):
             Flag specifying whether the grid should be included or if
             links should be used. Always writing the grid is
             recommended even in cases when it is not strictly necessary.
+            Note that if writeGrid == False the volume files do not contain 
+            any grid coordinates rendering the file useless if a separate
+            grid file was written out and is linked to it.
         """
         # Ensure extension is .cgns even if the user didn't specify
         fileName, ext = os.path.splitext(fileName)
@@ -3982,6 +3986,51 @@ class SUMB(AeroSolver):
                 self.setOption("turbresscale", [1e3, 1e-6])
             else:
                 raise Error("Turbulence model %-35s does not have default values specified for turbresscale. Specify turbresscale manually or update the python interface"%(turbModel))
+
+    def _setUnsteadyFileParameters(self):
+        """
+        This is a temporary function that sets the appropriate filenames
+        when using the unsteady equations and the bdf time integration scheme.
+        This function should drop out when unsteady solver is stepped through python
+        TEMPORARY
+        """
+        # THIS DOES NOT CURRENTLY WORK DUE TO INTERNAL LOGIC. REFACTOR FORTRAN 
+        # Set parameters for outputing data
+        #if self.getOption('writevolumesolution'):
+        #    self.sumb.monitor.writevolume = True
+        #    self.sumb.monitor.writegrid = True
+        #else:
+        #    self.sumb.monitor.writevolume = False
+        #    self.sumb.monitor.writegrid = False
+            
+        #if self.getOption('writesurfacesolution'):
+        #    self.sumb.monitor.writesurface = True
+        #else:
+        #    self.sumb.monitor.writesurface = False
+        
+        outputDir = self.getOption('outputDirectory')
+        baseName = self.curAP.name
+
+        # Join to get the actual filename root
+        volFileName = os.path.join(outputDir, baseName + "_vol.cgns")
+        surfFileName = os.path.join(outputDir, baseName + "_surf.cgns")
+        sliceFileName = os.path.join(outputDir, baseName + "_slices")
+
+        print (baseName, sliceFileName)
+        # Set fileName in sumb
+        self.sumb.inputio.solfile[:] = ''
+        self.sumb.inputio.solfile[0:len(volFileName)] = volFileName
+
+        # Set the grid file to the same name so the grids will be written
+        # to the volume files
+        self.sumb.inputio.newgridfile[:] = ''
+        self.sumb.inputio.newgridfile[0:len(volFileName)] = volFileName        
+        
+        self.sumb.inputio.surfacesolfile[:] = ''
+        self.sumb.inputio.surfacesolfile[0:len(surfFileName)] = surfFileName
+        
+        self.sumb.inputio.slicesolfile[:] = ''
+        self.sumb.inputio.slicesolfile[0:len(sliceFileName)] = sliceFileName
 
 
     def __del__(self):

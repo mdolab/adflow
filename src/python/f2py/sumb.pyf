@@ -594,6 +594,7 @@ python module libsumb
          character(len=maxstringlen) :: solfile
          integer(kind=inttype) parameter,optional :: precisiondouble=2
          character(len=maxstringlen) :: surfacesolfile
+         character(len=maxstringlen) :: slicesolfile ! TEMPORARY
          character(len=maxstringlen) :: cpfile
          logical :: writecoormeter
          integer(kind=inttype) :: precisionsol

@@ -223,6 +223,7 @@
        !                      same as the grid or restart file, but not
        !                      necesarrily.
        ! surfaceSolFile:      Surface solution file.
+       ! sliceSolFile:        File name of a slice of a surface solution. TEMPORARY
        ! cpFile:              File which contains the curve fits for cp.
        ! precisionGrid:       Precision of the grid file to be written.
        !                      Possibilities are precisionSingle and
@@ -256,7 +257,7 @@
        character(len=maxStringLen) :: paramFile, gridFile
        character(len=maxStringLen) :: plot3DConnFile, newGridFile
        character(len=maxStringLen) :: restartFile, solFile
-       character(len=maxStringLen) :: surfaceSolFile, cpFile
+       character(len=maxStringLen) :: surfaceSolFile, cpFile, sliceSolFile
 
        logical :: storeRindLayer, restart, checkRestartSol
        logical :: autoParameterUpdate, writeCoorMeter
