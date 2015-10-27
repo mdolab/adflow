@@ -208,7 +208,7 @@
 
        ! Initialize the dependent flow variables and the halo values.
 
-         call computeOversetInterpolation
+       call computeOversetInterpolationParallel
          
        call initDepvarAndHalos(halosRead)
   

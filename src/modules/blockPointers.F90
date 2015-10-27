@@ -91,6 +91,11 @@ module blockPointers
   integer(kind=intType), dimension(:,:,:), pointer :: iblank
   real(kind=realType), dimension(:, :), pointer :: fringeFrac
   integer(kind=intType), dimension(:, :), pointer :: fringeIndices
+  type(oversetDonor), dimension(:, :, :), pointer :: donors
+  logical, dimension(:, :, :), pointer :: forceRecv
+  logical, dimension(:, :, :), pointer :: recvStatus
+  real(kind=realType), dimension(:, :, :, :), pointer :: xSearch
+  real(kind=realType), dimension(:, :, :), pointer :: qualRecv
   integer(kind=intType) :: nFringe
 
   integer(kind=intType), dimension(:), pointer :: neighBlockOver

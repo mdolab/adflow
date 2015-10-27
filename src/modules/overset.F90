@@ -1,6 +1,7 @@
 module overset
 
   use precision
+  use adtData
   implicit none
 
 #define PETSC_AVOID_MPIF_H
@@ -18,60 +19,81 @@ module overset
   type variablePointer
      real(kind=realType), dimension(:, :, :), pointer :: arr
   end type variablePointer
-
+  
   ! Helper dataType for communicated overset grid points. This data
   ! structure mirrros the blockType structure in block.F90, but only
   ! contains minimum amount of information required for computing
   ! overset connectivities. 
 
-  type oversetDonor
+  ! Store the coordinates from a block that will need to be searched.
 
-     ! Make everything in here static such that we can potentially use
-     ! MPI to send these types around direclty
+  ! x , size(3, arrSize) : Seach point. 
+  ! fInd, size(3, arrSize) : i,j,k block indices of the point
+  ! dInd, size(4, arrSize) : blockID, i,j,k indices of the point's donor
+  ! frac, size(3, arrSize) : Fraction weights in the cell
+  ! gInd, size(8, arrSize) : Global indices of the 8 donor cells
+  type oversetSearchCoords
+     real(kind=realType), dimension(:, :), pointer :: x, frac
+     integer(kind=intType), dimension(:, :), pointer :: fInd, dInd, gInd
+     integer(kind=intType) :: n, arrSize
+  end type oversetSearchCoords
 
-     integer(kind=intType) :: donorProcID
-     integer(kind=intType) :: donorBlockID
-     real(kind=realType), dimension(3) :: frac
-     integer(kind=intType), dimension(3) :: ind
+  ! A simple generic sparse matrix storage container for storing the
+  ! (sparse) overlap structure of an overset mesh
+  type CSRMatrix
+     integer(kind=intType) :: nRow, nCol, nnz
+     integer(kind=intType), dimension(:), pointer :: colInd, rowPtr
+     real(kind=realType), dimension(:), pointer :: data
+     integer(Kind=intType), dimension(:), pointer :: assignedProc
+  end type CSRMatrix
 
-  end type oversetDonor
-
+  ! This derived type contains sufficient information to perfom ADT
+  ! donor searches. The information is com
   type oversetBlock
-     integer(kind=intType) :: cluster
+
+     ! Sizes for the block
      integer(kind=intType) :: ib, jb, kb
      integer(kind=intType) :: ie, je, ke
      integer(kind=intType) :: il, jl, kl
      integer(kind=intType) :: nx, ny, nz
+     
+     ! This is the cell volume of the donor
+     real(kind=realType), dimension(:, :), pointer :: qualDonor
+
+     ! Connectivity for the ADT
      integer(kind=intType), dimension(:, :), pointer :: hexaConn
-     real(kind=realType), dimension(:, :, :, :), pointer :: x ! Orignal X coordinates
-     real(kind=realType), dimension(:, :), pointer :: xDual, xPrimal
-     real(kind=realType), dimension(:, :, :, :), pointer :: xSearch
-     real(kind=realType), dimension(:, :, :), pointer :: qualDonor, qualRecv
-     integer(kind=intType), dimension(:,:,:), pointer :: iblank
-     integer(kind=intType), dimension(:,:,:), pointer :: cellStatus
+
+     ! Coordinates for the ADT
+     real(kind=realType), dimension(:, :), pointer :: xADT
+
+     ! Flag eliminating a cell as a potential donor. Using an integer
+     ! since it is easier to transfer
+     integer, dimension(:, :, :), pointer :: invalidDonor
+
+     ! Copy of global cell
      integer(kind=intType), dimension(:, :, :), pointer :: globalCell
-     logical, dimension(:, :, :), pointer :: recvStatus
-     logical, dimension(:, :, :), pointer :: donorStatus
-     logical, dimension(:, :, :), pointer :: forceRecv
-     logical, dimension(:, :, :), pointer :: invalidDonor
+     
+     ! Minimum volume for this block
      real(kind=realType) :: minVolume
-     integer :: globalBlockID, localBlockID
-     character(len=15) :: adtName
-     integer(kind=intTYpe) :: nFringe
-     integer(kind=intTYpe) :: nDonor
-     integer(kind=intType), dimension(:, :), pointer :: fringeIndices
-     integer(kind=intType), dimension(:, :), pointer :: donorIndices
-     real(kind=realType), dimension(:, :), pointer :: donorFrac
-     integer(kind=intType) :: procID
-     type(oversetDonor), dimension(:, :, :), pointer :: donors
+
+     ! The ADT for this block
+     type(adtType) :: ADT
+
+     ! Buffer space
+     real(kind=realType), dimension(:), allocatable :: rBuffer
+     integer(kind=intType), dimension(:), allocatable :: iBuffer
+
   end type oversetBlocK
 
   type(oversetBlock), dimension(:), allocatable :: oBlocks
   type(variablePointer), dimension(:, :), allocatable :: variables
 
+  type(oversetSearchCoords), dimension(:), allocatable :: searchCoords
+
   integer(kind=intType), dimension(:), allocatable :: nDomProc, cumDomProc
   integer(kind=intType), dimension(:, :), allocatable :: dims
   integer(kind=intType) :: nDomTotal
+
   ! Two vectors for overset communication
   Vec oversetDonors
   Vec oversetFringes
@@ -81,9 +103,5 @@ module overset
   
   ! Temporary index sets
   IS IS1, IS2
-
-  ! Variales for tracking cots
-  integer(kind=intType) :: totalSearches
-  real(kind=realType) :: searchCosts
 
 end module overset

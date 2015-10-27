@@ -173,6 +173,19 @@ module block
      real(kind=realType), dimension(:, :, :), pointer :: weight
   end type surfaceNodeWeightArray
 
+ type oversetDonor
+
+     ! Make everything in here static such that we can potentially use
+     ! MPI to send these types around direclty
+
+     integer(kind=intType) :: donorProcID
+     integer(kind=intType) :: donorBlockID
+     real(kind=realType), dimension(3) :: frac
+     integer(kind=intType), dimension(3) :: ind
+     integer(kind=intType), dimension(8) :: gInd
+
+  end type oversetDonor
+
   !      ******************************************************************
   !      *                                                                *
   !      * The definition of the derived data type block_type, which      *
@@ -305,7 +318,11 @@ module block
      integer(kind=intType), dimension(:,:,:), pointer :: iblank
      real(kind=realType), dimension(:, :), pointer :: fringeFrac
      integer(kind=intType), dimension(:, :), pointer :: fringeIndices
-
+     type(oversetDonor), dimension(:, :, :), pointer :: donors
+     logical, dimension(:, :, :), pointer :: forceRecv
+     logical, dimension(:, :, :), pointer :: recvStatus
+     real(kind=realType), dimension(:, :, :, :), pointer :: xSearch
+     real(kind=realType), dimension(:, :, :), pointer :: qualRecv
      integer(kind=intTYpe) :: nFringe
      !
      !        ****************************************************************

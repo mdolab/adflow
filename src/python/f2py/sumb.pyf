@@ -1147,8 +1147,7 @@ python module libsumb
             integer(kind=inttype), optional,check(len(dwbar)>=statesize),depend(dwbar) :: statesize=len(dwbar)
             integer(kind=inttype) :: spatialsize
         end subroutine testrevspatial
-        subroutine test
-        end subroutine test
+
     end interface 
 
 #ifdef USE_COMPLEX

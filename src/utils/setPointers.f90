@@ -117,6 +117,11 @@
        iblank => flowDoms(nn,mm,ll)%iblank
        fringeFrac => flowDoms(nn,mm,ll)%fringeFrac
        fringeIndices => flowDoms(nn,mm,ll)%fringeIndices
+       donors => flowDoms(nn,mm,ll)%donors
+       forceRecv => flowDoms(nn,mm,ll)%forceRecv
+       recvStatus => flowDoms(nn,mm,ll)%recvStatus
+       xSearch => flowDoms(nn,mm,ll)%xSearch
+       qualRecv => flowDoms(nn,mm,ll)%qualRecv
 
        ! The data for boundary subfaces.
 
