@@ -261,7 +261,7 @@
 !
       ! ADTs(:): The array to store the different ADT's.
 
-      type(adtType), dimension(:), allocatable :: ADTs
+      type(adtType), dimension(:), allocatable, target :: ADTs
 
       ! nProcRecv:      Number of processors from which I receive
       !                 coordinates that must be searched in my ADT.
