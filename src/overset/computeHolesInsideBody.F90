@@ -361,7 +361,7 @@ subroutine computeHolesInsideBody
               end if
 
               ! ! Do the very fast ray cast method-intersection search. 
-              call intersectionTreeSearchSinglePoint(jjAdt, coor(1:3), &
+              call intersectionTreeSearchSinglePoint(ADTs(jjAdt), coor(1:3), &
                    intInfo(1), BBint, frontLeaves, frontLeavesNew)
               
               ! If we never found *any* intersections again, cannot
@@ -373,7 +373,7 @@ subroutine computeHolesInsideBody
               nSearch = nSearch + 1
               ! Otherwise do the full min distance search
               coor(4) = 1e30
-              call minDistancetreeSearchSinglePoint(jjAdt, coor, intInfo, &
+              call minDistancetreeSearchSinglePoint(ADTs(jjAdt), coor, intInfo, &
                    uvw, dummy, 0, BB, frontLeaves, frontLeavesNew)
               
               faceID = intInfo(3)
@@ -404,12 +404,15 @@ subroutine computeHolesInsideBody
         end do
      end do
   end do
-  print *,'did ', nsearch, ' actual searches'
+
   ! Destroy ADT since we're done
   call adtDeallocateADTs(adtName)
 
   ! Deallocate all the remaining temporary data
   deallocate(nodes, conn, norm)
   deallocate(stack, BB, frontLeaves, frontLeavesNew, BBint)
+
+  ! Finally communicate the updated iBlanks
+  call exchangeIBlanks(level, sps, commPatternCell_2nd, internalCell_2nd)
 
 end subroutine computeHolesInsideBody

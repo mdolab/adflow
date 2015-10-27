@@ -29,8 +29,7 @@ include ${SUMB_RULES_FILE}
 
 vpath %.o $(SUMB_OBJDIR)
 
-FF90_OBJECTS_2 = adtData.o\
-		 gradD2Hexa.o\
+FF90_OBJECTS_2 = gradD2Hexa.o\
 		 hessD2Hexa.o\
 		 minD2Hexa.o\
 		 newtonStep.o

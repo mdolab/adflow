@@ -100,6 +100,31 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   call MatZeroEntries(matrix, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
+  ! Set the diagonal to 1 if the cell is not a compute cell:
+
+  ! Make an identity block
+  blk = zero
+  do i=1, nState
+     blk(i,i) = one
+  end do
+
+  do nn=1,nDom
+     do sps=1,nTimeIntervalsSpectral
+        call setPointers(nn, level, sps)
+        do k=2, kl
+           do j=2, jl
+              do i=2, il
+                 if (iblank(i, j, k) /= 1) then 
+                    iRow = flowDoms(nn, level, sps)%globalCell(i, j, k)
+                    iCol = iRow
+                    call setBlock(blk)
+                 end if
+              end do
+           end do
+        end do
+     end do
+  end do
+
   ! Set a pointer to the correct set of stencil depending on if we are
   ! using the first order stencil or the full jacobian
 
@@ -131,7 +156,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   ! restrict the fine grid solutions, since it is possible the
   ! NKsolver was used an the coarse grid solutions are (very!) out of
   ! date. 
-  
+
   ! Assembling matrix on coarser levels is not entirely implemented yet. 
   currentLevel = level
   groundLevel = level
@@ -140,7 +165,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   delta_x = 1e-9_realType
   one_over_dx = one/delta_x
   rkStage = 0
-  
+
   ! Determine if we want to use frozenTurbulent Adjoint
   resetToRANS = .False. 
   if (frozenTurb .and. equations == RANSEquations) then
@@ -178,7 +203,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
 
      ! Setup the coloring for this block depending on if its
      ! drdw or a PC
-     
+
      ! List of all Coloring Routines:
      !   Debugging Colorings Below:
      !       call setup_3x3x3_coloring(nn, level,  nColor)
@@ -190,7 +215,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
      !       call setup_dRdw_visc_coloring(nn, level,  nColor)
 
      if (usePC) then
-      
+
         if (viscous .and. viscPC) then
            call setup_3x3x3_coloring(nn, level,  nColor) ! dense 3x3x3 coloring
         else
@@ -231,12 +256,12 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
                        end do
                     end do
                  end if
-                 
+
                  if (useAD) then
                     flowdomsd(nn, 1, sps2)%w = zero ! This is actually w seed
                  end if
               end do
-              
+
               ! Peturb w or set AD Seed according to iColor
               do k=0, kb
                  do j=0, jb
@@ -252,7 +277,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
                     end do
                  end do
               end do
-             
+
               ! Run Block-based residual 
               if (useAD) then
 #ifndef USE_COMPLEX
@@ -315,64 +340,68 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
            kLoop: do k=0, kb
               jLoop: do j=0, jb
                  iLoop: do i=0, ib
-                    iCol = flowDoms(nn, level, sps)%globalCell(i, j, k)
-                    ! if (iCol < 0) then
-                    !    iCol = -(iCol + 1)
-                    ! end if
-                    colorCheck: if (flowdomsd(nn, 1, 1)%color(i, j, k) == icolor) then! &
-                       !.and. icol >= 0) then
-                       !colorCheck: if (flowdomsd(nn, 1, 1)%color(i, j, k) == icolor) then
+                    colBlank: if (flowDoms(nn, level, sps)%iblank(i, j, k) == 1) then 
 
-                       ! i, j, k are now the "Center" cell that we
-                       ! actually petrubed. From knowledge of the
-                       ! stencil, we can simply take this cell and
-                       ! using the stencil, set the values around it
-                       ! in PETSc
+                       iCol = flowDoms(nn, level, sps)%globalCell(i, j, k)
 
-                       stencilLoop: do i_stencil=1, n_stencil
-                          ii = stencil(i_stencil, 1)
-                          jj = stencil(i_stencil, 2)
-                          kk = stencil(i_stencil, 3)
+                       colorCheck: if (flowdomsd(nn, 1, 1)%color(i, j, k) == icolor) then! &
+                          !.and. icol >= 0) then
+                          !colorCheck: if (flowdomsd(nn, 1, 1)%color(i, j, k) == icolor) then
 
-                          ! Check to see if the cell in this
-                          ! sentcil is on a physical cell, not a
-                          ! halo/BC halo
-                          onBlock: if ( i+ii >= 2 .and. i+ii <= il .and. &
-                                        j+jj >= 2 .and. j+jj <= jl .and. &
-                                        k+kk >= 2 .and. k+kk <= kl) then 
+                          ! i, j, k are now the "Center" cell that we
+                          ! actually petrubed. From knowledge of the
+                          ! stencil, we can simply take this cell and
+                          ! using the stencil, set the values around it
+                          ! in PETSc
 
-                             irow = flowDoms(nn, level, sps)%globalCell(&
-                                 i+ii, j+jj, k+kk)
+                          stencilLoop: do i_stencil=1, n_stencil
+                             ii = stencil(i_stencil, 1)
+                             jj = stencil(i_stencil, 2)
+                             kk = stencil(i_stencil, 3)
 
-                             centerCell: if ( ii == 0 .and. jj == 0 &
-                                  .and. kk == 0) then
-                                useDiagPC: if (usePC .and. useDiagTSPC) then
-                                   ! If we're doing the PC and we want
-                                   ! to use TS diagonal form, only set
-                                   ! values for on-time insintance
-                                   blk = flowDomsd(nn, 1, sps)%dw_deriv(i+ii, j+jj, k+kk, &
-                                        1:nstate, 1:nstate)
-                                   call setBlock(blk)
-                                else
-                                   ! Otherwise loop over spectral
-                                   ! instances and set all.
-                                   do sps2=1, nTimeIntervalsSpectral
-                                      irow = flowDoms(nn, level, sps2)%&
-                                           globalCell(i+ii, j+jj, k+kk)
-                                      blk = flowDomsd(nn, 1, sps2)%dw_deriv(i+ii, j+jj, k+kk, &
+                             ! Check to see if the cell in this
+                             ! sentcil is on a physical cell, not a
+                             ! halo/BC halo
+                             onBlock: if ( i+ii >= 2 .and. i+ii <= il .and. &
+                                  j+jj >= 2 .and. j+jj <= jl .and. &
+                                  k+kk >= 2 .and. k+kk <= kl) then 
+
+                                irow = flowDoms(nn, level, sps)%globalCell(&
+                                     i+ii, j+jj, k+kk)
+
+                                rowBlank: if (flowDoms(nn, level, sps)%iBlank(i+ii, j+jj, k+kk) == 1) then 
+
+                                   centerCell: if ( ii == 0 .and. jj == 0 &
+                                        .and. kk == 0) then
+                                      useDiagPC: if (usePC .and. useDiagTSPC) then
+                                         ! If we're doing the PC and we want
+                                         ! to use TS diagonal form, only set
+                                         ! values for on-time insintance
+                                         blk = flowDomsd(nn, 1, sps)%dw_deriv(i+ii, j+jj, k+kk, &
+                                              1:nstate, 1:nstate)
+                                         call setBlock(blk)
+                                      else
+                                         ! Otherwise loop over spectral
+                                         ! instances and set all.
+                                         do sps2=1, nTimeIntervalsSpectral
+                                            irow = flowDoms(nn, level, sps2)%&
+                                                 globalCell(i+ii, j+jj, k+kk)
+                                            blk = flowDomsd(nn, 1, sps2)%dw_deriv(i+ii, j+jj, k+kk, &
+                                                 1:nstate, 1:nstate)
+                                            call setBlock(blk)
+                                         end do
+                                      end if useDiagPC
+                                   else
+                                      ! ALl other cells just set.
+                                      blk = flowDomsd(nn, 1, sps)%dw_deriv(i+ii, j+jj, k+kk, &
                                            1:nstate, 1:nstate)
                                       call setBlock(blk)
-                                   end do
-                                end if useDiagPC
-                             else
-                                ! ALl other cells just set.
-                                blk = flowDomsd(nn, 1, sps)%dw_deriv(i+ii, j+jj, k+kk, &
-                                     1:nstate, 1:nstate)
-                                call setBlock(blk)
-                             end if centerCell
-                          end if onBlock
-                       end do stencilLoop
-                    end if colorCheck
+                                   end if centerCell
+                                end if rowBlank
+                             end if onBlock
+                          end do stencilLoop
+                       end if colorCheck
+                    end if colBlank
                  end do iLoop
               end do jLoop
            end do kLoop
@@ -384,7 +413,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   if (.not. useAD) then 
      call resetFDReference(level)
   end if
-  
+
   ! PETSc Matrix Assembly and Options Set
   call MatAssemblyBegin(matrix, MAT_FINAL_ASSEMBLY, ierr)
   call EChk(ierr, __FILE__, __LINE__)
@@ -434,7 +463,7 @@ contains
           end if
        end do
     end do
-    
+
     ! Check if the blk has nan
     if (isnan(sum(blk))) then
        print *,'Bad Block:',blk

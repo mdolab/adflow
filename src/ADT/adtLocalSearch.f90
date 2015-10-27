@@ -26,7 +26,7 @@
 
         !===============================================================
 
-        subroutine containmentTreeSearch(jj,        coor,   &
+        subroutine containmentTreeSearch(ADT,       coor,   &
                                          intInfo,   uvw,    &
                                          arrDonor,  nCoor,  &
                                          nInterpol)
@@ -39,8 +39,7 @@
 !       *                                                              *
 !       * Subroutine intent(in) arguments.                             *
 !       * --------------------------------                             *
-!       * jj:        Entry in the array ADTs, whose ADT must be        *
-!       *            searched.                                         *
+!       * ADT:       ADT type whose ADT must be searched               *
 !       * nCoor:     Number of coordinates for which the element must  *
 !       *            be determined.                                    *
 !       * coor:      The coordinates of these points.                  *
@@ -75,7 +74,8 @@
 !
 !       Subroutine arguments.
 !
-        integer(kind=intType), intent(in) :: nCoor, jj
+        type(adtType), intent(inout) :: ADT
+        integer(kind=intType), intent(in) :: nCoor
         integer(kind=intType), intent(in) :: nInterpol
 
         real(kind=realType), dimension(:,:), intent(in) :: coor
@@ -107,7 +107,7 @@
         allocate(BB(nAllocBB), frontLeaves(nAllocFront), &
                  frontLeavesNew(nAllocFront), stat=ierr)
         if(ierr /= 0)                                    &
-          call adtTerminate(jj, "containmentTreeSearch", &
+          call adtTerminate(ADT, "containmentTreeSearch", &
                             "Memory allocation failure for BB, &
                             &frontLeaves and frontLeavesNew.")
 
@@ -115,7 +115,7 @@
 
         coorLoop: do nn=1, nCoor
 
-           call containmentTreeSearchSinglePoint(jj, coor(:, nn), &
+           call containmentTreeSearchSinglePoint(ADT, coor(:, nn), &
            intInfo(:, nn), uvw(:, nn), arrDonor, nInterpol, BB, &
            frontLeaves, frontLeavesNew)
 
@@ -125,13 +125,13 @@
 
         deallocate(BB, frontLeaves, frontLeavesNew, stat=ierr)
         if(ierr /= 0)                                    &
-          call adtTerminate(jj, "containmentTreeSearch", &
+          call adtTerminate(ADT, "containmentTreeSearch", &
                             "Deallocation failure for BB, &
                             &frontLeaves and frontLeavesNew.")
 
         end subroutine containmentTreeSearch
 
-      subroutine containmentTreeSearchSinglePoint(jj, coor, &
+      subroutine containmentTreeSearchSinglePoint(ADT, coor, &
            intInfo, uvw, arrDonor, nInterpol, BB, &
            frontLeaves, frontLeavesNew)
 !
@@ -150,8 +150,7 @@
 !       *                                                              *
 !       * Subroutine intent(in) arguments.                             *
 !       * --------------------------------                             *
-!       * jj:        Entry in the array ADTs, whose ADT must be        *
-!       *            searched.                                         *
+!       * ADT:       ADT type whose ADT must be searched               *
 !       * coor:      The coordinate of the point to be searched.       *
 !       * nInterpol: Number of variables to be interpolated.           *
 !       * arrDonor:  Array with the donor data; needed to obtain the   *
@@ -185,7 +184,7 @@
 !
 !       Subroutine arguments.
 !
-        integer(kind=intType), intent(in) :: jj
+        type(adtType), intent(inout) :: ADT
         integer(kind=intType), intent(in) :: nInterpol
 
         real(kind=realType), dimension(3), intent(in) :: coor
@@ -239,8 +238,8 @@
 !
         ! Set some pointers to make the code more readable.
 
-        xBBox  => ADTs(jj)%xBBox
-        ADTree => ADTs(jj)%ADTree
+        xBBox  => ADT%xBBox
+        ADTree => ADT%ADTree
 
         ! Determine the sizes from the arrays we have been passed
 
@@ -289,6 +288,7 @@
                 ! or a leaf of the next level.
 
                 kk = ADTree(ll)%children(mm)
+               
                 terminalTest: if(kk < 0) then
 
                   ! Child contains a bounding box. Check if the
@@ -306,7 +306,7 @@
                     ! bounding box in the list of possible candidates.
 
                     if(nBB == nAllocBB) &
-                      call reallocPlus(BB, nAllocBB, 10, jj)
+                      call reallocPlus(BB, nAllocBB, 10, ADT)
 
                     nBB     = nBB + 1
                     BB(nBB) = kk
@@ -329,8 +329,8 @@
 
                     if(nFrontLeavesNew == nAllocFront) then
                       i = nAllocFront
-                      call reallocPlus(frontLeavesNew, i, 25, jj)
-                      call reallocPlus(frontLeaves, nAllocFront, 25, jj)
+                      call reallocPlus(frontLeavesNew, i, 25, ADT)
+                      call reallocPlus(frontLeaves, nAllocFront, 25, ADT)
                     endif
 
                     nFrontLeavesNew = nFrontLeavesNew + 1
@@ -374,27 +374,27 @@
             ! Determine the element type stored in this bounding box.
 
             kk = BB(mm)
-            select case (ADTs(jj)%elementType(kk))
+            select case (ADT%elementType(kk))
 
               case (adtTetrahedron)
 
                 ! Element is a tetrahedron.
                 ! Compute the coordinates relative to node 1.
 
-                ll   = ADTs(jj)%elementID(kk)
-                n(1) = ADTs(jj)%tetraConn(1,ll)
+                ll   = ADT%elementID(kk)
+                n(1) = ADT%tetraConn(1,ll)
 
                 do i=2,4
-                  n(i) = ADTs(jj)%tetraConn(i,ll)
+                  n(i) = ADT%tetraConn(i,ll)
 
-                  xn(1,i) = ADTs(jj)%coor(1,n(i)) - ADTs(jj)%coor(1,n(1))
-                  xn(2,i) = ADTs(jj)%coor(2,n(i)) - ADTs(jj)%coor(2,n(1))
-                  xn(3,i) = ADTs(jj)%coor(3,n(i)) - ADTs(jj)%coor(3,n(1))
+                  xn(1,i) = ADT%coor(1,n(i)) - ADT%coor(1,n(1))
+                  xn(2,i) = ADT%coor(2,n(i)) - ADT%coor(2,n(1))
+                  xn(3,i) = ADT%coor(3,n(i)) - ADT%coor(3,n(1))
                 enddo
 
-                x(1) = coor(1) - ADTs(jj)%coor(1,n(1))
-                x(2) = coor(2) - ADTs(jj)%coor(2,n(1))
-                x(3) = coor(3) - ADTs(jj)%coor(3,n(1))
+                x(1) = coor(1) - ADT%coor(1,n(1))
+                x(2) = coor(2) - ADT%coor(2,n(1))
+                x(3) = coor(3) - ADT%coor(3,n(1))
 
                 ! Determine the matrix for the linear transformation
                 ! from the standard element to the current element.
@@ -448,20 +448,20 @@
                 ! Element is a pyramid.
                 ! Compute the coordinates relative to node 1.
 
-                ll   = ADTs(jj)%elementID(kk)
-                n(1) = ADTs(jj)%pyraConn(1,ll)
+                ll   = ADT%elementID(kk)
+                n(1) = ADT%pyraConn(1,ll)
 
                 do i=2,5
-                  n(i) = ADTs(jj)%pyraConn(i,ll)
+                  n(i) = ADT%pyraConn(i,ll)
 
-                  xn(1,i) = ADTs(jj)%coor(1,n(i)) - ADTs(jj)%coor(1,n(1))
-                  xn(2,i) = ADTs(jj)%coor(2,n(i)) - ADTs(jj)%coor(2,n(1))
-                  xn(3,i) = ADTs(jj)%coor(3,n(i)) - ADTs(jj)%coor(3,n(1))
+                  xn(1,i) = ADT%coor(1,n(i)) - ADT%coor(1,n(1))
+                  xn(2,i) = ADT%coor(2,n(i)) - ADT%coor(2,n(1))
+                  xn(3,i) = ADT%coor(3,n(i)) - ADT%coor(3,n(1))
                 enddo
 
-                x(1) = coor(1) - ADTs(jj)%coor(1,n(1))
-                x(2) = coor(2) - ADTs(jj)%coor(2,n(1))
-                x(3) = coor(3) - ADTs(jj)%coor(3,n(1))
+                x(1) = coor(1) - ADT%coor(1,n(1))
+                x(2) = coor(2) - ADT%coor(2,n(1))
+                x(3) = coor(3) - ADT%coor(3,n(1))
 
                 ! Modify the coordinates of node 3, such that it
                 ! corresponds to the weights of the u*v term in the
@@ -570,20 +570,20 @@
                 ! Element is a prism.
                 ! Compute the coordinates relative to node 1.
 
-                 ll   = ADTs(jj)%elementID(kk)
-                 n(1) = ADTs(jj)%prismsConn(1,ll)
+                 ll   = ADT%elementID(kk)
+                 n(1) = ADT%prismsConn(1,ll)
 
                 do i=2,6
-                  n(i) = ADTs(jj)%prismsConn(i,ll)
+                  n(i) = ADT%prismsConn(i,ll)
 
-                  xn(1,i) = ADTs(jj)%coor(1,n(i)) - ADTs(jj)%coor(1,n(1))
-                  xn(2,i) = ADTs(jj)%coor(2,n(i)) - ADTs(jj)%coor(2,n(1))
-                  xn(3,i) = ADTs(jj)%coor(3,n(i)) - ADTs(jj)%coor(3,n(1))
+                  xn(1,i) = ADT%coor(1,n(i)) - ADT%coor(1,n(1))
+                  xn(2,i) = ADT%coor(2,n(i)) - ADT%coor(2,n(1))
+                  xn(3,i) = ADT%coor(3,n(i)) - ADT%coor(3,n(1))
                 enddo
 
-                x(1) = coor(1) - ADTs(jj)%coor(1,n(1))
-                x(2) = coor(2) - ADTs(jj)%coor(2,n(1))
-                x(3) = coor(3) - ADTs(jj)%coor(3,n(1))
+                x(1) = coor(1) - ADT%coor(1,n(1))
+                x(2) = coor(2) - ADT%coor(2,n(1))
+                x(3) = coor(3) - ADT%coor(3,n(1))
 
                 ! Modify the coordinates of node 5 and 6, such that they
                 ! correspond to the weights of the u*w and v*w term in the
@@ -695,20 +695,20 @@
                 ! Element is a hexahedron.
                 ! Compute the coordinates relative to node 1.
 
-                ll   = ADTs(jj)%elementID(kk)
-                n(1) = ADTs(jj)%hexaConn(1,ll)
+                ll   = ADT%elementID(kk)
+                n(1) = ADT%hexaConn(1,ll)
 
                 do i=2,8
-                  n(i) = ADTs(jj)%hexaConn(i,ll)
+                  n(i) = ADT%hexaConn(i,ll)
 
-                  xn(1,i) = ADTs(jj)%coor(1,n(i)) - ADTs(jj)%coor(1,n(1))
-                  xn(2,i) = ADTs(jj)%coor(2,n(i)) - ADTs(jj)%coor(2,n(1))
-                  xn(3,i) = ADTs(jj)%coor(3,n(i)) - ADTs(jj)%coor(3,n(1))
+                  xn(1,i) = ADT%coor(1,n(i)) - ADT%coor(1,n(1))
+                  xn(2,i) = ADT%coor(2,n(i)) - ADT%coor(2,n(1))
+                  xn(3,i) = ADT%coor(3,n(i)) - ADT%coor(3,n(1))
                 enddo
 
-                x(1) = coor(1) - ADTs(jj)%coor(1,n(1))
-                x(2) = coor(2) - ADTs(jj)%coor(2,n(1))
-                x(3) = coor(3) - ADTs(jj)%coor(3,n(1))
+                x(1) = coor(1) - ADT%coor(1,n(1))
+                x(2) = coor(2) - ADT%coor(2,n(1))
+                x(3) = coor(3) - ADT%coor(3,n(1))
 
                 ! Modify the coordinates of node 3, 6, 8 and 7 such that
                 ! they correspond to the weights of the u*v, u*w, v*w and
@@ -840,9 +840,9 @@
 
               ! The processor, element type and local element ID.
 
-              intInfo(1) = ADTs(jj)%myID
-              intInfo(2) = ADTs(jj)%elementType(kk)
-              intInfo(3) = ADTs(jj)%elementID(kk)
+              intInfo(1) = ADT%myID
+              intInfo(2) = ADT%elementType(kk)
+              intInfo(3) = ADT%elementID(kk)
 
               ! The parametric weights.
 
@@ -873,7 +873,7 @@
         !***************************************************************
         !***************************************************************
 
-        subroutine minDistanceTreeSearch(jj,        coor,   &
+        subroutine minDistanceTreeSearch(ADT,       coor,   &
                                          intInfo,   uvw,    &
                                          arrDonor,  nCoor,  &
                                          nInterpol)
@@ -886,8 +886,7 @@
 !       *                                                              *
 !       * Subroutine intent(in) arguments.                             *
 !       * --------------------------------                             *
-!       * jj:        Entry in the array ADTs, whose ADT must be        *
-!       *            searched.                                         *
+!       * ADT:       ADT type whose ADT must be searched               *
 !       * nCoor:     Number of coordinates for which the element must  *
 !       *            be determined.                                    *
 !       * coor:      The coordinates and the currently stored minimum  *
@@ -930,7 +929,8 @@
 !
 !       Subroutine arguments.
 !
-        integer(kind=intType), intent(in) :: nCoor, jj
+        type(adtType), intent(inout) :: ADT
+        integer(kind=intType), intent(in) :: nCoor
         integer(kind=intType), intent(in) :: nInterpol
 
         real(kind=realType), dimension(:,:), intent(in) :: coor
@@ -975,7 +975,7 @@
         allocate(stack(nStack), BB(nAllocBB), frontLeaves(nAllocFront), &
                  frontLeavesNew(nAllocFront), stat=ierr)
         if(ierr /= 0)                                    &
-          call adtTerminate(jj, "minDistanceTreeSearch", &
+          call adtTerminate(ADT, "minDistanceTreeSearch", &
                             "Memory allocation failure for stack, BB, &
                             &etc.")
 
@@ -983,7 +983,7 @@
 
         coorLoop: do nn=1,nCoor
 
-           call minDistanceTreeSearchSinglePoint(jj, coor(:, nn), &
+           call minDistanceTreeSearchSinglePoint(ADT, coor(:, nn), &
                 intInfo(:, nn), uvw(:, nn), arrDonor, nInterpol, BB, &
                 frontLeaves, frontLeavesNew)
 
@@ -993,13 +993,13 @@
 
         deallocate(stack, BB, frontLeaves, frontLeavesNew, stat=ierr)
         if(ierr /= 0)                                    &
-          call adtTerminate(jj, "minDistanceTreeSearch", &
+          call adtTerminate(ADT, "minDistanceTreeSearch", &
                             "Deallocation failure for stack, BB, etc.")
 
         end subroutine minDistanceTreeSearch
 
 
-      subroutine minDistanceTreeSearchSinglePoint(jj, coor, intInfo, &
+      subroutine minDistanceTreeSearchSinglePoint(ADT, coor, intInfo, &
            uvw, arrDonor, nInterpol, BB, frontLeaves, frontLeavesNew)
 !
 !       ****************************************************************
@@ -1016,8 +1016,7 @@
 !       *                                                              *
 !       * Subroutine intent(in) arguments.                             *
 !       * --------------------------------                             *
-!       * jj:        Entry in the array ADTs, whose ADT must be        *
-!       *            searched.                                         *
+!       * ADT:       ADT type whose ADT must be searched               *
 !       * coor:      The coordinates and the currently stored minimum  *
 !       *            distance squared of these points:                 *
 !       *            coor(1): Coordinate 1.                            *
@@ -1058,7 +1057,7 @@
 !
 !       Subroutine arguments.
 !
-        integer(kind=intType), intent(in) :: jj
+        type(adtType), intent(inout) :: ADT
         integer(kind=intType), intent(in) :: nInterpol
 
         real(kind=realType), dimension(4), intent(in) :: coor
@@ -1110,8 +1109,8 @@
 !
         ! Set some pointers to make the code more readable.
 
-        xBBox  => ADTs(jj)%xBBox
-        ADTree => ADTs(jj)%ADTree
+        xBBox  => ADT%xBBox
+        ADTree => ADT%ADTree
 
         ! Initial allocation of the arrays for the tree traversal as well
         ! as the stack array used in the qsort routine. The latter is
@@ -1342,7 +1341,7 @@
 
                     if(nBB == nAllocBB) &
                       call reallocBBoxTargetTypePlus(BB, nAllocBB, &
-                                                     10, jj)
+                                                     10, ADT)
 
                     ! Update the counter and store the data.
 
@@ -1415,8 +1414,8 @@
 
                     if(nFrontLeavesNew == nAllocFront) then
                       i = nAllocFront
-                      call reallocPlus(frontLeavesNew, i, 25, jj)
-                      call reallocPlus(frontLeaves, nAllocFront, 25, jj)
+                      call reallocPlus(frontLeavesNew, i, 25, ADT)
+                      call reallocPlus(frontLeaves, nAllocFront, 25, ADT)
                     endif
 
                     nFrontLeavesNew = nFrontLeavesNew + 1
@@ -1465,7 +1464,7 @@
           ! Sort the target bounding boxes in increasing order such that
           ! the one with the smallest possible distance is first.
 
-          call qsortBBoxTargets(BB, nBB, jj)
+          call qsortBBoxTargets(BB, nBB, ADT)
 !
 !         **************************************************************
 !         *                                                            *
@@ -1487,10 +1486,10 @@
             ! Determine the element type stored in this bounding box.
 
             kk = BB(mm)%ID
-            select case (ADTs(jj)%elementType(kk))
+            select case (ADT%elementType(kk))
 
               case (adtTriangle)
-                call adtTerminate(jj, "minDistanceTreeSearch", &
+                call adtTerminate(ADT, "minDistanceTreeSearch", &
                                   "Minimum distance search for &
                                   &triangles not implemented yet")
 
@@ -1509,27 +1508,27 @@
                 ! Determine the 4 vectors which completely describe
                 ! the quadrilateral face
 
-                ll   = ADTs(jj)%elementID(kk)
-                n(1) = ADTs(jj)%quadsConn(1,ll)
-                n(2) = ADTs(jj)%quadsConn(2,ll)
-                n(3) = ADTs(jj)%quadsConn(3,ll)
-                n(4) = ADTs(jj)%quadsConn(4,ll)
+                ll   = ADT%elementID(kk)
+                n(1) = ADT%quadsConn(1,ll)
+                n(2) = ADT%quadsConn(2,ll)
+                n(3) = ADT%quadsConn(3,ll)
+                n(4) = ADT%quadsConn(4,ll)
 
-                x1(1) = ADTs(jj)%coor(1,n(1))
-                x1(2) = ADTs(jj)%coor(2,n(1))
-                x1(3) = ADTs(jj)%coor(3,n(1))
+                x1(1) = ADT%coor(1,n(1))
+                x1(2) = ADT%coor(2,n(1))
+                x1(3) = ADT%coor(3,n(1))
 
-                x21(1) = ADTs(jj)%coor(1,n(2)) - x1(1)
-                x21(2) = ADTs(jj)%coor(2,n(2)) - x1(2)
-                x21(3) = ADTs(jj)%coor(3,n(2)) - x1(3)
+                x21(1) = ADT%coor(1,n(2)) - x1(1)
+                x21(2) = ADT%coor(2,n(2)) - x1(2)
+                x21(3) = ADT%coor(3,n(2)) - x1(3)
 
-                x41(1) = ADTs(jj)%coor(1,n(4)) - x1(1)
-                x41(2) = ADTs(jj)%coor(2,n(4)) - x1(2)
-                x41(3) = ADTs(jj)%coor(3,n(4)) - x1(3)
+                x41(1) = ADT%coor(1,n(4)) - x1(1)
+                x41(2) = ADT%coor(2,n(4)) - x1(2)
+                x41(3) = ADT%coor(3,n(4)) - x1(3)
 
-                x3142(1) = ADTs(jj)%coor(1,n(3)) - x1(1) - x21(1) - x41(1)
-                x3142(2) = ADTs(jj)%coor(2,n(3)) - x1(2) - x21(2) - x41(2)
-                x3142(3) = ADTs(jj)%coor(3,n(3)) - x1(3) - x21(3) - x41(3)
+                x3142(1) = ADT%coor(1,n(3)) - x1(1) - x21(1) - x41(1)
+                x3142(2) = ADT%coor(2,n(3)) - x1(2) - x21(2) - x41(2)
+                x3142(3) = ADT%coor(3,n(3)) - x1(3) - x21(3) - x41(3)
 
                 ! Initialize u and v to 0.5 and determine the
                 ! corresponding coordinates on the face, which is the
@@ -1682,21 +1681,21 @@
               !=========================================================
 
               case (adtTetrahedron)
-                call adtTerminate(jj, "minDistanceTreeSearch", &
+                call adtTerminate(ADT, "minDistanceTreeSearch", &
                                   "Minimum distance search for &
                                   &tetrahedra not implemented yet")
 
               !===========================================================
 
               case (adtPyramid)
-                call adtTerminate(jj, "minDistanceTreeSearch", &
+                call adtTerminate(ADT, "minDistanceTreeSearch", &
                                   "Minimum distance search for &
                                   &pyramids not implemented yet")
 
               !===========================================================
 
               case (adtPrism)
-                call adtTerminate(jj, "minDistanceTreeSearch", &
+                call adtTerminate(ADT, "minDistanceTreeSearch", &
                                   "Minimum distance search for &
                                   &prisms not implemented yet")
 
@@ -1707,27 +1706,27 @@
                 ! Determine the element ID and the corresponding
                 ! 8 node ID's.
 
-                ll = ADTs(jj)%elementID(kk)
-                n(1) = ADTs(jj)%hexaConn(1,ll)
-                n(2) = ADTs(jj)%hexaConn(2,ll)
-                n(3) = ADTs(jj)%hexaConn(3,ll)
-                n(4) = ADTs(jj)%hexaConn(4,ll)
-                n(5) = ADTs(jj)%hexaConn(5,ll)
-                n(6) = ADTs(jj)%hexaConn(6,ll)
-                n(7) = ADTs(jj)%hexaConn(7,ll)
-                n(8) = ADTs(jj)%hexaConn(8,ll)
+                ll = ADT%elementID(kk)
+                n(1) = ADT%hexaConn(1,ll)
+                n(2) = ADT%hexaConn(2,ll)
+                n(3) = ADT%hexaConn(3,ll)
+                n(4) = ADT%hexaConn(4,ll)
+                n(5) = ADT%hexaConn(5,ll)
+                n(6) = ADT%hexaConn(6,ll)
+                n(7) = ADT%hexaConn(7,ll)
+                n(8) = ADT%hexaConn(8,ll)
 
                 ! Call the subroutine minD2Hexa to do the work.
 
                 call minD2Hexa(coor(1:3),            &
-                               ADTs(jj)%coor(1:3,n(1)), &
-                               ADTs(jj)%coor(1:3,n(2)), &
-                               ADTs(jj)%coor(1:3,n(3)), &
-                               ADTs(jj)%coor(1:3,n(4)), &
-                               ADTs(jj)%coor(1:3,n(5)), &
-                               ADTs(jj)%coor(1:3,n(6)), &
-                               ADTs(jj)%coor(1:3,n(7)), &
-                               ADTs(jj)%coor(1:3,n(8)), &
+                               ADT%coor(1:3,n(1)), &
+                               ADT%coor(1:3,n(2)), &
+                               ADT%coor(1:3,n(3)), &
+                               ADT%coor(1:3,n(4)), &
+                               ADT%coor(1:3,n(5)), &
+                               ADT%coor(1:3,n(6)), &
+                               ADT%coor(1:3,n(7)), &
+                               ADT%coor(1:3,n(8)), &
                                val, chi, ierr)
 
                 ! If the distance squared is less than the current value
@@ -1769,9 +1768,9 @@
             ! First the integer info, i.e. the processor ID, element type
             ! and local element ID.
 
-            intInfo(1) = ADTs(jj)%myID
-            intInfo(2) = ADTs(jj)%elementType(kkk)
-            intInfo(3) = ADTs(jj)%elementID(kkk)
+            intInfo(1) = ADT%myID
+            intInfo(2) = ADT%elementType(kkk)
+            intInfo(3) = ADT%elementID(kkk)
 
             ! The parametric weights. Note that the wall distance
             ! squared, stored in the 4th position of uvw, already
@@ -1795,7 +1794,7 @@
 
         end subroutine minDistanceTreeSearchSinglePoint
 
-        subroutine intersectionTreeSearchSinglePoint(jj, coor, &
+        subroutine intersectionTreeSearchSinglePoint(ADT, coor, &
              intInfo, BB, frontLeaves, frontLeavesNew)
 !
 !       ****************************************************************
@@ -1807,8 +1806,7 @@
 !       *                                                              *
 !       * Subroutine intent(in) arguments.                             *
 !       * --------------------------------                             *
-!       * jj:        Entry in the array ADTs, whose ADT must be        *
-!       *            searched.                                         *
+!       * ADT:       ADT type whose ADT must be searched               *
 !       * coor(3):   The coordinate of the point to be searched.       *
 !       *                                                              *
 !       * Subroutine intent(out) arguments.                            *
@@ -1822,7 +1820,7 @@
 !
 !       Subroutine arguments.
 !
-        integer(kind=intType), intent(in) :: jj
+        type(adtType), intent(inout) :: ADT
 
         real(kind=realType), dimension(3), intent(in) :: coor
         integer(kind=intType), intent(out) :: intInfo
@@ -1851,8 +1849,8 @@
 !
         ! Set some pointers to make the code more readable.
 
-        xBBox  => ADTs(jj)%xBBox
-        ADTree => ADTs(jj)%ADTree
+        xBBox  => ADT%xBBox
+        ADTree => ADT%ADTree
 
         ! Determine the sizes from the arrays we have been passed
 
@@ -1935,8 +1933,8 @@
 
                     if(nFrontLeavesNew == nAllocFront) then
                       i = nAllocFront
-                      call reallocPlus(frontLeavesNew, i, 25, jj)
-                      call reallocPlus(frontLeaves, nAllocFront, 25, jj)
+                      call reallocPlus(frontLeavesNew, i, 25, ADT)
+                      call reallocPlus(frontLeaves, nAllocFront, 25, ADT)
                     endif
 
                     nFrontLeavesNew = nFrontLeavesNew + 1
@@ -1981,7 +1979,7 @@
           !   ! Determine the element type stored in this bounding box.
 
           !   kk = BB(mm)
-          !   select case (ADTs(jj)%elementType(kk))
+          !   select case (ADT%elementType(kk))
 
           !     case (adtQuadrilateral)
 
