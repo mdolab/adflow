@@ -48,7 +48,10 @@ else:
 outName = args.outfile
 if not args.outfile:
     # Construct a default 
-    outName = "lbAnalysis_{0}_{1}.log".format(os.path.splitext(args.grid)[0], args.mgCycle)
+    pth = os.path.dirname(args.grid)
+    nme = os.path.basename(args.grid)
+    outName = "lbAnalysis_{0}_{1}.log".format(os.path.splitext(nme)[0], args.mgCycle)
+    outName = os.path.join(pth, outName)
 
 # Define problem
 aeroOptions = {'gridFile':args.grid,
