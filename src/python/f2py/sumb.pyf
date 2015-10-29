@@ -336,6 +336,12 @@ python module libsumb
          real(kind=realtype) dimension(3),intent(in) :: axis
        end subroutine getareasensitivity
 
+       subroutine updatecoorfinemesh(dtadvance, sps) ! in preprocessing/updateCoorFineMesh.f90 
+         integer(kind=inttype), intent(in) :: sps
+         real(kind=realtype), dimension(*), intent(in) :: dtadvance
+       end subroutine updatecoorfinemesh
+
+
        ! ############################################################################
        ! SUmb ADjoint Debugging Routines
        ! ############################################################################

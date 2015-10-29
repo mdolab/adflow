@@ -1068,6 +1068,28 @@ class SUMB(AeroSolver):
 
         return hflux
     
+    def rigidRotateMesh(self,dt=None, ifShift=True):
+        """
+        Rigidly rotates the mesh if the proper rigid rotation parapms have been set
+        
+        Parameters
+        ----------        
+        dt : float
+            The timestep increment. Default is None. 
+            If user does not supply the dt the current set will be used.
+        ifShift : Boolean
+            Will shift the stored ALE meshes. Default is true. 
+        
+        """
+        if ifShift and self.sumb.iteration.deforming_grid and self.sumb.inputunsteady.useale :
+            self.sumb.shiftcoorandvolumes()
+            self.sumb.shiftlevelale()
+        
+        if not dt:
+            dt = self.sumb.inputunsteady.deltat
+        self.sumb.updatecoorfinemesh(dt, 1)
+        
+    
     #======================================================
     #
     # End of utilities for MD simulations
@@ -4016,7 +4038,6 @@ class SUMB(AeroSolver):
         surfFileName = os.path.join(outputDir, baseName + "_surf.cgns")
         sliceFileName = os.path.join(outputDir, baseName + "_slices")
 
-        print (baseName, sliceFileName)
         # Set fileName in sumb
         self.sumb.inputio.solfile[:] = ''
         self.sumb.inputio.solfile[0:len(volFileName)] = volFileName

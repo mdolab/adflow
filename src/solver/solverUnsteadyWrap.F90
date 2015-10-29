@@ -163,8 +163,9 @@ subroutine initTimeStepWrap
      ! --------------------------------
 
 
-     ! Added 100915
-     call updateCoorFineMesh(deltaTSec, 1_intType)
+     ! This function cannot be called here since it will always rotate the mesh
+     ! Rotation is controlled externally from the python interface now!!
+     !call updateCoorFineMesh(deltaTSec, 1_intType)
 
      ! Adapt the geometric info on all grid levels needed for the
      ! current ground level and multigrid cycle.
