@@ -73,7 +73,7 @@ for i in rge:
     lIb, fIb = CFDSolver.checkPartitioning(i)
     loadImbalance.append(lIb)
     faceImbalance.append(fIb)
-    fd.write("For {0:>5d} procs, Load imbalance : {1:>5.3f},  Face imbalance : {1:>5.3f}\n".format(i,lIb,fIb))
+    fd.write("For {0:>5d} procs, Load imbalance : {1:>5.3f},  Face imbalance : {2:>5.3f}\n".format(i,lIb,fIb))
 
 A = numpy.array((rge, loadImbalance, faceImbalance)).T
 
