@@ -80,7 +80,7 @@ subroutine storeCoor
 
   spectralLoop: do kk=1,nTimeIntervalsSpectral
      domains: do nn=1,nDom
-             
+        
         ! Set the pointers for this block on the ground level.
         
         call setPointers(nn, groundLevel,kk)

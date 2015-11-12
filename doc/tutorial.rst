@@ -3,6 +3,9 @@
 Tutorial
 ========
 
+Basic Run Script
+----------------
+
 The following shows how to get started with SUmb by running the mdo_tutorial
 wing problem. First, we show the complete program listing and then go through 
 each statement line by line::
@@ -155,3 +158,35 @@ root processor. ::
   if MPI.COMM_WORLD.rank == 0:
   print funcs
 
+
+
+Specifics
+---------
+Here some notes on how to set up various functionality in SUmb is listed.
+
+
+Rigid rotation for time-accurate solution
+*****************************************
+This is a small tutorial how to set the apppropriate flags to do a rigid rotation. The following SUmb options flags need to be set::
+
+  useGridMotion = True
+  alphaFollowing = False
+
+There are three boolean flags that control the rigid rotation axis
+pmode - rotation about x axis
+rmode - rotation about y axis
+qmode - rotation about z axis
+
+Usually there is only one mode set at a time. When doing a rigid rotation beaware that the sign on deltaAlpha needs to be set appropriately depending on what axis the wing is rotating about!
+
+There are two common cases. The span of the wing is in, y direction (rotation about y-axis) or z direction (rotation about y-axis):
+
+NEED TO REFINE 
+THIS DEPENDS ON THE COORDINATES
+1. Span is in y direction / rotation is about the y-axis. (rmode needs to be set to true)
+  * positive rotation (+deltaAlpha) will pitch the wing upwards 
+  * negative rotation (-deltaAlpha) will pitch the wing downwards
+
+2. Span is in z direction / rotation is about the z-axis (qmode needs to be set to true)
+  * negative rotation (-deltaAlpha) will pitch the wing upwards 
+  * positive rotation (+deltaAlpha) will pitch the wing downwards
