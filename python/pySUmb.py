@@ -349,8 +349,10 @@ class SUMB(AeroSolver):
         nSegments : int
             Number of slices to use for the distribution. Typically
             150-250 is sufficient
-        direction : str
-            One of 'x', 'y', or 'z'. The axis that is the 'lift' direction.
+
+        direction : str {'x', 'y', 'z'}
+            The normal of the slice direction. If you have z-axis 'out the wing'
+            you would use 'z'
 
         groupName: str
             The family (as defined in pyWarp) to use for the lift
