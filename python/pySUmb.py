@@ -202,7 +202,8 @@ class SUMB(AeroSolver):
         # Do the remainder of the operations that would have been done
         # had we read in a param file
         self.sumb.iteration.deforming_grid = True
-
+        
+    
         # In order to properly initialize we need to have mach number
         # and a few other things set. Just create a dummy aeroproblem,
         # use it, and then it will be deleted.
@@ -716,8 +717,9 @@ class SUMB(AeroSolver):
 
         # --------------------------------------------------------------
 
-        if self.getOption('equationMode') == 'unsteady':
+        if self.getOption('equationMode').lower() == 'unsteady':
             self.sumb.alloctimearrays(self.getOption('nTimeStepsFine'))
+            self._setUnsteadyFileParameters()
 
         # Mesh warp may have already failed:
         if not self.sumb.killsignals.fatalfail:
@@ -775,7 +777,9 @@ class SUMB(AeroSolver):
         if self.getOption('printTiming') and self.comm.rank == 0:
             print('Solution Time: %10.3f sec'% solTime)
 
-        # Post-Processing -- Write Solutions is requested
+        # Post-Processing
+        # --------------------------------------------------------------
+        # Solution is written if writeSolution argument true or does not exist
         if kwargs.pop('writeSolution', True):
             self.writeSolution()
 
@@ -847,7 +851,7 @@ class SUMB(AeroSolver):
 
         # --------------------------------------------------------------
 
-        if self.getOption('equationMode') == 'unsteady':
+        if self.getOption('equationMode').lower() == 'unsteady':
             self.sumb.alloctimearrays(self.getOption('nTimeStepsFine'))
 
         # Mesh warp may have already failed:
@@ -910,17 +914,11 @@ class SUMB(AeroSolver):
 
         t2 = time.time()
         solTime = t2 - t1
-
-        ts     = self.sumb.monitor.timestepunsteady
-        if self.getOption('writeVolumeSolution') and \
-          numpy.mod(ts, self.getOption('nsavevolume')) == 0 :
-            self.writeVolumeSolutionFile('V.cgns')
-        if self.getOption('writeSurfaceSolution') and \
-          numpy.mod(ts, self.getOption('nsavesurface')) == 0 :
-            self.writeSurfaceSolutionFile('S.cgns')
-
         if self.getOption('printTiming') and self.comm.rank == 0:
-            print('Solution Time: %10.3f sec'% solTime)
+            print('Timestep solution time: %10.3f sec'% solTime)
+
+        self.writeSolution()
+  
 
     def setDisplacement(self, coordinates, groupName='interface', ifShift=True):
         if ifShift and self.sumb.iteration.deforming_grid:
@@ -942,37 +940,36 @@ class SUMB(AeroSolver):
                 bool(self.sumb.killsignals.routinefailed), op=MPI.LOR)
             self.sumb.killsignals.fatalfail = self.sumb.killsignals.routinefailed
 
-    def getCurForce(self):
-    # Adapted from writeForceFile
-    # Returns current tractions on the interface
+    def setTemperature(self, tnsw, groupName='interface'):
+        TS = 1
+        self._setMask(groupName)
+        self.sumb.settnswall(numpy.ravel(tnsw), TS)
+        
+        self.sumb.killsignals.routinefailed = False
+        self.sumb.killsignals.fatalFail = False
+        self.sumb.killsignals.routinefailed = \
+            self.comm.allreduce(
+            bool(self.sumb.killsignals.routinefailed), op=MPI.LOR)
+        self.sumb.killsignals.fatalfail = self.sumb.killsignals.routinefailed
+
+    def getCurTopo(self):
         TS = 0
         groupName = 'interface'
 
-        # Gather the data
-        pts = self.comm.gather(self.getForcePoints(TS, groupName), root=0)
+        if self.mesh is None:
+            print("MBMesh object not set!")
 
-        # Forces are still evaluated on the displaced surface so do NOT pass in pts.
-        forces = self.comm.gather(self.getForces(groupName, TS=TS), root=0)
-        conn   = self.comm.gather(self.mesh.getSurfaceConnectivity(groupName), root=0)
+        # Gather coordinates and connectivity
+        pts  = self.comm.gather(self.getForcePoints(TS, groupName), root=0)
+        conn = self.comm.gather(self.mesh.getSurfaceConnectivity(groupName), root=0)
 
         # Get data only on root proc
-        f = [] # Tractions
         x = [] # Coordinates
         c = [] # Connectivity
         if self.myid == 0:
-            # First sum up the total number of nodes and elements:
-            nPt = 0
-            nCell = 0
-            for iProc in xrange(len(pts)):
-                nPt += len(pts[iProc])
-                nCell += len(conn[iProc])//4
-
             # Get the coordinates and surface tractions
             for iProc in xrange(len(pts)):
                 for i in xrange(len(pts[iProc])):
-                    f.append([ numpy.real(forces[iProc][i, 0]), \
-                               numpy.real(forces[iProc][i, 1]), \
-                               numpy.real(forces[iProc][i, 2]) ])
                     x.append([ numpy.real(pts[iProc][i, 0]), \
                                numpy.real(pts[iProc][i, 1]), \
                                numpy.real(pts[iProc][i, 2]) ])
@@ -986,7 +983,114 @@ class SUMB(AeroSolver):
                                int(conn[iProc][4*i+2]+nodeOffset), \
                                int(conn[iProc][4*i+3]+nodeOffset) ])
                 nodeOffset += len(pts[iProc])
+        return [x,c]
+        
+    def getCurForce(self):
+    # Returns current tractions on the interface
+        [x,c] = self.getCurTopo()
+        f     = self._getCurForce()
         return [f,x,c]
+
+    def getCurHFlux(self):
+    # Returns current surface heat flux on the interface
+        [x,c] = self.getCurTopo()
+        q     = self._getCurHFlux()
+        return [q,x,c]
+
+    def _getCurForce(self):
+    # Adapted from writeForceFile
+    # Returns current tractions on the interface
+        TS = 0
+        groupName = 'interface'
+
+        if self.mesh is None:
+            print("MBMesh object not set!")
+
+        # Gather the data
+        pts    = self.comm.gather(self.getForcePoints(TS, groupName), root=0)
+        forces = self.comm.gather(self.getForces(groupName, TS=TS), root=0)
+
+        # Get data only on root proc
+        f = [] # Tractions
+        if self.myid == 0:
+            # Get the coordinates and surface tractions
+            for iProc in xrange(len(pts)):
+                for i in xrange(len(pts[iProc])):
+                    f.append([ numpy.real(forces[iProc][i, 0]), \
+                               numpy.real(forces[iProc][i, 1]), \
+                               numpy.real(forces[iProc][i, 2]) ])
+        return f
+
+    def _getCurHFlux(self):
+    # Returns current surface heat flux on the interface
+        TS = 0
+        groupName = 'interface'
+
+        if self.mesh is None:
+            print("MBMesh object not set!")
+
+        # Gather the data
+        pts  = self.comm.gather(self.getForcePoints(TS, groupName), root=0)
+        flux = self.comm.gather(self._getHeatFlux(groupName, TS=TS), root=0)
+
+        # Get data only on root proc
+        q = [] # Heat flux
+        if self.myid == 0:
+            # Get the coordinates and surface tractions
+            for iProc in xrange(len(pts)):
+                for i in xrange(len(pts[iProc])):
+                    q.append([ numpy.real(flux[iProc][i]) ])
+        return q
+
+    def _getHeatFlux(self, groupName=None, TS=0):
+        """ Return the heat fluxes on this processor.
+        Adapted from getForces
+
+        Parameters
+        ----------
+        groupName : str
+            Group identifier to get only forces cooresponding to the
+            desired group.  The group must have been added with
+            addFamilyGroup in the mesh object.
+        TS : int
+            Spectral instance for which to get the forces
+
+        Returns
+        -------
+        hflux : array (N)
+        """
+        # Just to be sure, we'll set the mask
+        self._setMask(groupName)
+
+        [npts, ncell] = self.sumb.getforcesize()
+        if npts > 0:
+            hflux = self.sumb.getheatflux(npts, TS+1).T
+        else:
+            hflux = numpy.zeros((0,),self.dtype)
+
+        return hflux
+    
+    def rigidRotateMesh(self,dt=None, ifShift=True):
+        """
+        Rigidly rotates the mesh if the proper rigid rotation parapms have been set
+        
+        Parameters
+        ----------        
+        dt : float
+            The timestep increment. Default is None. 
+            If user does not supply the dt the current set will be used.
+        ifShift : Boolean
+            Will shift the stored ALE meshes. Default is true. 
+        
+        """
+        if ifShift and self.sumb.iteration.deforming_grid and self.sumb.inputunsteady.useale :
+            self.sumb.shiftcoorandvolumes()
+            self.sumb.shiftlevelale()
+        
+        if not dt:
+            dt = self.sumb.inputunsteady.deltat
+        self.sumb.updatecoorfinemesh(dt, 1)
+        
     
     #======================================================
     #
@@ -1477,7 +1581,7 @@ class SUMB(AeroSolver):
 
         baseName: Use this supplied string for the base filename. Typically
                   only used from an external solver.
-        number: Use the user spplied number to index solutino. Again, only
+        number: Use the user supplied number to index solution. Again, only
                 typically used from an external solver.
                 """
         if outputDir is None:
@@ -1500,14 +1604,33 @@ class SUMB(AeroSolver):
         # Join to get the actual filename root
         base = os.path.join(outputDir, baseName)
 
-        # Now call each of the 4 routines with the appropriate file name:
-        if self.getOption('writevolumesolution'):
+        # Get the timestep if this is time dependent solution, else we default
+        # to the same values as the nsave values (which is 1) for steady 
+        # and time-spectral solution to be written,
+        if self.getOption('equationMode').lower() == 'unsteady':            
+            ts = self.sumb.monitor.timestepunsteady
+        else:
+            ts = 1
+        
+        # Now call each of the 4 routines with the appropriate file name:    
+        if self.getOption('writevolumesolution') and \
+          numpy.mod(ts, self.getOption('nsavevolume')) == 0 :
             self.writeVolumeSolutionFile(base + '_vol.cgns')
-        if self.getOption('writesurfacesolution'):
-            self.writeSurfaceSolutionFile(base + '_surf.cgns')
+            
+        if self.getOption('writesurfacesolution') and \
+          numpy.mod(ts, self.getOption('nsavesurface')) == 0 :
+            self.writeSurfaceSolutionFile(base + '_surf.cgns')   
+         
+        # ADD NSAVE TEST AROUND THESE AS WELL BUT
+        # THIS IS SMALL COMPARED TO OTHER. REFACTOR
+        if self.getOption('equationMode').lower() == 'unsteady':            
+            self.writeLiftDistributionFile(base + '_lift_Timestep%4.4d.dat'% ts)
+            self.writeSlicesFile(base + '_slices_Timestep%4.4d.dat'% ts)
+        else:
+            self.writeLiftDistributionFile(base + '_lift.dat')
+            self.writeSlicesFile(base + '_slices.dat')
 
-        self.writeLiftDistributionFile(base + '_lift.dat')
-        self.writeSlicesFile(base + '_slices.dat')
+
 
     def writeMeshFile(self, fileName):
         """Write the current mesh to a CGNS file. This call isn't used
@@ -1549,6 +1672,9 @@ class SUMB(AeroSolver):
             Flag specifying whether the grid should be included or if
             links should be used. Always writing the grid is
             recommended even in cases when it is not strictly necessary.
+            Note that if writeGrid == False the volume files do not contain 
+            any grid coordinates rendering the file useless if a separate
+            grid file was written out and is linked to it.
         """
         # Ensure extension is .cgns even if the user didn't specify
         fileName, ext = os.path.splitext(fileName)
@@ -2069,6 +2195,9 @@ class SUMB(AeroSolver):
         beta = AP.beta
         beta = AP.beta
         mach = AP.mach
+        machRef = AP.machRef
+        machGrid = AP.machGrid
+        
         xRef = AP.xRef; yRef = AP.yRef; zRef = AP.zRef
         xRot = AP.xRot; yRot = AP.yRot; zRot = AP.zRot
         areaRef = AP.areaRef
@@ -2130,6 +2259,21 @@ class SUMB(AeroSolver):
         if zRot is None:
             zRot = 0.0
 
+        # Set mach defaults if user did not specified any machRef or machGrid values
+        
+        # If the user is running time spectral but did not specify
+        # machGrid then default it to be equal to mach. 
+
+        if machRef is None:
+            machRef = mach
+        
+        if machGrid is None:
+            if self.getOption('equationMode').lower()=='time spectral':
+                machGrid = mach
+            else:
+                # Steady, unsteady
+                machGrid = 0.0
+
         if T is None or P is None or rho is None or V is None or mu is None:
             raise Error("Insufficient information is given in the "
                         "aeroProblem to determine physical state. "
@@ -2151,15 +2295,16 @@ class SUMB(AeroSolver):
         self.sumb.inputphysics.lengthref = chordRef
 
         # 4. Set mach numbers
+        # Mach number for time spectral needs to be set to set to zero
+        # If time-spectral (TS) then mach = 0, machcoef = mach, machgrid = mach
+        # If Steady-State (SS), time-accurate (TA) then mach = mach, machcoef = mach, machgrid = 0
         if self.getOption('equationMode').lower()=='time spectral':
             self.sumb.inputphysics.mach = 0.0
-            self.sumb.inputphysics.machcoef = mach
-            self.sumb.inputphysics.machgrid = mach
-            self.sumb.inputmotion.gridmotionspecified = True
         else:
             self.sumb.inputphysics.mach = mach
-            self.sumb.inputphysics.machcoef = mach
-            self.sumb.inputphysics.machgrid = 0.0
+        
+        self.sumb.inputphysics.machcoef = machRef
+        self.sumb.inputphysics.machgrid = machGrid
 
         # Set reference state information:
         if self.getOption('equationType') != 'euler':
@@ -2207,7 +2352,6 @@ class SUMB(AeroSolver):
             self.sumb.inputmotion.degreefouralpha  = AP.degreeFourier
             self.sumb.inputmotion.coscoeffouralpha = AP.cosCoefFourier
             self.sumb.inputmotion.sincoeffouralpha = AP.sinCoefFourier
-            self.sumb.inputmotion.gridmotionspecified = True
         elif  self.getOption('betaMode'):
             self.sumb.inputmotion.degreepolmach = int(AP.degreePol)
             self.sumb.inputmotion.coefpolmach = AP.coefPol
@@ -2215,7 +2359,6 @@ class SUMB(AeroSolver):
             self.sumb.inputmotion.degreefourbeta  = AP.degreeFourier
             self.sumb.inputmotion.coscoeffourbeta = AP.cosCoefFourier
             self.sumb.inputmotion.sincoeffourbeta = AP.sinCoefFourier
-            self.sumb.inputmotion.gridmotionspecified = True
         elif self.getOption('machMode'):
             self.sumb.inputmotion.degreepolmach = int(AP.degreePol)
             self.sumb.inputmotion.coefpolmach = AP.coefPol
@@ -2223,7 +2366,6 @@ class SUMB(AeroSolver):
             self.sumb.inputmotion.degreefourmach  = AP.degreeFourier
             self.sumb.inputmotion.coscoeffourmach = AP.cosCoefFourier
             self.sumb.inputmotion.sincoeffourmach = AP.sinCoefFourier
-            self.sumb.inputmotion.gridmotionspecified = True
         elif  self.getOption('pMode'):
             ### add in lift axis dependence
             self.sumb.inputmotion.degreepolxrot = int(AP.degreePol)
@@ -2232,7 +2374,6 @@ class SUMB(AeroSolver):
             self.sumb.inputmotion.degreefourxrot  = AP.degreeFourier
             self.sumb.inputmotion.coscoeffourxrot = AP.cosCoefFourier
             self.sumb.inputmotion.sincoeffourxrot = AP.sinCoefFourier
-            self.sumb.inputmotion.gridmotionspecified = True
         elif self.getOption('qMode'):
             self.sumb.inputmotion.degreepolzrot = int(AP.degreePol)
             self.sumb.inputmotion.coefpolzrot = AP.coefPol
@@ -2240,7 +2381,6 @@ class SUMB(AeroSolver):
             self.sumb.inputmotion.degreefourzrot  = AP.degreeFourier
             self.sumb.inputmotion.coscoeffourzrot = AP.cosCoefFourier
             self.sumb.inputmotion.sincoeffourzrot = AP.sinCoefFourier
-            self.sumb.inputmotion.gridmotionspecified = True
         elif self.getOption('rMode'):
             self.sumb.inputmotion.degreepolyrot = int(AP.degreePol)
             self.sumb.inputmotion.coefpolyrot = AP.coefPol
@@ -2248,7 +2388,6 @@ class SUMB(AeroSolver):
             self.sumb.inputmotion.degreefouryrot  = AP.degreeFourier
             self.sumb.inputmotion.coscoeffouryrot = AP.cosCoefFourier
             self.sumb.inputmotion.sincoeffouryrot = AP.sinCoefFourier
-            self.sumb.inputmotion.gridmotionspecified = True
 
         if not firstCall:
             self.sumb.referencestate()
@@ -3377,6 +3516,7 @@ class SUMB(AeroSolver):
             'ntimestepsfine':[int, 400],
             'deltat':[float, .010],
             'useale':[bool, True],
+            'usegridmotion':[bool, False],
 
             # Time Spectral Paramters
             'timeintervals': [int, 1],
@@ -3610,6 +3750,11 @@ class SUMB(AeroSolver):
             'ntimestepsfine':{'location':'inputunsteady.ntimestepsfine'},
             'deltat':{'location':'inputunsteady.deltat'},
             'useale':{'location':'inputunsteady.useale'},
+            
+            # Grid motion Params
+            'usegridmotion':{'location':'inputmotion.gridmotionspecified'},
+             
+            
             # Time Spectral Paramters
             'timeintervals':{'location':'inputtimespectral.ntimeintervalsspectral'},
             'alphamode':{'location':'inputtsstabderiv.tsalphamode'},
@@ -3865,6 +4010,50 @@ class SUMB(AeroSolver):
                 self.setOption("turbresscale", [1e3, 1e-6])
             else:
                 raise Error("Turbulence model %-35s does not have default values specified for turbresscale. Specify turbresscale manually or update the python interface"%(turbModel))
+
+    def _setUnsteadyFileParameters(self):
+        """
+        This is a temporary function that sets the appropriate filenames
+        when using the unsteady equations and the bdf time integration scheme.
+        This function should drop out when unsteady solver is stepped through python
+        TEMPORARY
+        """
+        # THIS DOES NOT CURRENTLY WORK DUE TO INTERNAL LOGIC. REFACTOR FORTRAN 
+        # Set parameters for outputing data
+        #if self.getOption('writevolumesolution'):
+        #    self.sumb.monitor.writevolume = True
+        #    self.sumb.monitor.writegrid = True
+        #else:
+        #    self.sumb.monitor.writevolume = False
+        #    self.sumb.monitor.writegrid = False
+            
+        #if self.getOption('writesurfacesolution'):
+        #    self.sumb.monitor.writesurface = True
+        #else:
+        #    self.sumb.monitor.writesurface = False
+        
+        outputDir = self.getOption('outputDirectory')
+        baseName = self.curAP.name
+
+        # Join to get the actual filename root
+        volFileName = os.path.join(outputDir, baseName + "_vol.cgns")
+        surfFileName = os.path.join(outputDir, baseName + "_surf.cgns")
+        sliceFileName = os.path.join(outputDir, baseName + "_slices")
+
+        # Set fileName in sumb
+        self.sumb.inputio.solfile[:] = ''
+        self.sumb.inputio.solfile[0:len(volFileName)] = volFileName
+
+        # Set the grid file to the same name so the grids will be written
+        # to the volume files
+        self.sumb.inputio.newgridfile[:] = ''
+        self.sumb.inputio.newgridfile[0:len(volFileName)] = volFileName        
+        
+        self.sumb.inputio.surfacesolfile[:] = ''
+        self.sumb.inputio.surfacesolfile[0:len(surfFileName)] = surfFileName
+        
+        self.sumb.inputio.slicesolfile[:] = ''
+        self.sumb.inputio.slicesolfile[0:len(sliceFileName)] = sliceFileName
 
 
     def __del__(self):

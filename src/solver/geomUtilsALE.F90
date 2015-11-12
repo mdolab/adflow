@@ -40,6 +40,7 @@ subroutine setLevelALE(setType)
   !      Local variables.
   !
   integer(kind=intType) :: i,j,k,l, aleBeg,aleEnd, nn,mm,kk
+  integer(kind=intType) :: ll,nlvl
 
   if (.not. useALE .or. equationMode .ne. unsteady)  then 
      return
@@ -57,85 +58,87 @@ subroutine setLevelALE(setType)
      aleEnd = setType
   end select
 
+  nlvl = ubound(flowDoms,2)
   spectralLoop: do kk=1,nTimeIntervalsSpectral
-     domains: do nn=1,nDom
+     levels: do ll=groundLevel,nlvl
+        domains: do nn=1,nDom
 
-        ! Set the pointers for this block on the ground level.
+           ! Set the pointers for this block on the ground level.
+           call setPointers(nn, ll, kk)
 
-        call setPointers(nn, groundLevel, kk)
-
-        blkALE : do l = aleBeg,aleENd
-           fillI2 : do k = 1,ke
-              do j = 1,je
-                 do i = 0,ie
-                    sFaceIALE(l,i,j,k) = sFaceI(i,j,k)
-                    sIALE(l,i,j,k,1)   = sI(i,j,k,1)
-                    sIALE(l,i,j,k,2)   = sI(i,j,k,2)
-                    sIALE(l,i,j,k,3)   = sI(i,j,k,3)
+           blkALE : do l = aleBeg,aleENd
+              fillI2 : do k = 1,ke
+                 do j = 1,je
+                    do i = 0,ie
+                       sFaceIALE(l,i,j,k) = sFaceI(i,j,k)
+                       sIALE(l,i,j,k,1)   = sI(i,j,k,1)
+                       sIALE(l,i,j,k,2)   = sI(i,j,k,2)
+                       sIALE(l,i,j,k,3)   = sI(i,j,k,3)
+                    enddo
                  enddo
-              enddo
-           enddo fillI2
+              enddo fillI2
 
-           fillJ2 : do k = 1,ke
-              do j = 0,je
-                 do i = 1,ie
-                    sFaceJALE(l,i,j,k) = sFaceJ(i,j,k)
-                    sJALE(l,i,j,k,1)   = sJ(i,j,k,1)
-                    sJALE(l,i,j,k,2)   = sJ(i,j,k,2)
-                    sJALE(l,i,j,k,3)   = sJ(i,j,k,3)
+              fillJ2 : do k = 1,ke
+                 do j = 0,je
+                    do i = 1,ie
+                       sFaceJALE(l,i,j,k) = sFaceJ(i,j,k)
+                       sJALE(l,i,j,k,1)   = sJ(i,j,k,1)
+                       sJALE(l,i,j,k,2)   = sJ(i,j,k,2)
+                       sJALE(l,i,j,k,3)   = sJ(i,j,k,3)
+                    enddo
                  enddo
-              enddo
-           enddo fillJ2
+              enddo fillJ2
 
-           fillK2 : do k = 0,ke
-              do j = 1,je
-                 do i = 1,ie
-                    sFaceKALE(l,i,j,k) = sFaceK(i,j,k)
-                    sKALE(l,i,j,k,1)   = sK(i,j,k,1)
-                    sKALE(l,i,j,k,2)   = sK(i,j,k,2)
-                    sKALE(l,i,j,k,3)   = sK(i,j,k,3)
+              fillK2 : do k = 0,ke
+                 do j = 1,je
+                    do i = 1,ie
+                       sFaceKALE(l,i,j,k) = sFaceK(i,j,k)
+                       sKALE(l,i,j,k,1)   = sK(i,j,k,1)
+                       sKALE(l,i,j,k,2)   = sK(i,j,k,2)
+                       sKALE(l,i,j,k,3)   = sK(i,j,k,3)
+                    enddo
                  enddo
-              enddo
-           enddo fillK2
-        enddo blkALE
+              enddo fillK2
+           enddo blkALE
 
-        normLoop: do mm=1,nBocos
-           do l = aleBeg,aleENd
-              do j=BCData(mm)%jcBeg, BCData(mm)%jcEnd
-                 do i=BCData(mm)%icBeg, BCData(mm)%icEnd
-                    BCData(mm)%normALE(l,i,j,1) = BCData(mm)%norm(i,j,1)
-                    BCData(mm)%normALE(l,i,j,2) = BCData(mm)%norm(i,j,2)
-                    BCData(mm)%normALE(l,i,j,3) = BCData(mm)%norm(i,j,3)
-                 enddo
-              enddo
-           enddo
-        enddo normLoop
-
-        rFaceLoop: do mm=1,nBocos
-           testAssoc: if( associated(BCData(mm)%rFace) ) then
+           normLoop: do mm=1,nBocos
               do l = aleBeg,aleENd
                  do j=BCData(mm)%jcBeg, BCData(mm)%jcEnd
                     do i=BCData(mm)%icBeg, BCData(mm)%icEnd
-                       BCData(mm)%rFaceALE(l,i,j) = BCData(mm)%rFace(i,j)
+                       BCData(mm)%normALE(l,i,j,1) = BCData(mm)%norm(i,j,1)
+                       BCData(mm)%normALE(l,i,j,2) = BCData(mm)%norm(i,j,2)
+                       BCData(mm)%normALE(l,i,j,3) = BCData(mm)%norm(i,j,3)
                     enddo
                  enddo
               enddo
-           endif testAssoc
-        enddo rFaceLoop
+           enddo normLoop
 
-        uSlipLoop: do mm=1,nViscBocos
-           do l = aleBeg,aleENd
-              do j=BCData(mm)%jcBeg, BCData(mm)%jcEnd
-                 do i=BCData(mm)%icBeg, BCData(mm)%icEnd
-                    BCData(mm)%uSlipALE(l,i,j,1) = BCData(mm)%uSlip(i,j,1)
-                    BCData(mm)%uSlipALE(l,i,j,2) = BCData(mm)%uSlip(i,j,2)
-                    BCData(mm)%uSlipALE(l,i,j,3) = BCData(mm)%uSlip(i,j,3)
+           rFaceLoop: do mm=1,nBocos
+              testAssoc: if( associated(BCData(mm)%rFace) ) then
+                 do l = aleBeg,aleENd
+                    do j=BCData(mm)%jcBeg, BCData(mm)%jcEnd
+                       do i=BCData(mm)%icBeg, BCData(mm)%icEnd
+                          BCData(mm)%rFaceALE(l,i,j) = BCData(mm)%rFace(i,j)
+                       enddo
+                    enddo
+                 enddo
+              endif testAssoc
+           enddo rFaceLoop
+
+           uSlipLoop: do mm=1,nViscBocos
+              do l = aleBeg,aleENd
+                 do j=BCData(mm)%jcBeg, BCData(mm)%jcEnd
+                    do i=BCData(mm)%icBeg, BCData(mm)%icEnd
+                       BCData(mm)%uSlipALE(l,i,j,1) = BCData(mm)%uSlip(i,j,1)
+                       BCData(mm)%uSlipALE(l,i,j,2) = BCData(mm)%uSlip(i,j,2)
+                       BCData(mm)%uSlipALE(l,i,j,3) = BCData(mm)%uSlip(i,j,3)
+                    enddo
                  enddo
               enddo
-           enddo
-        enddo uSlipLoop
+           enddo uSlipLoop
 
-     end do domains
+        end do domains
+     end do levels
   end do spectralLoop
 
 end subroutine setLevelALE

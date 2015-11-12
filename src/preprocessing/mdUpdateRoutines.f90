@@ -29,6 +29,7 @@ subroutine updateCoordinatesAllLevels
   !      Local variables.
   !
   integer(kind=intType) :: nLevels, nn
+  real(kind=realType)   :: origGroundLevel
   !
   !      ******************************************************************
   !      *                                                                *
@@ -37,7 +38,8 @@ subroutine updateCoordinatesAllLevels
   !      ******************************************************************
   !
   ! Determine the halo coordinates of the fine level.
-  groundLevel = 1
+  origGroundLevel = groundLevel
+  groundLevel     = 1
   call xhalo(groundLevel)
 
   ! Loop over the coarse grid levels; first the owned coordinates
@@ -48,6 +50,8 @@ subroutine updateCoordinatesAllLevels
      call coarseOwnedCoordinates(nn)
      call xhalo(nn)
   enddo
+
+  groundLevel = origGroundLevel
 
 end subroutine updateCoordinatesAllLevels
 
