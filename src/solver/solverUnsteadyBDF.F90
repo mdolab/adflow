@@ -323,6 +323,7 @@
        use iteration
        use killSignals
        use monitor
+       use inputIO
        implicit none
 !
 !      Local variables.
@@ -330,6 +331,7 @@
        integer :: ierr
 
        integer(kind=intType) :: nn
+       character(len=7) :: intString
 !
 !      ******************************************************************
 !      *                                                                *
@@ -375,6 +377,12 @@
 
          if(writeGrid .or. writeVolume .or. writeSurface) &
            call writeSol
+
+         ! Write the slice files for this timestep if they have been specified. TEMPORARY
+
+         write(intString,"(i4.4)") timeStepUnsteady + nTimeStepsRestart
+         intString = adjustl(intString)
+         call writeSlicesFile(trim(slicesolfile)//"_Timestep"//trim(intString)//".dat")
 
        endif
 
