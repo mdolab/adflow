@@ -44,7 +44,6 @@ FILES_TO_COMPLEXIFY2 = \
 	       adjustInflowAngle.f90\
 	       bleedFlowParameters.f90\
 	       calMassFlux.f90\
-	       coeffConvergenceCheck.f90\
 	       convergenceInfo.F90\
 	       computedwD3ADI.f90\
 	       computeInletMassFlowFullWheel.f90\

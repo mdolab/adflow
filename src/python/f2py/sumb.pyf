@@ -17,13 +17,6 @@ python module libsumb
        ! ############################################################################
        ! SUmb Routines
        ! ############################################################################
-        subroutine openlog(filename) ! in :test:log.F90
-          character*(*) :: filename
-        end subroutine openlog
-        
-        subroutine closelog()
-        end subroutine closelog
-
        subroutine writeintromessage ! in :sumb:../../utils/initExec.F90
        end subroutine writeintromessage
        
@@ -925,7 +918,6 @@ python module libsumb
          logical :: writegrid
          logical :: writevolume
          logical :: writesurface
-         logical :: coeffconvcheck
        end module monitor
 
        module block ! in :sumb:../../modules/block.f90
@@ -1112,7 +1104,6 @@ python module libsumb
          real(kind=realtype) :: totalrstart
          real(kind=realtype) :: totalrfinal
          logical :: rkreset
-         integer(kind=inttype) :: nrkreset
          integer(kind=inttype) :: applypcsubspacesize
          logical :: freestreamresset
          integer(kind=inttype) :: nksolvecount

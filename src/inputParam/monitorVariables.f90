@@ -40,7 +40,7 @@
 
        character(len=maxCGNSNameLen), dimension(nVarMax) :: tmpNames
 
-       logical :: monDrho
+       logical :: monDrho, monTotalR
 !
 !      ******************************************************************
 !      *                                                                *
@@ -63,6 +63,7 @@
        ! Initialize monDrho, monDturb and showCPU to .false.
 
        monDrho  = .false.
+       monTotalR = .false.
        monDturb = .false.
        showCPU  = .false.
 
@@ -188,8 +189,10 @@
              tmpNames(nMon) = cgnsEddyMax
              
           case("totalr")
+             monTotalR = .True.
              nMon = nMon + 1; nMonSum = nMonSum + 1
              tmpNames(nMon) = 'totalR'
+
           case("sepsensor")
              nMon = nMon + 1; nMonSum = nMonSum + 1
              tmpNames(nMon) = cgnsSepSensor
@@ -215,6 +218,15 @@
          nMon = nMon + 1; nMonSum = nMonSum + 1
          tmpNames(nMon) = cgnsL2resRho
        endif
+
+       ! If the density residual was not specified to be monitored,
+       ! add it to tmpNames.
+
+       if(.not. monTotalR) then
+          nMon = nMon + 1; nMonSum = nMonSum + 1
+          tmpNames(nMon) = "totalR"
+       endif
+
 
        ! Allocate the memory for monNames. If the turbulent residuals
        ! must be monitored allocate some extra place.

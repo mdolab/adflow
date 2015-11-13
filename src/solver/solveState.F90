@@ -41,8 +41,8 @@ subroutine solveState
 
   integer(kind=intType) :: iter, nMGCycles
   character (len=7) :: numberString
-  logical :: solve_NK, solve_RK
-  real(kind=realType) :: rhoRes1,totalRRes1
+  logical :: solve_NK, solve_RK, absConv, relConv
+  real(kind=realType) :: totalR, rhoRes
   real(kind=realType) :: l2convsave
   !
   !      ******************************************************************
@@ -52,7 +52,6 @@ subroutine solveState
   !      ******************************************************************
   !
   ! Allocate the memory for cycling.
-
 
   allocate(cycling(nMGSteps), stat=ierr)
   if(ierr /= 0)                  &
@@ -288,6 +287,7 @@ subroutine solveState
   ! Note that if single grid startup iterations were made, this
   ! value is printed twice.
   call convergenceInfo
+
   if(routineFailed)then
      ! Release the memory of cycling.
      deallocate(cycling, stat=ierr)
@@ -299,6 +299,22 @@ subroutine solveState
      return
   endif
 
+  ! Compute the staring residual 
+  call getCurrentResidual(rhoResStart,totalRStart)
+
+  ! Only compute the free stream res once for efficiency
+  if (groundLevel == 1)  then
+     if (.not. freeStreamResSet)  then
+        call getFreeStreamResidual(rhoRes0,totalR0)
+        freeStreamResSet = .True.
+     end if
+  else
+     call getFreeStreamResidual(rhoRes0,totalR0)
+  end if
+
+  ! Save L2 since we may need to overwrite. 
+  L2ConvSave = L2Conv
+
   ! Determine if we need to run the RK solver, the NK solver or Both.
 
   if ( groundLevel .ne. 1_intType .or. .not. useNKSolver) then
@@ -306,15 +322,6 @@ subroutine solveState
      ! the NKsolver we will ALWAYS solve RK and NEVER NK.
      solve_RK = .True.
      solve_NK = .False.
-     L2ConvSave = L2Conv
-
-     if (groundLevel == 1 .and. fromPython) then
-        if (.not. freeStreamResSet)  then
-           call getFreeStreamResidual(rhoRes0,totalR0)
-           freeStreamResSet = .True.
-        end if
-        call getCurrentResidual(rhoResStart,totalRStart)
-     end if
 
   else ! We want to use the NKsolver AND we are on the fine grid. 
 
@@ -322,38 +329,33 @@ subroutine solveState
      ! to start directly into the NKsolver OR if we have to run the
      ! RKsolver first to improve the starting point and then the NKsolver
 
-     ! Get Frestream and starting residuals
-     if (.not. freeStreamResSet) then
-        call getFreeStreamResidual(rhoRes0, totalR0)
-        freeStreamResSet = .True.
-     end if
-     call getCurrentResidual(rhoResStart,totalRStart)
-
      ! Determine if we need to run the RK solver, before we can
      ! run the NK solver 
-     L2ConvSave = L2Conv
+
      if (totalRStart/totalR0 > NK_Switch_Tol) then
 
-        ! If we haven't run anything yet, set rhoResL1Start...this is
-        ! the intial rho residual on the fine grid. This is what is
-        ! used in convergence info
-        if (rhoResL1Start < zero) then 
-          rhoResL1Start = rhoResStart
-        end if
-        
-        L2Conv = NK_Switch_Tol*rhoRes0/rhoResL1Start
+        L2Conv = NK_Switch_Tol
 
+        ! Need to solve RK
         solve_RK = .True.
+
+        ! We may or may not have to solve the NK but set to true so we
+        ! will check
         solve_NK = .True.
+
      else 
-        ! Nominally we don't run any RK iterations....
+
+        ! Nominally we don't need to run any RK iterations
         solve_NK = .True.
         solve_RK = .False.
+
         if (RKreset) then
            ! EXCEPT if we explictly want the solver to run a (small)
            ! fixed number of iterations to re-globlaize the solution
+
+           L2Conv = NK_Switch_Tol
+
            solve_RK = .True.
-           nMGCycles = nRKreset
         end if
      end if
   end if
@@ -361,8 +363,7 @@ subroutine solveState
   if (solve_RK) then
 
      ! Loop over the number of multigrid cycles.
-
-     multiGrid: do iter=1,nMGCycles
+     multiGrid: do iter=1, nMGCycles
 
         ! Rewrite the sliding mesh mass flow parameters (not for
         ! unsteady) and the convergence header after a certain number
@@ -461,7 +462,6 @@ subroutine solveState
 
         ! Exit the loop if the corresponding kill signal
         ! has been received or if the solution is converged.
-
         if(globalSignal == signalWriteQuit .or. converged) exit
 
         ! Check if the bleed boundary conditions must be updated and
@@ -475,21 +475,27 @@ subroutine solveState
 
   ! Reset the L2Convergence in case it had been changed above
   L2Conv = L2ConvSave
+  call mpi_barrier(sumb_comm_world, ierr)
 
   ! Now we have run the RK solver. We will run the NK solver only if
-  ! the solve_NK flag is set:
-  if (solve_NK) then
+  ! the solve_NK flag is set and we have some number of cycles left.
+  if (solve_NK .and.  iter < ncycles) then
      
-     ! We have to check to see if NKSwitchtol was LOWER than
-     ! l2convrel. This means that the RK solution is already good
-     ! enough for what we want so we're done
-    
-     call getcurrentResidual(rhoRes1, totalRRes1)
-     if (rhoRes1 < rhoResStart * l2convrel) then
-        ! We no not have to run the NK solver so do nothing
-     else
+     call getcurrentResidual(rhoRes, totalR)
+     absConv = .False. 
+     relConv = .False. 
+     ! To a mini convergence check here:
+     if (totalR < L2Conv * totalR0) then 
+        absConv = .True. 
+     end if
+     
+     if (totalR < L2ConvRel*totalRStart) then 
+        relConv = .True.
+     end if
+
+     if (.not. (absConv .or. relConv)) then 
         ! Run the NK solver down as far we need to go
-        call setupNKsolver() 
+        call setupNKsolver()
         call NKsolver()
      end if
   end if

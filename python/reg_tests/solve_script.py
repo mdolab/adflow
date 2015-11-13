@@ -23,9 +23,6 @@ from python.pySUmb import SUMB
 # options as Oct 14, 2015.
 
 defOpts = {
-    # Log File instead of stdout
-    'logfile':'',
-
     # Common Paramters
     'gridfile':'default.cgns',
     'restartfile':'default_restart.cgns',
@@ -112,7 +109,6 @@ defOpts = {
     'l2convergencecoarse':1e-2,
     'maxl2deviationfactor':1.0,
     'coeffconvcheck':False,
-    'miniterationnum':0,
 
     # Newton-Krylov Paramters
     'usenksolver':False,
@@ -145,7 +141,6 @@ defOpts = {
     'metricconversion':1.0,
     'autosolveretry':False,
     'autoadjointretry':False,
-    'storehistory':False,
     'numbersolutions':True,
     'printiterations':True,
     'printtiming':True,
@@ -237,7 +232,7 @@ def test1():
     ap.addDV('alpha')
     ap.addDV('mach')
     ap.addDV('altitude')
-    CFDSolver = SUMB(options=aeroOptions, debug=True)
+    CFDSolver = SUMB(options=aeroOptions, debug=False)
     DVGeo = DVGeometry('../inputFiles/mdo_tutorial_ffd.fmt')
     nTwist = 6
     DVGeo.addRefAxis('wing', pyspline.Curve(x=numpy.linspace(5.0/4.0, 1.5/4.0+7.5, nTwist), 
@@ -249,7 +244,7 @@ def test1():
 
     DVGeo.addGeoDVGlobal('twist', [0]*nTwist, twist, lower=-10, upper=10, scale=1.0)
     DVGeo.addGeoDVLocal('shape', lower=-0.5, upper=0.5, axis='y', scale=10.0)
-    mesh = MBMesh(options={'gridFile':'../inputFiles/mdo_tutorial_euler.cgns'}, debug=True)
+    mesh = MBMesh(options={'gridFile':'../inputFiles/mdo_tutorial_euler.cgns'}, debug=False)
     CFDSolver.setMesh(mesh)
     CFDSolver.setDVGeo(DVGeo)
     CFDSolver.addLiftDistribution(10, 'z')
@@ -701,12 +696,12 @@ def test7():
     CFDSolver.checkSolutionFailure(ap, funcs)
     if MPI.COMM_WORLD.rank == 0:
         print 'Eval Functions:'
-        reg_write_dict(funcs, 1e-10, 1e-10)
+        reg_write_dict(funcs, 1e-9, 1e-9)
     funcsSens = {}
     CFDSolver.evalFunctionsSens(ap, funcsSens)
     if MPI.COMM_WORLD.rank == 0:
         print 'Eval Functions Sens:'
-        reg_write_dict(funcsSens, 1e-10, 1e-10)
+        reg_write_dict(funcsSens, 1e-9, 1e-9)
 
     # Clean up:
     del CFDSolver
@@ -771,12 +766,12 @@ def test8():
     CFDSolver.checkSolutionFailure(ap, funcs)
     if MPI.COMM_WORLD.rank == 0:
         print 'Eval Functions:'
-        reg_write_dict(funcs, 1e-10, 1e-10)
+        reg_write_dict(funcs, 1e-9, 1e-9)
     funcsSens = {}
     CFDSolver.evalFunctionsSens(ap, funcsSens)
     if MPI.COMM_WORLD.rank == 0:
         print 'Eval Functions Sens:'
-        reg_write_dict(funcsSens, 1e-10, 1e-10)
+        reg_write_dict(funcsSens, 1e-9, 1e-9)
 
     # Clean up:
     del CFDSolver
