@@ -379,9 +379,12 @@ subroutine convergenceInfo
               if (totalR < L2ConvThisLevel * totalR0) then 
                  absConv = .True. 
               end if
-
-              if (totalR < L2ConvThisLevelRel*totalRStart) then 
-                 relConv = .True. 
+              
+              ! Relative check only done on finest level
+              if (currentLevel == 1) then 
+                 if (totalR < L2ConvThisLevelRel*totalRStart) then 
+                    relConv = .True. 
+                 end if
               end if
 
               if (absConv .or. relConv)  then 
