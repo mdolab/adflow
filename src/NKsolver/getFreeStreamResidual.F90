@@ -12,7 +12,6 @@ subroutine getFreeStreamResidual(rhoRes, totalRRes)
   real(kind=realType), intent(out) :: rhoRes, totalRRes
   real(kind=realType), dimension(:), allocatable :: wtemp, ptemp, rlvtemp, revtemp
   integer(kind=intType) :: nDimW, nDimP, counter
-  integer(kind=intType) :: tempCurrentLevel, tempMGStartLevel
   integer(kind=intType) :: nn, sps, i, j, k, l
 
   ! Get the residual cooresponding to the free-stream on the fine
@@ -26,7 +25,7 @@ subroutine getFreeStreamResidual(rhoRes, totalRRes)
   nDimW = 0
   nDimP = 0
   do nn=1, nDom
-     call setPointers(nn, 1, 1)
+     call setPointers(nn, currentLevel, 1)
      nDimp = nDimp + (ib+1)*(jb+1)*(kb+1)
      nDimW = nDimw + (ib+1)*(jb+1)*(kb+1)
   end do
@@ -47,7 +46,7 @@ subroutine getFreeStreamResidual(rhoRes, totalRRes)
   counter = 0
   spectralLoop1: do sps=1, nTimeIntervalsSpectral
      domains1: do nn=1, nDom
-        call setPointers(nn, 1, sps)
+        call setPointers(nn, currentLevel, sps)
         do l=1, nw
            do k=0, kb
               do j=0, jb
@@ -65,7 +64,7 @@ subroutine getFreeStreamResidual(rhoRes, totalRRes)
   counter = 0
   spectralLoop2: do sps=1, nTimeIntervalsSpectral
      domains2: do nn=1, nDom
-        call setPointers(nn, 1, sps)
+        call setPointers(nn, currentLevel, sps)
         do k=0, kb
            do j=0, jb
               do i=0, ib
@@ -81,7 +80,7 @@ subroutine getFreeStreamResidual(rhoRes, totalRRes)
      counter = 0
      spectralLoop3: do sps=1, nTimeIntervalsSpectral
         domains3: do nn=1, nDom
-           call setPointers(nn, 1, sps)
+           call setPointers(nn, currentLevel, sps)
            do k=0, kb
               do j=0, jb
                  do i=0, ib
@@ -98,7 +97,7 @@ subroutine getFreeStreamResidual(rhoRes, totalRRes)
      counter = 0
      spectralLoop4: do sps=1, nTimeIntervalsSpectral
         domains4: do nn=1, nDom
-           call setPointers(nn, 1, sps)
+           call setPointers(nn, currentLevel, sps)
            do k=0, kb
               do j=0, jb
                  do i=0, ib
@@ -110,20 +109,30 @@ subroutine getFreeStreamResidual(rhoRes, totalRRes)
         end do domains4
      end do spectralLoop4
   end if
+
+  ! Set the w-variables to the ones of the uniform flow field.
+  spectralLoop4b: do sps=1, nTimeIntervalsSpectral
+     domains4b: do nn=1, nDom
+        call setPointers(nn, currentLevel, sps)
+        do l=1,nw
+           do k=0, kb
+              do j=0, jb
+                 do i=0, ib
+                    w(i,j,k,l) = winf(l)
+                 enddo
+              enddo
+           enddo
+        end do
+     end do domains4b
+  end do spectralLoop4b
   
-  tempMGStartLevel = mgStartLevel
-  tempCurrentLevel = currentLevel
-
-  mgStartLevel = 1
-  currentlevel = 1
-
-  call setUniformFlow
+  ! Evaluate the residual now
   call getCurrentResidual(rhoRes, totalRRes)
 
   counter = 0
   redospectralLoop1: do sps=1, nTimeIntervalsSpectral
      redomains1: do nn=1, nDom
-        call setPointers(nn, 1, sps)
+        call setPointers(nn, currentLevel, sps)
         do l=1, nw
            do k=0, kb
               do j=0, jb
@@ -140,7 +149,7 @@ subroutine getFreeStreamResidual(rhoRes, totalRRes)
   counter = 0
   respectralLoop2: do sps=1, nTimeIntervalsSpectral
      redomains2: do nn=1, nDom
-        call setPointers(nn, 1, sps)
+        call setPointers(nn, currentLevel, sps)
         do k=0, kb
            do j=0, jb
               do i=0, ib
@@ -156,7 +165,7 @@ subroutine getFreeStreamResidual(rhoRes, totalRRes)
      counter = 0
      redospectralLoop3: do sps=1, nTimeIntervalsSpectral
         redodomains3: do nn=1, nDom
-           call setPointers(nn, 1, sps)
+           call setPointers(nn, currentLevel, sps)
            do k=0, kb
               do j=0, jb
                  do i=0, ib
@@ -173,7 +182,7 @@ subroutine getFreeStreamResidual(rhoRes, totalRRes)
      counter = 0
      redospectralLoop4: do sps=1, nTimeIntervalsSpectral
         redodomains4: do nn=1, nDom
-           call setPointers(nn, 1, sps)
+           call setPointers(nn, currentLevel, sps)
            do k=0, kb
               do j=0, jb
                  do i=0, ib
@@ -185,9 +194,6 @@ subroutine getFreeStreamResidual(rhoRes, totalRRes)
         end do redodomains4
      end do redospectralLoop4
   end if
-
-  mgStartLevel = tempMGStartLevel
-  currentLevel = tempCurrentLevel
 
   deallocate(wtemp, ptemp)
 

@@ -7,14 +7,12 @@ subroutine getCurrentResidual(rhoRes,totalRRes)
   use iteration
   use inputPhysics
   use inputIteration
+
   implicit none
   ! Compute the current resdiual of w
   real(kind=realType), intent(out) :: rhoRes,totalRRes
   real(kind=realType) :: ovv,r_sum,rho_sum
   integer(kind=intType) :: sps,nn,i,j,k,l,ierr
-  currentLevel = 1
-  groundLevel = 1
-  rkStage = 0
   
  call timestep(.false.)
 
@@ -32,9 +30,9 @@ subroutine getCurrentResidual(rhoRes,totalRRes)
 
   r_sum = zero
   rho_sum = zero
-  do sps=1,nTimeIntervalsSpectral
-     do nn=1,nDom
-        call setPointers(nn,1_intType,sps)
+  do sps=1, nTimeIntervalsSpectral
+     do nn=1, nDom
+        call setPointers(nn, currentLevel, sps)
         ! Copy off dw/vol to rVec
         do k=2,kl
            do j=2,jl

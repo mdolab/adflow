@@ -146,12 +146,6 @@ class SUMB(AeroSolver):
         AeroSolver.__init__(self, name, category, defOpts, informs,
                             options=options)
 
-        # Setup the log file if necessary:
-        self.logFile = None
-        if self.getOption('logfile') != '' and self.comm.rank == 0:
-            self.logFile = self.getOption('logfile')
-            self.sumb.openlog(self.logFile)
-
         # Update turbresscale depending on the turbulence model specified
         self._updateTurbResScale()
         
@@ -687,34 +681,17 @@ class SUMB(AeroSolver):
         # --------------------------------------------------------------
         # Setup interation arrays ---- don't touch this unless you
         # REALLY REALLY know what you're doing!
-        if self.sumb.monitor.niterold == 0 and \
-            self.sumb.monitor.nitercur == 0 and \
-            self.sumb.iteration.itertot == 0:
-            if self.myid == 0:
-                desiredSize = self.sumb.inputiteration.nsgstartup + \
-                    self.sumb.inputiteration.ncycles
-                self.sumb.allocconvarrays(desiredSize)
-        else:
-            # More Time Steps / Iterations OR a restart
-            # Reallocate convergence history array and time array
-            # with new size,  storing old values from previous runs
-            if self.getOption('storeHistory'):
-                currentSize = len(self.sumb.monitor.convarray)
-                desiredSize = currentSize + self.sumb.inputiteration.ncycles+1
-                self.sumb.monitor.niterold  = self.sumb.monitor.nitercur+1
-            else:
-                self.sumb.monitor.nitercur  = 0
-                self.sumb.monitor.niterold  = 1
-                desiredSize = self.sumb.inputiteration.nsgstartup + \
-                    self.sumb.inputiteration.ncycles +1
 
-            # Allocate Arrays
-            if self.myid == 0:
-                self.sumb.allocconvarrays(desiredSize)
-
+        # iterTot is non-zero which means we already did a solution,
+        # so we can run on the finest level.
+        if self.sumb.iteration.itertot != 0:
             self.sumb.inputiteration.mgstartlevel = 1
-            self.sumb.iteration.itertot = 0
 
+        self.sumb.iteration.itertot = 0
+        self.sumb.niterold = 0
+        desiredSize = self.sumb.inputiteration.nsgstartup + \
+                      self.sumb.inputiteration.ncycles
+        self.sumb.allocconvarrays(desiredSize)
         # --------------------------------------------------------------
 
         if self.getOption('equationMode').lower() == 'unsteady':
@@ -821,33 +798,10 @@ class SUMB(AeroSolver):
         # --------------------------------------------------------------
         # Setup interation arrays ---- don't touch this unless you
         # REALLY REALLY know what you're doing!
-        if self.sumb.monitor.niterold == 0 and \
-            self.sumb.monitor.nitercur == 0 and \
-            self.sumb.iteration.itertot == 0:
-            if self.myid == 0:
-                desiredSize = self.sumb.inputiteration.nsgstartup + \
-                    self.sumb.inputiteration.ncycles
-                self.sumb.allocconvarrays(desiredSize)
-        else:
-            # More Time Steps / Iterations OR a restart
-            # Reallocate convergence history array and time array
-            # with new size,  storing old values from previous runs
-            if self.getOption('storeHistory'):
-                currentSize = len(self.sumb.monitor.convarray)
-                desiredSize = currentSize + self.sumb.inputiteration.ncycles+1
-                self.sumb.monitor.niterold  = self.sumb.monitor.nitercur+1
-            else:
-                self.sumb.monitor.nitercur  = 0
-                self.sumb.monitor.niterold  = 1
-                desiredSize = self.sumb.inputiteration.nsgstartup + \
-                    self.sumb.inputiteration.ncycles +1
 
-            # Allocate Arrays
-            if self.myid == 0:
-                self.sumb.allocconvarrays(desiredSize)
-
-            self.sumb.inputiteration.mgstartlevel = 1
-            self.sumb.iteration.itertot = 0
+        self.sumb.monitor.niterold = 0
+        desiredSize = self.sumb.monitor.nsgstartup + self.sumb.iteration.ncycles
+        self.sumb.allocconvarrays(desiredSize)
 
         # --------------------------------------------------------------
 
@@ -1324,8 +1278,8 @@ class SUMB(AeroSolver):
         else:
             anm1 = alpha0 - abs(delta)
 
-        minIterSave = self.getOption('minIterationNum')
-        self.setOption('minIterationNum', 25)
+        minIterSave = self.getOption('nRKReset')
+        self.setOption('nRKReset', 25)
         for iIter in range(20):
             # We need to reset the flow since changing the alpha leads
             # to problems with the NK solver
@@ -1360,7 +1314,7 @@ class SUMB(AeroSolver):
             anm1 = anew
 
         # Restore the min iter option
-        self.setOption('minIterationNum', minIterSave)
+        self.setOption('nRKReset', minIterSave)
 
     def solveTrimCL(self, aeroProblem, trimFunc, trimDV, dvIndex,
                     CLStar, trimStar=0.0, alpha0=None, trim0=None, da=1e-3,
@@ -1500,8 +1454,8 @@ class SUMB(AeroSolver):
         # value. Then we use a safe-guarded secant search to zero into
         # that vlaue.
 
-        minIterSave = self.getOption('minIterationNum')
-        self.setOption('minIterationNum', 25)
+        minIterSave = self.getOption('nRKReset')
+        self.setOption('nRKReset', 25)
 
         # Solve first problem
         aeroProblem.alpha = alpha0
@@ -1565,7 +1519,7 @@ class SUMB(AeroSolver):
             if abs(fnm1) < tol:
                 break
         # Restore the min iter option
-        self.setOption('minIterationNum', minIterSave)
+        self.setOption('nRKReset', minIterSave)
             
     def writeSolution(self, outputDir=None, baseName=None, number=None):
         """This is a generic shell function that potentially writes
@@ -2203,6 +2157,10 @@ class SUMB(AeroSolver):
         areaRef = AP.areaRef
         chordRef = AP.chordRef
         liftIndex = self.getOption('liftIndex')
+
+        if self.dtype == 'd':
+            mach = numpy.real(mach)
+
         if self.dtype == 'd':
             T = numpy.real(AP.T)
             P = numpy.real(AP.P)
@@ -2621,11 +2579,15 @@ class SUMB(AeroSolver):
                 dIdP = dIda[self.aeroDVs['P']]
                 dIdT = dIda[self.aeroDVs['T']]
                 dIdMach = dIda[self.aeroDVs['mach']]
+
                 # Chain rule the reynolds dependance back to what came from aeroproblem:
+                rho = numpy.real(self.curAP.rho)
+                mu = numpy.real(self.curAP.mu)
+                V = numpy.real(self.curAP.V)
                 dIdReynolds = dIda[self.aeroDVs['reynolds']]
-                dIdV = self.curAP.rho/self.curAP.mu*dIdReynolds
-                dIdrho = self.curAP.V/self.curAP.mu*dIdReynolds
-                dIdmu = -self.curAP.rho*self.curAP.V/self.curAP.mu**2 * dIdReynolds
+                dIdV = rho/mu*dIdReynolds
+                dIdrho = V/mu*dIdReynolds
+                dIdmu = -rho*V/mu**2 * dIdReynolds
 
                 # Chain-rule to get the final derivative:
                 funcsSens[self.curAP.DVNames[dv]] = (
@@ -3450,9 +3412,6 @@ class SUMB(AeroSolver):
         them out.
         """
         defOpts = {
-            # Log File instead of stdout
-            'logfile':[str, ''],
-
             # Common Paramters
             'gridfile':[str, 'default.cgns'],
             'restartfile':[str, 'default_restart.cgns'],
@@ -3537,7 +3496,6 @@ class SUMB(AeroSolver):
             'l2convergencecoarse':[float, 1e-2],
             'maxl2deviationfactor':[float, 1.0],
             'coeffconvcheck':[bool, False],
-            'miniterationnum':[int, 0],
 
             # Newton-Krylov Paramters
             'usenksolver':[bool, False],
@@ -3570,7 +3528,6 @@ class SUMB(AeroSolver):
             'metricconversion':[float, 1.0],
             'autosolveretry':[bool, False],
             'autoadjointretry':[bool, False],
-            'storehistory':[bool, False],
             'numbersolutions':[bool, True],
             'printiterations':[bool, True],
             'printtiming':[bool, True],
@@ -3774,7 +3731,6 @@ class SUMB(AeroSolver):
             'l2convergencecoarse':{'location':'inputiteration.l2convcoarse'},
             'maxl2deviationfactor':{'location':'inputiteration.maxl2deviationfactor'},
             'coeffconvcheck':{'location':'monitor.coeffconvcheck'},
-            'miniterationnum':{'location':'inputiteration.miniternum'},
 
             # Newton-Krylov Paramters
             'usenksolver':{'location':'nksolvervars.usenksolver'},
@@ -3803,7 +3759,7 @@ class SUMB(AeroSolver):
             'nkmaxlinearkspits':{'location':'nksolvervars.ksp_max_it'},
             'nkjacobianlag':{'location':'nksolvervars.jacobian_lag'},
             'rkreset':{'location':'nksolvervars.rkreset'},
-            'nrkreset':{'location':'nksolvervars.nrkreset'},
+            'nrkreset':{'location':'inputiteration.miniternum'},
             'nkadpc':{'location':'nksolvervars.nkadpc'},
             'nkviscpc':{'location':'nksolvervars.nkviscpc'},
             'applypcsubspacesize':{'location':'nksolvervars.applypcsubspacesize'},
@@ -3897,7 +3853,6 @@ class SUMB(AeroSolver):
 
         ignoreOptions = [
             'defaults',
-            'storehistory',
             'numbersolutions',
             'writesurfacesolution',
             'writevolumesolution',
@@ -3906,7 +3861,6 @@ class SUMB(AeroSolver):
             'usereversemodead',
             'partitiononly',
             'liftindex',
-            'logfile'
              ]
 
         # Deprecated options. These should not be used, but old
@@ -4055,10 +4009,6 @@ class SUMB(AeroSolver):
         self.sumb.inputio.slicesolfile[:] = ''
         self.sumb.inputio.slicesolfile[0:len(sliceFileName)] = sliceFileName
 
-
-    def __del__(self):
-        if self.logFile:
-            self.sumb.closeLog()
 
 class sumbFlowCase(object):
     """
