@@ -299,17 +299,22 @@ subroutine solveState
      return
   endif
 
-  ! Compute the staring residual 
-  call getCurrentResidual(rhoResStart,totalRStart)
-
   ! Only compute the free stream res once for efficiency
   if (groundLevel == 1)  then
      if (.not. freeStreamResSet)  then
         call getFreeStreamResidual(rhoRes0,totalR0)
         freeStreamResSet = .True.
+
      end if
+
+     ! Compute the staring residual MUST be after free stream residual
+     ! to update dw/fw
+     call getCurrentResidual(rhoResStart,totalRStart)
+
   else
      call getFreeStreamResidual(rhoRes0,totalR0)
+     freeStreamResSet = .False.
+     call getCurrentResidual(rhoResStart,totalRStart)
   end if
 
   ! Save L2 since we may need to overwrite. 
