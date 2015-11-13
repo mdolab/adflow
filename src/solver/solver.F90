@@ -100,10 +100,7 @@
          select case (equationMode)
            case (steady, timeSpectral)
              call solverSteady
-             ! if (fatalFailroutineFailed) then
-             !     exit
-             !  end if
-           case (unsteady)
+          case (unsteady)
              select case (timeIntegrationScheme)
                case (BDF)
                  call solverUnsteadyBDF

@@ -106,7 +106,6 @@ defOpts = {
     'l2convergencecoarse': 1e-2,
     'maxl2deviationfactor': 1.0,
     'coeffconvcheck': False,
-    'miniterationnum': 0,
 
     # Newton-Krylov Paramters
     'usenksolver': False,
@@ -139,7 +138,6 @@ defOpts = {
     'metricconversion': 1.0,
     'autosolveretry': False,
     'autoadjointretry': False,
-    'storehistory': False,
     'numbersolutions': True,
     'printiterations': True,
     'printtiming': True,

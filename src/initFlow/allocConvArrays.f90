@@ -34,8 +34,6 @@ subroutine allocConvArrays(nIterTot)
   !      Local variables.
   !
   integer :: ierr
-  real(kind=realType) :: tmp(nTimeIntervalsSpectral,nMon)
-
   !      ******************************************************************
   !      *                                                                *
   !      * Begin execution                                                *
@@ -48,35 +46,13 @@ subroutine allocConvArrays(nIterTot)
   if(.not. storeConvInnerIter) return 
 
   if (allocated(convArray)) then
-     ! Its already allocated, so copy the data out first:
-     tmp = convArray(0,:,:)
-
-     deallocate(convArray,stat=ierr)
-     if(ierr /= 0) then
-        call returnFail("allocConvArrays", &
-             "Memory deallocation failure for convArrya")
-     end if
-   
-
-     allocate(convArray(0:nIterTot,nTimeIntervalsSpectral,nMon), stat=ierr)
-     if(ierr /= 0) then
-        call returnFail("allocConvArrays", &
-             "Memory allocation failure for convArray")
-     end if
-     convArray = zero
-     convArray(0,:,:) = tmp
-
-  else ! Just allocate:
-
-     allocate(convArray(0:nIterTot,nTimeIntervalsSpectral,nMon), stat=ierr)
-     if(ierr /= 0) then
-        call returnFail("allocConvArrays", &
-             "Memory allocation failure for convArray")
-     end if
-
-     ! Zero Array:
-     convArray = zero
+     deallocate(convArray)
   end if
+
+  allocate(convArray(0:nIterTot, nTimeIntervalsSpectral, nMon))
+  
+  ! Zero Array:
+  convArray = zero
 
 end subroutine allocConvArrays
 

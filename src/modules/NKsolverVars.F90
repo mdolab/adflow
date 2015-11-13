@@ -76,7 +76,6 @@ module NKsolverVars
   logical :: NKViscPC
   logical :: RKreset
 
-  integer(kind=intType) :: nRKreset
   real(kind=realType) :: resSum(8)
 
   ! Non-linear Solver Tolerances
