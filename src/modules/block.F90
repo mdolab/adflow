@@ -321,6 +321,7 @@ module block
      type(oversetDonor), dimension(:, :, :), pointer :: donors
      logical, dimension(:, :, :), pointer :: forceRecv
      logical, dimension(:, :, :), pointer :: recvStatus
+     logical, dimension(:, :, :), pointer :: donorStatus 
      real(kind=realType), dimension(:, :, :, :), pointer :: xSearch
      real(kind=realType), dimension(:, :, :), pointer :: qualRecv
      integer(kind=intTYpe) :: nFringe

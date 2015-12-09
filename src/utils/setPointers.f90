@@ -120,6 +120,7 @@
        donors => flowDoms(nn,mm,ll)%donors
        forceRecv => flowDoms(nn,mm,ll)%forceRecv
        recvStatus => flowDoms(nn,mm,ll)%recvStatus
+       donorStatus => flowDoms(nn,mm,ll)%donorStatus
        xSearch => flowDoms(nn,mm,ll)%xSearch
        qualRecv => flowDoms(nn,mm,ll)%qualRecv
 

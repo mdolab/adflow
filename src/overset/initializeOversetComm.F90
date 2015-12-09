@@ -12,14 +12,16 @@ subroutine initializeOversetComm
   ! Working Variables
   integer(kind=intType) :: ii, jj, kk, i, j, k, nn, ierr, tag1, tag2, dest
   integer(kind=intType) :: iDom, nFirstHalos, counter, donorID, iFringe
-  integer(kind=intType) :: nFringeProc, nDonorsPerCell
+  integer(kind=intType) :: nFringeProc, nDonorsPerCell, level, sps
   integer(kind=intType), dimension(:), allocatable :: offsetBlock
   integer(kind=intType), dimension(:), allocatable :: fringesProc
-  integer(kind=intType), dimension(:), allocatable :: nFringePerBlock
-  integer(kind=intType), dimension(:), allocatable :: intBuffer
-  real(kind=realType), dimension(:), allocatable :: realBuffer
   integer(kind=intType) :: nFringeOnBlock, iStart, iEnd
   integer status(MPI_STATUS_SIZE) 
+
+  ! Explictly set level and sps to 1. This will be removed in the future.
+  level = 1
+  sps = 1 
+
   ! Number of donors depends on the type of interpolation
   if (oversetInterpolation == linear) then 
      nDonorsPerCell = 8
@@ -27,171 +29,87 @@ subroutine initializeOversetComm
      nDonorsPerCell = 27
   end if
 
-  ! First we determine the total number of fringes on each
-  ! block. Currently on the root processor with the oBlocks knows this
-  ! information. 
+  ! My own proc flowDoms already knows my fringe cells donors info
+  ! Now just update the 'nFringe, 'fringeFrac' and 'fringeIndices' info.
 
-  ! Let everyone know the number of fringes from each block
-  allocate(nFringePerBlock(nDomTotal))
+  ! First find out nFringe
+  loop_nDom: do nn=1, nDom
+     iDom = nn + cumDomProc(myid)
+     call setPointers(nn, level, sps)
 
-  if (myid == 0) then 
-     do iDom=1, nDomTotal
-        oBlocks(iDom)%nFringe = 0
-        do k=2, oBlocks(iDom)%kl
-           do j=2, oBlocks(iDom)%jl
-              do i=2, oBlocks(iDom)%il
-                 if (oBlocks(iDom)%iBlank(i,j,k) == -1) then 
-                    oBlocks(iDom)%nFringe = oBlocks(iDom)%nFringe + 1
+     nFringe = 0 ! = flowDoms(nn, level, 1)%nFringe = 0 
+     do k=2, kl
+        do j=2, jl
+           do i=2, il
+              
+              if (iBlank(i, j, k) == -1) then
+                 nFringe = nFringe + 1
 
-                    ! Also check that we actuall have info for
-                    ! it...totherwise this is an orphan that we can't
-                    ! deal with yer. 
+                 ! Also check that we actuall have info for
+                 ! it...totherwise this is an orphan that we can't
+                 ! deal with yer. 
+                 if ( donors(i, j, k)%donorBlockId == -1 ) then
 
-                    if (oBlocks(iDom)%donors(i, j, k)%donorProcID == -1) then 
-                       print *,'We have an orphan. Cannot do this yet.'
-                       print *,'Bad block, cell:', iDom, i, j, k 
-                       stop
-                    end if
+                    print *,'We have an orphan. Cannot do this yet.'
+                    print *,'Bad global block, local cell:', iDom, i, j, k 
+                    stop
                  end if
-              end do
+              end if 
+
            end do
         end do
-        nFringePerBlock(iDom) = oBlocks(iDom)%nFringe
      end do
-  end if
+     flowDoms(nn, level, sps)%nFringe = nFringe
 
-  ! Broadcast nFringePerBlock to everyone
-  call mpi_bcast(nFringePerBlock, nDomTotal, sumb_integer, 0, sumb_comm_world, ierr)
-  call ECHK(ierr, __FILE__, __LINE__)
+     ! Allocate 'fringeFrac' and 'fringeIndices'
+     ! fringeFrac(3, nFringe)      : donor cell fractions
+     ! fringeIndices( 1   , nFringe) : donor cell globalBlockId
+     ! fringeIndices( 2:4 , nFringe) : donor cell indices
+     ! fringeIndices( 5:12, nFringe) : donor cell global cells i
+     ! fringeIndices(13:15, nFringe) : current or receiver/fringe cell indices 
+     
+     allocate(flowDoms(nn, level, sps)%fringeFrac(3, nFringe), &
+              flowDoms(nn, level, sps)%fringeIndices(8, nFringe))
+              !flowDoms(nn, level, sps)%fringeIndices(15, nFringe))
 
-  ! Now go back through the oBlocks, pack up donorBlockID, ind and
-  ! frac and fire it to the correct processor.
-  if (myid == 0) then 
-     do iDom=1, nDomTotal
+     fringeFrac => flowDoms(nn, level, sps)%fringeFrac
+     fringeIndices => flowDoms(nn, level, sps)%fringeIndices
+  
+     ! Now, actually save fringeFrac and fringeIndices from flowDoms()%donors
+     ii = 0
+     do k=2, kl
+        do j=2, jl
+           do i=2, il
+              
+              if (iBlank(i, j, k) == -1) then
+                 ii = ii + 1
 
-        if (oBlocks(iDom)%procID /= 0) then 
+                 fringeFrac(:, ii)      = donors(i, j, k)%frac
 
-           ! Allocate buffer space, pack and send. 
-           allocate(realBuffer(nFringePerBlock(iDom)*3), &
-                intBuffer(nFringePerBlock(iDom)*8))
+                 fringeIndices( 1   , ii) = donors(i, j, k)%donorBlockID !globalBlockId of donor
+                 fringeIndices( 2:4 , ii) = donors(i, j, k)%ind !donor indices
 
-           ii = 0
-           do k=2, oBlocks(iDom)%kl
-              do j=2, oBlocks(iDom)%jl
-                 do i=2, oBlocks(iDom)%il
-                    if (oBlocks(iDom)%iBlank(i,j,k) == -1) then 
+                 !a fringeIndices( 5:12, ii) = donors(i, j, k)%gInd !donor global cell indices
 
-                       ! Frac for the donor
-                       realBuffer(ii*3+1) = oBlocks(iDom)%donors(i,j,k)%frac(1)
-                       realBuffer(ii*3+2) = oBlocks(iDom)%donors(i,j,k)%frac(2)
-                       realBuffer(ii*3+3) = oBlocks(iDom)%donors(i,j,k)%frac(3)
+                 !a fringeIndices(13:15, ii) = (/i, j, k/) !receiver/fringe indices
 
-                       ! Block/index for the donor
-                       intBuffer(ii*8+1) =  oBlocks(iDom)%donors(i,j,k)%donorBlockID
-                       intBuffer(ii*8+2) =  oBlocks(iDom)%donors(i,j,k)%ind(1)
-                       intBuffer(ii*8+3) =  oBlocks(iDom)%donors(i,j,k)%ind(2)
-                       intBuffer(ii*8+4) =  oBlocks(iDom)%donors(i,j,k)%ind(3)
+                 fringeIndices(  5, ii)   = nn !localBlockId
+                 fringeIndices(6:8, ii)   = (/i, j, k/) !receiver/fringe indices
 
-                       ! Block/index for the receiver
-                       intBuffer(ii*8+5) =  oBlocks(iDom)%localBlockID
-                       intBuffer(ii*8+6) =  i
-                       intBuffer(ii*8+7) =  j
-                       intBuffer(ii*8+8) =  k
-
-                       ii = ii + 1
-                    end if
-                 end do
-              end do
+              end if
+     
            end do
-
-           tag1 = 2*(iDom-1) + 1
-           tag2 = tag1 + 1
-           dest = oBlocks(iDom)%procID
-
-           call mpi_send(intBuffer, size(intBuffer), sumb_integer, dest, tag1, &
-                sumb_comm_world, ierr)
-
-           call mpi_send(realBuffer, size(realBuffer), sumb_real, dest, tag2, &
-                sumb_comm_world, ierr)
-
-           deallocate(realBuffer, intBuffer)
-
-        else
-
-           ! Its a local block so we can allocate and copy
-           allocate(flowDoms(iDom, 1, 1)%fringeFrac(3, nFringePerBlock(iDom)), &
-                flowDoms(iDom, 1, 1)%fringeIndices(8, nFringePerBlock(iDom)))
-
-           flowDoms(iDom, 1, 1)%nFringe = nFringePerBlock(iDom)
-
-           ! Set pointers to make it easier to read
-           fringeFrac => flowDoms(iDom, 1, 1)%fringeFrac
-           fringeIndices => flowDoms(iDom, 1, 1)%fringeIndices
-
-           ii = 0
-           do k=2, oBlocks(iDom)%kl
-              do j=2, oBlocks(iDom)%jl
-                 do i=2, oBlocks(iDom)%il
-                    if (oBlocks(iDom)%iBlank(i,j,k) == -1) then 
-                       ii = ii + 1
-                       fringeFrac(:, ii) = oBlocks(iDom)%donors(i,j,k)%frac
-                       fringeIndices(1  , ii) = oBlocks(iDom)%donors(i,j,k)%donorBlockID
-                       fringeIndices(2:4, ii) = oBlocks(iDom)%donors(i,j,k)%ind
-
-                       fringeIndices(5  , ii) = oBlocks(iDom)%localBlockID
-                       fringeIndices(6:8, ii) = (/i, j, k/)
-
-                    end if
-                 end do
-              end do
-           end do
-        end if
-     end do
-
-  else ! Not root...need to receive.
-
-     do nn=1, nDom
-        call setPointers(nn, 1, 1)
-
-        iDom = cumDomProc(myid) + nn
-        allocate(realBuffer(nFringePerBlock(iDom)*3), &
-             intBuffer(nFringePerBlock(iDom)*8))
-
-        tag1 = 2*(iDom-1) + 1
-        tag2 = tag1 + 1
-
-        call MPI_Recv(intBuffer, size(intBuffer), sumb_integer, 0, tag1, &
-             sumb_comm_world, status, ierr)
-
-        call MPI_Recv(realBuffer, size(realBuffer), sumb_real, 0, tag2, &
-             sumb_comm_world, status, ierr)
-
-        ! Allocate space in flowDoms for this
-        allocate(flowDoms(nn, 1, 1)%fringeFrac(3, nFringePerBlock(iDom)), &
-             flowDoms(nn, 1, 1)%fringeIndices(8, nFringePerBlock(iDom)))
-        flowDoms(nn, 1, 1)%nFringe = nFringePerBlock(iDom)
-
-        ! Set pointers to make it easier to read
-        fringeFrac => flowDoms(nn, 1, 1)%fringeFrac
-        fringeIndices => flowDoms(nn, 1, 1)%fringeIndices
-
-        do ii=1, nFringePerBlock(iDom)
-           fringeFrac(:, ii) = realBuffer(3*ii-2:3*ii)
-           fringeIndices(:, ii) = intBuffer(8*ii-7:8*ii)
         end do
-
-        ! Free the buffers
-        deallocate(intBuffer, realBuffer)
      end do
-  end if
+
+  end do loop_nDom
 
   nFringeProc = 0
   do nn=1, nDom
-     ! Count up the total number of fringes (times 8) I need. This is
-     ! quite inefficient but we'll fix later
-     nFringeProc = nFringeProc + nDonorsPerCell*flowDoms(nn, 1, 1)%nFringe
+     ! Count up the total number of fringes (times 8) I need. 
+     nFringeProc = nFringeProc + nDonorsPerCell*flowDoms(nn, level, sps)%nFringe
   end do
- 
+
   ! One last thing...we need the single-level halo based onset per proc 
   allocate(offsetBlock(nDomTotal))
   offsetBlock(1) = 0
@@ -200,21 +118,25 @@ subroutine initializeOversetComm
           (dims(1, nn-1) + 1) * (dims(2, nn-1) + 1) * (dims(3, nn-1) + 1)
   end do
 
+  call MPi_barrier(sumb_comm_world, ierr)
 
   ! Allocate spaces for the fringes indices
   allocate(fringesProc(nFringeProc))
 
   nFirstHalos = 0
   counter = 0
-
+  
   ! Copy in the indices each block needs. 
   do nn=1, nDom
-     call setPointers(nn, 1, 1)
-     do iFringe=1, nFringe
+     call setPointers(nn, level, sps)
+     !fringeIndices => flowDoms(nn, level, sps)%fringeIndices
+
+     do iFringe=1, nFringe  !flowDoms(nn, level, sps)%nFringe
 
         ! What we will do now is back out global index of the donor
         ! cells
         donorID = fringeIndices(1, iFringe)
+
         i = fringeIndices(2, iFringe)
         j = fringeIndices(3, iFringe)
         k = fringeIndices(4, iFringe)
@@ -262,6 +184,6 @@ subroutine initializeOversetComm
   call ECHK(ierr, __FILE__, __LINE__)
 
   ! Clean up the temporary IS1
-  deallocate(fringesProc, offsetBlock, nFringePerBLock)
+  deallocate(fringesProc, offsetBlock)
 
 end subroutine initializeOversetComm

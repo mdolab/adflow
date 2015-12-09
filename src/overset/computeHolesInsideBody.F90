@@ -40,7 +40,7 @@ subroutine computeHolesInsideBody
   ! Data for the ADT
   character(len=10), parameter :: adtName = "holeCutADT"
   integer(kind=intType), dimension(3, 0) :: connTria
-  real(kind=realType), dimension(0, 0) :: dummy
+  real(kind=realType), dimension(3, 2) :: dummy
   logical :: useBBox 
   integer(kind=intType) :: nTria, intInfo(3), jjADT, nAlloc, nSearch
   real(kind=realType) :: coor(4), uvw(5) 
