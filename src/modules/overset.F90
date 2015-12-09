@@ -32,11 +32,24 @@ module overset
   ! dInd, size(4, arrSize) : blockID, i,j,k indices of the point's donor
   ! frac, size(3, arrSize) : Fraction weights in the cell
   ! gInd, size(8, arrSize) : Global indices of the 8 donor cells
+  ! qualRecv, size(1, arraySize) : qualRecv of point i,j,k, usually
+  !                                donorQual of the donor to point i,j,k
   type oversetSearchCoords
      real(kind=realType), dimension(:, :), pointer :: x, frac
      integer(kind=intType), dimension(:, :), pointer :: fInd, dInd, gInd
      integer(kind=intType) :: n, arrSize
+     real(kind=realType), dimension(:, :), pointer :: qualRecv
+
+     ! Buffer space
+     real(kind=realType), dimension(:), allocatable :: rBuffer
+     integer(kind=intType), dimension(:), allocatable :: iBuffer
   end type oversetSearchCoords
+
+  type specialSearchCoords
+     ! procId, size(3, arrSize) : size(fInd), saves procId of
+     !                            incoming oversetSearchCoords blocks
+     integer(kind=intType), dimension(:, :), pointer :: procId
+  end type specialSearchCoords
 
   ! A simple generic sparse matrix storage container for storing the
   ! (sparse) overlap structure of an overset mesh
@@ -83,12 +96,30 @@ module overset
      real(kind=realType), dimension(:), allocatable :: rBuffer
      integer(kind=intType), dimension(:), allocatable :: iBuffer
 
+     ! Additional variables for donor info
+     ! ------------------------------------
+     integer(kind=intType), dimension(:,:,:), pointer :: iblank
+
+     ! Status of a cell based on oversetbc info
+     integer(kind=intType), dimension(:,:,:), pointer :: cellStatus
+
+     ! Valid status of donor cells
+     logical, dimension(:, :, :), pointer :: recvStatus
+     logical, dimension(:, :, :), pointer :: donorStatus
+     logical, dimension(:, :, :), pointer :: forceRecv
+     ! ------------------------------------
+
   end type oversetBlocK
 
   type(oversetBlock), dimension(:), allocatable :: oBlocks
   type(variablePointer), dimension(:, :), allocatable :: variables
 
   type(oversetSearchCoords), dimension(:), allocatable :: searchCoords
+  type(specialSearchCoords), dimension(:), allocatable :: specialArray
+
+  ! temporary search coordinates to save. size= (nDom,0:nProc-1),
+  ! nDom=total compute blocks in my proc
+  type(oversetSearchCoords), dimension(:,:), allocatable :: tmpsearchCoords
 
   integer(kind=intType), dimension(:), allocatable :: nDomProc, cumDomProc
   integer(kind=intType), dimension(:, :), allocatable :: dims
