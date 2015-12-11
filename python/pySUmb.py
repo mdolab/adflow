@@ -2542,7 +2542,7 @@ class SUMB(AeroSolver):
         # Now set the flags and possibly reset adjoint
         if self.sumb.killsignals.adjointfailed:
             self.adjointFailed = True
-            # Reset stored adjoint
+            #Reset stored adjoint
             self.curAP.sumbData.adjoints[objective][:] = 0.0
         else:
             self.curAP.sumbData.adjoints[objective] = psi
@@ -2847,16 +2847,16 @@ class SUMB(AeroSolver):
         # Process the Xs perturbation
         if xSDot is None:
             xsdot = numpy.zeros_like(self.coords0)
-            useSpatial = True
         else:
             xsdot = xSDot
+            useSpatial = True
 
         # Process the Xv perturbation
         if xVDot is None:
             xvdot = numpy.zeros(self.getSpatialSize())
-            useSpatial = True
         else:
             xvdot = xVDot
+            useSpatial = True
 
         # Process wDot perturbation
         if wDot is None:
