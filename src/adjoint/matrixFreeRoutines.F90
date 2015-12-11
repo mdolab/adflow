@@ -1033,3 +1033,37 @@ subroutine solveDirectForRHS(inVec, outVec, nDOF, relativeTolerance)
   ! #endif
 
 end subroutine solveDirectForRHS
+
+
+subroutine testdRdWTSpeed(X, Y, n)
+
+
+  use ADjointPETSc, only : dRdwT, psi_like1, psi_like2
+  use constants
+  implicit none
+
+  real(kind=realType), dimension(n) :: X, Y
+  integer(kind=intType) :: ierr, n
+
+  ! Simple debugging routine to just do a matrix-vector product with
+  ! dRdwT to see how long it takes. 
+
+  call VecPlaceArray(psi_like1, X, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  call VecPlaceArray(psi_like2, Y, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  ! Get Current Residual -- we always solve for the delta
+  call MatMult(dRdWT, psi_like1, psi_like2, ierr) 
+  call EChk(ierr,__FILE__,__LINE__)
+
+
+  call VecResetArray(psi_like1, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+  
+  call VecResetArray(psi_like2, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+
+end subroutine testdRdWTSpeed
