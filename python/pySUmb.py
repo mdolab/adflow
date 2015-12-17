@@ -493,6 +493,9 @@ class SUMB(AeroSolver):
         """Add a series of new functions to SUmb. This is a vector version of
         the addFunction() routine. See that routine for more documentation. """
 
+        if names is None:
+            names = [None]*len(funcNames)
+
         if len(funcNames) != len(groupNames) or len(funcNames) != len(names):
             raise Error("funcNames, groupNames, and names all have to be "
                         "lists of the same length")
@@ -527,7 +530,7 @@ class SUMB(AeroSolver):
             # Now register the function into sumbCostFunctions
             self.sumbCostFunctions[sumbFuncName] = [groupName, funcName]
 
-            newFuncNames.append(name)
+            newFuncNames.append(sumbFuncName)
 
         return newFuncNames
 
