@@ -332,8 +332,6 @@ class SUMB(AeroSolver):
         # Fianlly we have the local displacements for this processor we save
         self.curAP.sumbData.disp = localD
                         
-
-
     def addLiftDistribution(self, nSegments, direction,
                             groupName=None, description=''):
         """
@@ -495,6 +493,9 @@ class SUMB(AeroSolver):
         """Add a series of new functions to SUmb. This is a vector version of
         the addFunction() routine. See that routine for more documentation. """
 
+        if names is None:
+            names = [None]*len(funcNames)
+
         if len(funcNames) != len(groupNames) or len(funcNames) != len(names):
             raise Error("funcNames, groupNames, and names all have to be "
                         "lists of the same length")
@@ -529,7 +530,7 @@ class SUMB(AeroSolver):
             # Now register the function into sumbCostFunctions
             self.sumbCostFunctions[sumbFuncName] = [groupName, funcName]
 
-            newFuncNames.append(name)
+            newFuncNames.append(sumbFuncName)
 
         return newFuncNames
 
@@ -662,6 +663,7 @@ class SUMB(AeroSolver):
 
         # Set the full mask such that we get the full coefficients in
         # the printout.
+
         self.sumb.setfullmask()
 
         # If this problem has't been solved yet, reset flow to this
@@ -1423,12 +1425,12 @@ class SUMB(AeroSolver):
                 break
         return Xn
 
-    def solveSep(self, aeroProblem, sepStar, alpha0=0,
-                delta=0.5, tol=1e-3, expansionRatio=1.2):
-        """This is a safe-guarded secant search method to determine the alpha
-        that yields a specified value of the sep sensor. Since this
-        function is highly nonlinear we use a bisection search
-        instead of a secant search. 
+    def solveSep(self, aeroProblem, sepStar, nIter=10, alpha0=None,
+                 delta=0.1, tol=1e-3, expansionRatio=1.2, sepName=None):
+        """This is a safe-guarded secant search method to determine
+        the alpha that yields a specified value of the sep
+        sensor. Since this function is highly nonlinear we use a
+        linear search to get the bounding range first.
 
         Parameters
         ----------
@@ -1436,44 +1438,84 @@ class SUMB(AeroSolver):
             The aerodynamic problem to solve
         sepStar : float
             The desired target separation sensor value
-        alpha0 : angle (deg)
-            Initial guess 
+        nIter : int
+            Maximum number of iterations
+        alpha0 : angle (deg) or None
+            Initial guess. If none, use what is in aeroProblem.
         delta : angle (deg)
             Initial step. Only the magnitude is significant
         tol : float
             Desired tolerance for sepSensor
+
+        sepName : str or None
+            User supplied function to use for sep sensor. May be a 
+            user-added group function. 
 
         Returns
         -------
         None, but the correct alpha is stored in the aeroProblem
         """ 
         self.setAeroProblem(aeroProblem)
-
+        ap = aeroProblem
         # There are two main parts of the algorithm: First we need to
         # find the alpha range bracketing the desired function
         # value. Then we use a safe-guarded secant search to zero into
         # that vlaue.
 
-        minIterSave = self.getOption('nRKReset')
-        self.setOption('nRKReset', 25)
+        if sepName is None:
+            sepName = 'sepsensor'
+
+        if alpha0 is None:
+            alpha0 = ap.alpha
+
+        # Name of function to use
+        funcName = '%s_%s'%(ap.name, sepName)
+
+        if not self.getOption('rkreset') and self.getOption('usenksolve'):
+            SUMBWarning("nRKReset option is not set. It is usually necessary "
+                        "for solveSep() when NK solver is used.")
 
         # Solve first problem
-        aeroProblem.alpha = alpha0
-        self.__call__(aeroProblem, writeSolution=False)
-        sol = self.getSolution()
-        f = sol['sepsensor'] - sepStar
+        ap.alpha = alpha0
+        self.__call__(ap, writeSolution=False)
+        funcs = {}
+        self.evalFunctions(ap, funcs, [sepName])
+        f = funcs[funcName] - sepStar
         da = delta
+
+        if self.comm.rank == 0:
+            print('+----------------------------------------------+')
+            print('| Presolve ')
+            print('| Alpha      = %s'%ap.alpha)
+            print('| Sep value  = %s'%funcs[funcName])
+            print('| F          = %s'%f)
+            print('| Sep*       = %s'%sepStar)
+            print('+----------------------------------------------+')
+
+        if self.comm.rank == 0:
+            print ('Searching for Correct Interval')
+
         # Now try to find the interval
-        for i in range(20):
+        for i in range(nIter):
+
             if f > 0.0:
                 da = -numpy.abs(da)
             else:
                 da = numpy.abs(da)
             # Increment the alpha and solve again
-            aeroProblem.alpha += da
-            self.__call__(aeroProblem, writeSolution=False)
-            sol = self.getSolution()
-            fnew = sol['sepsensor'] - sepStar
+            ap.alpha += da
+            self.__call__(ap, writeSolution=False)
+            self.evalFunctions(ap, funcs, [sepName])
+            fnew = funcs[funcName] - sepStar
+
+            if self.comm.rank == 0:
+                print('+----------------------------------------------+')
+                print('| Finished It= %d'%i)
+                print('| Alpha      = %s'%ap.alpha)
+                print('| Sep value  = %s'%funcs[funcName])
+                print('| F          = %s'%fnew)
+                print('| Sep*       = %s'%sepStar)
+                print('+----------------------------------------------+')
 
             if numpy.sign(f) != numpy.sign(fnew):
                 # We crossed the zero:
@@ -1485,18 +1527,31 @@ class SUMB(AeroSolver):
 
         # Now we know anm2 and anm1 bracket the zero. We now start the
         # secant search but make sure that we stay inside of these known bounds
-        anm1 = aeroProblem.alpha
-        anm2 = aeroProblem.alpha - da
+        anm1 = ap.alpha
+        anm2 = ap.alpha - da
         fnm1 = fnew
         fnm2 = f
         lowAlpha = min(anm1, anm2)
         highAlpha = max(anm1, anm2)
-        for iIter in range(20):
+
+        if self.comm.rank == 0:
+            print ('Switching to Secant Search')
+
+        for iIter in range(nIter):
             if iIter != 0:
-                aeroProblem.alpha = anm1
-                self.__call__(aeroProblem, writeSolution=False)
-                sol = self.getSolution()
-                fnm1 = sol['sepsensor'] - sepStar
+                ap.alpha = anm1
+                self.__call__(ap, writeSolution=False)
+                self.evalFunctions(ap, funcs, [sepName])
+                fnm1 = funcs[funcName] - sepStar
+
+            if self.comm.rank == 0:
+                print('+----------------------------------------------+')
+                print('| Finished It= %d'%i)
+                print('| Alpha      = %s'%ap.alpha)
+                print('| Sep value  = %s'%funcs[funcName])
+                print('| F          = %s'%fnm1)
+                print('| Sep*       = %s'%sepStar)
+                print('+----------------------------------------------+')
 
             # Secant update
             anew = anm1 - fnm1*(anm1 - anm2)/(fnm1-fnm2)
@@ -1518,9 +1573,7 @@ class SUMB(AeroSolver):
             # Finally, convergence check
             if abs(fnm1) < tol:
                 break
-        # Restore the min iter option
-        self.setOption('nRKReset', minIterSave)
-            
+
     def writeSolution(self, outputDir=None, baseName=None, number=None):
         """This is a generic shell function that potentially writes
         the various output files. The intent is that the user or
