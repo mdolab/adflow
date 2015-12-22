@@ -2936,7 +2936,7 @@ class SUMB(AeroSolver):
         # already existing (and possibly nonzero) xsdot and xvdot
         if xDvDot is not None or xSDot is not None:
             if xDvDot is not None:
-                xsdot += self.DVGeo.totalSensitivityProd(xDvDot, self.curAP.ptSetName)
+                xsdot += self.DVGeo.totalSensitivityProd(xDvDot, self.curAP.ptSetName).reshape(xsdot.shape)
             xvdot += self.mesh.warpDerivFwd(xsdot)
             useSpatial = True
 
@@ -2950,7 +2950,8 @@ class SUMB(AeroSolver):
         # Process the derivative of the functions
         funcsdot = {}
         for f in self.curAP.evalFuncs:
-            mapping = self.sumbCostFunctions[f.lower()]
+            basicFunc = self.sumbCostFunctions[f.lower()][1]
+            mapping = self.basicCostFunctions[basicFunc]
             funcsdot[f] = tmp[mapping - 1]
         
         # Assemble the returns
