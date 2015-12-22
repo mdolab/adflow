@@ -2943,9 +2943,13 @@ class SUMB(AeroSolver):
         # Sizes for output arrays
         costSize = self.sumb.costfunctions.ncostfunction
         fSize, nCell = self.sumb.getforcesize()
-        
+
         dwdot,tmp,fdot = self.sumb.computematrixfreeproductfwd(
-            xvdot, extradot, wdot, useSpatial, useState, costSize, fSize)
+            xvdot, extradot, wdot, useSpatial, useState, costSize,  max(1, fSize))
+
+        # Explictly put fdot to nothing if we ac
+        if fSize==0:
+            fdot = numpy.zeros((0, 3))
 
         # Process the derivative of the functions
         funcsdot = {}
