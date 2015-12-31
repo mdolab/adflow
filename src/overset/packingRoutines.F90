@@ -23,7 +23,7 @@ subroutine packOBlock(oBlock)
   iSize = iSize + size(oBlock%hexaConn)
 
   iSize = iSize + size(oBlock%globalCell)
-
+  
   iSize = iSize + size(oBlock%nearWall)
 
   iSize = iSize + oBlock%ADT%nLeaves*2 ! The two itegers for the
@@ -176,7 +176,7 @@ subroutine unpackOBlock(oBlock)
   ! Allocate the remainder of the arrays in oBlock.
   allocate(oBlock%hexaConn(8, nHexa))
   allocate(oBlock%globalCell(0:oBlock%ib, 0:oBlock%jb, 0:oBlock%kb))
-  allocate(oBlock%globalCell(0:oBlock%ie, 0:oBlock%je, 0:oBlock%ke))
+  allocate(oBlock%nearWall(1:oBlock%ie, 1:oBlock%je, 1:oBlock%ke))
   allocate(oBlock%qualDonor(1, oBlock%ie * oBlock%je * oBlock%ke))
   allocate(oBlock%xADT(3, nADT))
 
@@ -233,9 +233,9 @@ subroutine unpackOBlock(oBlock)
      end do
   end do
 
-  do k=0, oBlock%ke
-     do j=0, oBlock%je
-        do i=0, oBlock%ie
+  do k=1, oBlock%ke
+     do j=1, oBlock%je
+        do i=1, oBlock%ie
            iSize = iSize + 1
            oBlock%nearWall(i, j, k) = oBlock%iBuffer(iSize)
         end do

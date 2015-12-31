@@ -190,7 +190,7 @@ subroutine floodInteriorCells(level, sps)
         exit parallelSyncLoop
      end if
      loopIter = loopIter + 1
-     exit parallelSyncLoop
+
   end do parallelSyncLoop
 
 contains
