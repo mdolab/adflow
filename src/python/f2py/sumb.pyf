@@ -175,9 +175,6 @@ python module libsumb
          real(kind=realtype) intent(out) :: face_inbalance
        end subroutine checkpartitioning
 
-       subroutine writegridswithhalos
-       end subroutine writegridswithhalos
-
        subroutine writesol ! in :sumb:../../output/writeSol.f90
        end subroutine writesol
 
@@ -824,12 +821,10 @@ python module libsumb
        end module inputtimespectral
 
        module inputoverset
-         real(kind=realtype) :: overlapfactor
          integer(kind=inttype) :: oversetinterpolation
          integer(kind=inttype) parameter, optional :: linear=1
          integer(kind=inttype) parameter, optional :: quadratic=2
        end module inputoverset
-
        
        module inputunsteady ! in :test:inputParam.f90
          use accuracy

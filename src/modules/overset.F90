@@ -2,23 +2,8 @@ module overset
 
   use precision
   use adtData
+  use block
   implicit none
-
-#define PETSC_AVOID_MPIF_H
-
-#include "include/petscversion.h"
-#if PETSC_VERSION_MINOR > 5
-#include "petsc/finclude/petsc.h"
-#include "petsc/finclude/petscvec.h90"
-#else
-#include "include/finclude/petsc.h"
-#include "include/finclude/petscvec.h90"
-#endif
-
-  ! Helper data type for overset communication
-  type variablePointer
-     real(kind=realType), dimension(:, :, :), pointer :: arr
-  end type variablePointer
   
   ! Helper dataType for communicated overset grid points. This data
   ! structure mirrros the blockType structure in block.F90, but only
@@ -27,37 +12,17 @@ module overset
 
   ! Store the coordinates from a block that will need to be searched.
 
-  ! x , size(3, arrSize) : Seach point. 
-  ! fInd, size(3, arrSize) : i,j,k block indices of the point
-  ! dInd, size(4, arrSize) : blockID, i,j,k indices of the point's donor
-  ! frac, size(3, arrSize) : Fraction weights in the cell
-  ! gInd, size(8, arrSize) : Global indices of the 8 donor cells
-  ! qualRecv, size(1, arraySize) : qualRecv of point i,j,k, usually
-  !                                donorQual of the donor to point i,j,k
-  type oversetSearchCoords
-     real(kind=realType), dimension(:, :), pointer :: x, frac
-     integer(kind=intType), dimension(:, :), pointer :: fInd, dInd, gInd
-     integer(kind=intType) :: n, arrSize
-     real(kind=realType), dimension(:, :), pointer :: qualRecv
-
-     ! Buffer space
-     real(kind=realType), dimension(:), allocatable :: rBuffer
-     integer(kind=intType), dimension(:), allocatable :: iBuffer
-  end type oversetSearchCoords
-
-  type specialSearchCoords
-     ! procId, size(3, arrSize) : size(fInd), saves procId of
-     !                            incoming oversetSearchCoords blocks
-     integer(kind=intType), dimension(:, :), pointer :: procId
-  end type specialSearchCoords
-
   ! A simple generic sparse matrix storage container for storing the
   ! (sparse) overlap structure of an overset mesh
   type CSRMatrix
-     integer(kind=intType) :: nRow, nCol, nnz
+     integer(kind=intType) :: nRow, nCol, nnz, nnzLocal
      integer(kind=intType), dimension(:), pointer :: colInd, rowPtr
      real(kind=realType), dimension(:), pointer :: data
      integer(Kind=intType), dimension(:), pointer :: assignedProc
+
+     ! Flag if this matrix is allocated
+     logical :: allocated=.False.
+
   end type CSRMatrix
 
   ! This derived type contains sufficient information to perfom ADT
@@ -79,60 +44,59 @@ module overset
      ! Coordinates for the ADT
      real(kind=realType), dimension(:, :), pointer :: xADT
 
-     ! Flag eliminating a cell as a potential donor. Using an integer
-     ! since it is easier to transfer
-     integer, dimension(:, :, :), pointer :: invalidDonor
-
      ! Copy of global cell
      integer(kind=intType), dimension(:, :, :), pointer :: globalCell
+
+     ! Whether or not a cell is "near" a wall
+     integer(kind=intType), dimension(:, :, :), pointer :: nearWall
      
      ! Minimum volume for this block
-     real(kind=realType) :: minVolume
+     real(kind=realType) :: minVol
 
      ! The ADT for this block
      type(adtType) :: ADT
 
-     ! Buffer space
+     ! The processor for this block
+     integer(kind=intType) :: proc
+     
+     ! And the local block index
+     integer(kind=intType) :: block
+
+     ! Buffer space for sending/receiving the block
      real(kind=realType), dimension(:), allocatable :: rBuffer
      integer(kind=intType), dimension(:), allocatable :: iBuffer
 
-     ! Additional variables for donor info
-     ! ------------------------------------
-     integer(kind=intType), dimension(:,:,:), pointer :: iblank
+     ! Flag if this block got allocated
+     logical :: allocated=.False.
 
-     ! Status of a cell based on oversetbc info
-     integer(kind=intType), dimension(:,:,:), pointer :: cellStatus
+  end type oversetBlock
 
-     ! Valid status of donor cells
-     logical, dimension(:, :, :), pointer :: recvStatus
-     logical, dimension(:, :, :), pointer :: donorStatus
-     logical, dimension(:, :, :), pointer :: forceRecv
-     ! ------------------------------------
+  type fringeListType
+     type(fringeType), dimension(:), allocatable :: arr
+  end type fringeListType
 
-  end type oversetBlocK
-
+  ! These are the two main lists of derived types used for overset
+  ! assembly
   type(oversetBlock), dimension(:), allocatable :: oBlocks
-  type(variablePointer), dimension(:, :), allocatable :: variables
+  type(fringeListType), dimension(:), allocatable :: fringeList
 
-  type(oversetSearchCoords), dimension(:), allocatable :: searchCoords
-  type(specialSearchCoords), dimension(:), allocatable :: specialArray
+  ! This is the flattened list of the fringes next to the wall that we
+  !  have actually found donors for.
+  ! tmpFringePtr is only used if we need to realloc. 
+  type(fringeType), dimension(:), pointer :: localWallFringes, wallFringes, tmpFringePtr
+  integer(kind=intType) :: nLocalWallFringe, nWallFringe
 
-  ! temporary search coordinates to save. size= (nDom,0:nProc-1),
-  ! nDom=total compute blocks in my proc
-  type(oversetSearchCoords), dimension(:,:), allocatable :: tmpsearchCoords
+  ! A receive buffer for fringes
+  type(fringeType), dimension(:), allocatable :: tmpFringes
 
+  ! These are the master overlap matrices
+  type(CSRMatrix), dimension(:, :), allocatable, target :: overlapMatrix
+
+  ! Some additional helper stuff
   integer(kind=intType), dimension(:), allocatable :: nDomProc, cumDomProc
-  integer(kind=intType), dimension(:, :), allocatable :: dims
   integer(kind=intType) :: nDomTotal
 
-  ! Two vectors for overset communication
-  Vec oversetDonors
-  Vec oversetFringes
-  
-  ! The vecscatter context for the communication
-  VecScatter oversetScatter
-  
-  ! Temporary index sets
-  IS IS1, IS2
+  ! The new fringe datatype
+  integer :: oversetMPIFringe
 
 end module overset

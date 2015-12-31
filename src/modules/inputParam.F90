@@ -1055,14 +1055,10 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       ! Overlapfactor : factor between 0 and 1 used to ensure sufficient overlap
-       !                 with implicit hole cutting. Usually between 0.8 and 0.9
-
        ! oversetInterpolation: The degree of the overset
-       !                       interpolation. Currently only linear
-       !                       and quadratic are implemented
+       !                       interpolation. Currently only linear is
+       !                       implemented
 
-       real(kind=realType) :: overlapFactor
 
        integer(kind=intType) :: oversetInterpolation
        integer(kind=intType), parameter :: linear=1, &

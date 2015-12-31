@@ -63,13 +63,7 @@
        nullify(flowDoms(nn,level,sps)%groupNum)
 
        nullify(flowDoms(nn,level,sps)%iblank)
-       nullify(flowDoms(nn,level,sps)%fringeFrac)
-       nullify(flowDoms(nn,level,sps)%fringeIndices)
-       nullify(flowDoms(nn,level,sps)%donors)
-       nullify(flowDoms(nn,level,sps)%forceRecv)
-       nullify(flowDoms(nn,level,sps)%recvStatus)
-       nullify(flowDoms(nn,level,sps)%xSearch)
-       nullify(flowDoms(nn,level,sps)%qualRecv)
+       nullify(flowDoms(nn,level,sps)%fringes)
 
        nullify(flowDoms(nn,level,sps)%BCData)
        nullify(flowDoms(nn,level,sps)%viscSubface)

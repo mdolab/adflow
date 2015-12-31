@@ -39,19 +39,26 @@ include ${SUMB_RULES_FILE}
 
 vpath %.o $(SUMB_OBJDIR)
 
-FILES_TO_COMPLEXIFY =  readInterpolation.F90 \
-		       writeGridsWithHalos.F90 \
-		       determineClusters.F90 \
+FILES_TO_COMPLEXIFY =  determineClusters.F90 \
 		       checkOverset.F90 \
 		       exchangeIblanks.f90\
-		       computeHolesInsideBody.F90\
+		       exchangeFringes.f90\
+		       floodInteriorCells.F90\
 		       computeInterpolationParallel.F90\
-		       pairSearch.F90 \
-		       computeQuadraticWeights.F90 \
-		       matrixinv3by3.F90 \
-		       oversetComm.F90 \
 		       oversetLoadBalance.F90\
-		       initializeOversetComm.F90 \
+		       qsortFringeType.F90\
+		       computeHolesInsideBody.F90\
+		       packingRoutines.F90\
+		       fringeSearch.F90\
+                       oversetMPITypes.F90\
+	 	       oversetUtilities.F90\
+		       irregularCellCorrection.F90\
+		       fringeReduction.F90\
+		       finalOversetCommStructures.F90\
+		       setIBlankArray.F90\
+		       # computeQuadraticWeights.F90 \
+		       matrixinv3by3.F90 \
+
 
 ALL_FILES = $(FILES_TO_COMPLEXIFY) $(FILES_TO_COPY)
 OFILES := $(ALL_FILES:%.f90=%.o) $(ALL_FILES:%.F90=%.o) $(ALL_FILES:%.c=%.o)

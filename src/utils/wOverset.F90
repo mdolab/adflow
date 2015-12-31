@@ -220,18 +220,18 @@ subroutine wOverset(level, start, end, commPressure,       &
         ! Store the block and the indices of the donor a bit easier.
 
         d1 = internal(level,mm)%donorBlock(i)
-        i1 = internal(level,mm)%donorIndices(i,1)
-        j1 = internal(level,mm)%donorIndices(i,2)
-        k1 = internal(level,mm)%donorIndices(i,3)
+        i1 = internal(level,mm)%donorIndices(i, 1)
+        j1 = internal(level,mm)%donorIndices(i, 2)
+        k1 = internal(level,mm)%donorIndices(i, 3)
 
-        weight => internal(level,mm)%donorInterp(i,:)
+        weight => internal(level,mm)%donorInterp(i, :)
 
         ! Idem for the halo's.
 
         d2 = internal(level,mm)%haloBlock(i)
-        i2 = internal(level,mm)%haloIndices(i,1)
-        j2 = internal(level,mm)%haloIndices(i,2)
-        k2 = internal(level,mm)%haloIndices(i,3)
+        i2 = internal(level,mm)%haloIndices(i, 1)
+        j2 = internal(level,mm)%haloIndices(i, 2)
+        k2 = internal(level,mm)%haloIndices(i, 3)
 
         ! Copy the given range of working variables.
 

@@ -49,18 +49,31 @@ subroutine setGlobalCellsAndNodes(level)
   integer(kind=intType), intent(in) :: level
 
   ! Local variables
-  integer(kind=intType) :: nn, i, j, k, sps
+  integer(kind=intType) :: nn, i, j, k, sps, iDim
   integer(kind=intType) :: ierr, istart
   logical :: commPressure, commLamVis, commEddyVis, commGamma
   integer(kind=intType), dimension(nProc) :: nNodes, nCells, nCellOffset, nNodeOffset
   integer(kind=intType), dimension(nDom) :: nCellBLockOffset,nNodeBLockOffset
-  integer(kind=intType) :: npts
+  integer(kind=intType) :: npts, nCell, nNode
   integer(kind=intType), dimension(:), allocatable :: nNodesProc, cumNodesProc
   integer(kind=intTYpe), dimension(:), allocatable :: nCellsProc, cumCellsProc
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, ii, jj,mm
-  integer(kind=intType), dimension(:,:), pointer ::  globalCellPtr0
-  integer(kind=intType), dimension(:,:), pointer ::  globalCellPtr1
-  integer(kind=intType), dimension(:,:), pointer ::  globalCellPtr2
+
+  ! Allocate memory for the cell and node indexing.
+  do nn=1,nDom
+     do sps=1,nTimeIntervalsSpectral
+     call setPointers(nn, level, sps)
+        allocate(flowDoms(nn,level,sps)%globalCell(0:ib,0:jb,0:kb), &
+             flowDoms(nn,level,sps)%globalNode(0:ie,0:je,0:ke), stat=ierr)
+        if (ierr /=0) then
+           call returnFail("setGlobalCellsAndNodes", "Allocation failure for globalCell/Node")
+        end if
+
+        ! Assign a 'magic number' of -5 to globalCell and global Node:
+        flowDoms(nn,level,sps)%globalCell = -5
+        flowDoms(nn,level,sps)%globalNode = -5
+     end do
+  end do
 
   ! Determine the number of nodes and cells owned by each processor
   ! by looping over the local block domains.
@@ -126,6 +139,17 @@ subroutine setGlobalCellsAndNodes(level)
      nNodeBlockOffset(nn) = nNodeBLockOffset(nn-1) + il*jl*kl
   enddo
 
+  ! Get the sizes for the tmp arrays
+  nNode = 0
+  nCell = 0
+  do nn=1,nDom
+     do sps=1, nTimeIntervalsSpectral
+        call setPointers(nn, level, sps)
+        nCell = nCell + (ib+1)*(jb+1)*(kb+1)
+        nNode = nNode + ib*jb*kb*3
+     end do
+  end do
+
   ! Determine the global block row index for each (i,j,k) cell in
   ! each local block.
 
@@ -146,134 +170,9 @@ subroutine setGlobalCellsAndNodes(level)
         enddo
      enddo
   end do
-
-  ! Determine the global block row index for each (i,j,k) node in
-  ! each local block.
-  do sps=1, nTimeIntervalsSpectral
-     do nn=1, nDom
-        call setPointers(nn, level, sps)
-        do k=1, kl
-           do j=1, jl
-              do i=1, il
-                 !modified Timespectral indexing. Put all time
-                 !instances of a give block adjacent to each other in
-                 !the matrix
-                 globalNode(i, j, k) = &
-                      nNodeBLockOffset(nn)*nTimeIntervalsSpectral + &
-                      il*jl*kl*(sps-1) + (i-1)+(j-1)*il + (k-1)*il*jl
-              end do
-           end do
-        end do
-     end do
+  do sps=1,nTimeIntervalsSpectral
+     call exchangeGlobalCells(level, sps, commPatternCell_2nd, internalCell_2nd)
   end do
-
-  ! The above procedure has uniquely numbered all cells and nodes
-  ! owned on each processor. However we must also determine the
-  ! indices of the halo cells/nodes from other processors. Do do this,
-  ! we will cheat slightly. We will copy globalCell into the Pressure
-  ! variable. Then do a double halo exchange, and copy them back out
-  ! into globalCel. Then we will do the same thing for the globalNode
-  ! values. Pressure values are saved in dw just in case.
-
-  ! ------------ globalCell ----------------
-  do sps=1, nTimeIntervalsSpectral
-     do nn=1, nDom
-        call setPointers(nn, level, sps)
-        do k=0,kb
-           do j=0,jb
-              do i=0,ib
-                 dw(i ,j, k, 1) = P(i, j, k)
-                 P(i,j,k) = transfer(globalCell(i,j,k), P(1,1,1))
-              end do
-           end do
-        end do
-     end do
-  end do
-
-  istart = 0
-  iend   = -1
-  commPressure = .True.
-  commGamma    = .False.
-  commlamVis  = .False.
-  commEddyVis = .False.
-  call whalo1to1(level, istart, iend, commPressure, &
-       commGamma, commLamVis, commEddyVis, &
-       commPatternCell_2nd,  internalCell_2nd)
-
-  ! Copy back out
-  do sps=1, nTimeIntervalsSpectral
-     do nn=1, nDom
-        call setPointers(nn, level, sps)
-        do k=0, kb
-           do j=0, jb
-              do i=0, ib
-                 globalCell(i, j, k) = transfer(P(i, j, k), globalCell(1,1,1))
-
-              end do
-           end do
-        end do
-     end do
-  end do
-
-  ! ------------ globalNode ----------------
-  do sps=1, nTimeIntervalsSpectral
-     do nn=1, nDom
-        call setPointers(nn, level, sps)
-        do k=0,ke
-           do j=0,je
-              do i=0,ie
-                 dw(i, j, k, 2) = X(i, j, k, 1)
-                 X(i, j, k, 1) = transfer(globalNode(i, j, k), X(1,1,1,1))
-              end do
-           end do
-        end do
-     end do
-  end do
-
-  call exchangeCoor(level)
-  
-  ! Copy back out
-  do sps=1, nTimeIntervalsSpectral
-     do nn=1, nDom
-        call setPointers(nn, level, sps)
-        do k=0, ke
-           do j=0, je
-              do i=0, ie
-                 globalNode(i, j, k) = transfer(X(i, j, k, 1), globalNode(1,1,1))
-              end do
-           end do
-        end do
-     end do
-  end do
-
-  ! Reset Pressure 
-  do sps=1, nTimeIntervalsSpectral
-     do nn=1, nDom
-        call setPointers(nn, level, sps)
-        do k=0,kb
-           do j=0,jb
-              do i=0,ib
-                 P(i, j, k) = dw(i, j, k, 1)
-                 dw(i, j, k, 1) = zero
-
-              end do
-           end do
-        end do
-     end do
-  end do
-  
-  do sps=1, nTimeIntervalsSpectral
-     do nn=1, nDom
-        call setPointers(nn, level, sps)
-        do k=0,ke
-           do j=0,je
-              do i=0,ie
-                 X(i, j, k, 1) = dw(i, j, k, 2)
-                 dw(i, j, k, 2) = zero
-              end do
-           end do
-        end do
-     end do
-  end do
+  call exchangeCoorNumbering(level)
   
 end subroutine setGlobalCellsAndNodes

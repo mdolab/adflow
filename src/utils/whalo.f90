@@ -201,16 +201,11 @@
        call whaloMixing(level, start, end, commPressure, commVarGamma, &
                         commLamVis, commEddyVis, 2_intType)
 
-
        ! Exchange the overset cells
+       mm = ubound(commPatternOverset, 1)
        call wOverset(level, start, end, commPressure, commVarGamma, &
-            commLamVis, commEddyVis)
-
-       ! And do the 1 to 1 machinging ones again
-       call whalo1to1(level, start, end, commPressure, commVarGamma, &
-            commLamVis, commEddyVis, commPatternCell_2nd,  &
-            internalCell_2nd)
-
+            commLamVis, commEddyVis, commPatternOverset, internalOverset, mm)
+ 
        ! If both the pressure and the total energy has been communicated
        ! compute the energy again. The reason is that both values are
        ! interpolated and consequently the values are not consistent.
