@@ -180,6 +180,7 @@
 !       *                                                              *
 !       ****************************************************************
 !
+        use constants
         implicit none
 !
 !       Subroutine arguments.

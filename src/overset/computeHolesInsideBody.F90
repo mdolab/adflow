@@ -1,4 +1,4 @@
-subroutine computeHolesInsideBody
+subroutine computeHolesInsideBody(level, sps)
 
   ! This routine will flag the iBlank values in oBlocks with 0 if the
   ! the cell center falls inside the body. This is a (semi) parallel
@@ -15,8 +15,11 @@ subroutine computeHolesInsideBody
   use overset
   implicit none
 
+  ! Input Variables
+  integer(kind=intType), intent(in) :: level, sps
+
   ! Local Variables
-  integer(kind=intType) :: i, j, k, l, ii, jj, nn, mm, level, sps, iNode, iFace
+  integer(kind=intType) :: i, j, k, l, ii, jj, nn, mm, iNode, iFace
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, ni, nj, nUnique, faceID
   integer(kind=intType) :: ierr, iDim
 
@@ -65,13 +68,9 @@ subroutine computeHolesInsideBody
      end subroutine pointReduce
   end interface
 
-  ! We explicitly use level=1, and sps=1 here. This should change at some point
-  level = 1
-  sps = 1
-
   ! The first thing we do is gather all the surface nodes to
   ! each processor such that every processor can make it's own copy of
-  ! the complex surface mesh to use to search. Note that this
+  ! the complete surface mesh to use to search. Note that this
   ! procedure *DOES NOT SCALE IN MEMORY*...ie eventually the surface
   ! mesh will become too large to store on a single processor,
   ! although this will probably not happen until the sizes get up in
@@ -82,7 +81,7 @@ subroutine computeHolesInsideBody
 
   do nn=1,nDom
      call setPointers(nn, level, sps)
-     do mm=1,nBocos
+     do mm=1, nBocos
         if(BCType(mm) == NSWallAdiabatic .or. &
            BCType(mm) == NSWallIsothermal .or. &
            BCType(mm) == EulerWall) then
@@ -273,7 +272,7 @@ subroutine computeHolesInsideBody
      end do
   end do
 
-  ! No longer need the unique data
+  ! No longer need the unique data and the link array
   deallocate(uniqueNodes, link)
 
   ! Compute the (averaged) uniqe nodal vectors:
@@ -360,7 +359,7 @@ subroutine computeHolesInsideBody
                  cycle
               end if
 
-              ! ! Do the very fast ray cast method-intersection search. 
+              ! Do the very fast ray cast method-intersection search. 
               call intersectionTreeSearchSinglePoint(ADTs(jjAdt), coor(1:3), &
                    intInfo(1), BBint, frontLeaves, frontLeavesNew)
               

@@ -173,18 +173,62 @@ module block
      real(kind=realType), dimension(:, :, :), pointer :: weight
   end type surfaceNodeWeightArray
 
- type oversetDonor
+ type fringeType
 
-     ! Make everything in here static such that we can potentially use
-     ! MPI to send these types around direclty
+     ! Make everything in here static such that we can easily copy the
+     ! datatype and use MPI to communicate them directly. This data
+     ! type bears some resemblence to the haloList type used for the
+     ! B2B preprocessing.
 
-     integer(kind=intType) :: donorProcID
-     integer(kind=intType) :: donorBlockID
-     real(kind=realType), dimension(3) :: frac
-     integer(kind=intType), dimension(3) :: ind
-     integer(kind=intType), dimension(8) :: gInd
+    ! This is the coordinate of what we are searching
+    real(kind=realType), dimension(3) :: x
 
-  end type oversetDonor
+    ! This is the current minimum quality of the cell. It is
+    ! initialized to the quality of the original cell
+    real(kind=realType) :: quality
+
+    ! A flag to always force returning a donor if one exists.
+    logical :: forceRecv
+    
+    ! This is the information regarding where the cell came from. 
+    integer(kind=intType) :: myBlock, myI, myJ, myK
+
+    ! This is the information about the donor that was found. Note we
+    ! use dI, dJ, dK, short for donorI, etc.
+    integer(kind=intType) :: donorProc, donorBlock, dI, dJ, dK
+    real(kind=realType) :: donorFrac(3)
+
+    ! gInd are the global indices of the donor cells. We will need
+    ! these for forming the PC for the Newton Krylov solver
+    integer(kind=intType), dimension(8) :: gInd
+    
+    ! The status of this cell as a donor
+    logical :: isDonor
+
+    ! The status of this cell as a hole
+    logical :: isHole
+
+    ! The status of this cell as a comput cell
+    logical :: isCompute
+
+    ! Flag specifying if this cell is next to a wall
+    logical :: isWall
+
+    ! Flag specifying if this cell is a donor to cell
+    logical :: isWallDonor
+
+  end type fringeType
+  
+  interface operator(<=)
+     module procedure lessEqualFringeType
+  end interface operator(<=)
+
+
+  interface operator(<)
+     module procedure lessFringeType
+  end interface operator(<)
+
+
 
   !      ******************************************************************
   !      *                                                                *
@@ -316,15 +360,7 @@ module block
      !        ****************************************************************
 
      integer(kind=intType), dimension(:,:,:), pointer :: iblank
-     real(kind=realType), dimension(:, :), pointer :: fringeFrac
-     integer(kind=intType), dimension(:, :), pointer :: fringeIndices
-     type(oversetDonor), dimension(:, :, :), pointer :: donors
-     logical, dimension(:, :, :), pointer :: forceRecv
-     logical, dimension(:, :, :), pointer :: recvStatus
-     logical, dimension(:, :, :), pointer :: donorStatus 
-     real(kind=realType), dimension(:, :, :, :), pointer :: xSearch
-     real(kind=realType), dimension(:, :, :), pointer :: qualRecv
-     integer(kind=intTYpe) :: nFringe
+     type(fringeType) , dimension(:, :, :), pointer :: fringes
      !
      !        ****************************************************************
      !        *                                                              *
@@ -812,5 +848,148 @@ module block
   ! nCellGlobal(nLev) - Global number of cells on every mg level.
 
   integer(kind=intType), allocatable, dimension(:) :: nCellGlobal
+
+  contains
+
+
+  logical function lessEqualFringeType(g1, g2)
+    
+    !        ****************************************************************
+    !        *                                                              *
+    !        * lessEqual returns .true. if g1 <= g2 and .false. otherwise.  *
+    !        * The comparison is firstly based on the processor ID of the   *
+    !        * donor, then the block, then then the I, J, K                 *
+    !        *                                                              *
+    !        ****************************************************************
+    !
+    implicit none
+    !
+    !        Function arguments.
+    !
+    type(fringeType), intent(in) :: g1, g2
+    !
+    ! Compare the donor processors first. If not equal,
+    ! set lessEqual appropriately and return.
+    
+    if(g1%donorProc < g2%donorProc) then
+       lessEqualfringeType = .true.
+       return
+    else if(g1%donorProc > g2%donorProc) then
+       lessEqualfringeType = .false.
+       return
+    endif
+
+    ! Donor processors are identical. Now we check the block
+    
+    if(g1%donorBlock < g2%donorBlock) then
+       lessEqualfringeType = .true.
+       return
+    else if(g1%donorBlock > g2%donorBlock) then
+       lessEqualfringeType = .false.
+       return
+    endif
+    
+    ! Compare the indices of the halo. First k, then j and
+    ! finally i.
+    
+    if(g1%dK < g2%dK) then
+       lessEqualfringeType = .true.
+       return
+    else if(g1%dK > g2%dK) then
+       lessEqualfringeType = .false.
+       return
+    endif
+    
+    if(g1%dJ < g2%dJ) then
+       lessEqualfringeType = .true.
+       return
+    else if(g1%dJ > g2%dJ) then
+       lessEqualfringeType = .false.
+       return
+    endif
+         
+    if(g1%dI < g2%dI) then
+       lessEqualfringeType = .true.
+       return
+    else if(g1%dI > g2%dI) then
+       lessEqualfringeType = .false.
+       return
+    endif
+
+    ! Both entities are identical. So set lessEqual to .true.
+    
+    lessEqualfringeType = .true.
+    
+  end function lessEqualFringeType
+
+  logical function lessFringeType(g1, g2)
+    
+    !        ****************************************************************
+    !        *                                                              *
+    !        * less returns .true. if g1 <= g2 and .false. otherwise.  *
+    !        * The comparison is firstly based on the processor ID of the   *
+    !        * donor, then the block, then then the I, J, K                 *
+    !        *                                                              *
+    !        ****************************************************************
+    !
+    implicit none
+    !
+    !        Function arguments.
+    !
+    type(fringeType), intent(in) :: g1, g2
+    !
+    ! Compare the donor processors first. If not equal,
+    ! set less appropriately and return.
+    
+    if(g1%donorProc < g2%donorProc) then
+       lessfringeType = .true.
+       return
+    else if(g1%donorProc > g2%donorProc) then
+       lessfringeType = .false.
+       return
+    endif
+
+    ! Donor processors are identical. Now we check the block
+    
+    if(g1%donorBlock < g2%donorBlock) then
+       lessfringeType = .true.
+       return
+    else if(g1%donorBlock > g2%donorBlock) then
+       lessfringeType = .false.
+       return
+    endif
+    
+    ! Compare the indices of the halo. First k, then j and
+    ! finally i.
+    
+    if(g1%dK < g2%dK) then
+       lessfringeType = .true.
+       return
+    else if(g1%dK > g2%dK) then
+       lessfringeType = .false.
+       return
+    endif
+    
+    if(g1%dJ < g2%dJ) then
+       lessfringeType = .true.
+       return
+    else if(g1%dJ > g2%dJ) then
+       lessfringeType = .false.
+       return
+    endif
+         
+    if(g1%dI < g2%dI) then
+       lessfringeType = .true.
+       return
+    else if(g1%dI > g2%dI) then
+       lessfringeType = .false.
+       return
+    endif
+
+    ! Both entities are identical. So set less to .False.
+    
+    lessFringeType = .False.
+    
+  end function lessFringeType
 
 end module block

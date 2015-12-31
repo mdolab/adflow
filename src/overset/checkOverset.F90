@@ -1,4 +1,4 @@
-subroutine checkOverset 
+subroutine checkOverset (level, sps)
 
   !
   !      ******************************************************************
@@ -15,13 +15,17 @@ subroutine checkOverset
   use stencils
   implicit none
 
+  ! Input/Output
+  integer(kind=intType), intent(in) :: level, sps
+
+  ! Working
   integer(kind=intType) :: i, j, k, nn, ii, jj, kk
   integer(kind=intType) :: magic, ibval
   integer(kind=intType) :: i_stencil
 
   magic = 33
   do nn=1, nDom
-     call setPointers(nn, 1_intType, 1_intType)
+     call setPointers(nn, level, sps)
 
      do k=2, kl
         do j=2, jl
