@@ -222,6 +222,7 @@
        type(commType), allocatable, dimension(:)   :: commPatternCell_1st
        type(commType), allocatable, dimension(:)   :: commPatternCell_2nd
        type(commType), allocatable, dimension(:)   :: commPatternNode_1st
+       type(commType), allocatable, dimension(:, :) :: commPatternOverset
 
        ! internalCell_1st(nLevel): Memory to memory copies for 1st level
        !                           cell halo's on the multiple grids.
@@ -233,16 +234,21 @@
        type(internalCommType), allocatable, dimension(:)   :: internalCell_1st
        type(internalCommType), allocatable, dimension(:)   :: internalCell_2nd
        type(internalCommType), allocatable, dimension(:)   :: internalNode_1st
+       type(internalCommType), allocatable, dimension(:, :) :: internalOverset
 
        ! sendBufferSize_1to1: Size of the send buffer needed to perform
        !                      all 1 to 1 communication.
        ! recvBufferSize_1to1: Idem for the receive buffer.
+       ! sendBufferSizeOver:  Size of the send buffer needed to perform
+       !                      all overset communication.
+       ! recvBufferSizeOver:  Idem for the receive buffer.
        ! sendBufferSize:      Size of the send buffer to perform all
        !                      possible communication.
        ! recvBufferSize:      Idem for the receive buffer.
 
        integer(kind=intType) :: sendBufferSize_1to1, sendBufferSize
        integer(kind=intType) :: recvBufferSize_1to1, recvBufferSize
+       integer(kind=intType) :: sendBufferSizeOver, recvBufferSizeOver
 
        ! sendBuffer:   Buffer used to store the info to be send during
        !               a nonblocking communication.

@@ -39,7 +39,7 @@
        nbkGlobal   = flowDoms(nn,mm,ll)%cgnsBlockID
        mgLevel     = mm
        spectralSol = ll
-       nFringe     = flowDoms(nn,mm,ll)%nFringe
+
        ! Block dimensions.
 
        nx = flowDoms(nn,mm,ll)%nx
@@ -115,14 +115,7 @@
 
        ! Overset boundary and hole info.
        iblank => flowDoms(nn,mm,ll)%iblank
-       fringeFrac => flowDoms(nn,mm,ll)%fringeFrac
-       fringeIndices => flowDoms(nn,mm,ll)%fringeIndices
-       donors => flowDoms(nn,mm,ll)%donors
-       forceRecv => flowDoms(nn,mm,ll)%forceRecv
-       recvStatus => flowDoms(nn,mm,ll)%recvStatus
-       donorStatus => flowDoms(nn,mm,ll)%donorStatus
-       xSearch => flowDoms(nn,mm,ll)%xSearch
-       qualRecv => flowDoms(nn,mm,ll)%qualRecv
+       fringes => flowDoms(nn,mm,ll)%fringes
 
        ! The data for boundary subfaces.
 

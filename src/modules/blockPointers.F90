@@ -89,19 +89,7 @@ module blockPointers
   integer(kind=intType), dimension(:), pointer :: groupNum
 
   integer(kind=intType), dimension(:,:,:), pointer :: iblank
-  real(kind=realType), dimension(:, :), pointer :: fringeFrac
-
-  ! Saves global (8) indices of donors of fringe cells
-  integer(kind=intType), dimension(:, :), pointer :: fringeIndices
-
-  integer(kind=intType), dimension(:, :), pointer :: fringeDonorIndicesGlobal
-  type(oversetDonor), dimension(:, :, :), pointer :: donors
-  logical, dimension(:, :, :), pointer :: forceRecv
-  logical, dimension(:, :, :), pointer :: recvStatus
-  logical, dimension(:, :, :), pointer :: donorStatus
-  real(kind=realType), dimension(:, :, :, :), pointer :: xSearch
-  real(kind=realType), dimension(:, :, :), pointer :: qualRecv
-  integer(kind=intType) :: nFringe
+  type(fringeType), dimension(:, :, :), pointer :: fringes
 
   integer(kind=intType), dimension(:), pointer :: neighBlockOver
   integer(kind=intType), dimension(:), pointer :: neighProcOver

@@ -10,13 +10,12 @@
 
 subroutine oversetLoadBalance(overlap)
 
-
   use constants
   use communication
   use overset
   implicit none
 
-  ! Input/output Paramaters
+  ! Input/Output
   type(CSRMatrix), intent(inout) :: overlap
 
   ! Working paramters
@@ -190,13 +189,7 @@ subroutine oversetLoadBalance(overlap)
 
      print *, 'estimate:', evenCost * nProc
      print *, 'Actual:', sum(procCosts)
-
   end if
-  
-  ! ! Do a sanity check:
-  ! if (sum(procCosts) /= sum(data)) then 
-  !    call terminate("oversetLoadBalance", "Fundamental error in load balancing algorithm itself")
-  ! end if
 
 end subroutine oversetLoadBalance
 

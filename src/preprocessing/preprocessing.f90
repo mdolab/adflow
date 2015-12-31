@@ -29,6 +29,7 @@
        use interfaceGroups
        use section
        use wallDistanceData
+       use overset
        implicit none
 !
 !      Local variables.
@@ -128,6 +129,17 @@
                         "Memory allocation failure for &
                         &commPatternMixing")
 
+       ! Allocate the memory for the overset mesh communication pattern.
+       ! This pattern changes in time and therefore each spectral time
+       ! value has its own sliding mesh communication pattern.
+
+       mm = nTimeIntervalsSpectral
+       allocate(commPatternOverset(nn,mm), internalOverset(nn,mm), &
+            overlapMatrix(nn, mm), stat=ierr)
+       if(ierr /= 0)                     &
+         call returnFail("preprocessing", &
+                        "Memory allocation failure for commOverset")
+
        ! Determine the fine grid 1 to 1 matching communication pattern.
 
        call determineCommPattern(1_intType)
@@ -139,8 +151,10 @@
        recvBufferSize_1to1  = 0
        sendBufferSizeSlide  = 0
        recvBufferSizeSlide  = 0
+       sendBufferSizeOver   = 0
+       recvBufferSizeOver   = 0
 
-       call setBufferSizes(1_intType, 1_intType, .true., .false.)
+       call setBufferSizes(1_intType, 1_intType, .true., .false., .false.)
 
        ! Loop to create the coarse grid levels.
 
@@ -153,7 +167,7 @@
          call createCoarseBlocks(level)
          call determineCommPattern(level)
          call coarseLevel0CoolingParameters(level)
-         call setBufferSizes(level, 1_intType, .true., .false.)
+         call setBufferSizes(level, 1_intType, .true., .false., .false.)
 
        enddo
 
@@ -183,6 +197,8 @@
        wallDistanceDataAllocated = .False.
        updateWallAssociation = .True. 
        
+       ! Nullify the wallFringe poiter as initialization
+       nullify(wallFringes, localWallFringes)
 
        ! Loop over the number of levels and perform a lot of tasks.
        ! See the corresponding subroutine header, although the
@@ -200,20 +216,15 @@
          call viscSubfaceInfo(level)
          call determineAreaLevel0Cooling(level)
          call determineNcellGlobal(level)
-       enddo
+         call setGlobalCellsAndNodes(level)
+          
+         if (level == 1) then
+           call oversetComm(level, .true., .false.)
+         else
+           call oversetComm(level, .true., .true.)
+         end if
 
-       ! iBlanks are not all allocated so do so and just set to 1
-       do mm=1,nTimeIntervalsSpectral
-         do level=1,nLevels
-           do nn=1,nDom
-             call setPointers(nn, level, mm)
-             if (.not. associated(flowDoms(nn, level, mm)%iblank)) then 
-                allocate(flowDoms(nn, level, mm)%iblank(0:ib, 0:jb, 0:kb))
-                flowDoms(nn,level, mm)%iblank = one
-             end if
-           end do
-         end do
-       end do
+       enddo
 
        end subroutine preprocessing
 

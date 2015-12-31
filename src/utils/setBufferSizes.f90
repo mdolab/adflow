@@ -9,8 +9,9 @@
 !      ******************************************************************
 !
        subroutine setBufferSizes(level, sps, determine1to1Buf,    &
-                                             determineSlidingBuf)
- !
+                                             determineSlidingBuf, & 
+                                             determineOversetBuf)
+!
 !      ******************************************************************
 !      *                                                                *
 !      * setBufferSizes determines the size of the send and receive     *
@@ -42,6 +43,7 @@
 !
        integer(kind=intType), intent(in) :: level, sps
        logical, intent(in) :: determine1to1Buf, determineSlidingBuf
+       logical, intent(in) :: determineOversetBuf
 !
 !      Local variables.
 !
@@ -150,12 +152,39 @@
 
        endif
 
+       ! Check if the overset communication must be considered.
+
+       if( determineOversetBuf ) then
+
+         ! Same deal for the overset communication.
+
+         i = commPatternOverset(level,sps)%nProcSend
+         sendSize = commPatternOverset(level,sps)%nsendCum(i)
+
+         i = commPatternOverset(level,sps)%nProcRecv
+         recvSize = commPatternOverset(level,sps)%nrecvCum(i)
+
+         ! Multiply sendSize and recvSize with the number of variables to
+         ! be communicated.
+
+         sendSize = sendSize*nVarComm
+         recvSize = recvSize*nVarComm
+
+         ! Store the maximum of the current values and the old values.
+
+         sendBufferSizeOver = max(sendBufferSizeOver, sendSize)
+         recvBufferSizeOver = max(recvBufferSizeOver, recvSize)
+
+       endif
+
        ! Take the maximum for of all the buffers to
        ! obtain the actual size to be allocated.
 
        sendBufferSize = max(sendBufferSize_1to1, &
+                            sendBufferSizeOver,  &
                             sendBufferSizeSlide)
        recvBufferSize = max(recvBufferSize_1to1, &
+                            recvBufferSizeOver,  &
                             recvBufferSizeSlide)
 
        end subroutine setBufferSizes
