@@ -39,23 +39,25 @@ include ${SUMB_RULES_FILE}
 
 vpath %.o $(SUMB_OBJDIR)
 
-FILES_TO_COMPLEXIFY =  determineClusters.F90 \
-		       checkOverset.F90 \
-		       exchangeIblanks.f90\
-		       exchangeFringes.f90\
-		       floodInteriorCells.F90\
-		       computeInterpolationParallel.F90\
-		       oversetLoadBalance.F90\
-		       qsortFringeType.F90\
-		       computeHolesInsideBody.F90\
-		       packingRoutines.F90\
-		       fringeSearch.F90\
-                       oversetMPITypes.F90\
-	 	       oversetUtilities.F90\
-		       irregularCellCorrection.F90\
-		       fringeReduction.F90\
-		       finalOversetCommStructures.F90\
-		       setIBlankArray.F90\
+FILES_TO_COMPLEXIFY =	computeInterpolationParallel.F90\
+			determineClusters.F90 \
+			checkOverset.F90 \
+			exchangeIblanks.f90\
+			exchangeFringes.f90\
+			floodInteriorCells.F90\
+			oversetLoadBalance.F90\
+			qsortFringeType.F90\
+			determineWallDonors.F90\
+			computeHolesInsideBody.F90\
+			packingRoutines.F90\
+			fringeSearch.F90\
+			oversetMPITypes.F90\
+			oversetUtilities.F90\
+			irregularCellCorrection.F90\
+			fringeReduction.F90\
+			finalOversetCommStructures.F90\
+			setIBlankArray.F90\
+		        exchangeDonorStatus.F90\
 		       # computeQuadraticWeights.F90 \
 		       matrixinv3by3.F90 \
 
