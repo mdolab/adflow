@@ -30,7 +30,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
   integer(kind=intType) :: nn, mm, n, ierr, iProc
   integer(kind=intTYpe) :: rowStart, rowEnd, nnRow, nUniqueProc
   integer(kind=intType) :: sendCount, recvCount, currentProc, nLocalFringe
-  integer(kind=intType) :: iWork, nWork, nFringeProc, nWallFringeProc
+  integer(kind=intType) :: iWork, nWork, nFringeProc
   real(kind=realType) :: startTime, endTime, timeA, timeB
   real(kind=realType), dimension(:, :), allocatable :: xMin, xMax
   real(kind=realType), dimension(:), allocatable :: minVol
@@ -39,7 +39,6 @@ subroutine oversetComm(level, firstTime, coarseLevel)
   integer(kind=intType), dimension(:,:), allocatable :: work
   integer(kind=intType), dimension(:), allocatable :: procsForThisRow, inverse
   integer(kind=intType), dimension(:), allocatable :: fringeProc, cumFringeProc
-  integer(kind=intType), dimension(:), allocatable :: wallFringeProc, cumWallFringeProc
   logical, dimension(:), allocatable :: oBlockReady, fringesReady
   type(fringeType), dimension(:), allocatable :: localFringes
 
@@ -881,98 +880,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      ! information we need to start the flooding process later on. 
      ! -----------------------------------------------------------------
 
-     ! Sort the wall fringes and determine the processor splits. 
-     call qsortFringeType(localWallFringes, nLocalWallFringe)
-     allocate(wallFringeProc(nProc), cumWallFringeProc(1:nProc+1))
-     call computeFringeProcArray(localWallFringes, nLocalWallFringe, &
-          wallFringeProc, cumWallFringeProc, nWallFringeProc)
-
-     sendCount = 0
-     do j=1, nWallFringeProc
-
-        iProc = wallFringeProc(j)
-        iStart = cumWallFringeProc(j)
-        iEnd = cumWallFringeProc(j+1)-1
-        if (iProc == myid) then 
-           do i=iStart, iEnd
-              nn = localWallFringes(i)%donorBlock
-              
-              do kk=0, 1
-                 do jj=0, 1
-                    do ii=0, 1
-                       
-                       iii = ii + localWallFringes(i)%dI
-                       jjj = jj + localWallFringes(i)%dJ
-                       kkk = kk + localWallFringes(i)%dK
-                       
-                       flowDoms(nn, level, sps)%fringes(iii, jjj, kkk)%isWallDonor = .True.
-                    end do
-                 end do
-              end do
-           end do
-        else
-
-           ! I need to send these wall fringes to the donor proc
-           sendCount = sendCount + 1
-
-           ! Note the tag here: The previous comm used tags
-           ! 1:nDomTotal. These start at nDomTotal + 1 such that there is
-           ! no overlap.
-
-           tag = 6*MAGIC + iProc + 1
-
-           call mpi_issend(localWallFringes(iStart:iEnd), iEnd-iStart+1, &
-                oversetMPIFringe, iProc, tag, &
-                SUmb_comm_world, sendRequests(sendCount), ierr)
-           call ECHK(ierr, __FILE__, __LINE__)
-        end if
-     end do
-
-     barrierDone = .False.
-     barrierActive = .False.
-     do while (.not. barrierDone)
-
-        call MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, SUmb_comm_world, flag, status, ierr)
-        call ECHK(ierr, __FILE__, __LINE__)
-
-        ! Check if a message is ready
-        tag = status(MPI_TAG)
-        if (flag .and. tag >= 6*MAGIC+1 .and. tag <= 7*MAGIC) then 
-
-           call receiveFringes(status, n)
-
-           ! Do the flagging of wall donors on the fly
-           do j=1, n
-              nn = tmpFringes(j)%donorBlock
-
-              do ii=0, 1
-                 do jj=0, 1
-                    do kk=0, 1
-                       iii = ii + tmpFringes(j)%dI
-                       jjj = jj + tmpFringes(j)%dJ
-                       kkk = kk + tmpFringes(j)%dK
-
-                       flowDoms(nn, level, sps)%fringes(iii, jjj, kkk)%isWallDonor = .True.
-                    end do
-                 end do
-              end do
-           end do
-        end if
-
-        if (.not. barrierActive) then
-           call MPI_testAll(sendCount, sendRequests, flag, MPI_STATUSES_IGNORE, ierr)
-           call ECHK(ierr, __FILE__, __LINE__)
-           
-           if (flag) then 
-              call MPI_Ibarrier(sumb_comm_world, barrierRequest, ierr)
-              call ECHK(ierr, __FILE__, __LINE__)
-              barrierActive = .True.
-           end if
-        else
-           call MPI_test(barrierRequest, barrierDone, MPI_STATUS_IGNORE, ierr)
-           call ECHK(ierr, __FILE__, __LINE__)
-        end if
-     end do
+     call determineWallDonors(level, sps, MAGIC)
 
 !=================================================================================
      ! -----------------------------------------------------------------
@@ -982,6 +890,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      ! to be compute, by cancelling the donor information. Update the
      ! fringes when we're done so everyone has up to date information.
      ! -----------------------------------------------------------------
+     call exchangeDonorStatus(level, sps, commPatternCell_2nd, internalCell_2nd)
      
      call irregularCellCorrection(level, sps)
 
@@ -1003,9 +912,9 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      ! fringes or holes. If so we can flag that particular cell as a
      ! hole.
      ! -----------------------------------------------------------------
-
+     
      call fringeReduction(level, sps)
-  
+
      call exchangeFringes(level, sps, commPatternCell_2nd, internalCell_2nd)
 
      ! -----------------------------------------------------------------
@@ -1461,180 +1370,180 @@ subroutine test
 end subroutine test
 
 
-! subroutine writePartionedMesh(fileName)
+subroutine writePartionedMesh(fileName)
 
-!   ! This is a debugging routine for writing out meshes *as they are
-!   ! partioned*. This can be useful for debugging overset issues.
+  ! This is a debugging routine for writing out meshes *as they are
+  ! partioned*. This can be useful for debugging overset issues.
 
-!   use communication
-!   use blockPointers
+  use communication
+  use blockPointers
 
-!   implicit none
+  implicit none
 
-!   character(len=*), intent(in) :: fileName
-!   integer(kind=intType) :: nDomTotal, iProc, nn, i, j, k, iDim, iDom, ierr, ii
-!   integer(kind=intType) :: bufSize, maxSize, ibufSize, imaxSize
-!   integer(kind=intType), dimension(3, nDom) :: localDim
-!   integer(kind=intType), dimension(:), allocatable :: nDomProc, cumDomProc
-!   integer(kind=intType), dimension(:, :), allocatable :: dims
-!   real(kind=realType), dimension(:), allocatable :: buffer
-!   integer(kind=intType), dimension(:), allocatable :: ibuffer !iblank
-!   character*40 :: tmpStr
+  character(len=*), intent(in) :: fileName
+  integer(kind=intType) :: nDomTotal, iProc, nn, i, j, k, iDim, iDom, ierr, ii
+  integer(kind=intType) :: bufSize, maxSize, ibufSize, imaxSize
+  integer(kind=intType), dimension(3, nDom) :: localDim
+  integer(kind=intType), dimension(:), allocatable :: nDomProc, cumDomProc
+  integer(kind=intType), dimension(:, :), allocatable :: dims
+  real(kind=realType), dimension(:), allocatable :: buffer
+  integer(kind=intType), dimension(:), allocatable :: ibuffer !iblank
+  character*40 :: tmpStr
 
-!   integer status(MPI_STATUS_SIZE) 
-!   ! Gather the dimensions of all blocks to everyone
-!   call mpi_allreduce(nDom, nDomTotal, 1, sumb_integer, MPI_SUM, &
-!        sumb_comm_world, ierr)
-!   call ECHK(ierr, __FILE__, __LINE__)
+  integer status(MPI_STATUS_SIZE) 
+  ! Gather the dimensions of all blocks to everyone
+  call mpi_allreduce(nDom, nDomTotal, 1, sumb_integer, MPI_SUM, &
+       sumb_comm_world, ierr)
+  call ECHK(ierr, __FILE__, __LINE__)
 
-!   ! Store the sizes of the local blocks
-!   do nn=1,nDom
-!      call setPointers(nn, 1, 1)
+  ! Store the sizes of the local blocks
+  do nn=1,nDom
+     call setPointers(nn, 1, 1)
 
-!      ! Store the 'l' sizes for transferring
-!      localDim(1, nn) = il
-!      localDim(2, nn) = jl
-!      localDim(3, nn) = kl
-!   end do
+     ! Store the 'l' sizes for transferring
+     localDim(1, nn) = il
+     localDim(2, nn) = jl
+     localDim(3, nn) = kl
+  end do
 
-!   ! Allocate the space we need for the numbers and cumulative form
-!   allocate(nDomProc(0:nProc-1), cumDomProc(0:nProc), dims(3, nDomTotal))
+  ! Allocate the space we need for the numbers and cumulative form
+  allocate(nDomProc(0:nProc-1), cumDomProc(0:nProc), dims(3, nDomTotal))
 
-!   ! Receive the number of domains from each proc using an allgather.
-!   call mpi_allgather(nDom, 1, sumb_integer, nDomProc, 1, sumb_integer, &
-!        sumb_comm_world, ierr)
-!   call ECHK(ierr, __FILE__, __LINE__)
+  ! Receive the number of domains from each proc using an allgather.
+  call mpi_allgather(nDom, 1, sumb_integer, nDomProc, 1, sumb_integer, &
+       sumb_comm_world, ierr)
+  call ECHK(ierr, __FILE__, __LINE__)
 
-!   ! Compute the cumulative format:
-!   cumDomProc(0) = 0
-!   do iProc=1, nProc
-!      cumDomProc(iProc) = cumDomProc(iProc-1) + nDomProc(iProc-1)
-!   end do
+  ! Compute the cumulative format:
+  cumDomProc(0) = 0
+  do iProc=1, nProc
+     cumDomProc(iProc) = cumDomProc(iProc-1) + nDomProc(iProc-1)
+  end do
 
-!   ! We will also allgather all of the block sizes which will make
-!   ! things a little easier since everyone will know the proper sizes
-!   ! for the sends
-!   call mpi_allgatherV(localDim, nDom*3, sumb_integer, dims, 3*nDomProc, &
-!        3*cumDomProc, sumb_integer, sumb_comm_world, ierr)
-!   call ECHK(ierr, __FILE__, __LINE__)
+  ! We will also allgather all of the block sizes which will make
+  ! things a little easier since everyone will know the proper sizes
+  ! for the sends
+  call mpi_allgatherV(localDim, nDom*3, sumb_integer, dims, 3*nDomProc, &
+       3*cumDomProc, sumb_integer, sumb_comm_world, ierr)
+  call ECHK(ierr, __FILE__, __LINE__)
 
-!   maxSize = 0
-!   imaxSize = 0
-!   do i=1,nDomTotal
-!      maxSize = max(maxSize, dims(1, i)*dims(2,i)*dims(3,i)*3)
-!      imaxSize = max(imaxSize, dims(1, i)*dims(2,i)*dims(3,i))
-!   end do
+  maxSize = 0
+  imaxSize = 0
+  do i=1,nDomTotal
+     maxSize = max(maxSize, dims(1, i)*dims(2,i)*dims(3,i)*3)
+     imaxSize = max(imaxSize, dims(1, i)*dims(2,i)*dims(3,i))
+  end do
 
-!   allocate(buffer(maxSize))
-!   allocate(ibuffer(imaxSize)) !iblank
+  allocate(buffer(maxSize))
+  allocate(ibuffer(imaxSize)) !iblank
 
-!   if (myid == 0) then 
-!      print *,'writing mesh...'
-!      ! Root proc does all the writing. Just dump to ascii tecplot
-!      ! file---really slow.
+  if (myid == 0) then 
+     print *,'writing mesh...'
+     ! Root proc does all the writing. Just dump to ascii tecplot
+     ! file---really slow.
 
-!      open(unit=1, file=fileName, form='formatted', status='unknown')
-!      !write(1, *) "Variables = X Y Z"
-!      write(1, *) "Variables = X Y Z IBLANK"
+     open(unit=1, file=fileName, form='formatted', status='unknown')
+     !write(1, *) "Variables = X Y Z"
+     write(1, *) "Variables = X Y Z IBLANK"
 
-!      ! Write my own blocks first
-!      do nn=1,nDom
-!         call setPointers(nn, 1, 1)
-!         !write(tmpStr, *) "Proc ", 0, " Local ID", nn
-!         write(tmpStr, "(a,I2.2,a,I2.2,a)"), """Proc ", 0, " Local ID ", nn , """"
-!         write(1,*) "ZONE I=", il, " J=",jl, "K=", kl, "T=", trim(tmpStr)
-!         write(1, *) "DATAPACKING=BLOCK"
-!         !write(1, *) "VARLOCATION=([1,2,3]=NODAL)"
-!         write(1, *) "VARLOCATION=([1,2,3,4]=NODAL)"
+     ! Write my own blocks first
+     do nn=1,nDom
+        call setPointers(nn, 1, 1)
+        !write(tmpStr, *) "Proc ", 0, " Local ID", nn
+        write(tmpStr, "(a,I2.2,a,I2.2,a)"), """Proc ", 0, " Local ID ", nn , """"
+        write(1,*) "ZONE I=", il, " J=",jl, "K=", kl, "T=", trim(tmpStr)
+        write(1, *) "DATAPACKING=BLOCK"
+        !write(1, *) "VARLOCATION=([1,2,3]=NODAL)"
+        write(1, *) "VARLOCATION=([1,2,3,4]=NODAL)"
 
-!         do iDim=1, 3
-!            do k=1, kl
-!               do j=1, jl
-!                  do i=1, il
-!                     write(1, *) x(i, j, k, idim)
-!                  end do
-!               end do
-!            end do
-!         end do
+        do iDim=1, 3
+           do k=1, kl
+              do j=1, jl
+                 do i=1, il
+                    write(1, *) x(i, j, k, idim)
+                 end do
+              end do
+           end do
+        end do
 
-!         ! Iblanks are cell center values,  imposed on primal nodes, for plotting
-!         ! purpose only
-!         do k=1, kl
-!            do j=1, jl
-!               do i=1, il
-!                  write(1, *) iBlank(i+1, j+1, k+1) 
-!               end do
-!            end do
-!         end do
-!      end do
+        ! Iblanks are cell center values,  imposed on primal nodes, for plotting
+        ! purpose only
+        do k=1, kl
+           do j=1, jl
+              do i=1, il
+                 write(1, *) iBlank(i+1, j+1, k+1) 
+              end do
+           end do
+        end do
+     end do
 
-!      ! Now loop over the remaining blocks...receiving each and writing:
+     ! Now loop over the remaining blocks...receiving each and writing:
 
-!      do iProc=1, nProc-1
-!         do nn=1, nDomProc(iProc)
-!            iDom = cumDomProc(iProc) + nn
-!            bufSize = dims(1, iDom)*dims(2, iDom)*dims(3,iDom)*3
-!            ibufSize = dims(1, iDom)*dims(2, iDom)*dims(3,iDom)
+     do iProc=1, nProc-1
+        do nn=1, nDomProc(iProc)
+           iDom = cumDomProc(iProc) + nn
+           bufSize = dims(1, iDom)*dims(2, iDom)*dims(3,iDom)*3
+           ibufSize = dims(1, iDom)*dims(2, iDom)*dims(3,iDom)
 
-!            call MPI_Recv(buffer, bufSize, sumb_real, iProc, iProc, &
-!                 sumb_comm_world, status, ierr)
+           call MPI_Recv(buffer, bufSize, sumb_real, iProc, iProc, &
+                sumb_comm_world, status, ierr)
 
-!            call MPI_Recv(ibuffer, ibufSize, sumb_integer, iProc, 10*iProc, &
-!                 sumb_comm_world, status, ierr)
+           call MPI_Recv(ibuffer, ibufSize, sumb_integer, iProc, 10*iProc, &
+                sumb_comm_world, status, ierr)
 
-!            write(tmpStr, "(a,I2.2,a,I2.2,a)"), """Proc ", iProc, " Local ID ", nn ,""""
-!            write(1,*) "ZONE I=", dims(1, iDom), " J=", dims(2, iDom), "K=", dims(3, iDom), "T=", trim(tmpStr)
-!            write(1, *) "DATAPACKING=BLOCK"
-!            !write(1, *) "VARLOCATION=([1,2,3]=NODAL)"
-!            write(1, *) "VARLOCATION=([1,2,3,4]=NODAL)"
+           write(tmpStr, "(a,I2.2,a,I2.2,a)"), """Proc ", iProc, " Local ID ", nn ,""""
+           write(1,*) "ZONE I=", dims(1, iDom), " J=", dims(2, iDom), "K=", dims(3, iDom), "T=", trim(tmpStr)
+           write(1, *) "DATAPACKING=BLOCK"
+           !write(1, *) "VARLOCATION=([1,2,3]=NODAL)"
+           write(1, *) "VARLOCATION=([1,2,3,4]=NODAL)"
 
-!            ! Dump directly...already in the right order
-!            do i=1, bufSize
-!               write(1, *), buffer(i)
-!            end do
-!            do i=1, ibufSize
-!               write(1, *), ibuffer(i)
-!            end do
-!         end do
-!      end do
-!      close(1)
-!      print *,'Done writing mesh...'
-!   else 
+           ! Dump directly...already in the right order
+           do i=1, bufSize
+              write(1, *), buffer(i)
+           end do
+           do i=1, ibufSize
+              write(1, *), ibuffer(i)
+           end do
+        end do
+     end do
+     close(1)
+     print *,'Done writing mesh...'
+  else 
 
-!      ! Pand and send my stuff:
-!      do nn=1, nDom
-!         call setPointers(nn, 1, 1)
-!         ii = 0
-!         do iDim=1, 3
-!            do k=1, kl
-!               do j=1, jl
-!                  do i=1, il
-!                     ii = ii + 1
-!                     buffer(ii) = x(i, j, k, iDim)
-!                  end do
-!               end do
-!            end do
-!         end do
+     ! Pand and send my stuff:
+     do nn=1, nDom
+        call setPointers(nn, 1, 1)
+        ii = 0
+        do iDim=1, 3
+           do k=1, kl
+              do j=1, jl
+                 do i=1, il
+                    ii = ii + 1
+                    buffer(ii) = x(i, j, k, iDim)
+                 end do
+              end do
+           end do
+        end do
 
-!         call mpi_send(buffer, ii, sumb_real, 0, myid, &
-!              sumb_comm_world, ierr)
+        call mpi_send(buffer, ii, sumb_real, 0, myid, &
+             sumb_comm_world, ierr)
 
-!         ! Iblanks are cell center values,  imposed on primal nodes, for plotting
-!         ! purpose only
-!         ii = 0
-!         do k=1, kl
-!            do j=1, jl
-!               do i=1, il
-!                  ii = ii + 1
-!                  ibuffer(ii) = iBlank(i+1, j+1, k+1)
-!               end do
-!            end do
-!         end do
-!         call mpi_send(ibuffer, ii, sumb_integer, 0, 10*myid, &
-!              sumb_comm_world, ierr)
-!      end do
-!   end if
+        ! Iblanks are cell center values,  imposed on primal nodes, for plotting
+        ! purpose only
+        ii = 0
+        do k=1, kl
+           do j=1, jl
+              do i=1, il
+                 ii = ii + 1
+                 ibuffer(ii) = iBlank(i+1, j+1, k+1)
+              end do
+           end do
+        end do
+        call mpi_send(ibuffer, ii, sumb_integer, 0, 10*myid, &
+             sumb_comm_world, ierr)
+     end do
+  end if
 
-!   deallocate(buffer, ibuffer, nDomProc, cumDomProc, dims)
+  deallocate(buffer, ibuffer, nDomProc, cumDomProc, dims)
 
-! end subroutine writePartionedMesh
+end subroutine writePartionedMesh
