@@ -49,6 +49,10 @@ module overset
 
      ! Whether or not a cell is "near" a wall
      integer(kind=intType), dimension(:, :, :), pointer :: nearWall
+
+     ! Whether or not a cell is not possible to be a donor. Ie. a forceRecv
+     integer(kind=intType), dimension(:, :, :), pointer :: invalidDonor
+
      
      ! Minimum volume for this block
      real(kind=realType) :: minVol

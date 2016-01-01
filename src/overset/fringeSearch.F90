@@ -12,7 +12,9 @@ subroutine fringeSearch(oBlock, fringes, n)
   integer(kind=intType), intent(in) :: n
 
   ! Working Varaibles
-  integer(kind=intType) :: nInterpol, elemID, nalloc, intInfo(3), i, ii, jj, kk, j
+  integer(kind=intType) :: nInterpol, elemID, nalloc, intInfo(3), i, ii, jj, kk, j, nn
+  integer(kind=intTYpe) :: iii, jjj, kkk
+  logical :: invalid
   real(kind=realType) :: uvw(4), donorQual
 
   ! Variables we have to pass the ADT search routine
@@ -46,69 +48,85 @@ subroutine fringeSearch(oBlock, fringes, n)
 
         elemFound: if (.not. intInfo(1) < 0) then 
 
+           ! Donor and block and index information for this donor. 
            donorQual = uvw(4)
            elemID = intInfo(3) - 1 ! Make it zero based
-
-           ! If we found a donor and our fringe is a wall, we need to
-           ! ! record it. Check if we need to make more space.
-           if (fringes(i)%isWall) then 
-
-              ! Copy in just the donor information we need to keep track of
-              ii = mod(elemID, oBlock%il) + 1
-              jj = mod(elemID/oBlock%il, oBlock%jl) + 1
-              kk = elemID/(oBlock%il*oBlock%jl) + 1
+           ii = mod(elemID, oBlock%il) + 1
+           jj = mod(elemID/oBlock%il, oBlock%jl) + 1
+           kk = elemID/(oBlock%il*oBlock%jl) + 1
               
-              if (.not. oBlock%nearWall(ii, jj, kk) == 1) then
-
-                 nLocalWallFringe = nLocalWallFringe + 1
-                 
-                 ! Check if we still have enough room for this fringe and
-                 ! realloc if necessary
-                 
-                 if (nLocalWallFringe > size(localWallFringes)) then 
-                    ii = size(localWallFringes)
-                    tmpFringePtr => localWallFringes            ! Pointer to existing data
-                    allocate(localWallFringes(2*ii))            ! Allocate new space
-                    localWallFringes(1:ii) = tmpFringePtr(1:ii) ! Copy exsitng values
-                    deallocate(tmpFringePtr)                    ! Free original memory 
-                 end if
-                 
-                 localWallFringes(nLocalWallFringe)%donorProc = oBlock%proc
-                 localWallFringes(nLocalWallFringe)%donorBlock = oBlock%block
-                 localWallFringes(nLocalWallFringe)%dI = ii 
-                 localWallFringes(nLocalWallFringe)%dJ = jj
-                 localWallFringes(nLocalWallFringe)%dK = kk
+           ! If we found a donor and our fringe is a wall, we will
+           ! record if only if it is also not "near" another wall (on
+           ! the oBlock)
+           if (fringes(i)%isWall .and. .not. oBlock%nearWall(ii, jj, kk) == 1) then 
+              
+              nLocalWallFringe = nLocalWallFringe + 1
+              
+              ! Check if we still have enough room in our
+              ! localWallFringe array and realloc if necessary
+              ! necessary
+              
+              if (nLocalWallFringe > size(localWallFringes)) then 
+                 nn = size(localWallFringes)
+                 tmpFringePtr => localWallFringes            ! Pointer to existing data
+                 allocate(localWallFringes(2*nn))            ! Allocate new space
+                 localWallFringes(1:nn) = tmpFringePtr(1:nn) ! Copy exsitng values
+                 deallocate(tmpFringePtr)                    ! Free original memory 
               end if
+              
+              ! Now record the information
+              localWallFringes(nLocalWallFringe)%donorProc = oBlock%proc
+              localWallFringes(nLocalWallFringe)%donorBlock = oBlock%block
+              localWallFringes(nLocalWallFringe)%dI = ii 
+              localWallFringes(nLocalWallFringe)%dJ = jj
+              localWallFringes(nLocalWallFringe)%dK = kk
+
            end  if
 
+           ! This is for the actual donors. The '<' is really the
+           ! 'implicit hole' method where we take the best quality donor. 
            if ( donorQual < fringes(i)%quality) then
 
-              ! Unwind the element indices for the donor Remember we have
-              ! (il, jl, kl) elements in the dual mesh. Also save the
-              ! remaining information into the fringe datatype
+              invalid = .False.
+              do kkk=0,1
+                 do jjj=0,1
+                    do iii=0,1
+                       if (oBlock%invalidDonor(ii+iii, jj+jjj, kk+kkk)==1) then 
+                          invalid = .True.
+                       end if
+                    end do
+                 end do
+              end do
 
-              fringes(i)%donorProc = oBlock%proc
-              fringes(i)%donorBlock = oBlock%block
-              ii = mod(elemID, oBlock%il) + 1
-              jj = mod(elemID/oBlock%il, oBlock%jl) + 1
-              kk = elemID/(oBlock%il*oBlock%jl) + 1
-              fringes(i)%dI = ii 
-              fringes(i)%dJ = jj
-              fringes(i)%dK = kk
+              if (.not. invalid) then 
+                 fringes(i)%donorProc = oBlock%proc
+                 fringes(i)%donorBlock = oBlock%block
+                 fringes(i)%dI = ii 
+                 fringes(i)%dJ = jj
+                 fringes(i)%dK = kk
+                 
+                 fringes(i)%donorFrac = uvw(1:3)
+                 fringes(i)%isCompute = .False.
 
-              fringes(i)%donorFrac = uvw(1:3)
-              fringes(i)%quality = donorQual
-              fringes(i)%isCompute = .False.
+                 ! This is important: We need to reset the quality of
+                 ! this fringe to the donorQuality. This is necessary
+                 ! since we may be searching these same fringes local
+                 ! against another oBlock and we will only accept a
+                 ! different donor if it is better than the best one
+                 ! so far.
+                 fringes(i)%quality = donorQual
 
-              ! Save the global indices as well. 
-              fringes(i)%gInd(1) = oBlock%globalCell(ii  , jj  , kk  )
-              fringes(i)%gInd(2) = oBlock%globalCell(ii+1, jj  , kk  )
-              fringes(i)%gInd(3) = oBlock%globalCell(ii  , jj+1, kk  )
-              fringes(i)%gInd(4) = oBlock%globalCell(ii+1, jj+1, kk  )
-              fringes(i)%gInd(5) = oBlock%globalCell(ii  , jj  , kk+1)
-              fringes(i)%gInd(6) = oBlock%globalCell(ii+1, jj  , kk+1)
-              fringes(i)%gInd(7) = oBlock%globalCell(ii  , jj+1, kk+1)
-              fringes(i)%gInd(8) = oBlock%globalCell(ii+1, jj+1, kk+1)
+                 
+                 ! Save the global indices as well. 
+                 fringes(i)%gInd(1) = oBlock%globalCell(ii  , jj  , kk  )
+                 fringes(i)%gInd(2) = oBlock%globalCell(ii+1, jj  , kk  )
+                 fringes(i)%gInd(3) = oBlock%globalCell(ii  , jj+1, kk  )
+                 fringes(i)%gInd(4) = oBlock%globalCell(ii+1, jj+1, kk  )
+                 fringes(i)%gInd(5) = oBlock%globalCell(ii  , jj  , kk+1)
+                 fringes(i)%gInd(6) = oBlock%globalCell(ii+1, jj  , kk+1)
+                 fringes(i)%gInd(7) = oBlock%globalCell(ii  , jj+1, kk+1)
+                 fringes(i)%gInd(8) = oBlock%globalCell(ii+1, jj+1, kk+1)
+              end if
            end if
         end if elemFound
      end if shortCut
