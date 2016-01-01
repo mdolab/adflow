@@ -950,6 +950,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
                 oBlocks(iDom)%hexaConn, &
                 oBlocks(iDom)%globalCell, &
                 oBLocks(iDOm)%nearWall, &
+                oBLocks(iDOm)%invalidDonor, &
                 oBlocks(iDom)%qualDonor, &
                 oBlocks(iDom)%xADT, &
                 oBlocks(iDom)%rBuffer, &
@@ -1215,8 +1216,11 @@ subroutine initializeOBlock(oBlock, nn)
   allocate( &
        oBlock%qualDonor(1, ie*je*ke), &
        oBlock%globalCell(0:ib, 0:jb, 0:kb), &
-       oBlock%nearWall(1:ie, 1:je, 1:ke))
+       oBlock%nearWall(1:ie, 1:je, 1:ke), &
+       oBlock%invalidDonor(1:ie, 1:je, 1:ke))
+  
   oBlock%nearWall = 0
+  oBlock%invalidDonor = 0
 
   kk = 5
   do mm=1,nBocos
@@ -1261,7 +1265,54 @@ subroutine initializeOBlock(oBlock, nn)
      end if
   end do ! BocoLoop
 
-  ! Copy Volume to qualDonor and do minVol while we're at it
+
+  do mm=1,nBocos
+     ! Just record the ranges necessary and we'll add in a generic
+     ! loop. Why is it the first three? Well, the first level of halos
+     ! off of an overset outer bound is completely
+     ! meaningless. Essentially we ignore those. So the outer two
+     ! layers of cells are indices 2 and 3. Therefore the first 3 on
+     ! either side need to be flagged as invalid.
+     select case (BCFaceID(mm))
+     case (iMin)
+        iStart=1; iEnd=3;
+        jStart=BCData(mm)%inBeg+1; jEnd=BCData(mm)%inEnd
+        kStart=BCData(mm)%jnBeg+1; kEnd=BCData(mm)%jnEnd
+     case (iMax)
+        iStart=nx; iEnd=ie;
+        jStart=BCData(mm)%inBeg+1; jEnd=BCData(mm)%inEnd
+        kStart=BCData(mm)%jnBeg+1; kEnd=BCData(mm)%jnEnd
+     case (jMin)
+        iStart=BCData(mm)%inBeg+1; iEnd=BCData(mm)%inEnd
+        jStart=1; jEnd=3;
+        kStart=BCData(mm)%jnBeg+1; kEnd=BCData(mm)%jnEnd
+     case (jMax)
+        iStart=BCData(mm)%inBeg+1; iEnd=BCData(mm)%inEnd
+        jStart=ny; jEnd=je;
+        kStart=BCData(mm)%jnBeg+1; kEnd=BCData(mm)%jnEnd
+     case (kMin)
+        iStart=BCData(mm)%inBeg+1; iEnd=BCData(mm)%inEnd
+        jStart=BCData(mm)%jnBeg+1; jEnd=BCData(mm)%jnEnd
+        kStart=1; kEnd=3;
+     case (kMax)
+        iStart=BCData(mm)%inBeg+1; iEnd=BCData(mm)%inEnd
+        jStart=BCData(mm)%jnBeg+1; jEnd=BCData(mm)%jnEnd
+        kStart=nz; kEnd=ke;
+     end select
+     
+     if (BCType(mm) == OversetOuterBound) then
+        do k=kStart, kEnd
+           do j=jStart, jEnd
+              do i=iStart, iEnd
+                 ! Compute the index
+                 oBlock%invalidDonor(i, j, k) = 1
+              end do
+           end do
+        end do
+     end if
+  end do
+
+    ! Copy Volume to qualDonor and do minVol while we're at it
   oBlock%minVol = Large
   mm = 0
   do k=1,ke
