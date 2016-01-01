@@ -26,6 +26,8 @@ subroutine packOBlock(oBlock)
   
   iSize = iSize + size(oBlock%nearWall)
 
+  iSize = iSize + size(oBlock%invalidDonor)
+
   iSize = iSize + oBlock%ADT%nLeaves*2 ! The two itegers for the
   ! children in each leaf
 
@@ -93,6 +95,14 @@ subroutine packOBlock(oBlock)
      end do
   end do
 
+  do k=1, oBlock%ke
+     do j=1, oBlock%je
+        do i=1, oBlock%ie
+           iSize = iSize + 1
+           oBlock%iBuffer(iSize) = oBlock%invalidDonor(i, j, k)
+        end do
+     end do
+  end do
 
   do i=1, oBlock%ADT%nLeaves
      iSize = iSize + 1
@@ -177,6 +187,7 @@ subroutine unpackOBlock(oBlock)
   allocate(oBlock%hexaConn(8, nHexa))
   allocate(oBlock%globalCell(0:oBlock%ib, 0:oBlock%jb, 0:oBlock%kb))
   allocate(oBlock%nearWall(1:oBlock%ie, 1:oBlock%je, 1:oBlock%ke))
+  allocate(oBlock%invalidDonor(1:oBlock%ie, 1:oBlock%je, 1:oBlock%ke))
   allocate(oBlock%qualDonor(1, oBlock%ie * oBlock%je * oBlock%ke))
   allocate(oBlock%xADT(3, nADT))
 
@@ -238,6 +249,16 @@ subroutine unpackOBlock(oBlock)
         do i=1, oBlock%ie
            iSize = iSize + 1
            oBlock%nearWall(i, j, k) = oBlock%iBuffer(iSize)
+        end do
+     end do
+  end do
+
+
+  do k=1, oBlock%ke
+     do j=1, oBlock%je
+        do i=1, oBlock%ie
+           iSize = iSize + 1
+           oBlock%invalidDonor(i, j, k) = oBlock%iBuffer(iSize)
         end do
      end do
   end do
