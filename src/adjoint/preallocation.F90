@@ -87,6 +87,7 @@ subroutine statePreAllocation(onProc, offProc, wSize, stencil, N_stencil, &
                        ! above since while the donor for a fringe cell
                        ! will be from another block that block could
                        ! be on-processor or off-processor. 
+                       onProc(ii) = onProc(ii) + 1
 
                     else if (iblank(iii, jjj, kkk) == 0) then 
                        ! blanked cell. We just have the single
