@@ -80,7 +80,7 @@ subroutine exchangeDonorStatus(level, sps, commPattern, internal)
 
      ! Send the data.
      call mpi_isend(recvBuf(ii), size, mpi_logical, procID,  &
-          procID, SUmb_comm_world, recvRequests(i), &
+          procID, SUmb_comm_world, sendRequests(i), &
           ierr)
 
      ! Set ii to jj for the next processor.
@@ -103,7 +103,7 @@ subroutine exchangeDonorStatus(level, sps, commPattern, internal)
      ! Post the receive.
 
      call mpi_irecv(sendBuf(ii), size, mpi_logical, procID, &
-          myID, SUmb_comm_world, sendRequests(i), ierr)
+          myID, SUmb_comm_world, recvRequests(i), ierr)
 
      ! And update ii.
 
@@ -150,7 +150,7 @@ subroutine exchangeDonorStatus(level, sps, commPattern, internal)
 
      ! Complete any of the requests.
 
-     call mpi_waitany(size, sendRequests, index, status, ierr)
+     call mpi_waitany(size, recvRequests, index, status, ierr)
 
      ! Copy the data just arrived in the halo's.
 
@@ -184,7 +184,7 @@ subroutine exchangeDonorStatus(level, sps, commPattern, internal)
 
   size = commPattern(level)%nProcRecv
   do i=1,commPattern(level)%nProcRecv
-     call mpi_waitany(size, recvRequests, index, status, ierr)
+     call mpi_waitany(size, sendRequests, index, status, ierr)
   enddo
 
   deallocate(recvBuf, sendBuf)

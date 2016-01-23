@@ -9,7 +9,6 @@ subroutine emptyFringe(fringe)
   ! Initialize data in empty fringe
   fringe%x = (/large, large, large/)
   fringe%quality = large
-  fringe%forceRecv = .False.
   fringe%donorProc = -1
   fringe%donorBlock = -1
   fringe%dI = -1
@@ -47,7 +46,7 @@ subroutine printOverlapMatrix(overlap)
      do i=1, overlap%nrow
         write(*, "(a,I4, a)", advance='no'), 'Row:', i, "   "
         do jj=overlap%rowPtr(i), overlap%rowPtr(i+1)-1
-           write(*, "(a,I2, a, I6)", advance='no'), "(", overlap%colInd(jj), ")", int(overlap%data(jj))
+           write(*, "(a,I2, a, e10.5)", advance='no'), "(", overlap%colInd(jj), ")", overlap%data(jj)
         end do
         write(*, *) " "
      end do
@@ -83,7 +82,6 @@ subroutine getCumulativeForm(sizeArray, n, cumArray)
   end do
 
 end subroutine getCumulativeForm
-
 
 subroutine transposeOverlap(A, B)
 
@@ -205,7 +203,6 @@ subroutine computeFringeProcArray(fringes, n, fringeProc, cumFringeProc, nFringe
 
 end subroutine computeFringeProcArray
 
-
 subroutine receiveFringes(status, n)
   ! This is a little helper routnine that receives the
   ! oversetFringeType and puts them in tmpFringes. This exact code
@@ -227,7 +224,7 @@ subroutine receiveFringes(status, n)
      deallocate(tmpFringes)
      allocate(tmpFringes(n))
   end if
-           
+
   ! Now actually receive the fringes
   call mpi_recv(tmpFringes, n, oversetMPIFringe, status(MPI_SOURCE), &
        status(MPI_TAG), SUmb_comm_world, status, ierr)
@@ -236,18 +233,115 @@ subroutine receiveFringes(status, n)
 end subroutine receiveFringes
 
 
-  subroutine fracToWeights(frac, weights)
-    use constants
-    implicit none
-    real(kind=realType), intent(in), dimension(3) :: frac
-    real(kind=realType), intent(out), dimension(8) :: weights
+subroutine fracToWeights(frac, weights)
+  use constants
+  implicit none
+  real(kind=realType), intent(in), dimension(3) :: frac
+  real(kind=realType), intent(out), dimension(8) :: weights
 
-    weights(1) = (one-frac(1))*(one-frac(2))*(one-frac(3))
-    weights(2) = (    frac(1))*(one-frac(2))*(one-frac(3))
-    weights(3) = (one-frac(1))*(    frac(2))*(one-frac(3))
-    weights(4) = (    frac(1))*(    frac(2))*(one-frac(3))
-    weights(5) = (one-frac(1))*(one-frac(2))*(    frac(3))
-    weights(6) = (    frac(1))*(one-frac(2))*(    frac(3))
-    weights(7) = (one-frac(1))*(    frac(2))*(    frac(3))
-    weights(8) = (    frac(1))*(    frac(2))*(    frac(3))
-  end subroutine fracToWeights
+  weights(1) = (one-frac(1))*(one-frac(2))*(one-frac(3))
+  weights(2) = (    frac(1))*(one-frac(2))*(one-frac(3))
+  weights(3) = (one-frac(1))*(    frac(2))*(one-frac(3))
+  weights(4) = (    frac(1))*(    frac(2))*(one-frac(3))
+  weights(5) = (one-frac(1))*(one-frac(2))*(    frac(3))
+  weights(6) = (    frac(1))*(one-frac(2))*(    frac(3))
+  weights(7) = (one-frac(1))*(    frac(2))*(    frac(3))
+  weights(8) = (    frac(1))*(    frac(2))*(    frac(3))
+end subroutine fracToWeights
+
+
+subroutine getCommPattern(oMat, oMatT, sendList, size1, nSend, recvList, size2, nRecv)
+
+  use overset
+  use communication 
+  implicit none
+
+  ! Input/output
+  type(CSRMatrix), intent(in) :: oMat, oMatT
+  integer(kind=intType), intent(in) :: size1, size2
+  integer(kind=intType), intent(out) :: sendList(2, size1), recvList(2, size2)
+  integer(kind=intType), intent(out) :: nSend, nRecv
+
+  ! Working:
+  integer(kind=intType) :: nn, iDom, nnRow, i, jj, ii, nUniqueProc, iProc
+  integer(kind=intType), dimension(:), allocatable :: procsForThisRow, inverse, blkProc
+  logical :: added
+
+  ! Generic routine to determine what I need to send/recv based on the
+  ! data provided in the overlap matrix. The '2' in the send and
+  ! receive lists will record the processor and the global 'idom'
+  ! index, which is suffient to use for the subsequent communication
+  ! structure.
+
+  nSend = 0
+  nRecv = 0
+
+  ! These variables are used to compact the sending of
+  ! blocks/fringes. The logic is as follows: A a different
+  ! processor may need a block/fringe for more than 1 search. This
+  ! is manifested by having two or more entries is the rows (or
+  ! columns) I own. It would be inefficient to send the same data
+  ! to the same processor more than once, so we "uniquify" the
+  ! processors before we send. There is also another salient
+  ! reason: If we were to send the same data twice, and the other
+  ! processor started using the data, we could get a race condition
+  ! as it was modified the received fringes (during a search) while
+  ! the same fringes were being overwritten by the receive operation. 
+
+  allocate(procsForThisRow(nDomTotal), inverse(nDomTotal), blkProc(nDomTotal))
+
+  ii = 0
+  do iProc=0, nProc-1
+     do i=1, nDomProc(iProc)
+        ii = ii + 1
+        blkProc(ii) = iProc
+     end do
+  end do
+
+  ! Loop over the owned rows of the normal matrix
+  do nn=1, nDom
+     iDom = cumDomProc(myid) + nn
+     nnRow = oMat%rowPtr(iDom+1) - oMat%rowPtr(iDom)
+     procsForThisRow(1:nnRow) = oMat%assignedProc(oMat%rowPtr(iDom) : oMat%rowPtr(iDom+1)-1)
+     call unique(procsForThisRow, nnRow, nUniqueProc, inverse)
+
+     do jj = 1, nUniqueProc
+        if (procsForThisRow(jj) /= myid) then 
+           ! This intersection requires a row quantity from me
+           nSend = nSend + 1
+           sendList(1, nSend) = procsForThisRow(jj) 
+           sendList(2, nSend) = iDom 
+        end if
+     end do
+  end do
+
+  ! Now we loop back through the whole matrix looking at what I have
+  ! to do. If there is a row I don't own, I will have to receive it:
+ 
+  do iDom=1, oMat%nRow
+     added = .False.
+     rowLoop: do jj=oMat%rowPtr(iDom), oMat%rowPtr(iDom+1)-1
+
+        ! I have to do this intersection
+        if (oMat%assignedProc(jj) == myID) then 
+
+           ! But I don't know the row entry
+           if (.not. (iDom > cumDomProc(myid) .and. iDom <= cumDomProc(myid+1))) then 
+
+              ! Need to back out what proc the iDom correponds to:
+              nRecv = nRecv + 1
+              recvList(1, nRecv) = blkProc(iDom)
+              recvList(2, nRecv) = iDom
+              added = .True.
+           end if
+        end if
+
+        ! Just move on to the next row since we only need to receive it once. 
+        if (added) then 
+           exit rowLoop
+        end if
+     end do rowLoop
+  end do
+
+  deallocate(procsForThisRow, inverse, blkProc)
+end subroutine getCommPattern

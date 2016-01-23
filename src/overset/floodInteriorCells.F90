@@ -10,7 +10,7 @@ subroutine floodInteriorCells(level, sps)
   ! Working
   integer(kind=intType) :: nn, i, j, k, nSeed, iSeed, ierr
   integer(kind=intType), dimension(:, :), allocatable :: stack, floodSeeds
-  integer(kind=intType) :: nChanged, stackPointer, loopIter
+  integer(kind=intType) :: nChanged, nChangedLocal, stackPointer, loopIter
 
   ! At this point iblank should not be meanginful since we actually
   ! still computing the interpolation. So we can hijack it for the
@@ -28,7 +28,7 @@ subroutine floodInteriorCells(level, sps)
   parallelSyncLoop: do 
 
      ! Keep track of the total number of fringes we've modified
-     nChanged = 0
+     nChangedLocal = 0
 
      do nn=1,nDom
         call setPointers(nn, level, sps)
@@ -123,11 +123,11 @@ subroutine floodInteriorCells(level, sps)
               stackPointer = stackPointer - 1
 
               if (fringes(i, j, k)%isCompute .and. fringes(i, j, k)%donorProc == -1) then 
-                 ! Flag the cell (usin iblank) as being changed
+                 ! Flag the cell (using iblank) as being changed
                  iBlank(i, j, k) = 1
 
                  ! Keep track of the total number we've changed.
-                 nChanged = nChanged + 1
+                 nChangedLocal = nChangedLocal + 1
 
                  ! Pure compute cell, convert to hole
                  call emptyFringe(fringes(i, j, k))
@@ -178,7 +178,7 @@ subroutine floodInteriorCells(level, sps)
      call exchangeIblanks(level, sps, commPatternCell_2nd, internalCell_2nd)
 
      ! Determine if cells got changd. If so do another loop.
-     call mpi_allreduce(MPI_IN_PLACE, nChanged, 1, sumb_integer, MPI_SUM, &
+     call mpi_allreduce(nChangedLocal, nChanged, 1, sumb_integer, MPI_SUM, &
           sumb_comm_world, ierr)
      call ECHK(ierr, __FILE__, __LINE__)
 

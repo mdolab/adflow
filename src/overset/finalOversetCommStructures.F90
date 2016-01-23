@@ -15,14 +15,18 @@ subroutine finalOversetCommStructures(level, sps, MAGIC)
   integer(kind=intType), intent(in) :: level, sps, MAGIC
 
   ! Working Parameters
-  integer(kind=intType) :: i, j, k, ii, jj, kk, nn, tag, ierr, nLocalFringe, n, nFringeProc, sendCOunt
+  integer(kind=intType) :: i, j, k, ii, jj, kk, nn, tag, ierr, nLocalFringe
+  integer(kind=intType) :: n, nFringeProc, sendCount, iProc
   integer(kind=intType) :: nCopy,  iSize, iStart, iEnd, iProcRecv, iSendProc, iRecvProc
   type(fringeType), dimension(:), allocatable :: localFringes
-  integer(kind=intType), dimension(:), allocatable :: nProcSend
-  logical :: barrierActive, barrierDone, flag
-  integer :: barrierRequest
-  integer status(MPI_STATUS_SIZE) 
+  integer(kind=intType), dimension(:), allocatable :: nProcSend, nProcSendLocal
   integer(kind=intType), dimension(:), allocatable :: fringeProc, cumFringeProc
+
+  ! MPI Stuff
+  integer status(MPI_STATUS_SIZE) 
+  integer, allocatable, dimension(:) :: sendRequests1
+  integer(kind=intTYpe) :: nMsgToSend, iRecv, nRecv
+  logical :: flag
 
   ! We need to fill in the following information in the comm patterns:
   ! sendProc, nProcSend, nSend, and sendList for each proc
@@ -83,15 +87,15 @@ subroutine finalOversetCommStructures(level, sps, MAGIC)
 
   nCopy = 0
   nProcRecv = 0
-  allocate(nProcSend(nProc))
-  nProcSend = 0
+  allocate(nProcSend(nProc), nProcSendLocal(nProc))
+  nProcSendLocal = 0
 
   do i=1, nFringeProc ! The numer of processors i'm dealing with
      if (fringeProc(i) == myid) then 
         nCopy = cumFringeProc(i+1) - cumFringeProc(i)
      else
         nProcRecv = nProcRecv + 1
-        nProcSend(fringeProc(i)+1) = 1
+        nProcSendLocal(fringeProc(i)+1) = 1
      end if
   end do
 
@@ -99,9 +103,20 @@ subroutine finalOversetCommStructures(level, sps, MAGIC)
   ! send donors to. The value we care about is nSend(myid). Also,
   ! this counts as a barrier so we know that all comms have
   ! finished. That means we can restart our MAGIC tag back to 1.
-  call mpi_allreduce(MPI_IN_PLACE, nProcSend, nProc, sumb_integer, MPI_SUM, &
+  call mpi_allreduce(nProcSendLocal, nProcSend, nProc, sumb_integer, MPI_SUM, &
        sumb_comm_world, ierr)
   call ECHK(ierr, __FILE__, __LINE__)
+
+  ! ---------------------------------------------------------------------
+  ! Since we are setting up...ie doing the transpose of the actual
+  ! final comm structure, the number of sends we make in this routine,
+  ! is the same is the number of receives we actually want to do in
+  ! the final comm structure. We need to allocate the sendRequests1
+  ! and to know the number of recevies and since this information is
+  ! already computed we assign it here. I know it looks confusing. 
+  allocate(sendRequests1(nProcRecv))
+  nRecv = nProcSend(myid+1)
+  ! ---------------------------------------------------------------------
 
   ! We can allocate all necessary space for the send and receive information
   commPatternOverset(level, sps)%nProcRecv = nProcRecv
@@ -166,20 +181,19 @@ subroutine finalOversetCommStructures(level, sps, MAGIC)
            commPatternOverset(level, sps)%recvList(iRecvProc)%indices(ii,3) = localFringes(j)%myK
         end do
 
-        ! Now iSSend these fringes to where they need to go: Start
+        ! Now iSend these fringes to where they need to go: Start
         ! the tags at MAGIC not 1 since we will call
         ! exchangeIBlanks below which have tags from 0:nProc
         tag = MAGIC + myID + 1
         sendCount = sendCount + 1
-        call mpi_issend(localFringes(iStart:iend), iSize, oversetMPIFringe, &
-             fringeProc(i), tag, SUmb_comm_world, sendRequests(sendCount), ierr)
+        call mpi_isend(localFringes(iStart:iend), iSize, oversetMPIFringe, &
+             fringeProc(i), tag, SUmb_comm_world, sendRequests1(sendCount), ierr)
      end if
   end do
 
-  barrierDone = .False.
-  barrierActive = .False.
   iSendProc = 0
-  do while (.not. barrierDone)
+  iRecv = 0
+  do while (iRecv < nRecv)
 
      call MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, SUmb_comm_world, flag, status, ierr)
      call ECHK(ierr, __FILE__, __LINE__)
@@ -187,7 +201,7 @@ subroutine finalOversetCommStructures(level, sps, MAGIC)
      ! Check if a message is ready
      tag = status(MPI_TAG)
      if (flag .and. tag >= MAGIC+1 .and. tag <= 2*MAGIC) then
-
+        iRecv = iRecv + 1
         call receiveFringes(status, n)
 
         ! We don't actually know the order that the fringes will be
@@ -204,26 +218,12 @@ subroutine finalOversetCommStructures(level, sps, MAGIC)
 
         ! Now set the data
         do i=1, n
-           commPatternOverset(level, sps)%sendList(iSendProc)%block(i) = tmpFringes(i)%donorBlock
+           commPatternOverset(level, sps)%sendList(iSendProc)%block(i) =  tmpFringes(i)%donorBlock
            commPatternOverset(level, sps)%sendList(iSendProc)%indices(i, :) = &
                 (/tmpFringes(i)%dI, tmpFringes(i)%dJ, tmpFringes(i)%dK/)
            call fracToWeights(tmpFringes(i)%donorFrac, &
                 commPatternOverset(level, sps)%sendList(iSendProc)%interp(i, :))
         end do
-     end if
-
-     if (.not. barrierActive) then
-        call MPI_testAll(sendCount, sendRequests, flag, MPI_STATUSES_IGNORE, ierr)
-        call ECHK(ierr, __FILE__, __LINE__)
-
-        if (flag) then 
-           call MPI_Ibarrier(sumb_comm_world, barrierRequest, ierr)
-           call ECHK(ierr, __FILE__, __LINE__)
-           barrierActive = .True.
-        end if
-     else
-        call MPI_test(barrierRequest, barrierDone, MPI_STATUS_IGNORE, ierr)
-        call ECHK(ierr, __FILE__, __LINE__)
      end if
   end do
 
@@ -238,7 +238,9 @@ subroutine finalOversetCommStructures(level, sps, MAGIC)
   call getCumulativeForm(commPatternOverset(level, sps)%nRecv, commPatternOverset(level, sps)%nProcRecv, &
        commPatternOverset(level, sps)%nRecvCum)
 
-  deallocate(fringeProc, cumFringeProc, nProcSend)
-  
+  call mpi_waitall(sendCount, sendRequests1, MPI_STATUSES_IGNORE, ierr)
+  call ECHK(ierr, __FILE__, __LINE__)
+
+  deallocate(localFringes, fringeProc, cumFringeProc, nProcSend)
 
 end subroutine finalOversetCommStructures

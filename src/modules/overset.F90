@@ -52,7 +52,6 @@ module overset
 
      ! Whether or not a cell is not possible to be a donor. Ie. a forceRecv
      integer(kind=intType), dimension(:, :, :), pointer :: invalidDonor
-
      
      ! Minimum volume for this block
      real(kind=realType) :: minVol
@@ -71,18 +70,80 @@ module overset
      integer(kind=intType), dimension(:), allocatable :: iBuffer
 
      ! Flag if this block got allocated
-     logical :: allocated=.False.
+     logical :: allocated = .False.
+
+     ! Flag if the real/int Buffers are ready after receiving info
+     logical :: realBufferReady = .False. 
+     logical :: intBufferReady = .False. 
 
   end type oversetBlock
 
-  type fringeListType
-     type(fringeType), dimension(:), allocatable :: arr
-  end type fringeListType
+  type oversetFringe
 
-  ! These are the two main lists of derived types used for overset
-  ! assembly
-  type(oversetBlock), dimension(:), allocatable :: oBlocks
-  type(fringeListType), dimension(:), allocatable :: fringeList
+     ! Sizes
+     integer(kind=intType) :: il, jl ,kl
+
+     ! Buffer space for sending/receiving the fringes
+     real(kind=realType), dimension(:), allocatable :: rBuffer
+     integer(kind=intType), dimension(:), allocatable :: iBuffer
+
+     ! These are the coordinate of what we are searching
+    real(kind=realType), dimension(:, :), allocatable :: x
+
+    ! qualaity is the best quality that has been found from a
+    ! DONOR cell. It is initialized to large. 
+    real(kind=realType), dimension(:), allocatable :: quality
+
+    ! A flag to always force returning a donor if one exists.
+    integer(kind=intType), dimension(:), allocatable :: forceRecv
+   
+    ! origQuality. This the actual quality of the cell. 
+    real(kind=realType), dimension(:), allocatable :: origQuality
+
+    ! This is the information regarding where the cell came from. 
+    integer(kind=intType), dimension(:), allocatable :: myBlock
+    integer(kind=intType), dimension(:), allocatable :: myIndex
+
+    ! This is the information about the donor that was found. Note we
+    ! use dI, dJ, dK, short for donorI, etc.
+    integer(kind=intType), dimension(:), allocatable :: donorProc
+    integer(kind=intType), dimension(:), allocatable :: donorBlock
+    integer(kind=intType), dimension(:), allocatable :: dI
+    integer(kind=intType), dimension(:), allocatable :: dJ
+    integer(kind=intType), dimension(:), allocatable :: dK
+
+    real(kind=realType), dimension(:, :), allocatable  :: donorFrac
+
+    ! gInd are the global indices of the donor cells. We will need
+    ! these for forming the PC for the Newton Krylov solver
+    integer(kind=intType), dimension(:, :), allocatable :: gInd
+    
+    ! The status of this cell as a donor
+    integer(kind=intType), dimension(:), allocatable  :: isDonor
+
+    ! The status of this cell as a hole
+    integer(kind=intType), dimension(:), allocatable  :: isHole
+
+    ! The status of this cell as a comput cell
+    integer(kind=intType), dimension(:), allocatable  :: isCompute
+
+    ! Flag specifying if this cell is next to a wall
+    integer(kind=intType), dimension(:), allocatable  :: isWall
+
+    ! Flag specifying if this cell is a donor to cell
+    integer(kind=intType), dimension(:), allocatable  :: isWallDonor
+
+    ! Flag if this set of fringes got allocated
+    logical :: allocated = .False.
+    
+    ! Flag if the real/int Buffers are ready after receiving info
+    logical :: realBufferReady = .False. 
+    logical :: intBufferReady = .False. 
+    
+    ! The number of actual fringes that need to communicated. 
+    integer(kind=intType) :: fringeReturnSize = 0
+
+ end type oversetFringe
 
   ! This is the flattened list of the fringes next to the wall that we
   !  have actually found donors for.
@@ -100,7 +161,12 @@ module overset
   integer(kind=intType), dimension(:), allocatable :: nDomProc, cumDomProc
   integer(kind=intType) :: nDomTotal
 
-  ! The new fringe datatype
+  ! Several different MPI data types depending on the data we need to send
+
+  ! This contains only the data needed to search for coordinates
+  integer :: oversetMPISearchCoord
+
+  ! This contains all MPI fringe data
   integer :: oversetMPIFringe
 
 end module overset

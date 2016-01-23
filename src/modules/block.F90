@@ -183,13 +183,16 @@ module block
     ! This is the coordinate of what we are searching
     real(kind=realType), dimension(3) :: x
 
-    ! This is the current minimum quality of the cell. It is
-    ! initialized to the quality of the original cell
+    ! qualaity is the best quality that has been found from a
+    ! DONOR cell. It is initialized to large. 
     real(kind=realType) :: quality
 
     ! A flag to always force returning a donor if one exists.
     logical :: forceRecv
-    
+   
+    ! origQuality. This the actual quality of the cell. 
+    real(kind=realType) :: origQuality
+
     ! This is the information regarding where the cell came from. 
     integer(kind=intType) :: myBlock, myI, myJ, myK
 
