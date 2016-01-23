@@ -483,11 +483,12 @@ subroutine oversetComm(level, firstTime, coarseLevel)
            call terminate("computeInterpolationParallel", "Inconsistent Comm pattern detected.")
         end if
      end do
-
+ 
      ! Last thing to do wait for all the sends to finish 
-     call mpi_waitall(sendCount, sendRequests, MPI_STATUSES_IGNORE, ierr)
-     call ECHK(ierr, __FILE__, __LINE__)
-
+     do i=1,sendCount
+        call mpi_waitany(sendCount, sendRequests, index, status, ierr)
+        call ECHK(ierr, __FILE__, __LINE__)
+     end do
 
      ! -----------------------------------------------------------------
      ! Step 9: Well, all the searches are done, so now we can now send
@@ -582,10 +583,16 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      end do
 
      ! Last thing to do wait for all the sends and receives to finish 
-     call mpi_waitall(recvCount, recvRequests, MPI_STATUSES_IGNORE, ierr)
-     call ECHK(ierr, __FILE__, __LINE__)
-     call mpi_waitall(sendCount, sendRequests, MPI_STATUSES_IGNORE, ierr)
-     call ECHK(ierr, __FILE__, __LINE__)
+    ! Last thing to do wait for all the sends to finish 
+     do i=1,sendCount
+        call mpi_waitany(sendCount, sendRequests, index, status, ierr)
+        call ECHK(ierr, __FILE__, __LINE__)
+     end do
+
+     do i=1,recvCount
+        call mpi_waitany(recvCount, recvRequests, index, status, ierr)
+        call ECHK(ierr, __FILE__, __LINE__)
+     end do
    
      ! Now before we do the actual receives, before we need to
      ! allocate space intRecvBuff and realRecvBuff for the receive. We
@@ -713,11 +720,15 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      end do
   
      ! Now wait for the sends and receives to finish
-     call mpi_waitall(sendCount, sendRequests, MPI_STATUSES_IGNORE, ierr)
-     call ECHK(ierr, __FILE__, __LINE__)
+     do i=1,sendCount
+        call mpi_waitany(sendCount, sendRequests, index, status, ierr)
+        call ECHK(ierr, __FILE__, __LINE__)
+     end do
 
-     call mpi_waitall(recvCount, recvRequests, MPI_STATUSES_IGNORE, ierr)
-     call ECHK(ierr, __FILE__, __LINE__)
+     do i=1,recvCount
+        call mpi_waitany(recvCount, recvRequests, index, status, ierr)
+        call ECHK(ierr, __FILE__, __LINE__)
+     end do
            
      ! Process the data we just received. 
      do kk=1, nOfringeSend
