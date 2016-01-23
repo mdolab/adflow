@@ -170,6 +170,28 @@ subroutine setGlobalCellsAndNodes(level)
         enddo
      enddo
   end do
+
+  ! Determine the global block row index for each (i,j,k) node in
+  ! each local block.
+  do sps=1, nTimeIntervalsSpectral
+     do nn=1, nDom
+        call setPointers(nn, level, sps)
+        do k=1, kl
+           do j=1, jl
+              do i=1, il
+                 !modified Timespectral indexing. Put all time
+                 !instances of a give block adjacent to each other in
+                 !the matrix
+                 globalNode(i, j, k) = &
+                      nNodeBLockOffset(nn)*nTimeIntervalsSpectral + &
+                      il*jl*kl*(sps-1) + (i-1)+(j-1)*il + (k-1)*il*jl
+
+              end do
+           end do
+        end do
+     end do
+  end do
+  
   do sps=1,nTimeIntervalsSpectral
      call exchangeGlobalCells(level, sps, commPatternCell_2nd, internalCell_2nd)
   end do
