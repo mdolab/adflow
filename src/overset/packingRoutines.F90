@@ -1,3 +1,59 @@
+subroutine getOBlockBufferSizes(il, jl, kl, iSize, rSize)
+
+  ! Subroutine to get the required buffer sizes. This only uses the
+  ! block dimensions and technically doesn't have anything to do with
+  ! oBlock. This allows us to figure out the sizes and perform a
+  ! global communication before actually building the ADTrees, which
+  ! may not be that well load-balanced. 
+
+  use constants
+  implicit none
+
+  ! Input/OUtput
+  integer(kind=intType) :: il, jl ,kl
+  integer(kind=intType) :: rSize, iSize
+
+  ! Working paramters
+  integer(kind=intType) :: ie, je, ke, nBBox, nLeaves
+  
+  ! Initializeation
+  iSize = 0
+  rSize = 0
+
+  ! Create ie sizes as well
+  ie = il + 1; je = jl + 1; ke = kl+1
+
+  ! Count up the integers we want to send:
+
+  iSize = iSize + 14 ! All block indices
+
+  iSize = iSize + 8*il*jl*kl ! hexa conn
+
+  iSize = iSize + (ie+2)*(je+2)*(ke+2) ! global cell
+  
+  iSize = iSize + ie*je*ke ! nearWall
+
+  iSize = iSize + ie*je*ke ! invalidDonor
+  
+  ! Number of boxes in the ADT is the same as the number of elements
+  ! (like hexa conn (without the *8 obviously)
+  nBBox = il * jl * kl
+  nLeaves = nBBox-1 ! See ADT/adtBuild.f90
+
+  iSize = iSize + nLeaves*2 ! Two ints for the children in each leaf
+
+  ! Count up the reals we ned to send:
+  rSize = rSize + ie*je*ke ! qualDonor
+
+  rSize = rSize + 3*ie*je*ke ! xADT
+
+  rSize = rSize + nBBox*6 ! Cell bounding boxes
+
+  rSize = rSize + nLeaves*12 ! Bounding boxes for leaves
+
+  rSize = rSize + 1 ! Min block volume
+end subroutine getOBlockBufferSizes
+
 subroutine packOBlock(oBlock)
 
   use overset
@@ -13,36 +69,8 @@ subroutine packOBlock(oBlock)
   ! Working paramters
   integer(kind=intType) :: rSize, iSize, i, j, k, nHexa, nADT
 
-  iSize = 0
-  rSize = 0
-
-  ! Count up the integers we want to send:
-
-  iSize = iSize + 14 ! All block indices
-
-  iSize = iSize + size(oBlock%hexaConn)
-
-  iSize = iSize + size(oBlock%globalCell)
-  
-  iSize = iSize + size(oBlock%nearWall)
-
-  iSize = iSize + size(oBlock%invalidDonor)
-
-  iSize = iSize + oBlock%ADT%nLeaves*2 ! The two itegers for the
-  ! children in each leaf
-
-  ! Count up the reals we ned to send:
-  rSize = rSize + size(oBlock%qualDonor)
-
-  rSize = rSize + size(oBlock%xADT)
-
-  rSize = rSize + oBlock%ADT%nBBoxes*6 ! Cell bounding boxes
-
-  ! Bounding boxes for leaves
-  rSize = rSize + oBlock%ADT%nLeaves*12
-
-  rSize = rSize + 1 ! Min block volume
-
+  call getOBlockBufferSizes(oBlock%il, oBlock%jl, oBlock%kl, iSize, rSize)
+ 
   ! Allocate the buffers
   allocate(oBlock%rBuffer(rSize), oBlock%iBuffer(iSize))
 
@@ -305,3 +333,147 @@ subroutine unpackOBlock(oBlock)
   oBlock%allocated = .True.
 
 end subroutine unpackOBlock
+
+subroutine getOFringeBufferSizes(il, jl, kl, iSize, rSize)
+
+  ! Subroutine to get the required buffer sizes. This one is pretty
+  ! easy, but we use a routine to make it look the same as for hte
+  ! oBlock. Note that these bufer sizes are over-estimates. They are
+  ! the maximum possible amount of data to send. 
+
+  use constants
+  implicit none
+
+  ! Input/OUtput
+  integer(kind=intType), intent(in) :: il, jl ,kl
+  integer(kind=intType), intent(out) :: rSize, iSize
+
+  ! Working
+  integer(kind=intType) :: mm
+  
+  ! All arrays have the same size
+  mm = (il-1)*(jl-1)*(kl-1) ! nx*ny*nz
+
+  ! Initializeation
+  iSize = mm * 14 ! We need at most: donorProc, donorBlock,
+                  ! dI, dJ, dK, myIndex and 8 for gInd
+  rSize = mm * 4  ! Sending we need X an quality, receiving we need donorFrac and quality
+
+end subroutine getOFringeBufferSizes
+
+subroutine packOFringeSearchCoord(oFringe)
+
+  use overset
+  use constants
+  implicit none
+
+  ! Pack up the search coordines in this oFringe into its own buffer
+  ! so we are ready to send it.
+
+  ! Input/Output Parameters
+  type(oversetFringe), intent(inout) :: oFringe
+
+  ! Working paramters
+  integer(kind=intType) :: rSize, iSize, mm, i, ii
+
+  call getOFringeBufferSizes(oFringe%il, oFringe%jl, oFringe%kl, iSize, rSize)
+
+  ! Allocate the buffers
+  allocate(oFringe%rBuffer(rSize), oFringe%iBuffer(iSize))
+
+  mm = (oFringe%il-1)*(oFringe%jl-1)*(oFringe%kl-1)
+
+  oFringe%iBuffer(1) = oFringe%il
+  oFringe%iBuffer(2) = oFringe%jl
+  oFringe%iBuffer(3) = oFringe%kl
+  ii = 3
+
+  ! Copy the integers. Just isWall for this packing. 
+  do i=1, mm
+     ii = ii +1
+     oFringe%iBuffer(ii) = oFringe%isWall(i)
+
+     ii = ii +1
+     oFringe%iBuffer(ii) = oFringe%myIndex(i)
+  end do
+
+  ! Copy the reals
+  ii = 0
+  do i=1, mm
+     oFringe%rBuffer(ii+1) = oFringe%x(1, i)
+     oFringe%rBuffer(ii+2) = oFringe%x(2, i)
+     oFringe%rBuffer(ii+3) = oFringe%x(3, i)
+     oFringe%rBuffer(ii+4) = oFringe%quality(i)
+     ii = ii + 4
+  end do
+
+end subroutine packOFringeSearchCoord
+
+subroutine unpackOFringeSearchCoord(oFringe, mm)
+  use communication
+  use overset
+  use constants
+  implicit none
+
+  ! Pack up the search coordines in this oFringe into its own buffer
+  ! so we are ready to send it.
+
+  ! Input/Output Parameters
+  type(oversetFringe), intent(inout) :: oFringe
+  integer(kind=intType) , intent(in) :: mm
+
+  ! Working paramters
+  integer(kind=intType) :: rSize, iSize, idom, i, ii
+
+  allocate(& 
+       oFringe%x(3, mm), &
+       oFringe%quality(mm), &
+       oFringe%myBlock(mm), &
+       oFringe%myIndex(mm), &
+       oFringe%donorProc(mm), &
+       oFringe%donorBlock(mm), &
+       oFringe%dI(mm), &
+       oFringe%dJ(mm), &
+       oFringe%dK(mm), &
+       oFringe%donorFrac(3, mm), &
+       oFringe%gInd(8, mm), &    
+       oFringe%isWall(mm))
+
+  ! Initialzize default values
+  oFringe%donorProc = -1
+  oFringe%dI = -1
+  oFringe%dJ = -1
+  oFringe%dK = -1
+  oFringe%donorFrac = -one
+  oFringe%gInd = -1
+  oFringe%isWall = 0
+
+  ! Copy the integers. Just isWall and myIndex for this packing and
+  ! the sizes
+  oFringe%il = oFringe%iBuffer(1)
+  oFringe%jl = oFringe%iBuffer(2)
+  oFringe%kl = oFringe%iBuffer(3)
+  ii = 3
+  do i=1, mm
+     ii = ii + 1
+     oFringe%isWall(i) = oFringe%iBuffer(ii)
+
+     ii = ii + 1
+     oFringe%myIndex(i) = oFringe%iBuffer(ii)
+
+  end do
+
+  ! Copy the reals
+  ii = 0
+  do i=1, mm
+     oFringe%x(1, i) = oFringe%rBuffer(ii+1)
+     oFringe%x(2, i) = oFringe%rBuffer(ii+2)
+     oFringe%x(3, i) = oFringe%rBuffer(ii+3)
+     oFringe%quality(i) = oFringe%rBuffer(ii+4)
+     ii = ii + 4
+  end do
+
+  ! Flag this oFringe as being allocated:
+  oFringe%allocated = .True.
+
+end subroutine unpackOFringeSearchCoord

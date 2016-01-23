@@ -16,8 +16,7 @@ subroutine irregularCellCorrection(level, sps)
      do k=2, kl
         do j=2, jl
            do i=2, il
-              if (.not. fringes(i, j, k)%forceRecv .and. &
-                   fringes(i, j, k)%isDonor .and. &
+              if (fringes(i, j, k)%isDonor .and. &
                    fringes(i, j, k)%donorProc /= -1) then 
                  ! Clear this fringe
                  call emptyFringe(fringes(i, j, k))
