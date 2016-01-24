@@ -64,6 +64,7 @@ FILES_TO_COMPLEXIFY = \
 		 exchangeCoor.f90\
 		 exchangeCoor_d.f90\
 		 exchangeCoor_b.f90\
+		 exchangeGlobalCell.F90\
 		 exchangeCoorNumbering.f90\
 		 faceRotationMatrices.f90\
 		 finalCommStructures.f90\

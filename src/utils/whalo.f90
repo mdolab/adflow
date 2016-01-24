@@ -77,21 +77,6 @@
        call whaloMixing(level, start, end, commPressure, commVarGamma, &
                         commLamVis, commEddyVis, 1_intType)
 
-       ! Exchange the overset boundary cell data.
-
-       call wOverset(level, start, end, commPressure,       &
-                     commVarGamma, commLamVis, commEddyVis, &
-                     commPatternOverset, internalOverset, mm)
-
-       ! Average any overset orphans.
-
-       do ll=1,nTimeIntervalsSpectral
-         do nn=1,nDom
-           call setPointers(nn,level,ll)
-           call orphanAverage(start, end, commPressure, commGamma, &
-                              commLamVis, commEddyVis)
-         end do
-       end do
 
        ! If both the pressure and the total energy has been communicated
        ! compute the energy again. The reason is that both values are
@@ -136,13 +121,6 @@
                       kcBeg(mm), kcEnd(mm), correctForK)
                enddo
              endif
-           enddo
-
-           ! Now treat the overset boundary.
-
-           do ll=1,nTimeIntervalsSpectral
-             call setPointers(nn,level,ll)
-             call computeEtotBndryList(correctForK)
            enddo
 
          enddo domains
@@ -223,22 +201,11 @@
        call whaloMixing(level, start, end, commPressure, commVarGamma, &
                         commLamVis, commEddyVis, 2_intType)
 
-       ! Exchange the overset boundary cell data.
-
-       call wOverset(level, start, end, commPressure,       &
-                     commVarGamma, commLamVis, commEddyVis, &
-                     commPatternOverset, internalOverset, mm)
-
-       ! Average any overset orphans.
-
-       do ll=1,nTimeIntervalsSpectral
-         do nn=1,nDom
-           call setPointers(nn,level,ll)
-           call orphanAverage(start, end, commPressure, commGamma, &
-                              commLamVis, commEddyVis)
-         end do
-       end do
-
+       ! Exchange the overset cells
+       mm = ubound(commPatternOverset, 1)
+       call wOverset(level, start, end, commPressure, commVarGamma, &
+            commLamVis, commEddyVis, commPatternOverset, internalOverset, mm)
+ 
        ! If both the pressure and the total energy has been communicated
        ! compute the energy again. The reason is that both values are
        ! interpolated and consequently the values are not consistent.
@@ -307,13 +274,6 @@
                                   correctForK)
                enddo
              endif
-           enddo
-
-           ! Now treat the overset boundary.
-
-           do ll=1,nTimeIntervalsSpectral
-             call setPointers(nn,level,ll)
-             call computeEtotBndryList(correctForK)
            enddo
 
          enddo domains

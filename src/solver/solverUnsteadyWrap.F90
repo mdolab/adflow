@@ -175,18 +175,15 @@ subroutine initTimeStepWrap
      ! the wall distance, because he may know a priori that the
      ! changes in geometry happen quite far away from the boundary
      ! layer. This is accomplished via updateWallDistanceUnsteady.
-     ! Also note changingOverset can be true only when the grid
-     ! is changing.
 
      call updateCoordinatesAllLevels
      if(changing_Grid .and. updateWallDistanceUnsteady) &
           call updateWallDistanceAllLevels
 
      if(changingOverset) call updateOversetAllLevels
-
-     ! Added 100915
-     call updateSlidingAllLevels
-     call updateMetricsAllLevels
+     ! To be done in ALE loop
+     ! call updateSlidingAllLevels
+     ! call updateMetricsAllLevels
 
      ! --------------------------------
      ! Next do a loop to interpolated mesh for intermediate configurations
