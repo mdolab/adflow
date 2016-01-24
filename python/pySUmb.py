@@ -2936,21 +2936,26 @@ class SUMB(AeroSolver):
         # already existing (and possibly nonzero) xsdot and xvdot
         if xDvDot is not None or xSDot is not None:
             if xDvDot is not None:
-                xsdot += self.DVGeo.totalSensitivityProd(xDvDot, self.curAP.ptSetName)
+                xsdot += self.DVGeo.totalSensitivityProd(xDvDot, self.curAP.ptSetName).reshape(xsdot.shape)
             xvdot += self.mesh.warpDerivFwd(xsdot)
             useSpatial = True
 
         # Sizes for output arrays
         costSize = self.sumb.costfunctions.ncostfunction
         fSize, nCell = self.sumb.getforcesize()
-        
+
         dwdot,tmp,fdot = self.sumb.computematrixfreeproductfwd(
-            xvdot, extradot, wdot, useSpatial, useState, costSize, fSize)
+            xvdot, extradot, wdot, useSpatial, useState, costSize,  max(1, fSize))
+
+        # Explictly put fdot to nothing if we ac
+        if fSize==0:
+            fdot = numpy.zeros((0, 3))
 
         # Process the derivative of the functions
         funcsdot = {}
         for f in self.curAP.evalFuncs:
-            mapping = self.sumbCostFunctions[f.lower()]
+            basicFunc = self.sumbCostFunctions[f.lower()][1]
+            mapping = self.basicCostFunctions[basicFunc]
             funcsdot[f] = tmp[mapping - 1]
         
         # Assemble the returns

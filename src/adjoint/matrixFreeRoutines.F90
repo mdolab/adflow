@@ -912,125 +912,125 @@ end subroutine dRdwMatMult
 
 subroutine solveAdjointForRHS(inVec, outVec, nDOF, relativeTolerance)
 
-  !   use ADJointPETSc
-  !   use inputADjoint
-  !   use adjointvars
-  !   use killsignals
-  !   use constants
-  !   implicit none
+    use ADJointPETSc
+    use inputADjoint
+    use adjointvars
+    use killsignals
+    use constants
+    implicit none
 
-  !   ! Input Variables
-  !   real(kind=realType), dimension(ndof), intent(in) :: inVec
-  !   real(kind=realType), dimension(ndof), intent(out) :: outVec
-  !   real(kind=realType), intent(in) :: relativeTolerance
-  !   integer(kind=intType), intent(in) :: nDOF
+    ! Input Variables
+    real(kind=realType), dimension(ndof), intent(in) :: inVec
+    real(kind=realType), dimension(ndof), intent(out) :: outVec
+    real(kind=realType), intent(in) :: relativeTolerance
+    integer(kind=intType), intent(in) :: nDOF
+    integer(kind=intTYpe) :: adjointConvergedReason
+    ! Working variables
+    integer(kind=intType) :: ierr
 
-  !   ! Working variables
-  !   integer(kind=intType) :: ierr
+#ifndef USE_COMPLEX
 
-  ! #ifndef USE_COMPLEX
+    ! Place the arrays
+    call VecPlaceArray(psi_like1, inVec, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
 
-  !   ! Place the arrays
-  !   call VecPlaceArray(psi_like1, inVec, ierr)
-  !   call EChk(ierr,__FILE__,__LINE__)
+    call VecPlaceArray(psi_like2, outVec, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
 
-  !   call VecPlaceArray(psi_like2, outVec, ierr)
-  !   call EChk(ierr,__FILE__,__LINE__)
+    ! Zero out initial solution
+    call VecSet(psi_like2, zero, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
 
-  !   ! Zero out initial solution
-  !   call VecSet(psi_like2, zero, ierr)
-  !   call EChk(ierr,__FILE__,__LINE__)
+    ! Set desired realtive tolerance
+    call KSPSetTolerances(adjointKSP, relativeTolerance, adjAbsTol, adjDivTol, &
+         adjMaxIter, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
 
-  !   ! Set desired realtive tolerance
-  !   call KSPSetTolerances(adjointKSP, relativeTolerance, adjAbsTol, adjDivTol, &
-  !        adjMaxIter, ierr)
-  !   call EChk(ierr, __FILE__, __LINE__)
+    ! Solve (remember this is actually a transpose solve)
+    call KSPSolve(adjointKSP, psi_like1, psi_like2, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
 
-  !   ! Solve (remember this is actually a transpose solve)
-  !   call KSPSolve(adjointKSP, psi_like1, psi_like2, ierr)
-  !   call EChk(ierr, __FILE__, __LINE__)
+    call KSPGetConvergedReason(adjointKSP, adjointConvergedReason, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
 
-  !   call KSPGetConvergedReason(adjointKSP, adjointConvergedReason, ierr)
-  !   call EChk(ierr, __FILE__, __LINE__)
+    if (adjointConvergedReason ==  KSP_CONVERGED_RTOL .or. &
+         adjointConvergedReason ==  KSP_CONVERGED_ATOL .or. &
+         adjointConvergedReason ==  KSP_CONVERGED_HAPPY_BREAKDOWN) then
+       adjointFailed = .False.
+    else
+       adjointFailed = .True.
+    end if
 
-  !   if (adjointConvergedReason ==  KSP_CONVERGED_RTOL .or. &
-  !        adjointConvergedReason ==  KSP_CONVERGED_ATOL .or. &
-  !        adjointConvergedReason ==  KSP_CONVERGED_HAPPY_BREAKDOWN) then
-  !      adjointFailed = .False.
-  !   else
-  !      adjointFailed = .True.
-  !   end if
+    ! Rest arrays
+    call VecResetArray(psi_like1,  ierr)
+    call EChk(ierr,__FILE__,__LINE__)
 
-  !   ! Rest arrays
-  !   call VecResetArray(psi_like1,  ierr)
-  !   call EChk(ierr,__FILE__,__LINE__)
-
-  !   call VecResetArray(psi_like2,  ierr)
-  !   call EChk(ierr,__FILE__,__LINE__)
-
-  ! #endif
+    call VecResetArray(psi_like2,  ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+    
+#endif
 
 end subroutine solveAdjointForRHS
 
 subroutine solveDirectForRHS(inVec, outVec, nDOF, relativeTolerance)
 
-  !   use ADJointPETSc
-  !   use inputADjoint
-  !   use adjointVars
-  !   use constants
-  !   use killsignals
-  !   implicit none
+    use ADJointPETSc
+    use inputADjoint
+    use adjointVars
+    use constants
+    use killsignals
+    implicit none
 
-  !   ! Input Variables
-  !   real(kind=realType), dimension(ndof), intent(in) :: inVec
-  !   real(kind=realType), dimension(ndof), intent(out) :: outVec
-  !   real(kind=realType), intent(in) :: relativeTolerance
-  !   integer(kind=intType), intent(in) :: nDOF
+    ! Input Variables
+    real(kind=realType), dimension(ndof), intent(in) :: inVec
+    real(kind=realType), dimension(ndof), intent(out) :: outVec
+    real(kind=realType), intent(in) :: relativeTolerance
+    integer(kind=intType), intent(in) :: nDOF
+    integer(kind=intTYpe) :: adjointConvergedReason
+    ! Working variables
+    integer(kind=intType) :: ierr
 
-  !   ! Working variables
-  !   integer(kind=intType) :: ierr
+#ifndef USE_COMPLEX
 
-  ! #ifndef USE_COMPLEX
+    ! Place the arrays
+    call VecPlaceArray(psi_like1, inVec, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
 
-  !   ! Place the arrays
-  !   call VecPlaceArray(psi_like1, inVec, ierr)
-  !   call EChk(ierr,__FILE__,__LINE__)
+    call VecPlaceArray(psi_like2, outVec, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
 
-  !   call VecPlaceArray(psi_like2, outVec, ierr)
-  !   call EChk(ierr,__FILE__,__LINE__)
+    ! Zero out initial solution
+    call VecSet(psi_like2, zero, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
 
-  !   ! Zero out initial solution
-  !   call VecSet(psi_like2, zero, ierr)
-  !   call EChk(ierr,__FILE__,__LINE__)
+    ! Set desired realtive tolerance
+    call KSPSetTolerances(adjointKSP, relativeTolerance, adjAbsTol, adjDivTol, &
+         adjMaxIter, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
 
-  !   ! Set desired realtive tolerance
-  !   call KSPSetTolerances(adjointKSP, relativeTolerance, adjAbsTol, adjDivTol, &
-  !        adjMaxIter, ierr)
-  !   call EChk(ierr, __FILE__, __LINE__)
+    ! Solve (this is the transpose solve of a transpose matrix, so it's direct)
+    call KSPSolveTranspose(adjointKSP, psi_like1, psi_like2, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
 
-  !   ! Solve (this is the transpose solve of a transpose matrix, so it's direct)
-  !   call KSPSolveTranspose(adjointKSP, psi_like1, psi_like2, ierr)
-  !   call EChk(ierr, __FILE__, __LINE__)
+    call KSPGetConvergedReason(adjointKSP, adjointConvergedReason, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
 
-  !   call KSPGetConvergedReason(adjointKSP, adjointConvergedReason, ierr)
-  !   call EChk(ierr, __FILE__, __LINE__)
+    if (adjointConvergedReason ==  KSP_CONVERGED_RTOL .or. &
+         adjointConvergedReason ==  KSP_CONVERGED_ATOL .or. &
+         adjointConvergedReason ==  KSP_CONVERGED_HAPPY_BREAKDOWN) then
+       adjointFailed = .False.
+    else
+       adjointFailed = .True.
+    end if
 
-  !   if (adjointConvergedReason ==  KSP_CONVERGED_RTOL .or. &
-  !        adjointConvergedReason ==  KSP_CONVERGED_ATOL .or. &
-  !        adjointConvergedReason ==  KSP_CONVERGED_HAPPY_BREAKDOWN) then
-  !      adjointFailed = .False.
-  !   else
-  !      adjointFailed = .True.
-  !   end if
+    ! Rest arrays
+    call VecResetArray(psi_like1, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
 
-  !   ! Rest arrays
-  !   call VecResetArray(psi_like1, ierr)
-  !   call EChk(ierr,__FILE__,__LINE__)
+    call VecResetArray(psi_like2, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
 
-  !   call VecResetArray(psi_like2, ierr)
-  !   call EChk(ierr,__FILE__,__LINE__)
-
-  ! #endif
+#endif
 
 end subroutine solveDirectForRHS
 
