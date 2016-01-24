@@ -180,7 +180,7 @@ subroutine initTimeStepWrap
      if(changing_Grid .and. updateWallDistanceUnsteady) &
           call updateWallDistanceAllLevels
 
-     if(changingOverset) call updateOversetAllLevels
+     !if(changingOverset) call updateOversetAllLevels
      ! To be done in ALE loop
      ! call updateSlidingAllLevels
      ! call updateMetricsAllLevels
