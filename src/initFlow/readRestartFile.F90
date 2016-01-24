@@ -249,7 +249,7 @@
            ! overset cases because there will be an extra solution node
            ! for the nodal iblanks.
 
-           if((nSols > 1 .and. .not. oversetPresent) .or. nSols > 2) &
+           if((nSols > 1) .or. nSols > 2) &
              call returnFail("readRestartFile", &
                             "Multiple solutions present in restart file")
 

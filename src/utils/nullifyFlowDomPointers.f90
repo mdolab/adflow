@@ -62,12 +62,8 @@
        nullify(flowDoms(nn,level,sps)%l3)
        nullify(flowDoms(nn,level,sps)%groupNum)
 
-       nullify(flowDoms(nn,level,sps)%ibndry)
-       nullify(flowDoms(nn,level,sps)%idonor)
-       nullify(flowDoms(nn,level,sps)%overint)
-       nullify(flowDoms(nn,level,sps)%neighProcOver)
-       nullify(flowDoms(nn,level,sps)%neighBlockOver)
        nullify(flowDoms(nn,level,sps)%iblank)
+       nullify(flowDoms(nn,level,sps)%fringes)
 
        nullify(flowDoms(nn,level,sps)%BCData)
        nullify(flowDoms(nn,level,sps)%viscSubface)
