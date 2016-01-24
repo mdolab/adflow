@@ -178,11 +178,6 @@
          enddo
        enddo
 
-       ! Compute global cells and Nodes
-       do level=1,nLevels
-          call setGlobalCellsAndNodes(level)
-       end do
-       
        ! Initialize the halo cells if a restart is performed and the
        ! entire flow field if this is not the case.
 
@@ -207,6 +202,7 @@
        implicit none
 
        ! Initialize the dependent flow variables and the halo values.
+
        call initDepvarAndHalos(halosRead)
-  
+       
        end subroutine initFlowPart2

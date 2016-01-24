@@ -39,13 +39,13 @@ subroutine statePreAllocation(onProc, offProc, wSize, stencil, N_stencil, &
 
   ! Determine the range of onProc in dRdwT
   iRowStart = flowDoms(1, 1, 1)%globalCell(2,2,2)
-  call SetPointers(nDom, 1, nTimeIntervalsSpectral)
+  call setPointers(nDom, 1, nTimeIntervalsSpectral)
   iRowEnd   = flowDoms(nDom, 1, nTimeIntervalsSpectral)%globalCell(il, jl, kl)
 
   do nn=1, nDom
      do sps=1, nTimeIntervalsSpectral
         call setPointers(nn, level, sps)
-        ! Loop over each Cell
+        ! Loop over each real cell
         do k=2, kl
            do j=2, jl
               do i=2, il 
@@ -57,22 +57,47 @@ subroutine statePreAllocation(onProc, offProc, wSize, stencil, N_stencil, &
                  do jj=1, N_stencil
                     
                     ! Determine the cell we are dealing with 
-                    iii = stencil(jj, 1)
-                    jjj = stencil(jj, 2)
-                    kkk = stencil(jj, 3)
+                    iii = stencil(jj, 1) + i
+                    jjj = stencil(jj, 2) + j 
+                    kkk = stencil(jj, 3) + k 
                     
-                    ! Check if it is onProc
-                    if (globalCell(i + iii, j + jjj, k + kkk) >= 0) then ! Real cell
-                       if (globalCell(i + iii, j + jjj, k+kkk) >= irowStart .and. &
-                            globalCell(i + iii, j + jjj, k+kkk) <= irowEnd) then
-                          
-                          ! Increase onProc
-                          onProc(ii) = onProc(ii) + 1
-                       else
-                          ! Increase offProc
-                          offProc(ii) = offProc(ii) + 1
+                    ! Check if the cell in question is a fringe or not:
+                    if (iblank(iii, jjj, kkk) == 1) then 
+
+                       ! Check if it is onProc
+                       if (globalCell(iii, jjj, kkk) >= 0) then ! Real cell
+
+                          if (globalCell(iii, jjj, kkk) >= irowStart .and. &
+                               globalCell(iii, jjj, kkk) <= irowEnd) then
+                             
+                             ! Cell is on processor
+                             onProc(ii) = onProc(ii) + 1
+                          else
+                             ! Cell is off processor
+                             offProc(ii) = offProc(ii) + 1
+                          end if
                        end if
+
+                    else if (iblank(iii, jjj, kkk) == -1) then 
+                       ! Fringe cell. We won't actually be putting the
+                       ! values at this location, but we will looop
+                       ! here over the donors for this fringe cell and
+                       ! add non-zero entries as necessary. We still
+                       ! have to do the same onProc/offProc check as
+                       ! above since while the donor for a fringe cell
+                       ! will be from another block that block could
+                       ! be on-processor or off-processor. 
+                       onProc(ii) = onProc(ii) + 1
+
+                    else if (iblank(iii, jjj, kkk) == 0) then 
+                       ! blanked cell. We just have the single
+                       ! identity on the diagonal block. This will of
+                       ! course always be onProc. 
+                       onProc(ii) = onProc(ii) + 1
                     end if
+                       
+
+
                  end do ! Stencil Loop
               end do ! I loop
            end do ! J loop

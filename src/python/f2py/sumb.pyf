@@ -529,8 +529,6 @@ python module libsumb
          integer(kind=inttype) :: sendbuffersize
          integer(kind=inttype) :: recvbuffersize_1to1
          integer(kind=inttype) :: recvbuffersize
-         integer(kind=inttype) :: sendbuffersizeover
-         integer(kind=inttype) :: recvbuffersizeover
          real(kind=realtype) allocatable,dimension(:) :: sendbuffer
          real(kind=realtype) allocatable,dimension(:) :: recvbuffer
          integer allocatable,dimension(:) :: sendrequests
@@ -613,6 +611,7 @@ python module libsumb
          logical :: writefarfield
          logical :: viscoussurfacevelocities
          logical :: slicefiletractions
+         logical :: nodaloutput
          integer(kind=inttype) parameter,optional :: precisionsingle=1
          logical optional :: firstwrite=.true.
          integer(kind=inttype) :: fileformatwrite
@@ -835,6 +834,12 @@ python module libsumb
          logical :: writeunsteadysurfspectral
          real(kind=realtype) allocatable,dimension(:,:,:) :: rotmatrixspectral
        end module inputtimespectral
+
+       module inputoverset
+         integer(kind=inttype) :: oversetinterpolation
+         integer(kind=inttype) parameter, optional :: linear=1
+         integer(kind=inttype) parameter, optional :: quadratic=2
+       end module inputoverset
        
        module inputunsteady ! in :test:inputParam.f90
          use accuracy
@@ -850,16 +855,6 @@ python module libsumb
          integer(kind=inttype) :: ntimestepsfine
          integer(kind=inttype) :: ntimestepscoarse
        end module inputunsteady
-
-       module inputoverset ! in :sumb:../../modules/inputParam.f90
-         use precison
-         integer(kind=inttype) parameter,optional :: trilinear=1_inttype
-         logical :: oversetdonorsareguesses
-         logical :: avgrestrictresforblanks
-         integer(kind=inttype) :: oversetinterptype
-         integer(kind=inttype) :: oversetinterptypecoarse
-         real(kind=realtype) :: allowabledonorquality
-       end module inputoverset
 
        module iteration ! in :sumb:../../modules/iteration.f90
          use precision
@@ -882,7 +877,6 @@ python module libsumb
          logical :: standalonemode
          logical :: changing_grid
          logical :: deforming_grid
-         logical :: changingoverset
          logical optional :: pv3initialized=.false.
          integer(kind=inttype) :: noldsolavail
          integer(kind=inttype) :: noldlevels

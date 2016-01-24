@@ -29,6 +29,7 @@
        use interfaceGroups
        use section
        use wallDistanceData
+       use overset
        implicit none
 !
 !      Local variables.
@@ -134,7 +135,7 @@
 
        mm = nTimeIntervalsSpectral
        allocate(commPatternOverset(nn,mm), internalOverset(nn,mm), &
-                stat=ierr)
+            overlapMatrix(nn, mm), stat=ierr)
        if(ierr /= 0)                     &
          call returnFail("preprocessing", &
                         "Memory allocation failure for commOverset")
@@ -196,6 +197,8 @@
        wallDistanceDataAllocated = .False.
        updateWallAssociation = .True. 
        
+       ! Nullify the wallFringe poiter as initialization
+       nullify(wallFringes, localWallFringes)
 
        ! Loop over the number of levels and perform a lot of tasks.
        ! See the corresponding subroutine header, although the
@@ -203,11 +206,6 @@
 
        do level=1,nLevels
          call xhalo(level)
-         if (level == 1) then
-           call oversetComm(level, .true., .false.)
-         else
-           call oversetComm(level, .true., .true.)
-         end if
          call slidingComm(level, .true.)
          call allocateMetric(level)
          call metric(level)
@@ -218,19 +216,15 @@
          call viscSubfaceInfo(level)
          call determineAreaLevel0Cooling(level)
          call determineNcellGlobal(level)
+         call setGlobalCellsAndNodes(level)
+          
+         if (level == 1) then
+           call oversetComm(level, .true., .false.)
+         else
+           call oversetComm(level, .true., .true.)
+         end if
+
        enddo
-
-       ! Before heading to the solver, set all the boundary iblanks
-       ! for the levels just updated to 0.
-
-       do mm=1,nTimeIntervalsSpectral
-         do level=1,nLevels
-           do nn=1,nDom
-             call setPointers(nn, level, mm)
-             call changeIblanks(.false., 0_intType)
-           end do
-         end do
-       end do
 
        end subroutine preprocessing
 
