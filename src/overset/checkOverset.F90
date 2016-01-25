@@ -46,7 +46,7 @@ subroutine checkOverset (level, sps)
 
                  end do stencilLoop
                  if (ibval /= magic) then
-                    print *,'Error in connectivity: ', nn, i, j, k, ibval
+                    print *,'Error in connectivity: ', nbkglobal, i+iBegOR-1, j+jBegOr-1, k+kBegOr-1, ibval
                     !stop
                  end if
               end if

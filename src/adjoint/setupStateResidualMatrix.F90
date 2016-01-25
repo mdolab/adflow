@@ -52,7 +52,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   integer(kind=intType) :: ierr, nn, sps, sps2, i, j, k, l, ll, ii, jj, kk
   integer(kind=intType) :: nColor, iColor, jColor, irow, icol, fmDim, frow
   integer(kind=intType) :: nTransfer, nState, tmp, icount
-  integer(kind=intType) :: n_stencil, i_stencil
+  integer(kind=intType) :: n_stencil, i_stencil, m
   integer(kind=intType), dimension(:, :), pointer :: stencil
   real(kind=realType) :: delta_x, one_over_dx
 
@@ -64,11 +64,11 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   real(kind=realType), dimension(:,:), allocatable :: blk
 #endif
   integer(kind=intType) :: liftIndex
-  integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, mm, colInd
+  integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, mm, cols(8), nCol
   logical :: resetToRANS
-  real :: val
-
-  ! Setup number of state variable based on turbulence assumption
+  real(kind=realType) :: weights(8)
+  
+    ! Setup number of state variable based on turbulence assumption
   if ( frozenTurb ) then
      nState = nwf
   else
@@ -116,7 +116,8 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
               do i=2, il
                  if (iblank(i, j, k) /= 1) then 
                     iRow = flowDoms(nn, level, sps)%globalCell(i, j, k)
-                    iCol = iRow
+                    cols(1) = irow
+                    nCol = 1
                     call setBlock(blk)
                  end if
               end do
@@ -194,7 +195,6 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   end if
   ! Master Domain Loop
   domainLoopAD: do nn=1, nDom
-
      ! Set pointers to the first timeInstance...just to getSizes
      call setPointers(nn, level, 1)
      ! Set unknown sizes in diffSizes for AD routine
@@ -340,9 +340,23 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
            kLoop: do k=0, kb
               jLoop: do j=0, jb
                  iLoop: do i=0, ib
-                    colBlank: if (flowDoms(nn, level, sps)%iblank(i, j, k) == 1) then 
+                    colBlank: if (flowDoms(nn, level, sps)%iblank(i, j, k) /= 0) then 
 
-                       iCol = flowDoms(nn, level, sps)%globalCell(i, j, k)
+                       ! If the cell we perturned ('iCol') is an
+                       ! interpolated cell, we don't actually use
+                       ! iCol, rather we use the 8 real donors that
+                       ! comprise the cell's value. 
+                       if (flowDoms(nn, level, sps)%iblank(i, j, k) == 1) then 
+                          cols(1) = flowDoms(nn, level, sps)%globalCell(i, j, k)
+                          nCol = 1
+                       else
+                          do m=1,8
+                             cols(m) = flowDoms(nn, level, sps)%fringes(i, j, k)%gInd(m)
+                          end do
+                          call fracToWeights(flowDoms(nn, level, sps)%fringes(i, j, k)%donorFrac, &
+                                     weights)
+                          nCol = 8
+                       end if
 
                        colorCheck: if (flowdomsd(nn, 1, 1)%color(i, j, k) == icolor) then! &
                           !.and. icol >= 0) then
@@ -415,6 +429,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   end if
 
   ! PETSc Matrix Assembly and Options Set
+
   call MatAssemblyBegin(matrix, MAT_FINAL_ASSEMBLY, ierr)
   call EChk(ierr, __FILE__, __LINE__)
   call MatAssemblyEnd  (matrix, MAT_FINAL_ASSEMBLY, ierr)
@@ -452,6 +467,7 @@ contains
     integer(kind=intType) :: i, j
     logical :: zeroFlag
     zeroFlag = .False.
+
 #ifndef USE_COMPLEX
     ! Check if the blk is all zeros
 
@@ -468,26 +484,46 @@ contains
     if (isnan(sum(blk))) then
        print *,'Bad Block:',blk
        print *,'irow:',irow
-       print *,'icol',icol
+       print *,'icol',cols(1:ncol)
        print *,'nn:',nn
        print *,'ijk:',i,j,k
        call EChk(1, __FILE__, __LINE__)
     end if
 #endif
 
-    if (.not. zeroFlag) then
-       if (useTranspose) then
-          blk = transpose(blk)
-          call MatSetValuesBlocked(matrix, 1, icol, 1, irow, blk, &
-               ADD_VALUES, ierr)
-          call EChk(ierr, __FILE__, __LINE__)
+     if (.not. zeroFlag) then
+       if (nCol == 1) then 
+          if (useTranspose) then
+             blk = transpose(blk)
+             call MatSetValuesBlocked(matrix, 1, cols(1), 1, irow, blk, &
+                  ADD_VALUES, ierr)
+             call EChk(ierr, __FILE__, __LINE__)
+          else
+             call MatSetValuesBlocked(matrix, 1, irow, 1, cols(1), blk, &
+                  ADD_VALUES, ierr)
+             call EChk(ierr, __FILE__, __LINE__)
+          end if
        else
-          call MatSetValuesBlocked(matrix, 1, irow, 1, icol, blk, &
-               ADD_VALUES, ierr)
-          call EChk(ierr, __FILE__, __LINE__)
+          if (useTranspose) then
+             blk = transpose(blk)
+             do m=1, ncol
+                if (cols(m) >= 0) then 
+                   call MatSetValuesBlocked(matrix, 1, cols(m), 1, irow, blk*weights(m), &
+                        ADD_VALUES, ierr)
+                   call EChk(ierr, __FILE__, __LINE__)
+                end if
+             end do
+          else
+             do m=1, ncol
+                if (cols(m) >= 0) then 
+                   call MatSetValuesBlocked(matrix, 1, irow, 1, cols(m), blk*weights(m), &
+                        ADD_VALUES, ierr)
+                   call EChk(ierr, __FILE__, __LINE__)
+                end if
+             end do
+          end if
        end if
     end if
-
   end subroutine setBlock
 #endif
 end subroutine setupStateResidualMatrix

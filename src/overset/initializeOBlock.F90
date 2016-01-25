@@ -187,7 +187,14 @@ subroutine initializeOBlock(oBlock, nn)
         end do
      end do
   end do
-  oBlock%globalCell = globalCell
+
+  do k=0,kb
+     do j=0,jb
+        do i=0,ib
+           oBlock%globalCell(i, j, k) = globalCell(i, j, k)
+        end do
+     end do
+  end do
 
   ! Now setup the data for the ADT
   nHexa = il * jl * kl
