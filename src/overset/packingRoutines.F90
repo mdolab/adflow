@@ -361,7 +361,7 @@ subroutine getOFringeBufferSizes(il, jl, kl, iSize, rSize)
 
 end subroutine getOFringeBufferSizes
 
-subroutine packOFringeSearchCoord(oFringe)
+subroutine packOFringe(oFringe)
 
   use overset
   use constants
@@ -407,9 +407,9 @@ subroutine packOFringeSearchCoord(oFringe)
      ii = ii + 4
   end do
 
-end subroutine packOFringeSearchCoord
+end subroutine packOFringe
 
-subroutine unpackOFringeSearchCoord(oFringe, mm)
+subroutine unpackOFringe(oFringe)
   use communication
   use overset
   use constants
@@ -420,10 +420,16 @@ subroutine unpackOFringeSearchCoord(oFringe, mm)
 
   ! Input/Output Parameters
   type(oversetFringe), intent(inout) :: oFringe
-  integer(kind=intType) , intent(in) :: mm
 
   ! Working paramters
-  integer(kind=intType) :: rSize, iSize, idom, i, ii
+  integer(kind=intType) :: rSize, iSize, idom, i, ii, mm
+
+  ! Set the sizes of this oFringe
+  oFringe%il = oFringe%iBuffer(1)
+  oFringe%jl = oFringe%iBuffer(2)
+  oFringe%kl = oFringe%iBuffer(3)
+
+  mm = (oFringe%il-1)*(oFringe%jl-1)*(oFringe%kl-1)
 
   allocate(& 
        oFringe%x(3, mm), &
@@ -448,19 +454,13 @@ subroutine unpackOFringeSearchCoord(oFringe, mm)
   oFringe%gInd = -1
   oFringe%isWall = 0
 
-  ! Copy the integers. Just isWall and myIndex for this packing and
-  ! the sizes
-  oFringe%il = oFringe%iBuffer(1)
-  oFringe%jl = oFringe%iBuffer(2)
-  oFringe%kl = oFringe%iBuffer(3)
-  ii = 3
+  ii = 3 ! Already copied out the sizes
   do i=1, mm
      ii = ii + 1
      oFringe%isWall(i) = oFringe%iBuffer(ii)
 
      ii = ii + 1
      oFringe%myIndex(i) = oFringe%iBuffer(ii)
-
   end do
 
   ! Copy the reals
@@ -476,4 +476,75 @@ subroutine unpackOFringeSearchCoord(oFringe, mm)
   ! Flag this oFringe as being allocated:
   oFringe%allocated = .True.
 
-end subroutine unpackOFringeSearchCoord
+end subroutine unpackOFringe
+
+
+subroutine getOWallBufferSizes(il, jl, kl, iSize, rSize)
+
+  ! Subroutine to get the required buffer sizes. This one is pretty
+  ! easy, but we use a routine to make it look the same as for hte
+  ! oBlock. Note that these bufer sizes are over-estimates. They are
+  ! the maximum possible amount of data to send. 
+
+  use constants
+  implicit none
+
+  ! Input/OUtput
+  integer(kind=intType), intent(in) :: il, jl ,kl
+  integer(kind=intType), intent(out) :: rSize, iSize
+
+  ! Working
+  integer(kind=intType) :: mm
+  
+  iSize = 3
+  rSize = 0
+
+end subroutine getOWallBufferSizes
+
+subroutine packOWall(oWall)
+
+  use overset
+  use constants
+  implicit none
+
+  ! Pack up the search coordines in this oFringe into its own buffer
+  ! so we are ready to send it.
+
+  ! Input/Output Parameters
+  type(oversetWall), intent(inout) :: oWall
+
+  ! Working paramters
+  integer(kind=intType) :: rSize, iSize, mm, i, ii
+
+  call getOWallBufferSizes(oWall%il, oWall%kl, oWall%kl, isize, rSize)
+  
+  ! Allocate the buffers
+  allocate(oWall%rBuffer(rSize), oWall%iBuffer(iSize))
+
+  oWall%iBuffer(1) = oWalL%il
+  oWall%iBuffer(2) = oWalL%jl
+  oWall%iBuffer(3) = oWalL%kl
+
+end subroutine packOWall
+
+subroutine unpackOWall(oWall)
+
+  use overset
+  use constants
+  implicit none
+
+  ! Input/Output Parameters
+  type(oversetFringe), intent(inout) :: oWall
+
+  ! Working paramters
+  integer(kind=intType) :: rSize, iSize, idom, i, ii, mm
+
+  ! Set the sizes of this oFringe
+  oWall%il = oWall%iBuffer(1)
+  oWall%jl = oWall%iBuffer(2)
+  oWall%kl = oWall%iBuffer(3)
+
+  ! Flag this oWall as being allocated:
+  oWall%allocated = .True.
+
+end subroutine unpackOWall

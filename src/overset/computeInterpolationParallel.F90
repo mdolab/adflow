@@ -39,8 +39,9 @@ subroutine oversetComm(level, firstTime, coarseLevel)
   integer(kind=intType), dimension(:), allocatable :: cumFringeRecv, fringeRecvSizes
   type(oversetBlock), dimension(:), allocatable :: oBlocks
   type(oversetFringe), dimension(:), allocatable :: oFringes
+  type(oversetWall), dimension(:), allocatable :: oWalls
   type(fringeType), dimension(:), allocatable :: localFringes
-  logical, dimension(:), allocatable :: oBlockReady, oFringeReady
+  logical, dimension(:), allocatable :: oBlockReady, oFringeReady, oWallReady
   logical :: computeCellFound
   type(CSRMatrix), pointer :: overlap
   type(CSRMatrix) :: overlapTranspose
@@ -49,10 +50,13 @@ subroutine oversetComm(level, firstTime, coarseLevel)
   integer status(MPI_STATUS_SIZE) 
   integer(kind=intType) :: MAGIC, source, tag, iRecv
   logical :: flag
-  integer(kind=intType) :: nOFringeSend, nOFringeRecv, nOBlockSend, nOBlockRecv
+  integer(kind=intType) :: nOFringeSend, nOFringeRecv
+  integer(kind=intType) :: nOBlockSend, nOBlockRecv
+  integer(kind=intType) :: nOWallSend, nOWallRecv
   integer(kind=intType), dimension(:, :), allocatable :: oBlockSendList, oBlockRecvList
-  integer(kind=intType), dimension(:, :), allocatable :: fringeSendList, fringeRecvList
-  integer(kind=intType), dimension(:), allocatable :: rBufferSizes, iBufferSizes, fringeSizes
+  integer(kind=intType), dimension(:, :), allocatable :: oFringeSendList, oFringeRecvList
+  integer(kind=intType), dimension(:, :), allocatable :: oWallSendList, oWallRecvList
+  integer(kind=intType), dimension(:, :), allocatable :: bufSizes
   integer(kind=intType), dimension(:, :), allocatable :: recvInfo
   integer(kind=intType), dimension(:), allocatable :: intSendBuf, intRecvBuf
   real(kind=realType), dimension(:), allocatable :: realSendBuf, realRecvBuf
@@ -141,11 +145,8 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      ! processors the size of the int Buffer, real Buffer and the
      ! number of fringes we can expect to receive.
 
-     allocate(rBufferSizes(nDomTotal), &
-              iBufferSizes(nDomtotal), &
-              fringeSizes(nDomTotal), &
-              tmpInt2D(nDomTotal, 3), &
-              tmpReal(size(overlap%data)))
+     allocate(bufSizes(nDomTotal, 6), tmpInt2D(nDomTotal, 6), &
+          tmpReal(size(overlap%data)))
 
      ! Initialization 
      tmpReal = zero
@@ -160,28 +161,20 @@ subroutine oversetComm(level, firstTime, coarseLevel)
         end if
         ! Sizes
         call getOBlockBufferSizes(il, jl, kl, tmpInt2D(iDom, 1), tmpInt2D(iDom, 2))
-        tmpInt2D(iDom, 3) = nx*ny*nz
+        call getOFringeBufferSizes(il, jl, kl, tmpInt2D(iDom, 3), tmpInt2D(iDom, 4))
+        call getOWallBufferSizes(il, jl, kl, tmpInt2D(iDom, 5), tmpInt2D(iDom, 6))
      end do
      
      if (.not. firstTime) then 
         tmpReal = overlap%data
      end if
 
-
-     ! Determine the total search costs for each proc
+     ! Determine the total search costs for each proc and all the bufferSizes
      call mpi_allreduce(tmpReal, overlap%data, overlap%nnz, sumb_real, MPI_SUM, &
           sumb_comm_world, ierr)
      call ECHK(ierr, __FILE__, __LINE__)
 
-     call mpi_allreduce(tmpInt2D(:, 1), iBufferSizes, nDomTotal, sumb_integer, MPI_SUM, &
-          sumb_comm_world, ierr)
-     call ECHK(ierr, __FILE__, __LINE__)
-
-     call mpi_allreduce(tmpInt2D(:, 2), rBufferSizes, nDomTotal, sumb_integer, MPI_SUM, &
-          sumb_comm_world, ierr)
-     call ECHK(ierr, __FILE__, __LINE__)
-
-     call mpi_allreduce(tmpInt2D(:, 3), fringeSizes, nDomTotal, sumb_integer, MPI_SUM, &
+     call mpi_allreduce(tmpInt2D, bufSizes, 6*nDomTotal, sumb_integer, MPI_SUM, &
           sumb_comm_world, ierr)
      call ECHK(ierr, __FILE__, __LINE__)
 
@@ -265,15 +258,16 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      ! should be ok.
      ! -----------------------------------------------------------------
 
-     allocate(oBlocks(nDomTotal), oFringes(nDomTotal))
+     allocate(oBlocks(nDomTotal), oFringes(nDomTotal), oWalls(nDomTotal))
 
      ! Thse variables keep track of if the block/fringes are
      ! ready. Initialized to false and only flipped when we are sure
      ! they are ready to be used. 
 
-     allocate(oBlockReady(nDomTotal), oFringeReady(nDomTotal))
+     allocate(oBlockReady(nDomTotal), oFringeReady(nDomTotal), oWallReady(nDomTotal))
      oBlockReady = .False.
      oFringeReady = .False.
+     oWallReady = .False.
 
      ! Allocate space for the localWallFringes. localWallFringes keeps
      ! track of donors for cells that are next to a wall. These must
@@ -295,8 +289,12 @@ subroutine oversetComm(level, firstTime, coarseLevel)
         oBlockReady(iDom) = .True.
 
         call initializeFringes(oFringes(iDom), nn, level, sps)
-        call packOFringeSearchCoord(oFringes(iDom))
+        call packOFringe(oFringes(iDom))
         oFringeReady(iDom) = .True. 
+
+        call initializeOWall(oWalls(iDom), nn, level, sps)
+        call packOWall(oWalls(iDom))
+        oWallReady(iDom) = .True. 
 
      end do
 
@@ -304,20 +302,25 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      ! for oBlock comm and the fringe comm. These are transpose of
      ! each other. Just overestimate the sizes of the lists. 
 
-     ! For sending, the worse case is sending all my blocks/fringes to
+     ! For sending, the worse case is sending all my blocks/fringes/walls to
      ! everyone but myself:
-     allocate(oBlockSendList(2, nDom*(nProc-1)), fringeSendList(2, nDom*(nProc-1)))
+     ii = nDom*(nProc-1)
+     allocate(oBlockSendList(2, ii), oFringeSendList(2, ii), oWallSendList(2, ii))
 
-     ! For receiving, the worse receive is all the blocks/fringes I don't already have:
-     allocate(oBlockRecvList(2, nDomTotal - nDom), fringeRecvList(2, nDomTotal - nDom))
+     ! For receiving, the worse receive is all the blocks/fringes/wall I
+     ! don't already have:
+     ii = nDomTotal - nDom
+     allocate(oBlockRecvList(2, ii), oFringeRecvList(2, ii), oWallRecvList(2, ii))
 
      call getCommPattern(overlap, overlapTranspose, &
           oblockSendList, size(oBlockSendList, 2),  nOblockSend, &
           oBlockRecvList, size(oBlockRecvList, 2), nOblockRecv)
      call getCommPattern(overlapTranspose, overlap, &
-          fringeSendList, size(fringeSendList, 2), nOFringeSend, &
-          fringeRecvList, size(fringeRecvList, 2), nOFringeRecv)
-     
+          oFringeSendList, size(oFringeSendList, 2), nOFringeSend, &
+          oFringeRecvList, size(oFringeRecvList, 2), nOFringeRecv)
+     nOWallSend = 0
+     nOWallRecv = 0
+
      ! Done with the transposed matrix
      call deallocateCSRMatrix(overlapTranspose)
 
@@ -327,7 +330,9 @@ subroutine oversetComm(level, firstTime, coarseLevel)
 
      ! Allocate the exact space for our send and recv requests. Note
      ! that for the oBlocks, two values are set, real and integer. 
-     nn = max(2*nOBlockSend + 2*nOFringeSend, 2*nOBlockRecv + 2*nOfringeRecv, nProc)
+     nn = max(nProc, &
+          2*nOBlockSend + 2*nOFringeSend + 2*nOWallSend, &
+          2*nOBlockRecv + 2*nOfringeRecv + 2*nOWallRecv)
      if (allocated(sendRequests)) then 
         deallocate(sendRequests, recvRequests)
      end if
@@ -335,97 +340,50 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      allocate(sendRequests(nn), recvRequests(nn))
      allocate(recvInfo(2, nn))
 
-     ! Post all the oBlock iSends
+     ! Post all the oBlock/oFringe/oWall iSends
      sendCount = 0
      do jj=1, nOblockSend
-
         iProc = oBlockSendList(1, jj)
         iDom = oBlockSendList(2, jj)
-        tag = iDom + MAGIC
-
-        sendCount = sendCount + 1
-        call mpi_isend(oBlocks(iDom)%rBuffer, rBufferSizes(iDom), sumb_real, &
-             iProc, tag, SUmb_comm_world, sendRequests(sendCount), ierr)
-        call ECHK(ierr, __FILE__, __LINE__)
-
-        tag = iDom + 2*MAGIC
-        sendCount = sendCount + 1
-        call mpi_isend(oBlocks(iDom)%iBuffer, iBufferSizes(iDom), sumb_integer, &
-             iProc, tag, SUmb_comm_world, sendRequests(sendCount), ierr)
-        call ECHK(ierr, __FILE__, __LINE__)
+        call sendOBlock(oBlocks(iDom), iDom, iProc, 0, sendCount)
      end do
 
-     ! Post all the fringe iSends
      do jj=1, nOFringeSend
-
-        iProc = fringeSendList(1, jj)
-        iDom = fringeSendList(2, jj)
-        tag = iDom + 3*MAGIC
-
-        sendCount = sendCount + 1
-        call mpi_isend(oFringes(iDom)%rBuffer, 4*fringeSizes(iDom), sumb_real, &
-             iProc, tag, SUmb_comm_world, sendRequests(sendCount), ierr)
-        call ECHK(ierr, __FILE__, __LINE__)
-
-        tag = iDom + 4*MAGIC
-        sendCount = sendCount + 1
-        call mpi_isend(oFringes(iDom)%iBuffer, 2*fringeSizes(iDom)+3, sumb_integer, &
-             iProc, tag, SUmb_comm_world, sendRequests(sendCount), ierr)
-        call ECHK(ierr, __FILE__, __LINE__)
+        iProc = oFringeSendList(1, jj)
+        iDom = oFringeSendList(2, jj)
+        call sendOFringe(oFringes(iDom), iDom, iProc, MAGIC, sendCount)
      end do
 
-     ! Post all the oBlock receives. Before posting the actual
+     do jj=1, nOWallSend
+        iProc = oFringeSendList(1, jj)
+        iDom = oFringeSendList(2, jj)
+        call sendOWall(oWalls(iDom), iDom, iProc, 2*MAGIC, sendCount)
+     end do
+        
+     ! Post all the oBlock/oFringe/oWall receives. Before posting the actual
      ! receive, allocate the receiving buffer. 
      recvCount = 0
      do jj=1, nOBlockRecv
-
         iProc = oBlockRecvList(1, jj)
         iDom = oBlockRecvList(2, jj)
-        tag = iDom + MAGIC
-      
-        allocate(oBLocks(iDom)%rBuffer(rBufferSizes(iDom)), &
-             oBlocks(iDom)%iBuffer(iBufferSizes(iDom)))
- 
-        recvCount = recvCount + 1
-        call mpi_irecv(oBlocks(iDom)%rBuffer, rBufferSizes(iDom), sumb_real, &
-             iProc, tag, SUmb_comm_world, recvRequests(recvCount), ierr)
-        call ECHK(ierr, __FILE__, __LINE__)
-        recvInfo(:, recvCount) = (/iDom, 1/) ! 1 for oblock real recv
-
-        tag = iDom + 2*MAGIC
-        recvCount = recvCount + 1
-        call mpi_irecv(oBlocks(iDom)%iBuffer, iBufferSizes(iDom), sumb_integer, &
-             iProc, tag, SUmb_comm_world, recvRequests(recvCount), ierr)
-        call ECHK(ierr, __FILE__, __LINE__)
-        recvInfo(:, recvCount) = (/iDom, 2/) ! 2 for oblock int recv
+        call recvOBlock(oBlocks(iDom), iDom, iProc, 0, &
+             bufSizes(iDom, 1), bufSizes(iDom, 2), recvCount, recvInfo)
      end do
 
-     ! Post all the fringe iRecvs. Again, allocate the receiving space
-     ! before posting the actual receive. 
      do jj=1, nOFringeRecv
-
-        iProc = fringeRecvList(1, jj)
-        iDom = fringeRecvList(2, jj)
-
-        iSize = fringeSizes(iDom)*14
-        rSize = fringeSizes(iDom)*4
-        allocate(oFringes(iDom)%rBuffer(rSize), oFringes(iDom)%iBuffer(iSize))
-
-        tag = iDom + 3*MAGIC
-        recvCount = recvCount + 1
-        call mpi_irecv(oFringes(iDom)%rBuffer, 4*fringeSizes(iDom), sumb_real, &
-             iProc, tag, SUmb_comm_world, recvRequests(recvCount), ierr)
-        call ECHK(ierr, __FILE__, __LINE__)
-        recvInfo(:, recvCount) = (/iDom, 3/) ! 3 for fringe real recv
-
-        tag = iDom + 4*MAGIC
-        recvCount = recvCount + 1
-        call mpi_irecv(oFringes(iDom)%iBuffer, 2*fringeSizes(iDom)+3, sumb_integer, &
-             iProc, tag, SUmb_comm_world, recvRequests(recvCount), ierr)
-        call ECHK(ierr, __FILE__, __LINE__)
-        recvInfo(:, recvCount) = (/iDom, 4/) ! 4 for fringe real recv
+        iProc = oFringeRecvList(1, jj)
+        iDom = oFringeRecvList(2, jj)
+        call recvOFringe(oFringes(iDom), iDom, iProc, MAGIC, &
+             bufSizes(iDom, 3), bufSizes(iDom, 4), recvCount, recvInfo)
      end do
-     
+
+     do jj=1, nOWallRecv
+        iProc = oWallRecvList(1, jj)
+        iDom = oWallRecvList(2, jj)
+        call recvOWall(oWalls(iDom), iDom, iProc, 2*MAGIC, &
+             bufSizes(iDom, 5), bufSizes(iDom, 6), recvCount, recvInfo)
+     end do
+
      ! Before we start waiting for the receives to finish, we can see
      ! if we can do any searches with the blocks/fringes we already
      ! have. Call the internal routine for this.
@@ -441,22 +399,20 @@ subroutine oversetComm(level, firstTime, coarseLevel)
         ! Global domain index of the recv that finished
         iDom = recvInfo(1, index)
 
-        ! Check which type of receive just finished. 
+        ! Check which type of receive just finished and flag them as
+        ! being complete.
         if     (recvInfo(2, index) == 1) then 
-           ! oBlock Real receive. Flag the realBuffer as ready in oBlock
            oBlocks(iDom)%realBufferReady = .True. 
-
         else if (recvInfo(2, index) == 2) then 
-           ! oBlock Int receive. Flag the intBuffer as ready in oBlock
            oBlocks(iDom)%intBufferReady = .True. 
-
         else if (recvInfo(2, index) == 3) then 
-           ! oFringe Real receive. Flag the realBuffer as ready in oFringe
            oFringes(iDom)%realBufferReady = .True. 
-
         else if (recvInfo(2, index) == 4) then 
-           ! oFringe Int receive. Flag the intBuffer as ready in oFringe
            oFringes(iDOm)%intBufferReady = .True. 
+        else if (recvInfo(2, index) == 5) then 
+           oFringes(iDom)%realBufferReady = .True. 
+        else if (recvInfo(2, index) == 6) then 
+           oFringes(iDom)%intBufferReady = .True. 
         end if
 
         ! If both int and real buffers are received, we can unpack the
@@ -471,7 +427,15 @@ subroutine oversetComm(level, firstTime, coarseLevel)
         ! oFringe and flag it as ready.
         if (oFringes(iDom)%realBufferReady .and. oFringes(iDom)%intBufferReady .and. &
              .not.oFringes(iDom)%allocated) then 
-           call unpackOFringeSearchCoord(oFringes(iDom), fringeSizes(iDom))
+           call unpackOFringe(oFringes(iDom))
+           oFringeReady(iDom) = .True.
+        end if
+
+        ! If both int and real buffers are received, we can unpack the
+        ! oWall and flag it as ready.
+        if (oWalls(iDom)%realBufferReady .and. oWalls(iDom)%intBufferReady .and. &
+             .not.oWalls(iDom)%allocated) then 
+           call unpackOWall(oWalls(iDom))
            oFringeReady(iDom) = .True.
         end if
 
@@ -503,13 +467,13 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      ! make a separate pass. Essentially this *is* the packing routine.
      ! -----------------------------------------------------------------
 
-     do iDom=1,nDomTotal
+     do iDom=1, nDomTotal
         if (oFringes(iDom)%allocated) then 
 
            ! Fringe is allocated so check it
            iPtr = 0
            rPtr = 0
-           do i=1, fringeSizes(iDom)
+           do i=1, size(oFringes(iDom)%donorProc)
               if (oFringes(iDom)%donorProc(i) /= -1) then 
                  ! Copy the values for this fringe into the fringe's
                  ! buffer
@@ -558,8 +522,8 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      sendCount = 0
      do jj=1, nOFringeRecv
 
-        iProc = fringeRecvList(1, jj)
-        iDom = fringeRecvList(2, jj)
+        iProc = oFringeRecvList(1, jj)
+        iDom = oFringeRecvList(2, jj)
       
         sendCount = sendCount + 1
         call mpi_isend(oFringes(iDom)%fringeReturnSize, 1, sumb_integer, &
@@ -573,8 +537,8 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      recvCount = 0
      do jj=1, nOFringeSend
 
-        iProc = fringeSendList(1, jj)
-        iDom = fringeSendList(2, jj)
+        iProc = oFringeSendList(1, jj)
+        iDom = oFringeSendList(2, jj)
         recvCount = recvCount + 1
       
         call mpi_irecv(fringeRecvSizes(jj), 1, sumb_integer, &
@@ -616,8 +580,8 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      sendCount = 0
      do jj=1, nOFringeRecv
 
-        iProc = fringeRecvList(1, jj)
-        iDom = fringeRecvList(2, jj)
+        iProc = oFringeRecvList(1, jj)
+        iDom = oFringeRecvList(2, jj)
         iSize = oFringes(iDom)%fringeReturnSize 
         if (iSize > 0) then 
            tag = iDom + MAGIC
@@ -638,8 +602,8 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      recvCount = 0
      do jj=1, nOfringeSend
 
-        iProc = fringeSendList(1, jj)
-        iDom = fringeSendList(2, jj)
+        iProc = oFringeSendList(1, jj)
+        iDom = oFringeSendList(2, jj)
         iSize = cumFringeRecv(jj+1) - cumFringeRecv(jj) 
         if (iSize > 0) then 
 
@@ -734,7 +698,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      do kk=1, nOfringeSend
 
         ! Local block index of the fringes
-        iDom = fringeSendList(2, kk)
+        iDom = oFringeSendList(2, kk)
         nn = iDom - cumDomProc(myid)
 
         ! Set the block pointers for the local block we are dealing
@@ -797,28 +761,10 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      end do
  
      ! ------------------------------------------------------------------
-     ! We are now completely finished with oFringes so we can delete
-     ! the ones we have allocated. Also delete the tempoary buffers.
-     do iDom=1, nDomTotal
-        if (oFringes(iDom)%allocated) then 
-           deallocate(&
-                oFringes(iDom)%x, &
-                oFringes(iDom)%quality, &
-                oFringes(iDom)%myBlock, &
-                oFringes(iDom)%myIndex, &
-                oFringes(iDom)%donorProc, &
-                oFringes(iDom)%donorBlock, &
-                oFringes(iDom)%dI, &
-                oFringes(iDom)%dJ, &
-                oFringes(iDom)%dK, &
-                oFringes(iDom)%donorFrac, &
-                oFringes(iDom)%gInd, &
-                oFringes(iDom)%isWall)
-        end if
-        oFringes(iDom)%allocated = .False. 
-     end do
-
-     deallocate(oFringes, intRecvBuf, realRecvBuf)
+     ! We are now completely finished with oFringes, oBlocks and
+     ! oWalls. 
+     call deallocateOData(oBlocks, oFringes, oWalls)
+     deallocate(oFringes, oWalls, intRecvBuf, realRecvBuf)
 
      ! -----------------------------------------------------------------
      ! Step 9: We now have computed all the fringes that we can. Some of
@@ -957,26 +903,6 @@ subroutine oversetComm(level, firstTime, coarseLevel)
 
      ! Deallocate some data we no longer need
      deallocate(Xmin, Xmax, minVol, oBlockReady,  work)
-
-     ! oBlocks is a little tricker since we need to deallocate the
-     ! individual parts first:
-     do iDom=1, nDomTotal
-        if (oblocks(iDom)%allocated) then 
-           deallocate(&
-                oBlocks(iDom)%hexaConn, &
-                oBlocks(iDom)%globalCell, &
-                oBLocks(iDOm)%nearWall, &
-                oBLocks(iDOm)%invalidDonor, &
-                oBlocks(iDom)%qualDonor, &
-                oBlocks(iDom)%xADT, &
-                oBlocks(iDom)%rBuffer, &
-                oBlocks(iDom)%iBuffer)
-           call destroySerialHex(oBlocks(iDom)%ADT)
-        end if
-     end do
-
-     ! Finally deallocate the oBlocks array itself
-     deallocate(oBlocks)
 
      ! Setup the buffer sizes
      call setBufferSizes(level, sps, .false., .false., .true.)
