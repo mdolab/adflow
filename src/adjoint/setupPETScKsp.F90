@@ -47,8 +47,11 @@ subroutine setupPETScKsp
      call EChk(ierr, __FILE__, __LINE__)
   else
      ! Use the exact jacobian.  Here the matrix that defines the
-     ! linear system also serves as the preconditioning matrix.
-
+     ! linear system also serves as the preconditioning matrix. This
+     ! is only valid if useMatrixFree is flase. 
+     if (useMatrixfreedRdw) then 
+        call terminate("setupPETScKSP", "useMatrixFreedRdW option cannot be true when the approxPC option is False")
+     end if
      call KSPSetOperators(adjointKSP, dRdWt, dRdWT, ierr)
      call EChk(ierr, __FILE__, __LINE__)
   end if

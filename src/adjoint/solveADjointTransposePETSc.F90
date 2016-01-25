@@ -28,10 +28,12 @@ subroutine solveAdjoint(RHS, psi, checkSolution, nState)
   use ADjointPETSc, only : dRdwT, psi_like1, psi_like2, adjointKSP, &
        adjResInit, adjResStart, adjResFinal
  
-
   use killsignals
   use inputADjoint
+  use adjointVars
   use communication
+  use blockPointers
+  use inputTimeSpectral
   implicit none
 #define PETSC_AVOID_MPIF_H
 
@@ -52,7 +54,7 @@ subroutine solveAdjoint(RHS, psi, checkSolution, nState)
   real(kind=realType), dimension(2) :: time
   real(kind=realType)               :: timeAdjLocal, timeAdj
   real(kind=realType) :: l2abs, l2rel
-  integer(kind=intType) :: ierr
+  integer(kind=intType) :: ierr, nn, sps
   integer(kind=intType) :: adjConvIts
   KSPConvergedReason adjointConvergedReason
   Vec adjointRes, RHSVec
@@ -63,6 +65,17 @@ subroutine solveAdjoint(RHS, psi, checkSolution, nState)
        write(*,10) "Solving ADjoint Transpose with PETSc..."
 
   call cpu_time(time(1))
+
+  ! Make sure the derivative memory is allocated and zeroed. 
+  if (.not. derivVarsAllocated) then 
+     call alloc_derivative_values(1_intType)
+  end if
+
+  do nn=1,nDom
+     do sps=1,nTimeIntervalsSpectral
+        call zeroADSeeds(nn, 1_intType, sps)
+     end do
+  end do
 
   ! Dump psi into psi_like1 and RHS into psi_like2
   call VecPlaceArray(psi_like1, psi, ierr)
