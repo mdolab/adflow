@@ -39,7 +39,7 @@ subroutine initializeFringes(oFringe, nn, level, sps)
        oFringe%myBlock(mm), &
        oFringe%myIndex(mm), &
        oFringe%donorProc(mm), &
-       oFringe%donorBLock(mm), &
+       oFringe%donorBlock(mm), &
        oFringe%dI(mm), &
        oFringe%dJ(mm), &
        oFringe%dK(mm), &

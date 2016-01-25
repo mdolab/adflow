@@ -25,7 +25,7 @@ subroutine getOBlockBufferSizes(il, jl, kl, iSize, rSize)
 
   ! Count up the integers we want to send:
 
-  iSize = iSize + 14 ! All block indices
+  iSize = iSize + 5 ! Blocks sizes + proc + nn
 
   iSize = iSize + 8*il*jl*kl ! hexa conn
 
@@ -68,6 +68,7 @@ subroutine packOBlock(oBlock)
 
   ! Working paramters
   integer(kind=intType) :: rSize, iSize, i, j, k, nHexa, nADT
+  integer(kind=intType) :: ie, je, ke
 
   call getOBlockBufferSizes(oBlock%il, oBlock%jl, oBlock%kl, iSize, rSize)
  
@@ -77,26 +78,19 @@ subroutine packOBlock(oBlock)
   ! Reset the integer counter and add all the integers on this pass
   iSize = 0
 
-  oBlock%iBuffer(1) = oBlock%ib
-  oBlock%iBuffer(2) = oBlock%jb
-  oBlock%iBuffer(3) = oBlock%kb
-  oBlock%iBuffer(4) = oBlock%ie
-  oBlock%iBuffer(5) = oBlock%je
-  oBlock%iBuffer(6) = oBlock%ke
-  oBlock%iBuffer(7) = oBlock%il
-  oBlock%iBuffer(8) = oBlock%jl
-  oBlock%iBuffer(9) = oBlock%kl
-  oBlock%iBuffer(10)= oBlock%nx
-  oBlock%iBuffer(11) = oBlock%ny
-  oBlock%iBuffer(12) = oBlock%nz
+  oBlock%iBuffer(1) = oBlock%il
+  oBlock%iBuffer(2) = oBlock%jl
+  oBlock%iBuffer(3) = oBlock%kl
+  oBlock%iBuffer(4) = oBlock%proc
+  oBlock%iBuffer(5) = oBlock%block
 
-  oBlock%iBuffer(13) = oBlock%proc
-  oBlock%iBuffer(14) = oBlock%block
-
-  iSize = iSize + 14
+  iSize = iSize + 5
+  ie = oBlock%il + 1
+  je = oBlock%jl + 1
+  ke = oBlock%kl + 1
 
   nHexa = oBlock%il * oBlock%jl * oBlock%kl
-  nADT = oBlock%ie * oBlock%je * oBlock%ke
+  nADT = ie*je*ke
 
   do j=1, nHexa
      do i=1, 8
@@ -105,27 +99,27 @@ subroutine packOBlock(oBlock)
      end do
   end do
 
-  do k=0, oBlock%kb
-     do j=0, oBlock%jb
-        do i=0, oBlock%ib
+  do k=0, ke+1
+     do j=0, je+1
+        do i=0, ie+1
            iSize = iSize + 1
            oBlock%iBuffer(iSize) = oBlock%globalCell(i, j, k)
         end do
      end do
   end do
 
-  do k=1, oBlock%ke
-     do j=1, oBlock%je
-        do i=1, oBlock%ie
+  do k=1, ke
+     do j=1, je
+        do i=1, ie
            iSize = iSize + 1
            oBlock%iBuffer(iSize) = oBlock%nearWall(i, j, k)
         end do
      end do
   end do
 
-  do k=1, oBlock%ke
-     do j=1, oBlock%je
-        do i=1, oBlock%ie
+  do k=1, ke
+     do j=1, je
+        do i=1, ie
            iSize = iSize + 1
            oBlock%iBuffer(iSize) = oBlock%invalidDonor(i, j, k)
         end do
@@ -142,12 +136,12 @@ subroutine packOBlock(oBlock)
   ! Reset the real counter and add all the real values on this pass.
   rSize = 0
 
-  do i=1, oBlock%ie * oBlock%je * oBlock%ke
+  do i=1, ie*je*ke
      rSize = rSize + 1
      oBlock%rBuffer(rSize) = oBlock%qualDonor(1, i)
   end do
 
-  do j=1, oBlock%ie * oBlock%je * oBlock%ke
+  do j=1, ie*je*ke
      do i=1, 3
         rSize = rSize + 1
         oBlock%rBuffer(rSize) = oBlock%xADT(i, j)
@@ -188,35 +182,30 @@ subroutine unpackOBlock(oBlock)
 
   ! Working paramters
   integer(kind=intType) :: rSize, iSize, i, j, k, nHexa, nADT
+  integer(kind=intType) :: ie, je, ke
 
   ! Reset the integer counter and add all the integers on this pass
   iSize = 0
 
-  oBlock%ib = oBlock%iBuffer(1) 
-  oBlock%jb = oBlock%iBuffer(2)
-  oBlock%kb = oBlock%iBuffer(3)
-  oBlock%ie = oBlock%iBuffer(4)
-  oBlock%je = oBlock%iBuffer(5)
-  oBlock%ke = oBlock%iBuffer(6)
-  oBlock%il = oBlock%iBuffer(7)
-  oBlock%jl = oBlock%iBuffer(8)
-  oBlock%kl = oBlock%iBuffer(9)
-  oBlock%nx = oBlock%iBuffer(10)
-  oBlock%ny = oBlock%iBuffer(11)
-  oBlock%nz = oBlock%iBuffer(12)
-  oBlock%proc = oBlock%iBuffer(13)
-  oBlock%block = oBlock%iBuffer(14)
-  iSize = iSize + 14
+  oBlock%il = oBlock%iBuffer(1) 
+  oBlock%jl = oBlock%iBuffer(2)
+  oBlock%kl = oBlock%iBuffer(3)
+  oBlock%proc = oBlock%iBuffer(4)
+  oBlock%block = oBlock%iBuffer(5)
+  iSize = iSize + 5
 
+  ie = oBlock%il + 1
+  je = oBlock%jl + 1
+  ke = oBlock%kl + 1
   nHexa = oBlock%il * oBlock%jl * oBlock%kl
-  nADT = oBlock%ie * oBlock%je * oBlock%ke
+  nADT = ie*je*ke
 
   ! Allocate the remainder of the arrays in oBlock.
   allocate(oBlock%hexaConn(8, nHexa))
-  allocate(oBlock%globalCell(0:oBlock%ib, 0:oBlock%jb, 0:oBlock%kb))
-  allocate(oBlock%nearWall(1:oBlock%ie, 1:oBlock%je, 1:oBlock%ke))
-  allocate(oBlock%invalidDonor(1:oBlock%ie, 1:oBlock%je, 1:oBlock%ke))
-  allocate(oBlock%qualDonor(1, oBlock%ie * oBlock%je * oBlock%ke))
+  allocate(oBlock%globalCell(0:ie+1, 0:ie+1, 0:ke+1))
+  allocate(oBlock%nearWall(1:ie, 1:je, 1:ke))
+  allocate(oBlock%invalidDonor(1:ie, 1:je, 1:ke))
+  allocate(oBlock%qualDonor(1, ie * je * ke))
   allocate(oBlock%xADT(3, nADT))
 
   ! -------------------------------------------------------------------
@@ -263,18 +252,18 @@ subroutine unpackOBlock(oBlock)
      end do
   end do
 
-  do k=0, oBlock%kb
-     do j=0, oBlock%jb
-        do i=0, oBlock%ib
+  do k=0, ke+1
+     do j=0, je+1
+        do i=0, ie+1
            iSize = iSize + 1
            oBlock%globalCell(i, j, k) = oBlock%iBuffer(iSize)
         end do
      end do
   end do
 
-  do k=1, oBlock%ke
-     do j=1, oBlock%je
-        do i=1, oBlock%ie
+  do k=1, ke
+     do j=1, je
+        do i=1, ie
            iSize = iSize + 1
            oBlock%nearWall(i, j, k) = oBlock%iBuffer(iSize)
         end do
@@ -282,9 +271,9 @@ subroutine unpackOBlock(oBlock)
   end do
 
 
-  do k=1, oBlock%ke
-     do j=1, oBlock%je
-        do i=1, oBlock%ie
+  do k=1, ke
+     do j=1, je
+        do i=1, ie
            iSize = iSize + 1
            oBlock%invalidDonor(i, j, k) = oBlock%iBuffer(iSize)
         end do
@@ -301,12 +290,12 @@ subroutine unpackOBlock(oBlock)
   ! Now copy out the real values
   rSize = 0
 
-  do i=1, oBlock%ie * oBlock%je * oBlock%ke
+  do i=1, ie*je*ke
      rSize = rSize + 1
      oBlock%qualDonor(1, i) =  oBlock%rBuffer(rSize)
   end do
 
-  do j=1, oBlock%ie * oBlock%je * oBlock%ke
+  do j=1, ie*je*ke
      do i=1, 3
         rSize = rSize + 1
         oBlock%xADT(i, j) = oBlock%rBuffer(rSize)
