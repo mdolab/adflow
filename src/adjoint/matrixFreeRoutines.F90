@@ -617,13 +617,11 @@ subroutine computeMatrixFreeProductBwdFast(dwbar, wbar, stateSize)
      resetToRANS = .True.
   end if
 
-  ! Allocate the memory we need for this block to do the forward
-  ! mode derivatives and copy reference values
-  !call alloc_derivative_values( level)
-  if (.not. derivVarsAllocated) then 
-     call alloc_derivative_values(level)
-  end if
-
+  ! Note: The calling routine is responsible for ensuring that the
+  ! derivative values are allocated AND ZEROED! This routine makes use
+  ! of the fact that only wbar needs to be zeroed since all other
+  ! required seeds are zeroed in the individual fast routines. This is
+  ! slightly unsafe, but it necessary for speed. 
   do nn=1,nDom
      do sps=1,nTimeIntervalsSpectral
         flowDomsd(nn, level, sps)%w = zero
@@ -917,6 +915,8 @@ subroutine solveAdjointForRHS(inVec, outVec, nDOF, relativeTolerance)
     use adjointvars
     use killsignals
     use constants
+    use blockPointers
+    use inputTimeSpectral
     implicit none
 
     ! Input Variables
@@ -926,7 +926,8 @@ subroutine solveAdjointForRHS(inVec, outVec, nDOF, relativeTolerance)
     integer(kind=intType), intent(in) :: nDOF
     integer(kind=intTYpe) :: adjointConvergedReason
     ! Working variables
-    integer(kind=intType) :: ierr
+    integer(kind=intType) :: ierr, nn, sps
+    real(kind=realType) :: val
 
 #ifndef USE_COMPLEX
 
@@ -945,6 +946,17 @@ subroutine solveAdjointForRHS(inVec, outVec, nDOF, relativeTolerance)
     call KSPSetTolerances(adjointKSP, relativeTolerance, adjAbsTol, adjDivTol, &
          adjMaxIter, ierr)
     call EChk(ierr, __FILE__, __LINE__)
+
+    ! Make sure the derivative memory is allocated and zeroed. 
+    if (.not. derivVarsAllocated) then 
+       call alloc_derivative_values(1_intType)
+    end if
+
+    do nn=1,nDom
+       do sps=1,nTimeIntervalsSpectral
+          call zeroADSeeds(nn, 1_intType, sps)
+       end do
+    end do
 
     ! Solve (remember this is actually a transpose solve)
     call KSPSolve(adjointKSP, psi_like1, psi_like2, ierr)
@@ -979,6 +991,8 @@ subroutine solveDirectForRHS(inVec, outVec, nDOF, relativeTolerance)
     use adjointVars
     use constants
     use killsignals
+    use blockPointers
+    use inputTimeSpectral
     implicit none
 
     ! Input Variables
@@ -988,7 +1002,7 @@ subroutine solveDirectForRHS(inVec, outVec, nDOF, relativeTolerance)
     integer(kind=intType), intent(in) :: nDOF
     integer(kind=intTYpe) :: adjointConvergedReason
     ! Working variables
-    integer(kind=intType) :: ierr
+    integer(kind=intType) :: ierr, nn, sps
 
 #ifndef USE_COMPLEX
 
@@ -1007,6 +1021,17 @@ subroutine solveDirectForRHS(inVec, outVec, nDOF, relativeTolerance)
     call KSPSetTolerances(adjointKSP, relativeTolerance, adjAbsTol, adjDivTol, &
          adjMaxIter, ierr)
     call EChk(ierr, __FILE__, __LINE__)
+
+    ! Make sure the derivative memory is allocated and zeroed. 
+    if (.not. derivVarsAllocated) then 
+       call alloc_derivative_values(1_intType)
+    end if
+
+    do nn=1,nDom
+       do sps=1,nTimeIntervalsSpectral
+          call zeroADSeeds(nn, 1_intType, sps)
+       end do
+    end do
 
     ! Solve (this is the transpose solve of a transpose matrix, so it's direct)
     call KSPSolveTranspose(adjointKSP, psi_like1, psi_like2, ierr)
