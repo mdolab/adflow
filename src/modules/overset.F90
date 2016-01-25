@@ -30,10 +30,7 @@ module overset
   type oversetBlock
 
      ! Sizes for the block
-     integer(kind=intType) :: ib, jb, kb
-     integer(kind=intType) :: ie, je, ke
      integer(kind=intType) :: il, jl, kl
-     integer(kind=intType) :: nx, ny, nz
 
      ! This is the cell volume of the donor
      real(kind=realType), dimension(:, :), pointer :: qualDonor
@@ -94,12 +91,6 @@ module overset
      ! DONOR cell. It is initialized to large. 
      real(kind=realType), dimension(:), allocatable :: quality
 
-     ! A flag to always force returning a donor if one exists.
-     integer(kind=intType), dimension(:), allocatable :: forceRecv
-
-     ! origQuality. This the actual quality of the cell. 
-     real(kind=realType), dimension(:), allocatable :: origQuality
-
      ! This is the information regarding where the cell came from. 
      integer(kind=intType), dimension(:), allocatable :: myBlock
      integer(kind=intType), dimension(:), allocatable :: myIndex
@@ -108,9 +99,7 @@ module overset
      ! use dI, dJ, dK, short for donorI, etc.
      integer(kind=intType), dimension(:), allocatable :: donorProc
      integer(kind=intType), dimension(:), allocatable :: donorBlock
-     integer(kind=intType), dimension(:), allocatable :: dI
-     integer(kind=intType), dimension(:), allocatable :: dJ
-     integer(kind=intType), dimension(:), allocatable :: dK
+     integer(kind=intType), dimension(:), allocatable :: dI, dJ, dK
 
      real(kind=realType), dimension(:, :), allocatable  :: donorFrac
 
@@ -118,20 +107,8 @@ module overset
      ! these for forming the PC for the Newton Krylov solver
      integer(kind=intType), dimension(:, :), allocatable :: gInd
 
-     ! The status of this cell as a donor
-     integer(kind=intType), dimension(:), allocatable  :: isDonor
-
-     ! The status of this cell as a hole
-     integer(kind=intType), dimension(:), allocatable  :: isHole
-
-     ! The status of this cell as a comput cell
-     integer(kind=intType), dimension(:), allocatable  :: isCompute
-
      ! Flag specifying if this cell is next to a wall
      integer(kind=intType), dimension(:), allocatable  :: isWall
-
-     ! Flag specifying if this cell is a donor to cell
-     integer(kind=intType), dimension(:), allocatable  :: isWallDonor
 
      ! Flag if this set of fringes got allocated
      logical :: allocated = .False.
@@ -154,7 +131,7 @@ module overset
      real(kind=realType), dimension(:), allocatable :: rBuffer
      integer(kind=intType), dimension(:), allocatable :: iBuffer
 
-     ! The ADT for this block's wall
+     ! The ADT for this block's wall(s)
      type(adtType) :: ADT
 
      ! Flag if the real/int Buffers are ready after receiving info

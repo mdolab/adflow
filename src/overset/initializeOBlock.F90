@@ -25,18 +25,6 @@ subroutine initializeOBlock(oBlock, nn)
   oBlock%jl = jl
   oBlock%kl = kl
 
-  oBlock%ie = ie
-  oBlock%je = je
-  oBlock%ke = ke
-
-  oBlock%ib = ib
-  oBlock%jb = jb
-  oBlock%kb = kb
-
-  oBlock%nx = nx
-  oBlock%ny = ny
-  oBlock%nz = nz
-
   oBlock%proc = myID
   oBlock%block = nn
 
