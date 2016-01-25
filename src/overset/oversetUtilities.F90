@@ -345,3 +345,244 @@ subroutine getCommPattern(oMat, oMatT, sendList, size1, nSend, recvList, size2, 
 
   deallocate(procsForThisRow, inverse, blkProc)
 end subroutine getCommPattern
+
+subroutine sendOBlock(oBlock, iDom, iProc, tagOffset, sendCount)
+
+  use communication
+  use overset
+  implicit none
+
+  ! Input/Output
+  type(oversetBlock), intent(inout) :: oBlock
+  integer(kind=intType), intent(in) :: iProc, iDom, tagOffset
+  integer(kind=intType), intent(inout) :: sendCount
+  
+  ! Working
+  integer(kind=intType) :: tag, ierr
+
+  tag = tagOffset + iDom
+  sendCount = sendCount + 1
+  call mpi_isend(oBlock%rBuffer, size(oBlock%rbuffer), sumb_real, &
+       iProc, tag, SUmb_comm_world, sendRequests(sendCount), ierr)
+  call ECHK(ierr, __FILE__, __LINE__)
+  
+  sendCount = sendCount + 1
+  call mpi_isend(oBlock%iBuffer, size(oBlock%iBuffer), sumb_integer, &
+       iProc, tag, SUmb_comm_world, sendRequests(sendCount), ierr)
+  call ECHK(ierr, __FILE__, __LINE__)
+  
+end subroutine sendOBlock
+
+subroutine sendOFringe(oFringe, iDom, iProc, tagOffset, sendCount)
+
+  use communication
+  use overset
+  implicit none
+
+  ! Input/Output
+  type(oversetFringe), intent(inout) :: oFringe
+  integer(kind=intType), intent(in) :: iProc, iDom, tagOffset
+  integer(kind=intType), intent(inout) :: sendCount
+
+  ! Working
+  integer(kind=intType) :: tag, ierr
+
+  tag = iDom + tagOffset
+  sendCount = sendCount + 1
+  call mpi_isend(oFringe%rBuffer, size(oFringe%rbuffer), sumb_real, &
+       iProc, tag, SUmb_comm_world, sendRequests(sendCount), ierr)
+  call ECHK(ierr, __FILE__, __LINE__)
+  
+  sendCount = sendCount + 1
+  call mpi_isend(oFringe%iBuffer, size(oFringe%iBuffer), sumb_integer, &
+       iProc, tag, SUmb_comm_world, sendRequests(sendCount), ierr)
+  call ECHK(ierr, __FILE__, __LINE__)
+  
+end subroutine sendOFringe
+
+subroutine sendOWall(oWall, iDom, iProc, tagOffset, sendCount)
+
+  use communication
+  use overset
+  implicit none
+
+  ! Input/Output
+  type(oversetWall), intent(inout) :: oWall
+  integer(kind=intType), intent(in) :: iProc, iDom, tagOffset
+  integer(kind=intType), intent(inout) :: sendCount
+
+  ! Working
+  integer(kind=intType) :: tag, ierr
+
+  tag = iDom + tagOffset
+  sendCount = sendCount + 1
+  call mpi_isend(oWall%rBuffer, size(oWall%rbuffer), sumb_real, &
+       iProc, tag, SUmb_comm_world, sendRequests(sendCount), ierr)
+  call ECHK(ierr, __FILE__, __LINE__)
+  
+  sendCount = sendCount + 1
+  call mpi_isend(oWall%iBuffer, size(oWall%iBuffer), sumb_integer, &
+       iProc, tag, SUmb_comm_world, sendRequests(sendCount), ierr)
+  call ECHK(ierr, __FILE__, __LINE__)
+  
+end subroutine sendOWall
+
+subroutine recvOBlock(oBlock, iDom, iProc, tagOffset, iSize, rSize, &
+     recvCount, recvInfo)
+
+  use communication
+  use overset
+  implicit none
+
+  ! Input/Output
+  type(oversetBlock), intent(inout) :: oBlock
+  integer(kind=intType), intent(in) :: iDom, iProc, tagOffset, rSize, iSize
+  integer(kind=intType), intent(inout) :: recvCount
+  integer(kind=intType), intent(inout) :: recvInfo(2, recvCount+2)
+
+  ! Working
+  integer(kind=intType) :: tag, ierr
+
+  tag = tagOffset + iDom
+  allocate(oBLock%rBuffer(rSize), oBlock%iBuffer(iSize))
+ 
+  recvCount = recvCount + 1
+  call mpi_irecv(oBlock%rBuffer, rSize, sumb_real, &
+       iProc, tag, SUmb_comm_world, recvRequests(recvCount), ierr)
+  call ECHK(ierr, __FILE__, __LINE__)
+  recvInfo(:, recvCount) = (/iDom, 1/) 
+
+  recvCount = recvCount + 1
+  call mpi_irecv(oBlock%iBuffer, iSize, sumb_integer, &
+       iProc, tag, SUmb_comm_world, recvRequests(recvCount), ierr)
+  call ECHK(ierr, __FILE__, __LINE__)
+  recvInfo(:, recvCount) = (/iDom, 2/) 
+  
+end subroutine recvOBlock
+
+subroutine recvOFringe(oFringe, iDom, iProc, tagOffset, iSize, rSize, &
+     recvCount, recvInfo)
+
+  use communication
+  use overset
+  implicit none
+
+  ! Input/Output
+  type(oversetFringe), intent(inout) :: oFringe
+  integer(kind=intType), intent(in) :: iDom, iProc, tagOffset, rSize, iSize
+  integer(kind=intType), intent(inout) :: recvCount
+  integer(kind=intType), intent(inout) :: recvInfo(2, recvCount+2)
+
+  ! Working
+  integer(kind=intType) :: tag, ierr
+
+  tag = tagOffset + iDom
+  allocate(oFringe%rBuffer(rSize), oFringe%iBuffer(iSize))
+ 
+  recvCount = recvCount + 1
+  call mpi_irecv(oFringe%rBuffer, rSize, sumb_real, &
+       iProc, tag, SUmb_comm_world, recvRequests(recvCount), ierr)
+  call ECHK(ierr, __FILE__, __LINE__)
+  recvInfo(:, recvCount) = (/iDom, 3/) 
+
+  recvCount = recvCount + 1
+  call mpi_irecv(oFringe%iBuffer, iSize, sumb_integer, &
+       iProc, tag, SUmb_comm_world, recvRequests(recvCount), ierr)
+  call ECHK(ierr, __FILE__, __LINE__)
+  recvInfo(:, recvCount) = (/iDom, 4/) 
+  
+end subroutine recvOFringe
+
+subroutine recvOWall(oWall, iDom, iProc, tagOffset, iSize, rSize, &
+     recvCount, recvInfo)
+
+  use communication
+  use overset
+  implicit none
+
+  ! Input/Output
+  type(oversetWall), intent(inout) :: oWall
+  integer(kind=intType), intent(in) :: iDom, iProc, tagOffset, rSize, iSize
+  integer(kind=intType), intent(inout) :: recvCount
+  integer(kind=intType), intent(inout) :: recvInfo(2, recvCount+2)
+
+  ! Working
+  integer(kind=intType) :: tag, ierr
+
+  tag = tagOffset + iDom
+  allocate(oWall%rBuffer(rSize), oWall%iBuffer(iSize))
+ 
+  recvCount = recvCount + 1
+  call mpi_irecv(oWall%rBuffer, rSize, sumb_real, &
+       iProc, tag, SUmb_comm_world, recvRequests(recvCount), ierr)
+  call ECHK(ierr, __FILE__, __LINE__)
+  recvInfo(:, recvCount) = (/iDom, 5/) 
+
+  recvCount = recvCount + 1
+  call mpi_irecv(oWall%iBuffer, iSize, sumb_integer, &
+       iProc, tag, SUmb_comm_world, recvRequests(recvCount), ierr)
+  call ECHK(ierr, __FILE__, __LINE__)
+  recvInfo(:, recvCount) = (/iDom, 6/) 
+  
+end subroutine recvOWall
+
+
+subroutine deallocateOData(oBlocks, oFringes, oWalls, n)
+
+  ! This subroutine deallocates all data stores in a list of oBlocks,
+  ! oFringes and oWalls. 
+  use adtAPI
+  use overset
+  implicit none
+
+  ! Input Params
+  type(oversetBlock), dimension(n), intent(inout) :: oBLocks
+  type(oversetFringe), dimension(n), intent(inout) :: oFringes
+  type(oversetWall), dimension(n), intent(inout) :: oWalls
+  integer(kind=intType) :: n
+
+  ! Working Parameters
+  integer(kind=intType) :: i
+
+  do i=1, n
+
+     ! oBlock:
+     if (oblocks(i)%allocated) then 
+        deallocate(&
+             oBlocks(i)%hexaConn, &
+             oBlocks(i)%globalCell, &
+             oBLocks(i)%nearWall, &
+             oBLocks(i)%invalidDonor, &
+             oBlocks(i)%qualDonor, &
+             oBlocks(i)%xADT, &
+             oBlocks(i)%rBuffer, &
+             oBlocks(i)%iBuffer)
+        call destroySerialHex(oBlocks(i)%ADT)
+     end if
+
+     ! oFringe:
+     if (oFringes(i)%allocated) then 
+        deallocate(&
+             oFringes(i)%x, &
+             oFringes(i)%quality, &
+             oFringes(i)%myBlock, &
+             oFringes(i)%myIndex, &
+             oFringes(i)%donorProc, &
+             oFringes(i)%donorBlock, &
+             oFringes(i)%dI, &
+             oFringes(i)%dJ, &
+             oFringes(i)%dK, &
+             oFringes(i)%donorFrac, &
+             oFringes(i)%gInd, &
+             oFringes(i)%isWall)
+     end if
+     oFringes(i)%allocated = .False. 
+
+     ! oWalls
+     if (oWalls(i)%allocated) then 
+           ! ...
+     end if
+     oWalls(i)%allocated = .False.
+
+  end do
+end subroutine deallocateOData

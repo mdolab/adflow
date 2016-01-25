@@ -4,7 +4,7 @@ module overset
   use adtData
   use block
   implicit none
-  
+
   ! Helper dataType for communicated overset grid points. This data
   ! structure mirrros the blockType structure in block.F90, but only
   ! contains minimum amount of information required for computing
@@ -34,7 +34,7 @@ module overset
      integer(kind=intType) :: ie, je, ke
      integer(kind=intType) :: il, jl, kl
      integer(kind=intType) :: nx, ny, nz
-     
+
      ! This is the cell volume of the donor
      real(kind=realType), dimension(:, :), pointer :: qualDonor
 
@@ -52,7 +52,7 @@ module overset
 
      ! Whether or not a cell is not possible to be a donor. Ie. a forceRecv
      integer(kind=intType), dimension(:, :, :), pointer :: invalidDonor
-     
+
      ! Minimum volume for this block
      real(kind=realType) :: minVol
 
@@ -61,7 +61,7 @@ module overset
 
      ! The processor for this block
      integer(kind=intType) :: proc
-     
+
      ! And the local block index
      integer(kind=intType) :: block
 
@@ -88,62 +88,84 @@ module overset
      integer(kind=intType), dimension(:), allocatable :: iBuffer
 
      ! These are the coordinate of what we are searching
-    real(kind=realType), dimension(:, :), allocatable :: x
+     real(kind=realType), dimension(:, :), allocatable :: x
 
-    ! qualaity is the best quality that has been found from a
-    ! DONOR cell. It is initialized to large. 
-    real(kind=realType), dimension(:), allocatable :: quality
+     ! qualaity is the best quality that has been found from a
+     ! DONOR cell. It is initialized to large. 
+     real(kind=realType), dimension(:), allocatable :: quality
 
-    ! A flag to always force returning a donor if one exists.
-    integer(kind=intType), dimension(:), allocatable :: forceRecv
-   
-    ! origQuality. This the actual quality of the cell. 
-    real(kind=realType), dimension(:), allocatable :: origQuality
+     ! A flag to always force returning a donor if one exists.
+     integer(kind=intType), dimension(:), allocatable :: forceRecv
 
-    ! This is the information regarding where the cell came from. 
-    integer(kind=intType), dimension(:), allocatable :: myBlock
-    integer(kind=intType), dimension(:), allocatable :: myIndex
+     ! origQuality. This the actual quality of the cell. 
+     real(kind=realType), dimension(:), allocatable :: origQuality
 
-    ! This is the information about the donor that was found. Note we
-    ! use dI, dJ, dK, short for donorI, etc.
-    integer(kind=intType), dimension(:), allocatable :: donorProc
-    integer(kind=intType), dimension(:), allocatable :: donorBlock
-    integer(kind=intType), dimension(:), allocatable :: dI
-    integer(kind=intType), dimension(:), allocatable :: dJ
-    integer(kind=intType), dimension(:), allocatable :: dK
+     ! This is the information regarding where the cell came from. 
+     integer(kind=intType), dimension(:), allocatable :: myBlock
+     integer(kind=intType), dimension(:), allocatable :: myIndex
 
-    real(kind=realType), dimension(:, :), allocatable  :: donorFrac
+     ! This is the information about the donor that was found. Note we
+     ! use dI, dJ, dK, short for donorI, etc.
+     integer(kind=intType), dimension(:), allocatable :: donorProc
+     integer(kind=intType), dimension(:), allocatable :: donorBlock
+     integer(kind=intType), dimension(:), allocatable :: dI
+     integer(kind=intType), dimension(:), allocatable :: dJ
+     integer(kind=intType), dimension(:), allocatable :: dK
 
-    ! gInd are the global indices of the donor cells. We will need
-    ! these for forming the PC for the Newton Krylov solver
-    integer(kind=intType), dimension(:, :), allocatable :: gInd
-    
-    ! The status of this cell as a donor
-    integer(kind=intType), dimension(:), allocatable  :: isDonor
+     real(kind=realType), dimension(:, :), allocatable  :: donorFrac
 
-    ! The status of this cell as a hole
-    integer(kind=intType), dimension(:), allocatable  :: isHole
+     ! gInd are the global indices of the donor cells. We will need
+     ! these for forming the PC for the Newton Krylov solver
+     integer(kind=intType), dimension(:, :), allocatable :: gInd
 
-    ! The status of this cell as a comput cell
-    integer(kind=intType), dimension(:), allocatable  :: isCompute
+     ! The status of this cell as a donor
+     integer(kind=intType), dimension(:), allocatable  :: isDonor
 
-    ! Flag specifying if this cell is next to a wall
-    integer(kind=intType), dimension(:), allocatable  :: isWall
+     ! The status of this cell as a hole
+     integer(kind=intType), dimension(:), allocatable  :: isHole
 
-    ! Flag specifying if this cell is a donor to cell
-    integer(kind=intType), dimension(:), allocatable  :: isWallDonor
+     ! The status of this cell as a comput cell
+     integer(kind=intType), dimension(:), allocatable  :: isCompute
 
-    ! Flag if this set of fringes got allocated
-    logical :: allocated = .False.
-    
-    ! Flag if the real/int Buffers are ready after receiving info
-    logical :: realBufferReady = .False. 
-    logical :: intBufferReady = .False. 
-    
-    ! The number of actual fringes that need to communicated. 
-    integer(kind=intType) :: fringeReturnSize = 0
+     ! Flag specifying if this cell is next to a wall
+     integer(kind=intType), dimension(:), allocatable  :: isWall
 
- end type oversetFringe
+     ! Flag specifying if this cell is a donor to cell
+     integer(kind=intType), dimension(:), allocatable  :: isWallDonor
+
+     ! Flag if this set of fringes got allocated
+     logical :: allocated = .False.
+
+     ! Flag if the real/int Buffers are ready after receiving info
+     logical :: realBufferReady = .False. 
+     logical :: intBufferReady = .False. 
+
+     ! The number of actual fringes that need to communicated. 
+     integer(kind=intType) :: fringeReturnSize = 0
+
+  end type oversetFringe
+
+  type oversetWall
+
+     ! Sizes
+     integer(kind=intType) :: il, jl ,kl
+
+     ! Buffer space for sending/receiving the fringes
+     real(kind=realType), dimension(:), allocatable :: rBuffer
+     integer(kind=intType), dimension(:), allocatable :: iBuffer
+
+     ! The ADT for this block's wall
+     type(adtType) :: ADT
+
+     ! Flag if the real/int Buffers are ready after receiving info
+     logical :: realBufferReady = .False. 
+     logical :: intBufferReady = .False. 
+
+     ! Flag if this wall got allocated
+     logical :: allocated = .False.
+
+  end type oversetWall
+
 
   ! This is the flattened list of the fringes next to the wall that we
   !  have actually found donors for.
