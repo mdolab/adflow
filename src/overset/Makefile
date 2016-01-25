@@ -47,6 +47,7 @@ FILES_TO_COMPLEXIFY =	computeInterpolationParallel.F90\
 			oversetLoadBalance.F90\
 			qsortFringeType.F90\
 			initializeOBlock.F90\
+			initializeOWall.F90\
 			initializeFringes.F90\
 			determineDonors.F90\
 			computeHolesInsideBody.F90\
