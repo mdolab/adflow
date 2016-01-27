@@ -583,7 +583,7 @@ contains
              xMin(1) = coor(1,mm); xMax(1) = coor(1,mm)
              xMin(2) = coor(2,mm); xMax(2) = coor(2,mm)
              xMin(3) = coor(3,mm); xMax(3) = coor(3,mm)
-
+             
              do j=2,nNPE
                 mm = conn(j,i)
 
@@ -1215,7 +1215,6 @@ contains
 
   end subroutine buildVolumeADT
 
-
   subroutine buildSerialHex(nHexa, nNodes, coor, hexaConn, ADT)
     !
     !       ****************************************************************
@@ -1368,4 +1367,155 @@ contains
     deallocate(ADT%ADTree)
   end subroutine destroySerialHex
 
+  subroutine buildSerialQuad(nQuad, nNodes, coor, quadsConn, ADT)
+    !
+    !       ****************************************************************
+    !       *                                                              *
+    !       * This a specialized routine that builds and ADT tree for      *
+    !       * quad surface meshes and only in serial. Also, this routine   *
+    !       * does not                                                     *
+    !       * use adtDats's ADTs() array list...the user must supply the   *
+    !       * adtType to use and is responsible for all data management of *
+    !       * this type.                                                   *
+    !       * The memory intensive part of these                           *
+    !       * arguments, the arrays with the coordinates and               *
+    !       * connectivities, are not copied. Instead pointers are set to  *
+    !       * these arrays. It is therefore the responsibility of the user *
+    !       * not to deallocate this memory before all the searches have   *
+    !       * been performed.                                              *
+    !       *                                                              *
+    !       * Subroutine intent(in) arguments.                             *
+    !       * --------------------------------                             *
+    !       * nQuad :    Number of quad cells
+    !       * nNodes:    Number of nodes in the given grid.                *
+    !       *                                                              *
+    !       * Subroutine intent(in), target arguments.                     *
+    !       * ----------------------------------------                     *
+    !       * coor(3,nNodes):        Nodal coordinates of the local grid.  *
+    !       * quadsConn(8,nHexa):     Connectivity for quad cells           *
+    !       *                                                              *
+    !       * Subroutine intent(out), arguments.                           *
+    !       * ----------------------------------------                     *
+    !       * ADT : The newly completed ADT                                *
+    !       *                                                              *
+    !       ****************************************************************
+    !
+    implicit none
+    !
+    !       Subroutine arguments.
+    !
+    integer(kind=intType), intent(in) :: nQuad
+    integer(kind=intType), intent(in) :: nNodes
+
+    integer(kind=intType), dimension(:,:), intent(in), &
+         target :: quadsConn
+
+    real(kind=realType), dimension(:,:), intent(in), &
+         target :: coor
+    type(adtType), intent(out) :: ADT
+    !
+    !       Local variables.
+    !
+    integer :: ierr, ll, nNPE
+    integer(kind=intType) :: i, j, mm
+    real(kind=realType), dimension(3) :: xMin, xMax
+    !
+    !       ****************************************************************
+    !       *                                                              *
+    !       * Begin execution.                                             *
+    !       *                                                              *
+    !       ****************************************************************
+    !
+
+    ! We need to set comm...explictly mpi_comm_self
+    ADT%comm = MPI_COMM_SELF
+    ADT%nProcs = 1
+    ADT%myID = 0
+    ! Set the ADT type, which is a surface ADT.
+
+    ADT%adtType = adtSurfaceADT
+
+    ! Copy the number of nodes and volume elements and set the number
+    ! of surface elements to 0; only a volume grid has been given.
+
+    ADT%nNodes  = nNodes
+    ADT%nHexa   = 0
+    ADT%nTetra  = 0
+    ADT%nPyra   = 0
+    ADT%nPrisms = 0
+    ADT%nTria  = 0
+    ADT%nQuads = nQuad
+
+    ! Set the pointers for the coordinates and the
+    ! volume connectivities.
+
+    ADT%coor       => coor
+    ADT%quadsConn   => quadsConn
+    nullify(ADT%triaConn)
+
+    ADT%nBBoxes = nQuad
+
+    ! Allocate the memory for the bounding box coordinates, the
+    ! corresponding element type and the index in the connectivity.
+
+    allocate(ADT%xBBox(6, nQuad))
+    allocate(ADT%elementType(nQuad))
+    allocate(ADT%elementID(nQuad))
+
+    ! All hexas
+    ADT%elementType = adtQuadrilateral
+    
+    ! Loop over the number of elements and store the bounding
+    ! box info.
+    nNPE = 4
+
+    do i=1, nQuad
+
+       mm = quadsConn(1,i)
+       xMin(1) = coor(1,mm); xMax(1) = coor(1,mm)
+       xMin(2) = coor(2,mm); xMax(2) = coor(2,mm)
+       xMin(3) = coor(3,mm); xMax(3) = coor(3,mm)
+
+       do j=2,nNPE
+          mm = quadsConn(j,i)
+
+          xMin(1) = min(xMin(1),coor(1,mm))
+          xMin(2) = min(xMin(2),coor(2,mm))
+          xMin(3) = min(xMin(3),coor(3,mm))
+
+          xMax(1) = max(xMax(1),coor(1,mm))
+          xMax(2) = max(xMax(2),coor(2,mm))
+          xMax(3) = max(xMax(3),coor(3,mm))
+       enddo
+
+       ADT%xBBox(1,i) = xMin(1)
+       ADT%xBBox(2,i) = xMin(2)
+       ADT%xBBox(3,i) = xMin(3)
+
+       ADT%xBBox(4,i) = xMax(1)
+       ADT%xBBox(5,i) = xMax(2)
+       ADT%xBBox(6,i) = xMax(3)
+
+       ! elementID is just sequential since we only have 1 element type
+       ADT%elementID(i) = i
+
+    enddo
+
+    ! Build the ADT from the now known boundary boxes.
+
+    call buildADT(ADT)
+
+  end subroutine buildSerialQuad
+
+  subroutine destroySerialQuad(ADT)
+    ! Deallocate the data allocated from the ADT
+    
+    implicit none
+    type(adtType), intent(inout) :: ADT
+
+    deallocate(ADT%xBBox)
+    deallocate(ADT%elementType)
+    deallocate(ADT%elementID)
+    deallocate(ADT%ADTree)
+  end subroutine destroySerialQuad
 end module adtBuild
