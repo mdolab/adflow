@@ -181,8 +181,10 @@ subroutine initializeFringes(oFringe, nn, level, sps)
         end do
      end if
 
-     ! For the wall check, we only need 1 layer next to
-     ! wall. Modify the required bounds for this
+     ! For the wall check, we only need 1 layer next to wall. Modify
+     ! the required bounds for this. Also, we set the isWall() value
+     ! to the face idex (iMin through kMax). This will tell what the
+     ! normal direction to the wall is. 
      select case (BCFaceID(mm))
      case (iMin)
         iEnd=2
@@ -206,7 +208,7 @@ subroutine initializeFringes(oFringe, nn, level, sps)
                  fringes(i, j, k)%isWall  = .True. 
                  ! Recompute the index
                  ii = (k-2)*nx*ny + (j-2)*nx + (i-2) + 1
-                 oFringe%isWall(ii) = 1
+                 oFringe%isWall(ii) = bcFaceID(mm)
               end do
            end do
         end do

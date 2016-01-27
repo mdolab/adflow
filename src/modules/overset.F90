@@ -125,11 +125,17 @@ module overset
   type oversetWall
 
      ! Sizes
-     integer(kind=intType) :: il, jl ,kl
+     integer(kind=intType) :: il, jl, kl, nNodes, nCells
 
      ! Buffer space for sending/receiving the fringes
      real(kind=realType), dimension(:), allocatable :: rBuffer
      integer(kind=intType), dimension(:), allocatable :: iBuffer
+
+     ! Surface nodes used to build the tree:
+     real(kind=realType), dimension(:, :), pointer :: x
+
+     ! Connectivity for the surface
+     integer(kind=intType), dimension(:, :), pointer:: conn
 
      ! The ADT for this block's wall(s)
      type(adtType) :: ADT
