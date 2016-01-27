@@ -202,7 +202,7 @@ subroutine unpackOBlock(oBlock)
 
   ! Allocate the remainder of the arrays in oBlock.
   allocate(oBlock%hexaConn(8, nHexa))
-  allocate(oBlock%globalCell(0:ie+1, 0:ie+1, 0:ke+1))
+  allocate(oBlock%globalCell(0:ie+1, 0:je+1, 0:ke+1))
   allocate(oBlock%nearWall(1:ie, 1:je, 1:ke))
   allocate(oBlock%invalidDonor(1:ie, 1:je, 1:ke))
   allocate(oBlock%qualDonor(1, ie * je * ke))
