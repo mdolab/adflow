@@ -61,6 +61,7 @@ FILES_TO_COMPLEXIFY =	computeInterpolationParallel.F90\
 		        exchangeDonorStatus.F90\
 			oversetMPITypes.F90\
 			exchangeFringes.f90\
+			surfaceCorrection.F90\
 		       # computeQuadraticWeights.F90 \
 		       matrixinv3by3.F90 \
 

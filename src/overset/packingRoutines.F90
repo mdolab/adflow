@@ -270,7 +270,6 @@ subroutine unpackOBlock(oBlock)
      end do
   end do
 
-
   do k=1, ke
      do j=1, je
         do i=1, ie
@@ -467,6 +466,35 @@ subroutine unpackOFringe(oFringe)
 
 end subroutine unpackOFringe
 
+subroutine getWallSize(nNodes, nCells)
+  ! Simple helper routine to return the number of wall nodes and cells
+  ! for the block pointed to by blockPointers. 
+
+  use blockPointers
+  use BCTypes
+  implicit none
+  
+  ! Output
+  integer(kind=intType), intent(out) :: nNodes, nCells
+
+  ! Working:
+  integer(kind=intType) :: mm, iBeg, iEnd, jBeg, jEnd
+
+  ! Figure out the size the wall is going to be:
+  nNodes = 0
+  nCells = 0
+  do mm=1,nBocos
+      if (BCType(mm) == EulerWall .or. BCType(mm) == NSWallAdiabatic .or. &
+          BCType(mm) == NSWallIsoThermal) then 
+        
+        jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
+        iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
+        nNodes = nNodes + (iEnd - iBeg + 1)*(jEnd - jBeg + 1)
+        nCells = nCells + (iEnd - iBeg )*(jEnd - jBeg)
+     end if
+  end do
+
+end subroutine getWallSize
 
 subroutine getOWallBufferSizes(il, jl, kl, iSize, rSize)
 
@@ -483,11 +511,33 @@ subroutine getOWallBufferSizes(il, jl, kl, iSize, rSize)
   integer(kind=intType), intent(out) :: rSize, iSize
 
   ! Working
-  integer(kind=intType) :: mm
-  
-  iSize = 3
-  rSize = 0
+  integer(kind=intType) :: mm, nNodes, nCells, nBBox, nLeaves
 
+  ! Initalization
+  iSize = 3 ! For the block sizes
+  iSize = iSize + 2 ! For the nCells/nNodes variables
+  rSize = 0
+  
+  call getWallSize(nNodes, nCells)
+
+  if (nNodes > 0) then 
+     ! Count up the integers we want to send:
+
+     iSize = iSize + nCells*4 ! This is for the connectivity
+     
+     ! Number of boxes in the ADT is the same as the number of elements
+     nBBox = nCells
+     nLeaves = nBBox-1 ! See ADT/adtBuild.f90
+     
+     iSize = iSize + nLeaves*2 ! Two ints for the children in each leaf
+     
+     ! Count up the reals we ned to send:
+     rSize = rSize + 3*nNodes ! surface coordinates
+     
+     rSize = rSize + nBBox*6 ! Cell bounding boxes
+     
+     rSize = rSize + nLeaves*12 ! Bounding boxes for leaves
+  end if
 end subroutine getOWallBufferSizes
 
 subroutine packOWall(oWall)
@@ -496,24 +546,65 @@ subroutine packOWall(oWall)
   use constants
   implicit none
 
-  ! Pack up the search coordines in this oFringe into its own buffer
+  ! Pack up the search coordines in this oWall into its own buffer
   ! so we are ready to send it.
 
   ! Input/Output Parameters
   type(oversetWall), intent(inout) :: oWall
 
   ! Working paramters
-  integer(kind=intType) :: rSize, iSize, mm, i, ii
+  integer(kind=intType) :: rSize, iSize, mm, i, j, nNodes, nCells
 
   call getOWallBufferSizes(oWall%il, oWall%kl, oWall%kl, isize, rSize)
-  
+
   ! Allocate the buffers
   allocate(oWall%rBuffer(rSize), oWall%iBuffer(iSize))
 
   oWall%iBuffer(1) = oWalL%il
   oWall%iBuffer(2) = oWalL%jl
   oWall%iBuffer(3) = oWalL%kl
+  oWall%iBuffer(4) = oWall%nNodes
+  oWall%iBuffer(5) = oWall%nCells
+  
+  if (oWall%nNodes > 0) then 
+     iSize = 5
+     do j=1, oWall%nCells
+        do i=1, 4
+           iSize = iSize + 1
+           oWall%iBuffer(iSize) = oWall%conn(i, j)
+        end do
+     end do
+     
+     do i=1, oWall%ADT%nLeaves
+        iSize = iSize + 1
+        oWall%iBuffer(iSize) = oWall%ADT%ADTree(i)%children(1)
+        iSize = iSize + 1
+        oWall%iBuffer(iSize) = oWall%ADT%ADTree(i)%children(2)
+     end do
 
+     ! Done with the integer values, do the real ones
+     rSize = 0
+     
+     do i=1, oWall%nNodes
+        do j=1, 3
+           rSize = rSize + 1
+           oWall%rBuffer(rSize) = oWall%x(j, i)
+        end do
+     end do
+     
+     do i=1, oWall%ADT%nBboxes
+        oWall%rBuffer(rSize+1:rSize+6) = oWall%ADT%xBBox(:, i)
+        rSize = rSize + 6
+     end do
+     
+     do i=1, oWall%ADT%nLeaves
+        oWall%rBuffer(rSize+1:rSize+6) = oWall%ADT%ADTree(i)%xMin(:)
+        rSize = rSize + 6
+        
+        oWall%rBuffer(rSize+1:rSize+6) = oWall%ADT%ADTree(i)%xMax(:)
+        rSize = rSize + 6
+     end do
+  end if
 end subroutine packOWall
 
 subroutine unpackOWall(oWall)
@@ -523,15 +614,94 @@ subroutine unpackOWall(oWall)
   implicit none
 
   ! Input/Output Parameters
-  type(oversetFringe), intent(inout) :: oWall
+  type(oversetWall), intent(inout) :: oWall
 
   ! Working paramters
-  integer(kind=intType) :: rSize, iSize, idom, i, ii, mm
+  integer(kind=intType) :: rSize, iSize, idom, i,  j
 
-  ! Set the sizes of this oFringe
+  ! Set the sizes of this oWall
   oWall%il = oWall%iBuffer(1)
   oWall%jl = oWall%iBuffer(2)
   oWall%kl = oWall%iBuffer(3)
+
+  oWall%nNodes = oWall%iBuffer(4)
+  oWall%nCells = oWall%iBuffer(5)
+
+  iSize = 5
+  rSize = 0
+
+  ! Allocate the arrays now that we know the sizes
+  allocate(oWall%conn(4, oWall%nCells))
+  allocate(oWall%x(3, oWall%nNodes))
+
+  ! Once we know the sizes, allocate all the arrays in the
+  ! ADTree. Since we are not going to call the *actual* build routine
+  ! for the ADT, we need to set all the information ourselves. This
+  ! essentially does the same thing as buildSerialHex.
+  oWall%ADT%adtType = adtSurfaceADT
+  oWall%ADT%nNodes = oWall%nNodes
+  oWall%ADT%nTetra = 0
+  oWall%ADT%nPyra = 0
+  oWall%ADT%nPrisms = 0
+  oWall%ADT%nTria = 0
+  oWall%ADT%nQuads = oWall%nCells
+  oWall%ADT%coor => oWall%x
+  oWall%ADT%quadsConn => oWall%conn
+  nullify(oWall%ADT%triaConn)
+  oWall%ADT%nBBoxes = oWall%nCells
+  allocate(oWall%ADT%xBBOX(6, oWall%nCells))
+  allocate(oWall%ADT%elementType(oWall%nCells))
+  allocate(oWall%ADT%elementID(oWall%nCells))
+  oWall%ADT%comm = MPI_COMM_SELF
+  oWall%ADT%nProcs = 1
+  oWall%ADT%myID = 0
+
+  ! All hexas
+  oWall%ADT%elementType = adtQuadrilateral
+
+  do i=1, oWall%nCells
+     oWall%ADT%elementID(i) = i
+  end do
+
+  ! Now continue copying out the values if necessary:
+  if (oWall%nNodes > 0) then 
+     do j=1, oWall%nCells
+        do i=1, 4
+           iSize = iSize + 1
+           oWall%conn(i, j) = oWall%iBuffer(iSize)
+        end do
+     end do
+     
+     do i=1, oWall%ADT%nLeaves
+        iSize = iSize + 1
+        oWall%ADT%ADTree(i)%children(1) = oWall%iBuffer(iSize)
+        iSize = iSize + 1
+        oWall%ADT%ADTree(i)%children(2) = oWall%iBuffer(iSize)
+     end do
+
+     ! Done with the integer values, do the real ones
+     rSize = 0
+     
+     do i=1, oWall%nNodes
+        do j=1, 3
+           rSize = rSize + 1
+           oWall%x(j, i) = oWall%rBuffer(rSize)
+        end do
+     end do
+     
+     do i=1, oWall%ADT%nBboxes
+        oWall%ADT%xBBox(:, i) = oWall%rBuffer(rSize+1:rSize+6)
+        rSize = rSize + 6
+     end do
+     
+     do i=1, oWall%ADT%nLeaves
+        oWall%ADT%ADTree(i)%xMin(:) = oWall%rBuffer(rSize+1:rSize+6)
+        rSize = rSize + 6
+        
+        oWall%ADT%ADTree(i)%xMax(:) = oWall%rBuffer(rSize+1:rSize+6)
+        rSize = rSize + 6
+     end do
+  end if
 
   ! Flag this oWall as being allocated:
   oWall%allocated = .True.

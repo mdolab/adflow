@@ -160,9 +160,9 @@ subroutine oversetComm(level, firstTime, coarseLevel)
            end do
         end if
         ! Sizes
-        call getOBlockBufferSizes(il, jl, kl, tmpInt2D(iDom, 1), tmpInt2D(iDom, 2))
+        call getOBlockBufferSizes (il, jl, kl, tmpInt2D(iDom, 1), tmpInt2D(iDom, 2))
         call getOFringeBufferSizes(il, jl, kl, tmpInt2D(iDom, 3), tmpInt2D(iDom, 4))
-        call getOWallBufferSizes(il, jl, kl, tmpInt2D(iDom, 5), tmpInt2D(iDom, 6))
+        call getOWallBufferSizes  (il, jl, kl, tmpInt2D(iDom, 5), tmpInt2D(iDom, 6))
      end do
      
      if (.not. firstTime) then 
@@ -193,10 +193,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
 
      call oversetLoadBalance(overlap)
      call transposeOverlap(overlap, overlapTranspose)
-     ! if (myid == 0) then 
-     !    call  printoverlapmatrix(overlap)
-     ! end if
-
+   
      ! -----------------------------------------------------------------
      !  Step 8: Section out just the intersections we have to
      !  do. Essentially this is just the entries in the matrix that we
@@ -295,7 +292,6 @@ subroutine oversetComm(level, firstTime, coarseLevel)
         call initializeOWall(oWalls(iDom), nn, level, sps)
         call packOWall(oWalls(iDom))
         oWallReady(iDom) = .True. 
-
      end do
 
      ! Call the generic routines to determine the send/receive pattern
@@ -312,12 +308,17 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      ii = nDomTotal - nDom
      allocate(oBlockRecvList(2, ii), oFringeRecvList(2, ii), oWallRecvList(2, ii))
 
-     call getCommPattern(overlap, overlapTranspose, &
+     call getCommPattern(overlap, &
           oblockSendList, size(oBlockSendList, 2),  nOblockSend, &
           oBlockRecvList, size(oBlockRecvList, 2), nOblockRecv)
-     call getCommPattern(overlapTranspose, overlap, &
+     call getCommPattern(overlapTranspose, &
           oFringeSendList, size(oFringeSendList, 2), nOFringeSend, &
           oFringeRecvList, size(oFringeRecvList, 2), nOFringeRecv)
+
+     ! The wall send/recv list is essentially the merging of the
+     ! oBlock and oFringe send/recv lists. Essentially if we have an
+     ! oBlock OR an oFringe we need to have the oWall for it as well. 
+
      nOWallSend = 0
      nOWallRecv = 0
 
@@ -355,6 +356,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      end do
 
      do jj=1, nOWallSend
+        stop
         iProc = oFringeSendList(1, jj)
         iDom = oFringeSendList(2, jj)
         call sendOWall(oWalls(iDom), iDom, iProc, 2*MAGIC, sendCount)
@@ -378,6 +380,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      end do
 
      do jj=1, nOWallRecv
+        stop
         iProc = oWallRecvList(1, jj)
         iDom = oWallRecvList(2, jj)
         call recvOWall(oWalls(iDom), iDom, iProc, 2*MAGIC, &
@@ -435,6 +438,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
         ! oWall and flag it as ready.
         if (oWalls(iDom)%realBufferReady .and. oWalls(iDom)%intBufferReady .and. &
              .not.oWalls(iDom)%allocated) then 
+           stop
            call unpackOWall(oWalls(iDom))
            oFringeReady(iDom) = .True.
         end if
@@ -763,8 +767,8 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      ! ------------------------------------------------------------------
      ! We are now completely finished with oFringes, oBlocks and
      ! oWalls. 
-     call deallocateOData(oBlocks, oFringes, oWalls)
-     deallocate(oFringes, oWalls, intRecvBuf, realRecvBuf)
+     call deallocateOData(oBlocks, oFringes, oWalls, size(oBlocks))
+     deallocate(oBlocks, oFringes, oWalls, intRecvBuf, realRecvBuf)
 
      ! -----------------------------------------------------------------
      ! Step 9: We now have computed all the fringes that we can. Some of
@@ -865,7 +869,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      ! should probably only flood compute cells that are not also
      ! donors, since that would get a little complicated. 
 
-     call floodInteriorCells(level, sps)
+     !call floodInteriorCells(level, sps)
 
      call exchangeFringes(level, sps, commPatternCell_2nd, internalCell_2nd)
 
@@ -1133,7 +1137,7 @@ contains
        if (oBlockReady(iDom) .and. oFringeReady(jDom) .and. work(4, iWork) == 0) then 
 
           startTime = mpi_wtime()
-          call fringeSearch(oBlocks(iDom), oFringes(jDom))
+          call fringeSearch(oBlocks(iDom), oFringes(jDom), oWalls(iDom), oWalls(jDom))
           endTime = mpi_wtime()
           overlap%data(jj) = endTime - startTime
           

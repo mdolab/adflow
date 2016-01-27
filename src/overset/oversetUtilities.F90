@@ -249,15 +249,14 @@ subroutine fracToWeights(frac, weights)
   weights(8) = (    frac(1))*(    frac(2))*(    frac(3))
 end subroutine fracToWeights
 
-
-subroutine getCommPattern(oMat, oMatT, sendList, size1, nSend, recvList, size2, nRecv)
+subroutine getCommPattern(oMat,  sendList, size1, nSend, recvList, size2, nRecv)
 
   use overset
   use communication 
   implicit none
 
   ! Input/output
-  type(CSRMatrix), intent(in) :: oMat, oMatT
+  type(CSRMatrix), intent(in) :: oMat
   integer(kind=intType), intent(in) :: size1, size2
   integer(kind=intType), intent(out) :: sendList(2, size1), recvList(2, size2)
   integer(kind=intType), intent(out) :: nSend, nRecv
@@ -580,7 +579,10 @@ subroutine deallocateOData(oBlocks, oFringes, oWalls, n)
 
      ! oWalls
      if (oWalls(i)%allocated) then 
-           ! ...
+        deallocate(&
+             oWalls(i)%x, &
+             oWalls(i)%conn)
+        call destroySerialQuad(oWalls(i)%ADT)
      end if
      oWalls(i)%allocated = .False.
 

@@ -1,4 +1,4 @@
-subroutine fringeSearch(oBlock, oFringe)
+subroutine fringeSearch(oBlock, oFringe, bWall, fWall)
 
   use constants
   use overset
@@ -8,12 +8,15 @@ subroutine fringeSearch(oBlock, oFringe)
 
   type(oversetBlock), intent(inout) :: oBlock
   type(oversetFringe), intent(inout) :: oFringe
+  type(oversetWall), intent(inout) :: bWall, fWall
   integer(kind=intType) :: idom, jdom
+
   ! Working Varaibles
   integer(kind=intType) :: nInterpol, elemID, nalloc, intInfo(3), i, ii, jj, kk, j, nn
-  integer(kind=intTYpe) :: iii, jjj, kkk
+  integer(kind=intTYpe) :: iii, jjj, kkk, n
   logical :: invalid
-  real(kind=realType) :: uvw(4), donorQual
+  real(kind=realType) :: uvw(4), donorQual, xx(3)
+  real(kind=realType), dimension(:, :), allocatable :: offset
 
   ! Variables we have to pass the ADT search routine
   integer(kind=intType), dimension(:), pointer :: BB
@@ -26,9 +29,22 @@ subroutine fringeSearch(oBlock, oFringe)
   ! the singlePoint search routine. 
   allocate(BB(20), frontLeaves(25), frontLeavesNew(25))
 
+  ! Number of fringes we have:
+  n = size(oFringe%x, 2)
+
+  ! Offset vector:
+  allocate(offset(3, n))
+
+  ! Determine if we have a wall-wall overlap:
+  if (bWall%nNodes /= 0 .and. fWall%nNodes /= 0) then 
+     !call surfaceCorrection(oBlock, oFringe, bWall, fWall, offset, n)
+     offset = zero
+  else
+     offset = zero
+  end if
+
   ! Search the cells one at a time:
-  
-  do i=1, size(oFringe%x, 2)
+  do i=1, n
 
      ! We can take a little short cut here: If we know that the min
      ! volume of the oBlock is LARGER than the cell we're searching
@@ -39,11 +55,12 @@ subroutine fringeSearch(oBlock, oFringe)
      ! not, so we check that the minimum volume in the oBlock is LESS
      ! than the volume of the coordinate we're searching for.
      shortCut: if (  oBlock%minVol < oFringe%quality(i) .or.&
-          (oFringe%isWall(i)==1)) then 
+          (oFringe%isWall(i)>0)) then 
 
-        call containmentTreeSearchSinglePoint(oBlock%ADT, &
-             oFringe%x(:, i), intInfo, uvw, oBlock%qualDonor, &
-             nInterpol, BB, frontLeaves, frontLeavesNew)
+        ! Compute the potentailly offset point to search for. 
+        xx = oFringe%x(:, i) + offset(:, i)
+        call containmentTreeSearchSinglePoint(oBlock%ADT, xx, intInfo, uvw, &
+             oBlock%qualDonor, nInterpol, BB, frontLeaves, frontLeavesNew)
 
         elemFound: if (.not. intInfo(1) < 0) then 
 
@@ -58,7 +75,7 @@ subroutine fringeSearch(oBlock, oFringe)
            ! record if only if it is also not "near" another wall (on
            ! the oBlock)
 
-           if ((oFringe%isWall(i) == 1) .and.&
+           if ((oFringe%isWall(i) > 0) .and.&
                 .not. (oBlock%nearWall(ii, jj, kk) == 1)) then 
               nLocalWallFringe = nLocalWallFringe + 1
               
@@ -129,4 +146,6 @@ subroutine fringeSearch(oBlock, oFringe)
         end if elemFound
      end if shortCut
   end do
+  deallocate(offset, BB, frontLeaves, frontLeavesNew)
+
 end subroutine fringeSearch
