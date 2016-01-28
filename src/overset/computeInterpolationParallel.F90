@@ -876,9 +876,9 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      ! should probably only flood compute cells that are not also
      ! donors, since that would get a little complicated. 
 
-     !call floodInteriorCells(level, sps)
+     call floodInteriorCells(level, sps)
 
-     !call exchangeFringes(level, sps, commPatternCell_2nd, internalCell_2nd)
+     call exchangeFringes(level, sps, commPatternCell_2nd, internalCell_2nd)
 
      !-----------------------------------------------------------------
      ! Step 15: Reduction of the number of fringes. What we do is look at
@@ -887,9 +887,9 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      ! hole.
      ! -----------------------------------------------------------------
 
-     !call fringeReduction(level, sps)
+     call fringeReduction(level, sps)
 
-     !call exchangeFringes(level, sps, commPatternCell_2nd, internalCell_2nd)
+     call exchangeFringes(level, sps, commPatternCell_2nd, internalCell_2nd)
 
      ! -----------------------------------------------------------------
      ! Step 17: We can now create the final required comm structures
@@ -926,9 +926,9 @@ subroutine oversetComm(level, firstTime, coarseLevel)
   allocate(sendBuffer(sendBufferSize), recvBuffer(recvBufferSize))
 
   call MPI_barrier(sumb_comm_world, ierr)
-  print *,' DONE! interpolation', myid, mpi_wtime()-timeA
+  !print *,' DONE! interpolation', myid, mpi_wtime()-timeA
   !call writePartionedMesh('partmesh.dat')
-  !deallocate(cumdomproc, ndomproc)
+  deallocate(cumdomproc, ndomproc)
 contains
 
   ! Simple utility-type routines that make the main subroutine
