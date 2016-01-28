@@ -295,7 +295,7 @@ subroutine exchangeFringes(level, sps, commPattern, internal)
   ! Complete the nonblocking receives in an arbitrary sequence and
   ! copy the variables from the buffer into the halo's.
 
-  size = nVar*commPattern(level)%nProcRecv
+  size = commPattern(level)%nProcRecv
   completeRecvs: do i=1,commPattern(level)%nProcRecv
 
      ! Complete any of the requests.
@@ -305,7 +305,7 @@ subroutine exchangeFringes(level, sps, commPattern, internal)
      ! Copy the data just arrived in the halo's.
 
      ii = index
-     jj = commPattern(level)%nrecvCum(ii-1)
+     jj = nVar*commPattern(level)%nrecvCum(ii-1)
      do j=1,commPattern(level)%nrecv(ii)
 
         ! Store the block and the indices of the halo a bit easier.
