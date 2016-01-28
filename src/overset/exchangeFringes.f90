@@ -160,7 +160,7 @@ subroutine exchangeFringes(level, sps, commPattern, internal)
      ! Copy the data just arrived in the halo's.
 
      ii = index
-     jj = commPattern(level)%nrecvCum(ii-1)
+     jj = nVar*commPattern(level)%nrecvCum(ii-1)
      do j=1,commPattern(level)%nrecv(ii)
 
         ! Store the block and the indices of the halo a bit easier.
@@ -190,7 +190,7 @@ subroutine exchangeFringes(level, sps, commPattern, internal)
 
   ! Done with the integer memory. 
 
-  deallocate(sendBufInt, recvBufInt, stat=ierr)
+  deallocate(sendBufInt, recvBufInt)
 
   ! Now do the real exchange. We can use the regular real buffers here
   ! since they are large enough
@@ -229,9 +229,7 @@ subroutine exchangeFringes(level, sps, commPattern, internal)
 
         ! Copy integer values to buffer
 
-        sendBuffer(jj  ) = flowDoms(d1,level,sps)%fringes(i1,j1,k1)%donorFrac(1)
-        sendBuffer(jj+1) = flowDoms(d1,level,sps)%fringes(i1,j1,k1)%donorFrac(2)
-        sendBuffer(jj+2) = flowDoms(d1,level,sps)%fringes(i1,j1,k1)%donorFrac(3)
+        sendBuffer(jj:jj+2) = flowDoms(d1,level,sps)%fringes(i1,j1,k1)%donorFrac
 
         jj = jj + 3
 
@@ -297,7 +295,7 @@ subroutine exchangeFringes(level, sps, commPattern, internal)
   ! Complete the nonblocking receives in an arbitrary sequence and
   ! copy the variables from the buffer into the halo's.
 
-  size = commPattern(level)%nProcRecv
+  size = nVar*commPattern(level)%nProcRecv
   completeRecvs: do i=1,commPattern(level)%nProcRecv
 
      ! Complete any of the requests.
@@ -317,9 +315,7 @@ subroutine exchangeFringes(level, sps, commPattern, internal)
         j2 = commPattern(level)%recvList(ii)%indices(j,2)
         k2 = commPattern(level)%recvList(ii)%indices(j,3)
 
-        flowDoms(d2,level,sps)%fringes(i2,j2,k2)%donorFrac(1) = recvBuffer(jj+1)
-        flowDoms(d2,level,sps)%fringes(i2,j2,k2)%donorFrac(2) = recvBuffer(jj+2)
-        flowDoms(d2,level,sps)%fringes(i2,j2,k2)%donorFrac(3) = recvBuffer(jj+3)
+        flowDoms(d2,level,sps)%fringes(i2,j2,k2)%donorFrac = recvBuffer(jj+1:jj+3)
 
         jj = jj + 3
      enddo
