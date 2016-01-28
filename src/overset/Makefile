@@ -43,6 +43,7 @@ FILES_TO_COMPLEXIFY =	computeInterpolationParallel.F90\
 			determineClusters.F90 \
 			checkOverset.F90 \
 			exchangeIblanks.f90\
+			exchangeIsCompute.f90\
 			floodInteriorCells.F90\
 			oversetLoadBalance.F90\
 			qsortFringeType.F90\
@@ -59,9 +60,9 @@ FILES_TO_COMPLEXIFY =	computeInterpolationParallel.F90\
 			finalOversetCommStructures.F90\
 			setIBlankArray.F90\
 		        exchangeDonorStatus.F90\
-			oversetMPITypes.F90\
 			exchangeFringes.f90\
 			surfaceCorrection.F90\
+			oversetMPITypes.F90\
 		       # computeQuadraticWeights.F90 \
 		       matrixinv3by3.F90 \
 

@@ -868,8 +868,6 @@ subroutine oversetComm(level, firstTime, coarseLevel)
 
      call irregularCellCorrection(level, sps)
 
-     call exchangeFringes(level, sps, commPatternCell_2nd, internalCell_2nd)
-
      ! Next we have to perfrom the interior cell flooding. We already
      ! have the information we need: we have isWallFringe defined in
      ! the fringes as well as knowing if a cell is a compute. We
@@ -878,7 +876,10 @@ subroutine oversetComm(level, firstTime, coarseLevel)
 
      call floodInteriorCells(level, sps)
 
-     call exchangeFringes(level, sps, commPatternCell_2nd, internalCell_2nd)
+     ! The fringeReduction just needs to be isCompute flag so exchange
+     ! this as these may have been changed by the flooding
+
+     call exchangeIsCompute(level, sps, commPatternCell_2nd, internalCell_2nd)
 
      !-----------------------------------------------------------------
      ! Step 15: Reduction of the number of fringes. What we do is look at
@@ -888,6 +889,11 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      ! -----------------------------------------------------------------
 
      call fringeReduction(level, sps)
+    
+     ! Before we can do the final comm structures, we need to make
+     ! sure that every processor's halo have any donor information
+     ! necessary to build its own comm pattern. For this will need to
+     ! send donorProc, donorBlock, dI, dJ, dK and donorFrac. 
 
      call exchangeFringes(level, sps, commPatternCell_2nd, internalCell_2nd)
 
@@ -903,7 +909,6 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      call finalOversetCommStructures(level, sps, MAGIC)
 
      ! VERY last thing is to update iBlank based on the status of our local fringes. 
-     call mpi_barrier(sumb_comm_world, ierr)
      call setIblankArray(level, sps)
 
      ! -----------------------------------------------------------------
@@ -924,10 +929,6 @@ subroutine oversetComm(level, firstTime, coarseLevel)
   ! for the overset comm
   deallocate(sendBuffer, recvBuffer)
   allocate(sendBuffer(sendBufferSize), recvBuffer(recvBufferSize))
-
-  call MPI_barrier(sumb_comm_world, ierr)
-  !print *,' DONE! interpolation', myid, mpi_wtime()-timeA
-  !call writePartionedMesh('partmesh.dat')
   deallocate(cumdomproc, ndomproc)
 contains
 

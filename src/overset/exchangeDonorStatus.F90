@@ -3,7 +3,7 @@ subroutine exchangeDonorStatus(level, sps, commPattern, internal)
   ! exchangeDonorStatus performs the *TRANSPOSE* of the normal halo
   ! exchange. That means it takes information *in the halo cells* and
   ! accumulate it into the *owned cells*. In this particular case, we
-  ! are tramitting the isDonor and isWallDonor information from the
+  ! are transmitting the isDonor and isWallDonor information from the
   ! halos to the owned cells. The "accumulate" operation will be an
   ! MPI_LOR.  Note that this actually hast he same comm structure as
   ! 'whalo1to1_b'.
