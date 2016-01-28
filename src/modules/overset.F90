@@ -125,7 +125,9 @@ module overset
   type oversetWall
 
      ! Sizes
-     integer(kind=intType) :: il, jl, kl, nNodes, nCells
+     integer(kind=intType) :: il, jl, kl
+     integer(kind=intType) :: nNodes=0
+     integer(kind=intType) :: nCells=0
 
      ! Buffer space for sending/receiving the fringes
      real(kind=realType), dimension(:), allocatable :: rBuffer
