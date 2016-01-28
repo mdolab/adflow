@@ -15,7 +15,7 @@ subroutine fringeSearch(oBlock, oFringe, bWall, fWall)
   integer(kind=intType) :: nInterpol, elemID, nalloc, intInfo(3), i, ii, jj, kk, j, nn
   integer(kind=intTYpe) :: iii, jjj, kkk, n
   logical :: invalid
-  real(kind=realType) :: uvw(4), donorQual, xx(3)
+  real(kind=realType) :: uvw(4), donorQual, xx(3), pt(3)
   real(kind=realType), dimension(:, :), allocatable :: offset
 
   ! Variables we have to pass the ADT search routine
@@ -34,13 +34,11 @@ subroutine fringeSearch(oBlock, oFringe, bWall, fWall)
 
   ! Offset vector:
   allocate(offset(3, n))
+  offset = zero
 
   ! Determine if we have a wall-wall overlap:
   if (bWall%nNodes /= 0 .and. fWall%nNodes /= 0) then 
-     !call surfaceCorrection(oBlock, oFringe, bWall, fWall, offset, n)
-     offset = zero
-  else
-     offset = zero
+     call surfaceCorrection(oBlock, oFringe, bWall, fWall, offset, n)
   end if
 
   ! Search the cells one at a time:
@@ -59,6 +57,7 @@ subroutine fringeSearch(oBlock, oFringe, bWall, fWall)
 
         ! Compute the potentailly offset point to search for. 
         xx = oFringe%x(:, i) + offset(:, i)
+
         call containmentTreeSearchSinglePoint(oBlock%ADT, xx, intInfo, uvw, &
              oBlock%qualDonor, nInterpol, BB, frontLeaves, frontLeavesNew)
 
@@ -70,7 +69,7 @@ subroutine fringeSearch(oBlock, oFringe, bWall, fWall)
            ii = mod(elemID, oBlock%il) + 1
            jj = mod(elemID/oBlock%il, oBlock%jl) + 1
            kk = elemID/(oBlock%il*oBlock%jl) + 1
-              
+
            ! If we found a donor and our fringe is a wall, we will
            ! record if only if it is also not "near" another wall (on
            ! the oBlock)

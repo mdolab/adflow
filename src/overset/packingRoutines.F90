@@ -480,15 +480,16 @@ subroutine getWallSize(nNodes, nCells)
   ! Working:
   integer(kind=intType) :: mm, iBeg, iEnd, jBeg, jEnd
 
-  ! Figure out the size the wall is going to be:
+  ! Figure out the size the wall is going to be. See
+  ! initializeOWall.F90 for why the sizes are the way they are. 
   nNodes = 0
   nCells = 0
   do mm=1,nBocos
       if (BCType(mm) == EulerWall .or. BCType(mm) == NSWallAdiabatic .or. &
           BCType(mm) == NSWallIsoThermal) then 
         
-        jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
-        iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
+        jBeg = BCData(mm)%jnBeg-1 ; jEnd = BCData(mm)%jnEnd
+        iBeg = BCData(mm)%inBeg-1 ; iEnd = BCData(mm)%inEnd
         nNodes = nNodes + (iEnd - iBeg + 1)*(jEnd - jBeg + 1)
         nCells = nCells + (iEnd - iBeg )*(jEnd - jBeg)
      end if
@@ -662,6 +663,10 @@ subroutine unpackOWall(oWall)
   do i=1, oWall%nCells
      oWall%ADT%elementID(i) = i
   end do
+
+  oWall%ADT%nLeaves = oWall%ADT%nBBoxes - 1
+  if(oWall%ADT%nBBoxes <= 1) oWall%ADT%nLeaves = oWall%ADT%nLeaves + 1
+  allocate(oWall%ADT%ADTree(oWall%ADT%nLeaves))
 
   ! Now continue copying out the values if necessary:
   if (oWall%nNodes > 0) then 

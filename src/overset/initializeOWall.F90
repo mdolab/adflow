@@ -36,27 +36,37 @@ subroutine initializeOWall(oWall)
      if (BCType(mm) == EulerWall .or. BCType(mm) == NSWallAdiabatic .or. &
           BCType(mm) == NSWallIsoThermal) then 
 
-        ! NODE Loop
-        jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
-        iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
+        ! THIS IS SUPER IMPORTANT: It is absolutely critical that the
+        ! wall be built *FROM THE DUAL MESH!!* IT WILL NOT WORK IF YOU
+        ! USE THE PRIMAL MESH! The -1 for the node ranges below gives
+        ! the extra '1' node for the mesh fromed from the dual cells. 
+
+        jBeg = BCData(mm)%jnBeg-1 ; jEnd = BCData(mm)%jnEnd
+        iBeg = BCData(mm)%inBeg-1 ; iEnd = BCData(mm)%inEnd
 
         ! Now fill up the point array
         do j=jBeg, jEnd
-           do i=iBeg, iEnd ! This is a node loop
+           do i=iBeg, iEnd 
               ii = ii +1
               select case(BCFaceID(mm))
               case(imin)
-                 oWall%x(:,ii) = x(1,i,j,:)
+                 oWall%x(:,ii) = fourth*(x(1, i, j, :) + x(1, i+1, j, :) + &
+                      x(1, i, j+1, :) + x(1, i+1, j+1, :))
               case(imax)
-                 oWall%x(:,ii) = x(il,i,j,:)
+                 oWall%x(:,ii) = fourth*(x(il, i, j, :) + x(il, i+1, j, :) + &
+                      x(il, i, j+1, :) + x(il, i+1, j+1, :))
               case(jmin) 
-                 oWall%x(:,ii) = x(i,1,j,:)
+                 oWall%x(:,ii) = fourth*(x(i, 1, j, :) + x(i+1, 1, j, :) + &
+                      x(i, 1, j+1, :) + x(i+1, 1, j+1, :))
               case(jmax) 
-                 oWall%x(:,ii) = x(i,jl,j,:)
+                 oWall%x(:,ii) = fourth*(x(i, jl, j, :) + x(i+1, jl, j, :) + &
+                      x(i, jl, j+1, :) + x(i+1, jl, j+1, :))
               case(kmin) 
-                 oWall%x(:,ii) = x(i,j,1,:)
+                 oWall%x(:,ii) = fourth*(x(i, j, 1, :) + x(i+1, j, 1, :) + &
+                      x(i, j+1, 1, :) + x(i+1, j+1, 1, :))
               case(kmax) 
-                 oWall%x(:,ii) = x(i,j,kl,:)
+                 oWall%x(:,ii) = fourth*(x(i, j, kl, :) + x(i+1, j, kl, :) + &
+                      x(i, j+1, kl, :) + x(i+1, j+1, kl, :))
               end select
            end do
         end do

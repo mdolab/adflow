@@ -193,7 +193,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
 
      call oversetLoadBalance(overlap)
      call transposeOverlap(overlap, overlapTranspose)
-   
+
      ! -----------------------------------------------------------------
      !  Step 8: Section out just the intersections we have to
      !  do. Essentially this is just the entries in the matrix that we
@@ -264,7 +264,16 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      allocate(oBlockReady(nDomTotal), oFringeReady(nDomTotal), oWallReady(nDomTotal))
      oBlockReady = .False.
      oFringeReady = .False.
-     oWallReady = .False.
+     ! Flag the oWalls that do not actually have a wall, as being
+     ! ready.
+     do iDom=1,nDomtotal
+        if (bufSizes(iDom, 6) == 0) then 
+           oWallReady(iDom) = .True.
+        else
+           oWallReady(iDom) = .False.
+        end if
+     end do
+     
 
      ! Allocate space for the localWallFringes. localWallFringes keeps
      ! track of donors for cells that are next to a wall. These must
@@ -318,9 +327,9 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      ! The wall send/recv list is essentially the merging of the
      ! oBlock and oFringe send/recv lists. Essentially if we have an
      ! oBlock OR an oFringe we need to have the oWall for it as well. 
-
-     nOWallSend = 0
-     nOWallRecv = 0
+     call getOWallCommPattern(overlap, overlapTranspose, &
+          oWallSendList, size(oWallSendList, 2), nOWallSend, &
+          oWallRecvList, size(oWallRecvList, 2), nOWallRecv, bufSizes(:, 6))
 
      ! Done with the transposed matrix
      call deallocateCSRMatrix(overlapTranspose)
@@ -356,9 +365,8 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      end do
 
      do jj=1, nOWallSend
-        stop
-        iProc = oFringeSendList(1, jj)
-        iDom = oFringeSendList(2, jj)
+        iProc = oWallSendList(1, jj)
+        iDom = oWallSendList(2, jj)
         call sendOWall(oWalls(iDom), iDom, iProc, 2*MAGIC, sendCount)
      end do
         
@@ -380,13 +388,13 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      end do
 
      do jj=1, nOWallRecv
-        stop
         iProc = oWallRecvList(1, jj)
         iDom = oWallRecvList(2, jj)
         call recvOWall(oWalls(iDom), iDom, iProc, 2*MAGIC, &
              bufSizes(iDom, 5), bufSizes(iDom, 6), recvCount, recvInfo)
      end do
 
+  
      ! Before we start waiting for the receives to finish, we can see
      ! if we can do any searches with the blocks/fringes we already
      ! have. Call the internal routine for this.
@@ -413,9 +421,9 @@ subroutine oversetComm(level, firstTime, coarseLevel)
         else if (recvInfo(2, index) == 4) then 
            oFringes(iDOm)%intBufferReady = .True. 
         else if (recvInfo(2, index) == 5) then 
-           oFringes(iDom)%realBufferReady = .True. 
+           oWalls(iDom)%realBufferReady = .True. 
         else if (recvInfo(2, index) == 6) then 
-           oFringes(iDom)%intBufferReady = .True. 
+           oWalls(iDom)%intBufferReady = .True. 
         end if
 
         ! If both int and real buffers are received, we can unpack the
@@ -438,9 +446,8 @@ subroutine oversetComm(level, firstTime, coarseLevel)
         ! oWall and flag it as ready.
         if (oWalls(iDom)%realBufferReady .and. oWalls(iDom)%intBufferReady .and. &
              .not.oWalls(iDom)%allocated) then 
-           stop
            call unpackOWall(oWalls(iDom))
-           oFringeReady(iDom) = .True.
+           oWallReady(iDom) = .True.
         end if
 
         ! Now see if we can do any more of the work, ie the searches. 
@@ -871,7 +878,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
 
      !call floodInteriorCells(level, sps)
 
-     call exchangeFringes(level, sps, commPatternCell_2nd, internalCell_2nd)
+     !call exchangeFringes(level, sps, commPatternCell_2nd, internalCell_2nd)
 
      !-----------------------------------------------------------------
      ! Step 15: Reduction of the number of fringes. What we do is look at
@@ -880,9 +887,9 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      ! hole.
      ! -----------------------------------------------------------------
 
-     call fringeReduction(level, sps)
+     !call fringeReduction(level, sps)
 
-     call exchangeFringes(level, sps, commPatternCell_2nd, internalCell_2nd)
+     !call exchangeFringes(level, sps, commPatternCell_2nd, internalCell_2nd)
 
      ! -----------------------------------------------------------------
      ! Step 17: We can now create the final required comm structures
@@ -921,7 +928,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
   call MPI_barrier(sumb_comm_world, ierr)
   print *,' DONE! interpolation', myid, mpi_wtime()-timeA
   !call writePartionedMesh('partmesh.dat')
-  deallocate(cumdomproc, ndomproc)
+  !deallocate(cumdomproc, ndomproc)
 contains
 
   ! Simple utility-type routines that make the main subroutine
@@ -1134,7 +1141,9 @@ contains
 
        ! Check if I have the oBlock and fringes i need to do this
        ! intersection and I haven't already done it.
-       if (oBlockReady(iDom) .and. oFringeReady(jDom) .and. work(4, iWork) == 0) then 
+       if (oBlockReady(iDom) .and. oFringeReady(jDom) .and. &
+            oWallReady(iDom) .and. oWallReady(jDom) .and. &
+            work(4, iWork) == 0) then 
 
           startTime = mpi_wtime()
           call fringeSearch(oBlocks(iDom), oFringes(jDom), oWalls(iDom), oWalls(jDom))

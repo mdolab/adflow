@@ -345,6 +345,104 @@ subroutine getCommPattern(oMat,  sendList, size1, nSend, recvList, size2, nRecv)
   deallocate(procsForThisRow, inverse, blkProc)
 end subroutine getCommPattern
 
+subroutine getOWallCommPattern(oMat, oMatT, sendList, size1, nSend, &
+     recvList, size2, nRecv, rBufSize)
+  
+  ! This subroutine get the the comm pattern to send the oWall types. 
+  
+  use overset
+  use communication 
+  implicit none
+
+  ! Input/output
+  type(CSRMatrix), intent(in) :: oMat, oMatT
+  integer(kind=intType), intent(in) :: size1, size2
+  integer(kind=intType), intent(out) :: sendList(2, size1), recvList(2, size2)
+  integer(kind=intType), intent(out) :: nSend, nRecv
+  integer(kind=intType), intent(in) :: rBufSize(nDomTotal)
+
+  ! Working:
+  integer(kind=intType) :: nn, iDom, jDom, nnRow, nnRowT, i, jj, ii, nUniqueProc, iProc
+  integer(kind=intType), dimension(:), allocatable :: blkProc, toRecv
+  integer(kind=intType), dimension(:), allocatable :: procsForThisRow, inverse
+
+
+  nSend = 0
+  nRecv = 0
+
+  allocate(procsForThisRow(2*nDomTotal), inverse(2*nDomTotal), blkProc(nDomTotal))
+
+  ii = 0
+  do iProc=0, nProc-1
+     do i=1, nDomProc(iProc)
+        ii = ii + 1
+        blkProc(ii) = iProc
+     end do
+  end do
+
+  ! Loop over the owned rows of the regular matrix and the rows
+  ! transposed matrix (ie columns of the regular matrix)
+  do nn=1, nDom
+
+     iDom = cumDomProc(myid) + nn
+
+     ! Only deal with this block if the rbuffer size for the oWall is
+     ! greater than zero. If it is zero, it is empty we don't need to
+     ! deal with it.
+     if (rBufSize(iDom) > 0) then 
+
+        nnRow = oMat%rowPtr(iDom+1) - oMat%rowPtr(iDom)
+        procsForThisRow(1:nnRow) = oMat%assignedProc(oMat%rowPtr(iDom) : oMat%rowPtr(iDom+1)-1)
+        
+        nnRowT = oMatT%rowPtr(iDom+1) - oMatT%rowPtr(iDom)
+        procsForThisRow(nnRow+1:nnRow+nnRowT) = oMatT%assignedProc(oMatT%rowPtr(iDom) : oMatT%rowPtr(iDom+1)-1)
+
+        call unique(procsForThisRow, nnRow+nnRowT, nUniqueProc, inverse)
+        
+        do jj = 1, nUniqueProc
+           if (procsForThisRow(jj) /= myid) then 
+              ! This intersection requires a row quantity from me
+              nSend = nSend + 1
+              sendList(1, nSend) = procsForThisRow(jj) 
+              sendList(2, nSend) = iDom 
+           end if
+        end do
+     end if
+  end do
+
+  ! Now we loop back through the whole matrix looking at what I have
+  ! to do. If there is a row or column I don't own, I will have to receive it:
+  allocate(toRecv(nDomTotal))
+  toRecv = 0
+  do iDom=1, nDomTotal
+     do jj=oMat%rowPtr(iDom), oMat%rowPtr(iDom+1)-1
+        jDom = oMat%colInd(jj)
+        if (oMat%assignedProc(jj) == myID) then 
+           ! I don't have the row entry:
+           if (.not. (iDom > cumDomProc(myid) .and. iDom <= cumDomProc(myid+1))) then 
+              toRecv(iDom) = 1
+           end if
+           ! Don't have the column entry:
+           if (.not. (jDom > cumDomProc(myid) .and. jDom <= cumDomProc(myid+1))) then 
+              toRecv(jDom) = 1
+           end if
+        end if
+     end do
+  end do
+     
+  ! Now loop back through and set my recvList. Only add if the
+  ! rBufferSize is larger than zero.
+  do iDom=1, nDomTotal
+     if (toRecv(iDom) == 1 .and. rBufSize(iDom) > 0) then 
+        nRecv = nRecv + 1
+        recvList(1, nRecv) = blkProc(iDom)
+        recvList(2, nRecv) = iDom
+     end if
+  end do
+
+  deallocate(procsForThisRow, inverse, blkProc, toRecv)
+end subroutine getOWallCommPattern
+
 subroutine sendOBlock(oBlock, iDom, iProc, tagOffset, sendCount)
 
   use communication

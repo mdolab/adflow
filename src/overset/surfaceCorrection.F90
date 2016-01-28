@@ -56,7 +56,6 @@ subroutine surfaceCorrection(oBlock, oFringe, bWall, fWall, offset, n)
   nx = oFringe%il -1 
   ny = oFringe%jl -1 
   nz = oFringe%kl -1 
-  offset = zero
   masterLoop: do ii=1, n
 
      if (oFringe%isWall(ii) > 0) then 
@@ -66,7 +65,7 @@ subroutine surfaceCorrection(oBlock, oFringe, bWall, fWall, offset, n)
         xx(4) = large
 
         ! Project onto the oBlock *first* since we may be able to
-        ! short out out of this doesn't find a solution in the 0-1
+        ! short-cut out if this doesn't find a solution in the 0-1
         ! range.
         call minDistanceTreeSearchSinglePoint(bWall%ADT, xx, intInfoB, uvwB, &
              dummy, nInterpol, BB, frontLeaves, frontLeavesNew)
@@ -83,7 +82,7 @@ subroutine surfaceCorrection(oBlock, oFringe, bWall, fWall, offset, n)
                 dummy, nInterpol, BB, frontLeaves, frontLeavesNew)
                    
            ! We only continue if the distances are *close*. It could
-           ! happen that the first constrained solution is very far
+           ! happen that the 'B' constrained solution is very far
            ! away. Essentialy what this second check does is determine
            ! what is "close to a wall"; it gives us a scaling for the problem
 
@@ -91,17 +90,18 @@ subroutine surfaceCorrection(oBlock, oFringe, bWall, fWall, offset, n)
            dF = sqrt(uvwF(4))
            ratio = dB/dF
            
-           ! We area pretty generours with the distance check. This is
+           ! We are pretty generours with the distance check. This is
            ! essentially anything within about 500 y+. 
 
            if (ratio > 1/500_realType .and. ratio < 500_realType) then
 
-              ! Now compute the actual surface points of each projection
+              ! Now compute the locations on the quad of each
+              ! projection
               nodesB = bWall%conn(:, intInfoB(3))
               nodesF = fWall%conn(:, intInfoF(3))
               call getWeights(uvwB(1:2), weightsB)
               call getWeights(uvwF(1:2), weightsF)
-
+  
               ptB = zero
               ptF = zero
               do j=1,4
@@ -121,7 +121,6 @@ subroutine surfaceCorrection(oBlock, oFringe, bWall, fWall, offset, n)
               normalF(2) = (v1(3)*v2(1) - v1(1)*v2(3))
               normalF(3) = (v1(1)*v2(2) - v1(2)*v2(1))
               
-
               vecB = xx(1:3) - ptB
               vecF = xx(1:3) - ptF
 
@@ -156,8 +155,6 @@ subroutine surfaceCorrection(oBlock, oFringe, bWall, fWall, offset, n)
                  jStart = j; jEnd = j
                  kStart = k; kEnd = k
                  
-                 ! Note the that 'Max' faces have the start at the
-                 ! wall so iEnd
                  select case(oFringe%isWall(ii))
                  case(iMin, iMax)
                     iStart=2; iEnd=nx+1
@@ -182,7 +179,7 @@ subroutine surfaceCorrection(oBlock, oFringe, bWall, fWall, offset, n)
                           distY = sqrt((yy(1)-ptF(1))**2 + (yy(2)-ptF(2))**2 + (yy(3)-ptF(3))**2)
 
                           ! Now we can finally compute the normalize ratio
-                          ratio = (distY - dF) / dF 
+                          ratio = (distY - dF) / dF / 500
                           fact = max(one-ratio**3, zero)
                           offset(:, jj) = offset(:, jj) + fact*masterOffset
                        end do
@@ -201,14 +198,12 @@ contains
   subroutine getWeights(uv, weights)
     use constants
     implicit none
-
+    
     real(kind=realType), intent(in) :: uv(2)
     real(kind=realType), intent(out) :: weights(4)
     weights(1) = (one - uv(1))*(one - uv(2))
     weights(2) = (      uv(1))*(one - uv(2))
     weights(3) = (      uv(1))*(      uv(2))
     weights(4) = (one - uv(1))*(      uv(2))
-
   end subroutine getWeights
-
 end subroutine surfaceCorrection
