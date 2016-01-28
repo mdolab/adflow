@@ -39,14 +39,6 @@ subroutine finalOversetCommStructures(level, sps, MAGIC)
      do k=0, kb
         do j=0, jb
            do i=0, ib
-              ! This needs to be fixed....we have to reset myI, etc
-              ! here since the exhcnageFringe overwrite the myI, etc
-              ! from the OTHER block which will not correct.
-              fringes(i, j, k)%myI = i
-              fringes(i, j, k)%myJ = j
-              fringes(i, j, k)%myK = k
-              fringes(i, j, k)%myBlock = nn
-
               if (fringes(i, j, k)%donorProc /= -1) then 
                  nLocalFringe = nLocalFringe + 1
               end if
@@ -242,5 +234,10 @@ subroutine finalOversetCommStructures(level, sps, MAGIC)
   call ECHK(ierr, __FILE__, __LINE__)
 
   deallocate(localFringes, fringeProc, cumFringeProc, nProcSend)
+
+  ! Put a barrier here to make sure that the iprobe only get the
+  ! messages from this routine
+  call mpi_barrier(sumb_comm_world, ierr)
+  call ECHK(ierr, __FILE__, __LINE__)
 
 end subroutine finalOversetCommStructures
