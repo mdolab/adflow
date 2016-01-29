@@ -1,4 +1,4 @@
-subroutine finalOversetCommStructures(level, sps, MAGIC)
+subroutine finalOversetCommStructures(level, sps)
 
 
   ! We need to fill in the following information in the comm patterns:
@@ -7,32 +7,31 @@ subroutine finalOversetCommStructures(level, sps, MAGIC)
 
   use blockPointers
   use communication
-  use overset
 
   implicit none
 
   ! Input Parameters
-  integer(kind=intType), intent(in) :: level, sps, MAGIC
+  integer(kind=intType), intent(in) :: level, sps
 
   ! Working Parameters
   integer(kind=intType) :: i, j, k, ii, jj, kk, nn, tag, ierr, nLocalFringe
-  integer(kind=intType) :: n, nFringeProc, sendCount, iProc
-  integer(kind=intType) :: nCopy,  iSize, iStart, iEnd, iProcRecv, iSendProc, iRecvProc
+  integer(kind=intType) :: n, nFringeProc, sendCount, recvCount, iProc
+  integer(kind=intType) :: iSize, iStart, iEnd, iProcRecv, iSendProc, iRecvProc
+  integer(kind=intType) :: nProcSend, nProcRecv, nCopy, totalRecvSize
   type(fringeType), dimension(:), allocatable :: localFringes
-  integer(kind=intType), dimension(:), allocatable :: nProcSend, nProcSendLocal
+  integer(kind=intType), dimension(:), allocatable :: tmpInt
+  integer(kind=intType), dimension(:), allocatable :: recvSizes
+  integer(kind=intType), dimension(:), allocatable :: nProcSendLocal
   integer(kind=intType), dimension(:), allocatable :: fringeProc, cumFringeProc
-
-  ! MPI Stuff
+  integer(kind=intType), dimension(:), allocatable :: intSendBuf, intRecvBuf
+  real(kind=realType), dimension(:), allocatable :: realSendBuf, realRecvBuf
   integer status(MPI_STATUS_SIZE) 
-  integer, allocatable, dimension(:) :: sendRequests1
-  integer(kind=intTYpe) :: nMsgToSend, iRecv, nRecv
-  logical :: flag
 
   ! We need to fill in the following information in the comm patterns:
   ! sendProc, nProcSend, nSend, and sendList for each proc
   ! recvProc, nProcRecv, nRecv, and recvList for each proc
 
-  ! Count ALL fringes including the halos
+  ! Count all actual fringes (including second level halos)
   nLocalFringe = 0
   do nn=1, nDom
      call setPointers(nn, level, sps)
@@ -41,6 +40,7 @@ subroutine finalOversetCommStructures(level, sps, MAGIC)
            do i=0, ib
               if (fringes(i, j, k)%donorProc /= -1) then 
                  nLocalFringe = nLocalFringe + 1
+
               end if
            end do
         end do
@@ -77,38 +77,56 @@ subroutine finalOversetCommStructures(level, sps, MAGIC)
   call computeFringeProcArray(localFringes, nLocalFringe, &
        fringeProc, cumFringeProc, nFringeProc)
 
+  allocate(tmpInt(0:nProc-1), recvSizes(0:nProc-1))
+  tmpInt = 0
+  do j=1, nFringeProc
+     iProc = fringeProc(j)
+     if (iProc /= myid) then 
+        tmpInt(iProc) = (cumFringeProc(j+1) - cumFringeProc(j))
+     end if
+  end do
+
+  ! Sum how much data we must receive from each processor. 
+  call mpi_alltoall(tmpInt, 1, sumb_integer, recvSizes, 1, sumb_integer, &
+       sumb_comm_world, ierr)
+  call ECHK(ierr, __FILE__, __LINE__)
+  deallocate(tmpInt)
+
+  ! Allocate space for the sending and receiving buffers
+  totalRecvSize = sum(recvSizes)
+  allocate(intSendBuf(4*nLocalFringe), intRecvBuf(totalRecvSize*4), &
+       realSendBuf(3*nLocalFringe), realRecvBuf(totalRecvSize*3))
+  
+  ! Pack the real and integer buffers with donorBlock, dI, dJ, dK and
+  ! donorFrac. We are putting everything in here, including our
+  ! own. That's ok.
+  do j=1, nLocalFringe
+     intSendBuf(4*j-3) = localFringes(j)%donorBlock
+     intSendbuf(4*j-2) = localFringes(j)%dI
+     intSendBuf(4*j-1) = localFringes(j)%dJ
+     intSendBuf(4*j  ) = localFringes(j)%dK
+     realSendBuf(3*j-2:3*j) = localFringes(j)%donorFrac
+  end do
+
   nCopy = 0
   nProcRecv = 0
-  allocate(nProcSend(nProc), nProcSendLocal(nProc))
+  allocate(nProcSendLocal(0:nProc-1))
   nProcSendLocal = 0
 
   do i=1, nFringeProc ! The numer of processors i'm dealing with
      if (fringeProc(i) == myid) then 
         nCopy = cumFringeProc(i+1) - cumFringeProc(i)
      else
-        nProcRecv = nProcRecv + 1
-        nProcSendLocal(fringeProc(i)+1) = 1
+        nProcRecv = nProcRecv + 1  ! I will receive something from this proc
+        nProcSendLocal(fringeProc(i)) = 1 ! That proc will send it to me
      end if
   end do
 
-  ! This will determine the number of procs each processor has to
-  ! send donors to. The value we care about is nSend(myid). Also,
-  ! this counts as a barrier so we know that all comms have
-  ! finished. That means we can restart our MAGIC tag back to 1.
-  call mpi_allreduce(nProcSendLocal, nProcSend, nProc, sumb_integer, MPI_SUM, &
-       sumb_comm_world, ierr)
-  call ECHK(ierr, __FILE__, __LINE__)
-
-  ! ---------------------------------------------------------------------
-  ! Since we are setting up...ie doing the transpose of the actual
-  ! final comm structure, the number of sends we make in this routine,
-  ! is the same is the number of receives we actually want to do in
-  ! the final comm structure. We need to allocate the sendRequests1
-  ! and to know the number of recevies and since this information is
-  ! already computed we assign it here. I know it looks confusing. 
-  allocate(sendRequests1(nProcRecv))
-  nRecv = nProcSend(myid+1)
-  ! ---------------------------------------------------------------------
+  ! This will sum up the nProcSendLocal array and then send out the
+  ! number of sends I have to do. 
+  call mpi_reduce_scatter_block(nProcSendLocal, nProcSend, 1, &
+       sumb_integer, MPI_SUM, sumb_comm_world, ierr)
+  deallocate(nProcSendLocal)
 
   ! We can allocate all necessary space for the send and receive information
   commPatternOverset(level, sps)%nProcRecv = nProcRecv
@@ -116,10 +134,10 @@ subroutine finalOversetCommStructures(level, sps, MAGIC)
   allocate(commPatternOverset(level, sps)%nRecv(nProcRecv))
   allocate(commPatternOverset(level, sps)%recvList(nProcRecv))
 
-  commPatternOverset(level, sps)%nProcSend = nProcSend(myid+1)
-  allocate(commPatternOverset(level, sps)%sendProc(nProcSend(myid+1)))
-  allocate(commPatternOverset(level, sps)%nSend(nProcSend(myid+1)))
-  allocate(commPatternOverset(level, sps)%sendList(nProcSend(myid+1)))
+  commPatternOverset(level, sps)%nProcSend = nProcSend
+  allocate(commPatternOverset(level, sps)%sendProc(nProcSend))
+  allocate(commPatternOverset(level, sps)%nSend(nProcSend))
+  allocate(commPatternOverset(level, sps)%sendList(nProcSend))
 
   ! As well as the copy information
   internalOverset(level, sps)%nCopy = nCopy
@@ -129,9 +147,52 @@ subroutine finalOversetCommStructures(level, sps, MAGIC)
   allocate(internalOverset(level, sps)%haloBlock(nCopy))
   allocate(internalOverset(level, sps)%haloIndices(nCopy, 3))
 
+  ! Send the donors back to their own processors.
   sendCount = 0
+  do j=1, nFringeProc
+     
+     iProc = fringeProc(j)
+     iStart = cumFringeProc(j)-1
+     iSize = cumFringeProc(j+1) - cumFringeProc(j)
+     
+     if (iProc /= myid) then 
+        sendCount = sendCount + 1
+        call mpi_isend(intSendBuf(iStart*4+1), 4*iSize, sumb_integer, iProc, myid, &
+             sumb_comm_world, sendRequests(sendCount), ierr)
+        call ECHK(ierr, __FILE__, __LINE__)
+
+        sendCount = sendCount + 1
+        call mpi_isend(realSendBuf(iStart*3+1), 3*iSize, sumb_real, iProc, myid, &
+             sumb_comm_world, sendRequests(sendCount), ierr)
+        call ECHK(ierr, __FILE__, __LINE__)
+     end if
+  end do
+  
+  ! Non-blocking receives
+  recvCount = 0
+  ii = 1
+  jj = 1
+  do iProc=0, nProc-1
+     
+     if (recvSizes(iProc) > 0) then
+        recvCount = recvCount + 1
+        call mpi_irecv(intRecvBuf(ii), 4*recvSizes(iProc), sumb_integer, &
+             iProc, iProc, sumb_comm_world, recvRequests(recvCount), ierr) 
+        call ECHK(ierr, __FILE__, __LINE__) 
+       
+        ii = ii + recvSizes(iProc)*4
+
+        recvCount = recvCount + 1
+        call mpi_irecv(realRecvBuf(jj), 3*recvSizes(iProc), sumb_real, &
+             iProc, iProc, sumb_comm_world, recvRequests(recvCount), ierr) 
+        call ECHK(ierr, __FILE__, __LINE__) 
+        jj = jj + recvSizes(iProc)*3
+     end if
+  end do
+
+  ! Do a little local work while we wait for the data to send/recv
   iRecvProc = 0
-  do i=1, nFringeProc ! The numer of processors i'm dealing with
+  do i=1, nFringeProc
      iSize = cumFringeProc(i+1) - cumFringeProc(i)
      iStart = cumFringeProc(i)
      iEnd   = cumFringeProc(i+1)-1
@@ -152,11 +213,10 @@ subroutine finalOversetCommStructures(level, sps, MAGIC)
            internalOverset(level, sps)%haloIndices(ii, 1) = localFringes(j)%myI
            internalOverset(level, sps)%haloIndices(ii, 2) = localFringes(j)%myJ
            internalOverset(level, sps)%haloIndices(ii, 3) = localFringes(j)%myK
-
         end do
-
      else
-        ! Set the receiver info and send the donor info to the donor proc
+
+        ! Set the receiver info. The info is already sent and in flight
         iRecvProc = iRecvProc + 1
         commPatternOverset(level, sps)%recvProc(iRecvProc) = fringeProc(i)
         commPatternOverset(level, sps)%nRecv(iRecvProc) = iSize
@@ -172,49 +232,27 @@ subroutine finalOversetCommStructures(level, sps, MAGIC)
            commPatternOverset(level, sps)%recvList(iRecvProc)%indices(ii,2) = localFringes(j)%myJ
            commPatternOverset(level, sps)%recvList(iRecvProc)%indices(ii,3) = localFringes(j)%myK
         end do
-
-        ! Now iSend these fringes to where they need to go: Start
-        ! the tags at MAGIC not 1 since we will call
-        ! exchangeIBlanks below which have tags from 0:nProc
-        tag = MAGIC + myID + 1
-        sendCount = sendCount + 1
-        call mpi_isend(localFringes(iStart:iend), iSize, oversetMPIFringe, &
-             fringeProc(i), tag, SUmb_comm_world, sendRequests1(sendCount), ierr)
      end if
   end do
 
-  iSendProc = 0
-  iRecv = 0
-  do while (iRecv < nRecv)
+  ! Complete all the sends/receives. We could do overlapping here
+  ! like the frist comm for the fringes/blocks. 
+  call mpi_waitall(recvCount, recvRequests, MPI_STATUSES_IGNORE, ierr)
+  call ECHK(ierr, __FILE__, __LINE__)
+  
+  call mpi_waitall(sendCount, sendRequests, MPI_STATUSES_IGNORE, ierr)
+  call ECHK(ierr, __FILE__, __LINE__)
 
-     call MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, SUmb_comm_world, flag, status, ierr)
-     call ECHK(ierr, __FILE__, __LINE__)
-
-     ! Check if a message is ready
-     tag = status(MPI_TAG)
-     if (flag .and. tag >= MAGIC+1 .and. tag <= 2*MAGIC) then
-        iRecv = iRecv + 1
-
-        call MPI_Get_count(status, oversetMPIFringe, n, ierr)
-        call ECHK(ierr, __FILE__, __LINE__)
-
-        ! Allocate space for temporary fringes if not big enough
-        if (n > size(tmpFringes)) then 
-           deallocate(tmpFringes)
-           allocate(tmpFringes(n))
-        end if
-
-        ! Now actually receive the fringes
-        call mpi_recv(tmpFringes, n, oversetMPIFringe, status(MPI_SOURCE), &
-             status(MPI_TAG), SUmb_comm_world, status, ierr)
-        call ECHK(ierr, __FILE__, __LINE__)
-
-        ! We don't actually know the order that the fringes will be
-        ! received. this is ok. We just put them in the order we get
-        ! them. Increment the iSendProc. 
+  ! All of our data has now arrived we can now finish completing the send information.
+  ii = 0
+  jj = 0
+  iSendProc = 0 ! running counter of the ith processor
+  do iProc=0, nProc-1
+     if (recvSizes(iProc)> 0) then
+        ! We should have received something from this processor
         iSendProc = iSendProc + 1
-
-        commPatternOverset(level, sps)%sendProc(iSendProc) = status(MPI_TAG) - MAGIC -1 
+        commPatternOverset(level, sps)%sendProc(iSendProc) = iProc
+        n = recvSizes(iProc)
         commPatternOverset(level, sps)%nSend(iSendProc) = n
         allocate(& 
              commPatternOverset(level, sps)%sendList(iSendProc)%block(n), &
@@ -223,18 +261,21 @@ subroutine finalOversetCommStructures(level, sps, MAGIC)
 
         ! Now set the data
         do i=1, n
-           commPatternOverset(level, sps)%sendList(iSendProc)%block(i) =  tmpFringes(i)%donorBlock
+           commPatternOverset(level, sps)%sendList(iSendProc)%block(i) = intRecvBuf(ii+1)
            commPatternOverset(level, sps)%sendList(iSendProc)%indices(i, :) = &
-                (/tmpFringes(i)%dI, tmpFringes(i)%dJ, tmpFringes(i)%dK/)
-           call fracToWeights(tmpFringes(i)%donorFrac, &
+                intRecvBuf(ii+2:ii+4)
+           ii = ii + 4
+
+           call fracToWeights(realRecvBuf(jj+1:jj+3), &
                 commPatternOverset(level, sps)%sendList(iSendProc)%interp(i, :))
+           jj = jj + 3
         end do
      end if
   end do
 
   ! One last thing to do is to create the cumulative forms of nSend
   ! and nRecv (nSendCum and nRecvCum)
-  allocate(commPatternOverset(level, sps)%nSendCum(0:nProcSend(myid+1)), &
+  allocate(commPatternOverset(level, sps)%nSendCum(0:nProcSend), &
        commPatternOverset(level, sps)%nRecvCum(0:nProcRecv))
 
   call getCumulativeForm(commPatternOverset(level, sps)%nSend, commPatternOverset(level, sps)%nProcSend, &
@@ -243,14 +284,7 @@ subroutine finalOversetCommStructures(level, sps, MAGIC)
   call getCumulativeForm(commPatternOverset(level, sps)%nRecv, commPatternOverset(level, sps)%nProcRecv, &
        commPatternOverset(level, sps)%nRecvCum)
 
-  call mpi_waitall(sendCount, sendRequests1, MPI_STATUSES_IGNORE, ierr)
-  call ECHK(ierr, __FILE__, __LINE__)
-
-  deallocate(localFringes, fringeProc, cumFringeProc, nProcSend)
-
-  ! Put a barrier here to make sure that the iprobe only get the
-  ! messages from this routine
-  call mpi_barrier(sumb_comm_world, ierr)
-  call ECHK(ierr, __FILE__, __LINE__)
+  deallocate(localFringes, fringeProc, cumFringeProc, &
+       intRecvBuf, intSendBuf, realRecvBuf, realSendBuf)
 
 end subroutine finalOversetCommStructures
