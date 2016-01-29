@@ -52,24 +52,24 @@ subroutine registerOversetFringeTypes
   call MPI_Type_commit(oversetMPIFringe, ierr)
   call ECHK(ierr, __FILE__, __LINE__)
 
-  ! ---------------------------------------------------
-  !             Search Coords data Type 
-  ! ---------------------------------------------------
+  ! ! ---------------------------------------------------
+  ! !             Search Coords data Type 
+  ! ! ---------------------------------------------------
 
-  i = 1
+  ! i = 1
 
-  iType(i) = sumb_real   ; iBlock(i) = 3; call MPI_Get_address(fringe%x, idisp(i), ierr); i = i + 1
-  iType(i) = sumb_real   ; iBlock(i) = 1; call MPI_Get_address(fringe%origQuality, idisp(i), ierr); i = i + 1
-  iType(i) = MPI_LOGICAL ; iBlock(i) = 1; call MPI_Get_address(fringe%isWall, iDisp(i), ierr); 
+  ! iType(i) = sumb_real   ; iBlock(i) = 3; call MPI_Get_address(fringe%x, idisp(i), ierr); i = i + 1
+  ! iType(i) = sumb_real   ; iBlock(i) = 1; call MPI_Get_address(fringe%origQuality, idisp(i), ierr); i = i + 1
+  ! iType(i) = MPI_LOGICAL ; iBlock(i) = 1; call MPI_Get_address(fringe%isWall, iDisp(i), ierr); 
 
-  ! Compute the dispalcements by subtracting off the starting point
-  idisp = idisp - start
+  ! ! Compute the dispalcements by subtracting off the starting point
+  ! idisp = idisp - start
 
-  call MPI_Type_create_struct(i, iblock, idisp, itype, oversetMPISearchCoord, ierr)
-  call ECHK(ierr, __FILE__, __LINE__)
+  ! call MPI_Type_create_struct(i, iblock, idisp, itype, oversetMPISearchCoord, ierr)
+  ! call ECHK(ierr, __FILE__, __LINE__)
 
-  ! Finally register the new type
-  call MPI_Type_commit(oversetMPISearchCoord, ierr)
-  call ECHK(ierr, __FILE__, __LINE__)
+  ! ! Finally register the new type
+  ! call MPI_Type_commit(oversetMPISearchCoord, ierr)
+  ! call ECHK(ierr, __FILE__, __LINE__)
 
 end subroutine registerOversetFringeTypes

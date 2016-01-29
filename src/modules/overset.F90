@@ -170,9 +170,6 @@ module overset
 
   ! Several different MPI data types depending on the data we need to send
 
-  ! This contains only the data needed to search for coordinates
-  integer :: oversetMPISearchCoord
-
   ! This contains all MPI fringe data
   integer :: oversetMPIFringe
 

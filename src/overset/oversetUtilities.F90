@@ -203,36 +203,6 @@ subroutine computeFringeProcArray(fringes, n, fringeProc, cumFringeProc, nFringe
 
 end subroutine computeFringeProcArray
 
-subroutine receiveFringes(status, n)
-  ! This is a little helper routnine that receives the
-  ! oversetFringeType and puts them in tmpFringes. This exact code
-  ! shows up in a variety of places. 
-  use communication
-  use overset
-  implicit none
-
-  integer, intent(in) ::  status(MPI_STATUS_SIZE) 
-  integer(kind=inttype), intent(out) ::  n
-  integer(kind=intType) :: ierr
-
-  ! Get size
-  call MPI_Get_count(status, oversetMPIFringe, n, ierr)
-  call ECHK(ierr, __FILE__, __LINE__)
-
-  ! Allocate space for temporary fringes if not big enough
-  if (n > size(tmpFringes)) then 
-     deallocate(tmpFringes)
-     allocate(tmpFringes(n))
-  end if
-
-  ! Now actually receive the fringes
-  call mpi_recv(tmpFringes, n, oversetMPIFringe, status(MPI_SOURCE), &
-       status(MPI_TAG), SUmb_comm_world, status, ierr)
-  call ECHK(ierr, __FILE__, __LINE__)
-
-end subroutine receiveFringes
-
-
 subroutine fracToWeights(frac, weights)
   use constants
   implicit none
