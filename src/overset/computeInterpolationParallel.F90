@@ -42,7 +42,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
   type(oversetWall), dimension(:), allocatable :: oWalls
   type(fringeType), dimension(:), allocatable :: localFringes
   logical, dimension(:), allocatable :: oBlockReady, oFringeReady, oWallReady
-  logical :: computeCellFound
+  logical :: computeCellFound, oversetPresent
   type(CSRMatrix), pointer :: overlap
   type(CSRMatrix) :: overlapTranspose
 
@@ -61,6 +61,25 @@ subroutine oversetComm(level, firstTime, coarseLevel)
   integer(kind=intType), dimension(:), allocatable :: intSendBuf, intRecvBuf
   real(kind=realType), dimension(:), allocatable :: realSendBuf, realRecvBuf
   integer(kind=intType) :: sendCount, recvCount
+
+  ! If there is not overset meshes present, just make an empty comm
+  ! structure and call it a day. 
+  if (.not. oversetPresent()) then 
+     do sps=1,nTimeIntervalsSpectral
+        call emptyOversetComm(level, sps)
+        do nn=1, nDom
+           if (.not. associated(flowDoms(nn,level,sps)%iblank)) then
+              i = flowDoms(nn,level,sps)%ib
+              j = flowDoms(nn,level,sps)%jb
+              k = flowDoms(nn,level,sps)%kb
+              
+              allocate(flowDoms(nn,level,sps)%iblank(0:i,0:j,0:k))
+              flowDoms(nn, level, sps)%iblank = 1
+           end if
+        end do
+     end do
+     return
+  end if
 
   timeA = mpi_wtime()
   ! -----------------------------------------------------------------
