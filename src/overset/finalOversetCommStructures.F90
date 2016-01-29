@@ -194,7 +194,20 @@ subroutine finalOversetCommStructures(level, sps, MAGIC)
      tag = status(MPI_TAG)
      if (flag .and. tag >= MAGIC+1 .and. tag <= 2*MAGIC) then
         iRecv = iRecv + 1
-        call receiveFringes(status, n)
+
+        call MPI_Get_count(status, oversetMPIFringe, n, ierr)
+        call ECHK(ierr, __FILE__, __LINE__)
+
+        ! Allocate space for temporary fringes if not big enough
+        if (n > size(tmpFringes)) then 
+           deallocate(tmpFringes)
+           allocate(tmpFringes(n))
+        end if
+
+        ! Now actually receive the fringes
+        call mpi_recv(tmpFringes, n, oversetMPIFringe, status(MPI_SOURCE), &
+             status(MPI_TAG), SUmb_comm_world, status, ierr)
+        call ECHK(ierr, __FILE__, __LINE__)
 
         ! We don't actually know the order that the fringes will be
         ! received. this is ok. We just put them in the order we get

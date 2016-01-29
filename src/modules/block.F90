@@ -190,12 +190,6 @@ module block
     ! DONOR cell. It is initialized to large. 
     real(kind=realType) :: quality
 
-    ! A flag to always force returning a donor if one exists.
-    logical :: forceRecv
-   
-    ! origQuality. This the actual quality of the cell. 
-    real(kind=realType) :: origQuality
-
     ! This is the information regarding where the cell came from. 
     integer(kind=intType) :: myBlock, myI, myJ, myK
 
@@ -229,11 +223,9 @@ module block
      module procedure lessEqualFringeType
   end interface operator(<=)
 
-
   interface operator(<)
      module procedure lessFringeType
   end interface operator(<)
-
 
 
   !      ******************************************************************

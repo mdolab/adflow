@@ -23,7 +23,7 @@ subroutine exchangeIsCompute(level, sps, commPattern, internal)
   integer :: size, procId, ierr, index
   integer, dimension(mpi_status_size) :: status
 
-  integer(kind=intType) :: i, j, ii, jj
+  integer(kind=intType) :: i, j, ii, jj, nVar
   integer(kind=intType) :: d1, i1, j1, k1, d2, i2, j2, k2
 
   logical, dimension(:), allocatable :: sendBuf
@@ -36,13 +36,13 @@ subroutine exchangeIsCompute(level, sps, commPattern, internal)
   !      ******************************************************************
   !
   ! Allocate the memory for the sending and receiving buffers.
-
+  nVar = 2
   ii = commPattern(level)%nProcSend
   ii = commPattern(level)%nsendCum(ii)
   jj = commPattern(level)%nProcRecv
   jj = commPattern(level)%nrecvCum(jj)
 
-  allocate(sendBuf(ii), recvBuf(jj), stat=ierr)
+  allocate(sendBuf(ii*nVar), recvBuf(jj*nVar), stat=ierr)
   if(ierr /= 0)                       &
        call terminate("exchangeIblank", &
        "Memory allocation failure for buffers")
@@ -57,7 +57,7 @@ subroutine exchangeIsCompute(level, sps, commPattern, internal)
      ! a bit easier.
 
      procID = commPattern(level)%sendProc(i)
-     size    = commPattern(level)%nsend(i)
+     size    = nVar*commPattern(level)%nsend(i)
 
      ! Copy the data in the correct part of the send buffer.
 
@@ -75,6 +75,9 @@ subroutine exchangeIsCompute(level, sps, commPattern, internal)
         ! Copy iblank values to buffer.
 
         sendBuf(jj) = flowDoms(d1,level,sps)%fringes(i1,j1,k1)%isCompute
+        jj = jj + 1
+
+        sendBuf(jj) = flowDoms(d1,level,sps)%fringes(i1,j1,k1)%isHole
         jj = jj + 1
 
      enddo
@@ -100,7 +103,7 @@ subroutine exchangeIsCompute(level, sps, commPattern, internal)
      ! a bit easier.
 
      procID = commPattern(level)%recvProc(i)
-     size    = commPattern(level)%nrecv(i)
+     size    = nVar*commPattern(level)%nrecv(i)
 
      ! Post the receive.
 
@@ -136,6 +139,9 @@ subroutine exchangeIsCompute(level, sps, commPattern, internal)
      flowDoms(d2,level,sps)%fringes(i2,j2,k2)%isCompute = &
           flowDoms(d1,level,sps)%fringes(i1,j1,k1)%isCompute
 
+     flowDoms(d2,level,sps)%fringes(i2,j2,k2)%isHole = &
+          flowDoms(d1,level,sps)%fringes(i1,j1,k1)%isHole
+
   enddo localCopy
 
   ! Complete the nonblocking receives in an arbitrary sequence and
@@ -151,7 +157,7 @@ subroutine exchangeIsCompute(level, sps, commPattern, internal)
      ! Copy the data just arrived in the halo's.
 
      ii = index
-     jj = commPattern(level)%nrecvCum(ii-1)
+     jj = nVar*commPattern(level)%nrecvCum(ii-1)
      do j=1,commPattern(level)%nrecv(ii)
 
         ! Store the block and the indices of the halo a bit easier.
@@ -164,7 +170,9 @@ subroutine exchangeIsCompute(level, sps, commPattern, internal)
         ! Copy the isCompute flag
 
         jj = jj + 1
-        flowDoms(d2,level,sps)%fringes(i2,j2,k2)%iscompute = recvBuf(jj)
+        flowDoms(d2,level,sps)%fringes(i2,j2,k2)%isCompute = recvBuf(jj)
+        jj = jj + 1
+        flowDoms(d2,level,sps)%fringes(i2,j2,k2)%isHole = recvBuf(jj)
 
      enddo
 
