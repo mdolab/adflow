@@ -151,15 +151,11 @@ module overset
 
   end type oversetWall
 
-
   ! This is the flattened list of the fringes next to the wall that we
   !  have actually found donors for.
   ! tmpFringePtr is only used if we need to realloc. 
   type(fringeType), dimension(:), pointer :: localWallFringes, wallFringes, tmpFringePtr
   integer(kind=intType) :: nLocalWallFringe, nWallFringe
-
-  ! A receive buffer for fringes
-  type(fringeType), dimension(:), allocatable :: tmpFringes
 
   ! These are the master overlap matrices
   type(CSRMatrix), dimension(:, :), allocatable, target :: overlapMatrix
@@ -167,10 +163,5 @@ module overset
   ! Some additional helper stuff
   integer(kind=intType), dimension(:), allocatable :: nDomProc, cumDomProc
   integer(kind=intType) :: nDomTotal
-
-  ! Several different MPI data types depending on the data we need to send
-
-  ! This contains all MPI fringe data
-  integer :: oversetMPIFringe
 
 end module overset

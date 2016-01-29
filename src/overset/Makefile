@@ -62,11 +62,11 @@ FILES_TO_COMPLEXIFY =	computeInterpolationParallel.F90\
 		        exchangeDonorStatus.F90\
 			exchangeFringes.f90\
 			surfaceCorrection.F90\
-			oversetMPITypes.F90\
 			oversetPresent.F90\
 			emptyOversetComm.F90\
 		       # computeQuadraticWeights.F90 \
 		       matrixinv3by3.F90 \
+
 
 
 ALL_FILES = $(FILES_TO_COMPLEXIFY) $(FILES_TO_COPY)

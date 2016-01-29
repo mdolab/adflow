@@ -83,14 +83,10 @@ subroutine oversetComm(level, firstTime, coarseLevel)
 
   timeA = mpi_wtime()
   ! -----------------------------------------------------------------
-  ! Step 1: Initializaion: We need to register our fringe type with
-  ! MPI so we can use it directly in communication of fringes. This
-  ! will make our life a lot simplier. We also need to initialize
-  ! stencils since this may be first time they are used. 
+  ! Step 1: Initializaion: Make sure the stencils are initialized. 
   ! -----------------------------------------------------------------
 
   call initialize_stencils()
-  call registerOversetFringeTypes()
 
   ! -----------------------------------------------------------------
   ! Step 2: Communicate the block size info to everyone. Also generate
@@ -924,8 +920,8 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      ! them to donor proc. This then form the sending information. The
      ! internal copy is formed from the part that is on-processor. 
      ! -----------------------------------------------------------------
-     allocate(tmpFringes(1000))
-     call finalOversetCommStructures(level, sps, MAGIC)
+
+     call finalOversetCommStructures(level, sps)
 
      ! VERY last thing is to update iBlank based on the status of our local fringes. 
      call setIblankArray(level, sps)
