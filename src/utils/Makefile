@@ -97,6 +97,8 @@ FILES_TO_COMPLEXIFY =  \
 	       whaloMixing.f90\
 	       whaloSliding.f90\
 	       wOverset.F90\
+	       wOverset_d.F90\
+	       wOverset_b.F90\
 	       writeVarsToBuffer.f90\
 	       getLiftDirFromSymmetry.F90\
 
