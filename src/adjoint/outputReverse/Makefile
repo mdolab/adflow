@@ -88,6 +88,7 @@ FF90_OBJECTS2 =  \
 		bceddywall_b.o\
 		bceddynowall_b.o\
 		bcturbwall_b.o\
+		bcturbinterface_b.o\
 		bcturbfarfield_b.o\
 		updatewalldistancesquickly_b.o\
 		boundarynormals_b.o\

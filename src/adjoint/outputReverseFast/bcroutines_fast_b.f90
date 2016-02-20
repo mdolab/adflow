@@ -111,9 +111,9 @@ contains
 !  farfield boundary condition 
 ! ------------------------------------
     if (precond .eq. turkel .or. precond .eq. choimerkle) call &
-&     returnFail('applyallbc', &
+&     returnfail('applyallbc', &
 &      'farfield turkel and coid/merkle preconditioners not implemented'&
-&           )
+&            )
     do nn=1,nbocos
       if (bctype(nn) .eq. farfield) then
         call setbcpointers(nn, .false.)
@@ -1792,8 +1792,8 @@ branch = myIntStack(myIntPtr)
         end if
       end do
     case (cptempcurvefits) 
-      call returnFail('bcroutines', &
-&                 'cptempcurvefits not implemented yet.')
+      call returnfail('bcroutines', &
+&                  'cptempcurvefits not implemented yet.')
     end select
   end subroutine computeetot
   subroutine setbcpointers(nn, spatialpointers)
@@ -1809,6 +1809,7 @@ branch = myIntStack(myIntPtr)
     use bctypes
     use blockpointers
     use flowvarrefstate
+    use inputphysics
     implicit none
 ! subroutine arguments.
     integer(kind=inttype), intent(in) :: nn
@@ -1966,43 +1967,53 @@ branch = myIntStack(myIntPtr)
         ssj => sj(2, :, :, :)
         ssk => sk(2, :, :, :)
         ss => s(2, :, :, :)
-        dd2wall => d2wall(2, :, :)
       case (imax) 
         xx => x(il, :, :, :)
         ssi => si(il, :, :, :)
         ssj => sj(il, :, :, :)
         ssk => sk(il, :, :, :)
         ss => s(il, :, :, :)
-        dd2wall => d2wall(il, :, :)
       case (jmin) 
         xx => x(:, 1, :, :)
         ssi => sj(:, 1, :, :)
         ssj => si(:, 2, :, :)
         ssk => sk(:, 2, :, :)
         ss => s(:, 2, :, :)
-        dd2wall => d2wall(:, 2, :)
       case (jmax) 
         xx => x(:, jl, :, :)
         ssi => sj(:, jl, :, :)
         ssj => si(:, jl, :, :)
         ssk => sk(:, jl, :, :)
         ss => s(:, jl, :, :)
-        dd2wall => d2wall(:, jl, :)
       case (kmin) 
         xx => x(:, :, 1, :)
         ssi => sk(:, :, 1, :)
         ssj => si(:, :, 2, :)
         ssk => sj(:, :, 2, :)
         ss => s(:, :, 2, :)
-        dd2wall => d2wall(:, :, 2)
       case (kmax) 
         xx => x(:, :, kl, :)
         ssi => sk(:, :, kl, :)
         ssj => si(:, :, kl, :)
         ssk => sj(:, :, kl, :)
         ss => s(:, :, kl, :)
-        dd2wall => d2wall(:, :, kl)
       end select
+      if (equations .eq. ransequations) then
+        select case  (bcfaceid(nn)) 
+        case (imin) 
+          dd2wall => d2wall(2, :, :)
+        case (imax) 
+          dd2wall => d2wall(il, :, :)
+        case (jmin) 
+          dd2wall => d2wall(:, 2, :)
+        case (jmax) 
+          dd2wall => d2wall(:, jl, :)
+        case (kmin) 
+          dd2wall => d2wall(:, :, 2)
+        case (kmax) 
+          dd2wall => d2wall(:, :, kl)
+        end select
+      end if
     end if
   end subroutine setbcpointers
   subroutine resetbcpointers(nn, spatialpointers)
