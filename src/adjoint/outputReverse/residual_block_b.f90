@@ -124,6 +124,8 @@ subroutine residual_block_b()
   real(kind=realtype) :: tempd42
   real(kind=realtype) :: tempd41
   real(kind=realtype) :: tempd40
+  real(kind=realtype) :: x3
+  real(kind=realtype) :: x2
   real(kind=realtype) :: x1
   real(kind=realtype) :: temp19
   real(kind=realtype) :: temp18
@@ -168,10 +170,8 @@ subroutine residual_block_b()
   real(kind=realtype) :: tempd23
   real(kind=realtype) :: temp37
   real(kind=realtype) :: tempd22
-  real(kind=realtype) :: tempd59
   real(kind=realtype) :: temp36
   real(kind=realtype) :: tempd21
-  real(kind=realtype) :: tempd58
   real(kind=realtype) :: temp35
   real(kind=realtype) :: tempd20
   real(kind=realtype) :: tempd57
@@ -188,6 +188,8 @@ subroutine residual_block_b()
   real(kind=realtype) :: tempd51
   real(kind=realtype) :: tempd50
   real(kind=realtype) :: abs0
+  real(kind=realtype) :: max2
+  real(kind=realtype) :: max1
   real(kind=realtype) :: temp9
   real(kind=realtype) :: temp8
   real(kind=realtype) :: tempd19
@@ -322,7 +324,6 @@ subroutine residual_block_b()
 ! add the dissipative and possibly viscous fluxes to the
 ! euler fluxes. loop over the owned cells and add fw to dw.
 ! also multiply by iblank so that no updates occur in holes
-! or on the overset boundary.
   if (lowspeedpreconditioner) then
     do k=2,kl
       do j=2,jl
@@ -455,9 +456,18 @@ subroutine residual_block_b()
           b55 = a51*(gamma(i, j, k)-1) + a55*(gamma(i, j, k)-1)
 ! dwo is the orginal redisual
           do l=1,nwf
+            x2 = real(iblank(i, j, k), realtype)
+            if (x2 .lt. zero) then
+              call pushreal8(max1)
+              max1 = zero
+              call pushcontrol1b(0)
+            else
+              call pushreal8(max1)
+              max1 = x2
+              call pushcontrol1b(1)
+            end if
             call pushreal8(dwo(l))
-            dwo(l) = (dw(i, j, k, l)+fw(i, j, k, l))*real(iblank(i, j, k&
-&             ), realtype)
+            dwo(l) = (dw(i, j, k, l)+fw(i, j, k, l))*max1
           end do
           dw(i, j, k, 1) = b11*dwo(1) + b12*dwo(2) + b13*dwo(3) + b14*&
 &           dwo(4) + b15*dwo(5)
@@ -553,10 +563,15 @@ subroutine residual_block_b()
           dwd(i, j, k, 1) = 0.0_8
           do l=nwf,1,-1
             call popreal8(dwo(l))
-            tempd58 = real(iblank(i, j, k), realtype)*dwod(l)
-            dwd(i, j, k, l) = dwd(i, j, k, l) + tempd58
-            fwd(i, j, k, l) = fwd(i, j, k, l) + tempd58
+            dwd(i, j, k, l) = dwd(i, j, k, l) + max1*dwod(l)
+            fwd(i, j, k, l) = fwd(i, j, k, l) + max1*dwod(l)
             dwod(l) = 0.0_8
+            call popcontrol1b(branch)
+            if (branch .eq. 0) then
+              call popreal8(max1)
+            else
+              call popreal8(max1)
+            end if
           end do
           temp3 = sos**4
           temp4 = sos**4
@@ -822,14 +837,37 @@ subroutine residual_block_b()
       end do
     end do
   else
+    do l=1,nwf
+      do k=2,kl
+        do j=2,jl
+          do i=2,il
+            x3 = real(iblank(i, j, k), realtype)
+            if (x3 .lt. zero) then
+              call pushreal8(max2)
+              max2 = zero
+              call pushcontrol1b(0)
+            else
+              call pushreal8(max2)
+              max2 = x3
+              call pushcontrol1b(1)
+            end if
+          end do
+        end do
+      end do
+    end do
     fwd = 0.0_8
     do l=nwf,1,-1
       do k=kl,2,-1
         do j=jl,2,-1
           do i=il,2,-1
-            tempd59 = real(iblank(i, j, k), realtype)*dwd(i, j, k, l)
-            fwd(i, j, k, l) = fwd(i, j, k, l) + tempd59
-            dwd(i, j, k, l) = tempd59
+            fwd(i, j, k, l) = fwd(i, j, k, l) + max2*dwd(i, j, k, l)
+            dwd(i, j, k, l) = max2*dwd(i, j, k, l)
+            call popcontrol1b(branch)
+            if (branch .eq. 0) then
+              call popreal8(max2)
+            else
+              call popreal8(max2)
+            end if
           end do
         end do
       end do
