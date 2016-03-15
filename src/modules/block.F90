@@ -138,8 +138,6 @@ module block
      real(kind=realType), dimension(:,:),     pointer :: sHeatFlux
 
 
-
-
      ! ptInlet(:,:):       Total pressure at subsonic inlets.
      ! ttInlet(:,:):       Total temperature at subsonic inlets.
      ! htInlet(:,:):       Total enthalpy at subsonic inlets.
@@ -170,6 +168,9 @@ module block
      real(kind=realType), dimension(:,:), pointer :: velZ
      real(kind=realType), dimension(:,:), pointer :: ps
 
+     ! Surface blanking for force integration
+     integer(kind=intType), dimension(:,:), pointer :: iblank
+      
   end type BCDataType
 
   type surfaceNodeWeightArray

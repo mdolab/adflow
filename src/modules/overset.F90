@@ -128,6 +128,8 @@ module overset
      integer(kind=intType) :: il, jl, kl
      integer(kind=intType) :: nNodes=0
      integer(kind=intType) :: nCells=0
+     integer(kind=intType) :: maxCells=0
+     integer(kind=intType) :: cluster=0
 
      ! Buffer space for sending/receiving the fringes
      real(kind=realType), dimension(:), allocatable :: rBuffer
@@ -138,6 +140,10 @@ module overset
 
      ! Connectivity for the surface
      integer(kind=intType), dimension(:, :), pointer:: conn
+     
+     ! Blanking values for Nodes
+     integer(kind=intType), dimension(:), allocatable :: iBlank
+     integer(kind=intType), dimension(:), allocatable :: cellPtr
 
      ! The ADT for this block's wall(s)
      type(adtType) :: ADT
@@ -163,5 +169,6 @@ module overset
   ! Some additional helper stuff
   integer(kind=intType), dimension(:), allocatable :: nDomProc, cumDomProc
   integer(kind=intType) :: nDomTotal
+  real(kind=realType), dimension(:), allocatable :: clusterAreas
 
 end module overset

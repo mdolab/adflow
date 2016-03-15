@@ -217,14 +217,17 @@
          call determineAreaLevel0Cooling(level)
          call determineNcellGlobal(level)
          call setGlobalCellsAndNodes(level)
-          
-         if (level == 1) then
-           call oversetComm(level, .true., .false.)
-         else
-           call oversetComm(level, .true., .true.)
-         end if
+      enddo
 
-       enddo
+      call allocMemBCData
+
+      do level=1,nLevels
+         if (level == 1) then
+            call oversetComm(level, .true., .false.)
+         else
+            call oversetComm(level, .true., .true.)
+         end if
+      end do
 
        end subroutine preprocessing
 

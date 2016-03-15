@@ -24,43 +24,46 @@ subroutine oversetComm(level, firstTime, coarseLevel)
   integer(kind=intType) :: sps
 
   ! Local Variables
-  integer(kind=intType) :: i, ii, iii, j, jj, jjj, k, kk, kkk, i_stencil
-  integer(kind=intType) :: m, iSize, iStart, iEnd, index, rSize
+  integer(kind=intType) :: i, ii, j, jj, k, kk, i_stencil
+  integer(kind=intType) :: m, iSize, iStart, iEnd, index, rSize, nClusters
   integer(kind=intType) :: iDom, jDom, iDim, iPtr, rPtr
   integer(kind=intType) :: nn, mm, n, ierr, iProc, myIndex
-  integer(kind=intTYpe) :: rowStart, rowEnd, nnRow, nUniqueProc
   integer(kind=intType) :: iWork, nWork, nFringeProc, nLocalFringe
-  real(kind=realType) :: startTime, endTime, timeA, timeB
-  real(kind=realType) :: quality
-  real(kind=realType), dimension(:, :), allocatable :: xMin, xMax
-  real(kind=realType), dimension(:), allocatable :: minVol, tmpReal
-  integer(kind=intType), dimension(:), allocatable :: clusters, tmpInt
-  integer(kind=intType), dimension(:,:), allocatable :: work, tmpInt2D
+  real(kind=realType) :: startTime, endTime, quality
+  logical :: computeCellFound, oversetPresent
+
+  type(CSRMatrix), pointer :: overlap
+  type(CSRMatrix) :: overlapTranspose
+
+  integer(kind=intType), dimension(:), allocatable :: clusters
   integer(kind=intType), dimension(:), allocatable :: cumFringeRecv, fringeRecvSizes
+  integer(kind=intType), dimension(:, :), allocatable :: work, tmpInt2D
+
+  real(kind=realType), dimension(:), allocatable :: tmpReal
+  real(kind=realType), dimension(:, :), allocatable :: xMin, xMax
+
+  logical, dimension(:), allocatable :: oBlockReady, oFringeReady, oWallReady
+
   type(oversetBlock), dimension(:), allocatable :: oBlocks
   type(oversetFringe), dimension(:), allocatable :: oFringes
   type(oversetWall), dimension(:), allocatable :: oWalls
   type(fringeType), dimension(:), allocatable :: localFringes
-  logical, dimension(:), allocatable :: oBlockReady, oFringeReady, oWallReady
-  logical :: computeCellFound, oversetPresent
-  type(CSRMatrix), pointer :: overlap
-  type(CSRMatrix) :: overlapTranspose
 
   ! MPI/Communication related
   integer status(MPI_STATUS_SIZE) 
-  integer(kind=intType) :: MAGIC, source, tag, iRecv
-  logical :: flag
+  integer(kind=intType) :: MAGIC, source, tag, sendCount, recvCount
   integer(kind=intType) :: nOFringeSend, nOFringeRecv
   integer(kind=intType) :: nOBlockSend, nOBlockRecv
   integer(kind=intType) :: nOWallSend, nOWallRecv
+  logical :: flag
+
   integer(kind=intType), dimension(:, :), allocatable :: oBlockSendList, oBlockRecvList
   integer(kind=intType), dimension(:, :), allocatable :: oFringeSendList, oFringeRecvList
   integer(kind=intType), dimension(:, :), allocatable :: oWallSendList, oWallRecvList
-  integer(kind=intType), dimension(:, :), allocatable :: bufSizes
-  integer(kind=intType), dimension(:, :), allocatable :: recvInfo
-  integer(kind=intType), dimension(:), allocatable :: intSendBuf, intRecvBuf
-  real(kind=realType), dimension(:), allocatable :: realSendBuf, realRecvBuf
-  integer(kind=intType) :: sendCount, recvCount
+  integer(kind=intType), dimension(:, :), allocatable :: bufSizes, recvInfo
+  integer(kind=intType), dimension(:), allocatable :: intRecvBuf
+  real(kind=realType), dimension(:), allocatable :: realRecvBuf
+
 
   ! If there is not overset meshes present, just make an empty comm
   ! structure and call it a day. 
@@ -72,7 +75,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
               i = flowDoms(nn,level,sps)%ib
               j = flowDoms(nn,level,sps)%jb
               k = flowDoms(nn,level,sps)%kb
-              
+
               allocate(flowDoms(nn,level,sps)%iblank(0:i,0:j,0:k))
               flowDoms(nn, level, sps)%iblank = 1
            end if
@@ -81,7 +84,6 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      return
   end if
 
-  timeA = mpi_wtime()
   ! -----------------------------------------------------------------
   ! Step 1: Initializaion: Make sure the stencils are initialized. 
   ! -----------------------------------------------------------------
@@ -120,7 +122,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      ! all procs. 
      ! -----------------------------------------------------------------
      allocate(clusters(nDomTotal))
-     call determineClusters(clusters, nDomTotal, cumDomProc)
+     call determineClusters(clusters, nDomTotal, cumDomProc, nClusters)
 
      ! -----------------------------------------------------------------
      ! Step 4: Compute the 3D axis oriented bounding boxes for each block
@@ -128,7 +130,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      ! minimum volume for each block to everyone.  (Routine below)
      ! -----------------------------------------------------------------
 
-     allocate(xMin(3, nDomTotal), xMax(3, nDomTotal), minVol(nDomTotal))
+     allocate(xMin(3, nDomTotal), xMax(3, nDomTotal))
      call computeDomainBoundingBoxes
      ! -----------------------------------------------------------------
      ! Step 8: Build a global sparse matrix representation of the overlap
@@ -139,9 +141,6 @@ subroutine oversetComm(level, firstTime, coarseLevel)
         call deallocateCSRMatrix(overlap)
         call buildGlobalSparseOverlap(overlap)
      end if
-
-     ! Done with the clusters
-     deallocate(clusters)
 
      ! -----------------------------------------------------------------
      ! Step 8: This is going to put the number of searches (coordinates)
@@ -177,9 +176,9 @@ subroutine oversetComm(level, firstTime, coarseLevel)
         ! Sizes
         call getOBlockBufferSizes (il, jl, kl, tmpInt2D(iDom, 1), tmpInt2D(iDom, 2))
         call getOFringeBufferSizes(il, jl, kl, tmpInt2D(iDom, 3), tmpInt2D(iDom, 4))
-        call getOWallBufferSizes  (il, jl, kl, tmpInt2D(iDom, 5), tmpInt2D(iDom, 6))
+        call getOWallBufferSizes  (il, jl, kl, tmpInt2D(iDom, 5), tmpInt2D(iDom, 6), .True.)
      end do
-     
+
      if (.not. firstTime) then 
         tmpReal = overlap%data
      end if
@@ -196,8 +195,8 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      ! Done with the tmp arrays. This should be the last of the
      ! blocking collectives for a while. 
      deallocate(tmpReal, tmpInt2D)
- 
-        ! -----------------------------------------------------------------
+
+     ! -----------------------------------------------------------------
      ! Step 8: We are now ready to partiaion and loadbalance the work
      ! based on the costs stored in the overlap matrix. These costs
      ! may be the search estimates from initializeOverlapCosts OR they
@@ -288,7 +287,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
            oWallReady(iDom) = .False.
         end if
      end do
-     
+
 
      ! Allocate space for the localWallFringes. localWallFringes keeps
      ! track of donors for cells that are next to a wall. These must
@@ -313,8 +312,8 @@ subroutine oversetComm(level, firstTime, coarseLevel)
         call packOFringe(oFringes(iDom))
         oFringeReady(iDom) = .True. 
 
-        call initializeOWall(oWalls(iDom), nn, level, sps)
-        call packOWall(oWalls(iDom))
+        call initializeOWall(oWalls(iDom), .True., clusters(iDom))
+        call packOWall(oWalls(iDom), .true.)
         oWallReady(iDom) = .True. 
      end do
 
@@ -384,7 +383,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
         iDom = oWallSendList(2, jj)
         call sendOWall(oWalls(iDom), iDom, iProc, 2*MAGIC, sendCount)
      end do
-        
+
      ! Post all the oBlock/oFringe/oWall receives. Before posting the actual
      ! receive, allocate the receiving buffer. 
      recvCount = 0
@@ -409,7 +408,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
              bufSizes(iDom, 5), bufSizes(iDom, 6), recvCount, recvInfo)
      end do
 
-  
+
      ! Before we start waiting for the receives to finish, we can see
      ! if we can do any searches with the blocks/fringes we already
      ! have. Call the internal routine for this.
@@ -473,7 +472,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
            call terminate("computeInterpolationParallel", "Inconsistent Comm pattern detected.")
         end if
      end do
- 
+
      ! Last thing to do wait for all the sends to finish 
      do i=1,sendCount
         call mpi_waitany(sendCount, sendRequests, index, status, ierr)
@@ -518,12 +517,12 @@ subroutine oversetComm(level, firstTime, coarseLevel)
                  oFringes(iDom)%iBuffer(iPtr+13) = oFringes(iDom)%gInd(8, i)
                  oFringes(iDom)%iBuffer(iPtr+14) = oFringes(iDom)%myIndex(i)
                  iPtr = iPtr + 14
-                 
+
                  oFringes(iDom)%rBuffer(rPtr+1) = oFringes(iDom)%donorFrac(1, i)
                  oFringes(iDom)%rBuffer(rPtr+2) = oFringes(iDom)%donorFrac(2, i)
                  oFringes(iDom)%rBuffer(rPtr+3) = oFringes(iDom)%donorFrac(3, i)
                  oFringes(iDom)%rBuffer(rPtr+4) = oFringes(iDom)%quality(i)
-                 
+
                  rPtr = rPtr + 4
               end if
            end do
@@ -550,7 +549,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
 
         iProc = oFringeRecvList(1, jj)
         iDom = oFringeRecvList(2, jj)
-      
+
         sendCount = sendCount + 1
         call mpi_isend(oFringes(iDom)%fringeReturnSize, 1, sumb_integer, &
              iproc, iDom, sumb_comm_world, sendRequests(sendCount), ierr)
@@ -566,14 +565,14 @@ subroutine oversetComm(level, firstTime, coarseLevel)
         iProc = oFringeSendList(1, jj)
         iDom = oFringeSendList(2, jj)
         recvCount = recvCount + 1
-      
+
         call mpi_irecv(fringeRecvSizes(jj), 1, sumb_integer, &
              iProc, iDom, sumb_comm_world, recvRequests(recvCount), ierr)
         call ECHK(ierr, __FILE__, __LINE__)
      end do
 
      ! Last thing to do wait for all the sends and receives to finish 
-    ! Last thing to do wait for all the sends to finish 
+     ! Last thing to do wait for all the sends to finish 
      do i=1,sendCount
         call mpi_waitany(sendCount, sendRequests, index, status, ierr)
         call ECHK(ierr, __FILE__, __LINE__)
@@ -583,7 +582,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
         call mpi_waitany(recvCount, recvRequests, index, status, ierr)
         call ECHK(ierr, __FILE__, __LINE__)
      end do
-   
+
      ! Now before we do the actual receives, before we need to
      ! allocate space intRecvBuff and realRecvBuff for the receive. We
      ! also compute the cumulative offsets so that we know what to
@@ -592,8 +591,8 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      allocate(cumFringeRecv(1:nOFringeSend+1))
      cumFringeRecv(1) = 1
      do jj=1, nOFringeSend ! These are the fringes we *sent*
-                           ! originally, now are going to receive them
-                           ! back
+        ! originally, now are going to receive them
+        ! back
         cumFringeRecv(jj+1) = cumFringeRecv(jj) + fringeRecvSizes(jj)
      end do
 
@@ -615,7 +614,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
            call mpi_isend(oFringes(iDom)%rBuffer, iSize*4, sumb_real, &
                 iproc, tag, sumb_comm_world, sendRequests(sendCount), ierr)
            call ECHK(ierr, __FILE__, __LINE__)
-           
+
            tag = iDom + 2*MAGIC
            sendCount = sendCount + 1
            call mpi_isend(oFringes(iDom)%iBuffer, iSize*14, sumb_integer, &
@@ -638,8 +637,8 @@ subroutine oversetComm(level, firstTime, coarseLevel)
            recvCount = recvCount + 1       
            call mpi_irecv(realRecvBuf(iStart), iSize*4, sumb_real, &
                 iProc, tag, sumb_comm_world, recvRequests(recvCount), ierr)
-            call ECHK(ierr, __FILE__, __LINE__)
-            recvInfo(:, recvCount) = (/iDom, 1/) ! 1 for real recv
+           call ECHK(ierr, __FILE__, __LINE__)
+           recvInfo(:, recvCount) = (/iDom, 1/) ! 1 for real recv
 
            iStart = (cumFringeRecv(jj  )-1)*14 + 1
            tag = iDom + 2*MAGIC
@@ -650,7 +649,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
            recvInfo(:, recvCount) = (/iDom, 2/) ! 2 for int recv
         end if
      end do
-   
+
      ! We can do some useful work while the fringes are
      ! communicating. Specifically we can process the local
      ! fringes. This is essentially the operation as below we perform
@@ -661,9 +660,9 @@ subroutine oversetComm(level, firstTime, coarseLevel)
 
      do nn=1,nDom
         call setPointers(nn, level, sps)
-        
+
         iDom = cumDomProc(myid) + nn
-        
+
         ! We can cheat here and just do a nice triple loop, this is
         ! because these fringes are local and we know we still have
         ! all of them and are still in the "right order"
@@ -692,7 +691,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
                     fringes(i, j, k)%gInd(6) = oFringes(iDom)%gInd(6, ii)
                     fringes(i, j, k)%gInd(7) = oFringes(iDom)%gInd(7, ii)
                     fringes(i, j, k)%gInd(8) = oFringes(iDom)%gInd(8, ii)
-                    
+
                     ! Now unwind the index of *donor*
 
                     ! Remove the compute status of this cell
@@ -708,7 +707,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
            end do
         end do
      end do
-  
+
      ! Now wait for the sends and receives to finish
      do i=1,sendCount
         call mpi_waitany(sendCount, sendRequests, index, status, ierr)
@@ -719,7 +718,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
         call mpi_waitany(recvCount, recvRequests, index, status, ierr)
         call ECHK(ierr, __FILE__, __LINE__)
      end do
-           
+
      ! Process the data we just received. 
      do kk=1, nOfringeSend
 
@@ -730,7 +729,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
         ! Set the block pointers for the local block we are dealing
         ! with:
         call setPointers(nn, level, sps)
-           
+
         ! This is the range of fringes that are now ready. 
         do jj=cumFringeRecv(kk), cumFringeRecv(kk+1)-1
 
@@ -738,26 +737,26 @@ subroutine oversetComm(level, firstTime, coarseLevel)
            ! the index in the first place is we are not getting the
            ! same number of fringes back as we sent so the myIndex
            ! lets of know which ones are actuall coming back. 
-           
+
            ! myindex is 1 based so we need the -1 at the end 
            myIndex = intRecvBuf(14*(jj-1) + 14) - 1
            i = mod(myIndex, nx) + 2
            j = mod(myIndex/nx, ny) + 2
            k = myIndex/(nx*ny) + 2
-         
+
            ! Extract the quality value from the buffer
            quality = realRecvBuf(4*(jj-1) + 4)
-           
+
            ! This is the acutal implict hole cutting "less than"
            ! operation. 
            if (quality < fringes(i, j, k)%quality) then 
-              
+
               ! Only count this a new local fringe if it doesn't
               ! already have one
               if (fringes(i, j, k)%donorProc == -1) then 
                  nLocalFringe = nLocalFringe + 1
               end if
-              
+
               ! Accept the incoming fringe. 
               iStart = 14*(jj-1)
               fringes(i, j, k)%donorProc  = intRecvBuf(iStart + 1)
@@ -765,7 +764,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
               fringes(i, j, k)%dI =         intRecvBuf(iStart + 3)
               fringes(i, j, k)%dJ =         intRecvBuf(iStart + 4)
               fringes(i, j, k)%dK =         intRecvBuf(iStart + 5)
-              
+
               fringes(i, j, k)%gInd(1)    = intRecvBuf(iStart + 6)
               fringes(i, j, k)%gInd(2)    = intRecvBuf(iStart + 7)
               fringes(i, j, k)%gInd(3)    = intRecvBuf(iStart + 8)
@@ -774,22 +773,24 @@ subroutine oversetComm(level, firstTime, coarseLevel)
               fringes(i, j, k)%gInd(6)    = intRecvBuf(iStart + 11)
               fringes(i, j, k)%gInd(7)    = intRecvBuf(iStart + 12)
               fringes(i, j, k)%gInd(8)    = intRecvBuf(iStart + 13)
-              
+
               fringes(i, j, k)%donorFrac = realRecvBuf(4*jj-3:4*jj-1)
-              
+
               ! Set this new quality
               fringes(i, j, k)%quality = quality
-              
+
               ! Remove the compute status of this cell
               fringes(i, j, k)%isCompute = .False. 
            end if
         end do
      end do
- 
+
      ! ------------------------------------------------------------------
      ! We are now completely finished with oFringes, oBlocks and
      ! oWalls. 
-     call deallocateOData(oBlocks, oFringes, oWalls, size(oBlocks))
+     call deallocateOBlocks(oBlocks, size(oBlocks))
+     call deallocateOFringes(oFringes, size(oFringes))
+     call deallocateOWalls(oWalls, size(oWalls))
      deallocate(oBlocks, oFringes, oWalls, intRecvBuf, realRecvBuf)
 
      ! -----------------------------------------------------------------
@@ -815,7 +816,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      ! not include the halos.
      allocate(localFringes(nLocalFringe))
 
-  
+
      ! Fill up these fringes
      nLocalFringe = 0
      do nn=1, nDom
@@ -836,7 +837,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
                        ii = visc_drdw_stencil(i_stencil, 1) + i
                        jj = visc_drdw_stencil(i_stencil, 2) + j
                        kk = visc_drdw_stencil(i_stencil, 3) + k
-                       
+
                        if (fringes(ii, jj, kk)%isCompute) then 
                           ! This is a compute cell
                           computeCellFound = .True.
@@ -891,6 +892,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
 
      call floodInteriorCells(level, sps)
 
+
      ! The fringeReduction just needs to be isCompute flag so exchange
      ! this as these may have been changed by the flooding
 
@@ -904,7 +906,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      ! -----------------------------------------------------------------
 
      call fringeReduction(level, sps)
-    
+
      ! Before we can do the final comm structures, we need to make
      ! sure that every processor's halo have any donor information
      ! necessary to build its own comm pattern. For this will need to
@@ -932,11 +934,18 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      ! -----------------------------------------------------------------
      call checkOverset(level, sps)
 
-     ! Deallocate some data we no longer need
-     deallocate(Xmin, Xmax, minVol, oBlockReady,  work)
+     call createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
+          nOwallSend, nOwallRecv, size(oWallSendList, 2), &
+          size(oWallRecvList, 2), work, nWork)
 
      ! Setup the buffer sizes
      call setBufferSizes(level, sps, .false., .false., .true.)
+
+     ! Deallocate some data we no longer need
+     deallocate(Xmin, Xmax, oBlockReady, oFringeReady, oWallReady,  work)
+
+     ! Done with the clusters
+     deallocate(clusters)
 
   end do spectralLoop
 
@@ -978,7 +987,6 @@ contains
 
     ! Working Variables
     real(kind=realType), dimension(3, nDom) :: xMinLocal, xMaxLocal
-    real(kind=realType), dimension(nDom) :: minVolLocal
 
     do nn=1,nDom
        call setPointers(nn, level, sps)
@@ -991,11 +999,9 @@ contains
        xMaxLocal(2, nn) = maxval(x(:, :, :, 2))
        xMaxLocal(3, nn) = maxval(x(:, :, :, 3))
 
-       minVolLocal(nn) = minval(vol(2:il, 2:jl, 2:kl))
-
     end do
 
-    ! Now we can allgather the xMin, xMax and minVolume from each
+    ! Now we can allgather the xMin and xMax  from each
     ! processor to everyone
     call mpi_allgatherV(xMinLocal, nDom*3, sumb_real, xMin, 3*nDomProc, &
          3*cumDomProc, sumb_real, sumb_comm_world, ierr)
@@ -1003,10 +1009,6 @@ contains
 
     call mpi_allgatherV(xMaxLocal, nDom*3, sumb_real, xMax, 3*nDomProc, &
          3*cumDomProc, sumb_real, sumb_comm_world, ierr)
-    call ECHK(ierr, __FILE__, __LINE__)
-
-    call mpi_allgatherV(minVolLocal, nDom, sumb_real, minVol, nDomProc, &
-         cumDomProc, sumb_real, sumb_comm_world, ierr)
     call ECHK(ierr, __FILE__, __LINE__)
 
   end subroutine computeDomainBoundingBoxes
@@ -1139,7 +1141,7 @@ contains
   end subroutine buildGlobalSparseOverlap
 
   subroutine doMyWork(flag)
-    
+
     ! This internal subroutine which may be called repeadly, performs
     ! as many of the searches my processor is responsible for. It
     ! returns true when all the work has been completed. 
@@ -1165,7 +1167,7 @@ contains
           call fringeSearch(oBlocks(iDom), oFringes(jDom), oWalls(iDom), oWalls(jDom))
           endTime = mpi_wtime()
           overlap%data(jj) = endTime - startTime
-          
+
           ! Flag this work as being done:
           work(4, iWork) = 1
        end if
@@ -1402,3 +1404,4 @@ subroutine writePartionedMesh(fileName)
   deallocate(buffer, ibuffer, nDomProc, cumDomProc, dims)
 
 end subroutine writePartionedMesh
+

@@ -16,11 +16,16 @@ subroutine initializeFringes(oFringe, nn, level, sps)
   ! Working Params
   integer(kind=intTYpe) :: i, j, k, mm, iDim, ii
   integer(kind=intTYpe) :: iStart, iEnd, jStart, jEnd, kStart, kEnd
-
+  real(kind=realType) :: factor, frac
+  logical :: wallsPresent, isWallType
+  integer(kind=intType), dimension(:, :, :), allocatable :: tmp
   ! Allocate space for the double halo fringes. 
   if (.not. associated(flowDoms(nn, level, sps)%fringes)) then 
      allocate(flowDoms(nn, level, sps)%fringes(0:ib, 0:jb, 0:kb))
   end if
+
+  ! Check if we have walls:
+  call wallsOnBLock(wallsPresent)
 
   ! Manually set the pointer to fringes we just allocated instead of
   ! calling setPointers again
@@ -93,115 +98,76 @@ subroutine initializeFringes(oFringe, nn, level, sps)
                    x(i  , j  , k  , iDim))
               oFringe%x(iDim, ii) = fringes(i, j, k)%x(iDim)
            end do
-           fringes(i, j, k)%quality = vol(i, j, k)
-           oFringe%quality(ii) = vol(i, j, k)
+
+           if (wallsPresent) then 
+              factor = .25
+           else
+              factor = one
+           end if
+
+           fringes(i, j, k)%quality = factor*vol(i, j, k)
+           oFringe%quality(ii) = factor*vol(i, j, k)
            oFringe%myIndex(ii) = ii
         end do
      end do
   end do
   
+  ! Now loop over this block's boundary condiitons and we need to set
+  ! a litle info: We need to flag the two levels next to an overset
+  ! outer boundary as being a "forced receiver'. To implement this, we
+  ! set the volume of these cells to "large".  We use the generic
+  ! flagForcedReceiver routine for this since the same information is
+  ! used elsewhere.
 
-  ! Now loop over this block's boundary condiitons and we need
-  ! to set a litle info: We need to flag the two levels next to
-  ! an overset outer boundary as being a "forced receiver'. To
-  ! implement this, we set the volume of these cells to "large".
+  allocate(tmp(1:ie, 1:je, 1:ke))
+  call flagForcedReceivers(tmp)
+  do k=2, kl
+     do j=2, jl
+        do i=2, il
+           if (tmp(i,j,k) == 1) then
+              fringes(i, j, k)%quality = large
+              ii = (k-2)*nx*ny + (j-2)*nx + (i-2) + 1
+              oFringe%quality(ii) = large
+           end if
+        end do
+     end do
+  end do
+  deallocate(tmp)
+
   ! We also need to flag a single layer of cells next a wall
   ! boundary condition as being "isWall". Knowing the fringes
   ! next to walls will be necessary for determine the overap
   ! wall distance correction as well as the flooding procedure.
-  
+
   do mm=1, nBocos
-     ! Just record the ranges necessary and we'll add in a generic loop
-     select case (BCFaceID(mm))
+     select case(BCFaceID(mm))
      case (iMin)
-        iStart=2; iEnd=3;
+        iStart=2; iEnd=2;
         jStart=BCData(mm)%inBeg+1; jEnd=BCData(mm)%inEnd
         kStart=BCData(mm)%jnBeg+1; kEnd=BCData(mm)%jnEnd
      case (iMax)
-        iStart=nx; iEnd=il;
+        iStart=il; iEnd=il;
         jStart=BCData(mm)%inBeg+1; jEnd=BCData(mm)%inEnd
         kStart=BCData(mm)%jnBeg+1; kEnd=BCData(mm)%jnEnd
      case (jMin)
         iStart=BCData(mm)%inBeg+1; iEnd=BCData(mm)%inEnd
-        jStart=2; jEnd=3;
+        jStart=2; jEnd=2;
         kStart=BCData(mm)%jnBeg+1; kEnd=BCData(mm)%jnEnd
      case (jMax)
         iStart=BCData(mm)%inBeg+1; iEnd=BCData(mm)%inEnd
-        jStart=ny; jEnd=jl;
+        jStart=jl; jEnd=jl;
         kStart=BCData(mm)%jnBeg+1; kEnd=BCData(mm)%jnEnd
      case (kMin)
         iStart=BCData(mm)%inBeg+1; iEnd=BCData(mm)%inEnd
         jStart=BCData(mm)%jnBeg+1; jEnd=BCData(mm)%jnEnd
-        kStart=2; kEnd=3;
+        kStart=2; kEnd=2;
      case (kMax)
         iStart=BCData(mm)%inBeg+1; iEnd=BCData(mm)%inEnd
         jStart=BCData(mm)%jnBeg+1; jEnd=BCData(mm)%jnEnd
-        kStart=nz; kEnd=kl;
+        kStart=kl; kEnd=kl;
      end select
 
-     ! ! Just record the ranges necessary and we'll add in a generic loop
-     ! select case (BCFaceID(mm))
-     ! case (iMin)
-     !    iStart=2; iEnd=2;
-     !    jStart=BCData(mm)%inBeg+1; jEnd=BCData(mm)%inEnd
-     !    kStart=BCData(mm)%jnBeg+1; kEnd=BCData(mm)%jnEnd
-     ! case (iMax)
-     !    print *, 'imax?'
-     !    iStart=il; iEnd=il;
-     !    jStart=BCData(mm)%inBeg+1; jEnd=BCData(mm)%inEnd
-     !    kStart=BCData(mm)%jnBeg+1; kEnd=BCData(mm)%jnEnd
-     ! case (jMin)
-     !    iStart=BCData(mm)%inBeg+1; iEnd=BCData(mm)%inEnd
-     !    jStart=2; jEnd=2;
-     !    kStart=BCData(mm)%jnBeg+1; kEnd=BCData(mm)%jnEnd
-     ! case (jMax)
-     !    iStart=BCData(mm)%inBeg+1; iEnd=BCData(mm)%inEnd
-     !    jStart=jl; jEnd=jl;
-     !    kStart=BCData(mm)%jnBeg+1; kEnd=BCData(mm)%jnEnd
-     ! case (kMin)
-     !    iStart=BCData(mm)%inBeg+1; iEnd=BCData(mm)%inEnd
-     !    jStart=BCData(mm)%jnBeg+1; jEnd=BCData(mm)%jnEnd
-     !    kStart=2; kEnd=2;
-     ! case (kMax)
-     !    iStart=BCData(mm)%inBeg+1; iEnd=BCData(mm)%inEnd
-     !    jStart=BCData(mm)%jnBeg+1; jEnd=BCData(mm)%jnEnd
-     !    kStart=kl; kEnd=kl;
-     ! end select
-
-     if (BCType(mm) == OversetOuterBound) then
-        do k=kStart, kEnd
-           do j=jStart, jEnd
-              do i=iStart, iEnd
-                 fringes(i, j, k)%quality = large
-                 ! Recompute the index
-                 ii = (k-2)*nx*ny + (j-2)*nx + (i-2) + 1
-                 oFringe%quality(ii) = large
-              end do
-           end do
-        end do
-     end if
-
-     ! For the wall check, we only need 1 layer next to wall. Modify
-     ! the required bounds for this. Also, we set the isWall() value
-     ! to the face idex (iMin through kMax). This will tell what the
-     ! normal direction to the wall is. 
-     select case (BCFaceID(mm))
-     case (iMin)
-        iEnd=2
-     case (iMax)
-        iStart=il
-     case (jMin)
-        jEnd=2
-     case (jMax)
-        jStart=jl
-     case (kMin)
-        kEnd=2
-     case (kMax)
-        kStart=kl
-     end select
-     if (BCType(mm) == NSWallAdiabatic .or. &
-          BCType(mm) == NSWallIsoThermal .or. &
-          BCType(mm) == EulerWall) then 
+     if (isWallType(BCType(mm))) then 
         do k=kStart, kEnd
            do j=jStart, jEnd
               do i=iStart, iEnd
