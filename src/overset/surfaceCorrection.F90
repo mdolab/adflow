@@ -34,7 +34,7 @@ subroutine surfaceCorrection(oBlock, oFringe, bWall, fWall, offset, n)
 
   ! Allocate the (pointer) memory that may be resized as necessary for
   ! the singlePoint search routine. 
-  allocate(BB(10), frontLeaves(25), frontLeavesNew(25), stack(100))
+  allocate(BB(10), frontLeaves(25), frontLeavesNew(25))
 
   ! Basic algorithm is:
 
@@ -141,7 +141,7 @@ subroutine surfaceCorrection(oBlock, oFringe, bWall, fWall, offset, n)
                  
                  ! Now set the offset for the wall. 
                  masterOffset = vecF - vecB
-
+              
                  ! Last thing we need to do is add an attenuating
                  ! offset for the nodes in the off-wall direction. 
 
@@ -192,7 +192,7 @@ subroutine surfaceCorrection(oBlock, oFringe, bWall, fWall, offset, n)
   end do masterLoop
 
   ! Make sure to clean up the pointer allocations
-  deallocate(BB, frontLeaves, frontLeavesNew, stack)
+  deallocate(BB, frontLeaves, frontLeavesNew)
 
 contains
   subroutine getWeights(uv, weights)

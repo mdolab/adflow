@@ -19,6 +19,8 @@ subroutine initializeOBlock(oBlock, nn)
   ! Working paramters
   integer(kind=intType) :: i, j, k, mm, nADT, nHexa, planeOffset
   integer(kind=intType) :: iStart, iEnd, jStart, jEnd, kStart, kEnd
+  real(kind=realType) :: factor, frac
+  logical :: wallsPresent
 
   ! Set all the sizes for this block.
   oBlock%il = il
@@ -27,6 +29,8 @@ subroutine initializeOBlock(oBlock, nn)
 
   oBlock%proc = myID
   oBlock%block = nn
+
+  call wallsOnBlock(wallsPresent)
 
   allocate( &
        oBlock%qualDonor(1, ie*je*ke), &
@@ -37,7 +41,7 @@ subroutine initializeOBlock(oBlock, nn)
   oBlock%nearWall = 0
   oBlock%invalidDonor = 0
 
-  kk = 10
+  kk = 29
   do mm=1,nBocos
      select case (BCFaceID(mm))
      case (iMin)
@@ -88,102 +92,32 @@ subroutine initializeOBlock(oBlock, nn)
      end if
   end do ! BocoLoop
 
-  do mm=1,nBocos
-     ! Just record the ranges necessary and we'll add in a generic
-     ! loop. Why is it the first three? Well, the first level of halos
-     ! off of an overset outer bound is completely
-     ! meaningless. Essentially we ignore those. So the outer two
-     ! layers of cells are indices 2 and 3. Therefore the first 3 on
-     ! either side need to be flagged as invalid.
 
-     select case (BCFaceID(mm))
-     case (iMin)
-        iStart=1; iEnd=3;
-        jStart=BCData(mm)%inBeg+1; jEnd=BCData(mm)%inEnd
-        kStart=BCData(mm)%jnBeg+1; kEnd=BCData(mm)%jnEnd
-     case (iMax)
-        iStart=nx; iEnd=ie;
-        jStart=BCData(mm)%inBeg+1; jEnd=BCData(mm)%inEnd
-        kStart=BCData(mm)%jnBeg+1; kEnd=BCData(mm)%jnEnd
-     case (jMin)
-        iStart=BCData(mm)%inBeg+1; iEnd=BCData(mm)%inEnd
-        jStart=1; jEnd=3;
-        kStart=BCData(mm)%jnBeg+1; kEnd=BCData(mm)%jnEnd
-     case (jMax)
-        iStart=BCData(mm)%inBeg+1; iEnd=BCData(mm)%inEnd
-        jStart=ny; jEnd=je;
-        kStart=BCData(mm)%jnBeg+1; kEnd=BCData(mm)%jnEnd
-     case (kMin)
-        iStart=BCData(mm)%inBeg+1; iEnd=BCData(mm)%inEnd
-        jStart=BCData(mm)%jnBeg+1; jEnd=BCData(mm)%jnEnd
-        kStart=1; kEnd=3;
-     case (kMax)
-        iStart=BCData(mm)%inBeg+1; iEnd=BCData(mm)%inEnd
-        jStart=BCData(mm)%jnBeg+1; jEnd=BCData(mm)%jnEnd
-        kStart=nz; kEnd=ke;
-     end select
-
-
-     ! select case (BCFaceID(mm))
-     ! case (iMin)
-     !    iStart=1; iEnd=2;
-     !    jStart=BCData(mm)%inBeg+1; jEnd=BCData(mm)%inEnd
-     !    kStart=BCData(mm)%jnBeg+1; kEnd=BCData(mm)%jnEnd
-     ! case (iMax)
-     !    iStart=nx; iEnd=il;
-     !    jStart=BCData(mm)%inBeg+1; jEnd=BCData(mm)%inEnd
-     !    kStart=BCData(mm)%jnBeg+1; kEnd=BCData(mm)%jnEnd
-     ! case (jMin)
-     !    iStart=BCData(mm)%inBeg+1; iEnd=BCData(mm)%inEnd
-     !    jStart=1; jEnd=2;
-     !    kStart=BCData(mm)%jnBeg+1; kEnd=BCData(mm)%jnEnd
-     ! case (jMax)
-     !    iStart=BCData(mm)%inBeg+1; iEnd=BCData(mm)%inEnd
-     !    jStart=ny; jEnd=jl;
-     !    kStart=BCData(mm)%jnBeg+1; kEnd=BCData(mm)%jnEnd
-     ! case (kMin)
-     !    iStart=BCData(mm)%inBeg+1; iEnd=BCData(mm)%inEnd
-     !    jStart=BCData(mm)%jnBeg+1; jEnd=BCData(mm)%jnEnd
-     !    kStart=1; kEnd=2;
-     ! case (kMax)
-     !    iStart=BCData(mm)%inBeg+1; iEnd=BCData(mm)%inEnd
-     !    jStart=BCData(mm)%jnBeg+1; jEnd=BCData(mm)%jnEnd
-     !    kStart=nz; kEnd=kl;
-     ! end select
-
-     if (BCType(mm) == OversetOuterBound) then
-        do k=kStart, kEnd
-           do j=jStart, jEnd
-              do i=iStart, iEnd
-                 ! Compute the index
-                 oBlock%invalidDonor(i, j, k) = 1
-              end do
-           end do
-        end do
-     end if
-  end do
-
+  call flagForcedReceivers(oBlock%invalidDonor)
+  
   ! Copy Volume to qualDonor and do minVol while we're at it
   oBlock%minVol = Large
   mm = 0
+
   do k=1,ke
      do j=1,je
         do i=1,ie
            mm = mm + 1
-           oBlock%qualDonor(1, mm) = vol(i, j, k)
-           oBlock%minVol = min(oBlock%minVol, vol(i, j, k))
+           if (wallsPresent) then 
+              factor = .25
+           else
+              factor = one
+           end if
+
+           oBlock%qualDonor(1, mm) = vol(i, j, k)*factor
+           oBlock%minVol = min(oBlock%minVol, vol(i, j, k)*factor)
         end do
      end do
   end do
-
-  do k=0,kb
-     do j=0,jb
-        do i=0,ib
-           oBlock%globalCell(i, j, k) = globalCell(i, j, k)
-        end do
-     end do
-  end do
-
+  
+  !Copy over global cell
+  oBlock%globalCell = globalCell
+  
   ! Now setup the data for the ADT
   nHexa = il * jl * kl
   nADT = ie * je * ke

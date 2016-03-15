@@ -40,7 +40,9 @@ include ${SUMB_RULES_FILE}
 vpath %.o $(SUMB_OBJDIR)
 
 FILES_TO_COMPLEXIFY =	computeInterpolationParallel.F90\
+			createZipperMesh.F90\
 			determineClusters.F90 \
+			determineClusterAreas.F90 \
 			checkOverset.F90 \
 			exchangeIblanks.f90\
 			exchangeIsCompute.f90\
@@ -64,6 +66,11 @@ FILES_TO_COMPLEXIFY =	computeInterpolationParallel.F90\
 			surfaceCorrection.F90\
 			oversetPresent.F90\
 			emptyOversetComm.F90\
+			wallSearch.F90\
+			initBCDataiBlank.F90\
+			exchangeSurfaceIBlanks.F90\
+			makeBoundaryStrings.F90\
+			writeDualGrid.F90\
 		       # computeQuadraticWeights.F90 \
 		       matrixinv3by3.F90 \
 

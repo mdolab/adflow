@@ -13,13 +13,14 @@ subroutine fringeSearch(oBlock, oFringe, bWall, fWall)
 
   ! Working Varaibles
   integer(kind=intType) :: nInterpol, elemID, nalloc, intInfo(3), i, ii, jj, kk, j, nn
-  integer(kind=intTYpe) :: iii, jjj, kkk, n
-  logical :: invalid
-  real(kind=realType) :: uvw(4), donorQual, xx(3), pt(3)
+  integer(kind=intTYpe) :: iii, jjj, kkk, n, myind,  nx, ny, nz, myindex
+  logical :: invalid, failed
+  real(kind=realType) :: uvw(5), donorQual, xx(4), pt(3)
   real(kind=realType), dimension(:, :), allocatable :: offset
-
+  real(kind=realType) :: oneMinusU, oneMinusV, oneMinusW, weight(8)
   ! Variables we have to pass the ADT search routine
   integer(kind=intType), dimension(:), pointer :: BB
+  type(adtBBoxTargetType), dimension(:), pointer :: BB2
   integer(kind=intType), dimension(:), pointer :: frontLeaves
   integer(kind=intType), dimension(:), pointer :: frontLeavesNew
 
@@ -27,7 +28,7 @@ subroutine fringeSearch(oBlock, oFringe, bWall, fWall)
 
   ! Allocate the (pointer) memory that may be resized as necessary for
   ! the singlePoint search routine. 
-  allocate(BB(20), frontLeaves(25), frontLeavesNew(25))
+  allocate(BB(20), BB2(20), frontLeaves(25), frontLeavesNew(25), stack(100))
 
   ! Number of fringes we have:
   n = size(oFringe%x, 2)
@@ -56,12 +57,25 @@ subroutine fringeSearch(oBlock, oFringe, bWall, fWall)
           (oFringe%isWall(i)>0)) then 
 
         ! Compute the potentailly offset point to search for. 
-        xx = oFringe%x(:, i) + offset(:, i)
+        xx(1:3) = oFringe%x(:, i) + offset(:, i)
 
         call containmentTreeSearchSinglePoint(oBlock%ADT, xx, intInfo, uvw, &
-             oBlock%qualDonor, nInterpol, BB, frontLeaves, frontLeavesNew)
+             oBlock%qualDonor, nInterpol, BB, frontLeaves, frontLeavesNew, failed)
+        
+        if (intInfo(1) >= 0 .and. failed) then 
 
-        elemFound: if (.not. intInfo(1) < 0) then 
+           ! we "found" a point but it is garbage. Do the failsafe search
+           xx(4) = large
+           call minDistanceTreeSearchSinglePoint(oBlock%ADT, xx, intInfo, uvw, &
+             oBlock%qualDonor, nInterpol, BB2, frontLeaves, frontLeavesNew)
+           
+        end if
+        
+        elemFound: if (intInfo(1) >= 0) then 
+
+           ! Check if our solution is actually any good by evaluating the
+           ! interpolated point. 
+
 
            ! Donor and block and index information for this donor. 
            donorQual = uvw(4)
@@ -93,10 +107,28 @@ subroutine fringeSearch(oBlock, oFringe, bWall, fWall)
               ! Now record the information
               localWallFringes(nLocalWallFringe)%donorProc = oBlock%proc
               localWallFringes(nLocalWallFringe)%donorBlock = oBlock%block
-              localWallFringes(nLocalWallFringe)%dI = ii 
-              localWallFringes(nLocalWallFringe)%dJ = jj
-              localWallFringes(nLocalWallFringe)%dK = kk
-           end  if
+
+              ! Which cell we flag depend on which quadrant it is
+              ! within the dual cell:
+
+              if (uvw(1) < half) then 
+                 localWallFringes(nLocalWallFringe)%dI = ii
+              else
+                 localWallFringes(nLocalWallFringe)%dI = ii+1
+              end if
+
+              if (uvw(2) < half) then 
+                 localWallFringes(nLocalWallFringe)%dJ = jj
+              else
+                 localWallFringes(nLocalWallFringe)%dJ = jj+1
+              end if
+
+              if (uvw(3) < half) then 
+                 localWallFringes(nLocalWallFringe)%dK = kk
+              else
+                 localWallFringes(nLocalWallFringe)%dK = kk+1
+              end if
+           end if
 
            ! This check is for the actual donors. The '<' is really
            ! the 'implicit hole' method where we take the best quality
@@ -145,6 +177,6 @@ subroutine fringeSearch(oBlock, oFringe, bWall, fWall)
         end if elemFound
      end if shortCut
   end do
-  deallocate(offset, BB, frontLeaves, frontLeavesNew)
+  deallocate(offset, BB, BB2, frontLeaves, frontLeavesNew, stack)
 
 end subroutine fringeSearch

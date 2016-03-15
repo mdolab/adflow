@@ -410,7 +410,7 @@ subroutine releaseMemoryPart2
   call vecDestroy(x_like,PETScIerr)
   call EChk(PETScIerr, __FILE__, __LINE__)
 
-  ! Finally delete cgnsDoms...but there is still shit-ton more
+  ! Finally delete cgnsDoms...but there is still more
   ! pointers that need to be deallocated...
   do nn=1,cgnsNDom
      if (associated(cgnsDoms(nn)%procStored)) &
@@ -573,27 +573,7 @@ subroutine deallocateBlock(nn, level, sps)
      if( associated(BCData(i)%turbInlet) ) &
           deallocate(BCData(i)%turbInlet, stat=ierr)
      if(ierr /= 0) deallocationFailure = .true.
-     nullify(BCData(i)%norm)
-     nullify(BCData(i)%rface)
-     nullify(BCData(i)%uSlip)
-     nullify(BCData(i)%TNS_Wall)
-     nullify(BCData(i)%ptInlet)
-     nullify(BCData(i)%ttInlet)
-     nullify(BCData(i)%htInlet)
-     nullify(BCData(i)%flowXdirInlet)
-     nullify(BCData(i)%flowYdirInlet)
-     nullify(BCData(i)%flowZdirInlet)
-     nullify(BCData(i)%rho)
-     nullify(BCData(i)%velx)
-     nullify(BCData(i)%vely)
-     nullify(BCData(i)%velz)
-     nullify(BCData(i)%ps)
-     nullify(BCData(i)%turbInlet)
 
-
-  ! *******************************
-  ! Added by HDN
-  ! *******************************
      if( associated(BCData(i)%normALE) ) &
           deallocate(BCData(i)%normALE, stat=ierr)
      if(ierr /= 0) deallocationFailure = .true.
@@ -607,10 +587,40 @@ subroutine deallocateBlock(nn, level, sps)
           deallocate(BCData(i)%sHeatFlux, stat=ierr)
      if(ierr /= 0) deallocationFailure = .true.
 
+     if( associated(BCData(i)%iBlank) ) &
+          deallocate(BCData(i)%iBlank, stat=ierr)
+     if(ierr /= 0) deallocationFailure = .true.
+
+     nullify(BCData(i)%norm)
+     nullify(BCData(i)%rface)
+     nullify(BCData(i)%F)
+     nullify(BCData(i)%Fv)
+     nullify(BCData(i)%Fp)
+     nullify(BCData(i)%dualArea)
+     nullify(BCData(i)%uSlip)
+     nullify(BCData(i)%TNS_Wall)
+
      nullify(BCData(i)%normALE)
-     nullify(BCData(i)%rFaceALE)
+     nullify(BCData(i)%rfaceALE)
      nullify(BCData(i)%uSlipALE)
      nullify(BCData(i)%sHeatFlux)
+     
+     nullify(BCData(i)%ptInlet)
+     nullify(BCData(i)%ttInlet)
+     nullify(BCData(i)%htInlet)
+     nullify(BCData(i)%flowXdirInlet)
+     nullify(BCData(i)%flowYdirInlet)
+     nullify(BCData(i)%flowZdirInlet)
+     
+     nullify(BCData(i)%turbInlet)
+     
+     nullify(BCData(i)%rho)
+     nullify(BCData(i)%velx)
+     nullify(BCData(i)%vely)
+     nullify(BCData(i)%velz)
+     nullify(BCData(i)%ps)
+     nullify(BCData(i)%iblank)
+
   enddo
 
   if( associated(flowDoms(nn,level,sps)%BCType) ) &

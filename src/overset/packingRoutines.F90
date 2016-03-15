@@ -466,7 +466,7 @@ subroutine unpackOFringe(oFringe)
 
 end subroutine unpackOFringe
 
-subroutine getWallSize(nNodes, nCells)
+subroutine getWallSize(nNodes, nCells, dualMesh)
   ! Simple helper routine to return the number of wall nodes and cells
   ! for the block pointed to by blockPointers. 
 
@@ -474,6 +474,9 @@ subroutine getWallSize(nNodes, nCells)
   use BCTypes
   implicit none
   
+  ! Input
+  logical :: dualMesh
+
   ! Output
   integer(kind=intType), intent(out) :: nNodes, nCells
 
@@ -484,20 +487,25 @@ subroutine getWallSize(nNodes, nCells)
   ! initializeOWall.F90 for why the sizes are the way they are. 
   nNodes = 0
   nCells = 0
-  do mm=1,nBocos
+  do mm=1, nBocos
       if (BCType(mm) == EulerWall .or. BCType(mm) == NSWallAdiabatic .or. &
           BCType(mm) == NSWallIsoThermal) then 
-        
-        jBeg = BCData(mm)%jnBeg-1 ; jEnd = BCData(mm)%jnEnd
-        iBeg = BCData(mm)%inBeg-1 ; iEnd = BCData(mm)%inEnd
-        nNodes = nNodes + (iEnd - iBeg + 1)*(jEnd - jBeg + 1)
-        nCells = nCells + (iEnd - iBeg )*(jEnd - jBeg)
+         if (dualMesh) then 
+            jBeg = BCData(mm)%jnBeg-1 ; jEnd = BCData(mm)%jnEnd
+            iBeg = BCData(mm)%inBeg-1 ; iEnd = BCData(mm)%inEnd
+         else
+            jBeg = BCData(mm)%jnBeg; jEnd = BCData(mm)%jnEnd
+            iBeg = BCData(mm)%inBeg; iEnd = BCData(mm)%inEnd
+         end if
+
+         nNodes = nNodes + (iEnd - iBeg + 1)*(jEnd - jBeg + 1)
+         nCells = nCells + (iEnd - iBeg )*(jEnd - jBeg)
      end if
   end do
 
 end subroutine getWallSize
 
-subroutine getOWallBufferSizes(il, jl, kl, iSize, rSize)
+subroutine getOWallBufferSizes(il, jl, kl, iSize, rSize, dualMesh)
 
   ! Subroutine to get the required buffer sizes. This one is pretty
   ! easy, but we use a routine to make it look the same as for hte
@@ -509,6 +517,7 @@ subroutine getOWallBufferSizes(il, jl, kl, iSize, rSize)
 
   ! Input/OUtput
   integer(kind=intType), intent(in) :: il, jl ,kl
+  logical, intent(in) :: dualMesh
   integer(kind=intType), intent(out) :: rSize, iSize
 
   ! Working
@@ -516,15 +525,22 @@ subroutine getOWallBufferSizes(il, jl, kl, iSize, rSize)
 
   ! Initalization
   iSize = 3 ! For the block sizes
-  iSize = iSize + 2 ! For the nCells/nNodes variables
+  iSize = iSize + 4 ! For the maxCells/nCells/nNodes variables
   rSize = 0
   
-  call getWallSize(nNodes, nCells)
+  call getWallSize(nNodes, nCells, dualMesh)
+
+  ! Note that nCells here is the maximum number size. This will result
+  ! in a slight overestimate of the buffer size. This is ok.
 
   if (nNodes > 0) then 
      ! Count up the integers we want to send:
 
      iSize = iSize + nCells*4 ! This is for the connectivity
+
+     iSize = iSize + nCells   ! This is for the iblank array
+
+     iSize = iSize + nCells   ! This is for the cellPtr array
      
      ! Number of boxes in the ADT is the same as the number of elements
      nBBox = nCells
@@ -534,14 +550,14 @@ subroutine getOWallBufferSizes(il, jl, kl, iSize, rSize)
      
      ! Count up the reals we ned to send:
      rSize = rSize + 3*nNodes ! surface coordinates
-     
+
      rSize = rSize + nBBox*6 ! Cell bounding boxes
      
      rSize = rSize + nLeaves*12 ! Bounding boxes for leaves
   end if
 end subroutine getOWallBufferSizes
 
-subroutine packOWall(oWall)
+subroutine packOWall(oWall, dualMesh)
 
   use overset
   use constants
@@ -552,11 +568,11 @@ subroutine packOWall(oWall)
 
   ! Input/Output Parameters
   type(oversetWall), intent(inout) :: oWall
-
+  logical, intent(in) :: dualMesh
   ! Working paramters
   integer(kind=intType) :: rSize, iSize, mm, i, j, nNodes, nCells
 
-  call getOWallBufferSizes(oWall%il, oWall%kl, oWall%kl, isize, rSize)
+  call getOWallBufferSizes(oWall%il, oWall%kl, oWall%kl, isize, rSize, dualMesh)
 
   ! Allocate the buffers
   allocate(oWall%rBuffer(rSize), oWall%iBuffer(iSize))
@@ -566,14 +582,26 @@ subroutine packOWall(oWall)
   oWall%iBuffer(3) = oWalL%kl
   oWall%iBuffer(4) = oWall%nNodes
   oWall%iBuffer(5) = oWall%nCells
+  oWall%iBuffer(6) = oWall%maxCells
+  oWall%iBuffer(7) = oWall%cluster
   
   if (oWall%nNodes > 0) then 
-     iSize = 5
+     iSize = 7
      do j=1, oWall%nCells
         do i=1, 4
            iSize = iSize + 1
            oWall%iBuffer(iSize) = oWall%conn(i, j)
         end do
+     end do
+
+     do i=1, oWall%maxCells
+        iSize = iSize + 1
+        oWall%iBuffer(iSize) = oWall%iBlank(i)
+     end do
+
+     do i=1, oWall%nCells
+        iSize = iSize + 1
+        oWall%iBuffer(iSize) = oWall%cellPtr(i)
      end do
      
      do i=1, oWall%ADT%nLeaves
@@ -618,7 +646,7 @@ subroutine unpackOWall(oWall)
   type(oversetWall), intent(inout) :: oWall
 
   ! Working paramters
-  integer(kind=intType) :: rSize, iSize, idom, i,  j
+  integer(kind=intType) :: rSize, iSize, idom, i,  j, iNode
 
   ! Set the sizes of this oWall
   oWall%il = oWall%iBuffer(1)
@@ -627,13 +655,17 @@ subroutine unpackOWall(oWall)
 
   oWall%nNodes = oWall%iBuffer(4)
   oWall%nCells = oWall%iBuffer(5)
+  oWall%maxCells = oWall%iBuffer(6)
+  oWall%cluster = oWall%iBuffer(7)
 
-  iSize = 5
+  iSize = 7
   rSize = 0
 
   ! Allocate the arrays now that we know the sizes
-  allocate(oWall%conn(4, oWall%nCells))
   allocate(oWall%x(3, oWall%nNodes))
+  allocate(oWall%conn(4, oWall%nCells))
+  allocate(oWall%iBlank(oWall%maxCells))
+  allocate(oWall%cellPtr(oWall%nCells))
 
   ! Once we know the sizes, allocate all the arrays in the
   ! ADTree. Since we are not going to call the *actual* build routine
@@ -666,6 +698,7 @@ subroutine unpackOWall(oWall)
 
   oWall%ADT%nLeaves = oWall%ADT%nBBoxes - 1
   if(oWall%ADT%nBBoxes <= 1) oWall%ADT%nLeaves = oWall%ADT%nLeaves + 1
+
   allocate(oWall%ADT%ADTree(oWall%ADT%nLeaves))
 
   ! Now continue copying out the values if necessary:
@@ -676,7 +709,17 @@ subroutine unpackOWall(oWall)
            oWall%conn(i, j) = oWall%iBuffer(iSize)
         end do
      end do
-     
+
+     do i=1, oWall%maxCells
+        iSize = iSize + 1
+        oWall%iBlank(i) = oWall%iBuffer(iSize)
+     end do
+
+     do i=1, oWall%nCells
+        iSize = iSize + 1
+        oWall%cellPtr(i) = oWall%iBuffer(iSize)
+     end do
+
      do i=1, oWall%ADT%nLeaves
         iSize = iSize + 1
         oWall%ADT%ADTree(i)%children(1) = oWall%iBuffer(iSize)
@@ -693,7 +736,7 @@ subroutine unpackOWall(oWall)
            oWall%x(j, i) = oWall%rBuffer(rSize)
         end do
      end do
-     
+
      do i=1, oWall%ADT%nBboxes
         oWall%ADT%xBBox(:, i) = oWall%rBuffer(rSize+1:rSize+6)
         rSize = rSize + 6
