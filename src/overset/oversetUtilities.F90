@@ -586,6 +586,7 @@ subroutine recvOWall(oWall, iDom, iProc, tagOffset, iSize, rSize, &
   recvInfo(:, recvCount) = (/iDom, 5/) 
 
   recvCount = recvCount + 1
+
   call mpi_irecv(oWall%iBuffer, iSize, sumb_integer, &
        iProc, tag, SUmb_comm_world, recvRequests(recvCount), ierr)
   call ECHK(ierr, __FILE__, __LINE__)
@@ -593,19 +594,15 @@ subroutine recvOWall(oWall, iDom, iProc, tagOffset, iSize, rSize, &
   
 end subroutine recvOWall
 
+subroutine deallocateOBlocks(oBlocks, n)
 
-subroutine deallocateOData(oBlocks, oFringes, oWalls, n)
-
-  ! This subroutine deallocates all data stores in a list of oBlocks,
-  ! oFringes and oWalls. 
+  ! This subroutine deallocates all data stores in a list of oBlocks
   use adtAPI
   use overset
   implicit none
 
   ! Input Params
   type(oversetBlock), dimension(n), intent(inout) :: oBLocks
-  type(oversetFringe), dimension(n), intent(inout) :: oFringes
-  type(oversetWall), dimension(n), intent(inout) :: oWalls
   integer(kind=intType) :: n
 
   ! Working Parameters
@@ -626,8 +623,25 @@ subroutine deallocateOData(oBlocks, oFringes, oWalls, n)
              oBlocks(i)%iBuffer)
         call destroySerialHex(oBlocks(i)%ADT)
      end if
+  end do
+end subroutine deallocateOBlocks
 
-     ! oFringe:
+subroutine deallocateOFringes(oFringes, n)
+
+  ! This subroutine deallocates all data stores in a list of oFringes
+
+  use adtAPI
+  use overset
+  implicit none
+
+  ! Input Params
+  type(oversetFringe), dimension(n), intent(inout) :: oFringes
+  integer(kind=intType) :: n
+
+  ! Working Parameters
+  integer(kind=intType) :: i
+
+  do i=1, n
      if (oFringes(i)%allocated) then 
         deallocate(&
              oFringes(i)%x, &
@@ -644,15 +658,129 @@ subroutine deallocateOData(oBlocks, oFringes, oWalls, n)
              oFringes(i)%isWall)
      end if
      oFringes(i)%allocated = .False. 
+  end do
+end subroutine deallocateOFringes
 
-     ! oWalls
+subroutine deallocateOWalls(oWalls, n)
+
+  ! This subroutine deallocates all data stores in a list of oWalls
+
+  use adtAPI
+  use overset
+  implicit none
+
+  ! Input Params
+  type(oversetWall), dimension(n), intent(inout) :: oWalls
+  integer(kind=intType) :: n
+
+  ! Working Parameters
+  integer(kind=intType) :: i
+
+  do i=1, n
      if (oWalls(i)%allocated) then 
         deallocate(&
              oWalls(i)%x, &
-             oWalls(i)%conn)
+             oWalls(i)%conn, &
+             oWalls(i)%iblank, &
+             oWalls(i)%cellPtr)
         call destroySerialQuad(oWalls(i)%ADT)
      end if
      oWalls(i)%allocated = .False.
-
   end do
-end subroutine deallocateOData
+end subroutine deallocateOWalls
+
+subroutine wallsOnBlock(wallsPresent) 
+
+  use blockPointers
+  use bcTypes
+  implicit none
+
+  logical, intent(out) :: wallsPresent
+  integer(kind=intType) :: mm
+  wallsPresent = .False.
+  do mm=1, nBocos
+     if (BCType(mm) == NSWallAdiabatic .or. &
+          BCType(mm) == NSWallIsoThermal .or. &
+          BCType(mm) == EulerWall) then 
+        wallsPresent = .True.
+     end if
+  end do
+
+end subroutine wallsOnBlock
+
+subroutine flagForcedReceivers(tmp)
+
+  use blockPointers
+  use BCTypes
+  implicit none
+
+  ! This is generic routine for filling up a 3D array of 1st level halos
+  ! cells (1:ie, 1:je, 1:ke) indicating cells that are forced
+  ! receivers. BlockPointers must have already been set.
+
+  integer(kind=intType), intent(out), dimension(1:ie, 1:je, 1:ke) :: tmp
+  integer(kind=intType) :: i, j, k, mm, iStart, iEnd, jStart, jEnd, kStart, kEnd
+
+  tmp = 0
+  do mm=1,nBocos
+     ! Just record the ranges necessary and we'll add in a generic
+     ! loop. Why is it the first three? Well, the first level of halos
+     ! off of an overset outer bound is completely
+     ! meaningless. Essentially we ignore those. So the outer two
+     ! layers of cells are indices 2 and 3. Therefore the first 3 on
+     ! either side need to be flagged as invalid.
+
+     select case (BCFaceID(mm))
+     case (iMin)
+        iStart=1; iEnd=3;
+        jStart=BCData(mm)%inBeg+1; jEnd=BCData(mm)%inEnd
+        kStart=BCData(mm)%jnBeg+1; kEnd=BCData(mm)%jnEnd
+     case (iMax)
+        iStart=nx; iEnd=ie;
+        jStart=BCData(mm)%inBeg+1; jEnd=BCData(mm)%inEnd
+        kStart=BCData(mm)%jnBeg+1; kEnd=BCData(mm)%jnEnd
+     case (jMin)
+        iStart=BCData(mm)%inBeg+1; iEnd=BCData(mm)%inEnd
+        jStart=1; jEnd=3;
+        kStart=BCData(mm)%jnBeg+1; kEnd=BCData(mm)%jnEnd
+     case (jMax)
+        iStart=BCData(mm)%inBeg+1; iEnd=BCData(mm)%inEnd
+        jStart=ny; jEnd=je;
+        kStart=BCData(mm)%jnBeg+1; kEnd=BCData(mm)%jnEnd
+     case (kMin)
+        iStart=BCData(mm)%inBeg+1; iEnd=BCData(mm)%inEnd
+        jStart=BCData(mm)%jnBeg+1; jEnd=BCData(mm)%jnEnd
+        kStart=1; kEnd=3;
+     case (kMax)
+        iStart=BCData(mm)%inBeg+1; iEnd=BCData(mm)%inEnd
+        jStart=BCData(mm)%jnBeg+1; jEnd=BCData(mm)%jnEnd
+        kStart=nz; kEnd=ke;
+     end select
+
+     if (BCType(mm) == OversetOuterBound) then
+        do k=kStart, kEnd
+           do j=jStart, jEnd
+              do i=iStart, iEnd
+                 tmp(i, j, k) = 1
+              end do
+           end do
+        end do
+     end if
+  end do
+end subroutine flagForcedReceivers
+
+function isWallType(bType)
+  
+  use BCTypes
+  implicit none
+  integer(kind=intType) :: bType
+  logical :: isWallType
+
+  isWallType = .False.
+  if (bType == NSWallAdiabatic .or. &
+       bType == NSWallIsoThermal .or. &
+       bType == EulerWall) then 
+     isWallType = .True.
+  end if
+
+end function isWallType

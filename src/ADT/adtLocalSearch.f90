@@ -91,6 +91,7 @@
         integer(kind=intType), dimension(:), pointer :: frontLeavesNew
         integer(kind=intType) :: nAllocBB, nAllocFront
         integer(kind=intType) :: ierr, nn
+        logical :: failed
 !
 !       ****************************************************************
 !       *                                                              *
@@ -112,12 +113,12 @@
                             &frontLeaves and frontLeavesNew.")
 
         ! Loop over the number of coordinates to be treated.
-
+        
         coorLoop: do nn=1, nCoor
 
            call containmentTreeSearchSinglePoint(ADT, coor(:, nn), &
-           intInfo(:, nn), uvw(:, nn), arrDonor, nInterpol, BB, &
-           frontLeaves, frontLeavesNew)
+           intInfo(:, nn), uvw(:, nn), arrDonor, nInterpol, BB,  &
+           frontLeaves, frontLeavesNew, failed)
 
         end do coorLoop
 
@@ -133,7 +134,7 @@
 
       subroutine containmentTreeSearchSinglePoint(ADT, coor, &
            intInfo, uvw, arrDonor, nInterpol, BB, &
-           frontLeaves, frontLeavesNew)
+           frontLeaves, frontLeavesNew, failed)
 !
 !       ****************************************************************
 !       *                                                              *
@@ -193,10 +194,11 @@
 
         integer(kind=intType), dimension(3), intent(out) :: intInfo
         real(kind=realType),   dimension(:), intent(out) :: uvw
-
+        logical, intent(out) :: failed
         integer(kind=intType), dimension(:), pointer :: BB
         integer(kind=intType), dimension(:), pointer :: frontLeaves
         integer(kind=intType), dimension(:), pointer :: frontLeavesNew
+
 !
 !       Local parameters used in the Newton algorithm.
 !
@@ -251,6 +253,7 @@
         ! corresponding volume element is found.
 
         intInfo(1) = -1
+        failed = .True.
 !
 !         **************************************************************
 !         *                                                            *
@@ -430,6 +433,7 @@
                 if(u >= adtZero .and. v >= adtZero .and. &
                    w >= adtZero .and. (u+v+w) <= adtOne) then
                   elementFound = .true.
+                  failed = .False. !No iteration for tetrahedrons
 
                   ! Set the number of interpolation nodes to 4 and
                   ! determine the interpolation weights.
@@ -536,7 +540,10 @@
                   ! weights is below the threshold
 
                   val = sqrt(du*du + dv*dv + dw*dw)
-                  if(val <= thresConv) exit NewtonPyra
+                  if(val <= thresConv) then 
+                     failed = .False.
+                     exit NewtonPyra
+                  end if
                 enddo NewtonPyra
 
                 ! Check if the coordinate is inside the pyramid.
@@ -545,7 +552,7 @@
 
                 if(u     >= adtZero .and. v     >= adtZero .and. &
                    w     >= adtZero .and. (u+w) <= adtOne  .and. &
-                   (v+w) <= adtOne) then
+                   (v+w) <= adtOne .and. .not. failed) then
                   elementFound = .true.
 
                   ! Set the number of interpolation nodes to 5 and
@@ -661,7 +668,11 @@
                   ! weights is below the threshold
 
                   val = sqrt(du*du + dv*dv + dw*dw)
-                  if(val <= thresConv) exit NewtonPrisms
+                  if(val <= thresConv) then 
+                     failed = .False.
+                     exit NewtonPrisms
+                  end if
+
                 enddo NewtonPrisms
 
                 ! Check if the coordinate is inside the prism.
@@ -670,7 +681,7 @@
 
                 if(u     >= adtZero .and. v >= adtZero .and. &
                    w     >= adtZero .and. w <= adtOne  .and. &
-                   (u+v) <= adtOne) then
+                   (u+v) <= adtOne .and. .not. failed) then
                   elementFound = .true.
 
                   ! Set the number of interpolation nodes to 6 and
@@ -800,7 +811,11 @@
                   ! weights is below the threshold
 
                   val = sqrt(du*du + dv*dv + dw*dw)
-                  if(val <= thresConv) exit NewtonHexa
+                  if(val <= thresConv) then 
+                     failed = .False.
+                     exit NewtonHexa
+                  end if
+
                 enddo NewtonHexa
 
                 ! Check if the coordinate is inside the hexahedron.
@@ -809,7 +824,7 @@
 
                 if(u >= adtZero .and. u <= adtOne .and. &
                    v >= adtZero .and. v <= adtOne .and. &
-                   w >= adtZero .and. w <= adtOne) then
+                   w >= adtZero .and. w <= adtOne .and. .not. failed) then 
                   elementFound = .true.
 
                   ! Set the number of interpolation nodes to 8 and
@@ -867,9 +882,8 @@
             endif
 
           enddo BBoxLoop
-
+          
         end subroutine containmentTreeSearchSinglePoint
-
 
         !***************************************************************
         !***************************************************************

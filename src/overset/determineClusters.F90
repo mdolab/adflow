@@ -9,7 +9,7 @@
 !      *                                                                *
 !      ******************************************************************
 
-subroutine determineClusters(clusters, N, cumDomsProc)
+subroutine determineClusters(clusters, N, cumDomsProc, clusterID)
 
   use constants
   use cgnsGrid
@@ -17,13 +17,14 @@ subroutine determineClusters(clusters, N, cumDomsProc)
   use communication
   implicit none
 
-  ! Input variables
+  ! Input/output variables
   integer(kind=intType), intent(in) :: N
   integer(kind=intType), dimension(N), intent(out) :: clusters
   integer(kind=intType), dimension(0:nProc), intent(in) :: cumDomsProc
+  integer(kind=intType), intent(out) :: clusterID
 
   ! Working variables
-  integer(kind=intType) :: numBlocks, blockID, clusterID, cgnsBlk, ierr
+  integer(kind=intType) :: numBlocks, blockID, cgnsBlk, ierr
   integer(kind=intType) :: i, nn
   integer(kind=intType), dimension(N) :: clustersLocal
   logical :: blocksAvailable
