@@ -655,6 +655,12 @@ class SUMB(AeroSolver):
             solver can suppress all I/O during intermediate solves.
             """
         
+        # Make sure the user isn't trying to solve a slave
+        # aeroproblem. Cannot do that
+        if hasattr(aeroProblem, 'isSlave'):
+            if aeroProblem.isSlave:
+                raise Error('Cannot solve an aeroProblem created as a slave')
+
         # Get option about adjoint memory
         releaseAdjointMemory = kwargs.pop('relaseAdjointMemory', True)
 
@@ -4069,6 +4075,18 @@ class SUMB(AeroSolver):
         self.sumb.inputio.slicesolfile[:] = ''
         self.sumb.inputio.slicesolfile[0:len(sliceFileName)] = sliceFileName
 
+
+    def createSlaveAeroProblem(self, master):
+        """Create a slave aeroproblem"""
+
+        # Make sure everything is created for the master
+        self.setAeroProblem(master)
+
+        slave = copy.deepcopy(master)
+        slave.sumbData = master.sumbData
+        slave.surfMesh = master.surfMesh
+        slave.isSlave = True
+        return slave
 
 class sumbFlowCase(object):
     """
