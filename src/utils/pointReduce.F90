@@ -1,254 +1,181 @@
-
 subroutine pointReduce(pts, N, tol, uniquePts, link, nUnique)
 
   ! Given a list of N points (pts) in three space, with possible
-  ! duplicates, (to within tol) return a list of the nUnqiue
+  ! duplicates, (to within tol) return a list of the nUnique
   ! uniquePoints of points and a link array of length N, that points
   ! into the unique list
-
-  use precision 
+  use precision
+  use kdtree2_module
   implicit none
 
   ! Input Parameters
   integer(kind=intType), intent(in) :: N
-  real(kind=realType), intent(in), dimension(:, :) :: pts
+  real(kind=realType), intent(in), dimension(3, N) :: pts
   real(kind=realType), intent(in) :: tol
 
   ! Output Parametres
-  real(kind=realType), intent(out), dimension(:,:) :: uniquePts
-  integer(kind=intType), intent(out), dimension(:) :: link
+  real(kind=realType), intent(out), dimension(3, N) :: uniquePts
+  integer(kind=intType), intent(out), dimension(N) :: link
   integer(kind=intType), intent(out) :: nUnique
 
-  ! Working Parameters
-  real(kind=realType), allocatable, dimension(:) :: dists, tmp
-  integer(kind=intType), allocatable, dimension(:) :: ind
-  integer(kind=intType) :: i, j, nTmp, link_counter, ii
-  logical cont, cont2
-  integer(kind=intType), parameter :: dupMax = 500
-  integer(kind=intType) :: tmpInd(dupMax), subLink(dupMax), nSubUnique
-  real(kind=realType) :: subPts(3, dupMax), subUniquePts(3, dupMax)
-  interface
-     subroutine pointReduceBruteForce(pts, N, tol, uniquePts, link, nUnique)
-       use precision
-       implicit none
+  ! Working paramters
+  type(kdtree2), pointer :: mytree
+  real(kind=realType) :: tol2, timeb, timea
+  integer(kind=intType) :: nFound, i, j, nAlloc
+  type(kdtree2_result), allocatable, dimension(:) :: results
 
-       real(kind=realType), intent(in), dimension(:, :) :: pts
-       integer(kind=intType), intent(in) :: N
-       real(kind=realType), intent(in) :: tol
-       real(kind=realType), intent(out), dimension(:, :) :: uniquePts
-       integer(kind=intType), intent(out), dimension(:) :: link
-       integer(kind=intType), intent(out) :: nUnique
-     end subroutine pointReduceBruteForce
-
-  end interface
-
-  if (N == 0) then
+  if (N==0) then 
      nUnique = 0
-     return
-  end If
+     return 
+  end if
 
-  ! Allocate dists, and the ind pointer
-  allocate(dists(N), tmp(N), ind(N))
+  ! We will use the KD_tree to do most of the heavy lifting here:
+  mytree => kdtree2_create(pts, sort=.True.)
 
-  ! Compute distances of all points from the first
-  do i=1, N
-     dists(i) = sqrt((pts(1,i)-pts(1,1))**2 + (pts(2,i)-pts(2,1))**2 + (pts(3, i)-pts(3,1))**2)
-     tmp(i) = dists(i)
-     ind(i) = i
-  end do
+  ! KD tree works with the square of the tolerance
+  tol2 = tol**2
 
-  ! Do an argsort on the distances
-  call ArgQsort(tmp, N, ind)
+  ! Unlikely we'll have more than 20 points same, but there is a
+  ! safetly check anwyay.
+  nalloc = 20
+  allocate(results(nalloc))
 
-  i = 1
-  cont = .True.
-  link_counter = 0
+  link = 0
   nUnique = 0
 
-  do while(cont)
-     cont2 = .True.
+  ! Loop over all nodes
+  do i=1, N
+     if (link(i) == 0) then 
+        call kdtree2_r_nearest(mytree, pts(:, i), tol2, nFound, nAlloc, results)
 
-     j = i
-     nTmp = 0
-     do while(cont2)
-        if (abs(dists(ind(i))-dists(ind(j))) < tol) then
-           nTmp = nTmp + 1
-           if (nTmp > dupMax) then
-              ! Need to make dupMax larger!
-              call ECHK(-99, __FILE__, __LINE__)
-           end if
-
-           tmpInd(nTmp) = ind(j)
-           j = j + 1
-           if (j == N+1) then ! Overrun check
-              cont2 = .False.
-           end if
-        else
-           cont2 = .False.
+        ! Expand if necesary and re-run
+        if (nfound > nalloc) then 
+           deallocate(results)
+           nalloc = nfound
+           allocate(results(nalloc))
+           call kdtree2_r_nearest(mytree, pts(:, i), tol2, nFound, nAlloc, results)
         end if
-     end do
 
-     ! Copy the points that have the same distance into subPts. Note
-     ! these may NOT be the same, since two points can have the same
-     ! distnace, but not be co-incident (ie (1,0,0), (-1,0,0))
-     do ii=1,nTmp
-        subPts(:, ii) = pts(:, tmpInd(ii))
-     end do
+        if (nFound == 1) then 
+           ! This one is easy, it is already a unique node
+           nUnique = nUnique + 1
+           link(i) = nUnique
+           uniquePts(:, nUnique) = pts(:, i)
+        else
+           if (link(i) == 0) then 
+              ! This node hasn't been assigned yet:
+              nUnique = nUnique + 1
+              uniquePts(:, nUnique) = pts(:, i)
 
-     ! Brute Force Search them 
-     call pointReduceBruteForce(subPts, nTmp, tol, subUniquePts, subLink, nSubUnique)
-
-     do ii=1,nSubUnique
-        nUnique = nUnique + 1
-        uniquePts(:, nUnique) = subUniquePts(:,ii)
-     end do
-
-     do ii=1,nTmp
-        link(tmpInd(ii)) = subLink(ii) + link_counter
-     end do
-
-     link_counter = link_counter +  maxval(subLink) 
-
-     i = j - 1 + 1
-     if (i == N+1) then
-        cont = .False.
+              do j=1, nFound
+                 link(results(j)%idx) = nUnique
+              end do
+           end if
+        end if
      end if
   end do
-  deallocate(dists, tmp, ind)
+
+  ! Done with the tree and the result vector
+  call kdtree2_destroy(mytree)
+  deallocate(results)
 
 end subroutine pointReduce
 
-subroutine pointReduceBruteForce(pts, N, tol, uniquePts, link, nUnique)
+! subroutine pointReduce(pts, N, tol, uniquePts, link, nUnique)
 
-  ! Given a list of N points (pts) in three space, with possible
-  ! duplicates, (to within tol) return a list of the nUnqiue
-  ! uniquePoints of points and a link array of length N, that points
-  ! into the unique list
+!   ! Given a list of N points (pts) in three space, with possible
+!   ! duplicates, (to within tol) return a list of the nUnique
+!   ! uniquePoints of points and a link array of length N, that points
+!   ! into the unique list
+!   use constants
+!   use kd_tree
+!   implicit none
 
-  use precision 
-  implicit none
+!   ! Input Parameters
+!   integer(kind=intType), intent(in) :: N
+!   real(kind=realType), intent(in), dimension(3, N) :: pts
+!   real(kind=realType), intent(in) :: tol
 
-  ! Input Parameters
-  integer(kind=intType), intent(in) :: N
-  real(kind=realType), intent(in), dimension(:, :) :: pts
-  real(kind=realType), intent(in) :: tol
+!   ! Output Parametres
+!   real(kind=realType), intent(out), dimension(3, N) :: uniquePts
+!   integer(kind=intType), intent(out), dimension(N) :: link
+!   integer(kind=intType), intent(out) :: nUnique
 
-  ! Output Parametres
-  real(kind=realType), intent(out), dimension(:,:) :: uniquePts
-  integer(kind=intType), intent(out), dimension(:) :: link
-  integer(kind=intType), intent(out) :: nUnique
+!   ! Working paramters
+!   type(tree_master_record), pointer :: mytree
+!   real(kind=realType) :: tol2, timeb, timea
+!   integer(kind=intType) :: nFound, i, j, nAlloc, kk
+!   logical :: nodeFound
+!   real(kind=realType), dimension(:), allocatable :: distances
+!   integer(kind=intType), dimension(:), allocatable :: indexes
+!   if (N == 0) then 
+!      nUnique = N
+!      return 
+!   end if
 
-  ! Working parameters
-  integer(kind=intType) :: i, j
-  real(kind=realType) :: dist
-  logical :: found_it
+!   ! We will use the KD_tree to do most of the heavy lifting here:
+!   mytree => create_tree(pts)
 
-  ! First point is *always* unique
-  uniquePts(:, 1) = pts(:, 1)
-  link(:) = 0
-  link(1) = 1
-  nUnique = 1
+!   ! KD tree works with the square of the tolerance
+!   tol2 = tol**2
 
-  ! Loop over remainder of points
-  do i=2,N
-     found_it = .False.
-     ! Loop over found unique points (this is where the n^2 comes from)
+!   ! Unlikely we'll have more than 20 points same, but there is a
+!   ! safetly check anwyay.
+!   nalloc = min(10, N)
+!   allocate(distances(nalloc), indexes(nalloc))
 
-     uniqueLoop: do j=1,nUnique
-        dist = sqrt((pts(1, i)-uniquePts(1, j))**2 + &
-             (pts(2, i) - uniquePts(2, j))**2 + &
-             (pts(3, i) - uniquePts(3, j))**2)
+!   link = 0
+!   nUnique = 0
+  
+!   ! Loop over all nodes
+!   do i=1, N
+     
+!      ! Only search if this node is already defined.
+!      if (link(i) == 0) then 
 
-        ! If pt(i) is within tolerance of the jth unique point, set
-        ! link for ith point to the jth unique element and break loop
-        if (dist < tol) then
-           link(i) = j
-           found_it = .True. 
-           exit uniqueLoop
-        end if
-     end do uniqueLoop
+!         searchLoop: do 
+!            ! First try to find the closest nalloc pts
+!            distances = large
+!            call n_nearest_to(mytree, pts(:, i), nAlloc, indexes, distances)
 
-     ! If we never found the point, it is unique so add it it to the
-     ! unique list list:
-     if (.not. found_it) then
-        nUnique = nUnique + 1
-        uniquePts(:, nUnique) = pts(:, i)
-        link(i) = j
-     end if
-  end do
+!            kk = 0
+!            nodeFound = .False.
+!            do j=1, nAlloc
+!               if (distances(j) < tol2) then 
+!                  kk = kk + 1
+!                  ! Found a node matching myself. 
+!                  if (.not. nodeFound) then 
+!                     ! This node hasn't been assigned yet:
+!                     nUnique = nUnique + 1
+!                     uniquePts(:, nUnique) = pts(:, i)
+!                     link(indexes(j)) = nunique
+!                     nodeFound = .True. 
+!                  else
+!                     ! This node has not been assigned so just set the link
+!                     link(indexes(j)) = nUnique
+!                  end if
+!               end if
+!            end do
+         
+!            if (kk < nAlloc .or. kk == N)  then 
+!               ! We're sure we found all the points; Reset nAlloc in
+!               ! case it had been higher. 
+!               nAlloc = min(10, N)
+!               exit searchLoop
+!            else
+!               nAlloc = nAlloc*2
+!               if (nAlloc > size(distances)) then 
+!                  deallocate(distances, indexes)
+!                  allocate(distances(nAlloc), indexes(nAlloc))
+!               end if
+!            end if
+!         end do searchLoop
+!      end if
+!   end do
+ 
+!   deallocate(distances, indexes)
 
-  ! Agorithm observations: It would appear this algorithm runs in
-  ! linear time if all the points are the same, and quadratic time if
-  ! all the points are unique, and somewhere inbetween
-  ! otherwise. Since this is called from pointReduce, it is most
-  ! likely that there are going to be more duplicates than the unique
-  ! points. 
+!   ! Done with the tree and the result vector
+!   call destroy_tree(mytree)
 
-end subroutine pointReduceBruteForce
-
-recursive subroutine ArgQSort(A, nA, ind)
-
-  ! Do an ArgQuickSort. Adapted from
-  ! http://rosettacode.org/wiki/Sorting_algorithms/Quicksort#FPr. Thw
-  ! index 'ind' is initialzed inside the algorithm
-
-  use constants
-  implicit none
-
-  ! DUMMY ARGUMENTS
-  integer(kind=intType), intent(in) :: nA
-  real(kind=realType), dimension(nA), intent(inout) :: A
-  integer(kind=intType), dimension(nA), intent(inout) :: ind
-
-  ! LOCAL VARIABLES
-  integer(kind=intType) :: left, right, itemp, i
-  real(kind=realType) :: random, pivot, temp
-  integer(kind=intType) :: marker
-
-  if (nA > 1) then
-
-     ! random pivot (not best performance, but avoids worst-case)
-     ! call random_number(random)
-
-     ! Just take mid point...complex code doesn't like random_number
-     random = half
-     i = int(random*real(nA-1))+1
-   
-     pivot = A(i) 
-     left = 0
-     right = nA + 1
-
-     do while (left < right)
-        right = right - 1
-        do while (A(right) > pivot)
-           right = right - 1
-        end do
-        left = left + 1
-        do while (A(left) < pivot)
-           left = left + 1
-        end do
-        if (left < right) then
-           ! Swap value 
-           temp = A(left)
-           A(left) = A(right)
-           A(right) = temp
-           ! ! And swap index
-           iTemp = ind(left)
-           ind(left) = ind(right)
-           ind(right) = itemp
-
-        end if
-     end do
-
-     if (left == right) then
-        marker = left + 1
-     else
-        marker = left
-     end if
-
-     call argQSort(A(:marker-1), marker-1, ind(:marker-1))
-     call argQSort(A(marker:), nA-marker+1, ind(marker:))
-
-  end if
-
-end subroutine ArgQSort
+! end subroutine pointReduce

@@ -56,6 +56,7 @@ FF90_OBJECTS_3 = NKsolverVars.o\
 		 costFunctions.o\
 		 liftDistributionData.o\
 		 adtData.o\
+		 kd_tree.o\
 
 FF90_OBJECTS_4 = ADjointVars.o\
 		 ADjointPETSc.o\

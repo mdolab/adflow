@@ -825,6 +825,8 @@ subroutine oversetComm(level, firstTime, coarseLevel)
            do j=2, jl
               do i=2, il
 
+              
+
                  ! Check if this cell is a fringe:
                  if (fringes(i, j, k)%donorProc /= -1) then 
 
@@ -934,6 +936,10 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      ! -----------------------------------------------------------------
      call checkOverset(level, sps)
 
+     ! -----------------------------------------------------------------
+     ! Step 18: Create the zipper mesh. We pass in a few arrays
+     ! dealing with wall exchange since there is no need to recompute them. 
+     ! -----------------------------------------------------------------
      call createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
           nOwallSend, nOwallRecv, size(oWallSendList, 2), &
           size(oWallRecvList, 2), work, nWork)
@@ -1405,3 +1411,162 @@ subroutine writePartionedMesh(fileName)
 
 end subroutine writePartionedMesh
 
+subroutine writeWalls
+
+  use communication
+  use overset
+  use constants
+  use blockPointers
+  use BCTypes
+  implicit none
+
+  character(80) :: fileName, zoneName
+  integer(kind=intType) :: i, j, nn, iDom, iBeg, iEnd, jBeg, jEnd, mm, iDim
+  real(kind=realType), dimension(:, :, :), pointer :: xx
+
+  write (fileName,"(a,I2.2,a)") "wall_", myid, ".dat"
+
+  open(unit=101,file=trim(fileName),form='formatted')
+  write(101,*) 'TITLE = "mywalls"'
+  write(101,*) 'Variables = "X", "Y", "Z", "CellIBlank"'
+
+  do nn=1,nDom
+     iDom = nn + cumDomProc(myid)
+     call setPointers(nn, 1, 1)
+     if (nBocos > 0) then 
+        do mm=1, nBocos
+           jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
+           iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
+           if (BCType(mm) == EulerWall .or. &
+                BCType(mm) == NSWallAdiabatic .or. &
+                BCType(mm) == NSWallIsothermal) then
+              select case (BCFaceID(mm))
+              case (iMin)
+                 xx => x(1,:,:,:)
+              case (iMax)
+                 xx => x(il,:,:,:)
+              case (jMin)
+                 xx => x(:,1,:,:)
+              case (jMax)
+                 xx => x(:,jl,:,:)
+              case (kMin)
+                 xx => x(:,:,1,:)
+              case (kMax)
+                 xx => x(:,:,kl,:)
+              end select
+
+              write(zoneName, "(a,I2.2,a,I2.2)") "Zone", iDom, "_Proc_", myid
+110           format('ZONE T=',a, " I=", i5, " J=", i5)
+              write(101, 110), trim(zoneName), iEnd-iBeg+1, jEnd-jBeg+1
+              write (101,*) "DATAPACKING=BLOCK, VARLOCATION=([1,2,3]=NODAL, [4]=CELLCENTERED)"
+
+13            format (E14.6)
+              do iDim=1,3
+                 do j=jBeg, jEnd
+                    do i=iBeg, iEnd
+                       write(101, *) xx(i+1, j+1, iDim)
+                    end do
+                 end do
+              end do
+
+              do j=jBeg+1, jEnd
+                 do i=iBeg+1, iEnd
+                    write(101, *) BCData(mm)%iBlank(i, j)
+                 end do
+              end do
+           end if
+        end do
+     else
+        ! Write dummy zone
+        write(zoneName, "(a,I1,a,I1)") "Zone", 0, "_Proc_", myid
+        write(101, 110), trim(zoneName), 1, 1
+        write (101,*) "DATAPACKING=POINT"
+        write(101, *) zero, zero, zero, one, one
+     end if
+  end do
+  close(101)
+end subroutine writeWalls
+
+subroutine writeOversetString(string, fileID)
+
+  use communication
+  use overset
+  implicit none
+
+  type(oversetString), intent(inout) :: string
+  integer(kind=intType), intent(in) :: fileID
+  integer(kind=intType) :: i, j
+  character(80) :: zoneName  
+
+ 
+  write (zoneName,"(a,I2.2)") "Zone T=gap_", string%myID
+  write (fileID, *) trim(zoneName)
+  
+  write (fileID,*) "Nodes = ", string%nNodes, " Elements= ", string%nElems, " ZONETYPE=FELINESEG"
+  write (fileID,*) "DATAPACKING=POINT"
+13 format (E20.12)
+  
+  do i=1, string%nNodes
+     ! Write the coordinates
+     do j=1, 3
+        write(fileID,13, advance='no') string%x(j, i)
+     end do
+     
+     do j=1, 3
+        write(fileID,13, advance='no') string%otherX(j, i) - string%x(j, i) !string%norm(j, i)
+     end do
+     
+     write(fileID,13, advance='no') real(string%ind(i))
+     write(fileID,13, advance='no') real(string%myID)
+     write(fileID,13, advance='no') real(i)
+     write(fileID,13, advance='no') real(string%otherID(1, i))
+     write(fileID,13, advance='no') real(string%otherID(2, i))
+     write(fileID,"(1x)")
+  end do
+  
+15 format(I5, I5)
+  do i=1, string%nElems
+     write(fileID, 15) string%conn(1, i), string%conn(2, i)
+  end do
+  
+end subroutine writeOversetString
+
+
+
+subroutine writeOversetTriangles(string, fileName)
+
+  use communication
+  use overset
+  implicit none
+
+  type(oversetString), intent(inout) :: string
+  character(*) :: fileName
+  integer(kind=intType) :: i, j
+  character(80) :: zoneName  
+
+  open(unit=101, file=trim(fileName), form='formatted')
+  write(101,*) 'TITLE = "Triangles"'
+  write(101,*) 'Variables = "X", "Y", "Z"'
+
+  write (zoneName,"(a,I2.2)") "Zone T=triangles_", string%myID
+  write (101, *) trim(zoneName)
+  
+  write (101,*) "Nodes = ", string%nNodes, " Elements= ", string%nTris, " ZONETYPE=FETRIANGLE"
+  write (101,*) "DATAPACKING=POINT"
+13 format (E20.12)
+
+  ! Write all the coordinates  
+  do i=1, string%nNodes
+     do j=1, 3
+        write(101,13, advance='no') string%x(j, i)
+     end do
+     write(101,"(1x)")
+  end do
+
+  
+15 format(I5, I5)
+  do i=1, string%nTris
+     write(101, 15) string%tris(1, i), string%tris(2, i), string%tris(3, i)
+  end do
+  close(101)
+end subroutine writeOversetTriangles

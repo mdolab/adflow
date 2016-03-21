@@ -44,19 +44,24 @@ subroutine createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
   type(oversetWall), dimension(:), allocatable :: oWalls
   integer(kind=intType), dimension(:), allocatable :: intRecvBuf
   logical :: isWallType
-
+  real(kind=realType) :: timeA
   ! MPI/Communication related
   integer status(MPI_STATUS_SIZE) 
   integer(kind=intType), dimension(:, :), allocatable :: bufSizes
   integer(kind=intType), dimension(:, :), allocatable :: recvInfo
   integer(kind=intType) :: sendCount, recvCount, index
+  timeA = mpi_wtime()
+
+  ! -------------------------------------------------------------------
+  ! Step 1: Eliminate any gap overlaps between meshes
+  ! -------------------------------------------------------------------
 
   allocate(clusters(nDomTotal))
   call determineClusters(clusters, nDomTotal, cumDomProc, nClusters)
 
   ! Determine the average area of surfaces on each cluster. This
   ! will be independent of any block splitting distribution. 
-  
+
   call determineClusterAreas(clusters, nDomTotal, nClusters)
 
   ! Set the boundary condition blank values
@@ -123,15 +128,15 @@ subroutine createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
      call mpi_waitany(recvCount, recvRequests, index, status, ierr)
      call ECHK(ierr, __FILE__, __LINE__)
   end do
-  
+
   do i=1,sendCount
      call mpi_waitany(sendCount, sendRequests, index, status, ierr)
      call ECHK(ierr, __FILE__, __LINE__)
   end do
-  
+
   ! Unpack any blocks we received if necessary:
   do i=1, recvCount
-     
+
      ! Global domain index of the recv that finished
      iDom = recvInfo(1, i)
      if (.not. oWalls(iDom)%allocated) then 
@@ -168,7 +173,7 @@ subroutine createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
           iproc, iDom, sumb_comm_world, sendRequests(sendCount), ierr)
      call ECHK(ierr, __FILE__, __LINE__)
   end do
-  
+
   recvCount = 0
   iStart = 1
   do jj=1, noWallSend
@@ -176,24 +181,24 @@ subroutine createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
      iDom = oWallSendList(2, jj)
      iSize = oWalls(iDom)%maxCells
      recvCount = recvCount + 1       
-     
+
      call mpi_irecv(intRecvBuf(iStart), iSize, sumb_integer, &
           iProc, iDom, sumb_comm_world, recvRequests(recvCount), ierr)
      call ECHK(ierr, __FILE__, __LINE__)
      iStart = iStart + iSize
   end do
-  
+
   ! Now wait for the sends and receives to finish
   do i=1, sendCount
      call mpi_waitany(sendCount, sendRequests, index, status, ierr)
      call ECHK(ierr, __FILE__, __LINE__)
   end do
-  
+
   do i=1, recvCount
      call mpi_waitany(recvCount, recvRequests, index, status, ierr)
      call ECHK(ierr, __FILE__, __LINE__)
   end do
-  
+
   ! Process the oWalls we own locally
   do nn=1, nDom
      call setPointers(nn, level, sps)
@@ -212,14 +217,14 @@ subroutine createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
         end if
      end do
   end do
-  
+
   ! And update based on the data we received from other processors
   ii = 0
   do kk=1, noWallSend
-     
+
      iDom = oWallSendList(2, kk)
      nn = iDom - cumDomProc(myid)
-     
+
      ! Set the block pointers for the local block we are dealing
      ! with:
      call setPointers(nn, level, sps)
@@ -236,11 +241,11 @@ subroutine createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
         end if
      end do
   end do
-  
+
   ! Ditch our owalls
   call deallocateOWalls(OWalls, nDomTotal)
-  deallocate(oWalls, intRecvBuf, clusters)
-  
+  deallocate(oWalls, intRecvBuf)
+
   ! We are still left with an issue since we had only worked with
   ! the owned cells, we don't know if if a halo surface iblank was
   ! modified by another processor. The easiest way to deal with
@@ -249,84 +254,42 @@ subroutine createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
   ! communicate and the extract again. Easy-peasy
   call exchangeSurfaceIBlanks(level, sps, commPatternCell_2nd, internalCell_2nd)
 
+  ! Before we continue, we do a little more
+  ! processing. bowTieElimination tries to eliminate cells
+  call bowTieAndIsolationElimination(level, sps)
+
+  ! -------------------------------------------------------------------
+  ! Step 2: Identify gap boundary strings and split the strings to 
+  !         sub-strings.
+  ! -------------------------------------------------------------------
+  call makeGapBoundaryStrings(level, sps, clusters)
+
+  call mpi_barrier(sumb_comm_world, ierr)
+  if (myid == 0) then 
+     print *,'Time:', mpi_wtime()-timeA
+  end if
+
+  ! Debugging
   call writeWalls(oWalls, size(oWalls))
-  print *,'done', myid
-  !call makeBoundaryStrings(level, sps)
 
+  !   ! -------------------------------------------------------------------
+  !   ! Step 3: Perform gap string splitting.
+  !   ! -------------------------------------------------------------------
+  !   !
+  !   ! Currently string splitting is done inside makeGapBoundaryStrings!!
+  !   !call splitGapBoundaryStrings(level, sps)
 
+  !   ! -------------------------------------------------------------------
+  !   ! Step 4: Perform triangulation of gaps between quad cells
+  !   !         This is the last step of zipping the gaps with zipper
+  !   !         triangle mesh elements.
+  !   ! -------------------------------------------------------------------
+  !   call wallTriangulate(level, sps, overlap)
 
+  !   ! Write out wall surface data (unstructured format)
+  !   call writeSurfMeshBlock
 
-   ! -------------------------------------------------------------------
-!   ! Step 2: Identify gap boundary strings and split the strings to 
-!   !         sub-strings.
-!   ! -------------------------------------------------------------------
-!   call makeGapBoundaryStrings(level, sps, overlap)
+  deallocate(clusters)
 
-!   ! -------------------------------------------------------------------
-!   ! Step 3: Perform gap string splitting.
-!   ! -------------------------------------------------------------------
-!   !
-!   ! Currently string splitting is done inside makeGapBoundaryStrings!!
-!   !call splitGapBoundaryStrings(level, sps)
- 
-!   ! -------------------------------------------------------------------
-!   ! Step 4: Perform triangulation of gaps between quad cells
-!   !         This is the last step of zipping the gaps with zipper
-!   !         triangle mesh elements.
-!   ! -------------------------------------------------------------------
-!   call wallTriangulate(level, sps, overlap)
+end subroutine createZipperMesh
 
-!   ! Write out wall surface data (unstructured format)
-!   call writeSurfMeshBlock
-
-!   print *,' DONE! zipper', myid, mpi_wtime()-timeA
-
-   end subroutine createZipperMesh
-
-
-     ! ================================================================
-
-     !      open(unit=101,file='overlap_cells.txt',form='formatted')
-     !   ! Process the oWalls we own locally
-     !      do nn=1, nDom
-     !         call setPointers(nn, level, sps)
-     !         iDom = cumDomProc(myid) + nn
-     !         do mm=1, nBocos
-     !            if (BCType(mm) == EulerWall .or. BCType(mm) == NSWallAdiabatic .or. &
-     !                 BCType(mm) == NSWallIsoThermal) then 
-
-     !               select case (BCFaceID(mm))
-     !               case (iMin)
-     !                  xx => x(1,:,:,:)
-     !               case (iMax)
-     !                  xx => x(il,:,:,:)
-     !               case (jMin)
-     !                  xx => x(:,1,:,:)
-     !               case (jMax)
-     !                  xx => x(:,jl,:,:)
-     !               case (kMin)
-     !                  xx => x(:,:,1,:)
-     !               case (kMax)
-     !                  xx => x(:,:,kl,:)
-     !               end select
-
-     !               ! We need to write out the 4 coordinates for each quad,
-     !               ! the cluserID and the iblak status of 2 or 3
-
-     !               ! Owned Cell loop
-     !               do j=BCData(mm)%jnBeg+1, BCData(mm)%jnEnd
-     !                  do i=BCData(mm)%inBeg+1, BCData(mm)%inEnd
-     ! 13  format (E14.6, E14.6, E14.6)
-     !                     if (BCData(mm)%iBlank(i, j) >= 2) then 
-     !                        write(101, 13, advance='no'), xx(i  , j  , 1), xx(i  , j  , 2), xx(i  , j  , 3)
-     !                        write(101, 13, advance='no'), xx(i+1, j  , 1), xx(i+1, j  , 2), xx(i+1, j  , 3)
-     !                        write(101, 13, advance='no'), xx(i+1, j+1, 1), xx(i+1, j+1, 2), xx(i+1, j+1, 3)
-     !                        write(101, 13, advance='no'), xx(i  , j+1, 1), xx(i  , j+1, 2), xx(i  , j+1, 3)
-     !                        write(101, *), BCData(mm)%iblank(i,j), clusters(iDom)
-     !                     end if
-     !                  end do
-     !               end do
-     !            end if
-     !         end do
-     !      end do
-     !      close(101)
