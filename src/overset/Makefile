@@ -41,6 +41,7 @@ vpath %.o $(SUMB_OBJDIR)
 
 FILES_TO_COMPLEXIFY =	computeInterpolationParallel.F90\
 			createZipperMesh.F90\
+			bowtieAndIsolationElimination.F90\
 			determineClusters.F90 \
 			determineClusterAreas.F90 \
 			checkOverset.F90 \
