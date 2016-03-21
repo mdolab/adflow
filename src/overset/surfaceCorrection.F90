@@ -125,7 +125,7 @@ subroutine surfaceCorrection(oBlock, oFringe, bWall, fWall, offset, n)
               vecF = xx(1:3) - ptF
 
               ! We do one last check before we commit to a correction:
-              ! The dot product of the normalized vectors but put
+              ! The dot product of the normalized vectors must point
               ! substantially in the same direction.
 
               normB = vecB / dB
@@ -137,7 +137,7 @@ subroutine surfaceCorrection(oBlock, oFringe, bWall, fWall, offset, n)
 
               dp = normB(1)*normF(1) + normB(2)*normF(2) + normB(3)*normF(3)
 
-              if (abs(dp) > 0.98_realType) then 
+              if (abs(dp) > 0.5_realType) then 
                  
                  ! Now set the offset for the wall. 
                  masterOffset = vecF - vecB
@@ -186,6 +186,7 @@ subroutine surfaceCorrection(oBlock, oFringe, bWall, fWall, offset, n)
                     end do
                  end do
               end if
+
            end if
         end if
      end if

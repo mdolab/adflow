@@ -3,6 +3,7 @@ module overset
   use precision
   use adtData
   use block
+  use kdtree2_module
   implicit none
 
   ! Helper dataType for communicated overset grid points. This data
@@ -156,6 +157,96 @@ module overset
      logical :: allocated = .False.
 
   end type oversetWall
+
+  type oversetString
+     ! This is a generic type defining a string list. It may be used
+     ! as both a "parent" or a "child". 
+
+     ! Sizes
+     integer(kind=intType) :: nNodes, nElems
+
+     ! My String's index
+     integer(kind=intType) :: myID
+
+     ! Whether or no this string is periodic
+     logical :: isPeriodic=.False.
+
+     ! The bounding box of my string
+     real(kind=realType), dimension(3) :: xMin, xMax
+
+     ! The actual physical node locations. Size (3, nNodes)
+     real(kind=realType), dimension(:, :), pointer :: x
+
+     ! The (unit, averaged) surface normal for nodes. Same size as x
+     real(kind=realType), dimension(:, :), pointer :: norm
+
+     ! The orignal nodal index. Size nNodes.
+     integer(kind=intType), dimension(:), pointer :: ind
+
+     ! The connectivity of the nodes forming 1D bar elements. Size (2, nElems)
+     integer(kind=intType), dimension(:, :), pointer :: conn
+
+     ! The index of my node numbers on my parent
+     integer(kind=intType), dimension(:), pointer :: pNodes
+
+     ! The index of my elements numbers on my parent
+     integer(kind=intType), dimension(:), pointer :: pElems
+
+     ! The string ID and index of my nodes on a split substing
+     integer(kind=intType), dimension(:, :), pointer :: cNodes
+
+     ! The string ID and index of my elements on a split substring
+     integer(kind=intType), dimension(:, :), pointer :: cElems
+
+     ! The cloest string ID of each node *AND* the node index on the
+     ! other string. Size (2, nNodes)
+     integer(kind=intType), dimension(:, :), pointer :: otherID
+
+     ! Node location on the other string. 
+     real(kind=realType), dimension(:, :), pointer :: otherX
+
+     ! The inverse of the connectivity node to elem array. Size (5,
+     ! nNodes). First index is the number of elements, other 4 entries
+     ! are the up to 4 possible element neighbours. 
+     integer(kind=intType), dimension(:, :), pointer :: nte
+
+     ! Two buffer used for storing element indices while creating
+     ! chains. Size (2, nElem)
+     integer(kind=intType), dimension(:, :), pointer :: subStr
+
+     ! The sizes of the two substrings
+     integer(kind=intType), dimension(2) :: NsubStr
+
+     ! A array to keep track of the number of elements
+     ! "consumed" during chain searches or during zipping.
+     integer(kind=intType), dimension(:), pointer :: elemUsed
+
+     ! The KD tree for this string for performing fast seaches. 
+     !type(tree_master_record), pointer :: tree
+     type(kdtree2), pointer :: tree
+
+     ! Pointer to the parent string
+     type(oversetString), pointer :: p
+
+     ! Pointer for next string for a linked list
+     type(oversetString), pointer :: next
+
+     ! List of all all directed edges. 
+     type(oversetEdge), pointer, dimension(:) :: edges
+
+     ! List of all computed triangles
+     integer(kind=intType), dimension(:, :), pointer :: tris
+
+     ! Number of trianges
+     integer(kind=intType) :: nTris
+
+
+  end type oversetString
+
+  type oversetEdge
+     ! Simple data structure representing a directed edge from n1->n2
+     integer(kind=intType) :: n1, n2
+  end type oversetEdge
 
   ! This is the flattened list of the fringes next to the wall that we
   !  have actually found donors for.
