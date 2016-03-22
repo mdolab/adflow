@@ -4,6 +4,7 @@ subroutine makeGapBoundaryStrings(level, sps, clusters)
   use bctypes
   use communication
   use overset
+  use stringOps
   use kdtree2_module
   implicit none
 
@@ -12,11 +13,11 @@ subroutine makeGapBoundaryStrings(level, sps, clusters)
   integer(kind=intType), intent(in) :: clusters(nDomTotal)
 
   ! Working
-  integer(kind=intType) :: i, j, k, nn, mm, ii, jj, c, e,  idx, nClusters
+  integer(kind=intType) :: i, j, k, nn, mm, ii, jj, kk, c, e,  idx, nClusters
   integer(kind=intType) :: i1, i2, j1, j2, iBeg, iEnd, jBeg, jEnd
   integer(kind=intType) :: iStart, iSize, ierr, iProc, firstElem, curElem
   integer(kind=intType) :: below, above, left, right, nNodes, nElems
-  integer(kind=intType) :: patchNodeCounter
+  integer(kind=intType) :: patchNodeCounter, eBlank(4), nZipped
   integer(kind=intType), dimension(:), allocatable :: nElemsProc, nNodesProc
   integer(kind=intType), dimension(:, :), pointer :: gcp
   real(kind=realType), dimension(:, :, :), pointer :: xx
@@ -32,21 +33,14 @@ subroutine makeGapBoundaryStrings(level, sps, clusters)
   type(oversetString), dimension(:), allocatable :: globalStrings
   type(oversetString) :: master
   type(oversetString), pointer :: fullStrings, strings, str
-  integer(kind=intType) :: nFullStrings, nALloc
+  integer(kind=intType) :: nFullStrings, nALloc, nUnique
   type(kdtree2_result), allocatable, dimension(:) :: results
-  logical :: checkLeft, checkRight, isConvex
-  real(kind=realType) :: timeA,  pt(3),   v(3), nDist, cosTheta
-  real(kind=realType), dimension(3) :: xj, xjp1, xjm1
+  integer(kind=intType), allocatable, dimension(:) :: nearEdgeList
+  logical :: checkLeft, checkRight, concave, positiveTriArea
+  logical :: leftOK, rightOK, overlappedEdges
+  real(kind=realType) :: timeA,  pt(3),   v(3), cosTheta,  cutOff
+  real(kind=realType), dimension(3) :: xj, xjp1, xjm1, normj
   integer status(MPI_STATUS_SIZE) 
-  interface
-     subroutine createSubString(p, s, id)
-       use overset
-       implicit none
-       type(oversetString), target, intent(in) :: p
-       type(oversetString), intent(out) :: s
-       integer(kind=intType), intent(in) :: id
-     end subroutine createSubString
-  end interface
 
   ! Loop over the wall faces counting up the edges that stradle a
   ! compute cell and a blanked (or interpolated) cell. 
@@ -68,8 +62,10 @@ subroutine makeGapBoundaryStrings(level, sps, clusters)
   ! to carry this index information forward as it will determine which
   ! of node tractions are needed for the triangle integration. 
 
-  allocate(nNodesProc(0:nProc))
+  allocate(nNodesProc(0:nProc), nElemsProc(0:nProc))
+
   nNodesProc(0) = 0
+  nElemsProc(0) = 0
 
   ! The number of nodes my proc has is sum(epc)/2 (all clusters and get rid of the *2 above)
   call MPI_allGather(sum(epc)/2, 1, sumb_integer, nNodesProc(1:nProc), 1, sumb_integer, &
@@ -286,7 +282,6 @@ subroutine makeGapBoundaryStrings(level, sps, clusters)
   end if
 
   ! Next for each each cluster, gather to the root the gap boundary strings
-  allocate(nElemsProc(0:nProc))
 
   do c=1, nClusters
      ! Now let the root processor know how many nodes/elements my
@@ -373,7 +368,8 @@ subroutine makeGapBoundaryStrings(level, sps, clusters)
      else
         ! Not root proc so send my stuff if we have anything:
         if (localStrings(c)%nElems > 0) then 
-           ! ----------- Node sized arrays -------------
+ 
+          ! ----------- Node sized arrays -------------
            call MPI_Send(localStrings(c)%x, 3*localStrings(c)%nNodes, sumb_real, 0, myid, &
                 sumb_comm_world, ierr)
            call ECHK(ierr, __FILE__, __LINE__)
@@ -420,6 +416,7 @@ subroutine makeGapBoundaryStrings(level, sps, clusters)
         nElems = nElems + globalStrings(c)%nElems
         nNodes = nNodes + globalStrings(C)%nNodes
      end do
+
      call nullifyString(master)
      master%nNodes = nNodes
      master%nElems = nElems
@@ -445,7 +442,7 @@ subroutine makeGapBoundaryStrings(level, sps, clusters)
      end do
 
      ! Now the root is done with the global strings so deallocate that
-     ! too.  with global strings too
+     ! too. 
      do c=1, nClusters
         call deallocateString(globalStrings(c))
      end do
@@ -460,17 +457,13 @@ subroutine makeGapBoundaryStrings(level, sps, clusters)
      ! how many actual strings we will need so we will use a linked
      ! list as we go. 
      
-     ! ! ================= DEBUG ===============
-     ! call writeOversetString(master, 99)
-     ! ! =======================================
-
      ! Allocate some additional arrays we need for doing the chain
      ! searches. 
      nElems = master%nElems
      nNodes = master%nNodes
      allocate(master%elemUsed(nElems), master%subStr(2, nElems), &
-          master%cNodes(2, nNodes), master%cElems(2, nElems))
-      master%cElems = 0
+          master%cNodes(2, nNodes))
+
       master%cNodes = 0
       master%elemUsed = 0
       curElem = 1
@@ -523,18 +516,14 @@ subroutine makeGapBoundaryStrings(level, sps, clusters)
         end if
 
         ! Create a substring from master based on the elements we
-        ! have in buffer
-        call createSubString(master, str, nFullStrings)
-
-        ! Build the tree for this string. 
-         str%tree => kdtree2_create(str%x, sort=.True., rearrange=.True.)
+        ! have in the buffer
+        call createSubStringFromElems(master, str, nFullStrings)
 
         ! Scan through until we find the next unused element:
         do while(master%elemUsed(curElem) == 1 .and. curElem < master%nElems) 
            curElem = curElem + 1
         end do
      end do
-
 
      ! =================== Initial Self Zipping -=================
      master%myID = 99
@@ -560,17 +549,27 @@ subroutine makeGapBoundaryStrings(level, sps, clusters)
      i = 0 
      do while (i < nFullStrings)
         i = i + 1
-        call selfZip(str)
+        zipperLoop: do j=1, 5
+           if (j== 1) then
+              cutOff = 120_realType
+           else
+              cutOff = 90_realType
+           end if
+           call selfZip(str, cutOff, nZipped)
+           if (nZipped == 0) then 
+              exit zipperLoop
+           end if
+        end do zipperLoop
         str => str%next
      end do
 
      ! =============================================================
 
-
      ! Now make we determine the nearest point on another substring
      ! for each point. 
      nAlloc = 50
      allocate(results(nAlloc))
+     allocate(nearEdgeList(100))
      ! Loop over the fullStrings
      str => fullStrings
      i = 0 
@@ -584,48 +583,82 @@ subroutine makeGapBoundaryStrings(level, sps, clusters)
         ! Loop over my nodes and search for it in master tree
         nodeLoop:do j=1, str%nNodes
 
-           ! Reinitialize the max number of neighbours
+           ! Reinitialize initial maximum number of neighbours
            nAlloc = 50
+
+           ! Set the elements to not check, the two right next to me
+           eBlank(1:2) = 0
+           do jj=1, master%nte(1, str%pNodes(j))
+              eBlank(jj) = master%nte(1+jj, str%pNodes(j))
+           end do
 
            ! We have to be careful since single-sided chains have only
            ! 1 neighbour at each end. 
            checkLeft = .True. 
            checkRight = .True. 
            xj = str%x(:, j)
+           normj = str%norm(:, j)
 
-           ! if (str%isPeriodic) then 
-           !    if (j > 1 .and. j < str%nNodes) then 
-           !       xjm1 = str%x(:, j-1)
-           !       xjp1 = str%x(:, j+1)
-           !    else if (j == 1) then 
-           !       xjm1 = str%x(:, str%nNodes)
-           !       xjp1 = str%x(:, j+1)
-           !    else if (j == str%nNodes) then 
-           !       xjm1 = str%x(:, j-1)
-           !       xjp1 = str%x(:, 1)
-           !    end if
-           ! else
-           !    ! Not periodic
-           !    if (j == 1) &
-           !         checkLeft = .False.
-           !    if (j == str%nNodes) &
-           !         checkRight = .False.
+           concave = .False.
+           if (str%isPeriodic) then 
+              if (j > 1 .and. j < str%nNodes) then 
+                 xjm1 = str%x(:, j-1)
+                 xjp1 = str%x(:, j+1)
+              else if (j == 1) then 
+                 xjm1 = str%x(:, str%nNodes)
+                 xjp1 = str%x(:, j+1)
+              else if (j == str%nNodes) then 
+                 xjm1 = str%x(:, j-1)
+                 xjp1 = str%x(:, 1)
+              end if
+           else
+              ! Not periodic. Assume the ends are concave. This will
+              ! forces checking if both the left and right are ok,
+              ! which since the leftOK and rightOK's default to
+              ! .True., it just checks the one triangle which is what
+              ! we want.
+              if (j == 1) then 
+                 checkLeft = .False.
+                 concave = .True. 
+              end if
 
-           !    if (checkLeft) &
-           !         xjm1 = str(:, j-1)
-           !    if (checkRight) & 
-           !         xjp1 = str(:, j+1)
-           ! else if 
+              if (j == str%nNodes) then 
+                   checkRight = .False.
+                   concave = .True. 
+                end if
 
+                if (checkLeft)  &
+                     xjm1 = str%x(:, j-1)
+                if (checkRight) & 
+                     xjp1 = str%x(:, j+1)
+
+           end if
+
+           if (checkLeft .and. checkRight) then 
               
+              ! Determine if the point is convex or concave provided
+              !  we have both neighbours.
+              call cross_prod(xjm1 - xj, xjp1 - xj, v)
 
-
+              if (dot_product(v, normj) > zero) then 
+                 concave = .True. 
+              end if
+           end if
 
            outerLoop: do
               minDist = large
-
+              kk = 0
               call kdtree2_n_nearest(master%tree, xj, nAlloc, results)
-
+              
+              ! Add the edges connected to the closest 50 nodes
+              do k=1, 50
+                 idx = results(k)%idx
+                 do jj=1, master%nte(1, idx)
+                    kk = kk + 1
+                    nearEdgeList(kk) = master%nte(1+jj, idx)
+                 end do
+              end do
+             
               innerLoop: do k=1, nAlloc
 
                  ! Since we know the results are sorted, if the
@@ -638,37 +671,88 @@ subroutine makeGapBoundaryStrings(level, sps, clusters)
                  ! easier to read
                  curDist = sqrt(results(k)%dis)
                  idx = results(k)%idx
-
-                 ! Check if the node we found isn't on our substring
-                 if (master%cNodes(1, idx) == str%myID) then 
-                    cycle innerLoop
-                 end if
-
-                 ! Check if the node we found violates the the "in
-                 ! front" test. For a concave corner TWO triangle
-                 ! areas formed by the point and the two edges must be
-                 ! positive. For a convex corner only one of the
-                 ! triangle areas needs to be positive. 
-
-
-
+                 pt = master%x(:, idx)
+                 
+                 ! --------------------------------------------- 
+                 ! Exit Condition: We can stop the loop if the current
+                 ! uncorrected distance is larger than our current
+                 ! minimum. This guarantees the minimum corrected
+                 ! distance is found.
+                 ! ---------------------------------------------
 
                  if (curDist > minDist) then 
-                    ! We can stop the loop if the current uncorrected
-                    ! distance is larger than our current
-                    ! minimum. This guarantees the minimum corrected
-                    ! distance is found. 
                     exit outerLoop
                  end if
 
+                 ! ---------------------------------------------
+                 ! Check 1: If the node we found isn't on our
+                 ! substring. we don't need to do anything
+                 ! ---------------------------------------------
+
+                 if (master%cNodes(1, idx) == str%myID) then 
+                    cycle innerLoop 
+                 end if
+
+                 ! --------------------------------------------- 
+                 ! Check 2: Check if the node we found violates the
+                 ! the "in front" test. For a concave corner TWO
+                 ! triangle areas formed by the point and the two
+                 ! edges must be positive. For a convex corner only
+                 ! one of the triangle areas needs to be positive.
+                 ! ---------------------------------------------
+                 
+                 leftOK = .True. 
+                 rightOK = .True. 
+                 if (checkLeft .and. .not. positiveTriArea(xj, xjm1, pt, normj)) then
+                    leftOK = .False.
+                 end if
+
+                 if (checkRight .and. .not. positiveTriArea(xjp1, xj, pt, normj)) then 
+                    rightOK = .False.
+                 end if
+        
+                 if (concave) then 
+                    if (.not. (leftOK .and. rightOK)) then 
+                       cycle innerLoop
+                    end if
+                 else
+                    if (.not. (leftOK .or. rightOK)) then 
+                       cycle innerLoop
+                    end if
+                 end if
+                 
+                 ! --------------------------------------------- 
+                 ! Check 3: Check if the vector to our point cross
+                 ! over any edges in the near edge list. That will
+                 ! also invalidate the canidate point. But only do it
+                 ! if the edges are pointing in the same direction
+                 ! ---------------------------------------------
+
+                 ! Keep track of the 1 or 2 elements connected to the
+                 ! current search node so we know not to test them
+                 eBlank(3:4) = 0
+                 do jj=1, master%nte(1, idx)
+                    eBlank(jj+2) = master%nte(1+jj, idx)
+                 end do
+
+                 if (dot_product(normj, master%norm(:, idx)) > 0.5) then 
+                    if (overlappedEdges(pt, xj, normj, master, eBlank,nearEdgeList, kk)) then 
+                       cycle innerLoop
+                    end if
+                 end if
+                 ! --------------------------------------------- 
+                 ! Check 4: Now that the point has passed the previous
+                 ! checks, we can compute the agumented distance
+                 ! function and see if it better than the exisitng min
+                 ! distance.
+                 ! ---------------------------------------------
+
                  ! Now calculate our new distance
-                 v =  master%x(:, idx) - xj
-                 nDist = dot_product(v, str%norm(:, j))
+                 v =  pt - xj
                  v = v/norm2(v)
-                 pt = master%x(:, idx) - str%norm(:, j)*nDist
 
                  ! Recompute the distance function
-                 cosTheta = abs(dot_product(str%norm(:, j), v))
+                 cosTheta = abs(dot_product(normj, v))
                  
                  ! Update distFunction 
                  dStar = curDist / (max(1-cosTheta, 1e-6))
@@ -677,97 +761,30 @@ subroutine makeGapBoundaryStrings(level, sps, clusters)
                     ! Save the string ID and the index.
                     minDist = dStar
                     str%otherID(:, j) = master%cNodes(:, idx)
-                    str%otherX(:, j) = master%x(:, idx)
+                    str%otherX(:, j) = pt
                  end if
               end do innerLoop
 
-              ! We are not 100% sure that we found the minium yet. 
-              nAlloc = nAlloc *2
-              print *, 'reallocing:', i, j, nAlloc
+              ! We are not 100% sure that we found the minium
+              ! yet. Make nAlloc twice as big and start over. 
+              nAlloc = nAlloc * 2
               if (nAlloc > size(results)) then 
                  deallocate(results)
                  allocate(results(nAlloc))
               end if
+
            end do outerLoop
-
         end do nodeLoop
-
 
         ! Set pointer to next substring
         str => str%next
      end do
 
-
-
-     ! Now make we determine the nearest point on another substring
-     ! for each point. 
-     
-     ! ! Loop over the fullStrings
-     ! str => fullStrings
-     ! i = 0 
-     ! do while (i < nFullStrings)
-     !    i = i + 1
-        
-     !    ! Current min distance for each node. 
-     !    allocate(minDist(str%nNodes))
-     !    minDist = large
-
-     !    ! Allocate space for otherID as it is not done yet
-     !    allocate(str%otherID(2, str%nNodes))
-     !    allocate(str%otherX(3, str%nNodes))
-     !    ! Loop over all *OTHER* substring
-     !    str2 => fullStrings
-     !    j = 0
-     !    do while(j < nFullStrings)
-     !       j = j + 1
-
-     !       ! Obviously don't check my own string. 
-     !       if (j /= i ) then 
-              
-     !          ! Loop over my nodes and search in the other tree.
-     !          do k=1, str%nNodes
-     !             !call n_nearest_to_brute_force(str2%tree, str%x(:, k), 1, indexes, distances)
-     !             call kdtree2_n_nearest(str2%tree, str%x(:, k), 1, results)
-
-     !             ! We can't use the *actual* distance. Insteady we
-     !             ! use the following: D* = dist_to_projected_pt +
-     !             ! (K*normal_dist)**2. K can usually be quite large. 
-             
-     !             v =  str2%x(:, results(1)%idx) - str%x(:, k)
-     !             nDist = dot_product(v, str%norm(:, k))
-     !             v = v/norm2(v)
-     !             pt =str2%x(:, results(1)%idx) - str%norm(:, k)*nDist
-
-     !             ! Recompute the distance function
-     !             cosTheta = abs(dot_product(str%norm(:, k), v))
-
-     !             ! Update distFunction 
-     !             results(1)%dis = results(1)%dis / (max(1-cosTheta, 1e-6))
-                 
-     !             if (sqrt(results(1)%dis) < minDist(k)) then 
-     !                ! Save the string ID and the index.
-     !                minDist(k) = sqrt(results(1)%dis)
-     !                str%otherID(:, k) = (/j, results(1)%idx/)
-     !                str%otherX(:, k) = str2%x(:, results(1)%idx)
-     !             end if
-
-     !          end do
-     !       end if
-     !       str2 => str2%next
-     !    end do
-
-     !    deallocate(minDist)
-     !    str => str%next
-     ! end do
-
      print *,'search time:', mpi_wtime()-timea
-
 
      ! =============== DEBUGGING =================
 
-
      call writeOversetTriangles(master, "fullTriangulation.dat")
-
 
      print *, 'nFullStrings:', nFullStrings
      open(unit=101, file="fullGapStrings.dat", form='formatted')
@@ -788,618 +805,6 @@ subroutine makeGapBoundaryStrings(level, sps, clusters)
   deallocate(nElemsProc, nNodesProc)
 end subroutine makeGapBoundaryStrings
 
-subroutine reduceGapString(string)
-
-  use overset
-
-  ! Generic routine for removing duplicate nodes on the given
-  ! string. The string is returned with the nodes and connectivities
-  ! adjusted accordingly.
-  implicit none
-
-  ! Input/Ouput
-  type(oversetString), intent(inout) :: string
-
-  ! Working:
-  real(kind=realType) :: minEdge
-  integer(kind=intType) :: nUnqiue, i, n1, n2, nUnique
-  integer(kind=intType), dimension(:), allocatable :: link
-  real(kind=realType), dimension(:, :), allocatable :: uniqueNodes
-  real(kind=realType), dimension(:, :), pointer :: xptr, normPtr
-  integer(kind=intType) , dimension(:), pointer :: indPtr
-  ! interface
-  !    subroutine pointReduce(pts, N, tol, uniquePts, link, nUnique)
-  !      use precision
-  !      use kdtree2_module
-  !      implicit none
-  !      integer(kind=intType), intent(in) :: N
-  !      real(kind=realType), intent(in), dimension(3, N) :: pts
-  !      real(kind=realType), intent(in) :: tol
-  !      real(kind=realType), intent(out), dimension(3, N) :: uniquePts
-  !      integer(kind=intType), intent(out), dimension(N) :: link
-  !      integer(kind=intType), intent(out) :: nUnique
-  !    end subroutine pointReduce
-  ! end interface
-
-  ! We will do a sort of adaptive tolernace here: Get the minium edge
-  ! length and base the tolerance on that:
-
-  minEdge = huge(one)
-
-  do i=1, string%nElems
-     n1 = string%conn(1, i)
-     n2 = string%conn(2, i)
-     minEdge = min(minEdge, norm2(string%x(:, n1) - string%x(:, n2)))
-  end do
-
-  allocate(link(string%nNodes), uniqueNodes(3, string%nNodes))
-
-  call pointReduce(string%x, string%nNodes, minEdge/1000.0, uniqueNodes, link, nUnique)
-  
-  ! Update the connectivity to use the new set of nodes
-  do i=1, string%nElems
-     string%conn(1, i) = link(string%conn(1, i))
-     string%conn(2, i) = link(string%conn(2, i))
-  end do
-
-  ! Reallocate the node based data to the correct size. Set pointers
-  ! to original data first. 
-  xPtr => string%x
-  normPtr => string%norm
-  indPtr => string%ind
-  allocate(string%x(3, nUnique), string%norm(3, nUnique), string%ind(nUnique))
-
-  do i=1, string%nNodes
-     string%x(:, link(i)) = xPtr(:, i)
-     string%norm(:, link(i)) = normPtr(:, i)
-     string%ind(link(i)) = indPtr(i)
-  end do
-  string%nNodes = nUnique
-
-  ! deallocate the pointer data which is the original data
-  deallocate(xPtr, normPtr, indPtr, link, uniqueNodes)
-
-end subroutine reduceGapString
-
-recursive subroutine createNodeToElem(string)
-
-  ! Next thing we have to do is produce the inverse of the
-  ! connectivity...the nodeToElem array. Normally, each node should
-  ! point to 1 element (at a boundary) or two elements for a normal
-  ! part of a chain. There are however, some pathalogical cases
-  ! that will result in more: 
-  
-  ! 1. The same edge may be added twice if it is on a boundary
-  ! between two block and each add the same edge. 
-  
-  ! 2. Chains that are "just" touching such as middle node of the
-  ! following: (double lines are chains)
-  !
-  !     +----------++------------+
-  !     +          ||            |
-  !     +  ib=1    /\   ib=0     |
-  !     +          ||            |
-  !     +===>>=====++=====<<=====+
-  !     +          ||            |
-  !     +  ib=0    \/   ib=1     |
-  !     +          ||            |
-  !     +----------++------------+
-  ! 
-  ! The center node has 4 edges eminating from it. It is part of
-  ! the chain that enters from the left and cointinues to the top
-  ! as well as the chain that enters from the right and continues
-  ! to the bottom. 
-  
-  ! This algorithm should take linear time, but has lots of
-  ! indirect addressing (welcome to unstructured grids). It looks
-  ! like it might be quadratic, but there should never be more than
-  ! 4 edges attached to each node. 
-
-  use overset
-  implicit none
-
-  ! Input/Output
-  type(oversetString) :: string
-
-  ! Working
-  integer(kind=intType) :: i, j, ii, jj, n(2), m(2), curElem, nDup
-  integer(kind=intType), dimension(string%nElems) :: duplicated
-  integer(kind=intType), dimension(:, :), pointer :: tmpConn
-  logical :: duplicateElement
-
-  allocate(string%nte(3, string%nNodes))
-  string%nte = 0 
-  duplicated = 0
-
-  do i=1, string%nElems
-     ! Node numbers we're working with:
-     n = string%conn(:, i)
-
-     ! For each node check which elements (if any) are already
-     ! connected. We need to check them again the node numbers n1 and n2
-
-     duplicateElement = .False.
-     do jj=1, 2
-
-        do j=1, string%nte(1, n(jj)) ! Loop over the element numbers already here:
-           curElem = string%nte(j+1, n(jj))
-
-           m = string%conn(:, curElem)
-
-           if (m(1) == n(1) .and. m(2) == n(2)) then 
-              duplicateElement = .True.
-
-           else if(m(1) == n(2) .and. m(2) == n(1)) then 
-              ! Element exists, but it is the wrong order...don't
-              ! know what to do with this, probably an error or
-              ! maybe a corner case I haven't thought of.
-              call terminate("makeBoundaryString", "Inconsistnet duplicate edge.")
-           end if
-        end do
-     end do
-
-     if (.not. duplicateElement) then 
-        do jj=1, 2
-           string%nte(1, n(jj)) = string%nte(1, n(jj)) + 1
-           ii = string%nte(1, n(jj))
-           string%nte(ii+1, n(jj)) = i
-        end do
-     else
-        ! Well, we've figured out that this element is actually a
-        ! duplicate so we'll make a note of that
-        duplicated(i) = 1
-     end if
-  end do
-
-  ! If we have duplicated elements, modify the conn to adjust for this. 
-  nDup = sum(duplicated) 
-  if (nDup > 0) then 
-     tmpConn => string%conn
-     allocate(string%conn(2, string%nElems - nDup))
-
-     j = 0
-     do i=1, string%nElems
-        if (duplicated(i) == 0) then 
-           j = j + 1
-           string%conn(:, j) = tmpConn(:, i)
-        end if
-     end do
-     
-     ! Set the new number of elements
-     string%nElems = string%nElems - nDup
-
-     ! Don't forget to deallocate the tmpConn pointer which is
-     ! actually the original conn data.
-     deallocate(tmpConn)
-
-     ! Destrory nte and call myself again to get the final correct nte
-     ! without the duplicates.
-     deallocate(string%nte)
-     call createNodeToElem(string)
-  end if
-end subroutine createNodeToElem
-
-subroutine nullifyString(string)
-
-  use overset
-  implicit none
-  type(oversetString) :: string
-
-  nullify(string%x, string%norm, string%ind, string%conn, &
-       string%otherID, string%nte, string%subStr, string%elemUsed)
-end subroutine nullifyString
-
-subroutine deallocateString(string)
-
-  use overset
-  implicit none
-  type(oversetString) :: string
-  integer(kind=intType) :: i
-
-  if (associated(string%x)) & 
-       deallocate(string%x)
-
- if (associated(string%norm)) & 
-       deallocate(string%norm)
-
- if (associated(string%ind)) & 
-       deallocate(string%ind)
-
- if (associated(string%conn)) & 
-       deallocate(string%conn)
-
- if (associated(string%otherID)) & 
-       deallocate(string%otherID)
-
- if (associated(string%nte)) & 
-       deallocate(string%nte)
-
- if (associated(string%subStr)) & 
-       deallocate(string%subStr)
-
- if (associated(string%elemUsed)) &
-       deallocate(string%elemUsed)
-
-end subroutine deallocateString
-
-subroutine doChain(master, iStart, iSub)
-
-  use overset
-  implicit none
-  ! Input/OUtput
-  type(oversetString) :: master
-  integer(kind=intType), intent(in) :: iStart, iSub
-
-  ! Working
-  integer(Kind=intType) :: i, j, jj, c, n1, n2, curNode, nextNode
-  integer(Kind=intType) :: jElem, elem1, elem2, curElem, nextElem
-  logical :: finished
-  real(kind=realType), dimension(3) :: v1, v2, v3
-  real(kind=realType), dimension(4) :: testDP
-  integer(kind=intType) :: N
-
-  ! The number of elements in this substring
-  N = 1
-
-  curNode = iStart
-
-  chainLoop: do
-
-     ! Get the currnet element
-     curElem = master%subStr(iSub, N)
-
-     ! Flag the element as used:
-     master%elemUsed(curElem) = 1
-
-     ! Get the two nodes for the current element:
-     n1 = master%conn(1, curElem)
-     n2 = master%conn(2, curElem)
-
-     if (n1 == curNode) then 
-        nextNode = n2
-     else
-        nextNode = n1
-     end if
-
-     ! Exit condition 1: Next node was our starting node:
-     if (nextNode == iStart) then 
-        print *,'Peroidic exit'
-        exit chainLoop
-     end if
-
-     ! Exit condition 2: The next node has only 1 element, (the one
-     ! we're currently on) so that means the the chain is finished
-     c = master%nte(1, nextNode)
-     
-     if (c == 1) then 
-        print *,'Single chain exit'
-        exit chainLoop
-
-     else if (c == 2) then 
-        ! With c=2 this easy, just extract the two elements
-        elem1 = master%nte(2, nextNode)
-        elem2 = master%nte(3, nextNode)
-        
-        if (elem1 == curElem) then 
-           nextElem = elem2
-        else
-           nextElem = elem1
-        end if
-     ! else
-     !    ! Uggh, we have a bow-tie topology. These are pretty
-     !    ! annonying. There are 4 elements attached, 1 of which is our
-     !    ! current element. We need to find the out of the three to
-     !    ! take. This is done using the directed edge and the stored
-     !    ! normals. 
-
-     !    ! v1 is the vector along the curent element
-     !    v1 = master%x(:, n2) - master%x(:, n1)
-
-     !    ! Test each of the 4 elements
-     !    testDP = zero
-     !    do jj=1, 4
-     !       jElem = master%nte(1+jj, nextNode)
-     !       if (jElem /= curElem) then 
-     !          ! Not our current element. 
-     !          n1 = master%conn(1, jElem)
-     !          n2 = master%conn(2, jElem)
-     !          v2 = master%x(:, n2) - master%x(:, n1)
-
-     !          call cross_prod(v1, v2, v3)
-     !          v3 = v3 / norm2(v3)
-
-     !          ! Dot product with "nextNode"'s normal
-     !          testDP(jj) = dot_product(master%norm(:, nextNode), v3)
-     !       end if
-     !    end do
-
-     !    ! The next element is the one with the largest DP, it should
-     !    ! be positive.
-
-     !    j = maxloc(testDP, dim=1)
-     !    nextElem = master%nte(1+j, nextNode)
-     end if
-
-     ! Now add the "nextElem" to our chain:
-     N = N + 1
-     master%subStr(iSub, N) = nextElem
-     
-     ! Flag this elemet as being used
-     master%elemUsed(nextElem) = 1 
-     
-     ! Finally set the nextNode back to the current node for the next
-     ! iteration
-     curNode = nextNode
-  end do chainLoop
-  master%nSubStr(iSub) = N
-end subroutine doChain
-
-subroutine createSubString(p, s, id)
-
-  use overset
-  implicit none
-
-  ! Input/output
-  type(oversetString), target, intent(in) :: p
-  type(oversetString), intent(out) :: s
-  integer(kind=intType), intent(in) :: id
-
-  ! Working 
-  integer(kind=intType) :: i, j, n1, n2, k
-  integer(kind=intType), dimension(:), allocatable :: nodeUsed
-
-  ! Firstly we can set the number of elements, since we know precisely
-  ! what this is:
-  s%nElems = p%nSubStr(1)
-  s%myID = id
-
-  ! Next determine the number of nodes. This is done by flagging the
-  ! nodes in the parent that are used by 's'
-  allocate(nodeUsed(p%nNodes))
-  nodeUsed = 0
-  k = 0
-  do i=1, s%nElems
-     n1 = p%conn(1, p%subStr(1, i))
-     n2 = p%conn(2, p%subStr(1, i))
-     if (nodeUsed(n1) == 0) then 
-        k = k + 1
-        nodeUsed(n1) = k
-     end if
-
-     if (nodeUsed(n2) == 0) then 
-        k = k + 1
-        nodeUsed(n2) = k
-     end if
-     
-     ! Set the child relationship information for the elements
-     p%cElems(:, p%subStr(1, i)) = (/s%myID, i/)
-
-  end do
-
-  ! We can now set the number of nodes the substring has
-  s%nNodes = k
-  
-  ! The number of nodes will equal the number of elements iff the
-  ! string is period. Otherwise we will have 1 more node than element.
-  
-  n1 = p%subStr(1, 1)
-  n2 = p%subStr(1, s%nElems)
-  if (n1 == n2 .and. s%nNodes ==  s%nElems) then 
-     s%isPeriodic = .True. 
-  end if
-
-  ! Allocate and set the node and element parent information
-  allocate(s%pElems(s%nElems), s%pNodes(s%nNodes))
-
-  do i=1, s%nElems
-     s%pElems(i) = p%subStr(1, i)
-  end do
-
-  ! Now create the pNodes ("link") array such that pNodes(i) points to
-  ! the node index in the parent
-  j = 0
-  do i=1, p%nNodes
-     if (nodeUsed(i) /= 0) then 
-       s%pNodes(nodeUsed(i)) = i
-     end if
-  end do
-
-  ! Set the parent's cNode to point to my nodes
-  do i=1, s%nNodes
-     p%cNodes(:, s%pNodes(i)) = (/s%myID, i/)
-  end do
-
-  ! Now that we know the mapping between by local nodes-based
-  ! quantities and the parent, we can allocate and set all the
-  ! node-based quantities.
-  
-  allocate(s%x(3, s%nNodes), s%norm(3, s%nNodes), s%ind(s%nNodes))
-  do i=1, s%nNodes
-     s%x(:, i) = p%x(:, s%pNodes(i))
-     s%norm(:, i) = p%norm(:, s%pNodes(i))
-     s%ind(i) = p%ind(s%pNodes(i))
-  end do
-
-  ! We can now create the local conn too, *USING THE LOCAL NODE NUMBERS*
-  allocate(s%conn(2, s%nElems))
-
-  do i=1, s%nElems
-     s%conn(1, i) = nodeUsed(p%conn(1, s%pElems(i)))
-     s%conn(2, i) = nodeUsed(p%conn(2, s%pElems(i)))
-  end do
-
-  ! Set the pointer to my parent. 
-  s%p => p
-
-  deallocate(nodeUsed)
-
-  ! Last thing we can do is create the nodeToElem for the substring. 
-  call  createNodeToElem(s)
-
-end subroutine createSubString
-
-subroutine combineChainBuffers(s)
-
-  use overset
-  implicit none
-  type(oversetString), intent(inout) :: s
-  integer(kind=intType) :: N1, N2
-
-  N1 = s%nSubStr(1)
-  N2 = s%nSubStr(2)
-
-  ! First reverse the direction of string 2 of the nodes we found
-  s%subStr(2, 1:N2) = s%subStr(2, N2:1:-1)
-              
-  ! Now String 1 can be tacked on the end of string2
-  s%subStr(2, N2+1:N2+N1) = s%subStr(1, 1:N1)
-              
-  ! And finally copied back to string1
-  s%subStr(1, 1:N1+N2) = s%subStr(2, 1:N1+N2)
-  s%nSubStr(1) = N1 + n2
-              
-end subroutine combineChainBuffers
-
-         
-
-subroutine selfZip(s)
-
-  use overset
-  use kdtree2_module
-  implicit none
-  type(oversetString), intent(inout) :: s
-  
-  ! Working
-  integer(kind=intType) :: i, k,  N, ii, im1, ip1, nalloc, idx, nFound
-  logical :: lastNodeZipper, inTri, overlapFound
-  real(kind=realType), dimension(3) :: v1, v2, norm, c
-  real(kind=realType) :: cosCutoff, cosTheta, r2, v1nrm, v2nrm
-  type(kdtree2_result), dimension(:), allocatable  :: results
-
-  ! Perform self zipping on the supplied string. The string at this
-  ! point should be either peroidic or since sinded --- no multiple
-  ! loops should be left. Therefore, we can count on the nodes being
-  ! in order.
-
-  cosCutoff = cos(120*pi/180)
-
-  if (s%isPeriodic) then 
-     im1 = s%nNodes
-     ii = 1
-     ip1 = 2
-     N = s%nElems
-  else
-     im1 = 1
-     ii = 2
-     ip1 = 3
-     N = s%nNodes - 2
-  end if
-
-  nAlloc = 25
-  allocate(results(nAlloc))
-
-  lastNodeZipper = .False. 
-  do while (ii < N)
-     
-     ! Determine the anlge between the vectors
-     v1 = s%x(:, ip1) - s%x(:, ii)
-     v2 = s%x(:, im1) - s%x(:, ii)
-     v1nrm = norm2(v1)
-     v2nrm = norm2(v2)
-     call cross_prod(v2, v1, norm)
-     norm = norm / norm2(norm)
-     
-     if (dot_product(norm, s%norm(:, ii)) > zero) then 
-
-        costheta = dot_product(v1, v2)  / (v1nrm * v2nrm)
-     
-        if (costheta > cosCutoff) then 
-
-           ! We may have a valid triangle. We need to make sure we
-           ! don't overlap anyone else. 
-           !
-           !     +
-           !     | \
-           !     |   \
-           !     |     c
-           !     |       \
-           !     |         \
-           !     +----------+
-           !
-           ! We do a ball search based at 'c' which is just the
-           ! (average of xip1 and xim1) using a radius defined as the
-           ! maximum of (the distance between 'c' and 'xi', half
-           ! length of xip1 to xim1)
-           ! 
-           c = half*(s%x(:, ip1) + s%x(:, im1))
-           r2 = (c(1) - s%x(1, ii))**2 +  (c(2) - s%x(2, ii))**2 +  (c(3) - s%x(3, ii))**2
-
-           r2 = max(r2, (s%x(1, ip1) - s%x(1, im1))**2 + (s%x(2, ip1) - s%x(2, im1))**2 + &
-                (s%x(3, ip1) - s%x(3, im1))**2)
-
-           nFound = 0
-           outerLoop: do 
-
-              call kdtree2_r_nearest(s%p%tree, c, r2, nfound, nalloc, results) 
-              if (nFound < nAlloc) then 
-                 exit outerLoop
-              end if
-
-              ! Allocate more space and keep going
-              deallocate(results)
-              nAlloc = nAlloc * 2
-              allocate(results(nAlloc))
-           end do outerLoop
-           
-           ! We can now be sure that we have all the points inside our
-           ! ball. Next we proceed to systematically check them. 
-           overlapFound = .False.
-           nodeFoundLoop: do k=1, nFound
-              ! Note that we do check nodes from our own string,
-              ! except for the the three nodes we're dealing
-              ! with. Remember that we are working in our parent's
-              ! ording here.
-              idx = results(k)%idx 
-
-              notPartofTriangle: if (idx /= s%pNodes(im1) .and. &
-                   idx /= s%pNodes(ii) .and. idx /= s%pNodes(ip1)) then 
-                 
-                 ! Only check if the node normal of the point we're
-                 ! checking is in the same direction as the triangle. 
-                 if (dot_product(s%norm(:, ii), s%p%norm(:, idx)) > zero) then 
-
-                
-                    ! Finally do the actual trianlge test
-                    call pointInTriangle(s%x(:, ip1), s%x(:, ii), s%x(:, im1), &
-                         s%p%x(:, idx), inTri)
-                    if (inTri) then 
-                       ! As soon as 1 is in the triangle, we know the
-                       ! gap string is no good. 
-                       overlapFound = .True. 
-                       exit nodeFoundLoop
-                    end if
-                 end if
-              end if notPartofTriangle
-           end do nodeFoundLoop
-
-           if (.not. overlapFound) then 
-              ! This trialge is good!
-              print *,'adding triangle:', s%myID, (/s%pNodes(im1), s%pNodes(ii),s%pNodes(ip1)/)
-              s%p%nTris = s%p%nTris+ 1
-              s%p%tris(:, s%p%nTris) = (/s%pNodes(im1), s%pNodes(ii),s%pNodes(ip1)/)
-           end if
-        end if
-     end if
-
-     ! Just shuffle along
-     ii = ii + 1
-     ip1 = ii + 1
-     im1 = ii -1
-     
-  end do
-
-
-end subroutine selfZip
 
 subroutine pointInTriangle(x1, x2, x3, pt, inTri) 
 
@@ -1414,18 +819,123 @@ subroutine pointInTriangle(x1, x2, x3, pt, inTri)
      inTri = .false.
   end if
 
-  contains 
-    function sameSide(p1, p2, a, b)
+contains 
+  function sameSide(p1, p2, a, b)
+    
+    implicit none
+    logical :: sameSide
+    real(kind=realType), dimension(3) ::p1, p2, a, b, cp1, cp2
 
-      implicit none
-      logical :: sameSide
-      real(kind=realType), dimension(3) ::p1, p2, a, b, cp1, cp2
+    sameSide = .False.
+    call cross_prod(b-a, p1-a, cp1)
+    call cross_prod(b-a, p2-a, cp2)
+    if (dot_product(cp1, cp2) >= zero) then 
+       sameSide = .true. 
+    end if
+  end function SameSide
+end subroutine pointInTriangle
 
-      sameSide = .False.
-      call cross_prod(b-a, p1-a, cp1)
-      call cross_prod(b-a, p2-a, cp2)
-      if (dot_product(cp1, cp2) >= zero) then 
-         sameSide = .true. 
-      end if
-    end function SameSide
-  end subroutine pointInTriangle
+function positiveTriArea(p1, p2, p3, norm)
+
+  use constants
+  implicit none
+  real(kind=realType), intent(in), dimension(3) :: p1, p2, p3, norm
+  real(kind=realType), dimension(3) :: n
+  logical :: positiveTriArea
+  
+  call cross_prod(p2-p1, p3-p1, n)
+  if (dot_product(n, norm) > zero) then 
+     positiveTriArea = .True. 
+  else
+     positiveTriArea = .False.
+  end if
+end function positiveTriArea
+
+function overlappedEdges(pt, x0, norm, s, eBlank, nearEdgeList, n)
+
+  use overset
+  implicit none
+
+  ! Input/output
+  real(kind=realType), dimension(3), intent(in) :: pt, x0, norm
+  type(oversetString) , intent(in) :: s
+  integer(kind=intType), intent(in) :: n, eBlank(4)
+  integer(kind=intType), dimension(n), intent(in) :: nearEdgeList
+  logical :: overlappedEdges
+
+  ! Working
+  integer(kind=intType) :: i
+  real(kind=realType), dimension(3) :: v, p1, p2, u, normA,  normB
+  real(kind=realType) :: uNrm, x1, x2, x3, x4, y1, y2, y3, y4, idet, Px, Py
+  real(kind=realType) :: u1, u2, v1, v2, w1, w2
+  real(kind=realType) :: s1, s2, tmp, line(2), vec(2), tol
+  overlappedEdges = .False. 
+  tol = 1e-6
+  ! We will conver this completely into a 2D problem by projecting
+  ! everything onto the plane defined by norm. x0 is at the origin of
+  ! the 2D system and the xaxis point from x0 to pt
+ 
+  u = pt - x0
+  uNrm = norm2(u)
+  u = u/uNrm
+
+  call cross_prod(norm, u, v)
+  v = v /norm2(v)
+  
+  ! Now u,v,norm is an orthogonal coordinate system
+  x1 = zero
+  y1 = zero
+  x2 = uNrm
+  y2 = zero
+  overLappedEdges = .False.
+
+  ! Loop over the number of edges in the list 
+  elemLoop: do i=1, n
+     if (eBlank(1) == nearEdgeList(i) .or. &
+          eBlank(2) == nearEdgeList(i) .or. &
+          eBlank(3) == nearEdgeList(i) .or. &
+          eBlank(4) == nearEdgeList(i)) then 
+        cycle
+     end if
+
+     ! Project the two points into the plane
+     p1 = s%x(:, s%conn(1, nearEdgeList(i)))
+     p2 = s%x(:, s%conn(2, nearEdgeList(i)))
+
+     normA = s%norm(:, s%conn(1, nearEdgeList(i)))
+     normB = s%norm(:, s%conn(2, nearEdgeList(i)))
+
+     ! Make sure the edges are on the same plane, otherwise this is
+     ! meaningless
+     if (dot_product(normA, norm) < half .or. dot_product(normb, norm) < half) then 
+        cycle
+     end if
+     ! Project the two points onto the plane
+     p1 = p1 - norm*dot_product(p1 - x0, norm)
+     p2 = p2 - norm*dot_product(p2 - x0, norm)
+
+     ! Now get the 2D coordinates
+     x3 = dot_product(p1-x0, u)
+     y3 = dot_product(p1-x0, v)
+     x4 = dot_product(p2-x0, u)
+     y4 = dot_product(p2-x0, v)
+
+     u1 = x2 - x1
+     y2 = y2 - y1
+
+     v1 = x4 - x3
+     v2 = y4 - y3
+     
+     w1 = x1- x3
+     w2 = y1- y3
+     
+     s1 = (v2*w1 - v1*w2)/(v1*u2 - v2*u1)
+     s2 = (u1*w2 - u2*w1)/(u1*v2 - u2*v1)
+
+     if (s1 > tol .and. s1 < one - tol .and. s2 > tol .and. s2 < one - tol) then 
+        overlappedEdges = .True. 
+        exit elemLoop 
+     end if
+  end do elemLoop
+
+end function overlappedEdges
