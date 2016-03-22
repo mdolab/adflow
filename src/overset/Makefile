@@ -38,8 +38,10 @@ include ${SUMB_RULES_FILE}
 #      ******************************************************************
 
 vpath %.o $(SUMB_OBJDIR)
+FF90_OBJECTS_1 = stringOps.o\
 
-FILES_TO_COMPLEXIFY =	computeInterpolationParallel.F90\
+FILES_TO_COMPLEXIFY =	stringOps.F90\
+			computeInterpolationParallel.F90\
 			createZipperMesh.F90\
 			bowtieAndIsolationElimination.F90\
 			determineClusters.F90 \

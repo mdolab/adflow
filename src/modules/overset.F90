@@ -171,9 +171,6 @@ module overset
      ! Whether or no this string is periodic
      logical :: isPeriodic=.False.
 
-     ! The bounding box of my string
-     real(kind=realType), dimension(3) :: xMin, xMax
-
      ! The actual physical node locations. Size (3, nNodes)
      real(kind=realType), dimension(:, :), pointer :: x
 
@@ -194,9 +191,6 @@ module overset
 
      ! The string ID and index of my nodes on a split substing
      integer(kind=intType), dimension(:, :), pointer :: cNodes
-
-     ! The string ID and index of my elements on a split substring
-     integer(kind=intType), dimension(:, :), pointer :: cElems
 
      ! The cloest string ID of each node *AND* the node index on the
      ! other string. Size (2, nNodes)
