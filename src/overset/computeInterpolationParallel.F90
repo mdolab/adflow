@@ -1298,7 +1298,7 @@ subroutine writePartionedMesh(fileName)
   end do
 
   allocate(buffer(maxSize))
-  allocate(ibuffer(imaxSize)) !iblank
+  allocate(ibuffer(imaxSize))
 
   if (myid == 0) then 
      print *,'writing mesh...'
@@ -1511,16 +1511,26 @@ subroutine writeOversetString(string, fileID)
      do j=1, 3
         write(fileID,13, advance='no') string%x(j, i)
      end do
-     
-     do j=1, 3
-        write(fileID,13, advance='no') string%otherX(j, i) - string%x(j, i) !string%norm(j, i)
-     end do
-     
+     if (associated(string%otherX)) then 
+        do j=1, 3
+           write(fileID,13, advance='no') string%otherX(j, i) - string%x(j, i) !string%norm(j, i)
+        end do
+     else
+        do j=1, 3
+           write(fileID,13, advance='no') string%norm(j, i)
+        end do
+     end if
      write(fileID,13, advance='no') real(string%ind(i))
      write(fileID,13, advance='no') real(string%myID)
      write(fileID,13, advance='no') real(i)
-     write(fileID,13, advance='no') real(string%otherID(1, i))
-     write(fileID,13, advance='no') real(string%otherID(2, i))
+     if (associated(string%otherID)) then 
+        write(fileID,13, advance='no') real(string%otherID(1, i))
+        write(fileID,13, advance='no') real(string%otherID(2, i))
+     else
+        write(fileID,13, advance='no') real(zero)
+        write(fileID,13, advance='no') real(zero)
+     end if
+
      write(fileID,"(1x)")
   end do
   

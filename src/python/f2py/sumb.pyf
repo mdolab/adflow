@@ -95,6 +95,9 @@ python module libsumb
        subroutine preprocessing ! in :sumb:../../preprocessing/preprocessing.f90
        end subroutine preprocessing
 
+       subroutine preprocessing2 ! in :sumb:../../preprocessing/preprocessing.f90
+       end subroutine preprocessing2
+
        subroutine preprocessingpart2 ! in :sumb:../../preprocessing/preprocessing.f90
        end subroutine preprocessingpart2
      

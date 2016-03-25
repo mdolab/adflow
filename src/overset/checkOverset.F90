@@ -39,10 +39,11 @@ subroutine checkOverset (level, sps)
                     jj = visc_drdw_stencil(i_stencil, 2) + j
                     kk = visc_drdw_stencil(i_stencil, 3) + k
 
-                    ! This abs works here since fringes with -1
-                    ! count ok. It is only holes with iblank=0 that
-                    ! we have to avoid.
-                    ibval = ibval + abs(iblank(ii, jj, kk))
+                    if (iBlank(ii, jj, kk) == 1 .or. &
+                         iBlank(ii, jj, kk) == -1) then 
+
+                       ibval = ibval + 1
+                    end if
 
                  end do stencilLoop
                  if (ibval /= magic) then

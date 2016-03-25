@@ -10,7 +10,7 @@ contains
     type(oversetString) :: string
 
     nullify(string%x, string%norm, string%ind, string%conn, &
-         string%otherID, string%nte, string%subStr, string%elemUsed)
+         string%otherX, string%otherID, string%nte, string%subStr, string%elemUsed)
   end subroutine nullifyString
 
   subroutine deallocateString(string)

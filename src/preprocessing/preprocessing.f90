@@ -224,6 +224,7 @@
       do level=1,nLevels
          if (level == 1) then
             call oversetComm(level, .true., .false.)
+
          else
             call oversetComm(level, .true., .true.)
          end if

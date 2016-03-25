@@ -9,7 +9,7 @@ subroutine bowTieAndIsolationElimination(level, sps)
   integer(kind=intType), intent(in) :: level, sps
 
   ! Local variables
-  integer(kind=intType) :: mm, nn, i, j, k, iBeg, iEnd, jBeg, jEnd
+  integer(kind=intType) :: mm, nn, i, j, k, e, iBeg, iEnd, jBeg, jEnd
   logical :: side(4), isWallType
 
   integer(kind=intType), dimension(:, :), pointer :: ibp, gcp
@@ -22,69 +22,71 @@ subroutine bowTieAndIsolationElimination(level, sps)
   ! 1. Bow-tie elimination
   ! 2. Single cell elmination
 
-  domainLoop1: do nn=1, nDom
-     call setPointers(nn, level, sps)
+  bowTieLoop: do E=0, 2
+     domainLoop1: do nn=1, nDom
+        call setPointers(nn, level, sps)
+        
+        bocoLoop1: do mm=1, nBocos
+           wallType1: if (isWallType(BCType(mm))) then
+              
+              select case (BCFaceID(mm))
+              case (iMin)
+                 ibp => iblank(2, :, :)
+                 gcp => globalCell(2, :, :)
+              case (iMax)
+                 ibp => iblank(il, :, :)
+                 gcp => globalCell(il, :, :)
+              case (jMin)
+                 ibp => iblank(:, 2, :)
+                 gcp => globalCell(:, 2, :)
+              case (jMax)
+                 ibp => iblank(:, jl, :)
+                 gcp => globalCell(:, jl, :)
+              case (kMin)
+                 ibp => iblank(:, :, 2)
+                 gcp => globalCell(:, :, 2)
+              case (kMax)
+                 ibp => iblank(:, :, kl)
+                 gcp => globalCell(:, :, kl)
+              end select
+              
+              ! -------------------------------------------------
+              ! Step 2: Bow-tie elimination: Elimiate cells
+              ! that touch only at a corner.
+              ! -------------------------------------------------
+              
+              ! Make bounds a little easier to read. Owned cells only
+              ! from now on.
+              jBeg = BCData(mm)%jnBeg+1 ; jEnd = BCData(mm)%jnEnd
+              iBeg = BCData(mm)%inBeg+1 ; iEnd = BCData(mm)%inEnd
 
-     bocoLoop1: do mm=1, nBocos
-        wallType1: if (isWallType(BCType(mm))) then
-
-           select case (BCFaceID(mm))
-           case (iMin)
-              ibp => iblank(2, :, :)
-              gcp => globalCell(2, :, :)
-           case (iMax)
-              ibp => iblank(il, :, :)
-              gcp => globalCell(il, :, :)
-           case (jMin)
-              ibp => iblank(:, 2, :)
-              gcp => globalCell(:, 2, :)
-           case (jMax)
-              ibp => iblank(:, jl, :)
-              gcp => globalCell(:, jl, :)
-           case (kMin)
-              ibp => iblank(:, :, 2)
-              gcp => globalCell(:, :, 2)
-           case (kMax)
-              ibp => iblank(:, :, kl)
-              gcp => globalCell(:, :, kl)
-           end select
-
-           ! -------------------------------------------------
-           ! Step 2: Bow-tie elimination: Elimiate cells
-           ! that touch only at a corner.
-           ! -------------------------------------------------
-
-           ! Make bounds a little easier to read. Owned cells only
-           ! from now on.
-           jBeg = BCData(mm)%jnBeg+1 ; jEnd = BCData(mm)%jnEnd
-           iBeg = BCData(mm)%inBeg+1 ; iEnd = BCData(mm)%inEnd
-
-           ! Allocate two tmporary auxilary arrays 'eN'->
-           ! edgeNeighbours and 'cN'-> cornerNeighbous. For every
-           ! comute determine the number of compute neighbours
-           ! connected along edges and at corners
-           allocate(nE(iBeg:iEnd, jBeg:jEnd), nC(iBeg:iEnd, jBeg:jEnd))!, &
-           !toFlip(iBeg:iEnd, jBeg:jEnd))
-
-           call findBowTies()
-
-           do j=jBeg, jEnd
-              do i=iBeg, iEnd
-                 if (BCData(mm)%iBlank(i, j) > 0 .and. nC(i,j) >=1 .and. nE(i,j) <2) then
-                    BCData(mm)%iBlank(i, j) = 0
-                 end if
+              ! Allocate two tmporary auxilary arrays 'eN'->
+              ! edgeNeighbours and 'cN'-> cornerNeighbous. For every
+              ! comute determine the number of compute neighbours
+              ! connected along edges and at corners
+              allocate(nE(iBeg:iEnd, jBeg:jEnd), nC(iBeg:iEnd, jBeg:jEnd))!, &
+              
+              call findBowTies()
+              
+              do j=jBeg, jEnd
+                 do i=iBeg, iEnd
+                    if (BCData(mm)%iBlank(i, j) > 0 .and. nC(i,j) >=1 .and. nE(i,j) <=E) then
+                       BCData(mm)%iBlank(i, j) = 0
+                    end if
+                 end do
               end do
-           end do
+              
+              deallocate(nC, nE)
+           end if wallType1
+        end do bocoLoop1
+     end do domainLoop1
 
-           deallocate(nC, nE)
-        end if wallType1
-     end do bocoLoop1
-  end do domainLoop1
-
-  ! Since we potentially changed iBlanks, we need to updated by
-  ! performing an exchange.
-  call exchangeSurfaceIBlanks(level, sps, commPatternCell_2nd, internalCell_2nd)
-
+     ! Since we potentially changed iBlanks, we need to updated by
+     ! performing an exchange.
+     call exchangeSurfaceIBlanks(level, sps, commPatternCell_2nd, internalCell_2nd)
+     
+  end do bowTieLoop
+     
   domainLoop2: do nn=1, nDom
      call setPointers(nn, level, sps)
 
