@@ -22,6 +22,16 @@ subroutine setIblankArray(level, sps)
               if (fringes(i, j, k)%isHole) then 
                  iBlank(i, j, k) = 0
               end if
+
+
+              if (fringes(i, j, k)%isFlooded) then 
+                 iBlank(i, j, k) = -2
+              end if
+
+              if (fringes(i, j, k)%isFloodSeed) then 
+                 iBlank(i, j, k) = -3
+              end if
+
            end do
         end do
      end do

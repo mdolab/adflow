@@ -73,6 +73,7 @@ FILES_TO_COMPLEXIFY = \
 		 mdUpdateRoutines.f90\
 		 metric.f90\
 		 preprocessing.f90\
+		 preprocessing2.f90\
 		 qsortHaloListType.f90\
 		 qsortIndHaloType.f90\
 		 qsortPeriodicSubfacesHaloType.f90\

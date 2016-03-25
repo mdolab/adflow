@@ -19,7 +19,7 @@ subroutine initializeOBlock(oBlock, nn)
   ! Working paramters
   integer(kind=intType) :: i, j, k, mm, nADT, nHexa, planeOffset
   integer(kind=intType) :: iStart, iEnd, jStart, jEnd, kStart, kEnd
-  real(kind=realType) :: factor, frac
+  real(kind=realType) :: factor, frac, exponent, wallEdge, avgEdge
   logical :: wallsPresent
 
   ! Set all the sizes for this block.
@@ -41,7 +41,7 @@ subroutine initializeOBlock(oBlock, nn)
   oBlock%nearWall = 0
   oBlock%invalidDonor = 0
 
-  kk = 29
+  kk = 40
   do mm=1,nBocos
      select case (BCFaceID(mm))
      case (iMin)
@@ -95,22 +95,45 @@ subroutine initializeOBlock(oBlock, nn)
 
   call flagForcedReceivers(oBlock%invalidDonor)
   
+  ! Add to the invalid donor list:
+  kk = 0
+  do k=1, ke
+     do j=1, je
+        do i=1, ie
+           if (iblank(i,j,k) == -2 .or. iblank(i,j,k)==-3 .or. iblank(i,j,k) == 0) then 
+              oBlock%invalidDonor(i,j,k) = 1
+              kk = kk + 1
+           end if
+        end do
+     end do
+  end do
+
   ! Copy Volume to qualDonor and do minVol while we're at it
   oBlock%minVol = Large
   mm = 0
-
+  exponent = third
   do k=1,ke
      do j=1,je
         do i=1,ie
            mm = mm + 1
            if (wallsPresent) then 
-              factor = .25
+
+              wallEdge = fourth*(&
+                   norm2(x(i-1, j-1, k-1, :) - x(i-1, j-1, k, :)) + &
+                   norm2(x(i  , j-1, k-1, :) - x(i  , j-1, k, :)) + &
+                   norm2(x(i-1, j  , k-1, :) - x(i-1, j  , k, :)) + &
+                   norm2(x(i  , j  , k-1, :) - x(i  , j  , k, :)))
+              
+              avgEdge = vol(i, j, k)**exponent
+              !oBlock%qualDonor(1, mm) = half*(avgEdge + wallEdge)
+              !oBlock%qualDonor(1, mm) = min(avgEdge, wallEdge)
+              oBlock%qualDonor(1, mm) = avgEdge
            else
-              factor = one
+              factor = 5.0
+              oBlock%qualDonor(1, mm) = (vol(i, j, k)*factor)**exponent
            end if
 
-           oBlock%qualDonor(1, mm) = vol(i, j, k)*factor
-           oBlock%minVol = min(oBlock%minVol, vol(i, j, k)*factor)
+           oBlock%minVol = min(oBlock%minVol,  oBlock%qualDonor(1, mm))
         end do
      end do
   end do

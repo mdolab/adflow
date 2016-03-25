@@ -11,7 +11,7 @@ subroutine floodInteriorCells(level, sps)
   integer(kind=intType) :: nn, i, j, k, nSeed, iSeed, ierr
   integer(kind=intType), dimension(:, :), allocatable :: stack, floodSeeds
   integer(kind=intType) :: nChanged, nChangedLocal, stackPointer, loopIter
-
+  logical :: tmpSave
   ! At this point iblank should not be meanginful since we actually
   ! still computing the interpolation. So we can hijack it for the
   ! integer comm here:
@@ -42,7 +42,7 @@ subroutine floodInteriorCells(level, sps)
 
         ! Also allocate space for our flood seeds. Make it big enough to
         ! include the first level halos. 
-        allocate(floodSeeds(3, ie*je*je))
+        allocate(floodSeeds(3, 6*ie*je*je))
 
         ! These are the seeds we have directly. We will only use these on the first iteration:
         nSeed = 0
@@ -113,6 +113,14 @@ subroutine floodInteriorCells(level, sps)
            ! we have
            stackPointer = 1
 
+           ! flag the seed points --- only on first pass
+           if (loopIter == 1) then 
+              i = stack(1, stackPointer)
+              j = stack(2, stackPointer)
+              k = stack(3, stackPointer)
+              fringes(i, j, k)%isFloodSeed = .True. 
+           end if
+
            ! Start the flooding (stacked based, not recursive)
            do while (stackPointer > 0 )
 
@@ -130,10 +138,13 @@ subroutine floodInteriorCells(level, sps)
                  nChangedLocal = nChangedLocal + 1
 
                  ! Pure compute cell, convert to hole
+                 tmpSave = fringes(i, j, k)%isFloodSeed
                  call emptyFringe(fringes(i, j, k))
                  fringes(i, j, k)%isHole = .True.
+                 fringes(i, j, k)%isFlooded = .True.
                  fringes(i, j, k)%isCompute = .False.
-
+                 fringes(i, j, k)%isFloodSeed = tmpSave
+            
                  ! Now add the six nearest neighbours to the stack
                  ! provided they are in the owned cell range:
 
@@ -174,7 +185,7 @@ subroutine floodInteriorCells(level, sps)
         deallocate(stack, floodSeeds)
      end do
 
-     ! Exchange "iblanks", which is really the changed info
+    ! Exchange "iblanks", which is really the changed info
      call exchangeIblanks(level, sps, commPatternCell_2nd, internalCell_2nd)
 
      ! Determine if cells got changd. If so do another loop.
@@ -189,6 +200,7 @@ subroutine floodInteriorCells(level, sps)
      if (nChanged == 0) then 
         exit parallelSyncLoop
      end if
+
      loopIter = loopIter + 1
 
   end do parallelSyncLoop

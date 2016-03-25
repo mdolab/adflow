@@ -33,7 +33,7 @@ subroutine makeGapBoundaryStrings(level, sps, clusters)
   type(oversetString), dimension(:), allocatable :: globalStrings
   type(oversetString) :: master
   type(oversetString), pointer :: fullStrings, strings, str
-  integer(kind=intType) :: nFullStrings, nALloc, nUnique
+  integer(kind=intType) :: nFullStrings, nALloc, nUnique, nSearch
   type(kdtree2_result), allocatable, dimension(:) :: results
   integer(kind=intType), allocatable, dimension(:) :: nearEdgeList
   logical :: checkLeft, checkRight, concave, positiveTriArea
@@ -361,7 +361,7 @@ subroutine makeGapBoundaryStrings(level, sps, clusters)
 
               ! Increment the conn we just received by the node offset:
               do i=iStart, iEnd
-                 globalStrings(c)%conn(:, i) = globalStrings(c)%conn(:, i) + nNodesProc(iProc-1)
+                 globalStrings(c)%conn(:, i) = globalStrings(c)%conn(:, i) + nNodesProc(iProc)
               end do
            end if
         end do
@@ -426,6 +426,7 @@ subroutine makeGapBoundaryStrings(level, sps, clusters)
      nNodes = 0 ! This is our running counter for offseting nodes
      ii = 0
      jj = 0
+
      do c=1, nClusters
         do i=1, globalStrings(c)%nNodes
            ii = ii + 1
@@ -450,6 +451,14 @@ subroutine makeGapBoundaryStrings(level, sps, clusters)
 
      ! We are now left with just the single "master" string. Create
      ! the node to element data structure for master.
+
+     master%myID = 99
+     open(unit=101, file="master.dat", form='formatted')
+     write(101,*) 'TITLE = "Gap Strings Data" '
+     write(101,*) 'Variables = "X", "Y", "Z", "Nx", "Ny", "Nz", "ind" "gapID" "gapIndex" "otherID" "otherIndex"'
+     call writeOversetString(master, 101)
+     close(101)
+
      call  createNodeToElem(master)
      
      ! The next step is to create ordered strings based on the
@@ -584,8 +593,8 @@ subroutine makeGapBoundaryStrings(level, sps, clusters)
         nodeLoop:do j=1, str%nNodes
 
            ! Reinitialize initial maximum number of neighbours
-           nAlloc = 50
-
+           nSearch = 50
+           
            ! Set the elements to not check, the two right next to me
            eBlank(1:2) = 0
            do jj=1, master%nte(1, str%pNodes(j))
@@ -648,7 +657,7 @@ subroutine makeGapBoundaryStrings(level, sps, clusters)
            outerLoop: do
               minDist = large
               kk = 0
-              call kdtree2_n_nearest(master%tree, xj, nAlloc, results)
+              call kdtree2_n_nearest(master%tree, xj, nSearch, results)
               
               ! Add the edges connected to the closest 50 nodes
               do k=1, 50
@@ -659,7 +668,7 @@ subroutine makeGapBoundaryStrings(level, sps, clusters)
                  end do
               end do
              
-              innerLoop: do k=1, nAlloc
+              innerLoop: do k=1, nSearch
 
                  ! Since we know the results are sorted, if the
                  ! distance(k) > than our current minDist, we can stop
@@ -765,11 +774,18 @@ subroutine makeGapBoundaryStrings(level, sps, clusters)
                  end if
               end do innerLoop
 
+              ! If we have already searched the max, we have to quit the loop
+              if (nSearch == master%Nnodes) then 
+                 exit outerLoop
+              end if
+
               ! We are not 100% sure that we found the minium
               ! yet. Make nAlloc twice as big and start over. 
-              nAlloc = nAlloc * 2
-              if (nAlloc > size(results)) then 
+              nSearch = nSearch * 2
+              nSearch = min(nSearch, master%nNodes)
+              if (nSearch > nAlloc) then 
                  deallocate(results)
+                 nAlloc = nAlloc*2
                  allocate(results(nAlloc))
               end if
 

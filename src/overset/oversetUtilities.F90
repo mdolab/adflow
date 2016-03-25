@@ -25,6 +25,8 @@ subroutine emptyFringe(fringe)
   fringe%isCompute = .True.
   fringe%isWall = .False.
   fringe%isWallDonor = .False.
+  fringe%isFloodSeed = .False.
+  fringe%isFlooded = .False.
 end subroutine emptyFringe
 
 subroutine printOverlapMatrix(overlap)

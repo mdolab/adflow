@@ -93,7 +93,7 @@ subroutine surfaceCorrection(oBlock, oFringe, bWall, fWall, offset, n)
            ! We are pretty generours with the distance check. This is
            ! essentially anything within about 500 y+. 
 
-           if (ratio > 1/500_realType .and. ratio < 500_realType) then
+           if (ratio > 1/1000_realType .and. ratio < 1000_realType) then
 
               ! Now compute the locations on the quad of each
               ! projection

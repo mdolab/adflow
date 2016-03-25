@@ -7,6 +7,7 @@ subroutine initializeFringes(oFringe, nn, level, sps)
   use blockPointers
   use overset
   use BCTypes
+  use stencils
   implicit none
   
   ! Input Params
@@ -14,10 +15,11 @@ subroutine initializeFringes(oFringe, nn, level, sps)
   integer(kind=intType), intent(in) :: nn, level, sps
 
   ! Working Params
-  integer(kind=intTYpe) :: i, j, k, mm, iDim, ii
+  integer(kind=intTYpe) :: i, j, k, mm, iDim, ii, jj, kk, iii, jjj
   integer(kind=intTYpe) :: iStart, iEnd, jStart, jEnd, kStart, kEnd
-  real(kind=realType) :: factor, frac
+  real(kind=realType) :: factor, frac, exponent, avgEdge, wallEdge
   logical :: wallsPresent, isWallType
+  integer(kind=intType) :: i_stencil
   integer(kind=intType), dimension(:, :, :), allocatable :: tmp
   ! Allocate space for the double halo fringes. 
   if (.not. associated(flowDoms(nn, level, sps)%fringes)) then 
@@ -81,6 +83,7 @@ subroutine initializeFringes(oFringe, nn, level, sps)
   ! Now loop over the actual compute cells, setting the cell center
   ! value 'x', the volume and flag these cells as compute
   ii = 0
+  exponent = third
   do k=2, kl
      do j=2, jl
         do i=2, il
@@ -100,13 +103,24 @@ subroutine initializeFringes(oFringe, nn, level, sps)
            end do
 
            if (wallsPresent) then 
-              factor = .25
+
+              wallEdge = fourth*(&
+                   norm2(x(i-1, j-1, k-1, :) - x(i-1, j-1, k, :)) + &
+                   norm2(x(i  , j-1, k-1, :) - x(i  , j-1, k, :)) + &
+                   norm2(x(i-1, j  , k-1, :) - x(i-1, j  , k, :)) + &
+                   norm2(x(i  , j  , k-1, :) - x(i  , j  , k, :)))
+
+              avgEdge = vol(i, j, k)**exponent
+              
+              !fringes(i, j, k)%quality = half*(avgEdge + wallEdge)
+              !fringes(i, j, k)%quality = min(avgEdge, wallEdge)
+              fringes(i, j, k)%quality = avgEdge
            else
-              factor = one
+              factor = 5.0
+              fringes(i, j, k)%quality = (factor*vol(i, j, k))**exponent
            end if
 
-           fringes(i, j, k)%quality = factor*vol(i, j, k)
-           oFringe%quality(ii) = factor*vol(i, j, k)
+           oFringe%quality(ii) = fringes(i, j, k)%quality
            oFringe%myIndex(ii) = ii
         end do
      end do
@@ -129,10 +143,40 @@ subroutine initializeFringes(oFringe, nn, level, sps)
               ii = (k-2)*nx*ny + (j-2)*nx + (i-2) + 1
               oFringe%quality(ii) = large
            end if
+
         end do
      end do
   end do
   deallocate(tmp)
+
+
+  jjj = 0
+  do k=0, kb
+     do j=0, jb
+        do i=0, ib
+           if (iBlank(i,j,k) == -2 .or. iblank(i,j,k)==-3 .or. iblank(i,j,k)==0) then 
+              ! Any cell in this cell's stencil 
+              
+              stencilLoop: do i_stencil=1, N_visc_drdw
+                 ii = visc_drdw_stencil(i_stencil, 1) + i
+                 jj = visc_drdw_stencil(i_stencil, 2) + j
+                 kk = visc_drdw_stencil(i_stencil, 3) + k
+
+                 ! Make sure we're on-block
+                 if (ii >=2 .and. ii <= il .and. jj >= 2 .and. jj<= jl .and. &
+                      kk >=2 .and. kk <= kl) then 
+                    if (iblank(ii, jj, kk) == 1) then 
+                       iii = (kk-2)*nx*ny + (jj-2)*nx + (ii-2) + 1
+                       oFringe%quality(iii) = large
+                       fringes(ii, jj, kk)%quality = large
+                       jjj = jjj + 1
+                    end if
+                 end if
+              end do stencilLoop
+           end if
+        end do
+     end do
+  end do
 
   ! We also need to flag a single layer of cells next a wall
   ! boundary condition as being "isWall". Knowing the fringes
