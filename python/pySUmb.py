@@ -2217,6 +2217,13 @@ class SUMB(AeroSolver):
         chordRef = AP.chordRef
         liftIndex = self.getOption('liftIndex')
 
+        if (AP.T is None or AP.P is None or AP.rho is None or 
+            AP.V is None or AP.mu is None):
+            raise Error("Insufficient information is given in the "
+                        "aeroProblem to determine physical state. "
+                        "See AeroProblem documentation for how to "
+                        "specify complete aerodynamic states.")
+
         if self.dtype == 'd':
             mach = numpy.real(mach)
 
@@ -2290,12 +2297,6 @@ class SUMB(AeroSolver):
             else:
                 # Steady, unsteady
                 machGrid = 0.0
-
-        if T is None or P is None or rho is None or V is None or mu is None:
-            raise Error("Insufficient information is given in the "
-                        "aeroProblem to determine physical state. "
-                        "See AeroProblem documentation for how to "
-                        "specify complete aerodynamic states.")
 
         # 1. Angle of attack:
         dToR = numpy.pi/180.0
