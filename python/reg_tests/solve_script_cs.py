@@ -825,6 +825,7 @@ def test6():
                      altitude=10000.0, areaRef=45.5, chordRef=3.25, evalFuncs=['cl','cmz','drag'])
     
     ap.addDV('alpha')
+    ap.addDV('mach')
     CFDSolver = SUMB(options=aeroOptions)
     if 'complex' in sys.argv:
         DVGeo = DVGeometry('../inputFiles/mdo_tutorial_ffd.fmt', complex=True)
@@ -884,17 +885,26 @@ def test6():
             reg_write(funcsSens['mdo_tutorial_cl']['shape'][0][13], 1e-10,1e-10)
             reg_write(funcsSens['mdo_tutorial_cmz']['shape'][0][13], 1e-10,1e-10)
             reg_write(funcsSens['mdo_tutorial_drag']['shape'][0][13], 1e-10,1e-10)
+
+            print ('mach Derivatives:')
+            reg_write(funcsSens['mdo_tutorial_cl']['mach_mdo_tutorial'], 1e-10,1e-10)
+            reg_write(funcsSens['mdo_tutorial_cmz']['mach_mdo_tutorial'], 1e-10,1e-10)
+            reg_write(funcsSens['mdo_tutorial_drag']['mach_mdo_tutorial'], 1e-10,1e-10)
+
     else:
         # For the complex....we just do successive perturbation
-        for ii in range(3):
-            xRef = {'twist':[0.0, 0.0], 'span':[0.0], 'shape':numpy.zeros(72, dtype='D')}
+        for ii in range(4):
+            xRef = {'twist':[0.0, 0.0], 'span':[0.0], 'shape':numpy.zeros(72, dtype='D'), 'mach_mdo_tutorial':0.8}
             if ii == 0:
                 xRef['twist'][0] += h*1j
             elif ii == 1:      
                 xRef['span'][0] += h*1j
-            else:
+            elif ii == 2:
                 xRef['shape'][13] += h*1j
+            else:
+                xRef['mach_mdo_tutorial']+=h*1j
 
+            ap.setDesignVars(xRef)
             CFDSolver.resetFlow(ap)
             DVGeo.setDesignVars(xRef)
             CFDSolver(ap, writeSolution=False)
@@ -913,6 +923,8 @@ def test6():
                     print ('Span Derivatives:')
                 elif ii == 2:
                     print ('shape[13] Derivatives:')
+                elif ii == 3:
+                    print ('mach Derivatives:')
 
                 for key in ['cl','cmz','drag']:
                     deriv = numpy.imag(funcs['mdo_tutorial_%s'%key])/h
