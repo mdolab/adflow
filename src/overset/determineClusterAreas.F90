@@ -20,10 +20,16 @@ subroutine determineClusterAreas(clusters, N, totalClusters)
   integer(kind=intType), intent(in) :: N, totalClusters
 
   ! Working
-  integer(kind=intType) :: i, j, mm, nn, clusterID, ierr
+  integer(kind=intType) :: i, j, mm, nn, clusterID, ierr, nPts, nCells
+  integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, ii
+  integer(kind=intType) :: lower_left, lower_right, upper_left, upper_right
   real(kind=realType), dimension(:), allocatable :: localAreas
   integer(kind=intType), dimension(:), allocatable :: localCount, globalCount
-  real(kind=realType), dimension(:, :, :), pointer :: ssi
+  real(kind=realType), dimension(:, :), allocatable :: pts
+  real(kind=realType) :: fact , v1(3), v2(3), sss(3), da
+
+  logical :: isWallType
+
   if (allocated(clusterAreas)) then 
      ! We only ever do this once!
      return
@@ -35,43 +41,56 @@ subroutine determineClusterAreas(clusters, N, totalClusters)
   localAreas = zero
   localCount = 0
 
-  do nn=1, nDom
-     call setPointers(nn, 1_intType, 1_intType)
-     clusterID = clusters(cumDomProc(myid) + nn)
-     do mm=1, nBocos
+  call getForceSize(nPts, nCells)
+  allocate(pts(3, nPts))
+  call getForcePoints(pts, nPts, 1_intType)
 
-        if (BCType(mm) == EulerWall .or. BCType(mm) == NSWallAdiabatic .or. &
-             BCType(mm) == NSWallIsoThermal) then 
+  ii = 0 
+  domains: do nn=1,nDom
+     call setPointers(nn, 1_intType, 1_intType)
+
+     clusterID = clusters(cumDomProc(myid) + nn)
+
+     ! Loop over the number of boundary subfaces of this block.
+     bocos: do mm=1,nBocos
+        if( isWalltype(BCType(mm))) then            
+              
+           ! Store the cell range of the subfaces a bit easier.
+           ! As only owned faces must be considered the nodal range
+           ! in BCData must be used to obtain this data.
            
-           select case (BCFaceID(mm))
-           case (iMin)
-              ssi => si(1,:,:,:)
-           case (iMax)
-              ssi => si(il,:,:,:)
-           case (jMin)
-              ssi => sj(:,1,:,:)
-           case (jMax)
-              ssi => sj(:,jl,:,:)
-           case (kMin)
-              ssi => sk(:,:,1,:)
-           case (kMax)
-              ssi => sk(:,:,kl,:)
-           end select
+           jBeg = BCData(mm)%jnBeg + 1; jEnd = BCData(mm)%jnEnd
+           iBeg = BCData(mm)%inBeg + 1; iEnd = BCData(mm)%inEnd
            
-           ! Loop over the owned cells
-           do j = BCData(mm)%jnBeg+1, BCData(mm)%jnEnd
-              do i = BCData(mm)%inBeg+1, BCData(mm)%inEnd
-                 ! No need to check for orientation since we just need
-                 ! the area.
+           ! Compute the dual area at each node. Just store in first dof
+           do j=jBeg, jEnd ! This is a face loop
+              do i=iBeg, iEnd ! This is a face loop 
                  
-                 localAreas(clusterID) = localAreas(clusterID) + &
-                      sqrt(ssi(i, j, 1)**2 + ssi(i, j, 2)**2 + ssi(i, j, 3)**2)
+                 ! Compute Normal
+                 lower_left  = ii + (j-jBeg)*(iEnd-iBeg+2) + i-iBeg + 1
+                 lower_right = lower_left + 1
+                 upper_left  = lower_right + iend - ibeg + 1
+                 upper_right = upper_left + 1
+
+                 v1(:) = pts(:, upper_right) -   pts(:, lower_left)
+                 v2(:) = pts(:, upper_left) -  pts(:, lower_right)
+
+                 ! Cross Product
+                 call cross_prod(v1, v2, sss)
+                 da = fourth*(sss(1)**2 + sss(2)**2 + sss(3)**2)
+                 localAreas(clusterID) = localAreas(clusterID) + da
                  localCount(clusterID) = localCount(clusterID) + 1
               end do
            end do
+           
+           ! Note how iBeg,iBeg is defined above... it is one MORE
+           ! then the starting node (used for looping over faces, not
+           ! nodes)
+           ii = ii + (jEnd-jBeg+2)*(iEnd-iBeg+2)
+           
         end if
-     end do
-  end do
+     end do bocos
+  end do domains
 
   ! All reduce sum for the localAreas to get clusterAreas and
   ! localCount to get globalCount

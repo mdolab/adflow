@@ -262,6 +262,9 @@ subroutine createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
   ! Step 2: Identify gap boundary strings and split the strings to 
   !         sub-strings.
   ! -------------------------------------------------------------------
+  ! Debugging
+  call writeWalls(oWalls, size(oWalls))
+
   call makeGapBoundaryStrings(level, sps, clusters)
 
   call mpi_barrier(sumb_comm_world, ierr)
@@ -269,25 +272,6 @@ subroutine createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
      print *,'Time:', mpi_wtime()-timeA
   end if
 
-  ! Debugging
-  call writeWalls(oWalls, size(oWalls))
-
-  !   ! -------------------------------------------------------------------
-  !   ! Step 3: Perform gap string splitting.
-  !   ! -------------------------------------------------------------------
-  !   !
-  !   ! Currently string splitting is done inside makeGapBoundaryStrings!!
-  !   !call splitGapBoundaryStrings(level, sps)
-
-  !   ! -------------------------------------------------------------------
-  !   ! Step 4: Perform triangulation of gaps between quad cells
-  !   !         This is the last step of zipping the gaps with zipper
-  !   !         triangle mesh elements.
-  !   ! -------------------------------------------------------------------
-  !   call wallTriangulate(level, sps, overlap)
-
-  !   ! Write out wall surface data (unstructured format)
-  !   call writeSurfMeshBlock
 
   deallocate(clusters)
 

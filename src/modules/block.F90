@@ -209,8 +209,14 @@ module block
     ! The status of this cell as a hole
     logical :: isHole
 
-    ! The status of this cell as a comput cell
+    ! The status of this cell as a compute cell
     logical :: isCompute
+
+    ! The status of this cell as a flood seed point
+    logical :: isFloodSeed
+
+    ! The status of this cell as a flooeded hole
+    logical :: isFlooded
 
     ! Flag specifying if this cell is next to a wall
     logical :: isWall
