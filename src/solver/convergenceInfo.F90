@@ -563,8 +563,10 @@ subroutine convergenceInfo
 
            ! If we made it to ncycles, check to see if we're
            ! "close" to being converged. 
-           do sps = 1,nTimeIntervalsSpectral
+           do sps = 1,nTimeIntervalsSpectral         
               if (totalR < maxL2DeviationFactor * totalR0 * L2ConvThisLevel) then 
+                 routineFailed = .False.
+              else
                  routineFailed = .True.
               end if
            enddo
