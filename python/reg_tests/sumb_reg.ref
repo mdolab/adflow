@@ -7287,7 +7287,7 @@ Dictionary Key: mdo_tutorial_cd
 Dictionary Key: alpha_mdo_tutorial
 @value 0.002208433525026059 1e-10 1e-10
 Dictionary Key: mach_mdo_tutorial
-@value -0.02229961554023551 1e-10 1e-10
+@value -0.006664618813524457 1e-10 1e-10
 Dictionary Key: shape
 @value 0.000458672675112196 1e-10 1e-10
 @value 0.002335493640365277 1e-10 1e-10
@@ -7372,7 +7372,7 @@ Dictionary Key: mdo_tutorial_lift
 Dictionary Key: alpha_mdo_tutorial
 @value    88.30362300005507 1e-10 1e-10
 Dictionary Key: mach_mdo_tutorial
-@value    1074.341628447222 1e-10 1e-10
+@value    471.2174552282547 1e-10 1e-10
 Dictionary Key: shape
 @value    14.22889071879749 1e-10 1e-10
 @value    4.664936036380448 1e-10 1e-10
