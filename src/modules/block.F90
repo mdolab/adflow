@@ -188,7 +188,7 @@ module block
     real(kind=realType), dimension(3) :: x
 
     ! qualaity is the best quality that has been found from a
-    ! DONOR cell. It is initialized to large. 
+    ! DONOR cell. It is initialized to a 'large' value.
     real(kind=realType) :: quality
 
     ! This is the information regarding where the cell came from. 
@@ -203,6 +203,12 @@ module block
     ! these for forming the PC for the Newton Krylov solver
     integer(kind=intType), dimension(8) :: gInd
     
+    ! Status integer: This stores the following status information:
+    ! isDonor, isHold, isCompute, isFloodSeed, isFlooded, isWall and
+    ! is wallDonor. 
+
+    integer(kind=intType) :: status
+
     ! The status of this cell as a donor
     logical :: isDonor
 
@@ -366,6 +372,9 @@ module block
 
      integer(kind=intType), dimension(:,:,:), pointer :: iblank
      type(fringeType) , dimension(:, :, :), pointer :: fringes
+     integer(kind=intType), dimension(:, :), pointer :: orphans
+     integer(kind=intType) :: nOrphans
+
      !
      !        ****************************************************************
      !        *                                                              *

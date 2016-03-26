@@ -70,7 +70,9 @@ subroutine oversetComm(level, firstTime, coarseLevel)
   if (.not. oversetPresent()) then 
      do sps=1,nTimeIntervalsSpectral
         call emptyOversetComm(level, sps)
+
         do nn=1, nDom
+           flowDoms(nn,level,sps)%nOrphans = 0
            if (.not. associated(flowDoms(nn,level,sps)%iblank)) then
               i = flowDoms(nn,level,sps)%ib
               j = flowDoms(nn,level,sps)%jb
