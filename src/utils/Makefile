@@ -54,6 +54,7 @@ FILES_TO_COMPLEXIFY =  \
 	       nullifyCGNSDomPointers.f90\
 	       nullifyFlowDomPointers.f90\
 	       pointReduce.F90\
+	       orphanAverage.f90\
 	       qsortIntegers.f90\
 	       qsortReals.f90\
 	       qsortStrings.f90\
