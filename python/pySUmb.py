@@ -655,6 +655,12 @@ class SUMB(AeroSolver):
             solver can suppress all I/O during intermediate solves.
             """
         
+        # Make sure the user isn't trying to solve a slave
+        # aeroproblem. Cannot do that
+        if hasattr(aeroProblem, 'isSlave'):
+            if aeroProblem.isSlave:
+                raise Error('Cannot solve an aeroProblem created as a slave')
+
         # Get option about adjoint memory
         releaseAdjointMemory = kwargs.pop('relaseAdjointMemory', True)
 
@@ -2211,6 +2217,13 @@ class SUMB(AeroSolver):
         chordRef = AP.chordRef
         liftIndex = self.getOption('liftIndex')
 
+        if (AP.T is None or AP.P is None or AP.rho is None or 
+            AP.V is None or AP.mu is None):
+            raise Error("Insufficient information is given in the "
+                        "aeroProblem to determine physical state. "
+                        "See AeroProblem documentation for how to "
+                        "specify complete aerodynamic states.")
+
         if self.dtype == 'd':
             mach = numpy.real(mach)
 
@@ -2284,12 +2297,6 @@ class SUMB(AeroSolver):
             else:
                 # Steady, unsteady
                 machGrid = 0.0
-
-        if T is None or P is None or rho is None or V is None or mu is None:
-            raise Error("Insufficient information is given in the "
-                        "aeroProblem to determine physical state. "
-                        "See AeroProblem documentation for how to "
-                        "specify complete aerodynamic states.")
 
         # 1. Angle of attack:
         dToR = numpy.pi/180.0
@@ -3503,6 +3510,7 @@ class SUMB(AeroSolver):
             'turbulencemodel':[str, 'sa'],
             'turbulenceorder':[str, 'first order'],
             'turbresscale':[object, None],
+            'eddyvisinfratio':[float, .009],
             'usewallfunctions':[bool, False],
             'useapproxwalldistance':[bool, True],
             'walltreatment':[str, 'linear pressure extrapolation'],
@@ -3722,6 +3730,7 @@ class SUMB(AeroSolver):
                                'second order':2,
                                'location':'inputdiscretization.orderturb'},
             'turbresscale':{'location':'inputiteration.turbresscale'},
+            'eddyvisinfratio':{'location':'inputphysics.eddyvisinfratio'},
             'usewallfunctions':{'location':'inputphysics.wallfunctions'},
             'useapproxwalldistance':{'location':'inputdiscretization.useapproxwalldistance'},
                     'reynoldsnumber':{'location':'inputphysics.reynolds'},
@@ -4079,6 +4088,18 @@ class SUMB(AeroSolver):
         self.sumb.inputio.slicesolfile[:] = ''
         self.sumb.inputio.slicesolfile[0:len(sliceFileName)] = sliceFileName
 
+
+    def createSlaveAeroProblem(self, master):
+        """Create a slave aeroproblem"""
+
+        # Make sure everything is created for the master
+        self.setAeroProblem(master)
+
+        slave = copy.deepcopy(master)
+        slave.sumbData = master.sumbData
+        slave.surfMesh = master.surfMesh
+        slave.isSlave = True
+        return slave
 
 class sumbFlowCase(object):
     """
