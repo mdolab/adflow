@@ -98,14 +98,8 @@ python module libsumb
        subroutine preprocessing2 ! in :sumb:../../preprocessing/preprocessing.f90
        end subroutine preprocessing2
 
-       subroutine preprocessingpart2 ! in :sumb:../../preprocessing/preprocessing.f90
-       end subroutine preprocessingpart2
-     
        subroutine initflow ! in :sumb:../../initFlow/initFlow.f90
        end subroutine initflow
-
-       subroutine initflowpart2 ! in :sumb:../../initFlow/initFlow.f90
-       end subroutine initflowpart2
 
        subroutine updategamma
        end subroutine updategamma
