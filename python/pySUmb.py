@@ -109,9 +109,9 @@ class SUMB(AeroSolver):
             for key in options.keys():
                 options[key.lower()] = options.pop(key)
         else:
-            raise Error("The 'options' keyword argument must be passed "
+            raise Error("The 'options' keyword argument must be passed to"
                         "sumb. The options dictionary must contain (at least) "
-                        "the gridFile entry for the grid")
+                        "the gridFile entry for the grid.")
 
         # Load all the option/objective/DV information:
         defOpts = self._getDefOptions()
@@ -224,8 +224,8 @@ class SUMB(AeroSolver):
         self.sumb.partitionandreadgrid(False)
         self.sumb.preprocessing()
         self.sumb.initflow()
-        self.sumb.preprocessingpart2()
-        self.sumb.initflowpart2()
+        # self.sumb.preprocessingpart2()
+        # self.sumb.initflowpart2()
         self.sumb.preprocessingadjoint()
 
     def setMesh(self, mesh, groupName='all'):

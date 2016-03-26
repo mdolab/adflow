@@ -63,7 +63,7 @@ subroutine statePreAllocation(onProc, offProc, wSize, stencil, N_stencil, &
   ! spectral instances. The "on" spectral instances are accounted for
   ! in the stencil  
   onProc(:) = nTimeIntervalsSpectral-1
-
+  offProc(:) = 0
   ! Determine the range of onProc in dRdwT
   iRowStart = flowDoms(1, 1, 1)%globalCell(2,2,2)
   call setPointers(nDom, 1, nTimeIntervalsSpectral)
