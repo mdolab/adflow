@@ -32,6 +32,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   use NKSolverVars, only : diag
   use communication
   use adjointVars
+  use turbMod
   implicit none
 #define PETSC_AVOID_MPIF_H
 
@@ -64,11 +65,11 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   real(kind=realType), dimension(:,:), allocatable :: blk
 #endif
   integer(kind=intType) :: liftIndex
-  integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, mm, cols(8), nCol
-  logical :: resetToRANS
-  real(kind=realType) :: weights(8)
-  
-    ! Setup number of state variable based on turbulence assumption
+  integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, mm, colInd
+  logical :: resetToRANS, secondOrdSave
+  real :: val
+
+  ! Setup number of state variable based on turbulence assumption
   if ( frozenTurb ) then
      nState = nwf
   else
@@ -140,6 +141,8 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
 
      ! Very important to use only Second-Order dissipation for PC 
      lumpedDiss=.True.
+     secondOrdSave = secondOrd
+     secondOrd = .False.
   else
      if (viscous) then
         stencil => visc_drdw_stencil
@@ -441,6 +444,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   !Return dissipation Parameters to normal -> VERY VERY IMPORTANT
   if (usePC) then
      lumpedDiss = .False.
+     secondOrd = secondOrdSave
   end if
 
   ! Reset the correct equation parameters if we were useing the frozen
