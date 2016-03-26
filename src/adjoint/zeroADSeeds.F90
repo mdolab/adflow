@@ -81,7 +81,7 @@ subroutine zeroADSeeds(nn, level, sps)
      flowDomsd(nn,1,sps)%bvtk2 = zero
   end if
 
-  viscbocoLoop: do mm=1,nviscBocos
+  viscbocoLoop: do mm=1,flowDoms(nn, level, sps)%nViscBocos
      flowDomsd(nn, level, sps)%viscSubface(mm)%tau = zero 
      flowDomsd(nn, level, sps)%viscSubface(mm)%q = zero
   end do viscbocoLoop
