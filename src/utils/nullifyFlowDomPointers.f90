@@ -64,6 +64,7 @@
 
        nullify(flowDoms(nn,level,sps)%iblank)
        nullify(flowDoms(nn,level,sps)%fringes)
+       nullify(flowDoms(nn,level,sps)%orphans)
 
        nullify(flowDoms(nn,level,sps)%BCData)
        nullify(flowDoms(nn,level,sps)%viscSubface)

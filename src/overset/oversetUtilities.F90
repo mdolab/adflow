@@ -786,3 +786,241 @@ function isWallType(bType)
   end if
 
 end function isWallType
+
+! Utility function for unpacking/accessing the status variable
+
+! function setIsDonor(i, flag)
+!   use precision
+!   implicit none
+!   logical :: isDonor
+!   tmp = isDonor(i)
+!   if (tmp == flag) then 
+!      ! Same nothing to do
+!      return
+!   else if (tmp .and. .not. flag) 
+!      ! Current value is true, make it false
+!      i = i - DONOR_ID
+!   else if(.not. tmp .and. flag) 
+!      ! Current value is false, make it true
+!      i = i + DONOR_ID
+!   end if
+! end function setIsDonor
+
+! function isDonor(i)
+!   use precision
+!   implicit none
+!   logical :: isDonor, flag, tmp
+!   integer(kind=intType), intent(inout) :: i
+!   if (mod(i, 2**(DONOR_ID+1)) == 0) then 
+!      isDonor = .False.
+!   else
+!      isDonor = .True. 
+!   end if
+! end function isDonor
+
+
+! function setIsHole(i, flag)
+!   use precision
+!   implicit none
+!   logical :: isHole, flag, tmp
+!   tmp = isHole(i)
+!   if (tmp == flag) then 
+!      ! Same nothing to do
+!      return
+!   else if (tmp .and. .not. flag) 
+!      ! Current value is true, make it false
+!      i = i - HOLE_ID
+!   else if(.not. tmp .and. flag) 
+!      ! Current value is false, make it true
+!      i = i + HOLE_ID
+!   end if
+! end function setIsHole
+
+function isDonor(i)
+  use precision
+  implicit none
+  logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor
+  integer(kind=intType), intent(in) :: i
+  call getStatus(i, isDonor, isDonor, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor)
+end function isDonor
+
+function isHole(i)
+  use precision
+  implicit none
+  logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor
+  integer(kind=intType), intent(in) :: i
+  call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor)
+end function isHole
+
+function isCompute(i)
+  use precision
+  implicit none
+  logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor
+  integer(kind=intType), intent(in) :: i
+  call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor)
+end function isCompute
+
+function isFloodSeed(i)
+  use precision
+  implicit none
+  logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor
+  integer(kind=intType), intent(in) :: i
+  call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor)
+end function isFloodSeed
+
+function isFlooded(i)
+  use precision
+  implicit none
+  logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor
+  integer(kind=intType), intent(in) :: i
+  call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor)
+end function isFlooded
+
+function isWall(i)
+  use precision
+  implicit none
+  logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor
+  integer(kind=intType), intent(in) :: i
+  call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor)
+end function isWall
+
+function isWallDonor(i)
+  use precision
+  implicit none
+  logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor
+  integer(kind=intType), intent(in) :: i
+  call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor)
+end function isWallDonor
+
+subroutine setIsDonor(i, flag)
+  use precision
+  implicit none
+  integer(kind=intType), intent(inout) :: i
+  logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, flag
+  call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor)
+  call setStatus(i, flag   , isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor)
+end subroutine setIsDonor
+
+subroutine setIsHole(i, flag)
+  use precision
+  implicit none
+  integer(kind=intType), intent(inout) :: i
+  logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, flag
+  call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor)
+  call setStatus(i, isDonor, flag  , isCompute, isFloodSeed, isFlooded, isWall, isWallDonor)
+end subroutine setIsHole
+
+subroutine setIsCompute(i, flag)
+  use precision
+  implicit none
+  integer(kind=intType), intent(inout) :: i
+  logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, flag
+  call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor)
+  call setStatus(i, isDonor, isHole, flag     , isFloodSeed, isFlooded, isWall, isWallDonor)
+end subroutine setIsCompute
+
+subroutine setIsFloodSeed(i, flag)
+  use precision
+  implicit none
+  integer(kind=intType), intent(inout) :: i
+  logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, flag
+  call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor)
+  call setStatus(i, isDonor, isHole, isCompute, flag       , isFlooded, isWall, isWallDonor)
+end subroutine setIsFloodSeed
+
+subroutine setIsFlooded(i, flag)
+  use precision
+  implicit none
+  integer(kind=intType), intent(inout) :: i
+  logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, flag
+  call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor)
+  call setStatus(i, isDonor, isHole, isCompute, isFloodSeed, flag     , isWall, isWallDonor)
+end subroutine setIsFlooded
+
+subroutine setIsWall(i, flag)
+  use precision
+  implicit none
+  integer(kind=intType), intent(inout) :: i
+  logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, flag
+  call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor)
+  call setStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, flag  , isWallDonor)
+end subroutine setIsWall
+
+subroutine setIsWallDonor(i, flag)
+  use precision
+  implicit none
+  integer(kind=intType), intent(inout) :: i
+  logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor, flag
+  call getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor)
+  call setStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, flag)
+end subroutine setIsWallDonor
+
+subroutine setStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor)
+
+  use precision
+  implicit none
+  integer(kind=intType), intent(out) :: i
+  logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor
+  i = 0
+
+  if (isDonor  )   i = i + 1
+  if (isHole   )   i = i + 2
+  if (isCompute)   i = i + 4
+  if (isFloodSeed) i = i + 8
+  if (isFlooded  ) i = i + 16
+  if (isWall     ) i = i + 32
+  if (isWallDonor) i = i + 64
+
+end subroutine setStatus
+
+subroutine getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor)
+  
+  use precision
+  implicit none
+  logical :: isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall, isWallDonor
+  integer(kind=intType) :: i, j
+  j = i
+
+  isDonor = .False.
+  isHole = .False.
+  isCompute = .False.
+  isFloodSeed = .False.
+  isFlooded = .False.
+  isWall = .False.
+  isWallDonor = .False.
+
+  if (j/64 > 0) then 
+     isWallDonor = .True. 
+     j = j - 64
+  end if
+
+  if (j/32 > 0) then 
+     isWall = .True. 
+     j = j - 32
+  end if
+
+  if (j/16 > 0) then 
+     isFlooded = .True. 
+     j = j - 16
+  end if
+
+  if (j/8 > 0) then 
+     isFloodSeed = .True. 
+     j = j - 8
+  end if
+
+  if (j/4 > 0) then 
+     isFloodSeed = .True. 
+     j = j - 4
+  end if
+
+  if (j/2 > 0) then 
+     isCompute = .True. 
+     j = j - 2
+  end if
+
+  if (j/1 > 0) then 
+     isDonor = .True. 
+     j = j - 1
+  end if
+end subroutine getStatus

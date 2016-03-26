@@ -52,10 +52,10 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   ! Local variables.
   integer(kind=intType) :: ierr, nn, sps, sps2, i, j, k, l, ll, ii, jj, kk
   integer(kind=intType) :: nColor, iColor, jColor, irow, icol, fmDim, frow
-  integer(kind=intType) :: nTransfer, nState, tmp, icount
+  integer(kind=intType) :: nTransfer, nState, tmp, icount, cols(8), nCol
   integer(kind=intType) :: n_stencil, i_stencil, m
   integer(kind=intType), dimension(:, :), pointer :: stencil
-  real(kind=realType) :: delta_x, one_over_dx
+  real(kind=realType) :: delta_x, one_over_dx, weights(8)
 
 #ifdef USE_COMPLEX
   complex(kind=realType) :: alpha, beta, alphad, betad

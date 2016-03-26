@@ -90,6 +90,8 @@ module blockPointers
 
   integer(kind=intType), dimension(:,:,:), pointer :: iblank
   type(fringeType), dimension(:, :, :), pointer :: fringes
+  integer(kind=intType), dimension(:, :), pointer :: orphans
+  integer(kind=intType) :: nOrphans
 
   integer(kind=intType), dimension(:), pointer :: neighBlockOver
   integer(kind=intType), dimension(:), pointer :: neighProcOver
