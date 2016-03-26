@@ -41,7 +41,7 @@ subroutine initializeOBlock(oBlock, nn)
   oBlock%nearWall = 0
   oBlock%invalidDonor = 0
 
-  kk = 40
+  kk = 30
   do mm=1,nBocos
      select case (BCFaceID(mm))
      case (iMin)
@@ -129,7 +129,7 @@ subroutine initializeOBlock(oBlock, nn)
               !oBlock%qualDonor(1, mm) = min(avgEdge, wallEdge)
               oBlock%qualDonor(1, mm) = avgEdge
            else
-              factor = 5.0
+              factor = 1.0
               oBlock%qualDonor(1, mm) = (vol(i, j, k)*factor)**exponent
            end if
 

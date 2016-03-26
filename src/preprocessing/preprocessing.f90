@@ -219,6 +219,8 @@
          call setGlobalCellsAndNodes(level)
       enddo
 
+      ! BC Data must be alloaced (for surface iblank) before we can do
+      ! the overset computation.
       call allocMemBCData
 
       do level=1,nLevels
@@ -230,23 +232,9 @@
          end if
       end do
 
-       end subroutine preprocessing
-
-
-       subroutine preprocessingPart2
-
-         ! This routine computes the wallDistance. It needs to be run
-         ! AFTER initFLow so it is in it's own routine.
-
-         use block
-         implicit none
-         integer(kind=intType) :: level, nLevels
-
-         nLevels = ubound(flowDoms,2)
-
          do level=1,nLevels
             call wallDistance(level, .True.)
          end do
 
-       end subroutine preprocessingPart2
-         
+
+       end subroutine preprocessing

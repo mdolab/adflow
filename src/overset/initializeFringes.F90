@@ -116,7 +116,7 @@ subroutine initializeFringes(oFringe, nn, level, sps)
               !fringes(i, j, k)%quality = min(avgEdge, wallEdge)
               fringes(i, j, k)%quality = avgEdge
            else
-              factor = 5.0
+              factor = 1.0
               fringes(i, j, k)%quality = (factor*vol(i, j, k))**exponent
            end if
 
