@@ -7,7 +7,6 @@ subroutine emptyFringe(fringe)
   type(fringeType), intent(inout) :: fringe
 
   ! Initialize data in empty fringe
-  fringe%x = (/large, large, large/)
   fringe%quality = large
   fringe%donorProc = -1
   fringe%donorBlock = -1
@@ -20,13 +19,8 @@ subroutine emptyFringe(fringe)
   fringe%myK = -1
   fringe%donorFrac = -one
   fringe%gInd = -1
-  fringe%isDonor = .False.
-  fringe%isHole = .False.
-  fringe%isCompute = .True.
-  fringe%isWall = .False.
-  fringe%isWallDonor = .False.
-  fringe%isFloodSeed = .False.
-  fringe%isFlooded = .False.
+  fringe%status = 0
+  call setIsCompute(fringe%status, .True.)
 end subroutine emptyFringe
 
 subroutine printOverlapMatrix(overlap)
@@ -58,7 +52,7 @@ subroutine printOverlapMatrix(overlap)
      do i=1, overlap%nRow
         write(*, "(a,I4, a)", advance='no'), 'Row:', i, "   "
         do jj=overlap%rowPtr(i), overlap%rowPtr(i+1)-1
-           write(*, "(a,I2, a, I6)", advance='no'), "(", overlap%colInd(jj), ")", int(overlap%assignedProc(jj))
+           write(*, "(a,I2, a, I8)", advance='no'), "(", overlap%colInd(jj), ")", int(overlap%assignedProc(jj))
         end do
         write(*, *) " "
      end do
@@ -620,9 +614,11 @@ subroutine deallocateOBlocks(oBlocks, n)
              oBLocks(i)%nearWall, &
              oBLocks(i)%invalidDonor, &
              oBlocks(i)%qualDonor, &
-             oBlocks(i)%xADT, &
-             oBlocks(i)%rBuffer, &
-             oBlocks(i)%iBuffer)
+             oBlocks(i)%xADT)
+        if (allocated(oblocks(i)%rbuffer)) then 
+           deallocate(oBlocks(i)%rBuffer, &
+                oBlocks(i)%iBuffer)
+        end if
         call destroySerialHex(oBlocks(i)%ADT)
      end if
   end do
@@ -658,6 +654,10 @@ subroutine deallocateOFringes(oFringes, n)
              oFringes(i)%donorFrac, &
              oFringes(i)%gInd, &
              oFringes(i)%isWall)
+        if (allocated(oFringes(i)%rbuffer)) then 
+           deallocate(oFringes(i)%rBuffer,&
+                oFringes(i)%iBuffer)
+        end if
      end if
      oFringes(i)%allocated = .False. 
   end do
@@ -788,53 +788,6 @@ function isWallType(bType)
 end function isWallType
 
 ! Utility function for unpacking/accessing the status variable
-
-! function setIsDonor(i, flag)
-!   use precision
-!   implicit none
-!   logical :: isDonor
-!   tmp = isDonor(i)
-!   if (tmp == flag) then 
-!      ! Same nothing to do
-!      return
-!   else if (tmp .and. .not. flag) 
-!      ! Current value is true, make it false
-!      i = i - DONOR_ID
-!   else if(.not. tmp .and. flag) 
-!      ! Current value is false, make it true
-!      i = i + DONOR_ID
-!   end if
-! end function setIsDonor
-
-! function isDonor(i)
-!   use precision
-!   implicit none
-!   logical :: isDonor, flag, tmp
-!   integer(kind=intType), intent(inout) :: i
-!   if (mod(i, 2**(DONOR_ID+1)) == 0) then 
-!      isDonor = .False.
-!   else
-!      isDonor = .True. 
-!   end if
-! end function isDonor
-
-
-! function setIsHole(i, flag)
-!   use precision
-!   implicit none
-!   logical :: isHole, flag, tmp
-!   tmp = isHole(i)
-!   if (tmp == flag) then 
-!      ! Same nothing to do
-!      return
-!   else if (tmp .and. .not. flag) 
-!      ! Current value is true, make it false
-!      i = i - HOLE_ID
-!   else if(.not. tmp .and. flag) 
-!      ! Current value is false, make it true
-!      i = i + HOLE_ID
-!   end if
-! end function setIsHole
 
 function isDonor(i)
   use precision
@@ -1010,12 +963,12 @@ subroutine getStatus(i, isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWa
   end if
 
   if (j/4 > 0) then 
-     isFloodSeed = .True. 
+     isCompute = .True. 
      j = j - 4
   end if
 
   if (j/2 > 0) then 
-     isCompute = .True. 
+     isHole = .True. 
      j = j - 2
   end if
 

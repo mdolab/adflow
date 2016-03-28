@@ -9,7 +9,7 @@ subroutine setIblankArray(level, sps)
   
   ! Working
   integer(kind=intType) :: i, j, k, nn
-
+  logical :: isHole, isFlooded, isFloodSeed
   do nn=1, nDom
      call setPointers(nn, level, sps)
      iBlank = 1
@@ -19,16 +19,20 @@ subroutine setIblankArray(level, sps)
               if (fringes(i, j, k)%donorProc /= -1) then
                  iblank(i, j, k) = -1
               end if
-              if (fringes(i, j, k)%isHole) then 
+
+              if (isHole(fringes(i, j, k)%status)) then 
+!                 if (fringes(i, j, k)%isHOle) then 
                  iBlank(i, j, k) = 0
               end if
 
 
-              if (fringes(i, j, k)%isFlooded) then 
+              if (isFlooded(fringes(i, j, k)%status)) then
+              !if (fringes(i, j, k)%isFlooded) then 
                  iBlank(i, j, k) = -2
               end if
 
-              if (fringes(i, j, k)%isFloodSeed) then 
+              if (isFloodSeed(fringes(i, j, k)%status)) then
+              !if (fringes(i, j, k)%isFloodSeed) then 
                  iBlank(i, j, k) = -3
               end if
 

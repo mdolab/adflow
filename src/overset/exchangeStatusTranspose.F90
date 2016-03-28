@@ -1,12 +1,12 @@
-subroutine exchangeDonorStatus(level, sps, commPattern, internal)
+subroutine exchangeStatusTranspose(level, sps, commPattern, internal)
 
-  ! exchangeDonorStatus performs the *TRANSPOSE* of the normal halo
-  ! exchange. That means it takes information *in the halo cells* and
-  ! accumulate it into the *owned cells*. In this particular case, we
-  ! are transmitting the isDonor and isWallDonor information from the
-  ! halos to the owned cells. The "accumulate" operation will be an
-  ! MPI_LOR.  Note that this actually hast he same comm structure as
-  ! 'whalo1to1_b'.
+  ! exchangeStatusTranspose performs the *TRANSPOSE* of the normal
+  ! halo exchange. That means it takes information *in the halo cells*
+  ! and accumulate it into the *owned cells*. In this particular case,
+  ! we are transmitting the isDonor and isWallDonor information from
+  ! the halos to the owned cells. The "accumulate" operation will be
+  ! an MPI_LOR.  Note that this actually hast he same comm structure
+  ! as 'whalo1to1_b'.
 
   use block
   use communication
@@ -24,10 +24,14 @@ subroutine exchangeDonorStatus(level, sps, commPattern, internal)
   integer :: size, procID, ierr, index
   integer, dimension(mpi_status_size) :: status
 
-  integer(kind=intType) :: nVar, mm
+  integer(kind=intType) :: mm
   integer(kind=intType) :: i, j, k, ii, jj
   integer(kind=intType) :: d1, i1, j1, k1, d2, i2, j2, k2
-  logical, dimension(:), allocatable :: sendBuf, recvBuf
+  integer(kind=intType), dimension(:), allocatable :: sendBuf, recvBuf
+  logical :: CisDonor, CisHole, CisCompute, CisFloodSeed, CisFlooded, CisWall, CisWallDonor
+  logical :: DisDonor, DisHole, DisCompute, DisFloodSeed, DisFlooded, DisWall, DisWallDonor
+integer(kind=intType) :: cellStatus, donorStatus
+
   !
   !      ******************************************************************
   !      *                                                                *
@@ -36,16 +40,13 @@ subroutine exchangeDonorStatus(level, sps, commPattern, internal)
   !      ******************************************************************
   !
 
-  ! Hard code this since we are sending two pieces of information
-  nVar = 2
-
   ii = commPattern(level)%nProcSend
   ii = commPattern(level)%nsendCum(ii)
   jj = commPattern(level)%nProcRecv
   jj = commPattern(level)%nrecvCum(jj)
 
-  ! We are exchanging nVar pieces of information
-  allocate(sendBuf(nVar*ii), recvBuf(nVar*jj), stat=ierr)
+  ! We are exchanging 1 piece of information
+  allocate(sendBuf(ii), recvBuf(jj), stat=ierr)
 
   ! Gather up the seeds into the *recv* buffer. Note we loop
   ! over nProcRECV here! After the buffer is assembled it is
@@ -59,7 +60,7 @@ subroutine exchangeDonorStatus(level, sps, commPattern, internal)
      ! a bit easier.
 
      procID = commPattern(level)%recvProc(i)
-     size    = nVar*commPattern(level)%nrecv(i)
+     size    = commPattern(level)%nrecv(i)
 
      ! Copy the data into the buffer
 
@@ -72,14 +73,13 @@ subroutine exchangeDonorStatus(level, sps, commPattern, internal)
         j2 = commPattern(level)%recvList(i)%indices(j,2)
         k2 = commPattern(level)%recvList(i)%indices(j,3)
 
-        recvBuf(jj  ) = flowDoms(d2, level, sps)%fringes(i2, j2, k2)%isDonor
-        recvBuf(jj+1) = flowDoms(d2, level, sps)%fringes(i2, j2, k2)%isWallDonor
-        jj = jj + 2
+        recvBuf(jj) = flowDoms(d2, level, sps)%fringes(i2, j2, k2)%status
+        jj = jj + 1
 
      enddo
 
      ! Send the data.
-     call mpi_isend(recvBuf(ii), size, mpi_logical, procID,  &
+     call mpi_isend(recvBuf(ii), size, sumb_integer, procID,  &
           procID, SUmb_comm_world, sendRequests(i), &
           ierr)
 
@@ -98,11 +98,11 @@ subroutine exchangeDonorStatus(level, sps, commPattern, internal)
      ! a bit easier.
 
      procID = commPattern(level)%sendProc(i)
-     size    = nVar*commPattern(level)%nsend(i)
+     size    = commPattern(level)%nsend(i)
 
      ! Post the receive.
 
-     call mpi_irecv(sendBuf(ii), size, mpi_logical, procID, &
+     call mpi_irecv(sendBuf(ii), size, sumb_integer, procID, &
           myID, SUmb_comm_world, recvRequests(i), ierr)
 
      ! And update ii.
@@ -131,14 +131,19 @@ subroutine exchangeDonorStatus(level, sps, commPattern, internal)
 
      ! OR operation. Note we modify the '1' values ie. the 'donors'
      ! which are now receivers because of the transpose operation.
-     flowDoms(d1, level, sps)%fringes(i1, j1, k1)%isDonor = &
-          (flowDoms(d1, level, sps)%fringes(i1, j1, k1)%isDonor .or. &
-          flowDoms(d2, level, sps)%fringes(i2, j2, k2)%isDonor)
+     cellStatus = flowDoms(d1, level, sps)%fringes(i1, j1, k1)%status
+     call getStatus(cellStatus, CisDonor, CisHole, CisCompute, &
+          CisFloodSeed, CisFlooded, CisWall, CisWallDonor)
 
-     flowDoms(d1, level, sps)%fringes(i1, j1, k1)%isWallDonor = &
-          (flowDoms(d1, level, sps)%fringes(i1, j1, k1)%isWallDonor .or. &
-          flowDoms(d2, level, sps)%fringes(i2, j2, k2)%isWallDonor)
+     donorStatus = flowDoms(d2, level, sps)%fringes(i2, j2, k2)%status
+     call getStatus(donorStatus, DisDonor, DisHole, DisCompute, &
+          DisFloodSeed, DisFlooded, DisWall, DisWallDonor)
+     
+     call setIsDonor(flowDoms(d1, level, sps)%fringes(i1, j1, k1)%status, &
+          CIsDonor .or. DisDonor)
 
+     call setIsWallDonor(flowDoms(d1, level, sps)%fringes(i1, j1, k1)%status, &
+          CIsWallDonor .or. DisWallDonor)
 
   enddo localCopy
 
@@ -156,28 +161,32 @@ subroutine exchangeDonorStatus(level, sps, commPattern, internal)
 
      ii = index
 
-     jj = nVar*commPattern(level)%nsendCum(ii-1)
+     jj = commPattern(level)%nsendCum(ii-1)
 
      do j=1,commPattern(level)%nsend(ii)
 
         ! Store the block and the indices of the halo a bit easier.
 
-        d2 = commPattern(level)%sendList(ii)%block(j)
-        i2 = commPattern(level)%sendList(ii)%indices(j,1)
-        j2 = commPattern(level)%sendList(ii)%indices(j,2)
-        k2 = commPattern(level)%sendList(ii)%indices(j,3)
+        d1 = commPattern(level)%sendList(ii)%block(j)
+        i1 = commPattern(level)%sendList(ii)%indices(j,1)
+        j1 = commPattern(level)%sendList(ii)%indices(j,2)
+        k1 = commPattern(level)%sendList(ii)%indices(j,3)
 
-        jj = jj + 1
-        flowDoms(d2, level, sps)%fringes(i2, j2, k2)%isDonor = &
-             (flowDoms(d2, level, sps)%fringes(i2, j2, k2)%isDonor .or. &
-             sendBuf(jj))
-        jj = jj + 1
-        flowDoms(d2, level, sps)%fringes(i2, j2, k2)%isWallDonor = &
-             (flowDoms(d2, level, sps)%fringes(i2, j2, k2)%isWallDonor .or. &
-             sendBuf(jj))
 
+        cellStatus = flowDoms(d1, level, sps)%fringes(i1, j1, k1)%status
+        call getStatus(cellStatus, CisDonor, CisHole, CisCompute, &
+             CisFloodSeed, CisFlooded, CisWall, CisWallDonor)
+        jj = jj + 1
+        donorStatus = sendBuf(jj)
+        call getStatus(donorStatus, DisDonor, DisHole, DisCompute, &
+             DisFloodSeed, DisFlooded, DisWall, DisWallDonor)
+        
+        call setIsDonor(flowDoms(d1, level, sps)%fringes(i1, j1, k1)%status, &
+             CIsDonor .or. DisDonor)
+        
+        call setIsWallDonor(flowDoms(d1, level, sps)%fringes(i1, j1, k1)%status, &
+             CIsWallDonor .or. DisWallDonor)
      enddo
-
   enddo completeSends
 
   ! Complete the nonblocking sends.
@@ -189,4 +198,4 @@ subroutine exchangeDonorStatus(level, sps, commPattern, internal)
 
   deallocate(recvBuf, sendBuf)
 
-end subroutine exchangeDonorStatus
+end subroutine exchangeStatusTranspose

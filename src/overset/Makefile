@@ -48,13 +48,13 @@ FILES_TO_COMPLEXIFY =	stringOps.F90\
 			determineClusterAreas.F90 \
 			checkOverset.F90 \
 			exchangeIblanks.f90\
-			exchangeIsCompute.f90\
 			floodInteriorCells.F90\
 			oversetLoadBalance.F90\
 			qsortFringeType.F90\
 			initializeOBlock.F90\
 			initializeOWall.F90\
 			initializeFringes.F90\
+			initializeOFringes.F90\
 			determineDonors.F90\
 			computeHolesInsideBody.F90\
 			packingRoutines.F90\
@@ -64,7 +64,6 @@ FILES_TO_COMPLEXIFY =	stringOps.F90\
 			fringeReduction.F90\
 			finalOversetCommStructures.F90\
 			setIBlankArray.F90\
-		        exchangeDonorStatus.F90\
 			exchangeFringes.f90\
 			surfaceCorrection.F90\
 			oversetPresent.F90\
@@ -74,9 +73,11 @@ FILES_TO_COMPLEXIFY =	stringOps.F90\
 			exchangeSurfaceIBlanks.F90\
 			makeBoundaryStrings.F90\
 			writeDualGrid.F90\
+			exchangeStatus.F90\
+			exchangeStatusTranspose.F90\
+
 		       # computeQuadraticWeights.F90 \
 		       matrixinv3by3.F90 \
-
 
 
 ALL_FILES = $(FILES_TO_COMPLEXIFY) $(FILES_TO_COPY)
