@@ -39,6 +39,7 @@ subroutine oversetLoadBalance(overlap)
   rowPtr => overlap%rowPtr
   assignedProc => overlap%assignedProc
   data => overlap%data
+
   ! Determine the total search cost:
   totalSearch = sum(overlap%data)
  
@@ -181,15 +182,6 @@ subroutine oversetLoadBalance(overlap)
         end if
      end if
   end do masterLoop
-  
-  ! if (myid == 0) then 
-  !    do iProc=0, nProc-1
-  !       print *,iProc, procCosts(iProc)
-  !    end do
-
-  !    print *, 'estimate:', evenCost * nProc
-  !    print *, 'Actual:', sum(procCosts)
-  ! end if
 
 end subroutine oversetLoadBalance
 

@@ -184,9 +184,6 @@ module block
      ! type bears some resemblence to the haloList type used for the
      ! B2B preprocessing.
 
-    ! This is the coordinate of what we are searching
-    real(kind=realType), dimension(3) :: x
-
     ! qualaity is the best quality that has been found from a
     ! DONOR cell. It is initialized to a 'large' value.
     real(kind=realType) :: quality
@@ -204,31 +201,10 @@ module block
     integer(kind=intType), dimension(8) :: gInd
     
     ! Status integer: This stores the following status information:
-    ! isDonor, isHold, isCompute, isFloodSeed, isFlooded, isWall and
+    ! isDonor, isHole, isCompute, isFloodSeed, isFlooded, isWall and
     ! is wallDonor. 
 
     integer(kind=intType) :: status
-
-    ! The status of this cell as a donor
-    logical :: isDonor
-
-    ! The status of this cell as a hole
-    logical :: isHole
-
-    ! The status of this cell as a compute cell
-    logical :: isCompute
-
-    ! The status of this cell as a flood seed point
-    logical :: isFloodSeed
-
-    ! The status of this cell as a flooeded hole
-    logical :: isFlooded
-
-    ! Flag specifying if this cell is next to a wall
-    logical :: isWall
-
-    ! Flag specifying if this cell is a donor to cell
-    logical :: isWallDonor
 
   end type fringeType
   

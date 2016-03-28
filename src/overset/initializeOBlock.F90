@@ -129,7 +129,7 @@ subroutine initializeOBlock(oBlock, nn)
               !oBlock%qualDonor(1, mm) = min(avgEdge, wallEdge)
               oBlock%qualDonor(1, mm) = avgEdge
            else
-              factor = 1.0
+              factor = 4.0
               oBlock%qualDonor(1, mm) = (vol(i, j, k)*factor)**exponent
            end if
 

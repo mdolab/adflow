@@ -70,6 +70,12 @@ subroutine packOBlock(oBlock)
   integer(kind=intType) :: rSize, iSize, i, j, k, nHexa, nADT
   integer(kind=intType) :: ie, je, ke
 
+  ! If the buffer is already allocated, the block is packed and there
+  ! is nothing to do
+  if (allocated(oBlock%rBuffer)) then 
+     return
+  end if
+
   call getOBlockBufferSizes(oBlock%il, oBlock%jl, oBlock%kl, iSize, rSize)
  
   ! Allocate the buffers
@@ -319,6 +325,7 @@ subroutine unpackOBlock(oBlock)
 
   ! Flag this oBlock as being allocated:
   oBlock%allocated = .True.
+  deallocate(oBlock%iBuffer, oBlock%rBuffer)
 
 end subroutine unpackOBlock
 
@@ -343,9 +350,8 @@ subroutine getOFringeBufferSizes(il, jl, kl, iSize, rSize)
   mm = (il-1)*(jl-1)*(kl-1) ! nx*ny*nz
 
   ! Initializeation
-  iSize = mm * 14 ! We need at most: donorProc, donorBlock,
-                  ! dI, dJ, dK, myIndex and 8 for gInd
-  rSize = mm * 4  ! Sending we need X an quality, receiving we need donorFrac and quality
+  iSize = mm * 2 + 3! We need isWall and myIndex plus 3 for the sizes
+  rSize = mm * 4 ! Need to send x and quality
 
 end subroutine getOFringeBufferSizes
 
@@ -364,7 +370,14 @@ subroutine packOFringe(oFringe)
   ! Working paramters
   integer(kind=intType) :: rSize, iSize, mm, i, ii
 
-  call getOFringeBufferSizes(oFringe%il, oFringe%jl, oFringe%kl, iSize, rSize)
+  ! If the buffer is already allocated, the block is packed and there
+  ! is nothing to do
+  if (allocated(oFringe%rBuffer)) then 
+     return
+  end if
+
+  call getOFringeBufferSizes(oFringe%il, oFringe%jl, oFringe%kl, &
+       iSize, rSize)
 
   ! Allocate the buffers
   allocate(oFringe%rBuffer(rSize), oFringe%iBuffer(iSize))
@@ -376,7 +389,7 @@ subroutine packOFringe(oFringe)
   oFringe%iBuffer(3) = oFringe%kl
   ii = 3
 
-  ! Copy the integers. Just isWall for this packing. 
+  ! Copy the integers. Just isWall and myIndex for sending.
   do i=1, mm
      ii = ii +1
      oFringe%iBuffer(ii) = oFringe%isWall(i)
@@ -463,6 +476,7 @@ subroutine unpackOFringe(oFringe)
 
   ! Flag this oFringe as being allocated:
   oFringe%allocated = .True.
+  deallocate(oFringe%rBuffer, oFringe%iBuffer)
 
 end subroutine unpackOFringe
 
@@ -753,5 +767,5 @@ subroutine unpackOWall(oWall)
 
   ! Flag this oWall as being allocated:
   oWall%allocated = .True.
-
+  deallocate(oWall%rBuffer, oWall%iBuffer)
 end subroutine unpackOWall

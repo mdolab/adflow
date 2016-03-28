@@ -1056,14 +1056,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       ! oversetInterpolation: The degree of the overset
-       !                       interpolation. Currently only linear is
-       !                       implemented
-
-
-       integer(kind=intType) :: oversetInterpolation
-       integer(kind=intType), parameter :: linear=1, &
-                                           quadratic =2
+       logical :: lowOversetMemory=.False.
 
 
      end module inputOverset

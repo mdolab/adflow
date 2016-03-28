@@ -147,7 +147,7 @@ class OversetCheck(SUMB):
         # Finally complete loading
         self.sumb.dummyreadparamfile()
         self.sumb.partitionandreadgrid(False)
-        self.sumb.preprocessingcustomoveset()
+        self.sumb.preprocessingcustomoverset()
         # self.sumb.initflow()
         # self.sumb.preprocessingpart2()
         # self.sumb.initflowpart2()
