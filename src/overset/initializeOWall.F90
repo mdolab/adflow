@@ -6,7 +6,7 @@ subroutine initializeOWall(oWall, dualMesh, cluster)
   use blockPointers
   use adtAPI
   use BCTypes
-
+  use kdtree2_module
   implicit none 
 
   ! Input Params
@@ -15,7 +15,7 @@ subroutine initializeOWall(oWall, dualMesh, cluster)
   integer(kind=intType), intent(in) :: cluster
 
   ! Working paramters
-  integer(kind=intType) :: i, j, ii, jj, jjj, mm, ni, nj, nodeCount
+  integer(kind=intType) :: i, j, k, n, ii, jj, jjj, mm, ni, nj, nodeCount
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, nNodes, maxCells, nCells, iNode
   logical :: isWallType
 
@@ -32,7 +32,8 @@ subroutine initializeOWall(oWall, dualMesh, cluster)
   ! Allocate space for the x array and connectivity array. cellPtr is
   ! larger than necessary.
   allocate(oWall%x(3, nNodes), oWall%conn(4, maxCells), &
-       oWall%cellPtr(maxCells), oWall%iBlank(maxCells))
+       oWall%cellPtr(maxCells), oWall%iBlank(maxCells), &
+       oWall%nte(4, nNodes))
  
   ii = 0 ! Cumulative node counter
   jj = 0 ! Cumulative cell counter (with iblanks)
@@ -155,6 +156,25 @@ subroutine initializeOWall(oWall, dualMesh, cluster)
 
   ! Build the tree itself.
   call buildSerialQuad(oWall%nCells, nNodes, oWall%x, oWall%conn, owall%ADT)
+
+  ! Build the KDTree
+  if (oWall%nNodes > 0) then 
+     oWall%tree => kdtree2_create(oWall%x)
+  end if
+  
+  ! Build the inverse of the connectivity, the nodeToElem array. 
+  oWall%nte = 0
+  do i=1, oWall%nCells
+     do j=1, 4
+        n = oWall%conn(j, i)
+        inner:do k=1,4
+           if (oWall%nte(k, n) == 0) then 
+              oWall%nte(k, n) = i
+              exit inner
+           end if
+        end do inner
+     end do
+  end do
 
   ! Flag this wall as being allocated
   oWall%allocated = .True.

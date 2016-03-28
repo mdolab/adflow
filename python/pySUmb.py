@@ -3587,6 +3587,7 @@ class SUMB(AeroSolver):
             
             # Overset parameters
             'lowoversetmemory':[bool, False],
+            'nearwalldist':[float, 0.1],
 
             # Load Balance/partitioning parameters
             'blocksplitting':[bool, True],
@@ -3850,6 +3851,7 @@ class SUMB(AeroSolver):
 
             # Overset Parameters
             'lowoversetmemory':{'location':'inputoverset.lowoversetmemory'},
+            'nearwalldist':{'location':'inputoverset.nearwalldist'},
 
             # Misc Paramters
             'printiterations':{'location':'inputiteration.printiterations'},

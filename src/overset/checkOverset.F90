@@ -20,7 +20,7 @@ subroutine checkOverset (level, sps)
 
   ! Working
   integer(kind=intType) :: i, j, k, nn, ii, jj, kk, n
-  integer(kind=intType) :: magic, ibval
+  integer(kind=intType) :: magic
   integer(kind=intType) :: i_stencil
 
   magic = 33
@@ -44,7 +44,7 @@ subroutine checkOverset (level, sps)
 
                        if (iBlank(ii, jj, kk) == 1) then 
                           ! This cell is an orphan:
-                          print *,'Error in connectivity: ', nbkglobal, i+iBegOR-1, j+jBegOr-1, k+kBegOr-1, ibval
+                          print *,'Error in connectivity: ', nbkglobal, i+iBegOR-1, j+jBegOr-1, k+kBegOr-1
                           n = n + 1
                        end if
                     end if
