@@ -847,6 +847,7 @@ python module libsumb
 
        module inputoverset
          logical :: lowoversetmemory
+         real(kind=realtype) :: nearwalldist
        end module inputoverset
        
        module inputunsteady ! in :test:inputParam.f90
