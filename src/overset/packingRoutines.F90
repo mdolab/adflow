@@ -654,13 +654,14 @@ subroutine unpackOWall(oWall)
 
   use overset
   use constants
+  use kdtree2_module
   implicit none
 
   ! Input/Output Parameters
   type(oversetWall), intent(inout) :: oWall
 
   ! Working paramters
-  integer(kind=intType) :: rSize, iSize, idom, i,  j, iNode
+  integer(kind=intType) :: rSize, iSize, idom, i,  j, k, n, iNode
 
   ! Set the sizes of this oWall
   oWall%il = oWall%iBuffer(1)
@@ -680,7 +681,7 @@ subroutine unpackOWall(oWall)
   allocate(oWall%conn(4, oWall%nCells))
   allocate(oWall%iBlank(oWall%maxCells))
   allocate(oWall%cellPtr(oWall%nCells))
-
+  allocate(oWall%nte(4, oWall%nNodes))
   ! Once we know the sizes, allocate all the arrays in the
   ! ADTree. Since we are not going to call the *actual* build routine
   ! for the ADT, we need to set all the information ourselves. This
@@ -764,6 +765,25 @@ subroutine unpackOWall(oWall)
         rSize = rSize + 6
      end do
   end if
+
+  ! Build the KDTree
+  if (oWall%nNodes > 0) then 
+     oWall%tree => kdtree2_create(oWall%x)
+  end if
+
+  ! Build the inverse of the connectivity, the nodeToElem array. 
+  oWall%nte = 0
+  do i=1, oWall%nCells
+     do j=1, 4
+        n = oWall%conn(j, i)
+        inner:do k=1,4
+           if (oWall%nte(k, n) == 0) then 
+              oWall%nte(k, n) = i
+              exit inner
+           end if
+        end do inner
+     end do
+  end do
 
   ! Flag this oWall as being allocated:
   oWall%allocated = .True.

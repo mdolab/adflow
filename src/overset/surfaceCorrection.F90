@@ -3,6 +3,8 @@ subroutine surfaceCorrection(oBlock, oFringe, bWall, fWall, offset, n)
   use overset
   use adtAPI
   use BCTypes
+  use kdtree2_module
+  use inputOverset
   implicit none
 
   ! Input/Output
@@ -14,18 +16,20 @@ subroutine surfaceCorrection(oBlock, oFringe, bWall, fWall, offset, n)
 
   ! Working 
   integer(kind=intType) :: i, j, k, ii, jj, nx, ny, nz, myIndex, nInterpol
+  integer(kind=intType) :: cellID, idx
   integer(kind=intType) :: iStart, iEnd, iInc
   integer(kind=intType) :: jStart, jEnd, jInc
   integer(kind=intType) :: kStart, kEnd, kInc
 
-  integer(kind=intType), dimension(3) :: intInfoF, intInfoB, intInfoC
-  integer(kind=intType), dimension(4) :: nodesB, nodesF, nodesC
+  integer(kind=intType), dimension(3) :: intInfoF, intInfoB
+  integer(kind=intType), dimension(4) :: nodesB, nodesF
   real(kind=realType), dimension(3, 2) :: dummy
-  real(kind=realType), dimension(5) :: uvwF, uvwB, uvwC
-  real(kind=realType), dimension(3) :: vecF, vecB, vecC, normF, normB, &
-       ptB, ptF,ptC, yy, masterOffset,v1, v2, sss, normalB, normalF
-  real(kind=realType), dimension(4) :: weightsF, weightsB, weightsC,xx, xxx
-  real(kind=realType) :: ratio, dB, dF, dp, fact, distY
+  real(kind=realType), dimension(5) :: uvwF, uvwB
+  real(kind=realType), dimension(3) :: ptB, ptF, yy, masterOffset
+  real(kind=realType), dimension(4) :: weightsF, weightsB, xx
+  real(kind=realType) :: ratio, dB, dF, fact, distY, q1(3, 4), q2(3, 4)
+  type(kdtree2_result) :: results(1)
+  logical :: overlapped1, overlapped2, overlapped, bad
 
   ! Variables we have to pass the ADT search routine
   integer(kind=intType), dimension(:), pointer :: frontLeaves
@@ -35,22 +39,6 @@ subroutine surfaceCorrection(oBlock, oFringe, bWall, fWall, offset, n)
   ! Allocate the (pointer) memory that may be resized as necessary for
   ! the singlePoint search routine. 
   allocate(BB(10), frontLeaves(25), frontLeavesNew(25))
-
-  ! Basic algorithm is:
-
-  ! For each wall node (isWall > 0) in 'oFringe'
-  !
-  !    Project onto its own wall 'fWall'
-  !
-  !    Project onto its donor's wall 'bWall'
-  !
-  !    if (u,v) in [0,1] for bWall projection AND distances are comparable
-  !
-  !        Compute offset vector entry. 
-  !
-  !        Loop over all other nodes from oFringe along ray:
-  !
-  !            Set offset by attenuating the wall offset. 
 
   nInterpol = 0
   nx = oFringe%il -1 
@@ -64,129 +52,130 @@ subroutine surfaceCorrection(oBlock, oFringe, bWall, fWall, offset, n)
         xx(1:3) = oFringe%x(:, ii)
         xx(4) = large
 
-        ! Project onto the oBlock *first* since we may be able to
-        ! short-cut out if this doesn't find a solution in the 0-1
-        ! range.
+        bad = .False.
+        if (norm2(xx(1:3) - (/37.0179, 3.05469, 3.64083/)) < .01) then 
+           bad = .True.
+        end if
+
+        ! Project the point onto the oBlock
         call minDistanceTreeSearchSinglePoint(bWall%ADT, xx, intInfoB, uvwB, &
              dummy, nInterpol, BB, frontLeaves, frontLeavesNew)
+        dB = sqrt(uvwB(4))
 
         if (uvwB(1) > zero .and. uvwB(1) < one .and. &
              uvwB(2) > zero .and. uvwB(2) < one) then 
-           
-           ! Ok, so we found a contained solution one the other
-           ! wall. Now lets check our own. We almost don't need to do
-           ! this, since it essentially has to be the fact below our
-           ! point. 
 
-           call minDistanceTreeSearchSinglePoint(fWall%ADT, xx, intInfoF, uvwF, &
-                dummy, nInterpol, BB, frontLeaves, frontLeavesNew)
-                   
-           ! We only continue if the distances are *close*. It could
-           ! happen that the 'B' constrained solution is very far
-           ! away. Essentialy what this second check does is determine
-           ! what is "close to a wall"; it gives us a scaling for the problem
+           ! Extract the 4 nodes for this quad element
+           do k=1, 4
+              q1(:, k) = bWall%x(:, bWall%conn(k, intInfoB(3)))
+           end do
 
-           dB = sqrt(uvwB(4))
-           dF = sqrt(uvwF(4))
-           ratio = dB/dF
-           
-           ! We are pretty generours with the distance check. This is
-           ! essentially anything within about 500 y+. 
+           ! This is a little inefficient...what we want to do is
+           ! determine the 4 quads surrounding the point I'm looking
+           ! for. Use the KDTree to determine the index of the node in
+           ! question, then use the nToElem pointer to get the 4 quads
+           ! surrounding my node.  
+           call kdtree2_n_nearest(fWall%tree, xx(1:3), 1, results)
 
-           if (ratio > 1/1000_realType .and. ratio < 1000_realType) then
+           idx = results(1)%idx ! Node index on fWall
+           overlapped1 = .False.
+           overlapped2 = .False.
+           overlapped = .False.
+           ! Now loop over (up to 4) of the quads surrounding this node:
+           quadLoop: do j=1, 4
+              cellID = fWall%nte(j, idx)
+              if (cellID > 0) then 
 
+                 do k=1, 4
+                    q2(:, k) = fWall%x(:, fWall%conn(k, cellID))
+                 end do
+
+                 ! Now see if the two quads overlap in the flat sense
+                 call quadOverlap(q1, q2, overlapped1)
+
+                 overlapped2 = .False.
+                 if (dB < nearWallDist) then
+                    overlapped2 = .True.
+                 end if
+               
+                 if (overlapped1 .and.  overlapped2) then 
+                    overlapped = .True.
+                    exit quadLoop
+                 end if
+              end if
+           end do quadLoop
+            
+           if (overlapped) then 
+              ! Remember to re-initialize the distance. This determines
+              ! the distance to my wall. Essentially half the off-wall distance
+              xx(4) = large
+              call minDistanceTreeSearchSinglePoint(fWall%ADT, xx, intInfoF, uvwF, &
+                   dummy, nInterpol, BB, frontLeaves, frontLeavesNew)
+              
+              ! This is now close the point is to my own wall. Essentialy
+              ! the is just the offwall spacing. 
+              dF = sqrt(uvwF(4))
+              
               ! Now compute the locations on the quad of each
               ! projection
               nodesB = bWall%conn(:, intInfoB(3))
               nodesF = fWall%conn(:, intInfoF(3))
               call getWeights(uvwB(1:2), weightsB)
               call getWeights(uvwF(1:2), weightsF)
-  
+
               ptB = zero
               ptF = zero
               do j=1,4
                  ptB = ptB + weightsB(j)*bWall%x(:, nodesB(j))
                  ptF = ptF + weightsF(j)*fWall%x(:, nodesF(j))
               end do
-     
-              v1 = bWall%x(:, nodesB(3)) - bWall%x(:, nodesB(1))
-              v2 = bWall%x(:, nodesB(4)) - bWall%x(:, nodesB(2))
-              normalB(1) = (v1(2)*v2(3) - v1(3)*v2(2))
-              normalB(2) = (v1(3)*v2(1) - v1(1)*v2(3))
-              normalB(3) = (v1(1)*v2(2) - v1(2)*v2(1))
-              
-              v1 = fWall%x(:, nodesF(3)) - fWall%x(:, nodesF(1))
-              v2 = fWall%x(:, nodesF(4)) - fWall%x(:, nodesF(2))
-              normalF(1) = (v1(2)*v2(3) - v1(3)*v2(2))
-              normalF(2) = (v1(3)*v2(1) - v1(1)*v2(3))
-              normalF(3) = (v1(1)*v2(2) - v1(2)*v2(1))
-              
-              vecB = xx(1:3) - ptB
-              vecF = xx(1:3) - ptF
 
-              ! We do one last check before we commit to a correction:
-              ! The dot product of the normalized vectors must point
-              ! substantially in the same direction.
+              ! Now set the offset for the wall. 
+              masterOffset =  ptB - ptF
+          
+              ! Last thing we need to do is add an attenuating
+              ! offset for the nodes in the off-wall direction. 
 
-              normB = vecB / dB
-              normF = vecF / dF
+              ! Back out the i,j,k index of this node from myIndex
+              myIndex = oFringe%myIndex(ii)-1
+              i = mod(myIndex, nx) + 2
+              j = mod(myIndex/nx, ny) + 2
+              k = myIndex/(nx*ny) + 2
 
-              ! Check our dot product
-              normalB = normalB / sqrt(normalB(1)**2 + normalB(2)**2 + normalB(3)**2)
-              normalF = normalF / sqrt(normalF(1)**2 + normalF(2)**2 + normalF(3)**2)
+              iStart = i; iEnd = i
+              jStart = j; jEnd = j
+              kStart = k; kEnd = k
 
-              dp = normB(1)*normF(1) + normB(2)*normF(2) + normB(3)*normF(3)
+              select case(oFringe%isWall(ii))
+              case(iMin, iMax)
+                 iStart=2; iEnd=nx+1
+              case(jMin, jMax)
+                 jStart=2; jEnd=ny+1
+              case(kMin, kMax)
+                 kStart=2; kEnd=nz+1
+              end select
+              do k=kStart, kEnd
+                 do j=jStart, jEnd
+                    do i=iStart, iEnd
+                       ! Recompute the index
+                       jj = (k-2)*nx*ny + (j-2)*nx + (i-2) + 1
 
-              if (abs(dp) > 0.5_realType) then 
-                 
-                 ! Now set the offset for the wall. 
-                 masterOffset = vecF - vecB
-              
-                 ! Last thing we need to do is add an attenuating
-                 ! offset for the nodes in the off-wall direction. 
+                       ! Extract the curent point
+                       yy = oFringe%x(:, jj)
 
-                 ! Back out the i,j,k index of this node from myIndex
-                 myIndex = oFringe%myIndex(ii)-1
-                 i = mod(myIndex, nx) + 2
-                 j = mod(myIndex/nx, ny) + 2
-                 k = myIndex/(nx*ny) + 2
+                       ! Get this distance to the "wall". We just
+                       ! use the parametric position we found on
+                       ! our fringe.
 
-                 iStart = i; iEnd = i
-                 jStart = j; jEnd = j
-                 kStart = k; kEnd = k
-                 
-                 select case(oFringe%isWall(ii))
-                 case(iMin, iMax)
-                    iStart=2; iEnd=nx+1
-                 case(jMin, jMax)
-                    jStart=2; jEnd=ny+1
-                 case(kMin, kMax)
-                    kStart=2; kEnd=nz+1
-                 end select
-                 do k=kStart, kEnd
-                    do j=jStart, jEnd
-                       do i=iStart, iEnd
-                          ! Recompute the index
-                          jj = (k-2)*nx*ny + (j-2)*nx + (i-2) + 1
+                       distY = sqrt((yy(1)-ptF(1))**2 + (yy(2)-ptF(2))**2 + (yy(3)-ptF(3))**2)
 
-                          ! Extract the curent point
-                          yy = oFringe%x(:, jj)
-
-                          ! Get this distance to the "wall". We just
-                          ! use the parametric position we found on
-                          ! our fringe.
-                          
-                          distY = sqrt((yy(1)-ptF(1))**2 + (yy(2)-ptF(2))**2 + (yy(3)-ptF(3))**2)
-
-                          ! Now we can finally compute the normalize ratio
-                          ratio = (distY - dF) / dF / 500
-                          fact = max(one-ratio**3, zero)
-                          offset(:, jj) = offset(:, jj) + fact*masterOffset
-                       end do
+                       ! Now we can finally compute the normalize ratio
+                       ratio = (distY - dF) / dF / 500
+                       fact = max(one-ratio**3, zero)
+                       offset(:, jj) = offset(:, jj) + fact*masterOffset
                     end do
                  end do
-              end if
-
+              end do
            end if
         end if
      end if
@@ -199,7 +188,7 @@ contains
   subroutine getWeights(uv, weights)
     use constants
     implicit none
-    
+
     real(kind=realType), intent(in) :: uv(2)
     real(kind=realType), intent(out) :: weights(4)
     weights(1) = (one - uv(1))*(one - uv(2))

@@ -686,6 +686,9 @@ subroutine deallocateOWalls(oWalls, n)
              oWalls(i)%iblank, &
              oWalls(i)%cellPtr)
         call destroySerialQuad(oWalls(i)%ADT)
+        if (oWalls(i)%nNodes > 0) then 
+           call kdtree2_destroy(oWalls(i)%tree)
+        end if
      end if
      oWalls(i)%allocated = .False.
   end do

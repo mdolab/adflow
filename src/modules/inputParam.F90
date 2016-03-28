@@ -1057,7 +1057,7 @@
 !      ******************************************************************
 !
        logical :: lowOversetMemory=.False.
-
+       real(kind=realType) ::  nearWallDist=0.1
 
      end module inputOverset
 

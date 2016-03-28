@@ -146,8 +146,14 @@ module overset
      integer(kind=intType), dimension(:), allocatable :: iBlank
      integer(kind=intType), dimension(:), allocatable :: cellPtr
 
+     ! Node to element array
+     integer(kind=intType), dimension(:, :), allocatable :: nte
+
      ! The ADT for this block's wall(s)
      type(adtType) :: ADT
+
+     ! This KDTree for this block's wall
+     type(kdtree2), pointer :: tree
 
      ! Flag if the real/int Buffers are ready after receiving info
      logical :: realBufferReady = .False. 
@@ -233,8 +239,7 @@ module overset
 
      ! Number of trianges
      integer(kind=intType) :: nTris
-
-
+     
   end type oversetString
 
   type oversetEdge
@@ -255,5 +260,10 @@ module overset
   integer(kind=intType), dimension(:), allocatable :: nDomProc, cumDomProc
   integer(kind=intType) :: nDomTotal
   real(kind=realType), dimension(:), allocatable :: clusterAreas
+
+  type XPlane
+     real(kind=realType), dimension(:, :, :), pointer :: xx
+     integer(kind=intType), dimension(:, :), pointer :: nearWall
+  end type XPlane
 
 end module overset

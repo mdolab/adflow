@@ -5,6 +5,7 @@ subroutine initializeOBlock(oBlock, nn)
   !  data currently in blockPointers
   use constants
   use overset
+  use inputOverset
   use blockPointers
   use adtAPI
   use BCTypes
@@ -19,8 +20,10 @@ subroutine initializeOBlock(oBlock, nn)
   ! Working paramters
   integer(kind=intType) :: i, j, k, mm, nADT, nHexa, planeOffset
   integer(kind=intType) :: iStart, iEnd, jStart, jEnd, kStart, kEnd
-  real(kind=realType) :: factor, frac, exponent, wallEdge, avgEdge
-  logical :: wallsPresent
+  real(kind=realType) :: factor, frac, exponent, wallEdge, avgEdge, dist
+  logical :: wallsPresent, isWallType
+  real(kind=realType), dimension(:, :, :, :), allocatable, target :: tmpX
+  type(Xplane), dimension(:), allocatable :: planes
 
   ! Set all the sizes for this block.
   oBlock%il = il
@@ -40,58 +43,6 @@ subroutine initializeOBlock(oBlock, nn)
 
   oBlock%nearWall = 0
   oBlock%invalidDonor = 0
-
-  kk = 30
-  do mm=1,nBocos
-     select case (BCFaceID(mm))
-     case (iMin)
-        iStart=1; iEnd=2+kk;
-        jStart=BCData(mm)%icBeg; jEnd=BCData(mm)%icEnd
-        kStart=BCData(mm)%jcBeg; kEnd=BCData(mm)%jcEnd
-     case (iMax)
-        iStart=ie-kk; iEnd=ie;
-        jStart=BCData(mm)%icBeg; jEnd=BCData(mm)%icEnd
-        kStart=BCData(mm)%jcBeg; kEnd=BCData(mm)%jcEnd
-     case (jMin)
-        iStart=BCData(mm)%icBeg; iEnd=BCData(mm)%icEnd
-        jStart=1; jEnd=1+kk;
-        kStart=BCData(mm)%jcBeg; kEnd=BCData(mm)%jcEnd
-     case (jMax)
-        iStart=BCData(mm)%icBeg; iEnd=BCData(mm)%icEnd
-        jStart=je-kk; jEnd=je;
-        kStart=BCData(mm)%jcBeg; kEnd=BCData(mm)%jcEnd
-     case (kMin)
-        iStart=BCData(mm)%icBeg; iEnd=BCData(mm)%icEnd
-        jStart=BCData(mm)%jcBeg; jEnd=BCData(mm)%jcEnd
-        kStart=1; kEnd=1+kk;
-     case (kMax)
-        iStart=BCData(mm)%icBeg; iEnd=BCData(mm)%icEnd
-        jStart=BCData(mm)%jcBeg; jEnd=BCData(mm)%jcEnd
-        kStart=ke-kk; kEnd=ke;
-     end select
-
-     if (BCType(mm) == NSWallAdiabatic .or. &
-          BCType(mm) == NSWallIsoThermal .or. &
-          BCType(mm) == EulerWall) then 
-
-        ! Clip Bounds:
-        iStart = max(1, iStart)
-        iEnd   = min(ie, iEnd)
-        jStart = max(1, jStart)
-        jEnd   = min(je, jEnd)
-        kStart = max(1, kStart)
-        kEnd   = min(ke, kEnd)
-
-        do k=kStart, kEnd
-           do j=jStart, jEnd
-              do i=iStart, iEnd
-                 oBlock%nearWall(i, j, k) = 1
-              end do
-           end do
-        end do
-     end if
-  end do ! BocoLoop
-
 
   call flagForcedReceivers(oBlock%invalidDonor)
   
@@ -146,7 +97,7 @@ subroutine initializeOBlock(oBlock, nn)
   nADT = ie * je * ke
 
   allocate(oBlock%xADT(3, nADT), oBlock%hexaConn(8, nHexa))
-
+  allocate(tmpX(3, ie, je, ke))
   ! Fill up the xADT using cell centers (dual mesh)
   mm = 0
   do k=1, ke
@@ -162,9 +113,73 @@ subroutine initializeOBlock(oBlock, nn)
                 x(i  , j-1, k  , :) + &
                 x(i-1, j  , k  , :) + &
                 x(i  , j  , k  , :))
+           tmpX(:, i, j, k) = oBlock%xADT(:, mm)
         end do
      end do
   end do
+
+  ! Flag all nodes that are within nearWallDist as being nearWall
+  do mm=1, nBocos
+     if (isWallType(BCType(mm))) then 
+        select case (BCFaceID(mm))
+        case (iMin)
+           allocate(planes(ie))
+           do i=1, ie
+              planes(i)%xx => tmpX(:, i, :, :)
+              planes(i)%nearWall => oBlock%nearWall(i, :, :)
+           end do
+        case (iMax)
+           allocate(planes(ie))
+           do i=1, ie
+              planes(i)%xx => tmpX(:, ie-i+1, :, :)
+              planes(i)%nearWall => oBlock%nearWall(ie-i+1, :, :)
+           end do
+        case (jMin)
+           allocate(planes(je))
+           do j=1, je
+              planes(j)%xx => tmpX(:, :, j, :)
+              planes(j)%nearWall => oBlock%nearWall(:, j, :)
+           end do
+        case (jMax)
+           allocate(planes(je))
+           do j=1, je
+              planes(j)%xx => tmpX(:, :, je-j+1, :)
+              planes(j)%nearWall => oBlock%nearWall(:, je-j+1, :)
+           end do
+        case (kMin)
+           allocate(planes(ke))
+           do k=1, ke
+              planes(k)%xx => tmpX(:, :, :, k)
+              planes(k)%nearWall => oBlock%nearWall(:, :, k)
+           end do
+        case (kMax)
+           allocate(planes(ke))
+           do k=1, ke
+              planes(k)%xx => tmpX(:, :, :, ke-k+1)
+              planes(k)%nearWall => oBlock%nearWall(:, :, ke-k+1)
+           end do
+        end select
+        
+        ! Loop over the size of the generalized plane
+        do j=1, size(planes(1)%xx, 3)
+           do i=1, size(planes(1)%xx, 2)
+              
+              ! Loop over the 'k' ie offwall direction
+              do k=1, size(planes) 
+                 
+                 dist = norm2(planes(k)%xx(:, i, j) - planes(1)%xx(:, i, j))
+                 if (dist < nearWallDist) then 
+                    planes(k)%nearWall(i, j) = 1
+                 end if
+              end do
+           end do
+        end do
+     deallocate(planes)
+  end if
+end do ! BocoLoop
+deallocate(tmpX)
+
+
 
   mm = 0
   ! These are the 'elements' of the dual mesh.
