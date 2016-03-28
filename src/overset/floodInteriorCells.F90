@@ -11,7 +11,7 @@ subroutine floodInteriorCells(level, sps)
   integer(kind=intType) :: nn, i, j, k, nSeed, iSeed, ierr
   integer(kind=intType), dimension(:, :), allocatable :: stack, floodSeeds
   integer(kind=intType) :: nChanged, nChangedLocal, stackPointer, loopIter
-  logical :: tmpSave
+  logical :: tmpSave, isCompute, isWallDonor, isFloodSeed
   ! At this point iblank should not be meanginful since we actually
   ! still computing the interpolation. So we can hijack it for the
   ! integer comm here:
@@ -51,8 +51,8 @@ subroutine floodInteriorCells(level, sps)
            do k=2, kl
               do j=2, jl
                  do i=2, il
-                    if (fringes(i, j, k)%isWallDonor .and. &
-                         fringes(i, j, k)%isCompute)  then 
+                       if (isWallDonor(fringes(i, j, k)%status) .and. &
+                            isCompute(fringes(i, j, k)%status)) then 
                        call addSeed(i,j ,k)
                     end if
                  end do
@@ -118,7 +118,7 @@ subroutine floodInteriorCells(level, sps)
               i = stack(1, stackPointer)
               j = stack(2, stackPointer)
               k = stack(3, stackPointer)
-              fringes(i, j, k)%isFloodSeed = .True. 
+              call setIsFloodSeed(fringes(i, j, k)%status, .True. )
            end if
 
            ! Start the flooding (stacked based, not recursive)
@@ -129,8 +129,7 @@ subroutine floodInteriorCells(level, sps)
               j = stack(2, stackPointer)
               k = stack(3, stackPointer)
               stackPointer = stackPointer - 1
-
-              if (fringes(i, j, k)%isCompute .and. fringes(i, j, k)%donorProc == -1) then 
+              if (isCompute(fringes(i, j, k)%status) .and. fringes(i, j, k)%donorProc == -1) then 
                  ! Flag the cell (using iblank) as being changed
                  iBlank(i, j, k) = 1
 
@@ -138,12 +137,13 @@ subroutine floodInteriorCells(level, sps)
                  nChangedLocal = nChangedLocal + 1
 
                  ! Pure compute cell, convert to hole
-                 tmpSave = fringes(i, j, k)%isFloodSeed
+                 
+                 tmpSave = isFloodSeed(fringes(i, j, k)%status)
                  call emptyFringe(fringes(i, j, k))
-                 fringes(i, j, k)%isHole = .True.
-                 fringes(i, j, k)%isFlooded = .True.
-                 fringes(i, j, k)%isCompute = .False.
-                 fringes(i, j, k)%isFloodSeed = tmpSave
+                 call setIsHole(fringes(i, j, k)%status, .True.)
+                 call setIsFlooded(fringes(i, j, k)%status, .True.)
+                 call setIsCompute(fringes(i, j, k)%status, .False.)
+                 call setIsFloodSeed(fringes(i, j, k)%status, tmpSave)
             
                  ! Now add the six nearest neighbours to the stack
                  ! provided they are in the owned cell range:

@@ -133,9 +133,9 @@ subroutine determineDonors(level, sps, fringeList, nFringe, useWall)
                     jjj = jj + fringeList(i)%dJ
                     kkk = kk + fringeList(i)%dK
                     if (useWall) then 
-                       flowDoms(nn, level, sps)%fringes(iii, jjj, kkk)%isWallDonor = .True.
+                       call setIsWallDonor(flowDoms(nn, level, sps)%fringes(iii, jjj, kkk)%status, .True. )
                     else
-                       flowDoms(nn, level, sps)%fringes(iii, jjj, kkk)%isDonor = .True.
+                       call setIsDonor(flowDoms(nn, level, sps)%fringes(iii, jjj, kkk)%status, .True. )
                     end if
                  end do
               end do
@@ -164,9 +164,9 @@ subroutine determineDonors(level, sps, fringeList, nFringe, useWall)
               jjj = jj + intRecvBuf(4*j-1)
               kkk = kk + intRecvBuf(4*j  )
               if (useWall) then 
-                 flowDoms(nn, level, sps)%fringes(iii, jjj, kkk)%isWallDonor = .True.
+                 call setIsWallDonor(flowDoms(nn, level, sps)%fringes(iii, jjj, kkk)%status, .True. )
               else
-                 flowDoms(nn, level, sps)%fringes(iii, jjj, kkk)%isDonor = .True.
+                 call setIsDonor(flowDoms(nn, level, sps)%fringes(iii, jjj, kkk)%status, .True. )
               end if
            end do
         end do

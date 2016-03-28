@@ -846,9 +846,7 @@ python module libsumb
        end module inputtimespectral
 
        module inputoverset
-         integer(kind=inttype) :: oversetinterpolation
-         integer(kind=inttype) parameter, optional :: linear=1
-         integer(kind=inttype) parameter, optional :: quadratic=2
+         logical :: lowoversetmemory
        end module inputoverset
        
        module inputunsteady ! in :test:inputParam.f90

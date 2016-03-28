@@ -9,7 +9,7 @@ subroutine fringeReduction(level, sps)
 
   ! Working
   integer(kind=intType) :: i, j, k, nn, ii, jj, kk, i_stencil
-  logical :: computeCellFound
+  logical :: computeCellFound, isCompute
 
   do nn=1, nDom
      call setPointers(nn, level, sps)
@@ -28,7 +28,7 @@ subroutine fringeReduction(level, sps)
                     jj = visc_drdw_stencil(i_stencil, 2) + j
                     kk = visc_drdw_stencil(i_stencil, 3) + k
 
-                    if (fringes(ii, jj, kk)%isCompute) then 
+                    if (isCompute(fringes(ii, jj, kk)%status)) then 
                        ! This is a compute cell
                        computeCellFound = .True.
                     end if
@@ -38,8 +38,8 @@ subroutine fringeReduction(level, sps)
                     ! This cell is a hole no compute cell
                     ! surrounding a fringe, we can hard iblank it.
                     call emptyFringe(fringes(i, j, k))
-                    fringes(i, j, k)%isHole = .True.
-                    fringes(i, j, k)%isCompute = .False.
+                    call setIsHole(fringes(i, j, k)%status, .True.)
+                    call setIsCompute(fringes(i, j, k)%status, .False.)
                  end if
               end if
            end do

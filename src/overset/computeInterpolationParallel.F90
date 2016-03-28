@@ -16,6 +16,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
   use BCTypes
   use inputTimeSpectral
   use ADTapi
+  use inputOverset
   implicit none
 
   ! Input Parameters
@@ -30,7 +31,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
   integer(kind=intType) :: nn, mm, n, ierr, iProc, myIndex
   integer(kind=intType) :: iWork, nWork, nFringeProc, nLocalFringe
   real(kind=realType) :: startTime, endTime, quality
-  logical :: computeCellFound, oversetPresent
+  logical :: computeCellFound, oversetPresent, isCompute
 
   type(CSRMatrix), pointer :: overlap
   type(CSRMatrix) :: overlapTranspose
@@ -206,8 +207,9 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      ! transpose of the matrix which is useful to use for the fringe
      ! sending operation (it is transpose of the block sending)
      ! -----------------------------------------------------------------
-
-     call oversetLoadBalance(overlap)
+     if (.not. lowOversetMemory) then 
+        call oversetLoadBalance(overlap)
+     end if
      call transposeOverlap(overlap, overlapTranspose)
 
      ! -----------------------------------------------------------------
@@ -290,7 +292,6 @@ subroutine oversetComm(level, firstTime, coarseLevel)
         end if
      end do
 
-
      ! Allocate space for the localWallFringes. localWallFringes keeps
      ! track of donors for cells that are next to a wall. These must
      ! be recorded independently of the actual donors since we don't
@@ -307,11 +308,9 @@ subroutine oversetComm(level, firstTime, coarseLevel)
         iDom = cumDomProc(myid) + nn
 
         call initializeOBlock(oBlocks(iDom), nn)
-        call packOBlock(oBlocks(iDom))
         oBlockReady(iDom) = .True.
 
-        call initializeFringes(oFringes(iDom), nn, level, sps)
-        call packOFringe(oFringes(iDom))
+        call initializeOFringes(oFringes(iDom), nn)
         oFringeReady(iDom) = .True. 
 
         call initializeOWall(oWalls(iDom), .True., clusters(iDom))
@@ -336,6 +335,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      call getCommPattern(overlap, &
           oblockSendList, size(oBlockSendList, 2),  nOblockSend, &
           oBlockRecvList, size(oBlockRecvList, 2), nOblockRecv)
+
      call getCommPattern(overlapTranspose, &
           oFringeSendList, size(oFringeSendList, 2), nOFringeSend, &
           oFringeRecvList, size(oFringeRecvList, 2), nOFringeRecv)
@@ -371,12 +371,14 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      do jj=1, nOblockSend
         iProc = oBlockSendList(1, jj)
         iDom = oBlockSendList(2, jj)
+        call packOBlock(oBlocks(iDom))
         call sendOBlock(oBlocks(iDom), iDom, iProc, 0, sendCount)
      end do
 
      do jj=1, nOFringeSend
         iProc = oFringeSendList(1, jj)
         iDom = oFringeSendList(2, jj)
+        call packOFringe(oFringes(iDom))
         call sendOFringe(oFringes(iDom), iDom, iProc, MAGIC, sendCount)
      end do
 
@@ -481,6 +483,27 @@ subroutine oversetComm(level, firstTime, coarseLevel)
         call ECHK(ierr, __FILE__, __LINE__)
      end do
 
+     ! We are now completely finished with oBlocks and owalls so
+     ! delete before we allocate space for all the fringes
+     call deallocateOBlocks(oBlocks, size(oBlocks))
+     call deallocateOWalls(oWalls, size(oWalls))
+     deallocate(oBlocks, oWalls)
+
+     ! Make sure all oFringe buffers are delloacted before we allocate
+     ! space for the large fringe arraay
+     do iDom=1, nDomTotal
+        if (allocated(oFringes(iDom)%iBuffer)) then 
+           deallocate(oFringes(iDom)%iBuffer, &
+                oFringes(iDom)%rBuffer)
+        end if
+     end do
+ 
+     ! Now create the fringes
+     do nn=1, nDom
+        call setPointers(nn, level, sps)
+        call initializeFringes(nn, level, sps)
+     end do
+
      ! -----------------------------------------------------------------
      ! Step 9: Well, all the searches are done, so now we can now send
      ! the fringes back to where they came from. However, since we
@@ -496,12 +519,24 @@ subroutine oversetComm(level, firstTime, coarseLevel)
 
      do iDom=1, nDomTotal
         if (oFringes(iDom)%allocated) then 
-
            ! Fringe is allocated so check it
            iPtr = 0
            rPtr = 0
+           ! First pass count up the sizes
            do i=1, size(oFringes(iDom)%donorProc)
               if (oFringes(iDom)%donorProc(i) /= -1) then 
+                 iPtr = iPtr + 14
+                 rPtr = rPtr + 4
+              end if
+           end do
+
+           allocate(oFringes(iDom)%iBuffer(iPtr), oFringes(iDom)%rBuffer(rPtr))
+           iPtr = 0
+           rPtr = 0
+           ! Second pass add the values
+           do i=1, size(oFringes(iDom)%donorProc)
+              if (oFringes(iDom)%donorProc(i) /= -1) then 
+                 
                  ! Copy the values for this fringe into the fringe's
                  ! buffer
                  oFringes(iDom)%iBuffer(iPtr+1) = oFringes(iDom)%donorProc(i)
@@ -697,7 +732,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
                     ! Now unwind the index of *donor*
 
                     ! Remove the compute status of this cell
-                    fringes(i, j, k)%isCompute = .False. 
+                    call setIsCompute(fringes(i, j, k)%status, .False.)
 
                     ! Very Important --- also store the quality of the
                     ! donor...we need to compare this with the quality
@@ -782,18 +817,16 @@ subroutine oversetComm(level, firstTime, coarseLevel)
               fringes(i, j, k)%quality = quality
 
               ! Remove the compute status of this cell
-              fringes(i, j, k)%isCompute = .False. 
+              call setIsCompute(fringes(i, j, k)%status, .False.)
+
            end if
         end do
      end do
 
      ! ------------------------------------------------------------------
-     ! We are now completely finished with oFringes, oBlocks and
-     ! oWalls. 
-     call deallocateOBlocks(oBlocks, size(oBlocks))
+     ! We are now completely finished with oFringes and the buffers
      call deallocateOFringes(oFringes, size(oFringes))
-     call deallocateOWalls(oWalls, size(oWalls))
-     deallocate(oBlocks, oFringes, oWalls, intRecvBuf, realRecvBuf)
+     deallocate(oFringes, intRecvBuf, realRecvBuf)
 
      ! -----------------------------------------------------------------
      ! Step 9: We now have computed all the fringes that we can. Some of
@@ -827,8 +860,6 @@ subroutine oversetComm(level, firstTime, coarseLevel)
            do j=2, jl
               do i=2, il
 
-              
-
                  ! Check if this cell is a fringe:
                  if (fringes(i, j, k)%donorProc /= -1) then 
 
@@ -842,7 +873,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
                        jj = visc_drdw_stencil(i_stencil, 2) + j
                        kk = visc_drdw_stencil(i_stencil, 3) + k
 
-                       if (fringes(ii, jj, kk)%isCompute) then 
+                       if (isCompute(fringes(ii, jj, kk)%status)) then 
                           ! This is a compute cell
                           computeCellFound = .True.
                        end if
@@ -884,8 +915,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      ! ! fringes when we're done so everyone has up to date information.
      ! ! -----------------------------------------------------------------
 
-     call exchangeDonorStatus(level, sps, commPatternCell_2nd, internalCell_2nd)
-
+     call exchangeStatusTranspose(level, sps, commPatternCell_2nd, internalCell_2nd)
      call irregularCellCorrection(level, sps)
 
      ! Next we have to perfrom the interior cell flooding. We already
@@ -898,10 +928,9 @@ subroutine oversetComm(level, firstTime, coarseLevel)
 
 
      ! The fringeReduction just needs to be isCompute flag so exchange
-     ! this as these may have been changed by the flooding
+     ! the status this as these may have been changed by the flooding
 
-     call exchangeIsCompute(level, sps, commPatternCell_2nd, internalCell_2nd)
-
+     call exchangeStatus(level, sps, commPatternCell_2nd, internalCell_2nd)
      !-----------------------------------------------------------------
      ! Step 15: Reduction of the number of fringes. What we do is look at
      ! all the fringes and see if all the cells in its stencil are also
@@ -1144,7 +1173,12 @@ contains
          overlap%rowPtr(2:nDomTotal+1), &
          nDomProc, cumDomProc, sumb_integer, sumb_comm_world, ierr)
 
-    deallocate(colIndLocal, rowPtrLocal, localOverlap)
+    ! Initialize the assignedProc to the owned rows of a processor
+    do iProc=0,nProc-1
+        overlap%assignedProc(cumNNZProc(iProc)+1:cumNNZProc(iProc+1)) = iProc
+     end do
+
+    deallocate(colIndLocal, rowPtrLocal, localOverlap, cumNNzProc)
 
   end subroutine buildGlobalSparseOverlap
 
