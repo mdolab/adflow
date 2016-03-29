@@ -262,7 +262,8 @@ module overset
   real(kind=realType), dimension(:), allocatable :: clusterAreas
 
   type XPlane
-     real(kind=realType), dimension(:, :, :), pointer :: xx
+     real(kind=realType), dimension(:, :, :), pointer :: x
+     real(kind=realType), dimension(:, :, :), pointer :: xseed
      integer(kind=intType), dimension(:, :), pointer :: nearWall
   end type XPlane
 
