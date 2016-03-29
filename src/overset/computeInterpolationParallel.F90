@@ -990,7 +990,6 @@ subroutine oversetComm(level, firstTime, coarseLevel)
   end do spectralLoop
 
 
-
   ! Free the buffer and make a new one that includes necessary sizes
   ! for the overset comm
   deallocate(sendBuffer, recvBuffer)

@@ -31,7 +31,7 @@ subroutine getOBlockBufferSizes(il, jl, kl, iSize, rSize)
 
   iSize = iSize + (ie+2)*(je+2)*(ke+2) ! global cell
   
-  iSize = iSize + ie*je*ke ! nearWall
+  iSize = iSize + il*jl*kl ! nearWall
 
   iSize = iSize + ie*je*ke ! invalidDonor
   
@@ -68,7 +68,7 @@ subroutine packOBlock(oBlock)
 
   ! Working paramters
   integer(kind=intType) :: rSize, iSize, i, j, k, nHexa, nADT
-  integer(kind=intType) :: ie, je, ke
+  integer(kind=intType) :: ie, je, ke, il, jl ,kl
 
   ! If the buffer is already allocated, the block is packed and there
   ! is nothing to do
@@ -91,9 +91,14 @@ subroutine packOBlock(oBlock)
   oBlock%iBuffer(5) = oBlock%block
 
   iSize = iSize + 5
-  ie = oBlock%il + 1
-  je = oBlock%jl + 1
-  ke = oBlock%kl + 1
+
+  il = oBlock%il
+  jl = oBlock%jl
+  kl = oBlock%kl
+
+  ie = il + 1
+  je = jl + 1
+  ke = kl + 1
 
   nHexa = oBlock%il * oBlock%jl * oBlock%kl
   nADT = ie*je*ke
@@ -114,9 +119,9 @@ subroutine packOBlock(oBlock)
      end do
   end do
 
-  do k=1, ke
-     do j=1, je
-        do i=1, ie
+  do k=1, kl
+     do j=1, jl
+        do i=1, il
            iSize = iSize + 1
            oBlock%iBuffer(iSize) = oBlock%nearWall(i, j, k)
         end do
@@ -188,7 +193,7 @@ subroutine unpackOBlock(oBlock)
 
   ! Working paramters
   integer(kind=intType) :: rSize, iSize, i, j, k, nHexa, nADT
-  integer(kind=intType) :: ie, je, ke
+  integer(kind=intType) :: ie, je, ke, il, jl, kl
 
   ! Reset the integer counter and add all the integers on this pass
   iSize = 0
@@ -200,16 +205,20 @@ subroutine unpackOBlock(oBlock)
   oBlock%block = oBlock%iBuffer(5)
   iSize = iSize + 5
 
-  ie = oBlock%il + 1
-  je = oBlock%jl + 1
-  ke = oBlock%kl + 1
+  il = oBlock%il
+  jl = oBlock%jl
+  kl = oBlock%kl
+  ie = il + 1
+  je = jl + 1
+  ke = kl + 1
+  
   nHexa = oBlock%il * oBlock%jl * oBlock%kl
   nADT = ie*je*ke
 
   ! Allocate the remainder of the arrays in oBlock.
   allocate(oBlock%hexaConn(8, nHexa))
   allocate(oBlock%globalCell(0:ie+1, 0:je+1, 0:ke+1))
-  allocate(oBlock%nearWall(1:ie, 1:je, 1:ke))
+  allocate(oBlock%nearWall(1:il, 1:jl, 1:kl))
   allocate(oBlock%invalidDonor(1:ie, 1:je, 1:ke))
   allocate(oBlock%qualDonor(1, ie * je * ke))
   allocate(oBlock%xADT(3, nADT))
@@ -267,9 +276,9 @@ subroutine unpackOBlock(oBlock)
      end do
   end do
 
-  do k=1, ke
-     do j=1, je
-        do i=1, ie
+  do k=1, kl
+     do j=1, jl
+        do i=1, il
            iSize = iSize + 1
            oBlock%nearWall(i, j, k) = oBlock%iBuffer(iSize)
         end do
