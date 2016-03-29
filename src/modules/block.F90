@@ -509,7 +509,9 @@ module block
      real(kind=realType), dimension(:,:,:,:),   pointer :: sFaceIALE, sFaceJALE, sFaceKALE
 
 
-
+     ! Tempory storage for overset variables
+     real(kind=realType), dimension(:, :, :, :), pointer :: XSeed
+     integer(kind=intType), dimension(:, :, :), pointer :: nearWall
 
      !
      !        ****************************************************************
