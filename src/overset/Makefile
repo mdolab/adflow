@@ -48,6 +48,7 @@ FILES_TO_COMPLEXIFY =	stringOps.F90\
 			determineClusterAreas.F90 \
 			checkOverset.F90 \
 			exchangeIblanks.f90\
+			flagNearWall.F90\
 			floodInteriorCells.F90\
 			oversetLoadBalance.F90\
 			qsortFringeType.F90\
@@ -75,7 +76,7 @@ FILES_TO_COMPLEXIFY =	stringOps.F90\
 			writeDualGrid.F90\
 			exchangeStatus.F90\
 			exchangeStatusTranspose.F90\
-
+			exchangeXSeeds.F90\
 		       # computeQuadraticWeights.F90 \
 		       matrixinv3by3.F90 \
 

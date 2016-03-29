@@ -303,11 +303,14 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      allocate(localWallFringes(1000))
      nLocalWallFringe = 0
 
+     ! Determine the cells that are near wall. We have a special routine for this. 
+     call flagNearWallCells(level, sps)
+
      do nn=1, nDom
         call setPointers(nn, level, sps)
         iDom = cumDomProc(myid) + nn
 
-        call initializeOBlock(oBlocks(iDom), nn)
+        call initializeOBlock(oBlocks(iDom), nn, level, sps)
         oBlockReady(iDom) = .True.
 
         call initializeOFringes(oFringes(iDom), nn)
@@ -966,7 +969,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      ! algorithm to verify that we actually have a valid interpolation
      ! -----------------------------------------------------------------
      call checkOverset(level, sps)
-
+     
      ! -----------------------------------------------------------------
      ! Step 18: Create the zipper mesh. We pass in a few arrays
      ! dealing with wall exchange since there is no need to recompute them. 
@@ -985,6 +988,8 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      deallocate(clusters)
 
   end do spectralLoop
+
+
 
   ! Free the buffer and make a new one that includes necessary sizes
   ! for the overset comm
@@ -1343,17 +1348,16 @@ subroutine writePartionedMesh(fileName)
 
      open(unit=1, file=fileName, form='formatted', status='unknown')
      !write(1, *) "Variables = X Y Z"
-     write(1, *) "Variables = X Y Z IBLANK"
+     write(1, *) "Variables = X Y Z IBLANK NEARWALL"
 
      ! Write my own blocks first
      do nn=1,nDom
         call setPointers(nn, 1, 1)
         !write(tmpStr, *) "Proc ", 0, " Local ID", nn
-        write(tmpStr, "(a,I2.2,a,I2.2,a)"), """Proc ", 0, " Local ID ", nn , """"
+        write(tmpStr, "(a,I3.3,a,I3.3,a)"), """Proc ", 0, " Local ID ", nn , """"
         write(1,*) "ZONE I=", il, " J=",jl, "K=", kl, "T=", trim(tmpStr)
         write(1, *) "DATAPACKING=BLOCK"
-        !write(1, *) "VARLOCATION=([1,2,3]=NODAL)"
-        write(1, *) "VARLOCATION=([1,2,3,4]=NODAL)"
+        write(1, *) "VARLOCATION=([1,2,3,5]=NODAL, [4]=CELLCENTERED)"
 
         do iDim=1, 3
            do k=1, kl
@@ -1367,13 +1371,22 @@ subroutine writePartionedMesh(fileName)
 
         ! Iblanks are cell center values,  imposed on primal nodes, for plotting
         ! purpose only
-        do k=1, kl
-           do j=1, jl
-              do i=1, il
-                 write(1, *) iBlank(i+1, j+1, k+1) 
+        do k=2, kl
+           do j=2, jl
+              do i=2, il
+                 write(1, *) iBlank(i, j, k) 
               end do
            end do
         end do
+
+        do k=1, kl
+           do j=1, jl
+              do i=1, il
+                 write(1, *) flowDoms(nn, 1,1)%nearWall(i, j, k)
+              end do
+           end do
+        end do
+
      end do
 
      ! Now loop over the remaining blocks...receiving each and writing:
@@ -1382,7 +1395,7 @@ subroutine writePartionedMesh(fileName)
         do nn=1, nDomProc(iProc)
            iDom = cumDomProc(iProc) + nn
            bufSize = dims(1, iDom)*dims(2, iDom)*dims(3,iDom)*3
-           ibufSize = dims(1, iDom)*dims(2, iDom)*dims(3,iDom)
+           ibufSize = (dims(1, iDom)-1)*(dims(2, iDom)-1)*(dims(3,iDom)-1)*2
 
            call MPI_Recv(buffer, bufSize, sumb_real, iProc, iProc, &
                 sumb_comm_world, status, ierr)
@@ -1390,11 +1403,10 @@ subroutine writePartionedMesh(fileName)
            call MPI_Recv(ibuffer, ibufSize, sumb_integer, iProc, 10*iProc, &
                 sumb_comm_world, status, ierr)
 
-           write(tmpStr, "(a,I2.2,a,I2.2,a)"), """Proc ", iProc, " Local ID ", nn ,""""
+           write(tmpStr, "(a,I3.3,a,I3.3,a)"), """Proc ", iProc, " Local ID ", nn ,""""
            write(1,*) "ZONE I=", dims(1, iDom), " J=", dims(2, iDom), "K=", dims(3, iDom), "T=", trim(tmpStr)
            write(1, *) "DATAPACKING=BLOCK"
-           !write(1, *) "VARLOCATION=([1,2,3]=NODAL)"
-           write(1, *) "VARLOCATION=([1,2,3,4]=NODAL)"
+           write(1, *) "VARLOCATION=([1,2,3]=NODAL, [4,5]=CELLCENTERED)"
 
            ! Dump directly...already in the right order
            do i=1, bufSize
@@ -1430,14 +1442,24 @@ subroutine writePartionedMesh(fileName)
         ! Iblanks are cell center values,  imposed on primal nodes, for plotting
         ! purpose only
         ii = 0
-        do k=1, kl
-           do j=1, jl
-              do i=1, il
+        do k=2, kl
+           do j=2, jl
+              do i=2, il
                  ii = ii + 1
-                 ibuffer(ii) = iBlank(i+1, j+1, k+1)
+                 ibuffer(ii) = iBlank(i, j, k)
               end do
            end do
         end do
+
+        do k=2, kl
+           do j=2, jl
+              do i=2, il
+                 ii = ii + 1
+                 ibuffer(ii) = flowDoms(nn, 1,1)%nearWall(i,j,k)
+              end do
+           end do
+        end do
+
         call mpi_send(ibuffer, ii, sumb_integer, 0, 10*myid, &
              sumb_comm_world, ierr)
      end do
