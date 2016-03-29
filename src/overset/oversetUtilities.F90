@@ -698,19 +698,21 @@ subroutine wallsOnBlock(wallsPresent)
 
   use blockPointers
   use bcTypes
+  use cgnsGrid
   implicit none
 
   logical, intent(out) :: wallsPresent
   integer(kind=intType) :: mm
   wallsPresent = .False.
-  do mm=1, nBocos
-     if (BCType(mm) == NSWallAdiabatic .or. &
-          BCType(mm) == NSWallIsoThermal .or. &
-          BCType(mm) == EulerWall) then 
+  ! Check THE ORIGINAL CGNS blocks for BCs, because the block may have
+  ! been split. 
+  do mm=1, cgnsDoms(nbkGlobal)%nBocos
+     if (cgnsDoms(nbkGlobal)%bocoInfo(mm)%BCType == NSWallAdiabatic .or. &
+          cgnsDoms(nbkGlobal)%bocoInfo(mm)%BCType == NSWallIsothermal .or. &
+          cgnsDoms(nbkGlobal)%bocoInfo(mm)%BCType == EulerWall) then
         wallsPresent = .True.
      end if
   end do
-
 end subroutine wallsOnBlock
 
 subroutine flagForcedReceivers(tmp)
