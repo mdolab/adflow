@@ -94,15 +94,12 @@ python module libsumb
 
        subroutine preprocessing ! in :sumb:../../preprocessing/preprocessing.f90
        end subroutine preprocessing
-
-       subroutine preprocessingpart2 ! in :sumb:../../preprocessing/preprocessing.f90
-       end subroutine preprocessingpart2
      
        subroutine initflow ! in :sumb:../../initFlow/initFlow.f90
        end subroutine initflow
-
-       subroutine initflowpart2 ! in :sumb:../../initFlow/initFlow.f90
-       end subroutine initflowpart2
+       
+       subroutine initflowrestart
+       end subroutine initflowrestart
 
        subroutine updategamma
        end subroutine updategamma
@@ -1105,6 +1102,7 @@ python module libsumb
          integer(kind=inttype) :: asm_overlap
          character(len=maxstringlen) :: global_pc_type
          real(kind=realtype) :: ksp_atol
+         real(kind=realtype) :: ksp_rtol_init
          integer(kind=inttype) :: ksp_max_it
          integer(kind=inttype) :: local_pc_ilu_level
          real(kind=realtype) :: snes_stol

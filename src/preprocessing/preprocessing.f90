@@ -232,23 +232,16 @@
          end do
        end do
 
-       end subroutine preprocessing
+       ! Compute global cells and Nodes
+       do level=1,nLevels
+          call setGlobalCellsAndNodes(level)
+       end do
 
+       nLevels = ubound(flowDoms,2)
+       
+       do level=1,nLevels
+          call wallDistance(level, .True.)
+       end do
+       
+     end subroutine preprocessing
 
-       subroutine preprocessingPart2
-
-         ! This routine computes the wallDistance. It needs to be run
-         ! AFTER initFLow so it is in it's own routine.
-
-         use block
-         implicit none
-         integer(kind=intType) :: level, nLevels
-
-         nLevels = ubound(flowDoms,2)
-
-         do level=1,nLevels
-            call wallDistance(level, .True.)
-         end do
-
-       end subroutine preprocessingPart2
-         

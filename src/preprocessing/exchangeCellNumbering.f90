@@ -1,8 +1,18 @@
-subroutine exchangeCoorNumbering(level)
+!
+!      ******************************************************************
+!      *                                                                *
+!      * File:          exchangeCoor.F90                                *
+!      * Author:        Edwin van der Weide                             *
+!      * Starting date: 02-24-2003                                      *
+!      * Last modified: 06-12-2005                                      *
+!      *                                                                *
+!      ******************************************************************
+!
+subroutine exchangeCellNumbering(level)
   !
   !      ******************************************************************
   !      *                                                                *
-  !      * ExchangeCoorNumbering exchanges the node indices of the given  *
+  !      * ExchangeCellNumbering exchanges the cell indices of the given  *
   !      * level.                                                         *
   !      *                                                                *
   !      ******************************************************************
@@ -36,37 +46,37 @@ subroutine exchangeCoorNumbering(level)
        intSendBuffer(size(sendBuffer)))
 
   ! Loop over the number of spectral solutions.
-  spectralLoop: do mm=1,nTimeIntervalsSpectral
+  spectralLoop: do mm=1, nTimeIntervalsSpectral
 
      ! Send the coordinates i have to send. The data is first copied
      ! into the send buffer and this buffer is sent.
 
      ii = 1
-     sends: do i=1,commPatternNode_1st(level)%nProcSend
+     sends: do i=1,commPatternCell_2nd(level)%nProcSend
 
         ! Store the processor id and the size of the message
         ! a bit easier.
 
-        procID = commPatternNode_1st(level)%sendProc(i)
-        ssize   = commPatternNode_1st(level)%nSend(i)
+        procID = commPatternCell_2nd(level)%sendProc(i)
+        ssize   = commPatternCell_2nd(level)%nSend(i)
 
         ! Copy the data in the correct part of the send buffer.
 
         jj = ii
-        do j=1,commPatternNode_1st(level)%nSend(i)
+        do j=1,commPatternCell_2nd(level)%nSend(i)
 
            ! Store the block id and the indices of the donor
            ! a bit easier.
 
-           d1 = commPatternNode_1st(level)%sendList(i)%block(j)
-           i1 = commPatternNode_1st(level)%sendList(i)%indices(j,1)
-           j1 = commPatternNode_1st(level)%sendList(i)%indices(j,2)
-           k1 = commPatternNode_1st(level)%sendList(i)%indices(j,3)
+           d1 = commPatternCell_2nd(level)%sendList(i)%block(j)
+           i1 = commPatternCell_2nd(level)%sendList(i)%indices(j,1)
+           j1 = commPatternCell_2nd(level)%sendList(i)%indices(j,2)
+           k1 = commPatternCell_2nd(level)%sendList(i)%indices(j,3)
 
            ! Copy the coordinates of this point in the buffer.
            ! Update the counter jj accordingly.
 
-           intSendBuffer(jj) = flowDoms(d1,level,mm)%globalNode(i1,j1,k1)
+           intSendBuffer(jj)   = flowDoms(d1,level,mm)%globalCell(i1,j1,k1)
            jj = jj + 1
 
         enddo
@@ -86,13 +96,13 @@ subroutine exchangeCoorNumbering(level)
      ! Post the nonblocking receives.
 
      ii = 1
-     receives: do i=1,commPatternNode_1st(level)%nProcRecv
+     receives: do i=1,commPatternCell_2nd(level)%nProcRecv
 
         ! Store the processor id and the size of the message
         ! a bit easier.
 
-        procID = commPatternNode_1st(level)%recvProc(i)
-        ssize   = commPatternNode_1st(level)%nRecv(i)
+        procID = commPatternCell_2nd(level)%recvProc(i)
+        ssize   = commPatternCell_2nd(level)%nRecv(i)
 
         ! Post the receive.
 
@@ -107,31 +117,31 @@ subroutine exchangeCoorNumbering(level)
 
      ! Copy the local data.
 
-     localCopy: do i=1,internalNode_1st(level)%nCopy
+     localCopy: do i=1,internalCell_2nd(level)%nCopy
 
         ! Store the block and the indices of the donor a bit easier.
 
-        d1 = internalNode_1st(level)%donorBlock(i)
-        i1 = internalNode_1st(level)%donorIndices(i,1)
-        j1 = internalNode_1st(level)%donorIndices(i,2)
-        k1 = internalNode_1st(level)%donorIndices(i,3)
+        d1 = internalCell_2nd(level)%donorBlock(i)
+        i1 = internalCell_2nd(level)%donorIndices(i,1)
+        j1 = internalCell_2nd(level)%donorIndices(i,2)
+        k1 = internalCell_2nd(level)%donorIndices(i,3)
         ! Idem for the halo's.
 
-        d2 = internalNode_1st(level)%haloBlock(i)
-        i2 = internalNode_1st(level)%haloIndices(i,1)
-        j2 = internalNode_1st(level)%haloIndices(i,2)
-        k2 = internalNode_1st(level)%haloIndices(i,3)
+        d2 = internalCell_2nd(level)%haloBlock(i)
+        i2 = internalCell_2nd(level)%haloIndices(i,1)
+        j2 = internalCell_2nd(level)%haloIndices(i,2)
+        k2 = internalCell_2nd(level)%haloIndices(i,3)
         ! Copy the coordinates.
-        flowDoms(d2,level,mm)%globalNode(i2,j2,k2) = &
-             flowDoms(d1,level,mm)%globalNode(i1,j1,k1)
+        flowDoms(d2,level,mm)%globalCell(i2,j2,k2) = &
+             flowDoms(d1,level,mm)%globalCell(i1,j1,k1)
 
      enddo localCopy
 
      ! Complete the nonblocking receives in an arbitrary sequence and
      ! copy the coordinates from the buffer into the halo's.
 
-     ssize = commPatternNode_1st(level)%nProcRecv
-     completeRecvs: do i=1,commPatternNode_1st(level)%nProcRecv
+     ssize = commPatternCell_2nd(level)%nProcRecv
+     completeRecvs: do i=1,commPatternCell_2nd(level)%nProcRecv
 
         ! Complete any of the requests.
 
@@ -140,19 +150,19 @@ subroutine exchangeCoorNumbering(level)
         ! Copy the data just arrived in the halo's.
 
         ii = index
-        jj = commPatternNode_1st(level)%nRecvCum(ii-1) +1
-        do j=1,commPatternNode_1st(level)%nRecv(ii)
+        jj = commPatternCell_2nd(level)%nRecvCum(ii-1) +1
+        do j=1,commPatternCell_2nd(level)%nRecv(ii)
 
            ! Store the block and the indices of the halo a bit easier.
 
-           d2 = commPatternNode_1st(level)%recvList(ii)%block(j)
-           i2 = commPatternNode_1st(level)%recvList(ii)%indices(j,1)
-           j2 = commPatternNode_1st(level)%recvList(ii)%indices(j,2)
-           k2 = commPatternNode_1st(level)%recvList(ii)%indices(j,3)
+           d2 = commPatternCell_2nd(level)%recvList(ii)%block(j)
+           i2 = commPatternCell_2nd(level)%recvList(ii)%indices(j,1)
+           j2 = commPatternCell_2nd(level)%recvList(ii)%indices(j,2)
+           k2 = commPatternCell_2nd(level)%recvList(ii)%indices(j,3)
 
            ! Copy the data.
 
-           flowDoms(d2,level,mm)%globalNode(i2,j2,k2) = intRecvBuffer(jj)
+           flowDoms(d2,level,mm)%globalCell(i2,j2,k2) = intRecvBuffer(jj)
            jj = jj + 1
 
         enddo
@@ -161,11 +171,11 @@ subroutine exchangeCoorNumbering(level)
 
      ! Complete the nonblocking sends.
 
-     ssize = commPatternNode_1st(level)%nProcSend
-     do i=1,commPatternNode_1st(level)%nProcSend
+     ssize = commPatternCell_2nd(level)%nProcSend
+     do i=1,commPatternCell_2nd(level)%nProcSend
         call mpi_waitany(ssize, sendRequests, index, status, ierr)
      enddo
 
   enddo spectralLoop
   deallocate(intSendBuffer, intRecvBuffer)
-end subroutine exchangeCoorNumbering
+end subroutine exchangeCellNumbering
