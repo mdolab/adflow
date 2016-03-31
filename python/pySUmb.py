@@ -669,6 +669,10 @@ class SUMB(AeroSolver):
         # the printout.
         self.sumb.setfullmask()
 
+        # Remind the users of the modified options:
+        if self.getOption('printIterations'):
+            self.printModifiedOptions()
+        
         # If this problem has't been solved yet, reset flow to this
         # flight condition
         if self.curAP.sumbData.stateInfo is None:
@@ -1977,6 +1981,24 @@ class SUMB(AeroSolver):
                     tmpDict[key] = self.getOption(key)
             pp(tmpDict)
 
+    def printModifiedOptions(self):
+
+        """
+        Prints a nicely formatted dictionary of all the current SUmb
+        options that have been modified from the defaults to the root 
+        processor"""
+        if self.comm.rank == 0:
+            print('+---------------------------------------+')
+            print('|      All Modified SUmb Options:       |')
+            print('+---------------------------------------+')
+            # Need to assemble a temporary dictionary 
+            tmpDict = {}
+            for key in self.options:
+                if key != 'defaults':
+                    if self.getOption(key) != self.options['defaults'][key][1]:
+                        tmpDict[key] = self.getOption(key)
+            pp(tmpDict)
+
     # =========================================================================
     #   The following routines are public functions however, they should
     #   not need to be used by a user using this class directly. They are
@@ -2230,6 +2252,7 @@ class SUMB(AeroSolver):
         except:
             self.curAP.savedOptions = {'sumb':{}}
 
+            
         if 'sumb' in self.curAP.solverOptions:
             for key in self.curAP.solverOptions['sumb']:
                 curVal = self.getOption(key)
@@ -2237,8 +2260,7 @@ class SUMB(AeroSolver):
                 if overwriteVal != curVal:
                     self.setOption(key, overwriteVal)
                     self.curAP.savedOptions['sumb'][key] = curVal
-                    
-                    
+                                        
         AP = self.curAP
         alpha = AP.alpha
         beta = AP.beta
