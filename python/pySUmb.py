@@ -224,8 +224,6 @@ class SUMB(AeroSolver):
         self.sumb.partitionandreadgrid(False)
         self.sumb.preprocessing()
         self.sumb.initflow()
-        self.sumb.preprocessingpart2()
-        self.sumb.initflowpart2()
         self.sumb.preprocessingadjoint()
 
     def setMesh(self, mesh, groupName='all'):
@@ -669,13 +667,16 @@ class SUMB(AeroSolver):
 
         # Set the full mask such that we get the full coefficients in
         # the printout.
-
         self.sumb.setfullmask()
 
         # If this problem has't been solved yet, reset flow to this
         # flight condition
         if self.curAP.sumbData.stateInfo is None:
-            self.resetFlow(aeroProblem, releaseAdjointMemory)
+            if self.getOption('restartFile') != "":
+                self.sumb.inputiteration.mgstartlevel = 1
+                self.sumb.initflowrestart()
+            else:
+                self.resetFlow(aeroProblem, releaseAdjointMemory)
 
         # Possibly release adjoint memory if not already done so.
         if releaseAdjointMemory:
@@ -2153,6 +2154,26 @@ class SUMB(AeroSolver):
             if self.mesh is not None:
                 self.curAP.surfMesh = self.getSurfaceCoordinates(self.groupName)
 
+            # Restore any options that the current aeroProblem
+            # (self.curAP) modified. We have to be slightly careful
+            # since a setOption() may have been called in between:
+            
+            for key in self.curAP.savedOptions['sumb']:
+                # Saved Val: This is the main option value when the
+                # aeroProblem set it's own option
+                # setVal: This is the value the aeroProblem set itself
+                # curVal: This is the actual value currently set
+
+                savedVal = self.curAP.savedOptions['sumb'][key]
+                setVal = self.curAP.solverOptions['sumb'][key]
+                curVal = self.getOption(key)
+
+                if curVal == setVal:
+                    # Restore the saved value, if it still what the
+                    # aeroProblem had set
+                    self.setOption(key, savedVal)
+            
+
         # If not done so already, embed the coordinates:
         if self.DVGeo is not None and ptSetName not in self.DVGeo.points:
             self.DVGeo.addPointSet(self.coords0, ptSetName)
@@ -2196,13 +2217,28 @@ class SUMB(AeroSolver):
         if releaseAdjointMemory:
             self.releaseAdjointMemory()
 
-      
-
     def _setAeroProblemData(self, firstCall=False):
         """
         After an aeroProblem has been associated with self.cuAP, set
         all the updated information in SUmb."""
 
+        # Set any additional sumb options that may be defined in the
+        # aeroproblem. While we do it we save the options that we've
+        # modified if they are different than the current option.
+        try:
+            self.curAP.savedOptions
+        except:
+            self.curAP.savedOptions = {'sumb':{}}
+
+        if 'sumb' in self.curAP.solverOptions:
+            for key in self.curAP.solverOptions['sumb']:
+                curVal = self.getOption(key)
+                overwriteVal =  self.curAP.solverOptions['sumb'][key]
+                if overwriteVal != curVal:
+                    self.setOption(key, overwriteVal)
+                    self.curAP.savedOptions['sumb'][key] = curVal
+                    
+                    
         AP = self.curAP
         alpha = AP.alpha
         beta = AP.beta
@@ -3451,13 +3487,14 @@ class SUMB(AeroSolver):
         # the correct length, otherwise convert to string
         if isinstance(value, str):
             spacesToAdd = self.optionMap[name]['len'] - len(value)
-            value = '\'' + value + ' '*spacesToAdd + '\''
+            value = ''.join(['\'', value,' '*spacesToAdd, '\''])
         else:
             value = str(value)
         # end if
 
         # Exec str is what is actually executed:
-        execStr = 'self.sumb.'+self.optionMap[name]['location'] + '=' + value
+        execStr = ''.join(['self.sumb.', self.optionMap[name]['location'], 
+                           '=', value])
 
         exec(execStr)
 
@@ -3479,8 +3516,7 @@ class SUMB(AeroSolver):
         defOpts = {
             # Common Paramters
             'gridfile':[str, 'default.cgns'],
-            'restartfile':[str, 'default_restart.cgns'],
-            'solrestart':[bool, False],
+            'restartfile':[str, ''],
 
             # Output Parameters
             'storerindlayer':[bool, True],
@@ -3656,7 +3692,6 @@ class SUMB(AeroSolver):
                         'len':self.sumb.constants.maxstringlen},
             'restartfile':{'location':'inputio.restartfile',
                            'len':self.sumb.constants.maxstringlen},
-            'solrestart':{'location':'inputio.restart'},
             'storerindlayer':{'location':'inputio.storerindlayer'},
             'writesymmetry':{'location':'inputio.writesymmetry'},
             'writefarfield':{'location':'inputio.writefarfield'},
@@ -3808,7 +3843,7 @@ class SUMB(AeroSolver):
             'nkuseew':{'location':'nksolvervars.nkuseew'},
             'nkswitchtol':{'location':'nksolvervars.nk_switch_tol'},
             'nksubspacesize':{'location':'nksolvervars.ksp_subspace'},
-            'nklinearsolvetol':{'location':'nksolvervars.ksp_rtol'},
+            'nklinearsolvetol':{'location':'nksolvervars.ksp_rtol_init'},
             'nkpc':{'additive schwartz':'asm',
                     'multigrid':'mg',
                     'location':'nksolvervars.global_pc_type',

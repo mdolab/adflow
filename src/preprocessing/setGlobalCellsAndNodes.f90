@@ -62,6 +62,21 @@ subroutine setGlobalCellsAndNodes(level)
   integer(kind=intType), dimension(:,:), pointer ::  globalCellPtr1
   integer(kind=intType), dimension(:,:), pointer ::  globalCellPtr2
 
+  do sps=1, nTimeIntervalsSpectral
+     do nn=1, nDom
+        call setPointers(nn, level, sps)
+        ! Allocate memory for the cell and node indexing...only on sps=1
+        allocate(flowDoms(nn,level,sps)%globalCell(0:ib,0:jb,0:kb), &
+             flowDoms(nn,level,sps)%globalNode(0:ie,0:je,0:ke), stat=ierr)
+        if (ierr /=0) then
+           call returnFail("setGlobalCellsAndNodes", "Allocation failure for globalCell/Node")
+        end if
+        ! Assign a 'magic number' of -5 to globalCell and global Node:
+        flowDoms(nn,level,sps)%globalCell = -5
+        flowDoms(nn,level,sps)%globalNode = -5
+     end do
+  end do
+
   ! Determine the number of nodes and cells owned by each processor
   ! by looping over the local block domains.
   nCellsLocal(level) = 0
@@ -169,108 +184,13 @@ subroutine setGlobalCellsAndNodes(level)
 
   ! The above procedure has uniquely numbered all cells and nodes
   ! owned on each processor. However we must also determine the
-  ! indices of the halo cells/nodes from other processors. Do do this,
-  ! we will cheat slightly. We will copy globalCell into the Pressure
-  ! variable. Then do a double halo exchange, and copy them back out
-  ! into globalCel. Then we will do the same thing for the globalNode
-  ! values. Pressure values are saved in dw just in case.
+  ! indices of the halo cells/nodes from other processors. To do this
+  ! we just run the specific halo exchanges for the cells and one for
+  ! the nodes
 
-  ! ------------ globalCell ----------------
-  do sps=1, nTimeIntervalsSpectral
-     do nn=1, nDom
-        call setPointers(nn, level, sps)
-        do k=0,kb
-           do j=0,jb
-              do i=0,ib
-                 dw(i ,j, k, 1) = P(i, j, k)
-                 P(i,j,k) = transfer(globalCell(i,j,k), P(1,1,1))
-              end do
-           end do
-        end do
-     end do
-  end do
+  call exchangeCoorNumbering(level)
 
-  istart = 0
-  iend   = -1
-  commPressure = .True.
-  commGamma    = .False.
-  commViscous  = .False.
-  call wHalo2(level, istart, iend, commPressure, commGamma, commViscous)
+  call exchangeCellNumbering(level)
 
-  ! Copy back out
-  do sps=1, nTimeIntervalsSpectral
-     do nn=1, nDom
-        call setPointers(nn, level, sps)
-        do k=0, kb
-           do j=0, jb
-              do i=0, ib
-                 globalCell(i, j, k) = transfer(P(i, j, k), globalCell(1,1,1))
-
-              end do
-           end do
-        end do
-     end do
-  end do
-
-  ! ------------ globalNode ----------------
-  do sps=1, nTimeIntervalsSpectral
-     do nn=1, nDom
-        call setPointers(nn, level, sps)
-        do k=0,ke
-           do j=0,je
-              do i=0,ie
-                 dw(i, j, k, 2) = X(i, j, k, 1)
-                 X(i, j, k, 1) = transfer(globalNode(i, j, k), X(1,1,1,1))
-              end do
-           end do
-        end do
-     end do
-  end do
-
-  call exchangeCoor(level)
-  
-  ! Copy back out
-  do sps=1, nTimeIntervalsSpectral
-     do nn=1, nDom
-        call setPointers(nn, level, sps)
-        do k=0, ke
-           do j=0, je
-              do i=0, ie
-                 globalNode(i, j, k) = transfer(X(i, j, k, 1), globalNode(1,1,1))
-              end do
-           end do
-        end do
-     end do
-  end do
-
-  ! Reset Pressure 
-  do sps=1, nTimeIntervalsSpectral
-     do nn=1, nDom
-        call setPointers(nn, level, sps)
-        do k=0,kb
-           do j=0,jb
-              do i=0,ib
-                 P(i, j, k) = dw(i, j, k, 1)
-                 dw(i, j, k, 1) = zero
-
-              end do
-           end do
-        end do
-     end do
-  end do
-  
-  do sps=1, nTimeIntervalsSpectral
-     do nn=1, nDom
-        call setPointers(nn, level, sps)
-        do k=0,ke
-           do j=0,je
-              do i=0,ie
-                 X(i, j, k, 1) = dw(i, j, k, 2)
-                 dw(i, j, k, 2) = zero
-              end do
-           end do
-        end do
-     end do
-  end do
   
 end subroutine setGlobalCellsAndNodes

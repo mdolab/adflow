@@ -65,6 +65,7 @@ FILES_TO_COMPLEXIFY = \
 		 exchangeCoor_d.f90\
 		 exchangeCoor_b.f90\
 		 exchangeCoorNumbering.f90\
+		 exchangeCellNumbering.f90\
 		 faceRotationMatrices.f90\
 		 finalCommStructures.f90\
 		 indirectHalosPerLevel.f90\
@@ -76,6 +77,7 @@ FILES_TO_COMPLEXIFY = \
 		 qsortIndHaloType.f90\
 		 qsortPeriodicSubfacesHaloType.f90\
 		 setFamilyInfoFaces.f90\
+		 setGlobalCellsAndNodes.f90\
 		 setPorosities.f90\
 		 shiftCoorAndVolumes.f90\
 		 unitVectorsInAxialPlane.f90\
