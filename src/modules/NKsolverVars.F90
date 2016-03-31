@@ -108,6 +108,7 @@ module NKsolverVars
   ! Krylov-Solver Tolerances
   real(kind=realType) :: ksp_atol
   real(kind=realType) :: ksp_rtol
+  real(kind=realType) :: ksp_rtol_init
   integer(kind=intTYpe) :: ksp_max_it
   real(kind=realType) :: ksp_div_tol = 10
 

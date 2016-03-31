@@ -19,7 +19,7 @@ subroutine NKsolver
        ksp_rtol, ksp_atol, func_evals, ksp_max_it, ksp_subspace, ksp_div_tol, &
        nksolvecount, Mmax, iter_k, iter_m, NKLS, NKuseEw, &
        nolinesearch, cubiclinesearch, nonmonotonelinesearch, rhores0, &
-       NK_switch_tol, rhoresstart, work, g
+       NK_switch_tol, rhoresstart, work, g, ksp_rtol_init
 
   use InputIO ! L2conv, l2convrel
   use inputIteration
@@ -176,7 +176,9 @@ subroutine NKsolver
 
      ! Get the EW Forcing tolerance ksp_rtol if necessary
      if (NKUseEW) then 
-        call getEWTol(iter, norm, old_norm, rtol_last, ksp_rtol)
+        call getEWTol(iter, norm, old_norm, rtol_last, ksp_rtol, ksp_rtol_init)
+     else
+        ksp_rtol = ksp_rtol_init
      end if
 
      ! Set all tolerances for linear solve:
@@ -656,7 +658,7 @@ subroutine LSNM(x, f, g, y, w, fnorm, ynorm, gnorm, nfevals, flag)
 #endif
 end subroutine LSNM
 
-subroutine getEWTol(iter, norm, old_norm, rtol_last, rtol)
+subroutine getEWTol(iter, norm, old_norm, rtol_last, rtol, rtol_init)
 
   use constants
   implicit none
@@ -671,7 +673,7 @@ subroutine getEWTol(iter, norm, old_norm, rtol_last, rtol)
   !threshold:  0.100000000000000     
 
   integer(kind=intType) :: iter
-  real(kind=realType), intent(in) :: norm, old_norm, rtol_last
+  real(kind=realType), intent(in) :: norm, old_norm, rtol_last, rtol_init
   real(kind=realType), intent(out) :: rtol
   real(kind=realType) :: rtol_max, gamma, alpha, alpha2, threshold, stol
 
@@ -682,7 +684,7 @@ subroutine getEWTol(iter, norm, old_norm, rtol_last, rtol)
   threshold = 0.10_realType
 
   if (iter == 1) then
-     rtol = rtol
+     rtol = rtol_init
   else
      ! We use version 2:
      rtol = gamma*(norm/old_norm)**alpha

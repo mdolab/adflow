@@ -53,6 +53,7 @@ FILES_TO_COMPLEXIFY= restartMod.f90\
 		 initDepvarAndHalos.f90\
 		 initFlow.f90\
 		 initFlowfield.f90\
+		 initFlowRestart.f90\
 		 initializeHalos.f90\
 		 interpolateSpectralSolution.f90\
 		 readConvHistory.F90\
@@ -95,7 +96,6 @@ FILES_TO_COMPLEXIFY= restartMod.f90\
 		 scaleFactors.F90\
 		 setFlowInfinityState.F90\
 		 setIOVar.f90\
-		 setGlobalCellsAndNodes.f90\
 		 setPressureAndComputeEnergy.f90\
 		 setUniformFlow.f90\
 		 timeSpectralCoef.f90\

@@ -33,6 +33,7 @@
        use monitor
        use su_cgns
        use restartMod
+       use killSignals
        implicit none
 !
 !      Local variables.
@@ -88,7 +89,7 @@
          if(ierr /= all_ok) then
            write(errorMessage,*) "File ", trim(solFiles(solID)), &
                                  " could not be opened for reading"
-           call returnFail("readRestartFile", errorMessage)
+           call terminate("readRestartFile", errorMessage)
          endif
 
          fileIDs(solID) = cgnsInd
@@ -98,13 +99,13 @@
 
          call cg_nbases_f(cgnsInd, cgnsBase, ierr)
          if(ierr /= all_ok)                  &
-           call returnFail("readRestartFile", &
+           call terminate("readRestartFile", &
                           "Something wrong when calling cg_nbases_f")
 
          if(CGNSBase < 1) then
            write(errorMessage,*) "CGNS file ", trim(solFiles(solID)), &
                                  " does not contain a base"
-           call returnFail("readRestartFile", errorMessage)
+           call terminate("readRestartFile", errorMessage)
          endif
 
          ! Only data from the first base is read. Information from
@@ -118,7 +119,7 @@
          call cg_base_read_f(cgnsInd, cgnsBase, cgnsName, cellDim, &
                              physDim, ierr)
          if(ierr /= all_ok)                  &
-           call returnFail("readRestartFile", &
+           call terminate("readRestartFile", &
                           "Something wrong when calling cg_base_read_f")
 
          ! Check the cell and physical dimensions. Both must be 3 for
@@ -128,15 +129,16 @@
            write(errorMessage,100) cellDim, physDim
  100       format("Both the number of cell and physical dimensions &
                   &should be 3, not",1X,I1,1X,"and",1X,I1)
-           call returnFail("readRestartFile", errorMessage)
+           call terminate("readRestartFile", errorMessage)
          endif
 
        enddo fileOpenLoop
 
        ! Read the convergence history. Only processor 0 needs to do that.
-
-       if(myID == 0) call readConvHistory(fileIDs)
-       call mpi_bcast(nIterOld, 1, sumb_integer, 0, sumb_comm_world, ierr)
+       if (.not. fromPython) then 
+          if(myID == 0) call readConvHistory(fileIDs)
+          call mpi_bcast(nIterOld, 1, sumb_integer, 0, sumb_comm_world, ierr)
+       end if
 
        ! Read the time history for an unsteady computation. Again only
        ! done by processor 0. Note that time history only needs to be
@@ -173,11 +175,11 @@
 
          call cg_nzones_f(cgnsInd, cgnsBase, nZones, ierr)
          if(ierr /= all_ok)                  &
-           call returnFail("readRestartFile", &
+           call terminate("readRestartFile", &
                           "Something wrong when calling cg_nzones_f")
 
          if(nZones /= cgnsNdom)              &
-           call returnFail("readRestartFile", &
+           call terminate("readRestartFile", &
                           "Number of blocks in grid file and restart &
                           &file differ")
 
@@ -209,7 +211,7 @@
              write(errorMessage,*) "Zone name ", trim(cgnsName),  &
                                    " not found in restart file ", &
                                    trim(solFiles(solID))
-             call returnFail("readRestartFile", errorMessage)
+             call terminate("readRestartFile", errorMessage)
            else
              jj = zoneNumbers(jj)
            endif
@@ -222,14 +224,14 @@
            call cg_zone_read_f(cgnsInd, cgnsBase, cgnsZone, &
                                cgnsname, sizes, ierr)
            if(ierr /= all_ok)                  &
-             call returnFail("readRestartFile", &
+             call terminate("readRestartFile", &
                             "Something wrong when calling &
                             &cg_zone_read_f")
 
            if(cgnsDoms(nbkGlobal)%il /= sizes(1) .or. &
               cgnsDoms(nbkGlobal)%jl /= sizes(2) .or. &
               cgnsDoms(nbkGlobal)%kl /= sizes(3))     &
-             call returnFail("readRestartFile", &
+             call terminate("readRestartFile", &
                             "Corresponding zones in restart file and &
                             &grid file have different dimensions")
 
@@ -238,11 +240,11 @@
 
            call cg_nsols_f(cgnsInd, cgnsBase, cgnsZone, nSols, ierr)
            if(ierr /= all_ok)                  &
-             call returnFail("readRestartFile", &
+             call terminate("readRestartFile", &
                             "Something wrong when calling cg_nsols_f")
 
            if(nSols == 0)                      &
-             call returnFail("readRestartFile", &
+             call terminate("readRestartFile", &
                             "No solution present in restart file")
 
            ! Check for multiple solutions. A distinction is needed for
@@ -250,7 +252,7 @@
            ! for the nodal iblanks.
 
            if((nSols > 1 .and. .not. oversetPresent) .or. nSols > 2) &
-             call returnFail("readRestartFile", &
+             call terminate("readRestartFile", &
                             "Multiple solutions present in restart file")
 
            ! Determine the location of the solution variables. A loop is
@@ -261,7 +263,7 @@
              call cg_sol_info_f(cgnsInd, cgnsBase, cgnsZone, cgnsSol, &
                                 cgnsName, location, ierr)
              if(ierr /= all_ok)                  &
-               call returnFail("readRestartFile", &
+               call terminate("readRestartFile", &
                               "Something wrong when calling &
                               &cg_sol_info_f")
 
@@ -273,12 +275,12 @@
            call cg_goto_f(cgnsInd, cgnsBase, ierr, "Zone_t", &
                           cgnsZone, "FlowSolution_t", cgnsSol, "end")
            if(ierr /= all_ok)                  &
-             call returnFail("readRestartFile", &
+             call terminate("readRestartFile", &
                             "Something wrong when calling cg_goto_f")
 
            call cg_rind_read_f(sizes, ierr)
            if(ierr /= all_ok)                  &
-             call returnFail("readRestartFile", &
+             call terminate("readRestartFile", &
                             "Something wrong when calling &
                             &cg_rind_read_f")
 
@@ -353,7 +355,7 @@
              rangeMax(2) = rangeMin(2) + ny
              rangeMax(3) = rangeMin(3) + nz
            else
-             call returnFail("readRestartFile", &
+             call terminate("readRestartFile", &
                             "Only CellCenter or Vertex data allowed in &
                             &restart file")
            endif
@@ -366,13 +368,13 @@
                            2-nHjMin:jl+nHjMax, &
                            2-nHkMin:kl+nHkMax), stat=ierr)
            if(ierr /= 0)                       &
-             call returnFail("readRestartFile", &
+             call terminate("readRestartFile", &
                             "Memory allocation failure for buffer")
 
            if(location == Vertex) then
              allocate(bufferVertex(1:il,1:jl,1:kl), stat=ierr)
              if(ierr /= 0)                       &
-               call returnFail("readRestartFile", &
+               call terminate("readRestartFile", &
                           "Memory allocation failure for bufferVertex")
            endif
 
@@ -414,7 +416,7 @@
 
            deallocate(buffer, varNames, varTypes, stat=ierr)
            if(ierr /= 0)                       &
-             call returnFail("readRestartFile", &
+             call terminate("readRestartFile", &
                             "Deallocation error for buffer, varNames &
                             &and varTypes.")
 
@@ -423,7 +425,7 @@
            if(location == Vertex) then
              deallocate(bufferVertex, stat=ierr)
              if(ierr /= 0)                       &
-               call returnFail("readRestartFile", &
+               call terminate("readRestartFile", &
                               "Deallocation error for bufferVertex")
            endif
 
@@ -433,7 +435,7 @@
 
          deallocate(zoneNames, zoneNumbers, stat=ierr)
          if(ierr /= 0)                       &
-           call returnFail("readRestartFile", &
+           call terminate("readRestartFile", &
                           "Deallocation failure for zoneNames &
                           &and zoneNumbers.")
 
@@ -441,7 +443,7 @@
 
          call cg_close_f(cgnsInd, ierr)
          if(ierr /= all_ok)                  &
-           call returnFail("readRestartFile", &
+           call terminate("readRestartFile", &
                           "Something wrong when calling cg_close_f")
 
        enddo solLoop
