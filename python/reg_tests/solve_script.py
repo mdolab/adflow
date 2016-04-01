@@ -24,7 +24,7 @@ from python.pySUmb import SUMB
 
 defOpts = {
     # Common Paramters
-    'gridfile':'default.cgns',
+    'gridFile':'default.cgns',
     'restartfile':'',
 
     # Output Parameters
@@ -107,7 +107,6 @@ defOpts = {
     'l2convergencerel':1e-16,
     'l2convergencecoarse':1e-2,
     'maxl2deviationfactor':1.0,
-    'coeffconvcheck':False,
 
     # Newton-Krylov Paramters
     'usenksolver':False,
@@ -137,7 +136,6 @@ defOpts = {
     'partitiononly':False,
 
     # Misc Paramters
-    'metricconversion':1.0,
     'autosolveretry':False,
     'autoadjointretry':False,
     'numbersolutions':True,
@@ -175,7 +173,6 @@ defOpts = {
     'asmoverlap':1,
     'innerpreconits':1,
     'outerpreconits':3,
-    'usereversemodead':False,
     'applyadjointpcsubspacesize':20,
     'frozenturbulence':True,
     'usematrixfreedrdw':True,
@@ -209,16 +206,16 @@ def test1():
 
     # Now set the options that need to be overwritten for this example:
     aeroOptions.update(
-        {'gridFile': '../inputFiles/mdo_tutorial_euler.cgns',
-         'MGCycle':'2w',
-         'CFL':1.5,
-         'CFLCoarse':1.25,
-         'nCyclesCoarse':250,
-         'nCycles':10000,
+        {'gridfile': '../inputFiles/mdo_tutorial_euler.cgns',
+         'mgcycle':'2w',
+         'cfl':1.5,
+         'cflcoarse':1.25,
+         'ncyclescoarse':250,
+         'ncycles':10000,
          'monitorvariables':['resrho','cl','cd','cmz','totalr'],
-         'useNKSolver':True,
-         'L2Convergence':1e-14,
-         'L2ConvergenceCoarse':1e-2,
+         'usenksolver':True,
+         'l2convergence':1e-14,
+         'l2convergencecoarse':1e-2,
          'nkswitchtol':1e-2,
          'adjointl2convergence': 1e-14,
      }
@@ -333,17 +330,17 @@ def test2():
 
     # Now set the options that need to be overwritten for this example:
     aeroOptions.update(
-        {'gridFile': '../inputFiles/mdo_tutorial_euler_random.cgns',
-         'MGCycle':'2w',
+        {'gridfile': '../inputFiles/mdo_tutorial_euler_random.cgns',
+         'mgcycle':'2w',
          'smoother':'dadi',
-         'CFL':1.5,
-         'CFLCoarse':1.25,
-         'nCyclesCoarse':250,
-         'nCycles':10000,
+         'cfl':1.5,
+         'cflcoarse':1.25,
+         'ncyclescoarse':250,
+         'ncycles':10000,
          'monitorvariables':['resrho','cl','cd','cmz','totalr'],
-         'useNKSolver':True,
-         'L2Convergence':1e-14,
-         'L2ConvergenceCoarse':1e-2,
+         'usenksolver':True,
+         'l2convergence':1e-14,
+         'l2convergencecoarse':1e-2,
          'nkswitchtol':1e-2,
          'adjointl2convergence': 1e-14,
      }
@@ -400,16 +397,16 @@ def test3():
 
     # Now set the options that need to be overwritten for this example:
     aeroOptions.update(
-        {'gridFile': '../inputFiles/mdo_tutorial_euler.cgns',
-         'MGCycle':'2w',
+        {'gridfile': '../inputFiles/mdo_tutorial_euler.cgns',
+         'mgcycle':'2w',
          'smoother':'dadi',
-         'CFL':10.0,
-         'CFLCoarse':1.25,
-         'nCyclesCoarse':250,
-         'nCycles':10000,
+         'cfl':10.0,
+         'cflcoarse':1.25,
+         'ncyclescoarse':250,
+         'ncycles':10000,
          'monitorvariables':['resrho','cl','cd','cmz','totalr'],
-         'L2Convergence':1e-12,
-         'L2ConvergenceCoarse':1e-2,
+         'l2convergence':1e-12,
+         'l2convergencecoarse':1e-2,
          'adjointl2convergence': 1e-14,
      }
     )
@@ -443,18 +440,18 @@ def test4():
 
         # Now set the options that need to be overwritten for this example:
         aeroOptions.update(
-            {'gridFile': '../inputFiles/mdo_tutorial_euler.cgns',
-             'MGCycle':'2w',
-             'CFL':1.5,
-             'CFLCoarse':1.25,
-             'nCyclesCoarse':250,
-             'nCycles':10000,
+            {'gridfile': '../inputFiles/mdo_tutorial_euler.cgns',
+             'mgcycle':'2w',
+             'clf':1.5,
+             'cflcoarse':1.25,
+             'ncyclescoarse':250,
+             'ncycles':10000,
              'monitorvariables':['resrho','cl','cd','cmz','totalr'],
-             'L2Convergence':1e-14,
-             'L2ConvergenceCoarse':1e-2,
+             'l2convergence':1e-14,
+             'l2convergenceCoarse':1e-2,
              'adjointl2convergence': 1e-14,
-             'useNKSolver':True,
-             'NKSwitchTol':1e-2,
+             'usenksolver':True,
+             'nkswitchtol':1e-2,
          }
         )
 
@@ -504,22 +501,22 @@ def test5():
 
     # Now set the options that need to be overwritten for this example:
     aeroOptions.update(
-        {'gridFile': '../inputFiles/mdo_tutorial_euler_l2.cgns',
-         'MGCycle':'sg',
-         'CFL':1.5,
-         'CFLCoarse':1.25,
-         'nCyclesCoarse':250,
-         'nCycles':10000,
+        {'gridfile': '../inputFiles/mdo_tutorial_euler_l2.cgns',
+         'mgcycle':'sg',
+         'cfl':1.5,
+         'cflcoarse':1.25,
+         'ncyclescoarse':250,
+         'ncycles':10000,
          'monitorvariables':['resrho','cl','cd','cmz','totalr'],
-         'L2Convergence':1e-14,
-         'L2ConvergenceCoarse':1e-2,
+         'l2convergence':1e-14,
+         'l2convergencecoarse':1e-2,
          'adjointl2convergence': 1e-14,
-         'timeIntervals':3,
-         'equationMode':'Time Spectral',
+         'timetntervals':3,
+         'equationmode':'Time Spectral',
          'tsstability':True,
          'alphamode':True,
-         'useNKSolver':True,
-         'NKSwitchTol':1e-2,
+         'usenksolver':True,
+         'nkswitchtol':1e-2,
          'usediagtspc':False,
          'asmoverlap':2,
          'ilufill':3,
@@ -581,17 +578,17 @@ def test6():
 
     # Now set the options that need to be overwritten for this example:
     aeroOptions.update(
-        {'gridFile': '../inputFiles/mdo_tutorial_rans.cgns',
-         'MGCycle':'2w',
-         'equationType':'Laminar NS',
-         'CFL':1.5,
-         'CFLCoarse':1.25,
-         'nCyclesCoarse':250,
-         'nCycles':10000,
+        {'gridfile': '../inputFiles/mdo_tutorial_rans.cgns',
+         'mgcycle':'2w',
+         'equationtype':'Laminar NS',
+         'cfl':1.5,
+         'cflcoarse':1.25,
+         'ncyclescoarse':250,
+         'ncycles':10000,
          'monitorvariables':['resrho','resturb','cl','cd','cmz','yplus','totalr'],
-         'useNKSolver':True,
-         'L2Convergence':1e-14,
-         'L2ConvergenceCoarse':1e-2,
+         'usenksolver':True,
+         'l2convergence':1e-14,
+         'l2Convergencecoarse':1e-2,
          'nkswitchtol':1e-2,
          'adjointl2convergence': 1e-14,
      }
@@ -647,24 +644,24 @@ def test7():
 
     # Now set the options that need to be overwritten for this example:
     aeroOptions.update(
-        {'gridFile': '../inputFiles/mdo_tutorial_rans.cgns',
-         'MGCycle':'2w',
-         'equationType':'RANS',
+        {'gridfile': '../inputFiles/mdo_tutorial_rans.cgns',
+         'mgcycle':'2w',
+         'equationtype':'RANS',
          'smoother':'dadi',
-         'CFL':1.5,
-         'CFLCoarse':1.25,
+         'cfl':1.5,
+         'cflcoarse':1.25,
          'resaveraging':'noresaveraging',
          'nsubiter':3,
          'nsubiterturb':3,
-         'nCyclesCoarse':100,
-         'nCycles':1000,
+         'ncyclescoarse':100,
+         'ncycles':1000,
          'monitorvariables':['resrho','resturb','cl','cd','cmz','yplus','totalr'],
-         'useNKSolver':True,
-         'L2Convergence':1e-14,
-         'L2ConvergenceCoarse':1e-4,
+         'usenksolver':True,
+         'l2convergence':1e-14,
+         'l2convergencecoarse':1e-4,
          'nkswitchtol':1e-3,
          'adjointl2convergence': 1e-14,
-         'frozenTurbulence':False,
+         'frozenturbulence':False,
      }
     )
     # Setup aeroproblem, cfdsolver, mesh and geometry.
@@ -716,24 +713,24 @@ def test8():
 
     # Now set the options that need to be overwritten for this example:
     aeroOptions.update(
-        {'gridFile': '../inputFiles/mdo_tutorial_rans_random.cgns',
-         'MGCycle':'2w',
-         'equationType':'RANS',
+        {'gridfile': '../inputFiles/mdo_tutorial_rans_random.cgns',
+         'mgcycle':'2w',
+         'equationtype':'RANS',
          'smoother':'dadi',
-         'CFL':1.5,
-         'CFLCoarse':1.25,
+         'cfl':1.5,
+         'cflcoarse':1.25,
          'resaveraging':'noresaveraging',
          'nsubiter':3,
          'nsubiterturb':3,
-         'nCyclesCoarse':100,
-         'nCycles':1000,
+         'ncyclescoarse':100,
+         'ncycles':1000,
          'monitorvariables':['resrho','resturb','cl','cd','cmz','yplus','totalr'],
-         'useNKSolver':True,
-         'L2Convergence':1e-14,
-         'L2ConvergenceCoarse':1e-4,
+         'usenksolver':True,
+         'l2convergence':1e-14,
+         'l2convergencecoarse':1e-4,
          'nkswitchtol':1e-3,
          'adjointl2convergence': 1e-14,
-         'frozenTurbulence':False,
+         'frozenturbulence':False,
      }
     )
 
@@ -786,19 +783,19 @@ def test9():
 
     # Now set the options that need to be overwritten for this example:
     aeroOptions.update(
-        {'gridFile': '../inputFiles/dpw4_38k.cgns',
-         'MGCycle':'sg',
-         'CFL':1.5,
-         'CFLCoarse':1.25,
+        {'gridfile': '../inputFiles/dpw4_38k.cgns',
+         'mgcycle':'sg',
+         'cfl':1.5,
+         'cflcoarse':1.25,
          'resaveraging':'noresaveraging',
-         'nCycles':1000,
+         'ncycles':1000,
          'monitorvariables':['resrho','cl','cd','cmy','yplus','totalr'],
-         'useNKSolver':True,
-         'L2Convergence':1e-14,
-         'L2ConvergenceCoarse':1e-4,
+         'usenksolver':True,
+         'l2convergence':1e-14,
+         'l2convergencecoarse':1e-4,
          'nkswitchtol':1e-1,
          'adjointl2convergence': 1e-14,
-         'liftIndex':3,
+         'liftindex':3,
      }
     )
 
@@ -939,33 +936,32 @@ def test10():
 
     # Now set the options that need to be overwritten for this example:
     aeroOptions.update(
-        {'gridFile': '../inputFiles/naca0012_rans-L2.cgns',
+        {'gridfile': '../inputFiles/naca0012_rans-L2.cgns',
          'writevolumesolution':False,
          'vis4':.025,
          'vis2':0.5,
-         'restrictionRelaxation':.5,
+         'restrictionrelaxation':.5,
          'smoother':'dadi',
-         
-         'equationType':'RANS',
-         'equationMode':'unsteady',
-         'timeIntegrationScheme':'bdf',
-         'nTimeStepsFine':nfineSteps,
-         'deltaT':dt,
+         'equationtype':'RANS',
+         'equationmode':'unsteady',
+         'timeIntegrationscheme':'bdf',
+         'ntimestepsfine':nfineSteps,
+         'deltat':dt,
          'nsubiterturb':10,
          'nsubiter':5,         
-         'useALE':False,
+         'useale':False,
          'usegridmotion':True,
-         'CFL':2.5,
-         'CFLCoarse':1.2,
-         'nCycles':2000,            
-         'MGCycle':'3w',
-         'MGStartLevel':1,
+         'cfl':2.5,
+         'cflcoarse':1.2,
+         'ncycles':2000,            
+         'mgcycle':'3w',
+         'mgstartlevel':1,
          'monitorvariables':['cpu','resrho','cl','cd','cmz'],                            
-         'useNKSolver':False,
-         'L2Convergence':1e-6,
-         'L2ConvergenceCoarse':1e-4,
+         'usenksolver':False,
+         'l2convergence':1e-6,
+         'l2convergencecoarse':1e-4,
          'qmode':True,
-         'alphaFollowing': False,
+         'alphafollowing': False,
      }
     )
 
@@ -1009,27 +1005,27 @@ def test11():
 
     # Now set the options that need to be overwritten for this example:
     aeroOptions.update(
-        {'gridFile': '../inputFiles/bscw_rans_finer_L3.cgns',
+        {'gridfile': '../inputFiles/bscw_rans_finer_L3.cgns',
          'liftindex':3,
          'writevolumesolution':False,
-         'useNKSolver':False,
-         'equationType':'RANS',
-         'equationMode':'unsteady',
-         'timeIntegrationScheme':'bdf',
-         'nTimeStepsFine':nfineSteps,
-         'deltaT':dt,
+         'usenksolver':False,
+         'equationtype':'RANS',
+         'equationmode':'unsteady',
+         'timeintegrationscheme':'bdf',
+         'ntimestepsfine':nfineSteps,
+         'deltat':dt,
          'smoother':'dadi',
          'nsubiterturb':3, 
          'nsubiter':5, 
-         'useALE':False,
+         'useale':False,
          'usegridmotion':True,
-         'CFL':1.5,
-         'CFLCoarse':1.25,
-         'MGCycle':'2w',
-         'MGStartLevel':1,
-         'nCycles': 30, 
+         'cfl':1.5,
+         'cflcoarse':1.25,
+         'mgcycle':'2w',
+         'mgstartlevel':1,
+         'ncycles': 30, 
          'monitorvariables':['cpu', 'resrho','resturb','cl','cd','cdp','cdv','cmy','yplus','totalr'],
-         'L2Convergence':1e-8,
+         'l2convergence':1e-8,
          'rmode':True,  
          'alphaFollowing': False,
      }
