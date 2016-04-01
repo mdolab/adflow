@@ -690,6 +690,7 @@ python module libsumb
          logical :: freezeturbsource
          logical :: printiterations
          logical :: printwarnings
+         real(kind=realtype) ::maxl2deviationfactor
        end module inputiteration
 
        module inputmotion ! in :sumb:../../modules/inputParam.f90
