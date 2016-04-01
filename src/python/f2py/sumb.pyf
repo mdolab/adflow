@@ -599,7 +599,6 @@ python module libsumb
 
        module inputio ! in :sumb:../../modules/inputParam.f90
          use constants
-         integer(kind=inttype) parameter,optional :: noformat=0
          character(len=maxstringlen) :: solfile
          integer(kind=inttype) parameter,optional :: precisiondouble=2
          character(len=maxstringlen) :: surfacesolfile
@@ -608,12 +607,9 @@ python module libsumb
          logical :: writecoormeter
          integer(kind=inttype) :: precisionsol
          integer(kind=inttype) :: precisiongrid
-         integer(kind=inttype) parameter,optional :: cgnsformat=1
          character(len=maxstringlen) :: newgridfile
          character(len=maxstringlen) :: restartfile
          logical :: restart
-         character(len=maxstringlen) :: plot3dconnfile
-         integer(kind=inttype) :: fileformatread
          character(len=maxstringlen) :: gridfile
          logical :: storeconvinneriter
          logical :: storerindlayer
@@ -625,8 +621,6 @@ python module libsumb
          logical :: slicefiletractions
          integer(kind=inttype) parameter,optional :: precisionsingle=1
          logical optional :: firstwrite=.true.
-         integer(kind=inttype) :: fileformatwrite
-         integer(kind=inttype) parameter,optional :: plot3dformat=2
          character(len=maxstringlen) :: paramfile
        end module inputio
 

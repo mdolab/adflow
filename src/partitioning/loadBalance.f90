@@ -292,7 +292,7 @@ subroutine loadBalance
 
         ! Allocate memory for the overset boundary info. Note the
         ! number of orphans is set to 0 because there is no support
-        ! for input of orphans from CGNS or Plot3D yet.
+        ! for input of orphans from CGNS.
 
         flowDoms(nn,1,1)%nCellsOverset = blocks(i)%nCellsOverset
         flowDoms(nn,1,1)%nOrphans      = 0

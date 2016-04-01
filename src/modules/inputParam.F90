@@ -188,10 +188,6 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       integer(kind=intType), parameter :: noFormat     = 0, &
-                                           cgnsFormat   = 1, &
-                                           plot3DFormat = 2
-
        integer(kind=intType), parameter :: precisionSingle = 1, &
                                            precisionDouble = 2
 !
@@ -202,17 +198,11 @@
 !      ******************************************************************
 !
        ! paramFile:           Parameter file, command line argument.
-       ! fileFormatRead:      What file format for the grid and
-       !                      possibly solution is used when reading.
-       !                      Options are cgnsFormat and plot3DFormat.
-       ! fileFormatWrite:     Idem, but then for writing.
        ! firstWrite:          Whether or not this is the first time a
        !                      solution is written. Needed when different
        !                      file formats are used for reading and
        !                      writing.
        ! gridFile:            Grid file.
-       ! plot3DConnFile:      Connectivity file for the grid if a
-       !                      plot3D grid file is used.
        ! newGridFile:         File to which the changed grid is
        !                      written. Needed for moving and/or
        !                      deforming geometries.
@@ -251,11 +241,10 @@
        ! sliceFileTractions:  Whether or not tractions will be included
        !                      in the slice files.
        
-       integer(kind=intType) :: fileFormatRead, fileFormatWrite
        integer(kind=intType) :: precisionGrid, precisionSol
 
        character(len=maxStringLen) :: paramFile, gridFile
-       character(len=maxStringLen) :: plot3DConnFile, newGridFile
+       character(len=maxStringLen) :: newGridFile
        character(len=maxStringLen) :: restartFile, solFile
        character(len=maxStringLen) :: surfaceSolFile, cpFile, sliceSolFile
 

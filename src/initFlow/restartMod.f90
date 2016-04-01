@@ -25,8 +25,6 @@
 !      *                                                                *
 !      *                 Variables in this module.                      *
 !      *                                                                *
-!      *           Variables used by both CGNS and Plot3D.              *
-!      *                                                                *
 !      ******************************************************************
 !
        ! halosRead:Determines if the halos where read or not.
@@ -106,25 +104,5 @@
        real(kind=cgnsRealType), dimension(:,:,:), allocatable :: buffer
        real(kind=cgnsRealType), dimension(:,:,:), allocatable :: &
                                                             bufferVertex
-!
-!      ******************************************************************
-!      *                                                                *
-!      *               Variables only used by Plot3D.                   *
-!      *                                                                *
-!      ******************************************************************
-!
-       ! sorted2Or: Mapping of the sorted names to the original
-       !            names.
-
-       integer(kind=intType), dimension(:), allocatable :: sorted2Or
-
-       ! sizeVolumeSol:   Size in bytes to store one cell centered
-       !                  variable for the entire grid.
-       ! sizeConvHistory: Size in bytes of the convergence history.
-       ! sizeHeader:      Size in bytes of the file header, i.e. 
-       !                  everything before the solution variables.
-
-       integer(kind=mpi_offset_kind) :: sizeHeader
-       integer(kind=mpi_offset_kind) :: sizeVolumeSol, sizeConvHistory
 
        end module restartMod

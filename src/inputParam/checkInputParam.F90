@@ -89,8 +89,8 @@
 !
 !      ******************************************************************
 !      *                                                                *
-!      * IO parameters. Check if the grid file has been specified and,  *
-!      * if needed, the plot3D connectivity file. Possibly correct the  *
+!      * IO parameters. Check if the grid file has been specified       *
+!      * Possibly correct the                                           *
 !      * value of restart. Note that restart got the default value of   *
 !      * .true. in case no restart file has been specified it is now    *
 !      * set to false. Set the names of the solution files if not       *
@@ -111,45 +111,14 @@
          call mpi_barrier(SUmb_comm_world, ierr)
        endif
 
-       if(fileFormatRead  == noFormat) fileFormatRead  = fileFormatWrite
-       if(fileFormatWrite == noFormat) fileFormatWrite = fileFormatRead
-
-#ifdef USE_NO_CGNS
-       if(fileFormatRead  == noFormat) fileFormatRead  = plot3DFormat
-       if(fileFormatWrite == noFormat) fileFormatWrite = plot3DFormat
-#else
-       if(fileFormatRead  == noFormat) fileFormatRead  = cgnsFormat
-       if(fileFormatWrite == noFormat) fileFormatWrite = cgnsFormat
-#endif
-
-       if(fileFormatRead  == plot3DFormat .or. &
-          fileFormatWrite == plot3DFormat) then
-         if(plot3DConnFile == "") then
-           if(myID == 0)                       &
-             call returnFail("checkInputParam", &
-                            "plot3D connectivity file not specified")
-           call mpi_barrier(SUmb_comm_world, ierr)
-         endif
-       endif
-
        if(restartFile == "") restart = .false.
 
        if(newGridFile == "") then
-         select case(fileFormatWrite)
-           case (cgnsFormat)
-              newGridFile = "NewGrid.cgns"
-           case (plot3DFormat)
-             newGridFile = "NewGrid.xyz"
-         end select
+          newGridFile = "NewGrid.cgns"
        endif
 
        if(solFile == "") then
-         select case(fileFormatWrite)
-           case (cgnsFormat)
-             solFile = "SolSUmb.cgns"
-           case (plot3DFormat)
-             solFile = "SolSUmb.q"
-         end select
+          solFile = "SolSUmb.cgns"
        endif
 
        if(surfaceSolFile == "") &

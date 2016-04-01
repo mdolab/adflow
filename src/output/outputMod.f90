@@ -73,14 +73,11 @@
        !                     the grid and volume solution files. If not,
        !                     the grid and solution are written in the
        !                     same file.
-       ! writePlot3DConn:    Whether or not to write the Plot3D
-       !                     connectivity file.
        ! writeFormatInParam: Whether or not the format must be written
        !                     in the parameter file if this file must
        !                     be updated automatically.
 
        logical :: useLinksInCGNS
-       logical :: writePlot3DConn
        logical :: writeFormatInParam
 
        end module outputMod

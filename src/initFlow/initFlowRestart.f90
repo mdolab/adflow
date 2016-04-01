@@ -45,14 +45,8 @@ subroutine initFlowRestart
   ! Note that halosRead is possibly overwritten in the
   ! folloing select case statement below
   
-  select case (fileFormatRead)
-  case (cgnsFormat)
-     call readRestartFile()
-     
-  case (plot3DFormat)
-     call readRestartFilePlot3D()
-  end select
-
+  call readRestartFile()
+  
   ! Copy or interpolate the spectral solution, if needed.
   
   if( copySpectral )     call copySpectralSolution

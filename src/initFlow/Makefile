@@ -57,40 +57,23 @@ FILES_TO_COMPLEXIFY= restartMod.f90\
 		 initializeHalos.f90\
 		 interpolateSpectralSolution.f90\
 		 readConvHistory.F90\
-		 readConvHistoryPlot3D.f90\
 		 readDensity.f90\
-		 readDensityPlot3D.f90\
 		 readEnergy.f90\
-		 readEnergyPlot3D.f90\
 		 readPressure.f90\
-		 readPressurePlot3D.f90\
 		 readRestartFile.F90\
-		 readRestartFilePlot3D.f90\
 		 readRestartVariable.F90\
 		 readTimeHistory.F90\
-		 readTimeHistoryPlot3D.f90\
 		 readTurbEddyVis.f90\
-		 readTurbEddyVisPlot3D.f90\
 		 readTurbKwType.f90\
-		 readTurbKwTypePlot3D.f90\
 		 readTurbSA.f90\
-		 readTurbSAPlot3D.f90\
 		 readTurbV2f.f90\
-		 readTurbV2fPlot3D.f90\
 		 readTurbvar.f90\
-		 readTurbvarPlot3D.f90\
 		 readXmomentum.f90\
-		 readXmomentumPlot3D.f90\
 		 readXvelocity.f90\
-		 readXvelocityPlot3D.f90\
 		 readYmomentum.f90\
-		 readYmomentumPlot3D.f90\
 		 readYvelocity.f90\
-		 readYvelocityPlot3D.f90\
 		 readZmomentum.f90\
-		 readZmomentumPlot3D.f90\
 		 readZvelocity.f90\
-		 readZvelocityPlot3D.f90\
 		 referenceState.F90\
 		 releaseExtraMemBCs.f90\
 		 scaleFactors.F90\
