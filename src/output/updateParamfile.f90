@@ -91,18 +91,6 @@
 
          endif
 
-         ! Write the format, if needed.
-
-         if( writeFormatInParam ) then
-           select case(fileFormatWrite)
-             case (cgnsFormat)
-               write(writeUnit,*) "      File format read: CGNS"
-
-             case (plot3DFormat)
-               write(writeUnit,*) "      File format read: PLOT3D"
-           end select
-         endif
-
          ! In case a grid file has been written, write the name
          ! of the new grid file. If multiple files were written
          ! only the first name is relevant for the restart.

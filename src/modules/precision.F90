@@ -180,26 +180,6 @@
 !
 !      ******************************************************************
 !      *                                                                *
-!      * Definition of the integer types and their corresponding sizes  *
-!      * in a PLOT3D file and corresponding solution file.              *
-!      *                                                                *
-!      ******************************************************************
-!
-       integer(kind=4), private :: dummyIntPLOT3D
-       integer(kind=4), private :: dummyRecordIntPLOT3D
-
-       integer, parameter :: intPLOT3DType       = kind(dummyIntPLOT3D)
-       integer, parameter :: intRecordPLOT3DType = kind(dummyRecordIntPLOT3D)
-
-       integer(kind=intType), parameter :: nBytesPerIntPLOT3D       = 4
-       integer(kind=intType), parameter :: nBytesPerRecordIntPLOT3D = 4
-#ifndef USE_TAPENADE
-       integer, parameter :: sumb_integerPLOT3D       = mpi_integer4
-       integer, parameter :: sumb_integerRecordPLOT3D = mpi_integer4
-#endif
-!
-!      ******************************************************************
-!      *                                                                *
 !      * Set the parameter debug, depending on the compiler option.     *
 !      *                                                                *
 !      ******************************************************************

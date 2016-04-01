@@ -73,20 +73,6 @@
        print "(2a)",    "#              Parameter file: ", &
                         trim(paramFile)
 
-       select case (fileFormatRead)
-         case (cgnsFormat)
-           print "(a)", "#            File format read: CGNS"
-           print "(2a)","#                   Grid file: ", &
-                        trim(gridFile)
-
-         case (plot3DFormat)
-           print "(a)", "#            File format read: PLOT3D"
-           print "(2a)","#    PLOT3D Connectivity file: ", &
-                         trim(plot3DConnFile)
-           print "(2a)","#                   Grid file: ", &
-                        trim(gridFile)
-       end select
-
        if( restart ) then
          print "(a)",   "#                     Restart: yes"
          print "(2a)",  "#                Restart file: ", &
@@ -100,14 +86,6 @@
          print "(a)",   "#          Restart: no"
        endif
        print "(a)",     "#"
-
-       select case (fileFormatWrite)
-         case (cgnsFormat)
-           print "(a)", "#           File format write: CGNS"
-
-         case (plot3DFormat)
-           print "(a)", "#           File format write: PLOT3D"
-       end select
 
        if(changing_Grid .or. gridMotionSpecified) &
          print "(2a)",  "#               New grid file: ", &

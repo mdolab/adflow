@@ -50,19 +50,9 @@
        ! Read the number of blocks and the block sizes of the grid stored
        ! in the cgns grid file. This info is stored on all processors
 
-       select case(fileFormatRead)
-         case (cgnsFormat)
-           call readBlockSizes
-           call determineNeighborIDs
-
-         !===============================================================
-
-         case (plot3DFormat)
-           call readBlockSizesPlot3D
-           call readConnectivityPlot3D
-           call readOversetPlot3D
-       end select
-
+       call readBlockSizes
+       call determineNeighborIDs
+       
        ! Some extra work is required to determine the IDs for the 
        ! sliding mesh and domain interfaces, which are specified via
        ! UserDefined boundary conditions in CGNS. The IDs for other
@@ -107,22 +97,9 @@
        call allocCoorFineGrid
 
        ! Read the grid of the blocks (block parts) to be stored
-       ! on this processor. For Plot3D format also releases the
-       ! memory of some variables needed for the reading.
+       ! on this processor. 
 
-       select case(fileFormatRead)
-         case (cgnsFormat)
-           call readGrid
-
-         case (plot3DFormat)
-           call readGridPlot3D
-
-           deallocate(byteSwapGrids, blockFormatGrids, stat=ierr)
-            if(ierr /= 0)                            &
-              call terminate("partitionAndReadGrid", &
-                             "Deallocation failure for byteSwapGrids &
-                             &and blockFormatGrids")
-       end select
+       call readGrid
 
        ! Determine the number of colors of the sliding mesh interfaces,
        ! such that the computation of the communication pattern of the

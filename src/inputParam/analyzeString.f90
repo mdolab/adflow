@@ -302,17 +302,8 @@
 !        *                                                              *
 !        ****************************************************************
 !
-         case ("file format read")
-           fileFormatRead = determineFileFormat(value, keyword)
-
-         case ("file format write")
-           fileFormatWrite = determineFileFormat(value, keyword)
-
          case ("grid file")
            gridFile = value
-
-         case ("plot3d connectivity file")
-           plot3DConnFile = value
 
          case ("restart file")
            restartFile = value
@@ -1549,62 +1540,6 @@
        end select
 
        end function determineDiscretization
-
-!      ==================================================================
-
-       function determineFileFormat(value, keyword)
-!
-!      ******************************************************************
-!      *                                                                *
-!      * determineFileFormat determines the file format stored in       *
-!      * value. If it does not match with one of the expected values an *
-!      * error message is printed and the program is stopped.           *
-!      *                                                                *
-!      ******************************************************************
-!
-       use communication
-       use inputIO
-       implicit none
-!
-!      Function type
-!
-       integer(kind=intType) :: determineFileFormat
-!
-!      Function arguments
-!
-       character (len=*), intent(inout) :: value
-       character (len=*), intent(in)    :: keyword
-!
-!      Local variables
-!
-       integer :: error
-
-       character (len=2*maxStringLen) :: errorMessage
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
-       ! Create a lower case version of value and check the options.
-
-       call convertToLowerCase(value)
-
-       select case (value)
-         case ("cgns")
-           determineFileFormat = cgnsFormat
-         case ("plot3d")
-           determineFileFormat = plot3DFormat
-         case default
-           write(errorMessage,*) "Unknown ", trim(keyword), &
-                                 ", ", trim(value), ", specified"
-           if(myID == 0) &
-             call returnFail("determineFileFormat", errorMessage)
-           call mpi_barrier(SUmb_comm_world, error)
-       end select
-
-       end function determineFileFormat
 
 !      ==================================================================
 

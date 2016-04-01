@@ -101,12 +101,8 @@
 !      * Set the default values for the IO-parameters.                  *
 !      *                                                                *
 !      ******************************************************************
-!
-       fileFormatRead  = NoFormat   ! Serves as a check later on.
-       fileFormatWrite = NoFormat   ! Idem.
 
        gridFile       = ""          ! Serves as a check later on.
-       plot3DConnFile = ""          ! Idem.
        restartFile    = ""          ! Idem.
 
        restart         = .true.     ! This will be corrected later if no
