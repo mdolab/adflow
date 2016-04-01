@@ -309,25 +309,6 @@
        integer, dimension(:), allocatable :: fileIDs
 
        character(len=maxStringLen), dimension(:), allocatable :: gridFiles
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Variables only needed for the reading of Plot3D files.         *
-!      *                                                                *
-!      ******************************************************************
-!
-       ! byteSwapGrids(nGridsRead):    Whether or not byte swapping must
-       !                               be applied for the grids to be
-       !                               read. Note that different 
-       !                               endianness of the grid files is
-       !                               allowed.
-       ! blockFormatGrids(nGridsRead): What type of grid is stored, 
-       !                               single block or multi-block.
-       !                               Again every grid can be different.
-
-       integer(kind=intType), dimension(:), allocatable :: &
-                                                        blockFormatGrids
-       logical, dimension(:), allocatable :: byteSwapGrids
 
        contains
 !

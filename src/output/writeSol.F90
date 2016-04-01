@@ -73,34 +73,16 @@
        ! a grid file is written as well if this is the first time
        ! a solution file is written.
 
-       writePlot3DConn    = .false.
        writeFormatInParam = .false.
-
-       if((fileFormatWrite /= fileFormatRead) .and. &
-          writeVolume .and. firstWrite) then
-         writeGrid          = .true.
-         writePlot3DConn    = .true.
-         writeFormatInParam = .true.
-         firstWrite         = .false.
-       endif
 
        ! Write the files. The routines called depend on the IO
        ! format used.
 
-       select case(fileFormatWrite)
-         case (cgnsFormat)
-           call setHelpVariablesWriting
-           call writeCGNSGridFile
-           call writeCGNSVolumeSol
-           call writeCGNSSurfaceSol
-           call releaseHelpVariablesWriting
-
-         case (plot3DFormat)
-           call writePlot3DGridFile
-           call writePlot3DConnFile
-           call writePlot3DVolumeSol
-           call writePlot3DSurfaceSol
-       end select
+       call setHelpVariablesWriting
+       call writeCGNSGridFile
+       call writeCGNSVolumeSol
+       call writeCGNSSurfaceSol
+       call releaseHelpVariablesWriting
 
        ! Update the parameter file, if needed.
 

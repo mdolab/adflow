@@ -85,12 +85,6 @@ FILES_TO_COMPLEXIFY = outputMod.f90\
 		 writeInterpolFromSpectral.f90\
 		 writeIsoSurface.F90\
 		 writeOversetCGNSZone.F90\
-		 writePlot3DConnFile.f90\
-		 writePlot3DConvInfo.f90\
-		 writePlot3DGridFile.f90\
-		 writePlot3DSurfaceSol.f90\
-		 writePlot3DTimeHistory.f90\
-		 writePlot3DVolumeSol.f90\
 		 writeSol.F90\
 		 writeSolCGNSZone.F90\
 		 writeSurfsolCGNSZone.F90\

@@ -16,7 +16,6 @@ SUBDIR_SRC    = src/modules       \
 	        src/metis-4.0     \
 	        src/output        \
 	        src/overset       \
-		src/parallelIO    \
 	        src/partitioning  \
 	        src/preprocessing \
 	        src/slidingComm   \

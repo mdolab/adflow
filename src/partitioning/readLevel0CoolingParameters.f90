@@ -79,8 +79,6 @@
 
        if (fromPython) return 
 !
-       select case(fileFormatRead)
-         case (cgnsFormat)
 
            ! CGNS format used. Blocks are given by names.
            ! Copy the global block names into zoneNames, sort them and
@@ -109,36 +107,6 @@
              blocksPerZone(tmp(mm)) = nn
            enddo
 
-         !===============================================================
-
-         case (plot3DFormat)
-
-           ! Plot 3D format. Blocks are given by numbers.
-           ! Copy the global block numbers into zoneNumbers, sort them
-           ! and remove the possible ties. 
-
-           do nn=1,nDom
-             zoneNumbers(nn) = flowDoms(nn,1,1)%cgnsBlockID
-           enddo
-
-           nZones = nDom
-           call qsortIntegers(zoneNumbers, nZones)
-           call removeTiesIntegers(zoneNumbers, nBlocksPerZone, nZones)
-
-           ! Determine the blocks per zone.
-
-           do nn=1,nZones
-             tmp(nn) = nBlocksPerZone(nn-1)
-           enddo
-
-           do nn=1,nDom
-             mm = bsearchIntegers(flowDoms(nn,1,1)%cgnsBlockID, &
-                                  zoneNumbers, nZones)
-             tmp(mm) = tmp(mm) + 1
-             blocksPerZone(tmp(mm)) = nn
-           enddo
-
-       end select
 !
 !      ******************************************************************
 !      *                                                                *
@@ -318,8 +286,6 @@
          ! distinction between the two grid formats.
 
          kk = 0
-         select case(fileFormatRead)
-           case (cgnsFormat)
 
              ! CGNS format. The block should be identified by a string.
 
@@ -345,36 +311,6 @@
 
              enddo subfaceLoop1CGNS
 
-           !=============================================================
-
-           case (plot3DFormat)
-
-             ! Plot 3D format.
-             ! The block should be identified by a number.
-
-             subfaceLoop1Plot3D: do mm=1,nSubfaces
-
-               read(strings(mm),*,iostat=ios) zoneID, iBeg, iEnd,     &
-                                              jBeg, jEnd, kBeg, kEnd, &
-                                              dirDownStream
-               if(ios /= 0) then
-                 if(myID == 0)                                   &
-                   call returnFail("readLevel0CoolingParameters", &
-                                  "Something wrong when reading &
-                                  &subface parameters.")
-                 call mpi_barrier(SUmb_comm_world, ierr)
-               endif
-
-               ! Search for the zone ID in the sorted zone numbers
-               ! corresponding to the blocks stored on this processor.
-               ! Update the number of local subfaces.
-
-               ll = bsearchIntegers(zoneID, zoneNumbers, nZones)
-               kk = kk + nLocalSubfacesCoolingSubface(ll)
-
-             enddo subfaceLoop1Plot3D
-
-         end select
 
          ! Allocate the memory to store the local subfaces of this
          ! cooling plane.
@@ -400,8 +336,6 @@
          ! cooling plane, but now store the local subface information.
 
          kk = 0
-         select case(fileFormatRead)
-           case (cgnsFormat)
 
              ! CGNS format. The block is identified by a string. This
              ! has already been checked, so no need to do again.
@@ -420,30 +354,6 @@
                                                 level0Cooling(nn,1))
 
              enddo subfaceLoop2CGNS
-
-           !=============================================================
-
-           case (plot3DFormat)
-
-             ! Plot 3D format. The block is identified by a number. This
-             ! has already been checked, so no need to do again.
-
-             subfaceLoop2Plot3D: do mm=1,nSubfaces
-
-               read(strings(mm),*) zoneID, iBeg, iEnd, jBeg, jEnd, &
-                                           kBeg, kEnd, dirDownStream
-
-               ! Search for the zone ID in the sorted zone numbers
-               ! corresponding to the blocks stored on this processor.
-               ! Store the local subfaces.
-
-               ll = bsearchIntegers(zoneID, zoneNumbers, nZones)
-               call localSubfacesCoolingSubface(ll, kk, &
-                                                level0Cooling(nn,1))
-
-             enddo subfaceLoop2Plot3D
-
-         end select
 
          ! Release the memory of strings.
 

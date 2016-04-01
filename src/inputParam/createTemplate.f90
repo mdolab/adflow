@@ -78,14 +78,8 @@
        write(writeUnit,"(a)") "     IO Parameters"
        write(writeUnit,"(a)") "-----------------------------------------&
                               &--------------------------------------"
-       write(writeUnit,"(a)") "                   File format read: CGNS"
-       write(writeUnit,"(a)") "                  File format write: CGNS"
-       write(writeUnit,"(a)") "               # Other possibility: &
-                              &PLOT3D"
        write(writeUnit,"(a)")
        write(writeUnit,"(a)") "                         Grid file: &
-                              &MISSING FILE NAME"
-       write(writeUnit,"(a)") "          PLOT3D Connectivity file: &
                               &MISSING FILE NAME"
        write(writeUnit,"(a)")
        write(writeUnit,"(a)") "                      Restart file: &

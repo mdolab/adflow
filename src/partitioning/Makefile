@@ -50,7 +50,6 @@ FF90_OBJECTS_1 = partitionMod.o
 
 FILES_TO_COMPLEXIFY = allocCoorFineGrid.f90\
 		 blockDistribution.f90\
-		 cgnsBCForPlot3D.f90\
 		 check1to1Subfaces.f90\
 		 checkFaces.f90\
 		 checkLoadBalance.f90\
@@ -75,15 +74,11 @@ FILES_TO_COMPLEXIFY = allocCoorFineGrid.f90\
 		 qsortSubfaceNonMatchType.f90\
 		 read1to1Conn.F90\
 		 readBlockSizes.F90\
-		 readBlockSizesPlot3D.f90\
 		 readBocos.F90\
-		 readConnectivityPlot3D.f90\
 		 readFamilyInfo.F90\
 		 readGeneralConn.F90\
-		 readGridPlot3D.f90\
 		 readLevel0CoolingParameters.f90\
 		 readOversetHoles.F90\
-		 readOversetPlot3D.f90\
 		 readPeriodicSubface.F90\
 		 readZoneInfo.F90\
 		 reallocSubfaceMemory.f90\
