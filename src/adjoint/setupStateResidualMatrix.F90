@@ -29,7 +29,6 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   use inputAdjoint       
   use stencils
   use diffSizes
-  use NKSolverVars, only : diag
   use communication
   use adjointVars
   use turbMod

@@ -50,7 +50,8 @@ FF90_OBJECTS_2 = bleedFlows.o\
 		 killSignals.o\
 		 communication.o\
 
-FF90_OBJECTS_3 = NKsolverVars.o\
+FF90_OBJECTS_3 = NKSolverVars.o\
+		 ANKSolverVars.o\
 		 block.o\
 		 IOModule.o\
 		 costFunctions.o\

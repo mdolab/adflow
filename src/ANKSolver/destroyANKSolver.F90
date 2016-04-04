@@ -1,17 +1,14 @@
-subroutine destroyNKsolver
+subroutine destroyANKsolver
 #ifndef USE_NO_PETSC
   ! Destroy all the PETSc objects for the Newton-Krylov
   ! solver. 
 
-  use NKsolverVars
+  use ANKsolverVars
   implicit none
   integer(kind=intType) :: ierr
   
-  if (NKSolverSetup) then
+  if (ANK_SolverSetup) then
  
-     call MatDestroy(dRdw, ierr) 
-     call EChk(ierr, __FILE__, __LINE__)
-     
      call MatDestroy(dRdwPre, ierr)
      call EChk(ierr, __FILE__, __LINE__)
      
@@ -24,16 +21,10 @@ subroutine destroyNKsolver
      call VecDestroy(deltaW, ierr)
      call EChk(ierr, __FILE__, __LINE__)
      
-     call VecDestroy(g, ierr)
+     call KSPDestroy(ANK_KSP, ierr)
      call EChk(ierr, __FILE__, __LINE__)
 
-     call VecDestroy(work, ierr)
-     call EChk(ierr, __FILE__, __LINE__)
-
-     call KSPDestroy(newtonKrylovKSP, ierr)
-     call EChk(ierr, __FILE__, __LINE__)
-
-     NKSolverSetup = .False.
+     ANK_SolverSetup = .False.
   end if
 #endif
-end subroutine destroyNKsolver
+end subroutine destroyANKsolver

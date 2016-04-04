@@ -134,12 +134,6 @@
 
        enddo fileOpenLoop
 
-       ! Read the convergence history. Only processor 0 needs to do that.
-       if (.not. fromPython) then 
-          if(myID == 0) call readConvHistory(fileIDs)
-          call mpi_bcast(nIterOld, 1, sumb_integer, 0, sumb_comm_world, ierr)
-       end if
-
        ! Read the time history for an unsteady computation. Again only
        ! done by processor 0. Note that time history only needs to be
        ! present in the first solution file

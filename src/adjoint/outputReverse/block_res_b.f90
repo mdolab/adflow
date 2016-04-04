@@ -465,7 +465,6 @@ varloopfine:do l=1,nwf
 !  actual residual calc
   call pushreal8array(fw, size(fw, 1)*size(fw, 2)*size(fw, 3)*size(fw, 4&
 &               ))
-  call pushreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
   call pushreal8array(aa, size(aa, 1)*size(aa, 2)*size(aa, 3))
   do ii1=1,ntimeintervalsspectral
     do ii2=1,1
@@ -767,7 +766,6 @@ varloopfine:do l=1,nwf
     end do
   end do
   call popreal8array(aa, size(aa, 1)*size(aa, 2)*size(aa, 3))
-  call popreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
   call popreal8array(fw, size(fw, 1)*size(fw, 2)*size(fw, 3)*size(fw, 4)&
 &             )
   call residual_block_b()

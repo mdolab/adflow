@@ -31,7 +31,8 @@ SUBDIR_SRC    = src/modules       \
                 src/adjoint/outputForward \
                 src/adjoint/residualInput \
 		src/adjoint \
-		src/NKsolver      \
+		src/NKSolver      \
+		src/ANKSolver     \
 
 SUBDIR_EXEC   = src/exec
 SUBDIR_PV3    = src/pv3Interface

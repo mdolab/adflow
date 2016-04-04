@@ -110,17 +110,14 @@ defOpts = {
 
     # Newton-Krylov Paramters
     'usenksolver':False,
-    'nklinearsolver':'gmres',
     'nkswitchtol':2.5e-4,
     'nksubspacesize':60,
     'nklinearsolvetol':0.3,
     'nkuseew':True,
-    'nkpc':'additive schwartz',
     'nkadpc':False,
     'nkviscpc':False,
     'nkasmoverlap':1,
     'nkpcilufill':2,
-    'nklocalpcordering':'rcm',
     'nkjacobianlag':20,
     'rkreset':False,
     'nrkreset':5,
@@ -128,6 +125,17 @@ defOpts = {
     'nkinnerpreconits':1,
     'nkouterpreconits':1,
     'nkls':'cubic',
+    'nkcfl0':1000000000000.0,
+
+    # Approximate Newton-Krylov Parameters
+    'useanksolver':False,
+    'ankswitchtol':1e-2,
+    'anksubspacesize':5,
+    'anklinearsolvetol':0.5,
+    'ankasmoverlap':1,
+    'ankpcilufill':1,
+    'ankjacobianlag':20,
+    'ankinnerpreconits':1,
 
     # LoadBalance/partitioning Parameters
     'blocksplitting':True,
@@ -435,6 +443,7 @@ def test4():
     # ****************************************************************************
     printHeader('MDO tutorial 1-Processor Test')
     # ****************************************************************************
+    from petsc4py import PETSc
     if MPI.COMM_WORLD.rank == 0:
         aeroOptions = copy.deepcopy(defOpts)
 
@@ -442,7 +451,7 @@ def test4():
         aeroOptions.update(
             {'gridfile': '../inputFiles/mdo_tutorial_euler.cgns',
              'mgcycle':'2w',
-             'clf':1.5,
+             'cfl':1.5,
              'cflcoarse':1.25,
              'ncyclescoarse':250,
              'ncycles':10000,

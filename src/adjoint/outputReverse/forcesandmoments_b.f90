@@ -483,6 +483,7 @@ bocos:do nn=1,nbocos
         call pushreal8array(rlv, size(rlv, 1)*size(rlv, 2)*size(rlv, 3))
         call pushreal8array(gamma, size(gamma, 1)*size(gamma, 2)*size(&
 &                     gamma, 3))
+        call pushreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
         call pushreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev, 3))
         call resetbcpointers(nn, .true.)
         call pushcontrol2b(2)
@@ -586,6 +587,7 @@ bocos:do nn=1,nbocos
       bcdatad(nn)%f = 0.0_8
     else if (branch .ne. 1) then
       call popreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev, 3))
+      call popreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
       call popreal8array(gamma, size(gamma, 1)*size(gamma, 2)*size(gamma&
 &                  , 3))
       call popreal8array(rlv, size(rlv, 1)*size(rlv, 2)*size(rlv, 3))

@@ -17,7 +17,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use precision
+       use constants
        implicit none
 
        ! groundLevel:  Current ground level of the computation. Needed
@@ -123,6 +123,23 @@
        integer(kind=intType) :: nOldSolAvail, nOldLevels
        real(kind=realType), dimension(:), allocatable :: coefTime
 
+       ! iterType: The type of iteration performed. Will be one of RK,
+       ! DADI, ANK or NK ( or None on the 0th evaluation)
+       character(len=6) :: iterType
+
+       ! approxTotalIts : A rough approximation of the total number of
+       ! function evaluations. An RK or DADI multi grid iteration
+       ! counts as 1.  ANK steps count as 1 + number of KSP
+       ! iterations. NK steps count the total number of function
+       ! evalautions either for mat-vecs or during a line search. It
+       ! is this value that is checked again nCycles for doing too
+       ! much work.
+       integer(kind=intType) :: approxTotalIts
+       
+       ! Variable for monitoring the current CFL depending on the type
+       ! of iteration
+       real(kind=realTYpe) :: CFLMonitor
+
        ! *******************************
        ! Added by HDN
        ! *******************************
@@ -148,5 +165,7 @@
        logical :: timeSpectralGridsNotWritten
 
        logical, dimension(:), allocatable :: oldSolWritten
+
+       external signalwritecallback
 
        end module iteration

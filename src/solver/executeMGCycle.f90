@@ -90,8 +90,10 @@
              select case (smoother)
                case (RungeKutta)
                  call RungeKuttaSmoother
+                 iterType = "    RK"
                case (DADI)
                   call DADISmoother
+                  iterType = "  DADI"
                case (nlLusgs)
                  call returnFail("executeMGCycle", &
                                 "nlLusgs smoother not implemented yet")
@@ -142,5 +144,8 @@
 
        call initres(1_intType, nwf)
        call residual
+
+       ! Set some information for monitoring purposes
+       approxTotalIts = approxTotalIts + 1
 
        end subroutine executeMGCycle

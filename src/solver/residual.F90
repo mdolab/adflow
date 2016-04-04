@@ -217,8 +217,8 @@ subroutine residual_block
         else
            ! This is a PC calc...only include viscous fluxes if viscPC
            ! is used
+           call computeSpeedOfSoundSquared
            if (viscPC) then
-              call computeSpeedOfSoundSquared
               call allNodalGradients
               call viscousFlux 
            else
