@@ -26,43 +26,8 @@ subroutine viscousFluxApprox
   real(kind=realType) :: dd
   logical :: correctForK
 
-  ! Set rFilv to rFil to indicate that this is the viscous part.
-  ! If rFilv == 0 the viscous residuals need not to be computed
-  ! and a return can be made.
-
-  rFilv = rFil
-
-  if(abs(rFilv) < thresholdReal) return
-
-  ! Determine whether or not the pressure must be corrected
-  ! for the presence of the turbulent kinetic energy.
-
-  if( kPresent ) then
-     if((currentLevel <= groundLevel) .or. turbCoupled) then
-        correctForK = .true.
-     else
-        correctForK = .false.
-     endif
-  else
-     correctForK = .false.
-  endif
-
-  ! Store the speed of sound squared instead of the pressure.
-  ! To be 100 percent correct, substract 2/3*rho*k (if present)
-  ! from the pressure to obtain the true presssure. First layer of
-  ! halo's, because that's what is needed by the viscous stencil.
-
-  do k=1,ke
-     do j=1,je
-        do i=1,ie
-           if( correctForK ) &
-                p(i,j,k) = p(i,j,k) - twoThird*w(i,j,k,irho)*w(i,j,k,itu1)
-           p(i,j,k) = gamma(i,j,k)*p(i,j,k)/w(i,j,k,irho)
-        enddo
-     enddo
-  enddo
-
   mue = zero
+  rFilv = rFil
 
   ! Viscous fluxes in the I-direction
 
@@ -106,7 +71,7 @@ subroutine viscousFluxApprox
            w_y = dd*ssy
            w_z = dd*ssz
 
-           dd = p(i+1, j, k)-p(i, j, k)
+           dd = aa(i+1, j, k)-aa(i, j, k)
            q_x = -dd*ssx
            q_y = -dd*ssy
            q_z = -dd*ssz
@@ -220,7 +185,7 @@ subroutine viscousFluxApprox
            w_y = dd*ssy
            w_z = dd*ssz
 
-           dd = p(i, j+1, k)-p(i, j, k)
+           dd = aa(i, j+1, k)-aa(i, j, k)
            q_x = -dd*ssx
            q_y = -dd*ssy
            q_z = -dd*ssz
@@ -333,7 +298,7 @@ subroutine viscousFluxApprox
            w_y = dd*ssy
            w_z = dd*ssz
 
-           dd = p(i, j, k+1)-p(i, j, k)
+           dd = aa(i, j, k+1)-aa(i, j, k)
            q_x = -dd*ssx
            q_y = -dd*ssy
            q_z = -dd*ssz
@@ -404,27 +369,5 @@ subroutine viscousFluxApprox
         end do
      end do
   end do
-
-
-  ! Restore the pressure in p. Again only the first layer of
-  ! halo cells.
-
-  do k=1,ke
-     do j=1,je
-        do i=1,ie
-           p(i,j,k) = w(i,j,k,irho)*p(i,j,k)/gamma(i,j,k)
-        enddo
-     enddo
-  enddo
-
-  if( correctForK ) then
-     do k=1,ke
-        do j=1,je
-           do i=1,ie
-              p(i,j,k) = p(i,j,k) + twoThird*w(i,j,k,irho)*w(i,j,k,itu1)
-           enddo
-        enddo
-     enddo
-  endif
 
 end subroutine viscousFluxApprox

@@ -2,10 +2,11 @@
 python module solverunsteadyale__user__routines 
     interface solverunsteadyale_user_interface 
         subroutine alecallback_python(t) ! in :test:solverUnsteady_ALE.f90
-            real(kind=realtype) :: t
+          real(kind=realtype) :: t
         end subroutine alecallback_python
     end interface solverunsteadyale_user_interface
 end python module solverunsteadyale__user__routines
+
 
 #ifdef USE_COMPLEX
 python module libsumb_cs ! in 
@@ -622,6 +623,10 @@ python module libsumb
          integer(kind=inttype) parameter,optional :: precisionsingle=1
          logical optional :: firstwrite=.true.
          character(len=maxstringlen) :: paramfile
+         character(len=maxstringlen) :: forcedvolumefile
+         character(len=maxstringlen) :: forcedsurfacefile
+         character(len=maxstringlen) :: forcedliftfile
+         character(len=maxstringlen) :: forcedslicefile
        end module inputio
 
        module localmg ! in :test:localModules.f90
@@ -911,7 +916,6 @@ python module libsumb
          logical :: showcpu
          logical :: monmasssliding
          logical :: monmassfamilies
-         integer :: niterold
          integer :: nitercur
          real(kind=realtype) allocatable,dimension(:,:,:) :: convarray
          integer(kind=inttype) :: ntimestepsrestart
@@ -1077,43 +1081,41 @@ python module libsumb
 
        module nksolvervars ! in :test:NKsolverVars.F90
          use constants
-         integer(kind=inttype) :: innerpreconits
-         integer(kind=inttype) :: outerpreconits
-         integer(kind=inttype) :: jacobian_lag
+         integer(kind=inttype) :: nk_innerpreconits
+         integer(kind=inttype) :: nk_outerpreconits
+         integer(kind=inttype) :: nk_jacobianlag
          logical :: usenksolver
-         logical :: nkadpc
-         logical :: nkuseew
-         logical :: nkviscpc
-         integer(kind=inttype) :: nkls
+         logical :: nk_adpc
+         logical :: nk_useew
+         logical :: nk_viscpc
+         integer(kind=inttype) :: nk_ls
          integer(kind=inttype) :: nolinesearch=0
          integer(kind=inttype) :: cubiclinesearch=1
          integer(kind=inttype) :: nonmonotonelinesearch=2
-         integer(kind=inttype) :: snes_max_funcs
-         real(kind=realtype) :: snes_rtol
-         character(len=maxstringlen) :: global_pc_side
-         integer(kind=inttype) :: snes_max_its
-         character(len=maxstringlen) :: ksp_solver_type
-         integer(kind=inttype) :: ksp_subspace
-         integer(kind=inttype) :: asm_overlap
-         character(len=maxstringlen) :: global_pc_type
-         real(kind=realtype) :: ksp_atol
-         real(kind=realtype) :: ksp_rtol_init
-         integer(kind=inttype) :: ksp_max_it
-         integer(kind=inttype) :: local_pc_ilu_level
-         real(kind=realtype) :: snes_stol
-         real(kind=realtype) :: snes_atol
-         character(len=maxstringlen) :: local_pc_ordering
-         real(kind=realtype) :: ksp_div_tol=10
-         real(kind=realtype) :: nk_switch_tol
-         real(kind=realtype) :: ksp_rtol
+         integer(kind=inttype) :: nk_subspace
+         integer(kind=inttype) :: nk_asmoverlap
+         real(kind=realtype) :: nk_rtolinit
+         integer(kind=inttype) :: nk_ilufill
+         real(kind=realtype) :: nk_switchtol
+         real(kind=realtype) :: nk_cfl0
          real(kind=realtype) :: totalr0
          real(kind=realtype) :: totalrstart
          real(kind=realtype) :: totalrfinal
-         logical :: rkreset
          integer(kind=inttype) :: applypcsubspacesize
          logical :: freestreamresset
-         integer(kind=inttype) :: nksolvecount
        end module nksolvervars
+
+       module anksolvervars ! in :test:NKsolverVars.F90
+         use constants
+         integer(kind=inttype) :: ank_innerpreconits
+         integer(kind=inttype) :: ank_jacobianlag
+         logical :: useanksolver
+         integer(kind=inttype) :: ank_subspace
+         integer(kind=inttype) :: ank_asmoverlap
+         real(kind=realtype) :: ank_rtol
+         integer(kind=inttype) :: ank_ilufill
+         real(kind=realtype) :: ank_switchtol
+       end module anksolvervars
       
        ! ############################################################################
        ! Coupler API Routines

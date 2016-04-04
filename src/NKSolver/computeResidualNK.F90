@@ -4,9 +4,7 @@ subroutine computeResidualNK()
   ! actual function that is used for the matrix free matrix-vector
   ! products is FormFunction_mf (see formFunction.F90). This the
   ! routine that actually computes the residual. This works with
-  ! Euler, Laminar and RANS equation modes. This function ONLY
-  ! OPERATES ON THE FINEST GRID LEVEL. It does not coarser grid
-  ! levels.
+  ! Euler, Laminar and RANS equation modes. 
 
   ! This function uses the w that is currently stored in the flowDoms
   ! datastructure and leaves the resulting residual dw, in the same
@@ -23,28 +21,45 @@ subroutine computeResidualNK()
 
   ! Local Variables
   integer(kind=intType) :: i, j, k, sps,nn
-  logical secondHalo
-  real(kind=realType) :: gm1,v2
+  logical secondHalo, correctForK
+  real(kind=realType) :: gm1, factK, v2
 
-  secondHalo = .True. 
-  currentLevel = 1_intType
-  groundLevel = 1_intTYpe
   gm1 = gammaConstant - one
   rkStage = 0
+
+  secondHalo = .false.
+  correctForK = .false.
+  if(currentLevel <= groundLevel) then
+     secondHalo = .true.
+     if (kPresent) then 
+        correctForK = .True.
+     end if
+  end if
 
   ! Recompute pressure on ALL cells 
   spectralLoop: do sps=1, nTimeIntervalsSpectral
      domainsState: do nn=1, nDom
         ! Set the pointers to this block.
         call setPointers(nn, currentLevel, sps)
+        factK = zero
         do k=0, kb
            do j=0, jb
               do i=0, ib
+                 
+                 gm1  = gamma(i, j, k) - one
+                 factK = five*third - gamma(i, j ,k)
                  v2 = w(i,j,k,ivx)**2 + w(i,j,k,ivy)**2 &
                       + w(i,j,k,ivz)**2
 
                  p(i,j,k) = gm1*(w(i,j,k,irhoE) &
-                      - half*w(i,j,k,irho)*v2)
+                      - half*w(i,j,k,irho)*v2) 
+
+                 if( correctForK ) then 
+                    p(i, j ,K) = p(i,j, k) + factK*w(i, j, k, irho) &
+                         * w(i, j, k, itu1)
+                 end if
+
+                 ! Clip to make sure it is positive.
                  p(i,j,k) = max(p(i,j,k), 1.e-4_realType*pInfCorr)
               end do
            end do
@@ -68,26 +83,20 @@ subroutine computeResidualNK()
         end do
      end do
   end if
-  
-  ! Exchange halos
-  call whalo2(1_intType, 1_intType, nw, .true., &
-       .true., .true.)
 
-  ! Compute the skin-friction velocity (wall functions only)
-  call computeUtau
+  ! Exchange halos
+  call whalo2(currentLevel, 1_intType, nw, .true., &
+       .true., .true.)
 
   ! Compute time step (spectral radius is actually what we need)
   call timestep(.false.)
 
   ! Possible Turblent Equations
   if( equations == RANSEquations ) then
+     ! Compute the skin-friction velocity (wall functions only)
+     call computeUtau
      call initres(nt1, nt2) ! Initialize only the Turblent Variables
-     select case (turbModel)
-     case (spalartAllmaras)
-        call sa(.True.)
-     case (menterSST)
-        call SST(.True.)
-     end select
+     call turbResidual
   endif
 
   ! Initialize Flow residuals
@@ -97,4 +106,7 @@ subroutine computeResidualNK()
   call residual 
 
 end subroutine computeResidualNK
+
+
+
 

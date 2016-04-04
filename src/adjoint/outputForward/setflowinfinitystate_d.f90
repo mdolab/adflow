@@ -73,9 +73,16 @@ subroutine setflowinfinitystate_d()
   winf(ivy) = uinf*veldirfreestream(2)
   winfd(ivz) = uinfd*veldirfreestream(3) + uinf*veldirfreestreamd(3)
   winf(ivz) = uinf*veldirfreestream(3)
-! set the turbulent variables if transport variables are
-! to be solved.
-  if (equations .eq. ransequations) then
+! set the turbulent variables if transport variables are to be
+! solved. we should be checking for rans equations here,
+! however, this code is included in block res. the issue is
+! that for frozen turbulence (or ank jacobian) we call the
+! block_res with equationtype set to laminar even though we are
+! actually solving the rans equations. the issue is that, the
+! freestream turb variables will be changed to zero, thus
+! changing the solution. insteady we check if nw > nwf which
+! will accomplish the same thing. 
+  if (nw .gt. nwf) then
     nuinfd = (muinfd*rhoinf-muinf*rhoinfd)/rhoinf**2
     nuinf = muinf/rhoinf
     select case  (turbmodel) 
@@ -83,7 +90,6 @@ subroutine setflowinfinitystate_d()
       winfd(itu1) = sanuknowneddyratio_d(eddyvisinfratio, nuinf, nuinfd&
 &       , winf(itu1))
     case (komegawilcox, komegamodified, mentersst) 
-!   winf(itu1) = 1.341946*nuinf   ! eddyvis = 0.009*lamvis
 !=============================================================
       winfd(itu1) = 1.5_realtype*turbintensityinf**2*uinf2d
       winf(itu1) = 1.5_realtype*uinf2*turbintensityinf**2

@@ -17,20 +17,20 @@ subroutine applyPC(in_vec, out_vec, ndof)
   integer(kind=intType) :: ierr
 
   ! Setup the NKsolver if not already done so
-  if (.not. NKSolverSetup) then
+  if (.not. NK_solverSetup) then
      call setupNKSolver
   end if
   
   ! We possibly need to re-form the jacobian
-  if (mod(NKsolveCount, jacobian_lag) == 0) then
-     call FormJacobian()
+  if (mod(NK_iter, NK_jacobianLag) == 0) then 
+     call FormJacobianNK()
   end if
 
-  ! Place the two arrays in the vector
-  call VecPlaceArray(w_like1, in_vec, ierr)
+  ! Place the two arrays into two vectos. We reuse 'work' and 'g'. 
+  call VecPlaceArray(work, in_vec, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  call VecPlaceArray(w_like2, out_vec, ierr)
+  call VecPlaceArray(g, out_vec, ierr)
   call EChk(ierr, __FILE__, __LINE__)
   
   ! Set the base vec
@@ -40,22 +40,22 @@ subroutine applyPC(in_vec, out_vec, ndof)
   call EChk(ierr, __FILE__, __LINE__)
 
    ! This needs to be a bit better...
-  call KSPSetTolerances(newtonKrylovKSP, 1e-8, 1e-16, 10.0, &
+  call KSPSetTolerances(NK_KSP, 1e-8, 1e-16, 10.0, &
        applyPCSubSpaceSize, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
   ! Actually do the Linear Krylov Solve
-  call KSPSolve(newtonKrylovKSP, w_like1, w_like2, ierr)
+  call KSPSolve(NK_KSP, work, g, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
   ! Reset the array pointers:
-  call VecResetArray(w_like1, ierr)
+  call VecResetArray(work, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  call VecResetArray(w_like2, ierr)
+  call VecResetArray(g, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  NKSolveCount = NKSolveCount + 1
+  NK_iter = NK_iter + 1
 #endif
 end subroutine applyPC
 
@@ -92,10 +92,9 @@ subroutine applyAdjointPC(in_vec, out_vec, ndof)
   call EChk(ierr, __FILE__, __LINE__)
 
   ! This needs to be a bit better...
-
-     call KSPSetTolerances(adjointKSP, PETSC_DEFAULT_REAL, &
-          PETSC_DEFAULT_REAL, PETSC_DEFAULT_REAL, &
-          applyAdjointPCSubSpaceSize, ierr)
+  call KSPSetTolerances(adjointKSP, PETSC_DEFAULT_REAL, &
+       PETSC_DEFAULT_REAL, PETSC_DEFAULT_REAL, &
+       applyAdjointPCSubSpaceSize, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
   ! Actually do the Linear Krylov Solve

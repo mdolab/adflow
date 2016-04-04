@@ -644,7 +644,7 @@ class SUMB(AeroSolver):
             is used in a multidisciplinary enviornment when the outer
             solver can suppress all I/O during intermediate solves.
             """
-        
+
         # Make sure the user isn't trying to solve a slave
         # aeroproblem. Cannot do that
         if hasattr(aeroProblem, 'isSlave'):
@@ -656,6 +656,9 @@ class SUMB(AeroSolver):
 
         # Set the aeroProblem
         self.setAeroProblem(aeroProblem, releaseAdjointMemory)
+
+        # Set filenames for possibled forced write
+        self._setForcedFileNames()
 
         # Set the full mask such that we get the full coefficients in
         # the printout.
@@ -693,7 +696,6 @@ class SUMB(AeroSolver):
             self.sumb.inputiteration.mgstartlevel = 1
 
         self.sumb.iteration.itertot = 0
-        self.sumb.niterold = 0
         desiredSize = self.sumb.inputiteration.nsgstartup + \
                       self.sumb.inputiteration.ncycles
         self.sumb.allocconvarrays(desiredSize)
@@ -799,16 +801,6 @@ class SUMB(AeroSolver):
         # data. Also increment the counter for this case.
         self.curAP.sumbData.adjointRHS = {}
         self.curAP.sumbData.callCounter += 1
-
-        # --------------------------------------------------------------
-        # Setup interation arrays ---- don't touch this unless you
-        # REALLY REALLY know what you're doing!
-
-        self.sumb.monitor.niterold = 0
-        desiredSize = self.sumb.monitor.nsgstartup + self.sumb.iteration.ncycles
-        self.sumb.allocconvarrays(desiredSize)
-
-        # --------------------------------------------------------------
 
         if self.getOption('equationMode').lower() == 'unsteady':
             self.sumb.alloctimearrays(self.getOption('nTimeStepsFine'))
@@ -1640,6 +1632,7 @@ class SUMB(AeroSolver):
             self.writeLiftDistributionFile(base + '_lift.dat')
             self.writeSlicesFile(base + '_slices.dat')
 
+    
 
 
     def writeMeshFile(self, fileName):
@@ -1873,11 +1866,9 @@ class SUMB(AeroSolver):
         self.sumb.inputiteration.mgstartlevel = strLvl
         self.sumb.iteration.groundlevel = strLvl
         self.sumb.iteration.currentlevel = strLvl
-        self.sumb.monitor.niterold = 0
         self.sumb.monitor.nitercur = 0
         self.sumb.iteration.itertot = 0
         self.sumb.setuniformflow()
-        self.sumb.nksolvervars.nksolvecount = 0
         self.sumb.killsignals.routinefailed =  False
         self.sumb.killsignals.fatalfail = False
         self.sumb.nksolvervars.freestreamresset = False
@@ -3585,26 +3576,34 @@ class SUMB(AeroSolver):
             'l2convergencecoarse':[float, 1e-2],
             'maxl2deviationfactor':[float, 1.0],
 
-            # Newton-Krylov Paramters
+            # Newton-Krylov Parameters
             'usenksolver':[bool, False],
-            'nklinearsolver':[str, 'gmres'],
             'nkswitchtol':[float, 2.5e-4],
             'nksubspacesize':[int, 60],
             'nklinearsolvetol':[float, 0.3],
             'nkuseew':[bool, True],
-            'nkpc':[str, 'additive schwartz'],
             'nkadpc':[bool, False],
             'nkviscpc':[bool, False],
             'nkasmoverlap':[int, 1],
             'nkpcilufill':[int, 2],
-            'nklocalpcordering':[str, 'rcm'],
             'nkjacobianlag':[int, 20],
-            'rkreset':[bool, False],
-            'nrkreset':[int, 5],
             'applypcsubspacesize':[int, 10],
             'nkinnerpreconits':[int, 1],
             'nkouterpreconits':[int, 1],
+            'nkcfl0':[float, 100.0],
             'nkls':[str, 'cubic'],
+            'rkreset':[bool, False],
+            'nrkreset':[int, 5],
+
+            # Approximate Newton-Krylov Parameters
+            'useanksolver':[bool, False],
+            'ankswitchtol':[float, 1e-2],
+            'anksubspacesize':[int, 5],
+            'anklinearsolvetol':[float, 0.5],
+            'ankasmoverlap':[int, 1],
+            'ankpcilufill':[int, 1],
+            'ankjacobianlag':[int, 20],
+            'ankinnerpreconits':[int, 1],
             
             # Load Balance/partitioning parameters
             'blocksplitting':[bool, True],
@@ -3620,7 +3619,7 @@ class SUMB(AeroSolver):
             'printtiming':[bool, True],
             'setmonitor':[bool, True],
             'printwarnings':[bool, True],
-            'monitorvariables':[list, ['cpu','resrho','cl', 'cd']],
+            'monitorvariables':[list, ['cpu','resrho', 'resturb', 'cl', 'cd']],
             'surfacevariables':[list, ['cp','vx', 'vy','vz', 'mach']],
             'volumevariables':[list, ['resrho']],
 
@@ -3687,6 +3686,7 @@ class SUMB(AeroSolver):
                      'physics':self.sumb.inputphysics,
                      'stab': self.sumb.inputtsstabderiv,
                      'nk': self.sumb.nksolvervars,
+                     'ank': self.sumb.anksolvervars,
                      'adjoint': self.sumb.inputadjoint,
                      'cost': self.sumb.costfunctions,
                      'unsteady':self.sumb.inputunsteady,
@@ -3833,37 +3833,36 @@ class SUMB(AeroSolver):
 
             # Newton-Krylov Paramters
             'usenksolver':['nk', 'usenksolver'],
-            'nklinearsolver':{'gmres':'gmres',
-                              'tfqmr':'tfqmr',
-                              'location':['nk', 'ksp_solver_type']},
-
-            'nkuseew':['nk', 'nkuseew'],
-            'nkswitchtol':['nk', 'nk_switch_tol'],
-            'nksubspacesize':['nk', 'ksp_subspace'],
-            'nklinearsolvetol':['nk', 'ksp_rtol_init'],
-            'nkpc':{'additive schwartz':'asm',
-                    'multigrid':'mg',
-                    'location':['nk', 'global_pc_type']},
-            'nkasmoverlap':['nk', 'asm_overlap'],
-            'nkpcilufill':['nk', 'local_pc_ilu_level'],
-            'nklocalpcordering':{'natural':'natural',
-                                 'rcm':'rcm',
-                                 'nested dissection':'nd',
-                                 'one way dissection':'1wd',
-                                 'quotient minimum degree':'qmd',
-                                 'location':['nk', 'local_pc_ordering']},
-            'nkjacobianlag':['nk', 'jacobian_lag'],
-            'rkreset':['nk', 'rkreset'],
-            'nrkreset':['iter', 'miniternum'],
-            'nkadpc':['nk', 'nkadpc'],
-            'nkviscpc':['nk', 'nkviscpc'],
+            'nkuseew':['nk', 'nk_useew'],
+            'nkswitchtol':['nk', 'nk_switchtol'],
+            'nksubspacesize':['nk', 'nk_subspace'],
+            'nklinearsolvetol':['nk', 'nk_rtolinit'],
+            'nkasmoverlap':['nk', 'nk_asmoverlap'],
+            'nkpcilufill':['nk', 'nk_ilufill'],
+            'nkjacobianlag':['nk', 'nk_jacobianlag'],
+            'nkadpc':['nk', 'nk_adpc'],
+            'nkviscpc':['nk', 'nk_viscpc'],
             'applypcsubspacesize':['nk', 'applypcsubspacesize'],
-            'nkinnerpreconits':['nk', 'innerpreconits'],
-            'nkouterpreconits':['nk', 'outerpreconits'],
+            'nkinnerpreconits':['nk', 'nk_innerpreconits'],
+            'nkouterpreconits':['nk', 'nk_outerpreconits'],
+            'nkcfl0':['nk', 'nk_cfl0'],
             'nkls':{'none':self.sumb.nksolvervars.nolinesearch,
                     'cubic':self.sumb.nksolvervars.cubiclinesearch,
                     'non monotone':self.sumb.nksolvervars.nonmonotonelinesearch,
-                    'location':['nk', 'nkls']},
+                    'location':['nk', 'nk_ls']},
+            'rkreset':['nk', 'rkreset'],
+            'nrkreset':['iter', 'miniternum'],
+
+            # Approximate Newton-Krylov Paramters
+            'useanksolver':['ank', 'useanksolver'],
+            'ankswitchtol':['ank', 'ank_switchtol'],
+            'anksubspacesize':['ank', 'ank_subspace'],
+            'anklinearsolvetol':['ank', 'ank_rtol'],
+            'ankasmoverlap':['ank', 'ank_asmoverlap'],
+            'ankpcilufill':['ank', 'ank_ilufill'],
+            'ankjacobianlag':['ank', 'ank_jacobianlag'],
+            'applypcsubspacesize':['ank', 'applypcsubspacesize'],
+            'ankinnerpreconits':['ank', 'ank_innerpreconits'],
 
             # Load Balance Paramters
             'blocksplitting':['parallel', 'splitblocks'],
@@ -4094,7 +4093,26 @@ class SUMB(AeroSolver):
         self.sumb.inputio.slicesolfile[:] = ''
         self.sumb.inputio.slicesolfile[0:len(sliceFileName)] = sliceFileName
 
+    def _setForcedFileNames(self):
+        self.sumb.inputio.forcedvolumefile[:] = ''
+        self.sumb.inputio.forcedsurfacefile[:] = ''
+        self.sumb.inputio.forcedliftfile[:] = ''
+        self.sumb.inputio.forcedslicefile[:] = ''
 
+        outputDir = self.getOption('outputDirectory')
+        baseName = self.curAP.name
+        base = os.path.join(outputDir, baseName)
+
+        volFileName = base + '_forced_vol.cgns'
+        surfFileName = base + '_forced_surf.cgns'
+        liftFileName = base + '_forced_lift.dat'
+        sliceFileName = base + '_forced_slices.dat'
+
+        self.sumb.inputio.forcedvolumefile[0:len(volFileName)] = volFileName
+        self.sumb.inputio.forcedsurfacefile[0:len(surfFileName)] = surfFileName
+        self.sumb.inputio.forcedliftfile[0:len(liftFileName)] = liftFileName
+        self.sumb.inputio.forcedslicefile[0:len(sliceFileName)] = sliceFileName
+        
     def createSlaveAeroProblem(self, master):
         """Create a slave aeroproblem"""
 

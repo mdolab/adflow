@@ -36,7 +36,6 @@ subroutine setWVec(wVec)
 #include "include/finclude/petscvec.h90"
 #endif
 
-
   Vec   wVec
   integer(kind=intType) :: ierr,nn,sps,i,j,k,l,ii
   real(kind=realType),pointer :: wvec_pointer(:)
@@ -74,7 +73,6 @@ subroutine setRVec(rVec)
   use inputtimespectral
   use flowvarrefstate
   use inputiteration
-  use NKsolvervars, only: scalevec
   implicit none
 #define PETSC_AVOID_MPIF_H
 
@@ -124,57 +122,6 @@ subroutine setRVec(rVec)
   call EChk(ierr,__FILE__,__LINE__)
 #endif
 end subroutine setRVec
-
-subroutine setRVec2(rVec)
-#ifndef USE_NO_PETSC
-  ! Set the current residual in dw into the PETSc Vector
-  use blockPointers
-  use inputtimespectral
-  use flowvarrefstate
-  use inputiteration
-  use NKsolvervars, only: scalevec
-  implicit none
-#define PETSC_AVOID_MPIF_H
-
-#include "include/petscversion.h"
-#if PETSC_VERSION_MINOR > 5
-#include "petsc/finclude/petscsys.h"
-#include "petsc/finclude/petscvec.h"
-#include "petsc/finclude/petscvec.h90"
-#else
-#include "include/finclude/petscsys.h"
-#include "include/finclude/petscvec.h"
-#include "include/finclude/petscvec.h90"
-#endif
-
-  Vec    rVec
-  integer(kind=intType) :: ierr,nn,sps,i,j,k,l,ii
-  real(kind=realType),pointer :: rvec_pointer(:)
-
-  call VecGetArrayF90(rVec,rvec_pointer,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-  ii = 1
-  do nn=1,nDom
-     do sps=1,nTimeIntervalsSpectral
-        call setPointers(nn,1_intType,sps)
-        ! Copy off dw/vol to rVec
-        do l=1,nw
-           do k=2,kl
-              do j=2,jl
-                 do i=2,il
-                    rvec_pointer(ii) = dw(i,j,k,l)
-                    ii = ii + 1
-                 end do
-              end do
-           end do
-        end do
-     end do
-  end do
-  
-  call VecRestoreArrayF90(rVec,rvec_pointer,ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-#endif
-end subroutine setRVec2
 
 subroutine setW(wVec)
 #ifndef USE_NO_PETSC
@@ -452,4 +399,40 @@ subroutine getInfo(info, iSize)
      end do
   end do
 end subroutine getInfo
+
+subroutine getEWTol(norm, old_norm, rtol_last, rtol)
+
+  use constants
+  implicit none
+
+  ! There are the default EW Parameters from PETSc. They seem to work well
+  !version:           2
+  !rtol_0:  0.300000000000000     
+  !rtol_max:  0.900000000000000     
+  !gamma:   1.00000000000000     
+  !alpha:   1.61803398874989     
+  !alpha2:   1.61803398874989     
+  !threshold:  0.100000000000000     
+
+  real(kind=realType), intent(in) :: norm, old_norm, rtol_last
+  real(kind=realType), intent(out) :: rtol
+  real(kind=realType) :: rtol_max, gamma, alpha, alpha2, threshold, stol
+
+  rtol_max  = 0.5_realType
+  gamma     = 1.0_realType
+  alpha     = (1.0_realType+sqrt(five))/2.0_realType
+  alpha2    = (1.0_realType+sqrt(five))/2.0_realType
+  threshold = 0.10_realType
+  ! We use version 2:
+  rtol = gamma*(norm/old_norm)**alpha
+  stol = gamma*rtol_last**alpha
+  
+  if (stol > threshold) then
+     rtol = max(rtol, stol)
+  end if
+  
+  ! Safeguard: avoid rtol greater than one
+  rtol = min(rtol, rtol_max)
+  
+end subroutine getEWTol
 

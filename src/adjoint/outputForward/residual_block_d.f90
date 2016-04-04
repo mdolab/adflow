@@ -2,7 +2,7 @@
 !  tapenade 3.10 (r5363) -  9 sep 2014 09:53
 !
 !  differentiation of residual_block in forward (tangent) mode (with options i4 dr8 r8):
-!   variations   of useful results: *p *dw *w *(*viscsubface.tau)
+!   variations   of useful results: *dw *w *(*viscsubface.tau)
 !   with respect to varying inputs: gammainf timeref rhoinf tref
 !                winf pinfcorr rgas *rev *p *sfacei *sfacej *sfacek
 !                *dw *w *rlv *x *vol *si *sj *sk *radi *radj *radk
@@ -195,17 +195,19 @@ subroutine residual_block_d()
         call computespeedofsoundsquared_d()
         call allnodalgradients_d()
         call viscousflux_d()
-      else if (viscpc) then
+      else
 ! this is a pc calc...only include viscous fluxes if viscpc
 ! is used
         call computespeedofsoundsquared_d()
-        call allnodalgradients_d()
-        call viscousflux_d()
-      else
-        call viscousfluxapprox_d()
-        do ii1=1,isize1ofdrfviscsubface
-          viscsubfaced(ii1)%tau = 0.0_8
-        end do
+        if (viscpc) then
+          call allnodalgradients_d()
+          call viscousflux_d()
+        else
+          call viscousfluxapprox_d()
+          do ii1=1,isize1ofdrfviscsubface
+            viscsubfaced(ii1)%tau = 0.0_8
+          end do
+        end if
       end if
     else
       do ii1=1,isize1ofdrfviscsubface
