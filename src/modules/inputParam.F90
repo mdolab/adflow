@@ -259,8 +259,13 @@
        logical :: writeSymmetry = .True. 
        logical :: writeFarfield = .False. 
        logical :: viscousSurfaceVelocities = .True.
-
        
+       ! Extra file names (set from python) that specify the name of
+       ! the volume, surface, lift and slice files written from an
+       ! interrupt. 
+       character(len=maxStringLen) :: forcedSurfaceFile, forcedVolumeFile
+       character(len=maxStringLen) :: forcedLiftFile, forcedSliceFile
+
        end module inputIO
 
 !      ==================================================================
@@ -275,7 +280,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use precision
+       use constants
        implicit none
        save
 !
@@ -371,6 +376,7 @@
        ! printIterations: If True, iterations are printed to stdout
        ! turbresscale: Scaling factor for turbulent residual. Necessary for
        !            NKsolver with RANS. Only tested on SA. 
+       ! iterType : String used for specifying which type of iteration was taken
        integer(kind=intType) :: nCycles, nCyclesCoarse
        integer(kind=intType) :: nSaveVolume, nSaveSurface
        integer(kind=intType) :: nsgStartup, smoother, nRKStages
@@ -403,6 +409,7 @@
        logical :: printIterations
        logical :: printWarnings
        real(kind=realType), dimension(4) :: turbResScale
+
        end module inputIteration
 
 !      ==================================================================

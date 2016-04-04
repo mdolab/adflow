@@ -300,17 +300,18 @@ subroutine residual_block_b()
         call allnodalgradients()
         call viscousflux()
         call pushcontrol3b(0)
-      else if (viscpc) then
+      else
 ! this is a pc calc...only include viscous fluxes if viscpc
 ! is used
         call computespeedofsoundsquared()
-        call allnodalgradients()
-        call viscousflux()
-        call pushcontrol3b(1)
-      else
-        call pushreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
-        call viscousfluxapprox()
-        call pushcontrol3b(2)
+        if (viscpc) then
+          call allnodalgradients()
+          call viscousflux()
+          call pushcontrol3b(1)
+        else
+          call viscousfluxapprox()
+          call pushcontrol3b(2)
+        end if
       end if
     else
       call pushcontrol3b(3)
@@ -842,16 +843,18 @@ subroutine residual_block_b()
       call viscousflux_b()
       call allnodalgradients_b()
       call computespeedofsoundsquared_b()
+      goto 100
     else
       call viscousflux_b()
       call allnodalgradients_b()
-      call computespeedofsoundsquared_b()
     end if
   else if (branch .eq. 2) then
-    call popreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
     call viscousfluxapprox_b()
+  else
+    goto 100
   end if
-  call popcontrol3b(branch)
+  call computespeedofsoundsquared_b()
+ 100 call popcontrol3b(branch)
   if (branch .lt. 4) then
     if (branch .lt. 2) then
       if (branch .eq. 0) then
@@ -869,11 +872,11 @@ subroutine residual_block_b()
       radkd = 0.0_8
     else
       call invisciddissfluxmatrix_b()
-      goto 100
+      goto 110
     end if
     trefd = 0.0_8
     rgasd = 0.0_8
-    goto 110
+    goto 120
   else if (branch .lt. 6) then
     if (branch .eq. 4) then
       call invisciddissfluxmatrixapprox_b()
@@ -897,15 +900,15 @@ subroutine residual_block_b()
       radjd = 0.0_8
       radkd = 0.0_8
     end if
-    goto 110
+    goto 120
   end if
- 100 rhoinfd = 0.0_8
+ 110 rhoinfd = 0.0_8
   trefd = 0.0_8
   rgasd = 0.0_8
   radid = 0.0_8
   radjd = 0.0_8
   radkd = 0.0_8
- 110 call popreal8array(dw, size(dw, 1)*size(dw, 2)*size(dw, 3)*size(dw&
+ 120 call popreal8array(dw, size(dw, 1)*size(dw, 2)*size(dw, 3)*size(dw&
 &                 , 4))
   call inviscidcentralflux_b()
 end subroutine residual_block_b

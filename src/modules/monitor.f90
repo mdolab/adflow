@@ -86,14 +86,10 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       ! nIterOld: Number of iterations done by a previous computation,
-       !           i.e. before the restart. This value is 0 when started
-       !           from scratch. NiterOld is an integer, because of
-       !           cgns.
        ! nIterCur: Current number of iterations. Also niterCur is an
        !           integer, because of cgns.
 
-       integer :: nIterOld, nIterCur
+       integer :: nIterCur
 
        ! convArray(0:nIterMax,nsps,nmon): 3D array to store the
        !                                  convergence histories.

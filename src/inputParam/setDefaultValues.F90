@@ -27,7 +27,8 @@
        use localMG
        use couplerParam
        use killSignals
-       use NKSolverVars
+       use NKSolverVars, only : NK_solverSetup, freeStreamResSet
+       use ANKSolverVars, only : ANK_solverSetup
        use inputDiscretization
        use ADjointPETSc
        use costFunctions
@@ -422,15 +423,13 @@
        printIterations = .True.
        routineFailed = .False.
        fatalFail     = .False.
-       nkSolverSetup = .False.
-       NKPCSetup     = .False.
+       NK_solverSetup = .False.
+       ANK_solverSetup = .False.
        lumpedDiss    = .False.
        useApproxWallDistance = .False.
        cflLimit = 3.0
-       rhoResL1Start = -one
        adjointPETScVarsAllocated = .False.
        usematrixfreedrdw = .False.
-       nksolvecount = 0
        sepSensorOffset = zero
        sepSensorSharpness = 10_realType
        end subroutine setDefaultValues

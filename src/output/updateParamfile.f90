@@ -76,7 +76,7 @@
 
            select case (equationMode)
              case (steady, timeSpectral)
-               write(integerString,"(i8)") iterTot + nIterOld
+               write(integerString,"(i8)") iterTot 
                integerString = adjustl(integerString)
                write(writeUnit,100) trim(integerString)
  100           format(" # Restart after",1X,A,1X,"iterations")

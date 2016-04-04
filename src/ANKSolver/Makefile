@@ -36,17 +36,15 @@ include ${SUMB_RULES_FILE}
 
 vpath %.o $(SUMB_OBJDIR)
 
-FILES_TO_COMPLEXIFY = applyPC.F90\
-	       computeResidualNK.F90\
-	       destroyNKSolver.F90\
-	       formFunction.F90\
-	       formJacobian.F90\
-	       getCurrentResidual.F90\
-	       getFreeStreamResidual.F90\
-	       NKUtilities.F90\
-	       setupNKSolver.F90\
+FILES_TO_COMPLEXIFY = \
+		computeResidualANK.F90\
+		destroyANKSolver.F90\
+		formJacobianANK.F90\
+		setupANKSolver.F90\
+		ANKStep.F90\
+		ANKUtilities.F90\
 
-FILES_TO_COPY = NKSolver.F90
+FILES_TO_COPY =
 
 ALL_FILES = $(FILES_TO_COMPLEXIFY) $(FILES_TO_COPY)
 OFILES := $(ALL_FILES:%.f90=%.o) $(ALL_FILES:%.F90=%.o) $(ALL_FILES:%.c=%.o)

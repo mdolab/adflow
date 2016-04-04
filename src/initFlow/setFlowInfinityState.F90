@@ -71,10 +71,17 @@
        wInf(ivy)  = uInf*velDirFreestream(2)
        wInf(ivz)  = uInf*velDirFreestream(3)
        
-       ! Set the turbulent variables if transport variables are
-       ! to be solved.
+       ! Set the turbulent variables if transport variables are to be
+       ! solved. We should be checking for RANS equations here,
+       ! however, this code is included in block res. The issue is
+       ! that for frozen turbulence (or ANK jacobian) we call the
+       ! block_res with equationType set to Laminar even though we are
+       ! actually solving the rans equations. The issue is that, the
+       ! freestream turb variables will be changed to zero, thus
+       ! changing the solution. Insteady we check if nw > nwf which
+       ! will accomplish the same thing. 
        
-       if(equations == RANSEquations) then
+       if(nw > nwf) then 
 
          nuInf  = muInf/rhoInf
 
@@ -83,7 +90,6 @@
            case (spalartAllmaras, spalartAllmarasEdwards)
 
              wInf(itu1) = saNuKnownEddyRatio(eddyVisInfRatio, nuInf)
-         !   wInf(itu1) = 1.341946*nuInf   ! eddyVis = 0.009*lamVis
 
            !=============================================================
 
@@ -111,7 +117,7 @@
 
          end select
 
-       endif
+      endif
 
        ! Set the value of pInfCorr. In case a k-equation is present
        ! add 2/3 times rho*k.

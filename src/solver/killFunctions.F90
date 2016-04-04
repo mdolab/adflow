@@ -87,8 +87,7 @@
 
              case (steady, timeSpectral)
                print 103
- 103           format("# Solution will be written after this multigrid &
-                      &cycle")
+ 103           format("# Solution will be written after this iteration")
 
              case (unsteady)
                print 104

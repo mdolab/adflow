@@ -219,8 +219,8 @@
          tmpNames(nMon) = cgnsL2resRho
        endif
 
-       ! If the density residual was not specified to be monitored,
-       ! add it to tmpNames.
+       ! If the total residual was not specified to be monitored, add
+       ! it to tmpNames.
 
        if(.not. monTotalR) then
           nMon = nMon + 1; nMonSum = nMonSum + 1

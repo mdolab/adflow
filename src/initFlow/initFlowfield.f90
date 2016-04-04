@@ -43,7 +43,6 @@
        ! history is stored and the values after every time step is
        ! stored in a separate array.
 
-       nIterOld             = 0
        nTimeStepsRestart   = 0
        timeUnsteadyRestart = zero
 
