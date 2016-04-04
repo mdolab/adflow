@@ -75,7 +75,9 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
      nState = nw
   endif
 
+  ! Generic block to use while setting values
   allocate(blk(nState, nState))
+
   ! Exchange data and call the residual to make sure its up to date
   ! withe current w
   call whalo2(1_intType, 1_intType, nw, .True., .True., .True.)
@@ -152,23 +154,56 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
 
   ! Allocate the additional memory we need for doing forward mode AD
   !  derivatives and copy any required reference values:
-  if (.not. derivVarsAllocated) then 
+  if (.not. derivVarsAllocated .and. useAD) then 
      call alloc_derivative_values(level)
   end if
-  do nn=1,nDom
-     do sps=1,nTimeIntervalsSpectral
+
+  ! For AD the initial seeds must all be zeroed.
+  if (useAD) then 
+     do nn=1, nDom
+        do sps=1, nTimeIntervalsSpectral
+           call setPointers(nn, level, sps)
+           call zeroADSeeds(nn, level, sps)
+        end do
+     end do
+  end if
+
+  do nn=1, nDom
+     do sps=1, nTimeIntervalsSpectral
         call setPointers(nn, level, sps)
-        call zeroADSeeds(nn,level, sps)
+
+        ! Allocate temporary space only needed while assembling. 
+        allocate(flowDoms(nn, 1, sps)%dw_deriv(2:il, 2:jl, 2:kl, 1:nw, 1:nw), stat=ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+
+        allocate(flowDoms(nn, 1, sps)%wtmp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+        
+        allocate(flowDoms(nn, 1, sps)%dwtmp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+        
+        allocate(flowDoms(nn, 1, sps)%dwtmp2(0:ib,0:jb,0:kb,1:nw),stat=ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+
+        ! Only need 1 set of colors on the first sps instance.
+        if (sps == 1) then 
+           allocate(flowDoms(nn, 1, 1)%color(0:ib, 0:jb, 0:kb), stat=ierr)
+           call EChk(ierr,__FILE__,__LINE__)
+        end if
      end do
   end do
 
+  ! For the PC we don't linearize the shock sensor so it must be
+  ! computed here.
   if (usePC) then 
      call referenceShockSensor
   end if
 
+  ! For FD, the initial reference values must be computed and stored.
   if (.not. useAD) then 
      call setFDReference(level)
   end if
+
   ! Master Domain Loop
   domainLoopAD: do nn=1, nDom
 
@@ -192,7 +227,6 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
      !       call setup_dRdw_visc_coloring(nn, level,  nColor)
 
      if (usePC) then
-      
         if (viscous .and. viscPC) then
            call setup_3x3x3_coloring(nn, level,  nColor) ! dense 3x3x3 coloring
         else
@@ -208,13 +242,18 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
      end if
 
      spectralLoop: do sps=1, nTimeIntervalsSpectral
-        ! Set pointers and derivative pointers
-        call setPointers_d(nn, level, sps)
+        ! Set pointers and (possibly derivative pointers)
+        if (useAD) then 
+           call setPointers_d(nn, level, sps)
+        else
+           call setPointers(nn, level, sps)
+           shockSensor => flowDoms(nn,1,sps)%shockSensor
+        end if
 
         ! Do Coloring and perturb states
         colorLoop: do iColor = 1, nColor
            do sps2 = 1, nTimeIntervalsSpectral
-              flowDomsd(nn, 1, sps2)%dw_deriv(:, :, :, :, :) = zero
+              flowDoms(nn, 1, sps2)%dw_deriv(:, :, :, :, :) = zero
            end do
 
            ! Master State Loop
@@ -227,7 +266,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
                        do k=0,kb
                           do j=0,jb
                              do i=0,ib
-                                flowDoms(nn, level, sps2)%w(i,j,k,ll) =  flowDomsd(nn, 1, sps2)%wtmp(i,j,k,ll)
+                                flowDoms(nn, level, sps2)%w(i,j,k,ll) =  flowDoms(nn, 1, sps2)%wtmp(i,j,k,ll)
                              end do
                           end do
                        end do
@@ -243,11 +282,10 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
               do k=0, kb
                  do j=0, jb
                     do i=0, ib
-                       if (flowdomsd(nn, 1, 1)%color(i, j, k) == icolor) then
+                       if (flowdoms(nn, 1, 1)%color(i, j, k) == icolor) then
                           if (useAD) then
                              flowDomsd(nn, 1, sps)%w(i, j, k, l) = one
                           else
-
                              w(i, j, k, l) = w(i, j, k, l) + delta_x
                           end if
                        end if
@@ -280,7 +318,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
                        do j=2, jl
                           do i=2, il
                              if (useAD) then
-                                flowDomsd(nn, 1, sps2)%dw_deriv(i, j, k, ll, l) = &
+                                flowDoms(nn, 1, sps2)%dw_deriv(i, j, k, ll, l) = &
                                      flowdomsd(nn, 1, sps2)%dw(i, j, k, ll)
                              else
                                 if (sps2 == sps) then
@@ -288,20 +326,20 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
                                    ! instance, we've computed the spatial
                                    ! contribution so subtrace dwtmp
 
-                                   flowDomsd(nn, 1, sps2)%dw_deriv(i, j, k, ll, l) = &
-                                        one_over_dx*&
+                                   flowDoms(nn, 1, sps2)%dw_deriv(i, j, k, ll, l) = &
+                                        one_over_dx * &
                                         (flowDoms(nn, 1, sps2)%dw(i, j, k, ll) - &
-                                        flowDomsd(nn, 1, sps2)%dwtmp(i, j, k, ll))
+                                        flowDoms(nn, 1, sps2)%dwtmp(i, j, k, ll))
                                 else
                                    ! If the peturbation is on an off
                                    ! instance, only subtract dwtmp2
                                    ! which is the reference result
                                    ! after initres
 
-                                   flowDomsd(nn, 1, sps2)%dw_deriv(i, j, k, ll, l) = &
+                                   flowDoms(nn, 1, sps2)%dw_deriv(i, j, k, ll, l) = &
                                         one_over_dx*(&
                                         flowDoms(nn, 1, sps2)%dw(i, j, k, ll) - &
-                                        flowDomsd(nn, 1, sps2)%dwtmp2(i, j, k, ll))
+                                        flowDoms(nn, 1, sps2)%dwtmp2(i, j, k, ll))
                                 end if
                              end if
                           end do
@@ -321,7 +359,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
                     ! if (iCol < 0) then
                     !    iCol = -(iCol + 1)
                     ! end if
-                    colorCheck: if (flowdomsd(nn, 1, 1)%color(i, j, k) == icolor) then! &
+                    colorCheck: if (flowdoms(nn, 1, 1)%color(i, j, k) == icolor) then! &
                        !.and. icol >= 0) then
                        !colorCheck: if (flowdomsd(nn, 1, 1)%color(i, j, k) == icolor) then
 
@@ -352,7 +390,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
                                    ! If we're doing the PC and we want
                                    ! to use TS diagonal form, only set
                                    ! values for on-time insintance
-                                   blk = flowDomsd(nn, 1, sps)%dw_deriv(i+ii, j+jj, k+kk, &
+                                   blk = flowDoms(nn, 1, sps)%dw_deriv(i+ii, j+jj, k+kk, &
                                         1:nstate, 1:nstate)
                                    call setBlock(blk)
                                 else
@@ -361,14 +399,14 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
                                    do sps2=1, nTimeIntervalsSpectral
                                       irow = flowDoms(nn, level, sps2)%&
                                            globalCell(i+ii, j+jj, k+kk)
-                                      blk = flowDomsd(nn, 1, sps2)%dw_deriv(i+ii, j+jj, k+kk, &
+                                      blk = flowDoms(nn, 1, sps2)%dw_deriv(i+ii, j+jj, k+kk, &
                                            1:nstate, 1:nstate)
                                       call setBlock(blk)
                                    end do
                                 end if useDiagPC
                              else
                                 ! ALl other cells just set.
-                                blk = flowDomsd(nn, 1, sps)%dw_deriv(i+ii, j+jj, k+kk, &
+                                blk = flowDoms(nn, 1, sps)%dw_deriv(i+ii, j+jj, k+kk, &
                                      1:nstate, 1:nstate)
                                 call setBlock(blk)
                              end if centerCell
@@ -382,21 +420,37 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
      end do spectralLoop
   end do domainLoopAD
 
+  ! PETSc Matrix Assembly begin
+  call MatAssemblyBegin(matrix, MAT_FINAL_ASSEMBLY, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+  
+  ! Maybe we can do something useful while the communication happens?
+  ! Deallocate the temporary memory used in this routine.
+
   ! Deallocate and reset values 
   if (.not. useAD) then 
      call resetFDReference(level)
   end if
-  
-  ! PETSc Matrix Assembly and Options Set
-  call MatAssemblyBegin(matrix, MAT_FINAL_ASSEMBLY, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
-  call MatAssemblyEnd  (matrix, MAT_FINAL_ASSEMBLY, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
 
-  call MatSetOption(matrix, MAT_NEW_NONZERO_LOCATIONS, PETSC_FALSE, ierr)
-  call EChk(ierr, __FILE__, __LINE__)
+  do nn=1, nDom
+     do sps=1, nTimeIntervalsSpectral
+        deallocate(&
+             flowDoms(nn, 1, sps)%dw_deriv, &
+             flowDoms(nn, 1, sps)%wTmp, &
+             flowDoms(nn, 1, sps)%dwTmp, &
+             flowDoms(nn, 1, sps)%dwTmp2)
+        if (sps == 1) then 
+           deallocate(flowDoms(nn, 1, sps)%color)
+        end if
 
-  !Return dissipation Parameters to normal -> VERY VERY IMPORTANT
+        ! Deallocate the shock sensor refernce if usePC 
+        if (usePC) then 
+           deallocate(flowDoms(nn, 1, sps)%shockSensor)
+        end if
+     end do
+  end do
+
+  ! Return dissipation Parameters to normal -> VERY VERY IMPORTANT
   if (usePC) then
      lumpedDiss = .False.
      secondOrd = secondOrdSave
@@ -409,6 +463,13 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   end if
 
   deallocate(blk)
+
+  ! Complete the matrix assembly.
+  call MatAssemblyEnd  (matrix, MAT_FINAL_ASSEMBLY, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+  call MatSetOption(matrix, MAT_NEW_NONZERO_LOCATIONS, PETSC_FALSE, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
 
 contains
 

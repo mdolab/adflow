@@ -29,7 +29,7 @@ subroutine solveState
   use killSignals
   use monitor
   use blockPointers
-  use nksolvervars, only : NK_switchTol, useNKSolver, NK_CFL
+  use nksolvervars, only : NK_switchTol, useNKSolver, NK_CFL, rkREset
   use anksolvervars, only : ANK_switchTol, useANKSolver, ANK_CFL
   implicit none
   !
@@ -149,7 +149,7 @@ subroutine solveState
          call executeMGCycle
          CFLMonitor = CFLCoarse
      else
-        if (.not. useANKSolver .and. .not. useNKSolver .or. (iterTot < minIterNum)) then 
+        if (.not. useANKSolver .and. .not. useNKSolver .or. (iterTot < minIterNum .and. rkreset)) then 
 
            ! Always RK/DADI or a RK startup. Run the MG Cycle
            
@@ -274,3 +274,4 @@ subroutine solveState
   enddo nonLinearIteration
 
 end subroutine solveState
+

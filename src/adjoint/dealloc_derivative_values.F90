@@ -39,7 +39,6 @@ subroutine dealloc_derivative_values(level)
              flowDomsd(nn,1,sps)%wtmp, &
              flowDomsd(nn,1,sps)%dwtmp, &
              flowDomsd(nn,1,sps)%dwtmp2, &
-             flowDomsd(nn,1,sps)%xtmp, &
              flowDomsd(nn,1,sps)%dw_deriv, stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
      end do deallocatespectral
