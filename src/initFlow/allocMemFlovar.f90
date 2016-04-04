@@ -24,6 +24,7 @@ subroutine allocMemFlovarPart1(sps,level)
   use inputIteration
   use inputPhysics
   use inputUnsteady
+  use inputphysics
   use iteration
   implicit none
   !
@@ -82,7 +83,7 @@ subroutine allocMemFlovarPart1(sps,level)
      ! Alloc mem for dadi
      allocate(flowDoms(nn,level,sps)%dadidata(ie,je,ke,10), stat=ierr)
 
-     ! Alloc mem for viscous fluxes
+     ! Alloc mem for nodal gradients 
      allocate(flowDoms(nn,level,sps)%ux(il,jl,kl), stat=ierr)
      allocate(flowDoms(nn,level,sps)%uy(il,jl,kl), stat=ierr)
      allocate(flowDoms(nn,level,sps)%uz(il,jl,kl), stat=ierr)
@@ -278,10 +279,6 @@ subroutine allocMemFlovarPart2(sps, level)
      jb = flowDoms(nn,level,sps)%jb
      kb = flowDoms(nn,level,sps)%kb
 
-     ! Allocate the mesh velocities; only for a moving block.
-
-     !if( flowDoms(nn,level,sps)%blockIsMoving ) then
-
      ! Block is moving. Allocate the memory for s, sFaceI,
      ! sFaceJ and sFaceK.
 
@@ -294,23 +291,21 @@ subroutine allocMemFlovarPart2(sps, level)
           "Memory allocation failure for s, &
           &sFaceI, sFaceJ and sFaceK.")
 
-     ! *******************************
-     ! Added by HDN
-     ! Added sVelo[I,J,K]ALE, sFace[I,J,K]ALE
-     ! *******************************
-     allocate( &
-          flowDoms(nn,level,sps)%sVeloIALE(0:ie,je,ke,3), &
-          flowDoms(nn,level,sps)%sVeloJALE(ie,0:je,ke,3), &
-          flowDoms(nn,level,sps)%sVeloKALE(ie,je,0:ke,3), &
-          flowDoms(nn,level,sps)%sFaceIALE(0:nALEsteps,0:ie,je,ke), &
-          flowDoms(nn,level,sps)%sFaceJALE(0:nALEsteps,ie,0:je,ke), &
-          flowDoms(nn,level,sps)%sFaceKALE(0:nALEsteps,ie,je,0:ke), stat=ierr)
-     if(ierr /= 0)                              &
-          call returnFail("allocMemFlovarPart2", &
-          "Memory allocation failure for &
-          sVeloIALE, sVeloJALE and sVeloKALE; &
-          sFaceIALE, sFaceJALE and sFaceKALE.")
-
+     ! Extra face velocities for ALE
+     if (equationMode == unSteady .and. useALE) then 
+        allocate( &
+             flowDoms(nn,level,sps)%sVeloIALE(0:ie,je,ke,3), &
+             flowDoms(nn,level,sps)%sVeloJALE(ie,0:je,ke,3), &
+             flowDoms(nn,level,sps)%sVeloKALE(ie,je,0:ke,3), &
+             flowDoms(nn,level,sps)%sFaceIALE(0:nALEsteps,0:ie,je,ke), &
+             flowDoms(nn,level,sps)%sFaceJALE(0:nALEsteps,ie,0:je,ke), &
+             flowDoms(nn,level,sps)%sFaceKALE(0:nALEsteps,ie,je,0:ke), stat=ierr)
+        if(ierr /= 0)                              &
+             call returnFail("allocMemFlovarPart2", &
+             "Memory allocation failure for &
+             sVeloIALE, sVeloJALE and sVeloKALE; &
+             sFaceIALE, sFaceJALE and sFaceKALE.")
+     end if
 
 
      ! Test if we are on the finest mesh.
@@ -339,31 +334,26 @@ subroutine allocMemFlovarPart2(sps, level)
         flowDoms(nn,level,sps)%fw = zero
 
 
-        ! *******************************
-        ! Added by HDN
-        ! *******************************
-        allocate( &
-             flowDoms(nn,level,sps)%dwALE(0:nALEsteps,0:ib,0:jb,0:kb,1:nw),  &
-             flowDoms(nn,level,sps)%fwALE(0:nALEsteps,0:ib,0:jb,0:kb,1:nwf), &
-             stat=ierr)
-        if(ierr /= 0)                              &
-             call returnFail("allocMemFlovarPart2", &
-             "Memory allocation failure for dwALE, fwALE.")
-
-        flowDoms(nn,level,sps)%dwALE = zero
-        flowDoms(nn,level,sps)%fwALE = zero
-
-
-        ! Allocate the memory for the zeroth runge kutta stage
-        ! if a runge kutta scheme must be used.
-
-        if(smoother == RungeKutta) then
-           allocate(flowDoms(nn,level,sps)%wn(2:il,2:jl,2:kl,1:nMGVar), &
-                flowDoms(nn,level,sps)%pn(2:il,2:jl,2:kl), stat=ierr)
+        ! Extra variables for ALE
+        if (equationMode == unSteady .and. useALE) then 
+           allocate( &
+                flowDoms(nn,level,sps)%dwALE(0:nALEsteps,0:ib,0:jb,0:kb,1:nw),  &
+                flowDoms(nn,level,sps)%fwALE(0:nALEsteps,0:ib,0:jb,0:kb,1:nwf), &
+                stat=ierr)
            if(ierr /= 0)                              &
                 call returnFail("allocMemFlovarPart2", &
-                "Memory allocation failure for wn and pn")
-        endif
+                "Memory allocation failure for dwALE, fwALE.")
+           
+           flowDoms(nn,level,sps)%dwALE = zero
+           flowDoms(nn,level,sps)%fwALE = zero
+        end if
+
+        ! Allocate the memory for the zeroth runge kutta stage
+        allocate(flowDoms(nn,level,sps)%wn(2:il,2:jl,2:kl,1:nMGVar), &
+             flowDoms(nn,level,sps)%pn(2:il,2:jl,2:kl), stat=ierr)
+        if(ierr /= 0)                              &
+             call returnFail("allocMemFlovarPart2", &
+             "Memory allocation failure for wn and pn")
 
         ! For unsteady mode using Runge-Kutta schemes allocate the
         ! memory for dwOldRK.
