@@ -57,7 +57,7 @@ module NKsolverVars
   ! Misc variables
   logical :: NK_solverSetup
   integer(kind=intType) :: NK_iter
-
+  logical :: rkReset
   ! Eisenstat-Walker Parameters
   integer(kind=intType) :: ew_version
   real(kind=realType) :: ew_rtol_0

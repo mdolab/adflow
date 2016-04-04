@@ -31,7 +31,6 @@ subroutine alloc_derivative_values(level)
 
   real(kind=realType) :: alpha, beta, force(3, nTimeINtervalsSpectral), moment(3, nTimeIntervalsSpectral), sepSensor, Cavitation
   integer(kind=intType) :: liftIndex
-  
  
   ! This routine will not use the extra variables to block_res or the
   ! extra outputs, so we must zero them here
@@ -59,9 +58,9 @@ subroutine alloc_derivative_values(level)
   call VecDuplicate(xSurfVec(1), xSurfVecd, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  do nn=1,nDom
-     do sps=1,nTimeIntervalsSpectral
-        call setPointers(nn,level,sps)
+  do nn=1, nDom
+     do sps=1, nTimeIntervalsSpectral
+        call setPointers(nn, level, sps)
 
         ! Allocate d2wall if not already done so
         if (.not. associated(flowDoms(nn, 1, sps)%d2wall)) then 
@@ -69,11 +68,6 @@ subroutine alloc_derivative_values(level)
            call EChk(ierr,__FILE__,__LINE__)
         end if
 
-        ! Allocate shockSensor in flowDoms *NOT* flowDomsd....and
-        ! compute the value depending on equations/dissipation
-        ! type. Note we are just doing all cells including corners
-        ! halos..those values are not used anyway. 
-        allocate(flowDoms(nn,1,sps)%shockSensor(0:ib,0:jb,0:kb))
         allocate(flowDomsd(nn,1,sps)%x(0:ie,0:je,0:ke,3), stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
         
@@ -218,44 +212,6 @@ subroutine alloc_derivative_values(level)
            
         enddo viscbocoLoop
      end do
-  end do
-  
-  ! Also allocate a "color" array for the derivative calcs. Only do
-  ! this on flowDomsd, only on the 1st timeInstance. This goes from
-  ! 0:{i,j,k}b which is necessary for the double halo cells. The same
-  ! array is used for the nodal colors, however, in that case only the
-  ! 0:{i,j,k}e entries are needed. 
-  do nn=1,nDom
-     call setPointers(nn, level, 1)
-     allocate(flowDomsd(nn,1,1)%color(0:ib,0:jb,0:kb),stat=ierr)
-     call EChk(ierr,__FILE__,__LINE__)
-  end do
-  ! Finally Allocate wtmp,dw_deriv and dwtmp in the flowDomsd structure
-  ! Allocate Memory and copy out w and dw for reference
-
-  do nn=1,nDom
-     allocspectralLoop: do sps=1,nTimeIntervalsSpectral
-
-        call setPointers(nn,level,sps)
-        shockSensor => flowDoms(nn,level,sps)%shockSensor
-
-   
-        allocate(flowDomsd(nn,1,sps)%wtmp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
-        call EChk(ierr,__FILE__,__LINE__)
-        
-        allocate(flowDomsd(nn,1,sps)%dwtmp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
-        call EChk(ierr,__FILE__,__LINE__)
-        
-        allocate(flowDomsd(nn,1,sps)%dwtmp2(0:ib,0:jb,0:kb,1:nw),stat=ierr)
-        call EChk(ierr,__FILE__,__LINE__)
-        
-        allocate(flowDomsd(nn,1,sps)%xtmp(0:ie,0:je,0:ke,3),stat=ierr)
-        call EChk(ierr,__FILE__,__LINE__)
-        
-        allocate(flowDomsd(nn,1,sps)%dw_deriv(0:ib,0:jb,0:kb,1:nw,1:nw),stat=ierr)
-        call EChk(ierr,__FILE__,__LINE__)
-
-     end do allocspectralLoop
   end do
 
 #ifndef USE_COMPLEX

@@ -16,6 +16,7 @@ subroutine getCurrentResidual(rhoRes,totalRRes)
   real(kind=realType), intent(out) :: rhoRes,totalRRes
   integer(kind=intType) :: sps,nn,ierr
 
+  monLoc = zero
   do sps=1, nTimeIntervalsSpectral
      do nn=1, nDom
         call setPointers(nn, currentLevel, sps)
