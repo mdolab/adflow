@@ -2215,8 +2215,9 @@ class SUMB(AeroSolver):
         self.sumb.killsignals.routinefailed = False
         self.sumb.killsignals.fatalFail = False
 
-        # Destroy the NK solver and the adjoint memory
+        # Destroy the ANK/NK solver and the adjoint memory
         self.sumb.destroynksolver()
+        self.sumb.destroyanksolver()
         if releaseAdjointMemory:
             self.releaseAdjointMemory()
 
@@ -2578,6 +2579,7 @@ class SUMB(AeroSolver):
         # Destroy the NKsolver to free memory -- Call this even if the
         # solver is not used...a safeguard check is done in Fortran
         self.sumb.destroynksolver()
+        self.sumb.destroyanksolver()
         self._setAeroDVs()
 
         if not self.adjointSetup or reform:
@@ -3483,7 +3485,7 @@ class SUMB(AeroSolver):
         if name.lower() in self.defaultOptions:
             return self.options[name.lower()][1]
         else:
-            raise Error('%s is not a valid option name'% name)
+            raise Error('%s is not a valid option name.'% name)
 
     def _getDefOptions(self):
         """
@@ -3597,6 +3599,7 @@ class SUMB(AeroSolver):
 
             # Approximate Newton-Krylov Parameters
             'useanksolver':[bool, False],
+            'ankuseturbdadi':[bool, True],
             'ankswitchtol':[float, 1e-2],
             'anksubspacesize':[int, 5],
             'anklinearsolvetol':[float, 0.5],
@@ -3855,6 +3858,7 @@ class SUMB(AeroSolver):
 
             # Approximate Newton-Krylov Paramters
             'useanksolver':['ank', 'useanksolver'],
+            'ankuseturbdadi':['ank', 'ank_useturbdadi'],
             'ankswitchtol':['ank', 'ank_switchtol'],
             'anksubspacesize':['ank', 'ank_subspace'],
             'anklinearsolvetol':['ank', 'ank_rtol'],

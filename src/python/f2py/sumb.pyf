@@ -496,24 +496,11 @@ python module libsumb
          integer(kind=inttype) optional,check(len(in_vec)>=ndof),depend(in_vec) :: ndof=len(in_vec)
        end subroutine applyadjointpc
 
-       subroutine getcurrentresidual(rhores,totalrres)
-         real(kind=realtype), intent(out) :: rhores
-         real(kind=realtype), intent(out) :: totalrres
-       end subroutine getcurrentresidual
-
-       subroutine getfreestreamresidual(rhores,totalrres)
-         real(kind=realtype), intent(out) :: rhores
-         real(kind=realtype), intent(out) :: totalrres
-       end subroutine getfreestreamresidual
-
-       subroutine computeresidualnk
-       end subroutine computeresidualnk
-
-       subroutine setupnksolver
-       end subroutine setupnksolver
-       
        subroutine destroynksolver
        end subroutine destroynksolver
+
+       subroutine destroyanksolver
+       end subroutine destroyanksolver
        
        ! ############################################################################
        ! Time Spectral Stability Routines
@@ -973,11 +960,6 @@ python module libsumb
 
        module killsignals ! in :sumb:../../modules/killSignals.f90
          use precision
-         integer(kind=inttype) parameter,optional :: nosignal=0_int_type
-         integer(kind=inttype) parameter,optional :: signalwrite=1_int_type
-         integer(kind=inttype) parameter,optional :: signalwritequit=2_int_type
-         integer(kind=inttype) :: localsignal
-         integer(kind=inttype) :: globalsignal
          logical :: frompython
          logical :: routinefailed
          logical :: fatalfail
@@ -1033,7 +1015,6 @@ python module libsumb
             real(kind=realtype) sepsensoroffset
             real(kind=realtype) sepsensorsharpness
        end module costfunctions
-
       
        module adjointvars ! in :test:ADjointVars.F90
          use constants
@@ -1110,6 +1091,7 @@ python module libsumb
          integer(kind=inttype) :: ank_innerpreconits
          integer(kind=inttype) :: ank_jacobianlag
          logical :: useanksolver
+         logical :: ank_useturbdadi
          integer(kind=inttype) :: ank_subspace
          integer(kind=inttype) :: ank_asmoverlap
          real(kind=realtype) :: ank_rtol
@@ -1117,46 +1099,6 @@ python module libsumb
          real(kind=realtype) :: ank_switchtol
        end module anksolvervars
       
-       ! ############################################################################
-       ! Coupler API Routines
-       ! ############################################################################
-
-       module couplerparam ! in :sumb:../../modules/couplerParam.f90 
-         use precision
-         use constants
-         character(len=80) allocatable,dimension(:) :: datanamessumb
-         integer(kind=inttype) :: nnodestrue
-         integer(kind=inttype) :: ntetraalloc
-         integer(kind=inttype) :: npyraalloc
-         integer(kind=inttype) allocatable,dimension(:) :: iwsumb
-         integer(kind=inttype) :: npyratrue
-         integer(kind=inttype) :: ndatasumb
-         integer(kind=inttype) :: nprismtrue
-         real(kind=realtype) :: pini
-         integer(kind=inttype) :: nprismalloc
-         real(kind=realtype) dimension(3) :: veldirini
-         integer(kind=inttype) :: nnodesalloc
-         integer(kind=inttype) :: nhexatrue
-         real(kind=realtype) :: rhoini
-         integer(kind=inttype) :: ntetratrue
-         integer parameter,optional :: maxcplnamelen=80
-         logical :: cplgetcoarsesol
-         integer(kind=inttype) :: nhexaalloc
-         character(len=80) :: codename
-         real(kind=realtype) :: machini
-
-       end module couplerparam
-
-       subroutine sumb_init ! in :sumb:../../utils/SUmb_init.f90
-         use communication
-         implicit none
-       end subroutine sumb_init
-
-       subroutine sumb_finalize ! in :sumb:../../utils/SUmb_finalize.f90
-         use communication
-         implicit none
-       end subroutine sumb_finalize
-
         subroutine testrev(dwbar,wbar,statesize) ! in :test:test.F90
           real(kind=realtype) dimension(statesize),intent(in) :: dwbar
           real(kind=realtype) dimension(statesize),intent(out),depend(statesize) :: wbar

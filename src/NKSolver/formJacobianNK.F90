@@ -9,6 +9,7 @@ subroutine FormJacobianNK
   use blockPointers
   use inputTimeSpectral
   use flowvarrefstate
+
   implicit none
 #define PETSC_AVOID_MPIF_H
 
@@ -29,7 +30,22 @@ subroutine FormJacobianNK
   integer(kind=intType) :: ierr
   logical :: useAD, usePC, useTranspose, useObjective, tmp
   integer(kind=intType) :: i, j, k, l, ii, nn, sps
+  real(kind=realType) :: dt, ovv
   real(kind=realType), pointer :: diag(:)
+ interface
+     subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
+          useObjective, frozenTurb, level, matrixTurb)
+       use precision
+       implicit none
+#define PETSC_AVOID_MPIF_H
+#include "include/finclude/petsc.h"
+       Mat :: matrix
+       Mat, optional :: matrixTurb
+       ! Input Variables
+       logical, intent(in) :: useAD, usePC, useTranspose, useObjective, frozenTurb
+       integer(kind=intType), intent(in) :: level
+     end subroutine setupStateResidualMatrix
+  end interface
 
   ! Dummy assembly begin/end calls for the matrix-free Matrx
   call MatAssemblyBegin(dRdw, MAT_FINAL_ASSEMBLY, ierr)
@@ -53,24 +69,7 @@ subroutine FormJacobianNK
   call VecGetArrayF90(work, diag, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  ! Now put the lumping on the digonal
-  ii = 0 
-  do nn=1, nDom
-     do sps=1, nTimeIntervalsSpectral
-        call setPointers(nn, 1, sps)
-        do k=2, kl
-           do j=2, jl
-              do i=2, il
-                 do l=1, nw
-                    ii = ii + 1
-                    diag(ii) = one/(NK_CFL*dtl(i, j, k))
-
-                 end do
-              end do
-           end do
-        end do
-     end do
-  end do
+  diag(:) = one/NK_CFL
 
   call VecRestoreArrayF90(work, diag, ierr)
   call EChk(ierr,__FILE__,__LINE__)

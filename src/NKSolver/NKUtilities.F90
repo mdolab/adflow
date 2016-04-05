@@ -100,16 +100,16 @@ subroutine setRVec(rVec)
      do sps=1,nTimeIntervalsSpectral
         call setPointers(nn,1_intType,sps)
         ! Copy off dw/vol to rVec
-        do k=2,kl
-           do j=2,jl
-              do i=2,il
-                 ovv = 1/vol(i,j,k)
+        do k=2, kl
+           do j=2, jl
+              do i=2, il
+                 ovv = 1/vol(i, j, k)
                  do l=1,nwf
-                    rvec_pointer(ii) = dw(i,j,k,l)*ovv
+                    rvec_pointer(ii) = dw(i, j, k, l)*ovv
                     ii = ii + 1
                  end do
                  do l=nt1,nt2
-                    rvec_pointer(ii) = dw(i,j,k,l)*ovv*turbResScale(l-nt1+1)
+                    rvec_pointer(ii) = dw(i, j, k, l)*ovv*turbResScale(l-nt1+1)
                     ii = ii + 1
                  end do
               end do
