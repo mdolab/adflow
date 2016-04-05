@@ -159,6 +159,7 @@ subroutine NKMatMult(A, vecX,  vecY, ierr)
   Mat   A
   Vec   vecX, vecY
   integer(kind=intType) ::ierr, i, j, k, l, nn, sps, ii
+  real(kind=realType) :: dt, ovv
   real(kind=realType), pointer :: yPtr(:), xPtr(:)
   
   ! Frist run the underlying matrix-free mult
@@ -170,23 +171,7 @@ subroutine NKMatMult(A, vecX,  vecY, ierr)
   call VecGetArrayReadF90(vecX, xPtr, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  ! Now put the lumping on the digonal
-  ii = 0 
-  do nn=1, nDom
-     do sps=1, nTimeIntervalsSpectral
-        call setPointers(nn, 1, sps)
-        do k=2, kl
-           do j=2, jl
-              do i=2, il
-                 do l=1, nw
-                    ii = ii + 1
-                    yPtr(ii) = yPtr(ii) + one/(NK_CFL*dtl(i,j,k))*xPtr(ii)
-                 end do
-              end do
-           end do
-        end do
-     end do
-  end do
+  yPtr = yPtr + one/NK_CFL*xPtr
 
   call VecRestorearrayF90(vecY, yPtr, ierr)
   call EChk(ierr,__FILE__,__LINE__)

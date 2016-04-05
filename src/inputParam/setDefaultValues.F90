@@ -28,7 +28,7 @@
        use couplerParam
        use killSignals
        use NKSolverVars, only : NK_solverSetup, freeStreamResSet
-       use ANKSolverVars, only : ANK_solverSetup
+       use ANKSolverVars, only : ANK_solverSetup, ANK_turbSetup
        use inputDiscretization
        use ADjointPETSc
        use costFunctions
@@ -425,6 +425,7 @@
        fatalFail     = .False.
        NK_solverSetup = .False.
        ANK_solverSetup = .False.
+       ANK_turbSetup = .False.
        lumpedDiss    = .False.
        useApproxWallDistance = .False.
        cflLimit = 3.0

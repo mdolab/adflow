@@ -1,5 +1,5 @@
 subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
-     useObjective, frozenTurb, level)
+     useObjective, frozenTurb, level, matrixTurb)
 #ifndef USE_NO_PETSC
   !     ******************************************************************
   !     *                                                                *
@@ -42,7 +42,8 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
 #include "include/finclude/petsc.h"
 #endif
   ! PETSc Matrix Variable
-  Mat matrix
+  Mat :: matrix
+  Mat, optional :: matrixTurb
 
   ! Input Variables
   logical, intent(in) :: useAD, usePC, useTranspose, useObjective, frozenTurb
@@ -55,6 +56,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   integer(kind=intType) :: n_stencil, i_stencil
   integer(kind=intType), dimension(:, :), pointer :: stencil
   real(kind=realType) :: delta_x, one_over_dx
+  real(kind=realType) :: delta_x_turb, one_over_dx_turb
 
 #ifdef USE_COMPLEX
   complex(kind=realType) :: alpha, beta, alphad, betad
@@ -65,8 +67,14 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
 #endif
   integer(kind=intType) :: liftIndex
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, mm, colInd
-  logical :: resetToRANS, secondOrdSave
+  logical :: resetToRANS, secondOrdSave,  splitMat
   real :: val
+
+  if (present(matrixTurb)) then 
+     splitMat = .True. 
+  else
+     splitMat = .False.
+  end if
 
   ! Setup number of state variable based on turbulence assumption
   if ( frozenTurb ) then
@@ -102,6 +110,11 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   call MatZeroEntries(matrix, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
+  if (splitMat) then 
+     call MatZeroEntries(matrixTurb, ierr)
+     call EChk(ierr, __FILE__, __LINE__)
+  end if
+
   ! Set a pointer to the correct set of stencil depending on if we are
   ! using the first order stencil or the full jacobian
 
@@ -135,7 +148,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   ! restrict the fine grid solutions, since it is possible the
   ! NKsolver was used an the coarse grid solutions are (very!) out of
   ! date. 
-  
+
   ! Assembling matrix on coarser levels is not entirely implemented yet. 
   currentLevel = level
   groundLevel = level
@@ -143,8 +156,13 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   ! Set delta_x
   delta_x = 1e-9_realType
   one_over_dx = one/delta_x
+
+
+  delta_x_turb = 1e-14
+  one_over_dx_turb = one/delta_x_turb
+
   rkStage = 0
-  
+
   ! Determine if we want to use frozenTurbulent Adjoint
   resetToRANS = .False. 
   if (frozenTurb .and. equations == RANSEquations) then
@@ -178,10 +196,10 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
 
         allocate(flowDoms(nn, 1, sps)%wtmp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
-        
+
         allocate(flowDoms(nn, 1, sps)%dwtmp(0:ib,0:jb,0:kb,1:nw),stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
-        
+
         allocate(flowDoms(nn, 1, sps)%dwtmp2(0:ib,0:jb,0:kb,1:nw),stat=ierr)
         call EChk(ierr,__FILE__,__LINE__)
 
@@ -215,7 +233,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
 
      ! Setup the coloring for this block depending on if its
      ! drdw or a PC
-     
+
      ! List of all Coloring Routines:
      !   Debugging Colorings Below:
      !       call setup_3x3x3_coloring(nn, level,  nColor)
@@ -247,6 +265,8 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
            call setPointers_d(nn, level, sps)
         else
            call setPointers(nn, level, sps)
+        end if
+        if (usePC) then 
            shockSensor => flowDoms(nn,1,sps)%shockSensor
         end if
 
@@ -272,12 +292,12 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
                        end do
                     end do
                  end if
-                 
+
                  if (useAD) then
                     flowdomsd(nn, 1, sps2)%w = zero ! This is actually w seed
                  end if
               end do
-              
+
               ! Peturb w or set AD Seed according to iColor
               do k=0, kb
                  do j=0, jb
@@ -286,13 +306,17 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
                           if (useAD) then
                              flowDomsd(nn, 1, sps)%w(i, j, k, l) = one
                           else
-                             w(i, j, k, l) = w(i, j, k, l) + delta_x
+                             if (l <= nwf) then 
+                                w(i, j, k, l) = w(i, j, k, l) + delta_x
+                             else
+                                w(i, j, k, l) = w(i, j, k, l) + delta_x_turb
+                             end if
                           end if
                        end if
                     end do
                  end do
               end do
-             
+
               ! Run Block-based residual 
               if (useAD) then
 #ifndef USE_COMPLEX
@@ -326,10 +350,17 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
                                    ! instance, we've computed the spatial
                                    ! contribution so subtrace dwtmp
 
-                                   flowDoms(nn, 1, sps2)%dw_deriv(i, j, k, ll, l) = &
-                                        one_over_dx * &
-                                        (flowDoms(nn, 1, sps2)%dw(i, j, k, ll) - &
-                                        flowDoms(nn, 1, sps2)%dwtmp(i, j, k, ll))
+                                   if (l <= nwf) then 
+                                      flowDoms(nn, 1, sps2)%dw_deriv(i, j, k, ll, l) = &
+                                           one_over_dx * &
+                                           (flowDoms(nn, 1, sps2)%dw(i, j, k, ll) - &
+                                           flowDoms(nn, 1, sps2)%dwtmp(i, j, k, ll))
+                                   else
+                                      flowDoms(nn, 1, sps2)%dw_deriv(i, j, k, ll, l) = &
+                                           one_over_dx_turb * &
+                                           (flowDoms(nn, 1, sps2)%dw(i, j, k, ll) - &
+                                           flowDoms(nn, 1, sps2)%dwtmp(i, j, k, ll))
+                                   end if
                                 else
                                    ! If the peturbation is on an off
                                    ! instance, only subtract dwtmp2
@@ -378,11 +409,11 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
                           ! sentcil is on a physical cell, not a
                           ! halo/BC halo
                           onBlock: if ( i+ii >= 2 .and. i+ii <= il .and. &
-                                        j+jj >= 2 .and. j+jj <= jl .and. &
-                                        k+kk >= 2 .and. k+kk <= kl) then 
+                               j+jj >= 2 .and. j+jj <= jl .and. &
+                               k+kk >= 2 .and. k+kk <= kl) then 
 
                              irow = flowDoms(nn, level, sps)%globalCell(&
-                                 i+ii, j+jj, k+kk)
+                                  i+ii, j+jj, k+kk)
 
                              centerCell: if ( ii == 0 .and. jj == 0 &
                                   .and. kk == 0) then
@@ -423,7 +454,11 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   ! PETSc Matrix Assembly begin
   call MatAssemblyBegin(matrix, MAT_FINAL_ASSEMBLY, ierr)
   call EChk(ierr, __FILE__, __LINE__)
-  
+
+  if (splitMat) then 
+     call MatAssemblyBegin(matrixTurb, MAT_FINAL_ASSEMBLY, ierr)
+     call EChk(ierr, __FILE__, __LINE__)
+  end if
   ! Maybe we can do something useful while the communication happens?
   ! Deallocate the temporary memory used in this routine.
 
@@ -471,6 +506,14 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   call MatSetOption(matrix, MAT_NEW_NONZERO_LOCATIONS, PETSC_FALSE, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
+  if (splitMat) then 
+     call MatAssemblyEnd(matrixTurb, MAT_FINAL_ASSEMBLY, ierr)
+     call EChk(ierr, __FILE__, __LINE__)
+
+     call MatSetOption(matrixTurb, MAT_NEW_NONZERO_LOCATIONS, PETSC_FALSE, ierr)
+     call EChk(ierr, __FILE__, __LINE__)
+  end if
+
 contains
 
   subroutine setBlock(blk)
@@ -484,7 +527,7 @@ contains
     complex(kind=realType), dimension(nState, nState) :: blk
 #endif
     ! local variables
-    integer(kind=intType) :: i, j
+    integer(kind=intType) :: i, j, tmp, iRowSet, iColSet
     logical :: zeroFlag
     zeroFlag = .False.
 #ifndef USE_COMPLEX
@@ -498,7 +541,7 @@ contains
           end if
        end do
     end do
-    
+
     ! Check if the blk has nan
     if (isnan(sum(blk))) then
        print *,'Bad Block:',blk
@@ -509,20 +552,33 @@ contains
        call EChk(1, __FILE__, __LINE__)
     end if
 #endif
-
     if (.not. zeroFlag) then
        if (useTranspose) then
           blk = transpose(blk)
-          call MatSetValuesBlocked(matrix, 1, icol, 1, irow, blk, &
-               ADD_VALUES, ierr)
+          iColSet = iRow
+          iRowSet = iCol
+       else
+          iColSet = iCol
+          iRowSet = iRow
+       end if
+
+       if (splitMat) then 
+          call MatSetValuesBlocked(matrix, 1, iRowSet, 1, iColSet, &
+               blk(1:nwf, 1:nwf), ADD_VALUES, ierr)
+          call EChk(ierr, __FILE__, __LINE__)
+
+          call MatSetValuesBlocked(matrixTurb, 1, iRowSet, 1, iColSet, &
+               blk(nt1:nt2, nt1:nt2), ADD_VALUES, ierr)
           call EChk(ierr, __FILE__, __LINE__)
        else
-          call MatSetValuesBlocked(matrix, 1, irow, 1, icol, blk, &
+          call MatSetValuesBlocked(matrix, 1, iRowSet, 1, iColSet, blk, &
                ADD_VALUES, ierr)
           call EChk(ierr, __FILE__, __LINE__)
        end if
     end if
 
+
   end subroutine setBlock
 #endif
 end subroutine setupStateResidualMatrix
+

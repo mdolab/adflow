@@ -82,3 +82,38 @@ subroutine computeResidualANK()
 end subroutine computeResidualANK
 
 
+! subroutine computeResidualANKTurb()
+
+!   ! This is the residual evaluation driver for the ANK solver. It
+!   ! computes the residual for the mean flow but does not compute the
+!   ! turbulent residuals. 
+
+!   use blockPointers
+!   use inputTimeSpectral
+!   use flowvarrefstate
+!   use iteration
+!   use inputPhysics 
+!   implicit none
+
+!   ! Local Variables
+!   integer(kind=intType) :: nn, sps
+
+
+!   call whalo2(currentLevel, nt1, nt2, .False., .False., .False.)
+!   spectralLoop: do sps=1, nTimeIntervalsSpectral
+!      domainsState: do nn=1, nDom
+!         ! Set the pointers to this block.
+!         call setPointers(nn, currentLevel, sps)
+!         call computeEddyViscosity 
+!      end do domainsState
+!   end do spectralLoop
+!   if (equations == RANSEquations) then 
+
+!      call computeUTau
+!      call initRes(nt1, nt2)
+!      call turbResidual
+!   end if
+
+! end subroutine computeResidualANKTurb
+
+
