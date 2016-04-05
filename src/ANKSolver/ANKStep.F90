@@ -6,7 +6,7 @@ subroutine ANKStep(firstCall)
   use ANKSolverVars, only: ANK_jacobianLag,  wVec, rVec, deltaW, &
        ANK_KSP, ANK_rTol, ANK_subSpace, ANK_divTol, &
        ANK_Iter, ANK_CFL, NORM_2, wVecTurb, rVecTurb, deltaWTurb, ANK_KSPTurb, &
-       ANK_useTurbDADI
+       ANK_useTurbDADI, ANK_CFL0
     
   use inputIteration
   use inputPhysics
@@ -53,7 +53,7 @@ subroutine ANKStep(firstCall)
      call VecNorm(rVec, NORM_2, norm, ierr)
      call EChk(ierr, __FILE__, __LINE__)
 
-     ANK_CFL = min(CFL * totalR0 / norm, 100000.0)
+     ANK_CFL = min(ANK_CFL0 * (totalR0 / norm)**1.5, 100000.0)
 
      call FormJacobianANK()
   end if
