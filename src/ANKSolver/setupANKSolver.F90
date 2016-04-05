@@ -13,6 +13,8 @@ subroutine setupANKsolver
   use stencils
   use ADjointVars , only: nCellsLocal
   use ANKSolverVars, only: dRdwPre, wVec, rVec, deltaW, ANK_solverSetup, ANK_KSP, ANK_iter
+  use ANKSolverVars, only: dRdwPreTurb, wVecTurb, rVecTurb, deltaWTurb, ANK_KSPTurb
+  use ANKSolverVars, only: ANK_turbSetup, ANK_useTurbDADI
   implicit none
 #define PETSC_AVOID_MPIF_H
 
@@ -86,6 +88,65 @@ subroutine setupANKsolver
 
      call KSPSetOperators(ANK_KSP, dRdwPre, dRdwPre, ierr)
      call EChk(ierr, __FILE__, __LINE__)
+
+
+     ! =================== Turbulence Setup =====================
+     if (.not. ANK_useTurbDADI .and. nw > nwf) then 
+        nDimW = nCellsLocal(1_intTYpe) * nTimeIntervalsSpectral
+
+        call VecCreate(SUMB_COMM_WORLD, wVecTurb, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+        
+        call VecSetSizes(wVecTurb, nDimW, PETSC_DECIDE, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+ 
+        call VecSetBlockSize(wVecTurb, 1, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+        
+        call VecSetType(wVecTurb, VECMPI, ierr) 
+        call EChk(ierr, __FILE__, __LINE__)
+        
+        !  Create duplicates for residual and delta
+        call VecDuplicate(wVecTurb, rVecTurb, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+        
+        call VecDuplicate(wVecTurb, deltaWTurb, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+        
+        ! Create Pre-Conditioning Matrix
+        allocate(nnzDiagonal(nCellsLocal(1_intType)*nTimeIntervalsSpectral), &
+             nnzOffDiag(nCellsLocal(1_intType)*nTimeIntervalsSpectral) )
+        
+        stencil => euler_pc_stencil
+        n_stencil = N_euler_pc
+        
+        level = 1
+        call statePreAllocation(nnzDiagonal, nnzOffDiag, nDimW, stencil, n_stencil, &
+             level)
+        call myMatCreate(dRdwPreTurb, 1, nDimW, nDimW, nnzDiagonal, nnzOffDiag, &
+             __FILE__, __LINE__)
+        
+        call matSetOption(dRdwPreTurb, MAT_STRUCTURALLY_SYMMETRIC, PETSC_TRUE, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+        deallocate(nnzDiagonal, nnzOffDiag)
+        
+        ! Set the mat_row_oriented option to false so that dense
+        ! subblocks can be passed in in fortran column-oriented format
+        call MatSetOption(dRdWPreTurb, MAT_ROW_ORIENTED, PETSC_FALSE, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+        
+        !  Create the linear solver context
+        call KSPCreate(SUMB_COMM_WORLD, ANK_KSPTurb, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+        
+        ! Set operators for the solver
+        call KSPSetOperators(ANK_KSPTurb, dRdwPreTurb, dRdwPreTurb, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+        
+        ANK_turbSetup = .True.
+     else
+        ANK_turbSetup = .False.
+     end if
 
      ANK_solverSetup = .True.
      ANK_iter = 0

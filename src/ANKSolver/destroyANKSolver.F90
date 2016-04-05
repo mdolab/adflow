@@ -24,7 +24,24 @@ subroutine destroyANKsolver
      call KSPDestroy(ANK_KSP, ierr)
      call EChk(ierr, __FILE__, __LINE__)
 
+     if (ANK_turbSetup) then 
+        call MatDestroy(dRdwPreTurb, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+        
+        call VecDestroy(wVecTurb, ierr)  
+        call EChk(ierr, __FILE__, __LINE__)
+        
+        call VecDestroy(rVecTurb, ierr) 
+        call EChk(ierr, __FILE__, __LINE__)
+        
+        call VecDestroy(deltaWTurb, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+        
+        call KSPDestroy(ANK_KSPTurb, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+     end if
      ANK_SolverSetup = .False.
+     ANK_TurbSetup = .False.
   end if
 #endif
 end subroutine destroyANKsolver

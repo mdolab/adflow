@@ -18,7 +18,11 @@ module ANKsolverVars
   Mat  dRdwPre
   Vec wVec, rVec, deltaW
   KSP  ANK_KSP
-  PetscFortranAddr   ctx(1)
+
+  Mat  dRdwPreTurb
+  Vec wVecTurb, rVecTurb, deltaWTurb
+  KSP  ANK_KSPTurb
+
 #endif
 
   ! Options for ANK Solver
@@ -31,10 +35,12 @@ module ANKsolverVars
   real(kind=realType)   :: ANK_rtol
   real(kind=realType)   :: ANK_switchTol
   real(kind=realType)   :: ANK_divTol = 10
+  logical :: ANK_useTurbDADI
 
   ! Misc variables
   real(kind=realType) :: ANK_CFL
-  logical :: ANK_solverSetup
+  logical :: ANK_solverSetup=.False.
+  logical :: ANK_turbSetup=.False.
   integer(kind=intTYpe) :: ANK_iter
 
 end module ANKsolverVars

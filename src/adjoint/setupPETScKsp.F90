@@ -15,6 +15,7 @@ subroutine setupPETScKsp
   use inputADjoint
   use communication
   use blockPointers
+
   implicit none
 
 #define PETSC_AVOID_MPIF_H
@@ -29,11 +30,21 @@ subroutine setupPETScKsp
   !     Local variables.
   logical :: useAD, usePC, useTranspose, useObjective
   integer(kind=intType) :: ierr
-
-  PC master_PC, coarsePC, finePC, levelPC, subpc
-  KSP coarseKSPSolver, fineKSPSolver, levelKSP, subksp
-  Mat tmp1
   external MyKSPMonitor
+  interface
+     subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
+          useObjective, frozenTurb, level, matrixTurb)
+       use precision
+       implicit none
+#define PETSC_AVOID_MPIF_H
+#include "include/finclude/petsc.h"
+       Mat :: matrix
+       Mat, optional :: matrixTurb
+       ! Input Variables
+       logical, intent(in) :: useAD, usePC, useTranspose, useObjective, frozenTurb
+       integer(kind=intType), intent(in) :: level
+     end subroutine setupStateResidualMatrix
+  end interface
 
   if (ApproxPC)then
      !setup the approximate PC Matrix

@@ -16,6 +16,20 @@ subroutine setupAdjointMatrix
   integer(kind=intType) :: ierr
   real(kind=realType), dimension(2) :: time
   real(kind=realType)               :: timeAdjLocal, timeAdj
+  interface
+     subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
+          useObjective, frozenTurb, level, matrixTurb)
+       use precision
+       implicit none
+#define PETSC_AVOID_MPIF_H
+#include "include/finclude/petsc.h"
+       Mat :: matrix
+       Mat, optional :: matrixTurb
+       ! Input Variables
+       logical, intent(in) :: useAD, usePC, useTranspose, useObjective, frozenTurb
+       integer(kind=intType), intent(in) :: level
+     end subroutine setupStateResidualMatrix
+  end interface
 
 #ifndef USE_NO_PETSC
 
@@ -31,7 +45,7 @@ subroutine setupAdjointMatrix
   useObjective = .True.
 
   call setupStateResidualMatrix(drdwt, useAD, usePC, useTranspose, useObjective, &
-       frozenTurbulence, 1_intType, frozenTurbulence)
+       frozenTurbulence, 1_intType)
 
   call cpu_time(time(2))
   timeAdjLocal = time(2)-time(1)
