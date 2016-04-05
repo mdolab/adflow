@@ -55,7 +55,7 @@ subroutine NKStep(firstCall)
 
   ! Determine if if we need to form the Preconditioner
   if (mod(NK_iter, NK_jacobianLag) == 0) then
-     NK_CFL = NK_CFL0 * totalR0 / norm !* nk_switch_tol
+     NK_CFL = NK_CFL0 * (totalR0 / norm)**1.5
      call FormJacobianNK()
   else
      call MatAssemblyBegin(dRdw, MAT_FINAL_ASSEMBLY, ierr)

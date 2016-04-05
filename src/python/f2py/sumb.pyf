@@ -1069,6 +1069,7 @@ python module libsumb
          logical :: nk_adpc
          logical :: nk_useew
          logical :: nk_viscpc
+         logical :: rkreset
          integer(kind=inttype) :: nk_ls
          integer(kind=inttype) :: nolinesearch=0
          integer(kind=inttype) :: cubiclinesearch=1
@@ -1097,6 +1098,7 @@ python module libsumb
          real(kind=realtype) :: ank_rtol
          integer(kind=inttype) :: ank_ilufill
          real(kind=realtype) :: ank_switchtol
+         real(kind=realtype) :: ank_cfl0
        end module anksolvervars
       
         subroutine testrev(dwbar,wbar,statesize) ! in :test:test.F90

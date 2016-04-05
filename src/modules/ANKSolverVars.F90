@@ -38,7 +38,7 @@ module ANKsolverVars
   logical :: ANK_useTurbDADI
 
   ! Misc variables
-  real(kind=realType) :: ANK_CFL
+  real(kind=realType) :: ANK_CFL, ANK_CFL0
   logical :: ANK_solverSetup=.False.
   logical :: ANK_turbSetup=.False.
   integer(kind=intTYpe) :: ANK_iter
