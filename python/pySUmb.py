@@ -3607,7 +3607,8 @@ class SUMB(AeroSolver):
             'ankpcilufill':[int, 1],
             'ankjacobianlag':[int, 20],
             'ankinnerpreconits':[int, 1],
-            
+            'ankcfl0':[float, 1.0],
+
             # Load Balance/partitioning parameters
             'blocksplitting':[bool, True],
             'loadimbalance':[float, 0.1],
@@ -3867,6 +3868,7 @@ class SUMB(AeroSolver):
             'ankjacobianlag':['ank', 'ank_jacobianlag'],
             'applypcsubspacesize':['ank', 'applypcsubspacesize'],
             'ankinnerpreconits':['ank', 'ank_innerpreconits'],
+            'ankcfl0':['ank', 'ank_cfl0'],
 
             # Load Balance Paramters
             'blocksplitting':['parallel', 'splitblocks'],
