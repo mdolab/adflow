@@ -1249,58 +1249,6 @@
 !
 !        ****************************************************************
 !        *                                                              *
-!        * Overset parameters.                                          *
-!        *                                                              *
-!        ****************************************************************
-!
-         case ("input overset donors are guesses")
-           oversetDonorsAreGuesses = checkYesNo(value, keyword)
-
-         case ("average restricted residual for blanks")
-           avgRestrictResForBlanks = checkYesNo(value, keyword)
-
-         case ("overset interpolation type")
-
-           ! Convert value to lower case and check the options.
-
-           call convertToLowerCase(value)
-
-           select case (value)
-             case ("trilinear")
-               oversetInterpType = trilinear
-             case default
-               write(errorMessage,*) "Unknown overset interpolation &
-                                     &type, ", &
-                                     trim(value), ", specified"
-               if(myID == 0) &
-                 call returnFail("analyzeString", errorMessage)
-               call mpi_barrier(SUmb_comm_world, pos)
-           end select
-
-         case ("overset interpolation type coarse grid")
-
-           ! Convert value to lower case and check the options.
-
-           call convertToLowerCase(value)
-
-           select case (value)
-             case ("trilinear")
-               oversetInterpTypeCoarse = trilinear
-             case default
-               write(errorMessage,*) "Unknown overset interpolation &
-                                     &type coarse grid, ", &
-                                     trim(value), ", specified"
-               if(myID == 0) &
-                 call returnFail("analyzeString", errorMessage)
-               call mpi_barrier(SUmb_comm_world, pos)
-           end select
-
-         case ("allowable donor quality")
-           read(value,*) allowableDonorQuality
-
-!
-!        ****************************************************************
-!        *                                                              *
 !        * TS Stability Derivative parameters.                          *
 !        *                                                              *
 !        ****************************************************************

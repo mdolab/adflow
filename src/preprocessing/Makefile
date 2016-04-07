@@ -64,6 +64,7 @@ FILES_TO_COMPLEXIFY = \
 		 exchangeCoor.f90\
 		 exchangeCoor_d.f90\
 		 exchangeCoor_b.f90\
+		 exchangeGlobalCell.F90\
 		 exchangeCoorNumbering.f90\
 		 exchangeCellNumbering.f90\
 		 faceRotationMatrices.f90\
@@ -73,6 +74,7 @@ FILES_TO_COMPLEXIFY = \
 		 mdUpdateRoutines.f90\
 		 metric.f90\
 		 preprocessing.f90\
+		 preprocessingCustomOverset.F90\
 		 qsortHaloListType.f90\
 		 qsortIndHaloType.f90\
 		 qsortPeriodicSubfacesHaloType.f90\

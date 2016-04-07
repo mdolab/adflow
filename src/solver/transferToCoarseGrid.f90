@@ -21,7 +21,6 @@
        use blockPointers
        use flowVarRefState
        use inputIteration
-       use inputOverset
        use inputTimeSpectral
        use iteration
        implicit none
@@ -129,42 +128,6 @@
                       + vvol(ii,jj1,kk)  + vvol(ii1,jj1,kk)  &
                       + vvol(ii,jj,kk1)  + vvol(ii1,jj,kk1)  &
                       + vvol(ii,jj1,kk1) + vvol(ii1,jj1,kk1)
-
-                 ! Check if the restricted residual is being averaged
-                 ! for blanks on the fine grid, which only needs to be
-                 ! applied for coarse field cells (i.e. iblank = 1).
-
-                 applyBlankFactor: if (avgRestrictResForBlanks .and. &
-                                       iblank(i,j,k) == 1) then
-
-                   ! Compute the sum of the fine grid iblanks.
-
-                   l = iiblank(ii,jj,kk)   + iiblank(ii1,jj,kk)   &
-                     + iiblank(ii,jj1,kk)  + iiblank(ii1,jj1,kk)  &
-                     + iiblank(ii,jj,kk1)  + iiblank(ii1,jj,kk1)  &
-                     + iiblank(ii,jj1,kk1) + iiblank(ii1,jj1,kk1)
-
-                   ! If the sum is greater than 0, then compute the 
-                   ! blanking factor which is the ratio of the total
-                   ! fine volume to the unblanked volume. Otherwise,
-                   ! this coarse cell is completely over the fine hole
-                   ! and the factor doesn't matter.
-
-                   if (l > 0) then
-                     blankFact = vvol(ii, jj, kk) *iiblank(ii, jj, kk )  &
-                               + vvol(ii, jj1,kk) *iiblank(ii, jj1,kk )  &
-                               + vvol(ii1,jj, kk) *iiblank(ii1,jj, kk )  &
-                               + vvol(ii1,jj1,kk) *iiblank(ii1,jj1,kk )  &
-                               + vvol(ii, jj, kk1)*iiblank(ii, jj, kk1)  &
-                               + vvol(ii, jj1,kk1)*iiblank(ii, jj1,kk1)  &
-                               + vvol(ii1,jj, kk1)*iiblank(ii1,jj, kk1)  &
-                               + vvol(ii1,jj1,kk1)*iiblank(ii1,jj1,kk1)
-                     blankFact = vola/blankFact
-                   else
-                     blankFact = one
-                   end if
-
-                 end if applyBlankFactor
 
                  ! Invert the sum of the fine grid volumes.
 

@@ -529,20 +529,6 @@ subroutine initializeLiftDistributionData
   integer(kind=intType) :: ierr, i, j
   real(kind=realType), parameter :: tol=1e-8
   integer(kind=intType) :: nSurfVariables, nSliceVariables
-  interface
-     subroutine pointReduce(pts, N, tol, uniquePts, link, nUnique)
-       use precision
-       implicit none
-
-       real(kind=realType), dimension(:, :) :: pts
-       integer(kind=intType), intent(in) :: N
-       real(kind=realType), intent(in) :: tol
-       real(kind=realType), dimension(:, :) :: uniquePts
-       integer(kind=intType), dimension(:) :: link
-       integer(kind=intType) :: nUnique
-     end subroutine pointReduce
-
-  end interface
 
   if (liftDistInitialized) then
      return
@@ -632,7 +618,6 @@ subroutine initializeLiftDistributionData
         ! Maximum space for the unique coordinates and link array
         allocate(uniqueNodes(3, nNodesTotal))
         allocate(link(nNodesTotal))
-
         call pointReduce(allNodes, nNodesTotal, tol, uniqueNodes, link, nUnique)
 
         ! Loop over the allCells and relpace the node index which

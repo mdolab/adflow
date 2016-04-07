@@ -92,6 +92,8 @@
 !
         integer :: ierr
 
+        type(adtType), pointer :: ADT
+
         integer(kind=intType) :: jj, nAlloc
 
         real(kind=realType), dimension(1) :: dummy
@@ -117,24 +119,28 @@
 
         if(jj > nAlloc) stop "ADT to be searched does not exist."
 
+        ! Set pointer to the ADT we will be working with
+
+        ADT => ADTs(jj)
+
         ! Check if the ADT corresponds to a volume grid. If not terminate.
 
-        if(ADTs(jj)%adtType /= adtVolumeADT) then
-          if(ADTs(jj)%myID == 0)                       &
-            call adtTerminate(jj, "containmentSearch", &
+        if(ADT%adtType /= adtVolumeADT) then
+          if(ADT%myID == 0)                       &
+            call adtTerminate(ADT, "containmentSearch", &
                               "ADT does not contain a volume mesh.")
-          call mpi_barrier(ADTs(jj)%comm, ierr)
+          call mpi_barrier(ADT%comm, ierr)
         endif
 
         ! Initialize the search, i.e. determine the number of
         ! coordinates to be searched in each of the local ADT's.
 
-        call initSearch(nCoor, coor, dummy, jj, .true.)
+        call initSearch(nCoor, coor, dummy, ADT, .true.)
 
         ! Perform the actual search.
 
         call search(nCoor,     coor,      procID,   elementType, &
-                    elementID, uvw,       dummy,    jj,          &
+                    elementID, uvw,       dummy,    ADT,         &
                     .true.,    nInterpol, arrDonor, arrInterpol)
 
         end subroutine containmentSearch
@@ -225,6 +231,8 @@
         integer :: ierr
         integer, dimension(:), allocatable :: tmpProcID
 
+        type(adtType), pointer :: ADT
+
         integer(kind=intType) :: i, j, ii, jj, nAlloc, nFail
         integer(kind=intType), dimension(:), allocatable :: tmpElementID
         integer(kind=intType), dimension(:), allocatable :: coorIDs
@@ -260,22 +268,25 @@
 
         if(jj > nAlloc) stop "ADT to be searched does not exist."
 
+        ! Set pointer to the ADT we will be working with
+        ADT => ADTs(jj)
+
         ! Check if the ADT corresponds to a volume grid.
         ! If not terminate.
 
-        if(ADTs(jj)%adtType /= adtVolumeADT) then
-          if(ADTs(jj)%myID == 0)                    &
-            call adtTerminate(jj, "failSafeSearch", &
+        if(ADT%adtType /= adtVolumeADT) then
+          if(ADT%myID == 0)                    &
+            call adtTerminate(ADT, "failSafeSearch", &
                               "ADT does not contain a volume mesh.")
-          call mpi_barrier(ADTs(jj)%comm, ierr)
+          call mpi_barrier(ADT%comm, ierr)
         endif
 
         ! Perform the containment search.
 
-        call initSearch(nCoor, coor, dummy, jj, .true.)
+        call initSearch(nCoor, coor, dummy, ADT, .true.)
 
         call search(nCoor,     coor,      procID,   elementType, &
-                    elementID, uvw,       dummy,    jj,          &
+                    elementID, uvw,       dummy,    ADT,         &
                     .true.,    nInterpol, arrDonor, arrInterpol)
 
         ! Determine the number of coordinates for which the containment
@@ -294,7 +305,7 @@
         ! Determine the global sum of nFail, which is stored in ii.
 
         call mpi_allreduce(nFail, ii, 1, sumb_integer, mpi_max, &
-                           ADTs(jj)%comm, ierr)
+                           ADT%comm, ierr)
 
         ! Return if ii == 0, because the minimum distance search
         ! is not needed.
@@ -310,7 +321,7 @@
                  coorIDs(nFail),        tmpArrInt(nInterpol,nFail), &
                  stat=ierr)
         if(ierr /= 0)                             &
-          call adtTerminate(jj, "failSafeSearch", &
+          call adtTerminate(ADT, "failSafeSearch", &
                             "Memory allocation failure for the arrays &
                             &for the minimum distance search.")
 
@@ -333,10 +344,10 @@
         ! Perform the minimum distance search for the coordinates for
         ! which the containment search failed.
 
-        call initSearch(nFail, tmpCoor, tmpDist2, jj, .false.)
+        call initSearch(nFail, tmpCoor, tmpDist2, ADT, .false.)
 
         call search(nFail,        tmpCoor,   tmpProcID, tmpElementType, &
-                    tmpElementID, tmpUVW,    tmpDist2, jj,              &
+                    tmpElementID, tmpUVW,    tmpDist2, ADT,             &
                     .false.,      nInterpol, arrDonor, tmpArrInt)
 
         ! Copy for the successful searches the data into the arrays to
@@ -367,7 +378,7 @@
                    tmpUVW,  tmpDist2,  coorIDs,        tmpArrInt,    &
                    stat=ierr)
         if(ierr /= 0)                             &
-          call adtTerminate(jj, "failSafeSearch", &
+          call adtTerminate(ADT, "failSafeSearch", &
                             "Deallocation failure for the arrays &
                             &for the minimum distance search.")
 
@@ -376,7 +387,7 @@
         !***************************************************************
         !***************************************************************
 
-        subroutine initSearch(nCoor, coor, dist2, jj, containmentSearch)
+        subroutine initSearch(nCoor, coor, dist2, ADT, containmentSearch)
 !
 !       ****************************************************************
 !       *                                                              *
@@ -392,8 +403,7 @@
 !       * nCoor:             Number of local coordinates for which the *
 !       *                    element must be determined.               *
 !       * coor:              The coordinates of these points.          *
-!       * jj:                The index in the array ADTs of the tree   *
-!       *                    to be searched.                           *
+!       * ADT:               ADT type whose ADT must be searched       *
 !       * containmentSearch: Whether or not a containment search must  *
 !       *                    be performed. If not a minimum distance   *
 !       *                    search algorithm is used, which is more   *
@@ -413,8 +423,8 @@
 !
 !       Subroutine arguments.
 !
+        type(adtType), intent(inout) :: ADT
         integer(kind=intType), intent(in) :: nCoor
-        integer(kind=intType), intent(in) :: jj
 
         real(kind=realType), dimension(:,:), intent(in) :: coor
         real(kind=realType), dimension(:),   intent(inout) :: dist2
@@ -445,14 +455,14 @@
 !
         ! Set some pointers to make the code more readable.
 
-        nRootLeaves        = ADTs(jj)%nRootLeaves
-        myEntryInRootProcs = ADTs(jj)%myEntryInRootProcs
-        rootLeavesProcs   => ADTs(jj)%rootLeavesProcs
-        rootBBoxes        => ADTs(jj)%rootBBoxes
+        nRootLeaves        = ADT%nRootLeaves
+        myEntryInRootProcs = ADT%myEntryInRootProcs
+        rootLeavesProcs   => ADT%rootLeavesProcs
+        rootBBoxes        => ADT%rootBBoxes
 
-        comm   = ADTs(jj)%comm
-        nProcs = ADTs(jj)%nProcs
-        myID   = ADTs(jj)%myID
+        comm   = ADT%comm
+        nProcs = ADT%nProcs
+        myID   = ADT%myID
 
         ! Determine the global maximum of nCoor. This number will serve
         ! as an upper bound for the number of points to be searched
@@ -481,7 +491,7 @@
         allocate(nCoorPerRootLeaf(0:nProcs), &
                  mCoorPerRootLeaf(0:nProcs), stat=ierr)
         if(ierr /= 0)                         &
-          call adtTerminate(jj, "initSearch", &
+          call adtTerminate(ADT, "initSearch", &
                             "Memory allocation failure for &
                             &nCoorPerRootLeaf and mCoorPerRootLeaf.")
 
@@ -616,7 +626,7 @@
         nn = nCoorPerRootLeaf(nProcs)
         allocate(coorPerRootLeaf(nn), stat=ierr)
         if(ierr /= 0)                                   &
-          call adtTerminate(jj, "initSearch",           &
+          call adtTerminate(ADT, "initSearch",           &
                             "Memory allocation failure for &
                             &coorPerRootLeaf.")
 
@@ -703,7 +713,7 @@
                  nCoorPerProc(0:nProcs-1), nCoorFromProc(0:nProcs-1), &
                  stat=ierr)
         if(ierr /= 0)                         &
-          call adtTerminate(jj, "initSearch", &
+          call adtTerminate(ADT, "initSearch", &
                             "Memory allocation failure for help arrays.")
 
         ! Determine the number of coordinates I want to be searched in
@@ -775,7 +785,7 @@
 
         deallocate(nCoorPerProc, nCoorFromProc, stat=ierr)
         if(ierr /= 0)                         &
-          call adtTerminate(jj, "initSearch", &
+          call adtTerminate(ADT, "initSearch", &
                             "Deallocation failure for nCoorPerProc and &
                             &nCoorFromProc")
 
@@ -863,6 +873,8 @@
 !       Local variables.
 !
         integer(kind=intType) :: jj, nAlloc
+
+        type(adtType), pointer :: ADT
 !
 !       ****************************************************************
 !       *                                                              *
@@ -885,15 +897,19 @@
 
         if(jj > nAlloc) stop "ADT to be searched does not exist."
 
+        ! Set pointer to the ADT we will be working with
+
+        ADT => ADTs(jj)
+
         ! Initialize the search, i.e. determine the number of
         ! coordinates to be searched in each of the local ADT's.
 
-        call initSearch(nCoor, coor, dist2, jj, .false.)
+        call initSearch(nCoor, coor, dist2, ADT, .false.)
 
         ! Perform the actual search.
 
         call search(nCoor,     coor,      procID,   elementType, &
-                    elementID, uvw,       dist2,    jj,          &
+                    elementID, uvw,       dist2,    ADT,         &
                     .false.,   nInterpol, arrDonor, arrInterpol)
 
         ! Negate the elementID if the coordinate is outside the element,
@@ -910,7 +926,7 @@
 
         subroutine search(nCoor,       coor,      procID,            &
                           elementType, elementID, uvw,               &
-                          dist2,       jj,        containmentSearch, &
+                          dist2,       ADT,       containmentSearch, &
                           nInterpol,   arrDonor,  arrInterpol)
 !
 !       ****************************************************************
@@ -923,8 +939,7 @@
 !       * nCoor:             Number of local coordinates for which the *
 !       *                    element must be determined.               *
 !       * coor:              The coordinates of these points.          *
-!       * jj:                The index in the array ADTs of the tree   *
-!       *                    to be searched.                           *
+!       * ADT:                ADT type whose ADT must be searched      *
 !       * containmentSearch: Whether or not a containment search must  *
 !       *                    be performed. If not a minimum distance   *
 !       *                    search algorithm is used, which is more   *
@@ -965,8 +980,8 @@
 !
 !       Subroutine arguments.
 !
+        type(adtType), intent(inout) :: ADT
         integer(kind=intType), intent(in) :: nCoor
-        integer(kind=intType), intent(in) :: jj
         integer(kind=intType), intent(in) :: nInterpol
 
         real(kind=realType), dimension(:,:), intent(in) :: coor
@@ -1023,9 +1038,9 @@
 !
         ! Some abbreviations to make the code more readable.
 
-        comm   = ADTs(jj)%comm
-        nProcs = ADTs(jj)%nProcs
-        myID   = ADTs(jj)%myID
+        comm   = ADT%comm
+        nProcs = ADT%nProcs
+        myID   = ADT%myID
 
         ! Determine the number of variables stored in the coordinate
         ! buffers. For a minimum distance search also the distance
@@ -1057,7 +1072,7 @@
                  sendRecvRequest(2,nProcs-1), coorRequested(nn),         &
                  stat=ierr)
         if(ierr /= 0)                     &
-          call adtTerminate(jj, "search", &
+          call adtTerminate(ADT, "search", &
                             "Memory allocation failure for help arrays.")
 
         ! Initialize coorRequested to .false. This indicates that
@@ -1183,7 +1198,7 @@
 
           allocate(coorBuf(nVarCoor,nn), stat=ierr)
           if(ierr /= 0)                     &
-            call adtTerminate(jj, "search", &
+            call adtTerminate(ADT, "search", &
                               "Memory allocation failure for coorBuf.")
 
           ! Send the coordinates to the appropriate processors.
@@ -1326,7 +1341,7 @@
           allocate(coorRecv(nVarCoor,nn), intRecv(3,i), &
                    uvwRecv(nVarUVW,i),    stat=ierr)
           if(ierr /= 0)                     &
-            call adtTerminate(jj, "search", &
+            call adtTerminate(ADT, "search", &
                               "Memory allocation failure for &
                               &recv arrays")
 
@@ -1375,7 +1390,7 @@
             ! actual number of coordinates to be searched.
 
             nn = j
-            call containmentTreeSearch(jj,        coorRecv, intRecv, &
+            call containmentTreeSearch(ADT,      coorRecv, intRecv, &
                                        uvwRecv,   arrDonor, nn,      &
                                        nInterpol)
 
@@ -1448,7 +1463,7 @@
             ! actual number of coordinates to be searched.
 
             nn = j
-            call minDistanceTreeSearch(jj,        coorRecv, intRecv, &
+            call minDistanceTreeSearch(ADT,       coorRecv, intRecv, &
                                        uvwRecv,   arrDonor, nn,      &
                                        nInterpol)
 
@@ -1498,7 +1513,7 @@
 
           deallocate(coorRecv, stat=ierr)
           if(ierr /= 0)                     &
-            call adtTerminate(jj, "search", &
+            call adtTerminate(ADT, "search", &
                               "Deallocation failure for coorRecv.")
 
           ! Set iStartLocal and iEndLocal for the next round.
@@ -1539,7 +1554,7 @@
             if( debug ) then
               if(sizeMessage == mpi_undefined .or. &
                  mod(sizeMessage,nVarCoor) /= 0)   &
-                call adtTerminate(jj, "search",    &
+                call adtTerminate(ADT, "search",    &
                                   "Unexpected size of message")
             endif
 
@@ -1550,7 +1565,7 @@
             nn = sizeMessage/nVarCoor
             allocate(coorRecv(nVarCoor,nn), stat=ierr)
             if(ierr /= 0)                     &
-              call adtTerminate(jj, "search", &
+              call adtTerminate(ADT, "search", &
                                 "Memory allocation failure for &
                                 &coorRecv.")
 
@@ -1561,12 +1576,12 @@
             ! release coorRecv afterwards.
 
             if( containmentSearch ) then
-              call containmentTreeSearch(jj,             coorRecv,       &
+              call containmentTreeSearch(ADT,            coorRecv,       &
                                          intRecv(:,ii:), uvwRecv(:,ii:), &
                                          arrDonor,       nn,             &
                                          nInterpol)
             else
-              call minDistanceTreeSearch(jj,             coorRecv,       &
+              call minDistanceTreeSearch(ADT,            coorRecv,       &
                                          intRecv(:,ii:), uvwRecv(:,ii:), &
                                          arrDonor,       nn,             &
                                          nInterpol)
@@ -1574,7 +1589,7 @@
 
             deallocate(coorRecv, stat=ierr)
             if(ierr /= 0)                     &
-              call adtTerminate(jj, "search", &
+              call adtTerminate(ADT, "search", &
                                 "Deallocation failure for coorRecv.")
 
             ! Send the integer and the floating point information back to
@@ -1606,7 +1621,7 @@
 
           deallocate(coorBuf, stat=ierr)
           if(ierr /= 0)                     &
-            call adtTerminate(jj, "search", &
+            call adtTerminate(ADT, "search", &
                               "Deallocation failure for coorBuf.")
 
           ! Loop over the number of processors to which I sent requests.
@@ -1629,7 +1644,7 @@
             if( debug ) then
               if(sizeMessage == mpi_undefined .or. &
                  mod(sizeMessage,3) /= 0)          &
-                call adtTerminate(jj, "search",    &
+                call adtTerminate(ADT, "search",    &
                                   "Unexpected size of message")
             endif
 
@@ -1639,7 +1654,7 @@
             nn = sizeMessage/3
             allocate(intBuf(3,nn), uvwBuf(nVarUVW,nn), stat=ierr)
             if(ierr /= 0)                     &
-              call adtTerminate(jj, "search", &
+              call adtTerminate(ADT, "search", &
                                 "Memory allocation failure for intBuf &
                                 &and uvwBuf.")
 
@@ -1741,7 +1756,7 @@
 
             deallocate(intBuf, uvwBuf, stat=ierr)
             if(ierr /= 0)                     &
-              call adtTerminate(jj, "search", &
+              call adtTerminate(ADT, "search", &
                                 "Deallocation failure for intBuf &
                                 &and uvwBuf.")
           enddo recvLoop
@@ -1759,7 +1774,7 @@
 
           deallocate(intRecv, uvwRecv, stat=ierr)
           if(ierr /= 0)                     &
-            call adtTerminate(jj, "search", &
+            call adtTerminate(ADT, "search", &
                               "Deallocation failure for intRecv and &
                               &uvwRecv")
 
@@ -1777,7 +1792,7 @@
                    nCoorFromProc, sendRecvRequest, coorRequested, &
                    stat=ierr)
         if(ierr /= 0)                     &
-          call adtTerminate(jj, "search", &
+          call adtTerminate(ADT, "search", &
                             "Deallocation failure for help arrays.")
 
         ! Release the memory of the help arrays stored in the module
@@ -1786,7 +1801,7 @@
         deallocate(procRecv,         nCoorProcRecv,   nCoorPerRootLeaf, &
                    mCoorPerRootLeaf, coorPerRootLeaf, stat=ierr)
         if(ierr /= 0)                     &
-          call adtTerminate(jj, "search", &
+          call adtTerminate(ADT, "search", &
                             "Deallocation failure for help arrays &
                             &stored in the module adtData.")
 

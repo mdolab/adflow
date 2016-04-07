@@ -49,18 +49,15 @@ subroutine setGlobalCellsAndNodes(level)
   integer(kind=intType), intent(in) :: level
 
   ! Local variables
-  integer(kind=intType) :: nn, i, j, k, sps
+  integer(kind=intType) :: nn, i, j, k, sps, iDim
   integer(kind=intType) :: ierr, istart
-  logical :: commPressure, commViscous, commGamma
+  logical :: commPressure, commLamVis, commEddyVis, commGamma
   integer(kind=intType), dimension(nProc) :: nNodes, nCells, nCellOffset, nNodeOffset
   integer(kind=intType), dimension(nDom) :: nCellBLockOffset,nNodeBLockOffset
-  integer(kind=intType) :: npts
+  integer(kind=intType) :: npts, nCell, nNode
   integer(kind=intType), dimension(:), allocatable :: nNodesProc, cumNodesProc
   integer(kind=intTYpe), dimension(:), allocatable :: nCellsProc, cumCellsProc
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, ii, jj,mm
-  integer(kind=intType), dimension(:,:), pointer ::  globalCellPtr0
-  integer(kind=intType), dimension(:,:), pointer ::  globalCellPtr1
-  integer(kind=intType), dimension(:,:), pointer ::  globalCellPtr2
 
   do sps=1, nTimeIntervalsSpectral
      do nn=1, nDom
@@ -176,6 +173,7 @@ subroutine setGlobalCellsAndNodes(level)
                  globalNode(i, j, k) = &
                       nNodeBLockOffset(nn)*nTimeIntervalsSpectral + &
                       il*jl*kl*(sps-1) + (i-1)+(j-1)*il + (k-1)*il*jl
+
               end do
            end do
         end do
