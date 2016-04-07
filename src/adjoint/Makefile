@@ -38,6 +38,7 @@ FILES_TO_COMPLEXIFY = \
 		matrixFreeRoutines.F90\
 		alloc_derivative_values.F90\
 		dealloc_derivative_values.F90\
+		allocPCMem.F90\
 		determineStencil.F90\
 		setupAllResidualMatricesFwd.F90\
 		setupColoring.F90\
@@ -46,12 +47,14 @@ FILES_TO_COMPLEXIFY = \
 		zeroADSeeds.F90\
 		setFDReference.F90\
 		referenceShockSensor.F90\
+		PCMatMult.F90\
 
 FILES_TO_COPY = \
 		solveADjointTransposePETSc.F90\
 		initPETScWrap.c\
 		saveAdjoint.F90\
 		setupStateResidualMatrix.F90\
+		setupPCMatrix.F90\
 		verifyAD.F90\
 		test.F90\
 

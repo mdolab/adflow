@@ -265,6 +265,15 @@ module blockPointers
   real(kind=realType), dimension(:,:,:), pointer :: vol_offTimeInstanced
   
   type(BCDataType),      dimension(:), pointer :: BCDatad
+
+  real(kind=realType), dimension(:, :, :, :, :), pointer :: PCMat
+    real(kind=realType), dimension(:, :, :, :), pointer :: PCvec1, PCvec2  
+
+  real(kind=realType), dimension(:, :, :, :), pointer :: i_D_fact,  j_D_fact,  k_D_fact 
+  real(kind=realType), dimension(:, :, :, :), pointer :: i_L_Fact,  j_L_Fact,  k_L_Fact 
+  real(kind=realType), dimension(:, :, :, :), pointer :: i_U_Fact,  j_U_Fact,  k_U_Fact 
+  real(kind=realType), dimension(:, :, :, :), pointer :: i_U2_Fact, j_U2_Fact, k_U2_Fact
+  integer(kind=intType), dimension(:, :, :, :), pointer :: i_ipiv, j_ipiv, k_ipiv
 #endif
 
 end module blockPointers
