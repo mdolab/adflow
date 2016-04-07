@@ -325,11 +325,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
                           if (useAD) then
                              flowDomsd(nn, 1, sps)%w(i, j, k, l) = one
                           else
-                             if (l <= nwf) then 
-                                w(i, j, k, l) = w(i, j, k, l) + delta_x
-                             else
-                                w(i, j, k, l) = w(i, j, k, l) + delta_x_turb
-                             end if
+                             w(i, j, k, l) = w(i, j, k, l) + delta_x
                           end if
                        end if
                     end do
@@ -369,17 +365,10 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
                                    ! instance, we've computed the spatial
                                    ! contribution so subtrace dwtmp
 
-                                   if (l <= nwf) then 
-                                      flowDoms(nn, 1, sps2)%dw_deriv(i, j, k, ll, l) = &
-                                           one_over_dx * &
-                                           (flowDoms(nn, 1, sps2)%dw(i, j, k, ll) - &
-                                           flowDoms(nn, 1, sps2)%dwtmp(i, j, k, ll))
-                                   else
-                                      flowDoms(nn, 1, sps2)%dw_deriv(i, j, k, ll, l) = &
-                                           one_over_dx_turb * &
-                                           (flowDoms(nn, 1, sps2)%dw(i, j, k, ll) - &
-                                           flowDoms(nn, 1, sps2)%dwtmp(i, j, k, ll))
-                                   end if
+                                   flowDoms(nn, 1, sps2)%dw_deriv(i, j, k, ll, l) = &
+                                        one_over_dx * &
+                                        (flowDoms(nn, 1, sps2)%dw(i, j, k, ll) - &
+                                        flowDoms(nn, 1, sps2)%dwtmp(i, j, k, ll))
                                 else
                                    ! If the peturbation is on an off
                                    ! instance, only subtract dwtmp2
@@ -423,7 +412,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
                           nCol = 8
                        end if
 
-                       colorCheck: if (flowdomsd(nn, 1, 1)%color(i, j, k) == icolor) then! &
+                       colorCheck: if (flowdoms(nn, 1, 1)%color(i, j, k) == icolor) then! &
                           !.and. icol >= 0) then
                           !colorCheck: if (flowdomsd(nn, 1, 1)%color(i, j, k) == icolor) then
 
@@ -456,7 +445,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
                                          ! If we're doing the PC and we want
                                          ! to use TS diagonal form, only set
                                          ! values for on-time insintance
-                                         blk = flowDomsd(nn, 1, sps)%dw_deriv(i+ii, j+jj, k+kk, &
+                                         blk = flowDoms(nn, 1, sps)%dw_deriv(i+ii, j+jj, k+kk, &
                                               1:nstate, 1:nstate)
                                          call setBlock(blk)
                                       else
@@ -465,14 +454,14 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
                                          do sps2=1, nTimeIntervalsSpectral
                                             irow = flowDoms(nn, level, sps2)%&
                                                  globalCell(i+ii, j+jj, k+kk)
-                                            blk = flowDomsd(nn, 1, sps2)%dw_deriv(i+ii, j+jj, k+kk, &
+                                            blk = flowDoms(nn, 1, sps2)%dw_deriv(i+ii, j+jj, k+kk, &
                                                  1:nstate, 1:nstate)
                                             call setBlock(blk)
                                          end do
                                       end if useDiagPC
                                    else
                                       ! ALl other cells just set.
-                                      blk = flowDomsd(nn, 1, sps)%dw_deriv(i+ii, j+jj, k+kk, &
+                                      blk = flowDoms(nn, 1, sps)%dw_deriv(i+ii, j+jj, k+kk, &
                                            1:nstate, 1:nstate)
                                       call setBlock(blk)
                                    end if centerCell
