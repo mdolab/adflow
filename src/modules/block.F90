@@ -790,6 +790,27 @@ module block
      integer(kind=intType),dimension(:),pointer::ifaceptb
      integer(kind=intType),dimension(:),pointer::iedgeptb
 
+     ! Data storing the first order PC in tri-diagonal ordering. 7 
+     ! real(kind=realType), dimension(:, :, :, :, :), pointer :: Diag
+     ! real(kind=realType), dimension(:, :, :, :, :), pointer :: i_L, i_U
+     ! real(kind=realType), dimension(:, :, :, :, :), pointer :: j_L, j_U
+     ! real(kind=realType), dimension(:, :, :, :, :), pointer :: k_L, k_U
+
+     real(kind=realType), dimension(:, :, :, :, :), pointer :: PCMat
+
+     ! Generic vectors for doing products/preconditioning. Like w, but
+     ! only 1 level of halos, and it is in block ordering (nw first)
+     ! instead of field ordering like w is. 
+     real(kind=realType), dimension(:, :, :, :), pointer :: PCVec1, PCVec2
+
+     ! Data for the factorized trigonal solves
+     real(kind=realType), dimension(:, :, :, :), pointer :: i_D_fact,  j_D_fact,  k_D_fact 
+     real(kind=realType), dimension(:, :, :, :), pointer :: i_L_Fact,  j_L_Fact,  k_L_Fact 
+     real(kind=realType), dimension(:, :, :, :), pointer :: i_U_Fact,  j_U_Fact,  k_U_Fact 
+     real(kind=realType), dimension(:, :, :, :), pointer :: i_U2_Fact, j_U2_Fact, k_U2_Fact
+
+     integer(kind=intType), dimension(:, :, :, :), pointer :: i_ipiv, j_ipiv, k_ipiv
+
   end type blockType
 
   !

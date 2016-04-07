@@ -309,6 +309,29 @@
        fwALE     => flowDoms(nn,1,ll)%fwALE
 
 
+       ! Pointers for PC
+       PCMat => flowDoms(nn,mm,ll)%pcMat
 
+       i_D_Fact => flowDoms(nn,mm,ll)%i_D_fact
+       i_L_Fact => flowDoms(nn,mm,ll)%i_L_fact
+       i_U_Fact => flowDoms(nn,mm,ll)%i_U_fact
+       i_U2_Fact => flowDoms(nn,mm,ll)%i_U2_fact
+
+       j_D_Fact => flowDoms(nn,mm,ll)%j_D_fact
+       j_L_Fact => flowDoms(nn,mm,ll)%j_L_fact
+       j_U_Fact => flowDoms(nn,mm,ll)%j_U_fact
+       j_U2_Fact => flowDoms(nn,mm,ll)%j_U2_fact
+
+       k_D_Fact => flowDoms(nn,mm,ll)%k_D_fact
+       k_L_Fact => flowDoms(nn,mm,ll)%k_L_fact
+       k_U_Fact => flowDoms(nn,mm,ll)%k_U_fact
+       k_U2_Fact => flowDoms(nn,mm,ll)%k_U2_fact
+
+       PCVec1 => flowDoms(nn,mm,ll)%PCVec1
+       PCVec2 => flowDoms(nn,mm,ll)%PCVec2
+
+       i_ipiv => flowDoms(nn,mm,ll)%i_ipiv
+       j_ipiv => flowDoms(nn,mm,ll)%j_ipiv
+       k_ipiv => flowDoms(nn,mm,ll)%k_ipiv
 
      end subroutine setPointers
