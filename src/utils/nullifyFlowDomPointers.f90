@@ -201,5 +201,21 @@
        nullify(flowDoms(nn,level,sps)%dwALE)
        nullify(flowDoms(nn,level,sps)%fwALE)
 
+       nullify(flowDoms(nn,level,sps)%PCMat)
+       nullify(flowDoms(nn,level,sps)%i_D_Fact)
+       nullify(flowDoms(nn,level,sps)%i_L_Fact)
+       nullify(flowDoms(nn,level,sps)%i_U_Fact)
+       nullify(flowDoms(nn,level,sps)%i_U2_Fact)
+
+       nullify(flowDoms(nn,level,sps)%j_D_Fact)
+       nullify(flowDoms(nn,level,sps)%j_L_Fact)
+       nullify(flowDoms(nn,level,sps)%j_U_Fact)
+       nullify(flowDoms(nn,level,sps)%j_U2_Fact)
+
+       nullify(flowDoms(nn,level,sps)%k_D_Fact)
+       nullify(flowDoms(nn,level,sps)%k_L_Fact)
+       nullify(flowDoms(nn,level,sps)%k_U_Fact)
+       nullify(flowDoms(nn,level,sps)%k_U2_Fact)
+
        
        end subroutine nullifyFlowDomPointers
