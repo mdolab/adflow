@@ -50,7 +50,7 @@
        ! boundary faces and determine the data for both the fine grid.
 
        groundLevel = 1
-       call allocMemBcdata
+
        call setBCDataFineGrid(.true.)
 
        ! As some boundary conditions can be treated in multiple ways,
@@ -118,6 +118,7 @@
        call initBCDataDomainInterfaces
 
        ! Initialize the dependent flow variables and the halo values.
+
        call initDepvarAndHalos(halosRead)
   
      end subroutine initFlow

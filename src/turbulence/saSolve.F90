@@ -497,7 +497,7 @@
        do k=2,kl
          do j=2,jl
            do i=2,il
-             rblank = real(iblank(i,j,k), realType)
+             rblank = max(real(iblank(i,j,k), realType), zero)
              dw(i,j,k,itu1) = -vol(i,j,k)*dw(i,j,k,idvt)*rblank
            enddo
          enddo
@@ -724,7 +724,7 @@
              ! Multiply the off-diagonal terms and rhs by the iblank
              ! value so the update determined for iblank = 0 is zero.
 
-             rblank = real(iblank(i,j,k), realType)
+             rblank = max(real(iblank(i,j,k), realType), zero)
 
              cc(j) = qq(i,j,k)
              ff(j) = dw(i,j,k,idvt)*rblank
@@ -852,7 +852,7 @@
              ! Multiply the off-diagonal terms and rhs by the iblank
              ! value so the update determined for iblank = 0 is zero.
 
-             rblank = real(iblank(i,j,k), realType)
+             rblank = max(real(iblank(i,j,k), realType), zero)
 
              cc(i) = qq(i,j,k)
              ff(i) = dw(i,j,k,idvt)*rblank
@@ -980,7 +980,7 @@
              ! Multiply the off-diagonal terms and rhs by the iblank
              ! value so the update determined for iblank = 0 is zero.
 
-             rblank = real(iblank(i,j,k), realType)
+             rblank = max(real(iblank(i,j,k), realType), zero)
 
              cc(k) = qq(i,j,k)
              ff(k) = dw(i,j,k,idvt)*rblank
