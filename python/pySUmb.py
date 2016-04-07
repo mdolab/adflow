@@ -3713,6 +3713,7 @@ class SUMB(AeroSolver):
             'writefarfield':['io', 'writefarfield'],
             'slicefiletractions':['io', 'slicefiletractions'],
             'nsavevolume':['io', 'nsavevolume'],
+            'nodaloutput':['io', 'nodaloutput'],
             'nsavesurface':['iter', 'nsavesurface'],
             'viscoussurfacevelocities':['io', 'viscoussurfacevelocities'],
             'solutionprecision':{'single':self.sumb.inputio.precisionsingle,
