@@ -40,11 +40,4 @@
                         "Deallocation failure for nBlocksCGNSblock, &
                         &etc.")
 
-       if (writeGrid .and. oversetPresent) then
-         deallocate(nDomPerProc, IDsBegOrAllDoms, stat=ierr)
-         if(ierr /= 0)                                   &
-           call returnFail("releaseHelpVariablesWriting", &
-                          "Deallocation failure for nDomPerProc, etc.")
-       end if
-
        end subroutine releaseHelpVariablesWriting

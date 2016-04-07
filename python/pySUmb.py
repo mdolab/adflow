@@ -3511,6 +3511,7 @@ class SUMB(AeroSolver):
             'gridprecision':[str,'double'],
             'isosurface':[dict, {}],
             'isovariables':[list, []],
+            'nodaloutput':[bool, True],
             'viscoussurfacevelocities':[bool, True],
             'slicefiletractions':[bool, False],
 

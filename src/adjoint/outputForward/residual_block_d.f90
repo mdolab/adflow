@@ -100,10 +100,14 @@ subroutine residual_block_d()
   real(kind=realtype) :: arg1d
   real(kind=realtype) :: result1
   real(kind=realtype) :: result1d
+  real(kind=realtype) :: x3
+  real(kind=realtype) :: x2
   real(kind=realtype) :: x1
   real(kind=realtype) :: x1d
   real(kind=realtype) :: abs0
   integer :: ii1
+  real(kind=realtype) :: max2
+  real(kind=realtype) :: max1
 !
 !      ******************************************************************
 !      *                                                                *
@@ -223,7 +227,6 @@ subroutine residual_block_d()
 ! add the dissipative and possibly viscous fluxes to the
 ! euler fluxes. loop over the owned cells and add fw to dw.
 ! also multiply by iblank so that no updates occur in holes
-! or on the overset boundary.
   if (lowspeedpreconditioner) then
     dwod = 0.0_8
     do k=2,kl
@@ -466,10 +469,14 @@ subroutine residual_block_d()
           b55 = a51*(gamma(i, j, k)-1) + a55*(gamma(i, j, k)-1)
 ! dwo is the orginal redisual
           do l=1,nwf
-            dwod(l) = real(iblank(i, j, k), realtype)*(dwd(i, j, k, l)+&
-&             fwd(i, j, k, l))
-            dwo(l) = (dw(i, j, k, l)+fw(i, j, k, l))*real(iblank(i, j, k&
-&             ), realtype)
+            x2 = real(iblank(i, j, k), realtype)
+            if (x2 .lt. zero) then
+              max1 = zero
+            else
+              max1 = x2
+            end if
+            dwod(l) = max1*(dwd(i, j, k, l)+fwd(i, j, k, l))
+            dwo(l) = (dw(i, j, k, l)+fw(i, j, k, l))*max1
           end do
           dwd(i, j, k, 1) = b11d*dwo(1) + b11*dwod(1) + b12d*dwo(2) + &
 &           b12*dwod(2) + b13d*dwo(3) + b13*dwod(3) + b14d*dwo(4) + b14*&
@@ -504,10 +511,14 @@ subroutine residual_block_d()
       do k=2,kl
         do j=2,jl
           do i=2,il
-            dwd(i, j, k, l) = real(iblank(i, j, k), realtype)*(dwd(i, j&
-&             , k, l)+fwd(i, j, k, l))
-            dw(i, j, k, l) = (dw(i, j, k, l)+fw(i, j, k, l))*real(iblank&
-&             (i, j, k), realtype)
+            x3 = real(iblank(i, j, k), realtype)
+            if (x3 .lt. zero) then
+              max2 = zero
+            else
+              max2 = x3
+            end if
+            dwd(i, j, k, l) = max2*(dwd(i, j, k, l)+fwd(i, j, k, l))
+            dw(i, j, k, l) = (dw(i, j, k, l)+fw(i, j, k, l))*max2
           end do
         end do
       end do

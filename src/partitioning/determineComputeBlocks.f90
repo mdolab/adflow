@@ -67,8 +67,6 @@
                       blocks(i)%dknEnd,      blocks(i)%neighBlock, &
                       blocks(i)%l1,          blocks(i)%l2,         &
                       blocks(i)%l3,          blocks(i)%groupNum,   &
-                      blocks(i)%cgnsOver,    blocks(i)%ipntOver,   &
-                      blocks(i)%neighOver,   blocks(i)%overComm,   &
                       stat=ierr)
            if(ierr /= 0) &
              call returnFail("determineComputeBlocks", &
@@ -187,13 +185,6 @@
 
          enddo subblockLoop
        enddo cgnsLoop
-
-       ! Loop over the cgns blocks one more time to distribute all of
-       ! its overset cells to the sublocks.
-
-       do i=1,cgnsNDom
-         call distributeOversetCells(i, nsubPerCGNS, splitInfo)
-       end do
 
        end subroutine determineComputeBlocks
 
