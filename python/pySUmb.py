@@ -3550,6 +3550,9 @@ class SUMB(AeroSolver):
             'resaveraging':[str,'alternateresaveraging'],
             'smoothparameter':[float, 1.5],
             'cfllimit':[float, 1.5],
+            
+            # Overset Parameters:
+            'nearwalldist':[float, 0.1],
 
             # Unsteady Paramters
             'timeintegrationscheme':[str, 'bdf'],
@@ -3699,6 +3702,7 @@ class SUMB(AeroSolver):
                      'localmg':self.sumb.localmg,
                      'parallel':self.sumb.inputparallel,
                      'ts':self.sumb.inputtimespectral, 
+                     'overset':self.sumb.inputoverset,
                  }
 
         # In the option map, we first list the "module" defined in
@@ -3802,6 +3806,9 @@ class SUMB(AeroSolver):
                             'location':['iter', 'resaveraging']},
             'smoothparameter':['iter', 'smoop'],
             'cfllimit':['iter', 'cfllimit'],
+
+            # Overset Parameters
+            'nearwalldist':['overset','nearwalldist'],
 
             # Unsteady Params
             'timeintegrationscheme':{'bdf':self.sumb.inputunsteady.bdf,
