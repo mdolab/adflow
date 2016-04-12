@@ -3511,6 +3511,7 @@ class SUMB(AeroSolver):
             'gridprecision':[str,'double'],
             'isosurface':[dict, {}],
             'isovariables':[list, []],
+            'nodaloutput':[bool, True],
             'viscoussurfacevelocities':[bool, True],
             'slicefiletractions':[bool, False],
 
@@ -3549,6 +3550,10 @@ class SUMB(AeroSolver):
             'resaveraging':[str,'alternateresaveraging'],
             'smoothparameter':[float, 1.5],
             'cfllimit':[float, 1.5],
+            
+            # Overset Parameters:
+            'nearwalldist':[float, 0.1],
+            'backgroundvolscale':[float, 1.0],
 
             # Unsteady Paramters
             'timeintegrationscheme':[str, 'bdf'],
@@ -3698,6 +3703,7 @@ class SUMB(AeroSolver):
                      'localmg':self.sumb.localmg,
                      'parallel':self.sumb.inputparallel,
                      'ts':self.sumb.inputtimespectral, 
+                     'overset':self.sumb.inputoverset,
                  }
 
         # In the option map, we first list the "module" defined in
@@ -3712,6 +3718,7 @@ class SUMB(AeroSolver):
             'writefarfield':['io', 'writefarfield'],
             'slicefiletractions':['io', 'slicefiletractions'],
             'nsavevolume':['io', 'nsavevolume'],
+            'nodaloutput':['io', 'nodaloutput'],
             'nsavesurface':['iter', 'nsavesurface'],
             'viscoussurfacevelocities':['io', 'viscoussurfacevelocities'],
             'solutionprecision':{'single':self.sumb.inputio.precisionsingle,
@@ -3800,6 +3807,10 @@ class SUMB(AeroSolver):
                             'location':['iter', 'resaveraging']},
             'smoothparameter':['iter', 'smoop'],
             'cfllimit':['iter', 'cfllimit'],
+
+            # Overset Parameters
+            'nearwalldist':['overset','nearwalldist'],
+            'backgroundvolscale':['overset','backgroundvolscale'],
 
             # Unsteady Params
             'timeintegrationscheme':{'bdf':self.sumb.inputunsteady.bdf,

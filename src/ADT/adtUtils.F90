@@ -42,7 +42,7 @@
 
         !===============================================================
 
-        subroutine adtTerminate(jj, routineName, errorMessage)
+        subroutine adtTerminate(ADT, routineName, errorMessage)
 !
 !       ****************************************************************
 !       *                                                              *
@@ -52,7 +52,7 @@
 !       * Subroutine intent(in) arguments.                             *
 !       * --------------------------------                             *
 !       * routineName: Name of the routine where the error occured.    *
-!       * jj:          Currently active ADT.                           *
+!       * ADT:         Currently active ADT.                           *
 !       *                                                              *
 !       * Subroutine intent(inout) arguments.                          *
 !       * -----------------------------------                          *
@@ -68,7 +68,7 @@
 !
 !       Subroutine arguments
 !
-        integer(kind=intType), intent(in) :: jj
+        type(adtType), intent(in) :: ADT
 
         character(len=*), intent(in) :: routineName
         character(len=*), intent(in) :: errorMessage
@@ -106,7 +106,7 @@
                       &============================"
 
 #ifndef SEQUENTIAL_MODE
-        write(integerString,"(i8)") ADTs(jj)%myID
+        write(integerString,"(i8)") ADT%myID
         integerString = adjustl(integerString)
 
         print "(2a)", "#* adtTerminate called by processor ", &
@@ -164,7 +164,7 @@
         ! Call abort and stop the program. This stop should be done in
         ! abort, but just to be sure.
 
-        call mpi_abort(ADTs(jj)%comm, 1, ierr)
+        call mpi_abort(ADT%comm, 1, ierr)
         stop
 
         end subroutine adtTerminate
@@ -290,7 +290,7 @@
                      ADTs(jj)%xBBox,           ADTs(jj)%ADTree,     &
                      stat=ierr)
           if(ierr /= 0)                             &
-            call adtTerminate(jj, "deallocateADTs", &
+            call adtTerminate(ADTs(jj), "deallocateADTs", &
                               "Deallocation failure for the ADT data")
         endif
 
@@ -343,7 +343,7 @@
           nAllocNew = nn
           allocate(tmpADTs(nAllocNew), stat=ierr)
           if(ierr /= 0) &
-            call adtTerminate(jj, "adtDeallocateADTs", &
+            call adtTerminate(ADTs(jj), "adtDeallocateADTs", &
                               "Memory allocation failure for tmpADTs")
 
           ! Copy the data from ADTs to tmpADTs.
@@ -381,7 +381,7 @@
         !***************************************************************
         !***************************************************************
 
-        subroutine qsortBBoxes(arr, nn, jj, dir)
+        subroutine qsortBBoxes(arr, nn, ADT, dir)
 !
 !       ****************************************************************
 !       *                                                              *
@@ -396,7 +396,7 @@
 !       * Subroutine intent(in) arguments.                             *
 !       * --------------------------------                             *
 !       * nn:  Size of the array to be sorted.                         *
-!       * jj:  The local index of the ADT from which the coordinate of *
+!       * ADT: The ADTfrom which the coordinate of                     *
 !       *      the bounding box must be taken.                         *
 !       * dir: Index of the coordinate, which must be sorted.          *
 !       *                                                              *
@@ -413,7 +413,8 @@
 !
 !       Subroutine arguments.
 !
-        integer(kind=intType), intent(in)  :: nn, jj, dir
+        type(adtType), intent(in) :: ADT
+        integer(kind=intType), intent(in)  :: nn, dir
 
         integer(kind=intType), dimension(:), intent(inout) :: arr
 !
@@ -437,7 +438,7 @@
 !
         ! Set the pointer for the coordinates of the bounding boxes.
 
-        xBBox => ADTs(jj)%xBBox
+        xBBox => ADT%xBBox
 
         ! Initialize the variables that control the sorting.
 
@@ -553,7 +554,7 @@
 
             jStack = jStack + 2
 
-            if(jStack > nStack) call reallocPlus(stack, nStack, 100, jj)
+            if(jStack > nStack) call reallocPlus(stack, nStack, 100, ADT)
 
             if((r-i+1) >= (j-l)) then
               stack(jStack)   = r
@@ -573,7 +574,7 @@
         if( debug ) then
           do i=1,(nn-1)
             if(xBBox(dir,arr(i+1)) < xBBox(dir,arr(i))) then
-              call adtTerminate(jj, "qsortBBoxes", &
+              call adtTerminate(ADT, "qsortBBoxes", &
                                 "Array is not sorted correctly")
             endif
           enddo
@@ -584,7 +585,7 @@
         !***************************************************************
         !***************************************************************
 
-        subroutine qsortBBoxTargets(arr, nn, jj)
+        subroutine qsortBBoxTargets(arr, nn, ADT)
 !
 !       ****************************************************************
 !       *                                                              *
@@ -596,8 +597,9 @@
         implicit none
 !
 !       Subroutine arguments
-!
-        integer(kind=intType), intent(in) :: nn, jj
+!        
+        type(adtType), intent(in) :: ADT
+        integer(kind=intType), intent(in) :: nn
 
         type(adtBBoxTargetType), dimension(:), pointer :: arr
 !
@@ -727,7 +729,7 @@
 
             jStack = jStack + 2
 
-            if(jStack > nStack) call reallocPlus(stack, nStack, 100, jj)
+            if(jStack > nStack) call reallocPlus(stack, nStack, 100, ADT)
 
             if((r-i+1) >= (j-l)) then
               stack(jStack)   = r
@@ -747,7 +749,7 @@
         if( debug ) then
           do i=1,(nn-1)
             if(arr(i+1) < arr(i))                       &
-              call adtTerminate(jj, "qsortBBoxTargets", &
+                 call adtTerminate(ADT, "qsortBBoxTargets", &
                                 "Array is not sorted correctly")
           enddo
         endif
@@ -819,7 +821,7 @@
 
         if(nn <= nAlloc) then
           if(ADTs(nn)%myID == 0)                    &
-            call adtTerminate(nn, "reallocateADTs", &
+              call adtTerminate(ADTs(nn), "reallocateADTs", &
                               "Given ID corresponds to an already &
                               &active ADT")
           call mpi_barrier(ADTs(nn)%comm, ierr)
@@ -892,7 +894,7 @@
         !***************************************************************
         !***************************************************************
 
-        subroutine reallocBBoxTargetTypePlus(arr, nSize, nInc, jj)
+        subroutine reallocBBoxTargetTypePlus(arr, nSize, nInc, ADT)
 !
 !       ****************************************************************
 !       *                                                              *
@@ -901,7 +903,7 @@
 !       *                                                              *
 !       * Subroutine intent(in) arguments.                             *
 !       * --------------------------------                             *
-!       * jj:   Entry in the array ADTs, whose ADT is being searched.  *
+!       * ADT:         Currently active ADT.                           *
 !       * nInc: Increment of the size of the array.                    *
 !       *                                                              *
 !       * Subroutine intent(inout) arguments.                          *
@@ -919,10 +921,10 @@
 !
 !       Subroutine arguments.
 !
+        type(adtType), intent(in) :: ADT 
         integer,                  intent(in)    :: nInc
-        integer(kind=intType), intent(in)    :: jj
         integer(kind=intType), intent(inout) :: nSize
-
+        
         type(adtBBoxTargetType), dimension(:), pointer :: arr
 !
 !       Local variables.
@@ -949,7 +951,7 @@
         nSize = nSize + nInc
         allocate(arr(nSize), stat=ierr)
         if(ierr /= 0) &
-          call adtTerminate(jj, "reallocBBoxTargetTypePlus", &
+          call adtTerminate(ADT, "reallocBBoxTargetTypePlus", &
                             "Memory allocation failure for arr.")
 
         ! Copy the data from the original array into arr.
@@ -964,7 +966,7 @@
 
         deallocate(tmp, stat=ierr)
         if(ierr /= 0) &
-          call adtTerminate(jj, "reallocBBoxTargetTypePlus", &
+          call adtTerminate(ADT, "reallocBBoxTargetTypePlus", &
                             "Deallocation failure for tmp.")
 
         end subroutine reallocBBoxTargetTypePlus
@@ -972,7 +974,7 @@
         !***************************************************************
         !***************************************************************
 
-        subroutine reallocPlus(arr, nSize, nInc, jj)
+        subroutine reallocPlus(arr, nSize, nInc, ADT)
 !
 !       ****************************************************************
 !       *                                                              *
@@ -981,7 +983,7 @@
 !       *                                                              *
 !       * Subroutine intent(in) arguments.                             *
 !       * --------------------------------                             *
-!       * jj:   Entry in the array ADTs, whose ADT is being searched.  *
+!       * ADT:         Currently active ADT.                           *
 !       * nInc: Increment of the size of the array.                    *
 !       *                                                              *
 !       * Subroutine intent(inout) arguments.                          *
@@ -999,8 +1001,8 @@
 !
 !       Subroutine arguments.
 !
+        type(adtType), intent(in) :: ADT
         integer,                  intent(in)    :: nInc
-        integer(kind=intType), intent(in)    :: jj
         integer(kind=intType), intent(inout) :: nSize
 
         integer(kind=intType), dimension(:), pointer :: arr
@@ -1029,7 +1031,7 @@
         nSize = nSize + nInc
         allocate(arr(nSize), stat=ierr)
         if(ierr /= 0)                          &
-          call adtTerminate(jj, "reallocPlus", &
+          call adtTerminate(ADT, "reallocPlus", &
                             "Memory allocation failure for arr.")
 
         ! Copy the data from the original array into arr.
@@ -1044,7 +1046,7 @@
 
         deallocate(tmp, stat=ierr)
         if(ierr /= 0)                          &
-          call adtTerminate(jj, "reallocPlus", &
+          call adtTerminate(ADT, "reallocPlus", &
                             "Deallocation failure for tmp.")
 
         end subroutine reallocPlus

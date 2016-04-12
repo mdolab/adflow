@@ -1,0 +1,127 @@
+subroutine initializeFringes(nn, level, sps)
+
+  ! This subroutine initializes the fringe information for the given
+  ! block, level and spectral instance. It is assumed that
+  ! blockPointers are already set. 
+  use communication
+  use blockPointers
+  use overset
+  use BCTypes
+  use stencils
+  use inputOverset
+  implicit none
+  
+  ! Input Params
+  integer(kind=intType), intent(in) :: nn, level, sps
+
+  ! Working Params
+  integer(kind=intTYpe) :: i, j, k, mm, iDim, ii, jj, kk, iii, jjj
+  integer(kind=intTYpe) :: iStart, iEnd, jStart, jEnd, kStart, kEnd
+  logical :: wallsPresent, isWallType
+  integer(kind=intType) :: i_stencil
+  integer(kind=intType), dimension(:, :, :), allocatable :: tmp
+
+  ! Allocate space for the double halo fringes. 
+  if (.not. associated(flowDoms(nn, level, sps)%fringes)) then 
+     allocate(flowDoms(nn, level, sps)%fringes(0:ib, 0:jb, 0:kb))
+  end if
+
+  ! Check if we have walls:
+  call wallsOnBLock(wallsPresent)
+
+  ! Manually set the pointer to fringes we (possibly) just allocated
+  ! instead of calling setPointers again
+  fringes => flowDoms(nn, level, sps)%fringes
+
+  ! Loop over all cells, including halos, setting all isCompute to
+  ! false. This is important. Halos cells on boundaries are *not*
+  ! considered compute cells. 
+
+  do k=0, kb
+     do j=0, jb
+        do i=0, ib
+           call emptyFringe(fringes(i, j, k))
+           fringes(i, j, k)%myI = i
+           fringes(i, j, k)%myJ = j
+           fringes(i, j, k)%myK = k
+           fringes(i, j, k)%myBlock = nn
+           call setIsCompute(fringes(i, j, k)%status, .False.)
+        end do
+     end do
+  end do
+
+  ii = 0
+  do k=2, kl
+     do j=2, jl
+        do i=2, il
+           call setIsCompute(fringes(i, j, k)%status, .True.)
+           ii = ii + 1
+           if (wallsPresent) then 
+              fringes(i, j, k)%quality = vol(i, j, k)**third
+           else
+              fringes(i, j, k)%quality = (backgroundVolScale*vol(i, j, k))**third
+           end if
+        end do
+     end do
+  end do
+  
+  ! Now loop over this block's boundary condiitons and we need to set
+  ! a litle info: We need to flag the two levels next to an overset
+  ! outer boundary as being a "forced receiver'. To implement this, we
+  ! set the volume of these cells to "large".  We use the generic
+  ! flagForcedReceiver routine for this since the same information is
+  ! used elsewhere.
+
+  allocate(tmp(1:ie, 1:je, 1:ke))
+  call flagForcedReceivers(tmp)
+  do k=2, kl
+     do j=2, jl
+        do i=2, il
+           if (tmp(i,j,k) == 1) then
+              fringes(i, j, k)%quality = large
+           end if
+        end do
+     end do
+  end do
+  deallocate(tmp)
+
+  ! Flag all the interior hole cells with a *negative* quality since
+  ! this means it won't try to get a stencil:
+
+  do k=2, kl
+     do j=2, jl
+        do i=2, il
+           if (iBlank(i,j,k) == -2 .or. iblank(i,j,k)==-3) then 
+               fringes(i, j, k)%quality = -large
+           end if
+        end do
+     end do
+  end do
+
+  ! Flag the cells *surrounding* the hold cells with large
+  ! quality. That forces them to get a donor. 
+
+  do k=0, kb
+     do j=0, jb
+        do i=0, ib
+           if (iBlank(i,j,k) == -2 .or. iblank(i,j,k)==-3) then 
+
+              stencilLoop: do i_stencil=1, N_visc_drdw
+                 ii = visc_drdw_stencil(i_stencil, 1) + i
+                 jj = visc_drdw_stencil(i_stencil, 2) + j
+                 kk = visc_drdw_stencil(i_stencil, 3) + k
+
+                 ! Make sure we're on-block
+                 if (ii >=2 .and. ii <= il .and. jj >= 2 .and. jj<= jl .and. &
+                      kk >=2 .and. kk <= kl) then 
+                    if (iblank(ii, jj, kk) /= -2 .or. iblank(ii, jj, kk) /= -1) then 
+                       fringes(i, j, k)%quality = large
+                    end if
+                 end if
+              end do stencilLoop
+           end if
+        end do
+     end do
+  end do
+
+end subroutine initializeFringes
