@@ -33,7 +33,7 @@ subroutine initializeOWall(oWall, dualMesh, cluster)
   ! larger than necessary.
   allocate(oWall%x(3, nNodes), oWall%conn(4, maxCells), &
        oWall%cellPtr(maxCells), oWall%iBlank(maxCells), &
-       oWall%nte(4, nNodes))
+       oWall%delta(nNodes), oWall%nte(4, nNodes))
  
   ii = 0 ! Cumulative node counter
   jj = 0 ! Cumulative cell counter (with iblanks)
@@ -97,16 +97,16 @@ subroutine initializeOWall(oWall, dualMesh, cluster)
            end do
            nodeCount = nodeCount + ni*nj
 
-           ! We don't care about iBlank or cellPtr for the dual mesh
+           ! We don't care about iBlank, cellPtr or delta for the dual
+           ! mesh
            oWall%iBlank = 1
            oWall%cellPtr = 0
-
+           oWall%delta = zero
         else ! Using the primal mesh
            jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
            iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
            
-           ! Now fill up the point array and nodeStatus arrays. Owned
-           ! node loop.
+           ! Now fill up the point array. Owned node loop.
            do j=jBeg, jEnd
               do i=iBeg, iEnd 
                  ii = ii +1
@@ -124,6 +124,7 @@ subroutine initializeOWall(oWall, dualMesh, cluster)
                  case(kmax) 
                     oWall%x(:,ii) = x(i, j, kl, :) 
                  end select
+                 oWall%delta(ii) = BCData(mm)%deltaNode(i, j)
               end do
            end do
 
@@ -167,7 +168,7 @@ subroutine initializeOWall(oWall, dualMesh, cluster)
   do i=1, oWall%nCells
      do j=1, 4
         n = oWall%conn(j, i)
-        inner:do k=1,4
+        inner:do k=1, 4
            if (oWall%nte(k, n) == 0) then 
               oWall%nte(k, n) = i
               exit inner

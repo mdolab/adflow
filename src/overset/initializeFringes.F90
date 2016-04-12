@@ -8,6 +8,7 @@ subroutine initializeFringes(nn, level, sps)
   use overset
   use BCTypes
   use stencils
+  use inputOverset
   implicit none
   
   ! Input Params
@@ -16,10 +17,10 @@ subroutine initializeFringes(nn, level, sps)
   ! Working Params
   integer(kind=intTYpe) :: i, j, k, mm, iDim, ii, jj, kk, iii, jjj
   integer(kind=intTYpe) :: iStart, iEnd, jStart, jEnd, kStart, kEnd
-  real(kind=realType) :: factor, frac, exponent, avgEdge, wallEdge
   logical :: wallsPresent, isWallType
   integer(kind=intType) :: i_stencil
   integer(kind=intType), dimension(:, :, :), allocatable :: tmp
+
   ! Allocate space for the double halo fringes. 
   if (.not. associated(flowDoms(nn, level, sps)%fringes)) then 
      allocate(flowDoms(nn, level, sps)%fringes(0:ib, 0:jb, 0:kb))
@@ -28,12 +29,13 @@ subroutine initializeFringes(nn, level, sps)
   ! Check if we have walls:
   call wallsOnBLock(wallsPresent)
 
-  ! Manually set the pointer to fringes we just allocated instead of
-  ! calling setPointers again
+  ! Manually set the pointer to fringes we (possibly) just allocated
+  ! instead of calling setPointers again
   fringes => flowDoms(nn, level, sps)%fringes
 
   ! Loop over all cells, including halos, setting all isCompute to
-  ! false
+  ! false. This is important. Halos cells on boundaries are *not*
+  ! considered compute cells. 
 
   do k=0, kb
      do j=0, jb
@@ -49,28 +51,15 @@ subroutine initializeFringes(nn, level, sps)
   end do
 
   ii = 0
-  exponent = third
   do k=2, kl
      do j=2, jl
         do i=2, il
            call setIsCompute(fringes(i, j, k)%status, .True.)
            ii = ii + 1
            if (wallsPresent) then 
-
-              wallEdge = fourth*(&
-                   norm2(x(i-1, j-1, k-1, :) - x(i-1, j-1, k, :)) + &
-                   norm2(x(i  , j-1, k-1, :) - x(i  , j-1, k, :)) + &
-                   norm2(x(i-1, j  , k-1, :) - x(i-1, j  , k, :)) + &
-                   norm2(x(i  , j  , k-1, :) - x(i  , j  , k, :)))
-
-              avgEdge = vol(i, j, k)**exponent
-              
-              !fringes(i, j, k)%quality = half*(avgEdge + wallEdge)
-              !fringes(i, j, k)%quality = min(avgEdge, wallEdge)
-              fringes(i, j, k)%quality = avgEdge
+              fringes(i, j, k)%quality = vol(i, j, k)**third
            else
-              factor = 4.0
-              fringes(i, j, k)%quality = (factor*vol(i, j, k))**exponent
+              fringes(i, j, k)%quality = (backgroundVolScale*vol(i, j, k))**third
            end if
         end do
      end do
@@ -96,30 +85,43 @@ subroutine initializeFringes(nn, level, sps)
   end do
   deallocate(tmp)
 
-  ! jjj = 0
-  ! do k=0, kb
-  !    do j=0, jb
-  !       do i=0, ib
-  !          if (iBlank(i,j,k) == -2 .or. iblank(i,j,k)==-3 .or. iblank(i,j,k)==0) then 
-  !             ! Any cell in this cell's stencil 
-              
-  !             stencilLoop: do i_stencil=1, N_visc_drdw
-  !                ii = visc_drdw_stencil(i_stencil, 1) + i
-  !                jj = visc_drdw_stencil(i_stencil, 2) + j
-  !                kk = visc_drdw_stencil(i_stencil, 3) + k
+  ! Flag all the interior hole cells with a *negative* quality since
+  ! this means it won't try to get a stencil:
 
-  !                ! Make sure we're on-block
-  !                if (ii >=2 .and. ii <= il .and. jj >= 2 .and. jj<= jl .and. &
-  !                     kk >=2 .and. kk <= kl) then 
-  !                   if (iblank(ii, jj, kk) == 1) then 
-  !                      iii = (kk-2)*nx*ny + (jj-2)*nx + (ii-2) + 1
-  !                      fringes(ii, jj, kk)%quality = large
-  !                      jjj = jjj + 1
-  !                   end if
-  !                end if
-  !             end do stencilLoop
-  !          end if
-  !       end do
-  !    end do
-  ! end do
+  do k=2, kl
+     do j=2, jl
+        do i=2, il
+           if (iBlank(i,j,k) == -2 .or. iblank(i,j,k)==-3) then 
+               fringes(i, j, k)%quality = -large
+           end if
+        end do
+     end do
+  end do
+
+  ! Flag the cells *surrounding* the hold cells with large
+  ! quality. That forces them to get a donor. 
+
+  do k=0, kb
+     do j=0, jb
+        do i=0, ib
+           if (iBlank(i,j,k) == -2 .or. iblank(i,j,k)==-3) then 
+
+              stencilLoop: do i_stencil=1, N_visc_drdw
+                 ii = visc_drdw_stencil(i_stencil, 1) + i
+                 jj = visc_drdw_stencil(i_stencil, 2) + j
+                 kk = visc_drdw_stencil(i_stencil, 3) + k
+
+                 ! Make sure we're on-block
+                 if (ii >=2 .and. ii <= il .and. jj >= 2 .and. jj<= jl .and. &
+                      kk >=2 .and. kk <= kl) then 
+                    if (iblank(ii, jj, kk) /= -2 .or. iblank(ii, jj, kk) /= -1) then 
+                       fringes(i, j, k)%quality = large
+                    end if
+                 end if
+              end do stencilLoop
+           end if
+        end do
+     end do
+  end do
+
 end subroutine initializeFringes

@@ -1055,6 +1055,6 @@
 !
        logical :: lowOversetMemory=.False.
        real(kind=realType) ::  nearWallDist=0.1
-
+       real(kind=realType) :: backgroundVolScale = 1.0
      end module inputOverset
 
