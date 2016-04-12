@@ -63,6 +63,14 @@ module block
      real(kind=realType), dimension(:,:),   pointer :: uTau
 
   end type viscSubfaceType
+
+  type rPtr
+     real(kind=realType), dimension(:, :, :), pointer :: var
+  end type rPtr
+
+  type iPtr
+     integer(kind=intType), dimension(:, :, :), pointer :: var
+  end type iPtr
   !
   !      ******************************************************************
   !      *                                                                *
@@ -809,6 +817,11 @@ module block
      real(kind=realType), dimension(:, :, :, :), pointer :: i_U2_Fact, j_U2_Fact, k_U2_Fact
 
      integer(kind=intType), dimension(:, :, :, :), pointer :: i_ipiv, j_ipiv, k_ipiv
+
+     ! A list of pointers for generic communication of either real or
+     ! integer data.
+     type(rPtr), dimension(12) :: realCommVars
+     type(iPtr), dimension(3) :: intCommvars
 
   end type blockType
 

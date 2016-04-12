@@ -188,9 +188,24 @@ subroutine setGlobalCellsAndNodes(level)
   ! we just run the specific halo exchanges for the cells and one for
   ! the nodes
 
-  call exchangeCoorNumbering(level)
+  spectralModes: do sps=1,nTimeIntervalsSpectral
+     domainLoop:do nn=1, nDom
+        flowDoms(nn, level, sps)%intCommVars(1)%var => &
+             flowDoms(nn, level, sps)%globalNode(:, :, :)
+     end do domainLoop
 
-  call exchangeCellNumbering(level)
+     ! Run the generic integer exchange
+     call wHalo1to1IntGeneric(1, level, sps, commPatternNode_1st, internalNode_1st)
+  end do spectralModes
 
-  
+  spectralModes2: do sps=1,nTimeIntervalsSpectral
+     domainLoop2:do nn=1, nDom
+        flowDoms(nn, level, sps)%intCommVars(1)%var => &
+             flowDoms(nn, level, sps)%globalCell(:, :, :)
+     end do domainLoop2
+
+     ! Run the generic integer exchange
+     call wHalo1to1IntGeneric(1, level, sps, commPatternCell_2nd, internalCell_2nd)
+  end do spectralModes2
+
 end subroutine setGlobalCellsAndNodes

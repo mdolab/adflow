@@ -115,7 +115,6 @@
        nullify(flowDoms(nn,level,sps)%rlv)
        nullify(flowDoms(nn,level,sps)%rev)
        nullify(flowDoms(nn,level,sps)%s)
-       nullify(flowDoms(nn,level,sps)%dadidata)
 
        nullify(flowDoms(nn,level,sps)%ux)
        nullify(flowDoms(nn,level,sps)%uy)
