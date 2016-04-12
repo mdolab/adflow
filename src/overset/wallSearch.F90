@@ -11,10 +11,10 @@ subroutine wallSearch(aWall, bWall)
   type(oversetWall), intent(inout) :: aWall, bWall
 
   ! Working Varaibles
-  integer(kind=intType) :: i, j, elem, jj, n, ii
+  integer(kind=intType) :: i, j, elem, jj, n, ii, k
   logical :: found
   integer(kind=intType) :: nInterpol, elemID, intInfo(3)
-  real(kind=realType) :: uvw(5), xx(4), dist, q1(3, 4), q2(3, 4)
+  real(kind=realType) :: uvw(5), xx(4), dist, q1(3, 4), q2(3, 4), delta
 
   ! Variables we have to pass the ADT search routine
   integer(kind=intType), dimension(:), pointer :: frontLeaves
@@ -69,8 +69,23 @@ subroutine wallSearch(aWall, bWall)
         call minDistanceTreeSearchSinglePoint(aWall%ADT, xx, intInfo, uvw, &
              dummy, nInterpol, BB, frontLeaves, frontLeavesNew)
 
-        ! Store the closest element for this node
-        tmpNodeElem(i) = intInfo(3)
+        ! Don't accept the element just yet. Check that that it is
+        ! within a factor of our node tolernace. We have to check both
+        ! the node on bWall and the nodes on the cell we found becuase
+        ! one could be bigger. 
+        dist = sqrt(uvw(4))
+        elemID = intInfo(3)
+
+        delta = bWall%delta(i)
+
+        do k=1,4
+           delta = max(delta, aWall%delta(aWall%conn(k, elemID)))
+        end do
+
+        if (dist < max(nearWallDist, 10*delta)) then 
+           ! Store the closest element for this node
+           tmpNodeElem(i) = elemID
+        end if
      end if
   end do
 
@@ -99,8 +114,21 @@ subroutine wallSearch(aWall, bWall)
         call minDistanceTreeSearchSinglePoint(aWall%ADT, xx, intInfo, uvw, &
              dummy, nInterpol, BB, frontLeaves, frontLeavesNew)
 
+        ! Don't accept the element just yet. Check that that it is
+        ! within a factor of our node tolernace. 
+        dist = sqrt(uvw(4))
+        elemID = intInfo(3)
+
+        delta = zero
+        do k=1, 4
+           delta = max(delta, bWall%delta(bWall%conn(k, i)))
+           delta = max(delta, aWall%delta(aWall%conn(k, elemID)))
+        end do
+
+        if (dist < max(nearWallDist, 10*delta)) then 
         ! Store the closest element for this node
-        tmpCellElem(i) = intInfo(3)
+           tmpCellElem(i) = elemID
+        end if
      end if
   end do
 
@@ -129,7 +157,6 @@ subroutine wallSearch(aWall, bWall)
            if (overlapped) then 
               if (clusterAreas(bWall%cluster) > clusterAreas(aWall%cluster)) then 
                  bWall%iBlank(bWall%cellPtr(i)) = -2
-                 cycle
               end if
            end if
         end if
@@ -147,7 +174,7 @@ subroutine wallSearch(aWall, bWall)
         call  quadOverlap(q1, q2, overlapped)
         if (overlapped) then 
            if (clusterAreas(bWall%cluster) > clusterAreas(aWall%cluster)) then 
-              bWall%iBlank(bWall%cellPtr(i)) = -2
+              bWall%iBlank(bWall%cellPtr(i)) = -2 ! -2 means it was overlapped and got blanked
            end if
         end if
      end if
@@ -172,7 +199,29 @@ subroutine quadOverlap(q1, q2, overlapped)
   ! Working
   integer(kind=intType) :: ii, jj
   real(kind=realType), dimension(2, 4) :: qq1, qq2
-  real(kind=realType), dimension(3) :: axis1, axis2, n1, n2, normal, v1, v2
+  real(kind=realType), dimension(3) :: axis1, axis2, n1, n2, normal, v1, v2, c1, c2
+  real(kind=realType) :: e1, e2
+  ! Check distance between cell centers
+  c1 = zero
+  c2 = zero
+  do ii = 1,4
+     c1 = c1 + fourth*q1(:,ii)
+     c2 = c2 + fourth*q2(:,ii)
+  end do
+
+  ! Get get max distance between center and node:
+  e1 = zero
+  e2 = zero
+  do ii=1,4
+     e1 = max(e1, norm2(c1 - q1(:, ii)))
+     e2 = max(e2, norm2(c2 - q2(:, ii)))
+  end do
+
+  ! Check if distance between cell center sid beyond the threshold
+  if (norm2(c1-c2) .ge. (e1 + e2)) then
+     overlapped = .False.
+     return
+  end if
 
   ! The two quads *may* be overlapped. We have to do it hard way. 
 

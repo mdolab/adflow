@@ -87,6 +87,8 @@
                             BCData(mm)%Fp(iBeg:iEnd,jBeg:jEnd,3), &
                             BCData(mm)%Fv(iBeg:iEnd,jBeg:jEnd,3), &
                             BCData(mm)%iBlank(iBeg:iEnd, jBeg:jEnd), &
+                            BCData(mm)%delta(iBeg:iEnd, jBeg:jEnd), &
+                            BCData(mm)%deltaNode(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd), &
                             stat=ierr)
                    if(ierr /= 0)                      &
                      call returnFail("allocMemBCData", &
@@ -107,6 +109,8 @@
                             BCData(mm)%Fp(iBeg:iEnd,jBeg:jEnd,3), &
                             BCData(mm)%Fv(iBeg:iEnd,jBeg:jEnd,3), &
                             BCData(mm)%iBlank(iBeg:iEnd, jBeg:jEnd), &
+                            BCData(mm)%delta(iBeg:iEnd, jBeg:jEnd), &
+                            BCData(mm)%deltaNode(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd), &
                             stat=ierr)
                    if(ierr /= 0)                      &
                      call returnFail("allocMemBCData", &
@@ -127,6 +131,8 @@
                             BCData(mm)%Fp(iBeg:iEnd,jBeg:jEnd,3), &
                             BCData(mm)%Fv(iBeg:iEnd,jBeg:jEnd,3), &
                             BCData(mm)%iBlank(iBeg:iEnd, jBeg:jEnd), &
+                            BCData(mm)%delta(iBeg:iEnd, jBeg:jEnd), &
+                            BCData(mm)%deltaNode(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd), &
                             stat=ierr)
                    if(ierr /= 0)                      &
                      call returnFail("allocMemBCData", &

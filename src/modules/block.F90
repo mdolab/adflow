@@ -171,6 +171,11 @@ module block
      ! Surface blanking for force integration
      integer(kind=intType), dimension(:,:), pointer :: iblank
       
+     ! Surface deviation. This is an estimate of how much the surface
+     ! deviates from the "real" underlying surface'
+     real(Kind=realType), dimension(:, :), pointer :: delta
+     real(Kind=realType), dimension(:, :), pointer :: deltaNode
+
   end type BCDataType
 
   type surfaceNodeWeightArray
@@ -824,6 +829,14 @@ module block
      real(kind=realType), dimension(:, :, :, :), pointer :: i_U2_Fact, j_U2_Fact, k_U2_Fact
 
      integer(kind=intType), dimension(:, :, :, :), pointer :: i_ipiv, j_ipiv, k_ipiv
+
+     ! Pointers for doing generic information exchange
+     real(kind=realType), dimension(:, :, :), pointer :: rVar1, rVar2, &
+          rVar3, rVar4, rVar5, rVar6, rVar7, rVar8, rVar9
+
+     integer(kind=intType), dimension(:, :, :), pointer :: iVar1, iVar2, &
+          iVar3, iVar4, iVar5, iVar6, iVar7, iVar8, iVar9
+
 
   end type blockType
 

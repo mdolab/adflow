@@ -9,8 +9,8 @@ contains
     implicit none
     type(oversetString) :: string
 
-    nullify(string%x, string%norm, string%ind, string%conn, &
-         string%otherX, string%otherID, string%nte, string%subStr, string%elemUsed)
+    nullify(string%x, string%norm, string%h, string%ind, string%conn, &
+         string%gc, string%otherID, string%nte, string%subStr, string%elemUsed)
   end subroutine nullifyString
 
   subroutine deallocateString(string)
@@ -26,11 +26,17 @@ contains
     if (associated(string%norm)) & 
          deallocate(string%norm)
 
+    if (associated(string%h)) & 
+         deallocate(string%h)
+
     if (associated(string%ind)) & 
          deallocate(string%ind)
 
     if (associated(string%conn)) & 
          deallocate(string%conn)
+
+    if (associated(string%gc)) & 
+         deallocate(string%gc)
 
     if (associated(string%otherID)) & 
          deallocate(string%otherID)
@@ -43,9 +49,11 @@ contains
 
     if (associated(string%elemUsed)) &
          deallocate(string%elemUsed)
+
     call nullifyString(string)
 
   end subroutine deallocateString
+
 
   subroutine reduceGapString(string)
 
@@ -65,6 +73,7 @@ contains
     integer(kind=intType), dimension(:), allocatable :: link
     real(kind=realType), dimension(:, :), allocatable :: uniqueNodes
     real(kind=realType), dimension(:, :), pointer :: xptr, normPtr
+    real(kind=realType), dimension(:), pointer :: hPtr
     integer(kind=intType) , dimension(:), pointer :: indPtr
 
     ! We will do a sort of adaptive tolernace here: Get the minium edge
@@ -92,12 +101,14 @@ contains
     ! to original data first. 
     xPtr => string%x
     normPtr => string%norm
+    hPtr => string%h
     indPtr => string%ind
-    allocate(string%x(3, nUnique), string%norm(3, nUnique), string%ind(nUnique))
+    allocate(string%x(3, nUnique), string%norm(3, nUnique), string%h(nUnique), string%ind(nUnique))
 
     do i=1, string%nNodes
        string%x(:, link(i)) = xPtr(:, i)
        string%norm(:, link(i)) = normPtr(:, i)
+       string%h(link(i)) = hPtr(i)
        string%ind(link(i)) = indPtr(i)
     end do
     string%nNodes = nUnique
@@ -123,6 +134,7 @@ contains
     integer(kind=intType) :: i, j, ii, jj, n(2), m(2), curElem, nDup
     integer(kind=intType), dimension(string%nElems) :: duplicated
     integer(kind=intType), dimension(:, :), pointer :: tmpConn
+    integer(kind=intType), dimension(:), pointer :: tmpGC
     logical :: duplicateElement
 
     allocate(string%nte(3, string%nNodes))
@@ -173,13 +185,15 @@ contains
     nDup = sum(duplicated) 
     if (nDup > 0) then 
        tmpConn => string%conn
+       tmpGC => string%gc
        allocate(string%conn(2, string%nElems - nDup))
-
+       allocate(string%gc(string%nElems - nDup))
        j = 0
        do i=1, string%nElems
           if (duplicated(i) == 0) then 
              j = j + 1
              string%conn(:, j) = tmpConn(:, i)
+             string%gc(i) = tmpGC(i)
           end if
        end do
 
@@ -188,7 +202,7 @@ contains
 
        ! Don't forget to deallocate the tmpConn pointer which is
        ! actually the original conn data.
-       deallocate(tmpConn)
+       deallocate(tmpConn, tmpGC)
 
        ! Destroy nte and call myself again to get the final correct nte
        ! without the duplicates.
@@ -348,19 +362,21 @@ contains
     ! quantities and the parent, we can allocate and set all the
     ! node-based quantities.
 
-    allocate(s%x(3, s%nNodes), s%norm(3, s%nNodes), s%ind(s%nNodes))
+    allocate(s%x(3, s%nNodes), s%norm(3, s%nNodes), s%h(s%nNodes), s%ind(s%nNodes))
     do i=1, s%nNodes
        s%x(:, i) = p%x(:, s%pNodes(i))
        s%norm(:, i) = p%norm(:, s%pNodes(i))
+       s%h(i) = p%h(s%pNodes(i))
        s%ind(i) = p%ind(s%pNodes(i))
     end do
 
     ! We can now create the local conn too, *USING THE LOCAL NODE NUMBERS*
-    allocate(s%conn(2, s%nElems))
+    allocate(s%conn(2, s%nElems), s%gc(s%nElems))
 
     do i=1, s%nElems
        s%conn(1, i) = nodeUsed(p%conn(1, s%pElems(i)))
        s%conn(2, i) = nodeUsed(p%conn(2, s%pElems(i)))
+       s%gc(i) = p%gc(s%pElems(i))
     end do
 
     ! Set the pointer to my parent. 
@@ -412,6 +428,7 @@ subroutine selfZip(s, cutOff, nZipped)
   integer(Kind=intType), dimension(:), allocatable :: nodeMap
   type(kdtree2_result), dimension(:), allocatable  :: results
   real(kind=realType), dimension(:, :), pointer :: xTmp, normTmp
+  real(kind=realType), dimension(:), pointer :: hTmp
   integer(kind=intType), dimension(:, :), pointer :: connTmp
   integer(kind=intType), dimension(:), pointer :: indTmp, pNodesTmp
   ! Perform self zipping on the supplied string. The string at this
@@ -567,6 +584,7 @@ subroutine selfZip(s, cutOff, nZipped)
   nElems = s%nElems
   xTmp => s%x
   normTmp => s%norm
+  hTmp => s%h
   indTmp => s%ind
   connTmp => s%conn
   pNodesTmp => s%pNodes
@@ -589,13 +607,14 @@ subroutine selfZip(s, cutOff, nZipped)
   s%nNodes = s%nNodes - nZipped
   s%nElems = s%nElems - nZipped
 
-  allocate(s%x(3, s%nNodes), s%norm(3, s%nNodes), s%ind(s%nNodes), &
-       s%pNodes(s%nNodes), s%conn(2, s%nElems))
+  allocate(s%x(3, s%nNodes), s%norm(3, s%nNodes), s%h(s%nNodes), &
+       s%ind(s%nNodes), s%pNodes(s%nNodes), s%conn(2, s%nElems))
 
   do i=1, nNodes
      if (nodeMap(i) /= 0) then 
         s%x(:, nodeMap(i)) = xTmp(:, i)
         s%norm(:, nodeMap(i)) = normTmp(:, i)
+        s%h(nodeMap(i)) = hTmp(i)
         s%ind(nodeMap(i)) = indTmp(i)
         s%pNodes(nodeMap(i)) = pNodesTmp(i)
      end if
