@@ -80,9 +80,6 @@ subroutine allocMemFlovarPart1(sps,level)
           call returnFail("allocMemFlovarPart1", &
           "Memory allocation failure for w")
 
-     ! Alloc mem for dadi
-     allocate(flowDoms(nn,level,sps)%dadidata(ie,je,ke,10), stat=ierr)
-
      ! Alloc mem for nodal gradients 
      allocate(flowDoms(nn,level,sps)%ux(il,jl,kl), stat=ierr)
      allocate(flowDoms(nn,level,sps)%uy(il,jl,kl), stat=ierr)
@@ -208,7 +205,6 @@ subroutine allocMemFlovarPart1(sps,level)
                 "Memory allocation failure for bmti1, etc")
 
         endif sps1RansTest
-
      endif fineLevelTest
 
   enddo domains
@@ -321,7 +317,7 @@ subroutine allocMemFlovarPart2(sps, level)
              flowDoms(nn,level,sps)%radI(1:ie,1:je,1:ke),     &
              flowDoms(nn,level,sps)%radJ(1:ie,1:je,1:ke),     &
              flowDoms(nn,level,sps)%radK(1:ie,1:je,1:ke),     &
-             flowDoms(nn,level,sps)%scratch(0:ib,0:jb,0:kb,5), &
+             flowDoms(nn,level,sps)%scratch(0:ib,0:jb,0:kb,10), &
              stat=ierr)
         if(ierr /= 0)                              &
              call returnFail("allocMemFlovarPart2", &
