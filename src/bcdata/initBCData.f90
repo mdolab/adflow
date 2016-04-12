@@ -147,6 +147,8 @@
                bcData(j)%symNormSet = .False.
                bcData(j)%symNorm = zero
                nullify(BCData(j)%iblank)
+               nullify(BCData(j)%delta)
+               nullify(BCData(j)%deltaNode)
 
              enddo bocoLoop
            enddo domainsLoop

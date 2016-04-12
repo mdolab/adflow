@@ -232,20 +232,9 @@
          end if
       end do
 
-         do level=1,nLevels
-            call wallDistance(level, .True.)
-         end do
-
-       ! Compute global cells and Nodes
-       do level=1,nLevels
-          call setGlobalCellsAndNodes(level)
-       end do
-
-       nLevels = ubound(flowDoms,2)
-       
-       do level=1,nLevels
-          call wallDistance(level, .True.)
-       end do
+      do level=1,nLevels
+         call wallDistance(level, .True.)
+      end do
        
      end subroutine preprocessing
 

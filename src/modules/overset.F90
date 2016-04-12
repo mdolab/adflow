@@ -139,6 +139,9 @@ module overset
      ! Surface nodes used to build the tree:
      real(kind=realType), dimension(:, :), pointer :: x
 
+     ! Local estimate of surface error
+     real(kind=realType), dimension(:), pointer :: delta
+
      ! Connectivity for the surface
      integer(kind=intType), dimension(:, :), pointer:: conn
      
@@ -183,6 +186,13 @@ module overset
      ! The (unit, averaged) surface normal for nodes. Same size as x
      real(kind=realType), dimension(:, :), pointer :: norm
 
+     ! An estimate of the local cell size. 
+     real(kind=realType), dimension(:), pointer :: h
+     
+     ! The global cell ID of the compute (above and) next to an 
+     ! edge.
+     integer(kind=intType), dimension(:), pointer :: gc
+
      ! The orignal nodal index. Size nNodes.
      integer(kind=intType), dimension(:), pointer :: ind
 
@@ -201,9 +211,6 @@ module overset
      ! The cloest string ID of each node *AND* the node index on the
      ! other string. Size (2, nNodes)
      integer(kind=intType), dimension(:, :), pointer :: otherID
-
-     ! Node location on the other string. 
-     real(kind=realType), dimension(:, :), pointer :: otherX
 
      ! The inverse of the connectivity node to elem array. Size (5,
      ! nNodes). First index is the number of elements, other 4 entries

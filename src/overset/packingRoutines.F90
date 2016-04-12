@@ -565,6 +565,7 @@ subroutine getOWallBufferSizes(il, jl, kl, iSize, rSize, dualMesh)
 
      iSize = iSize + nCells   ! This is for the cellPtr array
      
+    
      ! Number of boxes in the ADT is the same as the number of elements
      nBBox = nCells
      nLeaves = nBBox-1 ! See ADT/adtBuild.f90
@@ -573,6 +574,8 @@ subroutine getOWallBufferSizes(il, jl, kl, iSize, rSize, dualMesh)
      
      ! Count up the reals we ned to send:
      rSize = rSize + 3*nNodes ! surface coordinates
+
+     rSize = rSize + nNodes ! surface delta
 
      rSize = rSize + nBBox*6 ! Cell bounding boxes
      
@@ -644,6 +647,11 @@ subroutine packOWall(oWall, dualMesh)
         end do
      end do
      
+     do i=1, oWall%nNodes
+        rSize = rSize + 1
+        oWall%rBuffer(rSize) = oWall%delta(i)
+     end do
+     
      do i=1, oWall%ADT%nBboxes
         oWall%rBuffer(rSize+1:rSize+6) = oWall%ADT%xBBox(:, i)
         rSize = rSize + 6
@@ -687,6 +695,7 @@ subroutine unpackOWall(oWall)
 
   ! Allocate the arrays now that we know the sizes
   allocate(oWall%x(3, oWall%nNodes))
+  allocate(oWall%delta(oWall%nNodes))
   allocate(oWall%conn(4, oWall%nCells))
   allocate(oWall%iBlank(oWall%maxCells))
   allocate(oWall%cellPtr(oWall%nCells))
@@ -759,6 +768,11 @@ subroutine unpackOWall(oWall)
            rSize = rSize + 1
            oWall%x(j, i) = oWall%rBuffer(rSize)
         end do
+     end do
+
+     do i=1, oWall%nNodes
+        rSize = rSize + 1
+        oWall%delta(i) = oWall%rBuffer(rSize)
      end do
 
      do i=1, oWall%ADT%nBboxes
