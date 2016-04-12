@@ -52,11 +52,10 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   ! Local variables.
   integer(kind=intType) :: ierr, nn, sps, sps2, i, j, k, l, ll, ii, jj, kk
   integer(kind=intType) :: nColor, iColor, jColor, irow, icol, fmDim, frow
-  integer(kind=intType) :: nTransfer, nState, tmp, icount
-  integer(kind=intType) :: n_stencil, i_stencil
+  integer(kind=intType) :: nTransfer, nState, tmp, icount, cols(8), nCol
+  integer(kind=intType) :: n_stencil, i_stencil, m
   integer(kind=intType), dimension(:, :), pointer :: stencil
-  real(kind=realType) :: delta_x, one_over_dx
-  real(kind=realType) :: delta_x_turb, one_over_dx_turb
+  real(kind=realType) :: delta_x, one_over_dx, weights(8)
 
 #ifdef USE_COMPLEX
   complex(kind=realType) :: alpha, beta, alphad, betad
@@ -110,6 +109,32 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   call MatZeroEntries(matrix, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
+  ! Set the diagonal to 1 if the cell is not a compute cell:
+
+  ! Make an identity block
+  blk = zero
+  do i=1, nState
+     blk(i,i) = one
+  end do
+
+  do nn=1,nDom
+     do sps=1,nTimeIntervalsSpectral
+        call setPointers(nn, level, sps)
+        do k=2, kl
+           do j=2, jl
+              do i=2, il
+                 if (iblank(i, j, k) /= 1) then 
+                    iRow = flowDoms(nn, level, sps)%globalCell(i, j, k)
+                    cols(1) = irow
+                    nCol = 1
+                    call setBlock(blk)
+                 end if
+              end do
+           end do
+        end do
+     end do
+  end do
+
   if (splitMat) then 
      call MatZeroEntries(matrixTurb, ierr)
      call EChk(ierr, __FILE__, __LINE__)
@@ -156,11 +181,6 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   ! Set delta_x
   delta_x = 1e-9_realType
   one_over_dx = one/delta_x
-
-
-  delta_x_turb = 1e-14
-  one_over_dx_turb = one/delta_x_turb
-
   rkStage = 0
 
   ! Determine if we want to use frozenTurbulent Adjoint
@@ -224,7 +244,6 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
 
   ! Master Domain Loop
   domainLoopAD: do nn=1, nDom
-
      ! Set pointers to the first timeInstance...just to getSizes
      call setPointers(nn, level, 1)
      ! Set unknown sizes in diffSizes for AD routine
@@ -306,11 +325,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
                           if (useAD) then
                              flowDomsd(nn, 1, sps)%w(i, j, k, l) = one
                           else
-                             if (l <= nwf) then 
-                                w(i, j, k, l) = w(i, j, k, l) + delta_x
-                             else
-                                w(i, j, k, l) = w(i, j, k, l) + delta_x_turb
-                             end if
+                             w(i, j, k, l) = w(i, j, k, l) + delta_x
                           end if
                        end if
                     end do
@@ -350,17 +365,10 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
                                    ! instance, we've computed the spatial
                                    ! contribution so subtrace dwtmp
 
-                                   if (l <= nwf) then 
-                                      flowDoms(nn, 1, sps2)%dw_deriv(i, j, k, ll, l) = &
-                                           one_over_dx * &
-                                           (flowDoms(nn, 1, sps2)%dw(i, j, k, ll) - &
-                                           flowDoms(nn, 1, sps2)%dwtmp(i, j, k, ll))
-                                   else
-                                      flowDoms(nn, 1, sps2)%dw_deriv(i, j, k, ll, l) = &
-                                           one_over_dx_turb * &
-                                           (flowDoms(nn, 1, sps2)%dw(i, j, k, ll) - &
-                                           flowDoms(nn, 1, sps2)%dwtmp(i, j, k, ll))
-                                   end if
+                                   flowDoms(nn, 1, sps2)%dw_deriv(i, j, k, ll, l) = &
+                                        one_over_dx * &
+                                        (flowDoms(nn, 1, sps2)%dw(i, j, k, ll) - &
+                                        flowDoms(nn, 1, sps2)%dwtmp(i, j, k, ll))
                                 else
                                    ! If the peturbation is on an off
                                    ! instance, only subtract dwtmp2
@@ -386,64 +394,82 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
            kLoop: do k=0, kb
               jLoop: do j=0, jb
                  iLoop: do i=0, ib
-                    iCol = flowDoms(nn, level, sps)%globalCell(i, j, k)
-                    ! if (iCol < 0) then
-                    !    iCol = -(iCol + 1)
-                    ! end if
-                    colorCheck: if (flowdoms(nn, 1, 1)%color(i, j, k) == icolor) then! &
-                       !.and. icol >= 0) then
-                       !colorCheck: if (flowdomsd(nn, 1, 1)%color(i, j, k) == icolor) then
+                    colBlank: if (flowDoms(nn, level, sps)%iblank(i, j, k) /= 0) then 
 
-                       ! i, j, k are now the "Center" cell that we
-                       ! actually petrubed. From knowledge of the
-                       ! stencil, we can simply take this cell and
-                       ! using the stencil, set the values around it
-                       ! in PETSc
+                       ! If the cell we perturned ('iCol') is an
+                       ! interpolated cell, we don't actually use
+                       ! iCol, rather we use the 8 real donors that
+                       ! comprise the cell's value. 
+                       if (flowDoms(nn, level, sps)%iblank(i, j, k) == 1) then 
+                          cols(1) = flowDoms(nn, level, sps)%globalCell(i, j, k)
+                          nCol = 1
+                       else
+                          do m=1,8
+                             cols(m) = flowDoms(nn, level, sps)%fringes(i, j, k)%gInd(m)
+                          end do
+                          call fracToWeights(flowDoms(nn, level, sps)%fringes(i, j, k)%donorFrac, &
+                                     weights)
+                          nCol = 8
+                       end if
 
-                       stencilLoop: do i_stencil=1, n_stencil
-                          ii = stencil(i_stencil, 1)
-                          jj = stencil(i_stencil, 2)
-                          kk = stencil(i_stencil, 3)
+                       colorCheck: if (flowdoms(nn, 1, 1)%color(i, j, k) == icolor) then! &
+                          !.and. icol >= 0) then
+                          !colorCheck: if (flowdomsd(nn, 1, 1)%color(i, j, k) == icolor) then
 
-                          ! Check to see if the cell in this
-                          ! sentcil is on a physical cell, not a
-                          ! halo/BC halo
-                          onBlock: if ( i+ii >= 2 .and. i+ii <= il .and. &
-                               j+jj >= 2 .and. j+jj <= jl .and. &
-                               k+kk >= 2 .and. k+kk <= kl) then 
+                          ! i, j, k are now the "Center" cell that we
+                          ! actually petrubed. From knowledge of the
+                          ! stencil, we can simply take this cell and
+                          ! using the stencil, set the values around it
+                          ! in PETSc
 
-                             irow = flowDoms(nn, level, sps)%globalCell(&
-                                  i+ii, j+jj, k+kk)
+                          stencilLoop: do i_stencil=1, n_stencil
+                             ii = stencil(i_stencil, 1)
+                             jj = stencil(i_stencil, 2)
+                             kk = stencil(i_stencil, 3)
 
-                             centerCell: if ( ii == 0 .and. jj == 0 &
-                                  .and. kk == 0) then
-                                useDiagPC: if (usePC .and. useDiagTSPC) then
-                                   ! If we're doing the PC and we want
-                                   ! to use TS diagonal form, only set
-                                   ! values for on-time insintance
-                                   blk = flowDoms(nn, 1, sps)%dw_deriv(i+ii, j+jj, k+kk, &
-                                        1:nstate, 1:nstate)
-                                   call setBlock(blk)
-                                else
-                                   ! Otherwise loop over spectral
-                                   ! instances and set all.
-                                   do sps2=1, nTimeIntervalsSpectral
-                                      irow = flowDoms(nn, level, sps2)%&
-                                           globalCell(i+ii, j+jj, k+kk)
-                                      blk = flowDoms(nn, 1, sps2)%dw_deriv(i+ii, j+jj, k+kk, &
+                             ! Check to see if the cell in this
+                             ! sentcil is on a physical cell, not a
+                             ! halo/BC halo
+                             onBlock: if ( i+ii >= 2 .and. i+ii <= il .and. &
+                                  j+jj >= 2 .and. j+jj <= jl .and. &
+                                  k+kk >= 2 .and. k+kk <= kl) then 
+
+                                irow = flowDoms(nn, level, sps)%globalCell(&
+                                     i+ii, j+jj, k+kk)
+
+                                rowBlank: if (flowDoms(nn, level, sps)%iBlank(i+ii, j+jj, k+kk) == 1) then 
+
+                                   centerCell: if ( ii == 0 .and. jj == 0 &
+                                        .and. kk == 0) then
+                                      useDiagPC: if (usePC .and. useDiagTSPC) then
+                                         ! If we're doing the PC and we want
+                                         ! to use TS diagonal form, only set
+                                         ! values for on-time insintance
+                                         blk = flowDoms(nn, 1, sps)%dw_deriv(i+ii, j+jj, k+kk, &
+                                              1:nstate, 1:nstate)
+                                         call setBlock(blk)
+                                      else
+                                         ! Otherwise loop over spectral
+                                         ! instances and set all.
+                                         do sps2=1, nTimeIntervalsSpectral
+                                            irow = flowDoms(nn, level, sps2)%&
+                                                 globalCell(i+ii, j+jj, k+kk)
+                                            blk = flowDoms(nn, 1, sps2)%dw_deriv(i+ii, j+jj, k+kk, &
+                                                 1:nstate, 1:nstate)
+                                            call setBlock(blk)
+                                         end do
+                                      end if useDiagPC
+                                   else
+                                      ! ALl other cells just set.
+                                      blk = flowDoms(nn, 1, sps)%dw_deriv(i+ii, j+jj, k+kk, &
                                            1:nstate, 1:nstate)
                                       call setBlock(blk)
-                                   end do
-                                end if useDiagPC
-                             else
-                                ! ALl other cells just set.
-                                blk = flowDoms(nn, 1, sps)%dw_deriv(i+ii, j+jj, k+kk, &
-                                     1:nstate, 1:nstate)
-                                call setBlock(blk)
-                             end if centerCell
-                          end if onBlock
-                       end do stencilLoop
-                    end if colorCheck
+                                   end if centerCell
+                                end if rowBlank
+                             end if onBlock
+                          end do stencilLoop
+                       end if colorCheck
+                    end if colBlank
                  end do iLoop
               end do jLoop
            end do kLoop
@@ -530,6 +556,7 @@ contains
     integer(kind=intType) :: i, j, tmp, iRowSet, iColSet
     logical :: zeroFlag
     zeroFlag = .False.
+
 #ifndef USE_COMPLEX
     ! Check if the blk is all zeros
 
@@ -546,39 +573,46 @@ contains
     if (isnan(sum(blk))) then
        print *,'Bad Block:',blk
        print *,'irow:',irow
-       print *,'icol',icol
+       print *,'icol',cols(1:ncol)
        print *,'nn:',nn
        print *,'ijk:',i,j,k
        call EChk(1, __FILE__, __LINE__)
     end if
 #endif
-    if (.not. zeroFlag) then
-       if (useTranspose) then
-          blk = transpose(blk)
-          iColSet = iRow
-          iRowSet = iCol
-       else
-          iColSet = iCol
-          iRowSet = iRow
-       end if
 
-       if (splitMat) then 
-          call MatSetValuesBlocked(matrix, 1, iRowSet, 1, iColSet, &
-               blk(1:nwf, 1:nwf), ADD_VALUES, ierr)
-          call EChk(ierr, __FILE__, __LINE__)
-
-          call MatSetValuesBlocked(matrixTurb, 1, iRowSet, 1, iColSet, &
-               blk(nt1:nt2, nt1:nt2), ADD_VALUES, ierr)
-          call EChk(ierr, __FILE__, __LINE__)
+     if (.not. zeroFlag) then
+       if (nCol == 1) then 
+          if (useTranspose) then
+             blk = transpose(blk)
+             call MatSetValuesBlocked(matrix, 1, cols(1), 1, irow, blk, &
+                  ADD_VALUES, ierr)
+             call EChk(ierr, __FILE__, __LINE__)
+          else
+             call MatSetValuesBlocked(matrix, 1, irow, 1, cols(1), blk, &
+                  ADD_VALUES, ierr)
+             call EChk(ierr, __FILE__, __LINE__)
+          end if
        else
-          call MatSetValuesBlocked(matrix, 1, iRowSet, 1, iColSet, blk, &
-               ADD_VALUES, ierr)
-          call EChk(ierr, __FILE__, __LINE__)
+          if (useTranspose) then
+             blk = transpose(blk)
+             do m=1, ncol
+                if (cols(m) >= 0) then 
+                   call MatSetValuesBlocked(matrix, 1, cols(m), 1, irow, blk*weights(m), &
+                        ADD_VALUES, ierr)
+                   call EChk(ierr, __FILE__, __LINE__)
+                end if
+             end do
+          else
+             do m=1, ncol
+                if (cols(m) >= 0) then 
+                   call MatSetValuesBlocked(matrix, 1, irow, 1, cols(m), blk*weights(m), &
+                        ADD_VALUES, ierr)
+                   call EChk(ierr, __FILE__, __LINE__)
+                end if
+             end do
+          end if
        end if
     end if
-
-
   end subroutine setBlock
 #endif
 end subroutine setupStateResidualMatrix
-

@@ -60,14 +60,19 @@
        if(commGamma .and. (cpModel == cpTempCurveFits)) &
          commVarGamma = .true.
 
+       
+       mm = ubound(commPatternOverset, 1)
+       call wOverset_b(level, start, end, commPressure, commVarGamma, &
+            commLamVis, commEddyVis, commPatternOverset, internalOverset, mm)
+
        ! Exchange the 1 to 1 matching 2nd level cell halo's.
 
        call whalo1to1_b(level, start, end, commPressure, commVarGamma, &
             commLamVis, commEddyVis, commPatternCell_2nd,  &
             internalCell_2nd)
 
-       ! NOTE: Only the 1to1 halo exchange is done. whalosliding,
-       ! whalomixing, wOverset, orphanAverage and PandE corrections
+       ! NOTE: Only the 1to1 halo exchange and overset is done. whalosliding,
+       ! whalomixing, orphanAverage and PandE corrections
        ! calculation are NOT implementent. 
 
      end subroutine whalo2_b
