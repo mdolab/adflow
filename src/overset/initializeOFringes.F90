@@ -8,6 +8,7 @@ subroutine initializeOFringes(oFringe, nn)
   use overset
   use BCTypes
   use stencils
+  use inputOverset
   implicit none
   
   ! Input Params
@@ -17,7 +18,6 @@ subroutine initializeOFringes(oFringe, nn)
   ! Working Params
   integer(kind=intTYpe) :: i, j, k, mm, iDim, ii, jj, kk, iii, jjj
   integer(kind=intTYpe) :: iStart, iEnd, jStart, jEnd, kStart, kEnd
-  real(kind=realType) :: factor, frac, exponent, avgEdge, wallEdge
   logical :: wallsPresent, isWallType
   integer(kind=intType) :: i_stencil
   integer(kind=intType), dimension(:, :, :), allocatable :: tmp
@@ -57,7 +57,6 @@ subroutine initializeOFringes(oFringe, nn)
   ! Now loop over the actual compute cells, setting the cell center
   ! value 'x', the volume and flag these cells as compute
   ii = 0
-  exponent = third
   do k=2, kl
      do j=2, jl
         do i=2, il
@@ -75,21 +74,9 @@ subroutine initializeOFringes(oFringe, nn)
            end do
 
            if (wallsPresent) then 
-
-              wallEdge = fourth*(&
-                   norm2(x(i-1, j-1, k-1, :) - x(i-1, j-1, k, :)) + &
-                   norm2(x(i  , j-1, k-1, :) - x(i  , j-1, k, :)) + &
-                   norm2(x(i-1, j  , k-1, :) - x(i-1, j  , k, :)) + &
-                   norm2(x(i  , j  , k-1, :) - x(i  , j  , k, :)))
-
-              avgEdge = vol(i, j, k)**exponent
-              
-              !fringes(i, j, k)%quality = half*(avgEdge + wallEdge)
-              !fringes(i, j, k)%quality = min(avgEdge, wallEdge)
-              oFringe%quality(ii) = avgEdge
+              oFringe%quality(ii) = vol(i, j, k)**third
            else
-              factor = 4.0
-              oFringe%quality(ii) = (factor*vol(i, j, k))**exponent
+              oFringe%quality(ii) = (backgroundVolScale*vol(i, j, k))**third
            end if
            oFringe%myIndex(ii) = ii
         end do
@@ -118,13 +105,28 @@ subroutine initializeOFringes(oFringe, nn)
   end do
   deallocate(tmp)
 
-  jjj = 0
+  ! Flag all the interior hole cells with a *negative* quality since
+  ! this means it won't try to get a stencil:
+
+  do k=2, kl
+     do j=2, jl
+        do i=2, il
+           if (iBlank(i,j,k) == -2 .or. iblank(i,j,k)==-3) then 
+               iii = (kk-2)*nx*ny + (jj-2)*nx + (ii-2) + 1
+              oFringe%quality(iii) = -large
+           end if
+        end do
+     end do
+  end do
+
+  ! Flag the cells *surrounding* the hold cells with large
+  ! quality. That forces them to get a donor. 
+
   do k=0, kb
      do j=0, jb
         do i=0, ib
-           if (iBlank(i,j,k) == -2 .or. iblank(i,j,k)==-3 .or. iblank(i,j,k)==0) then 
-              ! Any cell in this cell's stencil 
-              
+           if (iBlank(i,j,k) == -2 .or. iblank(i,j,k)==-3) then 
+
               stencilLoop: do i_stencil=1, N_visc_drdw
                  ii = visc_drdw_stencil(i_stencil, 1) + i
                  jj = visc_drdw_stencil(i_stencil, 2) + j
@@ -133,10 +135,9 @@ subroutine initializeOFringes(oFringe, nn)
                  ! Make sure we're on-block
                  if (ii >=2 .and. ii <= il .and. jj >= 2 .and. jj<= jl .and. &
                       kk >=2 .and. kk <= kl) then 
-                    if (iblank(ii, jj, kk) == 1) then 
+                    if (iblank(ii, jj, kk) /= -2 .or. iblank(ii, jj, kk) /= -1) then 
                        iii = (kk-2)*nx*ny + (jj-2)*nx + (ii-2) + 1
                        oFringe%quality(iii) = large
-                       jjj = jjj + 1
                     end if
                  end if
               end do stencilLoop

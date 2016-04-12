@@ -67,6 +67,9 @@ subroutine createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
   ! Set the boundary condition blank values
   call initBCDataIBlank(level, sps)
 
+  ! Create the surface deltas
+  call surfaceDeviation(level, sps)
+
   ! Alloc data for the OWalls
   nn = max(nProc, 2*nOWallSend, 2*nOwallRecv)
   allocate(tmpInt2D(nDomTotal, 2), bufSizes(nDomTotal, 2), &
