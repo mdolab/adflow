@@ -412,6 +412,13 @@ subroutine computeHolesInsideBody(level, sps)
   deallocate(stack, BB, frontLeaves, frontLeavesNew, BBint)
 
   ! Finally communicate the updated iBlanks
-  call exchangeIBlanks(level, sps, commPatternCell_2nd, internalCell_2nd)
+  ! Update the iblank info. 
+  domainLoop:do nn=1, nDom
+     flowDoms(nn, level, sps)%intCommVars(1)%var => &
+          flowDoms(nn, level, sps)%iblank(:, :, :)
+  end do domainLoop
+  
+  ! Run the generic integer exchange
+  call wHalo1to1IntGeneric(1, level, sps, commPatternCell_2nd, internalCell_2nd)
 
 end subroutine computeHolesInsideBody

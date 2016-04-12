@@ -39,6 +39,12 @@ subroutine setIblankArray(level, sps)
   end do
 
   ! Update the iblank info. 
+  domainLoop:do nn=1, nDom
+     flowDoms(nn, level, sps)%intCommVars(1)%var => &
+          flowDoms(nn, level, sps)%iblank(:, :, :)
+  end do domainLoop
   
-  call exchangeIblanks(level, sps, commPatternCell_2nd, internalCell_2nd)
+  ! Run the generic integer exchange
+  call wHalo1to1IntGeneric(1, level, sps, commPatternCell_2nd, internalCell_2nd)
+ 
 end subroutine setIblankArray

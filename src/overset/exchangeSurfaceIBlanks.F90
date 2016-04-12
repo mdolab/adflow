@@ -80,7 +80,13 @@ subroutine exchangeSurfaceIblanks(level, sps, commPattern, internal)
   end do
      
   ! Exchange iblanks
-  call exchangeIblanks(level, sps, commPattern, internal)
+  domainLoop:do nn=1, nDom
+     flowDoms(nn, level, sps)%intCommVars(1)%var => &
+          flowDoms(nn, level, sps)%iblank(:, :, :)
+  end do domainLoop
+  
+  ! Run the generic integer exchange
+  call wHalo1to1IntGeneric(1, level, sps, commPattern, internal)
 
   ii = 0
   do nn=1, nDom
