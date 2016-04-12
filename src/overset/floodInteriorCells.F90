@@ -12,18 +12,17 @@ subroutine floodInteriorCells(level, sps)
   integer(kind=intType), dimension(:, :), allocatable :: stack, floodSeeds
   integer(kind=intType) :: nChanged, nChangedLocal, stackPointer, loopIter
   logical :: tmpSave, isCompute, isWallDonor, isFloodSeed
-  ! At this point iblank should not be meanginful since we actually
-  ! still computing the interpolation. So we can hijack it for the
-  ! integer comm here:
+  integer(kind=intType), dimension(:, :, :), pointer :: changed
 
-  ! Set all iBlanks to 0 before we start
+  ! Allocate pointer space for the integer flag communication
   do nn=1, nDom
-     flowDoms(nn, level, sps)%iBlank = 0
+     call setPointers(nn, level, sps)
+     allocate(flowDoms(nn, level, sps)%intCommVars(1)%var(1:ib+1, 1:jb+1, 1:kb+1))
+     flowDoms(nn, level, sps)%intCommVars(1)%var = 0
   end do
-    
+
   ! Keep track of the total number of loops
   loopIter = 1
- 
 
   parallelSyncLoop: do 
 
@@ -32,7 +31,8 @@ subroutine floodInteriorCells(level, sps)
 
      do nn=1,nDom
         call setPointers(nn, level, sps)
-    
+        changed => flowDoms(nn, level, sps)%intCommVars(1)%var
+
         ! Allocate space for our queue (stack). It needs to be 6*nx*ny*nz + 1:
         ! 6 for each of the 6 coordinate directions plus our extra
         ! seed. It should never come close to this unless the entire
@@ -69,10 +69,10 @@ subroutine floodInteriorCells(level, sps)
            ! iMin/iMax
            do k=2, kl
               do j=2, jl
-                 if (iblank(1, j, k) == 1) then
+                 if (changed(1, j, k) == 1) then
                     call addSeed(2, j, k)
                  end if
-                 if (iblank(ie, j, k) == 1) then
+                 if (changed(ie, j, k) == 1) then
                     call addSeed(il, j, k)
                  end if
               end do
@@ -81,10 +81,10 @@ subroutine floodInteriorCells(level, sps)
            ! jMin/jMax
            do k=2, kl
               do i=2, il
-                 if (iblank(i, 1, k) == 1) then 
+                 if (changed(i, 1, k) == 1) then 
                     call addSeed(i, 2, k)
                  end if
-                 if (iblank(i, je, k) == 1) then 
+                 if (changed(i, je, k) == 1) then 
                     call addSeed(i, jl, k)
                  end if
               end do
@@ -93,10 +93,10 @@ subroutine floodInteriorCells(level, sps)
            ! kMin:
            do j=2, jl
               do i=2, il
-                 if (iblank(i, j, 1) == 1) then
+                 if (changed(i, j, 1) == 1) then
                     call addSeed(i, j, 2)
                  end if
-                 if (iblank(i, j, ke) == 1) then
+                 if (changed(i, j, ke) == 1) then
                     call addSeed(i, j, kl)
                  end if
               end do
@@ -130,8 +130,8 @@ subroutine floodInteriorCells(level, sps)
               k = stack(3, stackPointer)
               stackPointer = stackPointer - 1
               if (isCompute(fringes(i, j, k)%status) .and. fringes(i, j, k)%donorProc == -1) then 
-                 ! Flag the cell (using iblank) as being changed
-                 iBlank(i, j, k) = 1
+                 ! Flag the cell (using changed) as being changed
+                 changed(i, j, k) = 1
 
                  ! Keep track of the total number we've changed.
                  nChangedLocal = nChangedLocal + 1
@@ -185,8 +185,8 @@ subroutine floodInteriorCells(level, sps)
         deallocate(stack, floodSeeds)
      end do
 
-    ! Exchange "iblanks", which is really the changed info
-     call exchangeIblanks(level, sps, commPatternCell_2nd, internalCell_2nd)
+    ! Exchange "changed"
+     call wHalo1to1IntGeneric(1, level, sps, commPatternCell_1st, internalCell_1st)
 
      ! Determine if cells got changd. If so do another loop.
      call mpi_allreduce(nChangedLocal, nChanged, 1, sumb_integer, MPI_SUM, &
@@ -204,6 +204,12 @@ subroutine floodInteriorCells(level, sps)
      loopIter = loopIter + 1
 
   end do parallelSyncLoop
+
+  ! deallocate the temporary int space
+  do nn=1, nDom
+     call setPointers(nn, level, sps)
+     deallocate(flowDoms(nn, level, sps)%intCommVars(1)%var)
+  end do
 
 contains
   ! Simple routine to make code easier to read above
