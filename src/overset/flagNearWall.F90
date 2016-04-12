@@ -109,8 +109,17 @@ subroutine flagNearWallCells(level, sps)
      ! Reset the counter
      nAtBoundaryLocal = 0
 
-     ! Exchange the xSeeds after the initial flooding.
-     call exchangeXSeeds(level, sps, commPatternNode_1st, internalNode_1st)
+     ! Exchange the xSeeds after the initial flooding. Set the
+     ! pointers for the comm:
+     do nn=1, nDom
+        xSeed => flowDoms(nn, level, sps)%xSeed
+        flowDoms(nn, level, sps)%realCommVars(1)%var => xSeed(:, :, :, 1)
+        flowDoms(nn, level, sps)%realCommVars(2)%var => xSeed(:, :, :, 2)
+        flowDoms(nn, level, sps)%realCommVars(3)%var => xSeed(:, :, :, 3)
+     end do
+
+     ! Run the generic integer exchange
+     call wHalo1to1RealGeneric(3, level, sps, commPatternNode_1st, internalNode_1st)
 
      do nn=1, nDom
         call setPointers(nn, level, sps)
@@ -169,7 +178,7 @@ subroutine flagNearWallCells(level, sps)
   ! Deallocate X and XSeed since they are no longer needed. We
   ! have to hold onto nearWall a little longer since we need to use it
   ! in initializeOBlock. It will deallocate it. 
- do nn=1, nDom
+  do nn=1, nDom
     deallocate(flowDoms(nn, level, sps)%XSeed)
   end do
 
