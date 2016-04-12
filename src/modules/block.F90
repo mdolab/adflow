@@ -830,14 +830,6 @@ module block
 
      integer(kind=intType), dimension(:, :, :, :), pointer :: i_ipiv, j_ipiv, k_ipiv
 
-     ! Pointers for doing generic information exchange
-     real(kind=realType), dimension(:, :, :), pointer :: rVar1, rVar2, &
-          rVar3, rVar4, rVar5, rVar6, rVar7, rVar8, rVar9
-
-     integer(kind=intType), dimension(:, :, :), pointer :: iVar1, iVar2, &
-          iVar3, iVar4, iVar5, iVar6, iVar7, iVar8, iVar9
-
-
   end type blockType
 
   !

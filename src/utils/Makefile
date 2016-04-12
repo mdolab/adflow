@@ -89,7 +89,6 @@ FILES_TO_COMPLEXIFY =  \
                TSMach.f90\
                TSMachdot.f90\
 	       unique.f90\
-	       whalo1to1Generic.f90\
 	       whalo1to1.f90\
 	       whalo1to1_b.f90\
 	       whalo1to1_d.f90\
