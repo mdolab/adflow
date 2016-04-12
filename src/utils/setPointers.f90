@@ -223,7 +223,6 @@
 
        dw => flowDoms(nn,1,ll)%dw
        fw => flowDoms(nn,1,ll)%fw
-       dadidata => flowDoms(nn,1,ll)%dadidata
        dwOldRK => flowDoms(nn,1,ll)%dwOldRK
        scratch => flowDoms(nn,1,ll)%scratch
 
