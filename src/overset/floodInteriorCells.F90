@@ -1,4 +1,3 @@
-
 subroutine floodInteriorCells(level, sps)
   use communication
   use blockPointers
@@ -17,6 +16,8 @@ subroutine floodInteriorCells(level, sps)
   ! Allocate pointer space for the integer flag communication
   do nn=1, nDom
      call setPointers(nn, level, sps)
+     ! Note that it has to start at 1 since this is normally a pointer
+     ! so the exchange routine expects the ordering to start at 1.
      allocate(flowDoms(nn, level, sps)%intCommVars(1)%var(1:ib+1, 1:jb+1, 1:kb+1))
      flowDoms(nn, level, sps)%intCommVars(1)%var = 0
   end do
