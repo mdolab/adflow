@@ -103,15 +103,12 @@
        ! deforming_Grid:   Whether or not the grid deforms; this can
        !                   only happen for a multi-disciplinary,
        !                   usually aero-elastic problem.
-       ! changingOverset:  Whether or not the overset connectivity needs
-       !                   to be updated at each time step, due to 
-       !                   moving or deforming grids.
        ! PV3Initialized:   Whether or not PV3 has been initialized,
        !                   for use in multidisciplinary problems where
        !                   solver is called multiple times
  
        logical :: standAloneMode, changing_Grid, deforming_Grid
-       logical :: changingOverset, PV3Initialized = .false.
+       logical :: PV3Initialized = .false.
 
        ! nOldSolAvail:     Number of available old solutions for
        !                   the time integration.

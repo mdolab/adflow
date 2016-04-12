@@ -38,35 +38,50 @@ include ${SUMB_RULES_FILE}
 #      ******************************************************************
 
 vpath %.o $(SUMB_OBJDIR)
-FF90_OBJECTS_1 = boundaryList.o\
-		 searchMod.o
+FF90_OBJECTS_1 = stringOps.o\
 
-FILES_TO_COMPLEXIFY =  boundaryList.f90\
-		 searchMod.f90\
-		 addHalosToBoundary.f90\
-		 badDonorQuality.f90\
-		 buildCoarseBoundaryList.f90\
-		 buildFineBoundaryList.f90\
-		 cellCentroid.f90\
-		 changeIblanks.f90\
-		 checkOverset.f90\
-		 checkSizeBoundaryList.f90\
-		 createCoarseBoundary.f90\
-		 determineOversetComm.f90\
-		 donorSearchCycle.f90\
-		 donorWeights.f90\
-		 estimateCoarseDonor.f90\
-		 exchangeIblanks.f90\
-		 fringeToField.f90\
-		 mergeComm.f90\
-		 numAdjacentField.f90\
-		 oversetComm.f90\
-		 releaseMemOverset.f90\
-		 scan1to1HalosForFringe.f90\
-		 setBlockOversetData.f90\
-		 stencilSearch.f90\
-		 transformCellIndices.f90\
-		 updateOversetAllLevels.f90
+FILES_TO_COMPLEXIFY =	stringOps.F90\
+			computeInterpolationParallel.F90\
+			createZipperMesh.F90\
+			bowtieAndIsolationElimination.F90\
+			determineClusters.F90 \
+			determineClusterAreas.F90 \
+			checkOverset.F90 \
+			exchangeIblanks.f90\
+			exchangeSurfaceDelta.F90\
+			flagNearWall.F90\
+			floodInteriorCells.F90\
+			oversetLoadBalance.F90\
+			qsortFringeType.F90\
+			initializeOBlock.F90\
+			initializeOWall.F90\
+			initializeFringes.F90\
+			initializeOFringes.F90\
+			determineDonors.F90\
+			computeHolesInsideBody.F90\
+			packingRoutines.F90\
+			fringeSearch.F90\
+			oversetUtilities.F90\
+			irregularCellCorrection.F90\
+			fringeReduction.F90\
+			finalOversetCommStructures.F90\
+			setIBlankArray.F90\
+			exchangeFringes.f90\
+			surfaceCorrection.F90\
+			oversetPresent.F90\
+			emptyOversetComm.F90\
+			wallSearch.F90\
+			initBCDataiBlank.F90\
+			exchangeSurfaceIBlanks.F90\
+			makeBoundaryStrings.F90\
+			writeDualGrid.F90\
+			exchangeStatus.F90\
+			exchangeStatusTranspose.F90\
+			exchangeXSeeds.F90\
+			surfaceDeviation.F90\
+		       # computeQuadraticWeights.F90 \
+		       matrixinv3by3.F90 \
+
 
 ALL_FILES = $(FILES_TO_COMPLEXIFY) $(FILES_TO_COPY)
 OFILES := $(ALL_FILES:%.f90=%.o) $(ALL_FILES:%.F90=%.o) $(ALL_FILES:%.c=%.o)

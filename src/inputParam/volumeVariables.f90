@@ -74,7 +74,7 @@
        volWriteFilteredShock = .false.
        
        volWriteBlank = .false.
-
+       volWriteGC = .false.
        
 
        ! Initialize nVarSpecified to 0. This serves as a test
@@ -213,6 +213,10 @@
 
            case ("blank")
              volWriteBlank = .true.
+             nVarSpecified = nVarSpecified + 1
+
+          case ("gc")
+             volWriteGC = .true.
              nVarSpecified = nVarSpecified + 1
 
            case default

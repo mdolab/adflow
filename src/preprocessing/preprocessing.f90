@@ -29,6 +29,7 @@
        use interfaceGroups
        use section
        use wallDistanceData
+       use overset
        implicit none
 !
 !      Local variables.
@@ -134,7 +135,7 @@
 
        mm = nTimeIntervalsSpectral
        allocate(commPatternOverset(nn,mm), internalOverset(nn,mm), &
-                stat=ierr)
+            overlapMatrix(nn, mm), stat=ierr)
        if(ierr /= 0)                     &
          call returnFail("preprocessing", &
                         "Memory allocation failure for commOverset")
@@ -196,6 +197,8 @@
        wallDistanceDataAllocated = .False.
        updateWallAssociation = .True. 
        
+       ! Nullify the wallFringe poiter as initialization
+       nullify(wallFringes, localWallFringes)
 
        ! Loop over the number of levels and perform a lot of tasks.
        ! See the corresponding subroutine header, although the
@@ -203,11 +206,6 @@
 
        do level=1,nLevels
          call xhalo(level)
-         if (level == 1) then
-           call oversetComm(level, .true., .false.)
-         else
-           call oversetComm(level, .true., .true.)
-         end if
          call slidingComm(level, .true.)
          call allocateMetric(level)
          call metric(level)
@@ -218,30 +216,25 @@
          call viscSubfaceInfo(level)
          call determineAreaLevel0Cooling(level)
          call determineNcellGlobal(level)
-       enddo
+         call setGlobalCellsAndNodes(level)
+      enddo
 
-       ! Before heading to the solver, set all the boundary iblanks
-       ! for the levels just updated to 0.
+      ! BC Data must be alloaced (for surface iblank) before we can do
+      ! the overset computation.
+      call allocMemBCData
 
-       do mm=1,nTimeIntervalsSpectral
-         do level=1,nLevels
-           do nn=1,nDom
-             call setPointers(nn, level, mm)
-             call changeIblanks(.false., 0_intType)
-           end do
-         end do
-       end do
+      do level=1,nLevels
+         if (level == 1) then
+            call oversetComm(level, .true., .false.)
 
-       ! Compute global cells and Nodes
-       do level=1,nLevels
-          call setGlobalCellsAndNodes(level)
-       end do
+         else
+            call oversetComm(level, .true., .true.)
+         end if
+      end do
 
-       nLevels = ubound(flowDoms,2)
-       
-       do level=1,nLevels
-          call wallDistance(level, .True.)
-       end do
+      do level=1,nLevels
+         call wallDistance(level, .True.)
+      end do
        
      end subroutine preprocessing
 

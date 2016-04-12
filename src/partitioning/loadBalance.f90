@@ -23,7 +23,6 @@ subroutine loadBalance
   use cgnsGrid
   use communication
   use inputMotion
-  use inputOverset
   use inputParallel
   use inputPhysics
   use inputTimeSpectral
@@ -290,85 +289,9 @@ subroutine loadBalance
              call returnFail("loadBalance", &
              "Deallocation error for oldSubfaceID")
 
-        ! Allocate memory for the overset boundary info. Note the
-        ! number of orphans is set to 0 because there is no support
-        ! for input of orphans from CGNS.
-
-        flowDoms(nn,1,1)%nCellsOverset = blocks(i)%nCellsOverset
-        flowDoms(nn,1,1)%nOrphans      = 0
-
-        j = blocks(i)%nCellsOverset
-        k = nDonorWeights(oversetInterpType)
-
-        allocate(flowDoms(nn,1,1)%ibndry(3,j),        &
-             flowDoms(nn,1,1)%idonor(3,j),        &
-             flowDoms(nn,1,1)%overint(k,j),       &
-             flowDoms(nn,1,1)%neighProcOver(j),   &
-             flowDoms(nn,1,1)%neighBlockOver(j),  &
-             stat=ierr)
-        if(ierr /= 0)                   &
-             call returnFail("loadBalance", &
-             "Memory allocation failure for overset info")
-
-        ! Find the neighboring processor and the local block id
-        ! on that processor as in the internal subface case.
-
-        do j = 1,blocks(i)%nCellsOverset
-           flowDoms(nn,1,1)%neighProcOver(j) = &
-                part(blocks(i)%neighOver(j))
-           flowDoms(nn,1,1)%neighBlockOver(j) = &
-                blocks(blocks(i)%neighOver(j))%blockId
-        enddo
-
-        ! Transfer the boundary and donor indices from the cgns doms
-        ! to the flowDoms. Note the conversion to the local block
-        ! indices, and the additional +1 to convert from a cgns cell
-        ! index to the style used in this code.
-
-        ii = blocks(i)%cgnsBlockId
-        do j = 1,blocks(i)%nCellsOverset
-           jj = blocks(i)%cgnsOver(j)
-           kk = blocks(i)%ipntOver(j)
-
-           flowDoms(nn,1,1)%ibndry(1,j) =                            &
-                cgnsDoms(ii)%connOver(jj)%ibndry(1,kk) &
-                - blocks(i)%iBegOr + 2
-           flowDoms(nn,1,1)%ibndry(2,j) =                            &
-                cgnsDoms(ii)%connOver(jj)%ibndry(2,kk) &
-                - blocks(i)%jBegOr + 2
-           flowDoms(nn,1,1)%ibndry(3,j) =                            &
-                cgnsDoms(ii)%connOver(jj)%ibndry(3,kk) &
-                - blocks(i)%kBegOr + 2
-
-           flowDoms(nn,1,1)%idonor(1,j) =                            &
-                cgnsDoms(ii)%connOver(jj)%idonor(1,kk) &
-                - blocks(blocks(i)%neighOver(j))%iBegOr + 2
-           flowDoms(nn,1,1)%idonor(2,j) =                            &
-                cgnsDoms(ii)%connOver(jj)%idonor(2,kk) &
-                - blocks(blocks(i)%neighOver(j))%jBegOr + 2
-           flowDoms(nn,1,1)%idonor(3,j) =                            &
-                cgnsDoms(ii)%connOver(jj)%idonor(3,kk) &
-                - blocks(blocks(i)%neighOver(j))%kBegOr + 2
-
-           ! If the fine grid interpolants were input, check if they
-           ! are the actual weights or the parametric coordinates. In
-           ! the latter case, convert them to the weights.
-
-           if (.not. oversetDonorsAreGuesses) then
-              if (ubound(cgnsDoms(ii)%connOver(jj)%interp,1) == 3) then
-                 call getWeights(cgnsDoms(ii)%connOver(jj)%interp(:,kk), &
-                      flowDoms(nn,1,1)%overint(:,j))
-              else
-                 flowDoms(nn,1,1)%overint(:,j) = &
-                      cgnsDoms(ii)%connOver(jj)%interp(:,kk)
-              end if
-           end if
-        end do
-
      endif myBlock
 
-     ! Release the memory of the subface and overset info in
-     ! this block.
+     ! Release the memory of the subface on this block.
 
      deallocate(blocks(i)%bcType,      blocks(i)%bcFaceid,    &
           blocks(i)%cgnsSubface, blocks(i)%inBeg,       &
@@ -380,8 +303,6 @@ subroutine loadBalance
           blocks(i)%dknEnd,      blocks(i)%neighBlock,  &
           blocks(i)%l1,          blocks(i)%l2,          &
           blocks(i)%l3,          blocks(i)%groupNum,    &
-          blocks(i)%cgnsOver,    blocks(i)%ipntOver,    &
-          blocks(i)%neighOver,   blocks(i)%overComm,    &
           stat=ierr)
      if(ierr /= 0)                   &
           call returnFail("loadBalance", &

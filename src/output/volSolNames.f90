@@ -257,4 +257,9 @@
          solNames(nn) = cgnsBlank
        endif
 
+       if( volWriteGC) then
+         nn = nn + 1
+         solNames(nn) = cgnsGC
+       endif
+
        end subroutine volSolNames

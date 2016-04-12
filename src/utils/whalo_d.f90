@@ -66,8 +66,13 @@
             commLamVis, commEddyVis, commPatternCell_2nd,  &
             internalCell_2nd)
 
-       ! NOTE: Only the 1to1 halo exchange is done. whalosliding,
-       ! whalomixing, wOverset, orphanAverage and PandE corrections
+       ! Exchange the overset cells
+       mm = ubound(commPatternOverset, 1)
+       call wOverset_d(level, start, end, commPressure, commVarGamma, &
+            commLamVis, commEddyVis, commPatternOverset, internalOverset, mm)
+
+       ! NOTE: Only the 1to1 halo and wOverset exchange is done. whalosliding,
+       ! whalomixing, orphanAverage and PandE corrections
        ! calculation are NOT implementent. 
 
      end subroutine whalo2_d

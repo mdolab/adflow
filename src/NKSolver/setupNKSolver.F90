@@ -80,7 +80,7 @@ subroutine setupNKsolver
 
      level = 1
      call statePreAllocation(nnzDiagonal, nnzOffDiag, nDimW/nw, stencil, n_stencil, &
-          level)
+          level, .False.)
      call myMatCreate(dRdwPre, nw, nDimW, nDimW, nnzDiagonal, nnzOffDiag, &
           __FILE__, __LINE__)
 

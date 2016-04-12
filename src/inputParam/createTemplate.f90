@@ -553,22 +553,6 @@
        write(writeUnit,"(a)") "            #                          RowSum"
        write(writeUnit,"(a)") "            #                          RowAbs\n"
 
-       ! Write the keywords and default values for the overset parameters.
-
-       write(writeUnit,"(a)") "-----------------------------------------&
-                              &--------------------------------------"
-       write(writeUnit,"(a)") "     Overset Parameters"
-       write(writeUnit,"(a)") "-----------------------------------------&
-                              &--------------------------------------"
-       write(writeUnit,"(a)") "      Input overset donors are guesses: no"
-       write(writeUnit,"(a)") "Average restricted residual for blanks: no"
-       write(writeUnit,"(a)") "            Overset interpolation type: &
-                              &TriLinear"
-       write(writeUnit,"(a)") "Overset interpolation type coarse grid: &
-                              &TriLinear"
-       write(writeUnit,"(a)") "              Allowable donor quality: 1.0"
-       write(writeUnit,"(a)")
-
        ! Write the keywords and default values for the coupler parameters.
 
        write(writeUnit,"(a)") "-----------------------------------------&
