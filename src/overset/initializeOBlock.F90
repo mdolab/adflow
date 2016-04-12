@@ -11,6 +11,7 @@ subroutine initializeOBlock(oBlock, nn, level, sps)
   use BCTypes
   use cgnsGrid
   use communication
+  use stencils
   implicit none 
 
   ! Input Params
@@ -21,6 +22,7 @@ subroutine initializeOBlock(oBlock, nn, level, sps)
   integer(kind=intType) :: i, j, k, mm, nADT, nHexa, planeOffset
   integer(kind=intType) :: iStart, iEnd, jStart, jEnd, kStart, kEnd
   real(kind=realType) :: factor, frac, exponent, wallEdge, avgEdge, dist
+  integer(kind=intType) :: i_stencil, ii, jj, iii
   logical :: wallsPresent, isWallType
 
   ! Set all the sizes for this block.
@@ -49,18 +51,32 @@ subroutine initializeOBlock(oBlock, nn, level, sps)
   oBlock%invalidDonor = 0
   call flagForcedReceivers(oBlock%invalidDonor)
   
-  ! ! Add to the invalid donor list:
-  ! kk = 0
-  ! do k=1, ke
-  !    do j=1, je
-  !       do i=1, ie
-  !          if (iblank(i,j,k) == -2 .or. iblank(i,j,k)==-3 .or. iblank(i,j,k) == 0) then 
-  !             oBlock%invalidDonor(i,j,k) = 1
-  !             kk = kk + 1
-  !          end if
-  !       end do
-  !    end do
-  ! end do
+  ! Add to the invalid donor list if it got flooded with iblank of -2 or -3:
+  iii = 0
+  do k=1, ke
+     do j=1, je
+        do i=1, ie
+           ! This is a hard interior cell. Flag EVERY cell it it's
+           ! stencil as a invalid donor. 
+           if (iblank(i,j,k) == -2 .or. iblank(i,j,k)==-3) then 
+
+              stencilLoop: do i_stencil=1, N_visc_drdw
+                 ii = visc_drdw_stencil(i_stencil, 1) + i
+                 jj = visc_drdw_stencil(i_stencil, 2) + j
+                 kk = visc_drdw_stencil(i_stencil, 3) + k
+
+                 ! Make sure we're at least at 1-level halos
+                 if (ii >= 1 .and. ii <= ie .and. jj >= 1 .and. jj<= je .and. &
+                      kk >= 1 .and. kk <= ke) then 
+                    oBlock%invalidDonor(ii, jj, kk) = 1
+                    iii = iii + 1
+                 end if
+              end do stencilLoop
+           end if
+        end do
+     end do
+  end do
+
 
   ! Copy Volume to qualDonor and do minVol while we're at it
   oBlock%minVol = Large
