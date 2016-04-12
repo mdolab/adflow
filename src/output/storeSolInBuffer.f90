@@ -564,6 +564,15 @@
              enddo
            enddo
 
+         case (cgnsGC)
+            do k=kBeg,kEnd
+             do j=jBeg,jEnd
+               do i=iBeg,iEnd
+                  wIO(i,j,k,1) = real(globalcell(i,j,k),realType)
+               enddo
+             enddo
+           enddo
+
         case (cgnsShock)
            
            do k=kBeg,kEnd

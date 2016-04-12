@@ -163,4 +163,9 @@
           solNames(nn) = cgnsCavitation
        end if
 
+       if (surfWriteGC) then
+          nn = nn + 1
+          solNames(nn) = cgnsGC
+       end if
+
        end subroutine surfSolNames

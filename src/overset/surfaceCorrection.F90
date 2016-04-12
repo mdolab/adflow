@@ -29,7 +29,7 @@ subroutine surfaceCorrection(oBlock, oFringe, bWall, fWall, offset, n)
   real(kind=realType), dimension(4) :: weightsF, weightsB, xx
   real(kind=realType) :: ratio, dB, dF, fact, distY, q1(3, 4), q2(3, 4)
   type(kdtree2_result) :: results(1)
-  logical :: overlapped1, overlapped2, overlapped, bad
+  logical :: overlapped1, overlapped2, overlapped
 
   ! Variables we have to pass the ADT search routine
   integer(kind=intType), dimension(:), pointer :: frontLeaves
@@ -44,6 +44,7 @@ subroutine surfaceCorrection(oBlock, oFringe, bWall, fWall, offset, n)
   nx = oFringe%il -1 
   ny = oFringe%jl -1 
   nz = oFringe%kl -1 
+
   masterLoop: do ii=1, n
 
      if (oFringe%isWall(ii) > 0) then 
@@ -52,11 +53,7 @@ subroutine surfaceCorrection(oBlock, oFringe, bWall, fWall, offset, n)
         xx(1:3) = oFringe%x(:, ii)
         xx(4) = large
 
-        bad = .False.
-        if (norm2(xx(1:3) - (/37.0179, 3.05469, 3.64083/)) < .01) then 
-           bad = .True.
-        end if
-
+      
         ! Project the point onto the oBlock
         call minDistanceTreeSearchSinglePoint(bWall%ADT, xx, intInfoB, uvwB, &
              dummy, nInterpol, BB, frontLeaves, frontLeavesNew)

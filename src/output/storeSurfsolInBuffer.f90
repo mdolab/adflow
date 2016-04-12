@@ -73,6 +73,7 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
   real(kind=realType), dimension(:,:),   pointer :: dd2Wall
   real(kind=realType), dimension(:, :), allocatable :: tmpBuffer
   real(kind=realType), dimension(:, :, :), pointer :: nodeWeights
+  integer(kind=intType), dimension(:, :), pointer :: gc
   integer(kind=intType), dimension(:, :), allocatable :: iBlanktmp
 
   !
@@ -150,7 +151,7 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
      ww1    => w(1,1:,1:,:);   ww2    => w(2,1:,1:,:)
      pp1    => p(1,1:,1:);     pp2    => p(2,1:,1:)
      ss => si(1,:,:,:) ; fact = -one
-
+     gc => globalCell(2, 1:, 1:)
      pp1    => p(1,1:,1:);     pp2    => p(2,1:,1:)           
      gamma1 => gamma(1,1:,1:); gamma2 => gamma(2,1:,1:)
 
@@ -178,7 +179,7 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
 
      ww1    => w(ie,1:,1:,:);   ww2    => w(il,1:,1:,:)
      ss => si(il,:,:,:) ; fact = one
-
+     gc => globalCell(il, 1:, 1:)
      pp1    => p(ie,1:,1:);     pp2    => p(il,1:,1:)
      gamma1 => gamma(ie,1:,1:); gamma2 => gamma(il,1:,1:)
 
@@ -206,7 +207,7 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
 
      ww1    => w(1:,1,1:,:);   ww2    => w(1:,2,1:,:)
      ss => sj(:,1,:,:) ; fact = -one
-
+     gc => globalCell(1:, 2, 1:)
      pp1    => p(1:,1,1:);     pp2    => p(1:,2,1:)
      gamma1 => gamma(1:,1,1:); gamma2 => gamma(1:,2,1:)
 
@@ -234,7 +235,7 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
 
      ww1    => w(1:,je,1:,:);   ww2    => w(1:,jl,1:,:)
      ss => sj(:,jl,:,:); fact = one
-
+     gc => globalCell(1:, jl, 1:)
      pp1    => p(1:,je,1:);     pp2    => p(1:,jl,1:)
      gamma1 => gamma(1:,je,1:); gamma2 => gamma(1:,jl,1:)
 
@@ -262,7 +263,7 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
 
      ww1    => w(1:,1:,1,:);   ww2    => w(1:,1:,2,:)
      ss => sk(:,:,1,:);  fact = -one
-
+     gc => globalCell(1:, 1:, 2)
      pp1    => p(1:,1:,1);     pp2    => p(1:,1:,2)
      gamma1 => gamma(1:,1:,1); gamma2 => gamma(1:,1:,2)
 
@@ -290,7 +291,7 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
 
      ww1    => w(1:,1:,ke,:);   ww2    => w(1:,1:,kl,:)
      ss => sk(:,:,kl,:);  fact = one
-
+     gc => globalCell(1:, 1:, kl)
      pp1    => p(1:,1:,ke);     pp2    => p(1:,1:,kl)
      gamma1 => gamma(1:,1:,ke); gamma2 => gamma(1:,1:,kl)
 
@@ -703,6 +704,16 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
      do j=rangeFaceNode(2,1), rangeFaceNode(2,2)+1
         do i=rangeFaceNode(1,1), rangeFaceNode(1,2)+1
            tmpBuffer(i, j) = real(iblank2(i,j), realType)
+        enddo
+     enddo
+
+ case (cgnsGC)
+
+     ! Loop over the given range of faces. 
+
+     do j=rangeFaceNode(2,1), rangeFaceNode(2,2)+1
+        do i=rangeFaceNode(1,1), rangeFaceNode(1,2)+1
+           tmpBuffer(i, j) = real(gc(i,j), realType)
         enddo
      enddo
 
