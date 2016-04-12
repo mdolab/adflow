@@ -27,7 +27,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
   ! Local Variables
   integer(kind=intType) :: i, ii, j, jj, k, kk, i_stencil
   integer(kind=intType) :: m, iSize, iStart, iEnd, index, rSize, nClusters
-  integer(kind=intType) :: iDom, jDom, iDim, iPtr, rPtr
+  integer(kind=intType) :: iDom, jDom, iDim, iCnt, rCnt
   integer(kind=intType) :: nn, mm, n, ierr, iProc, myIndex
   integer(kind=intType) :: iWork, nWork, nFringeProc, nLocalFringe
   integer(kind=intType) :: iRefine
@@ -533,50 +533,50 @@ subroutine oversetComm(level, firstTime, coarseLevel)
         do iDom=1, nDomTotal
            if (oFringes(iDom)%allocated) then 
               ! Fringe is allocated so check it
-              iPtr = 0
-              rPtr = 0
+              iCnt = 0
+              rCnt = 0
               ! First pass count up the sizes
               do i=1, size(oFringes(iDom)%donorProc)
                  if (oFringes(iDom)%donorProc(i) /= -1) then 
-                    iPtr = iPtr + 14
-                    rPtr = rPtr + 4
+                    iCnt = iCnt + 14
+                    rCnt = rCnt + 4
                  end if
               end do
 
-              allocate(oFringes(iDom)%iBuffer(iPtr), oFringes(iDom)%rBuffer(rPtr))
-              iPtr = 0
-              rPtr = 0
+              allocate(oFringes(iDom)%iBuffer(iCnt), oFringes(iDom)%rBuffer(rCnt))
+              iCnt = 0
+              rCnt = 0
               ! Second pass add the values
               do i=1, size(oFringes(iDom)%donorProc)
                  if (oFringes(iDom)%donorProc(i) /= -1) then 
 
                     ! Copy the values for this fringe into the fringe's
                     ! buffer
-                    oFringes(iDom)%iBuffer(iPtr+1) = oFringes(iDom)%donorProc(i)
-                    oFringes(iDom)%iBuffer(iPtr+2) = oFringes(iDom)%donorBlock(i)
-                    oFringes(iDom)%iBuffer(iPtr+3) = oFringes(iDom)%dI(i)
-                    oFringes(iDom)%iBuffer(iPtr+4) = oFringes(iDom)%dJ(i)
-                    oFringes(iDom)%iBuffer(iPtr+5) = oFringes(iDom)%dK(i)
-                    oFringes(iDom)%iBuffer(iPtr+6) = oFringes(iDom)%gInd(1, i)
-                    oFringes(iDom)%iBuffer(iPtr+7) = oFringes(iDom)%gInd(2, i)
-                    oFringes(iDom)%iBuffer(iPtr+8) = oFringes(iDom)%gInd(3, i)
-                    oFringes(iDom)%iBuffer(iPtr+9) = oFringes(iDom)%gInd(4, i)
-                    oFringes(iDom)%iBuffer(iPtr+10) = oFringes(iDom)%gInd(5, i)
-                    oFringes(iDom)%iBuffer(iPtr+11) = oFringes(iDom)%gInd(6, i)
-                    oFringes(iDom)%iBuffer(iPtr+12) = oFringes(iDom)%gInd(7, i)
-                    oFringes(iDom)%iBuffer(iPtr+13) = oFringes(iDom)%gInd(8, i)
-                    oFringes(iDom)%iBuffer(iPtr+14) = oFringes(iDom)%myIndex(i)
-                    iPtr = iPtr + 14
+                    oFringes(iDom)%iBuffer(iCnt+1) = oFringes(iDom)%donorProc(i)
+                    oFringes(iDom)%iBuffer(iCnt+2) = oFringes(iDom)%donorBlock(i)
+                    oFringes(iDom)%iBuffer(iCnt+3) = oFringes(iDom)%dI(i)
+                    oFringes(iDom)%iBuffer(iCnt+4) = oFringes(iDom)%dJ(i)
+                    oFringes(iDom)%iBuffer(iCnt+5) = oFringes(iDom)%dK(i)
+                    oFringes(iDom)%iBuffer(iCnt+6) = oFringes(iDom)%gInd(1, i)
+                    oFringes(iDom)%iBuffer(iCnt+7) = oFringes(iDom)%gInd(2, i)
+                    oFringes(iDom)%iBuffer(iCnt+8) = oFringes(iDom)%gInd(3, i)
+                    oFringes(iDom)%iBuffer(iCnt+9) = oFringes(iDom)%gInd(4, i)
+                    oFringes(iDom)%iBuffer(iCnt+10) = oFringes(iDom)%gInd(5, i)
+                    oFringes(iDom)%iBuffer(iCnt+11) = oFringes(iDom)%gInd(6, i)
+                    oFringes(iDom)%iBuffer(iCnt+12) = oFringes(iDom)%gInd(7, i)
+                    oFringes(iDom)%iBuffer(iCnt+13) = oFringes(iDom)%gInd(8, i)
+                    oFringes(iDom)%iBuffer(iCnt+14) = oFringes(iDom)%myIndex(i)
+                    iCnt = iCnt + 14
 
-                    oFringes(iDom)%rBuffer(rPtr+1) = oFringes(iDom)%donorFrac(1, i)
-                    oFringes(iDom)%rBuffer(rPtr+2) = oFringes(iDom)%donorFrac(2, i)
-                    oFringes(iDom)%rBuffer(rPtr+3) = oFringes(iDom)%donorFrac(3, i)
-                    oFringes(iDom)%rBuffer(rPtr+4) = oFringes(iDom)%quality(i)
+                    oFringes(iDom)%rBuffer(rCnt+1) = oFringes(iDom)%donorFrac(1, i)
+                    oFringes(iDom)%rBuffer(rCnt+2) = oFringes(iDom)%donorFrac(2, i)
+                    oFringes(iDom)%rBuffer(rCnt+3) = oFringes(iDom)%donorFrac(3, i)
+                    oFringes(iDom)%rBuffer(rCnt+4) = oFringes(iDom)%quality(i)
 
-                    rPtr = rPtr + 4
+                    rCnt = rCnt + 4
                  end if
               end do
-              oFringes(iDom)%fringeReturnSize = rPtr/4
+              oFringes(iDom)%fringeReturnSize = rCnt/4
 
            end if
         end do
