@@ -64,16 +64,16 @@ subroutine computedwDADI
   if (currentLevel == 1) then
      currentCfl = cfl
   end if
-  qq_i => dadidata(:,:,:,1)
-  qq_j => dadidata(:,:,:,2)
-  qq_k => dadidata(:,:,:,3)
-  cc_i => dadidata(:,:,:,4)
-  cc_j => dadidata(:,:,:,5)
-  cc_k => dadidata(:,:,:,6)
-  spectral_i => dadidata(:,:,:,7)
-  spectral_j => dadidata(:,:,:,8)
-  spectral_k => dadidata(:,:,:,9)
-  dual_dt => dadidata(:,:,:,10)
+  qq_i => scratch(:,:,:,1)
+  qq_j => scratch(:,:,:,2)
+  qq_k => scratch(:,:,:,3)
+  cc_i => scratch(:,:,:,4)
+  cc_j => scratch(:,:,:,5)
+  cc_k => scratch(:,:,:,6)
+  spectral_i => scratch(:,:,:,7)
+  spectral_j => scratch(:,:,:,8)
+  spectral_k => scratch(:,:,:,9)
+  dual_dt => scratch(:,:,:,10)
 
   !  havent thought about iblank
 
