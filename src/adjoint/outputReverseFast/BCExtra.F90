@@ -38,10 +38,18 @@ subroutine applyAllBC_block_fast_b(secondHalo)
     DO nn=1,nbocos
        IF (bctype(nn) .EQ. symm) THEN
           CALL SETBCPOINTERS(nn, .false.)
-          CALL BCSYMM(nn, secondhalo)
-          END IF
+          CALL BCSYMM1stHalo(nn)
+       END IF
     END DO
 
+    if (secondHalo) then 
+       DO nn=1,nbocos
+          IF (bctype(nn) .EQ. symm) THEN
+             CALL SETBCPOINTERS(nn, .false.)
+             CALL BCSYMM2ndHalo(nn)
+          END IF
+       END DO
+    END IF
     ! ------------------------------------
     !  Adibatic Wall Boundary Condition 
     ! ------------------------------------
@@ -94,13 +102,23 @@ subroutine applyAllBC_block_fast_b(secondHalo)
     ! ------------------------------------
     !  Symmetry Boundary Condition 
     ! ------------------------------------
-    DO nn=1,nbocos
-       IF (bctype(nn) .EQ. symm) THEN
-          CALL SETBCPOINTERS_fast_b(nn, .false.)
-          CALL BCSYMM_fast_b(nn, secondhalo)
+    if (secondHalo) then 
+       DO nn=1,nbocos
+          IF (bctype(nn) .EQ. symm) THEN
+             CALL SETBCPOINTERS_fast_b(nn, .false.)
+             CALL BCSYMM2ndhalo_fast_b(nn)
           END IF
-    END DO
+       END DO
+    END if
 
+    if (secondHalo) then 
+       DO nn=1,nbocos
+          IF (bctype(nn) .EQ. symm) THEN
+             CALL SETBCPOINTERS_fast_b(nn, .false.)
+             CALL BCSYMM1sthalo_fast_b(nn)
+          END IF
+       END DO
+    END if
 
     ! ! ------------------------------------
     ! !  Euler Wall Boundary Condition 

@@ -83,10 +83,19 @@ contains
     do nn=1,nbocos
       if (bctype(nn) .eq. symm) then
         call setbcpointers(nn, .false.)
-        call bcsymm(nn, secondhalo)
+        call bcsymm1sthalo(nn)
         call resetbcpointers(nn, .false.)
       end if
     end do
+    if (secondhalo) then
+      do nn=1,nbocos
+        if (bctype(nn) .eq. symm) then
+          call setbcpointers(nn, .false.)
+          call bcsymm2ndhalo(nn)
+          call resetbcpointers(nn, .false.)
+        end if
+      end do
+    end if
 ! ------------------------------------
 !  adibatic wall boundary condition 
 ! ------------------------------------
@@ -132,24 +141,20 @@ contains
       end if
     end do
   end subroutine applyallbc_block
-!  differentiation of bcsymm in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *rev0 *rev1 *rev2 *rev3 *pp0
-!                *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3 *ww0 *ww1
-!                *ww2 *ww3
-!   with respect to varying inputs: *rev0 *rev1 *rev2 *rev3 *pp0
-!                *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3 *ww0 *ww1
-!                *ww2 *ww3
-!   rw status of diff variables: *rev0:in-out *rev1:in-out *rev2:incr
-!                *rev3:incr *pp0:in-out *pp1:in-out *pp2:incr *pp3:incr
-!                *rlv0:in-out *rlv1:in-out *rlv2:incr *rlv3:incr
-!                *ww0:in-out *ww1:in-out *ww2:incr *ww3:incr
-!   plus diff mem management of: rev0:in rev1:in rev2:in rev3:in
-!                pp0:in pp1:in pp2:in pp3:in rlv0:in rlv1:in rlv2:in
-!                rlv3:in ww0:in ww1:in ww2:in ww3:in
+!  differentiation of bcsymm1sthalo in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
+!   gradient     of useful results: *rev1 *rev2 *pp1 *pp2 *rlv1
+!                *rlv2 *ww1 *ww2
+!   with respect to varying inputs: *rev1 *rev2 *pp1 *pp2 *rlv1
+!                *rlv2 *ww1 *ww2
+!   rw status of diff variables: *rev1:in-out *rev2:incr *pp1:in-out
+!                *pp2:incr *rlv1:in-out *rlv2:incr *ww1:in-out
+!                *ww2:incr
+!   plus diff mem management of: rev1:in rev2:in pp1:in pp2:in
+!                rlv1:in rlv2:in ww1:in ww2:in
 ! ===================================================================
 !   actual implementation of each of the boundary condition routines
 ! ===================================================================
-  subroutine bcsymm_fast_b(nn, secondhalo)
+  subroutine bcsymm1sthalo_fast_b(nn)
 !
 ! ******************************************************************
 ! *                                                                *
@@ -171,7 +176,6 @@ contains
     use iteration
     implicit none
 ! subroutine arguments.
-    logical, intent(in) :: secondhalo
     integer(kind=inttype), intent(in) :: nn
 ! local variables.
     integer(kind=inttype) :: i, j, l, ii
@@ -180,59 +184,6 @@ contains
     intrinsic mod
     integer :: branch
     real(kind=realtype) :: tempd
-    real(kind=realtype) :: tempd0
-    if (secondhalo) then
-      do ii=0,isize*jsize-1
-        i = mod(ii, isize) + istart
-        j = ii/isize + jstart
-! determine the flow variables in the halo cell.
-! set the pressure and gamma and possibly the
-! laminar and eddy viscosity in the halo.
-        if (viscous) then
-myIntPtr = myIntPtr + 1
- myIntStack(myIntPtr) = 0
-        else
-myIntPtr = myIntPtr + 1
- myIntStack(myIntPtr) = 1
-        end if
-        if (eddymodel) then
-          rev3d(i, j) = rev3d(i, j) + rev0d(i, j)
-          rev0d(i, j) = 0.0_8
-        end if
-branch = myIntStack(myIntPtr)
- myIntPtr = myIntPtr - 1
-        if (branch .eq. 0) then
-          rlv3d(i, j) = rlv3d(i, j) + rlv0d(i, j)
-          rlv0d(i, j) = 0.0_8
-        end if
-        pp3d(i, j) = pp3d(i, j) + pp0d(i, j)
-        pp0d(i, j) = 0.0_8
-        do l=nt1mg,nt2mg
-          ww3d(i, j, l) = ww3d(i, j, l) + ww0d(i, j, l)
-          ww0d(i, j, l) = 0.0_8
-        end do
-        ww3d(i, j, irhoe) = ww3d(i, j, irhoe) + ww0d(i, j, irhoe)
-        ww0d(i, j, irhoe) = 0.0_8
-        ww3d(i, j, ivz) = ww3d(i, j, ivz) + ww0d(i, j, ivz)
-        vnd = -(bcdata(nn)%norm(i, j, 3)*ww0d(i, j, ivz))
-        ww0d(i, j, ivz) = 0.0_8
-        ww3d(i, j, ivy) = ww3d(i, j, ivy) + ww0d(i, j, ivy)
-        vnd = vnd - bcdata(nn)%norm(i, j, 2)*ww0d(i, j, ivy)
-        ww0d(i, j, ivy) = 0.0_8
-        ww3d(i, j, ivx) = ww3d(i, j, ivx) + ww0d(i, j, ivx)
-        vnd = vnd - bcdata(nn)%norm(i, j, 1)*ww0d(i, j, ivx)
-        ww0d(i, j, ivx) = 0.0_8
-        ww3d(i, j, irho) = ww3d(i, j, irho) + ww0d(i, j, irho)
-        ww0d(i, j, irho) = 0.0_8
-        tempd0 = two*vnd
-        ww3d(i, j, ivx) = ww3d(i, j, ivx) + bcdata(nn)%norm(i, j, 1)*&
-&         tempd0
-        ww3d(i, j, ivy) = ww3d(i, j, ivy) + bcdata(nn)%norm(i, j, 2)*&
-&         tempd0
-        ww3d(i, j, ivz) = ww3d(i, j, ivz) + bcdata(nn)%norm(i, j, 3)*&
-&         tempd0
-      end do
-    end if
     do ii=0,isize*jsize-1
       i = mod(ii, isize) + istart
       j = ii/isize + jstart
@@ -283,11 +234,11 @@ branch = myIntStack(myIntPtr)
       ww2d(i, j, ivy) = ww2d(i, j, ivy) + bcdata(nn)%norm(i, j, 2)*tempd
       ww2d(i, j, ivz) = ww2d(i, j, ivz) + bcdata(nn)%norm(i, j, 3)*tempd
     end do
-  end subroutine bcsymm_fast_b
+  end subroutine bcsymm1sthalo_fast_b
 ! ===================================================================
 !   actual implementation of each of the boundary condition routines
 ! ===================================================================
-  subroutine bcsymm(nn, secondhalo)
+  subroutine bcsymm1sthalo(nn)
 !
 ! ******************************************************************
 ! *                                                                *
@@ -309,7 +260,6 @@ branch = myIntStack(myIntPtr)
     use iteration
     implicit none
 ! subroutine arguments.
-    logical, intent(in) :: secondhalo
     integer(kind=inttype), intent(in) :: nn
 ! local variables.
     integer(kind=inttype) :: i, j, l, ii
@@ -343,33 +293,119 @@ branch = myIntStack(myIntPtr)
       if (viscous) rlv1(i, j) = rlv2(i, j)
       if (eddymodel) rev1(i, j) = rev2(i, j)
     end do
-    if (secondhalo) then
-! if we need the second halo, do everything again, but using ww0,
-! ww3 etc instead of ww2 and ww1. 
-      do ii=0,isize*jsize-1
-        i = mod(ii, isize) + istart
-        j = ii/isize + jstart
-        vn = two*(ww3(i, j, ivx)*bcdata(nn)%norm(i, j, 1)+ww3(i, j, ivy)&
-&         *bcdata(nn)%norm(i, j, 2)+ww3(i, j, ivz)*bcdata(nn)%norm(i, j&
-&         , 3))
+  end subroutine bcsymm1sthalo
+!  differentiation of bcsymm2ndhalo in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
+!   gradient     of useful results: *rev0 *rev3 *pp0 *pp3 *rlv0
+!                *rlv3 *ww0 *ww3
+!   with respect to varying inputs: *rev0 *rev3 *pp0 *pp3 *rlv0
+!                *rlv3 *ww0 *ww3
+!   rw status of diff variables: *rev0:in-out *rev3:incr *pp0:in-out
+!                *pp3:incr *rlv0:in-out *rlv3:incr *ww0:in-out
+!                *ww3:incr
+!   plus diff mem management of: rev0:in rev3:in pp0:in pp3:in
+!                rlv0:in rlv3:in ww0:in ww3:in
+  subroutine bcsymm2ndhalo_fast_b(nn)
+    use blockpointers
+    use bctypes
+    use constants
+    use flowvarrefstate
+    use iteration
+    implicit none
+! subroutine arguments.
+    integer(kind=inttype), intent(in) :: nn
+! local variables.
+    integer(kind=inttype) :: i, j, l, ii
+    real(kind=realtype) :: vn, nnx, nny, nnz
+    real(kind=realtype) :: vnd
+    intrinsic mod
+    integer :: branch
+    real(kind=realtype) :: tempd
+    do ii=0,isize*jsize-1
+      i = mod(ii, isize) + istart
+      j = ii/isize + jstart
 ! determine the flow variables in the halo cell.
-        ww0(i, j, irho) = ww3(i, j, irho)
-        ww0(i, j, ivx) = ww3(i, j, ivx) - vn*bcdata(nn)%norm(i, j, 1)
-        ww0(i, j, ivy) = ww3(i, j, ivy) - vn*bcdata(nn)%norm(i, j, 2)
-        ww0(i, j, ivz) = ww3(i, j, ivz) - vn*bcdata(nn)%norm(i, j, 3)
-        ww0(i, j, irhoe) = ww3(i, j, irhoe)
-        do l=nt1mg,nt2mg
-          ww0(i, j, l) = ww3(i, j, l)
-        end do
 ! set the pressure and gamma and possibly the
 ! laminar and eddy viscosity in the halo.
-        gamma0(i, j) = gamma3(i, j)
-        pp0(i, j) = pp3(i, j)
-        if (viscous) rlv0(i, j) = rlv3(i, j)
-        if (eddymodel) rev0(i, j) = rev3(i, j)
+      if (viscous) then
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+      else
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+      end if
+      if (eddymodel) then
+        rev3d(i, j) = rev3d(i, j) + rev0d(i, j)
+        rev0d(i, j) = 0.0_8
+      end if
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+      if (branch .eq. 0) then
+        rlv3d(i, j) = rlv3d(i, j) + rlv0d(i, j)
+        rlv0d(i, j) = 0.0_8
+      end if
+      pp3d(i, j) = pp3d(i, j) + pp0d(i, j)
+      pp0d(i, j) = 0.0_8
+      do l=nt1mg,nt2mg
+        ww3d(i, j, l) = ww3d(i, j, l) + ww0d(i, j, l)
+        ww0d(i, j, l) = 0.0_8
       end do
-    end if
-  end subroutine bcsymm
+      ww3d(i, j, irhoe) = ww3d(i, j, irhoe) + ww0d(i, j, irhoe)
+      ww0d(i, j, irhoe) = 0.0_8
+      ww3d(i, j, ivz) = ww3d(i, j, ivz) + ww0d(i, j, ivz)
+      vnd = -(bcdata(nn)%norm(i, j, 3)*ww0d(i, j, ivz))
+      ww0d(i, j, ivz) = 0.0_8
+      ww3d(i, j, ivy) = ww3d(i, j, ivy) + ww0d(i, j, ivy)
+      vnd = vnd - bcdata(nn)%norm(i, j, 2)*ww0d(i, j, ivy)
+      ww0d(i, j, ivy) = 0.0_8
+      ww3d(i, j, ivx) = ww3d(i, j, ivx) + ww0d(i, j, ivx)
+      vnd = vnd - bcdata(nn)%norm(i, j, 1)*ww0d(i, j, ivx)
+      ww0d(i, j, ivx) = 0.0_8
+      ww3d(i, j, irho) = ww3d(i, j, irho) + ww0d(i, j, irho)
+      ww0d(i, j, irho) = 0.0_8
+      tempd = two*vnd
+      ww3d(i, j, ivx) = ww3d(i, j, ivx) + bcdata(nn)%norm(i, j, 1)*tempd
+      ww3d(i, j, ivy) = ww3d(i, j, ivy) + bcdata(nn)%norm(i, j, 2)*tempd
+      ww3d(i, j, ivz) = ww3d(i, j, ivz) + bcdata(nn)%norm(i, j, 3)*tempd
+    end do
+  end subroutine bcsymm2ndhalo_fast_b
+  subroutine bcsymm2ndhalo(nn)
+    use blockpointers
+    use bctypes
+    use constants
+    use flowvarrefstate
+    use iteration
+    implicit none
+! subroutine arguments.
+    integer(kind=inttype), intent(in) :: nn
+! local variables.
+    integer(kind=inttype) :: i, j, l, ii
+    real(kind=realtype) :: vn, nnx, nny, nnz
+    intrinsic mod
+! if we need the second halo, do everything again, but using ww0,
+! ww3 etc instead of ww2 and ww1. 
+    do ii=0,isize*jsize-1
+      i = mod(ii, isize) + istart
+      j = ii/isize + jstart
+      vn = two*(ww3(i, j, ivx)*bcdata(nn)%norm(i, j, 1)+ww3(i, j, ivy)*&
+&       bcdata(nn)%norm(i, j, 2)+ww3(i, j, ivz)*bcdata(nn)%norm(i, j, 3)&
+&       )
+! determine the flow variables in the halo cell.
+      ww0(i, j, irho) = ww3(i, j, irho)
+      ww0(i, j, ivx) = ww3(i, j, ivx) - vn*bcdata(nn)%norm(i, j, 1)
+      ww0(i, j, ivy) = ww3(i, j, ivy) - vn*bcdata(nn)%norm(i, j, 2)
+      ww0(i, j, ivz) = ww3(i, j, ivz) - vn*bcdata(nn)%norm(i, j, 3)
+      ww0(i, j, irhoe) = ww3(i, j, irhoe)
+      do l=nt1mg,nt2mg
+        ww0(i, j, l) = ww3(i, j, l)
+      end do
+! set the pressure and gamma and possibly the
+! laminar and eddy viscosity in the halo.
+      gamma0(i, j) = gamma3(i, j)
+      pp0(i, j) = pp3(i, j)
+      if (viscous) rlv0(i, j) = rlv3(i, j)
+      if (eddymodel) rev0(i, j) = rev3(i, j)
+    end do
+  end subroutine bcsymm2ndhalo
 !  differentiation of bcnswalladiabatic in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *rev0 *rev1 *rev2 *pp0 *pp1
 !                *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2
