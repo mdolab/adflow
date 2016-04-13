@@ -155,4 +155,7 @@
 
        enddo
 
+       ! Explictly set groundlevel to 1
+       groundLevel = 1
+       
        end subroutine solver

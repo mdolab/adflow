@@ -3866,7 +3866,6 @@ class SUMB(AeroSolver):
             'ankasmoverlap':['ank', 'ank_asmoverlap'],
             'ankpcilufill':['ank', 'ank_ilufill'],
             'ankjacobianlag':['ank', 'ank_jacobianlag'],
-            'applypcsubspacesize':['ank', 'applypcsubspacesize'],
             'ankinnerpreconits':['ank', 'ank_innerpreconits'],
             'ankcfl0':['ank', 'ank_cfl0'],
 
