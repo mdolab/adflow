@@ -227,7 +227,9 @@ ad_reverse_fast:
 	                             (ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2) \
 	BCRoutines%bcFarField(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2)>\
 			     (ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2) \
-	BCRoutines%bcSymm(ww0, ww1, ww2, ww3, pp0, pp1, pp2, pp3, rlv0, rlv1, rlv2, rlv3, rev0, rev1, rev2, rev3)>\
+	BCRoutines%bcSymm1stHalo(ww0, ww1, ww2, ww3, pp0, pp1, pp2, pp3, rlv0, rlv1, rlv2, rlv3, rev0, rev1, rev2, rev3)>\
+			 (ww0, ww1, ww2, ww3, pp0, pp1, pp2, pp3, rlv0, rlv1, rlv2, rlv3, rev0, rev1, rev2, rev3) \
+	BCRoutines%bcSymm2ndHalo(ww0, ww1, ww2, ww3, pp0, pp1, pp2, pp3, rlv0, rlv1, rlv2, rlv3, rev0, rev1, rev2, rev3)>\
 			 (ww0, ww1, ww2, ww3, pp0, pp1, pp2, pp3, rlv0, rlv1, rlv2, rlv3, rev0, rev1, rev2, rev3) \
 	BCRoutines%bcEulerWall(ww0, ww1, ww2, ww3, pp0, pp1, pp2, pp3, rlv0, rlv1, rlv2, rlv3, rev0, rev1, rev2, rev3)>\
 			      (ww0, ww1, ww2, ww3, pp0, pp1, pp2, pp3, rlv0, rlv1, rlv2, rlv3, rev0, rev1, rev2, rev3) \
@@ -278,7 +280,9 @@ ad_reverse_spatial:
 	saModule%saViscous(scratch, vol, si, sj, sk)>(scratch, vol, si, sj, sk) \
 	saModule%saResScale(scratch, vol)>(dw) \
 	resScale(dw, fw, vol)>(dw) \
-	BCRoutines%bcSymm(ww2, ww3, pp2, pp3, rlv2, rlv3, rev2, rev3 bcData%norm)>\
+	BCRoutines%bcSymm1stHalo(ww2, ww3, pp2, pp3, rlv2, rlv3, rev2, rev3 bcData%norm)>\
+			 (ww0, ww1, pp0, pp1, rlv0, rlv1, rev0, rev1) \
+	BCRoutines%bcSymm2ndHalo(ww2, ww3, pp2, pp3, rlv2, rlv3, rev2, rev3 bcData%norm)>\
 			 (ww0, ww1, pp0, pp1, rlv0, rlv1, rev0, rev1) \
 	turbAdvection(vol, si, sj, sk, scratch)>(scratch, vol, si, sj, sk)" \
 	-adjvarname %d \
