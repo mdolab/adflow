@@ -85,11 +85,21 @@ contains
     do nn=1, nBocos
        if (bcType(nn) == symm) then 
           call setBCPointers(nn, .False.)
-          call bcSymm(nn, secondHalo)
+          call bcSymm1stHalo(nn)
           call resetBCPointers(nn, .False.)
        end if
     end do
 
+    if (secondHalo) then 
+       !$AD II-LOOP
+       do nn=1, nBocos
+          if (bcType(nn) == symm) then 
+             call setBCPointers(nn, .False.)
+             call bcSymm2ndHalo(nn)
+             call resetBCPointers(nn, .False.)
+          end if
+       end do
+    end if
 
 #ifndef USE_TAPENADE
     ! ------------------------------------
@@ -267,7 +277,7 @@ contains
   ! ===================================================================
   !   Actual implementation of each of the boundary condition routines
   ! ===================================================================
-  subroutine bcSymm(nn, secondHalo)
+  subroutine bcSymm1stHalo(nn)
     !
     ! ******************************************************************
     ! *                                                                *
@@ -290,7 +300,6 @@ contains
     implicit none
 
     ! Subroutine arguments.
-    logical, intent(in) :: secondHalo
     integer(kind=intType), intent(in) :: nn
 
     ! Local variables.
@@ -336,44 +345,59 @@ contains
        if( viscous )   rlv1(i,j) = rlv2(i,j)
        if( eddyModel ) rev1(i,j) = rev2(i,j)
     enddo
+  end subroutine bcSymm1stHalo
 
-    if (secondHalo) then
+  subroutine bcSymm2ndHalo(nn)
 
-       ! If we need the second halo, do everything again, but using ww0,
-       ! ww3 etc instead of ww2 and ww1. 
+    use blockPointers
+    use BCTypes
+    use constants
+    use flowVarRefState
+    use iteration
+    implicit none
 
-       !$AD II-LOOP
-       do ii=0,isize*jsize-1
-          i = mod(ii, isize) + iStart
-          j = ii/isize + jStart
+    ! Subroutine arguments.
+    integer(kind=intType), intent(in) :: nn
+    
+    ! Local variables.
+    integer(kind=intType) :: i, j, l, ii
+    real(kind=realType) :: vn, nnx, nny, nnz
+
+    ! If we need the second halo, do everything again, but using ww0,
+    ! ww3 etc instead of ww2 and ww1. 
+    
+    !$AD II-LOOP
+    do ii=0,isize*jsize-1
+       i = mod(ii, isize) + iStart
+       j = ii/isize + jStart
           
-          vn = two*(ww3(i,j,ivx)*BCData(nn)%norm(i,j,1) + &
-               ww3(i,j,ivy)*BCData(nn)%norm(i,j,2) + &
-               ww3(i,j,ivz)*BCData(nn)%norm(i,j,3))
-
-          ! Determine the flow variables in the halo cell.
-          ww0(i,j,irho) = ww3(i,j,irho)
-          ww0(i,j,ivx) = ww3(i,j,ivx) - vn*BCData(nn)%norm(i,j,1)
-          ww0(i,j,ivy) = ww3(i,j,ivy) - vn*BCData(nn)%norm(i,j,2)
-          ww0(i,j,ivz) = ww3(i,j,ivz) - vn*BCData(nn)%norm(i,j,3)
-
-          ww0(i,j,irhoE) = ww3(i,j,irhoE)
-
-          !$AD II-LOOP
-          do l=nt1MG,nt2MG
-             ww0(i,j,l) = ww3(i,j,l)
-          enddo
-
-          ! Set the pressure and gamma and possibly the
-          ! laminar and eddy viscosity in the halo.
-
-          gamma0(i,j) = gamma3(i,j)
-          pp0(i,j)    = pp3(i,j)
-          if( viscous )   rlv0(i,j) = rlv3(i,j)
-          if( eddyModel ) rev0(i,j) = rev3(i,j)
+       vn = two*(ww3(i,j,ivx)*BCData(nn)%norm(i,j,1) + &
+            ww3(i,j,ivy)*BCData(nn)%norm(i,j,2) + &
+            ww3(i,j,ivz)*BCData(nn)%norm(i,j,3))
+       
+       ! Determine the flow variables in the halo cell.
+       ww0(i,j,irho) = ww3(i,j,irho)
+       ww0(i,j,ivx) = ww3(i,j,ivx) - vn*BCData(nn)%norm(i,j,1)
+       ww0(i,j,ivy) = ww3(i,j,ivy) - vn*BCData(nn)%norm(i,j,2)
+       ww0(i,j,ivz) = ww3(i,j,ivz) - vn*BCData(nn)%norm(i,j,3)
+       
+       ww0(i,j,irhoE) = ww3(i,j,irhoE)
+       
+       !$AD II-LOOP
+       do l=nt1MG,nt2MG
+          ww0(i,j,l) = ww3(i,j,l)
        enddo
-    end if
-  end subroutine bcSymm
+       
+       ! Set the pressure and gamma and possibly the
+       ! laminar and eddy viscosity in the halo.
+
+       gamma0(i,j) = gamma3(i,j)
+       pp0(i,j)    = pp3(i,j)
+       if( viscous )   rlv0(i,j) = rlv3(i,j)
+       if( eddyModel ) rev0(i,j) = rev3(i,j)
+    enddo
+
+  end subroutine bcSymm2ndHalo
 
 #ifndef USE_TAPENADE
   subroutine bcSymmPolar(nn, secondHalo)
