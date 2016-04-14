@@ -193,7 +193,7 @@ contains
           if (duplicated(i) == 0) then 
              j = j + 1
              string%conn(:, j) = tmpConn(:, i)
-             string%gc(i) = tmpGC(i)
+             string%gc(j) = tmpGC(i)
           end if
        end do
 
