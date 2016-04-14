@@ -450,6 +450,7 @@ subroutine makeGapBoundaryStrings(level, sps, clusters)
   ! =================================================================
   !                   Serial code from here on out
   ! =================================================================
+
   if (myid == 0) then 
      timea = mpi_wtime()
 
@@ -603,6 +604,20 @@ subroutine makeGapBoundaryStrings(level, sps, clusters)
      ! applied. Therefore we know this will always be enough 
      allocate(master%edges(4*master%nElems))
 
+     master%nEdges = 0
+
+     do i=1, nFullStrings
+        str => strings(i)
+        do j=1, str%nElems
+           master%nEdges = master%nEdges + 1
+           master%edges(master%nEdges)%n1 = str%p%conn(1, str%pElems(j)) !<-- first node
+           master%edges(master%nEdges)%n2 = str%p%conn(2, str%pElems(j)) !<-- second node
+        end do
+     end do 
+
+    ! ! Reset master%elemused so that it can be used while zipping.
+    !  master%elemUsed = 0
+
      ! Allocate space for the triangles. Again, this can be at most,
      ! nElems, but can be smaller due to self zipping. 
      allocate(master%tris(3, master%nElems))
@@ -611,20 +626,27 @@ subroutine makeGapBoundaryStrings(level, sps, clusters)
      ! Build the master tree
      master%tree => kdtree2_create(master%x, sort=.True.)
 
-     ! ! Loop over the full strings and try to self zip. 
-     ! do i=1, nFullStrings
-     !    zipperLoop: do j=1, 5
-     !       if (j== 1) then
-     !          cutOff = 120_realType
-     !       else
-     !          cutOff = 90_realType
-     !       end if
-     !       call selfZip(strings(i), cutOff, nZipped)
-     !       if (nZipped == 0) then 
-     !          exit zipperLoop
-     !       end if
-     !    end do zipperLoop
-     ! end do
+     ! Loop over the full strings and try to self zip. 
+     do i=1, nFullStrings
+        zipperLoop: do j=1, 5
+           if (j== 1) then
+              cutOff = 120_realType
+           else
+              cutOff = 90_realType
+           end if
+           call selfZip(strings(i), cutOff, nZipped)
+           if (nZipped == 0) then 
+              exit zipperLoop
+           end if
+        end do zipperLoop
+     end do
+
+     ! Now that we have self zipped the edges, allocated space for
+     ! elemUsed. The remaining edges on each string must be either
+     ! cross zipped or pocket zipped
+     do i=1, nFullStrings
+        allocate(strings(i)%elemUsed(strings(i)%nElems))
+     end do
      
      ! =============================================================
 
@@ -808,53 +830,49 @@ subroutine makeGapBoundaryStrings(level, sps, clusters)
      print *,'search time:', mpi_wtime()-timea
 
 
-     ! Now determine what the bad strings are:
-     allocate(badString(nFullStrings))
-     badString = .False.
-     jj = 0
-     do i=1, nFullStrings
-        ii = 0
-        str => strings(i)
+     ! ! Now determine what the bad strings are:
+     ! allocate(badString(nFullStrings))
+     ! badString = .False.
+     ! jj = 0
+     ! do i=1, nFullStrings
+     !    ii = 0
+     !    str => strings(i)
 
-        ratio = zero
-        do j=1, str%nNodes
-           myPt = str%x(:, i)
-           id = str%otherID(1, i)
-           index = str%otherID(2, i)
+     !    ratio = zero
+     !    do j=1, str%nNodes
+     !       myPt = str%x(:, i)
+     !       id = str%otherID(1, i)
+     !       index = str%otherID(2, i)
 
-           if (id /= -1) then 
-              otherPt = strings(id)%x(:, index)
-              dist = norm2(myPt - otherPt)
-              maxH = max(str%h(i), strings(id)%h(index))
-              ratio = ratio + dist/maxH
-              ii = ii + 1
-           end if
-        end do
+     !       if (id /= -1) then 
+     !          otherPt = strings(id)%x(:, index)
+     !          dist = norm2(myPt - otherPt)
+     !          maxH = max(str%h(i), strings(id)%h(index))
+     !          ratio = ratio + dist/maxH
+     !          ii = ii + 1
+     !       end if
+     !    end do
      
-        if (ratio/ii > one) then 
-           badString(i) = .True. 
-           jj = jj + str%nElems
-        end if
-     end do
+     !    if (ratio/ii > one) then 
+     !       badString(i) = .True. 
+     !       jj = jj + str%nElems
+     !    end if
+     ! end do
 
-     allocate(surfaceSeeds(jj), inverse(jj))
-     jj = 0
-     do i=1, nFullStrings
-        str => strings(i)
-        if (badString(i)) then 
-           do j=1, str%nElems
-              jj = jj + 1
-              surfaceSeeds(jj) = str%gc(j)
-           end do
-        end if
-     end do
-     print *,' bad Strings:', badString
-     ! Unique:
-     call unique(surfaceSeeds, jj, ii, inverse)
-     print *, 'seeds'
-     do i=1, ii
-        print *,i, surfaceSeeds(i)
-     end do
+     ! ---------------------------------------------------------------
+     ! Xzip 2: Call the actual Xzip by providing all gap strings data.
+     ! ---------------------------------------------------------------
+     !call makeCrossZip(master, strings, nFullStrings)
+
+     ! ===============================================================
+     ! Do pocket zipping
+     ! ---------------------------------------------------------------
+     ! Sort through zipped triangle edges and the edges which have not
+     ! been used twice (orphan edges) will be ultimately gathered to 
+     ! form polygon pockets to be zipped.
+     !call makePocketZip(master, strings, nFullStrings)
+
+
      ! =============== DEBUGGING =================
 
      call writeOversetTriangles(master, "fullTriangulation.dat")
@@ -869,21 +887,7 @@ subroutine makeGapBoundaryStrings(level, sps, clusters)
      close(101)
      ! ===========================================
 
-     ! Send the list of surface seeds back to everyone. 
   end if
-
-  call mpi_bcast(ii, 1, sumb_integer, 0, sumb_comm_world)
-  call ECHK(ierr, __FILE__, __LINE__)
-
-  if (myid /= 0) then 
-     allocate(surfaceSeeds(ii))
-  end if
-
-  call mpi_bcast(surfaceSeeds, ii, sumb_integer, 0, sumb_comm_world)
-  call ECHK(ierr, __FILE__, __LINE__)
-
-  !call surfaceFlood(level, sps, surfaceSeeds, ii)
-
 
   ! Free the remaining memory
   deallocate(nElemsProc, nNodesProc)

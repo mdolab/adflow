@@ -52,6 +52,10 @@ FILES_TO_COMPLEXIFY =	stringOps.F90\
 			floodInteriorCells.F90\
 			oversetLoadBalance.F90\
 			qsortFringeType.F90\
+			qsortEdgeType.F90\
+			qsortPocketEdgeType.F90\
+			binSearchPocketEdgeType.F90\
+			binSearchNodes.F90\
 			initializeOBlock.F90\
 			initializeOWall.F90\
 			initializeFringes.F90\

@@ -136,6 +136,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
 
      allocate(xMin(3, nDomTotal), xMax(3, nDomTotal))
      call computeDomainBoundingBoxes
+
      ! -----------------------------------------------------------------
      ! Step 8: Build a global sparse matrix representation of the overlap
      ! matrix.  Every processor will have the same sparse matrix
@@ -291,11 +292,21 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      allocate(sendRequests(nn), recvRequests(nn))
      allocate(recvInfo(2, nn))
      
-
-     refineLoop: do iRefine=1, 2
+     refineLoop: do iRefine=1, 1
 
         ! Work isn't done yet
         work(4, :) = 0
+
+        if (iRefine == 1) then 
+           ! On the first pass we need to get an estimate of what is
+           ! inside the body and what isn't. This method isn't
+           ! perfect; some cells that are actually inside the true
+           ! surface won't be flagged, but that's ok. 
+
+           call computeHolesInsideBody(level, sps)
+           print *,'done holes in body'
+        end if
+
 
         ! -----------------------------------------------------------------
         ! Step 8: Allocation of temporary data structures: oBlocks and fringeList
@@ -917,6 +928,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
         ! information we need to start the flooding process later on. 
         ! -----------------------------------------------------------------
 
+       
         call determineDonors(level, sps, localWallFringes, nLocalWallFringe, .True.)
 
         ! !=================================================================================
@@ -930,16 +942,16 @@ subroutine oversetComm(level, firstTime, coarseLevel)
 
         call exchangeStatusTranspose(level, sps, commPatternCell_2nd, internalCell_2nd)
 
-        if (iRefine > 1) then 
-           call irregularCellCorrection(level, sps)
-        end if
+        !if (iRefine > 1) then 
+        call irregularCellCorrection(level, sps)
+        !end if
 
         ! Next we have to perfrom the interior cell flooding. We already
         ! have the information we need: we have isWallFringe defined in
         ! the fringes as well as knowing if a cell is a compute. We
         ! should probably only flood compute cells that are not also
         ! donors, since that would get a little complicated. 
-
+        
         call floodInteriorCells(level, sps)
         
         ! The fringeReduction just needs to be isCompute flag so exchange
@@ -953,7 +965,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
         ! hole.
         ! -----------------------------------------------------------------
 
-        if (iRefine > 1) then 
+        !if (iRefine > 1) then 
            call fringeReduction(level, sps)
 
         ! Before we can do the final comm structures, we need to make
@@ -962,7 +974,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
         ! send donorProc, donorBlock, dI, dJ, dK and donorFrac. 
 
            call exchangeFringes(level, sps, commPatternCell_2nd, internalCell_2nd)
-        end if
+        !end if
         
         ! -----------------------------------------------------------------
         ! Step 17: We can now create the final required comm structures
@@ -993,12 +1005,12 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      ! Step 18: Create the zipper mesh. We pass in a few arrays
      ! dealing with wall exchange since there is no need to recompute them. 
      ! -----------------------------------------------------------------
-     ! call createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
-     !      nOwallSend, nOwallRecv, size(oWallSendList, 2), &
-     !      size(oWallRecvList, 2), work, nWork)
+     call createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
+          nOwallSend, nOwallRecv, size(oWallSendList, 2), &
+          size(oWallRecvList, 2), work, nWork)
      
      ! Setup the buffer sizes
-     call setBufferSizes(level, sps, .false., .false., .true.)
+     call setBufferSizes(level, sps, .false., .false., .True.)
      
      ! Deallocate some data we no longer need
      deallocate(Xmin, Xmax, work)
@@ -1229,6 +1241,7 @@ contains
             work(4, iWork) == 0) then 
 
           startTime = mpi_wtime()
+
           call fringeSearch(oBlocks(iDom), oFringes(jDom), oWalls(iDom), oWalls(jDom))
           endTime = mpi_wtime()
           overlap%data(jj) = endTime - startTime
@@ -1663,7 +1676,6 @@ subroutine writeOversetTriangles(string, fileName)
      end do
      write(101,"(1x)")
   end do
-
 
 15 format(I5, I5)
   do i=1, string%nTris
