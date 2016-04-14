@@ -139,6 +139,10 @@ module overset
      ! Surface nodes used to build the tree:
      real(kind=realType), dimension(:, :), pointer :: x
 
+     ! Surface nonal used for determining if point is "underneath" the
+     ! surface. 
+     real(kind=realType), dimension(:, :), pointer :: norm
+
      ! Local estimate of surface error
      real(kind=realType), dimension(:), pointer :: delta
 
@@ -241,6 +245,9 @@ module overset
      ! List of all all directed edges. 
      type(oversetEdge), pointer, dimension(:) :: edges
 
+     ! nEdges: The number of new edges added due to triangles. 
+     integer(kind=intTYpe) :: nEdges
+
      ! List of all computed triangles
      integer(kind=intType), dimension(:, :), pointer :: tris
 
@@ -253,6 +260,33 @@ module overset
      ! Simple data structure representing a directed edge from n1->n2
      integer(kind=intType) :: n1, n2
   end type oversetEdge
+
+  interface operator(<=)
+     module procedure lessEqualEdgeType
+  end interface operator(<=)
+
+  interface operator(<)
+     module procedure lessEdgeType
+  end interface operator(<)
+
+  type pocketEdge
+     ! Simple data structure representing a directed edge from n1->n2
+     ! Similar to oversetEdge, but introduced to do different type
+     ! of sort on edges
+     integer(kind=intType) :: n1, n2
+  end type pocketEdge
+
+  interface operator(<=)
+     module procedure lessEqualPocketEdgeN2
+  end interface operator(<=)
+
+  interface operator(<)
+     module procedure lessPocketEdgeN2
+  end interface operator(<)
+
+  interface operator(==)
+     module procedure EqualPocketEdgeN2
+  end interface operator(==)
 
   ! This is the flattened list of the fringes next to the wall that we
   !  have actually found donors for.
@@ -274,4 +308,203 @@ module overset
      integer(kind=intType), dimension(:, :), pointer :: nearWall
   end type XPlane
 
+  contains
+  ! ==============================
+  ! Operator overloading functions
+  ! ==============================
+  logical function lessEqualEdgeType(e1, e2)
+    !
+    !  **********************************************************************
+    !  * lessEqualEdgeType returns .True. if e1<=e2 and .False. otherwise.  *
+    !  * Compared on the directed edge node indices n1 and n2.              *
+    !  * First compare wrt averaged node indices data. If same averaged     *
+    !  * node data, then compare wrt increasing or decreasing node indices. *
+    !  **********************************************************************
+
+    implicit none
+
+    ! Input
+    type(oversetEdge), intent(in) :: e1, e2
+
+    ! Local variables
+    integer(kind=intType) :: nsum1, nsum2, ndiff1, ndiff2
+
+    ! Compare the averaged (or just sum of) node indices values.
+    ! Positive sign for increasing order of node indices.
+    nsum1 = e1%n1 + e1%n2 
+    nsum2 = e2%n1 + e2%n2
+    ndiff1 = e1%n2 - e1%n1
+    ndiff2 = e2%n2 - e2%n1
+ 
+    ! Compare based on averaged node indices values
+    if (abs(nsum1) < abs(nsum2)) then
+       lessEqualEdgeType = .True.
+       return
+    else if (abs(nsum1) > abs(nsum2)) then
+       lessEqualEdgeType = .False.
+       return
+    end if
+
+    if (abs(nsum1) /= abs(nsum2)) &
+       STOP ' *** Error in lessEqualEdgeType ***'
+
+    ! Compare based on edge nodes difference
+    if (abs(ndiff1) < abs(ndiff2)) then
+       lessEqualEdgeType = .True.
+       return
+    else if (abs(ndiff1) > abs(ndiff2)) then
+       lessEqualEdgeType = .False.
+       return
+    end if
+
+    ! here abs(ndiff1) == abs(ndiff2) and 
+    ! abs(nsum1)== abs(nsum2), so same edge
+    if (ndiff1 < ndiff2) then
+       lessEqualEdgeType = .True.
+       return
+    else if (ndiff1 > ndiff2) then
+       lessEqualEdgeType = .False.
+       return
+    end if
+
+    ! here ndiff1 == ndiff2, hence .True.
+
+    lessEqualEdgeType = .True.
+    
+  end function lessEqualEdgeType
+
+  ! ---------------------------------
+  logical function lessEdgeType(e1, e2)
+    !
+    !  **********************************************************************
+    !  * lessEdgeType returns .True. if e1<e2 and .False. otherwise.  *
+    !  * Compared on the directed edge node indices n1 and n2.              *
+    !  * First compare wrt averaged node indices data. If same averaged     *
+    !  * node data, then compare wrt increasing or decreasing node indices. *
+    !  **********************************************************************
+
+    implicit none
+
+    ! Input
+    type(oversetEdge), intent(in) :: e1, e2
+
+    ! Local variables
+    integer(kind=intType) :: nsum1, nsum2, ndiff1, ndiff2
+
+    ! Compare the averaged (or just sum of) node indices values.
+    ! Positive sign for increasing order of node indices.
+    nsum1 = e1%n1 + e1%n2 
+    nsum2 = e2%n1 + e2%n2
+    ndiff1 = e1%n2 - e1%n1
+    ndiff2 = e2%n2 - e2%n1
+ 
+    ! Compare based on averaged node indices values
+    if (abs(nsum1) < abs(nsum2)) then
+       lessEdgeType = .True.
+       return
+    else if (abs(nsum1) > abs(nsum2)) then
+       lessEdgeType = .False.
+       return
+    end if
+
+    if (abs(nsum1) /= abs(nsum2)) &
+       STOP ' *** Error in lessEdgeType ***'
+
+    ! Compare based on edge nodes difference
+    if (abs(ndiff1) < abs(ndiff2)) then
+       lessEdgeType = .True.
+       return
+    else if (abs(ndiff1) > abs(ndiff2)) then
+       lessEdgeType = .False.
+       return
+    end if
+
+    ! here abs(ndiff1) == abs(ndiff2) and 
+    ! abs(nsum1)== abs(nsum2), so same edge
+    if (ndiff1 < ndiff2) then
+       lessEdgeType = .True.
+       return
+    else if (ndiff1 > ndiff2) then
+       lessEdgeType = .False.
+       return
+    end if
+
+    ! here ndiff1 == ndiff2, hence .False.
+
+    lessEdgeType = .False.
+    
+  end function lessEdgeType
+
+
+  logical function lessEqualPocketEdgeN2(e1, e2)
+    !
+    !  **********************************************************************
+    !  * lessEqualPocketEdgeN2 returns .True. if e1%n2<=e2%n2 and .False.   *
+    !  * otherwise. Compared on the directed edge node indices n1 and n2.   *
+    !  **********************************************************************
+
+    implicit none
+
+    ! Input
+    type(pocketEdge), intent(in) :: e1, e2
+
+    if (e1%n2 < e2%n2) then
+       lessEqualPocketEdgeN2 = .True.
+       return 
+    else if (e1%n2 > e2%n2) then
+       lessEqualPocketEdgen2 = .False.
+       return
+    end if
+
+    ! Here e1%n2==e2%n2, so edges are equal, hence .True.
+    lessEqualPocketEdgeN2 = .True.
+    
+  end function lessEqualPocketEdgeN2
+
+  logical function lessPocketEdgeN2(e1, e2)
+    !
+    !  **********************************************************************
+    !  * lessPocketEdgeN2 returns .True. if e1%N2<e2%N2 and .False.         *
+    !  * otherwise. Compared on the directed edge node indices n1 and n2.   *
+    !  **********************************************************************
+
+    implicit none
+
+    ! Input
+    type(pocketEdge), intent(in) :: e1, e2
+
+    if (e1%N2 < e2%N2) then
+       lessPocketEdgeN2 = .True.
+       return 
+    else if (e1%N2 > e2%N2) then
+       lessPocketEdgeN2 = .False.
+       return
+    end if
+
+    ! Here e1%N2==e2%n2, so edges are equal, hence .False.
+    lessPocketEdgeN2 = .False.
+    
+  end function lessPocketEdgeN2
+
+  logical function EqualPocketEdgeN2(e1, e2)
+    !
+    !  **********************************************************************
+    !  * EqualPocketEdgeN2 returns .True. if e1%N2==e2%N2 and .False.       *
+    !  * otherwise. Compared on the directed edge node indices n1 and n2.   *
+    !  **********************************************************************
+
+    implicit none
+
+    ! Input
+    type(pocketEdge), intent(in) :: e1, e2
+
+    if (e1%N2 == e2%N2) then
+       EqualPocketEdgeN2 = .True.
+       return 
+    else 
+       EqualPocketEdgeN2 = .False.
+       return
+    end if
+
+  end function EqualPocketEdgeN2
 end module overset

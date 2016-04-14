@@ -52,14 +52,13 @@ subroutine initializeOBlock(oBlock, nn, level, sps)
   call flagForcedReceivers(oBlock%invalidDonor)
   
   ! Add to the invalid donor list if it got flooded with iblank of -2 or -3:
-  iii = 0
   do k=1, ke
      do j=1, je
         do i=1, ie
            ! This is a hard interior cell. Flag EVERY cell it it's
            ! stencil as a invalid donor. 
-           if (iblank(i,j,k) == -2 .or. iblank(i,j,k)==-3) then 
-
+           if (iblank(i,j,k) == -2 .or. iblank(i,j,k)==-3 .or. iblank(i,j,k)==0) then 
+           !if (iblank(i,j,k) == -2 .or. iblank(i,j,k)==-3) then 
               stencilLoop: do i_stencil=1, N_visc_drdw
                  ii = visc_drdw_stencil(i_stencil, 1) + i
                  jj = visc_drdw_stencil(i_stencil, 2) + j
@@ -69,14 +68,12 @@ subroutine initializeOBlock(oBlock, nn, level, sps)
                  if (ii >= 1 .and. ii <= ie .and. jj >= 1 .and. jj<= je .and. &
                       kk >= 1 .and. kk <= ke) then 
                     oBlock%invalidDonor(ii, jj, kk) = 1
-                    iii = iii + 1
                  end if
               end do stencilLoop
            end if
         end do
      end do
   end do
-
 
   ! Copy Volume to qualDonor and do minVol while we're at it
   oBlock%minVol = Large

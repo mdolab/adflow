@@ -22,6 +22,7 @@ subroutine finalOversetCommStructures(level, sps)
   integer(kind=intType), dimension(:), allocatable :: tmpInt
   integer(kind=intType), dimension(:), allocatable :: recvSizes
   integer(kind=intType), dimension(:), allocatable :: nProcSendLocal
+  integer(kind=intType), dimension(:), allocatable :: nProcSendLocaltmp
   integer(kind=intType), dimension(:), allocatable :: fringeProc, cumFringeProc
   integer(kind=intType), dimension(:), allocatable :: intSendBuf, intRecvBuf
   real(kind=realType), dimension(:), allocatable :: realSendBuf, realRecvBuf
@@ -124,9 +125,27 @@ subroutine finalOversetCommStructures(level, sps)
 
   ! This will sum up the nProcSendLocal array and then send out the
   ! number of sends I have to do. 
-  call mpi_reduce_scatter_block(nProcSendLocal, nProcSend, 1, &
-       sumb_integer, MPI_SUM, sumb_comm_world, ierr)
-  deallocate(nProcSendLocal)
+  ! call mpi_reduce_scatter_block(nProcSendLocal, nProcSend, 1, &
+  !      sumb_integer, MPI_SUM, sumb_comm_world, ierr)
+
+ !
+  ! The following is done for MPI 2.0 compatibility. 
+  ! ------------------------------------------------
+  ! Break mpi_reduce_scatter_block to two steps: mpi_reduce and mpi_scatter
+  allocate(nProcSendLocaltmp(0:nProc-1))
+  nProcSendLocaltmp = 0
+
+  ! Step 1: Reduce at root proc
+  call mpi_reduce(nProcSendLocal, nProcSendLocaltmp, nProc, &
+           sumb_integer, MPI_SUM, 0, sumb_comm_world, ierr)
+
+  ! Step 2: Scatter from root proc
+  ! sendbuf = nProcSendLocaltmp, sendcount = 1, 
+  ! recvbuf = nProcSend, recvcount = 1, source = 0
+  call mpi_scatter(nProcSendLocaltmp, 1, sumb_integer, nProcSend, 1, &
+           sumb_integer, 0, sumb_comm_world, ierr)
+
+  deallocate(nProcSendLocaltmp, nProcSendLocal)
 
   ! We can allocate all necessary space for the send and receive information
   commPatternOverset(level, sps)%nProcRecv = nProcRecv
