@@ -623,6 +623,12 @@ subroutine selfZip(s, cutOff, nZipped)
      end if
   end do
 
+  !  Update the cNodes in the parent so they point to the updated node
+  ! numbers
+  do i=1, s%nNodes
+     s%p%cNodes(:, s%pNodes(i)) = (/s%myID, nodeMap(i)/)
+  end do
+
   ! Update the number of nodes/elems in our shorted chain. Every
   ! zipper reduces the number of nodes and number of elems by 1
   s%nNodes = s%nNodes - nZipped
@@ -649,6 +655,8 @@ subroutine selfZip(s, cutOff, nZipped)
      s%conn(2, s%nElems) = 1
   end if
   
+  
+
   ! Dellocate the existing memory
   deallocate(xTmp, normTmp, indTmp, connTmp, pNodesTmp)
 end subroutine selfZip
