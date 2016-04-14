@@ -1677,7 +1677,7 @@ subroutine writeOversetTriangles(string, fileName)
      write(101,"(1x)")
   end do
 
-15 format(I5, I5)
+15 format(I5, I5, I5)
   do i=1, string%nTris
      write(101, 15) string%tris(1, i), string%tris(2, i), string%tris(3, i)
   end do
