@@ -13,60 +13,63 @@ subroutine computeHolesInsideBody(level, sps)
   use communication
   use inputTimeSpectral
   use overset
+  use inputOverset
   implicit none
 
   ! Input Variables
   integer(kind=intType), intent(in) :: level, sps
 
   ! Local Variables
-  integer(kind=intType) :: i, j, k, l, ii, jj, nn, mm, iNode, iFace
-  integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, ni, nj, nUnique, faceID
-  integer(kind=intType) :: ierr, iDim
+  integer(kind=intType) :: i, j, k, l, ii, jj, kk, nn, mm, iNode, iCell, c
+  integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, ni, nj, nUnique, cellID
+  integer(kind=intType) :: ierr, iDim, nCluster
 
   ! Data for local surface
-  integer(kind=intType) :: nNodeLocal, nFaceLocal
+  integer(kind=intType) :: nNodes, nCells
+  integer(kind=intType) :: nNodesLocal, nCellsLocal
   integer(kind=intType), dimension(:, :), allocatable :: connLocal
+  integer(kind=intType), dimension(:), allocatable :: clusterNodeLocal
+  integer(kind=intType), dimension(:), allocatable :: clusterCellLocal
   real(kind=realType), dimension(:, :), allocatable :: nodesLocal
-  logical :: regularOrdering
   real(kind=realType), dimension(:,:,:), pointer :: xx
+  real(kind=realType) :: myDist, otherDist, timeA
+  logical :: regularOrdering, nearAWall
+  integer(kind=intType), dimension(:), allocatable :: clusters
+
+  ! Overset Walls for storing the surface ADT's
+  type(oversetWall), dimension(:), allocatable, target :: walls
+  type(oversetWall), target :: fullWall
 
   ! Data for global surface
-  integer(kind=intTYpe) :: nNode, nFace
-  integer(kind=intType), dimension(:),    allocatable :: nFaceProc, cumFaceProc
+  integer(kind=intTYpe) :: nNodesGlobal, nCellsGlobal
+  integer(kind=intType), dimension(:, :), allocatable, target :: connGlobal
+  real(kind=realType), dimension(:, :), allocatable, target :: nodesGlobal
+
+  integer(kind=intType), dimension(:), allocatable :: nodesPerCluster, cellsPerCluster, cnc, ccc
+  integer(kind=intType), dimension(:), allocatable :: clusterNodeGlobal
+  integer(kind=intType), dimension(:), allocatable :: clusterCellGlobal
+  integer(kind=intType), dimension(:), allocatable :: localNodeNums
+
+  integer(kind=intType), dimension(:),    allocatable :: nCellProc, cumCellProc
   integer(kind=intType), dimension(:),    allocatable :: nNodeProc, cumNodeProc
-  integer(kind=intType), dimension(:, :), allocatable :: conn
-  real(kind=realType),   dimension(:, :), allocatable :: nodes
-  real(kind=realType),   dimension(:, :), allocatable :: uniqueNodes, norm
-  integer(kind=intType), dimension(:),    allocatable :: link, normCount
-  real(kind=realType), dimension(3) :: xMin, xMax
+  real(kind=realType),   dimension(:, :), allocatable :: uniqueNodes
+  integer(kind=intType), dimension(:),    allocatable :: link
+
+  ! Pointers for easier readibility
+  integer(kind=intType), dimension(:, :), pointer :: conn
+  real(kind=realType), dimension(:, :), pointer :: nodes, norm
 
   ! Data for the ADT
-  character(len=10), parameter :: adtName = "holeCutADT"
-  integer(kind=intType), dimension(3, 0) :: connTria
-  real(kind=realType), dimension(3, 2) :: dummy
-  logical :: useBBox 
-  integer(kind=intType) :: nTria, intInfo(3), jjADT, nAlloc, nSearch
+  integer(kind=intType) :: intInfo(3)
   real(kind=realType) :: coor(4), uvw(5) 
+  real(kind=realType), dimension(3, 2) :: dummy
   real(kind=realType), parameter :: tol=1e-12
   integer(kind=intType), dimension(:), pointer :: frontLeaves, frontLeavesNew, BBint
   type(adtBBoxTargetType), dimension(:), pointer :: BB
   
   ! Misc
-  real(kind=realType), dimension(3) :: sss, xp, normal, v1, v2
   real(kind=realType) :: dp, shp(4)
-
-  interface
-     subroutine pointReduce(pts, N, tol, uniquePts, link, nUnique)
-       use precision
-       implicit none
-       real(kind=realType), dimension(:, :) :: pts
-       integer(kind=intType), intent(in) :: N
-       real(kind=realType), intent(in) :: tol
-       real(kind=realType), dimension(:, :) :: uniquePts
-       integer(kind=intType), dimension(:) :: link
-       integer(kind=intType) :: nUnique
-     end subroutine pointReduce
-  end interface
+  real(kind=realType), dimension(3) ::xp, normal, v1
 
   ! The first thing we do is gather all the surface nodes to
   ! each processor such that every processor can make it's own copy of
@@ -75,9 +78,12 @@ subroutine computeHolesInsideBody(level, sps)
   ! mesh will become too large to store on a single processor,
   ! although this will probably not happen until the sizes get up in
   ! the hundreds of millions of cells. 
+  timea = mpi_wtime()
+  allocate(clusters(nDomTotal))
+  call determineClusters(clusters, nDomTotal, cumDomProc, nCluster)
 
-  nNodeLocal = 0
-  nFaceLocal = 0
+  nNodesLocal = 0
+  nCellsLocal = 0
 
   do nn=1,nDom
      call setPointers(nn, level, sps)
@@ -90,46 +96,49 @@ subroutine computeHolesInsideBody(level, sps)
            jBeg = bcData(mm)%jnBeg
            jEnd = bcData(mm)%jnEnd
 
-           nNodeLocal = nNodeLocal + &
+           nNodesLocal = nNodesLocal + &
                 (iEnd - iBeg + 1)*(jEnd - jBeg + 1)
-           nFaceLocal = nFaceLocal + & 
+           nCellsLocal = nCellsLocal + & 
                 (iEnd - iBeg)*(jEnd - jBeg)
         end if
      end do
   end do
 
   ! Now communicate these sizes with everyone
-  allocate(nFaceProc(nProc), cumFaceProc(0:nProc), &
+  allocate(nCellProc(nProc), cumCellProc(0:nProc), &
            nNodeProc(nProc), cumNodeProc(0:nProc))
 
-  call mpi_allgather(nFaceLocal, 1, sumb_integer, nFaceProc, 1, sumb_integer, &
+  call mpi_allgather(nCellsLocal, 1, sumb_integer, nCellProc, 1, sumb_integer, &
        sumb_comm_world, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  call mpi_allgather(nNodeLocal, 1, sumb_integer, nNodeProc, 1, sumb_integer, &
+  call mpi_allgather(nNodesLocal, 1, sumb_integer, nNodeProc, 1, sumb_integer, &
        sumb_comm_world, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
   ! Now make cumulative versions of these
-  cumFaceProc(0) = 0
+  cumCellProc(0) = 0
   cumNodeProc(0) = 0
   do i=1,nProc
-     cumFaceProc(i) = cumFaceProc(i-1) + nFaceProc(i)
+     cumCellProc(i) = cumCellProc(i-1) + nCellProc(i)
      cumNodeProc(i) = cumNodeProc(i-1) + nNodeProc(i)
   end do
 
-  ! And save the total number of nodes and faces for reference
-  nFace = cumFaceProc(nProc)
-  nNode = cumNodeProc(nProc)
+  ! And save the total number of nodes and cells for reference
+  nCellsGlobal = cumCellProc(nProc)
+  nNodesGlobal = cumNodeProc(nProc)
 
   ! Allocate the space for the local nodes and element connectivity
-  allocate(nodesLocal(3, nNodeLocal), connLocal(4, nFaceLocal))
+  allocate(nodesLocal(3, nNodesLocal), connLocal(4, nCellsLocal), &
+       clusterCellLocal(nCellsLocal), clusterNodeLocal(NNodesLocal))
 
-  iFace = 0
+  iCell = 0
   iNode = 0
   ! Second loop over the local walls
   do nn=1,nDom
      call setPointers(nn, level, sps)
+     c = clusters(cumDomProc(myid) + nn)
+
      do mm=1,nBocos
         if(  BCType(mm) == NSWallAdiabatic .or. &
              BCType(mm) == NSWallIsothermal .or. &
@@ -190,32 +199,39 @@ subroutine computeHolesInsideBody(level, sps)
            if (regularOrdering) then 
               do j=1,nj-1
                  do i=1,ni-1
-                    iFace = iFace + 1
-                    connLocal(1, iFace) = cumNodeProc(myid) + iNode + (j-1)*ni + i
-                    connLocal(2, iFace) = cumNodeProc(myid) + iNode + (j-1)*ni + i + 1
-                    connLocal(3, iFace) = cumNodeProc(myid) + iNode + (j)*ni + i + 1 
-                    connLocal(4, iFace) = cumNodeProc(myid) + iNode + (j)*ni + i
+                    iCell = iCell + 1
+                    connLocal(1, iCell) = cumNodeProc(myid) + iNode + (j-1)*ni + i
+                    connLocal(2, iCell) = cumNodeProc(myid) + iNode + (j-1)*ni + i + 1
+                    connLocal(3, iCell) = cumNodeProc(myid) + iNode + (j)*ni + i + 1 
+                    connLocal(4, iCell) = cumNodeProc(myid) + iNode + (j)*ni + i
+                    ! Set the cluster
+                    clusterCellLocal(iCell) = c
                  end do
               end do
            else
               ! Do the reverse ordering
               do j=1,nj-1
                  do i=1,ni-1
-                    iFace = iFace + 1
-                    connLocal(1, iFace) = cumNodeProc(myid) + iNode + (j-1)*ni + i
-                    connLocal(2, iFace) = cumNodeProc(myid) + iNode + (j  )*ni + i
-                    connLocal(3, iFace) = cumNodeProc(myid) + iNode + (j)  *ni + i + 1 
-                    connLocal(4, iFace) = cumNodeProc(myid) + iNode + (j-1)*ni + i + 1
+                    iCell = iCell + 1
+                    connLocal(1, iCell) = cumNodeProc(myid) + iNode + (j-1)*ni + i
+                    connLocal(2, iCell) = cumNodeProc(myid) + iNode + (j  )*ni + i
+                    connLocal(3, iCell) = cumNodeProc(myid) + iNode + (j)  *ni + i + 1 
+                    connLocal(4, iCell) = cumNodeProc(myid) + iNode + (j-1)*ni + i + 1   
+
+                    ! Set the cluster
+                    clusterCellLocal(iCell) = c
                  end do
               end do
            end if
+           
+        
            ! Loop over the nodes
            do j=jBeg,jEnd
               do i=iBeg,iEnd
                  iNode = iNode + 1
                  ! The plus one is for the pointer offset
                  nodesLocal(:, iNode) = xx(i+1, j+1, :)
-
+                 clusterNodeLocal(iNode) = c
               end do
            end do
         end if
@@ -223,110 +239,176 @@ subroutine computeHolesInsideBody(level, sps)
   end do
 
   ! Allocate space for the global reduced surface
-  allocate(nodes(3, nNode), conn(4, nFace))
-
-  ! Communicate the nodes and connectivity to everyone
-  call mpi_allgatherv(nodesLocal, 3*nNodeLocal, sumb_real, & 
-       nodes, nNodeProc*3, cumNodeProc*3, sumb_real, &
+  allocate(nodesGlobal(3, nNodesGlobal), connGlobal(4, nCellsGlobal), &
+       clusterCellGlobal(nCellsGlobal), clusterNodeGlobal(nNodesGlobal))
+  
+  ! Communicate the nodes, connectivity and cluster information to everyone
+  call mpi_allgatherv(nodesLocal, 3*nNodesLocal, sumb_real, & 
+       nodesGlobal, nNodeProc*3, cumNodeProc*3, sumb_real, &
        sumb_comm_world, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  call mpi_allgatherv(connLocal, 4*nFaceLocal, sumb_integer, &
-       conn, nFaceProc*4, cumFaceProc*4, sumb_integer, &
+  call mpi_allgatherv(clusterNodeLocal, nNodesLocal, sumb_integer, & 
+       clusterNodeGlobal, nNodeProc, cumNodeProc, sumb_integer, &
+       sumb_comm_world, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+  call mpi_allgatherv(connLocal, 4*nCellsLocal, sumb_integer, &
+       connGlobal, nCellProc*4, cumCellProc*4, sumb_integer, &
+       sumb_comm_world, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
+  call mpi_allgatherv(clusterCellLocal, nCellsLocal, sumb_integer, &
+       clusterCellGlobal, nCellProc, cumCellProc, sumb_integer, &
        sumb_comm_world, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
   ! Free the local data we do not need anymore
-  deallocate(nodesLocal, connLocal)
+  deallocate(nodesLocal, connLocal, clusterCellLocal, clusterNodeLocal, &
+       nCellProc, cumCellProc, nNodeProc, cumNodeProc)
 
-  ! Before we can build the ADTTree we need to compute a unique set of
-  ! surface nodes. 
+  ! We will now build separate trees for each cluster. 
+  allocate(nodesPerCluster(nCluster), cellsPerCluster(nCluster), &
+       cnc(nCluster), ccc(nCluster))
+  nodesPerCluster = 0
+  cellsPerCluster = 0
 
-  ! Maximum space for the unique coordinates and link array
-  allocate(uniqueNodes(3, nNode))
-  allocate(link(nNode))
-
-  call pointReduce(nodes, nNode, tol, uniqueNodes, link, nUnique)
-
-  ! Reset nNode to be nUnique
-  nNode = nUnique
-
-  ! Overwrite nodes with the uniqueNodes. Compute the max/min while
-  ! we're accessing the memory
-  xMin = large
-  xMax = eps
-
-  do i=1, nUnique
-     nodes(:, i) = uniqueNodes(:, i)
-
-     do iDim=1,3
-        xMin(iDim) = min(xMin(iDim), uniqueNodes(iDim, i))
-        xMax(iDim) = max(xMax(iDim), uniqueNodes(iDim, i))
-     end do
+  ! Count up the total number of elements and nodes on each cluster
+  do i=1, nCellsGlobal
+     cellsPerCluster(clusterCellGlobal(i)) = cellsPerCluster(clusterCellGlobal(i)) + 1
   end do
-
-  ! Update conn using the link:
-  do i=1, nFace
-     do j=1, 4
-        conn(j, i) = link(conn(j, i))
-     end do
-  end do
-
-  ! No longer need the unique data and the link array
-  deallocate(uniqueNodes, link)
-
-  ! Compute the (averaged) uniqe nodal vectors:
-  allocate(norm(3, nNode), normCount(nNode))
-  norm = zero
-  normCount = 0
-
-  do i=1, nFace
-
-     ! Compute cross product normal and normize
-     v1 = nodes(:, conn(3, i)) -  nodes(:, conn(1, i))
-     v2 =  nodes(:, conn(4, i)) -  nodes(:, conn(2, i))
-
-     sss(1) = (v1(2)*v2(3) - v1(3)*v2(2))
-     sss(2) = (v1(3)*v2(1) - v1(1)*v2(3))
-     sss(3) = (v1(1)*v2(2) - v1(2)*v2(1))
-     sss = sss / sqrt(sss(1)**2 + sss(2)**2 + sss(3)**2)
-
-     ! Add to each of the four nodes and increment the number added
-     do j=1,4
-        norm(:, conn(j, i)) = norm(:, conn(j, i)) + sss
-        normCount(conn(j, i)) = normCount(conn(j, i)) + 1
-     end do
-  end do
-
-  ! Now just divide by the norm count
-  do i=1, nNode
-     norm(:, i) = norm(:, i) / normCount(i)
-  end do
-
-  ! Node count is no longer needed
-  deallocate(normCount)
-
-  ! Dummy triangular data for the ADT
-  nTria    = 0
-  useBBox = .False.
-
-  call adtBuildSurfaceADT(nTria, nFace, nNode, nodes, connTria,  conn,  &
-       dummy, useBBox, MPI_comm_self, adtName)
   
-  nAlloc = ubound(ADTs, 1)
-  do jjAdt=1,nAlloc
-     if(adtName == ADTs(jjAdt)%adtID) exit
-  enddo
-  
+  do i=1, nNodesGlobal
+     nodesPerCluster(clusterNodeGlobal(i)) = nodesPerCluster(clusterNodeGlobal(i)) + 1
+  end do
+
+  ! Create the list of the walls. We are reusing the overset walls here. 
+  allocate(walls(nCluster))
+  allocate(localNodeNums(nNodesGlobal))
+
+  ! Allocate the memory for each of the cluster nodes
+  do i=1, nCluster
+     nNodes = nodesPerCluster(i)
+     nCells = cellsPerCluster(i)
+     walls(i)%nCells = nCells
+     walls(i)%nNodes = nNodes
+
+     allocate(walls(i)%x(3, nNodes), walls(i)%conn(4, nCells))
+  end do
+
+  ! We now loop through the master list of nodes and elements and
+  !  "push" them back to where they should go. We also keep track of
+  !  the local node numbers so that the cluster surcells can update
+  !  their own conn.
+  localNodeNums = 0
+  cnc = 0
+  do i=1, nNodesGlobal
+     c = clusterNodeGlobal(i) ! Cluter this node belongs to
+     cnc(c) = cnc(c) + 1 ! "cluster node count:" the 'nth' node for this  cluster
+
+     walls(c)%x(:, cnc(c))= nodesGlobal(:, i)
+     localNodeNums(i) = cnc(c)
+  end do
+
+  ccc = 0
+  do i=1, nCellsGlobal
+     c = clusterCellGlobal(i)
+     ccc(c) = ccc(c) + 1 ! "Cluster cell count" the 'nth' cell for this cluster
+     walls(c)%conn(:, ccc(c)) = connGlobal(:, i)
+  end do
+
+
+  do i=1, nCluster
+
+     nCells = walls(i)%nCells
+     nNodes = walls(i)%nNodes 
+
+     ! Fistly we need to update the conn to use our local node ordering. 
+     do j=1, nCells
+        do k=1, 4
+           walls(i)%conn(k, j) = localNodeNums(walls(i)%conn(k, j))
+        end do
+     end do
+
+     ! Allocate temporary space for doing the point reduction. 
+     allocate(uniqueNodes(3, nNodes), link(nNodes))
+
+     call pointReduce(walls(i)%x, nNodes, tol, uniqueNodes, link, nUnique)
+
+     ! Reset the number of nodes to be number of unique nodes
+     nNodes = nUnique
+     walls(i)%nNodes = nNodes
+     
+     ! Update the nodes with the unique ones. 
+     do j=1, nUnique
+        walls(i)%x(:, j) = uniqueNodes(:, j)
+     end do
+
+     ! Update conn using the link:
+     do j=1, nCells
+        do k=1, 4
+           walls(i)%conn(k, j) = link(walls(i)%conn(k, j))
+        end do
+     end do
+
+     ! Unique nodes and link are no longer needed
+     deallocate(link, uniqueNodes)
+
+     call buildSerialQuad(nCells, nNodes, walls(i)%x, walls(i)%conn, walls(i)%ADT)
+     call buildUniqueNormal(walls(i))
+  end do
+
+  ! Finally build up a "full wall" that is made up of all the cluster
+  ! walls. Note that we can reuse the space previously allocated for
+  ! the global data, namely, nodes and conn. These will be slightly
+  ! larger than necessary becuase of the point reduce. 
+
+  fullWall%x => nodesGlobal
+  fullWall%conn => connGlobal
+  allocate(fullWall%norm(3, nNodesGlobal))
+
+  nNodes = 0
+  nCells = 0
+  ii = 0
+  do i=1, nCluster
+
+     ! Add in the nodes/elements from this cluster
+
+     do j=1, walls(i)%nNodes
+        nNodes = nNodes + 1
+        fullWall%x(:, nNodes) = walls(i)%x(:, j)
+     end do
+
+     do j=1, walls(i)%nCells
+        nCells = nCells + 1
+        fullWall%conn(:, nCells) = walls(i)%conn(:, j) + ii
+     end do
+
+     ! Increment the node offset
+     ii = ii + walls(i)%nNodes
+  end do
+
+  ! Finish the setup of the full surcell
+  fullWall%nCells = nCells
+  fullWall%nNodes = nNodes
+  call buildSerialQuad(nCells, nNodes, fullWall%x, fullWall%conn, fullWall%ADT)
+  call buildUniqueNormal(fullWall)
+
   ! Allocate the (pointer) memory that may be resized as necessary for
   ! the singlePoint search routine. 
   allocate(stack(100), BB(20), BBint(20), frontLeaves(25), frontLeavesNew(25))
-   
+
   ! Now determine the iblank status:
-  nSearch = 0
+  kk = 0
   do nn=1, nDom
-  
+
+     ! Set the cluster for this block
+     c = clusters(cumDomProc(myid) + nn)
+     conn => fullWall%conn
+     nodes => fullWall%x
+     norm => fullWall%norm
      call setPointers(nn, level, sps)
+
      do k=2, kl
         do j=2, jl
            do i=2, il
@@ -347,69 +429,84 @@ subroutine computeHolesInsideBody(level, sps)
                    +         x(i-1,j-1,k,  3) + x(i,j-1,k,  3)  &
                    +         x(i-1,j,  k,  3) + x(i,j,  k,  3))
 
-              ! We can do a bounding box check here...if our query
-              ! point is outside the entire surface bouding box,
-              ! there's no way it can be inside. 
-              if ( coor(1) > xMax(1) .or. &
-                   coor(1) < xMin(1) .or. &
-                   coor(2) > xMax(2) .or. &
-                   coor(2) < xMin(2) .or. &
-                   coor(3) > xMax(3) .or. &
-                   coor(3) < xMin(3)) then 
+              ! Compute our exact wall distance using our own surface
+              ! ADT. This can be used for the actual wall distance for
+              ! RANS.
+              coor(4) = large
+              uvw(4) = large
+              if (walls(c)%nCells > 0) then 
+                 kk = kk + 1
+                 call minDistancetreeSearchSinglePoint(walls(c)%ADT, coor, intInfo, &
+                      uvw, dummy, 0, BB, frontLeaves, frontLeavesNew)
+                 cellID = intInfo(3)
+              end if
+
+              myDist = sqrt(uvw(4))
+              if (myDist < nearWallDist) then 
                  cycle
               end if
 
               ! Do the very fast ray cast method-intersection search. 
-              call intersectionTreeSearchSinglePoint(ADTs(jjAdt), coor(1:3), &
+              call intersectionTreeSearchSinglePoint(fullWall%ADT, coor(1:3), &
                    intInfo(1), BBint, frontLeaves, frontLeavesNew)
               
               ! If we never found *any* intersections again, cannot
               ! possibly be inside.
               if (intInfo(1) == 0) then 
-                  cycle
+                 cycle
                end if
 
-              nSearch = nSearch + 1
               ! Otherwise do the full min distance search
-              coor(4) = 1e30
-              call minDistancetreeSearchSinglePoint(ADTs(jjAdt), coor, intInfo, &
-                   uvw, dummy, 0, BB, frontLeaves, frontLeavesNew)
-              
-              faceID = intInfo(3)
+              coor(4) = large
+              call minDistancetreeSearchSinglePoint(fullWall%ADT, coor, &
+                   intInfo, uvw, dummy, 0, BB, frontLeaves, frontLeavesNew)
+              otherDist = sqrt(uvw(4))
+              cellID = intInfo(3)
 
-              ! bi-linear shape functions (CCW ordering)
-              shp(1) = (one-uvw(1))*(one-uvw(2))
-              shp(2) = (    uvw(1))*(one-uvw(2))
-              shp(3) = (    uvw(1))*(    uvw(2))
-              shp(4) = (one-uvw(1))*(    uvw(2))
-
-              xp = zero
-              normal = zero
-              do jj=1, 4
-                 xp = xp + shp(jj)*nodes(:, conn(jj, faceID))
-                 normal = normal + shp(jj)*norm(:, conn(jj, faceID))
-              end do
-
-              ! Compute the dot product of normal with cell center
-              ! (stored in coor) with the point on the surface.
-              v1 = coor(1:3) - xp
-              dp = normal(1)*v1(1) + normal(2)*v1(2) + normal(3)*v1(3)
-
-              if (dp < zero) then 
-                 ! We're inside so blank this cell. 
-                 iBlank(i, j, k) = 0
+              if (otherDist < myDist .or. myDist > nearWallDist) then 
+                 
+                 ! bi-linear shape functions (CCW ordering)
+                 shp(1) = (one-uvw(1))*(one-uvw(2))
+                 shp(2) = (    uvw(1))*(one-uvw(2))
+                 shp(3) = (    uvw(1))*(    uvw(2))
+                 shp(4) = (one-uvw(1))*(    uvw(2))
+                 
+                 xp = zero
+                 normal = zero
+                 do jj=1, 4
+                    xp = xp + shp(jj)*nodes(:, conn(jj, cellID))
+                    normal = normal + shp(jj)*norm(:, conn(jj, cellID))
+                 end do
+                 
+                 ! Compute the dot product of normal with cell center
+                 ! (stored in coor) with the point on the surface.
+                 v1 = coor(1:3) - xp
+                 dp = normal(1)*v1(1) + normal(2)*v1(2) + normal(3)*v1(3)
+                 
+                 if (dp < zero) then 
+                    ! We're inside so blank this cell. Set it to -3 as
+                    ! being a flood seed. 
+                    
+                    iBlank(i, j, k) = -3
+                 end if
               end if
            end do
         end do
      end do
   end do
-
-  ! Destroy ADT since we're done
-  call adtDeallocateADTs(adtName)
-
+  print *,'myid kk:', myid, kk
   ! Deallocate all the remaining temporary data
-  deallocate(nodes, conn, norm)
   deallocate(stack, BB, frontLeaves, frontLeavesNew, BBint)
+
+  do i=1, nCluster
+     deallocate(walls(i)%x, walls(i)%norm, walls(i)%conn)
+     call destroySerialQuad(walls(i)%ADT)
+  end do
+  deallocate(walls)
+
+  call destroySerialQuad(fullWall%ADT)
+  deallocate(nodesGlobal, connGlobal, fullWall%norm, &
+       clusterCellGlobal, clusterNodeGlobal, localNodeNums)
 
   ! Finally communicate the updated iBlanks
   ! Update the iblank info. 
@@ -420,5 +517,57 @@ subroutine computeHolesInsideBody(level, sps)
   
   ! Run the generic integer exchange
   call wHalo1to1IntGeneric(1, level, sps, commPatternCell_2nd, internalCell_2nd)
-
+  print *,' new time:', mpi_wtime()-timeA
 end subroutine computeHolesInsideBody
+
+
+subroutine buildUniqueNormal(wall)
+
+  use overset
+  implicit none
+
+  ! Input/Output parameters
+  type(oversetWall), intent(inout) :: wall
+  
+  ! Working
+  integer(kind=intType), dimension(:),    allocatable :: link, normCount  
+  real(kind=realType),   dimension(:, :), pointer :: nodes, norm
+  integer(kind=intType), dimension(:, :), pointer :: conn
+  real(kind=realType), dimension(3) :: sss,  v1, v2
+  integer(kind=intTYpe) :: i, j
+  ! Compute the (averaged) uniqe nodal vectors:
+  allocate(wall%norm(3, wall%nNodes), normCount(wall%nNodes))
+  nodes => wall%x
+  conn => wall%conn
+  norm => wall%norm
+
+  norm = zero
+  normCount = 0
+
+  do i=1, wall%nCells
+        
+     ! Compute cross product normal and normize
+     v1 = nodes(:, conn(3, i)) -  nodes(:, conn(1, i))
+     v2 =  nodes(:, conn(4, i)) -  nodes(:, conn(2, i))
+     
+     sss(1) = (v1(2)*v2(3) - v1(3)*v2(2))
+     sss(2) = (v1(3)*v2(1) - v1(1)*v2(3))
+     sss(3) = (v1(1)*v2(2) - v1(2)*v2(1))
+     sss = sss / sqrt(sss(1)**2 + sss(2)**2 + sss(3)**2)
+     
+     ! Add to each of the four nodes and increment the number added
+     do j=1, 4
+        norm(:, conn(j, i)) = norm(:, conn(j, i)) + sss
+        normCount(conn(j, i)) = normCount(conn(j, i)) + 1
+     end do
+  end do
+  
+  ! Now just divide by the norm count
+  do i=1, wall%nNodes
+     norm(:, i) = norm(:, i) / normCount(i)
+  end do
+  
+  ! Node count is no longer needed
+  deallocate(normCount)
+
+end subroutine buildUniqueNormal

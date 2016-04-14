@@ -44,6 +44,9 @@ subroutine fringeSearch(oBlock, oFringe, bWall, fWall)
 
   ! Search the cells one at a time:
   do i=1, n
+     if (oFringe%quality(i) < zero) then 
+        cycle
+     end if
 
      ! We can take a little short cut here: If we know that the min
      ! volume of the oBlock is LARGER than the cell we're searching
@@ -63,7 +66,6 @@ subroutine fringeSearch(oBlock, oFringe, bWall, fWall)
              oBlock%qualDonor, nInterpol, BB, frontLeaves, frontLeavesNew, failed)
         
         if (intInfo(1) >= 0 .and. failed) then 
-
            ! we "found" a point but it is garbage. Do the failsafe search
            xx(4) = large
            call minDistanceTreeSearchSinglePoint(oBlock%ADT, xx, intInfo, uvw, &
@@ -107,27 +109,10 @@ subroutine fringeSearch(oBlock, oFringe, bWall, fWall)
               ! Now record the information
               localWallFringes(nLocalWallFringe)%donorProc = oBlock%proc
               localWallFringes(nLocalWallFringe)%donorBlock = oBlock%block
-
-              ! Which cell we flag depend on which quadrant it is
-              ! within the dual cell:
-
-              if (uvw(1) < half) then 
-                 localWallFringes(nLocalWallFringe)%dI = ii
-              else
-                 localWallFringes(nLocalWallFringe)%dI = ii+1
-              end if
-
-              if (uvw(2) < half) then 
-                 localWallFringes(nLocalWallFringe)%dJ = jj
-              else
-                 localWallFringes(nLocalWallFringe)%dJ = jj+1
-              end if
-
-              if (uvw(3) < half) then 
-                 localWallFringes(nLocalWallFringe)%dK = kk
-              else
-                 localWallFringes(nLocalWallFringe)%dK = kk+1
-              end if
+              localWallFringes(nLocalWallFringe)%dI = ii
+              localWallFringes(nLocalWallFringe)%dJ = jj
+              localWallFringes(nLocalWallFringe)%dK = kk
+                 
            end if
 
            ! This check is for the actual donors. The '<' is really
