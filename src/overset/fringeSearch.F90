@@ -44,6 +44,9 @@ subroutine fringeSearch(oBlock, oFringe, bWall, fWall)
 
   ! Search the cells one at a time:
   do i=1, n
+
+     ! Cells with negative quality are those inside the body. Don't
+     ! bother to search for them since don't need donors. 
      if (oFringe%quality(i) < zero) then 
         cycle
      end if

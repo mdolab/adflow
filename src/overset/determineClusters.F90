@@ -9,30 +9,31 @@
 !      *                                                                *
 !      ******************************************************************
 
-subroutine determineClusters(clusters, N, cumDomsProc, clusterID)
+subroutine determineClusters()
 
   use constants
   use cgnsGrid
   use blockPointers
   use communication
+  use overset
   implicit none
 
   ! Input/output variables
-  integer(kind=intType), intent(in) :: N
-  integer(kind=intType), dimension(N), intent(out) :: clusters
-  integer(kind=intType), dimension(0:nProc), intent(in) :: cumDomsProc
-  integer(kind=intType), intent(out) :: clusterID
+  !integer(kind=intType), intent(out) :: clusterID
 
   ! Working variables
-  integer(kind=intType) :: numBlocks, blockID, cgnsBlk, ierr
+  integer(kind=intType) :: numBlocks, blockID, cgnsBlk, ierr, clusterID
   integer(kind=intType) :: i, nn
-  integer(kind=intType), dimension(N) :: clustersLocal
+  integer(kind=intType), dimension(nDomTotal) :: clustersLocal
   logical :: blocksAvailable
 
   ! Initialize the cluster of each of the CGNSDoms to 0
   do i=1, cgnsNDom
      cgnsDoms(i)%cluster = 0
   end do
+
+  ! Allocate clusters (defined in overset)
+  allocate(clusters(nDomTotal))
 
   ! Initialize cluster counter
   clusterID = 0
@@ -51,7 +52,7 @@ subroutine determineClusters(clusters, N, cumDomsProc, clusterID)
 
      do while ((.not. blocksAvailable) .and. (blockID .lt. cgnsnDom))
         blockID = blockID + 1 ! Increment counter
-        if (cgnsDoms(blockID)%cluster .eq. 0) then
+        if (cgnsDoms(blockID)%cluster == 0) then
            blocksAvailable = .true.
         end if
      end do
@@ -71,10 +72,13 @@ subroutine determineClusters(clusters, N, cumDomsProc, clusterID)
   ! Set the cluster ID for all my blocks:
   do nn=1,nDom
      cgnsBlk = flowDoms(nn, 1, 1)%cgnsBlockID
-     clustersLocal(cumDomsProc(myid) + nn) = cgnsDoms(cgnsBlk)%cluster
+     clustersLocal(cumDomProc(myid) + nn) = cgnsDoms(cgnsBlk)%cluster
   end do
-  call MPI_Allreduce(clustersLocal, clusters, N, sumb_integer, MPI_SUM, &
+  call MPI_Allreduce(clustersLocal, clusters, nDomTotal, sumb_integer, MPI_SUM, &
        sumb_comm_world, ierr)
+  
+  ! Finally, set the total number of clusters
+  nClusters = clusterID
 
 contains
 

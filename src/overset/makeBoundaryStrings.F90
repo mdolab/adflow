@@ -1,4 +1,4 @@
-subroutine makeGapBoundaryStrings(level, sps, clusters)
+subroutine makeGapBoundaryStrings(level, sps)
 
   use blockPointers
   use bctypes
@@ -10,11 +10,11 @@ subroutine makeGapBoundaryStrings(level, sps, clusters)
 
   ! Input Params
   integer(kind=intType), intent(in) :: level, sps
-  integer(kind=intType), intent(in) :: clusters(nDomTotal)
 
   ! Working
-  integer(kind=intType) :: i, j, k, nn, mm, ii, jj, kk, c, e,  idx, nClusters
+  integer(kind=intType) :: i, j, k, nn, mm, ii, jj, kk, c, e,  idx
   integer(kind=intType) :: i1, i2, j1, j2, iBeg, iEnd, jBeg, jEnd
+  integer(kind=intType) :: i3, i4, j3, j4
   integer(kind=intType) :: iStart, iSize, ierr, iProc, firstElem, curElem
   integer(kind=intType) :: below, above, left, right, nNodes, nElems
   integer(kind=intType) :: patchNodeCounter, nZipped, gc
@@ -44,14 +44,14 @@ subroutine makeGapBoundaryStrings(level, sps, clusters)
   real(kind=realType) :: timeA,  pt(3),   v(3), cosTheta,  cutOff, dist, maxH, ratio
   real(kind=realType), dimension(3) :: xj, xjp1, xjm1, normj
   real(kind=realType), dimension(3) :: xk, xkp1, xkm1, normk
-  real(kind=realType), dimension(3) :: myPt, otherPt
+  real(kind=realType), dimension(3) :: myPt, otherPt, eNorm
   integer(kind=intTYpe) :: otherID, otherIndex, closestOtherIndex, closestOtherString
   integer(kind=intType) :: id, index
   integer status(MPI_STATUS_SIZE) 
 
   ! Loop over the wall faces counting up the edges that stradle a
   ! compute cell and a blanked (or interpolated) cell. 
-  nClusters = maxval(clusters)
+
   allocate(epc(nClusters)) ! epc = elementsPerCluster
   epc = 0
 
@@ -93,12 +93,15 @@ subroutine makeGapBoundaryStrings(level, sps, clusters)
 
   do c=1, nClusters
      allocate(&
-          localStrings(c)%conn(2, epc(c)), localStrings(c)%x(3, 2*epc(c)), &
-          localStrings(c)%norm(3, 2*epc(c)), localStrings(c)%h(2*epc(c)), &
-          localStrings(c)%ind(2*epc(c)), localStrings(c)%gc(epc(c)))
-     localStrings(c)%x = zero
+          localStrings(c)%conn(2, epc(c)), localStrings(c)%nodeData(10, 2*epc(c)), &
+          localStrings(c)%ind(2*epc(c)))
+     localStrings(c)%nodeData = zero
      localStrings(c)%nNodes = 0
      localStrings(c)%nElems = 0
+
+     ! Assign string pointers immediately after allocation
+     call setStringPointers(localStrings(c))
+
   end do
   deallocate(epc)
   ! And now loop back through the walls and add in the
@@ -217,28 +220,45 @@ subroutine makeGapBoundaryStrings(level, sps, clusters)
                        if (below == 0) then 
                           i1 = i-1; j1 = j  
                           i2 = i  ; j2 = j  
-                          gc = gcp(i+1, j+2)
+
+                          i3 = i1; j3 = j + 1
+                          i4 = i2; j4 = j + 1
                        else
                           i1 = i  ; j1 = j  
                           i2 = i-1; j2 = j  
-                          gc = gcp(i+1, j+1)
+
+                          i3 = i1; j3 = j - 1
+                          i4 = i2; j4 = j - 1
                        end if
 
                        ! Don't forget pointer offset for xx
-                       localStrings(c)%x(:, 2*e-1) = xx(i1+1, j1+1, :)
-                       localStrings(c)%x(:, 2*e  ) = xx(i2+1, j2+1, :)
+                       localStrings(c)%nodeData(1:3, 2*e-1) = xx(i1+1, j1+1, :)
+                       localStrings(c)%nodeData(1:3, 2*e  ) = xx(i2+1, j2+1, :)
 
-                       localStrings(c)%norm(:, 2*e-1) = patchNormals(:, i1, j1)
-                       localStrings(c)%norm(:, 2*e  ) = patchNormals(:, i2, j2)
 
-                       localStrings(c)%h(2*e-1) = patchH(i1, j1)
-                       localStrings(c)%h(2*e  ) = patchH(i2, j2)
+                       localStrings(c)%nodeData(1:3, 2*e-1) = xx(i1+1, j1+1, :)
+                       localStrings(c)%nodeData(1:3, 2*e  ) = xx(i2+1, j2+1, :)
+                       
+                       v1 = xx(i1+1, j1+1, :) - xx(i3+1, j3+1, :)
+                       v1 = v1 / norm2(v1)
+
+                       v2 = xx(i2+1, j2+1, :) - xx(i4+1, j4+1, :)
+                       v2 = v2 / norm2(v2)
+
+                       localStrings(c)%nodeData(7:9, 2*e-1) = v1
+                       localStrings(c)%nodeData(7:9, 2*e  ) = v2
+
+                       localStrings(c)%nodeData(4:6, 2*e-1) = patchNormals(:, i1, j1)
+                       localStrings(c)%nodeData(4:6, 2*e  ) = patchNormals(:, i2, j2)
+
+                       localStrings(c)%nodeData(10, 2*e-1) = patchH(i1, j1)
+                       localStrings(c)%nodeData(10, 2*e  ) = patchH(i2, j2)
 
                        localStrings(c)%ind(2*e-1) = patchNums(i1, j1)
                        localStrings(c)%ind(2*e  ) = patchNums(i2, j2)
 
                        localStrings(c)%conn(:, e) = (/2*e-1, 2*e/)
-                       localStrings(c)%gc(e) = gc
+
                     end if
                  end if
               end do
@@ -265,28 +285,41 @@ subroutine makeGapBoundaryStrings(level, sps, clusters)
                        if (left == 0) then 
                           i1 = i  ; j1 = j  
                           i2 = i  ; j2 = j-1
-                          gc = gcp(i+2, j+1)
+
+                          i3 = i1+1; j3 = j1
+                          i4 = i2+1; j4 = j2
+
                        else
                           i1 = i  ; j1 = j-1
                           i2 = i  ; j2 = j  
-                          gc = gcp(i+1, j+1)
+
+                          i3 = i1-1; j3 = j1
+                          i4 = i2-1; j4 = j2
+
                        end if
 
                        ! Don't forget pointer offset xx
-                       localStrings(c)%x(:, 2*e-1) = xx(i1+1, j1+1, :)
-                       localStrings(c)%x(:, 2*e  ) = xx(i2+1, j2+1, :)
+                       localStrings(c)%nodeData(1:3, 2*e-1) = xx(i1+1, j1+1, :)
+                       localStrings(c)%nodeData(1:3, 2*e  ) = xx(i2+1, j2+1, :)
 
-                       localStrings(c)%norm(:, 2*e-1) = patchNormals(:, i1, j1)
-                       localStrings(c)%norm(:, 2*e  ) = patchNormals(:, i2, j2)
+                       localStrings(c)%nodeData(4:6, 2*e-1) = patchNormals(:, i1, j1)
+                       localStrings(c)%nodeData(4:6, 2*e  ) = patchNormals(:, i2, j2)
 
-                       localStrings(c)%h(2*e-1) = patchH(i1, j1)
-                       localStrings(c)%h(2*e  ) = patchH(i2, j2)
+                       v1 = xx(i1+1, j1+1, :) - xx(i3+1, j3+1, :)
+                       v1 = v1 / norm2(v1)
+
+                       v2 = xx(i2+1, j2+1, :) - xx(i4+1, j4+1, :)
+                       v2 = v2 / norm2(v2)
+
+                       localStrings(c)%nodeData(7:9, 2*e-1) = v1
+                       localStrings(c)%nodeData(7:9, 2*e  ) = v2
+                       localStrings(c)%nodeData(10, 2*e-1) = patchH(i1, j1)
+                       localStrings(c)%nodeData(10, 2*e  ) = patchH(i2, j2)
 
                        localStrings(c)%ind(2*e-1) = patchNums(i1, j1)
                        localStrings(c)%ind(2*e  ) = patchNums(i2, j2)
 
                        localStrings(c)%conn(:, e) = (/2*e-1, 2*e/)
-                       localStrings(c)%gc(e) = gc
 
                     end if
                  end if
@@ -339,25 +372,22 @@ subroutine makeGapBoundaryStrings(level, sps, clusters)
            nElemsProc(i) = nElemsProc(i) + nElemsProc(i-1)
         end do
 
-        allocate(globalStrings(c)%x(3, nNodesProc(nProc)), &
-             globalStrings(c)%norm(3, nNodesProc(nProc)), &
-             globalStrings(c)%h(nNodesProc(nProc)), &
+        allocate(globalStrings(c)%nodeData(10, nNodesProc(nProc)), &
              globalStrings(c)%ind(nNodesProc(nProc)), &
-             globalStrings(c)%conn(2, nElemsProc(nProc)), &
-             globalStrings(c)%gc(nElemsProc(nProc)))
+             globalStrings(c)%conn(2, nElemsProc(nProc)))
+
+        ! Always set the pointers immediately after allocation
+        call setStringPointers(globalStrings(c))
 
         ! Put proc 0's own nodes/normals/indices in the global list if we have any
         do i=1, localStrings(c)%nNodes
-           globalStrings(c)%x(:, i) = localStrings(c)%x(:, i)
-           globalStrings(c)%norm(:, i) = localStrings(c)%norm(:, i)
-           globalStrings(c)%h(i) = localStrings(c)%h(i)
+           globalStrings(c)%nodeData(:, i) = localStrings(c)%nodeData(:, i)
            globalStrings(c)%ind(i) = localStrings(c)%ind(i)
         end do
 
         ! Put proc 0's own elements in the global list if we have any
         do i=1, localStrings(c)%nElems
            globalStrings(c)%conn(:, i) = localStrings(c)%conn(:, i)
-           globalStrings(c)%gc(i) = localStrings(c)%gc(i)
         end do
 
         ! Set my total sizes
@@ -373,15 +403,7 @@ subroutine makeGapBoundaryStrings(level, sps, clusters)
               iSize = iEnd - iStart + 1
 
               ! ----------- Node sized arrays -------------
-              call MPI_Recv(globalStrings(c)%x(:, iStart:iEnd), iSize*3, sumb_real, iProc, iProc, &
-                   sumb_comm_world, status, ierr)
-              call ECHK(ierr, __FILE__, __LINE__)
-
-              call MPI_Recv(globalStrings(c)%norm(:, iStart:iEnd), iSize*3, sumb_real, iProc, iProc, &
-                   sumb_comm_world, status, ierr)
-              call ECHK(ierr, __FILE__, __LINE__)
-
-              call MPI_Recv(globalStrings(c)%h(iStart:iEnd), iSize, sumb_real, iProc, iProc, &
+              call MPI_Recv(globalStrings(c)%nodeData(:, iStart:iEnd), iSize*10, sumb_real, iProc, iProc, &
                    sumb_comm_world, status, ierr)
               call ECHK(ierr, __FILE__, __LINE__)
 
@@ -397,10 +419,6 @@ subroutine makeGapBoundaryStrings(level, sps, clusters)
                    sumb_comm_world, status, ierr)
               call ECHK(ierr, __FILE__, __LINE__)
 
-              call MPI_Recv(globalStrings(c)%gc(iStart:iEnd), iSize, sumb_integer, iProc, iProc, &
-                   sumb_comm_world, status, ierr)
-              call ECHK(ierr, __FILE__, __LINE__)
-
               ! Increment the conn we just received by the node offset:
               do i=iStart, iEnd
                  globalStrings(c)%conn(:, i) = globalStrings(c)%conn(:, i) + nNodesProc(iProc)
@@ -412,15 +430,7 @@ subroutine makeGapBoundaryStrings(level, sps, clusters)
         if (localStrings(c)%nElems > 0) then 
  
           ! ----------- Node sized arrays -------------
-           call MPI_Send(localStrings(c)%x, 3*localStrings(c)%nNodes, sumb_real, 0, myid, &
-                sumb_comm_world, ierr)
-           call ECHK(ierr, __FILE__, __LINE__)
-
-           call MPI_Send(localStrings(c)%norm, 3*localStrings(c)%nNodes, sumb_real, 0, myid, &
-                sumb_comm_world, ierr)
-           call ECHK(ierr, __FILE__, __LINE__)
-
-           call MPI_Send(localStrings(c)%h, localStrings(c)%nNodes, sumb_real, 0, myid, &
+           call MPI_Send(localStrings(c)%nodeData, 10*localStrings(c)%nNodes, sumb_real, 0, myid, &
                 sumb_comm_world, ierr)
            call ECHK(ierr, __FILE__, __LINE__)
            
@@ -433,15 +443,11 @@ subroutine makeGapBoundaryStrings(level, sps, clusters)
                 sumb_comm_world, ierr)
            call ECHK(ierr, __FILE__, __LINE__)
 
-           call MPI_Send(localStrings(c)%gc, localStrings(c)%nElems, sumb_integer, 0, myid, &
-                sumb_comm_world, ierr)
-           call ECHK(ierr, __FILE__, __LINE__)
-
         end if
      end if
   end do
 
-  ! Everyone is now down with the local strings
+  ! Everyone is now done with the local strings
   do c=1, nClusters
      call deallocateString(localStrings(c))
   end do
@@ -472,8 +478,11 @@ subroutine makeGapBoundaryStrings(level, sps, clusters)
      call nullifyString(master)
      master%nNodes = nNodes
      master%nElems = nElems
-     allocate(master%x(3, nNodes), master%conn(2, nElems), master%norm(3, nNodes), &
-          master%h(nNodes), master%ind(nNodes), master%gc(nElems))
+     allocate(master%nodeData(10, nNodes), master%conn(2, nElems), &
+          master%ind(nNodes))
+
+     ! Set the string pointers to the individual arrays
+     call setStringPointers(master)
 
      nNodes = 0 ! This is our running counter for offseting nodes
      ii = 0
@@ -482,19 +491,17 @@ subroutine makeGapBoundaryStrings(level, sps, clusters)
      do c=1, nClusters
         do i=1, globalStrings(c)%nNodes
            ii = ii + 1
-           master%x(:, ii) = globalStrings(c)%x(:, i)
-           master%norm(:, ii) = globalStrings(c)%norm(:, i)
-           master%h(ii) = globalStrings(c)%h(i)
+           master%nodeData(:, ii) = globalStrings(c)%nodeData(:, i)
            master%ind(ii) = globalStrings(c)%ind(i)
         end do
 
         do i=1, globalStrings(c)%nElems
            jj = jj + 1
            master%conn(:, jj) = globalStrings(c)%conn(:, i) + nNodes
-           master%gc(jj) = globalStrings(c)%gc(i)
         end do
         nNodes =ii
      end do
+
 
      ! Now the root is done with the global strings so deallocate that
      ! too. 
@@ -717,6 +724,15 @@ subroutine makeGapBoundaryStrings(level, sps, clusters)
                  if (master%cNodes(1, idx) == str%myID) then 
                     cycle innerLoop 
                  end if
+                 
+                 ! ---------------------------------------------
+
+                 ! Check 1b: If the node we found has been removed due
+                 ! to self zipping, we can just keep going
+                 ! --------------------------------------------
+                 if (master%cNodes(2, idx) == 0) then 
+                    cycle innerLoop 
+                 end if
 
                  ! The first time we make it here, idx will be the
                  ! index of the closest node on another string that
@@ -745,6 +761,7 @@ subroutine makeGapBoundaryStrings(level, sps, clusters)
                  ! ---------------------------------------------
                  otherID = master%cNodes(1, idx)
                  otherIndex = master%cNodes(2, idx)
+
                  call getNodeInfo(strings(otherID), otherIndex, checkLeft2, &
                       checkRight2, concave2, xk, xkm1, xkp1,  normk)
      
@@ -862,7 +879,35 @@ subroutine makeGapBoundaryStrings(level, sps, clusters)
      ! ---------------------------------------------------------------
      ! Xzip 2: Call the actual Xzip by providing all gap strings data.
      ! ---------------------------------------------------------------
-     !call makeCrossZip(master, strings, nFullStrings)
+
+     ! Sphere
+     !call crossZip(strings(3), 1, 33, strings(2), 89, 1)
+     !call crossZip(strings(1), 1, 45, strings(4), 47, 32)
+
+     ! ! Thin wing
+     ! call crossZip(strings(1), 1, 1, strings(3), 59, 59)
+     ! call crossZip(strings(4), 12, 12, strings(2), 40, 40)
+
+     ! Thin swept wing
+     ! call crossZip(strings(1), 118, 118, strings(3), 85, 85)
+     ! call crossZip(strings(4), 26, 26, strings(2), 29, 29)
+
+     ! ! dpw6 wb
+     ! call crossZip(strings(2), 119, 119, strings(6), 158, 158)
+     ! call crossZip(strings(7), 50, 50, strings(4), 145, 145)
+     ! call crossZip(strings(8), 1, 1, strings(5), 223, 223)
+     ! call crossZip(strings(1), 1, 81, strings(3), 89, 1)
+
+     ! ! dpw6 wbnp
+     ! call crossZip(strings(2), 112, 112, strings(7), 163, 163)
+     ! call crossZip(strings(8), 51, 51, strings(4), 144, 144)
+     ! call crossZip(strings(6), 182, 182, strings(9), 97, 97)
+
+     ! call crossZip(strings(23), 10, 10, strings(32), 10, 10)
+     ! call crossZip(strings(28), 9, 9, strings(24), 2, 2)
+     ! call crossZip(strings(25), 2, 2, strings(27), 9, 9)
+     ! call crossZip(strings(17), 9 , 9 , strings(18), 50, 50)
+     ! call crossZip(strings(11), 94, 94, strings(15), 58, 58)
 
      ! ===============================================================
      ! Do pocket zipping
@@ -880,7 +925,8 @@ subroutine makeGapBoundaryStrings(level, sps, clusters)
      print *, 'nFullStrings:', nFullStrings
      open(unit=101, file="fullGapStrings.dat", form='formatted')
      write(101,*) 'TITLE = "Gap Strings Data" '
-     write(101,*) 'Variables = "X", "Y", "Z", "Nx", "Ny", "Nz", "ind" "gapID" "gapIndex" "otherID" "otherIndex" "ratio"'
+     write(101,*) 'Variables = "X" "Y" "Z" "Nx" "Ny" "Nz" "Vx" "Vy" "Vz" "ind" &
+          "gapID" "gapIndex" "otherID" "otherIndex" "ratio"'
      do i=1, nFullStrings
         call writeOversetString(strings(i), strings, nFullStrings, 101)
      end do

@@ -773,6 +773,7 @@ python module libsumb
          real(kind=realtype) :: prandtlturb
          real(kind=realtype) :: pklim
          real(kind=realtype) :: walloffset
+         real(kind=realtype) :: walldistcutoff
          real(kind=realtype) :: eddyvisinfratio
          real(kind=realtype) :: turbintensityinf
          real(kind=realtype) :: surfaceref
@@ -1097,19 +1098,7 @@ python module libsumb
          real(kind=realtype) :: ank_switchtol
          real(kind=realtype) :: ank_cfl0
        end module anksolvervars
-      
-        subroutine testrev(dwbar,wbar,statesize) ! in :test:test.F90
-          real(kind=realtype) dimension(statesize),intent(in) :: dwbar
-          real(kind=realtype) dimension(statesize),intent(out),depend(statesize) :: wbar
-          integer(kind=inttype), optional,check(len(dwbar)>=statesize),depend(dwbar) :: statesize=len(dwbar)
-        end subroutine testrev
 
-        subroutine testrevspatial(dwbar,xbar,statesize,spatialsize) ! in :test:test.F90
-            real(kind=realtype) dimension(statesize),intent(in) :: dwbar
-            real(kind=realtype) dimension(spatialsize),intent(out),depend(spatialsize) :: xbar
-            integer(kind=inttype), optional,check(len(dwbar)>=statesize),depend(dwbar) :: statesize=len(dwbar)
-            integer(kind=inttype) :: spatialsize
-        end subroutine testrevspatial
        subroutine testdrdwtspeed(x,y,n) ! in :test:matrixFreeRoutines.F90
          real(kind=realtype) dimension(n) :: x
          real(kind=realtype) dimension(n),depend(n) :: y

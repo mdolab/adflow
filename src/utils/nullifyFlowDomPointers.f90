@@ -180,7 +180,7 @@
 
        nullify(flowDoms(nn,level,sps)%globalCell)
        nullify(flowDoms(nn,level,sps)%globalNode)
-       nullify(flowDOms(nn,level,sps)%elemID)
+       nullify(flowDOms(nn,level,sps)%surfNodeIndices)
        nullify(flowDOms(nn,level,sps)%uv)
 
 
