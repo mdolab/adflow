@@ -86,10 +86,10 @@ subroutine floodInteriorCells(level, sps)
            ! iMin/iMax
            do k=2, kl
               do j=2, jl
-                 if (changed(1, j, k) == 1) then
+                 if (changed(1+1, j+1, k+1) == 1) then
                     call addSeed(2, j, k)
                  end if
-                 if (changed(ie, j, k) == 1) then
+                 if (changed(ie+1, j+1, k+1) == 1) then
                     call addSeed(il, j, k)
                  end if
               end do
@@ -98,10 +98,10 @@ subroutine floodInteriorCells(level, sps)
            ! jMin/jMax
            do k=2, kl
               do i=2, il
-                 if (changed(i, 1, k) == 1) then 
+                 if (changed(i+1, 1+1, k+1) == 1) then 
                     call addSeed(i, 2, k)
                  end if
-                 if (changed(i, je, k) == 1) then 
+                 if (changed(i+1, je+1, k+1) == 1) then 
                     call addSeed(i, jl, k)
                  end if
               end do
@@ -110,10 +110,10 @@ subroutine floodInteriorCells(level, sps)
            ! kMin:
            do j=2, jl
               do i=2, il
-                 if (changed(i, j, 1) == 1) then
+                 if (changed(i+1, j+1, 1+1) == 1) then
                     call addSeed(i, j, 2)
                  end if
-                 if (changed(i, j, ke) == 1) then
+                 if (changed(i+1, j+1, ke+1) == 1) then
                     call addSeed(i, j, kl)
                  end if
               end do
@@ -149,7 +149,7 @@ subroutine floodInteriorCells(level, sps)
 
               if (isCompute(fringes(i, j, k)%status) .and. fringes(i, j, k)%donorProc == -1) then 
                  ! Flag the cell (using changed) as being changed
-                 changed(i, j, k) = 1
+                 changed(i+1, j+1, k+1) = 1
 
                  ! Keep track of the total number we've changed.
                  nChangedLocal = nChangedLocal + 1
