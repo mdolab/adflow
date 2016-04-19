@@ -9,8 +9,10 @@ contains
     implicit none
     type(oversetString) :: string
 
-    nullify(string%x, string%norm, string%h, string%ind, string%conn, &
-         string%gc, string%otherID, string%nte, string%subStr, string%elemUsed)
+    nullify(string%x, string%norm, string%h, string%perpNorm, &
+         string%nodeData, string%ind, string%conn, &
+         string%otherID, string%nte, string%subStr, string%elemUsed)
+
   end subroutine nullifyString
 
   subroutine deallocateString(string)
@@ -20,23 +22,14 @@ contains
     type(oversetString) :: string
     integer(kind=intType) :: i
 
-    if (associated(string%x)) & 
-         deallocate(string%x)
-
-    if (associated(string%norm)) & 
-         deallocate(string%norm)
-
-    if (associated(string%h)) & 
-         deallocate(string%h)
+    if (associated(string%nodeData)) & 
+         deallocate(string%nodeData)
 
     if (associated(string%ind)) & 
          deallocate(string%ind)
 
     if (associated(string%conn)) & 
          deallocate(string%conn)
-
-    if (associated(string%gc)) & 
-         deallocate(string%gc)
 
     if (associated(string%otherID)) & 
          deallocate(string%otherID)
@@ -54,6 +47,17 @@ contains
 
   end subroutine deallocateString
 
+  subroutine setStringPointers(string)
+
+    use overset
+    implicit none
+    type(oversetString) :: string
+    string%x => string%nodeData(1:3, :)
+    string%norm => string%nodeData(4:6, :)
+    string%perpNorm => string%nodeData(7:9, :)
+    string%h => string%nodeData(10, :)
+
+  end subroutine setStringPointers
 
   subroutine reduceGapString(string)
 
@@ -72,8 +76,7 @@ contains
     integer(kind=intType) :: nUnqiue, i, n1, n2, nUnique
     integer(kind=intType), dimension(:), allocatable :: link
     real(kind=realType), dimension(:, :), allocatable :: uniqueNodes
-    real(kind=realType), dimension(:, :), pointer :: xptr, normPtr
-    real(kind=realType), dimension(:), pointer :: hPtr
+    real(kind=realType), dimension(:, :), pointer :: nodeDataPtr
     integer(kind=intType) , dimension(:), pointer :: indPtr
 
     ! We will do a sort of adaptive tolernace here: Get the minium edge
@@ -99,22 +102,21 @@ contains
 
     ! Reallocate the node based data to the correct size. Set pointers
     ! to original data first. 
-    xPtr => string%x
-    normPtr => string%norm
-    hPtr => string%h
+    nodeDataPtr => string%nodeData
     indPtr => string%ind
-    allocate(string%x(3, nUnique), string%norm(3, nUnique), string%h(nUnique), string%ind(nUnique))
+    allocate(string%nodeData(10, nUnique), string%ind(nUnique))
+
+    ! Reset the pointers 
+    call setStringPointers(string)
 
     do i=1, string%nNodes
-       string%x(:, link(i)) = xPtr(:, i)
-       string%norm(:, link(i)) = normPtr(:, i)
-       string%h(link(i)) = hPtr(i)
+       string%nodeData(:, link(i)) = nodeDataPtr(:, i)
        string%ind(link(i)) = indPtr(i)
     end do
     string%nNodes = nUnique
 
     ! deallocate the pointer data which is actually the original data
-    deallocate(xPtr, normPtr, indPtr, link, uniqueNodes)
+    deallocate(nodeDataPtr, indPtr, link, uniqueNodes)
 
   end subroutine reduceGapString
 
@@ -134,7 +136,6 @@ contains
     integer(kind=intType) :: i, j, ii, jj, n(2), m(2), curElem, nDup
     integer(kind=intType), dimension(string%nElems) :: duplicated
     integer(kind=intType), dimension(:, :), pointer :: tmpConn
-    integer(kind=intType), dimension(:), pointer :: tmpGC
     logical :: duplicateElement
 
     allocate(string%nte(3, string%nNodes))
@@ -185,15 +186,15 @@ contains
     nDup = sum(duplicated) 
     if (nDup > 0) then 
        tmpConn => string%conn
-       tmpGC => string%gc
+
        allocate(string%conn(2, string%nElems - nDup))
-       allocate(string%gc(string%nElems - nDup))
+
        j = 0
        do i=1, string%nElems
           if (duplicated(i) == 0) then 
              j = j + 1
              string%conn(:, j) = tmpConn(:, i)
-             string%gc(j) = tmpGC(i)
+
           end if
        end do
 
@@ -202,7 +203,7 @@ contains
 
        ! Don't forget to deallocate the tmpConn pointer which is
        ! actually the original conn data.
-       deallocate(tmpConn, tmpGC)
+       deallocate(tmpConn)
 
        ! Destroy nte and call myself again to get the final correct nte
        ! without the duplicates.
@@ -362,21 +363,22 @@ contains
     ! quantities and the parent, we can allocate and set all the
     ! node-based quantities.
 
-    allocate(s%x(3, s%nNodes), s%norm(3, s%nNodes), s%h(s%nNodes), s%ind(s%nNodes))
+    allocate(s%nodeData(10, s%nNodes), s%ind(s%nNodes))
+
+    ! Set the string pointers
+    call setStringPointers(s)
+
     do i=1, s%nNodes
-       s%x(:, i) = p%x(:, s%pNodes(i))
-       s%norm(:, i) = p%norm(:, s%pNodes(i))
-       s%h(i) = p%h(s%pNodes(i))
+       s%nodeData(:, i) = p%nodeData(:, s%pNodes(i))
        s%ind(i) = p%ind(s%pNodes(i))
     end do
 
     ! We can now create the local conn too, *USING THE LOCAL NODE NUMBERS*
-    allocate(s%conn(2, s%nElems), s%gc(s%nElems))
+    allocate(s%conn(2, s%nElems))
 
     do i=1, s%nElems
        s%conn(1, i) = nodeUsed(p%conn(1, s%pElems(i)))
        s%conn(2, i) = nodeUsed(p%conn(2, s%pElems(i)))
-       s%gc(i) = p%gc(s%pElems(i))
     end do
 
     ! Set the pointer to my parent. 
@@ -425,10 +427,9 @@ subroutine selfZip(s, cutOff, nZipped)
   logical :: lastNodeZipper, inTri, overlapFound
   real(kind=realType), dimension(3) :: v1, v2, norm, c
   real(kind=realType) :: cosCutoff, cosTheta, r2, v1nrm, v2nrm
-  integer(Kind=intType), dimension(:), allocatable :: nodeMap
+  integer(Kind=intType), dimension(:), allocatable :: nodeMap, elemMap
   type(kdtree2_result), dimension(:), allocatable  :: results
-  real(kind=realType), dimension(:, :), pointer :: xTmp, normTmp
-  real(kind=realType), dimension(:), pointer :: hTmp
+  real(kind=realType), dimension(:, :), pointer :: nodeDataTmp
   integer(kind=intType), dimension(:, :), pointer :: connTmp
   integer(kind=intType), dimension(:), pointer :: indTmp, pNodesTmp
   ! Perform self zipping on the supplied string. The string at this
@@ -455,8 +456,9 @@ subroutine selfZip(s, cutOff, nZipped)
 
   nAlloc = 25
   allocate(results(nAlloc))
-  allocate(nodeMap(s%nNodes))
+  allocate(nodeMap(s%nNodes), elemMap(s%nElems))
   nodeMap = 1
+  elemMap = 1
 
   do while (ii <= N)
 
@@ -556,10 +558,17 @@ subroutine selfZip(s, cutOff, nZipped)
                  s%p%tris(:, s%p%nTris) = (/s%pNodes(ip1), s%pNodes(ii),s%pNodes(im1)/)
                  lastNodeZipper = .True.
                  nZipped = nZipped + 1
+
+                 ! Flag this node as gone
                  nodeMap(ii) = 0
 
+                 ! Flag the two edges on either side of this node as
+                 ! also being gone
+                 elemMap(s%nte(2, ii)) = 0
+                 elemMap(s%nte(3, ii)) = 0
 
-                 ! The two shorted string edges have been used for selfZip
+                 ! Flag the two edges that got removed as being used
+                 ! in the parent.
                  elem1 = s%p%nte(2, s%pNodes(ii))
                  elem2 = s%p%nte(3, s%pNodes(ii))
                  s%p%elemUsed(elem1) = 1
@@ -603,9 +612,7 @@ subroutine selfZip(s, cutOff, nZipped)
   ! Save pointers to existing data
   nNodes = s%nNodes
   nElems = s%nElems
-  xTmp => s%x
-  normTmp => s%norm
-  hTmp => s%h
+  nodeDataTmp => s%nodeData
   indTmp => s%ind
   connTmp => s%conn
   pNodesTmp => s%pNodes
@@ -624,7 +631,8 @@ subroutine selfZip(s, cutOff, nZipped)
   end do
 
   !  Update the cNodes in the parent so they point to the updated node
-  ! numbers
+  ! numbers. Note that the nodes that have been eliminated, have cNode
+  ! = 0, which will identify that it no longer has a child node. 
   do i=1, s%nNodes
      s%p%cNodes(:, s%pNodes(i)) = (/s%myID, nodeMap(i)/)
   end do
@@ -634,14 +642,15 @@ subroutine selfZip(s, cutOff, nZipped)
   s%nNodes = s%nNodes - nZipped
   s%nElems = s%nElems - nZipped
 
-  allocate(s%x(3, s%nNodes), s%norm(3, s%nNodes), s%h(s%nNodes), &
-       s%ind(s%nNodes), s%pNodes(s%nNodes), s%conn(2, s%nElems))
+  allocate(s%nodeData(10, s%nNodes), s%ind(s%nNodes), s%pNodes(s%nNodes), &
+       s%conn(2, s%nElems))
 
+  ! Set the pointers for the new string
+  call setStringPointers(s)
+  
   do i=1, nNodes
      if (nodeMap(i) /= 0) then 
-        s%x(:, nodeMap(i)) = xTmp(:, i)
-        s%norm(:, nodeMap(i)) = normTmp(:, i)
-        s%h(nodeMap(i)) = hTmp(i)
+        s%nodeData(:, nodeMap(i)) = nodeDataTmp(:, i)
         s%ind(nodeMap(i)) = indTmp(i)
         s%pNodes(nodeMap(i)) = pNodesTmp(i)
      end if
@@ -655,11 +664,491 @@ subroutine selfZip(s, cutOff, nZipped)
      s%conn(2, s%nElems) = 1
   end if
   
-  
-
+ 
   ! Dellocate the existing memory
-  deallocate(xTmp, normTmp, indTmp, connTmp, pNodesTmp)
+  deallocate(nodeDataTmp, indTmp, connTmp, pNodesTmp)
+  deallocate(nodeMap, elemMap)
+
+  ! Recrate the node to elem
+  call createNodeToElem(s)
 end subroutine selfZip
+
+subroutine crossZip(str1, N1, N2, str2, N3, N4)
+
+  implicit none
+  type(oversetString), intent(inout) :: str1, str2
+  integer(kind=intType) :: N1, N2, N3, N4
+
+  ! Working
+  integer(kind=intType) :: stepsA, stepsB, nStepsA, nStepsB
+  integer(kind=intType) :: nTriToAdd, ii, i, j, k, A, B, Ap, Bp
+  real(kind=realType), dimension(3) :: ptA, ptB, ptAp, ptBp
+  real(kind=realType), dimension(3) :: Aoff, Boff, ApOff, BpOff
+  real(kind=realType), dimension(3) :: normA, normB, normAp, normBp
+  real(kind=realType), dimension(3) :: perpA, perpB, perpAp, perpBp
+  real(kind=realType), dimension(3) :: triNorm1, quadNorm1
+  real(kind=realType), dimension(3) :: triNorm2, quadNorm2
+  logical :: aValid, bValid, advanceA, aPreferred, area1, area2
+  logical :: positiveTriArea, changeA, changeB
+  real(kind=realType) ::  sum1, sum2, h, dpa, dpb
+  real(kind=realType), parameter :: cutOff = 0.95*3
+  ! First determine the the total number of triangles we will add
+  ! total. It is equal to the total number of triangles on each
+  ! string. This will form the index on the do loop.
+
+  ! Str1 goes forward
+  if (N2 > N1) then 
+     nStepsA = N2 - N1
+  else if (N2 < N1) then 
+     nStepsA = N2 + str1%nNodes - N1
+  else ! N1 == N2
+     nStepsA = str1%nElems
+  end if
+
+  ! Str2 goes backwards
+  if (N3 < N4) then 
+     nStepsB = N3 + str2%nNodes - N4
+  else if (N3 > N4) then 
+     nStepsB = N3 - N4
+  else ! N3 == N4
+     nStepsB =  str2%nElems
+  end if
+
+  ! Initialize the front: 
+  A = N1
+  B = N3
+  ptA = str1%x(:, A)
+  ptB = str2%x(:, B)
+
+  normA = str1%norm(:, A)
+  normB = str2%norm(:, B)
+
+  perpA = str1%perpNorm(:, A)
+  perpB = str2%perpNorm(:, B)
+
+  Ap = nextNode(str1, A, .True.)
+  Bp = nextNode(str2, B, .False.)
+  ptAp = str1%x(:, Ap)
+  ptBp = str2%x(:, Bp)
+  normAp = str1%norm(:, Ap)
+  normBp = str2%norm(:, Bp)
+  perpAp = str1%perpNorm(:, Ap)
+  perpBp = str2%perpNorm(:, Bp)
+
+  ! The number of steps we've performed in each edge
+  stepsA = 0
+  stepsB = 0
+
+  ! Cross zip nodes N1 to N2 on str1 to nodes N3 to N4 on str2
+  ii = 0
+  do while (ii < nStepsA + nStepsB)
+     aValid = .True. 
+     bValid = .True. 
+     ! ---------------------------------------------------------------
+     ! Check 1: Point-in-Triangle test: This test considers the
+     ! triangle ABA+ and determines if any of the neighbouring points
+     ! on either of the two strings is contained inside the
+     ! triangle. If the test is positive, A+ must be rejected. The
+     ! same test is repeated for B+. 
+     ! ---------------------------------------------------------------
+
+     if (triOverlap(ptA, ptB, ptAp, str1, A, Ap) .or. &
+          triOverlap(ptA, ptB, ptAp, str2, B, B)) then
+        aValid = .False.
+     end if
+     
+     if (triOverlap(ptA, ptB, ptBp, str1, A, A) .or. & 
+          triOverlap(ptA, ptB, ptBp, str2, B, Bp)) then
+        bValid = .False.
+     end if
+
+     ! ---------------------------------------------------------------
+     ! Check 2: Convex quadrilaterl test: This test considers the
+     ! quadrilateral ABB+A+ and determines if it is convex. For
+     ! connection to point A+ to be valid, the vector areas of
+     ! triangles ABA+ and BB+A+ should have the same size. For
+     ! connection to B+ to be valid, the vector areas of trianges ABB+
+     ! and AB+A+ should be the same sign.  NOTE THAT THIS TEST DOES NOT
+     ! ACTUALLY WORK. IT IS 100% INCORRECT!!! THERE ARE CASES WHERE
+     ! THE SIGN OF BOTH AREAS ARE OPPOSITE! IT CANNOT BE SAFELY USED. 
+     ! ---------------------------------------------------------------
+
+     ! area1 = positiveTriArea(ptA, ptB, ptAp, normB)
+     ! area2 = positiveTriArea(ptB, ptBp, ptAp, normB)
+
+     ! if (area1 .neqv. area2) then 
+     !    aValid = .False. 
+     ! end if
+
+     ! area1 = positiveTriArea(ptA, ptB, ptBp, normA)
+     ! area2 = positiveTriArea(ptAp, ptBp, ptA, normA)
+
+     ! if (area1 .neqv. area2) then 
+     !    bValid = .False. 
+     ! end if
+
+     ! Instead, check if the triangle we're going to add has a
+     ! positive or negative vector area
+
+     area1 = positiveTriArea(ptA, ptB, ptAp, normA)
+     if (area1 .eqv. .False.) then 
+        aValid = .False. 
+     end if
+
+     area2 = positiveTriArea(ptA, ptB, ptBp, normB)
+     if (area2 .eqv. .False.) then 
+        bValid = .False. 
+     end if
+     
+     ! ---------------------------------------------------------------
+     ! Check 3: Prism volume test: Using the surface normals,
+     ! "extrude" a prisim in the direction of each surface normal and
+     ! find it's volume. It is is not positive, reject the
+     ! triangle. Since we don't have the node off wall, we will have
+     ! to make do with the normal vectors and average cell size. We
+     ! average the cell size and divide by 1000 to give an approximate
+     ! offwall distance. Then we use the norm veectors to offset in
+     ! that distance to produce the "off" points. 
+     ! ---------------------------------------------------------------
+     
+     ! h = quarter*(str1%h(A) + str1%h(Ap) + str2%h(B) + str2%h(Bp)) / 1000
+     ! AOff = ptA + normA * h
+     ! BOff = ptB + Bnorm * h
+     ! ApOff = ptAp + normAp * h
+     ! BpOff = ptBp + normBp * h
+
+     ! if (prismVol(A, B, Ap, Aoff, Boff, ApOff) < zero) then 
+     !    aValid = .False. 
+     ! end if
+
+     ! if (prismVol(A, B, Bp, Aoff, Boff, BpOff) < zero) then 
+     !    bValid = .False. 
+     ! end if
+
+     ! ---------------------------------------------------------------
+     ! Check 4: Interpolation stencil test: This one isn't implemented
+     ! ---------------------------------------------------------------
+
+     ! ---------------------------------------------------------------
+     ! Check 5: Surface normal compatibility test. The surface normal
+     ! from the triangle should be pointing (mostly) in the same
+     ! direction as the normal of the quad that this triangle shares
+     ! and edge with. THIS ALSO DOES NOT WORK! What we have to do
+     ! instead, is check the normal tri normal against the node
+     ! normals it would be using. This is simplier and is vastly
+     ! superior. 
+     ! ---------------------------------------------------------------
+
+     call cross_prod(ptB-ptA, ptAp-ptA, triNorm1)
+     triNorm1 = triNorm1 / norm2(triNorm1)
+
+     ! Compute the sum of the dot product of the nodal norms with the triNorm
+     sum1 = dot_product(triNorm1, normA) + dot_product(triNorm1, normB) + &
+          dot_product(triNorm1, normAp)
+
+     call cross_prod(ptB-ptA, ptBp-ptA, triNorm2)
+     triNorm2 = triNorm2 / norm2(triNorm2)
+
+     sum2 = dot_product(triNorm2, normA) + dot_product(triNorm2, normB) + &
+          dot_product(triNorm2, normBp)
+
+     if (aValid .and. bValid) then 
+        ! Only use this to help pick one if both are still valid:
+
+        if (sum1 < cutoff .and. sum2 > cutoff) then 
+           aValid = .False.
+
+        else if(sum2 < cutoff .and. sum1 > cutoff) then 
+           bValid = .False.
+
+        else if (sum1 < cutoff .and. sum2 < cutoff) then 
+           ! Both bad. Take the least bad one
+           if (sum1 > sum2) then 
+              bValid = .False. 
+           else
+              aValid = .False. 
+           end if
+        end if
+     end if
+
+     ! ---------------------------------------------------------------
+     ! Check 6: Front angle test: Try to keep the front as close as
+     ! possible to the gap edges. 
+     ! ---------------------------------------------------------------
+
+     ! Triangle ABA+. Original implemnetation
+     sum1 = vecAngle(ptA-ptAp, ptB-ptAp) + vecAngle(ptBp-ptB, ptAp-ptB) 
+     sum2 = vecAngle(ptB-ptBp, ptA-ptBp) + vecAngle(ptAp-ptB, ptBp-ptB)
+
+     if (sum1 > sum2) then 
+        aPreferred = .True. 
+     else
+        aPreferred = .False. 
+     end if
+
+     ! ---------------------------------------------------------------
+     ! Check 7: End of string test
+     ! ---------------------------------------------------------------
+
+     if (A == Ap) then 
+        aValid = .False. 
+        bValid = .True. 
+     end if
+
+     if (B == Bp) then 
+        bValid = .False. 
+        aValid = .True. 
+     end if
+
+     ! ---------------------------------------------------------------
+     ! Decide on the triangle we want to take. 
+     ! ---------------------------------------------------------------
+
+     if (aValid .and. .not. bValid) then 
+
+        ! We have no choice but to take A+
+        
+        call addTri(A, str1, B, str2, Ap, str1)
+        advanceA = .True. 
+
+     else if (bValid .and. .not. aValid) then 
+
+        ! We have no choice but to take B+
+
+        call addTri(A, str1, B, str2, Bp, str2)
+        advanceA = .False. 
+
+     else if (aValid .and. bValid) then 
+
+        ! We could take either. Use the preferred triangle. 
+        if (aPreferred) then 
+
+           call addTri(A, str1, B, str2, Ap, str1)
+           advanceA = .True.
+
+        else
+           
+           call addTri(A, str1, B, str2, Bp, str2)
+           advanceA = .False. 
+        
+        end if
+
+     else 
+        
+        ! Ewww. neither triangle is valid. This is bad. Just take A?
+        print *,'eww:', ptA, ptB
+        call addTri(A, str1, B, str2, Ap, str1)
+        advanceA = .True.
+
+     end if
+
+     ! Now we have to shuffle along the string. 
+     if (advanceA) then 
+        
+        stepsA = stepsA + 1
+
+        ! Copy the Ap to A
+        A = Ap
+        ptA = ptAp
+        normA = normAp
+        perpA = perpAp
+
+        ! And get the new data for Ap
+        Ap = nextNode(str1, A, .True.)
+        ptAp = str1%x(:, Ap)
+        normAp = str1%norm(:, Ap)
+        perpAp = str1%perpNorm(:, Ap)
+
+     else
+
+        stepsB = stepsB + 1
+        
+        ! Copy the Bp to B
+        B = Bp
+        ptB = ptBp
+        normB = normBp
+        perpB = perpBp
+
+        ! And get the new data for Bp
+        Bp = nextNode(str2, B, .False.)
+        ptBp = str2%x(:, Bp)
+        normBp = str2%norm(:, Bp)
+        perpBp = str2%perpNorm(:, Bp)
+     end if
+     
+     ! Finally increment the number of triangles we've used so far. 
+     ii = ii + 1
+   
+  end do
+  
+  contains
+
+    function nextNode(str, i, pos)
+
+      implicit none
+      type(oversetString), intent(iN) :: str
+      integer(kind=intType), intent(in) :: i
+      logical, intent(in) :: pos
+      integer(kind=intType) :: nextNode
+
+      if (pos) then 
+         if (stepsA == nStepsA) then 
+            nextNode = i
+         else
+            nextNode = i + 1
+            if (nextNode > str%nNodes) then 
+               if (str%isPeriodic) then 
+                  ! Loop back around
+                  nextNode = 1
+               else
+                  ! Leave it at the same node
+                  nextNode = i
+               end if
+            end if
+         end if
+      else
+         if (stepsB == nStepsB) then 
+            nextNode = i
+         else
+            nextNode = i - 1
+            if (nextNode < 1) then 
+               if (str%isPeriodic) then 
+                  ! Loop back around
+                  nextNode = str%nNodes
+               else
+                  ! Leave it at the same node
+                  nextNode = i
+               end if
+            end if
+         end if
+      end if
+    end function nextNode
+
+    function vecAngle(vec1, vec2)
+      
+      implicit none
+
+      ! Input/Output
+      real(kind=realType), dimension(3), intent(in) :: vec1, vec2
+      real(kind=realType) :: vecAngle
+
+      ! Working
+      real(kind=realType), dimension(3) :: vecA, vecB
+
+      vecA = vec1 / norm2(vec1)
+      vecB = vec2 / norm2(vec2)
+      
+      vecAngle = acos(dot_product(vecA, vecB))
+
+    end function vecAngle
+
+    function elemBetweenNodes(str, a, b)
+      implicit none
+
+      ! Input/Output
+      type(oversetString), intent(in) :: str
+      integer(kind=intType), intent(in) :: a,b
+      integer(kind=intType) :: elemBetweenNodes
+
+      ! Working
+      integer(kind=intType) :: e1, e2, e3, e4
+
+      if (str%nte(1, a) == 1) then 
+         e1 = str%nte(2, a)
+         e2 = e1
+      else
+         e1 = str%nte(2, a)
+         e2 = str%nte(3, a)
+      end if
+      
+      if (str%nte(1, b) == 1) then 
+         e3 = str%nte(2, b)
+         e4 = e3
+      else
+         e3 = str%nte(2, b)
+         e4 = str%nte(3, b)
+      end if
+
+      ! Two of the edges are the same. And this is the one that must
+      ! be between the two nodes. 
+
+      if (e1 == e3 .or. e1 == e4) then 
+         elemBetweenNodes = e1
+      else
+         elemBetweenNodes = e2
+      end if
+         
+    end function elemBetweenNodes
+    
+    function triArea(pt1, pt2, pt3)
+
+      implicit none
+
+      ! Input/Output
+      real(kind=realType), intent(in), dimension(3) :: pt1, pt2, pt3
+      real(kind=realType) :: triArea
+
+      ! Working
+      real(kind=realType), dimension(3) :: norm
+
+      call cross_prod(pt2-pt1, pt3-pt1, norm)
+      triArea = half * norm2(norm)
+
+    end function triArea
+
+    subroutine addTri(A, sA, B, sB, C, sC)
+
+      ! Form a triangle from index 'A' on string 'sA' , index 'B' on
+      ! string 'sB' and index 'C' on string 'sC'
+
+      implicit none
+      
+      ! Input/Output
+      integer(kind=intType), intent(in) :: A, B, C
+      type(oversetString), intent(in) :: sA, sB, sC
+      
+      ! Working 
+      type(oversetString), pointer :: p
+      integer(kind=intType) :: mn1, mn2, mn3
+      p => sA%p
+
+      p%nTris = p%nTris+ 1
+
+      ! mn = master node
+      mn1 = sA%pNodes(A)
+      mn2 = sB%pNodes(B)
+      mn3 = sC%pNodes(C)
+
+      p%tris(:, p%nTris) = (/mn1, mn2, mn3/)
+
+      ! Add these three edges to master list of edges
+
+      ! Edge 1:
+      p%nEdges = p%nEdges + 1
+      p%edges(p%nEdges)%n1 = mn1
+      p%edges(p%nEdges)%n2 = mn2
+
+      ! Edge 2:
+      p%nEdges = p%nEdges + 1
+      p%edges(p%nEdges)%n1 = mn2
+      p%edges(p%nEdges)%n2 = mn3
+
+      ! Edge 3:
+      p%nEdges = p%nEdges + 1
+      p%edges(p%nEdges)%n1 = mn3
+      p%edges(p%nEdges)%n2 = mn1
+      
+      ! Flag the edge that got used on master
+      if (sA%myID == sC%myID) then 
+         p%elemUsed(sA%pElems(elemBetweenNodes(sA, A, C))) = 1
+      else if (sB%myID == sC%myID) then 
+         p%elemUsed(sB%pElems(elemBetweenNodes(sB, B, C))) = 1
+      end if
+
+    end subroutine addTri
+
+end subroutine crossZip
+
 
   ! subroutine makeCrossZip(p, strings, nStrings)
   !   use overset
@@ -2086,4 +2575,38 @@ end subroutine selfZip
   !   end do
 
   ! end subroutine computeTriSurfArea
+
+function triOverlap(pt1, pt2, pt3, str, i1, i2)
+
+  implicit none
+  ! Input/Output
+  real(kind=realType), dimension(3), intent(in) :: pt1, pt2, pt3
+  integer(kind=intType), intent(in) :: i1, i2
+  type(oversetString), intent(in) :: str
+
+  ! Working
+  logical :: triOverlap, inTri
+  integer(kind=intType) :: i
+  real(kind=realType) :: triNorm(3)
+  ! Note: This is a dumb loop. We need to do a spatial serch here to
+  ! only check the nodes around the current point. 
+
+  call cross_prod(pt2-pt1, pt3-pt1, triNorm)
+  triNorm = triNorm / norm2(triNorm)
+
+  triOverlap = .False. 
+  do i=1, str%nNodes
+     if (i /= i1 .and. i/= i2) then
+        if (dot_product(str%norm(:, i), triNorm) > zero) then 
+           call pointInTriangle(pt1, pt2, pt3, str%x(:, i), inTri)
+           if (inTri) then 
+              triOverlap = .true. 
+              exit
+           end if
+        end if
+     end if
+  end do
+end function triOverlap
+
+
 end module stringOps

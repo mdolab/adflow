@@ -1,4 +1,4 @@
-subroutine checkOverset (level, sps)
+subroutine checkOverset (level, sps, totalOrphans)
 
   !
   !      ******************************************************************
@@ -13,17 +13,19 @@ subroutine checkOverset (level, sps)
   use overset
   use blockPointers
   use stencils
+  use communication
   implicit none
 
   ! Input/Output
   integer(kind=intType), intent(in) :: level, sps
+  integer(kind=intType), intent(out) :: totalOrphans
 
   ! Working
-  integer(kind=intType) :: i, j, k, nn, ii, jj, kk, n
-  integer(kind=intType) :: magic
-  integer(kind=intType) :: i_stencil
+  integer(kind=intType) :: i, j, k, nn, ii, jj, kk, n, ierr
+  integer(kind=intType) :: magic, localOrphans, i_stencil
 
   magic = 33
+  localOrphans = 0
   do nn=1, nDom
      call setPointers(nn, level, sps)
 
@@ -53,6 +55,8 @@ subroutine checkOverset (level, sps)
            end do
         end do
      end do
+
+     localOrphans = localOrphans + n
 
      ! Remove any existing orphans 
      if (associated(flowDoms(nn, level, sps)%orphans)) then 
@@ -95,5 +99,12 @@ subroutine checkOverset (level, sps)
         end do
      end do
   end do
+
+  ! Determine the total number of overset orphans
+  call mpi_allreduce(localOrphans, totalOrphans, 1, sumb_integer, MPI_SUM, &
+       sumb_comm_world, ierr)
+  call ECHK(ierr, __FILE__, __LINE__)
+ 
+
 end subroutine checkOverset
 

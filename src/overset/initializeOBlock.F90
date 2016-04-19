@@ -57,17 +57,18 @@ subroutine initializeOBlock(oBlock, nn, level, sps)
         do i=1, ie
            ! This is a hard interior cell. Flag EVERY cell it it's
            ! stencil as a invalid donor. 
-           !if (iblank(i,j,k) == -2 .or. iblank(i,j,k)==-3 .or. iblank(i,j,k)==0) then 
-              if (iblank(i,j,k) == -2 .or. iblank(i,j,k)==-3) then 
+           if (iblank(i, j, k) ==-3 .or. iBlank(i, j,k) == -2) then 
+          
               stencilLoop: do i_stencil=1, N_visc_drdw
                  ii = visc_drdw_stencil(i_stencil, 1) + i
                  jj = visc_drdw_stencil(i_stencil, 2) + j
                  kk = visc_drdw_stencil(i_stencil, 3) + k
-
+                 
                  ! Make sure we're at least at 1-level halos
                  if (ii >= 1 .and. ii <= ie .and. jj >= 1 .and. jj<= je .and. &
                       kk >= 1 .and. kk <= ke) then 
                     oBlock%invalidDonor(ii, jj, kk) = 1
+                
                  end if
               end do stencilLoop
            end if

@@ -53,7 +53,7 @@ subroutine flagNearWallCells(level, sps)
      ! Manaully set the three pointers
      xSeed => flowDoms(nn, level, sps)%xSeed
      nearWall => flowDoms(nn, level, sps)%nearWall
-
+     nearWall = 0
      ! Use large to denote no seed presnet
      xSeed = large
 

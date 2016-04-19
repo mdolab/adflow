@@ -1,10 +1,7 @@
-subroutine computeHolesInsideBody(level, sps)
+subroutine determineWallAssociation(level, sps)
 
-  ! This routine will flag the iBlank values in oBlocks with 0 if the
-  ! the cell center falls inside the body. This is a (semi) parallel
-  ! implementation: The global surface mesh is communicated to all
-  ! processors who then search accordingly. This scalable in terms of
-  ! computation but not strictly memory. 
+  ! This routine will determine the closest surface point for every
+  ! field cell. Special treatment is required for overlapping surfaces. 
 
   use adtAPI
   use blockPointers
@@ -61,7 +58,6 @@ subroutine computeHolesInsideBody(level, sps)
 
   ! Pointers for easier readibility
   integer(kind=intType), dimension(:, :), pointer :: conn
-  real(kind=realType), dimension(:, :), pointer :: nodes, norm
   integer(kind=intType), dimension(:), pointer :: tmpInd
 
   ! Data for the ADT
@@ -74,7 +70,7 @@ subroutine computeHolesInsideBody(level, sps)
   
   ! Misc
   real(kind=realType) :: dp, shp(4)
-  real(kind=realType), dimension(3) ::xp, normal, v1
+  real(kind=realType), dimension(3) :: xp
 
   ! Determine if overset is present.
   gridHasOverset = oversetPresent()
@@ -365,9 +361,6 @@ subroutine computeHolesInsideBody(level, sps)
 
      call pointReduce(walls(i)%x, nNodes, tol, uniqueNodes, link, nUnique)
 
-
-            
-
      ! Update the global indices. Use the returned link
      tmpInd => walls(i)%ind
      allocate(walls(i)%ind(nUnique))
@@ -396,7 +389,7 @@ subroutine computeHolesInsideBody(level, sps)
      deallocate(link, uniqueNodes)
 
      call buildSerialQuad(nCells, nNodes, walls(i)%x, walls(i)%conn, walls(i)%ADT)
-     call buildUniqueNormal(walls(i))
+
   end do
 
   if (gridHasOverset) then 
@@ -408,7 +401,6 @@ subroutine computeHolesInsideBody(level, sps)
      fullWall%x => nodesGlobal
      fullWall%conn => connGlobal
      fullWall%ind => nodeIndicesGlobal
-     allocate(fullWall%norm(3, nNodesGlobal))
 
      nNodes = 0
      nCells = 0
@@ -436,7 +428,6 @@ subroutine computeHolesInsideBody(level, sps)
      fullWall%nCells = nCells
      fullWall%nNodes = nNodes
      call buildSerialQuad(nCells, nNodes, fullWall%x, fullWall%conn, fullWall%ADT)
-     call buildUniqueNormal(fullWall)
   end if
 
   ! Allocate the (pointer) memory that may be resized as necessary for
@@ -461,8 +452,6 @@ subroutine computeHolesInsideBody(level, sps)
      ! Set the cluster for this block
      c = clusters(cumDomProc(myid) + nn)
      conn => fullWall%conn
-     nodes => fullWall%x
-     norm => fullWall%norm
      
      do k=2, kl
         do j=2, jl
@@ -486,7 +475,8 @@ subroutine computeHolesInsideBody(level, sps)
 
               if (.not. gridHasOverset) then 
                  ! No overset present. Simply search our own wall,
-                 ! walls(c), up to the wall cutoff. 
+                 ! walls(c), (the only one we have) up to the wall
+                 ! cutoff.
                  coor(4) = wallDistCutoff**2
                  intInfo(3) = 0 ! Must be initialized since the search
                                 ! may not find closer point.
@@ -510,9 +500,10 @@ subroutine computeHolesInsideBody(level, sps)
                  cycle
               end if
 
-              ! This is now the (possibly) overlapping surface mesh
-              ! case. It is somewhat more complex since we use the
-              ! same searches to flag cells that are inside the body. 
+              ! This is now the overset (possibly) overlapping surface
+              ! mesh case. It is somewhat more complex since we use
+              ! the same searches to flag cells that are inside the
+              ! body.
               
               coor(4) = wallDistCutoff**2
               intInfo(3) = 0
@@ -521,16 +512,11 @@ subroutine computeHolesInsideBody(level, sps)
               cellID = intInfo(3)
 
               if (cellID > 0) then
+                 ! We found the cell:
                  
-
+                 ! If the cell is outside of near-wall distance or our
+                 ! cluster doesn't have any owned cells. Just accept it. 
                  if (uvw(4) > nearWallDist**2 .or. walls(c)%nCells == 0) then 
-
-                    call checkInside()
- 
-                    ! We found a point within the wallDist cutoff OR the
-                    ! cell is from a cluster with no walls, ie a
-                    ! background cell. Accept it's wall distance, since
-                    ! it guaranteed to be correct.
                     
                     do kk=1,4
                        flowDoms(nn, level, sps)%surfNodeIndices(kk, i, j, k) = &
@@ -541,7 +527,7 @@ subroutine computeHolesInsideBody(level, sps)
                  else
                     
                     ! This point is *closer* than the nearWallDist AND
-                    ! it has a wall. Search for our own wall. 
+                    ! it has a wall. Search on our own wall.
 
                     coor(4) = large
                     call minDistancetreeSearchSinglePoint(walls(c)%ADT, coor, &
@@ -549,21 +535,15 @@ subroutine computeHolesInsideBody(level, sps)
                     cellID2 = intInfo2(3)
 
                     if (uvw2(4) < nearWallDist**2) then 
-                       ! Both are close to the wall. Accept the one from our own wall. 
+                       ! Both are close to the wall. Accept the one
+                       ! from our own wall unconditionally.
                        do kk=1,4
                           flowDoms(nn, level, sps)%surfNodeIndices(kk, i, j, k) = &
                                walls(c)%ind(walls(c)%conn(kk, cellID2))
                        end do
                        flowDoms(nn, level, sps)%uv(:, i, j, k) = uvw2(1:2)
                     else
-                       ! We have already found a closer point from the
-                       ! full wall.  This means we need to check if it
-                       ! is inside.
-
-                       call checkInside()
-
-                       ! And save the wall-dist info we already had
-                       ! computed from the full wall search
+                       ! The full wall distance is better. Take that. 
         
                        do kk=1,4
                           flowDoms(nn, level, sps)%surfNodeIndices(kk, i, j, k) = &
@@ -582,31 +562,6 @@ subroutine computeHolesInsideBody(level, sps)
                  flowDoms(nn, level, sps)%surfNodeIndices(:, i, j, k) = 0
                  flowDoms(nn, level, sps)%uv(:, i, j, k) = 0
 
-                 ! HOWEVER, It is possible that this cell is actually
-                 ! inside the body. To quickly check, run the ray cast
-                 ! algo.
-
-                 call intersectionTreeSearchSinglePoint(fullWall%ADT, coor(1:3), &
-                      intInfo(1), BBint, frontLeaves, frontLeavesNew)
-              
-                 ! If we never found *any* intersections, cannot
-                 ! possibly be inside, and there is nothing else to do. 
-                 if (intInfo(1) == 0) then 
-                    cycle
-                 else
-                    ! We found a ray cast intersection. Looks like it
-                    ! might actually be inside the surface after
-                    ! all. Re-run the full distance search with no
-                    ! dist cutoff.
-                    coor(4) = large
-                    call minDistancetreeSearchSinglePoint(fullWall%ADT, coor, &
-                         intInfo, uvw, dummy, 0, BB, frontLeaves, frontLeavesNew)
-                    cellID = intInfo(3)
-
-                    ! Determine if it is inside:
-                    call checkInside()
-                    
-                 end if
               end if
            end do
         end do
@@ -700,7 +655,6 @@ subroutine computeHolesInsideBody(level, sps)
   deallocate(stack, BB, frontLeaves, frontLeavesNew, BBint)
 
   do i=1, nClusters
-     deallocate(walls(i)%x, walls(i)%norm, walls(i)%conn)
      call destroySerialQuad(walls(i)%ADT)
   end do
   deallocate(walls)
@@ -710,100 +664,6 @@ subroutine computeHolesInsideBody(level, sps)
 
   if (gridHasOverset) then 
      call destroySerialQuad(fullWall%ADT)
-     deallocate(fullWall%norm)
   end if
 
-  ! Finally communicate the updated iBlanks
-  domainLoop:do nn=1, nDom
-     flowDoms(nn, level, sps)%intCommVars(1)%var => &
-          flowDoms(nn, level, sps)%iblank(:, :, :)
-  end do domainLoop
-  
-  ! Run the generic integer exchange
-  call wHalo1to1IntGeneric(1, level, sps, commPatternCell_2nd, internalCell_2nd)
-
-contains
-
-  subroutine checkInside()
-
-    implicit none
-
-    ! bi-linear shape functions (CCW ordering)
-    shp(1) = (one-uvw(1))*(one-uvw(2))
-    shp(2) = (    uvw(1))*(one-uvw(2))
-    shp(3) = (    uvw(1))*(    uvw(2))
-    shp(4) = (one-uvw(1))*(    uvw(2))
-                    
-    xp = zero
-    normal = zero
-    do jj=1, 4
-       xp = xp + shp(jj)*nodes(:, conn(jj, cellID))
-       normal = normal + shp(jj)*norm(:, conn(jj, cellID))
-    end do
-                    
-    ! Compute the dot product of normal with cell center
-    ! (stored in coor) with the point on the surface.
-    v1 = coor(1:3) - xp
-    dp = normal(1)*v1(1) + normal(2)*v1(2) + normal(3)*v1(3)
-    
-    if (dp < zero) then 
-       ! We're inside so blank this cell. Set it to -3 as
-       ! being a flood seed. 
-       
-       iBlank(i, j, k) = -3
-    end if
-  end subroutine checkInside
-
-end subroutine computeHolesInsideBody
-
-
-subroutine buildUniqueNormal(wall)
-
-  use overset
-  implicit none
-
-  ! Input/Output parameters
-  type(oversetWall), intent(inout) :: wall
-  
-  ! Working
-  integer(kind=intType), dimension(:),    allocatable :: link, normCount  
-  real(kind=realType),   dimension(:, :), pointer :: nodes, norm
-  integer(kind=intType), dimension(:, :), pointer :: conn
-  real(kind=realType), dimension(3) :: sss,  v1, v2
-  integer(kind=intTYpe) :: i, j
-  ! Compute the (averaged) uniqe nodal vectors:
-  allocate(wall%norm(3, wall%nNodes), normCount(wall%nNodes))
-  nodes => wall%x
-  conn => wall%conn
-  norm => wall%norm
-
-  norm = zero
-  normCount = 0
-
-  do i=1, wall%nCells
-        
-     ! Compute cross product normal and normize
-     v1 = nodes(:, conn(3, i)) -  nodes(:, conn(1, i))
-     v2 =  nodes(:, conn(4, i)) -  nodes(:, conn(2, i))
-     
-     sss(1) = (v1(2)*v2(3) - v1(3)*v2(2))
-     sss(2) = (v1(3)*v2(1) - v1(1)*v2(3))
-     sss(3) = (v1(1)*v2(2) - v1(2)*v2(1))
-     sss = sss / sqrt(sss(1)**2 + sss(2)**2 + sss(3)**2)
-     
-     ! Add to each of the four nodes and increment the number added
-     do j=1, 4
-        norm(:, conn(j, i)) = norm(:, conn(j, i)) + sss
-        normCount(conn(j, i)) = normCount(conn(j, i)) + 1
-     end do
-  end do
-  
-  ! Now just divide by the norm count
-  do i=1, wall%nNodes
-     norm(:, i) = norm(:, i) / normCount(i)
-  end do
-  
-  ! Node count is no longer needed
-  deallocate(normCount)
-
-end subroutine buildUniqueNormal
+end subroutine determineWallAssociation

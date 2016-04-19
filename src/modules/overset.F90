@@ -27,7 +27,7 @@ module overset
   end type CSRMatrix
 
   ! This derived type contains sufficient information to perfom ADT
-  ! donor searches. The information is com
+  ! donor searches. 
   type oversetBlock
 
      ! Sizes for the block
@@ -148,6 +148,9 @@ module overset
 
      ! Connectivity for the surface
      integer(kind=intType), dimension(:, :), pointer:: conn
+
+     ! ind: Global node index for nodes
+     integer(kind=intType), dimension(:), pointer :: ind
      
      ! Blanking values for Nodes
      integer(kind=intType), dimension(:), allocatable :: iBlank
@@ -184,18 +187,25 @@ module overset
      ! Whether or no this string is periodic
      logical :: isPeriodic=.False.
 
-     ! The actual physical node locations. Size (3, nNodes)
+     ! Node Data: The actual physical node locations, unit surface normal,
+     ! perpNormal and mesh size. x is from index 1:3, normal from 4:6,
+     ! perpNormal form 7:9 and h is index 10. This pointer gets allocated.
+     real(kind=realType), dimension(:, :), pointer :: nodeData
+
+     ! Pointer for physical node location. Points to nodeData
      real(kind=realType), dimension(:, :), pointer :: x
 
-     ! The (unit, averaged) surface normal for nodes. Same size as x
+     ! Pointer for nodal unit normal. Points to nodeData
      real(kind=realType), dimension(:, :), pointer :: norm
 
-     ! An estimate of the local cell size. 
+     ! Pointer for nodal unit perpendicual in-plane normal. Points to nodeData
+     real(kind=realType), dimension(:, :), pointer :: perpNorm
+
+     ! Pointer for nodal element size. Points to nodeData
      real(kind=realType), dimension(:), pointer :: h
-     
-     ! The global cell ID of the compute (above and) next to an 
-     ! edge.
-     integer(kind=intType), dimension(:), pointer :: gc
+
+     ! The index of the family for the edge
+     real(kind=realType), dimension(:), pointer :: elemFam
 
      ! The orignal nodal index. Size nNodes.
      integer(kind=intType), dimension(:), pointer :: ind
@@ -300,6 +310,9 @@ module overset
   ! Some additional helper stuff
   integer(kind=intType), dimension(:), allocatable :: nDomProc, cumDomProc
   integer(kind=intType) :: nDomTotal
+  integer(kind=intType) :: nClusters
+  integer(kind=intType), dimension(:), allocatable :: clusters
+
   real(kind=realType), dimension(:), allocatable :: clusterAreas
 
   type XPlane

@@ -182,11 +182,17 @@ subroutine dealloc_derivative_values(level)
 
   ! And the petsc vector(s)
   if (.not. wallDistanceNeeded) then 
-     call VecDestroy(xSurfVec(1), ierr)
+     do sps=1, nTimeIntervalsSpectral
+        call VecDestroy(xSurfVec(1, sps), ierr)
+     end do
   end if
 
-  call VecDestroy(xSurfVecd, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+  do sps=1, nTimeIntervalsSpectral
+     call VecDestroy(xSurfVecd(sps), ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+  end do
+  deallocate(xSurfVecd)
+
 #ifndef USE_COMPLEX
   ! Deallocate reverse mode space for bcpointers
   deallocate(ww0, ww1, ww2, ww3, pp0, pp1, pp2, pp3, rlv0, rlv1, rlv2, rlv3, &

@@ -10,7 +10,7 @@ subroutine floodInteriorCells(level, sps)
   integer(kind=intType) :: nn, i, j, k, nSeed, iSeed, ierr
   integer(kind=intType), dimension(:, :), allocatable :: stack, floodSeeds
   integer(kind=intType) :: nChanged, nChangedLocal, stackPointer, loopIter
-  logical :: tmpSave, isCompute, isWallDonor, isFloodSeed
+  logical :: tmpSave, isCompute, isWallDonor, isFloodSeed, isHole
   integer(kind=intType), dimension(:, :, :), pointer :: changed
 
   ! Allocate pointer space for the integer flag communication
@@ -49,6 +49,22 @@ subroutine floodInteriorCells(level, sps)
         nSeed = 0
 
         if (loopIter == 1) then 
+
+           ! Make the -3 and -2 cells, those inside the body,
+           ! "compute" cells. This allows the flooding algorithm to
+           ! work the same on subsequent outer iterations as the first
+           ! iteration. 
+           do k=2, kl
+              do j=2, jl
+                 do i=2, il
+                    if (iblank(i, j, k) == -3 .or. iblank(i, j, k) == -2) then 
+                       call setIsCompute(fringes(i, j, k)%status, .True.)
+                       fringes(i, j, k)%donorProc = -1
+                    end if
+                 end do
+              end do
+           end do
+
            do k=2, kl
               do j=2, jl
                  do i=2, il
@@ -130,6 +146,7 @@ subroutine floodInteriorCells(level, sps)
               j = stack(2, stackPointer)
               k = stack(3, stackPointer)
               stackPointer = stackPointer - 1
+
               if (isCompute(fringes(i, j, k)%status) .and. fringes(i, j, k)%donorProc == -1) then 
                  ! Flag the cell (using changed) as being changed
                  changed(i, j, k) = 1
@@ -138,14 +155,13 @@ subroutine floodInteriorCells(level, sps)
                  nChangedLocal = nChangedLocal + 1
 
                  ! Pure compute cell, convert to hole
-                 
                  tmpSave = isFloodSeed(fringes(i, j, k)%status)
                  call emptyFringe(fringes(i, j, k))
                  call setIsHole(fringes(i, j, k)%status, .True.)
                  call setIsFlooded(fringes(i, j, k)%status, .True.)
                  call setIsCompute(fringes(i, j, k)%status, .False.)
                  call setIsFloodSeed(fringes(i, j, k)%status, tmpSave)
-            
+                 
                  ! Now add the six nearest neighbours to the stack
                  ! provided they are in the owned cell range:
 

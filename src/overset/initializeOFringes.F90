@@ -111,7 +111,7 @@ subroutine initializeOFringes(oFringe, nn)
   do k=2, kl
      do j=2, jl
         do i=2, il
-           if (iBlank(i,j,k) == -2 .or. iblank(i,j,k)==-3) then 
+           if (iblank(i,j,k)==-3 .or. iblank(i,j,k)==-2) then 
                iii = (kk-2)*nx*ny + (jj-2)*nx + (ii-2) + 1
               oFringe%quality(iii) = -large
            end if
@@ -125,7 +125,7 @@ subroutine initializeOFringes(oFringe, nn)
   do k=0, kb
      do j=0, jb
         do i=0, ib
-           if (iBlank(i,j,k) == -2 .or. iblank(i,j,k)==-3) then 
+           if (iblank(i,j,k)==-3 .or. iblank(i,j,k)==-2) then 
 
               stencilLoop: do i_stencil=1, N_visc_drdw
                  ii = visc_drdw_stencil(i_stencil, 1) + i
@@ -135,7 +135,7 @@ subroutine initializeOFringes(oFringe, nn)
                  ! Make sure we're on-block
                  if (ii >=2 .and. ii <= il .and. jj >= 2 .and. jj<= jl .and. &
                       kk >=2 .and. kk <= kl) then 
-                    if (iblank(ii, jj, kk) /= -2 .or. iblank(ii, jj, kk) /= -1) then 
+                    if (iblank(ii, jj, kk) /= -3 .and. iblank(ii,jj,kk) /= -2) then 
                        iii = (kk-2)*nx*ny + (jj-2)*nx + (ii-2) + 1
                        oFringe%quality(iii) = large
                     end if
