@@ -68,9 +68,14 @@
        limiter     = noLimiter            ! No limiter in upwind schemes.
        precond     = noPrecond            ! No preconditioning.
 
-       wallBCTreatment = normalMomentum    ! Normal momentum equation is
-                                           ! Used to determine ghost
-                                           ! cell pressure.
+       eulerWallBCTreatment = normalMomentum   ! Normal momentum equation is
+                                               ! Used to determine ghost
+                                               ! cell pressure.
+
+       viscWallBCTreatment = constantPressure  ! Normal momentum equation is
+                                               ! Used to determine ghost
+                                               ! cell pressure.
+
        outflowTreatment = constantExtrapol ! Constant extrapolation at
                                            ! outflow boundaries.
 

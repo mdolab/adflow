@@ -568,12 +568,14 @@ contains
     use constants
     use flowVarRefState
     use iteration
+    use inputDiscretization !, only : viscWallBCTreatment, constantPressure, linExtrapolPressure
     implicit none
 
     logical, intent(in) :: secondHalo, correctForK
     integer(kind=intType), intent(in) :: nn
     integer(kind=intType) :: i, j, ii
     real(kind=realType) :: rhok
+    integer(kind=intType) :: wallTreatment
 
     ! Apply the BCWall In case the turbulent transport equations are
     ! solved together with the mean flow equations, aplly the viscous
@@ -614,7 +616,6 @@ contains
        ww1(i,j,ivx)  = -ww2(i,j,ivx) + two*bcData(nn)%uSlip(i,j,1)
        ww1(i,j,ivy)  = -ww2(i,j,ivy) + two*bcData(nn)%uSlip(i,j,2)
        ww1(i,j,ivz)  = -ww2(i,j,ivz) + two*bcData(nn)%uSlip(i,j,3)
-       pp1(i,j)      =  pp2(i,j) - four*third*rhok
 
        ! Set the viscosities. There is no need to test for a
        ! viscous problem of course. The eddy viscosity is
@@ -624,6 +625,36 @@ contains
        rlv1(i,j) = rlv2(i,j)
        if( eddyModel ) rev1(i,j) = -rev2(i,j)
     enddo
+
+    ! PRESSURE EXTRAPOLATION
+
+    ! Make sure that on the coarser grids the constant pressure
+    ! boundary condition is used.
+
+    wallTreatment = viscWallBcTreatment
+    if(currentLevel > groundLevel) wallTreatment = constantPressure
+
+    BCTreatment: select case (wallTreatment)
+
+    case (constantPressure)
+
+       ! Constant pressure. Set the gradient to zero.
+       pp1 = pp2 - four*third*rhok
+
+    case default
+
+       ! Linear extrapolation. 
+       !$AD II-LOOP
+       do ii=0,isize*jsize-1
+          i = mod(ii, isize) + iStart
+          j = ii/isize + jStart
+
+          pp1(i,j) = 2*pp2(i,j) - pp3(i,j)
+          ! Adjust value if pressure is negative
+          if (pp1(i,j) .le. zero) pp1(i,j) = pp2(i,j)
+       end do
+
+    end select BCTreatment
 
     ! Compute the energy for these halo's.
 
@@ -651,6 +682,7 @@ contains
     use constants
     use flowVarRefState
     use iteration
+    use inputDiscretization !, only : viscWallBCTreatment, constantPressure, linExtrapolPressure
     implicit none
 
     ! Subroutine arguments.
@@ -659,7 +691,7 @@ contains
 
     ! Local variables.
     integer(kind=intType) :: i, j, ii
-
+    integer(kind=intType) :: wallTreatment
     real(kind=realType) :: rhok, t2, t1
 
     ! In case the turbulent transport equations are solved
@@ -703,12 +735,38 @@ contains
        t1 = max(half*bcData(nn)%TNS_Wall(i,j), t1)
        t1 = min(two *bcData(nn)%TNS_Wall(i,j), t1)
 
+       ! PRESSURE EXTRAPOLATION
+
+       ! Make sure that on the coarser grids the constant pressure
+       ! boundary condition is used.
+
+       wallTreatment = viscWallBCTreatment
+       if(currentLevel > groundLevel) wallTreatment = constantPressure
+
+       BCTreatment: select case (wallTreatment)
+
+       case (constantPressure)
+
+          ! Constant pressure. Set the gradient to zero.
+          pp1 = pp2 - four*third*rhok
+
+       case default
+
+          ! Linear extrapolation. 
+          i = mod(ii, isize) + iStart
+          j = ii/isize + jStart
+             
+          pp1(i,j) = 2*pp2(i,j) - pp3(i,j)
+          ! Adjust value if pressure is negative
+          if (pp1(i,j) .le. zero) pp1(i,j) = pp2(i,j)
+          
+       end select BCTreatment
+
        ! Determine the variables in the halo. As the spacing
        ! is very small a constant pressure boundary condition
        ! (except for the k correction) is okay. Take the slip
        ! velocity into account.
 
-       pp1(i,j)      =  pp2(i,j) - four*third*rhok
        ww1(i,j,irho) =  pp1(i,j)/(RGas*t1)
        ww1(i,j,ivx)  = -ww2(i,j,ivx) + two*bcData(nn)%uSlip(i,j,1)
        ww1(i,j,ivy)  = -ww2(i,j,ivy) + two*bcData(nn)%uSlip(i,j,2)
@@ -1229,7 +1287,7 @@ contains
     ! Make sure that on the coarser grids the constant pressure
     ! boundary condition is used.
 
-    wallTreatment = wallBcTreatment
+    wallTreatment = eulerWallBcTreatment
     if(currentLevel > groundLevel) wallTreatment = constantPressure
 
     ! **************************************************************

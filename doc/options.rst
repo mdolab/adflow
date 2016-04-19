@@ -110,12 +110,16 @@ Parameter                                  Type       Default                   
                                                                                                     as the wall distance. This is substantially faster and permits efficient wall-distance
                                                                                                     updates for use in aerostructural analysis. 
                                                                 
-`wallTreatment`                          `str`       `linear pressure extrapolation`                Specifies how the boundary conditions are implemented. Generally the default value
-                                                                                                    need not be changed. Other values include `constant pressure extrapolation`,
-                                                                                                    `quadratic pressure extrapolation` and `normal momentum`. Only `linear pressure 
-                                                                                                    extrapolation` and `constant pressure` extrapolation are know to work with the 
-                                                                                                    adjoint method. 
+`eulerWallTreatment`                     `str`       `linear pressure extrapolation`                Specifies how the boundary conditions are implemented for inviscid simulations.
+                                                                                                    Generally the default value need not be changed. Other values include
+                                                                                                    `constant pressure extrapolation`, `quadratic pressure extrapolation` and
+                                                                                                    `normal momentum`. Only `linear pressure extrapolation` and `constant pressure` extrapolation
+                                                                                                    are know to work with the adjoint method.
                                                           
+`viscWallTreatment`                      `str`       `constant pressure extrapolation`              Specifies how the boundary conditions are implemented for viscous simulations.
+                                                                                                    Generally the default value need not be changed. The option available is
+                                                                                                    `linear pressure extrapolation`.
+
 `dissipationScalingExponent`             `float`     0.67                                           Exponent factor to use in JST dissipation scheme. This value typically will not need
                                                                                                     to be changed from its default value. The value of 2/3 is the theoretical best value
                                                                                                     for this value assuming an orthogonal 3 dimensional grid. 

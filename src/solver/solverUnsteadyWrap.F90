@@ -53,7 +53,7 @@ subroutine solverUnsteadyWrapBegin
   ! actually are inviscid walls. If so, set the logical
   ! exchangePressureEarly to .true.; otherwise set it to .false.
   
-  if(wallBcTreatment == normalMomentum) then
+  if(eulerWallBcTreatment == normalMomentum) then
      exchangePressureEarly = EulerWallsPresent()
   else
      exchangePressureEarly = .false.

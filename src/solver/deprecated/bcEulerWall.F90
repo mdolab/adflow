@@ -148,7 +148,7 @@
        ! Make sure that on the coarser grids the constant pressure
        ! boundary condition is used.
 
-       wallTreatment = wallBcTreatment
+       wallTreatment = eulerWallBcTreatment
        if(currentLevel > groundLevel) wallTreatment = constantPressure
 
        ! Loop over the boundary condition subfaces of this block.
