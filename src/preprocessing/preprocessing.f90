@@ -36,7 +36,7 @@
 !
        integer :: ierr
 
-       integer(kind=intType) :: nLevels, level, nn, mm, nsMin, nsMax, i
+       integer(kind=intType) :: nLevels, level, nn, mm, nsMin, nsMax, i, iProc
 !
 !      ******************************************************************
 !      *                                                                *
@@ -192,7 +192,7 @@
        call initBcdata
 
        ! Allocate some data of size nLevels for the fast wall distance calc
-       allocate(xVolumeVec(nLevels), xSurfVec(nLevels), wallScatter(nLevels), &
+       allocate(xVolumeVec(nLevels), xSurfVec(nLevels, mm), wallScatter(nLevels, mm), &
             wallDistanceDataAllocated(nLevels), updateWallAssociation(nLevels))
        wallDistanceDataAllocated = .False.
        updateWallAssociation = .True. 
@@ -200,9 +200,32 @@
        ! Nullify the wallFringe poiter as initialization
        nullify(wallFringes, localWallFringes)
 
+       ! Allocate nDomProc: the number of domains on each processor
+       ! and a cumulative form. 
+       allocate(nDomProc(0:nProc-1), cumDomProc(0:nProc))
+          
+       ! Gather the dimensions of all blocks to everyone
+       call mpi_allreduce(nDom, nDomTotal, 1, sumb_integer, MPI_SUM, &
+            sumb_comm_world, ierr)
+       
+       ! Receive the number of domains from each proc using an allgather.
+       call mpi_allgather(nDom, 1, sumb_integer, nDomProc, 1, sumb_integer, &
+            sumb_comm_world, ierr)
+       
+       ! Compute the cumulative format:
+       cumDomProc(0) = 0
+       do iProc=1, nProc
+          cumDomProc(iProc) = cumDomProc(iProc-1) + nDomProc(iProc-1)
+       end do
+
+       ! Determine the number of grid clusters
+       call determineClusters()
+
+
        ! Loop over the number of levels and perform a lot of tasks.
        ! See the corresponding subroutine header, although the
        ! names are pretty self-explaining
+
 
        do level=1,nLevels
          call xhalo(level)
@@ -217,7 +240,8 @@
          call determineAreaLevel0Cooling(level)
          call determineNcellGlobal(level)
          call setGlobalCellsAndNodes(level)
-      enddo
+         call wallDistance(level, .True.)
+      end do
 
       ! BC Data must be alloaced (for surface iblank) before we can do
       ! the overset computation.
@@ -232,9 +256,6 @@
          end if
       end do
 
-      do level=1,nLevels
-         call wallDistance(level, .True.)
-      end do
        
      end subroutine preprocessing
 

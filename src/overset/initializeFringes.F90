@@ -91,7 +91,7 @@ subroutine initializeFringes(nn, level, sps)
   do k=2, kl
      do j=2, jl
         do i=2, il
-           if (iBlank(i,j,k) == -2 .or. iblank(i,j,k)==-3) then 
+           if (iBlank(i, j, k) == -2 .or. iblank(i, j, k)==-3) then 
                fringes(i, j, k)%quality = -large
            end if
         end do
@@ -99,7 +99,8 @@ subroutine initializeFringes(nn, level, sps)
   end do
 
   ! Flag the cells *surrounding* the hold cells with large
-  ! quality. That forces them to get a donor. 
+  ! quality. That forces them to get a donor. Note that we *don't*
+  ! overwrite the exisitng -2 and -3 cells. 
 
   do k=0, kb
      do j=0, jb
@@ -114,8 +115,8 @@ subroutine initializeFringes(nn, level, sps)
                  ! Make sure we're on-block
                  if (ii >=2 .and. ii <= il .and. jj >= 2 .and. jj<= jl .and. &
                       kk >=2 .and. kk <= kl) then 
-                    if (iblank(ii, jj, kk) /= -2 .or. iblank(ii, jj, kk) /= -1) then 
-                       fringes(i, j, k)%quality = large
+                    if (iblank(ii, jj, kk) /= -3 .and. iblank(ii, jj, kk) /=-2) then 
+                       fringes(ii, jj, kk)%quality = large
                     end if
                  end if
               end do stencilLoop

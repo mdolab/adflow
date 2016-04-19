@@ -36,9 +36,8 @@ subroutine createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
   integer(kind=intType), intent(in) :: work(4, nWork)
 
   ! Local Variables
-  integer(kind=intType) :: i, j, k, ii, jj, kk, iStart, iSize, nClusters
+  integer(kind=intType) :: i, j, k, ii, jj, kk, iStart, iSize
   integer(kind=intType) :: iDom, jDom, nn, mm, n, ierr, iProc, iWork
-  integer(kind=intType), dimension(:), allocatable :: clusters
   integer(kind=intType), dimension(:,:), allocatable :: tmpInt2D
   logical, dimension(:), allocatable :: oWallReady
   type(oversetWall), dimension(:), allocatable :: oWalls
@@ -56,13 +55,10 @@ subroutine createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
   ! Step 1: Eliminate any gap overlaps between meshes
   ! -------------------------------------------------------------------
 
-  allocate(clusters(nDomTotal))
-  call determineClusters(clusters, nDomTotal, cumDomProc, nClusters)
-
   ! Determine the average area of surfaces on each cluster. This
   ! will be independent of any block splitting distribution. 
 
-  call determineClusterAreas(clusters, nDomTotal, nClusters)
+  call determineClusterAreas()
 
   ! Set the boundary condition blank values
   call initBCDataIBlank(level, sps)
@@ -268,15 +264,12 @@ subroutine createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
   ! Debugging
   call writeWalls(oWalls, size(oWalls))
 
-  call makeGapBoundaryStrings(level, sps, clusters)
+  call makeGapBoundaryStrings(level, sps)
 
   call mpi_barrier(sumb_comm_world, ierr)
   if (myid == 0) then 
      print *,'Time:', mpi_wtime()-timeA
   end if
-
-
-  deallocate(clusters)
 
 end subroutine createZipperMesh
 

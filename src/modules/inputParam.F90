@@ -706,6 +706,8 @@
        !                      is limited to pklim times the destruction.
        ! wallOffset:          Offset from the wall when wall functions
        !                      are used.
+       ! wallDistCutoff:      Cutoff distance outside of which the wall distance 
+       !                      is set to a large number
        ! eddyVisInfRatio:     Free stream value of the eddy viscosity.
        ! turbIntensityInf:    Free stream value of the turbulent intensity.
        ! surfaceRef:          Reference area for the force and moments
@@ -728,7 +730,7 @@
        real(kind=realType) :: Mach, MachCoef, MachGrid
        real(kind=realType) :: Reynolds, ReynoldsLength
        real(kind=realType) :: tempFreestream, gammaConstant, RGasDim
-       real(kind=realType) :: Prandtl, PrandtlTurb, pklim, wallOffset
+       real(kind=realType) :: Prandtl, PrandtlTurb, pklim, wallOffset, wallDistCutoff
        real(kind=realType) :: eddyVisInfRatio, turbIntensityInf
        real(kind=realType) :: surfaceRef, lengthRef
        real(kind=realType), dimension(3) :: velDirFreestream

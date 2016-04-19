@@ -7,17 +7,13 @@
 !      *                                                                *
 !      ******************************************************************
 
-subroutine determineClusterAreas(clusters, N, totalClusters)
+subroutine determineClusterAreas
 
   use BCTypes
   use blockPointers
   use communication
   use overset
   implicit none
-
-  ! Input/output variables
-  integer(kind=intType), dimension(N), intent(in) :: clusters
-  integer(kind=intType), intent(in) :: N, totalClusters
 
   ! Working
   integer(kind=intType) :: i, j, mm, nn, clusterID, ierr, nPts, nCells
@@ -35,8 +31,8 @@ subroutine determineClusterAreas(clusters, N, totalClusters)
      return
   end if
 
-  allocate(clusterAreas(totalClusters), localAreas(totalClusters), &
-       localCount(totalClusters), globalCount(totalClusters))
+  allocate(clusterAreas(nClusters), localAreas(nClusters), &
+       localCount(nClusters), globalCount(nClusters))
   
   localAreas = zero
   localCount = 0
@@ -95,16 +91,16 @@ subroutine determineClusterAreas(clusters, N, totalClusters)
   ! All reduce sum for the localAreas to get clusterAreas and
   ! localCount to get globalCount
 
-  call mpi_allreduce(localAreas, clusterAreas, totalClusters, sumb_real, &
+  call mpi_allreduce(localAreas, clusterAreas, nClusters, sumb_real, &
        MPI_SUM, sumb_comm_world, ierr)
   call ECHK(ierr, __FILE__, __LINE__)
   
-  call mpi_allreduce(localCount, globalCount, totalClusters, sumb_integer, &
+  call mpi_allreduce(localCount, globalCount, nClusters, sumb_integer, &
        MPI_SUM, sumb_comm_world, ierr)
   call ECHK(ierr, __FILE__, __LINE__)
 
   ! Final get the average global area
-  do i=1, totalClusters
+  do i=1, nClusters
      clusterAreas(i) = clusterAreas(i)/max(globalCount(i), 1)
   end do
     
