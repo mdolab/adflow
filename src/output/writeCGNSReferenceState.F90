@@ -255,7 +255,7 @@
                                    1, 1, val, ierr)
 
            case (4_intType)
-             val = sqrt(gammaInf*pref/rhoref)
+             val = sqrt(pref/rhoref)
              call cg_array_write_f(cgnsVelocity, realTypeCGNS, &
                                    1, 1, val, ierr)
 
