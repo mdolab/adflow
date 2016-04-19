@@ -86,46 +86,49 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       ! spaceDiscr:        Fine grid discretization.
-       ! spaceDiscrCoarse:  Coarse grid discretization.
-       ! orderTurb:         Order of the discretization of the advective
-       !                    terms of the turbulent transport equations.
-       !                    Possibilities are 1st and 2nd order.
-       ! riemann:           Fine grid riemann solver, upwind schemes only.
-       ! riemannCoarse:     Idem, but on the coarse grids.
-       ! limiter:           Limiter, upwind schemes only.
-       ! precond:           Preconditioner.
-       ! wallBCTreatment:   Wall boundary condition treatment.
-       ! outflowTreatment:  Treatment of the outflow boundaries. Either
-       !                    constantExtrapol or linExtrapol.
-       ! nonMatchTreatment: Treatment of the non-matching block
-       !                    boundaries. Either NonConservative or
-       !                    Conservative.
-       ! vis2:              Coefficient of the second order dissipation.
-       ! vis4:              Coefficient of the fourth order dissipation.
-       ! vis2Coarse:        Coefficient of the second order dissipation
-       !                    on the coarser grids in the mg cycle. On the
-       !                    coarser grids a first order scheme is used.
-       ! adis:              Exponent for directional scaling of the
-       !                    dissipation. adis == 0: no directional scaling,
-       !                                 adis == 1: isotropic dissipation.
-       ! kappaCoef:         Coefficient in the upwind reconstruction
-       !                    schemes, both linear and nonlinear.
-       ! vortexCorr:        Whether or not a vortex correction must be
-       !                    applied. Steady flow only.
-       ! dirScaling:        Whether or not directional scaling must be
-       !                    applied.
-       ! hScalingInlet:     Whether or not the outgoing Riemann invariant
-       !                    must be scaled for a subsonic inlet. May be
-       !                    needed for stability when strong total
-       !                    temperature gradients are present.
-       ! radiiNeededFine:   Whether or not the spectral radii are needed
-       !                    to compute the fluxes of the fine grid.
-       ! radiiNeededCoarse: Idem for the coarse grid.
-       ! lumpedDiss :       logical factor for determining whether or not
-       !                    lumped dissipation is used for preconditioner
-       ! sigma      :       Scaling parameter for dissipation lumping in
-       !                    approximateprecondtioner
+       ! spaceDiscr:             Fine grid discretization.
+       ! spaceDiscrCoarse:       Coarse grid discretization.
+       ! orderTurb:              Order of the discretization of the advective
+       !                         terms of the turbulent transport equations.
+       !                         Possibilities are 1st and 2nd order.
+       ! riemann:                Fine grid riemann solver, upwind schemes only.
+       ! riemannCoarse:          Idem, but on the coarse grids.
+       ! limiter:                Limiter, upwind schemes only.
+       ! precond:                Preconditioner.
+       ! eulerWallBCTreatment:   Wall boundary condition treatment for inviscid
+       !                         simulations.
+       ! viscWallBCTreatment:    Wall boundary condition treatment for viscous
+       !                         simulations.
+       ! outflowTreatment:       Treatment of the outflow boundaries. Either
+       !                         constantExtrapol or linExtrapol.
+       ! nonMatchTreatment:      Treatment of the non-matching block
+       !                         boundaries. Either NonConservative or
+       !                         Conservative.
+       ! vis2:                   Coefficient of the second order dissipation.
+       ! vis4:                   Coefficient of the fourth order dissipation.
+       ! vis2Coarse:             Coefficient of the second order dissipation
+       !                         on the coarser grids in the mg cycle. On the
+       !                         coarser grids a first order scheme is used.
+       ! adis:                   Exponent for directional scaling of the
+       !                         dissipation. adis == 0: no directional scaling,
+       !                                      adis == 1: isotropic dissipation.
+       ! kappaCoef:              Coefficient in the upwind reconstruction
+       !                         schemes, both linear and nonlinear.
+       ! vortexCorr:             Whether or not a vortex correction must be
+       !                         applied. Steady flow only.
+       ! dirScaling:             Whether or not directional scaling must be
+       !                         applied.
+       ! hScalingInlet:          Whether or not the outgoing Riemann invariant
+       !                         must be scaled for a subsonic inlet. May be
+       !                         needed for stability when strong total
+       !                         temperature gradients are present.
+       ! radiiNeededFine:        Whether or not the spectral radii are needed
+       !                         to compute the fluxes of the fine grid.
+       ! radiiNeededCoarse:      Idem for the coarse grid.
+       ! lumpedDiss :            logical factor for determining whether or not
+       !                         lumped dissipation is used for preconditioner
+       ! sigma      :            Scaling parameter for dissipation lumping in
+       !                         approximateprecondtioner
        ! useApproxWallDistance : logical to determine if the user wants to 
        !                         use the fast approximate wall distance
        !                         computations. Typically only used for 
@@ -138,13 +141,12 @@
        !                         set to True. This allows the user to 
        !                         reassociate the face a cell is associated
        !                         with. 
-       !                      
-       ! lowspeedpreconditoner:        Whether or not to use low-speed precondioner
+       ! lowspeedpreconditoner:  Whether or not to use low-speed precondioner
 
        integer(kind=intType) :: spaceDiscr, spaceDiscrCoarse
        integer(kind=intType) :: orderTurb, limiter
        integer(kind=intType) :: riemann, riemannCoarse, precond
-       integer(kind=intType) :: wallBCTreatment, outflowTreatment
+       integer(kind=intType) :: eulerWallBCTreatment, viscWallBCTreatment, outflowTreatment
        integer(kind=intType) :: nonMatchTreatment
 
        real(kind=realType) :: vis2, vis4, vis2Coarse, adis

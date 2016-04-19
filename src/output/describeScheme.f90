@@ -97,7 +97,7 @@
        ! condition treatment.
 
        if(equations == EulerEquations) then
-         select case (wallBcTreatment)
+         select case (eulerWallBcTreatment)
            case (constantPressure)
              write(string,300) trim(string), &
                                "Zero normal pressure gradIent"

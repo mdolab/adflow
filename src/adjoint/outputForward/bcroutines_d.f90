@@ -103,7 +103,6 @@ contains
         call resetbcpointers(nn, .false.)
       end if
     end do
-!$ad ii-loop
     if (secondhalo) then
       do nn=1,nbocos
         if (bctype(nn) .eq. symm) then
@@ -196,7 +195,6 @@ contains
         call resetbcpointers(nn, .false.)
       end if
     end do
-!$ad ii-loop
     if (secondhalo) then
       do nn=1,nbocos
         if (bctype(nn) .eq. symm) then
@@ -505,11 +503,11 @@ contains
 !   variations   of useful results: *rev0 *rev1 *pp0 *pp1 *rlv0
 !                *rlv1 *ww0 *ww1
 !   with respect to varying inputs: *(*bcdata.uslip) *rev0 *rev1
-!                *rev2 *pp0 *pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1
-!                *ww2
+!                *rev2 *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *ww0
+!                *ww1 *ww2
 !   plus diff mem management of: bcdata:in *bcdata.uslip:in rev0:in
-!                rev1:in rev2:in pp0:in pp1:in pp2:in rlv0:in rlv1:in
-!                rlv2:in ww0:in ww1:in ww2:in
+!                rev1:in rev2:in pp0:in pp1:in pp2:in pp3:in rlv0:in
+!                rlv1:in rlv2:in ww0:in ww1:in ww2:in
   subroutine bcnswalladiabatic_d(nn, secondhalo, correctfork)
 !
 !      ******************************************************************
@@ -524,12 +522,15 @@ contains
     use constants
     use flowvarrefstate
     use iteration
+!, only : viscwallbctreatment, constantpressure, linextrapolpressure
+    use inputdiscretization
     implicit none
     logical, intent(in) :: secondhalo, correctfork
     integer(kind=inttype), intent(in) :: nn
     integer(kind=inttype) :: i, j, ii
     real(kind=realtype) :: rhok
     real(kind=realtype) :: rhokd
+    integer(kind=inttype) :: walltreatment
     intrinsic mod
 ! apply the bcwall in case the turbulent transport equations are
 ! solved together with the mean flow equations, aplly the viscous
@@ -567,8 +568,6 @@ contains
       ww1(i, j, ivy) = -ww2(i, j, ivy) + two*bcdata(nn)%uslip(i, j, 2)
       ww1d(i, j, ivz) = two*bcdatad(nn)%uslip(i, j, 3) - ww2d(i, j, ivz)
       ww1(i, j, ivz) = -ww2(i, j, ivz) + two*bcdata(nn)%uslip(i, j, 3)
-      pp1d(i, j) = pp2d(i, j) - four*third*rhokd
-      pp1(i, j) = pp2(i, j) - four*third*rhok
 ! set the viscosities. there is no need to test for a
 ! viscous problem of course. the eddy viscosity is
 ! set to the negative value, as it should be zero on
@@ -580,6 +579,30 @@ contains
         rev1(i, j) = -rev2(i, j)
       end if
     end do
+! pressure extrapolation
+! make sure that on the coarser grids the constant pressure
+! boundary condition is used.
+    walltreatment = viscwallbctreatment
+    if (currentlevel .gt. groundlevel) walltreatment = constantpressure
+    select case  (walltreatment) 
+    case (constantpressure) 
+! constant pressure. set the gradient to zero.
+      pp1d = pp2d - four*third*rhokd
+      pp1 = pp2 - four*third*rhok
+    case default
+! linear extrapolation. 
+      do ii=0,isize*jsize-1
+        i = mod(ii, isize) + istart
+        j = ii/isize + jstart
+        pp1d(i, j) = 2*pp2d(i, j) - pp3d(i, j)
+        pp1(i, j) = 2*pp2(i, j) - pp3(i, j)
+! adjust value if pressure is negative
+        if (pp1(i, j) .le. zero) then
+          pp1d(i, j) = pp2d(i, j)
+          pp1(i, j) = pp2(i, j)
+        end if
+      end do
+    end select
 ! compute the energy for these halo's.
     call computeetot_d(ww1, ww1d, pp1, pp1d, correctfork)
 ! extrapolate the state vectors in case a second halo
@@ -600,11 +623,14 @@ contains
     use constants
     use flowvarrefstate
     use iteration
+!, only : viscwallbctreatment, constantpressure, linextrapolpressure
+    use inputdiscretization
     implicit none
     logical, intent(in) :: secondhalo, correctfork
     integer(kind=inttype), intent(in) :: nn
     integer(kind=inttype) :: i, j, ii
     real(kind=realtype) :: rhok
+    integer(kind=inttype) :: walltreatment
     intrinsic mod
 ! apply the bcwall in case the turbulent transport equations are
 ! solved together with the mean flow equations, aplly the viscous
@@ -633,7 +659,6 @@ contains
       ww1(i, j, ivx) = -ww2(i, j, ivx) + two*bcdata(nn)%uslip(i, j, 1)
       ww1(i, j, ivy) = -ww2(i, j, ivy) + two*bcdata(nn)%uslip(i, j, 2)
       ww1(i, j, ivz) = -ww2(i, j, ivz) + two*bcdata(nn)%uslip(i, j, 3)
-      pp1(i, j) = pp2(i, j) - four*third*rhok
 ! set the viscosities. there is no need to test for a
 ! viscous problem of course. the eddy viscosity is
 ! set to the negative value, as it should be zero on
@@ -641,6 +666,25 @@ contains
       rlv1(i, j) = rlv2(i, j)
       if (eddymodel) rev1(i, j) = -rev2(i, j)
     end do
+! pressure extrapolation
+! make sure that on the coarser grids the constant pressure
+! boundary condition is used.
+    walltreatment = viscwallbctreatment
+    if (currentlevel .gt. groundlevel) walltreatment = constantpressure
+    select case  (walltreatment) 
+    case (constantpressure) 
+! constant pressure. set the gradient to zero.
+      pp1 = pp2 - four*third*rhok
+    case default
+! linear extrapolation. 
+      do ii=0,isize*jsize-1
+        i = mod(ii, isize) + istart
+        j = ii/isize + jstart
+        pp1(i, j) = 2*pp2(i, j) - pp3(i, j)
+! adjust value if pressure is negative
+        if (pp1(i, j) .le. zero) pp1(i, j) = pp2(i, j)
+      end do
+    end select
 ! compute the energy for these halo's.
     call computeetot(ww1, pp1, correctfork)
 ! extrapolate the state vectors in case a second halo
@@ -651,11 +695,11 @@ contains
 !   variations   of useful results: *rev0 *rev1 *pp0 *pp1 *rlv0
 !                *rlv1 *ww0 *ww1
 !   with respect to varying inputs: rgas *(*bcdata.uslip) *rev0
-!                *rev1 *rev2 *pp0 *pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0
-!                *ww1 *ww2
+!                *rev1 *rev2 *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2
+!                *ww0 *ww1 *ww2
 !   plus diff mem management of: bcdata:in *bcdata.uslip:in rev0:in
-!                rev1:in rev2:in pp0:in pp1:in pp2:in rlv0:in rlv1:in
-!                rlv2:in ww0:in ww1:in ww2:in
+!                rev1:in rev2:in pp0:in pp1:in pp2:in pp3:in rlv0:in
+!                rlv1:in rlv2:in ww0:in ww1:in ww2:in
   subroutine bcnswallisothermal_d(nn, secondhalo, correctfork)
 !
 ! ******************************************************************
@@ -670,12 +714,15 @@ contains
     use constants
     use flowvarrefstate
     use iteration
+!, only : viscwallbctreatment, constantpressure, linextrapolpressure
+    use inputdiscretization
     implicit none
 ! subroutine arguments.
     logical, intent(in) :: secondhalo, correctfork
     integer(kind=inttype), intent(in) :: nn
 ! local variables.
     integer(kind=inttype) :: i, j, ii
+    integer(kind=inttype) :: walltreatment
     real(kind=realtype) :: rhok, t2, t1
     real(kind=realtype) :: rhokd, t2d, t1d
     intrinsic mod
@@ -722,12 +769,33 @@ contains
         t1 = two*bcdata(nn)%tns_wall(i, j)
         t1d = 0.0_8
       end if
+! pressure extrapolation
+! make sure that on the coarser grids the constant pressure
+! boundary condition is used.
+      walltreatment = viscwallbctreatment
+      if (currentlevel .gt. groundlevel) walltreatment = &
+&         constantpressure
+      select case  (walltreatment) 
+      case (constantpressure) 
+! constant pressure. set the gradient to zero.
+        pp1d = pp2d - four*third*rhokd
+        pp1 = pp2 - four*third*rhok
+      case default
+! linear extrapolation. 
+        i = mod(ii, isize) + istart
+        j = ii/isize + jstart
+        pp1d(i, j) = 2*pp2d(i, j) - pp3d(i, j)
+        pp1(i, j) = 2*pp2(i, j) - pp3(i, j)
+! adjust value if pressure is negative
+        if (pp1(i, j) .le. zero) then
+          pp1d(i, j) = pp2d(i, j)
+          pp1(i, j) = pp2(i, j)
+        end if
+      end select
 ! determine the variables in the halo. as the spacing
 ! is very small a constant pressure boundary condition
 ! (except for the k correction) is okay. take the slip
 ! velocity into account.
-      pp1d(i, j) = pp2d(i, j) - four*third*rhokd
-      pp1(i, j) = pp2(i, j) - four*third*rhok
       ww1d(i, j, irho) = (pp1d(i, j)*rgas*t1-pp1(i, j)*(rgasd*t1+rgas*&
 &       t1d))/(rgas*t1)**2
       ww1(i, j, irho) = pp1(i, j)/(rgas*t1)
@@ -768,12 +836,15 @@ contains
     use constants
     use flowvarrefstate
     use iteration
+!, only : viscwallbctreatment, constantpressure, linextrapolpressure
+    use inputdiscretization
     implicit none
 ! subroutine arguments.
     logical, intent(in) :: secondhalo, correctfork
     integer(kind=inttype), intent(in) :: nn
 ! local variables.
     integer(kind=inttype) :: i, j, ii
+    integer(kind=inttype) :: walltreatment
     real(kind=realtype) :: rhok, t2, t1
     intrinsic mod
     intrinsic max
@@ -809,11 +880,28 @@ contains
       else
         t1 = two*bcdata(nn)%tns_wall(i, j)
       end if
+! pressure extrapolation
+! make sure that on the coarser grids the constant pressure
+! boundary condition is used.
+      walltreatment = viscwallbctreatment
+      if (currentlevel .gt. groundlevel) walltreatment = &
+&         constantpressure
+      select case  (walltreatment) 
+      case (constantpressure) 
+! constant pressure. set the gradient to zero.
+        pp1 = pp2 - four*third*rhok
+      case default
+! linear extrapolation. 
+        i = mod(ii, isize) + istart
+        j = ii/isize + jstart
+        pp1(i, j) = 2*pp2(i, j) - pp3(i, j)
+! adjust value if pressure is negative
+        if (pp1(i, j) .le. zero) pp1(i, j) = pp2(i, j)
+      end select
 ! determine the variables in the halo. as the spacing
 ! is very small a constant pressure boundary condition
 ! (except for the k correction) is okay. take the slip
 ! velocity into account.
-      pp1(i, j) = pp2(i, j) - four*third*rhok
       ww1(i, j, irho) = pp1(i, j)/(rgas*t1)
       ww1(i, j, ivx) = -ww2(i, j, ivx) + two*bcdata(nn)%uslip(i, j, 1)
       ww1(i, j, ivy) = -ww2(i, j, ivy) + two*bcdata(nn)%uslip(i, j, 2)
@@ -887,7 +975,7 @@ contains
     integer(kind=inttype) :: max1
 ! make sure that on the coarser grids the constant pressure
 ! boundary condition is used.
-    walltreatment = wallbctreatment
+    walltreatment = eulerwallbctreatment
     if (currentlevel .gt. groundlevel) walltreatment = constantpressure
 ! **************************************************************
 ! *                                                            *
@@ -1173,7 +1261,7 @@ contains
     integer(kind=inttype) :: max1
 ! make sure that on the coarser grids the constant pressure
 ! boundary condition is used.
-    walltreatment = wallbctreatment
+    walltreatment = eulerwallbctreatment
     if (currentlevel .gt. groundlevel) walltreatment = constantpressure
 ! **************************************************************
 ! *                                                            *

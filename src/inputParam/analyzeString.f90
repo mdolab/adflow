@@ -207,7 +207,7 @@
                call mpi_barrier(SUmb_comm_world, pos)
            end select
 
-         case ("wall boundary treatment")
+         case ("euler wall boundary treatment")
 
            ! Convert value to lower case and check the options.
 
@@ -215,13 +215,33 @@
 
            select case (value)
              case ("constant pressure")
-               wallBcTreatment = constantPressure
+               eulerWallBcTreatment = constantPressure
              case ("linear extrapolation pressure")
-               wallBcTreatment = linExtrapolPressure
+               eulerWallBcTreatment = linExtrapolPressure
              case ("quadratic extrapolation pressure")
-               wallBcTreatment = quadExtrapolPressure
+               eulerWallBcTreatment = quadExtrapolPressure
              case ("normal momentum")
-               wallBcTreatment = normalMomentum
+               eulerWallBcTreatment = normalMomentum
+             case default
+               write(errorMessage,*) "Unknown wall boundary &
+                                      &treatment, ", &
+                                      trim(value), ", specified"
+               if(myID == 0) &
+                 call returnFail("analyzeString", errorMessage)
+               call mpi_barrier(SUmb_comm_world, pos)
+           end select
+
+         case ("viscous wall boundary treatment")
+
+           ! Convert value to lower case and check the options.
+
+           call convertToLowerCase(value)
+
+           select case (value)
+             case ("constant pressure")
+               viscWallBcTreatment = constantPressure
+             case ("linear extrapolation pressure")
+               viscWallBcTreatment = linExtrapolPressure
              case default
                write(errorMessage,*) "Unknown wall boundary &
                                       &treatment, ", &
