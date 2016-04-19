@@ -2367,6 +2367,7 @@ class SUMB(AeroSolver):
         # Set reference state information:
         if self.getOption('equationType') != 'euler':
             # RANS
+            self.sumb.flowvarrefstate.rhoref = rho
             self.sumb.flowvarrefstate.pref = P
             self.sumb.flowvarrefstate.tref = T
             self.sumb.inputphysics.tempfreestream = T
@@ -2386,6 +2387,7 @@ class SUMB(AeroSolver):
             self.sumb.inputphysics.prandtl = Pr            
         else:
             # EULER
+            self.sumb.flowvarrefstate.rhoref = rho
             self.sumb.flowvarrefstate.pref = P
             self.sumb.flowvarrefstate.tref = T
             self.sumb.inputphysics.tempfreestream = T
@@ -3528,7 +3530,8 @@ class SUMB(AeroSolver):
             'eddyvisinfratio':[float, .009],
             'usewallfunctions':[bool, False],
             'useapproxwalldistance':[bool, True],
-            'walltreatment':[str, 'linear pressure extrapolation'],
+            'eulerwalltreatment':[str, 'linear pressure extrapolation'],
+            'viscwalltreatment':[str, 'constant pressure extrapolation'],
             'dissipationscalingexponent':[float, 0.67],
             'vis4':[float, 0.0156],
             'vis2':[float, 0.25],
@@ -3771,12 +3774,14 @@ class SUMB(AeroSolver):
             'useapproxwalldistance':['discr', 'useapproxwalldistance'],
             'reynoldsnumber':['physics', 'reynolds'],
             'reynoldslength':['physics', 'reynoldslength'],
-            'walltreatment':{'linear pressure extrapolation':self.sumb.inputdiscretization.linextrapolpressure,
-                             'constant pressure extrapolation':self.sumb.inputdiscretization.constantpressure,
-                             'quadratic pressure extrapolation':self.sumb.inputdiscretization.quadextrapolpressure,
-                             'normal momentum':self.sumb.inputdiscretization.normalmomentum,
-                             'location':['discr', 'wallbctreatment']},
-
+            'eulerwalltreatment':{'linear pressure extrapolation':self.sumb.inputdiscretization.linextrapolpressure,
+                                  'constant pressure extrapolation':self.sumb.inputdiscretization.constantpressure,
+                                  'quadratic pressure extrapolation':self.sumb.inputdiscretization.quadextrapolpressure,
+                                  'normal momentum':self.sumb.inputdiscretization.normalmomentum,
+                                  'location':['discr', 'eulerwallbctreatment']},
+            'viscwalltreatment':{'linear pressure extrapolation':self.sumb.inputdiscretization.linextrapolpressure,
+                                 'constant pressure extrapolation':self.sumb.inputdiscretization.constantpressure,
+                                 'location':['discr', 'viscwallbctreatment']},
             'dissipationscalingexponent':['discr', 'adis'],
             'vis4':['discr', 'vis4'],
             'vis2':['discr', 'vis2'],

@@ -56,7 +56,7 @@ defOpts = {
     'turbresscale':10000.0,
     'usewallfunctions':False,
     'useapproxwalldistance':True,
-    'walltreatment':'linear pressure extrapolation',
+    'eulerwalltreatment':'linear pressure extrapolation',
     'dissipationscalingexponent':0.67,
     'vis4':0.0156,
     'vis2':0.25,

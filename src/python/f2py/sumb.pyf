@@ -563,7 +563,8 @@ python module libsumb
          integer(kind=inttype) :: riemann
          integer(kind=inttype) :: riemanncoarse
          integer(kind=inttype) :: precond
-         integer(kind=inttype) :: wallbctreatment
+         integer(kind=inttype) :: eulerwallbctreatment
+         integer(kind=inttype) :: viscwallbctreatment
          integer(kind=inttype) :: outflowtreatment
          real(kind=realtype) :: vis2
          real(kind=realtype) :: vis4
