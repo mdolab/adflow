@@ -47,9 +47,9 @@ FILES_TO_COMPLEXIFY = \
 		NKUtilities.F90\
 		setupNKSolver.F90\
 		NKStep.F90\
-		NKLineSearch.F90\
 
-FILES_TO_COPY = 
+
+FILES_TO_COPY = NKLineSearch.F90\
 
 ALL_FILES = $(FILES_TO_COMPLEXIFY) $(FILES_TO_COPY)
 OFILES := $(ALL_FILES:%.f90=%.o) $(ALL_FILES:%.F90=%.o) $(ALL_FILES:%.c=%.o)
@@ -72,19 +72,19 @@ clean:
 complexify:
 	@for file in $(FILES_TO_COMPLEXIFY); do \
 		echo Checking $$file; \
-		if [ $$file -nt ../../src_cs/NKsolver/$$file -o ! -e ../../src_cs/NKsolver/$$file ]; then \
+		if [ $$file -nt ../../src_cs/NKSolver/$$file -o ! -e ../../src_cs/NKSolver/$$file ]; then \
 			python ../complexify.py $$file; \
-			mv c_$$file ../../src_cs/NKsolver/$$file; \
+			mv c_$$file ../../src_cs/NKSolver/$$file; \
 		fi;\
 		done
 	@for file in $(FILES_TO_COPY); do \
-		if [ $$file -nt ../../src_cs/NKsolver/$$file -o ! -e ../../src_cs/NKsolver/$$file ]; then \
+		if [ $$file -nt ../../src_cs/NKSolver/$$file -o ! -e ../../src_cs/NKSolver/$$file ]; then \
 			echo copying file $$file; \
-			cp $$file ../../src_cs/NKsolver/$$file; \
+			cp $$file ../../src_cs/NKSolver/$$file; \
 		fi;\
 		done
 
-	cp Makefile ../../src_cs/NKsolver
+	cp Makefile ../../src_cs/NKSolver
 
 #      ******************************************************************
 #      *                                                                *

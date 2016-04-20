@@ -7,7 +7,7 @@ subroutine testpc()
   use inputtimespectral
   use blockPointers
   implicit none
-
+#ifndef USE_COMPLEX
   real(kind=realType) , dimension(:), allocatable :: v1, v2
   real(kind=realType) :: timeA, timeB, timeC, val
   integer(kind=intType) :: nDimw, ierr, i, nn, sps, j, k, ii, jj, kk, info
@@ -75,7 +75,7 @@ subroutine testpc()
    print *,'My Norm:', val
   call VecResetArray(psi_like1, ierr)
   call VecResetArray(psi_like2, ierr)
-
+#endif
 end subroutine testpc
 
 subroutine factorPCMatrix()

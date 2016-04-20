@@ -299,7 +299,7 @@ subroutine convergenceInfo
            write(*,"(2e24.16,1x)",advance="no") monGlob(mm)
 #endif
         end if
-        
+
         ! Store the convergence info in convArray, if desired.
         if( storeConvInnerIter ) then
            convArray(iterTot, sps, mm) = monGlob(mm)
@@ -468,62 +468,62 @@ subroutine convergenceInfo
   end do spectralLoop
 
 
-if( nanOccurred )then
+  if( nanOccurred )then
 
-  if (myid == 0) then 
-     print *,'Nan occured in Convergence Info on proc:',myid
-  end if
+     if (myid == 0) then 
+        print *,'Nan occured in Convergence Info on proc:',myid
+     end if
 
-  routineFailed = .True.
+     routineFailed = .True.
 
-  call returnFail("convergenceInfo", &
-       "A NaN occurred during the computation.")
+     call returnFail("convergenceInfo", &
+          "A NaN occurred during the computation.")
 
-  ! in a normal computation, code will simply exit.
-  ! in a python based computation, code will set 
-  ! routinedFailed to .True. and return to the 
-  ! python level...
-  return
-endif
+     ! in a normal computation, code will simply exit.
+     ! in a python based computation, code will set 
+     ! routinedFailed to .True. and return to the 
+     ! python level...
+     return
+  endif
 
-! ! If we are at the max iteration limit but the residual is
-! ! *close*, ie within maxL2DeviationFactor we say that's fine
+  ! ! If we are at the max iteration limit but the residual is
+  ! ! *close*, ie within maxL2DeviationFactor we say that's fine
 
-! if(fromPython .and. groundLevel ==1 .and. nIterCur >=nCycles) then
+  ! if(fromPython .and. groundLevel ==1 .and. nIterCur >=nCycles) then
 
-!    !Check to see if residuals are diverging or stalled for python
-!    select case (equationMode)
+  !    !Check to see if residuals are diverging or stalled for python
+  !    select case (equationMode)
 
-!    case (steady, timeSpectral)
+  !    case (steady, timeSpectral)
 
-!       ! Steady or time spectral mode. The convergence histories
-!       ! are stored and this info can be used. If the residuals 
-!       ! are diverging the, logical routineFailed in killSignals
-!       ! is set to true and the progress is halted.
-!       !only check on root porcessor
-!       if (myID == 0) then
+  !       ! Steady or time spectral mode. The convergence histories
+  !       ! are stored and this info can be used. If the residuals 
+  !       ! are diverging the, logical routineFailed in killSignals
+  !       ! is set to true and the progress is halted.
+  !       !only check on root porcessor
+  !       if (myID == 0) then
 
-!          ! If we made it to ncycles, check to see if we're
-!          ! "close" to being converged. 
-!          do sps = 1,nTimeIntervalsSpectral         
-!             if (totalR < maxL2DeviationFactor * totalR0 * L2ConvThisLevel) then 
-!                routineFailed = .False.
-!             else
-!                routineFailed = .True.
-!             end if
-!          enddo
-!       endif
+  !          ! If we made it to ncycles, check to see if we're
+  !          ! "close" to being converged. 
+  !          do sps = 1,nTimeIntervalsSpectral         
+  !             if (totalR < maxL2DeviationFactor * totalR0 * L2ConvThisLevel) then 
+  !                routineFailed = .False.
+  !             else
+  !                routineFailed = .True.
+  !             end if
+  !          enddo
+  !       endif
 
-!       call mpi_bcast(routineFailed, 1, MPI_LOGICAL, 0, SUmb_comm_world, ierr)
+  !       call mpi_bcast(routineFailed, 1, MPI_LOGICAL, 0, SUmb_comm_world, ierr)
 
-!    end select
-! end if
+  !    end select
+  ! end if
 
-! Determine whether or not the solution is considered
-! converged.  This info is only known at processor 0 and must
-! therefore be broadcast to the other processors.
+  ! Determine whether or not the solution is considered
+  ! converged.  This info is only known at processor 0 and must
+  ! therefore be broadcast to the other processors.
 
-call mpi_bcast(converged, 1, MPI_LOGICAL, 0, SUmb_comm_world, ierr)
+  call mpi_bcast(converged, 1, MPI_LOGICAL, 0, SUmb_comm_world, ierr)
 
 end subroutine convergenceInfo
 
@@ -540,34 +540,34 @@ subroutine sumResiduals(nn, mm)
   !      *                                                                *
   !      ******************************************************************
   !
-use blockPointers
-use monitor
-implicit none
-!
-!      Subroutine arguments.
-!
-integer(kind=intType), intent(in) :: nn, mm
-!
-!      Local variables.
-!
-integer(kind=intType) :: i, j, k
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
-! Loop over the number of owned cells of this block and
-! accumulate the residual.
+  use blockPointers
+  use monitor
+  implicit none
+  !
+  !      Subroutine arguments.
+  !
+  integer(kind=intType), intent(in) :: nn, mm
+  !
+  !      Local variables.
+  !
+  integer(kind=intType) :: i, j, k
+  !
+  !      ******************************************************************
+  !      *                                                                *
+  !      * Begin execution                                                *
+  !      *                                                                *
+  !      ******************************************************************
+  !
+  ! Loop over the number of owned cells of this block and
+  ! accumulate the residual.
 
-do k=2,kl
-  do j=2,jl
-     do i=2,il
-        monLoc(mm) = monLoc(mm) + (dw(i,j,k,nn)/vol(i,j,k))**2
+  do k=2,kl
+     do j=2,jl
+        do i=2,il
+           monLoc(mm) = monLoc(mm) + (dw(i,j,k,nn)/vol(i,j,k))**2
+        enddo
      enddo
   enddo
-enddo
 
 end subroutine sumResiduals
 
@@ -580,45 +580,45 @@ subroutine sumAllResiduals(mm)
   !      *                                                                *
   !      ******************************************************************
   !
-use blockPointers
-use monitor
-use flowvarrefstate
-use inputIteration
-implicit none
-!
-!      Subroutine arguments.
-!
-integer(kind=intType), intent(in) :: mm
-!
-!      Local variables.
-!
-integer(kind=intType) :: i, j, k, l
-real(kind=realType) :: state_sum,ovv
+  use blockPointers
+  use monitor
+  use flowvarrefstate
+  use inputIteration
+  implicit none
+  !
+  !      Subroutine arguments.
+  !
+  integer(kind=intType), intent(in) :: mm
+  !
+  !      Local variables.
+  !
+  integer(kind=intType) :: i, j, k, l
+  real(kind=realType) :: state_sum,ovv
 
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
-! Loop over the number of owned cells of this block and
-! accumulate the residual.
+  !      ******************************************************************
+  !      *                                                                *
+  !      * Begin execution                                                *
+  !      *                                                                *
+  !      ******************************************************************
+  !
+  ! Loop over the number of owned cells of this block and
+  ! accumulate the residual.
 
-do k=2,kl
-  do j=2,jl
-     do i=2,il
-        state_sum = 0.0
-        ovv = one/vol(i,j,k)
-        do l=1,nwf
-           state_sum = state_sum + (dw(i,j,k,l)*ovv)**2
-        end do
-        do l=nt1,nt2
-           ! l-nt1+1 will index the turbResScale properly
-           state_sum = state_sum + (dw(i,j,k,l)*ovv*turbResScale(l-nt1+1))**2
-        end do
-        monLoc(mm) = monLoc(mm) + state_sum
+  do k=2,kl
+     do j=2,jl
+        do i=2,il
+           state_sum = 0.0
+           ovv = one/vol(i,j,k)
+           do l=1,nwf
+              state_sum = state_sum + (dw(i,j,k,l)*ovv)**2
+           end do
+           do l=nt1,nt2
+              ! l-nt1+1 will index the turbResScale properly
+              state_sum = state_sum + (dw(i,j,k,l)*ovv*turbResScale(l-nt1+1))**2
+           end do
+           monLoc(mm) = monLoc(mm) + state_sum
+        enddo
      enddo
   enddo
-enddo
 
 end subroutine sumAllResiduals
