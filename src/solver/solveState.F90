@@ -227,6 +227,8 @@ subroutine solveState
      ! Determine and write the convergence info.
      call convergenceInfo
 
+     totalRFinal = totalR
+
      ! Check for divergence or nan here
      if(routineFailed) then
         exit NonLinearIteration
