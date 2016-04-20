@@ -596,7 +596,7 @@ def test6():
          'ncycles':10000,
          'monitorvariables':['resrho','resturb','cl','cd','cmz','yplus','totalr'],
          'usenksolver':True,
-         'l2convergence':1e-14,
+         'l2convergence':1e-15,
          'l2Convergencecoarse':1e-2,
          'nkswitchtol':1e-2,
          'adjointl2convergence': 1e-14,
