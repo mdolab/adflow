@@ -10,6 +10,26 @@ subroutine setupAllResidualMatricesfwd
   real(kind=realType) :: timeAdjLocal, timeAdj, time(2)
   integer(kind=intType) :: ierr
 #ifndef USE_COMPLEX
+ interface
+     subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
+          useObjective, frozenTurb, level, matrixTurb)
+       use precision
+       implicit none
+#define PETSC_AVOID_MPIF_H
+#include "include/petscversion.h"
+#if PETSC_VERSION_MINOR > 5
+#include "petsc/finclude/petsc.h"
+#else
+#include "include/finclude/petsc.h"
+#endif
+
+       Mat :: matrix
+       Mat, optional :: matrixTurb
+       ! Input Variables
+       logical, intent(in) :: useAD, usePC, useTranspose, useObjective, frozenTurb
+       integer(kind=intType), intent(in) :: level
+     end subroutine setupStateResidualMatrix
+  end interface
 
   ! If we are assembling matrices...we ned to assemble the
   ! 'transpose', with 'AD', we want the exact matrix not the 'PC',
