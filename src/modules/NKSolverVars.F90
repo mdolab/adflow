@@ -75,8 +75,8 @@ module NKsolverVars
   real(kind=realType) :: NK_CFL
 
   ! Variables for non-monotone line search
-  real(kind=realType), dimension(:), allocatable :: func_evals
-  integer(kind=intType) :: Mmax
+  real(kind=realType), dimension(:), allocatable :: NKLSFuncEvals
+  integer(kind=intType) :: Mmax=5
   integer(kind=intType) :: iter_k
   integer(kind=intType) :: iter_m
 

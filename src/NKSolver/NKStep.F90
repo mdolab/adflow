@@ -7,8 +7,8 @@ subroutine NKStep(firstCall)
   use flowVarRefState
   use NKSolverVars, only: dRdw, dRdwPre, NK_jacobianLag, totalR0, wVec, rVec, &
        deltaW, NK_KSP, NK_subspace, NK_divTol, NK_LS, NK_useEw, NK_iter, &
-       nolinesearch, cubiclinesearch, nonmonotonelinesearch, &
-       work, g, NK_rtolInit, NK_CFL, NK_CFL0, oldNorm, rtolLast
+       nolinesearch, cubiclinesearch, nonmonotonelinesearch, mMax, &
+       work, g, NK_rtolInit, NK_CFL, NK_CFL0, oldNorm, rtolLast, iter_k, iter_m
   use InputIO 
   use inputIteration
   use inputPhysics
@@ -45,8 +45,13 @@ subroutine NKStep(firstCall)
      ! 'g', which is what would be the case after a linesearch.
      call computeResidualNK()
      call setRVec(rVec)
+     iter_k = 1
+     iter_m = 0
   else
      NK_iter = NK_iter + 1
+
+     ! Increment counter for the nonmonotne line serach
+     iter_k = iter_k + 1
   end if
  
   ! Compute the norm of rVec for use in EW Criteria
@@ -105,9 +110,7 @@ subroutine NKStep(firstCall)
      call LSCubic(wVec, rVec, g, deltaW, work, fnorm, ynorm, gnorm, &
           nfevals, flag)
   else if (NK_LS == nonMonotoneLineSearch) then
-
-     print *, 'Not implemented yet'
-     stop
+     iter_m = min(iter_m+1, mMax)
      call LSNM(wVec, rVec, g, deltaW, work, fnorm, ynorm, gnorm, &
           nfevals, flag)
   end if

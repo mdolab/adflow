@@ -79,6 +79,12 @@ subroutine solveState
   ! Allocate (or reallocate) the convergence arry for this solveState.
   call allocConvArrays(nMGCycles)
 
+  ! Allocate space for storing hisotry of function evaluations for NK
+  ! solver with non-monotone line search if necessary
+  if (currentLevel == 1 .and. useNKSolver .and. NK_LS==nonMonotoneLineSearch) then 
+     allocate(NKLSFuncEvals(nMGCycles))
+  end if
+
   ! Write a message. Only done by processor 0.
 
   if(myID == 0) then
@@ -223,7 +229,7 @@ subroutine solveState
 
      ! Check for divergence or nan here
      if(routineFailed) then
-        return
+        exit NonLinearIteration
      endif   
 
      ! Exit the loop if we are converged
@@ -272,6 +278,12 @@ subroutine solveState
 
 
   enddo nonLinearIteration
+
+  ! deallocate space for storing hisotry of function evaluations for NK
+  ! solver with non-monotone line search if necessary
+  if (currentLevel == 1 .and. useNKSolver .and. NK_LS==nonMonotoneLineSearch) then 
+     deallocate(NKLSFuncEvals)
+  end if
 
 end subroutine solveState
 
