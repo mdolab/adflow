@@ -87,7 +87,8 @@ FILES_TO_COMPLEXIFY =  precision.F90\
 		 liftDistributionData.F90\
 		 killSignals.f90\
 		 communication.f90\
-		 NKsolverVars.F90\
+		 NKSolverVars.F90\
+		 ANKSolverVars.F90\
 		 block.F90\
 		 IOModule.f90\
 		 costFunctions.F90\

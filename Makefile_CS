@@ -16,12 +16,12 @@ REAL_SRC    =	src/modules       \
 		src/metis-4.0     \
 	        src/output        \
 	        src/overset       \
-		src/parallelIO    \
 	        src/partitioning  \
 	        src/preprocessing \
 	        src/slidingComm   \
 	        src/solver        \
-		src/NKsolver      \
+		src/NKSolver      \
+		src/ANKSolver     \
 	        src/turbulence    \
 	        src/utils         \
 	        src/wallDistance  \
@@ -42,12 +42,12 @@ SUBDIR_SRC    = src_cs/modules       \
 	        src_cs/inputParam    \
 	        src_cs/output        \
 	        src_cs/overset       \
-		src_cs/parallelIO    \
 	        src_cs/partitioning  \
 	        src_cs/preprocessing \
 	        src_cs/slidingComm   \
 	        src_cs/turbulence    \
-		src_cs/NKsolver      \
+		src_cs/NKSolver      \
+		src_cs/ANKSolver      \
 	        src_cs/utils         \
 	        src_cs/wallDistance  \
 		src_cs/warping       \

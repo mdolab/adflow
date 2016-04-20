@@ -67,19 +67,19 @@ clean:
 complexify:
 	@for file in $(FILES_TO_COMPLEXIFY); do \
 		echo Checking $$file; \
-		if [ $$file -nt ../../src_cs/NKsolver/$$file -o ! -e ../../src_cs/NKsolver/$$file ]; then \
+		if [ $$file -nt ../../src_cs/ANKSolver/$$file -o ! -e ../../src_cs/ANKSolver/$$file ]; then \
 			python ../complexify.py $$file; \
-			mv c_$$file ../../src_cs/NKsolver/$$file; \
+			mv c_$$file ../../src_cs/ANKSolver/$$file; \
 		fi;\
 		done
 	@for file in $(FILES_TO_COPY); do \
-		if [ $$file -nt ../../src_cs/NKsolver/$$file -o ! -e ../../src_cs/NKsolver/$$file ]; then \
+		if [ $$file -nt ../../src_cs/ANKSolver/$$file -o ! -e ../../src_cs/ANKSolver/$$file ]; then \
 			echo copying file $$file; \
-			cp $$file ../../src_cs/NKsolver/$$file; \
+			cp $$file ../../src_cs/ANKSolver/$$file; \
 		fi;\
 		done
 
-	cp Makefile ../../src_cs/NKsolver
+	cp Makefile ../../src_cs/ANKSolver
 
 #      ******************************************************************
 #      *                                                                *
