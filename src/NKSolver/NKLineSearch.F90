@@ -289,7 +289,7 @@ subroutine LSNM(x, f, g, y, w, fnorm, ynorm, gnorm, nfevals, flag)
 #ifndef USE_NO_PETSC
   use precision 
   use communication
-  use NKSolverVars, only: dRdw, func_evals, iter_k, iter_m
+  use NKSolverVars, only: dRdw, NKLSFuncEvals, iter_k, iter_m
   use constants
   implicit none
 #define PETSC_AVOID_MPIF_H
@@ -300,7 +300,6 @@ subroutine LSNM(x, f, g, y, w, fnorm, ynorm, gnorm, nfevals, flag)
 #else
 #include "include/finclude/petsc.h"
 #endif
-
 
   ! Input/Output
   Vec x, f, g, y, w
@@ -339,7 +338,7 @@ subroutine LSNM(x, f, g, y, w, fnorm, ynorm, gnorm, nfevals, flag)
   call VecNorm(f, NORM_2, fnorm, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
-  func_evals(iter_k) = 0.5_realType*fnorm*fnorm
+  NKLSFuncEvals(iter_k) = 0.5_realType*fnorm*fnorm
 
   call MatMult(dRdw, y, w, ierr)
   call EChk(ierr, __FILE__, __LINE__)
@@ -388,11 +387,11 @@ subroutine LSNM(x, f, g, y, w, fnorm, ynorm, gnorm, nfevals, flag)
      else
         call EChk(ierr, __FILE__, __LINE__)
 
-        max_val = func_evals(iter_k) + alpha*gamma*initSlope
+        max_val = NKLSFuncEvals(iter_k) + alpha*gamma*initSlope
 
         ! Loop over the previous, m function values and find the max:
         do j=iter_k-1, iter_k-iter_m+1, -1
-           max_val = max(max_val, func_evals(j) + alpha*gamma*initSlope)
+           max_val = max(max_val, NKLSFuncEvals(j) + alpha*gamma*initSlope)
         end do
         
         ! Sufficient reduction 
