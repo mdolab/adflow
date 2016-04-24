@@ -850,6 +850,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
         ! not include the halos.
         allocate(localFringes(nLocalFringe))
 
+        call exchangeStatus(level, sps, commPatternCell_2nd, internalCell_2nd)
 
         ! Fill up these fringes
         nLocalFringe = 0
@@ -890,6 +891,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
 
         call determineDonors(level, sps, localFringes, nLocalFringe, .False.)
 
+
         !==================================================================================
 
         ! -----------------------------------------------------------------
@@ -915,10 +917,12 @@ subroutine oversetComm(level, firstTime, coarseLevel)
         ! -----------------------------------------------------------------
 
         call exchangeStatusTranspose(level, sps, commPatternCell_2nd, internalCell_2nd)
+        call exchangeStatus(level, sps, commPatternCell_2nd, internalCell_2nd)
 
         if (irefine > 2) then 
            call irregularCellCorrection(level, sps)
         end if
+        call exchangeStatus(level, sps, commPatternCell_2nd, internalCell_2nd)
 
         ! Next we have to perfrom the interior cell flooding. We already
         ! have the information we need: we have isWallFringe defined in
