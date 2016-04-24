@@ -40,6 +40,7 @@ subroutine initializeOBlock(oBlock, nn, level, sps)
 
   ! We can directly copy nearwall out
   oBlock%nearWall = flowDoms(nn, level, sps)%nearWall
+
   !deallocate(flowDoms(nn, level, sps)%nearWall)
 
   ! Do the reset of the allocs
@@ -85,7 +86,7 @@ subroutine initializeOBlock(oBlock, nn, level, sps)
         do i=1,ie
            mm = mm + 1
            if (wallsPresent) then 
-              oBlock%qualDonor(1, mm) =  ((dble(k)/ke)**1.0)*vol(i, j, k)**third 
+              oBlock%qualDonor(1, mm) =  vol(i, j, k)**third 
               
            else
               oBlock%qualDonor(1, mm) = (backGroundVolScale*vol(i, j, k))**third
