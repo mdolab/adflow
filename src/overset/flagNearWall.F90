@@ -38,7 +38,7 @@ subroutine flagNearWallCells(level, sps)
   logical :: isWallType, tostop
   type(Xplane), dimension(:), allocatable :: planes
   real(Kind=realType), dimension(:, :, :, :), pointer :: xx, xSeed
-  integer(kind=intType), dimension(:, :, :), pointer :: nearWall
+
   real(kind=realType) :: dist
   ! Since we need to have the 'x' and 'nearWall' arrays allocated at
   ! once, these need to go into block. Allocate the two x arrays the
@@ -47,8 +47,11 @@ subroutine flagNearWallCells(level, sps)
   nFlaggedLocal = 0
   do nn=1, nDom
      call setPointers(nn, level, sps)
-     allocate(flowDoms(nn, level, sps)%XSeed(0:ie, 0:je, 0:ke, 3), &
-          flowDoms(nn, level, sps)%nearWall(1:il, 1:jl, 1:kl))
+     if (.not. associated(flowDoms(nn, level, sps)%nearWall)) then 
+        allocate(flowDoms(nn,level,sps)%nearWall(1:il, 1:jl, 1:kl))
+     end if
+
+     allocate(flowDoms(nn, level, sps)%XSeed(0:ie, 0:je, 0:ke, 3))
 
      ! Manaully set the three pointers
      xSeed => flowDoms(nn, level, sps)%xSeed
