@@ -21,7 +21,7 @@ subroutine initializeOBlock(oBlock, nn, level, sps)
   ! Working paramters
   integer(kind=intType) :: i, j, k, mm, nADT, nHexa, planeOffset
   integer(kind=intType) :: iStart, iEnd, jStart, jEnd, kStart, kEnd
-  real(kind=realType) :: factor, frac, exponent, wallEdge, avgEdge, dist
+  real(kind=realType) :: factor, frac,  wallEdge, avgEdge, dist
   integer(kind=intType) :: i_stencil, ii, jj, iii
   logical :: wallsPresent, isWallType
 
@@ -79,26 +79,16 @@ subroutine initializeOBlock(oBlock, nn, level, sps)
   ! Copy Volume to qualDonor and do minVol while we're at it
   oBlock%minVol = Large
   mm = 0
-  exponent = third
+
   do k=1,ke
      do j=1,je
         do i=1,ie
            mm = mm + 1
            if (wallsPresent) then 
-
-              wallEdge = fourth*(&
-                   norm2(x(i-1, j-1, k-1, :) - x(i-1, j-1, k, :)) + &
-                   norm2(x(i  , j-1, k-1, :) - x(i  , j-1, k, :)) + &
-                   norm2(x(i-1, j  , k-1, :) - x(i-1, j  , k, :)) + &
-                   norm2(x(i  , j  , k-1, :) - x(i  , j  , k, :)))
+              oBlock%qualDonor(1, mm) =  ((dble(k)/ke)**1.0)*vol(i, j, k)**third 
               
-              avgEdge = vol(i, j, k)**exponent
-              !oBlock%qualDonor(1, mm) = half*(avgEdge + wallEdge)
-              !oBlock%qualDonor(1, mm) = min(avgEdge, wallEdge)
-              oBlock%qualDonor(1, mm) = avgEdge
            else
-              factor = 4.0
-              oBlock%qualDonor(1, mm) = (vol(i, j, k)*factor)**exponent
+              oBlock%qualDonor(1, mm) = (backGroundVolScale*vol(i, j, k))**third
            end if
 
            oBlock%minVol = min(oBlock%minVol,  oBlock%qualDonor(1, mm))

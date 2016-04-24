@@ -112,9 +112,24 @@ subroutine fringeSearch(oBlock, oFringe, bWall, fWall)
               ! Now record the information
               localWallFringes(nLocalWallFringe)%donorProc = oBlock%proc
               localWallFringes(nLocalWallFringe)%donorBlock = oBlock%block
-              localWallFringes(nLocalWallFringe)%dI = ii
-              localWallFringes(nLocalWallFringe)%dJ = jj
-              localWallFringes(nLocalWallFringe)%dK = kk
+
+               if (uvw(1) < half) then 
+                  localWallFringes(nLocalWallFringe)%dI = ii
+               else
+                  localWallFringes(nLocalWallFringe)%dI = ii +1 
+               end if
+
+               if (uvw(2) < half) then 
+                  localWallFringes(nLocalWallFringe)%dJ = jj
+               else
+                  localWallFringes(nLocalWallFringe)%dJ = jj +1 
+               end if
+
+               if (uvw(3) < half) then 
+                  localWallFringes(nLocalWallFringe)%dK = kk
+               else
+                  localWallFringes(nLocalWallFringe)%dK = kk +1 
+               end if
                  
            end if
 

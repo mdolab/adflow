@@ -124,22 +124,31 @@ subroutine determineDonors(level, sps, fringeList, nFringe, useWall)
      if (iProc == myid) then 
         do i=iStart, iEnd
            nn = fringeList(i)%donorBlock
-           
-           do kk=0, 1
-              do jj=0, 1
-                 do ii=0, 1
-                    
-                    iii = ii + fringeList(i)%dI
-                    jjj = jj + fringeList(i)%dJ
-                    kkk = kk + fringeList(i)%dK
-                    if (useWall) then 
-                       call setIsWallDonor(flowDoms(nn, level, sps)%fringes(iii, jjj, kkk)%status, .True. )
-                    else
+          
+           ! For the wall donors, we just flag the 1 cell that was
+           ! identified in the fringe search based on the octant. 
+           if (useWall) then 
+
+              iii = fringeList(i)%dI
+              jjj = fringeList(i)%dJ
+              kkk = fringeList(i)%dK
+              
+              call setIsWallDonor(flowDoms(nn, level, sps)%fringes(iii, jjj, kkk)%status, .True. )
+
+           else
+              
+              do kk=0, 1
+                 do jj=0, 1
+                    do ii=0, 1
+                       
+                       iii = ii + fringeList(i)%dI
+                       jjj = jj + fringeList(i)%dJ
+                       kkk = kk + fringeList(i)%dK
                        call setIsDonor(flowDoms(nn, level, sps)%fringes(iii, jjj, kkk)%status, .True. )
-                    end if
+                    end do
                  end do
               end do
-           end do
+           end if
         end do
      end if
   end do
@@ -157,22 +166,24 @@ subroutine determineDonors(level, sps, fringeList, nFringe, useWall)
 
      nn = intRecvBuf(4*j-3)
      
-     do kk=0, 1
-        do jj=0, 1
-           do ii=0, 1
-              iii = ii + intRecvBuf(4*j-2)
-              jjj = jj + intRecvBuf(4*j-1)
-              kkk = kk + intRecvBuf(4*j  )
-              if (useWall) then 
-                 call setIsWallDonor(flowDoms(nn, level, sps)%fringes(iii, jjj, kkk)%status, .True. )
-              else
+     if (useWall) Then 
+        iii = intRecvBuf(4*j-2)
+        jjj = intRecvBuf(4*j-1)
+        kkk = intRecvBuf(4*j  )
+        call setIsWallDonor(flowDoms(nn, level, sps)%fringes(iii, jjj, kkk)%status, .True. )
+     else
+        do kk=0, 1
+           do jj=0, 1
+              do ii=0, 1
+                 iii = ii + intRecvBuf(4*j-2)
+                 jjj = jj + intRecvBuf(4*j-1)
+                 kkk = kk + intRecvBuf(4*j  )
                  call setIsDonor(flowDoms(nn, level, sps)%fringes(iii, jjj, kkk)%status, .True. )
-              end if
+              end do
            end do
         end do
-     end do
+     end if
   end do
-  
   ! Finished with the buffers and allocatable arrays
   deallocate(intSendBuf, intRecvBuf, fringeProc, cumFringeProc, tmpInt, recvSizes)
 
