@@ -151,8 +151,12 @@ subroutine floodInteriorCells(level, sps)
                  ! Flag the cell (using changed) as being changed
                  changed(i+1, j+1, k+1) = 1
 
-                 ! Keep track of the total number we've changed.
-                 nChangedLocal = nChangedLocal + 1
+                 ! Keep track of the total number we've changed.  For
+                 ! reporting purposes...only count the ones that are
+                 ! on actual compute cells:
+                 if (onBlock(i, j, k)) then 
+                    nChangedLocal = nChangedLocal + 1
+                 end if
 
                  ! Pure compute cell, convert to hole
                  tmpSave = isFloodSeed(fringes(i, j, k)%status)
@@ -237,6 +241,23 @@ contains
     nSeed = nSeed + 1
     floodSeeds(:, nSeed) = (/i, j, k/)
   end subroutine addSeed
+  
+  function onBlock(i, j, k)
+
+    use precision
+    implicit none
+    
+    integer(kind=intType), intent(in) :: i, j, k
+    logical :: onBlock
+    
+    if (i >= 2 .and. i <= il .and. j >= 2 .and. j<= jl .and. k >= 2 .and. k <= kl) then 
+       onBlock = .True. 
+    else
+       onBlock = .False.
+    end if
+  end function onBlock
+
+
 end subroutine floodInteriorCells
 
 
