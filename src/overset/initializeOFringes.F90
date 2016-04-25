@@ -112,7 +112,7 @@ subroutine initializeOFringes(oFringe, nn)
      do j=2, jl
         do i=2, il
            if (iblank(i,j,k)==-3 .or. iblank(i,j,k)==-2) then 
-               iii = (kk-2)*nx*ny + (jj-2)*nx + (ii-2) + 1
+               iii = (k-2)*nx*ny + (j-2)*nx + (i-2) + 1
               oFringe%quality(iii) = -large
            end if
         end do
