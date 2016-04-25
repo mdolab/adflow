@@ -275,11 +275,11 @@
        ! Pointers for globalCell/Node
        globalCell =>flowDoms(nn,mm,ll)%globalCell
        globalNode =>flowDoms(nn,mm,ll)%globalNode
-       nearWall => flowDoms(nn,mm,ll)%nearWall
        ifaceptb  =>flowDoms(nn,1,1)%ifaceptb
        iedgeptb  =>flowDoms(nn,1,1)%iedgeptb
 
-
+       xSeed => flowDoms(nn,mm,ll)%xSeed
+       wallInd => flowDoms(nn,mm,ll)%wallInd
 
        ! *******************************
        ! Added by HDN

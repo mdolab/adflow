@@ -182,7 +182,8 @@
        nullify(flowDoms(nn,level,sps)%globalNode)
        nullify(flowDOms(nn,level,sps)%surfNodeIndices)
        nullify(flowDOms(nn,level,sps)%uv)
-       nullify(flowDoms(nn,level,sps)%nearWall)
+       nullify(flowDoms(nn,level,sps)%wallInd)
+       nullify(flowDoms(nn,level,sps)%xSeed)
 
        ! *******************************
        ! Added by HDN

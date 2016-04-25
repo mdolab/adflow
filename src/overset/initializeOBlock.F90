@@ -21,9 +21,10 @@ subroutine initializeOBlock(oBlock, nn, level, sps)
   ! Working paramters
   integer(kind=intType) :: i, j, k, mm, nADT, nHexa, planeOffset
   integer(kind=intType) :: iStart, iEnd, jStart, jEnd, kStart, kEnd
-  real(kind=realType) :: factor, frac,  wallEdge, avgEdge, dist
+  real(kind=realType) :: factor, frac,  wallEdge, avgEdge, dist, xp(3)
   integer(kind=intType) :: i_stencil, ii, jj, iii
   logical :: wallsPresent, isWallType
+  logical, allocatable, dimension(:, :, :)  :: nearWallTmp
 
   ! Set all the sizes for this block.
   oBlock%il = il
@@ -32,16 +33,8 @@ subroutine initializeOBlock(oBlock, nn, level, sps)
 
   oBlock%proc = myID
   oBlock%block = nn
+  oBlock%cluster = clusters(cumDomProc(myid) + nn)
   call wallsOnBlock(wallsPresent)
-
-  ! Allocate the nearWall first and copy so we destroy the exiting
-  ! memory
-  allocate(oBlock%nearWall(1:il, 1:jl, 1:kl))
-
-  ! We can directly copy nearwall out
-  oBlock%nearWall = flowDoms(nn, level, sps)%nearWall
-
-  !deallocate(flowDoms(nn, level, sps)%nearWall)
 
   ! Do the reset of the allocs
   allocate( &
@@ -107,11 +100,19 @@ subroutine initializeOBlock(oBlock, nn, level, sps)
   allocate(oBlock%xADT(3, nADT), oBlock%hexaConn(8, nHexa))
   ! Fill up the xADT using cell centers (dual mesh)
   mm = 0
+
+  ! Allocate the nearWall
+  allocate(oBlock%nearWall(1:il, 1:jl, 1:kl))
+  oBlock%nearWall = 0
+
+  allocate(nearWallTmp(1:ie, 1:je, 1:ke))
+  nearWallTmp = .False.
+
   do k=1, ke
      do j=1, je
         do i=1, ie
            mm = mm + 1
-           oBlock%xADT(:, mm) = eighth*(&
+           xp = eighth*(&
                 x(i-1, j-1, k-1, :) + &
                 x(i  , j-1, k-1, :) + &
                 x(i-1, j  , k-1, :) + &
@@ -120,11 +121,43 @@ subroutine initializeOBlock(oBlock, nn, level, sps)
                 x(i  , j-1, k  , :) + &
                 x(i-1, j  , k  , :) + &
                 x(i  , j  , k  , :))
-           ! Just copy nearWall direclty out
+           oBlock%xADT(:, mm) = xp
+           
+           ! Determine if this point is near wall. Note that the
+           ! boundary halos sill have xSeed as "large" so these won't
+           ! be flagged as nearWall. We will account for this below. 
+           dist = norm2(xp - xSeed(i, j, k, :))
+           if (dist < nearWallDist) then 
+              nearWallTmp(i, j, k) = .True. 
+           end if
         end do
      end do
   end do
 
+  ! Now finally set the nearwall for the dual mesh cells. It is
+  ! considered a near wall if all "nodes" of the dual mesh cell are
+  ! also near wall. Have to be carful not to count boundary halos
+  ! since they do not have nearWallTmp Values.
+  
+  do k=1, kl
+     do j=1, jl
+        do i=1, il
+           if (&
+                (nearWallTmp(i  , j  , k  ) .or. globalCell(i  , j,   k  ) < 0) .and. &
+                (nearWallTmp(i+1, j  , k  ) .or. globalCell(i+1, j,   k  ) < 0) .and. &
+                (nearWallTmp(i  , j+1, k  ) .or. globalCell(i  , j+1, k  ) < 0) .and. &
+                (nearWallTmp(i+1, j+1, k  ) .or. globalCell(i+1, j+1, k  ) < 0) .and. &
+                (nearWallTmp(i  , j  , k+1) .or. globalCell(i  , j,   k+1) < 0) .and. &
+                (nearWallTmp(i+1, j  , k+1) .or. globalCell(i+1, j,   k+1) < 0) .and. &
+                (nearWallTmp(i  , j+1, k+1) .or. globalCell(i  , j+1, k+1) < 0) .and. &
+                (nearWallTmp(i+1, j+1, k+1) .or. globalCell(i+1, j+1, k+1) < 0)) then 
+              oBlock%nearWall(i, j, k) = 1
+           end if
+        end do
+     end do
+  end do
+  
+  deallocate(nearWallTmp)
   mm = 0
   ! These are the 'elements' of the dual mesh.
   planeOffset = ie * je

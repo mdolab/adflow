@@ -33,6 +33,9 @@ module overset
      ! Sizes for the block
      integer(kind=intType) :: il, jl, kl
 
+     ! Cluster this block belongs to
+     integer(kind=intType) :: cluster
+
      ! This is the cell volume of the donor
      real(kind=realType), dimension(:, :), pointer :: qualDonor
 
@@ -81,12 +84,21 @@ module overset
      ! Sizes
      integer(kind=intType) :: il, jl ,kl
 
+     ! Cluster this set of fringes belongs to
+     integer(kind=intType) :: cluster
+
      ! Buffer space for sending/receiving the fringes
      real(kind=realType), dimension(:), allocatable :: rBuffer
      integer(kind=intType), dimension(:), allocatable :: iBuffer
 
      ! These are the coordinate of what we are searching
      real(kind=realType), dimension(:, :), allocatable :: x
+
+     ! These are the coordinate of its wall surface if applicable
+     real(kind=realType), dimension(:, :), allocatable :: xSeed
+
+     ! These are the indices of the wall surfaces if applicable
+     integer(kind=intType), dimension( :), allocatable :: wallInd
 
      ! qualaity is the best quality that has been found from a
      ! DONOR cell. It is initialized to large. 
@@ -312,14 +324,9 @@ module overset
   integer(kind=intType) :: nDomTotal
   integer(kind=intType) :: nClusters
   integer(kind=intType), dimension(:), allocatable :: clusters
-
   real(kind=realType), dimension(:), allocatable :: clusterAreas
 
-  type XPlane
-     real(kind=realType), dimension(:, :, :), pointer :: x
-     real(kind=realType), dimension(:, :, :), pointer :: xseed
-     integer(kind=intType), dimension(:, :), pointer :: nearWall
-  end type XPlane
+  type(oversetWall), dimension(:), allocatable, target :: clusterWalls
 
   contains
   ! ==============================
