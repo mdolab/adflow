@@ -40,7 +40,7 @@ subroutine solveState
   !      Local variables.
   !
   integer :: ierr
-  integer(kind=intType) :: iter, nMGCycles
+  integer(kind=intType) ::  nMGCycles
   character (len=7) :: numberString
   logical :: absConv, relConv, firstNK, firstANK
 
@@ -234,7 +234,7 @@ subroutine solveState
      ! Check if the bleed boundary conditions must be updated and
      ! do so if needed.
      
-     if(mod(iter, nUpdateBleeds) == 0) &
+     if(mod(approxTotalIts, nUpdateBleeds) == 0) &
           call BCDataMassBleedOutflow(.false., .false.)
      
      ! Check if we've received a signal:
