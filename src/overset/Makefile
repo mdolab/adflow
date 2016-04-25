@@ -42,6 +42,7 @@ FF90_OBJECTS_1 = stringOps.o\
 
 FILES_TO_COMPLEXIFY =	stringOps.F90\
 			computeInterpolationParallel.F90\
+			buildClusterWalls.F90\
 			createZipperMesh.F90\
 			bowtieAndIsolationElimination.F90\
 			determineClusters.F90 \
