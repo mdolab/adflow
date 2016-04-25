@@ -48,8 +48,8 @@ FILES_TO_COMPLEXIFY =	stringOps.F90\
 			determineClusters.F90 \
 			determineClusterAreas.F90 \
 			checkOverset.F90 \
+			computeCellWallPoint.F90\
 			exchangeSurfaceDelta.F90\
-			flagNearWall.F90\
 			floodInteriorCells.F90\
 			oversetLoadBalance.F90\
 			qsortFringeType.F90\

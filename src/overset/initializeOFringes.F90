@@ -29,6 +29,7 @@ subroutine initializeOFringes(oFringe, nn)
   oFringe%il = il
   oFringe%jl = jl
   oFringe%kl = kl
+  oFringe%cluster = clusters(cumDomProc(myid) + nn)
 
   mm = nx*ny*nz
   allocate(oFringe%x(3, mm))
@@ -42,6 +43,8 @@ subroutine initializeOFringes(oFringe, nn)
   allocate(oFringe%dK(mm))
   allocate(oFringe%donorFrac(3, mm))
   allocate(oFringe%gInd(8, mm))
+  allocate(oFringe%xSeed(3, mm))
+  allocate(oFringe%wallInd(mm))
   allocate(oFringe%isWall(mm))
 
   ! These default set the entire array
@@ -53,6 +56,8 @@ subroutine initializeOFringes(oFringe, nn)
   oFringe%donorFrac = -one
   oFringe%gInd = -1
   oFringe%isWall = 0
+  oFringe%xSeed = large
+  oFringe%wallInd = 0
 
   ! Now loop over the actual compute cells, setting the cell center
   ! value 'x', the volume and flag these cells as compute
@@ -79,6 +84,10 @@ subroutine initializeOFringes(oFringe, nn)
               oFringe%quality(ii) = (backgroundVolScale*vol(i, j, k))**third
            end if
            oFringe%myIndex(ii) = ii
+           
+           oFringe%xSeed(:, ii) = xSeed(i, j, k, :)
+           oFringe%wallInd(ii) = wallInd(i, j, k)
+
         end do
      end do
   end do

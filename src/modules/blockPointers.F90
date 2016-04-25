@@ -178,7 +178,8 @@ module blockPointers
 
   integer(kind=intType), dimension(:,:,:), pointer :: globalNode
   integer(kind=intType), dimension(:,:,:), pointer :: globalCell
-  integer(kind=intType), dimension(:, :, :), pointer :: nearWall
+  real(kind=realType), dimension(:, :, :, :), pointer :: xSeed
+  integer(kind=intType), dimension(:, :, :), pointer :: wallInd
 
   integer(kind=intType), dimension(:), pointer ::ifaceptb,iedgeptb
 

@@ -522,7 +522,7 @@ module block
 
      ! Tempory storage for overset variables
      real(kind=realType), dimension(:, :, :, :), pointer :: XSeed
-     integer(kind=intType), dimension(:, :, :), pointer :: nearWall
+     integer(kind=intType), dimension(:, :, :), pointer :: wallInd
 
      !
      !        ****************************************************************

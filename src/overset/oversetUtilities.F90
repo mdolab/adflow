@@ -653,7 +653,9 @@ subroutine deallocateOFringes(oFringes, n)
              oFringes(i)%dK, &
              oFringes(i)%donorFrac, &
              oFringes(i)%gInd, &
-             oFringes(i)%isWall)
+             oFringes(i)%isWall, &
+             oFringes(i)%xSeed, &
+             oFringes(i)%wallInd)
         if (allocated(oFringes(i)%rbuffer)) then 
            deallocate(oFringes(i)%rBuffer,&
                 oFringes(i)%iBuffer)
