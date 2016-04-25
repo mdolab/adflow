@@ -47,6 +47,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
   type(oversetBlock), dimension(:), allocatable :: oBlocks
   type(oversetFringe), dimension(:), allocatable :: oFringes
   type(oversetWall), dimension(:), allocatable :: oWalls
+  type(oversetWall), pointer :: wall
   type(fringeType), dimension(:), allocatable :: localFringes
 
   ! MPI/Communication related
@@ -345,8 +346,34 @@ subroutine oversetComm(level, firstTime, coarseLevel)
         nLocalWallFringe = 0
 
         ! Determine the cells that are near wall. We have a special routine for this. 
-        call flagNearWallCells(level, sps)
+        call computeCellWallPoint(level, sps)
+        allocate(clusterWalls(nClusters))
+        call buildClusterWalls(level, sps, .True., clusterWalls)
 
+        ! We need a couple of extra things that buildCluster wall
+        ! doesn't do:
+        do ii=1, nClusters
+           wall => clusterWalls(ii)
+           if (wall%nNodes > 0) then 
+              wall%tree => kdtree2_create(wall%x(:, 1:wall%nNodes))
+           end if
+           
+           ! Build the inverse of the connectivity, the nodeToElem array. 
+           allocate(wall%nte(4, wall%nNodes))
+           wall%nte = 0
+           do i=1, wall%nCells
+              do j=1, 4
+                 n = wall%conn(j, i)
+                 inner:do k=1, 4
+                    if (wall%nte(k, n) == 0) then 
+                       wall%nte(k, n) = i
+                       exit inner
+                    end if
+                 end do inner
+              end do
+           end do
+        end do
+           
         do nn=1, nDom
            call setPointers(nn, level, sps)
            iDom = cumDomProc(myid) + nn
@@ -487,6 +514,16 @@ subroutine oversetComm(level, firstTime, coarseLevel)
         deallocate(oBlocks, oWalls)
         deallocate(oBlockReady, oFringeReady, oWallReady)
 
+        ! Destroy the cluster wall stuff
+        do i=1, nClusters
+           wall => clusterWalls(i)
+           call destroySerialQuad(wall%ADT)
+           if (wall%nNodes > 0) then 
+              call kdtree2_destroy(wall%tree)
+           end if
+           deallocate(wall%x, wall%conn, wall%ind, wall%nte)
+        end do
+        deallocate(clusterWalls)
 
         ! Make sure all oFringe buffers are delloacted before we allocate
         ! space for the large fringe arraay
@@ -772,7 +809,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
               ! We need to unwind *my* index. The reason why we sent
               ! the index in the first place is we are not getting the
               ! same number of fringes back as we sent so the myIndex
-              ! lets of know which ones are actuall coming back. 
+              ! lets of know which ones are actually coming back. 
 
               ! myindex is 1 based so we need the -1 at the end 
               myIndex = intRecvBuf(14*(jj-1) + 14) - 1
@@ -1331,7 +1368,7 @@ subroutine writePartionedMesh(fileName)
 
      open(unit=1, file=fileName, form='formatted', status='unknown')
      !write(1, *) "Variables = X Y Z"
-     write(1, *) "Variables = X Y Z IBLANK NEARWALL"
+     write(1, *) "Variables = X Y Z IBLANK"
 
      ! Write my own blocks first
      do nn=1,nDom
@@ -1340,7 +1377,7 @@ subroutine writePartionedMesh(fileName)
         write(tmpStr, "(a,I3.3,a,I3.3,a)"), """Proc ", 0, " Local ID ", nn , """"
         write(1,*) "ZONE I=", il, " J=",jl, "K=", kl, "T=", trim(tmpStr)
         write(1, *) "DATAPACKING=BLOCK"
-        write(1, *) "VARLOCATION=([1,2,3,5]=NODAL, [4]=CELLCENTERED)"
+        write(1, *) "VARLOCATION=([1,2,3,4]=NODAL)"
 
         do iDim=1, 3
            do k=1, kl
@@ -1358,14 +1395,6 @@ subroutine writePartionedMesh(fileName)
            do j=2, jl
               do i=2, il
                  write(1, *) iBlank(i, j, k) 
-              end do
-           end do
-        end do
-
-        do k=1, kl
-           do j=1, jl
-              do i=1, il
-                 write(1, *) flowDoms(nn, 1,1)%nearWall(i, j, k)
               end do
            end do
         end do
@@ -1389,7 +1418,7 @@ subroutine writePartionedMesh(fileName)
            write(tmpStr, "(a,I3.3,a,I3.3,a)"), """Proc ", iProc, " Local ID ", nn ,""""
            write(1,*) "ZONE I=", dims(1, iDom), " J=", dims(2, iDom), "K=", dims(3, iDom), "T=", trim(tmpStr)
            write(1, *) "DATAPACKING=BLOCK"
-           write(1, *) "VARLOCATION=([1,2,3]=NODAL, [4,5]=CELLCENTERED)"
+           write(1, *) "VARLOCATION=([1,2,3]=NODAL, [4]=CELLCENTERED)"
 
            ! Dump directly...already in the right order
            do i=1, bufSize
@@ -1430,15 +1459,6 @@ subroutine writePartionedMesh(fileName)
               do i=2, il
                  ii = ii + 1
                  ibuffer(ii) = iBlank(i, j, k)
-              end do
-           end do
-        end do
-
-        do k=2, kl
-           do j=2, jl
-              do i=2, il
-                 ii = ii + 1
-                 ibuffer(ii) = flowDoms(nn, 1,1)%nearWall(i,j,k)
               end do
            end do
         end do

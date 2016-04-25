@@ -37,11 +37,8 @@ subroutine fringeSearch(oBlock, oFringe, bWall, fWall)
   allocate(offset(3, n))
   offset = zero
 
-  ! Determine if we have a wall-wall overlap:
-  if (bWall%nNodes /= 0 .and. fWall%nNodes /= 0) then 
-     call surfaceCorrection(oBlock, oFringe, bWall, fWall, offset, n)
-  end if
-
+  call surfaceCorrection(oBlock, oFringe, offset, n)
+  
   ! Search the cells one at a time:
   do i=1, n
 
