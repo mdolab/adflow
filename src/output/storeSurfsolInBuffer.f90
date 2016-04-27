@@ -550,18 +550,18 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
         ! working indices are ii and jj.
 
         do j=rangeFaceNode(2,1), rangeFaceNode(2,2)+1
-           if(j == rangeFace(2,1)) then
+           if(j == rangeFaceNode(2,1)) then
               jj = j + offVis
-           else if(j == rangeFace(2,2)) then
+           else if(j == rangeFaceNode(2,2)+1) then
               jj = j - offVis
            else
               jj = j
            endif
 
            do i=rangeFaceNode(1,1), rangeFaceNode(1,2)+1
-              if(i == rangeFace(1,1)) then
+              if(i == rangeFaceNode(1,1)) then
                  ii = i + offVis
-              else if(i == rangeFace(1,2)) then
+              else if(i == rangeFaceNode(1,2)+1) then
                  ii = i - offVis
               else
                  ii = i
@@ -654,18 +654,18 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
         ! working indices are ii and jj.
 
         do j=rangeFaceNode(2,1), rangeFaceNode(2,2)+1
-           if(j == rangeFace(2,1)) then
+           if(j == rangeFaceNode(2,1)) then
               jj = j + offVis
-           else if(j == rangeFace(2,2)) then
+           else if(j == rangeFaceNode(2,2)+1) then
               jj = j - offVis
            else
               jj = j
            endif
 
            do i=rangeFaceNode(1,1), rangeFaceNode(1,2)+1
-              if(i == rangeFace(1,1)) then
+              if(i == rangeFaceNode(1,1)) then
                  ii = i + offVis
-              else if(i == rangeFace(1,2)) then
+              else if(i == rangeFaceNode(1,2)+1) then
                  ii = i - offVis
               else
                  ii = i
@@ -722,18 +722,18 @@ subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
      fact = fact*two/(gammaInf*pInf*MachCoef*MachCoef)
      scaleDim = pRef/pInf
      do j=rangeFaceNode(2,1), rangeFaceNode(2,2)+1
-        if(j == rangeFace(2,1)) then
+        if(j == rangeFaceNode(2,1)) then
            jj = j + offVis
-        else if(j == rangeFace(2,2)) then
+        else if(j == rangeFaceNode(2,2)+1) then
            jj = j - offVis
         else
            jj = j
         endif
 
         do i=rangeFaceNode(1,1), rangeFaceNode(1,2)+1
-           if(i == rangeFace(1,1)) then
+           if(i == rangeFaceNode(1,1)) then
               ii = i + offVis
-           else if(i == rangeFace(1,2)) then
+           else if(i == rangeFaceNode(1,2)+1) then
               ii = i - offVis
            else
               ii = i
