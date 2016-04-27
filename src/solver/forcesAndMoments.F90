@@ -41,7 +41,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
   !
   !      Local variables.
   !
-  integer(kind=intType) :: nn, i, j, ii
+  integer(kind=intType) :: nn, i, j, ii,blk
 
   real(kind=realType) :: pm1, fx, fy, fz, fn, sigma
   real(kind=realType) :: xc, yc, zc, qf(3)
@@ -165,9 +165,10 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
                    +         xx(i,j+1,3) + xx(i+1,j+1,3)) - refPoint(3)
 
               ! Compute the force components.
-              fx = pm1*ssi(i,j,1)
-              fy = pm1*ssi(i,j,2)
-              fz = pm1*ssi(i,j,3)
+              blk = max(BCData(nn)%iblank(i,j), 0)
+              fx = pm1*ssi(i,j,1)*blk
+              fy = pm1*ssi(i,j,2)*blk
+              fz = pm1*ssi(i,j,3)*blk
 
               ! Update the inviscid force and moment coefficients.
               cFp(1) = cFp(1) + fx
@@ -281,13 +282,14 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
                  j = ii/(bcData(nn)%inEnd-bcData(nn)%inBeg) + bcData(nn)%jnBeg + 1
 
                  ! Store the viscous stress tensor a bit easier.
+                 blk = max(BCData(nn)%iblank(i,j), 0)
 
-                 tauXx = viscSubface(nn)%tau(i,j,1)
-                 tauYy = viscSubface(nn)%tau(i,j,2)
-                 tauZz = viscSubface(nn)%tau(i,j,3)
-                 tauXy = viscSubface(nn)%tau(i,j,4)
-                 tauXz = viscSubface(nn)%tau(i,j,5)
-                 tauYz = viscSubface(nn)%tau(i,j,6)
+                 tauXx = viscSubface(nn)%tau(i,j,1)*blk
+                 tauYy = viscSubface(nn)%tau(i,j,2)*blk
+                 tauZz = viscSubface(nn)%tau(i,j,3)*blk
+                 tauXy = viscSubface(nn)%tau(i,j,4)*blk
+                 tauXz = viscSubface(nn)%tau(i,j,5)*blk
+                 tauYz = viscSubface(nn)%tau(i,j,6)*blk
 
                  ! Compute the viscous force on the face. A minus sign
                  ! is now present, due to the definition of this force.
