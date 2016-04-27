@@ -981,7 +981,8 @@ subroutine oversetComm(level, firstTime, coarseLevel)
         ! -----------------------------------------------------------------
 
         call fringeReduction(level, sps)
-
+        
+        call exchangeStatus(level, sps, commPatternCell_2nd, internalCell_2nd)
            ! Before we can do the final comm structures, we need to make
            ! sure that every processor's halo have any donor information
            ! necessary to build its own comm pattern. For this will need to
@@ -1294,27 +1295,43 @@ subroutine test
 end subroutine test
 
 
-subroutine writePartionedMesh(fileName)
+subroutine writePartitionedMesh(fileName)
 
   ! This is a debugging routine for writing out meshes *as they are
-  ! partioned*. This can be useful for debugging overset issues.
+  ! partioned*. This can be useful for debugging overset issues. Only
+  ! the grid coordinates are writting...these will have to be post
+  ! processed to get connectivity information if the grid is to be
+  ! used as input again.
 
   use communication
   use blockPointers
-
+  use cgnsgrid
   implicit none
+
+  include 'cgnslib_f.h'
+
 
   character(len=*), intent(in) :: fileName
   integer(kind=intType) :: nDomTotal, iProc, nn, i, j, k, iDim, iDom, ierr, ii
+  integer(kind=intType) :: iii,jjj,kkk
   integer(kind=intType) :: bufSize, maxSize, ibufSize, imaxSize
   integer(kind=intType), dimension(3, nDom) :: localDim
   integer(kind=intType), dimension(:), allocatable :: nDomProc, cumDomProc
   integer(kind=intType), dimension(:, :), allocatable :: dims
   real(kind=realType), dimension(:), allocatable :: buffer
-  integer(kind=intType), dimension(:), allocatable :: ibuffer !iblank
-  character*40 :: tmpStr
-
+  real(kind=realType), dimension(:, :, :, :), allocatable :: xtmp
+  integer(kind=intType) :: ier, zoneCOunter, sizes(9), base, zoneID, coordID, cg, zone
+  integer(kind=intType) :: ifield, iSol
+  character*40 :: tmpStr, zoneName
+  character*32 :: coorNames(3)
   integer status(MPI_STATUS_SIZE) 
+
+  coorNames(1) = "CoordinateX"
+  coorNames(2) = "CoordinateY"
+  coorNames(3) = "CoordinateZ"
+  print *,'writing fucking mesh on fucking proc:', myid
+  call MPI_BARRIER(sumb_comm_world, ierr)
+
   ! Gather the dimensions of all blocks to everyone
   call mpi_allreduce(nDom, nDomTotal, 1, sumb_integer, MPI_SUM, &
        sumb_comm_world, ierr)
@@ -1352,53 +1369,55 @@ subroutine writePartionedMesh(fileName)
   call ECHK(ierr, __FILE__, __LINE__)
 
   maxSize = 0
-  imaxSize = 0
   do i=1,nDomTotal
      maxSize = max(maxSize, dims(1, i)*dims(2,i)*dims(3,i)*3)
-     imaxSize = max(imaxSize, dims(1, i)*dims(2,i)*dims(3,i))
   end do
 
   allocate(buffer(maxSize))
-  allocate(ibuffer(imaxSize))
 
   if (myid == 0) then 
-     print *,'writing mesh...'
-     ! Root proc does all the writing. Just dump to ascii tecplot
-     ! file---really slow.
 
-     open(unit=1, file=fileName, form='formatted', status='unknown')
-     !write(1, *) "Variables = X Y Z"
-     write(1, *) "Variables = X Y Z IBLANK"
+     ! Open the CGNS File
+     call cg_open_f(fileName, mode_write, cg, ier)
+     base = 1
+     call cg_base_write_f(cg, "Base#1", 3, 3, base, ier)
 
+     zoneCounter = 0
      ! Write my own blocks first
      do nn=1,nDom
         call setPointers(nn, 1, 1)
-        !write(tmpStr, *) "Proc ", 0, " Local ID", nn
-        write(tmpStr, "(a,I3.3,a,I3.3,a)"), """Proc ", 0, " Local ID ", nn , """"
-        write(1,*) "ZONE I=", il, " J=",jl, "K=", kl, "T=", trim(tmpStr)
-        write(1, *) "DATAPACKING=BLOCK"
-        write(1, *) "VARLOCATION=([1,2,3,4]=NODAL)"
+        
+        sizes(1) = il
+        sizes(2) = jl
+        sizes(3) = kl
+        sizes(4) = nx
+        sizes(5) = ny
+        sizes(6) = nz
+        sizes(7) = 0
+        sizes(8) = 0
+        sizes(9) = 0
 
-        do iDim=1, 3
-           do k=1, kl
-              do j=1, jl
-                 do i=1, il
-                    write(1, *) x(i, j, k, idim)
-                 end do
+999     FORMAT('domain.', I5.5)
+        zoneCounter = zoneCounter + 1
+        write(zonename, 999) zoneCounter 
+
+        call cg_zone_write_f(cg, base, zonename, sizes, Structured, zoneID, ier)
+        
+        allocate(xtmp(sizes(1), sizes(2), sizes(3), 3))
+
+        do k=1, kl
+           do j=1, jl
+              do i=1, il
+                 xtmp(i,j,k,1:3) = x(i,j,k,1:3)
               end do
            end do
         end do
-
-        ! Iblanks are cell center values,  imposed on primal nodes, for plotting
-        ! purpose only
-        do k=2, kl
-           do j=2, jl
-              do i=2, il
-                 write(1, *) iBlank(i, j, k) 
-              end do
-           end do
+        
+        do idim=1, 3
+           call cg_coord_write_f(cg, base, zoneID, realDouble, coorNames(idim), &
+                xtmp(:, :, :, idim), coordID, ier)
         end do
-
+        deallocate(xtmp)
      end do
 
      ! Now loop over the remaining blocks...receiving each and writing:
@@ -1407,70 +1426,66 @@ subroutine writePartionedMesh(fileName)
         do nn=1, nDomProc(iProc)
            iDom = cumDomProc(iProc) + nn
            bufSize = dims(1, iDom)*dims(2, iDom)*dims(3,iDom)*3
-           ibufSize = (dims(1, iDom)-1)*(dims(2, iDom)-1)*(dims(3,iDom)-1)*2
 
            call MPI_Recv(buffer, bufSize, sumb_real, iProc, iProc, &
                 sumb_comm_world, status, ierr)
 
-           call MPI_Recv(ibuffer, ibufSize, sumb_integer, iProc, 10*iProc, &
-                sumb_comm_world, status, ierr)
-
-           write(tmpStr, "(a,I3.3,a,I3.3,a)"), """Proc ", iProc, " Local ID ", nn ,""""
-           write(1,*) "ZONE I=", dims(1, iDom), " J=", dims(2, iDom), "K=", dims(3, iDom), "T=", trim(tmpStr)
-           write(1, *) "DATAPACKING=BLOCK"
-           write(1, *) "VARLOCATION=([1,2,3]=NODAL, [4]=CELLCENTERED)"
-
-           ! Dump directly...already in the right order
-           do i=1, bufSize
-              write(1, *), buffer(i)
+           zoneCounter = zoneCounter + 1
+           write(zonename, 999) zoneCounter 
+              sizes(1) = dims(1, iDom)
+              sizes(2) = dims(2, iDom)
+              sizes(3) = dims(3, iDom)
+              sizes(4) = dims(1, iDom)-1
+              sizes(5) = dims(2, iDom)-1
+              sizes(6) = dims(3, iDom)-1
+              sizes(7) = 0
+              sizes(8) = 0
+              sizes(9) = 0
+           call cg_zone_write_f(cg, base, zonename, sizes, Structured, zoneID, ier)
+           ii = 0
+           allocate(xtmp(sizes(1), sizes(2), sizes(3), 3))
+           do k=1, sizes(3)
+              do j=1, sizes(2)
+                 do i=1, sizes(1)
+                    xtmp(i,j,k,1) = buffer(ii+1)
+                    xtmp(i,j,k,2) = buffer(ii+2)
+                    xtmp(i,j,k,3) = buffer(ii+3)
+                    ii = ii + 3
+                 end do
+              end do
            end do
-           do i=1, ibufSize
-              write(1, *), ibuffer(i)
+
+           do idim=1, 3
+              call cg_coord_write_f(cg, base, zoneID, realDouble, coorNames(idim), &
+                   xtmp(:, :, :, idim), coordID, ier)
            end do
+           deallocate(xtmp)
         end do
      end do
-     close(1)
-     print *,'Done writing mesh...'
   else 
-
-     ! Pand and send my stuff:
+     ! Pack and send my stuff:
      do nn=1, nDom
         call setPointers(nn, 1, 1)
         ii = 0
-        do iDim=1, 3
-           do k=1, kl
-              do j=1, jl
-                 do i=1, il
-                    ii = ii + 1
-                    buffer(ii) = x(i, j, k, iDim)
+        do k=1, kl
+           do j=1, jl
+              do i=1, il
+                 do iDim=1,3
+                    buffer(ii+idim) =  x(i,j,k,iDim)
                  end do
+                 ii = ii + 3
               end do
            end do
         end do
 
         call mpi_send(buffer, ii, sumb_real, 0, myid, &
              sumb_comm_world, ierr)
-
-        ! Iblanks are cell center values,  imposed on primal nodes, for plotting
-        ! purpose only
-        ii = 0
-        do k=2, kl
-           do j=2, jl
-              do i=2, il
-                 ii = ii + 1
-                 ibuffer(ii) = iBlank(i, j, k)
-              end do
-           end do
-        end do
-
-        call mpi_send(ibuffer, ii, sumb_integer, 0, 10*myid, &
-             sumb_comm_world, ierr)
      end do
   end if
 
-  deallocate(buffer, ibuffer, nDomProc, cumDomProc, dims)
+  deallocate(buffer, nDomProc, cumDomProc, dims)
 
-end subroutine writePartionedMesh
+end subroutine writePartitionedMesh
 
 subroutine writeWalls
 

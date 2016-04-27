@@ -172,6 +172,10 @@ python module libsumb
        subroutine writesol ! in :sumb:../../output/writeSol.f90
        end subroutine writesol
 
+       subroutine writepartitionedmesh(filename)
+         character*(*), intent(in) :: filename
+       end subroutine writepartitionedmesh
+
        subroutine updatewalldistancealllevels ! in :sumb:../../wallDistance/updateWallDistanceAllLevels.f90
        end subroutine updatewalldistancealllevels
 
