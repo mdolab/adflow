@@ -97,7 +97,7 @@ subroutine createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
      end if
   end do
 
-  ! Initialize the primal wallls
+  ! Initialize the primal walls
   do nn=1, nDom
      call setPointers(nn, level, sps)
      iDom = cumDomProc(myid) + nn
@@ -270,6 +270,10 @@ subroutine createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
   if (myid == 0) then 
      print *,'Time:', mpi_wtime()-timeA
   end if
+  
+
+
+
 
 end subroutine createZipperMesh
 

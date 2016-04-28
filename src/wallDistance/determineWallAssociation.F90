@@ -10,7 +10,7 @@ subroutine determineWallAssociation(level, sps)
   use communication
   use inputphysics
   use inputTimeSpectral
-  use overset
+  use overset, only : oversetPresent, oversetWall, nClusters, clusters, cumDomProc
   use inputOverset
   use adjointVars
   implicit none
@@ -25,7 +25,7 @@ subroutine determineWallAssociation(level, sps)
 
   ! Data for local surface
   integer(kind=intType) :: nNodes, nCells
-  logical :: gridHasOverset, oversetPresent
+  logical :: gridHasOverset
 
   ! Overset Walls for storing the surface ADT's
   type(oversetWall), dimension(:), allocatable, target :: walls
@@ -41,9 +41,6 @@ subroutine determineWallAssociation(level, sps)
   type(adtBBoxTargetType), dimension(:), pointer :: BB
   real(kind=realType), dimension(3) :: xp
 
-  ! Determine if overset is present.
-  gridHasOverset = oversetPresent()
-
   ! The first thing we do is gather all the surface nodes to
   ! each processor such that every processor can make it's own copy of
   ! the complete surface mesh to use to search. Note that this
@@ -55,7 +52,7 @@ subroutine determineWallAssociation(level, sps)
   allocate(walls(nClusters))
   call buildClusterWalls(level, sps, .False., walls)
 
-  if (gridHasOverset) then 
+  if (oversetPresent) then 
      ! Finally build up a "full wall" that is made up of all the cluster
      ! walls. 
 
@@ -139,7 +136,7 @@ subroutine determineWallAssociation(level, sps)
                    +         x(i-1,j-1,k,  3) + x(i,j-1,k,  3)  &
                    +         x(i-1,j,  k,  3) + x(i,j,  k,  3))
 
-              if (.not. gridHasOverset) then 
+              if (.not. oversetPresent) then 
                  ! No overset present. Simply search our own wall,
                  ! walls(c), (the only one we have) up to the wall
                  ! cutoff.
@@ -326,7 +323,7 @@ subroutine determineWallAssociation(level, sps)
   end do
   deallocate(walls)
 
-  if (gridHasOverset) then 
+  if (oversetPresent) then 
      deallocate(fullWall%x, fullWall%conn, fullWall%ind)
      call destroySerialQuad(fullWall%ADT)
   end if

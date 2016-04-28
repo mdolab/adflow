@@ -6,6 +6,8 @@ subroutine makeGapBoundaryStrings(level, sps)
   use overset
   use stringOps
   use kdtree2_module
+  use adjointvars
+  use wallDistanceData, only : xVolumeVec, IS1
   implicit none
 
   ! Input Params
@@ -19,20 +21,19 @@ subroutine makeGapBoundaryStrings(level, sps)
   integer(kind=intType) :: below, above, left, right, nNodes, nElems
   integer(kind=intType) :: patchNodeCounter, nZipped, gc
   integer(kind=intType), dimension(:), allocatable :: nElemsProc, nNodesProc
-  integer(kind=intType), dimension(:, :), pointer :: gcp
+  integer(kind=intType), dimension(:, :), pointer :: gcp, gnp
   real(kind=realType), dimension(:, :, :), pointer :: xx
   real(kind=realType), dimension(3) :: s1, s2, s3, s4, v1, v2, v3, v4, x0
   real(kind=realType) ::  fact, dStar, curDist, minDist, edgeLength
   logical :: isWallType
 
-  integer(kind=intType), dimension(:, :), allocatable :: patchNums
   real(kind=realType), dimension(:, :, :), allocatable :: patchNormals
   real(kind=realType), dimension(:, :), allocatable :: patchH
   integer(kind=intType), dimension(:), allocatable :: epc, surfaceSeeds, inverse
   logical,  dimension(:), allocatable :: badString
   type(oversetString), dimension(:), allocatable :: localStrings
   type(oversetString), dimension(:), allocatable :: globalStrings
-  type(oversetString) :: master
+  type(oversetString) :: master, pocketMaster
   type(oversetString), pointer :: stringsLL, str
   type(oversetString), dimension(:), allocatable, target :: strings
 
@@ -47,7 +48,9 @@ subroutine makeGapBoundaryStrings(level, sps)
   real(kind=realType), dimension(3) :: myPt, otherPt, eNorm
   integer(kind=intTYpe) :: otherID, otherIndex, closestOtherIndex, closestOtherString
   integer(kind=intType) :: id, index
+  integer(kind=intType), dimension(:), allocatable :: nodeIndices, cellIndices
   integer status(MPI_STATUS_SIZE) 
+  integer :: nSelfZipTris
 
   ! Loop over the wall faces counting up the edges that stradle a
   ! compute cell and a blanked (or interpolated) cell. 
@@ -64,26 +67,6 @@ subroutine makeGapBoundaryStrings(level, sps)
      epc(c) = epc(c) + 2*nNodes
   end do domainLoop
 
-  ! We also need to gather all the node counts such that we can
-  ! produce offsets and label every node on each patch. We will have
-  ! to carry this index information forward as it will determine which
-  ! of node tractions are needed for the triangle integration. 
-
-  allocate(nNodesProc(0:nProc), nElemsProc(0:nProc))
-
-  nNodesProc(0) = 0
-  nElemsProc(0) = 0
-
-  ! The number of nodes my proc has is sum(epc)/2 (all clusters and get rid of the *2 above)
-  call MPI_allGather(sum(epc)/2, 1, sumb_integer, nNodesProc(1:nProc), 1, sumb_integer, &
-       sumb_comm_world, ierr)
-  call ECHK(ierr, __FILE__, __LINE__)
-
-  ! Finish the cumulatie form
-  do i=2, nProc
-     ! The 0 and 1st entry of the nEdgeProc and nNodeProc arrays are already correct:
-     nNodesProc(i) = nNodesProc(i) + nNodesProc(i-1)
-  end do
 
   ! Allocate the spae we need in the local strings. 
   allocate(localStrings(nClusters))
@@ -94,7 +77,7 @@ subroutine makeGapBoundaryStrings(level, sps)
   do c=1, nClusters
      allocate(&
           localStrings(c)%conn(2, epc(c)), localStrings(c)%nodeData(10, 2*epc(c)), &
-          localStrings(c)%ind(2*epc(c)))
+          localStrings(c)%intNodeData(3, 2*epc(c)))
      localStrings(c)%nodeData = zero
      localStrings(c)%nNodes = 0
      localStrings(c)%nElems = 0
@@ -122,26 +105,32 @@ subroutine makeGapBoundaryStrings(level, sps)
            select case (BCFaceID(mm))
            case (iMin)
               xx => x(1, :, :, :)
+              gnp => globalNode(1, :, :)
               gcp => globalCell(2, :, :)
               fact = one
            case (iMax)
               xx => x(il, :, :, :)
+              gnp => globalNode(il, :, :)
               gcp => globalCell(il, :, :)
               fact = -one
            case (jMin)
               xx => x(:, 1, :, :)
+              gnp => globalNode(:, 1, :)
               gcp => globalCell(:, 2, :)
               fact = -one
            case (jMax)
               xx => x(:, jl, :, :)
+              gnp => globalNode(:, jl, :)
               gcp => globalCell(:, jl, :)
               fact = one
            case (kMin)
-              xx => x(:, :, 1, :)
+              xx => x(:, :, 1, :)          
+              gnp => globalNode(:, :, 1)
               gcp => globalCell(:, :, 2)
               fact = one
            case (kMax)
               xx => x(:, :, kl, :)
+              gnp => globalNode(:, :, kl)
               gcp => globalCell(:, :, kl)
               fact = -one
            end select
@@ -157,14 +146,12 @@ subroutine makeGapBoundaryStrings(level, sps)
            jBeg = BCdata(mm)%jnBeg; jEnd = BCData(mm)%jnEnd
            iBeg = BCData(mm)%inBeg; iEnd = BCData(mm)%inEnd  
            
-           allocate(patchNums(iBeg:iEnd, jBeg:jEnd), &
-                patchNormals(3, iBeg:iEnd, jBeg:jEnd), &
+           allocate(patchNormals(3, iBeg:iEnd, jBeg:jEnd), &
                 patchH(iBeg:iEnd, jBeg:jEnd))
 
            do j=jBeg, jEnd
               do i=iBeg, iEnd
                  patchNodeCounter = patchNodeCounter + 1
-                 patchNums(i, j) = patchNodeCounter + nNodesProc(myid)
                  x0 = xx(i+1, j+1, :)
 
                  ! Normalized normals for each surrounding face. 
@@ -235,28 +222,37 @@ subroutine makeGapBoundaryStrings(level, sps)
                        localStrings(c)%nodeData(1:3, 2*e-1) = xx(i1+1, j1+1, :)
                        localStrings(c)%nodeData(1:3, 2*e  ) = xx(i2+1, j2+1, :)
 
-
-                       localStrings(c)%nodeData(1:3, 2*e-1) = xx(i1+1, j1+1, :)
-                       localStrings(c)%nodeData(1:3, 2*e  ) = xx(i2+1, j2+1, :)
-                       
                        v1 = xx(i1+1, j1+1, :) - xx(i3+1, j3+1, :)
                        v1 = v1 / norm2(v1)
 
                        v2 = xx(i2+1, j2+1, :) - xx(i4+1, j4+1, :)
                        v2 = v2 / norm2(v2)
 
+                       ! Perpendicular vector
                        localStrings(c)%nodeData(7:9, 2*e-1) = v1
                        localStrings(c)%nodeData(7:9, 2*e  ) = v2
 
+                       ! Averaged node normal
                        localStrings(c)%nodeData(4:6, 2*e-1) = patchNormals(:, i1, j1)
                        localStrings(c)%nodeData(4:6, 2*e  ) = patchNormals(:, i2, j2)
 
+                       ! Surface deviation estimation
                        localStrings(c)%nodeData(10, 2*e-1) = patchH(i1, j1)
                        localStrings(c)%nodeData(10, 2*e  ) = patchH(i2, j2)
 
-                       localStrings(c)%ind(2*e-1) = patchNums(i1, j1)
-                       localStrings(c)%ind(2*e  ) = patchNums(i2, j2)
+                       ! Index of global node
+                       localStrings(c)%intNodeData(1, 2*e-1) = gnp(i1+1, j1+1)
+                       localStrings(c)%intNodeData(1, 2*e  ) = gnp(i2+1, j2+1)
 
+                       ! Cluster of the node
+                       localStrings(c)%intNodeData(2, 2*e-1) = c
+                       localStrings(c)%intNodeData(2, 2*e  ) = c
+
+                       ! Family ID of node. Not implemented yet. 
+                       localStrings(c)%intNodeData(3, 2*e-1) = -1
+                       localStrings(c)%intNodeData(3, 2*e  ) = -1
+
+                       ! Connectivity
                        localStrings(c)%conn(:, e) = (/2*e-1, 2*e/)
 
                     end if
@@ -302,30 +298,44 @@ subroutine makeGapBoundaryStrings(level, sps)
                        localStrings(c)%nodeData(1:3, 2*e-1) = xx(i1+1, j1+1, :)
                        localStrings(c)%nodeData(1:3, 2*e  ) = xx(i2+1, j2+1, :)
 
-                       localStrings(c)%nodeData(4:6, 2*e-1) = patchNormals(:, i1, j1)
-                       localStrings(c)%nodeData(4:6, 2*e  ) = patchNormals(:, i2, j2)
-
                        v1 = xx(i1+1, j1+1, :) - xx(i3+1, j3+1, :)
                        v1 = v1 / norm2(v1)
 
                        v2 = xx(i2+1, j2+1, :) - xx(i4+1, j4+1, :)
                        v2 = v2 / norm2(v2)
 
+                       ! Perpendicular vector
                        localStrings(c)%nodeData(7:9, 2*e-1) = v1
                        localStrings(c)%nodeData(7:9, 2*e  ) = v2
+
+                       ! Averaged node normal
+                       localStrings(c)%nodeData(4:6, 2*e-1) = patchNormals(:, i1, j1)
+                       localStrings(c)%nodeData(4:6, 2*e  ) = patchNormals(:, i2, j2)
+
+                       ! Surface deviation estimation
                        localStrings(c)%nodeData(10, 2*e-1) = patchH(i1, j1)
                        localStrings(c)%nodeData(10, 2*e  ) = patchH(i2, j2)
 
-                       localStrings(c)%ind(2*e-1) = patchNums(i1, j1)
-                       localStrings(c)%ind(2*e  ) = patchNums(i2, j2)
+                       ! Index of global node
+                       localStrings(c)%intNodeData(1, 2*e-1) = gnp(i1+1, j1+1)
+                       localStrings(c)%intNodeData(1, 2*e  ) = gnp(i2+1, j2+1)
 
+                       ! Cluster of the node
+                       localStrings(c)%intNodeData(2, 2*e-1) = c
+                       localStrings(c)%intNodeData(2, 2*e  ) = c
+
+                       ! Family ID of node. Not implemented yet.
+                       localStrings(c)%intNodeData(3, 2*e-1) = -1
+                       localStrings(c)%intNodeData(3, 2*e  ) = -1
+
+                       ! Connectivity
                        localStrings(c)%conn(:, e) = (/2*e-1, 2*e/)
 
                     end if
                  end if
               end do
            end do
-           deallocate(patchNums, patchNormals, patchH)
+           deallocate(patchNormals, patchH)
         end if
      end do bocoLoop
   end do domainLoop2
@@ -346,7 +356,9 @@ subroutine makeGapBoundaryStrings(level, sps)
 
   ! Next for each each cluster, gather to the root the gap boundary strings
 
-  do c=1, nClusters
+   allocate(nNodesProc(0:nProc), nElemsProc(0:nProc))
+
+   do c=1, nClusters
      ! Now let the root processor know how many nodes/elements my
      ! processor will be sending:
      nElemsProc(0) = 0
@@ -373,7 +385,7 @@ subroutine makeGapBoundaryStrings(level, sps)
         end do
 
         allocate(globalStrings(c)%nodeData(10, nNodesProc(nProc)), &
-             globalStrings(c)%ind(nNodesProc(nProc)), &
+             globalStrings(c)%intNodeData(3, nNodesProc(nProc)), &
              globalStrings(c)%conn(2, nElemsProc(nProc)))
 
         ! Always set the pointers immediately after allocation
@@ -382,7 +394,7 @@ subroutine makeGapBoundaryStrings(level, sps)
         ! Put proc 0's own nodes/normals/indices in the global list if we have any
         do i=1, localStrings(c)%nNodes
            globalStrings(c)%nodeData(:, i) = localStrings(c)%nodeData(:, i)
-           globalStrings(c)%ind(i) = localStrings(c)%ind(i)
+           globalStrings(c)%intNodeData(:, i) = localStrings(c)%intNodeData(:, i)
         end do
 
         ! Put proc 0's own elements in the global list if we have any
@@ -407,7 +419,7 @@ subroutine makeGapBoundaryStrings(level, sps)
                    sumb_comm_world, status, ierr)
               call ECHK(ierr, __FILE__, __LINE__)
 
-              call MPI_Recv(globalStrings(c)%ind(iStart:iEnd), iSize, sumb_integer, iProc, iProc, &
+              call MPI_Recv(globalStrings(c)%intNodeData(:, iStart:iEnd), iSize*3, sumb_integer, iProc, iProc, &
                    sumb_comm_world, status, ierr)
               call ECHK(ierr, __FILE__, __LINE__)
 
@@ -434,7 +446,7 @@ subroutine makeGapBoundaryStrings(level, sps)
                 sumb_comm_world, ierr)
            call ECHK(ierr, __FILE__, __LINE__)
            
-           call MPI_Send(localStrings(c)%ind, localStrings(c)%nNodes, sumb_integer, 0, myid, &
+           call MPI_Send(localStrings(c)%intNodeData, 3*localStrings(c)%nNodes, sumb_integer, 0, myid, &
                 sumb_comm_world, ierr)
            call ECHK(ierr, __FILE__, __LINE__)
 
@@ -479,7 +491,7 @@ subroutine makeGapBoundaryStrings(level, sps)
      master%nNodes = nNodes
      master%nElems = nElems
      allocate(master%nodeData(10, nNodes), master%conn(2, nElems), &
-          master%ind(nNodes))
+          master%intNodeData(3, nNodes))
 
      ! Set the string pointers to the individual arrays
      call setStringPointers(master)
@@ -492,7 +504,7 @@ subroutine makeGapBoundaryStrings(level, sps)
         do i=1, globalStrings(c)%nNodes
            ii = ii + 1
            master%nodeData(:, ii) = globalStrings(c)%nodeData(:, i)
-           master%ind(ii) = globalStrings(c)%ind(i)
+           master%intNodeData(:, ii) = globalStrings(c)%intNodeData(:, i)
         end do
 
         do i=1, globalStrings(c)%nElems
@@ -647,6 +659,8 @@ subroutine makeGapBoundaryStrings(level, sps)
            end if
         end do zipperLoop
      end do
+     nSelfZipTris = master%nTris
+     print*,' nSelfZipTris ', nSelfZipTris
 
      ! Now that we have self zipped the edges, allocated space for
      ! elemUsed. The remaining edges on each string must be either
@@ -847,79 +861,12 @@ subroutine makeGapBoundaryStrings(level, sps)
      print *,'search time:', mpi_wtime()-timea
 
 
-     ! ! Now determine what the bad strings are:
-     ! allocate(badString(nFullStrings))
-     ! badString = .False.
-     ! jj = 0
-     ! do i=1, nFullStrings
-     !    ii = 0
-     !    str => strings(i)
-
-     !    ratio = zero
-     !    do j=1, str%nNodes
-     !       myPt = str%x(:, i)
-     !       id = str%otherID(1, i)
-     !       index = str%otherID(2, i)
-
-     !       if (id /= -1) then 
-     !          otherPt = strings(id)%x(:, index)
-     !          dist = norm2(myPt - otherPt)
-     !          maxH = max(str%h(i), strings(id)%h(index))
-     !          ratio = ratio + dist/maxH
-     !          ii = ii + 1
-     !       end if
-     !    end do
-     
-     !    if (ratio/ii > one) then 
-     !       badString(i) = .True. 
-     !       jj = jj + str%nElems
-     !    end if
-     ! end do
-
-     ! ---------------------------------------------------------------
+       ! ---------------------------------------------------------------
      ! Xzip 2: Call the actual Xzip by providing all gap strings data.
      ! ---------------------------------------------------------------
-
-     ! Sphere
-     !call crossZip(strings(3), 1, 33, strings(2), 89, 1)
-     !call crossZip(strings(1), 1, 45, strings(4), 47, 32)
-
-     ! ! Thin wing
-     ! call crossZip(strings(1), 1, 1, strings(3), 59, 59)
-     ! call crossZip(strings(4), 12, 12, strings(2), 40, 40)
-
-     ! Thin swept wing
-     ! call crossZip(strings(1), 118, 118, strings(3), 85, 85)
-     ! call crossZip(strings(4), 26, 26, strings(2), 29, 29)
-
-     ! ! dpw6 wb
-     ! call crossZip(strings(2), 119, 119, strings(6), 158, 158)
-     ! call crossZip(strings(7), 50, 50, strings(4), 145, 145)
-     ! call crossZip(strings(8), 1, 1, strings(5), 223, 223)
-     ! call crossZip(strings(1), 1, 81, strings(3), 89, 1)
-
-     ! ! dpw6 wbnp
-     ! call crossZip(strings(2), 112, 112, strings(7), 163, 163)
-     ! call crossZip(strings(8), 51, 51, strings(4), 144, 144)
-     ! call crossZip(strings(6), 182, 182, strings(9), 97, 97)
-
-     ! call crossZip(strings(23), 10, 10, strings(32), 10, 10)
-     ! call crossZip(strings(28), 9, 9, strings(24), 2, 2)
-     ! call crossZip(strings(25), 2, 2, strings(27), 9, 9)
-     ! call crossZip(strings(17), 9 , 9 , strings(18), 50, 50)
-     ! call crossZip(strings(11), 94, 94, strings(15), 58, 58)
-
-     ! ===============================================================
-     ! Do pocket zipping
-     ! ---------------------------------------------------------------
-     ! Sort through zipped triangle edges and the edges which have not
-     ! been used twice (orphan edges) will be ultimately gathered to 
-     ! form polygon pockets to be zipped.
-     !call makePocketZip(master, strings, nFullStrings)
-
-
+     call makeCrossZip(master, strings, nFullStrings)
+  
      ! =============== DEBUGGING =================
-
      call writeOversetTriangles(master, "fullTriangulation.dat")
 
      print *, 'nFullStrings:', nFullStrings
@@ -927,16 +874,134 @@ subroutine makeGapBoundaryStrings(level, sps)
      write(101,*) 'TITLE = "Gap Strings Data" '
      write(101,*) 'Variables = "X" "Y" "Z" "Nx" "Ny" "Nz" "Vx" "Vy" "Vz" "ind" &
           "gapID" "gapIndex" "otherID" "otherIndex" "ratio"'
-     do i=1, nFullStrings
-        call writeOversetString(strings(i), strings, nFullStrings, 101)
+     do i=1, nFullStrings  
+      call writeOversetString(strings(i), strings, nFullStrings, 101)
      end do
      close(101)
      ! ===========================================
 
+     ! ===============================================================
+     ! Do pocket zipping
+     ! ---------------------------------------------------------------
+     ! Sort through zipped triangle edges and the edges which have not
+     ! been used twice (orphan edges) will be ultimately gathered to 
+     ! form polygon pockets to be zipped.
+     call makePocketZip(master, strings, nFullStrings, pocketMaster)
+
+
+     ! (3 nodes per triangle and 3 DOF per ndoe)
+     allocate(nodeIndices(3*3*(master%ntris + pocketMaster%ntris)))
+     
+     ii = 0
+     do i=1, master%nTris
+        do j=1, 3 ! Triangle node loop
+           jj = master%tris(j, i)
+           do k=1, 3 ! DOF Loop 
+              ! Zero-based ordering for petsc
+              nodeIndices(9*ii+3*(j-1)+k) = 3*master%ind(jj) + k-1 
+           end do
+        end do
+        ii = ii + 1
+     end do
+
+     do i=1, pocketMaster%nTris
+        do j=1, 3 ! Triangle node loop
+           jj = pocketMaster%tris(j, i)
+           do k=1, 3 ! DOF Loop 
+              ! Zero-based ordering for petsc
+              nodeIndices(9*ii+3*(j-1)+k) = 3*pocketMaster%ind(jj) + k-1 
+           end do
+        end do
+        ii = ii + 1
+     end do
+
+     ! Now the indices of the "global traction vector"
+     allocate(cellIndices(3*4*(master%nTris + pocketMaster%nTris)))
+
+     ii = 0
+     do i=1, master%nTris
+        do j=1, 4 ! Quad Loop
+           do k=1, 3 ! DOF Loop 
+              ! Zero-based ordering for petsc
+              cellIndices(12*ii+(j-1)*3 + k) = 0 ! NEED TO DETERMINE THESE!
+           end do
+        end do
+        ii = ii + 1
+     end do
+
+     do i=1, pocketMaster%nTris
+        do j=1, 4 ! Quad loop
+           do k=1, 3 ! DOF Loop 
+              ! Zero-based ordering for petsc
+              cellIndices(12*ii+(j-1)*3 + k) = 0 ! NEED TO DETERMINE THESE!!!
+           end do
+        end do
+        ii = ii + 1
+     end do
+  else
+
+     ! Other procs don't get any triangles :-(
+     allocate(nodeIndices(0))
+     allocate(cellIndices(0))
+     
   end if
 
+  ! This is the vector we will scatter the nodes into. 
+  call VecCreateMPI(SUMB_COMM_WORLD, size(nodeIndices), PETSC_DETERMINE, &
+       zipperNodes, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  call VecCreateMPI(SUMB_COMM_WORLD, nNodesLocal(1), PETSC_DETERMINE, &
+       globalNodes, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  call ISCreateGeneral(sumb_comm_world, size(nodeIndices), &
+       nodeIndices, PETSC_COPY_VALUES, IS1, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  call  VecScatterCreate(globalNodes, IS1, zipperNodes, PETSC_NULL_OBJECT, &
+       nodeZipperScatter, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  call ISDestroy(IS1, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  ! For the tractions we need to create the global vector as well as
+  ! the local one
+
+  call VecCreateMPI(SUMB_COMM_WORLD, 3*nNodesLocal(1), PETSC_DETERMINE, &
+       globalPressureTractions, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  call VecSetBlockSize(globalPressureTractions, 3, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  call vecDuplicate(globalPressureTractions, globalViscousTractions, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  call VecCreateMPI(SUMB_COMM_WORLD, size(cellIndices), PETSC_DETERMINE, &
+       zipperPressureTractions, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  call VecSetBlockSize(zipperPressureTractions, 3, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  call vecDuplicate(zipperPressureTractions, zipperViscousTractions, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  call ISCreateGeneral(sumb_comm_world, size(cellIndices), &
+       cellIndices, PETSC_COPY_VALUES, IS1, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+
+  call  VecScatterCreate(globalPressureTractions, IS1, zipperPressureTractions,& 
+       PETSC_NULL_OBJECT, tractionZipperScatter, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+  
+  call ISDestroy(IS1, ierr)
+  call EChk(ierr,__FILE__,__LINE__)
+ 
   ! Free the remaining memory
-  deallocate(nElemsProc, nNodesProc)
+  deallocate(nElemsProc, nNodesProc, nodeIndices, cellIndices)
 end subroutine makeGapBoundaryStrings
 
 
@@ -1169,7 +1234,6 @@ function overlappedEdges(str, j, pt)
   end do elemLoop
 
 end function overlappedEdges
-
 
 function overlappedEdges2(str, pt1, norm, pt2)
 

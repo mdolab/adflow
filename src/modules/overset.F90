@@ -6,6 +6,17 @@ module overset
   use kdtree2_module
   implicit none
 
+#define PETSC_AVOID_MPIF_H
+
+#include "include/petscversion.h"
+#if PETSC_VERSION_MINOR > 5
+#include "petsc/finclude/petsc.h"
+#include "petsc/finclude/petscvec.h90"
+#else
+#include "include/finclude/petsc.h"
+#include "include/finclude/petscvec.h90"
+#endif
+
   ! Helper dataType for communicated overset grid points. This data
   ! structure mirrros the blockType structure in block.F90, but only
   ! contains minimum amount of information required for computing
@@ -163,7 +174,7 @@ module overset
 
      ! ind: Global node index for nodes
      integer(kind=intType), dimension(:), pointer :: ind
-     
+
      ! Blanking values for Nodes
      integer(kind=intType), dimension(:), allocatable :: iBlank
      integer(kind=intType), dimension(:), allocatable :: cellPtr
@@ -199,79 +210,93 @@ module overset
      ! Whether or no this string is periodic
      logical :: isPeriodic=.False.
 
+     ! --------------------------------------------------------------------
      ! Node Data: The actual physical node locations, unit surface normal,
      ! perpNormal and mesh size. x is from index 1:3, normal from 4:6,
      ! perpNormal form 7:9 and h is index 10. This pointer gets allocated.
-     real(kind=realType), dimension(:, :), pointer :: nodeData
+     real(kind=realType), dimension(:, :), pointer :: nodeData => null()
 
      ! Pointer for physical node location. Points to nodeData
-     real(kind=realType), dimension(:, :), pointer :: x
+     real(kind=realType), dimension(:, :), pointer :: x => null()
 
      ! Pointer for nodal unit normal. Points to nodeData
-     real(kind=realType), dimension(:, :), pointer :: norm
+     real(kind=realType), dimension(:, :), pointer :: norm => null()
 
      ! Pointer for nodal unit perpendicual in-plane normal. Points to nodeData
-     real(kind=realType), dimension(:, :), pointer :: perpNorm
+     real(kind=realType), dimension(:, :), pointer :: perpNorm => null()
 
      ! Pointer for nodal element size. Points to nodeData
-     real(kind=realType), dimension(:), pointer :: h
+     real(kind=realType), dimension(:), pointer :: h => null()
 
-     ! The index of the family for the edge
-     real(kind=realType), dimension(:), pointer :: elemFam
+     ! --------------------------------------------------------------------
+     ! Integer Node Data: This stores the global node index (into
+     ! xVec), the cluster ID of the node, and the family ID of the node
+     integer(kind=intType), dimension(:, :), pointer :: intNodeData => null()
 
-     ! The orignal nodal index. Size nNodes.
-     integer(kind=intType), dimension(:), pointer :: ind
+     ! The orignal nodal index. Size nNodes. Pointer into intNodeData
+     integer(kind=intType), dimension(:), pointer :: ind => null()
+     
+     ! The cluster the node came from. Pointer into intNodeData
+     integer(kind=intType), dimension(:), pointer :: cluster => null()
+
+     ! The family the node came from. Pointer into intNodeData
+     integer(kind=intType), dimension(:), pointer :: family => null()
+     ! --------------------------------------------------------------------
 
      ! The connectivity of the nodes forming 1D bar elements. Size (2, nElems)
-     integer(kind=intType), dimension(:, :), pointer :: conn
+     integer(kind=intType), dimension(:, :), pointer :: conn => null()
 
      ! The index of my node numbers on my parent
-     integer(kind=intType), dimension(:), pointer :: pNodes
+     integer(kind=intType), dimension(:), pointer :: pNodes => null()
 
      ! The index of my elements numbers on my parent
-     integer(kind=intType), dimension(:), pointer :: pElems
+     integer(kind=intType), dimension(:), pointer :: pElems => null()
 
      ! The string ID and index of my nodes on a split substing
-     integer(kind=intType), dimension(:, :), pointer :: cNodes
+     integer(kind=intType), dimension(:, :), pointer :: cNodes => null()
 
      ! The cloest string ID of each node *AND* the node index on the
      ! other string. Size (2, nNodes)
-     integer(kind=intType), dimension(:, :), pointer :: otherID
+     integer(kind=intType), dimension(:, :), pointer :: otherID => null()
 
      ! The inverse of the connectivity node to elem array. Size (5,
      ! nNodes). First index is the number of elements, other 4 entries
      ! are the up to 4 possible element neighbours. 
-     integer(kind=intType), dimension(:, :), pointer :: nte
+     integer(kind=intType), dimension(:, :), pointer :: nte => null()
 
      ! Two buffer used for storing element indices while creating
      ! chains. Size (2, nElem)
-     integer(kind=intType), dimension(:, :), pointer :: subStr
+     integer(kind=intType), dimension(:, :), pointer :: subStr => null()
 
      ! The sizes of the two substrings
      integer(kind=intType), dimension(2) :: NsubStr
 
      ! A array to keep track of the number of elements
      ! "consumed" during chain searches or during zipping.
-     integer(kind=intType), dimension(:), pointer :: elemUsed
+     integer(kind=intType), dimension(:), pointer :: elemUsed => null()
+
+     ! Array to keep track of nodes used to contruct string pairs for
+     ! crossZipping.
+     integer(kind=intType), dimension(:), pointer :: XzipNodeUsed => null()
 
      ! The KD tree for this string for performing fast seaches. 
      !type(tree_master_record), pointer :: tree
-     type(kdtree2), pointer :: tree
+     type(kdtree2), pointer :: tree => null()
 
      ! Pointer to the parent string
-     type(oversetString), pointer :: p
+     type(oversetString), pointer :: p => null()
 
      ! Pointer for next string for a linked list
-     type(oversetString), pointer :: next
+     type(oversetString), pointer :: next => null()
 
      ! List of all all directed edges. 
-     type(oversetEdge), pointer, dimension(:) :: edges
+     type(oversetEdge), pointer, dimension(:) :: edges => null()
 
      ! nEdges: The number of new edges added due to triangles. 
      integer(kind=intTYpe) :: nEdges
 
      ! List of all computed triangles
-     integer(kind=intType), dimension(:, :), pointer :: tris
+     integer(kind=intType), dimension(:, :), pointer :: tris => null()
 
      ! Number of trianges
      integer(kind=intType) :: nTris
@@ -325,8 +350,22 @@ module overset
   integer(kind=intType) :: nClusters
   integer(kind=intType), dimension(:), allocatable :: clusters
   real(kind=realType), dimension(:), allocatable :: clusterAreas
-
   type(oversetWall), dimension(:), allocatable, target :: clusterWalls
+
+  ! Flag specifying if overset is present in mesh
+  logical :: oversetPresent
+
+  ! Data required for zipper mesh surface integration:
+  VecScatter :: nodeZipperScatter
+  Vec :: globalNodes
+  Vec :: zipperNodes
+
+  VecScatter :: tractionZipperScatter
+  Vec globalPressureTractions
+  Vec globalViscousTractions
+  Vec zipperPressureTractions
+  Vec zipperViscousTractions
+
 
   contains
   ! ==============================
