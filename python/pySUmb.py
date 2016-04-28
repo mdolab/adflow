@@ -3555,6 +3555,7 @@ class SUMB(AeroSolver):
             # Overset Parameters:
             'nearwalldist':[float, 0.1],
             'backgroundvolscale':[float, 1.0],
+            'oversetprojtol':[float, 1e-12],
 
             # Unsteady Paramters
             'timeintegrationscheme':[str, 'bdf'],
@@ -3813,6 +3814,7 @@ class SUMB(AeroSolver):
             # Overset Parameters
             'nearwalldist':['overset','nearwalldist'],
             'backgroundvolscale':['overset','backgroundvolscale'],
+            'oversetprojtol':['overset','oversetprojtol'],
 
             # Unsteady Params
             'timeintegrationscheme':{'bdf':self.sumb.inputunsteady.bdf,

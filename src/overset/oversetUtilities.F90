@@ -215,6 +215,24 @@ subroutine fracToWeights(frac, weights)
   weights(8) = (    frac(1))*(    frac(2))*(    frac(3))
 end subroutine fracToWeights
 
+
+subroutine fracToWeights2(frac, weights)
+  use constants
+  implicit none
+  real(kind=realType), intent(in), dimension(3) :: frac
+  real(kind=realType), intent(out), dimension(8) :: weights
+
+  weights(1) = (one-frac(1))*(one-frac(2))*(one-frac(3))
+  weights(2) = (    frac(1))*(one-frac(2))*(one-frac(3))
+  weights(3) = (    frac(1))*(    frac(2))*(one-frac(3))
+  weights(4) = (one-frac(1))*(    frac(2))*(one-frac(3))
+
+  weights(5) = (one-frac(1))*(one-frac(2))*(    frac(3))
+  weights(6) = (    frac(1))*(one-frac(2))*(    frac(3))
+  weights(7) = (    frac(1))*(    frac(2))*(    frac(3))
+  weights(8) = (one-frac(1))*(    frac(2))*(    frac(3))
+
+end subroutine fracToWeights2
 subroutine getCommPattern(oMat,  sendList, size1, nSend, recvList, size2, nRecv)
 
   use overset
