@@ -62,7 +62,6 @@ FILES_TO_COMPLEXIFY =	stringOps.F90\
 			initializeFringes.F90\
 			initializeOFringes.F90\
 			determineDonors.F90\
-			computeHolesInsideBody.F90\
 			packingRoutines.F90\
 			fringeSearch.F90\
 			oversetUtilities.F90\
@@ -72,7 +71,6 @@ FILES_TO_COMPLEXIFY =	stringOps.F90\
 			setIBlankArray.F90\
 			exchangeFringes.f90\
 			surfaceCorrection.F90\
-			oversetPresent.F90\
 			emptyOversetComm.F90\
 			wallSearch.F90\
 			initBCDataiBlank.F90\
@@ -82,6 +80,7 @@ FILES_TO_COMPLEXIFY =	stringOps.F90\
 			exchangeStatus.F90\
 			exchangeStatusTranspose.F90\
 			surfaceDeviation.F90\
+# 			computeHolesInsideBody.F90\
 		       # computeQuadraticWeights.F90 \
 		       matrixinv3by3.F90 \
 

@@ -36,7 +36,7 @@ subroutine computeHolesInsideBody(level, sps)
   real(kind=realType), dimension(:,:,:), pointer :: xx
   integer(kind=intType), dimension(:,:), pointer :: ind
   real(kind=realType) :: myDist, otherDist, timeA
-  logical :: regularOrdering, nearAWall, gridHasOverset, oversetPresent
+  logical :: regularOrdering, nearAWall
 
   ! Overset Walls for storing the surface ADT's
   type(oversetWall), dimension(:), allocatable, target :: walls
@@ -75,9 +75,6 @@ subroutine computeHolesInsideBody(level, sps)
   ! Misc
   real(kind=realType) :: dp, shp(4)
   real(kind=realType), dimension(3) ::xp, normal, v1
-
-  ! Determine if overset is present.
-  gridHasOverset = oversetPresent()
 
   ! The first thing we do is gather all the surface nodes to
   ! each processor such that every processor can make it's own copy of
@@ -399,7 +396,7 @@ subroutine computeHolesInsideBody(level, sps)
      call buildUniqueNormal(walls(i))
   end do
 
-  if (gridHasOverset) then 
+  if (oversetPresent) then 
      ! Finally build up a "full wall" that is made up of all the cluster
      ! walls. Note that we can reuse the space previously allocated for
      ! the global data, namely, nodes and conn. These will be slightly
@@ -484,7 +481,7 @@ subroutine computeHolesInsideBody(level, sps)
                    +         x(i-1,j-1,k,  3) + x(i,j-1,k,  3)  &
                    +         x(i-1,j,  k,  3) + x(i,j,  k,  3))
 
-              if (.not. gridHasOverset) then 
+              if (.not. oversetPresent) then 
                  ! No overset present. Simply search our own wall,
                  ! walls(c), up to the wall cutoff. 
                  coor(4) = wallDistCutoff**2
@@ -708,7 +705,7 @@ subroutine computeHolesInsideBody(level, sps)
   deallocate(nodesGlobal, connGlobal, clusterCellGlobal, &
        clusterNodeGlobal, localNodeNums)
 
-  if (gridHasOverset) then 
+  if (oversetPresent) then 
      call destroySerialQuad(fullWall%ADT)
      deallocate(fullWall%norm)
   end if

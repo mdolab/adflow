@@ -31,7 +31,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
   integer(kind=intType) :: nn, mm, n, ierr, iProc, myIndex, iRefine
   integer(kind=intType) :: iWork, nWork, nFringeProc, nLocalFringe
   real(kind=realType) :: startTime, endTime, quality
-  logical :: computeCellFound, oversetPresent, isCompute
+  logical :: computeCellFound,  isCompute
 
   type(CSRMatrix), pointer :: overlap
   type(CSRMatrix) :: overlapTranspose
@@ -79,7 +79,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
 
   ! If there is not overset meshes present, just make an empty comm
   ! structure and call it a day. 
-  if (.not. oversetPresent()) then 
+  if (.not. oversetPresent) then 
      do sps=1,nTimeIntervalsSpectral
         call emptyOversetComm(level, sps)
 
@@ -1023,9 +1023,9 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      ! Step 18: Create the zipper mesh. We pass in a few arrays
      ! dealing with wall exchange since there is no need to recompute them. 
      ! -----------------------------------------------------------------
-     ! call createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
-     !      nOwallSend, nOwallRecv, size(oWallSendList, 2), &
-     !      size(oWallRecvList, 2), work, nWork)
+     call createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
+          nOwallSend, nOwallRecv, size(oWallSendList, 2), &
+          size(oWallRecvList, 2), work, nWork)
 
      ! Setup the buffer sizes
      call setBufferSizes(level, sps, .false., .false., .True.)
@@ -1329,7 +1329,7 @@ subroutine writePartitionedMesh(fileName)
   coorNames(1) = "CoordinateX"
   coorNames(2) = "CoordinateY"
   coorNames(3) = "CoordinateZ"
-  print *,'writing fucking mesh on fucking proc:', myid
+
   call MPI_BARRIER(sumb_comm_world, ierr)
 
   ! Gather the dimensions of all blocks to everyone

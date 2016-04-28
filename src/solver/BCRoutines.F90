@@ -32,6 +32,7 @@ module BCRoutines
   real(kind=realType), dimension(:,:,:), pointer :: ssi, ssj, ssk
   real(kind=realType), dimension(:,:,:), pointer :: ss, xx
   real(kind=realType), dimension(:,:),   pointer :: dd2wall
+  integer(kind=intType), dimension(:,:), pointer :: gcp
 #else
   real(kind=realType), dimension(:,:,:), allocatable :: ww0, ww1, ww2, ww3
   real(kind=realType), dimension(:,:)  , allocatable :: pp0, pp1, pp2, pp3
@@ -39,6 +40,7 @@ module BCRoutines
   real(kind=realType), dimension(:,:)  , allocatable :: rev0, rev1, rev2, rev3
   real(kind=realType), dimension(:,:  ), allocatable :: gamma0, gamma1, gamma2, gamma3
   real(kind=realType), dimension(:,:,:), allocatable :: ssi, xx
+  integer(kind=intType), dimension(:,:), allocatable :: gcp
 #endif
   integer(kind=intType) :: iStart, iEnd, iSize
   integer(kind=intType) :: jStart, jEnd, jSize
@@ -2561,6 +2563,7 @@ contains
        gamma1 => gamma(1, 1:, 1:)
        gamma0 => gamma(0, 1:, 1:)
 
+       gcp => globalCell(2, 1:, 1:)
        !===============================================================
 
     case (iMax)
@@ -2590,6 +2593,7 @@ contains
        gamma1 => gamma(ie, 1:, 1:)
        gamma0 => gamma(ib, 1:, 1:)
 
+       gcp => globalCell(il, 1:, 1:)
        !===============================================================
 
     case (jMin)
@@ -2619,6 +2623,7 @@ contains
        gamma1 => gamma(1:, 1, 1:)
        gamma0 => gamma(1:, 0, 1:)
 
+       gcp => globalCell(1:, 2, 1:)
        !===============================================================
 
     case (jMax)
@@ -2648,6 +2653,7 @@ contains
        gamma1 => gamma(1:, je, 1:)
        gamma0 => gamma(1:, jb, 1:)
 
+       gcp => globalCell(:, jl, :)
        !===============================================================
 
     case (kMin)
@@ -2677,6 +2683,7 @@ contains
        gamma1 => gamma(1:, 1:, 1)
        gamma0 => gamma(1:, 1:, 0)
 
+       gcp => globalCell(1:, 1:, 2)
        !===============================================================
 
     case (kMax)
@@ -2706,6 +2713,7 @@ contains
        gamma1 => gamma(1:, 1:, ke)
        gamma0 => gamma(1:, 1:, kb)
 
+       gcp => globalCell(1:, 1:, 2)
     end select
 
     if (spatialPointers) then 
@@ -2799,6 +2807,7 @@ contains
        gamma1(1:je, 1:ke) = gamma(1, 1:je, 1:ke)
        gamma0(1:je, 1:ke) = gamma(0, 1:je, 1:ke)
 
+       gcp(1:je, 1:ke) = globalCell(2, 1:je, 1:ke)
        !===============================================================
 
     case (iMax)
@@ -2828,6 +2837,7 @@ contains
        gamma1(1:je, 1:ke) = gamma(ie, 1:je, 1:ke)
        gamma0(1:je, 1:ke) = gamma(ib, 1:je, 1:ke)
 
+       gcp(1:je, 1:ke) = globalCell(il, 1:je, 1:ke)
        !===============================================================
 
     case (jMin)
@@ -2857,6 +2867,7 @@ contains
        gamma1(1:ie, 1:ke) = gamma(1:ie, 1, 1:ke)
        gamma0(1:ie, 1:ke) = gamma(1:ie, 0, 1:ke)
 
+       gcp(1:ie, 1:ke) = globalCell(1:ie, 2, 1:ke)
        !===============================================================
 
     case (jMax)
@@ -2886,6 +2897,7 @@ contains
        gamma1(1:ie, 1:ke) = gamma(1:ie, je, 1:ke)
        gamma0(1:ie, 1:ke) = gamma(1:ie, jb, 1:ke)
 
+       gcp(1:ie, 1:ke) = globalCell(1:ie, jl, 1:ke)
        !===============================================================
 
     case (kMin)
@@ -2915,6 +2927,7 @@ contains
        gamma1(1:ie, 1:je) = gamma(1:ie, 1:je, 1)
        gamma0(1:ie, 1:je) = gamma(1:ie, 1:je, 0)
 
+       gcp(1:ie, 1:je) = globalCell(1:ie, 1:je, 2)
        !===============================================================
 
     case (kMax)
@@ -2943,6 +2956,8 @@ contains
        gamma2(1:ie, 1:je) = gamma(1:ie, 1:je, kl)
        gamma1(1:ie, 1:je) = gamma(1:ie, 1:je, ke)
        gamma0(1:ie, 1:je) = gamma(1:ie, 1:je, kb)
+
+       gcp(1:ie, 1:je) = globalCell(1:ie, 1:je, 2)
     end select
 
     ! These spatial pointers are only required for

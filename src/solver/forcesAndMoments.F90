@@ -29,6 +29,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
   use inputPhysics
   use bcroutines
   use costFunctions
+  use overset
   implicit none
   !
   !      Subroutine arguments
@@ -41,7 +42,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
   !
   !      Local variables.
   !
-  integer(kind=intType) :: nn, i, j, ii,blk
+  integer(kind=intType) :: nn, i, j, ii, blk, ierr
 
   real(kind=realType) :: pm1, fx, fy, fz, fn, sigma
   real(kind=realType) :: xc, yc, zc, qf(3)
@@ -189,6 +190,13 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
               bcData(nn)%Fp(i, j, 2) = fy
               bcData(nn)%Fp(i, j, 3) = fz
 #endif
+
+              if (oversetPresent) then 
+                 call VecSetValuesBlocked(globalPressureTractions, 1, &
+                      (/gcp(i, j)/), &
+                      (/fx, fy, fz/)/norm2(ssi(i,j,:)), INSERT_VALUES, ierr)
+              end if
+
               ! Divide by 4 so we can scatter
               fx = fourth*fx
               fy = fourth*fy
@@ -300,6 +308,12 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
                       +        tauYz*ssi(i,j,3))*scaleDim
                  fz = -fact*(tauXz*ssi(i,j,1) + tauYz*ssi(i,j,2) &
                       +        tauZz*ssi(i,j,3))*scaleDim
+
+                 if (oversetPresent) then 
+                    call VecSetValuesBlocked(globalViscousTractions, 1, &
+                         (/gcp(i, j)/), &
+                         (/fx, fy, fz/)/norm2(ssi(i,j,:)), INSERT_VALUES, ierr)
+                 end if
 
                  ! Compute the coordinates of the centroid of the face
                  ! relative from the moment reference point. Due to the
