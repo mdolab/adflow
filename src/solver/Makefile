@@ -56,6 +56,7 @@ FILES_TO_COMPLEXIFY2 = \
                farFieldDrag.f90\
 	       farFieldInducedDrag.f90\
 	       forcesAndMoments.F90\
+	       forcesAndMomentsZipper.F90\
 	       farFieldDrag.f90\
                geomUtilsALE.F90\
 	       getDirAngle.f90\

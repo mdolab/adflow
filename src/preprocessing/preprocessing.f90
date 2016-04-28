@@ -22,6 +22,7 @@
        use blockPointers
        use cgnsGrid
        use commMixing
+       use BCTypes
        use commSliding
        use communication
        use inputPhysics
@@ -37,6 +38,7 @@
        integer :: ierr
 
        integer(kind=intType) :: nLevels, level, nn, mm, nsMin, nsMax, i, iProc
+       logical :: local
 !
 !      ******************************************************************
 !      *                                                                *
@@ -221,6 +223,19 @@
        ! Determine the number of grid clusters
        call determineClusters()
 
+       ! Determine if we have overset mesh present:
+       local = .False.
+       do nn=1,nDom
+          call setPointers(nn, 1_intType, 1_intType)
+          
+          do mm=1, nBocos
+             if (BCType(mm) == OversetOuterBound) then
+                local = .True.
+             end if
+          end do
+       end do
+       
+       call mpi_allreduce(local, oversetPresent, 1, MPI_LOGICAL, MPI_LOR, SUmb_comm_world, ierr)
 
        ! Loop over the number of levels and perform a lot of tasks.
        ! See the corresponding subroutine header, although the
