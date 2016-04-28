@@ -42,11 +42,10 @@ subroutine oversetComm(level, firstTime, coarseLevel)
   real(kind=realType), dimension(:), allocatable :: tmpReal
   real(kind=realType), dimension(:, :), allocatable :: xMin, xMax
 
-  logical, dimension(:), allocatable :: oBlockReady, oFringeReady, oWallReady
+  logical, dimension(:), allocatable :: oBlockReady, oFringeReady
 
   type(oversetBlock), dimension(:), allocatable :: oBlocks
   type(oversetFringe), dimension(:), allocatable :: oFringes
-  type(oversetWall), dimension(:), allocatable :: oWalls
   type(oversetWall), pointer :: wall
   type(fringeType), dimension(:), allocatable :: localFringes
 
@@ -266,8 +265,8 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      ! Allocate the exact space for our send and recv requests. Note
      ! that for the oBlocks, two values are set, real and integer. 
      nn = max(nProc, &
-          2*nOBlockSend + 2*nOFringeSend + 2*nOWallSend, &
-          2*nOBlockRecv + 2*nOfringeRecv + 2*nOWallRecv)
+          2*nOBlockSend + 2*nOFringeSend, &
+          2*nOBlockRecv + 2*nOfringeRecv)
      if (allocated(sendRequests)) then 
         deallocate(sendRequests, recvRequests)
      end if
@@ -315,24 +314,15 @@ subroutine oversetComm(level, firstTime, coarseLevel)
         ! should be ok.
         ! -----------------------------------------------------------------
 
-        allocate(oBlocks(nDomTotal), oFringes(nDomTotal), oWalls(nDomTotal))
+        allocate(oBlocks(nDomTotal), oFringes(nDomTotal))
 
         ! Thse variables keep track of if the block/fringes are
         ! ready. Initialized to false and only flipped when we are sure
         ! they are ready to be used. 
 
-        allocate(oBlockReady(nDomTotal), oFringeReady(nDomTotal), oWallReady(nDomTotal))
+        allocate(oBlockReady(nDomTotal), oFringeReady(nDomTotal))
         oBlockReady = .False.
         oFringeReady = .False.
-        ! Flag the oWalls that do not actually have a wall, as being
-        ! ready.
-        do iDom=1,nDomtotal
-           if (bufSizes(iDom, 6) == 0) then 
-              oWallReady(iDom) = .True.
-           else
-              oWallReady(iDom) = .False.
-           end if
-        end do
 
         ! Allocate space for the localWallFringes. localWallFringes keeps
         ! track of donors for cells that are next to a wall. These must
@@ -384,13 +374,10 @@ subroutine oversetComm(level, firstTime, coarseLevel)
            call initializeOFringes(oFringes(iDom), nn)
            oFringeReady(iDom) = .True. 
 
-           call initializeOWall(oWalls(iDom), .True., clusters(iDom))
-           call packOWall(oWalls(iDom), .true.)
-           oWallReady(iDom) = .True. 
         end do
 
 
-        ! Post all the oBlock/oFringe/oWall iSends
+        ! Post all the oBlock/oFringe iSends
         sendCount = 0
         do jj=1, nOblockSend
            iProc = oBlockSendList(1, jj)
@@ -406,13 +393,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
            call sendOFringe(oFringes(iDom), iDom, iProc, MAGIC, sendCount)
         end do
 
-        do jj=1, nOWallSend
-           iProc = oWallSendList(1, jj)
-           iDom = oWallSendList(2, jj)
-           call sendOWall(oWalls(iDom), iDom, iProc, 2*MAGIC, sendCount)
-        end do
-
-        ! Post all the oBlock/oFringe/oWall receives. Before posting the actual
+        ! Post all the oBlock/oFringe receives. Before posting the actual
         ! receive, allocate the receiving buffer. 
         recvCount = 0
         do jj=1, nOBlockRecv
@@ -427,13 +408,6 @@ subroutine oversetComm(level, firstTime, coarseLevel)
            iDom = oFringeRecvList(2, jj)
            call recvOFringe(oFringes(iDom), iDom, iProc, MAGIC, &
                 bufSizes(iDom, 3), bufSizes(iDom, 4), recvCount, recvInfo)
-        end do
-
-        do jj=1, nOWallRecv
-           iProc = oWallRecvList(1, jj)
-           iDom = oWallRecvList(2, jj)
-           call recvOWall(oWalls(iDom), iDom, iProc, 2*MAGIC, &
-                bufSizes(iDom, 5), bufSizes(iDom, 6), recvCount, recvInfo)
         end do
 
 
@@ -462,10 +436,6 @@ subroutine oversetComm(level, firstTime, coarseLevel)
               oFringes(iDom)%realBufferReady = .True. 
            else if (recvInfo(2, index) == 4) then 
               oFringes(iDOm)%intBufferReady = .True. 
-           else if (recvInfo(2, index) == 5) then 
-              oWalls(iDom)%realBufferReady = .True. 
-           else if (recvInfo(2, index) == 6) then 
-              oWalls(iDom)%intBufferReady = .True. 
            end if
 
            ! If both int and real buffers are received, we can unpack the
@@ -484,14 +454,6 @@ subroutine oversetComm(level, firstTime, coarseLevel)
               oFringeReady(iDom) = .True.
            end if
 
-           ! If both int and real buffers are received, we can unpack the
-           ! oWall and flag it as ready.
-           if (oWalls(iDom)%realBufferReady .and. oWalls(iDom)%intBufferReady .and. &
-                .not.oWalls(iDom)%allocated) then 
-              call unpackOWall(oWalls(iDom))
-              oWallReady(iDom) = .True.
-           end if
-
            ! Now see if we can do any more of the work, ie the searches. 
            call doMyWork(flag)
 
@@ -507,12 +469,11 @@ subroutine oversetComm(level, firstTime, coarseLevel)
            call ECHK(ierr, __FILE__, __LINE__)
         end do
 
-        ! We are now completely finished with oBlocks and owalls so
+        ! We are now completely finished with oBlocks so
         ! delete before we allocate space for all the fringes
         call deallocateOBlocks(oBlocks, size(oBlocks))
-        call deallocateOWalls(oWalls, size(oWalls))
-        deallocate(oBlocks, oWalls)
-        deallocate(oBlockReady, oFringeReady, oWallReady)
+        deallocate(oBlocks)
+        deallocate(oBlockReady, oFringeReady)
 
         ! Destroy the cluster wall stuff
         do i=1, nClusters
@@ -1023,9 +984,9 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      ! Step 18: Create the zipper mesh. We pass in a few arrays
      ! dealing with wall exchange since there is no need to recompute them. 
      ! -----------------------------------------------------------------
-     call createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
-          nOwallSend, nOwallRecv, size(oWallSendList, 2), &
-          size(oWallRecvList, 2), work, nWork)
+     ! call createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
+     !      nOwallSend, nOwallRecv, size(oWallSendList, 2), &
+     !      size(oWallRecvList, 2), work, nWork)
 
      ! Setup the buffer sizes
      call setBufferSizes(level, sps, .false., .false., .True.)
@@ -1227,12 +1188,11 @@ contains
        ! Check if I have the oBlock and fringes i need to do this
        ! intersection and I haven't already done it.
        if (oBlockReady(iDom) .and. oFringeReady(jDom) .and. &
-            oWallReady(iDom) .and. oWallReady(jDom) .and. &
             work(4, iWork) == 0) then 
 
           startTime = mpi_wtime()
 
-          call fringeSearch(oBlocks(iDom), oFringes(jDom), oWalls(iDom), oWalls(jDom))
+          call fringeSearch(oBlocks(iDom), oFringes(jDom))
           endTime = mpi_wtime()
           overlap%data(jj) = endTime - startTime
 

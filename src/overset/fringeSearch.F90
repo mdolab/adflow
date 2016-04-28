@@ -1,4 +1,4 @@
-subroutine fringeSearch(oBlock, oFringe, bWall, fWall)
+subroutine fringeSearch(oBlock, oFringe)
 
   use constants
   use overset
@@ -8,14 +8,16 @@ subroutine fringeSearch(oBlock, oFringe, bWall, fWall)
 
   type(oversetBlock), intent(inout) :: oBlock
   type(oversetFringe), intent(inout) :: oFringe
-  type(oversetWall), intent(inout) :: bWall, fWall
+
   integer(kind=intType) :: idom, jdom
 
   ! Working Varaibles
-  integer(kind=intType) :: nInterpol, elemID, nalloc, intInfo(3), i, ii, jj, kk, j, nn
+  integer(kind=intType) :: nInterpol, elemID, nalloc, intInfo(3), intInfo2(3)
+  integer(kind=intType) :: i, ii, jj, kk, j, nn
   integer(kind=intTYpe) :: iii, jjj, kkk, n, myind,  nx, ny, nz, myindex
   logical :: invalid, failed
-  real(kind=realType) :: uvw(5), donorQual, xx(4), pt(3)
+  real(kind=realType) :: uu, vv, ww, err1, err2
+  real(kind=realType) :: uvw(5), uvw2(5), donorQual, xx(4), pt(3), xcheck(3)
   real(kind=realType), dimension(:, :), allocatable :: offset
   real(kind=realType) :: oneMinusU, oneMinusV, oneMinusW, weight(8)
   ! Variables we have to pass the ADT search routine
@@ -64,20 +66,46 @@ subroutine fringeSearch(oBlock, oFringe, bWall, fWall)
 
         call containmentTreeSearchSinglePoint(oBlock%ADT, xx, intInfo, uvw, &
              oBlock%qualDonor, nInterpol, BB, frontLeaves, frontLeavesNew, failed)
-        
+
+        if (intInfo(1) >= 0) then 
+           call fracToWeights2(uvw(1:3), weight)
+           xcheck = zero
+           do j=1,8
+              xcheck = xcheck + weight(j)*oBlock%xADT(:, oBlock%hexaConn(j, intInfo(3)))
+           end do
+           
+           if (norm2(xcheck - xx(1:3)) > oversetProjTol) then 
+              failed = .True.
+           end if
+        end if
+
         if (intInfo(1) >= 0 .and. failed) then 
            ! we "found" a point but it is garbage. Do the failsafe search
            xx(4) = large
            call minDistanceTreeSearchSinglePoint(oBlock%ADT, xx, intInfo, uvw, &
-             oBlock%qualDonor, nInterpol, BB2, frontLeaves, frontLeavesNew)
+                oBlock%qualDonor, nInterpol, BB2, frontLeaves, frontLeavesNew)
+
+           ! This is the best we can do. If you need to debug. Use the
+           ! following code:
+           ! call fracToWeights2(uvw(1:3), weight)
+           ! xcheck = zero
+           ! do j=1,8
+           !    xcheck = xcheck + weight(j)*oBlock%xADT(:, oBlock%hexaConn(j, intInfo(3)))
+           ! end do
            
+           ! if (norm2(xcheck - xx(1:3)) > oversetProjTol) then 
+           !    print *,'------------ Bad Interpolation --------------'
+           !    do j=1,8
+           !       print *, oBlock%xADT(:, oBlock%hexaConn(j, intInfo(3)))
+           !    end do
+           !    print *,'Pt :', xx(1:3)
+           !    print *,'chk:', xcheck
+           !    print *,'uvw:', uvw(1:3)
+           !    print *,'Error:', norm2(xx(1:3) - xcheck)
+           ! end if
         end if
         
         elemFound: if (intInfo(1) >= 0) then 
-
-           ! Check if our solution is actually any good by evaluating the
-           ! interpolated point. 
-
 
            ! Donor and block and index information for this donor. 
            donorQual = uvw(4)
@@ -133,7 +161,7 @@ subroutine fringeSearch(oBlock, oFringe, bWall, fWall)
            ! This check is for the actual donors. The '<' is really
            ! the 'implicit hole' method where we take the best quality
            ! donor.
-         
+           
            if ( donorQual < oFringe%quality(i)) then 
               invalid = .False.
               do kkk=0,1
