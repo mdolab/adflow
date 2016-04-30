@@ -46,9 +46,9 @@ subroutine initializeOBlock(oBlock, nn, level, sps)
   call flagForcedReceivers(oBlock%invalidDonor)
   
   ! Add to the invalid donor list if it got flooded with iblank of -2 or -3:
-  do k=1, ke
-     do j=1, je
-        do i=1, ie
+  do k=0, kb
+     do j=0, jb
+        do i=0, ib
            ! This is a hard interior cell. Flag EVERY cell it it's
            ! stencil as a invalid donor. 
            if (iblank(i, j, k) ==-3 .or. iBlank(i, j,k) == -2) then 
