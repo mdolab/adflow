@@ -21,7 +21,7 @@ subroutine initializeOBlock(oBlock, nn, level, sps)
   ! Working paramters
   integer(kind=intType) :: i, j, k, mm, nADT, nHexa, planeOffset
   integer(kind=intType) :: iStart, iEnd, jStart, jEnd, kStart, kEnd
-  real(kind=realType) :: factor, frac,  wallEdge, avgEdge, dist, xp(3)
+  real(kind=realType) :: factor, frac,  dist, xp(3)
   integer(kind=intType) :: i_stencil, ii, jj, iii
   logical :: wallsPresent, isWallType
   logical, allocatable, dimension(:, :, :)  :: nearWallTmp
@@ -79,7 +79,32 @@ subroutine initializeOBlock(oBlock, nn, level, sps)
         do i=1,ie
            mm = mm + 1
            if (wallsPresent) then 
-              oBlock%qualDonor(1, mm) =  vol(i, j, k)**third 
+              
+              ii = i
+              jj = j
+              kk = k
+              ! If the cell is a boundary halo, use the real cell
+              if (globalCell(i, j, k) < 0) then 
+
+                 ii = min(max(2, i), il)
+                 jj = min(max(2, j), jl)
+                 kk = min(max(2, k), kl)
+              end if
+              
+              xp = eighth*(&
+                   x(ii-1, jj-1, kk-1, :) + &
+                   x(ii  , jj-1, kk-1, :) + &
+                   x(ii-1, jj  , kk-1, :) + &
+                   x(ii  , jj  , kk-1, :) + &
+                   x(ii-1, jj-1, kk  , :) + &
+                   x(ii  , jj-1, kk  , :) + &
+                   x(ii-1, jj  , kk  , :) + &
+                   x(ii  , jj  , kk  , :))
+
+              dist = norm2(xp - xSeed(i, j, k, :))
+              frac = dist/clusterMarchDist(oBlock%cluster)
+              frac = one
+              oBlock%qualDonor(1, mm) = frac*vol(i, j, k)**third 
               
            else
               oBlock%qualDonor(1, mm) = (backGroundVolScale*vol(i, j, k))**third

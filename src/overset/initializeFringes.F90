@@ -18,13 +18,15 @@ subroutine initializeFringes(nn, level, sps)
   integer(kind=intTYpe) :: i, j, k, mm, iDim, ii, jj, kk, iii, jjj
   integer(kind=intTYpe) :: iStart, iEnd, jStart, jEnd, kStart, kEnd
   logical :: wallsPresent, isWallType
-  integer(kind=intType) :: i_stencil
+  integer(kind=intType) :: i_stencil, clusterID
   integer(kind=intType), dimension(:, :, :), allocatable :: tmp
-
+  real(kind=realType) :: frac, dist, xp(3)
   ! Allocate space for the double halo fringes. 
   if (.not. associated(flowDoms(nn, level, sps)%fringes)) then 
      allocate(flowDoms(nn, level, sps)%fringes(0:ib, 0:jb, 0:kb))
   end if
+  
+  clusterID = clusters(cumDomProc(myid) + nn)
 
   ! Check if we have walls:
   call wallsOnBLock(wallsPresent)
@@ -57,7 +59,22 @@ subroutine initializeFringes(nn, level, sps)
            call setIsCompute(fringes(i, j, k)%status, .True.)
            ii = ii + 1
            if (wallsPresent) then 
-              fringes(i, j, k)%quality = vol(i, j, k)**third
+              
+              xp = eighth*(&
+                   x(i-1, j-1, k-1, :) + &
+                   x(i  , j-1, k-1, :) + &
+                   x(i-1, j  , k-1, :) + &
+                   x(i  , j  , k-1, :) + &
+                   x(i-1, j-1, k  , :) + &
+                   x(i  , j-1, k  , :) + &
+                   x(i-1, j  , k  , :) + &
+                   x(i  , j  , k  , :))
+              
+              dist = norm2(xp - xSeed(i, j, k, :))
+              frac = dist/clusterMarchDist(clusterID)
+              frac = one
+              
+              fringes(i, j, k)%quality = frac*vol(i, j, k)**third
            else
               fringes(i, j, k)%quality = (backgroundVolScale*vol(i, j, k))**third
            end if
