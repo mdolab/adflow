@@ -75,6 +75,7 @@
        
        volWriteBlank = .false.
        volWriteGC = .false.
+       volWriteStatus = .false.
        
 
        ! Initialize nVarSpecified to 0. This serves as a test
@@ -217,6 +218,10 @@
 
           case ("gc")
              volWriteGC = .true.
+             nVarSpecified = nVarSpecified + 1
+
+          case ("status")
+             volWriteStatus = .true.
              nVarSpecified = nVarSpecified + 1
 
            case default

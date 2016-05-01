@@ -573,6 +573,15 @@
              enddo
            enddo
 
+         case (cgnsstatus)
+            do k=kBeg,kEnd
+             do j=jBeg,jEnd
+               do i=iBeg,iEnd
+                  wIO(i,j,k,1) = real(fringes(i,j,k)%status)
+               enddo
+             enddo
+           enddo
+
         case (cgnsShock)
            
            do k=kBeg,kEnd

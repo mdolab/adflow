@@ -59,7 +59,7 @@
        logical :: volWritePtotLoss,     volWriteResRho,   volWriteresMom
        logical :: volWriteResRhoE,      volWriteResTurb,  volWriteBlank
        logical :: volWriteShock,        volWriteFilteredShock
-       logical :: volWriteGC
+       logical :: volWriteGC, volwriteStatus
 !
 !      ******************************************************************
 !      *                                                                *
