@@ -52,8 +52,8 @@ subroutine floodInteriorCells(level, sps)
 
            ! Make the -3 and -2 cells, those inside the body,
            ! "compute" cells. This allows the flooding algorithm to
-           ! work the same on subsequent outer iterations as the first
-           ! iteration. 
+           ! flood them as if they were comptue cells on subsequent
+           ! iterations the same as the first iteration. 
            do k=2, kl
               do j=2, jl
                  do i=2, il
@@ -68,8 +68,7 @@ subroutine floodInteriorCells(level, sps)
            do k=2, kl
               do j=2, jl
                  do i=2, il
-                       if (isWallDonor(fringes(i, j, k)%status) .and. &
-                            isCompute(fringes(i, j, k)%status)) then 
+                    if (isWallDonor(fringes(i, j, k)%status)) then
                        call addSeed(i,j ,k)
                     end if
                  end do
@@ -136,6 +135,8 @@ subroutine floodInteriorCells(level, sps)
               j = stack(2, stackPointer)
               k = stack(3, stackPointer)
               call setIsFloodSeed(fringes(i, j, k)%status, .True. )
+              fringes(i, j, k)%donorProc = -1 ! Remove the status of
+                                              ! this cell as a fringe
            end if
 
            ! Start the flooding (stacked based, not recursive)

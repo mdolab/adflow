@@ -30,7 +30,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
   integer(kind=intType) :: iDom, jDom, iDim, iCnt, rCnt
   integer(kind=intType) :: nn, mm, n, ierr, iProc, myIndex, iRefine
   integer(kind=intType) :: iWork, nWork, nFringeProc, nLocalFringe
-  real(kind=realType) :: startTime, endTime, quality
+  real(kind=realType) :: startTime, endTime, quality, xp(3)
   logical :: computeCellFound,  isCompute
 
   type(CSRMatrix), pointer :: overlap
@@ -96,7 +96,6 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      end do
      return
   end if
-
 
   ! Determine the magic number which is actually the same as
   ! nDomTotal. nDomTotal is guaranteed to be greater than or equal to
@@ -279,7 +278,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      ! inside the body and what isn't. This method isn't
      ! perfect; some cells that are actually inside the true
      ! surface won't be flagged, but that's ok. 
-     refineLoop: do iRefine = 1,5
+     refineLoop: do iRefine = 1,3
 
         work(4, :) = 0
 
@@ -337,6 +336,8 @@ subroutine oversetComm(level, firstTime, coarseLevel)
 
         ! Determine the cells that are near wall. We have a special routine for this. 
         call computeCellWallPoint(level, sps)
+        call determineClusterMarchDist
+  
         allocate(clusterWalls(nClusters))
         call buildClusterWalls(level, sps, .True., clusterWalls)
 
@@ -858,25 +859,33 @@ subroutine oversetComm(level, firstTime, coarseLevel)
               do j=2, jl
                  do i=2, il
 
-                    ! Check if this cell is a fringe:
-                    if (fringes(i, j, k)%donorProc /= -1) then 
+                    ! Check if this cell is a fringe and not blanked
+                    ! from a previous iteration:
+                    if (fringes(i, j, k)%donorProc /= -1 .and. &
+                         iblank(i,j,k) /= -3 .and. &
+                         iblank(i,j,k)/=-2) then 
 
                        ! Now check if this cell *really* needs a
-                       ! donor...it all its neighbours are also
-                       ! interpolated it will get blanked so we can just
-                       ! forget about it. 
+                       ! donor...if all its neighbours are also
+                       ! interpolated it will get blanked so we can
+                       ! just forget about it.
                        computeCellFound = .False.
                        stencilLoop2: do i_stencil=1, N_visc_drdw
                           ii = visc_drdw_stencil(i_stencil, 1) + i
                           jj = visc_drdw_stencil(i_stencil, 2) + j
                           kk = visc_drdw_stencil(i_stencil, 3) + k
 
-                          if (isCompute(fringes(ii, jj, kk)%status)) then 
+                          ! Only check physical cells:
+                          if (globalCell(ii, jj, kk) >= 0 .and. &
+                               isCompute(fringes(ii, jj, kk)%status) .and. & 
+                               iblank(ii,jj,kk) /= -2 .and. &
+                               iblank(ii,jj,kk) /=-3) then
                              ! This is a compute cell
                              computeCellFound = .True.
                           end if
                        end do stencilLoop2
 
+                    
                        if (computeCellFound) then 
                           nLocalFringe = nLocalFringe + 1
                           localFringes(nLocalFringe) = fringes(i, j, k)
@@ -886,7 +895,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
               end do
            end do
         end do
-
+        
         call determineDonors(level, sps, localFringes, nLocalFringe, .False.)
 
 
@@ -944,11 +953,12 @@ subroutine oversetComm(level, firstTime, coarseLevel)
         call fringeReduction(level, sps)
         
         call exchangeStatus(level, sps, commPatternCell_2nd, internalCell_2nd)
-           ! Before we can do the final comm structures, we need to make
-           ! sure that every processor's halo have any donor information
-           ! necessary to build its own comm pattern. For this will need to
-           ! send donorProc, donorBlock, dI, dJ, dK and donorFrac. 
-
+        
+        ! Before we can do the final comm structures, we need to make
+        ! sure that every processor's halo have any donor information
+        ! necessary to build its own comm pattern. For this will need to
+        ! send donorProc, donorBlock, dI, dJ, dK and donorFrac. 
+        
         call exchangeFringes(level, sps, commPatternCell_2nd, internalCell_2nd)
 
         ! -----------------------------------------------------------------

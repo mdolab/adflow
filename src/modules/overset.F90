@@ -350,6 +350,7 @@ module overset
   integer(kind=intType) :: nClusters
   integer(kind=intType), dimension(:), allocatable :: clusters
   real(kind=realType), dimension(:), allocatable :: clusterAreas
+  real(kind=realType), dimension(:), allocatable :: clusterMarchDist
   type(oversetWall), dimension(:), allocatable, target :: clusterWalls
 
   ! Flag specifying if overset is present in mesh

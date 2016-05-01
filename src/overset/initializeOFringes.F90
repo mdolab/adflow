@@ -21,7 +21,7 @@ subroutine initializeOFringes(oFringe, nn)
   logical :: wallsPresent, isWallType
   integer(kind=intType) :: i_stencil
   integer(kind=intType), dimension(:, :, :), allocatable :: tmp
-
+  real(kind=realType) :: dist, frac, xp(3)
   ! Check if we have walls:
   call wallsOnBLock(wallsPresent)
 
@@ -79,7 +79,11 @@ subroutine initializeOFringes(oFringe, nn)
            end do
 
            if (wallsPresent) then 
-              oFringe%quality(ii) = vol(i, j, k)**third
+           
+              dist = norm2(oFringe%x(:, ii) - xSeed(i, j, k, :))
+              frac = dist/clusterMarchDist(oFringe%cluster)
+              frac = one
+              oFringe%quality(ii) = frac*vol(i, j, k)**third
            else
               oFringe%quality(ii) = (backgroundVolScale*vol(i, j, k))**third
            end if
