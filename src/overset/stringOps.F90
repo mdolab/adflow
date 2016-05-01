@@ -1252,642 +1252,642 @@ contains
     integer(kind=intType) :: jnodep
     integer(kind=intType), allocatable, dimension(:) :: Ins, Ine, Jns, Jne
     logical :: jEndfound(2), checkNodeUsed
-    ! ------------------------------------------------
-
-    ! Should the node used be checked to avoid string pairings?
-    checkNodeUsed = .True.
-
-    ! Allocate arrays to keep track of nodes to avoid same substring pairs for
-    ! crossZipping
-    do i=1, nstrings
-       allocate(strings(i)%XzipNodeUsed(1:strings(i)%nNodes))
-       strings(i)%XzipNodeUsed = 0 ! Not used, 1 = used
-    end do
-
-    ! For debugging sub-strings pairings
-    ! ----------------------------------
-    open(unit=101, file="subGapStrings.dat", form='formatted')
-    write(101,*) 'TITLE = "SubGap Strings Data" '
-    write(101,*) 'Variables = "X" "Y" "Z" "Nx" "Ny" "Nz" "Vx" "Vy" "Vz" "ind" &
-         "gapID" "gapIndex" "otherID" "otherIndex" "ratio"'
-    ! ----------------------------------
-
-    iSubstr = 0
-    do i=1, nStrings
-
-       ! Find total splits
-       nSplits = 0
-       inode = 1
-       do while (inode <= strings(i)%nNodes-1) 
-          if ( (strings(i)%otherID(1, inode) /= &
-               strings(i)%otherID(1, inode+1)) .and. &
-               inode > 1 ) then
-             nsplits = nsplits + 1
-          end if
-          inode = inode + 1
-       end do
-
-       ifNsplits: if (nsplits == 0) then
-          iSpl = 0
-          ! No splits found, cross zip with the full other gap string.
-          inodeS = 1
-          inodeE = strings(i)%nNodes
-
-          J = strings(i)%otherID(1, inodeS)
-
-          jnodeS = 1
-          jnodeE = strings(j)%nNodes
-
-          ! If I is periodic J should be periodic too. Fix end nodes of J
-          ! strings wrt otherID of inodeS/inodeE
-          if (strings(i)%isPeriodic) then
-
-             if (.not.strings(j)%isPeriodic) stop ' This is wrong '
-
-             ! Find the first symmetric pair with J strings
-             jnode = 1
-             loopPerJsym: do while (jnode <= strings(j)%nNodes) 
-
-                oidJ = strings(j)%otherID(1, jnode) ! string I
-                oidxJ = strings(j)%otherID(2, jnode) ! index on string I
-
-                if (oidJ /= strings(i)%myID) stop ' Should not be here, string I'
-
-                if (strings(i)%otherID(1, oidxJ) /= strings(j)%myID) &
-                     stop ' Something is wrong '
-
-                if (strings(i)%otherID(2, oidxJ) == jnode) then
-                   ! Found symmetric point
-                   inodeE = oidxJ
-                   jnodeS = jnode
-                   exit loopPerJsym
-                end if
-                jnodep = jnode + 1
-                if (jnode == strings(j)%nNodes) then
-                   exit loopPerJsym
-                end if
-
-                jnode = jnodep
-             end do loopPerJsym
-             if (jnode == strings(j)%nNodes) stop ' One cycle over '
-
-             inodeS = inodeE + 1
-             if (inodeE == strings(i)%nNodes) inodeS = 1
-             jnodeE = jnodeS - 1 
-             if (jnodeS == 1) jnodeE = strings(j)%nNodes
-          end if
-
-          ! Check if the nodes have been used already
-          if (checkNodeUsed) then
-             inodeStmp = inodeS
-             inodeEtmp = inodeE
-             if (inodeStmp <= inodeEtmp) then
-
-                inodeS = inodeStmp
-                inodeE = inodeStmp
-                chkinodeE10:do inode=inodeStmp, inodeEtmp
-                   if (strings(i)%XzipNodeUsed(inode) == 0) then
-                      inodeE = inode
-                   else
-                      exit chkinodeE10
-                   end if
-                end do chkinodeE10
-                if (inodeE == inodeS) exit ifNsplits
-             else ! inodeStmp > inodeEtmp
-                inodeS = inodeStmp
-                inodeE = inodeStmp
-                inode = inodeStmp
-                chkinodeE20:do while (inode >= inodeStmp .or. &
-                     inode <= inodeEtmp) 
-                   if (strings(i)%XzipNodeUsed(inode) == 0) then
-                      inodeE = inode
-
-                      inodep = inode + 1
-                      if (inode == strings(i)%nNodes) inodep = 1
-
-                      if (inodep == inodeStmp) then
-                         ! Come full cycle around the string
-                         exit chkinodeE20
-                      end if
-
-                      inode = inodep
-                   else
-                      exit chkinodeE20
-                   end if
-                end do chkinodeE20
-                if (inodeE == inodeS) exit ifNsplits
-             end if
-          end if !checkNodeUsed
-
-          if (jnodeS == jnodeE) exit ifNsplits
-
-          print '(A,6(I4,x),A,2(I4,x))',&
-               '      I, J, inodeS, inodeE, jnodeS, jnodeE ', &
-               I, J, inodeS, inodeE, jnodeS, jnodeE, &
-               'SubStr: ',iSubstr+1, iSubStr+2
-
-          ! ! Debug sub-strings pairings
-          ! iSubStr = iSubStr + 1
-          ! call writeOversetSubString(strings(i), inodeS, inodeE, iSubStr, &
-          !      strings, nStrings, 101)
-          ! iSubStr = iSubStr + 1
-          ! call writeOversetSubString(strings(j), jnodeS, jnodeE, iSubStr, &
-          !      strings, nStrings, 101)
-
-          ! Remember I string nodes used
-          if (inodeS <= inodeE) then
-             strings(i)%XzipNodeUsed(inodeS:inodeE) = 1
-          else ! inodeS > inodeE
-             strings(i)%XzipNodeUsed(inodeS:strings(i)%nNodes) = 1
-             strings(i)%XzipNodeUsed(1:inodeE) = 1
-          end if
-
-          ! Remember J string nodes used
-          if (jnodeS <= jnodeE) then
-             strings(j)%XzipNodeUsed(jnodeS:jnodeE) = 1
-          else ! jnodeS > jnodeE
-             strings(j)%XzipNodeUsed(jnodeS:strings(j)%nNodes) = 1
-             strings(j)%XzipNodeUsed(1:jnodeE) = 1
-          end if
-
-          if (strings(i)%isPeriodic .and. strings(j)%isPeriodic) then
-             ! For both periodic I and J strings, jnodeS <--> inodeE 
-             ! are symmetric pairs.
-             call crossZip(strings(i), inodeE, inodeE, strings(j), &
-                  jnodeS, jnodeS)
-          else 
-             ! single sided strings, end points on symmetric planes
-             call crossZip(strings(i), inodeS, inodeE, strings(j), &
-                  jnodeE, jnodeS)
-          end if
-
-       else ifNsplits
-
-          ! Define the node ranges for 
-          inodeS = 1
-          inode = 1
-          iSpl = 0
-
-          loopInode: do while (inode <=strings(i)%nNodes-1)
-
-             ! Cycle if node has already been used in previous strings pairings
-             if (checkNodeUsed .and. strings(i)%XzipNodeUsed(inode)==1) then
-                inode = inode + 1
-
-                ! Update inodeS 
-                inodeS = inode
-
-                cycle loopInode 
-             end if
-
-             splitIf: if ( (strings(i)%otherID(1, inode) /= &
-                  strings(i)%otherID(1, inode+1)) .and. &
-                  inode > inodeS ) then
-
-                inodeE = inode
-                ispl = ispl + 1
-
-                ! Potential other string
-                J = strings(i)%otherID(1, inodeE)
-
-                ! If I strings is periodic, change inodeS and inodeE
-                ! --------------------------------------------------
-                if (strings(i)%isPeriodic) then
-
-                   ! Change inodeS:
-                   inodetmp = inodeS
-                   perInodeS:do 
-                      inodem = inodetmp - 1
-                      if (inodetmp == 1) inodem = strings(i)%nNodes
-                      if (strings(i)%otherID(1, inodetmp) == J .and. &
-                           strings(i)%otherID(1, inodem) /= J) then
-
-                         inodeS = inodetmp
-                         exit perInodeS
-                      end if
-                      inodetmp = inodem
-                      if (inodetmp == inodeS) then
-                         ! Retain inodeS if came full circle
-                         print*, ' Come full circle inodeS'
-                         exit perInodeS
-                      end if
-                   end do perInodeS
-
-                   ! Change inodeE:
-                   inodetmp = inodeE
-                   perInodeE:do 
-                      inodep = inodetmp + 1
-                      if (inodetmp == strings(i)%nNodes) inodep = 1
-                      if (strings(i)%otherID(1, inodetmp) == J .and. &
-                           strings(i)%otherID(1, inodep) /= J) then
-
-                         inodeE = inodetmp
-                         exit perInodeE
-                      end if
-                      inodetmp = inodep
-                      if (inodetmp == inodeE) then
-                         ! Retain inodeE if came full circle
-                         print*, ' Come full circle inodeE '
-                         exit perInodeE
-                      end if
-                   end do perInodeE
-
-                end if
-                ! --- end periodic strings inodeS/inodeE -----------
-
-                ! Find symmetric point
-                jnode = 1
-                loopjsym: do while (jnode <= strings(j)%nNodes)
-
-                   oidJ = strings(j)%otherID(1, jnode) ! hopeful strings(i) ID
-                   oidxJ = strings(j)%otherID(2, jnode) ! hopeful strings(i) Idx
-
-                   !am if (oidJ == strings(i)%myID .and.  &
-                   !am     oidxJ >= inodeS .and. oidxJ <= inodeE) then
-                   if (oidJ == strings(i)%myID) then
-                      if ( (inodeS < inodeE .and. oidxJ >= inodeS .and. &
-                           oidxJ <= inodeE) .or. &
-                           (inodeS > inodeE .and. (oidxJ >= inodeS .or. &
-                           oidxJ <= inodeE)) ) then
-
-                         if (strings(i)%otherID(1, oidxJ) == strings(j)%myID .and. &
-                              strings(i)%otherID(2, oidxJ) == jnode) then
-                            ! Found symmetry point
-                            jsym = jnode
-                            isym = oidxJ
-                            exit loopjsym
-                         end if
-                      end if
-                   end if
-                   jnode = jnode + 1 
-                end do loopjsym
-
-                ! Traverse in +ve jDir to find jnodeE
-                jnode = jsym 
-                loopJnodeE: do 
-
-                   ! Already at the end then exit
-                   if ( jnode == strings(j)%nNodes .and. &
-                        .not.strings(j)%isPeriodic) then
-                      exit loopJnodeE
-                   end if
-
-                   jp1 = jnode + 1
-                   ! Treat different for periodic strings 
-                   if (jnode == strings(j)%nNodes .and. strings(j)%isPeriodic) then
-                      jp1 = 1
-                   end if
-
-                   if ( strings(j)%otherID(1, jp1) /= strings(i)%myID) then
-                      oidJ = strings(j)%otherID(1, jnode) ! hopeful strings(i) ID
-                      oidxJ = strings(j)%otherID(2, jnode) ! strings(i) index
-
-                      !am if(strings(i)%isPeriodic) inodeS = oidxJ
-                      jnodeE = jnode
-                      exit loopJnodeE
-
-                   else if (strings(j)%otherID(1, jp1) == strings(i)%myid .and.  &
-                        jp1 == strings(j)%nNodes .and. &
-                        .not.strings(j)%isPeriodic) then
-                      jnodeE = jnode+1
-                      exit loopJnodeE
-                   end if
-
-                   jnode = jp1
-                   ! Exit if counter has cycled through all nodes in
-                   ! periodic string J
-                   if (jnode == jsym) exit loopJnodeE 
-                end do loopJnodeE
-
-                ! Traverse in -ve jDir to find jnodeE
-                jnode = jsym 
-                loopJnodeS: do 
-
-                   ! Already at the end then exit
-                   if ( jnode == 1 .and. &
-                        .not.strings(j)%isPeriodic) then
-                      jnodeS = jnode
-                      exit loopJnodeS
-                   end if
-
-                   jm1 = jnode - 1
-                   ! Treat different for periodic strings 
-                   if (jnode == 1 .and. strings(j)%isPeriodic) then
-                      jm1 = strings(j)%nNodes
-                   end if
-
-                   if ( strings(j)%otherID(1, jm1) /= strings(i)%myID) then
-                      oidJ = strings(j)%otherID(1, jnode) ! hopeful strings(i) ID
-                      oidxJ = strings(j)%otherID(2, jnode) ! strings(i) index
-
-                      !am if(strings(i)%isPeriodic) inodeE = oidxJ
-                      jnodeS = jnode
-                      exit loopJnodeS
-
-                   else if (strings(j)%otherID(1, jm1) == strings(i)%myid .and.  &
-                        jm1 == 1 .and. &
-                        .not.strings(j)%isPeriodic) then
-                      jnodeS = jm1
-                      exit loopJnodeS
-                   end if
-
-                   jnode = jm1
-                   ! Exit if counter has cycled through all nodes in
-                   ! periodic string J
-                   if (jnode == jsym) exit loopJnodeS 
-                end do loopJnodeS
-
-                if (jnodeS == jnodeE) exit ifNsplits
-
-                print '(A,6(I4,x),A,2(I4,x))',&
-                     '      I, J, inodeS, inodeE, jnodeS, jnodeE ', &
-                     I, J, inodeS, inodeE, jnodeS, jnodeE, &
-                     'SubStr: ',iSubstr+1, iSubStr+2
-
-                ! ! Debug sub-strings pairings
-                ! iSubStr = iSubStr + 1
-                ! call writeOversetSubString(strings(i), inodeS, inodeE, iSubstr,&
-                !      strings, nStrings, 101)
-                ! iSubStr = iSubStr + 1
-                ! call writeOversetSubString(strings(j), jnodeS, jnodeE, iSubstr,&
-                !      strings, nStrings, 101)
-
-                ! Remember I string nodes used
-                if (inodeS <= inodeE) then
-                   strings(i)%XzipNodeUsed(inodeS:inodeE) = 1
-                else ! inodeS > inodeE
-                   strings(i)%XzipNodeUsed(inodeS:strings(i)%nNodes) = 1
-                   strings(i)%XzipNodeUsed(1:inodeE) = 1
-                end if
-
-                ! Remember J string nodes used
-                if (jnodeS <= jnodeE) then
-                   strings(j)%XzipNodeUsed(jnodeS:jnodeE) = 1
-                else ! jnodeS > jnodeE
-                   strings(j)%XzipNodeUsed(jnodeS:strings(j)%nNodes) = 1
-                   strings(j)%XzipNodeUsed(1:jnodeE) = 1
-                end if
-
-                ! Do crossZip
-                call crossZip(strings(i), inodeS, inodeE, strings(j), &
-                     jnodeE, jnodeS)
-
-                inodeS = inodeE + 1
-             end if splitIf
-
-             inode = inode + 1
-          end do loopInode
-
-
-          iSpl = iSpl + 1
-
-          ! ---------------------------------------------------------
-          ! Now do the remaining nodes of string I
-          ! ---------------------------------------------------------
-          inodeE = strings(i)%nNodes
-
-          ! Potential other string
-          J = strings(i)%otherID(1, inodeE)
-
-          ! If I strings is periodic, change inodeS and inodeE
-          ! --------------------------------------------------
-          if (strings(i)%isPeriodic) then
-
-             ! Change inodeS:
-             inodetmp = inodeS
-             perInodeS1:do 
-                inodem = inodetmp - 1
-                if (inodetmp == 1) inodem = strings(i)%nNodes
-                if (strings(i)%otherID(1, inodetmp) == J .and. &
-                     strings(i)%otherID(1, inodem) /= J) then
-
-                   inodeS = inodetmp
-                   exit perInodeS1
-                end if
-                inodetmp = inodem
-                if (inodetmp == inodeS) then
-                   ! Retain inodeS if came full circle
-                   print*, ' Come full circle inodeS'
-                   exit perInodeS1
-                end if
-             end do perInodeS1
-
-             ! Change inodeE:
-             inodetmp = inodeE
-             perInodeE1:do 
-                inodep = inodetmp + 1
-                if (inodetmp == strings(i)%nNodes) inodep = 1
-                if (strings(i)%otherID(1, inodetmp) == J .and. &
-                     strings(i)%otherID(1, inodep) /= J) then
-
-                   inodeE = inodetmp
-                   exit perInodeE1
-                end if
-                inodetmp = inodep
-                if (inodetmp == inodeE) then
-                   ! Retain inodeE if came full circle
-                   print*, ' Come full circle inodeE '
-                   exit perInodeE1
-                end if
-             end do perInodeE1
-
-          end if
-          ! --- end periodic strings inodeS/inodeE -----------
-
-
-          ! Find symmetric point
-          jnode = 1
-          loopjsym1: do while (jnode <= strings(j)%nNodes)
-
-             oidJ = strings(j)%otherID(1, jnode) ! hopeful strings(i) ID
-             oidxJ = strings(j)%otherID(2, jnode) ! hopeful strings(i) Idx
-
-             if (oidJ == strings(i)%myID) then
-                if ( (inodeS < inodeE .and. oidxJ >= inodeS .and. &
-                     oidxJ <= inodeE) .or. &
-                     (inodeS > inodeE .and. (oidxJ >= inodeS .or. &
-                     oidxJ <= inodeE)) ) then
-
-                   if (strings(i)%otherID(1, oidxJ) == strings(j)%myID .and. &
-                        strings(i)%otherID(2, oidxJ) == jnode) then
-                      ! Found symmetry point
-                      jsym = jnode
-                      isym = oidxJ
-                      exit loopjsym1
-                   end if
-                end if
-             end if
-
-             jnode = jnode + 1 
-          end do loopjsym1
-
-          ! Traverse in +ve jDir to find jnodeE
-          jnode = jsym 
-          loopJnodeE1: do 
-
-             ! Already at the end then exit
-             if ( jnode == strings(j)%nNodes .and. &
-                  .not.strings(j)%isPeriodic) then
-                jnodeE = jnode
-                exit loopJnodeE1
-             end if
-
-             jp1 = jnode + 1
-             ! Treat different for periodic strings 
-             if (jnode == strings(j)%nNodes .and. strings(j)%isPeriodic) then
-                jp1 = 1
-             end if
-
-             if ( strings(j)%otherID(1, jp1) /= strings(i)%myID) then
-                oidJ = strings(j)%otherID(1, jnode) ! hopeful strings(i) ID
-                oidxJ = strings(j)%otherID(2, jnode) ! strings(i) index
-
-                !am if(strings(i)%isPeriodic) inodeS = oidxJ
-                jnodeE = jnode
-                exit loopJnodeE1
-
-             else if (strings(j)%otherID(1, jp1) == strings(i)%myid .and.  &
-                  jp1 == strings(j)%nNodes .and. &
-                  .not.strings(j)%isPeriodic) then
-                jnodeE = jnode+1
-                exit loopJnodeE1
-             end if
-
-             jnode = jp1
-             ! Exit if counter has cycled through all nodes in
-             ! periodic string J
-             if (jnode == jsym) exit loopJnodeE1
-          end do loopJnodeE1
-
-          ! Traverse in -ve jDir to find jnodeE
-          jnode = jsym 
-          loopJnodeS1: do 
-
-             ! Already at the end then exit
-             if ( jnode == 1 .and. &
-                  .not.strings(j)%isPeriodic) then
-                jnodeS = jnode
-                exit loopJnodeS1
-             end if
-
-             jm1 = jnode - 1
-             ! Treat different for periodic strings 
-             if (jnode == 1 .and. strings(j)%isPeriodic) then
-                jm1 = strings(j)%nNodes
-             end if
-
-             if ( strings(j)%otherID(1, jm1) /= strings(i)%myID) then
-                oidJ = strings(j)%otherID(1, jnode) ! hopeful strings(i) ID
-                oidxJ = strings(j)%otherID(2, jnode) ! strings(i) index
-
-                !am if(strings(i)%isPeriodic) inodeE = oidxJ
-                jnodeS = jnode
-                exit loopJnodeS1
-
-             else if (strings(j)%otherID(1, jm1) == strings(i)%myid .and.  &
-                  jm1 == 1 .and. &
-                  .not.strings(j)%isPeriodic) then
-                jnodeS = jm1
-                exit loopJnodeS1
-             end if
-
-             jnode = jm1
-             ! Exit if counter has cycled through all nodes in
-             ! periodic string J
-             if (jnode == jsym) exit loopJnodeS1
-          end do loopJnodeS1
-
-
-
-          ! Check it has nodes that have not been used already
-          if (checkNodeUsed) then
-             inodeStmp = inodeS
-             inodeEtmp = inodeE
-             if (inodeStmp <= inodeEtmp) then
-
-                inodeS = inodeStmp
-                inodeE = inodeStmp
-                chkinodeE1:do inode=inodeStmp, inodeEtmp
-                   if (strings(i)%XzipNodeUsed(inode) == 0) then
-                      inodeE = inode
-                   else
-                      exit chkinodeE1
-                   end if
-                end do chkinodeE1
-                if (inodeE == inodeS) exit ifNsplits
-             else ! inodeStmp > inodeEtmp
-                inodeS = inodeStmp
-                inodeE = inodeStmp
-                inode = inodeStmp
-                chkinodeE2:do while (inode >= inodeStmp .or. &
-                     inode <= inodeEtmp) 
-                   if (strings(i)%XzipNodeUsed(inode) == 0) then
-                      inodeE = inode
-
-                      inodep = inode + 1
-                      if (inode == strings(i)%nNodes) inodep = 1
-
-                      inode = inodep
-                   else
-                      exit chkinodeE2
-                   end if
-                end do chkinodeE2
-                if (inodeE == inodeS) exit ifNsplits
-             end if
-          end if !checkNodeUsed
-
-          if (jnodeS == jnodeE) exit ifNsplits
-
-          print '(A,6(I4,x),A,2(I4,x))',&
-               'last: I, J, inodeS, inodeE, jnodeS, jnodeE ', &
-               I, J, inodeS, inodeE, jnodeS, jnodeE, &
-               'SubStr: ',iSubstr+1, iSubStr+2
-
-          ! ! Debug sub-strings pairings
-          ! iSubStr = iSubStr + 1
-          ! call writeOversetSubString(strings(i), inodeS, inodeE, iSubstr,&
-          !      strings, nStrings, 101)
-          ! iSubStr = iSubStr + 1
-          ! call writeOversetSubString(strings(j), jnodeS, jnodeE, iSubstr,&
-          !      strings, nStrings, 101)
-
-          ! Remember I string nodes used
-          if (inodeS <= inodeE) then
-             strings(i)%XzipNodeUsed(inodeS:inodeE) = 1
-          else ! inodeS > inodeE
-             strings(i)%XzipNodeUsed(inodeS:strings(i)%nNodes) = 1
-             strings(i)%XzipNodeUsed(1:inodeE) = 1
-          end if
-
-          ! Remember J string nodes used
-          if (jnodeS <= jnodeE) then
-             strings(j)%XzipNodeUsed(jnodeS:jnodeE) = 1
-          else ! jnodeS > jnodeE
-             strings(j)%XzipNodeUsed(jnodeS:strings(j)%nNodes) = 1
-             strings(j)%XzipNodeUsed(1:jnodeE) = 1
-          end if
-
-          ! Do crossZip
-          call crossZip(strings(i), inodeS, inodeE, strings(j), &
-               jnodeE, jnodeS)
-
-          ! ---------------------------------------------------------
-          ! End remaining nodes treatment
-          ! ---------------------------------------------------------
-
-       end if ifNsplits
-
-    end do ! nStrings
-
-    ! Debug sub-strings pairings
-    close(101)
-
-
-    do i=1, nStrings
-       deallocate(strings(i)%XzipNodeUsed)
-    end do
-
-  end subroutine makeCrossZip
+  !   ! ------------------------------------------------
+
+  !   ! Should the node used be checked to avoid string pairings?
+  !   checkNodeUsed = .True.
+
+  !   ! Allocate arrays to keep track of nodes to avoid same substring pairs for
+  !   ! crossZipping
+  !   do i=1, nstrings
+  !      allocate(strings(i)%XzipNodeUsed(1:strings(i)%nNodes))
+  !      strings(i)%XzipNodeUsed = 0 ! Not used, 1 = used
+  !   end do
+
+  !   ! For debugging sub-strings pairings
+  !   ! ----------------------------------
+  !   open(unit=101, file="subGapStrings.dat", form='formatted')
+  !   write(101,*) 'TITLE = "SubGap Strings Data" '
+  !   write(101,*) 'Variables = "X" "Y" "Z" "Nx" "Ny" "Nz" "Vx" "Vy" "Vz" "ind" &
+  !        "gapID" "gapIndex" "otherID" "otherIndex" "ratio"'
+  !   ! ----------------------------------
+
+  !   iSubstr = 0
+  !   do i=1, nStrings
+
+  !      ! Find total splits
+  !      nSplits = 0
+  !      inode = 1
+  !      do while (inode <= strings(i)%nNodes-1) 
+  !         if ( (strings(i)%otherID(1, inode) /= &
+  !              strings(i)%otherID(1, inode+1)) .and. &
+  !              inode > 1 ) then
+  !            nsplits = nsplits + 1
+  !         end if
+  !         inode = inode + 1
+  !      end do
+
+  !      ifNsplits: if (nsplits == 0) then
+  !         iSpl = 0
+  !         ! No splits found, cross zip with the full other gap string.
+  !         inodeS = 1
+  !         inodeE = strings(i)%nNodes
+
+  !         J = strings(i)%otherID(1, inodeS)
+
+  !         jnodeS = 1
+  !         jnodeE = strings(j)%nNodes
+
+  !         ! If I is periodic J should be periodic too. Fix end nodes of J
+  !         ! strings wrt otherID of inodeS/inodeE
+  !         if (strings(i)%isPeriodic) then
+
+  !            if (.not.strings(j)%isPeriodic) stop ' This is wrong '
+
+  !            ! Find the first symmetric pair with J strings
+  !            jnode = 1
+  !            loopPerJsym: do while (jnode <= strings(j)%nNodes) 
+
+  !               oidJ = strings(j)%otherID(1, jnode) ! string I
+  !               oidxJ = strings(j)%otherID(2, jnode) ! index on string I
+
+  !               if (oidJ /= strings(i)%myID) stop ' Should not be here, string I'
+
+  !               if (strings(i)%otherID(1, oidxJ) /= strings(j)%myID) &
+  !                    stop ' Something is wrong '
+
+  !               if (strings(i)%otherID(2, oidxJ) == jnode) then
+  !                  ! Found symmetric point
+  !                  inodeE = oidxJ
+  !                  jnodeS = jnode
+  !                  exit loopPerJsym
+  !               end if
+  !               jnodep = jnode + 1
+  !               if (jnode == strings(j)%nNodes) then
+  !                  exit loopPerJsym
+  !               end if
+
+  !               jnode = jnodep
+  !            end do loopPerJsym
+  !            if (jnode == strings(j)%nNodes) stop ' One cycle over '
+
+  !            inodeS = inodeE + 1
+  !            if (inodeE == strings(i)%nNodes) inodeS = 1
+  !            jnodeE = jnodeS - 1 
+  !            if (jnodeS == 1) jnodeE = strings(j)%nNodes
+  !         end if
+
+  !         ! Check if the nodes have been used already
+  !         if (checkNodeUsed) then
+  !            inodeStmp = inodeS
+  !            inodeEtmp = inodeE
+  !            if (inodeStmp <= inodeEtmp) then
+
+  !               inodeS = inodeStmp
+  !               inodeE = inodeStmp
+  !               chkinodeE10:do inode=inodeStmp, inodeEtmp
+  !                  if (strings(i)%XzipNodeUsed(inode) == 0) then
+  !                     inodeE = inode
+  !                  else
+  !                     exit chkinodeE10
+  !                  end if
+  !               end do chkinodeE10
+  !               if (inodeE == inodeS) exit ifNsplits
+  !            else ! inodeStmp > inodeEtmp
+  !               inodeS = inodeStmp
+  !               inodeE = inodeStmp
+  !               inode = inodeStmp
+  !               chkinodeE20:do while (inode >= inodeStmp .or. &
+  !                    inode <= inodeEtmp) 
+  !                  if (strings(i)%XzipNodeUsed(inode) == 0) then
+  !                     inodeE = inode
+
+  !                     inodep = inode + 1
+  !                     if (inode == strings(i)%nNodes) inodep = 1
+
+  !                     if (inodep == inodeStmp) then
+  !                        ! Come full cycle around the string
+  !                        exit chkinodeE20
+  !                     end if
+
+  !                     inode = inodep
+  !                  else
+  !                     exit chkinodeE20
+  !                  end if
+  !               end do chkinodeE20
+  !               if (inodeE == inodeS) exit ifNsplits
+  !            end if
+  !         end if !checkNodeUsed
+
+  !         if (jnodeS == jnodeE) exit ifNsplits
+
+  !         print '(A,6(I4,x),A,2(I4,x))',&
+  !              '      I, J, inodeS, inodeE, jnodeS, jnodeE ', &
+  !              I, J, inodeS, inodeE, jnodeS, jnodeE, &
+  !              'SubStr: ',iSubstr+1, iSubStr+2
+
+  !         ! ! Debug sub-strings pairings
+  !         ! iSubStr = iSubStr + 1
+  !         ! call writeOversetSubString(strings(i), inodeS, inodeE, iSubStr, &
+  !         !      strings, nStrings, 101)
+  !         ! iSubStr = iSubStr + 1
+  !         ! call writeOversetSubString(strings(j), jnodeS, jnodeE, iSubStr, &
+  !         !      strings, nStrings, 101)
+
+  !         ! Remember I string nodes used
+  !         if (inodeS <= inodeE) then
+  !            strings(i)%XzipNodeUsed(inodeS:inodeE) = 1
+  !         else ! inodeS > inodeE
+  !            strings(i)%XzipNodeUsed(inodeS:strings(i)%nNodes) = 1
+  !            strings(i)%XzipNodeUsed(1:inodeE) = 1
+  !         end if
+
+  !         ! Remember J string nodes used
+  !         if (jnodeS <= jnodeE) then
+  !            strings(j)%XzipNodeUsed(jnodeS:jnodeE) = 1
+  !         else ! jnodeS > jnodeE
+  !            strings(j)%XzipNodeUsed(jnodeS:strings(j)%nNodes) = 1
+  !            strings(j)%XzipNodeUsed(1:jnodeE) = 1
+  !         end if
+
+  !         if (strings(i)%isPeriodic .and. strings(j)%isPeriodic) then
+  !            ! For both periodic I and J strings, jnodeS <--> inodeE 
+  !            ! are symmetric pairs.
+  !            call crossZip(strings(i), inodeE, inodeE, strings(j), &
+  !                 jnodeS, jnodeS)
+  !         else 
+  !            ! single sided strings, end points on symmetric planes
+  !            call crossZip(strings(i), inodeS, inodeE, strings(j), &
+  !                 jnodeE, jnodeS)
+  !         end if
+
+  !      else ifNsplits
+
+  !         ! Define the node ranges for 
+  !         inodeS = 1
+  !         inode = 1
+  !         iSpl = 0
+
+  !         loopInode: do while (inode <=strings(i)%nNodes-1)
+
+  !            ! Cycle if node has already been used in previous strings pairings
+  !            if (checkNodeUsed .and. strings(i)%XzipNodeUsed(inode)==1) then
+  !               inode = inode + 1
+
+  !               ! Update inodeS 
+  !               inodeS = inode
+
+  !               cycle loopInode 
+  !            end if
+
+  !            splitIf: if ( (strings(i)%otherID(1, inode) /= &
+  !                 strings(i)%otherID(1, inode+1)) .and. &
+  !                 inode > inodeS ) then
+
+  !               inodeE = inode
+  !               ispl = ispl + 1
+
+  !               ! Potential other string
+  !               J = strings(i)%otherID(1, inodeE)
+
+  !               ! If I strings is periodic, change inodeS and inodeE
+  !               ! --------------------------------------------------
+  !               if (strings(i)%isPeriodic) then
+
+  !                  ! Change inodeS:
+  !                  inodetmp = inodeS
+  !                  perInodeS:do 
+  !                     inodem = inodetmp - 1
+  !                     if (inodetmp == 1) inodem = strings(i)%nNodes
+  !                     if (strings(i)%otherID(1, inodetmp) == J .and. &
+  !                          strings(i)%otherID(1, inodem) /= J) then
+
+  !                        inodeS = inodetmp
+  !                        exit perInodeS
+  !                     end if
+  !                     inodetmp = inodem
+  !                     if (inodetmp == inodeS) then
+  !                        ! Retain inodeS if came full circle
+  !                        print*, ' Come full circle inodeS'
+  !                        exit perInodeS
+  !                     end if
+  !                  end do perInodeS
+
+  !                  ! Change inodeE:
+  !                  inodetmp = inodeE
+  !                  perInodeE:do 
+  !                     inodep = inodetmp + 1
+  !                     if (inodetmp == strings(i)%nNodes) inodep = 1
+  !                     if (strings(i)%otherID(1, inodetmp) == J .and. &
+  !                          strings(i)%otherID(1, inodep) /= J) then
+
+  !                        inodeE = inodetmp
+  !                        exit perInodeE
+  !                     end if
+  !                     inodetmp = inodep
+  !                     if (inodetmp == inodeE) then
+  !                        ! Retain inodeE if came full circle
+  !                        print*, ' Come full circle inodeE '
+  !                        exit perInodeE
+  !                     end if
+  !                  end do perInodeE
+
+  !               end if
+  !               ! --- end periodic strings inodeS/inodeE -----------
+
+  !               ! Find symmetric point
+  !               jnode = 1
+  !               loopjsym: do while (jnode <= strings(j)%nNodes)
+
+  !                  oidJ = strings(j)%otherID(1, jnode) ! hopeful strings(i) ID
+  !                  oidxJ = strings(j)%otherID(2, jnode) ! hopeful strings(i) Idx
+
+  !                  !am if (oidJ == strings(i)%myID .and.  &
+  !                  !am     oidxJ >= inodeS .and. oidxJ <= inodeE) then
+  !                  if (oidJ == strings(i)%myID) then
+  !                     if ( (inodeS < inodeE .and. oidxJ >= inodeS .and. &
+  !                          oidxJ <= inodeE) .or. &
+  !                          (inodeS > inodeE .and. (oidxJ >= inodeS .or. &
+  !                          oidxJ <= inodeE)) ) then
+
+  !                        if (strings(i)%otherID(1, oidxJ) == strings(j)%myID .and. &
+  !                             strings(i)%otherID(2, oidxJ) == jnode) then
+  !                           ! Found symmetry point
+  !                           jsym = jnode
+  !                           isym = oidxJ
+  !                           exit loopjsym
+  !                        end if
+  !                     end if
+  !                  end if
+  !                  jnode = jnode + 1 
+  !               end do loopjsym
+
+  !               ! Traverse in +ve jDir to find jnodeE
+  !               jnode = jsym 
+  !               loopJnodeE: do 
+
+  !                  ! Already at the end then exit
+  !                  if ( jnode == strings(j)%nNodes .and. &
+  !                       .not.strings(j)%isPeriodic) then
+  !                     exit loopJnodeE
+  !                  end if
+
+  !                  jp1 = jnode + 1
+  !                  ! Treat different for periodic strings 
+  !                  if (jnode == strings(j)%nNodes .and. strings(j)%isPeriodic) then
+  !                     jp1 = 1
+  !                  end if
+
+  !                  if ( strings(j)%otherID(1, jp1) /= strings(i)%myID) then
+  !                     oidJ = strings(j)%otherID(1, jnode) ! hopeful strings(i) ID
+  !                     oidxJ = strings(j)%otherID(2, jnode) ! strings(i) index
+
+  !                     !am if(strings(i)%isPeriodic) inodeS = oidxJ
+  !                     jnodeE = jnode
+  !                     exit loopJnodeE
+
+  !                  else if (strings(j)%otherID(1, jp1) == strings(i)%myid .and.  &
+  !                       jp1 == strings(j)%nNodes .and. &
+  !                       .not.strings(j)%isPeriodic) then
+  !                     jnodeE = jnode+1
+  !                     exit loopJnodeE
+  !                  end if
+
+  !                  jnode = jp1
+  !                  ! Exit if counter has cycled through all nodes in
+  !                  ! periodic string J
+  !                  if (jnode == jsym) exit loopJnodeE 
+  !               end do loopJnodeE
+
+  !               ! Traverse in -ve jDir to find jnodeE
+  !               jnode = jsym 
+  !               loopJnodeS: do 
+
+  !                  ! Already at the end then exit
+  !                  if ( jnode == 1 .and. &
+  !                       .not.strings(j)%isPeriodic) then
+  !                     jnodeS = jnode
+  !                     exit loopJnodeS
+  !                  end if
+
+  !                  jm1 = jnode - 1
+  !                  ! Treat different for periodic strings 
+  !                  if (jnode == 1 .and. strings(j)%isPeriodic) then
+  !                     jm1 = strings(j)%nNodes
+  !                  end if
+
+  !                  if ( strings(j)%otherID(1, jm1) /= strings(i)%myID) then
+  !                     oidJ = strings(j)%otherID(1, jnode) ! hopeful strings(i) ID
+  !                     oidxJ = strings(j)%otherID(2, jnode) ! strings(i) index
+
+  !                     !am if(strings(i)%isPeriodic) inodeE = oidxJ
+  !                     jnodeS = jnode
+  !                     exit loopJnodeS
+
+  !                  else if (strings(j)%otherID(1, jm1) == strings(i)%myid .and.  &
+  !                       jm1 == 1 .and. &
+  !                       .not.strings(j)%isPeriodic) then
+  !                     jnodeS = jm1
+  !                     exit loopJnodeS
+  !                  end if
+
+  !                  jnode = jm1
+  !                  ! Exit if counter has cycled through all nodes in
+  !                  ! periodic string J
+  !                  if (jnode == jsym) exit loopJnodeS 
+  !               end do loopJnodeS
+
+  !               if (jnodeS == jnodeE) exit ifNsplits
+
+  !               print '(A,6(I4,x),A,2(I4,x))',&
+  !                    '      I, J, inodeS, inodeE, jnodeS, jnodeE ', &
+  !                    I, J, inodeS, inodeE, jnodeS, jnodeE, &
+  !                    'SubStr: ',iSubstr+1, iSubStr+2
+
+  !               ! ! Debug sub-strings pairings
+  !               ! iSubStr = iSubStr + 1
+  !               ! call writeOversetSubString(strings(i), inodeS, inodeE, iSubstr,&
+  !               !      strings, nStrings, 101)
+  !               ! iSubStr = iSubStr + 1
+  !               ! call writeOversetSubString(strings(j), jnodeS, jnodeE, iSubstr,&
+  !               !      strings, nStrings, 101)
+
+  !               ! Remember I string nodes used
+  !               if (inodeS <= inodeE) then
+  !                  strings(i)%XzipNodeUsed(inodeS:inodeE) = 1
+  !               else ! inodeS > inodeE
+  !                  strings(i)%XzipNodeUsed(inodeS:strings(i)%nNodes) = 1
+  !                  strings(i)%XzipNodeUsed(1:inodeE) = 1
+  !               end if
+
+  !               ! Remember J string nodes used
+  !               if (jnodeS <= jnodeE) then
+  !                  strings(j)%XzipNodeUsed(jnodeS:jnodeE) = 1
+  !               else ! jnodeS > jnodeE
+  !                  strings(j)%XzipNodeUsed(jnodeS:strings(j)%nNodes) = 1
+  !                  strings(j)%XzipNodeUsed(1:jnodeE) = 1
+  !               end if
+
+  !               ! Do crossZip
+  !               call crossZip(strings(i), inodeS, inodeE, strings(j), &
+  !                    jnodeE, jnodeS)
+
+  !               inodeS = inodeE + 1
+  !            end if splitIf
+
+  !            inode = inode + 1
+  !         end do loopInode
+
+
+  !         iSpl = iSpl + 1
+
+  !         ! ---------------------------------------------------------
+  !         ! Now do the remaining nodes of string I
+  !         ! ---------------------------------------------------------
+  !         inodeE = strings(i)%nNodes
+
+  !         ! Potential other string
+  !         J = strings(i)%otherID(1, inodeE)
+
+  !         ! If I strings is periodic, change inodeS and inodeE
+  !         ! --------------------------------------------------
+  !         if (strings(i)%isPeriodic) then
+
+  !            ! Change inodeS:
+  !            inodetmp = inodeS
+  !            perInodeS1:do 
+  !               inodem = inodetmp - 1
+  !               if (inodetmp == 1) inodem = strings(i)%nNodes
+  !               if (strings(i)%otherID(1, inodetmp) == J .and. &
+  !                    strings(i)%otherID(1, inodem) /= J) then
+
+  !                  inodeS = inodetmp
+  !                  exit perInodeS1
+  !               end if
+  !               inodetmp = inodem
+  !               if (inodetmp == inodeS) then
+  !                  ! Retain inodeS if came full circle
+  !                  print*, ' Come full circle inodeS'
+  !                  exit perInodeS1
+  !               end if
+  !            end do perInodeS1
+
+  !            ! Change inodeE:
+  !            inodetmp = inodeE
+  !            perInodeE1:do 
+  !               inodep = inodetmp + 1
+  !               if (inodetmp == strings(i)%nNodes) inodep = 1
+  !               if (strings(i)%otherID(1, inodetmp) == J .and. &
+  !                    strings(i)%otherID(1, inodep) /= J) then
+
+  !                  inodeE = inodetmp
+  !                  exit perInodeE1
+  !               end if
+  !               inodetmp = inodep
+  !               if (inodetmp == inodeE) then
+  !                  ! Retain inodeE if came full circle
+  !                  print*, ' Come full circle inodeE '
+  !                  exit perInodeE1
+  !               end if
+  !            end do perInodeE1
+
+  !         end if
+  !         ! --- end periodic strings inodeS/inodeE -----------
+
+
+  !         ! Find symmetric point
+  !         jnode = 1
+  !         loopjsym1: do while (jnode <= strings(j)%nNodes)
+
+  !            oidJ = strings(j)%otherID(1, jnode) ! hopeful strings(i) ID
+  !            oidxJ = strings(j)%otherID(2, jnode) ! hopeful strings(i) Idx
+
+  !            if (oidJ == strings(i)%myID) then
+  !               if ( (inodeS < inodeE .and. oidxJ >= inodeS .and. &
+  !                    oidxJ <= inodeE) .or. &
+  !                    (inodeS > inodeE .and. (oidxJ >= inodeS .or. &
+  !                    oidxJ <= inodeE)) ) then
+
+  !                  if (strings(i)%otherID(1, oidxJ) == strings(j)%myID .and. &
+  !                       strings(i)%otherID(2, oidxJ) == jnode) then
+  !                     ! Found symmetry point
+  !                     jsym = jnode
+  !                     isym = oidxJ
+  !                     exit loopjsym1
+  !                  end if
+  !               end if
+  !            end if
+
+  !            jnode = jnode + 1 
+  !         end do loopjsym1
+
+  !         ! Traverse in +ve jDir to find jnodeE
+  !         jnode = jsym 
+  !         loopJnodeE1: do 
+
+  !            ! Already at the end then exit
+  !            if ( jnode == strings(j)%nNodes .and. &
+  !                 .not.strings(j)%isPeriodic) then
+  !               jnodeE = jnode
+  !               exit loopJnodeE1
+  !            end if
+
+  !            jp1 = jnode + 1
+  !            ! Treat different for periodic strings 
+  !            if (jnode == strings(j)%nNodes .and. strings(j)%isPeriodic) then
+  !               jp1 = 1
+  !            end if
+
+  !            if ( strings(j)%otherID(1, jp1) /= strings(i)%myID) then
+  !               oidJ = strings(j)%otherID(1, jnode) ! hopeful strings(i) ID
+  !               oidxJ = strings(j)%otherID(2, jnode) ! strings(i) index
+
+  !               !am if(strings(i)%isPeriodic) inodeS = oidxJ
+  !               jnodeE = jnode
+  !               exit loopJnodeE1
+
+  !            else if (strings(j)%otherID(1, jp1) == strings(i)%myid .and.  &
+  !                 jp1 == strings(j)%nNodes .and. &
+  !                 .not.strings(j)%isPeriodic) then
+  !               jnodeE = jnode+1
+  !               exit loopJnodeE1
+  !            end if
+
+  !            jnode = jp1
+  !            ! Exit if counter has cycled through all nodes in
+  !            ! periodic string J
+  !            if (jnode == jsym) exit loopJnodeE1
+  !         end do loopJnodeE1
+
+  !         ! Traverse in -ve jDir to find jnodeE
+  !         jnode = jsym 
+  !         loopJnodeS1: do 
+
+  !            ! Already at the end then exit
+  !            if ( jnode == 1 .and. &
+  !                 .not.strings(j)%isPeriodic) then
+  !               jnodeS = jnode
+  !               exit loopJnodeS1
+  !            end if
+
+  !            jm1 = jnode - 1
+  !            ! Treat different for periodic strings 
+  !            if (jnode == 1 .and. strings(j)%isPeriodic) then
+  !               jm1 = strings(j)%nNodes
+  !            end if
+
+  !            if ( strings(j)%otherID(1, jm1) /= strings(i)%myID) then
+  !               oidJ = strings(j)%otherID(1, jnode) ! hopeful strings(i) ID
+  !               oidxJ = strings(j)%otherID(2, jnode) ! strings(i) index
+
+  !               !am if(strings(i)%isPeriodic) inodeE = oidxJ
+  !               jnodeS = jnode
+  !               exit loopJnodeS1
+
+  !            else if (strings(j)%otherID(1, jm1) == strings(i)%myid .and.  &
+  !                 jm1 == 1 .and. &
+  !                 .not.strings(j)%isPeriodic) then
+  !               jnodeS = jm1
+  !               exit loopJnodeS1
+  !            end if
+
+  !            jnode = jm1
+  !            ! Exit if counter has cycled through all nodes in
+  !            ! periodic string J
+  !            if (jnode == jsym) exit loopJnodeS1
+  !         end do loopJnodeS1
+
+
+
+  !         ! Check it has nodes that have not been used already
+  !         if (checkNodeUsed) then
+  !            inodeStmp = inodeS
+  !            inodeEtmp = inodeE
+  !            if (inodeStmp <= inodeEtmp) then
+
+  !               inodeS = inodeStmp
+  !               inodeE = inodeStmp
+  !               chkinodeE1:do inode=inodeStmp, inodeEtmp
+  !                  if (strings(i)%XzipNodeUsed(inode) == 0) then
+  !                     inodeE = inode
+  !                  else
+  !                     exit chkinodeE1
+  !                  end if
+  !               end do chkinodeE1
+  !               if (inodeE == inodeS) exit ifNsplits
+  !            else ! inodeStmp > inodeEtmp
+  !               inodeS = inodeStmp
+  !               inodeE = inodeStmp
+  !               inode = inodeStmp
+  !               chkinodeE2:do while (inode >= inodeStmp .or. &
+  !                    inode <= inodeEtmp) 
+  !                  if (strings(i)%XzipNodeUsed(inode) == 0) then
+  !                     inodeE = inode
+
+  !                     inodep = inode + 1
+  !                     if (inode == strings(i)%nNodes) inodep = 1
+
+  !                     inode = inodep
+  !                  else
+  !                     exit chkinodeE2
+  !                  end if
+  !               end do chkinodeE2
+  !               if (inodeE == inodeS) exit ifNsplits
+  !            end if
+  !         end if !checkNodeUsed
+
+  !         if (jnodeS == jnodeE) exit ifNsplits
+
+  !         print '(A,6(I4,x),A,2(I4,x))',&
+  !              'last: I, J, inodeS, inodeE, jnodeS, jnodeE ', &
+  !              I, J, inodeS, inodeE, jnodeS, jnodeE, &
+  !              'SubStr: ',iSubstr+1, iSubStr+2
+
+  !         ! ! Debug sub-strings pairings
+  !         ! iSubStr = iSubStr + 1
+  !         ! call writeOversetSubString(strings(i), inodeS, inodeE, iSubstr,&
+  !         !      strings, nStrings, 101)
+  !         ! iSubStr = iSubStr + 1
+  !         ! call writeOversetSubString(strings(j), jnodeS, jnodeE, iSubstr,&
+  !         !      strings, nStrings, 101)
+
+  !         ! Remember I string nodes used
+  !         if (inodeS <= inodeE) then
+  !            strings(i)%XzipNodeUsed(inodeS:inodeE) = 1
+  !         else ! inodeS > inodeE
+  !            strings(i)%XzipNodeUsed(inodeS:strings(i)%nNodes) = 1
+  !            strings(i)%XzipNodeUsed(1:inodeE) = 1
+  !         end if
+
+  !         ! Remember J string nodes used
+  !         if (jnodeS <= jnodeE) then
+  !            strings(j)%XzipNodeUsed(jnodeS:jnodeE) = 1
+  !         else ! jnodeS > jnodeE
+  !            strings(j)%XzipNodeUsed(jnodeS:strings(j)%nNodes) = 1
+  !            strings(j)%XzipNodeUsed(1:jnodeE) = 1
+  !         end if
+
+  !         ! Do crossZip
+  !         call crossZip(strings(i), inodeS, inodeE, strings(j), &
+  !              jnodeE, jnodeS)
+
+  !         ! ---------------------------------------------------------
+  !         ! End remaining nodes treatment
+  !         ! ---------------------------------------------------------
+
+  !      end if ifNsplits
+
+  !   end do ! nStrings
+
+  !   ! Debug sub-strings pairings
+  !   close(101)
+
+
+  !   do i=1, nStrings
+  !      deallocate(strings(i)%XzipNodeUsed)
+  !   end do
+
+end subroutine makeCrossZip
 
   subroutine makePocketZip(p, strings, nStrings, pocketMaster)
     use overset
