@@ -262,4 +262,9 @@
          solNames(nn) = cgnsGC
        endif
 
+       if( volWriteStatus) then
+         nn = nn + 1
+         solNames(nn) = cgnsStatus
+       endif
+
        end subroutine volSolNames
