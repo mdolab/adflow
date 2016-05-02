@@ -81,8 +81,8 @@ subroutine initializeOFringes(oFringe, nn)
 
            if (wallsPresent) then 
            
-              dist = norm2(oFringe%x(:, ii) - xSeed(i, j, k, :))
-              frac = dist/clusterMarchDist(oFringe%cluster)
+              ! dist = norm2(oFringe%x(:, ii) - xSeed(i, j, k, :))
+              ! frac = dist/clusterMarchDist(oFringe%cluster)
               frac = one
               oFringe%quality(ii) = frac*vol(i, j, k)**third
            else

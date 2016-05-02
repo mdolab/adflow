@@ -70,8 +70,8 @@ subroutine initializeFringes(nn, level, sps)
                    x(i-1, j  , k  , :) + &
                    x(i  , j  , k  , :))
               
-              dist = norm2(xp - xSeed(i, j, k, :))
-              frac = dist/clusterMarchDist(clusterID)
+              ! dist = norm2(xp - xSeed(i, j, k, :))
+              ! frac = dist/clusterMarchDist(clusterID)
               frac = one
               
               fringes(i, j, k)%quality = frac*vol(i, j, k)**third
