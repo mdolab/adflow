@@ -845,6 +845,7 @@ python module libsumb
          real(kind=realtype) :: nearwalldist
          real(kind=realtype) :: backgroundvolscale
          real(kind=realtype) :: oversetprojtol
+         real(kind=realtype) :: overlapfactor
        end module inputoverset
        
        module inputunsteady ! in :test:inputParam.f90

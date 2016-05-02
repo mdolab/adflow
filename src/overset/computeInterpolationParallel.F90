@@ -273,7 +273,6 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      allocate(sendRequests(nn), recvRequests(nn))
      allocate(recvInfo(2, nn))
 
-
      ! On the first pass we need to get an estimate of what is
      ! inside the body and what isn't. This method isn't
      ! perfect; some cells that are actually inside the true
@@ -784,7 +783,8 @@ subroutine oversetComm(level, firstTime, coarseLevel)
 
               ! This is the acutal implict hole cutting "less than"
               ! operation. 
-              if (quality < fringes(i, j, k)%quality) then 
+              if (quality < overlapFactor*fringes(i, j, k)%origQuality .and. &
+                 quality < fringes(i, j, k)%quality) then 
 
                  ! Only count this a new local fringe if it doesn't
                  ! already have one

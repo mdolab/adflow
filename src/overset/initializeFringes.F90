@@ -142,4 +142,12 @@ subroutine initializeFringes(nn, level, sps)
      end do
   end do
 
+  ! Set the original quality
+  do k=2, kl
+     do j=2, jl
+        do i=2, il
+           fringes(i, j, k)%origQuality = fringes(i, j, k)%quality
+        end do
+     end do
+  end do
 end subroutine initializeFringes

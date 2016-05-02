@@ -201,6 +201,8 @@ module block
     ! DONOR cell. It is initialized to a 'large' value.
     real(kind=realType) :: quality
 
+    real(kind=realType) :: origQuality
+
     ! This is the information regarding where the cell came from. 
     integer(kind=intType) :: myBlock, myI, myJ, myK
 
