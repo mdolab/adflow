@@ -34,6 +34,7 @@ subroutine initializeOFringes(oFringe, nn)
   mm = nx*ny*nz
   allocate(oFringe%x(3, mm))
   allocate(oFringe%quality(mm))
+  allocate(oFringe%origQuality(mm))
   allocate(oFringe%myBlock(mm))
   allocate(oFringe%myIndex(mm))
   allocate(oFringe%donorProc(mm))
@@ -87,6 +88,7 @@ subroutine initializeOFringes(oFringe, nn)
            else
               oFringe%quality(ii) = (backgroundVolScale*vol(i, j, k))**third
            end if
+
            oFringe%myIndex(ii) = ii
            
            oFringe%xSeed(:, ii) = xSeed(i, j, k, :)
@@ -159,6 +161,11 @@ subroutine initializeOFringes(oFringe, nn)
      end do
   end do
 
+  ! Set the original quality. 
+  do ii=1, mm
+     oFringe%origQuality(ii) = oFringe%quality(ii)
+  end do
+
   ! We also need to flag a single layer of cells next a wall
   ! boundary condition as being "isWall". Knowing the fringes
   ! next to walls will be necessary for determine the overap
@@ -207,5 +214,6 @@ subroutine initializeOFringes(oFringe, nn)
 
   ! Flag this set of fringes as being allocated
   oFringe%allocated = .True.
+
 
 end subroutine initializeOFringes

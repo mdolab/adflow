@@ -662,6 +662,7 @@ subroutine deallocateOFringes(oFringes, n)
         deallocate(&
              oFringes(i)%x, &
              oFringes(i)%quality, &
+             oFringes(i)%origQuality, &
              oFringes(i)%myBlock, &
              oFringes(i)%myIndex, &
              oFringes(i)%donorProc, &

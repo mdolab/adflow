@@ -362,7 +362,7 @@ subroutine getOFringeBufferSizes(il, jl, kl, iSize, rSize)
 
   ! Initializeation
   iSize = mm * 3 + 4! We need wallInd, isWall and myIndex plus 4 for the sizes
-  rSize = mm * 7 ! Need to send x, quality and xSeed
+  rSize = mm * 8 ! Need to send x, quality, origQuality and xSeed
 
 end subroutine getOFringeBufferSizes
 
@@ -428,7 +428,8 @@ subroutine packOFringe(oFringe)
      oFringe%rBuffer(ii+6) = oFringe%xSeed(2, i)
      oFringe%rBuffer(ii+7) = oFringe%xSeed(3, i)
 
-     ii = ii + 7
+     oFringe%rBuffer(ii+8) = oFringe%origQuality(i)
+     ii = ii + 8
   end do
 
 end subroutine packOFringe
@@ -459,6 +460,7 @@ subroutine unpackOFringe(oFringe)
   allocate(& 
        oFringe%x(3, mm), &
        oFringe%quality(mm), &
+       oFringe%origQuality(mm), &
        oFringe%myBlock(mm), &
        oFringe%myIndex(mm), &
        oFringe%donorProc(mm), &
@@ -508,7 +510,9 @@ subroutine unpackOFringe(oFringe)
      oFringe%xSeed(2, i) = oFringe%rBuffer(ii+6)
      oFringe%xSeed(3, i) = oFringe%rBuffer(ii+7)
 
-     ii = ii + 7
+     oFringe%origQuality(i) = oFringe%rBuffer(ii+8)
+
+     ii = ii + 8
   end do
 
   ! Flag this oFringe as being allocated:
