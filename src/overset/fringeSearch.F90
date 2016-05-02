@@ -159,7 +159,8 @@ subroutine fringeSearch(oBlock, oFringe)
            ! the 'implicit hole' method where we take the best quality
            ! donor.
            
-           if ( donorQual < oFringe%quality(i)) then 
+           if ( donorQual < overlapFactor*oFringe%origQuality(i) .and. &
+              donorQual < oFringe%quality(i)) then 
               invalid = .False.
               do kkk=0,1
                  do jjj=0,1

@@ -115,6 +115,8 @@ module overset
      ! DONOR cell. It is initialized to large. 
      real(kind=realType), dimension(:), allocatable :: quality
 
+     real(kind=realType), dimension(:), allocatable :: origQuality
+
      ! This is the information regarding where the cell came from. 
      integer(kind=intType), dimension(:), allocatable :: myBlock
      integer(kind=intType), dimension(:), allocatable :: myIndex
