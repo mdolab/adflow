@@ -101,8 +101,8 @@ subroutine initializeOBlock(oBlock, nn, level, sps)
                    x(ii-1, jj  , kk  , :) + &
                    x(ii  , jj  , kk  , :))
 
-              dist = norm2(xp - xSeed(i, j, k, :))
-              frac = dist/clusterMarchDist(oBlock%cluster)
+              ! dist = norm2(xp - xSeed(i, j, k, :))
+              ! frac = dist/clusterMarchDist(oBlock%cluster)
               frac = one
               oBlock%qualDonor(1, mm) = frac*vol(i, j, k)**third 
               

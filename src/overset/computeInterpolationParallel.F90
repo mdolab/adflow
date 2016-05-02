@@ -335,7 +335,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
 
         ! Determine the cells that are near wall. We have a special routine for this. 
         call computeCellWallPoint(level, sps)
-        call determineClusterMarchDist
+        !call determineClusterMarchDist
   
         allocate(clusterWalls(nClusters))
         call buildClusterWalls(level, sps, .True., clusterWalls)
