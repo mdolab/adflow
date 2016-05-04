@@ -1226,7 +1226,8 @@ class SUMB(AeroSolver):
                 
 
     def solveCL(self, aeroProblem, CLStar, alpha0=0,
-                delta=0.5, tol=1e-3, autoReset=True):
+                delta=0.5, tol=1e-3, autoReset=True, CLalpha_guess=None,
+                maxIter = 20):
         """This is a simple secant method search for solving for a
         fixed CL. This really should only be used to determine the
         starting alpha for a lift constraint in an optimization.
@@ -1249,6 +1250,12 @@ class SUMB(AeroSolver):
             think). This will reset the flow after each solve which
             solves this problem. Not necessary (or desired) when using
             the RK solver.
+        CLalpha_guess : float or None
+            The user can provide an estimate for the lift curve slope
+            in order to accelerate convergence. If the user supply a
+            value to this option, it will not use the delta value anymore
+            to select the angle of attack of the second run. The value
+            should be in 1/deg.
 
         Returns
         -------
@@ -1270,14 +1277,31 @@ class SUMB(AeroSolver):
         self.curAP.sumbData.callCounter -= 1
         sol = self.getSolution()
         fnm2 = sol['cl'] - CLStar
-        if fnm2 < 0:
-            anm1 = alpha0 + abs(delta)
-        else:
-            anm1 = alpha0 - abs(delta)
 
+        if CLalpha_guess is None:
+            # Use the delta option to define the next Aoa
+            if fnm2 < 0:
+                anm1 = alpha0 + abs(delta)
+            else:
+                anm1 = alpha0 - abs(delta)
+        else:
+            # Use CLalpha_guess option to define the next Aoa
+            anm1 = alpha0 - fnm2/CLalpha_guess
+
+        # Overwrite the RK options momentarily.
+        # We need to do this to avoid using NK right at the beggining
+        # of the new AoA iteration. When we change the AoA, we only change
+        # the residuals at the boundaries, and the Newton solver will not
+        # allow these residuals to change the rest of the solution.
+        # A few RK iterations allow the total residual to "go uphill",
+        # so that we can converge to a new solution.
         minIterSave = self.getOption('nRKReset')
+        rkresetSave = self.getOption('rkreset')
         self.setOption('nRKReset', 25)
-        for iIter in range(20):
+        self.setOption('rkreset', True)
+
+        # Secant method iterations
+        for iIter in range(maxIter):
             # We need to reset the flow since changing the alpha leads
             # to problems with the NK solver
             if autoReset:
@@ -1310,8 +1334,9 @@ class SUMB(AeroSolver):
             # Se the n-1 alpha value from update
             anm1 = anew
 
-        # Restore the min iter option
+        # Restore the min iter option given by user initially
         self.setOption('nRKReset', minIterSave)
+        self.setOption('rkreset', rkresetSave)
 
     def solveTrimCL(self, aeroProblem, trimFunc, trimDV, dvIndex,
                     CLStar, trimStar=0.0, alpha0=None, trim0=None, da=1e-3,
