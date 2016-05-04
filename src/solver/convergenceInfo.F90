@@ -349,6 +349,13 @@ subroutine convergenceInfo
            if (totalR < L2ConvRel*totalRStart) then 
               relConv = .True. 
            end if
+
+           ! If the totla number of iterations is less than the
+           ! RKReset, don't check the residual
+           if (iterTot < minIterNum .and. rkreset) then 
+              relConv = .False.
+              absConv = .False.
+           end if
         end if
 
         ! Combine the two flags.
