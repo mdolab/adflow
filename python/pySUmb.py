@@ -3622,6 +3622,7 @@ class SUMB(AeroSolver):
             'loadimbalance':[float, 0.1],
             'loadbalanceiter':[int, 10],
             'partitiononly':[bool, False],
+            'partitionlikenproc':[int, -1],
 
             # Misc Paramters
             'autosolveretry':[bool, False],
@@ -3891,6 +3892,7 @@ class SUMB(AeroSolver):
             'blocksplitting':['parallel', 'splitblocks'],
             'loadimbalance':['parallel', 'loadimbalance'],
             'loadbalanceiter':['parallel', 'loadbalanceiter'],
+            'partitionlikenproc':['parallel', 'partitionlikenproc'],
 
             # Misc Paramters
             'printiterations':['iter', 'printiterations'],
