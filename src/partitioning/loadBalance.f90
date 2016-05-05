@@ -53,12 +53,24 @@ subroutine loadBalance
   !
   ! Determine the block distribution over the processors.
 
-  !nProc = 64
-  !do nProc=250,400 !750,1000 !200,400
+
+  if (partitionLikeNProc > nProc) then 
+     nProc = partitionLikenProc
+  end if
 
   call blockDistribution
-  !enddo
-  !call returnFail("loadBalance","Hack for distribution test")
+
+  ! Restore the size of the comm
+  call mpi_Comm_Size(sumb_comm_world, nProc, ierr)
+
+  ! We ned to modify what comes back if we are using the
+  ! partitionLikenProc option:
+  if (partitionLikenProc > nProc) then 
+     do i=1, nBlocks
+        part(i) = mod(part(i), nProc)
+     end do
+  end if
+
   !
   !      ******************************************************************
   !      *                                                                *
