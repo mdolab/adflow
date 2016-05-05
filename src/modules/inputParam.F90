@@ -608,6 +608,7 @@
        real(realType) :: loadImbalance
        logical        :: splitBlocks
        integer(kind=inttype) :: loadBalanceIter
+       integer(kind=inttype) :: partitionlikenproc=0
        end module inputParallel
 
 !      ==================================================================
