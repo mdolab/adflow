@@ -67,7 +67,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
   ! -----------------------------------------------------------------
   ! Step 1: Initializaion: Make sure the stencils are initialized. 
   ! -----------------------------------------------------------------
-
+  print *,'ndom:', ndom
   call initialize_stencils()
 
   ! -----------------------------------------------------------------
@@ -332,13 +332,12 @@ subroutine oversetComm(level, firstTime, coarseLevel)
         ! routine.
         allocate(localWallFringes(1000))
         nLocalWallFringe = 0
-
-        ! Determine the cells that are near wall. We have a special routine for this. 
-        call computeCellWallPoint(level, sps)
-        !call determineClusterMarchDist
   
         allocate(clusterWalls(nClusters))
         call buildClusterWalls(level, sps, .True., clusterWalls)
+
+        ! Determine the cells that are near wall. We have a special routine for this. 
+        call computeCellWallPoint(level, sps, clusterWalls)
 
         ! We need a couple of extra things that buildCluster wall
         ! doesn't do:

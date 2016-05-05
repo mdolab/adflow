@@ -8,6 +8,7 @@ subroutine emptyFringe(fringe)
 
   ! Initialize data in empty fringe
   fringe%quality = large
+  fringe%origQuality = large
   fringe%donorProc = -1
   fringe%donorBlock = -1
   fringe%dI = -1
