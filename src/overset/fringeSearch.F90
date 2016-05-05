@@ -15,7 +15,7 @@ subroutine fringeSearch(oBlock, oFringe)
   integer(kind=intType) :: nInterpol, elemID, nalloc, intInfo(3), intInfo2(3)
   integer(kind=intType) :: i, ii, jj, kk, j, nn
   integer(kind=intTYpe) :: iii, jjj, kkk, n, myind,  nx, ny, nz, myindex
-  logical :: invalid, failed, badProjection
+  logical :: invalid, failed
   real(kind=realType) :: uu, vv, ww, err1, err2
   real(kind=realType) :: uvw(5), uvw2(5), donorQual, xx(4), pt(3), xcheck(3)
   real(kind=realType), dimension(:, :), allocatable :: offset
@@ -63,7 +63,7 @@ subroutine fringeSearch(oBlock, oFringe)
 
         ! Compute the potentailly offset point to search for. 
         xx(1:3) = oFringe%x(:, i) + offset(:, i)
-        badProjection = .False.
+
         call containmentTreeSearchSinglePoint(oBlock%ADT, xx, intInfo, uvw, &
              oBlock%qualDonor, nInterpol, BB, frontLeaves, frontLeavesNew, failed)
 
@@ -85,21 +85,25 @@ subroutine fringeSearch(oBlock, oFringe)
            call minDistanceTreeSearchSinglePoint(oBlock%ADT, xx, intInfo, uvw, &
                 oBlock%qualDonor, nInterpol, BB2, frontLeaves, frontLeavesNew)
 
-           ! This is the best we can do. If you need to debug. Use the
-           ! following code:
+           ! Check this one:
            call fracToWeights2(uvw(1:3), weight)
            xcheck = zero
            do j=1,8
               xcheck = xcheck + weight(j)*oBlock%xADT(:, oBlock%hexaConn(j, intInfo(3)))
            end do
            
-           if (norm2(xcheck - xx(1:3)) > oversetProjTol) then 
-              ! Only report if this fringe is likely to be accepted
-              badProjection = .True.
+           ! Since this is the last line of defence, relax the tolerance a bit
+           if (norm2(xcheck - xx(1:3)) > 100*oversetProjTol) then 
+              ! This fringe has not found a donor
+              intInfo(1) = -1
+           else
+              ! This one has now passed.
+            
+              ! Important! uvw(4) is the distance squared for this search
+              ! *not* the interpolated solution
+              uvw(4) = uvw(5)
            end if
-           ! Important! uvw(4) is the distance squared for this search
-           ! *not* the interpolated solution
-           uvw(4) = uvw(5)
+
         end if
         
         elemFound: if (intInfo(1) >= 0) then 
@@ -161,6 +165,7 @@ subroutine fringeSearch(oBlock, oFringe)
            
            if ( donorQual < overlapFactor*oFringe%origQuality(i) .and. &
               donorQual < oFringe%quality(i)) then 
+
               invalid = .False.
               do kkk=0,1
                  do jjj=0,1
@@ -199,18 +204,7 @@ subroutine fringeSearch(oBlock, oFringe)
                  oFringe%gInd(6, i) = oBlock%globalCell(ii+1, jj  , kk+1)
                  oFringe%gInd(7, i) = oBlock%globalCell(ii  , jj+1, kk+1)
                  oFringe%gInd(8, i) = oBlock%globalCell(ii+1, jj+1, kk+1)
-
-                 ! if (badProjection) then 
-                 !    print *,'------------ Bad Interpolation --------------'
-                 !    do j=1,8
-                 !       print *, oBlock%xADT(:, oBlock%hexaConn(j, intInfo(3)))
-                 !    end do
-                 !    print *,'Pt :', xx(1:3)
-                 !    print *,'chk:', xcheck
-                 !    print *,'uvw:', uvw(1:3)
-                 !    print *,'Error:', norm2(xx(1:3) - xcheck)
-                 ! end if
-                 
+                
               end if
            end if
         end if elemFound

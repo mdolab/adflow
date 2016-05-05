@@ -67,7 +67,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
   ! -----------------------------------------------------------------
   ! Step 1: Initializaion: Make sure the stencils are initialized. 
   ! -----------------------------------------------------------------
-  print *,'ndom:', ndom
+
   call initialize_stencils()
 
   ! -----------------------------------------------------------------
