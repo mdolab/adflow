@@ -162,20 +162,28 @@ module overset
      integer(kind=intType), dimension(:), allocatable :: iBuffer
 
      ! Surface nodes used to build the tree:
-     real(kind=realType), dimension(:, :), pointer :: x
+     real(kind=realType), dimension(:, :), pointer :: x => null()
+
+     ! Only primal mesh cell centers for dual mesh. Only allocated as
+     ! needed. 
+     real(kind=realType), dimension(:, :),  pointer :: xPrimalCen => null()
 
      ! Surface nonal used for determining if point is "underneath" the
      ! surface. 
-     real(kind=realType), dimension(:, :), pointer :: norm
+     real(kind=realType), dimension(:, :), pointer :: norm => null()
 
      ! Local estimate of surface error
-     real(kind=realType), dimension(:), pointer :: delta
+     real(kind=realType), dimension(:), pointer :: delta => null()
 
      ! Connectivity for the surface
-     integer(kind=intType), dimension(:, :), pointer:: conn
+     integer(kind=intType), dimension(:, :), pointer:: conn => null()
 
      ! ind: Global node index for nodes
-     integer(kind=intType), dimension(:), pointer :: ind
+     integer(kind=intType), dimension(:), pointer :: ind => null()
+
+     ! indPrimal: Global node index. Only temporarly used to store
+     ! index for strictly primal cells on dual mesh.
+     integer(kind=intType), dimension(:), pointer :: indPrimal => null()
 
      ! Blanking values for Nodes
      integer(kind=intType), dimension(:), allocatable :: iBlank
