@@ -142,6 +142,47 @@ subroutine initializeFringes(nn, level, sps)
      end do
   end do
 
+  ! Flag the actual halo cells behind an overset outer boundary as holes.
+  do mm=1,nBocos
+
+     select case (BCFaceID(mm))
+     case (iMin)
+        iStart=0; iEnd=1;
+        jStart=BCData(mm)%inBeg+1; jEnd=BCData(mm)%inEnd
+        kStart=BCData(mm)%jnBeg+1; kEnd=BCData(mm)%jnEnd
+     case (iMax)
+        iStart=ie; iEnd=ib;
+        jStart=BCData(mm)%inBeg+1; jEnd=BCData(mm)%inEnd
+        kStart=BCData(mm)%jnBeg+1; kEnd=BCData(mm)%jnEnd
+     case (jMin)
+        iStart=BCData(mm)%inBeg+1; iEnd=BCData(mm)%inEnd
+        jStart=0; jEnd=1;
+        kStart=BCData(mm)%jnBeg+1; kEnd=BCData(mm)%jnEnd
+     case (jMax)
+        iStart=BCData(mm)%inBeg+1; iEnd=BCData(mm)%inEnd
+        jStart=je; jEnd=jb;
+        kStart=BCData(mm)%jnBeg+1; kEnd=BCData(mm)%jnEnd
+     case (kMin)
+        iStart=BCData(mm)%inBeg+1; iEnd=BCData(mm)%inEnd
+        jStart=BCData(mm)%jnBeg+1; jEnd=BCData(mm)%jnEnd
+        kStart=0; kEnd=1;
+     case (kMax)
+        iStart=BCData(mm)%inBeg+1; iEnd=BCData(mm)%inEnd
+        jStart=BCData(mm)%jnBeg+1; jEnd=BCData(mm)%jnEnd
+        kStart=ke; kEnd=kb;
+     end select
+
+     if (BCType(mm) == OversetOuterBound) then
+        do k=kStart, kEnd
+           do j=jStart, jEnd
+              do i=iStart, iEnd
+                 iblank(i,j,k) = 0
+              end do
+           end do
+        end do
+     end if
+  end do
+
   ! Set the original quality
   do k=2, kl
      do j=2, jl

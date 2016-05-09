@@ -993,9 +993,9 @@ subroutine oversetComm(level, firstTime, coarseLevel)
      ! Step 18: Create the zipper mesh. We pass in a few arrays
      ! dealing with wall exchange since there is no need to recompute them. 
      ! -----------------------------------------------------------------
-     ! call createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
-     !      nOwallSend, nOwallRecv, size(oWallSendList, 2), &
-     !      size(oWallRecvList, 2), work, nWork)
+     call createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
+          nOwallSend, nOwallRecv, size(oWallSendList, 2), &
+          size(oWallRecvList, 2), work, nWork)
 
      ! Setup the buffer sizes
      call setBufferSizes(level, sps, .false., .false., .True.)

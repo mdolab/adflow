@@ -285,7 +285,16 @@
                                   correctForK)
                enddo
              endif
-           enddo
+             
+             ! Treat the overset blocks. Since we don't have the logic
+             ! setup here correctly to only update the overset cells,
+             ! just do the whole block, for every block
+             do ll=1, nTimeIntervalsSpectral
+                call setPointers(nn, level, ll)
+                call computeETotBlock(2, il, 2, jl, 2, kl, correctForK)
+             end do
+
+          enddo
 
          enddo domains
 
