@@ -76,6 +76,7 @@ FILES_TO_COMPLEXIFY =	stringOps.F90\
 			wallSearch.F90\
 			initBCDataiBlank.F90\
 			exchangeSurfaceIBlanks.F90\
+			determineZipperWallAssociation.F90\
 			makeBoundaryStrings.F90\
 			writeDualGrid.F90\
 			exchangeStatus.F90\

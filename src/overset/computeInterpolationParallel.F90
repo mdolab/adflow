@@ -1641,6 +1641,198 @@ subroutine writeOversetString(str, strings, n, fileID)
 
 end subroutine writeOversetString
 
+subroutine writeOversetSubString(string, iStart, iEnd, iSubstr, &
+              stringsAll, nStringsAll, fileID)
+
+  use communication
+  use overset
+  implicit none
+
+  integer(kind=intType), intent(in) :: iStart, iEnd, iSubstr, fileID
+  integer(kind=intType), intent(in) :: nStringsAll
+  type(oversetString), intent(inout) :: string
+  type(oversetString), intent(inout), dimension(nStringsAll) :: stringsAll
+
+  integer(kind=intType) :: i, j, tmpNodes, tmpElems, ii, id, index
+  integer(kind=intType), allocatable, dimension(:) :: tmpNodeMap
+  real(kind=realType), dimension(3) :: myPt, otherPT, vec
+  real(kind=realType) :: maxH, dist, ratio
+  type(oversetString) :: tmpString
+  character(80) :: zoneName  
+
+  ! iSubstr = global subString ID of this full 'string'
+
+  ! Copy ID
+  !am tmpString%myID = string%myID
+  tmpString%myID = iSubstr
+ 
+  if (iStart <= iEnd) then
+     if (iStart == iEnd) then
+        print*, ' Error: something wrong iSubstr ', iSubstr
+        stop
+     end if
+     tmpString%nNodes = iEnd - iStart + 1
+  else ! iStart > iEnd
+     tmpString%nNodes = string%nNodes - iStart + 1 + iEnd
+  end if
+
+  tmpString%nElems = tmpString%nNodes - 1
+  ! Treat periodic strings which are fullStrings differently
+  if (string%isPeriodic .and. tmpString%nNodes==string%nNodes) then
+     tmpString%nNodes = string%nNodes
+     tmpString%nElems = string%nElems
+  end if
+
+  tmpNodes = tmpString%nNodes
+  tmpElems = tmpString%nElems
+
+  ! Allocate temporary arrays to be copied from this full 'string'
+  allocate(tmpString%x(3, tmpNodes), tmpstring%norm(3, tmpNodes), &
+           tmpString%otherID(2, tmpNodes), tmpString%h(tmpNodes),&
+           tmpString%ind(tmpNodes), tmpString%conn(2, tmpElems))
+  allocate(tmpNodeMap(tmpNodes))
+
+  ! Copy Node data
+  if (iStart <= iEnd) then
+     ii = 0
+     do i=iStart, iEnd
+        ii = ii + 1
+        tmpString%x(:, ii)         = string%x(:, i)
+        tmpString%norm(:, ii)      = string%norm(:, i)
+        tmpString%otherID(1:2, ii) = string%otherID(1:2, i)
+        tmpString%ind(ii)          = string%ind(i)
+        tmpString%h(ii)            = string%h(i)
+        tmpNodeMap(ii)             = i
+     end do
+  else ! iStart > iEnd
+     ii = 0
+     do i=iStart, string%nNodes
+        ii = ii + 1
+        tmpString%x(:, ii)         = string%x(:, i)
+        tmpString%norm(:, ii)      = string%norm(:, i)
+        tmpString%otherID(1:2, ii) = string%otherID(1:2, i)
+        tmpString%ind(ii)          = string%ind(i)
+        tmpString%h(ii)            = string%h(i)
+        tmpNodeMap(ii)             = i
+     end do
+     do i=1, iEnd
+        ii = ii + 1
+        tmpString%x(:, ii)         = string%x(:, i)
+        tmpString%norm(:, ii)      = string%norm(:, i)
+        tmpString%otherID(1:2, ii) = string%otherID(1:2, i)
+        tmpString%ind(ii)          = string%ind(i)
+        tmpString%h(ii)            = string%h(i)
+        tmpNodeMap(ii)             = i
+     end do
+  end if
+
+  ! Create conn data from nodes since they are in arranged continguously
+  do ii=1, tmpString%nElems
+     tmpString%conn(1, ii) = ii
+     tmpString%conn(2, ii) = ii + 1
+  end do
+  ! Treat periodic fullString differently
+  if (string%isPeriodic .and. tmpString%nNodes==string%nNodes) then
+     tmpString%conn(2, tmpString%nElems) = 1
+  end if
+
+
+  write (zoneName,"(a,I4.4)") "Zone T=gap_", iSubstr
+  write (fileID, *) trim(zoneName)
+  
+  write (fileID,*) "Nodes = ", tmpString%nNodes, " Elements= ", tmpString%nElems, " ZONETYPE=FELINESEG"
+  write (fileID,*) "DATAPACKING=BLOCK"
+13 format (E20.12)
+  
+  ! Nodes
+  do j=1,3
+     do i=1, tmpString%nNodes
+        write(fileID,13) tmpString%x(j, i)
+     end do
+  end do
+
+  ! Node normal
+  do j=1,3
+     do i=1, tmpString%nNodes
+        write(fileID,13) tmpString%norm(j, i)
+     end do
+  end do
+  
+  ! Vector between closest points
+  do j=1,3
+     do i=1, tmpString%nNodes
+        myPt = tmpString%x(:, i)
+        id = tmpString%otherID(1, i)
+        if (id /= -1) then 
+           index = tmpString%otherID(2, i)
+           otherPt = stringsAll(id)%x(:, index)
+           vec = otherPt - myPt
+        else
+           vec = zero
+        end if
+
+        write(fileID,13) vec(j)
+     end do
+  end do
+
+  ! global node ID
+  do i=1, tmpString%nNodes
+     write(fileID,13) real(tmpString%ind(i))
+  end do
+
+  ! gapID
+  do i=1, tmpString%nNodes
+     write(fileID,13) real(tmpString%myID)
+  end do
+
+  ! gap Index
+  do i=1, tmpString%nNodes
+     write(fileID,13) real(tmpnodeMap(i))
+  end do
+
+  if (associated(tmpString%otherID)) then 
+     ! otherID
+     do i=1, tmpString%nNodes
+        write(fileID,13) real(tmpString%otherID(1, i))
+     end do
+
+     ! other Index
+     do i=1, tmpString%nNodes
+        write(fileID,13) real(tmpString%otherID(2, i))
+     end do
+  else
+     do i=1, 2*tmpString%nNodes
+        write(fileID,13) zero
+     end do
+  end if
+
+  do i=1, tmpString%nNodes
+     myPt = tmpString%x(:, i)
+     id = tmpString%otherID(1, i)
+     if (id /= -1) then 
+        index = tmpString%otherID(2, i)
+        otherPt = stringsAll(id)%x(:, index)
+        dist = norm2(myPt - otherPt)
+        maxH = max(tmpString%h(i), stringsAll(id)%h(index))
+        ratio = dist/maxH
+     else
+        ratio = zero
+     end if
+
+     write(fileID,13) ratio
+  end do
+
+15 format(I5, I5)
+  do i=1, tmpString%nElems
+     write(fileID, 15) tmpString%conn(1, i), tmpString%conn(2, i)
+  end do
+
+  deallocate(tmpString%x, tmpstring%norm, &
+             tmpString%otherID, tmpString%h, &
+             tmpString%ind, tmpString%conn)
+  deallocate(tmpNodeMap)
+  
+end subroutine writeOversetSubString
 
 
 subroutine writeOversetTriangles(string, fileName)
