@@ -34,6 +34,7 @@ subroutine buildClusterWalls(level, sps, useDual, walls)
   real(kind=realType), dimension(:, :), allocatable :: nodesLocal
   real(kind=realType), dimension(:,:,:), pointer :: xx, xx1, xx2, xx3, xx4
   integer(kind=intType), dimension(:,:), pointer :: ind
+  integer(kind=intType), dimension(:,:), pointer :: indCell
   logical :: regularOrdering
 
   ! Data for global surface
@@ -41,12 +42,14 @@ subroutine buildClusterWalls(level, sps, useDual, walls)
   integer(kind=intType), dimension(:, :), allocatable, target :: connGlobal
   real(kind=realType), dimension(:, :), allocatable, target :: nodesGlobal
   integer(kind=intType), dimension(:), allocatable, target :: nodeIndicesGlobal
+  integer(kind=intType), dimension(:), allocatable, target :: cellIndicesGlobal
 
   integer(kind=intType), dimension(:), allocatable :: nodesPerCluster, cellsPerCluster, cnc, ccc
   integer(kind=intType), dimension(:), allocatable :: clusterNodeGlobal
   integer(kind=intType), dimension(:), allocatable :: clusterCellGlobal
   integer(kind=intType), dimension(:), allocatable :: localNodeNums
   integer(kind=intType), dimension(:), allocatable :: nodeIndicesLocal
+  integer(kind=intType), dimension(:), allocatable :: cellIndicesLocal
 
   integer(kind=intType), dimension(:),    allocatable :: nCellProc, cumCellProc
   integer(kind=intType), dimension(:),    allocatable :: nNodeProc, cumNodeProc
@@ -122,6 +125,7 @@ subroutine buildClusterWalls(level, sps, useDual, walls)
   allocate(nodesLocal(3, nNodesLocal), connLocal(4, nCellsLocal), &
        clusterCellLocal(nCellsLocal), clusterNodeLocal(NNodesLocal), &
        nodeIndicesLocal(nNodesLocal))
+  allocate(cellIndicesLocal(nCellsLocal))
 
   iCell = 0
   iNode = 0
@@ -189,27 +193,45 @@ subroutine buildClusterWalls(level, sps, useDual, walls)
               case (iMin)
                  xx   => x(1,:,:,:)
                  ind  => globalNode(1, :, :)
+
+                 ! Pointer to owned global cell indices
+                 indCell => globalCell(2, :, :)
                 
               case (iMax)
                  xx   => x(il,:,:,:)
                  ind  => globalNode(il, :, :)
                  
+                 ! Pointer to owned global cell indices
+                 indCell => globalCell(il, :, :)
+
               case (jMin)
                  xx   => x(:,1,:,:)
                  ind  => globalNode(:, 1, :)
                  
+                 ! Pointer to owned global cell indices
+                 indCell => globalCell(:, 2, :)
+                
               case (jMax)
                  xx   => x(:,jl,:,:)
                  ind  => globalNode(:, jl, :)
               
+                 ! Pointer to owned global cell indices
+                 indCell => globalCell(:, jl, :)
+
               case (kMin)
                  xx   => x(:,:,1,:)
                  ind  => globalNode(:, :, 1)
                  
+                 ! Pointer to owned global cell indices
+                 indCell => globalCell(:, :, 2)
+                
               case (kMax)
                  xx   => x(:,:,kl,:)
                  ind  => globalNode(:, :, kl)
                  
+                 ! Pointer to owned global cell indices
+                 indCell => globalCell(:, :, kl)
+                
               end select
               
               ! Just set hte 4 other pointers to xx so we can use the
@@ -273,6 +295,14 @@ subroutine buildClusterWalls(level, sps, useDual, walls)
                     connLocal(4, iCell) = cumNodeProc(myid) + iNode + (j)*ni + i
                     ! Set the cluster
                     clusterCellLocal(iCell) = c
+        
+                    ! Save the global cell index
+                    if (useDual) then
+                       cellIndicesLocal(iCell) = 0
+                    else
+                       ! Valid only when using primary nodes
+                       cellIndicesLocal(iCell) = indCell(iBeg+i+1, jBeg+j+1)
+                    end if
                  end do
               end do
            else
@@ -287,6 +317,14 @@ subroutine buildClusterWalls(level, sps, useDual, walls)
 
                     ! Set the cluster
                     clusterCellLocal(iCell) = c
+
+                    ! Save the global cell index
+                    if (useDual) then
+                       cellIndicesLocal(iCell) = 0
+                    else
+                       ! Valid only when using primary nodes
+                       cellIndicesLocal(iCell) = indCell(iBeg+i+1, jBeg+j+1)
+                    end if
                  end do
               end do
            end if
@@ -312,6 +350,7 @@ subroutine buildClusterWalls(level, sps, useDual, walls)
   allocate(nodesGlobal(3, nNodesGlobal), connGlobal(4, nCellsGlobal), &
        clusterCellGlobal(nCellsGlobal), clusterNodeGlobal(nNodesGlobal), &
        nodeIndicesGlobal(nNodesGlobal))
+  allocate(cellIndicesGlobal(nCellsGlobal))
          
   ! Communicate the nodes, connectivity and cluster information to everyone
   call mpi_allgatherv(nodesLocal, 3*nNodesLocal, sumb_real, & 
@@ -339,9 +378,15 @@ subroutine buildClusterWalls(level, sps, useDual, walls)
        sumb_comm_world, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
+  call mpi_allgatherv(cellIndicesLocal, nCellsLocal, sumb_integer, &
+       cellIndicesGlobal, nCellProc, cumCellProc, sumb_integer, &
+       sumb_comm_world, ierr)
+  call EChk(ierr, __FILE__, __LINE__)
+
   ! Free the local data we do not need anymore
   deallocate(nodesLocal, connLocal, clusterCellLocal, clusterNodeLocal, &
        nCellProc, cumCellProc, nNodeProc, cumNodeProc, nodeIndicesLocal)
+  deallocate(cellIndicesLocal)
 
   ! We will now build separate trees for each cluster. 
   allocate(nodesPerCluster(nClusters), cellsPerCluster(nClusters), &
@@ -370,6 +415,7 @@ subroutine buildClusterWalls(level, sps, useDual, walls)
 
      allocate(walls(i)%x(3, nNodes), walls(i)%conn(4, nCells), &
           walls(i)%ind(nNodes))
+     allocate(walls(i)%indCell(nCells))
   end do
 
   ! We now loop through the master list of nodes and elements and
@@ -392,6 +438,8 @@ subroutine buildClusterWalls(level, sps, useDual, walls)
      c = clusterCellGlobal(i)
      ccc(c) = ccc(c) + 1 ! "Cluster cell count" the 'nth' cell for this cluster
      walls(c)%conn(:, ccc(c)) = connGlobal(:, i)
+     
+     walls(c)%indCell(ccc(c)) = cellIndicesGlobal(i)
   end do
 
   do i=1, nClusters

@@ -185,6 +185,9 @@ module overset
      ! index for strictly primal cells on dual mesh.
      integer(kind=intType), dimension(:), pointer :: indPrimal => null()
 
+     ! indCell: Global cell index for wall cells
+     integer(kind=intType), dimension(:), pointer :: indCell
+
      ! Blanking values for Nodes
      integer(kind=intType), dimension(:), allocatable :: iBlank
      integer(kind=intType), dimension(:), allocatable :: cellPtr
@@ -310,6 +313,10 @@ module overset
 
      ! Number of trianges
      integer(kind=intType) :: nTris
+     ! surfCellID(1:nTris)
+     ! Global cellID of the primal cell containing the triangle centroid
+     integer(kind=intType), dimension(:), pointer :: surfCellID
+     
      
   end type oversetString
 
@@ -376,6 +383,7 @@ module overset
   Vec globalViscousTractions
   Vec zipperPressureTractions
   Vec zipperViscousTractions
+  PetscViewer viewer
 
 
   contains
