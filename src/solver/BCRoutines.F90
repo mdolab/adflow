@@ -2653,7 +2653,8 @@ contains
        gamma1 => gamma(1:, je, 1:)
        gamma0 => gamma(1:, jb, 1:)
 
-       gcp => globalCell(:, jl, :)
+       !am gcp => globalCell(:, jl, :)
+       gcp => globalCell(1:, jl, 1:)
        !===============================================================
 
     case (kMin)
@@ -2713,7 +2714,8 @@ contains
        gamma1 => gamma(1:, 1:, ke)
        gamma0 => gamma(1:, 1:, kb)
 
-       gcp => globalCell(1:, 1:, 2)
+       !am gcp => globalCell(1:, 1:, 2)
+       gcp => globalCell(1:, 1:, kl)
     end select
 
     if (spatialPointers) then 

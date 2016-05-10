@@ -1,5 +1,6 @@
 subroutine makeGapBoundaryStrings(level, sps)
 
+  use adtAPI
   use blockPointers
   use bctypes
   use communication
@@ -51,6 +52,12 @@ subroutine makeGapBoundaryStrings(level, sps)
   integer(kind=intType), dimension(:), allocatable :: nodeIndices, cellIndices
   integer status(MPI_STATUS_SIZE) 
   integer :: nSelfZipTris
+
+  ! Wall search related
+  integer(kind=intType) :: ncells
+  type(oversetWall), dimension(:), allocatable, target :: walls
+  type(oversetWall),  target :: fullWall
+  character(80) :: fileName
 
   ! Loop over the wall faces counting up the edges that stradle a
   ! compute cell and a blanked (or interpolated) cell. 
@@ -464,6 +471,85 @@ subroutine makeGapBoundaryStrings(level, sps)
      call deallocateString(localStrings(c))
   end do
   deallocate(localStrings)
+
+  ! Before we perform serial code implementations, surface wall info 
+  ! need to be communicated to root proc (zero) too. This will be used 
+  ! later to identify zipper triangle containment search for identifying
+  ! quad surface cell info for force integration. Search will be
+  ! performed on dual surface cells.
+
+  ! ---------- Begin wall data accumulation -------------
+  allocate(walls(nClusters))
+  ! Build primal quad walls ADT
+  call buildClusterWalls(level, sps, .False., walls)
+
+  ! Finally build up a "full wall" that is made up of all the cluster
+  ! walls. 
+
+  nNodes = 0
+  nCells = 0
+  do i=1, nClusters
+     nNodes = nNodes+ walls(i)%nNodes
+     nCells = nCells + walls(i)%nCells
+  end do
+
+  allocate(fullWall%x(3, nNodes))
+  allocate(fullWall%conn(4, nCells))
+  allocate(fullWall%ind(nNodes))
+  allocate(fullWall%indCell(nCells))
+
+  nNodes = 0
+  nCells = 0
+  ii = 0
+  do i=1, nClusters
+
+     ! Add in the nodes/elements from this cluster
+
+     do j=1, walls(i)%nNodes
+        nNodes = nNodes + 1
+        fullWall%x(:, nNodes) = walls(i)%x(:, j)
+        fullWall%ind(nNodes) = walls(i)%ind(j)
+     end do
+
+     do j=1, walls(i)%nCells
+        nCells = nCells + 1
+        fullWall%conn(:, nCells) = walls(i)%conn(:, j) + ii
+        fullWall%indCell(nCells) = walls(i)%indCell(j)
+     end do
+
+     ! Increment the node offset
+     ii = ii + walls(i)%nNodes
+  end do
+
+  ! Finish the setup of the full wall.
+  fullWall%nCells = nCells
+  fullWall%nNodes = nNodes
+  call buildSerialQuad(nCells, nNodes, fullWall%x, fullWall%conn, fullWall%ADT)
+
+  ! Now all the procs have fullWall info. 
+  ! Note: this is overkill, since only proc 0 needs them for zipper 
+  !       triangle containment search.
+
+  !! Debug fullWalls
+  !! ----------------------
+  !write (fileName,"(a,I2.2,a)") "fullwall_", myid, ".dat"
+  !open(unit=101,file=trim(fileName),form='formatted')
+  !write(101,*) 'TITLE = "mywalls"'
+  !write(101,*) 'Variables = "X", "Y", "Z"'
+  !write(101,*) "Zone T=fullwall"
+  !write (101,*) "Nodes = ", fullWall%nNodes, " Elements= ", fullWall%nCells, " ZONETYPE=FEQUADRILATERAL"
+  !write(101, *) "DATAPACKING=POINT"
+  !do i=1, fullWall%nNodes
+  !   write(101, '(3(E20.12,x))')fullWall%x(1:3,i)
+  !end do
+  !do i=1, fullWall%nCells
+  !   write(101, '(4(I5,x))') fullWall%conn(1:4, i)
+  !end do
+  !close(101)
+  !! ----------------------
+  
+
+  ! ---------- End wall data accumulation in root proc -------------
   
   ! =================================================================
   !                   Serial code from here on out
@@ -860,8 +946,7 @@ subroutine makeGapBoundaryStrings(level, sps)
 
      print *,'search time:', mpi_wtime()-timea
 
-
-       ! ---------------------------------------------------------------
+     ! ---------------------------------------------------------------
      ! Xzip 2: Call the actual Xzip by providing all gap strings data.
      ! ---------------------------------------------------------------
      call makeCrossZip(master, strings, nFullStrings)
@@ -889,8 +974,20 @@ subroutine makeGapBoundaryStrings(level, sps)
      call makePocketZip(master, strings, nFullStrings, pocketMaster)
 
 
+     ! -------------------------------------------------------------
+     ! Perform comm data preparation for force integration on zipper
+     ! triangles. Do containment search for zipper triangle
+     ! containement in primal wall quad cells. Here 'surfCellID'
+     ! store the indices of the global cells containing zipper
+     ! triangle's cell center.
+     ! (Look at ../wallDistance/determineWallAssociation.F90).
+
+     call determineZipperWallAssociation(master, pocketMaster, fullWall)
+     ! -------------------------------------------------------------
+
      ! (3 nodes per triangle and 3 DOF per ndoe)
      allocate(nodeIndices(3*3*(master%ntris + pocketMaster%ntris)))
+     print*,'Triangles: (master,pocket,total) ',master%nTris, pocketMaster%nTris, master%nTris+pocketMaster%nTris
      
      ii = 0
      do i=1, master%nTris
@@ -915,29 +1012,51 @@ subroutine makeGapBoundaryStrings(level, sps)
         ii = ii + 1
      end do
 
+     ! Save indices of the primal quad cells containing cell center
+     ! of each zipper triangle. Comes from containment search 
+     ! routine. surfCellID are global cell IDs of real primal cells.
+
      ! Now the indices of the "global traction vector"
-     allocate(cellIndices(3*4*(master%nTris + pocketMaster%nTris)))
+     allocate(cellIndices(3*(master%nTris + pocketMaster%nTris)))
 
      ii = 0
      do i=1, master%nTris
-        do j=1, 4 ! Quad Loop
-           do k=1, 3 ! DOF Loop 
-              ! Zero-based ordering for petsc
-              cellIndices(12*ii+(j-1)*3 + k) = 0 ! NEED TO DETERMINE THESE!
-           end do
+        do k=1, 3 ! DOF Loop 
+           ! Zero-based ordering for petsc
+           cellIndices(3*ii + k) = 3*master%surfCellID(i) + k-1 
         end do
         ii = ii + 1
      end do
 
      do i=1, pocketMaster%nTris
-        do j=1, 4 ! Quad loop
-           do k=1, 3 ! DOF Loop 
-              ! Zero-based ordering for petsc
-              cellIndices(12*ii+(j-1)*3 + k) = 0 ! NEED TO DETERMINE THESE!!!
-           end do
+        do k=1, 3 ! DOF Loop 
+           ! Zero-based ordering for petsc
+           cellIndices(3*ii + k) = 3*pocketMaster%surfCellID(i) + k-1 
         end do
         ii = ii + 1
      end do
+     !allocate(cellIndices(3*4*(master%nTris + pocketMaster%nTris)))
+
+     !ii = 0
+     !do i=1, master%nTris
+     !   do j=1, 4 ! Quad Loop
+     !      do k=1, 3 ! DOF Loop 
+     !         ! Zero-based ordering for petsc
+     !         cellIndices(12*ii+(j-1)*3 + k) = 0 ! NEED TO DETERMINE THESE!
+     !      end do
+     !   end do
+     !   ii = ii + 1
+     !end do
+
+     !do i=1, pocketMaster%nTris
+     !   do j=1, 4 ! Quad loop
+     !      do k=1, 3 ! DOF Loop 
+     !         ! Zero-based ordering for petsc
+     !         cellIndices(12*ii+(j-1)*3 + k) = 0 ! NEED TO DETERMINE THESE!!!
+     !      end do
+     !   end do
+     !   ii = ii + 1
+     !end do
   else
 
      ! Other procs don't get any triangles :-(
@@ -945,13 +1064,25 @@ subroutine makeGapBoundaryStrings(level, sps)
      allocate(cellIndices(0))
      
   end if
+  
+  ! Do not need walls and fullWall, deallocate them.
+  ! ------------------------------------------------
+  do i=1, nClusters
+     deallocate(walls(i)%x, walls(i)%conn, walls(i)%ind)
+     call destroySerialQuad(walls(i)%ADT)
+  end do
+  deallocate(walls)
+
+  deallocate(fullWall%x, fullWall%conn, fullWall%ind)
+  call destroySerialQuad(fullWall%ADT)
+  ! ------------------------------------------------
 
   ! This is the vector we will scatter the nodes into. 
   call VecCreateMPI(SUMB_COMM_WORLD, size(nodeIndices), PETSC_DETERMINE, &
        zipperNodes, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  call VecCreateMPI(SUMB_COMM_WORLD, nNodesLocal(1), PETSC_DETERMINE, &
+  call VecCreateMPI(SUMB_COMM_WORLD, 3*nNodesLocal(1), PETSC_DETERMINE, &
        globalNodes, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
@@ -959,7 +1090,7 @@ subroutine makeGapBoundaryStrings(level, sps)
        nodeIndices, PETSC_COPY_VALUES, IS1, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  call  VecScatterCreate(globalNodes, IS1, zipperNodes, PETSC_NULL_OBJECT, &
+  call VecScatterCreate(globalNodes, IS1, zipperNodes, PETSC_NULL_OBJECT, &
        nodeZipperScatter, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
@@ -969,7 +1100,7 @@ subroutine makeGapBoundaryStrings(level, sps)
   ! For the tractions we need to create the global vector as well as
   ! the local one
 
-  call VecCreateMPI(SUMB_COMM_WORLD, 3*nNodesLocal(1), PETSC_DETERMINE, &
+  call VecCreateMPI(SUMB_COMM_WORLD, 3*nCellsLocal(1), PETSC_DETERMINE, &
        globalPressureTractions, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
@@ -993,10 +1124,17 @@ subroutine makeGapBoundaryStrings(level, sps)
        cellIndices, PETSC_COPY_VALUES, IS1, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
-  call  VecScatterCreate(globalPressureTractions, IS1, zipperPressureTractions,& 
+  call VecScatterCreate(globalPressureTractions, IS1, zipperPressureTractions,& 
        PETSC_NULL_OBJECT, tractionZipperScatter, ierr)
   call EChk(ierr,__FILE__,__LINE__)
   
+  !! Test output
+  !! --------------
+  !call PetscViewerASCIIOpen(sumb_comm_world,'indices.dat',viewer,ierr)
+  !call ISView(IS1, viewer, ierr)
+  !call PetscViewerDestroy(viewer,ierr)
+  !! --------------
+
   call ISDestroy(IS1, ierr)
   call EChk(ierr,__FILE__,__LINE__)
  
