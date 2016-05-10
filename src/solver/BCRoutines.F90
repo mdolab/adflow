@@ -2653,7 +2653,6 @@ contains
        gamma1 => gamma(1:, je, 1:)
        gamma0 => gamma(1:, jb, 1:)
 
-       !am gcp => globalCell(:, jl, :)
        gcp => globalCell(1:, jl, 1:)
        !===============================================================
 
@@ -2714,7 +2713,6 @@ contains
        gamma1 => gamma(1:, 1:, ke)
        gamma0 => gamma(1:, 1:, kb)
 
-       !am gcp => globalCell(1:, 1:, 2)
        gcp => globalCell(1:, 1:, kl)
     end select
 

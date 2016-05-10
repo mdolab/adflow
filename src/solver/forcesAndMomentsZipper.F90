@@ -163,7 +163,6 @@ subroutine forcesAndMomentsZipper(cFp, cFv, cMp, cMv)
 
         ! Compute cell center
         xc(:) = third*(x1 + x2 + x3) - refPoint(:)
-        !write(4000,'(I5,x,9(E20.12,x))') i, pres(:), vis(:), xc(:)
         
         ! Add to Fp and Fv
         Fp = Fp + pres * norm2(ss)
