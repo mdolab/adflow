@@ -1035,28 +1035,6 @@ subroutine makeGapBoundaryStrings(level, sps)
         end do
         ii = ii + 1
      end do
-     !allocate(cellIndices(3*4*(master%nTris + pocketMaster%nTris)))
-
-     !ii = 0
-     !do i=1, master%nTris
-     !   do j=1, 4 ! Quad Loop
-     !      do k=1, 3 ! DOF Loop 
-     !         ! Zero-based ordering for petsc
-     !         cellIndices(12*ii+(j-1)*3 + k) = 0 ! NEED TO DETERMINE THESE!
-     !      end do
-     !   end do
-     !   ii = ii + 1
-     !end do
-
-     !do i=1, pocketMaster%nTris
-     !   do j=1, 4 ! Quad loop
-     !      do k=1, 3 ! DOF Loop 
-     !         ! Zero-based ordering for petsc
-     !         cellIndices(12*ii+(j-1)*3 + k) = 0 ! NEED TO DETERMINE THESE!!!
-     !      end do
-     !   end do
-     !   ii = ii + 1
-     !end do
   else
 
      ! Other procs don't get any triangles :-(

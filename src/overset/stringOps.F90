@@ -921,8 +921,6 @@ contains
        ! ---------------------------------------------------------------
 
        ! Triangle ABA+. Original implemnetation
-       !am sum1 = vecAngle(ptA-ptAp, ptB-ptAp) + vecAngle(ptBp-ptB, ptAp-ptB) 
-       !am sum2 = vecAngle(ptB-ptBp, ptA-ptBp) + vecAngle(ptAp-ptB, ptBp-ptB)
        sum1 = abs(vecAngle(ptA-ptAp, ptB-ptAp)) + abs(vecAngle(ptBp-ptB, ptAp-ptB)) 
        sum2 = abs(vecAngle(ptA-ptBp, ptB-ptBp)) + abs(vecAngle(ptBp-ptA, ptAp-ptA))
 
@@ -1352,7 +1350,6 @@ contains
                       exit chkinodeE10
                    end if
                 end do chkinodeE10
-                !am if (inodeE == inodeS) exit ifNsplits
                 if (inodeE == inodeS) cycle loopStrings
              else ! inodeStmp > inodeEtmp
                 inodeS = inodeStmp
@@ -1376,12 +1373,10 @@ contains
                       exit chkinodeE20
                    end if
                 end do chkinodeE20
-                !am if (inodeE == inodeS) exit ifNsplits
                 if (inodeE == inodeS) cycle loopStrings
              end if
           end if !checkNodeUsed
 
-          !am if (jnodeS == jnodeE) exit ifNsplits
           if (jnodeS == jnodeE) cycle loopStrings
 
           print '(A,6(I4,x),A,2(I4,x))',&
@@ -1510,8 +1505,6 @@ contains
                    oidJ = strings(j)%otherID(1, jnode) ! hopeful strings(i) ID
                    oidxJ = strings(j)%otherID(2, jnode) ! hopeful strings(i) Idx
 
-                   !am if (oidJ == strings(i)%myID .and.  &
-                   !am     oidxJ >= inodeS .and. oidxJ <= inodeE) then
                    if (oidJ == strings(i)%myID) then
                       if ( (inodeS < inodeE .and. oidxJ >= inodeS .and. &
                            oidxJ <= inodeE) .or. &
@@ -1550,7 +1543,6 @@ contains
                       oidJ = strings(j)%otherID(1, jnode) ! hopeful strings(i) ID
                       oidxJ = strings(j)%otherID(2, jnode) ! strings(i) index
 
-                      !am if(strings(i)%isPeriodic) inodeS = oidxJ
                       jnodeE = jnode
                       exit loopJnodeE
 
@@ -1588,7 +1580,6 @@ contains
                       oidJ = strings(j)%otherID(1, jnode) ! hopeful strings(i) ID
                       oidxJ = strings(j)%otherID(2, jnode) ! strings(i) index
 
-                      !am if(strings(i)%isPeriodic) inodeE = oidxJ
                       jnodeS = jnode
                       exit loopJnodeS
 
@@ -1605,7 +1596,6 @@ contains
                    if (jnode == jsym) exit loopJnodeS 
                 end do loopJnodeS
 
-                !am if (jnodeS == jnodeE) exit ifNsplits
                 if (jnodeS == jnodeE) cycle loopStrings
 
                 print '(A,6(I4,x),A,2(I4,x))',&
@@ -1756,7 +1746,6 @@ contains
                 oidJ = strings(j)%otherID(1, jnode) ! hopeful strings(i) ID
                 oidxJ = strings(j)%otherID(2, jnode) ! strings(i) index
 
-                !am if(strings(i)%isPeriodic) inodeS = oidxJ
                 jnodeE = jnode
                 exit loopJnodeE1
 
@@ -1794,7 +1783,6 @@ contains
                 oidJ = strings(j)%otherID(1, jnode) ! hopeful strings(i) ID
                 oidxJ = strings(j)%otherID(2, jnode) ! strings(i) index
 
-                !am if(strings(i)%isPeriodic) inodeE = oidxJ
                 jnodeS = jnode
                 exit loopJnodeS1
 
@@ -1811,8 +1799,6 @@ contains
              if (jnode == jsym) exit loopJnodeS1
           end do loopJnodeS1
 
-
-
           ! Check it has nodes that have not been used already
           if (checkNodeUsed) then
              inodeStmp = inodeS
@@ -1828,7 +1814,6 @@ contains
                       exit chkinodeE1
                    end if
                 end do chkinodeE1
-                !am if (inodeE == inodeS) exit ifNsplits
                 if (inodeE == inodeS) cycle loopStrings
              else ! inodeStmp > inodeEtmp
                 inodeS = inodeStmp
@@ -1847,12 +1832,10 @@ contains
                       exit chkinodeE2
                    end if
                 end do chkinodeE2
-                !am if (inodeE == inodeS) exit ifNsplits
                 if (inodeE == inodeS) cycle loopStrings
              end if
           end if !checkNodeUsed
 
-          !am if (jnodeS == jnodeE) exit ifNsplits
           if (jnodeS == jnodeE) cycle loopStrings
 
           print '(A,6(I4,x),A,2(I4,x))',&
@@ -1901,20 +1884,19 @@ contains
 
     end do loopStrings ! nStrings
 
-    ! For debugging sub-strings pairings
-    ! ----------------------------------
-    print*,'Number of subStrings ', iSubStr
-    open(unit=101, file="subGapStrings.dat", form='formatted')
-    write(101,*) 'TITLE = "SubGap Strings Data" '
-    write(101,*) 'Variables = "X" "Y" "Z" "Nx" "Ny" "Nz" "Vx" "Vy" "Vz" "ind" &
-         "gapID" "gapIndex" "otherID" "otherIndex" "ratio"'
-    do i=1, iSubStr
-       call writeOversetSubString(subStrings(i), nStart(i), nEnd(i), i,&
-                                  strings, nStrings, 101)
-    end do
-    close(101)
-    ! ----------------------------------
-
+    !! For debugging sub-strings pairings
+    !! ----------------------------------
+    !print*,'Number of subStrings ', iSubStr
+    !open(unit=101, file="subGapStrings.dat", form='formatted')
+    !write(101,*) 'TITLE = "SubGap Strings Data" '
+    !write(101,*) 'Variables = "X" "Y" "Z" "Nx" "Ny" "Nz" "Vx" "Vy" "Vz" "ind" &
+    !     "gapID" "gapIndex" "otherID" "otherIndex" "ratio"'
+    !do i=1, iSubStr
+    !   call writeOversetSubString(subStrings(i), nStart(i), nEnd(i), i,&
+    !                              strings, nStrings, 101)
+    !end do
+    !close(101)
+    !! ----------------------------------
 
     do i=1, nStrings
        deallocate(strings(i)%XzipNodeUsed)
@@ -1935,7 +1917,6 @@ contains
     integer(kind=intType) :: n1, n2, npolyEdges, npolyEdgestmp, nEdgeUsed
     integer(kind=intType) :: nNodes1, nNodes2, cn1, cn2, str1, str2, nends
     type(oversetEdge), pointer, dimension(:) :: polyEdges, polyEdgestmp
-    !am type(pocketEdge), pointer, dimension(:) :: pocketEdges
     integer(kind=intType), allocatable, dimension(:) :: edgeMap, edgeMaptmp
     integer(kind=intType), allocatable, dimension(:) :: nodeList, nodeMap
     logical :: isEndEdge
@@ -2090,31 +2071,31 @@ contains
     ! End canceling out edges.
     ! ---------------------------------------------------------------------
 
-    ! Debug polygonEdges
-    ! -----------------------------------------------------------
-    open(unit=101, file="polygonEdges.dat", form='formatted')
-    write(101,*) 'TITLE = "PolygonEdges Data" '
-    write(101,*) 'Variables = "X", "Y", "Z"'
-    write(101,*) "Zone T=Pockets"
-    write (101,*) "Nodes = ", npolyEdges*2, " Elements= ", npolyEdges, " ZONETYPE=FELINESEG"
-    write (101,*) "DATAPACKING=POINT"
+    !! Debug polygonEdges
+    !! -----------------------------------------------------------
+    !open(unit=101, file="polygonEdges.dat", form='formatted')
+    !write(101,*) 'TITLE = "PolygonEdges Data" '
+    !write(101,*) 'Variables = "X", "Y", "Z"'
+    !write(101,*) "Zone T=Pockets"
+    !write (101,*) "Nodes = ", npolyEdges*2, " Elements= ", npolyEdges, " ZONETYPE=FELINESEG"
+    !write (101,*) "DATAPACKING=POINT"
 
-    ! node data
-    do i=1, npolyEdges
-       n1 = polyEdges(i)%n1
-       n2 = polyEdges(i)%n2
-       ! node 1
-       write(101,'(3(E20.12,x))')p%x(1, n1), p%x(2, n1), p%x(3, n1)
-       ! node 2
-       write(101,'(3(E20.12,x))')p%x(1, n2), p%x(2, n2), p%x(3, n2)
-    end do
+    !! node data
+    !do i=1, npolyEdges
+    !   n1 = polyEdges(i)%n1
+    !   n2 = polyEdges(i)%n2
+    !   ! node 1
+    !   write(101,'(3(E20.12,x))')p%x(1, n1), p%x(2, n1), p%x(3, n1)
+    !   ! node 2
+    !   write(101,'(3(E20.12,x))')p%x(1, n2), p%x(2, n2), p%x(3, n2)
+    !end do
 
-    ! Edge data
-    do i=1, npolyEdges
-       write(101,'(3(I5,x))')2*i-1, 2*i
-    end do
-    close(101)
-    !-------------------------------------------------------------
+    !! Edge data
+    !do i=1, npolyEdges
+    !   write(101,'(3(I5,x))')2*i-1, 2*i
+    !end do
+    !close(101)
+    !!-------------------------------------------------------------
 
     !-------------------------------------------------------------
     ! PocketZip 3:
@@ -2174,19 +2155,19 @@ contains
        pocketMaster%conn(2, i) = nodeMap(2*i) !<-- map to the unique node index
     end do
 
-    ! Debug pocketMaster
-    ! --------------------
-    pocketMaster%myID = 88
-    open(unit=101, file="pocketMaster.dat", form='formatted')
-    write(101,*) 'TITLE = "PocketMaster Data" '
-    write(101,*) 'Variables = "X" "Y" "Z" "Nx" "Ny" "Nz" "Vx" "Vy" "Vz" "ind" &
-         "gapID" "gapIndex" "otherID" "otherIndex" "ratio"'
-    allocate(tmpStrings(1))
-    tmpStrings(1) = pocketMaster ! Derived type assignment
-    call writeOversetString(tmpStrings(1), tmpStrings, 1, 101)
-    close(101)
-    deallocate(tmpStrings)
-    ! --------------------
+    !! Debug pocketMaster
+    !! --------------------
+    !pocketMaster%myID = 88
+    !open(unit=101, file="pocketMaster.dat", form='formatted')
+    !write(101,*) 'TITLE = "PocketMaster Data" '
+    !write(101,*) 'Variables = "X" "Y" "Z" "Nx" "Ny" "Nz" "Vx" "Vy" "Vz" "ind" &
+    !     "gapID" "gapIndex" "otherID" "otherIndex" "ratio"'
+    !allocate(tmpStrings(1))
+    !tmpStrings(1) = pocketMaster ! Derived type assignment
+    !call writeOversetString(tmpStrings(1), tmpStrings, 1, 101)
+    !close(101)
+    !deallocate(tmpStrings)
+    !! --------------------
 
     ! Create nte info
     call createNodeToElem(pocketMaster)
@@ -2285,6 +2266,8 @@ contains
        strPkt => strPkt%next
     end do
 
+    ! Debug pocketStrings
+    ! --------------------------------------------------------------
     open(unit=101, file="pocketStrings.dat", form='formatted')
     write(101,*) 'TITLE = "PocketStrings Data" '
 
@@ -2299,12 +2282,12 @@ contains
             nPocketStrings, 101)
     end do
     close(101)
+    ! --------------------------------------------------------------
 
     ! ---------------------------------------------
     ! ------------------------------------------------------------------------
     ! End 3.2, perform doChain on pocketMaster elems and create pocket strings.
     ! ------------------------------------------------------------------------
-    !print*, ' Perform pocketZipping ======>'
 
     ! --------------------------
     ! 3.3: selfZip pocketStrings
