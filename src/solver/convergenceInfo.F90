@@ -218,26 +218,7 @@ subroutine convergenceInfo
      ! ----------------------------------------------------------
      call forcesAndMomentsZipper(cfp, cfv, cmp, cmv)
 
-     ! Save lift and drag contributions from zipper meshes
-     if (myid == 0) then
-        write(4000,"(1x,i6,2x)",advance="no") groundLevel
-        write(4000,"(i6,1x)",advance="no") iterTot
-        write(4000,"(i6,1x)",advance="no") approxTotalIts
-
-        ! Lift
-        write(4000,"(e24.16,1x)",advance="no") &
-          (cfp(1) + cfv(1))*liftDirection(1) &
-        + (cfp(2) + cfv(2))*liftDirection(2) &
-        + (cfp(3) + cfv(3))*liftDirection(3)
-
-        ! Drag
-        write(4000,"(e24.16,1x)",advance="no") &
-          (cfp(1) + cfv(1))*dragDirection(1) &
-        + (cfp(2) + cfv(2))*dragDirection(2) &
-        + (cfp(3) + cfv(3))*dragDirection(3)
-        write(4000,"(1x)")
-     end if
-     
+    
      ! Loop over the number of monitoring variables.
      nMonitoringVarZip: do mm=1,nMon
 
