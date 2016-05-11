@@ -30,6 +30,8 @@ subroutine referencestate_d()
 !      * velocity direction is computed from the boundary conditions,   *
 !      * which is used for initialization.                              *
 !      *                                                                *
+!      * the original version has been nuked since the computations are *
+!      * no longer necessary when calling from python                   *
 !      ******************************************************************
 !
   use bctypes
@@ -50,125 +52,86 @@ subroutine referencestate_d()
   real(kind=realtype) :: gm1, ratio, tmp
   real(kind=realtype) :: mx, my, mz, re, v, tinfdim
   real(kind=realtype) :: mxd, myd, mzd, red, vd, tinfdimd
-  real(kind=realtype), dimension(3) :: dirloc, dirglob
-  real(kind=realtype), dimension(5) :: valloc, valglob
-  type(bcdatatype), dimension(:), pointer :: bcdata
-  interface 
-      subroutine velmagnanddirectionsubface(vmag, dir, bcdata, mm)
-        use block
-        implicit none
-        integer(kind=inttype), intent(in) :: mm
-        real(kind=realtype), intent(out) :: vmag
-        real(kind=realtype), dimension(3), intent(inout) :: dir
-        type(bcdatatype), dimension(:), pointer :: bcdata
-      end subroutine velmagnanddirectionsubface
-  end interface
-
   intrinsic sqrt
   real(kind=realtype) :: arg1
   real(kind=realtype) :: arg1d
   real(kind=realtype) :: result1
   real(kind=realtype) :: result1d
-!
-!      ******************************************************************
-!      *                                                                *
-!      * begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
-! initialize the dimensional free stream temperature and pressure.
-! from these values the density and viscosity is computed. for
-! external viscous and internal computation this is corrected
-! later on.
-  pinfdimd = prefd
-  pinfdim = pref
-  if (pref .le. zero) then
-    pinfdim = 101325.0_realtype
-    pinfdimd = 0.0_8
-  end if
+! the following values must be set:
+! pinfdim, reynolds, tempfreestream
+! pref, rhoref and tref may be optionally set of if less than 0
+! will take free stream values.
   tinfdimd = tempfreestreamd
   tinfdim = tempfreestream
-  rhoinfdimd = (pinfdimd*rgasdim*tinfdim-pinfdim*rgasdim*tinfdimd)/(&
-&   rgasdim*tinfdim)**2
+  rhoinfdimd = -(pinfdim*rgasdim*tinfdimd/(rgasdim*tinfdim)**2)
   rhoinfdim = pinfdim/(rgasdim*tinfdim)
   mudimd = musuthdim*((tsuthdim+ssuthdim)*1.5_realtype*(tinfdim/tsuthdim&
 &   )**0.5*tinfdimd/((tinfdim+ssuthdim)*tsuthdim)-(tsuthdim+ssuthdim)*&
 &   tinfdimd*(tinfdim/tsuthdim)**1.5_realtype/(tinfdim+ssuthdim)**2)
   mudim = musuthdim*((tsuthdim+ssuthdim)/(tinfdim+ssuthdim))*(tinfdim/&
 &   tsuthdim)**1.5_realtype
-! check the flow type we are having here.
-  if (flowtype .eq. internalflow) then
-    gammainfd = 0.0_8
-    trefd = 0.0_8
-    rhorefd = 0.0_8
-  else
 ! external flow. compute the value of gammainf.
-    call computegamma_d(tempfreestream, tempfreestreamd, gammainf, &
-&                 gammainfd, 1)
+  call computegamma_d(tempfreestream, tempfreestreamd, gammainf, &
+&               gammainfd, 1)
 ! in case of a viscous problem, compute the
 ! dimensional free stream density and pressure.
-    if (equations .eq. nsequations .or. equations .eq. ransequations) &
-&   then
+  if (equations .eq. nsequations .or. equations .eq. ransequations) then
 ! compute the x, y, and z-components of the mach number
 ! relative to the body; i.e. the mesh velocity must be
 ! taken into account here.
-      mxd = machcoefd*veldirfreestream(1) + machcoef*veldirfreestreamd(1&
-&       )
-      mx = machcoef*veldirfreestream(1)
-      myd = machcoefd*veldirfreestream(2) + machcoef*veldirfreestreamd(2&
-&       )
-      my = machcoef*veldirfreestream(2)
-      mzd = machcoefd*veldirfreestream(3) + machcoef*veldirfreestreamd(3&
-&       )
-      mz = machcoef*veldirfreestream(3)
+    mxd = machcoefd*veldirfreestream(1) + machcoef*veldirfreestreamd(1)
+    mx = machcoef*veldirfreestream(1)
+    myd = machcoefd*veldirfreestream(2) + machcoef*veldirfreestreamd(2)
+    my = machcoef*veldirfreestream(2)
+    mzd = machcoefd*veldirfreestream(3) + machcoef*veldirfreestreamd(3)
+    mz = machcoef*veldirfreestream(3)
 ! reynolds number per meter, the viscosity using sutherland's
 ! law and the free stream velocity relative to the body.
-      red = reynoldsd/reynoldslength
-      re = reynolds/reynoldslength
-      mudimd = musuthdim*((tsuthdim+ssuthdim)*1.5*(tempfreestream/&
-&       tsuthdim)**0.5*tempfreestreamd/((tempfreestream+ssuthdim)*&
-&       tsuthdim)-(tsuthdim+ssuthdim)*tempfreestreamd*(tempfreestream/&
-&       tsuthdim)**1.5/(tempfreestream+ssuthdim)**2)
-      mudim = musuthdim*((tsuthdim+ssuthdim)/(tempfreestream+ssuthdim))*&
-&       (tempfreestream/tsuthdim)**1.5
-      arg1d = rgasdim*((mxd*mx+mx*mxd+myd*my+my*myd+mzd*mz+mz*mzd)*&
-&       gammainf*tempfreestream+(mx*mx+my*my+mz*mz)*(gammainfd*&
-&       tempfreestream+gammainf*tempfreestreamd))
-      arg1 = (mx*mx+my*my+mz*mz)*gammainf*rgasdim*tempfreestream
-      if (arg1 .eq. 0.0_8) then
-        vd = 0.0_8
-      else
-        vd = arg1d/(2.0*sqrt(arg1))
-      end if
-      v = sqrt(arg1)
+    red = reynoldsd/reynoldslength
+    re = reynolds/reynoldslength
+    mudimd = musuthdim*((tsuthdim+ssuthdim)*1.5*(tempfreestream/tsuthdim&
+&     )**0.5*tempfreestreamd/((tempfreestream+ssuthdim)*tsuthdim)-(&
+&     tsuthdim+ssuthdim)*tempfreestreamd*(tempfreestream/tsuthdim)**1.5/&
+&     (tempfreestream+ssuthdim)**2)
+    mudim = musuthdim*((tsuthdim+ssuthdim)/(tempfreestream+ssuthdim))*(&
+&     tempfreestream/tsuthdim)**1.5
+    arg1d = rgasdim*((mxd*mx+mx*mxd+myd*my+my*myd+mzd*mz+mz*mzd)*&
+&     gammainf*tempfreestream+(mx*mx+my*my+mz*mz)*(gammainfd*&
+&     tempfreestream+gammainf*tempfreestreamd))
+    arg1 = (mx*mx+my*my+mz*mz)*gammainf*rgasdim*tempfreestream
+    if (arg1 .eq. 0.0_8) then
+      vd = 0.0_8
+    else
+      vd = arg1d/(2.0*sqrt(arg1))
+    end if
+    v = sqrt(arg1)
 ! compute the free stream density and pressure.
 ! set tinfdim to tempfreestream.
-      rhoinfdimd = ((red*mudim+re*mudimd)*v-re*mudim*vd)/v**2
-      rhoinfdim = re*mudim/v
-      pinfdimd = rgasdim*(rhoinfdimd*tempfreestream+rhoinfdim*&
-&       tempfreestreamd)
-      pinfdim = rhoinfdim*rgasdim*tempfreestream
-      tinfdimd = tempfreestreamd
-      tinfdim = tempfreestream
-    end if
+    rhoinfdimd = ((red*mudim+re*mudimd)*v-re*mudim*vd)/v**2
+    rhoinfdim = re*mudim/v
+    pinfdimd = rgasdim*(rhoinfdimd*tempfreestream+rhoinfdim*&
+&     tempfreestreamd)
+    pinfdim = rhoinfdim*rgasdim*tempfreestream
+  else
+    pinfdimd = 0.0_8
+  end if
 ! in case the reference pressure, density and temperature were
 ! not specified, set them to the infinity values.
-    if (pref .le. zero) then
-      prefd = pinfdimd
-      pref = pinfdim
-    end if
-    if (rhoref .le. zero) then
-      rhorefd = rhoinfdimd
-      rhoref = rhoinfdim
-    else
-      rhorefd = 0.0_8
-    end if
-    if (tref .le. zero) then
-      trefd = tinfdimd
-      tref = tinfdim
-    else
-      trefd = 0.0_8
-    end if
+  if (pref .le. zero) then
+    prefd = pinfdimd
+    pref = pinfdim
+  end if
+  if (rhoref .le. zero) then
+    rhorefd = rhoinfdimd
+    rhoref = rhoinfdim
+  else
+    rhorefd = 0.0_8
+  end if
+  if (tref .le. zero) then
+    trefd = tinfdimd
+    tref = tinfdim
+  else
+    trefd = 0.0_8
   end if
 ! compute the value of muref, such that the nondimensional
 ! equations are identical to the dimensional ones.
@@ -214,50 +177,4 @@ subroutine referencestate_d()
   rgas = rgasdim*rhoref*tref/pref
   muinfd = (mudimd*muref-mudim*murefd)/muref**2
   muinf = mudim/muref
-
-contains
-!=================================================================
-!===============================================================
-  function maxvaluesubface(var)
-    implicit none
-!
-!        function type
-!
-    real(kind=realtype) :: maxvaluesubface
-!
-!        function argument.
-!
-    real(kind=realtype), dimension(:, :), pointer :: var
-!
-!        local variables.
-!
-    integer(kind=inttype) :: i, j
-    intrinsic associated
-    intrinsic max
-!
-!        ****************************************************************
-!        *                                                              *
-!        * begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
-!
-! initialize the function to -1 and return immediately if
-! var is not associated with data.
-    maxvaluesubface = -one
-    if (.not.associated(var)) then
-      return
-    else
-! loop over the owned faces of the subface. as the cell range
-! may contain halo values, the nodal range is used.
-      do j=bcdata(mm)%jnbeg+1,bcdata(mm)%jnend
-        do i=bcdata(mm)%inbeg+1,bcdata(mm)%inend
-          if (maxvaluesubface .lt. var(i, j)) then
-            maxvaluesubface = var(i, j)
-          else
-            maxvaluesubface = maxvaluesubface
-          end if
-        end do
-      end do
-    end if
-  end function maxvaluesubface
 end subroutine referencestate_d
