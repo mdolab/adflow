@@ -31,6 +31,8 @@ subroutine referencestate_b()
 !      * velocity direction is computed from the boundary conditions,   *
 !      * which is used for initialization.                              *
 !      *                                                                *
+!      * the original version has been nuked since the computations are *
+!      * no longer necessary when calling from python                   *
 !      ******************************************************************
 !
   use bctypes
@@ -51,26 +53,11 @@ subroutine referencestate_b()
   real(kind=realtype) :: gm1, ratio, tmp
   real(kind=realtype) :: mx, my, mz, re, v, tinfdim
   real(kind=realtype) :: mxd, myd, mzd, red, vd, tinfdimd
-  real(kind=realtype), dimension(3) :: dirloc, dirglob
-  real(kind=realtype), dimension(5) :: valloc, valglob
-  type(bcdatatype), dimension(:), pointer :: bcdata
-  interface 
-      subroutine velmagnanddirectionsubface(vmag, dir, bcdata, mm)
-        use block
-        implicit none
-        integer(kind=inttype), intent(in) :: mm
-        real(kind=realtype), intent(out) :: vmag
-        real(kind=realtype), dimension(3), intent(inout) :: dir
-        type(bcdatatype), dimension(:), pointer :: bcdata
-      end subroutine velmagnanddirectionsubface
-  end interface
-
   intrinsic sqrt
   integer :: branch
   real(kind=realtype) :: temp1
   real(kind=realtype) :: temp0
   real(kind=realtype) :: tempd
-  real(kind=realtype) :: tempd8
   real(kind=realtype) :: tempd7
   real(kind=realtype) :: tempd6
   real(kind=realtype) :: tempd5
@@ -80,80 +67,59 @@ subroutine referencestate_b()
   real(kind=realtype) :: tempd1
   real(kind=realtype) :: tempd0
   real(kind=realtype) :: temp
-!
-!      ******************************************************************
-!      *                                                                *
-!      * begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
-! initialize the dimensional free stream temperature and pressure.
-! from these values the density and viscosity is computed. for
-! external viscous and internal computation this is corrected
-! later on.
-  pinfdim = pref
-  if (pref .le. zero) then
-    pinfdim = 101325.0_realtype
-    call pushcontrol1b(0)
-  else
-    call pushcontrol1b(1)
-  end if
+! the following values must be set:
+! pinfdim, reynolds, tempfreestream
+! pref, rhoref and tref may be optionally set of if less than 0
+! will take free stream values.
   tinfdim = tempfreestream
   rhoinfdim = pinfdim/(rgasdim*tinfdim)
   mudim = musuthdim*((tsuthdim+ssuthdim)/(tinfdim+ssuthdim))*(tinfdim/&
 &   tsuthdim)**1.5_realtype
-! check the flow type we are having here.
-  if (flowtype .eq. internalflow) then
-    call pushcontrol2b(0)
-  else
 ! external flow. compute the value of gammainf.
-    call computegamma(tempfreestream, gammainf, 1)
+  call computegamma(tempfreestream, gammainf, 1)
 ! in case of a viscous problem, compute the
 ! dimensional free stream density and pressure.
-    if (equations .eq. nsequations .or. equations .eq. ransequations) &
-&   then
+  if (equations .eq. nsequations .or. equations .eq. ransequations) then
 ! compute the x, y, and z-components of the mach number
 ! relative to the body; i.e. the mesh velocity must be
 ! taken into account here.
-      mx = machcoef*veldirfreestream(1)
-      my = machcoef*veldirfreestream(2)
-      mz = machcoef*veldirfreestream(3)
+    mx = machcoef*veldirfreestream(1)
+    my = machcoef*veldirfreestream(2)
+    mz = machcoef*veldirfreestream(3)
 ! reynolds number per meter, the viscosity using sutherland's
 ! law and the free stream velocity relative to the body.
-      re = reynolds/reynoldslength
-      mudim = musuthdim*((tsuthdim+ssuthdim)/(tempfreestream+ssuthdim))*&
-&       (tempfreestream/tsuthdim)**1.5
-      v = sqrt((mx*mx+my*my+mz*mz)*gammainf*rgasdim*tempfreestream)
+    re = reynolds/reynoldslength
+    mudim = musuthdim*((tsuthdim+ssuthdim)/(tempfreestream+ssuthdim))*(&
+&     tempfreestream/tsuthdim)**1.5
+    v = sqrt((mx*mx+my*my+mz*mz)*gammainf*rgasdim*tempfreestream)
 ! compute the free stream density and pressure.
 ! set tinfdim to tempfreestream.
-      rhoinfdim = re*mudim/v
-      call pushreal8(pinfdim)
-      pinfdim = rhoinfdim*rgasdim*tempfreestream
-      tinfdim = tempfreestream
-      call pushcontrol1b(0)
-    else
-      call pushcontrol1b(1)
-    end if
+    rhoinfdim = re*mudim/v
+    call pushreal8(pinfdim)
+    pinfdim = rhoinfdim*rgasdim*tempfreestream
+    call pushcontrol1b(0)
+  else
+    call pushcontrol1b(1)
+  end if
 ! in case the reference pressure, density and temperature were
 ! not specified, set them to the infinity values.
-    if (pref .le. zero) then
-      pref = pinfdim
-      call pushcontrol1b(0)
-    else
-      call pushcontrol1b(1)
-    end if
-    if (rhoref .le. zero) then
-      rhoref = rhoinfdim
-      call pushcontrol1b(0)
-    else
-      call pushcontrol1b(1)
-    end if
-    if (tref .le. zero) then
-      tref = tinfdim
-      call pushcontrol2b(1)
-    else
-      call pushcontrol2b(2)
-    end if
+  if (pref .le. zero) then
+    pref = pinfdim
+    call pushcontrol1b(0)
+  else
+    call pushcontrol1b(1)
+  end if
+  if (rhoref .le. zero) then
+    rhoref = rhoinfdim
+    call pushcontrol1b(0)
+  else
+    call pushcontrol1b(1)
+  end if
+  if (tref .le. zero) then
+    tref = tinfdim
+    call pushcontrol1b(0)
+  else
+    call pushcontrol1b(1)
   end if
 ! compute the value of muref, such that the nondimensional
 ! equations are identical to the dimensional ones.
@@ -171,151 +137,90 @@ subroutine referencestate_b()
   rhoinf = rhoinfdim/rhoref
   mudimd = muinfd/muref
   murefd = murefd - mudim*muinfd/muref**2
-  tempd5 = rgasdim*rgasd/pref
-  trefd = trefd + rhoref*tempd5
+  tempd4 = rgasdim*rgasd/pref
+  trefd = trefd + rhoref*tempd4
   temp0 = gammainf*pinf/rhoinf
   temp1 = sqrt(temp0)
   if (temp0 .eq. 0.0_8) then
-    tempd8 = 0.0
+    tempd7 = 0.0
   else
-    tempd8 = mach*uinfd/(2.0*temp1*rhoinf)
+    tempd7 = mach*uinfd/(2.0*temp1*rhoinf)
   end if
   machd = temp1*uinfd
-  gammainfd = gammainfd + pinf*tempd8
-  pinfd = pinfd + gammainf*tempd8
-  rhoinfd = rhoinfd - temp0*tempd8
+  gammainfd = gammainfd + pinf*tempd7
+  pinfd = pinfd + gammainf*tempd7
+  rhoinfd = rhoinfd - temp0*tempd7
   rhoinfdimd = rhoinfdimd + rhoinfd/rhoref
   pinfdimd = pinfdimd + pinfd/pref
   if (rhoref/pref .eq. 0.0_8) then
-    tempd7 = 0.0
-  else
-    tempd7 = timerefd/(2.0*sqrt(rhoref/pref)*pref)
-  end if
-  if (pref*rhoref .eq. 0.0_8) then
     tempd6 = 0.0
   else
-    tempd6 = murefd/(2.0*sqrt(pref*rhoref))
+    tempd6 = timerefd/(2.0*sqrt(rhoref/pref)*pref)
   end if
-  rhorefd = pref*tempd6 - rhoinfdim*rhoinfd/rhoref**2 + tempd7 + tref*&
-&   tempd5
-  prefd = prefd + rhoref*tempd6 - pinfdim*pinfd/pref**2 - rhoref*tempd7/&
-&   pref - rhoref*tref*tempd5/pref
-  call popcontrol2b(branch)
+  if (pref*rhoref .eq. 0.0_8) then
+    tempd5 = 0.0
+  else
+    tempd5 = murefd/(2.0*sqrt(pref*rhoref))
+  end if
+  rhorefd = pref*tempd5 - rhoinfdim*rhoinfd/rhoref**2 + tempd6 + tref*&
+&   tempd4
+  prefd = prefd + rhoref*tempd5 - pinfdim*pinfd/pref**2 - rhoref*tempd6/&
+&   pref - rhoref*tref*tempd4/pref
+  call popcontrol1b(branch)
   if (branch .eq. 0) then
+    tinfdimd = trefd
+  else
+    tinfdimd = 0.0_8
+  end if
+  call popcontrol1b(branch)
+  if (branch .eq. 0) rhoinfdimd = rhoinfdimd + rhorefd
+  call popcontrol1b(branch)
+  if (branch .eq. 0) then
+    pinfdimd = pinfdimd + prefd
+    prefd = 0.0_8
+  end if
+  call popcontrol1b(branch)
+  if (branch .eq. 0) then
+    call popreal8(pinfdim)
+    rhoinfdimd = rhoinfdimd + rgasdim*tempfreestream*pinfdimd
+    tempd2 = rhoinfdimd/v
+    red = mudim*tempd2
+    mudimd = mudimd + re*tempd2
+    vd = -(re*mudim*tempd2/v)
+    temp = mx**2 + my**2 + mz**2
+    if (rgasdim*(temp*(gammainf*tempfreestream)) .eq. 0.0_8) then
+      tempd0 = 0.0
+    else
+      tempd0 = rgasdim*vd/(2.0*sqrt(rgasdim*(temp*(gammainf*&
+&       tempfreestream))))
+    end if
+    tempd3 = gammainf*tempfreestream*tempd0
+    mxd = 2*mx*tempd3
+    myd = 2*my*tempd3
+    mzd = 2*mz*tempd3
+    gammainfd = gammainfd + temp*tempfreestream*tempd0
+    tempd1 = musuthdim*(tsuthdim+ssuthdim)*mudimd/(ssuthdim+&
+&     tempfreestream)
+    tempfreestreamd = temp*gammainf*tempd0 + (1.5*(tempfreestream/&
+&     tsuthdim)**0.5/tsuthdim-(tempfreestream/tsuthdim)**1.5/(ssuthdim+&
+&     tempfreestream))*tempd1 + rgasdim*rhoinfdim*pinfdimd
+    reynoldsd = red/reynoldslength
+    machcoefd = machcoefd + veldirfreestream(2)*myd + veldirfreestream(1&
+&     )*mxd + veldirfreestream(3)*mzd
+    veldirfreestreamd(3) = veldirfreestreamd(3) + machcoef*mzd
+    veldirfreestreamd(2) = veldirfreestreamd(2) + machcoef*myd
+    veldirfreestreamd(1) = veldirfreestreamd(1) + machcoef*mxd
+    mudimd = 0.0_8
+    rhoinfdimd = 0.0_8
+  else
     tempfreestreamd = 0.0_8
     reynoldsd = 0.0_8
-    tinfdimd = 0.0_8
-  else
-    if (branch .eq. 1) then
-      tinfdimd = trefd
-    else
-      tinfdimd = 0.0_8
-    end if
-    call popcontrol1b(branch)
-    if (branch .eq. 0) rhoinfdimd = rhoinfdimd + rhorefd
-    call popcontrol1b(branch)
-    if (branch .eq. 0) then
-      pinfdimd = pinfdimd + prefd
-      prefd = 0.0_8
-    end if
-    call popcontrol1b(branch)
-    if (branch .eq. 0) then
-      rhoinfdimd = rhoinfdimd + rgasdim*tempfreestream*pinfdimd
-      tempd3 = rhoinfdimd/v
-      mudimd = mudimd + re*tempd3
-      vd = -(re*mudim*tempd3/v)
-      temp = mx**2 + my**2 + mz**2
-      if (rgasdim*(temp*(gammainf*tempfreestream)) .eq. 0.0_8) then
-        tempd2 = 0.0
-      else
-        tempd2 = rgasdim*vd/(2.0*sqrt(rgasdim*(temp*(gammainf*&
-&         tempfreestream))))
-      end if
-      tempd1 = musuthdim*(tsuthdim+ssuthdim)*mudimd/(ssuthdim+&
-&       tempfreestream)
-      tempfreestreamd = rgasdim*rhoinfdim*pinfdimd + (1.5*(&
-&       tempfreestream/tsuthdim)**0.5/tsuthdim-(tempfreestream/tsuthdim)&
-&       **1.5/(ssuthdim+tempfreestream))*tempd1 + temp*gammainf*tempd2 +&
-&       tinfdimd
-      call popreal8(pinfdim)
-      tinfdim = tempfreestream
-      red = mudim*tempd3
-      tempd4 = gammainf*tempfreestream*tempd2
-      mxd = 2*mx*tempd4
-      myd = 2*my*tempd4
-      mzd = 2*mz*tempd4
-      gammainfd = gammainfd + temp*tempfreestream*tempd2
-      reynoldsd = red/reynoldslength
-      machcoefd = machcoefd + veldirfreestream(2)*myd + veldirfreestream&
-&       (1)*mxd + veldirfreestream(3)*mzd
-      veldirfreestreamd(3) = veldirfreestreamd(3) + machcoef*mzd
-      veldirfreestreamd(2) = veldirfreestreamd(2) + machcoef*myd
-      veldirfreestreamd(1) = veldirfreestreamd(1) + machcoef*mxd
-      mudimd = 0.0_8
-      rhoinfdimd = 0.0_8
-      pinfdimd = 0.0_8
-      tinfdimd = 0.0_8
-    else
-      tempfreestreamd = 0.0_8
-      reynoldsd = 0.0_8
-    end if
-    call computegamma_b(tempfreestream, tempfreestreamd, gammainf, &
-&                 gammainfd, 1)
   end if
-  tempd0 = rhoinfdimd/(rgasdim*tinfdim)
+  call computegamma_b(tempfreestream, tempfreestreamd, gammainf, &
+&               gammainfd, 1)
   tempd = musuthdim*(tsuthdim+ssuthdim)*mudimd/(ssuthdim+tinfdim)
   tinfdimd = tinfdimd + (1.5_realtype*(tinfdim/tsuthdim)**0.5/tsuthdim-(&
 &   tinfdim/tsuthdim)**1.5_realtype/(ssuthdim+tinfdim))*tempd - pinfdim*&
-&   tempd0/tinfdim
-  pinfdimd = pinfdimd + tempd0
+&   rhoinfdimd/(rgasdim*tinfdim**2)
   tempfreestreamd = tempfreestreamd + tinfdimd
-  call popcontrol1b(branch)
-  if (branch .eq. 0) pinfdimd = 0.0_8
-  prefd = prefd + pinfdimd
-
-contains
-!=================================================================
-!===============================================================
-  function maxvaluesubface(var)
-    implicit none
-!
-!        function type
-!
-    real(kind=realtype) :: maxvaluesubface
-!
-!        function argument.
-!
-    real(kind=realtype), dimension(:, :), pointer :: var
-!
-!        local variables.
-!
-    integer(kind=inttype) :: i, j
-    intrinsic associated
-    intrinsic max
-!
-!        ****************************************************************
-!        *                                                              *
-!        * begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
-!
-! initialize the function to -1 and return immediately if
-! var is not associated with data.
-    maxvaluesubface = -one
-    if (.not.associated(var)) then
-      return
-    else
-! loop over the owned faces of the subface. as the cell range
-! may contain halo values, the nodal range is used.
-      do j=bcdata(mm)%jnbeg+1,bcdata(mm)%jnend
-        do i=bcdata(mm)%inbeg+1,bcdata(mm)%inend
-          if (maxvaluesubface .lt. var(i, j)) then
-            maxvaluesubface = var(i, j)
-          else
-            maxvaluesubface = maxvaluesubface
-          end if
-        end do
-      end do
-    end if
-  end function maxvaluesubface
 end subroutine referencestate_b

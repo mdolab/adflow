@@ -2390,12 +2390,16 @@ class SUMB(AeroSolver):
         self.sumb.inputphysics.machgrid = machGrid
 
         # Set reference state information:
+
+        # Reset these so that the updated free stream values are taken
+        self.sumb.flowvarrefstate.pref = -1.0
+        self.sumb.flowvarrefstate.tref = -1.0
+        self.sumb.flowvarrefstate.rhoref = -1.0
+        self.sumb.flowvarrefstate.pinfdim = P
+        self.sumb.inputphysics.tempfreestream = T
+
         if self.getOption('equationType') != 'euler':
-            # RANS
-            self.sumb.flowvarrefstate.rhoref = rho
-            self.sumb.flowvarrefstate.pref = P
-            self.sumb.flowvarrefstate.tref = T
-            self.sumb.inputphysics.tempfreestream = T
+            # RANS/Laminar
             ReLength = 1.0
             self.sumb.inputphysics.reynolds = rho*V/mu
             self.sumb.inputphysics.reynoldslength = ReLength
@@ -2412,10 +2416,6 @@ class SUMB(AeroSolver):
             self.sumb.inputphysics.prandtl = Pr            
         else:
             # EULER
-            self.sumb.flowvarrefstate.rhoref = rho
-            self.sumb.flowvarrefstate.pref = P
-            self.sumb.flowvarrefstate.tref = T
-            self.sumb.inputphysics.tempfreestream = T
             self.sumb.inputphysics.reynolds = 1.0
             self.sumb.inputphysics.reynoldslength = 1.0
 
@@ -3538,6 +3538,7 @@ class SUMB(AeroSolver):
             'gridprecision':[str,'double'],
             'isosurface':[dict, {}],
             'isovariables':[list, []],
+            'nodaloutput':[bool, True],
             'viscoussurfacevelocities':[bool, True],
             'slicefiletractions':[bool, False],
 
@@ -3577,6 +3578,12 @@ class SUMB(AeroSolver):
             'resaveraging':[str,'alternateresaveraging'],
             'smoothparameter':[float, 1.5],
             'cfllimit':[float, 1.5],
+            
+            # Overset Parameters:
+            'nearwalldist':[float, 0.1],
+            'backgroundvolscale':[float, 1.0],
+            'oversetprojtol':[float, 1e-12],
+            'overlapfactor':[float, 0.9],
 
             # Unsteady Paramters
             'timeintegrationscheme':[str, 'bdf'],
@@ -3642,6 +3649,7 @@ class SUMB(AeroSolver):
             'loadimbalance':[float, 0.1],
             'loadbalanceiter':[int, 10],
             'partitiononly':[bool, False],
+            'partitionlikenproc':[int, -1],
 
             # Misc Paramters
             'autosolveretry':[bool, False],
@@ -3726,6 +3734,7 @@ class SUMB(AeroSolver):
                      'localmg':self.sumb.localmg,
                      'parallel':self.sumb.inputparallel,
                      'ts':self.sumb.inputtimespectral, 
+                     'overset':self.sumb.inputoverset,
                  }
 
         # In the option map, we first list the "module" defined in
@@ -3740,6 +3749,7 @@ class SUMB(AeroSolver):
             'writefarfield':['io', 'writefarfield'],
             'slicefiletractions':['io', 'slicefiletractions'],
             'nsavevolume':['io', 'nsavevolume'],
+            'nodaloutput':['io', 'nodaloutput'],
             'nsavesurface':['iter', 'nsavesurface'],
             'viscoussurfacevelocities':['io', 'viscoussurfacevelocities'],
             'solutionprecision':{'single':self.sumb.inputio.precisionsingle,
@@ -3796,6 +3806,7 @@ class SUMB(AeroSolver):
             'turbresscale':['iter', 'turbresscale'],
             'eddyvisinfratio':['physics', 'eddyvisinfratio'],
             'usewallfunctions':['physics', 'wallfunctions'],
+            'walldistcutoff':['physics', 'walldistcutoff'],
             'useapproxwalldistance':['discr', 'useapproxwalldistance'],
             'reynoldsnumber':['physics', 'reynolds'],
             'reynoldslength':['physics', 'reynoldslength'],
@@ -3830,6 +3841,12 @@ class SUMB(AeroSolver):
                             'location':['iter', 'resaveraging']},
             'smoothparameter':['iter', 'smoop'],
             'cfllimit':['iter', 'cfllimit'],
+
+            # Overset Parameters
+            'nearwalldist':['overset','nearwalldist'],
+            'backgroundvolscale':['overset','backgroundvolscale'],
+            'oversetprojtol':['overset','oversetprojtol'],
+            'overlapfactor':['overset','overlapfactor'],
 
             # Unsteady Params
             'timeintegrationscheme':{'bdf':self.sumb.inputunsteady.bdf,
@@ -3903,6 +3920,7 @@ class SUMB(AeroSolver):
             'blocksplitting':['parallel', 'splitblocks'],
             'loadimbalance':['parallel', 'loadimbalance'],
             'loadbalanceiter':['parallel', 'loadbalanceiter'],
+            'partitionlikenproc':['parallel', 'partitionlikenproc'],
 
             # Misc Paramters
             'printiterations':['iter', 'printiterations'],
