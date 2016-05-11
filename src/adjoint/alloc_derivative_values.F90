@@ -51,12 +51,17 @@ subroutine alloc_derivative_values(level)
   ! If we are not using RANS with walDistance create a dummy xSurfVec
   ! since one does not yet exist
   if (.not. wallDistanceNeeded .or. .not. useApproxWallDistance) then 
-     call VecCreateMPI(SUMB_COMM_WORLD, 1, PETSC_DETERMINE, xSurfVec(1), ierr)
+     do sps=1, nTimeIntervalsSpectral
+        call VecCreateMPI(SUMB_COMM_WORLD, 1, PETSC_DETERMINE, xSurfVec(1, sps), ierr)
+     end do
   end if
 
   ! Duplicate the PETSc Xsurf Vec, but only on the first level:
-  call VecDuplicate(xSurfVec(1), xSurfVecd, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
+  allocate(xSurfVecd(nTimeIntervalsSpectral))
+  do sps=1, nTimeIntervalsSpectral
+     call VecDuplicate(xSurfVec(1, sps), xSurfVecd(sps), ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+  end do
 
   do nn=1, nDom
      do sps=1, nTimeIntervalsSpectral

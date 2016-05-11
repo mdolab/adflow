@@ -86,11 +86,15 @@
                             BCData(mm)%sHeatFlux(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
                             BCData(mm)%Fp(iBeg:iEnd,jBeg:jEnd,3), &
                             BCData(mm)%Fv(iBeg:iEnd,jBeg:jEnd,3), &
+                            BCData(mm)%iBlank(iBeg:iEnd, jBeg:jEnd), &
+                            BCData(mm)%delta(iBeg:iEnd, jBeg:jEnd), &
+                            BCData(mm)%deltaNode(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd), &
                             stat=ierr)
                    if(ierr /= 0)                      &
                      call returnFail("allocMemBCData", &
                                     "Memory allocation failure for &
                                     &an adiabatic wall")
+                   BCData(mm)%iBlank = 1
 
                  !=======================================================
 
@@ -104,11 +108,15 @@
                             BCData(mm)%sHeatFlux(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
                             BCData(mm)%Fp(iBeg:iEnd,jBeg:jEnd,3), &
                             BCData(mm)%Fv(iBeg:iEnd,jBeg:jEnd,3), &
+                            BCData(mm)%iBlank(iBeg:iEnd, jBeg:jEnd), &
+                            BCData(mm)%delta(iBeg:iEnd, jBeg:jEnd), &
+                            BCData(mm)%deltaNode(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd), &
                             stat=ierr)
                    if(ierr /= 0)                      &
                      call returnFail("allocMemBCData", &
                                     "Memory allocation failure for &
                                     &an isothermal wall")
+                   BCData(mm)%iBlank = 1
 
                  !=======================================================
 
@@ -122,12 +130,15 @@
                             BCData(mm)%sHeatFlux(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
                             BCData(mm)%Fp(iBeg:iEnd,jBeg:jEnd,3), &
                             BCData(mm)%Fv(iBeg:iEnd,jBeg:jEnd,3), &
+                            BCData(mm)%iBlank(iBeg:iEnd, jBeg:jEnd), &
+                            BCData(mm)%delta(iBeg:iEnd, jBeg:jEnd), &
+                            BCData(mm)%deltaNode(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd), &
                             stat=ierr)
                    if(ierr /= 0)                      &
                      call returnFail("allocMemBCData", &
                                     "Memory allocation failure for &
                                     &an Euler wall")
-
+                   BCData(mm)%iBlank = 1
                    !=======================================================
 
                  case (farField)

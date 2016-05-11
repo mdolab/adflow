@@ -122,8 +122,15 @@ bocos:do nn=1,nbocos
 ! farfield. the kind of boundary condition to be applied,
 ! inflow or outflow, depends on the local conditions.
       call bcturbfarfield_d(nn)
-    case default
+    case (slidinginterface, oversetouterbound, domaininterfaceall, &
+&   domaininterfacerhouvw, domaininterfacep, domaininterfacerho, &
+&   domaininterfacetotal) 
 !=============================================================
+! sliding mesh interface, overset outer boudaries, and 
+! domain interface with another code are not really boundary
+! condition and therefore the values are kept.
+      call bcturbinterface_d(nn)
+    case default
 !=============================================================
       call returnfail('bcturbtreatment', 'unknown boundary condition'&
 &                 )

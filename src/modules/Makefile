@@ -56,6 +56,8 @@ FF90_OBJECTS_3 = NKSolverVars.o\
 		 IOModule.o\
 		 costFunctions.o\
 		 liftDistributionData.o\
+		 adtData.o\
+		 kd_tree.o\
 
 FF90_OBJECTS_4 = ADjointVars.o\
 		 ADjointPETSc.o\
@@ -79,6 +81,7 @@ FF90_OBJECTS_4 = ADjointVars.o\
 	         diffSizes.o\
 		 wallDistanceData.o\
 		 myPushPopLib.o\
+		 overset.o\
 
 FILES_TO_COMPLEXIFY =  precision.F90\
 		 bleedFlows.f90\
@@ -117,6 +120,7 @@ FILES_TO_COMPLEXIFY =  precision.F90\
 	         diffSizes.f90\
 		 wallDistanceData.F90\
 		 myPushPopLib.F90\
+		 overset.F90\
 
 FILES_TO_COPY = su_cgns.F90 \
 		complexify.f90 

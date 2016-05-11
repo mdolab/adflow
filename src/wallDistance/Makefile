@@ -44,6 +44,7 @@ FILES_TO_COMPLEXIFY = viscSurface.f90\
 		 computeNormalSpacing.f90\
 		 determineDistance.f90\
 		 determineDistanceQuickly.F90\
+		 determineWallAssociation.F90\
 		 initWallDistance.f90\
 		 localViscousSurfaceMesh.f90\
 		 updateWallDistanceAllLevels.f90\

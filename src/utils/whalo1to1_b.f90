@@ -92,6 +92,7 @@ subroutine whalo1to1_b(level, start, end, commPressure,       &
            do k=start,end
               recvBuffer(jj) = flowDomsd(d2,level,mm)%w(i2,j2,k2,k)
               jj = jj + 1
+              flowDomsd(d2,level,mm)%w(i2,j2,k2,k) = zero
            enddo
 
            ! The pressure, if needed.
@@ -99,6 +100,7 @@ subroutine whalo1to1_b(level, start, end, commPressure,       &
            if( commPressure ) then
               recvBuffer(jj) = flowDomsd(d2,level,mm)%p(i2,j2,k2)
               jj = jj + 1
+              flowDomsd(d2,level,mm)%p(i2,j2,k2) = zero
            endif
 
            ! The specific heat ratio, if needed. Note that level == 1.
@@ -106,6 +108,7 @@ subroutine whalo1to1_b(level, start, end, commPressure,       &
            if( commVarGamma ) then
               recvBuffer(jj) = flowDomsd(d2,1,mm)%gamma(i2,j2,k2)
               jj = jj + 1
+              flowDomsd(d2,1,mm)%gamma(i2,j2,k2) = zero
            endif
 
            ! The laminar viscosity for viscous computations.
@@ -114,6 +117,7 @@ subroutine whalo1to1_b(level, start, end, commPressure,       &
            if( commLamVis ) then
               recvBuffer(jj) = flowDomsd(d2,1,mm)%rlv(i2,j2,k2)
               jj = jj + 1
+              flowDomsd(d2,1,mm)%rlv(i2,j2,k2) = zero
            endif
 
            ! The eddy viscosity ratio for eddy viscosity models.
@@ -123,6 +127,7 @@ subroutine whalo1to1_b(level, start, end, commPressure,       &
            if( commEddyVis ) then
               recvBuffer(jj) = flowDomsd(d2,level,mm)%rev(i2,j2,k2)
               jj = jj + 1
+              flowDomsd(d2,level,mm)%rev(i2,j2,k2) = zero
            endif
 
         enddo
@@ -182,36 +187,43 @@ subroutine whalo1to1_b(level, start, end, commPressure,       &
         do k=start,end
            flowDomsd(d1,level,mm)%w(i1,j1,k1,k) = flowDomsd(d1,level,mm)%w(i1,j1,k1,k) + &
                 flowDomsd(d2,level,mm)%w(i2,j2,k2,k)
+           flowDomsd(d2,level,mm)%w(i2,j2,k2,k) = zero
         enddo
 
         ! The pressure, if needed.
 
-        if( commPressure )                   &
-             flowDomsd(d1,level,mm)%p(i1,j1,k1) = flowDomsd(d1,level,mm)%p(i1,j1,k1) + &
-             flowDomsd(d2,level,mm)%p(i2,j2,k2)
+        if( commPressure ) then
+           flowDomsd(d1,level,mm)%p(i1,j1,k1) = flowDomsd(d1,level,mm)%p(i1,j1,k1) + &
+                flowDomsd(d2,level,mm)%p(i2,j2,k2)
+           flowDomsd(d2,level,mm)%p(i2,j2,k2) = zero
+        end if
 
         ! The specific heat ratio, if needed. Note that level == 1.
 
-        if( commVarGamma )                   &
+        if( commVarGamma ) then
              flowDomsd(d1,1,mm)%gamma(i1,j1,k1) = flowDomsd(d1,1,mm)%gamma(i1,j1,k1) + &
              flowDomsd(d2,1,mm)%gamma(i2,j2,k2)
-
+             flowDomsd(d2,1,mm)%gamma(i2,j2,k2) = zero
+          end if
 
         ! The laminar viscosity for viscous computations.
         ! Again level == 1.
 
-        if( commLamVis )                   &
+        if( commLamVis ) then
              flowDomsd(d1,1,mm)%rlv(i1,j1,k1) = flowDomsd(d1,1,mm)%rlv(i1,j1,k1) + &
              flowDomsd(d2,1,mm)%rlv(i2,j2,k2)
+             flowDomsd(d2,1,mm)%rlv(i2,j2,k2) = zero
+          end if
 
         ! The eddy viscosity for eddy viscosity models.
         ! Level is the true multigrid level, because the eddy
         ! viscosity is allocated on all grid levels.
 
-        if( commEddyVis )                      &
+        if( commEddyVis ) then
              flowDomsd(d1,level,mm)%rev(i1,j1,k1) = flowDomsd(d1,level,mm)%rev(i1,j1,k1) + &
              flowDomsd(d2,level,mm)%rev(i2,j2,k2)
-
+             flowDomsd(d2,level,mm)%rev(i2,j2,k2) = zero
+          end if
 
      enddo localCopy
 

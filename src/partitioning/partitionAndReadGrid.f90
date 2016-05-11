@@ -66,12 +66,6 @@
 
        call determineBleedFlowRegions
 
-       ! Determine whether overset connectivites are changing in time.
-       ! This needs to be known to possibly save time in unsteady or
-       ! time spectral modes.
-
-       call setChangingOverset
-
        ! If we are just doing a partition test, return
        if (partitionOnly) then 
           return
@@ -83,13 +77,9 @@
 
        call loadBalance
 
-      ! Initialize the iblank array for the fine grid domains, and
-      ! then deallocate all memory taken up by the overset data in
-      ! the global domains. This can be a large chunk of memory for
-      ! some cases.
+      ! Initialize the iblank array for the fine grid domains
 
        call initFineGridIblank
-       call releaseOversetCGNSGrid
 
        ! Allocate the coordinates of the fine grid level and the
        ! derived data type used to read them.
