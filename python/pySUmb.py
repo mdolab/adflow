@@ -2390,12 +2390,16 @@ class SUMB(AeroSolver):
         self.sumb.inputphysics.machgrid = machGrid
 
         # Set reference state information:
+
+        # Reset these so that the updated free stream values are taken
+        self.sumb.flowvarrefstate.pref = -1.0
+        self.sumb.flowvarrefstate.tref = -1.0
+        self.sumb.flowvarrefstate.rhoref = -1.0
+        self.sumb.flowvarrefstate.pinfdim = P
+        self.sumb.inputphysics.tempfreestream = T
+
         if self.getOption('equationType') != 'euler':
-            # RANS
-            self.sumb.flowvarrefstate.rhoref = rho
-            self.sumb.flowvarrefstate.pref = P
-            self.sumb.flowvarrefstate.tref = T
-            self.sumb.inputphysics.tempfreestream = T
+            # RANS/Laminar
             ReLength = 1.0
             self.sumb.inputphysics.reynolds = rho*V/mu
             self.sumb.inputphysics.reynoldslength = ReLength
@@ -2412,10 +2416,6 @@ class SUMB(AeroSolver):
             self.sumb.inputphysics.prandtl = Pr            
         else:
             # EULER
-            self.sumb.flowvarrefstate.rhoref = rho
-            self.sumb.flowvarrefstate.pref = P
-            self.sumb.flowvarrefstate.tref = T
-            self.sumb.inputphysics.tempfreestream = T
             self.sumb.inputphysics.reynolds = 1.0
             self.sumb.inputphysics.reynoldslength = 1.0
 
