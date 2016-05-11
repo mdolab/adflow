@@ -262,7 +262,7 @@ subroutine createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
   !         sub-strings.
   ! -------------------------------------------------------------------
   ! Debugging
-  call writeWalls(oWalls, size(oWalls))
+  !call writeWalls(oWalls, size(oWalls))
 
   call makeGapBoundaryStrings(level, sps)
 
