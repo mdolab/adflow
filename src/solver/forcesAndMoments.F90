@@ -23,12 +23,14 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
   !      * here.                                                          *
   !      ******************************************************************
   !
+  use communication
   use blockPointers
   use BCTypes
   use flowVarRefState
   use inputPhysics
   use bcroutines
   use costFunctions
+  use overset
   implicit none
   !
   !      Subroutine arguments
@@ -41,7 +43,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
   !
   !      Local variables.
   !
-  integer(kind=intType) :: nn, i, j, ii
+  integer(kind=intType) :: nn, i, j, ii, blk, ierr
 
   real(kind=realType) :: pm1, fx, fy, fz, fn, sigma
   real(kind=realType) :: xc, yc, zc, qf(3)
@@ -53,6 +55,8 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
   real(kind=realType), dimension(3) :: refPoint
   real(kind=realType) :: mx, my, mz, qa
   logical :: viscousSubface
+  
+  real(kind=realType) :: areaSum
   !
   !      ******************************************************************
   !      *                                                                *
@@ -82,6 +86,8 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
   sepSensor = zero
   Cavitation = zero
   sepSensorAvg = zero
+
+  areaSum = zero
 
   ! Loop over the boundary subfaces of this block.
 
@@ -165,9 +171,22 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
                    +         xx(i,j+1,3) + xx(i+1,j+1,3)) - refPoint(3)
 
               ! Compute the force components.
+              blk = max(BCData(nn)%iblank(i,j), 0)
               fx = pm1*ssi(i,j,1)
               fy = pm1*ssi(i,j,2)
               fz = pm1*ssi(i,j,3)
+
+              ! Save forces for zipper mesh before iBlanking
+              if (oversetPresent) then 
+                 call VecSetValuesBlocked(globalPressureTractions, 1, &
+                      (/gcp(i, j)/), &
+                      (/fx, fy, fz/)/norm2(ssi(i,j,:)), INSERT_VALUES, ierr)
+              end if
+
+              ! iBlank forces after saving for zipper mesh
+              fx = fx*blk
+              fy = fy*blk
+              fz = fz*blk
 
               ! Update the inviscid force and moment coefficients.
               cFp(1) = cFp(1) + fx
@@ -188,6 +207,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
               bcData(nn)%Fp(i, j, 2) = fy
               bcData(nn)%Fp(i, j, 3) = fz
 #endif
+
               ! Divide by 4 so we can scatter
               fx = fourth*fx
               fy = fourth*fy
@@ -215,6 +235,8 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
               BCData(nn)%dualArea(i  , j-1) = BCData(nn)%dualArea(i  , j-1) + qA
               BCData(nn)%dualArea(i-1, j  ) = BCData(nn)%dualArea(i-1, j  ) + qA
               BCData(nn)%dualArea(i  , j  ) = BCData(nn)%dualArea(i  , j  ) + qA
+   
+              areaSum = areaSum + four*qA*blk
 
               ! Get normalized surface velocity:
               v(1) = ww2(i, j, ivx)
@@ -281,6 +303,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
                  j = ii/(bcData(nn)%inEnd-bcData(nn)%inBeg) + bcData(nn)%jnBeg + 1
 
                  ! Store the viscous stress tensor a bit easier.
+                 blk = max(BCData(nn)%iblank(i,j), 0)
 
                  tauXx = viscSubface(nn)%tau(i,j,1)
                  tauYy = viscSubface(nn)%tau(i,j,2)
@@ -298,6 +321,25 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
                       +        tauYz*ssi(i,j,3))*scaleDim
                  fz = -fact*(tauXz*ssi(i,j,1) + tauYz*ssi(i,j,2) &
                       +        tauZz*ssi(i,j,3))*scaleDim
+
+                 ! Save forces for zipper mesh before iBlanking
+                 if (oversetPresent) then 
+                    call VecSetValuesBlocked(globalViscousTractions, 1, &
+                         (/gcp(i, j)/), &
+                         (/fx, fy, fz/)/norm2(ssi(i,j,:)), INSERT_VALUES, ierr)
+                 end if
+
+                 ! iBlank forces after saving for zipper mesh
+                 tauXx = tauXx*blk
+                 tauYy = tauYy*blk
+                 tauZz = tauZz*blk
+                 tauXy = tauXy*blk
+                 tauXz = tauXz*blk
+                 tauYz = tauYz*blk
+
+                 fx = fx*blk
+                 fy = fy*blk
+                 fz = fz*blk
 
                  ! Compute the coordinates of the centroid of the face
                  ! relative from the moment reference point. Due to the
@@ -406,6 +448,9 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
         bcData(nn)%F = zero
      end if mask
   enddo bocos
+
+  !write(7000+myid,*)areaSum
+  !print*,'myid, AreaSum ',myid,areaSum
 
   ! Currently the coefficients only contain the surface integral
   ! of the pressure tensor. These values must be scaled to

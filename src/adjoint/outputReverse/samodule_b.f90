@@ -1378,12 +1378,19 @@ end subroutine sa_block_b
     real(kind=realtype) :: rblank
     intrinsic mod
     intrinsic real
+    intrinsic max
+    real(kind=realtype) :: x1
     scratchd = 0.0_8
     do ii=0,nx*ny*nz-1
       i = mod(ii, nx) + 2
       j = mod(ii/nx, ny) + 2
       k = ii/(nx*ny) + 2
-      rblank = real(iblank(i, j, k), realtype)
+      x1 = real(iblank(i, j, k), realtype)
+      if (x1 .lt. zero) then
+        rblank = zero
+      else
+        rblank = x1
+      end if
       vold(i, j, k) = vold(i, j, k) - rblank*scratch(i, j, k, idvt)*dwd(&
 &       i, j, k, itu1)
       scratchd(i, j, k, idvt) = scratchd(i, j, k, idvt) - rblank*vol(i, &
@@ -1410,11 +1417,18 @@ end subroutine sa_block_b
     real(kind=realtype) :: rblank
     intrinsic mod
     intrinsic real
+    intrinsic max
+    real(kind=realtype) :: x1
     do ii=0,nx*ny*nz-1
       i = mod(ii, nx) + 2
       j = mod(ii/nx, ny) + 2
       k = ii/(nx*ny) + 2
-      rblank = real(iblank(i, j, k), realtype)
+      x1 = real(iblank(i, j, k), realtype)
+      if (x1 .lt. zero) then
+        rblank = zero
+      else
+        rblank = x1
+      end if
       dw(i, j, k, itu1) = -(vol(i, j, k)*scratch(i, j, k, idvt)*rblank)
     end do
   end subroutine saresscale
@@ -1446,6 +1460,9 @@ end subroutine sa_block_b
     logical, dimension(:, :), pointer :: flag
     intrinsic max
     intrinsic real
+    real(kind=realtype) :: x3
+    real(kind=realtype) :: x2
+    real(kind=realtype) :: x1
 ! initialize the wall function flags to .false.
     flagi2 = .false.
     flagil = .false.
@@ -1629,10 +1646,12 @@ bocos:do nn=1,nviscbocos
           if (uu .gt. zero) up = uu
           bb(j) = bb(j) - up
           dd(j) = dd(j) + um
-! store the central jacobian and rhs in cc and ff.
-! multiply the off-diagonal terms and rhs by the iblank
-! value so the update determined for iblank = 0 is zero.
-          rblank = real(iblank(i, j, k), realtype)
+          x1 = real(iblank(i, j, k), realtype)
+          if (x1 .lt. zero) then
+            rblank = zero
+          else
+            rblank = x1
+          end if
           cc(j) = qq(i, j, k)
           ff(j) = scratch(i, j, k, idvt)*rblank
           bb(j) = bb(j)*rblank
@@ -1736,10 +1755,12 @@ bocos:do nn=1,nviscbocos
           if (uu .gt. zero) up = uu
           bb(i) = bb(i) - up
           dd(i) = dd(i) + um
-! store the central jacobian and rhs in cc and ff.
-! multiply the off-diagonal terms and rhs by the iblank
-! value so the update determined for iblank = 0 is zero.
-          rblank = real(iblank(i, j, k), realtype)
+          x2 = real(iblank(i, j, k), realtype)
+          if (x2 .lt. zero) then
+            rblank = zero
+          else
+            rblank = x2
+          end if
           cc(i) = qq(i, j, k)
           ff(i) = scratch(i, j, k, idvt)*rblank
           bb(i) = bb(i)*rblank
@@ -1843,10 +1864,12 @@ bocos:do nn=1,nviscbocos
           if (uu .gt. zero) up = uu
           bb(k) = bb(k) - up
           dd(k) = dd(k) + um
-! store the central jacobian and rhs in cc and ff.
-! multiply the off-diagonal terms and rhs by the iblank
-! value so the update determined for iblank = 0 is zero.
-          rblank = real(iblank(i, j, k), realtype)
+          x3 = real(iblank(i, j, k), realtype)
+          if (x3 .lt. zero) then
+            rblank = zero
+          else
+            rblank = x3
+          end if
           cc(k) = qq(i, j, k)
           ff(k) = scratch(i, j, k, idvt)*rblank
           bb(k) = bb(k)*rblank
