@@ -3565,6 +3565,7 @@ class SUMB(AeroSolver):
             'restrictionrelaxation':[float, .80],
             'liftindex':[int, 2],
             'lowspeedpreconditioner':[bool, False],
+            'walldistcutoff':[float, 1e20],
 
             # Common Paramters
             'ncycles':[int, 500],
