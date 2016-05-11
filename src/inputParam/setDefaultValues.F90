@@ -236,18 +236,6 @@
 !
 !      ******************************************************************
 !      *                                                                *
-!      * Set the default values for the overset parameters.             *
-!      *                                                                *
-!      ******************************************************************
-!
-       oversetDonorsAreGuesses = .false.
-       avgRestrictResforBlanks = .false.
-       oversetInterpType       = TriLinear
-       oversetInterpTypeCoarse = TriLinear
-       allowableDonorQuality   = one
-!
-!      ******************************************************************
-!      *                                                                *
 !      * Set the default values for the parallel parameters.            *
 !      *                                                                *
 !      ******************************************************************

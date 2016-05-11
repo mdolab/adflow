@@ -42,9 +42,10 @@
        integer :: ierr, i, j, k, nn, ii, l
 
        integer(kind=intType) :: sps, sps2, ll, nLevels
-       logical :: tempLogical 
+       logical :: tempLogical
        double precision :: t0
        character(len=3) :: integerString
+       
 !
 !      ******************************************************************
 !      *                                                                *
@@ -52,6 +53,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+
        ! Check if the RANS equations are solved. If not, the wall
        ! distance is not needed and a return can be made.
 
@@ -62,7 +64,7 @@
        ! distance. It may be needed for the boundary conditions and
        ! the monitoring of the y+. Return afterwards.
 
-       if(.not. wallDistanceNeeded) then
+       if(.not. wallDistanceNeeded) then 
 
          ! Loop over the number of spectral solutions, initialize the
          ! distance and compute the initial normal spacing.
@@ -115,8 +117,8 @@
        ! updating the wall distances between iterations of
        ! aerostructural solutions. 
 
-
-       ! Normal, original wall distance calc
+       ! Normal, original wall distance calc. Cannot be used when
+       ! overset is present due to possibility of overlapping walls. 
        if (.not. useApproxWallDistance) then 
           ! Loop over the number of spectral solutions.
           spectralLoop: do sps=1,nTimeIntervalsSpectral
@@ -147,39 +149,48 @@
                 call determineDistance(level, sps)
              end if
           end do spectralLoop
-       else ! The user wants to use approx wall distance calcs:
+       else ! The user wants to use approx wall distance calcs OR we
+            ! have overset mesh. :
 
           if (updateWallAssociation(level)) then 
+
              ! Initialize the wall distance
              spectralLoop2: do sps=1,nTimeIntervalsSpectral
                 call initWallDistance(level, sps, allocMem)
              end do spectralLoop2
+
              ! Destroy the PETSc wall distance data if necessary
              call destroyWallDistanceData(level)
 
              ! Do the associtaion. This allocates the data destroyed
              ! in the destroyWallDistanceData call
-             call determineWallAssociation(level)
+
+             do sps=1, nTimeIntervalsSpectral
+                call determineWallAssociation(level, sps)
+             end do
+
              updateWallAssociation(level) = .False.
           end if
 
           ! Update the xsurf vector from X
           call updateXSurf(level)
 
-          ! Now extract the vector of the surface data we need
-          call VecGetArrayF90(xSurfVec(level), xSurf, ierr)
-          call EChk(ierr,__FILE__,__LINE__)
-          
           ! Call the actual update routine, on each of the sps instances and blocks
-          do sps=1,nTimeIntervalsSpectral
+          do sps=1, nTimeIntervalsSpectral
+  
+             ! Now extract the vector of the surface data we need
+             call VecGetArrayF90(xSurfVec(level, sps), xSurf, ierr)
+             call EChk(ierr,__FILE__,__LINE__)
+
              do nn=1,nDom
                 call setPointers(nn, level, sps)
                 call updateWallDistancesQuickly(nn, level, sps)
              end do
-          end do
 
-          call VecRestoreArrayF90(xSurfVec(level), xSurf, ierr)
-          call EChk(ierr,__FILE__,__LINE__)
+             call VecRestoreArrayF90(xSurfVec(level, sps), xSurf, ierr)
+             call EChk(ierr,__FILE__,__LINE__)
+             
+          end do
        end if
                      
        ! Allocate the temporarily released memory again. For more info
@@ -217,10 +228,11 @@ subroutine destroyWallDistanceData(level)
 
   use precision
   use wallDistanceData
-
+  use inputTimeSpectral
+  implicit none
   ! Subroutine arguments
   integer(kind=intType), intent(in) :: level
-  integer(kind=intType) :: ierr
+  integer(kind=intType) :: ierr, sps
 
   ! Determine if we need to deallocate the PETSc data for
   ! this level
@@ -228,11 +240,13 @@ subroutine destroyWallDistanceData(level)
      call VecDestroy(xVolumeVec(level), ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
-     call VecDestroy(xSurfVec(level), ierr)
-     call EChk(ierr,__FILE__,__LINE__)
-     
-     call VecScatterDestroy(wallScatter(level), ierr)
-     call EChk(ierr,__FILE__,__LINE__)
+     do sps=1, nTimeIntervalsSpectral
+        call VecDestroy(xSurfVec(level, sps), ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+        
+        call VecScatterDestroy(wallScatter(level, sps), ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+     end do
 
      wallDistanceDataAllocated(level) = .False.
   end if

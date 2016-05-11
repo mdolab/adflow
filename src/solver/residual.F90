@@ -233,7 +233,6 @@ subroutine residual_block
   ! Add the dissipative and possibly viscous fluxes to the
   ! Euler fluxes. Loop over the owned cells and add fw to dw.
   ! Also multiply by iblank so that no updates occur in holes
-  ! or on the overset boundary.
   if ( lowspeedpreconditioner ) then
      do k=2,kl
         do j=2,jl
@@ -344,7 +343,7 @@ subroutine residual_block
 
               ! dwo is the orginal redisual
               do l=1,nwf
-                 dwo(l) = (dw(i,j,k,l) + fw(i,j,k,l))* real(iblank(i,j,k), realType)
+                 dwo(l) = (dw(i,j,k,l) + fw(i,j,k,l))* max(real(iblank(i,j,k), realType), zero)
               end do
 
               dw(i,j,k,1)=B11*dwo(1) + B12*dwo(2)+ B13*dwo(3) + B14*dwo(4) + B15*dwo(5)
@@ -362,7 +361,7 @@ subroutine residual_block
            do j=2,jl
               do i=2,il
                  dw(i,j,k,l) = (dw(i,j,k,l) + fw(i,j,k,l)) &
-                      * real(iblank(i,j,k), realType)
+                      * max(real(iblank(i,j,k), realType), zero)
               enddo
            enddo
         enddo
