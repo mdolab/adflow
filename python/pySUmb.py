@@ -1226,7 +1226,7 @@ class SUMB(AeroSolver):
                 
 
     def solveCL(self, aeroProblem, CLStar, alpha0=0,
-                delta=0.5, tol=1e-3, autoReset=True, CLalpha_guess=None,
+                delta=0.5, tol=1e-3, autoReset=True, CLalphaGuess=None,
                 maxIter = 20):
         """This is a simple secant method search for solving for a
         fixed CL. This really should only be used to determine the
@@ -1250,7 +1250,7 @@ class SUMB(AeroSolver):
             think). This will reset the flow after each solve which
             solves this problem. Not necessary (or desired) when using
             the RK solver.
-        CLalpha_guess : float or None
+        CLalphaGuess : float or None
             The user can provide an estimate for the lift curve slope
             in order to accelerate convergence. If the user supply a
             value to this option, it will not use the delta value anymore
@@ -1278,15 +1278,15 @@ class SUMB(AeroSolver):
         sol = self.getSolution()
         fnm2 = sol['cl'] - CLStar
 
-        if CLalpha_guess is None:
+        if CLalphaGuess is None:
             # Use the delta option to define the next Aoa
             if fnm2 < 0:
                 anm1 = alpha0 + abs(delta)
             else:
                 anm1 = alpha0 - abs(delta)
         else:
-            # Use CLalpha_guess option to define the next Aoa
-            anm1 = alpha0 - fnm2/CLalpha_guess
+            # Use CLalphaGuess option to define the next Aoa
+            anm1 = alpha0 - fnm2/CLalphaGuess
 
         # Overwrite the RK options momentarily.
         # We need to do this to avoid using NK right at the beggining
@@ -1334,7 +1334,7 @@ class SUMB(AeroSolver):
             # Se the n-1 alpha value from update
             anm1 = anew
 
-        # Restore the min iter option given by user initially
+        # Restore the min iter option given initially by user
         self.setOption('nRKReset', minIterSave)
         self.setOption('rkreset', rkresetSave)
 
