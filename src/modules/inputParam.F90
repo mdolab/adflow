@@ -1063,5 +1063,6 @@
        real(kind=realType) :: nearWallDist=0.1
        real(kind=realType) :: oversetProjTol=1e-12
        real(kind=realType) :: backgroundVolScale = 1.0
+       logical :: debugZipper=.False.
      end module inputOverset
 
