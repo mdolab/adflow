@@ -31,6 +31,11 @@ subroutine wallSearch(aWall, bWall)
      return
   end if
 
+  if (clusterAreas(bWall%cluster) <= clusterAreas(aWall%cluster)) then 
+     ! B is smaller so we don't need to do anything
+     return
+  end if
+
   nInterpol = 0
   ! Allocate the (pointer) memory that may be resized as necessary for
   ! the singlePoint search routine. 
@@ -145,6 +150,7 @@ subroutine wallSearch(aWall, bWall)
      do j=1, 4
         n = bWall%conn(j, i)
         elem = tmpNodeElem(n)
+
         if (elem > 0) then 
 
            ! Get coordinates of the other quad
@@ -153,7 +159,7 @@ subroutine wallSearch(aWall, bWall)
            end do
 
            call  quadOverlap(q1, q2, overlapped)
-
+           
            if (overlapped) then 
               if (clusterAreas(bWall%cluster) > clusterAreas(aWall%cluster)) then 
                  bWall%iBlank(bWall%cellPtr(i)) = -2
@@ -179,6 +185,153 @@ subroutine wallSearch(aWall, bWall)
         end if
      end if
   end do
+
+  ! ============= This is quite inefficient. ==============
+  !
+  ! Now do the all the searches in reverse. Probably don't need the
+  ! cell center check anymore since the other search will take care of
+  ! it. 
+
+  deallocate(tmpNodeElem, tmpCellElem)
+  allocate(tmpNodeElem(aWall%nNodes), tmpCellElem(aWall%nCells))
+  tmpNodeElem(:) = 0
+  tmpCellElem(:) = 0
+
+  ADTree => bWall%ADT%ADTree
+  do i=1, aWall%nNodes
+
+     xx(1:3) = aWall%x(:, i)
+     xx(4) = large
+
+     ! Just check if it is inside the root bounding box..ie the full
+     ! bounding box of the surface. This is pretty conservative.
+     if(xx(1) >= ADTree(1)%xMin(1) .and. &
+          xx(1) <= ADTree(1)%xMax(4) .and. &
+          xx(2) >= ADTree(1)%xMin(2) .and. &
+          xx(2) <= ADTree(1)%xMax(5) .and. &
+          xx(3) >= ADTree(1)%xMin(3) .and. &
+          xx(3) <= ADTree(1)%xMax(6)) then
+
+        ! Now find the closest element on the other mesh for this
+        ! node. This is the regular (expensive) closest point search
+
+        call minDistanceTreeSearchSinglePoint(bWall%ADT, xx, intInfo, uvw, &
+             dummy, nInterpol, BB, frontLeaves, frontLeavesNew)
+
+        ! Don't accept the element just yet. Check that that it is
+        ! within a factor of our node tolernace. We have to check both
+        ! the node on bWall and the nodes on the cell we found becuase
+        ! one could be bigger. 
+        dist = sqrt(uvw(4))
+        elemID = intInfo(3)
+
+        delta = aWall%delta(i)
+
+        do k=1,4
+           delta = max(delta, bWall%delta(bWall%conn(k, elemID)))
+        end do
+
+        if (dist < max(nearWallDist, 10*delta)) then 
+           ! Store the closest element for this node
+           tmpNodeElem(i) = elemID
+        end if
+     end if
+  end do
+
+  ! Also check the cell centers
+  do i=1,aWall%nCells
+
+     ! Compute the cell center
+     xx(1:3) = zero
+     do jj=1,4
+        xx(1:3) = xx(1:3) + fourth*aWall%x(:, awall%conn(jj, i))
+     end do
+
+     xx(4) = large
+
+     ! Just check if it is in the first bounding box:
+     if(xx(1) >= ADTree(1)%xMin(1) .and. &
+          xx(1) <= ADTree(1)%xMax(4) .and. &
+          xx(2) >= ADTree(1)%xMin(2) .and. &
+          xx(2) <= ADTree(1)%xMax(5) .and. &
+          xx(3) >= ADTree(1)%xMin(3) .and. &
+          xx(3) <= ADTree(1)%xMax(6)) then
+
+        ! Now find the closest element on the other mesh for this
+        ! node. This is the regular (expensive) closest point search
+
+        call minDistanceTreeSearchSinglePoint(bWall%ADT, xx, intInfo, uvw, &
+             dummy, nInterpol, BB, frontLeaves, frontLeavesNew)
+
+        ! Don't accept the element just yet. Check that that it is
+        ! within a factor of our node tolernace. 
+        dist = sqrt(uvw(4))
+        elemID = intInfo(3)
+
+        delta = zero
+        do k=1, 4
+           delta = max(delta, aWall%delta(aWall%conn(k, i)))
+           delta = max(delta, bWall%delta(bWall%conn(k, elemID)))
+        end do
+
+        if (dist < max(nearWallDist, 10*delta)) then 
+        ! Store the closest element for this node
+           tmpCellElem(i) = elemID
+        end if
+     end if
+  end do
+
+  ! On the next pass loop over the *cells*
+  do i=1, aWall%nCells
+
+     ! Get my coordiantes for my (3D) quad
+     do jj=1,4
+        q1(:, jj) = aWall%x(:, aWall%conn(jj, i))
+     end do
+
+     ! We first check overlap with the 4 elements found from
+     ! projecting the nodes.
+     do j=1, 4
+        n = aWall%conn(j, i)
+        elem = tmpNodeElem(n)
+
+        if (elem > 0) then 
+
+           ! Get coordinates of the other quad
+           do jj=1,4
+              q2(:, jj) = bWall%x(:, bWall%conn(jj, elem))
+           end do
+
+           call  quadOverlap(q1, q2, overlapped)
+           
+           if (overlapped) then 
+              if (clusterAreas(bWall%cluster) > clusterAreas(aWall%cluster)) then 
+                 ! b is still the one blanked
+                 bWall%iBlank(bWall%cellPtr(elem)) = -2
+              end if
+           end if
+        end if
+     end do
+
+     ! And check the cell center
+     elem = tmpCellElem(i)
+     if (elem > 0) then 
+        ! Get coordinates of the other quad
+
+        do jj=1,4
+           q2(:, jj) = bWall%x(:, bWall%conn(jj, elem))
+        end do
+
+        call  quadOverlap(q1, q2, overlapped)
+        if (overlapped) then 
+           if (clusterAreas(bWall%cluster) > clusterAreas(aWall%cluster)) then 
+              ! bWall is still the one blanked
+              bWall%iBlank(bWall%cellPtr(elem)) = -2 ! -2 means it was overlapped and got blanked
+           end if
+        end if
+     end if
+  end do
+
 
   deallocate(BB, frontLeaves, frontLeavesNew, stack)
 
