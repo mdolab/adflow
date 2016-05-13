@@ -1227,7 +1227,7 @@ class SUMB(AeroSolver):
 
     def solveCL(self, aeroProblem, CLStar, alpha0=0,
                 delta=0.5, tol=1e-3, autoReset=True, CLalphaGuess=None,
-                maxIter = 20):
+                maxIter = 20, nReset=25):
         """This is a simple secant method search for solving for a
         fixed CL. This really should only be used to determine the
         starting alpha for a lift constraint in an optimization.
@@ -1297,7 +1297,7 @@ class SUMB(AeroSolver):
         # so that we can converge to a new solution.
         minIterSave = self.getOption('nRKReset')
         rkresetSave = self.getOption('rkreset')
-        self.setOption('nRKReset', 25)
+        self.setOption('nRKReset', nReset)
         self.setOption('rkreset', True)
 
         # Secant method iterations
