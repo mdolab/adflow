@@ -3585,6 +3585,7 @@ class SUMB(AeroSolver):
             'backgroundvolscale':[float, 1.0],
             'oversetprojtol':[float, 1e-12],
             'overlapfactor':[float, 0.9],
+            'debugzipper':[bool, False],
 
             # Unsteady Paramters
             'timeintegrationscheme':[str, 'bdf'],
@@ -3848,6 +3849,7 @@ class SUMB(AeroSolver):
             'backgroundvolscale':['overset','backgroundvolscale'],
             'oversetprojtol':['overset','oversetprojtol'],
             'overlapfactor':['overset','overlapfactor'],
+            'debugzipper':['overset','debugzipper'],
 
             # Unsteady Params
             'timeintegrationscheme':{'bdf':self.sumb.inputunsteady.bdf,

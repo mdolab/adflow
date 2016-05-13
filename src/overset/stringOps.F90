@@ -27,10 +27,8 @@ contains
          string%subStr, &
          string%elemUsed, &
          string%XzipNodeUsed, &
-         string%tris)
-
-     !nullify(string%surfNodeIndices, string%uv)
-     nullify(string%surfCellID)
+         string%tris, &
+         string%surfCellID)
 
   end subroutine nullifyString
 
@@ -205,7 +203,7 @@ contains
                 ! Element exists, but it is the wrong order...don't
                 ! know what to do with this, probably an error or
                 ! maybe a corner case I haven't thought of.
-                call terminate("makeBoundaryString", "Inconsistnet duplicate edge.")
+                call terminate("makeBoundaryString", "Inconsistent duplicate edge.")
              end if
           end do
        end do
@@ -459,24 +457,28 @@ contains
     use overset
     use kdtree2_module
     implicit none
+
+    ! Input/Output
     type(oversetString), intent(inout), target :: s
     integer(Kind=intType), intent(out) :: nZipped
     real(kind=realType), intent(in) :: cutOff
+
     ! Working
-    integer(kind=intType) :: i, j, k,  N, ii, im1, ip1, nalloc, idx, nFound
-    integer(kind=intType) :: nNodes, nElems, elem1, elem2
-    logical :: lastNodeZipper, inTri, overlapFound
-    real(kind=realType), dimension(3) :: v1, v2, norm, c
+    integer(kind=intType) :: i, j, k,  N, ii, im1, ip1
+    logical :: lastNodeZippered,  added
+    real(kind=realType), dimension(3) :: v1, v2, norm
     real(kind=realType) :: cosCutoff, cosTheta, r2, v1nrm, v2nrm
-    integer(Kind=intType), dimension(:), allocatable :: nodeMap, elemMap
+    integer(Kind=intType), dimension(:), allocatable :: nodeMap
     type(kdtree2_result), dimension(:), allocatable  :: results
-    real(kind=realType), dimension(:, :), pointer :: nodeDataTmp
-    integer(kind=intType), dimension(:, :), pointer :: connTmp, intNodeDataTmp
-    integer(kind=intType), dimension(:), pointer :: pNodesTmp
+
     ! Perform self zipping on the supplied string. The string at this
     ! point should be either peroidic or since sinded --- no multiple
     ! loops should be left. Therefore, we can count on the nodes being
     ! in order.
+
+    allocate(results(25))
+    allocate(nodeMap(s%nNodes))
+    nodeMap = 1
 
     cosCutoff = cos(cutOff*pi/180)
     nzipped = 0
@@ -495,12 +497,6 @@ contains
        N = s%nNodes - 1
     end if
 
-    nAlloc = 25
-    allocate(results(nAlloc))
-    allocate(nodeMap(s%nNodes), elemMap(s%nElems))
-    nodeMap = 1
-    elemMap = 1
-
     do while (ii <= N)
 
        ! Peroidic string at end...loop around
@@ -508,7 +504,7 @@ contains
           ip1 = 1
        end if
 
-       lastNodeZipper = .False. 
+       lastNodeZippered = .False. 
 
        ! Determine the anlge between the vectors
        v1 = s%x(:, ip1) - s%x(:, ii)
@@ -527,112 +523,18 @@ contains
 
              if (costheta > cosCutoff) then 
 
-                ! We may have a valid triangle. We need to make sure we
-                ! don't overlap anyone else. 
-                !
-                ! xim1 +
-                !      | \
-                !      |   \
-                !      |     c
-                !      |       \
-                !      |         \
-                !      +----------+
-                !      xi         xip1
-                ! We do a ball search based at 'c' which is just the
-                ! (average of xip1 and xim1) using a radius defined as the
-                ! maximum of (the distance between 'c' and 'xi', half
-                ! length of xip1 to xim1)
-                ! 
-                c = half*(s%x(:, ip1) + s%x(:, im1))
-                r2 = (c(1) - s%x(1, ii))**2 +  (c(2) - s%x(2, ii))**2 +  (c(3) - s%x(3, ii))**2
+                call addPotentialTriangle(s, im1, ii, ip1, nodeMap, &
+                     results, added)
 
-                r2 = max(r2, (s%x(1, ip1) - s%x(1, im1))**2 + (s%x(2, ip1) - s%x(2, im1))**2 + &
-                     (s%x(3, ip1) - s%x(3, im1))**2)
-
-                nFound = 0
-                outerLoop: do 
-
-                   call kdtree2_r_nearest(s%p%tree, c, r2, nfound, nalloc, results) 
-                   if (nFound < nAlloc) then 
-                      exit outerLoop
-                   end if
-
-                   ! Allocate more space and keep going
-                   deallocate(results)
-                   nAlloc = nAlloc * 2
-                   allocate(results(nAlloc))
-                end do outerLoop
-
-                ! We can now be sure that we have all the points inside our
-                ! ball. Next we proceed to systematically check them. 
-                overlapFound = .False.
-                nodeFoundLoop: do k=1, nFound
-                   ! Note that we do check nodes from our own string,
-                   ! except for the the three nodes we're dealing
-                   ! with. Remember that we are working in our parent's
-                   ! ording here.
-                   idx = results(k)%idx 
-
-                   notPartofTriangle: if (idx /= s%pNodes(im1) .and. &
-                        idx /= s%pNodes(ii) .and. idx /= s%pNodes(ip1)) then 
-
-                      ! Only check if the node normal of the point we're
-                      ! checking is in the same direction as the triangle. 
-                      if (dot_product(s%norm(:, ii), s%p%norm(:, idx)) > zero) then 
-
-                         ! Finally do the actual trianlge test
-                         call pointInTriangle(s%x(:, ip1), s%x(:, ii), s%x(:, im1), &
-                              s%p%x(:, idx), inTri)
-                         if (inTri) then 
-                            ! As soon as 1 is in the triangle, we know the
-                            ! gap string is no good. 
-                            overlapFound = .True. 
-                            exit nodeFoundLoop
-                         end if
-                      end if
-                   end if notPartofTriangle
-                end do nodeFoundLoop
-
-                if (.not. overlapFound) then 
-                   ! This triangle is good!
-                   s%p%nTris = s%p%nTris+ 1
-                   s%p%tris(:, s%p%nTris) = (/s%pNodes(ip1), s%pNodes(ii),s%pNodes(im1)/)
-                   lastNodeZipper = .True.
+                if (added) then 
                    nZipped = nZipped + 1
-
-                   ! Flag this node as gone
-                   nodeMap(ii) = 0
-
-                   ! Flag the two edges on either side of this node as
-                   ! also being gone
-                   elemMap(s%nte(2, ii)) = 0
-                   elemMap(s%nte(3, ii)) = 0
-
-                   ! Flag the two edges that got removed as being used
-                   ! in the parent.
-                   elem1 = s%p%nte(2, s%pNodes(ii))
-                   elem2 = s%p%nte(3, s%pNodes(ii))
-                   s%p%elemUsed(elem1) = 1
-                   s%p%elemUsed(elem2) = 1
-
-                   ! Add these three edges to oversetEdge's 
-                   ! Edge 1:
-                   s%p%nEdges = s%p%nEdges + 1
-                   s%p%edges(s%p%nEdges)%n1 = s%pNodes(ip1)
-                   s%p%edges(s%p%nEdges)%n2 = s%pNodes(ii)
-                   ! Edge 2:
-                   s%p%nEdges = s%p%nEdges + 1
-                   s%p%edges(s%p%nEdges)%n1 = s%pNodes(ii)
-                   s%p%edges(s%p%nEdges)%n2 = s%pNodes(im1)
-                   ! Edge 3:
-                   s%p%nEdges = s%p%nEdges + 1
-                   s%p%edges(s%p%nEdges)%n1 = s%pNodes(im1)
-                   s%p%edges(s%p%nEdges)%n2 = s%pNodes(ip1)
+                   lastNodeZippered = .True.
                 end if
              end if
           end if
        end if
-       if (lastNodeZipper) then 
+
+       if (lastNodeZippered) then 
           ! Skip the next node...we'll get it on the next pass
           ii = ii + 2
           im1 = ii -1
@@ -650,67 +552,8 @@ contains
     ! process still sees the same string, it just gets a little
     ! shorter. 
 
-    ! Save pointers to existing data
-    nNodes = s%nNodes
-    nElems = s%nElems
-    nodeDataTmp => s%nodeData
-    intNodeDataTmp => s%intNodeData
-    connTmp => s%conn
-    pNodesTmp => s%pNodes
-
-    ! Convert the nodeMap which currently contains a one if the node
-    ! still exists and 0 if it doesn't. This will convert it to the new
-    ! node numbers. Ie nodeMap(i) gives the new node index of the
-    ! shorted chain. If nodeMap(i) = 0, it is no longer part of the
-    ! chain.
-    j = 0
-    do i=1, s%nNodes
-       if (nodeMap(i) == 1) then 
-          j = j + 1
-          nodeMap(i) = j
-       end if
-    end do
-
-    !  Update the cNodes in the parent so they point to the updated node
-    ! numbers. Note that the nodes that have been eliminated, have cNode
-    ! = 0, which will identify that it no longer has a child node. 
-    do i=1, s%nNodes
-       s%p%cNodes(:, s%pNodes(i)) = (/s%myID, nodeMap(i)/)
-    end do
-
-    ! Update the number of nodes/elems in our shorted chain. Every
-    ! zipper reduces the number of nodes and number of elems by 1
-    s%nNodes = s%nNodes - nZipped
-    s%nElems = s%nElems - nZipped
-
-    allocate(s%nodeData(10, s%nNodes), s%intNodeData(3, s%nNodes), &
-         s%pNodes(s%nNodes), s%conn(2, s%nElems))
-
-    ! Set the pointers for the new string
-    call setStringPointers(s)
-
-    do i=1, nNodes
-       if (nodeMap(i) /= 0) then 
-          s%nodeData(:, nodeMap(i)) = nodeDataTmp(:, i)
-          s%intNodeData(:, nodeMap(i)) = intNodeDataTmp(:, i)
-          s%pNodes(nodeMap(i)) = pNodesTmp(i)
-       end if
-    end do
-
-    ! Since we know the string was in order, we can simply redo the connectivity
-    do i=1, s%nElems
-       s%conn(:, i) = (/i, i+1/)
-    end do
-    if (s%isPeriodic) then 
-       s%conn(2, s%nElems) = 1
-    end if
-
-    ! Dellocate the existing memory
-    deallocate(nodeDataTmp, intNodeDataTmp, connTmp, pNodesTmp)
-    deallocate(nodeMap, elemMap)
-
-    ! Recrate the node to elem
-    call createNodeToElem(s)
+    call shortenString(s, nodeMap)
+    deallocate(results, nodeMap)
 
   end subroutine selfZip
 
@@ -757,6 +600,10 @@ contains
        nStepsB =  str2%nElems
     end if
 
+    ! The number of steps we've performed in each edge
+    stepsA = 0
+    stepsB = 0
+
     ! Initialize the front: 
     A = N1
     B = N3
@@ -778,9 +625,7 @@ contains
     perpAp = str1%perpNorm(:, Ap)
     perpBp = str2%perpNorm(:, Bp)
 
-    ! The number of steps we've performed in each edge
-    stepsA = 0
-    stepsB = 0
+
 
     ! Cross zip nodes N1 to N2 on str1 to nodes N3 to N4 on str2
     ii = 0
@@ -896,7 +741,9 @@ contains
        sum2 = dot_product(triNorm2, normA) + dot_product(triNorm2, normB) + &
             dot_product(triNorm2, normBp)
 
-       if (aValid .and. bValid) then 
+       ! Only use this to help pick one if both are still valid:
+       if (aValid .and. bValid .and. dot_product(triNorm1, triNorm2) < 0.8) then
+
           ! Only use this to help pick one if both are still valid:
 
           if (sum1 < cutoff .and. sum2 > cutoff) then 
@@ -1028,7 +875,6 @@ contains
        else if (.not.advanceA .and. .not.advanceB) then
 
           ! Move A
-          ! -------------------
           stepsA = stepsA + 1
 
           ! Copy the Ap to A
@@ -1042,10 +888,9 @@ contains
           ptAp = str1%x(:, Ap)
           normAp = str1%norm(:, Ap)
           perpAp = str1%perpNorm(:, Ap)
-          ! -------------------
+
 
           ! Move B
-          ! -------------------
           stepsB = stepsB + 1
 
           ! Copy the Bp to B
@@ -1059,9 +904,6 @@ contains
           ptBp = str2%x(:, Bp)
           normBp = str2%norm(:, Bp)
           perpBp = str2%perpNorm(:, Bp)
-          ! -------------------
-       else
-          Stop ' *** Error: Can not advance both A and B ***'
        end if
 
        ! Finally increment the number of triangles we've used so far. 
@@ -1069,7 +911,9 @@ contains
 
        ! Account for two skipped triangles (i.e. one extra count)
        ! if both A and B are skipped and advanced to Ap and Bp.
-       if (.not.advanceA .and. .not.advanceB) ii = ii + 1
+       if (.not.advanceA .and. .not.advanceB) then 
+          ii = ii + 1
+       end if
     end do
 
   contains
@@ -1187,749 +1031,398 @@ contains
 
     end function triArea
 
-    subroutine addTri(A, sA, B, sB, C, sC)
-
-      ! Form a triangle from index 'A' on string 'sA' , index 'B' on
-      ! string 'sB' and index 'C' on string 'sC'
-
-      implicit none
-
-      ! Input/Output
-      integer(kind=intType), intent(in) :: A, B, C
-      type(oversetString), intent(in) :: sA, sB, sC
-
-      ! Working 
-      type(oversetString), pointer :: p
-      integer(kind=intType) :: mn1, mn2, mn3
-      p => sA%p
-
-      p%nTris = p%nTris+ 1
-
-      ! mn = master node
-      mn1 = sA%pNodes(A)
-      mn2 = sB%pNodes(B)
-      mn3 = sC%pNodes(C)
-
-      p%tris(:, p%nTris) = (/mn1, mn2, mn3/)
-
-      ! Add these three edges to master list of edges
-
-      ! Edge 1:
-      p%nEdges = p%nEdges + 1
-      p%edges(p%nEdges)%n1 = mn1
-      p%edges(p%nEdges)%n2 = mn2
-
-      ! Edge 2:
-      p%nEdges = p%nEdges + 1
-      p%edges(p%nEdges)%n1 = mn2
-      p%edges(p%nEdges)%n2 = mn3
-
-      ! Edge 3:
-      p%nEdges = p%nEdges + 1
-      p%edges(p%nEdges)%n1 = mn3
-      p%edges(p%nEdges)%n2 = mn1
-
-      ! Flag the edge that got used on master
-      if (sA%myID == sC%myID) then 
-         p%elemUsed(sA%pElems(elemBetweenNodes(sA, A, C))) = 1
-      else if (sB%myID == sC%myID) then 
-         p%elemUsed(sB%pElems(elemBetweenNodes(sB, B, C))) = 1
-      end if
-
-    end subroutine addTri
-
   end subroutine crossZip
 
+  subroutine addTri(A, sA, B, sB, C, sC)
+
+    ! Form a triangle from index 'A' on string 'sA' , index 'B' on
+    ! string 'sB' and index 'C' on string 'sC'
+
+    implicit none
+
+    ! Input/Output
+    integer(kind=intType), intent(in) :: A, B, C
+    type(oversetString), intent(in) :: sA, sB, sC
+
+    ! Working 
+    type(oversetString), pointer :: p
+    integer(kind=intType) :: mn1, mn2, mn3
+    p => sA%p
+
+    p%nTris = p%nTris+ 1
+
+    ! mn = master node
+    mn1 = sA%pNodes(A)
+    mn2 = sB%pNodes(B)
+    mn3 = sC%pNodes(C)
+
+    p%tris(:, p%nTris) = (/mn1, mn2, mn3/)
+
+    ! Add these three edges to master list of edges
+
+    ! Edge 1:
+    p%nEdges = p%nEdges + 1
+    p%edges(p%nEdges)%n1 = mn1
+    p%edges(p%nEdges)%n2 = mn2
+
+    ! Edge 2:
+    p%nEdges = p%nEdges + 1
+    p%edges(p%nEdges)%n1 = mn2
+    p%edges(p%nEdges)%n2 = mn3
+
+    ! Edge 3:
+    p%nEdges = p%nEdges + 1
+    p%edges(p%nEdges)%n1 = mn3
+    p%edges(p%nEdges)%n2 = mn1
+
+  end subroutine addTri
+
   subroutine makeCrossZip(p, strings, nStrings)
-    use overset
+
     implicit none
 
     ! Input/output
     integer(kind=intType), intent(in) :: nStrings
-    type(oversetString), intent(inout) :: p, strings(nStrings)
+    type(oversetString), intent(inout), target :: p, strings(nStrings)
+    type(oversetString), pointer :: s, s1, s2
 
-    ! Local variables
-    integer(kind=intType) :: i, j, inode, jnode, iDir, inzip, jnzip, jp1, jm1
-    integer(kind=intType) :: inodeS, inodeE, jnodeS, jnodeE, jsym, isym, jbeg
-    integer(kind=intType) :: oID, oIDx, nsplits, oidJ, oidxJ, iSpl, iSubstr
-    integer(kind=intType) :: inodetmp, inodep, inodem, inodeStmp, inodeEtmp
-    integer(kind=intType) :: jnodep
-    integer(kind=intType), allocatable, dimension(:) :: Ins, Ine, Jns, Jne
-    logical :: jEndfound(2), checkNodeUsed
-    type(oversetString) :: subStrings(1000)
-    integer :: nStart(1000), nEnd(1000)
-    ! ------------------------------------------------
+    ! Working
+    integer(kind=intType) :: i, iStart, iEnd, jStart, jEnd, iStart_j, iEnd_j
+    integer(kind=intType) :: curOtherID, iString, ii, nextI, curIStart
+    logical :: fullLoop1, fullLoop2, dummy
+    ! The purpose of this routine is to determine the ranges on two
+    !  paired strings that are continuously paired and suitable for
+    !  performing cross zipping. 
 
-    ! Should the node used be checked to avoid string pairings?
-    checkNodeUsed = .True.
-
-    ! Allocate arrays to keep track of nodes to avoid same substring pairs for
-    ! crossZipping
+    ! Allocate arrays to keep track of nodes that have already been
+    !  used in cross zipping. 
     do i=1, nstrings
-       allocate(strings(i)%XzipNodeUsed(1:strings(i)%nNodes))
-       strings(i)%XzipNodeUsed = 0 ! Not used, 1 = used
+       s => strings(i)
+       allocate(s%XzipNodeUsed(s%nNodes))
+       s%xZipNodeUsed = 0
     end do
 
-    iSubstr = 0
-    loopStrings: do i=1, nStrings
+    strLoop: do iString=1, nStrings
 
-       ! Find total splits
-       nSplits = 0
-       inode = 1
-       do while (inode <= strings(i)%nNodes-1) 
-          if ( (strings(i)%otherID(1, inode) /= &
-               strings(i)%otherID(1, inode+1)) .and. &
-               inode > 1 ) then
-             nsplits = nsplits + 1
-          end if
-          inode = inode + 1
-       end do
+       ! S1 is the curent '1' string we are working with 
+       s1 => strings(iString)
 
-       ifNsplits: if (nsplits == 0) then
-          iSpl = 0
-          ! No splits found, cross zip with the full other gap string.
-          inodeS = 1
-          inodeE = strings(i)%nNodes
+       ! Find the lowest node number that isn't used:
+       curIStart = startNode(s1)
+       do while(curIStart > 0) 
 
-          J = strings(i)%otherID(1, inodeS)
+          iStart = curIStart
+          ! Other ID is the string attached at the current pt. 
+          curOtherID = s1%otherID(1, iStart)
 
-          jnodeS = 1
-          jnodeE = strings(j)%nNodes
+          ! S2 is the current '2' string we are working with 
+          s2 => strings(curOtherID)
+          jStart = s1%otherID(2, iStart)
 
-          ! If I is periodic J should be periodic too. Fix end nodes of J
-          ! strings wrt otherID of inodeS/inodeE
-          if (strings(i)%isPeriodic) then
+          ! ---------------- s1 increments -------------
+          ! The goal is to increment s1 as far as we can go in the
+          ! NEGATIVE direction.
+          call traceMatch(s1, iStart, .False., curOtherID, iEnd, fullLoop1)
 
-             if (.not.strings(j)%isPeriodic) stop ' This is wrong '
-
-             ! Find the first symmetric pair with J strings
-             jnode = 1
-             loopPerJsym: do while (jnode <= strings(j)%nNodes) 
-
-                oidJ = strings(j)%otherID(1, jnode) ! string I
-                oidxJ = strings(j)%otherID(2, jnode) ! index on string I
-
-                if (oidJ /= strings(i)%myID) stop ' Should not be here, string I'
-
-                if (strings(i)%otherID(1, oidxJ) /= strings(j)%myID) &
-                     stop ' Something is wrong '
-
-                if (strings(i)%otherID(2, oidxJ) == jnode) then
-                   ! Found symmetric point
-                   inodeE = oidxJ
-                   jnodeS = jnode
-                   exit loopPerJsym
-                end if
-                jnodep = jnode + 1
-                if (jnode == strings(j)%nNodes) then
-                   exit loopPerJsym
-                end if
-
-                jnode = jnodep
-             end do loopPerJsym
-             if (jnode == strings(j)%nNodes) stop ' One cycle over '
-
-             inodeS = inodeE + 1
-             if (inodeE == strings(i)%nNodes) inodeS = 1
-             jnodeE = jnodeS - 1 
-             if (jnodeS == 1) jnodeE = strings(j)%nNodes
+          if (.not. fullLoop1) then 
+             ! Now set iStart to iEnd. Basically we start right at the
+             ! negative end the chain and traverse in the POSITIVE
+             ! direction. 
+             iStart = iEnd 
+             call traceMatch(s1, iStart, .True., curOtherID, iEnd, dummy)
           end if
 
-          ! Check if the nodes have been used already
-          if (checkNodeUsed) then
-             inodeStmp = inodeS
-             inodeEtmp = inodeE
-             if (inodeStmp <= inodeEtmp) then
+          ! Now, iStart -> iEnd (in the positive order) is the maximum
+          ! possible extent that s1 could be connected to s1
+          ! over. However, s2 may have something to say about that. We
+          ! do the same operation for s2. Note that the orders are reversed. 
 
-                inodeS = inodeStmp
-                inodeE = inodeStmp
-                chkinodeE10:do inode=inodeStmp, inodeEtmp
-                   if (strings(i)%XzipNodeUsed(inode) == 0) then
-                      inodeE = inode
-                   else
-                      exit chkinodeE10
-                   end if
-                end do chkinodeE10
-                if (inodeE == inodeS) cycle loopStrings
-             else ! inodeStmp > inodeEtmp
-                inodeS = inodeStmp
-                inodeE = inodeStmp
-                inode = inodeStmp
-                chkinodeE20:do while (inode >= inodeStmp .or. &
-                     inode <= inodeEtmp) 
-                   if (strings(i)%XzipNodeUsed(inode) == 0) then
-                      inodeE = inode
+          ! ---------------- s2 increments -------------
+          call traceMatch(s2, jStart, .True., s1%myID, jEnd, fullLoop2)
 
-                      inodep = inode + 1
-                      if (inode == strings(i)%nNodes) inodep = 1
-
-                      if (inodep == inodeStmp) then
-                         ! Come full cycle around the string
-                         exit chkinodeE20
-                      end if
-
-                      inode = inodep
-                   else
-                      exit chkinodeE20
-                   end if
-                end do chkinodeE20
-                if (inodeE == inodeS) cycle loopStrings
-             end if
-          end if !checkNodeUsed
-
-          if (jnodeS == jnodeE) cycle loopStrings
-
-          print '(A,6(I4,x),A,2(I4,x))',&
-               '      I, J, inodeS, inodeE, jnodeS, jnodeE ', &
-               I, J, inodeS, inodeE, jnodeS, jnodeE, &
-               'SubStr: ',iSubstr+1, iSubStr+2
-
-          ! For debugging sub-strings
-          ! -------------------------
-          iSubStr = iSubStr + 1
-          subStrings(iSubStr) = strings(i) ! string type assignment
-          nStart(iSubStr) = inodeS
-          nEnd(iSubStr) = inodeE
-
-          iSubStr = iSubStr + 1
-          subStrings(iSubStr) = strings(j) ! string type assignment
-          nStart(iSubStr) = jnodeS
-          nEnd(iSubStr) = jnodeE
-          ! -------------------------
-
-          ! Remember I string nodes used
-          if (inodeS <= inodeE) then
-             strings(i)%XzipNodeUsed(inodeS:inodeE) = 1
-          else ! inodeS > inodeE
-             strings(i)%XzipNodeUsed(inodeS:strings(i)%nNodes) = 1
-             strings(i)%XzipNodeUsed(1:inodeE) = 1
+          ! If the first jnode isnt' actually matched to me, like I am
+          ! to him. Therefore skip me, and go to the next one.
+          if (jStart == jEnd .and. &
+               .not. fullLoop2 .and. &
+               s2%otherID(1, jStart) /= s1%myID) then 
+             s1%xZipNodeUsed(curIStart) = 1
+             curIStart = startNode(s1)
+             cycle 
           end if
 
-          ! Remember J string nodes used
-          if (jnodeS <= jnodeE) then
-             strings(j)%XzipNodeUsed(jnodeS:jnodeE) = 1
-          else ! jnodeS > jnodeE
-             strings(j)%XzipNodeUsed(jnodeS:strings(j)%nNodes) = 1
-             strings(j)%XzipNodeUsed(1:jnodeE) = 1
+          if (.not. fullLoop2) then 
+             jStart = jEnd
+             call traceMatch(s2, jStart, .False., s1%myID, jEnd, dummy)
           end if
 
-          if (strings(i)%isPeriodic .and. strings(j)%isPeriodic) then
-             ! For both periodic I and J strings, jnodeS <--> inodeE 
-             ! are symmetric pairs.
-             call crossZip(strings(i), inodeE, inodeE, strings(j), &
-                  jnodeS, jnodeS)
+          if ((iStart == iEnd .and. .not. fullLoop1)  .or.& 
+               (jStart == jEnd .and. .not. fullLoop2)) then
+             ! Can't go anywhere. Flag this node and the next.
+             s1%xZipNodeUsed(curIStart) = 1
+             curIStart = startNode(s1)
+             cycle 
+          end if
+
+          if ((istart == iend .and. fullLoop1) .and. &
+               (jstart == jend .and. fullLoop2)) then 
+
+             ! s1 fully attached to s2
+
+             call closestSymmetricNode(s1, s2, istart, jstart)
+             iEnd = iStart
+             jEnd = jStart
+
+          else if((iStart == iEnd .and. fullLoop1) .and. .not. fullLoop2) then 
+
+             ! s1 is fully attached to a part of s2. No need to modify the ranges
+
+          else if((jStart == jEnd .and. fullLoop2) .and. .not. fullLoop1) then 
+
+             ! s2 is fully attached to a part of s1. No need to modify the ranges
           else 
-             ! single sided strings, end points on symmetric planes
-             call crossZip(strings(i), inodeS, inodeE, strings(j), &
-                  jnodeE, jnodeS)
+
+             ! part of s1 is attached to part of s2
+
+             ! Now we "project" the s2 increments back onto the the s1
+             ! range:
+             iStart_j = s2%otherID(2, jStart)
+             iEnd_j   = s2%otherID(2, jEnd)
+
+             ! Now determine the smallest overlapping range. iStart and
+             ! iEnd are updated. 
+             iStart = max(iStart, iStart_j)
+             iEnd = min(iEnd, iEnd_j)
+
+             ! Now with the updated range. Project the iRange back to the
+             ! the final J range.
+             jStart = s1%otherID(2, iStart)
+             jEnd   = s1%otherID(2, iEnd)
+
+             if ((istart == iend  .and. .not. fullLoop1) .or. &
+                  (jstart == jend  .and. .not. fullLoop2)) then 
+                ! The range on one became zero. Don't cross zip.
+                s1%xZipNodeUsed(curIStart) = 1
+                curIStart = startNode(s1)
+                cycle 
+             end if
+
           end if
 
-       else ifNsplits
-
-          ! Define the node ranges for 
-          inodeS = 1
-          inode = 1
-          iSpl = 0
-
-          loopInode: do while (inode <=strings(i)%nNodes-1)
-
-             ! Cycle if node has already been used in previous strings pairings
-             if (checkNodeUsed .and. strings(i)%XzipNodeUsed(inode)==1) then
-                inode = inode + 1
-
-                ! Update inodeS 
-                inodeS = inode
-
-                cycle loopInode 
-             end if
-
-             splitIf: if ( (strings(i)%otherID(1, inode) /= &
-                  strings(i)%otherID(1, inode+1)) .and. &
-                  inode > inodeS ) then
-
-                inodeE = inode
-                ispl = ispl + 1
-
-                ! Potential other string
-                J = strings(i)%otherID(1, inodeE)
-
-                ! If I strings is periodic, change inodeS and inodeE
-                ! --------------------------------------------------
-                if (strings(i)%isPeriodic) then
-
-                   ! Change inodeS:
-                   inodetmp = inodeS
-                   perInodeS:do 
-                      inodem = inodetmp - 1
-                      if (inodetmp == 1) inodem = strings(i)%nNodes
-                      if (strings(i)%otherID(1, inodetmp) == J .and. &
-                           strings(i)%otherID(1, inodem) /= J) then
-
-                         inodeS = inodetmp
-                         exit perInodeS
-                      end if
-                      inodetmp = inodem
-                      if (inodetmp == inodeS) then
-                         ! Retain inodeS if came full circle
-                         print*, ' Come full circle inodeS'
-                         exit perInodeS
-                      end if
-                   end do perInodeS
-
-                   ! Change inodeE:
-                   inodetmp = inodeE
-                   perInodeE:do 
-                      inodep = inodetmp + 1
-                      if (inodetmp == strings(i)%nNodes) inodep = 1
-                      if (strings(i)%otherID(1, inodetmp) == J .and. &
-                           strings(i)%otherID(1, inodep) /= J) then
-
-                         inodeE = inodetmp
-                         exit perInodeE
-                      end if
-                      inodetmp = inodep
-                      if (inodetmp == inodeE) then
-                         ! Retain inodeE if came full circle
-                         print*, ' Come full circle inodeE '
-                         exit perInodeE
-                      end if
-                   end do perInodeE
-
-                end if
-                ! --- end periodic strings inodeS/inodeE -----------
-
-                ! Find symmetric point
-                jnode = 1
-                loopjsym: do while (jnode <= strings(j)%nNodes)
-
-                   oidJ = strings(j)%otherID(1, jnode) ! hopeful strings(i) ID
-                   oidxJ = strings(j)%otherID(2, jnode) ! hopeful strings(i) Idx
-
-                   if (oidJ == strings(i)%myID) then
-                      if ( (inodeS < inodeE .and. oidxJ >= inodeS .and. &
-                           oidxJ <= inodeE) .or. &
-                           (inodeS > inodeE .and. (oidxJ >= inodeS .or. &
-                           oidxJ <= inodeE)) ) then
-
-                         if (strings(i)%otherID(1, oidxJ) == strings(j)%myID .and. &
-                              strings(i)%otherID(2, oidxJ) == jnode) then
-                            ! Found symmetry point
-                            jsym = jnode
-                            isym = oidxJ
-                            exit loopjsym
-                         end if
-                      end if
-                   end if
-                   jnode = jnode + 1 
-                end do loopjsym
-
-                ! Traverse in +ve jDir to find jnodeE
-                jnode = jsym 
-                loopJnodeE: do 
-
-                   ! Already at the end then exit
-                   if ( jnode == strings(j)%nNodes .and. &
-                        .not.strings(j)%isPeriodic) then
-                      exit loopJnodeE
-                   end if
-
-                   jp1 = jnode + 1
-                   ! Treat different for periodic strings 
-                   if (jnode == strings(j)%nNodes .and. strings(j)%isPeriodic) then
-                      jp1 = 1
-                   end if
-
-                   if ( strings(j)%otherID(1, jp1) /= strings(i)%myID) then
-                      oidJ = strings(j)%otherID(1, jnode) ! hopeful strings(i) ID
-                      oidxJ = strings(j)%otherID(2, jnode) ! strings(i) index
-
-                      jnodeE = jnode
-                      exit loopJnodeE
-
-                   else if (strings(j)%otherID(1, jp1) == strings(i)%myid .and.  &
-                        jp1 == strings(j)%nNodes .and. &
-                        .not.strings(j)%isPeriodic) then
-                      jnodeE = jnode+1
-                      exit loopJnodeE
-                   end if
-
-                   jnode = jp1
-                   ! Exit if counter has cycled through all nodes in
-                   ! periodic string J
-                   if (jnode == jsym) exit loopJnodeE 
-                end do loopJnodeE
-
-                ! Traverse in -ve jDir to find jnodeE
-                jnode = jsym 
-                loopJnodeS: do 
-
-                   ! Already at the end then exit
-                   if ( jnode == 1 .and. &
-                        .not.strings(j)%isPeriodic) then
-                      jnodeS = jnode
-                      exit loopJnodeS
-                   end if
-
-                   jm1 = jnode - 1
-                   ! Treat different for periodic strings 
-                   if (jnode == 1 .and. strings(j)%isPeriodic) then
-                      jm1 = strings(j)%nNodes
-                   end if
-
-                   if ( strings(j)%otherID(1, jm1) /= strings(i)%myID) then
-                      oidJ = strings(j)%otherID(1, jnode) ! hopeful strings(i) ID
-                      oidxJ = strings(j)%otherID(2, jnode) ! strings(i) index
-
-                      jnodeS = jnode
-                      exit loopJnodeS
-
-                   else if (strings(j)%otherID(1, jm1) == strings(i)%myid .and.  &
-                        jm1 == 1 .and. &
-                        .not.strings(j)%isPeriodic) then
-                      jnodeS = jm1
-                      exit loopJnodeS
-                   end if
-
-                   jnode = jm1
-                   ! Exit if counter has cycled through all nodes in
-                   ! periodic string J
-                   if (jnode == jsym) exit loopJnodeS 
-                end do loopJnodeS
-
-                if (jnodeS == jnodeE) cycle loopStrings
-
-                print '(A,6(I4,x),A,2(I4,x))',&
-                     '      I, J, inodeS, inodeE, jnodeS, jnodeE ', &
-                     I, J, inodeS, inodeE, jnodeS, jnodeE, &
-                     'SubStr: ',iSubstr+1, iSubStr+2
-
-                ! For debugging sub-strings
-                ! -------------------------
-                iSubStr = iSubStr + 1
-                subStrings(iSubStr) = strings(i) ! string type assignment
-                nStart(iSubStr) = inodeS
-                nEnd(iSubStr) = inodeE
-
-                iSubStr = iSubStr + 1
-                subStrings(iSubStr) = strings(j) ! string type assignment
-                nStart(iSubStr) = jnodeS
-                nEnd(iSubStr) = jnodeE
-                ! -------------------------
-
-                ! Remember I string nodes used
-                if (inodeS <= inodeE) then
-                   strings(i)%XzipNodeUsed(inodeS:inodeE) = 1
-                else ! inodeS > inodeE
-                   strings(i)%XzipNodeUsed(inodeS:strings(i)%nNodes) = 1
-                   strings(i)%XzipNodeUsed(1:inodeE) = 1
-                end if
-
-                ! Remember J string nodes used
-                if (jnodeS <= jnodeE) then
-                   strings(j)%XzipNodeUsed(jnodeS:jnodeE) = 1
-                else ! jnodeS > jnodeE
-                   strings(j)%XzipNodeUsed(jnodeS:strings(j)%nNodes) = 1
-                   strings(j)%XzipNodeUsed(1:jnodeE) = 1
-                end if
-
-                ! Do crossZip
-                call crossZip(strings(i), inodeS, inodeE, strings(j), &
-                     jnodeE, jnodeS)
-
-                inodeS = inodeE + 1
-             end if splitIf
-
-             inode = inode + 1
-          end do loopInode
-
-
-          iSpl = iSpl + 1
-
-          ! ---------------------------------------------------------
-          ! Now do the remaining nodes of string I
-          ! ---------------------------------------------------------
-          inodeE = strings(i)%nNodes
-
-          ! Potential other string
-          J = strings(i)%otherID(1, inodeE)
-
-          ! If I strings is periodic, change inodeS and inodeE
-          ! --------------------------------------------------
-          if (strings(i)%isPeriodic) then
-
-             ! Change inodeS:
-             inodetmp = inodeS
-             perInodeS1:do 
-                inodem = inodetmp - 1
-                if (inodetmp == 1) inodem = strings(i)%nNodes
-                if (strings(i)%otherID(1, inodetmp) == J .and. &
-                     strings(i)%otherID(1, inodem) /= J) then
-
-                   inodeS = inodetmp
-                   exit perInodeS1
-                end if
-                inodetmp = inodem
-                if (inodetmp == inodeS) then
-                   ! Retain inodeS if came full circle
-                   print*, ' Come full circle inodeS'
-                   exit perInodeS1
-                end if
-             end do perInodeS1
-
-             ! Change inodeE:
-             inodetmp = inodeE
-             perInodeE1:do 
-                inodep = inodetmp + 1
-                if (inodetmp == strings(i)%nNodes) inodep = 1
-                if (strings(i)%otherID(1, inodetmp) == J .and. &
-                     strings(i)%otherID(1, inodep) /= J) then
-
-                   inodeE = inodetmp
-                   exit perInodeE1
-                end if
-                inodetmp = inodep
-                if (inodetmp == inodeE) then
-                   ! Retain inodeE if came full circle
-                   print*, ' Come full circle inodeE '
-                   exit perInodeE1
-                end if
-             end do perInodeE1
-
-          end if
-          ! --- end periodic strings inodeS/inodeE -----------
-
-
-          ! Find symmetric point
-          jnode = 1
-          loopjsym1: do while (jnode <= strings(j)%nNodes)
-
-             oidJ = strings(j)%otherID(1, jnode) ! hopeful strings(i) ID
-             oidxJ = strings(j)%otherID(2, jnode) ! hopeful strings(i) Idx
-
-             if (oidJ == strings(i)%myID) then
-                if ( (inodeS < inodeE .and. oidxJ >= inodeS .and. &
-                     oidxJ <= inodeE) .or. &
-                     (inodeS > inodeE .and. (oidxJ >= inodeS .or. &
-                     oidxJ <= inodeE)) ) then
-
-                   if (strings(i)%otherID(1, oidxJ) == strings(j)%myID .and. &
-                        strings(i)%otherID(2, oidxJ) == jnode) then
-                      ! Found symmetry point
-                      jsym = jnode
-                      isym = oidxJ
-                      exit loopjsym1
-                   end if
-                end if
-             end if
-
-             jnode = jnode + 1 
-          end do loopjsym1
-
-          ! Traverse in +ve jDir to find jnodeE
-          jnode = jsym 
-          loopJnodeE1: do 
-
-             ! Already at the end then exit
-             if ( jnode == strings(j)%nNodes .and. &
-                  .not.strings(j)%isPeriodic) then
-                jnodeE = jnode
-                exit loopJnodeE1
-             end if
-
-             jp1 = jnode + 1
-             ! Treat different for periodic strings 
-             if (jnode == strings(j)%nNodes .and. strings(j)%isPeriodic) then
-                jp1 = 1
-             end if
-
-             if ( strings(j)%otherID(1, jp1) /= strings(i)%myID) then
-                oidJ = strings(j)%otherID(1, jnode) ! hopeful strings(i) ID
-                oidxJ = strings(j)%otherID(2, jnode) ! strings(i) index
-
-                jnodeE = jnode
-                exit loopJnodeE1
-
-             else if (strings(j)%otherID(1, jp1) == strings(i)%myid .and.  &
-                  jp1 == strings(j)%nNodes .and. &
-                  .not.strings(j)%isPeriodic) then
-                jnodeE = jnode+1
-                exit loopJnodeE1
-             end if
-
-             jnode = jp1
-             ! Exit if counter has cycled through all nodes in
-             ! periodic string J
-             if (jnode == jsym) exit loopJnodeE1
-          end do loopJnodeE1
-
-          ! Traverse in -ve jDir to find jnodeE
-          jnode = jsym 
-          loopJnodeS1: do 
-
-             ! Already at the end then exit
-             if ( jnode == 1 .and. &
-                  .not.strings(j)%isPeriodic) then
-                jnodeS = jnode
-                exit loopJnodeS1
-             end if
-
-             jm1 = jnode - 1
-             ! Treat different for periodic strings 
-             if (jnode == 1 .and. strings(j)%isPeriodic) then
-                jm1 = strings(j)%nNodes
-             end if
-
-             if ( strings(j)%otherID(1, jm1) /= strings(i)%myID) then
-                oidJ = strings(j)%otherID(1, jnode) ! hopeful strings(i) ID
-                oidxJ = strings(j)%otherID(2, jnode) ! strings(i) index
-
-                jnodeS = jnode
-                exit loopJnodeS1
-
-             else if (strings(j)%otherID(1, jm1) == strings(i)%myid .and.  &
-                  jm1 == 1 .and. &
-                  .not.strings(j)%isPeriodic) then
-                jnodeS = jm1
-                exit loopJnodeS1
-             end if
-
-             jnode = jm1
-             ! Exit if counter has cycled through all nodes in
-             ! periodic string J
-             if (jnode == jsym) exit loopJnodeS1
-          end do loopJnodeS1
-
-          ! Check it has nodes that have not been used already
-          if (checkNodeUsed) then
-             inodeStmp = inodeS
-             inodeEtmp = inodeE
-             if (inodeStmp <= inodeEtmp) then
-
-                inodeS = inodeStmp
-                inodeE = inodeStmp
-                chkinodeE1:do inode=inodeStmp, inodeEtmp
-                   if (strings(i)%XzipNodeUsed(inode) == 0) then
-                      inodeE = inode
-                   else
-                      exit chkinodeE1
-                   end if
-                end do chkinodeE1
-                if (inodeE == inodeS) cycle loopStrings
-             else ! inodeStmp > inodeEtmp
-                inodeS = inodeStmp
-                inodeE = inodeStmp
-                inode = inodeStmp
-                chkinodeE2:do while (inode >= inodeStmp .or. &
-                     inode <= inodeEtmp) 
-                   if (strings(i)%XzipNodeUsed(inode) == 0) then
-                      inodeE = inode
-
-                      inodep = inode + 1
-                      if (inode == strings(i)%nNodes) inodep = 1
-
-                      inode = inodep
-                   else
-                      exit chkinodeE2
-                   end if
-                end do chkinodeE2
-                if (inodeE == inodeS) cycle loopStrings
-             end if
-          end if !checkNodeUsed
-
-          if (jnodeS == jnodeE) cycle loopStrings
-
-          print '(A,6(I4,x),A,2(I4,x))',&
-               'last: I, J, inodeS, inodeE, jnodeS, jnodeE ', &
-               I, J, inodeS, inodeE, jnodeS, jnodeE, &
-               'SubStr: ',iSubstr+1, iSubStr+2
-
-          ! For debugging sub-strings
-          ! -------------------------
-          iSubStr = iSubStr + 1
-          subStrings(iSubStr) = strings(i) ! string type assignment
-          nStart(iSubStr) = inodeS
-          nEnd(iSubStr) = inodeE
-
-          iSubStr = iSubStr + 1
-          subStrings(iSubStr) = strings(j) ! string type assignment
-          nStart(iSubStr) = jnodeS
-          nEnd(iSubStr) = jnodeE
-          ! -------------------------
-
-          ! Remember I string nodes used
-          if (inodeS <= inodeE) then
-             strings(i)%XzipNodeUsed(inodeS:inodeE) = 1
-          else ! inodeS > inodeE
-             strings(i)%XzipNodeUsed(inodeS:strings(i)%nNodes) = 1
-             strings(i)%XzipNodeUsed(1:inodeE) = 1
-          end if
-
-          ! Remember J string nodes used
-          if (jnodeS <= jnodeE) then
-             strings(j)%XzipNodeUsed(jnodeS:jnodeE) = 1
-          else ! jnodeS > jnodeE
-             strings(j)%XzipNodeUsed(jnodeS:strings(j)%nNodes) = 1
-             strings(j)%XzipNodeUsed(1:jnodeE) = 1
-          end if
-
-          ! Do crossZip
-          call crossZip(strings(i), inodeS, inodeE, strings(j), &
-               jnodeE, jnodeS)
-
-          ! ---------------------------------------------------------
-          ! End remaining nodes treatment
-          ! ---------------------------------------------------------
-
-       end if ifNsplits
-
-    end do loopStrings ! nStrings
-
-    !! For debugging sub-strings pairings
-    !! ----------------------------------
-    !print*,'Number of subStrings ', iSubStr
-    !open(unit=101, file="subGapStrings.dat", form='formatted')
-    !write(101,*) 'TITLE = "SubGap Strings Data" '
-    !write(101,*) 'Variables = "X" "Y" "Z" "Nx" "Ny" "Nz" "Vx" "Vy" "Vz" "ind" &
-    !     "gapID" "gapIndex" "otherID" "otherIndex" "ratio"'
-    !do i=1, iSubStr
-    !   call writeOversetSubString(subStrings(i), nStart(i), nEnd(i), i,&
-    !                              strings, nStrings, 101)
-    !end do
-    !close(101)
-    !! ----------------------------------
-
-    do i=1, nStrings
-       deallocate(strings(i)%XzipNodeUsed)
-    end do
+          ! Do actual cross zip
+          call crossZip(s1, iStart, iEnd, s2, jStart, jEnd)
+
+          ! Flag all the nodes in xZipUsed as used:
+          call flagNodesUsed(s1, iStart, iEnd, .True.)
+          call flagNodesUsed(s2, jStart, jEnd, .False.)
+
+          ! Find the next starting index:
+          curIStart = startNode(s1)
+
+       end do
+    end do strLoop
+
+  contains
+
+    function startNode(s)
+      ! Determine the lowest index of a non-used xzip node for
+      ! string 's'. 
+      implicit none
+      type(oversetString) :: s
+      integer(kind=intType) :: startNode, i
+
+      ! This will be the return value if all nodes are used:
+      startNode = 0
+      nodeLoop: do i=1, s%nNodes
+         if (s%xZipNodeUsed(i) == 0) then 
+            startNode = i
+            exit nodeLoop
+         end if
+      end do nodeLoop
+    end function startNode
+
+    function nextNode(s, i)
+
+      implicit none
+      type(oversetString), intent(iN) :: s
+      integer(kind=intType), intent(in) :: i
+      integer(kind=intType) :: nextNode
+
+      ! Normally just increment:
+      nextNode = i + 1
+
+      if (i == s%nNodes) then 
+         if (s%isPeriodic) then 
+            nextNode = 1
+         else
+            ! Can't go any further
+            nextNode = i
+         end if
+      end if
+
+      ! If the next node is used. The next node is set the current
+      ! one.
+      if (s%xZipNodeUsed(nextNode) == 1) then 
+         nextNode = i
+      end if
+    end function nextNode
+
+    function simpleNextNode(s, i)
+
+      implicit none
+      type(oversetString), intent(iN) :: s
+      integer(kind=intType), intent(in) :: i
+      integer(kind=intType) :: simpleNextNode
+
+      ! Normally just increment:
+      simpleNextNode = i + 1
+
+      if (i == s%nNodes) then 
+         if (s%isPeriodic) then 
+            simpleNextNode = 1
+         else
+            ! Can't go any further
+            simpleNextNode = i
+         end if
+      end if
+    end function simpleNextNode
+
+    function prevNode(s, i)
+
+      implicit none
+      type(oversetString), intent(iN) :: s
+      integer(kind=intType), intent(in) :: i
+      integer(kind=intTYpe) :: prevNode
+      ! Normally just increment:
+      prevNode = i - 1
+
+      if (i == 1) then 
+         if (s%isPeriodic) then 
+            prevNode = s%nNodes
+         else
+            ! Can't go any further
+            prevNode = i
+         end if
+      end if
+
+      ! If the next node is used. The next node is set the current
+      ! one.
+      if (s%xZipNodeUsed(prevNode) == 1) then 
+         prevNode = i
+      end if
+    end function prevNode
+
+    subroutine traceMatch(s, iStart, pos, checkID, iEnd, fullLoop)
+
+      implicit none
+
+      ! Given a starting position 'iStart' on string 's', traverse in
+      ! the 'POSitive' or '.not. POSitive' direction checking that the
+      ! otherID still matches "checkID". Return the ending position
+      ! 'iEnd'. 
+
+      ! Input/Output
+      type(oversetString) :: s
+      integer(kind=intType), intent(in) :: iStart, checkID
+      logical, intent(in) :: pos
+      integer(kind=intType), intent(out) :: iEnd 
+      logical, intent(out) :: fullLoop
+
+      ! Working
+      integer(kind=intType) :: i, nextI
+
+      i = iStart
+      fullLoop = .False.
+
+      traverseLoop: do 
+         if (pos) then 
+            nextI = nextNode(s, i)
+         else
+            nextI = prevNode(s, i)
+         end if
+
+         if (nextI == i .or. s%otherID(1, nextI) /= checkID) then 
+            ! We can't go any further than we already are
+            iEnd = i
+            exit traverseLoop
+         end if
+
+         ! Continue to the next one.
+         i = nextI
+
+         if (i == iStart) then 
+            fullLoop = .True.
+            iEnd = i
+            exit traverseLoop
+         end if
+      end do traverseLoop
+    end subroutine traceMatch
+
+    subroutine flagNodesUsed(s, N1, N2, pos)
+
+      implicit none
+
+      ! Input/Output
+      type(oversetString) :: s
+      integer(kind=intType), intent(in) :: N1, N2
+      logical, intent(in) :: pos
+
+      ! Working
+      integer(kind=intType) :: nSteps, i, nextI
+
+      if (pos) then 
+         if (N2 > N1) then 
+            nSteps = N2 - N1
+         else if (N2 < N1) then 
+            nSteps = N2 + s%nNodes - N1
+         else ! N1 == N2
+            nSteps = s%nElems
+         end if
+      else
+         if (N1 < N2) then 
+            nSteps = N1 + s%nNodes - N2
+         else if (N1 > N2) then 
+            nSteps = N1 - N2
+         else ! N3 == N4
+            nSteps =  s%nElems
+         end if
+      end if
+
+      s%xZipNodeUsed(N1) = 1
+      i = N1
+      do ii=1, nSteps
+         if (pos) then 
+            nextI = nextNode(s, i)
+         else
+            nextI = prevNode(s, i)
+         end if
+
+         s%xZipNodeUsed(nextI) = 1
+         i = nextI
+      end do
+    end subroutine flagNodesUsed
 
   end subroutine makeCrossZip
 
   subroutine makePocketZip(p, strings, nStrings, pocketMaster)
     use overset
+    use inputOverset
     implicit none
 
     ! Input/output
     integer(kind=intType), intent(in) :: nStrings
     type(oversetString), intent(in) :: p, strings(nStrings)
     type(oversetString) :: pocketMaster
+
     ! Local variables
     integer(kind=intType) :: i, nsum1, nsum2, ndiff1, ndiff2, ipedge, icur
-    integer(kind=intType) :: n1, n2, npolyEdges, npolyEdgestmp, nEdgeUsed
-    integer(kind=intType) :: nNodes1, nNodes2, cn1, cn2, str1, str2, nends
-    type(oversetEdge), pointer, dimension(:) :: polyEdges, polyEdgestmp
-    integer(kind=intType), allocatable, dimension(:) :: edgeMap, edgeMaptmp
-    integer(kind=intType), allocatable, dimension(:) :: nodeList, nodeMap
-    logical :: isEndEdge
-    logical, allocatable, dimension(:) :: PocketEdgeUsed
-
-    type(oversetString), pointer  :: pocketStrings, strPkt
-    type(oversetString), allocatable, dimension(:), target :: tmpStrings
-    type(oversetString), allocatable, dimension(:), target :: pocketStringsArr
-    integer(kind=intType) :: npocketEdges, npocketStrings, nPktEdges, nUnique
+    integer(kind=intType) :: n1, n2, npolyEdges
+    integer(kind=intType) :: nNodes1, nNodes2, cn1, cn2, str1, str2
+    type(oversetEdge), allocatable, dimension(:) :: polyEdges
+    type(oversetEdge) :: e1, e2
+    type(oversetString), pointer  :: stringsLL, str
+    integer(kind=intType) :: npocketEdges, nFullStrings, nNodes
     integer(kind=intType) :: ip, curElem, nElems, iStart, firstElem
-    real(kind=realType) :: triArea
-    ! ---------------------------------------------------------------
-
+    type(oversetString), allocatable, dimension(:), target :: pocketStringsArr
 
     ! ---------------------------------------------------------------
     ! PocketZip 1: 
@@ -1937,379 +1430,190 @@ contains
     ! ---------------------------------------------------------------
     call qsortEdgeType(p%Edges, p%nEdges)
 
-    ! ---------------------------------------------------------------------
-    ! PocketZip 2:
-    ! Now cancel out edges counted twice in master%Edges. The edges are
-    ! sorted such that the edges with same nodes are in consecutive order.
-    ! ---------------------------------------------------------------------
+    ! Now gather up the left-over edges for pocket zipping.
 
     ! Over estimate of remaining pocket edges to zip
     allocate(polyEdges(p%nEdges)) 
-    allocate(polyEdgestmp(p%nEdges)) 
-    allocate(edgeMap(p%nEdges))
-    allocate(edgeMaptmp(p%nEdges))
-    edgeMap = -1
-    edgeMaptmp = -1
-
-    ! Initialize
-    npolyEdgestmp = p%nEdges
-    edgeMaptmp = -1
-    do i=1, p%nEdges
-       polyEdgesTmp(i)%n1 = p%Edges(i)%n1
-       polyEdgesTmp(i)%n2 = p%Edges(i)%n2
-       edgeMaptmp(i) = i
-    end do
 
     ! Eliminate the edges going through the ordered edges. 
     ! The sorted opposite edges are canceled in pairs.
     npolyEdges = 0
 
-    nends = 0
+    i = 1
+    do while (i < p%nEdges -1)
 
-    loop_outer: do 
+       ! Two edges in sequence
+       e1 = p%Edges(i)
+       e2 = p%Edges(i+1)
 
-       npolyEdges = 0
-       edgeMap = -1
-       i = 1
-       nends = 0
-       loopEdge: do while (i < npolyEdgestmp) 
+       ! First determine if e1 is at the end of two single ended
+       ! chains. In this case the edge *will* not be paired and that's
+       ! correct. 
 
-          nsum1 = (polyEdgesTmp(i)%n1   + polyEdgesTmp(i)%n2)
-          nsum2 = (polyEdgesTmp(i+1)%n1 + polyEdgesTmp(i+1)%n2)
+       str1    = p%cNodes(1, e1%n1) ! node1's child fullStrings ID
+       cn1     = p%cNodes(2, e1%n1) ! node1's child fullStrings node index
+       nNodes1 = strings(str1)%nNodes ! node1's child fullStrings nNodes size
 
-          ndiff1 = (polyEdgesTmp(i)%n2   - polyEdgesTmp(i)%n1)
-          ndiff2 = (polyEdgesTmp(i+1)%n2 - polyEdgesTmp(i+1)%n1)
+       str2    = p%cNodes(1, e1%n2) ! node2's child fullStrings ID
+       cn2     = p%cNodes(2, e1%n2) ! node2's child fullStrings node index
+       nNodes2 = strings(str2)%nNodes ! node2's child fullStrings nNodes size
 
-          ! If the edge joins the end nodes of single sided 
-          ! fullStrings pair, eliminate it.
-          ! -----------------------------------------------------------
-          isEndEdge = .False.
+       if (str1 /= str2 ) then
+          if (.not.strings(str1)%isperiodic .and. &
+               .not.strings(str2)%isperiodic .and. &
+               (cn1==1 .or. cn1==nNodes1) .and. (cn2==1 .or. cn2==nNodes2)) then
 
-          ! Parent nodes of this edge
-          n1 = polyEdgesTmp(i)%n1
-          n2 = polyEdgesTmp(i)%n2
-
-          str1    = p%cNodes(1, n1) ! node1's child fullStrings ID
-          cn1     = p%cNodes(2, n1) ! node1's child fullStrings node index
-          !am nNodes1 = p%cNodes(3, n1) ! node1's child fullStrings nNodes size
-          nNodes1 = strings(str1)%nNodes ! node1's child fullStrings nNodes size
-
-          str2    = p%cNodes(1, n2) ! node2's child fullStrings ID
-          cn2     = p%cNodes(2, n2) ! node2's child fullStrings node index
-          !am nNodes2 = p%cNodes(3, n2) ! node2's child fullStrings nNodes size
-          nNodes2 = strings(str2)%nNodes ! node2's child fullStrings nNodes size
-
-          if (str1 /= str2 ) then
-             if (.not.strings(str1)%isperiodic .and. &
-                  .not.strings(str2)%isperiodic .and. &
-                  (cn1==1 .or. cn1==nNodes1) .and. (cn2==1 .or. cn2==nNodes2)) then
-                ! This is an end edge, eliminate this one too.
-                nends = nends + 1
-
-                i = i + 1
-                cycle loopEdge
-             end if
-          end if
-          ! --- End end nodes check -----------------------------------
-
-
-          if (nsum1 == nsum2 .and. ndiff1 + ndiff2 == 0) then
-             ! Found ordered edges pair. Eliminate these two edges.
-
-             ! Jump to 2nd next edge
-             i = i + 2
-             cycle loopEdge
-          else
-             ! Add this edge to new edge list
-             npolyEdges = npolyEdges + 1
-             polyEdges(npolyEdges)%n1 = polyEdgesTmp(i)%n1
-             polyEdges(npolyEdges)%n2 = polyEdgesTmp(i)%n2
-
-             edgeMap(npolyEdges) = edgeMaptmp(i)
-
-             if (i+1 == npolyEdgestmp) then
-                ! Add this last edge to new edge list
-                npolyEdges = npolyEdges + 1
-                polyEdges(npolyEdges)%n1 = polyEdgesTmp(i+1)%n1
-                polyEdges(npolyEdges)%n2 = polyEdgesTmp(i+1)%n2
-
-                edgeMap(npolyEdges) = edgeMaptmp(i+1)
-
-                exit loopEdge
-             end if
-
-             ! Loop to next edge
+             ! Increment just 1 in 1 to skip over edge e1. 
              i = i + 1
+             cycle 
           end if
-       end do loopEdge
-
-       if (npolyEdgestmp - npolyEdges == 0) then
-          !print*, ' No more edges to cancel ', npolyEdges
-          exit loop_outer
        end if
 
-       ! Update polyedgesTmp  and edgeMaptmp before cycling loop
-       ! -------------------------------------------------------
-       ! First zero out
-       do i=1, npolyEdgesTmp
-          polyEdgesTmp(i)%n1 = -1
-          polyEdgesTmp(i)%n2 = -1
-       end do
-       edgeMaptmp = -1
+       ! The sum and difference:
+       nsum1 = e1%n1 + e1%n2
+       nsum2 = e2%n1 + e2%n2
 
-       ! New tmp sizes
-       npolyEdgestmp = npolyEdges
-       do i=1, npolyEdges
-          polyEdgesTmp(i)%n1 = polyEdges(i)%n1
-          polyEdgesTmp(i)%n2 = polyEdges(i)%n2
-          edgeMaptmp(i) = edgeMap(i)
-       end do
-       ! -------------------------------------------------------
+       ndiff1 = e1%n2 - e1%n1
+       ndiff2 = e2%n2 - e2%n1
 
-    end do loop_outer
-    ! ---------------------------------------------------------------------
-    ! End canceling out edges.
-    ! ---------------------------------------------------------------------
+       if (nsum1 == nsum2 .and. ndiff1 + ndiff2 == 0) then 
+          ! These edges cancel. Great. 
+          i = i + 2
+          cycle
+       else
+          ! Add e1
+          npolyEdges = npolyEdges + 1
+          polyEdges(npolyEdges) = e1
 
-    !! Debug polygonEdges
-    !! -----------------------------------------------------------
-    !open(unit=101, file="polygonEdges.dat", form='formatted')
-    !write(101,*) 'TITLE = "PolygonEdges Data" '
-    !write(101,*) 'Variables = "X", "Y", "Z"'
-    !write(101,*) "Zone T=Pockets"
-    !write (101,*) "Nodes = ", npolyEdges*2, " Elements= ", npolyEdges, " ZONETYPE=FELINESEG"
-    !write (101,*) "DATAPACKING=POINT"
+          ! And e2 if it is the very last edge
+          if (i+1 == p%nEdges) then 
+             npolyEdges = npolyEdges + 1
+             polyEdges(npolyEdges) = e2
+             i = i + 1 
+          end if
 
-    !! node data
-    !do i=1, npolyEdges
-    !   n1 = polyEdges(i)%n1
-    !   n2 = polyEdges(i)%n2
-    !   ! node 1
-    !   write(101,'(3(E20.12,x))')p%x(1, n1), p%x(2, n1), p%x(3, n1)
-    !   ! node 2
-    !   write(101,'(3(E20.12,x))')p%x(1, n2), p%x(2, n2), p%x(3, n2)
-    !end do
-
-    !! Edge data
-    !do i=1, npolyEdges
-    !   write(101,'(3(I5,x))')2*i-1, 2*i
-    !end do
-    !close(101)
-    !!-------------------------------------------------------------
-
-    !-------------------------------------------------------------
-    ! PocketZip 3:
-    ! Accumulate full pocket string edges.
-    ! Do similar to how master edges were accumulated.
-    ! 3.1: create pocketMaster elems and nodes
-    ! 3.2: perform doChain on pocketMaster elems and create pocket strings.
-    ! 3.3: selfZip pocketStrings
-    !-------------------------------------------------------------
-
-    ! ----------------------------------------
-    ! 3.1: create pocketMaster elems and nodes
-    ! ----------------------------------------
-
-    ! First create unique nodeList
-    ! Number of nodes is twice the size of edges
-    allocate(nodeList(2*nPolyEdges), nodeMap(2*nPolyEdges))
-    do i=1, nPolyEdges
-       nodeList(2*i-1) = PolyEdges(i)%n1
-       nodeList(2*i)   = PolyEdges(i)%n2
+          i = i + 1 
+       end if
     end do
-
-    call unique(nodeList, 2*nPolyEdges, nUnique, nodeMap)
 
     ! Define pocketMaster string
     call nullifyString(pocketMaster)
-
-    pocketMaster%nNodes = nUnique
+    pocketMaster%myID = 88
     pocketMaster%nElems = nPolyEdges
+    pocketMaster%nNodes = nPolyEdges*2
+    pocketMaster%nEdges = 0
+    allocate(pocketMaster%nodeData(10, 2*nPolyEdges), &
+         pocketMaster%intNodeData(3, 2*nPolyEdges), &
+         pocketMaster%conn(2, nPolyEdges))
 
-    allocate(pocketMaster%nodeData(10, pocketMaster%nNodes), &
-         pocketMaster%conn(2, pocketMaster%nElems), &
-         pocketMaster%intNodeData(3, pocketMaster%nNodes))
-    allocate(pocketMaster%pNodes(pocketMaster%nNodes))
-
-    allocate(pocketMaster%otherID(2, pocketMaster%nNodes))
-    pocketMaster%otherID = -1
-
-    ! Set the string pointers to the individual arrays
-    call setStringPointers(pocketMaster)
-
-    ! Node data
-    do i=1, nUnique
-       ip = nodeList(i)
-
-       !Copy x, norm, perpNorm, and h data from global master data
-       pocketMaster%nodeData(:, i) = p%nodeData(:, ip)  
-       pocketMaster%intNodeData(:, i) = p%intNodeData(:, ip)
-
-       ! Save the original master node index
-       pocketMaster%pNodes(i) = ip
-    end do
-
-    ! Element data
+    ! Dump the data into the pocketMaster
     do i=1, nPolyEdges
-       pocketMaster%conn(1, i) = nodeMap(2*i-1) !<-- map to the unique node index
-       pocketMaster%conn(2, i) = nodeMap(2*i) !<-- map to the unique node index
+       pocketMaster%nodeData(:, 2*i-1) = p%nodeData(:, polyEdges(i)%n1)
+       pocketMaster%intNodeData(:, 2*i-1) = p%intNodeData(:, polyEdges(i)%n1)
+
+       pocketMaster%nodeData(:, 2*i) = p%nodeData(:, polyEdges(i)%n2)
+       pocketMaster%intNodeData(:, 2*i) = p%intNodeData(:, polyEdges(i)%n2)
+       pocketMaster%conn(:, i) = (/2*i, 2*i-1/)
     end do
 
-    !! Debug pocketMaster
-    !! --------------------
-    !pocketMaster%myID = 88
-    !open(unit=101, file="pocketMaster.dat", form='formatted')
-    !write(101,*) 'TITLE = "PocketMaster Data" '
-    !write(101,*) 'Variables = "X" "Y" "Z" "Nx" "Ny" "Nz" "Vx" "Vy" "Vz" "ind" &
-    !     "gapID" "gapIndex" "otherID" "otherIndex" "ratio"'
-    !allocate(tmpStrings(1))
-    !tmpStrings(1) = pocketMaster ! Derived type assignment
-    !call writeOversetString(tmpStrings(1), tmpStrings, 1, 101)
-    !close(101)
-    !deallocate(tmpStrings)
-    !! --------------------
-
-    ! Create nte info
+    call setStringPointers(pocketMaster)
+    call reduceGapString(pocketMaster)
     call createNodeToElem(pocketMaster)
 
-    ! End 3.1 create pocketMaster elems and nodes
+    ! The next step is to create ordered strings based on the
+    ! connectivity. This is a purely logical operation. We don't know
+    ! how many actual strings we will need so we will use a linked
+    ! list as we go. 
 
-    ! ---------------------------------------------------------------------
-    ! 3.2: perform doChain on pocketMaster elems and create pocket strings.
-    ! ---------------------------------------------------------------------
+    ! Allocate some additional arrays we need for doing the chain
+    ! searches. 
+    nElems = pocketMaster%nElems
+    nNodes = pocketMaster%nNodes
+    allocate(pocketMaster%elemUsed(nElems), pocketMaster%subStr(2, nElems), &
+         pocketMaster%cNodes(2, nNodes))
 
-    ! Create ordered pocketStrings based on connectivity using
-    ! linked list.
-
-    ! Some additional arrays.
-    allocate(pocketMaster%elemUsed(pocketMaster%nElems), &
-         pocketMaster%subStr(2, pocketMaster%nElems), &
-         pocketMaster%cNodes(2, pocketMaster%nNodes)) ! Third index saves the size of the substrings
-    !am pocketMaster%cNodes(3, pocketMaster%nNodes)) ! Third index saves the size of the substrings
-
-    ! Initialize
     pocketMaster%cNodes = 0
     pocketMaster%elemUsed = 0
     curElem = 1
-    nPocketStrings = 0
-
-    !print*,' Create pocketStrings from pocketMaster >>>>>>>>> '
-    ! Do similar to creation to fullStrings
+    nFullStrings = 0
     do while (curElem < pocketMaster%nElems)
 
-       ! First node of the first unused element
+       ! Arbitrarily get the first node for my element:
        iStart = pocketMaster%conn(1, curElem)
        nElems = pocketMaster%nte(1, iStart)
 
-       ! --------------------
-       ! First side of chain:
-       ! --------------------
        firstElem = pocketMaster%nte(2, iStart)
        pocketMaster%subStr(1, 1) = firstElem
        call doChain(pocketMaster, iStart, 1)
 
-       ! ---------------------
-       ! Second side of chain: 
-       ! ---------------------
-       ! Ideally, pocketStrings should be periodic. Should not require
-       ! second side of chain. Do a sanity check anyway.
+       ! We now have a boundary string stored in master%subString(1,
+       ! :nSubStr(1)). These are actually the element numbers of the
+       ! master that form a continuous chain.
 
-       if (nElems > 1) then
-          firstElem = pocketMaster%nte(3, iStart)
-
-          ! Check the second one is already end of the periodic chain
-          ! done above.
-          if (pocketMaster%elemUsed(firstElem) == 0) then
-             print*, ' First side did not create a periodic chain'
-             stop ' Error'
-          end if
-       end if
-
-       ! Extract pocketStrings linked list from elements present in
-       ! pocketMaster%subStr buffer
-
-       ! Create or add a new string to 'pocketStrings' linked list
-       if (nPocketStrings == 0) then
-          allocate(pocketStrings) ! Create first linked list node
-          nPocketStrings = 1
-          pocketStrings%next => pocketStrings
-          strPkt => pocketStrings ! Work with the first termporary linked list node
+       ! Create or add a new string to our linked list
+       ! "stringsLL".
+       if (nFullStrings == 0) then 
+          allocate(stringsLL)
+          nFullStrings = 1
+          stringsLL%next => stringsLL
+          str => stringsLL
        else
-          allocate(strPkt%next) ! Create new linked list node and link to it
-          strPkt%next%next => pocketStrings ! point the end back to original pointer.
-          strPkt => strPkt%next ! Work with the new temporary linked list node
-
-          nPocketStrings = nPocketStrings + 1
+          allocate(str%next)
+          str%next%next => stringsLL
+          str => str%next
+          nFullStrings = nFullStrings + 1 
        end if
 
-       ! Create a pocketStrings substring from pocketMaster buffer
-       call createSubStringFromElems(pocketMaster, strPkt, nPocketStrings)
+       ! Create a substring from master based on the elements we
+       ! have in the buffer
+       call createSubStringFromElems(pocketMaster, str, nFullStrings)
 
-       do while (pocketMaster%elemUsed(curElem) == 1 .and. &
-            curElem < pocketMaster%nElems)
+       ! Scan through until we find the next unused element:
+       do while(pocketMaster%elemUsed(curElem) == 1 .and. curElem < pocketMaster%nElems) 
           curElem = curElem + 1
        end do
-    end do ! main while loop
-
-    ! Debug pocketStrings
-    ! ---------------------------------------------
-    print *, 'nPocketStrings:', nPocketStrings
+    end do
 
     ! Temporary strings array for plotting and pocketZipping
-    allocate(pocketStringsArr(nPocketStrings))
-    strPkt => pocketStrings
+    allocate(pocketStringsArr(nFullStrings))
+    str => stringsLL
     i = 0
-    do while(i < nPocketStrings)
+    do while(i < nFullStrings)
        i = i + 1
-       pocketStringsArr(i) = strPkt ! Derived type assignment
-       call nullifyString(strPkt)
-       strPkt => strPkt%next
+       pocketStringsArr(i) = str ! Derived type assignment
+       call nullifyString(str)
+       str => str%next
     end do
-
-    ! Debug pocketStrings
-    ! --------------------------------------------------------------
-    open(unit=101, file="pocketStrings.dat", form='formatted')
-    write(101,*) 'TITLE = "PocketStrings Data" '
-
-    write(101,*) 'Variables = "X" "Y" "Z" "Nx" "Ny" "Nz" "Vx" "Vy" "Vz" "ind" &
-         "gapID" "gapIndex" "otherID" "otherIndex" "ratio"'
-    do i=1, nPocketStrings
-       ! Temporarily allocate otherID
-       allocate(pocketStringsArr(i)%otherID(2, pocketStringsArr(i)%nNodes))
-       pocketStringsArr(i)%otherID = -1
-
-       call writeOversetString(pocketStringsArr(i), pocketStringsArr, &
-            nPocketStrings, 101)
-    end do
-    close(101)
-    ! --------------------------------------------------------------
-
-    ! ---------------------------------------------
-    ! ------------------------------------------------------------------------
-    ! End 3.2, perform doChain on pocketMaster elems and create pocket strings.
-    ! ------------------------------------------------------------------------
-
-    ! --------------------------
-    ! 3.3: selfZip pocketStrings
-    ! --------------------------
-
-    ! ======= Do actual pocketZip ================
-
-    ! This is again going to be similar to selfZip of fullStrings
-
-    pocketMaster%myID = 88
 
     ! Allocate space for pocket triangles.
     ! (n-sided polygon -> n-2 triangles)
     allocate(pocketMaster%tris(3, pocketMaster%nElems))
+    allocate(pocketMaster%edges(4*pocketMaster%nElems))
     pocketMaster%nTris = 0
 
     ! Build the pocketMaster tree
     pocketMaster%tree => kdtree2_create(pocketMaster%x, sort=.True.)
 
+    if (debugZipper) then 
+       open(unit=101, file="pocketStrings.dat", form='formatted')
+       write(101,*) 'TITLE = "PocketStrings Data" '
+       
+       write(101,*) 'Variables = "X" "Y" "Z" "Nx" "Ny" "Nz" "Vx" "Vy" "Vz" "ind" &
+            "gapID" "gapIndex" "otherID" "otherIndex" "ratio"'
+       do i=1, nFullStrings
+          ! Temporarily allocate otherID
+          allocate(pocketStringsArr(i)%otherID(2, pocketStringsArr(i)%nNodes))
+          pocketStringsArr(i)%otherID = -1
+
+          call writeOversetString(pocketStringsArr(i), pocketStringsArr, &
+               nFullStrings, 101)
+       end do
+       close(101)
+    end if
+
     ! Loop over pocketStrings and begin pocketZip starting 
     ! from smallest convex ear.
-    do i=1, nPocketStrings
+    do i=1, nFullStrings
        pocketZiploop: do while (pocketStringsArr(i)%nNodes > 2) 
           ! Each pass zips one triangle. Keep zipping
           ! until last triangle is zipped in the pocket polygon.
@@ -2317,17 +1621,15 @@ contains
        end do pocketZiploop
     end do
 
-    call writeOversetTriangles(pocketMaster, "pocketTriangulation.dat")
-    ! ------------------------------
-    ! End 3.3, selfZip pocketStrings
-    ! ------------------------------
-    !am call computeTriSurfArea(pocketMaster, triArea)
-    !am print*,'triArea ',triArea
+    ! Destroy the strings array
+    do i=1, nFullStrings
+       call deallocateString(pocketStringsArr(i))
+    end do
+    deallocate(pocketStringsArr, polyEdges)
+
 
   end subroutine makePocketZip
 
-  !
-  ! ======================================
   subroutine pocketZip(s)
 
     use overset
@@ -2338,42 +1640,21 @@ contains
     type(oversetString), intent(inout), target :: s
 
     ! Local variables
-    integer(kind=intType) :: i, j, k, ii, im1, ip1, nalloc, idx, nFound, N
-    integer(kind=intType) :: nNodes, nElems, elem1, elem2, imin
-    logical :: lastNodeZipper, inTri, overlapFound
+    integer(kind=intType) :: i, j, k, ii, im1, ip1, N
+    integer(kind=intType) :: nNodes, nElems, imin
     real(kind=realType), dimension(3) :: v1, v2, norm, c
     real(kind=realType) :: cosCutoff, cosTheta, r2, v1nrm, v2nrm, costhetaMax
 
-    integer(Kind=intType), dimension(:), allocatable :: nodeMap
-    integer(Kind=intType), dimension(:), allocatable :: badNode
+    integer(Kind=intType), dimension(:), allocatable :: nodeMap, badNode
     type(kdtree2_result), dimension(:), allocatable  :: results
-    !am real(kind=realType), dimension(:, :), pointer :: xTmp, normTmp
-    real(kind=realType), dimension(:, :), pointer :: nodeDataTmp
-    integer(kind=intType), dimension(:, :), pointer :: connTmp, intNodeDataTmp
-    integer(kind=intType), dimension(:), pointer :: pNodesTmp
-    logical :: foundZipNode
-
-    ! ----------------------------------
-    ! pocketStrings 's' should be all peridic
-    if (.not.s%isPeriodic) then
-       print*,' Non-periodic pocketStrings ID: ',s%myID
-       stop
-    end if
+    logical :: added
 
     N = s%nNodes
-
-    nAlloc = 25
-    allocate(results(nAlloc))
-    allocate(nodeMap(s%nNodes))
-    allocate(badNode(s%nNodes))
+    allocate(results(25), nodeMap(N), badNode(N))
     nodeMap = 1
-    badNode = 0 ! 1 if bad
+    badNode = 0 ! Will become 1 if bad
 
-    foundZipNode = .False.
-
-    !=====================================
-    outerZiploop: do while (.not.foundZipNode)
-       !=====================================
+    outerZiploop: do 
 
        ! Find min angled ear
        costhetaMax = -Large 
@@ -2381,19 +1662,12 @@ contains
 
           if (badNode(ii) == 1) cycle nodeloop
 
-          im1 = ii - 1
-          ip1 = ii + 1
-
-          ! Peroidic string at end...loop around
-          if (ii == N) then 
-             ip1 = 1
-          else if (ii == 1) then
-             im1 = s%nNodes
-          end if
+          ip1 = nextNode(ii)
+          im1 = prevNode(ii)
 
           ! Determine the angle between the vectors
-          v1 = s%x(:, ip1) - s%x(:, ii)
-          v2 = s%x(:, im1) - s%x(:, ii)
+          v1 = s%x(:, im1) - s%x(:, ii)
+          v2 = s%x(:, ip1) - s%x(:, ii)
           v1nrm = norm2(v1)
           v2nrm = norm2(v2)
           call cross_prod(v2, v1, norm)
@@ -2402,10 +1676,8 @@ contains
           ! Interior node norm and potential node norm should point
           ! in the same direction.
           if (dot_product(norm, s%norm(:, ii)) > zero) then
-
              ! Dot product of im1 and ip1 nodes should be close
              if (dot_product(s%norm(:, ip1), s%norm(:, im1)) > 0.80) then
-
                 costheta = dot_product(v1, v2)  / (v1nrm * v2nrm)
 
                 ! cos(theta) is the largest for smallest angle
@@ -2415,156 +1687,47 @@ contains
                 end if
              end if
           end if
+       end do nodeloop
 
-       end do nodeloop !ii 
-
-       ! Zip about imin node
+       ! Zip about node "imin"
        ii = imin
-
-       im1 = ii - 1
-       ip1 = ii + 1
-
-       ! Peroidic string at end...loop around
-       if (ii == N) then 
-          ip1 = 1
-       else if (ii == 1) then
-          im1 = s%nNodes
-       end if
-
-       ! Check that this triangle does not contain any other 
-       ! pocketStrings nodes
-
-       c = half*(s%x(:, ip1) + s%x(:, im1))
-       r2 = (c(1) - s%x(1, ii))**2 +  (c(2) - s%x(2, ii))**2 +  (c(3) - s%x(3, ii))**2
-
-       r2 = max(r2, (s%x(1, ip1) - s%x(1, im1))**2 + (s%x(2, ip1) - s%x(2, im1))**2 + &
-            (s%x(3, ip1) - s%x(3, im1))**2)
-
-       nFound = 0
-       outerLoop: do 
-
-          call kdtree2_r_nearest(s%p%tree, c, r2, nfound, nalloc, results) 
-          if (nFound < nAlloc) then 
-             exit outerLoop
-          end if
-
-          ! Allocate more space and keep going
-          deallocate(results)
-          nAlloc = nAlloc * 2
-          allocate(results(nAlloc))
-       end do outerLoop
-
-       ! We can now be sure that we have all the points inside our
-       ! ball. Next we proceed to systematically check them. 
-       overlapFound = .False.
-       nodeFoundLoop: do k=1, nFound
-          ! Note that we do check nodes from our own string,
-          ! except for the the three nodes we're dealing
-          ! with. Remember that we are working in our parent's
-          ! ording here.
-          idx = results(k)%idx 
-
-          notPartofTriangle: if (idx /= s%pNodes(im1) .and. &
-               idx /= s%pNodes(ii) .and. idx /= s%pNodes(ip1)) then 
-
-             ! Only check if the node normal of the point we're
-             ! checking is in the same direction as the triangle. 
-             if (dot_product(s%norm(:, ii), s%p%norm(:, idx)) > zero) then 
-
-                ! Finally do the actual trianlge test
-                call pointInTriangle(s%x(:, ip1), s%x(:, ii), s%x(:, im1), &
-                     s%p%x(:, idx), inTri)
-                if (inTri) then 
-                   ! As soon as 1 is in the triangle, we know the
-                   ! gap string is no good. 
-                   overlapFound = .True. 
-                   exit nodeFoundLoop
-                end if
-             end if
-          end if notPartofTriangle
-       end do nodeFoundLoop
-
-       if (.not. overlapFound) then 
-          ! This triangle is good!
-
-          s%p%nTris = s%p%nTris+ 1
-          s%p%tris(:, s%p%nTris) = (/s%pNodes(ip1), s%pNodes(ii),s%pNodes(im1)/)
-          nodeMap(ii) = 0
-
-          ! The two shorted string edges have been used for selfZip
-          ! 
-          elem1 = s%p%nte(2, s%pNodes(ii))
-          elem2 = s%p%nte(3, s%pNodes(ii))
-          s%p%elemUsed(elem1) = 1
-          s%p%elemUsed(elem2) = 1
-
-          foundZipNode = .True.
+       ip1 = nextNode(ii)
+       im1 = prevNode(ii)
+       call addPotentialTriangle(s, ip1, ii, im1, nodeMap, results, added)
+       if (added) then 
+          ! This triangle was good!
+          exit outerZipLoop
        else 
           ! Bad node. Need to cycle through rest of pocket nodes.
           ! Remember this bad node in next cycle.
           badNode(ii) = 1 
           cycle outerZiploop
        end if
-
-       ! Modify the pocketStrings to remove the two elements and the node
-       ! that got eliminated due to pocketZipping. 
-
-       ! Save pointers to existing data
-       nNodes = s%nNodes
-       nElems = s%nElems
-       nodeDataTmp => s%nodeData
-       intNodeDataTmp => s%intNodeData
-       connTmp => s%conn
-       pNodesTmp => s%pNodes
-
-       ! nodeMap(imin) = 0, and 1 for the rest nodes. Create new nodeMap
-       ! by taking off node 'imin'.
-       j = 0
-       do i=1, s%nNodes
-          if (nodeMap(i) == 1) then 
-             j = j + 1
-             nodeMap(i) = j
-          end if
-       end do
-
-       ! Update the number of nodes/elems in our shorted chain. Every
-       ! zipper reduces the number of nodes and number of elems by 1
-       s%nNodes = s%nNodes - 1
-       s%nElems = s%nElems - 1
-
-       allocate(s%nodeData(10, s%nNodes), s%intNodeData(3, s%nNodes), &
-            s%pNodes(s%nNodes), s%conn(2, s%nElems))
-
-       ! Set the pointers for the new string
-       call setStringPointers(s)
-
-       do i=1, nNodes
-          if (nodeMap(i) /= 0) then 
-             s%nodeData(:, nodeMap(i)) = nodeDataTmp(:, i)
-             s%intNodeData(:, nodeMap(i)) = intNodeDataTmp(:, i)
-             s%pNodes(nodeMap(i)) = pNodesTmp(i)
-
-             ! Update string's parent's child node data
-             !am s%p%cNodes(:, s%pNodes(nodeMap(i))) = (/s%myID, nodeMap(i), s%nNodes/)
-             s%p%cNodes(:, s%pNodes(nodeMap(i))) = (/s%myID, nodeMap(i) /)
-          end if
-       end do
-
-       ! Since we know the string was in order, we can simply redo the connectivity
-       do i=1, s%nElems
-          s%conn(:, i) = (/i, i+1/)
-       end do
-       if (s%isPeriodic) then 
-          s%conn(2, s%nElems) = 1
-       end if
-
-       ! Dellocate the existing memory
-       deallocate(nodeDataTmp, intNodeDataTmp, connTmp, pNodesTmp)
-
     end do outerZiploop
 
-    deallocate(nodeMap, badNode)
+    ! Modify the pocketStrings to remove the two elements and the node
+    ! that got eliminated due to pocketZipping. 
+    call shortenString(s, nodeMap)
+    deallocate(nodeMap, badNode, results)
 
+  contains
+    function nextNode(ii)
+      implicit none
+      integer(kind=intType) :: ii, nextNode
+      nextNode = ii + 1
+      if (ii == N) then 
+         nextNode = 1
+      end if
+    end function nextNode
+
+    function prevNode(ii)
+      implicit none
+      integer(kind=intType) :: ii, prevNode
+      prevNode = ii - 1
+      if (ii == 1) then 
+         prevNode = N
+      end if
+    end function prevNode
   end subroutine pocketZip
 
   subroutine computeTriSurfArea(master, area)
@@ -2628,5 +1791,378 @@ contains
     end do
   end function triOverlap
 
+  subroutine shortenString(s, nodeMap)
+
+    ! This is an auxilary routine that take a string 's', and a node
+    ! map of len s%nNodes, with 1 or 0. A 1 means that the node will
+    ! be in the shortened string, 0 means that the node should be
+    ! deleted.
+
+    implicit none
+
+    ! Input/Output
+    type(oversetString) :: s
+    integer(kind=intType), dimension(:), intent(inout) :: nodeMap
+
+    ! Working
+    integer(kind=intType) :: nNodes, nElems, nRemoved, i, j
+    real(kind=realType), dimension(:, :), pointer :: nodeDataTmp
+    integer(kind=intType), dimension(:, :), pointer :: connTmp, intNodeDataTmp
+    integer(kind=intType), dimension(:), pointer :: pNodesTmp
+
+
+    ! Now we will modify our string to remove the elements and nodes
+    ! that got knocked off due to self zipping. This way the calling
+    ! process still sees the same string, it just gets a little
+    ! shorter. 
+
+    ! Save pointers to existing data
+    nNodes = s%nNodes
+    nElems = s%nElems
+    nodeDataTmp => s%nodeData
+    intNodeDataTmp => s%intNodeData
+    connTmp => s%conn
+    pNodesTmp => s%pNodes
+
+    ! Convert the nodeMap which currently contains a one if the node
+    ! still exists and 0 if it doesn't. This will convert it to the new
+    ! node numbers. Ie nodeMap(i) gives the new node index of the
+    ! shorted chain. If nodeMap(i) = 0, it is no longer part of the
+    ! chain.
+    j = 0
+    nRemoved = 0
+    do i=1, s%nNodes
+       if (nodeMap(i) == 1) then 
+          j = j + 1
+          nodeMap(i) = j
+       else
+          nRemoved = nRemoved + 1
+       end if
+    end do
+
+    !  Update the cNodes in the parent so they point to the updated node
+    ! numbers. Note that the nodes that have been eliminated, have cNode
+    ! = 0, which will identify that it no longer has a child node. 
+    do i=1, s%nNodes
+       s%p%cNodes(:, s%pNodes(i)) = (/s%myID, nodeMap(i)/)
+    end do
+
+    ! Update the number of nodes/elems in our shorted chain. Every
+    ! zipper reduces the number of nodes and number of elems by 1
+    s%nNodes = s%nNodes - nRemoved
+    s%nElems = s%nElems - nRemoved
+
+    allocate(s%nodeData(10, s%nNodes), s%intNodeData(3, s%nNodes), &
+         s%pNodes(s%nNodes), s%conn(2, s%nElems))
+
+    ! Set the pointers for the new string
+    call setStringPointers(s)
+
+    do i=1, nNodes
+       if (nodeMap(i) /= 0) then 
+          s%nodeData(:, nodeMap(i)) = nodeDataTmp(:, i)
+          s%intNodeData(:, nodeMap(i)) = intNodeDataTmp(:, i)
+          s%pNodes(nodeMap(i)) = pNodesTmp(i)
+       end if
+    end do
+
+    ! Since we know the string was in order, we can simply redo the connectivity
+    do i=1, s%nElems
+       s%conn(:, i) = (/i, i+1/)
+    end do
+
+    if (s%isPeriodic) then 
+       s%conn(2, s%nElems) = 1
+    end if
+
+    ! Dellocate the existing memory
+    deallocate(nodeDataTmp, intNodeDataTmp, connTmp, pNodesTmp)
+
+    ! Recreate the node to elem
+    if (s%nNodes >=3 ) then 
+       call createNodeToElem(s)
+    end if
+
+  end subroutine shortenString
+
+  subroutine addPotentialTriangle(s, im1, ii, ip1, nodeMap, results, added)
+
+    ! Common routine (for pocketZip and selfZip) to potentially add a
+    ! triangle resulting from a single string. 
+
+    implicit none
+
+    ! Input/Output
+    type(oversetString) :: s
+    integer(kind=intType), intent(in) :: im1, ii, ip1
+    integer(kind=intType), intent(inout), dimension(:) :: nodeMap
+    type(kdtree2_result), dimension(:), allocatable :: results
+    logical, intent(out) :: added
+    ! Working:
+    real(kind=realType) :: r2
+    real(kind=realType), dimension(3) :: v1, v2, norm, c
+    integer(kind=intType) ::  nFound, nalloc, idx, k, j, i
+    logical :: overlapFound, inTri
+
+    ! We may have a valid triangle. We need to make sure we
+    ! don't overlap anyone else. 
+    !
+    ! xim1 +
+    !      | \
+    !      |   \
+    !      |     c
+    !      |       \
+    !      |         \
+    !      +----------+
+    !      xi         xip1
+    ! We do a ball search based at 'c' which is just the
+    ! (average of xip1 and xim1) using a radius defined as the
+    ! maximum of (the distance between 'c' and 'xi', half
+    ! length of xip1 to xim1)
+    ! 
+    added = .False.
+    c = half*(s%x(:, ip1) + s%x(:, im1))
+    r2 = (c(1) - s%x(1, ii))**2 +  (c(2) - s%x(2, ii))**2 +  (c(3) - s%x(3, ii))**2
+
+    r2 = max(r2, (s%x(1, ip1) - s%x(1, im1))**2 + (s%x(2, ip1) - s%x(2, im1))**2 + &
+         (s%x(3, ip1) - s%x(3, im1))**2)
+
+    nFound = 0
+    outerLoop: do 
+       nalloc = size(results)
+       call kdtree2_r_nearest(s%p%tree, c, r2, nfound, nalloc, results) 
+       if (nFound < nAlloc) then 
+          exit outerLoop
+       end if
+
+       ! Allocate more space and keep going
+       deallocate(results)
+       nAlloc = nAlloc * 2
+       allocate(results(nAlloc))
+    end do outerLoop
+
+
+    ! We can now be sure that we have all the points inside our
+    ! ball. Next we proceed to systematically check them. 
+    overlapFound = .False.
+    nodeFoundLoop: do k=1, nFound
+       ! Note that we do check nodes from our own string,
+       ! except for the the three nodes we're dealing
+       ! with. Remember that we are working in our parent's
+       ! ording here.
+       idx = results(k)%idx 
+
+       notPartofTriangle: if (idx /= s%pNodes(im1) .and. &
+            idx /= s%pNodes(ii) .and. idx /= s%pNodes(ip1)) then 
+
+          ! Only check if the node normal of the point we're
+          ! checking is in the same direction as the triangle. 
+          if (dot_product(s%norm(:, ii), s%p%norm(:, idx)) > zero) then 
+
+             ! Finally do the actual trianlge test
+             call pointInTriangle(s%x(:, ip1), s%x(:, ii), s%x(:, im1), &
+                  s%p%x(:, idx), inTri)
+             if (inTri) then 
+                ! As soon as 1 is in the triangle, we know the
+                ! triangle is no good. 
+                overlapFound = .True. 
+                exit nodeFoundLoop
+             end if
+          end if
+       end if notPartofTriangle
+    end do nodeFoundLoop
+
+    if (.not. overlapFound) then 
+
+       ! This triangle is good!
+       added = .True. 
+
+       ! Call the generic addTri Routine. Here all the ndoes from the
+       ! triangle come from the same string.
+       call addTri(ip1, s, ii, s, im1, s)
+
+       ! Flag this node as gone
+       nodeMap(ii) = 0
+
+    end if
+  end subroutine addPotentialTriangle
+
+  subroutine closestSymmetricNode(s1, s2, i, j)
+
+    implicit none
+
+    ! Input/Output
+    type(oversetString) :: s1, s2
+    integer(kind=intType), intent(out) :: i, j
+    real(kind=realType) :: minDist, dist
+    integer(kind=intType) :: ii
+
+    ! Working:
+    minDist = large
+
+    do ii=1, s1%nNodes
+       ! "The other index of the matching node on the other string is
+       ! me" ie. "I point to you and you point to me"
+
+       if (s2%otherID(2, s1%otherID(2, ii)) == ii) then 
+
+          dist = norm2(s1%x(:, ii) - s2%x(:, s1%otherID(2, ii)))
+
+          if (dist < minDist) then 
+             minDist = dist
+             i = ii
+             j = s1%otherID(2, ii)
+          end if
+       end if
+    end do
+
+  end subroutine closestSymmetricNode
+
+
+  subroutine writeOversetString(str, strings, n, fileID)
+
+    use communication
+    use overset
+    implicit none
+
+    type(oversetString), intent(inout) :: str
+    type(oversetString), intent(inout), dimension(n) :: strings
+    integer(kind=intType), intent(in) :: fileID, n
+    integer(kind=intType) :: i, j, id, index
+    real(kind=realType), dimension(3) :: myPt, otherPT, vec
+    real(kind=realType) :: maxH, dist, ratio
+
+    character(80) :: zoneName  
+
+
+    write (zoneName,"(a,I5.5)") "Zone T=gap_", str%myID
+    write (fileID, *) trim(zoneName)
+
+    write (fileID,*) "Nodes = ", str%nNodes, " Elements= ", str%nElems, " ZONETYPE=FELINESEG"
+    write(fileID, *) "DATAPACKING=BLOCK"
+13  format (E20.12)
+
+    ! Nodes
+    do j=1,3
+       do i=1, str%nNodes
+          write(fileID,13) str%x(j, i)
+       end do
+    end do
+
+    ! Node normal
+    do j=1,3
+       do i=1, str%nNodes
+          write(fileID,13) str%norm(j, i)
+       end do
+    end do
+
+    ! Vector between closest points
+    do j=1,3
+       do i=1, str%nNodes
+          myPt = str%x(:, i)
+          id = str%otherID(1, i)
+          if (id /= -1) then 
+             index = str%otherID(2, i)
+             otherPt = strings(id)%x(:, index)
+             vec = otherPt - myPt
+          else
+             vec = zero
+          end if
+
+          write(fileID,13) vec(j)
+       end do
+    end do
+
+    ! global node ID
+    do i=1, str%nNodes
+       write(fileID,13) real(str%ind(i))
+    end do
+
+    ! gapID
+    do i=1, str%nNodes
+       write(fileID,13) real(str%myID)
+    end do
+
+    ! gap Index
+    do i=1, str%nNodes
+       write(fileID,13) real(i)
+    end do
+
+    if (associated(str%otherID)) then 
+       ! otherID
+       do i=1, str%nNodes
+          write(fileID,13) real(str%otherID(1, i))
+       end do
+
+       ! other Index
+       do i=1, str%nNodes
+          write(fileID,13) real(str%otherID(2, i))
+       end do
+    else
+       do i=1, 2*str%nNodes
+          write(fileID,13) zero
+       end do
+    end if
+
+
+    do i=1, str%nNodes
+       myPt = str%x(:, i)
+       id = str%otherID(1, i)
+       if (id /= -1) then 
+          index = str%otherID(2, i)
+          otherPt = strings(id)%x(:, index)
+          dist = norm2(myPt - otherPt)
+          maxH = max(str%h(i), strings(id)%h(index))
+          ratio = dist/maxH
+       else
+          ratio = zero
+       end if
+
+       write(fileID,13) ratio
+    end do
+
+15  format(I5, I5)
+    do i=1, str%nElems
+       write(fileID, 15) str%conn(1, i), str%conn(2, i)
+    end do
+
+  end subroutine writeOversetString
+
+  subroutine writeOversetTriangles(string, fileName)
+
+    use communication
+    use overset
+    implicit none
+
+    type(oversetString), intent(inout) :: string
+    character(*) :: fileName
+    integer(kind=intType) :: i, j
+    character(80) :: zoneName  
+
+    open(unit=101, file=trim(fileName), form='formatted')
+    write(101,*) 'TITLE = "Triangles"'
+    write(101,*) 'Variables = "X", "Y", "Z"'
+
+    write (zoneName,"(a,I5.5)") "Zone T=triangles_", string%myID
+    write (101, *) trim(zoneName)
+
+    write (101,*) "Nodes = ", string%nNodes, " Elements= ", string%nTris, " ZONETYPE=FETRIANGLE"
+    write (101,*) "DATAPACKING=POINT"
+13  format (E20.12)
+
+    ! Write all the coordinates  
+    do i=1, string%nNodes
+       do j=1, 3
+          write(101,13, advance='no') string%x(j, i)
+       end do
+       write(101,"(1x)")
+    end do
+
+15  format(I5, I5, I5)
+    do i=1, string%nTris
+       write(101, 15) string%tris(1, i), string%tris(2, i), string%tris(3, i)
+    end do
+    close(101)
+  end subroutine writeOversetTriangles
 
 end module stringOps
