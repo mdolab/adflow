@@ -9,6 +9,7 @@ subroutine makeGapBoundaryStrings(level, sps)
   use kdtree2_module
   use adjointvars
   use wallDistanceData, only : xVolumeVec, IS1
+  use inputOverset
   implicit none
 
   ! Input Params
@@ -526,30 +527,9 @@ subroutine makeGapBoundaryStrings(level, sps)
   fullWall%nNodes = nNodes
   call buildSerialQuad(nCells, nNodes, fullWall%x, fullWall%conn, fullWall%ADT)
 
-  ! Now all the procs have fullWall info. 
-  ! Note: this is overkill, since only proc 0 needs them for zipper 
-  !       triangle containment search.
-
-  !! Debug fullWalls
-  !! ----------------------
-  !write (fileName,"(a,I2.2,a)") "fullwall_", myid, ".dat"
-  !open(unit=101,file=trim(fileName),form='formatted')
-  !write(101,*) 'TITLE = "mywalls"'
-  !write(101,*) 'Variables = "X", "Y", "Z"'
-  !write(101,*) "Zone T=fullwall"
-  !write (101,*) "Nodes = ", fullWall%nNodes, " Elements= ", fullWall%nCells, " ZONETYPE=FEQUADRILATERAL"
-  !write(101, *) "DATAPACKING=POINT"
-  !do i=1, fullWall%nNodes
-  !   write(101, '(3(E20.12,x))')fullWall%x(1:3,i)
-  !end do
-  !do i=1, fullWall%nCells
-  !   write(101, '(4(I5,x))') fullWall%conn(1:4, i)
-  !end do
-  !close(101)
-  !! ----------------------
-  
-
-  ! ---------- End wall data accumulation in root proc -------------
+  ! Now all the procs have fullWall info.  Note: this is overkill,
+  ! since only proc 0 needs them for zipper triangle containment
+  ! search.
   
   ! =================================================================
   !                   Serial code from here on out
@@ -599,7 +579,6 @@ subroutine makeGapBoundaryStrings(level, sps)
         end do
         nNodes =ii
      end do
-
 
      ! Now the root is done with the global strings so deallocate that
      ! too. 
@@ -720,11 +699,9 @@ subroutine makeGapBoundaryStrings(level, sps)
         end do
      end do 
 
-    ! ! Reset master%elemused so that it can be used while zipping.
-    !  master%elemUsed = 0
-
      ! Allocate space for the triangles. Again, this can be at most,
-     ! nElems, but can be smaller due to self zipping. 
+     ! nElems, but the total number of elements will most likely be
+     ! smaller due to self zipping.
      allocate(master%tris(3, master%nElems))
      master%nTris = 0
 
@@ -746,7 +723,6 @@ subroutine makeGapBoundaryStrings(level, sps)
         end do zipperLoop
      end do
      nSelfZipTris = master%nTris
-     print*,' nSelfZipTris ', nSelfZipTris
 
      ! Now that we have self zipped the edges, allocated space for
      ! elemUsed. The remaining edges on each string must be either
@@ -944,35 +920,35 @@ subroutine makeGapBoundaryStrings(level, sps)
         end do nodeLoop
      end do
 
-     print *,'search time:', mpi_wtime()-timea
+     if (debugZipper) then 
+        open(unit=101, file="fullGapStrings.dat", form='formatted')
+        write(101,*) 'TITLE = "Gap Strings Data" '
+        write(101,*) 'Variables = "X" "Y" "Z" "Nx" "Ny" "Nz" "Vx" "Vy" "Vz" "ind" &
+             "gapID" "gapIndex" "otherID" "otherIndex" "ratio"'
+        do i=1, nFullStrings  
+           call writeOversetString(strings(i), strings, nFullStrings, 101)
+        end do
+        close(101)
+     end if
 
      ! ---------------------------------------------------------------
      ! Xzip 2: Call the actual Xzip by providing all gap strings data.
      ! ---------------------------------------------------------------
      call makeCrossZip(master, strings, nFullStrings)
-  
-     ! =============== DEBUGGING =================
-     call writeOversetTriangles(master, "fullTriangulation.dat")
 
-     print *, 'nFullStrings:', nFullStrings
-     open(unit=101, file="fullGapStrings.dat", form='formatted')
-     write(101,*) 'TITLE = "Gap Strings Data" '
-     write(101,*) 'Variables = "X" "Y" "Z" "Nx" "Ny" "Nz" "Vx" "Vy" "Vz" "ind" &
-          "gapID" "gapIndex" "otherID" "otherIndex" "ratio"'
-     do i=1, nFullStrings  
-      call writeOversetString(strings(i), strings, nFullStrings, 101)
-     end do
-     close(101)
-     ! ===========================================
+     if (debugZipper) then 
+        call writeOversetTriangles(master, "fullTriangulation.dat")
+     end if
 
-     ! ===============================================================
-     ! Do pocket zipping
      ! ---------------------------------------------------------------
      ! Sort through zipped triangle edges and the edges which have not
      ! been used twice (orphan edges) will be ultimately gathered to 
      ! form polygon pockets to be zipped.
      call makePocketZip(master, strings, nFullStrings, pocketMaster)
 
+     if (debugZipper) then 
+        call writeOversetTriangles(pocketMaster, "pocketTriangulation.dat")
+     end if
 
      ! -------------------------------------------------------------
      ! Perform comm data preparation for force integration on zipper
@@ -987,7 +963,6 @@ subroutine makeGapBoundaryStrings(level, sps)
 
      ! (3 nodes per triangle and 3 DOF per ndoe)
      allocate(nodeIndices(3*3*(master%ntris + pocketMaster%ntris)))
-     print*,'Triangles: (master,pocket,total) ',master%nTris, pocketMaster%nTris, master%nTris+pocketMaster%nTris
      
      ii = 0
      do i=1, master%nTris
@@ -1036,15 +1011,12 @@ subroutine makeGapBoundaryStrings(level, sps)
         ii = ii + 1
      end do
   else
-
      ! Other procs don't get any triangles :-(
      allocate(nodeIndices(0))
      allocate(cellIndices(0))
-     
   end if
   
-  ! Do not need walls and fullWall, deallocate them.
-  ! ------------------------------------------------
+  ! Do not need walls, fullWall or the strings anymore. Deallocate them.
   do i=1, nClusters
      deallocate(walls(i)%x, walls(i)%conn, walls(i)%ind)
      call destroySerialQuad(walls(i)%ADT)
@@ -1053,6 +1025,17 @@ subroutine makeGapBoundaryStrings(level, sps)
 
   deallocate(fullWall%x, fullWall%conn, fullWall%ind)
   call destroySerialQuad(fullWall%ADT)
+
+  ! Clean up memory on the root proc
+  if (myid == 0) then 
+     do i=1, nFullStrings
+        call deallocateString(strings(i))
+     end do
+     deallocate(strings)
+     call deallocateString(master)
+     call deallocateString(pocketMaster)
+  end if
+
   ! ------------------------------------------------
 
   ! This is the vector we will scatter the nodes into. 
@@ -1106,18 +1089,13 @@ subroutine makeGapBoundaryStrings(level, sps)
        PETSC_NULL_OBJECT, tractionZipperScatter, ierr)
   call EChk(ierr,__FILE__,__LINE__)
   
-  !! Test output
-  !! --------------
-  !call PetscViewerASCIIOpen(sumb_comm_world,'indices.dat',viewer,ierr)
-  !call ISView(IS1, viewer, ierr)
-  !call PetscViewerDestroy(viewer,ierr)
-  !! --------------
-
   call ISDestroy(IS1, ierr)
   call EChk(ierr,__FILE__,__LINE__)
  
   ! Free the remaining memory
   deallocate(nElemsProc, nNodesProc, nodeIndices, cellIndices)
+  
+
 end subroutine makeGapBoundaryStrings
 
 
