@@ -848,6 +848,7 @@ python module libsumb
          real(kind=realtype) :: backgroundvolscale
          real(kind=realtype) :: oversetprojtol
          real(kind=realtype) :: overlapfactor
+         logical :: debugzipper
        end module inputoverset
        
        module inputunsteady ! in :test:inputParam.f90

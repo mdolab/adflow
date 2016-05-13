@@ -25,6 +25,7 @@ subroutine createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
   use overset
   use BCTypes
   use inputTimeSpectral
+  use inputOverset
 
   implicit none
 
@@ -43,13 +44,12 @@ subroutine createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
   type(oversetWall), dimension(:), allocatable :: oWalls
   integer(kind=intType), dimension(:), allocatable :: intRecvBuf
   logical :: isWallType
-  real(kind=realType) :: timeA
+
   ! MPI/Communication related
   integer status(MPI_STATUS_SIZE) 
   integer(kind=intType), dimension(:, :), allocatable :: bufSizes
   integer(kind=intType), dimension(:, :), allocatable :: recvInfo
   integer(kind=intType) :: sendCount, recvCount, index
-  timeA = mpi_wtime()
 
   ! -------------------------------------------------------------------
   ! Step 1: Eliminate any gap overlaps between meshes
@@ -261,19 +261,12 @@ subroutine createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
   ! Step 2: Identify gap boundary strings and split the strings to 
   !         sub-strings.
   ! -------------------------------------------------------------------
-  ! Debugging
-  call writeWalls(oWalls, size(oWalls))
+
+  if (debugZipper) then 
+     call writeWalls(oWalls, size(oWalls))
+  end if
 
   call makeGapBoundaryStrings(level, sps)
-
-  call mpi_barrier(sumb_comm_world, ierr)
-  if (myid == 0) then 
-     print *,'Time:', mpi_wtime()-timeA
-  end if
   
-
-
-
-
 end subroutine createZipperMesh
 
