@@ -104,6 +104,10 @@ subroutine checkOverset (level, sps, totalOrphans)
   call mpi_allreduce(localOrphans, totalOrphans, 1, sumb_integer, MPI_SUM, &
        sumb_comm_world, ierr)
   call ECHK(ierr, __FILE__, __LINE__)
+
+  if (myid == 0) then 
+     print *, 'Total number of orphans:', totalOrphans
+  end if
  
 
 end subroutine checkOverset
