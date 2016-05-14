@@ -223,6 +223,9 @@ module overset
      ! Whether or no this string is periodic
      logical :: isPeriodic=.False.
 
+     ! Whether or no this string is a pocket
+     logical :: isPocket=.False.
+
      ! --------------------------------------------------------------------
      ! Node Data: The actual physical node locations, unit surface normal,
      ! perpNormal and mesh size. x is from index 1:3, normal from 4:6,
