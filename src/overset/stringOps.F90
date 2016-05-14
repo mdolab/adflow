@@ -1089,7 +1089,6 @@ contains
     ! Working
     integer(kind=intType) :: i, iStart, iEnd, jStart, jEnd, iStart_j, iEnd_j
     integer(kind=intType) :: curOtherID, iString, ii, nextI, curIStart
-    integer(kind=intType) :: nIElemsBeg, nJElemsBeg, nIElemsEnd, nJElemsEnd
     logical :: fullLoop1, fullLoop2, dummy
     ! The purpose of this routine is to determine the ranges on two
     !  paired strings that are continuously paired and suitable for
@@ -1105,18 +1104,17 @@ contains
 
     strLoop: do iString=1, nStrings
 
+       ! Skip strings that were pocekts
+       if (strings(iString)%isPocket) then 
+          cycle
+       end if
+
        ! S1 is the curent '1' string we are working with 
        s1 => strings(iString)
 
        ! Find the lowest node number that isn't used:
        curIStart = startNode(s1)
        do while(curIStart > 0) 
-
-          if (debugZipper) then 
-             print *,'------------------------------------------------'
-             print *,'Starting string ', s1%myid, 'at index ', curIstart
-             print *,'------------------------------------------------'
-          end if
 
           iStart = curIStart
           ! Other ID is the string attached at the current pt. 
@@ -1162,11 +1160,6 @@ contains
              call traceMatch(s2, jStart, .False., s1%myID, jEnd, dummy)
           end if
 
-          if (debugZipper) then 
-             print *,'Initial Range s1:', istart, iend, fullLoop1
-             print *,'Initial Range s2:', jstart, jend, fullLoop2
-          end if
-
           if ((iStart == iEnd .and. .not. fullLoop1)  .or.& 
                (jStart == jEnd .and. .not. fullLoop2)) then
              ! Can't go anywhere. Flag this node and the next.
@@ -1195,12 +1188,8 @@ contains
 
              ! part of s1 is attached to part of s2
 
-             ! Determine the number of elements we initial think we
-             ! want to zip for both strings. 
-             nIElemsBeg = elemsForRange(s1, iStart, iEnd, .True.)
-             nJElemsBeg = elemsForRange(s2, jStart, jEnd, .False.)
-
-             ! Now we "project" the s2 increments back onto the the s1
+             
+            ! Now we "project" the s2 increments back onto the the s1
              ! range:
              iStart_j = s2%otherID(2, jStart)
              iEnd_j   = s2%otherID(2, jEnd)
@@ -1215,13 +1204,9 @@ contains
              jStart = s1%otherID(2, iStart)
              jEnd   = s1%otherID(2, iEnd)
 
-             ! Now determine the updated number of elements
-             nIElemsEnd = elemsForRange(s1, iStart, iEnd, .True.)
-             nJElemsEnd = elemsForRange(s2, jStart, jEnd, .False.)
-
-             if (nIElemsEnd > nIElemsBeg .or. nJElemsEnd > nJElemsBeg) then 
-                ! Something happened and the strings became zero
-                ! length or went the wrong way. 
+             if ((istart == iend  .and. .not. fullLoop1) .or. &
+                  (jstart == jend  .and. .not. fullLoop2)) then 
+                ! The range on one became zero. Don't cross zip.
                 s1%xZipNodeUsed(curIStart) = 1
                 curIStart = startNode(s1)
                 cycle 
@@ -1427,39 +1412,6 @@ contains
          i = nextI
       end do
     end subroutine flagNodesUsed
-
-    function elemsForRange(s, N1, N2, pos)
-      ! Determine the number of elements between N1 and N2 for for the
-      ! "POSitive" or "not POSIitive (negative" direction.
-
-      implicit none
-      type(oversetString) :: s
-      integer(kind=intType), intent(in) :: N1, N2
-      logical :: pos
-      integer(kind=intType) :: elemsForRange
-      
-      if (.not. s%isPeriodic) then 
-         if (pos) then 
-            elemsForRange = N1 - N2
-         else
-            elemsForRange = N2 - N1
-         end if
-      else ! Periodic
-         if (pos) then 
-            if (N2 >= N1) then 
-               elemsForRange = N2 - N1
-            else
-               elemsForRange = N2 + s%nNodes - N1
-            end if
-         else
-            if (N1 >= N2) then 
-               elemsForRange = N1 - N2
-            else
-               elemsForRange = N1 + s%nNodes - N2
-            end if
-         end if
-      end if
-    end function elemsForRange
 
   end subroutine makeCrossZip
 
@@ -2077,6 +2029,228 @@ contains
     end do
 
   end subroutine closestSymmetricNode
+
+  subroutine stringMatch(strings, nStrings)
+
+    implicit none
+    
+    type(oversetString), dimension(nstrings), target :: strings
+    integer(kind=intType), intent(in) :: nStrings
+
+    integer(kind=intType) :: i, j, k, idx
+    integer(kind=intType) ::  nAlloc, nUnique, nSearch
+    type(kdtree2_result), allocatable, dimension(:) :: results
+    type(oversetString), pointer ::  str, master
+    logical :: checkLeft, checkRight, concave, nodeInFrontOfEdges
+    logical :: checkLeft2, checkRight2, concave2
+    logical :: leftOK, rightOK, overlappedEdges, overlappedEdges2
+    real(kind=realType), dimension(3) :: xj, xjp1, xjm1, normj
+    real(kind=realType), dimension(3) :: xk, xkp1, xkm1, normk
+    real(kind=realType), dimension(3) :: myPt, otherPt, eNorm
+    real(kind=realType) ::  fact, dStar, curDist, minDist, edgeLength
+    integer(kind=intTYpe) :: otherID, otherIndex, closestOtherIndex, closestOtherString
+    integer(kind=intType) :: id, index
+    real(kind=realType) :: timeA,  pt(3),   v(3), cosTheta,  cutOff, dist, maxH, ratio
+
+    ! Now make we determine the nearest point on another substring
+    ! for each point. 
+    nAlloc = 50
+    allocate(results(nAlloc))
+    master => strings(1)%p
+
+    ! Loop over the fullStrings
+    do i=1, nStrings
+       str => strings(i) ! Easier readability
+
+       ! No need to do anything with the pocket string.
+       if (str%isPocket) then 
+          cycle
+       end if
+
+       ! Allocate space for otherID as it is not done yet
+       if (associated(str%otherID)) then 
+          deallocate(str%otherID)
+       end if
+
+       allocate(str%otherID(2, str%nNodes))
+       str%otherID = -1
+
+        ! Loop over my nodes and search for it in master tree
+        nodeLoop:do j=1, str%nNodes
+
+           ! Reinitialize initial maximum number of neighbours
+           nSearch = 50
+           
+           ! We have to be careful since single-sided chains have only
+           ! 1 neighbour at each end. 
+
+           call getNodeInfo(str, j, checkLeft, checkRight, concave, &
+                xj, xjm1, xjp1,  normj)
+     
+           outerLoop: do
+              minDist = large
+              closestOtherIndex = -1
+              call kdtree2_n_nearest(master%tree, xj, nSearch, results)
+
+              ! Only check edges connected to nodes within the
+              ! distance the maximum element size of my self or the
+              ! closest node. We put in a fudge factor of 1.5. 
+
+              innerLoop: do k=1, nSearch
+
+                 ! Since we know the results are sorted, if the
+                 ! distance(k) > than our current minDist, we can stop
+                 ! since there is no possible way that any of the
+                 ! remaining points can be closer given that the modified
+                 ! D* is always larger than the original D
+                 
+                 ! Extract current information to make things a little
+                 ! easier to read
+                 curDist = sqrt(results(k)%dis)
+                 idx = results(k)%idx
+                 pt = master%x(:, idx)
+
+                 ! --------------------------------------------- 
+                 ! Exit Condition: We can stop the loop if the current
+                 ! uncorrected distance is larger than our current
+                 ! minimum. This guarantees the minimum corrected
+                 ! distance is found.
+                 ! ---------------------------------------------
+
+                 if (curDist > minDist) then 
+                    exit outerLoop
+                 end if
+
+                 ! ---------------------------------------------
+                 ! Check 1: If the node we found isn't on our
+                 ! substring. we don't need to do anything
+                 ! ---------------------------------------------
+
+                 if (master%cNodes(1, idx) == str%myID) then 
+                    cycle innerLoop 
+                 end if
+                 
+                 ! ---------------------------------------------
+
+                 ! Check 1b: If the node we found has been removed due
+                 ! to self zipping, we can just keep going
+                 ! --------------------------------------------
+                 if (master%cNodes(2, idx) == 0) then 
+                    cycle innerLoop 
+                 end if
+
+                 ! The first time we make it here, idx will be the
+                 ! index of the closest node on another string that
+                 ! isn't me. 
+                 if (closestOtherIndex == -1) then 
+                    closestOtherString = master%cNodes(1, idx)
+                    closestOtherIndex = master%cNodes(2, idx)
+                 end if
+
+                 ! --------------------------------------------- 
+                 ! Check 2: Check if the node we found violates the
+                 ! the "in front" test. For a concave corner TWO
+                 ! triangle areas formed by the point and the two
+                 ! edges must be positive. For a convex corner only
+                 ! one of the triangle areas needs to be positive.
+                 ! ---------------------------------------------
+                 if (.not. nodeInFrontOfEdges(pt, concave, checkLeft, checkRight, &
+                      xj, xjm1, xjp1, normj)) then 
+                    cycle innerLoop
+                 end if
+
+                 ! --------------------------------------------- 
+                 ! Check 3: This is the *reverse* of check 2: Is the
+                 ! node we're searching for visible from the potential
+                 ! closest other node. 
+                 ! ---------------------------------------------
+                 otherID = master%cNodes(1, idx)
+                 otherIndex = master%cNodes(2, idx)
+
+                 call getNodeInfo(strings(otherID), otherIndex, checkLeft2, &
+                      checkRight2, concave2, xk, xkm1, xkp1,  normk)
+     
+                 if (.not. nodeInFrontOfEdges(xj, concave2, checkLeft2, &
+                      checkRight2, xk, xkm1, xkp1, normk)) then 
+                    cycle innerLoop
+                 end if
+                 
+                 ! --------------------------------------------- 
+                 ! Check 4a: Check if the potential node intersects
+                 ! itself.
+                 ! ---------------------------------------------
+                 if (overlappedEdges(str, j, pt)) then 
+                    cycle
+                 end if
+
+                 ! --------------------------------------------- 
+                 ! Check 4b: OR if the other node would have to
+                 ! intersect *ITSELF* to get back to me. This is used 
+                 ! to catch closest points crossing over thin strips. 
+                 ! ---------------------------------------------
+                 
+                 if (overlappedEdges(strings(otherID), otherIndex, xj)) then 
+                    cycle
+                 end if
+
+                 ! --------------------------------------------- 
+                 ! Check 4c: Make sure it doesn't inersect the closest
+                 ! string if that happens to be different from the
+                 ! cloest one.  string. This should only check very
+                 ! rare cases the other checks miss.
+                 ! ---------------------------------------------
+                 
+                 if (otherID /= closestOtherString) then 
+                    if (overlappedEdges2(&
+                         strings(closestOtherString), xj, normj, pt)) then 
+                       cycle
+                    end if
+                 end if
+                    
+                 ! --------------------------------------------- 
+                 ! Check 5: Now that the point has passed the previous
+                 ! checks, we can compute the agumented distance
+                 ! function and see if it better than the exisitng min
+                 ! distance.
+                 ! ---------------------------------------------
+
+                 ! Now calculate our new distance
+                 v =  pt - xj
+                 v = v/norm2(v)
+
+                 ! Recompute the distance function
+                 cosTheta = abs(dot_product(normj, v))
+                 
+                 ! Update distFunction 
+                 dStar = curDist / (max(1-cosTheta, 1e-6))
+                 
+                 if (dStar < minDist) then 
+                    ! Save the string ID and the index.
+                    minDist = dStar
+                    str%otherID(:, j) = master%cNodes(:, idx)
+                 end if
+              end do innerLoop
+
+              ! If we have already searched the max, we have to quit the loop
+              if (nSearch == master%Nnodes) then 
+                 exit outerLoop
+              end if
+
+              ! We are not 100% sure that we found the minium
+              ! yet. Make nAlloc twice as big and start over. 
+              nSearch = nSearch * 2
+              nSearch = min(nSearch, master%nNodes)
+              if (nSearch > nAlloc) then 
+                 deallocate(results)
+                 nAlloc = nAlloc*2
+                 allocate(results(nAlloc))
+              end if
+           end do outerLoop
+        end do nodeLoop
+     end do
+   end subroutine stringMatch
+  
+
 
 
   subroutine writeOversetString(str, strings, n, fileID)
