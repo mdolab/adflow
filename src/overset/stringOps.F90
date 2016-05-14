@@ -1089,6 +1089,8 @@ contains
     ! Working
     integer(kind=intType) :: i, iStart, iEnd, jStart, jEnd, iStart_j, iEnd_j
     integer(kind=intType) :: curOtherID, iString, ii, nextI, curIStart
+    integer(kind=intType) :: nIElemsBeg, nJElemsBeg, nIElemsEnd, nJElemsEnd
+
     logical :: fullLoop1, fullLoop2, dummy
     ! The purpose of this routine is to determine the ranges on two
     !  paired strings that are continuously paired and suitable for
@@ -1115,6 +1117,12 @@ contains
        ! Find the lowest node number that isn't used:
        curIStart = startNode(s1)
        do while(curIStart > 0) 
+
+          if (debugZipper) then 
+             print *,'------------------------------------------------'
+             print *,'Starting string ', s1%myid, 'at index ', curIstart
+             print *,'------------------------------------------------'
+          end if
 
           iStart = curIStart
           ! Other ID is the string attached at the current pt. 
@@ -1167,6 +1175,11 @@ contains
              curIStart = startNode(s1)
              cycle 
           end if
+ 
+          if (debugZipper) then 
+             print *,'Initial Range s1:', istart, iend, fullLoop1
+             print *,'Initial Range s2:', jstart, jend, fullLoop2
+          end if
 
           if ((istart == iend .and. fullLoop1) .and. &
                (jstart == jend .and. fullLoop2)) then 
@@ -1187,9 +1200,13 @@ contains
           else 
 
              ! part of s1 is attached to part of s2
+ 
+             ! Determine the number of elements we initial think we
+             ! want to zip for both strings. 
+             nIElemsBeg = elemsForRange(s1, iStart, iEnd, .True.)
+             nJElemsBeg = elemsForRange(s2, jStart, jEnd, .False.)
 
-             
-            ! Now we "project" the s2 increments back onto the the s1
+             ! Now we "project" the s2 increments back onto the the s1
              ! range:
              iStart_j = s2%otherID(2, jStart)
              iEnd_j   = s2%otherID(2, jEnd)
@@ -1204,9 +1221,13 @@ contains
              jStart = s1%otherID(2, iStart)
              jEnd   = s1%otherID(2, iEnd)
 
-             if ((istart == iend  .and. .not. fullLoop1) .or. &
-                  (jstart == jend  .and. .not. fullLoop2)) then 
-                ! The range on one became zero. Don't cross zip.
+             ! Now determine the updated number of elements
+             nIElemsEnd = elemsForRange(s1, iStart, iEnd, .True.)
+             nJElemsEnd = elemsForRange(s2, jStart, jEnd, .False.)
+
+             if (nIElemsEnd > nIElemsBeg .or. nJElemsEnd > nJElemsBeg) then 
+                ! Something happened and the strings became zero
+                ! length or went the wrong way. 
                 s1%xZipNodeUsed(curIStart) = 1
                 curIStart = startNode(s1)
                 cycle 
@@ -1412,6 +1433,39 @@ contains
          i = nextI
       end do
     end subroutine flagNodesUsed
+
+   function elemsForRange(s, N1, N2, pos)
+      ! Determine the number of elements between N1 and N2 for for the
+      ! "POSitive" or "not POSIitive (negative" direction.
+
+      implicit none
+      type(oversetString) :: s
+      integer(kind=intType), intent(in) :: N1, N2
+      logical :: pos
+      integer(kind=intType) :: elemsForRange
+      
+      if (.not. s%isPeriodic) then 
+         if (pos) then 
+            elemsForRange = N1 - N2
+         else
+            elemsForRange = N2 - N1
+         end if
+      else ! Periodic
+         if (pos) then 
+            if (N2 >= N1) then 
+               elemsForRange = N2 - N1
+            else
+               elemsForRange = N2 + s%nNodes - N1
+            end if
+         else
+            if (N1 >= N2) then 
+               elemsForRange = N1 - N2
+            else
+               elemsForRange = N1 + s%nNodes - N2
+            end if
+         end if
+      end if
+    end function elemsForRange
 
   end subroutine makeCrossZip
 
