@@ -1078,7 +1078,7 @@ contains
   end subroutine addTri
 
   subroutine makeCrossZip(p, strings, nStrings)
-
+    use inputoverset
     implicit none
 
     ! Input/output
@@ -1206,6 +1206,12 @@ contains
                 cycle 
              end if
 
+          end if
+
+          if (debugZipper) then 
+             print *,'Zipping string: ', s1%myid, ' with ', s2%myid
+             print *,'s1 range:', istart, iend
+             print *,'s2 range:', jstart, jend
           end if
 
           ! Do actual cross zip
