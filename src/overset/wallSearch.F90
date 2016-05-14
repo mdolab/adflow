@@ -54,19 +54,25 @@ subroutine wallSearch(aWall, bWall)
   tmpCellElem(:) = 0
 
   ADTree => aWall%ADT%ADTree
+
+
+
   do i=1, bWall%nNodes
 
      xx(1:3) = bWall%x(:, i)
      xx(4) = large
-
+     
      ! Just check if it is inside the root bounding box..ie the full
-     ! bounding box of the surface. This is pretty conservative.
-     if(xx(1) >= ADTree(1)%xMin(1) .and. &
-          xx(1) <= ADTree(1)%xMax(4) .and. &
-          xx(2) >= ADTree(1)%xMin(2) .and. &
-          xx(2) <= ADTree(1)%xMax(5) .and. &
-          xx(3) >= ADTree(1)%xMin(3) .and. &
-          xx(3) <= ADTree(1)%xMax(6)) then
+     ! bounding box of the surface. This is would appear conservative,
+     ! but isn't good enough. We need to expand by nearWallDist since
+     ! it is possible a overlap occurs right at the edge of the
+     ! bounding box. 
+     if(xx(1) >= ADTree(1)%xMin(1) - nearWallDist .and. &
+          xx(1) <= ADTree(1)%xMax(4)  + nearWallDist .and. &
+          xx(2) >= ADTree(1)%xMin(2) - nearWallDist .and. &
+          xx(2) <= ADTree(1)%xMax(5) + nearWallDist .and. &
+          xx(3) >= ADTree(1)%xMin(3) - nearWallDist .and. &
+          xx(3) <= ADTree(1)%xMax(6) + nearWallDist) then
 
         ! Now find the closest element on the other mesh for this
         ! node. This is the regular (expensive) closest point search
@@ -81,7 +87,7 @@ subroutine wallSearch(aWall, bWall)
         dist = sqrt(uvw(4))
         elemID = intInfo(3)
 
-        delta = bWall%delta(i)
+       delta = bWall%delta(i)
 
         do k=1,4
            delta = max(delta, aWall%delta(aWall%conn(k, elemID)))
@@ -161,9 +167,7 @@ subroutine wallSearch(aWall, bWall)
            call  quadOverlap(q1, q2, overlapped)
            
            if (overlapped) then 
-              if (clusterAreas(bWall%cluster) > clusterAreas(aWall%cluster)) then 
-                 bWall%iBlank(bWall%cellPtr(i)) = -2
-              end if
+              bWall%iBlank(bWall%cellPtr(i)) = -2
            end if
         end if
      end do
@@ -179,9 +183,7 @@ subroutine wallSearch(aWall, bWall)
 
         call  quadOverlap(q1, q2, overlapped)
         if (overlapped) then 
-           if (clusterAreas(bWall%cluster) > clusterAreas(aWall%cluster)) then 
-              bWall%iBlank(bWall%cellPtr(i)) = -2 ! -2 means it was overlapped and got blanked
-           end if
+           bWall%iBlank(bWall%cellPtr(i)) = -2 ! -2 means it was overlapped and got blanked
         end if
      end if
   end do
@@ -305,10 +307,7 @@ subroutine wallSearch(aWall, bWall)
            call  quadOverlap(q1, q2, overlapped)
            
            if (overlapped) then 
-              if (clusterAreas(bWall%cluster) > clusterAreas(aWall%cluster)) then 
-                 ! b is still the one blanked
-                 bWall%iBlank(bWall%cellPtr(elem)) = -2
-              end if
+              bWall%iBlank(bWall%cellPtr(elem)) = -2
            end if
         end if
      end do
@@ -324,10 +323,8 @@ subroutine wallSearch(aWall, bWall)
 
         call  quadOverlap(q1, q2, overlapped)
         if (overlapped) then 
-           if (clusterAreas(bWall%cluster) > clusterAreas(aWall%cluster)) then 
-              ! bWall is still the one blanked
-              bWall%iBlank(bWall%cellPtr(elem)) = -2 ! -2 means it was overlapped and got blanked
-           end if
+           ! bWall is still the one blanked
+           bWall%iBlank(bWall%cellPtr(elem)) = -2 ! -2 means it was overlapped and got blanked
         end if
      end if
   end do
