@@ -1223,11 +1223,11 @@ class SUMB(AeroSolver):
             # Compute everything and update into the dictionary
             funcsSens[key].update(self.computeJacobianVectorProductBwd(
                 resBar=psi, funcsBar=funcsBar, xDvDeriv=True))
-                
+
 
     def solveCL(self, aeroProblem, CLStar, alpha0=0,
                 delta=0.5, tol=1e-3, autoReset=True, CLalphaGuess=None,
-                maxIter = 20):
+                maxIter = 20, nReset=25):
         """This is a simple secant method search for solving for a
         fixed CL. This really should only be used to determine the
         starting alpha for a lift constraint in an optimization.
@@ -1288,6 +1288,10 @@ class SUMB(AeroSolver):
             # Use CLalphaGuess option to define the next Aoa
             anm1 = alpha0 - fnm2/CLalphaGuess
 
+        # Check for convergence
+        if abs(fnm2) < tol:
+            return
+
         # Overwrite the RK options momentarily.
         # We need to do this to avoid using NK right at the beggining
         # of the new AoA iteration. When we change the AoA, we only change
@@ -1297,7 +1301,7 @@ class SUMB(AeroSolver):
         # so that we can converge to a new solution.
         minIterSave = self.getOption('nRKReset')
         rkresetSave = self.getOption('rkreset')
-        self.setOption('nRKReset', 25)
+        self.setOption('nRKReset', nReset)
         self.setOption('rkreset', True)
 
         # Secant method iterations
