@@ -39,6 +39,7 @@ include ${SUMB_RULES_FILE}
 
 vpath %.o $(SUMB_OBJDIR)
 FF90_OBJECTS_1 = stringOps.o\
+		 cartMesh.o\
 
 FILES_TO_COMPLEXIFY =	stringOps.F90\
 			computeInterpolationParallel.F90\
