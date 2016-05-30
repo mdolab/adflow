@@ -1446,19 +1446,23 @@ contains
       
       if (.not. s%isPeriodic) then 
          if (pos) then 
-            elemsForRange = N1 - N2
-         else
             elemsForRange = N2 - N1
+         else
+            elemsForRange = N1 - N2
          end if
       else ! Periodic
          if (pos) then 
-            if (N2 >= N1) then 
+            if (N2 == N1) then 
+               elemsForRange = s%nElems
+            else if (N2 > N1) then 
                elemsForRange = N2 - N1
             else
                elemsForRange = N2 + s%nNodes - N1
             end if
          else
-            if (N1 >= N2) then 
+            if (N1 == N2) then 
+               elemsForRange = s%nElems
+            else if (N1 > N2) then 
                elemsForRange = N1 - N2
             else
                elemsForRange = N1 + s%nNodes - N2
