@@ -17,6 +17,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
   use inputTimeSpectral
   use ADTapi
   use inputOverset
+  use cartMesh
   implicit none
 
   ! Input Parameters
@@ -338,6 +339,10 @@ subroutine oversetComm(level, firstTime, coarseLevel)
 
         ! Determine the cells that are near wall. We have a special routine for this. 
         call computeCellWallPoint(level, sps, clusterWalls)
+        
+        if (irefine == 1) then 
+           call createCartMesh(level, sps)
+        end if
 
         ! We need a couple of extra things that buildCluster wall
         ! doesn't do:
@@ -372,7 +377,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
 
            call initializeOFringes(oFringes(iDom), nn)
            oFringeReady(iDom) = .True. 
-
+        
         end do
 
 
@@ -925,9 +930,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
         call exchangeStatusTranspose(level, sps, commPatternCell_2nd, internalCell_2nd)
         call exchangeStatus(level, sps, commPatternCell_2nd, internalCell_2nd)
 
-        if (irefine > 2) then 
-           call irregularCellCorrection(level, sps)
-        end if
+        call irregularCellCorrection(level, sps)
         call exchangeStatus(level, sps, commPatternCell_2nd, internalCell_2nd)
 
         ! Next we have to perfrom the interior cell flooding. We already
@@ -984,7 +987,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
         deallocate(fringeRecvSizes, cumFringeRecv, localFringes)
 
         ! If we have no more orphans quit
-        if (i == 0 .and. iRefine > 2) then 
+        if (i == 0) then 
            exit refineLoop
         end if
 
@@ -1002,8 +1005,6 @@ subroutine oversetComm(level, firstTime, coarseLevel)
 
      ! Deallocate some data we no longer need
      deallocate(Xmin, Xmax, work)
-
-
   end do spectralLoop
 
   ! Free the buffer and make a new one that includes necessary sizes
