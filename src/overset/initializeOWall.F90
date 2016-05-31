@@ -130,13 +130,12 @@ subroutine initializeOWall(oWall, dualMesh, cluster)
 
            ! Fill up the conn array being careful to *only* adding
            ! cells that are not already blanked. 
-           
            ni = iEnd - iBeg + 1
            nj = jEnd - jBeg + 1
            do j=0, nj-2
               do i=0, ni-2
                  jjj = jjj + 1
-                 oWall%iBlank(jjj) = BCData(mm)%iblank(i+2,j+2)
+                 oWall%iBlank(jjj) = BCData(mm)%iblank(iBeg+i+1,jBeg+j+1)
                  if (oWall%iBlank(jjj) == 1) then 
                     jj = jj + 1
                     oWall%conn(1, jj) = nodeCount + (j  )*ni + i + 1 ! n1

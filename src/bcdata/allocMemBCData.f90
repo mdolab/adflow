@@ -86,8 +86,10 @@
                             BCData(mm)%sHeatFlux(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
                             BCData(mm)%Fp(iBeg:iEnd,jBeg:jEnd,3), &
                             BCData(mm)%Fv(iBeg:iEnd,jBeg:jEnd,3), &
-                            BCData(mm)%iBlank(iBeg:iEnd, jBeg:jEnd), &
-                            BCData(mm)%delta(iBeg:iEnd, jBeg:jEnd), &
+                            ! Note: iBlank/delta are cell based, but uses the
+                            ! node number to guarantee a halo exists. 
+                            BCData(mm)%iBlank(iNodeBeg:iNodeEnd+1, jNodeBeg:jnodeEnd+1), &
+                            BCData(mm)%delta(iNodeBeg:iNodeEnd+1, jNodeBeg:jnodeEnd+1), &
                             BCData(mm)%deltaNode(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd), &
                             stat=ierr)
                    if(ierr /= 0)                      &
@@ -108,8 +110,10 @@
                             BCData(mm)%sHeatFlux(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
                             BCData(mm)%Fp(iBeg:iEnd,jBeg:jEnd,3), &
                             BCData(mm)%Fv(iBeg:iEnd,jBeg:jEnd,3), &
-                            BCData(mm)%iBlank(iBeg:iEnd, jBeg:jEnd), &
-                            BCData(mm)%delta(iBeg:iEnd, jBeg:jEnd), &
+                            ! Note: iBlank/delta are cell based, but uses the
+                            ! node number to guarantee a halo exists. 
+                            BCData(mm)%iBlank(iNodeBeg:iNodeEnd+1, jNodeBeg:jnodeEnd+1), &
+                            BCData(mm)%delta(iNodeBeg:iNodeEnd+1, jNodeBeg:jnodeEnd+1), &
                             BCData(mm)%deltaNode(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd), &
                             stat=ierr)
                    if(ierr /= 0)                      &
@@ -130,8 +134,10 @@
                             BCData(mm)%sHeatFlux(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
                             BCData(mm)%Fp(iBeg:iEnd,jBeg:jEnd,3), &
                             BCData(mm)%Fv(iBeg:iEnd,jBeg:jEnd,3), &
-                            BCData(mm)%iBlank(iBeg:iEnd, jBeg:jEnd), &
-                            BCData(mm)%delta(iBeg:iEnd, jBeg:jEnd), &
+                            ! Note: iBlank/delta are cell based, but uses the
+                            ! node number to guarantee a halo exists. 
+                            BCData(mm)%iBlank(iNodeBeg:iNodeEnd+1, jNodeBeg:jnodeEnd+1), &
+                            BCData(mm)%delta(iNodeBeg:iNodeEnd+1, jNodeBeg:jnodeEnd+1), &
                             BCData(mm)%deltaNode(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd), &
                             stat=ierr)
                    if(ierr /= 0)                      &
