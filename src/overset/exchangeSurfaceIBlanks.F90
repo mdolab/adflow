@@ -114,9 +114,8 @@ subroutine exchangeSurfaceIblanks(level, sps, commPattern, internal)
            end select
 
            ! INCLUDE THE HALOS!
-           do j=BCData(mm)%jcBeg, BCData(mm)%jcEnd
-              do i=BCData(mm)%icBeg, BCData(mm)%icEnd
-
+           do j=BCData(mm)%jnBeg, BCData(mm)%jnEnd+1
+              do i=BCData(mm)%inBeg, BCData(mm)%inEnd+1
                  ! Remember to account for the pointer offset since
                  ! the iblank starts at zero
                  BCData(mm)%iBlank(i,j) = ibp(i+1, j+1)

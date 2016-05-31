@@ -59,7 +59,6 @@ subroutine initBCDataiBlank(level, sps)
 
      bocoLoop: do mm=1, nBocos
         wallType: if (isWallType(BCType(mm))) then
-
            select case (BCFaceID(mm))
            case (iMin)
               ibp => iblank(2, :, :)
@@ -91,24 +90,21 @@ subroutine initBCDataiBlank(level, sps)
            ! Step 1: Set the (haloed) cell iBlanks directly from
            ! the volume iBlanks
            ! -------------------------------------------------
-
-           ! Make bounds a little easier to read. 1-level halos
-           jBeg = BCData(mm)%jcBeg ; jEnd = BCData(mm)%jcEnd
-           iBeg = BCData(mm)%icBeg ; iEnd = BCData(mm)%icEnd
-
+           jBeg = BCData(mm)%jnBeg+1 ; jEnd = BCData(mm)%jnEnd
+           iBeg = BCData(mm)%inBeg+1 ; iEnd = BCData(mm)%inEnd
+        
            ! Just set the cell iblank directly from the cell iblank
-           ! above it. Remember the +1 in ibp is for the pointer offset.
-           do j=jBeg, jEnd
-              do i=iBeg, iEnd
+           ! above it. Remember the +1 in ibp is for the pointer
+           ! offset. These ranges *ALWAYS* give 1 level of halos
+           do j=jBeg-1, jEnd+1
+              do i=iBeg-1, iEnd+1
                  BCData(mm)%iBlank(i,j) = ibp(i+1, j+1)
               end do
            end do
 
            ! Make bounds a little easier to read. Owned cells only
            ! from now on.
-           jBeg = BCData(mm)%jnBeg+1 ; jEnd = BCData(mm)%jnEnd
-           iBeg = BCData(mm)%inBeg+1 ; iEnd = BCData(mm)%inEnd
-
+     
            ! -------------------------------------------------
            ! Step 2: Slit elimination
            ! -------------------------------------------------
