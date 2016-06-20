@@ -669,9 +669,11 @@ class SUMB(AeroSolver):
             self.printModifiedOptions()
         
         # If this problem has't been solved yet, reset flow to this
-        # flight condition
+        # flight condition. If restarting load restart files and set 
+        # mgstartlevel to finest lever since we are starting on a 
+        # converged solution. 
         if self.curAP.sumbData.stateInfo is None:
-            if self.getOption('restartFile') != "":
+            if self.getOption('restartFile') is not None:
                 self.sumb.inputiteration.mgstartlevel = 1
                 self.sumb.initflowrestart()
             else:
@@ -788,10 +790,22 @@ class SUMB(AeroSolver):
         # Set the aeroProblem
         self.setAeroProblem(aeroProblem, releaseAdjointMemory)
 
+        # Set the full mask such that we get the full coefficients in
+        # the printout.
+        self.sumb.setfullmask()
+
+        # Remind the users of the modified options:
+        if self.getOption('printIterations'):
+            self.printModifiedOptions()
+
         # If this problem has't been solved yet, reset flow to this
         # flight condition
         if self.curAP.sumbData.stateInfo is None:
-            self.resetFlow(aeroProblem, releaseAdjointMemory)
+            if self.getOption('restartFile') is not None:
+                self.sumb.inputiteration.mgstartlevel = 1
+                self.sumb.initflowrestart()
+            else:
+                self.resetFlow(aeroProblem, releaseAdjointMemory)
 
         # Possibly release adjoint memory if not already done so.
         if releaseAdjointMemory:
@@ -864,11 +878,17 @@ class SUMB(AeroSolver):
         #     return
 
         t2 = time.time()
-        solTime = t2 - t1
-        if self.getOption('printTiming') and self.comm.rank == 0:
-            print('Timestep solution time: %10.3f sec'% solTime)
 
         self.writeSolution()
+        
+        t3 = time.time()
+        solTime = t2 - t1
+        writeTime = t3 - t2
+        totalTime = solTime + writeTime
+        if self.getOption('printTiming') and self.comm.rank == 0:
+            print('Timestep total solution time: %10.3f sec'% totalTime)
+            print('      Timestep solution time: %10.3f sec'% solTime)
+            print('       Writing solution time: %10.3f sec'% writeTime)
   
 
     def setDisplacement(self, coordinates, groupName='interface', ifShift=True):
@@ -2485,6 +2505,27 @@ class SUMB(AeroSolver):
             self.sumb.updateperiodicinfoalllevels()
             self.sumb.updategridvelocitiesalllevels()
 
+
+    def getPointRef(self):
+        return self.sumb.inputphysics.pointref
+
+
+    def setPointRef(self, pointRef):
+        """
+        This function can be used to update the reference point during
+        run such as between timesteps for unsteady run
+        
+        Parameters
+        ----------
+        pointRef : list
+            Contrains the reference point. Format of the list is
+            as follows [xRef, yRef, zRef]
+        """
+        if len(pointRef) < 3:
+            raise Error("'pointRef' needs to be list of three numbers. Length of list is {0:d}".format(len(pointRef)))
+        self.sumb.inputphysics.pointref = pointRef
+
+
     def getForces(self, groupName=None, TS=0):
         """ Return the forces on this processor.
 
@@ -3442,6 +3483,38 @@ class SUMB(AeroSolver):
                     self.sumb.volumevariables(varStr)
                 if name == 'isovariables':
                     self.sumb.isovariables(varStr)
+                    
+            if name == "restartfile":
+                # If value is None no value has been specified by the user. None is the default value.
+                if value is not None:
+                    # Check its type, if a string its a single value, but if list multiple
+                    if type(value) is str:
+                        # Check empty string
+                        if value:
+                            # Allocate only one slot since we have only one filename
+                            self.sumb.allocrestartfiles(1)
+                            self.sumb.setrestartfiles(value, 1)
+                        else:
+                            # Empty string. Raise error
+                            raise Error("Option 'restartfile' string cannot be empty. If not performing a restart either delete 'restartfile' option from script or replace the empty string with 'None'")     
+                        
+                    elif type(value) is list:
+                        # Check input
+                        nFiles = len(value)
+                        if nFiles > 0:
+                            if type(value[0]) is str:
+                                # Allocate for the entire list
+                                self.sumb.allocrestartfiles(nFiles)
+                                # Populate the array
+                                for i, val in enumerate(value):
+                                    # The +1 is to match fortran indexing
+                                    self.sumb.setrestartfiles(val,i+1)
+                            else:
+                                raise Error("Datatype for Option %-35s was not valid. Expected list of <type 'str'>. Received data type is %-47s"% (name, type(value[0])))
+                        else:
+                            raise Error("Option %-35s of %-35s contains %-35s elements. Must contain at least 1 restart file of type <type 'str'>"% (name, type(value), len(value)))
+                    else:
+                        raise Error("Datatype for Option %-35s not valid. Expected data type is <type 'str'> or <type 'list'>. Received data type is %-47s"% (name, type(value)))    
 
             if name == 'isosurface':
                 # We have a bit of work to do...extract out the
@@ -3527,7 +3600,7 @@ class SUMB(AeroSolver):
         defOpts = {
             # Input file parameters
             'gridfile':[str, 'default.cgns'],
-            'restartfile':[str, ''],
+            'restartfile':[object, None],
 
             # Output Parameters
             'storerindlayer':[bool, True],
@@ -3747,7 +3820,6 @@ class SUMB(AeroSolver):
         optionMap = {
             # Common Paramters
             'gridfile':['io', 'gridfile'],
-            'restartfile':['io', 'restartfile'],
             'storerindlayer':['io', 'storerindlayer'],
             'writesymmetry':['io', 'writesymmetry'],
             'writefarfield':['io', 'writefarfield'],
@@ -4020,6 +4092,7 @@ class SUMB(AeroSolver):
                               'isovariables',
                               'isosurface',
                               'turbresscale',
+                              'restartfile'
                           ))
 
         return ignoreOptions, deprecatedOptions, specialOptions
@@ -4134,6 +4207,7 @@ class SUMB(AeroSolver):
         volFileName = os.path.join(outputDir, baseName + "_vol.cgns")
         surfFileName = os.path.join(outputDir, baseName + "_surf.cgns")
         sliceFileName = os.path.join(outputDir, baseName + "_slices")
+        liftDistributionFileName = os.path.join(outputDir, baseName + "_lift")
 
         # Set fileName in sumb
         self.sumb.inputio.solfile[:] = ''
@@ -4149,6 +4223,9 @@ class SUMB(AeroSolver):
         
         self.sumb.inputio.slicesolfile[:] = ''
         self.sumb.inputio.slicesolfile[0:len(sliceFileName)] = sliceFileName
+
+        self.sumb.inputio.liftdistributionfile[:] = ''
+        self.sumb.inputio.liftdistributionfile[0:len(liftDistributionFileName)] = liftDistributionFileName
 
     def _setForcedFileNames(self):
         self.sumb.inputio.forcedvolumefile[:] = ''

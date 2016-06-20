@@ -325,12 +325,6 @@
          case ("grid file")
            gridFile = value
 
-         case ("restart file")
-           restartFile = value
-
-         case ("restart")
-           restart = checkYesNo(value, keyword)
-
          case ("check nondimensionalization")
            checkRestartSol = checkYesNo(value, keyword)
 

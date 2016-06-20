@@ -244,49 +244,17 @@
        if(mgStartlevel <= 0) mgStartlevel = -1
 
        ! Determine the value of mgStartlevel. This parameter might be
-       ! specified in the parameter file, but it is checked here for
-       ! consistency. If mgStartlevel has not been specified it is
-       ! either set to the coarsest level in the mg cycle (starting
-       ! from free stream) or to the finest level (restart).
+       ! specified in the python script file and is checked here for
+       ! consistency. If mgStartlevel has not been specified to any
+       ! specific level it is set to the coarsest level in the mg cycle
+       ! (starting from free stream) or to the finest level (restart).
+       ! The restart is handled in python wrapper.
 
        if(mgStartlevel == -1) then
 
          ! Value has not been specified. Default value is set, see
          ! the comments above.
-
-         if( restart ) then
-           mgStartlevel = 1
-         else
-           mgStartlevel = nMGLevels
-         endif
-
-       else
-
-         ! Value has been specified. Correct this value for a restart
-         ! in case not the finest grid has been specified. Processor 0
-         ! prints a warning.
-
-         if( restart ) then
-
-           if(mgStartlevel /= 1 .and. myID == 0) then
-             print "(a)", "#"
-             print "(a)", "#*==================== !!! Warning !!! &
-                          &======================"
-             print 100, mgStartlevel
- 100         format("#* Multigrid start level specified is ",i1,".")
-             print "(a)", "#* This is in conflict with the restart."
-             print "(a)", "#* Therefore Multigrid start level is &
-                          &set to 1."
-             print "(a)", "#*=====================================&
-                          &======================"
-             print "(a)", "#"
-           endif
-
-           ! Correct the start level.
-
-           mgStartlevel = 1
-
-         endif
+         mgStartlevel = nMGLevels
 
        endif
 

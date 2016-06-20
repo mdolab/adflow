@@ -44,6 +44,8 @@ FILES_TO_COMPLEXIFY= restartMod.f90\
 		 allocConvArrays.f90\
 		 allocMemFlovar.f90\
 		 allocTimeArrays.f90\
+		 allocRestartFiles.f90\
+		 setRestartFiles.f90\
 		 computePressure.f90\
 		 copySpectralSolution.f90\
 		 determineSolFileNames.f90\
