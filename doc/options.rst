@@ -11,8 +11,10 @@ Parameter                                  Type       Default                   
 `gridFile`                               `str`       `None`                                         This is the grid file to use. It must be a multi-block-structured CGNS file with
                                                                                                     all block-to-block information and boundary condition information contained in the
 		                       				                
-`restartFile`                            `str`       `restart.cgns`                                 Use this CGNS file to restart the solution from a previous solution. This file must
-                                                                                                    have been a volume solution file that was written by ``sumb``.  
+`restartFile`                            `Object`    `None`                                         Accepts a single string or a list of strings pointing to a CGNS file(s) which must
+                                                                                                    be a volume solution file that was written by ``sumb``. For steady state restart one
+                                                                                                    CGNS file is sufficient and does not need to be provided as a list with single item. 
+                                                                                                    For unsteady restart you typically provide a list with 2 items for second order restart.
                                                                                                                                                                          
 `solRestart`                             `bool`      `False`                                        Flag to use specified restart file.
                                                                                                                                                                          

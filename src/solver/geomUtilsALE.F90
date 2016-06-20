@@ -46,6 +46,8 @@ subroutine setLevelALE(setType)
      return
   end if
 
+  ! Determine what to do based on input.
+  ! -1 is used to initialize all ALE steps with inital values
   select case (setType)
   case (-1_intType)
      aleBeg = 0_intType
@@ -66,7 +68,7 @@ subroutine setLevelALE(setType)
            ! Set the pointers for this block on the ground level.
            call setPointers(nn, ll, kk)
 
-           blkALE : do l = aleBeg,aleENd
+           blkALE : do l = aleBeg,aleEnd
               fillI2 : do k = 1,ke
                  do j = 1,je
                     do i = 0,ie
@@ -102,7 +104,7 @@ subroutine setLevelALE(setType)
            enddo blkALE
 
            normLoop: do mm=1,nBocos
-              do l = aleBeg,aleENd
+              do l = aleBeg,aleEnd
                  do j=BCData(mm)%jcBeg, BCData(mm)%jcEnd
                     do i=BCData(mm)%icBeg, BCData(mm)%icEnd
                        BCData(mm)%normALE(l,i,j,1) = BCData(mm)%norm(i,j,1)
@@ -115,7 +117,7 @@ subroutine setLevelALE(setType)
 
            rFaceLoop: do mm=1,nBocos
               testAssoc: if( associated(BCData(mm)%rFace) ) then
-                 do l = aleBeg,aleENd
+                 do l = aleBeg,aleEnd
                     do j=BCData(mm)%jcBeg, BCData(mm)%jcEnd
                        do i=BCData(mm)%icBeg, BCData(mm)%icEnd
                           BCData(mm)%rFaceALE(l,i,j) = BCData(mm)%rFace(i,j)
@@ -126,7 +128,7 @@ subroutine setLevelALE(setType)
            enddo rFaceLoop
 
            uSlipLoop: do mm=1,nViscBocos
-              do l = aleBeg,aleENd
+              do l = aleBeg,aleEnd
                  do j=BCData(mm)%jcBeg, BCData(mm)%jcEnd
                     do i=BCData(mm)%icBeg, BCData(mm)%icEnd
                        BCData(mm)%uSlipALE(l,i,j,1) = BCData(mm)%uSlip(i,j,1)
@@ -334,6 +336,7 @@ subroutine interpLevelALE_block
   ALEloop : do l = 1,nALEsteps
      ! --------------------------------
      ! Then average surface normal and normal velocity from array of old variables
+     ! This eq. 10a and 10b, found paper by C.Farhat http://dx.doi.org/10.1016/S0021-9991(03)00311-5
      ! --------------------------------
      updateI : do k = 1,ke
         do j = 1,je
