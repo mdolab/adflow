@@ -234,7 +234,7 @@ subroutine gridVelocitiesFineLevelPart1_block(useOldCoor, t, sps)
      ! Set the coefficients for the time integrator and store
      ! the inverse of the physical nonDimensional time step,
      ! divided by 4 and 8, a bit easier.
-     
+
      call setCoefTimeIntegrator
      oneOver4dt = fourth*timeRef/deltaT
      oneOver8dt = half*oneOver4dt
@@ -254,6 +254,9 @@ subroutine gridVelocitiesFineLevelPart1_block(useOldCoor, t, sps)
 
               ! *******************************
               ! Using FIRST order BDF for all cases
+              ! Refer to eq. 11b, found paper by C.Farhat http://dx.doi.org/10.1016/S0021-9991(03)00311-5
+              ! Same applies for the velocities of the faces below. Theta(n+1) = 1, Theta(n) = -1 therfore
+              ! it becoms a first order scheme.
               ! *******************************
 
               ! The velocity of the cell center is determined
@@ -390,7 +393,7 @@ subroutine gridVelocitiesFineLevelPart1_block(useOldCoor, t, sps)
                  sc(3) = (xx(j+1,k+1,3) + xx(j,k+1,3) &
                       +  xx(j+1,k,  3) + xx(j,k,  3))
 
-                 ii = 1 ! There was a loop
+                 ii = 1 ! There was a loop who looped over nOldLevels
                  sc(1) = sc(1) + (xxOld(ii,j+1,k+1,1) &
                       +          xxOld(ii,j,  k+1,1) &
                       +          xxOld(ii,j+1,k,  1) &
