@@ -30,7 +30,7 @@ else:
 defOpts = {
     # Common Paramters
     'gridfile': 'default.cgns',
-    'restartfile': '',
+    'restartfile':None,
 
     # Output Parameters
     'storerindlayer': True,

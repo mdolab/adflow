@@ -500,35 +500,32 @@ subroutine convergenceInfo
   ! ! If we are at the max iteration limit but the residual is
   ! ! *close*, ie within maxL2DeviationFactor we say that's fine
 
-  ! if(fromPython .and. groundLevel ==1 .and. nIterCur >=nCycles) then
+  if(fromPython .and. groundLevel ==1 .and. approxTotalIts >= nCycles) then
 
-  !    !Check to see if residuals are diverging or stalled for python
-  !    select case (equationMode)
+     !Check to see if residuals are diverging or stalled for python
+     select case (equationMode)
 
-  !    case (steady, timeSpectral)
+     case (steady, timeSpectral)
 
-  !       ! Steady or time spectral mode. The convergence histories
-  !       ! are stored and this info can be used. If the residuals 
-  !       ! are diverging the, logical routineFailed in killSignals
-  !       ! is set to true and the progress is halted.
-  !       !only check on root porcessor
-  !       if (myID == 0) then
+        ! Steady or time spectral mode. The convergence histories
+        ! are stored and this info can be used. If the residuals
+        ! are diverging the, logical routineFailed in killSignals
+        ! is set to true and the progress is halted.
+        !only check on root porcessor
+        if (myID == 0) then
 
-  !          ! If we made it to ncycles, check to see if we're
-  !          ! "close" to being converged. 
-  !          do sps = 1,nTimeIntervalsSpectral         
-  !             if (totalR < maxL2DeviationFactor * totalR0 * L2ConvThisLevel) then 
-  !                routineFailed = .False.
-  !             else
-  !                routineFailed = .True.
-  !             end if
-  !          enddo
-  !       endif
+           ! If we made it to ncycles, check to see if we're
+           ! "close" to being converged.
+           do sps = 1,nTimeIntervalsSpectral
+              if (totalR > maxL2DeviationFactor * totalR0 * L2ConvThisLevel) then
+                 routineFailed = .True.
+              end if
+           enddo
+        endif
+        call mpi_bcast(routineFailed, 1, MPI_LOGICAL, 0, SUmb_comm_world, ierr)
 
-  !       call mpi_bcast(routineFailed, 1, MPI_LOGICAL, 0, SUmb_comm_world, ierr)
-
-  !    end select
-  ! end if
+     end select
+  end if
 
   ! Determine whether or not the solution is considered
   ! converged.  This info is only known at processor 0 and must

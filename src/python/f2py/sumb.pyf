@@ -157,6 +157,16 @@ python module libsumb
          integer(kind=inttype) :: ntimetot
        end subroutine alloctimearrays
 
+       subroutine allocrestartfiles(nfiles) ! in :sumb:../../initFlow/allocrestartfiles.f90
+         integer(kind=inttype) :: nfiles
+       end subroutine allocrestartfiles
+
+       subroutine setrestartfiles(filename,i) ! in :sumb:../../initFlow/setrestartfiles.f90
+         character*(*) intent(in) :: filename
+         integer(kind=inttype) :: i
+       end subroutine setrestartfiles
+
+
        subroutine solver ! in :sumb:../../solver/solver.F90
        end subroutine solver
 
@@ -592,13 +602,12 @@ python module libsumb
          integer(kind=inttype) parameter,optional :: precisiondouble=2
          character(len=maxstringlen) :: surfacesolfile
          character(len=maxstringlen) :: slicesolfile ! TEMPORARY
+         character(len=maxstringlen) :: liftdistributionfile ! TEMPORARY
          character(len=maxstringlen) :: cpfile
          logical :: writecoormeter
          integer(kind=inttype) :: precisionsol
          integer(kind=inttype) :: precisiongrid
          character(len=maxstringlen) :: newgridfile
-         character(len=maxstringlen) :: restartfile
-         logical :: restart
          character(len=maxstringlen) :: gridfile
          logical :: storeconvinneriter
          logical :: storerindlayer
