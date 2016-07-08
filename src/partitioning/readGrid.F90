@@ -172,6 +172,7 @@ subroutine readGrid
                    &cg_coord_read_f")
 
               ! Copy the data into IOVar and scale it to meters.
+              ! The is effectivly copying into the variable x. w is just temporary through IOVar
 
               do kk=1,kl
                  do jj=1,jl

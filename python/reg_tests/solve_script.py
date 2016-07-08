@@ -25,7 +25,7 @@ from python.pySUmb import SUMB
 defOpts = {
     # Common Paramters
     'gridFile':'default.cgns',
-    'restartfile':'',
+    'restartfile':None,
 
     # Output Parameters
     'storerindlayer':True,

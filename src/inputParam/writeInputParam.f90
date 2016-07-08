@@ -73,18 +73,6 @@
        print "(2a)",    "#              Parameter file: ", &
                         trim(paramFile)
 
-       if( restart ) then
-         print "(a)",   "#                     Restart: yes"
-         print "(2a)",  "#                Restart file: ", &
-                        trim(restartFile)
-         if( checkRestartSol) then
-           print "(a)", "# Check nonDimensionalization: yes"
-         else
-           print "(a)", "# Check nonDimensionalization: no"
-         endif
-       else
-         print "(a)",   "#          Restart: no"
-       endif
        print "(a)",     "#"
 
        if(changing_Grid .or. gridMotionSpecified) &

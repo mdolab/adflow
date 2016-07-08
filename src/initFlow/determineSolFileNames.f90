@@ -36,7 +36,7 @@
 !
        integer :: ierr
 
-       integer(kind=intType) :: ii, nn, restartID
+       integer(kind=intType) :: ii, nn
 
        character(len=7)            :: integerString
        character(len=maxStringLen) :: tmpName
@@ -61,92 +61,31 @@
          case (steady)
 
            ! Steady computation. Only one solution needs to be read.
+           ! In case a list of restart files were provided in the python
+           ! script, we force a read from only the first solution file.
 
            nSolsRead = 1
            allocate(solFiles(nSolsRead), stat=ierr)
            if(ierr /= 0)                              &
-             call returnFail("determineGridFileNames", &
+             call returnFail("determineSolFileNames", &
                             "Memory allocation failure for solFiles")
 
-           solFiles(1) = restartFile
+           solFiles(1) = restartFiles(1)
+
+           ! Check if the files can be opened, exit if that fails.
+           call checkSolFileNames()
 
          !===============================================================
 
          case (unsteady)
 
            ! Unsteady computation. For a consistent restart nOldLevels
-           ! solutions must be read. First determine the prefix of the
-           ! restart file and the time step number from which a restart
-           ! should be made.
+           ! solutions must be read. All restart files are provided explicitly
+           ! from python script.
+           call setSolFileNames()
 
-           ii = len_trim(restartFile)
-           do
-             if(restartFile(ii:ii) < "0" .or. &
-                restartFile(ii:ii) > "9") exit
-             ii = ii - 1
-           enddo
-
-           ! If the last characters of the file name do not contain a
-           ! number, the restart file does not come from a previous
-           ! unsteady computation and therefore only one solution
-           ! will be read.
-
-           if(ii == len_trim(restartFile)) then
-
-             nSolsRead = 1
-             allocate(solFiles(nSolsRead), stat=ierr)
-             if(ierr /= 0)                             &
-               call returnFail("determineSolFileNames", &
-                              "Memory allocation failure for solFiles")
-
-             solFiles(1) = restartFile
-
-           else
-
-             ! Read the integer number from the last characters
-             ! of the restart file.
-
-             read(restartFile(ii+1:),*) restartID
-
-             ! Allocate the memory for the file names and set them.
-
-             nSolsRead = nOldLevels
-             allocate(solFiles(nSolsRead), stat=ierr)
-             if(ierr /= 0)                             &
-               call returnFail("determineSolFileNames", &
-                              "Memory allocation failure for solFiles")
-
-             do nn=1,nSolsRead
-               write(integerString,"(i6)") restartID - nn + 1
-               integerString = adjustl(integerString)
-               solFiles(nn) = restartFile(:ii)//trim(integerString)
-             enddo
-
-           endif
-
-           ! Check if the files can be opened.
-
-           do nn=1,nSolsRead
-             open(unit=21,file=solFiles(nn),status="old",iostat=ierr)
-             if(ierr /= 0) exit
-             close(unit=21)
-           enddo
-
-           ! Possibly correct nSolsRead. Take nOldGridRead if
-           ! a deforming mesh computation is performed.
-           ! If nSolsRead == 0, i.e. not a valid solution is found,
-           ! print an error message and returnFail.
-
-           nSolsRead = nn - 1
-           if( deforming_Grid ) &
-             nSolsRead = min(nSolsRead, nOldGridRead)
-
-           if(nSolsRead == 0) then
-             if(myID == 0)                             &
-               call returnFail("determineSolFileNames", &
-                              "Solution file(s) could not be opened")
-             call mpi_barrier(SUmb_comm_world, ierr)
-           endif
+           ! Check if the files can be opened, exit if that fails.
+           call checkSolFileNames()
 
            ! Set nOldSolAvail to nSolsRead and check if a consistent
            ! restart can be made. If not, processor 0 prints a warning.
@@ -179,73 +118,11 @@
 
            ! Time spectral computation. For a consistent restart
            ! nTimeIntervalsSpectral solutions must be read. First 
-           ! determine the prefix of the restart file.
+           ! determine the the restart files.
+           call setSolFileNames()
 
-           ii = len_trim(restartFile)
-           do
-             if(restartFile(ii:ii) < "0" .or. &
-                restartFile(ii:ii) > "9") exit
-             ii = ii - 1
-           enddo
-
-           ! If the last characters of the file name do not contain a
-           ! number, the restart file does not come from a previous
-           ! time spectral computation and therefore only one solution
-           ! will be read.
-
-           if(ii == len_trim(restartFile)) then
-
-             nSolsRead = 1
-             allocate(solFiles(nSolsRead), stat=ierr)
-             if(ierr /= 0)                             &
-               call returnFail("determineSolFileNames", &
-                              "Memory allocation failure for solFiles")
-
-             solfiles(1) = restartFile
-
-           else
-
-             ! Loop to find out how many time instances were used in
-             ! the previous computation from which a restart is made.
-
-             nn = 0
-             do
-               nn = nn + 1
-               write(integerString,"(i6)") nn
-               integerString = adjustl(integerString)
-               tmpName = restartFile(:ii)//trim(integerString)
-
-               open(unit=21,file=tmpName,status="old",iostat=ierr)
-               if(ierr /= 0) exit
-               close(unit=21)
-             enddo
-
-             ! Subtract 1 to obtain the correct number of files.
-
-             nn = nn - 1
-
-             ! Take care of the expeptional situation that nn == 0.
-             ! This happens when the restart file ends at with an
-             ! integer, but does not correspond to a time spectral
-             ! solution. Allocate the memory.
-
-             nSolsRead = max(nn, 1_intType)
-             allocate(solFiles(nSolsRead), stat=ierr)
-             if(ierr /= 0)                             &
-               call returnFail("determineSolFileNames", &
-                              "Memory allocation failure for solFiles")
-
-             if(nn == 0) then
-               solFiles(1) = restartFile
-             else
-               do nn=1,nSolsRead
-                 write(integerString,"(i6)") nn
-                 integerString = adjustl(integerString)
-                 solFiles(nn) = restartFile(:ii)//trim(integerString)
-               enddo
-             endif
-
-           endif
+           ! Check if the files can be opened, exit if that fails.
+           call checkSolFileNames()
 
            ! Check whether or not the spectral solution must be copied
            ! or interpolated.
@@ -259,3 +136,93 @@
        end select
 
        end subroutine determineSolFileNames
+
+
+
+       subroutine setSolFileNames
+!
+!      ******************************************************************
+!      *                                                                *
+!      * setSolFileNames allocates and set the solution files that      *
+!      * will be read and loaded in the restart                         *
+!      *                                                                *
+!      ******************************************************************
+!
+       use communication
+       use restartMod
+       use inputIO
+       implicit none
+!
+!      Local variables
+!
+       integer :: ierr
+       integer(kind=intType) :: nn
+!
+!      ******************************************************************
+!      *                                                                *
+!      * Begin execution                                                *
+!      *                                                                *
+!      ******************************************************************
+
+       ! The length of the array provided gives the number of nSolsRead.
+       nSolsRead = SIZE(restartFiles,1)
+
+       ! Allocate the memory for the file names and set them.
+       allocate(solFiles(nSolsRead), stat=ierr)
+       if(ierr /= 0)                             &
+         call returnFail("determineSolFileNames", &
+                      "Memory allocation failure for solFiles")
+
+       do nn=1,nSolsRead
+         solFiles(nn) = restartFiles(nn)
+       enddo
+
+       end subroutine setSolFileNames
+
+
+
+       subroutine checkSolFileNames
+!
+!      ******************************************************************
+!      *                                                                *
+!      * checkSolFileNames will check if the provided restart files     *
+!      * are readable on disk. If not readable return fail, if readable *
+!      * message will be printed to let the user know that restart file *
+!      * will be tried to read.                                         *
+!      *                                                                *
+!      ******************************************************************
+!
+       use communication
+       use restartMod
+       implicit none
+!
+!      Local variables
+!
+       integer :: ierr
+       character(len=maxStringLen) :: errorMessage
+       integer(kind=intType) :: nn
+!
+!      ******************************************************************
+!      *                                                                *
+!      * Begin execution                                                *
+!      *                                                                *
+!      ******************************************************************
+       do nn=1,nSolsRead
+         open(unit=21,file=solFiles(nn),status="old",iostat=ierr)
+         if(ierr /= 0) then
+           write(errorMessage,*) "Restart file ", trim(solFiles(nn)), &
+                                  " could not be opened for reading"
+           call terminate("checkSolFileNames", errorMessage)
+           exit
+         end if
+         close(unit=21)
+
+         if(myID == 0) then
+           print "(a)", "#"
+           write (*,100) trim(solFiles(nn))
+           print "(a)", "#"
+           100 format("# Found restart file: ", A, 1X)
+         end if
+       enddo
+
+       end subroutine checkSolFileNames
