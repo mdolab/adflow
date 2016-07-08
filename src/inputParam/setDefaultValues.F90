@@ -316,6 +316,14 @@
        pointRef(1) = zero
        pointRef(2) = zero
        pointRef(3) = zero
+
+       momentAxis(1,1) = zero
+       momentAxis(1,2) = one
+       momentAxis(2,1) = zero
+       momentAxis(2,2) = zero
+       momentAxis(3,1) = zero
+       momentAxis(3,2) = zero
+
 !
 !      ******************************************************************
 !      *                                                                *
