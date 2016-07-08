@@ -38,8 +38,14 @@
       integer(kind=intType) :: nDesignTemperature
       integer(kind=intType) :: nDesignReynolds
       integer(kind=intType) :: nDesignReynoldsLength
+      integer(kind=intType) :: nDesignAxisX1
+      integer(kind=intType) :: nDesignAxisX2
+      integer(kind=intType) :: nDesignAxisY1
+      integer(kind=intType) :: nDesignAxisY2
+      integer(kind=intType) :: nDesignAxisZ1
+      integer(kind=intType) :: nDesignAxisZ2
       integer(kind=intType) :: nDesignExtra = 0
-      
+            
       ! nNodesGlobal  Total number of nodes on each level
       ! nNodesLocal   Number of nodes owned by the processor on each level
       ! nOffsetLocal  Global node number offset per processor on each level

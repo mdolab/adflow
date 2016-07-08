@@ -90,6 +90,7 @@ subroutine getSolution(sps)
   functionValue(costFuncSepSensorAvgZ) = globalCFVals(costFuncSepSensorAvgZ)
 
   functionValue(costFuncCavitation) = globalCFVals(costFuncCavitation)
+  functionValue(costFuncAxisMoment) = globalCFVals(costFuncAxisMoment)
 
   if(TSStability)then
 

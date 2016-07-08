@@ -8,8 +8,8 @@
 !      *                                                                *
 !      ******************************************************************
 !
-subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
-     sepSensorAvg, Cavitation)
+subroutine forcesAndMoments(cFp, cFv, cMp, cMv, cMpaxis, cMvaxis, &
+     yplusMax, sepSensor, sepSensorAvg, Cavitation)
   !
   !      ******************************************************************
   !      *                                                                *
@@ -38,20 +38,22 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
 
   real(kind=realType), intent(out) :: yplusMax, sepSensor
   real(kind=realType), intent(out) :: sepSensorAvg(3), Cavitation
+  real(kind=realType), intent(out) :: cMpaxis, cMvaxis
   !
   !      Local variables.
   !
   integer(kind=intType) :: nn, i, j, ii
 
   real(kind=realType) :: pm1, fx, fy, fz, fn, sigma
-  real(kind=realType) :: xc, yc, zc, qf(3)
+  real(kind=realType) :: xc, yc, zc, qf(3), r(3), n(3), L
   real(kind=realType) :: fact, rho, mul, yplus, dwall
   real(kind=realType) :: scaleDim, V(3), sensor, sensor1, Cp, tmp, plocal
   real(kind=realType) :: tauXx, tauYy, tauZz
   real(kind=realType) :: tauXy, tauXz, tauYz
 
   real(kind=realType), dimension(3) :: refPoint
-  real(kind=realType) :: mx, my, mz, qa
+  real(kind=realType), dimension(3,2) :: axisPoints
+  real(kind=realType) :: mx, my, mz, qa, m0x, m0y, m0z
   logical :: viscousSubface
   !
   !      ******************************************************************
@@ -69,6 +71,15 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
   refPoint(1) = LRef*pointRef(1)
   refPoint(2) = LRef*pointRef(2)
   refPoint(3) = LRef*pointRef(3)
+
+  ! Determine the points defining the axis about which to compute a moment
+
+  axisPoints(1,1) = LRef*momentAxis(1,1)
+  axisPoints(1,2) = LRef*momentAxis(1,2)
+  axisPoints(2,1) = LRef*momentAxis(2,1)
+  axisPoints(2,2) = LRef*momentAxis(2,2)
+  axisPoints(3,1) = LRef*momentAxis(3,1)
+  axisPoints(3,2) = LRef*momentAxis(3,2)
 
   ! Initialize the force and moment coefficients to 0 as well as
   ! yplusMax.
@@ -181,6 +192,33 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
               cMp(1) = cMp(1) + mx
               cMp(2) = cMp(2) + my
               cMp(3) = cMp(3) + mz
+
+              ! Compute the r and n vectors for the moment around an
+              ! axis computation where r is the distance from the 
+              ! force to the first point on the axis and n is a unit
+              ! normal in the direction of the axis
+              r(1) = fourth*(xx(i,j,  1) + xx(i+1,j,  1) &
+                   +         xx(i,j+1,1) + xx(i+1,j+1,1)) - axisPoints(1,1)
+              r(2) = fourth*(xx(i,j,  2) + xx(i+1,j,  2) &
+                   +         xx(i,j+1,2) + xx(i+1,j+1,2)) - axisPoints(2,1)
+              r(3) = fourth*(xx(i,j,  3) + xx(i+1,j,  3) &
+                   +         xx(i,j+1,3) + xx(i+1,j+1,3)) - axisPoints(3,1)
+
+              L = sqrt((axisPoints(1,2) - axisPoints(1,1)) ** 2 &
+                   +   (axisPoints(2,2) - axisPoints(2,1)) ** 2 &
+                   +   (axisPoints(3,2) - axispoints(3,1)) ** 2 )
+                       
+              n(1) = (axisPoints(1,2) - axisPoints(1,1)) / L
+              n(2) = (axisPoints(2,2) - axisPoints(2,1)) / L
+              n(3) = (axisPoints(3,2) - axisPoints(3,1)) / L
+
+              ! Compute the moment of the force about the first point 
+              ! used to define the axis, and then project that axis in 
+              ! the n direction
+              m0x = r(2)*fz - r(3)*fy
+              m0y = r(3)*fx - r(1)*fz
+              m0z = r(1)*fy - r(2)*fx
+              cMpaxis = cMpaxis + m0x*n(1) + m0y*n(2) + m0z*n(3)
 
 #ifndef USE_TAPENADE           
               ! Save the face based forces for the slice operations
@@ -325,6 +363,34 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
                  cMv(2) = cMv(2) + my
                  cMv(3) = cMv(3) + mz
 
+                 ! Compute the r and n vectors for the moment around an
+                 ! axis computation where r is the distance from the 
+                 ! force to the first point on the axis and n is a unit
+                 ! normal in the direction of the axis
+                 r(1) = fourth*(xx(i,j,  1) + xx(i+1,j,  1) &
+                      +         xx(i,j+1,1) + xx(i+1,j+1,1)) - axisPoints(1,1)
+                 r(2) = fourth*(xx(i,j,  2) + xx(i+1,j,  2) &
+                      +         xx(i,j+1,2) + xx(i+1,j+1,2)) - axisPoints(2,1)
+                 r(3) = fourth*(xx(i,j,  3) + xx(i+1,j,  3) &
+                      +         xx(i,j+1,3) + xx(i+1,j+1,3)) - axisPoints(3,1)
+                 
+                 L = sqrt((axisPoints(1,2) - axisPoints(1,1)) ** 2 &
+                      +   (axisPoints(2,2) - axisPoints(2,1)) ** 2 &
+                      +   (axisPoints(3,2) - axispoints(3,1)) ** 2 )
+                       
+                 n(1) = (axisPoints(1,2) - axisPoints(1,1)) / L
+                 n(2) = (axisPoints(2,2) - axisPoints(2,1)) / L
+                 n(3) = (axisPoints(3,2) - axisPoints(3,1)) / L
+                 
+                 ! Compute the moment of the force about the first point 
+                 ! used to define the axis, and then project that axis in 
+                 ! the n direction
+                 m0x = r(2)*fz - r(3)*fy
+                 m0y = r(3)*fx - r(1)*fz
+                 m0z = r(1)*fy - r(2)*fx
+                 cMvaxis = cMvaxis + m0x*n(1) + m0y*n(2) + m0z*n(3)
+                 
+                 
 #ifndef USE_TAPENADE           
                  ! Save the face based forces for the slice operations
                  bcData(nn)%Fv(i, j, 1) = fx
@@ -420,5 +486,5 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
   fact = fact/(lengthRef*LRef)
   cMp(1) = cMp(1)*fact; cMp(2) = cMp(2)*fact; cMp(3) = cMp(3)*fact
   cMv(1) = cMv(1)*fact; cMv(2) = cMv(2)*fact; cMv(3) = cMv(3)*fact
-
+  cMpaxis = cMpaxis*fact; cMvaxis = cMvaxis * fact
 end subroutine forcesAndMoments
