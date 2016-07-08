@@ -73,6 +73,7 @@
        surfWriteDrag  = .false.
        surfWriteSepSensor = .false.
        surfWriteCavitation = .false.
+       surfWriteAxisMoment = .false.
 
        ! Initialize nVarSpecified to 0. This serves as a test
        ! later on.
@@ -198,6 +199,10 @@
 
            case ("cavitation")
               surfWriteCavitation = .true. 
+              nVarSpecified = nVarSpecified + 1
+
+           case ("axismoment")
+              surfWriteAxisMoment = .true. 
               nVarSpecified = nVarSpecified + 1
 
            case default

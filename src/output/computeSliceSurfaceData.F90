@@ -33,6 +33,7 @@ subroutine computeSliceSurfaceData(sps, nFields)
   integer(kind=intType) :: mm, nn, i, j, jj, offVis, ii
   integer(kind=intType) :: iFace, nSolVar, iFaceStart, iSolVar, ivar
   real(kind=realType) :: cFp(3), cFv(3), cMp(3), cMv(3), yplusmax
+  real(kind=realType) :: cMpaxis, cMvaxis
   real(kind=realType) :: sepSensor, sepSensorAvg(3)
   real(kind=realType) :: Cavitation
   character(len=maxCGNSNameLen), dimension(:), allocatable :: solNames
@@ -60,8 +61,8 @@ subroutine computeSliceSurfaceData(sps, nFields)
   iFace = 0
   domains1: do nn=1,nDom
      call setPointers(nn,1_intType,sps)
-     call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, &
-          sepSensor, sepSensorAvg, Cavitation)
+     call forcesAndMoments(cFp, cFv, cMp, cMv, cMpaxis, cMvaxis, &
+          yplusMax, sepSensor, sepSensorAvg, Cavitation)
 
      ! Loop over the number of boundary subfaces of this block.
      bocos1: do mm=1,nBocos
@@ -561,7 +562,7 @@ subroutine computeSliceSurfaceData(sps, nFields)
                        localData(iVar, iFace) = real(min(iblank2(i,j), 1_intType), realType)
                     enddo
                  enddo
-              case (cgnsLift, cgnsDrag) 
+              case (cgnsLift, cgnsDrag)
                  
                  ! This is not implemented so just put in zeros
                  do j= BCData(mm)%jnBeg+1, BCData(mm)%jnEnd
@@ -609,6 +610,8 @@ subroutine computeSliceSurfaceData(sps, nFields)
                        
                     enddo
                  enddo
+
+                 
               end select varName
 
            end do ! Solution Variable loop

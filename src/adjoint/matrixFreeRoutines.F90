@@ -83,6 +83,7 @@ subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useSta
   machGridd = zero
   machcoefd = zero
   pointRefd  = zero
+  momentAxis = zero
   lengthRefd = zero
   prefd = zero
   tempfreestreamd = zero
@@ -143,6 +144,18 @@ subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useSta
           pointrefd(2) = extraDot(nDesignPointRefY+1)
      if (nDesignPointRefZ >= 0) &
           pointrefd(3) = extraDot(nDesignPointRefZ+1)
+     if (nDesignAxisX1 >=0) &
+          momentaxisd(1,1) = extraDot(nDesignAxisX1+1)
+     if (nDesignAxisX2 >=0) &
+          momentaxisd(1,2) = extraDot(nDesignAxisX2+1)
+     if (nDesignAxisY1 >=0) &
+          momentaxisd(2,1) = extraDot(nDesignAxisY1+1)
+     if (nDesignAxisY1 >=0) &
+          momentaxisd(2,2) = extraDot(nDesignAxisY1+1)
+     if (nDesignAxisZ1 >=0) &
+          momentaxisd(3,1) = extraDot(nDesignAxisZ1+1)
+     if (nDesignAxisZ1 >=0) &
+          momentaxisd(3,2) = extraDot(nDesignAxisZ1+1)
   end if
 
   ! Now set any STATE seeds
@@ -442,6 +455,19 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, fbar, useSpatial, useSta
                    extraLocalBar(nDesignPointRefY+1) = extraLocalBar(nDesignPointRefY+1) + pointrefd(2)
               if (nDesignPointRefZ >= 0) &
                    extraLocalBar(nDesignPointRefZ+1) = extraLocalBar(nDesignPointRefZ+1) + pointrefd(3)
+              if (nDesignAxisX1 >= 0) &
+                   extraLocalBar(nDesignAxisX1+1) = extraLocalBar(nDesignAxisX1+1) + momentaxisd(1,1)
+              if (nDesignAxisX2 >= 0) &
+                   extraLocalBar(nDesignAxisX2+1) = extraLocalBar(nDesignAxisX2+1) + momentaxisd(1,2)
+              if (nDesignAxisY1 >= 0) &
+                   extraLocalBar(nDesignAxisY1+1) = extraLocalBar(nDesignAxisY1+1) + momentaxisd(2,1)
+              if (nDesignAxisY2 >= 0) &
+                   extraLocalBar(nDesignAxisY2+1) = extraLocalBar(nDesignAxisY2+1) + momentaxisd(2,2)
+              if (nDesignAxisZ1 >= 0) &
+                   extraLocalBar(nDesignAxisZ1+1) = extraLocalBar(nDesignAxisZ1+1) + momentaxisd(3,1)
+              if (nDesignAxisZ2 >= 0) &
+                   extraLocalBar(nDesignAxisZ2+1) = extraLocalBar(nDesignAxisZ2+1) + momentaxisd(3,2)
+              
            end if
 
            if (useState) then 
