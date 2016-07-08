@@ -111,8 +111,6 @@
          call mpi_barrier(SUmb_comm_world, ierr)
        endif
 
-       if(restartFile == "") restart = .false.
-
        if(newGridFile == "") then
           newGridFile = "NewGrid.cgns"
        endif
@@ -836,7 +834,7 @@
              call returnFail("checkInputParam", &
                             "Memory allocation error for coefTime")
 
-           ! Determine the accuracy and set nOldLevels accordingly.
+           ! Determine the accuracy and set ALE parameters accordingly.
            if (useALE) then 
               select case (timeAccuracy)
               case (firstOrder)

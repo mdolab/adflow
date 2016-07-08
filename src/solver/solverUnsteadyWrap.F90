@@ -77,7 +77,7 @@ subroutine solverUnsteadyWrapBegin
   timeUnsteady     = 0.0
   timeStepUnsteady = 0
 
-  ! Fill up old xold and volold
+  ! Fill up old, xold and volold with current x and vol, respectively
   call fillCoor
 
   ! Set all ALE levels by initial configuration
@@ -206,7 +206,7 @@ subroutine initTimeStepWrap
      call gridVelocitiesFineLevelPart1(deforming_Grid, tNewSec, 1_intType)
 
      ! --------------------------------
-     ! Secondly store x to a temporary variable
+     ! Secondly store x to a temporary variable xALE
      ! --------------------------------
      call storeCoor
 
@@ -214,7 +214,7 @@ subroutine initTimeStepWrap
      ! Thirdly update surface normal and normal velocity
      ! --------------------------------
      ALEloop : do lale = 1,nALEMeshes
-        ! Interpolate mesh over latest time step
+        ! Interpolate mesh over latest time step for all ALE Meshes
         call interpCoor(lale)
 
         ! Update s[I,J,K], norm
@@ -223,14 +223,13 @@ subroutine initTimeStepWrap
 
         ! Update sFace[I,J,K]
         call gridVelocitiesFineLevelPart2(deforming_Grid, tNewSec, 1_intType)
+
         ! Update uSlip
         call slipVelocitiesFineLevel_ALE(deforming_Grid, tNewSec, 1_intType) ! Maybe Unnecessary - to be verified
 
         ! Added 101115
         call gridVelocitiesCoarseLevels(1_intType)
         call slipVelocitiesCoarseLevels(1_intType)
-
-
 
         ! Update rFace
         call normalVelocitiesAllLevels(1_intType)

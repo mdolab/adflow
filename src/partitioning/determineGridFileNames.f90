@@ -82,8 +82,10 @@
          case (unsteady)
 
            ! Unsteady computation. A further check is required.
+           ! EJ: replaced boolean variable restart with .false. for now
+           ! Need to refactor this code as well with ALE restart
 
-           testMultipleUnsteady: if(deforming_Grid .and. restart) then
+           testMultipleUnsteady: if(deforming_Grid .and. .false.) then
 
              ! A restart is made with deforming meshes. For a consistent
              ! restart nOldLevels grids must be read. First determine
@@ -183,8 +185,10 @@
          case (timeSpectral)
 
            ! Time spectral computation. A further check is required.
+           ! EJ: replaced boolean variable restart with .false. for now
+           ! Need to refactor this code as well with ALE restart
 
-           testMultipleTS: if(deforming_Grid .and. restart) then
+           testMultipleTS: if(deforming_Grid .and. .false.) then
 
              ! A restart is made with deforming meshes. For a consistent
              ! restart multiple grids must be read. First determine the
