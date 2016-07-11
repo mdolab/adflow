@@ -64,10 +64,19 @@ Parameter                                  Type       Default                   
                                                                                                     diagonal-dominant alternating-direction implicit (D3ADI) scheme. This is typically 
                                                                                                     faster that the Runge Kutta method but may be less robust. 
 									      
-`equationType`                           `str`       `euler`                                        The type of equations to solve. Possible values are `euler`, `laminar NS`, or `RANS`. 
+`equationType`                           `str`       `euler`                                        The type of equations to solve. Possible values are
+
+                                                                                                    * `euler`
+                                                                                                    * `laminar NS`
+                                                                                                    * `RANS`
 									      
-`equationMode`                           `str`       `steady`                                       The temporal mode of the equations to solve. Possible values are `steady`, `unsteady`
-                                                                                                    or `time spectral`. The `steady` and `time spectral` methods have been extensively 
+`equationMode`                           `str`       `steady`                                       The temporal mode of the equations to solve. Possible values are
+
+                                                                                                    * `steady`
+                                                                                                    * `unsteady`
+                                                                                                    * `time spectral`
+                                                                                                    
+                                                                                                    The `steady` and `time spectral` methods have been extensively 
                                                                                                     tested from the Python interface. The unsteady method has not been extensively 
                                                                                                     tested from Python.
 									      
