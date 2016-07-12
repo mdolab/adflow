@@ -444,6 +444,7 @@ subroutine addParaSlice(sliceName, pt, direction, mask, nmask)
   character*(*), intent(in) :: sliceName
   real(kind=realType), dimension(3), intent(in) :: pt, direction
   integer(kind=intType), intent(in) :: mask(nmask), nmask
+
   call initializeLiftDistributionData
 
   nParaSlices = nParaSlices + 1
@@ -529,21 +530,7 @@ subroutine initializeLiftDistributionData
   integer(kind=intType) :: ierr, i, j
   real(kind=realType), parameter :: tol=1e-8
   integer(kind=intType) :: nSurfVariables, nSliceVariables
-  interface
-     subroutine pointReduce(pts, N, tol, uniquePts, link, nUnique)
-       use precision
-       implicit none
-
-       real(kind=realType), dimension(:, :) :: pts
-       integer(kind=intType), intent(in) :: N
-       real(kind=realType), intent(in) :: tol
-       real(kind=realType), dimension(:, :) :: uniquePts
-       integer(kind=intType), dimension(:) :: link
-       integer(kind=intType) :: nUnique
-     end subroutine pointReduce
-
-  end interface
-
+ 
   if (liftDistInitialized) then
      return
   else
