@@ -184,13 +184,9 @@ subroutine convergenceHeader
 
         case (cgnsSepSensor)
            write(*,"(a)",advance="no") "        SepSensor       |"
-
         case (cgnsCavitation)
+
            write(*,"(a)",advance="no") "       Cavitation       |"
-
-        case (cgnsAxisMoment)
-           write(*,"(a)",advance="no") "       AxisMoment       |"
-
         end select
      enddo
 

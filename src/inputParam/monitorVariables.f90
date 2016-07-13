@@ -196,14 +196,9 @@
           case("sepsensor")
              nMon = nMon + 1; nMonSum = nMonSum + 1
              tmpNames(nMon) = cgnsSepSensor
-
           case("cavitation")
 	     nMon = nMon + 1; nMonSum = nMonSum + 1
              tmpNames(nMon) = cgnsCavitation
-
-          case("axismoment")
-             nMon = nMon + 1; nMonSum = nMonSum + 1
-             tmpNames(nMon) = cgnsAxisMoment
           
            case default
              write(errorMessage,"(3a)") "Unknown monitoring variable, ", &

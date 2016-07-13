@@ -48,7 +48,6 @@ subroutine convergenceInfo
 
   real(kind=realType) :: L2ConvThisLevel
   real(kind=realType), dimension(3) :: cfp, cfv, cmp, cmv
-  real(kind=realType) :: cmpaxis, cmvaxis
   logical :: nanOccurred, writeIterations
   logical :: absConv, relConv
   !
@@ -96,8 +95,8 @@ subroutine convergenceInfo
 
         ! Compute the forces and moments for this block.
 
-        call forcesAndMoments(cfp, cfv, cmp, cmv, cmpaxis, cmvaxis,&
-             yplusMax, sepSensor, sepSensorAvg, Cavitation)
+        call forcesAndMoments(cfp, cfv, cmp, cmv, yplusMax, sepSensor, &
+             sepSensorAvg, Cavitation)
 
         ! Determine the maximum values of the monitoring variables
         ! of this block.
@@ -209,9 +208,6 @@ subroutine convergenceInfo
 
            case (cgnsCavitation)
               monLoc(mm) = monLoc(mm) + Cavitation
-
-           case (cgnsAxisMoment)
-              monLoc(mm) = monLoc(mm) + cmpaxis + cmvaxis
 
            end select ! monNames(mm)
 

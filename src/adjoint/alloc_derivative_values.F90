@@ -29,7 +29,7 @@ subroutine alloc_derivative_values(level)
   integer(kind=intType) :: iBeg, jBeg, iStop, jStop, isizemax, jsizemax
   integer(kind=intType) :: massShape(2), max_face_size
 
-  real(kind=realType) :: alpha, beta, force(3, nTimeINtervalsSpectral), moment(3, nTimeIntervalsSpectral), sepSensor, Cavitation, axisMoment
+  real(kind=realType) :: alpha, beta, force(3, nTimeINtervalsSpectral), moment(3, nTimeIntervalsSpectral), sepSensor, Cavitation
   integer(kind=intType) :: liftIndex
  
   ! This routine will not use the extra variables to block_res or the

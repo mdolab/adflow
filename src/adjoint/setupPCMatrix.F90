@@ -66,7 +66,6 @@ subroutine setupPCMatrix(useAD,  useTranspose, frozenTurb, level)
   machGridd = zero
   machcoefd = zero
   pointRefd  = zero
-  momentAxisd = zero
   lengthRefd = zero
   prefd = zero
   tempfreestreamd = zero

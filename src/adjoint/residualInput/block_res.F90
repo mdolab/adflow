@@ -38,7 +38,7 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, &
 
   ! Output Variables
   real(kind=realType), dimension(3, nTimeIntervalsSpectral) :: force, moment
-  real(kind=realType) :: sepSensor, Cavitation, sepSensorAvg(3), axisMoment
+  real(kind=realType) :: sepSensor, Cavitation, sepSensorAvg(3)
   
   ! Working Variables
   real(kind=realType) :: gm1, v2, fact, tmp
@@ -47,7 +47,6 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, &
   real(kind=realType), dimension(nSections) :: t
   logical :: useOldCoor
   real(kind=realType), dimension(3) :: cFp, cFv, cMp, cMv
-  real(kind=realType) :: cMpaxis, cMvaxis
   real(kind=realType) :: yplusMax, scaleDim, oneOverDt
   useOldCoor = .False.
 
@@ -344,8 +343,8 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, &
      end do
   end do
 
-  call forcesAndMoments(cFp, cFv, cMp, cMv, cMpaxis, cMvaxis, &
-       yplusMax, sepSensor, sepSensorAvg, Cavitation)
+  call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
+       sepSensorAvg, Cavitation)
 
   ! Convert back to actual forces. Note that even though we use
   ! MachCoef, Lref, and surfaceRef here, they are NOT differented,
@@ -365,12 +364,10 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, &
   do sps2 = 1,nTimeIntervalsSpectral
      moment(:, sps2) = (cMp + cMV)/fact
   end do
-  
-  axisMoment = (cMpaxis + cMvaxis) / fact
 
 #ifndef USE_COMPLEX  
   call getCostFunction2(force, moment, sepSensor, sepSensorAvg, &
-       Cavitation, axisMoment, alpha, beta, liftIndex)
+       Cavitation, alpha, beta, liftIndex)
 #endif
 end subroutine block_res
 

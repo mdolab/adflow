@@ -279,9 +279,6 @@
           case (cgnsCavitation)
 	     sortNumber(i) = 115
 
-          case (cgnsAxisMoment)
-             sortNumber(i) = 116
-
            case (cgnsHdiffMax)
              sortNumber(i) = 201
 
