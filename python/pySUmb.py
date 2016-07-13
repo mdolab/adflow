@@ -1993,7 +1993,6 @@ class SUMB(AeroSolver):
             'sepsensoravgy'  :funcVals[self.sumb.costfunctions.costfuncsepsensoravgy-1],
             'sepsensoravgz'  :funcVals[self.sumb.costfunctions.costfuncsepsensoravgz-1],
             'cavitation' :funcVals[self.sumb.costfunctions.costfunccavitation-1],
-            'axismoment' :funcVals[self.sumb.costfunctions.costfuncaxismoment-1],
             }
 
         return SUmbsolution
@@ -2303,8 +2302,6 @@ class SUMB(AeroSolver):
         
         xRef = AP.xRef; yRef = AP.yRef; zRef = AP.zRef
         xRot = AP.xRot; yRot = AP.yRot; zRot = AP.zRot
-        momentAxis = AP.momentAxis
-
         areaRef = AP.areaRef
         chordRef = AP.chordRef
         liftIndex = self.getOption('liftIndex')
@@ -2374,15 +2371,7 @@ class SUMB(AeroSolver):
             yRot = 0.0
         if zRot is None:
             zRot = 0.0
-        if momentAxis is None: # Set the default to the x-axis through the origin
-            axisX1 = 0.0; axisX2 = 1.0
-            axisY1 = 0.0; axisY2 = 0.0
-            axisZ1 = 0.0; axisZ2 = 0.0
-        else:
-            axisX1 = momentAxis[0][0]; axisX2 = momentAxis[1][0]
-            axisY1 = momentAxis[0][1]; axisY2 = momentAxis[1][1]
-            axisZ1 = momentAxis[0][2]; axisZ2 = momentAxis[1][2]
-        
+
         # Set mach defaults if user did not specified any machRef or machGrid values
         
         # If the user is running time spectral but did not specify
@@ -2406,7 +2395,6 @@ class SUMB(AeroSolver):
 
         # 2. Reference Points:
         self.sumb.inputphysics.pointref = [xRef, yRef, zRef]
-        self.sumb.inputphysics.momentaxis = [[axisX1,axisX2],[axisY1,axisY2],[axisZ1,axisZ2]]
         self.sumb.inputmotion.rotpoint = [xRot, yRot, zRot]
 
         # 3. Reference Areas
@@ -4130,13 +4118,7 @@ class SUMB(AeroSolver):
             'zRef':'adjointvars.ndesignpointrefz',
             'chordRef':'adjointvars.ndesignlengthref',
             'areaRef':'adjointvars.ndesignsurfaceref',
-            'disserror':'adjointvars.ndesigndisserror',
-            'axisX1':'adjointvars.ndesignaxisx1',
-            'axisX2':'adjointvars.ndesignaxisx2',
-            'axisY1':'adjointvars.ndesignaxisy1',
-            'axisY2':'adjointvars.ndesignaxisy2',
-            'axisZ1':'adjointvars.ndesignaxisz1',
-            'axisZ2':'adjointvars.ndesignaxisz2',
+            'disserror':'adjointvars.ndesigndisserror'
             }
 
         # This is SUmb's internal mapping for cost functions
@@ -4179,7 +4161,6 @@ class SUMB(AeroSolver):
             'sepsensoravgy':self.sumb.costfunctions.costfuncsepsensoravgy,
             'sepsensoravgz':self.sumb.costfunctions.costfuncsepsensoravgz,
             'cavitation':self.sumb.costfunctions.costfunccavitation,
-            'axismoment':self.sumb.costfunctions.costfuncaxismoment,
             }
 
         return possibleAeroDVs, sumbCostFunctions

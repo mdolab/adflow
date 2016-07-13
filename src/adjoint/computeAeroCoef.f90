@@ -37,8 +37,7 @@ subroutine computeAeroCoef(globalCFVals,sps)
   real(kind=realType) :: force(3), cforce(3), Lift, Drag, CL, CD
   real(kind=realType) :: Moment(3),cMoment(3), fact, scaleDim
   real(kind=realType) :: cFp(3), cFv(3), cMp(3), cMv(3), yPlusMax
-  real(kind=realType) :: cMpaxis, CMvaxis, cAxisMoment
-  real(Kind=realType) :: sepSensor, sepSensorAvg(3), Cavitation, axisMoment
+  real(Kind=realType) :: sepSensor, sepSensorAvg(3), Cavitation
   real(kind=realType), dimension(nCostFunction)::localCFVals
 
   !     ******************************************************************
@@ -53,14 +52,13 @@ subroutine computeAeroCoef(globalCFVals,sps)
   domains: do nn=1,nDom
      call setPointers(nn,1_intType,sps)
      
-     call forcesAndMoments(cFp, cFv, cMp, cMv, cMpaxis, cMvaxis, & 
-          yplusMax, sepSensor, sepSensorAvg, Cavitation)
+     call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
+          sepSensorAvg, Cavitation)
      scaleDim = pRef/pInf
 
      ! Sum pressure and viscous contributions
      cForce = cFp + cFv
      cMoment = cMp + cMv
-     cAxisMoment = cMpaxis + cMvaxis
 
      ! Get Lift coef and Drag coef
      CD =  cForce(1)*dragDirection(1) &
@@ -81,7 +79,6 @@ subroutine computeAeroCoef(globalCFVals,sps)
      ! Moment factor has an extra lengthRef
      fact = fact/(lengthRef*LRef)
      Moment = cMoment / fact
-     axisMoment = cAxisMoment / fact
 
      localCFVals(costFuncLift) = localCFVals(costFuncLift) + Lift
      localCFVals(costFuncDrag) = localCFVals(costFuncDrag) + Drag
@@ -104,8 +101,6 @@ subroutine computeAeroCoef(globalCFVals,sps)
      localCFVals(costFuncSepSensorAvgY) = localCFVals(costFuncSepSensorAvgY) + sepSensorAvg(2)
      localCFVals(costFuncSepSensorAvgZ) = localCFVals(costFuncSepSensorAvgZ) + sepSensorAvg(3)
      localCFVals(costFuncCavitation) = localCFVals(costFuncCavitation) + Cavitation
-     localCFVals(costFuncAxisMoment) = localCFVals(costFuncAxisMoment) + AxisMoment
-     
   end do domains
 
   ! Now we will mpi_allReduce them into globalCFVals

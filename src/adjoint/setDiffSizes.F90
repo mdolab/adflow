@@ -71,10 +71,6 @@ subroutine setDiffSizes
   ISIZE1OFDrfDrfbcdata_Cavitation = 0
   ISIZE2OFDrfDrfbcdata_Cavitation = 0
 
-  ! axisMoment
-  ISIZE1OFDrfDrfbcdata_axisMoment = 0
-  ISIZE2OFDrfDrfbcdata_axisMoment = 0
-    
   ! viscsubface%tau
   ISIZE1OFDrfDrfviscsubface_tau = 0
   ISIZE2OFDrfDrfviscsubface_tau = 0

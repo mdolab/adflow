@@ -1,5 +1,5 @@
 subroutine getCostFunction2(force, moment, sepSensor, sepSensorAvg, &
-  Cavitation, axisMoment, alpha, beta, liftIndex)
+  Cavitation, alpha, beta, liftIndex)
 
   ! Compute the value of the actual objective function based on the
   ! (summed) forces and moments and any other "extra" design
@@ -15,7 +15,7 @@ subroutine getCostFunction2(force, moment, sepSensor, sepSensorAvg, &
   ! Input 
   integer(kind=intType), intent(in) :: liftIndex
   real(kind=realType), intent(in), dimension(3, nTimeIntervalsSpectral) :: force, moment
-  real(kind=realType), intent(in) ::  sepSensor, Cavitation, sepSensorAvg(3), axisMoment
+  real(kind=realType), intent(in) ::  sepSensor, Cavitation, sepSensorAvg(3)
   real(kind=realType), intent(in) :: alpha, beta
 
   ! Working
@@ -54,7 +54,6 @@ subroutine getCostFunction2(force, moment, sepSensor, sepSensorAvg, &
 
      funcValues(costFuncSepSensor) = funcValues(costFuncSepSensor) + ovrNTS*sepSensor
      funcValues(costFuncCavitation) = funcValues(costFuncCavitation) + ovrNTS*Cavitation
-     funcValues(costFuncAxisMoment) = funcValues(costFuncAxisMoment) + ovrNTS*axisMoment
      funcValues(costFuncSepSensorAvgX) = funcValues(costFuncSepSensorAvgX) + ovrNTS*sepSensorAvg(1)
      funcValues(costFuncSepSensorAvgY) = funcValues(costFuncSepSensorAvgY) + ovrNTS*sepSensorAvg(2)
      funcValues(costFuncSepSensorAvgZ) = funcValues(costFuncSepSensorAvgZ) + ovrNTS*sepSensorAvg(3)
