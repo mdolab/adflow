@@ -789,7 +789,6 @@ python module libsumb
          real(kind=realtype) dimension(3) :: liftdirection
          real(kind=realtype) dimension(3) :: dragdirection
          real(kind=realtype) dimension(3) :: pointref
-         real(kind=realtype) dimension(3,2) :: momentaxis
          real(kind=realtype) dimension(3) :: pointrefec
          logical :: forcesastractions
          real(kind=realtype) :: ssuthdim
@@ -1023,7 +1022,6 @@ python module libsumb
             integer(kind=inttype) parameter,optional :: costfuncsepsensoravgy=40
             integer(kind=inttype) parameter,optional :: costfuncsepsensoravgz=41
             integer(kind=inttype) parameter,optional :: costfunccavitation=42
-            integer(kind=inttype) parameter,optional :: costfuncaxismoment=43
             real(kind=realtype) sepsensoroffset
             real(kind=realtype) sepsensorsharpness
        end module costfunctions
@@ -1053,13 +1051,6 @@ python module libsumb
          integer(kind=inttype) :: ndesignpressure
          integer(kind=inttype) :: ndesigntemperature
          integer(kind=inttype) :: ndesignreynolds
-         integer(kind=inttype) :: ndesignaxisx1
-         integer(kind=inttype) :: ndesignaxisx2
-         integer(kind=inttype) :: ndesignaxisy1
-         integer(kind=inttype) :: ndesignaxisy2
-         integer(kind=inttype) :: ndesignaxisz1
-         integer(kind=inttype) :: ndesignaxisz2
-         
        end module adjointvars
 
        module adjointpetsc

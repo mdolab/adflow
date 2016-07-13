@@ -65,7 +65,7 @@ subroutine resetFDReference(level)
   
   ! Working Parameters
   integer(kind=intType) :: i, j, k, l, nn, sps, liftIndex
-  real(kind=realType) :: alpha, beta, sepSensor, Cavitation, axisMoment
+  real(kind=realType) :: alpha, beta, sepSensor, Cavitation
 
   do nn=1, nDom
      do sps=1, nTimeIntervalsSpectral
