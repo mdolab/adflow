@@ -109,7 +109,10 @@ contains
     do nn=1, nBocos
        if (bcType(nn) == symmPolar) then
           call setBCPointers(nn, .True.)
-          call bcSymmPolar(nn, secondHalo)
+          call bcSymmPolar(nn, .False.)
+          if (secondHalo) then 
+             call bcSymmPolar(nn, secondHalo)
+          end if
           call resetBCPointers(nn, .True.)
        end if
     end do
