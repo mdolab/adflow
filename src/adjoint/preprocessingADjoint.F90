@@ -31,7 +31,7 @@ subroutine preprocessingADjoint
 
   !     Local variables.
   !
-  integer(kind=intType) :: ndimW, ndimS, ncell, nState, nDimPsi, nDimX
+  integer(kind=intType) :: ndimW, ncell, nState, nDimPsi, nDimX
   !
   !
   ! Create PETSc Vectors that are actually empty. These do NOT take
@@ -44,11 +44,6 @@ subroutine preprocessingADjoint
   else
      nState = nw
   endif
-
-  ! Create two (empty) Vectors for getdFdx(T)Vec operations
-  call getForceSize(nDimS,ncell)
-  nDimS = nDimS * 3 *nTimeIntervalsSpectral! Multiply by 3 for each
-  ! dof on each point
 
   nDimW = nw * nCellsLocal(1_intType)*nTimeIntervalsSpectral
   nDimPsi = nState*  nCellsLocal(1_intType)*nTimeIntervalsSpectral

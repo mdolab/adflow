@@ -300,21 +300,31 @@ subroutine getForces(forces, npts, sps_in)
   use inputTimeSpectral
   use communication
   use inputPhysics
+  use ADJointPETSc, only : nodeValLocal, nodeValGlobal, sumGlobal, tracScatter
   implicit none
-  !
-  !      Local variables.
-  !
-  integer(kind=intType), intent(in) :: npts, sps_in
-  real(kind=realType), intent(out) :: forces(3,npts)
 
-    real(kind=realType) :: area(npts) ! Dual area's
-  integer(kind=intType) :: mm, nn, i, j, ii, jj,sps
+#define PETSC_AVOID_MPIF_H
+#include "include/petscversion.h"
+#if PETSC_VERSION_MINOR > 5
+#include "petsc/finclude/petscsys.h"
+#include "petsc/finclude/petscvec.h"
+#include "petsc/finclude/petscvec.h90"
+#else
+#include "include/finclude/petscsys.h"
+#include "include/finclude/petscvec.h"
+#include "include/finclude/petscvec.h90"
+#endif
+
+  integer(kind=intType), intent(in) :: npts, sps_in
+  real(kind=realType), intent(inout) :: forces(3*npts)
+
+  integer(kind=intType) :: mm, nn, i, j, ii, jj,sps, iDim, ierr
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd
   real(kind=realType) :: sss(3),v2(3),v1(3), qa, sepSensor, Cavitation
   real(kind=realType) :: sepSensorAvg(3)
   integer(kind=intType) :: lower_left,lower_right,upper_left,upper_right
   real(kind=realType) :: cFp(3), cFv(3), cMp(3), cMv(3), yplusmax, qf(3)
-
+  real(kind=realType), dimension(:), pointer :: localPtr
   !      ******************************************************************
   !      *                                                                *
   !      * Begin execution                                                *
@@ -323,28 +333,147 @@ subroutine getForces(forces, npts, sps_in)
 
   sps = sps_in
 
-  ii = 0 
-  domains: do nn=1,nDom
-     call setPointers(nn,1_intType,sps)
-     call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, &
-          sepSensor, sepSensorAvg, Cavitation)
+  ! If forces are requied, copy them out directly. 
+  if (.not. forcesAsTractions) then 
      
-     ! Loop over the number of boundary subfaces of this block.
-     bocos: do mm=1,nBocos
+     ii = 0 
+     domains: do nn=1,nDom
+        call setPointers(nn, 1_intType, sps)
+        call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, &
+             sepSensor, sepSensorAvg, Cavitation)
         
-        if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic .or. &
-             BCType(mm) == NSWallIsothermal) then
-
-           ! This is easy, just copy out F in continuous ordering. 
-           do j=BCData(mm)%jnBeg,BCData(mm)%jnEnd
-              do i=BCData(mm)%inBeg,BCData(mm)%inEnd
-                 ii = ii + 1
-                 Forces(:, ii) = bcData(mm)%F(i, j, :)
+        ! Loop over the number of boundary subfaces of this block.
+        bocos: do mm=1, nBocos
+           
+           if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic .or. &
+                BCType(mm) == NSWallIsothermal) then
+              
+              ! This is easy, just copy out F in continuous ordering. 
+              do j=BCData(mm)%jnBeg, BCData(mm)%jnEnd
+                 do i=BCData(mm)%inBeg, BCData(mm)%inEnd
+                    ii = ii + 1
+                    Forces(3*ii-2:3*ii) = bcData(mm)%F(i, j, :)/bcData(mm)%dualArea(i,j)
+                 end do
               end do
+           end if
+        end do bocos
+     end do domains
+  else
+
+     ! If we need to return tractions. It is a little tricker. We have
+     ! to reduce the values globally across patches. 
+     
+     ! The dual Area calc has to be done first:
+     call vecGetArrayF90(nodeValLocal, localPtr, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+       
+     ii = 0 
+     do nn=1,nDom
+        call setPointers(nn, 1_intType, sps)
+        call forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, &
+             sepSensor, sepSensorAvg, Cavitation)
+        do mm=1, nBocos
+           if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic .or. &
+                BCType(mm) == NSWallIsothermal) then
+              do j=BCData(mm)%jnBeg, BCData(mm)%jnEnd
+                 do i=BCData(mm)%inBeg, BCData(mm)%inEnd
+                    ii = ii + 1
+                    localPtr(ii) = BCData(mm)%dualArea(i, j)
+                 end do
+              end do
+           end if
+        end do
+     end do
+
+     call vecRestoreArrayF90(nodeValLocal, localPtr, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     ! Globalize the dualAreas
+     call vecSet(sumGlobal, zero, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     call VecScatterBegin(tracScatter, nodeValLocal, sumGlobal, ADD_VALUES, &
+          SCATTER_FORWARD, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     call VecScatterEnd(tracScatter, nodeValLocal, sumGlobal, ADD_VALUES, &
+          SCATTER_FORWARD, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     ! Now compute the inverse of the dual areas since we can then
+     ! multiply instead of dividing. 
+
+     call vecGetArrayF90(sumGlobal, localPtr, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     localPtr = one/localPtr
+
+     call vecRestoreArrayF90(sumGlobal, localPtr, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     
+     ! Now do each of the three dimensions one at a time:
+     dimLoop: do iDim=1, 3
+        
+        call vecGetArrayF90(nodeValLocal, localPtr, ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+
+        ii = 0
+        do nn=1, nDom
+           call setPointers(nn, 1_intType, sps)
+           do mm=1, nBocos
+           if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic .or. &
+                BCType(mm) == NSWallIsothermal) then
+                 do j=BCData(mm)%jnBeg, BCData(mm)%jnEnd
+                    do i=BCData(mm)%inBeg, BCData(mm)%inEnd
+                       ii = ii + 1
+                       localPtr(ii) = bcData(mm)%F(i, j, iDim)
+                    end do
+                 end do
+              end if
            end do
-        end if
-     end do bocos
-  end do domains
+        end do
+        
+        call vecRestoreArrayF90(nodeValLocal, localPtr, ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+        
+        ! Globalize the current force
+        call vecSet(nodeValGlobal, zero, ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+
+        call VecScatterBegin(tracScatter, nodeValLocal, nodeValGlobal, ADD_VALUES, &
+             SCATTER_FORWARD, ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+        
+        call VecScatterEnd(tracScatter, nodeValLocal, nodeValGlobal, ADD_VALUES, &
+             SCATTER_FORWARD, ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+
+        ! Now divide by the dual area. We can do this with a vecpointwisemult
+        call vecPointwiseMult(nodeValGlobal, nodeValGlobal, sumGlobal, ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+        
+        ! Push back to the local values
+        call VecScatterBegin(tracScatter, nodeValGlobal, nodeValLocal, INSERT_VALUES, &
+             SCATTER_REVERSE, ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+
+        call VecScatterEnd(tracScatter, nodeValGlobal, nodeValLocal, INSERT_VALUES, &
+             SCATTER_REVERSE, ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+        
+        ! Finally we can get traction and put it in our output array
+        call vecGetArrayF90(nodeValLocal, localPtr, ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+
+        do i=1, nPts
+           forces((i-1)*3 + iDim) = localPtr(i)
+        end do
+        call vecRestoreArrayF90(nodeValLocal, localPtr, ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+     end do dimLoop
+  end if
+
 end subroutine getForces
 
 subroutine setFullMask
