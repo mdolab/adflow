@@ -140,7 +140,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
            ! do j=(BCData(nn)%jnBeg+1),BCData(nn)%jnEnd
            !    do i=(BCData(nn)%inBeg+1),BCData(nn)%inEnd
 
-           bcData(nn)%dualArea = zero
+           bcData(nn)%dualArea = zero!1e-30
            bcData(nn)%F = zero
            !$AD II-LOOP
            do ii=0,(BCData(nn)%jnEnd - bcData(nn)%jnBeg)*(bcData(nn)%inEnd - bcData(nn)%inBeg) -1 
@@ -391,18 +391,20 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
 #endif
               enddo
            end if visForce
-           ! If forces are tractions we have to divide by the dual area:
-           if (forcesAsTractions) then
-              do j= BCData(nn)%jnBeg, BCData(nn)%jnEnd
-                 do i=BCData(nn)%inBeg, BCData(nn)%inEnd
-                    bcData(nn)%F(i, j, :) =  bcData(nn)%F(i, j, :) / bcData(nn)%dualArea(i, j)
-                 end do
-              end do
-           end if
+
+           ! ! If forces are tractions we have to divide by the dual area:
+           ! if (forcesAsTractions) then
+           !    do j= BCData(nn)%jnBeg, BCData(nn)%jnEnd
+           !       do i=BCData(nn)%inBeg, BCData(nn)%inEnd
+           !          bcData(nn)%F(i, j, :) =  bcData(nn)%F(i, j, :) / bcData(nn)%dualArea(i, j)
+           !       end do
+           !    end do
+           ! end if
 
            call resetBCPointers(nn, .True.)
         end if invForce
      else
+        bcData(nn)%dualArea = zero!1e-30
         bcData(nn)%F = zero
      end if mask
   enddo bocos
