@@ -299,12 +299,12 @@ python module libsumb
           integer(kind=inttype) optional,intent(in),check((len(conn))/(4)>=ncell),depend(conn) :: ncell=(len(conn))/(4)
         end subroutine getforceconnectivity
 
-        subroutine getforces(forces,npts,sps_in) ! in :test:getForces.f90
-          real(kind=realtype) dimension(3,npts),intent(out),depend(npts) :: forces
-          integer(kind=inttype) intent(in) :: npts
-          integer(kind=inttype) intent(in) :: sps_in
+        subroutine getforces(forces,npts,sps_in) ! in :test:getForces.F90
+            real(kind=realtype) dimension(3 * npts),intent(inout) :: forces
+            integer(kind=inttype), optional,intent(in),check((len(forces))/(3)>=npts),depend(forces) :: npts=(len(forces))/(3)
+            integer(kind=inttype) intent(in) :: sps_in
         end subroutine getforces
-        
+
         subroutine getforcepoints(points,npts,sps_in) ! in :test:getForces.f90
           integer(kind=inttype), intent(in) :: sps_in
           real(kind=realtype) dimension(3,npts),intent(inout) :: points
@@ -1120,6 +1120,11 @@ python module libsumb
          integer(kind=inttype), optional,check(len(x)>=n),depend(x) :: n=len(x)
         end subroutine testdrdwtspeed 
  
+        subroutine test_inviscid_flux(elaptime)
+          real(kind=realtype), intent(out) :: elaptime(3)
+        end subroutine test_inviscid_flux
+        subroutine test
+        end subroutine test
     end interface 
 
 #ifdef USE_COMPLEX

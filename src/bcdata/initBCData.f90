@@ -122,6 +122,7 @@
                nullify(BCData(j)%Fv)
                nullify(BCData(j)%Fp)
                nullify(BCData(j)%dualArea)
+               nullify(BCData(j)%fIndex)
                nullify(BCData(j)%uSlip)
                nullify(BCData(j)%TNS_Wall)
 
