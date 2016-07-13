@@ -242,6 +242,12 @@
        do level=1,nLevels
           call wallDistance(level, .True.)
        end do
+
+       ! Determine the local-to-global mapping for the traction
+       ! computation. 
+
+       call initializeTractionScatter()
+
        
      end subroutine preprocessing
 

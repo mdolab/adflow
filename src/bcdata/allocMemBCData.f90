@@ -83,6 +83,7 @@
                             BCData(mm)%TNS_Wall(iBeg:iEnd,jBeg:jEnd), &
                             BCData(mm)%F(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
                             BCData(mm)%dualArea(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
+                            BCData(mm)%fIndex(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd), &
                             BCData(mm)%sHeatFlux(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
                             BCData(mm)%Fp(iBeg:iEnd,jBeg:jEnd,3), &
                             BCData(mm)%Fv(iBeg:iEnd,jBeg:jEnd,3), &
@@ -101,6 +102,7 @@
                             BCData(mm)%TNS_Wall(iBeg:iEnd,jBeg:jEnd), &
                             BCData(mm)%F(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
                             BCData(mm)%dualArea(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
+                            BCData(mm)%fIndex(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd), &
                             BCData(mm)%sHeatFlux(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
                             BCData(mm)%Fp(iBeg:iEnd,jBeg:jEnd,3), &
                             BCData(mm)%Fv(iBeg:iEnd,jBeg:jEnd,3), &
@@ -119,6 +121,7 @@
                             BCData(mm)%TNS_Wall(iBeg:iEnd,jBeg:jEnd), &
                             BCData(mm)%F(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
                             BCData(mm)%dualArea(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
+                            BCData(mm)%fIndex(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd), &
                             BCData(mm)%sHeatFlux(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
                             BCData(mm)%Fp(iBeg:iEnd,jBeg:jEnd,3), &
                             BCData(mm)%Fv(iBeg:iEnd,jBeg:jEnd,3), &

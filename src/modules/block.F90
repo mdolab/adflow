@@ -102,6 +102,7 @@ module block
      real(kind=realType), dimension(:,:),   pointer :: rface
      real(kind=realType), dimension(:,:,:), pointer :: F, Fv, Fp
      real(kind=realType), dimension(:,:), pointer :: dualArea
+     integer(kind=realType), dimension(:,:), pointer :: fIndex
 
      ! symNorm is the normal for (symmertry) boundary conditions.
      ! symNormSet is set to false until symNorm is computed at the

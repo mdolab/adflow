@@ -36,6 +36,7 @@ subroutine releaseMemoryPart1
   use commMixing
   use wallDistanceData
   use adjointVars
+  use ADJointPETSc
   implicit none
   !
   !      Local variables
@@ -176,6 +177,12 @@ subroutine releaseMemoryPart1
      call destroyWallDistanceData(l)
   end do
   deallocate(xSurfVec, xVolumeVec, wallScatter)
+
+  ! Destroy the traction force stuff
+  call vecDestroy(nodeValLocal, ierr)
+  call vecDestroy(nodeValGlobal, ierr)
+  call vecDestroy(sumGlobal, ierr)
+  call vecScatterDestroy(tracScatter, ierr)
 
   ! From Communication Stuff
   do l=1,nLevels
@@ -511,6 +518,10 @@ subroutine deallocateBlock(nn, level, sps)
 
      if( associated(BCData(i)%dualArea) ) &
           deallocate(BCData(i)%dualArea, stat=ierr)
+     if(ierr /= 0) deallocationFailure = .true.
+
+     if( associated(BCData(i)%fIndex) ) &
+          deallocate(BCData(i)%fIndex, stat=ierr)
      if(ierr /= 0) deallocationFailure = .true.
 
      if( associated(BCData(i)%F) ) &
