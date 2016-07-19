@@ -24,8 +24,8 @@
 !                *uz:(loc) *d2wall:(loc) *si:(loc) *sj:(loc) *sk:(loc)
 !                *bvti1:(loc) *bvti2:(loc) *vx:(loc) *vy:(loc)
 !                *vz:(loc) *fw:(loc) *(*viscsubface.tau):(loc)
-!                *(*bcdata.norm):(loc) *(*bcdata.f):in-out *(*bcdata.dualarea):(loc)
-!                *radi:(loc) *radj:(loc) *radk:(loc) mach:out tempfreestream:out
+!                *(*bcdata.norm):(loc) *(*bcdata.f):in-out *radi:(loc)
+!                *radj:(loc) *radk:(loc) mach:out tempfreestream:out
 !                reynolds:out veldirfreestream:(loc) machgrid:out
 !                lengthref:out machcoef:out dragdirection:(loc)
 !                liftdirection:(loc) pointref:out *xx:in-out *rev0:in-out
@@ -40,11 +40,11 @@
 !                qz:in scratch:in bvtk1:in bvtk2:in ux:in uy:in
 !                uz:in d2wall:in si:in sj:in sk:in bvti1:in bvti2:in
 !                vx:in vy:in vz:in fw:in viscsubface:in *viscsubface.tau:in
-!                bcdata:in *bcdata.norm:in *bcdata.f:in *bcdata.dualarea:in
-!                radi:in radj:in radk:in xx:in rev0:in rev1:in
-!                rev2:in rev3:in pp0:in pp1:in pp2:in pp3:in rlv0:in
-!                rlv1:in rlv2:in rlv3:in ssi:in ww0:in ww1:in ww2:in
-!                ww3:in xsurf:in
+!                bcdata:in *bcdata.norm:in *bcdata.f:in radi:in
+!                radj:in radk:in xx:in rev0:in rev1:in rev2:in
+!                rev3:in pp0:in pp1:in pp2:in pp3:in rlv0:in rlv1:in
+!                rlv2:in rlv3:in ssi:in ww0:in ww1:in ww2:in ww3:in
+!                xsurf:in
 ! this is a super-combined function that combines the original
 ! functionality of: 
 ! pressure computation
@@ -539,14 +539,6 @@ varloopfine:do l=1,nwf
   call pushreal8array(gamma2, size(gamma2, 1)*size(gamma2, 2))
   call pushreal8array(gamma1, size(gamma1, 1)*size(gamma1, 2))
   call pushreal8array(gamma0, size(gamma0, 1)*size(gamma0, 2))
-  do ii1=1,size(bcdata)
-    call pushreal8array(bcdata(ii1)%dualarea, size(bcdata(ii1)%dualarea&
-&                 , 1)*size(bcdata(ii1)%dualarea, 2))
-  end do
-  do ii1=1,size(bcdata)
-    call pushreal8array(bcdata(ii1)%f, size(bcdata(ii1)%f, 1)*size(&
-&                 bcdata(ii1)%f, 2)*size(bcdata(ii1)%f, 3))
-  end do
   call pushreal8array(sk, size(sk, 1)*size(sk, 2)*size(sk, 3)*size(sk, 4&
 &               ))
   call pushreal8array(sj, size(sj, 1)*size(sj, 2)*size(sj, 3)*size(sj, 4&
@@ -672,14 +664,6 @@ varloopfine:do l=1,nwf
 &             )
   call popreal8array(sk, size(sk, 1)*size(sk, 2)*size(sk, 3)*size(sk, 4)&
 &             )
-  do ii1=size(bcdata),1,-1
-    call popreal8array(bcdata(ii1)%f, size(bcdata(ii1)%f, 1)*size(bcdata&
-&                (ii1)%f, 2)*size(bcdata(ii1)%f, 3))
-  end do
-  do ii1=size(bcdata),1,-1
-    call popreal8array(bcdata(ii1)%dualarea, size(bcdata(ii1)%dualarea, &
-&                1)*size(bcdata(ii1)%dualarea, 2))
-  end do
   call popreal8array(gamma0, size(gamma0, 1)*size(gamma0, 2))
   call popreal8array(gamma1, size(gamma1, 1)*size(gamma1, 2))
   call popreal8array(gamma2, size(gamma2, 1)*size(gamma2, 2))

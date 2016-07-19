@@ -3,8 +3,8 @@
 !
 !  differentiation of block_res in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: pref *(flowdoms.w) *(flowdoms.dw)
-!                *(*bcdata.f) *rev0 *rev1 *pp0 *pp1 *rlv0 *rlv1
-!                *ww0 *ww1 funcvalues
+!                *(*bcdata.f) *(*bcdata.dualarea) *rev0 *rev1 *pp0
+!                *pp1 *rlv0 *rlv1 *ww0 *ww1 funcvalues
 !   with respect to varying inputs: pref *(flowdoms.x) *(flowdoms.w)
 !                mach tempfreestream reynolds machgrid lengthref
 !                machcoef pointref *xx *rev0 *rev1 *rev2 *rev3
@@ -23,7 +23,7 @@
 !                *uz:(loc) *si:(loc) *sj:(loc) *sk:(loc) *bvti1:(loc)
 !                *bvti2:(loc) *vx:(loc) *vy:(loc) *vz:(loc) *fw:(loc)
 !                *(*viscsubface.tau):(loc) *(*bcdata.norm):(loc)
-!                *(*bcdata.rface):(loc) *(*bcdata.f):out *(*bcdata.dualarea):(loc)
+!                *(*bcdata.rface):(loc) *(*bcdata.f):out *(*bcdata.dualarea):out
 !                *(*bcdata.uslip):(loc) *radi:(loc) *radj:(loc)
 !                *radk:(loc) mach:in tempfreestream:in reynolds:in
 !                veldirfreestream:(loc) machgrid:in lengthref:in

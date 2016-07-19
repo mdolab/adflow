@@ -118,6 +118,7 @@ FILES_TO_COMPLEXIFY =  precision.F90\
 	         diffSizes.f90\
 		 wallDistanceData.F90\
 		 myPushPopLib.F90\
+		 kd_tree.f90\
 
 FILES_TO_COPY = su_cgns.F90 \
 		complexify.f90 
