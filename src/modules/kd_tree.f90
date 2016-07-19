@@ -678,9 +678,9 @@ contains
       integer(kind=intType), intent (In) :: l, u
       ! ..
       ! .. Local Scalars ..
-      integer(kind=intType) :: i, c, m, dimen
+      integer(kind=intType) :: i, c, m, dimen, idim
       logical :: recompute
-      real(kind=realType)    :: average
+      real(kind=realType)    :: average, left, right, coorspread(tp%dimen)
 
 !!$      If (.False.) Then 
 !!$         If ((l .Lt. 1) .Or. (l .Gt. tp%n)) Then
@@ -743,12 +743,20 @@ contains
                res%box(i) = parent%box(i)
             endif
          end do
-         
 
-         c = maxloc(res%box(1:dimen)%upper-res%box(1:dimen)%lower,1)
          !
          ! c is the identity of which coordinate has the greatest spread.
          !
+         
+         coorspread = res%box(1:dimen)%upper-res%box(1:dimen)%lower
+
+         tmp = -one
+         do i=1, dimen
+            if (coorSpread(i) > tmp) then 
+               tmp = coorSpread(i)
+               c = i
+            end if
+         end do
          
          if (.false.) then
             ! select exact median to have fully balanced tree.
@@ -798,8 +806,18 @@ contains
             ! Since we are taking unions (in effect) of a tree structure,
             ! this is much faster than doing an exhaustive
             ! search over all points
-            res%box%upper = max(res%left%box%upper,res%right%box%upper)
-            res%box%lower = min(res%left%box%lower,res%right%box%lower) 
+            do idim=1, dimen
+               left = res%left%box(idim)%upper
+               right = res%right%box(idim)%upper
+               res%box(idim)%upper = max(left,right)
+
+               left = res%left%box(idim)%lower
+               right = res%right%box(idim)%lower
+               
+               res%box(idim)%lower = min(left, right)
+            end do
+            ! res%box%upper = max(res%left%box%upper,res%right%box%upper)
+            ! res%box%lower = min(res%left%box%lower,res%right%box%lower) 
          endif
       end if
     end function build_tree_for_range

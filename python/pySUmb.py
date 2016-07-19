@@ -30,7 +30,7 @@ from mpi4py import MPI
 from baseclasses import AeroSolver, AeroProblem
 from . import MExt
 from pprint import pprint as pp
-    
+
 class Error(Exception):
     """
     Format the error message in a box to make it clear this
@@ -149,7 +149,7 @@ class SUMB(AeroSolver):
 
         # Update turbresscale depending on the turbulence model specified
         self._updateTurbResScale()
-        
+
         # Initialize petec in case the user has not already
         self.sumb.initializepetsc()
 
@@ -191,7 +191,7 @@ class SUMB(AeroSolver):
         # Do the remainder of the operations that would have been done
         # had we read in a param file
         self.sumb.iteration.deforming_grid = True
-        
+
         # In order to properly initialize we need to have mach number
         # and a few other things set. Just create a dummy aeroproblem,
         # use it, and then it will be deleted.
@@ -228,7 +228,7 @@ class SUMB(AeroSolver):
             The pyWarp mesh object for doing the warping
         groupName : str
             The group which SUmb will consider to include all surfaces
-            that will be manipulated by the geometry. 
+            that will be manipulated by the geometry.
         """
 
         self.mesh = mesh
@@ -292,7 +292,7 @@ class SUMB(AeroSolver):
            The AP object that the displacements should be applied to.
         dispFile : str
            The file contaning the displacments. This file should have
-           been obtained from TACS                                
+           been obtained from TACS
         """
         self.setAeroProblem(aeroProblem)
 
@@ -321,7 +321,7 @@ class SUMB(AeroSolver):
 
         # Fianlly we have the local displacements for this processor we save
         self.curAP.sumbData.disp = localD
-                        
+
     def addLiftDistribution(self, nSegments, direction,
                             groupName=None, description=''):
         """
@@ -455,16 +455,16 @@ class SUMB(AeroSolver):
         example,
 
         >>> addFunction('cd', None, 'super_cd')
-    
-        will add a function that is the same as 'cd', but call 'super_cd'
-        supplied name 'name'.
-        
+
+        will add a function that is the same as 'cd', but called
+        'super_cd'.
+
         Parameters
         ----------
         funcName : str or list
             The name of the built-in sumb function
         groupName : str or list
-            The family (as defined in warping module) to use for 
+            The family (as defined in warping module) to use for
             the function.
         Name : str or list
             An overwrite name.
@@ -473,6 +473,7 @@ class SUMB(AeroSolver):
         -------
         names : list
            The names if the functions that were added
+
         """
 
         # Just call the addFunctions() routine with lists
@@ -500,7 +501,7 @@ class SUMB(AeroSolver):
             if funcName.lower() not in self.basicCostFunctions:
                 raise Error('Supplied function name is not known to SUmb')
 
-            # And make sure that the groupName is defined. 
+            # And make sure that the groupName is defined.
             if self.mesh is None:
                 raise Error("A mesh must be supplied to SUmb in order to use "
                             "the 'addFunction' functionality")
@@ -657,7 +658,7 @@ class SUMB(AeroSolver):
         # Set the aeroProblem
         self.setAeroProblem(aeroProblem, releaseAdjointMemory)
 
-        # Set filenames for possibled forced write
+        # Set filenames for possible forced write during solution
         self._setForcedFileNames()
 
         # Set the full mask such that we get the full coefficients in
@@ -667,11 +668,11 @@ class SUMB(AeroSolver):
         # Remind the users of the modified options:
         if self.getOption('printIterations'):
             self.printModifiedOptions()
-        
+
         # If this problem has't been solved yet, reset flow to this
-        # flight condition. If restarting load restart files and set 
-        # mgstartlevel to finest lever since we are starting on a 
-        # converged solution. 
+        # flight condition. If restarting load restart files and set
+        # mgstartlevel to finest lever since we are starting on a
+        # converged solution.
         if self.curAP.sumbData.stateInfo is None:
             if self.getOption('restartFile') is not None:
                 self.sumb.inputiteration.mgstartlevel = 1
@@ -772,320 +773,13 @@ class SUMB(AeroSolver):
         if self.getOption('TSStability'):
             self.computeStabilityParameters()
 
-    #======================================================
-    #
-    # Utilities for MD simulations
-    #
-    #======================================================
-
-    def initSolver(self, aeroProblem, **kwargs):
-        """
-        This is essentially first half of __call__, which initializes the solver.
-        Plus the routine that initializes zeroth unsteady time step.
-        """
-        
-        # Get option about adjoint memory
-        releaseAdjointMemory = kwargs.pop('relaseAdjointMemory', True)
-
-        # Set the aeroProblem
-        self.setAeroProblem(aeroProblem, releaseAdjointMemory)
-
-        # Set the full mask such that we get the full coefficients in
-        # the printout.
-        self.sumb.setfullmask()
-
-        # Remind the users of the modified options:
-        if self.getOption('printIterations'):
-            self.printModifiedOptions()
-
-        # If this problem has't been solved yet, reset flow to this
-        # flight condition
-        if self.curAP.sumbData.stateInfo is None:
-            if self.getOption('restartFile') is not None:
-                self.sumb.inputiteration.mgstartlevel = 1
-                self.sumb.initflowrestart()
-            else:
-                self.resetFlow(aeroProblem, releaseAdjointMemory)
-
-        # Possibly release adjoint memory if not already done so.
-        if releaseAdjointMemory:
-            self.releaseAdjointMemory()
-
-        # Clear out any saved adjoint RHS since they are now out of
-        # data. Also increment the counter for this case.
-        self.curAP.sumbData.adjointRHS = {}
-        self.curAP.sumbData.callCounter += 1
-
-        if self.getOption('equationMode').lower() == 'unsteady':
-            self.sumb.alloctimearrays(self.getOption('nTimeStepsFine'))
-
-        # Mesh warp may have already failed:
-        if not self.sumb.killsignals.fatalfail:
-
-            if (self.getOption('equationMode').lower() == 'steady' or
-                self.getOption('equationMode').lower() == 'time spectral'):
-                self.updateGeometryInfo()
-
-                # Check to see if the above update routines failed.
-                self.sumb.killsignals.fatalfail = \
-                    self.comm.allreduce(
-                    bool(self.sumb.killsignals.fatalfail), op=MPI.LOR)
-
-        if self.sumb.killsignals.fatalfail:
-            print("Fatal failure during mesh warp! Bad mesh is "
-                  "written in output directory as failed_mesh.cgns")
-            fileName = os.path.join(self.getOption('outputDirectory'),
-                                    'failed_mesh.cgns')
-            self.writeMeshFile(fileName)
-            self.curAP.fatalFail = True
-            self.curAP.solveFailed = True
-            return
-
-        # We now know the mesh warping was ok so reset the flags:
-        self.sumb.killsignals.routinefailed =  False
-        self.sumb.killsignals.fatalfail = False
-        
-        # Initialize for solverUnsteady_ALE
-        self.sumb.solverunsteadywrapbegin()
-
-    def stepCounter(self, adv=1):
-        self.sumb.monitor.timestepunsteady = self.sumb.monitor.timestepunsteady + adv
-        self.sumb.monitor.timeunsteady     = self.sumb.monitor.timeunsteady     + \
-            adv*self.sumb.inputunsteady.deltat
-        return self.sumb.monitor.timeunsteady, self.sumb.monitor.timestepunsteady
-        
-    def timeStepping(self):
-        """
-        This advances the solver by one physical time step
-        """
-        
-        t1 = time.time()
-
-        # Call the unsteady solver
-        self.sumb.solverunsteadywrapinloop()
-
-        # # Save the states into the aeroProblem
-        # self.curAP.sumbData.stateInfo = self._getInfo()
-
-        # # Assign Fail Flags
-        # self.curAP.solveFailed = bool(self.sumb.killsignals.routinefailed)
-        # self.curAP.fatalFail = bool(self.sumb.killsignals.fatalfail)
-
-        # # Reset Flow if there's a fatal fail reset and return;
-        # # --> Do not write solution
-        # if self.curAP.fatalFail:
-        #     self.resetFlow(aeroProblem)
-        #     return
-
-        t2 = time.time()
-
-        self.writeSolution()
-        
-        t3 = time.time()
-        solTime = t2 - t1
-        writeTime = t3 - t2
-        totalTime = solTime + writeTime
-        if self.getOption('printTiming') and self.comm.rank == 0:
-            print('Timestep total solution time: %10.3f sec'% totalTime)
-            print('      Timestep solution time: %10.3f sec'% solTime)
-            print('       Writing solution time: %10.3f sec'% writeTime)
-  
-
-    def setDisplacement(self, coordinates, groupName='interface', ifShift=True):
-        if ifShift and self.sumb.iteration.deforming_grid:
-            self.sumb.shiftcoorandvolumes()
-            self.sumb.shiftlevelale()
-        self.setSurfaceCoordinates(coordinates, groupName)
-        if self._updateGeomInfo and self.mesh is not None:
-            timeA = time.time()
-            self.mesh.warpMesh()
-            newGrid = self.mesh.getSolverGrid()
-            self.sumb.killsignals.routinefailed = False
-            self.sumb.killsignals.fatalFail = False
-            self.updateTime = time.time()-timeA
-            if newGrid is not None:
-                self.sumb.setgrid(newGrid)
-            self._updateGeomInfo = False
-            self.sumb.killsignals.routinefailed = \
-                self.comm.allreduce(
-                bool(self.sumb.killsignals.routinefailed), op=MPI.LOR)
-            self.sumb.killsignals.fatalfail = self.sumb.killsignals.routinefailed
-
-    def setTemperature(self, tnsw, groupName='interface'):
-        TS = 1
-        self._setMask(groupName)
-        self.sumb.settnswall(numpy.ravel(tnsw), TS)
-        
-        self.sumb.killsignals.routinefailed = False
-        self.sumb.killsignals.fatalFail = False
-        self.sumb.killsignals.routinefailed = \
-            self.comm.allreduce(
-            bool(self.sumb.killsignals.routinefailed), op=MPI.LOR)
-        self.sumb.killsignals.fatalfail = self.sumb.killsignals.routinefailed
-
-    def getCurTopo(self):
-        TS = 0
-        groupName = 'interface'
-
-        if self.mesh is None:
-            print("MBMesh object not set!")
-
-        # Gather coordinates and connectivity
-        pts  = self.comm.gather(self.getForcePoints(TS, groupName), root=0)
-        conn = self.comm.gather(self.mesh.getSurfaceConnectivity(groupName), root=0)
-
-        # Get data only on root proc
-        x = [] # Coordinates
-        c = [] # Connectivity
-        if self.myid == 0:
-            # Get the coordinates and surface tractions
-            for iProc in xrange(len(pts)):
-                for i in xrange(len(pts[iProc])):
-                    x.append([ numpy.real(pts[iProc][i, 0]), \
-                               numpy.real(pts[iProc][i, 1]), \
-                               numpy.real(pts[iProc][i, 2]) ])
-            
-            # Get the connectivity
-            nodeOffset = 0
-            for iProc in xrange(len(conn)):
-                for i in xrange(len(conn[iProc])//4):
-                    c.append([ int(conn[iProc][4*i+0]+nodeOffset), \
-                               int(conn[iProc][4*i+1]+nodeOffset), \
-                               int(conn[iProc][4*i+2]+nodeOffset), \
-                               int(conn[iProc][4*i+3]+nodeOffset) ])
-                nodeOffset += len(pts[iProc])
-        return [x,c]
-        
-    def getCurForce(self):
-    # Returns current tractions on the interface
-        [x,c] = self.getCurTopo()
-        f     = self._getCurForce()
-        return [f,x,c]
-
-    def getCurHFlux(self):
-    # Returns current surface heat flux on the interface
-        [x,c] = self.getCurTopo()
-        q     = self._getCurHFlux()
-        return [q,x,c]
-
-    def _getCurForce(self):
-    # Adapted from writeForceFile
-    # Returns current tractions on the interface
-        TS = 0
-        groupName = 'interface'
-
-        if self.mesh is None:
-            print("MBMesh object not set!")
-
-        # Gather the data
-        pts    = self.comm.gather(self.getForcePoints(TS, groupName), root=0)
-        forces = self.comm.gather(self.getForces(groupName, TS=TS), root=0)
-
-        # Get data only on root proc
-        f = [] # Tractions
-        if self.myid == 0:
-            # Get the coordinates and surface tractions
-            for iProc in xrange(len(pts)):
-                for i in xrange(len(pts[iProc])):
-                    f.append([ numpy.real(forces[iProc][i, 0]), \
-                               numpy.real(forces[iProc][i, 1]), \
-                               numpy.real(forces[iProc][i, 2]) ])
-        return f
-
-    def _getCurHFlux(self):
-    # Returns current surface heat flux on the interface
-        TS = 0
-        groupName = 'interface'
-
-        if self.mesh is None:
-            print("MBMesh object not set!")
-
-        # Gather the data
-        pts  = self.comm.gather(self.getForcePoints(TS, groupName), root=0)
-        flux = self.comm.gather(self._getHeatFlux(groupName, TS=TS), root=0)
-
-        # Get data only on root proc
-        q = [] # Heat flux
-        if self.myid == 0:
-            # Get the coordinates and surface tractions
-            for iProc in xrange(len(pts)):
-                for i in xrange(len(pts[iProc])):
-                    q.append([ numpy.real(flux[iProc][i]) ])
-        return q
-
-    def _getHeatFlux(self, groupName=None, TS=0):
-        """ Return the heat fluxes on this processor.
-        Adapted from getForces
-
-        Parameters
-        ----------
-        groupName : str
-            Group identifier to get only forces cooresponding to the
-            desired group.  The group must have been added with
-            addFamilyGroup in the mesh object.
-        TS : int
-            Spectral instance for which to get the forces
-
-        Returns
-        -------
-        hflux : array (N)
-        """
-        # Just to be sure, we'll set the mask
-        self._setMask(groupName)
-
-        [npts, ncell] = self.sumb.getforcesize()
-        if npts > 0:
-            hflux = self.sumb.getheatflux(npts, TS+1).T
-        else:
-            hflux = numpy.zeros((0,),self.dtype)
-
-        return hflux
-    
-    def rigidRotateMesh(self,dt=None, ifShift=True):
-        """
-        Rigidly rotates the mesh if the proper rigid rotation parapms have been set
-        
-        Parameters
-        ----------        
-        dt : float
-            The timestep increment. Default is None. 
-            If user does not supply the dt the current set will be used.
-        ifShift : Boolean
-            Will shift the stored ALE meshes. Default is true. 
-        
-        """
-        if ifShift and self.sumb.iteration.deforming_grid and self.sumb.inputunsteady.useale :
-            self.sumb.shiftcoorandvolumes()
-            self.sumb.shiftlevelale()
-        
-        if not dt:
-            dt = self.sumb.inputunsteady.deltat
-        self.sumb.updatecoorfinemesh(dt, 1)
-        
-    
-    #======================================================
-    #
-    # End of utilities for MD simulations
-    #
-    #======================================================
-    
     def evalFunctions(self, aeroProblem, funcs, evalFuncs=None, sps=1,
                       ignoreMissing=False):
         """
         Evaluate the desired functions given in iterable object,
         'evalFuncs' and add them to the dictionary 'funcs'. The keys
         in the funcs dictioary will be have an _<ap.name> appended to
-        them. Additionally, information regarding whether or not the
-        last analysis with the aeroProblem was sucessful is
-        included. This information is included as "funcs['fail']". If
-        the 'fail' entry already exits in the dictionary the following
-        operation is performed:
-
-        funcs['fail'] = funcs['fail'] or <did this problem fail>
-
-        In other words, if any one problem fails, the funcs['fail']
-        entry will be False. This information can then be used
-        directly in the pyOptSparse. 
+        them.
 
         Parameters
         ----------
@@ -1122,10 +816,10 @@ class SUMB(AeroSolver):
 
         # We need to determine how many different masks we have, since
         # we will have to call getSolution for each *unique* function
-        # mask. We can also do the error checking 
+        # mask. We can also do the error checking
         groupMap = {}
         for f in evalFuncs:
-            if f.lower() in self.sumbCostFunctions:            
+            if f.lower() in self.sumbCostFunctions:
                 group = self.sumbCostFunctions[f][0]
                 basicFunc = self.sumbCostFunctions[f][1]
                 if group not in groupMap:
@@ -1140,7 +834,10 @@ class SUMB(AeroSolver):
         # getSolution, there may be just one. No need for error
         # checking here.
         for group in groupMap:
+
+            # Call the lower level getSolution() function
             res = self.getSolution(sps, groupName=group)
+
             # g contains the "basic function" (index 0) and the actual
             # function name (index 1)
             for g in groupMap[group]:
@@ -1149,10 +846,19 @@ class SUMB(AeroSolver):
                 funcs[key] = res[g[0]]
 
     def checkSolutionFailure(self, aeroProblem, funcs):
-        """
-        Take in a an aeroProblem and check for failure. Then append the fail
-        flag in funcs.
-    
+        """Take in a an aeroProblem and check for failure. Then append the
+        fail flag in funcs. Information regarding whether or not the
+        last analysis with the aeroProblem was sucessful is
+        included. This information is included as "funcs['fail']". If
+        the 'fail' entry already exits in the dictionary the following
+        operation is performed:
+
+        funcs['fail'] = funcs['fail'] or <did this problem fail>
+
+        In other words, if any one problem fails, the funcs['fail']
+        entry will be True. This information can then be used
+        directly in the pyOptSparse.
+
         Parameters
         ----------
         aeroProblem : pyAero_problem class
@@ -1160,11 +866,12 @@ class SUMB(AeroSolver):
 
         funcs : dict
             Dictionary into which the functions are saved.
+
         """
         self.setAeroProblem(aeroProblem)
         # We also add the fail flag into the funcs dictionary. If fail
         # is already there, we just logically 'or' what was
-        # there. Otherwise we add a new entry. 
+        # there. Otherwise we add a new entry.
         failFlag = self.curAP.solveFailed or self.curAP.fatalFail
         if 'fail' in funcs:
             funcs['fail'] = funcs['fail'] or failFlag
@@ -1224,7 +931,7 @@ class SUMB(AeroSolver):
             # Set dict structure for this derivative
             funcsSens[key] = {}
 
-            # Solve adjoint equation 
+            # Solve adjoint equation
             self.solveAdjoint(aeroProblem, f)
 
             # Now, due to the use of the super combined
@@ -1244,10 +951,10 @@ class SUMB(AeroSolver):
             funcsSens[key].update(self.computeJacobianVectorProductBwd(
                 resBar=psi, funcsBar=funcsBar, xDvDeriv=True))
 
-
-    def solveCL(self, aeroProblem, CLStar, alpha0=0,
+    def solveCL(self, aeroProblem, CLStar, alpha0=None,
                 delta=0.5, tol=1e-3, autoReset=True, CLalphaGuess=None,
                 maxIter = 20, nReset=25):
+
         """This is a simple secant method search for solving for a
         fixed CL. This really should only be used to determine the
         starting alpha for a lift constraint in an optimization.
@@ -1259,7 +966,8 @@ class SUMB(AeroSolver):
         CLStar : float
             The desired target CL
         alpha0 : angle (deg)
-            Initial guess for secant seach (deg)
+            Initial guess for secant seach (deg). If None, use the
+            value in the aeroProblem
         delta : angle (deg)
             Initial step direction for secant search
         tol : float
@@ -1280,14 +988,14 @@ class SUMB(AeroSolver):
         Returns
         -------
         None, but the correct alpha is stored in the aeroProblem
+
         """
         self.setAeroProblem(aeroProblem)
+        if alpha0 is not None:
+            aeroProblem.alpha = anm2
 
-        anm2 = alpha0
-
-
-        # Solve for the n-2 value:
-        aeroProblem.alpha = anm2
+        # Set the startign value
+        anm2 = aeroProblem.alpha
 
         # Print alpha
         if self.comm.rank == 0:
@@ -1308,7 +1016,7 @@ class SUMB(AeroSolver):
             # Use CLalphaGuess option to define the next Aoa
             anm1 = alpha0 - fnm2/CLalphaGuess
 
-        # Check for convergence
+        # Check for convergence if the starting point is already ok.
         if abs(fnm2) < tol:
             return
 
@@ -1326,8 +1034,8 @@ class SUMB(AeroSolver):
 
         # Secant method iterations
         for iIter in range(maxIter):
-            # We need to reset the flow since changing the alpha leads
-            # to problems with the NK solver
+            # We may need to reset the flow since changing strictly
+            # alpha leads to problems with the NK solver
             if autoReset:
                 self.resetFlow(aeroProblem)
 
@@ -1364,8 +1072,8 @@ class SUMB(AeroSolver):
 
     def solveTrimCL(self, aeroProblem, trimFunc, trimDV, dvIndex,
                     CLStar, trimStar=0.0, alpha0=None, trim0=None, da=1e-3,
-                    deta=1e-2, tol=1e-4, nIter=10):
-        """Solve the trim-Cl problem using a Broyden method. 
+                    deta=1e-2, tol=1e-4, nIter=10, Jac0=None, liftFunc='cl'):
+        """Solve the trim-Cl problem using a Broyden method.
 
         Parameters
         ----------
@@ -1383,7 +1091,7 @@ class SUMB(AeroSolver):
             Desired trimFunc value
         alpha0 : float or None
             Starting alpha. If None, use what is in the aeroProblem
-        trim0 : float or NOne
+        trim0 : float or None
             Starting trim value. If None, use what is in the DVGeo object
         da : float
             Initial alpha step for jacobian
@@ -1392,65 +1100,76 @@ class SUMB(AeroSolver):
         tol : float
             Tolerance for trimCL solve solution
         nIter : int
-            Maximum number of iterations. 
-            """
+            Maximum number of iterations.
+        Jac0 : 2x2 numpy array
+            Initial guess for the trim-cl jacobian. Usually obtained
+            from a previous analysis and saves two function
+            evaluations to produce the intial jacobian.
+        liftFunc : str
+            Solution variable to use for lift. Usually 'cl' or a
+            custom function created from cl.
+        """
 
         self.setAeroProblem(aeroProblem)
 
-        # Set defaults if they are not given.                                                                                               
+        # Set defaults if they are not given.
         if alpha0 is None:
             alpha0 = self.curAP.alpha
         if trim0 is None:
             trim0 = 0.0
 
-        def Func(Xn, CLs):
+        def Func(Xn, CLstar):
             self.curAP.alpha = Xn[0]
             xGeo = self.DVGeo.getValues()
             xGeo[trimDV][dvIndex] = Xn[1]
             self.DVGeo.setDesignVars(xGeo)
-            self.__call__(self.curAP)
+            self.__call__(self.curAP, writeSolution=False)
+            self.curAP.sumbData.callCounter -= 1
             funcs = {}
-            self.evalFunctions(self.curAP, funcs, evalFuncs=['cl',trimFunc])
-            sol = self.getSolution()
-            F = numpy.array([funcs['%s_cl'%self.curAP.name]-CLs, funcs['%s_%s'%(self.curAP.name, trimFunc)]])
-            return F, sol
+            self.evalFunctions(self.curAP, funcs, evalFuncs=[liftFunc, trimFunc])
+            F = numpy.array([funcs['%s_%s'%(self.curAP.name, liftFunc)]-CLstar,
+                             funcs['%s_%s'%(self.curAP.name, trimFunc)]])
+            return F
 
-        # Generate initial point and jacobian
-
+        # Generate initial point
         Xn = numpy.array([alpha0, trim0])
         Fn, sol = Func(Xn, CLStar)
 
-        # Next we generate the jacobian                                                                                                     
-        J = numpy.zeros((2,2))
+        # Next we generate the initial jacobian if we haven't been
+        # provided with one.
+        if Jac0 is not None:
+            J = Jac0.copy()
+        else:
+            J = numpy.zeros((2,2))
 
-        # Perturb alpha                                                                                                                     
-        Xn[0] += da
-        Fpda, sol = Func(Xn, CLStar)
-        J[:, 0] = (Fpda - Fn)/da
-        Xn[0] -= da
-        
-        # Perturb eta:                                                                                                                      
-        Xn[1] += deta
-        Fpdeta, sol = Func(Xn, CLStar)
-        J[:, 1] = (Fpdeta - Fn)/deta
-        Xn[1] -= deta
+            # Perturb alpha
+            Xn[0] += da
+            Fpda = Func(Xn, CLStar)
+            J[:, 0] = (Fpda - Fn)/da
+            Xn[0] -= da
+
+            # Perturb eta:
+            Xn[1] += deta
+            Fpdeta = Func(Xn, CLStar)
+            J[:, 1] = (Fpdeta - Fn)/deta
+            Xn[1] -= deta
 
         # Main iteration loop
         for jj in range(nIter):
             if self.comm.rank == 0:
                 print ('Fn:', Fn)
 
-            # We now have a point and a jacobian...Newton's Method!                                                                 
+            # We now have a point and a jacobian...Newton's Method!
             Xnp1 = Xn - numpy.linalg.solve(J, Fn)
             if self.comm.rank == 0:
                 print ("Xnp1:", Xnp1)
 
-            # Solve the new Xnp1                                                                                                    
-            Fnp1, sol = Func(Xnp1, CLStar)
+            # Solve the new Xnp1
+            Fnp1 = Func(Xnp1, CLStar)
             if self.comm.rank == 0:
                 print ("Fnp1:", Fnp1)
 
-            # Update the jacobian using Broyden's method                                                                            
+            # Update the jacobian using Broyden's method
             dx = Xnp1 - Xn
             dF = Fnp1 - Fn
             J = J + numpy.outer((dF - numpy.dot(J, dx))/(numpy.linalg.norm(dx)**2), dx)
@@ -1458,11 +1177,11 @@ class SUMB(AeroSolver):
             if self.comm.rank == 0:
                 print ("New J:", J)
 
-            # Shuffle the Fn and Xn backwards                                                                                       
+            # Shuffle the Fn and Xn backwards
             Fn = Fnp1.copy()
             Xn = Xnp1.copy()
 
-            # Check for convergence                                                                                                 
+            # Check for convergence
             if numpy.linalg.norm(Fn) < tol:
                 if self.comm.rank == 0:
                     print ('Converged!', jj, Fn, Xn)
@@ -1492,13 +1211,13 @@ class SUMB(AeroSolver):
             Desired tolerance for sepSensor
 
         sepName : str or None
-            User supplied function to use for sep sensor. May be a 
-            user-added group function. 
+            User supplied function to use for sep sensor. May be a
+            user-added group function.
 
         Returns
         -------
         None, but the correct alpha is stored in the aeroProblem
-        """ 
+        """
         self.setAeroProblem(aeroProblem)
         ap = aeroProblem
         # There are two main parts of the algorithm: First we need to
@@ -1606,7 +1325,7 @@ class SUMB(AeroSolver):
                 anew = 0.5*(anm1 + lowAlpha)
             if anew > highAlpha:
                 anew = 0.5*(anm1 + highAlpha)
-            
+
             # Shift the n-1 values to n-2
             fnm2 = fnm1
             anm2 = anm1
@@ -1656,33 +1375,30 @@ class SUMB(AeroSolver):
         base = os.path.join(outputDir, baseName)
 
         # Get the timestep if this is time dependent solution, else we default
-        # to the same values as the nsave values (which is 1) for steady 
+        # to the same values as the nsave values (which is 1) for steady
         # and time-spectral solution to be written,
-        if self.getOption('equationMode').lower() == 'unsteady':            
+        if self.getOption('equationMode').lower() == 'unsteady':
             ts = self.sumb.monitor.timestepunsteady
         else:
             ts = 1
-        
-        # Now call each of the 4 routines with the appropriate file name:    
+
+        # Now call each of the 4 routines with the appropriate file name:
         if self.getOption('writevolumesolution') and \
           numpy.mod(ts, self.getOption('nsavevolume')) == 0 :
             self.writeVolumeSolutionFile(base + '_vol.cgns')
-            
+
         if self.getOption('writesurfacesolution') and \
           numpy.mod(ts, self.getOption('nsavesurface')) == 0 :
-            self.writeSurfaceSolutionFile(base + '_surf.cgns')   
-         
+            self.writeSurfaceSolutionFile(base + '_surf.cgns')
+
         # ADD NSAVE TEST AROUND THESE AS WELL BUT
         # THIS IS SMALL COMPARED TO OTHER. REFACTOR
-        if self.getOption('equationMode').lower() == 'unsteady':            
+        if self.getOption('equationMode').lower() == 'unsteady':
             self.writeLiftDistributionFile(base + '_lift_Timestep%4.4d.dat'% ts)
             self.writeSlicesFile(base + '_slices_Timestep%4.4d.dat'% ts)
         else:
             self.writeLiftDistributionFile(base + '_lift.dat')
             self.writeSlicesFile(base + '_slices.dat')
-
-    
-
 
     def writeMeshFile(self, fileName):
         """Write the current mesh to a CGNS file. This call isn't used
@@ -1692,7 +1408,8 @@ class SUMB(AeroSolver):
         ----------
         fileName : str
             Name of the mesh file
-            """
+
+        """
 
         # Ensure extension is .cgns even if the user didn't specify
         fileName, ext = os.path.splitext(fileName)
@@ -1714,7 +1431,9 @@ class SUMB(AeroSolver):
         self.sumb.writesol()
 
     def writeVolumeSolutionFile(self, fileName, writeGrid=True):
-        """Write the current state of the volume flow solution to a CGNS file.
+        """Write the current state of the volume flow solution to a CGNS
+        file. This is a lower level routine; Normally one should call
+        writeSolution(). 
 
         Parameters
         ----------
@@ -1724,7 +1443,7 @@ class SUMB(AeroSolver):
             Flag specifying whether the grid should be included or if
             links should be used. Always writing the grid is
             recommended even in cases when it is not strictly necessary.
-            Note that if writeGrid == False the volume files do not contain 
+            Note that if writeGrid == False the volume files do not contain
             any grid coordinates rendering the file useless if a separate
             grid file was written out and is linked to it.
         """
@@ -1924,7 +1643,7 @@ class SUMB(AeroSolver):
 
     def _setMask(self, groupName):
         """Set the wall masks for the supplied groupName"""
-        
+
         if groupName is None:
             self.sumb.setfullmask()
             return
@@ -1947,8 +1666,8 @@ class SUMB(AeroSolver):
         is a collective function and must be called on all processors
         """
         # Set the mask for the group
-        self._setMask(groupName)        
-        
+        self._setMask(groupName)
+
         # We should return the list of results that is the same as the
         # possibleObjectives list
         self.sumb.getsolution(sps)
@@ -1996,7 +1715,7 @@ class SUMB(AeroSolver):
             }
 
         return SUmbsolution
-        
+
     def printCurrentOptions(self):
 
         """
@@ -2006,7 +1725,7 @@ class SUMB(AeroSolver):
             print('+---------------------------------------+')
             print('|          All SUmb Options:            |')
             print('+---------------------------------------+')
-            # Need to assemble a temporary dictionary 
+            # Need to assemble a temporary dictionary
             tmpDict = {}
             for key in self.options:
                 tmpDict[key] = self.getOption(key)
@@ -2016,13 +1735,13 @@ class SUMB(AeroSolver):
 
         """
         Prints a nicely formatted dictionary of all the current SUmb
-        options that have been modified from the defaults to the root 
+        options that have been modified from the defaults to the root
         processor"""
         if self.comm.rank == 0:
             print('+---------------------------------------+')
             print('|      All Modified SUmb Options:       |')
             print('+---------------------------------------+')
-            # Need to assemble a temporary dictionary 
+            # Need to assemble a temporary dictionary
             tmpDict = {}
             for key in self.options:
                 if self.getOption(key) != self.defaultOptions[key][1]:
@@ -2063,13 +1782,13 @@ class SUMB(AeroSolver):
             for i in range(self.comm.size):
                 globalMask.extend(tmp[i])
             globalMask = numpy.array(globalMask)
-            
+
         return globalMask
 
     def _getCellGroupMaskLocal(self, groupName=None):
         """
         This function determines a mask (array of 1's and 0's) that
-        determines if the cell in the local set of wall faces 
+        determines if the cell in the local set of wall faces
         is a member of the groupName as defined by the warping.
 
         Parameters
@@ -2110,21 +1829,21 @@ class SUMB(AeroSolver):
                     localMask.extend(numpy.ones(nCells, 'intc'))
                 else:
                     localMask.extend(numpy.zeros(nCells, 'intc'))
-                
+
         return localMask
 
     def getSurfaceCoordinates(self, groupName='all'):
         """
-        See MultiBlockMesh.py for more info
+
         """
         if self.mesh is not None:
             return self.mesh.getSurfaceCoordinates(groupName)
         else:
-            raise Error('Must have a mesh object to use getSurfaceCoordinates.')  
-    
+            raise Error('Must have a mesh object to use getSurfaceCoordinates.')
+
     def getInitialSurfaceCoordinates(self, groupName='all'):
         """
-        See MultiBlockMesh.py for more info
+
         """
 
         if self.mesh is not None:
@@ -2137,7 +1856,7 @@ class SUMB(AeroSolver):
                 self.updateGeometryInfo()
                 return self.mesh.getSurfaceCoordinates(groupName)
             else:
-                # otherwise, the initial mesh is the undeflected mesh, so 
+                # otherwise, the initial mesh is the undeflected mesh, so
                 # return that
                 return self.coords0
         else:
@@ -2166,7 +1885,7 @@ class SUMB(AeroSolver):
         # reference; only check the DV changes
         if aeroProblem is self.curAP:
             if self.DVGeo is not None:
-               
+
                 # DVGeo appeared and we have not embedded points!
                 if not ptSetName in self.DVGeo.points:
                     self.DVGeo.addPointSet(self.coords0, ptSetName)
@@ -2180,7 +1899,7 @@ class SUMB(AeroSolver):
 
             # Finally update other data
             self._setAeroProblemData()
-            self.updateGeometryInfo()          
+            self.updateGeometryInfo()
 
             return
 
@@ -2198,7 +1917,7 @@ class SUMB(AeroSolver):
             aeroProblem.surfMesh = None
             if self.mesh is not None:
                 aeroProblem.surfMesh = self.getSurfaceCoordinates(self.groupName)
-                
+
         if self.curAP is not None:
             # If we have already solved something and are now
             # switching, save what we need:
@@ -2209,7 +1928,7 @@ class SUMB(AeroSolver):
             # Restore any options that the current aeroProblem
             # (self.curAP) modified. We have to be slightly careful
             # since a setOption() may have been called in between:
-            
+
             for key in self.curAP.savedOptions['sumb']:
                 # Saved Val: This is the main option value when the
                 # aeroProblem set it's own option
@@ -2224,7 +1943,6 @@ class SUMB(AeroSolver):
                     # Restore the saved value, if it still what the
                     # aeroProblem had set
                     self.setOption(key, savedVal)
-            
 
         # If not done so already, embed the coordinates:
         if self.DVGeo is not None and ptSetName not in self.DVGeo.points:
@@ -2247,7 +1965,7 @@ class SUMB(AeroSolver):
                 coords = self.curAP.surfMesh
         else:
             coords = self.curAP.surfMesh
-            
+
         if self.curAP.sumbData.disp is not None:
             coords += self.curAP.sumbData.disp
 
@@ -2283,7 +2001,7 @@ class SUMB(AeroSolver):
         except:
             self.curAP.savedOptions = {'sumb':{}}
 
-            
+
         if 'sumb' in self.curAP.solverOptions:
             for key in self.curAP.solverOptions['sumb']:
                 curVal = self.getOption(key)
@@ -2291,7 +2009,7 @@ class SUMB(AeroSolver):
                 if overwriteVal != curVal:
                     self.setOption(key, overwriteVal)
                     self.curAP.savedOptions['sumb'][key] = curVal
-                                        
+
         AP = self.curAP
         alpha = AP.alpha
         beta = AP.beta
@@ -2299,14 +2017,14 @@ class SUMB(AeroSolver):
         mach = AP.mach
         machRef = AP.machRef
         machGrid = AP.machGrid
-        
+
         xRef = AP.xRef; yRef = AP.yRef; zRef = AP.zRef
         xRot = AP.xRot; yRot = AP.yRot; zRot = AP.zRot
         areaRef = AP.areaRef
         chordRef = AP.chordRef
         liftIndex = self.getOption('liftIndex')
 
-        if (AP.T is None or AP.P is None or AP.rho is None or 
+        if (AP.T is None or AP.P is None or AP.rho is None or
             AP.V is None or AP.mu is None):
             raise Error("Insufficient information is given in the "
                         "aeroProblem to determine physical state. "
@@ -2322,7 +2040,7 @@ class SUMB(AeroSolver):
             rho = numpy.real(AP.rho)
             V = numpy.real(AP.V)
             mu = numpy.real(AP.mu)
-            
+
             SSuthDim = numpy.real(AP.SSuthDim)
             muSuthDim = numpy.real(AP.muSuthDim)
             TSuthDim = numpy.real(AP.TSuthDim)
@@ -2335,14 +2053,14 @@ class SUMB(AeroSolver):
             rho = AP.rho
             V = AP.V
             mu = AP.mu
-            
+
             SSuthDim = AP.SSuthDim
             muSuthDim = AP.muSuthDim
             TSuthDim = AP.TSuthDim
             RGasDim = AP.R
             gammaConstant = AP.gamma
             Pr = AP.Pr
-            
+
         # Do some checking here for things that MUST be specified:
         if AP.mach is None:
             raise Error("'mach' number must be specified in the aeroProblem"
@@ -2373,13 +2091,13 @@ class SUMB(AeroSolver):
             zRot = 0.0
 
         # Set mach defaults if user did not specified any machRef or machGrid values
-        
+
         # If the user is running time spectral but did not specify
-        # machGrid then default it to be equal to mach. 
+        # machGrid then default it to be equal to mach.
 
         if machRef is None:
             machRef = mach
-        
+
         if machGrid is None:
             if self.getOption('equationMode').lower()=='time spectral':
                 machGrid = mach
@@ -2409,7 +2127,7 @@ class SUMB(AeroSolver):
             self.sumb.inputphysics.mach = 0.0
         else:
             self.sumb.inputphysics.mach = mach
-        
+
         self.sumb.inputphysics.machcoef = machRef
         self.sumb.inputphysics.machgrid = machGrid
 
@@ -2432,24 +2150,23 @@ class SUMB(AeroSolver):
             self.sumb.inputphysics.musuthdim = muSuthDim
             self.sumb.inputphysics.tsuthdim = TSuthDim
             self.sumb.inputphysics.rgasdim = RGasDim
-            
-            # Update gamma only if it has changed from what currently is set
-            if abs(self.sumb.inputphysics.gammaconstant - gammaConstant) > 1.0e-12:
-                self.sumb.inputphysics.gammaconstant = gammaConstant
-                self.sumb.updategamma() # NOTE! It is absolutely necessary to call this function, otherwise gamma is not properly updated.
-            self.sumb.inputphysics.prandtl = Pr            
-        else:
-            # EULER
-            self.sumb.inputphysics.reynolds = 1.0
-            self.sumb.inputphysics.reynoldslength = 1.0
 
-            self.sumb.inputphysics.rgasdim = RGasDim            
             # Update gamma only if it has changed from what currently is set
             if abs(self.sumb.inputphysics.gammaconstant - gammaConstant) > 1.0e-12:
                 self.sumb.inputphysics.gammaconstant = gammaConstant
                 self.sumb.updategamma() # NOTE! It is absolutely necessary to call this function, otherwise gamma is not properly updated.
             self.sumb.inputphysics.prandtl = Pr
+        else:
+            # EULER
+            self.sumb.inputphysics.reynolds = 1.0
+            self.sumb.inputphysics.reynoldslength = 1.0
 
+            self.sumb.inputphysics.rgasdim = RGasDim
+            # Update gamma only if it has changed from what currently is set
+            if abs(self.sumb.inputphysics.gammaconstant - gammaConstant) > 1.0e-12:
+                self.sumb.inputphysics.gammaconstant = gammaConstant
+                self.sumb.updategamma() # NOTE! It is absolutely necessary to call this function, otherwise gamma is not properly updated.
+            self.sumb.inputphysics.prandtl = Pr
 
         # 4. Periodic Parameters --- These are not checked/verified
         # and come directly from aeroProblem. Make sure you specify
@@ -2509,12 +2226,11 @@ class SUMB(AeroSolver):
     def getPointRef(self):
         return self.sumb.inputphysics.pointref
 
-
     def setPointRef(self, pointRef):
         """
         This function can be used to update the reference point during
         run such as between timesteps for unsteady run
-        
+
         Parameters
         ----------
         pointRef : list
@@ -2524,7 +2240,6 @@ class SUMB(AeroSolver):
         if len(pointRef) < 3:
             raise Error("'pointRef' needs to be list of three numbers. Length of list is {0:d}".format(len(pointRef)))
         self.sumb.inputphysics.pointref = pointRef
-
 
     def getForces(self, groupName=None, TS=0):
         """ Return the forces on this processor.
@@ -2553,10 +2268,8 @@ class SUMB(AeroSolver):
         self._setMask(groupName)
 
         [npts, ncell] = self.sumb.getforcesize()
-        if npts > 0:
-            forces = self.sumb.getforces(npts, TS+1).T
-        else:
-            forces = numpy.zeros((0,3),self.dtype)
+        forces = numpy.zeros((npts,3),self.dtype)
+        self.sumb.getforces(numpy.ravel(forces), TS+1)
 
         if groupName is not None:
             forces = self.mesh.sectionVectorByFamily(groupName, forces)
@@ -2597,7 +2310,6 @@ class SUMB(AeroSolver):
         outVec : array
             Preconditioned vector
         """
-
         return self.sumb.applypc(inVec, outVec)
 
     def globalAdjointPreCon(self, inVec, outVec):
@@ -2616,7 +2328,6 @@ class SUMB(AeroSolver):
         outVec : array
             Preconditioned vector
         """
-
         return self.sumb.applyadjointpc(inVec, outVec)
 
     def verifyAD(self):
@@ -2674,6 +2385,7 @@ class SUMB(AeroSolver):
 
     def solveAdjoint(self, aeroProblem, objective, forcePoints=None,
                       structAdjoint=None, groupName=None):
+
         # May be switching aeroProblems here
         self.setAeroProblem(aeroProblem)
 
@@ -2711,7 +2423,7 @@ class SUMB(AeroSolver):
         # Now set the flags and possibly reset adjoint
         if self.sumb.killsignals.adjointfailed:
             self.adjointFailed = True
-            #Reset stored adjoint
+            # Reset stored adjoint
             self.curAP.sumbData.adjoints[objective][:] = 0.0
         else:
             self.curAP.sumbData.adjoints[objective] = psi
@@ -2721,7 +2433,7 @@ class SUMB(AeroSolver):
         """This internal furncion is used to convert the raw array ouput from
         the matrix-free product bwd routine into the required
         dictionary format."""
-        
+
 	funcsSens = {}
 
         DVsRequired = list(self.curAP.DVNames.keys())
@@ -2739,17 +2451,18 @@ class SUMB(AeroSolver):
                 # P,T,mach,rho,V, and mu with respect to the actual
                 # aeroproblem design variable 'dv'. We then chain rule
                 # them together, along with the linearization fo
-                # Re=rho*V/mu. 
+                # Re=rho*V/mu.
                 tmp = {}
 	        self.curAP.evalFunctionsSens(tmp, ['P', 'T', 'mach', 'rho','V', 'mu'])
 
                 # Extract the derivatives wrt the independent
-                # parameters in SUmb       
+                # parameters in SUmb
                 dIdP = dIda[self.aeroDVs['P']]
                 dIdT = dIda[self.aeroDVs['T']]
                 dIdMach = dIda[self.aeroDVs['mach']]
 
-                # Chain rule the reynolds dependance back to what came from aeroproblem:
+                # Chain rule the reynolds dependance back to what came
+                # from aeroproblem:
                 rho = numpy.real(self.curAP.rho)
                 mu = numpy.real(self.curAP.mu)
                 V = numpy.real(self.curAP.V)
@@ -2762,9 +2475,9 @@ class SUMB(AeroSolver):
                 funcsSens[self.curAP.DVNames[dv]] = (
                     tmp[self.curAP['P']][self.curAP.DVNames[dv]]*dIdP +
                     tmp[self.curAP['T']][self.curAP.DVNames[dv]]*dIdT +
-                    tmp[self.curAP['mach']][self.curAP.DVNames[dv]]*dIdMach + 
-                    tmp[self.curAP['rho']][self.curAP.DVNames[dv]]*dIdrho + 
-                    tmp[self.curAP['V']][self.curAP.DVNames[dv]]*dIdV + 
+                    tmp[self.curAP['mach']][self.curAP.DVNames[dv]]*dIdMach +
+                    tmp[self.curAP['rho']][self.curAP.DVNames[dv]]*dIdrho +
+                    tmp[self.curAP['V']][self.curAP.DVNames[dv]]*dIdV +
                     tmp[self.curAP['mu']][self.curAP.DVNames[dv]]*dIdmu)
 
             elif dv in self.possibleAeroDVs:
@@ -2772,7 +2485,7 @@ class SUMB(AeroSolver):
                     funcsSens[self.curAP.DVNames[dv]] = dIda[self.aeroDVs[dv]]
                     if dv == 'alpha':
                         funcsSens[self.curAP.DVNames[dv]] *= numpy.pi/180.0
-     
+
 	return funcsSens
 
     def _setAeroDVs(self):
@@ -2784,7 +2497,7 @@ class SUMB(AeroSolver):
         DVMap = {}
         for dv in DVsRequired:
             if dv.lower() in ['altitude', 'mach', 'P', 'T', 'reynolds']:
-                # All these variables need to be compined 
+                # All these variables need to be compined
                 self._addAeroDV('P')
                 self._addAeroDV('mach')
                 self._addAeroDV('reynolds')
@@ -2809,13 +2522,6 @@ class SUMB(AeroSolver):
                       '= %d'% self.aeroDVs[adv]
             # Leave this zero-based since we only need to use it in petsc
             exec(execStr)
-
-    def getNAeroDV(self):
-        """
-        Return the number of aerodynamic variables
-        """
-        self._setAeroDVs()
-        return self.nDVAero
 
     def solveAdjointForRHS(self, inVec, relTol=None):
         """
@@ -2921,10 +2627,9 @@ class SUMB(AeroSolver):
     def getResNorms(self):
         """Return the initial, starting and final Res Norms. Typically
         used by an external solver."""
-        return \
-            numpy.real(self.sumb.nksolvervars.totalr0), \
-            numpy.real(self.sumb.nksolvervars.totalrstart),\
-            numpy.real(self.sumb.nksolvervars.totalrfinal)
+        return (numpy.real(self.sumb.nksolvervars.totalr0), 
+                numpy.real(self.sumb.nksolvervars.totalrstart),
+                numpy.real(self.sumb.nksolvervars.totalrfinal))
 
     def setResNorms(self, initNorm=None, startNorm=None, finalNorm=None):
         """ Set one of these norms if not None. Typlically used by an
@@ -2939,9 +2644,9 @@ class SUMB(AeroSolver):
     def _prescribedTSMotion(self):
         """Determine if we have prescribed motion timespectral analysis"""
 
-        if (self.getOption('alphamode') or self.getOption('betamode') or 
-            self.getOption('machmode') or self.getOption('pmode') or 
-            self.getOption('qmode') or self.getOption('rmode') or 
+        if (self.getOption('alphamode') or self.getOption('betamode') or
+            self.getOption('machmode') or self.getOption('pmode') or
+            self.getOption('qmode') or self.getOption('rmode') or
             self.getOption('altitudemode')):
             return True
         else:
@@ -2956,7 +2661,7 @@ class SUMB(AeroSolver):
         Parameters
         ----------
         objective: string
-            The objective to be tested.        
+            The objective to be tested.
         """
         if objective.lower() in self.sumbCostFunctions.keys():
             return True
@@ -2966,7 +2671,7 @@ class SUMB(AeroSolver):
     # =========================================================================
     #   The following routines two routines are the workhorse of the
     #   forward and reverse mode routines. These can compute *ANY*
-    #   product that is possible from the solver. 
+    #   product that is possible from the solver.
     #   =========================================================================
 
     def computeJacobianVectorProductFwd(self, xDvDot=None, xSDot=None, xVDot=None, wDot=None,
@@ -2975,11 +2680,11 @@ class SUMB(AeroSolver):
         vector products. It is not generally called by the user by
         rather internally or from another solver. A DVGeo object and a
         mesh object must both be set for this routine.
-        
+
         Parameters
         ----------
-        xDvDot : dict 
-            Perturbation on the geometric design variables defined in DVGeo. 
+        xDvDot : dict
+            Perturbation on the geometric design variables defined in DVGeo.
         xSDot : numpy array
             Perturbation on the surface
         xVDot : numpy array
@@ -2990,8 +2695,8 @@ class SUMB(AeroSolver):
         residualDeriv : bool
             Flag specifiying if the residualDerivative (dwDot) should be returned
         funcDeriv : bool
-            Flag specifiying if the derviative of the cost functions 
-            (as defined in the current aeroproblem) should be returned. 
+            Flag specifiying if the derviative of the cost functions
+            (as defined in the current aeroproblem) should be returned.
         Fderiv : bool
             Flag specifiying if the derviative of the surface forces (tractions)
             should be returned
@@ -3005,7 +2710,7 @@ class SUMB(AeroSolver):
         if xDvDot is None and xSDot is None and xVDot is None and wDot is None:
             raise Error('computeJacobianVectorProductFwd: xDvDot, xSDot, xVDot and wDot cannot '
                         'all be None')
-            
+
         self._setAeroDVs()
 
         # Default flags
@@ -3072,7 +2777,7 @@ class SUMB(AeroSolver):
             basicFunc = self.sumbCostFunctions[f.lower()][1]
             mapping = self.basicCostFunctions[basicFunc]
             funcsdot[f] = tmp[mapping - 1]
-        
+
         # Assemble the returns
         returns = []
         if residualDeriv:
@@ -3084,8 +2789,8 @@ class SUMB(AeroSolver):
 
         return tuple(returns) if len(returns) > 1 else returns[0]
 
-    def computeJacobianVectorProductBwd(self, resBar=None, funcsBar=None, fBar=None, 
-                                    wDeriv=None, xVDeriv=None, xSDeriv=None, 
+    def computeJacobianVectorProductBwd(self, resBar=None, funcsBar=None, fBar=None,
+                                    wDeriv=None, xVDeriv=None, xSDeriv=None,
                                     xDvDeriv=None, xDvDerivAero=None):
         """This the main python gateway for producing reverse mode jacobian
         vector products. It is not generally called by the user by
@@ -3094,30 +2799,30 @@ class SUMB(AeroSolver):
         object must be present for xDvDeriv=True flag. Note that more
         than one of the specified return flags may be spcified. If
         more than one return is specified, the order of return is :
-        (wDeriv, xVDeriv, XsDeriv, xDvDeriv, dXdvDerivAero). 
-        
+        (wDeriv, xVDeriv, XsDeriv, xDvDeriv, dXdvDerivAero).
+
         Parameters
         ----------
         resBar : numpy array
             Seed for the residuals (dwb in sumb)
         funcsBar : dict
-            Dictionary of functions with reverse seeds. Only nonzero seeds 
-            need to be provided. All other seeds will be taken as zero. 
+            Dictionary of functions with reverse seeds. Only nonzero seeds
+            need to be provided. All other seeds will be taken as zero.
         fBar : numpy array
             Seed for the forces (or tractions depending on the option value) to use
-            in reverse mode. 
+            in reverse mode.
 
         wDeriv : bool
             Flag specifiying if the state (w) derivative (wb) should be returned
         xVDeriv : bool
             Flag specifiying if the volume node (xV) derivative should be returned
         xSDeriv : bool
-            Flag specifiying if the surface node (xS) derivative should be returned. 
+            Flag specifiying if the surface node (xS) derivative should be returned.
         xDvDeriv : bool
             Flag specifiying if the design variable (xDv) derviatives should
             be returned. This will include both geometric *and* aerodynamic derivatives
         xDvDerivAero : bool
-            Flag to return *just* the aerodynamic derivatives. If this is True and 
+            Flag to return *just* the aerodynamic derivatives. If this is True and
             xDvDeriv is False,*just* the aerodynamic derivatives are returned.
 
         Returns
@@ -3131,7 +2836,7 @@ class SUMB(AeroSolver):
             raise Error("computeJacobianVectorProductBwd: One of resBar, funcsBar and fBar"
                         " must be given. resBar=%s, funcsBar=%s, fBar=%s"% (
                             resBar, funcsBar, fBar))
-        if (wDeriv is None and xVDeriv is None and xDvDeriv is None and 
+        if (wDeriv is None and xVDeriv is None and xDvDeriv is None and
             xSDeriv is None and xDvDerivAero is None):
             raise Error("computeJacobianVectorProductBwd: One of wDeriv, xVDeriv, "
                         "xDvDeriv and xDvDerivAero must be given as True. "
@@ -3161,7 +2866,7 @@ class SUMB(AeroSolver):
             # functions that have the same mask, otherwise, we can't
             # do it
             groupMasks = set()
-            
+
             for f in funcsBar:
                 if f.lower() in self.sumbCostFunctions:
 
@@ -3181,7 +2886,7 @@ class SUMB(AeroSolver):
                 raise Error("Attemping to compute a jacobian vector product "
                             "with multiple functions that have different "
                             "masks. This is not allowed.")
-            
+
             # If there wasn't any actual funcsBar, then tmp is still
             # just zeros
             funcsBar = tmp
@@ -3192,9 +2897,7 @@ class SUMB(AeroSolver):
         if fBar is None:
             [nPts, nCell] = self.sumb.getforcesize()
             fBar = numpy.zeros((nPts, 3))
-        else:
-            fBar = fBar
-            
+
         # Determine if we can do a cheaper state-variable only
         # computation or if we need to include the spatial terms:
         useSpatial = False
@@ -3204,21 +2907,21 @@ class SUMB(AeroSolver):
         if xDvDeriv or xVDeriv or xSDeriv or xDvDerivAero:
             useSpatial = True
 
-        # Do actual Fortran call. 
+        # Do actual Fortran call.
         xvbar, extrabar, wbar = self.sumb.computematrixfreeproductbwd(
-            resBar, funcsBar, fBar.T, useSpatial, useState, self.getSpatialSize(), 
+            resBar, funcsBar, fBar.T, useSpatial, useState, self.getSpatialSize(),
             max(1, self.nDVAero))
-     
+
         # Assemble the possible returns the user has requested:
         returns = []
         if wDeriv:
             returns.append(wbar)
         if xVDeriv:
             returns.append(xvbar)
-            
+
         # Process xVbar back to the xS or xDV (geometric variables) if necessary
         if xDvDeriv or xSDeriv:
-            if self.mesh is not None: 
+            if self.mesh is not None:
                 self.mesh.warpDeriv(xvbar)
                 xsbar = self.mesh.getdXs(self.groupName)
 
@@ -3231,7 +2934,7 @@ class SUMB(AeroSolver):
                 if xSDeriv:
                     raise Error("Could not complete requested xSDeriv "
                                 "derivatives since no mesh is present")
-     
+
             # Process all the way back to the DVs:
             if xDvDeriv:
                 xdvbar = {}
@@ -3250,12 +2953,12 @@ class SUMB(AeroSolver):
                     if self.comm.rank == 0:
                         SUMBWarning("No mesh object is present. No geometric "
                                     "derivatives computed.")
-                    
+
                 # Include aero derivatives here:
                 xdvbar.update(self._processAeroDerivatives(extrabar))
                 returns.append(xdvbar)
 
-                   
+
         # Include the aerodynamic variables if requested to do so.
         if xDvDerivAero:
             xdvaerobar = {}
@@ -3271,17 +2974,12 @@ class SUMB(AeroSolver):
     def expandVectorByFamily(self, *args, **kwargs):
         return self.mesh.expandVectorByFamily(*args, **kwargs)
 
-    def finalizeAdjoint(self):
-        """
-        destroy the PESTc memory
-        """
-        self.releaseAdjointMemory()
-        self.sumb.releasememadjoint()
-
     def getStateSize(self):
-        """Return the number of degrees of freedom (states) that are
-        on this processor. This is (number of states)*(number of
-        cells)*(number of spectral instacnes)"""
+        """Return the number of degrees of freedom (states) that are on this
+        processor. This is (number of states)*(number of
+        cells)*(number of spectral instances)
+
+        """
 
         nstate = self.sumb.flowvarrefstate.nw
         ncells = self.sumb.adjointvars.ncellslocal[0]
@@ -3387,7 +3085,7 @@ class SUMB(AeroSolver):
         # end if
 
         if groupName is not None:
-            areas = self.mesh.sectionVectorByFamily(groupName, areas)
+            areas = self.sectionVectorByFamily(groupName, areas)
         # end if
 
         # Now we do an mpiallreduce with sum:
@@ -3420,8 +3118,8 @@ class SUMB(AeroSolver):
             da = numpy.zeros((0,3), self.dtype)
 
         if groupName is not None:
-            da = self.mesh.sectionVectorByFamily(groupName, da)
-            da = self.mesh.expandVectorByFamily(groupName, da)
+            da = self.sectionVectorByFamily(groupName, da)
+            da = self.expandVectorByFamily(groupName, da)
 
         funcsSens[self.curAP.name + '_area'] = self.DVGeo.totalSensitivity(
             da, ptSetName=self.curAP.ptSetName, comm=self.comm, config=self.curAP.name)
@@ -3433,7 +3131,7 @@ class SUMB(AeroSolver):
         name = name.lower()
 
         # Make sure we are not trying to change an immutable option if
-        # we are not allowed to. 
+        # we are not allowed to.
         if self.solverCreated and name in self.imOptions:
             raise Error("Option '%-35s' cannot be modified after the solver "
                         "is created."%name)
@@ -3483,21 +3181,25 @@ class SUMB(AeroSolver):
                     self.sumb.volumevariables(varStr)
                 if name == 'isovariables':
                     self.sumb.isovariables(varStr)
-                    
-            if name == "restartfile":
-                # If value is None no value has been specified by the user. None is the default value.
+
+            elif name == "restartfile":
+                # If value is None no value has been specified by the
+                # user. None is the default value.
                 if value is not None:
-                    # Check its type, if a string its a single value, but if list multiple
+                    # Check its type, if a string its a single value,
+                    # but if list multiple
                     if type(value) is str:
                         # Check empty string
                         if value:
-                            # Allocate only one slot since we have only one filename
+                            # Allocate only one slot since we have
+                            # only one filename
                             self.sumb.allocrestartfiles(1)
                             self.sumb.setrestartfiles(value, 1)
                         else:
                             # Empty string. Raise error
-                            raise Error("Option 'restartfile' string cannot be empty. If not performing a restart either delete 'restartfile' option from script or replace the empty string with 'None'")     
-                        
+                            raise Error("Option 'restartfile' string cannot be empty. "
+                                        "If not performing a restart, 'restartFile' "
+                                        "option must be set to None")
                     elif type(value) is list:
                         # Check input
                         nFiles = len(value)
@@ -3510,13 +3212,21 @@ class SUMB(AeroSolver):
                                     # The +1 is to match fortran indexing
                                     self.sumb.setrestartfiles(val,i+1)
                             else:
-                                raise Error("Datatype for Option %-35s was not valid. Expected list of <type 'str'>. Received data type is %-47s"% (name, type(value[0])))
+                                raise Error("Datatype for Option %-35s was not "
+                                            "valid. Expected list of <type 'str'>. "
+                                            "Received data type is "
+                                            "%-47s"% (name, type(value[0])))
                         else:
-                            raise Error("Option %-35s of %-35s contains %-35s elements. Must contain at least 1 restart file of type <type 'str'>"% (name, type(value), len(value)))
+                            raise Error("Option %-35s of %-35s contains %-35s "
+                                        "elements. Must contain at least 1 "
+                                        "restart file of type <type "
+                                        "'str'>"% (name, type(value), len(value)))
                     else:
-                        raise Error("Datatype for Option %-35s not valid. Expected data type is <type 'str'> or <type 'list'>. Received data type is %-47s"% (name, type(value)))    
+                        raise Error("Datatype for Option %-35s not valid. "
+                                    "Expected data type is <type 'str'> or <type "
+                                    "'list'>. Received data type is %-47s"% (name, type(value)))
 
-            if name == 'isosurface':
+            elif name == 'isosurface':
                 # We have a bit of work to do...extract out the
                 # names, and there can be more than 1 value per variables
                 var = []
@@ -3528,17 +3238,18 @@ class SUMB(AeroSolver):
                     for i in xrange(len(isoVals)):
                         var.append(key)
                         val.append(isoVals[i])
-                    # end for
-                # end for
+             
                 val = numpy.array(val)
 
                 self.sumb.initializeisosurfacevariables(val)
                 for i in xrange(len(val)):
                     self.sumb.setisosurfacevariable(var[i], i+1)
 
-            if name == "turbresscale":
-                # If value is None no value has been specified by the user. None is the default value.
-                # Do nothing as it will be updated with _updateTurbResScale from __init__                
+            elif name == "turbresscale":
+                # If value is None no value has been specified by the
+                # user. None is the default value.  Do nothing as it
+                # will be updated with _updateTurbResScale from
+                # __init__
                 if value is not None:
                     tmp_turbresscalar = [0.0, 0.0, 0.0, 0.0]
                     # Check type to handle the insert properly
@@ -3549,11 +3260,19 @@ class SUMB(AeroSolver):
                             if type(value[0]) is float:
                                 tmp_turbresscalar[0:len(value)] = value[:]
                             else:
-                                raise Error("Datatype for Option %-35s was not valid. Expected list of <type 'float'>. Received data type is %-47s"% (name, type(value[0])))
+                                raise Error("Datatype for Option %-35s was not "
+                                            "valid. Expected list of "
+                                            "<type 'float'>. Received data type "
+                                            "is %-47s"% (name, type(value[0])))
                         else:
-                            raise Error("Option %-35s of %-35s contains %-35s elements. Min and max number of elements are 1 and 4 respectively"% (name, type(value), len(value)))
+                            raise Error("Option %-35s of %-35s contains %-35s "
+                                        "elements. Min and max number of "
+                                        "elements are 1 and 4 "
+                                        "respectively"% (name, type(value), len(value)))
                     else:
-                        raise Error("Datatype for Option %-35s not valid. Expected data type is <type 'float'> or <type 'list'>. Received data type is %-47s"% (name, type(value)))
+                        raise Error("Datatype for Option %-35s not valid. Expected "
+                                    "data type is <type 'float'> or <type "
+                                    "'list'>. Received data type is %-47s"% (name, type(value)))
 
                     module = self.moduleMap[self.optionMap[name][0]]
                     variable = self.optionMap[name][1]
@@ -3655,7 +3374,7 @@ class SUMB(AeroSolver):
             'resaveraging':[str,'alternateresaveraging'],
             'smoothparameter':[float, 1.5],
             'cfllimit':[float, 1.5],
-            
+
             # Overset Parameters:
             'nearwalldist':[float, 0.1],
             'backgroundvolscale':[float, 1.0],
@@ -3788,15 +3507,15 @@ class SUMB(AeroSolver):
         object is created. SUmb will raise an error if a user tries to
         change these. The strings for these options are placed in a set"""
 
-        return ('gridfile', 'equationtype', 'equationmode', 'flowtype', 
-                'useapproxwalldistance', 'liftindex', 'mgcycle', 
-                'mgstartlevel', 'timeintegrationscheme', 'timeaccuracy', 
-                'useale', 'timeintervals', 'blocksplitting', 
+        return ('gridfile', 'equationtype', 'equationmode', 'flowtype',
+                'useapproxwalldistance', 'liftindex', 'mgcycle',
+                'mgstartlevel', 'timeintegrationscheme', 'timeaccuracy',
+                'useale', 'timeintervals', 'blocksplitting',
                 'loadimbalance', 'loadbalanceiter', 'partitiononly')
 
     def _getOptionMap(self):
         """ The SUmb option map and module mapping"""
-        
+
         moduleMap = {'io': self.sumb.inputio,
                      'discr':self.sumb.inputdiscretization,
                      'iter':self.sumb.inputiteration,
@@ -3810,7 +3529,7 @@ class SUMB(AeroSolver):
                      'motion':self.sumb.inputmotion,
                      'localmg':self.sumb.localmg,
                      'parallel':self.sumb.inputparallel,
-                     'ts':self.sumb.inputtimespectral, 
+                     'ts':self.sumb.inputtimespectral,
                      'overset':self.sumb.inputoverset,
                  }
 
@@ -3833,7 +3552,7 @@ class SUMB(AeroSolver):
                                  'location':['io', 'precisionsol']},
             'gridprecision':{'single':self.sumb.inputio.precisionsingle,
                              'double':self.sumb.inputio.precisiondouble,
-                             'location':['io', 'precisiongrid']}, 
+                             'location':['io', 'precisiongrid']},
 
             # Physics Paramters
             'discretization':{'central plus scalar dissipation': self.sumb.inputdiscretization.dissscalar,
@@ -3935,10 +3654,10 @@ class SUMB(AeroSolver):
             'ntimestepsfine':['unsteady', 'ntimestepsfine'],
             'deltat':['unsteady', 'deltat'],
             'useale':['unsteady', 'useale'],
-            
+
             # Grid motion Params
             'usegridmotion':['motion', 'gridmotionspecified'],
-             
+
             # Time Spectral Paramters
             'timeintervals':['ts', 'ntimeintervalsspectral'],
             'alphamode':['stab', 'tsalphamode'],
@@ -3949,7 +3668,7 @@ class SUMB(AeroSolver):
             'rmode':['stab', 'tsrmode'],
             'altitudemode':['stab', 'tsaltitudemode'],
             'windaxis':['stab', 'usewindaxis'],
-            'alphafollowing':['stab', 'tsalphafollowing'], 
+            'alphafollowing':['stab', 'tsalphafollowing'],
             'tsstability':['stab', 'tsstability'],
 
             # Convergence Paramters
@@ -4057,7 +3776,7 @@ class SUMB(AeroSolver):
             'sepsensoroffset':['cost', 'sepsensoroffset'],
             'sepsensorsharpness':['cost', 'sepsensorsharpness'],
         }
-            
+
         return optionMap, moduleMap
 
     def _getSpecialOptionLists(self):
@@ -4164,12 +3883,12 @@ class SUMB(AeroSolver):
             }
 
         return possibleAeroDVs, sumbCostFunctions
-        
+
     def _updateTurbResScale(self):
-        # If turbresscale is None it has not been set by the user in script 
+        # If turbresscale is None it has not been set by the user in script
         # thus set default values depending on turbulence model;
         # else do nothing since it already contains value specified by user
-        
+
         if self.getOption("turbresscale") is None:
             turbModel = self.getOption("turbulencemodel")
             if turbModel == "sa":
@@ -4186,7 +3905,7 @@ class SUMB(AeroSolver):
         This function should drop out when unsteady solver is stepped through python
         TEMPORARY
         """
-        # THIS DOES NOT CURRENTLY WORK DUE TO INTERNAL LOGIC. REFACTOR FORTRAN 
+        # THIS DOES NOT CURRENTLY WORK DUE TO INTERNAL LOGIC. REFACTOR FORTRAN
         # Set parameters for outputing data
         #if self.getOption('writevolumesolution'):
         #    self.sumb.monitor.writevolume = True
@@ -4194,12 +3913,12 @@ class SUMB(AeroSolver):
         #else:
         #    self.sumb.monitor.writevolume = False
         #    self.sumb.monitor.writegrid = False
-            
+
         #if self.getOption('writesurfacesolution'):
         #    self.sumb.monitor.writesurface = True
         #else:
         #    self.sumb.monitor.writesurface = False
-        
+
         outputDir = self.getOption('outputDirectory')
         baseName = self.curAP.name
 
@@ -4216,11 +3935,11 @@ class SUMB(AeroSolver):
         # Set the grid file to the same name so the grids will be written
         # to the volume files
         self.sumb.inputio.newgridfile[:] = ''
-        self.sumb.inputio.newgridfile[0:len(volFileName)] = volFileName        
-        
+        self.sumb.inputio.newgridfile[0:len(volFileName)] = volFileName
+
         self.sumb.inputio.surfacesolfile[:] = ''
         self.sumb.inputio.surfacesolfile[0:len(surfFileName)] = surfFileName
-        
+
         self.sumb.inputio.slicesolfile[:] = ''
         self.sumb.inputio.slicesolfile[0:len(sliceFileName)] = sliceFileName
 
@@ -4228,6 +3947,9 @@ class SUMB(AeroSolver):
         self.sumb.inputio.liftdistributionfile[0:len(liftDistributionFileName)] = liftDistributionFileName
 
     def _setForcedFileNames(self):
+        # Set the filenames that will be used if the user forces a
+        # write during a solution. 
+
         self.sumb.inputio.forcedvolumefile[:] = ''
         self.sumb.inputio.forcedsurfacefile[:] = ''
         self.sumb.inputio.forcedliftfile[:] = ''
@@ -4246,7 +3968,7 @@ class SUMB(AeroSolver):
         self.sumb.inputio.forcedsurfacefile[0:len(surfFileName)] = surfFileName
         self.sumb.inputio.forcedliftfile[0:len(liftFileName)] = liftFileName
         self.sumb.inputio.forcedslicefile[0:len(sliceFileName)] = sliceFileName
-        
+
     def createSlaveAeroProblem(self, master):
         """Create a slave aeroproblem"""
 
@@ -4271,5 +3993,3 @@ class sumbFlowCase(object):
         self.coords = None
         self.callCounter = -1
         self.disp = None
-
-

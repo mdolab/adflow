@@ -476,6 +476,97 @@ subroutine getForces(forces, npts, sps_in)
 
 end subroutine getForces
 
+
+subroutine getForces_b(forces_b, npts, sps_in)
+
+  ! This routine performs the reverse of getForces. It takes in
+  ! forces_b and perfroms the reverse of the nodal averaging procedure
+  ! in getForces if tractions are required. For direct forces, just a
+  ! simple copy is necessary. 
+  use blockPointers
+  use BCTypes
+  use inputPhysics
+  implicit none
+
+  integer(kind=intType), intent(in) :: npts, sps_in
+  real(kind=realType), intent(in) :: forces_b(3*npts)
+
+  integer(kind=intType) :: mm, nn, i, j, ii, jj,sps, iDim, ierr
+  integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd
+  real(kind=realType) :: sss(3),v2(3),v1(3), qa, sepSensor, Cavitation
+  real(kind=realType) :: sepSensorAvg(3)
+  integer(kind=intType) :: lower_left,lower_right,upper_left,upper_right
+  real(kind=realType) :: cFp(3), cFv(3), cMp(3), cMv(3), yplusmax, qf(3)
+  real(kind=realType), dimension(:), pointer :: localPt
+  sps = sps_in
+  if (.not. forcesAsTractions) then 
+     ! For forces, we just copy the seed and aero the dualArea seed
+     jj = 0 
+     
+     domains: do nn=1,nDom
+        call setPointers_d(nn, 1_intType, sps)
+        
+        ! Loop over the number of boundary subfaces of this block.
+        bocos: do mm=1,nBocos
+           if (bctype(mm) .eq. eulerwall .or. &
+                bctype(mm) .eq. nswalladiabatic  .or. &
+                bctype(mm) .eq. nswallisothermal) then
+              
+              ! Loop over the nodes since that's where the forces get
+              ! defined.
+              do j=(BCData(mm)%jnBeg),BCData(mm)%jnEnd
+                 do i=(BCData(mm)%inBeg),BCData(mm)%inEnd
+                    do iDim=1,3
+                       jj = jj + 1
+                       bcDatad(mm)%F(i, j, iDim) = forces_b(jj)
+                       bcDatad(mm)%dualArea(i, j) = zero
+                    end do
+                 end do
+              end do
+           end if
+        end do bocos
+     end do domains
+  else
+
+     ! For tractions it's a bit more difficult becuase we have to do
+     ! the scatter/gather operation.
+
+     ! Not implemented yet. 
+        
+
+
+        ! ! Copy the reverse seed into the local values
+        ! call vecGetArrayF90(nodeValLocal, localPtr, ierr)
+        ! call EChk(ierr,__FILE__,__LINE__)
+
+        ! do i=1, nPts
+        !    localPtr(i) = forces_b((i-1)*3 + iDim)
+        ! end do
+        
+        ! call vecRestoreArrayF90(nodeValLocal, localPtr, ierr)
+        ! call EChk(ierr,__FILE__,__LINE__)
+
+     
+        ! ! Push up to the global values
+        ! call VecScatterBegin(tracScatter, nodeValLocal, nodeValGlobal, ADD_VALUES, &
+        !      SCATTER_FORWARD, ierr)
+        ! call EChk(ierr,__FILE__,__LINE__)
+
+        ! call VecScatterEnd(tracScatter, nodeValLocal, nodeValGlobal, ADD_VALUES, &
+        !      SCATTER_FORWARD, ierr)
+        ! call EChk(ierr,__FILE__,__LINE__)
+        
+        ! ! the operation that is done in the forward direction is T = F/A
+  !end do
+  end if
+
+
+
+
+
+end subroutine getForces_b
+
+
 subroutine setFullMask
 
   ! Shortcut routine to set all the boundary mask values to 1

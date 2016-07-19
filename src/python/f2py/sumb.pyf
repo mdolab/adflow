@@ -1129,11 +1129,6 @@ python module libsumb
          integer(kind=inttype), optional,check(len(x)>=n),depend(x) :: n=len(x)
         end subroutine testdrdwtspeed 
  
-        subroutine test_inviscid_flux(elaptime)
-          real(kind=realtype), intent(out) :: elaptime(3)
-        end subroutine test_inviscid_flux
-        subroutine test
-        end subroutine test
     end interface 
 
 #ifdef USE_COMPLEX

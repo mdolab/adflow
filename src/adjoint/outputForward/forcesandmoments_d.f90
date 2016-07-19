@@ -2,8 +2,8 @@
 !  tapenade 3.10 (r5363) -  9 sep 2014 09:53
 !
 !  differentiation of forcesandmoments in forward (tangent) mode (with options i4 dr8 r8):
-!   variations   of useful results: *(*bcdata.f) sepsensoravg cfp
-!                cfv cmp cmv cavitation sepsensor
+!   variations   of useful results: *(*bcdata.f) *(*bcdata.dualarea)
+!                sepsensoravg cfp cfv cmp cmv cavitation sepsensor
 !   with respect to varying inputs: gammainf pinf pref *p *w *x
 !                *si *sj *sk *(*viscsubface.tau) veldirfreestream
 !                lengthref machcoef pointref *xx *pp1 *pp2 *ssi
@@ -193,6 +193,7 @@ bocos:do nn=1,nbocos
 !
 ! do j=(bcdata(nn)%jnbeg+1),bcdata(nn)%jnend
 !    do i=(bcdata(nn)%inbeg+1),bcdata(nn)%inend
+!1e-30
         bcdatad(nn)%dualarea = 0.0_8
         bcdata(nn)%dualarea = zero
         bcdatad(nn)%f = 0.0_8
@@ -540,21 +541,20 @@ bocos:do nn=1,nbocos
             end if
           end do
         end if
-! if forces are tractions we have to divide by the dual area:
-        if (forcesastractions) then
-          do j=bcdata(nn)%jnbeg,bcdata(nn)%jnend
-            do i=bcdata(nn)%inbeg,bcdata(nn)%inend
-              bcdatad(nn)%f(i, j, :) = (bcdatad(nn)%f(i, j, :)*bcdata(nn&
-&               )%dualarea(i, j)-bcdata(nn)%f(i, j, :)*bcdatad(nn)%&
-&               dualarea(i, j))/bcdata(nn)%dualarea(i, j)**2
-              bcdata(nn)%f(i, j, :) = bcdata(nn)%f(i, j, :)/bcdata(nn)%&
-&               dualarea(i, j)
-            end do
-          end do
-        end if
+! ! if forces are tractions we have to divide by the dual area:
+! if (forcesastractions) then
+!    do j= bcdata(nn)%jnbeg, bcdata(nn)%jnend
+!       do i=bcdata(nn)%inbeg, bcdata(nn)%inend
+!          bcdata(nn)%f(i, j, :) =  bcdata(nn)%f(i, j, :) / bcdata(nn)%dualarea(i, j)
+!       end do
+!    end do
+! end if
         call resetbcpointers(nn, .true.)
       end if
     else
+!1e-30
+      bcdatad(nn)%dualarea = 0.0_8
+      bcdata(nn)%dualarea = zero
       bcdatad(nn)%f = 0.0_8
       bcdata(nn)%f = zero
     end if
