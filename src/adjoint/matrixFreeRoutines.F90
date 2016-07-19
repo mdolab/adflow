@@ -357,6 +357,14 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, fbar, useSpatial, useSta
 
   ii = 0 ! Residual bar counter
   jj = 0 ! Force bar counter
+
+  ! Before we start, perform the reverse of getForces() for each
+  ! spectral instance. This set the bcDatad%F and bcData%dualArea
+  ! seeds.
+  do sps=1, nTimeIntervalsSpectral
+     call getForces_b(fBar, 3*fSize, sps)
+  end do
+
   domainLoopAD: do nn=1,nDom
 
      ! Just to get sizes
@@ -382,25 +390,6 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, fbar, useSpatial, useSta
         ! And the function value seeds
         funcValuesd = funcsBar
         
-        ! And the Force seeds is spatial is true
-        bocos: do mm=1,nBocos
-           if (bctype(mm) .eq. eulerwall .or. &
-                bctype(mm) .eq. nswalladiabatic  .or. &
-                bctype(mm) .eq. nswallisothermal) then
-              
-              ! Loop over the nodes since that's where the forces get
-              ! defined.
-              do j=(BCData(mm)%jnBeg),BCData(mm)%jnEnd
-                 do i=(BCData(mm)%inBeg),BCData(mm)%inEnd
-                    jj = jj + 1
-                    do iDim=1,3
-                       bcDatad(mm)%F(i, j, iDim) = fBar(idim, jj)
-                    end do
-                 end do
-              end do
-           end if
-        end do bocos
-
         call BLOCK_RES_B(nn, sps, useSpatial, alpha, alphad, beta, betad, &
              & liftindex, frozenTurbulence)
 
