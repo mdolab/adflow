@@ -87,8 +87,10 @@ class SUMB(AeroSolver):
         Set this flag to true when debugging with a symbolic
         debugger. The MExt module deletes the copied .so file when not
         required which causes issues debugging.
+    dtype : str
+        String type for float: 'd' or 'D'. Not needed to be uset by user. 
         """
-    def __init__(self, comm=None, options=None, debug=False):
+    def __init__(self, comm=None, options=None, debug=False, dtype='d'):
 
         # Load the compiled module using MExt, allowing multiple
         # imports
@@ -119,7 +121,7 @@ class SUMB(AeroSolver):
             self.sumbCostFunctions[key] = [None, key]
 
         # This is the real solver so dtype is 'd'
-        self.dtype = 'd'
+        self.dtype = dtype
 
         # Next set the MPI Communicators and associated info
         if comm is None:
@@ -174,10 +176,9 @@ class SUMB(AeroSolver):
         self._updateGeomInfo = True
 
         # By Default we don't have an external mesh object or a
-        # geometric manipulation object, and the groupName is 'all'
+        # geometric manipulation object
         self.mesh = None
         self.DVGeo = None
-        self.groupName = 'all'
 
         # Matrix Setup Flag
         self.adjointSetup = False
@@ -218,7 +219,42 @@ class SUMB(AeroSolver):
         self.sumb.initflow()
         self.sumb.preprocessingadjoint()
 
-    def setMesh(self, mesh, groupName='all'):
+        famList = self._processFortranStringArray(
+            self.sumb.surfacefamilies.famnames)
+        isWall = self.sumb.surfacefamilies.famiswall
+
+        # Add the initial families that already exist in the CGNS
+        # file.
+        self.families = {}
+        wallList = []
+        for i in range(len(famList)):
+            self.families[famList[i]] = [i+1]
+            if isWall[i]:
+                wallList.append(famList[i])
+
+        # Add a couple of special families. 
+        self.allFamilies = 'allSurfaces'
+        self.addFamilyGroup(self.allFamilies, famList)
+
+        self.allWallsGroup = 'all'
+        self.addFamilyGroup(self.allWallsGroup, wallList)
+
+        # Set the design families if given, otherwise default to all
+        # walls
+        self.designFamilies = self.getOption('designSurfaceFamily')
+        if self.designFamilies is None:
+            self.designFamilies = self.allWallsGroup
+
+        # Set the mesh families if given, otherwise default to all
+        # walls
+        self.meshFamilies = self.getOption('meshSurfaceFamily')
+        if self.meshFamilies is None:
+            self.meshFamilies = self.allWallsGroup
+
+        self.coords0 = self.getSurfaceCoordinates(self.allFamilies)
+
+
+    def setMesh(self, mesh):
         """
         Set the mesh object to SUmb to do geometric deformations
 
@@ -226,36 +262,20 @@ class SUMB(AeroSolver):
         ----------
         mesh : multiBlockMesh object
             The pyWarp mesh object for doing the warping
-        groupName : str
-            The group which SUmb will consider to include all surfaces
-            that will be manipulated by the geometry.
         """
 
+        # Store a reference to the mesh
         self.mesh = mesh
-        self.groupName = groupName
 
-        # Setup External Warping
+        # Setup External Warping with volume indices
         ndof_1_instance = self.sumb.adjointvars.nnodeslocal[0]*3
         meshInd = self.sumb.getcgnsmeshindices(ndof_1_instance)
         self.mesh.setExternalMeshIndices(meshInd)
 
-        # Setup Surface/Force info
-        npatch = self.sumb.getnpatches()
-        patchnames = []
-        patchsizes = []
-        for i in xrange(npatch):
-            tmp = numpy.zeros(256, 'c')
-            self.sumb.getpatchname(i+1, tmp)
-            patchnames.append(
-                ''.join([tmp[j] for j in range(256)]).lower().strip())
-            patchsizes.append(self.sumb.getpatchsize(i+1))
-
-        conn = self.getForceConnectivity()
-        pts = self.getForcePoints()
-
-        self.mesh.setExternalSurface(patchnames, patchsizes, conn, pts)
-        # Get a inital copy of coordinates and save
-        self.coords0 = self.getSurfaceCoordinates(self.groupName)
+        # Set the surface the user has supplied:
+        conn = self.getSurfaceConnectivity(self.meshFamilies)
+        pts = self.getSurfacePoints(self.meshFamilies)
+        self.mesh.setSurfaceDefinition(pts, conn)
 
     def setDVGeo(self, DVGeo):
         """
@@ -323,9 +343,8 @@ class SUMB(AeroSolver):
         self.curAP.sumbData.disp = localD
 
     def addLiftDistribution(self, nSegments, direction,
-                            groupName=None, description=''):
-        """
-        Add a lift distribution to the surface output.
+                            groupName=None):
+        """Add a lift distribution to the surface output.
 
         Parameters
         ----------
@@ -338,25 +357,22 @@ class SUMB(AeroSolver):
             you would use 'z'
 
         groupName: str
-            The family (as defined in pyWarp) to use for the lift
-            distribution. Currently not coded.
-
-        description : str
-            An additional string that can be used to destingush
-            between multiple lift distributions in the output.
+            The family group to use for the lift distribution. Default
+            of None corresponds to all wall surfaces. 
         """
-        if groupName is None:
-            groupTag = ""
-        else:
-            groupTag = '%s: '% groupName
 
+        # Determine the families we want to use
+        if groupName is None:
+            groupName = self.allWallsGroup
+
+        groupTag = '%s: '% groupName
+        famList = self._getFamilyList(groupName)
         direction=direction.lower()
         if direction not in ['x','y','z']:
             if direction not in ['x','y','z']:
                 raise Error("direction must be one of 'x', 'y', or 'z'")
 
-        # Determine the mask for the cells
-        mask = self._getCellGroupMask(groupName)
+        self._setFamilyList(groupName)
 
         if direction == 'x':
             dirVec = [1.0, 0.0, 0.0]
@@ -372,7 +388,7 @@ class SUMB(AeroSolver):
             self.nLiftDist + 1, groupTag, direction)
         self.nLiftDist += 1
 
-        self.sumb.addliftdistribution(nSegments, dirVec, dirInd, distName, mask)
+        self.sumb.addliftdistribution(nSegments, dirVec, dirInd, distName, famList)
 
     def addSlices(self, direction, positions, sliceType='relative',
                   groupName=None):
@@ -398,17 +414,16 @@ class SUMB(AeroSolver):
             every out put so is always exactly planar and always at the initial
             position the user indicated.
         groupName : str
-            The family (as defined in pyWarp) to use for the slices.
+             The family to use for the slices. Default is None corresponding to all
+             wall groups.
             """
 
+        # Determine the families we want to use
         if groupName is None:
-            groupTag = ""
-        else:
-            groupTag = '%s: '% groupName
+            groupName = self.allWallsGroup
+        groupTag = '%s: '% groupName
 
-        # Determine the mask for the cells
-        mask = self._getCellGroupMask(groupName)
-
+        famList = self._getFamilyList(groupName)
         direction = direction.lower()
         if direction not in ['x', 'y', 'z']:
             raise Error("'direction' must be one of 'x', 'y', or 'z'")
@@ -437,11 +452,11 @@ class SUMB(AeroSolver):
             if sliceType == 'relative':
                 sliceName = 'Slice_%4.4d %s Para Init %s=%7.3f'% (
                     j, groupTag, direction, positions[i])
-                self.sumb.addparaslice(sliceName, tmp[i], dirVec, mask)
+                self.sumb.addparaslice(sliceName, tmp[i], dirVec, famList)
             else:
                 sliceName = 'Slice_%4.4d %s Absolute %s=%7.3f'% (
                     j, groupTag, direction, positions[i])
-                self.sumb.addabsslice(sliceName, tmp[i], dirVec, mask)
+                self.sumb.addabsslice(sliceName, tmp[i], dirVec, famList)
 
         self.nSlice += N
 
@@ -464,8 +479,7 @@ class SUMB(AeroSolver):
         funcName : str or list
             The name of the built-in sumb function
         groupName : str or list
-            The family (as defined in warping module) to use for
-            the function.
+            The family or group of families to use for the function
         Name : str or list
             An overwrite name.
 
@@ -501,18 +515,12 @@ class SUMB(AeroSolver):
             if funcName.lower() not in self.basicCostFunctions:
                 raise Error('Supplied function name is not known to SUmb')
 
-            # And make sure that the groupName is defined.
-            if self.mesh is None:
-                raise Error("A mesh must be supplied to SUmb in order to use "
-                            "the 'addFunction' functionality")
-
             # Check if the goupName has been added to the mesh.
             if groupName is not None:
-                try:
-                    famList = self.mesh.familyGroup[groupName]['families']
-                except:
-                    raise Error("The supplied groupName='%s' has not been "
-                                "been added in the mesh"%groupName)
+                if groupName not in self.families:
+                    raise Error("'%s' is not a family in the CGNS file or has not been added"
+                                " as a combination of families"%(groupName))
+               
             if name is None:
                 sumbFuncName = '%s_%s'%(funcName, groupName)
             else:
@@ -588,7 +596,7 @@ class SUMB(AeroSolver):
 
         return loadInbalance, faceInbalance
 
-    def getTriangulatedMeshSurface(self, groupName='all'):
+    def getTriangulatedMeshSurface(self, groupName=None, TS=0):
         """
         This function returns a trianguled verision of the surface
         mesh on all processors. The intent is to use this for doing
@@ -601,10 +609,13 @@ class SUMB(AeroSolver):
            be passed directly to DVConstraint setSurface() function.
         """
 
-        # Use first spectral instance
-        pts = self.comm.allgather(self.getForcePoints(0, groupName))
-        conn = self.mesh.getSurfaceConnectivity(groupName)
-        conn = self.comm.allgather(conn)
+        if groupName is None:
+            groupName = self.allWallsGroup
+
+        # Obtain the points and connectivity for the specified
+        # groupName
+        pts = self.comm.allgather(self.getSurfacePoints(groupName, TS))
+        conn = self.comm.allgather(self.getSurfaceConnectivity(groupName))
 
         # Triangle info...point and two vectors
         p0 = []
@@ -612,11 +623,11 @@ class SUMB(AeroSolver):
         v2 = []
 
         for iProc in xrange(len(conn)):
-            for i in xrange(len(conn[iProc])//4):
-                i0 = conn[iProc][4*i+0]
-                i1 = conn[iProc][4*i+1]
-                i2 = conn[iProc][4*i+2]
-                i3 = conn[iProc][4*i+3]
+            for i in xrange(len(conn[iProc])):
+                i0 = conn[iProc][i, 0]
+                i1 = conn[iProc][i, 1]
+                i2 = conn[iProc][i, 2]
+                i3 = conn[iProc][i, 3]
 
                 p0.append(pts[iProc][i0])
                 v1.append(pts[iProc][i1]-pts[iProc][i0])
@@ -661,9 +672,9 @@ class SUMB(AeroSolver):
         # Set filenames for possible forced write during solution
         self._setForcedFileNames()
 
-        # Set the full mask such that we get the full coefficients in
-        # the printout.
-        self.sumb.setfullmask()
+        # Set the full set of families such that we get the full
+        # coefficients in the printout. 
+        self._setFamilyList(self.allFamilies)
 
         # Remind the users of the modified options:
         if self.getOption('printIterations'):
@@ -814,9 +825,9 @@ class SUMB(AeroSolver):
         if evalFuncs is None:
             evalFuncs = self.curAP.evalFuncs
 
-        # We need to determine how many different masks we have, since
-        # we will have to call getSolution for each *unique* function
-        # mask. We can also do the error checking
+        # We need to determine how many different groupings we have,
+        # since we will have to call getSolution for each *unique*
+        # function grouping. We can also do the error checking
         groupMap = {}
         for f in evalFuncs:
             if f.lower() in self.sumbCostFunctions:
@@ -992,7 +1003,7 @@ class SUMB(AeroSolver):
         """
         self.setAeroProblem(aeroProblem)
         if alpha0 is not None:
-            aeroProblem.alpha = anm2
+            aeroProblem.alpha = alpha0
 
         # Set the startign value
         anm2 = aeroProblem.alpha
@@ -1394,11 +1405,15 @@ class SUMB(AeroSolver):
         # ADD NSAVE TEST AROUND THESE AS WELL BUT
         # THIS IS SMALL COMPARED TO OTHER. REFACTOR
         if self.getOption('equationMode').lower() == 'unsteady':
-            self.writeLiftDistributionFile(base + '_lift_Timestep%4.4d.dat'% ts)
-            self.writeSlicesFile(base + '_slices_Timestep%4.4d.dat'% ts)
+            liftName = base + '_lift_Timestep%4.4d.dat'% ts
+            sliceName = base + '_slices_Timestep%4.4d.dat'% ts
+            surfName = base + '_surf_Timestep%4.4d.dat' %ts
         else:
-            self.writeLiftDistributionFile(base + '_lift.dat')
-            self.writeSlicesFile(base + '_slices.dat')
+            liftName = base + '_lift.dat'
+            sliceName = base + '_slices.dat'
+            surfName = base + '_surf.dat'
+
+        self.sumb.writetecplot(sliceName, True, liftName, True, surfName, True)
 
     def writeMeshFile(self, fileName):
         """Write the current mesh to a CGNS file. This call isn't used
@@ -1504,7 +1519,9 @@ class SUMB(AeroSolver):
         fileName += '.dat'
 
         # Actual write command
-        self.sumb.writeliftdistributionfile(fileName)
+        sliceName = ""
+        surfName = ""
+        self.sumb.writetecplot(sliceName, False, fileName, True, surfName, False)
 
     def writeSlicesFile(self, fileName):
         """Evaluate and write the defined slice information to a
@@ -1521,9 +1538,11 @@ class SUMB(AeroSolver):
         fileName += '.dat'
 
         # Actual write command
-        self.sumb.writeslicesfile(fileName)
+        sliceName = ""
+        surfName = "" 
+        self.sumb.writetecplot(sliceName, False, fileName, True, surfName, False)
 
-    def writeForceFile(self, fileName, TS=0, groupName='all',
+    def writeForceFile(self, fileName, TS=0, groupName=None,
                        cfdForcePts=None):
         """This function collects all the forces and locations and
         writes them to a file with each line having: X Y Z Fx Fy Fz.
@@ -1535,22 +1554,19 @@ class SUMB(AeroSolver):
         typically used in an aerostructural case.
 
         """
+        if groupName is None:
+            groupName = self.allWallsGroup
 
-        if self.mesh is None:
-            mpiPrint('Error: A pyWarp mesh be specified to use writeForceFile',
-                     comm=self.comm)
-            return
 
         # Now we need to gather the data:
         if cfdForcePts is None:
-            pts = self.comm.gather(self.getForcePoints(TS, groupName), root=0)
+            pts = self.comm.gather(self.getSurfacePoints(groupName, TS), root=0)
         else:
             pts = self.comm.gather(cfdForcePts)
 
-        # Forces are still evaluated on the displaced surface so do NOT pass in pts.
+        # Get the forces and connectivity
         forces = self.comm.gather(self.getForces(groupName, TS=TS), root=0)
-        conn   = self.comm.gather(self.mesh.getSurfaceConnectivity(groupName),
-                                  root=0)
+        conn   = self.comm.gather(self.getSurfaceConnectivity(groupName), root=0)
 
         # Write out Data only on root proc:
         if self.myid == 0:
@@ -1559,7 +1575,7 @@ class SUMB(AeroSolver):
             nCell = 0
             for iProc in xrange(len(pts)):
                 nPt += len(pts[iProc])
-                nCell += len(conn[iProc])//4
+                nCell += len(conn[iProc])
 
             # Open output file
             f = open(fileName, 'w')
@@ -1584,15 +1600,15 @@ class SUMB(AeroSolver):
             # locally per proc. As we loop over the data from each
             # proc, we need to increment the connectivity by the
             # number of nodes we've "used up" so far
-
             nodeOffset = 0
             for iProc in xrange(len(conn)):
-                for i in xrange(len(conn[iProc])//4):
+                conn[iProc] += 1
+                for i in xrange(len(conn[iProc])):
                     f.write('%d %d %d %d\n'%(
-                            conn[iProc][4*i+0]+nodeOffset,
-                            conn[iProc][4*i+1]+nodeOffset,
-                            conn[iProc][4*i+2]+nodeOffset,
-                            conn[iProc][4*i+3]+nodeOffset))
+                        conn[iProc][i,0]+nodeOffset,
+                        conn[iProc][i,1]+nodeOffset,
+                        conn[iProc][i,2]+nodeOffset,
+                        conn[iProc][i,3]+nodeOffset))
 
                 nodeOffset += len(pts[iProc])
             f.close()
@@ -1641,32 +1657,13 @@ class SUMB(AeroSolver):
         self.sumb.killsignals.fatalfail = False
         self.sumb.nksolvervars.freestreamresset = False
 
-    def _setMask(self, groupName):
-        """Set the wall masks for the supplied groupName"""
-
-        if groupName is None:
-            self.sumb.setfullmask()
-            return
-
-        try:
-            famList = self.mesh.familyGroup[groupName]['families']
-        except:
-            raise Error("The supplied family group name has not "
-                        "been added in the mesh object OR a mesh"
-                        "object has not been supplied to sumb")
-
-        # Set each of the families:
-        self.sumb.setnmaskfams(len(famList))
-        for i in range(len(famList)):
-            self.sumb.setmaskfam(i+1, famList[i].upper())
-        self.sumb.setmask()
-
     def getSolution(self, sps=1, groupName=None):
         """ Retrieve the solution variables from the solver. Note this
         is a collective function and must be called on all processors
         """
-        # Set the mask for the group
-        self._setMask(groupName)
+
+        # Extract the familiy list we want to use for evaluation
+        self._setFamilyList(groupName)
 
         # We should return the list of results that is the same as the
         # possibleObjectives list
@@ -1755,96 +1752,16 @@ class SUMB(AeroSolver):
     #   i.e. an Aerostructural solver
     # =========================================================================
 
-    def _getCellGroupMask(self, groupName=None):
+    def getSurfaceCoordinates(self, groupName=None):
+        # This is an alias for getSurfacePoints
+        return self.getSurfacePoints(groupName)
+
+    def getInitialSurfaceCoordinates(self, groupName=None):
         """
-        This function determines a mask (array of 1's and 0's) that
-        determines if the cell in the globally reduced set of wall
-        faces is a member of the groupName as defined by the warping.
 
-        Parameters
-        ----------
-        groupName : str
-            The name of the family group defined in the warping
-
-        Returns
-        -------
-        mask : numpy array of integers
-            The mask. Only returned on root proc. All other procs have
-            numpy array of length 0.
-            """
-
-        localMask = self._getCellGroupMaskLocal(groupName)
-        # Now we need to gather all of the local masks to the root
-        # proc.
-        tmp = self.comm.gather(localMask, root=0)
-        globalMask = []
-        if self.comm.rank == 0:
-            for i in range(self.comm.size):
-                globalMask.extend(tmp[i])
-            globalMask = numpy.array(globalMask)
-
-        return globalMask
-
-    def _getCellGroupMaskLocal(self, groupName=None):
         """
-        This function determines a mask (array of 1's and 0's) that
-        determines if the cell in the local set of wall faces
-        is a member of the groupName as defined by the warping.
-
-        Parameters
-        ----------
-        groupName : str
-            The name of the family group defined in the warping
-
-        Returns
-        -------
-        mask : numpy array of integers
-            The mask. Returned on all procs. May be length 0.
-            """
-
-        # See if we can save ourselves some work if the mask is
-        # already in the cache:
         if groupName is None:
-            localMask = []
-            for i in xrange(self.sumb.getnpatches()):
-                patchsize = self.sumb.getpatchsize(i+1)
-                nCells = patchsize[0]*patchsize[1]
-                localMask.extend(numpy.ones(nCells, 'intc'))
-        else:
-            try:
-                famList = self.mesh.familyGroup[groupName]['families']
-            except:
-                raise Error("The supplied family group name has not "
-                            "been added in the mesh object.")
-
-            # Now we just go through each patch and see if it in our familyList
-            localMask = []
-            for i in xrange(self.sumb.getnpatches()):
-                tmp = numpy.zeros(256, 'c')
-                self.sumb.getpatchname(i+1, tmp)
-                patchname = ''.join([tmp[j] for j in range(256)]).lower().strip()
-                patchsize = self.sumb.getpatchsize(i+1)
-                nCells = (patchsize[0]-1)*(patchsize[1]-1)
-                if patchname in famList:
-                    localMask.extend(numpy.ones(nCells, 'intc'))
-                else:
-                    localMask.extend(numpy.zeros(nCells, 'intc'))
-
-        return localMask
-
-    def getSurfaceCoordinates(self, groupName='all'):
-        """
-
-        """
-        if self.mesh is not None:
-            return self.mesh.getSurfaceCoordinates(groupName)
-        else:
-            raise Error('Must have a mesh object to use getSurfaceCoordinates.')
-
-    def getInitialSurfaceCoordinates(self, groupName='all'):
-        """
-
-        """
+            groupName = self.allWallsGroup
 
         if self.mesh is not None:
             if self.DVGeo is not None:
@@ -1852,32 +1769,49 @@ class SUMB(AeroSolver):
                 # shape generated directly from the design variables
                 ptSetName = 'sumb_%s_coords'% self.curAP.name
                 self.setSurfaceCoordinates(
-                    self.DVGeo.update(ptSetName, config=self.curAP.name), self.groupName)
+                    self.DVGeo.update(ptSetName, config=self.curAP.name), 
+                    self.getOption('designSurfaceFamily'))
                 self.updateGeometryInfo()
-                return self.mesh.getSurfaceCoordinates(groupName)
+                return self.getSurfaceCoordinates(groupName)
             else:
                 # otherwise, the initial mesh is the undeflected mesh, so
                 # return that
                 return self.coords0
-        else:
-            raise Error('getInitialSurfaceCoordinateCoordinates requires a mesh object.')
 
-    def setSurfaceCoordinates(self, coordinates, groupName='all'):
+    def setSurfaceCoordinates(self, coordinates, groupName=None):
         """
-        See MultiBlockMesh.py for more info
+        Set the updated surface coordinates for a particular group.
+
+        Parameters
+        ----------
+        coordinates : numpy array
+            Numpy array of size Nx3, where N is the number of coordinates on this processor.
+            This array must have the same shape as the array obtained with getSurfaceCoordinates()
+
+        groupName : str
+            Name of family or group of families for which to return coordinates for.
+
         """
+        if self.mesh is None:
+            return
+
+        if groupName is None:
+            groupName = self.allWallsGroup
+
         self._updateGeomInfo = True
-        if self.mesh is not None:
-            self.mesh.setSurfaceCoordinates(coordinates, groupName)
+        if self.mesh is None:
+            raise Error("Cannot set new surface coordinate locations without a mesh"
+                        "warping object present.")
 
-    def getSurfaceConnectivity(self, groupName='all'):
-        """
-        See MultiBlockMesh.py for more info
-        """
-        if self.mesh is not None:
-            return self.mesh.getSurfaceConnectivity(groupName)
+        # First get the surface coordinates of the meshFamily in case
+        # the groupName is a subset, those values will remain unchanged.
+        meshSurfCoords = self.getSurfaceCoordinates(self.meshFamilies)
+        meshSurfCoords = self.mapVector(coordinates, groupName, 
+                                        self.meshFamilies, meshSurfCoords)
+        self.mesh.setSurfaceCoordinates(meshSurfCoords)
 
     def setAeroProblem(self, aeroProblem, releaseAdjointMemory=True):
+
         """Set the supplied aeroProblem to be used in SUmb"""
         ptSetName = 'sumb_%s_coords'% aeroProblem.name
 
@@ -1888,14 +1822,17 @@ class SUMB(AeroSolver):
 
                 # DVGeo appeared and we have not embedded points!
                 if not ptSetName in self.DVGeo.points:
-                    self.DVGeo.addPointSet(self.coords0, ptSetName)
+                    coords0 = self.mapVector(self.coords0, self.allFamilies, 
+                                             self.getOption('designSurfaceFamily'))
+                    self.DVGeo.addPointSet(coords0, ptSetName)
 
                 if not self.DVGeo.pointSetUpToDate(ptSetName):
                     coords = self.DVGeo.update(ptSetName, config=self.curAP.name)
 
                     if self.curAP.sumbData.disp is not None:
                         coords += self.curAP.sumbData.disp
-                    self.setSurfaceCoordinates(coords, self.groupName)
+                    self.setSurfaceCoordinates(
+                        coords, self.getOption('designSurfaceFamily'))
 
             # Finally update other data
             self._setAeroProblemData()
@@ -1916,14 +1853,14 @@ class SUMB(AeroSolver):
             aeroProblem.ptSetName = ptSetName
             aeroProblem.surfMesh = None
             if self.mesh is not None:
-                aeroProblem.surfMesh = self.getSurfaceCoordinates(self.groupName)
+                aeroProblem.surfMesh = self.getSurfaceCoordinates(self.allFamilies)
 
         if self.curAP is not None:
             # If we have already solved something and are now
             # switching, save what we need:
             self.curAP.stateInfo = self._getInfo()
             if self.mesh is not None:
-                self.curAP.surfMesh = self.getSurfaceCoordinates(self.groupName)
+                self.curAP.surfMesh = self.getSurfaceCoordinates(self.allFamilies)
 
             # Restore any options that the current aeroProblem
             # (self.curAP) modified. We have to be slightly careful
@@ -1946,7 +1883,10 @@ class SUMB(AeroSolver):
 
         # If not done so already, embed the coordinates:
         if self.DVGeo is not None and ptSetName not in self.DVGeo.points:
-            self.DVGeo.addPointSet(self.coords0, ptSetName)
+
+            coords0 = self.mapVector(self.coords0, self.allFamilies, 
+                                     self.designFamilies)
+            self.DVGeo.addPointSet(coords0, ptSetName)
 
         # We are now ready to associate self.curAP with the supplied AP
         self.curAP = aeroProblem
@@ -1969,7 +1909,7 @@ class SUMB(AeroSolver):
         if self.curAP.sumbData.disp is not None:
             coords += self.curAP.sumbData.disp
 
-        self.setSurfaceCoordinates(coords, self.groupName)
+        self.setSurfaceCoordinates(coords, self.designFamilies)
 
         # Finally update other data
         self._setAeroProblemData()
@@ -2242,20 +2182,18 @@ class SUMB(AeroSolver):
         self.sumb.inputphysics.pointref = pointRef
 
     def getForces(self, groupName=None, TS=0):
-        """ Return the forces on this processor.
+        """ Return the forces on this processor on the families defined by groupName.
 
         Parameters
         ----------
         groupName : str
             Group identifier to get only forces cooresponding to the
-            desired group.  The group must have been added with
-            addFamilyGroup in the mesh object.
+            desired group. The group must be a family or a user-supplied 
+            group of families. The default is None which corresponds to 
+            all wall-type surfaces. 
+
         TS : int
             Spectral instance for which to get the forces
-        pressure : bool
-            Flag as to include the pressure forces
-        viscous : bool
-            Flag as to include the viscous forces
 
         Returns
         -------
@@ -2264,35 +2202,72 @@ class SUMB(AeroSolver):
             options) on this processor. Note that N may be 0, and an
             empty array of shape (0, 3) can be returned.
         """
-        # Just to be sure, we'll set the mask
-        self._setMask(groupName)
+        # Set the family to all walls group. 
+        npts, ncell = self._getSurfaceSize(self.allWallsGroup)
 
-        [npts, ncell] = self.sumb.getforcesize()
-        forces = numpy.zeros((npts,3),self.dtype)
+        forces = numpy.zeros((npts, 3), self.dtype)
         self.sumb.getforces(numpy.ravel(forces), TS+1)
+        if groupName is None:
+            groupName = self.allWallsGroup
+        
+        # Finally map the vector as required. 
+        return self.mapVector(forces, self.allWallsGroup, groupName)
 
-        if groupName is not None:
-            forces = self.mesh.sectionVectorByFamily(groupName, forces)
+    def getSurfacePoints(self, groupName=None, TS=0):
+        """Return the coordinates for the surfaces defined by groupName. 
 
-        return forces
+        Parameters
+        ----------
+        groupName : str
+            Group identifier to get only coordinates cooresponding to
+            the desired group. The group must be a family or a
+            user-supplied group of families. The default is None which
+            corresponds to all wall-type surfaces.
 
-    def getForcePoints(self, TS=0, groupName=None):
-        [npts, ncell] = self.sumb.getforcesize()
-        pts = numpy.zeros((npts, 3),self.dtype)
+        TS : int
+            The time spectral instance to use for the forces.
+        """
+
+        if groupName is None:
+            groupName = self.allWallsGroup
+
+        # Get the required size
+        npts, ncell = self._getSurfaceSize(groupName)
+        pts = numpy.zeros((npts, 3), self.dtype)
+
+        # Set the list of surfaces this family requires
+        self._setFamilyList(groupName)
+
         if npts > 0:
-            self.sumb.getforcepoints(pts.T, TS+1)
-
-        if groupName is not None:
-            pts = self.mesh.sectionVectorByFamily(groupName, pts)
+            self.sumb.getsurfacepoints(pts.T, TS+1)
 
         return pts
 
-    def getForceConnectivity(self):
-        [npts, ncells] = self.sumb.getforcesize()
-        conn =  numpy.zeros((ncells, 4), dtype='intc')
-        self.sumb.getforceconnectivity(numpy.ravel(conn))
+    def getSurfaceConnectivity(self, groupName=None):
+        """Return the connectivity dinates at which the forces (or tractions) are
+        defined. This is the complement of getForces() which returns
+        the forces at the locations returned in this routine. 
 
-        return conn
+        Parameters
+        ----------
+        groupName : str
+            Group identifier to get only forces cooresponding to the
+            desired group. The group must be a family or a user-supplied 
+            group of families. The default is None which corresponds to 
+            all wall-type surfaces.
+        """
+        
+        if groupName is None:
+            groupName = self.allWallsGroup
+
+        # Set the list of surfaces this family requires
+        self._setFamilyList(groupName)
+        npts, ncell = self._getSurfaceSize(groupName)
+        conn =  numpy.zeros((ncell, 4), dtype='intc')
+        self.sumb.getsurfaceconnectivity(numpy.ravel(conn))
+
+        # Conver to 0-based ordering becuase we are in python
+        return conn-1
 
     def globalNKPreCon(self, inVec, outVec):
         """This function is ONLY used as a preconditioner to the
@@ -2403,7 +2378,8 @@ class SUMB(AeroSolver):
         # Check to see if we need to agument the RHS with a structural
         # adjoint:
         if structAdjoint is not None and groupName is not None:
-            phi = self.mesh.expandVectorByFamily(groupName, structAdjoint)
+            phi = self.mapVector(structAdjoint, groupName, self.allWallsGroup)
+
             agument = self.computeJacobianVectorProductBwd(
                 fBar=phi, wDeriv=True)
             RHS -= agument
@@ -2853,50 +2829,52 @@ class SUMB(AeroSolver):
             else:
                 resBar = numpy.zeros(self.getStateSize())
 
+        # -------------------------
+        #  Check for fBar (forces)
+        # -------------------------
+        if fBar is None:
+            nPts, nCell = self._getSurfaceSize(self.allWallsGroup)
+            fBar = numpy.zeros((nPts, 3))
+            
         # ---------------------
-        #  Check for funcsBar
+        #  Check for funcsBar 
         # ---------------------
-        self.sumb.setfullmask()
+        # (do this after fBar since we need to set the family list here)
+        self._setFamilyList(self.allFamilies)
+
         if funcsBar is None:
             funcsBar = numpy.zeros(self.sumb.costfunctions.ncostfunction)
         else:
             tmp = numpy.zeros(self.sumb.costfunctions.ncostfunction)
 
             # We have to make sure that the user has supplied
-            # functions that have the same mask, otherwise, we can't
+            # functions that have the same group, otherwise, we can't
             # do it
-            groupMasks = set()
-
+            groups = set()
+            
             for f in funcsBar:
                 if f.lower() in self.sumbCostFunctions:
 
-                    mask = self.sumbCostFunctions[f][0]
+                    groupName = self.sumbCostFunctions[f][0]
                     basicFunc = self.sumbCostFunctions[f][1]
-                    groupMasks.add(mask)
+                    groups.add(groupName)
 
                     mapping = self.basicCostFunctions[basicFunc]
                     tmp[mapping-1] = funcsBar[f]
 
-            if len(groupMasks) == 1:
-                # We're ok..there was only one mask from the
-                # functions...just pop it out of the set and then set
-                # it.
-                self._setMask(groupMasks.pop())
-            elif len(groupMasks) > 1:
+            if len(groups) == 1:
+                # We're ok..there was only one group from the
+                # functions..
+                self._setFamilyList(list(groups)[0])
+
+            elif len(groups) > 1:
                 raise Error("Attemping to compute a jacobian vector product "
                             "with multiple functions that have different "
-                            "masks. This is not allowed.")
+                            "groups. This is not allowed.")
 
             # If there wasn't any actual funcsBar, then tmp is still
             # just zeros
             funcsBar = tmp
-
-        # -------------------------
-        #  Check for fBar (forces)
-        # -------------------------
-        if fBar is None:
-            [nPts, nCell] = self.sumb.getforcesize()
-            fBar = numpy.zeros((nPts, 3))
 
         # Determine if we can do a cheaper state-variable only
         # computation or if we need to include the spatial terms:
@@ -2923,7 +2901,9 @@ class SUMB(AeroSolver):
         if xDvDeriv or xSDeriv:
             if self.mesh is not None:
                 self.mesh.warpDeriv(xvbar)
-                xsbar = self.mesh.getdXs(self.groupName)
+                xsbar = self.mesh.getdXs()
+                xsbar = self.mapVector(xsbar, self.meshFamilies,
+                                       self.designFamilies)
 
                 if xSDeriv:
                     returns.append(xsbar)
@@ -2968,11 +2948,72 @@ class SUMB(AeroSolver):
         # Single return (most frequent) is 'clean', otherwise a tuple.
         return tuple(returns) if len(returns) > 1 else returns[0]
 
-    def sectionVectorByFamily(self, *args, **kwargs):
-        return self.mesh.sectionVectorByFamily(*args, **kwargs)
+    def mapVector(self, vec1, groupName1, groupName2, vec2=None):
+        """This is the main workhorse routine of everything that deals with
+        families in SUmb. The purpose of this routine is to convert a
+        vector 'vec1' (of size Nx3) that was evaluated with
+        'groupName1' and expand or contract it (and adjust the
+        ordering) to produce 'vec2' evaluated on groupName2.
 
-    def expandVectorByFamily(self, *args, **kwargs):
-        return self.mesh.expandVectorByFamily(*args, **kwargs)
+        A little ascii art might help. Consider the following "mesh"
+        . Family 'fam1' has 9 points, 'fam2' has 10 pts and 'fam3' has
+        5 points.  Consider that we have also also added two
+        additional groups: 'f12' containing 'fam1' and 'fma2' and a
+        group 'f23' that contains families 'fam2' and 'fam3'. The vector
+        we want to map is 'vec1'. It is length 9+10. All the 'x's are
+        significant values.
+
+        The call: coerseVector(vec1, 'f12', 'f23')
+        
+        will produce the "returned vec" array, containing the
+        significant values from 'fam2', where the two groups overlap,
+        and the new values from 'fam3' set to zero. The values from
+        fam1 are lost. The returned vec has size 15. 
+
+            fam1     fam2      fam3
+        |---------+----------+------|
+
+        |xxxxxxxxx xxxxxxxxxx|        <- vec1
+                  |xxxxxxxxxx 000000| <- returned vec (vec2)
+
+
+        Parameters
+        ----------
+        vec1 : Numpy array
+            Array of size Nx3 that will be mapped to a different family set.
+
+        groupName1 : str
+            The family group where the vector vec1 is currently defined
+
+        groupName2 : str
+            The family group where we want to the vector to mapped into
+
+        vec2 : Numpy array or None
+            Array containing existing values in the output vector we want to keep. 
+            If this vector is not given, the values will be filled with zeros. 
+
+        Returns
+        -------
+        vec2 : Numpy array
+            The input vector maped to the families defined in groupName2.
+        """
+        if groupName1 not in self.families or groupName2 not in self.families:
+            raise Error("'%s' or '%s' is not a family in the CGNS file or has not been added"
+                        " as a combination of families"%(groupName1, groupName2))
+       
+        # Shortcut:
+        if groupName1 == groupName2:
+            return vec1
+
+        if vec2 is None:
+            npts, ncell = self._getSurfaceSize(groupName2)
+            vec2 = numpy.zeros((npts, 3), self.dtype)
+            
+        famList1 = self.families[groupName1]
+        famList2 = self.families[groupName2]
+        self.sumb.mapvector(vec1.T, famList1, vec2.T, famList2)
+
+        return vec2
 
     def getStateSize(self):
         """Return the number of degrees of freedom (states) that are on this
@@ -3062,67 +3103,145 @@ class SUMB(AeroSolver):
 
         return res
 
-    def computeArea(self, aeroProblem, funcs, axis, groupName=None, TS=0):
+    def addFamilyGroup(self, groupName, families):
+        """Add a custom grouping of families called groupName. The groupName
+        must be distinct from the existing families. All families must
+        in the 'families' list must be present in the CGNS file.
+
+        Parameters
+        ----------
+        groupName : str
+            User-supplied custom name for the family groupings
+        families : list
+            List of string. Family names to combine into the family group
         """
-        Compute the projected area of the surface mesh
 
-        Input Arguments:
-           axis, numpy array, size(3): The projection vector
-               along which to determine the shadow area
-           groupName, str: The group from which to obtain the coordinates.
-               This name must have been obtained from addFamilyGroup() or
-               be the default 'all' which contains all surface coordiantes
+        # Do some error checking
+        if groupName in self.families:
+            raise Error("The specified groupName '%s' already exists in the "
+                        "cgns file or has already been added."%groupName)
 
-        Output Arguments:
-            Area: The resulting area
-            """
-        self.setAeroProblem(aeroProblem)
-        cfdForcePts = self.getForcePoints(TS)
-        if len(cfdForcePts) > 0:
-            areas = self.sumb.getareas(cfdForcePts.T, TS+1, axis).T
-        else:
-            areas = numpy.zeros((0,3), self.dtype)
-        # end if
+        # We can actually allow for nested groups. That is, an entry
+        # in families may already be a group added in a previous call. 
 
-        if groupName is not None:
-            areas = self.sectionVectorByFamily(groupName, areas)
-        # end if
+        indices = []
+        for fam in families:
+            if fam.lower() not in self.families:
+                raise Error("The specified family '%s' for group '%s', does "
+                            "not exist in the cgns file or has "
+                            "not already been added. The current list of "
+                            "families (original and grouped) is: %s"%(
+                                fam, groupName, repr(self.families.keys())))
 
-        # Now we do an mpiallreduce with sum:
-        area = self.comm.allreduce(numpy.sum(areas), op=MPI.SUM)
+            indices.extend(self.families[fam.lower()])
+            
+        self.families[groupName] = sorted(numpy.unique(indices))
 
-        key = self.curAP.name + '_area'
-        self.curAP.funcNames['area'] = key
-        funcs[key] = area
+    def _getSurfaceSize(self, groupName):
+        """Internal routine to return the size of a particular surface. This
+        does *NOT* set the actual family group"""
+        if groupName is None:
+            groupName = self.allFamilies
 
-    def computeAreaSensitivity(self, aeroProblem, funcsSens, axis, groupName=None, TS=0):
+        if groupName not in self.families:
+            raise Error("'%s' is not a family in the CGNS file or has not been added"
+                        " as a combination of families"%groupName)
+
+        [nPts, nCells] = self.sumb.getsurfacesize(self.families[groupName])
+        return nPts, nCells
+
+    def _setFamilyList(self, groupName):
+
+        """Internal routine for setting the (sorted) list of integers that
+        corresponds to the speficied groupName"""
+        
+        # The default for this routine is all the families. Usually an
+        # intermediate routine will have a default so this default is
+        # rarely used. 
+        if groupName is None:
+            groupName = self.allFamilies
+
+        if groupName not in self.families:
+            raise Error("'%s' is not a family in the CGNS file or has not been added"
+                        " as a combination of families"%groupName)
+
+        self.sumb.setfamilyinfo(self.families[groupName])
+        
+    def _getFamilyList(self, groupName):
+        
+        if groupName is None:
+            groupName = self.allFamilies
+
+        if groupName not in self.families:
+            raise Error("'%s' is not a family in the CGNS file or has not been added"
+                        " as a combination of families"%groupName)
+
+        return self.families[groupName]
+
+
+    # def computeArea(self, aeroProblem, funcs, axis, groupName=None, TS=0):
+    #
+
         """
-        Compute the projected area of the surface mesh
+    #     Compute the projected area of the surface mesh
 
-        Input Arguments:
-           axis, numpy array, size(3): The projection vector
-               along which to determine the shadow area
-           groupName, str: The group from which to obtain the coordinates.
-               This name must have been obtained from addFamilyGroup() or
-               be the default 'all' which contains all surface coordiantes
+    #     Input Arguments:
+    #        axis, numpy array, size(3): The projection vector
+    #            along which to determine the shadow area
+    #        groupName, str: The group from which to obtain the coordinates.
+    #            This name must have been obtained from addFamilyGroup() or
+    #            be the default 'all' which contains all surface coordiantes
 
-        Output Arguments:
-            Area: The resulting area
-            """
-        self.setAeroProblem(aeroProblem)
-        cfdForcePts = self.getForcePoints(TS)
+    #     Output Arguments:
+    #         Area: The resulting area
+    #         """
+    #     self.setAeroProblem(aeroProblem)
+    #     cfdForcePts = self.getForcePoints(TS)
+    #     if len(cfdForcePts) > 0:
+    #         areas = self.sumb.getareas(cfdForcePts.T, TS+1, axis).T
+    #     else:
+    #         areas = numpy.zeros((0,3), self.dtype)
+    #     # end if
 
-        if len(cfdForcePts) > 0:
-            da = self.sumb.getareasensitivity(cfdForcePts.T, TS+1, axis).T
-        else:
-            da = numpy.zeros((0,3), self.dtype)
+    #     if groupName is not None:
+    #         areas = self.sectionVectorByFamily(groupName, areas)
+    #     # end if
 
-        if groupName is not None:
-            da = self.sectionVectorByFamily(groupName, da)
-            da = self.expandVectorByFamily(groupName, da)
+    #     # Now we do an mpiallreduce with sum:
+    #     area = self.comm.allreduce(numpy.sum(areas), op=MPI.SUM)
 
-        funcsSens[self.curAP.name + '_area'] = self.DVGeo.totalSensitivity(
-            da, ptSetName=self.curAP.ptSetName, comm=self.comm, config=self.curAP.name)
+    #     key = self.curAP.name + '_area'
+    #     self.curAP.funcNames['area'] = key
+    #     funcs[key] = area
+
+    # def computeAreaSensitivity(self, aeroProblem, funcsSens, axis, groupName=None, TS=0):
+    #     """
+    #     Compute the projected area of the surface mesh
+
+    #     Input Arguments:
+    #        axis, numpy array, size(3): The projection vector
+    #            along which to determine the shadow area
+    #        groupName, str: The group from which to obtain the coordinates.
+    #            This name must have been obtained from addFamilyGroup() or
+    #            be the default 'all' which contains all surface coordiantes
+
+    #     Output Arguments:
+    #         Area: The resulting area
+    #         """
+    #     self.setAeroProblem(aeroProblem)
+    #     cfdForcePts = self.getForcePoints(TS)
+
+    #     if len(cfdForcePts) > 0:
+    #         da = self.sumb.getareasensitivity(cfdForcePts.T, TS+1, axis).T
+    #     else:
+    #         da = numpy.zeros((0,3), self.dtype)
+
+    #     if groupName is not None:
+    #         da = self.sectionVectorByFamily(groupName, da)
+    #         da = self.expandVectorByFamily(groupName, da)
+
+    #     funcsSens[self.curAP.name + '_area'] = self.DVGeo.totalSensitivity(
+    #         da, ptSetName=self.curAP.ptSetName, comm=self.comm, config=self.curAP.name)
 
     def setOption(self, name, value):
         """
@@ -3321,6 +3440,10 @@ class SUMB(AeroSolver):
             'gridfile':[str, 'default.cgns'],
             'restartfile':[object, None],
 
+            # Surface definition parameters:
+            'meshsurfacefamily':[object, None],
+            'designsurfacefamily':[object, None],
+
             # Output Parameters
             'storerindlayer':[bool, True],
             'outputdirectory':[str, './'],
@@ -3336,7 +3459,6 @@ class SUMB(AeroSolver):
             'isovariables':[list, []],
             'nodaloutput':[bool, True],
             'viscoussurfacevelocities':[bool, True],
-            'slicefiletractions':[bool, False],
 
             # Physics Paramters
             'discretization':[str, 'central plus scalar dissipation'],
@@ -3511,7 +3633,8 @@ class SUMB(AeroSolver):
                 'useapproxwalldistance', 'liftindex', 'mgcycle',
                 'mgstartlevel', 'timeintegrationscheme', 'timeaccuracy',
                 'useale', 'timeintervals', 'blocksplitting',
-                'loadimbalance', 'loadbalanceiter', 'partitiononly')
+                'loadimbalance', 'loadbalanceiter', 'partitiononly',
+                'meshSurfaceFamily', 'designSurfaceFamily')
 
     def _getOptionMap(self):
         """ The SUmb option map and module mapping"""
@@ -3542,7 +3665,6 @@ class SUMB(AeroSolver):
             'storerindlayer':['io', 'storerindlayer'],
             'writesymmetry':['io', 'writesymmetry'],
             'writefarfield':['io', 'writefarfield'],
-            'slicefiletractions':['io', 'slicefiletractions'],
             'nsavevolume':['io', 'nsavevolume'],
             'nodaloutput':['io', 'nodaloutput'],
             'nsavesurface':['iter', 'nsavesurface'],
@@ -3794,6 +3916,8 @@ class SUMB(AeroSolver):
                              'autoadjointretry',
                              'partitiononly',
                              'liftindex',
+                             'meshsurfacefamily',
+                             'designsurfacefamily'
                          ))
 
         # Deprecated options. These should not be used, but old
@@ -3968,6 +4092,17 @@ class SUMB(AeroSolver):
         self.sumb.inputio.forcedsurfacefile[0:len(surfFileName)] = surfFileName
         self.sumb.inputio.forcedliftfile[0:len(liftFileName)] = liftFileName
         self.sumb.inputio.forcedslicefile[0:len(sliceFileName)] = sliceFileName
+
+    def _processFortranStringArray(self, strArray):
+        """Getting arrays of strings out of Fortran can be kinda nasty. This
+        takes the array and returns a nice python list of strings"""
+        shp = strArray.shape
+        arr = strArray.reshape((shp[1],shp[0]), order='F')
+        tmp = []
+        for i in range(arr.shape[1]):
+            tmp.append(''.join(arr[:, i]).strip().lower())
+
+        return tmp
 
     def createSlaveAeroProblem(self, master):
         """Create a slave aeroproblem"""

@@ -41,7 +41,6 @@ defOpts = {
     'isosurface':{},
     'isovariables':[],
     'viscoussurfacevelocities':True,
-    'slicefiletractions':False,
 
     # Physics Paramters
     'discretization':'central plus scalar dissipation',
@@ -260,7 +259,7 @@ def test1():
         reg_write(numpy.sum(surf[0]))
         reg_write(numpy.sum(surf[1]))
         reg_write(numpy.sum(surf[2]))
-
+  
     CFDSolver(ap)
     funcs = {}
     CFDSolver.evalFunctions(ap, funcs)
@@ -1057,12 +1056,12 @@ def test11():
                      
     # Generate a mesh object
     Mesh = MBMesh(options=meshOptions)
-    Mesh.addFamilyGroup("upperSurface",["upperSurface"])
-    Mesh.addFamilyGroup("lowerSurface",["lowerSurface"])
                      
     # Create solver
     CFDSolver = SUMB(options=aeroOptions)
     CFDSolver.setMesh(Mesh)
+    CFDSolver.addFamilyGroup("upperSurface",["upperSurface"])
+    CFDSolver.addFamilyGroup("lowerSurface",["lowerSurface"])
     CFDSolver.addSlices('y', [.48768, .77216], groupName="upperSurface")
     CFDSolver.addSlices('y', [.48768, .77216], groupName="lowerSurface")
 

@@ -38,12 +38,6 @@ module ADjointPETSc
   !adjointKSP   Linear solver (Krylov subspace method) context
   KSP     adjointKSP
 
-  ! Vectors for global traction calc
-  Vec nodeValLocal
-  Vec nodevalGlobal
-  Vec sumGlobal
-  VecScatter tracScatter
-  IS IS1, IS2
 
   ! Initial, start and final adjoint residuals
   real(kind=realType) :: adjResInit

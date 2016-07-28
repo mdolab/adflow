@@ -266,9 +266,8 @@ subroutine solveState
         
         call writeSol()
 
-        ! Also write potential slice and lift file
-        call writeliftdistributionfile(forcedLiftFile)
-        call writeslicesFile(forcedSliceFile)
+        ! Also write potential tecplot files
+        call writeTecplot(forcedSliceFile, .True., forcedLiftFile, .True., "", .False.)
         
         ! Reset the signal 
         localSignal = noSignal

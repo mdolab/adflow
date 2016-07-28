@@ -17,7 +17,7 @@ subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useSta
   use adjointvars
   use stencils
   use diffSizes
-
+  use surfaceFamilies, only: wallFamilies, totalWallFamilies
   implicit none
 #define PETSC_AVOID_MPIF_H
 
@@ -359,10 +359,10 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, fbar, useSpatial, useSta
   jj = 0 ! Force bar counter
 
   ! Before we start, perform the reverse of getForces() for each
-  ! spectral instance. This set the bcDatad%F and bcData%dualArea
+  ! spectral instance. This set the bcDatad%F and bcData%area
   ! seeds.
   do sps=1, nTimeIntervalsSpectral
-     call getForces_b(fBar, 3*fSize, sps)
+     call getForces_b(fBar, fSize, sps)
   end do
 
   domainLoopAD: do nn=1,nDom
@@ -824,7 +824,7 @@ subroutine dRdwMatMult(A, vecX,  vecY, ierr)
   use inputAdjoint       
   use ADjointVars
   use inputTimeSpectral  
-
+  use surfaceFamilies, only: wallFamilies, totalWallFamilies
   implicit none
 #define PETSC_AVOID_MPIF_H
 
@@ -873,9 +873,12 @@ subroutine dRdwMatMult(A, vecX,  vecY, ierr)
   extraSize   = size(extraDot)
   stateSize   = size(wd_pointer)
   costSize    = nCostFunction
-  call getForceSize(fSize, fSizeCell)
+
+  call getSurfaceSize(fSize, fSizeCell, wallFamilies, totalWallFamilies)
+  call setFullFamilyList()
   allocate(xvdot(spatialSize))
   allocate(fdot(3, fSize))
+
   xvdot = zero
   extradot = zero
   fdot = zero
