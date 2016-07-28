@@ -42,8 +42,7 @@ FILES_TO_COMPLEXIFY = 	getForces.F90\
 	        setGrid.f90\
 	        setTNSWall.f90\
 	        initializeExternalWarping.f90\
-	        blockLogicalFunctions.f90\
-		blockRelations.f90
+
 FILES_TO_COPY = 
 
 ALL_FILES = $(FILES_TO_COMPLEXIFY) $(FILES_TO_COPY)

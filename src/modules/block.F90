@@ -101,7 +101,8 @@ module block
      real(kind=realType), dimension(:,:,:), pointer :: norm
      real(kind=realType), dimension(:,:),   pointer :: rface
      real(kind=realType), dimension(:,:,:), pointer :: F, Fv, Fp
-     real(kind=realType), dimension(:,:), pointer :: dualArea
+     real(kind=realType), dimension(:,:,:), pointer :: T, Tv, Tp
+     real(kind=realType), dimension(:,:), pointer :: area
      integer(kind=realType), dimension(:,:), pointer :: fIndex
 
      ! symNorm is the normal for (symmertry) boundary conditions.
@@ -127,8 +128,10 @@ module block
 
      real(kind=realType), dimension(:,:,:), pointer :: uSlip
      real(kind=realType), dimension(:,:),   pointer :: TNS_Wall
-     integer(kind=intType) :: mask
 
+     ! The name of this boundary condition and it's index
+     character(maxCGNSNameLen) :: family
+     integer(kind=intType) :: famID
 
      ! *******************************
      ! Added by HDN
@@ -145,9 +148,6 @@ module block
      real(kind=realType), dimension(:,:,:),   pointer :: rFaceALE
      real(kind=realType), dimension(:,:,:,:), pointer :: uSlipALE
      real(kind=realType), dimension(:,:),     pointer :: sHeatFlux
-
-
-
 
      ! ptInlet(:,:):       Total pressure at subsonic inlets.
      ! ttInlet(:,:):       Total temperature at subsonic inlets.

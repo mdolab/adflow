@@ -10,7 +10,7 @@
 !
        subroutine storeSurfsolInBuffer(sps, buffer, nn, blockID,   &
                                        faceID, cellRange, solName, &
-                                       viscousSubface)
+                                       viscousSubface, useRindLayer)
 !
 !      ******************************************************************
 !      *                                                                *
@@ -42,7 +42,7 @@
        integer(kind=intType), dimension(3,2), intent(in) :: cellRange
        real(kind=realType), dimension(*), intent(out) :: buffer
        character(len=*), intent(in) :: solName
-       logical, intent(in) :: viscousSubface
+       logical, intent(in) :: viscousSubface, useRindLayer
 !
 !      Local variables.
 !
@@ -87,7 +87,7 @@
        ! in the halo's.
 
        offVis = 0
-       if( storeRindLayer ) offVis = 1
+       if(  useRindLayer ) offVis = 1
 
        ! CellRange contains the range of the current block in the
        ! original cgns block. Substract the offset and store the local
@@ -159,7 +159,7 @@
 
            pp1    => p(1,1:,1:);     pp2    => p(2,1:,1:)           
            gamma1 => gamma(1,1:,1:); gamma2 => gamma(2,1:,1:)
-           !print *,'block is moving imin',blockIsMoving
+
            if( blockIsMoving)then
               ss1    => s(1,1:,1:,:);   ss2    => s(2,1:,1:,:)
            end if
@@ -316,7 +316,7 @@
 
        varName: select case (solName)
 
-         case (cgnsDensity)
+       case (cgnsDensity)
 
            do j=rangeFace(2,1), rangeFace(2,2)
              do i=rangeFace(1,1), rangeFace(1,2)

@@ -3,15 +3,16 @@
 !
 !  differentiation of block_res in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *(flowdoms.x) *(flowdoms.w)
-!                *(flowdoms.dw) *(*bcdata.f) *xx *rev0 *rev1 *rev2
-!                *rev3 *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3
-!                *ssi *ww0 *ww1 *ww2 *ww3 funcvalues
-!   with respect to varying inputs: pref *(flowdoms.x) *(flowdoms.w)
-!                *(flowdoms.dw) *(*bcdata.f) mach tempfreestream
-!                reynolds machgrid lengthref machcoef pointref
+!                *(flowdoms.dw) *(*bcdata.fv) *(*bcdata.fp) *(*bcdata.area)
 !                *xx *rev0 *rev1 *rev2 *rev3 *pp0 *pp1 *pp2 *pp3
 !                *rlv0 *rlv1 *rlv2 *rlv3 *ssi *ww0 *ww1 *ww2 *ww3
-!                *xsurf funcvalues alpha beta
+!                funcvalues
+!   with respect to varying inputs: pref *(flowdoms.x) *(flowdoms.w)
+!                *(flowdoms.dw) *(*bcdata.fv) *(*bcdata.fp) *(*bcdata.area)
+!                mach tempfreestream reynolds machgrid lengthref
+!                machcoef pointref *xx *rev0 *rev1 *rev2 *rev3
+!                *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3 *ssi
+!                *ww0 *ww1 *ww2 *ww3 *xsurf funcvalues alpha beta
 !   rw status of diff variables: mudim:(loc) gammainf:(loc) pinf:(loc)
 !                timeref:(loc) rhoinf:(loc) muref:(loc) rhoinfdim:(loc)
 !                tref:(loc) winf:(loc) muinf:(loc) uinf:(loc) pinfcorr:(loc)
@@ -24,27 +25,28 @@
 !                *uz:(loc) *d2wall:(loc) *si:(loc) *sj:(loc) *sk:(loc)
 !                *bvti1:(loc) *bvti2:(loc) *vx:(loc) *vy:(loc)
 !                *vz:(loc) *fw:(loc) *(*viscsubface.tau):(loc)
-!                *(*bcdata.norm):(loc) *(*bcdata.f):in-out *radi:(loc)
-!                *radj:(loc) *radk:(loc) mach:out tempfreestream:out
-!                reynolds:out veldirfreestream:(loc) machgrid:out
-!                lengthref:out machcoef:out dragdirection:(loc)
-!                liftdirection:(loc) pointref:out *xx:in-out *rev0:in-out
-!                *rev1:in-out *rev2:in-out *rev3:in-out *pp0:in-out
-!                *pp1:in-out *pp2:in-out *pp3:in-out *rlv0:in-out
-!                *rlv1:in-out *rlv2:in-out *rlv3:in-out *ssi:in-out
-!                *ww0:in-out *ww1:in-out *ww2:in-out *ww3:in-out
-!                *xsurf:out funcvalues:in-zero alpha:out beta:out
+!                *(*bcdata.norm):(loc) *(*bcdata.fv):in-out *(*bcdata.fp):in-out
+!                *(*bcdata.area):in-out *radi:(loc) *radj:(loc)
+!                *radk:(loc) mach:out tempfreestream:out reynolds:out
+!                veldirfreestream:(loc) machgrid:out lengthref:out
+!                machcoef:out dragdirection:(loc) liftdirection:(loc)
+!                pointref:out *xx:in-out *rev0:in-out *rev1:in-out
+!                *rev2:in-out *rev3:in-out *pp0:in-out *pp1:in-out
+!                *pp2:in-out *pp3:in-out *rlv0:in-out *rlv1:in-out
+!                *rlv2:in-out *rlv3:in-out *ssi:in-out *ww0:in-out
+!                *ww1:in-out *ww2:in-out *ww3:in-out *xsurf:out
+!                funcvalues:in-zero alpha:out beta:out
 !   plus diff mem management of: flowdoms.x:in flowdoms.vol:in
 !                flowdoms.w:in flowdoms.dw:in rev:in aa:in bvtj1:in
 !                bvtj2:in wx:in wy:in wz:in p:in rlv:in qx:in qy:in
 !                qz:in scratch:in bvtk1:in bvtk2:in ux:in uy:in
 !                uz:in d2wall:in si:in sj:in sk:in bvti1:in bvti2:in
 !                vx:in vy:in vz:in fw:in viscsubface:in *viscsubface.tau:in
-!                bcdata:in *bcdata.norm:in *bcdata.f:in radi:in
-!                radj:in radk:in xx:in rev0:in rev1:in rev2:in
-!                rev3:in pp0:in pp1:in pp2:in pp3:in rlv0:in rlv1:in
-!                rlv2:in rlv3:in ssi:in ww0:in ww1:in ww2:in ww3:in
-!                xsurf:in
+!                bcdata:in *bcdata.norm:in *bcdata.fv:in *bcdata.fp:in
+!                *bcdata.area:in radi:in radj:in radk:in xx:in
+!                rev0:in rev1:in rev2:in rev3:in pp0:in pp1:in
+!                pp2:in pp3:in rlv0:in rlv1:in rlv2:in rlv3:in
+!                ssi:in ww0:in ww1:in ww2:in ww3:in xsurf:in
 ! this is a super-combined function that combines the original
 ! functionality of: 
 ! pressure computation

@@ -29,6 +29,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
   use inputPhysics
   use bcroutines
   use costFunctions
+  use surfaceFamilies
   implicit none
   !
   !      Subroutine arguments
@@ -41,7 +42,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
   !
   !      Local variables.
   !
-  integer(kind=intType) :: nn, i, j, ii
+  integer(kind=intType) :: nn, i, j, ii, bSearchIntegers
 
   real(kind=realType) :: pm1, fx, fy, fz, fn, sigma
   real(kind=realType) :: xc, yc, zc, qf(3)
@@ -51,7 +52,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
   real(kind=realType) :: tauXy, tauXz, tauYz
 
   real(kind=realType), dimension(3) :: refPoint
-  real(kind=realType) :: mx, my, mz, qa
+  real(kind=realType) :: mx, my, mz, cellArea
   logical :: viscousSubface
   !
   !      ******************************************************************
@@ -98,13 +99,13 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
      !        *                                                              *
      !        ****************************************************************
      !
-     ! Only include this patch if necessary
-     mask: if(bcData(nn)%mask == 1) then 
+
+     famInclude: if (bsearchIntegers(BCdata(nn)%famID, &
+          famGroups, shape(famGroups)) > 0) then 
 
         invForce: if(BCType(nn) == EulerWall .or. &
              BCType(nn) == NSWallAdiabatic .or. &
              BCType(nn) == NSWallIsothermal) then
-             
            ! Subface is a wall. Check if it is a viscous wall.
 
            viscousSubface = .true.
@@ -139,9 +140,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
            !
            ! do j=(BCData(nn)%jnBeg+1),BCData(nn)%jnEnd
            !    do i=(BCData(nn)%inBeg+1),BCData(nn)%inEnd
-
-           bcData(nn)%dualArea = zero!1e-30
-           bcData(nn)%F = zero
+           
            !$AD II-LOOP
            do ii=0,(BCData(nn)%jnEnd - bcData(nn)%jnBeg)*(bcData(nn)%inEnd - bcData(nn)%inBeg) -1 
               i = mod(ii, (bcData(nn)%inEnd-bcData(nn)%inBeg)) + bcData(nn)%inBeg + 1
@@ -182,39 +181,12 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
               cMp(2) = cMp(2) + my
               cMp(3) = cMp(3) + mz
 
-#ifndef USE_TAPENADE           
-              ! Save the face based forces for the slice operations
+              ! Save the face-based forces and area
               bcData(nn)%Fp(i, j, 1) = fx
               bcData(nn)%Fp(i, j, 2) = fy
               bcData(nn)%Fp(i, j, 3) = fz
-#endif
-              ! Divide by 4 so we can scatter
-              fx = fourth*fx
-              fy = fourth*fy
-              fz = fourth*fz
-
-              ! Scatter 1/4 of the force to each of the nodes:
-              BCData(nn)%F(i-1,j-1,1) = BCData(nn)%F(i-1,j-1,1) + fx
-              BCData(nn)%F(i  ,j-1,1) = BCData(nn)%F(i  ,j-1,1) + fx
-              BCData(nn)%F(i-1,j  ,1) = BCData(nn)%F(i-1,j  ,1) + fx
-              BCData(nn)%F(i  ,j  ,1) = BCData(nn)%F(i  ,j  ,1) + fx
-
-              BCData(nn)%F(i-1,j-1,2) = BCData(nn)%F(i-1,j-1,2) + fy
-              BCData(nn)%F(i  ,j-1,2) = BCData(nn)%F(i  ,j-1,2) + fy
-              BCData(nn)%F(i-1,j  ,2) = BCData(nn)%F(i-1,j  ,2) + fy
-              BCData(nn)%F(i  ,j  ,2) = BCData(nn)%F(i  ,j  ,2) + fy
-
-              BCData(nn)%F(i-1,j-1,3) = BCData(nn)%F(i-1,j-1,3) + fz
-              BCData(nn)%F(i  ,j-1,3) = BCData(nn)%F(i  ,j-1,3) + fz
-              BCData(nn)%F(i-1,j  ,3) = BCData(nn)%F(i-1,j  ,3) + fz
-              BCData(nn)%F(i  ,j  ,3) = BCData(nn)%F(i  ,j  ,3) + fz
-
-              ! Scatter a quarter of the area to each node:
-              qA = fourth*sqrt(ssi(i, j, 1)**2 + ssi(i, j, 2)**2 + ssi(i, j, 3)**2)
-              BCData(nn)%dualArea(i-1, j-1) = BCData(nn)%dualArea(i-1, j-1) + qA
-              BCData(nn)%dualArea(i  , j-1) = BCData(nn)%dualArea(i  , j-1) + qA
-              BCData(nn)%dualArea(i-1, j  ) = BCData(nn)%dualArea(i-1, j  ) + qA
-              BCData(nn)%dualArea(i  , j  ) = BCData(nn)%dualArea(i  , j  ) + qA
+              cellArea = sqrt(ssi(i,j,1)**2 + ssi(i,j,2)**2 + ssi(i,j,3)**2)
+              bcData(nn)%area(i, j) = cellArea
 
               ! Get normalized surface velocity:
               v(1) = ww2(i, j, ivx)
@@ -231,7 +203,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
               sensor = one/(one + exp(-2*sepSensorSharpness*(sensor-sepSensorOffset)))
 
               ! And integrate over the area of this cell and save:
-              sensor = sensor * four * qA
+              sensor = sensor * cellArea
               sepSensor = sepSensor + sensor
 
               ! Also accumulate into the sepSensorAvg
@@ -252,7 +224,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
               Sigma = 1.4
               Sensor1 = -Cp - Sigma
               Sensor1 = one/(one+exp(-2*10*Sensor1))
-              Sensor1 = Sensor1 * four * qA
+              Sensor1 = Sensor1 * cellArea
               Cavitation = Cavitation + Sensor1
            enddo
            !
@@ -325,34 +297,10 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
                  cMv(2) = cMv(2) + my
                  cMv(3) = cMv(3) + mz
 
-#ifndef USE_TAPENADE           
                  ! Save the face based forces for the slice operations
                  bcData(nn)%Fv(i, j, 1) = fx
                  bcData(nn)%Fv(i, j, 2) = fy
                  bcData(nn)%Fv(i, j, 3) = fz
-#endif
-
-                 ! Divide by 4 so we can scatter
-                 fx = fourth*fx
-                 fy = fourth*fy
-                 fz = fourth*fz
-
-                 ! Scatter 1/4 of the force to each of the nodes:
-                 BCData(nn)%F(i-1,j-1,1) = BCData(nn)%F(i-1,j-1,1) + fx
-                 BCData(nn)%F(i  ,j-1,1) = BCData(nn)%F(i  ,j-1,1) + fx
-                 BCData(nn)%F(i-1,j  ,1) = BCData(nn)%F(i-1,j  ,1) + fx
-                 BCData(nn)%F(i  ,j  ,1) = BCData(nn)%F(i  ,j  ,1) + fx
-
-                 BCData(nn)%F(i-1,j-1,2) = BCData(nn)%F(i-1,j-1,2) + fy
-                 BCData(nn)%F(i  ,j-1,2) = BCData(nn)%F(i  ,j-1,2) + fy
-                 BCData(nn)%F(i-1,j  ,2) = BCData(nn)%F(i-1,j  ,2) + fy
-                 BCData(nn)%F(i  ,j  ,2) = BCData(nn)%F(i  ,j  ,2) + fy
-
-                 BCData(nn)%F(i-1,j-1,3) = BCData(nn)%F(i-1,j-1,3) + fz
-                 BCData(nn)%F(i  ,j-1,3) = BCData(nn)%F(i  ,j-1,3) + fz
-                 BCData(nn)%F(i-1,j  ,3) = BCData(nn)%F(i-1,j  ,3) + fz
-                 BCData(nn)%F(i  ,j  ,3) = BCData(nn)%F(i  ,j  ,3) + fz
-
 
                  ! Compute the tangential component of the stress tensor,
                  ! which is needed to monitor y+. The result is stored
@@ -390,24 +338,25 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
                  end if
 #endif
               enddo
+           else
+              ! If we had no viscous force, set the viscous component to zero
+              bcData(nn)%Fv = zero
            end if visForce
-
-           ! ! If forces are tractions we have to divide by the dual area:
-           ! if (forcesAsTractions) then
-           !    do j= BCData(nn)%jnBeg, BCData(nn)%jnEnd
-           !       do i=BCData(nn)%inBeg, BCData(nn)%inEnd
-           !          bcData(nn)%F(i, j, :) =  bcData(nn)%F(i, j, :) / bcData(nn)%dualArea(i, j)
-           !       end do
-           !    end do
-           ! end if
-
+           
            call resetBCPointers(nn, .True.)
+
         end if invForce
      else
-        bcData(nn)%dualArea = zero!1e-30
-        bcData(nn)%F = zero
-     end if mask
-  enddo bocos
+        ! If it wasn't included, but still a wall...zero
+        if(BCType(nn) == EulerWall .or. &
+             BCType(nn) == NSWallAdiabatic .or. &
+             BCType(nn) == NSWallIsothermal) then
+           bcData(nn)%area = zero
+           bcData(nn)%Fp = zero
+           bcData(nn)%Fv = zero
+        end if
+     end if famInclude
+  end do bocos
 
   ! Currently the coefficients only contain the surface integral
   ! of the pressure tensor. These values must be scaled to

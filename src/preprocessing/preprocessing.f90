@@ -36,7 +36,8 @@
        integer :: ierr
 
        integer(kind=intType) :: nLevels, level, nn, mm, nsMin, nsMax, i
-!
+
+
 !      ******************************************************************
 !      *                                                                *
 !      * Begin execution                                                *
@@ -238,16 +239,12 @@
        end do
 
        nLevels = ubound(flowDoms,2)
-       
+
        do level=1,nLevels
           call wallDistance(level, .True.)
        end do
 
-       ! Determine the local-to-global mapping for the traction
-       ! computation. 
+       call setSurfaceFamilyInfo
+       call initializeLiftDistributionData
 
-       call initializeTractionScatter()
-
-       
      end subroutine preprocessing
-
