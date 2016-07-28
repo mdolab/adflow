@@ -1042,7 +1042,7 @@
                call storeSurfsolInBuffer(ind, buffer, jj, ii,       &
                                          faceID, cellRange(1,1,kk), &
                                          solNames(mm),              &
-                                         viscousSubface)
+                                         viscousSubface, storeRindLayer)
              endif
            enddo
 

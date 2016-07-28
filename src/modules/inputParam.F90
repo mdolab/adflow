@@ -239,8 +239,6 @@
        !                      On systems with a limited amount of memory
        !                      the storage of this info could be a
        !                      bottleneck for memory.
-       ! sliceFileTractions:  Whether or not tractions will be included
-       !                      in the slice files.
        
        integer(kind=intType) :: precisionGrid, precisionSol
 
@@ -252,7 +250,7 @@
 
        logical :: storeRindLayer, checkRestartSol
        logical :: autoParameterUpdate, writeCoorMeter
-       logical :: storeConvInnerIter, sliceFileTractions
+       logical :: storeConvInnerIter
 
        logical :: firstWrite = .true.
 
@@ -1102,3 +1100,4 @@
        logical:: useWindAxis
 
      end module inputTSStabDeriv
+

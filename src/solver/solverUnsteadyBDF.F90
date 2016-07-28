@@ -382,8 +382,8 @@
          ! Write lift distribution TEMPORARY
          write(intString,"(i4.4)") timeStepUnsteady + nTimeStepsRestart
          intString = adjustl(intString)
-         call writeSlicesFile(trim(slicesolfile)//"_Timestep"//trim(intString)//".dat")
-         call writeLiftDistributionFile(trim(liftDistributionFile)//"_Timestep"//trim(intString)//".dat")
+         call writeSlicesFile(trim(slicesolfile)//"_Timestep"//trim(intString)//".dat", .True.)
+         call writeLiftDistributionFile(trim(liftDistributionFile)//"_Timestep"//trim(intString)//".dat", .True.)
 
        endif
 
