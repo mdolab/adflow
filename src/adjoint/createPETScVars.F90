@@ -70,7 +70,7 @@ subroutine createPETScVars
      level = 1
      
      call statePreAllocation(nnzDiagonal, nnzOffDiag, nDimW/nState, stencil, n_stencil, &
-          level)
+          level, .True.)
      call myMatCreate(dRdwT, nState, nDimW, nDimW, nnzDiagonal, nnzOffDiag, &
        __FILE__, __LINE__)
      
@@ -113,7 +113,7 @@ subroutine createPETScVars
 
      level = 1
      call statePreAllocation(nnzDiagonal, nnzOffDiag, nDimW/nState, stencil, n_stencil, &
-          level)
+          level, .True.)
      call myMatCreate(dRdwPreT, nState, nDimW, nDimW, nnzDiagonal, nnzOffDiag, &
           __FILE__, __LINE__)
 

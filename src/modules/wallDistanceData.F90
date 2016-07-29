@@ -31,12 +31,6 @@
 #endif
        save
 
-#ifndef USE_TAPENADE
-       type faceList
-          integer(kind=intType) :: n
-          integer(kind=intType), dimension(:), allocatable :: id
-       end type faceList
-#endif
 
        ! xVolume: flatten 1-D vector of all volume nodes for all
        ! spectral instances. The dimension is the number of levels
@@ -65,11 +59,10 @@
 #ifndef USE_TAPENADE
        real(kind=realType), dimension(:), pointer :: xSurfd
        Vec , dimension(:), allocatable :: xVolumeVec
-       Vec , dimension(:), allocatable :: xSurfVec
-       Vec :: xSurfVecd
-       VecScatter, dimension(:), allocatable :: wallScatter
+       Vec , dimension(:, :), allocatable :: xSurfVec 
+       Vec , dimension(:), allocatable :: xSurfVecd
+       VecScatter, dimension(:, :), allocatable :: wallScatter
        IS IS1, IS2
-       type(faceList), dimension(:), allocatable :: indicesForSPS
        real(kind=realType), dimension(:), pointer :: xVolume
 #endif
 

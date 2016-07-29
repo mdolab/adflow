@@ -93,6 +93,7 @@ ALL_RES_FILES =	$(SRC)/adjoint/residualInput/block_res.F90\
 		$(SRC)/turbulence/bcTurbFarfield.f90\
 		$(SRC)/turbulence/unsteadyTurbSpectral.f90\
 		$(SRC)/turbulence/bcTurbTreatment.F90\
+		$(SRC)/turbulence/bcTurbInterface.f90\
 		$(SRC)/turbulence/applyAllTurbBC.F90\
 		$(SRC)/turbulence/bcEddyWall.f90\
 		$(SRC)/turbulence/bcEddyNoWall.f90\

@@ -66,7 +66,8 @@
        if( volWritePtotloss )     nVolSolvar = nVolSolvar + 1
        if( volWriteShock )        nVolSolvar = nVolSolvar + 1
        if( volWriteFilteredShock) nVolSolvar = nVolSolvar + 1
-
+       if( volWriteGC  )          nVolSolvar = nVolSolvar + 1
+       if( volWriteStatus )       nVolSolvar = nVolSolvar + 1
        ! Check the discrete variables.
 
        if( volWriteResRho )  nVolDiscrVar  = nVolDiscrVar + 1

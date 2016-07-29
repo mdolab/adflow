@@ -129,9 +129,6 @@
                nullify(BCData(j)%uSlip)
                nullify(BCData(j)%TNS_Wall)
 
-     ! *******************************
-     ! Added by HDN
-     ! *******************************
                nullify(BCData(j)%normALE)
                nullify(BCData(j)%rfaceALE)
                nullify(BCData(j)%uSlipALE)
@@ -153,6 +150,10 @@
                nullify(BCData(j)%ps)
                bcData(j)%symNormSet = .False.
                bcData(j)%symNorm = zero
+               nullify(BCData(j)%iblank)
+               nullify(BCData(j)%delta)
+               nullify(BCData(j)%deltaNode)
+
              enddo bocoLoop
            enddo domainsLoop
          enddo spectralLoop

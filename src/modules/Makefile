@@ -57,6 +57,8 @@ FF90_OBJECTS_3 = NKSolverVars.o\
 		 costFunctions.o\
 		 kd_tree.o\
 		 surfaceFamilies.o\
+		 adtData.o\
+		 kd_tree.o\
 
 FF90_OBJECTS_4 = ADjointVars.o\
 		 ADjointPETSc.o\
@@ -80,6 +82,7 @@ FF90_OBJECTS_4 = ADjointVars.o\
 	         diffSizes.o\
 		 wallDistanceData.o\
 		 myPushPopLib.o\
+		 overset.o\
 		 liftDistributionData.o\
 
 FILES_TO_COMPLEXIFY =  precision.F90\
@@ -119,6 +122,7 @@ FILES_TO_COMPLEXIFY =  precision.F90\
 	         diffSizes.f90\
 		 wallDistanceData.F90\
 		 myPushPopLib.F90\
+		 overset.F90\
 		 kd_tree.f90\
 		 surfaceFamilies.F90\
 

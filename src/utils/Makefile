@@ -53,15 +53,14 @@ FILES_TO_COMPLEXIFY =  \
 	       myIsNAN.f90\
 	       nullifyCGNSDomPointers.f90\
 	       nullifyFlowDomPointers.f90\
-	       orphanAverage.f90\
 	       pointReduce.F90\
+	       orphanAverage.f90\
 	       qsortIntegers.f90\
 	       qsortReals.f90\
 	       qsortStrings.f90\
 	       reallocateIntegers.f90\
 	       reallocateReals.f90\
 	       releaseMemory.F90\
-	       releaseOversetCGNSGrid.f90\
 	       removeTiesIntegers.f90\
 	       removeTiesStrings.f90\
 	       replaceTabsAndReturns.f90\
@@ -99,9 +98,12 @@ FILES_TO_COMPLEXIFY =  \
 	       whalo_d.f90\
 	       whaloMixing.f90\
 	       whaloSliding.f90\
-	       wOverset.f90\
+	       wOverset.F90\
+	       wOverset_d.F90\
+	       wOverset_b.F90\
 	       writeVarsToBuffer.f90\
 	       getLiftDirFromSymmetry.F90\
+
 
 FILES_TO_COPY = myIsNaNC.c\
 		f77flush.c\
