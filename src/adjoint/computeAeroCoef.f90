@@ -26,6 +26,7 @@ subroutine computeAeroCoef(globalCFVals,sps)
   use costFunctions
   use inputTimeSpectral
   use flowVarRefState
+  use overset, only : oversetPresent
   implicit none
 
   ! Input/Ouput Variables
@@ -69,16 +70,17 @@ subroutine computeAeroCoef(globalCFVals,sps)
      cavitationLocal = cavitationLocal + cavitation
   end do domains
 
-  call forcesAndMomentsZipper(cfp, cfv, cmp, cmv)
-
-  ! Add the extra zipper component on the root proc
-  if (myid == 0) then 
-     cFpLocal = cFpLocal + cFp
-     cFvLocal = cFvLocal + cFv
-     cMpLocal = cMpLocal + cMp
-     cMvLocal = cMvLocal + cMv
+  if (oversetPresent) then 
+     call forcesAndMomentsZipper(cfp, cfv, cmp, cmv, sps)
+  
+     ! Add the extra zipper component on the root proc
+     if (myid == 0) then 
+        cFpLocal = cFpLocal + cFp
+        cFvLocal = cFvLocal + cFv
+        cMpLocal = cMpLocal + cMp
+        cMvLocal = cMvLocal + cMv
+     end if
   end if
-
 
   ! Now compute the other variables
   cFp = cFpLocal

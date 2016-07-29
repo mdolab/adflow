@@ -92,6 +92,14 @@ subroutine oversetComm(level, firstTime, coarseLevel)
               allocate(flowDoms(nn,level,sps)%iblank(0:i,0:j,0:k))
               flowDoms(nn, level, sps)%iblank = 1
            end if
+           do mm=1, flowDoms(nn, level, sps)%nBocos
+              if (flowDoms(nn, level, sps)%BCType(mm) == EulerWall .or. &
+                   flowDoms(nn, level, sps)%BCType(mm) == NSWallAdiabatic .or. &
+                   flowDoms(nn, level, sps)%BCType(mm) == NSWallIsoThermal) then 
+                 flowDoms(nn, level, sps)%BCData(mm)%iblank = 1
+              end if
+           end do
+              
         end do
      end do
      return
