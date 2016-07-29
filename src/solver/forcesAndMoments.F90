@@ -176,14 +176,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
               fy = pm1*ssi(i,j,2)
               fz = pm1*ssi(i,j,3)
 
-              ! Save forces for zipper mesh before iBlanking
-              if (oversetPresent) then 
-                 call VecSetValuesBlocked(globalPressureTractions, 1, &
-                      (/gcp(i, j)/), &
-                      (/fx, fy, fz/)/norm2(ssi(i,j,:)), INSERT_VALUES, ierr)
-              end if
-
-              ! iBlank forces after saving for zipper mesh
+              ! iBlank forces
               fx = fx*blk
               fy = fy*blk
               fz = fz*blk
@@ -321,13 +314,6 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
                       +        tauYz*ssi(i,j,3))*scaleDim
                  fz = -fact*(tauXz*ssi(i,j,1) + tauYz*ssi(i,j,2) &
                       +        tauZz*ssi(i,j,3))*scaleDim
-
-                 ! Save forces for zipper mesh before iBlanking
-                 if (oversetPresent) then 
-                    call VecSetValuesBlocked(globalViscousTractions, 1, &
-                         (/gcp(i, j)/), &
-                         (/fx, fy, fz/)/norm2(ssi(i,j,:)), INSERT_VALUES, ierr)
-                 end if
 
                  ! iBlank forces after saving for zipper mesh
                  tauXx = tauXx*blk
