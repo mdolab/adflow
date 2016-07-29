@@ -1412,8 +1412,8 @@ class SUMB(AeroSolver):
             liftName = base + '_lift.dat'
             sliceName = base + '_slices.dat'
             surfName = base + '_surf.dat'
-
-        self.sumb.writetecplot(sliceName, True, liftName, True, surfName, True)
+        writeSurf = self.getOption('writeTecplotSurfaceSolution')
+        self.sumb.writetecplot(sliceName, True, liftName, True, surfName, writeSurf)
 
     def writeMeshFile(self, fileName):
         """Write the current mesh to a CGNS file. This call isn't used
@@ -3451,6 +3451,7 @@ class SUMB(AeroSolver):
             'writefarfield':[bool, False],
             'writesurfacesolution':[bool,True],
             'writevolumesolution':[bool,True],
+            'writetecplotsurfacesolution':[bool,False],
             'nsavevolume':[int,1],
             'nsavesurface':[int,1],
             'solutionprecision':[str,'single'],
@@ -3912,6 +3913,7 @@ class SUMB(AeroSolver):
         ignoreOptions = set(('numbersolutions',
                              'writesurfacesolution',
                              'writevolumesolution',
+                             'writetecplotsurfacesolution',
                              'autosolveretry',
                              'autoadjointretry',
                              'partitiononly',
