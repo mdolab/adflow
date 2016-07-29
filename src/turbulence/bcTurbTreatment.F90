@@ -140,7 +140,7 @@
              call bcTurbFarfield(nn)
 
            !=============================================================
-#ifndef USE_TAPENADE
+
            case (SlidingInterface,   OversetOuterBound,     &
                  DomainInterfaceAll, DomainInterfaceRhoUVW, &
                  DomainInterfaceP,   DomainInterfaceRho,    &
@@ -151,7 +151,7 @@
              ! condition and therefore the values are kept.
 
              call bcTurbInterface(nn)
-#endif
+
            !=============================================================
 
            case default

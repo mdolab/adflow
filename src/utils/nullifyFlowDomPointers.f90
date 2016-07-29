@@ -62,12 +62,9 @@
        nullify(flowDoms(nn,level,sps)%l3)
        nullify(flowDoms(nn,level,sps)%groupNum)
 
-       nullify(flowDoms(nn,level,sps)%ibndry)
-       nullify(flowDoms(nn,level,sps)%idonor)
-       nullify(flowDoms(nn,level,sps)%overint)
-       nullify(flowDoms(nn,level,sps)%neighProcOver)
-       nullify(flowDoms(nn,level,sps)%neighBlockOver)
        nullify(flowDoms(nn,level,sps)%iblank)
+       nullify(flowDoms(nn,level,sps)%fringes)
+       nullify(flowDoms(nn,level,sps)%orphans)
 
        nullify(flowDoms(nn,level,sps)%BCData)
        nullify(flowDoms(nn,level,sps)%viscSubface)
@@ -183,9 +180,10 @@
 
        nullify(flowDoms(nn,level,sps)%globalCell)
        nullify(flowDoms(nn,level,sps)%globalNode)
-       nullify(flowDOms(nn,level,sps)%elemID)
+       nullify(flowDOms(nn,level,sps)%surfNodeIndices)
        nullify(flowDOms(nn,level,sps)%uv)
-
+       nullify(flowDoms(nn,level,sps)%wallInd)
+       nullify(flowDoms(nn,level,sps)%xSeed)
 
        ! *******************************
        ! Added by HDN

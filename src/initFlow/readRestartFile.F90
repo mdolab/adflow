@@ -239,8 +239,8 @@
            ! overset cases because there will be an extra solution node
            ! for the nodal iblanks.
 
-           if((nSols > 1 .and. .not. oversetPresent) .or. nSols > 2) &
-             call terminate("readRestartFile", &
+           if((nSols > 1) .or. nSols > 2) &
+             call returnFail("readRestartFile", &
                             "Multiple solutions present in restart file")
 
            ! Determine the location of the solution variables. A loop is

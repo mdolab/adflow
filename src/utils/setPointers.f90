@@ -114,19 +114,10 @@
        groupNum   => flowDoms(nn,mm,1)%groupNum
 
        ! Overset boundary and hole info.
-
-       nCellsOverset     = flowDoms(nn,mm,ll)%nCellsOverset
-       nCellsOversetAll  = flowDoms(nn,mm,ll)%nCellsOversetAll
-       nOrphans          = flowDoms(nn,mm,ll)%nOrphans
-       nHoles            = flowDoms(nn,mm,ll)%nHoles
-
-       ibndry           => flowDoms(nn,mm,ll)%ibndry
-       idonor           => flowDoms(nn,mm,ll)%idonor
-       overint          => flowDoms(nn,mm,ll)%overint
-       neighProcOver    => flowDoms(nn,mm,ll)%neighProcOver
-       neighBlockOver   => flowDoms(nn,mm,ll)%neighBlockOver
-
        iblank => flowDoms(nn,mm,ll)%iblank
+       fringes => flowDoms(nn,mm,ll)%fringes
+       orphans => flowDoms(nn,mm,ll)%orphans
+       nOrphans = flowDoms(nn,mm,ll)%nOrphans
 
        ! The data for boundary subfaces.
 
@@ -284,11 +275,11 @@
        ! Pointers for globalCell/Node
        globalCell =>flowDoms(nn,mm,ll)%globalCell
        globalNode =>flowDoms(nn,mm,ll)%globalNode
-
        ifaceptb  =>flowDoms(nn,1,1)%ifaceptb
        iedgeptb  =>flowDoms(nn,1,1)%iedgeptb
 
-
+       xSeed => flowDoms(nn,mm,ll)%xSeed
+       wallInd => flowDoms(nn,mm,ll)%wallInd
 
        ! *******************************
        ! Added by HDN

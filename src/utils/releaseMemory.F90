@@ -204,7 +204,6 @@ subroutine releaseMemoryPart1
      call deallocateInternalCommType(internalNode_1st(l))
 
      do sps=1,nTimeIntervalsSpectral
-        call deallocateCommType(commPatternOverset(l, sps))
         call deallocateSlidingCommType(commslidingCell_1st(l,sps))
         call deallocateSlidingCommType(commslidingCell_2nd(l,sps))
      end do
@@ -220,8 +219,7 @@ subroutine releaseMemoryPart1
   ! The remainder of the comms are just deallocated...these still need
   ! to be treated properly
   deallocate(commSlidingCell_1st, commSlidingCell_2nd, &
-       intSlidingCell_1st, intSlidingCell_2nd, commPatternMixing, &
-       commPatternOverSet, internalOverset)
+       intSlidingCell_1st, intSlidingCell_2nd, commPatternMixing)
 
   ! Send/recv buffer
   if (allocated(sendBuffer)) then
@@ -427,7 +425,7 @@ subroutine releaseMemoryPart2
   call vecDestroy(x_like,PETScIerr)
   call EChk(PETScIerr, __FILE__, __LINE__)
 
-  ! Finally delete cgnsDoms...but there is still shit-ton more
+  ! Finally delete cgnsDoms...but there is still more
   ! pointers that need to be deallocated...
   do nn=1,cgnsNDom
      if (associated(cgnsDoms(nn)%procStored)) &
@@ -438,15 +436,6 @@ subroutine releaseMemoryPart2
 
      if (associated(cgnsDoms(nn)%connNonMatchAbutting)) &
         deallocate(cgnsDoms(nn)%connNonMatchAbutting)
-
-     if (associated(cgnsDoms(nn)%connOver)) &
-        deallocate(cgnsDoms(nn)%connOver)
-
-     if (associated(cgnsDoms(nn)%hole)) &
-        deallocate(cgnsDoms(nn)%hole)
-
-     if (associated(cgnsDoms(nn)%hole)) &
-        deallocate(cgnsDoms(nn)%hole)
 
      if (associated(cgnsDoms(nn)%bocoInfo)) &
         deallocate(cgnsDoms(nn)%bocoInfo)
@@ -615,27 +604,7 @@ subroutine deallocateBlock(nn, level, sps)
      if( associated(BCData(i)%turbInlet) ) &
           deallocate(BCData(i)%turbInlet, stat=ierr)
      if(ierr /= 0) deallocationFailure = .true.
-     nullify(BCData(i)%norm)
-     nullify(BCData(i)%rface)
-     nullify(BCData(i)%uSlip)
-     nullify(BCData(i)%TNS_Wall)
-     nullify(BCData(i)%ptInlet)
-     nullify(BCData(i)%ttInlet)
-     nullify(BCData(i)%htInlet)
-     nullify(BCData(i)%flowXdirInlet)
-     nullify(BCData(i)%flowYdirInlet)
-     nullify(BCData(i)%flowZdirInlet)
-     nullify(BCData(i)%rho)
-     nullify(BCData(i)%velx)
-     nullify(BCData(i)%vely)
-     nullify(BCData(i)%velz)
-     nullify(BCData(i)%ps)
-     nullify(BCData(i)%turbInlet)
 
-
-  ! *******************************
-  ! Added by HDN
-  ! *******************************
      if( associated(BCData(i)%normALE) ) &
           deallocate(BCData(i)%normALE, stat=ierr)
      if(ierr /= 0) deallocationFailure = .true.
@@ -649,10 +618,43 @@ subroutine deallocateBlock(nn, level, sps)
           deallocate(BCData(i)%sHeatFlux, stat=ierr)
      if(ierr /= 0) deallocationFailure = .true.
 
+     if( associated(BCData(i)%iBlank) ) &
+          deallocate(BCData(i)%iBlank, stat=ierr)
+     if(ierr /= 0) deallocationFailure = .true.
+
+     nullify(BCData(i)%norm)
+     nullify(BCData(i)%rface)
+     nullify(BCData(i)%F)
+     nullify(BCData(i)%Fv)
+     nullify(BCData(i)%Fp)
+     nullify(BCData(i)%T)
+     nullify(BCData(i)%Tv)
+     nullify(BCData(i)%Tp)
+
+     nullify(BCData(i)%uSlip)
+     nullify(BCData(i)%TNS_Wall)
+
      nullify(BCData(i)%normALE)
-     nullify(BCData(i)%rFaceALE)
+     nullify(BCData(i)%rfaceALE)
      nullify(BCData(i)%uSlipALE)
      nullify(BCData(i)%sHeatFlux)
+     
+     nullify(BCData(i)%ptInlet)
+     nullify(BCData(i)%ttInlet)
+     nullify(BCData(i)%htInlet)
+     nullify(BCData(i)%flowXdirInlet)
+     nullify(BCData(i)%flowYdirInlet)
+     nullify(BCData(i)%flowZdirInlet)
+     
+     nullify(BCData(i)%turbInlet)
+     
+     nullify(BCData(i)%rho)
+     nullify(BCData(i)%velx)
+     nullify(BCData(i)%vely)
+     nullify(BCData(i)%velz)
+     nullify(BCData(i)%ps)
+     nullify(BCData(i)%iblank)
+
   enddo
 
   if( associated(flowDoms(nn,level,sps)%BCType) ) &
@@ -765,26 +767,6 @@ subroutine deallocateBlock(nn, level, sps)
 
   if( associated(flowDoms(nn,level,sps)%iblank) ) &
        deallocate(flowDoms(nn,level,sps)%iblank, stat=ierr)
-  if(ierr /= 0) deallocationFailure = .true.
-
-  if( associated(flowDoms(nn,level,sps)%ibndry) ) &
-       deallocate(flowDoms(nn,level,sps)%ibndry, stat=ierr)
-  if(ierr /= 0) deallocationFailure = .true.
-
-  if( associated(flowDoms(nn,level,sps)%idonor) ) &
-       deallocate(flowDoms(nn,level,sps)%idonor, stat=ierr)
-  if(ierr /= 0) deallocationFailure = .true.
-
-  if( associated(flowDoms(nn,level,sps)%overint) ) &
-       deallocate(flowDoms(nn,level,sps)%overint, stat=ierr)
-  if(ierr /= 0) deallocationFailure = .true.
-
-  if( associated(flowDoms(nn,level,sps)%neighBlockOver) ) &
-       deallocate(flowDoms(nn,level,sps)%neighBlockOver, stat=ierr)
-  if(ierr /= 0) deallocationFailure = .true.
-
-  if( associated(flowDoms(nn,level,sps)%neighProcOver) ) &
-       deallocate(flowDoms(nn,level,sps)%neighProcOver, stat=ierr)
   if(ierr /= 0) deallocationFailure = .true.
 
   if( associated(flowDoms(nn,level,sps)%BCData) ) &

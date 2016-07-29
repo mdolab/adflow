@@ -88,15 +88,10 @@ module blockPointers
   integer(kind=intType), dimension(:), pointer :: l1, l2, l3
   integer(kind=intType), dimension(:), pointer :: groupNum
 
-  integer(kind=intType) :: nCellsOverset, nCellsOversetAll
-  integer(kind=intType) :: nHoles, nOrphans
-
   integer(kind=intType), dimension(:,:,:), pointer :: iblank
-
-  integer(kind=intType), dimension(:,:), pointer :: ibndry
-  integer(kind=intType), dimension(:,:), pointer :: idonor
-
-  real(kind=realType),   dimension(:,:), pointer :: overint
+  type(fringeType), dimension(:, :, :), pointer :: fringes
+  integer(kind=intType), dimension(:, :), pointer :: orphans
+  integer(kind=intType) :: nOrphans
 
   integer(kind=intType), dimension(:), pointer :: neighBlockOver
   integer(kind=intType), dimension(:), pointer :: neighProcOver
@@ -183,6 +178,8 @@ module blockPointers
 
   integer(kind=intType), dimension(:,:,:), pointer :: globalNode
   integer(kind=intType), dimension(:,:,:), pointer :: globalCell
+  real(kind=realType), dimension(:, :, :, :), pointer :: xSeed
+  integer(kind=intType), dimension(:, :, :), pointer :: wallInd
 
   integer(kind=intType), dimension(:), pointer ::ifaceptb,iedgeptb
 

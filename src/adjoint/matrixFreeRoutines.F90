@@ -291,7 +291,7 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, fbar, useSpatial, useSta
   integer(kind=intType) ::  level, irow, liftIndex, nState
   logical :: resetToRans
   real(kind=realType), dimension(extraSize) :: extraLocalBar
-  real(kind=realType), dimension(:), allocatable :: xSurfbSum
+  real(kind=realType), dimension(:, :), allocatable :: xSurfbSum
 
   ! Setup number of state variable based on turbulence assumption
   if ( frozenTurbulence ) then
@@ -342,14 +342,10 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, fbar, useSpatial, useSta
   funcValuesd= zero
   call getDirAngle(velDirFreestream, liftDirection, liftIndex, alpha, beta)
 
-  ! Now extract the vector of the surface data we need
-  call VecGetArrayF90(xSurfVec(level), xSurf, ierr)
+  call VecGetLocalSize(xSurfVec(1, 1), i, ierr)
   call EChk(ierr,__FILE__,__LINE__)
-
-  ! And it's derivative
-  call VecGetArrayF90(xSurfVecd, xSurfd, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-  allocate(xSurfbSum(size(xSurfd)))
+  
+  allocate(xSurfbSum(nTimeIntervalsSpectral, i))
   xSurfbSum = zero
 
   ! Zero out extraLocal
@@ -374,6 +370,14 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, fbar, useSpatial, useSta
      do sps=1,nTimeIntervalsSpectral
         ! Set pointers and derivative pointers
         call setPointers_d(nn, level, sps)
+
+        ! Get the pointers from the petsc vectors
+        call VecGetArrayF90(xSurfVec(level, sps), xSurf, ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+
+        ! And it's derivative
+        call VecGetArrayF90(xSurfVecd(sps), xSurfd, ierr)
+        call EChk(ierr,__FILE__,__LINE__)
 
         ! Set the dw seeds
         do k=2, kl
@@ -408,7 +412,7 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, fbar, useSpatial, useSta
 
            if (useSpatial) then 
               ! We need to acculumate the contribution from this block into xSurfbSum
-              xSurfbSum = xSurfbSum + xSurfd
+              xSurfbSum(sps, :) = xSurfbSum(sps, :) + xSurfd
               
               ! Also need the extra variables, those are zero-based:
               if (nDesignAoA >= 0) &
@@ -451,6 +455,15 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, fbar, useSpatial, useSta
            end if
 
         end do
+
+        ! These arrays need to be restored before we can move to the next spectral instance. 
+        call VecRestoreArrayF90(xSurfVec(level, sps), xSurf, ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+        
+        ! And it's derivative
+        call VecRestoreArrayF90(xSurfVecd(sps), xSurfd, ierr)
+        call EChk(ierr,__FILE__,__LINE__)
+
      end do
   end do domainLoopAD
 
@@ -494,16 +507,17 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, fbar, useSpatial, useSta
 
   ! Copy the Sum value back to xSurfb which is actually the PETSc
   ! array. And now we are done with the xSurfBSum value
-  xSurfd = xSurfbSum
+
+  do sps=1,nTimeIntervalsSpectral
+
+     ! And it's derivative
+     call VecGetArrayF90(xSurfVecd(sps), xSurfd, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     xSurfd = xSurfbSum(sps, :)
+  end do
+
   deallocate(xsurfbSum)
-
-  ! These arrays need to be restored before we can do the spatial scatter below:
-  call VecRestoreArrayF90(xSurfVec(level), xSurf, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-
-  ! And it's derivative
-  call VecRestoreArrayF90(xSurfVecd, xSurfd, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
 
   ! And perform assembly on the w vectors if 
   if (useState) then 
@@ -529,11 +543,13 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, fbar, useSpatial, useSta
      ! scatter from the global x vector to xSurf...but only if
      ! wallDistances were used
      if (wallDistanceNeeded .and. useApproxWallDistance) then 
-        call VecScatterBegin(wallScatter(1), xSurfVecd, x_like, ADD_VALUES, SCATTER_REVERSE, ierr)
-        call EChk(ierr,__FILE__,__LINE__)
-
-        call VecScatterEnd(wallScatter(1), xSurfVecd, x_like, ADD_VALUES, SCATTER_REVERSE, ierr)
-        call EChk(ierr,__FILE__,__LINE__)
+        do sps=1, nTimeIntervalsSpectral
+           call VecScatterBegin(wallScatter(1, sps), xSurfVecd(sps), x_like, ADD_VALUES, SCATTER_REVERSE, ierr)
+           call EChk(ierr,__FILE__,__LINE__)
+           
+           call VecScatterEnd(wallScatter(1, sps), xSurfVecd(sps), x_like, ADD_VALUES, SCATTER_REVERSE, ierr)
+           call EChk(ierr,__FILE__,__LINE__)
+        end do
      end if
      call VecResetArray(x_like, ierr)
      call EChk(ierr,__FILE__,__LINE__)
