@@ -34,6 +34,7 @@ subroutine convergenceInfo
   use bleedFlows       ! eran-massf 
   use couplerParam     ! eran_idendifyname
   use nksolvervars
+  use overset, only: oversetPresent
   implicit none
   !
   !      Local variables.
@@ -215,71 +216,73 @@ subroutine convergenceInfo
      end do domains
 
      ! Add the corrections from zipper meshes from proc 0
-     call forcesAndMomentsZipper(cfp, cfv, cmp, cmv, sps)
-         
-     ! Loop over the number of monitoring variables and just modify
-     ! the ones that need to be updated with the zipper forces we just
-     ! computed. 
-     nMonitoringVarZip: do mm=1,nMon
+     if (oversetPresent) then 
+        call forcesAndMomentsZipper(cfp, cfv, cmp, cmv, sps)
 
-        ! Determine the monitoring variable and act accordingly.
 
-        select case (monNames(mm))
+        !Loop over the number of monitoring variables and just modify
+        !the ones that need to be updated with the zipper forces we just
+        !computed. 
+        nMonitoringVarZip: do mm=1,nMon
 
-        case (cgnsCl)
-           monLoc(mm) = monLoc(mm)                         &
-                + (cfp(1) + cfv(1))*liftDirection(1) &
-                + (cfp(2) + cfv(2))*liftDirection(2) &
-                + (cfp(3) + cfv(3))*liftDirection(3)
+           ! Determine the monitoring variable and act accordingly.
 
-        case (cgnsClp)
-           monLoc(mm) = monLoc(mm) + cfp(1)*liftDirection(1) &
-                +              cfp(2)*liftDirection(2) &
-                +              cfp(3)*liftDirection(3)
+           select case (monNames(mm))
 
-        case (cgnsClv)
-           monLoc(mm) = monLoc(mm) + cfv(1)*liftDirection(1) &
-                +              cfv(2)*liftDirection(2) &
-                +              cfv(3)*liftDirection(3)
+           case (cgnsCl)
+              monLoc(mm) = monLoc(mm)                         &
+                   + (cfp(1) + cfv(1))*liftDirection(1) &
+                   + (cfp(2) + cfv(2))*liftDirection(2) &
+                   + (cfp(3) + cfv(3))*liftDirection(3)
 
-        case (cgnsCd)
-           monLoc(mm) = monLoc(mm)                         &
-                + (cfp(1) + cfv(1))*dragDirection(1) &
-                + (cfp(2) + cfv(2))*dragDirection(2) &
-                + (cfp(3) + cfv(3))*dragDirection(3)
+           case (cgnsClp)
+              monLoc(mm) = monLoc(mm) + cfp(1)*liftDirection(1) &
+                   +              cfp(2)*liftDirection(2) &
+                   +              cfp(3)*liftDirection(3)
 
-        case (cgnsCdp)
-           monLoc(mm) = monLoc(mm) + cfp(1)*dragDirection(1) &
-                +              cfp(2)*dragDirection(2) &
-                +              cfp(3)*dragDirection(3)
+           case (cgnsClv)
+              monLoc(mm) = monLoc(mm) + cfv(1)*liftDirection(1) &
+                   +              cfv(2)*liftDirection(2) &
+                   +              cfv(3)*liftDirection(3)
 
-        case (cgnsCdv)
-           monLoc(mm) = monLoc(mm) + cfv(1)*dragDirection(1) &
-                +              cfv(2)*dragDirection(2) &
-                +              cfv(3)*dragDirection(3)
+           case (cgnsCd)
+              monLoc(mm) = monLoc(mm)                         &
+                   + (cfp(1) + cfv(1))*dragDirection(1) &
+                   + (cfp(2) + cfv(2))*dragDirection(2) &
+                   + (cfp(3) + cfv(3))*dragDirection(3)
 
-        case (cgnsCfx)
-           monLoc(mm) = monLoc(mm) + cfp(1) + cfv(1)
+           case (cgnsCdp)
+              monLoc(mm) = monLoc(mm) + cfp(1)*dragDirection(1) &
+                   +              cfp(2)*dragDirection(2) &
+                   +              cfp(3)*dragDirection(3)
 
-        case (cgnsCfy)
-           monLoc(mm) = monLoc(mm) + cfp(2) + cfv(2)
+           case (cgnsCdv)
+              monLoc(mm) = monLoc(mm) + cfv(1)*dragDirection(1) &
+                   +              cfv(2)*dragDirection(2) &
+                   +              cfv(3)*dragDirection(3)
 
-        case (cgnsCfz)
-           monLoc(mm) = monLoc(mm) + cfp(3) + cfv(3)
+           case (cgnsCfx)
+              monLoc(mm) = monLoc(mm) + cfp(1) + cfv(1)
 
-        case (cgnsCmx)
-           monLoc(mm) = monLoc(mm) + cmp(1) + cmv(1)
+           case (cgnsCfy)
+              monLoc(mm) = monLoc(mm) + cfp(2) + cfv(2)
 
-        case (cgnsCmy)
-           monLoc(mm) = monLoc(mm) + cmp(2) + cmv(2)
+           case (cgnsCfz)
+              monLoc(mm) = monLoc(mm) + cfp(3) + cfv(3)
 
-        case (cgnsCmz)
-           monLoc(mm) = monLoc(mm) + cmp(3) + cmv(3)
+           case (cgnsCmx)
+              monLoc(mm) = monLoc(mm) + cmp(1) + cmv(1)
 
-        end select 
+           case (cgnsCmy)
+              monLoc(mm) = monLoc(mm) + cmp(2) + cmv(2)
 
-     end do nMonitoringVarZip
+           case (cgnsCmz)
+              monLoc(mm) = monLoc(mm) + cmp(3) + cmv(3)
 
+           end select
+
+        end do nMonitoringVarZip
+     end if
      ! Determine the global sum of the summation monitoring
      ! variables. This is an all reduce since every processor needs to
      ! know the residual to make the same descisions. 
