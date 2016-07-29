@@ -1,4 +1,4 @@
-subroutine forcesAndMomentsZipper(cFp, cFv, cMp, cMv)
+subroutine forcesAndMomentsZipper(cFp, cFv, cMp, cMv, sps)
 
   use communication
   use blockPointers
@@ -6,120 +6,139 @@ subroutine forcesAndMomentsZipper(cFp, cFv, cMp, cMv)
   use flowVarRefState
   use inputPhysics
   use costFunctions
-  use overset
+  use overset, only : nodeZipperScatter, globalNodalVec, localZipperNodes, localZipperTp, localZipperTv
   use inputTimeSpectral
-
+  use inputIteration
   implicit none
 
+#define PETSC_AVOID_MPIF_H
+#include "include/petscversion.h"
+#if PETSC_VERSION_MINOR > 5
+#include "petsc/finclude/petscsys.h"
+#include "petsc/finclude/petscvec.h"
+#include "petsc/finclude/petscvec.h90"
+#else
+#include "include/finclude/petscsys.h"
+#include "include/finclude/petscvec.h"
+#include "include/finclude/petscvec.h90"
+#endif
+
+  ! Input/Output
   real(kind=realType), dimension(3), intent(out) :: cFp, cFv
   real(kind=realType), dimension(3), intent(out) :: cMp, cMv
-  integer(kind=intType) :: i, j, k, l, ii, ierr, nn, sps, iTri, nl, ng
-  real(kind=realType), dimension(:), pointer :: xx, pp, vv, xVolume
-  real(kind=realType), dimension(3) :: x1, x2, x3, xc
-  real(kind=realType), dimension(3) :: pp1, pp2, pp3, pp4, pres
-  real(kind=realType), dimension(3) :: vv1, vv2, vv3, vv4, ss, vis, norm
-  real(kind=realType), dimension(3) :: Fp, Fv, Mp, Mv, Ftmp, Mtmp
-  real(kind=realType) :: fact, scaleDim, u, v
-  real(kind=realType), dimension(3) :: refPoint
-  real(kind=realType) :: areaSum
-  character(60) :: fout
-  ! ------------------------------------------------------------------
+  integer(kind=intType), intent(in) :: sps
+
+  ! Working
+  integer(kind=intType) :: i, j, k, l, ierr, nn, mm, gind, ind, iVar
+  integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, rowStart, rowEnd
+  real(kind=realType), dimension(:, :, :), pointer :: xx
+  real(kind=realType), dimension(:), pointer :: xPtr, pPtr, vPtr, localPtr
+  integer(kind=intType), dimension(:, :), pointer :: gnp
+
+  real(kind=realType), dimension(3) :: x1, x2, x3, xc, ss, norm, refPoint
+  real(kind=realType), dimension(3) :: pp1, pp2, pp3, presForce
+  real(kind=realType), dimension(3) :: vv1, vv2, vv3, viscForce
+  real(kind=realType), dimension(3) :: Fp, Fv, Mp, Mv, MTmp
+  real(kind=realType) :: fact, scaleDim, triArea
+
+  ! PETsc
+  Vec, pointer :: localVec
 
   ! Set the actual scaling factor such that ACTUAL forces are computed
   scaleDim = pRef/pInf
 
   ! Determine the reference point for the moment computation in
   ! meters.
-
   refPoint(1) = LRef*pointRef(1)
   refPoint(2) = LRef*pointRef(2)
   refPoint(3) = LRef*pointRef(3)
 
-  ! Initialize the force and moment coefficients to 0 
+  ! Communicate the nodes, pressure tractions and viscous tractions to
+  ! the root proc for the triangles. We do a generic loop
 
-  cFp(1:3) = zero
-  cFv(1:3) = zero
-  cMp(1:3) = zero
-  cMv(1:3) = zero
-
-  ! Fill up xVolumeVec 
-  call VecGetArrayF90(globalNodes, xVolume, ierr)
+  call VecGetOwnershipRange(globalNodalVec, rowStart, rowEnd, ierr)
   call EChk(ierr,__FILE__,__LINE__)
-  
-  ii = 0
-  do nn=1,nDom
-     do sps=1,nTimeIntervalsSpectral
-        call setPointers(nn, 1, 1)
-        do k=1, kl
-           do j=1, jl
-              do i=1, il
-                 do l= 1,3
-                    ii = ii + 1
-                    xVolume(ii) = X(i, j, k, l)
+
+  do iVar=1, 3
+
+     call VecGetArrayF90(globalNodalVec, localPtr, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     
+     domainLoop: do nn=1, nDom
+        call setPointers(nn, 1, sps)
+        
+        bocoLoop: do mm=1, nBocos
+
+           if(BCType(nn) == EulerWall .or. &
+                BCType(nn) == NSWallAdiabatic .or. &
+                BCType(nn) == NSWallIsothermal) then
+              
+              select case (BCFaceID(mm))
+              case (iMin)
+                 xx => x(1, :, :, :)
+                 gnp => globalNode(1, :, :)
+              case (iMax)
+                 xx => x(il, :, :, :)
+                 gnp => globalNode(il, :, :)
+              case (jMin)
+                 xx => x(:, 1, :, :)
+                 gnp => globalNode(:, 1, :)
+              case (jMax)
+                 xx => x(:, jl, :, :)
+                 gnp => globalNode(:, jl, :)
+              case (kMin)
+                 xx => x(:, :, 1, :)          
+                 gnp => globalNode(:, :, 1)
+              case (kMax)
+                 xx => x(:, :, kl, :)
+                 gnp => globalNode(:, :, kl)
+              end select
+
+              jBeg = BCdata(mm)%jnBeg; jEnd = BCData(mm)%jnEnd
+              iBeg = BCData(mm)%inBeg; iEnd = BCData(mm)%inEnd  
+              
+              ! Loop over the nodes of the subface:
+              do j=jBeg, jEnd
+                 do i=iBeg, iEnd
+                    gInd = gnp(i+1, j+1)
+                    ind = (gInd-rowStart)*3+1
+
+                    ! select case(iVar)
+                    ! case (1) ! Nodes
+                    !    localPtr(ind:ind+3) = xx(i+1, j+1, :)
+                    ! case (2)
+                    !    localPtr(ind:ind+3) = bcData(mm)%Tp(i, j, :)
+                    ! case (3)
+                    !    localPtr(ind:ind+3) = bcData(mm)%Tv(i, j, :)
+                    ! end select
                  end do
               end do
-           end do
-        end do
-     end do
+           end if
+        end do bocoLoop
+     end do domainLoop
+     
+     call vecRestoreArrayF90(globalNodalVec, localPtr, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+     select case(iVar)
+     case(1)
+        localVec => localZipperNodes
+     case(2)
+        localVec => localZipperTp
+     case(3)
+        localVec => localZipperTv
+     end select
+     
+     ! Perform the scatter from the global x vector to zipperNodes
+     call VecScatterBegin(nodeZipperScatter, globalNodalVec, &
+          localVec, INSERT_VALUES, SCATTER_FORWARD, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+     
+     call VecScatterEnd(nodeZipperScatter, globalNodalVec, &
+          localVec, INSERT_VALUES, SCATTER_FORWARD, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
   end do
-  call vecRestoreArrayF90(globalNodes, xVolume, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-  
-  ! Perform the scatter from the global x vector to zipperNodes
-  call VecScatterBegin(nodeZipperScatter, globalNodes, &
-       zipperNodes, INSERT_VALUES, SCATTER_FORWARD, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-
-  call VecScatterEnd(nodeZipperScatter, globalNodes, &
-       zipperNodes, INSERT_VALUES, SCATTER_FORWARD, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-
-  ! Perform assembly on global force vectors
-  call VecAssemblyBegin(globalPressureTractions, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-
-  call VecAssemblyEnd(globalPressureTractions, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-
-  call VecAssemblyBegin(globalViscousTractions, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-
-  call VecAssemblyEnd(globalViscousTractions, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-
-
-  ! Perform the scatter from the global surface tractions to the
-  ! zipper tractions
-
-  call VecScatterBegin(tractionZipperScatter, globalPressureTractions, &
-       zipperPressureTractions, INSERT_VALUES, SCATTER_FORWARD, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-
-  call VecScatterEnd(tractionZipperScatter, globalPressureTractions, &
-       zipperPressureTractions, INSERT_VALUES, SCATTER_FORWARD, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-
-
-  call VecScatterBegin(tractionZipperScatter, globalViscousTractions, &
-       zipperViscousTractions, INSERT_VALUES, SCATTER_FORWARD, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-
-  call VecScatterEnd(tractionZipperScatter, globalViscousTractions, &
-       zipperViscousTractions, INSERT_VALUES, SCATTER_FORWARD, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-
-  !! Test output
-  !! ---------------------
-  !write(fout,'(i7)')myid
-  !fout = 'vec.'//trim(adjustl(fout))
-  !fout = trim(adjustl(fout))
-  !call PetscViewerASCIIOpen(sumb_comm_world,fout,viewer,ierr)
-  !call VecView(zipperViscousTractions,viewer,ierr)
-  !call PetscViewerDestroy(viewer,ierr)
-
-  !call VecGetLocalSize(zipperViscousTractions,nl,ierr)
-  !print*,'myid, nl ', myid, nl
-  !! ---------------------
 
   ! Puck out pointers for the nodes and tractions
 
@@ -129,96 +148,73 @@ subroutine forcesAndMomentsZipper(cFp, cFv, cMp, cMv)
      Mp = zero
      Mv = zero
      
-
-     call VecGetArrayF90(zipperPressureTractions, pp, ierr)
+     call VecGetArrayF90(localZipperTp, pPtr, ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
-     call VecGetArrayF90(zipperViscousTractions, vv, ierr)
+     call VecGetArrayF90(localZipperTv, vPtr, ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
-     call VecGetArrayF90(zipperNodes, xx, ierr)
+     call VecGetArrayF90(localZipperNodes, xPtr, ierr)
      call EChk(ierr,__FILE__,__LINE__)
      
-     ! Number of triangles is the length of zipperNodes /9
-     ! or length of zipperPressuretraction / 3
-
-     areaSum = zero
+     ! Number of triangles is the length of localZipperNodes /9
 
      do i=1, size(xx)/9
-     !do i=1, size(pp)/3
 
-        x1 = xx((i-1)*9+1:(i-1)*9+3)
-        x2 = xx((i-1)*9+4:(i-1)*9+6)
-        x3 = xx((i-1)*9+7:(i-1)*9+9)
+        ! Nodes for the triangles
+        x1 = xPtr((i-1)*9+1:(i-1)*9+3)
+        x2 = xPtr((i-1)*9+4:(i-1)*9+6)
+        x3 = xPtr((i-1)*9+7:(i-1)*9+9)
 
-        ! Just use cell center values
-        pres(:) = pp((i-1)*3+1:i*3)
-        vis(:) = vv((i-1)*3+1:i*3)
-        
+        ! Nodal pressure tractions
+        pp1 = pPtr((i-1)*9+1:(i-1)*9+3)
+        pp2 = pPtr((i-1)*9+4:(i-1)*9+6)
+        pp3 = pPtr((i-1)*9+7:(i-1)*9+9)
+
+        ! Nodal viscous tractions
+        vv1 = vPtr((i-1)*9+1:(i-1)*9+3)
+        vv2 = vPtr((i-1)*9+4:(i-1)*9+6)
+        vv3 = vPtr((i-1)*9+7:(i-1)*9+9)
+
         ! Compute area
         call cross_prod(x2-x1, x3-x1, norm)
         ss = half * norm
+        triArea = norm2(ss)
+        
+        ! This is the actual integration
+        presForce = third*(pp1 + pp2 + pp3) * triArea
+        viscForce = third*(vv1 + vv2 + vv3) * triArea
 
-        areaSum = areaSum + norm2(ss)
+        ! Add to Fp and Fv
+        Fp = Fp + presForce
+        Fv = Fv + viscForce
 
         ! Compute cell center
         xc(:) = third*(x1 + x2 + x3) - refPoint(:)
         
-        ! Add to Fp and Fv
-        Fp = Fp + pres * norm2(ss)
-        Fv = Fv + vis  * norm2(ss)
-
         ! Add to Mp and Mv
-        Ftmp = pres * norm2(ss)
-        call cross_prod(xc, Ftmp, Mtmp)
+        call cross_prod(xc, presForce, Mtmp)
         Mp = Mp + Mtmp
 
-        Ftmp = vis * norm2(ss)
-        call cross_prod(xc, Ftmp, Mtmp)
+        call cross_prod(xc, viscForce, Mtmp)
         Mv = Mv + Mtmp
 
      end do
-     !write(7000,*)areaSum
 
-     !! Debug triangles
-     !! ----------------------------------------------------------
-     !open(unit=101, file='tempTri.dat', form='formatted')
-     !rewind(101)
-     !write(101,*) 'TITLE = "Triangles"'
-     !write(101,*) 'Variables = "X", "Y", "Z"'
-     !write(101,*) "Zone T=Triangles_petsc"
-     !write (101,*) "Nodes = ", size(xx)/3, " Elements= ", size(xx)/9, " ZONETYPE=FETRIANGLE"
-     !write (101,*) "DATAPACKING=POINT"
-     !! Node data
-     !do i=1, size(xx)/9
-     !   x1 = xx((i-1)*9+1:(i-1)*9+3)
-     !   x2 = xx((i-1)*9+4:(i-1)*9+6)
-     !   x3 = xx((i-1)*9+7:(i-1)*9+9)
-     !   write(101,'(3(E20.12,x))') x1(1:3)
-     !   write(101,'(3(E20.12,x))') x2(1:3)
-     !   write(101,'(3(E20.12,x))') x3(1:3)
-     !end do
-     !! Cell data (conn)
-     !do i=1, size(xx)/9
-     !   write(101, '(3(i5,x))') (i-1)*3+1, (i-1)*3+2, (i-1)*3+3
-     !end do
-     !close(101)
-     !! ----------------------------------------------------------
-
-     call VecRestoreArrayF90(zipperPressureTractions, pp, ierr)
+     ! Return the array pointers
+     call VecRestoreArrayF90(localZipperNodes, xPtr, ierr)
      call EChk(ierr,__FILE__,__LINE__)
      
-
-     call VecRestoreArrayF90(zipperViscousTractions, vv, ierr)
+     call VecRestoreArrayF90(localZipperTp, pPtr, ierr)
      call EChk(ierr,__FILE__,__LINE__)
      
-     call VecRestoreArrayF90(zipperNodes, xx, ierr)
+     call VecRestoreArrayF90(localZipperTv, vPtr, ierr)
      call EChk(ierr,__FILE__,__LINE__)
      
-
      fact = two/(gammaInf*pInf*MachCoef*MachCoef &
           *surfaceRef*LRef*LRef*scaleDim)
 
+     ! Convert the values to coefficients
      cFp(:) =  fact*Fp
      cFv(:) =  fact*Fv
 

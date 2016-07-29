@@ -379,17 +379,12 @@ module overset
 
   ! Data required for zipper mesh surface integration:
   VecScatter :: nodeZipperScatter
-  Vec :: globalNodes
-  Vec :: zipperNodes
-
-  VecScatter :: tractionZipperScatter
-  Vec globalPressureTractions
-  Vec globalViscousTractions
-  Vec zipperPressureTractions
-  Vec zipperViscousTractions
+  Vec :: globalNodalVec
+  Vec, target :: localZipperNodes
+  Vec, target :: localZipperTp
+  Vec, target :: localZIpperTv
 
   PetscViewer viewer
-
 
   contains
   ! ==============================

@@ -209,17 +209,17 @@ subroutine convergenceInfo
            case (cgnsCavitation)
               monLoc(mm) = monLoc(mm) + Cavitation
 
-           end select ! monNames(mm)
+           end select
 
         end do nMonitoringVar
      end do domains
 
      ! Add the corrections from zipper meshes from proc 0
-     ! ----------------------------------------------------------
-     call forcesAndMomentsZipper(cfp, cfv, cmp, cmv)
-
-    
-     ! Loop over the number of monitoring variables.
+     call forcesAndMomentsZipper(cfp, cfv, cmp, cmv, sps)
+         
+     ! Loop over the number of monitoring variables and just modify
+     ! the ones that need to be updated with the zipper forces we just
+     ! computed. 
      nMonitoringVarZip: do mm=1,nMon
 
         ! Determine the monitoring variable and act accordingly.
@@ -276,10 +276,9 @@ subroutine convergenceInfo
         case (cgnsCmz)
            monLoc(mm) = monLoc(mm) + cmp(3) + cmv(3)
 
-        end select ! monNames(mm)
+        end select 
 
      end do nMonitoringVarZip
-     ! --- End corrections from zipper meshes from proc 0 ---
 
      ! Determine the global sum of the summation monitoring
      ! variables. This is an all reduce since every processor needs to
