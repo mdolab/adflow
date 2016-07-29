@@ -190,14 +190,13 @@
            ! Add the dissipative and possibly viscous fluxes to the
            ! Euler fluxes. Loop over the owned cells and add fw to dw.
            ! Also multiply by iblank so that no updates occur in holes
-           ! or on the overset boundary.
 
            do l=1,nwf
              do k=2,kl
                do j=2,jl
                  do i=2,il
                    dw(i,j,k,l) = (dw(i,j,k,l) + fw(i,j,k,l)) &
-                               * real(iblank(i,j,k), realType)
+                               * max(real(iblank(i,j,k), realType), zero)
                  enddo
                enddo
              enddo

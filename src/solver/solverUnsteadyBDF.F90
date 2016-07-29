@@ -199,14 +199,12 @@
          ! the wall distance, because he may know a priori that the
          ! changes in geometry happen quite far away from the boundary
          ! layer. This is accomplished via updateWallDistanceUnsteady.
-         ! Also note changingOverset can be true only when the grid
-         ! is changing.
 
          call updateCoordinatesAllLevels
          if(changing_Grid .and. updateWallDistanceUnsteady) &
            call updateWallDistanceAllLevels
 
-         if(changingOverset) call updateOversetAllLevels
+
          call updateSlidingAllLevels
          call updateMetricsAllLevels
 
@@ -538,14 +536,11 @@
          ! the wall distance, because he may know a priori that the
          ! changes in geometry happen quite far away from the boundary
          ! layer. This is accomplished via updateWallDistanceUnsteady.
-         ! Also note changingOverset can be true only when the grid
-         ! is changing.
 
          call updateCoordinatesAllLevels
          if(changing_Grid .and. updateWallDistanceUnsteady) &
            call updateWallDistanceAllLevels
 
-         if(changingOverset) call updateOversetAllLevels
          call updateSlidingAllLevels
          call updateMetricsAllLevels
 

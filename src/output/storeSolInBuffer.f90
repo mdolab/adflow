@@ -559,7 +559,25 @@
            do k=kBeg,kEnd
              do j=jBeg,jEnd
                do i=iBeg,iEnd
-                 wIO(i,j,k,1) = real(min(iblank(i,j,k),1_intType),realType)
+                 wIO(i,j,k,1) = real(iblank(i,j,k),realType)
+               enddo
+             enddo
+           enddo
+
+         case (cgnsGC)
+            do k=kBeg,kEnd
+             do j=jBeg,jEnd
+               do i=iBeg,iEnd
+                  wIO(i,j,k,1) = real(globalcell(i,j,k),realType)
+               enddo
+             enddo
+           enddo
+
+         case (cgnsstatus)
+            do k=kBeg,kEnd
+             do j=jBeg,jEnd
+               do i=iBeg,iEnd
+                  wIO(i,j,k,1) = real(fringes(i,j,k)%status)
                enddo
              enddo
            enddo

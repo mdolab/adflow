@@ -23,12 +23,14 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
   !      * here.                                                          *
   !      ******************************************************************
   !
+  use communication
   use blockPointers
   use BCTypes
   use flowVarRefState
   use inputPhysics
   use bcroutines
   use costFunctions
+  use overset
   use surfaceFamilies
   implicit none
   !
@@ -42,7 +44,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
   !
   !      Local variables.
   !
-  integer(kind=intType) :: nn, i, j, ii, bSearchIntegers
+  integer(kind=intType) :: nn, i, j, ii, bSearchIntegers, blk
 
   real(kind=realType) :: pm1, fx, fy, fz, fn, sigma
   real(kind=realType) :: xc, yc, zc, qf(3)
@@ -164,9 +166,15 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
                    +         xx(i,j+1,3) + xx(i+1,j+1,3)) - refPoint(3)
 
               ! Compute the force components.
+              blk = max(BCData(nn)%iblank(i,j), 0)
               fx = pm1*ssi(i,j,1)
               fy = pm1*ssi(i,j,2)
               fz = pm1*ssi(i,j,3)
+
+              ! iBlank forces
+              fx = fx*blk
+              fy = fy*blk
+              fz = fz*blk
 
               ! Update the inviscid force and moment coefficients.
               cFp(1) = cFp(1) + fx
@@ -253,6 +261,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
                  j = ii/(bcData(nn)%inEnd-bcData(nn)%inBeg) + bcData(nn)%jnBeg + 1
 
                  ! Store the viscous stress tensor a bit easier.
+                 blk = max(BCData(nn)%iblank(i,j), 0)
 
                  tauXx = viscSubface(nn)%tau(i,j,1)
                  tauYy = viscSubface(nn)%tau(i,j,2)
@@ -270,6 +279,18 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
                       +        tauYz*ssi(i,j,3))*scaleDim
                  fz = -fact*(tauXz*ssi(i,j,1) + tauYz*ssi(i,j,2) &
                       +        tauZz*ssi(i,j,3))*scaleDim
+
+                 ! iBlank forces after saving for zipper mesh
+                 tauXx = tauXx*blk
+                 tauYy = tauYy*blk
+                 tauZz = tauZz*blk
+                 tauXy = tauXy*blk
+                 tauXz = tauXz*blk
+                 tauYz = tauYz*blk
+
+                 fx = fx*blk
+                 fy = fy*blk
+                 fz = fz*blk
 
                  ! Compute the coordinates of the centroid of the face
                  ! relative from the moment reference point. Due to the

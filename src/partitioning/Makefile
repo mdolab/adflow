@@ -61,7 +61,6 @@ FILES_TO_COMPLEXIFY = allocCoorFineGrid.f90\
 		 determineGridFileNames.f90\
 		 determineInterfaceIDs.f90\
 		 determineNeighborIDs.f90\
-		 distributeOversetCells.f90\
 		 fineGridSpectralCoor.f90\
 		 initFlowDoms.f90\
 		 initFineGridIblank.f90\
@@ -78,11 +77,9 @@ FILES_TO_COMPLEXIFY = allocCoorFineGrid.f90\
 		 readFamilyInfo.F90\
 		 readGeneralConn.F90\
 		 readLevel0CoolingParameters.f90\
-		 readOversetHoles.F90\
 		 readPeriodicSubface.F90\
 		 readZoneInfo.F90\
 		 reallocSubfaceMemory.f90\
-		 setChangingOverset.f90\
 		 sortSubfaces.f90\
 		 splitBlock.f90\
 		 timePeriodSpectral.f90\

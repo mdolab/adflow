@@ -56,18 +56,6 @@
 
        call deallocateTempMemory(.true.)
 
-       ! If blanks are to be written then change the iblank values on
-       ! the overset boundary such that output data there isn't blanked.
-
-       if(writeGrid .or. volWriteBlank .or. surfWriteBlank) then
-         do nn=1,nTimeIntervalsSpectral
-           do i=1,nDom
-             call setPointers(i, 1_intType, nn)
-             call changeIblanks(.false., 1_intType)
-           enddo
-         enddo
-       endif
-
        ! If the reading format is different from the writing format
        ! and a volume solution file must be written automatically
        ! a grid file is written as well if this is the first time
@@ -95,18 +83,6 @@
        if(ierr /= 0)                &
          call returnFail("writeSol", &
                         "Deallocation failure for the file names.")
-
-       ! If blanks were written then change the iblank values on the
-       ! overset boundary back to 0.
-
-       if(writeGrid .or. volWriteBlank .or. surfWriteBlank) then
-         do nn=1,nTimeIntervalsSpectral
-           do i=1,nDom
-             call setPointers(i, 1_intType, nn)
-             call changeIblanks(.false., 0_intType)
-           enddo
-         enddo
-       endif
 
        ! Allocate the memory again that was deallocated in the beginning
        ! of this routine.

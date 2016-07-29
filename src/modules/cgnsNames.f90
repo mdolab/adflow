@@ -187,6 +187,14 @@
 
        character(len=maxCGNSNameLen), parameter :: &
                            cgnsFilteredShock = "FilteredShock"
+
+       character(len=maxCGNSNameLen), parameter :: &
+            cgnsGC = "globalCell"
+
+       character(len=maxCGNSNameLen), parameter :: &
+            cgnsStatus = "status"
+
+
 !
 !      ******************************************************************
 !      *                                                                *
