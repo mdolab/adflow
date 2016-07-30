@@ -48,8 +48,7 @@ subroutine createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
   integer(kind=intType), dimension(:), allocatable :: intRecvBuf
   logical :: isWallType
   type(oversetString) :: master, pocketMaster
-  integer(kind=intType), dimension(:), allocatable :: nodeIndices, cellIndices
-  integer(kind=intType), dimension(:), allocatable :: nElemsProc, nNodesProc
+  integer(kind=intType), dimension(:), allocatable :: nodeIndices
 
   type(oversetString), dimension(:), allocatable, target :: strings
   integer(kind=intType) :: nFullStrings, nUnique
@@ -312,17 +311,7 @@ subroutine createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
         call writeOversetTriangles(pocketMaster, "pocketTriangulation.dat")
      end if
 
-     ! -------------------------------------------------------------
-     ! Perform comm data preparation for force integration on zipper
-     ! triangles. Do containment search for zipper triangle
-     ! containement in primal wall quad cells. Here 'surfCellID'
-     ! store the indices of the global cells containing zipper
-     ! triangle's cell center.
-     ! (Look at ../wallDistance/determineWallAssociation.F90).
-
-     call determineZipperWallAssociation(master, pocketMaster, fullWall)
-
-    
+      
      ! (3 nodes per triangle and 3 DOF per ndoe)
      allocate(nodeIndices(3*3*(master%ntris + pocketMaster%ntris)))
   
@@ -351,19 +340,8 @@ subroutine createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
   else
      ! Other procs don't have any triangles :-(
      allocate(nodeIndices(0))
-     allocate(cellIndices(0))
   end if
   
-  ! Do not need walls, fullWall or the strings anymore. Deallocate them.
-  do i=1, nClusters
-     deallocate(walls(i)%x, walls(i)%conn, walls(i)%ind)
-     call destroySerialQuad(walls(i)%ADT)
-  end do
-  deallocate(walls)
-
-  deallocate(fullWall%x, fullWall%conn, fullWall%ind)
-  call destroySerialQuad(fullWall%ADT)
-
   ! Clean up memory on the root proc
   if (myid == 0) then 
      do i=1, nFullStrings
@@ -409,7 +387,7 @@ subroutine createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
   call EChk(ierr,__FILE__,__LINE__)
  
   ! Free the remaining memory
-  deallocate(nElemsProc, nNodesProc, nodeIndices, cellIndices)
+  deallocate(nodeIndices)
 
 end subroutine createZipperMesh
 

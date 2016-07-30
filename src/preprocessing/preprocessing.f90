@@ -262,6 +262,9 @@ subroutine preprocessing
   ! the overset computation.
   call allocMemBCData
 
+  ! Family info must be setup before doing oversetcomm
+  call setSurfaceFamilyInfo
+
   do level=1,nLevels
      if (level == 1) then
         call oversetComm(level, .true., .false.)
@@ -278,7 +281,6 @@ subroutine preprocessing
      call wallDistance(level, .True.)
   end do
 
-  call setSurfaceFamilyInfo
   call initializeLiftDistributionData
 
 end subroutine preprocessing
