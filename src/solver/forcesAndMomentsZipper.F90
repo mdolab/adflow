@@ -69,9 +69,9 @@ subroutine forcesAndMomentsZipper(cFp, cFv, cMp, cMv, sps)
         
         bocoLoop: do mm=1, nBocos
 
-           if(BCType(nn) == EulerWall .or. &
-                BCType(nn) == NSWallAdiabatic .or. &
-                BCType(nn) == NSWallIsothermal) then
+           if(BCType(mm) == EulerWall .or. &
+                BCType(mm) == NSWallAdiabatic .or. &
+                BCType(mm) == NSWallIsothermal) then
               
               select case (BCFaceID(mm))
               case (iMin)
@@ -101,16 +101,20 @@ subroutine forcesAndMomentsZipper(cFp, cFv, cMp, cMv, sps)
               do j=jBeg, jEnd
                  do i=iBeg, iEnd
                     gInd = gnp(i+1, j+1)
-                    ind = (gInd-rowStart)*3+1
+                    ind = (gInd-rowStart/3)*3+1
+                    if (ind < 0) then 
+                       print *,'something wrong:', myid, gind, rowstart, ind
+                       stop
+                    end if
 
-                    ! select case(iVar)
-                    ! case (1) ! Nodes
-                    !    localPtr(ind:ind+3) = xx(i+1, j+1, :)
-                    ! case (2)
-                    !    localPtr(ind:ind+3) = bcData(mm)%Tp(i, j, :)
-                    ! case (3)
-                    !    localPtr(ind:ind+3) = bcData(mm)%Tv(i, j, :)
-                    ! end select
+                    select case(iVar)
+                    case (1) ! Nodes
+                       localPtr(ind:ind+2) = xx(i+1, j+1, :)
+                    case (2)
+                       localPtr(ind:ind+2) = bcData(mm)%Tp(i, j, :)
+                    case (3)
+                       localPtr(ind:ind+2) = bcData(mm)%Tv(i, j, :)
+                    end select
                  end do
               end do
            end if
@@ -159,7 +163,7 @@ subroutine forcesAndMomentsZipper(cFp, cFv, cMp, cMv, sps)
      
      ! Number of triangles is the length of localZipperNodes /9
 
-     do i=1, size(xx)/9
+     do i=1, size(xPtr)/9
 
         ! Nodes for the triangles
         x1 = xPtr((i-1)*9+1:(i-1)*9+3)

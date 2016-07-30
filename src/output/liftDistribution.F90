@@ -313,6 +313,7 @@ subroutine writeSlicesFile(fileName, updateSurfaceData)
               call writeSlice(globalSlice, file, nSolVar)
            end if
            call destroySlice(globalSlice)
+           deallocate(famList)
         end do
 
         !Close file on root proc
