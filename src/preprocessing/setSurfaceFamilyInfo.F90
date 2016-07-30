@@ -55,6 +55,7 @@ subroutine setSurfaceFamilyInfo
   defaultFamName(BCWallViscous) = 'wall'
   defaultFamName(BCWallViscousHeatFlux) = 'wall'
   defaultFamName(BCWallViscousIsothermal) = 'wall'
+  defaultFamName(UserDefined) = 'userDefined'
 
 101 format("CGNS Block ",I4,", boundary condition ",I4, ", of type ",a, &
        " does not have a family. Based on the boundary condition type," &
@@ -198,7 +199,9 @@ subroutine setSurfaceFamilyInfo
 
   ! Finally create the scatter context for each individual family
   ! as well as a special one for all wall families
+
   allocate(familyExchanges(totalFamilies, ntimeIntervalsSpectral))
+
   do sps=1, nTimeIntervalsSpectral
      do i=1, totalFamilies
         curFam(1) = i

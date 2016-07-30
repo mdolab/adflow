@@ -357,6 +357,17 @@
 
                end select
 
+               ! Try to Read off the family name.
+               call cg_goto_f(cgnsInd, cgnsBase, ierr, "Zone_t", nZone, &
+                    "ZoneBC_t", 1, "BC_t", i, "end")
+               
+               cgnsDoms(nZone)%bocoInfo(i)%wallBCName = ""
+               if (ierr == 0) then ! Node exits
+                  call cg_famname_read_f(familyName, ierr)
+                  if (ierr == 0) then
+                     cgnsDoms(nZone)%bocoInfo(i)%wallBCName = familyName
+                  end if
+               end if
              !===========================================================
 
              case default

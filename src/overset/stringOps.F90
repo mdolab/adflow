@@ -2309,6 +2309,10 @@ contains
     integer(kind=intType) :: id, index
     real(kind=realType) :: timeA,  pt(3),   v(3), cosTheta,  cutOff, dist, maxH, ratio
 
+    if (nStrings == 0) then  
+       return
+    end if
+
     ! Now make we determine the nearest point on another substring
     ! for each point. 
     nAlloc = 50
