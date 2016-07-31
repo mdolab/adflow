@@ -357,11 +357,13 @@ subroutine wOverset_b(level, start, end, commPressure,       &
 
            ! Store the block and the indices of the halo a bit easier.
 
-           d2 = commPattern(level,mm)%recvList(ii)%block(j)
-           i2 = commPattern(level,mm)%recvList(ii)%indices(j,1)
-           j2 = commPattern(level,mm)%recvList(ii)%indices(j,2)
-           k2 = commPattern(level,mm)%recvList(ii)%indices(j,3)
+           d2 = commPattern(level,mm)%sendList(ii)%block(j)
+           i2 = commPattern(level,mm)%sendList(ii)%indices(j,1)
+           j2 = commPattern(level,mm)%sendList(ii)%indices(j,2)
+           k2 = commPattern(level,mm)%sendList(ii)%indices(j,3)
 
+           weight => commPattern(level, mm)%sendList(ii)%interp(j, :)
+           
            ! Copy the conservative variables.
 
            do k=start,end
