@@ -145,8 +145,12 @@ subroutine forcesAndMomentsZipper(cFp, cFv, cMp, cMv, sps)
   end do
 
   ! Puck out pointers for the nodes and tractions
-
+  cFp = zero
+  cFv = zero
+  cMp = zero
+  cMv = zero
   if (myid == 0) then 
+
      Fp = zero
      Fv = zero
      Mp = zero
