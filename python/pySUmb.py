@@ -2826,12 +2826,14 @@ class SUMB(AeroSolver):
             Filename to use. The Adjoint matrix, PC matrix(if it exists)
             and RHS  will be written
         """
-        adjointMatrixName = baseFileNmae + '_drdw.bin'
-        pcMatrixName = baseFileNmae + '_drdwPre.bin'
+        adjointMatrixName = baseFileName + '_drdw.bin'
+        pcMatrixName = baseFileName + '_drdwPre.bin'
         rhsName = baseFileName + '_rsh.bin'
+        cellCenterName = baseFileName + '_cellCen.bin'
         self.sumb.saveadjointmatrix(adjointMatrixName)
         self.sumb.saveadjointpc(pcMatrixName)
-        self.sumb.saveadjointrhs(rhsName)
+        self.sumb.saveadjointrhs(rhsName) 
+        self.sumb.savecellcenters(cellCenterName)
 
     def computeStabilityParameters(self):
         """
