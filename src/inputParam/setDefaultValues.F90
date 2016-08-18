@@ -109,10 +109,7 @@
 !      ******************************************************************
 
        gridFile       = ""          ! Serves as a check later on.
-       restartFile    = ""          ! Idem.
 
-       restart         = .true.     ! This will be corrected later if no
-                                    ! restart file is specified.
        checkRestartSol = .true.     ! Restart solution is checked for
                                     ! correct nonDimensionalization.
 

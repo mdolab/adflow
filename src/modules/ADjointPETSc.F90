@@ -19,8 +19,6 @@ module ADjointPETSc
   !
   use constants
   implicit none
-
-#ifndef USE_NO_PETSC
 #define PETSC_AVOID_MPIF_H
 
 #include "include/petscversion.h"
@@ -40,10 +38,11 @@ module ADjointPETSc
   !adjointKSP   Linear solver (Krylov subspace method) context
   KSP     adjointKSP
 
+
   ! Initial, start and final adjoint residuals
   real(kind=realType) :: adjResInit
   real(kind=realType) :: adjResStart
   real(kind=realType) :: adjResFinal
   logical :: adjointPETScVarsAllocated
-#endif
+
 end module ADjointPETSc

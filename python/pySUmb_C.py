@@ -39,13 +39,10 @@ class SUMB_C(SUMB):
       
         # Load the compiled module using MExt, allowing multiple
         # imports
-        try: 
-            self.sumb
-        except:
-            curDir = os.path.dirname(os.path.realpath(__file__))
-            self.sumb = MExt.MExt('libsumb_cs',[curDir])._module
-        SUMB.__init__(self, *args, **kwargs)        
-        self.dtype = 'D'
+
+        curDir = os.path.dirname(os.path.realpath(__file__))
+        self.sumb = MExt.MExt('libsumb_cs',[curDir])._module
+        SUMB.__init__(self, dtype='D', *args, **kwargs)        
 
     def _on_setOption(self, name, value):
         
