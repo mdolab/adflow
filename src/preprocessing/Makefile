@@ -68,6 +68,7 @@ FILES_TO_COMPLEXIFY = \
 		 finalCommStructures.f90\
 		 indirectHalosPerLevel.f90\
 		 init2ndLevelCellHalos.f90\
+		 setSurfaceFamilyInfo.F90\
 		 mdUpdateRoutines.f90\
 		 metric.f90\
 		 preprocessing.f90\

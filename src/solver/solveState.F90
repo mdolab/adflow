@@ -40,7 +40,7 @@ subroutine solveState
   !      Local variables.
   !
   integer :: ierr
-  integer(kind=intType) :: iter, nMGCycles
+  integer(kind=intType) :: nMGCycles
   character (len=7) :: numberString
   logical :: absConv, relConv, firstNK, firstANK
 
@@ -155,7 +155,7 @@ subroutine solveState
          call executeMGCycle
          CFLMonitor = CFLCoarse
      else
-        if (.not. useANKSolver .and. .not. useNKSolver .or. (iterTot < minIterNum .and. rkreset)) then 
+        if (.not. useANKSolver .and. .not. useNKSolver .or. (iterTot <= minIterNum .and. rkreset)) then
 
            ! Always RK/DADI or a RK startup. Run the MG Cycle
            
@@ -242,7 +242,7 @@ subroutine solveState
      ! Check if the bleed boundary conditions must be updated and
      ! do so if needed.
      
-     if(mod(iter, nUpdateBleeds) == 0) &
+     if(mod(iterTot, nUpdateBleeds) == 0) &
           call BCDataMassBleedOutflow(.false., .false.)
      
      ! Check if we've received a signal:
@@ -266,9 +266,8 @@ subroutine solveState
         
         call writeSol()
 
-        ! Also write potential slice and lift file
-        call writeliftdistributionfile(forcedLiftFile)
-        call writeslicesFile(forcedSliceFile)
+        ! Also write potential tecplot files
+        call writeTecplot(forcedSliceFile, .True., forcedLiftFile, .True., "", .False.)
         
         ! Reset the signal 
         localSignal = noSignal

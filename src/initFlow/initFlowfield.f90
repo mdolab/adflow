@@ -36,7 +36,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       ! Initialize nIterOld and nTimeStepsRestart to 0 (no restart
+       ! Initialize nTimeStepsRestart to 0 (no restart
        ! is performed) and allocate the memory for the arrays to store
        ! convergence history. This allocation is only to be done by
        ! processor 0. For an unsteady computation the entire convergence

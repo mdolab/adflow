@@ -134,12 +134,6 @@
 
        enddo fileOpenLoop
 
-       ! Read the time history for an unsteady computation. Again only
-       ! done by processor 0. Note that time history only needs to be
-       ! present in the first solution file
-
-       if(equationMode == unsteady .and. myID == 0) &
-         call readTimeHistory(fileIDs)
 
        ! Broadcast nTimeStepsRestart and timeUnsteadyRestart to all
        ! processors. These values are needed to perform a consistent
@@ -442,18 +436,6 @@
 
        enddo solLoop
 
-       ! Write a message about the time step number for which is
-       ! restarted.
-
-       if(equationMode == unsteady .and. myID == 0) then
-         write(integerString,"(i7)") nTimeStepsRestart+1
-         integerString = adjustl(integerString)
-
-         print "(a)", "#"
-         print 110, trim(integerString)
-         print "(a)", "#"
- 110     format("# Restarting at time step",1X,A,".")
-       endif
 
        ! Determine the global sum of nTypeMismatch; the result only
        ! needs to be known on processor 0. Use ii as the global buffer

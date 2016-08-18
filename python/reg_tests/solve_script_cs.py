@@ -21,6 +21,7 @@ else:
     from pywarp import MBMesh
     from python.pySUmb import SUMB
 
+
 # ###################################################################
 
 # First thing we will do is define a complete set of default options
@@ -30,7 +31,7 @@ else:
 defOpts = {
     # Common Paramters
     'gridfile': 'default.cgns',
-    'restartfile': '',
+    'restartfile':None,
 
     # Output Parameters
     'storerindlayer': True,
@@ -104,21 +105,17 @@ defOpts = {
     'l2convergencerel': 1e-16,
     'l2convergencecoarse': 1e-2,
     'maxl2deviationfactor': 1.0,
-    'coeffconvcheck': False,
 
     # Newton-Krylov Paramters
     'usenksolver': False,
-    'nklinearsolver': 'gmres',
     'nkswitchtol': 2.5e-4,
     'nksubspacesize': 60,
     'nklinearsolvetol': 0.3,
     'nkuseew': True,
-    'nkpc': 'additive schwartz',
     'nkadpc': False,
     'nkviscpc': False,
     'nkasmoverlap': 1,
     'nkpcilufill': 2,
-    'nklocalpcordering': 'rcm',
     'nkjacobianlag': 20,
     'rkreset': False,
     'nrkreset': 5,
@@ -134,7 +131,6 @@ defOpts = {
     'partitiononly': False,
 
     # Misc Paramters
-    'metricconversion': 1.0,
     'autosolveretry': False,
     'autoadjointretry': False,
     'numbersolutions': True,
@@ -172,7 +168,6 @@ defOpts = {
     'asmoverlap' :  1,
     'innerpreconits': 1,
     'outerpreconits': 3,
-    'usereversemodead': False,
     'applyadjointpcsubspacesize': 20,
     'frozenturbulence': True,
     'usematrixfreedrdw': False,
@@ -799,7 +794,7 @@ def test6():
     aeroOptions.update(
         {'gridfile': '../inputFiles/mdo_tutorial_rans.cgns',
          'mgcycle':'2w',
-         'equationType':'RANS',
+         'equationtype':'RANS',
          'smoother':'dadi',
          'nsubiterturb':3,
          'nsubiter':3,

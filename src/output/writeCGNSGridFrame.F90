@@ -442,6 +442,17 @@
              call returnFail("writeCGNSGridFrame", &
                             "Something wrong when calling &
                             &cg_boco_write_f")
+           
+           ! Write the family name for the surface for all boundary
+           ! conditions.
+           call cg_goto_f(cgnsInd, cgnsBase, ierr, &
+                "Zone_t", cgnsZone(nn),  &
+                "ZoneBC_t", 1, "BC_t", ii, "end")
+           if(ierr /= CG_OK)                     &
+                call returnFail("writeCGNSGridFrame", &
+                "Something wrong when calling cg_goto_f")
+           
+           call cg_famname_write_f(cgnsDoms(nn)%bocoINFO(mm)%wallBCName, ierr)
 
            ! Write the family name if the boundary condition is
            ! specified per family.

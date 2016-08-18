@@ -117,17 +117,18 @@ subroutine interpCoor(lale)
   !
   integer(kind=intType) :: i,j,k,nn,kk
 
-  if (.not. useALE .or. equationMode .ne. unsteady)  then 
+  if (.not. useALE .or. equationMode .ne. unsteady)  then
      return
   end if
 
   spectralLoop: do kk=1,nTimeIntervalsSpectral
      domains: do nn=1,nDom
-             
+
         ! Set the pointers for this block on the ground level.
-        
+        ! This eq. 11a, found paper by C.Farhat http://dx.doi.org/10.1016/S0021-9991(03)00311-5
+
         call setPointers(nn, groundLevel,kk)
-        
+
         interpmesh : do k = 0,ke
            do j = 0,je
               do i = 0,ie
@@ -143,7 +144,7 @@ subroutine interpCoor(lale)
 
      end do domains
   end do spectralLoop
-  
+
 end subroutine interpCoor
 
 ! ===========================================================
@@ -160,17 +161,17 @@ subroutine recoverCoor
   integer(kind=intType) :: i,j,k,nn,kk
 
 
-  if (.not. useALE .or. equationMode .ne. unsteady)  then 
+  if (.not. useALE .or. equationMode .ne. unsteady)  then
      return
   end if
 
   spectralLoop: do kk=1,nTimeIntervalsSpectral
      domains: do nn=1,nDom
-             
+
         ! Set the pointers for this block on the ground level.
-        
+
         call setPointers(nn, groundLevel,kk)
-        
+
         recoverx : do k = 0,ke
            do j = 0,je
               do i = 0,ie
@@ -183,5 +184,6 @@ subroutine recoverCoor
 
      end do domains
   end do spectralLoop
-  
+
 end subroutine recoverCoor
+

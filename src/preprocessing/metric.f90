@@ -108,9 +108,9 @@
            ! *******************************
            if (equationMode == unSteady .and. useALE) then 
               allocate(flowDoms(nn,level,sps)%sIALE(0:nALEsteps,0:ie,1:je,1:ke,3), &
-                   flowDoms(nn,level,sps)%sJALE(0:nALEsteps,1:ie,0:je,1:ke,3), &
-                   flowDoms(nn,level,sps)%sKALE(0:nALEsteps,1:ie,1:je,0:ke,3), &
-                   stat=ierr)
+                       flowDoms(nn,level,sps)%sJALE(0:nALEsteps,1:ie,0:je,1:ke,3), &
+                       flowDoms(nn,level,sps)%sKALE(0:nALEsteps,1:ie,1:je,0:ke,3), &
+                       stat=ierr)
               if(ierr /= 0)                      &
                    call terminate("allocateMetric", &
                    "Memory allocation failure for &

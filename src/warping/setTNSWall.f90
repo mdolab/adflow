@@ -34,7 +34,6 @@ subroutine setTNSWall(tnsw, npts, sps_in)
      ! According to preprocessing/viscSubfaceInfo, visc bocos are numbered
      ! before other bocos. Therefore, mm_nViscBocos == mm_nBocos
      bocos: do mm=1,nBocos
-        mask: if(bcData(mm)%mask == 1) then 
 
            if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic .or. &
                 BCType(mm) == NSWallIsothermal) then
@@ -46,7 +45,7 @@ subroutine setTNSWall(tnsw, npts, sps_in)
               end do
            end if
 
-        end if mask
+
      end do bocos
   end do domains
 

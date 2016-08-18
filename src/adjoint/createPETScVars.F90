@@ -31,7 +31,7 @@ subroutine createPETScVars
 
 
   !     Local variables.
-  integer(kind=intType)  :: nDimW, nDimX, nDimPt, nDimCell
+  integer(kind=intType)  :: nDimW, nDimX
   integer(kind=intType) :: i, n_stencil, nState
   integer(kind=intType), dimension(:), allocatable :: nnzDiagonal, nnzOffDiag
   integer(kind=intType), dimension(:), allocatable :: nnzDiagonal2, nnzOffDiag2
@@ -53,10 +53,6 @@ subroutine createPETScVars
 
   nDimW = nState * nCellsLocal(1_intType)*nTimeIntervalsSpectral
   nDimX = 3 * nNodesLocal(1_intType)*nTimeIntervalsSpectral
-
-  call getForceSize(npts, ncells)
-  nDimPt = npts * 3 * nTimeIntervalsSpectral
-  nDimCell = nCells * 3 * nTimeIntervalsSpectral
 
   if (.not. useMatrixFreedRdw) then 
      ! Setup matrix-based dRdwT
