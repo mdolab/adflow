@@ -208,7 +208,7 @@
        ! newGridFile:         File to which the changed grid is
        !                      written. Needed for moving and/or
        !                      deforming geometries.
-       ! restartFile:         Restart solution file; for cgns this
+       ! restartFiles:        Restart solution files; for cgns this
        !                      could be the same as the grid file, but
        !                      not necesarrily.
        ! solFile:             Solution file; for cgns this could be the
@@ -216,6 +216,7 @@
        !                      necesarrily.
        ! surfaceSolFile:      Surface solution file.
        ! sliceSolFile:        File name of a slice of a surface solution. TEMPORARY
+       ! liftDistributionFile:File name of a lift file. TEMPORARY
        ! cpFile:              File which contains the curve fits for cp.
        ! precisionGrid:       Precision of the grid file to be written.
        !                      Possibilities are precisionSingle and
@@ -223,8 +224,6 @@
        ! precisionSol:        Idem for the solution file(s).
        ! storeRindLayer:      Whether or not to store 1 layer of rind
        !                      (halo) cells in the solution file.
-       ! restart:             Whether or not continue from a previous
-       !                      computation.
        ! checkRestartSol:     Whether or not the solution in the restart
        !                      file must be checked for correct
        !                      nondimensionalization.
@@ -240,19 +239,18 @@
        !                      On systems with a limited amount of memory
        !                      the storage of this info could be a
        !                      bottleneck for memory.
-       ! sliceFileTractions:  Whether or not tractions will be included
-       !                      in the slice files.
        
        integer(kind=intType) :: precisionGrid, precisionSol
 
        character(len=maxStringLen) :: paramFile, gridFile
        character(len=maxStringLen) :: newGridFile
-       character(len=maxStringLen) :: restartFile, solFile
-       character(len=maxStringLen) :: surfaceSolFile, cpFile, sliceSolFile
+       character(len=maxStringLen) :: solFile
+       character(len=maxstringlen), dimension(:), allocatable :: restartFiles
+       character(len=maxStringLen) :: surfaceSolFile, cpFile, sliceSolFile, liftDistributionFile
 
-       logical :: storeRindLayer, restart, checkRestartSol
+       logical :: storeRindLayer, checkRestartSol
        logical :: autoParameterUpdate, writeCoorMeter
-       logical :: storeConvInnerIter, sliceFileTractions
+       logical :: storeConvInnerIter
 
        logical :: firstWrite = .true.
 
@@ -1102,3 +1100,4 @@
        logical:: useWindAxis
 
      end module inputTSStabDeriv
+

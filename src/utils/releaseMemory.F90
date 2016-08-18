@@ -36,13 +36,15 @@ subroutine releaseMemoryPart1
   use commMixing
   use wallDistanceData
   use adjointVars
+  use ADJointPETSc
+  use surfaceFamilies
   implicit none
   !
   !      Local variables
   !
   integer :: ierr
 
-  integer(kind=intType) :: sps, nLevels, level, nn, l
+  integer(kind=intType) :: sps, nLevels, level, nn, l, i, j
   !
   !      ******************************************************************
   !      *                                                                *
@@ -176,6 +178,19 @@ subroutine releaseMemoryPart1
      call destroyWallDistanceData(l)
   end do
   deallocate(xSurfVec, xVolumeVec, wallScatter)
+
+  ! Destroy the traction force stuff
+  do j=1, size(familyExchanges, 2)
+     do i=1, size(familyExchanges, 1)
+        call destroyFamilyExchange(familyExchanges(i, j))
+     end do
+  end do
+  deallocate(familyExchanges)
+
+  do i=1, size(wallExchange)
+     call destroyFamilyExchange(wallExchange(i))
+  end do
+  deallocate(wallExchange)
 
   ! From Communication Stuff
   do l=1,nLevels
@@ -509,8 +524,12 @@ subroutine deallocateBlock(nn, level, sps)
           deallocate(BCData(i)%norm, stat=ierr)
      if(ierr /= 0) deallocationFailure = .true.
 
-     if( associated(BCData(i)%dualArea) ) &
-          deallocate(BCData(i)%dualArea, stat=ierr)
+     if( associated(BCData(i)%area) ) &
+          deallocate(BCData(i)%area, stat=ierr)
+     if(ierr /= 0) deallocationFailure = .true.
+
+     if( associated(BCData(i)%fIndex) ) &
+          deallocate(BCData(i)%fIndex, stat=ierr)
      if(ierr /= 0) deallocationFailure = .true.
 
      if( associated(BCData(i)%F) ) &
@@ -523,6 +542,18 @@ subroutine deallocateBlock(nn, level, sps)
 
      if( associated(BCData(i)%Fp) ) &
           deallocate(BCData(i)%Fp, stat=ierr)
+     if(ierr /= 0) deallocationFailure = .true.
+
+     if( associated(BCData(i)%T) ) &
+          deallocate(BCData(i)%T, stat=ierr)
+     if(ierr /= 0) deallocationFailure = .true.
+
+     if( associated(BCData(i)%Tv) ) &
+          deallocate(BCData(i)%Tv, stat=ierr)
+     if(ierr /= 0) deallocationFailure = .true.
+
+     if( associated(BCData(i)%Tp) ) &
+          deallocate(BCData(i)%Tp, stat=ierr)
      if(ierr /= 0) deallocationFailure = .true.
 
      if( associated(BCData(i)%rface) ) &

@@ -68,24 +68,24 @@
                inodeBeg = BCData(mm)%inbeg; inodeEnd = BCData(mm)%inend
                jnodeBeg = BCData(mm)%jnbeg; jnodeEnd = BCData(mm)%jnend
 
-               ! Initialize all mask values to 1
-               bcData(mm)%mask = 1
-
                ! Determine the boundary condition we are having here
                ! and allocate the memory accordingly.
 
                select case (BCType(mm))
 
                  case (NSWallAdiabatic)
-
                    allocate(BCData(mm)%uSlip(iBeg:iEnd,jBeg:jEnd,3), &
                             BCData(mm)%uSlipALE(0:nALEsteps,iBeg:iEnd,jBeg:jEnd,3), &
                             BCData(mm)%TNS_Wall(iBeg:iEnd,jBeg:jEnd), &
                             BCData(mm)%F(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
-                            BCData(mm)%dualArea(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
+                            BCData(mm)%T(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &                         
+                            BCData(mm)%Tp(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
+                            BCData(mm)%Tv(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), & 
+                            BCData(mm)%fIndex(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd), &
                             BCData(mm)%sHeatFlux(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
                             BCData(mm)%Fp(iBeg:iEnd,jBeg:jEnd,3), &
                             BCData(mm)%Fv(iBeg:iEnd,jBeg:jEnd,3), &
+                            BCData(mm)%area(iBeg:iEnd,jBeg:jEnd), &
                             stat=ierr)
                    if(ierr /= 0)                      &
                      call returnFail("allocMemBCData", &
@@ -100,10 +100,15 @@
                             BCData(mm)%uSlipALE(0:nALEsteps,iBeg:iEnd,jBeg:jEnd,3), &
                             BCData(mm)%TNS_Wall(iBeg:iEnd,jBeg:jEnd), &
                             BCData(mm)%F(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
-                            BCData(mm)%dualArea(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
+                            BCData(mm)%T(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &                         
+                            BCData(mm)%Tp(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
+                            BCData(mm)%Tv(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), & 
+                            BCData(mm)%fIndex(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd), &
                             BCData(mm)%sHeatFlux(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
                             BCData(mm)%Fp(iBeg:iEnd,jBeg:jEnd,3), &
                             BCData(mm)%Fv(iBeg:iEnd,jBeg:jEnd,3), &
+                            BCData(mm)%area(iBeg:iEnd,jBeg:jEnd), &
+
                             stat=ierr)
                    if(ierr /= 0)                      &
                      call returnFail("allocMemBCData", &
@@ -118,10 +123,14 @@
                             BCData(mm)%rFaceALE(0:nALEsteps,iBeg:iEnd,jBeg:jEnd), &
                             BCData(mm)%TNS_Wall(iBeg:iEnd,jBeg:jEnd), &
                             BCData(mm)%F(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
-                            BCData(mm)%dualArea(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
+                            BCData(mm)%T(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &                         
+                            BCData(mm)%Tp(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
+                            BCData(mm)%Tv(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), & 
+                            BCData(mm)%fIndex(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd), &
                             BCData(mm)%sHeatFlux(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
                             BCData(mm)%Fp(iBeg:iEnd,jBeg:jEnd,3), &
                             BCData(mm)%Fv(iBeg:iEnd,jBeg:jEnd,3), &
+                            BCData(mm)%area(iBeg:iEnd,jBeg:jEnd), &
                             stat=ierr)
                    if(ierr /= 0)                      &
                      call returnFail("allocMemBCData", &
@@ -137,10 +146,6 @@
 
                    allocate(BCData(mm)%rface(iBeg:iEnd,jBeg:jEnd), &
                             BCData(mm)%rFaceALE(0:nALEsteps,iBeg:iEnd,jBeg:jEnd), &
-                            BCData(mm)%F(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
-                            BCData(mm)%sHeatFlux(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
-                            BCData(mm)%dualArea(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
-
                         stat=ierr)
                    if(ierr /= 0)                      &
                      call returnFail("allocMemBCData", &
@@ -158,9 +163,6 @@
      ! *******************************
                    allocate(BCData(mm)%rface(iBeg:iEnd,jBeg:jEnd), &
                             BCData(mm)%rFaceALE(0:nALEsteps,iBeg:iEnd,jBeg:jEnd), &
-                            BCData(mm)%F(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
-                            BCData(mm)%sHeatFlux(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
-                            BCData(mm)%dualArea(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
                             stat=ierr)
                    if(ierr /= 0)                      &
                      call returnFail("allocMemBCData", &
@@ -179,9 +181,7 @@
                             BCData(mm)%velx(iBeg:iEnd,jBeg:jEnd),  &
                             BCData(mm)%vely(iBeg:iEnd,jBeg:jEnd),  &
                             BCData(mm)%velz(iBeg:iEnd,jBeg:jEnd),  &
-                            BCData(mm)%ps(iBeg:iEnd,jBeg:jEnd),    &
-                            BCData(mm)%F(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
-                            BCData(mm)%sHeatFlux(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
+                            BCData(mm)%ps(iBeg:iEnd,jBeg:jEnd), &
                             stat=ierr)
                    if(ierr /= 0)                      &
                      call returnFail("allocMemBCData", &
@@ -209,16 +209,7 @@
      ! *******************************
                  case (SupersonicOutflow)
                    ! No state is needed for this boco
-                   ! To avoid seg fault during force and heat flux extraction,
-                   ! F and sHeatFlux are allocated
-
-                   allocate(BCData(mm)%F(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
-                            BCData(mm)%sHeatFlux(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
-                            stat=ierr)
-                   if(ierr /= 0)                      &
-                     call terminate("allocMemBCData", &
-                                    "Memory allocation failure for &
-                                    &a supersonic outflow")
+                 
 
                  !=======================================================
 
@@ -237,9 +228,7 @@
                             BCData(mm)%rho(iBeg:iEnd,jBeg:jEnd),           &
                             BCData(mm)%velx(iBeg:iEnd,jBeg:jEnd),          &
                             BCData(mm)%vely(iBeg:iEnd,jBeg:jEnd),          &
-                            BCData(mm)%velz(iBeg:iEnd,jBeg:jEnd),          &
-                            BCData(mm)%F(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
-                            BCData(mm)%sHeatFlux(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
+                            BCData(mm)%velz(iBeg:iEnd,jBeg:jEnd), &
                             stat=ierr)
                    if(ierr /= 0)                      &
                      call returnFail("allocMemBCData", &
@@ -269,9 +258,7 @@
                    ! memory for the static pressure.
 
                    allocate(BCData(mm)%ps(iBeg:iEnd,jBeg:jEnd), &
-                            BCData(mm)%F(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
-                            BCData(mm)%sHeatFlux(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd), &
-                            stat=ierr)
+                        stat=ierr)
                    if(ierr /= 0)                      &
                      call returnFail("allocMemBCData", &
                                     "Memory allocation failure for &

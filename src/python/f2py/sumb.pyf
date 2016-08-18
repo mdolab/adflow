@@ -53,38 +53,40 @@ python module libsumb
          integer(kind=inttype), intent(in) :: ivar
        end subroutine setisosurfacevariable
        
-       subroutine addparaslice(slicename,pt,direction,mask,nmask) ! in :test:liftDistribution.F90
+       subroutine addparaslice(slicename,pt,direction,famlist,n) ! in :test:liftDistribution.F90
          character*(*) intent(in) :: slicename
          real(kind=realtype) dimension(3),intent(in) :: pt
          real(kind=realtype) dimension(3),intent(in) :: direction
-         integer(kind=inttype) dimension(nmask),intent(in) :: mask
-         integer(kind=inttype), optional,intent(in),check(len(mask)>=nmask),depend(mask)
+         integer(kind=inttype) dimension(n),intent(in) :: famlist
+         integer(kind=inttype), optional,intent(in),check(len(famlist)>=n),depend(famlist) :: n=len(famlist)
+
        end subroutine addparaslice
 
-       subroutine addabsslice(slicename,pt,direction,mask,nmask) ! in :test:liftDistribution.F90
+       subroutine addabsslice(slicename,pt,direction,famlist,n) ! in :test:liftDistribution.F90
          character*(*) intent(in) :: slicename
          real(kind=realtype) dimension(3),intent(in) :: pt
          real(kind=realtype) dimension(3),intent(in) :: direction
-         integer(kind=inttype) dimension(nmask),intent(in) :: mask
-         integer(kind=inttype), optional,intent(in),check(len(mask)>=nmask),depend(mask)
+         integer(kind=inttype) dimension(n),intent(in) :: famlist
+         integer(kind=inttype), optional,intent(in),check(len(famlist)>=n),depend(famlist) :: n=len(famlist)
        end subroutine addabsslice
 
-       subroutine addliftdistribution(nsegments,dir_vec,dir_ind, distname, mask, nmask) ! in :test:liftDistribution.F90
+       subroutine addliftdistribution(nsegments,dir_vec,dir_ind, distname,famlist,n) ! in :test:liftDistribution.F90
          integer(kind=inttype) intent(in) :: nsegments
          real(kind=realtype) dimension(3), intent(in) :: dir_vec
          integer(kind=inttype), intent(in) :: dir_ind
          character*(*) intent(in) :: distname
-         integer(kind=inttype) dimension(nmask),intent(in) :: mask
-         integer(kind=inttype), optional,intent(in),check(len(mask)>=nmask),depend(mask)
+         integer(kind=inttype) dimension(n),intent(in) :: famlist
+         integer(kind=inttype), optional,intent(in),check(len(famlist)>=n),depend(famlist) :: n=len(famlist)
        end subroutine addliftdistribution
        
-       subroutine writeliftdistributionfile(filename)
-         character*(*), intent(in) :: filename
+       subroutine writetecplot(slicefile, writeslices, liftfile, writelift, surffile, writesurf)
+         character*(*), intent(in) :: slicefile
+         logical, intent(in) :: writeslices
+         character*(*), intent(in) :: liftfile
+         logical, intent(in) :: writelift
+         character*(*), intent(in) :: surffile
+         logical, intent(in) :: writesurf
        end subroutine writeliftdistributionfile
-
-       subroutine writeslicesfile(filename)
-         character*(*), intent(in) :: filename
-       end subroutine writeslicesfile
 
        subroutine dummyreadparamfile ! in :sumb:../../inputParam/readParamFile.f90
        end subroutine dummyreadparamfile
@@ -157,6 +159,16 @@ python module libsumb
          integer(kind=inttype) :: ntimetot
        end subroutine alloctimearrays
 
+       subroutine allocrestartfiles(nfiles) ! in :sumb:../../initFlow/allocrestartfiles.f90
+         integer(kind=inttype) :: nfiles
+       end subroutine allocrestartfiles
+
+       subroutine setrestartfiles(filename,i) ! in :sumb:../../initFlow/setrestartfiles.f90
+         character*(*) intent(in) :: filename
+         integer(kind=inttype) :: i
+       end subroutine setrestartfiles
+
+
        subroutine solver ! in :sumb:../../solver/solver.F90
        end subroutine solver
 
@@ -197,20 +209,16 @@ python module libsumb
          integer(kind=inttype) :: sps
         end subroutine getsolution
 
-        subroutine setfullmask
-        end subroutine setfullmask
-        
-        subroutine setmask
-        end subroutine setmask
-
-        subroutine setnmaskfams(n)
-          integer(kind=inttype), intent(in) :: n
-        end subroutine setnmaskfams
-        
-        subroutine setmaskfam(i, fam)
-          integer(kind=inttype), intent(in) :: i
-          character(32), intent(in) :: fam
-        end subroutine setmaskfam
+        subroutine mapvector(vec1,n1,famlist1,nf1,vec2,n2,famlist2,nf2) ! in :test:liftDistribution.F90
+          real(kind=realtype) dimension(3,n1),intent(in) :: vec1
+          integer(kind=inttype), optional,check(shape(vec1,1)==n1),depend(vec1) :: n1=shape(vec1,1)
+          integer(kind=inttype) dimension(nf1),intent(in) :: famlist1
+          integer(kind=inttype), optional,check(len(famlist1)>=nf1),depend(famlist1) :: nf1=len(famlist1)
+          real(kind=realtype) dimension(3,n2),intent(inout) :: vec2
+          integer(kind=inttype), optional,check(shape(vec2,1)==n2),depend(vec2) :: n2=shape(vec2,1)
+          integer(kind=inttype) dimension(nf2),intent(in) :: famlist2
+          integer(kind=inttype), optional,check(len(famlist2)>=nf2),depend(famlist2) :: nf2=len(famlist2)
+        end subroutine mapvector
 
        ! ############################################################################
        ! Added by HDN
@@ -236,24 +244,15 @@ python module libsumb
        subroutine solverunsteadywrapend ! in :sumb:../../solver/solverUnsteadyWrap.F90
        end subroutine solverunsteadywrapend
      
-       subroutine getheatflux(hflux,npts,sps_in) ! in :test:getHeatFlux.f90
-         real(kind=realtype) dimension(npts),intent(out),depend(npts) :: hflux
-         integer(kind=inttype) intent(in) :: npts
-         integer(kind=inttype) intent(in) :: sps_in
-       end subroutine getheatflux
-
-       subroutine heatfluxes ! in :test:getHeatFlux.f90
-       end subroutine heatfluxes
-
-       subroutine settnswall(tnsw,npts,sps_in) ! in :test:setTNSWall.f90
-         real(kind=realtype) dimension(npts),intent(in) :: tnsw
-         integer(kind=inttype) optional,intent(in),check(len(tnsw)>=npts),depend(tnsw) :: npts=len(tnsw)
-         integer(kind=inttype) intent(in) :: sps_in
-       end subroutine settnswall
 
        ! ############################################################################
        ! SUmb Mesh/Forces Interface Routines
        ! ############################################################################
+
+        subroutine setfamilyinfo(famlist,n) ! in :test:getForces.F90
+          integer(kind=inttype) dimension(n),intent(in) :: famlist
+          integer(kind=inttype), optional,intent(in),check(len(famlist)>=n),depend(famlist) :: n=len(famlist)
+        end subroutine setfamilyinfo
 
        subroutine getcgnsmeshindices(ndof,indices)
          integer(kind=inttype) intent(in) :: ndof
@@ -275,41 +274,29 @@ python module libsumb
             integer(kind=inttype) intent(in) :: ndof
         end subroutine getgrid
 
-       subroutine getnpatches(npatches) ! in :test:getForces.f90
-         integer(kind=inttype) intent(out) :: npatches
-       end subroutine getnpatches
- 
-       subroutine getpatchname(ipatch,patchname) ! in :test:getForces.f90
-         integer(kind=inttype) intent(in) :: ipatch
-         character*(*) intent(inout) :: patchname
-       end subroutine getpatchname
-
-       subroutine getpatchsize(ipatch,patchsize) ! in :test:getForces.f90
-         integer(kind=inttype) intent(in) :: ipatch
-         integer(kind=inttype) dimension(2), intent(out) :: patchsize
-       end subroutine getpatchsize
-
-       subroutine getforcesize(npts, ncells) ! in :test:getForces.f90
+       subroutine getsurfacesize(npts, ncells, famlist, n) ! in :test:getForces.f90
          integer(kind=inttype) intent(out) :: npts
          integer(kind=inttype) intent(out) :: ncells
-       end subroutine getforcesize
+         integer(kind=inttype) dimension(n),intent(in) :: famlist
+         integer(kind=inttype), optional,intent(in),check(len(famlist)>=n),depend(famlist) :: n=len(famlist)
+       end subroutine getsurfacesize
 
-        subroutine getforceconnectivity(conn,ncell) ! in :test:getForces.f90
+        subroutine getsurfaceconnectivity(conn,ncell) ! in :test:getForces.f90
           integer(kind=inttype) dimension(4 * ncell),intent(inout) :: conn
           integer(kind=inttype) optional,intent(in),check((len(conn))/(4)>=ncell),depend(conn) :: ncell=(len(conn))/(4)
-        end subroutine getforceconnectivity
+        end subroutine getsurfaceconnectivity
 
-        subroutine getforces(forces,npts,sps_in) ! in :test:getForces.f90
-          real(kind=realtype) dimension(3,npts),intent(out),depend(npts) :: forces
-          integer(kind=inttype) intent(in) :: npts
-          integer(kind=inttype) intent(in) :: sps_in
+        subroutine getforces(forces,npts,sps_in) ! in :test:getForces.F90
+            real(kind=realtype) dimension(3 * npts),intent(inout) :: forces
+            integer(kind=inttype), optional,intent(in),check((len(forces))/(3)>=npts),depend(forces) :: npts=(len(forces))/(3)
+            integer(kind=inttype) intent(in) :: sps_in
         end subroutine getforces
-        
-        subroutine getforcepoints(points,npts,sps_in) ! in :test:getForces.f90
+
+        subroutine getsurfacepoints(points,npts,sps_in) ! in :test:getForces.f90
           integer(kind=inttype), intent(in) :: sps_in
           real(kind=realtype) dimension(3,npts),intent(inout) :: points
           integer(kind=inttype) optional,intent(in),check(shape(points,1)==npts),depend(points) :: npts=shape(points,1)
-       end subroutine getforcepoints
+        end subroutine getsurfacepoints
 
        subroutine getareas(areas,pts,npts,sps_in,axis) ! in :test:getAreas.f90
          real(kind=realtype) dimension(3,npts),intent(out),depend(npts) :: areas
@@ -332,6 +319,7 @@ python module libsumb
          real(kind=realtype), dimension(*), intent(in) :: dtadvance
        end subroutine updatecoorfinemesh
 
+       
 
        ! ############################################################################
        ! SUmb ADjoint Debugging Routines
@@ -596,13 +584,12 @@ python module libsumb
          integer(kind=inttype) parameter,optional :: precisiondouble=2
          character(len=maxstringlen) :: surfacesolfile
          character(len=maxstringlen) :: slicesolfile ! TEMPORARY
+         character(len=maxstringlen) :: liftdistributionfile ! TEMPORARY
          character(len=maxstringlen) :: cpfile
          logical :: writecoormeter
          integer(kind=inttype) :: precisionsol
          integer(kind=inttype) :: precisiongrid
          character(len=maxstringlen) :: newgridfile
-         character(len=maxstringlen) :: restartfile
-         logical :: restart
          character(len=maxstringlen) :: gridfile
          logical :: storeconvinneriter
          logical :: storerindlayer
@@ -611,7 +598,6 @@ python module libsumb
          logical :: writesymmetry
          logical :: writefarfield
          logical :: viscoussurfacevelocities
-         logical :: slicefiletractions
          integer(kind=inttype) parameter,optional :: precisionsingle=1
          logical optional :: firstwrite=.true.
          character(len=maxstringlen) :: paramfile
@@ -1064,6 +1050,12 @@ python module libsumb
          logical :: tsalphamode
          logical :: tsalphafollowing 
        end module inputtsstabderiv
+
+        module surfacefamilies ! in :test:inputParam.F90
+          integer(kind=inttype), allocatable,dimension(:) :: famgroups
+          character(len=32), dimension(:), allocatable :: famnames
+          integer(kind=inttype), allocatable,dimension(:) :: famiswall
+        end module surfacefamilies
 
        module nksolvervars ! in :test:NKsolverVars.F90
          use constants

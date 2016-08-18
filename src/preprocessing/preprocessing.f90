@@ -36,7 +36,8 @@
        integer :: ierr
 
        integer(kind=intType) :: nLevels, level, nn, mm, nsMin, nsMax, i
-!
+
+
 !      ******************************************************************
 !      *                                                                *
 !      * Begin execution                                                *
@@ -238,10 +239,12 @@
        end do
 
        nLevels = ubound(flowDoms,2)
-       
+
        do level=1,nLevels
           call wallDistance(level, .True.)
        end do
-       
-     end subroutine preprocessing
 
+       call setSurfaceFamilyInfo
+       call initializeLiftDistributionData
+
+     end subroutine preprocessing

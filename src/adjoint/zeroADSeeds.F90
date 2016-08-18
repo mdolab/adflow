@@ -60,8 +60,9 @@ subroutine zeroADSeeds(nn, level, sps)
   bocoLoop: do mm=1, flowDoms(nn, level, sps)%nBocos
      flowDomsd(nn, level, sps)%BCData(mm)%norm= zero
      flowDomsd(nn, level, sps)%bcData(mm)%rface = zero
-     flowDomsd(nn, level, sps)%bcData(mm)%F = zero
-     flowDomsd(nn, level, sps)%bcData(mm)%dualArea = zero
+     flowDomsd(nn, level, sps)%bcData(mm)%Fv = zero
+     flowDomsd(nn, level, sps)%bcData(mm)%Fp = zero
+     flowDomsd(nn, level, sps)%bcData(mm)%area = zero
      flowDomsd(nn, level, sps)%BCData(mm)%uSlip = zero
      flowDomsd(nn, level, sps)%BCData(mm)%TNS_Wall = zero
   end do bocoLoop
