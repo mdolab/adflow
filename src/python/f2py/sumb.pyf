@@ -396,6 +396,10 @@ python module libsumb
           subroutine saveadjointrhs(filename) ! in :test:saveAdjoint.F90
             character*(*) intent(in) :: filename
           end subroutine saveadjointrhs
+          subroutine savecellcenters(filename) ! in :test:saveAdjoint.F90
+            character*(*) intent(in) :: filename
+          end subroutine savecellcenters
+
 
        ! -------- Partial Derivative Functions -----------
        
