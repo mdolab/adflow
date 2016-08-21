@@ -34,10 +34,8 @@ SUBDIR_SRC    = src/modules       \
 		src/NKSolver      \
 		src/ANKSolver     \
 
-SUBDIR_EXEC   = src/exec
-SUBDIR_PV3    = src/pv3Interface
-SUMB_SUBDIRS       = $(SUBDIR_SRC) $(PV3_INT_SRC_DIR)
-SUMB_CLEAN_SUBDIRS = $(SUBDIR_SRC)  $(SUBDIR_PV3) $(SUBDIR_EXEC)
+SUMB_SUBDIRS       = $(SUBDIR_SRC)
+SUMB_CLEAN_SUBDIRS = $(SUBDIR_SRC)
 
 default:
 # Check if the config.mk file is in the config dir.
@@ -81,5 +79,4 @@ sumb:
 			(cd $$subdir && make) || exit 1; \
 		done
 	(cd lib && make)
-	(cd $(SUBDIR_EXEC) && make)
 	(cd src/python/f2py && make)

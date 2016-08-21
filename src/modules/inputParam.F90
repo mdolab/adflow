@@ -776,25 +776,6 @@ end module inputUnsteady
 
 !      ==================================================================
 
-module inputVisualization
-  !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Input parameters for visualization.                            *
-  !      *                                                                *
-  !      ******************************************************************
-  !
-  implicit none
-  save
-
-  ! PV3VisOnly: Whether or not to run in visualization mode only.
-
-  logical :: PV3VisOnly
-
-end module inputVisualization
-
-!      ==================================================================
-
 module inputOverset
   !
   !      ******************************************************************

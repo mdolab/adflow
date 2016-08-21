@@ -56,12 +56,10 @@ SUBDIR_SRC    = src_cs/modules       \
 		src_cs/bendingMomentAnalysis \
 	        src_cs/stabilityDerivatives \
 
-SUBDIR_EXEC   = src_cs/exec
-SUBDIR_PV3    = src_cs/pv3Interface
 CONFIG_DEFAULT_DIR = config/defaults
 CONFIG_DIR         = config
-SUMB_SUBDIRS       = $(SUBDIR_SRC) $(PV3_INT_SRC_DIR)
-SUMB_CLEAN_SUBDIRS = $(SUBDIR_SRC)  $(SUBDIR_PV3) $(SUBDIR_EXEC)
+SUMB_SUBDIRS       = $(SUBDIR_SRC)
+SUMB_CLEAN_SUBDIRS = $(SUBDIR_SRC)
 
 default:
 # Check if the config.mk file is in the config dir.

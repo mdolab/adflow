@@ -79,12 +79,9 @@
        ! changingOverset:  Whether or not the overset connectivity needs
        !                   to be updated at each time step, due to 
        !                   moving or deforming grids.
-       ! PV3Initialized:   Whether or not PV3 has been initialized,
-       !                   for use in multidisciplinary problems where
-       !                   solver is called multiple times
  
        logical :: standAloneMode, changing_Grid, deforming_Grid
-       logical :: changingOverset, PV3Initialized = .false.
+       logical :: changingOverset
 
        ! nOldSolAvail:     Number of available old solutions for
        !                   the time integration.

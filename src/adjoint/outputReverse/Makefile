@@ -70,7 +70,6 @@ FF90_OBJECTS2 =  \
 		prodsmag2_b.o\
 		turbadvection_b.o\
 		forcesandmoments_b.o\
-		setflowinfinitystate_b.o\
 		sanuknowneddyratio_b.o\
 		etotarray_b.o\
 		eintarray_b.o\

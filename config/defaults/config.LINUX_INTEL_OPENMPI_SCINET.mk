@@ -42,12 +42,6 @@ CC_DEBUG_FLAGS   = #-g -Wall -pedantic -DDEBUG_MODE
 AR       = ar
 AR_FLAGS = -rvs
 
-# ------- Defin pV3 and pvm3 linker flags ------------------------------
-#PV3_FLAGS          = -DUSE_PV3
-#PV3_LINKER_FLAGS   = -L/usr/local/pV3/clients/LINUX-INTEL -lpV3
-#PVM3_LINKER_FLAGS  = -L/usr/local/pvm3/lib/LINUX -lgpvm3 -lpvm3
-#PV3_INT_SRC_DIR    = src/pv3Interface
-
 # ------- Define Linker Flags ------------------------------------------
 LINKER       = $(FF90)
 LINKER_FLAGS = -nofor_main
