@@ -71,11 +71,32 @@ module costFunctions
        costFuncSepSensorAvgZ = 41, &
        costFuncCavitation = 42
 
-  real(kind=realType), allocatable, dimension(:)   :: functionValue
-  real(kind=realType), dimension(nCostFunction)   :: funcValues
+  integer(kind=intType), parameter :: &
+       icFp1 = 1, &
+       icFp2 = 3, &
+       icFv1 = 4, &
+       icFv2 = 6, &
+       icMp1 = 7, &
+       icMp2 = 9, &
+       icMv1 =10, &
+       icMv2 =12, &
+       iSepSensor = 13, &
+       iSepAvg1 = 14, &
+       iSepAvg2 = 16, &
+       iFp1 =17, &
+       iFp2 =19, &
+       iFv1 =20, &
+       iFv2 =22, &
+       iMp1 =23, &
+       iMp2 =25, &
+       iMv1 =26, &
+       iMv2 =28, &
+       iCavitation=29, &
+       iyPlus = 30
+  integer(kind=intType), parameter :: nLocalValues=30
+  real(kind=realType), dimension(nCostFunction) ::  funcValues
 #ifndef USE_TAPENADE 
-  real(kind=realType), dimension(nCostFunction)   :: funcValuesd
-  real(kind=realType), dimension(nCostFunction)   :: funcValuesb
+  real(kind=realType), dimension(nCostFunction) ::  funcValuesd
 #endif
   
   real(kind=realtype) :: sepSensorOffset, sepSensorSharpness

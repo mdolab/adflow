@@ -10,14 +10,15 @@
 !
 subroutine updateRotationRate(rotCenter, rotRate, blocks, nblocks)
 
-  use inputTimeSpectral 
-  use section
-  use inputPhysics  
-  use inputMotion   
-  use cgnsGrid      
-  use monitor
-  use iteration
-  use blockpointers
+  use constants
+  use inputTimeSpectral, only : nTimeInTervalsSpectral
+  use section, only : sections, nSections
+  use inputPhysics, only : equationMode
+  use inputMotion, only : rotPoint
+  use cgnsGrid, only : cgnsDoms
+  use monitor, only : timeUnsteadyRestart
+  use iteration, only : groundLevel
+  use blockpointers, only : nDom, nbkGlobal, flowDoms
   implicit none
 
   real(kind=realType),intent(in)::rotCenter(3), rotRate(3)

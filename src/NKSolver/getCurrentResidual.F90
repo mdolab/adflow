@@ -1,13 +1,11 @@
 subroutine getCurrentResidual(rhoRes,totalRRes)
 
-  use communication
-  use blockPointers
-  use flowVarRefState
-  use inputTimeSpectral
-  use iteration
-  use inputPhysics
-  use inputIteration
-  use monitor
+  use constants
+  use communication, only : sumb_comm_world 
+  use blockPointers, only : nDom, nCellGlobal
+  use inputTimeSpectral, only : nTimeIntervalsSpectral
+  use iteration, only : currentLevel
+  use monitor, only: monLoc, monGlob, nMonSum
   implicit none
 
   ! Compute rhoRes and totalR. The actual residual must have already

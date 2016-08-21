@@ -1,17 +1,16 @@
 subroutine ANKStep(firstCall)
 
   use constants
-  use flowVarRefState
+  use flowVarRefState, only : nw
   use NKSolverVars, only : totalR0
   use ANKSolverVars, only: ANK_jacobianLag,  wVec, rVec, deltaW, &
        ANK_KSP, ANK_rTol, ANK_subSpace, ANK_divTol, &
        ANK_Iter, ANK_CFL, NORM_2, wVecTurb, rVecTurb, deltaWTurb, ANK_KSPTurb, &
        ANK_useTurbDADI, ANK_CFL0
-    
-  use inputIteration
-  use inputPhysics
-  use monitor
-  use iteration
+  use inputPhysics, only : equations
+  use flowVarRefState, only :  nw, nwf
+  use inputIteration, only : L2conv
+  use iteration, only : approxTotalIts
   implicit none
 
   ! Input Variables

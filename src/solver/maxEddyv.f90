@@ -17,8 +17,9 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use blockPointers
-       use flowVarRefState
+       use constants
+       use blockPointers, only : il, jl, kl, rlv, rev
+       use flowVarRefState, only : nwf, eddyModel
        implicit none
 !
 !      Subroutine arguments.

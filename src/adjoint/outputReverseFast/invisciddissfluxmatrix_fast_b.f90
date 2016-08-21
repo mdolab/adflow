@@ -30,13 +30,16 @@ subroutine invisciddissfluxmatrix_fast_b()
 !      ******************************************************************
 !
   use myPushPopLib
-  use blockpointers
-  use cgnsgrid
   use constants
-  use flowvarrefstate
-  use inputdiscretization
-  use inputphysics
-  use iteration
+  use blockpointers, only : nx, ny, nz, il, jl, kl, ie, je, ke, ib, jb&
+& , kb, w, wd, p, pd, pori, porj, pork, fw, fwd, gamma, si, sj, sk, &
+& indfamilyi, indfamilyj, indfamilyk, spectralsol, addgridvelocities, &
+& sfacei, sfacej, sfacek, factfamilyi, factfamilyj, factfamilyk
+  use flowvarrefstate, only : pinfcorr
+  use inputdiscretization, only : vis2, vis4
+  use inputphysics, only : equations
+  use iteration, only : rfil
+  use cgnsgrid, only : massflowfamilydiss
   implicit none
 !
 !      local parameters.
@@ -71,7 +74,7 @@ subroutine invisciddissfluxmatrix_fast_b()
   real(kind=realtype) :: abv1d, abv2d, abv3d, abv4d, abv5d, abv6d, abv7d
   real(kind=realtype), dimension(ie, je, ke, 3) :: dss
   real(kind=realtype), dimension(ie, je, ke, 3) :: dssd
-  logical :: correctfork
+  logical :: correctfork, getcorrectfork
   intrinsic abs
   intrinsic mod
   intrinsic max
@@ -90,6 +93,7 @@ subroutine invisciddissfluxmatrix_fast_b()
   real(kind=realtype) :: temp1
   real(kind=realtype) :: tempd12
   real(kind=realtype) :: temp27
+  real(kind=realtype) :: max10d
   real(kind=realtype) :: temp0
   real(kind=realtype) :: tempd11
   real(kind=realtype) :: temp26
@@ -103,6 +107,7 @@ subroutine invisciddissfluxmatrix_fast_b()
   real(kind=realtype) :: abs1d
   real(kind=realtype) :: temp55
   real(kind=realtype) :: temp54
+  real(kind=realtype) :: max2d
   real(kind=realtype) :: temp53
   real(kind=realtype) :: min3
   real(kind=realtype) :: temp52
@@ -112,6 +117,7 @@ subroutine invisciddissfluxmatrix_fast_b()
   real(kind=realtype) :: temp50
   real(kind=realtype) :: abs4d
   real(kind=realtype) :: min1d
+  real(kind=realtype) :: max8d
   real(kind=realtype) :: x3
   real(kind=realtype) :: x2
   real(kind=realtype) :: x2d
@@ -136,6 +142,7 @@ subroutine invisciddissfluxmatrix_fast_b()
   real(kind=realtype) :: temp10
   real(kind=realtype) :: temp47
   real(kind=realtype) :: tempd32
+  real(kind=realtype) :: max12d
   real(kind=realtype) :: temp46
   real(kind=realtype) :: tempd31
   real(kind=realtype) :: temp45
@@ -149,6 +156,7 @@ subroutine invisciddissfluxmatrix_fast_b()
   real(kind=realtype) :: tempd9
   real(kind=realtype) :: tempd
   real(kind=realtype) :: tempd8
+  real(kind=realtype) :: max4d
   real(kind=realtype) :: tempd7
   real(kind=realtype) :: tempd6
   real(kind=realtype) :: tempd5
@@ -157,6 +165,7 @@ subroutine invisciddissfluxmatrix_fast_b()
   real(kind=realtype) :: tempd3
   real(kind=realtype) :: tempd2
   real(kind=realtype) :: tempd1
+  real(kind=realtype) :: max7d
   real(kind=realtype) :: tempd0
   real(kind=realtype) :: x1d
   real(kind=realtype) :: min3d
@@ -172,6 +181,7 @@ subroutine invisciddissfluxmatrix_fast_b()
   real(kind=realtype) :: temp38
   real(kind=realtype) :: tempd22
   real(kind=realtype) :: temp37
+  real(kind=realtype) :: max11d
   real(kind=realtype) :: tempd21
   real(kind=realtype) :: temp36
   real(kind=realtype) :: tempd20
@@ -189,15 +199,26 @@ subroutine invisciddissfluxmatrix_fast_b()
   real(kind=realtype) :: abs2d
   real(kind=realtype) :: abs1
   real(kind=realtype) :: abs0
+  real(kind=realtype) :: max3d
+  real(kind=realtype) :: max9
   real(kind=realtype) :: abs5d
+  real(kind=realtype) :: max8
+  real(kind=realtype) :: max7
+  real(kind=realtype) :: max6
+  real(kind=realtype) :: max6d
+  real(kind=realtype) :: max5
+  real(kind=realtype) :: max4
   real(kind=realtype) :: temp
   real(kind=realtype) :: max3
   real(kind=realtype) :: max2
   real(kind=realtype) :: max1
+  real(kind=realtype) :: max12
   real(kind=realtype) :: temp9
+  real(kind=realtype) :: max11
   real(kind=realtype) :: temp8
   real(kind=realtype) :: min2d
   real(kind=realtype) :: tempd19
+  real(kind=realtype) :: max10
   real(kind=realtype) :: temp7
   real(kind=realtype) :: tempd18
   real(kind=realtype) :: y3
@@ -232,15 +253,7 @@ subroutine invisciddissfluxmatrix_fast_b()
     plim = 0.001_realtype*pinfcorr
 ! determine whether or not the total energy must be corrected
 ! for the presence of the turbulent kinetic energy.
-    if (kpresent) then
-      if (currentlevel .eq. groundlevel .or. turbcoupled) then
-        correctfork = .true.
-      else
-        correctfork = .false.
-      end if
-    else
-      correctfork = .false.
-    end if
+    correctfork = getcorrectfork()
 ! initialize sface to zero. this value will be used if the
 ! block is not moving.
     sface = zero
@@ -380,19 +393,17 @@ subroutine invisciddissfluxmatrix_fast_b()
       wavg = half*(w(i+1, j, k, ivz)+w(i, j, k, ivz))
       a2avg = half*(gamma(i+1, j, k)*p(i+1, j, k)/w(i+1, j, k, irho)+&
 &       gamma(i, j, k)*p(i, j, k)/w(i, j, k, irho))
-      sx = si(i, j, k, 1)
-      sy = si(i, j, k, 2)
-      sz = si(i, j, k, 3)
-      area = sqrt(sx**2 + sy**2 + sz**2)
+      area = sqrt(si(i, j, k, 1)**2 + si(i, j, k, 2)**2 + si(i, j, k, 3)&
+&       **2)
       if (1.e-25_realtype .lt. area) then
         max1 = area
       else
         max1 = 1.e-25_realtype
       end if
       tmp = one/max1
-      sx = sx*tmp
-      sy = sy*tmp
-      sz = sz*tmp
+      sx = si(i, j, k, 1)*tmp
+      sy = si(i, j, k, 2)*tmp
+      sz = si(i, j, k, 3)*tmp
       alphaavg = half*(uavg**2+vavg**2+wavg**2)
       havg = alphaavg + ovgm1*(a2avg-gm53*kavg)
       aavg = sqrt(a2avg)
@@ -419,25 +430,25 @@ subroutine invisciddissfluxmatrix_fast_b()
       end if
       rrad = lam3 + aavg
       if (lam1 .lt. epsacoustic*rrad) then
-        lam1 = epsacoustic*rrad
+        max2 = epsacoustic*rrad
       else
-        lam1 = lam1
-      end if
-      if (lam2 .lt. epsacoustic*rrad) then
-        lam2 = epsacoustic*rrad
-      else
-        lam2 = lam2
-      end if
-      if (lam3 .lt. epsshear*rrad) then
-        lam3 = epsshear*rrad
-      else
-        lam3 = lam3
+        max2 = lam1
       end if
 ! multiply the eigenvalues by the area to obtain
 ! the correct values for the dissipation term.
-      lam1 = lam1*area
-      lam2 = lam2*area
-      lam3 = lam3*area
+      lam1 = max2*area
+      if (lam2 .lt. epsacoustic*rrad) then
+        max3 = epsacoustic*rrad
+      else
+        max3 = lam2
+      end if
+      lam2 = max3*area
+      if (lam3 .lt. epsshear*rrad) then
+        max4 = epsshear*rrad
+      else
+        max4 = lam3
+      end if
+      lam3 = max4*area
 ! some abbreviations, which occur quite often in the
 ! dissipation terms.
       abv1 = half*(lam1+lam2)
@@ -542,19 +553,17 @@ subroutine invisciddissfluxmatrix_fast_b()
       wavg = half*(w(i, j+1, k, ivz)+w(i, j, k, ivz))
       a2avg = half*(gamma(i, j+1, k)*p(i, j+1, k)/w(i, j+1, k, irho)+&
 &       gamma(i, j, k)*p(i, j, k)/w(i, j, k, irho))
-      sx = sj(i, j, k, 1)
-      sy = sj(i, j, k, 2)
-      sz = sj(i, j, k, 3)
-      area = sqrt(sx**2 + sy**2 + sz**2)
+      area = sqrt(sj(i, j, k, 1)**2 + sj(i, j, k, 2)**2 + sj(i, j, k, 3)&
+&       **2)
       if (1.e-25_realtype .lt. area) then
-        max2 = area
+        max5 = area
       else
-        max2 = 1.e-25_realtype
+        max5 = 1.e-25_realtype
       end if
-      tmp = one/max2
-      sx = sx*tmp
-      sy = sy*tmp
-      sz = sz*tmp
+      tmp = one/max5
+      sx = sj(i, j, k, 1)*tmp
+      sy = sj(i, j, k, 2)*tmp
+      sz = sj(i, j, k, 3)*tmp
       alphaavg = half*(uavg**2+vavg**2+wavg**2)
       havg = alphaavg + ovgm1*(a2avg-gm53*kavg)
       aavg = sqrt(a2avg)
@@ -581,25 +590,25 @@ subroutine invisciddissfluxmatrix_fast_b()
       end if
       rrad = lam3 + aavg
       if (lam1 .lt. epsacoustic*rrad) then
-        lam1 = epsacoustic*rrad
+        max6 = epsacoustic*rrad
       else
-        lam1 = lam1
-      end if
-      if (lam2 .lt. epsacoustic*rrad) then
-        lam2 = epsacoustic*rrad
-      else
-        lam2 = lam2
-      end if
-      if (lam3 .lt. epsshear*rrad) then
-        lam3 = epsshear*rrad
-      else
-        lam3 = lam3
+        max6 = lam1
       end if
 ! multiply the eigenvalues by the area to obtain
 ! the correct values for the dissipation term.
-      lam1 = lam1*area
-      lam2 = lam2*area
-      lam3 = lam3*area
+      lam1 = max6*area
+      if (lam2 .lt. epsacoustic*rrad) then
+        max7 = epsacoustic*rrad
+      else
+        max7 = lam2
+      end if
+      lam2 = max7*area
+      if (lam3 .lt. epsshear*rrad) then
+        max8 = epsshear*rrad
+      else
+        max8 = lam3
+      end if
+      lam3 = max8*area
 ! some abbreviations, which occur quite often in the
 ! dissipation terms.
       abv1 = half*(lam1+lam2)
@@ -710,19 +719,17 @@ myIntPtr = myIntPtr + 1
       wavg = half*(w(i, j, k+1, ivz)+w(i, j, k, ivz))
       a2avg = half*(gamma(i, j, k+1)*p(i, j, k+1)/w(i, j, k+1, irho)+&
 &       gamma(i, j, k)*p(i, j, k)/w(i, j, k, irho))
-      sx = sk(i, j, k, 1)
-      sy = sk(i, j, k, 2)
-      sz = sk(i, j, k, 3)
-      area = sqrt(sx**2 + sy**2 + sz**2)
+      area = sqrt(sk(i, j, k, 1)**2 + sk(i, j, k, 2)**2 + sk(i, j, k, 3)&
+&       **2)
       if (1.e-25_realtype .lt. area) then
-        max3 = area
+        max9 = area
       else
-        max3 = 1.e-25_realtype
+        max9 = 1.e-25_realtype
       end if
-      tmp = one/max3
-      sx = sx*tmp
-      sy = sy*tmp
-      sz = sz*tmp
+      tmp = one/max9
+      sx = sk(i, j, k, 1)*tmp
+      sy = sk(i, j, k, 2)*tmp
+      sz = sk(i, j, k, 3)*tmp
       alphaavg = half*(uavg**2+vavg**2+wavg**2)
       havg = alphaavg + ovgm1*(a2avg-gm53*kavg)
       aavg = sqrt(a2avg)
@@ -761,37 +768,37 @@ myIntPtr = myIntPtr + 1
       end if
       rrad = lam3 + aavg
       if (lam1 .lt. epsacoustic*rrad) then
-        lam1 = epsacoustic*rrad
+        max10 = epsacoustic*rrad
 myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 0
       else
-myIntPtr = myIntPtr + 1
- myIntStack(myIntPtr) = 1
-        lam1 = lam1
-      end if
-      if (lam2 .lt. epsacoustic*rrad) then
-        lam2 = epsacoustic*rrad
-myIntPtr = myIntPtr + 1
- myIntStack(myIntPtr) = 0
-      else
-myIntPtr = myIntPtr + 1
- myIntStack(myIntPtr) = 1
-        lam2 = lam2
-      end if
-      if (lam3 .lt. epsshear*rrad) then
-        lam3 = epsshear*rrad
-myIntPtr = myIntPtr + 1
- myIntStack(myIntPtr) = 0
-      else
-        lam3 = lam3
+        max10 = lam1
 myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 1
       end if
 ! multiply the eigenvalues by the area to obtain
 ! the correct values for the dissipation term.
-      lam1 = lam1*area
-      lam2 = lam2*area
-      lam3 = lam3*area
+      lam1 = max10*area
+      if (lam2 .lt. epsacoustic*rrad) then
+        max11 = epsacoustic*rrad
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+      else
+        max11 = lam2
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+      end if
+      lam2 = max11*area
+      if (lam3 .lt. epsshear*rrad) then
+        max12 = epsshear*rrad
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+      else
+        max12 = lam3
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+      end if
+      lam3 = max12*area
 ! some abbreviations, which occur quite often in the
 ! dissipation terms.
       abv1 = half*(lam1+lam2)
@@ -856,28 +863,33 @@ myIntPtr = myIntPtr + 1
       abv1d = abv3d
       lam1d = half*abv1d + half*abv2d
       lam2d = half*abv1d - half*abv2d
-      lam3d = area*lam3d
-      lam2d = area*lam2d
-      lam1d = area*lam1d
+      max12d = area*lam3d
 branch = myIntStack(myIntPtr)
  myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
-        rradd = epsshear*lam3d
+        rradd = epsshear*max12d
         lam3d = 0.0_8
       else
+        lam3d = max12d
         rradd = 0.0_8
       end if
+      max11d = area*lam2d
 branch = myIntStack(myIntPtr)
  myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
-        rradd = rradd + epsacoustic*lam2d
+        rradd = rradd + epsacoustic*max11d
         lam2d = 0.0_8
+      else
+        lam2d = max11d
       end if
+      max10d = area*lam1d
 branch = myIntStack(myIntPtr)
  myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
-        rradd = rradd + epsacoustic*lam1d
+        rradd = rradd + epsacoustic*max10d
         lam1d = 0.0_8
+      else
+        lam1d = max10d
       end if
       lam3d = lam3d + rradd
       aavgd = rradd
@@ -1121,19 +1133,17 @@ myIntPtr = myIntPtr + 1
       wavg = half*(w(i, j+1, k, ivz)+w(i, j, k, ivz))
       a2avg = half*(gamma(i, j+1, k)*p(i, j+1, k)/w(i, j+1, k, irho)+&
 &       gamma(i, j, k)*p(i, j, k)/w(i, j, k, irho))
-      sx = sj(i, j, k, 1)
-      sy = sj(i, j, k, 2)
-      sz = sj(i, j, k, 3)
-      area = sqrt(sx**2 + sy**2 + sz**2)
+      area = sqrt(sj(i, j, k, 1)**2 + sj(i, j, k, 2)**2 + sj(i, j, k, 3)&
+&       **2)
       if (1.e-25_realtype .lt. area) then
-        max2 = area
+        max5 = area
       else
-        max2 = 1.e-25_realtype
+        max5 = 1.e-25_realtype
       end if
-      tmp = one/max2
-      sx = sx*tmp
-      sy = sy*tmp
-      sz = sz*tmp
+      tmp = one/max5
+      sx = sj(i, j, k, 1)*tmp
+      sy = sj(i, j, k, 2)*tmp
+      sz = sj(i, j, k, 3)*tmp
       alphaavg = half*(uavg**2+vavg**2+wavg**2)
       havg = alphaavg + ovgm1*(a2avg-gm53*kavg)
       aavg = sqrt(a2avg)
@@ -1172,37 +1182,37 @@ myIntPtr = myIntPtr + 1
       end if
       rrad = lam3 + aavg
       if (lam1 .lt. epsacoustic*rrad) then
-        lam1 = epsacoustic*rrad
+        max6 = epsacoustic*rrad
 myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 0
       else
-myIntPtr = myIntPtr + 1
- myIntStack(myIntPtr) = 1
-        lam1 = lam1
-      end if
-      if (lam2 .lt. epsacoustic*rrad) then
-        lam2 = epsacoustic*rrad
-myIntPtr = myIntPtr + 1
- myIntStack(myIntPtr) = 0
-      else
-myIntPtr = myIntPtr + 1
- myIntStack(myIntPtr) = 1
-        lam2 = lam2
-      end if
-      if (lam3 .lt. epsshear*rrad) then
-        lam3 = epsshear*rrad
-myIntPtr = myIntPtr + 1
- myIntStack(myIntPtr) = 0
-      else
-        lam3 = lam3
+        max6 = lam1
 myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 1
       end if
 ! multiply the eigenvalues by the area to obtain
 ! the correct values for the dissipation term.
-      lam1 = lam1*area
-      lam2 = lam2*area
-      lam3 = lam3*area
+      lam1 = max6*area
+      if (lam2 .lt. epsacoustic*rrad) then
+        max7 = epsacoustic*rrad
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+      else
+        max7 = lam2
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+      end if
+      lam2 = max7*area
+      if (lam3 .lt. epsshear*rrad) then
+        max8 = epsshear*rrad
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+      else
+        max8 = lam3
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+      end if
+      lam3 = max8*area
 ! some abbreviations, which occur quite often in the
 ! dissipation terms.
       abv1 = half*(lam1+lam2)
@@ -1267,28 +1277,33 @@ myIntPtr = myIntPtr + 1
       abv1d = abv3d
       lam1d = half*abv1d + half*abv2d
       lam2d = half*abv1d - half*abv2d
-      lam3d = area*lam3d
-      lam2d = area*lam2d
-      lam1d = area*lam1d
+      max8d = area*lam3d
 branch = myIntStack(myIntPtr)
  myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
-        rradd = epsshear*lam3d
+        rradd = epsshear*max8d
         lam3d = 0.0_8
       else
+        lam3d = max8d
         rradd = 0.0_8
       end if
+      max7d = area*lam2d
 branch = myIntStack(myIntPtr)
  myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
-        rradd = rradd + epsacoustic*lam2d
+        rradd = rradd + epsacoustic*max7d
         lam2d = 0.0_8
+      else
+        lam2d = max7d
       end if
+      max6d = area*lam1d
 branch = myIntStack(myIntPtr)
  myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
-        rradd = rradd + epsacoustic*lam1d
+        rradd = rradd + epsacoustic*max6d
         lam1d = 0.0_8
+      else
+        lam1d = max6d
       end if
       lam3d = lam3d + rradd
       aavgd = rradd
@@ -1532,19 +1547,17 @@ myIntPtr = myIntPtr + 1
       wavg = half*(w(i+1, j, k, ivz)+w(i, j, k, ivz))
       a2avg = half*(gamma(i+1, j, k)*p(i+1, j, k)/w(i+1, j, k, irho)+&
 &       gamma(i, j, k)*p(i, j, k)/w(i, j, k, irho))
-      sx = si(i, j, k, 1)
-      sy = si(i, j, k, 2)
-      sz = si(i, j, k, 3)
-      area = sqrt(sx**2 + sy**2 + sz**2)
+      area = sqrt(si(i, j, k, 1)**2 + si(i, j, k, 2)**2 + si(i, j, k, 3)&
+&       **2)
       if (1.e-25_realtype .lt. area) then
         max1 = area
       else
         max1 = 1.e-25_realtype
       end if
       tmp = one/max1
-      sx = sx*tmp
-      sy = sy*tmp
-      sz = sz*tmp
+      sx = si(i, j, k, 1)*tmp
+      sy = si(i, j, k, 2)*tmp
+      sz = si(i, j, k, 3)*tmp
       alphaavg = half*(uavg**2+vavg**2+wavg**2)
       havg = alphaavg + ovgm1*(a2avg-gm53*kavg)
       aavg = sqrt(a2avg)
@@ -1583,37 +1596,37 @@ myIntPtr = myIntPtr + 1
       end if
       rrad = lam3 + aavg
       if (lam1 .lt. epsacoustic*rrad) then
-        lam1 = epsacoustic*rrad
+        max2 = epsacoustic*rrad
 myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 0
       else
-myIntPtr = myIntPtr + 1
- myIntStack(myIntPtr) = 1
-        lam1 = lam1
-      end if
-      if (lam2 .lt. epsacoustic*rrad) then
-        lam2 = epsacoustic*rrad
-myIntPtr = myIntPtr + 1
- myIntStack(myIntPtr) = 0
-      else
-myIntPtr = myIntPtr + 1
- myIntStack(myIntPtr) = 1
-        lam2 = lam2
-      end if
-      if (lam3 .lt. epsshear*rrad) then
-        lam3 = epsshear*rrad
-myIntPtr = myIntPtr + 1
- myIntStack(myIntPtr) = 0
-      else
-        lam3 = lam3
+        max2 = lam1
 myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 1
       end if
 ! multiply the eigenvalues by the area to obtain
 ! the correct values for the dissipation term.
-      lam1 = lam1*area
-      lam2 = lam2*area
-      lam3 = lam3*area
+      lam1 = max2*area
+      if (lam2 .lt. epsacoustic*rrad) then
+        max3 = epsacoustic*rrad
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+      else
+        max3 = lam2
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+      end if
+      lam2 = max3*area
+      if (lam3 .lt. epsshear*rrad) then
+        max4 = epsshear*rrad
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+      else
+        max4 = lam3
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+      end if
+      lam3 = max4*area
 ! some abbreviations, which occur quite often in the
 ! dissipation terms.
       abv1 = half*(lam1+lam2)
@@ -1678,28 +1691,33 @@ myIntPtr = myIntPtr + 1
       abv1d = abv3d
       lam1d = half*abv1d + half*abv2d
       lam2d = half*abv1d - half*abv2d
-      lam3d = area*lam3d
-      lam2d = area*lam2d
-      lam1d = area*lam1d
+      max4d = area*lam3d
 branch = myIntStack(myIntPtr)
  myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
-        rradd = epsshear*lam3d
+        rradd = epsshear*max4d
         lam3d = 0.0_8
       else
+        lam3d = max4d
         rradd = 0.0_8
       end if
+      max3d = area*lam2d
 branch = myIntStack(myIntPtr)
  myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
-        rradd = rradd + epsacoustic*lam2d
+        rradd = rradd + epsacoustic*max3d
         lam2d = 0.0_8
+      else
+        lam2d = max3d
       end if
+      max2d = area*lam1d
 branch = myIntStack(myIntPtr)
  myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
-        rradd = rradd + epsacoustic*lam1d
+        rradd = rradd + epsacoustic*max2d
         lam1d = 0.0_8
+      else
+        lam1d = max2d
       end if
       lam3d = lam3d + rradd
       aavgd = rradd

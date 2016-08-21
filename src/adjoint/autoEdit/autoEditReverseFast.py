@@ -36,7 +36,7 @@ useful_modules = ['samodule_b','bcroutines_b','turbbcroutines_b']
 for f in os.listdir(DIR_ORI):
     if f.endswith(EXT):
         # open original file in read mode
-        file_object_ori = open(DIR_ORI + '/' + f,'r')
+        file_object_ori = open(os.path.join(DIR_ORI,f),'r')
         print "\nParsing input file", file_object_ori.name
 
         # read to whole file to string and reposition the pointer
@@ -80,7 +80,7 @@ for f in os.listdir(DIR_ORI):
             # Replace modules
             m = patt_modules.match(line)
             if m:
-                line = m.group(1) + '\n'
+                line = line.replace('_b', '')
 
                 if not addedModule:
                     line = '  use myPushPopLib\n'+line

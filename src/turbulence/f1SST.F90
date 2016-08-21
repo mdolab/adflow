@@ -51,7 +51,7 @@
            call setPointers(mm, currentLevel, sps)
 
            ! Set the pointers for f1 and kwCD to the correct entries
-           ! in scratch
+           ! in scratch which are currently not used.
 
            f1   => scratch(1:,1:,1:,if1SST)
            kwCD => scratch(1:,1:,1:,icd)
@@ -319,7 +319,7 @@
              j2 = commPatternCell_1st(ll)%recvList(ii)%indices(j,2)
              k2 = commPatternCell_1st(ll)%recvList(ii)%indices(j,3)
 
-             ! And copy the data in the appropriate place in dw. Note
+             ! And copy the data in the appropriate place in scratch. Note
              ! that level == 1 and not ll (= currentLevel).
 
              flowDoms(d2,1,sps)%scratch(i2,j2,k2,if1SST) = recvBuffer(jj)
@@ -407,7 +407,7 @@
              k1 = commSlidingCell_1st(ll,sps)%sendList(i)%indices(j,3)
 
              ! Copy the data in the send buffer. Note that level == 1 and
-             ! not currentLevel (== ll) for dw.
+             ! not currentLevel (== ll) for scratch.
 
              sendBuffer(jj) = flowDoms(d1,1,sps)%scratch(i1,j1,k1,if1SST)
              jj = jj + 1
@@ -460,7 +460,7 @@
            j2 = intSlidingCell_1st(ll,sps)%slidingHaloList%indices(i,2)
            k2 = intSlidingCell_1st(ll,sps)%slidingHaloList%indices(i,3)
 
-           ! And set f1 to zero. Again level == 1 for dw.
+           ! And set f1 to zero. Again level == 1 for scratch.
 
            flowDoms(d2,1,sps)%scratch(i2,j2,k2,if1SST) = zero
 
@@ -488,7 +488,7 @@
 
             alp = intSlidingCell_1st(ll,sps)%weight(i)
 
-            ! Update f1 of the halo. Note that level == 1 for dw.
+            ! Update f1 of the halo. Note that level == 1 for scratch.
 
             flowDoms(d2,1,sps)%scratch(i2,j2,k2,if1SST) =     &
                 flowDoms(d2,1,sps)%scratch(i2,j2,k2,if1SST) + &
@@ -526,7 +526,7 @@
                 + commSlidingCell_1st(ll,sps)%recvList(ii)%indRecv(j)
 
              ! Update f1 of the halo. Note that level == 1 and not
-             ! currentLevel for dw.
+             ! currentLevel for scratch.
 
              flowDoms(d2,1,sps)%scratch(i2,j2,k2,if1SST) =     &
                  flowDoms(d2,1,sps)%scratch(i2,j2,k2,if1SST) + &
@@ -722,7 +722,7 @@
              j2 = commPatternOverset(ll,sps)%recvList(ii)%indices(j,2)
              k2 = commPatternOverset(ll,sps)%recvList(ii)%indices(j,3)
 
-             ! And copy the data in the appropriate place in dw. Note
+             ! And copy the data in the appropriate place in scratch. Note
              ! that level == 1 and not ll (= currentLevel).
 
              flowDoms(d2,1,sps)%scratch(i2,j2,k2,if1SST) = recvBuffer(jj)

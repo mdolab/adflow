@@ -219,6 +219,7 @@
          call viscSubfaceInfo(level)
          call determineAreaLevel0Cooling(level)
          call determineNcellGlobal(level)
+         call setReferenceVolume(level)
        enddo
 
        ! Before heading to the solver, set all the boundary iblanks

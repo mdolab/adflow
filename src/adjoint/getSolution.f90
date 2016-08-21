@@ -31,17 +31,12 @@ subroutine getSolution(sps)
   real(kind=realType)::bendingMoment,bendingSum, cf(3), cm(3)
   integer(kind=intType) :: i, liftIndex
 
-  ! Function values
-  if (.not. allocated(functionValue)) then
-     allocate(functionValue(nCostFunction))
-  end if
-
   !Begin execution
   !determine the liftIndex from the flow and liftdirection
   call getDirAngle(velDirFreestream, LiftDirection,&
        liftIndex, alpha, beta)
 
-  functionValue(:) = 0.0
+  funcValues(:) = 0.0
 
   bendingSum = 0.0
   do i =1,nTimeIntervalsSpectral
@@ -66,59 +61,59 @@ subroutine getSolution(sps)
   end do
   
   call computeAeroCoef(globalCFVals,sps)
-  functionValue(costFuncBendingCoef)=bendingSum/nTimeIntervalsSpectral
+  funcValues(costFuncBendingCoef)=bendingSum/nTimeIntervalsSpectral
 
-  functionValue(costFuncLift) = globalCFVals(costFuncLift) 
-  functionValue(costFuncDrag) = globalCFVals(costFuncDrag) 
-  functionValue(costFuncLiftCoef) = globalCFVals(costFuncLiftCoef) 
-  functionValue(costFuncDragCoef) = globalCFVals(costFuncDragCoef) 
-  functionValue(costFuncForceX) = globalCFVals(costFuncForceX) 
-  functionValue(costFuncForceY) = globalCFVals(costFuncForceY) 
-  functionValue(costFuncForceZ) = globalCFVals(costFuncForceZ) 
-  functionValue(costFuncForceXCoef) = globalCFVals(costFuncForceXCoef) 
-  functionValue(costFuncForceYCoef) = globalCFVals(costFuncForceYCoef) 
-  functionValue(costFuncForceZCoef) = globalCFVals(costFuncForceZCoef) 
-  functionValue(costFuncMomX) = globalCFVals(costFuncMomX) 
-  functionValue(costFuncMomY) = globalCFVals(costFuncMomY) 
-  functionValue(costFuncMomZ) = globalCFVals(costFuncMomZ) 
-  functionValue(costFuncMomXCoef) = globalCFVals(costFuncMomXCoef) 
-  functionValue(costFuncMomYCoef) = globalCFVals(costFuncMomYCoef)
-  functionValue(costFuncMomZCoef) = globalCFVals(costFuncMomZCoef)
-  functionValue(costFuncSepSensor) = globalCFVals(costFuncSepSensor)
-  functionValue(costFuncSepSensorAvgX) = globalCFVals(costFuncSepSensorAvgX)
-  functionValue(costFuncSepSensorAvgY) = globalCFVals(costFuncSepSensorAvgY)
-  functionValue(costFuncSepSensorAvgZ) = globalCFVals(costFuncSepSensorAvgZ)
+  funcValues(costFuncLift) = globalCFVals(costFuncLift) 
+  funcValues(costFuncDrag) = globalCFVals(costFuncDrag) 
+  funcValues(costFuncLiftCoef) = globalCFVals(costFuncLiftCoef) 
+  funcValues(costFuncDragCoef) = globalCFVals(costFuncDragCoef) 
+  funcValues(costFuncForceX) = globalCFVals(costFuncForceX) 
+  funcValues(costFuncForceY) = globalCFVals(costFuncForceY) 
+  funcValues(costFuncForceZ) = globalCFVals(costFuncForceZ) 
+  funcValues(costFuncForceXCoef) = globalCFVals(costFuncForceXCoef) 
+  funcValues(costFuncForceYCoef) = globalCFVals(costFuncForceYCoef) 
+  funcValues(costFuncForceZCoef) = globalCFVals(costFuncForceZCoef) 
+  funcValues(costFuncMomX) = globalCFVals(costFuncMomX) 
+  funcValues(costFuncMomY) = globalCFVals(costFuncMomY) 
+  funcValues(costFuncMomZ) = globalCFVals(costFuncMomZ) 
+  funcValues(costFuncMomXCoef) = globalCFVals(costFuncMomXCoef) 
+  funcValues(costFuncMomYCoef) = globalCFVals(costFuncMomYCoef)
+  funcValues(costFuncMomZCoef) = globalCFVals(costFuncMomZCoef)
+  funcValues(costFuncSepSensor) = globalCFVals(costFuncSepSensor)
+  funcValues(costFuncSepSensorAvgX) = globalCFVals(costFuncSepSensorAvgX)
+  funcValues(costFuncSepSensorAvgY) = globalCFVals(costFuncSepSensorAvgY)
+  funcValues(costFuncSepSensorAvgZ) = globalCFVals(costFuncSepSensorAvgZ)
 
-  functionValue(costFuncCavitation) = globalCFVals(costFuncCavitation)
+  funcValues(costFuncCavitation) = globalCFVals(costFuncCavitation)
 
   if(TSStability)then
 
      call computeTSDerivatives(force, moment, liftIndex, coef0, dcdalpha, &
           dcdalphadot, dcdq, dcdqdot)
 
-     functionValue( costFuncCl0  )       = coef0(1)
-     functionValue( costFuncCd0 )        = coef0(2)
-     functionValue( costFuncCFy0 )       = coef0(4)
-     functionValue( costFuncCm0 )        = coef0(8)
+     funcValues( costFuncCl0  )       = coef0(1)
+     funcValues( costFuncCd0 )        = coef0(2)
+     funcValues( costFuncCFy0 )       = coef0(4)
+     funcValues( costFuncCm0 )        = coef0(8)
 
-     functionValue( costFuncClAlpha)     = dcdalpha(1)
-     functionValue( costFuncCdAlpha)     = dcdalpha(2)
-     functionValue( costFuncCFyAlpha)    = dcdalpha(4)
-     functionValue( costFuncCmzAlpha)    = dcdalpha(8)
+     funcValues( costFuncClAlpha)     = dcdalpha(1)
+     funcValues( costFuncCdAlpha)     = dcdalpha(2)
+     funcValues( costFuncCFyAlpha)    = dcdalpha(4)
+     funcValues( costFuncCmzAlpha)    = dcdalpha(8)
 
-     functionValue( costFuncClAlphaDot)     = dcdalphadot(1)
-     functionValue( costFuncCdAlphaDot)     = dcdalphadot(2)
-     functionValue( costFuncCFyAlphaDot)    = dcdalphadot(4)
-     functionValue( costFuncCmzAlphaDot)    = dcdalphadot(8)
+     funcValues( costFuncClAlphaDot)     = dcdalphadot(1)
+     funcValues( costFuncCdAlphaDot)     = dcdalphadot(2)
+     funcValues( costFuncCFyAlphaDot)    = dcdalphadot(4)
+     funcValues( costFuncCmzAlphaDot)    = dcdalphadot(8)
     
-     functionValue( costFuncClq)         = dcdq(1)
-     functionValue( costFuncCdq)         = dcdq(2)
-     functionValue( costFuncCfyq)        = dcdq(4)
-     functionValue( costFuncCmzq)        = dcdq(8)
+     funcValues( costFuncClq)         = dcdq(1)
+     funcValues( costFuncCdq)         = dcdq(2)
+     funcValues( costFuncCfyq)        = dcdq(4)
+     funcValues( costFuncCmzq)        = dcdq(8)
 
-     functionValue( costFuncClqDot)         = dcdqdot(1)
-     functionValue( costFuncCdqDot)         = dcdqdot(2)
-     functionValue( costFuncCfyqDot)        = dcdqdot(4)
-     functionValue( costFuncCmzqDot)        = dcdqdot(8)
+     funcValues( costFuncClqDot)         = dcdqdot(1)
+     funcValues( costFuncCdqDot)         = dcdqdot(2)
+     funcValues( costFuncCfyqDot)        = dcdqdot(4)
+     funcValues( costFuncCmzqDot)        = dcdqdot(8)
   end if
 end subroutine getSolution

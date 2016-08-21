@@ -24,13 +24,19 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use blockPointers
-       use cgnsGrid
-       use constants
-       use inputDiscretization
-       use inputPhysics
-       use flowVarRefState
-       use iteration
+  use constants
+  use blockPointers, only : il, jl, kl, ie, je, ke, ib, jb, kb, w, p, &
+       porI, porJ, porK, fw, gamma, si, sj, sk, &
+       indFamilyI, indFamilyJ, indFamilyK, spectralSol, addGridVelocities, &
+       sFaceI, sfaceJ, sFacek, rotMatrixI, rotMatrixJ, rotMatrixK, &
+       factFamilyI, factFamilyJ, factFamilyK 
+  use flowVarRefState, only : kPresent, nw, nwf, rgas, tref
+  use inputDiscretization, only: limiter, lumpedDiss, precond, riemann, &
+       riemannCoarse, orderTurb, kappaCoef
+  use inputPhysics, only : equations
+  use iteration, only : rFil, currentLevel, groundLevel
+  use cgnsGrid, only: massFlowFamilyDiss
+
        implicit none
 !
 !      Subroutine arguments.
@@ -52,7 +58,7 @@
        real(kind=realType), dimension(nw)  :: du1, du2, du3
        real(kind=realType), dimension(nwf) :: flux
 
-       logical :: firstOrderK, correctForK, rotationalPeriodic
+       logical :: firstOrderK, correctForK, getCorrectForK, rotationalPeriodic
 !
 !      ******************************************************************
 !      *                                                                *
@@ -94,16 +100,7 @@
 
        ! Determine whether or not the total energy must be corrected
        ! for the presence of the turbulent kinetic energy.
-
-       if( kPresent ) then
-         if((currentLevel == groundLevel) .or. turbCoupled) then
-           correctForK = .true.
-         else
-           correctForK = .false.
-         endif
-       else
-         correctForK = .false.
-       endif
+       correctForK = getCorrectForK()
 
        ! Compute the factor used in the minmod limiter.
 
