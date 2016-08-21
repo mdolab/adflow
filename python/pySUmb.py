@@ -1639,9 +1639,9 @@ class SUMB(AeroSolver):
             to reset the flow to.
             """
         self.setAeroProblem(aeroProblem, releaseAdjointMemory)
-        self.sumb.referencestate()
-        self.sumb.setflowinfinitystate()
+        self._resetFlow()
 
+    def _resetFlow(self):
         strLvl = self.getOption('MGStartLevel')
         nLevels = self.sumb.inputiteration.nmglevels
         if strLvl < 0 or strLvl > nLevels:
@@ -2073,40 +2073,21 @@ class SUMB(AeroSolver):
 
         # Set reference state information:
 
-        # Reset these so that the updated free stream values are taken
-        self.sumb.flowvarrefstate.pref = -1.0
-        self.sumb.flowvarrefstate.tref = -1.0
-        self.sumb.flowvarrefstate.rhoref = -1.0
+        # Set the dimensional free strema values
         self.sumb.flowvarrefstate.pinfdim = P
-        self.sumb.inputphysics.tempfreestream = T
+        self.sumb.flowvarrefstate.tinfdim = T
+        self.sumb.flowvarrefstate.rhoinfdim = rho
 
-        if self.getOption('equationType') != 'euler':
-            # RANS/Laminar
-            ReLength = 1.0
-            self.sumb.inputphysics.reynolds = rho*V/mu
-            self.sumb.inputphysics.reynoldslength = ReLength
+        self.sumb.inputphysics.ssuthdim = SSuthDim
+        self.sumb.inputphysics.musuthdim = muSuthDim
+        self.sumb.inputphysics.tsuthdim = TSuthDim
+        self.sumb.inputphysics.rgasdim = RGasDim
+        self.sumb.inputphysics.prandtl = Pr
 
-            self.sumb.inputphysics.ssuthdim = SSuthDim
-            self.sumb.inputphysics.musuthdim = muSuthDim
-            self.sumb.inputphysics.tsuthdim = TSuthDim
-            self.sumb.inputphysics.rgasdim = RGasDim
-
-            # Update gamma only if it has changed from what currently is set
-            if abs(self.sumb.inputphysics.gammaconstant - gammaConstant) > 1.0e-12:
-                self.sumb.inputphysics.gammaconstant = gammaConstant
-                self.sumb.updategamma() # NOTE! It is absolutely necessary to call this function, otherwise gamma is not properly updated.
-            self.sumb.inputphysics.prandtl = Pr
-        else:
-            # EULER
-            self.sumb.inputphysics.reynolds = 1.0
-            self.sumb.inputphysics.reynoldslength = 1.0
-
-            self.sumb.inputphysics.rgasdim = RGasDim
-            # Update gamma only if it has changed from what currently is set
-            if abs(self.sumb.inputphysics.gammaconstant - gammaConstant) > 1.0e-12:
-                self.sumb.inputphysics.gammaconstant = gammaConstant
-                self.sumb.updategamma() # NOTE! It is absolutely necessary to call this function, otherwise gamma is not properly updated.
-            self.sumb.inputphysics.prandtl = Pr
+        # Update gamma only if it has changed from what currently is set
+        if abs(self.sumb.inputphysics.gammaconstant - gammaConstant) > 1.0e-12:
+            self.sumb.inputphysics.gammaconstant = gammaConstant
+            self.sumb.updategamma() # NOTE! It is absolutely necessary to call this function, otherwise gamma is not properly updated.
 
         # 4. Periodic Parameters --- These are not checked/verified
         # and come directly from aeroProblem. Make sure you specify
@@ -2157,7 +2138,6 @@ class SUMB(AeroSolver):
 
         if not firstCall:
             self.sumb.referencestate()
-            self.sumb.setflowinfinitystate()
             self.sumb.iteration.groundlevel = 1
             self.sumb.updateperiodicinfoalllevels()
             self.sumb.updategridvelocitiesalllevels()
@@ -2319,7 +2299,7 @@ class SUMB(AeroSolver):
         dv : str
             dv name. Must be in the self.possibleAeroDVs list
             """
-
+        dv = dv.lower()
         if dv not in self.possibleAeroDVs:
             raise Error("%s was not one of the possible AeroDVs. "
                         "The complete list of DVs for SUmb is %s. "%(
@@ -2414,53 +2394,49 @@ class SUMB(AeroSolver):
 
         DVsRequired = list(self.curAP.DVNames.keys())
         for dv in DVsRequired:
-            if dv.lower() in ['altitude', 'mach', 'P', 'T', 'reynolds']:
-                # These design variables are *special*! The issue is
-                # that SUmb takes as effective input P, T, mach and
-                # reynolds and these are *not* the typical values we
-                # use from the aeroproblem. So to ensure generic
-                # treatment of the derivatives we have already added
-                # P, T, mach and Reynolds to SUmb as "design
-                # variables" --- this means we get the sensitivity of
-                # the objective with respect to these 4
-                # variables. Next we compute the derivatives of
-                # P,T,mach,rho,V, and mu with respect to the actual
-                # aeroproblem design variable 'dv'. We then chain rule
-                # them together, along with the linearization fo
-                # Re=rho*V/mu.
-                tmp = {}
-	        self.curAP.evalFunctionsSens(tmp, ['P', 'T', 'mach', 'rho','V', 'mu'])
+            tmp = {}
+            if dv.lower() in ['altitude']:
+                # This design variable is special. It combines changes
+                # in temperature, pressure and density into a single
+                # variable. Since we have derivatives for T, P and
+                # rho, we simply chain rule it back to the the
+                # altitude variable. 
+	        self.curAP.evalFunctionsSens(tmp, ['P', 'T', 'rho'])
 
                 # Extract the derivatives wrt the independent
                 # parameters in SUmb
                 dIdP = dIda[self.aeroDVs['p']]
                 dIdT = dIda[self.aeroDVs['t']]
-                dIdMach = dIda[self.aeroDVs['mach']]
-
-                # Chain rule the reynolds dependance back to what came
-                # from aeroproblem:
-                rho = numpy.real(self.curAP.rho)
-                mu = numpy.real(self.curAP.mu)
-                V = numpy.real(self.curAP.V)
-                dIdReynolds = dIda[self.aeroDVs['reynolds']]
-                dIdV = rho/mu*dIdReynolds
-                dIdrho = V/mu*dIdReynolds
-                dIdmu = -rho*V/mu**2 * dIdReynolds
+                dIdrho = dIda[self.aeroDVs['rho']]
 
                 # Chain-rule to get the final derivative:
                 funcsSens[self.curAP.DVNames[dv]] = (
                     tmp[self.curAP['P']][self.curAP.DVNames[dv]]*dIdP +
                     tmp[self.curAP['T']][self.curAP.DVNames[dv]]*dIdT +
-                    tmp[self.curAP['mach']][self.curAP.DVNames[dv]]*dIdMach +
-                    tmp[self.curAP['rho']][self.curAP.DVNames[dv]]*dIdrho +
-                    tmp[self.curAP['V']][self.curAP.DVNames[dv]]*dIdV +
-                    tmp[self.curAP['mu']][self.curAP.DVNames[dv]]*dIdmu)
+                    tmp[self.curAP['rho']][self.curAP.DVNames[dv]]*dIdrho)
+            elif dv.lower() in ['mach']:
+                self.curAP.evalFunctionsSens(tmp, ['P', 'rho'])
+                # Simular story for Mach: It is technically possible
+                # to use a mach number for a fiexed RE simulation. For
+                # the RE to stay fixed and change the mach number, the
+                # 'P' and 'rho' must also change. We have to chain run
+                # this dependence back through to the final mach
+                # derivative. When Mach number is used with altitude
+                # or P and T, this calc is unnecessary, but won't do
+                # any harm.
+                dIdP = dIda[self.aeroDVs['p']]
+                dIdrho = dIda[self.aeroDVs['rho']]
+                       
+                # Chain-rule to get the final derivative:
+                funcsSens[self.curAP.DVNames[dv]] = (
+                    tmp[self.curAP['P']][self.curAP.DVNames[dv]]*dIdP +
+                    tmp[self.curAP['rho']][self.curAP.DVNames[dv]]*dIdrho + 
+                    dIda[self.aeroDVs[dv]])
 
             elif dv in self.possibleAeroDVs:
-                if dv in self.possibleAeroDVs:
-                    funcsSens[self.curAP.DVNames[dv]] = dIda[self.aeroDVs[dv]]
-                    if dv == 'alpha':
-                        funcsSens[self.curAP.DVNames[dv]] *= numpy.pi/180.0
+                funcsSens[self.curAP.DVNames[dv]] = dIda[self.aeroDVs[dv]]
+                if dv == 'alpha':
+                    funcsSens[self.curAP.DVNames[dv]] *= numpy.pi/180.0
 
 	return funcsSens
 
@@ -2472,12 +2448,17 @@ class SUMB(AeroSolver):
         DVsRequired = list(self.curAP.DVNames.keys())
         DVMap = {}
         for dv in DVsRequired:
-            if dv.lower() in ['altitude', 'mach', 'P', 'T', 'reynolds']:
+            dv = dv.lower()
+            if dv in ['altitude']:
                 # All these variables need to be compined
-                self._addAeroDV('p')
+                self._addAeroDV('P')
+                self._addAeroDV('T')
+                self._addAeroDV('rho')
+            elif dv in ['mach']:
                 self._addAeroDV('mach')
-                self._addAeroDV('reynolds')
-                self._addAeroDV('t')
+                self._addAeroDV('P')
+                self._addAeroDV('rho')
+
             elif dv in self.possibleAeroDVs:
                 self._addAeroDV(dv)
             else:
@@ -3967,7 +3948,6 @@ class SUMB(AeroSolver):
             'xref':'adjointvars.ndesignpointrefx',
             'yref':'adjointvars.ndesignpointrefy',
             'zref':'adjointvars.ndesignpointrefz',
-            'reynolds':'adjointvars.ndesignreynolds',
             }
 
         # This is SUmb's internal mapping for cost functions

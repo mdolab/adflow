@@ -36,8 +36,7 @@
       integer(kind=intType) :: nDesignDissError
       integer(kind=intType) :: nDesignPressure
       integer(kind=intType) :: nDesignTemperature
-      integer(kind=intType) :: nDesignReynolds
-      integer(kind=intType) :: nDesignReynoldsLength
+      integer(kind=intType) :: nDesignDensity
       integer(kind=intType) :: nDesignExtra = 0
       
       ! nNodesGlobal  Total number of nodes on each level

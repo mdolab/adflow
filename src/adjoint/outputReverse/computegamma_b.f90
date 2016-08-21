@@ -2,7 +2,7 @@
 !  tapenade 3.10 (r5363) -  9 sep 2014 09:53
 !
 !  differentiation of computegamma in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: gamma t
+!   gradient     of useful results: gamma
 !   with respect to varying inputs: t
 !
 !      ******************************************************************
@@ -105,6 +105,7 @@ subroutine computegamma_b(t, td, gamma, gammad, mm)
         call pushcontrol2b(0)
       end if
     end do
+    td = 0.0_8
     do i=mm,1,-1
       call popcontrol2b(branch)
       if (branch .eq. 0) then
@@ -132,5 +133,8 @@ subroutine computegamma_b(t, td, gamma, gammad, mm)
         gammad(i) = 0.0_8
       end if
     end do
+    goto 120
   end select
+  td = 0.0_8
+ 120 continue
 end subroutine computegamma_b

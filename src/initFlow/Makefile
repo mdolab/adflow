@@ -78,7 +78,6 @@ FILES_TO_COMPLEXIFY= restartMod.f90\
 		 referenceState.F90\
 		 releaseExtraMemBCs.f90\
 		 scaleFactors.F90\
-		 setFlowInfinityState.F90\
 		 setIOVar.f90\
 		 setPressureAndComputeEnergy.f90\
 		 setUniformFlow.f90\
