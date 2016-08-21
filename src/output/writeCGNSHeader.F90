@@ -353,9 +353,6 @@
 
            select case(turbModel)
 
-             case (baldwinLomax)
-               call writeCGNSBaldwinLomaxInfo(cgnsInd, base)
-
              case (spalartAllmaras)
                call writeCGNSSaInfo(cgnsInd, base)
 

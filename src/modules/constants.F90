@@ -137,7 +137,6 @@
        integer(kind=intType), parameter :: cpConstant      = 1, &
                                            cpTempCurveFits = 2
        integer(kind=intType), parameter ::                              &
-                                  baldwinLomax           =  1,  &
                                   spalartAllmaras        =  2,  &
                                   spalartAllmarasEdwards =  3,  &
                                   komegaWilcox           =  4,  &

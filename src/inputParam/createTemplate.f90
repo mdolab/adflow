@@ -152,7 +152,7 @@
 
        write(writeUnit,"(a)") "           Turbulence model: &
                               &MISSING PARAMETER"
-       write(writeUnit,"(a)") "            # Possibilities: Baldwin Lomax"
+       write(writeUnit,"(a)") "            # Possibilities: "
        write(writeUnit,"(a)") "            #              : &
                               &Spalart Allmaras"
        write(writeUnit,"(a)") "            #              : &

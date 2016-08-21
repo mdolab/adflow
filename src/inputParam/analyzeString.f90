@@ -990,8 +990,6 @@
            call convertToLowerCase(value)
 
            select case (value)
-             case ("baldwin lomax")
-               turbModel = baldwinLomax
              case ("spalart allmaras")
                turbModel = spalartAllmaras
              case ("spalart allmaras edwards")
