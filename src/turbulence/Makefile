@@ -54,7 +54,6 @@ FILES_TO_COMPLEXIFY = \
 		 bcTurbSymm.f90\
 		 bcTurbTreatment.F90\
 		 bcTurbWall.F90\
-		 bl.f90\
 		 computeEddyViscosity.F90\
 		 curveFit.f90\
 		 f1SST.F90\

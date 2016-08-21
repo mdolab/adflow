@@ -63,13 +63,6 @@
            viscous = .true.
 
            select case(turbModel)
-             case (baldwinLomax)
-               nw  = 5
-               nt2 = 5
-
-               eddyModel = .true.
-
-             !===========================================================
 
              case (spalartAllmaras)
                nw  = 6

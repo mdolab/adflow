@@ -64,7 +64,6 @@ FILES_TO_COMPLEXIFY = outputMod.f90\
 		 updateParamfile.f90\
 		 volSolFileNamesWrite.f90\
 		 volSolNames.f90\
-		 writeCGNSBaldwinLomaxInfo.F90\
 		 writeCGNSConvInfo.F90\
 		 writeCGNSGridFile.F90\
 		 writeCGNSGridFrame.F90\

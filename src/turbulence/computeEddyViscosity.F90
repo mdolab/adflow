@@ -57,8 +57,6 @@
          case (spalartAllmaras, spalartAllmarasEdwards)
            call saEddyViscosity
 #ifndef USE_TAPENADE          
-         case (baldwinLomax)
-           call blEddyViscosity
 
          case (v2f)
            call vfEddyViscosity
