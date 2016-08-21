@@ -69,7 +69,6 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, &
 
   call adjustInflowAngle(alpha, beta, liftIndex)
   call referenceState
-  call setFlowInfinityState
 
   ! ------------------------------------------------
   !        Additional Spatial Components

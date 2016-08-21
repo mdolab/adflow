@@ -7,35 +7,34 @@
 !                *xx *rev0 *rev1 *rev2 *rev3 *pp0 *pp1 *pp2 *pp3
 !                *rlv0 *rlv1 *rlv2 *rlv3 *ssi *ww0 *ww1 *ww2 *ww3
 !                funcvalues
-!   with respect to varying inputs: pref *(flowdoms.x) *(flowdoms.w)
-!                *(flowdoms.dw) *(*bcdata.fv) *(*bcdata.fp) *(*bcdata.area)
-!                mach tempfreestream reynolds machgrid lengthref
+!   with respect to varying inputs: tinfdim rhoinfdim pinfdim *(flowdoms.x)
+!                *(flowdoms.w) *(flowdoms.dw) *(*bcdata.fv) *(*bcdata.fp)
+!                *(*bcdata.area) mach machgrid rgasdim lengthref
 !                machcoef pointref *xx *rev0 *rev1 *rev2 *rev3
 !                *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3 *ssi
 !                *ww0 *ww1 *ww2 *ww3 *xsurf funcvalues alpha beta
-!   rw status of diff variables: mudim:(loc) gammainf:(loc) pinf:(loc)
-!                timeref:(loc) rhoinf:(loc) muref:(loc) rhoinfdim:(loc)
+!   rw status of diff variables: gammainf:(loc) tinfdim:out pinf:(loc)
+!                timeref:(loc) rhoinf:(loc) muref:(loc) rhoinfdim:out
 !                tref:(loc) winf:(loc) muinf:(loc) uinf:(loc) pinfcorr:(loc)
-!                rgas:(loc) pinfdim:(loc) pref:out rhoref:(loc)
-!                *(flowdoms.x):in-out *(flowdoms.vol):(loc) *(flowdoms.w):in-out
-!                *(flowdoms.dw):in-out *rev:(loc) *aa:(loc) *bvtj1:(loc)
-!                *bvtj2:(loc) *wx:(loc) *wy:(loc) *wz:(loc) *p:(loc)
-!                *rlv:(loc) *qx:(loc) *qy:(loc) *qz:(loc) *scratch:(loc)
-!                *bvtk1:(loc) *bvtk2:(loc) *ux:(loc) *uy:(loc)
-!                *uz:(loc) *d2wall:(loc) *si:(loc) *sj:(loc) *sk:(loc)
-!                *bvti1:(loc) *bvti2:(loc) *vx:(loc) *vy:(loc)
-!                *vz:(loc) *fw:(loc) *(*viscsubface.tau):(loc)
+!                rgas:(loc) muinfdim:(loc) pinfdim:out pref:(loc)
+!                rhoref:(loc) *(flowdoms.x):in-out *(flowdoms.vol):(loc)
+!                *(flowdoms.w):in-out *(flowdoms.dw):in-out *rev:(loc)
+!                *aa:(loc) *bvtj1:(loc) *bvtj2:(loc) *wx:(loc)
+!                *wy:(loc) *wz:(loc) *p:(loc) *rlv:(loc) *qx:(loc)
+!                *qy:(loc) *qz:(loc) *scratch:(loc) *bvtk1:(loc)
+!                *bvtk2:(loc) *ux:(loc) *uy:(loc) *uz:(loc) *d2wall:(loc)
+!                *si:(loc) *sj:(loc) *sk:(loc) *bvti1:(loc) *bvti2:(loc)
+!                *vx:(loc) *vy:(loc) *vz:(loc) *fw:(loc) *(*viscsubface.tau):(loc)
 !                *(*bcdata.norm):(loc) *(*bcdata.fv):in-out *(*bcdata.fp):in-out
 !                *(*bcdata.area):in-out *radi:(loc) *radj:(loc)
-!                *radk:(loc) mach:out tempfreestream:out reynolds:out
-!                veldirfreestream:(loc) machgrid:out lengthref:out
-!                machcoef:out dragdirection:(loc) liftdirection:(loc)
-!                pointref:out *xx:in-out *rev0:in-out *rev1:in-out
-!                *rev2:in-out *rev3:in-out *pp0:in-out *pp1:in-out
-!                *pp2:in-out *pp3:in-out *rlv0:in-out *rlv1:in-out
-!                *rlv2:in-out *rlv3:in-out *ssi:in-out *ww0:in-out
-!                *ww1:in-out *ww2:in-out *ww3:in-out *xsurf:out
-!                funcvalues:in-zero alpha:out beta:out
+!                *radk:(loc) mach:out veldirfreestream:(loc) machgrid:out
+!                rgasdim:out lengthref:out machcoef:out dragdirection:(loc)
+!                liftdirection:(loc) pointref:out *xx:in-out *rev0:in-out
+!                *rev1:in-out *rev2:in-out *rev3:in-out *pp0:in-out
+!                *pp1:in-out *pp2:in-out *pp3:in-out *rlv0:in-out
+!                *rlv1:in-out *rlv2:in-out *rlv3:in-out *ssi:in-out
+!                *ww0:in-out *ww1:in-out *ww2:in-out *ww3:in-out
+!                *xsurf:out funcvalues:in-zero alpha:out beta:out
 !   plus diff mem management of: flowdoms.x:in flowdoms.vol:in
 !                flowdoms.w:in flowdoms.dw:in rev:in aa:in bvtj1:in
 !                bvtj2:in wx:in wy:in wz:in p:in rlv:in qx:in qy:in
@@ -136,13 +135,8 @@ subroutine block_res_b(nn, sps, usespatial, alpha, alphad, beta, betad, &
 !        additional 'extra' components
 ! ------------------------------------------------ 
   call adjustinflowangle(alpha, beta, liftindex)
-  call pushreal8(rhoref)
-  call pushreal8(pref)
-  call pushreal8(pinfdim)
-  call pushreal8(tref)
   call pushreal8(gammainf)
   call referencestate()
-  call setflowinfinitystate()
 ! ------------------------------------------------
 !        additional spatial components
 ! ------------------------------------------------
@@ -954,12 +948,7 @@ varloopfine:do l=1,nwf
   call boundarynormals_b()
   call metric_block_b()
   call volume_block_b()
- 100 call setflowinfinitystate_b()
-  call popreal8(gammainf)
-  call popreal8(tref)
-  call popreal8(pinfdim)
-  call popreal8(pref)
-  call popreal8(rhoref)
+ 100 call popreal8(gammainf)
   call referencestate_b()
   call adjustinflowangle_b(alpha, alphad, beta, betad, liftindex)
   funcvaluesd = 0.0_8

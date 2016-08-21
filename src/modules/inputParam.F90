@@ -571,9 +571,6 @@ module inputPhysics
   !                      axis (e.g. y- or z-axis in spanwise direction).
   ! liftDirection(3):    Direction vector for the lift.
   ! dragDirection(3):    Direction vector for the drag.
-  ! Reynolds:            Reynolds number.
-  ! ReynoldsLength:      Length used to compute the Reynolds number.
-  ! tempFreestream:      Free stream temperature in Kelvin.
   ! gammaConstant:       Constant specific heat ratio.
   ! RGasDim:             Gas constant in S.I. units.
   ! Prandtl:             Prandtl number.
@@ -603,7 +600,7 @@ module inputPhysics
 
   real(kind=realType) :: Mach, MachCoef, MachGrid
   real(kind=realType) :: Reynolds, ReynoldsLength
-  real(kind=realType) :: tempFreestream, gammaConstant, RGasDim
+  real(kind=realType) :: gammaConstant, RGasDim
   real(kind=realType) :: Prandtl, PrandtlTurb, pklim, wallOffset
   real(kind=realType) :: eddyVisInfRatio, turbIntensityInf
   real(kind=realType) :: surfaceRef, lengthRef
@@ -619,12 +616,10 @@ module inputPhysics
   real(kind=realType), dimension(3) :: dragDirectiond, dragDirectionb
   real(kind=realType), dimension(3) :: pointRefd, pointRefb
   real(kind=realType) :: Machd, MachCoefd, MachGridd
-  real(kind=realType) :: Machb, MachCoefb, MachGridb
   real(kind=realType) :: reynoldsd, reynoldslengthd
-  real(kind=realType) :: reynoldsb, reynoldslengthb
-  real(kind=realType) :: gammaconstantb, gammaconstantd
-  real(kind=realType) :: surfaceRefd, surfaceRefb, lengthRefd, lengthRefb
-  real(kind=realType) :: tempFreeStreamd, tempFreeStreamb
+  real(kind=realType) :: gammaconstantd
+  real(kind=realType) :: surfaceRefd, lengthRefd
+  real(kind=realType) :: rgasdimd
   real(kind=realType) :: Prandtlb, PrandtlTurbb
 #endif
 

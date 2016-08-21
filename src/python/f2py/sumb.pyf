@@ -779,7 +779,6 @@ python module libsumb
          real(kind=realtype) :: machgrid
          real(kind=realtype) :: reynolds
          real(kind=realtype) :: reynoldslength
-         real(kind=realtype) :: tempfreestream
          real(kind=realtype) :: gammaconstant
          real(kind=realtype) :: rgasdim
          real(kind=realtype) :: prandtl
@@ -941,6 +940,7 @@ python module libsumb
          logical :: lrefspecified
          real(kind=realtype) :: pinfdim
          real(kind=realtype) :: rhoinfdim
+         real(kind=realtype) :: tinfdim
          real(kind=realtype) :: mudim
          real(kind=realtype) :: rhoinf
          real(kind=realtype) :: uinf
@@ -1037,7 +1037,7 @@ python module libsumb
          integer(kind=inttype) :: ndesigndisserror
          integer(kind=inttype) :: ndesignpressure
          integer(kind=inttype) :: ndesigntemperature
-         integer(kind=inttype) :: ndesignreynolds
+         integer(kind=inttype) :: ndesigndensity
        end module adjointvars
 
        module adjointpetsc
