@@ -23,30 +23,19 @@ subroutine computespeedofsoundsquared_d()
 !      *                                                                *
 !      ******************************************************************
 !
-  use blockpointers
   use constants
-  use flowvarrefstate
-  use inputphysics
-  use iteration
+  use blockpointers, only : ie, je, ke, w, wd, p, pd, aa, aad, gamma
   implicit none
 !
 !      local variables.
 !
-  logical :: correctfork
   real(kind=realtype), parameter :: twothird=two*third
   integer(kind=inttype) :: i, j, k, ii
   real(kind=realtype) :: pp
   real(kind=realtype) :: ppd
+  logical :: correctfork, getcorrectfork
 ! determine if we need to correct for k
-  if (kpresent) then
-    if (currentlevel .le. groundlevel .or. turbcoupled) then
-      correctfork = .true.
-    else
-      correctfork = .false.
-    end if
-  else
-    correctfork = .false.
-  end if
+  correctfork = getcorrectfork()
   if (correctfork) then
     aad = 0.0_8
     do k=1,ke

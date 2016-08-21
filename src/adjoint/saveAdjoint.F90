@@ -10,8 +10,9 @@
 
 subroutine saveADjointMatrix(fileName)
 
+  use constants
   use ADjointPETSc, only: drdwt
-  use communication
+  use communication, only : sumb_comm_world
   implicit none
 
 #ifndef USE_NO_PETSC
@@ -44,8 +45,9 @@ end subroutine saveADjointMatrix
 
 subroutine saveAdjointPC(fileName)
 
+  use constants
   use ADjointPETSc, only: drdwpret
-  use communication
+  use communication, only : sumb_comm_world
   implicit none
 
 #ifndef USE_NO_PETSC

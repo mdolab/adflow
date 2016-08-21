@@ -322,7 +322,7 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, &
               do i=2, il
                  flowDoms(nn, 1, sps2)%dw(i, j, k, l)  = & 
                       flowDoms(nn, 1, sps2)%dw(i, j, k, l)  / &
-                      flowDoms(nn, currentLevel, sps2)%vol(i, j, k)
+                      flowDoms(nn, currentLevel, sps2)%volref(i, j, k)
               end do
            end do
         end do
@@ -336,7 +336,7 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, &
               do i=2, il
                  flowDoms(nn, 1, sps2)%dw(i, j, k, l)  = & 
                       flowDoms(nn, 1, sps2)%dw(i, j, k, l)  / &
-                      flowDoms(nn, currentLevel, sps2)%vol(i, j, k)*turbResScale(l-nt1+1)
+                      flowDoms(nn, currentLevel, sps2)%volref(i, j, k)*turbResScale(l-nt1+1)
               end do
            end do
         end do
@@ -388,7 +388,7 @@ subroutine resScale
   do k=2, kl
      do j=2, jl
         do i=2, il
-           oVol = one/vol(i,j,k)
+           oVol = one/volref(i,j,k)
            do l=1, nwf
               dw(i, j, k, l) = (dw(i, j, k, l) + fw(i, j, k, l))* ovol
            end do

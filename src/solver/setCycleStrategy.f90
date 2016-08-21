@@ -20,8 +20,9 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use inputIteration
-       use iteration
+       use constants
+       use inputIteration, only : nMGSteps, cycleStrategy
+       use iteration, only : cycling, groundLevel, nStepsCycling
        implicit none
 !
 !      Local variables.

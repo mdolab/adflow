@@ -189,7 +189,7 @@
 
            if(smoother == RungeKutta) then
 
-             allocate(flowDoms(nn,1,mm)%wn(2:il,2:jl,2:kl,1:nMGVar), &
+             allocate(flowDoms(nn,1,mm)%wn(2:il,2:jl,2:kl,1:nwf), &
                       flowDoms(nn,1,mm)%pn(2:il,2:jl,2:kl), stat=ierr)
              if(ierr /= 0)                            &
                call returnFail("allocateTempMemory", &

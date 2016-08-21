@@ -19,13 +19,13 @@ subroutine inviscidDissFluxScalar
   !      *                                                                *
   !      ******************************************************************
   !
-  use blockPointers
-  use cgnsGrid
   use constants
-  use flowVarRefState
-  use inputDiscretization
-  use inputPhysics
-  use iteration
+  use blockPointers, only : nx, ny, nz, il, jl, kl, ie, je, ke, ib, jb, kb, &
+       w, p, porI, porJ, porK, fw, radI, radJ, radK, gamma
+  use flowVarRefState, only : gammaInf, pInfCorr, rhoInf
+  use inputDiscretization, only: vis2, vis4
+  use inputPhysics, only : equations
+  use iteration, only : rFil
   implicit none
   !
   !      Local parameter.
@@ -86,7 +86,7 @@ subroutine inviscidDissFluxScalar
 
      ! Store the entropy in ss. See above. 
 
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
      !$AD II-LOOP
      do ii=0,(ib+1)*(jb+1)*(kb+1)-1
         i = mod(ii, ib+1)
@@ -98,7 +98,7 @@ subroutine inviscidDissFluxScalar
               do i=0,ib
 #endif      
                  ss(i,j,k) = p(i,j,k)/(w(i,j,k,irho)**gamma(i,j,k))
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
               end do
 #else
            end do
@@ -108,7 +108,7 @@ subroutine inviscidDissFluxScalar
   end select
 
   ! Compute the pressure sensor for each cell, in each direction:
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
   !$AD II-LOOP
   do ii=0,ie*je*ke-1
      i = mod(ii, ie) + 1
@@ -127,7 +127,7 @@ subroutine inviscidDissFluxScalar
 
               dss(i,j,k,3) = abs((ss(i,j,k+1) - two*ss(i,j,k) + ss(i,j,k-1)) &
                    /     (ss(i,j,k+1) + two*ss(i,j,k) + ss(i,j,k-1) + sslim))
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
            end do
 #else
         end do
@@ -153,7 +153,7 @@ subroutine inviscidDissFluxScalar
   !      *                                                                *
   !      ******************************************************************
   !
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
   !$AD II-LOOP
   do ii=0,il*ny*nz-1
      i = mod(ii, il) + 1
@@ -219,7 +219,7 @@ subroutine inviscidDissFluxScalar
 
               fw(i+1,j,k,irhoE) = fw(i+1,j,k,irhoE) + fs
               fw(i,j,k,irhoE)   = fw(i,j,k,irhoE)   - fs
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
            end do
 #else
         end do
@@ -234,7 +234,7 @@ subroutine inviscidDissFluxScalar
   !      *                                                                *
   !      ******************************************************************
   !
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
   !$AD II-LOOP
   do ii=0,nx*jl*nz-1
      i = mod(ii, nx) + 2
@@ -300,7 +300,7 @@ subroutine inviscidDissFluxScalar
 
               fw(i,j+1,k,irhoE) = fw(i,j+1,k,irhoE) + fs
               fw(i,j,k,irhoE)   = fw(i,j,k,irhoE)   - fs
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
            end do
 #else
         end do
@@ -314,7 +314,7 @@ subroutine inviscidDissFluxScalar
   !      *                                                                *
   !      ******************************************************************
   !
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
   !$AD II-LOOP
   do ii=0,nx*ny*kl-1
      i = mod(ii, nx) + 2
@@ -381,7 +381,7 @@ subroutine inviscidDissFluxScalar
               fw(i,j,k+1,irhoE) = fw(i,j,k+1,irhoE) + fs
               fw(i,j,k,irhoE)   = fw(i,j,k,irhoE)   - fs
 
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
            end do
 #else
         end do

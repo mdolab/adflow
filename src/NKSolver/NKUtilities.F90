@@ -14,12 +14,10 @@
 
 subroutine setWVec(wVec)
   ! Set the current residual in dw into the PETSc Vector
-#ifndef USE_NO_PETSC
-  use communication
-  use blockPointers
-  use inputtimespectral
-  use flowvarrefstate
-  use inputiteration
+  use constants
+  use blockPointers, only : nDom, il, jl, kl, w
+  use inputtimespectral, only : ntimeIntervalsSpectral
+  use flowvarrefstate, only : nw
 
   implicit none
 #define PETSC_AVOID_MPIF_H
@@ -62,18 +60,19 @@ subroutine setWVec(wVec)
 
   call VecRestoreArrayF90(wVec,wvec_pointer,ierr)
   call EChk(ierr,__FILE__,__LINE__)
-#endif
 
 end subroutine setWVec
 
 subroutine setRVec(rVec)
-#ifndef USE_NO_PETSC
+
   ! Set the current residual in dw into the PETSc Vector
-  use blockPointers
-  use inputtimespectral
-  use flowvarrefstate
-  use inputiteration
+  use constants
+  use blockPointers, only : nDom, volRef, il, jl, kl, dw
+  use inputtimespectral, only : nTimeIntervalsSpectral
+  use flowvarrefstate, only : nw, nwf, nt1, nt2
+  use inputIteration, only : turbResScale
   implicit none
+
 #define PETSC_AVOID_MPIF_H
 
 #include "include/petscversion.h"
@@ -103,7 +102,7 @@ subroutine setRVec(rVec)
         do k=2, kl
            do j=2, jl
               do i=2, il
-                 ovv = 1/vol(i, j, k)
+                 ovv = 1/volRef(i, j, k)
                  do l=1,nwf
                     rvec_pointer(ii) = dw(i, j, k, l)*ovv
                     ii = ii + 1
@@ -120,16 +119,15 @@ subroutine setRVec(rVec)
   
   call VecRestoreArrayF90(rVec,rvec_pointer,ierr)
   call EChk(ierr,__FILE__,__LINE__)
-#endif
+
 end subroutine setRVec
 
 subroutine setW(wVec)
-#ifndef USE_NO_PETSC
 
-  use communication
-  use blockPointers
-  use inputTimeSpectral
-  use flowVarRefState
+  use constants
+  use blockPointers, only : nDom, il, jl, kl, w
+  use inputTimeSpectral, only : nTimeIntervalsSpectral
+  use flowVarRefState, only : nw
 
   implicit none
 #define PETSC_AVOID_MPIF_H
@@ -181,16 +179,17 @@ subroutine setW(wVec)
   call VecRestoreArrayF90(wVec,wvec_pointer,ierr)
   call EChk(ierr,__FILE__,__LINE__)
 #endif
-#endif
+
 end subroutine setW
 
 subroutine getStates(states,ndimw)
   ! Return the state vector, w to Python
-  
-  use ADjointPETSc
-  use blockPointers
-  use inputTimeSpectral
-  use flowvarrefstate
+
+  use constants
+  use blockPointers, only : il, jl, kl, nDom, w
+  use inputTimeSpectral, only : nTimeIntervalsSpectral
+  use flowvarrefstate, only : nw
+
   implicit none
  
   integer(kind=intType),intent(in):: ndimw
@@ -220,10 +219,10 @@ end subroutine getStates
 subroutine getRes(res,ndimw)
   
   ! Compute the residual and return result to Python
-  use ADjointPETSc
-  use blockPointers
-  use inputTimeSpectral
-  use flowvarrefstate
+  use constants
+  use blockPointers, only : il, jl, kl, nDom, dw, volRef
+  use inputTimeSpectral, only : nTimeIntervalsSpectral
+  use flowvarrefstate, only : nw
   implicit none
  
   integer(kind=intType),intent(in):: ndimw
@@ -231,6 +230,7 @@ subroutine getRes(res,ndimw)
 
   ! Local Variables
   integer(kind=intType) :: nn,i,j,k,l,counter,sps
+  real(kind=realType) :: ovv
 
   call computeResidualNK()
   counter = 0 
@@ -240,9 +240,10 @@ subroutine getRes(res,ndimw)
         do k=2,kl
            do j=2,jl
               do i=2,il
+                 ovv = one/volRef(i,j,k)
                  do l=1,nw
                     counter = counter + 1
-                    res(counter) = dw(i,j,k,l)/vol(i,j,k)
+                    res(counter) = dw(i,j,k,l)*ovv
                  end do
               end do
            end do
@@ -255,11 +256,10 @@ end subroutine getRes
 subroutine setStates(states,ndimw)
 
   ! Take in externallly generated states and set them in SUmb
-
-  use ADjointPETSc
-  use blockPointers
-  use inputTimeSpectral
-  use flowvarrefstate
+  use constants
+  use blockPointers, only : il, jl, kl, nDom, w
+  use inputTimeSpectral, only : nTimeIntervalsSpectral
+  use flowvarrefstate, only : nw
   implicit none
  
   integer(kind=intType),intent(in):: ndimw
@@ -287,10 +287,10 @@ subroutine setStates(states,ndimw)
 end subroutine setStates
 
 subroutine getInfoSize(iSize)
-  use blockPointers
-  use inputTimeSpectral
-  use flowvarrefstate
-  use inputphysics
+  use constants
+  use blockPointers, only : ib, jb, kb, nDom
+  use inputTimeSpectral, only : nTimeIntervalsSpectral
+  use flowvarrefstate, only : nw, viscous, eddymodel
 
   implicit none
   integer(kind=intType), intent(out) :: iSize
@@ -315,10 +315,11 @@ end subroutine getInfoSize
 
 subroutine setInfo(info, iSize)
 
-  use blockPointers
-  use inputTimeSpectral
-  use flowvarrefstate
-  use inputphysics
+  use constants
+  use blockPointers, only : w, p, ib, jb, kb, rlv, rev, nDom
+  use inputTimeSpectral, only : nTimeIntervalsSpectral
+  use flowvarrefstate, only : nw, viscous, eddymodel
+  !use inputphysics, only : 
   implicit none
 
   real(kind=realType), intent(in), dimension(iSize) :: info
@@ -358,10 +359,12 @@ subroutine setInfo(info, iSize)
 end subroutine setInfo
 
 subroutine getInfo(info, iSize)
-  use blockPointers
-  use inputTimeSpectral
-  use flowvarrefstate
-  use inputphysics
+
+  use constants
+  use blockPointers, only : w, p, ib, jb, kb, rlv, rev, nDom
+  use inputTimeSpectral, only : nTimeIntervalsSpectral
+  use flowvarrefstate, only : nw, viscous, eddymodel
+
   implicit none
 
   real(kind=realType), intent(out), dimension(iSize) :: info

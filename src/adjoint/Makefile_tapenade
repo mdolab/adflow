@@ -111,9 +111,11 @@ ALL_RES_FILES =	$(SRC)/adjoint/residualInput/block_res.F90\
 		$(SRC)/utils/computeEtot.f90\
 		$(SRC)/utils/bsearchIntegers.f90\
 		$(SRC)/utils/computeSpeedOfSoundSquared.F90\
+		$(SRC)/utils/getCorrectForK.f90\
 		$(SRC)/bendingMomentAnalysis/rootBendingMomentAnalysis.f90\
 		$(SRC)/wallDistance/determineDistanceQuickly.F90\
 		$(SRC)/solver/BCRoutines.F90\
+
 
 # intermediate residual files.
 I_RES_FILES := $(ALL_RES_FILES:%=%.f90)

@@ -264,11 +264,6 @@ python module libsumb
          integer(kind=inttype) optional,intent(in),check(len(grid)>=ndof),depend(grid) :: ndof=len(grid)
        end subroutine setgrid
 
-       subroutine setgridsimple(grid,ndof) ! in :test:setGrid.f90
-         real(kind=realtype) dimension(ndof),intent(in) :: grid
-         integer(kind=inttype) optional,intent(in),check(len(grid)>=ndof),depend(grid) :: ndof=len(grid)
-       end subroutine setgridsimple
-
        subroutine getgrid(grid,ndof) ! in :test:setGrid.f90
             real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: grid
             integer(kind=inttype) intent(in) :: ndof
@@ -384,6 +379,7 @@ python module libsumb
           subroutine saveadjointrhs(filename) ! in :test:saveAdjoint.F90
             character*(*) intent(in) :: filename
           end subroutine saveadjointrhs
+
           subroutine savecellcenters(filename) ! in :test:saveAdjoint.F90
             character*(*) intent(in) :: filename
           end subroutine savecellcenters
@@ -508,6 +504,71 @@ python module libsumb
          use precision
          integer parameter,optional :: maxstringlen   = 256
          integer parameter,optional :: maxcgnsnamelen =  32
+         integer(kind=inttype) parameter,optional :: eulerequations=1_inttype
+         integer(kind=inttype) parameter,optional :: nsequations=2_inttype
+         integer(kind=inttype) parameter,optional :: ransequations=3_inttype
+         integer(kind=inttype) parameter,optional :: steady=1_inttype
+         integer(kind=inttype) parameter,optional :: unsteady=2_inttype
+         integer(kind=inttype) parameter,optional :: timespectral=3_inttype
+         integer(kind=inttype) parameter,optional :: internalflow=1_inttype
+         integer(kind=inttype) parameter,optional :: externalflow=2_inttype
+         integer(kind=inttype) parameter,optional :: cpconstant=1_inttype
+         integer(kind=inttype) parameter,optional :: cptempcurvefits=2_inttype
+         integer(kind=inttype) parameter,optional :: baldwinlomax=1_inttype
+         integer(kind=inttype) parameter,optional :: spalartallmaras=2_inttype
+         integer(kind=inttype) parameter,optional :: spalartallmarasedwards=3_inttype
+         integer(kind=inttype) parameter,optional :: komegawilcox=4_inttype
+         integer(kind=inttype) parameter,optional :: komegamodified=5_inttype
+         integer(kind=inttype) parameter,optional :: ktau=6_inttype
+         integer(kind=inttype) parameter,optional :: mentersst=7_inttype
+         integer(kind=inttype) parameter,optional :: v2f=10_inttype
+         integer(kind=inttype) parameter,optional :: strain=1_inttype
+         integer(kind=inttype) parameter,optional :: vorticity=2_inttype
+         integer(kind=inttype) parameter,optional :: katolaunder=3_inttype
+         integer(kind=inttype) parameter,optional :: dissscalar=1_inttype
+         integer(kind=inttype) parameter,optional :: dissmatrix=2_inttype
+         integer(kind=inttype) parameter,optional :: disscusp=3_inttype
+         integer(kind=inttype) parameter,optional :: upwind=9_inttype
+         integer(kind=inttype) parameter,optional :: roe=1_inttype
+         integer(kind=inttype) parameter,optional :: vanleer=2_inttype
+         integer(kind=inttype) parameter,optional :: ausmdv=3_inttype
+         integer(kind=inttype) parameter,optional :: nolimiter=2_inttype
+         integer(kind=inttype) parameter,optional :: vanalbeda=3_inttype
+         integer(kind=inttype) parameter,optional :: minmod=4_inttype
+         integer(kind=inttype) parameter,optional :: noprecond=1_inttype
+         integer(kind=inttype) parameter,optional :: turkel=2_inttype
+         integer(kind=inttype) parameter,optional :: choimerkle=3_inttype
+         integer(kind=inttype) parameter,optional :: constantpressure=1_inttype
+         integer(kind=inttype) parameter,optional :: linextrapolpressure=2_inttype
+         integer(kind=inttype) parameter,optional :: quadextrapolpressure=3_inttype
+         integer(kind=inttype) parameter,optional :: normalmomentum=4_inttype
+         integer(kind=inttype) parameter,optional :: constantextrapol=1_inttype
+         integer(kind=inttype) parameter,optional :: linextrapol=2_inttype
+         integer(kind=inttype) parameter,optional :: rungekutta=1_inttype
+         integer(kind=inttype) parameter,optional :: dadi=2_inttype
+         integer(kind=inttype) parameter,optional :: nllusgs=3_inttype
+         integer(kind=inttype) parameter,optional :: nllusgsline=4_inttype
+         integer(kind=inttype) parameter,optional :: segregated=1_inttype
+         integer(kind=inttype) parameter,optional :: coupled=2_inttype
+         integer(kind=inttype) parameter,optional :: gmres=1_inttype
+         integer(kind=inttype) parameter,optional :: adi=2_inttype
+         integer(kind=inttype) parameter,optional :: bcdirichlet0=0_inttype
+         integer(kind=inttype) parameter,optional :: bcneumann0=1_inttype
+         integer(kind=inttype) parameter,optional :: noresaveraging=0_inttype
+         integer(kind=inttype) parameter,optional :: alwaysresaveraging=1_inttype
+         integer(kind=inttype) parameter,optional :: alternateresaveraging=2_inttype
+         integer(kind=inttype) parameter,optional :: turbrelaxnotdefined=0_inttype
+         integer(kind=inttype) parameter,optional :: turbrelaxexplicit=1_inttype
+         integer(kind=inttype) parameter,optional :: turbrelaximplicit=2_inttype
+         integer(kind=inttype) parameter,optional :: precisionsingle=1
+         integer(kind=inttype) parameter,optional :: precisiondouble=2
+         integer(kind=inttype) parameter,optional :: bdf=1
+         integer(kind=inttype) parameter,optional :: explicitrk=2
+         integer(kind=inttype) parameter,optional :: implicitrk=3
+         integer(kind=inttype) parameter,optional :: md=4
+         integer(kind=inttype) :: nolinesearch=0
+         integer(kind=inttype) :: cubiclinesearch=1
+         integer(kind=inttype) :: nonmonotonelinesearch=2
        end module constants
 
        module communication ! in :sumb:../../modules/communication.f90
@@ -614,22 +675,6 @@ python module libsumb
 
        module inputiteration ! in :sumb:../../modules/inputParam.f90
          use precision
-         integer(kind=inttype) parameter,optional :: rungekutta=1_inttype
-         integer(kind=inttype) parameter,optional :: dadi=2_inttype
-         integer(kind=inttype) parameter,optional :: nllusgs=3_inttype
-         integer(kind=inttype) parameter,optional :: nllusgsline=4_inttype
-         integer(kind=inttype) parameter,optional :: segregated=1_inttype
-         integer(kind=inttype) parameter,optional :: coupled=2_inttype
-         integer(kind=inttype) parameter,optional :: gmres=1_inttype
-         integer(kind=inttype) parameter,optional :: adi=2_inttype
-         integer(kind=inttype) parameter,optional :: bcdirichlet0=0_inttype
-         integer(kind=inttype) parameter,optional :: bcneumann=1_inttype
-         integer(kind=inttype) parameter,optional :: noresaveraging=0_inttype
-         integer(kind=inttype) parameter,optional :: alwaysresaveraging=1_inttype
-         integer(kind=inttype) parameter,optional :: alternateresaveraging=2_inttype
-         integer(kind=inttype) parameter,optional :: turbrelaxnotdefined=0_inttype
-         integer(kind=inttype) parameter,optional :: turbrelaxexplicit=1_inttype
-         integer(kind=inttype) parameter,optional :: turbrelaximplicit=2_inttype
          integer(kind=inttype) :: ncycles
          integer(kind=inttype) :: ncyclescoarse
          integer(kind=inttype) :: nsavevolume
@@ -720,27 +765,7 @@ python module libsumb
 
        module inputphysics ! in :sumb:../../modules/inputParam.f90
          use precision
-         integer(kind=inttype) parameter,optional :: eulerequations=1_inttype
-         integer(kind=inttype) parameter,optional :: nsequations=2_inttype
-         integer(kind=inttype) parameter,optional :: ransequations=3_inttype
-         integer(kind=inttype) parameter,optional :: steady=1_inttype
-         integer(kind=inttype) parameter,optional :: unsteady=2_inttype
-         integer(kind=inttype) parameter,optional :: timespectral=3_inttype
-         integer(kind=inttype) parameter,optional :: internalflow=1_inttype
-         integer(kind=inttype) parameter,optional :: externalflow=2_inttype
-         integer(kind=inttype) parameter,optional :: cpconstant=1_inttype
-         integer(kind=inttype) parameter,optional :: cptempcurvefits=2_inttype
-         integer(kind=inttype) parameter,optional :: baldwinlomax=1_inttype
-         integer(kind=inttype) parameter,optional :: spalartallmaras=2_inttype
-         integer(kind=inttype) parameter,optional :: spalartallmarasedwards=3_inttype
-         integer(kind=inttype) parameter,optional :: komegawilcox=4_inttype
-         integer(kind=inttype) parameter,optional :: komegamodified=5_inttype
-         integer(kind=inttype) parameter,optional :: ktau=6_inttype
-         integer(kind=inttype) parameter,optional :: mentersst=7_inttype
-         integer(kind=inttype) parameter,optional :: v2f=10_inttype
-         integer(kind=inttype) parameter,optional :: strain=1_inttype
-         integer(kind=inttype) parameter,optional :: vorticity=2_inttype
-         integer(kind=inttype) parameter,optional :: katolaunder=3_inttype
+
          integer(kind=inttype) :: equations
          integer(kind=inttype) :: equationmode
          integer(kind=inttype) :: flowtype
@@ -826,15 +851,11 @@ python module libsumb
        
        module inputunsteady ! in :test:inputParam.f90
          use accuracy
-         integer(kind=inttype) parameter,optional :: bdf=1
          real(kind=realtype) :: deltat
          logical :: useale
-         integer(kind=inttype) parameter,optional :: implicitrk=3
          integer(kind=inttype) :: timeintegrationscheme
          logical :: updatewalldistanceunsteady
          integer(kind=inttype) :: timeaccuracy
-         integer(kind=inttype) parameter,optional :: explicitrk=2
-         integer(kind=inttype) parameter,optional :: md=4
          integer(kind=inttype) :: ntimestepsfine
          integer(kind=inttype) :: ntimestepscoarse
        end module inputunsteady
@@ -881,8 +902,6 @@ python module libsumb
 
        module monitor ! in :sumb:../../modules/monitor.f90
          use constants
-         integer parameter,optional :: fieldwidth=12
-         integer parameter,optional :: decimalwidth=5
          integer :: nmonsum
          integer :: nmonmax
          integer :: nmon
@@ -909,12 +928,6 @@ python module libsumb
 
        module block ! in :sumb:../../modules/block.f90
          use constants
-         integer(kind=portype) parameter,optional :: leftstarted=-1_portype
-         integer(kind=portype) parameter,optional :: regular=0_portype
-         integer(kind=portype) parameter,optional :: rightstarted=1_portype
-         integer(kind=inttype) parameter,optional :: nosubinlet=0_inttype
-         integer(kind=inttype) parameter,optional :: totalconditions=1_inttype
-         integer(kind=inttype) parameter,optional :: massflow=2_inttype
          integer(kind=inttype) :: ndom
          integer(kind=inttype) allocatable,dimension(:) :: ncellglobal
        end module block
@@ -972,7 +985,6 @@ python module libsumb
             integer(kind=inttype) parameter,optional :: costfuncforcexcoef=8
             integer(kind=inttype) parameter,optional :: costfunccmzq=20
             integer(kind=inttype) parameter,optional :: costfunccmzalphadot=19
-            real(kind=realtype) allocatable,dimension(:) :: functionvalue
             integer(kind=inttype) parameter,optional :: costfunclift=1
             integer(kind=inttype) parameter,optional :: costfunccd0=27
             integer(kind=inttype) parameter,optional :: costfuncclqdot=26
@@ -1003,6 +1015,7 @@ python module libsumb
             integer(kind=inttype) parameter,optional :: costfuncsepsensoravgy=40
             integer(kind=inttype) parameter,optional :: costfuncsepsensoravgz=41
             integer(kind=inttype) parameter,optional :: costfunccavitation=42
+            real(kind=realtype) dimension(42) :: funcvalues
             real(kind=realtype) sepsensoroffset
             real(kind=realtype) sepsensorsharpness
        end module costfunctions

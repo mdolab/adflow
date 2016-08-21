@@ -69,7 +69,7 @@ subroutine invisciddissfluxmatrixapprox_d()
   real(kind=realtype) :: kavgd, lam1d, lam2d, lam3d, aread
   real(kind=realtype) :: abv1, abv2, abv3, abv4, abv5, abv6, abv7
   real(kind=realtype) :: abv1d, abv2d, abv3d, abv4d, abv5d, abv6d, abv7d
-  logical :: correctfork
+  logical :: correctfork, getcorrectfork
   intrinsic abs
   intrinsic max
   intrinsic min
@@ -144,15 +144,7 @@ subroutine invisciddissfluxmatrixapprox_d()
     plim = 0.001_realtype*pinfcorr
 ! determine whether or not the total energy must be corrected
 ! for the presence of the turbulent kinetic energy.
-    if (kpresent) then
-      if (currentlevel .eq. groundlevel .or. turbcoupled) then
-        correctfork = .true.
-      else
-        correctfork = .false.
-      end if
-    else
-      correctfork = .false.
-    end if
+    correctfork = getcorrectfork()
 ! initialize sface to zero. this value will be used if the
 ! block is not moving.
     sface = zero

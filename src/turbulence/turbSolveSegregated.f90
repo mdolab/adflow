@@ -63,9 +63,6 @@
 
          select case (turbModel)
 
-           case (baldwinLomax)
-             call bl(.false.)
-
            case (spalartAllmaras)
               call sa(.false.)
 

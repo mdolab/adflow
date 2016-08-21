@@ -25,7 +25,7 @@
        use inputIteration
        use inputPhysics
        use paramTurb
-       use turbMod
+       use turbMod, only : prod, dvt, sct, scl2, sig1, sig2
        implicit none
 !
 !      Subroutine arguments.
@@ -473,8 +473,8 @@
          do j=2,jl
            do i=2,il
              rblank = real(iblank(i,j,k), realType)
-             dw(i,j,k,itu1) = -vol(i,j,k)*dvt(i,j,k,1)*rblank
-             dw(i,j,k,itu2) = -vol(i,j,k)*dvt(i,j,k,2)*rblank
+             dw(i,j,k,itu1) = -volRef(i,j,k)*dvt(i,j,k,1)*rblank
+             dw(i,j,k,itu2) = -volRef(i,j,k)*dvt(i,j,k,2)*rblank
            enddo
          enddo
        enddo

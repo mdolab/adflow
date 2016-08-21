@@ -22,12 +22,12 @@
 !      ******************************************************************
 !
 #ifndef USE_NO_SIGNALS
-
-       use communication
-       use constants
-       use inputPhysics
-       use killSignals
-       use iteration
+       
+       use constants  
+       use communication, only : myID
+       use inputPhysics, only : equationMode
+       use killSignals, only : localSignal, noSignal, signalWrite
+       use iteration, only : groundLevel
        implicit none
 !
 !      Local variables.

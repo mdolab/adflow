@@ -17,7 +17,10 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      use adtUtils
+      use constants
+      use adtUtils, only : ADTs, adtLeafType, adtBBoxTargetType, stack, &
+           nStack, adtTerminate, reallocbboxtargettypeplus, reallocplus, &
+           qsortbboxtargets
       implicit none
 
       !=================================================================
@@ -309,7 +312,7 @@
 
                 val = a11*(a22*a33 - a32*a23) + a21*(a13*a32 - a12*a33) &
                     + a31*(a12*a23 - a13*a22)
-                val = sign(adtOne,val)/max(abs(val),adtEps)
+                val = sign(one,val)/max(abs(val),adtEps)
 
                 ! Compute the u, v, w weights for the given coordinate.
 
@@ -327,8 +330,8 @@
                 ! If so, set elementFound to .true. and determine the
                 ! interpolation weights.
 
-                if(u >= adtZero .and. v >= adtZero .and. &
-                   w >= adtZero .and. (u+v+w) <= adtOne) then
+                if(u >= zero .and. v >= zero .and. &
+                   w >= zero .and. (u+v+w) <= one) then
                   elementFound = .true.
 
                   ! Set the number of interpolation nodes to 4 and
@@ -336,7 +339,7 @@
 
                   nNodeElement = 4
 
-                  weight(1) = adtOne - u - v - w
+                  weight(1) = one - u - v - w
                   weight(2) = u
                   weight(3) = v
                   weight(4) = w
@@ -377,7 +380,7 @@
                 ! Jacobian matrix is always regular, even if the element
                 ! is degenerate.
 
-                u = adtHalf; v = adtHalf; w = adtHalf
+                u = half; v=half; w=half;
 
                 ! The Newton algorithm to determine the parametric
                 ! weights u, v and w for the given coordinate.
@@ -387,7 +390,7 @@
                   ! Compute the RHS.
 
                   uv = u*v
-                  oneMinusW = adtOne - w
+                  oneMinusW = one - w
 
                   f(1) = oneMinusW*(xn(1,2)*u + xn(1,4)*v + xn(1,3)*uv) &
                        + xn(1,5)*w - x(1)
@@ -416,7 +419,7 @@
 
                   val = a11*(a22*a33 - a32*a23) + a21*(a13*a32 - a12*a33) &
                       + a31*(a12*a23 - a13*a22)
-                  val = sign(adtOne,val)/max(abs(val),adtEps)
+                  val = sign(one,val)/max(abs(val),adtEps)
 
                   ! Compute the new values of u, v and w.
 
@@ -443,9 +446,9 @@
                 ! If so, set elementFound to .true. and determine the
                 ! interpolation weights.
 
-                if(u     >= adtZero .and. v     >= adtZero .and. &
-                   w     >= adtZero .and. (u+w) <= adtOne  .and. &
-                   (v+w) <= adtOne) then
+                if(u     >= zero .and. v     >= zero .and. &
+                   w     >= zero .and. (u+w) <= one  .and. &
+                   (v+w) <= one) then
                   elementFound = .true.
 
                   ! Set the number of interpolation nodes to 5 and
@@ -453,9 +456,9 @@
 
                   nNodeElement = 5
 
-                  oneMinusU = adtOne - u
-                  oneMinusV = adtOne - v
-                  oneMinusW = adtOne - w
+                  oneMinusU = one - u
+                  oneMinusV = one - v
+                  oneMinusW = one - w
 
                   weight(1) = oneMinusU*oneMinusV*oneMinusW
                   weight(2) =         u*oneMinusV*oneMinusW
@@ -503,7 +506,7 @@
                 ! Jacobian matrix is always regular, even if the element
                 ! is degenerate.
 
-                u = adtFourth; v = adtFourth; w = adtHalf
+                u = fourth; v = fourth; w = half
 
                 ! The Newton algorithm to determine the parametric
                 ! weights u, v and w for the given coordinate.
@@ -541,7 +544,7 @@
 
                   val = a11*(a22*a33 - a32*a23) + a21*(a13*a32 - a12*a33) &
                       + a31*(a12*a23 - a13*a22)
-                  val = sign(adtOne,val)/max(abs(val),adtEps)
+                  val = sign(one,val)/max(abs(val),adtEps)
 
                   ! Compute the new values of u, v and w.
 
@@ -568,9 +571,9 @@
                 ! If so, set elementFound to .true. and determine the
                 ! interpolation weights.
 
-                if(u     >= adtZero .and. v >= adtZero .and. &
-                   w     >= adtZero .and. w <= adtOne  .and. &
-                   (u+v) <= adtOne) then
+                if(u     >= zero .and. v >= zero .and. &
+                   w     >= zero .and. w <= one  .and. &
+                   (u+v) <= one) then
                   elementFound = .true.
 
                   ! Set the number of interpolation nodes to 6 and
@@ -578,8 +581,8 @@
 
                   nNodeElement = 6
 
-                  oneMinusUminusV = adtOne - u - v
-                  oneMinusW       = adtOne - w
+                  oneMinusUminusV = one - u - v
+                  oneMinusW       = one - w
 
                   weight(1) = oneMinusUminusV*oneMinusW
                   weight(2) =               u*oneMinusW
@@ -639,7 +642,7 @@
                 ! Jacobian matrix is always regular, even if the element
                 ! is degenerate.
 
-                u = adtHalf; v = adtHalf; w = adtHalf
+                u = half; v = half; w = half
 
                 ! The Newton algorithm to determine the parametric
                 ! weights u, v and w for the given coordinate.
@@ -680,7 +683,7 @@
 
                   val = a11*(a22*a33 - a32*a23) + a21*(a13*a32 - a12*a33) &
                       + a31*(a12*a23 - a13*a22)
-                  val = sign(adtOne,val)/max(abs(val),adtEps)
+                  val = sign(one,val)/max(abs(val),adtEps)
 
                   ! Compute the new values of u, v and w.
 
@@ -707,9 +710,9 @@
                 ! If so, set elementFound to .true. and determine the
                 ! interpolation weights.
 
-                if(u >= adtZero .and. u <= adtOne .and. &
-                   v >= adtZero .and. v <= adtOne .and. &
-                   w >= adtZero .and. w <= adtOne) then
+                if(u >= zero .and. u <= one .and. &
+                   v >= zero .and. v <= one .and. &
+                   w >= zero .and. w <= one) then
                   elementFound = .true.
 
                   ! Set the number of interpolation nodes to 8 and
@@ -717,9 +720,9 @@
 
                   nNodeElement = 8
 
-                  oneMinusU = adtOne - u
-                  oneMinusV = adtOne - v
-                  oneMinusW = adtOne - w
+                  oneMinusU = one - u
+                  oneMinusV = one - v
+                  oneMinusW = one - w
 
                   weight(1) = oneMinusU*oneMinusV*oneMinusW
                   weight(2) =         u*oneMinusV*oneMinusW
@@ -940,7 +943,7 @@
           else if(coor(1,nn) > ADTree(1)%xMax(4)) then
             dx =  coor(1,nn) - ADTree(1)%xMax(4)
           else
-            dx = adtZero
+            dx = zero
           endif
 
           if(     coor(2,nn) < ADTree(1)%xMin(2)) then
@@ -948,7 +951,7 @@
           else if(coor(2,nn) > ADTree(1)%xMax(5)) then
             dy =  coor(2,nn) - ADTree(1)%xMax(5)
           else
-            dy = adtZero
+            dy = zero
           endif
 
           if(     coor(3,nn) < ADTree(1)%xMin(3)) then
@@ -956,7 +959,7 @@
           else if(coor(3,nn) > ADTree(1)%xMax(6)) then
             dz =  coor(3,nn) - ADTree(1)%xMax(6)
           else
-            dz = adtZero
+            dz = zero
           endif
 
           ! Continue with the next coordinate if the possible distance
@@ -1107,7 +1110,7 @@
                   else if(coor(1,nn) > xBBox(4,kk)) then
                     dx =  coor(1,nn) - xBBox(4,kk)
                   else
-                    dx = adtZero
+                    dx = zero
                   endif
 
                   if(     coor(2,nn) < xBBox(2,kk)) then
@@ -1115,7 +1118,7 @@
                   else if(coor(2,nn) > xBBox(5,kk)) then
                     dy =  coor(2,nn) - xBBox(5,kk)
                   else
-                    dy = adtZero
+                    dy = zero
                   endif
 
                   if(     coor(3,nn) < xBBox(3,kk)) then
@@ -1123,7 +1126,7 @@
                   else if(coor(3,nn) > xBBox(6,kk)) then
                     dz =  coor(3,nn) - xBBox(6,kk)
                   else
-                    dz = adtZero
+                    dz = zero
                   endif
 
                   d2 = dx*dx + dy*dy + dz*dz
@@ -1179,7 +1182,7 @@
                   else if(coor(1,nn) > ADTree(kk)%xMax(4)) then
                     dx =  coor(1,nn) - ADTree(kk)%xMax(4)
                   else
-                    dx = adtZero
+                    dx = zero
                   endif
 
                   if(     coor(2,nn) < ADTree(kk)%xMin(2)) then
@@ -1187,7 +1190,7 @@
                   else if(coor(2,nn) > ADTree(kk)%xMax(5)) then
                     dy =  coor(2,nn) - ADTree(kk)%xMax(5)
                   else
-                    dy = adtZero
+                    dy = zero
                   endif
 
                   if(     coor(3,nn) < ADTree(kk)%xMin(3)) then
@@ -1195,7 +1198,7 @@
                   else if(coor(3,nn) > ADTree(kk)%xMax(6)) then
                     dz =  coor(3,nn) - ADTree(kk)%xMax(6)
                   else
-                    dz = adtZero
+                    dz = zero
                   endif
 
                   d2 = dx*dx + dy*dy + dz*dz
@@ -1299,7 +1302,7 @@
                 ! This is a surface element, so set the parametric weight
                 ! w to zero.
 
-                w = adtZero
+                w = zero
 
                 ! Determine the 4 vectors which completely describe
                 ! the quadrilateral face
@@ -1330,8 +1333,8 @@
                 ! corresponding coordinates on the face, which is the
                 ! centroid.
 
-                u  = adtHalf
-                v  = adtHalf
+                u  = half
+                v  = half
                 uv = u*v
 
                 xf(1) = x1(1) + u*x21(1) + v*x41(1) + uv*x3142(1)
@@ -1374,7 +1377,7 @@
                   norm(2) = a(3)*b(1) - a(1)*b(3)
                   norm(3) = a(1)*b(2) - a(2)*b(1)
 
-                  invLen = adtOne/max(adtEps,sqrt(norm(1)*norm(1) &
+                  invLen = one/max(adtEps,sqrt(norm(1)*norm(1) &
                          +                        norm(2)*norm(2) &
                          +                        norm(3)*norm(3)))
 
@@ -1424,8 +1427,8 @@
                   ! Determine the new parameter values uu and vv. These
                   ! are limited to 0 <= (uu,vv) <= 1.
 
-                  u = u + du; u = min(adtOne,max(adtZero,u))
-                  v = v + dv; v = min(adtOne,max(adtZero,v))
+                  u = u + du; u = min(one,max(zero,u))
+                  v = v + dv; v = min(one,max(zero,v))
 
                   ! Determine the final values of the corrections.
 
@@ -1468,10 +1471,10 @@
                   kkk  = kk;   uu   = u;    vv   = v;    ww   = w
                   m(1) = n(1); m(2) = n(2); m(3) = n(3); m(4) = n(4)
 
-                  weight(1) = (adtOne - u)*(adtOne - v)
-                  weight(2) =           u *(adtOne - v)
+                  weight(1) = (one - u)*(one - v)
+                  weight(2) =           u *(one - v)
                   weight(3) =           u *          v
-                  weight(4) = (adtOne - u)*          v
+                  weight(4) = (one - u)*          v
                 endif
 
               !=========================================================
@@ -1540,14 +1543,14 @@
                   m(1) = n(1); m(2) = n(2); m(3) = n(3); m(4) = n(4)
                   m(5) = n(5); m(6) = n(6); m(7) = n(7); m(8) = n(8)
 
-                  weight(1) = (adtOne - uu)*(adtOne - vv)*(adtOne - ww)
-                  weight(2) =           uu *(adtOne - vv)*(adtOne - ww)
-                  weight(3) =           uu *          vv *(adtOne - ww)
-                  weight(4) = (adtOne - uu)*          vv *(adtOne - ww)
-                  weight(5) = (adtOne - uu)*(adtOne - vv)*          ww
-                  weight(6) =           uu *(adtOne - vv)*          ww
+                  weight(1) = (one - uu)*(one - vv)*(one - ww)
+                  weight(2) =           uu *(one - vv)*(one - ww)
+                  weight(3) =           uu *          vv *(one - ww)
+                  weight(4) = (one - uu)*          vv *(one - ww)
+                  weight(5) = (one - uu)*(one - vv)*          ww
+                  weight(6) =           uu *(one - vv)*          ww
                   weight(7) =           uu *          vv *          ww
-                  weight(8) = (adtOne - uu)*          vv *          ww
+                  weight(8) = (one - uu)*          vv *          ww
                 endif
 
             end select

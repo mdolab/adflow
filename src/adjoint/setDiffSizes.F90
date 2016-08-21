@@ -17,13 +17,13 @@ subroutine setDiffSizes
   !      *                                                                *
   !      ******************************************************************
   !
-  use diffSizes
-  use blockPointers
   use constants
-  use flowVarRefState
-  use inputTimeSpectral
-  use inputPhysics
-  use costFunctions
+  use blockPointers, only : flowDoms, ib, jb, kb, ie, je, ke, ib, jb, ke, &
+       nBocos, nViscBocos, nDom
+  use flowVarRefState, only : nw, nwf, nt1, nt2
+  use inputTimeSpectral, only : nTimeIntervalsSpectral
+  use inputPhysics, only : equations
+  use diffSizes
   implicit none
 
   ! local variables

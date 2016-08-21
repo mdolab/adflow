@@ -1669,7 +1669,7 @@ class SUMB(AeroSolver):
         # possibleObjectives list
         self.sumb.getsolution(sps)
 
-        funcVals = self.sumb.costfunctions.functionvalue
+        funcVals = self.sumb.costfunctions.funcvalues
         SUmbsolution = {
             'lift':funcVals[self.sumb.costfunctions.costfunclift-1],
             'drag':funcVals[self.sumb.costfunctions.costfuncdrag-1],
@@ -2433,8 +2433,8 @@ class SUMB(AeroSolver):
 
                 # Extract the derivatives wrt the independent
                 # parameters in SUmb
-                dIdP = dIda[self.aeroDVs['P']]
-                dIdT = dIda[self.aeroDVs['T']]
+                dIdP = dIda[self.aeroDVs['p']]
+                dIdT = dIda[self.aeroDVs['t']]
                 dIdMach = dIda[self.aeroDVs['mach']]
 
                 # Chain rule the reynolds dependance back to what came
@@ -2474,10 +2474,10 @@ class SUMB(AeroSolver):
         for dv in DVsRequired:
             if dv.lower() in ['altitude', 'mach', 'P', 'T', 'reynolds']:
                 # All these variables need to be compined
-                self._addAeroDV('P')
+                self._addAeroDV('p')
                 self._addAeroDV('mach')
                 self._addAeroDV('reynolds')
-                self._addAeroDV('T')
+                self._addAeroDV('t')
             elif dv in self.possibleAeroDVs:
                 self._addAeroDV(dv)
             else:
@@ -2549,14 +2549,12 @@ class SUMB(AeroSolver):
             Filename to use. The Adjoint matrix, PC matrix(if it exists)
             and RHS  will be written
         """
-        adjointMatrixName = baseFileName + '_drdw.bin'
-        pcMatrixName = baseFileName + '_drdwPre.bin'
+        adjointMatrixName = baseFileNmae + '_drdw.bin'
+        pcMatrixName = baseFileNmae + '_drdwPre.bin'
         rhsName = baseFileName + '_rsh.bin'
-        cellCenterName = baseFileName + '_cellCen.bin'
         self.sumb.saveadjointmatrix(adjointMatrixName)
         self.sumb.saveadjointpc(pcMatrixName)
-        self.sumb.saveadjointrhs(rhsName) 
-        self.sumb.savecellcenters(cellCenterName)
+        self.sumb.saveadjointrhs(rhsName)
 
     def computeStabilityParameters(self):
         """
@@ -2732,7 +2730,7 @@ class SUMB(AeroSolver):
 
         # For the geometric xDvDot perturbation we accumulate into the
         # already existing (and possibly nonzero) xsdot and xvdot
-        if xDvDot is not None or xSDot is not None:
+        if self.DVGeo and (xDvDot is not None or xSDot is not None):
             if xDvDot is not None:
                 xsdot += self.DVGeo.totalSensitivityProd(xDvDot, self.curAP.ptSetName).reshape(xsdot.shape)
             xvdot += self.mesh.warpDerivFwd(xsdot)
@@ -2740,21 +2738,21 @@ class SUMB(AeroSolver):
 
         # Sizes for output arrays
         costSize = self.sumb.costfunctions.ncostfunction
-        fSize, nCell = self.sumb.getforcesize()
+        fSize, nCell = self._getSurfaceSize(self.allWallsGroup)
 
         dwdot,tmp,fdot = self.sumb.computematrixfreeproductfwd(
             xvdot, extradot, wdot, useSpatial, useState, costSize,  max(1, fSize))
 
-        # Explictly put fdot to nothing if we ac
+        # Explictly put fdot to nothing if size is zero
         if fSize==0:
             fdot = numpy.zeros((0, 3))
 
         # Process the derivative of the functions
-        funcsdot = {}
+        funcsDot = {}
         for f in self.curAP.evalFuncs:
             basicFunc = self.sumbCostFunctions[f.lower()][1]
             mapping = self.basicCostFunctions[basicFunc]
-            funcsdot[f] = tmp[mapping - 1]
+            funcsDot[f] = tmp[mapping - 1]
 
         # Assemble the returns
         returns = []
@@ -2833,11 +2831,17 @@ class SUMB(AeroSolver):
 
         # -------------------------
         #  Check for fBar (forces)
-        # -------------------------
+        # ------------------------
+        nTime  = self.sumb.inputtimespectral.ntimeintervalsspectral
+        nPts, nCell = self._getSurfaceSize(self.allWallsGroup)
+
         if fBar is None:
-            nPts, nCell = self._getSurfaceSize(self.allWallsGroup)
-            fBar = numpy.zeros((nPts, 3))
-            
+            fBar = numpy.zeros((nTime, nPts, 3))
+        else:
+            # Expand out to the sps direction in case there were only
+            # 2 dimensions. 
+            fBar= fBar.reshape((nTime, nPts, 3))
+        
         # ---------------------
         #  Check for funcsBar 
         # ---------------------
@@ -2965,7 +2969,7 @@ class SUMB(AeroSolver):
         we want to map is 'vec1'. It is length 9+10. All the 'x's are
         significant values.
 
-        The call: coerseVector(vec1, 'f12', 'f23')
+        The call: mapVector(vec1, 'f12', 'f23')
         
         will produce the "returned vec" array, containing the
         significant values from 'fam2', where the two groups overlap,
@@ -2978,6 +2982,10 @@ class SUMB(AeroSolver):
         |xxxxxxxxx xxxxxxxxxx|        <- vec1
                   |xxxxxxxxxx 000000| <- returned vec (vec2)
 
+        It is also possible to pass in vec2 into this routine. For
+        that case, the existing values in the array will not be
+        kept. In the previous examples, the values cooresponding to
+        fam3 will retain their original values. 
 
         Parameters
         ----------
@@ -2998,6 +3006,7 @@ class SUMB(AeroSolver):
         -------
         vec2 : Numpy array
             The input vector maped to the families defined in groupName2.
+
         """
         if groupName1 not in self.families or groupName2 not in self.families:
             raise Error("'%s' or '%s' is not a family in the CGNS file or has not been added"
@@ -3672,53 +3681,53 @@ class SUMB(AeroSolver):
             'nodaloutput':['io', 'nodaloutput'],
             'nsavesurface':['iter', 'nsavesurface'],
             'viscoussurfacevelocities':['io', 'viscoussurfacevelocities'],
-            'solutionprecision':{'single':self.sumb.inputio.precisionsingle,
-                                 'double':self.sumb.inputio.precisiondouble,
+            'solutionprecision':{'single':self.sumb.constants.precisionsingle,
+                                 'double':self.sumb.constants.precisiondouble,
                                  'location':['io', 'precisionsol']},
-            'gridprecision':{'single':self.sumb.inputio.precisionsingle,
-                             'double':self.sumb.inputio.precisiondouble,
+            'gridprecision':{'single':self.sumb.constants.precisionsingle,
+                             'double':self.sumb.constants.precisiondouble,
                              'location':['io', 'precisiongrid']},
 
             # Physics Paramters
-            'discretization':{'central plus scalar dissipation': self.sumb.inputdiscretization.dissscalar,
-                              'central plus matrix dissipation': self.sumb.inputdiscretization.dissmatrix,
-                              'central plus cusp dissipation':self.sumb.inputdiscretization.disscusp,
-                              'upwind':self.sumb.inputdiscretization.upwind,
+            'discretization':{'central plus scalar dissipation': self.sumb.constants.dissscalar,
+                              'central plus matrix dissipation': self.sumb.constants.dissmatrix,
+                              'central plus cusp dissipation':self.sumb.constants.disscusp,
+                              'upwind':self.sumb.constants.upwind,
                               'location':['discr', 'spacediscr']},
-            'coarsediscretization':{'central plus scalar dissipation': self.sumb.inputdiscretization.dissscalar,
-                                    'central plus matrix dissipation': self.sumb.inputdiscretization.dissmatrix,
-                                    'central plus cusp dissipation': self.sumb.inputdiscretization.disscusp,
-                                    'upwind': self.sumb.inputdiscretization.upwind,
+            'coarsediscretization':{'central plus scalar dissipation': self.sumb.constants.dissscalar,
+                                    'central plus matrix dissipation': self.sumb.constants.dissmatrix,
+                                    'central plus cusp dissipation': self.sumb.constants.disscusp,
+                                    'upwind': self.sumb.constants.upwind,
                                     'location':['discr', 'spacediscrcoarse']},
-            'limiter':{'vanalbeda':self.sumb.inputdiscretization.vanalbeda,
-                       'minmod':self.sumb.inputdiscretization.minmod,
-                       'nolimiter':self.sumb.inputdiscretization.nolimiter,
+            'limiter':{'vanalbeda':self.sumb.constants.vanalbeda,
+                       'minmod':self.sumb.constants.minmod,
+                       'nolimiter':self.sumb.constants.nolimiter,
                        'location':['discr', 'limiter']},
-            'smoother':{'runge kutta':self.sumb.inputiteration.rungekutta,
-                        'lu sgs':self.sumb.inputiteration.nllusgs,
-                        'lu sgs line':self.sumb.inputiteration.nllusgsline,
-                        'dadi':self.sumb.inputiteration.dadi,
+            'smoother':{'runge kutta':self.sumb.constants.rungekutta,
+                        'lu sgs':self.sumb.constants.nllusgs,
+                        'lu sgs line':self.sumb.constants.nllusgsline,
+                        'dadi':self.sumb.constants.dadi,
                         'location':['iter', 'smoother']},
 
-            'equationtype':{'euler':self.sumb.inputphysics.eulerequations,
-                            'laminar ns':self.sumb.inputphysics.nsequations,
-                            'rans':self.sumb.inputphysics.ransequations,
+            'equationtype':{'euler':self.sumb.constants.eulerequations,
+                            'laminar ns':self.sumb.constants.nsequations,
+                            'rans':self.sumb.constants.ransequations,
                             'location':['physics', 'equations']},
-            'equationmode':{'steady':self.sumb.inputphysics.steady,
-                            'unsteady':self.sumb.inputphysics.unsteady,
-                            'time spectral':self.sumb.inputphysics.timespectral,
+            'equationmode':{'steady':self.sumb.constants.steady,
+                            'unsteady':self.sumb.constants.unsteady,
+                            'time spectral':self.sumb.constants.timespectral,
                             'location':['physics', 'equationmode']},
-            'flowtype':{'internal':self.sumb.inputphysics.internalflow,
-                        'external':self.sumb.inputphysics.externalflow,
+            'flowtype':{'internal':self.sumb.constants.internalflow,
+                        'external':self.sumb.constants.externalflow,
                         'location':['physics', 'flowtype']},
-            'turbulencemodel':{'baldwin lomax':self.sumb.inputphysics.baldwinlomax,
-                               'sa':self.sumb.inputphysics.spalartallmaras,
-                               'sae':self.sumb.inputphysics.spalartallmarasedwards,
-                               'k omega wilcox':self.sumb.inputphysics.komegawilcox,
-                               'k omega modified':self.sumb.inputphysics.komegamodified,
-                               'ktau':self.sumb.inputphysics.ktau,
-                               'menter sst':self.sumb.inputphysics.mentersst,
-                               'v2f':self.sumb.inputphysics.v2f,
+            'turbulencemodel':{'baldwin lomax':self.sumb.constants.baldwinlomax,
+                               'sa':self.sumb.constants.spalartallmaras,
+                               'sae':self.sumb.constants.spalartallmarasedwards,
+                               'k omega wilcox':self.sumb.constants.komegawilcox,
+                               'k omega modified':self.sumb.constants.komegamodified,
+                               'ktau':self.sumb.constants.ktau,
+                               'menter sst':self.sumb.constants.mentersst,
+                               'v2f':self.sumb.constants.v2f,
                                'location':['physics', 'turbmodel']},
             'turbulenceorder':{'first order':1,
                                'second order':2,
@@ -3728,15 +3737,13 @@ class SUMB(AeroSolver):
             'usewallfunctions':['physics', 'wallfunctions'],
             'walldistcutoff':['physics', 'walldistcutoff'],
             'useapproxwalldistance':['discr', 'useapproxwalldistance'],
-            'reynoldsnumber':['physics', 'reynolds'],
-            'reynoldslength':['physics', 'reynoldslength'],
-            'eulerwalltreatment':{'linear pressure extrapolation':self.sumb.inputdiscretization.linextrapolpressure,
-                                  'constant pressure extrapolation':self.sumb.inputdiscretization.constantpressure,
-                                  'quadratic pressure extrapolation':self.sumb.inputdiscretization.quadextrapolpressure,
-                                  'normal momentum':self.sumb.inputdiscretization.normalmomentum,
+            'eulerwalltreatment':{'linear pressure extrapolation':self.sumb.constants.linextrapolpressure,
+                                  'constant pressure extrapolation':self.sumb.constants.constantpressure,
+                                  'quadratic pressure extrapolation':self.sumb.constants.quadextrapolpressure,
+                                  'normal momentum':self.sumb.constants.normalmomentum,
                                   'location':['discr', 'eulerwallbctreatment']},
-            'viscwalltreatment':{'linear pressure extrapolation':self.sumb.inputdiscretization.linextrapolpressure,
-                                 'constant pressure extrapolation':self.sumb.inputdiscretization.constantpressure,
+            'viscwalltreatment':{'linear pressure extrapolation':self.sumb.constants.linextrapolpressure,
+                                 'constant pressure extrapolation':self.sumb.constants.constantpressure,
                                  'location':['discr', 'viscwallbctreatment']},
             'dissipationscalingexponent':['discr', 'adis'],
             'vis4':['discr', 'vis4'],
@@ -3755,9 +3762,9 @@ class SUMB(AeroSolver):
             'cflcoarse':['iter', 'cflcoarse'],
             'mgcycle':['localmg', 'mgdescription'],
             'mgstartlevel':['iter', 'mgstartlevel'],
-            'resaveraging':{'noresaveraging':self.sumb.inputiteration.noresaveraging,
-                            'alwaysresaveraging':self.sumb.inputiteration.alwaysresaveraging,
-                            'alternateresaveraging':self.sumb.inputiteration.alternateresaveraging,
+            'resaveraging':{'noresaveraging':self.sumb.constants.noresaveraging,
+                            'alwaysresaveraging':self.sumb.constants.alwaysresaveraging,
+                            'alternateresaveraging':self.sumb.constants.alternateresaveraging,
                             'location':['iter', 'resaveraging']},
             'smoothparameter':['iter', 'smoop'],
             'cfllimit':['iter', 'cfllimit'],
@@ -3769,10 +3776,10 @@ class SUMB(AeroSolver):
             'overlapfactor':['overset','overlapfactor'],
 
             # Unsteady Params
-            'timeintegrationscheme':{'bdf':self.sumb.inputunsteady.bdf,
-                                     'explicitrk':self.sumb.inputunsteady.explicitrk,
-                                     'implicitrk':self.sumb.inputunsteady.implicitrk,
-                                     'md':self.sumb.inputunsteady.md,
+            'timeintegrationscheme':{'bdf':self.sumb.constants.bdf,
+                                     'explicitrk':self.sumb.constants.explicitrk,
+                                     'implicitrk':self.sumb.constants.implicitrk,
+                                     'md':self.sumb.constants.md,
                                      'location':['unsteady', 'timeintegrationscheme']},
             'timeaccuracy':['unsteady', 'timeaccuracy'],
             'ntimestepscoarse':['unsteady', 'ntimestepscoarse'],
@@ -3817,9 +3824,9 @@ class SUMB(AeroSolver):
             'nkinnerpreconits':['nk', 'nk_innerpreconits'],
             'nkouterpreconits':['nk', 'nk_outerpreconits'],
             'nkcfl0':['nk', 'nk_cfl0'],
-            'nkls':{'none':self.sumb.nksolvervars.nolinesearch,
-                    'cubic':self.sumb.nksolvervars.cubiclinesearch,
-                    'non monotone':self.sumb.nksolvervars.nonmonotonelinesearch,
+            'nkls':{'none':self.sumb.constants.nolinesearch,
+                    'cubic':self.sumb.constants.cubiclinesearch,
+                    'non monotone':self.sumb.constants.nonmonotonelinesearch,
                     'location':['nk', 'nk_ls']},
             'rkreset':['nk', 'rkreset'],
             'nrkreset':['iter', 'miniternum'],
@@ -3928,8 +3935,6 @@ class SUMB(AeroSolver):
         # scripts can continue to run
         deprecatedOptions = {'finitedifferencepc':'Use the ADPC option.',
                              'writesolution':'Use writeSurfaceSolution and writeVolumeSolution options instead.',
-                             'reynoldsnumber':'Put required information in aeroProblem class',
-                             'reynoldslength':'Put required information in aeroProblem class'
                              }
 
         specialOptions = set(('surfacevariables',
@@ -3951,21 +3956,19 @@ class SUMB(AeroSolver):
             'beta':'adjointvars.ndesignssa',
             'mach':'adjointvars.ndesignmach',
             'machgrid':'adjointvars.ndesignmachgrid',
-            'P':'adjointvars.ndesignpressure',
-            'reynolds':'adjointvars.ndesignreynolds',
-            'T':'adjointvars.ndesigntemperature',
-            'rotX':'adjointvars.ndesignrotx',
-            'rotY':'adjointvars.ndesignroty',
-            'rotZ':'adjointvars.ndesignrotz',
+            'p':'adjointvars.ndesignpressure',
+            'rho':'adjointvars.ndesigndensity',
+            't':'adjointvars.ndesigntemperature',
+            'rotx':'adjointvars.ndesignrotx',
+            'roty':'adjointvars.ndesignroty',
+            'rotz':'adjointvars.ndesignrotz',
             'rotcenx':'adjointvars.ndesignrotcenx',
             'rotceny':'adjointvars.ndesignrotceny',
             'rotcenz':'adjointvars.ndesignrotcenz',
-            'xRef':'adjointvars.ndesignpointrefx',
-            'yYef':'adjointvars.ndesignpointrefy',
-            'zRef':'adjointvars.ndesignpointrefz',
-            'chordRef':'adjointvars.ndesignlengthref',
-            'areaRef':'adjointvars.ndesignsurfaceref',
-            'disserror':'adjointvars.ndesigndisserror'
+            'xref':'adjointvars.ndesignpointrefx',
+            'yref':'adjointvars.ndesignpointrefy',
+            'zref':'adjointvars.ndesignpointrefz',
+            'reynolds':'adjointvars.ndesignreynolds',
             }
 
         # This is SUmb's internal mapping for cost functions

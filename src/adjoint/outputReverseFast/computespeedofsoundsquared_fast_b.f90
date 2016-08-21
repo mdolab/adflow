@@ -25,35 +25,24 @@ subroutine computespeedofsoundsquared_fast_b()
 !      ******************************************************************
 !
   use myPushPopLib
-  use blockpointers
   use constants
-  use flowvarrefstate
-  use inputphysics
-  use iteration
+  use blockpointers, only : ie, je, ke, w, wd, p, pd, aa, aad, gamma
   implicit none
 !
 !      local variables.
 !
-  logical :: correctfork
   real(kind=realtype), parameter :: twothird=two*third
   integer(kind=inttype) :: i, j, k, ii
   real(kind=realtype) :: pp
   real(kind=realtype) :: ppd
+  logical :: correctfork, getcorrectfork
   intrinsic mod
   real(kind=realtype) :: temp0
   real(kind=realtype) :: tempd
   real(kind=realtype) :: tempd0
   real(kind=realtype) :: temp
 ! determine if we need to correct for k
-  if (kpresent) then
-    if (currentlevel .le. groundlevel .or. turbcoupled) then
-      correctfork = .true.
-    else
-      correctfork = .false.
-    end if
-  else
-    correctfork = .false.
-  end if
+  correctfork = getcorrectfork()
   if (correctfork) then
     do ii=0,ie*je*ke-1
       i = mod(ii, ie) + 1

@@ -6,14 +6,9 @@ subroutine statePreAllocation(onProc, offProc, wSize, stencil, N_stencil, &
   ! "stencil" definition (look at modules/stencil.f90 for the
   ! definitions) and uses this to determine on and off proc values. 
 
-  use blockPointers
-  use ADjointPETSc
-  use ADjointVars    
-  use communication   
-  use inputTimeSpectral 
-  use flowVarRefState 
-  use inputADjoint    
-  use BCTypes
+  use constants
+  use blockPointers, only : nDom, il, jl, kl, globalCell, flowDoms
+  use inputTimeSpectral , only : nTimeIntervalsSpectral
 
   implicit none
 

@@ -160,6 +160,7 @@
        sk     => flowDoms(nn,mm,ll)%sk
 
        vol    => flowDoms(nn,mm,ll)%vol
+       volRef => flowDoms(nn,mm,ll)%volRef
        volOld => flowDoms(nn,1,ll)%volOld
 
        porI => flowDoms(nn,mm,1)%porI

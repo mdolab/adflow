@@ -20,10 +20,12 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use blockPointers
        use constants
-       use inputDiscretization
-       use iteration
+       use blockPointers, only : il, jl, kl, ie, je, ke, w, p, &
+            porI, porJ, porK, fw, radI, radJ, radK, gamma
+       use inputDiscretization, only: vis2Coarse
+       use iteration, only : rFil
+
        implicit none
 !
 !      Local variables.

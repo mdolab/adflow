@@ -4,8 +4,10 @@ subroutine applyPC(in_vec, out_vec, ndof)
   ! Apply the NK PC to the in_vec. This subroutine is ONLY used as a
   ! preconditioner for a global Aero-Structural Newton-Krylov Method
 
-  use NKSolverVars
-  use communication
+  use constants
+  use NKSolverVars, only : applyPCSubSpaceSize, dRdW, g, NK_iter, &
+       NK_jacobianLag, NK_solverSetup, wVec, PETSC_NULL_OBJECT, NK_KSP, work
+
   implicit none
 #include "include/petscversion.h"
   ! Input/Output
@@ -64,9 +66,10 @@ subroutine applyAdjointPC(in_vec, out_vec, ndof)
   ! Apply the Adjoint PC to the in_vec. This subroutine is ONLY used as a
   ! preconditioner for a global Aero-Structural Krylov Method
 
-  use communication
-  use ADjointPETSc
-  use inputAdjoint
+  use constants
+  use ADjointPETSc, only : adjointKSP, KSP_NORM_NONE, PETSC_DEFAULT_REAL, &
+       psi_like1, psi_like2
+  use inputAdjoint, only : applyAdjointPCSubSpaceSize
   implicit none
 
   ! Input/Output
