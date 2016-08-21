@@ -6,9 +6,10 @@ subroutine setupAdjointMatrix
   !     *                                                                *
   !     ******************************************************************
   !
-  use ADjointPETSc
-  use inputADjoint
-  use communication
+  use constants
+  !use ADjointPETSc
+  !use inputADjoint
+  !use communication
   implicit none
 
   ! Local variables.
@@ -30,8 +31,6 @@ subroutine setupAdjointMatrix
        integer(kind=intType), intent(in) :: level
      end subroutine setupStateResidualMatrix
   end interface
-
-#ifndef USE_NO_PETSC
 
   if( myid ==0 ) &
        write(*, 10) "Assembling State Residual Matrices..."
@@ -63,5 +62,4 @@ subroutine setupAdjointMatrix
 10 format(a)
 20 format(a, 1x, f8.2)
 
-#endif
 end subroutine setupAdjointMatrix

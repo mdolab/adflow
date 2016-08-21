@@ -17,7 +17,9 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      use adtUtils
+      use constants
+      use adtUtils, only : adtLeafType, adts, stack, nStack, adtTerminate, &
+           qsortbboxes, reallocateadts, allocateadts
       implicit none
 
       !=================================================================
@@ -381,7 +383,7 @@
         ! problems. The values do not matter.
 
         if(nBBoxes == 0) then
-          rootLeafBBox = adtZero
+          rootLeafBBox = zero
         else
           rootLeafBBox(1,1) = ADTree(1)%xMin(1)
           rootLeafBBox(2,1) = ADTree(1)%xMin(2)

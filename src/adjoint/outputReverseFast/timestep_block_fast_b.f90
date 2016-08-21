@@ -31,15 +31,18 @@ subroutine timestep_block_fast_b(onlyradii)
 !      ******************************************************************
 !
   use myPushPopLib
-  use blockpointers
   use constants
-  use flowvarrefstate
-  use inputdiscretization
-  use inputiteration
-  use inputphysics
-  use inputtimespectral
-  use iteration
-  use section
+  use blockpointers, only : ie, je, ke, il, jl, kl, w, wd, p, pd, rlv,&
+& rlvd, rev, revd, radi, radid, radj, radjd, radk, radkd, si, sj, sk, &
+& sfacei, sfacej, sfacek, dtl, gamma, vol, addgridvelocities, sectionid
+  use flowvarrefstate, only : timeref, eddymodel, gammainf, pinfcorr, &
+& viscous, rhoinf
+  use inputdiscretization, only : adis, dirscaling, radiineededcoarse,&
+& radiineededfine, precond
+  use inputphysics, only : equationmode
+  use iteration, only : groundlevel, currentlevel
+  use section, only : sections
+  use inputtimespectral, only : ntimeintervalsspectral
   implicit none
 ! the rest of this file can be skipped if only the spectral
 ! radii need to be computed.
@@ -75,9 +78,6 @@ subroutine timestep_block_fast_b(onlyradii)
   real(kind=realtype) :: abs1d
   real(kind=realtype) :: abs0d
   real(kind=realtype) :: tempd
-  real(kind=realtype) :: tempd5
-  real(kind=realtype) :: tempd4
-  real(kind=realtype) :: tempd3
   real(kind=realtype) :: tempd2
   real(kind=realtype) :: tempd1
   real(kind=realtype) :: tempd0
@@ -156,7 +156,7 @@ myIntPtr = myIntPtr + 1
 myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 1
         end if
-        radi(i, j, k) = half*(abs0+sqrt(cc2*(sx**2+sy**2+sz**2)))
+        ri = half*(abs0+sqrt(cc2*(sx**2+sy**2+sz**2)))
 ! the grid velocity in j-direction.
         if (addgridvelocities) sface = sfacej(i, j-1, k) + sfacej(i, j, &
 &           k)
@@ -174,7 +174,7 @@ myIntPtr = myIntPtr + 1
 myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 1
         end if
-        radj(i, j, k) = half*(abs1+sqrt(cc2*(sx**2+sy**2+sz**2)))
+        rj = half*(abs1+sqrt(cc2*(sx**2+sy**2+sz**2)))
 ! the grid velocity in k-direction.
         if (addgridvelocities) sface = sfacek(i, j, k-1) + sfacek(i, j, &
 &           k)
@@ -192,7 +192,7 @@ myIntPtr = myIntPtr + 1
 myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 1
         end if
-        radk(i, j, k) = half*(abs2+sqrt(cc2*(sx**2+sy**2+sz**2)))
+        rk = half*(abs2+sqrt(cc2*(sx**2+sy**2+sz**2)))
 ! compute the inviscid contribution to the time step.
 !
 !          **************************************************************
@@ -203,32 +203,32 @@ myIntPtr = myIntPtr + 1
 !          **************************************************************
 !
         if (doscaling) then
-          if (radi(i, j, k) .lt. eps) then
-myIntPtr = myIntPtr + 1
- myIntStack(myIntPtr) = 0
+          if (ri .lt. eps) then
             ri = eps
-          else
-            ri = radi(i, j, k)
-myIntPtr = myIntPtr + 1
- myIntStack(myIntPtr) = 1
-          end if
-          if (radj(i, j, k) .lt. eps) then
 myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 0
+          else
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+            ri = ri
+          end if
+          if (rj .lt. eps) then
             rj = eps
-          else
-            rj = radj(i, j, k)
-myIntPtr = myIntPtr + 1
- myIntStack(myIntPtr) = 1
-          end if
-          if (radk(i, j, k) .lt. eps) then
 myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 0
-            rk = eps
           else
-            rk = radk(i, j, k)
 myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 1
+            rj = rj
+          end if
+          if (rk .lt. eps) then
+            rk = eps
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+          else
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+            rk = rk
           end if
 ! compute the scaling in the three coordinate
 ! directions.
@@ -239,54 +239,62 @@ myIntPtr = myIntPtr + 1
 ! note that the multiplication is done with radi, radj
 ! and radk, such that the influence of the clipping
 ! is negligible.
-          tempd0 = radk(i, j, k)*radkd(i, j, k)
-          radkd(i, j, k) = (one+one/rki+rjk)*radkd(i, j, k)
-          tempd2 = radj(i, j, k)*radjd(i, j, k)
-          rjkd = tempd0 - one*tempd2/rjk**2
-          radjd(i, j, k) = (one+one/rjk+rij)*radjd(i, j, k)
-          tempd1 = radi(i, j, k)*radid(i, j, k)
-          rkid = tempd1 - one*tempd0/rki**2
-          rijd = tempd2 - one*tempd1/rij**2
-          radid(i, j, k) = (one+one/rij+rki)*radid(i, j, k)
+          rkd = (one+one/rki+rjk)*radkd(i, j, k)
+          rkid = -(rk*one*radkd(i, j, k)/rki**2)
+          rjkd = rk*radkd(i, j, k)
+          radkd(i, j, k) = 0.0_8
+          rjd = (one+one/rjk+rij)*radjd(i, j, k)
+          rjkd = rjkd - rj*one*radjd(i, j, k)/rjk**2
+          rijd = rj*radjd(i, j, k)
+          radjd(i, j, k) = 0.0_8
+          rijd = rijd - ri*one*radid(i, j, k)/rij**2
+          rkid = rkid + ri*radid(i, j, k)
           if (rk/ri .le. 0.0_8 .and. (adis .eq. 0.0_8 .or. adis .ne. int&
 &             (adis))) then
-            tempd3 = 0.0
+            tempd0 = 0.0
           else
-            tempd3 = adis*(rk/ri)**(adis-1)*rkid/ri
+            tempd0 = adis*(rk/ri)**(adis-1)*rkid/ri
           end if
           if (rj/rk .le. 0.0_8 .and. (adis .eq. 0.0_8 .or. adis .ne. int&
 &             (adis))) then
-            tempd4 = 0.0
+            tempd2 = 0.0
           else
-            tempd4 = adis*(rj/rk)**(adis-1)*rjkd/rk
+            tempd2 = adis*(rj/rk)**(adis-1)*rjkd/rk
           end if
-          rkd = tempd3 - rj*tempd4/rk
+          rkd = rkd + tempd0 - rj*tempd2/rk
           if (ri/rj .le. 0.0_8 .and. (adis .eq. 0.0_8 .or. adis .ne. int&
 &             (adis))) then
-            tempd5 = 0.0
+            tempd1 = 0.0
           else
-            tempd5 = adis*(ri/rj)**(adis-1)*rijd/rj
+            tempd1 = adis*(ri/rj)**(adis-1)*rijd/rj
           end if
-          rid = tempd5 - rk*tempd3/ri
-          rjd = tempd4 - ri*tempd5/rj
+          rid = tempd1 - rk*tempd0/ri + (one+one/rij+rki)*radid(i, j, k)
+          radid(i, j, k) = 0.0_8
+          rjd = rjd + tempd2 - ri*tempd1/rj
 branch = myIntStack(myIntPtr)
  myIntPtr = myIntPtr - 1
-          if (branch .ne. 0) radkd(i, j, k) = radkd(i, j, k) + rkd
+          if (branch .eq. 0) rkd = 0.0_8
 branch = myIntStack(myIntPtr)
  myIntPtr = myIntPtr - 1
-          if (branch .ne. 0) radjd(i, j, k) = radjd(i, j, k) + rjd
+          if (branch .eq. 0) rjd = 0.0_8
 branch = myIntStack(myIntPtr)
  myIntPtr = myIntPtr - 1
-          if (branch .ne. 0) radid(i, j, k) = radid(i, j, k) + rid
+          if (branch .eq. 0) rid = 0.0_8
+        else
+          rkd = radkd(i, j, k)
+          radkd(i, j, k) = 0.0_8
+          rjd = radjd(i, j, k)
+          radjd(i, j, k) = 0.0_8
+          rid = radid(i, j, k)
+          radid(i, j, k) = 0.0_8
         end if
         temp2 = sx**2 + sy**2 + sz**2
-        abs2d = half*radkd(i, j, k)
+        abs2d = half*rkd
         if (temp2*cc2 .eq. 0.0_8) then
           cc2d = 0.0
         else
-          cc2d = half*temp2*radkd(i, j, k)/(2.0*sqrt(temp2*cc2))
+          cc2d = half*temp2*rkd/(2.0*sqrt(temp2*cc2))
         end if
-        radkd(i, j, k) = 0.0_8
 branch = myIntStack(myIntPtr)
  myIntPtr = myIntPtr - 1
         if (branch .eq. 0) then
@@ -301,10 +309,9 @@ branch = myIntStack(myIntPtr)
         sy = sj(i, j-1, k, 2) + sj(i, j, k, 2)
         sz = sj(i, j-1, k, 3) + sj(i, j, k, 3)
         temp1 = sx**2 + sy**2 + sz**2
-        abs1d = half*radjd(i, j, k)
-        if (.not.temp1*cc2 .eq. 0.0_8) cc2d = cc2d + half*temp1*radjd(i&
-&           , j, k)/(2.0*sqrt(temp1*cc2))
-        radjd(i, j, k) = 0.0_8
+        abs1d = half*rjd
+        if (.not.temp1*cc2 .eq. 0.0_8) cc2d = cc2d + half*temp1*rjd/(2.0&
+&           *sqrt(temp1*cc2))
 branch = myIntStack(myIntPtr)
  myIntPtr = myIntPtr - 1
         if (branch .eq. 0) then
@@ -319,10 +326,9 @@ branch = myIntStack(myIntPtr)
         sy = si(i-1, j, k, 2) + si(i, j, k, 2)
         sz = si(i-1, j, k, 3) + si(i, j, k, 3)
         temp0 = sx**2 + sy**2 + sz**2
-        abs0d = half*radid(i, j, k)
-        if (.not.temp0*cc2 .eq. 0.0_8) cc2d = cc2d + half*temp0*radid(i&
-&           , j, k)/(2.0*sqrt(temp0*cc2))
-        radid(i, j, k) = 0.0_8
+        abs0d = half*rid
+        if (.not.temp0*cc2 .eq. 0.0_8) cc2d = cc2d + half*temp0*rid/(2.0&
+&           *sqrt(temp0*cc2))
 branch = myIntStack(myIntPtr)
  myIntPtr = myIntPtr - 1
         if (branch .eq. 0) then

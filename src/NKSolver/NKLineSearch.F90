@@ -2,7 +2,6 @@
 subroutine LSCubic(x, f, g, y, w, fnorm, ynorm, gnorm, nfevals, flag)
 #ifndef USE_NO_PETSC
   use constants
-  use communication
   use NKSolverVars, only: dRdw
   implicit none
 #define PETSC_AVOID_MPIF_H
@@ -287,10 +286,9 @@ end subroutine LSNone
 
 subroutine LSNM(x, f, g, y, w, fnorm, ynorm, gnorm, nfevals, flag)
 #ifndef USE_NO_PETSC
-  use precision 
-  use communication
-  use NKSolverVars, only: dRdw, NKLSFuncEvals, iter_k, iter_m
+
   use constants
+  use NKSolverVars, only: dRdw, NKLSFuncEvals, iter_k, iter_m
   implicit none
 #define PETSC_AVOID_MPIF_H
 

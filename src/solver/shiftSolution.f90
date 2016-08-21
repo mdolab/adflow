@@ -17,13 +17,15 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use blockPointers
-       use cgnsGrid
-       use flowVarRefState
-       use inputTimeSpectral
-       use inputUnsteady
-       use iteration
-       use monitor
+       use constants
+       use blockPointers, only: il, jl, kl, nbkglobal, wOld, w, nDom
+       use cgnsGrid, only : cgnsDoms 
+       use flowvarrefstate, only : nw
+       use iteration, only : groundLevel, nOldLevels
+       use inputTimeSpectral, only : nTimeIntervalsSpectral
+       use inputUnsteady, only : deltaT
+       use monitor, only : timeUnsteadyRestart, timeUnsteady
+       implicit none
 !
 !      Local variables.
 !

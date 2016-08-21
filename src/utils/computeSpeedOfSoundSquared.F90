@@ -1,3 +1,4 @@
+
 !
 !      ******************************************************************
 !      *                                                                *
@@ -17,33 +18,22 @@ subroutine computeSpeedOfSoundSquared
   !      *                                                                *
   !      ******************************************************************
   !
-  use blockPointers
   use constants
-  use flowVarRefState
-  use inputPhysics
-  use iteration
+  use blockPointers, only : ie, je, ke, w, p, aa, gamma
   implicit none
   !
   !      Local variables.
   !
-  logical :: correctForK
   real(kind=realType), PARAMETER :: twothird=two*third
   integer(kind=intType) :: i, j, k, ii
   real(kind=realType) :: pp
+  logical :: correctForK, getCorrectForK
 
   ! Determine if we need to correct for K
-  if( kPresent ) then
-     if((currentLevel <= groundLevel) .or. turbCoupled) then
-        correctForK = .true.
-     else
-        correctForK = .false.
-     endif
-  else
-     correctForK = .false.
-  endif
+  correctForK = getCorrectForK()
 
   if (correctForK) then 
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
      !$AD II-LOOP
      do ii=0,ie*je*ke - 1
         i = mod(ii, ie) + 1
@@ -56,7 +46,7 @@ subroutine computeSpeedOfSoundSquared
 #endif             
                  pp = p(i,j,k) - twoThird*w(i,j,k,irho)*w(i,j,k,itu1)
                  aa(i,j,k) = gamma(i,j,k)*pp/w(i,j,k,irho)
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
               end do
 #else
            enddo
@@ -64,7 +54,7 @@ subroutine computeSpeedOfSoundSquared
      enddo
 #endif   
   else
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
      !$AD II-LOOP
      do ii=0,ie*je*ke - 1
         i = mod(ii, ie) + 1
@@ -76,7 +66,7 @@ subroutine computeSpeedOfSoundSquared
               do i=1,ie
 #endif             
                  aa(i,j,k) = gamma(i,j,k)*p(i,j,k)/w(i,j,k,irho)
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
               end do
 #else
            enddo

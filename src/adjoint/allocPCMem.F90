@@ -3,9 +3,10 @@ subroutine allocPCMem(level)
   ! This routine allocates memory for the fortran-based PC. It is
   ! currently not used anywhere, but it become useful in the future.
   
-  use blockPointers
-  use inputTimeSpectral
-  use flowVarRefState
+  use constants
+  use blockPointers, only : nDom, nx, ny, nz, il, jl, kl, ie, je, ke, flowDoms
+  use inputTimeSpectral, onlY : nTimeIntervalsSpectral
+  use flowVarRefState, only : nw
   implicit none
 
   integer(kind=intType), intent(in) :: level

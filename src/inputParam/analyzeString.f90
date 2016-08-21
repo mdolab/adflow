@@ -21,6 +21,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use communication
        use flowVarRefState
        use allInputParam
@@ -554,7 +555,7 @@
              case ("zero dirichlet")
                mgBoundCorr = bcDirichlet0
              case ("neumann")
-               mgBoundCorr = bcNeumann
+               mgBoundCorr = bcNeumann0
              case default
                write(errorMessage,*) "Unknown treatment boundary &
                                       &multigrid corrections, ",  &

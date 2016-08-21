@@ -1,11 +1,12 @@
+#ifndef USE_TAPENADE
 subroutine timeStep(onlyRadii)
   !
   ! Shell function to call timeStep_block on all blocks
   !
-  use blockPointers
   use constants
-  use inputTimeSpectral
-  use iteration
+  use blockPointers, only : nDom
+  use inputTimeSpectral, only : nTimeIntervalsSpectral
+  use iteration, only : currentLevel
   implicit none
   !
   !      Subroutine argument.
@@ -35,6 +36,7 @@ subroutine timeStep(onlyRadii)
   end do spectralLoop
 
 end subroutine timeStep
+#endif
 !
 !      ******************************************************************
 !      *                                                                *
@@ -58,15 +60,18 @@ subroutine timeStep_block(onlyRadii)
   !      *                                                                *
   !      ******************************************************************
   !
-  use blockPointers
   use constants
-  use flowVarRefState
-  use inputDiscretization
-  use inputIteration
-  use inputPhysics
-  use inputTimeSpectral
-  use iteration
-  use section
+  use blockPointers, only : ie, je, ke, il, jl, kl, w, p, rlv, rev, &
+       radi, radj, radk, si, sj, sk, sFaceI, sfaceJ, sfaceK, dtl, gamma, vol, &
+       addGridVelocities, sectionID
+  use flowVarRefState, only : timeRef, eddyModel, gammaInf, pInfCorr, &
+       viscous, rhoInf
+  use inputDiscretization, only : adis, dirScaling, radiiNeededCoarse, &
+       radiiNeededFine, precond
+  use inputPhysics, only : equationMode
+  use iteration, only : groundLevel, currentLevel
+  use section, only : sections
+  use inputTimeSpectral, only : nTimeIntervalsSpectral
   implicit none
   !
   !      Subroutine argument.
@@ -135,7 +140,7 @@ subroutine timeStep_block(onlyRadii)
      ! No preconditioner. Simply the standard spectral radius.
      ! Loop over the cells, including the first level halo.
 
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
      !$AD II-LOOP
      do ii=0,ie*je*ke-1
         i = mod(ii, ie) + 1
@@ -170,7 +175,7 @@ subroutine timeStep_block(onlyRadii)
 
                  qsi = uux*sx + uuy*sy + uuz*sz - sFace
                  
-                 radi(i,j,k) = half*(abs(qsi) &
+                 ri = half*(abs(qsi) &
                       +       sqrt(cc2*(sx**2 + sy**2 + sz**2)))
                  
                  ! The grid velocity in j-direction.
@@ -186,7 +191,7 @@ subroutine timeStep_block(onlyRadii)
                  
                  qsj = uux*sx + uuy*sy + uuz*sz - sFace
                  
-                 radJ(i,j,k) = half*(abs(qsj) &
+                 rj = half*(abs(qsj) &
                       +       sqrt(cc2*(sx**2 + sy**2 + sz**2)))
                  
                  ! The grid velocity in k-direction.
@@ -202,13 +207,13 @@ subroutine timeStep_block(onlyRadii)
 
                  qsk = uux*sx + uuy*sy + uuz*sz - sFace
                  
-                 radK(i,j,k) = half*(abs(qsk) &
+                 rk = half*(abs(qsk) &
                       +       sqrt(cc2*(sx**2 + sy**2 + sz**2)))
                  
                  ! Compute the inviscid contribution to the time step.
                  
-                 dtl(i,j,k) = radi(i,j,k) + radJ(i,j,k) + radK(i,j,k)
-
+                 dtl(i,j,k) = ri + rj + rk
+                 
                  !
                  !          **************************************************************
                  !          *                                                            *
@@ -222,9 +227,9 @@ subroutine timeStep_block(onlyRadii)
                     ! Avoid division by zero by clipping radi, radJ and
                     ! radK.
                     
-                    ri = max(radi(i,j,k),eps)
-                    rj = max(radJ(i,j,k),eps)
-                    rk = max(radK(i,j,k),eps)
+                    ri = max(ri, eps)
+                    rj = max(rj, eps)
+                    rk = max(rk, eps)
 
                     ! Compute the scaling in the three coordinate
                     ! directions.
@@ -238,11 +243,15 @@ subroutine timeStep_block(onlyRadii)
                     ! and radK, such that the influence of the clipping
                     ! is negligible.
                     
-                    radi(i,j,k) = radi(i,j,k)*(one + one/rij + rki)
-                    radJ(i,j,k) = radJ(i,j,k)*(one + one/rjk + rij)
-                    radK(i,j,k) = radK(i,j,k)*(one + one/rki + rjk)
+                    radi(i,j,k) = ri*(one + one/rij + rki)
+                    radJ(i,j,k) = rj*(one + one/rjk + rij)
+                    radK(i,j,k) = rk*(one + one/rki + rjk)
+                 else
+                    radi(i,j,k) = ri
+                    radj(i,j,k) = rj
+                    radk(i,j,k) = rk
                  end if
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
               end do
 #else
            enddo

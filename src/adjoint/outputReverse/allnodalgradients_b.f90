@@ -3,7 +3,7 @@
 !
 !  differentiation of allnodalgradients in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *aa *wx *wy *wz *w *qx *qy
-!                *qz *ux *vol *uy *uz *si *sj *sk *vx *vy *vz
+!                *qz *ux *uy *uz *si *sj *sk *vx *vy *vz
 !   with respect to varying inputs: *aa *w *vol *si *sj *sk
 !   plus diff mem management of: aa:in wx:in wy:in wz:in w:in qx:in
 !                qy:in qz:in ux:in vol:in uy:in uz:in si:in sj:in
@@ -279,6 +279,7 @@ subroutine allnodalgradients_b()
   call pushinteger4(i)
   call pushinteger4(j)
   call pushinteger4(k)
+  vold = 0.0_8
   do ii=0,il*jl*kl-1
     i = mod(ii, il) + 1
     j = mod(ii/il, jl) + 1

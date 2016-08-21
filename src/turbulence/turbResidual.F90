@@ -51,9 +51,6 @@
 
        select case (turbModel)
 
-         case (baldwinLomax)
-           call bl(.true.)
-
          case (spalartAllmaras)
            call sa(.true.)
 

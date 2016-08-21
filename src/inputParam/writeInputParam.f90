@@ -292,25 +292,6 @@
          call removeZerosEformat(string)
          print "(2a)", " ", trim(string)
 
-         select case (equations)
-           case (NSEquations, RANSEquations)
-
-             write(string,100) Reynolds
-             call removeZerosEformat(string)
-             print "(2a)", "#                           Reynolds: ", &
-                           trim(string)
-
-             write(string,100) ReynoldsLength
-             call removeZerosEformat(string)
-             print "(2a)", "#         Reynolds length (in meter): ", &
-                           trim(string)
-
-             write(string,100) tempFreestream
-             call removeZerosEformat(string)
-             print "(2a)", "#     Free stream temperature (in K): ", &
-                           trim(string)
-
-         end select
 
        endif
 

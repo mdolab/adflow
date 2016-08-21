@@ -24,16 +24,17 @@ subroutine solveAdjoint(RHS, psi, checkSolution, nState)
   !     *                                                                *
   !     ******************************************************************
   !
-
+  use constants
   use ADjointPETSc, only : dRdwT, psi_like1, psi_like2, adjointKSP, &
        adjResInit, adjResStart, adjResFinal
  
-  use killsignals
-  use inputADjoint
-  use adjointVars
-  use communication
-  use blockPointers
-  use inputTimeSpectral
+  use killsignals, only : adjointFailed
+  use inputADjoint, only : adjAbsTol, adjDivTol, adjMaxIter, adjRelTol, &
+       adjRelTolRel, printTiming
+  use adjointVars, only: derivVarsAllocated
+  use communication, only : myid, sumb_comm_world
+  use blockPointers, only : nDom
+  use inputTimeSpectral, only : nTimeIntervalsSpectral
   implicit none
 #define PETSC_AVOID_MPIF_H
 

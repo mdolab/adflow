@@ -1,8 +1,9 @@
 subroutine setupAllResidualMatricesfwd
-  use ADjointPETSc
-  use ADjointVars 
-  use communication    
-  use inputADjoint       
+
+  use constants
+  use ADjointPETSc, only : dRdwT
+  use communication, only : sumb_comm_world, myid
+  use inputADjoint, only : frozenTurbulence, useMatrixFreedRdw
 
   implicit none
  

@@ -12,7 +12,6 @@ module surfaceFamilies
 #else
 #include "include/finclude/petsc.h"
 #endif
-
   type familyExchange 
      ! Vectors for global traction calc
      Vec nodeValLocal
@@ -51,7 +50,7 @@ module surfaceFamilies
   integer(kind=intType), dimension(:), allocatable :: wallFamilies, famIsWall
   integer(kind=intType) :: totalFamilies, totalWallFamilies
 
-
+#ifndef USE_TAPENADE
   contains
 
     subroutine destroyFamilyExchange(exch) 
@@ -86,5 +85,5 @@ module surfaceFamilies
         exch%allocated = .False.
         
       end subroutine destroyFamilyExchange
-
+#endif
 end module surfaceFamilies

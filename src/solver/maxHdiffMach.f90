@@ -18,11 +18,10 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use blockPointers
        use constants
-       use flowVarRefState
-       use inputPhysics
-       use monitor
+       use blockPointers, only : il, jl, kl, w, p, gamma
+       use flowVarRefState, only : pInfCorr, rhoInf, wInf
+       use monitor, only : monMachOrHMax
        implicit none
 !
 !      Subroutine arguments.

@@ -17,18 +17,17 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use communication
        use constants
-       use inputDiscretization
-       use inputIteration
-       use inputPhysics
-       use inputTimeSpectral
-       use inputUnsteady
-       use killSignals
-       use iteration
-       use monitor
-       use section
-       use blockPointers
+       use communication, only : myid
+       use inputDiscretization, only : eulerWallBCTreatment
+       use inputIteration, only: mgStartLevel, printIterations
+       use inputPhysics, only : equationMode
+       use inputUnsteady, only : timeIntegrationScheme
+       use killSignals, only : localSignal, noSignal
+       use iteration, only : changing_grid, currentLevel, exchangePressureEarly, &
+            groundLevel, nOldSolAvail, t0Solver
+       use monitor, only : timeUnsteady
+       use section, only : nSections
        implicit none
 !
 !      Local variables.
@@ -45,6 +44,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+
        ! If the normal momentum equation should be used to determine
        ! the pressure in the halo for inviscid walls, find out if there
        ! actually are inviscid walls. If so, set the logical
@@ -74,19 +74,6 @@
 
        timeUnsteady = zero
 
-       ! Initialize PV3 routines if PV3 support is required and has not
-       ! been called before. In order to make sure that the overset 
-       ! iblanking works properly with pV3, set groundLevel to 1 so that
-       ! the iblank arrays are allocated with the maximum size.
-
-#ifdef USE_PV3
-       if (.not. PV3Initialized) then
-         groundLevel = 1
-         call initializePV3
-         PV3Initialized = .true.
-       end if
-#endif
-
        ! Loop over the number of grid levels in the current computation.
        ! Note that the counter variable, groundLevel, is defined in
        ! the module iteration.
@@ -96,7 +83,6 @@
          ! Solve either the steady or the unsteady equations for this
          ! grid level. The time spectral method can be considered as
          ! a special kind of steady mode.
-
          select case (equationMode)
            case (steady, timeSpectral)
              call solverSteady

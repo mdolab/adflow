@@ -85,6 +85,7 @@
        nullify(flowDoms(nn,level,sps)%sj)
        nullify(flowDoms(nn,level,sps)%sk)
        nullify(flowDoms(nn,level,sps)%vol)
+       nullify(flowDoms(nn,level,sps)%volRef)
        nullify(flowDoms(nn,level,sps)%volOld)
 
        nullify(flowDoms(nn,level,sps)%pori)

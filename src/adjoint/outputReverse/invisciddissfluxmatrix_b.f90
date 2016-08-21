@@ -28,13 +28,17 @@ subroutine invisciddissfluxmatrix_b()
 !      *                                                                *
 !      ******************************************************************
 !
-  use blockpointers
-  use cgnsgrid
   use constants
-  use flowvarrefstate
-  use inputdiscretization
-  use inputphysics
-  use iteration
+  use blockpointers, only : nx, ny, nz, il, jl, kl, ie, je, ke, ib, jb&
+& , kb, w, wd, p, pd, pori, porj, pork, fw, fwd, gamma, si, sid, sj, sjd&
+& , sk, skd, indfamilyi, indfamilyj, indfamilyk, spectralsol, &
+& addgridvelocities, sfacei, sfacej, sfacek, factfamilyi, factfamilyj, &
+& factfamilyk
+  use flowvarrefstate, only : pinfcorr, pinfcorrd
+  use inputdiscretization, only : vis2, vis4
+  use inputphysics, only : equations
+  use iteration, only : rfil
+  use cgnsgrid, only : massflowfamilydiss
   implicit none
 !
 !      local parameters.
@@ -71,7 +75,7 @@ subroutine invisciddissfluxmatrix_b()
   real(kind=realtype) :: abv1d, abv2d, abv3d, abv4d, abv5d, abv6d, abv7d
   real(kind=realtype), dimension(ie, je, ke, 3) :: dss
   real(kind=realtype), dimension(ie, je, ke, 3) :: dssd
-  logical :: correctfork
+  logical :: correctfork, getcorrectfork
   intrinsic abs
   intrinsic mod
   intrinsic max
@@ -90,6 +94,7 @@ subroutine invisciddissfluxmatrix_b()
   real(kind=realtype) :: temp1
   real(kind=realtype) :: tempd12
   real(kind=realtype) :: temp27
+  real(kind=realtype) :: max10d
   real(kind=realtype) :: temp0
   real(kind=realtype) :: tempd11
   real(kind=realtype) :: temp26
@@ -98,9 +103,13 @@ subroutine invisciddissfluxmatrix_b()
   real(kind=realtype) :: temp24
   real(kind=realtype) :: temp23
   real(kind=realtype) :: temp22
+  real(kind=realtype) :: temp59
   real(kind=realtype) :: temp21
+  real(kind=realtype) :: temp58
   real(kind=realtype) :: temp20
+  real(kind=realtype) :: temp57
   real(kind=realtype) :: abs1d
+  real(kind=realtype) :: temp56
   real(kind=realtype) :: temp55
   real(kind=realtype) :: tempd40
   real(kind=realtype) :: temp54
@@ -113,7 +122,9 @@ subroutine invisciddissfluxmatrix_b()
   real(kind=realtype) :: min1
   real(kind=realtype) :: temp50
   real(kind=realtype) :: abs4d
+  real(kind=realtype) :: max5d
   real(kind=realtype) :: min1d
+  real(kind=realtype) :: max8d
   real(kind=realtype) :: x3
   real(kind=realtype) :: x2
   real(kind=realtype) :: x2d
@@ -140,6 +151,7 @@ subroutine invisciddissfluxmatrix_b()
   real(kind=realtype) :: temp10
   real(kind=realtype) :: temp47
   real(kind=realtype) :: tempd32
+  real(kind=realtype) :: max12d
   real(kind=realtype) :: temp46
   real(kind=realtype) :: tempd31
   real(kind=realtype) :: temp45
@@ -154,6 +166,7 @@ subroutine invisciddissfluxmatrix_b()
   real(kind=realtype) :: tempd9
   real(kind=realtype) :: tempd
   real(kind=realtype) :: tempd8
+  real(kind=realtype) :: max4d
   real(kind=realtype) :: tempd7
   real(kind=realtype) :: tempd6
   real(kind=realtype) :: tempd5
@@ -162,6 +175,7 @@ subroutine invisciddissfluxmatrix_b()
   real(kind=realtype) :: tempd3
   real(kind=realtype) :: tempd2
   real(kind=realtype) :: tempd1
+  real(kind=realtype) :: max7d
   real(kind=realtype) :: tempd0
   real(kind=realtype) :: x1d
   real(kind=realtype) :: tempd29
@@ -177,6 +191,7 @@ subroutine invisciddissfluxmatrix_b()
   real(kind=realtype) :: temp38
   real(kind=realtype) :: tempd22
   real(kind=realtype) :: temp37
+  real(kind=realtype) :: max11d
   real(kind=realtype) :: tempd21
   real(kind=realtype) :: temp36
   real(kind=realtype) :: tempd20
@@ -194,18 +209,34 @@ subroutine invisciddissfluxmatrix_b()
   real(kind=realtype) :: abs2d
   real(kind=realtype) :: abs1
   real(kind=realtype) :: abs0
+  real(kind=realtype) :: temp64
   real(kind=realtype) :: max3d
+  real(kind=realtype) :: temp63
+  real(kind=realtype) :: temp62
+  real(kind=realtype) :: temp61
+  real(kind=realtype) :: temp60
+  real(kind=realtype) :: max9
   real(kind=realtype) :: abs5d
+  real(kind=realtype) :: max8
+  real(kind=realtype) :: max7
+  real(kind=realtype) :: max6
+  real(kind=realtype) :: max6d
+  real(kind=realtype) :: max5
+  real(kind=realtype) :: max4
   real(kind=realtype) :: temp
   real(kind=realtype) :: max3
   real(kind=realtype) :: max2
   real(kind=realtype) :: max1
+  real(kind=realtype) :: max12
   real(kind=realtype) :: temp9
+  real(kind=realtype) :: max11
   real(kind=realtype) :: temp8
   real(kind=realtype) :: min2d
   real(kind=realtype) :: tempd19
+  real(kind=realtype) :: max10
   real(kind=realtype) :: temp7
   real(kind=realtype) :: tempd18
+  real(kind=realtype) :: max9d
   real(kind=realtype) :: y3
   real(kind=realtype) :: temp6
   real(kind=realtype) :: tempd17
@@ -240,15 +271,7 @@ subroutine invisciddissfluxmatrix_b()
     plim = 0.001_realtype*pinfcorr
 ! determine whether or not the total energy must be corrected
 ! for the presence of the turbulent kinetic energy.
-    if (kpresent) then
-      if (currentlevel .eq. groundlevel .or. turbcoupled) then
-        correctfork = .true.
-      else
-        correctfork = .false.
-      end if
-    else
-      correctfork = .false.
-    end if
+    correctfork = getcorrectfork()
 ! initialize sface to zero. this value will be used if the
 ! block is not moving.
     sface = zero
@@ -390,19 +413,17 @@ subroutine invisciddissfluxmatrix_b()
       wavg = half*(w(i+1, j, k, ivz)+w(i, j, k, ivz))
       a2avg = half*(gamma(i+1, j, k)*p(i+1, j, k)/w(i+1, j, k, irho)+&
 &       gamma(i, j, k)*p(i, j, k)/w(i, j, k, irho))
-      sx = si(i, j, k, 1)
-      sy = si(i, j, k, 2)
-      sz = si(i, j, k, 3)
-      area = sqrt(sx**2 + sy**2 + sz**2)
+      area = sqrt(si(i, j, k, 1)**2 + si(i, j, k, 2)**2 + si(i, j, k, 3)&
+&       **2)
       if (1.e-25_realtype .lt. area) then
         max1 = area
       else
         max1 = 1.e-25_realtype
       end if
       tmp = one/max1
-      sx = sx*tmp
-      sy = sy*tmp
-      sz = sz*tmp
+      sx = si(i, j, k, 1)*tmp
+      sy = si(i, j, k, 2)*tmp
+      sz = si(i, j, k, 3)*tmp
       alphaavg = half*(uavg**2+vavg**2+wavg**2)
       havg = alphaavg + ovgm1*(a2avg-gm53*kavg)
       aavg = sqrt(a2avg)
@@ -429,25 +450,25 @@ subroutine invisciddissfluxmatrix_b()
       end if
       rrad = lam3 + aavg
       if (lam1 .lt. epsacoustic*rrad) then
-        lam1 = epsacoustic*rrad
+        max2 = epsacoustic*rrad
       else
-        lam1 = lam1
-      end if
-      if (lam2 .lt. epsacoustic*rrad) then
-        lam2 = epsacoustic*rrad
-      else
-        lam2 = lam2
-      end if
-      if (lam3 .lt. epsshear*rrad) then
-        lam3 = epsshear*rrad
-      else
-        lam3 = lam3
+        max2 = lam1
       end if
 ! multiply the eigenvalues by the area to obtain
 ! the correct values for the dissipation term.
-      lam1 = lam1*area
-      lam2 = lam2*area
-      lam3 = lam3*area
+      lam1 = max2*area
+      if (lam2 .lt. epsacoustic*rrad) then
+        max3 = epsacoustic*rrad
+      else
+        max3 = lam2
+      end if
+      lam2 = max3*area
+      if (lam3 .lt. epsshear*rrad) then
+        max4 = epsshear*rrad
+      else
+        max4 = lam3
+      end if
+      lam3 = max4*area
 ! some abbreviations, which occur quite often in the
 ! dissipation terms.
       abv1 = half*(lam1+lam2)
@@ -483,8 +504,6 @@ subroutine invisciddissfluxmatrix_b()
     call pushinteger4(i)
     call pushinteger4(j)
     call pushreal8(area)
-    call pushreal8(abv2)
-    call pushreal8(abv3)
     call pushreal8(dr)
     call pushreal8(abv4)
     call pushreal8(dis2)
@@ -499,11 +518,7 @@ subroutine invisciddissfluxmatrix_b()
     call pushreal8(drv)
     call pushreal8(drw)
     call pushreal8(a2avg)
-    call pushreal8(lam3)
     call pushreal8(ppor)
-    call pushreal8(sx)
-    call pushreal8(sy)
-    call pushreal8(sz)
     call pushreal8(sface)
 !
 !      ******************************************************************
@@ -578,19 +593,17 @@ subroutine invisciddissfluxmatrix_b()
       wavg = half*(w(i, j+1, k, ivz)+w(i, j, k, ivz))
       a2avg = half*(gamma(i, j+1, k)*p(i, j+1, k)/w(i, j+1, k, irho)+&
 &       gamma(i, j, k)*p(i, j, k)/w(i, j, k, irho))
-      sx = sj(i, j, k, 1)
-      sy = sj(i, j, k, 2)
-      sz = sj(i, j, k, 3)
-      area = sqrt(sx**2 + sy**2 + sz**2)
+      area = sqrt(sj(i, j, k, 1)**2 + sj(i, j, k, 2)**2 + sj(i, j, k, 3)&
+&       **2)
       if (1.e-25_realtype .lt. area) then
-        max2 = area
+        max5 = area
       else
-        max2 = 1.e-25_realtype
+        max5 = 1.e-25_realtype
       end if
-      tmp = one/max2
-      sx = sx*tmp
-      sy = sy*tmp
-      sz = sz*tmp
+      tmp = one/max5
+      sx = sj(i, j, k, 1)*tmp
+      sy = sj(i, j, k, 2)*tmp
+      sz = sj(i, j, k, 3)*tmp
       alphaavg = half*(uavg**2+vavg**2+wavg**2)
       havg = alphaavg + ovgm1*(a2avg-gm53*kavg)
       aavg = sqrt(a2avg)
@@ -617,25 +630,25 @@ subroutine invisciddissfluxmatrix_b()
       end if
       rrad = lam3 + aavg
       if (lam1 .lt. epsacoustic*rrad) then
-        lam1 = epsacoustic*rrad
+        max6 = epsacoustic*rrad
       else
-        lam1 = lam1
-      end if
-      if (lam2 .lt. epsacoustic*rrad) then
-        lam2 = epsacoustic*rrad
-      else
-        lam2 = lam2
-      end if
-      if (lam3 .lt. epsshear*rrad) then
-        lam3 = epsshear*rrad
-      else
-        lam3 = lam3
+        max6 = lam1
       end if
 ! multiply the eigenvalues by the area to obtain
 ! the correct values for the dissipation term.
-      lam1 = lam1*area
-      lam2 = lam2*area
-      lam3 = lam3*area
+      lam1 = max6*area
+      if (lam2 .lt. epsacoustic*rrad) then
+        max7 = epsacoustic*rrad
+      else
+        max7 = lam2
+      end if
+      lam2 = max7*area
+      if (lam3 .lt. epsshear*rrad) then
+        max8 = epsshear*rrad
+      else
+        max8 = lam3
+      end if
+      lam3 = max8*area
 ! some abbreviations, which occur quite often in the
 ! dissipation terms.
       abv1 = half*(lam1+lam2)
@@ -671,8 +684,6 @@ subroutine invisciddissfluxmatrix_b()
     call pushinteger4(i)
     call pushinteger4(j)
     call pushreal8(area)
-    call pushreal8(abv2)
-    call pushreal8(abv3)
     call pushreal8(dr)
     call pushreal8(abv4)
     call pushreal8(dis2)
@@ -687,11 +698,7 @@ subroutine invisciddissfluxmatrix_b()
     call pushreal8(drv)
     call pushreal8(drw)
     call pushreal8(a2avg)
-    call pushreal8(lam3)
     call pushreal8(ppor)
-    call pushreal8(sx)
-    call pushreal8(sy)
-    call pushreal8(sz)
     dssd = 0.0_8
     sfaced = 0.0_8
     do ii=0,nx*ny*kl-1
@@ -766,24 +773,19 @@ subroutine invisciddissfluxmatrix_b()
       wavg = half*(w(i, j, k+1, ivz)+w(i, j, k, ivz))
       a2avg = half*(gamma(i, j, k+1)*p(i, j, k+1)/w(i, j, k+1, irho)+&
 &       gamma(i, j, k)*p(i, j, k)/w(i, j, k, irho))
-      sx = sk(i, j, k, 1)
-      sy = sk(i, j, k, 2)
-      sz = sk(i, j, k, 3)
-      area = sqrt(sx**2 + sy**2 + sz**2)
+      area = sqrt(sk(i, j, k, 1)**2 + sk(i, j, k, 2)**2 + sk(i, j, k, 3)&
+&       **2)
       if (1.e-25_realtype .lt. area) then
-        max3 = area
+        max9 = area
         call pushcontrol1b(0)
       else
         call pushcontrol1b(1)
-        max3 = 1.e-25_realtype
+        max9 = 1.e-25_realtype
       end if
-      tmp = one/max3
-      call pushreal8(sx)
-      sx = sx*tmp
-      call pushreal8(sy)
-      sy = sy*tmp
-      call pushreal8(sz)
-      sz = sz*tmp
+      tmp = one/max9
+      sx = sk(i, j, k, 1)*tmp
+      sy = sk(i, j, k, 2)*tmp
+      sz = sk(i, j, k, 3)*tmp
       alphaavg = half*(uavg**2+vavg**2+wavg**2)
       havg = alphaavg + ovgm1*(a2avg-gm53*kavg)
       aavg = sqrt(a2avg)
@@ -821,34 +823,31 @@ subroutine invisciddissfluxmatrix_b()
       end if
       rrad = lam3 + aavg
       if (lam1 .lt. epsacoustic*rrad) then
-        lam1 = epsacoustic*rrad
+        max10 = epsacoustic*rrad
         call pushcontrol1b(0)
       else
-        call pushcontrol1b(1)
-        lam1 = lam1
-      end if
-      if (lam2 .lt. epsacoustic*rrad) then
-        lam2 = epsacoustic*rrad
-        call pushcontrol1b(0)
-      else
-        call pushcontrol1b(1)
-        lam2 = lam2
-      end if
-      if (lam3 .lt. epsshear*rrad) then
-        lam3 = epsshear*rrad
-        call pushcontrol1b(0)
-      else
-        lam3 = lam3
+        max10 = lam1
         call pushcontrol1b(1)
       end if
 ! multiply the eigenvalues by the area to obtain
 ! the correct values for the dissipation term.
-      call pushreal8(lam1)
-      lam1 = lam1*area
-      call pushreal8(lam2)
-      lam2 = lam2*area
-      call pushreal8(lam3)
-      lam3 = lam3*area
+      lam1 = max10*area
+      if (lam2 .lt. epsacoustic*rrad) then
+        max11 = epsacoustic*rrad
+        call pushcontrol1b(0)
+      else
+        max11 = lam2
+        call pushcontrol1b(1)
+      end if
+      lam2 = max11*area
+      if (lam3 .lt. epsshear*rrad) then
+        max12 = epsshear*rrad
+        call pushcontrol1b(0)
+      else
+        max12 = lam3
+        call pushcontrol1b(1)
+      end if
+      lam3 = max12*area
 ! some abbreviations, which occur quite often in the
 ! dissipation terms.
       abv1 = half*(lam1+lam2)
@@ -919,29 +918,33 @@ subroutine invisciddissfluxmatrix_b()
       abv1d = abv3d
       lam1d = half*abv1d + half*abv2d
       lam2d = half*abv1d - half*abv2d
-      call popreal8(lam3)
-      call popreal8(lam2)
-      call popreal8(lam1)
-      aread = lam2*lam2d + lam1*lam1d + lam3*lam3d
-      lam3d = area*lam3d
-      lam2d = area*lam2d
-      lam1d = area*lam1d
+      max12d = area*lam3d
+      aread = max12*lam3d
       call popcontrol1b(branch)
       if (branch .eq. 0) then
-        rradd = epsshear*lam3d
+        rradd = epsshear*max12d
         lam3d = 0.0_8
       else
+        lam3d = max12d
         rradd = 0.0_8
       end if
+      max11d = area*lam2d
+      aread = aread + max11*lam2d
       call popcontrol1b(branch)
       if (branch .eq. 0) then
-        rradd = rradd + epsacoustic*lam2d
+        rradd = rradd + epsacoustic*max11d
         lam2d = 0.0_8
+      else
+        lam2d = max11d
       end if
+      max10d = area*lam1d
+      aread = aread + max10*lam1d
       call popcontrol1b(branch)
       if (branch .eq. 0) then
-        rradd = rradd + epsacoustic*lam1d
+        rradd = rradd + epsacoustic*max10d
         lam1d = 0.0_8
+      else
+        lam1d = max10d
       end if
       lam3d = lam3d + rradd
       aavgd = rradd
@@ -996,36 +999,34 @@ subroutine invisciddissfluxmatrix_b()
       wavgd = wavgd + 2*wavg*tempd39 + sz*unavgd
       szd = szd + wavg*unavgd
       kavgd = -(ovgm1*gm53*havgd)
-      call popreal8(sz)
-      call popreal8(sy)
-      call popreal8(sx)
-      tmpd = tmpd + sy*syd + sx*sxd + sz*szd
-      szd = tmp*szd
-      syd = tmp*syd
-      sxd = tmp*sxd
-      max3d = -(one*tmpd/max3**2)
+      skd(i, j, k, 3) = skd(i, j, k, 3) + tmp*szd
+      tmpd = tmpd + sk(i, j, k, 2)*syd + sk(i, j, k, 1)*sxd + sk(i, j, k&
+&       , 3)*szd
+      skd(i, j, k, 2) = skd(i, j, k, 2) + tmp*syd
+      skd(i, j, k, 1) = skd(i, j, k, 1) + tmp*sxd
+      max9d = -(one*tmpd/max9**2)
       call popcontrol1b(branch)
-      if (branch .eq. 0) aread = aread + max3d
-      if (sx**2 + sy**2 + sz**2 .eq. 0.0_8) then
+      if (branch .eq. 0) aread = aread + max9d
+      temp64 = sk(i, j, k, 3)
+      temp63 = sk(i, j, k, 2)
+      temp62 = sk(i, j, k, 1)
+      if (temp62**2 + temp63**2 + temp64**2 .eq. 0.0_8) then
         tempd36 = 0.0
       else
-        tempd36 = aread/(2.0*sqrt(sx**2+sy**2+sz**2))
+        tempd36 = aread/(2.0*sqrt(temp62**2+temp63**2+temp64**2))
       end if
-      sxd = sxd + 2*sx*tempd36
-      syd = syd + 2*sy*tempd36
-      szd = szd + 2*sz*tempd36
-      skd(i, j, k, 3) = skd(i, j, k, 3) + szd
-      skd(i, j, k, 2) = skd(i, j, k, 2) + syd
-      skd(i, j, k, 1) = skd(i, j, k, 1) + sxd
-      temp55 = w(i, j, k, irho)
-      temp54 = w(i, j, k+1, irho)
-      tempd37 = gamma(i, j, k+1)*half*a2avgd/temp54
-      tempd38 = gamma(i, j, k)*half*a2avgd/temp55
+      skd(i, j, k, 1) = skd(i, j, k, 1) + 2*temp62*tempd36
+      skd(i, j, k, 2) = skd(i, j, k, 2) + 2*temp63*tempd36
+      skd(i, j, k, 3) = skd(i, j, k, 3) + 2*temp64*tempd36
+      temp61 = w(i, j, k, irho)
+      temp60 = w(i, j, k+1, irho)
+      tempd37 = gamma(i, j, k+1)*half*a2avgd/temp60
+      tempd38 = gamma(i, j, k)*half*a2avgd/temp61
       pd(i, j, k+1) = pd(i, j, k+1) + tempd37
       wd(i, j, k+1, irho) = wd(i, j, k+1, irho) - p(i, j, k+1)*tempd37/&
-&       temp54
+&       temp60
       pd(i, j, k) = pd(i, j, k) + tempd38
-      wd(i, j, k, irho) = wd(i, j, k, irho) - p(i, j, k)*tempd38/temp55
+      wd(i, j, k, irho) = wd(i, j, k, irho) - p(i, j, k)*tempd38/temp61
       wd(i, j, k+1, ivz) = wd(i, j, k+1, ivz) + half*wavgd
       wd(i, j, k, ivz) = wd(i, j, k, ivz) + half*wavgd
       wd(i, j, k+1, ivy) = wd(i, j, k+1, ivy) + half*vavgd
@@ -1039,18 +1040,18 @@ subroutine invisciddissfluxmatrix_b()
       else
         wd(i, j, k+1, itu1) = wd(i, j, k+1, itu1) + half*kavgd
         wd(i, j, k, itu1) = wd(i, j, k, itu1) + half*kavgd
-        temp53 = w(i, j, k-1, itu1)
-        temp52 = w(i, j, k-1, irho)
-        temp51 = w(i, j, k+2, itu1)
-        temp50 = w(i, j, k+2, irho)
+        temp59 = w(i, j, k-1, itu1)
+        temp58 = w(i, j, k-1, irho)
+        temp57 = w(i, j, k+2, itu1)
+        temp56 = w(i, j, k+2, irho)
         tempd35 = -(dis4*drkd)
         dis2d = ddw6*drkd
         ddw6d = dis2*drkd - three*tempd35
-        dis4d = -((temp50*temp51-temp52*temp53-three*ddw6)*drkd)
-        wd(i, j, k+2, irho) = wd(i, j, k+2, irho) + temp51*tempd35
-        wd(i, j, k+2, itu1) = wd(i, j, k+2, itu1) + temp50*tempd35
-        wd(i, j, k-1, irho) = wd(i, j, k-1, irho) - temp53*tempd35
-        wd(i, j, k-1, itu1) = wd(i, j, k-1, itu1) - temp52*tempd35
+        dis4d = -((temp56*temp57-temp58*temp59-three*ddw6)*drkd)
+        wd(i, j, k+2, irho) = wd(i, j, k+2, irho) + temp57*tempd35
+        wd(i, j, k+2, itu1) = wd(i, j, k+2, itu1) + temp56*tempd35
+        wd(i, j, k-1, irho) = wd(i, j, k-1, irho) - temp59*tempd35
+        wd(i, j, k-1, itu1) = wd(i, j, k-1, itu1) - temp58*tempd35
         wd(i, j, k+1, irho) = wd(i, j, k+1, irho) + w(i, j, k+1, itu1)*&
 &         ddw6d
         wd(i, j, k+1, itu1) = wd(i, j, k+1, itu1) + w(i, j, k+1, irho)*&
@@ -1058,26 +1059,26 @@ subroutine invisciddissfluxmatrix_b()
         wd(i, j, k, irho) = wd(i, j, k, irho) - w(i, j, k, itu1)*ddw6d
         wd(i, j, k, itu1) = wd(i, j, k, itu1) - w(i, j, k, irho)*ddw6d
       end if
-      temp38 = w(i, j, k+2, irho)
-      temp39 = w(i, j, k+2, ivx)
-      temp40 = w(i, j, k-1, irho)
-      temp41 = w(i, j, k-1, ivx)
-      temp42 = w(i, j, k+2, irho)
-      temp43 = w(i, j, k+2, ivy)
-      temp44 = w(i, j, k-1, irho)
-      temp45 = w(i, j, k-1, ivy)
-      temp46 = w(i, j, k+2, irho)
-      temp47 = w(i, j, k+2, ivz)
-      temp48 = w(i, j, k-1, irho)
-      temp49 = w(i, j, k-1, ivz)
+      temp44 = w(i, j, k+2, irho)
+      temp45 = w(i, j, k+2, ivx)
+      temp46 = w(i, j, k-1, irho)
+      temp47 = w(i, j, k-1, ivx)
+      temp48 = w(i, j, k+2, irho)
+      temp49 = w(i, j, k+2, ivy)
+      temp50 = w(i, j, k-1, irho)
+      temp51 = w(i, j, k-1, ivy)
+      temp52 = w(i, j, k+2, irho)
+      temp53 = w(i, j, k+2, ivz)
+      temp54 = w(i, j, k-1, irho)
+      temp55 = w(i, j, k-1, ivz)
       tempd30 = -(dis4*dred)
       dis2d = dis2d + ddw4*drwd + ddw2*drud + ddw1*drd + ddw3*drvd + &
 &       ddw5*dred
       ddw5d = dis2*dred - three*tempd30
-      dis4d = dis4d - (temp46*temp47-temp48*temp49-three*ddw4)*drwd - (&
-&       temp38*temp39-temp40*temp41-three*ddw2)*drud - (w(i, j, k+2, &
-&       irho)-w(i, j, k-1, irho)-three*ddw1)*drd - (temp42*temp43-temp44&
-&       *temp45-three*ddw3)*drvd - (w(i, j, k+2, irhoe)-w(i, j, k-1, &
+      dis4d = dis4d - (temp52*temp53-temp54*temp55-three*ddw4)*drwd - (&
+&       temp44*temp45-temp46*temp47-three*ddw2)*drud - (w(i, j, k+2, &
+&       irho)-w(i, j, k-1, irho)-three*ddw1)*drd - (temp48*temp49-temp50&
+&       *temp51-three*ddw3)*drvd - (w(i, j, k+2, irhoe)-w(i, j, k-1, &
 &       irhoe)-three*ddw5)*dred
       wd(i, j, k+2, irhoe) = wd(i, j, k+2, irhoe) + tempd30
       wd(i, j, k-1, irhoe) = wd(i, j, k-1, irhoe) - tempd30
@@ -1085,10 +1086,10 @@ subroutine invisciddissfluxmatrix_b()
       wd(i, j, k, irhoe) = wd(i, j, k, irhoe) - ddw5d
       tempd31 = -(dis4*drwd)
       ddw4d = dis2*drwd - three*tempd31
-      wd(i, j, k+2, irho) = wd(i, j, k+2, irho) + temp47*tempd31
-      wd(i, j, k+2, ivz) = wd(i, j, k+2, ivz) + temp46*tempd31
-      wd(i, j, k-1, irho) = wd(i, j, k-1, irho) - temp49*tempd31
-      wd(i, j, k-1, ivz) = wd(i, j, k-1, ivz) - temp48*tempd31
+      wd(i, j, k+2, irho) = wd(i, j, k+2, irho) + temp53*tempd31
+      wd(i, j, k+2, ivz) = wd(i, j, k+2, ivz) + temp52*tempd31
+      wd(i, j, k-1, irho) = wd(i, j, k-1, irho) - temp55*tempd31
+      wd(i, j, k-1, ivz) = wd(i, j, k-1, ivz) - temp54*tempd31
       wd(i, j, k+1, irho) = wd(i, j, k+1, irho) + w(i, j, k+1, ivz)*&
 &       ddw4d
       wd(i, j, k+1, ivz) = wd(i, j, k+1, ivz) + w(i, j, k+1, irho)*ddw4d
@@ -1096,10 +1097,10 @@ subroutine invisciddissfluxmatrix_b()
       wd(i, j, k, ivz) = wd(i, j, k, ivz) - w(i, j, k, irho)*ddw4d
       tempd32 = -(dis4*drvd)
       ddw3d = dis2*drvd - three*tempd32
-      wd(i, j, k+2, irho) = wd(i, j, k+2, irho) + temp43*tempd32
-      wd(i, j, k+2, ivy) = wd(i, j, k+2, ivy) + temp42*tempd32
-      wd(i, j, k-1, irho) = wd(i, j, k-1, irho) - temp45*tempd32
-      wd(i, j, k-1, ivy) = wd(i, j, k-1, ivy) - temp44*tempd32
+      wd(i, j, k+2, irho) = wd(i, j, k+2, irho) + temp49*tempd32
+      wd(i, j, k+2, ivy) = wd(i, j, k+2, ivy) + temp48*tempd32
+      wd(i, j, k-1, irho) = wd(i, j, k-1, irho) - temp51*tempd32
+      wd(i, j, k-1, ivy) = wd(i, j, k-1, ivy) - temp50*tempd32
       wd(i, j, k+1, irho) = wd(i, j, k+1, irho) + w(i, j, k+1, ivy)*&
 &       ddw3d
       wd(i, j, k+1, ivy) = wd(i, j, k+1, ivy) + w(i, j, k+1, irho)*ddw3d
@@ -1107,10 +1108,10 @@ subroutine invisciddissfluxmatrix_b()
       wd(i, j, k, ivy) = wd(i, j, k, ivy) - w(i, j, k, irho)*ddw3d
       tempd33 = -(dis4*drud)
       ddw2d = dis2*drud - three*tempd33
-      wd(i, j, k+2, irho) = wd(i, j, k+2, irho) + temp39*tempd33
-      wd(i, j, k+2, ivx) = wd(i, j, k+2, ivx) + temp38*tempd33
-      wd(i, j, k-1, irho) = wd(i, j, k-1, irho) - temp41*tempd33
-      wd(i, j, k-1, ivx) = wd(i, j, k-1, ivx) - temp40*tempd33
+      wd(i, j, k+2, irho) = wd(i, j, k+2, irho) + temp45*tempd33
+      wd(i, j, k+2, ivx) = wd(i, j, k+2, ivx) + temp44*tempd33
+      wd(i, j, k-1, irho) = wd(i, j, k-1, irho) - temp47*tempd33
+      wd(i, j, k-1, ivx) = wd(i, j, k-1, ivx) - temp46*tempd33
       wd(i, j, k+1, irho) = wd(i, j, k+1, irho) + w(i, j, k+1, ivx)*&
 &       ddw2d
       wd(i, j, k+1, ivx) = wd(i, j, k+1, ivx) + w(i, j, k+1, irho)*ddw2d
@@ -1138,11 +1139,7 @@ subroutine invisciddissfluxmatrix_b()
         dssd(i, j, k, 3) = dssd(i, j, k, 3) + y3d
       end if
     end do
-    call popreal8(sz)
-    call popreal8(sy)
-    call popreal8(sx)
     call popreal8(ppor)
-    call popreal8(lam3)
     call popreal8(a2avg)
     call popreal8(drw)
     call popreal8(drv)
@@ -1157,8 +1154,6 @@ subroutine invisciddissfluxmatrix_b()
     call popreal8(dis2)
     call popreal8(abv4)
     call popreal8(dr)
-    call popreal8(abv3)
-    call popreal8(abv2)
     call popreal8(area)
     call popinteger4(j)
     call popinteger4(i)
@@ -1236,24 +1231,19 @@ subroutine invisciddissfluxmatrix_b()
       wavg = half*(w(i, j+1, k, ivz)+w(i, j, k, ivz))
       a2avg = half*(gamma(i, j+1, k)*p(i, j+1, k)/w(i, j+1, k, irho)+&
 &       gamma(i, j, k)*p(i, j, k)/w(i, j, k, irho))
-      sx = sj(i, j, k, 1)
-      sy = sj(i, j, k, 2)
-      sz = sj(i, j, k, 3)
-      area = sqrt(sx**2 + sy**2 + sz**2)
+      area = sqrt(sj(i, j, k, 1)**2 + sj(i, j, k, 2)**2 + sj(i, j, k, 3)&
+&       **2)
       if (1.e-25_realtype .lt. area) then
-        max2 = area
+        max5 = area
         call pushcontrol1b(0)
       else
         call pushcontrol1b(1)
-        max2 = 1.e-25_realtype
+        max5 = 1.e-25_realtype
       end if
-      tmp = one/max2
-      call pushreal8(sx)
-      sx = sx*tmp
-      call pushreal8(sy)
-      sy = sy*tmp
-      call pushreal8(sz)
-      sz = sz*tmp
+      tmp = one/max5
+      sx = sj(i, j, k, 1)*tmp
+      sy = sj(i, j, k, 2)*tmp
+      sz = sj(i, j, k, 3)*tmp
       alphaavg = half*(uavg**2+vavg**2+wavg**2)
       havg = alphaavg + ovgm1*(a2avg-gm53*kavg)
       aavg = sqrt(a2avg)
@@ -1291,34 +1281,31 @@ subroutine invisciddissfluxmatrix_b()
       end if
       rrad = lam3 + aavg
       if (lam1 .lt. epsacoustic*rrad) then
-        lam1 = epsacoustic*rrad
+        max6 = epsacoustic*rrad
         call pushcontrol1b(0)
       else
-        call pushcontrol1b(1)
-        lam1 = lam1
-      end if
-      if (lam2 .lt. epsacoustic*rrad) then
-        lam2 = epsacoustic*rrad
-        call pushcontrol1b(0)
-      else
-        call pushcontrol1b(1)
-        lam2 = lam2
-      end if
-      if (lam3 .lt. epsshear*rrad) then
-        lam3 = epsshear*rrad
-        call pushcontrol1b(0)
-      else
-        lam3 = lam3
+        max6 = lam1
         call pushcontrol1b(1)
       end if
 ! multiply the eigenvalues by the area to obtain
 ! the correct values for the dissipation term.
-      call pushreal8(lam1)
-      lam1 = lam1*area
-      call pushreal8(lam2)
-      lam2 = lam2*area
-      call pushreal8(lam3)
-      lam3 = lam3*area
+      lam1 = max6*area
+      if (lam2 .lt. epsacoustic*rrad) then
+        max7 = epsacoustic*rrad
+        call pushcontrol1b(0)
+      else
+        max7 = lam2
+        call pushcontrol1b(1)
+      end if
+      lam2 = max7*area
+      if (lam3 .lt. epsshear*rrad) then
+        max8 = epsshear*rrad
+        call pushcontrol1b(0)
+      else
+        max8 = lam3
+        call pushcontrol1b(1)
+      end if
+      lam3 = max8*area
 ! some abbreviations, which occur quite often in the
 ! dissipation terms.
       abv1 = half*(lam1+lam2)
@@ -1389,29 +1376,33 @@ subroutine invisciddissfluxmatrix_b()
       abv1d = abv3d
       lam1d = half*abv1d + half*abv2d
       lam2d = half*abv1d - half*abv2d
-      call popreal8(lam3)
-      call popreal8(lam2)
-      call popreal8(lam1)
-      aread = lam2*lam2d + lam1*lam1d + lam3*lam3d
-      lam3d = area*lam3d
-      lam2d = area*lam2d
-      lam1d = area*lam1d
+      max8d = area*lam3d
+      aread = max8*lam3d
       call popcontrol1b(branch)
       if (branch .eq. 0) then
-        rradd = epsshear*lam3d
+        rradd = epsshear*max8d
         lam3d = 0.0_8
       else
+        lam3d = max8d
         rradd = 0.0_8
       end if
+      max7d = area*lam2d
+      aread = aread + max7*lam2d
       call popcontrol1b(branch)
       if (branch .eq. 0) then
-        rradd = rradd + epsacoustic*lam2d
+        rradd = rradd + epsacoustic*max7d
         lam2d = 0.0_8
+      else
+        lam2d = max7d
       end if
+      max6d = area*lam1d
+      aread = aread + max6*lam1d
       call popcontrol1b(branch)
       if (branch .eq. 0) then
-        rradd = rradd + epsacoustic*lam1d
+        rradd = rradd + epsacoustic*max6d
         lam1d = 0.0_8
+      else
+        lam1d = max6d
       end if
       lam3d = lam3d + rradd
       aavgd = rradd
@@ -1466,36 +1457,34 @@ subroutine invisciddissfluxmatrix_b()
       wavgd = wavgd + 2*wavg*tempd28 + sz*unavgd
       szd = szd + wavg*unavgd
       kavgd = -(ovgm1*gm53*havgd)
-      call popreal8(sz)
-      call popreal8(sy)
-      call popreal8(sx)
-      tmpd = tmpd + sy*syd + sx*sxd + sz*szd
-      szd = tmp*szd
-      syd = tmp*syd
-      sxd = tmp*sxd
-      max2d = -(one*tmpd/max2**2)
+      sjd(i, j, k, 3) = sjd(i, j, k, 3) + tmp*szd
+      tmpd = tmpd + sj(i, j, k, 2)*syd + sj(i, j, k, 1)*sxd + sj(i, j, k&
+&       , 3)*szd
+      sjd(i, j, k, 2) = sjd(i, j, k, 2) + tmp*syd
+      sjd(i, j, k, 1) = sjd(i, j, k, 1) + tmp*sxd
+      max5d = -(one*tmpd/max5**2)
       call popcontrol1b(branch)
-      if (branch .eq. 0) aread = aread + max2d
-      if (sx**2 + sy**2 + sz**2 .eq. 0.0_8) then
+      if (branch .eq. 0) aread = aread + max5d
+      temp43 = sj(i, j, k, 3)
+      temp42 = sj(i, j, k, 2)
+      temp41 = sj(i, j, k, 1)
+      if (temp41**2 + temp42**2 + temp43**2 .eq. 0.0_8) then
         tempd25 = 0.0
       else
-        tempd25 = aread/(2.0*sqrt(sx**2+sy**2+sz**2))
+        tempd25 = aread/(2.0*sqrt(temp41**2+temp42**2+temp43**2))
       end if
-      sxd = sxd + 2*sx*tempd25
-      syd = syd + 2*sy*tempd25
-      szd = szd + 2*sz*tempd25
-      sjd(i, j, k, 3) = sjd(i, j, k, 3) + szd
-      sjd(i, j, k, 2) = sjd(i, j, k, 2) + syd
-      sjd(i, j, k, 1) = sjd(i, j, k, 1) + sxd
-      temp37 = w(i, j, k, irho)
-      temp36 = w(i, j+1, k, irho)
-      tempd26 = gamma(i, j+1, k)*half*a2avgd/temp36
-      tempd27 = gamma(i, j, k)*half*a2avgd/temp37
+      sjd(i, j, k, 1) = sjd(i, j, k, 1) + 2*temp41*tempd25
+      sjd(i, j, k, 2) = sjd(i, j, k, 2) + 2*temp42*tempd25
+      sjd(i, j, k, 3) = sjd(i, j, k, 3) + 2*temp43*tempd25
+      temp40 = w(i, j, k, irho)
+      temp39 = w(i, j+1, k, irho)
+      tempd26 = gamma(i, j+1, k)*half*a2avgd/temp39
+      tempd27 = gamma(i, j, k)*half*a2avgd/temp40
       pd(i, j+1, k) = pd(i, j+1, k) + tempd26
       wd(i, j+1, k, irho) = wd(i, j+1, k, irho) - p(i, j+1, k)*tempd26/&
-&       temp36
+&       temp39
       pd(i, j, k) = pd(i, j, k) + tempd27
-      wd(i, j, k, irho) = wd(i, j, k, irho) - p(i, j, k)*tempd27/temp37
+      wd(i, j, k, irho) = wd(i, j, k, irho) - p(i, j, k)*tempd27/temp40
       wd(i, j+1, k, ivz) = wd(i, j+1, k, ivz) + half*wavgd
       wd(i, j, k, ivz) = wd(i, j, k, ivz) + half*wavgd
       wd(i, j+1, k, ivy) = wd(i, j+1, k, ivy) + half*vavgd
@@ -1509,18 +1498,18 @@ subroutine invisciddissfluxmatrix_b()
       else
         wd(i, j, k, itu1) = wd(i, j, k, itu1) + half*kavgd
         wd(i, j+1, k, itu1) = wd(i, j+1, k, itu1) + half*kavgd
-        temp35 = w(i, j-1, k, itu1)
-        temp34 = w(i, j-1, k, irho)
-        temp33 = w(i, j+2, k, itu1)
-        temp32 = w(i, j+2, k, irho)
+        temp38 = w(i, j-1, k, itu1)
+        temp37 = w(i, j-1, k, irho)
+        temp36 = w(i, j+2, k, itu1)
+        temp35 = w(i, j+2, k, irho)
         tempd24 = -(dis4*drkd)
         dis2d = ddw6*drkd
         ddw6d = dis2*drkd - three*tempd24
-        dis4d = -((temp32*temp33-temp34*temp35-three*ddw6)*drkd)
-        wd(i, j+2, k, irho) = wd(i, j+2, k, irho) + temp33*tempd24
-        wd(i, j+2, k, itu1) = wd(i, j+2, k, itu1) + temp32*tempd24
-        wd(i, j-1, k, irho) = wd(i, j-1, k, irho) - temp35*tempd24
-        wd(i, j-1, k, itu1) = wd(i, j-1, k, itu1) - temp34*tempd24
+        dis4d = -((temp35*temp36-temp37*temp38-three*ddw6)*drkd)
+        wd(i, j+2, k, irho) = wd(i, j+2, k, irho) + temp36*tempd24
+        wd(i, j+2, k, itu1) = wd(i, j+2, k, itu1) + temp35*tempd24
+        wd(i, j-1, k, irho) = wd(i, j-1, k, irho) - temp38*tempd24
+        wd(i, j-1, k, itu1) = wd(i, j-1, k, itu1) - temp37*tempd24
         wd(i, j+1, k, irho) = wd(i, j+1, k, irho) + w(i, j+1, k, itu1)*&
 &         ddw6d
         wd(i, j+1, k, itu1) = wd(i, j+1, k, itu1) + w(i, j+1, k, irho)*&
@@ -1528,26 +1517,26 @@ subroutine invisciddissfluxmatrix_b()
         wd(i, j, k, irho) = wd(i, j, k, irho) - w(i, j, k, itu1)*ddw6d
         wd(i, j, k, itu1) = wd(i, j, k, itu1) - w(i, j, k, irho)*ddw6d
       end if
-      temp20 = w(i, j+2, k, irho)
-      temp21 = w(i, j+2, k, ivx)
-      temp22 = w(i, j-1, k, irho)
-      temp23 = w(i, j-1, k, ivx)
-      temp24 = w(i, j+2, k, irho)
-      temp25 = w(i, j+2, k, ivy)
-      temp26 = w(i, j-1, k, irho)
-      temp27 = w(i, j-1, k, ivy)
-      temp28 = w(i, j+2, k, irho)
-      temp29 = w(i, j+2, k, ivz)
-      temp30 = w(i, j-1, k, irho)
-      temp31 = w(i, j-1, k, ivz)
+      temp23 = w(i, j+2, k, irho)
+      temp24 = w(i, j+2, k, ivx)
+      temp25 = w(i, j-1, k, irho)
+      temp26 = w(i, j-1, k, ivx)
+      temp27 = w(i, j+2, k, irho)
+      temp28 = w(i, j+2, k, ivy)
+      temp29 = w(i, j-1, k, irho)
+      temp30 = w(i, j-1, k, ivy)
+      temp31 = w(i, j+2, k, irho)
+      temp32 = w(i, j+2, k, ivz)
+      temp33 = w(i, j-1, k, irho)
+      temp34 = w(i, j-1, k, ivz)
       tempd19 = -(dis4*dred)
       dis2d = dis2d + ddw4*drwd + ddw2*drud + ddw1*drd + ddw3*drvd + &
 &       ddw5*dred
       ddw5d = dis2*dred - three*tempd19
-      dis4d = dis4d - (temp28*temp29-temp30*temp31-three*ddw4)*drwd - (&
-&       temp20*temp21-temp22*temp23-three*ddw2)*drud - (w(i, j+2, k, &
-&       irho)-w(i, j-1, k, irho)-three*ddw1)*drd - (temp24*temp25-temp26&
-&       *temp27-three*ddw3)*drvd - (w(i, j+2, k, irhoe)-w(i, j-1, k, &
+      dis4d = dis4d - (temp31*temp32-temp33*temp34-three*ddw4)*drwd - (&
+&       temp23*temp24-temp25*temp26-three*ddw2)*drud - (w(i, j+2, k, &
+&       irho)-w(i, j-1, k, irho)-three*ddw1)*drd - (temp27*temp28-temp29&
+&       *temp30-three*ddw3)*drvd - (w(i, j+2, k, irhoe)-w(i, j-1, k, &
 &       irhoe)-three*ddw5)*dred
       wd(i, j+2, k, irhoe) = wd(i, j+2, k, irhoe) + tempd19
       wd(i, j-1, k, irhoe) = wd(i, j-1, k, irhoe) - tempd19
@@ -1555,10 +1544,10 @@ subroutine invisciddissfluxmatrix_b()
       wd(i, j, k, irhoe) = wd(i, j, k, irhoe) - ddw5d
       tempd20 = -(dis4*drwd)
       ddw4d = dis2*drwd - three*tempd20
-      wd(i, j+2, k, irho) = wd(i, j+2, k, irho) + temp29*tempd20
-      wd(i, j+2, k, ivz) = wd(i, j+2, k, ivz) + temp28*tempd20
-      wd(i, j-1, k, irho) = wd(i, j-1, k, irho) - temp31*tempd20
-      wd(i, j-1, k, ivz) = wd(i, j-1, k, ivz) - temp30*tempd20
+      wd(i, j+2, k, irho) = wd(i, j+2, k, irho) + temp32*tempd20
+      wd(i, j+2, k, ivz) = wd(i, j+2, k, ivz) + temp31*tempd20
+      wd(i, j-1, k, irho) = wd(i, j-1, k, irho) - temp34*tempd20
+      wd(i, j-1, k, ivz) = wd(i, j-1, k, ivz) - temp33*tempd20
       wd(i, j+1, k, irho) = wd(i, j+1, k, irho) + w(i, j+1, k, ivz)*&
 &       ddw4d
       wd(i, j+1, k, ivz) = wd(i, j+1, k, ivz) + w(i, j+1, k, irho)*ddw4d
@@ -1566,10 +1555,10 @@ subroutine invisciddissfluxmatrix_b()
       wd(i, j, k, ivz) = wd(i, j, k, ivz) - w(i, j, k, irho)*ddw4d
       tempd21 = -(dis4*drvd)
       ddw3d = dis2*drvd - three*tempd21
-      wd(i, j+2, k, irho) = wd(i, j+2, k, irho) + temp25*tempd21
-      wd(i, j+2, k, ivy) = wd(i, j+2, k, ivy) + temp24*tempd21
-      wd(i, j-1, k, irho) = wd(i, j-1, k, irho) - temp27*tempd21
-      wd(i, j-1, k, ivy) = wd(i, j-1, k, ivy) - temp26*tempd21
+      wd(i, j+2, k, irho) = wd(i, j+2, k, irho) + temp28*tempd21
+      wd(i, j+2, k, ivy) = wd(i, j+2, k, ivy) + temp27*tempd21
+      wd(i, j-1, k, irho) = wd(i, j-1, k, irho) - temp30*tempd21
+      wd(i, j-1, k, ivy) = wd(i, j-1, k, ivy) - temp29*tempd21
       wd(i, j+1, k, irho) = wd(i, j+1, k, irho) + w(i, j+1, k, ivy)*&
 &       ddw3d
       wd(i, j+1, k, ivy) = wd(i, j+1, k, ivy) + w(i, j+1, k, irho)*ddw3d
@@ -1577,10 +1566,10 @@ subroutine invisciddissfluxmatrix_b()
       wd(i, j, k, ivy) = wd(i, j, k, ivy) - w(i, j, k, irho)*ddw3d
       tempd22 = -(dis4*drud)
       ddw2d = dis2*drud - three*tempd22
-      wd(i, j+2, k, irho) = wd(i, j+2, k, irho) + temp21*tempd22
-      wd(i, j+2, k, ivx) = wd(i, j+2, k, ivx) + temp20*tempd22
-      wd(i, j-1, k, irho) = wd(i, j-1, k, irho) - temp23*tempd22
-      wd(i, j-1, k, ivx) = wd(i, j-1, k, ivx) - temp22*tempd22
+      wd(i, j+2, k, irho) = wd(i, j+2, k, irho) + temp24*tempd22
+      wd(i, j+2, k, ivx) = wd(i, j+2, k, ivx) + temp23*tempd22
+      wd(i, j-1, k, irho) = wd(i, j-1, k, irho) - temp26*tempd22
+      wd(i, j-1, k, ivx) = wd(i, j-1, k, ivx) - temp25*tempd22
       wd(i, j+1, k, irho) = wd(i, j+1, k, irho) + w(i, j+1, k, ivx)*&
 &       ddw2d
       wd(i, j+1, k, ivx) = wd(i, j+1, k, ivx) + w(i, j+1, k, irho)*ddw2d
@@ -1608,11 +1597,7 @@ subroutine invisciddissfluxmatrix_b()
         dssd(i, j, k, 2) = dssd(i, j, k, 2) + y2d
       end if
     end do
-    call popreal8(sz)
-    call popreal8(sy)
-    call popreal8(sx)
     call popreal8(ppor)
-    call popreal8(lam3)
     call popreal8(a2avg)
     call popreal8(drw)
     call popreal8(drv)
@@ -1627,8 +1612,6 @@ subroutine invisciddissfluxmatrix_b()
     call popreal8(dis2)
     call popreal8(abv4)
     call popreal8(dr)
-    call popreal8(abv3)
-    call popreal8(abv2)
     call popreal8(area)
     call popinteger4(j)
     call popinteger4(i)
@@ -1706,10 +1689,8 @@ subroutine invisciddissfluxmatrix_b()
       wavg = half*(w(i+1, j, k, ivz)+w(i, j, k, ivz))
       a2avg = half*(gamma(i+1, j, k)*p(i+1, j, k)/w(i+1, j, k, irho)+&
 &       gamma(i, j, k)*p(i, j, k)/w(i, j, k, irho))
-      sx = si(i, j, k, 1)
-      sy = si(i, j, k, 2)
-      sz = si(i, j, k, 3)
-      area = sqrt(sx**2 + sy**2 + sz**2)
+      area = sqrt(si(i, j, k, 1)**2 + si(i, j, k, 2)**2 + si(i, j, k, 3)&
+&       **2)
       if (1.e-25_realtype .lt. area) then
         max1 = area
         call pushcontrol1b(0)
@@ -1718,12 +1699,9 @@ subroutine invisciddissfluxmatrix_b()
         max1 = 1.e-25_realtype
       end if
       tmp = one/max1
-      call pushreal8(sx)
-      sx = sx*tmp
-      call pushreal8(sy)
-      sy = sy*tmp
-      call pushreal8(sz)
-      sz = sz*tmp
+      sx = si(i, j, k, 1)*tmp
+      sy = si(i, j, k, 2)*tmp
+      sz = si(i, j, k, 3)*tmp
       alphaavg = half*(uavg**2+vavg**2+wavg**2)
       havg = alphaavg + ovgm1*(a2avg-gm53*kavg)
       aavg = sqrt(a2avg)
@@ -1761,34 +1739,31 @@ subroutine invisciddissfluxmatrix_b()
       end if
       rrad = lam3 + aavg
       if (lam1 .lt. epsacoustic*rrad) then
-        lam1 = epsacoustic*rrad
+        max2 = epsacoustic*rrad
         call pushcontrol1b(0)
       else
-        call pushcontrol1b(1)
-        lam1 = lam1
-      end if
-      if (lam2 .lt. epsacoustic*rrad) then
-        lam2 = epsacoustic*rrad
-        call pushcontrol1b(0)
-      else
-        call pushcontrol1b(1)
-        lam2 = lam2
-      end if
-      if (lam3 .lt. epsshear*rrad) then
-        lam3 = epsshear*rrad
-        call pushcontrol1b(0)
-      else
-        lam3 = lam3
+        max2 = lam1
         call pushcontrol1b(1)
       end if
 ! multiply the eigenvalues by the area to obtain
 ! the correct values for the dissipation term.
-      call pushreal8(lam1)
-      lam1 = lam1*area
-      call pushreal8(lam2)
-      lam2 = lam2*area
-      call pushreal8(lam3)
-      lam3 = lam3*area
+      lam1 = max2*area
+      if (lam2 .lt. epsacoustic*rrad) then
+        max3 = epsacoustic*rrad
+        call pushcontrol1b(0)
+      else
+        max3 = lam2
+        call pushcontrol1b(1)
+      end if
+      lam2 = max3*area
+      if (lam3 .lt. epsshear*rrad) then
+        max4 = epsshear*rrad
+        call pushcontrol1b(0)
+      else
+        max4 = lam3
+        call pushcontrol1b(1)
+      end if
+      lam3 = max4*area
 ! some abbreviations, which occur quite often in the
 ! dissipation terms.
       abv1 = half*(lam1+lam2)
@@ -1859,29 +1834,33 @@ subroutine invisciddissfluxmatrix_b()
       abv1d = abv3d
       lam1d = half*abv1d + half*abv2d
       lam2d = half*abv1d - half*abv2d
-      call popreal8(lam3)
-      call popreal8(lam2)
-      call popreal8(lam1)
-      aread = lam2*lam2d + lam1*lam1d + lam3*lam3d
-      lam3d = area*lam3d
-      lam2d = area*lam2d
-      lam1d = area*lam1d
+      max4d = area*lam3d
+      aread = max4*lam3d
       call popcontrol1b(branch)
       if (branch .eq. 0) then
-        rradd = epsshear*lam3d
+        rradd = epsshear*max4d
         lam3d = 0.0_8
       else
+        lam3d = max4d
         rradd = 0.0_8
       end if
+      max3d = area*lam2d
+      aread = aread + max3*lam2d
       call popcontrol1b(branch)
       if (branch .eq. 0) then
-        rradd = rradd + epsacoustic*lam2d
+        rradd = rradd + epsacoustic*max3d
         lam2d = 0.0_8
+      else
+        lam2d = max3d
       end if
+      max2d = area*lam1d
+      aread = aread + max2*lam1d
       call popcontrol1b(branch)
       if (branch .eq. 0) then
-        rradd = rradd + epsacoustic*lam1d
+        rradd = rradd + epsacoustic*max2d
         lam1d = 0.0_8
+      else
+        lam1d = max2d
       end if
       lam3d = lam3d + rradd
       aavgd = rradd
@@ -1936,27 +1915,25 @@ subroutine invisciddissfluxmatrix_b()
       wavgd = wavgd + 2*wavg*tempd17 + sz*unavgd
       szd = szd + wavg*unavgd
       kavgd = -(ovgm1*gm53*havgd)
-      call popreal8(sz)
-      call popreal8(sy)
-      call popreal8(sx)
-      tmpd = tmpd + sy*syd + sx*sxd + sz*szd
-      szd = tmp*szd
-      syd = tmp*syd
-      sxd = tmp*sxd
+      sid(i, j, k, 3) = sid(i, j, k, 3) + tmp*szd
+      tmpd = tmpd + si(i, j, k, 2)*syd + si(i, j, k, 1)*sxd + si(i, j, k&
+&       , 3)*szd
+      sid(i, j, k, 2) = sid(i, j, k, 2) + tmp*syd
+      sid(i, j, k, 1) = sid(i, j, k, 1) + tmp*sxd
       max1d = -(one*tmpd/max1**2)
       call popcontrol1b(branch)
       if (branch .eq. 0) aread = aread + max1d
-      if (sx**2 + sy**2 + sz**2 .eq. 0.0_8) then
+      temp22 = si(i, j, k, 3)
+      temp21 = si(i, j, k, 2)
+      temp20 = si(i, j, k, 1)
+      if (temp20**2 + temp21**2 + temp22**2 .eq. 0.0_8) then
         tempd14 = 0.0
       else
-        tempd14 = aread/(2.0*sqrt(sx**2+sy**2+sz**2))
+        tempd14 = aread/(2.0*sqrt(temp20**2+temp21**2+temp22**2))
       end if
-      sxd = sxd + 2*sx*tempd14
-      syd = syd + 2*sy*tempd14
-      szd = szd + 2*sz*tempd14
-      sid(i, j, k, 3) = sid(i, j, k, 3) + szd
-      sid(i, j, k, 2) = sid(i, j, k, 2) + syd
-      sid(i, j, k, 1) = sid(i, j, k, 1) + sxd
+      sid(i, j, k, 1) = sid(i, j, k, 1) + 2*temp20*tempd14
+      sid(i, j, k, 2) = sid(i, j, k, 2) + 2*temp21*tempd14
+      sid(i, j, k, 3) = sid(i, j, k, 3) + 2*temp22*tempd14
       temp19 = w(i, j, k, irho)
       temp18 = w(i+1, j, k, irho)
       tempd15 = gamma(i+1, j, k)*half*a2avgd/temp18

@@ -18,8 +18,8 @@
 !      ******************************************************************
 !
        use constants
-       use iteration
-       use monitor
+       use monitor, only : nTimeStepsRestart, timeUnsteadyRestart, &
+            timeUnsteady, timeStepUnsteady
        implicit none
 !
 !      Local variables
