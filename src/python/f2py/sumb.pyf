@@ -21,9 +21,7 @@ python module libsumb
        subroutine writeintromessage ! in :sumb:../../utils/initExec.F90
        end subroutine writeintromessage
        
-       subroutine readparamfile ! in :sumb:../../inputParam/readParamFile.f90
-       end subroutine readparamfile
-       
+      
        subroutine setdefaultvalues()
        end subroutine setdefaultvalues
 
@@ -124,9 +122,6 @@ python module libsumb
 
        subroutine referencestate
        end subroutine referencestate
-
-       subroutine setflowinfinitystate
-       end subroutine setflowinfinitystate
 
        subroutine updatereferencepoint
        end subroutine updatereferencepoint
@@ -884,7 +879,6 @@ python module libsumb
          logical :: changing_grid
          logical :: deforming_grid
          logical :: changingoverset
-         logical optional :: pv3initialized=.false.
          integer(kind=inttype) :: noldsolavail
          integer(kind=inttype) :: noldlevels
          real(kind=realtype) allocatable,dimension(:) :: coeftime

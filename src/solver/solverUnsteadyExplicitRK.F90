@@ -298,12 +298,6 @@
 
          call initStageRK(1_intType)
 
-         ! Update PV3 solution if PV3 support is required.
-
-#ifdef USE_PV3
-         call pv_update(real(timeStepUnsteady,realPV3Type))
-#endif
-
          ! Determine whether or not solution files must be written.
 
          call checkWriteUnsteadyInLoop

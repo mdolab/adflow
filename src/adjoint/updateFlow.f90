@@ -30,7 +30,6 @@ subroutine updateFlow
   real(kind=realType), dimension(nSections) :: t
 
   call referenceState
-  call setFlowInfinityState
 
   groundlevel = 1
   do mm=1,nTimeIntervalsSpectral

@@ -167,19 +167,6 @@
 !
 !      ******************************************************************
 !      *                                                                *
-!      * Definition of the reals use by the visualization package PV3.  *
-!      * Note that PV3 expects all of its information to be passed back *
-!      * as 4-byte (float) reals.                                       *
-!      *                                                                *
-!      ******************************************************************
-!
-       integer(kind=4), private :: dummyIntPV3
-       real(kind=4),    private :: dummyRealPV3
-       integer, parameter       :: intPV3Type  = kind(dummyIntPV3)
-       integer, parameter       :: realPV3Type = kind(dummyRealPV3)
-!
-!      ******************************************************************
-!      *                                                                *
 !      * Set the parameter debug, depending on the compiler option.     *
 !      *                                                                *
 !      ******************************************************************

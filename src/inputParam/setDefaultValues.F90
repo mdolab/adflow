@@ -353,14 +353,6 @@
 !
 !      ******************************************************************
 !      *                                                                *
-!      * Visualization parameters.                                      *
-!      *                                                                *
-!      ******************************************************************
-!
-       PV3VisOnly = .false.    ! Perform an actual computation.
-!
-!      ******************************************************************
-!      *                                                                *
 !      * The reference state variables. Set them to -1, such that they  *
 !      * can be checked later on.                                       *
 !      *                                                                *
