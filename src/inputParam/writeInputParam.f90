@@ -158,8 +158,6 @@
          write(*,"(a)",advance="no") "#                  Turbulence &
                                         &model:"
          select case (turbModel)
-           case (baldwinLomax)
-             print "(a)", " Baldwin Lomax"
            case (spalartAllmaras)
              print "(a)", " Spalart Allmaras"
            case (spalartAllmarasEdwards)
