@@ -130,11 +130,6 @@
 
        call extractMgInfo
 
-       ! Set some iteration parameters, depending on the governing
-       ! equations to be solved and the iterative strategy to be used.
-
-       call setIterationParam
-
        ! If no monitoring variables were specified, set the default set.
        ! Idem for the surface and volume output variables.
 
