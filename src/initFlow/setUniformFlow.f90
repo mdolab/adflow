@@ -175,3 +175,97 @@
        endif testCorrection
 
        end subroutine setUniformFlow
+
+!=================================================================
+
+subroutine velMagnAndDirectionSubface(vmag, dir, BCData, mm)
+  !
+  !      ******************************************************************
+  !      *                                                                *
+  !      * VelMagnAndDirectionSubface determines the maximum value    *
+  !      * of the magnitude of the velocity as well as the sum of the     *
+  !      * flow directions for the currently active subface.              *
+  !      *                                                                *
+  !      ******************************************************************
+  !
+  use block
+  implicit none
+  !
+  !      Subroutine arguments.
+  !
+  integer(kind=intType), intent(in) :: mm
+
+  real(kind=realType), intent(out) :: vmag
+  real(kind=realType), dimension(3), intent(inout) :: dir
+
+  type(BCDataType), dimension(:), pointer :: BCData
+  !
+  !      Local variables.
+  !
+  integer(kind=intType) :: i, j
+  real(kind=realType)   :: vel
+  !
+  !      ******************************************************************
+  !      *                                                                *
+  !      * Begin execution                                                *
+  !      *                                                                *
+  !      ******************************************************************
+  !
+  ! Initialize vmag to -1.0.
+
+  vmag = -one
+
+  ! Check if the velocity is prescribed.
+
+  if( associated(BCData(mm)%velx) .and. &
+       associated(BCData(mm)%vely) .and. &
+       associated(BCData(mm)%velz) ) then
+
+     ! Loop over the owned faces of the subface. As the cell range
+     ! may contain halo values, the nodal range is used.
+
+     do j=(BCData(mm)%jnBeg+1),BCData(mm)%jnEnd
+        do i=(BCData(mm)%inBeg+1),BCData(mm)%inEnd
+
+           ! Compute the magnitude of the velocity and compare it
+           ! with the current maximum. Store the maximum of the two.
+
+           vel  = sqrt(BCData(mm)%velx(i,j)**2 &
+                +      BCData(mm)%vely(i,j)**2 &
+                +      BCData(mm)%velz(i,j)**2)
+           vmag = max(vmag, vel)
+
+           ! Compute the unit vector of the velocity and add it to dir.
+
+           vel    = one/max(eps,vel)
+           dir(1) = dir(1) + vel*BCData(mm)%velx(i,j)
+           dir(2) = dir(2) + vel*BCData(mm)%vely(i,j)
+           dir(3) = dir(3) + vel*BCData(mm)%velz(i,j)
+
+        enddo
+     enddo
+  endif
+
+  ! Check if the velocity direction is prescribed.
+
+  if( associated(BCData(mm)%flowXdirInlet) .and. &
+       associated(BCData(mm)%flowYdirInlet) .and. &
+       associated(BCData(mm)%flowZdirInlet) ) then
+
+     ! Add the unit vectors to dir by looping over the owned
+     ! faces of the subfaces. Again the nodal range must be
+     ! used for this.
+
+     do j=(BCData(mm)%jnBeg+1),BCData(mm)%jnEnd
+        do i=(BCData(mm)%inBeg+1),BCData(mm)%inEnd
+
+           dir(1) = dir(1) + BCData(mm)%flowXdirInlet(i,j)
+           dir(2) = dir(2) + BCData(mm)%flowYdirInlet(i,j)
+           dir(3) = dir(3) + BCData(mm)%flowZdirInlet(i,j)
+
+        enddo
+     enddo
+
+  endif
+
+end subroutine velMagnAndDirectionSubface

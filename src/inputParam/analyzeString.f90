@@ -1082,9 +1082,6 @@
          case ("reynolds length (in meter)")
            read(value,*) ReynoldsLength
 
-         case ("free stream temperature (in k)")
-           read(value,*) tempFreestream
-
          case ("constant specific heat ratio")
            read(value,*) gammaConstant
 

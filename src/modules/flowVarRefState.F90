@@ -63,7 +63,7 @@
        ! rhoInfDim: Free stream density in kg/m^3.
        ! muDim:     Free stream molecular viscosity in kg/(m s)
 
-       real(kind=realType) :: pInfDim, rhoInfDim, muDim
+       real(kind=realType) :: pInfDim, rhoInfDim, muDim, TinfDim, muInfDim
        !AD derivative values
 
        ! wInf(nw): Nondimensional free stream state vector.
@@ -87,16 +87,12 @@
 
 #ifndef USE_TAPENADE
        REAL(kind=realtype) :: prefd, rhorefd, trefd
-       REAL(kind=realtype) :: prefb, rhorefb, trefb
        REAL(kind=realtype) :: murefd, timerefd
-       REAL(kind=realtype) :: murefb, timerefb
-       REAL(kind=realtype) :: pinfdimd, rhoinfdimd
-       real(kind=realtype) :: mudimd, mudimb
+       REAL(kind=realtype) :: pinfdimd, rhoinfdimd, tinfdimd
+       real(kind=realtype) :: mudimd, muinfdimd
        REAL(kind=realtype) :: pinfdimb, rhoinfdimb
        REAL(kind=realtype) :: rhoinfd, uinfd, pinfd, pinfcorrd
-       REAL(kind=realtype) :: rhoinfb, uinfb, pinfb, pinfcorrb
        REAL(kind=realtype) :: rgasd, muinfd, gammainfd
-       REAL(kind=realtype) :: rgasb, muinfb, gammainfb
        real(kind=realType), dimension(:), allocatable :: wInfd, wInfb
 #endif
        ! viscous:   whether or not this is a viscous computation.

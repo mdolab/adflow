@@ -245,15 +245,6 @@
          call mpi_barrier(SUmb_comm_world, ierr)
        endif
 
-       if(equations == NSEquations .or. equations == RANSEquations) then
-         if(Reynolds < zero .and. flowType == externalFlow) then
-           if(myID == 0)                        &
-             call returnFail("checkInputParam", &
-                            "Reynolds not or wrongly specified")
-           call mpi_barrier(SUmb_comm_world, ierr)
-         endif
-       endif
-
        if(equations == RANSEquations .and. turbModel == none) then
          if(myID == 0)                        &
            call returnFail("checkInputParam", &
