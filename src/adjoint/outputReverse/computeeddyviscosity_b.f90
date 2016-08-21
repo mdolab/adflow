@@ -44,7 +44,7 @@ subroutine computeeddyviscosity_b()
 !
 ! check if an immediate return can be made.
   if (eddymodel) then
-    if (currentlevel .le. groundlevel .or. turbcoupled) then
+    if (currentlevel .le. groundlevel) then
       returnimmediately = .false.
     else
       returnimmediately = .true.

@@ -20,6 +20,7 @@
        use flowVarRefState
        use iteration
        use inputIteration
+       use inputPhysics
        implicit none
 !
 !      Local variables.
@@ -73,11 +74,6 @@
                  rkStage = 0
                  call timeStep(.false.)
 
-                 if( turbCoupled ) then
-                   call initres(nt1MG, nMGVar)
-                   call turbResidual
-                 endif
-
                  call initres(1_intType, nwf)
                  call residual
 
@@ -129,18 +125,15 @@
        ! Apply an iteration to the turbulent transport equations in
        ! case these must be solved segregatedly.
 
-       if( turbSegregated ) call turbSolveSegregated
+       if (equations == RANSEquations) then 
+          call turbSolveSegregated
+       end if
 
        ! Compute the time step.
 
        call timeStep(.false.)
 
        ! Compute the residual of the new solution on the ground level.
-
-       if( turbCoupled ) then
-         call initres(nt1MG, nMGVar)
-         call turbResidual
-       endif
 
        call initres(1_intType, nwf)
        call residual

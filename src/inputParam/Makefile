@@ -58,7 +58,6 @@ FILES_TO_COMPLEXIFY =localModules.f90\
 		 setDefaultValues.F90\
 		 setEquationParameters.f90\
 		 setIsoSurfaceValues.F90\
-		 setIterationParam.f90\
 		 setStageCoeffExplicitRK.f90\
 		 setStageCoeffImplicitRK.f90\
 		 surfaceVariables.f90\

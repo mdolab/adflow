@@ -60,20 +60,12 @@ contains
     logical, intent(in) :: secondHalo
 
     ! Local variables.
-    logical :: correctForK
+    logical :: correctForK, getCorrectForK
     integer(kind=intType) :: nn
     !
     ! Determine whether or not the total energy must be corrected
     ! for the presence of the turbulent kinetic energy.
-    if( kPresent ) then
-       if((currentLevel <= groundLevel) .or. turbCoupled) then
-          correctForK = .true.
-       else
-          correctForK = .false.
-       endif
-    else
-       correctForK = .false.
-    endif
+    correctForK = getCorrectForK()
 
     ! Apply all the boundary conditions. The order is important!  Only
     ! some of them have been AD'ed
@@ -333,13 +325,6 @@ contains
        ww1(i,j,ivz) = ww2(i,j,ivz) - vn*BCData(nn)%norm(i,j,3)
        ww1(i,j,irhoE) = ww2(i,j,irhoE)
        
-       ! Simply copy the turbulent variables.
-       
-       !$AD II-LOOP
-       do l=nt1MG,nt2MG
-          ww1(i,j,l) = ww2(i,j,l)
-       enddo
-       
        ! Set the pressure and gamma and possibly the
        ! laminar and eddy viscosity in the halo.
        
@@ -385,11 +370,6 @@ contains
        ww0(i,j,ivz) = ww3(i,j,ivz) - vn*BCData(nn)%norm(i,j,3)
        
        ww0(i,j,irhoE) = ww3(i,j,irhoE)
-       
-       !$AD II-LOOP
-       do l=nt1MG,nt2MG
-          ww0(i,j,l) = ww3(i,j,l)
-       enddo
        
        ! Set the pressure and gamma and possibly the
        ! laminar and eddy viscosity in the halo.
@@ -481,12 +461,6 @@ contains
           ww1(i,j,ivz)   = vtz - ww2(i,j,ivz)
           ww1(i,j,irhoE) = ww2(i,j,irhoE)
 
-          ! Simply copy the turbulent variables.
-
-          do l=nt1MG,nt2MG
-             ww1(i,j,l) = ww2(i,j,l)
-          enddo
-
           ! Set the pressure and possibly the laminar and
           ! eddy viscosity in the halo.
 
@@ -541,12 +515,6 @@ contains
           ww0(i,j,ivz)   = vtz - ww3(i,j,ivz)
           ww0(i,j,irhoE) = ww3(i,j,irhoE)
 
-          ! Simply copy the turbulent variables.
-
-          do l=nt1MG,nt2MG
-             ww0(i,j,l) = ww3(i,j,l)
-          enddo
-
           ! Set the pressure and possibly the laminar and
           ! eddy viscosity in the halo.
 
@@ -579,17 +547,6 @@ contains
     integer(kind=intType) :: i, j, ii
     real(kind=realType) :: rhok
     integer(kind=intType) :: wallTreatment
-
-    ! Apply the BCWall In case the turbulent transport equations are
-    ! solved together with the mean flow equations, aplly the viscous
-    ! wall boundary conditions for the turbulent variables.  No need
-    ! to extrapolate the secondary halo's, because this is done in
-    ! extrapolate2ndHalo. This is only necesssary when correcting for
-    ! K. *THIS IS NOT CURRENTLY INCLUDED IN AD. IT WILL BE REQUIRED
-    ! FOR THE 2-EQUATION TURBULENCE MODELS. 
-#ifndef USE_TAPENADE
-    if( turbCoupled ) call turbBCNSWall(.false.)
-#endif
 
     ! Initialize rhok to zero. This will be overwritten if a
     ! correction for k must be applied.
@@ -697,14 +654,6 @@ contains
     integer(kind=intType) :: wallTreatment
     real(kind=realType) :: rhok, t2, t1
 
-    ! In case the turbulent transport equations are solved
-    ! together with the mean flow equations, aplly the viscous
-    ! wall boundary conditions for the turbulent variables.
-    ! No need to extrapolate the secondary halo's, because this
-    ! is done in extrapolate2ndHalo.
-#ifndef USE_TAPENADE
-    if( turbCoupled ) call turbBCNSWall(.false.)
-#endif
     ! Initialize rhok to zero. This will be overwritten if a
     ! correction for k must be applied.
 
@@ -886,12 +835,6 @@ contains
        ww1(i,j,ivy)  = ve + (qnh - qne)*nny
        ww1(i,j,ivz)  = we + (qnh - qne)*nnz
 
-       ! Extrapolate the primitive turbulent variables.
-
-       do l=nt1MG,nt2MG
-          ww1(i,j,l) = ww2(i,j,l)
-       enddo
-
        ! Correct the pressure if a k-equation is present.
 
        if( correctForK )   &
@@ -1072,13 +1015,6 @@ contains
           pp1(i,j)       = ptot
           ww1(i,j,irhoE) = a2/(gamma2(i,j)*RGas)
 
-          ! Compute the turbulent variables, which are
-          ! prescribed.
-
-          do l=nt1MG,nt2MG
-             ww1(i,j,l) = BCData(nn)%turbInlet(i,j,l)
-          enddo
-
           ! Set the viscosities in the halo to the viscosities
           ! in the donor cell.
 
@@ -1147,13 +1083,6 @@ contains
           ww1(i,j,ivx)  = velx
           ww1(i,j,ivy)  = vely
           ww1(i,j,ivz)  = velz
-
-          ! Compute the turbulent variables, which are
-          ! prescribed.
-
-          do l=nt1MG,nt2MG
-             ww1(i,j,l) = BCData(nn)%turbInlet(i,j,l)
-          enddo
 
           ! Set the viscosities in the halo to the viscosities
           ! in the donor cell.
@@ -1460,12 +1389,6 @@ contains
        ww1(j,k,ivy)  = ww2(j,k,ivy) + vn*BCData(nn)%norm(j,k,2)
        ww1(j,k,ivz)  = ww2(j,k,ivz) + vn*BCData(nn)%norm(j,k,3)
 
-       ! Just copy the turbulent variables.
-
-       do l=nt1MG,nt2MG
-          ww1(j,k,l) = ww2(j,k,l)
-       enddo
-
        ! The laminar and eddy viscosity, if present.
 
        if( viscous )    rlv1(j,k) = rlv2(j,k)
@@ -1543,10 +1466,6 @@ contains
           ww1(i,j,ivz)  = BCData(nn)%velz(i,j)
           pp1(i,j)      = BCData(nn)%ps(i,j)
 
-          do l=nt1MG,nt2MG
-             ww1(i,j,l) = BCData(nn)%turbInlet(i,j,l)
-          enddo
-
           ! Set the viscosities in the halo to the viscosities
           ! in the donor cell.
 
@@ -1618,10 +1537,6 @@ contains
           ww1(i,j,ivx)  = velx
           ww1(i,j,ivy)  = vely
           ww1(i,j,ivz)  = velz
-
-          do l=nt1MG,nt2MG
-             ww1(i,j,l) = BCData(nn)%turbInlet(i,j,l)
-          enddo
 
           ! Set the viscosities in the halo to the viscosities
           ! in the donor cell.
@@ -1700,12 +1615,6 @@ contains
           ww1(i,j,ivx)  = ue + (qnh - qne)*nnx
           ww1(i,j,ivy)  = ve + (qnh - qne)*nny
           ww1(i,j,ivz)  = we + (qnh - qne)*nnz
-
-          ! Extrapolate the primitive turbulent variables.
-
-          do l=nt1MG,nt2MG
-             ww1(i,j,l) = ww2(i,j,l)
-          enddo
 
           ! Correct the pressure if a k-equation is present.
 
@@ -1854,13 +1763,6 @@ contains
           pp1(i,j)       = ptot
           ww1(i,j,irhoE) = a2/(gamma2(i,j)*RGas)
 
-          ! Compute the turbulent variables, which are
-          ! prescribed.
-
-          do l=nt1MG,nt2MG
-             ww1(i,j,l) = BCData(nn)%turbInlet(i,j,l)
-          enddo
-
           ! Set the viscosities in the halo to the viscosities
           ! in the donor cell.
 
@@ -1985,11 +1887,6 @@ contains
 
           sf = ww2(i,j,irho)**gamma2(i,j)/pp2(i,j)
 
-          !$AD II-LOOP
-          do l=nt1MG,nt2MG
-             ww1(i,j,l) = ww2(i,j,l)
-          enddo
-
        else                          
           ! Inflow
           uf = u0 + (qnf - qn0)*BCData(nn)%norm(i,j,1)
@@ -1997,10 +1894,6 @@ contains
           wf = w0 + (qnf - qn0)*BCData(nn)%norm(i,j,3)
           sf = s0
 
-          !$AD II-LOOP
-          do l=nt1MG,nt2MG
-             ww1(i,j,l) = wInf(l)
-          enddo
        endif
 
        ! Compute the density, velocity and pressure in the
@@ -2071,12 +1964,6 @@ contains
        ww1(i,j,ivz)  = BCData(nn)%velz(i,j)
        pp1(i,j)      = BCData(nn)%ps(i,j)
 
-       ! The turbulent variables.
-
-       do l=nt1MG,nt2MG
-          ww1(i,j,l) = BCData(nn)%turbInlet(i,j,l)
-       enddo
-
        ! Set the laminar and eddy viscosity in the halo
        ! if needed.
 
@@ -2097,12 +1984,6 @@ contains
           ww0(i,j,ivy)  = BCData(nn)%vely(i,j)
           ww0(i,j,ivz)  = BCData(nn)%velz(i,j)
           pp0(i,j)      = BCData(nn)%ps(i,j)
-
-          ! The turbulent variables.
-
-          do l=nt1MG,nt2MG
-             ww0(i,j,l) = BCData(nn)%turbInlet(i,j,l)
-          enddo
 
           ! Set the laminar and eddy viscosity in the halo
           ! if needed.
@@ -2192,12 +2073,6 @@ contains
 
        pp1(i,j) = fw2*pp2(i,j) + fw3*pp3(i,j)
        pp1(i,j) = max(factor*pp2(i,j), pp1(i,j))
-
-       ! Extrapolate the turbulent variables.
-
-       do l=nt1MG,nt2MG
-          ww1(i,j,l) = fw2*ww2(i,j,l) + fw3*ww3(i,j,l)
-       enddo
 
        ! The laminar and eddy viscosity, if present. These
        ! values are simply taken constant. Their values do
@@ -2561,14 +2436,6 @@ contains
        ww0(i,j,ivz) = two*ww1(i,j,ivz) - ww2(i,j,ivz)
 
        pp0(i,j) = max(factor*pp1(i,j),two*pp1(i,j) - pp2(i,j))
-
-       ! Extrapolate the turbulent variables. Use constant
-       ! extrapolation.
-
-       !$AD II-LOOP
-       do l=nt1MG,nt2MG
-          ww0(i,j,l) = ww1(i,j,l)
-       enddo
 
        ! The laminar and eddy viscosity, if present. These values
        ! are simply taken constant. Their values do not matter.

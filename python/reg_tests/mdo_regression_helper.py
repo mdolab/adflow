@@ -6,6 +6,7 @@ from __future__ import print_function
 # sufficiently close to be considered equal. 
 import numpy, os
 from mpi4py import MPI
+import sys
 REG_FILES_MATCH = 0
 REG_FILES_DO_NOT_MATCH = 1
 REG_ERROR = -1
@@ -140,30 +141,38 @@ def reg_file_comp(ref_file, comp_file):
     return res
 
 if __name__ == '__main__':
+    if len(sys.argv) == 1:
+        print('Single int write:')
+        reg_write(1)
 
-    print('Single int write:')
-    reg_write(1)
-    
-    print('Single float write:')
-    reg_write(3.14159)
+        print('Single float write:')
+        reg_write(3.14159)
 
-    print('List write:')
-    reg_write([1.0, 3.5, 6.0], 1e-8, 1e-10)
+        print('List write:')
+        reg_write([1.0, 3.5, 6.0], 1e-8, 1e-10)
 
-    print('1D Numpy array write')
-    vals = numpy.linspace(0, numpy.pi, 5)
-    reg_write(vals, 1e-12, 1e-12)
-    
-    print('2D Numpy array write:')
-    vals = numpy.linspace(0, 9.876, 4).reshape((2, 2))
-    reg_write(vals)
+        print('1D Numpy array write')
+        vals = numpy.linspace(0, numpy.pi, 5)
+        reg_write(vals, 1e-12, 1e-12)
 
-    str1 = "@value    3.141592653589793 1e-12 1e-12"
-    str2 = "@value    3.141592653589999 1e-12 1e-12"
+        print('2D Numpy array write:')
+        vals = numpy.linspace(0, 9.876, 4).reshape((2, 2))
+        reg_write(vals)
 
-    print('This comp should be True: ', _reg_str_comp(str1, str2))
+        str1 = "@value    3.141592653589793 1e-12 1e-12"
+        str2 = "@value    3.141592653589999 1e-12 1e-12"
 
-    str1 = "@value    3.141592653589793 1e-12 1e-12"
-    str2 = "@value    3.141592999999999 1e-12 1e-12"
+        print('This comp should be True: ', _reg_str_comp(str1, str2))
 
-    print('This comp should be False: ', _reg_str_comp(str1, str2))
+        str1 = "@value    3.141592653589793 1e-12 1e-12"
+        str2 = "@value    3.141592999999999 1e-12 1e-12"
+
+        print('This comp should be False: ', _reg_str_comp(str1, str2))
+
+    else:
+        res = reg_file_comp(sys.argv[1], sys.argv[2])
+        if res == 0: 
+            print ('Success!')
+        elif res == 1: 
+            print ('Failure!')
+

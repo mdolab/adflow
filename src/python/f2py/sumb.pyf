@@ -514,7 +514,6 @@ python module libsumb
          integer(kind=inttype) parameter,optional :: externalflow=2_inttype
          integer(kind=inttype) parameter,optional :: cpconstant=1_inttype
          integer(kind=inttype) parameter,optional :: cptempcurvefits=2_inttype
-         integer(kind=inttype) parameter,optional :: baldwinlomax=1_inttype
          integer(kind=inttype) parameter,optional :: spalartallmaras=2_inttype
          integer(kind=inttype) parameter,optional :: spalartallmarasedwards=3_inttype
          integer(kind=inttype) parameter,optional :: komegawilcox=4_inttype
@@ -877,12 +876,6 @@ python module libsumb
          integer(kind=inttype) :: rkstage
          integer(kind=inttype) :: nstepscycling
          integer(kind=inttype) allocatable,dimension(:) :: cycling
-         integer(kind=inttype) :: nmgvar
-         integer(kind=inttype) :: nt1mg
-         integer(kind=inttype) :: nt2mg
-         logical :: restricteddyvis
-         logical :: turbsegregated
-         logical :: turbcoupled
          integer(kind=inttype) :: itertot
          real(kind=realtype) :: rfil
          real(kind=realtype) :: t0solver
@@ -1110,25 +1103,6 @@ python module libsumb
          real(kind=realtype) :: ank_switchtol
          real(kind=realtype) :: ank_cfl0
        end module anksolvervars
-      
-        subroutine testrev(dwbar,wbar,statesize) ! in :test:test.F90
-          real(kind=realtype) dimension(statesize),intent(in) :: dwbar
-          real(kind=realtype) dimension(statesize),intent(out),depend(statesize) :: wbar
-          integer(kind=inttype), optional,check(len(dwbar)>=statesize),depend(dwbar) :: statesize=len(dwbar)
-        end subroutine testrev
-
-        subroutine testrevspatial(dwbar,xbar,statesize,spatialsize) ! in :test:test.F90
-            real(kind=realtype) dimension(statesize),intent(in) :: dwbar
-            real(kind=realtype) dimension(spatialsize),intent(out),depend(spatialsize) :: xbar
-            integer(kind=inttype), optional,check(len(dwbar)>=statesize),depend(dwbar) :: statesize=len(dwbar)
-            integer(kind=inttype) :: spatialsize
-        end subroutine testrevspatial
-       subroutine testdrdwtspeed(x,y,n) ! in :test:matrixFreeRoutines.F90
-         real(kind=realtype) dimension(n) :: x
-         real(kind=realtype) dimension(n),depend(n) :: y
-         integer(kind=inttype), optional,check(len(x)>=n),depend(x) :: n=len(x)
-        end subroutine testdrdwtspeed 
- 
     end interface 
 
 #ifdef USE_COMPLEX
