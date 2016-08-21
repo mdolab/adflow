@@ -78,10 +78,11 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use blockPointers
-       use inputIteration
-       use flowVarRefState
-       use iteration
+       use constants
+       use blockPointers, only : nx, ny, nz, il, jl, kl, dw, p, iBlank
+       use inputIteration, only: cfl, cflCoarse, cflLimit, smoop
+       use flowVarRefState, only : pInfCorr, nwf
+       use iteration, only : currentLevel
 
        implicit none
 !
@@ -167,7 +168,7 @@
 
            do i=2,il
              do j=2,jl
-               do l=1,nMGVar
+               do l=1,nwf
                  dw(i,j,k,l) = t(i,j) &
                              * (dw(i,j,k,l) +epz(i-1,j)*dw(i-1,j,k,l))
                end do
@@ -179,7 +180,7 @@
 
            do i=nx,2,-1
              do j=2,jl
-               do l=1,nMGVar
+               do l=1,nwf
                  dw(i,j,k,l) = dw(i,j,k,l) +d(i,j)*dw(i+1,j,k,l)
                end do
              end do
@@ -242,7 +243,7 @@
 
            do j=2,jl
              do i=2,il
-               do l=1,nMGVar
+               do l=1,nwf
                  dw(i,j,k,l) = t(i,j) &
                              * (dw(i,j,k,l) +epz(i,j-1)*dw(i,j-1,k,l))
                end do
@@ -254,7 +255,7 @@
 
            do j=ny,2,-1
              do i=2,il
-               do l=1,nMGVar
+               do l=1,nwf
                  dw(i,j,k,l) = dw(i,j,k,l) +d(i,j)*dw(i,j+1,k,l)
                end do
              end do
@@ -317,7 +318,7 @@
 
            do k=2,kl
              do i=2,il
-               do l=1,nMGVar
+               do l=1,nwf
                  dw(i,j,k,l) = t(i,k) &
                              * (dw(i,j,k,l) +epz(i,k-1)*dw(i,j,k-1,l))
                end do
@@ -329,7 +330,7 @@
 
            do k=nz,2,-1
              do i=2,il
-               do l=1,nMGVar
+               do l=1,nwf
                  dw(i,j,k,l) = dw(i,j,k,l) +d(i,k)*dw(i,j,k+1,l)
                end do
              end do

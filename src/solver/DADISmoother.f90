@@ -43,12 +43,6 @@ subroutine DADISmoother
         call executeDADIStep
 
         ! Compute the residuals for the next stage.
-
-        if( turbCoupled ) then
-           call initres(nt1MG, nMGVar)
-           call turbResidual
-        endif
-
         call initres(1_intType, nwf)
         call residual
 
@@ -95,7 +89,7 @@ subroutine executeDADIStep
   real(kind=realType) :: dt, currentCfl, gm1, gm53
   real(kind=realType) :: v2, ovr, dp, factK, ru, rv, rw
 
-  logical :: secondHalo, smoothResidual, correctForK
+  logical :: secondHalo, smoothResidual, correctForK, getCorrectForK
   !
   !      ******************************************************************
   !      *                                                                *
@@ -132,16 +126,8 @@ subroutine executeDADIStep
 
   ! Determine whether or not the total energy must be corrected
   ! for the presence of the turbulent kinetic energy.
+  correctForK = getCorrectForK()
 
-  if( kPresent ) then
-     if((currentLevel <= groundLevel) .or. turbCoupled) then
-        correctForK = .true.
-     else
-        correctForK = .false.
-     endif
-  else
-     correctForK = .false.
-  endif
   !
   !      ******************************************************************
   !      *                                                                *
@@ -192,13 +178,6 @@ subroutine executeDADIStep
 
            call computedwDADI
 
-           ! Compute the turbulent updates, if needed.
-
-           if( turbCoupled ) then
-              call returnFail("executeDADIstep", &
-                   "turbulent updates not implemented yet")
-           endif
-
         enddo spectralSteady
 
         !=============================================================
@@ -247,12 +226,6 @@ subroutine executeDADIStep
            enddo
 
            call computedwDADI
-           ! Compute the turbulent updates, if needed.
-
-           if( turbCoupled ) then
-              call returnFail("executeRkStage", &
-                   "turbulent updates not implemented yet")
-           endif
 
         enddo spectralUnsteady
 
@@ -333,18 +306,6 @@ subroutine executeDADIStep
            enddo
         enddo
 
-        ! Possible turbulent variables.
-
-        do l=nt1MG,nMGVar
-           do k=2,kl
-              do j=2,jl
-                 do i=2,il
-                    w(i,j,k,l) = w(i,j,k,l) - dw(i,j,k,l)
-                 enddo
-              enddo
-           enddo
-        enddo
-
         ! Compute the total energy and possibly the laminar and eddy
         ! viscosity in the owned cells.
 
@@ -372,10 +333,10 @@ subroutine executeDADIStep
   ! must be called.
 
   if( secondHalo ) then
-     call whalo2(currentLevel, 1_intType, nMGVar, .true., &
+     call whalo2(currentLevel, 1_intType, nwf, .true., &
           .true., .true.)
   else
-     call whalo1(currentLevel, 1_intType, nMGVar, .true., &
+     call whalo1(currentLevel, 1_intType, nwf, .true., &
           .true., .true.)
   endif
 

@@ -39,33 +39,6 @@
        integer(kind=intType) :: nStepsCycling
        integer(kind=intType), dimension(:), allocatable :: cycling
 
-       ! nMGVar: Number of variables to which the multigrid must be
-       !         applied. For the Euler and laminar Navier-Stokes
-       !         equations this is the number of flow variables; for
-       !         RANS this is either the total number of independent
-       !         variables (coupled solver) or the number of flow
-       !         variables (segregated solver).
-       ! nt1MG:  Starting index for the turbulent variables in MG.
-       ! nt2MG:  Ending index for the turbulent variables in MG.
-       !         For a segregated solver these values are such
-       !         that nothing is done on the turbulent equations.
-
-       integer(kind=intType) :: nMGVar, nt1MG, nt2MG
-
-       ! restrictEddyVis: Whether or not the eddy viscosity must
-       !                  be restricted to the coarser levels.
-       ! turbSegregated:  Whether or not the turbulent equations
-       !                  are solved segregatedly from the mean
-       !                  flow equations.
-       ! turbCoupled:     Whether or not the turbulent equations are
-       !                  solved in a coupled manner with the mean
-       !                  flow equations. The reason why both
-       !                  turbCoupled and turbSegregated are used is
-       !                  that everything must work for Euler and
-       !                  laminar NS as well.
-
-       logical :: restrictEddyVis, turbSegregated, turbCoupled
-
        ! iterTot: Total number of iterations on the current grid;
        !          a restart is not included in this count.
 

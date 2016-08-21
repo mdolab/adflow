@@ -18,12 +18,18 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use BCTypes
-       use blockPointers
-       use flowVarRefState
-       use inputIteration
-       use inputTimeSpectral
-       use iteration
+       use blockPointers, only : flowDoms, dw, il, jl, kl, ie, je, ke, w, &
+            p1, p, rev, w1, mgICoarse, mgJCoarse, mgKCoarse, nDom, wr, mgIWeight, &
+            mgJWeight, mgKWeight, iblank
+       use flowVarRefState, only : nwf, kPresent, pInfCorr, nw, rhoInf, nt1
+       use inputPhysics, only : equations
+       use inputIteration, only: fcoll, mgBoundCorr
+       use inputOverset, only : avgRestrictResForBlanks
+       use inputTimeSpectral, only : nTimeIntervalsSpectral
+       use iteration, only : currentLevel, rkStage, groundLevel, exchangePressureEarly
+
        implicit none
 !
 !      Subroutine arguments.
@@ -40,7 +46,7 @@
        real(kind=realType), dimension(:,:,:,:), pointer :: ww, ww1, res
        real(kind=realType), dimension(:,:,:),   pointer :: pp, pp1
 
-       logical :: secondHalo, correctForK
+       logical :: secondHalo, correctForK, getCorrectForK
 !
 !      ******************************************************************
 !      *                                                                *
@@ -59,7 +65,7 @@
        ! variables are interpolated.
 
        nVarInt = nw
-       if( corrections ) nVarInt = nMGVar
+       if( corrections ) nVarInt = nwf
 
        ! Set the value of secondHalo, depending on the situation.
        ! In the full MG (currentLevel < groundLevel) the second halo is
@@ -74,16 +80,7 @@
 
        ! Determine whether or not the total energy must be corrected
        ! for the presence of the turbulent kinetic energy.
-
-       if( kPresent ) then
-         if((currentLevel <= groundLevel) .or. turbCoupled) then
-           correctForK = .true.
-         else
-           correctForK = .false.
-         endif
-       else
-         correctForK = .false.
-       endif
+       correctForK = getCorrectForK()
 
        ! Set fact to either 0.0 or 1.0, depending whether neumann or
        ! dirichlet boundary conditions should be used for the boundary
@@ -284,8 +281,8 @@
            ! owned cells of this block. If the solution must be
            ! interpolated, extrapolate the viscosities in the halo's.
 
-           call computeLamViscosity
-           call computeEddyViscosity
+           call computeLamViscosity(.False.)
+           call computeEddyViscosity(.False.)
            if(.not. corrections) call extrapolateViscosities
 
          enddo domains
@@ -304,8 +301,9 @@
        ! first call the turbulent boundary conditions, such that the
        ! turbulent kinetic energy is properly initialized in the halo's.
 
-       if(turbSegregated .and. (.not. corrections)) &
+       if(.not. corrections .and. equations==RANSEquations) then 
          call applyAllTurbBC(secondHalo)
+      end if
 
        ! Apply all boundary conditions of the mean flow.
 

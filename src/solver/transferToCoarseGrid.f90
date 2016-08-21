@@ -55,11 +55,6 @@
        rkStage = 0
        call timeStep(.true.)
 
-       if( turbCoupled ) then
-         call initres(nt1MG, nMGVar)
-         call turbResidual
-       endif
-
        call initres(1_intType, nwf)
        call residual
 
@@ -69,13 +64,8 @@
        fineLevel    = currentLevel
        currentLevel = currentLevel +1
 
-       ! Set the logical correctForK. This will only be true if a
-       ! k-equation is present and if the turbulent equations are solved
-       ! in a coupled manner. Remember that we are guaranteed on a
-       ! coarser grid level.
-
+       ! Set the logical correctForK. 
        correctForK = .false.
-       if(kPresent .and. turbCoupled) correctForK = .true.
 
        ! Set the value of the blanking factor for the restricted
        ! residual to 1. This will be overwritten below if needed.
@@ -173,7 +163,7 @@
                  ! Store the restricted residual in wr, the residual
                  ! forcing term, and the solution in ww.
 
-                 do l=1,nMGVar
+                 do l=1,nwf
                    wr(i,j,k,l) = (dw(ii, jj,kk, l) + dw(ii, jj1,kk, l)  &
                                +  dw(ii1,jj,kk, l) + dw(ii1,jj1,kk, l)  &
                                +  dw(ii, jj,kk1,l) + dw(ii, jj1,kk1,l)  &
@@ -242,30 +232,15 @@
                           +  vvol(ii1,jj, kk1)*pp(ii1,jj, kk1) &
                           +  vvol(ii1,jj1,kk1)*pp(ii1,jj1,kk1))*vola
 
-                 ! Turbulent variables, if needed.
-
-                 do l=nt1MG,nMGVar
-                   w(i,j,k,l) = (vvol(ii, jj, kk) *ww(ii, jj, kk, l) &
-                              +  vvol(ii, jj1,kk) *ww(ii, jj1,kk, l) &
-                              +  vvol(ii1,jj, kk) *ww(ii1,jj, kk, l) &
-                              +  vvol(ii1,jj1,kk) *ww(ii1,jj1,kk, l) &
-                              +  vvol(ii, jj, kk1)*ww(ii, jj, kk1,l) &
-                              +  vvol(ii, jj1,kk1)*ww(ii, jj1,kk1,l) &
-                              +  vvol(ii1,jj, kk1)*ww(ii1,jj, kk1,l) &
-                              +  vvol(ii1,jj1,kk1)*ww(ii1,jj1,kk1,l))*vola
-                 enddo
-
                  ! Restrict the eddy viscosity if needed.
-
-                 if( restrictEddyVis )                               &
-                   rev(i,j,k) = (vvol(ii, jj, kk) *rrev(ii, jj, kk)  &
-                              +  vvol(ii, jj1,kk) *rrev(ii, jj1,kk)  &
-                              +  vvol(ii1,jj, kk) *rrev(ii1,jj, kk)  &
-                              +  vvol(ii1,jj1,kk) *rrev(ii1,jj1,kk)  &
-                              +  vvol(ii, jj, kk1)*rrev(ii, jj, kk1) &
-                              +  vvol(ii, jj1,kk1)*rrev(ii, jj1,kk1) &
-                              +  vvol(ii1,jj, kk1)*rrev(ii1,jj, kk1) &
-                              +  vvol(ii1,jj1,kk1)*rrev(ii1,jj1,kk1))*vola
+                 rev(i,j,k) = (vvol(ii, jj, kk) *rrev(ii, jj, kk)  &
+                      +  vvol(ii, jj1,kk) *rrev(ii, jj1,kk)  &
+                      +  vvol(ii1,jj, kk) *rrev(ii1,jj, kk)  &
+                      +  vvol(ii1,jj1,kk) *rrev(ii1,jj1,kk)  &
+                      +  vvol(ii, jj, kk1)*rrev(ii, jj, kk1) &
+                      +  vvol(ii, jj1,kk1)*rrev(ii, jj1,kk1) &
+                      +  vvol(ii1,jj, kk1)*rrev(ii1,jj, kk1) &
+                      +  vvol(ii1,jj1,kk1)*rrev(ii1,jj1,kk1))*vola
                enddo
              enddo
            enddo
@@ -281,7 +256,7 @@
            ! Set the values of the 1st layer of corner row halo's to avoid
            ! divisions by zero and uninitialized variables.
 
-           call setCornerRowHalos(nMGVar)
+           call setCornerRowHalos(nwf)
 
          enddo domains1
        enddo spectralLoop1
@@ -296,7 +271,7 @@
        ! Exchange the solution. As on the coarse grid only the first
        ! layer of halo's is needed, whalo1 is called.
 
-       call whalo1(currentLevel, 1_intType, nMGVar, .true., &
+       call whalo1(currentLevel, 1_intType, nwf, .true., &
                   .true., .true.)
 
        ! The second part of the residual forcing term is the residual
@@ -305,43 +280,6 @@
 
        rkStage = 0
        call timeStep(.false.)
-
-       ! Compute the residual of the turbulent equations if these
-       ! are solved in a coupled manner. This is done before the mean
-       ! flow residual, because the memory of the mean flow residuals
-       ! is used to compute the turbulent residuals.
-
-       if( turbCoupled ) then
-
-         ! Loop over the spectral solutions and domains to initialize
-         ! the turbulent residuals to zero. The routine initres cannot
-         ! be used, because there it is initialized to the residual
-         ! forcing term, which is computed here.
-
-         spectralLoop2: do sps=1,nTimeIntervalsSpectral
-           domains2: do nn=1,nDom
-
-             ! No need to set the pointers, as this is only a small
-             ! loop. Note that dw of the finest grid must be used!!
-
-             do l=nt1MG,nMGVar
-               do k=1,flowDoms(nn,currentLevel,sps)%ke
-                 do j=1,flowDoms(nn,currentLevel,sps)%je
-                   do i=1,flowDoms(nn,currentLevel,sps)%ie
-                     flowDoms(nn,1,sps)%dw(i,j,k,l) = zero
-                   enddo
-                 enddo
-               enddo
-             enddo
-
-           enddo domains2
-         enddo spectralLoop2
-
-         ! Compute the turbulent residual.
-
-         call turbResidual
-
-       endif
 
        ! The second part of the residual forcing term for the mean
        ! flow equations. Furthermore the solution, primitive variables,
@@ -387,18 +325,6 @@
              enddo
            enddo
 
-           ! The possible turbulent variables.
-
-           do l=nt1MG,nMGVar
-             do k=1,ke
-               do j=1,je
-                 do i=1,ie
-                   w1(i,j,k,l) = w(i,j,k,l)
-                 enddo
-               enddo
-             enddo
-           enddo
-
          enddo domains3
        enddo spectralLoop3
 
@@ -422,7 +348,7 @@
            ! Loop over the owned cells. No need to do anything on the
            ! halo's.
 
-           do l=1,nMGVar
+           do l=1,nwf
              do k=2,kl
                do j=2,jl
                  do i=2,il
