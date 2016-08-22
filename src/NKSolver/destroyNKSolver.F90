@@ -3,7 +3,9 @@ subroutine destroyNKsolver
   ! Destroy all the PETSc objects for the Newton-Krylov
   ! solver. 
 
-  use NKsolverVars
+  use constants
+  use NKsolverVars, only :dRdw, dRdwPre, dRdwPseudo, wVec, rVec, deltaW, g, &
+       work, NK_KSP, NK_solverSetup
   implicit none
   integer(kind=intType) :: ierr
   

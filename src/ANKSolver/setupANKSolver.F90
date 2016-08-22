@@ -1,16 +1,14 @@
 subroutine setupANKsolver
-#ifndef USE_NO_PETSC
+
   ! Setup the PETSc objects for the Newton-Krylov
   ! solver. destroyNKsolver can be used to destroy the objects created
   ! in this function
 
-  use blockPointers
-  use communication
-  use inputTimeSpectral
-  use flowVarRefState
-  use iteration
-  use inputPhysics
+  use constants
   use stencils
+  use communication, only : sumb_comm_world
+  use inputTimeSpectral, only : nTimeIntervalsSpectral
+  use flowVarRefState, only : nw, viscous, nwf
   use ADjointVars , only: nCellsLocal
   use ANKSolverVars, only: dRdwPre, wVec, rVec, deltaW, ANK_solverSetup, ANK_KSP, ANK_iter
   use ANKSolverVars, only: dRdwPreTurb, wVecTurb, rVecTurb, deltaWTurb, ANK_KSPTurb
@@ -151,7 +149,6 @@ subroutine setupANKsolver
      ANK_solverSetup = .True.
      ANK_iter = 0
   end if
-#endif
 
 end subroutine setupANKsolver
 

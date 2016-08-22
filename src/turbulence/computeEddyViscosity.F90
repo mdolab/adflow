@@ -38,7 +38,7 @@
        ! Check if an immediate return can be made.
 
        if( eddyModel ) then
-         if((currentLevel <= groundLevel) .or. turbCoupled) then
+         if((currentLevel <= groundLevel)) then
            returnImmediately = .false.
          else
            returnImmediately = .true.
@@ -57,8 +57,6 @@
          case (spalartAllmaras, spalartAllmarasEdwards)
            call saEddyViscosity
 #ifndef USE_TAPENADE          
-         case (baldwinLomax)
-           call blEddyViscosity
 
          case (v2f)
            call vfEddyViscosity

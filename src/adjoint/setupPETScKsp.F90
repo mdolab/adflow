@@ -11,10 +11,7 @@
 subroutine setupPETScKsp
 
   use ADjointPETSc, only: drdwpret, drdwt, adjointKSP
-  use ADjointVars
   use inputADjoint
-  use communication
-  use blockPointers
 
   implicit none
 

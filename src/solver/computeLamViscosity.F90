@@ -34,7 +34,7 @@ subroutine computeLamViscosity
   !
   integer(kind=intType) :: i, j, k, ii
   real(kind=realType)   :: muSuth, TSuth, SSuth, T, pp
-  logical               :: correctForK
+  logical               :: correctForK, getCorrectForK
   !
   !      ******************************************************************
   !      *                                                                *
@@ -49,15 +49,7 @@ subroutine computeLamViscosity
   ! Determine whether or not the pressure must be corrected
   ! for the presence of the turbulent kinetic energy.
 
-  if( kPresent ) then
-     if((currentLevel <= groundLevel) .or. turbCoupled) then
-        correctForK = .true.
-     else
-        correctForK = .false.
-     endif
-  else
-     correctForK = .false.
-  endif
+  correctForK = getCorrectForK()
 
   ! Compute the nonDimensional constants in sutherland's law.
 

@@ -8,11 +8,12 @@ subroutine preprocessingADjoint
   !     *                                                                *
   !     ******************************************************************
   !
-  use communication
-  use adjointVars
-  use flowVarRefState
-  use inputTimeSpectral
-  use inputAdjoint
+  use constants
+  use communication, only : sumb_comm_world
+  use adjointVars, only :nCellsLocal, nNOdesLocal
+  use flowVarRefState, only : nw, nwf
+  use inputTimeSpectral, only : nTimeIntervalsSpectral
+  use inputAdjoint, only : frozenTurbulence
   use ADjointPETSc, only: w_like1, w_like2, PETScIerr, &
        psi_like1, psi_like2, x_like, psi_like3
   implicit none

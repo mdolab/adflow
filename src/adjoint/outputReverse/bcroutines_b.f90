@@ -75,22 +75,14 @@ contains
 ! subroutine arguments.
     logical, intent(in) :: secondhalo
 ! local variables.
-    logical :: correctfork
+    logical :: correctfork, getcorrectfork
     integer(kind=inttype) :: nn
     integer :: branch
     integer :: ii1
 !
 ! determine whether or not the total energy must be corrected
 ! for the presence of the turbulent kinetic energy.
-    if (kpresent) then
-      if (currentlevel .le. groundlevel .or. turbcoupled) then
-        correctfork = .true.
-      else
-        correctfork = .false.
-      end if
-    else
-      correctfork = .false.
-    end if
+    correctfork = getcorrectfork()
     call pushreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev, 3))
     call pushreal8array(p, size(p, 1)*size(p, 2)*size(p, 3))
     call pushreal8array(gamma, size(gamma, 1)*size(gamma, 2)*size(gamma&
@@ -453,20 +445,12 @@ contains
 ! subroutine arguments.
     logical, intent(in) :: secondhalo
 ! local variables.
-    logical :: correctfork
+    logical :: correctfork, getcorrectfork
     integer(kind=inttype) :: nn
 !
 ! determine whether or not the total energy must be corrected
 ! for the presence of the turbulent kinetic energy.
-    if (kpresent) then
-      if (currentlevel .le. groundlevel .or. turbcoupled) then
-        correctfork = .true.
-      else
-        correctfork = .false.
-      end if
-    else
-      correctfork = .false.
-    end if
+    correctfork = getcorrectfork()
 ! apply all the boundary conditions. the order is important!  only
 ! some of them have been ad'ed
 ! ------------------------------------
@@ -601,10 +585,6 @@ contains
       end if
       pp2d(i, j) = pp2d(i, j) + pp1d(i, j)
       pp1d(i, j) = 0.0_8
-      do l=nt1mg,nt2mg
-        ww2d(i, j, l) = ww2d(i, j, l) + ww1d(i, j, l)
-        ww1d(i, j, l) = 0.0_8
-      end do
       ww2d(i, j, irhoe) = ww2d(i, j, irhoe) + ww1d(i, j, irhoe)
       ww1d(i, j, irhoe) = 0.0_8
       ww2d(i, j, ivz) = ww2d(i, j, ivz) + ww1d(i, j, ivz)
@@ -683,10 +663,6 @@ contains
       ww1(i, j, ivy) = ww2(i, j, ivy) - vn*bcdata(nn)%norm(i, j, 2)
       ww1(i, j, ivz) = ww2(i, j, ivz) - vn*bcdata(nn)%norm(i, j, 3)
       ww1(i, j, irhoe) = ww2(i, j, irhoe)
-! simply copy the turbulent variables.
-      do l=nt1mg,nt2mg
-        ww1(i, j, l) = ww2(i, j, l)
-      end do
 ! set the pressure and gamma and possibly the
 ! laminar and eddy viscosity in the halo.
       gamma1(i, j) = gamma2(i, j)
@@ -743,10 +719,6 @@ contains
       end if
       pp3d(i, j) = pp3d(i, j) + pp0d(i, j)
       pp0d(i, j) = 0.0_8
-      do l=nt1mg,nt2mg
-        ww3d(i, j, l) = ww3d(i, j, l) + ww0d(i, j, l)
-        ww0d(i, j, l) = 0.0_8
-      end do
       ww3d(i, j, irhoe) = ww3d(i, j, irhoe) + ww0d(i, j, irhoe)
       ww0d(i, j, irhoe) = 0.0_8
       ww3d(i, j, ivz) = ww3d(i, j, ivz) + ww0d(i, j, ivz)
@@ -805,9 +777,6 @@ contains
       ww0(i, j, ivy) = ww3(i, j, ivy) - vn*bcdata(nn)%norm(i, j, 2)
       ww0(i, j, ivz) = ww3(i, j, ivz) - vn*bcdata(nn)%norm(i, j, 3)
       ww0(i, j, irhoe) = ww3(i, j, irhoe)
-      do l=nt1mg,nt2mg
-        ww0(i, j, l) = ww3(i, j, l)
-      end do
 ! set the pressure and gamma and possibly the
 ! laminar and eddy viscosity in the halo.
       gamma0(i, j) = gamma3(i, j)
@@ -849,13 +818,6 @@ contains
     integer(kind=inttype) :: walltreatment
     intrinsic mod
     integer :: branch
-! apply the bcwall in case the turbulent transport equations are
-! solved together with the mean flow equations, aplly the viscous
-! wall boundary conditions for the turbulent variables.  no need
-! to extrapolate the secondary halo's, because this is done in
-! extrapolate2ndhalo. this is only necesssary when correcting for
-! k. *this is not currently included in ad. it will be required
-! for the 2-equation turbulence models. 
 ! initialize rhok to zero. this will be overwritten if a
 ! correction for k must be applied.
     rhok = zero
@@ -1003,13 +965,6 @@ contains
     real(kind=realtype) :: rhok
     integer(kind=inttype) :: walltreatment
     intrinsic mod
-! apply the bcwall in case the turbulent transport equations are
-! solved together with the mean flow equations, aplly the viscous
-! wall boundary conditions for the turbulent variables.  no need
-! to extrapolate the secondary halo's, because this is done in
-! extrapolate2ndhalo. this is only necesssary when correcting for
-! k. *this is not currently included in ad. it will be required
-! for the 2-equation turbulence models. 
 ! initialize rhok to zero. this will be overwritten if a
 ! correction for k must be applied.
     rhok = zero
@@ -1103,11 +1058,6 @@ contains
     real(kind=realtype) :: tempd1
     real(kind=realtype) :: tempd0
     real(kind=realtype) :: temp
-! in case the turbulent transport equations are solved
-! together with the mean flow equations, aplly the viscous
-! wall boundary conditions for the turbulent variables.
-! no need to extrapolate the secondary halo's, because this
-! is done in extrapolate2ndhalo.
 ! initialize rhok to zero. this will be overwritten if a
 ! correction for k must be applied.
     rhok = zero
@@ -1322,11 +1272,6 @@ contains
     intrinsic mod
     intrinsic max
     intrinsic min
-! in case the turbulent transport equations are solved
-! together with the mean flow equations, aplly the viscous
-! wall boundary conditions for the turbulent variables.
-! no need to extrapolate the secondary halo's, because this
-! is done in extrapolate2ndhalo.
 ! initialize rhok to zero. this will be overwritten if a
 ! correction for k must be applied.
     rhok = zero
@@ -1485,10 +1430,6 @@ contains
       ww1(j, k, ivx) = ww2(j, k, ivx) + vn*bcdata(nn)%norm(j, k, 1)
       ww1(j, k, ivy) = ww2(j, k, ivy) + vn*bcdata(nn)%norm(j, k, 2)
       ww1(j, k, ivz) = ww2(j, k, ivz) + vn*bcdata(nn)%norm(j, k, 3)
-! just copy the turbulent variables.
-      do l=nt1mg,nt2mg
-        ww1(j, k, l) = ww2(j, k, l)
-      end do
 ! the laminar and eddy viscosity, if present.
       if (viscous) rlv1(j, k) = rlv2(j, k)
       if (eddymodel) rev1(j, k) = rev2(j, k)
@@ -1527,10 +1468,6 @@ contains
         rlv2d(j, k) = rlv2d(j, k) + rlv1d(j, k)
         rlv1d(j, k) = 0.0_8
       end if
-      do l=nt2mg,nt1mg,-1
-        ww2d(j, k, l) = ww2d(j, k, l) + ww1d(j, k, l)
-        ww1d(j, k, l) = 0.0_8
-      end do
       ww2d(j, k, ivz) = ww2d(j, k, ivz) + ww1d(j, k, ivz)
       vnd = bcdata(nn)%norm(j, k, 3)*ww1d(j, k, ivz)
       bcdatad(nn)%norm(j, k, 3) = bcdatad(nn)%norm(j, k, 3) + vn*ww1d(j&
@@ -1648,10 +1585,6 @@ contains
       ww1(j, k, ivx) = ww2(j, k, ivx) + vn*bcdata(nn)%norm(j, k, 1)
       ww1(j, k, ivy) = ww2(j, k, ivy) + vn*bcdata(nn)%norm(j, k, 2)
       ww1(j, k, ivz) = ww2(j, k, ivz) + vn*bcdata(nn)%norm(j, k, 3)
-! just copy the turbulent variables.
-      do l=nt1mg,nt2mg
-        ww1(j, k, l) = ww2(j, k, l)
-      end do
 ! the laminar and eddy viscosity, if present.
       if (viscous) rlv1(j, k) = rlv2(j, k)
       if (eddymodel) rev1(j, k) = rev2(j, k)
@@ -1777,18 +1710,12 @@ contains
         vf = ve + (qnf-qne)*bcdata(nn)%norm(i, j, 2)
         wf = we + (qnf-qne)*bcdata(nn)%norm(i, j, 3)
         sf = ww2(i, j, irho)**gamma2(i, j)/pp2(i, j)
-        do l=nt1mg,nt2mg
-          ww1(i, j, l) = ww2(i, j, l)
-        end do
       else
 ! inflow
         uf = u0 + (qnf-qn0)*bcdata(nn)%norm(i, j, 1)
         vf = v0 + (qnf-qn0)*bcdata(nn)%norm(i, j, 2)
         wf = w0 + (qnf-qn0)*bcdata(nn)%norm(i, j, 3)
         sf = s0
-        do l=nt1mg,nt2mg
-          ww1(i, j, l) = winf(l)
-        end do
       end if
 ! compute the density, velocity and pressure in the
 ! halo cell.
@@ -1870,9 +1797,6 @@ contains
         vf = ve + (qnf-qne)*bcdata(nn)%norm(i, j, 2)
         wf = we + (qnf-qne)*bcdata(nn)%norm(i, j, 3)
         sf = ww2(i, j, irho)**gamma2(i, j)/pp2(i, j)
-        do l=nt1mg,nt2mg
-          ww1(i, j, l) = ww2(i, j, l)
-        end do
         call pushcontrol1b(0)
       else
 ! inflow
@@ -1880,9 +1804,6 @@ contains
         vf = v0 + (qnf-qn0)*bcdata(nn)%norm(i, j, 2)
         wf = w0 + (qnf-qn0)*bcdata(nn)%norm(i, j, 3)
         sf = s0
-        do l=nt1mg,nt2mg
-          ww1(i, j, l) = winf(l)
-        end do
         call pushcontrol1b(1)
       end if
 ! compute the density, velocity and pressure in the
@@ -1932,10 +1853,6 @@ contains
       cfd = 2*cf*ccd/gamma2(i, j)
       call popcontrol1b(branch)
       if (branch .eq. 0) then
-        do l=nt1mg,nt2mg
-          ww2d(i, j, l) = ww2d(i, j, l) + ww1d(i, j, l)
-          ww1d(i, j, l) = 0.0_8
-        end do
         tempd6 = bcdata(nn)%norm(i, j, 1)*ufd
         tempd5 = bcdata(nn)%norm(i, j, 2)*vfd
         tempd3 = sfd/pp2(i, j)
@@ -1959,10 +1876,6 @@ contains
 &         )*ufd
         qn0d = 0.0_8
       else
-        do l=nt1mg,nt2mg
-          winfd(l) = winfd(l) + ww1d(i, j, l)
-          ww1d(i, j, l) = 0.0_8
-        end do
         tempd9 = bcdata(nn)%norm(i, j, 1)*ufd
         tempd8 = bcdata(nn)%norm(i, j, 2)*vfd
         s0d = s0d + sfd
@@ -2141,18 +2054,12 @@ contains
         vf = ve + (qnf-qne)*bcdata(nn)%norm(i, j, 2)
         wf = we + (qnf-qne)*bcdata(nn)%norm(i, j, 3)
         sf = ww2(i, j, irho)**gamma2(i, j)/pp2(i, j)
-        do l=nt1mg,nt2mg
-          ww1(i, j, l) = ww2(i, j, l)
-        end do
       else
 ! inflow
         uf = u0 + (qnf-qn0)*bcdata(nn)%norm(i, j, 1)
         vf = v0 + (qnf-qn0)*bcdata(nn)%norm(i, j, 2)
         wf = w0 + (qnf-qn0)*bcdata(nn)%norm(i, j, 3)
         sf = s0
-        do l=nt1mg,nt2mg
-          ww1(i, j, l) = winf(l)
-        end do
       end if
 ! compute the density, velocity and pressure in the
 ! halo cell.
@@ -2227,11 +2134,6 @@ contains
       else
         pp0(i, j) = factor*pp1(i, j)
       end if
-! extrapolate the turbulent variables. use constant
-! extrapolation.
-      do l=nt1mg,nt2mg
-        ww0(i, j, l) = ww1(i, j, l)
-      end do
 ! the laminar and eddy viscosity, if present. these values
 ! are simply taken constant. their values do not matter.
       if (viscous) rlv0(i, j) = rlv1(i, j)
@@ -2271,10 +2173,6 @@ contains
         rlv1d(i, j) = rlv1d(i, j) + rlv0d(i, j)
         rlv0d(i, j) = 0.0_8
       end if
-      do l=nt1mg,nt2mg
-        ww1d(i, j, l) = ww1d(i, j, l) + ww0d(i, j, l)
-        ww0d(i, j, l) = 0.0_8
-      end do
       call popcontrol1b(branch)
       if (branch .eq. 0) then
         pp1d(i, j) = pp1d(i, j) + two*pp0d(i, j)
@@ -2404,11 +2302,6 @@ contains
       else
         pp0(i, j) = factor*pp1(i, j)
       end if
-! extrapolate the turbulent variables. use constant
-! extrapolation.
-      do l=nt1mg,nt2mg
-        ww0(i, j, l) = ww1(i, j, l)
-      end do
 ! the laminar and eddy viscosity, if present. these values
 ! are simply taken constant. their values do not matter.
       if (viscous) rlv0(i, j) = rlv1(i, j)

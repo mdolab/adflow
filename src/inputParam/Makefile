@@ -41,7 +41,6 @@ vpath %.o $(SUMB_OBJDIR)
 FF90_OBJECTS_1 = localModules.o
 
 FILES_TO_COMPLEXIFY =localModules.f90\
-		 analyzeString.f90\
 		 checkInputParam.F90\
 		 checkMonitor.f90\
 		 checkOutput.f90\
@@ -53,19 +52,16 @@ FILES_TO_COMPLEXIFY =localModules.f90\
 		 isoVariables.f90\
 		 monitorVariables.f90\
 		 readCpTempCurveFits.f90\
-		 readParamFile.f90\
 		 dummyReadParamFile.f90\
 		 setDefaultValues.F90\
 		 setEquationParameters.f90\
 		 setIsoSurfaceValues.F90\
-		 setIterationParam.f90\
 		 setStageCoeffExplicitRK.f90\
 		 setStageCoeffImplicitRK.f90\
 		 surfaceVariables.f90\
 		 volumeVariables.f90\
-		 writeInputParam.f90
 
-FILES_TO_COPY =	createTemplate.f90\
+FILES_TO_COPY =	
 
 
 ALL_FILES = $(FILES_TO_COMPLEXIFY) $(FILES_TO_COPY)

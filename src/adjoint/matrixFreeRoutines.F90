@@ -84,9 +84,9 @@ subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useSta
   machcoefd = zero
   pointRefd  = zero
   lengthRefd = zero
-  prefd = zero
-  tempfreestreamd = zero
-  reynoldsd = zero
+  pinfdimd = zero
+  tinfdimd = zero
+  rhoinfdimd = zero
 
   if (useSpatial) then 
      ! Here we set the spatial and extra seeds if necessary.
@@ -132,11 +132,11 @@ subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useSta
         machCoefd = extraDot(nDesignMachGrid+1)
      end if
      if (nDesignPressure >= 0) &
-          Prefd = extraDot(nDesignPressure+1)
+          PinfDimd = extraDot(nDesignPressure+1)
+     if (nDesignDensity >= 0) &
+          rhoinfDimd = extraDot(nDesignDensity+1)
      if (nDesignTemperature >= 0) &
-          Tempfreestreamd = extraDot(nDesignTemperature+1)
-     if (nDesignReynolds >= 0) &
-          reynoldsd= extraDot(nDesignReynolds+1)
+          tinfdimd = extraDot(nDesignTemperature+1)
      if (nDesignPointRefX >= 0) &
           pointrefd(1) = extraDot(nDesignPointRefX+1)
      if (nDesignPointRefY >= 0) &
@@ -424,11 +424,11 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, fbar, useSpatial, useSta
               if (nDesignMachGrid >= 0) &
                    extraLocalBar(nDesignMachGrid+1) = extraLocalBar(nDesignMachGrid+1) + machgridd + machcoefd
               if (nDesignPressure >= 0) &
-                   extraLocalBar(nDesignPressure+1) = extraLocalBar(nDesignPressure+1) + prefd
+                   extraLocalBar(nDesignPressure+1) = extraLocalBar(nDesignPressure+1) + pinfdimd
               if (nDesignTemperature >= 0) &
-                   extraLocalBar(nDesignTemperature+1) = extraLocalBar(nDesignTemperature+1) + tempfreestreamd
-              if (nDesignReynolds >= 0) &
-                   extraLocalBar(nDesignReynolds+1) = extraLocalBar(nDesignReynolds+1) + reynoldsd
+                   extraLocalBar(nDesignTemperature+1) = extraLocalBar(nDesignTemperature+1) + tinfdimd
+              if (nDesignDensity >= 0) &
+                   extraLocalBar(nDesignDensity+1) = extraLocalBar(nDesignDensity+1) + rhoinfdimd
               if (nDesignPointRefX >= 0) &
                    extraLocalBar(nDesignPointRefX+1) = extraLocalBar(nDesignPointRefX+1) + pointrefd(1)
               if (nDesignPointRefY >= 0) &

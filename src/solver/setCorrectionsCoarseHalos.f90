@@ -22,10 +22,10 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use block
        use BCTypes
        use constants
-       use flowVarRefState
+       use block, only : BCDataType, flowDoms
+       use flowVarRefState, only : nt1
        implicit none
 !
 !      Subroutine arguments.

@@ -18,6 +18,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use communication
        use inputPhysics
        implicit none
@@ -44,10 +45,6 @@
        ! appropriate subroutine.
 
        select case (turbModel)
-
-         case (baldwinLomax)
-
-         !===============================================================
 
          case (spalartAllmaras, spalartAllmarasEdwards)
            call readTurbSA(nTypeMismatch)

@@ -68,7 +68,6 @@ FF90_OBJECTS2 = allnodalgradients_d.o\
 		normalvelocities_block_d.o\
 		adjustinflowangle_d.o\
 		referencestate_d.o\
-		setflowinfinitystate_d.o\
 		forcesandmoments_d.o\
 		derivativerotmatrixrigid_d.o\
 		getdirangle_d.o\

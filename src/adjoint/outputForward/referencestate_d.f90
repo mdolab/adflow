@@ -3,9 +3,9 @@
 !
 !  differentiation of referencestate in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: gammainf pinf timeref rhoinf
-!                muref rhoinfdim tref muinf uinf rgas pinfdim pref
-!   with respect to varying inputs: pref mach tempfreestream reynolds
-!                veldirfreestream machcoef
+!                muref tref winf pinfcorr rgas pref
+!   with respect to varying inputs: tinfdim rhoinfdim pinfdim mach
+!                veldirfreestream rgasdim machcoef
 !
 !      ******************************************************************
 !      *                                                                *
@@ -20,119 +20,72 @@ subroutine referencestate_d()
 !
 !      ******************************************************************
 !      *                                                                *
-!      * referencestate computes the reference state values in case     *
-!      * these have not been specified. a distinction is made between   *
-!      * internal and external flows. in case nothing has been          *
-!      * specified for the former a dimensional computation will be     *
-!      * made. for the latter the reference state is set to an          *
-!      * arbitrary state for an inviscid computation and computed for a *
-!      * viscous computation. furthermore for internal flows an average *
-!      * velocity direction is computed from the boundary conditions,   *
-!      * which is used for initialization.                              *
 !      *                                                                *
 !      * the original version has been nuked since the computations are *
 !      * no longer necessary when calling from python                   *
+!      *                                                                *
+!      * this is the most compliclated routine in all of sumb. it is    *
+!      * stupidly complicated. this is most likely the reason your      *
+!      * derivatives are wrong. you don't understand this routine       *
+!      * and its effects.                                               *
+!      *                                                                *
+!      * this routine *requries* the following as input:                *
+!      * mach, pinfdim, tinfdim, rhoinfdim, rgasdim (machcoef non-sa    *
+!      *  turbulence only)                                              *
+!      *                                                                *
+!      *                                                                *
+!      * optionally, pref, rhoref and tref are used if they are         *
+!      * are non-negative. this only happens when you want the equations*
+!      * normalized by values other than the freestream                 *
+!      *                                                                *
+!      * this routine computes as output:  
+!      *   muinfdim, (unused anywhere in code)
+!      *   pref, rhoref, tref, muref, timeref ('dimensional' reference) *
+!      *   pinf, pinfcorr, rhoinf, uinf, rgas, muinf, gammainf and winf *
+!      *   (non-dimensionalized values used in actual computations)     *
 !      ******************************************************************
 !
-  use bctypes
-  use block
-  use communication
   use constants
-  use flowvarrefstate
-  use inputmotion
-  use inputphysics
-  use inputtimespectral
-  use iteration
+  use inputphysics, only : equations, mach, machd, machcoef, machcoefd&
+& , musuthdim, tsuthdim, veldirfreestream, veldirfreestreamd, rgasdim, &
+& rgasdimd, ssuthdim, eddyvisinfratio, turbmodel, turbintensityinf
+  use flowvarrefstate, only : pinfdim, pinfdimd, tinfdim, tinfdimd, &
+& rhoinfdim, rhoinfdimd, muinfdim, muinfdimd, pref, prefd, rhoref, &
+& rhorefd, tref, trefd, muref, murefd, timeref, timerefd, pinf, pinfd, &
+& pinfcorr, pinfcorrd, rhoinf, rhoinfd, uinf, uinfd, rgas, rgasd, muinf,&
+& muinfd, gammainf, gammainfd, winf, winfd, nw, nwf, kpresent, winf, &
+& winfd
+  use paramturb
   implicit none
-!
-!      local variables.
-!
-  integer :: ierr
-  integer(kind=inttype) :: sps, nn, mm
+  integer(kind=inttype) :: sps, nn, mm, ierr
   real(kind=realtype) :: gm1, ratio, tmp
-  real(kind=realtype) :: mx, my, mz, re, v, tinfdim
-  real(kind=realtype) :: mxd, myd, mzd, red, vd, tinfdimd
+  real(kind=realtype) :: nuinf, ktmp, uinf2
+  real(kind=realtype) :: nuinfd, ktmpd, uinf2d
+  real(kind=realtype) :: sanuknowneddyratio
+  real(kind=realtype) :: sanuknowneddyratio_d
+  real(kind=realtype) :: vinf, zinf
+  real(kind=realtype) :: vinfd, zinfd
   intrinsic sqrt
   real(kind=realtype) :: arg1
   real(kind=realtype) :: arg1d
   real(kind=realtype) :: result1
   real(kind=realtype) :: result1d
-! the following values must be set:
-! pinfdim, reynolds, tempfreestream
-! pref, rhoref and tref may be optionally set of if less than 0
-! will take free stream values.
-  tinfdimd = tempfreestreamd
-  tinfdim = tempfreestream
-  rhoinfdimd = -(pinfdim*rgasdim*tinfdimd/(rgasdim*tinfdim)**2)
-  rhoinfdim = pinfdim/(rgasdim*tinfdim)
-  mudimd = musuthdim*((tsuthdim+ssuthdim)*1.5_realtype*(tinfdim/tsuthdim&
-&   )**0.5*tinfdimd/((tinfdim+ssuthdim)*tsuthdim)-(tsuthdim+ssuthdim)*&
-&   tinfdimd*(tinfdim/tsuthdim)**1.5_realtype/(tinfdim+ssuthdim)**2)
-  mudim = musuthdim*((tsuthdim+ssuthdim)/(tinfdim+ssuthdim))*(tinfdim/&
-&   tsuthdim)**1.5_realtype
-! external flow. compute the value of gammainf.
-  call computegamma_d(tempfreestream, tempfreestreamd, gammainf, &
-&               gammainfd, 1)
-! in case of a viscous problem, compute the
-! dimensional free stream density and pressure.
-  if (equations .eq. nsequations .or. equations .eq. ransequations) then
-! compute the x, y, and z-components of the mach number
-! relative to the body; i.e. the mesh velocity must be
-! taken into account here.
-    mxd = machcoefd*veldirfreestream(1) + machcoef*veldirfreestreamd(1)
-    mx = machcoef*veldirfreestream(1)
-    myd = machcoefd*veldirfreestream(2) + machcoef*veldirfreestreamd(2)
-    my = machcoef*veldirfreestream(2)
-    mzd = machcoefd*veldirfreestream(3) + machcoef*veldirfreestreamd(3)
-    mz = machcoef*veldirfreestream(3)
-! reynolds number per meter, the viscosity using sutherland's
-! law and the free stream velocity relative to the body.
-    red = reynoldsd/reynoldslength
-    re = reynolds/reynoldslength
-    mudimd = musuthdim*((tsuthdim+ssuthdim)*1.5*(tempfreestream/tsuthdim&
-&     )**0.5*tempfreestreamd/((tempfreestream+ssuthdim)*tsuthdim)-(&
-&     tsuthdim+ssuthdim)*tempfreestreamd*(tempfreestream/tsuthdim)**1.5/&
-&     (tempfreestream+ssuthdim)**2)
-    mudim = musuthdim*((tsuthdim+ssuthdim)/(tempfreestream+ssuthdim))*(&
-&     tempfreestream/tsuthdim)**1.5
-    arg1d = rgasdim*((mxd*mx+mx*mxd+myd*my+my*myd+mzd*mz+mz*mzd)*&
-&     gammainf*tempfreestream+(mx*mx+my*my+mz*mz)*(gammainfd*&
-&     tempfreestream+gammainf*tempfreestreamd))
-    arg1 = (mx*mx+my*my+mz*mz)*gammainf*rgasdim*tempfreestream
-    if (arg1 .eq. 0.0_8) then
-      vd = 0.0_8
-    else
-      vd = arg1d/(2.0*sqrt(arg1))
-    end if
-    v = sqrt(arg1)
-! compute the free stream density and pressure.
-! set tinfdim to tempfreestream.
-    rhoinfdimd = ((red*mudim+re*mudimd)*v-re*mudim*vd)/v**2
-    rhoinfdim = re*mudim/v
-    pinfdimd = rgasdim*(rhoinfdimd*tempfreestream+rhoinfdim*&
-&     tempfreestreamd)
-    pinfdim = rhoinfdim*rgasdim*tempfreestream
-  else
-    pinfdimd = 0.0_8
-  end if
-! in case the reference pressure, density and temperature were
-! not specified, set them to the infinity values.
-  if (pref .le. zero) then
-    prefd = pinfdimd
-    pref = pinfdim
-  end if
-  if (rhoref .le. zero) then
-    rhorefd = rhoinfdimd
-    rhoref = rhoinfdim
-  else
-    rhorefd = 0.0_8
-  end if
-  if (tref .le. zero) then
-    trefd = tinfdimd
-    tref = tinfdim
-  else
-    trefd = 0.0_8
-  end if
+! compute the dimensional viscosity from sutherland's law
+  muinfdimd = musuthdim*((tsuthdim+ssuthdim)*1.5_realtype*(tinfdim/&
+&   tsuthdim)**0.5*tinfdimd/((tinfdim+ssuthdim)*tsuthdim)-(tsuthdim+&
+&   ssuthdim)*tinfdimd*(tinfdim/tsuthdim)**1.5_realtype/(tinfdim+&
+&   ssuthdim)**2)
+  muinfdim = musuthdim*((tsuthdim+ssuthdim)/(tinfdim+ssuthdim))*(tinfdim&
+&   /tsuthdim)**1.5_realtype
+! set the reference values. they *could* be different from the
+! free-stream values for an internal flow simulation. for now,
+! we just use the actual free stream values. 
+  prefd = pinfdimd
+  pref = pinfdim
+  trefd = tinfdimd
+  tref = tinfdim
+  rhorefd = rhoinfdimd
+  rhoref = rhoinfdim
 ! compute the value of muref, such that the nondimensional
 ! equations are identical to the dimensional ones.
 ! note that in the non-dimensionalization of muref there is
@@ -161,8 +114,7 @@ subroutine referencestate_d()
   pinf = pinfdim/pref
   rhoinfd = (rhoinfdimd*rhoref-rhoinfdim*rhorefd)/rhoref**2
   rhoinf = rhoinfdim/rhoref
-  arg1d = ((gammainfd*pinf+gammainf*pinfd)*rhoinf-gammainf*pinf*rhoinfd)&
-&   /rhoinf**2
+  arg1d = (gammainf*pinfd*rhoinf-gammainf*pinf*rhoinfd)/rhoinf**2
   arg1 = gammainf*pinf/rhoinf
   if (arg1 .eq. 0.0_8) then
     result1d = 0.0_8
@@ -172,9 +124,103 @@ subroutine referencestate_d()
   result1 = sqrt(arg1)
   uinfd = machd*result1 + mach*result1d
   uinf = mach*result1
-  rgasd = (rgasdim*(rhorefd*tref+rhoref*trefd)*pref-rgasdim*rhoref*tref*&
-&   prefd)/pref**2
+  rgasd = (((rgasdimd*rhoref+rgasdim*rhorefd)*tref+rgasdim*rhoref*trefd)&
+&   *pref-rgasdim*rhoref*tref*prefd)/pref**2
   rgas = rgasdim*rhoref*tref/pref
-  muinfd = (mudimd*muref-mudim*murefd)/muref**2
-  muinf = mudim/muref
+  muinfd = (muinfdimd*muref-muinfdim*murefd)/muref**2
+  muinf = muinfdim/muref
+  call computegamma_d(tinfdim, tinfdimd, gammainf, gammainfd, 1)
+! ----------------------------------------
+!      compute the final winf
+! ----------------------------------------
+! allocate the memory for winf if necessary
+! zero out the winf first
+  winf(:) = zero
+! set the reference value of the flow variables, except the total
+! energy. this will be computed at the end of this routine.
+  winfd = 0.0_8
+  winfd(irho) = rhoinfd
+  winf(irho) = rhoinf
+  winfd(ivx) = uinfd*veldirfreestream(1) + uinf*veldirfreestreamd(1)
+  winf(ivx) = uinf*veldirfreestream(1)
+  winfd(ivy) = uinfd*veldirfreestream(2) + uinf*veldirfreestreamd(2)
+  winf(ivy) = uinf*veldirfreestream(2)
+  winfd(ivz) = uinfd*veldirfreestream(3) + uinf*veldirfreestreamd(3)
+  winf(ivz) = uinf*veldirfreestream(3)
+! compute the velocity squared based on machcoef. this gives a
+! better indication of the 'speed' of the flow so the turubulence
+! intensity ration is more meaningful especially for moving
+! geometries. (not used in sa model)
+  uinf2d = (((machcoefd*machcoef+machcoef*machcoefd)*gammainf*pinf+&
+&   machcoef**2*(gammainfd*pinf+gammainf*pinfd))*rhoinf-machcoef**2*&
+&   gammainf*pinf*rhoinfd)/rhoinf**2
+  uinf2 = machcoef*machcoef*gammainf*pinf/rhoinf
+! set the turbulent variables if transport variables are to be
+! solved. we should be checking for rans equations here,
+! however, this code is included in block res. the issue is
+! that for frozen turbulence (or ank jacobian) we call the
+! block_res with equationtype set to laminar even though we are
+! actually solving the rans equations. the issue is that, the
+! freestream turb variables will be changed to zero, thus
+! changing the solution. insteady we check if nw > nwf which
+! will accomplish the same thing. 
+  if (nw .gt. nwf) then
+    nuinfd = (muinfd*rhoinf-muinf*rhoinfd)/rhoinf**2
+    nuinf = muinf/rhoinf
+    select case  (turbmodel) 
+    case (spalartallmaras, spalartallmarasedwards) 
+      winfd(itu1) = sanuknowneddyratio_d(eddyvisinfratio, nuinf, nuinfd&
+&       , winf(itu1))
+    case (komegawilcox, komegamodified, mentersst) 
+!=============================================================
+      winfd(itu1) = 1.5_realtype*turbintensityinf**2*uinf2d
+      winf(itu1) = 1.5_realtype*uinf2*turbintensityinf**2
+      winfd(itu2) = (winfd(itu1)*eddyvisinfratio*nuinf-winf(itu1)*&
+&       eddyvisinfratio*nuinfd)/(eddyvisinfratio*nuinf)**2
+      winf(itu2) = winf(itu1)/(eddyvisinfratio*nuinf)
+    case (ktau) 
+!=============================================================
+      winfd(itu1) = 1.5_realtype*turbintensityinf**2*uinf2d
+      winf(itu1) = 1.5_realtype*uinf2*turbintensityinf**2
+      winfd(itu2) = (eddyvisinfratio*nuinfd*winf(itu1)-eddyvisinfratio*&
+&       nuinf*winfd(itu1))/winf(itu1)**2
+      winf(itu2) = eddyvisinfratio*nuinf/winf(itu1)
+    case (v2f) 
+!=============================================================
+      winfd(itu1) = 1.5_realtype*turbintensityinf**2*uinf2d
+      winf(itu1) = 1.5_realtype*uinf2*turbintensityinf**2
+      winfd(itu2) = (0.09_realtype*2*winf(itu1)*winfd(itu1)*&
+&       eddyvisinfratio*nuinf-0.09_realtype*winf(itu1)**2*&
+&       eddyvisinfratio*nuinfd)/(eddyvisinfratio*nuinf)**2
+      winf(itu2) = 0.09_realtype*winf(itu1)**2/(eddyvisinfratio*nuinf)
+      winfd(itu3) = 0.666666_realtype*winfd(itu1)
+      winf(itu3) = 0.666666_realtype*winf(itu1)
+      winfd(itu4) = 0.0_8
+      winf(itu4) = 0.0_realtype
+    end select
+  end if
+! set the value of pinfcorr. in case a k-equation is present
+! add 2/3 times rho*k.
+  pinfcorrd = pinfd
+  pinfcorr = pinf
+  if (kpresent) then
+    pinfcorrd = pinfd + two*third*(rhoinfd*winf(itu1)+rhoinf*winfd(itu1)&
+&     )
+    pinfcorr = pinf + two*third*rhoinf*winf(itu1)
+  end if
+! compute the free stream total energy.
+  ktmp = zero
+  if (kpresent) then
+    ktmpd = winfd(itu1)
+    ktmp = winf(itu1)
+  else
+    ktmpd = 0.0_8
+  end if
+  vinf = zero
+  zinf = zero
+  zinfd = 0.0_8
+  vinfd = 0.0_8
+  call etotarray_d(rhoinf, rhoinfd, uinf, uinfd, vinf, vinfd, zinf, &
+&            zinfd, pinfcorr, pinfcorrd, ktmp, ktmpd, winf(irhoe), winfd&
+&            (irhoe), kpresent, 1)
 end subroutine referencestate_d

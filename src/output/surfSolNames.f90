@@ -143,16 +143,6 @@
          solNames(nn) = cgnsBlank
        endif
 
-       if (surfWriteLift) then
-          nn = nn + 1
-          solNames(nn) = cgnsLift
-       end if
-
-       if (surfWriteDrag) then
-          nn = nn + 1
-          solNames(nn) = cgnsDrag
-       end if
-
        if (surfWriteSepSensor) then
           nn = nn + 1
           solNames(nn) = cgnsSepSensor

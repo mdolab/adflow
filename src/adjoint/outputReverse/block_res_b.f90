@@ -7,35 +7,34 @@
 !                *xx *rev0 *rev1 *rev2 *rev3 *pp0 *pp1 *pp2 *pp3
 !                *rlv0 *rlv1 *rlv2 *rlv3 *ssi *ww0 *ww1 *ww2 *ww3
 !                funcvalues
-!   with respect to varying inputs: pref *(flowdoms.x) *(flowdoms.w)
-!                *(flowdoms.dw) *(*bcdata.fv) *(*bcdata.fp) *(*bcdata.area)
-!                mach tempfreestream reynolds machgrid lengthref
+!   with respect to varying inputs: tinfdim rhoinfdim pinfdim *(flowdoms.x)
+!                *(flowdoms.w) *(flowdoms.dw) *(*bcdata.fv) *(*bcdata.fp)
+!                *(*bcdata.area) mach machgrid rgasdim lengthref
 !                machcoef pointref *xx *rev0 *rev1 *rev2 *rev3
 !                *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3 *ssi
 !                *ww0 *ww1 *ww2 *ww3 *xsurf funcvalues alpha beta
-!   rw status of diff variables: mudim:(loc) gammainf:(loc) pinf:(loc)
-!                timeref:(loc) rhoinf:(loc) muref:(loc) rhoinfdim:(loc)
+!   rw status of diff variables: gammainf:(loc) tinfdim:out pinf:(loc)
+!                timeref:(loc) rhoinf:(loc) muref:(loc) rhoinfdim:out
 !                tref:(loc) winf:(loc) muinf:(loc) uinf:(loc) pinfcorr:(loc)
-!                rgas:(loc) pinfdim:(loc) pref:out rhoref:(loc)
-!                *(flowdoms.x):in-out *(flowdoms.vol):(loc) *(flowdoms.w):in-out
-!                *(flowdoms.dw):in-out *rev:(loc) *aa:(loc) *bvtj1:(loc)
-!                *bvtj2:(loc) *wx:(loc) *wy:(loc) *wz:(loc) *p:(loc)
-!                *rlv:(loc) *qx:(loc) *qy:(loc) *qz:(loc) *scratch:(loc)
-!                *bvtk1:(loc) *bvtk2:(loc) *ux:(loc) *uy:(loc)
-!                *uz:(loc) *d2wall:(loc) *si:(loc) *sj:(loc) *sk:(loc)
-!                *bvti1:(loc) *bvti2:(loc) *vx:(loc) *vy:(loc)
-!                *vz:(loc) *fw:(loc) *(*viscsubface.tau):(loc)
+!                rgas:(loc) muinfdim:(loc) pinfdim:out pref:(loc)
+!                rhoref:(loc) *(flowdoms.x):in-out *(flowdoms.vol):(loc)
+!                *(flowdoms.w):in-out *(flowdoms.dw):in-out *rev:(loc)
+!                *aa:(loc) *bvtj1:(loc) *bvtj2:(loc) *wx:(loc)
+!                *wy:(loc) *wz:(loc) *p:(loc) *rlv:(loc) *qx:(loc)
+!                *qy:(loc) *qz:(loc) *scratch:(loc) *bvtk1:(loc)
+!                *bvtk2:(loc) *ux:(loc) *uy:(loc) *uz:(loc) *d2wall:(loc)
+!                *si:(loc) *sj:(loc) *sk:(loc) *bvti1:(loc) *bvti2:(loc)
+!                *vx:(loc) *vy:(loc) *vz:(loc) *fw:(loc) *(*viscsubface.tau):(loc)
 !                *(*bcdata.norm):(loc) *(*bcdata.fv):in-out *(*bcdata.fp):in-out
 !                *(*bcdata.area):in-out *radi:(loc) *radj:(loc)
-!                *radk:(loc) mach:out tempfreestream:out reynolds:out
-!                veldirfreestream:(loc) machgrid:out lengthref:out
-!                machcoef:out dragdirection:(loc) liftdirection:(loc)
-!                pointref:out *xx:in-out *rev0:in-out *rev1:in-out
-!                *rev2:in-out *rev3:in-out *pp0:in-out *pp1:in-out
-!                *pp2:in-out *pp3:in-out *rlv0:in-out *rlv1:in-out
-!                *rlv2:in-out *rlv3:in-out *ssi:in-out *ww0:in-out
-!                *ww1:in-out *ww2:in-out *ww3:in-out *xsurf:out
-!                funcvalues:in-zero alpha:out beta:out
+!                *radk:(loc) mach:out veldirfreestream:(loc) machgrid:out
+!                rgasdim:out lengthref:out machcoef:out dragdirection:(loc)
+!                liftdirection:(loc) pointref:out *xx:in-out *rev0:in-out
+!                *rev1:in-out *rev2:in-out *rev3:in-out *pp0:in-out
+!                *pp1:in-out *pp2:in-out *pp3:in-out *rlv0:in-out
+!                *rlv1:in-out *rlv2:in-out *rlv3:in-out *ssi:in-out
+!                *ww0:in-out *ww1:in-out *ww2:in-out *ww3:in-out
+!                *xsurf:out funcvalues:in-zero alpha:out beta:out
 !   plus diff mem management of: flowdoms.x:in flowdoms.vol:in
 !                flowdoms.w:in flowdoms.dw:in rev:in aa:in bvtj1:in
 !                bvtj2:in wx:in wy:in wz:in p:in rlv:in qx:in qy:in
@@ -106,10 +105,9 @@ subroutine block_res_b(nn, sps, usespatial, alpha, alphad, beta, betad, &
   real(kind=realtype) :: temp1
   real(kind=realtype) :: temp0
   real(kind=realtype) :: tempd
-  real(kind=realtype) :: tempd7(3)
-  real(kind=realtype) :: tempd6
-  real(kind=realtype) :: tempd5(3)
-  real(kind=realtype) :: tempd4
+  real(kind=realtype) :: tempd6(3)
+  real(kind=realtype) :: tempd5
+  real(kind=realtype) :: tempd4(3)
   real(kind=realtype) :: tempd3
   real(kind=realtype) :: tempd2
   real(kind=realtype) :: tempd1
@@ -118,8 +116,6 @@ subroutine block_res_b(nn, sps, usespatial, alpha, alphad, beta, betad, &
   integer :: ii2
   integer :: ii1
   real(kind=realtype) :: temp
-  real(kind=realtype) :: temp5
-  real(kind=realtype) :: temp4
 ! setup number of state variable based on turbulence assumption
   if (frozenturb) then
     nstate = nwf
@@ -139,13 +135,8 @@ subroutine block_res_b(nn, sps, usespatial, alpha, alphad, beta, betad, &
 !        additional 'extra' components
 ! ------------------------------------------------ 
   call adjustinflowangle(alpha, beta, liftindex)
-  call pushreal8(rhoref)
-  call pushreal8(pref)
-  call pushreal8(pinfdim)
-  call pushreal8(tref)
   call pushreal8(gammainf)
   call referencestate()
-  call setflowinfinitystate()
 ! ------------------------------------------------
 !        additional spatial components
 ! ------------------------------------------------
@@ -247,9 +238,6 @@ subroutine block_res_b(nn, sps, usespatial, alpha, alphad, beta, betad, &
 !   call computeutau_block
 ! #endif
 ! compute time step and spectral radius
-  call pushreal8array(radk, size(radk, 1)*size(radk, 2)*size(radk, 3))
-  call pushreal8array(radj, size(radj, 1)*size(radj, 2)*size(radj, 3))
-  call pushreal8array(radi, size(radi, 1)*size(radi, 2)*size(radi, 3))
   call timestep_block(.false.)
 spectralloop0:do sps2=1,ntimeintervalsspectral
     flowdoms(nn, 1, sps2)%dw(:, :, :, :) = zero
@@ -490,35 +478,6 @@ varloopfine:do l=1,nwf
     end do
   end do
   call residual_block()
-! divide through by the reference volume
-  do sps2=1,ntimeintervalsspectral
-    do l=1,nwf
-      do k=2,kl
-        do j=2,jl
-          do i=2,il
-            call pushreal8(flowdoms(nn, 1, sps2)%dw(i, j, k, l))
-            flowdoms(nn, 1, sps2)%dw(i, j, k, l) = flowdoms(nn, 1, sps2)&
-&             %dw(i, j, k, l)/flowdoms(nn, currentlevel, sps2)%vol(i, j&
-&             , k)
-          end do
-        end do
-      end do
-    end do
-! treat the turblent residual with the scaling factor on the
-! residual
-    do l=nt1,nstate
-      do k=2,kl
-        do j=2,jl
-          do i=2,il
-            call pushreal8(flowdoms(nn, 1, sps2)%dw(i, j, k, l))
-            flowdoms(nn, 1, sps2)%dw(i, j, k, l) = flowdoms(nn, 1, sps2)&
-&             %dw(i, j, k, l)/flowdoms(nn, currentlevel, sps2)%vol(i, j&
-&             , k)*turbresscale(l-nt1+1)
-          end do
-        end do
-      end do
-    end do
-  end do
   call pushreal8array(ww3, size(ww3, 1)*size(ww3, 2)*size(ww3, 3))
   call pushreal8array(ww2, size(ww2, 1)*size(ww2, 2)*size(ww2, 3))
   call pushreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
@@ -602,34 +561,34 @@ varloopfine:do l=1,nwf
   cmvd = 0.0_8
   factd = 0.0_8
   do sps2=ntimeintervalsspectral,1,-1
-    tempd7 = momentd(:, sps2)/fact
-    cmpd = cmpd + tempd7
-    cmvd = cmvd + tempd7
-    factd = factd + sum(-((cmp+cmv)*tempd7/fact))
+    tempd6 = momentd(:, sps2)/fact
+    cmpd = cmpd + tempd6
+    cmvd = cmvd + tempd6
+    factd = factd + sum(-((cmp+cmv)*tempd6/fact))
     momentd(:, sps2) = 0.0_8
   end do
   call popreal8(fact)
-  tempd6 = factd/(lref*lengthref)
-  lengthrefd = lengthrefd - fact*tempd6/lengthref
-  factd = tempd6
+  tempd5 = factd/(lref*lengthref)
+  lengthrefd = lengthrefd - fact*tempd5/lengthref
+  factd = tempd5
   cfpd = 0.0_8
   cfvd = 0.0_8
   do sps2=ntimeintervalsspectral,1,-1
-    tempd5 = forced(:, sps2)/fact
-    cfpd = cfpd + tempd5
-    cfvd = cfvd + tempd5
-    factd = factd + sum(-((cfp+cfv)*tempd5/fact))
+    tempd4 = forced(:, sps2)/fact
+    cfpd = cfpd + tempd4
+    cfvd = cfvd + tempd4
+    factd = factd + sum(-((cfp+cfv)*tempd4/fact))
     forced(:, sps2) = 0.0_8
   end do
-  temp5 = machcoef**2*scaledim
-  temp4 = surfaceref*lref**2
-  temp3 = temp4*gammainf*pinf
-  tempd3 = -(two*factd/(temp3**2*temp5**2))
-  tempd4 = temp5*temp4*tempd3
-  gammainfd = gammainfd + pinf*tempd4
-  machcoefd = machcoefd + scaledim*temp3*2*machcoef*tempd3
-  scaledimd = temp3*machcoef**2*tempd3
-  pinfd = pinfd + gammainf*tempd4 - pref*scaledimd/pinf**2
+  temp3 = machcoef**2*scaledim
+  temp2 = surfaceref*lref**2
+  temp1 = temp2*gammainf*pinf
+  tempd2 = -(two*factd/(temp1**2*temp3**2))
+  tempd3 = temp3*temp2*tempd2
+  gammainfd = gammainfd + pinf*tempd3
+  machcoefd = machcoefd + scaledim*temp1*2*machcoef*tempd2
+  scaledimd = temp1*machcoef**2*tempd2
+  pinfd = pinfd + gammainf*tempd3 - pref*scaledimd/pinf**2
   prefd = prefd + scaledimd/pinf
   call popreal8array(cfp, 3)
   call popreal8array(cfv, 3)
@@ -691,26 +650,14 @@ varloopfine:do l=1,nwf
   call forcesandmoments_b(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd, &
 &                   yplusmax, sepsensor, sepsensord, sepsensoravg, &
 &                   sepsensoravgd, cavitation, cavitationd)
-  do ii1=1,ntimeintervalsspectral
-    do ii2=1,1
-      do ii3=nn,nn
-        flowdomsd(ii3, ii2, ii1)%vol = 0.0_8
-      end do
-    end do
-  end do
   do sps2=ntimeintervalsspectral,1,-1
     do l=nstate,nt1,-1
       do k=kl,2,-1
         do j=jl,2,-1
           do i=il,2,-1
-            call popreal8(flowdoms(nn, 1, sps2)%dw(i, j, k, l))
-            temp2 = flowdoms(nn, currentlevel, sps2)%vol(i, j, k)
-            tempd2 = turbresscale(l-nt1+1)*flowdomsd(nn, 1, sps2)%dw(i, &
-&             j, k, l)/temp2
-            flowdomsd(nn, currentlevel, sps2)%vol(i, j, k) = flowdomsd(&
-&             nn, currentlevel, sps2)%vol(i, j, k) - flowdoms(nn, 1, &
-&             sps2)%dw(i, j, k, l)*tempd2/temp2
-            flowdomsd(nn, 1, sps2)%dw(i, j, k, l) = tempd2
+            flowdomsd(nn, 1, sps2)%dw(i, j, k, l) = turbresscale(l-nt1+1&
+&             )*flowdomsd(nn, 1, sps2)%dw(i, j, k, l)/flowdoms(nn, &
+&             currentlevel, sps2)%volref(i, j, k)
           end do
         end do
       end do
@@ -719,14 +666,9 @@ varloopfine:do l=1,nwf
       do k=kl,2,-1
         do j=jl,2,-1
           do i=il,2,-1
-            call popreal8(flowdoms(nn, 1, sps2)%dw(i, j, k, l))
-            temp1 = flowdoms(nn, currentlevel, sps2)%vol(i, j, k)
-            flowdomsd(nn, currentlevel, sps2)%vol(i, j, k) = flowdomsd(&
-&             nn, currentlevel, sps2)%vol(i, j, k) - flowdoms(nn, 1, &
-&             sps2)%dw(i, j, k, l)*flowdomsd(nn, 1, sps2)%dw(i, j, k, l)&
-&             /temp1**2
             flowdomsd(nn, 1, sps2)%dw(i, j, k, l) = flowdomsd(nn, 1, &
-&             sps2)%dw(i, j, k, l)/temp1
+&             sps2)%dw(i, j, k, l)/flowdoms(nn, currentlevel, sps2)%&
+&             volref(i, j, k)
           end do
         end do
       end do
@@ -920,9 +862,6 @@ varloopfine:do l=1,nwf
   do sps2=ntimeintervalsspectral,1,-1
     flowdomsd(nn, 1, sps2)%dw = 0.0_8
   end do
-  call popreal8array(radi, size(radi, 1)*size(radi, 2)*size(radi, 3))
-  call popreal8array(radj, size(radj, 1)*size(radj, 2)*size(radj, 3))
-  call popreal8array(radk, size(radk, 1)*size(radk, 2)*size(radk, 3))
   call timestep_block_b(.false.)
   call popcontrol1b(branch)
   if (branch .eq. 0) then
@@ -1009,12 +948,7 @@ varloopfine:do l=1,nwf
   call boundarynormals_b()
   call metric_block_b()
   call volume_block_b()
- 100 call setflowinfinitystate_b()
-  call popreal8(gammainf)
-  call popreal8(tref)
-  call popreal8(pinfdim)
-  call popreal8(pref)
-  call popreal8(rhoref)
+ 100 call popreal8(gammainf)
   call referencestate_b()
   call adjustinflowangle_b(alpha, alphad, beta, betad, liftindex)
   funcvaluesd = 0.0_8

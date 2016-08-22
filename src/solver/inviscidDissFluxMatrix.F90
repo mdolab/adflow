@@ -21,13 +21,17 @@ subroutine inviscidDissFluxMatrix
   !      *                                                                *
   !      ******************************************************************
   !
-  use blockPointers
-  use cgnsGrid
   use constants
-  use flowVarRefState
-  use inputDiscretization
-  use inputPhysics
-  use iteration
+  use blockPointers, only : nx, ny, nz, il, jl, kl, ie, je, ke, ib, jb, kb, &
+       w, p, porI, porJ, porK, fw, gamma, si, sj, sk, &
+       indFamilyI, indFamilyJ, indFamilyK, spectralSol, addGridVelocities, &
+       sFaceI, sfaceJ, sFacek, factFamilyI, factFamilyJ, factFamilyK
+  use flowVarRefState, only : pInfCorr
+  use inputDiscretization, only: vis2, vis4
+  use inputPhysics, only : equations
+  use iteration, only : rFil
+  use cgnsGrid, only: massFlowFamilyDiss
+
   implicit none
   !
   !      Local parameters.
@@ -54,8 +58,7 @@ subroutine inviscidDissFluxMatrix
   real(kind=realType) :: kAvg, lam1, lam2, lam3, area
   real(kind=realType) :: abv1, abv2, abv3, abv4, abv5, abv6, abv7
   real(kind=realType),dimension(1:ie,1:je,1:ke,3) :: dss
-
-  logical :: correctForK
+  logical :: correctForK, getCorrectForK
   !
   !      ******************************************************************
   !      *                                                                *
@@ -77,15 +80,7 @@ subroutine inviscidDissFluxMatrix
   ! Determine whether or not the total energy must be corrected
   ! for the presence of the turbulent kinetic energy.
 
-  if( kPresent ) then
-     if((currentLevel == groundLevel) .or. turbCoupled) then
-        correctForK = .true.
-     else
-        correctForK = .false.
-     endif
-  else
-     correctForK = .false.
-  endif
+  correctForK = getCorrectForK()
 
   ! Initialize sface to zero. This value will be used if the
   ! block is not moving.
@@ -104,7 +99,7 @@ subroutine inviscidDissFluxMatrix
   fw = sfil*fw
 
   ! Compute the pressure sensor for each cell, in each direction:
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
   !$AD II-LOOP
   do ii=0,ie*je*ke-1
      i = mod(ii, ie) + 1
@@ -130,7 +125,7 @@ subroutine inviscidDissFluxMatrix
                    /     (omega*(p(i,j,k+1) + two*p(i,j,k) + p(i,j,k-1)) &
                    +      oneMinOmega*(abs(p(i,j,k+1) - p(i,j,k))      &
                    +                   abs(p(i,j,k) - p(i,j,k-1))) + plim))
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
            end do
 #else
         end do
@@ -144,7 +139,7 @@ subroutine inviscidDissFluxMatrix
   !      *                                                                *
   !      ******************************************************************
   !
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
   !$AD II-LOOP
   do ii=0,il*ny*nz-1
      i = mod(ii, il) + 1
@@ -225,12 +220,11 @@ subroutine inviscidDissFluxMatrix
               a2Avg = half*(gamma(i+1,j,k)*p(i+1,j,k)/w(i+1,j,k,irho) &
                    +       gamma(i,  j,k)*p(i,  j,k)/w(i,  j,k,irho))
 
-              sx = si(i,j,k,1); sy = si(i,j,k,2); sz = si(i,j,k,3)
-              area = sqrt(sx**2 + sy**2 + sz**2)
+              area = sqrt(si(i,j,k,1)**2 + si(i,j,k,2)**2 + si(i,j,k,3)**2)
               tmp  = one/max(1.e-25_realType,area)
-              sx   = sx*tmp
-              sy   = sy*tmp
-              sz   = sz*tmp
+              sx   = si(i,j,k,1)*tmp
+              sy   = si(i,j,k,2)*tmp
+              sz   = si(i,j,k,3)*tmp
 
               alphaAvg = half*(uAvg**2 + vAvg**2 + wAvg**2)
               hAvg     = alphaAvg + ovgm1*(a2Avg - gm53*kAvg)
@@ -254,16 +248,12 @@ subroutine inviscidDissFluxMatrix
 
               rrad = lam3 + aAvg
 
-              lam1 = max(lam1,epsAcoustic*rrad)
-              lam2 = max(lam2,epsAcoustic*rrad)
-              lam3 = max(lam3,epsShear*rrad)
-
               ! Multiply the eigenvalues by the area to obtain
               ! the correct values for the dissipation term.
 
-              lam1 = lam1*area
-              lam2 = lam2*area
-              lam3 = lam3*area
+              lam1 = max(lam1,epsAcoustic*rrad)*area
+              lam2 = max(lam2,epsAcoustic*rrad)*area
+              lam3 = max(lam3,epsShear*rrad)*area
 
               ! Some abbreviations, which occur quite often in the
               ! dissipation terms.
@@ -315,7 +305,7 @@ subroutine inviscidDissFluxMatrix
               fw(i+1,j,k,irhoE) = fw(i+1,j,k,irhoE) + fs
               fw(i,j,k,irhoE)   = fw(i,j,k,irhoE)   - fs
 
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
            end do
 #else
         end do
@@ -329,7 +319,7 @@ subroutine inviscidDissFluxMatrix
   !      *                                                                *
   !      ******************************************************************
   !
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
   !$AD II-LOOP
   do ii=0,nx*jl*nz-1
      i = mod(ii, nx) + 2
@@ -412,12 +402,11 @@ subroutine inviscidDissFluxMatrix
               a2Avg = half*(gamma(i,j+1,k)*p(i,j+1,k)/w(i,j+1,k,irho) &
                    +       gamma(i,j,  k)*p(i,j,  k)/w(i,j,  k,irho))
 
-              sx = sj(i,j,k,1); sy = sj(i,j,k,2); sz = sj(i,j,k,3)
-              area = sqrt(sx**2 + sy**2 + sz**2)
+              area = sqrt(sj(i,j,k,1)**2 + sj(i,j,k,2)**2 + sj(i,j,k,3)**2)
               tmp  = one/max(1.e-25_realType,area)
-              sx   = sx*tmp
-              sy   = sy*tmp
-              sz   = sz*tmp
+              sx   = sj(i,j,k,1)*tmp
+              sy   = sj(i,j,k,2)*tmp
+              sz   = sj(i,j,k,3)*tmp
 
               alphaAvg = half*(uAvg**2 + vAvg**2 + wAvg**2)
               hAvg     = alphaAvg + ovgm1*(a2Avg - gm53*kAvg)
@@ -441,16 +430,12 @@ subroutine inviscidDissFluxMatrix
 
               rrad = lam3 + aAvg
 
-              lam1 = max(lam1,epsAcoustic*rrad)
-              lam2 = max(lam2,epsAcoustic*rrad)
-              lam3 = max(lam3,epsShear*rrad)
-
               ! Multiply the eigenvalues by the area to obtain
               ! the correct values for the dissipation term.
 
-              lam1 = lam1*area
-              lam2 = lam2*area
-              lam3 = lam3*area
+              lam1 = max(lam1,epsAcoustic*rrad)*area
+              lam2 = max(lam2,epsAcoustic*rrad)*area
+              lam3 = max(lam3,epsShear*rrad)*area
 
               ! Some abbreviations, which occur quite often in the
               ! dissipation terms.
@@ -502,7 +487,7 @@ subroutine inviscidDissFluxMatrix
               fw(i,j+1,k,irhoE) = fw(i,j+1,k,irhoE) + fs
               fw(i,j,k,irhoE)   = fw(i,j,k,irhoE)   - fs
 
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
            end do
 #else
         end do
@@ -516,7 +501,7 @@ subroutine inviscidDissFluxMatrix
   !      *                                                                *
   !      ******************************************************************
   !
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
   !$AD II-LOOP
   do ii=0,nx*ny*kl-1
      i = mod(ii, nx) + 2
@@ -598,12 +583,11 @@ subroutine inviscidDissFluxMatrix
               a2Avg = half*(gamma(i,j,k+1)*p(i,j,k+1)/w(i,j,k+1,irho) &
                    +       gamma(i,j,k)  *p(i,j,k)  /w(i,j,k,  irho))
 
-              sx = sk(i,j,k,1); sy = sk(i,j,k,2); sz = sk(i,j,k,3)
-              area = sqrt(sx**2 + sy**2 + sz**2)
+              area = sqrt(sk(i,j,k,1)**2 + sk(i,j,k,2)**2 + sk(i,j,k,3)**2)
               tmp  = one/max(1.e-25_realType,area)
-              sx   = sx*tmp
-              sy   = sy*tmp
-              sz   = sz*tmp
+              sx   = sk(i,j,k,1)*tmp
+              sy   = sk(i,j,k,2)*tmp
+              sz   = sk(i,j,k,3)*tmp
 
               alphaAvg = half*(uAvg**2 + vAvg**2 + wAvg**2)
               hAvg     = alphaAvg + ovgm1*(a2Avg - gm53*kAvg)
@@ -627,16 +611,12 @@ subroutine inviscidDissFluxMatrix
 
               rrad = lam3 + aAvg
 
-              lam1 = max(lam1,epsAcoustic*rrad)
-              lam2 = max(lam2,epsAcoustic*rrad)
-              lam3 = max(lam3,epsShear*rrad)
-
               ! Multiply the eigenvalues by the area to obtain
               ! the correct values for the dissipation term.
 
-              lam1 = lam1*area
-              lam2 = lam2*area
-              lam3 = lam3*area
+              lam1 = max(lam1,epsAcoustic*rrad)*area
+              lam2 = max(lam2,epsAcoustic*rrad)*area
+              lam3 = max(lam3,epsShear*rrad)*area
 
               ! Some abbreviations, which occur quite often in the
               ! dissipation terms.
@@ -688,7 +668,7 @@ subroutine inviscidDissFluxMatrix
               fw(i,j,k+1,irhoE) = fw(i,j,k+1,irhoE) + fs
               fw(i,j,k,irhoE)   = fw(i,j,k,irhoE)   - fs
 
-#ifdef TAPENADE_FAST
+#ifdef TAPENADE_REVERSE
            end do
 #else
         end do

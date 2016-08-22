@@ -33,13 +33,19 @@ subroutine inviscidupwindflux_d(finegrid)
 !      *                                                                *
 !      ******************************************************************
 !
-  use blockpointers
-  use cgnsgrid
   use constants
-  use inputdiscretization
-  use inputphysics
-  use flowvarrefstate
-  use iteration
+  use blockpointers, only : il, jl, kl, ie, je, ke, ib, jb, kb, w, wd,&
+& p, pd, pori, porj, pork, fw, fwd, gamma, si, sid, sj, sjd, sk, skd, &
+& indfamilyi, indfamilyj, indfamilyk, spectralsol, addgridvelocities, &
+& sfacei, sfaceid, sfacej, sfacejd, sfacek, sfacekd, rotmatrixi, &
+& rotmatrixj, rotmatrixk, factfamilyi, factfamilyj, factfamilyk
+  use flowvarrefstate, only : kpresent, nw, nwf, rgas, rgasd, tref, &
+& trefd
+  use inputdiscretization, only : limiter, lumpeddiss, precond, &
+& riemann, riemanncoarse, orderturb, kappacoef
+  use inputphysics, only : equations
+  use iteration, only : rfil, currentlevel, groundlevel
+  use cgnsgrid, only : massflowfamilydiss
   implicit none
 !
 !      subroutine arguments.
@@ -62,7 +68,8 @@ subroutine inviscidupwindflux_d(finegrid)
   real(kind=realtype), dimension(nw) :: du1d, du2d, du3d
   real(kind=realtype), dimension(nwf) :: flux
   real(kind=realtype), dimension(nwf) :: fluxd
-  logical :: firstorderk, correctfork, rotationalperiodic
+  logical :: firstorderk, correctfork, getcorrectfork, &
+& rotationalperiodic
   intrinsic abs
   intrinsic associated
   intrinsic max
@@ -115,15 +122,7 @@ subroutine inviscidupwindflux_d(finegrid)
     end do
 ! determine whether or not the total energy must be corrected
 ! for the presence of the turbulent kinetic energy.
-    if (kpresent) then
-      if (currentlevel .eq. groundlevel .or. turbcoupled) then
-        correctfork = .true.
-      else
-        correctfork = .false.
-      end if
-    else
-      correctfork = .false.
-    end if
+    correctfork = getcorrectfork()
     if (1.e-10_realtype .lt. one - kappacoef) then
       max1 = one - kappacoef
     else

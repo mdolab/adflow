@@ -18,8 +18,7 @@ subroutine finalizePETSc
   !     *                                                                *
   !     ******************************************************************
   !
-  use ADjointPETSc
-  use communication
+  use ADjointPETSc, only : PETScIerr
   implicit none
   !
   !     ******************************************************************
@@ -30,9 +29,7 @@ subroutine finalizePETSc
   !
 #ifndef USE_NO_PETSC
 
-
   call PetscFinalize(PETScIerr)
-  print *, 'finialized:', PETScIerr
 
 #endif
 end subroutine finalizePETSc

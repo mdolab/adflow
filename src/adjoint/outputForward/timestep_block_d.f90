@@ -30,15 +30,19 @@ subroutine timestep_block_d(onlyradii)
 !      *                                                                *
 !      ******************************************************************
 !
-  use blockpointers
   use constants
-  use flowvarrefstate
-  use inputdiscretization
-  use inputiteration
-  use inputphysics
-  use inputtimespectral
-  use iteration
-  use section
+  use blockpointers, only : ie, je, ke, il, jl, kl, w, wd, p, pd, rlv,&
+& rlvd, rev, revd, radi, radid, radj, radjd, radk, radkd, si, sid, sj, &
+& sjd, sk, skd, sfacei, sfaceid, sfacej, sfacejd, sfacek, sfacekd, dtl, &
+& gamma, vol, vold, addgridvelocities, sectionid
+  use flowvarrefstate, only : timeref, timerefd, eddymodel, gammainf, &
+& gammainfd, pinfcorr, pinfcorrd, viscous, rhoinf, rhoinfd
+  use inputdiscretization, only : adis, dirscaling, radiineededcoarse,&
+& radiineededfine, precond
+  use inputphysics, only : equationmode
+  use iteration, only : groundlevel, currentlevel
+  use section, only : sections
+  use inputtimespectral, only : ntimeintervalsspectral
   implicit none
 ! the rest of this file can be skipped if only the spectral
 ! radii need to be computed.
@@ -181,8 +185,8 @@ subroutine timestep_block_d(onlyradii)
               result1d = arg1d/(2.0*sqrt(arg1))
             end if
             result1 = sqrt(arg1)
-            radid(i, j, k) = half*(abs0d+result1d)
-            radi(i, j, k) = half*(abs0+result1)
+            rid = half*(abs0d+result1d)
+            ri = half*(abs0+result1)
 ! the grid velocity in j-direction.
             if (addgridvelocities) then
               sfaced = sfacejd(i, j-1, k) + sfacejd(i, j, k)
@@ -214,8 +218,8 @@ subroutine timestep_block_d(onlyradii)
               result1d = arg1d/(2.0*sqrt(arg1))
             end if
             result1 = sqrt(arg1)
-            radjd(i, j, k) = half*(abs1d+result1d)
-            radj(i, j, k) = half*(abs1+result1)
+            rjd = half*(abs1d+result1d)
+            rj = half*(abs1+result1)
 ! the grid velocity in k-direction.
             if (addgridvelocities) then
               sfaced = sfacekd(i, j, k-1) + sfacekd(i, j, k)
@@ -247,10 +251,10 @@ subroutine timestep_block_d(onlyradii)
               result1d = arg1d/(2.0*sqrt(arg1))
             end if
             result1 = sqrt(arg1)
-            radkd(i, j, k) = half*(abs2d+result1d)
-            radk(i, j, k) = half*(abs2+result1)
+            rkd = half*(abs2d+result1d)
+            rk = half*(abs2+result1)
 ! compute the inviscid contribution to the time step.
-            dtl(i, j, k) = radi(i, j, k) + radj(i, j, k) + radk(i, j, k)
+            dtl(i, j, k) = ri + rj + rk
 !
 !          **************************************************************
 !          *                                                            *
@@ -260,26 +264,23 @@ subroutine timestep_block_d(onlyradii)
 !          **************************************************************
 !
             if (doscaling) then
-              if (radi(i, j, k) .lt. eps) then
+              if (ri .lt. eps) then
                 ri = eps
                 rid = 0.0_8
               else
-                rid = radid(i, j, k)
-                ri = radi(i, j, k)
+                ri = ri
               end if
-              if (radj(i, j, k) .lt. eps) then
+              if (rj .lt. eps) then
                 rj = eps
                 rjd = 0.0_8
               else
-                rjd = radjd(i, j, k)
-                rj = radj(i, j, k)
+                rj = rj
               end if
-              if (radk(i, j, k) .lt. eps) then
+              if (rk .lt. eps) then
                 rk = eps
                 rkd = 0.0_8
               else
-                rkd = radkd(i, j, k)
-                rk = radk(i, j, k)
+                rk = rk
               end if
 ! compute the scaling in the three coordinate
 ! directions.
@@ -320,15 +321,22 @@ subroutine timestep_block_d(onlyradii)
 ! note that the multiplication is done with radi, radj
 ! and radk, such that the influence of the clipping
 ! is negligible.
-              radid(i, j, k) = radid(i, j, k)*(one+one/rij+rki) + radi(i&
-&               , j, k)*(rkid-one*rijd/rij**2)
-              radi(i, j, k) = radi(i, j, k)*(one+one/rij+rki)
-              radjd(i, j, k) = radjd(i, j, k)*(one+one/rjk+rij) + radj(i&
-&               , j, k)*(rijd-one*rjkd/rjk**2)
-              radj(i, j, k) = radj(i, j, k)*(one+one/rjk+rij)
-              radkd(i, j, k) = radkd(i, j, k)*(one+one/rki+rjk) + radk(i&
-&               , j, k)*(rjkd-one*rkid/rki**2)
-              radk(i, j, k) = radk(i, j, k)*(one+one/rki+rjk)
+              radid(i, j, k) = rid*(one+one/rij+rki) + ri*(rkid-one*rijd&
+&               /rij**2)
+              radi(i, j, k) = ri*(one+one/rij+rki)
+              radjd(i, j, k) = rjd*(one+one/rjk+rij) + rj*(rijd-one*rjkd&
+&               /rjk**2)
+              radj(i, j, k) = rj*(one+one/rjk+rij)
+              radkd(i, j, k) = rkd*(one+one/rki+rjk) + rk*(rjkd-one*rkid&
+&               /rki**2)
+              radk(i, j, k) = rk*(one+one/rki+rjk)
+            else
+              radid(i, j, k) = rid
+              radi(i, j, k) = ri
+              radjd(i, j, k) = rjd
+              radj(i, j, k) = rj
+              radkd(i, j, k) = rkd
+              radk(i, j, k) = rk
             end if
           end do
         end do

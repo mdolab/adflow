@@ -17,7 +17,10 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      use adtUtils
+      use constants
+      use adtUtils, only : ADTs, adtLeafType, adtBBoxTargetType, stack, &
+           nStack, adtTerminate, reallocbboxtargettypeplus, reallocplus, &
+           qsortbboxtargets
       implicit none
 
       !=================================================================
@@ -26,7 +29,7 @@
 
         !===============================================================
 
-        subroutine containmentTreeSearch(ADT,       coor,   &
+        subroutine containmentTreeSearch(jj,        coor,   &
                                          intInfo,   uvw,    &
                                          arrDonor,  nCoor,  &
                                          nInterpol)
@@ -39,7 +42,8 @@
 !       *                                                              *
 !       * Subroutine intent(in) arguments.                             *
 !       * --------------------------------                             *
-!       * ADT:       ADT type whose ADT must be searched               *
+!       * jj:        Entry in the array ADTs, whose ADT must be        *
+!       *            searched.                                         *
 !       * nCoor:     Number of coordinates for which the element must  *
 !       *            be determined.                                    *
 !       * coor:      The coordinates of these points.                  *
@@ -74,8 +78,7 @@
 !
 !       Subroutine arguments.
 !
-        type(adtType), intent(inout) :: ADT
-        integer(kind=intType), intent(in) :: nCoor
+        integer(kind=intType), intent(in) :: nCoor, jj
         integer(kind=intType), intent(in) :: nInterpol
 
         real(kind=realType), dimension(:,:), intent(in) :: coor
@@ -83,122 +86,6 @@
 
         integer(kind=intType), dimension(:,:), intent(out) :: intInfo
         real(kind=realType),   dimension(:,:), intent(out) :: uvw
-!
-!       Local variables.
-!
-        integer(kind=intType), dimension(:), pointer :: BB
-        integer(kind=intType), dimension(:), pointer :: frontLeaves
-        integer(kind=intType), dimension(:), pointer :: frontLeavesNew
-        integer(kind=intType) :: nAllocBB, nAllocFront
-        integer(kind=intType) :: ierr, nn
-        logical :: failed
-!
-!       ****************************************************************
-!       *                                                              *
-!       * Begin execution.                                             *
-!       *                                                              *
-!       ****************************************************************
-!
-
-        ! Initial allocation of the arrays for the tree traversal.
-
-        nAllocBB    = 10
-        nAllocFront = 25
-
-        allocate(BB(nAllocBB), frontLeaves(nAllocFront), &
-                 frontLeavesNew(nAllocFront), stat=ierr)
-        if(ierr /= 0)                                    &
-          call adtTerminate(ADT, "containmentTreeSearch", &
-                            "Memory allocation failure for BB, &
-                            &frontLeaves and frontLeavesNew.")
-
-        ! Loop over the number of coordinates to be treated.
-        
-        coorLoop: do nn=1, nCoor
-
-           call containmentTreeSearchSinglePoint(ADT, coor(:, nn), &
-           intInfo(:, nn), uvw(:, nn), arrDonor, nInterpol, BB,  &
-           frontLeaves, frontLeavesNew, failed)
-
-        end do coorLoop
-
-        ! Release the memory allocated in this routine.
-
-        deallocate(BB, frontLeaves, frontLeavesNew, stat=ierr)
-        if(ierr /= 0)                                    &
-          call adtTerminate(ADT, "containmentTreeSearch", &
-                            "Deallocation failure for BB, &
-                            &frontLeaves and frontLeavesNew.")
-
-        end subroutine containmentTreeSearch
-
-      subroutine containmentTreeSearchSinglePoint(ADT, coor, &
-           intInfo, uvw, arrDonor, nInterpol, BB, &
-           frontLeaves, frontLeavesNew, failed)
-!
-!       ****************************************************************
-!       *                                                              *
-!       * This routine is replaces the original containment            *
-!       * tree search, however, it has been optimized for searching a  *
-!       * single query point at a time. Specifically, this means that  *
-!       * there are no allocatable arrays inside this routine; they    *
-!       * must be supplied exterally. Also since only a single point   *
-!       * is searched we can fix some of the dimensions. This routine  *
-!       * requires pointers for BB, frontLeaves and frontLeavesNew to  *
-!       * be passed to the routine. Since this routine is called a     *
-!       * very large number of times, these cannot be allocated        *
-!       * dynamically inside for speed purposes.                       *
-!       *                                                              *
-!       * Subroutine intent(in) arguments.                             *
-!       * --------------------------------                             *
-!       * ADT:       ADT type whose ADT must be searched               *
-!       * coor:      The coordinate of the point to be searched.       *
-!       * nInterpol: Number of variables to be interpolated.           *
-!       * arrDonor:  Array with the donor data; needed to obtain the   *
-!       *            interpolated data.                                *
-!       *                                                              *
-!       * Subroutine intent(out) arguments.                            *
-!       * ---------------------------------                            *
-!       * intInfo: 1D integer array of length three , in which the     *
-!       *        following output                                      *
-!       *          be be stored:                                       *
-!       *          intInfo(1): processor ID of the processor where    
-!       *                        the element is stored. This of course *
-!       *                        is myID. If no element is found this  *
-!       *                        value is set to -1.                   *
-!       *          intInfo(2): The element type of the element.        
-!       *          intInfo(3): The element ID of the element in the   
-!       *                        connectivity.                         *
-!       * uvw:     1D floating point array to store the parametric     *
-!       *          coordinates of the point in the transformed element *
-!       *          and the interpolated data:                          *
-!       *          uvw(1): Parametric u-weight.                        *
-!       *          uvw(2): Parametric v-weight.                        *
-!       *          uvw(3): Parametric w-weight.                        *
-!       *          uvw(4:): Interpolated solution(s), if desired. It is*
-!       *                     possible to call this routine with       *
-!       *                     nInterpol == 0.                          *
-!       *                                                              *
-!       ****************************************************************
-!
-        use constants
-        implicit none
-!
-!       Subroutine arguments.
-!
-        type(adtType), intent(inout) :: ADT
-        integer(kind=intType), intent(in) :: nInterpol
-
-        real(kind=realType), dimension(3), intent(in) :: coor
-        real(kind=realType), dimension(:,:), intent(in) :: arrDonor
-
-        integer(kind=intType), dimension(3), intent(out) :: intInfo
-        real(kind=realType),   dimension(:), intent(out) :: uvw
-        logical, intent(out) :: failed
-        integer(kind=intType), dimension(:), pointer :: BB
-        integer(kind=intType), dimension(:), pointer :: frontLeaves
-        integer(kind=intType), dimension(:), pointer :: frontLeavesNew
-
 !
 !       Local parameters used in the Newton algorithm.
 !
@@ -216,6 +103,10 @@
         integer(kind=intType) :: i, nNodeElement
 
         integer(kind=intType), dimension(8) :: n
+
+        integer(kind=intType), dimension(:), pointer :: BB
+        integer(kind=intType), dimension(:), pointer :: frontLeaves
+        integer(kind=intType), dimension(:), pointer :: frontLeavesNew
 
         real(kind=realType) :: u, v, w, uv, uw, vw, wvu, du, dv, dw
         real(kind=realType) :: oneMinusU, oneMinusV, oneMinusW
@@ -241,19 +132,29 @@
 !
         ! Set some pointers to make the code more readable.
 
-        xBBox  => ADT%xBBox
-        ADTree => ADT%ADTree
+        xBBox  => ADTs(jj)%xBBox
+        ADTree => ADTs(jj)%ADTree
 
-        ! Determine the sizes from the arrays we have been passed
+        ! Initial allocation of the arrays for the tree traversal.
 
-        nAllocBB    = size(BB)
-        nAllocFront = size(frontLeaves)
-        
-        ! Initialize the processor ID to -1 to indicate that no
-        ! corresponding volume element is found.
+        nAllocBB    = 10
+        nAllocFront = 25
 
-        intInfo(1) = -1
-        failed = .True.
+        allocate(BB(nAllocBB), frontLeaves(nAllocFront), &
+                 frontLeavesNew(nAllocFront), stat=ierr)
+        if(ierr /= 0)                                    &
+          call adtTerminate(jj, "containmentTreeSearch", &
+                            "Memory allocation failure for BB, &
+                            &frontLeaves and frontLeavesNew.")
+
+        ! Loop over the number of coordinates to be treated.
+
+        coorLoop: do nn=1,nCoor
+
+          ! Initialize the processor ID to -1 to indicate that no
+          ! corresponding volume element is found.
+
+          intInfo(1,nn) = -1
 !
 !         **************************************************************
 !         *                                                            *
@@ -292,25 +193,24 @@
                 ! or a leaf of the next level.
 
                 kk = ADTree(ll)%children(mm)
-               
                 terminalTest: if(kk < 0) then
 
                   ! Child contains a bounding box. Check if the
                   ! coordinate is inside the bounding box.
 
                   kk = -kk
-                  if(coor(1) >= xBBox(1,kk) .and. &
-                     coor(1) <= xBBox(4,kk) .and. &
-                     coor(2) >= xBBox(2,kk) .and. &
-                     coor(2) <= xBBox(5,kk) .and. &
-                     coor(3) >= xBBox(3,kk) .and. &
-                     coor(3) <= xBBox(6,kk)) then
+                  if(coor(1,nn) >= xBBox(1,kk) .and. &
+                     coor(1,nn) <= xBBox(4,kk) .and. &
+                     coor(2,nn) >= xBBox(2,kk) .and. &
+                     coor(2,nn) <= xBBox(5,kk) .and. &
+                     coor(3,nn) >= xBBox(3,kk) .and. &
+                     coor(3,nn) <= xBBox(6,kk)) then
 
                     ! Coordinate is inside the bounding box. Store the
                     ! bounding box in the list of possible candidates.
 
                     if(nBB == nAllocBB) &
-                      call reallocPlus(BB, nAllocBB, 10, ADT)
+                      call reallocPlus(BB, nAllocBB, 10, jj)
 
                     nBB     = nBB + 1
                     BB(nBB) = kk
@@ -321,20 +221,20 @@
                   ! Child contains a leaf. Check if the coordinate is
                   ! inside the bounding box of the leaf.
 
-                  if(coor(1) >= ADTree(kk)%xMin(1) .and. &
-                     coor(1) <= ADTree(kk)%xMax(4) .and. &
-                     coor(2) >= ADTree(kk)%xMin(2) .and. &
-                     coor(2) <= ADTree(kk)%xMax(5) .and. &
-                     coor(3) >= ADTree(kk)%xMin(3) .and. &
-                     coor(3) <= ADTree(kk)%xMax(6)) then
+                  if(coor(1,nn) >= ADTree(kk)%xMin(1) .and. &
+                     coor(1,nn) <= ADTree(kk)%xMax(4) .and. &
+                     coor(2,nn) >= ADTree(kk)%xMin(2) .and. &
+                     coor(2,nn) <= ADTree(kk)%xMax(5) .and. &
+                     coor(3,nn) >= ADTree(kk)%xMin(3) .and. &
+                     coor(3,nn) <= ADTree(kk)%xMax(6)) then
 
                     ! Coordinate is inside the leaf. Store the leaf in
                     ! the list for the new front.
 
                     if(nFrontLeavesNew == nAllocFront) then
                       i = nAllocFront
-                      call reallocPlus(frontLeavesNew, i, 25, ADT)
-                      call reallocPlus(frontLeaves, nAllocFront, 25, ADT)
+                      call reallocPlus(frontLeavesNew, i, 25, jj)
+                      call reallocPlus(frontLeaves, nAllocFront, 25, jj)
                     endif
 
                     nFrontLeavesNew = nFrontLeavesNew + 1
@@ -378,27 +278,27 @@
             ! Determine the element type stored in this bounding box.
 
             kk = BB(mm)
-            select case (ADT%elementType(kk))
+            select case (ADTs(jj)%elementType(kk))
 
               case (adtTetrahedron)
 
                 ! Element is a tetrahedron.
                 ! Compute the coordinates relative to node 1.
 
-                ll   = ADT%elementID(kk)
-                n(1) = ADT%tetraConn(1,ll)
+                ll   = ADTs(jj)%elementID(kk)
+                n(1) = ADTs(jj)%tetraConn(1,ll)
 
                 do i=2,4
-                  n(i) = ADT%tetraConn(i,ll)
+                  n(i) = ADTs(jj)%tetraConn(i,ll)
 
-                  xn(1,i) = ADT%coor(1,n(i)) - ADT%coor(1,n(1))
-                  xn(2,i) = ADT%coor(2,n(i)) - ADT%coor(2,n(1))
-                  xn(3,i) = ADT%coor(3,n(i)) - ADT%coor(3,n(1))
+                  xn(1,i) = ADTs(jj)%coor(1,n(i)) - ADTs(jj)%coor(1,n(1))
+                  xn(2,i) = ADTs(jj)%coor(2,n(i)) - ADTs(jj)%coor(2,n(1))
+                  xn(3,i) = ADTs(jj)%coor(3,n(i)) - ADTs(jj)%coor(3,n(1))
                 enddo
 
-                x(1) = coor(1) - ADT%coor(1,n(1))
-                x(2) = coor(2) - ADT%coor(2,n(1))
-                x(3) = coor(3) - ADT%coor(3,n(1))
+                x(1) = coor(1,nn) - ADTs(jj)%coor(1,n(1))
+                x(2) = coor(2,nn) - ADTs(jj)%coor(2,n(1))
+                x(3) = coor(3,nn) - ADTs(jj)%coor(3,n(1))
 
                 ! Determine the matrix for the linear transformation
                 ! from the standard element to the current element.
@@ -412,7 +312,7 @@
 
                 val = a11*(a22*a33 - a32*a23) + a21*(a13*a32 - a12*a33) &
                     + a31*(a12*a23 - a13*a22)
-                val = sign(adtOne,val)/max(abs(val),adtEps)
+                val = sign(one,val)/max(abs(val),adtEps)
 
                 ! Compute the u, v, w weights for the given coordinate.
 
@@ -430,17 +330,16 @@
                 ! If so, set elementFound to .true. and determine the
                 ! interpolation weights.
 
-                if(u >= adtZero .and. v >= adtZero .and. &
-                   w >= adtZero .and. (u+v+w) <= adtOne) then
+                if(u >= zero .and. v >= zero .and. &
+                   w >= zero .and. (u+v+w) <= one) then
                   elementFound = .true.
-                  failed = .False. !No iteration for tetrahedrons
 
                   ! Set the number of interpolation nodes to 4 and
                   ! determine the interpolation weights.
 
                   nNodeElement = 4
 
-                  weight(1) = adtOne - u - v - w
+                  weight(1) = one - u - v - w
                   weight(2) = u
                   weight(3) = v
                   weight(4) = w
@@ -453,20 +352,20 @@
                 ! Element is a pyramid.
                 ! Compute the coordinates relative to node 1.
 
-                ll   = ADT%elementID(kk)
-                n(1) = ADT%pyraConn(1,ll)
+                ll   = ADTs(jj)%elementID(kk)
+                n(1) = ADTs(jj)%pyraConn(1,ll)
 
                 do i=2,5
-                  n(i) = ADT%pyraConn(i,ll)
+                  n(i) = ADTs(jj)%pyraConn(i,ll)
 
-                  xn(1,i) = ADT%coor(1,n(i)) - ADT%coor(1,n(1))
-                  xn(2,i) = ADT%coor(2,n(i)) - ADT%coor(2,n(1))
-                  xn(3,i) = ADT%coor(3,n(i)) - ADT%coor(3,n(1))
+                  xn(1,i) = ADTs(jj)%coor(1,n(i)) - ADTs(jj)%coor(1,n(1))
+                  xn(2,i) = ADTs(jj)%coor(2,n(i)) - ADTs(jj)%coor(2,n(1))
+                  xn(3,i) = ADTs(jj)%coor(3,n(i)) - ADTs(jj)%coor(3,n(1))
                 enddo
 
-                x(1) = coor(1) - ADT%coor(1,n(1))
-                x(2) = coor(2) - ADT%coor(2,n(1))
-                x(3) = coor(3) - ADT%coor(3,n(1))
+                x(1) = coor(1,nn) - ADTs(jj)%coor(1,n(1))
+                x(2) = coor(2,nn) - ADTs(jj)%coor(2,n(1))
+                x(3) = coor(3,nn) - ADTs(jj)%coor(3,n(1))
 
                 ! Modify the coordinates of node 3, such that it
                 ! corresponds to the weights of the u*v term in the
@@ -481,7 +380,7 @@
                 ! Jacobian matrix is always regular, even if the element
                 ! is degenerate.
 
-                u = adtHalf; v = adtHalf; w = adtHalf
+                u = half; v=half; w=half;
 
                 ! The Newton algorithm to determine the parametric
                 ! weights u, v and w for the given coordinate.
@@ -491,7 +390,7 @@
                   ! Compute the RHS.
 
                   uv = u*v
-                  oneMinusW = adtOne - w
+                  oneMinusW = one - w
 
                   f(1) = oneMinusW*(xn(1,2)*u + xn(1,4)*v + xn(1,3)*uv) &
                        + xn(1,5)*w - x(1)
@@ -520,7 +419,7 @@
 
                   val = a11*(a22*a33 - a32*a23) + a21*(a13*a32 - a12*a33) &
                       + a31*(a12*a23 - a13*a22)
-                  val = sign(adtOne,val)/max(abs(val),adtEps)
+                  val = sign(one,val)/max(abs(val),adtEps)
 
                   ! Compute the new values of u, v and w.
 
@@ -540,19 +439,16 @@
                   ! weights is below the threshold
 
                   val = sqrt(du*du + dv*dv + dw*dw)
-                  if(val <= thresConv) then 
-                     failed = .False.
-                     exit NewtonPyra
-                  end if
+                  if(val <= thresConv) exit NewtonPyra
                 enddo NewtonPyra
 
                 ! Check if the coordinate is inside the pyramid.
                 ! If so, set elementFound to .true. and determine the
                 ! interpolation weights.
 
-                if(u     >= adtZero .and. v     >= adtZero .and. &
-                   w     >= adtZero .and. (u+w) <= adtOne  .and. &
-                   (v+w) <= adtOne .and. .not. failed) then
+                if(u     >= zero .and. v     >= zero .and. &
+                   w     >= zero .and. (u+w) <= one  .and. &
+                   (v+w) <= one) then
                   elementFound = .true.
 
                   ! Set the number of interpolation nodes to 5 and
@@ -560,9 +456,9 @@
 
                   nNodeElement = 5
 
-                  oneMinusU = adtOne - u
-                  oneMinusV = adtOne - v
-                  oneMinusW = adtOne - w
+                  oneMinusU = one - u
+                  oneMinusV = one - v
+                  oneMinusW = one - w
 
                   weight(1) = oneMinusU*oneMinusV*oneMinusW
                   weight(2) =         u*oneMinusV*oneMinusW
@@ -578,20 +474,20 @@
                 ! Element is a prism.
                 ! Compute the coordinates relative to node 1.
 
-                 ll   = ADT%elementID(kk)
-                 n(1) = ADT%prismsConn(1,ll)
+                 ll   = ADTs(jj)%elementID(kk)
+                 n(1) = ADTs(jj)%prismsConn(1,ll)
 
                 do i=2,6
-                  n(i) = ADT%prismsConn(i,ll)
+                  n(i) = ADTs(jj)%prismsConn(i,ll)
 
-                  xn(1,i) = ADT%coor(1,n(i)) - ADT%coor(1,n(1))
-                  xn(2,i) = ADT%coor(2,n(i)) - ADT%coor(2,n(1))
-                  xn(3,i) = ADT%coor(3,n(i)) - ADT%coor(3,n(1))
+                  xn(1,i) = ADTs(jj)%coor(1,n(i)) - ADTs(jj)%coor(1,n(1))
+                  xn(2,i) = ADTs(jj)%coor(2,n(i)) - ADTs(jj)%coor(2,n(1))
+                  xn(3,i) = ADTs(jj)%coor(3,n(i)) - ADTs(jj)%coor(3,n(1))
                 enddo
 
-                x(1) = coor(1) - ADT%coor(1,n(1))
-                x(2) = coor(2) - ADT%coor(2,n(1))
-                x(3) = coor(3) - ADT%coor(3,n(1))
+                x(1) = coor(1,nn) - ADTs(jj)%coor(1,n(1))
+                x(2) = coor(2,nn) - ADTs(jj)%coor(2,n(1))
+                x(3) = coor(3,nn) - ADTs(jj)%coor(3,n(1))
 
                 ! Modify the coordinates of node 5 and 6, such that they
                 ! correspond to the weights of the u*w and v*w term in the
@@ -610,7 +506,7 @@
                 ! Jacobian matrix is always regular, even if the element
                 ! is degenerate.
 
-                u = adtFourth; v = adtFourth; w = adtHalf
+                u = fourth; v = fourth; w = half
 
                 ! The Newton algorithm to determine the parametric
                 ! weights u, v and w for the given coordinate.
@@ -648,7 +544,7 @@
 
                   val = a11*(a22*a33 - a32*a23) + a21*(a13*a32 - a12*a33) &
                       + a31*(a12*a23 - a13*a22)
-                  val = sign(adtOne,val)/max(abs(val),adtEps)
+                  val = sign(one,val)/max(abs(val),adtEps)
 
                   ! Compute the new values of u, v and w.
 
@@ -668,20 +564,16 @@
                   ! weights is below the threshold
 
                   val = sqrt(du*du + dv*dv + dw*dw)
-                  if(val <= thresConv) then 
-                     failed = .False.
-                     exit NewtonPrisms
-                  end if
-
+                  if(val <= thresConv) exit NewtonPrisms
                 enddo NewtonPrisms
 
                 ! Check if the coordinate is inside the prism.
                 ! If so, set elementFound to .true. and determine the
                 ! interpolation weights.
 
-                if(u     >= adtZero .and. v >= adtZero .and. &
-                   w     >= adtZero .and. w <= adtOne  .and. &
-                   (u+v) <= adtOne .and. .not. failed) then
+                if(u     >= zero .and. v >= zero .and. &
+                   w     >= zero .and. w <= one  .and. &
+                   (u+v) <= one) then
                   elementFound = .true.
 
                   ! Set the number of interpolation nodes to 6 and
@@ -689,8 +581,8 @@
 
                   nNodeElement = 6
 
-                  oneMinusUminusV = adtOne - u - v
-                  oneMinusW       = adtOne - w
+                  oneMinusUminusV = one - u - v
+                  oneMinusW       = one - w
 
                   weight(1) = oneMinusUminusV*oneMinusW
                   weight(2) =               u*oneMinusW
@@ -707,20 +599,20 @@
                 ! Element is a hexahedron.
                 ! Compute the coordinates relative to node 1.
 
-                ll   = ADT%elementID(kk)
-                n(1) = ADT%hexaConn(1,ll)
+                ll   = ADTs(jj)%elementID(kk)
+                n(1) = ADTs(jj)%hexaConn(1,ll)
 
                 do i=2,8
-                  n(i) = ADT%hexaConn(i,ll)
+                  n(i) = ADTs(jj)%hexaConn(i,ll)
 
-                  xn(1,i) = ADT%coor(1,n(i)) - ADT%coor(1,n(1))
-                  xn(2,i) = ADT%coor(2,n(i)) - ADT%coor(2,n(1))
-                  xn(3,i) = ADT%coor(3,n(i)) - ADT%coor(3,n(1))
+                  xn(1,i) = ADTs(jj)%coor(1,n(i)) - ADTs(jj)%coor(1,n(1))
+                  xn(2,i) = ADTs(jj)%coor(2,n(i)) - ADTs(jj)%coor(2,n(1))
+                  xn(3,i) = ADTs(jj)%coor(3,n(i)) - ADTs(jj)%coor(3,n(1))
                 enddo
 
-                x(1) = coor(1) - ADT%coor(1,n(1))
-                x(2) = coor(2) - ADT%coor(2,n(1))
-                x(3) = coor(3) - ADT%coor(3,n(1))
+                x(1) = coor(1,nn) - ADTs(jj)%coor(1,n(1))
+                x(2) = coor(2,nn) - ADTs(jj)%coor(2,n(1))
+                x(3) = coor(3,nn) - ADTs(jj)%coor(3,n(1))
 
                 ! Modify the coordinates of node 3, 6, 8 and 7 such that
                 ! they correspond to the weights of the u*v, u*w, v*w and
@@ -750,7 +642,7 @@
                 ! Jacobian matrix is always regular, even if the element
                 ! is degenerate.
 
-                u = adtHalf; v = adtHalf; w = adtHalf
+                u = half; v = half; w = half
 
                 ! The Newton algorithm to determine the parametric
                 ! weights u, v and w for the given coordinate.
@@ -791,7 +683,7 @@
 
                   val = a11*(a22*a33 - a32*a23) + a21*(a13*a32 - a12*a33) &
                       + a31*(a12*a23 - a13*a22)
-                  val = sign(adtOne,val)/max(abs(val),adtEps)
+                  val = sign(one,val)/max(abs(val),adtEps)
 
                   ! Compute the new values of u, v and w.
 
@@ -811,20 +703,16 @@
                   ! weights is below the threshold
 
                   val = sqrt(du*du + dv*dv + dw*dw)
-                  if(val <= thresConv) then 
-                     failed = .False.
-                     exit NewtonHexa
-                  end if
-
+                  if(val <= thresConv) exit NewtonHexa
                 enddo NewtonHexa
 
                 ! Check if the coordinate is inside the hexahedron.
                 ! If so, set elementFound to .true. and determine the
                 ! interpolation weights.
 
-                if(u >= adtZero .and. u <= adtOne .and. &
-                   v >= adtZero .and. v <= adtOne .and. &
-                   w >= adtZero .and. w <= adtOne .and. .not. failed) then 
+                if(u >= zero .and. u <= one .and. &
+                   v >= zero .and. v <= one .and. &
+                   w >= zero .and. w <= one) then
                   elementFound = .true.
 
                   ! Set the number of interpolation nodes to 8 and
@@ -832,9 +720,9 @@
 
                   nNodeElement = 8
 
-                  oneMinusU = adtOne - u
-                  oneMinusV = adtOne - v
-                  oneMinusW = adtOne - w
+                  oneMinusU = one - u
+                  oneMinusV = one - v
+                  oneMinusW = one - w
 
                   weight(1) = oneMinusU*oneMinusV*oneMinusW
                   weight(2) =         u*oneMinusV*oneMinusW
@@ -856,23 +744,23 @@
 
               ! The processor, element type and local element ID.
 
-              intInfo(1) = ADT%myID
-              intInfo(2) = ADT%elementType(kk)
-              intInfo(3) = ADT%elementID(kk)
+              intInfo(1,nn) = ADTs(jj)%myID
+              intInfo(2,nn) = ADTs(jj)%elementType(kk)
+              intInfo(3,nn) = ADTs(jj)%elementID(kk)
 
               ! The parametric weights.
 
-              uvw(1) = u
-              uvw(2) = v
-              uvw(3) = w
+              uvw(1,nn) = u
+              uvw(2,nn) = v
+              uvw(3,nn) = w
 
               ! The interpolated solution.
 
               do ll=1,nInterpol
                 ii = 3+ll
-                uvw(ii) = weight(1)*arrDonor(ll,n(1))
+                uvw(ii,nn) = weight(1)*arrDonor(ll,n(1))
                 do i=2,nNodeElement
-                  uvw(ii) = uvw(ii) + weight(i)*arrDonor(ll,n(i))
+                  uvw(ii,nn) = uvw(ii,nn) + weight(i)*arrDonor(ll,n(i))
                 enddo
               enddo
 
@@ -882,13 +770,23 @@
             endif
 
           enddo BBoxLoop
-          
-        end subroutine containmentTreeSearchSinglePoint
+
+        enddo coorLoop
+
+        ! Release the memory allocated in this routine.
+
+        deallocate(BB, frontLeaves, frontLeavesNew, stat=ierr)
+        if(ierr /= 0)                                    &
+          call adtTerminate(jj, "containmentTreeSearch", &
+                            "Deallocation failure for BB, &
+                            &frontLeaves and frontLeavesNew.")
+
+        end subroutine containmentTreeSearch
 
         !***************************************************************
         !***************************************************************
 
-        subroutine minDistanceTreeSearch(ADT,       coor,   &
+        subroutine minDistanceTreeSearch(jj,        coor,   &
                                          intInfo,   uvw,    &
                                          arrDonor,  nCoor,  &
                                          nInterpol)
@@ -901,7 +799,8 @@
 !       *                                                              *
 !       * Subroutine intent(in) arguments.                             *
 !       * --------------------------------                             *
-!       * ADT:       ADT type whose ADT must be searched               *
+!       * jj:        Entry in the array ADTs, whose ADT must be        *
+!       *            searched.                                         *
 !       * nCoor:     Number of coordinates for which the element must  *
 !       *            be determined.                                    *
 !       * coor:      The coordinates and the currently stored minimum  *
@@ -944,8 +843,7 @@
 !
 !       Subroutine arguments.
 !
-        type(adtType), intent(inout) :: ADT
-        integer(kind=intType), intent(in) :: nCoor
+        integer(kind=intType), intent(in) :: nCoor, jj
         integer(kind=intType), intent(in) :: nInterpol
 
         real(kind=realType), dimension(:,:), intent(in) :: coor
@@ -953,136 +851,6 @@
 
         integer(kind=intType), dimension(:,:), intent(out) :: intInfo
         real(kind=realType),   dimension(:,:), intent(out) :: uvw
-!
-!       Local parameters used in the Newton algorithm.
-!
-        integer(kind=intType), parameter :: iterMax   = 15
-        real(kind=realType),   parameter :: adtEps    = 1.e-25_realType
-        real(kind=realType),   parameter :: thresConv = 1.e-10_realType
-!
-!       Local variables.
-!
-        integer :: ierr, nn
-        integer(kind=intType) :: nAllocBB, nAllocFront, nStack
-        integer(kind=intType), dimension(:), pointer :: frontLeaves
-        integer(kind=intType), dimension(:), pointer :: frontLeavesNew
-        type(adtBBoxTargetType), dimension(:), pointer :: BB
-!
-!       ****************************************************************
-!       *                                                              *
-!       * Begin execution.                                             *
-!       *                                                              *
-!       ****************************************************************
-!
-   
-        ! Initial allocation of the arrays for the tree traversal as well
-        ! as the stack array used in the qsort routine. The latter is
-        ! done, because the qsort routine is called for every coordinate
-        ! and therefore it is more efficient to allocate the stack once
-        ! rather than over and over again. The disadvantage of course is
-        ! that an essentially local variable, stack, is now stored in
-        ! adtData.
-
-        nAllocBB    =  10
-        nAllocFront =  25
-        nStack      = 100
-
-        allocate(stack(nStack), BB(nAllocBB), frontLeaves(nAllocFront), &
-                 frontLeavesNew(nAllocFront), stat=ierr)
-        if(ierr /= 0)                                    &
-          call adtTerminate(ADT, "minDistanceTreeSearch", &
-                            "Memory allocation failure for stack, BB, &
-                            &etc.")
-
-        ! Loop over the number of coordinates to be treated.
-
-        coorLoop: do nn=1,nCoor
-
-           call minDistanceTreeSearchSinglePoint(ADT, coor(:, nn), &
-                intInfo(:, nn), uvw(:, nn), arrDonor, nInterpol, BB, &
-                frontLeaves, frontLeavesNew)
-
-        enddo coorLoop
-
-        ! Release the memory allocated in this routine.
-
-        deallocate(stack, BB, frontLeaves, frontLeavesNew, stat=ierr)
-        if(ierr /= 0)                                    &
-          call adtTerminate(ADT, "minDistanceTreeSearch", &
-                            "Deallocation failure for stack, BB, etc.")
-
-        end subroutine minDistanceTreeSearch
-
-
-      subroutine minDistanceTreeSearchSinglePoint(ADT, coor, intInfo, &
-           uvw, arrDonor, nInterpol, BB, frontLeaves, frontLeavesNew)
-!
-!       ****************************************************************
-!       *                                                              *
-!       * This routine performs the actual minimum distance search for *
-!       * a single point on the local tree. It is local in the sens    *
-!       * that no communication is involved. This routine does the     *
-!       * actual search. The minDistanceTreeSearch is just a wrapper   *
-!       * around this routine. The reason for the split is that the    *
-!       * overset mesh connectivity requires efficient calling with    *
-!       * a single coordinate. Therefore, this rouine does not         *
-!       * allocate/deallocate any variables.                           *
-!       *                                                              *
-!       *                                                              *
-!       * Subroutine intent(in) arguments.                             *
-!       * --------------------------------                             *
-!       * ADT:       ADT type whose ADT must be searched               *
-!       * coor:      The coordinates and the currently stored minimum  *
-!       *            distance squared of these points:                 *
-!       *            coor(1): Coordinate 1.                            *
-!       *            coor(2): Coordinate 2.                            *
-!       *            coor(3): Coordinate 3.                            *
-!       *            coor(4): The currently stored minimum distance    *
-!       *            squared.                                          *
-!       * nInterpol: Number of variables to be interpolated.           *
-!       * arrDonor:  Array with the donor data; needed to obtain the   *
-!       *            interpolated data.                                *
-!       *                                                              *
-!       * Subroutine intent(out) arguments.                            *
-!       * ---------------------------------                            *
-!       * intInfo: 1D integer array, in which the following output     *
-!       *          will be stored:                                     *
-!       *          intInfo(1): processor ID of the processor where   *
-!       *                        the element is stored. This of course *
-!       *                        is myID. If no element is found this  *
-!       *                        value is set to -1.                   *
-!       *          intInfo(2): The element type of the element.        *
-!       *          intInfo(3): The element ID of the element in the    *
-!       *                        the connectivity.                     *
-!       * uvw:     2D floating point array to store the parametric     *
-!       *          coordinates of the point in the transformed element *
-!       *          as well as the new distance squared and the         *
-!       *          interpolated solution:                              *
-!       *          uvw(1): Parametric u-weight.                        *
-!       *          uvw(2): Parametric v-weight.                        *
-!       *          uvw(3): Parametric w-weight.                        *
-!       *          uvw(4): The new distance squared.                   *
-!       *          uvw(5): Interpolated solution, if desired. It is    *
-!       *                     possible to call this routine with       *
-!       *                     nInterpol == 0.                          *
-!       *                                                              *
-!       ****************************************************************
-!
-        implicit none
-!
-!       Subroutine arguments.
-!
-        type(adtType), intent(inout) :: ADT
-        integer(kind=intType), intent(in) :: nInterpol
-
-        real(kind=realType), dimension(4), intent(in) :: coor
-        real(kind=realType), dimension(:,:), intent(in) :: arrDonor
-
-        integer(kind=intType), dimension(3), intent(out) :: intInfo
-        real(kind=realType),   dimension(5), intent(out) :: uvw
-        integer(kind=intType), dimension(:), pointer :: frontLeaves
-        integer(kind=intType), dimension(:), pointer :: frontLeavesNew
-        type(adtBBoxTargetType), dimension(:), pointer :: BB
 !
 !       Local parameters used in the Newton algorithm.
 !
@@ -1101,6 +869,9 @@
 
         integer(kind=intType), dimension(8) :: n, m
 
+        integer(kind=intType), dimension(:), pointer :: frontLeaves
+        integer(kind=intType), dimension(:), pointer :: frontLeavesNew
+
         real(kind=realType) :: dx, dy, dz, d1, d2, invLen, val
         real(kind=realType) :: u, v, w, uv, uold, vold, vn, du, dv
         real(kind=realType) :: uu, vv, ww
@@ -1114,6 +885,8 @@
         real(kind=realType), dimension(:,:), pointer :: xBBox
 
         logical :: elementFound
+
+        type(adtBBoxTargetType), dimension(:), pointer :: BB
         type(adtLeafType),       dimension(:), pointer :: ADTree
 !
 !       ****************************************************************
@@ -1124,8 +897,8 @@
 !
         ! Set some pointers to make the code more readable.
 
-        xBBox  => ADT%xBBox
-        ADTree => ADT%ADTree
+        xBBox  => ADTs(jj)%xBBox
+        ADTree => ADTs(jj)%ADTree
 
         ! Initial allocation of the arrays for the tree traversal as well
         ! as the stack array used in the qsort routine. The latter is
@@ -1135,17 +908,28 @@
         ! that an essentially local variable, stack, is now stored in
         ! adtData.
 
-        nAllocBB    =  size(BB)
-        nAllocFront =  size(frontLeaves)
-        nStack      =  size(stack)
+        nAllocBB    =  10
+        nAllocFront =  25
+        nStack      = 100
 
-        ! Initialize the processor ID to -1 to indicate that no
-        ! corresponding volume element is found and the new minimum
-        ! distance squared to the old value.
-        
-        intInfo(1)     = -1
-        uvw(4) = coor(4)
-        !
+        allocate(stack(nStack), BB(nAllocBB), frontLeaves(nAllocFront), &
+                 frontLeavesNew(nAllocFront), stat=ierr)
+        if(ierr /= 0)                                    &
+          call adtTerminate(jj, "minDistanceTreeSearch", &
+                            "Memory allocation failure for stack, BB, &
+                            &etc.")
+
+        ! Loop over the number of coordinates to be treated.
+
+        coorLoop: do nn=1,nCoor
+
+          ! Initialize the processor ID to -1 to indicate that no
+          ! corresponding volume element is found and the new minimum
+          ! distance squared to the old value.
+
+          intInfo(1,nn)     = -1
+          uvw(4,nn) = coor(4,nn)
+!
 !         **************************************************************
 !         *                                                            *
 !         * Part 1. Determine the possible minimum distance squared to *
@@ -1154,35 +938,35 @@
 !         *                                                            *
 !         **************************************************************
 !
-          if(     coor(1) < ADTree(1)%xMin(1)) then
-            dx =  coor(1) - ADTree(1)%xMin(1)
-          else if(coor(1) > ADTree(1)%xMax(4)) then
-            dx =  coor(1) - ADTree(1)%xMax(4)
+          if(     coor(1,nn) < ADTree(1)%xMin(1)) then
+            dx =  coor(1,nn) - ADTree(1)%xMin(1)
+          else if(coor(1,nn) > ADTree(1)%xMax(4)) then
+            dx =  coor(1,nn) - ADTree(1)%xMax(4)
           else
-            dx = adtZero
+            dx = zero
           endif
 
-          if(     coor(2) < ADTree(1)%xMin(2)) then
-            dy =  coor(2) - ADTree(1)%xMin(2)
-          else if(coor(2) > ADTree(1)%xMax(5)) then
-            dy =  coor(2) - ADTree(1)%xMax(5)
+          if(     coor(2,nn) < ADTree(1)%xMin(2)) then
+            dy =  coor(2,nn) - ADTree(1)%xMin(2)
+          else if(coor(2,nn) > ADTree(1)%xMax(5)) then
+            dy =  coor(2,nn) - ADTree(1)%xMax(5)
           else
-            dy = adtZero
+            dy = zero
           endif
 
-          if(     coor(3) < ADTree(1)%xMin(3)) then
-            dz =  coor(3) - ADTree(1)%xMin(3)
-          else if(coor(3) > ADTree(1)%xMax(6)) then
-            dz =  coor(3) - ADTree(1)%xMax(6)
+          if(     coor(3,nn) < ADTree(1)%xMin(3)) then
+            dz =  coor(3,nn) - ADTree(1)%xMin(3)
+          else if(coor(3,nn) > ADTree(1)%xMax(6)) then
+            dz =  coor(3,nn) - ADTree(1)%xMax(6)
           else
-            dz = adtZero
+            dz = zero
           endif
 
           ! Continue with the next coordinate if the possible distance
           ! squared to the root leaf is larger than the currently stored
           ! value.
 
-          if((dx*dx + dy*dy + dz*dz) >= uvw(4)) return
+          if((dx*dx + dy*dy + dz*dz) >= uvw(4,nn)) cycle
 !
 !         **************************************************************
 !         *                                                            *
@@ -1215,16 +999,16 @@
                 ! Child contains a leaf. Determine the guaranteed distance
                 ! vector to the leaf.
 
-                d1 = abs(coor(1) - ADTree(ll)%xMin(1))
-                d2 = abs(coor(1) - ADTree(ll)%xMax(4))
+                d1 = abs(coor(1,nn) - ADTree(ll)%xMin(1))
+                d2 = abs(coor(1,nn) - ADTree(ll)%xMax(4))
                 dx = max(d1,d2)
 
-                d1 = abs(coor(2) - ADTree(ll)%xMin(2))
-                d2 = abs(coor(2) - ADTree(ll)%xMax(5))
+                d1 = abs(coor(2,nn) - ADTree(ll)%xMin(2))
+                d2 = abs(coor(2,nn) - ADTree(ll)%xMax(5))
                 dy = max(d1,d2)
 
-                d1 = abs(coor(3) - ADTree(ll)%xMin(3))
-                d2 = abs(coor(3) - ADTree(ll)%xMax(6))
+                d1 = abs(coor(3,nn) - ADTree(ll)%xMin(3))
+                d2 = abs(coor(3,nn) - ADTree(ll)%xMax(6))
                 dz = max(d1,d2)
 
               else
@@ -1234,16 +1018,16 @@
 
                 ll = -ll
 
-                d1 = abs(coor(1) - xBBox(1,ll))
-                d2 = abs(coor(1) - xBBox(4,ll))
+                d1 = abs(coor(1,nn) - xBBox(1,ll))
+                d2 = abs(coor(1,nn) - xBBox(4,ll))
                 dx = max(d1,d2)
 
-                d1 = abs(coor(2) - xBBox(2,ll))
-                d2 = abs(coor(2) - xBBox(5,ll))
+                d1 = abs(coor(2,nn) - xBBox(2,ll))
+                d2 = abs(coor(2,nn) - xBBox(5,ll))
                 dy = max(d1,d2)
 
-                d1 = abs(coor(3) - xBBox(3,ll))
-                d2 = abs(coor(3) - xBBox(6,ll))
+                d1 = abs(coor(3,nn) - xBBox(3,ll))
+                d2 = abs(coor(3,nn) - xBBox(6,ll))
                 dz = max(d1,d2)
 
               endif
@@ -1270,7 +1054,7 @@
           ! Store the minimum of the just computed guaranteed distance
           ! squared and the currently stored value in uvw.
 
-          uvw(4) = min(uvw(4),dd(1),dd(2))
+          uvw(4,nn) = min(uvw(4,nn),dd(1),dd(2))
 !
 !         **************************************************************
 !         *                                                            *
@@ -1321,28 +1105,28 @@
 
                   kk = -kk
 
-                  if(     coor(1) < xBBox(1,kk)) then
-                    dx =  coor(1) - xBBox(1,kk)
-                  else if(coor(1) > xBBox(4,kk)) then
-                    dx =  coor(1) - xBBox(4,kk)
+                  if(     coor(1,nn) < xBBox(1,kk)) then
+                    dx =  coor(1,nn) - xBBox(1,kk)
+                  else if(coor(1,nn) > xBBox(4,kk)) then
+                    dx =  coor(1,nn) - xBBox(4,kk)
                   else
-                    dx = adtZero
+                    dx = zero
                   endif
 
-                  if(     coor(2) < xBBox(2,kk)) then
-                    dy =  coor(2) - xBBox(2,kk)
-                  else if(coor(2) > xBBox(5,kk)) then
-                    dy =  coor(2) - xBBox(5,kk)
+                  if(     coor(2,nn) < xBBox(2,kk)) then
+                    dy =  coor(2,nn) - xBBox(2,kk)
+                  else if(coor(2,nn) > xBBox(5,kk)) then
+                    dy =  coor(2,nn) - xBBox(5,kk)
                   else
-                    dy = adtZero
+                    dy = zero
                   endif
 
-                  if(     coor(3) < xBBox(3,kk)) then
-                    dz =  coor(3) - xBBox(3,kk)
-                  else if(coor(3) > xBBox(6,kk)) then
-                    dz =  coor(3) - xBBox(6,kk)
+                  if(     coor(3,nn) < xBBox(3,kk)) then
+                    dz =  coor(3,nn) - xBBox(3,kk)
+                  else if(coor(3,nn) > xBBox(6,kk)) then
+                    dz =  coor(3,nn) - xBBox(6,kk)
                   else
-                    dz = adtZero
+                    dz = zero
                   endif
 
                   d2 = dx*dx + dy*dy + dz*dz
@@ -1350,13 +1134,13 @@
                   ! If this distance squared is less than the current
                   ! value, store this bounding box as a target.
 
-                  testStoreBBox: if(d2 < uvw(4)) then
+                  testStoreBBox: if(d2 < uvw(4,nn)) then
 
                     ! Check if the memory must be reallocated.
 
                     if(nBB == nAllocBB) &
                       call reallocBBoxTargetTypePlus(BB, nAllocBB, &
-                                                     10, ADT)
+                                                     10, jj)
 
                     ! Update the counter and store the data.
 
@@ -1371,20 +1155,20 @@
                     ! candidates. As this test is relatively cheap, do it
                     ! now for this bounding box.
               
-                    d1 = abs(coor(1) - xBBox(1,kk))
-                    d2 = abs(coor(1) - xBBox(4,kk))
+                    d1 = abs(coor(1,nn) - xBBox(1,kk))
+                    d2 = abs(coor(1,nn) - xBBox(4,kk))
                     dx = max(d1,d2)
 
-                    d1 = abs(coor(2) - xBBox(2,kk))
-                    d2 = abs(coor(2) - xBBox(5,kk))
+                    d1 = abs(coor(2,nn) - xBBox(2,kk))
+                    d2 = abs(coor(2,nn) - xBBox(5,kk))
                     dy = max(d1,d2)
 
-                    d1 = abs(coor(3) - xBBox(3,kk))
-                    d2 = abs(coor(3) - xBBox(6,kk))
+                    d1 = abs(coor(3,nn) - xBBox(3,kk))
+                    d2 = abs(coor(3,nn) - xBBox(6,kk))
                     dz = max(d1,d2)
 
                     d2 = dx*dx + dy*dy + dz*dz
-                    uvw(4) = min(uvw(4),d2)
+                    uvw(4,nn) = min(uvw(4,nn),d2)
 
                   endif testStoreBBox
 
@@ -1393,28 +1177,28 @@
                   ! Child contains a leaf. Compute the possible minimum
                   ! distance squared to the current coordinate.
 
-                  if(     coor(1) < ADTree(kk)%xMin(1)) then
-                    dx =  coor(1) - ADTree(kk)%xMin(1)
-                  else if(coor(1) > ADTree(kk)%xMax(4)) then
-                    dx =  coor(1) - ADTree(kk)%xMax(4)
+                  if(     coor(1,nn) < ADTree(kk)%xMin(1)) then
+                    dx =  coor(1,nn) - ADTree(kk)%xMin(1)
+                  else if(coor(1,nn) > ADTree(kk)%xMax(4)) then
+                    dx =  coor(1,nn) - ADTree(kk)%xMax(4)
                   else
-                    dx = adtZero
+                    dx = zero
                   endif
 
-                  if(     coor(2) < ADTree(kk)%xMin(2)) then
-                    dy =  coor(2) - ADTree(kk)%xMin(2)
-                  else if(coor(2) > ADTree(kk)%xMax(5)) then
-                    dy =  coor(2) - ADTree(kk)%xMax(5)
+                  if(     coor(2,nn) < ADTree(kk)%xMin(2)) then
+                    dy =  coor(2,nn) - ADTree(kk)%xMin(2)
+                  else if(coor(2,nn) > ADTree(kk)%xMax(5)) then
+                    dy =  coor(2,nn) - ADTree(kk)%xMax(5)
                   else
-                    dy = adtZero
+                    dy = zero
                   endif
 
-                  if(     coor(3) < ADTree(kk)%xMin(3)) then
-                    dz =  coor(3) - ADTree(kk)%xMin(3)
-                  else if(coor(3) > ADTree(kk)%xMax(6)) then
-                    dz =  coor(3) - ADTree(kk)%xMax(6)
+                  if(     coor(3,nn) < ADTree(kk)%xMin(3)) then
+                    dz =  coor(3,nn) - ADTree(kk)%xMin(3)
+                  else if(coor(3,nn) > ADTree(kk)%xMax(6)) then
+                    dz =  coor(3,nn) - ADTree(kk)%xMax(6)
                   else
-                    dz = adtZero
+                    dz = zero
                   endif
 
                   d2 = dx*dx + dy*dy + dz*dz
@@ -1422,15 +1206,15 @@
                   ! If this distance squared is less than the current
                   ! value, store this leaf in the new front.
 
-                  testStoreLeave: if(d2 < uvw(4)) then
+                  testStoreLeave: if(d2 < uvw(4,nn)) then
 
                     ! Check if enough memory has been allocated and
                     ! store the leaf.
 
                     if(nFrontLeavesNew == nAllocFront) then
                       i = nAllocFront
-                      call reallocPlus(frontLeavesNew, i, 25, ADT)
-                      call reallocPlus(frontLeaves, nAllocFront, 25, ADT)
+                      call reallocPlus(frontLeavesNew, i, 25, jj)
+                      call reallocPlus(frontLeaves, nAllocFront, 25, jj)
                     endif
 
                     nFrontLeavesNew = nFrontLeavesNew + 1
@@ -1439,20 +1223,20 @@
                     ! Compute the guaranteed distance squared to this leaf.
                     ! It may be less than the currently stored value.
 
-                    d1 = abs(coor(1) - ADTree(kk)%xMin(1))
-                    d2 = abs(coor(1) - ADTree(kk)%xMax(4))
+                    d1 = abs(coor(1,nn) - ADTree(kk)%xMin(1))
+                    d2 = abs(coor(1,nn) - ADTree(kk)%xMax(4))
                     dx = max(d1,d2)
 
-                    d1 = abs(coor(2) - ADTree(kk)%xMin(2))
-                    d2 = abs(coor(2) - ADTree(kk)%xMax(5))
+                    d1 = abs(coor(2,nn) - ADTree(kk)%xMin(2))
+                    d2 = abs(coor(2,nn) - ADTree(kk)%xMax(5))
                     dy = max(d1,d2)
 
-                    d1 = abs(coor(3) - ADTree(kk)%xMin(3))
-                    d2 = abs(coor(3) - ADTree(kk)%xMax(6))
+                    d1 = abs(coor(3,nn) - ADTree(kk)%xMin(3))
+                    d2 = abs(coor(3,nn) - ADTree(kk)%xMax(6))
                     dz = max(d1,d2)
 
                     d2 = dx*dx + dy*dy + dz*dz
-                    uvw(4) = min(uvw(4),d2)
+                    uvw(4,nn) = min(uvw(4,nn),d2)
 
                   endif testStoreLeave
 
@@ -1479,7 +1263,7 @@
           ! Sort the target bounding boxes in increasing order such that
           ! the one with the smallest possible distance is first.
 
-          call qsortBBoxTargets(BB, nBB, ADT)
+          call qsortBBoxTargets(BB, nBB, jj)
 !
 !         **************************************************************
 !         *                                                            *
@@ -1496,15 +1280,15 @@
             ! bounding box is not smaller than the current value.
             ! Remember that BB has been sorted in increasing order.
 
-            if(uvw(4) <= BB(mm)%posDist2) exit BBoxLoop
+            if(uvw(4,nn) <= BB(mm)%posDist2) exit BBoxLoop
 
             ! Determine the element type stored in this bounding box.
 
             kk = BB(mm)%ID
-            select case (ADT%elementType(kk))
+            select case (ADTs(jj)%elementType(kk))
 
               case (adtTriangle)
-                call adtTerminate(ADT, "minDistanceTreeSearch", &
+                call adtTerminate(jj, "minDistanceTreeSearch", &
                                   "Minimum distance search for &
                                   &triangles not implemented yet")
 
@@ -1518,39 +1302,39 @@
                 ! This is a surface element, so set the parametric weight
                 ! w to zero.
 
-                w = adtZero
+                w = zero
 
                 ! Determine the 4 vectors which completely describe
                 ! the quadrilateral face
 
-                ll   = ADT%elementID(kk)
-                n(1) = ADT%quadsConn(1,ll)
-                n(2) = ADT%quadsConn(2,ll)
-                n(3) = ADT%quadsConn(3,ll)
-                n(4) = ADT%quadsConn(4,ll)
+                ll   = ADTs(jj)%elementID(kk)
+                n(1) = ADTs(jj)%quadsConn(1,ll)
+                n(2) = ADTs(jj)%quadsConn(2,ll)
+                n(3) = ADTs(jj)%quadsConn(3,ll)
+                n(4) = ADTs(jj)%quadsConn(4,ll)
 
-                x1(1) = ADT%coor(1,n(1))
-                x1(2) = ADT%coor(2,n(1))
-                x1(3) = ADT%coor(3,n(1))
+                x1(1) = ADTs(jj)%coor(1,n(1))
+                x1(2) = ADTs(jj)%coor(2,n(1))
+                x1(3) = ADTs(jj)%coor(3,n(1))
 
-                x21(1) = ADT%coor(1,n(2)) - x1(1)
-                x21(2) = ADT%coor(2,n(2)) - x1(2)
-                x21(3) = ADT%coor(3,n(2)) - x1(3)
+                x21(1) = ADTs(jj)%coor(1,n(2)) - x1(1)
+                x21(2) = ADTs(jj)%coor(2,n(2)) - x1(2)
+                x21(3) = ADTs(jj)%coor(3,n(2)) - x1(3)
 
-                x41(1) = ADT%coor(1,n(4)) - x1(1)
-                x41(2) = ADT%coor(2,n(4)) - x1(2)
-                x41(3) = ADT%coor(3,n(4)) - x1(3)
+                x41(1) = ADTs(jj)%coor(1,n(4)) - x1(1)
+                x41(2) = ADTs(jj)%coor(2,n(4)) - x1(2)
+                x41(3) = ADTs(jj)%coor(3,n(4)) - x1(3)
 
-                x3142(1) = ADT%coor(1,n(3)) - x1(1) - x21(1) - x41(1)
-                x3142(2) = ADT%coor(2,n(3)) - x1(2) - x21(2) - x41(2)
-                x3142(3) = ADT%coor(3,n(3)) - x1(3) - x21(3) - x41(3)
+                x3142(1) = ADTs(jj)%coor(1,n(3)) - x1(1) - x21(1) - x41(1)
+                x3142(2) = ADTs(jj)%coor(2,n(3)) - x1(2) - x21(2) - x41(2)
+                x3142(3) = ADTs(jj)%coor(3,n(3)) - x1(3) - x21(3) - x41(3)
 
                 ! Initialize u and v to 0.5 and determine the
                 ! corresponding coordinates on the face, which is the
                 ! centroid.
 
-                u  = adtHalf
-                v  = adtHalf
+                u  = half
+                v  = half
                 uv = u*v
 
                 xf(1) = x1(1) + u*x21(1) + v*x41(1) + uv*x3142(1)
@@ -1570,9 +1354,9 @@
 
                   ! Determine the vector vf from xf to given coordinate.
 
-                  vf(1) = coor(1) - xf(1)
-                  vf(2) = coor(2) - xf(2)
-                  vf(3) = coor(3) - xf(3)
+                  vf(1) = coor(1,nn) - xf(1)
+                  vf(2) = coor(2,nn) - xf(2)
+                  vf(3) = coor(3,nn) - xf(3)
 
                   ! Determine the tangent vectors in u- and v-direction.
                   ! Store these in a and b respectively.
@@ -1593,7 +1377,7 @@
                   norm(2) = a(3)*b(1) - a(1)*b(3)
                   norm(3) = a(1)*b(2) - a(2)*b(1)
 
-                  invLen = adtOne/max(adtEps,sqrt(norm(1)*norm(1) &
+                  invLen = one/max(adtEps,sqrt(norm(1)*norm(1) &
                          +                        norm(2)*norm(2) &
                          +                        norm(3)*norm(3)))
 
@@ -1643,8 +1427,8 @@
                   ! Determine the new parameter values uu and vv. These
                   ! are limited to 0 <= (uu,vv) <= 1.
 
-                  u = u + du; u = min(adtOne,max(adtZero,u))
-                  v = v + dv; v = min(adtOne,max(adtZero,v))
+                  u = u + du; u = min(one,max(zero,u))
+                  v = v + dv; v = min(one,max(zero,v))
 
                   ! Determine the final values of the corrections.
 
@@ -1669,9 +1453,9 @@
                 ! Compute the distance squared between the given
                 ! coordinate and the point xf.
 
-                dx = coor(1) - xf(1)
-                dy = coor(2) - xf(2)
-                dz = coor(3) - xf(3)
+                dx = coor(1,nn) - xf(1)
+                dy = coor(2,nn) - xf(2)
+                dz = coor(3,nn) - xf(3)
 
                 val = dx*dx + dy*dy + dz*dz
 
@@ -1679,38 +1463,38 @@
                 ! store the wall distance and interpolation info and
                 ! indicate that an element was found.
 
-                if(val < uvw(4)) then
-                  uvw(4)    = val
+                if(val < uvw(4,nn)) then
+                  uvw(4,nn)    = val
                   nNodeElement = 4
                   elementFound = .true.
 
                   kkk  = kk;   uu   = u;    vv   = v;    ww   = w
                   m(1) = n(1); m(2) = n(2); m(3) = n(3); m(4) = n(4)
 
-                  weight(1) = (adtOne - u)*(adtOne - v)
-                  weight(2) =           u *(adtOne - v)
+                  weight(1) = (one - u)*(one - v)
+                  weight(2) =           u *(one - v)
                   weight(3) =           u *          v
-                  weight(4) = (adtOne - u)*          v
+                  weight(4) = (one - u)*          v
                 endif
 
               !=========================================================
 
               case (adtTetrahedron)
-                call adtTerminate(ADT, "minDistanceTreeSearch", &
+                call adtTerminate(jj, "minDistanceTreeSearch", &
                                   "Minimum distance search for &
                                   &tetrahedra not implemented yet")
 
               !===========================================================
 
               case (adtPyramid)
-                call adtTerminate(ADT, "minDistanceTreeSearch", &
+                call adtTerminate(jj, "minDistanceTreeSearch", &
                                   "Minimum distance search for &
                                   &pyramids not implemented yet")
 
               !===========================================================
 
               case (adtPrism)
-                call adtTerminate(ADT, "minDistanceTreeSearch", &
+                call adtTerminate(jj, "minDistanceTreeSearch", &
                                   "Minimum distance search for &
                                   &prisms not implemented yet")
 
@@ -1721,35 +1505,35 @@
                 ! Determine the element ID and the corresponding
                 ! 8 node ID's.
 
-                ll = ADT%elementID(kk)
-                n(1) = ADT%hexaConn(1,ll)
-                n(2) = ADT%hexaConn(2,ll)
-                n(3) = ADT%hexaConn(3,ll)
-                n(4) = ADT%hexaConn(4,ll)
-                n(5) = ADT%hexaConn(5,ll)
-                n(6) = ADT%hexaConn(6,ll)
-                n(7) = ADT%hexaConn(7,ll)
-                n(8) = ADT%hexaConn(8,ll)
+                ll = ADTs(jj)%elementID(kk)
+                n(1) = ADTs(jj)%hexaConn(1,ll)
+                n(2) = ADTs(jj)%hexaConn(2,ll)
+                n(3) = ADTs(jj)%hexaConn(3,ll)
+                n(4) = ADTs(jj)%hexaConn(4,ll)
+                n(5) = ADTs(jj)%hexaConn(5,ll)
+                n(6) = ADTs(jj)%hexaConn(6,ll)
+                n(7) = ADTs(jj)%hexaConn(7,ll)
+                n(8) = ADTs(jj)%hexaConn(8,ll)
 
                 ! Call the subroutine minD2Hexa to do the work.
 
-                call minD2Hexa(coor(1:3),            &
-                               ADT%coor(1:3,n(1)), &
-                               ADT%coor(1:3,n(2)), &
-                               ADT%coor(1:3,n(3)), &
-                               ADT%coor(1:3,n(4)), &
-                               ADT%coor(1:3,n(5)), &
-                               ADT%coor(1:3,n(6)), &
-                               ADT%coor(1:3,n(7)), &
-                               ADT%coor(1:3,n(8)), &
+                call minD2Hexa(coor(1:3,nn),            &
+                               ADTs(jj)%coor(1:3,n(1)), &
+                               ADTs(jj)%coor(1:3,n(2)), &
+                               ADTs(jj)%coor(1:3,n(3)), &
+                               ADTs(jj)%coor(1:3,n(4)), &
+                               ADTs(jj)%coor(1:3,n(5)), &
+                               ADTs(jj)%coor(1:3,n(6)), &
+                               ADTs(jj)%coor(1:3,n(7)), &
+                               ADTs(jj)%coor(1:3,n(8)), &
                                val, chi, ierr)
 
                 ! If the distance squared is less than the current value
                 ! store the wall distance and interpolation info and
                 ! indicate that an element was found.
 
-                if(val < uvw(4)) then
-                  uvw(4)    = val
+                if(val < uvw(4,nn)) then
+                  uvw(4,nn)    = val
                   nNodeElement = 8
                   elementFound = .true.
 
@@ -1759,14 +1543,14 @@
                   m(1) = n(1); m(2) = n(2); m(3) = n(3); m(4) = n(4)
                   m(5) = n(5); m(6) = n(6); m(7) = n(7); m(8) = n(8)
 
-                  weight(1) = (adtOne - uu)*(adtOne - vv)*(adtOne - ww)
-                  weight(2) =           uu *(adtOne - vv)*(adtOne - ww)
-                  weight(3) =           uu *          vv *(adtOne - ww)
-                  weight(4) = (adtOne - uu)*          vv *(adtOne - ww)
-                  weight(5) = (adtOne - uu)*(adtOne - vv)*          ww
-                  weight(6) =           uu *(adtOne - vv)*          ww
+                  weight(1) = (one - uu)*(one - vv)*(one - ww)
+                  weight(2) =           uu *(one - vv)*(one - ww)
+                  weight(3) =           uu *          vv *(one - ww)
+                  weight(4) = (one - uu)*          vv *(one - ww)
+                  weight(5) = (one - uu)*(one - vv)*          ww
+                  weight(6) =           uu *(one - vv)*          ww
                   weight(7) =           uu *          vv *          ww
-                  weight(8) = (adtOne - uu)*          vv *          ww
+                  weight(8) = (one - uu)*          vv *          ww
                 endif
 
             end select
@@ -1783,233 +1567,39 @@
             ! First the integer info, i.e. the processor ID, element type
             ! and local element ID.
 
-            intInfo(1) = ADT%myID
-            intInfo(2) = ADT%elementType(kkk)
-            intInfo(3) = ADT%elementID(kkk)
+            intInfo(1,nn) = ADTs(jj)%myID
+            intInfo(2,nn) = ADTs(jj)%elementType(kkk)
+            intInfo(3,nn) = ADTs(jj)%elementID(kkk)
 
             ! The parametric weights. Note that the wall distance
             ! squared, stored in the 4th position of uvw, already
             ! contains the correct value.
 
-            uvw(1) = uu
-            uvw(2) = vv
-            uvw(3) = ww
+            uvw(1,nn) = uu
+            uvw(2,nn) = vv
+            uvw(3,nn) = ww
 
             ! The interpolated solution, if needed.
 
             do ll=1,nInterpol
               ii = 4+ll
-              uvw(ii) = weight(1)*arrDonor(ll,m(1))
-              do i=2, nNodeElement
-                uvw(ii) = uvw(ii) + weight(i)*arrDonor(ll,m(i))
+              uvw(ii,nn) = weight(1)*arrDonor(ll,m(1))
+              do i=2,nNodeElement
+                uvw(ii,nn) = uvw(ii,nn) + weight(i)*arrDonor(ll,m(i))
               enddo
             enddo
 
           endif
 
-        end subroutine minDistanceTreeSearchSinglePoint
+        enddo coorLoop
 
-        subroutine intersectionTreeSearchSinglePoint(ADT, coor, &
-             intInfo, BB, frontLeaves, frontLeavesNew)
-!
-!       ****************************************************************
-!       *                                                              *
-!       * This routine is used in the ray casting approach to determine*
-!       * if a given ray intersects any of the surface elements. The   *
-!       * purpose is to determine if a point of interest is inside     *
-!       * or outside the (closed) surface defined by the ADT.          *
-!       *                                                              *
-!       * Subroutine intent(in) arguments.                             *
-!       * --------------------------------                             *
-!       * ADT:       ADT type whose ADT must be searched               *
-!       * coor(3):   The coordinate of the point to be searched.       *
-!       *                                                              *
-!       * Subroutine intent(out) arguments.                            *
-!       * ---------------------------------                            *
-!       * intInfo: Intersection info. The number of intersections we   *
-!       *          found. 
-!       *                                                              *
-!       ****************************************************************
-!
-        implicit none
-!
-!       Subroutine arguments.
-!
-        type(adtType), intent(inout) :: ADT
+        ! Release the memory allocated in this routine.
 
-        real(kind=realType), dimension(3), intent(in) :: coor
-        integer(kind=intType), intent(out) :: intInfo
+        deallocate(stack, BB, frontLeaves, frontLeavesNew, stat=ierr)
+        if(ierr /= 0)                                    &
+          call adtTerminate(jj, "minDistanceTreeSearch", &
+                            "Deallocation failure for stack, BB, etc.")
 
-        integer(kind=intType), dimension(:), pointer :: BB
-        integer(kind=intType), dimension(:), pointer :: frontLeaves
-        integer(kind=intType), dimension(:), pointer :: frontLeavesNew
-!
-!       Local variables.
-!
-        integer :: ierr
-
-        integer(kind=intType) :: ii, kk, ll, mm, nn
-        integer(kind=intType) :: nBB, nFrontLeaves, nFrontLeavesNew
-        integer(kind=intType) :: nAllocBB, nAllocFront
-        integer(kind=intType) :: i, nNodeElement
-        real(kind=realType), dimension(:,:), pointer :: xBBox
-        logical :: elementFound
-        type(adtLeafType), dimension(:), pointer :: ADTree
-!
-!       ****************************************************************
-!       *                                                              *
-!       * Begin execution.                                             *
-!       *                                                              *
-!       ****************************************************************
-!
-        ! Set some pointers to make the code more readable.
-
-        xBBox  => ADT%xBBox
-        ADTree => ADT%ADTree
-
-        ! Determine the sizes from the arrays we have been passed
-
-        nAllocBB    = size(BB)
-        nAllocFront = size(frontLeaves)
-        
-        ! Initialize the number of possible intersections to 0
-
-        intInfo = 0
-!
-!         **************************************************************
-!         *                                                            *
-!         * Part 1. Traverse the tree and determine the target         *
-!         *         bounding boxes, which may contain the intersection *
-!         *                                                            *
-!         **************************************************************
-!
-          ! Start at the root, i.e. set the front leaf to the root leaf.
-          ! Also initialize the number of possible bounding boxes to 0.
-
-          nBB = 0
-
-          nFrontLeaves   = 1
-          frontLeaves(1) = 1
-
-          treeTraversalLoop: do
-
-            ! Initialize the number of leaves for the new front, i.e.
-            ! the front of the next round, to 0.
-
-            nFrontLeavesNew = 0
-
-            ! Loop over the leaves of the current front.
-
-            currentFrontLoop: do ii=1,nFrontLeaves
-
-              ! Store the ID of the leaf a bit easier and loop over
-              ! its two children.
-
-              ll = frontLeaves(ii)
-
-              childrenLoop: do mm=1,2
-
-                ! Determine whether this child contains a bounding box
-                ! or a leaf of the next level.
-
-                kk = ADTree(ll)%children(mm)
-                terminalTest: if(kk < 0) then
-
-                  ! Child contains a bounding box. Check if the
-                  ! ray is inside the bounding box.
-
-                  kk = -kk
-                  if(  coor(1) <= xBBox(4,kk) .and. &
-
-                       coor(2) >= xBBox(2,kk) .and. &
-                       coor(2) <= xBBox(5,kk) .and. &
-                       coor(3) >= xBBox(3,kk) .and. &
-                       coor(3) <= xBBox(6,kk)) then
-
-                    ! Ray intersectst he bounding box. That's all we
-                    ! wanted to know:
-                     intInfo = 1
-                     exit treeTraversalLoop
-                  end if
-                else terminalTest
-
-                  ! Child contains a leaf. Check if the coordinate is
-                  ! inside the bounding box of the leaf.
-
-                  if(coor(1) <= ADTree(kk)%xMax(4) .and. &
-
-                     coor(2) >= ADTree(kk)%xMin(2) .and. &
-                     coor(2) <= ADTree(kk)%xMax(5) .and. &
-                     coor(3) >= ADTree(kk)%xMin(3) .and. &
-                     coor(3) <= ADTree(kk)%xMax(6)) then
-
-                    ! Coordinate is inside the leaf. Store the leaf in
-                    ! the list for the new front.
-
-                    if(nFrontLeavesNew == nAllocFront) then
-                      i = nAllocFront
-                      call reallocPlus(frontLeavesNew, i, 25, ADT)
-                      call reallocPlus(frontLeaves, nAllocFront, 25, ADT)
-                    endif
-
-                    nFrontLeavesNew = nFrontLeavesNew + 1
-                    frontLeavesNew(nFrontLeavesNew) = kk
-                  end if
-
-                endif terminalTest
-
-              enddo childrenLoop
-
-            enddo currentFrontLoop
-
-            ! End of the loop over the current front. If the new front
-            ! is empty the entire tree has been traversed and an exit is
-            ! made from the corresponding loop.
-
-            if(nFrontLeavesNew == 0) then 
-               exit treeTraversalLoop
-            end if
-            ! Copy the data of the new front leaves into the current
-            ! front for the next round.
-
-            nFrontLeaves = nFrontLeavesNew
-            do ll=1,nFrontLeaves
-              frontLeaves(ll) = frontLeavesNew(ll)
-            enddo
-
-          enddo treeTraversalLoop
-!
-!         **************************************************************
-!         *                                                            *
-!         * Part 2: Loop over the selected bounding boxes and check if *
-!         *         the corresponding elements contain the point.      *
-!         *                                                            *
-!         **************************************************************
-!
-          !intInfo = nBB
-          ! elementFound = .false.
-
-          ! BBoxLoop: do mm=1,nBB
-
-          !   ! Determine the element type stored in this bounding box.
-
-          !   kk = BB(mm)
-          !   select case (ADT%elementType(kk))
-
-          !     case (adtQuadrilateral)
-
-
-          !     !=========================================================
-
-          !     case (adtTriangle)
-
-         
-
-          !   end select
-     
-          ! enddo BBoxLoop
-
-        end subroutine intersectionTreeSearchSinglePoint
-
+        end subroutine minDistanceTreeSearch
 
       end module adtLocalSearch

@@ -199,12 +199,6 @@
                     &8 bytes."
 #endif
 
-#ifdef USE_PV3
-       print "(a)", "# - With pV3 support"
-#else
-       print "(a)", "# - Without pV3 support"
-#endif
-
 #ifdef USE_NO_CGNS
        print "(a)", "# - Without cgns support"
 #else
