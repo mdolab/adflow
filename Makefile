@@ -79,5 +79,4 @@ sumb:
 			(cd $$subdir && make) || exit 1; \
 		done
 	(cd lib && make)
-	(cd $(SUBDIR_EXEC) && make)
 	(cd src/python/f2py && make)
