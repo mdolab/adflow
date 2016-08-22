@@ -16,7 +16,7 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      use adtLocalSearch, only : containmenttreesearch, mindistancetreesearch
+      use adtLocalSearch
       use adtUtils
       implicit none
 
