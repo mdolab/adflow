@@ -22,6 +22,7 @@
        use blockPointers
        use cgnsGrid
        use commMixing
+       use BCTypes
        use commSliding
        use communication
        use inputPhysics
@@ -29,15 +30,16 @@
        use interfaceGroups
        use section
        use wallDistanceData
+       use overset
        implicit none
 !
 !      Local variables.
 !
        integer :: ierr
 
-       integer(kind=intType) :: nLevels, level, nn, mm, nsMin, nsMax, i
-
-
+       integer(kind=intType) :: nLevels, level, nn, mm, nsMin, nsMax, i, iProc
+       logical :: local
+!
 !      ******************************************************************
 !      *                                                                *
 !      * Begin execution                                                *
@@ -135,7 +137,7 @@
 
        mm = nTimeIntervalsSpectral
        allocate(commPatternOverset(nn,mm), internalOverset(nn,mm), &
-                stat=ierr)
+            overlapMatrix(nn, mm), stat=ierr)
        if(ierr /= 0)                     &
          call returnFail("preprocessing", &
                         "Memory allocation failure for commOverset")
@@ -192,23 +194,56 @@
        call initBcdata
 
        ! Allocate some data of size nLevels for the fast wall distance calc
-       allocate(xVolumeVec(nLevels), xSurfVec(nLevels), wallScatter(nLevels), &
+       allocate(xVolumeVec(nLevels), xSurfVec(nLevels, mm), wallScatter(nLevels, mm), &
             wallDistanceDataAllocated(nLevels), updateWallAssociation(nLevels))
        wallDistanceDataAllocated = .False.
        updateWallAssociation = .True. 
        
+       ! Nullify the wallFringe poiter as initialization
+       nullify(wallFringes, localWallFringes)
+
+       ! Allocate nDomProc: the number of domains on each processor
+       ! and a cumulative form. 
+       allocate(nDomProc(0:nProc-1), cumDomProc(0:nProc))
+          
+       ! Gather the dimensions of all blocks to everyone
+       call mpi_allreduce(nDom, nDomTotal, 1, sumb_integer, MPI_SUM, &
+            sumb_comm_world, ierr)
+       
+       ! Receive the number of domains from each proc using an allgather.
+       call mpi_allgather(nDom, 1, sumb_integer, nDomProc, 1, sumb_integer, &
+            sumb_comm_world, ierr)
+       
+       ! Compute the cumulative format:
+       cumDomProc(0) = 0
+       do iProc=1, nProc
+          cumDomProc(iProc) = cumDomProc(iProc-1) + nDomProc(iProc-1)
+       end do
+
+       ! Determine the number of grid clusters
+       call determineClusters()
+
+       ! Determine if we have overset mesh present:
+       local = .False.
+       do nn=1,nDom
+          call setPointers(nn, 1_intType, 1_intType)
+          
+          do mm=1, nBocos
+             if (BCType(mm) == OversetOuterBound) then
+                local = .True.
+             end if
+          end do
+       end do
+       
+       call mpi_allreduce(local, oversetPresent, 1, MPI_LOGICAL, MPI_LOR, SUmb_comm_world, ierr)
 
        ! Loop over the number of levels and perform a lot of tasks.
        ! See the corresponding subroutine header, although the
        ! names are pretty self-explaining
 
+
        do level=1,nLevels
          call xhalo(level)
-         if (level == 1) then
-           call oversetComm(level, .true., .false.)
-         else
-           call oversetComm(level, .true., .true.)
-         end if
          call slidingComm(level, .true.)
          call allocateMetric(level)
          call metric(level)
@@ -219,33 +254,27 @@
          call viscSubfaceInfo(level)
          call determineAreaLevel0Cooling(level)
          call determineNcellGlobal(level)
+         call setGlobalCellsAndNodes(level)
          call setReferenceVolume(level)
-       enddo
+         call wallDistance(level, .True.)
+      end do
 
-       ! Before heading to the solver, set all the boundary iblanks
-       ! for the levels just updated to 0.
+      ! BC Data must be alloaced (for surface iblank) before we can do
+      ! the overset computation.
+      call allocMemBCData
 
-       do mm=1,nTimeIntervalsSpectral
-         do level=1,nLevels
-           do nn=1,nDom
-             call setPointers(nn, level, mm)
-             call changeIblanks(.false., 0_intType)
-           end do
-         end do
-       end do
+      do level=1,nLevels
+         if (level == 1) then
+            call oversetComm(level, .true., .false.)
 
-       ! Compute global cells and Nodes
-       do level=1,nLevels
-          call setGlobalCellsAndNodes(level)
-       end do
+         else
+            call oversetComm(level, .true., .true.)
+         end if
+      end do
 
-       nLevels = ubound(flowDoms,2)
+      call setSurfaceFamilyInfo
+      call initializeLiftDistributionData
 
-       do level=1,nLevels
-          call wallDistance(level, .True.)
-       end do
-
-       call setSurfaceFamilyInfo
-       call initializeLiftDistributionData
-
+       
      end subroutine preprocessing
+

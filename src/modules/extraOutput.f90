@@ -38,7 +38,7 @@
        logical :: surfWriteCf,    surfWriteCh,       surfWriteYPlus
        logical :: surfWriteCfx,   surfWriteCfy,      surfWriteCfz
        logical :: surfWriteBlank, surfWriteSepSensor
-       logical :: surfWriteCavitation
+       logical :: surfWriteCavitation, surfWriteGC
 !
 !      ******************************************************************
 !      *                                                                *
@@ -56,7 +56,7 @@
        logical :: volWritevorty,        volWritevortz,    volWriteVort
        logical :: volWritePtotLoss,     volWriteResRho,   volWriteresMom
        logical :: volWriteResRhoE,      volWriteResTurb,  volWriteBlank
-       logical :: volWriteShock,        volWriteFilteredShock
+       logical :: volWriteShock,        volWriteFilteredShock, volWriteGC, volWriteStatus
 !
 !      ******************************************************************
 !      *                                                                *

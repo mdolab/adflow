@@ -26,7 +26,6 @@
        use flowVarRefState, only : nwf, kPresent, pInfCorr, nw, rhoInf, nt1
        use inputPhysics, only : equations
        use inputIteration, only: fcoll, mgBoundCorr
-       use inputOverset, only : avgRestrictResForBlanks
        use inputTimeSpectral, only : nTimeIntervalsSpectral
        use iteration, only : currentLevel, rkStage, groundLevel, exchangePressureEarly
 
@@ -281,8 +280,8 @@
            ! owned cells of this block. If the solution must be
            ! interpolated, extrapolate the viscosities in the halo's.
 
-           call computeLamViscosity(.False.)
-           call computeEddyViscosity(.False.)
+           call computeLamViscosity
+           call computeEddyViscosity
            if(.not. corrections) call extrapolateViscosities
 
          enddo domains

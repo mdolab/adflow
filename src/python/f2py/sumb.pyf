@@ -841,7 +841,15 @@ python module libsumb
          logical :: writeunsteadysurfspectral
          real(kind=realtype) allocatable,dimension(:,:,:) :: rotmatrixspectral
        end module inputtimespectral
-       
+              module inputoverset
+         logical :: lowoversetmemory
+         real(kind=realtype) :: nearwalldist
+         real(kind=realtype) :: backgroundvolscale
+         real(kind=realtype) :: oversetprojtol
+         real(kind=realtype) :: overlapfactor
+         logical :: debugzipper
+       end module inputoverset
+
        module inputunsteady ! in :test:inputParam.f90
          use accuracy
          real(kind=realtype) :: deltat
@@ -852,16 +860,6 @@ python module libsumb
          integer(kind=inttype) :: ntimestepsfine
          integer(kind=inttype) :: ntimestepscoarse
        end module inputunsteady
-
-       module inputoverset ! in :sumb:../../modules/inputParam.f90
-         use precison
-         integer(kind=inttype) parameter,optional :: trilinear=1_inttype
-         logical :: oversetdonorsareguesses
-         logical :: avgrestrictresforblanks
-         integer(kind=inttype) :: oversetinterptype
-         integer(kind=inttype) :: oversetinterptypecoarse
-         real(kind=realtype) :: allowabledonorquality
-       end module inputoverset
 
        module iteration ! in :sumb:../../modules/iteration.f90
          use precision

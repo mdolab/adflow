@@ -514,7 +514,7 @@ module inputParallel
   !                   to get better load balancing.
   real(realType) :: loadImbalance
   logical        :: splitBlocks
-  integer(kind=inttype) :: loadBalanceIter
+  integer(kind=inttype) :: loadBalanceIter, partitionlikenproc
 end module inputParallel
 
 !      ==================================================================
@@ -601,7 +601,7 @@ module inputPhysics
   real(kind=realType) :: Mach, MachCoef, MachGrid
   real(kind=realType) :: Reynolds, ReynoldsLength
   real(kind=realType) :: gammaConstant, RGasDim
-  real(kind=realType) :: Prandtl, PrandtlTurb, pklim, wallOffset
+  real(kind=realType) :: Prandtl, PrandtlTurb, pklim, wallOffset, wallDistCutoff
   real(kind=realType) :: eddyVisInfRatio, turbIntensityInf
   real(kind=realType) :: surfaceRef, lengthRef
   real(kind=realType), dimension(3) :: velDirFreestream
@@ -774,65 +774,6 @@ module inputUnsteady
 
 end module inputUnsteady
 
-!      ==================================================================
-
-module inputOverset
-  !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Input parameters which are related to verset grid assembly and *
-  !      * interpolation procedures.                                      *
-  !      *                                                                *
-  !      ******************************************************************
-  !
-  use precision
-  implicit none
-  save
-  !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Definition of some parameters which make the code more         *
-  !      * readable. The actual values of this parameters are arbitrary;  *
-  !      * in the code always the symbolic names are (should be) used.    *
-  !      *                                                                *
-  !      ******************************************************************
-  !
-  integer(kind=intType), parameter :: TriLinear    = 1
-
-  integer(kind=intType), dimension(1), parameter :: &
-       nDonorWeights = (/ 8 /)
-  !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Definition of the overset input parameters.                    *
-  !      *                                                                *
-  !      ******************************************************************
-  !
-  ! oversetDonorsAreGuesses: Whether or not the input overset donors
-  !                          should be treated as guesses, which
-  !                          causes the interpolants to be ignored
-  !                          and are determined automatically.
-  ! avgRestrictResforBlanks: Whether or not to amplify or average
-  !                          the restricted residual in multigrid
-  !                          to account for the fact that a coarse
-  !                          unblanked cell may contain blanked
-  !                          cells on the next finer level.
-  ! oversetInterpType:       Type of interpolation to use on the
-  !                          fine grid level.
-  ! oversetInterpTypeCoarse: Idem for the coarse levels.
-  ! allowableDonorQuality:   The cut-off value for the quality of
-  !                          a donor stencil when searches are
-  !                          performed.
-
-  logical :: oversetDonorsAreGuesses, avgRestrictResforBlanks
-
-  integer(kind=intType) :: oversetInterpType
-  integer(kind=intType) :: oversetInterpTypeCoarse
-
-  real(kind=realType) :: allowableDonorQuality
-
-end module inputOverset
-
 module inputADjoint
   !
   !      ******************************************************************
@@ -947,4 +888,24 @@ module inputTSStabDeriv
   logical:: useWindAxis
 
 end module inputTSStabDeriv
+
+
+module inputOverset
+  use constants
+  implicit none
+  save
+  !
+  !      ******************************************************************
+  !      *                                                                *
+  !      * Definition of parameters for the overset implementation        *
+  !      *                                                                *
+  !      ******************************************************************
+  !
+  logical :: lowOversetMemory=.False.
+  real(kind=realType) :: overlapFactor=0.9
+  real(kind=realType) :: nearWallDist=0.1
+  real(kind=realType) :: oversetProjTol=1e-12
+  real(kind=realType) :: backgroundVolScale = 1.0
+  logical :: debugZipper=.False.
+end module inputOverset
 
