@@ -3,31 +3,28 @@
 
 subroutine destroyPETScVars
 
-  use ADjointPETSc
-  use inputADjoint    
-  use blockPointers
-  use costFunctions
-  use inputTimeSpectral
+  use constants
+  use ADjointPETSc, only : dRdWT, dRdwPreT, adjointKSP, adjointPETScVarsAllocated
+  use inputAdjoint, only : approxPC
   implicit none
 
-  integer(kind=intType) :: i, nLevels, sps
+  integer(kind=intType) ::  ierr
   
-#ifndef USE_NO_PETSC
   if (adjointPETScVarsAllocated) then 
 
      ! Matrices
-     call MatDestroy(dRdWT, PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
+     call MatDestroy(dRdWT, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
      
      if (ApproxPC) then
-        call MatDestroy(dRdWPreT, PETScIerr)
-        call EChk(PETScIerr,__FILE__,__LINE__)
+        call MatDestroy(dRdWPreT, ierr)
+        call EChk(ierr,__FILE__,__LINE__)
      end if
      
-     call KSPDestroy(adjointKSP, PETScIerr)
-     call EChk(PETScIerr,__FILE__,__LINE__)
+     call KSPDestroy(adjointKSP, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
      adjointPETScVarsAllocated = .False.
   end if
-#endif
+
 end subroutine destroyPETScVars
 

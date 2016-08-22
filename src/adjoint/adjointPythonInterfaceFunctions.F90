@@ -5,10 +5,11 @@
 
 subroutine spectralPrecscribedMotion(input, nin, dXv, nout)
 
-  use blockPointers
-  use section
-  use inputTimeSpectral 
-  use monitor 
+  use constants
+  use blockPointers, only : il, jl, kl, nDom
+  use section, only : sections, nSections
+  use inputTimeSpectral, only : nTimeIntervalsSpectral
+  use monitor , only : timeUnsteadyRestart, timeUnsteady
   implicit none
   ! Input/Output Variables
   integer(kind=intType), intent(in) :: nin, nout

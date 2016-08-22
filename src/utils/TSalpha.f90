@@ -20,7 +20,7 @@
 !      ******************************************************************
 !
        use constants
-       use inputPhysics
+       use inputPhysics, only : equationMode
        implicit none
 !
 !      Function type

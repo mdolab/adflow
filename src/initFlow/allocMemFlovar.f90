@@ -73,7 +73,7 @@ subroutine allocMemFlovarPart1(sps,level)
         allocate(flowDoms(nn,level,sps)%w(0:ib,0:jb,0:kb,1:nw), &
              stat=ierr)
      else
-        allocate(flowDoms(nn,level,sps)%w(0:ib,0:jb,0:kb,1:nMGVar), &
+        allocate(flowDoms(nn,level,sps)%w(0:ib,0:jb,0:kb,1:nwf), &
              stat=ierr)
      endif
      if(ierr /= 0)                           &
@@ -345,7 +345,7 @@ subroutine allocMemFlovarPart2(sps, level)
         end if
 
         ! Allocate the memory for the zeroth runge kutta stage
-        allocate(flowDoms(nn,level,sps)%wn(2:il,2:jl,2:kl,1:nMGVar), &
+        allocate(flowDoms(nn,level,sps)%wn(2:il,2:jl,2:kl,1:nwf), &
              flowDoms(nn,level,sps)%pn(2:il,2:jl,2:kl), stat=ierr)
         if(ierr /= 0)                              &
              call returnFail("allocMemFlovarPart2", &
@@ -371,8 +371,8 @@ subroutine allocMemFlovarPart2(sps, level)
         ! forcing term and the state variables upon entry.
 
         allocate(flowDoms(nn,level,sps)%p1(1:ie,1:je,1:ke),          &
-             flowDoms(nn,level,sps)%w1(1:ie,1:je,1:ke,1:nMGVar), &
-             flowDoms(nn,level,sps)%wr(2:il,2:jl,2:kl,1:nMGVar), &
+             flowDoms(nn,level,sps)%w1(1:ie,1:je,1:ke,1:nwf), &
+             flowDoms(nn,level,sps)%wr(2:il,2:jl,2:kl,1:nwf), &
              stat=ierr)
         if(ierr /= 0)                              &
              call returnFail("allocMemFlovarPart2", &

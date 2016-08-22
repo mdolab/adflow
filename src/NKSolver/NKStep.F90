@@ -1,20 +1,13 @@
 subroutine NKStep(firstCall)
-#ifndef USE_NO_PETSC
 
-  use communication
   use constants
-  use inputTimeSpectral
-  use flowVarRefState
   use NKSolverVars, only: dRdw, dRdwPre, NK_jacobianLag, totalR0, wVec, rVec, &
        deltaW, NK_KSP, NK_subspace, NK_divTol, NK_LS, NK_useEw, NK_iter, &
        nolinesearch, cubiclinesearch, nonmonotonelinesearch, mMax, &
        work, g, NK_rtolInit, NK_CFL, NK_CFL0, oldNorm, rtolLast, iter_k, iter_m
-  use InputIO 
-  use inputIteration
-  use inputPhysics
-  use monitor
-  use killSignals
-  use iteration
+  use inputIteration, only : L2Conv
+  use killSignals, only : routineFailed
+  use iteration, only : approxTotalIts
   implicit none
 #define PETSC_AVOID_MPIF_H
 
@@ -136,5 +129,4 @@ subroutine NKStep(firstCall)
 
   approxTotalIts = approxTotalIts + nfEvals + kspIterations
 
-#endif
 end subroutine NKStep

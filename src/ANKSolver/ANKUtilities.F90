@@ -3,12 +3,11 @@
 
 subroutine setWVecANK(wVec)
   ! Set the current FLOW variables in the PETSc Vector
-#ifndef USE_NO_PETSC
-  use communication
-  use blockPointers
-  use inputtimespectral
-  use flowvarrefstate
-  use inputiteration
+
+   use constants
+  use blockPointers, only : nDom, il, jl, kl, w
+  use inputtimespectral, only : ntimeIntervalsSpectral
+  use flowvarrefstate, only : nwf
 
   implicit none
 #define PETSC_AVOID_MPIF_H
@@ -50,18 +49,16 @@ subroutine setWVecANK(wVec)
 
   call VecRestoreArrayF90(wVec, wvec_pointer, ierr)
   call EChk(ierr,__FILE__,__LINE__)
-#endif
 
 end subroutine setWVecANK
 
 subroutine setRVecANK(rVec)
-#ifndef USE_NO_PETSC
 
   ! Set the current FLOW residual in dw into the PETSc Vector
-  use blockPointers
-  use inputtimespectral
-  use flowvarrefstate
-  use inputiteration
+  use constants
+  use blockPointers, only : nDom, volRef, il, jl, kl, dw 
+  use inputtimespectral, only : nTimeIntervalsSpectral
+  use flowvarrefstate, only : nwf
   implicit none
 #define PETSC_AVOID_MPIF_H
 
@@ -90,7 +87,7 @@ subroutine setRVecANK(rVec)
         do k=2, kl
            do j=2, jl
               do i=2, il
-                 ovv = one/vol(i,j,k)
+                 ovv = one/volRef(i,j,k)
                  do l=1, nwf
                     ii = ii + 1        
                     rvec_pointer(ii) = dw(i, j, k, l)*ovv
@@ -103,16 +100,15 @@ subroutine setRVecANK(rVec)
   
   call VecRestoreArrayF90(rVec, rvec_pointer, ierr)
   call EChk(ierr,__FILE__,__LINE__)
-#endif
+
 end subroutine setRVecANK
 
 subroutine setWANK(wVec)
-#ifndef USE_NO_PETSC
 
-  use communication
-  use blockPointers
-  use inputTimeSpectral
-  use flowVarRefState
+  use constants
+  use blockPointers, only : nDom, vol, il, jl, kl, w
+  use inputtimespectral, only : nTimeIntervalsSpectral
+  use flowvarrefstate, only : nwf
 
   implicit none
 #define PETSC_AVOID_MPIF_H
@@ -163,18 +159,15 @@ subroutine setWANK(wVec)
   call VecRestoreArrayF90(wVec, wvec_pointer, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 #endif
-#endif
 end subroutine setWANK
 
 
 subroutine setWVecANKTurb(wVec)
   ! Set the current Turbulence variables in the PETSc Vector
-#ifndef USE_NO_PETSC
-  use communication
-  use blockPointers
-  use inputtimespectral
-  use flowvarrefstate
-  use inputiteration
+  use constants
+  use blockPointers, only : nDom, vol, il, jl, kl, w
+  use inputtimespectral, only : nTimeIntervalsSpectral
+  use flowvarrefstate, only : nt1, nt2
 
   implicit none
 #define PETSC_AVOID_MPIF_H
@@ -216,18 +209,17 @@ subroutine setWVecANKTurb(wVec)
 
   call VecRestoreArrayF90(wVec, wvec_pointer, ierr)
   call EChk(ierr,__FILE__,__LINE__)
-#endif
 
 end subroutine setWVecANKTurb
 
 subroutine setRVecANKTurb(rVec)
-#ifndef USE_NO_PETSC
 
   ! Set the current FLOW residual in dw into the PETSc Vector
-  use blockPointers
-  use inputtimespectral
-  use flowvarrefstate
-  use inputiteration
+  use constants
+  use blockPointers, only : nDom, vol, il, jl, kl, dw, volRef
+  use inputtimespectral, only : nTimeIntervalsSpectral
+  use flowvarrefstate, only : nt1, nt2
+  use inputIteration, only : turbResScale
   implicit none
 #define PETSC_AVOID_MPIF_H
 
@@ -245,7 +237,6 @@ subroutine setRVecANKTurb(rVec)
   Vec    rVec
   integer(kind=intType) :: ierr, nn, sps, i, j, k, l, ii
   real(kind=realType),pointer :: rvec_pointer(:)
-  real(Kind=realType) :: ovv
   call VecGetArrayF90(rVec,rvec_pointer,ierr)
   call EChk(ierr,__FILE__,__LINE__)
   ii = 0
@@ -258,7 +249,7 @@ subroutine setRVecANKTurb(rVec)
               do i=2, il
                  do l=nt1, nt2
                     ii = ii + 1
-                    rvec_pointer(ii) = dw(i,j,k,l)*turbResScale(l-nt1+1)/vol(i, j, k)
+                    rvec_pointer(ii) = dw(i,j,k,l)*turbResScale(l-nt1+1)/volRef(i, j, k)
                  end do
               end do
            end do
@@ -268,16 +259,14 @@ subroutine setRVecANKTurb(rVec)
   
   call VecRestoreArrayF90(rVec, rvec_pointer, ierr)
   call EChk(ierr,__FILE__,__LINE__)
-#endif
+
 end subroutine setRVecANKTurb
 
 subroutine setWANKTurb(wVec)
-#ifndef USE_NO_PETSC
-
-  use communication
-  use blockPointers
-  use inputTimeSpectral
-  use flowVarRefState
+  use constants
+  use blockPointers, only : nDom, vol, il, jl, kl, w
+  use inputtimespectral, only : nTimeIntervalsSpectral
+  use flowvarrefstate, only : nt1, nt2
 
   implicit none
 #define PETSC_AVOID_MPIF_H
@@ -327,7 +316,6 @@ subroutine setWANKTurb(wVec)
 #else
   call VecRestoreArrayF90(wVec, wvec_pointer, ierr)
   call EChk(ierr,__FILE__,__LINE__)
-#endif
 #endif
 end subroutine setWANKTurb
 

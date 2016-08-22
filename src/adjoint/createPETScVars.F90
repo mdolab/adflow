@@ -8,16 +8,15 @@ subroutine createPETScVars
   !     *                                                                *
   !     ******************************************************************
   !
+  use constants
   use ADjointPETSc, only: dRdwT, dRdwPreT, &
        adjointKSP, matfreectx, x_like, psi_like1, adjointPETScVarsAllocated
   use ADjointVars   
-  use BCTypes
-  use communication  
-  use inputTimeSpectral 
-  use flowVarRefState 
-  use inputADjoint    
+  use communication, only : sumb_comm_world
+  use inputTimeSpectral, only : nTimeIntervalsSpectral
+  use flowVarRefState, only : nwf, nw, viscous
+  use inputADjoint, only : approxPC, frozenTurbulence, useMatrixFreedRdw, viscPC
   use stencils
-  use blockPointers
   implicit none
 
 #define PETSC_AVOID_MPIF_H

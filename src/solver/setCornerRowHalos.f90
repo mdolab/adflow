@@ -21,8 +21,10 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use blockPointers
-       use flowVarRefState
+       use constants
+       use blockPointers, only : w, p, rlv, rev, nx, ny, nz,  &
+            il, ie, jl, je, kl, ke
+       use flowVarRefState, only : eddyModel, viscous
        implicit none
 !
 !      Subroutine arguments

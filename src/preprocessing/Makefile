@@ -84,7 +84,8 @@ FILES_TO_COMPLEXIFY = \
 		 update1to1Coarse.f90\
 		 updateCoorFineMesh.f90\
 		 viscSubfaceInfo.f90\
-		 xhalo.f90
+		 xhalo.f90\
+		 setReferenceVolume.F90\
 
 FILES_TO_COPY = bcHalo.f90\
 		indirectHalo.f90\

@@ -13,8 +13,7 @@ SUMB_RULES_FILE  = $(SUMB_DIR)/rulesSources.mk
 include ${SUMB_COMMON_FILE}
 include ${SUMB_RULES_FILE}
 
-LINKER_ALL_FLAGS = -L$(SUMB_LIBDIR) -lsumb $(PV3_LINKER_FLAGS)\
-		    $(CGNS_LINKER_FLAGS) $(PVM3_LINKER_FLAGS) \
+LINKER_ALL_FLAGS = -L$(SUMB_LIBDIR) -lsumb $(CGNS_LINKER_FLAGS) \
 		    $(PETSC_LINKER_FLAGS) $(LINKER_FLAGS)
 
 PYTHON_OBJECTS = fortranobject.o \
@@ -56,11 +55,11 @@ all:
 	f2py sumb.pyf.autogen
 
 # Compile c wrapper
-	$(CC) $(CC_FLAGS) $(PYTHON_INCLUDES) -I$(NUMPY_INCLUDES) \
+	$(CC) $(CC_ALL_FLAGS) $(PYTHON_INCLUDES) -I$(NUMPY_INCLUDES) \
 	-I$(F2PY_ROOT)/src -c libsumbmodule.c
 
 # Compile fortranobject needed by all f2py modules
-	$(CC) $(CC_FLAGS) $(PYTHON_INCLUDES) -I$(NUMPY_INCLUDES) \
+	$(CC) $(CC_ALL_FLAGS) $(PYTHON_INCLUDES) -I$(NUMPY_INCLUDES) \
 	-c $(F2PY_ROOT)/src/fortranobject.c -o fortranobject.o
 
 # Compiled f2py-generated wrapper file

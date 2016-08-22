@@ -3,7 +3,10 @@ subroutine destroyANKsolver
   ! Destroy all the PETSc objects for the Newton-Krylov
   ! solver. 
 
-  use ANKsolverVars
+  use constants
+  use ANKsolverVars, only :dRdwPre, wVec, rVec, deltaW, ANK_KSP, dRdwPreTurb, &
+       wVecTurb, rVecTurb, deltaWTurb, ANK_KSPTurb, ANK_solverSetup, ANK_turbSetup
+
   implicit none
   integer(kind=intType) :: ierr
   

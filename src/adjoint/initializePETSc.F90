@@ -12,13 +12,11 @@ subroutine initializePETSc
 
   ! Call the C-version of the petsc initialize routine
 
-  use ADjointPETSc
-  use inputADjoint
-  use communication
+  use ADjointPETSc, only : petsc_comm_world
+  use communication, only : sumb_comm_world
   implicit none
 
   PETSC_COMM_WORLD= SUMB_COMM_WORLD
   call initPETScWrap()
-  !call PetscInitialize(PETSC_NULL_CHARACTER, PETScIErr)
-  !call ECHK(PETScIerr, __FILE__, __LINE__)
+
 end subroutine initializePETSc

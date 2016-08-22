@@ -2,37 +2,37 @@
 !  tapenade 3.10 (r5363) -  9 sep 2014 09:53
 !
 !  differentiation of block_res in forward (tangent) mode (with options i4 dr8 r8):
-!   variations   of useful results: pref *(flowdoms.w) *(flowdoms.dw)
+!   variations   of useful results: *(flowdoms.w) *(flowdoms.dw)
 !                *(*bcdata.fv) *(*bcdata.fp) *(*bcdata.area) *rev0
 !                *rev1 *pp0 *pp1 *rlv0 *rlv1 *ww0 *ww1 funcvalues
-!   with respect to varying inputs: pref *(flowdoms.x) *(flowdoms.w)
-!                mach tempfreestream reynolds machgrid lengthref
+!   with respect to varying inputs: tinfdim rhoinfdim pinfdim *(flowdoms.x)
+!                *(flowdoms.w) mach machgrid rgasdim lengthref
 !                machcoef pointref *xx *rev0 *rev1 *rev2 *rev3
 !                *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3 *ss
 !                *ssi *ssj *ssk *ww0 *ww1 *ww2 *ww3 alpha beta
-!   rw status of diff variables: mudim:(loc) gammainf:(loc) pinf:(loc)
-!                timeref:(loc) rhoinf:(loc) muref:(loc) rhoinfdim:(loc)
+!   rw status of diff variables: gammainf:(loc) tinfdim:in pinf:(loc)
+!                timeref:(loc) rhoinf:(loc) muref:(loc) rhoinfdim:in
 !                tref:(loc) winf:(loc) muinf:(loc) uinf:(loc) pinfcorr:(loc)
-!                rgas:(loc) pinfdim:(loc) pref:in-out rhoref:(loc)
-!                *(flowdoms.x):in *(flowdoms.vol):(loc) *(flowdoms.w):in-out
-!                *(flowdoms.dw):out *rev:(loc) *aa:(loc) *bvtj1:(loc)
-!                *bvtj2:(loc) *wx:(loc) *wy:(loc) *wz:(loc) *p:(loc)
-!                *sfacei:(loc) *sfacej:(loc) *s:(loc) *sfacek:(loc)
-!                *rlv:(loc) *qx:(loc) *qy:(loc) *qz:(loc) *scratch:(loc)
-!                *bvtk1:(loc) *bvtk2:(loc) *ux:(loc) *uy:(loc)
-!                *uz:(loc) *si:(loc) *sj:(loc) *sk:(loc) *bvti1:(loc)
-!                *bvti2:(loc) *vx:(loc) *vy:(loc) *vz:(loc) *fw:(loc)
-!                *(*viscsubface.tau):(loc) *(*bcdata.norm):(loc)
-!                *(*bcdata.rface):(loc) *(*bcdata.fv):out *(*bcdata.fp):out
-!                *(*bcdata.area):out *(*bcdata.uslip):(loc) *radi:(loc)
-!                *radj:(loc) *radk:(loc) mach:in tempfreestream:in
-!                reynolds:in veldirfreestream:(loc) machgrid:in
-!                lengthref:in machcoef:in dragdirection:(loc) liftdirection:(loc)
-!                pointref:in *xx:in *rev0:in-out *rev1:in-out *rev2:in
-!                *rev3:in *pp0:in-out *pp1:in-out *pp2:in *pp3:in
-!                *rlv0:in-out *rlv1:in-out *rlv2:in *rlv3:in *ss:in
-!                *ssi:in *ssj:in *ssk:in *ww0:in-out *ww1:in-out
-!                *ww2:in *ww3:in funcvalues:out alpha:in beta:in
+!                rgas:(loc) muinfdim:(loc) pinfdim:in pref:(loc)
+!                rhoref:(loc) *(flowdoms.x):in *(flowdoms.vol):(loc)
+!                *(flowdoms.w):in-out *(flowdoms.dw):out *rev:(loc)
+!                *aa:(loc) *bvtj1:(loc) *bvtj2:(loc) *wx:(loc)
+!                *wy:(loc) *wz:(loc) *p:(loc) *sfacei:(loc) *sfacej:(loc)
+!                *s:(loc) *sfacek:(loc) *rlv:(loc) *qx:(loc) *qy:(loc)
+!                *qz:(loc) *scratch:(loc) *bvtk1:(loc) *bvtk2:(loc)
+!                *ux:(loc) *uy:(loc) *uz:(loc) *si:(loc) *sj:(loc)
+!                *sk:(loc) *bvti1:(loc) *bvti2:(loc) *vx:(loc)
+!                *vy:(loc) *vz:(loc) *fw:(loc) *(*viscsubface.tau):(loc)
+!                *(*bcdata.norm):(loc) *(*bcdata.rface):(loc) *(*bcdata.fv):out
+!                *(*bcdata.fp):out *(*bcdata.area):out *(*bcdata.uslip):(loc)
+!                *radi:(loc) *radj:(loc) *radk:(loc) mach:in veldirfreestream:(loc)
+!                machgrid:in rgasdim:in lengthref:in machcoef:in
+!                dragdirection:(loc) liftdirection:(loc) pointref:in
+!                *xx:in *rev0:in-out *rev1:in-out *rev2:in *rev3:in
+!                *pp0:in-out *pp1:in-out *pp2:in *pp3:in *rlv0:in-out
+!                *rlv1:in-out *rlv2:in *rlv3:in *ss:in *ssi:in
+!                *ssj:in *ssk:in *ww0:in-out *ww1:in-out *ww2:in
+!                *ww3:in funcvalues:out alpha:in beta:in
 !   plus diff mem management of: flowdoms.x:in flowdoms.vol:in
 !                flowdoms.w:in flowdoms.dw:in rev:in aa:in bvtj1:in
 !                bvtj2:in wx:in wy:in wz:in p:in sfacei:in sfacej:in
@@ -127,7 +127,6 @@ subroutine block_res_d(nn, sps, usespatial, alpha, alphad, beta, betad, &
 ! ------------------------------------------------ 
   call adjustinflowangle_d(alpha, alphad, beta, betad, liftindex)
   call referencestate_d()
-  call setflowinfinitystate_d()
 ! ------------------------------------------------
 !        additional spatial components
 ! ------------------------------------------------
@@ -405,14 +404,12 @@ varloopfine:do l=1,nwf
       do k=2,kl
         do j=2,jl
           do i=2,il
-            flowdomsd(nn, 1, sps2)%dw(i, j, k, l) = (flowdomsd(nn, 1, &
-&             sps2)%dw(i, j, k, l)*flowdoms(nn, currentlevel, sps2)%vol(&
-&             i, j, k)-flowdoms(nn, 1, sps2)%dw(i, j, k, l)*flowdomsd(nn&
-&             , currentlevel, sps2)%vol(i, j, k))/flowdoms(nn, &
-&             currentlevel, sps2)%vol(i, j, k)**2
+            flowdomsd(nn, 1, sps2)%dw(i, j, k, l) = flowdomsd(nn, 1, &
+&             sps2)%dw(i, j, k, l)/flowdoms(nn, currentlevel, sps2)%&
+&             volref(i, j, k)
             flowdoms(nn, 1, sps2)%dw(i, j, k, l) = flowdoms(nn, 1, sps2)&
-&             %dw(i, j, k, l)/flowdoms(nn, currentlevel, sps2)%vol(i, j&
-&             , k)
+&             %dw(i, j, k, l)/flowdoms(nn, currentlevel, sps2)%volref(i&
+&             , j, k)
           end do
         end do
       end do
@@ -424,13 +421,11 @@ varloopfine:do l=1,nwf
         do j=2,jl
           do i=2,il
             flowdomsd(nn, 1, sps2)%dw(i, j, k, l) = turbresscale(l-nt1+1&
-&             )*(flowdomsd(nn, 1, sps2)%dw(i, j, k, l)*flowdoms(nn, &
-&             currentlevel, sps2)%vol(i, j, k)-flowdoms(nn, 1, sps2)%dw(&
-&             i, j, k, l)*flowdomsd(nn, currentlevel, sps2)%vol(i, j, k)&
-&             )/flowdoms(nn, currentlevel, sps2)%vol(i, j, k)**2
+&             )*flowdomsd(nn, 1, sps2)%dw(i, j, k, l)/flowdoms(nn, &
+&             currentlevel, sps2)%volref(i, j, k)
             flowdoms(nn, 1, sps2)%dw(i, j, k, l) = flowdoms(nn, 1, sps2)&
-&             %dw(i, j, k, l)/flowdoms(nn, currentlevel, sps2)%vol(i, j&
-&             , k)*turbresscale(l-nt1+1)
+&             %dw(i, j, k, l)/flowdoms(nn, currentlevel, sps2)%volref(i&
+&             , j, k)*turbresscale(l-nt1+1)
           end do
         end do
       end do

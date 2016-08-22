@@ -31,15 +31,19 @@ subroutine timestep_block_b(onlyradii)
 !      *                                                                *
 !      ******************************************************************
 !
-  use blockpointers
   use constants
-  use flowvarrefstate
-  use inputdiscretization
-  use inputiteration
-  use inputphysics
-  use inputtimespectral
-  use iteration
-  use section
+  use blockpointers, only : ie, je, ke, il, jl, kl, w, wd, p, pd, rlv,&
+& rlvd, rev, revd, radi, radid, radj, radjd, radk, radkd, si, sid, sj, &
+& sjd, sk, skd, sfacei, sfacej, sfacek, dtl, gamma, vol, vold, &
+& addgridvelocities, sectionid
+  use flowvarrefstate, only : timeref, timerefd, eddymodel, gammainf, &
+& gammainfd, pinfcorr, pinfcorrd, viscous, rhoinf, rhoinfd
+  use inputdiscretization, only : adis, dirscaling, radiineededcoarse,&
+& radiineededfine, precond
+  use inputphysics, only : equationmode
+  use iteration, only : groundlevel, currentlevel
+  use section, only : sections
+  use inputtimespectral, only : ntimeintervalsspectral
   implicit none
 ! the rest of this file can be skipped if only the spectral
 ! radii need to be computed.
@@ -73,10 +77,7 @@ subroutine timestep_block_b(onlyradii)
   integer :: branch
   real(kind=realtype) :: temp2
   real(kind=realtype) :: temp1
-  real(kind=realtype) :: tempd12
   real(kind=realtype) :: temp0
-  real(kind=realtype) :: tempd11
-  real(kind=realtype) :: tempd10
   real(kind=realtype) :: abs1d
   real(kind=realtype) :: abs0d
   real(kind=realtype) :: tempd9
@@ -162,7 +163,7 @@ subroutine timestep_block_b(onlyradii)
           abs0 = -qsi
           call pushcontrol1b(1)
         end if
-        radi(i, j, k) = half*(abs0+sqrt(cc2*(sx**2+sy**2+sz**2)))
+        ri = half*(abs0+sqrt(cc2*(sx**2+sy**2+sz**2)))
 ! the grid velocity in j-direction.
         if (addgridvelocities) sface = sfacej(i, j-1, k) + sfacej(i, j, &
 &           k)
@@ -178,7 +179,7 @@ subroutine timestep_block_b(onlyradii)
           abs1 = -qsj
           call pushcontrol1b(1)
         end if
-        radj(i, j, k) = half*(abs1+sqrt(cc2*(sx**2+sy**2+sz**2)))
+        rj = half*(abs1+sqrt(cc2*(sx**2+sy**2+sz**2)))
 ! the grid velocity in k-direction.
         if (addgridvelocities) sface = sfacek(i, j, k-1) + sfacek(i, j, &
 &           k)
@@ -194,7 +195,7 @@ subroutine timestep_block_b(onlyradii)
           abs2 = -qsk
           call pushcontrol1b(1)
         end if
-        radk(i, j, k) = half*(abs2+sqrt(cc2*(sx**2+sy**2+sz**2)))
+        rk = half*(abs2+sqrt(cc2*(sx**2+sy**2+sz**2)))
 ! compute the inviscid contribution to the time step.
 !
 !          **************************************************************
@@ -205,26 +206,26 @@ subroutine timestep_block_b(onlyradii)
 !          **************************************************************
 !
         if (doscaling) then
-          if (radi(i, j, k) .lt. eps) then
-            call pushcontrol1b(0)
+          if (ri .lt. eps) then
             ri = eps
-          else
-            ri = radi(i, j, k)
-            call pushcontrol1b(1)
-          end if
-          if (radj(i, j, k) .lt. eps) then
             call pushcontrol1b(0)
+          else
+            call pushcontrol1b(1)
+            ri = ri
+          end if
+          if (rj .lt. eps) then
             rj = eps
-          else
-            rj = radj(i, j, k)
-            call pushcontrol1b(1)
-          end if
-          if (radk(i, j, k) .lt. eps) then
             call pushcontrol1b(0)
-            rk = eps
           else
-            rk = radk(i, j, k)
             call pushcontrol1b(1)
+            rj = rj
+          end if
+          if (rk .lt. eps) then
+            rk = eps
+            call pushcontrol1b(0)
+          else
+            call pushcontrol1b(1)
+            rk = rk
           end if
 ! compute the scaling in the three coordinate
 ! directions.
@@ -235,56 +236,64 @@ subroutine timestep_block_b(onlyradii)
 ! note that the multiplication is done with radi, radj
 ! and radk, such that the influence of the clipping
 ! is negligible.
-          tempd7 = radk(i, j, k)*radkd(i, j, k)
-          radkd(i, j, k) = (one+one/rki+rjk)*radkd(i, j, k)
-          tempd9 = radj(i, j, k)*radjd(i, j, k)
-          rjkd = tempd7 - one*tempd9/rjk**2
-          radjd(i, j, k) = (one+one/rjk+rij)*radjd(i, j, k)
-          tempd8 = radi(i, j, k)*radid(i, j, k)
-          rkid = tempd8 - one*tempd7/rki**2
-          rijd = tempd9 - one*tempd8/rij**2
-          radid(i, j, k) = (one+one/rij+rki)*radid(i, j, k)
+          rkd = (one+one/rki+rjk)*radkd(i, j, k)
+          rkid = -(rk*one*radkd(i, j, k)/rki**2)
+          rjkd = rk*radkd(i, j, k)
+          radkd(i, j, k) = 0.0_8
+          rjd = (one+one/rjk+rij)*radjd(i, j, k)
+          rjkd = rjkd - rj*one*radjd(i, j, k)/rjk**2
+          rijd = rj*radjd(i, j, k)
+          radjd(i, j, k) = 0.0_8
+          rijd = rijd - ri*one*radid(i, j, k)/rij**2
+          rkid = rkid + ri*radid(i, j, k)
           if (rk/ri .le. 0.0_8 .and. (adis .eq. 0.0_8 .or. adis .ne. int&
 &             (adis))) then
-            tempd10 = 0.0
+            tempd7 = 0.0
           else
-            tempd10 = adis*(rk/ri)**(adis-1)*rkid/ri
+            tempd7 = adis*(rk/ri)**(adis-1)*rkid/ri
           end if
           if (rj/rk .le. 0.0_8 .and. (adis .eq. 0.0_8 .or. adis .ne. int&
 &             (adis))) then
-            tempd11 = 0.0
+            tempd9 = 0.0
           else
-            tempd11 = adis*(rj/rk)**(adis-1)*rjkd/rk
+            tempd9 = adis*(rj/rk)**(adis-1)*rjkd/rk
           end if
-          rkd = tempd10 - rj*tempd11/rk
+          rkd = rkd + tempd7 - rj*tempd9/rk
           if (ri/rj .le. 0.0_8 .and. (adis .eq. 0.0_8 .or. adis .ne. int&
 &             (adis))) then
-            tempd12 = 0.0
+            tempd8 = 0.0
           else
-            tempd12 = adis*(ri/rj)**(adis-1)*rijd/rj
+            tempd8 = adis*(ri/rj)**(adis-1)*rijd/rj
           end if
-          rid = tempd12 - rk*tempd10/ri
-          rjd = tempd11 - ri*tempd12/rj
+          rid = tempd8 - rk*tempd7/ri + (one+one/rij+rki)*radid(i, j, k)
+          radid(i, j, k) = 0.0_8
+          rjd = rjd + tempd9 - ri*tempd8/rj
           call popcontrol1b(branch)
-          if (branch .ne. 0) radkd(i, j, k) = radkd(i, j, k) + rkd
+          if (branch .eq. 0) rkd = 0.0_8
           call popcontrol1b(branch)
-          if (branch .ne. 0) radjd(i, j, k) = radjd(i, j, k) + rjd
+          if (branch .eq. 0) rjd = 0.0_8
           call popcontrol1b(branch)
-          if (branch .ne. 0) radid(i, j, k) = radid(i, j, k) + rid
+          if (branch .eq. 0) rid = 0.0_8
+        else
+          rkd = radkd(i, j, k)
+          radkd(i, j, k) = 0.0_8
+          rjd = radjd(i, j, k)
+          radjd(i, j, k) = 0.0_8
+          rid = radid(i, j, k)
+          radid(i, j, k) = 0.0_8
         end if
         temp2 = sx**2 + sy**2 + sz**2
         if (cc2*temp2 .eq. 0.0_8) then
           tempd5 = 0.0
         else
-          tempd5 = half*radkd(i, j, k)/(2.0*sqrt(cc2*temp2))
+          tempd5 = half*rkd/(2.0*sqrt(cc2*temp2))
         end if
         tempd6 = cc2*tempd5
-        abs2d = half*radkd(i, j, k)
+        abs2d = half*rkd
         cc2d = temp2*tempd5
         sxd = 2*sx*tempd6
         syd = 2*sy*tempd6
         szd = 2*sz*tempd6
-        radkd(i, j, k) = 0.0_8
         call popcontrol1b(branch)
         if (branch .eq. 0) then
           qskd = abs2d
@@ -310,15 +319,14 @@ subroutine timestep_block_b(onlyradii)
         if (cc2*temp1 .eq. 0.0_8) then
           tempd3 = 0.0
         else
-          tempd3 = half*radjd(i, j, k)/(2.0*sqrt(cc2*temp1))
+          tempd3 = half*rjd/(2.0*sqrt(cc2*temp1))
         end if
         tempd4 = cc2*tempd3
-        abs1d = half*radjd(i, j, k)
+        abs1d = half*rjd
         cc2d = cc2d + temp1*tempd3
         sxd = 2*sx*tempd4
         syd = 2*sy*tempd4
         szd = 2*sz*tempd4
-        radjd(i, j, k) = 0.0_8
         call popcontrol1b(branch)
         if (branch .eq. 0) then
           qsjd = abs1d
@@ -344,15 +352,14 @@ subroutine timestep_block_b(onlyradii)
         if (cc2*temp0 .eq. 0.0_8) then
           tempd1 = 0.0
         else
-          tempd1 = half*radid(i, j, k)/(2.0*sqrt(cc2*temp0))
+          tempd1 = half*rid/(2.0*sqrt(cc2*temp0))
         end if
         tempd2 = cc2*tempd1
-        abs0d = half*radid(i, j, k)
+        abs0d = half*rid
         cc2d = cc2d + temp0*tempd1
         sxd = 2*sx*tempd2
         syd = 2*sy*tempd2
         szd = 2*sz*tempd2
-        radid(i, j, k) = 0.0_8
         call popcontrol1b(branch)
         if (branch .eq. 0) then
           qsid = abs0d

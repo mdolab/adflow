@@ -11,7 +11,7 @@ module myPushPopLib
   implicit none
   save
 
-  integer(kind=intType) :: myIntStack(20)
+  integer(kind=intType) :: myIntStack(32)
   integer(kind=intType) :: myIntPtr = 0
 
 end module myPushPopLib

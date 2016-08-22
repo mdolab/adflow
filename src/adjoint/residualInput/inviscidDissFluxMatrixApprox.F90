@@ -53,7 +53,7 @@ subroutine inviscidDissFluxMatrixApprox
   real(kind=realType) :: kAvg, lam1, lam2, lam3, area
   real(kind=realType) :: abv1, abv2, abv3, abv4, abv5, abv6, abv7
 
-  logical :: correctForK
+  logical :: correctForK, getCorrectForK
   !
   !      ******************************************************************
   !      *                                                                *
@@ -75,15 +75,7 @@ subroutine inviscidDissFluxMatrixApprox
   ! Determine whether or not the total energy must be corrected
   ! for the presence of the turbulent kinetic energy.
 
-  if( kPresent ) then
-     if((currentLevel == groundLevel) .or. turbCoupled) then
-        correctForK = .true.
-     else
-        correctForK = .false.
-     endif
-  else
-     correctForK = .false.
-  endif
+  correctForK = getCorrectForK()
 
   ! Initialize sface to zero. This value will be used if the
   ! block is not moving.

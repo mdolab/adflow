@@ -60,7 +60,7 @@
        real(kind=realType) :: fx, fy, fz, fn, a2Tot, a2, qw
        real(kind=realType) :: tauxx, tauyy, tauzz
        real(kind=realType) :: tauxy, tauxz, tauyz
-       real(kind=realType) :: pm1, scaleDim, a, sensor, plocal, sensor1
+       real(kind=realType) :: pm1, a, sensor, plocal, sensor1
        real(kind=realType), dimension(3) :: norm, V
 
        real(kind=realType), dimension(:,:,:), pointer :: ww1, ww2
@@ -697,79 +697,6 @@
                buffer(nn) = real(min(iblank2(i,j), 1_intType), realType)
              enddo
            enddo
-
-        case (cgnsLift,cgnsDrag) 
-
-           fact = fact*two/(gammaInf*pInf*MachCoef*MachCoef)
-           scaleDim = pRef/pInf
-           do j=rangeFace(2,1), rangeFace(2,2)
-              if(j == rangeFace(2,1)) then
-                 jj = j + offVis
-              else if(j == rangeFace(2,2)) then
-                 jj = j - offVis
-              else
-                 jj = j
-              endif
-              
-              do i=rangeFace(1,1), rangeFace(1,2)
-                 if(i == rangeFace(1,1)) then
-                    ii = i + offVis
-                 else if(i == rangeFace(1,2)) then
-                    ii = i - offVis
-                 else
-                    ii = i
-                 endif
-                 
-                 nn = nn + 1
-
-                 norm(1) = ss(ii,jj,1)
-                 norm(2) = ss(ii,jj,2)
-                 norm(3) = ss(ii,jj,3)
-
-                 ! Compute inviscid force
-                 pm1 = fact*(half*(pp2(i,j) + pp1(i,j)) - pInf)*scaleDim
-                 fx = pm1*norm(1)
-                 fy = pm1*norm(2)
-                 fz = pm1*norm(3)
- 
-                 ! Compute possible viscous force
-                 if (viscousSubface) then
-
-                    ! Determine the viscous subface on which this
-                    ! face is located.
-                    
-                    mm = viscPointer(ii,jj)
-                    
-                    ! Store the 6 components of the viscous stress tensor
-                    ! a bit easier.
-
-                    tauxx = viscSubface(mm)%tau(ii,jj,1)
-                    tauyy = viscSubface(mm)%tau(ii,jj,2)
-                    tauzz = viscSubface(mm)%tau(ii,jj,3)
-                    tauxy = viscSubface(mm)%tau(ii,jj,4)
-                    tauxz = viscSubface(mm)%tau(ii,jj,5)
-                    tauyz = viscSubface(mm)%tau(ii,jj,6)
-
-                    fx = fx -(tauxx*norm(1) + tauxy*norm(2) + tauxz*norm(3))*fact*scaleDim
-                    fy = fy -(tauxy*norm(1) + tauyy*norm(2) + tauyz*norm(3))*fact*scaleDim
-                    fz = fz -(tauxz*norm(1) + tauyz*norm(2) + tauzz*norm(3))*fact*scaleDim
-                    
-                 end if
-
-                 ! Next we get the traction by dividing by the area
-                 a =  sqrt(norm(1)**2 + norm(2)**2 + norm(3)**2)
-                 fx = fx / a
-                 fy = fy / a
-                 fz = fz / a
-                 select case(solName)
-                 case (cgnsLift)
-                    ! Take dot-product with lift vector
-                    buffer(nn) = fx*liftDirection(1) +fy*liftDirection(2) + fz*liftDirection(3)
-                 case(cgnsDrag)
-                    buffer(nn) = fx*dragDirection(1) +fy*dragDirection(2) + fz*dragDirection(3)
-                 end select
-              end do
-           end do
 
         case (cgnsSepSensor)
 

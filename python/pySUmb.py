@@ -1639,9 +1639,9 @@ class SUMB(AeroSolver):
             to reset the flow to.
             """
         self.setAeroProblem(aeroProblem, releaseAdjointMemory)
-        self.sumb.referencestate()
-        self.sumb.setflowinfinitystate()
+        self._resetFlow()
 
+    def _resetFlow(self):
         strLvl = self.getOption('MGStartLevel')
         nLevels = self.sumb.inputiteration.nmglevels
         if strLvl < 0 or strLvl > nLevels:
@@ -1669,7 +1669,7 @@ class SUMB(AeroSolver):
         # possibleObjectives list
         self.sumb.getsolution(sps)
 
-        funcVals = self.sumb.costfunctions.functionvalue
+        funcVals = self.sumb.costfunctions.funcvalues
         SUmbsolution = {
             'lift':funcVals[self.sumb.costfunctions.costfunclift-1],
             'drag':funcVals[self.sumb.costfunctions.costfuncdrag-1],
@@ -2073,40 +2073,21 @@ class SUMB(AeroSolver):
 
         # Set reference state information:
 
-        # Reset these so that the updated free stream values are taken
-        self.sumb.flowvarrefstate.pref = -1.0
-        self.sumb.flowvarrefstate.tref = -1.0
-        self.sumb.flowvarrefstate.rhoref = -1.0
+        # Set the dimensional free strema values
         self.sumb.flowvarrefstate.pinfdim = P
-        self.sumb.inputphysics.tempfreestream = T
+        self.sumb.flowvarrefstate.tinfdim = T
+        self.sumb.flowvarrefstate.rhoinfdim = rho
 
-        if self.getOption('equationType') != 'euler':
-            # RANS/Laminar
-            ReLength = 1.0
-            self.sumb.inputphysics.reynolds = rho*V/mu
-            self.sumb.inputphysics.reynoldslength = ReLength
+        self.sumb.inputphysics.ssuthdim = SSuthDim
+        self.sumb.inputphysics.musuthdim = muSuthDim
+        self.sumb.inputphysics.tsuthdim = TSuthDim
+        self.sumb.inputphysics.rgasdim = RGasDim
+        self.sumb.inputphysics.prandtl = Pr
 
-            self.sumb.inputphysics.ssuthdim = SSuthDim
-            self.sumb.inputphysics.musuthdim = muSuthDim
-            self.sumb.inputphysics.tsuthdim = TSuthDim
-            self.sumb.inputphysics.rgasdim = RGasDim
-
-            # Update gamma only if it has changed from what currently is set
-            if abs(self.sumb.inputphysics.gammaconstant - gammaConstant) > 1.0e-12:
-                self.sumb.inputphysics.gammaconstant = gammaConstant
-                self.sumb.updategamma() # NOTE! It is absolutely necessary to call this function, otherwise gamma is not properly updated.
-            self.sumb.inputphysics.prandtl = Pr
-        else:
-            # EULER
-            self.sumb.inputphysics.reynolds = 1.0
-            self.sumb.inputphysics.reynoldslength = 1.0
-
-            self.sumb.inputphysics.rgasdim = RGasDim
-            # Update gamma only if it has changed from what currently is set
-            if abs(self.sumb.inputphysics.gammaconstant - gammaConstant) > 1.0e-12:
-                self.sumb.inputphysics.gammaconstant = gammaConstant
-                self.sumb.updategamma() # NOTE! It is absolutely necessary to call this function, otherwise gamma is not properly updated.
-            self.sumb.inputphysics.prandtl = Pr
+        # Update gamma only if it has changed from what currently is set
+        if abs(self.sumb.inputphysics.gammaconstant - gammaConstant) > 1.0e-12:
+            self.sumb.inputphysics.gammaconstant = gammaConstant
+            self.sumb.updategamma() # NOTE! It is absolutely necessary to call this function, otherwise gamma is not properly updated.
 
         # 4. Periodic Parameters --- These are not checked/verified
         # and come directly from aeroProblem. Make sure you specify
@@ -2157,7 +2138,6 @@ class SUMB(AeroSolver):
 
         if not firstCall:
             self.sumb.referencestate()
-            self.sumb.setflowinfinitystate()
             self.sumb.iteration.groundlevel = 1
             self.sumb.updateperiodicinfoalllevels()
             self.sumb.updategridvelocitiesalllevels()
@@ -2319,7 +2299,7 @@ class SUMB(AeroSolver):
         dv : str
             dv name. Must be in the self.possibleAeroDVs list
             """
-
+        dv = dv.lower()
         if dv not in self.possibleAeroDVs:
             raise Error("%s was not one of the possible AeroDVs. "
                         "The complete list of DVs for SUmb is %s. "%(
@@ -2414,53 +2394,49 @@ class SUMB(AeroSolver):
 
         DVsRequired = list(self.curAP.DVNames.keys())
         for dv in DVsRequired:
-            if dv.lower() in ['altitude', 'mach', 'P', 'T', 'reynolds']:
-                # These design variables are *special*! The issue is
-                # that SUmb takes as effective input P, T, mach and
-                # reynolds and these are *not* the typical values we
-                # use from the aeroproblem. So to ensure generic
-                # treatment of the derivatives we have already added
-                # P, T, mach and Reynolds to SUmb as "design
-                # variables" --- this means we get the sensitivity of
-                # the objective with respect to these 4
-                # variables. Next we compute the derivatives of
-                # P,T,mach,rho,V, and mu with respect to the actual
-                # aeroproblem design variable 'dv'. We then chain rule
-                # them together, along with the linearization fo
-                # Re=rho*V/mu.
-                tmp = {}
-	        self.curAP.evalFunctionsSens(tmp, ['P', 'T', 'mach', 'rho','V', 'mu'])
+            tmp = {}
+            if dv.lower() in ['altitude']:
+                # This design variable is special. It combines changes
+                # in temperature, pressure and density into a single
+                # variable. Since we have derivatives for T, P and
+                # rho, we simply chain rule it back to the the
+                # altitude variable. 
+	        self.curAP.evalFunctionsSens(tmp, ['P', 'T', 'rho'])
 
                 # Extract the derivatives wrt the independent
                 # parameters in SUmb
-                dIdP = dIda[self.aeroDVs['P']]
-                dIdT = dIda[self.aeroDVs['T']]
-                dIdMach = dIda[self.aeroDVs['mach']]
-
-                # Chain rule the reynolds dependance back to what came
-                # from aeroproblem:
-                rho = numpy.real(self.curAP.rho)
-                mu = numpy.real(self.curAP.mu)
-                V = numpy.real(self.curAP.V)
-                dIdReynolds = dIda[self.aeroDVs['reynolds']]
-                dIdV = rho/mu*dIdReynolds
-                dIdrho = V/mu*dIdReynolds
-                dIdmu = -rho*V/mu**2 * dIdReynolds
+                dIdP = dIda[self.aeroDVs['p']]
+                dIdT = dIda[self.aeroDVs['t']]
+                dIdrho = dIda[self.aeroDVs['rho']]
 
                 # Chain-rule to get the final derivative:
                 funcsSens[self.curAP.DVNames[dv]] = (
                     tmp[self.curAP['P']][self.curAP.DVNames[dv]]*dIdP +
                     tmp[self.curAP['T']][self.curAP.DVNames[dv]]*dIdT +
-                    tmp[self.curAP['mach']][self.curAP.DVNames[dv]]*dIdMach +
-                    tmp[self.curAP['rho']][self.curAP.DVNames[dv]]*dIdrho +
-                    tmp[self.curAP['V']][self.curAP.DVNames[dv]]*dIdV +
-                    tmp[self.curAP['mu']][self.curAP.DVNames[dv]]*dIdmu)
+                    tmp[self.curAP['rho']][self.curAP.DVNames[dv]]*dIdrho)
+            elif dv.lower() in ['mach']:
+                self.curAP.evalFunctionsSens(tmp, ['P', 'rho'])
+                # Simular story for Mach: It is technically possible
+                # to use a mach number for a fiexed RE simulation. For
+                # the RE to stay fixed and change the mach number, the
+                # 'P' and 'rho' must also change. We have to chain run
+                # this dependence back through to the final mach
+                # derivative. When Mach number is used with altitude
+                # or P and T, this calc is unnecessary, but won't do
+                # any harm.
+                dIdP = dIda[self.aeroDVs['p']]
+                dIdrho = dIda[self.aeroDVs['rho']]
+                       
+                # Chain-rule to get the final derivative:
+                funcsSens[self.curAP.DVNames[dv]] = (
+                    tmp[self.curAP['P']][self.curAP.DVNames[dv]]*dIdP +
+                    tmp[self.curAP['rho']][self.curAP.DVNames[dv]]*dIdrho + 
+                    dIda[self.aeroDVs[dv]])
 
             elif dv in self.possibleAeroDVs:
-                if dv in self.possibleAeroDVs:
-                    funcsSens[self.curAP.DVNames[dv]] = dIda[self.aeroDVs[dv]]
-                    if dv == 'alpha':
-                        funcsSens[self.curAP.DVNames[dv]] *= numpy.pi/180.0
+                funcsSens[self.curAP.DVNames[dv]] = dIda[self.aeroDVs[dv]]
+                if dv == 'alpha':
+                    funcsSens[self.curAP.DVNames[dv]] *= numpy.pi/180.0
 
 	return funcsSens
 
@@ -2472,12 +2448,17 @@ class SUMB(AeroSolver):
         DVsRequired = list(self.curAP.DVNames.keys())
         DVMap = {}
         for dv in DVsRequired:
-            if dv.lower() in ['altitude', 'mach', 'P', 'T', 'reynolds']:
+            dv = dv.lower()
+            if dv in ['altitude']:
                 # All these variables need to be compined
                 self._addAeroDV('P')
-                self._addAeroDV('mach')
-                self._addAeroDV('reynolds')
                 self._addAeroDV('T')
+                self._addAeroDV('rho')
+            elif dv in ['mach']:
+                self._addAeroDV('mach')
+                self._addAeroDV('P')
+                self._addAeroDV('rho')
+
             elif dv in self.possibleAeroDVs:
                 self._addAeroDV(dv)
             else:
@@ -2730,7 +2711,7 @@ class SUMB(AeroSolver):
 
         # For the geometric xDvDot perturbation we accumulate into the
         # already existing (and possibly nonzero) xsdot and xvdot
-        if xDvDot is not None or xSDot is not None:
+        if self.DVGeo and (xDvDot is not None or xSDot is not None):
             if xDvDot is not None:
                 xsdot += self.DVGeo.totalSensitivityProd(xDvDot, self.curAP.ptSetName).reshape(xsdot.shape)
             xvdot += self.mesh.warpDerivFwd(xsdot)
@@ -2738,21 +2719,21 @@ class SUMB(AeroSolver):
 
         # Sizes for output arrays
         costSize = self.sumb.costfunctions.ncostfunction
-        fSize, nCell = self.sumb.getforcesize()
+        fSize, nCell = self._getSurfaceSize(self.allWallsGroup)
 
         dwdot,tmp,fdot = self.sumb.computematrixfreeproductfwd(
             xvdot, extradot, wdot, useSpatial, useState, costSize,  max(1, fSize))
 
-        # Explictly put fdot to nothing if we ac
+        # Explictly put fdot to nothing if size is zero
         if fSize==0:
             fdot = numpy.zeros((0, 3))
 
         # Process the derivative of the functions
-        funcsdot = {}
+        funcsDot = {}
         for f in self.curAP.evalFuncs:
             basicFunc = self.sumbCostFunctions[f.lower()][1]
             mapping = self.basicCostFunctions[basicFunc]
-            funcsdot[f] = tmp[mapping - 1]
+            funcsDot[f] = tmp[mapping - 1]
 
         # Assemble the returns
         returns = []
@@ -2831,11 +2812,17 @@ class SUMB(AeroSolver):
 
         # -------------------------
         #  Check for fBar (forces)
-        # -------------------------
+        # ------------------------
+        nTime  = self.sumb.inputtimespectral.ntimeintervalsspectral
+        nPts, nCell = self._getSurfaceSize(self.allWallsGroup)
+
         if fBar is None:
-            nPts, nCell = self._getSurfaceSize(self.allWallsGroup)
-            fBar = numpy.zeros((nPts, 3))
-            
+            fBar = numpy.zeros((nTime, nPts, 3))
+        else:
+            # Expand out to the sps direction in case there were only
+            # 2 dimensions. 
+            fBar= fBar.reshape((nTime, nPts, 3))
+        
         # ---------------------
         #  Check for funcsBar 
         # ---------------------
@@ -2963,7 +2950,7 @@ class SUMB(AeroSolver):
         we want to map is 'vec1'. It is length 9+10. All the 'x's are
         significant values.
 
-        The call: coerseVector(vec1, 'f12', 'f23')
+        The call: mapVector(vec1, 'f12', 'f23')
         
         will produce the "returned vec" array, containing the
         significant values from 'fam2', where the two groups overlap,
@@ -2976,6 +2963,10 @@ class SUMB(AeroSolver):
         |xxxxxxxxx xxxxxxxxxx|        <- vec1
                   |xxxxxxxxxx 000000| <- returned vec (vec2)
 
+        It is also possible to pass in vec2 into this routine. For
+        that case, the existing values in the array will not be
+        kept. In the previous examples, the values cooresponding to
+        fam3 will retain their original values. 
 
         Parameters
         ----------
@@ -2996,6 +2987,7 @@ class SUMB(AeroSolver):
         -------
         vec2 : Numpy array
             The input vector maped to the families defined in groupName2.
+
         """
         if groupName1 not in self.families or groupName2 not in self.families:
             raise Error("'%s' or '%s' is not a family in the CGNS file or has not been added"
@@ -3672,53 +3664,52 @@ class SUMB(AeroSolver):
             'nodaloutput':['io', 'nodaloutput'],
             'nsavesurface':['iter', 'nsavesurface'],
             'viscoussurfacevelocities':['io', 'viscoussurfacevelocities'],
-            'solutionprecision':{'single':self.sumb.inputio.precisionsingle,
-                                 'double':self.sumb.inputio.precisiondouble,
+            'solutionprecision':{'single':self.sumb.constants.precisionsingle,
+                                 'double':self.sumb.constants.precisiondouble,
                                  'location':['io', 'precisionsol']},
-            'gridprecision':{'single':self.sumb.inputio.precisionsingle,
-                             'double':self.sumb.inputio.precisiondouble,
+            'gridprecision':{'single':self.sumb.constants.precisionsingle,
+                             'double':self.sumb.constants.precisiondouble,
                              'location':['io', 'precisiongrid']},
 
             # Physics Paramters
-            'discretization':{'central plus scalar dissipation': self.sumb.inputdiscretization.dissscalar,
-                              'central plus matrix dissipation': self.sumb.inputdiscretization.dissmatrix,
-                              'central plus cusp dissipation':self.sumb.inputdiscretization.disscusp,
-                              'upwind':self.sumb.inputdiscretization.upwind,
+            'discretization':{'central plus scalar dissipation': self.sumb.constants.dissscalar,
+                              'central plus matrix dissipation': self.sumb.constants.dissmatrix,
+                              'central plus cusp dissipation':self.sumb.constants.disscusp,
+                              'upwind':self.sumb.constants.upwind,
                               'location':['discr', 'spacediscr']},
-            'coarsediscretization':{'central plus scalar dissipation': self.sumb.inputdiscretization.dissscalar,
-                                    'central plus matrix dissipation': self.sumb.inputdiscretization.dissmatrix,
-                                    'central plus cusp dissipation': self.sumb.inputdiscretization.disscusp,
-                                    'upwind': self.sumb.inputdiscretization.upwind,
+            'coarsediscretization':{'central plus scalar dissipation': self.sumb.constants.dissscalar,
+                                    'central plus matrix dissipation': self.sumb.constants.dissmatrix,
+                                    'central plus cusp dissipation': self.sumb.constants.disscusp,
+                                    'upwind': self.sumb.constants.upwind,
                                     'location':['discr', 'spacediscrcoarse']},
-            'limiter':{'vanalbeda':self.sumb.inputdiscretization.vanalbeda,
-                       'minmod':self.sumb.inputdiscretization.minmod,
-                       'nolimiter':self.sumb.inputdiscretization.nolimiter,
+            'limiter':{'vanalbeda':self.sumb.constants.vanalbeda,
+                       'minmod':self.sumb.constants.minmod,
+                       'nolimiter':self.sumb.constants.nolimiter,
                        'location':['discr', 'limiter']},
-            'smoother':{'runge kutta':self.sumb.inputiteration.rungekutta,
-                        'lu sgs':self.sumb.inputiteration.nllusgs,
-                        'lu sgs line':self.sumb.inputiteration.nllusgsline,
-                        'dadi':self.sumb.inputiteration.dadi,
+            'smoother':{'runge kutta':self.sumb.constants.rungekutta,
+                        'lu sgs':self.sumb.constants.nllusgs,
+                        'lu sgs line':self.sumb.constants.nllusgsline,
+                        'dadi':self.sumb.constants.dadi,
                         'location':['iter', 'smoother']},
 
-            'equationtype':{'euler':self.sumb.inputphysics.eulerequations,
-                            'laminar ns':self.sumb.inputphysics.nsequations,
-                            'rans':self.sumb.inputphysics.ransequations,
+            'equationtype':{'euler':self.sumb.constants.eulerequations,
+                            'laminar ns':self.sumb.constants.nsequations,
+                            'rans':self.sumb.constants.ransequations,
                             'location':['physics', 'equations']},
-            'equationmode':{'steady':self.sumb.inputphysics.steady,
-                            'unsteady':self.sumb.inputphysics.unsteady,
-                            'time spectral':self.sumb.inputphysics.timespectral,
+            'equationmode':{'steady':self.sumb.constants.steady,
+                            'unsteady':self.sumb.constants.unsteady,
+                            'time spectral':self.sumb.constants.timespectral,
                             'location':['physics', 'equationmode']},
-            'flowtype':{'internal':self.sumb.inputphysics.internalflow,
-                        'external':self.sumb.inputphysics.externalflow,
+            'flowtype':{'internal':self.sumb.constants.internalflow,
+                        'external':self.sumb.constants.externalflow,
                         'location':['physics', 'flowtype']},
-            'turbulencemodel':{'baldwin lomax':self.sumb.inputphysics.baldwinlomax,
-                               'sa':self.sumb.inputphysics.spalartallmaras,
-                               'sae':self.sumb.inputphysics.spalartallmarasedwards,
-                               'k omega wilcox':self.sumb.inputphysics.komegawilcox,
-                               'k omega modified':self.sumb.inputphysics.komegamodified,
-                               'ktau':self.sumb.inputphysics.ktau,
-                               'menter sst':self.sumb.inputphysics.mentersst,
-                               'v2f':self.sumb.inputphysics.v2f,
+            'turbulencemodel':{'sa':self.sumb.constants.spalartallmaras,
+                               'sae':self.sumb.constants.spalartallmarasedwards,
+                               'k omega wilcox':self.sumb.constants.komegawilcox,
+                               'k omega modified':self.sumb.constants.komegamodified,
+                               'ktau':self.sumb.constants.ktau,
+                               'menter sst':self.sumb.constants.mentersst,
+                               'v2f':self.sumb.constants.v2f,
                                'location':['physics', 'turbmodel']},
             'turbulenceorder':{'first order':1,
                                'second order':2,
@@ -3728,15 +3719,13 @@ class SUMB(AeroSolver):
             'usewallfunctions':['physics', 'wallfunctions'],
             'walldistcutoff':['physics', 'walldistcutoff'],
             'useapproxwalldistance':['discr', 'useapproxwalldistance'],
-            'reynoldsnumber':['physics', 'reynolds'],
-            'reynoldslength':['physics', 'reynoldslength'],
-            'eulerwalltreatment':{'linear pressure extrapolation':self.sumb.inputdiscretization.linextrapolpressure,
-                                  'constant pressure extrapolation':self.sumb.inputdiscretization.constantpressure,
-                                  'quadratic pressure extrapolation':self.sumb.inputdiscretization.quadextrapolpressure,
-                                  'normal momentum':self.sumb.inputdiscretization.normalmomentum,
+            'eulerwalltreatment':{'linear pressure extrapolation':self.sumb.constants.linextrapolpressure,
+                                  'constant pressure extrapolation':self.sumb.constants.constantpressure,
+                                  'quadratic pressure extrapolation':self.sumb.constants.quadextrapolpressure,
+                                  'normal momentum':self.sumb.constants.normalmomentum,
                                   'location':['discr', 'eulerwallbctreatment']},
-            'viscwalltreatment':{'linear pressure extrapolation':self.sumb.inputdiscretization.linextrapolpressure,
-                                 'constant pressure extrapolation':self.sumb.inputdiscretization.constantpressure,
+            'viscwalltreatment':{'linear pressure extrapolation':self.sumb.constants.linextrapolpressure,
+                                 'constant pressure extrapolation':self.sumb.constants.constantpressure,
                                  'location':['discr', 'viscwallbctreatment']},
             'dissipationscalingexponent':['discr', 'adis'],
             'vis4':['discr', 'vis4'],
@@ -3755,9 +3744,9 @@ class SUMB(AeroSolver):
             'cflcoarse':['iter', 'cflcoarse'],
             'mgcycle':['localmg', 'mgdescription'],
             'mgstartlevel':['iter', 'mgstartlevel'],
-            'resaveraging':{'noresaveraging':self.sumb.inputiteration.noresaveraging,
-                            'alwaysresaveraging':self.sumb.inputiteration.alwaysresaveraging,
-                            'alternateresaveraging':self.sumb.inputiteration.alternateresaveraging,
+            'resaveraging':{'noresaveraging':self.sumb.constants.noresaveraging,
+                            'alwaysresaveraging':self.sumb.constants.alwaysresaveraging,
+                            'alternateresaveraging':self.sumb.constants.alternateresaveraging,
                             'location':['iter', 'resaveraging']},
             'smoothparameter':['iter', 'smoop'],
             'cfllimit':['iter', 'cfllimit'],
@@ -3770,10 +3759,10 @@ class SUMB(AeroSolver):
             'debugzipper':['overset','debugzipper'],
 
             # Unsteady Params
-            'timeintegrationscheme':{'bdf':self.sumb.inputunsteady.bdf,
-                                     'explicitrk':self.sumb.inputunsteady.explicitrk,
-                                     'implicitrk':self.sumb.inputunsteady.implicitrk,
-                                     'md':self.sumb.inputunsteady.md,
+            'timeintegrationscheme':{'bdf':self.sumb.constants.bdf,
+                                     'explicitrk':self.sumb.constants.explicitrk,
+                                     'implicitrk':self.sumb.constants.implicitrk,
+                                     'md':self.sumb.constants.md,
                                      'location':['unsteady', 'timeintegrationscheme']},
             'timeaccuracy':['unsteady', 'timeaccuracy'],
             'ntimestepscoarse':['unsteady', 'ntimestepscoarse'],
@@ -3818,9 +3807,9 @@ class SUMB(AeroSolver):
             'nkinnerpreconits':['nk', 'nk_innerpreconits'],
             'nkouterpreconits':['nk', 'nk_outerpreconits'],
             'nkcfl0':['nk', 'nk_cfl0'],
-            'nkls':{'none':self.sumb.nksolvervars.nolinesearch,
-                    'cubic':self.sumb.nksolvervars.cubiclinesearch,
-                    'non monotone':self.sumb.nksolvervars.nonmonotonelinesearch,
+            'nkls':{'none':self.sumb.constants.nolinesearch,
+                    'cubic':self.sumb.constants.cubiclinesearch,
+                    'non monotone':self.sumb.constants.nonmonotonelinesearch,
                     'location':['nk', 'nk_ls']},
             'rkreset':['nk', 'rkreset'],
             'nrkreset':['iter', 'miniternum'],
@@ -3929,8 +3918,6 @@ class SUMB(AeroSolver):
         # scripts can continue to run
         deprecatedOptions = {'finitedifferencepc':'Use the ADPC option.',
                              'writesolution':'Use writeSurfaceSolution and writeVolumeSolution options instead.',
-                             'reynoldsnumber':'Put required information in aeroProblem class',
-                             'reynoldslength':'Put required information in aeroProblem class'
                              }
 
         specialOptions = set(('surfacevariables',
@@ -3952,21 +3939,18 @@ class SUMB(AeroSolver):
             'beta':'adjointvars.ndesignssa',
             'mach':'adjointvars.ndesignmach',
             'machgrid':'adjointvars.ndesignmachgrid',
-            'P':'adjointvars.ndesignpressure',
-            'reynolds':'adjointvars.ndesignreynolds',
-            'T':'adjointvars.ndesigntemperature',
-            'rotX':'adjointvars.ndesignrotx',
-            'rotY':'adjointvars.ndesignroty',
-            'rotZ':'adjointvars.ndesignrotz',
+            'p':'adjointvars.ndesignpressure',
+            'rho':'adjointvars.ndesigndensity',
+            't':'adjointvars.ndesigntemperature',
+            'rotx':'adjointvars.ndesignrotx',
+            'roty':'adjointvars.ndesignroty',
+            'rotz':'adjointvars.ndesignrotz',
             'rotcenx':'adjointvars.ndesignrotcenx',
             'rotceny':'adjointvars.ndesignrotceny',
             'rotcenz':'adjointvars.ndesignrotcenz',
-            'xRef':'adjointvars.ndesignpointrefx',
-            'yYef':'adjointvars.ndesignpointrefy',
-            'zRef':'adjointvars.ndesignpointrefz',
-            'chordRef':'adjointvars.ndesignlengthref',
-            'areaRef':'adjointvars.ndesignsurfaceref',
-            'disserror':'adjointvars.ndesigndisserror'
+            'xref':'adjointvars.ndesignpointrefx',
+            'yref':'adjointvars.ndesignpointrefy',
+            'zref':'adjointvars.ndesignpointrefz',
             }
 
         # This is SUmb's internal mapping for cost functions

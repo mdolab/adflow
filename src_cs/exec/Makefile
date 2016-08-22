@@ -58,8 +58,7 @@ include ${SUMB_COMMON_FILE}
 #      ******************************************************************
 
 LINKER_ALL_FLAGS =  -L$(ADT_DIR)/lib \
-		   -L$(SUMB_LIBDIR) -lsumb_cs $(PV3_LINKER_FLAGS)\
-		    $(CGNS_LINKER_FLAGS) $(PVM3_LINKER_FLAGS) \
+		   -L$(SUMB_LIBDIR) -lsumb_cs $(CGNS_LINKER_FLAGS) \
 		    $(PETSC_LINKER_FLAGS) $(LINKER_FLAGS)
 
 #      ******************************************************************

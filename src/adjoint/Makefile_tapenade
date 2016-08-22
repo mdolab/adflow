@@ -76,7 +76,6 @@ ALL_RES_FILES =	$(SRC)/adjoint/residualInput/block_res.F90\
 		$(SRC)/stabilityDerivatives/computeTSDerivatives.f90\
 		$(SRC)/stabilityDerivatives/computeLeastSquaresRegression.f90\
 		$(SRC)/initFlow/referenceState.F90\
-		$(SRC)/initFlow/setFlowInfinityState.F90\
 		$(SRC)/turbulence/computeEddyViscosity.F90\
 		$(SRC)/turbulence/curveFit.f90\
 		$(SRC)/turbulence/turbBCNSWall.f90\
@@ -112,9 +111,11 @@ ALL_RES_FILES =	$(SRC)/adjoint/residualInput/block_res.F90\
 		$(SRC)/utils/computeEtot.f90\
 		$(SRC)/utils/bsearchIntegers.f90\
 		$(SRC)/utils/computeSpeedOfSoundSquared.F90\
+		$(SRC)/utils/getCorrectForK.f90\
 		$(SRC)/bendingMomentAnalysis/rootBendingMomentAnalysis.f90\
 		$(SRC)/wallDistance/determineDistanceQuickly.F90\
 		$(SRC)/solver/BCRoutines.F90\
+
 
 # intermediate residual files.
 I_RES_FILES := $(ALL_RES_FILES:%=%.f90)
@@ -140,7 +141,7 @@ ad_forward:
 
 # The following is the single Tapenade command to run:
 	$(TAPENADE_HOME)/bin/tapenade -html \
-	-head "block_res(flowdoms%w flowdoms%x xsurf alpha beta mach machgrid machcoef pointref lengthRef Pref tempFreeStream Reynolds ww0 ww1 ww2 ww3 pp0 pp1 pp2 pp3 rlv0 rlv1 rlv2 rlv3 rev0 rev1 rev2 rev3 ssi ssj ssk ss xx) > \
+	-head "block_res(flowdoms%w flowdoms%x xsurf alpha beta mach machgrid machcoef pointref lengthRef PinfDim TinfDim rhoInfDim rGasDim ww0 ww1 ww2 ww3 pp0 pp1 pp2 pp3 rlv0 rlv1 rlv2 rlv3 rev0 rev1 rev2 rev3 ssi ssj ssk ss xx) > \
 (flowdoms%dw  bcData%Fv bcData%Fp bcData%area flowdoms%w flowdoms%x funcValues) \
 xhalo_block(x)>(x)" \
 	-forward $(TAPENADE_PRECISION) \
@@ -164,7 +165,7 @@ ad_reverse:
 
 # The following is the single Tapenade command to run:
 	$(TAPENADE_HOME)/bin/tapenade -html \
-	-head "block_res(flowdoms%w flowdoms%x xsurf alpha beta mach machgrid machcoef pointref lengthRef Pref tempFreeStream Reynolds ww0 ww1 ww2 ww3 pp0 pp1 pp2 pp3 rlv0 rlv1 rlv2 rlv3 rev0 rev1 rev2 rev3 xx ssi) > \
+	-head "block_res(flowdoms%w flowdoms%x xsurf alpha beta mach machgrid machcoef pointref lengthRef PinfDim TinfDim rhoInfDim rGasDim ww0 ww1 ww2 ww3 pp0 pp1 pp2 pp3 rlv0 rlv1 rlv2 rlv3 rev0 rev1 rev2 rev3 xx ssi) > \
 (flowdoms%dw  bcData%Fp bcData%Fv bcData%area flowdoms%w flowdoms%x funcValues ww0 ww1 ww2 ww3 pp0 pp1 pp2 pp3 rlv0 rlv1 rlv2 rlv3 rev0 rev1 rev2 rev3 xx ssi) \
 xhalo_block(x)>(x)" \
 	-adjvarname %d \

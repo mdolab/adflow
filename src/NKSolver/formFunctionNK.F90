@@ -5,7 +5,7 @@ subroutine FormFunction_mf(ctx, wVec, rVec, ierr)
   ! function. This is used for linear solve application for the
   ! aerostructural system pre-conditioner
 
-  use precision
+  use constants
   implicit none
 #define PETSC_AVOID_MPIF_H
 

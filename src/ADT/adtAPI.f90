@@ -17,10 +17,10 @@
 !     * present.                                                       *
 !     *                                                                *
 !     ******************************************************************
-!
-      use adtBuild
-      use adtSearch
-      use adtUtils
+       
+      use constants
+      use adtBuild, only : buildVolumeADT, buildSurfaceADT
+      use adtSearch, only : minDistanceSearch, failSafeSearch, deallocateadts, containmentsearch
       implicit none
 
       !=================================================================

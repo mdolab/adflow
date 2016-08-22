@@ -235,7 +235,7 @@ def test1():
     ap.addDV('alpha')
     ap.addDV('mach')
     ap.addDV('altitude')
-    CFDSolver = SUMB(options=aeroOptions, debug=False)
+    CFDSolver = SUMB(options=aeroOptions, debug=True)
     DVGeo = DVGeometry('../inputFiles/mdo_tutorial_ffd.fmt')
     nTwist = 6
     DVGeo.addRefAxis('wing', pyspline.Curve(x=numpy.linspace(5.0/4.0, 1.5/4.0+7.5, nTwist), 

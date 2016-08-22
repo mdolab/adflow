@@ -48,7 +48,8 @@ include ${SUMB_RULES_FILE}
 vpath %.o $(SUMB_OBJDIR)
 FF90_OBJECTS_1 = partitionMod.o
 
-FILES_TO_COMPLEXIFY = allocCoorFineGrid.f90\
+FILES_TO_COMPLEXIFY = \
+		allocCoorFineGrid.f90\
 		 blockDistribution.f90\
 		 check1to1Subfaces.f90\
 		 checkFaces.f90\

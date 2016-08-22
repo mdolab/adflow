@@ -1528,7 +1528,7 @@ subroutine integrateSlice(lSlc, gSlc, nFields, doConnectivity)
   ! Working variables
   integer(kind=intType) :: i, j, i1, i2
   real(kind=realType), dimension(3) :: x1, x2, pT1, pT2, vT1, vT2, pF, vF
-  real(kind=realType) :: len, dmax, dmin, dist, fact, scaleDim, M(3,3), tmp(4)
+  real(kind=realType) :: len, dmax, dmin, dist, fact, M(3,3), tmp(4)
   real(kind=realType) :: r(3), r_new(3), hyp, te(3), le(3), theta, w1, w2
   integer(kind=intType) :: bestPair(2), dir_ind, iProc, ierr, iSize
   real(kind=realtype), dimension(:,:), allocatable :: tempCoords
@@ -1686,8 +1686,7 @@ subroutine integrateSlice(lSlc, gSlc, nFields, doConnectivity)
      gSlc%chord = max(dmax, 1e-12)
 
      ! Compute factor to get coefficient
-     scaleDim = pRef/pInf
-     fact = two/(gammaInf*pInf*MachCoef*MachCoef*scaleDim)
+     fact = two/(gammaInf*pInf*MachCoef*MachCoef*pRef)
 
      ! Take dmax as chord and compute coefficients
      gSlc%CLp = gSlc%pL / gSlc%chord * fact

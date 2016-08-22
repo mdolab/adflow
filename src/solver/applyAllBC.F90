@@ -17,10 +17,11 @@ subroutine applyAllBC(secondHalo)
   !      *                                                                *
   !      ******************************************************************
   !
-  use blockPointers
-  use inputTimeSpectral
-  use iteration
-  use BCRoutines
+  use constants
+  use blockPointers, only : nDom
+  use inputTimeSpectral, only : nTimeIntervalsSpectral
+  use iteration, only :currentLevel
+  use BCRoutines, only : applyAllBC_block
   implicit none
   !
   !      Subroutine arguments.

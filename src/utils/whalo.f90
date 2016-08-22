@@ -37,7 +37,7 @@
 !
        integer(kind=intType) :: nn, mm, ll
 
-       logical :: correctForK, commLamVis, commEddyVis, commVarGamma
+       logical :: correctForK, getCorrectForK, commLamVis, commEddyVis, commVarGamma
 !
 !      ******************************************************************
 !      *                                                                *
@@ -88,16 +88,7 @@
 
          ! First determine whether or not the total energy must be
          ! corrected for the presence of the turbulent kinetic energy.
-
-         if( kPresent ) then
-           if((level <= groundLevel) .or. turbCoupled) then
-             correctForK = .true.
-           else
-             correctForK = .false.
-           endif
-         else
-           correctForK = .false.
-         endif
+          correctForK = getCorrectForK()
 
          ! Loop over the blocks to find the sliding mesh subfaces.
          ! Use is made of the fact the boundary conditions are identical
@@ -161,7 +152,7 @@
        integer(kind=intType) :: nn, mm, ll
        integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
 
-       logical :: correctForK, commLamVis, commEddyVis, commVarGamma
+       logical :: correctForK, getCorrectForK, commLamVis, commEddyVis, commVarGamma
 !
 !      ******************************************************************
 !      *                                                                *
@@ -228,15 +219,7 @@
          ! First determine whether or not the total energy must be
          ! corrected for the presence of the turbulent kinetic energy.
 
-         if( kPresent ) then
-           if((level <= groundLevel) .or. turbCoupled) then
-             correctForK = .true.
-           else
-             correctForK = .false.
-           endif
-         else
-           correctForK = .false.
-         endif
+          correctForK = getCorrectForK()
 
          ! Loop over the blocks to find the sliding mesh subfaces.
          ! Use is made of the fact the boundary conditions are identical

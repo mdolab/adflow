@@ -110,6 +110,7 @@ module blockPointers
   real(kind=realType), dimension(:,:,:,:,:), pointer :: xOld
   real(kind=realType), dimension(:,:,:,:), pointer :: sI, sJ, sK
   real(kind=realType), dimension(:,:,:),   pointer :: vol
+  real(kind=realType), dimension(:,:,:),   pointer :: volref
   real(kind=realType), dimension(:,:,:,:), pointer :: volOld
   real(kind=realType), dimension(:,:,:,:),   pointer :: dadidata
 

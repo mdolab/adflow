@@ -3,7 +3,7 @@
 !
 !  differentiation of residual_block in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: gammainf *rev *p *dw *w *rlv
-!                *x *vol *si *sj *sk *(*viscsubface.tau)
+!                *x *si *sj *sk *(*viscsubface.tau)
 !   with respect to varying inputs: gammainf timeref rhoinf tref
 !                winf pinfcorr rgas *rev *p *dw *w *rlv *x *vol
 !                *si *sj *sk *radi *radj *radk
@@ -888,7 +888,13 @@ subroutine residual_block_b()
     end if
   else if (branch .eq. 2) then
     call viscousfluxapprox_b()
+    vold = 0.0_8
   else
+    if (branch .eq. 3) then
+      vold = 0.0_8
+    else
+      vold = 0.0_8
+    end if
     goto 100
   end if
   call computespeedofsoundsquared_b()

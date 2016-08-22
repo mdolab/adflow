@@ -34,9 +34,8 @@ SUBDIR_SRC    = src/modules       \
 		src/NKSolver      \
 		src/ANKSolver     \
 
-SUBDIR_EXEC   = src/exec
-SUMB_SUBDIRS       = $(SUBDIR_SRC) 
-SUMB_CLEAN_SUBDIRS = $(SUBDIR_SRC) $(SUBDIR_EXEC)
+SUMB_SUBDIRS       = $(SUBDIR_SRC)
+SUMB_CLEAN_SUBDIRS = $(SUBDIR_SRC)
 
 default:
 # Check if the config.mk file is in the config dir.

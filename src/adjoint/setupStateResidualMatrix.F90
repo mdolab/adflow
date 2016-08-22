@@ -98,9 +98,9 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   machcoefd = zero
   pointRefd  = zero
   lengthRefd = zero
-  prefd = zero
-  tempfreestreamd = zero
-  reynoldsd = zero
+  pinfdimd = zero
+  rhoinfdimd = zero
+  tinfdimd = zero
   call getDirAngle(velDirFreestream, liftDirection, liftIndex, alpha, beta)
 
   rkStage = 0
