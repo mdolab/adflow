@@ -1,14 +1,10 @@
 subroutine FormJacobianNK
 #ifndef USE_NO_PETSC
-
+  use constants
   use NKSolverVars, only : work, dRdw, dRdWPre, NK_ADPC, NK_asmOverlap,&
        NK_innerPreConIts, NK_outerPreconIts, MAT_FINAL_ASSEMBLY, NK_viscPC, NK_iluFill, &
        NK_subspace, KSP_GMRES_CGS_REFINE_NEVER, NK_KSP, NK_CFL
   use inputADjoint, only : viscPC
-  use inputiteration
-  use blockPointers
-  use inputTimeSpectral
-  use flowvarrefstate
 
   implicit none
 #define PETSC_AVOID_MPIF_H
@@ -30,7 +26,7 @@ subroutine FormJacobianNK
   integer(kind=intType) :: ierr
   logical :: useAD, usePC, useTranspose, useObjective, tmp
   integer(kind=intType) :: i, j, k, l, ii, nn, sps
-  real(kind=realType) :: dt, ovv
+  real(kind=realType) :: dt
   real(kind=realType), pointer :: diag(:)
  interface
      subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &

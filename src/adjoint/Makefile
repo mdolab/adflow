@@ -55,8 +55,8 @@ FILES_TO_COPY = \
 		saveAdjoint.F90\
 		setupStateResidualMatrix.F90\
 		setupPCMatrix.F90\
-		verifyAD.F90\
-		test.F90\
+#		verifyAD.F90\
+#		test.F90\
 
 ALL_FILES = $(FILES_TO_COMPLEXIFY) $(FILES_TO_COPY)
 OFILES := $(ALL_FILES:%.f90=%.o) $(ALL_FILES:%.F90=%.o) $(ALL_FILES:%.c=%.o)

@@ -67,9 +67,9 @@ subroutine setupPCMatrix(useAD,  useTranspose, frozenTurb, level)
   machcoefd = zero
   pointRefd  = zero
   lengthRefd = zero
-  prefd = zero
-  tempfreestreamd = zero
-  reynoldsd = zero
+  pinfdimd = zero
+  tinfdimd = zero
+  rhoinfdimd = zero
   call getDirAngle(velDirFreestream, liftDirection, liftIndex, alpha, beta)
 
 

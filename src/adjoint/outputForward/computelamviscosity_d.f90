@@ -42,7 +42,7 @@ subroutine computelamviscosity_d()
   integer(kind=inttype) :: i, j, k, ii
   real(kind=realtype) :: musuth, tsuth, ssuth, t, pp
   real(kind=realtype) :: musuthd, tsuthd, ssuthd, td, ppd
-  logical :: correctfork
+  logical :: correctfork, getcorrectfork
 !
 !      ******************************************************************
 !      *                                                                *
@@ -57,15 +57,7 @@ subroutine computelamviscosity_d()
   else
 ! determine whether or not the pressure must be corrected
 ! for the presence of the turbulent kinetic energy.
-    if (kpresent) then
-      if (currentlevel .le. groundlevel .or. turbcoupled) then
-        correctfork = .true.
-      else
-        correctfork = .false.
-      end if
-    else
-      correctfork = .false.
-    end if
+    correctfork = getcorrectfork()
 ! compute the nondimensional constants in sutherland's law.
     musuthd = -(musuthdim*murefd/muref**2)
     musuth = musuthdim/muref

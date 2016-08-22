@@ -65,6 +65,7 @@
        integer, parameter :: if1SST  = 5  ! Tmp F1 (for SST) storage
        integer, parameter :: isct    = 4  ! Tmp time scale (for v2f) storage
        integer, parameter :: iscl2   = 5  ! Tmp length scale (for v2f) storage
+       integer, parameter :: iqq     = 6  ! Central jacobian storage
 
        ! Indices in the array of conservative flow residuals for the
        ! momentum variables.
@@ -115,4 +116,159 @@
        character(len=1), parameter :: tabChar = achar(9)
        character(len=1), parameter :: retChar = achar(13)
 #endif
+
+
+!      ******************************************************************
+!      *                                                                *
+!      * Definition of some parameters which make the code more         *
+!      * readable. The actual values of this parameters are arbitrary;  *
+!      * in the code always the symbolic names are (should be) used.    *
+!      *                                                                *
+!      ******************************************************************
+!
+       integer(kind=intType), parameter :: EulerEquations = 1,  &
+                                           NSEquations    = 2,  &
+                                           RANSEquations  = 3
+       integer(kind=intType), parameter :: steady        = 1,   &
+                                           unsteady      = 2,   &
+                                           timeSpectral  = 3
+       integer(kind=intType), parameter :: internalFlow = 1,    &
+                                           externalFlow = 2
+       integer(kind=intType), parameter :: cpConstant      = 1, &
+                                           cpTempCurveFits = 2
+       integer(kind=intType), parameter ::                              &
+                                  spalartAllmaras        =  2,  &
+                                  spalartAllmarasEdwards =  3,  &
+                                  komegaWilcox           =  4,  &
+                                  komegaModified         =  5,  &
+                                  ktau                   =  6,  &
+                                  menterSST              =  7,  &
+                                  v2f                    = 10
+       integer(kind=intType), parameter :: strain       = 1,    &
+                                           vorticity    = 2,    &
+                                           katoLaunder  = 3
+
+      integer(kind=intType), parameter :: firstOrder  = 1, &
+                                           secondOrder = 2, &
+                                           thirdOrder  = 3, &
+                                           fourthOrder = 4, &
+                                           fifthOrder  = 5
+
+!
+!      ******************************************************************
+!      *                                                                *
+!      * Definition of some parameters which make the code more         *
+!      * readable. The actual values of this parameters are arbitrary;  *
+!      * in the code always the symbolic names are (should be) used.    *
+!      *                                                                *
+!      ******************************************************************
+!
+       integer(kind=intType), parameter :: dissScalar = 1,  &
+                                           dissMatrix = 2,  &
+                                           dissCusp   = 3,  &
+                                           upwind     = 9
+       integer(kind=intType), parameter :: Roe     = 1,     &
+                                           vanLeer = 2,     &
+                                           ausmdv  = 3
+       integer(kind=intType), parameter :: noLimiter  = 2,  &
+                                           vanAlbeda  = 3,  &
+                                           minmod     = 4
+       integer(kind=intType), parameter :: noPrecond  = 1,  &
+                                           Turkel     = 2,  &
+                                           ChoiMerkle = 3
+       integer(kind=intType), parameter ::                          &
+                                  constantPressure     = 1, &
+                                  linExtrapolPressure  = 2, &
+                                  quadExtrapolPressure = 3, &
+                                  normalMomentum       = 4
+
+       integer(kind=intType), parameter ::                      &
+                                  constantExtrapol = 1, &
+                                  linExtrapol      = 2
+
+       integer(kind=intType), parameter :: NonConservative = 1, &
+                                           Conservative    = 2
+
+!
+!      ******************************************************************
+!      *                                                                *
+!      * Definition of some parameters which make the code more         *
+!      * readable. The actual values of this parameters are arbitrary;  *
+!      * in the code always the symbolic names are (should be) used.    *
+!      *                                                                *
+!      ******************************************************************
+!
+       integer(kind=intType), parameter :: precisionSingle = 1, &
+                                           precisionDouble = 2
+
+       ! Definition of the parameters for the time integration scheme.
+
+       integer(kind=intType), parameter :: BDF        = 1, &
+                                           explicitRK = 2, &
+                                           implicitRK = 3, &
+                                           MD         = 4
+       ! Line search parameters
+       integer(kind=intType), parameter :: noLineSearch = 0_intType, &
+                                           cubicLineSearch = 1_intType, &
+                                           nonMonotoneLineSearch = 2_intType
+
+!
+!      ******************************************************************
+!      *                                                                *
+!      * Definition of some parameters which make the code more         *
+!      * readable. The actual values of this parameters are arbitrary;  *
+!      * in the code always the symbolic names are (should be) used.    *
+!      *                                                                *
+!      ******************************************************************
+!
+       integer(kind=intType), parameter :: RungeKutta  = 1,  &
+                                           DADI        = 2,  &
+                                           nlLusgs     = 3,  &
+                                           nlLusgsLine = 4
+       integer(kind=intType), parameter :: segregated = 1,   &
+                                           coupled    = 2
+       integer(kind=intType), parameter :: gmres = 1,        &
+                                           adi   = 2
+
+       integer(kind=intType), parameter :: bcDirichlet0 = 0, &
+                                           bcNeumann0    = 1
+
+       integer(kind=intType), parameter ::                           &
+                                  noResAveraging        = 0, &
+                                  alwaysResAveraging    = 1, &
+                                  alternateResAveraging = 2
+       integer(kind=intType), parameter :: &
+                                   turbRelaxNotDefined = 0,  &
+                                   turbRelaxExplicit   = 1,  &
+                                   turbRelaxImplicit   = 2
+
+!     ******************************************************************
+!     *                                                                *
+!     * Definition of the parameters, which define whether the ADT     *
+!     * corresponds to surface or volume elements and the parameter,   *
+!     * which defines the maximum number of coordinates an ADT can     *
+!     * handle in one interpolation round.                             *
+!     *                                                                *
+!     ******************************************************************
+!
+      integer, parameter :: adtSurfaceADT = 1
+      integer, parameter :: adtVolumeADT  = 2
+      integer(kind=intType), parameter :: nCoorMaxLowerLimit = 100000
+!
+!     ******************************************************************
+!     *                                                                *
+!     * Definition of the parameters, which define the supported       *
+!     * element types. To save memory these parameters and the arrays  *
+!     * containing the data are of a different integer type.           *
+!     *                                                                *
+!     ******************************************************************
+!
+      integer(kind=adtElementType), parameter :: adtTriangle      = 1
+      integer(kind=adtElementType), parameter :: adtQuadrilateral = 2
+      integer(kind=adtElementType), parameter :: adtTetrahedron   = 3
+      integer(kind=adtElementType), parameter :: adtPyramid       = 4
+      integer(kind=adtElementType), parameter :: adtPrism         = 5
+      integer(kind=adtElementType), parameter :: adtHexahedron    = 6
+!
+
        end module constants

@@ -56,7 +56,6 @@
        use inputPhysics
        use inputTimeSpectral
        use inputUnsteady
-       use inputVisualization
        use inputADjoint
        use inputTSStabDeriv
        implicit none

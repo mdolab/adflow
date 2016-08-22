@@ -16,7 +16,7 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      use adtLocalSearch
+      use adtLocalSearch, only : containmenttreesearch, mindistancetreesearch
       use adtUtils
       implicit none
 
@@ -298,7 +298,7 @@
           if(procID(i) == -1) then
             nFail = nFail + 1
           else
-            dist2(i) = adtZero
+            dist2(i) = zero
           endif
         enddo
 
@@ -580,7 +580,7 @@
               else if(coor(1,i) > rootBBoxes(1,2,j)) then
                 dx =  coor(1,i) - rootBBoxes(1,2,j)
               else
-                dx = adtZero
+                dx = zero
               endif
 
               if(     coor(2,i) < rootBBoxes(2,1,j)) then
@@ -588,7 +588,7 @@
               else if(coor(2,i) > rootBBoxes(2,2,j)) then
                 dy =  coor(2,i) - rootBBoxes(2,2,j)
               else
-                dy = adtZero
+                dy = zero
               endif
 
               if(     coor(3,i) < rootBBoxes(3,1,j)) then
@@ -596,7 +596,7 @@
               else if(coor(3,i) > rootBBoxes(3,2,j)) then
                 dz =  coor(3,i) - rootBBoxes(3,2,j)
               else
-                dz = adtZero
+                dz = zero
               endif
 
               d2 = dx*dx + dy*dy + dz*dz
@@ -668,7 +668,7 @@
               else if(coor(1,i) > rootBBoxes(1,2,j)) then
                 dx =  coor(1,i) - rootBBoxes(1,2,j)
               else
-                dx = adtZero
+                dx = zero
               endif
 
               if(     coor(2,i) < rootBBoxes(2,1,j)) then
@@ -676,7 +676,7 @@
               else if(coor(2,i) > rootBBoxes(2,2,j)) then
                 dy =  coor(2,i) - rootBBoxes(2,2,j)
               else
-                dy = adtZero
+                dy = zero
               endif
 
               if(     coor(3,i) < rootBBoxes(3,1,j)) then
@@ -684,7 +684,7 @@
               else if(coor(3,i) > rootBBoxes(3,2,j)) then
                 dz =  coor(3,i) - rootBBoxes(3,2,j)
               else
-                dz = adtZero
+                dz = zero
               endif
 
               d2 = dx*dx + dy*dy + dz*dz
@@ -916,7 +916,7 @@
         ! i.e. if the distance is larger than zero.
 
         do jj=1,nCoor
-          if(dist2(jj) > adtZero) elementID(jj) = -elementID(jj)
+          if(dist2(jj) > zero) elementID(jj) = -elementID(jj)
         enddo
 
         end subroutine minDistanceSearch
@@ -1286,7 +1286,7 @@
                 nn = nn + 1
                 l  = coorPerRootLeaf(nn)
 
-                if(dist2(l) > adtZero) then
+                if(dist2(l) > zero) then
 
                   ! Coordinate needs to be interpolated. Update the
                   ! counters j and k and store the coordinates and the
@@ -1447,7 +1447,7 @@
               i = i + 1
               l = coorPerRootLeaf(i)
 
-              if(dist2(l) > adtZero) then
+              if(dist2(l) > zero) then
                 j = j + 1
 
                 coorRecv(1,j) = coor(1,l)

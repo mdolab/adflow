@@ -17,15 +17,15 @@ subroutine updateReferencePoint
   !     *                                                                *
   !     ******************************************************************
   !
-
-  use inputTimeSpectral
-  use section
-  use inputPhysics 
-  use inputMotion  
-  use cgnsGrid     
-  use monitor
-  use iteration
-  use blockpointers
+  use constants
+  use inputTimeSpectral, only : nTimeINTervalsSpectral
+  use section, only : sections, nSections
+  use inputPhysics, only : equationMode
+  use inputMotion, only : rotPoint
+  use cgnsGrid, only : cgnsDoms
+  use monitor, only : timeUnsteadyRestart
+  use iteration, only : groundLevel
+  use blockpointers, only : nDom, nbkGlobal
   implicit none
 
   ! Working variables

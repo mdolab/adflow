@@ -12,106 +12,62 @@ subroutine referenceState
   !
   !      ******************************************************************
   !      *                                                                *
-  !      * referenceState computes the reference state values in case     *
-  !      * these have not been specified. A distinction is made between   *
-  !      * internal and external flows. In case nothing has been          *
-  !      * specified for the former a dimensional computation will be     *
-  !      * made. For the latter the reference state is set to an          *
-  !      * arbitrary state for an inviscid computation and computed for a *
-  !      * viscous computation. Furthermore for internal flows an average *
-  !      * velocity direction is computed from the boundary conditions,   *
-  !      * which is used for initialization.                              *
   !      *                                                                *
   !      * The original version has been nuked since the computations are *
   !      * no longer necessary when calling from python                   *
+  !      *                                                                *
+  !      * This is the most compliclated routine in all of SUMb. It is    *
+  !      * stupidly complicated. This is most likely the reason your      *
+  !      * derivatives are wrong. You don't understand this routine       *
+  !      * and its effects.                                               *
+  !      *                                                                *
+  !      * This routine *requries* the following as input:                *
+  !      * Mach, pInfDim, TInfDim, rhoInfDim, rGasDim (machCoef non-SA    *
+  !      *  turbulence only)                                              *
+  !      *                                                                *
+  !      *                                                                *
+  !      * Optionally, pRef, rhoRef and Tref are used if they are         *
+  !      * are non-negative. This only happens when you want the equations*
+  !      * normalized by values other than the freestream                 *
+  !      *                                                                *
+  !      * This routine computes as output:  
+  !      *   muInfDim, (unused anywhere in code)
+  !      *   pRef, rhoRef, Tref, muRef, timeRef ('dimensional' reference) *
+  !      *   pInf, pInfCorr, rhoInf, uInf, rGas, muInf, gammaInf and wInf *
+  !      *   (Non-dimensionalized values used in actual computations)     *
   !      ******************************************************************
   !
-  use BCTypes
-  use block
-  use communication
   use constants
-#ifndef USE_TAPENADE
-  use couplerParam
-#endif
-  use flowVarRefState
-  use inputMotion
-  use inputPhysics
-  use inputTimeSpectral
-  use iteration
+  use inputPhysics, only : equations, Mach, machCoef, &
+       muSuthDim, TSuthDim, velDirFreeStream, &
+       rGasDim, SSuthDim, eddyVisInfRatio, turbModel, turbIntensityInf
+  use flowVarRefState, only : pInfDim, TinfDim, rhoInfDim,  &
+       muInfDim, &
+       pRef, rhoRef, Tref, muRef, timeRef, &
+       pInf, pInfCorr, rhoInf, uInf, rGas, muInf, gammaInf, wInf, &
+       nw, nwf, kPresent, wInf
+
+  use paramTurb
+
   implicit none
-  !
-  !      Local variables.
-  !
-  integer :: ierr
-
-  integer(kind=intType) :: sps, nn, mm
-
+ 
+  integer(kind=intType) :: sps, nn, mm, ierr
   real(kind=realType) :: gm1, ratio, tmp
-  real(kind=realType) :: mx, my, mz, Re, v, TInfDim
+  real(kind=realType) :: nuInf, ktmp, uInf2
+  real(kind=realType) :: saNuKnownEddyRatio
+  real(kind=realType) :: vinf, zinf
 
-  ! The following values MUST be set:
-  ! pInfDim, reynolds, tempFreeStream
-
-  ! pRef, rhoRef and Tref may be optionally set of if less than 0
-  ! will take free stream values.
-
-  TInfDim = tempFreestream
-  rhoInfDim = pInfDim/(RGasDim*TInfDim)
-  muDim     = muSuthDim                                    &
+  ! Compute the dimensional viscosity from Sutherland's law
+  muInfDim = muSuthDim &
        * ((TSuthDim + SSuthDim)/(TInfDim + SSuthDim)) &
        * ((TInfDim/TSuthDim)**1.5_realType)
 
-  ! External flow. Compute the value of gammaInf.
-
-  call computeGamma(tempFreestream, gammaInf, 1)
-
-  ! In case of a viscous problem, compute the
-  ! dimensional free stream density and pressure.
-
-  if(equations == NSEquations .or. &
-       equations == RANSEquations) then
-
-     ! Compute the x, y, and z-components of the Mach number
-     ! relative to the body; i.e. the mesh velocity must be
-     ! taken into account here.
-
-     mx = MachCoef*velDirFreestream(1)
-     my = MachCoef*velDirFreestream(2)
-     mz = MachCoef*velDirFreestream(3)
-
-     ! Reynolds number per meter, the viscosity using sutherland's
-     ! law and the free stream velocity relative to the body.
-
-     Re = Reynolds/ReynoldsLength
-     muDim = muSuthDim                    &
-          * ((TSuthDim + SSuthDim)       &
-          /  (tempFreestream + SSuthDim)) &
-          * ((tempFreestream/TSuthDim)**1.5)
-     v  = sqrt((mx*mx + my*my + mz*mz) &
-          *      gammaInf*RGasDim*tempFreestream)
-     
-     ! Compute the free stream density and pressure.
-     ! Set TInfDim to tempFreestream.
-
-     rhoInfDim = Re*muDim/v
-     pInfDim   = rhoInfDim*RGasDim*tempFreestream
-
-  endif
-
-  ! In case the reference pressure, density and temperature were
-  ! not specified, set them to the infinity values.
-
-  if(pRef   <= zero) then 
-     pRef   = pInfDim
-  end if
-  if(rhoRef <= zero) then 
-     rhoRef = rhoInfDim
-  end if
-  if(TRef   <= zero) then 
-     TRef   = TInfDim
-  end if
-
-
+  ! Set the reference values. They *COULD* be different from the
+  ! free-stream values for an internal flow simulation. For now,
+  ! we just use the actual free stream values. 
+  pref = PInfDim
+  tref = TInfDim
+  rhoref = rhoInfDim
 
   ! Compute the value of muRef, such that the nonDimensional
   ! equations are identical to the dimensional ones.
@@ -135,100 +91,99 @@ subroutine referenceState
   rhoInf = rhoInfDim/rhoRef
   uInf   = Mach*sqrt(gammaInf*pInf/rhoInf)
   RGas   = RGasDim*rhoRef*TRef/pRef
-  muInf  = muDim/muRef
+  muInf  = muInfDim/muRef
+  call computeGamma(TinfDim, gammaInf, 1)
+
+  ! ----------------------------------------
+  !      Compute the final wInf
+  ! ----------------------------------------
+
+  ! Allocate the memory for wInf if necessary
+#ifndef USE_TAPENADE
+  if( allocated(wInf)) deallocate(wInf)
+  allocate(wInf(nw), stat=ierr)
+#endif
+
+  ! zero out the winf first
+  wInf(:) = zero
+
+  ! Set the reference value of the flow variables, except the total
+  ! energy. This will be computed at the end of this routine.
+  
+  wInf(irho) = rhoInf
+  wInf(ivx)  = uInf*velDirFreestream(1)
+  wInf(ivy)  = uInf*velDirFreestream(2)
+  wInf(ivz)  = uInf*velDirFreestream(3)
+       
+  ! Compute the velocity squared based on MachCoef. This gives a
+  ! better indication of the 'speed' of the flow so the turubulence
+  ! intensity ration is more meaningful especially for moving
+  ! geometries. (Not used in SA model)
+
+  uInf2 = MachCoef*MachCoef*gammaInf*pInf/rhoInf
+  
+  ! Set the turbulent variables if transport variables are to be
+  ! solved. We should be checking for RANS equations here,
+  ! however, this code is included in block res. The issue is
+  ! that for frozen turbulence (or ANK jacobian) we call the
+  ! block_res with equationType set to Laminar even though we are
+  ! actually solving the rans equations. The issue is that, the
+  ! freestream turb variables will be changed to zero, thus
+  ! changing the solution. Insteady we check if nw > nwf which
+  ! will accomplish the same thing. 
+       
+  if(nw > nwf) then 
+
+     nuInf  = muInf/rhoInf
+
+     select case(turbModel)
+
+     case (spalartAllmaras, spalartAllmarasEdwards)
+        
+        wInf(itu1) = saNuKnownEddyRatio(eddyVisInfRatio, nuInf)
+        
+        !=============================================================
+        
+     case (komegaWilcox, komegaModified, menterSST)
+        
+        wInf(itu1) = 1.5_realType*uInf2*turbIntensityInf**2
+        wInf(itu2) = wInf(itu1)/(eddyVisInfRatio*nuInf)
+
+        !=============================================================
+        
+     case (ktau)
+        
+        wInf(itu1) = 1.5_realType*uInf2*turbIntensityInf**2
+        wInf(itu2) = eddyVisInfRatio*nuInf/wInf(itu1)
+        
+        !=============================================================
+        
+     case (v2f)
+        
+        wInf(itu1) = 1.5_realType*uInf2*turbIntensityInf**2
+        wInf(itu2) = 0.09_realType*wInf(itu1)**2 &
+             / (eddyVisInfRatio*nuInf)
+        wInf(itu3) = 0.666666_realType*wInf(itu1)
+        wInf(itu4) = 0.0_realType
+
+     end select
+     
+  endif
+
+  ! Set the value of pInfCorr. In case a k-equation is present
+  ! add 2/3 times rho*k.
+       
+  pInfCorr = pInf
+  if( kPresent ) pInfCorr = pInf + two*third*rhoInf*wInf(itu1)
+
+  ! Compute the free stream total energy.
+  
+  ktmp = zero
+  if( kPresent ) ktmp = wInf(itu1)
+  vInf = zero
+  zInf = zero
+  call etotArray(rhoInf, uInf, vInf, zInf, pInfCorr, ktmp, &
+       wInf(irhoE), kPresent, 1)
 
 end subroutine referenceState
 
-!=================================================================
-
-subroutine velMagnAndDirectionSubface(vmag, dir, BCData, mm)
-  !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * VelMagnAndDirectionSubface determines the maximum value    *
-  !      * of the magnitude of the velocity as well as the sum of the     *
-  !      * flow directions for the currently active subface.              *
-  !      *                                                                *
-  !      ******************************************************************
-  !
-  use block
-  implicit none
-  !
-  !      Subroutine arguments.
-  !
-  integer(kind=intType), intent(in) :: mm
-
-  real(kind=realType), intent(out) :: vmag
-  real(kind=realType), dimension(3), intent(inout) :: dir
-
-  type(BCDataType), dimension(:), pointer :: BCData
-  !
-  !      Local variables.
-  !
-  integer(kind=intType) :: i, j
-  real(kind=realType)   :: vel
-  !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
-  !
-  ! Initialize vmag to -1.0.
-
-  vmag = -one
-
-  ! Check if the velocity is prescribed.
-
-  if( associated(BCData(mm)%velx) .and. &
-       associated(BCData(mm)%vely) .and. &
-       associated(BCData(mm)%velz) ) then
-
-     ! Loop over the owned faces of the subface. As the cell range
-     ! may contain halo values, the nodal range is used.
-
-     do j=(BCData(mm)%jnBeg+1),BCData(mm)%jnEnd
-        do i=(BCData(mm)%inBeg+1),BCData(mm)%inEnd
-
-           ! Compute the magnitude of the velocity and compare it
-           ! with the current maximum. Store the maximum of the two.
-
-           vel  = sqrt(BCData(mm)%velx(i,j)**2 &
-                +      BCData(mm)%vely(i,j)**2 &
-                +      BCData(mm)%velz(i,j)**2)
-           vmag = max(vmag, vel)
-
-           ! Compute the unit vector of the velocity and add it to dir.
-
-           vel    = one/max(eps,vel)
-           dir(1) = dir(1) + vel*BCData(mm)%velx(i,j)
-           dir(2) = dir(2) + vel*BCData(mm)%vely(i,j)
-           dir(3) = dir(3) + vel*BCData(mm)%velz(i,j)
-
-        enddo
-     enddo
-  endif
-
-  ! Check if the velocity direction is prescribed.
-
-  if( associated(BCData(mm)%flowXdirInlet) .and. &
-       associated(BCData(mm)%flowYdirInlet) .and. &
-       associated(BCData(mm)%flowZdirInlet) ) then
-
-     ! Add the unit vectors to dir by looping over the owned
-     ! faces of the subfaces. Again the nodal range must be
-     ! used for this.
-
-     do j=(BCData(mm)%jnBeg+1),BCData(mm)%jnEnd
-        do i=(BCData(mm)%inBeg+1),BCData(mm)%inEnd
-
-           dir(1) = dir(1) + BCData(mm)%flowXdirInlet(i,j)
-           dir(2) = dir(2) + BCData(mm)%flowYdirInlet(i,j)
-           dir(3) = dir(3) + BCData(mm)%flowZdirInlet(i,j)
-
-        enddo
-     enddo
-
-  endif
-
-end subroutine velMagnAndDirectionSubface

@@ -21,7 +21,7 @@
 !     *                                                                *
 !     ******************************************************************
 !
-      use precision
+      use constants
 #ifdef USE_COMPLEX
       use complexify
 #endif
@@ -40,46 +40,6 @@
       private :: adtBBoxTargetTypeLessEqual
       private :: adtBBoxTargetTypeLess
       private :: adtTypeAssign
-!
-!     ******************************************************************
-!     *                                                                *
-!     * Definition of some constants.                                  *
-!     *                                                                *
-!     ******************************************************************
-!
-      real(kind=realType), parameter :: adtZero   = 0.0_realType
-      real(kind=realType), parameter :: adtFourth = 0.25_realType
-      real(kind=realType), parameter :: adtHalf   = 0.5_realType
-      real(kind=realType), parameter :: adtOne    = 1.0_realType
-!
-!     ******************************************************************
-!     *                                                                *
-!     * Definition of the parameters, which define whether the ADT     *
-!     * corresponds to surface or volume elements and the parameter,   *
-!     * which defines the maximum number of coordinates an ADT can     *
-!     * handle in one interpolation round.                             *
-!     *                                                                *
-!     ******************************************************************
-!
-      integer, parameter :: adtSurfaceADT = 1
-      integer, parameter :: adtVolumeADT  = 2
-
-      integer(kind=intType), parameter :: nCoorMaxLowerLimit = 100000
-!
-!     ******************************************************************
-!     *                                                                *
-!     * Definition of the parameters, which define the supported       *
-!     * element types. To save memory these parameters and the arrays  *
-!     * containing the data are of a different integer type.           *
-!     *                                                                *
-!     ******************************************************************
-!
-      integer(kind=adtElementType), parameter :: adtTriangle      = 1
-      integer(kind=adtElementType), parameter :: adtQuadrilateral = 2
-      integer(kind=adtElementType), parameter :: adtTetrahedron   = 3
-      integer(kind=adtElementType), parameter :: adtPyramid       = 4
-      integer(kind=adtElementType), parameter :: adtPrism         = 5
-      integer(kind=adtElementType), parameter :: adtHexahedron    = 6
 !
 !     ******************************************************************
 !     *                                                                *

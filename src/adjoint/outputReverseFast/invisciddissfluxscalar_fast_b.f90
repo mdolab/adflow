@@ -30,13 +30,14 @@ subroutine invisciddissfluxscalar_fast_b()
 !      ******************************************************************
 !
   use myPushPopLib
-  use blockpointers
-  use cgnsgrid
   use constants
-  use flowvarrefstate
-  use inputdiscretization
-  use inputphysics
-  use iteration
+  use blockpointers, only : nx, ny, nz, il, jl, kl, ie, je, ke, ib, jb&
+& , kb, w, wd, p, pd, pori, porj, pork, fw, fwd, radi, radid, radj, &
+& radjd, radk, radkd, gamma
+  use flowvarrefstate, only : gammainf, pinfcorr, rhoinf
+  use inputdiscretization, only : vis2, vis4
+  use inputphysics, only : equations
+  use iteration, only : rfil
   implicit none
 !
 !      local parameter.

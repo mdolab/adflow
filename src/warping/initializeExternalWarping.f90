@@ -1,7 +1,8 @@
 subroutine getCGNSMeshIndices(ndof,indices)
-  use block
-  use blockPointers
-  use cgnsGrid
+
+  use constants
+  use blockPointers, only : nDom, nBKGlobal, il, jl, kl, iBegOr, jBegOr, kBegOr
+  use cgnsGrid, only : cgnsDoms, cgnsnDom
   implicit none
 
   ! subroutine arguments

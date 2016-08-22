@@ -274,7 +274,7 @@
        liftDirSpecified = .false. ! Lift direction not specified.
 
        ReynoldsLength = one
-       tempFreestream = 288.15_realType
+       TinfDim = 288.15_realType
        gammaConstant  = 1.4_realType
        RGasDim        = 287.87_realType
 
@@ -338,14 +338,6 @@
        updateWallDistanceUnsteady = .true.  ! This default value is
                                             ! overruled for models that
                                             ! are wall distance free.
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Visualization parameters.                                      *
-!      *                                                                *
-!      ******************************************************************
-!
-       PV3VisOnly = .false.    ! Perform an actual computation.
 !
 !      ******************************************************************
 !      *                                                                *

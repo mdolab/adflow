@@ -21,7 +21,7 @@ subroutine applyAllBC_block_fast_b(secondHalo)
     ! Determine whether or not the total energy must be corrected
     ! for the presence of the turbulent kinetic energy.
     if( kPresent ) then
-       if((currentLevel <= groundLevel) .or. turbCoupled) then
+       if((currentLevel <= groundLevel)) then
           correctForK = .true.
        else
           correctForK = .false.

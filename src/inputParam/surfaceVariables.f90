@@ -69,8 +69,6 @@
        surfWriteCfz   = .false.
 
        surfWriteBlank = .false.
-       surfWriteLift  = .false.
-       surfWriteDrag  = .false.
        surfWriteSepSensor = .false.
        surfWriteCavitation = .false.
        surfWriteGC = .false.
@@ -184,14 +182,6 @@
            case ("blank")
              surfWriteBlank = .true.
              nVarSpecified = nVarSpecified + 1
-
-           case ("lift")
-              surfWriteLift = .true. 
-              nVarSpecified = nVarSpecified + 1
-
-           case ("drag")
-              surfWriteDrag = .true. 
-              nVarSpecified = nVarSpecified + 1
 
            case ("sepsensor")
               surfWriteSepSensor = .true. 

@@ -21,12 +21,13 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use blockPointers
-       use flowVarRefState
-       use inputIteration
-       use inputTimeSpectral
-       use iteration
-       use inputDiscretization
+       use constants
+       use blockPointers, only : w, p, wn, pn, il, jl, kl, nDom
+       use flowVarRefState, only: nwf
+       use inputIteration, only : nRKStages
+       use inputTimeSpectral, only :ntimeIntervalsSpectral
+       use iteration, only: currentLevel, rkStage
+
        implicit none
 !
 !      Local variables.
@@ -50,7 +51,7 @@
 
            ! The variables stored in w.
 
-           do l=1,nMGVar
+           do l=1,nwf
              do k=2,kl
                do j=2,jl
                  do i=2,il
@@ -83,11 +84,6 @@
          call executeRkStage
 
          ! Compute the residuals for the next stage.
-
-         if( turbCoupled ) then
-           call initres(nt1MG, nMGVar)
-           call turbResidual
-         endif
 
          call initres(1_intType, nwf)
          call residual
@@ -176,7 +172,7 @@
        ! for the presence of the turbulent kinetic energy.
 
        if( kPresent ) then
-         if((currentLevel <= groundLevel) .or. turbCoupled) then
+         if((currentLevel <= groundLevel)) then 
            correctForK = .true.
          else
            correctForK = .false.
@@ -242,13 +238,6 @@
                  enddo
                enddo
 
-               ! Compute the turbulent updates, if needed.
-
-               if( turbCoupled ) then
-                 call returnFail("executeRkStage", &
-                                "turbulent updates not implemented yet")
-               endif
-
              enddo spectralSteady
 
            !=============================================================
@@ -301,13 +290,6 @@
                    enddo
                  enddo
                enddo
-
-               ! Compute the turbulent updates, if needed.
-
-               if( turbCoupled ) then
-                 call returnFail("executeRkStage", &
-                                "turbulent updates not implemented yet")
-               endif
 
              enddo spectralUnsteady
 
@@ -388,18 +370,6 @@
              enddo
            enddo
 
-           ! Possible turbulent variables.
-
-           do l=nt1MG,nMGVar
-             do k=2,kl
-               do j=2,jl
-                 do i=2,il
-                   w(i,j,k,l) = wn(i,j,k,l) - dw(i,j,k,l)
-                 enddo
-               enddo
-             enddo
-           enddo
-
            ! Compute the total energy and possibly the laminar and eddy
            ! viscosity in the owned cells.
 
@@ -427,10 +397,10 @@
        ! must be called.
 
        if( secondHalo ) then
-         call whalo2(currentLevel, 1_intType, nMGVar, .true., &
+         call whalo2(currentLevel, 1_intType, nwf, .true., &
                      .true., .true.)
        else
-         call whalo1(currentLevel, 1_intType, nMGVar, .true., &
+         call whalo1(currentLevel, 1_intType, nwf, .true., &
                      .true., .true.)
        endif
 

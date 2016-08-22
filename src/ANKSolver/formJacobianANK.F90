@@ -1,16 +1,12 @@
 subroutine FormJacobianANK
-#ifndef USE_NO_PETSC
 
+  use constants
   use ANKSolverVars, only : dRdWPre, ANK_asmOverlap, &
        ANK_innerPreConIts,  MAT_FINAL_ASSEMBLY, ANK_iluFill, &
        ANK_subSpace, KSP_GMRES_CGS_REFINE_NEVER, ANK_KSP, ANK_CFL, deltaW, &
        ANK_KSPTurb, deltawTurb, dRdwPreTurb, ANK_useTurbDADI
-       
+  use flowVarRefState, only : nw, nwf
   use inputADjoint, only : viscPC
-  use inputiteration
-  use blockPointers
-  use inputTimeSpectral
-  use flowvarrefstate
 
   implicit none
 #define PETSC_AVOID_MPIF_H
@@ -31,7 +27,7 @@ subroutine FormJacobianANK
   character(len=maxStringLen) :: preConSide, localPCType, kspObjectType, globalPCType, localOrdering
   integer(kind=intType) ::ierr
   logical :: useAD, usePC, useTranspose, useObjective, tmp
-  real(kind=realType) ::  dt, ovv
+  real(kind=realType) ::  dt
   integer(kind=intType) :: i, j, k, l, ii, nn, sps, outerPreConIts
   real(kind=realType), pointer :: diag(:)
   external :: myKSPMonitor
@@ -133,6 +129,5 @@ subroutine FormJacobianANK
           KSP_GMRES_CGS_REFINE_NEVER, ierr)
      call EChk(ierr, __FILE__, __LINE__)
   end if
-#endif
 
 end subroutine FormJacobianANK

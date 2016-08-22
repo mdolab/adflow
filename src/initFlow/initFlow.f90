@@ -66,9 +66,6 @@
 
        call setBCDataCoarseGrid
 
-       ! Set the infinity state.
-       call setFlowInfinityState
-
        ! Non-dimensionalize the boundary data.
 
        call nonDimBoundData

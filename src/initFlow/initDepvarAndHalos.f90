@@ -95,7 +95,7 @@
        do mm=1,nTimeIntervalsSpectral
          do nn=1,nDom
            call setPointers(nn,mgStartlevel,mm)
-           call computeLamViscosity
+           call computeLamViscosity(.False.)
          enddo
        enddo
 
@@ -163,16 +163,19 @@
        call whalo2(mgStartlevel, 1_intType, 0_intType, .false., &
                    .false., .true.)
 
-       ! Apply the turbulent boundary conditions for a segregated
-       ! solver twice and redo the mean flow boundary conditions.
-       ! Just to be sure that everything is initialized properly for
-       ! all situations possible.
-
-       if( turbSegregated ) call applyAllTurbBC(.true.)
+       ! Apply the turbulent boundary conditions twice and redo the
+       ! mean flow boundary conditions.  Just to be sure that
+       ! everything is initialized properly for all situations
+       ! possible.
+       if (equations == RANSEquations) then 
+          call applyAllTurbBC(.true.)
+       end if
        call applyAllBC(.true.)
        call BCDataMassBleedOutflow(initBleeds, .false.)
        call applyAllBC(.true.)
-       if( turbSegregated ) call applyAllTurbBC(.true.)
+       if (equations == RANSEquations) then 
+          call applyAllTurbBC(.true.)
+       end if
 
        ! Exchange the solution for the second time to be sure that all
        ! halo's are initialized correctly. As this is the initialization

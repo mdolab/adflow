@@ -1,12 +1,9 @@
 subroutine getFreeStreamResidual(rhoRes, totalRRes)
 
-  use communication
-  use inputTimeSpectral
-  use flowVarRefState
-  use inputIteration
-  use blockpointers
-  use iteration
-
+  use constants
+  use blockPointers, only : nDom, ib, jb, kb, w
+  use inputTimeSpectral, only : nTimeIntervalsSpectral
+  use flowVarRefState, only : nw, winf
   implicit none
 
   real(kind=realType), intent(out) :: rhoRes, totalRRes

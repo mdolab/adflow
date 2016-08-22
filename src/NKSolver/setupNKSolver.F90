@@ -4,13 +4,11 @@ subroutine setupNKsolver
   ! solver. destroyNKsolver can be used to destroy the objects created
   ! in this function
 
-  use blockPointers
-  use communication
-  use inputTimeSpectral
-  use flowVarRefState
-  use iteration
-  use inputPhysics
+  use constants
   use stencils
+  use communication, only : sumb_comm_world
+  use inputTimeSpectral, only : nTimeIntervalsSpectral
+  use flowVarRefState, only : nw, viscous
   use InputAdjoint, only: viscPC
   use ADjointVars , only: nCellsLocal
   use NKSolverVars, only: dRdw, dRdwPre, dRdWpseudo, ctx, wVec, rVec, deltaW, &
@@ -159,7 +157,7 @@ subroutine NKMatMult(A, vecX,  vecY, ierr)
   Mat   A
   Vec   vecX, vecY
   integer(kind=intType) ::ierr, i, j, k, l, nn, sps, ii
-  real(kind=realType) :: dt, ovv
+  real(kind=realType) :: dt
   real(kind=realType), pointer :: yPtr(:), xPtr(:)
   
   ! Frist run the underlying matrix-free mult
