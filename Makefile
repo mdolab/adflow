@@ -9,7 +9,6 @@
 
 SUBDIR_SRC    = src/modules       \
 	        src/solver        \
-		src/ADT           \
 		src/bcdata        \
 	        src/initFlow      \
 	        src/inputParam    \
