@@ -21,6 +21,7 @@
        use BCTypes
        use blockPointers
        use inputTimeSpectral
+       use utils, only : setPointers, terminate
        implicit none
 !
 !      Local variables.
@@ -56,7 +57,7 @@
              j = flowDoms(i,level,sps)%nBocos
              allocate(flowDoms(i,level,sps)%BCData(j), stat=ierr)
              if(ierr /= 0)                   &
-               call returnFail("initBCData", &
+               call terminate("initBCData", &
                               "Memory allocation failure for BCData")
 
              ! Set the pointers to make it more readable.

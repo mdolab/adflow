@@ -34,6 +34,7 @@
        use inputUnsteady
        use iteration
        use partitionMod
+       use utils, only : terminate
        implicit none
 !
 !      Local variables
@@ -168,7 +169,7 @@
 
            ! Possibly correct nGridsRead and set nOldGridRead.
            ! If nOldGridRead == 0, i.e. not a valid grid is found,
-           ! print an error message and returnFail.
+           ! print an error message and terminate.
 
            nGridsRead   = nn - 1
            nOldGridRead = nGridsRead

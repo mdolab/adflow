@@ -299,6 +299,7 @@ contains
     ! adjusted accordingly.
 
     use overset
+    use utils, only : pointReduce
     implicit none
 
     ! Input/Ouput
@@ -360,6 +361,7 @@ contains
     ! boundary) or two elements for a normal part of a chain.
 
     use overset
+    use utils, only : terminate
     implicit none
 
     ! Input/Output

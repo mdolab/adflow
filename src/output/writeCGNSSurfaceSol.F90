@@ -32,7 +32,7 @@
        use blockPointers
        use cgnsNames
        use extraOutput
-
+       use utils, only : terminate, setPointers
        implicit none
 !
 !      Local parameter, the cell dimension.
@@ -79,7 +79,7 @@
        allocate(fileIDs(nSurfSolToWrite), cgnsBases(nSurfSolToWrite), &
                 stat=ierr)
        if(ierr /= 0)                           &
-         call returnFail("writeCGNSSurfaceSol", &
+         call terminate("writeCGNSSurfaceSol", &
                         "Memory allocation failure for fileIDs &
                         &and cgnsBases")
 
@@ -101,7 +101,7 @@
  101         format("File",1X,A,1X,"could not be opened by cgns for &
                     &writing")
 
-             call returnFail("writeCGNSSurfaceSol", errorMessage)
+             call terminate("writeCGNSSurfaceSol", errorMessage)
            endif
 
            fileIDs(nn) = cgnsInd
@@ -111,7 +111,7 @@
            call cg_base_write_f(cgnsInd, "BaseSurfaceSol", celldim, &
                                 cgnsPhysdim, cgnsBases(nn), ierr)
            if(ierr /= CG_OK)                      &
-             call returnFail("writeCGNSSurfaceSol", &
+             call terminate("writeCGNSSurfaceSol", &
                             "Something wrong when calling &
                             &cg_base_write_f")
 
@@ -129,7 +129,7 @@
 
        allocate(solNames(nSolVar), stat=ierr)
        if(ierr /= 0)                           &
-         call returnFail("writeCGNSSurfaceSol", &
+         call terminate("writeCGNSSurfaceSol", &
                         "Memory allocation failure for solNames")
 
        call surfSolNames(solNames)
@@ -189,7 +189,7 @@
                 call cg_base_write_f(cgnsInd, "IsoSurfaces", celldim, &
                      cgnsPhysDim, cgnsIsoSurfBases(nn), ierr)
                 if (ierr /= CG_OK) &
-                     call returnFail("WriteCGNSSurfaceSol", &
+                     call terminate("WriteCGNSSurfaceSol", &
                      "Something wrong when calling cg_base_write_f for &
                      isoSurface")
              end do solLoop2
@@ -203,7 +203,7 @@
           if (nIsoSurfVar > 0) then
              allocate(isoSurfSolNames(nIsoSurfVar), stat=ierr)
              if(ierr /= 0)                           &
-                  call returnFail("writeCGNSSurfaceSol", &
+                  call terminate("writeCGNSSurfaceSol", &
                   "Memory allocation failure for isoNames")
              call isoSurfNames(isoSurfSolNames)
           end if
@@ -244,7 +244,7 @@
          do nn=1,nSurfSolToWrite
            call cg_close_f(fileIDs(nn), ierr)
            if(ierr /= CG_OK)                      &
-             call returnFail("writeCGNSSurfaceSol", &
+             call terminate("writeCGNSSurfaceSol", &
                             "Something wrong when calling cg_close_f")
          enddo
       end if
@@ -253,7 +253,7 @@
 
        deallocate(solNames, fileIDs, cgnsBases, stat=ierr)
        if(ierr /= 0)                           &
-         call returnFail("writeCGNSSurfaceSol", &
+         call terminate("writeCGNSSurfaceSol", &
                         "Deallocation error for solNames, fileIDs &
                         &and cgnsBases")
 

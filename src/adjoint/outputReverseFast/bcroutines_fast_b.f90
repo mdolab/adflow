@@ -24,6 +24,7 @@
 module bcroutines_fast_b
   use myPushPopLib
   use constants
+  use utils_fast_b, only : terminate, getcorrectfork
   implicit none
   save 
   real(kind=realtype), dimension(:, :, :), pointer :: ww0, ww1, ww2, ww3
@@ -45,6 +46,7 @@ module bcroutines_fast_b
   real(kind=realtype), dimension(:, :, :), pointer :: ssi, ssj, ssk
   real(kind=realtype), dimension(:, :, :), pointer :: ss, xx
   real(kind=realtype), dimension(:, :), pointer :: dd2wall
+  integer(kind=inttype), dimension(:, :), pointer :: gcp
   integer(kind=inttype) :: istart, iend, isize
   integer(kind=inttype) :: jstart, jend, jsize
 
@@ -61,7 +63,7 @@ contains
 ! subroutine arguments.
     logical, intent(in) :: secondhalo
 ! local variables.
-    logical :: correctfork, getcorrectfork
+    logical :: correctfork
     integer(kind=inttype) :: nn
 !
 ! determine whether or not the total energy must be corrected
@@ -89,6 +91,17 @@ contains
       end do
     end if
 ! ------------------------------------
+!  symmetry polar boundary condition 
+! ------------------------------------
+    do nn=1,nbocos
+      if (bctype(nn) .eq. symmpolar) then
+        call setbcpointers(nn, .true.)
+        call bcsymmpolar(nn, .false.)
+        if (secondhalo) call bcsymmpolar(nn, secondhalo)
+        call resetbcpointers(nn, .true.)
+      end if
+    end do
+! ------------------------------------
 !  adibatic wall boundary condition 
 ! ------------------------------------
     do nn=1,nviscbocos
@@ -111,14 +124,48 @@ contains
 ! ------------------------------------
 !  farfield boundary condition 
 ! ------------------------------------
-    if (precond .eq. turkel .or. precond .eq. choimerkle) call &
-&     returnfail('applyallbc', &
-&      'farfield turkel and coid/merkle preconditioners not implemented'&
-&            )
     do nn=1,nbocos
       if (bctype(nn) .eq. farfield) then
         call setbcpointers(nn, .false.)
         call bcfarfield(nn, secondhalo, correctfork)
+        call resetbcpointers(nn, .false.)
+      end if
+    end do
+! ------------------------------------
+!  subsonic outflow boundary condition 
+! ------------------------------------
+    do nn=1,nbocos
+      if (bctype(nn) .eq. subsonicoutflow .or. bctype(nn) .eq. &
+&         massbleedoutflow) then
+        call setbcpointers(nn, .false.)
+        call bcsubsonicoutflow(nn, secondhalo, correctfork)
+        call resetbcpointers(nn, .false.)
+      end if
+    end do
+! ------------------------------------
+!  subsonic inflow boundary condition 
+! ------------------------------------
+    do nn=1,nbocos
+      if (bctype(nn) .eq. subsonicinflow) then
+        call setbcpointers(nn, .false.)
+        call bcsubsonicinflow(nn, secondhalo, correctfork)
+        call resetbcpointers(nn, .false.)
+      end if
+    end do
+! ------------------------------------
+!  extrapolation boundary condition 
+! ------------------------------------
+! extrapolation boundary conditions; this also includes
+! the supersonic outflow boundary conditions. the difference
+! between the two is that the extrap boundary conditions
+! correspond to singular lines and supersonic outflow
+! boundaries to physical boundaries. the treatment however
+! is identical.
+    do nn=1,nbocos
+      if (bctype(nn) .eq. extrap .or. bctype(nn) .eq. supersonicoutflow&
+&     ) then
+        call setbcpointers(nn, .false.)
+        call bcextrap(nn, secondhalo, correctfork)
         call resetbcpointers(nn, .false.)
       end if
     end do
@@ -130,6 +177,16 @@ contains
         call setbcpointers(nn, .true.)
         call bceulerwall(nn, secondhalo, correctfork)
         call resetbcpointers(nn, .true.)
+      end if
+    end do
+! ------------------------------------
+!  supersonic inflow condition 
+! ------------------------------------
+    do nn=1,nbocos
+      if (bctype(nn) .eq. supersonicinflow) then
+        call setbcpointers(nn, .false.)
+        call bcsupersonicinflow(nn, secondhalo, correctfork)
+        call resetbcpointers(nn, .false.)
       end if
     end do
   end subroutine applyallbc_block
@@ -383,6 +440,123 @@ branch = myIntStack(myIntPtr)
       if (eddymodel) rev0(i, j) = rev3(i, j)
     end do
   end subroutine bcsymm2ndhalo
+  subroutine bcsymmpolar(nn, secondhalo)
+!
+! ******************************************************************
+! *                                                                *
+! * bcsymmpolar applies the polar symmetry boundary conditions     *
+! * to a singular line of a block. it is assumed that the pointers *
+! * in blockpointers are already set to the correct block on the   *
+! * correct grid level.                                            *
+! * the polar symmetry condition is a special case of a degenerate *
+! * line, as this line is the axi-symmetric centerline.            *
+! *                                                                *
+! ******************************************************************
+!
+    use blockpointers
+    use bctypes
+    use constants
+    use flowvarrefstate
+    use iteration
+    implicit none
+! subroutine arguments.
+    logical, intent(in) :: secondhalo
+    integer(kind=inttype), intent(in) :: nn
+! local variables.
+    integer(kind=inttype) :: i, j, l, ii, mm
+    real(kind=realtype) :: nnx, nny, nnz, tmp, vtx, vty, vtz
+    intrinsic mod
+    intrinsic sqrt
+! loop over the generic subface to set the state in the
+! 1-st level halos 
+    if (.not.secondhalo) then
+      do ii=0,isize*jsize-1
+        i = mod(ii, isize) + istart
+        j = ii/isize + jstart
+! determine the unit vector along the degenerated face.
+! however it is not known which is the singular
+! direction and therefore determine the direction along
+! the diagonal (i,j) -- (i-1,j-1), which is correct for
+! both singular i and j-direction. note that due to the
+! usage of the pointer xx there is an offset of +1
+! in the indices and therefore (i+1,j+1) - (i,j) must
+! be used to determine this vector.
+        nnx = xx(i+1, j+1, 1) - xx(i, j, 1)
+        nny = xx(i+1, j+1, 2) - xx(i, j, 2)
+        nnz = xx(i+1, j+1, 3) - xx(i, j, 3)
+! determine the unit vector in this direction.
+        tmp = one/sqrt(nnx*nnx+nny*nny+nnz*nnz)
+        nnx = nnx*tmp
+        nny = nny*tmp
+        nnz = nnz*tmp
+! determine twice the tangential velocity vector of the
+! internal cell.
+        tmp = two*(ww2(i, j, ivx)*nnx+ww2(i, j, ivy)*nny+ww2(i, j, ivz)*&
+&         nnz)
+        vtx = tmp*nnx
+        vty = tmp*nny
+        vtz = tmp*nnz
+! determine the flow variables in the halo cell. the
+! velocity is constructed such that the average of the
+! internal and the halo cell is along the centerline.
+! note that the magnitude of the velocity does not
+! change and thus the energy is identical.
+        ww1(i, j, irho) = ww2(i, j, irho)
+        ww1(i, j, ivx) = vtx - ww2(i, j, ivx)
+        ww1(i, j, ivy) = vty - ww2(i, j, ivy)
+        ww1(i, j, ivz) = vtz - ww2(i, j, ivz)
+        ww1(i, j, irhoe) = ww2(i, j, irhoe)
+! set the pressure and possibly the laminar and
+! eddy viscosity in the halo.
+        pp1(i, j) = pp2(i, j)
+        if (viscous) rlv1(i, j) = rlv2(i, j)
+        if (eddymodel) rev1(i, j) = rev2(i, j)
+      end do
+    else
+      do ii=0,isize*jsize-1
+        i = mod(ii, isize) + istart
+        j = ii/isize + jstart
+! determine the unit vector along the degenerated face.
+! however it is not known which is the singular
+! direction and therefore determine the direction along
+! the diagonal (i,j) -- (i-1,j-1), which is correct for
+! both singular i and j-direction. note that due to the
+! usage of the pointer xx there is an offset of +1
+! in the indices and therefore (i+1,j+1) - (i,j) must
+! be used to determine this vector.
+        nnx = xx(i+1, j+1, 1) - xx(i, j, 1)
+        nny = xx(i+1, j+1, 2) - xx(i, j, 2)
+        nnz = xx(i+1, j+1, 3) - xx(i, j, 3)
+! determine the unit vector in this direction.
+        tmp = one/sqrt(nnx*nnx+nny*nny+nnz*nnz)
+        nnx = nnx*tmp
+        nny = nny*tmp
+        nnz = nnz*tmp
+! determine twice the tangential velocity vector of the
+! internal cell.
+        tmp = two*(ww3(i, j, ivx)*nnx+ww3(i, j, ivy)*nny+ww3(i, j, ivz)*&
+&         nnz)
+        vtx = tmp*nnx
+        vty = tmp*nny
+        vtz = tmp*nnz
+! determine the flow variables in the halo cell. the
+! velocity is constructed such that the average of the
+! internal and the halo cell is along the centerline.
+! note that the magnitude of the velocity does not
+! change and thus the energy is identical.
+        ww0(i, j, irho) = ww3(i, j, irho)
+        ww0(i, j, ivx) = vtx - ww3(i, j, ivx)
+        ww0(i, j, ivy) = vty - ww3(i, j, ivy)
+        ww0(i, j, ivz) = vtz - ww3(i, j, ivz)
+        ww0(i, j, irhoe) = ww3(i, j, irhoe)
+! set the pressure and possibly the laminar and
+! eddy viscosity in the halo.
+        pp0(i, j) = pp3(i, j)
+        if (viscous) rlv0(i, j) = rlv3(i, j)
+        if (eddymodel) rev0(i, j) = rev3(i, j)
+      end do
+    end if
+  end subroutine bcsymmpolar
 !  differentiation of bcnswalladiabatic in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *rev0 *rev1 *rev2 *pp0 *pp1
 !                *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2
@@ -934,6 +1108,288 @@ branch = myIntStack(myIntPtr)
 ! is needed.
     if (secondhalo) call extrapolate2ndhalo(correctfork)
   end subroutine bcnswallisothermal
+  subroutine bcsubsonicoutflow(nn, secondhalo, correctfork)
+!
+! ******************************************************************
+! *                                                                *
+! * bcsubsonicoutflow applies the subsonic outflow boundary        *
+! * condition, static pressure prescribed, to a block. it is       *
+! * assumed that the pointers in blockpointers are already set to  *
+! * the correct block on the correct grid level.                   *
+! * exactly the same boundary condition is also applied for an     *
+! * outflow mass bleed. therefore the test is for both a subsonic  *
+! * outflow and an bleed outflow.                                  *
+! *                                                                *
+! ******************************************************************
+!
+    use blockpointers
+    use bctypes
+    use constants
+    use flowvarrefstate
+    use inputphysics
+    use iteration
+    implicit none
+! subroutine arguments.
+    logical, intent(in) :: secondhalo, correctfork
+    integer(kind=inttype), intent(in) :: nn
+! local variables.
+    integer(kind=inttype) :: i, j, l, ii
+    real(kind=realtype), parameter :: twothird=two*third
+    real(kind=realtype) :: ovg, ovgm1, nnx, nny, nnz
+    real(kind=realtype) :: pexit, pint, r, a2, a, ac, ss
+    real(kind=realtype) :: ue, ve, we, qne, qnh
+    intrinsic mod
+    intrinsic sqrt
+! loop over the generic subface to set the state in the
+! halo cells.
+    do ii=0,isize*jsize-1
+      i = mod(ii, isize) + istart
+      j = ii/isize + jstart
+! store a couple of variables, such as the static
+! pressure and grid unit outward normal, a bit easier.
+      pexit = bcdata(nn)%ps(i, j)
+      nnx = bcdata(nn)%norm(i, j, 1)
+      nny = bcdata(nn)%norm(i, j, 2)
+      nnz = bcdata(nn)%norm(i, j, 3)
+! abbreviate 1/gamma and 1/(gamma -1) a bit easier.
+      ovg = one/gamma2(i, j)
+      ovgm1 = one/(gamma2(i, j)-one)
+! store the internal pressure and correct for the
+! possible presence of a k-equation.
+      pint = pp2(i, j)
+      if (correctfork) pint = pint - twothird*ww2(i, j, irho)*ww2(i, j, &
+&         itu1)
+! compute the velocity components, the normal velocity
+! and the speed of sound for the internal cell.
+      r = one/ww2(i, j, irho)
+      a2 = gamma2(i, j)*pint*r
+      a = sqrt(a2)
+      ue = ww2(i, j, ivx)
+      ve = ww2(i, j, ivy)
+      we = ww2(i, j, ivz)
+      qne = ue*nnx + ve*nny + we*nnz
+! compute the entropy and the acoustic variable.
+! these riemann invariants, as well as the tangential
+! velocity components, are extrapolated.
+      ss = pint*r**gamma2(i, j)
+      ac = qne + two*a*ovgm1
+! compute the state in the halo.
+      ww1(i, j, irho) = (pexit/ss)**ovg
+      pp1(i, j) = pexit
+      a = sqrt(gamma2(i, j)*pexit/ww1(i, j, irho))
+      qnh = ac - two*a*ovgm1
+      ww1(i, j, ivx) = ue + (qnh-qne)*nnx
+      ww1(i, j, ivy) = ve + (qnh-qne)*nny
+      ww1(i, j, ivz) = we + (qnh-qne)*nnz
+! correct the pressure if a k-equation is present.
+      if (correctfork) pp1(i, j) = pp1(i, j) + twothird*ww1(i, j, irho)*&
+&         ww1(i, j, itu1)
+! set the viscosities in the halo to the viscosities
+! in the donor cell.
+      if (viscous) rlv1(i, j) = rlv2(i, j)
+      if (eddymodel) rev1(i, j) = rev2(i, j)
+    end do
+! compute the energy for these halo's.
+    call computeetot(ww1, pp1, correctfork)
+! extrapolate the state vectors in case a second halo
+! is needed.
+    if (secondhalo) call extrapolate2ndhalo(correctfork)
+  end subroutine bcsubsonicoutflow
+  subroutine bcsubsonicinflow(nn, secondhalo, correctfork)
+!
+! ******************************************************************
+! *                                                                *
+! * bcsubsonicinflow applies the subsonic outflow boundary         *
+! * condition, total pressure, total density and flow direction    *
+! * prescribed,  to a block. it is assumed that the pointers in    *
+! * blockpointers are already set to the correct block on the      *
+! * correct grid level.                                            *
+! *                                                                *
+! ******************************************************************
+!
+    use blockpointers
+    use bctypes
+    use constants
+    use flowvarrefstate
+    use inputdiscretization
+    use inputphysics
+    use iteration
+    implicit none
+! subroutine arguments.
+    logical, intent(in) :: secondhalo, correctfork
+    integer(kind=inttype), intent(in) :: nn
+! local variables.
+    integer(kind=inttype) :: i, j, l, ii
+    real(kind=realtype) :: gm1, ovgm1
+    real(kind=realtype) :: ptot, ttot, htot, a2tot, r, alpha, beta
+    real(kind=realtype) :: aa2, bb, cc, dd, q, q2, a2, m2, scalefact
+    real(kind=realtype) :: ssx, ssy, ssz, nnx, nny, nnz
+    real(kind=realtype) :: rho, velx, vely, velz
+    intrinsic mod
+    intrinsic sqrt
+    intrinsic max
+    intrinsic min
+    real(kind=realtype) :: max1
+! determine the boundary treatment to be used.
+    select case  (bcdata(nn)%subsonicinlettreatment) 
+    case (totalconditions) 
+! the total conditions have been prescribed.
+! loop over the generic subface to set the state in the
+! halo cells.
+      do ii=0,isize*jsize-1
+        i = mod(ii, isize) + istart
+        j = ii/isize + jstart
+! store a couple of variables, such as the total
+! pressure, total temperature, total enthalpy, flow
+! direction and grid unit outward normal, a bit easier.
+        ptot = bcdata(nn)%ptinlet(i, j)
+        ttot = bcdata(nn)%ttinlet(i, j)
+        htot = bcdata(nn)%htinlet(i, j)
+        ssx = bcdata(nn)%flowxdirinlet(i, j)
+        ssy = bcdata(nn)%flowydirinlet(i, j)
+        ssz = bcdata(nn)%flowzdirinlet(i, j)
+        nnx = bcdata(nn)%norm(i, j, 1)
+        nny = bcdata(nn)%norm(i, j, 2)
+        nnz = bcdata(nn)%norm(i, j, 3)
+! some abbreviations in which gamma occurs.
+        gm1 = gamma2(i, j) - one
+        ovgm1 = one/gm1
+! determine the acoustic riemann variable that must be
+! extrapolated from the domain.
+        r = one/ww2(i, j, irho)
+        a2 = gamma2(i, j)*pp2(i, j)*r
+        beta = ww2(i, j, ivx)*nnx + ww2(i, j, ivy)*nny + ww2(i, j, ivz)*&
+&         nnz + two*ovgm1*sqrt(a2)
+! correct the value of the riemann invariant if total
+! enthalpy scaling must be applied. this scaling may
+! be needed for stability if large gradients of the
+! total temperature are prescribed.
+        scalefact = one
+        if (hscalinginlet) scalefact = sqrt(htot/(r*(ww2(i, j, irhoe)+&
+&           pp2(i, j))))
+        beta = beta*scalefact
+! compute the value of a2 + 0.5*gm1*q2, which is the
+! total speed of sound for constant cp. however, the
+! expression below is also valid for variable cp,
+! although a linearization around the value of the
+! internal cell is performed.
+        q2 = ww2(i, j, ivx)**2 + ww2(i, j, ivy)**2 + ww2(i, j, ivz)**2
+        a2tot = gm1*(htot-r*(ww2(i, j, irhoe)+pp2(i, j))+half*q2) + a2
+! compute the dot product between the normal and the
+! velocity direction. this value should be negative.
+        alpha = nnx*ssx + nny*ssy + nnz*ssz
+! compute the coefficients in the quadratic equation
+! for the magnitude of the velocity.
+        aa2 = half*gm1*alpha*alpha + one
+        bb = -(gm1*alpha*beta)
+        cc = half*gm1*beta*beta - two*ovgm1*a2tot
+! solve the equation for the magnitude of the
+! velocity. as this value must be positive and both aa2
+! and bb are positive (alpha is negative and beta is
+! positive up till mach = 5.0 or so, which is not
+! really subsonic anymore), it is clear which of the
+! two possible solutions must be taken. some clipping
+! is present, but this is normally not active.
+        dd = bb*bb - four*aa2*cc
+        if (zero .lt. dd) then
+          max1 = dd
+        else
+          max1 = zero
+        end if
+        dd = sqrt(max1)
+        q = (-bb+dd)/(two*aa2)
+        if (zero .lt. q) then
+          q = q
+        else
+          q = zero
+        end if
+        q2 = q*q
+! compute the speed of sound squared from the total
+! speed of sound equation (== total enthalpy equation
+! for constant cp).
+        a2 = a2tot - half*gm1*q2
+! compute the mach number squared and cut it between
+! 0.0 and 1.0. adapt the velocity and speed of sound
+! squared accordingly.
+        m2 = q2/a2
+        if (one .gt. m2) then
+          m2 = m2
+        else
+          m2 = one
+        end if
+        q2 = m2*a2
+        q = sqrt(q2)
+        a2 = a2tot - half*gm1*q2
+! compute the velocities in the halo cell and use rho,
+! rhoe and p as temporary buffers to store the total
+! temperature, total pressure and static temperature.
+        ww1(i, j, ivx) = q*ssx
+        ww1(i, j, ivy) = q*ssy
+        ww1(i, j, ivz) = q*ssz
+        ww1(i, j, irho) = ttot
+        pp1(i, j) = ptot
+        ww1(i, j, irhoe) = a2/(gamma2(i, j)*rgas)
+! set the viscosities in the halo to the viscosities
+! in the donor cell.
+        if (viscous) rlv1(i, j) = rlv2(i, j)
+        if (eddymodel) rev1(i, j) = rev2(i, j)
+      end do
+! compute the pressure and density for these halo's.
+      call prhosubsonicinlet(ww1, pp1, correctfork)
+    case (massflow) 
+!===========================================================
+! density and velocity vector prescribed.
+! loop over the generic subface to set the state in the
+! halo cells.
+      do ii=0,isize*jsize-1
+        i = mod(ii, isize) + istart
+        j = ii/isize + jstart
+! store a couple of variables, such as the density,
+! velocity and grid unit outward normal, a bit easier.
+        rho = bcdata(nn)%rho(i, j)
+        velx = bcdata(nn)%velx(i, j)
+        vely = bcdata(nn)%vely(i, j)
+        velz = bcdata(nn)%velz(i, j)
+        nnx = bcdata(nn)%norm(i, j, 1)
+        nny = bcdata(nn)%norm(i, j, 2)
+        nnz = bcdata(nn)%norm(i, j, 3)
+! some abbreviations in which gamma occurs.
+        gm1 = gamma2(i, j) - one
+        ovgm1 = one/gm1
+! determine the acoustic riemann variable that must be
+! extrapolated from the domain.
+        r = one/ww2(i, j, irho)
+        a2 = gamma2(i, j)*pp2(i, j)*r
+        beta = ww2(i, j, ivx)*nnx + ww2(i, j, ivy)*nny + ww2(i, j, ivz)*&
+&         nnz + two*ovgm1*sqrt(a2)
+! compute the speed of sound squared in the halo.
+        a2 = half*gm1*(beta-velx*nnx-vely*nny-velz*nnz)
+        if (zero .lt. a2) then
+          a2 = a2
+        else
+          a2 = zero
+        end if
+        a2 = a2*a2
+! compute the pressure in the halo, assuming a
+! constant value of gamma.
+        pp1(i, j) = rho*a2/gamma2(i, j)
+! simply copy the density and velocities.
+        ww1(i, j, irho) = rho
+        ww1(i, j, ivx) = velx
+        ww1(i, j, ivy) = vely
+        ww1(i, j, ivz) = velz
+! set the viscosities in the halo to the viscosities
+! in the donor cell.
+        if (viscous) rlv1(i, j) = rlv2(i, j)
+        if (eddymodel) rev1(i, j) = rev2(i, j)
+      end do
+    end select
+! compute the energy for these halo's.
+    call computeetot(ww1, pp1, correctfork)
+! extrapolate the state vectors in case a second halo
+! is needed.
+    if (secondhalo) call extrapolate2ndhalo(correctfork)
+  end subroutine bcsubsonicinflow
 !  differentiation of bceulerwall in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *rev0 *rev1 *rev2 *pp0 *pp1
 !                *pp2 *pp3 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2
@@ -963,6 +1419,7 @@ branch = myIntStack(myIntPtr)
     use inputdiscretization
     use inputphysics
     use iteration
+    use utils_fast_b, only : mydim, mydim_fast_b
     implicit none
 ! subroutine arguments.
     logical, intent(in) :: secondhalo, correctfork
@@ -980,7 +1437,6 @@ branch = myIntStack(myIntPtr)
     real(kind=realtype), dimension(istart:iend, jstart:jend) :: grad
     real(kind=realtype), dimension(istart:iend, jstart:jend) :: gradd
     intrinsic mod
-    real(kind=realtype) :: dim
     integer :: branch
     real(kind=realtype) :: tempd
 ! make sure that on the coarser grids the constant pressure
@@ -1023,7 +1479,7 @@ myIntPtr = myIntPtr + 1
 ! halo cell. note that rface is the grid velocity
 ! component in the direction of norm, i.e. outward
 ! pointing.
-      pp1(j, k) = dim(pp2(j, k), grad(j, k))
+      pp1(j, k) = mydim(pp2(j, k), grad(j, k))
       vn = two*(bcdata(nn)%rface(j, k)-ww2(j, k, ivx)*bcdata(nn)%norm(j&
 &       , k, 1)-ww2(j, k, ivy)*bcdata(nn)%norm(j, k, 2)-ww2(j, k, ivz)*&
 &       bcdata(nn)%norm(j, k, 3))
@@ -1082,8 +1538,8 @@ branch = myIntStack(myIntPtr)
       ww2d(j, k, ivx) = ww2d(j, k, ivx) - bcdata(nn)%norm(j, k, 1)*tempd
       ww2d(j, k, ivy) = ww2d(j, k, ivy) - bcdata(nn)%norm(j, k, 2)*tempd
       ww2d(j, k, ivz) = ww2d(j, k, ivz) - bcdata(nn)%norm(j, k, 3)*tempd
-      call dim_fast_b(pp2(j, k), pp2d(j, k), grad(j, k), gradd(j, k), &
-&               pp1d(j, k))
+      call mydim_fast_b(pp2(j, k), pp2d(j, k), grad(j, k), gradd(j, k), &
+&                 pp1d(j, k))
       pp1d(j, k) = 0.0_8
     end do
 branch = myIntStack(myIntPtr)
@@ -1115,6 +1571,7 @@ branch = myIntStack(myIntPtr)
     use inputdiscretization
     use inputphysics
     use iteration
+    use utils_fast_b, only : mydim
     implicit none
 ! subroutine arguments.
     logical, intent(in) :: secondhalo, correctfork
@@ -1130,7 +1587,6 @@ branch = myIntStack(myIntPtr)
     real(kind=realtype) :: uux, uuy, uuz
     real(kind=realtype), dimension(istart:iend, jstart:jend) :: grad
     intrinsic mod
-    real(kind=realtype) :: dim
 ! make sure that on the coarser grids the constant pressure
 ! boundary condition is used.
     walltreatment = eulerwallbctreatment
@@ -1164,7 +1620,7 @@ branch = myIntStack(myIntPtr)
 ! halo cell. note that rface is the grid velocity
 ! component in the direction of norm, i.e. outward
 ! pointing.
-      pp1(j, k) = dim(pp2(j, k), grad(j, k))
+      pp1(j, k) = mydim(pp2(j, k), grad(j, k))
       vn = two*(bcdata(nn)%rface(j, k)-ww2(j, k, ivx)*bcdata(nn)%norm(j&
 &       , k, 1)-ww2(j, k, ivy)*bcdata(nn)%norm(j, k, 2)-ww2(j, k, ivz)*&
 &       bcdata(nn)%norm(j, k, 3))
@@ -1598,6 +2054,266 @@ branch = myIntStack(myIntPtr)
 ! is needed.
     if (secondhalo) call extrapolate2ndhalo(correctfork)
   end subroutine bcfarfield
+  subroutine bcsupersonicinflow(nn, secondhalo, correctfork)
+!
+! ******************************************************************
+! *                                                                *
+! * bcsupersonicinflow applies the supersonic inflow boundary      *
+! * conditions, entire state vector is prescribed, to a block. it  *
+! * is assumed that the pointers in blockpointers are already set  *
+! * to the correct block on the correct grid level.                *
+! *                                                                *
+! ******************************************************************
+    use blockpointers
+    use bctypes
+    use constants
+    use flowvarrefstate
+    use iteration
+    implicit none
+! subroutine arguments.
+    logical, intent(in) :: secondhalo, correctfork
+    integer(kind=inttype), intent(in) :: nn
+! local variables.
+    integer(kind=inttype) :: i, j, l, kk, mm, ii
+    integer(kind=inttype) :: ibeg, iend, jbeg, jend, kbeg, kend
+    intrinsic mod
+! loop over the generic subface to set the state in the
+! halo cells.
+    do ii=0,isize*jsize-1
+      i = mod(ii, isize) + istart
+      j = ii/isize + jstart
+      ww1(i, j, irho) = bcdata(nn)%rho(i, j)
+      ww1(i, j, ivx) = bcdata(nn)%velx(i, j)
+      ww1(i, j, ivy) = bcdata(nn)%vely(i, j)
+      ww1(i, j, ivz) = bcdata(nn)%velz(i, j)
+      pp1(i, j) = bcdata(nn)%ps(i, j)
+! set the laminar and eddy viscosity in the halo
+! if needed.
+      if (viscous) rlv1(i, j) = rlv2(i, j)
+      if (eddymodel) rev1(i, j) = rev2(i, j)
+    end do
+    call computeetot(ww1, pp1, correctfork)
+    if (secondhalo) then
+      do ii=0,isize*jsize-1
+        i = mod(ii, isize) + istart
+        j = ii/isize + jstart
+        ww0(i, j, irho) = bcdata(nn)%rho(i, j)
+        ww0(i, j, ivx) = bcdata(nn)%velx(i, j)
+        ww0(i, j, ivy) = bcdata(nn)%vely(i, j)
+        ww0(i, j, ivz) = bcdata(nn)%velz(i, j)
+        pp0(i, j) = bcdata(nn)%ps(i, j)
+! set the laminar and eddy viscosity in the halo
+! if needed.
+        if (viscous) rlv0(i, j) = rlv1(i, j)
+        if (eddymodel) rev0(i, j) = rev1(i, j)
+      end do
+      call computeetot(ww0, pp0, correctfork)
+    end if
+  end subroutine bcsupersonicinflow
+  subroutine bcextrap(nn, secondhalo, correctfork)
+!
+! ******************************************************************
+! *                                                                *
+! * ccextrap applies the extrapolation boundary condition to a     *
+! * block. it is assumed that the pointers in blockpointers are    *
+! * already set to the correct block on the correct grid level.    *
+! * extrapolation boundaries are applied to both singular lines or *
+! * points of a block face and to supersonic outlets. they are     *
+! * marked differently because of postprocessing reasons, but      *
+! * their numerical treatment is identical.                        *
+! *                                                                *
+! ******************************************************************
+!
+    use blockpointers
+    use bctypes
+    use constants
+    use flowvarrefstate
+    use inputdiscretization
+    use inputphysics
+    use iteration
+    implicit none
+! subroutine arguments.
+    logical, intent(in) :: secondhalo, correctfork
+    integer(kind=inttype), intent(in) :: nn
+! local parameter.
+    real(kind=realtype), parameter :: factor=0.5
+! local variables.
+    integer(kind=inttype) :: i, j, l, ii
+    real(kind=realtype) :: fw2, fw3
+    intrinsic mod
+    intrinsic max
+! set the extrapolation weights, depending on the situation.
+    if (bctype(nn) .eq. supersonicoutflow) then
+! a physical outflow face. set the weights depending
+! on the input parameter.
+      select case  (outflowtreatment) 
+      case (constantextrapol) 
+        fw2 = one
+        fw3 = zero
+      case (linextrapol) 
+        fw2 = two
+        fw3 = -one
+      end select
+    else
+! singular block boundary. use linear extrapolation.
+      fw2 = two
+      fw3 = -one
+    end if
+! loop over the generic subface to set the state in the
+! 1-st level halos 
+    do ii=0,isize*jsize-1
+      i = mod(ii, isize) + istart
+      j = ii/isize + jstart
+! extrapolate the density, velocities and pressure.
+! make sure that a certain threshold is kept for the
+! density and pressure.
+      ww1(i, j, irho) = fw2*ww2(i, j, irho) + fw3*ww3(i, j, irho)
+      if (factor*ww2(i, j, irho) .lt. ww1(i, j, irho)) then
+        ww1(i, j, irho) = ww1(i, j, irho)
+      else
+        ww1(i, j, irho) = factor*ww2(i, j, irho)
+      end if
+      ww1(i, j, ivx) = fw2*ww2(i, j, ivx) + fw3*ww3(i, j, ivx)
+      ww1(i, j, ivy) = fw2*ww2(i, j, ivy) + fw3*ww3(i, j, ivy)
+      ww1(i, j, ivz) = fw2*ww2(i, j, ivz) + fw3*ww3(i, j, ivz)
+      pp1(i, j) = fw2*pp2(i, j) + fw3*pp3(i, j)
+      if (factor*pp2(i, j) .lt. pp1(i, j)) then
+        pp1(i, j) = pp1(i, j)
+      else
+        pp1(i, j) = factor*pp2(i, j)
+      end if
+! the laminar and eddy viscosity, if present. these
+! values are simply taken constant. their values do
+! not really matter.
+      if (viscous) rlv1(i, j) = rlv2(i, j)
+      if (eddymodel) rev1(i, j) = rev2(i, j)
+    end do
+! compute the energy for these halo's.
+    call computeetot(ww1, pp1, correctfork)
+! extrapolate the state vectors in case a second halo
+! is needed.
+    if (secondhalo) call extrapolate2ndhalo(correctfork)
+  end subroutine bcextrap
+  subroutine prhosubsonicinlet(ww, pp, correctfork)
+!
+! ******************************************************************
+! *                                                                *
+! * prhosubsonicinlet computes the pressure and density for the    *
+! * given range of the block to which the pointers in              *
+! * blockpointers currently point.                                 *
+! *                                                                *
+! ******************************************************************
+!
+    use blockpointers
+    use cpcurvefits
+    use flowvarrefstate
+    use inputphysics
+    implicit none
+! local parameter.
+    real(kind=realtype), parameter :: twothird=two*third
+! subroutine arguments.
+    real(kind=realtype), dimension(:, :, :) :: ww
+    real(kind=realtype), dimension(:, :) :: pp
+    logical, intent(in) :: correctfork
+! local variables.
+    integer(kind=inttype) :: i, j, ii, mm, nns, nnt, iii
+    real(kind=realtype) :: govgm1, tt, ts, pt, ratio
+    real(kind=realtype) :: intts, inttt, val
+    intrinsic mod
+! determine the cp model used in the computation.
+    select case  (cpmodel) 
+    case (cpconstant) 
+! constant cp and thus constant gamma. compute the coefficient
+! gamma/(gamma-1), which occurs in the isentropic expression
+! for the total pressure.
+      govgm1 = gammaconstant/(gammaconstant-one)
+! loop over the pointer range
+      do ii=0,isize*jsize-1
+        i = mod(ii, isize) + istart
+        j = ii/isize + jstart
+! store the total temperature, total pressure and
+! static temperature a bit easier.
+        tt = ww(i, j, irho)
+        pt = pp(i, j)
+        ts = ww(i, j, irhoe)
+! compute the static pressure from the total pressure
+! and the temperature ratio. compute the density using
+! the gas law.
+        ratio = (ts/tt)**govgm1
+        pp(i, j) = pt*ratio
+        ww(i, j, irho) = pp(i, j)/(rgas*ts)
+      end do
+    end select
+! add 2*rho*k/3 to the pressure if a k-equation is present.
+    if (correctfork) then
+      do ii=0,isize*jsize-1
+        i = mod(ii, isize) + istart
+        j = ii/isize + jstart
+        pp(i, j) = pp(i, j) + twothird*ww(i, j, irho)*ww(i, j, itu1)
+      end do
+    end if
+
+  contains
+    subroutine cportintegrant(t, nn, int)
+      implicit none
+! subroutine arguments.
+      integer(kind=inttype), intent(out) :: nn
+      real(kind=realtype), intent(in) :: t
+      real(kind=realtype), intent(out) :: int
+! local variables.
+      integer(kind=inttype) :: mm, ii, start
+      real(kind=realtype) :: t2
+      intrinsic log
+! determine the situation we are having here for the temperature.
+      if (t .le. cptrange(0)) then
+! temperature is less than the smallest temperature of the
+! curve fits. use extrapolation using constant cp.
+! set nn to 0 to indicate this.
+        nn = 0
+        int = (cv0+one)*log(t)
+      else if (t .ge. cptrange(cpnparts)) then
+! temperature is larger than the largest temperature of the
+! curve fits. use extrapolation using constant cp.
+! set nn to cpnparts+1 to indicate this.
+        nn = cpnparts + 1
+        int = (cvn+one)*log(t)
+      else
+! temperature is within the curve fit range. determine
+! the correct interval.
+        ii = cpnparts
+        start = 1
+interval:do 
+! next guess for the interval.
+          nn = start + ii/2
+! determine the situation we are having here.
+          if (t .gt. cptrange(nn)) then
+! temperature is larger than the upper boundary of
+! the current interval. update the lower boundary.
+            start = nn + 1
+            ii = ii - 1
+          else if (t .ge. cptrange(nn-1)) then
+! nn contains the correct curve fit interval.
+! compute the value of the integrant.
+            int = zero
+            do ii=1,cptempfit(nn)%nterm
+              mm = cptempfit(nn)%exponents(ii)
+              if (mm .eq. 0_inttype) then
+                int = int + cptempfit(nn)%constants(ii)*log(t)
+              else
+                t2 = t**mm
+                int = int + cptempfit(nn)%constants(ii)*t2/mm
+              end if
+            end do
+            goto 100
+          end if
+! this is the correct range. exit the do-loop.
+! modify ii for the next branch to search.
+          ii = ii/2
+        end do interval
+      end if
+ 100  continue
+    end subroutine cportintegrant
+  end subroutine prhosubsonicinlet
 !  differentiation of extrapolate2ndhalo in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *rev0 *rev1 *pp0 *pp1 *pp2
 !                *rlv0 *rlv1 *ww0 *ww1 *ww2
@@ -1867,8 +2583,8 @@ branch = myIntStack(myIntPtr)
         end if
       end do
     case (cptempcurvefits) 
-      call returnfail('bcroutines', &
-&                  'cptempcurvefits not implemented yet.')
+      call terminate('bcroutines', &
+&              'cptempcurvefits not implemented yet.')
     end select
   end subroutine computeetot
   subroutine setbcpointers(nn, spatialpointers)
@@ -1923,6 +2639,7 @@ branch = myIntStack(myIntPtr)
       gamma2 => gamma(2, 1:, 1:)
       gamma1 => gamma(1, 1:, 1:)
       gamma0 => gamma(0, 1:, 1:)
+      gcp => globalcell(2, 1:, 1:)
     case (imax) 
 !===============================================================
       ww3 => w(nx, 1:, 1:, :)
@@ -1945,6 +2662,7 @@ branch = myIntStack(myIntPtr)
       gamma2 => gamma(il, 1:, 1:)
       gamma1 => gamma(ie, 1:, 1:)
       gamma0 => gamma(ib, 1:, 1:)
+      gcp => globalcell(il, 1:, 1:)
     case (jmin) 
 !===============================================================
       ww3 => w(1:, 3, 1:, :)
@@ -1967,6 +2685,7 @@ branch = myIntStack(myIntPtr)
       gamma2 => gamma(1:, 2, 1:)
       gamma1 => gamma(1:, 1, 1:)
       gamma0 => gamma(1:, 0, 1:)
+      gcp => globalcell(1:, 2, 1:)
     case (jmax) 
 !===============================================================
       ww3 => w(1:, ny, 1:, :)
@@ -1989,6 +2708,7 @@ branch = myIntStack(myIntPtr)
       gamma2 => gamma(1:, jl, 1:)
       gamma1 => gamma(1:, je, 1:)
       gamma0 => gamma(1:, jb, 1:)
+      gcp => globalcell(1:, jl, 1:)
     case (kmin) 
 !===============================================================
       ww3 => w(1:, 1:, 3, :)
@@ -2011,6 +2731,7 @@ branch = myIntStack(myIntPtr)
       gamma2 => gamma(1:, 1:, 2)
       gamma1 => gamma(1:, 1:, 1)
       gamma0 => gamma(1:, 1:, 0)
+      gcp => globalcell(1:, 1:, 2)
     case (kmax) 
 !===============================================================
       ww3 => w(1:, 1:, nz, :)
@@ -2033,6 +2754,7 @@ branch = myIntStack(myIntPtr)
       gamma2 => gamma(1:, 1:, kl)
       gamma1 => gamma(1:, 1:, ke)
       gamma0 => gamma(1:, 1:, kb)
+      gcp => globalcell(1:, 1:, kl)
     end select
     if (spatialpointers) then
       select case  (bcfaceid(nn)) 

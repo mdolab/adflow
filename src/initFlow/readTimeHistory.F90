@@ -24,6 +24,8 @@
        use inputUnsteady
        use monitor
        use restartMod
+       use sorting, only : qsortStrings, bsearchStrings
+       use utils, only : setCGNSRealType
        implicit none
 !
 !      Subroutine arguments.
@@ -52,18 +54,7 @@
                                                  convNames, tmpNames
 
        logical :: allConvInfo
-!
-!      Function definitions.
-!
-       integer               :: setCGNSRealType
-       integer(kind=intType) :: bsearchStrings
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
+
        ! Store the file ID and the base a bit easier. Note that the time
        ! history only needs to be present in the first solution file.
 

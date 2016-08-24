@@ -1,3 +1,4 @@
+#ifndef USE_TAPENADE
 subroutine residual
   !
   ! Shell function to call residual_block on all blocks
@@ -6,7 +7,7 @@ subroutine residual
   use constants
   use inputTimeSpectral
   use Iteration
-
+  use utils, only : setPointers
   implicit none
   !
   !      Local variables.
@@ -30,19 +31,9 @@ subroutine residual
      end do domains
 
   end do spectralLoop
-
 end subroutine residual
+#endif
 
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          residual.f90                                    *
-!      * Author:        Edwin van der Weide, Steve Repsher (blanking)   *
-!      * Starting date: 03-15-2003                                      *
-!      * Last modified: 10-29-2007                                      *
-!      *                                                                *
-!      ******************************************************************
-!
 subroutine residual_block
   !
   !      ******************************************************************
@@ -61,6 +52,7 @@ subroutine residual_block
   use inputUnsteady ! Added by HDN
   use iteration
   use inputAdjoint
+  use flowUtils, only : computeSpeedOfSoundSquared
   implicit none
   !
   !      Local variables.
@@ -178,16 +170,6 @@ subroutine residual_block
 #endif
      endif
 
-     !===========================================================
-
-  case (dissCusp) ! Cusp dissipation scheme.
-#ifndef USE_TAPENADE
-     if( fineGrid ) then
-        call inviscidDissFluxCusp
-     else
-        call inviscidDissFluxCuspCoarse
-     endif
-#endif
      !===========================================================
 
   case (upwind) ! Dissipation via an upwind scheme.

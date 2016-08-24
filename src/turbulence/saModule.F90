@@ -4,17 +4,15 @@
 
 module saModule
 
-  use blockPointers
-
+  use constants
   real(kind=realType) :: cv13, kar2Inv, cw36, cb3Inv
-  !real(kind=realType), dimension(100,100,100) :: qq
   real(kind=realType), dimension(:,:,:), allocatable :: qq
   real(kind=realType), dimension(:,:,:), pointer :: ddw, ww, ddvt
   real(kind=realType), dimension(:,:),   pointer :: rrlv
   real(kind=realType), dimension(:,:),   pointer :: dd2Wall
   
 contains
-
+#ifndef USE_TAPENADE
   subroutine sa(resOnly)
     !
     ! Shell function to call sa_block on al blocks
@@ -23,6 +21,7 @@ contains
     use constants
     use inputTimeSpectral
     use iteration
+    use utils, only : setPointers
     implicit none
     !
     !      Subroutine arguments.
@@ -53,6 +52,7 @@ contains
     end do spectralLoop
 
   end subroutine sa
+#endif
 
   subroutine sa_block(resOnly)
     !

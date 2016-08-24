@@ -6,6 +6,7 @@ subroutine gridVelocitiesFineLevelPart1(useOldCoor, t, sps)
   use constants
   use inputTimeSpectral
   use iteration
+  use utils, only : setPointers
   implicit none
   !
   !      Subroutine arguments.
@@ -68,6 +69,7 @@ subroutine gridVelocitiesFineLevelPart1_block(useOldCoor, t, sps)
   use inputTSStabDeriv
   use monitor
   use communication
+  use utils, only : TSAlpha, TSBeta, TSMach, terminate, rotMatrixRigidBody
   implicit none
   !
   !      Subroutine arguments.
@@ -106,16 +108,6 @@ subroutine gridVelocitiesFineLevelPart1_block(useOldCoor, t, sps)
   real(kind=realType), dimension(3) ::velDir
   real(kind=realType), dimension(3) :: refDirection
  
-  !Function Definitions
-
-  real(kind=realType) :: TSAlpha,TSBeta,TSMach
-  !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
-  !
   ! Compute the mesh velocity from the given mesh Mach number.
 
   ! vel{x,y,z}Grid0 is the ACTUAL velocity you want at the
@@ -211,9 +203,9 @@ subroutine gridVelocitiesFineLevelPart1_block(useOldCoor, t, sps)
         velzGrid0 = (aInf*(IntervalMach+machgrid))*(-velDirFreestream(3))
 
      elseif(TSAltitudeMode)then
-        call returnFail('gridVelocityFineLevel','altitude motion not yet implemented...')
+        call terminate('gridVelocityFineLevel','altitude motion not yet implemented...')
      else
-        call returnFail('gridVelocityFineLevel','Not a recognized Stability Motion')
+        call terminate('gridVelocityFineLevel','Not a recognized Stability Motion')
      end if
   endif
 
@@ -448,6 +440,7 @@ subroutine gridVelocitiesFineLevelPart2(useOldCoor, t, sps)
   use constants
   use inputTimeSpectral
   use iteration
+  use utils, only : setPointers
   implicit none
   !
   !      Subroutine arguments.

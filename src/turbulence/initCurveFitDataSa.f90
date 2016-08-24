@@ -20,6 +20,7 @@
 !
        use flowVarRefState
        use paramTurb
+       use utils, only : terminate
        implicit none
 !
 !      Local variables.
@@ -43,7 +44,7 @@
                 tup2(nFit,nt1:nt2), tup3(nFit,nt1:nt2),       &
                 tuLogFit(nt1:nt2), stat=ierr)
        if(ierr /= 0)                          &
-         call returnFail("initCurveFitDataSa", &
+         call terminate("initCurveFitDataSa", &
                         "Memory allocation failure for curve fit &
                         &coefficients")
 

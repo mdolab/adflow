@@ -23,6 +23,7 @@
        use inputPhysics
        use section
        use viscSurface
+       use utils, only : setPointers, terminate
        implicit none
 !
 !      Subroutine arguments
@@ -99,7 +100,7 @@
                 elementID(nCell), uvw(3,nCell), dist2(nCell),      &
                 coorPer(3,nCellPer), dist2Per(nCellPer), stat=ierr)
        if(ierr /= 0)                         &
-         call returnFail("determineDistance", &
+         call terminate("determineDistance", &
                         "Memory allocation failure for the variables &
                         &needed by the adt.")
 !
@@ -406,7 +407,7 @@
 
        deallocate(connVisc, coorVisc, rotMatrixSections, stat=ierr)
        if(ierr /= 0)                         &
-         call returnFail("determineDistance", &
+         call terminate("determineDistance", &
                          "Deallocation error for the arrays &
                          &of viscSurface")
 
@@ -415,7 +416,7 @@
        deallocate(coor, procID, elementType, elementID, uvw, dist2, &
                   coorPer, dist2Per, stat=ierr)
        if(ierr /= 0)                          &
-         call returnFail("determineDistance", &
+         call terminate("determineDistance", &
                         "Deallocation failure for the variables &
                         &needed by the adt.")
 

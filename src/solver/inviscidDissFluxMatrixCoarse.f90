@@ -1,13 +1,3 @@
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          inviscidDissFluxMatrixCoarse.f90                *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 03-25-2003                                      *
-!      * Last modified: 08-25-2005                                      *
-!      *                                                                *
-!      ******************************************************************
-!
        subroutine inviscidDissFluxMatrixCoarse
 !
 !      ******************************************************************
@@ -29,14 +19,7 @@
          use inputDiscretization, only: vis2Coarse
          use inputPhysics, only : equations
          use iteration, only : rFil
-
-
-       ! use blockPointers
-       ! use constants
-       ! use flowVarRefState
-       ! use inputDiscretization
-       ! use inputPhysics
-       ! use iteration
+         use utils, only : getCorrectForK
        implicit none
 !
 !      Local parameters.
@@ -55,14 +38,8 @@
        real(kind=realType) :: alphaAvg, unAvg, ovaAvg, ova2Avg
        real(kind=realType) :: kAvg, lam1, lam2, lam3, area
        real(kind=realType) :: abv1, abv2, abv3, abv4, abv5, abv6, abv7
-       logical :: correctForK, getCorrectForK
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
+       logical :: correctForK
+
        ! Check if rFil == 0. If so, the dissipative flux needs not to
        ! be computed.
 

@@ -75,6 +75,9 @@ subroutine executeDADIStep
   use inputTimeSpectral
   use inputUnsteady
   use iteration
+  use utils, only : getCorrectForK, setPointers
+  use haloExchange, only : whalo1, whalo2
+  use flowUtils, only : computeETotBlock
   implicit none
   !
   !      Local parameter.
@@ -89,7 +92,7 @@ subroutine executeDADIStep
   real(kind=realType) :: dt, currentCfl, gm1, gm53
   real(kind=realType) :: v2, ovr, dp, factK, ru, rv, rw
 
-  logical :: secondHalo, smoothResidual, correctForK, getCorrectForK
+  logical :: secondHalo, smoothResidual, correctForK
   !
   !      ******************************************************************
   !      *                                                                *

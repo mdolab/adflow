@@ -35,6 +35,7 @@ subroutine convergenceInfo
   use couplerParam     ! eran_idendifyname
   use nksolvervars
   use overset, only: oversetPresent
+  use utils, only : setPointers, myisnan, returnFail
   implicit none
   !
   !      Local variables.
@@ -51,18 +52,7 @@ subroutine convergenceInfo
   real(kind=realType), dimension(3) :: cfp, cfv, cmp, cmv
   logical :: nanOccurred, writeIterations
   logical :: absConv, relConv
-  !
-  !      Function definition
-  !
-  logical :: myIsNAN
-  !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
-  !
-  !
+
   ! Determine whether or not the iterations must be written.
 
   writeIterations = .true.

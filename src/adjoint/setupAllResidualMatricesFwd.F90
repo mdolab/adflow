@@ -4,7 +4,7 @@ subroutine setupAllResidualMatricesfwd
   use ADjointPETSc, only : dRdwT
   use communication, only : sumb_comm_world, myid
   use inputADjoint, only : frozenTurbulence, useMatrixFreedRdw
-
+  use utils, only : EChk
   implicit none
  
   logical :: useAD, useTranspose, usePC, useObjective

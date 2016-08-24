@@ -12,7 +12,8 @@ subroutine setSurfaceFamilyInfo
   use inputTimeSpectral
   use surfaceFamilies
   use bctypes
-
+  use utils, only : setPointers, EChk, pointReduce, terminate, convertToLowerCase
+  use sorting, only : qsortStrings, bsearchStrings
   implicit none
   !
   !      Local variables.
@@ -20,7 +21,7 @@ subroutine setSurfaceFamilyInfo
   integer :: ierr
 
   integer(kind=intType) :: nLevels, level, nn, mm, nsMin, nsMax, i, j, k, nFam, famID, cgb, iFam
-  integer(kind=intType) :: bsearchStrings, sps, currentFamily, curFam(1)
+  integer(kind=intType) :: sps, currentFamily, curFam(1)
   character(maxCGNSNameLen), dimension(25) :: defaultFamName 
   character(maxCGNSNameLen) :: curStr, family
   character(maxCGNSNameLen), dimension(:), allocatable :: fulLFamList, uniqueFamList
@@ -237,7 +238,7 @@ subroutine createNodeScatterForFamilies(famList, nFam, famExchange, sps)
   use blockPointers
   use communication
   use surfaceFamilies
-
+  use utils, only : pointReduce, eChk
   implicit none
 
   ! Input Parameters
@@ -484,6 +485,7 @@ subroutine mapVector(vec1, n1, famList1, nf1, vec2, n2, famList2, nf2)
   ! This operation is actually pretty fast since it just requires a
   ! single copy of surface-based data. 
   use blockPointers
+  use sorting, only : bsearchIntegers
   implicit none
 
   ! Input/Output
@@ -494,8 +496,6 @@ subroutine mapVector(vec1, n1, famList1, nf1, vec2, n2, famList2, nf2)
 
   ! Working
   integer(kind=intType) :: k, ii, jj, nn, mm, iSize, iBeg, iEnd, jBeg, jEnd, famID
-  integer(kind=intType) ::bsearchIntegers
-
   logical :: fam1Included, fam2Included
 
   ii = 0 

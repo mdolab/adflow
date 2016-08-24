@@ -64,6 +64,7 @@ subroutine bcturbwall_d(nn)
   integer(kind=inttype) :: y3
   integer(kind=inttype) :: y2
   integer(kind=inttype) :: y1
+!        ================================================================
 !
 !      ******************************************************************
 !      *                                                                *
@@ -388,9 +389,5 @@ subroutine bcturbwall_d(nn)
         end do
       end do
     end select
-  case default
-!        ================================================================
-    call returnfail('bcturbwall', &
-&                'turbulence model not implemented yet')
   end select
 end subroutine bcturbwall_d

@@ -5,10 +5,12 @@ subroutine getSurfaceSize(size, sizeCell, famList, n)
   use blockPointers
   use inputTimeSpectral
   use surfaceFamilies
+  use utils, only : setPointers
+  use sorting, only : bsearchIntegers
   implicit none
 
   integer(kind=intType),intent(out) :: size, sizeCell
-  integer(kind=intType) :: nn,mm, bsearchIntegers
+  integer(kind=intType) :: nn,mm
   integer(kind=intType) :: iBeg,iEnd,jBeg,jEnd
   integer(kind=intType), intent(in) :: famList(n), n
 
@@ -37,6 +39,8 @@ subroutine getSurfaceConnectivity(conn, ncell)
   use blockPointers
   use inputPhysics
   use surfaceFamilies
+  use utils, only : setPointers
+  use sorting, only : bsearchIntegers
   implicit none
 
   ! Input/Output
@@ -45,7 +49,7 @@ subroutine getSurfaceConnectivity(conn, ncell)
 
   ! Working
   integer(kind=intType) :: nn, mm, cellCount, nodeCount, ni, nj, i, j
-  integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, bSearchIntegers
+  integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd
   logical regularOrdering
   cellCount = 0
   nodeCount = 0
@@ -54,7 +58,7 @@ subroutine getSurfaceConnectivity(conn, ncell)
      call setPointers(nn, 1_intType, 1_intType)
      bocos: do mm=1,nBocos
         famInclude: if (bsearchIntegers(BCdata(mm)%famID, &
-             famGroups, shape(famGroups)) > 0) then 
+             famGroups, size(famGroups)) > 0) then 
 
            jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
            iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
@@ -140,6 +144,8 @@ subroutine getSurfaceFamily(elemFam, ncell)
   use blockPointers
   use inputPhysics
   use surfaceFamilies
+  use utils, only : setPointers
+  use sorting, only : bsearchIntegers
   implicit none
 
   ! Input/Output
@@ -148,7 +154,7 @@ subroutine getSurfaceFamily(elemFam, ncell)
 
   ! Working
   integer(kind=intType) :: nn, mm, cellCount, nodeCount, ni, nj, i, j
-  integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, bSearchIntegers
+  integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd
   logical regularOrdering
   cellCount = 0
   nodeCount = 0
@@ -157,7 +163,7 @@ subroutine getSurfaceFamily(elemFam, ncell)
      call setPointers(nn, 1_intType, 1_intType)
      bocos: do mm=1,nBocos
         famInclude: if (bsearchIntegers(BCdata(mm)%famID, &
-             famGroups, shape(famGroups)) > 0) then 
+             famGroups, size(famGroups)) > 0) then 
 
            jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
            iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
@@ -183,6 +189,8 @@ subroutine getSurfacePoints(points, npts, sps_in)
   use blockPointers
   use inputTimeSpectral
   use surfaceFamilies
+  use utils, only : setPointers
+  use sorting, only : bsearchIntegers
   implicit none
   !
   !      Local variables.
@@ -190,7 +198,7 @@ subroutine getSurfacePoints(points, npts, sps_in)
   integer(kind=intType), intent(in) :: npts,sps_in
   real(kind=realType), intent(inout) :: points(3,npts)
 
-  integer(kind=intType) :: mm, nn, i, j, ii,sps,bsearchIntegers
+  integer(kind=intType) :: mm, nn, i, j, ii,sps
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd
 
   !      ******************************************************************
@@ -209,7 +217,7 @@ subroutine getSurfacePoints(points, npts, sps_in)
      bocos: do mm=1,nBocos
 
         famInclude: if (bsearchIntegers(BCdata(mm)%famID, &
-             famGroups, shape(famGroups)) > 0) then 
+             famGroups, size(famGroups)) > 0) then 
 
            ! NODE Based
            jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
@@ -250,12 +258,14 @@ subroutine getForces(forces, npts, sps)
   use communication
   use inputPhysics
   use surfaceFamilies
+  use utils, only : setPointers
+  use sorting, only : bsearchIntegers
   implicit none
 
   integer(kind=intType), intent(in) :: npts, sps
   real(kind=realType), intent(inout) :: forces(3*npts)
 
-  integer(kind=intType) :: mm, nn, i, j, ii, jj, iDim, ierr, bsearchIntegers
+  integer(kind=intType) :: mm, nn, i, j, ii, jj, iDim, ierr
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd
   real(kind=realType) :: sss(3),v2(3),v1(3), qa, sepSensor, Cavitation
   real(kind=realType) :: sepSensorAvg(3)
@@ -311,22 +321,17 @@ subroutine computeNodalTractions(sps)
   use communication
   use inputPhysics
   use surfaceFamilies, only: wallExchange, wallFamilies, totalWallFamilies
+  use utils, only : setPointers, EChk
+  use sorting, only : bsearchIntegers
   implicit none
 
 #define PETSC_AVOID_MPIF_H
-#include "include/petscversion.h"
-#if PETSC_VERSION_MINOR > 5
 #include "petsc/finclude/petscsys.h"
 #include "petsc/finclude/petscvec.h"
 #include "petsc/finclude/petscvec.h90"
-#else
-#include "include/finclude/petscsys.h"
-#include "include/finclude/petscvec.h"
-#include "include/finclude/petscvec.h90"
-#endif
-  integer(kind=intType), intent(in) ::  sps
 
-  integer(kind=intType) :: mm, nn, i, j, ii, jj, iDim, ierr, bsearchIntegers
+  integer(kind=intType), intent(in) ::  sps
+  integer(kind=intType) :: mm, nn, i, j, ii, jj, iDim, ierr
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, ind(4), ni, nj
   real(kind=realType) :: qf, qa
   real(kind=realType), dimension(:), pointer :: localPtr
@@ -531,6 +536,7 @@ subroutine computeNodalForces(sps)
   use communication
   use inputPhysics
   use surfaceFamilies
+  use utils, only : setPointers
   implicit none
 
   integer(kind=intType), intent(in) ::  sps
@@ -573,6 +579,8 @@ subroutine getForces_b(forces_b, npts, sps)
   use inputPhysics
   use surfaceFamilies, only: wallExchange, familyExchange
   use communication
+  use utils, only : EChk, setPointers
+
   implicit none
 #define PETSC_AVOID_MPIF_H
 #include "include/petscversion.h"

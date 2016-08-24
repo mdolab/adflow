@@ -1,13 +1,3 @@
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          checkFaces.f90                                  *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 09-10-2004                                      *
-!      * Last modified: 06-26-2005                                      *
-!      *                                                                *
-!      ******************************************************************
-!
        subroutine checkFaces
 !
 !      ******************************************************************
@@ -15,7 +5,7 @@
 !      * checkFaces determines whether or not a boundary condition or   *
 !      * a connectivity has been specified for all block faces. If this *
 !      * is not the case, the corresponding blocks are printed and the  *
-!      * code returnFails.                                               *
+!      * code terminates.                                               *
 !      *                                                                *
 !      ******************************************************************
 !
@@ -25,6 +15,7 @@
        use communication
        use inputPhysics
        use inputTimeSpectral
+       use utils, only : setPointers, terminate
        implicit none
 !
 !      Local variables.
@@ -47,13 +38,7 @@
        logical :: blockIsBad
 
        character(len=7) :: intString
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
+
 !      ******************************************************************
 !      *                                                                *
 !      * Determine the local bad blocks.                                *
@@ -114,7 +99,7 @@
 
        allocate(badGlobal(4,nBadGlobal), stat=ierr)
        if(ierr /= 0)                  &
-         call returnFail("checkFaces", &
+         call terminate("checkFaces", &
                         "Memory allocation failure for badGlobal")
 
        ! Gather the data.
@@ -130,7 +115,7 @@
 
        call sortBadEntities(nBadGlobal, badGlobal, dummy, .false.)
 
-       ! If bad blocks are present, print them to stdout and returnFail.
+       ! If bad blocks are present, print them to stdout and terminate.
 
        testBadPresent: if(nBadGlobal > 0) then
 
@@ -238,7 +223,7 @@
 
            ! Terminate.
 
-           call returnFail("checkFaces", &
+           call terminate("checkFaces", &
                           "Wrong block boundary info found")
 
          endif testRootProc
@@ -253,7 +238,7 @@
 
        deallocate(badGlobal, stat=ierr)
        if(ierr /= 0)                   &
-         call returnFail("checkFaces", &
+         call terminate("checkFaces", &
                         "Deallocation failure for badGlobal")
 
        end subroutine checkFaces

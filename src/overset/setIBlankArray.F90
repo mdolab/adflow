@@ -2,6 +2,8 @@ subroutine setIblankArray(level, sps)
 
   use blockPointers
   use communication
+  use utils, only : setPointers, EChk
+  use haloExchange, only : whalo1to1IntGeneric
   implicit none
 
   ! Input/Output
@@ -79,6 +81,7 @@ subroutine dumpIblank(level, sps)
 
   use blockPointers
   use communication
+  use utils, only : setPointers
   implicit none
 
   ! Input/Output

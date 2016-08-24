@@ -18,7 +18,7 @@
 !      ******************************************************************
 !
 #ifdef USE_NO_CGNS
-       call returnFail("writeCGNSVolumeSol", &
+       call terminate("writeCGNSVolumeSol", &
                       "Routine should not be called if no cgns support &
                       &is selected.")
 #else
@@ -30,6 +30,7 @@
        use su_cgns
        use outputMod
        use inputIteration
+       use utils, only : terminate
        implicit none
 !
 !      Local variables.
@@ -83,7 +84,7 @@
        call numberOfVolSolVariables(nVolSolvar, nVolDiscrVar)
        allocate(solNames(nVolSolvar+nVolDiscrVar), stat=ierr)
        if(ierr /= 0)                          &
-         call returnFail("writeCGNSVolumeSol", &
+         call terminate("writeCGNSVolumeSol", &
                         "Memory allocation failure for solNames")
        call volSolNames(solNames)
 
@@ -100,7 +101,7 @@
          do nn=1,nVolSolToWrite
            call cg_close_f(fileIDs(nn), ierr)
            if(ierr /= CG_OK)                     &
-             call returnFail("writeCGNSVolumeSol", &
+             call terminate("writeCGNSVolumeSol", &
                             "Something wrong when calling cg_close_f")
          enddo
 
@@ -118,7 +119,7 @@
       end if
 
       if(ierr /= 0)                          &
-           call returnFail("writeCGNSVolumeSol", &
+           call terminate("writeCGNSVolumeSol", &
                           "Deallocation error for fileIDs &
                           &and cgnsBases.")
 
@@ -126,7 +127,7 @@
 
        deallocate(solNames, stat=ierr)
        if(ierr /= 0)                          &
-         call returnFail("writeCGNSVolumeSol", &
+         call terminate("writeCGNSVolumeSol", &
                         "Deallocation error for solNames.")
 
        ! Deallocate the memory of IOVar. Note that the first entry
@@ -135,13 +136,13 @@
        do nn=1,nDom
          deallocate(IOVar(nn,1)%w, stat=ierr)
          if(ierr /= 0)                          &
-           call returnFail("writeCGNSVolumeSol", &
+           call terminate("writeCGNSVolumeSol", &
                           "Deallocation error for IOVar%w")
        enddo
 
        deallocate(IOVar, stat=ierr)
        if(ierr /= 0)                          &
-         call returnFail("writeCGNSVolumeSol", &
+         call terminate("writeCGNSVolumeSol", &
                         "Deallocation error for IOVar")
 
        ! Wait until all processors (especially processor 0) reach

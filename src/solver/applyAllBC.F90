@@ -22,6 +22,7 @@ subroutine applyAllBC(secondHalo)
   use inputTimeSpectral, only : nTimeIntervalsSpectral
   use iteration, only :currentLevel
   use BCRoutines, only : applyAllBC_block
+  use utils, only : setPointers
   implicit none
   !
   !      Subroutine arguments.

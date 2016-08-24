@@ -5,21 +5,12 @@ subroutine FormJacobianNK
        NK_innerPreConIts, NK_outerPreconIts, MAT_FINAL_ASSEMBLY, NK_viscPC, NK_iluFill, &
        NK_subspace, KSP_GMRES_CGS_REFINE_NEVER, NK_KSP, NK_CFL
   use inputADjoint, only : viscPC
-
+  use utils, only : EChk
   implicit none
 #define PETSC_AVOID_MPIF_H
-
-
-#include "include/petscversion.h"
-#if PETSC_VERSION_MINOR > 5
 #include "petsc/finclude/petscsys.h"
 #include "petsc/finclude/petscvec.h"
 #include "petsc/finclude/petscvec.h90"
-#else
-#include "include/finclude/petscsys.h"
-#include "include/finclude/petscvec.h"
-#include "include/finclude/petscvec.h90"
-#endif
 
   ! Local Variables
   character(len=maxStringLen) :: preConSide, localPCType, kspObjectType, globalPCType, localOrdering
@@ -34,13 +25,7 @@ subroutine FormJacobianNK
        use precision
        implicit none
 #define PETSC_AVOID_MPIF_H
-#include "include/petscversion.h"
-#if PETSC_VERSION_MINOR > 5
 #include "petsc/finclude/petsc.h"
-#else
-#include "include/finclude/petsc.h"
-#endif
-
        Mat :: matrix
        Mat, optional :: matrixTurb
        ! Input Variables

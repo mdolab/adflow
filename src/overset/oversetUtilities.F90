@@ -238,6 +238,7 @@ subroutine getCommPattern(oMat,  sendList, size1, nSend, recvList, size2, nRecv)
 
   use overset
   use communication 
+  use sorting, only : unique
   implicit none
 
   ! Input/output
@@ -337,6 +338,7 @@ subroutine getOWallCommPattern(oMat, oMatT, sendList, size1, nSend, &
   
   use overset
   use communication 
+  use sorting, only : unique
   implicit none
 
   ! Input/output
@@ -432,6 +434,7 @@ subroutine sendOBlock(oBlock, iDom, iProc, tagOffset, sendCount)
 
   use communication
   use overset
+  use utils, only : EChk
   implicit none
 
   ! Input/Output
@@ -459,8 +462,9 @@ subroutine sendOFringe(oFringe, iDom, iProc, tagOffset, sendCount)
 
   use communication
   use overset
+  use utils, only : EChk
   implicit none
-
+  
   ! Input/Output
   type(oversetFringe), intent(inout) :: oFringe
   integer(kind=intType), intent(in) :: iProc, iDom, tagOffset
@@ -486,6 +490,7 @@ subroutine sendOWall(oWall, iDom, iProc, tagOffset, sendCount)
 
   use communication
   use overset
+  use utils, only : EChk
   implicit none
 
   ! Input/Output
@@ -514,6 +519,7 @@ subroutine recvOBlock(oBlock, iDom, iProc, tagOffset, iSize, rSize, &
 
   use communication
   use overset
+  use utils, only : EChk
   implicit none
 
   ! Input/Output
@@ -547,6 +553,7 @@ subroutine recvOFringe(oFringe, iDom, iProc, tagOffset, iSize, rSize, &
 
   use communication
   use overset
+  use utils, only : EChk
   implicit none
 
   ! Input/Output
@@ -580,6 +587,7 @@ subroutine recvOWall(oWall, iDom, iProc, tagOffset, iSize, rSize, &
 
   use communication
   use overset
+  use utils, only : EChk
   implicit none
 
   ! Input/Output
@@ -709,7 +717,7 @@ subroutine deallocateOWalls(oWalls, n)
              oWalls(i)%cellPtr)
         call destroySerialQuad(oWalls(i)%ADT)
         if (oWalls(i)%nNodes > 0) then 
-           call kdtree2_destroy(oWalls(i)%tree)
+           call kdtree2destroy(oWalls(i)%tree)
         end if
      end if
      oWalls(i)%allocated = .False.

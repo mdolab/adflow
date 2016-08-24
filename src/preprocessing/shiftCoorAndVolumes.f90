@@ -24,6 +24,7 @@
        use blockPointers
        use inputTimeSpectral
        use iteration
+       use utils, only : setPointers
        implicit none
 !
 !      Local variables.

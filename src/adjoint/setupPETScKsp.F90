@@ -12,6 +12,7 @@ subroutine setupPETScKsp
 
   use ADjointPETSc, only: drdwpret, drdwt, adjointKSP
   use inputADjoint
+  use utils, only : ECHk, terminate
 
   implicit none
 
@@ -174,7 +175,7 @@ subroutine setupStandardKSP(kspObject, kspObjectType, gmresRestart, preConSide, 
   ! Note that if globalPreConIts=1 then maser_PC_KSP is NOT created and master_PC=globalPC
   ! and if localPreConIts=1 then subKSP is set to preOnly. 
   use constants
-  
+  use utils, only : ECHk
   implicit none
 
 #ifndef USE_NO_PETSC

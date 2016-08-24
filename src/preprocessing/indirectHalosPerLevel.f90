@@ -24,6 +24,7 @@
        use indirectHalo
        use communication
        use BCTypes
+       use utils, only : terminate
        implicit none
 !
 !      Subroutine arguments.
@@ -138,7 +139,7 @@
 
        allocate(sizeMessage(nProc), counter(2*nProc), stat=ierr)
        if(ierr /= 0)                             &
-         call returnFail("indirectHalosPerLevel", &
+         call terminate("indirectHalosPerLevel", &
                         "Memory allocation failure for sizeMessage &
                         &and counter")
 
@@ -204,7 +205,7 @@
 
        allocate(sendBuf(nItemAlloc*sizeSendBuf), stat=ierr)
        if(ierr /= 0)                                           &
-         call returnFail("indirectHalosPerLevel",               &
+         call terminate("indirectHalosPerLevel",               &
                         "Memory allocation error for sendBuf.")
 
        ! Send the data I must send. Use nonblocking sends to
@@ -318,7 +319,7 @@
        nLocalHalos = nHaloPerProc(myID+1) - nHaloPerProc(myID)
        allocate(localHalos(nItemAlloc*nLocalHalos), stat=ierr)
        if(ierr /= 0)                             &
-         call returnFail("indirectHalosPerLevel", &
+         call terminate("indirectHalosPerLevel", &
                         "Memory allocation error for localHalos")
 
        proc = myID
@@ -330,7 +331,7 @@
 
        allocate(recvBuf(nItemAlloc*sizeRecvBuf),  stat=ierr)
        if(ierr /= 0)                             &
-         call returnFail("indirectHalosPerLevel", &
+         call terminate("indirectHalosPerLevel", &
                         "Memory allocation error for recvBuf.")
 
        ! Initialize ms to 1 and start the loop over the number of
@@ -355,7 +356,7 @@
          if( debug ) then
            if(sizeRecv == mpi_undefined .or. &
               mod(sizeRecv,nItemSend) /= 0)  &
-             call returnFail("indirectHalosPerLevel", &
+             call terminate("indirectHalosPerLevel", &
                             "Unexpected size of message")
          endif
 
@@ -425,7 +426,7 @@
          if( debug ) then
            if(sizeRecv == mpi_undefined .or.         &
               mod(sizeRecv,nItemReturn) /= 0)        &
-             call returnFail("indirectHalosPerLevel", &
+             call terminate("indirectHalosPerLevel", &
                             "Unexpected size of message")
          endif
 
@@ -457,7 +458,7 @@
        deallocate(sizeMessage, counter, sendBuf, localHalos, &
                   recvBuf, stat=ierr)
        if(ierr /= 0)                             &
-         call returnFail("indirectHalosPerLevel", &
+         call terminate("indirectHalosPerLevel", &
                         "Deallocation error for sizeMessage, etc.")
 
        end subroutine indirectHalosPerLevel
@@ -476,6 +477,7 @@
 !
        use haloList
        use indirectHalo
+       use utils, only : delta
        implicit none
 !
 !      Subroutine arguments
@@ -494,10 +496,7 @@
        integer(kind=intType) :: l1, l2, l3
 
        integer(kind=intType), dimension(3,3) :: tMat
-!
-!      Function definition.
-!
-       integer(kind=intType) :: delta
+
 !
 !      ******************************************************************
 !      *                                                                *
@@ -587,6 +586,7 @@
 !
        use haloList
        use communication
+       use utils, only : terminate
        implicit none
 !
 !      Subroutine arguments.
@@ -619,7 +619,7 @@
 
        allocate(tmpBuf(nItemReturn*nHalos), stat=ierr)
        if(ierr /= 0)                            &
-         call returnFail("findDonorsRecvBuffer", &
+         call terminate("findDonorsRecvBuffer", &
                         "Memory allocation failure for tmpBuf");
 
        ! Initialize nn and mm to 0. nn is the counter for the incoming
@@ -738,7 +738,7 @@
 
        deallocate(tmpBuf, stat=ierr)
        if(ierr /= 0)                            &
-         call returnFail("findDonorsRecvBuffer", &
+         call terminate("findDonorsRecvBuffer", &
                         "Deallocation failure for tmpBuf")
 
        end subroutine findDonorsRecvBuffer
@@ -759,6 +759,7 @@
 !
        use haloList
        use indirectHalo
+       use utils, only : terminate
        implicit none
 !
 !      Subroutine arguments.
@@ -851,7 +852,7 @@
            allocate(entityHalo(iihalo)%periodicSubfaces(nPeriodic), &
                     stat=ierr)
            if(ierr /= 0)                        &
-             call returnFail("storeHalosInList", &
+             call terminate("storeHalosInList", &
                             "Memory allocation failure for &
                             &periodicSubfaces")
            nPeriodic = 0
@@ -876,7 +877,7 @@
 
        if( debug ) then
          if(nn /= nHaloPerLev(level-1) + nHaloPerProc(proc+1)) &
-           call returnFail("storeHalosInList",                  &
+           call terminate("storeHalosInList",                  &
                           "Something wrong with buffer size")
        endif
 

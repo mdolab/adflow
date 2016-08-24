@@ -27,6 +27,7 @@
        use communication
        use iteration
        use section
+       use utils, only : terminate, setPointers
        implicit none
 !
 !      Subroutine arguments.
@@ -168,7 +169,7 @@
              if(nSlices == 0) then
                nSlices = j
              else if(nSlices /= j) then
-               call returnFail("computeInletMassFlowFullWheelnSlices", &
+               call terminate("computeInletMassFlowFullWheelnSlices", &
                               "Different periodicity encountered for &
                               &inlet mass flow.")
              endif

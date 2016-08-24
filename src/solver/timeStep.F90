@@ -7,6 +7,7 @@ subroutine timeStep(onlyRadii)
   use blockPointers, only : nDom
   use inputTimeSpectral, only : nTimeIntervalsSpectral
   use iteration, only : currentLevel
+  use utils, only : setPointers
   implicit none
   !
   !      Subroutine argument.
@@ -72,6 +73,7 @@ subroutine timeStep_block(onlyRadii)
   use iteration, only : groundLevel, currentLevel
   use section, only : sections
   use inputTimeSpectral, only : nTimeIntervalsSpectral
+  use utils, only : terminate
   implicit none
   !
   !      Subroutine argument.
@@ -260,11 +262,11 @@ subroutine timeStep_block(onlyRadii)
 #endif  
 
   case (Turkel)
-     call returnFail("timeStep","Turkel preconditioner not implemented yet")
+     call terminate("timeStep","Turkel preconditioner not implemented yet")
 
 
   case (ChoiMerkle)
-     call returnFail("timeStep", &
+     call terminate("timeStep", &
           "choi merkle preconditioner not implemented yet")
   end select
  

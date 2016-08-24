@@ -1,14 +1,3 @@
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          readBocos.F90                                   *
-!      * Author:        Edwin van der Weide, Steve Repsher,             *
-!      *                Seonghyeon Hahn                                 *
-!      * Starting date: 12-17-2002                                      *
-!      * Last modified: 08-09-2005                                      *
-!      *                                                                *
-!      ******************************************************************
-!
        subroutine readBocos(cgnsInd, cgnsBase, nZone,                &
                             nDoubleBoundFaces, sortedFamName, famID)
 !
@@ -23,6 +12,8 @@
        use cgnsGrid
        use communication
        use su_cgns
+       use utils, only: terminate, setcgnsRealType
+       use sorting, only: bsearchStrings
        implicit none
 !
 !      Subroutine arguments
@@ -53,19 +44,13 @@
 !
 !      Function definitions.
 !
-       integer(kind=intType) :: bsearchStrings
+
        integer(kind=intType) :: internalBC
        logical               :: checkForDoubleBoundFace
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
+
 #ifdef USE_NO_CGNS
 
-       call returnFail("readBocos", &
+       call terminate("readBocos", &
                       "Routine should not be called if no cgns support &
                       &is selected.")
 
@@ -75,7 +60,7 @@
 
        call cg_nbocos_f(cgnsInd, cgnsBase, nZone, cgnsNBocos, ierr)
        if(ierr /= CG_OK)            &
-         call returnFail("readBocos", &
+         call terminate("readBocos", &
                         "Something wrong when calling cg_nbocos_f")
        cgnsDoms(nZone)%nBocos = cgnsNBocos
 
@@ -84,7 +69,7 @@
 
        allocate(cgnsDoms(nZone)%bocoInfo(cgnsNBocos), stat=ierr)
        if(ierr /= 0) &
-         call returnFail("readBocos", &
+         call terminate("readBocos", &
                         "Memory allocation failure for bocoInfo")
 
        ! Loop over the boundary conditions.
@@ -109,7 +94,7 @@
                              cgnsNDataSet, ierr)
 
          if(ierr /= CG_OK)           &
-           call returnFail("readBocos", &
+           call terminate("readBocos", &
                           "Something wrong when calling cg_boco_info_f")
 
          cgnsDoms(nZone)%bocoInfo(i)%npnts = cgnsNpnts
@@ -120,7 +105,7 @@
 
          ! Perform some checks.
          if(cgnsDoms(nZone)%bocoInfo(i)%normalListFlag > 0) &
-           call returnFail("readBocos", &
+           call terminate("readBocos", &
                           "Currently not possible to read &
                           &boundary normals")
 
@@ -137,7 +122,7 @@
            call cg_boco_read_f(cgnsInd, cgnsBase, nZone, i, bcRange, &
                                dummy, ierr)
            if(ierr /= CG_OK)             &
-             call returnFail("readBocos", &
+             call terminate("readBocos", &
                             "Something wrong when calling &
                             &cg_boco_read_f")
 
@@ -151,7 +136,7 @@
            ! message.
 
            if(cgnsNpnts > 1)             &
-             call returnFail("readBocos", &
+             call terminate("readBocos", &
                            "Point list with more than 1 point specified")
 
            ! Read the point index.
@@ -159,7 +144,7 @@
            call cg_boco_read_f(cgnsInd, cgnsBase, nZone, i, bcRange, &
                                dummy, ierr)
            if(ierr /= CG_OK)             &
-             call returnFail("readBocos", &
+             call terminate("readBocos", &
                            "Something wrong when calling cg_boco_read_f")
 
            ! Make sure that bcRange contains a range, i.e. the point
@@ -173,7 +158,7 @@
 
            ! Unknown ptsetType.
 
-           call returnFail("readBocos", "Unknown ptsetType encountered")
+           call terminate("readBocos", "Unknown ptsetType encountered")
 
          endif
 
@@ -246,7 +231,7 @@
                call cg_goto_f(cgnsInd, cgnsBase, ierr, "Zone_t", nZone, &
                               "ZoneBC_t", 1, "BC_t", i, "end")
                if(ierr /= CG_OK)             &
-                 call returnFail("readBocos", &
+                 call terminate("readBocos", &
                                 "Something wrong when calling cg_goto_f")
 
                call cg_famname_read_f(familyName, ierr)
@@ -255,7 +240,7 @@
 
                  write(errorMessage,101) trim(cgnsDoms(nZone)%zoneName), &
                              trim(cgnsDoms(nZone)%bocoInfo(i)%bocoName)
-                 if(myID == 0) call returnFail("readBocos", errorMessage)
+                 if(myID == 0) call terminate("readBocos", errorMessage)
                  call mpi_barrier(SUmb_comm_world, ierr)
 
                endif
@@ -268,7 +253,7 @@
                if(ii == 0) then
 
                  write(errorMessage,102) trim(familyName)
-                 if(myID == 0) call returnFail("readBocos", errorMessage)
+                 if(myID == 0) call terminate("readBocos", errorMessage)
                  call mpi_barrier(SUmb_comm_world, ierr)
 
                endif
@@ -293,12 +278,12 @@
                call cg_goto_f(cgnsInd, cgnsBase, ierr, "Zone_t", nZone, &
                               "ZoneBC_t", 1, "BC_t", i, "end")
                if(ierr /= CG_OK)             &
-                 call returnFail("readBocos", &
+                 call terminate("readBocos", &
                                 "Something wrong when calling cg_goto_f")
 
                call cg_nuser_data_f(nUserData, ierr)
                if(ierr /= CG_OK)            &
-                 call returnFail("readBocos", &
+                 call terminate("readBocos", &
                                 "Something wrong when calling &
                                 &cg_nuser_data_f")
 
@@ -307,7 +292,7 @@
                if(nUserData /= 1) then
                  write(errorMessage,103) trim(cgnsDoms(nZone)%zoneName), &
                              trim(cgnsDoms(nZone)%bocoInfo(i)%bocoName)
-                 if(myID == 0) call returnFail("readBocos", errorMessage)
+                 if(myID == 0) call terminate("readBocos", errorMessage)
                  call mpi_barrier(SUmb_comm_world, ierr)
                endif
 
@@ -317,7 +302,7 @@
                            cgnsDoms(nZone)%bocoInfo(i)%userDefinedName, &
                            ierr)
                if(ierr /= CG_OK)            &
-                 call returnFail("readBocos", &
+                 call terminate("readBocos", &
                                 "Something wrong when calling &
                                 &cg_user_data_read_f")
 
@@ -334,7 +319,7 @@
                  write(errorMessage,104) trim(cgnsDoms(nZone)%zoneName), &
                       trim(cgnsDoms(nZone)%bocoInfo(i)%bocoName),        &
                       trim(cgnsDoms(nZone)%bocoInfo(i)%userDefinedName)
-                 if(myID == 0) call returnFail("readBocos", errorMessage)
+                 if(myID == 0) call terminate("readBocos", errorMessage)
                  call mpi_barrier(SUmb_comm_world, ierr)
                endif
 
@@ -352,7 +337,7 @@
                          trim(cgnsDoms(nZone)%bocoInfo(i)%bocoName),       &
                          trim(cgnsDoms(nZone)%bocoInfo(i)%userDefinedName)
                    if(myID == 0) &
-                     call returnFail("readBocos", errorMessage)
+                     call terminate("readBocos", errorMessage)
                    call mpi_barrier(SUmb_comm_world, ierr)
 
                end select
@@ -386,7 +371,7 @@
                if(cgnsDoms(nZone)%bocoInfo(i)%BCType == bcNull) then
                  write(errorMessage,106) trim(cgnsDoms(nZone)%zoneName), &
                              trim(cgnsDoms(nZone)%bocoInfo(i)%bocoName)
-                 if(myID == 0) call returnFail("readBocos", errorMessage)
+                 if(myID == 0) call terminate("readBocos", errorMessage)
                  call mpi_barrier(SUmb_comm_world, ierr)
                endif
                
@@ -507,7 +492,7 @@
              allocate(cgnsDoms(nZone)%bocoInfo(i)%dataSet(cgnsNDataSet), &
                       stat=ierr)
              if(ierr /= 0 ) &
-               call returnFail("testDataSets", &
+               call terminate("testDataSets", &
                               "Memory allocation failure for dataSet")
 
              dataSet => cgnsDoms(nZone)%bocoInfo(i)%dataSet
@@ -603,17 +588,7 @@
          real(kind=cgnsRealType), dimension(:), allocatable :: tmp
 
          logical :: globalUnits
-!
-!        Function definition.
-!
-         integer :: setCGNSRealType
-!
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution.                                             *
-!        *                                                              *
-!        ****************************************************************
-!
+
          ! Set the cgns real type.
 
          realTypeCGNS = setCGNSRealType()
@@ -624,14 +599,14 @@
                         "ZoneBC_t", 1, "BC_t", i, "BCDataSet_t", j, &
                         "BCData_t", DirNeu, "end")
          if(ierr /= CG_OK)                     &
-           call returnFail("readBCDataArrays", &
+           call terminate("readBCDataArrays", &
                           "Something wrong when calling cg_goto_f")
 
          ! Determine the amount of data arrays present for this node.
 
          call cg_narrays_f(nArrays, ierr)
          if(ierr /= CG_OK)                   &
-           call returnFail("readBCDataArrays", &
+           call terminate("readBCDataArrays", &
                           "Something wrong when calling cg_narrays_f")
          nArr = nArrays
 
@@ -639,7 +614,7 @@
 
          allocate(arr(nArr), stat=ierr)
          if(ierr /= 0)                        &
-           call returnFail("readBCDataArrays", &
+           call terminate("readBCDataArrays", &
                           "Memory allocation failure for arr")
 
          ! Initialize the units to si units.
@@ -658,7 +633,7 @@
          globalUnits = .false.
          call cg_units_read_f(mass, len, time, temp, angle, ierr)
          if(ierr == error) &
-           call returnFail("readBCDataArrays", &
+           call terminate("readBCDataArrays", &
                           "Something wrong when calling cg_units_read_f")
 
          if(ierr == CG_OK) then
@@ -683,7 +658,7 @@
                           "ZoneBC_t", 1, "BC_t", i, "BCDataSet_t", j, &
                           "BCData_t", DirNeu, "end")
            if(ierr /= CG_OK)                     &
-             call returnFail("readBCDataArrays", &
+             call terminate("readBCDataArrays", &
                             "Something wrong when calling cg_goto_f")
 
            ! Determine the name and the dimensions of the array.
@@ -692,7 +667,7 @@
                                 arr(k)%nDimensions, arr(k)%dataDim, &
                                 ierr)
            if(ierr /= CG_OK)                     &
-             call returnFail("readBCDataArrays", &
+             call terminate("readBCDataArrays", &
                             "Something wrong when calling &
                             &cg_array_info_f")
 
@@ -707,7 +682,7 @@
 
            allocate(arr(k)%dataArr(nn), tmp(nn), stat=ierr)
            if(ierr /= 0)                          &
-             call returnFail("readBCDataArrays", &
+             call terminate("readBCDataArrays", &
                             "Memory allocation failure for dataArr &
                             &and tmp")
 
@@ -716,14 +691,14 @@
 
            call cg_array_read_as_f(k, realTypeCGNS, tmp, ierr)
            if(ierr /= CG_OK)                     &
-             call returnFail("readBCDataArrays", &
+             call terminate("readBCDataArrays", &
                             "Something wrong when calling &
                             &cg_array_read_as_f")
 
            arr(k)%dataArr = tmp
 
            deallocate(tmp, stat=ierr)
-           if(ierr /= 0) call returnFail("loopDataArrays", &
+           if(ierr /= 0) call terminate("loopDataArrays", &
                                         "Deallocation failure for tmp")
 
            ! Go to data array node to find out if the dimensions are
@@ -733,14 +708,14 @@
                           "ZoneBC_t", 1, "BC_t", i, "BCDataSet_t", j, &
                           "BCData_t", DirNeu, "DataArray_t", k, "end")
            if(ierr /= CG_OK)                     &
-             call returnFail("readBCDataArrays", &
+             call terminate("readBCDataArrays", &
                             "Something wrong when calling cg_goto_f")
 
            ! Try to read the units.
 
            call cg_units_read_f(mass, len, time, temp, angle, ierr)
            if(ierr == error) &
-             call returnFail("readBCDataArrays", &
+             call terminate("readBCDataArrays", &
                             "Something wrong when calling &
                             &cg_units_read_f")
 

@@ -9,7 +9,7 @@ subroutine setupRestrictionMatrix(matrix, level)
   use blockPointers      
   use inputTimeSpectral
   use flowVarRefState
-
+  use utils, only : setPointers, ECHk
   implicit none
 
 #define PETSC_AVOID_MPIF_H

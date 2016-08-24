@@ -36,6 +36,7 @@ subroutine computetsderivatives_d(force, forced, moment, momentd, &
   use monitor
   use section
   use inputmotion
+  use utils_d, only : tsalpha, tsalphadot, terminate
   implicit none
 !
 !     subroutine arguments.
@@ -78,18 +79,9 @@ subroutine computetsderivatives_d(force, forced, moment, momentd, &
 & dphiydot, dphizdot
   real(kind=realtype) :: derivativerigidrotangle, &
 & secondderivativerigidrotangle
-  real(kind=realtype) :: derivativerigidrotangle_d
-  real(kind=realtype) :: tsalpha, tsalphadot
   intrinsic sqrt
   real(kind=realtype) :: arg1
   real(kind=realtype) :: arg1d
-!
-!     ******************************************************************
-!     *                                                                *
-!     * begin execution.                                               *
-!     *                                                                *
-!     ******************************************************************
-!
   scaledimd = (prefd*pinf-pref*pinfd)/pinf**2
   scaledim = pref/pinf
   factd = -(two*surfaceref*lref**2*((gammainfd*pinf+gammainf*pinfd)*&
@@ -163,10 +155,10 @@ subroutine computetsderivatives_d(force, forced, moment, momentd, &
       end if
       intervalalpha(sps) = tsalpha(degreepolalpha, coefpolalpha, &
 &       degreefouralpha, omegafouralpha, coscoeffouralpha, &
-&       sincoeffouralpha, t)
-      intervalalphadot(sps) = tsalphadot(degreepolalpha, coefpolalpha&
-&       , degreefouralpha, omegafouralpha, coscoeffouralpha, &
-&       sincoeffouralpha, t)
+&       sincoeffouralpha, t(1))
+      intervalalphadot(sps) = tsalphadot(degreepolalpha, coefpolalpha, &
+&       degreefouralpha, omegafouralpha, coscoeffouralpha, &
+&       sincoeffouralpha, t(1))
       call getdirangle(veldirfreestream, liftdirection, liftindex, &
 &                   alpha + intervalalpha(sps), beta)
       basecoefd(sps, 1) = factd*(force(1, sps)*liftdirection(1)+force(2&
@@ -244,8 +236,8 @@ subroutine computetsderivatives_d(force, forced, moment, momentd, &
 &     lengthrefd)/lengthref**2
     dcdalphadot = dcdalphadot*2*(machgrid*a)/lengthref
   else
-    call returnfail('computetsderivatives', &
-&                'not a valid stability motion')
+    call terminate('computetsderivatives', &
+&            'not a valid stability motion')
     dcdalphadotd = 0.0_8
     coef0d = 0.0_8
     dcdalphad = 0.0_8

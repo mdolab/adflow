@@ -9,6 +9,7 @@ subroutine statePreAllocation(onProc, offProc, wSize, stencil, N_stencil, &
   use constants
   use blockPointers, only : nDom, il, jl, kl, globalCell, flowDoms
   use inputTimeSpectral , only : nTimeIntervalsSpectral
+  use utils, only : setPointers, EChk
 
   implicit none
 

@@ -20,6 +20,7 @@
        use blockPointers
        use su_cgns
        use restartMod
+       use utils, only : terminate, setCGNSRealType
        implicit none
 !
 !      Subroutine arguments.
@@ -31,20 +32,10 @@
        integer :: ierr, realTypeCGNS
 
        integer(kind=intType) :: i, j, k
-!
-!      Function definition.
-!
-       integer :: setCGNSRealType
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
+
 #ifdef USE_NO_CGNS
 
-       call returnFail("readRestartVariable", &
+       call terminate("readRestartVariable", &
                       "Routine should not be called if no cgns support &
                       &is selected.")
 
@@ -63,7 +54,7 @@
                               cgnsVarName, realTypeCGNS, rangeMin,  &
                               rangeMax, buffer, ierr)
          if(ierr /= all_ok)                        &
-           call returnFail("readRestartVariable", &
+           call terminate("readRestartVariable", &
                           "Something wrong when calling cg_field_read_f")
        else locationTest
 
@@ -74,7 +65,7 @@
                               cgnsVarName, realTypeCGNS, rangeMin, &
                               rangeMax, bufferVertex, ierr)
          if(ierr /= all_ok)                        &
-           call returnFail("readRestartVariable", &
+           call terminate("readRestartVariable", &
                           "Something wrong when calling cg_field_read_f")
 
          ! Create the cell centered values by averaging the vertex values.

@@ -23,6 +23,7 @@
        use commSliding
        use interfaceGroups
        use localSubfacesMod
+       use utils, only : terminate, reallocateInteger, reallocateInteger2
        implicit none
 !
 !      Subroutine arguments.
@@ -38,35 +39,6 @@
        integer(kind=intType), dimension(:), pointer :: block1, block2
        integer(kind=intType), dimension(:), pointer :: rotInd1, rotInd2
        integer(kind=intType), dimension(:,:), pointer :: ind1, ind2
-!
-!      Interfaces
-!
-       interface
-         subroutine reallocateInteger(intArray, newSize, oldSize, &
-                                      alwaysFreeMem)
-           use precision
-           implicit none
-
-           integer(kind=intType), dimension(:), pointer :: intArray
-           integer(kind=intType), intent(in) :: newSize, oldSize
-           logical, intent(in) :: alwaysFreeMem
-         end subroutine reallocateInteger
-
-         !===============================================================
-
-         subroutine reallocateInteger2(intArray,           &
-                                       newSize1, newSize2, &
-                                       oldSize1, oldSize2, &
-                                       alwaysFreeMem)
-           use precision
-           implicit none
-
-           integer(kind=intType), dimension(:,:), pointer :: intArray
-           integer(kind=intType), intent(in) :: newSize1, newSize2, &
-                                                oldSize1, oldSize2
-           logical, intent(in) :: alwaysFreeMem
-         end subroutine reallocateInteger2
-       end interface
 !
 !      ******************************************************************
 !      *                                                                *
@@ -268,7 +240,7 @@
 
            deallocate(mySubfaces(nn)%nRotations, stat=ierr)
            if(ierr /= 0)                          &
-             call returnFail("updateRotationInfo", &
+             call terminate("updateRotationInfo", &
                             "Deallocation error for nRotations of &
                             &mySubfaces.")
          enddo subfaceLoop

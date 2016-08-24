@@ -4,6 +4,7 @@ subroutine getFreeStreamResidual(rhoRes, totalRRes)
   use blockPointers, only : nDom, ib, jb, kb, w
   use inputTimeSpectral, only : nTimeIntervalsSpectral
   use flowVarRefState, only : nw, winf
+  use utils, only : setPointers
   implicit none
 
   real(kind=realType), intent(out) :: rhoRes, totalRRes

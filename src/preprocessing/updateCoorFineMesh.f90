@@ -1,13 +1,3 @@
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          updateCoorFineMesh.f90                          *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 02-02-2004                                      *
-!      * Last modified: 06-28-2005                                      *
-!      *                                                                *
-!      ******************************************************************
-!
        subroutine updateCoorFineMesh(dtAdvance, sps)
 !
 !      ******************************************************************
@@ -35,6 +25,7 @@
        use inputMotion
        use iteration
        use monitor
+       use utils, only : setPointers, rotMatrixRigidBody
        implicit none
 !
 !      Subroutine arguments.
@@ -56,13 +47,7 @@
 
        real(kind=realType), dimension(3)   :: rotationPoint
        real(kind=realType), dimension(3,3) :: rotationMatrix
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
+
        ! Compute the displacements due to the rigid motion of the mesh.
 
        displX = zero

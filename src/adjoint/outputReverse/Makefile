@@ -36,8 +36,10 @@ include ${SUMB_RULES_FILE}
 
 vpath %.o $(SUMB_OBJDIR)
 
-FF90_OBJECTS1 =  bcroutines_b.o\
-		 samodule_b.o\
+FF90_OBJECTS1 = utils_b.o\
+		flowutils_b.o\
+		bcroutines_b.o\
+		samodule_b.o\
 
 FF90_OBJECTS2 =  \
 		allnodalgradients_b.o\
@@ -45,10 +47,7 @@ FF90_OBJECTS2 =  \
 		getdirvector_b.o\
 		referencestate_b.o\
 		vectorrotation_b.o\
-		computeetot_b.o\
-		computegamma_b.o\
 		computelamviscosity_b.o\
-		computespeedofsoundsquared_b.o\
 		computepressuresimple_b.o\
 		getcostfunction2_b.o\
 		timestep_block_b.o\
@@ -56,11 +55,9 @@ FF90_OBJECTS2 =  \
 		xhalo_block_b.o\
 		residual_block_b.o\
 		invisciddissfluxscalar_b.o\
-		dim_b.o\
 		block_res_b.o  \
 		viscousflux_b.o \
 		viscousfluxapprox_b.o\
-		computeetotcellcpfit_b.o \
 	        inviscidcentralflux_b.o\
                 saeddyviscosity_b.o\
 		computeeddyviscosity_b.o\
@@ -71,8 +68,6 @@ FF90_OBJECTS2 =  \
 		turbadvection_b.o\
 		forcesandmoments_b.o\
 		sanuknowneddyratio_b.o\
-		etotarray_b.o\
-		eintarray_b.o\
 		getcostfunction2_b.o\
 		computeleastsquaresregression_b.o\
 		computerootbendingmoment_b.o\
@@ -101,7 +96,7 @@ FF90_OBJECTS2 =  \
 default: all
 
 all:
-	$(PMAKE) src1
+	$(MAKE) src1
 	cp -f *.mod $(SUMB_MODDIR)
 	$(PMAKE) src2
 

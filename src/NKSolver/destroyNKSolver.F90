@@ -6,6 +6,7 @@ subroutine destroyNKsolver
   use constants
   use NKsolverVars, only :dRdw, dRdwPre, dRdwPseudo, wVec, rVec, deltaW, g, &
        work, NK_KSP, NK_solverSetup
+  use utils, only: EChk
   implicit none
   integer(kind=intType) :: ierr
   

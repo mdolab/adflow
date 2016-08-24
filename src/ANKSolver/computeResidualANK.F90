@@ -9,6 +9,8 @@ subroutine computeResidualANK()
   use flowvarrefstate
   use iteration
   use inputPhysics 
+  use utils, only : setPointers
+  use haloExchange, only : whalo2
   implicit none
 
   ! Local Variables

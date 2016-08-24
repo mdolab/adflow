@@ -21,6 +21,9 @@
        use communication
        use haloList
        use periodicInfo
+       use utils, only : terminate
+       use sorting, only :qsortIntegers
+
        implicit none
 !
 !      Subroutine arguments.
@@ -65,7 +68,7 @@
        nPerHalos = nn
        allocate(periodic(nn), stat=ierr)
        if(ierr /= 0)                             &
-         call returnFail("determinePeriodicData", &
+         call terminate("determinePeriodicData", &
                         "Memory allocation failure for periodic")
 
        nn = 0
@@ -141,7 +144,7 @@
 
        deallocate(periodic, stat=ierr)
        if(ierr /= 0)                             &
-         call returnFail("determinePeriodicData", &
+         call terminate("determinePeriodicData", &
                         "Deallocation failure for periodic")
 
        !=================================================================
@@ -235,7 +238,7 @@
 
          allocate(periodicData(nn), stat=ierr)
          if(ierr /= 0)                       &
-           call returnFail("setPeriodicData", &
+           call terminate("setPeriodicData", &
                           "Memory allocation failure for periodicData")
 
          ! Loop over the number of periodic transformations.
@@ -252,7 +255,7 @@
            allocate(periodicData(nn)%block(mm), &
                     periodicData(nn)%indices(mm,3), stat=ierr)
            if(ierr /= 0)                       &
-             call returnFail("setPeriodicData", &
+             call terminate("setPeriodicData", &
                             "Memory allocation failure for block &
                             &and indices.")
 

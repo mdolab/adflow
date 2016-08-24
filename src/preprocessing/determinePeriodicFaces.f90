@@ -21,6 +21,7 @@
 !
        use cgnsGrid
        use periodicInfo
+       use utils, only : terminate
        implicit none
 !
 !      Local variables.
@@ -48,7 +49,7 @@
 
        allocate(periodicGlobal(nPeriodicGlobal), stat=ierr)
        if(ierr /= 0)                              &
-         call returnFail("determinePeriodicFaces", &
+         call terminate("determinePeriodicFaces", &
                         "Memory allocation failure for periodicGlobal")
 
        ! Repeat the loop over the faces of the cgns grid and store the

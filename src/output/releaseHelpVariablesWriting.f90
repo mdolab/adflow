@@ -20,9 +20,10 @@
        use cgnsGrid
        use monitor
        use outputMod
+       use utils, only : terminate
        implicit none
 !
-!      Local variables.
+!      Local variables
 !
        integer :: ierr
 !
@@ -36,7 +37,7 @@
 
        deallocate(nBlocksCGNSblock, blocksCGNSblock, stat=ierr)
        if(ierr /= 0)                                   &
-         call returnFail("releaseHelpVariablesWriting", &
+         call terminate("releaseHelpVariablesWriting", &
                         "Deallocation failure for nBlocksCGNSblock, &
                         &etc.")
 

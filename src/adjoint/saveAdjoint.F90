@@ -13,6 +13,7 @@ subroutine saveADjointMatrix(fileName)
   use constants
   use ADjointPETSc, only: drdwt
   use communication, only : sumb_comm_world
+  use utils, only : EChk
   implicit none
 
 #ifndef USE_NO_PETSC
@@ -48,6 +49,7 @@ subroutine saveAdjointPC(fileName)
   use constants
   use ADjointPETSc, only: drdwpret
   use communication, only : sumb_comm_world
+  use utils, only : EChk
   implicit none
 
 #ifndef USE_NO_PETSC
@@ -112,6 +114,7 @@ subroutine saveCellCenters(fileName)
   use inputTimeSpectral
   use adjointVars, only: nCellsLocal
   use communication
+  use utils, only : setPointers, EChk
   implicit none
 
 #ifndef USE_NO_PETSC

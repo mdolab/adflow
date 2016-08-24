@@ -13,6 +13,8 @@ subroutine determineWallAssociation(level, sps)
   use overset, only : oversetPresent, oversetWall, nClusters, clusters, cumDomProc
   use inputOverset
   use adjointVars
+  use utils, only : setPointers, EChk
+  use sorting, only : unique
   implicit none
 
   ! Input Variables

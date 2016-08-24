@@ -20,6 +20,7 @@
 !      ******************************************************************
 !
        use commSliding
+       use utils, only : terminate
        implicit none
 !
 !      Subroutine argument
@@ -48,7 +49,7 @@
        allocate(commSlidingCell%nSendCum(0:nn), &
                 commSlidingCell%nRecvCum(0:mm), stat=ierr)
        if(ierr /= 0)                                 &
-         call returnFail("cumulativeNSendReceives", &
+         call terminate("cumulativeNSendReceives", &
                         "Memory allocation failure for nSendCum &
                         &and nRecvCum.")
 

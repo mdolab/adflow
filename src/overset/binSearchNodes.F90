@@ -27,7 +27,6 @@ subroutine binSearchNodes(arr, searchNode, nn, searchInd)
      if (arr(middle) < searchNode) then
         first = middle + 1
      else if (arr(middle) == searchNode) then
-        !print*,' Found at location: ',middle
         searchInd = middle
         exit
      else

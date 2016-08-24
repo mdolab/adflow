@@ -9,6 +9,7 @@ subroutine forcesAndMomentsZipper(cFp, cFv, cMp, cMv, sps)
   use overset, only : nodeZipperScatter, globalNodalVec, localZipperNodes, localZipperTp, localZipperTv
   use inputTimeSpectral
   use inputIteration
+  use utils, only : EChk, setPointers
   implicit none
 
 #define PETSC_AVOID_MPIF_H

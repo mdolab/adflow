@@ -26,6 +26,7 @@
        use inputTimeSpectral
        use iteration
        use turbMod
+       use utils, only : setPointers
        implicit none
 !
 !      Local variables.

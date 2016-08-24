@@ -1,13 +1,3 @@
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          setPressureAndComputeEnergy.f90                 *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 10-07-2005                                      *
-!      * Last modified: 09-13-2006                                      *
-!      *                                                                *
-!      ******************************************************************
-!
        subroutine setPressureAndComputeEnergy(halosRead)
 !
 !      ******************************************************************
@@ -23,6 +13,8 @@
        use blockPointers
        use flowVarRefState
        use inputTimeSpectral
+       use utils, only : setPointers
+       use flowUtils, only : computeEtotBlock
        implicit none
 !
 !      Subroutine arguments.
@@ -34,13 +26,7 @@
        integer(kind=intType) :: sps, nn, nHalo
        integer(kind=intType) :: i, j, k
        integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
+
        ! Set the value of nHalo, depending whether or not the halo cells
        ! have been read from the restart file.
 

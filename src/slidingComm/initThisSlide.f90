@@ -22,6 +22,7 @@
        use cgnsGrid
        use communication
        use interfaceGroups
+       use utils, only : setPointers, terminate
        implicit none
 !
 !      Subroutine arguments.
@@ -161,7 +162,7 @@
                    integerString = adjustl(integerString)
                    write(errorMessage,100) trim(integerString)
 
-                   call returnFail("initThisSlide", errorMessage)
+                   call terminate("initThisSlide", errorMessage)
 
                  endif
 
@@ -176,7 +177,7 @@
                     integerString = adjustl(integerString)
                     write(errorMessage,101) trim(integerString)
 
-                    call returnFail("initThisSlide", errorMessage)
+                    call terminate("initThisSlide", errorMessage)
 
                  endif
                endif
@@ -233,7 +234,7 @@
            integerString = adjustl(integerString)
            write(errorMessage,102) trim(integerString)
 
-           call returnFail("initThisSlide", errorMessage)
+           call terminate("initThisSlide", errorMessage)
 
          endif
 
@@ -256,7 +257,7 @@
            integerString = adjustl(integerString)
            write(errorMessage,100) trim(integerString)
 
-           call returnFail("initThisSlide", errorMessage)
+           call terminate("initThisSlide", errorMessage)
 
          endif
        endif
@@ -282,7 +283,7 @@
            integerString = adjustl(integerString)
            write(errorMessage,103) trim(integerString)
 
-           call returnFail("initThisSlide", errorMessage)
+           call terminate("initThisSlide", errorMessage)
 
          endif
 
@@ -305,7 +306,7 @@
            integerString = adjustl(integerString)
            write(errorMessage,101) trim(integerString)
 
-           call returnFail("initThisSlide", errorMessage)
+           call terminate("initThisSlide", errorMessage)
 
          endif
        endif

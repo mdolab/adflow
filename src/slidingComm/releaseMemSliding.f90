@@ -70,6 +70,7 @@
 !      ******************************************************************
 !
        use commSliding
+       use utils, only : terminate
        implicit none
 !
 !      Subroutine arguments.
@@ -92,7 +93,7 @@
          deallocate(commSlidingCell%sendList(nn)%block,   &
                     commSlidingCell%sendList(nn)%indices, &
                     stat=ierr)
-         if(ierr /= 0) call returnFail("releaseCommSlidingCell", &
+         if(ierr /= 0) call terminate("releaseCommSlidingCell", &
                                       "Deallocation error for sendList")
        enddo
 
@@ -103,7 +104,7 @@
                     commSlidingCell%recvList(nn)%indices, &
                     commSlidingCell%recvList(nn)%weight,  &
                     stat=ierr)
-         if(ierr /= 0) call returnFail("releaseCommSlidingCell", &
+         if(ierr /= 0) call terminate("releaseCommSlidingCell", &
                                       "Deallocation error for recvList")
 
        enddo
@@ -118,7 +119,7 @@
                   commSlidingCell%recvList, &
                   stat=ierr)
        if(ierr /= 0)                              &
-         call returnFail("releaseCommSlidingCell", &
+         call terminate("releaseCommSlidingCell", &
                         "Deallocation error for commSlidingCell")
 
        end subroutine releaseCommSlidingCell
@@ -136,6 +137,7 @@
 !      ******************************************************************
 !
        use commSliding
+       use utils, only : terminate
        implicit none
 !
 !      Subroutine arguments.
@@ -162,7 +164,7 @@
                   intSlidingCell%weight,                  &
                   stat=ierr)
        if(ierr /= 0)                             &
-         call returnFail("releaseIntSlidingCell", &
+         call terminate("releaseIntSlidingCell", &
                         "Deallocation error for intSlidingCell")
 
        end subroutine releaseIntSlidingCell

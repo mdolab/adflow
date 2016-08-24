@@ -7,16 +7,6 @@
 !                *sfacek *w *si *sj *sk
 !   plus diff mem management of: p:in sfacei:in sfacej:in sfacek:in
 !                w:in si:in sj:in sk:in fw:in
-!
-!      ******************************************************************
-!      *                                                                *
-!      * file:          invisciddissfluxmatrixapprox.f90                *
-!      * author:        gaetan k.w. kenway                              *
-!      * starting date: 12-02-2014                                      *
-!      * last modified: 12-02-2014                                      *
-!      *                                                                *
-!      ******************************************************************
-!
 subroutine invisciddissfluxmatrixapprox_d()
 !
 !      ******************************************************************
@@ -37,6 +27,7 @@ subroutine invisciddissfluxmatrixapprox_d()
   use inputdiscretization
   use inputphysics
   use iteration
+  use utils_d, only : getcorrectfork
   implicit none
 !
 !      local parameters.
@@ -69,7 +60,7 @@ subroutine invisciddissfluxmatrixapprox_d()
   real(kind=realtype) :: kavgd, lam1d, lam2d, lam3d, aread
   real(kind=realtype) :: abv1, abv2, abv3, abv4, abv5, abv6, abv7
   real(kind=realtype) :: abv1d, abv2d, abv3d, abv4d, abv5d, abv6d, abv7d
-  logical :: correctfork, getcorrectfork
+  logical :: correctfork
   intrinsic abs
   intrinsic max
   intrinsic min
@@ -124,13 +115,6 @@ subroutine invisciddissfluxmatrixapprox_d()
   else
     abs0 = -rfil
   end if
-!
-!      ******************************************************************
-!      *                                                                *
-!      * begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
 ! check if rfil == 0. if so, the dissipative flux needs not to
 ! be computed.
   if (abs0 .lt. thresholdreal) then

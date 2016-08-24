@@ -33,6 +33,8 @@
        use inputIO
        use communication 
        use costFunctions
+       use utils, only : setPointers
+       use flowUtils, only : computePtot
        implicit none
 !
 !      Subroutine arguments.
@@ -459,7 +461,7 @@
            ! First compute the total pressure of the free stream.
 
            call computePtot(rhoInf, uInf, zero, zero, &
-                             pInf, ptotInf, 1_intType)
+                             pInf, ptotInf)
            ptotInf = one/ptotInf
 
            ! Loop over the faces and compute the total pressure loss.
@@ -474,7 +476,7 @@
                wsurf = half*(ww1(i,j,ivz)  + ww2(i,j,ivz))
 
                call computePtot(rsurf, usurf, vsurf, wsurf, &
-                                psurf, ptot, 1_intType)
+                                psurf, ptot)
 
                nn = nn + 1
                buffer(nn) = one - ptot*ptotInf

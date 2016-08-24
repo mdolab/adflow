@@ -1,13 +1,3 @@
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          inviscidDissFluxMatrixApprox.f90                *
-!      * Author:        Gaetan K.W. Kenway                              *
-!      * Starting date: 12-02-2014                                      *
-!      * Last modified: 12-02-2014                                      *
-!      *                                                                *
-!      ******************************************************************
-!
 subroutine inviscidDissFluxMatrixApprox
   !
   !      ******************************************************************
@@ -28,6 +18,7 @@ subroutine inviscidDissFluxMatrixApprox
   use inputDiscretization
   use inputPhysics
   use iteration
+  use utils, only : getCorrectForK
   implicit none
   !
   !      Local parameters.
@@ -52,15 +43,8 @@ subroutine inviscidDissFluxMatrixApprox
   real(kind=realType) :: alphaAvg, unAvg, ovaAvg, ova2Avg
   real(kind=realType) :: kAvg, lam1, lam2, lam3, area
   real(kind=realType) :: abv1, abv2, abv3, abv4, abv5, abv6, abv7
+  logical :: correctForK
 
-  logical :: correctForK, getCorrectForK
-  !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
-  !
   ! Check if rFil == 0. If so, the dissipative flux needs not to
   ! be computed.
 

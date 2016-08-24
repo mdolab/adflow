@@ -31,6 +31,7 @@ subroutine computelamviscosity_d()
   use flowvarrefstate
   use inputphysics
   use iteration
+  use utils_d, only : getcorrectfork
   implicit none
 !
 !      local parameter.
@@ -42,7 +43,7 @@ subroutine computelamviscosity_d()
   integer(kind=inttype) :: i, j, k, ii
   real(kind=realtype) :: musuth, tsuth, ssuth, t, pp
   real(kind=realtype) :: musuthd, tsuthd, ssuthd, td, ppd
-  logical :: correctfork, getcorrectfork
+  logical :: correctfork
 !
 !      ******************************************************************
 !      *                                                                *

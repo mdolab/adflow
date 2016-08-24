@@ -1,13 +1,3 @@
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          reallocSubfaceMemory.f90                        *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 02-10-2003                                      *
-!      * Last modified: 10-10-2005                                      *
-!      *                                                                *
-!      ******************************************************************
-!
        subroutine reallocSubfaceMemory(ii,nAlloc)
 !
 !      ******************************************************************
@@ -20,6 +10,7 @@
 !      ******************************************************************
 !
        use partitionMod
+       use utils, only : reallocateInteger
        implicit none
 !
 !      Subroutine arguments.
@@ -30,26 +21,6 @@
 !      Local arguments.
 !
        integer(kind=intType) :: nOld, nNew
-!
-!      Interfaces
-!
-       interface
-         subroutine reallocateInteger(intArray, newSize, oldSize, &
-                                       alwaysFreeMem)
-           use precision
-           implicit none
-
-           integer(kind=intType), dimension(:), pointer :: intArray
-           integer(kind=intType), intent(in) :: newSize, oldSize
-           logical, intent(in) :: alwaysFreeMem
-         end subroutine reallocateInteger
-       end interface
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
 !
        ! Store the old value of the allocated array and determine the
        ! new one. Store this new value in nAlloc.

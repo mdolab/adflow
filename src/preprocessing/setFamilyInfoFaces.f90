@@ -32,6 +32,7 @@
        use inputTimeSpectral
        use monitor
        use section
+       use utils, only : setPointers, terminate
        implicit none
 !
 !      Subroutine arguments.
@@ -100,7 +101,7 @@
          allocate(massFlowFamilyInv(0:mm,nn), &
                   massFlowFamilyDiss(0:mm,nn), stat=ierr)
          if(ierr /= 0) &
-           call returnFail("setFamilyInfoFaces", &
+           call terminate("setFamilyInfoFaces", &
                           "Memory allocation failure for &
                            &massFlowFamilyInv and massFlowFamilyDiss")
        endif
@@ -123,7 +124,7 @@
                   flowDoms(nn,level,1)%factFamilyK(2:il,2:jl,1:kl), &
                   stat=ierr)
          if(ierr /= 0)                          &
-           call returnFail("setFamilyInfoFaces", &
+           call terminate("setFamilyInfoFaces", &
                           "Memory allocation failure for indFamily &
                           &and factFamily")
 

@@ -6,7 +6,7 @@ subroutine destroyANKsolver
   use constants
   use ANKsolverVars, only :dRdwPre, wVec, rVec, deltaW, ANK_KSP, dRdwPreTurb, &
        wVecTurb, rVecTurb, deltaWTurb, ANK_KSPTurb, ANK_solverSetup, ANK_turbSetup
-
+  use utils, only : EChk
   implicit none
   integer(kind=intType) :: ierr
   

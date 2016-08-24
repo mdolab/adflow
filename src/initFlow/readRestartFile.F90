@@ -34,6 +34,8 @@
        use su_cgns
        use restartMod
        use killSignals
+       use utils, only : terminate, setPointers
+       use sorting, only : bsearchStrings
        implicit none
 !
 !      Local variables.
@@ -51,20 +53,10 @@
        character(len=7)              :: integerString
        character(len=maxCGNSNameLen) :: cgnsName
        character(len=2*maxStringLen) :: errorMessage
-!
-!      Function definitions.
-!
-       integer(kind=intType) :: bsearchStrings
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
+
 #ifdef USE_NO_CGNS
 
-       call returnFail("readRestartFile", &
+       call terminate("readRestartFile", &
                       "Routine should not be called if no cgns support &
                       &is selected.")
 
@@ -240,7 +232,7 @@
            ! for the nodal iblanks.
 
            if((nSols > 1) .or. nSols > 2) &
-             call returnFail("readRestartFile", &
+             call terminate("readRestartFile", &
                             "Multiple solutions present in restart file")
 
            ! Determine the location of the solution variables. A loop is
@@ -400,9 +392,9 @@
 
            endif testPrim
 
-           ! Release the memory of buffer, varNames and varTypes.
+           ! ! Release the memory of buffer, varNames and varTypes.
 
-           deallocate(buffer, varNames, varTypes, stat=ierr)
+           ! deallocate(buffer, varNames, varTypes, stat=ierr)
            if(ierr /= 0)                       &
              call terminate("readRestartFile", &
                             "Deallocation error for buffer, varNames &

@@ -30,6 +30,9 @@
        use IOModule
        use flowVarRefState
        use restartMod
+       use utils, only : setCGNSRealType, terminate
+       use sorting, only : bsearchStrings
+
        implicit none
 !
 !      Subroutine argument.
@@ -42,18 +45,7 @@
 
        integer(kind=intType) :: i, j, k, nn, mm, po, ip, jp, kp
        integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
-!
-!      Function definitions.
-!
-       integer               :: setCGNSRealType
-       integer(kind=intType) :: bsearchStrings
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
+
        ! Set the cell range to be copied from the buffer.
 
        iBeg = lbound(buffer,1); iEnd = ubound(buffer,1)
@@ -152,7 +144,7 @@
        ! Not able to determine the pressure.
        ! Print an error message and exit.
 
-       call returnFail("readPressure", &
+       call terminate("readPressure", &
                       "Not able to retrieve the pressure from &
                       &the variables in the restart file.")
 

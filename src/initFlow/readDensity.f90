@@ -27,6 +27,8 @@
        use constants
        use IOModule
        use restartMod
+       use utils, only : setCGNSRealType, terminate
+       use sorting, only : bsearchStrings
        implicit none
 !
 !      Subroutine argument.
@@ -39,18 +41,7 @@
 
        integer(kind=intType) :: i, j, k, nn, mm, po, ip, jp, kp
        integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
-!
-!      Function definitions.
-!
-       integer               :: setCGNSRealType
-       integer(kind=intType) :: bsearchStrings
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
+
        ! Set the cell range to be copied from the buffer.
 
        iBeg = lbound(buffer,1); iEnd = ubound(buffer,1)
@@ -105,7 +96,7 @@
        ! Not able to determine the density.
        ! Print an error message and exit.
 
-       call returnFail("readDensity", &
+       call terminate("readDensity", &
                       "Not able to retrieve density from the &
                       &variables in the restart file.")
 

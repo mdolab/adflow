@@ -18,6 +18,7 @@ subroutine allocRestartFiles(nFiles)
   use constants
   use inputIO
   use inputTimeSpectral
+  use utils, only : terminate
   implicit none
   !
   !      Subroutine argument.
@@ -40,7 +41,7 @@ subroutine allocRestartFiles(nFiles)
 
   allocate(restartFiles(nFiles), stat=ierr)
   if(ierr /= 0)                          &
-    call returnFail("allocRestartFiles", &
+    call terminate("allocRestartFiles", &
             "Memory allocation failure for restartFiles")
   
   ! Zero Array with empty strings

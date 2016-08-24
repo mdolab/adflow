@@ -69,6 +69,8 @@
 !      ******************************************************************
 !
        use commSliding
+       use utils, only : terminate
+
        implicit none
 !
 !      Subroutine arguments.
@@ -99,7 +101,7 @@
                 commSlidingCell%sendList(0), &
                 commSlidingCell%recvList(0), stat=ierr)
        if(ierr /= 0)                           &
-         call returnFail("initCommSlidingCell", &
+         call terminate("initCommSlidingCell", &
                         "Memory allocation failure for commSlidingCell")
 
        end subroutine initCommSlidingCell
@@ -116,6 +118,8 @@
 !      ******************************************************************
 !
        use commSliding
+       use utils, only : terminate
+
        implicit none
 !
 !      Subroutine arguments.
@@ -148,7 +152,7 @@
                 intSlidingCell%rotIndex(0),                  &
                 intSlidingCell%weight(0), stat=ierr)
        if(ierr /= 0)                          &
-         call returnFail("initIntSlidingCell", &
+         call terminate("initIntSlidingCell", &
                         "Memory allocation failure for intSlidingCell")
 
        end subroutine initIntSlidingCell

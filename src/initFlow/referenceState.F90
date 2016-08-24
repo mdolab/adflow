@@ -46,16 +46,16 @@ subroutine referenceState
        pRef, rhoRef, Tref, muRef, timeRef, &
        pInf, pInfCorr, rhoInf, uInf, rGas, muInf, gammaInf, wInf, &
        nw, nwf, kPresent, wInf
-
+  use flowUtils, only : computeGamma, eTot
   use paramTurb
 
   implicit none
  
   integer(kind=intType) :: sps, nn, mm, ierr
-  real(kind=realType) :: gm1, ratio, tmp
+  real(kind=realType) :: gm1, ratio
   real(kind=realType) :: nuInf, ktmp, uInf2
   real(kind=realType) :: saNuKnownEddyRatio
-  real(kind=realType) :: vinf, zinf
+  real(kind=realType) :: vinf, zinf, tmp1(1), tmp2(1)
 
   ! Compute the dimensional viscosity from Sutherland's law
   muInfDim = muSuthDim &
@@ -92,7 +92,9 @@ subroutine referenceState
   uInf   = Mach*sqrt(gammaInf*pInf/rhoInf)
   RGas   = RGasDim*rhoRef*TRef/pRef
   muInf  = muInfDim/muRef
-  call computeGamma(TinfDim, gammaInf, 1)
+  tmp1(1) = TinfDim
+  call computeGamma(tmp1, tmp2, 1)
+  gammaInf = tmp2(1)
 
   ! ----------------------------------------
   !      Compute the final wInf
@@ -182,8 +184,8 @@ subroutine referenceState
   if( kPresent ) ktmp = wInf(itu1)
   vInf = zero
   zInf = zero
-  call etotArray(rhoInf, uInf, vInf, zInf, pInfCorr, ktmp, &
-       wInf(irhoE), kPresent, 1)
+  call etot(rhoInf, uInf, vInf, zInf, pInfCorr, ktmp, &
+       wInf(irhoE), kPresent)
 
 end subroutine referenceState
 

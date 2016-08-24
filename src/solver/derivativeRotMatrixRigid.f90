@@ -25,6 +25,7 @@
        use flowVarRefState
        use inputMotion
        use monitor
+       use utils, only : rigidRotAngle, derivativeRigidRotAngle
        implicit none
 !
 !      Subroutine arguments.
@@ -42,18 +43,7 @@
        real(kind=realType) :: cosX, cosY, cosZ, sinX, sinY, sinZ
 
        real(kind=realType), dimension(3,3) :: dm, m
-!
-!      Function definitions.
-!
-       real(kind=realType) :: rigidRotAngle
-       real(kind=realType) :: derivativeRigidRotAngle
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
+
        ! Determine the rotation angle around the x-axis for the new
        ! time level and the corresponding values of the sine and cosine.
 

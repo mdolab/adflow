@@ -1,13 +1,3 @@
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          writeCGNSKomegaWilcoxInfo.F90                   *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 04-12-2003                                      *
-!      * Last modified: 06-29-2005                                      *
-!      *                                                                *
-!      ******************************************************************
-!
        subroutine writeCGNSKomegaWilcoxInfo(cgnsInd, cgnsBase)
 !
 !      ******************************************************************
@@ -20,6 +10,7 @@
        use inputPhysics
        use cgnsNames
        use su_cgns
+       use utils, only : terminate, setCGNSRealType
        implicit none
 !
 !      Subroutine arguments
@@ -31,20 +22,10 @@
        integer :: realTypeCGNS, ierr
 
        real(kind=cgnsRealType) :: val
-!
-!      Function definition.
-!
-       integer :: setCGNSRealType
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
+
 #ifdef USE_NO_CGNS
 
-       call returnFail("writeCGNSKomegaWilcoxInfo", &
+       call terminate("writeCGNSKomegaWilcoxInfo", &
                       "Routine should not be called if no cgns support &
                       &is selected.")
 
@@ -59,7 +40,7 @@
        call cg_goto_f(cgnsInd, cgnsBase, ierr, &
                       "FlowEquationSet_t", 1, "end")
        if(ierr /= CG_OK)                            &
-         call returnFail("writeCGNSKomegaWilcoxInfo", &
+         call terminate("writeCGNSKomegaWilcoxInfo", &
                         "Something wrong when calling cg_goto_f")
 
        ! Write that the k-omega model is used.
@@ -67,14 +48,14 @@
        call cg_model_write_f("TurbulenceModel_t", &
                              TwoEquation_Wilcox, ierr)
        if(ierr /= CG_OK)                            &
-         call returnFail("writeCGNSKomegaWilcoxInfo", &
+         call terminate("writeCGNSKomegaWilcoxInfo", &
                         "Something wrong when calling cg_model_write_f")
 
        ! Write the turbulent closure type.
 
        call cg_model_write_f("TurbulenceClosure_t", EddyViscosity, ierr)
        if(ierr /= CG_OK)                            &
-         call returnFail("writeCGNSKomegaWilcoxInfo", &
+         call terminate("writeCGNSKomegaWilcoxInfo", &
                         "Something wrong when calling cg_model_write_f")
 
        ! Write the details of the turbulence model under the turbulent
@@ -83,7 +64,7 @@
        call cg_goto_f(cgnsInd, cgnsBase, ierr, "FlowEquationSet_t", 1,&
                       "TurbulenceClosure_t", 1, "end")
        if(ierr /= CG_OK)                            &
-         call returnFail("writeCGNSKomegaWilcoxInfo", &
+         call terminate("writeCGNSKomegaWilcoxInfo", &
                         "Something wrong when calling cg_goto_f")
 
        ! Write the value of the turbulent prandtl number.
@@ -92,7 +73,7 @@
        call cg_array_write_f(cgnsPrandtlTurb, realTypeCGNS, &
                              1, 1, val, ierr)
        if(ierr /= CG_OK)                            &
-         call returnFail("writeCGNSKomegaWilcoxInfo", &
+         call terminate("writeCGNSKomegaWilcoxInfo", &
                         "Something wrong when calling cg_array_write_f")
 
        ! Indicate that this is a nonDimensional parameter.
@@ -100,12 +81,12 @@
        call cg_goto_f(cgnsInd, cgnsBase, ierr, "FlowEquationSet_t", 1,&
                       "TurbulenceClosure_t", 1, "DataArray_t", 1,"end")
        if(ierr /= CG_OK)                            &
-         call returnFail("writeCGNSKomegaWilcoxInfo", &
+         call terminate("writeCGNSKomegaWilcoxInfo", &
                         "Something wrong when calling cg_goto_f")
 
        call cg_dataclass_write_f(NonDimensionalParameter,IERR)
        if(ierr /= CG_OK)                            &
-         call returnFail("writeCGNSKomegaWilcoxInfo", &
+         call terminate("writeCGNSKomegaWilcoxInfo", &
                         "Something wrong when calling &
                         &cg_dataclass_write_f")
 

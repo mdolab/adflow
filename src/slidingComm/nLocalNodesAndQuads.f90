@@ -28,6 +28,7 @@
 !
        use adtAPI
        use localSubfacesMod
+       use utils, only : terminate
        implicit none
 !
 !      Subroutine arguments.
@@ -108,7 +109,7 @@
 
          allocate(nodeFlag(nPoint), stat=ierr)
          if(ierr /= 0)                           &
-           call returnFail("nLocalNodesAndQuads", &
+           call terminate("nLocalNodesAndQuads", &
                           "Memory allocation failure for nodeFlag.")
 
          nodeFlag = 0
@@ -175,7 +176,7 @@
 
          deallocate(nodeFlag, stat=ierr)
          if(ierr /= 0)                           &
-           call returnFail("nLocalNodesAndQuads", &
+           call terminate("nLocalNodesAndQuads", &
                           "Deallocation error for nodeFlag.")
 
        enddo loopSubfaces

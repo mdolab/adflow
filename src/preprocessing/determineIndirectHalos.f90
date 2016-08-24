@@ -60,6 +60,7 @@
        use haloList
        use indirectHalo
        use communication
+       use utils, only : terminate
        implicit none
 !
 !      Subroutine arguments.
@@ -138,7 +139,7 @@
        allocate(nHaloPerLev(0:nlevOfInd), nHaloPerProc(0:nProc), &
                 stat=ierr)
        if(ierr /= 0)                                          &
-         call returnFail("determineIndirectHalos",             &
+         call terminate("determineIndirectHalos",             &
                         "Allocation error for nHaloPerLev and &
                         &nHaloPerProc")
 
@@ -172,7 +173,7 @@
 
        deallocate(indHalo, nHaloPerLev, nHaloPerProc, stat=ierr)
        if(ierr /= 0) &
-         call returnFail("determineIndirectHalos",        &
+         call terminate("determineIndirectHalos",        &
                         "Deallocation error for indHalo, &
                         &nHaloPerLev and nHaloPerProc")
 
@@ -180,7 +181,7 @@
 
        if( debug ) then
          if(iihalo /= nHalo)                        &
-           call returnFail("determineIndirectHalos", &
+           call terminate("determineIndirectHalos", &
                           "iihalo differs from nHalo")
        endif
 

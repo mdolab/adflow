@@ -1,13 +1,3 @@
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          setInletFreestreamTurb.f90                      *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 09-29-2004                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
-!
        subroutine setInletFreestreamTurb
 !
 !      ******************************************************************
@@ -23,6 +13,7 @@
        use flowVarRefState
        use iteration
        use BCDataMod
+       use utils, only : terminate
        implicit none
 !
 !      Local variables.
@@ -34,13 +25,7 @@
        integer(kind=intType) :: level, nLevels
 
        type(BCDataType), dimension(:), pointer :: BCData
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
+
        ! If turbFreestreamSubfaces has not been allocated there are
        ! no such subfaces present and an immediate return should be made.
 
@@ -91,7 +76,7 @@
 
        deallocate(turbFreestreamSubfaces, stat=ierr)
        if(ierr /= 0) &
-         call returnFail("setInletFreestreamTurb", &
+            call terminate("setInletFreestreamTurb", &
                         "Deallocation failure for &
                         &turbFreestreamSubfaces")
 

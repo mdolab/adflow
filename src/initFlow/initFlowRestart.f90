@@ -22,6 +22,7 @@ subroutine initFlowRestart
   use inputIO
   use IOModule
   use restartMod
+  use utils, only : terminate
   implicit none
   !
   !      Local variables.
@@ -56,7 +57,7 @@ subroutine initFlowRestart
 
   deallocate(solFiles, IOVar, stat=ierr)
   if(ierr /= 0)                &
-       call returnFail("initFlow", &
+       call terminate("initFlow", &
        "Deallocation failure for solFiles and IOVar")
   
   ! At the moment the pressure is stored at the location of the

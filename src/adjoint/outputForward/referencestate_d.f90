@@ -55,16 +55,17 @@ subroutine referencestate_d()
 & pinfcorr, pinfcorrd, rhoinf, rhoinfd, uinf, uinfd, rgas, rgasd, muinf,&
 & muinfd, gammainf, gammainfd, winf, winfd, nw, nwf, kpresent, winf, &
 & winfd
+  use flowutils_d, only : computegamma, computegamma_d, etot, etot_d
   use paramturb
   implicit none
   integer(kind=inttype) :: sps, nn, mm, ierr
-  real(kind=realtype) :: gm1, ratio, tmp
+  real(kind=realtype) :: gm1, ratio
   real(kind=realtype) :: nuinf, ktmp, uinf2
   real(kind=realtype) :: nuinfd, ktmpd, uinf2d
   real(kind=realtype) :: sanuknowneddyratio
   real(kind=realtype) :: sanuknowneddyratio_d
-  real(kind=realtype) :: vinf, zinf
-  real(kind=realtype) :: vinfd, zinfd
+  real(kind=realtype) :: vinf, zinf, tmp1(1), tmp2(1)
+  real(kind=realtype) :: vinfd, zinfd, tmp1d(1), tmp2d(1)
   intrinsic sqrt
   real(kind=realtype) :: arg1
   real(kind=realtype) :: arg1d
@@ -129,7 +130,12 @@ subroutine referencestate_d()
   rgas = rgasdim*rhoref*tref/pref
   muinfd = (muinfdimd*muref-muinfdim*murefd)/muref**2
   muinf = muinfdim/muref
-  call computegamma_d(tinfdim, tinfdimd, gammainf, gammainfd, 1)
+  tmp1d = 0.0_8
+  tmp1d(1) = tinfdimd
+  tmp1(1) = tinfdim
+  call computegamma_d(tmp1, tmp1d, tmp2, tmp2d, 1)
+  gammainfd = tmp2d(1)
+  gammainf = tmp2(1)
 ! ----------------------------------------
 !      compute the final winf
 ! ----------------------------------------
@@ -220,7 +226,7 @@ subroutine referencestate_d()
   zinf = zero
   zinfd = 0.0_8
   vinfd = 0.0_8
-  call etotarray_d(rhoinf, rhoinfd, uinf, uinfd, vinf, vinfd, zinf, &
-&            zinfd, pinfcorr, pinfcorrd, ktmp, ktmpd, winf(irhoe), winfd&
-&            (irhoe), kpresent, 1)
+  call etot_d(rhoinf, rhoinfd, uinf, uinfd, vinf, vinfd, zinf, zinfd, &
+&       pinfcorr, pinfcorrd, ktmp, ktmpd, winf(irhoe), winfd(irhoe), &
+&       kpresent)
 end subroutine referencestate_d

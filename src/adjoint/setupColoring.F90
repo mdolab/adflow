@@ -4,6 +4,7 @@ subroutine setup_PC_coloring(nn, level, nColor)
 
   use constants
   use blockPointers, only : flowDoms, ib, jb, kb
+  use utils, only : setPointers
   implicit none
 
   ! Input parameters
@@ -35,7 +36,7 @@ subroutine setup_dRdw_euler_coloring(nn, level, nColor)
 
   use constants
   use blockPointers, only : flowDoms, ib, jb, kb
-
+  use utils, only : setPointers
   implicit none
 
   ! Input parameters
@@ -66,7 +67,7 @@ subroutine setup_dRdw_visc_coloring(nn, level, nColor)
 
   use constants
   use blockPointers, only : flowDoms, ib, jb, kb
-
+  use utils, only : setPointers
   implicit none
 
   ! Input parameters
@@ -102,7 +103,7 @@ subroutine setup_3x3x3_coloring(nn, level, nColor)
 
   use constants
   use blockPointers, only : flowDoms, ib, jb, kb
-
+  use utils, only : setPointers
   implicit none
 
   ! This is a dense 3x3x3 cube for debugging only
@@ -138,7 +139,7 @@ subroutine setup_4x4x4_coloring(nn, level, nColor)
 
   use constants
   use blockPointers, only : flowDoms, ib, jb, kb
-
+  use utils, only : setPointers
   implicit none
 
   ! This is a dense 4x4x4 cube for debugging drdx only
@@ -174,7 +175,7 @@ subroutine setup_5x5x5_coloring(nn, level, nColor)
 
   use constants
   use blockPointers, only : flowDoms, ib, jb, kb
-
+  use utils, only : setPointers
   implicit none
 
   ! This is a dense 5x5x5 cube for debugging only
@@ -210,7 +211,7 @@ subroutine setup_BF_coloring(nn, level, nColor)
 
   use constants
   use blockPointers, only : flowDoms, ib, jb, kb
-
+  use utils, only : setPointers
   implicit none
 
   ! Input parameters
@@ -243,7 +244,7 @@ subroutine setup_BF_node_coloring(nn, level, nColor)
 
   use constants
   use blockPointers, only : flowDoms, ie, je, ke
-
+  use utils, only : setPointers
   implicit none
 
   ! This is a REALLY brute force coloring for debugging

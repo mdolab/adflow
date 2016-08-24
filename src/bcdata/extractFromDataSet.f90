@@ -22,6 +22,7 @@
        use blockPointers
        use cgnsNames
        use BCDataMod
+       use utils, only : terminate
        implicit none
 !
 !      Subroutine arguments.
@@ -232,7 +233,7 @@
                write(errorMessage,100) &
             trim(cgnsDoms(nbkGlobal)%zonename), &
             trim(cgnsDoms(nbkGlobal)%bocoInfo(cgnsBoco)%bocoName)
-               call returnFail("extractFromDataSet", errorMessage)
+               call terminate("extractFromDataSet", errorMessage)
              endif
 
              ! Check what kind of interpolation must be used.
@@ -254,7 +255,7 @@
 
                case (2_intType, 3_intType)
 
-                  call returnFail("extractFromDataSet", &
+                  call terminate("extractFromDataSet", &
                                  "Multi-D Cartesian interpolation &
                                  &not implemented yet")
 
@@ -269,7 +270,7 @@
              write(errorMessage,101) &
             trim(cgnsDoms(nbkGlobal)%zonename), &
             trim(cgnsDoms(nbkGlobal)%bocoInfo(cgnsBoco)%bocoName)
-               call returnFail("extractFromDataSet", errorMessage)
+               call terminate("extractFromDataSet", errorMessage)
 
            endif
 
@@ -391,7 +392,7 @@
             trim(cgnsDoms(nbkGlobal)%zonename), &
             trim(cgnsDoms(nbkGlobal)%bocoInfo(cgnsBoco)%bocoName), &
             trim(bcVarNames(m))
-                   call returnFail("extractFromDataSet", errorMessage)
+                   call terminate("extractFromDataSet", errorMessage)
                  endif
 
                  ! Check what kind of interpolation must be used.
@@ -413,7 +414,7 @@
 
                    case (2_intType, 3_intType)
 
-                      call returnFail("extractFromDataSet", &
+                      call terminate("extractFromDataSet", &
                                      "Multi-D Cartesian interpolation &
                                      &not implemented yet")
 
@@ -430,7 +431,7 @@
             trim(cgnsDoms(nbkGlobal)%zonename), &
             trim(cgnsDoms(nbkGlobal)%bocoInfo(cgnsBoco)%bocoName), &
             trim(bcVarNames(m))
-                   call returnFail("extractFromDataSet", &
+                   call terminate("extractFromDataSet", &
                                   errorMessage)
                endif
 

@@ -21,6 +21,7 @@
        use cgnsGrid
        use communication
        use su_cgns
+       use utils, only : terminate
        implicit none
 !
 !      Subroutine arguments
@@ -43,7 +44,7 @@
 !
 #ifdef USE_NO_CGNS
 
-       call returnFail("read1to1Conn", &
+       call terminate("read1to1Conn", &
                       "Routine should not be called if no cgns support &
                       &is selected.")
 
@@ -65,7 +66,7 @@
                              cgnsDoms(nZone)%conn1to1(i)%donorName,   &
                              zoneRange, donorRange, transform, ierr)
          if(ierr /= CG_OK)                 &
-           call returnFail("read1to1Conn", &
+           call terminate("read1to1Conn", &
                           "Something wrong when calling cg_1to1_read_f")
 
          ! Store the zone range and donor range in cgnsDoms.

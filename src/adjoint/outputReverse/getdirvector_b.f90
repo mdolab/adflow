@@ -41,6 +41,7 @@ subroutine getdirvector_b(refdirection, alpha, alphad, beta, betad, &
 !     ******************************************************************
 !
   use constants
+  use utils_b, only : terminate
   implicit none
 !
 !     subroutine arguments.

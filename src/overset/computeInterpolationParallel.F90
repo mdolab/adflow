@@ -17,6 +17,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
   use inputTimeSpectral
   use ADTapi
   use inputOverset
+  use utils, only : EChk, setPointers, setBufferSizes, terminate
   implicit none
 
   ! Input Parameters
@@ -487,7 +488,7 @@ subroutine oversetComm(level, firstTime, coarseLevel)
            wall => clusterWalls(i)
            call destroySerialQuad(wall%ADT)
            if (wall%nNodes > 0) then 
-              call kdtree2_destroy(wall%tree)
+              call kdtree2destroy(wall%tree)
            end if
            deallocate(wall%x, wall%conn, wall%ind, wall%nte)
         end do
@@ -1236,6 +1237,8 @@ end subroutine oversetComm
 subroutine test
   use overset
   use blockPointers
+  use utils, only : EChk, setPointers, setBufferSizes, terminate
+  use haloExchange, only : whalo2
   implicit none
 
   integer(kind=intType) :: nn, i, j, k, mm
@@ -1283,6 +1286,7 @@ subroutine writePartitionedMesh(fileName)
   use communication
   use blockPointers
   use cgnsgrid
+  use utils, only : EChk, setPointers
   implicit none
 
   include 'cgnslib_f.h'
@@ -1471,6 +1475,7 @@ subroutine writeWalls
   use constants
   use blockPointers
   use BCTypes
+  use utils, only : setPointers
   implicit none
 
   character(80) :: fileName, zoneName

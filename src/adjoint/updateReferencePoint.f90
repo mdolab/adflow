@@ -26,6 +26,7 @@ subroutine updateReferencePoint
   use monitor, only : timeUnsteadyRestart
   use iteration, only : groundLevel
   use blockpointers, only : nDom, nbkGlobal
+  use utils, onlY : setPointers
   implicit none
 
   ! Working variables

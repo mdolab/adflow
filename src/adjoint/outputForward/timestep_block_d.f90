@@ -43,6 +43,7 @@ subroutine timestep_block_d(onlyradii)
   use iteration, only : groundlevel, currentlevel
   use section, only : sections
   use inputtimespectral, only : ntimeintervalsspectral
+  use utils_d, only : terminate
   implicit none
 ! the rest of this file can be skipped if only the spectral
 ! radii need to be computed.
@@ -342,14 +343,14 @@ subroutine timestep_block_d(onlyradii)
         end do
       end do
     case (turkel) 
-      call returnfail('timestep', &
-&                  'turkel preconditioner not implemented yet')
+      call terminate('timestep', &
+&              'turkel preconditioner not implemented yet')
       radid = 0.0_8
       radjd = 0.0_8
       radkd = 0.0_8
     case (choimerkle) 
-      call returnfail('timestep', &
-&                  'choi merkle preconditioner not implemented yet')
+      call terminate('timestep', &
+&              'choi merkle preconditioner not implemented yet')
       radid = 0.0_8
       radjd = 0.0_8
       radkd = 0.0_8

@@ -23,6 +23,7 @@
        use inputDiscretization
        use inputTimeSpectral
        use section
+       use utils, only : setPointers, terminate
        implicit none
 !
 !      Subroutine arguments.
@@ -100,7 +101,7 @@
                       flowDoms(nn,1,sps)%rotMatrixK(2:il,2:jl,kl,3,3), &
                       stat=ierr)
              if(ierr /= 0)                            &
-               call returnFail("faceRotationMatrices", &
+               call terminate("faceRotationMatrices", &
                               "Memory allocation failure for the &
                               &rotation matrices.")
            endif

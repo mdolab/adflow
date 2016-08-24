@@ -1,13 +1,3 @@
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          mixingDonorInterpol.f90                         *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 02-02-2005                                      *
-!      * Last modified: 09-21-2007                                      *
-!      *                                                                *
-!      ******************************************************************
-!
        subroutine mixingDonorInterpol(level, slideID, color, commPattern)
 !
 !      ******************************************************************
@@ -23,6 +13,8 @@
        use interfaceGroups
        use localSubfacesMod
        use mixingData
+       use utils, only : setPointers, terminate
+  
        implicit none
 !
 !      Parameter definitions
@@ -79,12 +71,6 @@
        real(kind=realType), dimension(:),     pointer :: weightDonor
        real(kind=realType), dimension(:,:,:), pointer :: rotMatDonor
 !
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
        ! Easier storage of the vectors which define the local Cartesian
        ! coordinate system.
 
@@ -119,7 +105,7 @@
 
        allocate(subRange(nSubSlide,2,2), stat=ierr)
        if(ierr /= 0) &
-         call returnFail("mixingDonorInterpol", &
+         call terminate("mixingDonorInterpol", &
                         "Memory allocation failure for subRange.")
 
        ! Repeat the loop over the subfaces, but now determine the
@@ -191,7 +177,7 @@
 
                do j=jjBeg,jjEnd
                  if(haloInfo(iiBeg-1,j) /= haloInfo(iiBeg-1,jjBeg)) &
-                   call returnFail("mixingDonorInterpol",            &
+                   call terminate("mixingDonorInterpol",            &
                                   "Inconsistent halo info for iBeg &
                                   &boundary.")
                enddo
@@ -210,7 +196,7 @@
 
                do j=jjBeg,jjEnd
                  if(haloInfo(iiEnd+1,j) /= haloInfo(iiEnd+1,jjBeg)) &
-                   call returnFail("mixingDonorInterpol",            &
+                   call terminate("mixingDonorInterpol",            &
                                   "Inconsistent halo info for iEnd &
                                   &boundary.")
                enddo
@@ -229,7 +215,7 @@
 
                do i=iiBeg,iiEnd
                  if(haloInfo(i,jjBeg-1) /= haloInfo(iiBeg,jjBeg-1)) &
-                   call returnFail("mixingDonorInterpol",            &
+                   call terminate("mixingDonorInterpol",            &
                                   "Inconsistent halo info for jBeg &
                                   &boundary.")
                enddo
@@ -248,7 +234,7 @@
 
                do i=iiBeg,iiEnd
                  if(haloInfo(i,jjEnd+1) /= haloInfo(iiBeg,jjEnd+1)) &
-                   call returnFail("mixingDonorInterpol",            &
+                   call terminate("mixingDonorInterpol",            &
                                   "Inconsistent halo info for jEnd &
                                   &boundary.")
                enddo
@@ -294,7 +280,7 @@
                 commPattern%indListDonor(nAlloc),          &
                 commPattern%weightDonor(nAlloc), stat=ierr)
        if(ierr /= 0) &
-         call returnFail("mixingDonorInterpol", &
+         call terminate("mixingDonorInterpol", &
                         "Memory allocation failure for donor data.")
 
        ! Set some pointers to make the code more readable.
@@ -344,7 +330,7 @@
 
              allocate(xFace(iBeg-1:iEnd,jBeg-1:jEnd,3), stat=ierr)
              if(ierr /= 0) &
-               call returnFail("mixingDonorInterpol", &
+               call terminate("mixingDonorInterpol", &
                               "Memory allocation failure for xFace.")
 
              call cylCoorNodesOnBlockFace(xFace,  iBeg-1, iEnd,  &
@@ -864,7 +850,7 @@
                  ! interval. If not print an error message and exit.
 
               !  if(jj == nIntervalsDonor(ii-1))         &
-              !    call returnFail("mixingDonorInterpol", &
+              !    call terminate("mixingDonorInterpol", &
               !                   "Face does not contribute to a &
               !                   &single interval.")
 
@@ -879,7 +865,7 @@
 
              deallocate(xFace, stat=ierr)
              if(ierr /= 0)                           &
-               call returnFail("mixingDonorInterpol", &
+               call terminate("mixingDonorInterpol", &
                               "Deallocation failure for xFace.")
 
            endif testInterface2
@@ -890,7 +876,7 @@
 
        deallocate(subRange, stat=ierr)
        if(ierr /= 0)                           &
-         call returnFail("mixingDonorInterpol", &
+         call terminate("mixingDonorInterpol", &
                         "Deallocation failure for subRange.")
 
        ! Reallocate the memory for the donor interpolation info, such
@@ -989,7 +975,7 @@
          allocate(commPattern%indListDonor(nAlloc), &
                   commPattern%weightDonor(nAlloc), stat=ierr)
          if(ierr /= 0) &
-           call returnFail("reallocDonorInterpolInfo", &
+           call terminate("reallocDonorInterpolInfo", &
                           "Memory allocation failure for indListDonor &
                           &and weightDonor.")
 
@@ -1003,7 +989,7 @@
 
          deallocate(indListDonor, weightDonor, stat=ierr)
          if(ierr /= 0)                                &
-           call returnFail("reallocDonorInterpolInfo", &
+           call terminate("reallocDonorInterpolInfo", &
                           "Deallocation failure for indListDonor &
                           &and weightDonor.")
 

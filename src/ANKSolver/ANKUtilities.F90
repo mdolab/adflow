@@ -8,20 +8,12 @@ subroutine setWVecANK(wVec)
   use blockPointers, only : nDom, il, jl, kl, w
   use inputtimespectral, only : ntimeIntervalsSpectral
   use flowvarrefstate, only : nwf
-
+  use utils, only : setPointers, EChk
   implicit none
 #define PETSC_AVOID_MPIF_H
-
-#include "include/petscversion.h"
-#if PETSC_VERSION_MINOR > 5
 #include "petsc/finclude/petscsys.h"
 #include "petsc/finclude/petscvec.h"
 #include "petsc/finclude/petscvec.h90"
-#else
-#include "include/finclude/petscsys.h"
-#include "include/finclude/petscvec.h"
-#include "include/finclude/petscvec.h90"
-#endif
 
   Vec   wVec
   integer(kind=intType) :: ierr,nn,sps,i,j,k,l,ii
@@ -59,19 +51,12 @@ subroutine setRVecANK(rVec)
   use blockPointers, only : nDom, volRef, il, jl, kl, dw 
   use inputtimespectral, only : nTimeIntervalsSpectral
   use flowvarrefstate, only : nwf
+  use utils, only : setPointers, EChk
   implicit none
 #define PETSC_AVOID_MPIF_H
-
-#include "include/petscversion.h"
-#if PETSC_VERSION_MINOR > 5
 #include "petsc/finclude/petscsys.h"
 #include "petsc/finclude/petscvec.h"
 #include "petsc/finclude/petscvec.h90"
-#else
-#include "include/finclude/petscsys.h"
-#include "include/finclude/petscvec.h"
-#include "include/finclude/petscvec.h90"
-#endif
 
   Vec    rVec
   integer(kind=intType) :: ierr, nn, sps, i, j, k, l, ii
@@ -109,32 +94,19 @@ subroutine setWANK(wVec)
   use blockPointers, only : nDom, vol, il, jl, kl, w
   use inputtimespectral, only : nTimeIntervalsSpectral
   use flowvarrefstate, only : nwf
-
+  use utils, only : setPointers, EChk
   implicit none
-#define PETSC_AVOID_MPIF_H
 
-#include "include/petscversion.h"
-#if PETSC_VERSION_MINOR > 5
 #include "petsc/finclude/petscsys.h"
 #include "petsc/finclude/petscvec.h"
 #include "petsc/finclude/petscvec.h90"
-#else
-#include "include/finclude/petscsys.h"
-#include "include/finclude/petscvec.h"
-#include "include/finclude/petscvec.h90"
-#endif
 
   Vec  wVec
   integer(kind=intType) :: ierr, nn, sps, i, j, k, l, ii
   real(kind=realType), pointer :: wvec_pointer(:)
-
-#if PETSC_VERSION_MINOR > 5
   call VecGetArrayReadF90(wVec, wvec_pointer, ierr)
   call EChk(ierr,__FILE__,__LINE__)
-#else
-  call VecGetArrayF90(wVec, wvec_pointer, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-#endif
+
   ii = 0
   do nn=1, nDom
      do sps=1,nTimeIntervalsSpectral
@@ -152,13 +124,9 @@ subroutine setWANK(wVec)
         end do
      end do
   end do
-#if PETSC_VERSION_MINOR > 5
   call VecRestoreArrayReadF90(wVec, wvec_pointer, ierr)
   call EChk(ierr,__FILE__,__LINE__)
-#else
-  call VecRestoreArrayF90(wVec, wvec_pointer, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-#endif
+
 end subroutine setWANK
 
 
@@ -168,20 +136,13 @@ subroutine setWVecANKTurb(wVec)
   use blockPointers, only : nDom, vol, il, jl, kl, w
   use inputtimespectral, only : nTimeIntervalsSpectral
   use flowvarrefstate, only : nt1, nt2
-
+  use utils, only : setPointers, EChk
   implicit none
 #define PETSC_AVOID_MPIF_H
 
-#include "include/petscversion.h"
-#if PETSC_VERSION_MINOR > 5
 #include "petsc/finclude/petscsys.h"
 #include "petsc/finclude/petscvec.h"
 #include "petsc/finclude/petscvec.h90"
-#else
-#include "include/finclude/petscsys.h"
-#include "include/finclude/petscvec.h"
-#include "include/finclude/petscvec.h90"
-#endif
 
   Vec   wVec
   integer(kind=intType) :: ierr, nn, sps, i, j, k, l, ii
@@ -220,19 +181,12 @@ subroutine setRVecANKTurb(rVec)
   use inputtimespectral, only : nTimeIntervalsSpectral
   use flowvarrefstate, only : nt1, nt2
   use inputIteration, only : turbResScale
+  use utils, only : setPointers, EChk
   implicit none
 #define PETSC_AVOID_MPIF_H
-
-#include "include/petscversion.h"
-#if PETSC_VERSION_MINOR > 5
 #include "petsc/finclude/petscsys.h"
 #include "petsc/finclude/petscvec.h"
 #include "petsc/finclude/petscvec.h90"
-#else
-#include "include/finclude/petscsys.h"
-#include "include/finclude/petscvec.h"
-#include "include/finclude/petscvec.h90"
-#endif
 
   Vec    rVec
   integer(kind=intType) :: ierr, nn, sps, i, j, k, l, ii
@@ -267,32 +221,21 @@ subroutine setWANKTurb(wVec)
   use blockPointers, only : nDom, vol, il, jl, kl, w
   use inputtimespectral, only : nTimeIntervalsSpectral
   use flowvarrefstate, only : nt1, nt2
-
+  use utils, only : setPointers, EChk
   implicit none
 #define PETSC_AVOID_MPIF_H
 
-#include "include/petscversion.h"
-#if PETSC_VERSION_MINOR > 5
 #include "petsc/finclude/petscsys.h"
 #include "petsc/finclude/petscvec.h"
 #include "petsc/finclude/petscvec.h90"
-#else
-#include "include/finclude/petscsys.h"
-#include "include/finclude/petscvec.h"
-#include "include/finclude/petscvec.h90"
-#endif
 
   Vec  wVec
   integer(kind=intType) :: ierr, nn, sps, i, j, k, l, ii
   real(kind=realType), pointer :: wvec_pointer(:)
 
-#if PETSC_VERSION_MINOR > 5
   call VecGetArrayReadF90(wVec, wvec_pointer, ierr)
   call EChk(ierr,__FILE__,__LINE__)
-#else
-  call VecGetArrayF90(wVec, wvec_pointer, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-#endif
+
   ii = 0
   do nn=1, nDom
      do sps=1,nTimeIntervalsSpectral
@@ -310,13 +253,10 @@ subroutine setWANKTurb(wVec)
         end do
      end do
   end do
-#if PETSC_VERSION_MINOR > 5
+
   call VecRestoreArrayReadF90(wVec, wvec_pointer, ierr)
   call EChk(ierr,__FILE__,__LINE__)
-#else
-  call VecRestoreArrayF90(wVec, wvec_pointer, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-#endif
+
 end subroutine setWANKTurb
 
 

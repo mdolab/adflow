@@ -20,6 +20,7 @@
 !
        use constants
        use inputUnsteady
+       use utils, only : terminate
        implicit none
 !
 !      Local variables.
@@ -46,7 +47,7 @@
            nRKStagesUnsteady = 3
 
          case default
-           call returnFail("setStageCoeffExplicitRK", &
+           call terminate("setStageCoeffExplicitRK", &
                           "No higher order stuff yet")
        end select
 
@@ -55,7 +56,7 @@
        allocate(betaRKUnsteady(nRKStagesUnsteady,nRKStagesUnsteady), &
                 gammaRKUnsteady(nRKStagesUnsteady), stat=ierr)
        if(ierr /= 0)                               &
-         call returnFail("setStageCoeffExplicitRK", &
+         call terminate("setStageCoeffExplicitRK", &
                         "Memory allocation failure for betaRKUnsteady &
                         &and gammaRKUnsteady.")
 
@@ -117,7 +118,7 @@
          !==============================================================
 
          case default
-           call returnFail("setStageCoeffExplicitRK", &
+           call terminate("setStageCoeffExplicitRK", &
                           "No higher order stuff yet")
        end select
 

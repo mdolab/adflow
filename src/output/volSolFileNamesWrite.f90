@@ -1,13 +1,3 @@
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          volSolFileNamesWrite.f90                        *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 10-11-2005                                      *
-!      * Last modified: 10-13-2005                                      *
-!      *                                                                *
-!      ******************************************************************
-!
        subroutine volSolFileNamesWrite
 !
 !      ******************************************************************
@@ -27,6 +17,7 @@
        use iteration
        use monitor
        use outputMod
+       use utils, only : terminate
        implicit none
 !
 !      Local variables.
@@ -37,13 +28,7 @@
        integer(kind=intType) :: iEnd, jEnd, kEnd
 
        character(len=7) :: intString
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
+
 !      ******************************************************************
 !      *                                                                *
 !      * Determine the names and number of volume solution files to be  *
@@ -62,7 +47,7 @@
 
            allocate(volSolFileNames(1), stat=ierr)
            if(ierr /= 0)                            &
-             call returnFail("volSolFileNamesWrite", &
+             call terminate("volSolFileNamesWrite", &
                             "Memory allocation failure for &
                             &volSolFileNames")
 
@@ -97,7 +82,7 @@
 
            allocate(volSolFileNames(nAvail), stat=ierr)
            if(ierr /= 0)                            &
-             call returnFail("volSolFileNamesWrite", &
+             call terminate("volSolFileNamesWrite", &
                             "Memory allocation failure for &
                             &volSolFileNames")
 
@@ -146,7 +131,7 @@
 
            allocate(volSolFileNames(nTimeIntervalsSpectral), stat=ierr)
            if(ierr /= 0)                            &
-             call returnFail("volSolFileNamesWrite", &
+             call terminate("volSolFileNamesWrite", &
                             "Memory allocation failure for &
                             &volSolFileNames")
 
@@ -184,7 +169,7 @@
 
          allocate(IOVar(nDom,nVolSolToWrite), stat=ierr)
          if(ierr /= 0)                            &
-           call returnFail("volSolFileNamesWrite", &
+           call terminate("volSolFileNamesWrite", &
                           "Memory allocation failure for IOVar")
 
          ! As the writing normally involves other variables than just
@@ -203,7 +188,7 @@
 
              allocate(IOVar(nn,1)%w(iEnd,jEnd,kEnd,1), stat=ierr)
              if(ierr /= 0)                            &
-               call returnFail("volSolFileNamesWrite", &
+               call terminate("volSolFileNamesWrite", &
                               "Memory allocation failure for IOVar%w")
            enddo
          else
@@ -216,7 +201,7 @@
 
              allocate(IOVar(nn,1)%w(2:iEnd,2:jEnd,2:kEnd,1), stat=ierr)
              if(ierr /= 0)                            &
-               call returnFail("volSolFileNamesWrite", &
+               call terminate("volSolFileNamesWrite", &
                               "Memory allocation failure for IOVar%w")
            enddo
          endif

@@ -30,6 +30,7 @@
        use BCTypes
        use blockPointers
        use cgnsGrid
+       use utils, only : terminate
        implicit none
 !
 !      Subroutine arguments
@@ -59,13 +60,8 @@
        character(len=maxStringLen) :: errorMessage
 
        type(cgnsBcDatasetType), pointer, dimension(:) :: dataSet
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
+
+
        ! Set the pointer for dataSet to make the code more readable.
 
        dataSet => cgnsDoms(nbkGlobal)%bocoInfo(cgnsBoco)%dataSet
@@ -82,7 +78,7 @@
          write(errorMessage,101) &
                trim(cgnsDoms(nbkGlobal)%zonename), &
                trim(cgnsDoms(nbkGlobal)%bocoInfo(cgnsBoco)%bocoName)
-         call returnFail("cart1D_InterpolSubface", errorMessage)
+         call terminate("cart1D_InterpolSubface", errorMessage)
  101     format("Zone",1X,A,", subface",1X,A,": Multidimensional &
                 &radially varying data specified. Only 1d data possible")
        endif
@@ -104,7 +100,7 @@
          write(errorMessage,102) &
                trim(cgnsDoms(nbkGlobal)%zonename), &
                trim(cgnsDoms(nbkGlobal)%bocoInfo(cgnsBoco)%bocoName)
-         call returnFail("cart1D_InterpolSubface", errorMessage)
+         call terminate("cart1D_InterpolSubface", errorMessage)
  102     format("Zone",1X,A,", subface",1X,A,": Data should be &
                 &specified for increasing coordinate values.")
        endif

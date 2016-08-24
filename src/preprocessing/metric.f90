@@ -50,6 +50,7 @@
        use inputTimeSpectral
        use iteration
        use inputUnsteady
+       use utils, only : terminate, setPointers
        implicit none
 !
 !      Subroutine arguments.
@@ -192,6 +193,7 @@
        use inputTimeSpectral
        use checkVolBlock
        use inputIteration
+       use utils, only : setPointers, terminate
        implicit none
 !
 !      Subroutine arguments.
@@ -745,7 +747,7 @@
            call writeNegVolumes(checkVolDoms)
 
            if(myID == 0) &
-             call returnFail("metric", "Negative volumes present in grid")
+             call terminate("metric", "Negative volumes present in grid")
            call mpi_barrier(SUmb_comm_world, ierr)
 
          else
@@ -868,6 +870,7 @@
        use inputPhysics
        use inputTimeSpectral     
        use checkVolBlock
+       use utils, only : setPointers, terminate
        implicit none
 !
 !      Subroutine arguments.

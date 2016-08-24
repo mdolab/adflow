@@ -25,6 +25,8 @@
 !      ******************************************************************
 !
        use cgnsGrid
+       use utils, only : terminate
+       use sorting, only: qsortstrings, bsearchstrings
        implicit none
 !
 !      Local variables
@@ -34,16 +36,6 @@
        integer(kind=intType), dimension(cgnsNDom) :: zoneNumbers
 
        integer(kind=intType) :: i, j, k, ii
-
-!      Function definition.
-!
-       integer(kind=intType) :: bsearchStrings
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
 !
        ! Copy the zone name from the derived data type into zoneNames.
 
@@ -70,7 +62,7 @@
          ! zone names.
 
          if(zoneNumbers(ii) /= -1)                &
-           call returnFail("determineNeighborIDs", &
+           call terminate("determineNeighborIDs", &
                           "Error occurs only when two identical zone &
                           &names are present")
 
@@ -93,7 +85,7 @@
            ii = bsearchStrings(cgnsDoms(i)%conn1to1(j)%donorName, &
                                zoneNames, cgnsNDom)
            if(ii == 0)                              &
-             call returnFail("determineNeighborIDs", &
+             call terminate("determineNeighborIDs", &
                             "donor name not found in sorted zone names")
 
            cgnsDoms(i)%conn1to1(j)%donorBlock = zoneNumbers(ii)
@@ -112,7 +104,7 @@
                     cgnsDoms(i)%connNonMatchAbutting(j)%donorNames(k), &
                     zoneNames, cgnsNDom)
              if(ii == 0)                              &
-               call returnFail("determineNeighborIDs", &
+               call terminate("determineNeighborIDs", &
                               "donor name not found in sorted zone names")
 
              cgnsDoms(i)%connNonMatchAbutting(j)%donorBlocks(k) = &

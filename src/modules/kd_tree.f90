@@ -469,17 +469,17 @@ module kdtree2_module
   ! Matt Kennel.  Only the Euclidean metric is supported. 
   !
   !
-  ! This module is identical to 'kd_tree', except that the order
+  ! This module is identical to 'kdtree', except that the order
   ! of subscripts is reversed in the data file.
   ! In otherwords for an embedding of N D-dimensional vectors, the
   ! data file is here, in natural Fortran order  data(1:D, 1:N)
   ! because Fortran lays out columns first,
   !
   ! whereas conventionally (C-style) it is data(1:N,1:D)
-  ! as in the original kd_tree module. 
+  ! as in the original kdtree module. 
   !
   !-------------DATA TYPE, CREATION, DELETION---------------------
-  public :: kdtree2, kdtree2_result, tree_node, kdtree2_create, kdtree2_destroy
+  public :: kdtree2, kdtree2_result, tree_node, kdtree2_create, kdtree2destroy
   !---------------------------------------------------------------
   !-------------------SEARCH ROUTINES-----------------------------
   public :: kdtree2_n_nearest,kdtree2_n_nearest_around_point
@@ -985,7 +985,7 @@ contains
   end subroutine spread_in_coordinate
 
 
-  subroutine kdtree2_destroy(tp)
+  subroutine kdtree2destroy(tp)
     implicit none
     ! Deallocates all memory for the tree, except input data matrix
     ! .. Structure Arguments ..
@@ -1027,7 +1027,7 @@ contains
 
     end subroutine destroy_node
 
-  end subroutine kdtree2_destroy
+  end subroutine kdtree2destroy
 
   subroutine kdtree2_n_nearest(tp,qv,nn,results)
     implicit none
@@ -1236,9 +1236,9 @@ contains
     endif
 
     if (sr%overflow) then
-       write (*,*) 'KD_TREE_TRANS: warning! return from kdtree2_r_nearest found more neighbors'
-       write (*,*) 'KD_TREE_TRANS: than storage was provided for.  Answer is NOT smallest ball'
-       write (*,*) 'KD_TREE_TRANS: with that number of neighbors!  I.e. it is wrong.'
+       write (*,*) 'KDTREE_TRANS: warning! return from kdtree2_r_nearest found more neighbors'
+       write (*,*) 'KDTREE_TRANS: than storage was provided for.  Answer is NOT smallest ball'
+       write (*,*) 'KDTREE_TRANS: with that number of neighbors!  I.e. it is wrong.'
     endif
 
     deallocate (sr%qv)
@@ -1350,7 +1350,7 @@ contains
     integer(kind=intType), intent(in) :: n
 
     if (size(sr%results,1) .lt. n) then
-       write (*,*) 'KD_TREE_TRANS:  you did not provide enough storage for results(1:n)'
+       write (*,*) 'KDTREE_TRANS:  you did not provide enough storage for results(1:n)'
        stop
        return
     endif

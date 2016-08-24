@@ -15,6 +15,8 @@ subroutine computeCellWallPoint(level, sps)
   use communication
   use kdtree2_module
   use overset
+  use utils, only : setPointers
+  use haloExchange, only : whalo1to1realgeneric
   implicit none 
 
   ! Input Params
@@ -102,7 +104,7 @@ subroutine computeCellWallPoint(level, sps)
      wall => clusterWalls(cluster)
 
      if (treeBuilt(cluster)) then 
-        call kdtree2_destroy(wall%tree)
+        call kdtree2destroy(wall%tree)
         deallocate(wall%xPrimalCen, wall%indPrimal)
      end if
   end do

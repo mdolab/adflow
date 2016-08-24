@@ -31,6 +31,7 @@
        use communication
        use haloList
        use periodicInfo
+       use utils, only : terminate
        implicit none
 !
 !      Subroutine arguments
@@ -117,14 +118,14 @@
        do i=1,nDom
          deallocate(nodeIndex(i)%entryList, stat=ierr)
          if(ierr /= 0)                           &
-          call returnFail("determineCommPattern", &
+          call terminate("determineCommPattern", &
                          "Deallocation error for &
                          &nodeIndex(i)%entryList")
        enddo
 
        deallocate(nodeIndex, transformNode, stat=ierr)
        if(ierr /= 0)                           &
-        call returnFail("determineCommPattern", &
+        call terminate("determineCommPattern", &
                        "Deallocation error for nodeIndex &
                        &and transformNode")
 
@@ -153,14 +154,14 @@
        do i=1,nDom
          deallocate(cellIndex(i)%entryList, stat=ierr)
          if(ierr /= 0)                             &
-          call returnFail("determineCommPattern", &
+          call terminate("determineCommPattern", &
                          "Deallocation error for &
                          &cellIndex(i)%entryList")
        enddo
 
        deallocate(cellIndex, transformCell, stat=ierr)
        if(ierr /= 0)                           &
-        call returnFail("determineCommPattern", &
+        call terminate("determineCommPattern", &
                        "Deallocation error for cellIndex &
                        &and transformCell")
 
@@ -207,7 +208,7 @@
 
        deallocate(nodeHalo1st, cellHalo1st, cellHalo2nd, stat=ierr)
        if(ierr /= 0)                            &
-         call returnFail("determineCommPattern", &
+         call terminate("determineCommPattern", &
                         "Deallocation error for nodeHalo1st, &
                         &cellHalo1st and cellHalo2nd")
 
@@ -215,7 +216,7 @@
 
        deallocate(periodicGlobal, stat=ierr)
        if(ierr /= 0)                            &
-         call returnFail("determineCommPattern", &
+         call terminate("determineCommPattern", &
                         "Deallocation error for periodicGlobal")
 
        end subroutine determineCommPattern
@@ -232,6 +233,7 @@
 !      ******************************************************************
 !
        use haloList
+       use utils, only : terminate
        implicit none
 !
 !      Subroutine arguments.
@@ -258,14 +260,14 @@
          if( associated(entityHalo(i)%interp) ) then
            deallocate(entityHalo(i)%interp, stat=ierr)
            if(ierr /= 0)                                  &
-             call returnFail("deallocatePointersHaloList", &
+             call terminate("deallocatePointersHaloList", &
                             "Deallocation failure for interp")
          endif
 
          if( associated(entityHalo(i)%periodicSubfaces) ) then
            deallocate(entityHalo(i)%periodicSubfaces, stat=ierr)
            if(ierr /= 0)                                  &
-             call returnFail("deallocatePointersHaloList", &
+             call terminate("deallocatePointersHaloList", &
                             "Deallocation failure for periodicSubfaces")
          endif
        enddo

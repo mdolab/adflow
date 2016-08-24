@@ -14,6 +14,7 @@ subroutine determineClusterAreas
   use communication
   use overset
   use surfaceFamilies
+  use utils, only : setPointers, EChk
   implicit none
 
   ! Working

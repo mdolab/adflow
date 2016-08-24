@@ -13,6 +13,7 @@ subroutine setupANKsolver
   use ANKSolverVars, only: dRdwPre, wVec, rVec, deltaW, ANK_solverSetup, ANK_KSP, ANK_iter
   use ANKSolverVars, only: dRdwPreTurb, wVecTurb, rVecTurb, deltaWTurb, ANK_KSPTurb
   use ANKSolverVars, only: ANK_turbSetup, ANK_useTurbDADI
+  use utils, only : EChk
   implicit none
 #define PETSC_AVOID_MPIF_H
 

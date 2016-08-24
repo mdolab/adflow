@@ -1,3 +1,4 @@
+#ifndef USE_TAPENADE
 subroutine gridVelocitiesFineLevel(useOldCoor, t, sps)
   !
   ! Shell function to call gridVelocitiesFineLevel on all blocks
@@ -6,6 +7,7 @@ subroutine gridVelocitiesFineLevel(useOldCoor, t, sps)
   use constants
   use inputTimeSpectral
   use iteration
+  use utils, only : setPointers
   implicit none
   !
   !      Subroutine arguments.
@@ -29,16 +31,8 @@ subroutine gridVelocitiesFineLevel(useOldCoor, t, sps)
   end do domains
 
 end subroutine gridVelocitiesFineLevel
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          gridVelocities.f90                              *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 02-23-2004                                     *
-!      * Last modified: 06-28-2005                                      *
-!      *                                                                *
-!      ******************************************************************
-!
+#endif
+
 subroutine gridVelocitiesFineLevel_block(useOldCoor, t, sps)
   !
   !      ******************************************************************
@@ -64,6 +58,7 @@ subroutine gridVelocitiesFineLevel_block(useOldCoor, t, sps)
   use inputTSStabDeriv
   use monitor
   use communication
+  use utils, only : tsAlpha, tsBeta, tsMach, terminate, rotMatrixRigidBody
   implicit none
   !
   !      Subroutine arguments.
@@ -100,10 +95,7 @@ subroutine gridVelocitiesFineLevel_block(useOldCoor, t, sps)
        betaTS,betaIncrement
   real(kind=realType), dimension(3) ::velDir
   real(kind=realType), dimension(3) :: refDirection
- 
-  !Function Definitions
 
-  real(kind=realType) :: TSAlpha,TSBeta,TSMach
   !
   !      ******************************************************************
   !      *                                                                *
@@ -210,9 +202,9 @@ subroutine gridVelocitiesFineLevel_block(useOldCoor, t, sps)
         velzGrid0 = (aInf*(IntervalMach+machgrid))*(-velDirFreestream(3))
 
      elseif(TSAltitudeMode)then
-        call returnFail('gridVelocityFineLevel','altitude motion not yet implemented...')
+        call terminate('gridVelocityFineLevel','altitude motion not yet implemented...')
      else
-        call returnFail('gridVelocityFineLevel','Not a recognized Stability Motion')
+        call terminate('gridVelocityFineLevel','Not a recognized Stability Motion')
      end if
   endif
 

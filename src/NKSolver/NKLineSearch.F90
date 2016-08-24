@@ -3,16 +3,10 @@ subroutine LSCubic(x, f, g, y, w, fnorm, ynorm, gnorm, nfevals, flag)
 #ifndef USE_NO_PETSC
   use constants
   use NKSolverVars, only: dRdw
+  use utils, only : EChk
   implicit none
 #define PETSC_AVOID_MPIF_H
-
-#include "include/petscversion.h"
-#if PETSC_VERSION_MINOR > 5
 #include "petsc/finclude/petsc.h"
-#else
-#include "include/finclude/petsc.h"
-#endif
-
 
   ! Input/Output
   Vec x, f, g, y, w
@@ -245,17 +239,11 @@ end subroutine LSCubic
 subroutine LSNone(x, f, g, y, w, nfevals, flag)
 #ifndef USE_NO_PETSC
   use constants
+  use utils, only : EChk
   implicit none
 
 #define PETSC_AVOID_MPIF_H
-
-#include "include/petscversion.h"
-#if PETSC_VERSION_MINOR > 5
 #include "petsc/finclude/petsc.h"
-#else
-#include "include/finclude/petsc.h"
-#endif
-
 
   ! Input/Output
   Vec x, f, g, y, w
@@ -289,15 +277,11 @@ subroutine LSNM(x, f, g, y, w, fnorm, ynorm, gnorm, nfevals, flag)
 
   use constants
   use NKSolverVars, only: dRdw, NKLSFuncEvals, iter_k, iter_m
+  use utils, only : EChk
+
   implicit none
 #define PETSC_AVOID_MPIF_H
-
-#include "include/petscversion.h"
-#if PETSC_VERSION_MINOR > 5
 #include "petsc/finclude/petsc.h"
-#else
-#include "include/finclude/petsc.h"
-#endif
 
   ! Input/Output
   Vec x, f, g, y, w

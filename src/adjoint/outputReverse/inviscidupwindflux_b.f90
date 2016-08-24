@@ -3,18 +3,8 @@
 !
 !  differentiation of inviscidupwindflux in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *p *w *si *sj *sk *fw
-!   with respect to varying inputs: tref rgas *p *w *si *sj *sk
+!   with respect to varying inputs: *p *w *si *sj *sk
 !   plus diff mem management of: p:in w:in si:in sj:in sk:in fw:in
-!
-!      ******************************************************************
-!      *                                                                *
-!      * file:          inviscidupwindflux.f90                          *
-!      * author:        edwin van der weide                             *
-!      * starting date: 03-25-2003                                      *
-!      * last modified: 10-29-2007                                      *
-!      *                                                                *
-!      ******************************************************************
-!
 subroutine inviscidupwindflux_b(finegrid)
 !
 !      ******************************************************************
@@ -44,6 +34,8 @@ subroutine inviscidupwindflux_b(finegrid)
   use inputphysics, only : equations
   use iteration, only : rfil, currentlevel, groundlevel
   use cgnsgrid, only : massflowfamilydiss
+  use utils_b, only : getcorrectfork, terminate
+  use flowutils_b, only : etot, etot_b
   implicit none
 !
 !      subroutine arguments.
@@ -65,8 +57,7 @@ subroutine inviscidupwindflux_b(finegrid)
   real(kind=realtype), dimension(nw) :: du1d, du2d, du3d
   real(kind=realtype), dimension(nwf) :: flux
   real(kind=realtype), dimension(nwf) :: fluxd
-  logical :: firstorderk, correctfork, getcorrectfork, &
-& rotationalperiodic
+  logical :: firstorderk, correctfork, rotationalperiodic
   intrinsic abs
   intrinsic associated
   intrinsic max
@@ -79,18 +70,9 @@ subroutine inviscidupwindflux_b(finegrid)
     abs0 = -rfil
   end if
 !
-!      ******************************************************************
-!      *                                                                *
-!      * begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
 ! check if rfil == 0. if so, the dissipative flux needs not to
 ! be computed.
-  if (abs0 .lt. thresholdreal) then
-    trefd = 0.0_8
-    rgasd = 0.0_8
-  else
+  if (abs0 .ge. thresholdreal) then
 ! check if the formulation for rotational periodic problems
 ! must be used.
     if (associated(rotmatrixi)) then
@@ -334,8 +316,6 @@ subroutine inviscidupwindflux_b(finegrid)
           end do
         end do
       end do
-      trefd = 0.0_8
-      rgasd = 0.0_8
       fluxd = 0.0_8
       leftd = 0.0_8
       rightd = 0.0_8
@@ -789,8 +769,6 @@ subroutine inviscidupwindflux_b(finegrid)
           end do
         end do
       end do
-      trefd = 0.0_8
-      rgasd = 0.0_8
       fluxd = 0.0_8
       leftd = 0.0_8
       rightd = 0.0_8
@@ -2107,9 +2085,8 @@ contains
     end if
   end subroutine leftrightstate
 !  differentiation of riemannflux in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: tref rgas flux left right
-!   with respect to varying inputs: tref rgas sx sy sz flux left
-!                right
+!   gradient     of useful results: flux left right
+!   with respect to varying inputs: sx sy sz flux left right
 !        ================================================================
   subroutine riemannflux_b(left, leftd, right, rightd, flux, fluxd)
     implicit none
@@ -2141,10 +2118,8 @@ contains
     real(kind=realtype) :: abv1, abv2, abv3, abv4, abv5, abv6, abv7
     real(kind=realtype) :: abv1d, abv2d, abv3d, abv4d, abv5d, abv6d, &
 &   abv7d
-    real(kind=realtype), dimension(2) :: rhotmp, utmp, vtmp, wtmp
-    real(kind=realtype), dimension(2) :: rhotmpd, utmpd, vtmpd, wtmpd
-    real(kind=realtype), dimension(2) :: ptmp, ktmp, etmp
-    real(kind=realtype), dimension(2) :: ptmpd, ktmpd, etmpd
+    real(kind=realtype), dimension(2) :: ktmp
+    real(kind=realtype), dimension(2) :: ktmpd
     intrinsic sqrt
     intrinsic max
     intrinsic abs
@@ -2234,21 +2209,12 @@ contains
           kavg = 0.0
         end if
 ! compute the total energy of the left and right state.
-        rhotmp(1) = left(irho)
-        rhotmp(2) = right(irho)
-        utmp(1) = left(ivx)
-        utmp(2) = right(ivx)
-        vtmp(1) = left(ivy)
-        vtmp(2) = right(ivy)
-        wtmp(1) = left(ivz)
-        wtmp(2) = right(ivz)
-        ptmp(1) = left(irhoe)
-        ptmp(2) = right(irhoe)
-        call pushreal8array(etmp, 2)
-        call etotarray(rhotmp, utmp, vtmp, wtmp, ptmp, ktmp, etmp, &
-&                   correctfork, 2)
-        etl = etmp(1)
-        etr = etmp(2)
+        call pushreal8(etl)
+        call etot(left(irho), left(ivx), left(ivy), left(ivz), left(&
+&           irhoe), ktmp(1), etl, correctfork)
+        call pushreal8(etr)
+        call etot(right(irho), right(ivx), right(ivy), right(ivz), right&
+&           (irhoe), ktmp(2), etr, correctfork)
 ! compute the difference of the conservative mean
 ! flow variables.
         dr = right(irho) - left(irho)
@@ -2624,30 +2590,16 @@ contains
         leftd(ivx) = leftd(ivx) - left(irho)*drud
         rightd(irho) = rightd(irho) + drd
         leftd(irho) = leftd(irho) - drd
-        etmpd = 0.0_8
-        etmpd(2) = etmpd(2) + etrd
-        etmpd(1) = etmpd(1) + etld
-        call popreal8array(etmp, 2)
-        rhotmpd = 0.0_8
-        ptmpd = 0.0_8
-        call etotarray_b(rhotmp, rhotmpd, utmp, utmpd, vtmp, vtmpd, wtmp&
-&                  , wtmpd, ptmp, ptmpd, ktmp, ktmpd, etmp, etmpd, &
-&                  correctfork, 2)
-        rightd(irhoe) = rightd(irhoe) + ptmpd(2)
-        ptmpd(2) = 0.0_8
-        leftd(irhoe) = leftd(irhoe) + ptmpd(1)
-        rightd(ivz) = rightd(ivz) + wtmpd(2)
-        wtmpd(2) = 0.0_8
-        leftd(ivz) = leftd(ivz) + wtmpd(1)
-        rightd(ivy) = rightd(ivy) + vtmpd(2)
-        vtmpd(2) = 0.0_8
-        leftd(ivy) = leftd(ivy) + vtmpd(1)
-        rightd(ivx) = rightd(ivx) + utmpd(2)
-        utmpd(2) = 0.0_8
-        leftd(ivx) = leftd(ivx) + utmpd(1)
-        rightd(irho) = rightd(irho) + rhotmpd(2)
-        rhotmpd(2) = 0.0_8
-        leftd(irho) = leftd(irho) + rhotmpd(1)
+        call popreal8(etr)
+        ktmpd = 0.0_8
+        call etot_b(right(irho), rightd(irho), right(ivx), rightd(ivx), &
+&             right(ivy), rightd(ivy), right(ivz), rightd(ivz), right(&
+&             irhoe), rightd(irhoe), ktmp(2), ktmpd(2), etr, etrd, &
+&             correctfork)
+        call popreal8(etl)
+        call etot_b(left(irho), leftd(irho), left(ivx), leftd(ivx), left&
+&             (ivy), leftd(ivy), left(ivz), leftd(ivz), left(irhoe), &
+&             leftd(irhoe), ktmp(1), ktmpd(1), etl, etld, correctfork)
         call popcontrol1b(branch)
         if (branch .ne. 0) then
           tempd0 = tmp*kavgd
@@ -2716,8 +2668,7 @@ contains
     real(kind=realtype) :: gm1, gm53
     real(kind=realtype) :: lam1, lam2, lam3
     real(kind=realtype) :: abv1, abv2, abv3, abv4, abv5, abv6, abv7
-    real(kind=realtype), dimension(2) :: rhotmp, utmp, vtmp, wtmp
-    real(kind=realtype), dimension(2) :: ptmp, ktmp, etmp
+    real(kind=realtype), dimension(2) :: ktmp
     intrinsic sqrt
     intrinsic max
     intrinsic abs
@@ -2774,20 +2725,10 @@ contains
           kavg = 0.0
         end if
 ! compute the total energy of the left and right state.
-        rhotmp(1) = left(irho)
-        rhotmp(2) = right(irho)
-        utmp(1) = left(ivx)
-        utmp(2) = right(ivx)
-        vtmp(1) = left(ivy)
-        vtmp(2) = right(ivy)
-        wtmp(1) = left(ivz)
-        wtmp(2) = right(ivz)
-        ptmp(1) = left(irhoe)
-        ptmp(2) = right(irhoe)
-        call etotarray(rhotmp, utmp, vtmp, wtmp, ptmp, ktmp, etmp, &
-&                   correctfork, 2)
-        etl = etmp(1)
-        etr = etmp(2)
+        call etot(left(irho), left(ivx), left(ivy), left(ivz), left(&
+&           irhoe), ktmp(1), etl, correctfork)
+        call etot(right(irho), right(ivx), right(ivy), right(ivz), right&
+&           (irhoe), ktmp(2), etr, correctfork)
 ! compute the difference of the conservative mean
 ! flow variables.
         dr = right(irho) - left(irho)
@@ -2905,18 +2846,16 @@ contains
 !          flux(imy)   = -porflux*(tmp*drv)
 !          flux(imz)   = -porflux*(tmp*drw)
 !          flux(irhoe) = -porflux*(tmp*dre)
-        call returnfail('riemannflux', &
-&                    'turkel preconditioner not implemented yet')
+        call terminate('riemannflux', &
+&                'turkel preconditioner not implemented yet')
       case (choimerkle) 
-        call returnfail('riemannflux', &
-&                    'choi merkle preconditioner not implemented yet')
+        call terminate('riemannflux', &
+&                'choi merkle preconditioner not implemented yet')
       end select
     case (vanleer) 
-      call returnfail('riemannflux', &
-&                  'van leer fvs not implemented yet')
+      call terminate('riemannflux', 'van leer fvs not implemented yet')
     case (ausmdv) 
-      call returnfail('riemannflux', 'ausmdv fvs not implemented yet'&
-&                 )
+      call terminate('riemannflux', 'ausmdv fvs not implemented yet')
     end select
   end subroutine riemannflux
 end subroutine inviscidupwindflux_b

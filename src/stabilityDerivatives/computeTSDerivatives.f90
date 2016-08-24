@@ -27,7 +27,7 @@ subroutine computeTSDerivatives(force, moment, liftIndex, coef0, dcdalpha, &
   use monitor           
   use section           
   use inputMotion
-
+  use utils, only : tsAlpha, tsAlphaDot, terminate
   implicit none
 
   !
@@ -55,16 +55,7 @@ subroutine computeTSDerivatives(force, moment, liftIndex, coef0, dcdalpha, &
   real(kind=realType),dimension(nTimeIntervalsSpectral)  :: dPhix, dPhiy, dphiz
   real(kind=realType),dimension(nTimeIntervalsSpectral)  :: dPhixdot, dPhiydot, dphizdot
   real(kind=realType)::derivativeRigidRotAngle, secondDerivativeRigidRotAngle
-  real(kind=realType):: TSAlpha,TSAlphadot
 
-
-  !
-  !     ******************************************************************
-  !     *                                                                *
-  !     * Begin execution.                                               *
-  !     *                                                                *
-  !     ******************************************************************
-  !
 
   scaleDim = pRef/pInf
 
@@ -149,11 +140,11 @@ subroutine computeTSDerivatives(force, moment, liftIndex, coef0, dcdalpha, &
 
         intervalAlpha(sps) = TSAlpha(degreePolAlpha,   coefPolAlpha,       &
              degreeFourAlpha,  omegaFourAlpha,     &
-             cosCoefFourAlpha, sinCoefFourAlpha, t)
+             cosCoefFourAlpha, sinCoefFourAlpha, t(1))
 
         intervalAlphadot(sps) = TSAlphadot(degreePolAlpha,   coefPolAlpha,       &
              degreeFourAlpha,  omegaFourAlpha,     &
-             cosCoefFourAlpha, sinCoefFourAlpha, t)
+             cosCoefFourAlpha, sinCoefFourAlpha, t(1))
 
         call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha+intervalAlpha(sps), beta)
 
@@ -195,7 +186,7 @@ subroutine computeTSDerivatives(force, moment, liftIndex, coef0, dcdalpha, &
      dcdalphadot = dcdalphadot*2*(machGrid*a)/lengthRef
 
   else
-     call returnFail('computeTSDerivatives','Not a valid stability motion')
+     call terminate('computeTSDerivatives','Not a valid stability motion')
   endif
 
 end subroutine computeTSDerivatives

@@ -21,6 +21,7 @@
 !
        use block
        use BCTypes
+       use utils, only : terminate
        implicit none
 !
 !      Local variables.
@@ -61,7 +62,7 @@
                     flowDoms(nn,level,1)%jcEnd(mm), &
                     flowDoms(nn,level,1)%kcEnd(mm), stat=ierr)
            if(ierr /= 0)                        &
-             call returnFail("cellRangeSubface", &
+             call terminate("cellRangeSubface", &
                             "Memory allocation failure for &
                             &cell subranges")
 

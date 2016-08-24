@@ -57,7 +57,6 @@ FILES_TO_COMPLEXIFY = \
 		 checkPartitioning.f90\
 		 checkTransform.f90\
 		 countConnectivities.F90\
-		 determineBleedFlowRegions.f90\
 		 determineComputeBlocks.f90\
 		 determineGridFileNames.f90\
 		 determineInterfaceIDs.f90\
@@ -67,7 +66,6 @@ FILES_TO_COMPLEXIFY = \
 		 initFineGridIblank.f90\
 		 internalBC.f90\
 		 loadBalance.f90\
-		 overwriteFamilyData.f90\
 		 overwriteWallBCData.f90\
 		 partitionAndReadGrid.f90\
 		 qsortSubblocksOfCGNSType.f90\
@@ -77,7 +75,6 @@ FILES_TO_COMPLEXIFY = \
 		 readBocos.F90\
 		 readFamilyInfo.F90\
 		 readGeneralConn.F90\
-		 readLevel0CoolingParameters.f90\
 		 readPeriodicSubface.F90\
 		 readZoneInfo.F90\
 		 reallocSubfaceMemory.f90\
