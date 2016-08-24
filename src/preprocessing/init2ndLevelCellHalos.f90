@@ -25,6 +25,7 @@
 !      ******************************************************************
 !
        use haloList
+       use utils, only : terminate
        implicit none
 !
 !      Local variables.
@@ -43,7 +44,7 @@
 
        allocate(cellHalo2nd(nCellHalo2nd), stat=ierr)
        if(ierr /= 0)                             &
-         call returnFail("init2ndLevelCellHalos", &
+         call terminate("init2ndLevelCellHalos", &
                         "Memory allocation failure for cellHalo2nd")
 
        ! Initialize iicell2nd to nCellHalo1st.
@@ -74,7 +75,7 @@
            jj = cellHalo2nd(i)%nPeriodicSubfaces
            allocate(cellHalo2nd(i)%periodicSubfaces(jj), stat=ierr)
            if(ierr /= 0)                             &
-             call returnFail("init2ndLevelCellHalos", &
+             call terminate("init2ndLevelCellHalos", &
                             "Memory allocation failure for &
                             &periodicSubfaces")
            do j=1,jj

@@ -23,6 +23,7 @@
        use localSubfacesMod
        use thisSlide
        use updateComm
+       use utils, only : terminate
        implicit none
 !
 !      Subroutine arguments.
@@ -127,7 +128,7 @@
        allocate(intSend(nn), realSend(mm), indicesSend(ii), &
                 stat=ierr)
        if(ierr /= 0)                                &
-         call returnFail("updateSlidingCommPattern", &
+         call terminate("updateSlidingCommPattern", &
                         "Memory allocation failure for intSend, etc.")
 
        ! Initialize the counters, which store the addresses for the
@@ -160,7 +161,7 @@
                     mySubfaces1(nn)%u,          &
                     mySubfaces1(nn)%v, stat=ierr)
          if(ierr /= 0)                                &
-           call returnFail("updateSlidingCommPattern", &
+           call terminate("updateSlidingCommPattern", &
                           "Deallocation error for mySubfaces1.")
        enddo
 
@@ -171,7 +172,7 @@
                     mySubfaces2(nn)%u,          &
                     mySubfaces2(nn)%v, stat=ierr)
          if(ierr /= 0)                                &
-           call returnFail("updateSlidingCommPattern", &
+           call terminate("updateSlidingCommPattern", &
                           "Deallocation error for mySubfaces2.")
        enddo
 
@@ -282,7 +283,7 @@
 
          allocate(tmpInt(2*ii), tmpReal(2*ii), stat=ierr)
          if(ierr /= 0)                                &
-           call returnFail("updateSlidingCommPattern", &
+           call terminate("updateSlidingCommPattern", &
                           "Memory allocation failure for tmpInt &
                           &and tmpReal.")
 
@@ -306,7 +307,7 @@
 
          deallocate(tmpInt, tmpReal, stat=ierr)
          if(ierr /= 0)                                &
-           call returnFail("updateSlidingCommPattern", &
+           call terminate("updateSlidingCommPattern", &
                           "Deallocation failure for tmpInt &
                           &and tmpReal.")
        enddo recvLoop1
@@ -317,7 +318,7 @@
 
        deallocate(subface1, quadID1, &
                   subface2, quadID2, stat=ierr)
-       if(ierr /= 0) call returnFail("updateSlidingCommPattern",  &
+       if(ierr /= 0) call terminate("updateSlidingCommPattern",  &
                                     "Deallocation error for subface1, &
                                     &quadID1, subface2 and quadID2.")
 
@@ -329,7 +330,7 @@
                     mySubfaces1(nn)%indHalo2, &
                     mySubfaces1(nn)%connDual, stat=ierr)
          if(ierr /= 0)                                &
-           call returnFail("updateSlidingCommPattern", &
+           call terminate("updateSlidingCommPattern", &
                           "Deallocation error for the remaining arrays &
                           &mySubfaces1.")
        enddo
@@ -339,14 +340,14 @@
                     mySubfaces2(nn)%indHalo2, &
                     mySubfaces2(nn)%connDual, stat=ierr)
          if(ierr /= 0)                                &
-           call returnFail("updateSlidingCommPattern", &
+           call terminate("updateSlidingCommPattern", &
                           "Deallocation error for he remaining arrays &
                           &mySubfaces2.")
        enddo
 
        deallocate(mySubfaces1, mySubfaces2, stat=ierr)
        if(ierr /= 0)                                &
-         call returnFail("updateSlidingCommPattern", &
+         call terminate("updateSlidingCommPattern", &
                         "Deallocation error for mySubfaces1 &
                         &and mySubfaces2.")
 
@@ -362,7 +363,7 @@
 
        deallocate(intSend, realSend, stat=ierr)
        if(ierr /= 0)                                &
-         call returnFail("updateSlidingCommPattern", &
+         call terminate("updateSlidingCommPattern", &
                         "Deallocation failure for intSend &
                         &and realSend.")
 
@@ -379,7 +380,7 @@
 
        allocate(intSend(ii), realSend(jj), stat=ierr)
        if(ierr /= 0)                                &
-         call returnFail("updateSlidingCommPattern", &
+         call terminate("updateSlidingCommPattern", &
                         "Memory allocation failure for intSend &
                         &and realSend.")
 
@@ -467,7 +468,7 @@
 
          allocate(tmpInt(ii), stat=ierr)
          if(ierr /= 0) &
-           call returnFail("updateSlidingCommPattern", &
+           call terminate("updateSlidingCommPattern", &
                           "Memory allocation failure for tmpInt.")
 
          call mpi_recv(tmpInt, size, sumb_integer, procID, &
@@ -484,7 +485,7 @@
 
          allocate(tmpReal(ii), stat=ierr)
          if(ierr /= 0) &
-           call returnFail("updateSlidingCommPattern", &
+           call terminate("updateSlidingCommPattern", &
                           "Memory allocation failure for tmpReal.")
 
          call mpi_recv(tmpReal, size, sumb_real, procID, &
@@ -504,7 +505,7 @@
 
          deallocate(tmpInt, tmpReal, stat=ierr)
          if(ierr /= 0)                                &
-           call returnFail("updateSlidingCommPattern", &
+           call terminate("updateSlidingCommPattern", &
                           "Deallocation error for tmpInt and tmpReal.")
 
        enddo recvLoop2
@@ -521,7 +522,7 @@
 
        deallocate(intSend, realSend, indicesSend, stat=ierr)
        if(ierr /= 0)                                &
-         call returnFail("updateSlidingCommPattern", &
+         call terminate("updateSlidingCommPattern", &
                         "Deallocation error for intSend, &
                         &realSend and indicesSend.")
 

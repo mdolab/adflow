@@ -5,45 +5,15 @@
 ! model. it is slightly more modularized than the original which makes
 ! performing reverse mode ad simplier. 
 module samodule_b
-  use blockpointers
+  use constants
   implicit none
   real(kind=realtype) :: cv13, kar2inv, cw36, cb3inv
-!real(kind=realtype), dimension(100,100,100) :: qq
   real(kind=realtype), dimension(:, :, :), allocatable :: qq
   real(kind=realtype), dimension(:, :, :), pointer :: ddw, ww, ddvt
   real(kind=realtype), dimension(:, :), pointer :: rrlv
   real(kind=realtype), dimension(:, :), pointer :: dd2wall
 
 contains
-  subroutine sa(resonly)
-!
-! shell function to call sa_block on al blocks
-!
-    use blockpointers
-    use constants
-    use inputtimespectral
-    use iteration
-    implicit none
-!
-!      subroutine arguments.
-    logical, intent(in) :: resonly
-!      local variables.
-!
-    integer(kind=inttype) :: nn, sps
-!
-! compute the time derivative for the time spectral mode.
-!
-    call unsteadyturbspectral(itu1, itu1)
-! loop over the number of spectral solutions.
-spectralloop:do sps=1,ntimeintervalsspectral
-! loop over the number of blocks.
-domains:do nn=1,ndom
-! set the pointers for this block.
-        call setpointers(nn, currentlevel, sps)
-        call sa_block(resonly)
-      end do domains
-    end do spectralloop
-  end subroutine sa
 !  differentiation of sa_block in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *dw *w *rlv *vol *si *sj *sk
 !                (global)timeref

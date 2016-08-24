@@ -74,6 +74,7 @@ subroutine block_res_b(nn, sps, usespatial, alpha, alphad, beta, betad, &
   use inputdiscretization
   use samodule_b
   use inputunsteady
+  use utils_b, only : terminate
   implicit none
 ! input arguments:
   integer(kind=inttype), intent(in) :: nn, sps

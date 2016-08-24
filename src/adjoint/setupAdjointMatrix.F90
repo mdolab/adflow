@@ -7,6 +7,7 @@ subroutine setupAdjointMatrix
   !     ******************************************************************
   !
   use constants
+  use utils, only : setPointers
   !use ADjointPETSc
   !use inputADjoint
   !use communication

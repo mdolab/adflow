@@ -28,6 +28,9 @@
        use cgnsNames
        use IOModule
        use restartMod
+       use utils, only : setCGNSRealType, terminate
+       use sorting, only : bsearchStrings
+
        implicit none
 !
 !      Subroutine argument.
@@ -42,18 +45,7 @@
        integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
 
        real(kind=realType) :: scale
-!
-!      Function definitions.
-!
-       integer               :: setCGNSRealType
-       integer(kind=intType) :: bsearchStrings
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
+
        ! Set the cell range to be copied from the buffer.
 
        iBeg = lbound(buffer,1); iEnd = ubound(buffer,1)
@@ -149,7 +141,7 @@
        ! Not able to determine the y-velocity.
        ! Print an error message and exit.
 
-       call returnFail("readYvelocity", &
+       call terminate("readYvelocity", &
                       "Not able to retrieve y-velocity from the &
                       &variables in the restart file.")
 

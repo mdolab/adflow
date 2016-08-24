@@ -43,6 +43,7 @@ subroutine timestep_block_fast_b(onlyradii)
   use iteration, only : groundlevel, currentlevel
   use section, only : sections
   use inputtimespectral, only : ntimeintervalsspectral
+  use utils_fast_b, only : terminate
   implicit none
 ! the rest of this file can be skipped if only the spectral
 ! radii need to be computed.

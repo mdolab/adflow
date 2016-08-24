@@ -26,6 +26,9 @@
        use flowVarRefState
        use IOModule
        use restartMod
+       use utils, only : setCGNSRealType, terminate
+       use sorting, only : bsearchStrings
+       use flowUtils, only : eTot
        implicit none
 !
 !      Subroutine argument.
@@ -40,18 +43,7 @@
        integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
 
        real(kind=realType) :: vvx, vvy, vvz, dummyK, pres, rhoInv
-!
-!      Function definitions.
-!
-       integer               :: setCGNSRealType
-       integer(kind=intType) :: bsearchStrings
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
+
        ! Set the cell range to be copied from the buffer.
 
        iBeg = lbound(buffer,1); iEnd = ubound(buffer,1)
@@ -140,9 +132,9 @@
                  vvy     = w(ip,jp,kp,imy)*rhoInv
                  vvz     = w(ip,jp,kp,imz)*rhoInv
                  pres   = buffer(i,j,k)*pScale
-                 call etotArray(w(ip,jp,kp,irho), vvx, vvy, vvz, pres,  &
+                 call etot(w(ip,jp,kp,irho), vvx, vvy, vvz, pres,  &
                                 w(ip,jp,kp,itu1), w(ip,jp,kp,irhoE), &
-                                kPresent, 1_intType)
+                                kPresent)
                enddo
              enddo
            enddo
@@ -162,9 +154,8 @@
                  vvy     = w(ip,jp,kp,imy)*rhoInv
                  vvz     = w(ip,jp,kp,imz)*rhoInv
                  pres   = buffer(i,j,k)*pScale
-                 call etotArray(w(ip,jp,kp,irho), vvx, vvy, vvz, pres, &
-                                dummyK, w(ip,jp,kp,irhoE),          &
-                                kPresent, 1_intType)
+                 call etot(w(ip,jp,kp,irho), vvx, vvy, vvz, pres, &
+                                dummyK, w(ip,jp,kp,irhoE), kPresent)
                enddo
              enddo
            enddo
@@ -179,7 +170,7 @@
 
        ! Energy could not be created. Terminate.
 
-       call returnFail("readEnergy", &
+       call terminate("readEnergy", &
                       "Energy could not be created")
 
        end subroutine readEnergy

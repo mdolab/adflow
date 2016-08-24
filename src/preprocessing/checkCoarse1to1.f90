@@ -22,6 +22,7 @@
        use block
        use inputTimeSpectral
        use coarseningInfo
+       use utils, only : terminate
        implicit none
 !
 !      Subroutine arguments.
@@ -185,7 +186,7 @@
                     "...Support not implemented yet.")
              ll = flowDoms(nn,1,1)%cgnsBlockID
              write(errorMessage,101) cgnsDoms(ll)%zoneName
-             call returnFail("checkCoarse1to1", errorMessage)
+             call terminate("checkCoarse1to1", errorMessage)
 
            endif is1to1
 

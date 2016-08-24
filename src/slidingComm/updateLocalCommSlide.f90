@@ -22,6 +22,8 @@
 !
        use commSliding
        use updateComm
+       use utils, only : reallocateinteger, reallocateinteger2, &
+            reallocateReal, terminate
        implicit none
 !
 !      Subroutine arguments.
@@ -53,7 +55,7 @@
        deallocate(donorInfo%indBuf,  donorInfo%block, &
                   donorInfo%indices, donorInfo%weight, stat=ierr)
        if(ierr /= 0)                            &
-         call returnFail("updateLocalCommSlide", &
+         call terminate("updateLocalCommSlide", &
                         "Deallocation error for the member variables &
                         &of donorInfo.")
 
@@ -83,54 +85,7 @@
 !        Local variables.
 !
          integer(kind=intType) :: nOld, ii, jj, i
-!
-!        Interfaces
-!
-         interface
-           subroutine reallocateInteger(intArray, newSize, oldSize, &
-                                        alwaysFreeMem)
-             use precision
-             implicit none
 
-             integer(kind=intType), dimension(:), pointer :: intArray
-             integer(kind=intType), intent(in) :: newSize, oldSize
-             logical, intent(in) :: alwaysFreeMem
-           end subroutine reallocateInteger
-
-           !=============================================================
-
-           subroutine reallocateInteger2(intArray,           &
-                                         newSize1, newSize2, &
-                                         oldSize1, oldSize2, &
-                                         alwaysFreeMem)
-             use precision
-             implicit none
- 
-             integer(kind=intType), dimension(:,:), pointer :: intArray
-             integer(kind=intType), intent(in) :: newSize1, newSize2, &
-                                                  oldSize1, oldSize2
-             logical, intent(in) :: alwaysFreeMem
-           end subroutine reallocateInteger2
-
-           !=============================================================
-
-           subroutine reallocateReal(realArray, newSize, oldSize, &
-                                     alwaysFreeMem)
-             use precision
-             implicit none
-
-             real(kind=realType), dimension(:), pointer :: realArray
-             integer(kind=intType), intent(in) :: newSize, oldSize
-             logical, intent(in) :: alwaysFreeMem
-           end subroutine reallocateReal
-         end interface
-!
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
-!
          ! Store the old value of nCopy and determine the new value.
 
          nOld = intSlidingCell%nCopy

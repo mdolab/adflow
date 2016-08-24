@@ -24,6 +24,7 @@
        use BCTypes
        use communication
        use inputTimeSpectral
+       use utils, only : setPointers
        implicit none
 !
 !      Subroutine arguments.

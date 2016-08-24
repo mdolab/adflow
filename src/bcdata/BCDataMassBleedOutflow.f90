@@ -25,6 +25,7 @@
        use inputIteration
        use inputTimeSpectral
        use iteration
+       use utils, only : siDensity, siVelocity, setPointers
        implicit none
 !
 !      Subroutine arguments.

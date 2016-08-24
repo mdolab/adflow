@@ -23,6 +23,7 @@
        use communication
        use interfaceGroups
        use tmpSliding
+       use utils, only : setPointers, terminate
        implicit none
 !
 !      Subroutine arguments.
@@ -128,7 +129,7 @@
                   distrSliding(nn)%procs2(tmp(nn,2)), stat=ierr)
 
          if(ierr /= 0)                   &
-           call returnFail("procSliding", &
+           call terminate("procSliding", &
                           "Memory allocation failure for procs1 &
                           &and procs2")
        enddo
@@ -138,7 +139,7 @@
        i = max(i,j)
        allocate(bufferRecv(i), stat=ierr)
        if(ierr /= 0)                   &
-         call returnFail("procSliding", &
+         call terminate("procSliding", &
                         "Memory allocation failure for bufferRecv")
 
        ! Loop over the two sides of a sliding mesh interface.
@@ -220,7 +221,7 @@
 
        deallocate(bufferRecv, stat=ierr)
        if(ierr /= 0)                   &
-         call returnFail("procSliding", &
+         call terminate("procSliding", &
                         "Deallocation failure for bufferRecv")
 
        end subroutine procSliding

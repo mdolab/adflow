@@ -41,6 +41,7 @@ subroutine forcesandmoments_d(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd&
 !      * here.                                                          *
 !      ******************************************************************
 !
+  use communication
   use blockpointers
   use bctypes
   use flowvarrefstate
@@ -48,6 +49,7 @@ subroutine forcesandmoments_d(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd&
   use bcroutines_d
   use costfunctions
   use surfacefamilies
+  use sorting, only : bsearchintegers
   use diffsizes
 !  hint: isize1ofdrfbcdata should be the size of dimension 1 of array *bcdata
   implicit none
@@ -65,7 +67,7 @@ subroutine forcesandmoments_d(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd&
 !
 !      local variables.
 !
-  integer(kind=inttype) :: nn, i, j, ii, bsearchintegers
+  integer(kind=inttype) :: nn, i, j, ii, blk
   real(kind=realtype) :: pm1, fx, fy, fz, fn, sigma
   real(kind=realtype) :: pm1d, fxd, fyd, fzd
   real(kind=realtype) :: xc, yc, zc, qf(3)
@@ -85,11 +87,11 @@ subroutine forcesandmoments_d(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd&
   real(kind=realtype) :: mx, my, mz, cellarea
   real(kind=realtype) :: mxd, myd, mzd, cellaread
   logical :: viscoussubface
-  intrinsic shape
+  intrinsic size
   intrinsic mod
+  intrinsic max
   intrinsic sqrt
   intrinsic exp
-  intrinsic max
   real(kind=realtype) :: arg1
   real(kind=realtype) :: arg1d
   real(kind=realtype) :: result1
@@ -165,7 +167,7 @@ bocos:do nn=1,nbocos
 !        *                                                              *
 !        ****************************************************************
 !
-    if (bsearchintegers(bcdata(nn)%famid, famgroups, shape(famgroups)) &
+    if (bsearchintegers(bcdata(nn)%famid, famgroups, size(famgroups)) &
 &       .gt. 0) then
       if ((bctype(nn) .eq. eulerwall .or. bctype(nn) .eq. &
 &         nswalladiabatic) .or. bctype(nn) .eq. nswallisothermal) then
@@ -227,13 +229,24 @@ bocos:do nn=1,nbocos
 &           +1, j+1, 3)) - refpointd(3)
           zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j&
 &           +1, 3)) - refpoint(3)
-! compute the force components.
+          if (bcdata(nn)%iblank(i, j) .lt. 0) then
+            blk = 0
+          else
+            blk = bcdata(nn)%iblank(i, j)
+          end if
           fxd = pm1d*ssi(i, j, 1) + pm1*ssid(i, j, 1)
           fx = pm1*ssi(i, j, 1)
           fyd = pm1d*ssi(i, j, 2) + pm1*ssid(i, j, 2)
           fy = pm1*ssi(i, j, 2)
           fzd = pm1d*ssi(i, j, 3) + pm1*ssid(i, j, 3)
           fz = pm1*ssi(i, j, 3)
+! iblank forces
+          fxd = blk*fxd
+          fx = fx*blk
+          fyd = blk*fyd
+          fy = fy*blk
+          fzd = blk*fzd
+          fz = fz*blk
 ! update the inviscid force and moment coefficients.
           cfpd(1) = cfpd(1) + fxd
           cfp(1) = cfp(1) + fx
@@ -365,7 +378,11 @@ bocos:do nn=1,nbocos
 &             )%inbeg + 1
             j = ii/(bcdata(nn)%inend-bcdata(nn)%inbeg) + bcdata(nn)%&
 &             jnbeg + 1
-! store the viscous stress tensor a bit easier.
+            if (bcdata(nn)%iblank(i, j) .lt. 0) then
+              blk = 0
+            else
+              blk = bcdata(nn)%iblank(i, j)
+            end if
             tauxxd = viscsubfaced(nn)%tau(i, j, 1)
             tauxx = viscsubface(nn)%tau(i, j, 1)
             tauyyd = viscsubfaced(nn)%tau(i, j, 2)
@@ -398,6 +415,19 @@ bocos:do nn=1,nbocos
 &             ssi(i, j, 2)+tauzz*ssi(i, j, 3))*scaledimd))
             fz = -(fact*(tauxz*ssi(i, j, 1)+tauyz*ssi(i, j, 2)+tauzz*ssi&
 &             (i, j, 3))*scaledim)
+! iblank forces after saving for zipper mesh
+            tauxx = tauxx*blk
+            tauyy = tauyy*blk
+            tauzz = tauzz*blk
+            tauxy = tauxy*blk
+            tauxz = tauxz*blk
+            tauyz = tauyz*blk
+            fxd = blk*fxd
+            fx = fx*blk
+            fyd = blk*fyd
+            fy = fy*blk
+            fzd = blk*fzd
+            fz = fz*blk
 ! compute the coordinates of the centroid of the face
 ! relative from the moment reference point. due to the
 ! usage of pointers for xx and offset of 1 is present,

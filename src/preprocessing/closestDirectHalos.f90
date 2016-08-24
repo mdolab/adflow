@@ -22,6 +22,7 @@
        use bcHalo
        use haloList
        use indirectHalo
+       use utils, only : terminate
        implicit none
 !
 !      Subroutine arguments.
@@ -67,7 +68,7 @@
 
        allocate(indHalo(nIndHalo), stat=ierr)
        if(ierr /= 0)                         &
-        call returnFail("closestDirectHalos", &
+        call terminate("closestDirectHalos", &
                        "Memory allocation failure for indHalo")
 
        ! Determine the lower bound for the block with halo's.
@@ -221,7 +222,7 @@
                  ! in the cgns file is not correct.
 
                  if(jj == 0)                            &
-                   call returnFail("closestDirectHalos", &
+                   call terminate("closestDirectHalos", &
                                   "Closest direct halo not in halo &
                                   &list. Something wrong with BC info?")
 

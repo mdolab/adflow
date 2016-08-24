@@ -69,9 +69,6 @@
          case (ktau)
            call ktEddyViscosity
 #endif
-         case default
-           call returnFail("computeEddyViscosity", &
-                          "Turbulence model not implemented yet")
        end select
 
        end subroutine computeEddyViscosity

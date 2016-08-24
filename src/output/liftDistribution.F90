@@ -208,6 +208,7 @@ subroutine writeSlicesFile(fileName, updateSurfaceData)
   use inputIteration
   use inputIO
   use surfaceFamilies
+  use utils, only : EChk
   implicit none
 
   ! Input Params
@@ -421,6 +422,8 @@ subroutine writeLiftDistributions(sps, fileID)
   use su_cgns
   use cgnsNames
   use surfaceFamilies
+  use utils, only : EChk
+  use sorting, only : bsearchIntegers
   implicit none
 
   ! Input parameters
@@ -429,7 +432,7 @@ subroutine writeLiftDistributions(sps, fileID)
   real(kind=realType), dimension(3) :: xmin, xmax, xmin_local, xmax_local
   real(kind=realType), parameter :: tol=1e-8
   type(liftDist), pointer :: d
-  integer(kind=intType) :: i, j, ii, jj, iDist, ierr, bsearchIntegers
+  integer(kind=intType) :: i, j, ii, jj, iDist, ierr
   real(kind=realType), dimension(:,:), allocatable :: values
   character(len=maxCGNSNameLen), dimension(:), allocatable :: liftDistNames
   real(kind=realType) :: dmin, dmax, sumL, sumD, span, delta, xCur(3)
@@ -637,6 +640,8 @@ subroutine writeTecplotSurfaceFile(fileName, updateSurfaceData)
   use inputIteration
   use inputIO
   use surfaceFamilies
+  use utils, only : EChk
+  use sorting, only : bsearchIntegers
   implicit none
 
   ! Input Params
@@ -647,7 +652,7 @@ subroutine writeTecplotSurfaceFile(fileName, updateSurfaceData)
   integer(kind=intType) :: i, j, iProc, sps, nSolVar, ierr, fileID, iSize, iFam
   character(len=maxStringLen) :: fname
   character(len=7) :: intString
-  integer(Kind=intType) :: nNodes, nCells, bSearchIntegers
+  integer(Kind=intType) :: nNodes, nCells
   integer(kind=intType), dimension(:), allocatable :: nodeSizes, nodeDisps
   integer(kind=intType), dimension(:), allocatable :: cellSizes, cellDisps
   character(len=maxCGNSNameLen), dimension(:), allocatable :: solNames
@@ -982,19 +987,14 @@ subroutine computeSurfaceOutputNodalData(exch, includeTractions)
   use blockPointers
   use BCTypes
   use surfaceFamilies, only: famGroups
+  use utils, only : setPointers, EChk
+  use sorting, only : bsearchIntegers
   implicit none
 
 #define PETSC_AVOID_MPIF_H
-#include "include/petscversion.h"
-#if PETSC_VERSION_MINOR > 5
 #include "petsc/finclude/petscsys.h"
 #include "petsc/finclude/petscvec.h"
 #include "petsc/finclude/petscvec.h90"
-#else
-#include "include/finclude/petscsys.h"
-#include "include/finclude/petscvec.h"
-#include "include/finclude/petscvec.h90"
-#endif
 
   ! Input Param  
   type(familyExchange) :: exch
@@ -1003,7 +1003,6 @@ subroutine computeSurfaceOutputNodalData(exch, includeTractions)
   ! Working params
   integer(kind=intType) :: i, j, ii, jj, kk, nn, mm, iSol, ierr, nPts, nCells
   integer(kind=intType) :: nFields, nSolVar, iBeg, iEnd, jBeg, jEnd, ind(4), ni, nj
-  integer(kind=intType) :: bSearchIntegers
   integer(kind=intType), dimension(3,2) :: cellRangeCGNS
   character(len=maxCGNSNameLen), dimension(:), allocatable :: solNames
   real(kind=realType), dimension(:), allocatable :: buffer
@@ -1045,7 +1044,7 @@ subroutine computeSurfaceOutputNodalData(exch, includeTractions)
            jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
 
            if (bsearchIntegers(BCdata(mm)%famID, &
-                famGroups, shape(famGroups)) > 0) then 
+                famGroups, size(famGroups)) > 0) then 
               do j=jBeg, jEnd
                  do i=iBeg, iEnd
                     ii = ii + 1
@@ -1086,7 +1085,7 @@ subroutine computeSurfaceOutputNodalData(exch, includeTractions)
         ni = iEnd - iBeg + 1
         nj = jEnd - jBeg + 1
         if (bsearchIntegers(BCdata(mm)%famID, &
-             famGroups, shape(famGroups)) > 0) then 
+             famGroups, size(famGroups)) > 0) then 
            do j=0,nj-2
               do i=0,ni-2
 
@@ -1146,7 +1145,7 @@ subroutine computeSurfaceOutputNodalData(exch, includeTractions)
 
         bocoLoop: do mm=1, nBocos
            if (bsearchIntegers(BCdata(mm)%famID, &
-                famGroups, shape(famGroups)) > 0) then 
+                famGroups, size(famGroups)) > 0) then 
 
               ! storeSurfSolInBuffer needs to know if the subface is
               ! viscous or not. 
@@ -1285,6 +1284,8 @@ subroutine createSlice(exch, slc, pt, dir, sliceName, famList, nFam)
   !      ******************************************************************
   !
   use liftDistributionData
+  use utils, only : reallocatereal2, reallocateinteger2, pointReduce
+  use sorting, only : bsearchIntegers
   implicit none
 
   ! Input param
@@ -1295,7 +1296,7 @@ subroutine createSlice(exch, slc, pt, dir, sliceName, famList, nFam)
   integer(kind=intType), intent(in) :: famList(nFam), nFam
 
   ! Working param
-  integer(kind=intType) :: i, nMax, nUnique, oldInd, newInd, bSearchIntegers
+  integer(kind=intType) :: i, nMax, nUnique, oldInd, newInd
   integer(kind=intType) :: patchIndices(4), indexSquare, jj, kk, icon, iCoor, num1, num2
   real(kind=realType) :: f(4), d, ovrdnom, tol
   logical :: logic1, foundFam
@@ -1303,27 +1304,6 @@ subroutine createSlice(exch, slc, pt, dir, sliceName, famList, nFam)
   integer(kind=intType), dimension(:, :), pointer :: tmpInd
   integer(kind=intType), dimension(:), allocatable :: link
 
-  interface
-     subroutine reallocateReal2(realArray, newSize1, newSize2, &
-          oldSize1, oldSize2, alwaysFreeMem)
-       use precision
-       implicit none
-       real(kind=realType), dimension(:,:), pointer :: realArray
-       integer(kind=intType), intent(in) :: newSize1, newSize2, &
-            oldSize1, oldSize2
-       logical, intent(in) :: alwaysFreeMem
-     end subroutine reallocateReal2
-
-     subroutine reallocateInteger2(intArray, newSize1, newSize2, &
-          oldSize1, oldSize2, alwaysFreeMem)
-       use precision
-       implicit none
-       integer(kind=intType), dimension(:,:), pointer :: intArray
-       integer(kind=intType), intent(in) :: newSize1, newSize2, &
-            oldSize1, oldSize2
-       logical, intent(in) :: alwaysFreeMem
-     end subroutine reallocateInteger2
-  end interface
 
   ! Allocate the family list this slice is to use:
   allocate(slc%famList(nFam))
@@ -1518,6 +1498,8 @@ subroutine integrateSlice(lSlc, gSlc, nFields, doConnectivity)
   use inputPhysics   
   use flowVarRefState
   use communication
+  use utils, only : EChk
+  use sorting, only : bsearchIntegers
   implicit none
 
   ! Input Variables

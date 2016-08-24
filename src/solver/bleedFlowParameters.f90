@@ -27,6 +27,7 @@
        use flowVarRefState
        use iteration
        use section
+       use utils, only : setPointers
        implicit none
 !
 !      Subroutine arguments

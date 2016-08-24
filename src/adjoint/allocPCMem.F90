@@ -7,6 +7,7 @@ subroutine allocPCMem(level)
   use blockPointers, only : nDom, nx, ny, nz, il, jl, kl, ie, je, ke, flowDoms
   use inputTimeSpectral, onlY : nTimeIntervalsSpectral
   use flowVarRefState, only : nw
+  use utils, only : EChk, setPointers
   implicit none
 
   integer(kind=intType), intent(in) :: level

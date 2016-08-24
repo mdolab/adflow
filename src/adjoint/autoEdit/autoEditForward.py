@@ -19,11 +19,17 @@ DIR_MOD = sys.argv[2]
 patt_modules = re.compile(r'(\s*use\s*\w*)(_d)\s*')
 patt_module = re.compile(r'\s*module\s\w*')
 patt_subroutine = re.compile(r'\s*subroutine\s\w*')
-patt_comment = re.compile(r'\s*!.*')
+patt_function = re.compile(r'\s*function\s\w*')
+
+patt_subend = re.compile(r'\s*end\s*subroutine')
+patt_funcend = re.compile(r'\s*end\s*function\n')
+
 print "Directory of input source files  :", DIR_ORI
 print "Directory of output source files :", DIR_MOD
 
-useful_modules = ['samodule_d','bcroutines_d','turbbcroutines_d']
+useful_modules = ['samodule_d','bcroutines_d','turbbcroutines_d',
+                  'utils_d', 'flowutils_d']
+modSubToKeep = []
 
 for f in os.listdir(DIR_ORI):
     if f.endswith(EXT):
@@ -47,7 +53,8 @@ for f in os.listdir(DIR_ORI):
                 isModule = True
             if patt_subroutine.match(line):
                 hasSubroutine = True
-
+            if patt_function.match(line):
+                hasSubroutine = True
         # If we have a module, close the input and cycle to next file. 
         if isModule and not hasSubroutine:
             file_object_ori.close()
@@ -58,6 +65,8 @@ for f in os.listdir(DIR_ORI):
 
         # Go back to the beginning
         file_object_ori.seek(0)
+        subActive = False
+        
         for line in file_object_ori:
             # Just deal with lower case string
             line = line.lower()
@@ -74,10 +83,10 @@ for f in os.listdir(DIR_ORI):
                 for m in useful_modules:
                     if m in line:
                         found = True
+                        print ('fucking useful module:', m)
                 if not found:
                     line = line.replace('_d', '')
-            
-            # write the modified line to new file
+
             file_object_mod.write(line)
 
         # close the files

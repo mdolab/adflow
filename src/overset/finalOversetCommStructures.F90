@@ -7,6 +7,7 @@ subroutine finalOversetCommStructures(level, sps)
 
   use blockPointers
   use communication
+  use utils, only : setPointers, terminate, EChk
 
   implicit none
 

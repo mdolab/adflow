@@ -1,13 +1,3 @@
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          transferToCoarseGrid.f90                        *
-!      * Author:        Edwin van der Weide, Steve Repsher              *
-!      * Starting date: 03-20-2003                                      *
-!      * Last modified: 09-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
-!
        subroutine transferToCoarseGrid
 !
 !      ******************************************************************
@@ -23,6 +13,10 @@
        use inputIteration
        use inputTimeSpectral
        use iteration
+       use utils, only : setPointers
+       use haloExchange, only : whalo1
+       use flowUtils, only : computeEtotBlock
+
        implicit none
 !
 !      Local variables.
@@ -39,13 +33,7 @@
        real(kind=realType), dimension(:,:,:), pointer :: pp, vvol, rrev
 
        logical :: correctForK
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
+
        ! Compute the residual on the fine grid. It is assumed that the
        ! halo's contain the correct values. The time step is computed,
        ! because this routine also computes the spectral radii for the

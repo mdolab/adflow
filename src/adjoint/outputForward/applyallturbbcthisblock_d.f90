@@ -33,13 +33,6 @@ subroutine applyallturbbcthisblock_d(secondhalo)
   integer(kind=inttype) :: nn, i, j, l, m
   real(kind=realtype), dimension(:, :, :, :), pointer :: bmt
   real(kind=realtype), dimension(:, :, :), pointer :: bvt, ww1, ww2
-!
-!      ******************************************************************
-!      *                                                                *
-!      * begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
 ! loop over the boundary condition subfaces of this block.
 bocos:do nn=1,nbocos
 ! loop over the faces and set the state in

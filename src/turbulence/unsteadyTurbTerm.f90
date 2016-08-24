@@ -38,6 +38,7 @@
        use iteration
        use section
        use turbMod
+
        implicit none
 !
 !      Subroutine arguments.
@@ -142,13 +143,6 @@
                ! is handled differently.
 
                return
-
-             !===========================================================
-
-             case (implicitRK)
-
-               call returnFail("unsteadyTurbTerm", &
-                              "Implicit RK not implemented yet")
 
            end select
 

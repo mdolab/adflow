@@ -23,6 +23,7 @@
        use commSliding
        use inputPhysics
        use interfaceGroups
+       use utils, only : terminate
        implicit none
 !
 !      Local variables.
@@ -63,7 +64,7 @@
 
        allocate(rotSliding(nRotSliding,3,3), stat=ierr)
        if(ierr /= 0)                                 &
-         call returnFail("determineRotationMatrices", &
+         call terminate("determineRotationMatrices", &
                         "Memory allocation failure for rotSliding.")
 
        ! Loop over the number of nInterfaceGroups to store the rotation

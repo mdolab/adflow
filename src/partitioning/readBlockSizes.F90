@@ -33,6 +33,8 @@
        use iteration
        use su_cgns
        use partitionMod
+       use utils, only : terminate, nullifyCGNSDomPointers
+       use sorting, only : bsearchStrings, qsortStrings
        implicit none
 !
 !      Local variables
@@ -53,17 +55,7 @@
                                                           sortedFamName
 
        logical :: noUnits
-!
-!      Function definition.
-!
-       integer(kind=intType) :: bsearchStrings
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
+
        ! Open the cgns files for reading and check if it went okay.
        ! Later on it is assumed that the 1st file stored in gridFiles
        ! is the "master".
@@ -166,11 +158,10 @@
        enddo
 
        ! Initialize whether the grid is changing to whether it is 
-       ! deforming, and possibly overwrite the family specified data.
+       ! deforming
 
        changing_Grid = deforming_Grid
        
-       call overwriteFamilyData(sortedFamName, famID)
 
        ! Determine the number of zones/blocks in the grid. Note that the
        ! reading is done using cgnsNzones (an integer variable) which is

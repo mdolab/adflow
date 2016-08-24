@@ -54,7 +54,6 @@ FILES_TO_COMPLEXIFY = outputMod.f90\
 		 numberOfIsoVariables.f90\
 		 openCGNSVolumeSol.F90\
 		 releaseHelpVariablesWriting.f90\
-		 resHalo1.f90\
 		 setHelpVariablesWriting.f90\
 		 storeOldSolInBuffer.f90\
 		 storeSolInBuffer.f90\

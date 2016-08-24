@@ -3,6 +3,7 @@
 subroutine setPointers_d(nn, level, sps)
 
   use blockPointers
+  use utils, only : setPointers
   implicit none
   !
   !      Subroutine arguments

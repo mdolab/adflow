@@ -17,17 +17,12 @@ subroutine createPETScVars
   use flowVarRefState, only : nwf, nw, viscous
   use inputADjoint, only : approxPC, frozenTurbulence, useMatrixFreedRdw, viscPC
   use stencils
+  use utils, only : EChk, setPointers
+  
   implicit none
 
 #define PETSC_AVOID_MPIF_H
-
-#include "include/petscversion.h"
-#if PETSC_VERSION_MINOR > 5
 #include "petsc/finclude/petsc.h"
-#else
-#include "include/finclude/petsc.h"
-#endif
-
 
   !     Local variables.
   integer(kind=intType)  :: nDimW, nDimX
@@ -138,15 +133,11 @@ subroutine myMatCreate(matrix, blockSize, m, n, nnzDiagonal, nnzOffDiag, &
   ! one place to make a change based on petsc version. 
 
   use communication
+  use utils, only : EChk, setPointers
   implicit none
 
 #define PETSC_AVOID_MPIF_H
-#include "include/petscversion.h"
-#if PETSC_VERSION_MINOR > 5
 #include "petsc/finclude/petsc.h"
-#else
-#include "include/finclude/petsc.h"
-#endif
 
   Mat matrix
   integer(kind=intType), intent(in) :: blockSize, m, n

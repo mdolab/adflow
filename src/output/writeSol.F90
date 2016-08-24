@@ -27,7 +27,8 @@
        use killSignals
        use monitor
        use outputMod
-
+       use utils, only : terminate, deallocateTempMemory, allocateTempMemory
+       use haloExchange, only : resHalo1
        implicit none
 !
 !      Local variables.
@@ -81,7 +82,7 @@
        deallocate(gridFileNames, volSolFileNames, &
                   surfSolFileNames, stat=ierr)
        if(ierr /= 0)                &
-         call returnFail("writeSol", &
+         call terminate("writeSol", &
                         "Deallocation failure for the file names.")
 
        ! Allocate the memory again that was deallocated in the beginning

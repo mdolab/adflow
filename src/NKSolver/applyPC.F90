@@ -7,7 +7,7 @@ subroutine applyPC(in_vec, out_vec, ndof)
   use constants
   use NKSolverVars, only : applyPCSubSpaceSize, dRdW, g, NK_iter, &
        NK_jacobianLag, NK_solverSetup, wVec, PETSC_NULL_OBJECT, NK_KSP, work
-
+  use utils, only : EChk
   implicit none
 #include "include/petscversion.h"
   ! Input/Output
@@ -70,6 +70,7 @@ subroutine applyAdjointPC(in_vec, out_vec, ndof)
   use ADjointPETSc, only : adjointKSP, KSP_NORM_NONE, PETSC_DEFAULT_REAL, &
        psi_like1, psi_like2
   use inputAdjoint, only : applyAdjointPCSubSpaceSize
+  use utils, only : EChk
   implicit none
 
   ! Input/Output

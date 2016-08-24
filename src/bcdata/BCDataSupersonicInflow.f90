@@ -1,13 +1,3 @@
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          BCDataSupersonicInflow.f90                      *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 09-24-2004                                      *
-!      * Last modified: 11-28-2007                                      *
-!      *                                                                *
-!      ******************************************************************
-!
        subroutine BCDataSupersonicInflow(boco, allFlowPresent, &
                                          allTurbPresent)
 !
@@ -24,6 +14,7 @@
        use flowVarRefState
        use inputPhysics
        use BCDataMod
+       use utils, only : siDensity, siPressure, siVelocity, siTemperature, terminate
        implicit none
 !
 !      Subroutine arguments.
@@ -60,13 +51,7 @@
 
          end function setBCVarTurb
        end interface
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
+
        ! Allocate the memory for the buffer bcVarArray, which is used
        ! for the interpolation and set the cgns names.
 
@@ -75,7 +60,7 @@
 
        allocate(bcVarArray(iBeg:iEnd,jBeg:jEnd,nbcVar), stat=ierr)
        if(ierr /= 0)                                &
-         call returnFail("BCDataSupersonicInflow", &
+         call terminate("BCDataSupersonicInflow", &
                         "Memory allocation failure for bcVarArray")
 
        bcVarNames(1) = cgnsDensity
@@ -136,7 +121,7 @@
  100         format("Zone ",a,", boundary subface ",a, &
                     ": Not enough data specified for supersonic inlet")
 
-             call returnFail("BCDataSupersonicInflow", errorMessage)
+             call terminate("BCDataSupersonicInflow", errorMessage)
 
            !=============================================================
 
@@ -188,7 +173,7 @@
 
        deallocate(bcVarArray, stat=ierr)
        if(ierr /= 0)                              &
-         call returnFail("BCDataSupersonicInflow", &
+         call terminate("BCDataSupersonicInflow", &
                         "Deallocation failure for bcVarArray")
 
        ! Check if the prescribed velocity is an inflow. No halo's
@@ -215,7 +200,7 @@
  102     format("Zone ",a,", supersonic inlet boundary subface ",a, &
                 ": Velocity points out of the domain for some faces.")
 
-         call returnFail("BCDataSupersonicInflow", errorMessage)
+         call terminate("BCDataSupersonicInflow", errorMessage)
        endif
 
        !=================================================================

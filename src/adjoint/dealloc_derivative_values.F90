@@ -1,7 +1,7 @@
 ! This is a special function that is sued to dealloc derivative values
 ! in blockpointers_d for use with the AD code.
 
-subroutine dealloc_derivative_values(level)
+subroutine deallocDerivativeValues(level)
 
   use blockPointers
   use inputtimespectral
@@ -15,6 +15,8 @@ subroutine dealloc_derivative_values(level)
   use bcroutines_b
 #endif
   use adjointVars
+  use utils, only : EChk, setPointers
+
   implicit none
 
   ! Input Parameters
@@ -199,9 +201,9 @@ subroutine dealloc_derivative_values(level)
 #ifndef USE_COMPLEX
   ! Deallocate reverse mode space for bcpointers
   deallocate(ww0, ww1, ww2, ww3, pp0, pp1, pp2, pp3, rlv0, rlv1, rlv2, rlv3, &
-       rev0, rev1, rev2, rev3, gamma0, gamma1, gamma2, gamma3, ssi, xx)
+       rev0, rev1, rev2, rev3, gamma0, gamma1, gamma2, gamma3, ssi, xx, gcp)
   deallocate(ww0d, ww1d, ww2d, ww3d, pp0d, pp1d, pp2d, pp3d, rlv0d, rlv1d, rlv2d, rlv3d, &
        rev0d, rev1d, rev2d, rev3d, ssid, xxd)
 #endif
 derivVarsAllocated = .False.
-end subroutine dealloc_derivative_values
+end subroutine deallocDerivativeValues

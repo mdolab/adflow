@@ -18,9 +18,16 @@ python module libsumb
        ! ############################################################################
        ! SUmb Routines
        ! ############################################################################
-       subroutine writeintromessage ! in :sumb:../../utils/initExec.F90
-       end subroutine writeintromessage
-       
+
+       module utils
+         subroutine writeintromessage ! in :sumb:../../utils/initExec.F90
+         end subroutine writeintromessage
+
+         subroutine getliftdirfromsymmetry(liftdir)
+           integer(kind=inttype), intent(out) :: liftdir
+         end subroutine getliftdirfromsymmetry
+
+       end module utils
       
        subroutine setdefaultvalues()
        end subroutine setdefaultvalues
@@ -101,9 +108,10 @@ python module libsumb
        
        subroutine initflowrestart
        end subroutine initflowrestart
-
-       subroutine updategamma
-       end subroutine updategamma
+       module flowutils 
+         subroutine updategamma
+         end subroutine updategamma
+       end module flowutils
 
        subroutine updatecoordinatesalllevels ! in :sumb:../../preprocessing/mdUpdateRoutines.f90
        end subroutine updatecoordinatesalllevels
@@ -459,9 +467,6 @@ python module libsumb
 #endif
        ! ------------- Misc --------------------
  
-       subroutine getliftdirfromsymmetry(liftdir)
-         integer(kind=inttype), intent(out) :: liftdir
-       end subroutine getliftdirfromsymmetry
 
        ! ############################################################################
        ! Newton-Krylov Solver Routines
@@ -793,6 +798,7 @@ python module libsumb
          real(kind=realtype) :: ssuthdim
          real(kind=realtype) :: musuthdim
          real(kind=realtype) :: tsuthdim
+         real(kind=realtype) :: walldistcutoff
        end module inputphysics
 
        module inputadjoint ! in :sumb:../modules/inputParam.f90

@@ -8,68 +8,64 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       subroutine turbResidual
-!
-!      ******************************************************************
-!      *                                                                *
-!      * turbResidual computes the residual of the residual of the      *
-!      * turbulent transport equations on the current multigrid level.  *
-!      *                                                                *
-!      ******************************************************************
-!
-       use inputDiscretization
-       use inputPhysics
-       use iteration
-       use turbMod
-       use saModule
-       implicit none
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
-       ! Determine whether or not a second order discretization for the
-       ! advective terms must be used.
+subroutine turbResidual
+  !
+  !      ******************************************************************
+  !      *                                                                *
+  !      * turbResidual computes the residual of the residual of the      *
+  !      * turbulent transport equations on the current multigrid level.  *
+  !      *                                                                *
+  !      ******************************************************************
+  !
+  use inputDiscretization
+  use inputPhysics
+  use iteration
+  use turbMod
+  use saModule
+  implicit none
+  !
+  !      ******************************************************************
+  !      *                                                                *
+  !      * Begin execution                                                *
+  !      *                                                                *
+  !      ******************************************************************
+  !
+  ! Determine whether or not a second order discretization for the
+  ! advective terms must be used.
 
-       secondOrd = .false.
-       if(currentLevel == 1_intType .and. &
-          orderTurb    == secondOrder) secondOrd = .true.
+  secondOrd = .false.
+  if(currentLevel == 1_intType .and. &
+       orderTurb    == secondOrder) secondOrd = .true.
 
-       ! Compute the quantities for certain turbulence models that
-       ! need to be communicated between blocks.
+  ! Compute the quantities for certain turbulence models that
+  ! need to be communicated between blocks.
 
-       select case (turbModel)
+  select case (turbModel)
 
-         case (menterSST)
-           call f1SST
+  case (menterSST)
+     call f1SST
 
-       end select
+  end select
 
-       ! Determine the turbulence model we have to solve for.
+  ! Determine the turbulence model we have to solve for.
 
-       select case (turbModel)
+  select case (turbModel)
 
-         case (spalartAllmaras)
-           call sa(.true.)
+  case (spalartAllmaras)
+     call sa(.true.)
 
-         case (komegaWilcox, komegaModified)
-           call kw(.true.)
+  case (komegaWilcox, komegaModified)
+     call kw(.true.)
 
-         case (menterSST)
-           call SST(.true.)
+  case (menterSST)
+     call SST(.true.)
 
-         case (ktau)
-           call kt(.true.)
+  case (ktau)
+     call kt(.true.)
 
-         case (v2f)
-           call vf(.true.)
+  case (v2f)
+     call vf(.true.)
 
-         case default
-           call returnFail("turbResidual", &
-                          "Turbulence model not implemented yet")
+  end select
 
-       end select
-
-       end subroutine turbResidual
+end subroutine turbResidual

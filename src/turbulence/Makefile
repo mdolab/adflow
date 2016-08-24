@@ -84,7 +84,7 @@ FILES_TO_COMPLEXIFY = \
 		 turbBCNSWall.f90\
 		 turbResidual.F90\
 		 turbSolveSegregated.f90\
-		 unsteadyTurbSpectral.f90\
+		 unsteadyTurbSpectral.F90\
 		 unsteadyTurbTerm.f90\
 		 vf.f90\
 		 vfScale.f90\

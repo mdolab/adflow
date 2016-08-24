@@ -23,6 +23,8 @@
        use constants
        use partitionMod
        use inputParallel
+       use utils, only : terminate
+       use sorting, only : qsortIntegers, bsearchIntegers
        implicit none
 !
 !      Subroutine arguments.
@@ -83,23 +85,13 @@
 
        real(kind=4) :: ubvec_temp(2) ! Explict float for ubvec
 !
-!      Function definition
-!
-       integer(kind=intType) :: bsearchIntegers
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
        ! Check whether part is allocated from a previous call. If so,
        ! release the memory.
 
        if( allocated(part) ) then
          deallocate(part, stat=ierr)
          if(ierr /= 0)                       &
-         call returnFail("graphPartitioning", &
+         call terminate("graphPartitioning", &
                         "Deallocation failure for part")
        endif
 
@@ -130,7 +122,7 @@
        allocate(xadj(0:nVertex), vwgt(nCon,nVertex), adjncy(nEdges), &
                 adjwgt(nEdges), part(nVertex), tmp(nEdgesMax), stat=ierr)
        if(ierr /= 0)                         &
-         call returnFail("graphPartitioning", &
+         call terminate("graphPartitioning", &
                         "Memory allocation failure for graph variables")
 
        ! Initialize xadj(0) to 0.
@@ -289,7 +281,7 @@
        
        deallocate(xadj, vwgt, adjncy, adjwgt, tmp, stat=ierr)
        if(ierr /= 0)                         &
-         call returnFail("graphPartitioning", &
+         call terminate("graphPartitioning", &
                         "Deallocation failure for graph variables")
 
        end subroutine graphPartitioning

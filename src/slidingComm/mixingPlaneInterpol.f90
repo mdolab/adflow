@@ -21,6 +21,7 @@
 !
        use commMixing
        use mixingData
+       use utils, only : terminate
        implicit none
 !
 !      Subroutine arguments.
@@ -66,7 +67,7 @@
 
        deallocate(mixingPoints, mixingCells, stat=ierr)
        if(ierr /= 0)                           &
-         call returnFail("mixingPlaneInterpol", &
+         call terminate("mixingPlaneInterpol", &
                         "Deallocation failure for mixingPoints and &
                         &mixingCells.")
 

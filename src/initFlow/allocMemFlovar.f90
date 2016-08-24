@@ -26,6 +26,7 @@ subroutine allocMemFlovarPart1(sps,level)
   use inputUnsteady
   use inputphysics
   use iteration
+  use utils, only : terminate
   implicit none
   !
   !      Subroutine arguments.
@@ -77,7 +78,7 @@ subroutine allocMemFlovarPart1(sps,level)
              stat=ierr)
      endif
      if(ierr /= 0)                           &
-          call returnFail("allocMemFlovarPart1", &
+          call terminate("allocMemFlovarPart1", &
           "Memory allocation failure for w")
 
      ! Alloc mem for nodal gradients 
@@ -100,13 +101,13 @@ subroutine allocMemFlovarPart1(sps,level)
      ! Allocate memory for the pressure.
      allocate(flowDoms(nn,level,sps)%p(0:ib,0:jb,0:kb), stat=ierr)
      if(ierr /= 0)                           &
-          call returnFail("allocMemFlovarPart1", &
+          call terminate("allocMemFlovarPart1", &
           "Memory allocation failure for p")
 
      ! Allocate memory for the speed of sound squared
      allocate(flowDoms(nn,level,sps)%aa(0:ib,0:jb,0:kb), stat=ierr)
      if(ierr /= 0)                           &
-          call returnFail("allocMemFlovarPart1", &
+          call terminate("allocMemFlovarPart1", &
           "Memory allocation failure for p")
 
      ! The eddy viscosity for eddy viscosity models.
@@ -119,7 +120,7 @@ subroutine allocMemFlovarPart1(sps,level)
      allocate(flowDoms(nn,level,sps)%rev(0:ib,0:jb,0:kb), &
           stat=ierr)
      if(ierr /= 0)                           &
-          call returnFail("allocMemFlovarPart1", &
+          call terminate("allocMemFlovarPart1", &
           "Memory allocation failure for rev")
      !endif
 
@@ -133,7 +134,7 @@ subroutine allocMemFlovarPart1(sps,level)
         allocate(flowDoms(nn,level,sps)%gamma(0:ib,0:jb,0:kb),    &
              stat=ierr)
         if(ierr /= 0)                           &
-             call returnFail("allocMemFlovarPart1", &
+             call terminate("allocMemFlovarPart1", &
              "Memory allocation failure for gamma.")
 
         flowDoms(nn,level,sps)%gamma = gammaConstant
@@ -144,7 +145,7 @@ subroutine allocMemFlovarPart1(sps,level)
         allocate(flowDoms(nn,level,sps)%rlv(0:ib,0:jb,0:kb), &
              stat=ierr)
         if(ierr /= 0)                           &
-             call returnFail("allocMemFlovarPart1", &
+             call terminate("allocMemFlovarPart1", &
              "Memory allocation failure for rlv")
         !endif
 
@@ -156,7 +157,7 @@ subroutine allocMemFlovarPart1(sps,level)
                 flowDoms(nn,level,sps)%wOld(nOldLevels,2:il,2:jl,2:kl,nw), &
                 stat=ierr)
            if(ierr /= 0)                           &
-                call returnFail("allocMemFlovarPart1", &
+                call terminate("allocMemFlovarPart1", &
                 "Memory allocation failure for wOld")
 
            ! Initialize wOld to zero, such that it is initialized.
@@ -173,7 +174,7 @@ subroutine allocMemFlovarPart1(sps,level)
                 flowDoms(nn,level,sps)%wOld(nOldLevels,2:il,2:jl,2:kl,nw), &
                 stat=ierr)
            if(ierr /= 0)                           &
-                call returnFail("allocMemFlovarPart1", &
+                call terminate("allocMemFlovarPart1", &
                 "Memory allocation failure for wOld")
 
            flowDoms(nn,level,sps)%wOld = zero
@@ -201,7 +202,7 @@ subroutine allocMemFlovarPart1(sps,level)
                 flowDoms(nn,level,sps)%bvtk2(ie,je,nt1:nt2), &
                 stat=ierr)
            if(ierr /= 0)                           &
-                call returnFail("allocMemFlovarPart1", &
+                call terminate("allocMemFlovarPart1", &
                 "Memory allocation failure for bmti1, etc")
 
         endif sps1RansTest
@@ -238,6 +239,7 @@ subroutine allocMemFlovarPart2(sps, level)
   use inputIteration
   use inputUnsteady
   use iteration
+  use utils, only : terminate
   implicit none
   !
   !      Subroutine arguments.
@@ -283,7 +285,7 @@ subroutine allocMemFlovarPart2(sps, level)
           flowDoms(nn,level,sps)%sFaceJ(ie,0:je,ke), &
           flowDoms(nn,level,sps)%sFaceK(ie,je,0:ke), stat=ierr)
      if(ierr /= 0)                              &
-          call returnFail("allocMemFlovarPart2", &
+          call terminate("allocMemFlovarPart2", &
           "Memory allocation failure for s, &
           &sFaceI, sFaceJ and sFaceK.")
 
@@ -297,7 +299,7 @@ subroutine allocMemFlovarPart2(sps, level)
              flowDoms(nn,level,sps)%sFaceJALE(0:nALEsteps,ie,0:je,ke), &
              flowDoms(nn,level,sps)%sFaceKALE(0:nALEsteps,ie,je,0:ke), stat=ierr)
         if(ierr /= 0)                              &
-             call returnFail("allocMemFlovarPart2", &
+             call terminate("allocMemFlovarPart2", &
              "Memory allocation failure for &
              sVeloIALE, sVeloJALE and sVeloKALE; &
              sFaceIALE, sFaceJALE and sFaceKALE.")
@@ -320,7 +322,7 @@ subroutine allocMemFlovarPart2(sps, level)
              flowDoms(nn,level,sps)%scratch(0:ib,0:jb,0:kb,10), &
              stat=ierr)
         if(ierr /= 0)                              &
-             call returnFail("allocMemFlovarPart2", &
+             call terminate("allocMemFlovarPart2", &
              "Memory allocation failure for dw, fw, dwOld, fwOld, &
              &gamma, dtl and the spectral radii.")
 
@@ -337,7 +339,7 @@ subroutine allocMemFlovarPart2(sps, level)
                 flowDoms(nn,level,sps)%fwALE(0:nALEsteps,0:ib,0:jb,0:kb,1:nwf), &
                 stat=ierr)
            if(ierr /= 0)                              &
-                call returnFail("allocMemFlovarPart2", &
+                call terminate("allocMemFlovarPart2", &
                 "Memory allocation failure for dwALE, fwALE.")
            
            flowDoms(nn,level,sps)%dwALE = zero
@@ -348,7 +350,7 @@ subroutine allocMemFlovarPart2(sps, level)
         allocate(flowDoms(nn,level,sps)%wn(2:il,2:jl,2:kl,1:nwf), &
              flowDoms(nn,level,sps)%pn(2:il,2:jl,2:kl), stat=ierr)
         if(ierr /= 0)                              &
-             call returnFail("allocMemFlovarPart2", &
+             call terminate("allocMemFlovarPart2", &
              "Memory allocation failure for wn and pn")
 
         ! For unsteady mode using Runge-Kutta schemes allocate the
@@ -361,7 +363,7 @@ subroutine allocMemFlovarPart2(sps, level)
            allocate(flowDoms(nn,level,sps)%dwOldRK(mm,il,jl,kl,nw), &
                 stat=ierr)
            if(ierr /= 0) &
-                call returnFail("allocMemFlovarPart2", &
+                call terminate("allocMemFlovarPart2", &
                 "Memory allocation failure for dwOldRK.")
         endif
 
@@ -375,7 +377,7 @@ subroutine allocMemFlovarPart2(sps, level)
              flowDoms(nn,level,sps)%wr(2:il,2:jl,2:kl,1:nwf), &
              stat=ierr)
         if(ierr /= 0)                              &
-             call returnFail("allocMemFlovarPart2", &
+             call terminate("allocMemFlovarPart2", &
              "Memory allocation failure for p1, w1 &
              &and wr")
 

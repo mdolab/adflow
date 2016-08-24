@@ -26,6 +26,8 @@
        use inputTimeSpectral
        use interfaceGroups
        use localSubfacesMod
+       use utils, only : setBufferSizes, setBufferSizes, allocateTempMemory, &
+            deallocateTempMemory, terminate
        implicit none
 !
 !      Subroutine arguments.
@@ -67,7 +69,7 @@
        if( firstTime ) then
          deallocate(sendBuffer, recvBuffer, stat=ierr)
          if(ierr /= 0)                   &
-           call returnFail("slidingComm", &
+           call terminate("slidingComm", &
                           "Deallocation error for communication buffers")
        else
          call deallocateTempMemory(.false.)
@@ -164,13 +166,13 @@
        do ii=1,nDom
          deallocate(donorDoms(ii)%haloInfo, stat=ierr)
          if(ierr /= 0)                   &
-           call returnFail("slidingComm", &
+           call terminate("slidingComm", &
                           "Deallocation error for haloInfo")
        enddo
 
        deallocate(donorDoms, stat=ierr)
        if(ierr /= 0)                   &
-         call returnFail("slidingComm", &
+         call terminate("slidingComm", &
                         "Deallocation error for donorDoms")
 
        ! Allocate the temporarily released memory again. For more info
@@ -180,7 +182,7 @@
          allocate(sendBuffer(sendBufferSize), &
                   recvBuffer(recvBufferSize), stat=ierr)
          if(ierr /= 0)                   &
-           call returnFail("slidingComm", &
+           call terminate("slidingComm", &
                           "Memory allocation failure for comm buffers")
        else
          call allocateTempMemory(.false.)

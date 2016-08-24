@@ -21,6 +21,7 @@
        use block
        use inputIteration
        use inputTimeSpectral
+       use utils, only : terminate, nullifyFlowDomPointers
        implicit none
 !
 !      Local variables.
@@ -42,7 +43,7 @@
        nn = max(nMGLevels, mgStartlevel)
        allocate(flowDoms(nDom, nn, nTimeIntervalsSpectral), stat=ierr)
        if(ierr /= 0)                    &
-         call returnFail("initFlowDoms", &
+         call terminate("initFlowDoms", &
                         "Memory allocation failure for flowDoms")
 
        ! Loop over all the blocks and initialize its pointers to the

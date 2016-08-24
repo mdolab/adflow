@@ -26,6 +26,7 @@
        use inputPhysics
        use IOModule
        use restartMod
+       use utils, only : terminate
        implicit none
 !
 !      Local variables.
@@ -44,7 +45,7 @@
 
        allocate(IOVar(nDom,nSolsRead), stat=ierr)
        if(ierr /= 0)                &
-         call returnFail("setIOVar", &
+         call terminate("setIOVar", &
                         "Memory allocation failure for solRead")
 
        ! Determine the equation mode we are solving and set the pointers
@@ -109,7 +110,7 @@
 
                  allocate(IOVar(nn,mm)%w(2:il,2:jl,2:kl,nw), stat=ierr)
                  if(ierr /= 0)                &
-                   call returnFail("setIOVar", &
+                   call terminate("setIOVar", &
                                   "Memory allocation failure for w")
                enddo
 

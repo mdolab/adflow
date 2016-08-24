@@ -64,13 +64,6 @@ subroutine applyallturbbcthisblock_b(secondhalo)
   real(kind=realtype) :: tmpd
   real(kind=realtype) :: tmpd1
   real(kind=realtype) :: tmpd0
-!
-!      ******************************************************************
-!      *                                                                *
-!      * begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
 ! loop over the boundary condition subfaces of this block.
 bocos:do nn=1,nbocos
 ! loop over the faces and set the state in

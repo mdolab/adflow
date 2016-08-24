@@ -22,6 +22,7 @@
        use cgnsGrid
        use su_cgns
        use outputMod
+       use utils, only : terminate, setCGNSRealType
        implicit none
 !
 !      Subroutine arguments.
@@ -30,7 +31,7 @@
        integer, dimension(*), intent(out) :: cgnsZone
 
 #ifdef USE_NO_CGNS
-       call returnFail("writeCGNSGridFrame", &
+       call terminate("writeCGNSGridFrame", &
                       "Routine should not be called if no cgns support &
                       &is selected.")
 #else
@@ -68,7 +69,7 @@
          write(errorMessage,*) "File ", trim(gridfileNames(ind)), &
                                " could not be opened by cgns &
                                &for writing"
-         call returnFail("writeCGNSGridFrame", errorMessage)
+         call terminate("writeCGNSGridFrame", errorMessage)
        endif
 
        fileIDs(ind) = cgnsInd
@@ -79,7 +80,7 @@
        call cg_base_write_f(cgnsInd, cgnsBaseName, cgnsCelldim, &
                             cgnsPhysdim, cgnsBase, ierr)
        if(ierr /= CG_OK)                     &
-         call returnFail("writeCGNSGridFrame", &
+         call terminate("writeCGNSGridFrame", &
                         "Something wrong when calling cg_base_write_f")
 
        cgnsBases(ind) = cgnsBase
@@ -99,7 +100,7 @@
          call cg_family_write_f(cgnsInd, cgnsBase, &
                                 cgnsFamilies(nn)%familyName, ii, ierr)
          if(ierr /= CG_OK)                     &
-           call returnFail("writeCGNSGridFrame", &
+           call terminate("writeCGNSGridFrame", &
                           "Something wrong when calling &
                           &cg_family_write_f")
 
@@ -111,7 +112,7 @@
                                  cgnsFamilies(nn)%bcName, &
                                  cgnsFamilies(nn)%BCTypeCGNS, jj, ierr)
            if(ierr /= CG_OK)                     &
-             call returnFail("writeCGNSGridFrame", &
+             call terminate("writeCGNSGridFrame", &
                             "Something wrong when calling &
                             &cg_fambc_write_f")
 
@@ -130,13 +131,13 @@
              call cg_goto_f(cgnsInd, cgnsBase, ierr, &
                             "Family_t", ii, "end")
              if(ierr /= CG_OK)                     &
-               call returnFail("writeCGNSGridFrame", &
+               call terminate("writeCGNSGridFrame", &
                               "Something wrong when calling cg_goto_f")
 
              call cg_user_data_write_f(cgnsFamilies(nn)%userDefinedName, &
                                        ierr)
              if(ierr /= CG_OK)                     &
-               call returnFail("writeCGNSGridFrame", &
+               call terminate("writeCGNSGridFrame", &
                               "Something wrong when calling &
                               &cg_user_data_write_f")
            endif
@@ -175,7 +176,7 @@
                               cgnsDoms(nn)%zoneType, cgnsZone(nn), &
                               ierr)
          if(ierr /= CG_OK)                     &
-           call returnFail("writeCGNSGridFrame", &
+           call terminate("writeCGNSGridFrame", &
                           "Something wrong when calling &
                           &cg_zone_write_f")
 
@@ -185,7 +186,7 @@
          call cg_goto_f(cgnsInd, cgnsBase, ierr, "Zone_t", &
                         cgnsZone(nn), "end")
          if(ierr /= CG_OK) &
-           call returnFail("writeCGNSGridFrame", &
+           call terminate("writeCGNSGridFrame", &
                           "Something wrong when calling cg_goto_f")
 
          ! Check if the zone belongs to a family. If so, write the
@@ -196,7 +197,7 @@
 
            call cg_famname_write_f(cgnsFamilies(mm)%familyName, ierr)
            if(ierr /= CG_OK) &
-             call returnFail("writeCGNSGridFrame", &
+             call terminate("writeCGNSGridFrame", &
                             "Something wrong when calling &
                             &cg_famname_write_f")
          endif
@@ -223,7 +224,7 @@
 
            call cg_rotating_write_f(rotRate, rotCenter, ierr)
            if(ierr /= CG_OK) &
-             call returnFail("writeCGNSGridFrame", &
+             call terminate("writeCGNSGridFrame", &
                             "Something wrong when calling &
                             &cg_rotating_write_f")
 
@@ -234,19 +235,19 @@
                           cgnsZone(nn), "RotatingCoordinates_t", 1, &
                           "DataArray_t", 2, "end")
            if(ierr /= CG_OK)                     &
-             call returnFail("writeCGNSGridFrame", &
+             call terminate("writeCGNSGridFrame", &
                             "Something wrong when calling cg_goto_f")
 
            call cg_dataclass_write_f(Dimensional, ierr)
            if(ierr /= CG_OK)                     &
-             call returnFail("writeCGNSGridFrame", &
+             call terminate("writeCGNSGridFrame", &
                             "Something wrong when calling &
                             &cg_dataclass_write_f")
 
            call cg_units_write_f(Null, Null, Second, Null, &
                                  Degree, ierr)
            if(ierr /= CG_OK)                     &
-             call returnFail("writeCGNSGridFrame", &
+             call terminate("writeCGNSGridFrame", &
                             "Something wrong when calling &
                             &cg_units_write_f")
          endif
@@ -291,7 +292,7 @@
 
              allocate(donorData(3,ll), stat=ierr)
              if(ierr /= 0) &
-               call returnFail("writeCGNSGridFrame", &
+               call terminate("writeCGNSGridFrame", &
                               "Memory allocation failure for &
                               &donorData")
 
@@ -327,7 +328,7 @@
                                   Structured, PointListDonor, Integer,   &
                                   ii, donorData, jj, ierr)
              if(ierr /= CG_OK)                     &
-               call returnFail("writeCGNSGridFrame", &
+               call terminate("writeCGNSGridFrame", &
                               "Something wrong when calling &
                               &cg_conn_write_f")
 
@@ -335,7 +336,7 @@
 
              deallocate(donorData, stat=ierr)
              if(ierr /= 0)                          &
-               call returnFail("writeCGNSGridFrame", &
+               call terminate("writeCGNSGridFrame", &
                               "Deallocation failure for donorData")
 
              ! Write the periodic info. First transform the rotation
@@ -354,7 +355,7 @@
                                            cgnsZone(nn), jj, rotCenter, &
                                            rotRate, translation, ierr)
              if(ierr /= CG_OK)                     &
-               call returnFail("writeCGNSGridFrame", &
+               call terminate("writeCGNSGridFrame", &
                               "Something wrong when calling &
                               &cg_conn_periodic_write_f")
 
@@ -367,19 +368,19 @@
                             "GridConnectivityProperty_t", 1, &
                             "Periodic_t", 1, "DataArray_t", 2, "end")
              if(ierr /= CG_OK)                     &
-               call returnFail("writeCGNSGridFrame", &
+               call terminate("writeCGNSGridFrame", &
                               "Something wrong when calling cg_goto_f")
 
              call cg_dataclass_write_f(Dimensional, ierr)
              if(ierr /= CG_OK)                     &
-               call returnFail("writeCGNSGridFrame", &
+               call terminate("writeCGNSGridFrame", &
                               "Something wrong when calling &
                               &cg_dataclass_write_f")
 
              call cg_units_write_f(Null, Null, Null, Null, &
                                    Degree, ierr)
              if(ierr /= CG_OK)                     &
-               call returnFail("writeCGNSGridFrame", &
+               call terminate("writeCGNSGridFrame", &
                               "Something wrong when calling &
                               &cg_units_write_f")
 
@@ -400,7 +401,7 @@
                                   zoneRange, donorRange, transform,      &
                                   ii, ierr)
              if(ierr /= CG_OK)                     &
-               call returnFail("writeCGNSGridFrame", &
+               call terminate("writeCGNSGridFrame", &
                               "Something wrong when calling &
                               &cg_1to1_write_f")
 
@@ -439,7 +440,7 @@
                                 cgnsDoms(nn)%bocoInfo(mm)%bocoName, &
                                 jj, PointRange, 2, zoneRange, ii, ierr)
            if(ierr /= CG_OK)                     &
-             call returnFail("writeCGNSGridFrame", &
+             call terminate("writeCGNSGridFrame", &
                             "Something wrong when calling &
                             &cg_boco_write_f")
            
@@ -449,7 +450,7 @@
                 "Zone_t", cgnsZone(nn),  &
                 "ZoneBC_t", 1, "BC_t", ii, "end")
            if(ierr /= CG_OK)                     &
-                call returnFail("writeCGNSGridFrame", &
+                call terminate("writeCGNSGridFrame", &
                 "Something wrong when calling cg_goto_f")
            
            call cg_famname_write_f(cgnsDoms(nn)%bocoINFO(mm)%wallBCName, ierr)
@@ -466,12 +467,12 @@
                             "Zone_t", cgnsZone(nn),  &
                             "ZoneBC_t", 1, "BC_t", ii, "end")
              if(ierr /= CG_OK)                     &
-               call returnFail("writeCGNSGridFrame", &
+               call terminate("writeCGNSGridFrame", &
                               "Something wrong when calling cg_goto_f")
 
              call cg_famname_write_f(cgnsFamilies(ll)%familyName, ierr)
              if(ierr /= CG_OK)                     &
-               call returnFail("writeCGNSGridFrame", &
+               call terminate("writeCGNSGridFrame", &
                               "Something wrong when calling &
                               &cg_famname_write_f")
            endif
@@ -488,13 +489,13 @@
                             "Zone_t", cgnsZone(nn),  &
                             "ZoneBC_t", 1, "BC_t", ii, "end")
              if(ierr /= CG_OK)                     &
-               call returnFail("writeCGNSGridFrame", &
+               call terminate("writeCGNSGridFrame", &
                               "Something wrong when calling cg_goto_f")
 
              call cg_user_data_write_f(    &
                          cgnsDoms(nn)%bocoInfo(mm)%userDefinedName, ierr)
              if(ierr /= CG_OK)                     &
-               call returnFail("writeCGNSGridFrame", &
+               call terminate("writeCGNSGridFrame", &
                               "Something wrong when calling &
                               &cg_user_data_write_f")
            endif
@@ -520,7 +521,7 @@
                                        dataSet(ll)%datasetName, &
                                        dataSet(ll)%BCType, jj, ierr)
                if(ierr /= CG_OK)                     &
-                 call returnFail("writeCGNSGridFrame", &
+                 call terminate("writeCGNSGridFrame", &
                                 "Something wrong when calling &
                                 &cg_dataset_write_f")
 
@@ -573,17 +574,7 @@
          integer(kind=intType) :: i, j, kk
 
          real(kind=cgnsRealType), dimension(:), allocatable :: tmp
-!
-!        Function definition.
-!
-         integer :: setCGNSRealType
-!
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution.                                             *
-!        *                                                              *
-!        ****************************************************************
-!
+
          ! Return immediately if narr == 0, i.e. if there is nothing
          ! to write.
 
@@ -598,7 +589,7 @@
          call cg_bcdata_write_f(cgnsInd, cgnsBase, cgnsZone(nn), &
                                   ii, jj, DirNeu, ierr)
          if(ierr /= CG_OK)                    &
-           call returnFail("writeBcdataArrays", &
+           call terminate("writeBcdataArrays", &
                           "Something wrong when calling &
                           &cg_bcdata_write_f")
 
@@ -612,7 +603,7 @@
                           cgnsZone(nn), "ZoneBC_t", 1, "BC_t", ii, &
                           "BCDataSet_t", jj, "BCData_t", DirNeu, "end")
            if(ierr /= CG_OK)                    &
-             call returnFail("writeBcdataArrays", &
+             call terminate("writeBcdataArrays", &
                             "Something wrong when calling cg_goto_f")
 
            ! Determine the total size of the prescribed data,
@@ -625,7 +616,7 @@
 
            allocate(tmp(j), stat=ierr)
            if(ierr /= 0)                         &
-             call returnFail("writeBcdataArrays", &
+             call terminate("writeBcdataArrays", &
                             "Memory allocation failure for tmp")
 
            tmp = arr(kk)%dataArr
@@ -637,13 +628,13 @@
                                  arr(kk)%nDimensions, arr(kk)%dataDim, &
                                  tmp, ierr)
            if(ierr /= CG_OK)                    &
-             call returnFail("writeBcdataArrays", &
+             call terminate("writeBcdataArrays", &
                             "Something wrong when calling &
                             &cg_array_write_f")
 
            deallocate(tmp, stat=ierr)
            if(ierr /= 0)                         &
-             call returnFail("writeBcdataArrays", &
+             call terminate("writeBcdataArrays", &
                             "Deallocation failure for tmp")
 
            ! Write the dimensional info for this array.
@@ -653,12 +644,12 @@
                           "BCDataSet_t", jj, "BCData_t", DirNeu,   &
                           "DataArray_t", kk, "end")
            if(ierr /= CG_OK)                    &
-             call returnFail("writeBcdataArrays", &
+             call terminate("writeBcdataArrays", &
                             "Something wrong when calling cg_goto_f")
 
            call cg_dataclass_write_f(Dimensional, ierr)
            if(ierr /= CG_OK)                    &
-             call returnFail("writeBcdataArrays", &
+             call terminate("writeBcdataArrays", &
                             "Something wrong when calling &
                             &cg_dataclass_write_f")
 
@@ -666,7 +657,7 @@
                                  arr(kk)%time,  arr(kk)%temp, &
                                  arr(kk)%angle, ierr)
            if(ierr /= CG_OK)                    &
-             call returnFail("writeBcdataArrays", &
+             call terminate("writeBcdataArrays", &
                             "Something wrong when calling &
                             &cg_units_write_f")
 

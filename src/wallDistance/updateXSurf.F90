@@ -3,6 +3,7 @@ subroutine updateXSurf(level)
   use wallDistanceData
   use blockPointers
   use inputTimeSpectral
+  use utils, only : EChk, setPointers
   implicit none
 
   ! Input Parameters

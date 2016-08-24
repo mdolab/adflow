@@ -84,6 +84,7 @@ subroutine bcturbwall_b(nn)
   real(kind=realtype) :: temp5
   integer(kind=inttype) :: y1
   real(kind=realtype) :: temp4
+!        ================================================================
 !
 !      ******************************************************************
 !      *                                                                *

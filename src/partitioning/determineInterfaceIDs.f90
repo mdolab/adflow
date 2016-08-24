@@ -1,14 +1,3 @@
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          determineInterfaceIDs.f90                       *
-!      * Author:        Edwin van der Weide, Steve Repsher,             *
-!      *                Seonghyeon Hahn                                 *
-!      * Starting date: 02-18-2005                                      *
-!      * Last modified: 09-19-2007                                      *
-!      *                                                                *
-!      ******************************************************************
-!
        subroutine determineInterfaceIDs
 !
 !      ******************************************************************
@@ -31,6 +20,9 @@
        use cgnsGrid
        use communication
        use iteration
+       use utils, only : terminate
+       use sorting, only: qsortstrings, bsearchstrings
+
        implicit none
 !
 !      Local variables.
@@ -53,16 +45,6 @@
                                                             namesSorted
 
        logical :: validInterface
-!
-!      Function definition.
-!
-       integer(kind=intType) :: bsearchStrings
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
 !
        ! Count the total number of each type of user-defined BC that
        ! needs to be treated here. Note that if a BC is specified by the
@@ -112,7 +94,7 @@
 
        if(standAloneMode .and. cgnsNDomainInterfaces > 0) then
          if(myID == 0) &
-           call returnFail("determineInterfaceIDs", &
+           call terminate("determineInterfaceIDs", &
                           "Domain interfaces are not allowed in &
                           &stand alone mode.")
          call mpi_barrier(SUmb_comm_world, ierr)
@@ -124,7 +106,7 @@
        nSliding = nSlidingFam + nSlidingBC
        if(mod(nSliding,2) == 1) then
          if(myID == 0)                              &
-           call returnFail("determineInterfaceIDs", &
+           call terminate("determineInterfaceIDs", &
                           "Odd number of sliding mesh families found")
          call mpi_barrier(SUmb_comm_world, ierr)
        endif
@@ -137,7 +119,7 @@
                 orID(nSliding), famSlidingID(nSlidingFam),     &
                 bcSlidingID(2,nSlidingBC), stat=ierr)
        if(ierr /= 0) &
-         call returnFail("determineInterfaceIDs", &
+         call terminate("determineInterfaceIDs", &
                         "Memory allocation failure for names, IDs")
 
        ! Loop back over the families again and store the names and
@@ -215,7 +197,7 @@
 
            write(errorMessage,101) trim(namesSliding(ii))
            if(myID == 0) &
-             call returnFail("determineInterfaceIDs", errorMessage)
+             call terminate("determineInterfaceIDs", errorMessage)
            call mpi_barrier(SUmb_comm_world, ierr)
 
          endif
@@ -232,7 +214,7 @@
        cgnsNSliding = nSliding/2
        allocate(famIDsSliding(cgnsNSliding,2), stat=ierr)
        if(ierr /= 0) &
-         call returnFail("determineInterfaceIDs", &
+         call terminate("determineInterfaceIDs", &
                         "Memory allocation failure for famIDsSliding")
 
        ! Check if the sorted family names indeed form a
@@ -273,7 +255,7 @@
            write(errorMessage,102) trim(namesSliding(nn)), &
                                    trim(namesSliding(mm))
            if(myID == 0) &
-             call returnFail("determineInterfaceIDs", errorMessage)
+             call terminate("determineInterfaceIDs", errorMessage)
            call mpi_barrier(SUmb_comm_world, ierr)
          endif
 
@@ -324,7 +306,7 @@
        deallocate(namesSliding, namesSorted, orID, &
                   famSlidingID, bcSlidingID, stat=ierr)
        if(ierr /= 0) &
-         call returnFail("determineInterfaceIDs", &
+         call terminate("determineInterfaceIDs", &
                         "Deallocation failure for names, IDs")
 
        ! Format statements.

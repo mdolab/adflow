@@ -94,8 +94,6 @@
                case (explicitRK)
                  call solverUnsteadyExplicitRK
 
-               case (implicitRK)
-                 call solverUnsteadyImplicitRK
               case (MD)
                  call solverUnsteady_ALE
               end select

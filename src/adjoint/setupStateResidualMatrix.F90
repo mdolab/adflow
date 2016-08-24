@@ -32,15 +32,12 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   use communication
   use adjointVars
   use turbMod
+  use utils, only : EChk, setPointers
+  use haloExchange, only :whalo2
   implicit none
 #define PETSC_AVOID_MPIF_H
-
-#include "include/petscversion.h"
-#if PETSC_VERSION_MINOR > 5
 #include "petsc/finclude/petsc.h"
-#else
-#include "include/finclude/petsc.h"
-#endif
+
   ! PETSc Matrix Variable
   Mat :: matrix
   Mat, optional :: matrixTurb
@@ -193,7 +190,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   ! Allocate the additional memory we need for doing forward mode AD
   !  derivatives and copy any required reference values:
   if (.not. derivVarsAllocated .and. useAD) then 
-     call alloc_derivative_values(level)
+     call allocDerivativeValues(level)
   end if
 
   ! For AD the initial seeds must all be zeroed.

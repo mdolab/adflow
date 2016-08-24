@@ -30,6 +30,7 @@ subroutine createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
   use inputOverset
   use adtapi
   use adjointvars
+  use utils, only : setPointers, EChk
   implicit none
 
   ! Input Parameters

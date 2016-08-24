@@ -1,6 +1,8 @@
 subroutine floodInteriorCells(level, sps)
   use communication
   use blockPointers
+  use utils, only : setPointers, EChk
+  use haloExchange, only : whalo1to1intGeneric
   implicit none
 
   ! Input/Output
@@ -265,6 +267,7 @@ end subroutine floodInteriorCells
 subroutine floodInteriorCells_init(level, sps)
   use communication
   use blockPointers
+  use utils, only : setPointers
   implicit none
 
   ! Input/Output

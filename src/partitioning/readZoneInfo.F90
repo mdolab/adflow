@@ -1,13 +1,3 @@
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          readZoneInfo.F90                                *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 12-17-2002                                      *
-!      * Last modified: 10-10-2005                                      *
-!      *                                                                *
-!      ******************************************************************
-!
        subroutine readZoneInfo(cgnsBase, nZone, sortedFamName, &
                                famID, noUnits)
 !
@@ -24,6 +14,8 @@
        use iteration
        use su_cgns
        use partitionMod
+       use utils, only : terminate, siAngle, siLen, siAngle
+       use sorting, only: bsearchStrings
        implicit none
 !
 !      Subroutine arguments
@@ -36,7 +28,7 @@
 
 #ifdef USE_NO_CGNS
 
-       call returnFail("readZoneInfo", &
+       call terminate("readZoneInfo", &
                       "Routine should not be called if no cgns support &
                       &is selected.")
 #else
@@ -59,11 +51,7 @@
        character(len=maxStringLen)   :: errorMessage
 
        logical :: overwrite
-!
-!      Function definitions.
-!
-       integer(kind=intType) :: bsearchStrings
-!
+
 !      ******************************************************************
 !      *                                                                *
 !      * Begin execution                                                *
@@ -78,7 +66,7 @@
        call cg_zone_read_f(cgnsInd, cgnsBase, nZone, &
                            cgnsDoms(nZone)%zoneName, sizesBlock, ierr)
        if(ierr /= CG_OK)               &
-         call returnFail("readZoneInfo", &
+         call terminate("readZoneInfo", &
                         "Something wrong when calling cg_nZones_f")
 
        ! Check the zone type.
@@ -86,14 +74,14 @@
        call cg_zone_type_f(cgnsInd, cgnsBase, nZone, &
                            cgnsDoms(nZone)%zonetype, ierr)
        if(ierr /= CG_OK)               &
-         call returnFail("readZoneInfo", &
+         call terminate("readZoneInfo", &
                         "Something wrong when calling cg_zone_type_f")
 
        if(cgnsDoms(nZone)%zonetype /= Structured) then
          write(errorMessage,*) "Zone ",                         &
                                 trim(cgnsDoms(nZone)%zoneName), &
                                 " of the grid file is not structured"
-         if(myID == 0) call returnFail("readZoneInfo", errorMessage)
+         if(myID == 0) call terminate("readZoneInfo", errorMessage)
          call mpi_barrier(SUmb_comm_world, ierr)
        endif
 
@@ -116,7 +104,7 @@
          call cg_zone_read_f(fileIDs(nn), cgnsBase, nZone, &
                              familyName, sizesBlock, ierr)
          if(ierr /= CG_OK)               &
-           call returnFail("readZoneInfo", &
+           call terminate("readZoneInfo", &
                           "Something wrong when calling cg_nZones_f")
 
          if(cgnsDoms(nZone)%il /= sizesBlock(1) .or. &
@@ -127,7 +115,7 @@
                                  ", zone ", trim(familyName), &
                                  " Zone dimensions are different&
                                  & than in file ", trim(gridFiles(1))
-           if(myID == 0) call returnFail("readBlockSizes", errorMessage)
+           if(myID == 0) call terminate("readBlockSizes", errorMessage)
            call mpi_barrier(SUmb_comm_world, ierr)
          endif
        enddo
@@ -136,7 +124,7 @@
 
        call cg_goto_f(cgnsInd, cgnsBase, ierr, "Zone_t", nZone, "end")
        if(ierr /= CG_OK)               &
-         call returnFail("readZoneInfo", &
+         call terminate("readZoneInfo", &
                         "Something wrong when calling cg_goto_f")
 !
 !      ******************************************************************
@@ -147,7 +135,7 @@
 !
        call cg_famname_read_f(familyName, ierr)
        if(ierr == error)                &
-         call returnFail("readZoneInfo", &
+         call terminate("readZoneInfo", &
                         "Something wrong when calling cg_famname_read_f")
 
        ! Check if a family name was specified. If so, determine the
@@ -165,7 +153,7 @@
 
            write(errorMessage,100) trim(familyName)
  100       format("Family name",1X,A,1X,"not present in the grid")
-           if(myID == 0) call returnFail("readZoneInfo", errorMessage)
+           if(myID == 0) call terminate("readZoneInfo", errorMessage)
            call mpi_barrier(SUmb_comm_world, ierr)
 
          endif
@@ -187,17 +175,17 @@
 
        call cg_ncoords_f(cgnsInd, cgnsBase, nZone, nCoords, ierr)
        if(ierr /= CG_OK)               &
-         call returnFail("readZoneInfo", &
+         call terminate("readZoneInfo", &
                         "Something wrong when calling cg_ncoords_f")
 
-       ! Check that 3 coordinates are present. If not, returnFail.
+       ! Check that 3 coordinates are present. If not, terminate.
 
        if(nCoords /= 3) then
          write(errorMessage,102) trim(cgnsDoms(nZone)%zoneName), nCoords
  102     format("The number of coordinates of zone ", a, &
                 " of base 1 is", i1, ". This should 3.")
 
-         if(myID == 0) call returnFail("readZoneInfo", errorMessage)
+         if(myID == 0) call terminate("readZoneInfo", errorMessage)
          call mpi_barrier(SUmb_comm_world, ierr)
        endif
 
@@ -213,12 +201,12 @@
                         "GridCoordinates_t", 1, "DataArray_t", i, &
                         "end")
          if(ierr /= CG_OK)               &
-           call returnFail("readZoneInfo", &
+           call terminate("readZoneInfo", &
                           "Something wrong when calling cg_goto_f")
 
          call cg_units_read_f(mass, len, time, temp, angle, ierr)
          if(ierr == error)                &
-           call returnFail("readZoneInfo", &
+           call terminate("readZoneInfo", &
                           "Something wrong when calling cg_units_read_f")
 
          ! Check if units were specified.
@@ -328,7 +316,7 @@
          call cg_goto_f(cgnsInd, cgnsBase, ierr, "Zone_t", nZone, &
                         "end")
          if(ierr /= CG_OK)               &
-           call returnFail("readZoneInfo", &
+           call terminate("readZoneInfo", &
                           "Something wrong when calling cg_goto_f")
 
          ! No family information specified.
@@ -336,7 +324,7 @@
 
          call cg_rotating_read_f(rotRate, rotCenter, ierr)
          if(ierr == error)                &
-           call returnFail("readZoneInfo", &
+           call terminate("readZoneInfo", &
                           "Something wrong when calling &
                           &cg_rotating_read_f")
 
@@ -363,12 +351,12 @@
                           "RotatingCoordinates_t", 1, "DataArray_t", 2, &
                           "end")
            if(ierr /= CG_OK)               &
-             call returnFail("readZoneInfo", &
+             call terminate("readZoneInfo", &
                             "Something wrong when calling cg_goto_f")
 
            call cg_units_read_f(mass, len, time, temp, angle, ierr)
            if(ierr == error)                &
-             call returnFail("readZoneInfo", &
+             call terminate("readZoneInfo", &
                             "Something wrong when calling &
                             &cg_units_read_f")
 

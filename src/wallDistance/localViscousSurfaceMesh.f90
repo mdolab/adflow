@@ -22,6 +22,7 @@
        use communication
        use section
        use viscSurface
+       use utils, only : setPointers, terminate
        implicit none
 !
 !      Subroutine arguments.
@@ -355,7 +356,7 @@
 
        allocate(rotMatrixSections(nSections,3,3), stat=ierr)
        if(ierr /= 0)                                  &
-         call returnFail("localViscousSurfaceMesh", &
+         call terminate("localViscousSurfaceMesh", &
                         "Memory allocation failure for &
                         &rotMatrixSections")
 !

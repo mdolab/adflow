@@ -22,6 +22,7 @@
 !      ******************************************************************
 !
        use updateComm
+       use utils, only : terminate
        implicit none
 !
 !      Subroutine arguments.
@@ -53,7 +54,7 @@
                 donorInfo%indices(nn,3), donorInfo%weight(nn), &
                 stat=ierr)
        if(ierr /= 0)                      &
-         call returnFail("volumeInterpol", &
+         call terminate("volumeInterpol", &
                         "Memory allocation failure for the member &
                         &variables of donorInfo.")
 

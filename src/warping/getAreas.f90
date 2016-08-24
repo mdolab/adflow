@@ -6,6 +6,7 @@ subroutine getAreas(areas, pts, npts, sps_in, axis)
   use inputTimeSpectral
   use communication
   use inputPhysics
+  use utils, only : setPointers
   implicit none
   !
   !      Local variables.
@@ -116,6 +117,7 @@ subroutine getAreaSensitivity(darea, pts, npts, sps_in, axis)
   use inputTimeSpectral
   use communication
   use inputPhysics
+  use utils, only : setPointers
   implicit none
   !
   !      Local variables.

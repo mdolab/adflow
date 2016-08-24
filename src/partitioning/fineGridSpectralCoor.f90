@@ -26,6 +26,7 @@
        use monitor
        use section
        use partitionMod
+       use utils, only : terminate
        implicit none
 !
 !      Local variables.
@@ -136,7 +137,7 @@
 
          allocate(IOVar(nn,1)%w(il,jl,kl,3), stat=ierr)
          if(ierr /= 0)                            &
-           call returnFail("fineGridSpectralCoor", &
+           call terminate("fineGridSpectralCoor", &
                           "Memory allocation failure for &
                           &IOVar(nn,1)%w")
 
@@ -214,7 +215,7 @@
        ! Interpolate the displacements and add them to the currently
        ! stored coordinates.
 
-       call returnFail("fineGridSpectralCoor", &
+       call terminate("fineGridSpectralCoor", &
                       "Arti should do this interpolation stuff")
 
        ! Release the memory of the variable w in IOVar.
@@ -223,7 +224,7 @@
          do ll=1,nGridsRead
            deallocate(IOVar(nn,ll)%w, stat=ierr)
            if(ierr /= 0)                            &
-             call returnFail("fineGridSpectralCoor", &
+             call terminate("fineGridSpectralCoor", &
                             "Deallocation failure for IOVar%w")
          enddo
        enddo

@@ -7,16 +7,6 @@
 !                *x *si *sj *sk veldirfreestream machgrid
 !   plus diff mem management of: sfacei:in sfacej:in s:in sfacek:in
 !                x:in si:in sj:in sk:in
-!
-!      ******************************************************************
-!      *                                                                *
-!      * file:          gridvelocities.f90                              *
-!      * author:        edwin van der weide                             *
-!      * starting date: 02-23-2004                                     *
-!      * last modified: 06-28-2005                                      *
-!      *                                                                *
-!      ******************************************************************
-!
 subroutine gridvelocitiesfinelevel_block_d(useoldcoor, t, sps)
 !
 !      ******************************************************************
@@ -42,6 +32,8 @@ subroutine gridvelocitiesfinelevel_block_d(useoldcoor, t, sps)
   use inputtsstabderiv
   use monitor
   use communication
+  use utils_d, only : tsalpha, tsbeta, tsmach, terminate, &
+& rotmatrixrigidbody
   implicit none
 !
 !      subroutine arguments.
@@ -81,8 +73,6 @@ subroutine gridvelocitiesfinelevel_block_d(useoldcoor, t, sps)
   real(kind=realtype), dimension(3) :: veldir
   real(kind=realtype), dimension(3) :: veldird
   real(kind=realtype), dimension(3) :: refdirection
-!function definitions
-  real(kind=realtype) :: tsalpha, tsbeta, tsmach
   intrinsic sqrt
   real(kind=realtype) :: arg1
   real(kind=realtype) :: arg1d
@@ -132,8 +122,7 @@ subroutine gridvelocitiesfinelevel_block_d(useoldcoor, t, sps)
 ! compute the rotation matrix of the rigid body rotation as
 ! well as the rotation point; the latter may vary in time due
 ! to rigid body translation.
-      call rotmatrixrigidbody(tnew, told, rotationmatrix, &
-&                          rotationpoint)
+      call rotmatrixrigidbody(tnew, told, rotationmatrix, rotationpoint)
       if (tsalphafollowing) then
         velxgrid0d = rotationmatrix(1, 1)*velxgrid0d + rotationmatrix(1&
 &         , 2)*velygrid0d + rotationmatrix(1, 3)*velzgrid0d
@@ -179,9 +168,8 @@ subroutine gridvelocitiesfinelevel_block_d(useoldcoor, t, sps)
       call getdirangle_d(veldirfreestream, veldirfreestreamd, &
 &                  liftdirection, liftindex, alpha, alphad, beta, betad)
 !determine the alpha for this time instance
-      betaincrement = tsbeta(degreepolbeta, coefpolbeta, &
-&       degreefourbeta, omegafourbeta, coscoeffourbeta, sincoeffourbeta&
-&       , t(1))
+      betaincrement = tsbeta(degreepolbeta, coefpolbeta, degreefourbeta&
+&       , omegafourbeta, coscoeffourbeta, sincoeffourbeta, t(1))
       betatsd = betad
       betats = beta + betaincrement
 !determine the grid velocity for this alpha
@@ -202,9 +190,8 @@ subroutine gridvelocitiesfinelevel_block_d(useoldcoor, t, sps)
       velzgrid0 = ainf*machgrid*(-veldir(3))
     else if (tsmachmode) then
 !determine the mach number at this time interval
-      intervalmach = tsmach(degreepolmach, coefpolmach, &
-&       degreefourmach, omegafourmach, coscoeffourmach, sincoeffourmach&
-&       , t(1))
+      intervalmach = tsmach(degreepolmach, coefpolmach, degreefourmach, &
+&       omegafourmach, coscoeffourmach, sincoeffourmach, t(1))
 !set the effective grid velocity
       velxgrid0d = -((ainfd*(intervalmach+machgrid)+ainf*machgridd)*&
 &       veldirfreestream(1)) - ainf*(intervalmach+machgrid)*&
@@ -219,11 +206,11 @@ subroutine gridvelocitiesfinelevel_block_d(useoldcoor, t, sps)
 &       veldirfreestreamd(3)
       velzgrid0 = ainf*(intervalmach+machgrid)*(-veldirfreestream(3))
     else if (tsaltitudemode) then
-      call returnfail('gridvelocityfinelevel', &
-&                  'altitude motion not yet implemented...')
+      call terminate('gridvelocityfinelevel', &
+&              'altitude motion not yet implemented...')
     else
-      call returnfail('gridvelocityfinelevel', &
-&                  'not a recognized stability motion')
+      call terminate('gridvelocityfinelevel', &
+&              'not a recognized stability motion')
     end if
   end if
   if (blockismoving) then

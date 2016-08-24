@@ -6,6 +6,7 @@ subroutine slipVelocitiesFineLevel_ALE(useOldCoor, t, sps)
   use constants
   use inputTimeSpectral
   use iteration
+  use utils, only : setPointers
   implicit none
   !
   !      Subroutine arguments.

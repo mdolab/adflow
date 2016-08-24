@@ -21,18 +21,17 @@ SUBDIR_SRC    = src/modules       \
 	        src/slidingComm   \
 	        src/stabilityDerivatives \
 	        src/turbulence    \
-	        src/utils         \
 	        src/wallDistance  \
 		src/warping       \
 		src/bendingMomentAnalysis \
                 src/adjoint/ADFirstAidKit \
-                src/adjoint/outputReverse \
-                src/adjoint/outputReverseFast \
-                src/adjoint/outputForward \
                 src/adjoint/residualInput \
-		src/adjoint \
 		src/NKSolver      \
 		src/ANKSolver     \
+		src/adjoint/outputForward \
+		src/adjoint/outputReverse \
+                src/adjoint/outputReverseFast \
+		src/adjoint \
 
 SUMB_SUBDIRS       = $(SUBDIR_SRC)
 SUMB_CLEAN_SUBDIRS = $(SUBDIR_SRC)

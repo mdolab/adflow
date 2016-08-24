@@ -20,6 +20,7 @@
 !
        use blockPointers
        use haloList
+       use utils, only : setPointers
        implicit none
 !
 !      Subroutine arguments.

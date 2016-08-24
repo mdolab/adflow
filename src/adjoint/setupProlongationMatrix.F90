@@ -9,7 +9,7 @@ subroutine setupProlongationMatrix(matrix, level)
   use blockPointers      
   use inputTimeSpectral
   use flowVarRefState
-
+  use utils, only : setPointers, EChk
   implicit none
 
 #define PETSC_AVOID_MPIF_H

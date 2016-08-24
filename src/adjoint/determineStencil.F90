@@ -10,6 +10,8 @@ subroutine determineStencil(lumped)
   use flowvarrefstate
   use inputPhysics
   use iteration
+  use utils, only : EChk, setPointers
+
   implicit none
   logical :: lumped
   integer(kind=intType) :: ncellx,ncelly,ncellz

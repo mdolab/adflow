@@ -33,6 +33,7 @@ subroutine computelamviscosity_fast_b()
   use flowvarrefstate
   use inputphysics
   use iteration
+  use utils_fast_b, only : getcorrectfork
   implicit none
 !
 !      local parameter.
@@ -44,7 +45,7 @@ subroutine computelamviscosity_fast_b()
   integer(kind=inttype) :: i, j, k, ii
   real(kind=realtype) :: musuth, tsuth, ssuth, t, pp
   real(kind=realtype) :: td, ppd
-  logical :: correctfork, getcorrectfork
+  logical :: correctfork
   intrinsic mod
   real(kind=realtype) :: temp0
   real(kind=realtype) :: tempd

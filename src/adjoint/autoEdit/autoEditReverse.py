@@ -23,7 +23,9 @@ patt_comment = re.compile(r'\s*!.*')
 print "Directory of input source files  :", DIR_ORI
 print "Directory of output source files :", DIR_MOD
 
-useful_modules = ['samodule_b','bcroutines_b','turbbcroutines_b']
+useful_modules = ['samodule_b','bcroutines_b','turbbcroutines_b',
+                  'utils_b', 'flowutils_b']
+
 for f in os.listdir(DIR_ORI):
     if f.endswith(EXT):
         # open original file in read mode

@@ -56,20 +56,21 @@ subroutine referencestate_b()
 & pinfcorr, pinfcorrd, rhoinf, rhoinfd, uinf, uinfd, rgas, rgasd, muinf,&
 & muinfd, gammainf, gammainfd, winf, winfd, nw, nwf, kpresent, winf, &
 & winfd
+  use flowutils_b, only : computegamma, computegamma_b, etot, etot_b
   use paramturb
   implicit none
   integer(kind=inttype) :: sps, nn, mm, ierr
-  real(kind=realtype) :: gm1, ratio, tmp
+  real(kind=realtype) :: gm1, ratio
   real(kind=realtype) :: nuinf, ktmp, uinf2
   real(kind=realtype) :: nuinfd, ktmpd, uinf2d
   real(kind=realtype) :: sanuknowneddyratio
-  real(kind=realtype) :: vinf, zinf
-  real(kind=realtype) :: vinfd, zinfd
+  real(kind=realtype) :: vinf, zinf, tmp1(1), tmp2(1)
+  real(kind=realtype) :: vinfd, zinfd, tmp1d(1), tmp2d(1)
   intrinsic sqrt
+  real(kind=realtype) :: tmp
   real(kind=realtype) :: tmp0
-  real(kind=realtype) :: tmp1
-  real(kind=realtype) :: tmp2
   real(kind=realtype) :: tmp3
+  real(kind=realtype) :: tmp4
   integer :: branch
   real(kind=realtype) :: temp2
   real(kind=realtype) :: temp1
@@ -113,10 +114,11 @@ subroutine referencestate_b()
   pinf = pinfdim/pref
   rhoinf = rhoinfdim/rhoref
   uinf = mach*sqrt(gammainf*pinf/rhoinf)
-  rgas = rgasdim*rhoref*tref/pref
   muinf = muinfdim/muref
+  tmp1(1) = tinfdim
+  call computegamma(tmp1, tmp2, 1)
   call pushreal8(gammainf)
-  call computegamma(tinfdim, gammainf, 1)
+  gammainf = tmp2(1)
 ! ----------------------------------------
 !      compute the final winf
 ! ----------------------------------------
@@ -152,26 +154,26 @@ subroutine referencestate_b()
     case (komegawilcox, komegamodified, mentersst) 
 !=============================================================
       winf(itu1) = 1.5_realtype*uinf2*turbintensityinf**2
-      tmp0 = winf(itu1)/(eddyvisinfratio*nuinf)
+      tmp = winf(itu1)/(eddyvisinfratio*nuinf)
       call pushreal8(winf(itu2))
-      winf(itu2) = tmp0
+      winf(itu2) = tmp
       call pushcontrol3b(2)
     case (ktau) 
 !=============================================================
       winf(itu1) = 1.5_realtype*uinf2*turbintensityinf**2
-      tmp1 = eddyvisinfratio*nuinf/winf(itu1)
+      tmp0 = eddyvisinfratio*nuinf/winf(itu1)
       call pushreal8(winf(itu2))
-      winf(itu2) = tmp1
+      winf(itu2) = tmp0
       call pushcontrol3b(3)
     case (v2f) 
 !=============================================================
       winf(itu1) = 1.5_realtype*uinf2*turbintensityinf**2
-      tmp2 = 0.09_realtype*winf(itu1)**2/(eddyvisinfratio*nuinf)
+      tmp3 = 0.09_realtype*winf(itu1)**2/(eddyvisinfratio*nuinf)
       call pushreal8(winf(itu2))
-      winf(itu2) = tmp2
-      tmp3 = 0.666666_realtype*winf(itu1)
+      winf(itu2) = tmp3
+      tmp4 = 0.666666_realtype*winf(itu1)
       call pushreal8(winf(itu3))
-      winf(itu3) = tmp3
+      winf(itu3) = tmp4
       call pushreal8(winf(itu4))
       winf(itu4) = 0.0_realtype
       call pushcontrol3b(4)
@@ -200,9 +202,13 @@ subroutine referencestate_b()
   end if
   vinf = zero
   zinf = zero
-  call etotarray_b(rhoinf, rhoinfd, uinf, uinfd, vinf, vinfd, zinf, &
-&            zinfd, pinfcorr, pinfcorrd, ktmp, ktmpd, winf(irhoe), winfd&
-&            (irhoe), kpresent, 1)
+  uinfd = 0.0_8
+  vinfd = 0.0_8
+  zinfd = 0.0_8
+  ktmpd = 0.0_8
+  call etot_b(rhoinf, rhoinfd, uinf, uinfd, vinf, vinfd, zinf, zinfd, &
+&       pinfcorr, pinfcorrd, ktmp, ktmpd, winf(irhoe), winfd(irhoe), &
+&       kpresent)
   call popcontrol1b(branch)
   if (branch .eq. 0) winfd(itu1) = winfd(itu1) + ktmpd
   call popcontrol1b(branch)
@@ -265,7 +271,11 @@ subroutine referencestate_b()
   end if
   muinfd = nuinfd/rhoinf
   rhoinfd = rhoinfd - muinf*nuinfd/rhoinf**2
- 100 tempd = gammainf*pinf*uinf2d/rhoinf
+ 100 muinfdimd = muinfd/muref
+  tempd2 = rgasdim*rhoref*rgasd/pref
+  trefd = trefd + tempd2
+  tempd1 = musuthdim*(tsuthdim+ssuthdim)*muinfdimd/(ssuthdim+tinfdim)
+  tempd = gammainf*pinf*uinf2d/rhoinf
   temp2 = machcoef**2/rhoinf
   machcoefd = machcoefd + 2*machcoef*tempd
   gammainfd = gammainfd + temp2*pinf*uinf2d
@@ -279,14 +289,16 @@ subroutine referencestate_b()
   uinfd = uinfd + veldirfreestream(1)*winfd(ivx)
   veldirfreestreamd(1) = veldirfreestreamd(1) + uinf*winfd(ivx)
   winfd(ivx) = 0.0_8
+  tmp2d = 0.0_8
   call popreal8(gammainf)
-  call computegamma_b(tinfdim, tinfdimd, gammainf, gammainfd, 1)
-  muinfdimd = muinfd/muref
+  tmp2d(1) = tmp2d(1) + gammainfd
+  call computegamma_b(tmp1, tmp1d, tmp2, tmp2d, 1)
+  tinfdimd = trefd + (1.5_realtype*(tinfdim/tsuthdim)**0.5/tsuthdim-(&
+&   tinfdim/tsuthdim)**1.5_realtype/(ssuthdim+tinfdim))*tempd1 + tmp1d(1&
+&   )
   murefd = murefd - muinfdim*muinfd/muref**2
   temp1 = tref/pref
-  tempd1 = rgasdim*rhoref*rgasd/pref
   rgasdimd = temp1*rhoref*rgasd
-  trefd = trefd + tempd1
   temp0 = gammainf*pinf/rhoinf
   temp = sqrt(temp0)
   if (temp0 .eq. 0.0_8) then
@@ -298,22 +310,19 @@ subroutine referencestate_b()
   machd = temp*uinfd
   pinfd = pinfd + tempd0
   if (rhoref/pref .eq. 0.0_8) then
-    tempd3 = 0.0
+    tempd4 = 0.0
   else
-    tempd3 = timerefd/(2.0*sqrt(rhoref/pref)*pref)
+    tempd4 = timerefd/(2.0*sqrt(rhoref/pref)*pref)
   end if
   if (pref*rhoref .eq. 0.0_8) then
-    tempd2 = 0.0
+    tempd3 = 0.0
   else
-    tempd2 = murefd/(2.0*sqrt(pref*rhoref))
+    tempd3 = murefd/(2.0*sqrt(pref*rhoref))
   end if
-  rhorefd = pref*tempd2 - rhoinfdim*rhoinfd/rhoref**2 + tempd3 + temp1*&
+  rhorefd = pref*tempd3 - rhoinfdim*rhoinfd/rhoref**2 + tempd4 + temp1*&
 &   rgasdim*rgasd
-  prefd = prefd + rhoref*tempd2 - pinfdim*pinfd/pref**2 - rhoref*tempd3/&
-&   pref - temp1*tempd1
+  prefd = prefd + rhoref*tempd3 - pinfdim*pinfd/pref**2 - rhoref*tempd4/&
+&   pref - temp1*tempd2
   rhoinfdimd = rhoinfdimd + rhorefd + rhoinfd/rhoref
   pinfdimd = pinfdimd + prefd + pinfd/pref
-  tempd4 = musuthdim*(tsuthdim+ssuthdim)*muinfdimd/(ssuthdim+tinfdim)
-  tinfdimd = tinfdimd + (1.5_realtype*(tinfdim/tsuthdim)**0.5/tsuthdim-(&
-&   tinfdim/tsuthdim)**1.5_realtype/(ssuthdim+tinfdim))*tempd4 + trefd
 end subroutine referencestate_b

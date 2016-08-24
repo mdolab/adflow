@@ -31,7 +31,8 @@ patt_comment = re.compile(r'\s*!.*')
 print "Directory of input source files  :", DIR_ORI
 print "Directory of output source files :", DIR_MOD
 
-useful_modules = ['samodule_b','bcroutines_b','turbbcroutines_b']
+useful_modules = ['samodule_b','bcroutines_b','turbbcroutines_b',
+                  'utils_b', 'flowutils_b']
 
 for f in os.listdir(DIR_ORI):
     if f.endswith(EXT):
@@ -80,22 +81,14 @@ for f in os.listdir(DIR_ORI):
             # Replace modules
             m = patt_modules.match(line)
             if m:
-                line = line.replace('_b', '')
-
                 if not addedModule:
-                    line = '  use myPushPopLib\n'+line
+                    file_object_mod.write('  use myPushPopLib\n')
                     addedModule = True
 
             # Replace _cb on calls
             if '_cb' in line:
                 line = line.replace('_cb', '')
-
-            # Delete patterns
-            if not f.lower() == 'bcroutines_b.f90':
-                for p in del_patterns:
-                    if p.match(line):
-                        line = ''
-
+       
             # Replace _b modules with normal -- except for the useful
             # ones. 
             m = patt_modules.match(line)
@@ -104,10 +97,13 @@ for f in os.listdir(DIR_ORI):
                 for m in useful_modules:
                     if m in line:
                         found = True
-                if not found:
+                if found:
+                    line = line.replace('_b', '_fast_b', 1)
+                else:
                     line = line.replace('_b', '')
-         
-                    
+                   
+
+                   
             # Push control 1b's
             m = patt_pushcontrol1b.match(line)
             if m:
@@ -129,6 +125,12 @@ for f in os.listdir(DIR_ORI):
             if m:
                 line = 'end module %s_fast_b\n'%m.group(2)
 
+            # Delete patterns
+            if not f.lower() == 'bcroutines_b.f90':
+                for p in del_patterns:
+                    if p.match(line):
+                        line = ''
+          
 
             # write the modified line to new file
             file_object_mod.write(line)

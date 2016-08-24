@@ -35,6 +35,7 @@
 !     ******************************************************************
 !
       use constants
+      use utils, only : terminate
       implicit none
 !
 !     Subroutine arguments.
@@ -102,7 +103,7 @@
          
          
       else
-         call returnFail('getDirVector', 'Invalid Lift Direction')
+         call terminate('getDirVector', 'Invalid Lift Direction')
          
       endif
       

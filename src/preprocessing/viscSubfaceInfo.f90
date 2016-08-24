@@ -27,6 +27,7 @@
        use BCTypes
        use blockPointers
        use inputTimeSpectral
+       use utils, only : setPointers, terminate
        implicit none
 !
 !      Subroutine argument.
@@ -64,7 +65,7 @@
            allocate(flowDoms(nn,level,sps)%viscSubface(nViscBocos), &
                     stat=ierr)
            if(ierr /= 0)                         &
-             call returnFail("viscSubfaceInfo", &
+             call terminate("viscSubfaceInfo", &
                             "Memory allocation failure for viscSubface")
          enddo
  
@@ -76,7 +77,7 @@
                   flowDoms(nn,level,1)%viscKmaxPointer(2:il,2:jl), &
                   stat=ierr)
          if(ierr /= 0)                         &
-           call returnFail("viscSubfaceInfo", &
+           call terminate("viscSubfaceInfo", &
                           "Memory allocation failure for subface info")
 
          ! Reset the pointers viscIminPointer, etc. to make it more
@@ -128,7 +129,7 @@
                       viscSubface(mm)%utau(iBeg:iEnd,jBeg:jEnd),   &
                       stat=ierr)
              if(ierr /= 0)                       &
-               call returnFail("viscSubfaceInfo", &
+               call terminate("viscSubfaceInfo", &
                               "Memory allocation failure for tau, q &
                               &and utau.")
            enddo

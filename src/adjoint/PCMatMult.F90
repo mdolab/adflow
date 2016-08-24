@@ -6,6 +6,7 @@ subroutine testpc()
   use flowvarrefstate
   use inputtimespectral
   use blockPointers
+  use utils, only : Echk
   implicit none
 #ifndef USE_COMPLEX
   real(kind=realType) , dimension(:), allocatable :: v1, v2
@@ -86,6 +87,7 @@ subroutine factorPCMatrix()
   use flowvarrefstate
   use inputtimespectral
   use blockPointers
+  use utils, only : Echk, setPointers
   implicit none
 
   integer(kind=intType) :: ierr, i, nn, sps, j, k, ii, jj, kk, info, timeA, timeB
@@ -203,7 +205,7 @@ subroutine PCMatMult(A, vecX,  vecY, ierr)
   use inputAdjoint       
   use ADjointVars
   use inputTimeSpectral  
-
+  use utils, only : EChk, setPointers
   implicit none
 #define PETSC_AVOID_MPIF_H
 
@@ -323,6 +325,7 @@ subroutine setPCVec(vecX)
   use blockPointers
   use inputTimeSpectral  
   use flowVarRefState
+  use utils, only : EChk, setPointers
   implicit none
 #define PETSC_AVOID_MPIF_H
 

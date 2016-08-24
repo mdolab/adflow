@@ -1,13 +1,3 @@
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          inviscidUpwindFlux.f90                          *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 03-25-2003                                      *
-!      * Last modified: 10-29-2007                                      *
-!      *                                                                *
-!      ******************************************************************
-!
        subroutine inviscidUpwindFlux(fineGrid)
 !
 !      ******************************************************************
@@ -36,7 +26,8 @@
   use inputPhysics, only : equations
   use iteration, only : rFil, currentLevel, groundLevel
   use cgnsGrid, only: massFlowFamilyDiss
-
+  use utils, only : getCorrectForK, terminate
+  use flowUtils, only : eTot
        implicit none
 !
 !      Subroutine arguments.
@@ -58,13 +49,7 @@
        real(kind=realType), dimension(nw)  :: du1, du2, du3
        real(kind=realType), dimension(nwf) :: flux
 
-       logical :: firstOrderK, correctForK, getCorrectForK, rotationalPeriodic
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
+       logical :: firstOrderK, correctForK, rotationalPeriodic
 !
        ! Check if rFil == 0. If so, the dissipative flux needs not to
        ! be computed.
@@ -924,9 +909,7 @@
          real(kind=realType) :: gm1, gm53
          real(kind=realType) :: lam1, lam2, lam3
          real(kind=realType) :: abv1, abv2, abv3, abv4, abv5, abv6, abv7
-
-         real(kind=realType), dimension(2) :: rhotmp, utmp, vtmp, wtmp
-         real(kind=realType), dimension(2) :: ptmp, ktmp, Etmp
+         real(kind=realType), dimension(2) :: ktmp
 !
 !        ****************************************************************
 !        *                                                              *
@@ -1000,28 +983,12 @@
                  endif
 
                  ! Compute the total energy of the left and right state.
+                 call etot(left(irho), left(ivx), left(ivy), left(ivz), &
+                      left(irhoe), ktmp(1), Etl, correctForK)
 
-                 rhotmp(1) = left(irho)
-                 rhotmp(2) = right(irho)
-
-                 utmp(1) = left(ivx)
-                 utmp(2) = right(ivx)
-
-                 vtmp(1) = left(ivy)
-                 vtmp(2) = right(ivy)
-
-                 wtmp(1) = left(ivz)
-                 wtmp(2) = right(ivz)
-
-                 ptmp(1) = left(irhoE)
-                 ptmp(2) = right(irhoE)
-
-                 call etotArray(rhotmp, utmp, vtmp, wtmp, ptmp, ktmp, &
-                                Etmp, correctForK, 2)
-
-                 Etl = Etmp(1)
-                 Etr = Etmp(2)
-
+                 call etot(right(irho), right(ivx), right(ivy), right(ivz), &
+                      right(irhoe), ktmp(2), Etr, correctForK)
+                 
                  ! Compute the difference of the conservative mean
                  ! flow variables.
 
@@ -1141,21 +1108,21 @@
       !          flux(irhoE) = -porFlux*(tmp*drE)
 
                case (Turkel)
-                 call returnFail(&
+                 call terminate(&
                       "riemannFlux",&
                       "Turkel preconditioner not implemented yet")
 
                case (ChoiMerkle)
-                 call returnFail("riemannFlux",&
+                 call terminate("riemannFlux",&
                       "choi merkle preconditioner not implemented yet")
 
              end select
 
            case (vanLeer)
-             call returnFail("riemannFlux", "van leer fvs not implemented yet")
+             call terminate("riemannFlux", "van leer fvs not implemented yet")
 
            case (ausmdv)
-             call returnFail("riemannFlux","ausmdv fvs not implemented yet")
+             call terminate("riemannFlux","ausmdv fvs not implemented yet")
 
          end select
 

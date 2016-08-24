@@ -6,6 +6,7 @@ subroutine referenceShockSensor
   use flowvarrefstate
   use inputPhysics
   use inputDiscretization
+  use utils, only : setPointers, EChk
   implicit none
 
   ! Working variables

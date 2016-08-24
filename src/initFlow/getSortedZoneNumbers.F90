@@ -23,13 +23,15 @@
 !      ******************************************************************
 !
 #ifdef USE_NO_CGNS
-       call returnFail("getSortedZoneNumbers", &
+       call terminate("getSortedZoneNumbers", &
                       "Routine should not be called if no cgns support &
                       &is selected.")
 #else
        use cgnsGrid
        use su_cgns
        use restartMod
+       use sorting, only : qsortStrings, bsearchStrings
+       use utils, only : terminate
        implicit none
 !
 !      Local variables.
@@ -48,22 +50,12 @@
        logical :: nameFound
 
        character(len=7) :: int1String, int2String
-!
-!      Function definition.
-!
-       integer(kind=intType) :: bsearchStrings
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
+
        ! Allocate the memory for zoneNames and zoneNumbers.
 
        allocate(zoneNames(cgnsNdom), zoneNumbers(cgnsNdom), stat=ierr)
        if(ierr /= 0)                            &
-         call returnFail("getSortedZoneNumbers", &
+         call terminate("getSortedZoneNumbers", &
                         "Memory allocation failure for zoneNames &
                         &and zoneNumbers")
 
@@ -80,7 +72,7 @@
          zone = nn
          call cg_zone_type_f(cgnsInd, cgnsBase, zone, zonetype, ierr)
          if(ierr /= all_ok)                       &
-           call returnFail("getSortedZoneNumbers", &
+           call terminate("getSortedZoneNumbers", &
                           "Something wrong when calling cg_zone_type_f")
 
          if(zonetype /= structured) then
@@ -93,7 +85,7 @@
            write(errorMessage,100) trim(int1String), trim(int2String)
  100       format("Base",1X,A,": Zone",1X,A, " of the cgns restart &
                   &file is not structured")
-           call returnFail("getSortedZoneNumbers", errorMessage)
+           call terminate("getSortedZoneNumbers", errorMessage)
 
          endif
 
@@ -101,7 +93,7 @@
 
          call cg_ncoords_f(cgnsInd, cgnsBase, zone, ncoords, ierr)
          if(ierr /= all_ok)                       &
-           call returnFail("getSortedZoneNumbers", &
+           call terminate("getSortedZoneNumbers", &
                           "Something wrong when calling cg_ncoords_f")
 
          ! If ncoords == 3, there are coordinates present. Then check if
@@ -114,14 +106,14 @@
            call cg_goto_f(cgnsInd, cgnsBase, ierr, "Zone_t", zone, &
                           "GridCoordinates_t", 1, "end")
            if(ierr /= all_ok)                       &
-             call returnFail("getSortedZoneNumbers", &
+             call terminate("getSortedZoneNumbers", &
                             "Something wrong when calling cg_goto_f")
 
            ! Check if this node is a link.
 
            call cg_is_link_f(pathLength, ierr)
            if(ierr /= all_ok)                       &
-             call returnFail("getSortedZoneNumbers", &
+             call terminate("getSortedZoneNumbers", &
                             "Something wrong when calling cg_is_link_f")
 
            if(pathLength > 0) then
@@ -130,7 +122,7 @@
 
              call cg_link_read_f(errorMessage, linkPath, ierr)
              if(ierr /= all_ok)                       &
-               call returnFail("getSortedZoneNumbers", &
+               call terminate("getSortedZoneNumbers", &
                               "Something wrong when calling &
                               &cg_link_read_f")
 
@@ -164,7 +156,7 @@
            call cg_zone_read_f(cgnsInd, cgnsBase, zone, &
                                zoneNames(nn), sizesBlock, ierr)
            if(ierr /= all_ok)                       &
-             call returnFail("getSortedZoneNumbers", &
+             call terminate("getSortedZoneNumbers", &
                             "Something wrong when calling &
                             &cg_zone_read_f")
          endif
@@ -198,7 +190,7 @@
          ! case, this means that two identical zone names are present.
 
          if(zoneNumbers(ii) /= -1)                &
-           call returnFail("getSortedZoneNumbers", &
+           call terminate("getSortedZoneNumbers", &
                           "Error occurs only when two identical zone &
                           &names are present")
 

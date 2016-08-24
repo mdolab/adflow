@@ -11,6 +11,7 @@ subroutine ANKStep(firstCall)
   use flowVarRefState, only :  nw, nwf
   use inputIteration, only : L2conv
   use iteration, only : approxTotalIts
+  use utils, only : EChk
   implicit none
 
   ! Input Variables

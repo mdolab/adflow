@@ -1,7 +1,7 @@
 ! This is a special function that is sued to alloc derivative values
 ! in blockpointers_d for use with the AD code.
 
-subroutine alloc_derivative_values(level)
+subroutine allocDerivativeValues(level)
 
   use blockPointers
   use inputtimespectral
@@ -19,6 +19,7 @@ subroutine alloc_derivative_values(level)
   use bcroutines_b
 #endif
   use adjointVars
+  use utils, only : EChk, setPointers
   implicit none
 
   ! Input parameters
@@ -235,7 +236,8 @@ subroutine alloc_derivative_values(level)
        rlv2d(isizemax, jsizemax), rlv3d(isizemax, jsizemax), &
        rev0d(isizemax, jsizemax), rev1d(isizemax, jsizemax), &
        rev2d(isizemax, jsizemax), rev3d(isizemax, jsizemax), &
-       ssid(isizemax, jsizemax,3), xxd(isizemax+1, jsizemax+1,3), stat=ierr)
+       ssid(isizemax, jsizemax,3), xxd(isizemax+1, jsizemax+1,3), &
+       gcp(isizemax, jsizemax), stat=ierr)
   call EChk(ierr,__FILE__,__LINE__)
   allocate(&
        ww0(isizemax, jsizemax, nw), ww1(isizemax, jsizemax, nw), &
@@ -248,9 +250,10 @@ subroutine alloc_derivative_values(level)
        rev2(isizemax, jsizemax), rev3(isizemax, jsizemax), &
        gamma0(isizemax, jsizemax), gamma1(isizemax, jsizemax), &
        gamma2(isizemax, jsizemax), gamma3(isizemax, jsizemax), &
-       ssi(isizemax, jsizemax,3), xx(isizemax+1, jsizemax+1,3), stat=ierr)
+       ssi(isizemax, jsizemax,3), xx(isizemax+1, jsizemax+1,3), &
+       stat=ierr)
   call EChk(ierr,__FILE__,__LINE__) 
 
 #endif 
 derivVarsAllocated = .True. 
-end subroutine alloc_derivative_values
+end subroutine allocDerivativeValues

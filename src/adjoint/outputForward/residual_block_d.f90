@@ -3,25 +3,15 @@
 !
 !  differentiation of residual_block in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *dw *w *(*viscsubface.tau)
-!   with respect to varying inputs: gammainf timeref rhoinf tref
-!                winf pinfcorr rgas *rev *p *sfacei *sfacej *sfacek
-!                *dw *w *rlv *x *vol *si *sj *sk *radi *radj *radk
+!   with respect to varying inputs: gammainf timeref rhoinf winf
+!                pinfcorr *rev *p *sfacei *sfacej *sfacek *dw *w
+!                *rlv *x *vol *si *sj *sk *radi *radj *radk
 !   plus diff mem management of: rev:in aa:in wx:in wy:in wz:in
 !                p:in sfacei:in sfacej:in sfacek:in dw:in w:in
 !                rlv:in x:in qx:in qy:in qz:in ux:in vol:in uy:in
 !                uz:in si:in sj:in sk:in vx:in vy:in vz:in fw:in
 !                viscsubface:in *viscsubface.tau:in radi:in radj:in
 !                radk:in
-!
-!      ******************************************************************
-!      *                                                                *
-!      * file:          residual.f90                                    *
-!      * author:        edwin van der weide, steve repsher (blanking)   *
-!      * starting date: 03-15-2003                                      *
-!      * last modified: 10-29-2007                                      *
-!      *                                                                *
-!      ******************************************************************
-!
 subroutine residual_block_d()
 !
 !      ******************************************************************
@@ -41,6 +31,8 @@ subroutine residual_block_d()
   use inputunsteady
   use iteration
   use inputadjoint
+  use flowutils_d, only : computespeedofsoundsquared, &
+& computespeedofsoundsquared_d
   use diffsizes
 !  hint: isize1ofdrfviscsubface should be the size of dimension 1 of array *viscsubface
   implicit none
@@ -170,11 +162,7 @@ subroutine residual_block_d()
     else
       fwd = 0.0_8
     end if
-  case (disscusp) 
-    fwd = 0.0_8
   case (upwind) 
-!===========================================================
-! cusp dissipation scheme.
 !===========================================================
 ! dissipation via an upwind scheme.
     call inviscidupwindflux_d(finegrid)

@@ -21,6 +21,7 @@
        use constants
        use extraOutput
        use allInputParam
+       use utils, only : convertToLowerCase, terminate
        implicit none
 !
 !      Subroutine arguments.
@@ -230,7 +231,7 @@
                                          &variable, ", trim(keyword), &
                                          ", specified"
              if(myID == 0) &
-               call returnFail("volumeVariables", errorMessage)
+               call terminate("volumeVariables", errorMessage)
              call mpi_barrier(SUmb_comm_world, pos)
 
          end select

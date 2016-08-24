@@ -2,7 +2,7 @@
 !  tapenade 3.10 (r5363) -  9 sep 2014 09:53
 !
 !  differentiation of computelamviscosity in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: tref rgas *p *w *rlv
+!   gradient     of useful results: rgas *p *w *rlv
 !   with respect to varying inputs: muref tref rgas *p *w
 !   plus diff mem management of: p:in w:in rlv:in
 !
@@ -31,6 +31,7 @@ subroutine computelamviscosity_b()
   use flowvarrefstate
   use inputphysics
   use iteration
+  use utils_b, only : getcorrectfork
   implicit none
 !
 !      local parameter.
@@ -42,7 +43,7 @@ subroutine computelamviscosity_b()
   integer(kind=inttype) :: i, j, k, ii
   real(kind=realtype) :: musuth, tsuth, ssuth, t, pp
   real(kind=realtype) :: musuthd, tsuthd, ssuthd, td, ppd
-  logical :: correctfork, getcorrectfork
+  logical :: correctfork
   intrinsic mod
   real(kind=realtype) :: temp3
   real(kind=realtype) :: temp2
@@ -70,6 +71,7 @@ subroutine computelamviscosity_b()
 ! return immediately if no laminar viscosity needs to be computed.
   if (.not.viscous) then
     murefd = 0.0_8
+    trefd = 0.0_8
   else
 ! determine whether or not the pressure must be corrected
 ! for the presence of the turbulent kinetic energy.
@@ -141,7 +143,7 @@ subroutine computelamviscosity_b()
         wd(i, j, k, irho) = wd(i, j, k, irho) + rgas*tempd6
       end do
     end if
-    trefd = trefd - tsuthdim*tsuthd/tref**2 - ssuthdim*ssuthd/tref**2
+    trefd = -(tsuthdim*tsuthd/tref**2) - ssuthdim*ssuthd/tref**2
     murefd = -(musuthdim*musuthd/muref**2)
   end if
 end subroutine computelamviscosity_b

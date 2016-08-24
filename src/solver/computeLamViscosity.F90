@@ -24,6 +24,7 @@ subroutine computeLamViscosity
   use flowVarRefState
   use inputPhysics
   use iteration
+  use utils, only : getCorrectForK
   implicit none
   !
   !      Local parameter.
@@ -34,7 +35,7 @@ subroutine computeLamViscosity
   !
   integer(kind=intType) :: i, j, k, ii
   real(kind=realType)   :: muSuth, TSuth, SSuth, T, pp
-  logical               :: correctForK, getCorrectForK
+  logical               :: correctForK
   !
   !      ******************************************************************
   !      *                                                                *

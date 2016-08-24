@@ -16,6 +16,7 @@ subroutine preprocessingADjoint
   use inputAdjoint, only : frozenTurbulence
   use ADjointPETSc, only: w_like1, w_like2, PETScIerr, &
        psi_like1, psi_like2, x_like, psi_like3
+  use utils, only : setPointers, EChk
   implicit none
 
 #ifndef USE_NO_PETSC

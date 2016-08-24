@@ -22,6 +22,7 @@
        use commMixing
        use interfaceGroups
        use mixingData
+       use utils, only : setPointers, terminate
        implicit none
 !
 !      Subroutine arguments.
@@ -38,7 +39,7 @@
        integer(kind=intType) :: nHalo, nFaces, nnzq, nInter
        integer(kind=intType) :: jBeg, jEnd, iBeg, iEnd
        integer(kind=intType) :: h1, h2, indh, ind1, ind2
-       integer(kind=intType) :: start, end
+       integer(kind=intType) :: start, eend
 
        integer(kind=intType), dimension(4) :: nk
 
@@ -115,7 +116,7 @@
                 commPattern%rotMatHalo(nHalo,3,3), &
                 stat=ierr)
        if(ierr /= 0)                          &
-         call returnFail("mixingHaloInterpol", &
+         call terminate("mixingHaloInterpol", &
                         "Memory allocation failure for halo data.")
 
        ! Repeat the loop over the subfaces of the sliding mesh interface
@@ -173,7 +174,7 @@
 
              allocate(xFace(iBeg-1:iEnd,jBeg-1:jEnd,3), stat=ierr)
              if(ierr /= 0)                          &
-               call returnFail("mixingHaloInterpol", &
+               call terminate("mixingHaloInterpol", &
                               "Memory allocation failure for xFace.")
 
              call cylCoorNodesOnBlockFace(xFace,  iBeg-1, iEnd,  &
@@ -328,21 +329,21 @@
                    ! Coordinate is somewhere in the range. Use a
                    ! binary algorithm to find the correct one.
 
-                   start = 1
-                   end   = nInter
+                   start = 1; 
+                   eend   = nInter
                    do
                      ! Condition to exit the loop.
 
-                     if(end - start <= 1) exit
+                      if(eend - start <= 1) exit
 
                      ! Compare the median and get rid of either the
                      ! left or right neighbors.
 
-                     jj = (start+end)/2
+                      jj = (start+eend)/2
                      if(mixingCells(jj) < coorInt) then
                        start = jj
                      else
-                       end = jj
+                       eend = jj
                      endif
                    enddo
 
@@ -350,10 +351,10 @@
                    ! interpolation. Store them as well as the weights.
 
                    commPattern%indListHalo(ii,1) = start
-                   commPattern%indListHalo(ii,2) = end
+                   commPattern%indListHalo(ii,2) = eend
 
-                   weight1 = (coorInt            - mixingCells(end)) &
-                           / (mixingCells(start) - mixingCells(end))
+                   weight1 = (coorInt            - mixingCells(eend)) &
+                           / (mixingCells(start) - mixingCells(eend))
                    weight2 = one - weight1
 
                    commPattern%weightHalo(ii,1) = weight1
@@ -393,7 +394,7 @@
 
              deallocate(xFace, stat=ierr)
              if(ierr /= 0)                          &
-               call returnFail("mixingHaloInterpol", &
+               call terminate("mixingHaloInterpol", &
                               "Deallocation failure for xFace.")
 
            endif testInterface

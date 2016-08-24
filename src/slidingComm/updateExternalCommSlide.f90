@@ -22,6 +22,9 @@
 !      ******************************************************************
 !
        use commSliding
+       use utils, only : reallocateinteger, reallocateinteger2, terminate, &
+            reallocateReal
+
        implicit none
 !
 !      Subroutine arguments.
@@ -92,53 +95,6 @@
          type(interpolHaloListType), pointer, dimension(:) :: &
                                                           tmpRecvList
 !
-!        Interfaces
-!
-         interface
-           subroutine reallocateInteger(intArray, newSize, oldSize, &
-                                        alwaysFreeMem)
-             use precision
-             implicit none
-
-             integer(kind=intType), dimension(:), pointer :: intArray
-             integer(kind=intType), intent(in) :: newSize, oldSize
-             logical, intent(in) :: alwaysFreeMem
-           end subroutine reallocateInteger
-
-           !=============================================================
-
-           subroutine reallocateInteger2(intArray,           &
-                                         newSize1, newSize2, &
-                                         oldSize1, oldSize2, &
-                                         alwaysFreeMem)
-             use precision
-             implicit none
- 
-             integer(kind=intType), dimension(:,:), pointer :: intArray
-             integer(kind=intType), intent(in) :: newSize1, newSize2, &
-                                                  oldSize1, oldSize2
-             logical, intent(in) :: alwaysFreeMem
-           end subroutine reallocateInteger2
-
-           !=============================================================
-
-           subroutine reallocateReal(realArray, newSize, oldSize, &
-                                     alwaysFreeMem)
-             use precision
-             implicit none
-
-             real(kind=realType), dimension(:), pointer :: realArray
-             integer(kind=intType), intent(in) :: newSize, oldSize
-             logical, intent(in) :: alwaysFreeMem
-           end subroutine reallocateReal
-         end interface
-!
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
-!
          ! Return immediately if nCopy == 0. This will probably never
          ! occur, but it does not hurt to test it.
 
@@ -181,7 +137,7 @@
 
            allocate(commSlidingCell%recvList(nn), stat=ierr)
            if(ierr /= 0)                                 &
-             call returnFail("updateCommSlidingCellRecv", &
+             call terminate("updateCommSlidingCellRecv", &
                             "Memory allocation failure for recvList.")
 
            ! Set the values of nCopy and the pointers back to the
@@ -214,7 +170,7 @@
 
            deallocate(tmpRecvList, stat=ierr)
            if(ierr /= 0)                                 &
-             call returnFail("updateCommSlidingCellRecv", &
+             call terminate("updateCommSlidingCellRecv", &
                             "Deallocation error for tmpRecvList.")
 
            ! Set the new value of nProcRecv.

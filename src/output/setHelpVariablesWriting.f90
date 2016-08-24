@@ -22,6 +22,7 @@
        use communication
        use monitor
        use outputMod
+       use utils, only : terminate
        implicit none
 !
 !      Local variables.
@@ -47,7 +48,7 @@
        allocate(nBlocksCGNSblock(0:cgnsNDom), blocksCGNSblock(nDom), &
                 stat=ierr)
        if(ierr /= 0)                               &
-         call returnFail("setHelpVariablesWriting", &
+         call terminate("setHelpVariablesWriting", &
                         "Memory allocation failure for &
                         &nBlocksCGNSblock and blocksCGNSblock.")
 

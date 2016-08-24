@@ -21,6 +21,7 @@ subroutine fillCoor
   use inputTimeSpectral
   use inputUnsteady
   use inputPhysics
+  use utils, only : setPointers
   implicit none
   !
   !      Local variables.
@@ -68,6 +69,7 @@ subroutine storeCoor
   use inputTimeSpectral
   use inputUnsteady
   use inputPhysics
+  use utils, only : setPointers
   implicit none
   !
   !      Local variables.
@@ -107,7 +109,8 @@ subroutine interpCoor(lale)
   use inputTimeSpectral
   use inputUnsteady
   use inputPhysics
-  implicit none
+   use utils, only : setPointers
+   implicit none
   !
   !      Input variables.
   !
@@ -154,6 +157,7 @@ subroutine recoverCoor
   use inputTimeSpectral
   use inputUnsteady
   use inputPhysics
+  use utils, only : setPointers
   implicit none
   !
   !      Local variables.

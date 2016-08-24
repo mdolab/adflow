@@ -28,6 +28,9 @@
        use cgnsNames
        use IOModule
        use restartMod
+       use utils, only : setCGNSRealType, terminate
+       use sorting, only : bsearchStrings
+
        implicit none
 !
 !      Subroutine argument.
@@ -42,18 +45,7 @@
        integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
 
        real(kind=realType) :: momScale
-!
-!      Function definitions.
-!
-       integer               :: setCGNSRealType
-       integer(kind=intType) :: bsearchStrings
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
+
        ! Set the cell range to be copied from the buffer.
 
        iBeg = lbound(buffer,1); iEnd = ubound(buffer,1)
@@ -148,7 +140,7 @@
 
        ! X-momentum could not be created. Terminate.
 
-       call returnFail("readXmomentum", &
+       call terminate("readXmomentum", &
                       "X-Momentum could not be created")
 
        end subroutine readXmomentum

@@ -25,6 +25,7 @@
        use iteration
        use turbMod
        use saModule
+       use haloExchange, only :whalo2
        implicit none
 !
 !      Local variables.
@@ -77,10 +78,6 @@
 
            case (v2f)
              call vf(.false.)
-
-           case default
-             call returnFail("turbSolveSegregated", &
-                            "Turbulence model not implemented yet")
 
          end select
 

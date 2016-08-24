@@ -67,6 +67,7 @@
        use interfaceGroups
        use localSubfacesMod
        use storeEntity
+       use utils, only : terminate
        implicit none
 !
 !      Subroutine arguments.
@@ -289,7 +290,7 @@
                       mySubfaces(nn)%nRotations(mm), &
                       mySubfaces(nn)%donorProc(mm), stat=ierr)
              if(ierr /= 0)                        &
-               call returnFail("interpolateSlide", &
+               call terminate("interpolateSlide", &
                               "Memory allocation failure for &
                               &face stuff.")
            enddo
@@ -322,7 +323,7 @@
                   uvw,       procID,   elementID, bufInterpol, &
                   stat=ierr)
        if(ierr /= 0)                        &
-         call returnFail("interpolateSlide", &
+         call terminate("interpolateSlide", &
                         "Deallocation failure for arrays allocated &
                         &in getInterpolationData")
 
@@ -469,7 +470,7 @@
          allocate(subfaceID(nInter),    entityID(nInter), &
                   nRotations(0:nInter), stat=ierr)
          if(ierr /= 0)                            &
-           call returnFail("getInterpolationData", &
+           call terminate("getInterpolationData", &
                           "Memory allocation failure for subfaceID, &
                           &entityID and nRotations.")
 
@@ -563,7 +564,7 @@
            enddo
 
            if(nn <= nInter)                         &
-             call returnFail("getInterpolationData", &
+             call terminate("getInterpolationData", &
                             "No rotation angle found.")
          endif
 
@@ -578,7 +579,7 @@
                   rotIndex(nn),  rotAngles(nn), bufInterpol(mm,nn), &
                   stat=ierr)
          if(ierr /= 0)                            &
-           call returnFail("getInterpolationData", &
+           call terminate("getInterpolationData", &
                           "Memory allocation failure for &
                           &interpolation arrays.")
 
@@ -762,7 +763,7 @@
 
          deallocate(nRotations, coorEnt, elementType, dist2, stat=ierr)
          if(ierr /= 0)                            &
-           call returnFail("getInterpolationData", &
+           call terminate("getInterpolationData", &
                           "Deallocation failure for nRotations, &
                           &coorEnt, elementType and dist2.")
 

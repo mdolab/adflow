@@ -25,6 +25,8 @@
 !
        use commSliding
        use updateComm
+       use utils, only : reallocateinteger, reallocateinteger2, terminate
+
        implicit none
 !
 !      Subroutine arguments
@@ -124,7 +126,7 @@
 
          if( debug ) then
            if(mm == 0)                               &
-             call returnFail("updateInterpolSendBuf", &
+             call terminate("updateInterpolSendBuf", &
                             "Entry not found in sortedDonors.")
          endif
 
@@ -147,7 +149,7 @@
        deallocate(donorInfo%indBuf,  donorInfo%block, &
                   donorInfo%indices, donorInfo%weight, stat=ierr)
        if(ierr /= 0)                             &
-         call returnFail("updateInterpolSendBuf", &
+         call terminate("updateInterpolSendBuf", &
                         "Deallocation error for the member variables &
                         &of donorInfo.")
 
@@ -187,41 +189,7 @@
 !
          type(slidingCommListType), dimension(:), pointer :: &
                                                            tmpSendList
-!
-!        Interfaces
-!
-         interface
-           subroutine reallocateInteger(intArray, newSize, oldSize, &
-                                        alwaysFreeMem)
-             use precision
-             implicit none
 
-             integer(kind=intType), dimension(:), pointer :: intArray
-             integer(kind=intType), intent(in) :: newSize, oldSize
-             logical, intent(in) :: alwaysFreeMem
-           end subroutine reallocateInteger
-
-           !=============================================================
-
-           subroutine reallocateInteger2(intArray,            &
-                                          newSize1, newSize2, &
-                                          oldSize1, oldSize2, &
-                                          alwaysFreeMem)
-             use precision
-             implicit none
- 
-             integer(kind=intType), dimension(:,:), pointer :: intArray
-             integer(kind=intType), intent(in) :: newSize1, newSize2, &
-                                                  oldSize1, oldSize2
-             logical, intent(in) :: alwaysFreeMem
-           end subroutine reallocateInteger2
-         end interface
-!
-!        ****************************************************************
-!        *                                                              *
-!        * Begin execution                                              *
-!        *                                                              *
-!        ****************************************************************
 !
          ! Return immediately if nDom == 0. This will probably never
          ! occur, but it does not hurt to test it.
@@ -265,7 +233,7 @@
 
            allocate(commSlidingCell%sendList(nn), stat=ierr)
            if(ierr /= 0)                                 &
-             call returnFail("updateCommSlidingCellSend", &
+             call terminate("updateCommSlidingCellSend", &
                             "Memory allocation failure for sendList.")
 
            ! Set the pointers back for the previously stored data
@@ -288,7 +256,7 @@
 
            deallocate(tmpSendList, stat=ierr)
            if(ierr /= 0)                                 &
-             call returnFail("updateCommSlidingCellSend", &
+             call terminate("updateCommSlidingCellSend", &
                             "Deallocation error for tmpSendList.")
 
            ! Set the new value of nProcSend.

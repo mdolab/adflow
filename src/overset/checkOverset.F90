@@ -14,6 +14,7 @@ subroutine checkOverset (level, sps, totalOrphans)
   use blockPointers
   use stencils
   use communication
+  use utils, only : setPointers, EChk
   implicit none
 
   ! Input/Output

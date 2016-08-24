@@ -1,14 +1,3 @@
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          readFamilyInfo.F90                              *
-!      * Author:        Edwin van der Weide, Steve Repsher,             *
-!      *                Seonghyeon Hahn                                 *
-!      * Starting date: 08-21-2003                                      *
-!      * Last modified: 10-29-2007                                      *
-!      *                                                                *
-!      ******************************************************************
-!
        subroutine readFamilyInfo(cgnsInd, cgnsBase)
 !
 !      ******************************************************************
@@ -24,6 +13,7 @@
        use communication
        use iteration
        use su_cgns
+       use utils, only: terminate
        implicit none
 !
 !      Subroutine arguments
@@ -39,16 +29,10 @@
 !      Function definition.
 !
        integer(kind=intType) :: internalBC
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
+
 #ifdef USE_NO_CGNS
 
-       call returnFail("readFamilyInfo", &
+       call terminate("readFamilyInfo", &
                       "Routine should not be called if no cgns support &
                       &is selected.")
 
@@ -57,7 +41,7 @@
 
        call cg_nfamilies_f(cgnsInd, cgnsBase, nn, ierr)
        if(ierr /= CG_OK)                 &
-         call returnFail("readFamilyInfo", &
+         call terminate("readFamilyInfo", &
                         "Something wrong when calling cg_nfamilies_f")
        cgnsNFamilies = nn
 	
@@ -65,7 +49,7 @@
 
        allocate(cgnsFamilies(nn), stat=ierr)
        if(ierr /= 0)                      &
-         call returnFail("readFamilyInfo", &
+         call terminate("readFamilyInfo", &
                         "Memory allocation failure for cgnsFamilies")
 
        ! Loop over the number of families and read the info.
@@ -95,7 +79,7 @@
                                nFamBC, nGeo, ierr)
 	
          if(ierr /= CG_OK)               &
-         call returnFail("readFamilyInfo", &
+         call terminate("readFamilyInfo", &
                         "Something wrong when calling cg_family_read_f")
 
          ! Determine the boundary condition for this family, if specified.
@@ -115,7 +99,7 @@
                                   cgnsFamilies(nn)%bcName,   &
                                   cgnsFamilies(nn)%BCTypeCGNS, ierr)
              if(ierr /= CG_OK)                 &
-               call returnFail("readFamilyInfo", &
+               call terminate("readFamilyInfo", &
                               "Something wrong when calling &
                               &cg_fambc_read_f")
 
@@ -132,12 +116,12 @@
                call cg_goto_f(cgnsInd, cgnsBase, ierr, &
                               "Family_t", nn, "end")
                if(ierr /= CG_OK)                 &
-                 call returnFail("readFamilyInfo", &
+                 call terminate("readFamilyInfo", &
                                 "Something wrong when calling cg_goto_f")
 
                call cg_nuser_data_f(nUserData, ierr)
                if(ierr /= CG_OK)                 &
-                 call returnFail("readFamilyInfo", &
+                 call terminate("readFamilyInfo", &
                                 "Something wrong when calling &
                                 &cg_nuser_data_f")
 
@@ -146,7 +130,7 @@
                if(nUserData /= 1) then
                  write(errorMessage,101) trim(cgnsFamilies(nn)%familyName)
                  if(myID == 0) &
-                   call returnFail("readFamilyInfo", errorMessage)
+                   call terminate("readFamilyInfo", errorMessage)
                  call mpi_barrier(SUmb_comm_world, ierr)
                endif
 
@@ -156,7 +140,7 @@
                                         cgnsFamilies(nn)%userDefinedName, &
                                         ierr)
                if(ierr /= CG_OK)                 &
-                 call returnFail("readFamilyInfo", &
+                 call terminate("readFamilyInfo", &
                                 "Something wrong when calling &
                                 &cg_user_data_read_f")
 
@@ -180,7 +164,7 @@
            case default
              write(errorMessage,201) trim(cgnsFamilies(nn)%familyName)
              if(myID == 0) &
-               call returnFail("readFamilyInfo", errorMessage)
+               call terminate("readFamilyInfo", errorMessage)
              call mpi_barrier(SUmb_comm_world, ierr)
 
          end select

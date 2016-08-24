@@ -7,6 +7,7 @@ subroutine initres(varStart, varEnd)
   use inputTimeSpectral
   use iteration
   use section
+  use utils, only : setPointers
   !
   !      Subroutine argument.
   !
@@ -63,6 +64,7 @@ subroutine initres_block(varStart, varEnd, nn, sps)
   use inputTimeSpectral
   use inputUnsteady
   use iteration
+
   implicit none
   !
   !      Subroutine arguments.
@@ -150,12 +152,6 @@ subroutine initres_block(varStart, varEnd, nn, sps)
               enddo
            enddo
         enddo
-
-        !=======================================================
-
-     case (implicitRK)
-        call returnFail("initRes", &
-             "Implicit RK not implemented yet")
 
         !=======================================================
 

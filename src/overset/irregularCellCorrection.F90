@@ -1,7 +1,7 @@
 subroutine irregularCellCorrection(level, sps)
 
   use blockPointers
-
+  use utils, only : setPointers
   implicit none
 
   ! Input/Output

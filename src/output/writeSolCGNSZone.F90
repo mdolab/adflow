@@ -29,6 +29,7 @@
        use iteration
        use su_cgns
        use outputMod
+       use utils, only : terminate, setPointers
        implicit none
 !
 !      Subroutine arguments.
@@ -40,7 +41,7 @@
 
 #ifdef USE_NO_CGNS
 
-       call returnFail("writeSolCGNSZone", &
+       call terminate("writeSolCGNSZone", &
                       "Routine should not be called if no cgns support &
                       &is selected.")
 
@@ -132,7 +133,7 @@
 
          allocate(sol(ll), stat=ierr)
          if(ierr /= 0)                        &
-           call returnFail("writeSolCGNSZone", &
+           call terminate("writeSolCGNSZone", &
                           "Memory allocation failure for sol")
 
          ! First determine the number of subblocks into the original cgns
@@ -148,7 +149,7 @@
 
          allocate(subRanges(3,2,nSubblocks), proc(nSubblocks), stat=ierr)
          if(ierr /= 0)                        &
-           call returnFail("writeSolCGNSZone", &
+           call terminate("writeSolCGNSZone", &
                           "Memory allocation failure for subRanges &
                           &and proc")
 
@@ -173,7 +174,7 @@
 
          allocate(buffer(bufSize), stat=ierr)
          if(ierr /= 0)                        &
-           call returnFail("writeSolCGNSZone", &
+           call terminate("writeSolCGNSZone", &
                           "Memory allocation failure for buffer")
 
          ! Loop over the number of solutions.
@@ -237,7 +238,7 @@
                                   Structured, cgnsZone, ierr)
              if(ierr /= CG_OK)                 then
             
-             call returnFail("writeSolCGNSZone", &
+             call terminate("writeSolCGNSZone", &
                   "Something wrong when calling &
                   &cg_zone_write_f")
           end if
@@ -251,7 +252,7 @@
                call cg_goto_f(cgnsInd, cgnsBase, ierr, "Zone_t", &
                               cgnsZone, "end")
                if(ierr /= CG_OK)                   &
-                 call returnFail("writeSolCGNSZone", &
+                 call terminate("writeSolCGNSZone", &
                                 "Something wrong when calling cg_goto_f")
 
                ! Determine the link name and write the link to the grid
@@ -264,7 +265,7 @@
                call cg_link_write_f("GridCoordinates", &
                                     gridFileNames(ind), linkName, ierr)
                if(ierr /= CG_OK)                   &
-                 call returnFail("writeSolCGNSZone", &
+                 call terminate("writeSolCGNSZone", &
                                 "Something wrong when calling &
                                 &cg_link_write_f")
             endif writeLinkTest
@@ -283,7 +284,7 @@
                                "Flow solution", CellCenter, cgnsSol, &
                                ierr)
            if(ierr /= CG_OK)                   &
-             call returnFail("writeSolCGNSZone", &
+             call terminate("writeSolCGNSZone", &
                             "Something wrong when calling &
                             &cg_sol_write_f")
 
@@ -295,7 +296,7 @@
            call cg_goto_f(cgnsInd, cgnsBase, ierr, "Zone_t", &
                           cgnsZone, "FlowSolution_t", cgnsSol, "end")
            if(ierr /= CG_OK)                   &
-             call returnFail("writeSolCGNSZone", &
+             call terminate("writeSolCGNSZone", &
                             "Something wrong when calling cg_goto_f")
 
            if( rindLayerThisSol ) then
@@ -308,7 +309,7 @@
 
            call cg_rind_write_f(sizes, ierr)
            if(ierr /= CG_OK)                   &
-             call returnFail("writeSolCGNSZone", &
+             call terminate("writeSolCGNSZone", &
                             "Something wrong when calling &
                             &cg_rind_write_f")
 
@@ -471,7 +472,7 @@
                                    solName, sol, source, ierr)
 
              if(ierr /= CG_OK)    &
-                  call returnFail("writeSolCGNSZone", &
+                  call terminate("writeSolCGNSZone", &
                   "Something wrong when calling &
                   &cg_field_write_f")
              enddo varWriteLoop
@@ -480,7 +481,7 @@
 
          ! Release some memory only allocated on the root processor.
          deallocate(sol, subRanges, proc, stat=ierr)
-         if(ierr /= 0) call returnFail("writeSolCGNSZone", &
+         if(ierr /= 0) call terminate("writeSolCGNSZone", &
                                       "Deallocation error on root proc")
 
        else rootproc
@@ -501,7 +502,7 @@
 
          allocate(buffer(bufSize), stat=ierr)
          if(ierr /= 0)                        &
-           call returnFail("writeSolCGNSZone", &
+           call terminate("writeSolCGNSZone", &
                           "Memory allocation failure for buffer")
 
          ! Loop over the number of solutions.
@@ -607,7 +608,7 @@
 
        deallocate(buffer, stat=ierr)
        if(ierr /= 0)                        &
-         call returnFail("writeSolCGNSZone", &
+         call terminate("writeSolCGNSZone", &
                         "Deallocation error for buffer")
 
        !=================================================================

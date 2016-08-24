@@ -2,6 +2,8 @@ module cartMesh
 
   use overset
   use communication
+  use utils
+  use haloExchange
   implicit none
 
 
@@ -15,20 +17,11 @@ contains
     include 'cgnslib_f.h'
 
 #define PETSC_AVOID_MPIF_H
-#include "include/petscversion.h"
-#if PETSC_VERSION_MINOR > 5
 #include "petsc/finclude/petscsys.h"
 #include "petsc/finclude/petscvec.h"
 #include "petsc/finclude/petscdmda.h"
 #include "petsc/finclude/petscvec.h90"
 #include "petsc/finclude/petscdmda.h90"
-#else
-#include "include/finclude/petscsys.h"
-#include "include/finclude/petscvec.h"
-#include "include/finclude/petscdmda.h"
-#include "include/finclude/petscvec.h90"
-#include "include/finclude/petscdmda.h90"
-#endif
 
     ! Input Params
     integer(kind=intType), intent(in) :: level, sps
@@ -997,6 +990,7 @@ contains
 
   subroutine tripleFactor(N, s)
 
+    use sorting, only : qsortIntegers
     implicit none
     ! Input/Output
     integer(kind=intType), intent(in) :: N

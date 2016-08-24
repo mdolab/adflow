@@ -1,13 +1,3 @@
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          checkTransform.f90                              *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 02-04-2003                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
-!
        subroutine checkTransform(transform, nZone, n1to1, printWarning)
 !
 !      ******************************************************************
@@ -21,6 +11,7 @@
        use constants
        use cgnsGrid
        use communication
+       use utils, only : delta, terminate
        implicit none
 !
 !      Subroutine arguments.
@@ -43,16 +34,6 @@
 
        character(len=maxCGNSNameLen) :: zoneName, connectName
        character(len=2*maxStringLen)  :: errorMessage
-!
-!      Function definitions.
-!
-       integer(kind=intType) :: delta
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
 !
        ! Copy the zoneName and connectName, just for readability later.
 
@@ -89,7 +70,7 @@
            write(errorMessage,100) trim(connectName), trim(zoneName)
  100       format("1 to 1 subface",1X,A,1X,"of zone",1X,A, &
                   ": No constant index found")
-           call returnFail("checkTransform", errorMessage)
+           call terminate("checkTransform", errorMessage)
          endif
 
          ! Make sure that other processors wait until they are killed.
@@ -108,7 +89,7 @@
            write(errorMessage,110) trim(connectName), trim(zoneName)
  110       format("1 to 1 subface",1X,A,1X,"of zone",1X,A, &
                   ": No constant index found for donor")
-           call returnFail("checkTransform", errorMessage)
+           call terminate("checkTransform", errorMessage)
          endif
 
          ! Make sure that other processors wait until they are killed.
@@ -139,7 +120,7 @@
  120         format("1 to 1 subface",1X,A,1X,"of zone",1X,A,  &
                     ": Something seriously wrong with the &
                     &transformation matrix")
-             call returnFail("checkTransform", errorMessage)
+             call terminate("checkTransform", errorMessage)
            endif
 
            ! Make sure that other processors wait until they are killed.
@@ -220,7 +201,7 @@
  140         format("1 to 1 subface",1X,A,1X,"of zone",1X,A,  &
                     ": Something seriously wrong with the &
                     &transformation matrix")
-           call returnFail("checkTransform", errorMessage)
+           call terminate("checkTransform", errorMessage)
          endif
 
          ! Make sure that other processors wait until they are killed.

@@ -27,6 +27,7 @@ subroutine computeAeroCoef(globalCFVals,sps)
   use inputTimeSpectral
   use flowVarRefState
   use overset, only : oversetPresent
+  use utils, only : EChk, setPointers
   implicit none
 
   ! Input/Ouput Variables

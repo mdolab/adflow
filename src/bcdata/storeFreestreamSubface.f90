@@ -21,6 +21,7 @@
 !
        use blockPointers
        use BCDataMod
+       use utils, only : terminate
        implicit none
 !
 !      Subroutine arguments.
@@ -54,7 +55,7 @@
 
          allocate(tmp(nFreestreamSubfaces,3), stat=ierr)
          if(ierr /= 0)                              &
-           call returnFail("storeFreestreamSubface", &
+           call terminate("storeFreestreamSubface", &
                           "Memory allocation failure for tmp")
 
          tmp = freestreamSubfaces
@@ -64,7 +65,7 @@
 
          deallocate(freestreamSubfaces, stat=ierr)
          if(ierr /= 0)                              &
-           call returnFail("storeFreestreamSubface", &
+           call terminate("storeFreestreamSubface", &
                           "Deallocation failure for freestreamSubfaces")
 
          nFreestreamSubfaces = nFreestreamSubfaces + 1
@@ -72,7 +73,7 @@
          allocate(freestreamSubfaces(nFreestreamSubfaces,3), &
                   stat=ierr)
          if(ierr /= 0)                              &
-           call returnFail("storeFreestreamSubface", &
+           call terminate("storeFreestreamSubface", &
                           "Memory allocation failure for &
                           &freestreamSubfaces")
 
@@ -87,7 +88,7 @@
 
          deallocate(tmp, stat=ierr)
          if(ierr /= 0)                              &
-           call returnFail("storeFreestreamSubface", &
+           call terminate("storeFreestreamSubface", &
                           "Deallocation failure for tmp")
 
        else testAllocated
@@ -100,7 +101,7 @@
          allocate(freestreamSubfaces(nFreestreamSubfaces,3), &
                   stat=ierr)
          if(ierr /= 0)                              &
-           call returnFail("storeFreestreamSubface", &
+           call terminate("storeFreestreamSubface", &
                           "Memory allocation failure for &
                           &freestreamSubfaces")
 

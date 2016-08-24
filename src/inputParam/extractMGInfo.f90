@@ -32,6 +32,7 @@
        use communication
        use constants
        use localMG
+       use utils, only : convertToLowerCase, terminate
        implicit none
 !
 !      Local variables
@@ -76,7 +77,7 @@
 
          nMGSteps = 1
          allocate(cycleStrategy(1), stat=error)
-         if(error /= 0) call returnFail("extractMgInfo", &
+         if(error /= 0) call terminate("extractMgInfo", &
                                        "allocation error for 1 integer")
          cycleStrategy(1) = 0
 
@@ -92,7 +93,7 @@
          if(.not. digitsOnlyInString(mgDescription(:stringLen-1))) then
            write(errorMessage,*) "Invalid cycle strategy, ", &
                                   mgDescription(:stringLen), ", specified"
-           if(myID == 0) call returnFail("extractMgInfo", errorMessage)
+           if(myID == 0) call terminate("extractMgInfo", errorMessage)
          endif
 
          ! Read the number of levels in the cycle.
@@ -108,7 +109,7 @@
            write(errorMessage,*) "Allocation error for", nMGSteps, &
                                   "integers for the v-cycle ",       &
                                   mgDescription(:stringLen)
-           call returnFail("extractMgInfo", errorMessage)
+           call terminate("extractMgInfo", errorMessage)
          endif
 
          ! Set the values of cycleStrategy.
@@ -134,7 +135,7 @@
          if(.not. digitsOnlyInString(mgDescription(:stringLen-1))) then
            write(errorMessage,*) "Invalid cycle strategy, ", &
                                   mgDescription(:stringLen), ", specified"
-           if(myID == 0) call returnFail("extractMgInfo", errorMessage)
+           if(myID == 0) call terminate("extractMgInfo", errorMessage)
          endif
 
          ! Read the number of levels in the cycle.
@@ -150,7 +151,7 @@
            write(errorMessage,*) "Allocation error for", nMGSteps, &
                                   "integers for the w-cycle ",       &
                                   mgDescription(:stringLen)
-           call returnFail("extractMgInfo", errorMessage)
+           call terminate("extractMgInfo", errorMessage)
          endif
 
          ! Set the values of cycleStrategy.
@@ -183,7 +184,7 @@
          if(error /= 0) then
            write(errorMessage,*) "Allocation error for", nMGSteps, &
                                   "integers for the cycle strategy"
-           call returnFail("extractMgInfo", errorMessage)
+           call terminate("extractMgInfo", errorMessage)
          endif
 
          ! Determine the entries for cycleStrategy.
@@ -208,7 +209,7 @@
                                       mgDescription(ii:i), &
                                       ", in the string describing &
                                       &cycling strategy"
-               if(myID == 0) call returnFail("extractMgInfo", errorMessage)
+               if(myID == 0) call terminate("extractMgInfo", errorMessage)
            end select
 
            ! Update i and nn
@@ -233,7 +234,7 @@
          nMGLevels = nMGLevels + 1
 
          if(nn /= 0 .and. myID == 0) &
-           call returnFail("extractMgInfo", &
+           call terminate("extractMgInfo", &
                      "sum of coefficients in cycle strategy is not 0")
        endif
 
@@ -318,6 +319,7 @@
 !
        use constants
        use communication
+       use utils, only : terminate
        implicit none
 !
 !      Result variable
@@ -344,7 +346,7 @@
  
        if(nLevels < 2) then
          write(errorMessage,*) "Wrong value of nLevels", nLevels
-         if(myID == 0) call returnFail("computeNstepsWcycle", errorMessage)
+         if(myID == 0) call terminate("computeNstepsWcycle", errorMessage)
        else if(nLevels == 2) then
          nSteps = 4
        else
@@ -367,6 +369,7 @@
        use inputIteration
        use communication
        use constants
+       use utils, only : terminate
        implicit none
 !
 !      Subroutine argument.
@@ -391,7 +394,7 @@
        if(nLevels < 2) then
 
          write(errorMessage,*) "Wrong value of nLevels", nLevels
-         if(myID == 0) call returnFail("setEntriesWcycle", errorMessage)
+         if(myID == 0) call terminate("setEntriesWcycle", errorMessage)
 
        else if(nLevels == 2) then
 

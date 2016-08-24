@@ -18,21 +18,12 @@ subroutine setWVec(wVec)
   use blockPointers, only : nDom, il, jl, kl, w
   use inputtimespectral, only : ntimeIntervalsSpectral
   use flowvarrefstate, only : nw
-
+  use utils, only : setPointers, EChk
   implicit none
 #define PETSC_AVOID_MPIF_H
-
-
-#include "include/petscversion.h"
-#if PETSC_VERSION_MINOR > 5
 #include "petsc/finclude/petscsys.h"
 #include "petsc/finclude/petscvec.h"
 #include "petsc/finclude/petscvec.h90"
-#else
-#include "include/finclude/petscsys.h"
-#include "include/finclude/petscvec.h"
-#include "include/finclude/petscvec.h90"
-#endif
 
   Vec   wVec
   integer(kind=intType) :: ierr,nn,sps,i,j,k,l,ii
@@ -71,21 +62,12 @@ subroutine setRVec(rVec)
   use inputtimespectral, only : nTimeIntervalsSpectral
   use flowvarrefstate, only : nw, nwf, nt1, nt2
   use inputIteration, only : turbResScale
+  use utils, only : setPointers, EChk
   implicit none
 
-#define PETSC_AVOID_MPIF_H
-
-#include "include/petscversion.h"
-#if PETSC_VERSION_MINOR > 5
 #include "petsc/finclude/petscsys.h"
 #include "petsc/finclude/petscvec.h"
 #include "petsc/finclude/petscvec.h90"
-#else
-#include "include/finclude/petscsys.h"
-#include "include/finclude/petscvec.h"
-#include "include/finclude/petscvec.h90"
-#endif
-
 
   Vec    rVec
   integer(kind=intType) :: ierr,nn,sps,i,j,k,l,ii
@@ -128,21 +110,13 @@ subroutine setW(wVec)
   use blockPointers, only : nDom, il, jl, kl, w
   use inputTimeSpectral, only : nTimeIntervalsSpectral
   use flowVarRefState, only : nw
+  use utils, only : setPointers, EChk
 
   implicit none
 #define PETSC_AVOID_MPIF_H
-
-#include "include/petscversion.h"
-#if PETSC_VERSION_MINOR > 5
 #include "petsc/finclude/petscsys.h"
 #include "petsc/finclude/petscvec.h"
 #include "petsc/finclude/petscvec.h90"
-#else
-#include "include/finclude/petscsys.h"
-#include "include/finclude/petscvec.h"
-#include "include/finclude/petscvec.h90"
-#endif
-
 
   Vec  wVec
   integer(kind=intType) :: ierr,nn,sps,i,j,k,l,ii
@@ -189,6 +163,7 @@ subroutine getStates(states,ndimw)
   use blockPointers, only : il, jl, kl, nDom, w
   use inputTimeSpectral, only : nTimeIntervalsSpectral
   use flowvarrefstate, only : nw
+  use utils, only : setPointers
 
   implicit none
  
@@ -223,6 +198,8 @@ subroutine getRes(res,ndimw)
   use blockPointers, only : il, jl, kl, nDom, dw, volRef
   use inputTimeSpectral, only : nTimeIntervalsSpectral
   use flowvarrefstate, only : nw
+  use utils, only : setPointers
+
   implicit none
  
   integer(kind=intType),intent(in):: ndimw
@@ -260,6 +237,8 @@ subroutine setStates(states,ndimw)
   use blockPointers, only : il, jl, kl, nDom, w
   use inputTimeSpectral, only : nTimeIntervalsSpectral
   use flowvarrefstate, only : nw
+  use utils, only : setPointers
+
   implicit none
  
   integer(kind=intType),intent(in):: ndimw
@@ -291,6 +270,7 @@ subroutine getInfoSize(iSize)
   use blockPointers, only : ib, jb, kb, nDom
   use inputTimeSpectral, only : nTimeIntervalsSpectral
   use flowvarrefstate, only : nw, viscous, eddymodel
+  use utils, only : setPointers
 
   implicit none
   integer(kind=intType), intent(out) :: iSize
@@ -319,7 +299,7 @@ subroutine setInfo(info, iSize)
   use blockPointers, only : w, p, ib, jb, kb, rlv, rev, nDom
   use inputTimeSpectral, only : nTimeIntervalsSpectral
   use flowvarrefstate, only : nw, viscous, eddymodel
-  !use inputphysics, only : 
+  use utils, only : setPointers
   implicit none
 
   real(kind=realType), intent(in), dimension(iSize) :: info
@@ -364,6 +344,7 @@ subroutine getInfo(info, iSize)
   use blockPointers, only : w, p, ib, jb, kb, rlv, rev, nDom
   use inputTimeSpectral, only : nTimeIntervalsSpectral
   use flowvarrefstate, only : nw, viscous, eddymodel
+  use utils, only : setPointers
 
   implicit none
 

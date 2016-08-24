@@ -5,6 +5,7 @@ subroutine surfaceCorrection(oBlock, oFringe, offset, n)
   use BCTypes
   use kdtree2_module
   use inputOverset
+  use sorting, only : unique
   implicit none
 
   ! Input/Output

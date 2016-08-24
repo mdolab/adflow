@@ -31,6 +31,7 @@ subroutine setLevelALE(setType)
   use inputTimeSpectral
   use inputUnsteady
   use inputPhysics
+  use utils, only : setPointers
   implicit none
   !
   !      Input variables.
@@ -160,6 +161,7 @@ subroutine shiftLevelALE
   use inputTimeSpectral
   use inputUnsteady
   use inputPhysics
+  use utils, only : setPointers
   implicit none
   !
   !      Local variables.

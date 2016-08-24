@@ -36,17 +36,17 @@ include ${SUMB_RULES_FILE}
 
 vpath %.o $(SUMB_OBJDIR)
 
-FF90_OBJECTS1 = bcroutines_fast_b.o\
+FF90_OBJECTS1 = utils_fast_b.o\
+		flowutils_fast_b.o\
+		bcroutines_fast_b.o\
 		samodule_fast_b.o\
 
 FF90_OBJECTS2 =  \
 		allnodalgradients_fast_b.o\
 		computelamviscosity_fast_b.o\
-		computespeedofsoundsquared_fast_b.o\
 		timestep_block_fast_b.o\
 		invisciddissfluxscalar_fast_b.o\
 		invisciddissfluxmatrix_fast_b.o\
-		dim_fast_b.o\
 		viscousflux_fast_b.o \
 	        inviscidcentralflux_fast_b.o\
 		computepressuresimple_fast_b.o\
@@ -66,7 +66,7 @@ FF90_OBJECTS2 =  \
 default: all
 
 all:
-	$(PMAKE) src1
+	$(MAKE) src1
 	cp -f *.mod $(SUMB_MODDIR)
 	$(PMAKE) src2
 

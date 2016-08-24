@@ -17,6 +17,8 @@ subroutine computeResidualNK()
   use iteration
   use inputPhysics 
   use saModule
+  use utils, only : setPointers
+  use haloExchange, only : whalo2
   implicit none
 
   ! Local Variables

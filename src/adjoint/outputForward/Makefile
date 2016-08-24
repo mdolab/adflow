@@ -36,32 +36,29 @@ include ${SUMB_RULES_FILE}
 
 vpath %.o $(SUMB_OBJDIR)
 
-FF90_OBJECTS1 = bcroutines_d.o\
+FF90_OBJECTS1 =\
+		utils_d.o\
+		flowutils_d.o\
+		bcroutines_d.o\
 		samodule_d.o\
+
 
 FF90_OBJECTS2 = allnodalgradients_d.o\
 		viscousflux_d.o \
 		viscousfluxapprox_d.o\
 		invisciddissfluxmatrix_d.o \
 		diffSizes.o\
-		computegamma_d.o\
 		computelamviscosity_d.o\
-		computespeedofsoundsquared_d.o\
 		computepressuresimple_d.o\
 		timestep_block_d.o\
-		curveupre_d.o\
 		invisciddissfluxscalar_d.o\
 		invisciddissfluxscalarapprox_d.o\
 		invisciddissfluxmatrixapprox_d.o\
-		dim_d.o\
 		inviscidupwindflux_d.o  \
 		block_res_d.o  \
 		residual_block_d.o \
-		computeetotcellcpfit_d.o \
-		etotarray_d.o \
 	        inviscidcentralflux_d.o\
                 saeddyviscosity_d.o\
-		eintarray_d.o  \
 		xhalo_block_d.o\
 		metric_block_d.o\
 		gridvelocitiesfinelevel_block_d.o\
@@ -69,11 +66,9 @@ FF90_OBJECTS2 = allnodalgradients_d.o\
 		adjustinflowangle_d.o\
 		referencestate_d.o\
 		forcesandmoments_d.o\
-		derivativerotmatrixrigid_d.o\
 		getdirangle_d.o\
 		getdirvector_d.o\
 		vectorrotation_d.o\
-		derivativerigidrotangle_d.o\
 		computeeddyviscosity_d.o\
 		sanuknowneddyratio_d.o\
 		prodkatolaunder_d.o\
@@ -81,7 +76,6 @@ FF90_OBJECTS2 = allnodalgradients_d.o\
 		prodsmag2_d.o\
 		turbadvection_d.o\
 		unsteadyturbterm_d.o\
-		curvetupyp_d.o\
 		slipvelocitiesfinelevel_block_d.o\
 		getcostfunction2_d.o\
 		computetsderivatives_d.o\
@@ -97,6 +91,7 @@ FF90_OBJECTS2 = allnodalgradients_d.o\
 		turb2ndhalo_d.o\
 		boundarynormals_d.o\
 		volume_block_d.o\
+		derivativerotmatrixrigid_d.o\
 
 #      ******************************************************************
 #      *                                                                *
@@ -107,9 +102,9 @@ FF90_OBJECTS2 = allnodalgradients_d.o\
 default: all
 
 all:
-	$(PMAKE) src1
+	$(MAKE) src1
 	$(PMAKE) src2
-
+	cp -f *.mod $(SUMB_MODDIR)
 clean:
 	@echo "        Making clean in solver... "
 	rm -f $(MAKE_CLEAN_ARGUMENTS)

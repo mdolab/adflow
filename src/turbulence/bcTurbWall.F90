@@ -350,9 +350,5 @@ subroutine bcTurbWall(nn)
         enddo
      enddo
 #endif
-  case default
-     call returnFail("bcTurbWall", &
-          "Turbulence model not implemented yet")
-
   end select
 end subroutine bcTurbWall

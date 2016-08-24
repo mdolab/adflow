@@ -31,6 +31,8 @@ subroutine derivativerotmatrixrigid_d(rotationmatrix, rotationmatrixd, &
   use flowvarrefstate
   use inputmotion
   use monitor
+  use utils_d, only : rigidrotangle, derivativerigidrotangle, &
+& derivativerigidrotangle_d
   implicit none
 !
 !      subroutine arguments.
@@ -48,21 +50,8 @@ subroutine derivativerotmatrixrigid_d(rotationmatrix, rotationmatrixd, &
   real(kind=realtype) :: cosx, cosy, cosz, sinx, siny, sinz
   real(kind=realtype), dimension(3, 3) :: dm, m
   real(kind=realtype), dimension(3, 3) :: dmd
-!
-!      function definitions.
-!
-  real(kind=realtype) :: rigidrotangle
-  real(kind=realtype) :: derivativerigidrotangle
-  real(kind=realtype) :: derivativerigidrotangle_d
   intrinsic sin
   intrinsic cos
-!
-!      ******************************************************************
-!      *                                                                *
-!      * begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
 ! determine the rotation angle around the x-axis for the new
 ! time level and the corresponding values of the sine and cosine.
   phi = rigidrotangle(degreepolxrot, coefpolxrot, degreefourxrot, &

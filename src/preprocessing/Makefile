@@ -52,9 +52,7 @@ FILES_TO_COMPLEXIFY = \
 		 checkSymmetry.f90\
 		 closestDirectHalos.f90\
 		 coarseDonorInfo.f90\
-		 coarseLevel0CoolingParameters.f90\
 		 createCoarseBlocks.f90\
-		 determineAreaLevel0Cooling.f90\
 		 determineCommPattern.f90\
 		 determineFaceHalos.f90\
 		 determineIndirectHalos.f90\

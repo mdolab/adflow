@@ -41,6 +41,7 @@ subroutine invisciddissfluxmatrix_d()
   use inputphysics, only : equations
   use iteration, only : rfil
   use cgnsgrid, only : massflowfamilydiss
+  use utils_d, only : getcorrectfork, mydim, mydim_d
   implicit none
 !
 !      local parameters.
@@ -77,12 +78,10 @@ subroutine invisciddissfluxmatrix_d()
   real(kind=realtype) :: abv1d, abv2d, abv3d, abv4d, abv5d, abv6d, abv7d
   real(kind=realtype), dimension(ie, je, ke, 3) :: dss
   real(kind=realtype), dimension(ie, je, ke, 3) :: dssd
-  logical :: correctfork, getcorrectfork
+  logical :: correctfork
   intrinsic abs
   intrinsic max
   intrinsic min
-  real(kind=realtype) :: dim
-  real(kind=realtype) :: dim_d
   intrinsic sqrt
   real(kind=realtype) :: arg1
   real(kind=realtype) :: arg1d
@@ -146,13 +145,6 @@ subroutine invisciddissfluxmatrix_d()
   else
     abs0 = -rfil
   end if
-!
-!      ******************************************************************
-!      *                                                                *
-!      * begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
 ! check if rfil == 0. if so, the dissipative flux needs not to
 ! be computed.
   if (abs0 .lt. thresholdreal) then
@@ -307,7 +299,7 @@ subroutine invisciddissfluxmatrix_d()
           end if
           dis2d = ppor*fis2*min1d
           dis2 = ppor*fis2*min1
-          dis4d = dim_d(ppor*fis4, 0.0_8, dis2, dis2d, dis4)
+          dis4d = mydim_d(ppor*fis4, 0.0_8, dis2, dis2d, dis4)
 ! construct the vector of the first and third differences
 ! multiplied by the appropriate constants.
           ddw1d = wd(i+1, j, k, irho) - wd(i, j, k, irho)
@@ -599,7 +591,7 @@ subroutine invisciddissfluxmatrix_d()
           end if
           dis2d = ppor*fis2*min2d
           dis2 = ppor*fis2*min2
-          dis4d = dim_d(ppor*fis4, 0.0_8, dis2, dis2d, dis4)
+          dis4d = mydim_d(ppor*fis4, 0.0_8, dis2, dis2d, dis4)
 ! construct the vector of the first and third differences
 ! multiplied by the appropriate constants.
           ddw1d = wd(i, j+1, k, irho) - wd(i, j, k, irho)
@@ -891,7 +883,7 @@ subroutine invisciddissfluxmatrix_d()
           end if
           dis2d = ppor*fis2*min3d
           dis2 = ppor*fis2*min3
-          dis4d = dim_d(ppor*fis4, 0.0_8, dis2, dis2d, dis4)
+          dis4d = mydim_d(ppor*fis4, 0.0_8, dis2, dis2d, dis4)
 ! construct the vector of the first and third differences
 ! multiplied by the appropriate constants.
           ddw1d = wd(i, j, k+1, irho) - wd(i, j, k, irho)

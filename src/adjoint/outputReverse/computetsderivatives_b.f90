@@ -37,6 +37,7 @@ subroutine computetsderivatives_b(force, forced, moment, momentd, &
   use monitor
   use section
   use inputmotion
+  use utils_b, only : tsalpha, tsalphadot, terminate
   implicit none
 !
 !     subroutine arguments.
@@ -79,7 +80,6 @@ subroutine computetsderivatives_b(force, forced, moment, momentd, &
 & dphiydot, dphizdot
   real(kind=realtype) :: derivativerigidrotangle, &
 & secondderivativerigidrotangle
-  real(kind=realtype) :: tsalpha, tsalphadot
   intrinsic sqrt
   real(kind=realtype) :: arg1
   real(kind=realtype) :: temp2
@@ -94,13 +94,6 @@ subroutine computetsderivatives_b(force, forced, moment, momentd, &
   real(kind=realtype) :: tempd1
   real(kind=realtype) :: tempd0
   real(kind=realtype) :: temp
-!
-!     ******************************************************************
-!     *                                                                *
-!     * begin execution.                                               *
-!     *                                                                *
-!     ******************************************************************
-!
   scaledim = pref/pinf
   fact = two/(gammainf*pinf*machcoef**2*surfaceref*lref**2*scaledim)
   factmoment = fact/(lengthref*lref)
@@ -163,10 +156,10 @@ subroutine computetsderivatives_b(force, forced, moment, momentd, &
         end if
         intervalalpha(sps) = tsalpha(degreepolalpha, coefpolalpha, &
 &         degreefouralpha, omegafouralpha, coscoeffouralpha, &
-&         sincoeffouralpha, t)
-        intervalalphadot(sps) = tsalphadot(degreepolalpha, &
-&         coefpolalpha, degreefouralpha, omegafouralpha, &
-&         coscoeffouralpha, sincoeffouralpha, t)
+&         sincoeffouralpha, t(1))
+        intervalalphadot(sps) = tsalphadot(degreepolalpha, coefpolalpha&
+&         , degreefouralpha, omegafouralpha, coscoeffouralpha, &
+&         sincoeffouralpha, t(1))
         basecoef(sps, 1) = fact*(force(1, sps)*liftdirection(1)+force(2&
 &         , sps)*liftdirection(2)+force(3, sps)*liftdirection(3))
         basecoef(sps, 2) = fact*(force(1, sps)*dragdirection(1)+force(2&

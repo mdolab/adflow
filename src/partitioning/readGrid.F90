@@ -1,13 +1,3 @@
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          readGrid.F90                                    *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 12-31-2002                                      *
-!      * Last modified: 02-26-2006                                      *
-!      *                                                                *
-!      ******************************************************************
-!
 subroutine readGrid
   !
   !      ******************************************************************
@@ -31,6 +21,7 @@ subroutine readGrid
   use IOModule
   use su_cgns
   use partitionMod
+  use utils, only: setCGNSRealType, terminate
   implicit none
   !
   !      Local variables.
@@ -50,17 +41,7 @@ subroutine readGrid
   character(len=maxCGNSNameLen) :: coordname
 
   real(kind=cgnsRealType), allocatable, dimension(:,:,:) :: buffer
-  !
-  !      Function definition.
-  !
-  integer :: setCGNSRealType
-  !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
-  !
+ 
   ! Set the cgns real type and initialize typeMismatch to 0.
   ! Set cgnsBase to 1, because we will always read from base 1;
   ! possible higher bases are ignored.

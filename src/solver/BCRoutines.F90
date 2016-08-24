@@ -21,6 +21,7 @@
 module BCRoutines
 
   use constants
+  use utils, only : terminate, getCorrectForK
   implicit none
   save
 #if !defined USE_TAPENADE || defined TAPENADE_POINTERS || defined TAPENADE_FORWARD
@@ -62,7 +63,7 @@ contains
     logical, intent(in) :: secondHalo
 
     ! Local variables.
-    logical :: correctForK, getCorrectForK
+    logical :: correctForK
     integer(kind=intType) :: nn
     !
     ! Determine whether or not the total energy must be corrected
@@ -95,7 +96,6 @@ contains
        end do
     end if
 
-#ifndef USE_TAPENADE
     ! ------------------------------------
     !  Symmetry Polar Boundary Condition 
     ! ------------------------------------
@@ -110,7 +110,6 @@ contains
           call resetBCPointers(nn, .True.)
        end if
     end do
-#endif
 
     ! ------------------------------------
     !  Adibatic Wall Boundary Condition 
@@ -139,11 +138,6 @@ contains
     ! ------------------------------------
     !  Farfield Boundary Condition 
     ! ------------------------------------
-
-    if (precond == Turkel .or. precond == ChoiMerkle) then 
-       call returnFail("applyAllBC", &
-            "Farfield Turkel and Coid/Merkle preconditioners not implemented")
-    end if
     !$AD II-LOOP
     do nn=1,nBocos
        if (bcType(nn) == farField) then
@@ -153,7 +147,6 @@ contains
        end if
     end do
 
-#ifndef USE_TAPENADE
     ! ------------------------------------
     !  Subsonic Outflow Boundary Condition 
     ! ------------------------------------
@@ -178,39 +171,6 @@ contains
     end do
 
     ! ------------------------------------
-    !  Bleed Inflow Boundary Condition 
-    ! ------------------------------------
-    do nn=1,nBocos
-       if (bcType(nn) == MassBleedInflow) then
-          call setBCPointers(nn, .False.)
-          call bcBleedInflow(nn, secondHalo, correctForK)
-          call resetBCPointers(nn, .False.)
-       end if
-    end do
-
-    ! ------------------------------------
-    !  Mdot Engine Boundary Condition 
-    ! ------------------------------------
-    do nn=1,nBocos
-       if (bcType(nn) == mdot) then 
-          call setBCPointers(nn, .False.)
-          call bcMDot(nn, secondHalo, correctForK)
-          call resetBCPointers(nn, .False.)
-       end if
-    end do
-
-    ! ------------------------------------
-    !  bcThrust Engine Boundary Condition 
-    ! ------------------------------------
-    do nn=1,nBocos
-       if (bcType(nn) == thrust) then 
-          call setBCPointers(nn, .False.)
-          call bcThrust(nn, secondHalo, correctForK)
-          call resetBCPointers(nn, .False.)
-       end if
-    end do
-
-    ! ------------------------------------
     !  Extrapolation Boundary Condition 
     ! ------------------------------------
     ! Extrapolation boundary conditions; this also includes
@@ -227,8 +187,6 @@ contains
           call resetBCPointers(nn, .False.)
        end if
     end do
-#endif
-
 
     ! ------------------------------------
     !  Euler Wall Boundary Condition 
@@ -257,7 +215,7 @@ contains
           call resetBCPointers(nn, .False.)
        end if
     end do
-
+#endif
     ! ------------------------------------
     !  Supersonic inflow condition 
     ! ------------------------------------
@@ -268,7 +226,7 @@ contains
           call resetBCPointers(nn, .False.)
        end if
     end do
-#endif
+
   end subroutine applyAllBC_block
 
   ! ===================================================================
@@ -384,7 +342,6 @@ contains
 
   end subroutine bcSymm2ndHalo
 
-#ifndef USE_TAPENADE
   subroutine bcSymmPolar(nn, secondHalo)
     !
     ! ******************************************************************
@@ -526,7 +483,7 @@ contains
        enddo
     end if
   end subroutine bcSymmPolar
-#endif
+
   subroutine bcNSWallAdiabatic(nn, secondHalo, correctForK)
     !
     !      ******************************************************************
@@ -746,7 +703,6 @@ contains
 
   end subroutine bcNSWallIsoThermal
 
-#ifndef USE_TAPENADE
   subroutine bcSubsonicOutflow(nn, secondHalo, correctForK)
     !
     ! ******************************************************************
@@ -1107,82 +1063,6 @@ contains
 
   end subroutine bcSubsonicInflow
 
-  subroutine bcBleedInflow(nn, secondHalo, correctForK)
-    !
-    ! *****************************************************************
-    ! *                                                                *
-    ! * bcBleedInflow applies the boundary conditions to an inflow     *
-    ! * bleed region of a block.                                       *
-    ! * It is assumed that the pointers in blockPointers are already   *
-    ! * set to the correct block on the correct grid level.            *
-    ! *                                                                *
-    ! ******************************************************************
-    !
-    use BCTypes
-    use bleedFlows
-    use blockPointers
-    use flowVarRefState
-    use iteration
-    implicit none
-
-    ! Subroutine arguments.
-    logical, intent(in) :: secondHalo, correctForK
-    integer(kind=intType), intent(in) :: nn
-
-    call returnFail("bcBleedInflow", "Not implemented yet")
-
-  end subroutine bcBleedInflow
-
-  subroutine bcMDot(nn, secondHalo, correctForK)
-    !
-    ! ******************************************************************
-    ! *                                                                *
-    ! * bcMdot applies the duct inflow boundary condition to a block.  *
-    ! * It is assumed that the pointers in blockPointers are already   *
-    ! * set to the correct block on the correct grid level.            *
-    ! *                                                                *
-    ! ******************************************************************
-
-    use BCTypes
-    use bleedFlows
-    use blockPointers
-    use flowVarRefState
-    use iteration
-    implicit none
-
-    ! Subroutine arguments.
-    logical, intent(in) :: secondHalo, correctForK
-    integer(kind=intType), intent(in) :: nn
-
-    call returnFail("bcMdot", "Not implemented yet")
-
-  end subroutine bcMDot
-
-  subroutine bcThrust(nn, secondHalo, correctForK)
-    ! ******************************************************************
-    ! *                                                                *
-    ! * bcThrust applies the duct outflow boundary condition to a      *
-    ! * block. It is assumed that the pointers in blockPointers are    *
-    ! * already set to the correct block on the correct grid level.    *
-    ! *                                                                *
-    ! ******************************************************************
-
-    use BCTypes
-    use bleedFlows
-    use blockPointers
-    use flowVarRefState
-    use iteration
-    implicit none
-
-    ! Subroutine arguments.
-    logical, intent(in) :: secondHalo, correctForK
-    integer(kind=intType), intent(in) :: nn
-
-    call returnFail("bcThrust", "Not implemented yet")
-
-  end subroutine bcThrust
-#endif
-
   subroutine bcEulerWall(nn, secondHalo, correctForK)
     !
     ! ******************************************************************
@@ -1200,6 +1080,7 @@ contains
     use inputDiscretization
     use inputPhysics
     use iteration
+    use utils, only : myDim
     implicit none
 
     ! Subroutine arguments.
@@ -1379,7 +1260,7 @@ contains
        ! component in the direction of norm, i.e. outward
        ! pointing.
 
-       pp1(j,k) = dim(pp2(j,k), grad(j,k))
+       pp1(j,k) = mydim(pp2(j,k), grad(j,k))
 
        vn = two*(BCData(nn)%rface(j,k) - &
             ww2(j,k,ivx)*BCData(nn)%norm(j,k,1) - &
@@ -1645,7 +1526,7 @@ contains
 
     case (DomainInterfaceRho)
 
-       call returnFail("analyzeString", &
+       call terminate("analyzeString", &
             "DomainInterfaceRho not implemented yet")
 
        !============================================================
@@ -1925,7 +1806,7 @@ contains
     if( secondHalo ) call extrapolate2ndHalo(correctForK)
 
   end subroutine bcFarfield
-#ifndef USE_TAPENADE
+
   subroutine bcSupersonicInflow(nn, secondHalo, correctForK)
     !
     ! ******************************************************************
@@ -2159,8 +2040,7 @@ contains
 
        enddo
 
-       !        ================================================================
-
+#ifndef USE_TAPENADE
     case (cpTempCurveFits)
 
        ! Cp as function of the temperature is given via curve fits.
@@ -2232,6 +2112,7 @@ contains
           ww(i,j,irho) = pp(i,j)/(RGas*ts)
 
        enddo
+#endif
     end select
 
     ! Add 2*rho*k/3 to the pressure if a k-equation is present.
@@ -2245,7 +2126,7 @@ contains
                + twoThird*ww(i,j,irho)*ww(i,j,itu1)
        enddo
     end if
-
+#ifndef USE_TAPENADAE
   contains
     subroutine cportIntegrant(T, nn, int)
       !
@@ -2344,8 +2225,8 @@ contains
 
       endif
     end subroutine cportIntegrant
-  end subroutine pRhoSubsonicInlet
 #endif
+  end subroutine pRhoSubsonicInlet
 
   subroutine computeEtot(ww, pp, correctForK)
     ! Simplified total energy computation for boundary conditions.
@@ -2395,7 +2276,7 @@ contains
 
     case (cpTempCurveFits)
 
-       call returnFail("BCRoutines", "CPTempCurveFits not implemented yet.")
+       call terminate("BCRoutines", "CPTempCurveFits not implemented yet.")
     end select
   end subroutine computeEtot
 

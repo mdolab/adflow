@@ -25,6 +25,8 @@ subroutine computeIsoVariable(solName, sps, isoVal)
   use flowVarRefState
   use inputPhysics
   use IOModule
+  use utils, only : setPointers, terminate
+  use flowUtils, only : computePTot
   implicit none
   !
   !      Subroutine arguments.
@@ -426,7 +428,7 @@ subroutine computeIsoVariable(solName, sps, isoVal)
         ! Compute the free stream total pressure.
 
         call computePtot(rhoInf, uInf, zero, zero, &
-             pInf, ptotInf, 1_intType)
+             pInf, ptotInf)
         ptotInf = one/ptotInf
 
         ! Loop over the cell centers and compute the
@@ -437,7 +439,7 @@ subroutine computeIsoVariable(solName, sps, isoVal)
               do i=1,ie
                  call computePtot(w(i,j,k,irho), w(i,j,k,ivx), &
                       w(i,j,k,ivy),  w(i,j,k,ivz), &
-                      p(i,j,k),      ptot, 1_intType)
+                      p(i,j,k),      ptot)
 
                  fc(i,j,k) = one - ptot*ptotInf
               enddo
@@ -597,7 +599,7 @@ subroutine computeIsoVariable(solName, sps, isoVal)
         enddo
 
      case default
-        call returnFail("computeIsoVariable", &
+        call terminate("computeIsoVariable", &
              "This should not happen")
 
      end select
