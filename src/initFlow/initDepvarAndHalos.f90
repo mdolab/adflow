@@ -30,6 +30,7 @@
        use section
        use utils, only : setPointers
        use haloExchange, only : whalo2
+       use BCData, only : bcDataMassBleedOutFlow
        implicit none
 !
 !      Subroutine arguments.

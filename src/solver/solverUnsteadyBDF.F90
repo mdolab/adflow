@@ -240,6 +240,9 @@
        use inputMotion
        use iteration
        use monitor
+       use bcdata, only : setbcdataFineGrid, setBCDataCoarseGrid, &
+            nonDimBoundData, setInletFreeStreamTurb, bcDataMassBleedOutflow
+
        implicit none
 !
 !      ******************************************************************

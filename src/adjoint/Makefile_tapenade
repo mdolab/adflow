@@ -66,7 +66,7 @@ ALL_RES_FILES =	$(SRC)/adjoint/residualInput/block_res.F90\
 		$(SRC)/solver/getDirVector.f90\
 		$(SRC)/solver/getDirAngle.f90\
 		$(SRC)/solver/vectorRotation.f90\
-		$(SRC)/solver/slipVelocities.f90\
+		$(SRC)/solver/slipVelocities.F90\
 		$(SRC)/solver/viscousFlux.F90\
 		$(SRC)/solver/utauWF.F90\
 		$(SRC)/solver/gridVelocitiesFineLevel.F90\
@@ -89,7 +89,7 @@ ALL_RES_FILES =	$(SRC)/adjoint/residualInput/block_res.F90\
 		$(SRC)/turbulence/bcTurbSymm.f90\
 		$(SRC)/turbulence/bcTurbWall.F90\
 		$(SRC)/turbulence/bcTurbFarfield.f90\
-		$(SRC)/turbulence/unsteadyTurbSpectral.f90\
+		$(SRC)/turbulence/unsteadyTurbSpectral.F90\
 		$(SRC)/turbulence/bcTurbTreatment.F90\
 		$(SRC)/turbulence/bcTurbInterface.f90\
 		$(SRC)/turbulence/applyAllTurbBC.F90\

@@ -9,7 +9,6 @@
 
 SUBDIR_SRC    = src/modules       \
 	        src/solver        \
-		src/bcdata        \
 	        src/initFlow      \
 	        src/inputParam    \
 	        src/metis-4.0     \
