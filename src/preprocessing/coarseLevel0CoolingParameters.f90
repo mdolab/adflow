@@ -21,7 +21,6 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use BCTypes
        use block
        use coolingModelLevel0
        implicit none

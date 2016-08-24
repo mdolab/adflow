@@ -21,7 +21,6 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use BCTypes
        use constants
        use inputPhysics
        use su_cgns

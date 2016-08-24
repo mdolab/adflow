@@ -11,7 +11,6 @@ contains
   subroutine createCartMesh(level, sps)
 
     use blockPointers
-    use bcTypes
 
     implicit none
     include 'cgnslib_f.h'

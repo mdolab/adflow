@@ -48,7 +48,6 @@ subroutine forcesandmoments_b(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd&
 !
   use communication
   use blockpointers
-  use bctypes
   use flowvarrefstate
   use inputphysics
   use bcroutines_b

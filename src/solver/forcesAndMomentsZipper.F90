@@ -2,7 +2,6 @@ subroutine forcesAndMomentsZipper(cFp, cFv, cMp, cMv, sps)
 
   use communication
   use blockPointers
-  use BCTypes
   use flowVarRefState
   use inputPhysics
   use costFunctions

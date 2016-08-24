@@ -4,7 +4,6 @@ subroutine setupPCMatrix(useAD,  useTranspose, frozenTurb, level)
   ! This routine generates a fortran form of the PCmatrix. It is
   ! currently not used anywhere, but it become useful in the future.
 
-  use BCTypes
   use blockPointers
   use inputDiscretization 
   use inputTimeSpectral 

@@ -56,7 +56,6 @@ subroutine applyAllTurbBCThisBlock(secondHalo)
   !      *                                                                *
   !      ******************************************************************
   !
-  use BCTypes
   use blockPointers
   use flowVarRefState
   use inputPhysics

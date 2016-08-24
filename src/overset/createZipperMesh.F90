@@ -23,7 +23,6 @@ subroutine createZipperMesh(level, sps, oWallSendList, oWallRecvList, &
   use communication
   use blockPointers
   use overset
-  use BCTypes
   use inputTimeSpectral
   use wallDistanceData, only : xVolumeVec, IS1
   use stringops

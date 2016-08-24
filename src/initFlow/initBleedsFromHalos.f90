@@ -21,7 +21,6 @@
 !
        use bleedFlows
        use blockPointers
-       use BCTypes
        use flowVarRefState
        use inputTimeSpectral
        use utils, only : setPointers, terminate

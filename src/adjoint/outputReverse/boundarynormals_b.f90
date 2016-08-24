@@ -14,7 +14,6 @@ subroutine boundarynormals_b()
 ! *                                                            *
 ! **************************************************************
 !
-  use bctypes
   use blockpointers
   use cgnsgrid
   use communication

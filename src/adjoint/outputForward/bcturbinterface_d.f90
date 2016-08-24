@@ -30,7 +30,6 @@ subroutine bcturbinterface_d(nn)
 !      ******************************************************************
 !
   use blockpointers
-  use bctypes
   use flowvarrefstate
   implicit none
 ! note that the original code had an error in the pointers...they

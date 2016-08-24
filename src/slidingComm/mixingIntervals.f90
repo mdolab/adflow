@@ -8,7 +8,6 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use BCTypes
        use blockPointers
        use interfaceGroups
        use localSubfacesMod

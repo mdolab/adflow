@@ -9,7 +9,6 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use BCTypes
        use blockPointers
        use cgnsGrid
        use communication
@@ -256,7 +255,6 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use BCTypes
        use blockPointers
        implicit none
 !

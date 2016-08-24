@@ -32,7 +32,6 @@ subroutine bcturbwall_b(nn)
 !      ******************************************************************
 !
   use blockpointers
-  use bctypes
   use flowvarrefstate
   use inputphysics
   use constants

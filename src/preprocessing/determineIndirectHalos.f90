@@ -104,7 +104,6 @@
        use haloList
        use indirectHalo
        use communication
-       use BCTypes
        implicit none
        integer(kind=intType), intent(in)    :: level
        integer(kind=intType), intent(inout) :: iihalo

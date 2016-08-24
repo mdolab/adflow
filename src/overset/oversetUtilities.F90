@@ -727,7 +727,6 @@ end subroutine deallocateOWalls
 subroutine wallsOnBlock(wallsPresent) 
 
   use blockPointers
-  use bcTypes
   use cgnsGrid
   implicit none
 
@@ -748,7 +747,6 @@ end subroutine wallsOnBlock
 subroutine flagForcedReceivers(tmp)
 
   use blockPointers
-  use BCTypes
   implicit none
 
   ! This is generic routine for filling up a 3D array of 1st level halos
@@ -807,8 +805,8 @@ subroutine flagForcedReceivers(tmp)
 end subroutine flagForcedReceivers
 
 function isWallType(bType)
-  
-  use BCTypes
+
+  use constants
   implicit none
   integer(kind=intType) :: bType
   logical :: isWallType

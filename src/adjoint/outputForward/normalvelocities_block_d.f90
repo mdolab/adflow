@@ -18,7 +18,6 @@ subroutine normalvelocities_block_d(sps)
 !      *                                                                *
 !      ******************************************************************
 !
-  use bctypes
   use blockpointers
   use iteration
   use diffsizes

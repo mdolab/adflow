@@ -28,7 +28,6 @@ subroutine slipvelocitiesfinelevel_block_d(useoldcoor, t, sps)
 !      *                                                                *
 !      ******************************************************************
 !
-  use bctypes
   use inputtimespectral
   use blockpointers
   use cgnsgrid

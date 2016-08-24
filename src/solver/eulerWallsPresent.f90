@@ -20,7 +20,6 @@
 !      ******************************************************************
 !
        use block
-       use BCTypes
        use communication
        implicit none
 !

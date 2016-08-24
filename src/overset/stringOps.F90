@@ -1912,7 +1912,7 @@ contains
 
     ! Local variables
     integer(kind=intType) :: i, j, k, ii, im1, ip1, N
-    integer(kind=intType) :: nNodes, nElems, imin
+    integer(kind=intType) :: nNodes, nElems, iimin
     real(kind=realType), dimension(3) :: v1, v2, norm, c
     real(kind=realType) :: cosCutoff, cosTheta, r2, v1nrm, v2nrm, costhetaMax
 
@@ -1954,14 +1954,14 @@ contains
                 ! cos(theta) is the largest for smallest angle
                 if (costhetaMax <= costheta) then
                    costhetaMax = costheta
-                   imin = ii
+                   iimin = ii
                 end if
              end if
           end if
        end do nodeloop
 
-       ! Zip about node "imin"
-       ii = imin
+       ! Zip about node "iimin"
+       ii = iimin
        ip1 = nextNode(ii)
        im1 = prevNode(ii)
        call addPotentialTriangle(s, ip1, ii, im1, nodeMap, results, added)

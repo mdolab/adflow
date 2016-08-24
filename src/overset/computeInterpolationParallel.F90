@@ -13,7 +13,6 @@ subroutine oversetComm(level, firstTime, coarseLevel)
   use blockPointers
   use overset
   use stencils
-  use BCTypes
   use inputTimeSpectral
   use ADTapi
   use inputOverset
@@ -1474,7 +1473,6 @@ subroutine writeWalls
   use overset
   use constants
   use blockPointers
-  use BCTypes
   use utils, only : setPointers
   implicit none
 

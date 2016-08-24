@@ -8,7 +8,6 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use BCTypes
        use cgnsGrid
        use communication
        use iteration

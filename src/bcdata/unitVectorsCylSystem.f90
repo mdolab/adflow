@@ -19,7 +19,6 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use BCTypes
        use blockPointers
        use section
        use BCDataMod

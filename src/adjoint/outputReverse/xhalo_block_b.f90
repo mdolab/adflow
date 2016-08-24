@@ -29,7 +29,6 @@ subroutine xhalo_block_b()
 !      ******************************************************************
 !
   use blockpointers
-  use bctypes
   use communication
   use inputtimespectral
   implicit none

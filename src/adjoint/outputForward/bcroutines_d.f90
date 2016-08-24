@@ -74,7 +74,6 @@ contains
     use inputdiscretization
     use inputtimespectral
     use iteration
-    use bctypes
     implicit none
 ! subroutine arguments.
     logical, intent(in) :: secondhalo
@@ -213,7 +212,6 @@ contains
     use inputdiscretization
     use inputtimespectral
     use iteration
-    use bctypes
     implicit none
 ! subroutine arguments.
     logical, intent(in) :: secondhalo
@@ -370,7 +368,6 @@ contains
 ! ******************************************************************
 !
     use blockpointers
-    use bctypes
     use constants
     use flowvarrefstate
     use iteration
@@ -446,7 +443,6 @@ contains
 ! ******************************************************************
 !
     use blockpointers
-    use bctypes
     use constants
     use flowvarrefstate
     use iteration
@@ -490,7 +486,6 @@ contains
 !                rev3:in pp0:in pp3:in rlv0:in rlv3:in ww0:in ww3:in
   subroutine bcsymm2ndhalo_d(nn)
     use blockpointers
-    use bctypes
     use constants
     use flowvarrefstate
     use iteration
@@ -546,7 +541,6 @@ contains
   end subroutine bcsymm2ndhalo_d
   subroutine bcsymm2ndhalo(nn)
     use blockpointers
-    use bctypes
     use constants
     use flowvarrefstate
     use iteration
@@ -602,7 +596,6 @@ contains
 ! ******************************************************************
 !
     use blockpointers
-    use bctypes
     use constants
     use flowvarrefstate
     use iteration
@@ -792,7 +785,6 @@ contains
 ! ******************************************************************
 !
     use blockpointers
-    use bctypes
     use constants
     use flowvarrefstate
     use iteration
@@ -920,7 +912,6 @@ contains
 !      ******************************************************************
 !
     use blockpointers
-    use bctypes
     use constants
     use flowvarrefstate
     use iteration
@@ -1014,7 +1005,6 @@ contains
 !      ******************************************************************
 !
     use blockpointers
-    use bctypes
     use constants
     use flowvarrefstate
     use iteration
@@ -1098,7 +1088,6 @@ contains
 ! *                                                                *
 ! ******************************************************************
     use blockpointers
-    use bctypes
     use constants
     use flowvarrefstate
     use iteration
@@ -1215,7 +1204,6 @@ contains
 ! *                                                                *
 ! ******************************************************************
     use blockpointers
-    use bctypes
     use constants
     use flowvarrefstate
     use iteration
@@ -1321,7 +1309,6 @@ contains
 ! ******************************************************************
 !
     use blockpointers
-    use bctypes
     use constants
     use flowvarrefstate
     use inputphysics
@@ -1477,7 +1464,6 @@ contains
 ! ******************************************************************
 !
     use blockpointers
-    use bctypes
     use constants
     use flowvarrefstate
     use inputphysics
@@ -1577,7 +1563,6 @@ contains
 ! ******************************************************************
 !
     use blockpointers
-    use bctypes
     use constants
     use flowvarrefstate
     use inputdiscretization
@@ -1877,7 +1862,6 @@ contains
 ! ******************************************************************
 !
     use blockpointers
-    use bctypes
     use constants
     use flowvarrefstate
     use inputdiscretization
@@ -2086,7 +2070,6 @@ contains
 ! ******************************************************************
 !
     use blockpointers
-    use bctypes
     use constants
     use flowvarrefstate
     use inputdiscretization
@@ -2373,7 +2356,6 @@ contains
 ! ******************************************************************
 !
     use blockpointers
-    use bctypes
     use constants
     use flowvarrefstate
     use inputdiscretization
@@ -2584,7 +2566,6 @@ contains
 !      ******************************************************************
 !
     use blockpointers
-    use bctypes
     use constants
     use flowvarrefstate
     use inputphysics
@@ -2811,7 +2792,6 @@ contains
 !      ******************************************************************
 !
     use blockpointers
-    use bctypes
     use constants
     use flowvarrefstate
     use inputphysics
@@ -2940,7 +2920,6 @@ contains
 ! *                                                                *
 ! ******************************************************************
     use blockpointers
-    use bctypes
     use constants
     use flowvarrefstate
     use iteration
@@ -3018,7 +2997,6 @@ contains
 ! *                                                                *
 ! ******************************************************************
     use blockpointers
-    use bctypes
     use constants
     use flowvarrefstate
     use iteration
@@ -3086,7 +3064,6 @@ contains
 ! ******************************************************************
 !
     use blockpointers
-    use bctypes
     use constants
     use flowvarrefstate
     use inputdiscretization
@@ -3183,7 +3160,6 @@ contains
 ! ******************************************************************
 !
     use blockpointers
-    use bctypes
     use constants
     use flowvarrefstate
     use inputdiscretization
@@ -3536,7 +3512,6 @@ interval:do
 !      *                                                                *
 !      ******************************************************************
 !
-    use bctypes
     use blockpointers
     use constants
     use flowvarrefstate
@@ -3652,7 +3627,6 @@ interval:do
 !      *                                                                *
 !      ******************************************************************
 !
-    use bctypes
     use blockpointers
     use constants
     use flowvarrefstate
@@ -3748,7 +3722,6 @@ interval:do
 !      *                                                                *
 !      ******************************************************************
 !
-    use bctypes
     use blockpointers
     use flowvarrefstate
     use inputphysics
@@ -4100,7 +4073,6 @@ interval:do
 !      *                                                                *
 !      ******************************************************************
 !
-    use bctypes
     use blockpointers
     use flowvarrefstate
     use inputphysics
@@ -4325,7 +4297,6 @@ interval:do
 !      *                                                                *
 !      ******************************************************************
 !
-    use bctypes
     use blockpointers
     use flowvarrefstate
     implicit none

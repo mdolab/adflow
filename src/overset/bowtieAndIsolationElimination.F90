@@ -1,7 +1,6 @@
 subroutine bowTieAndIsolationElimination(level, sps)
 
   use blockPointers
-  use BCTypes
   use communication
   use utils, only : setPointers
   implicit none

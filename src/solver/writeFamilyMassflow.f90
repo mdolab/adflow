@@ -17,7 +17,6 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use BCTypes
        use cgnsGrid
        use communication
        use inputPhysics

@@ -21,7 +21,6 @@ subroutine xhalo_block
   !      ******************************************************************
   !
   use blockPointers
-  use BCTypes
   use communication
   use inputTimeSpectral
   implicit none

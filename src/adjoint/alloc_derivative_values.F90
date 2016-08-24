@@ -7,7 +7,6 @@ subroutine allocDerivativeValues(level)
   use inputtimespectral
   use flowvarrefstate
   use inputPhysics
-  use BCTypes
   use cgnsGrid 
   use paramTurb
   use turbMod

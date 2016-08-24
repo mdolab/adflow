@@ -6,7 +6,6 @@ subroutine initializeOFringes(oFringe, nn)
   use communication
   use blockPointers
   use overset
-  use BCTypes
   use stencils
   use inputOverset
   implicit none

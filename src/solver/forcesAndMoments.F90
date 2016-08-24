@@ -25,7 +25,6 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
   !
   use communication
   use blockPointers
-  use BCTypes
   use flowVarRefState
   use inputPhysics
   use bcroutines
