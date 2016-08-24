@@ -21,7 +21,6 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use BCTypes
        use blockPointers
        use interfaceGroups
        implicit none

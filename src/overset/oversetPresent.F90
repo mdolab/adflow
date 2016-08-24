@@ -8,7 +8,6 @@
 function oversetPresent()
 
   use blockPointers
-  use BCTypes
   use communication
   implicit none
 

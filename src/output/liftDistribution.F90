@@ -985,7 +985,6 @@ subroutine computeSurfaceOutputNodalData(exch, includeTractions)
   use communication
   use inputPhysics
   use blockPointers
-  use BCTypes
   use surfaceFamilies, only: famGroups
   use utils, only : setPointers, EChk
   use sorting, only : bsearchIntegers

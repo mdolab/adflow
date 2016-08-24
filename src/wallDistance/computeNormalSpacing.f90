@@ -22,7 +22,6 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use BCTypes
        use blockPointers
        use constants
        use utils, only : setPointers

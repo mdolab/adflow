@@ -4,7 +4,6 @@ subroutine volume_block
   ! since there is debugging stuff in the original that is not
   ! necessary for AD.
 
-  use BCTypes
   use blockPointers
   use cgnsGrid
   use communication
@@ -330,7 +329,6 @@ subroutine boundaryNormals
   ! *                                                            *
   ! **************************************************************
   !
-  use BCTypes
   use blockPointers
   use cgnsGrid
   use communication

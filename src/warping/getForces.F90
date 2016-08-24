@@ -1,7 +1,6 @@
 subroutine getSurfaceSize(size, sizeCell, famList, n)
   ! Compute the number of points that will be returned from getForces
   ! or getForcePoints
-  use BCTypes
   use blockPointers
   use inputTimeSpectral
   use surfaceFamilies
@@ -35,7 +34,6 @@ end subroutine getSurfaceSize
 subroutine getSurfaceConnectivity(conn, ncell)
   ! Return the connectivity list for the each of the patches
 
-  use BCTypes
   use blockPointers
   use inputPhysics
   use surfaceFamilies
@@ -140,7 +138,6 @@ end subroutine getSurfaceConnectivity
 subroutine getSurfaceFamily(elemFam, ncell)
   ! Return the connectivity list for the each of the patches
 
-  use BCTypes
   use blockPointers
   use inputPhysics
   use surfaceFamilies
@@ -185,7 +182,6 @@ end subroutine getSurfaceFamily
 
 subroutine getSurfacePoints(points, npts, sps_in)
 
-  use BCTypes
   use blockPointers
   use inputTimeSpectral
   use surfaceFamilies
@@ -251,7 +247,6 @@ end subroutine getSurfacePoints
 
 subroutine getForces(forces, npts, sps)
 
-  use BCTypes
   use blockPointers
   use flowVarRefState
   use inputTimeSpectral
@@ -314,7 +309,6 @@ end subroutine getForces
 
 subroutine computeNodalTractions(sps)
 
-  use BCTypes
   use blockPointers
   use flowVarRefState
   use inputTimeSpectral
@@ -529,7 +523,6 @@ subroutine computeNodalForces(sps)
   ! node based values. There is no need for communication since we are
   ! simplying summing a quarter of each value to each corner. 
 
-  use BCTypes
   use blockPointers
   use flowVarRefState
   use inputTimeSpectral
@@ -575,7 +568,6 @@ subroutine getForces_b(forces_b, npts, sps)
   ! in getForces to compute bcDatad(mm)%Fp, bcDatad(mm)%Fv and
   ! bcDatad(mm)%area.
   use blockPointers
-  use BCTypes
   use inputPhysics
   use surfaceFamilies, only: wallExchange, familyExchange
   use communication

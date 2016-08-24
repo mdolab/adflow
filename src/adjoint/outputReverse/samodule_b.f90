@@ -1411,7 +1411,6 @@ end subroutine sa_block_b
 ! * a diagonal dominant adi-scheme.                                *
 ! *                                                                *
 ! ******************************************************************
-    use bctypes
     use blockpointers
     use inputiteration
     use inputphysics

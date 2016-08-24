@@ -9,7 +9,6 @@ subroutine writeIsoSurface(isoName , sps, nIsoSurfVar, isoSurfSolNames)
   use flowVarRefState
   use inputPhysics
   use su_cgns
-  use BCTypes
   use inputIO
   use outputMod
   use cgnsNames

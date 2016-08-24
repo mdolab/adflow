@@ -661,7 +661,6 @@ contains
     ! * a diagonal dominant ADI-scheme.                                *
     ! *                                                                *
     ! ******************************************************************
-    use bcTypes
     use blockPointers
     use inputIteration
     use inputPhysics

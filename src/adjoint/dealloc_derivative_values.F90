@@ -8,7 +8,6 @@ subroutine deallocDerivativeValues(level)
   use flowvarrefstate
   use inputPhysics
   use cgnsGrid
-  use BCTypes
   use communication
   use wallDistanceData
 #ifndef USE_COMPLEX

@@ -10,7 +10,6 @@ subroutine verifyOneValue
  
   !     ******************************************************************
   !
-  use BCTypes
   use blockPointers_d      
   use blockPointers_b
   use inputDiscretization 

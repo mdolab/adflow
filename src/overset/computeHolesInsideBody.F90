@@ -9,7 +9,6 @@ subroutine computeHolesInsideBody(level, sps)
   use adtAPI
   use blockPointers
   use wallDistanceData
-  use BCTypes
   use communication
   use inputphysics
   use inputTimeSpectral

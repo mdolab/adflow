@@ -19,7 +19,6 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use BCTypes
        use blockPointers
        use constants
        use inputIteration

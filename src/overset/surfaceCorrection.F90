@@ -2,7 +2,6 @@ subroutine surfaceCorrection(oBlock, oFringe, offset, n)
 
   use overset
   use adtAPI
-  use BCTypes
   use kdtree2_module
   use inputOverset
   use sorting, only : unique

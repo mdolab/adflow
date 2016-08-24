@@ -25,7 +25,6 @@
 !      ******************************************************************
 !
        use blockPointers
-       use BCTypes
        use cgnsNames
        use constants
        use flowVarRefState

@@ -16,7 +16,6 @@ subroutine surfaceDeviation(level, sps)
   use blockPointers
   use overset
   use inputTimeSpectral
-  use BCTypes
   use utils, only : setPointers
   implicit none
 

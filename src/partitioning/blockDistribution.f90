@@ -311,7 +311,6 @@
 !        *                                                              *
 !        ****************************************************************
 !
-         use BCTypes
          implicit none
 !
 !        Subroutine argument.

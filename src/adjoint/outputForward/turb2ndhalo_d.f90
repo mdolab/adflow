@@ -26,7 +26,6 @@ subroutine turb2ndhalo_d(nn)
 !      ******************************************************************
 !
   use blockpointers
-  use bctypes
   use flowvarrefstate
   implicit none
 !

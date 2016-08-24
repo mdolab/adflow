@@ -22,7 +22,6 @@ subroutine bcTurbSymm(nn)
   !      ******************************************************************
   !
   use blockPointers
-  use BCTypes
   use flowVarRefState
   implicit none
   !

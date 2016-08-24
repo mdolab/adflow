@@ -19,7 +19,6 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   !     *         always the finest level                                *         
   !     ******************************************************************
   !
-  use BCTypes
   use blockPointers
   use inputDiscretization 
   use inputTimeSpectral 

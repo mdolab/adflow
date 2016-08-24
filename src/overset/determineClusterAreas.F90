@@ -9,7 +9,6 @@
 
 subroutine determineClusterAreas
 
-  use BCTypes
   use blockPointers
   use communication
   use overset

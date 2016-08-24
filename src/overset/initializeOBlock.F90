@@ -8,7 +8,6 @@ subroutine initializeOBlock(oBlock, nn, level, sps)
   use inputOverset
   use blockPointers
   use adtAPI
-  use BCTypes
   use cgnsGrid
   use communication
   use stencils

@@ -2749,7 +2749,6 @@ contains
     ! planes. It is used just to determine what the lift direction is. 
 
     use constants
-    use bcTypes
     use blockPointers
     use communication
     implicit none
@@ -3022,7 +3021,6 @@ contains
     use inputPhysics
     use inputUnsteady
     use monitor
-    use BCTypes
     use cgnsGrid
     use communication
     use iteration
@@ -4188,7 +4186,6 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use BCTypes
     use blockPointers
     use flowVarRefState
     implicit none
@@ -4320,7 +4317,6 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use BCTypes
     use blockPointers
     use flowVarRefState
     implicit none

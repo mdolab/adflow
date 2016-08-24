@@ -11,7 +11,6 @@ subroutine computeCellWallPoint(level, sps)
   !  hense the numbe rof processors. 
 
   use blockPointers
-  use BCTypes
   use communication
   use kdtree2_module
   use overset

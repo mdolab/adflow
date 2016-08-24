@@ -22,7 +22,6 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use BCTypes
        use constants
        use block, only : BCDataType, flowDoms
        use flowVarRefState, only : nt1

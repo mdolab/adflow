@@ -20,7 +20,6 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use BCTypes
        use bleedFlows
        use blockPointers
        use communication

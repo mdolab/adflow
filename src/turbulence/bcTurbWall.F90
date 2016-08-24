@@ -21,7 +21,6 @@ subroutine bcTurbWall(nn)
   !      ******************************************************************
   !
   use blockPointers
-  use BCTypes
   use flowVarRefState
   use inputPhysics
   use constants

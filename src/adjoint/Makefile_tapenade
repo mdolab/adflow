@@ -45,7 +45,6 @@ ALL_RES_FILES =	$(SRC)/adjoint/residualInput/block_res.F90\
 		$(SRC)/modules/iteration.f90\
 		$(SRC)/modules/section.f90\
 		$(SRC)/modules/communication.f90\
-		$(SRC)/modules/BCTypes.f90\
 		$(SRC)/modules/paramTurb.F90\
 		$(SRC)/modules/cgnsGrid.f90 \
 		$(SRC)/modules/CpCurveFits.f90\

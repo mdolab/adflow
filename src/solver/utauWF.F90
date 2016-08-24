@@ -18,7 +18,6 @@
 !      ******************************************************************
 !
        use constants
-       use BCTypes
        use blockPointers, only : si, sj, sk, fw, rlv, d2wall, w, BCData, viscSubFace, &
             ie, je, ke, il, jl, kl, nViscBocos, BCFaceID
        use inputPhysics, only : wallFunctions

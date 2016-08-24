@@ -8,7 +8,6 @@
 subroutine emptyOversetComm(level, sps)
 
   use blockPointers
-  use BCTypes
   use communication
   implicit none
 

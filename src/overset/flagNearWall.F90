@@ -23,7 +23,6 @@ subroutine flagNearWallCells(level, sps)
   use inputOverset
   use blockPointers
   use adtAPI
-  use BCTypes
   use cgnsGrid
   use communication
   implicit none 

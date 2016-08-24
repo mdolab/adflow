@@ -19,7 +19,6 @@
 !      ******************************************************************
 !
        use blockPointers
-       use BCTypes
        use constants
        use flowVarRefState
        use inputPhysics
@@ -55,7 +54,6 @@
        interface
          subroutine setBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
                                   rev1, rev2, offset)
-           use BCTypes
            use blockPointers
            use flowVarRefState
            implicit none
@@ -69,7 +67,6 @@
 
         subroutine resetBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
                                   rev1, rev2, offset)
-           use BCTypes
            use blockPointers
            use flowVarRefState
            implicit none
@@ -82,7 +79,6 @@
          end subroutine resetBCPointers
 
         subroutine setgamma(nn, gamma1, gamma2)
-           use BCTypes
            use blockPointers
            use flowVarRefState
            implicit none
@@ -92,7 +88,6 @@
          end subroutine setgamma
 
         subroutine resetgamma(nn, gamma1, gamma2)
-           use BCTypes
            use blockPointers
            use flowVarRefState
            implicit none

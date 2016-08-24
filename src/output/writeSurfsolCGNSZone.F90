@@ -22,7 +22,6 @@
 !      ******************************************************************
 !
        use block
-       use BCTypes
        use cgnsGrid
        use communication
        use inputIO

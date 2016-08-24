@@ -1,6 +1,5 @@
 subroutine getAreas(areas, pts, npts, sps_in, axis)
 
-  use BCTypes
   use blockPointers
   use flowVarRefState
   use inputTimeSpectral
@@ -111,7 +110,6 @@ end subroutine getAreas
 
 subroutine getAreaSensitivity(darea, pts, npts, sps_in, axis)
 
-  use BCTypes
   use blockPointers
   use flowVarRefState
   use inputTimeSpectral

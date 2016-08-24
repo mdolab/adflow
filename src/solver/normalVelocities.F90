@@ -43,7 +43,6 @@ subroutine normalVelocities_block(sps)
   !      *                                                                *
   !      ******************************************************************
   !
-  use BCTypes
   use blockPointers
   use iteration
   implicit none

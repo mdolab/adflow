@@ -8,7 +8,6 @@ subroutine exchangeSurfaceDelta(level, sps, commPattern, internal)
   !      ******************************************************************
   !
   use blockPointers
-  use bctypes
   use communication
   implicit none
   !

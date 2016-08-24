@@ -58,7 +58,6 @@ subroutine slipVelocitiesFineLevelALE_block(useOldCoor, t, sps)
   !      *                                                                *
   !      ******************************************************************
   !
-  use BCTypes
   use inputTimeSpectral
   use blockPointers
   use cgnsGrid

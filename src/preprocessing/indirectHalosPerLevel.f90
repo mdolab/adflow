@@ -23,7 +23,6 @@
        use haloList
        use indirectHalo
        use communication
-       use BCTypes
        use utils, only : terminate
        implicit none
 !

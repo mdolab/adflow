@@ -89,7 +89,6 @@
        use constants
        use paramTurb
        use turbMod
-       use bcTypes
        use inputPhysics
        implicit none
 !
