@@ -137,6 +137,9 @@ subroutine initTimeStepWrap
   use monitor
   use section
   use flowVarRefState
+  use bcdata, only : setbcdataFineGrid, setBCDataCoarseGrid, &
+       nonDimBoundData, setInletFreeStreamTurb, bcDataMassBleedOutflow
+
   implicit none
   !
   !      Local variables.

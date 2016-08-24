@@ -28,6 +28,7 @@
        use monitor
        use utils, only : setPointers
        use haloExchange, only : whalo1, whalo2
+       use bcdata, only : setSupersonicInletFreeStream
        implicit none
 !
 !      Local parameter.
@@ -333,6 +334,8 @@
        use iteration
        use monitor
        use section
+       use BCData, only : setBCDataFineGrid, nonDimBoundData, &
+            setSupersonicInletFreeStream, setInletFreeStreamTurb
        implicit none
 !
 !      Subroutine arguments.

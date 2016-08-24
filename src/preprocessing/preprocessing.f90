@@ -31,6 +31,7 @@
        use wallDistanceData
        use overset
        use utils, only : setPointers, EChk, setBufferSizes, terminate
+       use bcdata, only : initBCData, allocMemBCData
        implicit none
 !
 !      Local variables.
