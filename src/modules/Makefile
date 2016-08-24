@@ -87,11 +87,18 @@ FF90_OBJECTS_4 = ADjointVars.o\
 
 FF90_OBJECTS_5 = ../utils/utils.o\
 		../utils/myIsNaNC.o\
+		../ADT/adtUtils.o\
 
 FF90_OBJECTS_6 =../utils/sorting.o\
 		../utils/flowUtils.o\
+		../ADT/adtBuild.o\
+		../ADT/adtLocalSearch.o\
 
-FF90_OBJECTS_7 = ../utils/haloExchange.o\
+FF90_OBJECTS_7 =../utils/haloExchange.o\
+		../ADT/adtSearch.o\
+
+FF90_OBJECTS_8 =../utils/haloExchange.o\
+		../ADT/adtAPI.o\
 
 FILES_TO_COMPLEXIFY =  precision.F90\
 		 bleedFlows.f90\
@@ -157,6 +164,7 @@ all:
 	$(PMAKE) src_5
 	$(PMAKE) src_6
 	$(PMAKE) src_7
+	$(PMAKE) src_8
 
 	cp -f *.mod $(SUMB_MODDIR)
 
@@ -196,3 +204,4 @@ src_4:	$(FF90_OBJECTS_4)
 src_5:	$(FF90_OBJECTS_5)
 src_6:	$(FF90_OBJECTS_6)
 src_7:	$(FF90_OBJECTS_7)
+src_8:	$(FF90_OBJECTS_8)
