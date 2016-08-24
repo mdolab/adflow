@@ -92,6 +92,7 @@ FF90_OBJECTS_6 =../utils/sorting.o\
 		../utils/flowUtils.o\
 		../ADT/adtBuild.o\
 		../ADT/adtLocalSearch.o\
+		../bcdata/BCData.o\
 
 FF90_OBJECTS_7 =../utils/haloExchange.o\
 		../ADT/adtSearch.o\
