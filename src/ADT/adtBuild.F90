@@ -1,13 +1,3 @@
-!
-!     ******************************************************************
-!     *                                                                *
-!     * File:          adtBuild.f90                                    *
-!     * Author:        Edwin van der Weide                             *
-!     * Starting date: 02-10-2006                                      *
-!     * Last modified: 02-22-2006                                      *
-!     *                                                                *
-!     ******************************************************************
-!
 module adtBuild
   !
   !     ******************************************************************
@@ -73,13 +63,7 @@ contains
          rootLeavesBBox
 
     type(adtLeafType), dimension(:), pointer :: ADTree
-    !
-    !       ****************************************************************
-    !       *                                                              *
-    !       * Begin execution.                                             *
-    !       *                                                              *
-    !       ****************************************************************
-    !
+
     ! Initialize nStack and allocate the corresponding array stack.
     ! These are used in the qsort routine for the bounding boxes.
     ! As this routine is called quite often it is more efficient to
@@ -492,13 +476,7 @@ contains
     logical, dimension(:), allocatable :: elementWithinBBox
 
     type(adtType), pointer :: ADT
-    !
-    !       ****************************************************************
-    !       *                                                              *
-    !       * Begin execution.                                             *
-    !       *                                                              *
-    !       ****************************************************************
-    !
+
     ! ! Allocate or reallocate the memory for ADTs. This depends
     ! ! whether or not this is the first ADT to be built.
 
@@ -583,7 +561,7 @@ contains
              xMin(1) = coor(1,mm); xMax(1) = coor(1,mm)
              xMin(2) = coor(2,mm); xMax(2) = coor(2,mm)
              xMin(3) = coor(3,mm); xMax(3) = coor(3,mm)
-             
+
              do j=2,nNPE
                 mm = conn(j,i)
 
@@ -787,13 +765,7 @@ contains
       !         Subroutine arguments.
       !
       integer, intent(in) :: ll
-      !
-      !         **************************************************************
-      !         *                                                            *
-      !         * Begin execution.                                           *
-      !         *                                                            *
-      !         **************************************************************
-      !
+
       select case (ll)
       case (1)
          elType = adtTriangle;      nElem = nTria;  nNPE = 3
@@ -894,13 +866,7 @@ contains
     logical, dimension(:), allocatable :: elementWithinBBox
 
     type(adtType), pointer :: ADT
-    !
-    !       ****************************************************************
-    !       *                                                              *
-    !       * Begin execution.                                             *
-    !       *                                                              *
-    !       ****************************************************************
-    !
+
     ! Allocate or reallocate the memory for ADTs. This depends
     ! whether or not this is the first ADT to be built.
 
@@ -1189,13 +1155,7 @@ contains
       !         Subroutine arguments.
       !
       integer, intent(in) :: ll
-      !
-      !         **************************************************************
-      !         *                                                            *
-      !         * Begin execution.                                           *
-      !         *                                                            *
-      !         **************************************************************
-      !
+
       select case (ll)
       case (1)
          elType = adtTetrahedron; nElem = nTetra;  nNPE = 4
@@ -1266,13 +1226,6 @@ contains
     integer :: ierr, ll, nNPE
     integer(kind=intType) :: i, j, mm
     real(kind=realType), dimension(3) :: xMin, xMax
-    !
-    !       ****************************************************************
-    !       *                                                              *
-    !       * Begin execution.                                             *
-    !       *                                                              *
-    !       ****************************************************************
-    !
 
     ! We need to set comm...explictly mpi_comm_self
     ADT%comm = MPI_COMM_SELF
@@ -1357,7 +1310,7 @@ contains
 
   subroutine destroySerialHex(ADT)
     ! Deallocate the data allocated from the ADT
-    
+
     implicit none
     type(adtType), intent(inout) :: ADT
 
@@ -1419,13 +1372,6 @@ contains
     integer :: ierr, ll, nNPE
     integer(kind=intType) :: i, j, mm
     real(kind=realType), dimension(3) :: xMin, xMax
-    !
-    !       ****************************************************************
-    !       *                                                              *
-    !       * Begin execution.                                             *
-    !       *                                                              *
-    !       ****************************************************************
-    !
 
     ! We need to set comm...explictly mpi_comm_self
     ADT%comm = MPI_COMM_SELF
@@ -1464,7 +1410,7 @@ contains
 
     ! All hexas
     ADT%elementType = adtQuadrilateral
-    
+
     ! Loop over the number of elements and store the bounding
     ! box info.
     nNPE = 4
@@ -1509,7 +1455,7 @@ contains
 
   subroutine destroySerialQuad(ADT)
     ! Deallocate the data allocated from the ADT
-    
+
     implicit none
     type(adtType), intent(inout) :: ADT
 
