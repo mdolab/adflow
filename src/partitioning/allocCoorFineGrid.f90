@@ -27,6 +27,7 @@
        use IOModule
        use iteration
        use partitionMod
+       use utils, only : terminate
        implicit none
 !
 !      Local variables.

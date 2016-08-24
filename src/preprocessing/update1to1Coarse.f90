@@ -1,13 +1,3 @@
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          update1to1Coarse.f90                            *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 09-08-2003                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
-!
        subroutine update1to1Coarse(level, subface)
 !
 !      ******************************************************************
@@ -21,6 +11,7 @@
        use block
        use coarse1to1Subface
        use coarseningInfo
+       use utils, only : terminate
        implicit none
 !
 !      Subroutine arguments.
@@ -35,13 +26,7 @@
        integer(kind=intType) :: iBeg, jBeg, kBeg, iEnd, jEnd, kEnd
 
        logical :: subfaceFound, idir, jdir, kdir
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
+
        ! Store the finer grid level in levm1
 
        levm1 = level -1
@@ -103,7 +88,7 @@
        ! The subface must be found on the fine grid. Check this.
 
        if(.not. subfaceFound)               &
-         call returnFail("update1to1Coarse", &
+         call terminate("update1to1Coarse", &
                         "Invalid fine grid 1 to 1 subface connectivity")
 
        ! Check the i-direction of the coarse grid subface to see if it

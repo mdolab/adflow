@@ -51,9 +51,9 @@ bocos:do nn=1,nbocos
 ! determine the kind of boundary condition for this subface.
     select case  (bctype(nn)) 
     case (nswalladiabatic, nswallisothermal) 
-      call pushcontrol2b(3)
-    case (symm, symmpolar, eulerwall) 
       call pushcontrol2b(2)
+    case (symm, symmpolar, eulerwall) 
+      call pushcontrol2b(3)
     case (farfield) 
       call pushcontrol2b(1)
     case (slidinginterface, oversetouterbound, domaininterfaceall, &
@@ -61,7 +61,7 @@ bocos:do nn=1,nbocos
 &   domaininterfacetotal) 
       call pushcontrol2b(0)
     case default
-      call pushcontrol2b(2)
+      call pushcontrol2b(3)
     end select
   end do bocos
   do nn=nbocos,1,-1
@@ -72,7 +72,7 @@ bocos:do nn=1,nbocos
       else
         call bcturbfarfield_b(nn)
       end if
-    else if (branch .ne. 2) then
+    else if (branch .eq. 2) then
       call bcturbwall_b(nn)
     end if
   end do

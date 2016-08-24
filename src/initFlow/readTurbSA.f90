@@ -26,6 +26,8 @@
        use flowVarRefState
        use IOModule
        use restartMod
+       use utils, only : setCGNSRealType
+       use sorting, only: bsearchStrings
        implicit none
 !
 !      Subroutine argument.
@@ -42,11 +44,6 @@
        real(kind=realType) :: nuScale, ratio, nu
 
        logical :: eddyVisPresent
-!
-!      Function definitions.
-!
-       integer               :: setCGNSRealType
-       integer(kind=intType) :: bsearchStrings
 
        real(kind=realType) :: saNuKnownEddyRatio
 !

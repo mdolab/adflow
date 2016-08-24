@@ -21,6 +21,7 @@
        use iteration
        use inputIteration
        use inputPhysics
+       use utils, only : terminate
        implicit none
 !
 !      Local variables.
@@ -91,10 +92,10 @@
                   call DADISmoother
                   iterType = "  DADI"
                case (nlLusgs)
-                 call returnFail("executeMGCycle", &
+                 call terminate("executeMGCycle", &
                                 "nlLusgs smoother not implemented yet")
                case (nlLusgsLine)
-                 call returnFail("executeMGCycle", &
+                 call terminate("executeMGCycle", &
                                 "nlLusgsLine smoother not implemented &
                                 &yet")
              end select

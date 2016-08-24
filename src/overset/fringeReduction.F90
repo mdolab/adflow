@@ -2,6 +2,7 @@ subroutine fringeReduction(level, sps)
 
   use blockPointers
   use stencils
+  use utils, only : setPointers
   implicit none
 
   ! Input/Output

@@ -18,15 +18,11 @@ subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useSta
   use stencils
   use diffSizes
   use surfaceFamilies, only: wallFamilies, totalWallFamilies
+  use utils, only : setPointers, EChk
+  use haloExchange, only : whalo2_d
   implicit none
 #define PETSC_AVOID_MPIF_H
-
-#include "include/petscversion.h"
-#if PETSC_VERSION_MINOR > 5
 #include "petsc/finclude/petsc.h"
-#else
-#include "include/finclude/petsc.h"
-#endif
 
   ! Input Variables
   integer(kind=intType), intent(in) :: spatialSize, extraSize, stateSize, costSize, fSize
@@ -66,7 +62,7 @@ subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useSta
   ! mode derivatives and copy reference values
   ! Allocate the memory for reverse
   if (.not. derivVarsAllocated) then 
-     call alloc_derivative_values(level)
+     call allocDerivativeValues(level)
   end if
   do nn=1,nDom
      do sps=1,nTimeIntervalsSpectral
@@ -259,19 +255,12 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, fbar, useSpatial, useSta
   use adjointvars
   use costfunctions
   use walldistancedata, only : xSurfVec, xSurfVecd, xSurf, xSurfd, wallScatter
+  use utils, only : setPointers, EChk
   implicit none
 
 #define PETSC_AVOID_MPIF_H
-
-#include "include/petscversion.h"
-#if PETSC_VERSION_MINOR > 5
 #include "petsc/finclude/petsc.h"
 #include "petsc/finclude/petscvec.h90"
-#else
-#include "include/finclude/petsc.h"
-#include "include/finclude/petscvec.h90"
-#endif
-
 
   ! Input Variables
   integer(kind=intType), intent(in) :: spatialSize, extraSize, stateSize, costSize, fSize
@@ -329,7 +318,7 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, fbar, useSpatial, useSta
 
   ! Allocate the memory for reverse
   if (.not. derivVarsAllocated) then 
-     call alloc_derivative_values(level)
+     call allocDerivativeValues(level)
   end if
   do nn=1,nDom
      do sps=1,nTimeIntervalsSpectral
@@ -584,11 +573,14 @@ subroutine computeMatrixFreeProductBwdFast(dwbar, wbar, stateSize)
   use inputAdjoint       
   use iteration
   use inputIteration
-  use saModule_fast_b
-  use bcroutines_b
+  use saModule_fast_b, only : saresscale_fast_b, saviscous_fast_b, &
+       sasource_fast_b, cb3Inv, cv13, cw36, kar2inv, qq
   use adjointvars
   use communication
   use paramTurb
+  use utils, only : terminate
+  use haloExchange, only : whalo2_b
+  use flowutils_fast_b, only : computespeedofsoundsquared_fast_b
   implicit none
 
   ! Input Variables
@@ -687,7 +679,7 @@ subroutine computeMatrixFreeProductBwdFast(dwbar, wbar, stateSize)
               call turbadvection_fast_b(1_inttype, 1_inttype, itu1-1, qq)
               call sasource_fast_b()
            case default
-              call returnFail("matrixFreeRoutines", &
+              call terminate("matrixFreeRoutines", &
                    "Only SA turbulence adjoint implemented")
            end select
 
@@ -775,18 +767,11 @@ subroutine dRdwTMatMult(A, vecX,  vecY, ierr)
   use inputAdjoint       
   use ADjointVars
   use inputTimeSpectral
+  use utils, only : EChk
   implicit none
 #define PETSC_AVOID_MPIF_H
-
-#include "include/petscversion.h"
-#if PETSC_VERSION_MINOR > 5
 #include "petsc/finclude/petsc.h"
 #include "petsc/finclude/petscvec.h90"
-#else
-#include "include/finclude/petsc.h"
-#include "include/finclude/petscvec.h90"
-#endif
-
 
   ! PETSc Arguments
   Mat   A
@@ -797,28 +782,15 @@ subroutine dRdwTMatMult(A, vecX,  vecY, ierr)
   real(kind=realType), pointer :: wb_pointer(:)
 
 #ifndef USE_COMPLEX
-
-#if PETSC_VERSION_MINOR > 5
   call VecGetArrayReadF90(vecX, dwb_pointer, ierr)
   call EChk(ierr,__FILE__,__LINE__)
-#else
-  call VecGetArrayF90(vecX, dwb_pointer, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-#endif
 
   call VecGetArrayF90(VecY, wb_pointer, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
   call computeMatrixFreeProductBwdFast(dwb_pointer, wb_pointer, size(wb_pointer))
 
-#if PETSC_VERSION_MINOR > 5
-  call VecRestoreArrayReadF90(vecX, dwb_pointer, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-#else
   call VecRestoreArrayF90(vecX, dwb_pointer, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-#endif
-  call VecRestoreArrayF90(VecY, wb_pointer, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
   ierr = 0
@@ -841,17 +813,11 @@ subroutine dRdwMatMult(A, vecX,  vecY, ierr)
   use ADjointVars
   use inputTimeSpectral  
   use surfaceFamilies, only: wallFamilies, totalWallFamilies
+  use utils, only : EChk
   implicit none
 #define PETSC_AVOID_MPIF_H
-
-#include "include/petscversion.h"
-#if PETSC_VERSION_MINOR > 5
 #include "petsc/finclude/petsc.h"
 #include "petsc/finclude/petscvec.h90"
-#else
-#include "include/finclude/petsc.h"
-#include "include/finclude/petscvec.h90"
-#endif
 
   ! PETSc Arguments
   Mat   A
@@ -871,13 +837,8 @@ subroutine dRdwMatMult(A, vecX,  vecY, ierr)
   real(kind=realType) ::funcsDot(nCostFunction)
 #ifndef USE_COMPLEX
 
-#if PETSC_VERSION_MINOR > 5
   call VecGetArrayReadF90(vecX, wd_pointer, ierr)
   call EChk(ierr,__FILE__,__LINE__)
-#else
-  call VecGetArrayF90(vecX, wd_pointer, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-#endif
 
   call VecGetArrayF90(VecY, dwd_pointer, ierr)
   call EChk(ierr,__FILE__,__LINE__)
@@ -902,13 +863,10 @@ subroutine dRdwMatMult(A, vecX,  vecY, ierr)
        useSpatial, useState, dwd_pointer, funcsDot, fDot, &
        spatialSize, extraSize, stateSize, costSize, fSize)
   deallocate(xvdot)
-#if PETSC_VERSION_MINOR > 5
+
   call VecRestoreArrayReadF90(vecX, wd_pointer, ierr)
   call EChk(ierr,__FILE__,__LINE__)
-#else
-  call VecRestoreArrayF90(vecX, wd_pointer, ierr)
-  call EChk(ierr,__FILE__,__LINE__)
-#endif
+
   call VecRestoreArrayF90(VecY, dwd_pointer, ierr)
   call EChk(ierr,__FILE__,__LINE__)
 
@@ -925,6 +883,7 @@ subroutine solveAdjointForRHS(inVec, outVec, nDOF, relativeTolerance)
     use constants
     use blockPointers
     use inputTimeSpectral
+    use utils, only : EChk
     implicit none
 
     ! Input Variables
@@ -957,7 +916,7 @@ subroutine solveAdjointForRHS(inVec, outVec, nDOF, relativeTolerance)
 
     ! Make sure the derivative memory is allocated and zeroed. 
     if (.not. derivVarsAllocated) then 
-       call alloc_derivative_values(1_intType)
+       call allocDerivativeValues(1_intType)
     end if
 
     do nn=1,nDom
@@ -1001,6 +960,7 @@ subroutine solveDirectForRHS(inVec, outVec, nDOF, relativeTolerance)
     use killsignals
     use blockPointers
     use inputTimeSpectral
+    use utils, only : EChk
     implicit none
 
     ! Input Variables
@@ -1032,7 +992,7 @@ subroutine solveDirectForRHS(inVec, outVec, nDOF, relativeTolerance)
 
     ! Make sure the derivative memory is allocated and zeroed. 
     if (.not. derivVarsAllocated) then 
-       call alloc_derivative_values(1_intType)
+       call allocDerivativeValues(1_intType)
     end if
 
     do nn=1,nDom
@@ -1073,6 +1033,7 @@ subroutine testdRdWTSpeed(X, Y, n)
 
   use ADjointPETSc, only : dRdwT, psi_like1, psi_like2
   use constants
+  use utils, only : EChk
   implicit none
 
   real(kind=realType), dimension(n) :: X, Y

@@ -30,6 +30,8 @@
        use inputDiscretization
        use block
        use wallDistanceData
+       use utils, only : setPointers, EChk, terminate, &
+            deallocateTempMemory, allocateTempMemory
        implicit none
 !
 !      Subroutine arguments.
@@ -101,7 +103,7 @@
        if( allocMem ) then
          deallocate(sendBuffer, recvBuffer, stat=ierr)
          if(ierr /= 0)                    &
-           call returnFail("wallDistance", &
+           call terminate("wallDistance", &
                           "Deallocation error for communication buffers")
        else
          call deallocateTempMemory(.false.)
@@ -200,7 +202,7 @@
          allocate(sendBuffer(sendBufferSize), &
                   recvBuffer(recvBufferSize), stat=ierr)
          if(ierr /= 0)                    &
-           call returnFail("wallDistance", &
+           call terminate("wallDistance", &
                           "Memory allocation failure for comm buffers")
        else
          call allocateTempMemory(.false.)
@@ -229,6 +231,7 @@ subroutine destroyWallDistanceData(level)
   use precision
   use wallDistanceData
   use inputTimeSpectral
+  use utils, onlY : EChk
   implicit none
   ! Subroutine arguments
   integer(kind=intType), intent(in) :: level

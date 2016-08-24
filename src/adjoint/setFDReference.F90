@@ -4,6 +4,7 @@ subroutine setFDReference(level)
   use flowVarRefState
   use inputTimeSpectral
   use inputPhysics
+  use utils, only : EChk, setPointers
   implicit none
 
   ! Input Parameters
@@ -58,6 +59,7 @@ subroutine resetFDReference(level)
   use flowVarRefState
   use inputTimeSpectral
   use inputPhysics
+  use utils, only : setPointers
   implicit none
 
   ! Input Parameters

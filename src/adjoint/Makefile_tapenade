@@ -57,7 +57,7 @@ ALL_RES_FILES =	$(SRC)/adjoint/residualInput/block_res.F90\
 		$(SRC)/solver/inviscidDissFluxMatrix.F90\
 		$(SRC)/solver/inviscidDissFluxScalar.F90\
 		$(SRC)/solver/inviscidUpwindFlux.F90\
-		$(SRC)/solver/computeUtau.f90\
+		$(SRC)/solver/computeUtau.F90\
 		$(SRC)/solver/timeStep.F90\
 		$(SRC)/solver/residual.F90\
 		$(SRC)/solver/computeLamViscosity.F90\
@@ -97,21 +97,9 @@ ALL_RES_FILES =	$(SRC)/adjoint/residualInput/block_res.F90\
 		$(SRC)/turbulence/bcEddyWall.f90\
 		$(SRC)/turbulence/bcEddyNoWall.f90\
 		$(SRC)/turbulence/turb2ndHalo.f90\
-		$(SRC)/utils/rotMatrixRigidBody.f90\
-		$(SRC)/utils/computeGamma.f90\
-		$(SRC)/utils/TSalpha.f90\
-		$(SRC)/utils/TSalphadot.f90\
-		$(SRC)/utils/TSBeta.f90\
-		$(SRC)/utils/TSMach.f90\
-		$(SRC)/utils/rigidRotAngle.f90\
-		$(SRC)/utils/derivativeRigidRotAngle.f90\
-		$(SRC)/utils/dummy_dim.f90\
-		$(SRC)/utils/setPointers.f90\
-		$(SRC)/utils/terminate.F90\
-		$(SRC)/utils/computeEtot.f90\
-		$(SRC)/utils/bsearchIntegers.f90\
-		$(SRC)/utils/computeSpeedOfSoundSquared.F90\
-		$(SRC)/utils/getCorrectForK.f90\
+		$(SRC)/utils/flowUtils.F90\
+		$(SRC)/utils/utils.F90\
+		$(SRC)/utils/sorting.F90\
 		$(SRC)/bendingMomentAnalysis/rootBendingMomentAnalysis.f90\
 		$(SRC)/wallDistance/determineDistanceQuickly.F90\
 		$(SRC)/solver/BCRoutines.F90\

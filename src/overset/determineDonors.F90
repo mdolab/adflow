@@ -14,6 +14,7 @@ subroutine determineDonors(level, sps, fringeList, nFringe, useWall)
 
   use block
   use communication
+  use utils, only : Echk, setPointers
   implicit none
 
   ! Input Params

@@ -29,7 +29,6 @@ subroutine binSearchPocketEdgeType(arr, search, nn, searchInd)
      if (arr(middle) < search) then
         first = middle + 1
      else if (arr(middle) == search) then
-        !print*,' Found at location: ',middle
         searchInd = middle
         exit
      else

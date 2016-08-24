@@ -1,13 +1,3 @@
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          surfSolFileNamesWrite.f90                        *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 10-11-2005                                      *
-!      * Last modified: 01-24-2006                                      *
-!      *                                                                *
-!      ******************************************************************
-!
        subroutine surfSolFileNamesWrite
 !
 !      ******************************************************************
@@ -22,6 +12,7 @@
        use inputTimeSpectral
        use monitor
        use outputMod
+       use utils, only : terminate
        implicit none
 !
 !      Local variables.
@@ -31,13 +22,7 @@
        integer(kind=intType) :: nn
 
        character(len=7) :: intString
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
+
        ! In contrast to the grids and volume solutions, possible states
        ! in the past don't need to be written for the surface. Therefore
        ! the memory allocation can be done independent of the test of
@@ -45,7 +30,7 @@
 
        allocate(surfSolFileNames(nTimeIntervalsSpectral), stat=ierr)
        if(ierr /= 0)                             &
-         call returnFail("surfSolFileNamesWrite", &
+         call terminate("surfSolFileNamesWrite", &
                         "Memory allocation failure for surfSolFileNames")
 
        ! Set the number of surface solution files to be written.

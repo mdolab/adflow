@@ -8,15 +8,10 @@ subroutine NKStep(firstCall)
   use inputIteration, only : L2Conv
   use killSignals, only : routineFailed
   use iteration, only : approxTotalIts
+  use utils, only : EChk
   implicit none
 #define PETSC_AVOID_MPIF_H
-
-#include "include/petscversion.h"
-#if PETSC_VERSION_MINOR > 5
 #include "petsc/finclude/petsc.h"
-#else
-#include "include/finclude/petsc.h"
-#endif
 
   ! Input Variables
   logical, intent(in) :: firstCall

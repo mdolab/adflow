@@ -1,13 +1,3 @@
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          allocTimeArrays.f90                             *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 05-20-2004                                      *
-!      * Last modified: 03-22-2005                                      *
-!      *                                                                *
-!      ******************************************************************
-!
        subroutine allocTimeArrays(nTimeTot)
 !
 !      ******************************************************************
@@ -21,6 +11,7 @@
 !      ******************************************************************
 !
        use monitor
+       use utils, only : terminate
        implicit none
 !
 !      Subroutine argument.
@@ -30,13 +21,7 @@
 !      Local variables.
 !
        integer :: ierr
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
+
        ! Allocate the memory for both the time array as well as the
        ! data array.
 
@@ -50,7 +35,7 @@
        allocate(timeArray(nTimeTot), &
                 timeDataArray(nTimeTot,nMon), stat=ierr)
        if(ierr /= 0)                       &
-         call returnFail("allocTimeArrays", &
+         call terminate("allocTimeArrays", &
                         "Memory allocation failure for timeArray &
                         &and timeDataArray")
        

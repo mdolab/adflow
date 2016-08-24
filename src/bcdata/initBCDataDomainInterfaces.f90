@@ -26,6 +26,8 @@
        use inputIteration
        use inputTimeSpectral
        use BCRoutines
+       use utils, only : setPointers
+       use flowUtils, only : computePtot, computeTtot
        implicit none
 !
 !      Local variables.
@@ -174,9 +176,9 @@
                      ! and total entahlpy.
 
                      call computePtot(rho, vvx, vvy, vvz, pres, &
-                                      BCData(mm)%ptInlet(i,j), 1_intType)
+                                      BCData(mm)%ptInlet(i,j))
                      call computeTtot(rho, vvx, vvy, vvz, pres, &
-                                      BCData(mm)%ttInlet(i,j), 1_intType)
+                                      BCData(mm)%ttInlet(i,j))
                      BCData(mm)%htInlet(i,j) = (ww2(i,j,irhoE) + pres) &
                                              / rho
 

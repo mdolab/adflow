@@ -28,6 +28,8 @@
        use iteration
        use monitor
        use section
+       use utils, only : setPointers
+       use haloExchange, only : whalo2
        implicit none
 !
 !      Subroutine arguments.

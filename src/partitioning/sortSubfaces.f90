@@ -20,6 +20,7 @@
 !
        use BCTypes
        use partitionMod
+       use sorting, only : qsortIntegers, bsearchIntegers
        implicit none
 !
 !      Subroutine arguments
@@ -35,17 +36,7 @@
        integer(kind=intType), dimension(blockID%nBocos) :: bcPriorSort
 
        integer(kind=intType), dimension(0:blockID%nBocos) :: mult
-!
-!      Function definition.
-!
-       integer(kind=intType) :: bsearchIntegers
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
+
        ! Loop over the boundary subfaces and determine the priorities.
        ! Store the priorities in both bcPrior and bcPriorSort.
 

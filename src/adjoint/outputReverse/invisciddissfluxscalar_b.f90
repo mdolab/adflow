@@ -37,6 +37,7 @@ subroutine invisciddissfluxscalar_b()
   use inputdiscretization, only : vis2, vis4
   use inputphysics, only : equations
   use iteration, only : rfil
+  use utils_b, only : mydim, mydim_b
   implicit none
 !
 !      local parameter.
@@ -61,7 +62,6 @@ subroutine invisciddissfluxscalar_b()
   intrinsic mod
   intrinsic max
   intrinsic min
-  real(kind=realtype) :: dim
   real(kind=realtype) :: arg1
   real(kind=realtype) :: arg1d
   integer :: branch
@@ -283,7 +283,7 @@ subroutine invisciddissfluxscalar_b()
       end if
       dis2 = fis2*rrad*min3
       arg1 = fis4*rrad
-      dis4 = dim(arg1, dis2)
+      dis4 = mydim(arg1, dis2)
 ! compute and scatter the dissipative flux.
 ! density. store it in the mass flow of the
 ! appropriate sliding mesh interface.
@@ -379,7 +379,7 @@ subroutine invisciddissfluxscalar_b()
       wd(i, j, k+1, irho) = wd(i, j, k+1, irho) + ddw1d
       wd(i, j, k, irho) = wd(i, j, k, irho) - ddw1d
       arg1d = 0.0_8
-      call dim_b(arg1, arg1d, dis2, dis2d, dis4d)
+      call mydim_b(arg1, arg1d, dis2, dis2d, dis4d)
       rradd = fis2*min3*dis2d + fis4*arg1d
       min3d = fis2*rrad*dis2d
       call popcontrol1b(branch)
@@ -430,7 +430,7 @@ subroutine invisciddissfluxscalar_b()
       end if
       dis2 = fis2*rrad*min2
       arg1 = fis4*rrad
-      dis4 = dim(arg1, dis2)
+      dis4 = mydim(arg1, dis2)
 ! compute and scatter the dissipative flux.
 ! density. store it in the mass flow of the
 ! appropriate sliding mesh interface.
@@ -526,7 +526,7 @@ subroutine invisciddissfluxscalar_b()
       wd(i, j+1, k, irho) = wd(i, j+1, k, irho) + ddw1d
       wd(i, j, k, irho) = wd(i, j, k, irho) - ddw1d
       arg1d = 0.0_8
-      call dim_b(arg1, arg1d, dis2, dis2d, dis4d)
+      call mydim_b(arg1, arg1d, dis2, dis2d, dis4d)
       rradd = fis2*min2*dis2d + fis4*arg1d
       min2d = fis2*rrad*dis2d
       call popcontrol1b(branch)
@@ -577,7 +577,7 @@ subroutine invisciddissfluxscalar_b()
       end if
       dis2 = fis2*rrad*min1
       arg1 = fis4*rrad
-      dis4 = dim(arg1, dis2)
+      dis4 = mydim(arg1, dis2)
 ! compute and scatter the dissipative flux.
 ! density. store it in the mass flow of the
 ! appropriate sliding mesh interface.
@@ -673,7 +673,7 @@ subroutine invisciddissfluxscalar_b()
       wd(i+1, j, k, irho) = wd(i+1, j, k, irho) + ddw1d
       wd(i, j, k, irho) = wd(i, j, k, irho) - ddw1d
       arg1d = 0.0_8
-      call dim_b(arg1, arg1d, dis2, dis2d, dis4d)
+      call mydim_b(arg1, arg1d, dis2, dis2d, dis4d)
       rradd = fis2*min1*dis2d + fis4*arg1d
       min1d = fis2*rrad*dis2d
       call popcontrol1b(branch)

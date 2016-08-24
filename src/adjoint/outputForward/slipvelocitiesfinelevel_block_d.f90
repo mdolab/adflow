@@ -40,6 +40,8 @@ subroutine slipvelocitiesfinelevel_block_d(useoldcoor, t, sps)
   use inputtsstabderiv
   use monitor
   use communication
+  use utils_d, only : tsalpha, tsbeta, tsmach, terminate
+  use utils_d, only : rotmatrixrigidbody
   use diffsizes
 !  hint: isize1ofdrfbcdata should be the size of dimension 1 of array *bcdata
   implicit none
@@ -80,19 +82,10 @@ subroutine slipvelocitiesfinelevel_block_d(useoldcoor, t, sps)
   real(kind=realtype), dimension(3) :: veldir
   real(kind=realtype), dimension(3) :: veldird
   real(kind=realtype), dimension(3) :: refdirection
-!function definitions
-  real(kind=realtype) :: tsalpha, tsbeta, tsmach
   intrinsic sqrt
   real(kind=realtype) :: arg1
   real(kind=realtype) :: arg1d
   integer :: ii1
-!
-!      ******************************************************************
-!      *                                                                *
-!      * begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
 ! determine the situation we are having here.
   if (useoldcoor) then
 ! the velocities must be determined via a finite difference
@@ -286,7 +279,7 @@ bocoloop1:do mm=1,nviscbocos
 ! well as the rotation point; the latter may vary in time due
 ! to rigid body translation.
         call rotmatrixrigidbody(tnew, told, rotationmatrix, &
-&                            rotationpoint)
+&                         rotationpoint)
         if (tsalphafollowing) then
           velxgrid0d = rotationmatrix(1, 1)*velxgrid0d + rotationmatrix(&
 &           1, 2)*velygrid0d + rotationmatrix(1, 3)*velzgrid0d
@@ -378,9 +371,8 @@ bocoloop1:do mm=1,nviscbocos
         xxcd = 0.0_8
       else if (tsmachmode) then
 !determine the mach number at this time interval
-        intervalmach = tsmach(degreepolmach, coefpolmach, &
-&         degreefourmach, omegafourmach, coscoeffourmach, &
-&         sincoeffourmach, t(1))
+        intervalmach = tsmach(degreepolmach, coefpolmach, degreefourmach&
+&         , omegafourmach, coscoeffourmach, sincoeffourmach, t(1))
 !set the effective grid velocity
         velxgrid0d = -((ainfd*(intervalmach+machgrid)+ainf*machgridd)*&
 &         veldirfreestream(1)) - ainf*(intervalmach+machgrid)*&
@@ -400,16 +392,16 @@ bocoloop1:do mm=1,nviscbocos
         xcd = 0.0_8
         xxcd = 0.0_8
       else if (tsaltitudemode) then
-        call returnfail('gridvelocityfinelevel', &
-&                    'altitude motion not yet implemented...')
+        call terminate('gridvelocityfinelevel', &
+&                'altitude motion not yet implemented...')
         do ii1=1,isize1ofdrfbcdata
           bcdatad(ii1)%uslip = 0.0_8
         end do
         xcd = 0.0_8
         xxcd = 0.0_8
       else
-        call returnfail('gridvelocityfinelevel', &
-&                    'not a recognized stability motion')
+        call terminate('gridvelocityfinelevel', &
+&                'not a recognized stability motion')
         do ii1=1,isize1ofdrfbcdata
           bcdatad(ii1)%uslip = 0.0_8
         end do

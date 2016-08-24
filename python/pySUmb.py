@@ -27,6 +27,7 @@ import time
 import copy
 import numpy
 from mpi4py import MPI
+from petsc4py import PETSc
 from baseclasses import AeroSolver, AeroProblem
 from . import MExt
 from pprint import pprint as pp
@@ -184,7 +185,7 @@ class SUMB(AeroSolver):
         self.adjointSetup = False
 
         # Write the intro message
-        self.sumb.writeintromessage()
+        self.sumb.utils.writeintromessage()
 
         # Remind the user of all the sumb options:
         self.printCurrentOptions()
@@ -274,7 +275,7 @@ class SUMB(AeroSolver):
 
         # Set the surface the user has supplied:
         conn = self.getSurfaceConnectivity(self.meshFamilies)
-        pts = self.getSurfacePoints(self.meshFamilies)
+        pts = self.getSurfaceCoordinates(self.meshFamilies)
         self.mesh.setSurfaceDefinition(pts, conn)
 
     def setDVGeo(self, DVGeo):
@@ -614,7 +615,7 @@ class SUMB(AeroSolver):
 
         # Obtain the points and connectivity for the specified
         # groupName
-        pts = self.comm.allgather(self.getSurfacePoints(groupName, TS))
+        pts = self.comm.allgather(self.getSurfaceCoordinates(groupName, TS))
         conn = self.comm.allgather(self.getSurfaceConnectivity(groupName))
 
         # Triangle info...point and two vectors
@@ -1560,7 +1561,7 @@ class SUMB(AeroSolver):
 
         # Now we need to gather the data:
         if cfdForcePts is None:
-            pts = self.comm.gather(self.getSurfacePoints(groupName, TS), root=0)
+            pts = self.comm.gather(self.getSurfaceCoordinates(groupName, TS), root=0)
         else:
             pts = self.comm.gather(cfdForcePts)
 
@@ -1752,10 +1753,6 @@ class SUMB(AeroSolver):
     #   i.e. an Aerostructural solver
     # =========================================================================
 
-    def getSurfaceCoordinates(self, groupName=None):
-        # This is an alias for getSurfacePoints
-        return self.getSurfacePoints(groupName)
-
     def getInitialSurfaceCoordinates(self, groupName=None):
         """
 
@@ -1770,7 +1767,7 @@ class SUMB(AeroSolver):
                 ptSetName = 'sumb_%s_coords'% self.curAP.name
                 self.setSurfaceCoordinates(
                     self.DVGeo.update(ptSetName, config=self.curAP.name), 
-                    self.getOption('designSurfaceFamily'))
+                    self.designFamilies)
                 self.updateGeometryInfo()
                 return self.getSurfaceCoordinates(groupName)
             else:
@@ -2193,7 +2190,7 @@ class SUMB(AeroSolver):
         # Finally map the vector as required. 
         return self.mapVector(forces, self.allWallsGroup, groupName)
 
-    def getSurfacePoints(self, groupName=None, TS=0):
+    def getSurfaceCoordinates(self, groupName=None, TS=0):
         """Return the coordinates for the surfaces defined by groupName. 
 
         Parameters

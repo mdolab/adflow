@@ -25,6 +25,7 @@
        use inputTimeSpectral
        use iteration
        use BCDataMod
+       use utils, only : setPointers
        implicit none
 !
 !      Subroutine arguments.

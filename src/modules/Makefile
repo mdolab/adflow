@@ -85,6 +85,14 @@ FF90_OBJECTS_4 = ADjointVars.o\
 		 overset.o\
 		 liftDistributionData.o\
 
+FF90_OBJECTS_5 = ../utils/utils.o\
+		../utils/myIsNaNC.o\
+
+FF90_OBJECTS_6 =../utils/sorting.o\
+		../utils/flowUtils.o\
+
+FF90_OBJECTS_7 = ../utils/haloExchange.o\
+
 FILES_TO_COMPLEXIFY =  precision.F90\
 		 bleedFlows.f90\
 		 constants.F90\
@@ -126,6 +134,7 @@ FILES_TO_COMPLEXIFY =  precision.F90\
 		 kd_tree.f90\
 		 surfaceFamilies.F90\
 
+
 FILES_TO_COPY = su_cgns.F90 \
 		complexify.f90 
 
@@ -145,6 +154,10 @@ all:
 	$(PMAKE) src_2
 	$(PMAKE) src_3
 	$(PMAKE) src_4
+	$(PMAKE) src_5
+	$(PMAKE) src_6
+	$(PMAKE) src_7
+
 	cp -f *.mod $(SUMB_MODDIR)
 
 clean:
@@ -180,3 +193,6 @@ src_1:	$(FF90_OBJECTS_1)
 src_2:	$(FF90_OBJECTS_2)
 src_3:	$(FF90_OBJECTS_3)
 src_4:	$(FF90_OBJECTS_4)
+src_5:	$(FF90_OBJECTS_5)
+src_6:	$(FF90_OBJECTS_6)
+src_7:	$(FF90_OBJECTS_7)

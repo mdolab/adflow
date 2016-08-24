@@ -20,6 +20,7 @@
        use interfaceGroups
        use localSubfacesMod
        use thisSlide
+       use utils, only : terminate
        implicit none
 !
 !      Subroutine arguments.
@@ -67,7 +68,7 @@
                 quadID1(nQuad1),    coor1(3,nNode1),  &
                 coorInt1(3,nNode1), stat=ierr)
        if(ierr /= 0)                           &
-         call returnFail("localSurfaceGrids", &
+         call terminate("localSurfaceGrids", &
                         "Memory allocation error for part 1")
 
        ! Determine the data for part 1 of the interface.
@@ -111,7 +112,7 @@
                 quadID2(nQuad2),    coor2(3,nNode2),  &
                 coorInt2(3,nNode2), stat=ierr)
        if(ierr /= 0)                         &
-         call returnFail("localSurfaceGrids", &
+         call terminate("localSurfaceGrids", &
                         "Memory allocation error for part 2")
 
        ! Determine the data for part 2 of the interface.

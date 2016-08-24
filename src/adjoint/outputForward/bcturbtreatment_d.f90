@@ -130,10 +130,6 @@ bocos:do nn=1,nbocos
 ! domain interface with another code are not really boundary
 ! condition and therefore the values are kept.
       call bcturbinterface_d(nn)
-    case default
-!=============================================================
-      call returnfail('bcturbtreatment', 'unknown boundary condition'&
-&                 )
     end select
   end do bocos
 end subroutine bcturbtreatment_d

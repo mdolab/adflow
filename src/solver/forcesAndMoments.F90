@@ -30,8 +30,8 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
   use inputPhysics
   use bcroutines
   use costFunctions
-  use overset
   use surfaceFamilies
+  use sorting, only :bsearchIntegers
   implicit none
   !
   !      Subroutine arguments
@@ -44,7 +44,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
   !
   !      Local variables.
   !
-  integer(kind=intType) :: nn, i, j, ii, bSearchIntegers, blk
+  integer(kind=intType) :: nn, i, j, ii, blk
 
   real(kind=realType) :: pm1, fx, fy, fz, fn, sigma
   real(kind=realType) :: xc, yc, zc, qf(3)
@@ -103,7 +103,7 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
      !
 
      famInclude: if (bsearchIntegers(BCdata(nn)%famID, &
-          famGroups, shape(famGroups)) > 0) then 
+          famGroups, size(famGroups)) > 0) then 
 
         invForce: if(BCType(nn) == EulerWall .or. &
              BCType(nn) == NSWallAdiabatic .or. &

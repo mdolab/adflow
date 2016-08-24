@@ -42,7 +42,8 @@ subroutine setGlobalCellsAndNodes(level)
   use blockpointers
   use communication
   use inputTimeSpectral
-
+  use utils, only: setPointers, terminate 
+  use haloExchange, only : whalo1to1intgeneric
   implicit none
 
   ! Input variables
@@ -66,7 +67,7 @@ subroutine setGlobalCellsAndNodes(level)
         allocate(flowDoms(nn,level,sps)%globalCell(0:ib,0:jb,0:kb), &
              flowDoms(nn,level,sps)%globalNode(0:ie,0:je,0:ke), stat=ierr)
         if (ierr /=0) then
-           call returnFail("setGlobalCellsAndNodes", "Allocation failure for globalCell/Node")
+           call terminate("setGlobalCellsAndNodes", "Allocation failure for globalCell/Node")
         end if
         ! Assign a 'magic number' of -5 to globalCell and global Node:
         flowDoms(nn,level,sps)%globalCell = -5

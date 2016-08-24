@@ -13,7 +13,8 @@ subroutine writeIsoSurface(isoName , sps, nIsoSurfVar, isoSurfSolNames)
   use inputIO
   use outputMod
   use cgnsNames
-
+  use utils, only : reallocateReal2, setPointers, reallocateinteger2, &
+       terminate, EChk, pointReduce
   implicit none
   
   ! Input param
@@ -40,31 +41,6 @@ subroutine writeIsoSurface(isoName , sps, nIsoSurfVar, isoSurfSolNames)
   integer, dimension(mpi_status_size) :: status
   integer(kind=intType) :: cgnsInd, cgnsBase, cgnsZOne, coordID, secID, solID, fieldID
   real(kind=realType) :: tol=1e-8 ! Node tol for isosurf pointReduce
-  interface
-     subroutine reallocateReal2(realArray,           &
-          newSize1, newSize2, &
-          oldSize1, oldSize2, &
-          alwaysFreeMem)
-       use precision
-       implicit none
-
-       real(kind=realType), dimension(:,:), pointer :: realArray
-       integer(kind=intType), intent(in) :: newSize1, newSize2, &
-            oldSize1, oldSize2
-       logical, intent(in) :: alwaysFreeMem
-     end subroutine reallocateReal2
-
-     subroutine reallocateInteger2(intArray, newSize1, newSize2, &
-          oldSize1, oldSize2,           &
-          alwaysFreeMem)
-       use precision
-       implicit none
-       integer(kind=intType), dimension(:,:), pointer :: intArray
-       integer(kind=intType), intent(in) :: newSize1, newSize2, &
-                                            oldSize1, oldSize2
-       logical, intent(in) :: alwaysFreeMem
-     end subroutine reallocateInteger2
-  end interface
 
   ! Fill up the connecivity matrices
   call getMatCons(matCon1, matCon2, ccwOrdering)
@@ -217,7 +193,7 @@ subroutine writeIsoSurface(isoName , sps, nIsoSurfVar, isoSurfSolNames)
         if (ierr .eq. CG_ERROR) call cg_error_exit_f
         
         if(ierr /= CG_OK)                    &
-             call returnFail("writeIsoSurface", &
+             call terminate("writeIsoSurface", &
              "Something wrong when calling cg_zone_write_f")
      end if
 
@@ -298,7 +274,7 @@ subroutine writeIsoSurface(isoName , sps, nIsoSurfVar, isoSurfSolNames)
                 buffer(2*nPtsProc(iProc+1)+1:3*nPtsProc(iProc+1)), coordID, ierr)
 
            if(ierr /= CG_OK)                    &
-                call returnFail("writeIsoSurface", &
+                call terminate("writeIsoSurface", &
                 "Something wrong when calling cg_coord_write_f")
            
            ! Increment by the number of nodes on this proc
@@ -381,7 +357,7 @@ subroutine writeIsoSurface(isoName , sps, nIsoSurfVar, isoSurfSolNames)
      call cg_section_write_f(cgnsInd, cgnsBase, cgnsZone, "ELEM", TRI_3, &
           1, sum(nConnProc), 0, allConn, secID, ierr)
      if(ierr /= CG_OK)                    &
-          call returnFail("writeIsoSurface", &
+          call terminate("writeIsoSurface", &
           "Something wrong when calling cg_section_partial_write_f")
 
      ! Also free allConn
@@ -397,7 +373,7 @@ subroutine writeIsoSurface(isoName , sps, nIsoSurfVar, isoSurfSolNames)
   if (myid == 0) then
      call cg_sol_write_f(cgnsInd, cgnsBase, cgnsZone, "isoSurfSolution", Vertex, solID, ierr)
      if(ierr /= CG_OK)                    &
-          call returnFail("writeIsoSurface", &
+          call terminate("writeIsoSurface", &
           "Something wrong when calling cg_sol_write_f")
   end if
 
@@ -463,7 +439,7 @@ subroutine writeIsoSurface(isoName , sps, nIsoSurfVar, isoSurfSolNames)
                    buffer, fieldID, ierr)
               
               if(ierr /= CG_OK)                    &
-                   call returnFail("writeIsoSurface", &
+                   call terminate("writeIsoSurface", &
                    "Something wrong when calling cg_field_partial_write_f")
               
               ! Increment by the number of nodes on this proc

@@ -6,6 +6,7 @@ subroutine setTNSWall(tnsw, npts, sps_in)
   use inputTimeSpectral
   use communication
   use inputPhysics
+  use utils, only : setPointers
   implicit none
   !
   !      Arguments.

@@ -78,6 +78,8 @@
        use flowVarRefState
        use inputPhysics
        use BCDataMod
+       use utils, only : terminate, siTurb
+
        implicit none
 !
 !      Subroutine arguments.
@@ -202,7 +204,7 @@
 
            allocate(tmp(nTurbFreestreamSubfaces,3), stat=ierr)
            if(ierr /= 0)                                  &
-             call returnFail("storeTurbFreestreamSubface", &
+             call terminate("storeTurbFreestreamSubface", &
                             "Memory allocation failure for tmp")
 
            tmp = turbFreestreamSubfaces
@@ -212,7 +214,7 @@
 
            deallocate(turbFreestreamSubfaces, stat=ierr)
            if(ierr /= 0)                                  &
-             call returnFail("storeTurbFreestreamSubface", &
+             call terminate("storeTurbFreestreamSubface", &
                             "Deallocation failure for &
                             &turbFreestreamSubfaces")
 
@@ -221,7 +223,7 @@
            allocate(turbFreestreamSubfaces(nTurbFreestreamSubfaces,3), &
                     stat=ierr)
            if(ierr /= 0)                                  &
-             call returnFail("storeTurbFreestreamSubface", &
+             call terminate("storeTurbFreestreamSubface", &
                             "Memory allocation failure for &
                             &turbFreestreamSubfaces")
 
@@ -236,7 +238,7 @@
 
            deallocate(tmp, stat=ierr)
            if(ierr /= 0)                                  &
-             call returnFail("storeTurbFreestreamSubface", &
+             call terminate("storeTurbFreestreamSubface", &
                             "Deallocation failure for tmp")
 
          else testAllocated
@@ -249,7 +251,7 @@
            allocate(turbFreestreamSubfaces(nTurbFreestreamSubfaces,3), &
                     stat=ierr)
            if(ierr /= 0)                                  &
-             call returnFail("storeTurbFreestreamSubface", &
+             call terminate("storeTurbFreestreamSubface", &
                             "Memory allocation failure for &
                             &turbFreestreamSubfaces")
 

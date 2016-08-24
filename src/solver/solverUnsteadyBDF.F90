@@ -24,6 +24,7 @@
        use monitor
        use blockPointers
        use inputTimeSpectral
+       use utils, only : setPointers
        implicit none
 !
 !      Local variables.

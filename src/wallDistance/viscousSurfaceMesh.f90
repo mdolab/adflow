@@ -22,6 +22,7 @@
        use communication
        use section
        use viscSurface
+       use utils, only : terminate
        implicit none
 !
 !      Subroutine arguments.
@@ -117,7 +118,7 @@
        allocate(connVisc(4,nquadVisc), coorVisc(3,nNodeVisc), &
                 stat=ierr)
        if(ierr /= 0)                            &
-         call returnFail("viscousSurfaceMesh", &
+         call terminate("viscousSurfaceMesh", &
                         "Memory allocation failure for connVisc &
                         &and coorVisc.")
 

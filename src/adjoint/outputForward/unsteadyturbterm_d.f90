@@ -122,10 +122,6 @@ nadvloopunsteady:do ii=1,nadv
 ! explicit time integration scheme. the time derivative
 ! is handled differently.
       return
-    case (implicitrk) 
-!===========================================================
-      call returnfail('unsteadyturbterm', &
-&                  'implicit rk not implemented yet')
     end select
   case (timespectral) 
 !===============================================================

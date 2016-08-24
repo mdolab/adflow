@@ -20,6 +20,7 @@ subroutine preprocessingCustomOverset
   use section
   use wallDistanceData
   use overset
+  use utils, only : EChk, setPointers, setBufferSizes
   implicit none
   !
   !      Local variables.

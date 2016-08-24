@@ -3,6 +3,7 @@ subroutine setReferenceVolume(level)
   use constants
   use blockPointers, only : nDom, flowDoms, il, jl, kl
   use inputTimeSpectral, only : nTimeIntervalsSpectral
+  use utils, only : setPointers
   implicit none
   integer :: ierr
 

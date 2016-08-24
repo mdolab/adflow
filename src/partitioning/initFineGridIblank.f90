@@ -23,6 +23,7 @@
 !
        use cgnsGrid
        use block
+       use utils, only : terminate
        implicit none
 !
 !      Local variables.
@@ -49,7 +50,7 @@
          allocate(flowDoms(n,1,1)%iblank(0:i,0:j,0:k), &
                   stat=ierr)
          if(ierr /= 0)                             &
-           call returnFail("initFineGridIblank", &
+           call terminate("initFineGridIblank", &
                           "Memory allocation failure for iblank")
  
          ! Initialize iblank to 1 everywhere, and the number of holes

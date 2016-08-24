@@ -47,7 +47,7 @@ FILES_TO_COMPLEXIFY2 = \
 	       computedwD3ADI.f90\
 	       computeInletMassFlowFullWheel.f90\
 	       computeLamViscosity.F90\
-	       computeUtau.f90\
+	       computeUtau.F90\
                coorUtilsALE.F90\
 	       DADISmoother.f90\
 	       derivativeRotMatrixRigid.f90\
@@ -66,8 +66,6 @@ FILES_TO_COMPLEXIFY2 = \
 	       gridVelocitiesFineLevel_ALE.F90\
 	       initres.F90\
 	       inviscidCentralFlux.F90\
-	       inviscidDissFluxCusp.f90\
-	       inviscidDissFluxCuspCoarse.f90\
 	       inviscidDissFluxMatrix.F90\
 	       inviscidDissFluxMatrixCoarse.f90\
 	       inviscidDissFluxScalar.F90\
@@ -87,13 +85,12 @@ FILES_TO_COMPLEXIFY2 = \
 	       setCorrectionsCoarseHalos.f90\
 	       setCycleStrategy.f90\
 	       shiftSolution.f90\
-	       slipVelocities.f90\
+	       slipVelocities.F90\
 	       slipVelocities_ALE.f90\
 	       solveState.F90\
 	       solver.F90\
 	       solverSteady.f90\
                solverUnsteadyExplicitRK.F90\
-               solverUnsteadyImplicitRK.F90\
 	       solverUnsteadyBDF.F90\
 	       solverUnsteady_ALE.F90\
 	       solverUnsteadyWrap.F90\

@@ -27,6 +27,7 @@
        use blockPointers
        use constants
        use inputDiscretization
+       use utils, only : terminate, setPointers
        implicit none
 !
 !      Subroutine arguments.
@@ -65,7 +66,7 @@
                   flowDoms(nn,level,1)%porJ(2:il,1:jl,2:kl), &
                   flowDoms(nn,level,1)%porK(2:il,2:jl,1:kl), stat=ierr)
          if(ierr /= 0)                     &
-           call returnFail("setPorosities", &
+           call terminate("setPorosities", &
                           "Memory allocation failure for porosities")
 
          ! Set the pointers for this block to make the source

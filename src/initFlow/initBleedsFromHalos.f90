@@ -24,6 +24,7 @@
        use BCTypes
        use flowVarRefState
        use inputTimeSpectral
+       use utils, only : setPointers, terminate
        implicit none
 !
 !      Local parameter.
@@ -66,7 +67,7 @@
 
              if(BCType(mm) == MassBleedInflow) then
 
-               call returnFail("initBleedsFromHalos", &
+               call terminate("initBleedsFromHalos", &
                               "No inflow bleeds yet")
 
              endif

@@ -25,6 +25,7 @@
        use inputTimeSpectral, only : nTimeIntervalsSpectral
        use inputUnsteady, only : deltaT
        use monitor, only : timeUnsteadyRestart, timeUnsteady
+       use utils, only : setPointers, rotMatrixRigidBody
        implicit none
 !
 !      Local variables.

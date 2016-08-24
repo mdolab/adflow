@@ -35,6 +35,7 @@ subroutine solveAdjoint(RHS, psi, checkSolution, nState)
   use communication, only : myid, sumb_comm_world
   use blockPointers, only : nDom
   use inputTimeSpectral, only : nTimeIntervalsSpectral
+  use utils, only : EChk
   implicit none
 #define PETSC_AVOID_MPIF_H
 
@@ -69,7 +70,7 @@ subroutine solveAdjoint(RHS, psi, checkSolution, nState)
 
   ! Make sure the derivative memory is allocated and zeroed. 
   if (.not. derivVarsAllocated) then 
-     call alloc_derivative_values(1_intType)
+     call allocDerivativeValues(1_intType)
   end if
 
   do nn=1,nDom

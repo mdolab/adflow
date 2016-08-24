@@ -28,7 +28,9 @@
        use inputIteration, only: fcoll, mgBoundCorr
        use inputTimeSpectral, only : nTimeIntervalsSpectral
        use iteration, only : currentLevel, rkStage, groundLevel, exchangePressureEarly
-
+       use utils, only : setPointers, getCorrectForK
+       use haloExchange, only : whalo1, whalo2
+       use flowUtils, only : computeEtotBlock
        implicit none
 !
 !      Subroutine arguments.
@@ -45,7 +47,7 @@
        real(kind=realType), dimension(:,:,:,:), pointer :: ww, ww1, res
        real(kind=realType), dimension(:,:,:),   pointer :: pp, pp1
 
-       logical :: secondHalo, correctForK, getCorrectForK
+       logical :: secondHalo, correctForK
 !
 !      ******************************************************************
 !      *                                                                *

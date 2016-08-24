@@ -9,6 +9,7 @@ subroutine makeGapBoundaryStrings(level, sps, master)
   use kdtree2_module
   use adjointvars
   use inputOverset
+  use utils, only : setPointers, EChk
   implicit none
 
   ! Input Params

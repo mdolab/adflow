@@ -28,6 +28,7 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, &
   use inputDiscretization 
   use saModule
   use inputUnsteady
+  use utils, only : terminate
   implicit none
 
   ! Input Arguments:
@@ -148,7 +149,7 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, &
         ! Not implemented yet
         !call SST_block(.true.)
      case default
-        call returnFail("turbResidual", & 
+        call terminate("turbResidual", & 
              "Only SA turbulence adjoint implemented")
      end select
   endif

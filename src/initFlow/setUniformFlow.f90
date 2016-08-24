@@ -23,6 +23,7 @@
        use inputIteration
        use inputPhysics
        use inputTimeSpectral
+       use utils, only : setPointers
        implicit none
 !
 !      Local variables.

@@ -1,13 +1,3 @@
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          check1to1Subfaces.f90                           *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 08-25-2004                                      *
-!      * Last modified: 06-26-2005                                      *
-!      *                                                                *
-!      ******************************************************************
-!
        subroutine check1to1Subfaces
 !
 !      ******************************************************************
@@ -25,6 +15,7 @@
        use communication
        use inputPhysics
        use inputTimeSpectral
+       use utils, only : delta, setPointers, terminate
        implicit none
 !
 !      Local variables.
@@ -57,16 +48,6 @@
        real(kind=realType), dimension(:,:), allocatable :: realRecv
 
        character(len=7) :: intString
-!
-!      Function definitions.
-!
-       integer(kind=intType) :: delta
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
 !
 !      ******************************************************************
 !      *                                                                *
@@ -141,7 +122,7 @@
 
        allocate(intBuf(10,nn), realBuf(3,mm), stat=ierr)
        if(ierr /= 0) &
-         call returnFail("check1to1Subfaces", &
+         call terminate("check1to1Subfaces", &
                         "Memory allocation failure for intBuf and &
                         &realBuf")
 
@@ -356,7 +337,7 @@
        nBad = 0
        allocate(badSubfaces(4,nFCheck), badDist(nFCheck), stat=ierr)
        if(ierr /= 0)                           &
-         call returnFail("check1to1Subfaces", &
+         call terminate("check1to1Subfaces", &
                         "Memory allocation failure for badSubfaces &
                         &and badDist")
 
@@ -397,7 +378,7 @@
 
          if( debug ) then
            if(size == mpi_undefined .or. mod(size,10) /= 0) &
-             call returnFail("check1to1Subfaces",            &
+             call terminate("check1to1Subfaces",            &
                             "Unexpected size of integer message")
          endif
 
@@ -407,7 +388,7 @@
          nn = size/10
          allocate(intRecv(10,nn), stat=ierr)
          if(ierr /= 0)                         &
-           call returnFail("check1to1Subfaces", &
+           call terminate("check1to1Subfaces", &
                           "Memory allocation failure for intRecv")
 
          ! Receive the integer buffer. Blocking receives can be used,
@@ -428,7 +409,7 @@
 
          if( debug ) then
            if(size == mpi_undefined .or. mod(size,3) /= 0) &
-             call returnFail("check1to1Subfaces",           &
+             call terminate("check1to1Subfaces",           &
                             "Unexpected size of real message")
          endif
 
@@ -438,7 +419,7 @@
          mm = size/3
          allocate(realRecv(3,mm), stat=ierr)
          if(ierr /= 0)                         &
-           call returnFail("check1to1Subfaces", &
+           call terminate("check1to1Subfaces", &
                           "Memory allocation failure for realRecv")
 
          ! Receive the real buffer. Blocking receives can be used,
@@ -457,7 +438,7 @@
 
          deallocate(intRecv, realRecv, stat=ierr)
          if(ierr /= 0)                         &
-           call returnFail("check1to1Subfaces", &
+           call terminate("check1to1Subfaces", &
                           "Deallocation failure for intRecv &
                           &and realRecv")
        enddo
@@ -474,7 +455,7 @@
 
        deallocate(intBuf, realBuf, stat=ierr)
        if(ierr /= 0)                           &
-         call returnFail("check1to1Subfaces", &
+         call terminate("check1to1Subfaces", &
                         "Deallocation failure for intBuf and realBuf")
 !
 !      ******************************************************************
@@ -507,7 +488,7 @@
        allocate(badGlobal(4,nBadGlobal), badDistGlobal(nBadGlobal), &
                 stat=ierr)
        if(ierr /= 0)                         &
-         call returnFail("check1to1Subfaces", &
+         call terminate("check1to1Subfaces", &
                         "Memory allocation failure for badGlobal &
                         &and badDistGlobal")
 
@@ -537,12 +518,12 @@
 
        ! Check for the presence of any internally created subfaces.
        ! This only occurs when something goes wrong in the block
-       ! splitting and therefore the program is returnFaild.
+       ! splitting and therefore the program is terminated.
 
        do nn=1,nBadGlobal
          if(badGlobal(2,nn) == 0) then
            if(myID == 0)                         &
-             call returnFail("check1to1Subfaces", &
+             call terminate("check1to1Subfaces", &
                             "Non-matching internally created &
                             &face found.")
            call mpi_barrier(SUmb_comm_world, ierr)
@@ -633,7 +614,7 @@
        deallocate(badSubfaces, badGlobal, badDist, badDistGlobal, &
                   stat=ierr)
        if(ierr /= 0)                         &
-         call returnFail("check1to1Subfaces", &
+         call terminate("check1to1Subfaces", &
                         "Deallocation failure for badSubfaces, &
                         &badGlobal, badDist and badDistGlobal")
 
@@ -754,6 +735,7 @@
        use blockPointers
        use cgnsGrid
        use communication
+       use utils, only : setPointers, terminate
        implicit none
 !
 !      Subroutine arguments.
@@ -837,7 +819,7 @@
 
          enddo
 
-         ! Check if a subface was found. If not returnFail.
+         ! Check if a subface was found. If not terminate.
 
          if(mm > n1to1) then
 
@@ -859,7 +841,7 @@
                     &seriously wrong with the zone connectivity.")
            endif
 
-           call returnFail("checkSubfaceCoor", errorMessage)
+           call terminate("checkSubfaceCoor", errorMessage)
 
          endif
 

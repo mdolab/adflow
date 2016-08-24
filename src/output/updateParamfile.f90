@@ -26,6 +26,7 @@
        use iteration
        use monitor
        use outputMod
+       use utils, only : terminate
        implicit none
 !
 !      Local parameter
@@ -62,7 +63,7 @@
          if(ios /= 0) then
            write(errorMessage,*) "Parameter file ", trim(paramFile), &
                                  " could not be updated"
-           call returnFail("updateParamfile", errorMessage)
+           call terminate("updateParamfile", errorMessage)
          endif
 
          ! Write a new line, such that the output looks nicer.

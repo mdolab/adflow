@@ -23,6 +23,8 @@
        use flowVarRefState
        use inputPhysics
        use restartMod
+       use utils, only : setCGNSRealType
+       use sorting, only : bsearchStrings
        implicit none
 !
 !      Subroutine arguments.
@@ -35,18 +37,7 @@
        integer :: realTypeCGNS
 
        integer(kind=intType) :: i, j, k, nn, mm
-!
-!      Function definitions.
-!
-       integer               :: setCGNSRealType
-       integer(kind=intType) :: bsearchStrings
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
+
        ! Set the cgns real type
 
        realTypeCGNS = setCGNSRealType()

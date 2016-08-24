@@ -21,6 +21,7 @@
        use constants
        use communication
        use inputPhysics
+       use utils, only : terminate
        implicit none
 !
 !      Subroutine argument.
@@ -49,21 +50,21 @@
          case (spalartAllmaras, spalartAllmarasEdwards)
            call readTurbSA(nTypeMismatch)
 
-         !===============================================================
+         ! !===============================================================
 
-         case (komegaWilcox, komegaModified, menterSST, ktau)
-           call readTurbKwType(nTypeMismatch)
+         ! case (komegaWilcox, komegaModified, menterSST, ktau)
+         !   call readTurbKwType(nTypeMismatch)
 
-         !===============================================================
+         ! !===============================================================
 
-         case (v2f)
-           call readTurbV2f(nTypeMismatch)
+         ! case (v2f)
+         !   call readTurbV2f(nTypeMismatch)
 
          !===============================================================
 
          case default
            if(myID == 0) &
-             call returnFail("readTurbvar", "Restart not implemented &
+             call terminate("readTurbvar", "Restart not implemented &
                             &for this turbulence model.")
            call mpi_barrier(SUmb_comm_world, ierr)
 

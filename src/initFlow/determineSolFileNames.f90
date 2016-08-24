@@ -30,6 +30,7 @@
        use inputUnsteady
        use iteration
        use restartMod
+       use utils, only : terminate
        implicit none
 !
 !      Local variables
@@ -67,7 +68,7 @@
            nSolsRead = 1
            allocate(solFiles(nSolsRead), stat=ierr)
            if(ierr /= 0)                              &
-             call returnFail("determineSolFileNames", &
+             call terminate("determineSolFileNames", &
                             "Memory allocation failure for solFiles")
 
            solFiles(1) = restartFiles(1)
@@ -150,7 +151,8 @@
 !
        use communication
        use restartMod
-       use inputIO
+       use inputIO 
+       use utils, only : terminate
        implicit none
 !
 !      Local variables
@@ -170,7 +172,7 @@
        ! Allocate the memory for the file names and set them.
        allocate(solFiles(nSolsRead), stat=ierr)
        if(ierr /= 0)                             &
-         call returnFail("determineSolFileNames", &
+         call terminate("determineSolFileNames", &
                       "Memory allocation failure for solFiles")
 
        do nn=1,nSolsRead
@@ -194,6 +196,7 @@
 !
        use communication
        use restartMod
+       use utils, only : terminate
        implicit none
 !
 !      Local variables

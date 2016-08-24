@@ -6,6 +6,7 @@ subroutine destroyPETScVars
   use constants
   use ADjointPETSc, only : dRdWT, dRdwPreT, adjointKSP, adjointPETScVarsAllocated
   use inputAdjoint, only : approxPC
+  use utils, only : EChk
   implicit none
 
   integer(kind=intType) ::  ierr

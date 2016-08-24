@@ -26,6 +26,8 @@
        use iteration
        use killSignals
        use monitor
+       use utils, only : setPointers
+       use haloExchange, only : whalo1, whalo2
        implicit none
 !
 !      Local parameter.

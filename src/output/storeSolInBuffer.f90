@@ -27,6 +27,8 @@
        use flowVarRefState
        use inputPhysics
        use IOModule
+       use flowUtils, only : computePTot
+       use utils, only : terminate
        implicit none
 !
 !      Subroutine arguments.
@@ -438,7 +440,7 @@
            ! Compute the free stream total pressure.
 
            call computePtot(rhoInf, uInf, zero, zero, &
-                            pInf, ptotInf, 1_intType)
+                            pInf, ptotInf)
            ptotInf = one/ptotInf
 
            ! Loop over the cell centers and compute the
@@ -449,7 +451,7 @@
                do i=iBeg,iEnd
                  call computePtot(w(i,j,k,irho), w(i,j,k,ivx), &
                                   w(i,j,k,ivy),  w(i,j,k,ivz), &
-                                  p(i,j,k),      ptot, 1_intType)
+                                  p(i,j,k),      ptot)
 
                  wIO(i,j,k,1) = one - ptot*ptotInf
                enddo
@@ -629,7 +631,7 @@
            
 
          case default
-           call returnFail("storeSolInBuffer", &
+           call terminate("storeSolInBuffer", &
                           "This should not happen")
 
        end select

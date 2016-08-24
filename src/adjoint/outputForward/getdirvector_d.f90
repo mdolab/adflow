@@ -41,6 +41,7 @@ subroutine getdirvector_d(refdirection, alpha, alphad, beta, betad, &
 !     ******************************************************************
 !
   use constants
+  use utils_d, only : terminate
   implicit none
 !
 !     subroutine arguments.
@@ -114,7 +115,7 @@ subroutine getdirvector_d(refdirection, alpha, alphad, beta, betad, &
     call vectorrotation_d(xw, xwd, yw, ywd, zw, zwd, 3, beta, betad, x1&
 &                   , x1d, y1, y1d, z1, z1d)
   else
-    call returnfail('getdirvector', 'invalid lift direction')
+    call terminate('getdirvector', 'invalid lift direction')
     zwd = 0.0_8
     xwd = 0.0_8
     ywd = 0.0_8

@@ -152,13 +152,6 @@
 
              call bcTurbInterface(nn)
 
-           !=============================================================
-
-           case default
-
-             call returnFail("bcTurbTreatment", &
-                            "Unknown boundary condition")
-
          end select typeBC
 
        enddo bocos

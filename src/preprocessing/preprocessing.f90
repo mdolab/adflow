@@ -31,6 +31,7 @@
        use section
        use wallDistanceData
        use overset
+       use utils, only : setPointers, EChk, setBufferSizes, terminate
        implicit none
 !
 !      Local variables.
@@ -61,7 +62,7 @@
            equationMode == timeSpectral) .and. nsMin < nsMax) then
 
          if(myID == 0)                     &
-           call returnFail("preprocessing", &
+           call terminate("preprocessing", &
                           "Different rotational periodicity encountered &
                           &for time accurate computation")
          call mpi_barrier(SUmb_comm_world, ierr)
@@ -81,7 +82,7 @@
                 internalCell_2nd(nn),    internalNode_1st(nn),    &
                 nCellGlobal(nn),         stat=ierr)
        if(ierr /= 0)                     &
-         call returnFail("preprocessing", &
+         call terminate("preprocessing", &
                         "Memory allocation failure for commPatterns")
 
        ! Set the sizes here so that we know how to dealloc the stuff
@@ -115,7 +116,7 @@
                 intSlidingCell_1st(nn,mm),  &
                 intSlidingCell_2nd(nn,mm),  stat=ierr)
        if(ierr /= 0)                     &
-         call returnFail("preprocessing", &
+         call terminate("preprocessing", &
                         "Memory allocation failure for &
                         &slidingCommPatterns")
 
@@ -127,7 +128,7 @@
        mm = nInterfaceGroups
        allocate(commPatternMixing(nn,mm,2), stat=ierr)
        if(ierr /= 0)                     &
-         call returnFail("preprocessing", &
+         call terminate("preprocessing", &
                         "Memory allocation failure for &
                         &commPatternMixing")
 
@@ -139,7 +140,7 @@
        allocate(commPatternOverset(nn,mm), internalOverset(nn,mm), &
             overlapMatrix(nn, mm), stat=ierr)
        if(ierr /= 0)                     &
-         call returnFail("preprocessing", &
+         call terminate("preprocessing", &
                         "Memory allocation failure for commOverset")
 
        ! Determine the fine grid 1 to 1 matching communication pattern.
@@ -168,7 +169,6 @@
 
          call createCoarseBlocks(level)
          call determineCommPattern(level)
-         call coarseLevel0CoolingParameters(level)
          call setBufferSizes(level, 1_intType, .true., .false., .false.)
 
        enddo
@@ -182,7 +182,7 @@
        allocate(sendBuffer(sendBufferSize), &
                 recvBuffer(recvBufferSize), stat=ierr)
        if(ierr /= 0)                     &
-         call returnFail("preprocessing", &
+         call terminate("preprocessing", &
                         "Memory allocation failure for sendBuffer &
                         &and recvBuffer")
 
@@ -252,7 +252,6 @@
          call faceRotationMatrices(level, .true.)
          call checkSymmetry(level)
          call viscSubfaceInfo(level)
-         call determineAreaLevel0Cooling(level)
          call determineNcellGlobal(level)
          call setGlobalCellsAndNodes(level)
          call setReferenceVolume(level)

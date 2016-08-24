@@ -23,6 +23,7 @@
        use interfaceGroups
        use localSubfacesMod
        use thisSlide
+       use utils, only : terminate
        implicit none
 !
 !      Subroutine arguments.
@@ -108,7 +109,7 @@
                     mySubfaces1(nn)%coorN,               &
                     mySubfaces1(nn)%coorNInt, stat=ierr)
          if(ierr /= 0)                   &
-           call returnFail("slidingMesh", &
+           call terminate("slidingMesh", &
                           "Deallocation failure of the primary grid &
                           &arrays for mySubfaces1.")
        enddo
@@ -124,7 +125,7 @@
                     mySubfaces2(nn)%coorN,               &
                     mySubfaces2(nn)%coorNInt, stat=ierr)
          if(ierr /= 0)                   &
-           call returnFail("slidingMesh", &
+           call terminate("slidingMesh", &
                           "Deallocation failure of the primary grid &
                           &arrays for mySubfaces2.")
        enddo
@@ -136,7 +137,7 @@
                   conn2, coor2, coorInt2, subface2, quadID2, &
                   stat=ierr)
        if(ierr /= 0)                   &
-         call returnFail("slidingMesh", &
+         call terminate("slidingMesh", &
                         "Deallocation error for the local surface grids")
 !
 !      ******************************************************************
@@ -180,7 +181,7 @@
                     mySubfaces1(nn)%storeDual,           &
                     mySubfaces1(nn)%coorQuad, stat=ierr)
          if(ierr /= 0)                   &
-           call returnFail("slidingMesh", &
+           call terminate("slidingMesh", &
                           "Deallocation failure of the dual grid &
                           &arrays for mySubfaces1.")
        enddo
@@ -192,7 +193,7 @@
                     mySubfaces2(nn)%storeDual,           &
                     mySubfaces2(nn)%coorQuad, stat=ierr)
          if(ierr /= 0)                   &
-           call returnFail("slidingMesh", &
+           call terminate("slidingMesh", &
                           "Deallocation failure of the dual grid &
                           &arrays for mySubfaces2.")
        enddo
@@ -203,7 +204,7 @@
        deallocate(conn1, coor1, coorInt1, conn2, coor2, coorInt2, &
                   stat=ierr)
        if(ierr /= 0)                   &
-         call returnFail("slidingMesh", &
+         call terminate("slidingMesh", &
                         "Deallocation error for the partial local &
                         &surface grids")
 

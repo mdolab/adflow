@@ -19,6 +19,7 @@
 !
        use flowVarRefState
        use paramTurb
+       use utils, only : terminate
        implicit none
 !
 !      Local variables.
@@ -31,7 +32,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       call returnFail("initCurveFitDataKtau", &
+       call terminate("initCurveFitDataKtau", &
                       "Not implemented yet")
 
        end subroutine initCurveFitDataKtau

@@ -75,6 +75,7 @@ subroutine block_res_d(nn, sps, usespatial, alpha, alphad, beta, betad, &
   use inputdiscretization
   use samodule_d
   use inputunsteady
+  use utils_d, only : terminate
   use diffsizes
 !  hint: isize1ofdrfbcdata should be the size of dimension 1 of array *bcdata
   implicit none
@@ -209,8 +210,8 @@ spectralloop0:do sps2=1,ntimeintervalsspectral
 !case (mentersst)
 ! not implemented yet
 !call sst_block(.true.)
-      call returnfail('turbresidual', &
-&                  'only sa turbulence adjoint implemented')
+      call terminate('turbresidual', &
+&              'only sa turbulence adjoint implemented')
       do ii1=1,ntimeintervalsspectral
         do ii2=1,1
           do ii3=nn,nn

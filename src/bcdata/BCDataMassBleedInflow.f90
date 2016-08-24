@@ -27,6 +27,7 @@
        use inputPhysics
        use section
        use BCDataMod
+       use utils, only : terminate, siVelocity
        implicit none
 !
 !      Subroutine arguments.
@@ -79,7 +80,7 @@
 
        allocate(bcVarArray(iBeg:iEnd,jBeg:jEnd,nbcVar), stat=ierr)
        if(ierr /= 0)                             &
-         call returnFail("BCDataMassBleedInflow", &
+         call terminate("BCDataMassBleedInflow", &
                         "Memory allocation failure for bcVarArray")
 
        bcVarNames(1) = cgnsVelx
@@ -103,7 +104,7 @@
        velrPresent = bcVarPresent(4)
        veltPresent = bcVarPresent(5)
 
-       ! Check if a velocity vector is present. If not returnFail.
+       ! Check if a velocity vector is present. If not terminate.
 
        velPresent = .false.
        if(velxPresent .and. velrPresent) velPresent = .true.
@@ -118,7 +119,7 @@
                 ": Velocity not completely specified for an inflow &
                 &bleed region.")
 
-         call returnFail("BCDataMassBleedInflow", errorMessage)
+         call terminate("BCDataMassBleedInflow", errorMessage)
        endif
 
        ! Check the situation we are having here for the velocity.
@@ -261,7 +262,7 @@
  200     format("Zone ",a,", inflow bleed region boundary subface ",a, &
                   ": Velocity points out of the domain for some faces.")
 
-         call returnFail("BCDataMassBleedInflow", errorMessage)
+         call terminate("BCDataMassBleedInflow", errorMessage)
        endif
 
        ! Set the turbulence variables and check if all of them are
@@ -276,7 +277,7 @@
 
        deallocate(bcVarArray, stat=ierr)
        if(ierr /= 0)                             &
-         call returnFail("BCDataMassBleedInflow", &
+         call terminate("BCDataMassBleedInflow", &
                         "Deallocation failure for bcVarArray")
 
        end subroutine BCDataMassBleedInflow

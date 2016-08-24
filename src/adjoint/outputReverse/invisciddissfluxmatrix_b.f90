@@ -39,6 +39,7 @@ subroutine invisciddissfluxmatrix_b()
   use inputphysics, only : equations
   use iteration, only : rfil
   use cgnsgrid, only : massflowfamilydiss
+  use utils_b, only : getcorrectfork, mydim, mydim_b
   implicit none
 !
 !      local parameters.
@@ -75,12 +76,11 @@ subroutine invisciddissfluxmatrix_b()
   real(kind=realtype) :: abv1d, abv2d, abv3d, abv4d, abv5d, abv6d, abv7d
   real(kind=realtype), dimension(ie, je, ke, 3) :: dss
   real(kind=realtype), dimension(ie, je, ke, 3) :: dssd
-  logical :: correctfork, getcorrectfork
+  logical :: correctfork
   intrinsic abs
   intrinsic mod
   intrinsic max
   intrinsic min
-  real(kind=realtype) :: dim
   intrinsic sqrt
   real(kind=realtype) :: arg1
   real(kind=realtype) :: arg1d
@@ -253,13 +253,6 @@ subroutine invisciddissfluxmatrix_b()
   else
     abs0 = -rfil
   end if
-!
-!      ******************************************************************
-!      *                                                                *
-!      * begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
 ! check if rfil == 0. if so, the dissipative flux needs not to
 ! be computed.
   if (abs0 .lt. thresholdreal) then
@@ -366,7 +359,7 @@ subroutine invisciddissfluxmatrix_b()
       end if
       dis2 = ppor*fis2*min1
       arg1 = ppor*fis4
-      dis4 = dim(arg1, dis2)
+      dis4 = mydim(arg1, dis2)
 ! construct the vector of the first and third differences
 ! multiplied by the appropriate constants.
       ddw1 = w(i+1, j, k, irho) - w(i, j, k, irho)
@@ -546,7 +539,7 @@ subroutine invisciddissfluxmatrix_b()
       end if
       dis2 = ppor*fis2*min2
       arg1 = ppor*fis4
-      dis4 = dim(arg1, dis2)
+      dis4 = mydim(arg1, dis2)
 ! construct the vector of the first and third differences
 ! multiplied by the appropriate constants.
       ddw1 = w(i, j+1, k, irho) - w(i, j, k, irho)
@@ -724,7 +717,7 @@ subroutine invisciddissfluxmatrix_b()
       end if
       dis2 = ppor*fis2*min3
       arg1 = ppor*fis4
-      dis4 = dim(arg1, dis2)
+      dis4 = mydim(arg1, dis2)
 ! construct the vector of the first and third differences
 ! multiplied by the appropriate constants.
       ddw1 = w(i, j, k+1, irho) - w(i, j, k, irho)
@@ -1124,7 +1117,7 @@ subroutine invisciddissfluxmatrix_b()
       wd(i, j, k+1, irho) = wd(i, j, k+1, irho) + ddw1d
       wd(i, j, k, irho) = wd(i, j, k, irho) - ddw1d
       arg1d = 0.0_8
-      call dim_b(arg1, arg1d, dis2, dis2d, dis4d)
+      call mydim_b(arg1, arg1d, dis2, dis2d, dis4d)
       min3d = ppor*fis2*dis2d
       call popcontrol1b(branch)
       if (branch .eq. 0) then
@@ -1182,7 +1175,7 @@ subroutine invisciddissfluxmatrix_b()
       end if
       dis2 = ppor*fis2*min2
       arg1 = ppor*fis4
-      dis4 = dim(arg1, dis2)
+      dis4 = mydim(arg1, dis2)
 ! construct the vector of the first and third differences
 ! multiplied by the appropriate constants.
       ddw1 = w(i, j+1, k, irho) - w(i, j, k, irho)
@@ -1582,7 +1575,7 @@ subroutine invisciddissfluxmatrix_b()
       wd(i, j+1, k, irho) = wd(i, j+1, k, irho) + ddw1d
       wd(i, j, k, irho) = wd(i, j, k, irho) - ddw1d
       arg1d = 0.0_8
-      call dim_b(arg1, arg1d, dis2, dis2d, dis4d)
+      call mydim_b(arg1, arg1d, dis2, dis2d, dis4d)
       min2d = ppor*fis2*dis2d
       call popcontrol1b(branch)
       if (branch .eq. 0) then
@@ -1640,7 +1633,7 @@ subroutine invisciddissfluxmatrix_b()
       end if
       dis2 = ppor*fis2*min1
       arg1 = ppor*fis4
-      dis4 = dim(arg1, dis2)
+      dis4 = mydim(arg1, dis2)
 ! construct the vector of the first and third differences
 ! multiplied by the appropriate constants.
       ddw1 = w(i+1, j, k, irho) - w(i, j, k, irho)
@@ -2040,7 +2033,7 @@ subroutine invisciddissfluxmatrix_b()
       wd(i+1, j, k, irho) = wd(i+1, j, k, irho) + ddw1d
       wd(i, j, k, irho) = wd(i, j, k, irho) - ddw1d
       arg1d = 0.0_8
-      call dim_b(arg1, arg1d, dis2, dis2d, dis4d)
+      call mydim_b(arg1, arg1d, dis2, dis2d, dis4d)
       min1d = ppor*fis2*dis2d
       call popcontrol1b(branch)
       if (branch .eq. 0) then

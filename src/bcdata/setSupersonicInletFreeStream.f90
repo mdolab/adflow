@@ -1,13 +1,3 @@
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          setSupersonicInletFreeStream.f90                *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 04-13-2005                                      *
-!      * Last modified: 07-11-2005                                      *
-!      *                                                                *
-!      ******************************************************************
-!
        subroutine setSupersonicInletFreeStream
 !
 !      ******************************************************************
@@ -23,6 +13,7 @@
        use flowVarRefState
        use iteration
        use BCDataMod
+       use utils, only : terminate
        implicit none
 !
 !      Local variables.
@@ -34,13 +25,7 @@
        integer(kind=intType) :: level, nLevels
 
        type(BCDataType), dimension(:), pointer :: BCData
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
+
        ! Return immediately if freestreamSubfaces has not been allocated,
        ! i.e. if no subfaces present for which the inflow data should
        ! be set to free stream values.
@@ -95,7 +80,7 @@
 
        deallocate(freestreamSubfaces, stat=ierr)
        if(ierr /= 0)                                    &
-         call returnFail("setSupersonicInletFreeStream", &
+         call terminate("setSupersonicInletFreeStream", &
                         "Deallocation failure for freestreamSubfaces")
 
        end subroutine setSupersonicInletFreeStream

@@ -24,6 +24,7 @@
        use inputIO
        use su_cgns
        use outputMod
+       use utils, only : terminate
        implicit none
 !
 !      Subroutine arguments.
@@ -33,7 +34,7 @@
        integer(kind=intType), intent(in) :: zone
 
 #ifdef USE_NO_CGNS
-       call returnFail("writeCoorCGNSZone", &
+       call terminate("writeCoorCGNSZone", &
                       "Routine should not be called if no cgns support &
                       &is selected.")
 #else
@@ -112,7 +113,7 @@
 
          allocate(subRanges(3,2,nSubBlocks), proc(nSubBlocks), stat=ierr)
          if(ierr /= 0)                         &
-           call returnFail("writeCoorCGNSZone", &
+           call terminate("writeCoorCGNSZone", &
                           "Memory allocation failure for subRanges &
                           &and proc")
 
@@ -186,7 +187,7 @@
 
          allocate(buffer(bufSize), stat=ierr)
          if(ierr /= 0)                         &
-           call returnFail("writeCoorCGNSZone", &
+           call terminate("writeCoorCGNSZone", &
                           "Memory allocation failure for buffer")
 
          ! Allocate the memory for the array used to write the three
@@ -198,7 +199,7 @@
             * cgnsDoms(zone)%kl * sizeCGNSWriteType
          allocate(coor(ll), stat=ierr)
          if(ierr /= 0)                         &
-           call returnFail("writeCoorCGNSZone", &
+           call terminate("writeCoorCGNSZone", &
                           "Memory allocation failure for coor")
 
          coorNames(1) = cgnsCoorx
@@ -294,7 +295,7 @@
                                    realTypeCGNS, coorNames(nn), &
                                    coor, tmp, ierr)
              if(ierr /= CG_OK)                    &
-               call returnFail("writeCoorCGNSZone", &
+               call terminate("writeCoorCGNSZone", &
                               "Something wrong when calling &
                               &cg_coord_write_f")
 
@@ -309,7 +310,7 @@
                               "GridCoordinates_t", 1,  &
                               "DataArray_t", tmp, "end")
                if(ierr /= CG_OK)                    &
-                 call returnFail("writeCoorCGNSZone", &
+                 call terminate("writeCoorCGNSZone", &
                                 "Something wrong when calling cg_goto_f")
 
                ! Write the units.
@@ -320,7 +321,7 @@
                                      cgnsDoms(zone)%temp, &
                                      cgnsDoms(zone)%angle, ierr)
                if(ierr /= CG_OK)                    &
-                 call returnFail("writeCoorCGNSZone", &
+                 call terminate("writeCoorCGNSZone", &
                                 "Something wrong when calling &
                                 &cg_units_write_f")
              endif
@@ -333,7 +334,7 @@
          ! root processor.
 
          deallocate(subRanges, proc, coor, stat=ierr)
-         if(ierr /= 0) call returnFail("writeCoorCGNSZone", &
+         if(ierr /= 0) call terminate("writeCoorCGNSZone", &
                                       "Deallocation error on root proc")
 
        else rootproc
@@ -385,7 +386,7 @@
 
          allocate(buffer(bufSize), stat=ierr)
          if(ierr /= 0)                         &
-           call returnFail("writeCoorCGNSZone", &
+           call terminate("writeCoorCGNSZone", &
                           "Memory allocation failure for buffer")
 
          ! Loop over the number of grids to be written.
@@ -420,7 +421,7 @@
 
        deallocate(buffer, stat=ierr)
        if(ierr /= 0)                         &
-         call returnFail("writeCoorCGNSZone", &
+         call terminate("writeCoorCGNSZone", &
                         "Deallocation failure for buffer")
 
 #endif

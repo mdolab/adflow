@@ -53,6 +53,7 @@
        use cgnsGrid
        use intersect
        use tmpSliding
+       use utils, only : terminate
        implicit none
 !
 !      Local variables.
@@ -77,7 +78,7 @@
          slideInt(nn)%nIntersections = 0
          allocate(slideInt(nn)%intersections(0), stat=ierr)
          if(ierr /= 0)                            &
-           call returnFail("slidingIntersections", &
+           call terminate("slidingIntersections", &
                           "Memory allocation failure for intersections")
        enddo
 
@@ -109,7 +110,7 @@
        allocate(nIntersecting(0:cgnsNSliding), intersecting(ii), &
                 stat=ierr)
        if(ierr /= 0)                            &
-         call returnFail("slidingIntersections", &
+         call terminate("slidingIntersections", &
                         "Memory allocation failure for nIntersecting &
                         &and intersecting.")
 
@@ -131,7 +132,7 @@
        do nn=1,cgnsNSliding
          deallocate(slideInt(nn)%intersections, stat=ierr)
          if(ierr /= 0) &
-           call returnFail("slidingIntersections", &
+           call terminate("slidingIntersections", &
                           "Deallocation error for intersections.")
        enddo
 
@@ -465,6 +466,7 @@
 !      ******************************************************************
 !
        use intersect
+       use utils, only : reallocateinteger
        implicit none
 !
 !      Subroutine arguments.
@@ -475,27 +477,7 @@
 !      Local variables.
 !
        integer(kind=intType) :: l, lOld
-!
-!      Interfaces
-!
-       interface
-         subroutine reallocateInteger(intArray, newSize, oldSize, &
-                                      alwaysFreeMem)
-           use precision
-           implicit none
 
-           integer(kind=intType), dimension(:), pointer :: intArray
-           integer(kind=intType), intent(in) :: newSize, oldSize
-           logical, intent(in) :: alwaysFreeMem
-         end subroutine reallocateInteger
-       end interface
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
        ! Check if the intersection is already stored.
 
        do l=1,slideInt(high)%nIntersections

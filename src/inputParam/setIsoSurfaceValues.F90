@@ -45,6 +45,7 @@ subroutine setIsoSurfaceVariable(variable, iVar)
   use extraOutput
   use allInputParam
   use cgnsNames
+  use utils, only : EChk
   implicit none
   !
   !      Subroutine arguments.

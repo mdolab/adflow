@@ -21,6 +21,7 @@
        use inputPhysics
        use monitor
        use cgnsNames
+       use utils, only : terminate
        implicit none
 !
 !      Local variables.
@@ -54,7 +55,7 @@
              nMonSum = 1; nMonMax = 0; nMon = 1
              allocate(monNames(nMon), stat=ierr)
              if(ierr /= 0)                       &
-               call returnFail("defaultMonitor", &
+               call terminate("defaultMonitor", &
                               "Memory allocation failure for monNames")
 
              ! Set the names for the variables to be monitored.
@@ -68,7 +69,7 @@
              nMonSum = 3; nMonMax = 0; nMon = 3
              allocate(monNames(nMon), stat=ierr)
              if(ierr /= 0)                       &
-               call returnFail("defaultMonitor", &
+               call terminate("defaultMonitor", &
                               "Memory allocation failure for monNames")
 
              ! Set the names for the variables to be monitored.
@@ -93,7 +94,7 @@
              nMonSum = 1; nMonMax = 0; nMon = 1
              allocate(monNames(nMon), stat=ierr)
              if(ierr /= 0)                       &
-               call returnFail("defaultMonitor", &
+               call terminate("defaultMonitor", &
                               "Memory allocation failure for monNames")
 
              ! Set the names for the variables to be monitored.
@@ -108,7 +109,7 @@
              nMonSum = 4; nMonMax = 0; nMon = 4
              allocate(monNames(nMon), stat=ierr)
              if(ierr /= 0)                       &
-               call returnFail("defaultMonitor", &
+               call terminate("defaultMonitor", &
                               "Memory allocation failure for monNames")
 
              ! Set the names for the variables to be monitored.
@@ -136,7 +137,7 @@
              nMonSum = 1; nMonMax = 2; nMon = 3
              allocate(monNames(nMon), stat=ierr)
              if(ierr /= 0)                       &
-               call returnFail("defaultMonitor", &
+               call terminate("defaultMonitor", &
                               "Memory allocation failure for monNames")
 
              ! Set the names for the variables to be monitored.
@@ -154,7 +155,7 @@
              nMonSum = 4; nMonMax = 2; nMon = 6
              allocate(monNames(nMon), stat=ierr)
              if(ierr /= 0)                       &
-               call returnFail("defaultMonitor", &
+               call terminate("defaultMonitor", &
                               "Memory allocation failure for monNames")
 
              ! Set the names for the variables to be monitored.

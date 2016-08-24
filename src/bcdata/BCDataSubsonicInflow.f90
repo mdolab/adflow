@@ -26,6 +26,8 @@
        use flowVarRefState
        use inputPhysics
        use BCDataMod
+       use utils, only : siDensity, siVelocity, siPressure, siAngle, &
+            siTemperature, terminate
        implicit none
 !
 !      Subroutine arguments.
@@ -76,7 +78,7 @@
 
        allocate(bcVarArray(iBeg:iEnd,jBeg:jEnd,nbcVar), stat=ierr)
        if(ierr /= 0)                            &
-         call returnFail("BCDataSubsonicInflow", &
+         call terminate("BCDataSubsonicInflow", &
                         "Memory allocation failure for bcVarArray")
 
        bcVarNames(1)  = cgnsPtot
@@ -176,7 +178,7 @@
  100     format("Zone ",a,", boundary subface ",a, &
                 ": Not enough data specified for subsonic inlet")
 
-         call returnFail("BCDataSubsonicInflow", errorMessage)
+         call terminate("BCDataSubsonicInflow", errorMessage)
 
        endif
 
@@ -192,7 +194,7 @@
 
        deallocate(bcVarArray, stat=ierr)
        if(ierr /= 0)                            &
-         call returnFail("BCDataSubsonicInflow", &
+         call terminate("BCDataSubsonicInflow", &
                         "Deallocation failure for bcVarArray")
 
        !=================================================================
@@ -250,7 +252,7 @@
          ! and store it.
 
          if( ttPresent ) then
-           call siTemperature(temp(2), mult, trans)
+            call siTemperature(temp(2), mult, trans)
 
            do j=jBeg,jEnd
              do i=iBeg,iEnd
@@ -527,7 +529,7 @@
                   ": Flow direction points out of the domain for &
                   &some faces.")
 
-           call returnFail("totalSubsonicInlet", errorMessage)
+           call terminate("totalSubsonicInlet", errorMessage)
          endif
 
          end subroutine totalSubsonicInlet
@@ -723,7 +725,7 @@
  300       format("Zone ",a,", subsonic inlet boundary subface ",a, &
                   ": Velocity points out of the domain for some faces.")
 
-           call returnFail("massflowSubsonicInlet", errorMessage)
+           call terminate("massflowSubsonicInlet", errorMessage)
          endif
 
          end subroutine massflowSubsonicInlet

@@ -9,6 +9,9 @@ subroutine exchangeStatus(level, sps, commPattern, internal)
   !
   use blockPointers
   use communication
+  use utils, only : setPointers
+  use haloExchange, only : whalo1to1intgeneric
+
   implicit none
   !
   !      Subroutine arguments.

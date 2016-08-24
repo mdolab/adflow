@@ -27,6 +27,8 @@
        use monitor
        use cgnsNames
        use allInputParam
+       use sorting, only :qsortIntegers, bsearchIntegers
+       use utils, only : terminate
        implicit none
 !
 !      Local variables.
@@ -40,17 +42,7 @@
        character(len=maxCGNSNameLen), dimension(:), allocatable :: &
                                                                 tmpNames
        logical :: RKExplicit
-!
-!      Function definition
-!
-       integer(kind=intType) :: bsearchIntegers
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
+
        ! Find out if an explicit RK scheme is used in unsteady mode and
        ! set the logical RKExplicit accordingly. For explicit RK schemes
        ! no residuals are monitored.
@@ -105,7 +97,7 @@
        allocate(sortNumber(nMon), tmpNumber(nMon), tmpNames(nMon), &
                 stat=ierr)
        if(ierr /= 0)                    &
-         call returnFail("checkMonitor", &
+         call terminate("checkMonitor", &
                         "Memory allocation failure for sortNumber, etc.")
 
        ! Loop over the monitoring variables, copy the name into tmpName
@@ -300,7 +292,7 @@
              endif
 
            case default
-              call returnFail("checkMonitor", "This should not happen")
+              call terminate("checkMonitor", "This should not happen")
          end select
 
        enddo
@@ -331,14 +323,14 @@
 
        deallocate(sortNumber, tmpNumber, tmpNames, stat=ierr)
        if(ierr /= 0)                    &
-         call returnFail("checkMonitor", &
+         call terminate("checkMonitor", &
                         "Deallocation error for sortNumber, etc.")
 
        ! Allocate the memory for the monitoring variables.
 
        allocate(monLoc(nMon), monGlob(nMon), monRef(nMon), stat=ierr)
        if(ierr /= 0)                    &
-         call returnFail("checkMonitor", &
+         call terminate("checkMonitor", &
                         "Memory allocation for monitoring variables")
 
        ! Check if the maximum Mach number or the maximum total enthalpy

@@ -13,6 +13,7 @@ subroutine setupNKsolver
   use ADjointVars , only: nCellsLocal
   use NKSolverVars, only: dRdw, dRdwPre, dRdWpseudo, ctx, wVec, rVec, deltaW, &
        NK_solverSetup, work, g, NK_viscPC, NK_KSP, NK_iter
+  use utils, only : EChk
   implicit none
 #define PETSC_AVOID_MPIF_H
 
@@ -33,7 +34,7 @@ subroutine setupNKsolver
 
   ! Make sure we don't have memory for the approximate and exact
   ! Newton solvers kicking around at the same time.
-  call destroyANKSolver()
+  !call destroyANKSolver()
 
   if (.not. NK_solverSetup) then
      nDimW = nw * nCellsLocal(1_intTYpe) * nTimeIntervalsSpectral
@@ -141,17 +142,11 @@ subroutine NKMatMult(A, vecX,  vecY, ierr)
   use ADjointVars
   use inputTimeSpectral  
   use nksolvervars, only : NK_CFL, dRdW, dRdWpre, NK_jacobianLag
+  use utils, only : EChk
   implicit none
 #define PETSC_AVOID_MPIF_H
-
-#include "include/petscversion.h"
-#if PETSC_VERSION_MINOR > 5
 #include "petsc/finclude/petsc.h"
 #include "petsc/finclude/petscvec.h90"
-#else
-#include "include/finclude/petsc.h"
-#include "include/finclude/petscvec.h90"
-#endif
 
   ! PETSc Arguments
   Mat   A

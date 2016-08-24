@@ -6,6 +6,7 @@ subroutine getCurrentResidual(rhoRes,totalRRes)
   use inputTimeSpectral, only : nTimeIntervalsSpectral
   use iteration, only : currentLevel
   use monitor, only: monLoc, monGlob, nMonSum
+  use utils, only : setPointers
   implicit none
 
   ! Compute rhoRes and totalR. The actual residual must have already

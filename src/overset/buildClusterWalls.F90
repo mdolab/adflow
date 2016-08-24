@@ -13,6 +13,7 @@ subroutine buildClusterWalls(level, sps, useDual, walls)
   use inputTimeSpectral
   use overset
   use inputOverset
+  use utils, only : setPointers, EChk, pointReduce
   implicit none
 
   ! Input Variables

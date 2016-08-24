@@ -7,16 +7,6 @@
 !                *sj *sk
 !   plus diff mem management of: sfacei:in sfacej:in sfacek:in
 !                si:in sj:in sk:in bcdata:in *bcdata.rface:in
-!
-!      ******************************************************************
-!      *                                                                *
-!      * file:          normalvelocities.f90                            *
-!      * author:        edwin van der weide                             *
-!      * starting date: 02-23-2004                                      *
-!      * last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
-!
 subroutine normalvelocities_block_d(sps)
 !
 !      ******************************************************************

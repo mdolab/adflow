@@ -31,7 +31,7 @@ subroutine inviscidDissFluxMatrix
   use inputPhysics, only : equations
   use iteration, only : rFil
   use cgnsGrid, only: massFlowFamilyDiss
-
+  use utils, only : getCorrectForK, myDim
   implicit none
   !
   !      Local parameters.
@@ -58,14 +58,8 @@ subroutine inviscidDissFluxMatrix
   real(kind=realType) :: kAvg, lam1, lam2, lam3, area
   real(kind=realType) :: abv1, abv2, abv3, abv4, abv5, abv6, abv7
   real(kind=realType),dimension(1:ie,1:je,1:ke,3) :: dss
-  logical :: correctForK, getCorrectForK
-  !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
-  !
+  logical :: correctForK
+
   ! Check if rFil == 0. If so, the dissipative flux needs not to
   ! be computed.
 
@@ -155,7 +149,7 @@ subroutine inviscidDissFluxMatrix
               ppor = zero
               if(porI(i,j,k) == normalFlux) ppor = one
               dis2 = ppor*fis2*min(dpMax, max(dss(i,j,k,1), dss(i+1,j,k,1)))
-              dis4 = dim(ppor*fis4, dis2)
+              dis4 = myDim(ppor*fis4, dis2)
 
               ! Construct the vector of the first and third differences
               ! multiplied by the appropriate constants.
@@ -337,7 +331,7 @@ subroutine inviscidDissFluxMatrix
               if(porJ(i,j,k) == normalFlux) ppor = one
 
               dis2 = ppor*fis2*min(dpMax, max(dss(i,j,k,2), dss(i,j+1,k,2)))
-              dis4 = dim(ppor*fis4, dis2)
+              dis4 = myDim(ppor*fis4, dis2)
 
               ! Construct the vector of the first and third differences
               ! multiplied by the appropriate constants.
@@ -518,7 +512,7 @@ subroutine inviscidDissFluxMatrix
               if(porK(i,j,k) == normalFlux) ppor = one
 
               dis2 = ppor*fis2*min(dpMax, max(dss(i,j,k,3), dss(i,j,k+1,3)))
-              dis4 = dim(ppor*fis4, dis2)
+              dis4 = myDim(ppor*fis4, dis2)
 
               ! Construct the vector of the first and third differences
               ! multiplied by the appropriate constants.

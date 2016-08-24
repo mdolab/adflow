@@ -28,6 +28,7 @@
        use blockPointers
        use cgnsGrid
        use section
+       use utils, only : terminate
        implicit none
 !
 !      Subroutine arguments
@@ -103,7 +104,7 @@
          write(errorMessage,101) &
                trim(cgnsDoms(nbkGlobal)%zonename), &
                trim(cgnsDoms(nbkGlobal)%bocoInfo(cgnsBoco)%bocoName)
-         call returnFail("radialInterpolSubface", errorMessage)
+         call terminate("radialInterpolSubface", errorMessage)
  101     format("Zone",1X,A,", subface",1X,A,": Multidimensional &
                 &radially varying data specified. Only 1d data possible")
        endif
@@ -124,7 +125,7 @@
          write(errorMessage,102) &
                trim(cgnsDoms(nbkGlobal)%zonename), &
                trim(cgnsDoms(nbkGlobal)%bocoInfo(cgnsBoco)%bocoName)
-         call returnFail("radialInterpolSubface", errorMessage)
+         call terminate("radialInterpolSubface", errorMessage)
  102     format("Zone",1X,A,", subface",1X,A,": Data should be &
                 &specified for increasing radius.")
        endif

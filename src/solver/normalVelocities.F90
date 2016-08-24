@@ -1,3 +1,4 @@
+#ifndef USE_TAPENADE
 subroutine normalVelocitiesAllLevels(sps)
   !
   ! Shell function to call normalVelocities_block on all blocks/levels
@@ -6,6 +7,7 @@ subroutine normalVelocitiesAllLevels(sps)
   use constants
   use inputTimeSpectral
   use iteration
+  use utils, only : setPointers
   implicit none
   !
   !      Subroutine arguments.
@@ -28,16 +30,8 @@ subroutine normalVelocitiesAllLevels(sps)
      end do domains
   end do levelLoop
 end subroutine normalVelocitiesAllLevels
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          normalVelocities.f90                            *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 02-23-2004                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
-!
+#endif
+
 subroutine normalVelocities_block(sps)
   !
   !      ******************************************************************

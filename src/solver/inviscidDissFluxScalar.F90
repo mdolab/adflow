@@ -26,6 +26,7 @@ subroutine inviscidDissFluxScalar
   use inputDiscretization, only: vis2, vis4
   use inputPhysics, only : equations
   use iteration, only : rFil
+  use utils, only : myDim
   implicit none
   !
   !      Local parameter.
@@ -171,7 +172,7 @@ subroutine inviscidDissFluxScalar
               rrad = ppor*(radI(i,j,k) + radI(i+1,j,k))
 
               dis2 = fis2*rrad*min(dssMax, max(dss(i,j,k,1), dss(i+1,j,k,1)))
-              dis4 = dim(fis4*rrad, dis2)
+              dis4 = myDim(fis4*rrad, dis2)
 
               ! Compute and scatter the dissipative flux.
               ! Density. Store it in the mass flow of the
@@ -252,7 +253,7 @@ subroutine inviscidDissFluxScalar
               rrad = ppor*(radJ(i,j,k) + radJ(i,j+1,k))
 
               dis2 = fis2*rrad*min(dssMax, max(dss(i,j,k,2),dss(i,j+1,k,2)))
-              dis4 = dim(fis4*rrad, dis2)
+              dis4 = myDim(fis4*rrad, dis2)
 
               ! Compute and scatter the dissipative flux.
               ! Density. Store it in the mass flow of the
@@ -332,7 +333,7 @@ subroutine inviscidDissFluxScalar
               rrad = ppor*(radK(i,j,k) + radK(i,j,k+1))
 
               dis2 = fis2*rrad*min(dssMax, max(dss(i,j,k,3), dss(i,j,k+1,3)))
-              dis4 = dim(fis4*rrad, dis2)
+              dis4 = myDim(fis4*rrad, dis2)
 
               ! Compute and scatter the dissipative flux.
               ! Density. Store it in the mass flow of the

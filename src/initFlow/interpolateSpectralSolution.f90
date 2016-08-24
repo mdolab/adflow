@@ -26,6 +26,7 @@
        use IOModule
        use section
        use restartMod
+       use utils, only : setPointers, terminate, spectralInterpolCoef
        implicit none
 !
 !      Local variables.
@@ -153,7 +154,7 @@
          do nn=1,nDom
            deallocate(IOVar(nn,sps)%w, stat=ierr)
            if(ierr /= 0) &
-             call returnFail("interpolateSpectralSolution", &
+             call terminate("interpolateSpectralSolution", &
                             "Deallocation failure for w.")
          enddo
        enddo

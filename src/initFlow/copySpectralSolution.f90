@@ -26,6 +26,7 @@
        use IOModule
        use monitor
        use section
+       use utils, only : rotMatrixRigidBody
        implicit none
 !
 !      Local variables.

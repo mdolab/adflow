@@ -28,6 +28,7 @@ subroutine loadBalance
   use inputTimeSpectral
   use iteration
   use partitionMod
+  use utils, only : terminate
   implicit none
   !
   !      Local variables.
@@ -212,7 +213,7 @@ subroutine loadBalance
 
 
         if(ierr /= 0)                   &
-             call returnFail("loadBalance", &
+             call terminate("loadBalance", &
              "Memory allocation failure for subface info")
 
         ! Determine the new numbering of the boundary subfaces, such
@@ -221,7 +222,7 @@ subroutine loadBalance
 
         allocate(oldSubfaceID(blocks(i)%nBocos), stat=ierr)
         if(ierr /= 0)                   &
-             call returnFail("loadBalance", &
+             call terminate("loadBalance", &
              "Memory allocation failure for oldSubfaceID")
 
         call sortSubfaces(oldSubfaceID, blocks(i))
@@ -298,7 +299,7 @@ subroutine loadBalance
 
         deallocate(oldSubfaceID, stat=ierr)
         if(ierr /= 0)                   &
-             call returnFail("loadBalance", &
+             call terminate("loadBalance", &
              "Deallocation error for oldSubfaceID")
 
      endif myBlock
@@ -317,7 +318,7 @@ subroutine loadBalance
           blocks(i)%l3,          blocks(i)%groupNum,    &
           stat=ierr)
      if(ierr /= 0)                   &
-          call returnFail("loadBalance", &
+          call terminate("loadBalance", &
           "Deallocation error for boundary info")
   enddo domains
 
@@ -335,7 +336,7 @@ subroutine loadBalance
 
   allocate(subblocksOfCGNS(nBlocks), stat=ierr)
   if(ierr /= 0)                   &
-       call returnFail("loadBalance", &
+       call terminate("loadBalance", &
        "Memory allocation failure for subblocksOfCGNS")
 
   ! Copy the data into subblocksOfCGNS.
@@ -387,7 +388,7 @@ subroutine loadBalance
           cgnsDoms(nn)%procStored(k),                           &
           cgnsDoms(nn)%localBlockID(k), stat=ierr)
      if(ierr /= 0)                   &
-          call returnFail("loadBalance", &
+          call terminate("loadBalance", &
           "Memory allocation failure for procStored, &
           &localBlockID, iBegOr, iEndOr, etc.")
 
@@ -417,7 +418,7 @@ subroutine loadBalance
 
   deallocate(blocks, part, subblocksOfCGNS, stat=ierr)
   if(ierr /= 0)                   &
-       call returnFail("loadBalance", &
+       call terminate("loadBalance", &
        "Deallocation error for blocks, part and &
        &subblocksOfCGNS")
 

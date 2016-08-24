@@ -21,6 +21,7 @@
 !
        use communication
        use haloList
+       use utils, only : terminate
        implicit none
 !
 !      Subroutine arguments.
@@ -67,7 +68,7 @@
 
        allocate(nHaloPerProc(0:nProc), sendInfo(0:nProc-1), stat=ierr)
        if(ierr /= 0)                             &
-         call returnFail("finalCommStructures", &
+         call terminate("finalCommStructures", &
                         "Memory allocation error for nHaloPerProc &
                         &and sendInfo")
 
@@ -95,7 +96,7 @@
 
        allocate(commPattern%indexRecvProc(0:nProc-1), stat=ierr)
        if(ierr /= 0)                             &
-         call returnFail("finalCommStructures", &
+         call terminate("finalCommStructures", &
                         "Memory allocation error for indexRecvProc")
 
        do i=0,(nProc-1)
@@ -128,7 +129,7 @@
                 commPattern%nrecvCum(0:ii), &
                 commPattern%recvList(ii), stat=ierr)
        if(ierr /= 0)                             &
-         call returnFail("finalCommStructures", &
+         call terminate("finalCommStructures", &
                         "Memory allocation error for recvProc, etc")
 
        ! Allocate memory for buffers, needed for the nonblocking sends.
@@ -136,7 +137,7 @@
        allocate(buffer(4,sizeBuffer), bufInt(ninterp,sizeBuffer), &
                 stat=ierr)
        if(ierr /= 0)                             &
-         call returnFail("finalCommStructures", &
+         call terminate("finalCommStructures", &
                         "Memory allocation error for buffer, bufInt.")
 
        ! Repeat the loop over the processors, but now store receive info.
@@ -166,7 +167,7 @@
                     commPattern%recvList(jj)%indices(kk,3), &
                     stat=ierr)
            if(ierr /= 0)                             &
-             call returnFail("finalCommStructures", &
+             call terminate("finalCommStructures", &
                             "Memory allocation failure for block and &
                             &indices of recvlist")
 
@@ -243,7 +244,7 @@
                 internalComm%haloBlock(ii),           &
                 internalComm%haloIndices(ii,3), stat=ierr)
        if(ierr /= 0)                             &
-         call returnFail("finalCommStructures", &
+         call terminate("finalCommStructures", &
                         "Memory allocation failure for internalComm")
 
        ! Copy the info from the halo list.
@@ -277,7 +278,7 @@
 
        allocate(commPattern%indexSendProc(0:nProc-1), stat=ierr)
        if(ierr /= 0)                             &
-         call returnFail("finalCommStructures", &
+         call terminate("finalCommStructures", &
                         "Memory allocation error for indexSendProc")
 
        do i=0,(nProc-1)
@@ -305,7 +306,7 @@
                 commPattern%nsendCum(0:ii), &
                 commPattern%sendList(ii),   stat=ierr)
        if(ierr /= 0)                             &
-         call returnFail("finalCommStructures", &
+         call terminate("finalCommStructures", &
                         "Memory allocation error for sendProc, etc")
 
        ! Repeat the loop over the number of processors, but now store
@@ -333,7 +334,7 @@
                   commPattern%sendList(i)%interp(ii,ninterp), &
                   stat=ierr)
          if(ierr /= 0)                             &
-           call returnFail("finalCommStructures", &
+           call terminate("finalCommStructures", &
                           "Memory allocation failure for block, interp, &
                           &and indices of sendlist")
        enddo
@@ -343,7 +344,7 @@
        allocate(recvBuf(4,sizeBuffer), &
                 recvBufInt(ninterp,sizeBuffer), stat=ierr)
        if(ierr /= 0)                             &
-         call returnFail("finalCommStructures", &
+         call terminate("finalCommStructures", &
                         "Memory allocation failure for recvBuffers")
 
        ! Loop over the number of processors to receive my send info.
@@ -365,12 +366,12 @@
 
          if( debug ) then
            if(ii <= 0 .or. ii > commPattern%nProcSend) &
-             call returnFail("finalCommStructures",     &
+             call terminate("finalCommStructures",     &
                             "Send processor not in the list")
 
            call mpi_get_count(status, sumb_integer, sizeRecv, ierr)
            if(sizeRecv /= 4*commPattern%nsend(ii)) &
-             call returnFail("finalCommStructures",     &
+             call terminate("finalCommStructures",     &
                             "Unexpected size of message")
          endif
 
@@ -429,7 +430,7 @@
        deallocate(nHaloPerProc, sendInfo, buffer, recvBuf, &
                   bufInt, recvBufInt, stat=ierr)
        if(ierr /= 0) &
-         call returnFail("finalCommStructures", &
+         call terminate("finalCommStructures", &
                         "Deallocation error for nHaloPerProc, &
                         &sendInfo, and temporary buffers")
 

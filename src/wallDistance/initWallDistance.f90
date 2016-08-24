@@ -19,6 +19,7 @@
 !
        use block
        use constants
+       use utils, only : terminate
        implicit none
 !
 !      Subroutine arguments.
@@ -53,7 +54,7 @@
            allocate(flowDoms(nn,level,sps)%d2Wall(2:il,2:jl,2:kl), &
                     stat=ierr)
            if(ierr /= 0)                          &
-             call returnFail("initWallDistance", &
+             call terminate("initWallDistance", &
                             "Memory allocation failure for d2Wall")
          endif
 

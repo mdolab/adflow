@@ -21,6 +21,7 @@
 !
        use blockPointers
        use iteration
+       use utils, only : setPointers
        implicit none
 !
 !      Subroutine arguments.

@@ -22,13 +22,15 @@
 !      ******************************************************************
 !
 #ifdef USE_NO_CGNS
-       call returnFail("getSortedVarNumbers", &
+       call terminate("getSortedVarNumbers", &
                       "Routine should not be called if no cgns support &
                       &is selected.")
 #else
        use constants
        use su_cgns
        use restartMod
+       use sorting, only : qsortStrings, bsearchStrings
+       use utils, only : terminate
        implicit none
 !
 !      Local variables.
@@ -42,23 +44,13 @@
 
        character(len=maxCGNSNameLen), allocatable, dimension(:) :: &
                                                                 tmpNames
-!
-!      Function definition.
-!
-       integer(kind=intType) :: bsearchStrings
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
+
        ! Determine the number of solution variables stored.
 
        call cg_nfields_f(cgnsInd, cgnsBase, cgnsZone, cgnsSol, &
                          nVar, ierr)
        if(ierr /= all_ok)                      &
-         call returnFail("getSortedVarNumbers", &
+         call terminate("getSortedVarNumbers", &
                         "Something wrong when calling cg_nfield_f")
 
        ! Allocate the memory for varnames, vartypes and varnumber
@@ -66,7 +58,7 @@
        allocate(varNames(nVar), varTypes(nVar), varNumbers(nVar), &
                 stat=ierr)
        if(ierr /= 0)                           &
-         call returnFail("getSortedVarNumbers", &
+         call terminate("getSortedVarNumbers", &
                         "Memory allocation failure for varNames, etc.")
 
        ! Loop over the number of variables and store their names and
@@ -76,7 +68,7 @@
          call cg_field_info_f(cgnsInd, cgnsBase, cgnsZone, cgnsSol, &
                               i, varTypes(i), varNames(i), ierr)
          if(ierr /= 0)                           &
-           call returnFail("getSortedVarNumbers", &
+           call terminate("getSortedVarNumbers", &
                           "Something wrong when calling cg_field_info_f")
        enddo
 
@@ -85,7 +77,7 @@
 
        allocate(tmpTypes(nVar), tmpNames(nVar), stat=ierr)
        if(ierr /= 0)                           &
-         call returnFail("getSortedVarNumbers", &
+         call terminate("getSortedVarNumbers", &
                         "Memory allocation failure for tmp variables")
 
        do i=1,nVar
@@ -115,7 +107,7 @@
          ! the case, this means that two identical var names are present.
 
          if(varNumbers(ii) /= -1)                &
-           call returnFail("getSortedVarNumbers", &
+           call terminate("getSortedVarNumbers", &
                           "Error occurs only when two identical &
                           &variable names are present")
 
@@ -129,7 +121,7 @@
 
        deallocate(varNumbers, tmpTypes, tmpNames, stat=ierr)
        if(ierr /= 0)                           &
-         call returnFail("getSortedVarNumbers", &
+         call terminate("getSortedVarNumbers", &
                         "Deallocation error for tmp variables")
 
 #endif

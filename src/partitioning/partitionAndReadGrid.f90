@@ -28,6 +28,7 @@
        use inputIO
        use IOModule
        use partitionMod
+       use utils, only : terminate
        implicit none
 
        logical, intent(in) :: partitionOnly
@@ -61,10 +62,6 @@
        ! sides of the slide.
 
        call determineInterfaceIDs
-
-       ! Determine the number of inflow and outflow bleeding regions.
-
-       call determineBleedFlowRegions
 
        ! If we are just doing a partition test, return
        if (partitionOnly) then 
@@ -110,7 +107,7 @@
 
        deallocate(fileIDs, gridFiles, IOVar, stat=ierr)
        if(ierr /= 0)                            &
-         call returnFail("partitionAndReadGrid", &
+            call terminate("partitionAndReadGrid", &
                         "Deallocation failure for fileIDs, gridFiles &
                         &and IOVar")
 
@@ -120,10 +117,5 @@
 
        call checkFaces
        call check1to1Subfaces
-
-       ! Read the parameters for the level 0 turbine cooling
-       ! model.
-
-       call readLevel0CoolingParameters
 
        end subroutine partitionAndReadGrid

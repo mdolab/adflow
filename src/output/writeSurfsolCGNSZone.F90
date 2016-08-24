@@ -28,6 +28,7 @@
        use inputIO
        use su_cgns
        use outputMod
+       use utils, only : terminate
        implicit none
 !
 !      Subroutine arguments.
@@ -41,7 +42,7 @@
        logical, intent(in) :: periodic
 
 #ifdef USE_NO_CGNS
-       call returnFail("writeSurfsolCGNSZone", &
+       call terminate("writeSurfsolCGNSZone", &
                       "Routine should not be called if no cgns support &
                       &is selected.")
 #else
@@ -196,7 +197,7 @@
        size = (il+1)*(jl+1)
        allocate(buffer(size), stat=ierr)
        if(ierr /= 0)                            &
-         call returnFail("writeSurfsolCGNSZone", &
+         call terminate("writeSurfsolCGNSZone", &
                         "Memory allocation failure for buffer")
 
        ! Determine the number of local blocks that actually share the
@@ -290,7 +291,7 @@
          allocate(rangeNode(3,2,nSubfaces), rangeCell(3,2,nSubfaces), &
                   stat=ierr)
          if(ierr /= 0)                            &
-           call returnFail("writeSurfsolCGNSZone", &
+           call terminate("writeSurfsolCGNSZone", &
                           "Memory allocation failure for &
                           &rangeNode, etc")
 
@@ -375,7 +376,7 @@
 
          deallocate(rangeNode, rangeCell, stat=ierr)
          if(ierr /= 0)                               &
-           call returnFail("writeSurfsolCGNSZone", &
+           call terminate("writeSurfsolCGNSZone", &
                           "Deallocation error for rangeNode, etc")
 
        else rootproc
@@ -413,7 +414,7 @@
 
        deallocate(buffer, stat=ierr)
        if(ierr /= 0)                            &
-         call returnFail("writeSurfsolCGNSZone", &
+         call terminate("writeSurfsolCGNSZone", &
                         "Deallocation error for buffer")
 
        contains
@@ -636,7 +637,7 @@
                case (DomainInterfaceTotal)
                  zonename = "DomainTotal"
                case default
-                 call returnFail("createSurfaceZone", &
+                 call terminate("createSurfaceZone", &
                                 "Unknown boundary condition")
              end select
 
@@ -653,7 +654,7 @@
          call cg_zone_write_f(cgnsInd, cgnsBase, zonename, sizes, &
                               Structured, cgnsZone, ierr)
          if(ierr /= CG_OK)                    &
-           call returnFail("createSurfaceZone", &
+           call terminate("createSurfaceZone", &
                           "Something wrong when calling cg_zone_write_f")
 
          ! Create the flow solution node.
@@ -661,7 +662,7 @@
          call cg_sol_write_f(cgnsInd, cgnsBase, cgnsZone, &
                              "Flow solution", CellCenter, cgnsSol, ierr)
          if(ierr /= CG_OK)                    &
-           call returnFail("createSurfaceZone", &
+           call terminate("createSurfaceZone", &
                           "Something wrong when calling cg_sol_write_f")
 
          ! Create the rind layers. If rind layers must be stored put
@@ -672,7 +673,7 @@
          call cg_goto_f(cgnsInd, cgnsBase, ierr, "Zone_t", &
                         cgnsZone, "FlowSolution_t", cgnsSol, "end")
          if(ierr /= CG_OK)                    &
-           call returnFail("createSurfaceZone", &
+           call terminate("createSurfaceZone", &
                           "Something wrong when calling cg_goto_f")
 
          if( storeRindLayer ) then
@@ -685,7 +686,7 @@
 
          call cg_rind_write_f(sizes, ierr)
          if(ierr /= CG_OK)                    &
-           call returnFail("createSurfaceZone", &
+           call terminate("createSurfaceZone", &
                           "Something wrong when calling cg_rind_write_f")
 
          end subroutine createSurfaceZone
@@ -750,7 +751,7 @@
               * sizeCGNSWriteType
            allocate(writeBuffer(mm), stat=ierr)
            if(ierr /= 0)                         &
-             call returnFail("writeSurfaceCoord", &
+             call terminate("writeSurfaceCoord", &
                             "Memory allocation failure for writeBuffer")
          endif
 
@@ -887,7 +888,7 @@
              end select
 
              if(ierr /= CG_OK)                    &
-               call returnFail("writeSurfaceCoord", &
+               call terminate("writeSurfaceCoord", &
                               "Something wrong when calling &
                               &cg_coord_write_f")
 
@@ -902,7 +903,7 @@
                               "GridCoordinates_t", 1,  &
                               "DataArray_t", source, "end")
                if(ierr /= CG_OK)                      &
-                 call returnFail("writeSurfaceCoord", &
+                 call terminate("writeSurfaceCoord", &
                                 "Something wrong when calling cg_goto_f")
 
                ! Write the units.
@@ -913,7 +914,7 @@
                                      cgnsDoms(zone)%temp, &
                                      cgnsDoms(zone)%angle, ierr)
                if(ierr /= CG_OK)                    &
-                 call returnFail("writeSurfaceCoord", &
+                 call terminate("writeSurfaceCoord", &
                                 "Something wrong when calling &
                                 &cg_units_write_f")
              endif
@@ -939,7 +940,7 @@
          if(myID == 0) then
            deallocate(writeBuffer, stat=ierr)
            if(ierr /= 0)                         &
-             call returnFail("writeSurfaceCoord", &
+             call terminate("writeSurfaceCoord", &
                             "Deallocation error for writeBuffer")
          endif
 
@@ -1008,7 +1009,7 @@
               * sizeCGNSWriteType
            allocate(writeBuffer(mm), stat=ierr)
            if(ierr /= 0)                       &
-             call returnFail("writeSurfaceSol", &
+             call terminate("writeSurfaceSol", &
                             "Memory allocation failure for writeBuffer")
          endif
 
@@ -1116,7 +1117,7 @@
                                    solNames(mm), writeBuffer,   &
                                    source, ierr)
              if(ierr /= 0)           then
-               call returnFail("writeSolCGNSZone", &
+               call terminate("writeSolCGNSZone", &
                               "Something wrong when &
                               &calling cg_field_write_f")
             end if
@@ -1142,7 +1143,7 @@
          if(myID == 0) then
            deallocate(writeBuffer, stat=ierr)
            if(ierr /= 0)                         &
-             call returnFail("writeSurfaceSol", &
+             call terminate("writeSurfaceSol", &
                             "Deallocation error for writeBuffer")
          endif
 

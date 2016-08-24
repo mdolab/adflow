@@ -37,6 +37,7 @@ subroutine invisciddissfluxscalar_d()
   use inputdiscretization, only : vis2, vis4
   use inputphysics, only : equations
   use iteration, only : rfil
+  use utils_d, only : mydim, mydim_d
   implicit none
 !
 !      local parameter.
@@ -60,8 +61,6 @@ subroutine invisciddissfluxscalar_d()
   intrinsic abs
   intrinsic max
   intrinsic min
-  real(kind=realtype) :: dim
-  real(kind=realtype) :: dim_d
   real(kind=realtype) :: pwr1
   real(kind=realtype) :: pwr1d
   real(kind=realtype) :: min3
@@ -260,7 +259,7 @@ subroutine invisciddissfluxscalar_d()
           end if
           dis2d = fis2*(rradd*min1+rrad*min1d)
           dis2 = fis2*rrad*min1
-          dis4d = dim_d(fis4*rrad, fis4*rradd, dis2, dis2d, dis4)
+          dis4d = mydim_d(fis4*rrad, fis4*rradd, dis2, dis2d, dis4)
 ! compute and scatter the dissipative flux.
 ! density. store it in the mass flow of the
 ! appropriate sliding mesh interface.
@@ -375,7 +374,7 @@ subroutine invisciddissfluxscalar_d()
           end if
           dis2d = fis2*(rradd*min2+rrad*min2d)
           dis2 = fis2*rrad*min2
-          dis4d = dim_d(fis4*rrad, fis4*rradd, dis2, dis2d, dis4)
+          dis4d = mydim_d(fis4*rrad, fis4*rradd, dis2, dis2d, dis4)
 ! compute and scatter the dissipative flux.
 ! density. store it in the mass flow of the
 ! appropriate sliding mesh interface.
@@ -490,7 +489,7 @@ subroutine invisciddissfluxscalar_d()
           end if
           dis2d = fis2*(rradd*min3+rrad*min3d)
           dis2 = fis2*rrad*min3
-          dis4d = dim_d(fis4*rrad, fis4*rradd, dis2, dis2d, dis4)
+          dis4d = mydim_d(fis4*rrad, fis4*rradd, dis2, dis2d, dis4)
 ! compute and scatter the dissipative flux.
 ! density. store it in the mass flow of the
 ! appropriate sliding mesh interface.

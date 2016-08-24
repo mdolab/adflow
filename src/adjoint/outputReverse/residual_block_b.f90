@@ -4,24 +4,14 @@
 !  differentiation of residual_block in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: gammainf *rev *p *dw *w *rlv
 !                *x *si *sj *sk *(*viscsubface.tau)
-!   with respect to varying inputs: gammainf timeref rhoinf tref
-!                winf pinfcorr rgas *rev *p *dw *w *rlv *x *vol
-!                *si *sj *sk *radi *radj *radk
+!   with respect to varying inputs: gammainf timeref rhoinf winf
+!                pinfcorr *rev *p *dw *w *rlv *x *vol *si *sj *sk
+!                *radi *radj *radk
 !   plus diff mem management of: rev:in aa:in wx:in wy:in wz:in
 !                p:in dw:in w:in rlv:in x:in qx:in qy:in qz:in
 !                ux:in vol:in uy:in uz:in si:in sj:in sk:in vx:in
 !                vy:in vz:in fw:in viscsubface:in *viscsubface.tau:in
 !                radi:in radj:in radk:in
-!
-!      ******************************************************************
-!      *                                                                *
-!      * file:          residual.f90                                    *
-!      * author:        edwin van der weide, steve repsher (blanking)   *
-!      * starting date: 03-15-2003                                      *
-!      * last modified: 10-29-2007                                      *
-!      *                                                                *
-!      ******************************************************************
-!
 subroutine residual_block_b()
 !
 !      ******************************************************************
@@ -41,6 +31,8 @@ subroutine residual_block_b()
   use inputunsteady
   use iteration
   use inputadjoint
+  use flowutils_b, only : computespeedofsoundsquared, &
+& computespeedofsoundsquared_b
   implicit none
 !
 !      local variables.
@@ -247,15 +239,15 @@ subroutine residual_block_b()
     if (finegrid) then
       if (.not.lumpeddiss) then
         call invisciddissfluxscalar()
-        call pushcontrol3b(0)
+        call pushcontrol3b(1)
       else
         call pushreal8array(w, size(w, 1)*size(w, 2)*size(w, 3)*size(w, &
 &                     4))
         call invisciddissfluxscalarapprox()
-        call pushcontrol3b(1)
+        call pushcontrol3b(2)
       end if
     else
-      call pushcontrol3b(2)
+      call pushcontrol3b(3)
     end if
   case (dissmatrix) 
 !===========================================================
@@ -263,25 +255,21 @@ subroutine residual_block_b()
     if (finegrid) then
       if (.not.lumpeddiss) then
         call invisciddissfluxmatrix()
-        call pushcontrol3b(3)
+        call pushcontrol3b(4)
       else
         call invisciddissfluxmatrixapprox()
-        call pushcontrol3b(4)
+        call pushcontrol3b(5)
       end if
     else
-      call pushcontrol3b(5)
+      call pushcontrol3b(6)
     end if
-  case (disscusp) 
-    call pushcontrol3b(6)
   case (upwind) 
-!===========================================================
-! cusp dissipation scheme.
 !===========================================================
 ! dissipation via an upwind scheme.
     call inviscidupwindflux(finegrid)
     call pushcontrol3b(7)
   case default
-    call pushcontrol3b(6)
+    call pushcontrol3b(0)
   end select
 !-------------------------------------------------------
 ! lastly, recover the old s[i,j,k], sface[i,j,k]
@@ -902,40 +890,33 @@ subroutine residual_block_b()
   if (branch .lt. 4) then
     if (branch .lt. 2) then
       if (branch .eq. 0) then
-        call invisciddissfluxscalar_b()
+        rhoinfd = 0.0_8
+        pinfcorrd = 0.0_8
+        radid = 0.0_8
+        radjd = 0.0_8
+        radkd = 0.0_8
       else
-        call popreal8array(w, size(w, 1)*size(w, 2)*size(w, 3)*size(w, 4&
-&                    ))
-        call invisciddissfluxscalarapprox_b()
+        call invisciddissfluxscalar_b()
       end if
     else if (branch .eq. 2) then
+      call popreal8array(w, size(w, 1)*size(w, 2)*size(w, 3)*size(w, 4))
+      call invisciddissfluxscalarapprox_b()
+    else
       rhoinfd = 0.0_8
       pinfcorrd = 0.0_8
       radid = 0.0_8
       radjd = 0.0_8
       radkd = 0.0_8
-    else
-      call invisciddissfluxmatrix_b()
-      goto 110
-    end if
-    trefd = 0.0_8
-    rgasd = 0.0_8
-    goto 120
-  else if (branch .lt. 6) then
-    if (branch .eq. 4) then
-      call invisciddissfluxmatrixapprox_b()
-    else
-      pinfcorrd = 0.0_8
     end if
   else
-    if (branch .eq. 6) then
-      rhoinfd = 0.0_8
-      trefd = 0.0_8
+    if (branch .lt. 6) then
+      if (branch .eq. 4) then
+        call invisciddissfluxmatrix_b()
+      else
+        call invisciddissfluxmatrixapprox_b()
+      end if
+    else if (branch .eq. 6) then
       pinfcorrd = 0.0_8
-      rgasd = 0.0_8
-      radid = 0.0_8
-      radjd = 0.0_8
-      radkd = 0.0_8
     else
       call inviscidupwindflux_b(finegrid)
       rhoinfd = 0.0_8
@@ -943,16 +924,14 @@ subroutine residual_block_b()
       radid = 0.0_8
       radjd = 0.0_8
       radkd = 0.0_8
+      goto 110
     end if
-    goto 120
+    rhoinfd = 0.0_8
+    radid = 0.0_8
+    radjd = 0.0_8
+    radkd = 0.0_8
   end if
- 110 rhoinfd = 0.0_8
-  trefd = 0.0_8
-  rgasd = 0.0_8
-  radid = 0.0_8
-  radjd = 0.0_8
-  radkd = 0.0_8
- 120 call popreal8array(dw, size(dw, 1)*size(dw, 2)*size(dw, 3)*size(dw&
+ 110 call popreal8array(dw, size(dw, 1)*size(dw, 2)*size(dw, 3)*size(dw&
 &                 , 4))
   call inviscidcentralflux_b()
 end subroutine residual_block_b

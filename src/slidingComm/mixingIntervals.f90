@@ -1,13 +1,3 @@
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          mixingIntervals.f90                             *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 01-31-2005                                      *
-!      * Last modified: 06-12-2005                                      *
-!      *                                                                *
-!      ******************************************************************
-!
        subroutine mixingIntervals(slideID, level, color, nSlices)
 !
 !      ******************************************************************
@@ -23,6 +13,7 @@
        use interfaceGroups
        use localSubfacesMod
        use mixingData
+       use utils, only : terminate, setPointers
        implicit none
 !
 !      Subroutine arguments.
@@ -159,7 +150,7 @@
 
              allocate(xFace(iBeg:iEnd,jBeg:jEnd,3), stat=ierr)
              if(ierr /= 0) &
-               call returnFail("mixingIntervals", &
+               call terminate("mixingIntervals", &
                               "Memory allocation failure for xFace.")
 
              call cylCoorNodesOnBlockFace(xFace, iBeg, iEnd,  &
@@ -364,7 +355,7 @@
 
              deallocate(xFace, stat=ierr)
              if(ierr /= 0)                       &
-               call returnFail("mixingIntervals", &
+               call terminate("mixingIntervals", &
                               "Deallocation failure for xFace.")
 
            endif testInterface1
@@ -390,7 +381,7 @@
 
        if(nSingularQuad > 1) then
          if(myID == 0)                       &
-           call returnFail("mixingIntervals", &
+           call terminate("mixingIntervals", &
                           "More than one polar singular quad found &
                           &in sliding mesh interface.")
          call mpi_barrier(comm, ierr)
@@ -550,7 +541,7 @@
 
        allocate(angles(nAngles), stat=ierr)
        if(ierr /= 0) &
-         call returnFail("mixingIntervals", &
+         call terminate("mixingIntervals", &
                         "Memory allocation failure for angles.")
 
        ! Set the angles to be checked.
@@ -596,7 +587,7 @@
 
        allocate(intervals(nAlloc), stat=ierr)
        if(ierr /= 0)                       &
-         call returnFail("mixingIntervals", &
+         call terminate("mixingIntervals", &
                         "Memory allocation failure for intervals.")
 
        ! Loop over the local subfaces of the sliding interface and store
@@ -632,7 +623,7 @@
 
              allocate(xFace(iBeg:iEnd,jBeg:jEnd,3), stat=ierr)
              if(ierr /= 0) &
-               call returnFail("mixingIntervals", &
+               call terminate("mixingIntervals", &
                               "Memory allocation failure for xFace.")
 
              call cylCoorNodesOnBlockFace(xFace, iBeg, iEnd,  &
@@ -857,7 +848,7 @@
 
              deallocate(xFace, stat=ierr)
              if(ierr /= 0)                       &
-               call returnFail("mixingIntervals", &
+               call terminate("mixingIntervals", &
                               "Deallocation failure for xFace.")
 
            endif testInterface2
@@ -868,7 +859,7 @@
 
        deallocate(angles, stat=ierr)
        if(ierr /= 0)                       &
-         call returnFail("mixingIntervals", &
+         call terminate("mixingIntervals", &
                         "Deallocation failure for angles.")
 !
 !      ******************************************************************
@@ -903,7 +894,7 @@
        allocate(intBuf1(nLocal),  realBuf1(2,nLocal), &
                 intBuf2(nGlobal), realBuf2(2,nGlobal), stat=ierr)
        if(ierr /= 0)                       &
-         call returnFail("mixingIntervals", &
+         call terminate("mixingIntervals", &
                         "Memory allocation failure for the buffers &
                         &used in allgatherv.")
 
@@ -923,7 +914,7 @@
 
        deallocate(intervals, stat=ierr)
        if(ierr /= 0)                       &
-         call returnFail("mixingIntervals", &
+         call terminate("mixingIntervals", &
                         "Deallocation failure for intervals.")
 
        ! Use allgatherv to gather the data from all processors.
@@ -947,7 +938,7 @@
 
        allocate(edges(nGlobal), stat=ierr)
        if(ierr /= 0)                       &
-         call returnFail("mixingIntervals", &
+         call terminate("mixingIntervals", &
                         "Memory allocation failure for edges.")
 
        do nn=1,nGlobal
@@ -965,7 +956,7 @@
 
        deallocate(intBuf1, realBuf1, intBuf2, realBuf2, stat=ierr)
        if(ierr /= 0)                       &
-         call returnFail("mixingIntervals", &
+         call terminate("mixingIntervals", &
                         "Deallocation failure for the buffers &
                         &used in allgatherv.")
 
@@ -1049,7 +1040,7 @@
        allocate(mixingPoints(nMixingPoints), &
                 mixingCells(nMixingPoints-1), stat=ierr)
        if(ierr /= 0) &
-         call returnFail("mixingIntervals", &
+         call terminate("mixingIntervals", &
                         "Memory allocation failure for mixingPoints &
                         &and mixingCells.")
 
@@ -1089,7 +1080,7 @@
 
        deallocate(edges, stat=ierr)
        if(ierr /= 0)                       &
-         call returnFail("mixingIntervals", &
+         call terminate("mixingIntervals", &
                         "Deallocation failure for edges.")
 
        ! Determine the coordinates of mixingCells, i.e. the cell
@@ -1137,7 +1128,7 @@
          nAlloc = nAlloc + 1000
          allocate(intervals(nAlloc), stat=ierr)
          if(ierr /= 0)                        &
-           call returnFail("reallocIntervals", &
+           call terminate("reallocIntervals", &
                           "Memory allocation failure for intervals.")
 
          do nn=1,nOld
@@ -1146,7 +1137,7 @@
 
          deallocate(tmp, stat=ierr)
          if(ierr /= 0)                        &
-           call returnFail("reallocIntervals", &
+           call terminate("reallocIntervals", &
                           "Deallocation failure for tmp.")
 
          end subroutine reallocIntervals

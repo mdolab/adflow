@@ -1,13 +1,3 @@
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          timeSpectralMatrices.f90                        *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 10-06-2004                                      *
-!      * Last modified: 06-28-2005                                      *
-!      *                                                                *
-!      ******************************************************************
-!
        subroutine timeSpectralMatrices
 !
 !      ******************************************************************
@@ -27,6 +17,7 @@
        use inputPhysics
        use inputTimeSpectral
        use section
+       use utils, only : terminate
        implicit none
 !
 !      Local variables.
@@ -43,12 +34,6 @@
                                                matrixCoefSpectral
        real(kind=realType), dimension(:,:,:), allocatable :: &
                                                diagMatCoefSpectral
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
 !
        ! This routine is only used for the spectral solutions. Return
        ! immediately if a different mode is solved.
@@ -74,7 +59,7 @@
                 matrixCoefSpectral(nSections,kk,3,3), &
                 diagMatCoefSpectral(nSections,3,3), stat=ierr)
        if(ierr /= 0)                              &
-         call returnFail("timeSpectralMatrices", &
+         call terminate("timeSpectralMatrices", &
                         "Memory allocation failure for the matrices of &
                         &the spectral time derivatives.")
 
@@ -210,7 +195,7 @@
        deallocate(coefSpectral, matrixCoefSpectral, &
                   diagMatCoefSpectral, stat=ierr)
        if(ierr /= 0)                            &
-         call returnFail("timeSpectralMatrices", &
+         call terminate("timeSpectralMatrices", &
                         "Deallocation failure for the help variables.")
 
        end subroutine timeSpectralMatrices

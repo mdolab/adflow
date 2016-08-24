@@ -19,6 +19,7 @@ subroutine setGrid(grid,ndof)
   use inputTimeSpectral, only : nTimeIntervalsSpectral
   use monitor, only : timeUnsteadyRestart, timeUnsteady
   use inputPhysics, only : equationMode
+  use utils, only : setPointers, rotMatrixRigidBody
   implicit none
 
   integer(kind=intType),intent(in) :: ndof
@@ -103,6 +104,7 @@ subroutine getGrid(grid,ndof)
   use constants
   use blockPointers, only : nDom, il, jl, kl, x
   use inputTimeSpectral, only : nTimeIntervalsSpectral
+  use utils, only : setPointers
   implicit none
   integer(kind=intType),intent(in) :: ndof
   real(kind=realType) ,intent(out) :: grid(ndof)

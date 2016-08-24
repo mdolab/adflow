@@ -10,6 +10,7 @@ subroutine spectralPrecscribedMotion(input, nin, dXv, nout)
   use section, only : sections, nSections
   use inputTimeSpectral, only : nTimeIntervalsSpectral
   use monitor , only : timeUnsteadyRestart, timeUnsteady
+  use utils, only : setPointers, rotMatrixRigidBody
   implicit none
   ! Input/Output Variables
   integer(kind=intType), intent(in) :: nin, nout

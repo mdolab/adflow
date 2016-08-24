@@ -36,6 +36,7 @@
        use iteration
        use monitor
        use localMG
+       use utils, only : terminate
        implicit none
 !
 !      Local variables
@@ -64,7 +65,7 @@
 !
        if(spaceDiscr == none) then
          if(myID == 0)                       &
-           call returnFail("checkInputParam", &
+           call terminate("checkInputParam", &
                           "Discretization scheme not specified")
          call mpi_barrier(SUmb_comm_world, ierr)
        endif
@@ -107,7 +108,7 @@
 !
        if(gridFile == "") then
          if(myID == 0) &
-           call returnFail("checkInputParam", "Grid file not specified")
+           call terminate("checkInputParam", "Grid file not specified")
          call mpi_barrier(SUmb_comm_world, ierr)
        endif
 
@@ -124,7 +125,7 @@
 
        if(cpModel == cpTempCurveFits .and. cpFile == "") then
          if(myID == 0)                        &
-           call returnFail("checkInputParam", &
+           call terminate("checkInputParam", &
                           "Cp curve fit file not specified")
          call mpi_barrier(SUmb_comm_world, ierr)
        endif
@@ -134,7 +135,7 @@
        if(fileFormatRead  == cgnsFormat .or. &
           fileFormatWrite == cgnsFormat) then
          if(myID == 0)                       &
-           call returnFail("checkInputParam", &
+           call terminate("checkInputParam", &
                           "cgns support disabled during compile time")
          call mpi_barrier(SUmb_comm_world, ierr)
        endif
@@ -162,13 +163,13 @@
        else
          if(smoother == none) then
            if(myID == 0) &
-             call returnFail("checkInputParam", "Smoother not specified")
+             call terminate("checkInputParam", "Smoother not specified")
            call mpi_barrier(SUmb_comm_world, ierr)
          endif
 
          if(ncycles < 0) then
            if(myID == 0)                        &
-             call returnFail("checkInputParam", &
+             call terminate("checkInputParam", &
                             "Number of multigrid cycles not or wrongly &
                             &specified")
            call mpi_barrier(SUmb_comm_world, ierr)
@@ -176,14 +177,14 @@
 
          if(cfl < zero) then
            if(myID == 0)                        &
-             call returnFail("checkInputParam", &
+             call terminate("checkInputParam", &
                             "cfl number not or wrongly specified")
            call mpi_barrier(SUmb_comm_world, ierr)
          endif
 
          if(l2Conv <= zero .or. L2Conv >= one) then
            if(myID == 0)                        &
-             call returnFail("checkInputParam", &
+             call terminate("checkInputParam", &
                             "Relative L2 norm for convergence must be a &
                             & number between 0 and 1.")
            call mpi_barrier(SUmb_comm_world, ierr)
@@ -191,7 +192,7 @@
 
          if(l2ConvCoarse <= zero .or. L2ConvCoarse >= one) then
            if(myID == 0)                        &
-             call returnFail("checkInputParam", &
+             call terminate("checkInputParam", &
                             "Relative L2 norm for convergence coarse grid &
                             &must be a number between 0 and 1.")
            call mpi_barrier(SUmb_comm_world, ierr)
@@ -207,7 +208,7 @@
 !
        if(flowType == internalFlow .and. gridMotionSpecified) then
          if(myID == 0) &
-           call returnFail("checkInputParam", &
+           call terminate("checkInputParam", &
                           "Grid motion specified for an internal flow; &
                           &this is not possible")
          call mpi_barrier(SUmb_comm_world, ierr)
@@ -222,32 +223,32 @@
 !
        if(equations == none) then
          if(myID == 0) &
-           call returnFail("checkInputParam", "Equations not specified")
+           call terminate("checkInputParam", "Equations not specified")
          call mpi_barrier(SUmb_comm_world, ierr)
        endif
 
        if(equationMode == none) then
          if(myID == 0) &
-           call returnFail("checkInputParam", "Mode not specified")
+           call terminate("checkInputParam", "Mode not specified")
          call mpi_barrier(SUmb_comm_world, ierr)
        endif
 
        if(flowType == none) then
          if(myID == 0) &
-           call returnFail("checkInputParam", "Flow type not specified")
+           call terminate("checkInputParam", "Flow type not specified")
          call mpi_barrier(SUmb_comm_world, ierr)
        endif
 
        if(Mach < zero .and. flowType == externalFlow) then
          if(myID == 0)                        &
-           call returnFail("checkInputParam", &
+           call terminate("checkInputParam", &
                           "Mach not or wrongly specified")
          call mpi_barrier(SUmb_comm_world, ierr)
        endif
 
        if(equations == RANSEquations .and. turbModel == none) then
          if(myID == 0)                        &
-           call returnFail("checkInputParam", &
+           call terminate("checkInputParam", &
                           "Turbulence model not specified")
          call mpi_barrier(SUmb_comm_world, ierr)
        endif
@@ -262,7 +263,7 @@
                    +      velDirFreestream(3)*velDirFreestream(3))
          if(vecLength < eps) then
            if(myID == 0)                        &
-             call returnFail("checkInputParam", &
+             call terminate("checkInputParam", &
                             "Free stream velocity direction wrongly &
                             &specified")
            call mpi_barrier(SUmb_comm_world, ierr)
@@ -298,7 +299,7 @@
                    +      liftDirection(3)*liftDirection(3))
          if(vecLength < eps) then
            if(myID == 0)                        &
-             call returnFail("checkInputParam", &
+             call terminate("checkInputParam", &
                             "Lift direction wrongly specified")
            call mpi_barrier(SUmb_comm_world, ierr)
          endif
@@ -316,7 +317,7 @@
 
          if(abs(dot) > 1.e-3_realType) then
            if(myID == 0)                       &
-             call returnFail("checkInputParam", &
+             call terminate("checkInputParam", &
                             "Lift direction not orthogonal to &
                             &free-stream")
            call mpi_barrier(SUmb_comm_world, ierr)
@@ -346,7 +347,7 @@
                  +      velDirIni(3)*velDirIni(3))
        if(vecLength < eps) then
          if(myID == 0)                       &
-           call returnFail("checkInputParam", &
+           call terminate("checkInputParam", &
                           "Velocity direction for initialization &
                           &wrongly specified")
          call mpi_barrier(SUmb_comm_world, ierr)
@@ -376,7 +377,7 @@
 
          if(nTimeIntervalsSpectral < 0) then
            if(myID == 0)                        &
-             call returnFail("checkInputParam", &
+             call terminate("checkInputParam", &
                             "Number time intervals spectral not or &
                             &wrongly specified")
            call mpi_barrier(SUmb_comm_world, ierr)
@@ -388,7 +389,7 @@
          if( writeUnsteadyRestartSpectral ) then
            if(dtUnsteadyRestartSpectral <= zero) then
              if(myID == 0)                        &
-               call returnFail("checkInputParam", &
+               call terminate("checkInputParam", &
                               "Time step (in sec) for unsteady restart &
                               &not or wrongly specified.")
              call mpi_barrier(SUmb_comm_world, ierr)
@@ -402,7 +403,7 @@
              writeUnsteadySurfSpectral) then
            if(nunsteadySolSpectral <= 0) then
              if(myID == 0)                        &
-               call returnFail("checkInputParam", &
+               call terminate("checkInputParam", &
                               "Number of unsteady solution files &
                               &not or wrongly specified.")
              call mpi_barrier(SUmb_comm_world, ierr)
@@ -430,7 +431,7 @@
 
          if(nTimeStepsFine < 0) then
            if(myID == 0)                        &
-             call returnFail("checkInputParam", &
+             call terminate("checkInputParam", &
                             "Number of unsteady time steps fine grid &
                             &not or wrongly specified")
            call mpi_barrier(SUmb_comm_world, ierr)
@@ -440,7 +441,7 @@
 
          if(deltaT < 0) then
            if(myID == 0)                        &
-             call returnFail("checkInputParam", &
+             call terminate("checkInputParam", &
                             "Unsteady time step (in sec) &
                             &not or wrongly specified")
            call mpi_barrier(SUmb_comm_world, ierr)
@@ -452,7 +453,7 @@
          if(degreePolXRot >= 0 .and. &
             .not. allocated(coefPolXRot)) then
            if(myID == 0)                        &
-             call returnFail("checkInputParam", &
+             call terminate("checkInputParam", &
                             "Polynomial coefficients x-rotation &
                             &not specified")
            call mpi_barrier(SUmb_comm_world, ierr)
@@ -461,7 +462,7 @@
          if(degreePolYRot >= 0 .and. &
             .not. allocated(coefPolYRot)) then
            if(myID == 0)                        &
-             call returnFail("checkInputParam", &
+             call terminate("checkInputParam", &
                             "Polynomial coefficients y-rotation &
                             &not specified")
            call mpi_barrier(SUmb_comm_world, ierr)
@@ -470,7 +471,7 @@
          if(degreePolZRot >= 0 .and. &
             .not. allocated(coefPolZRot)) then
            if(myID == 0)                        &
-             call returnFail("checkInputParam", &
+             call terminate("checkInputParam", &
                             "Polynomial coefficients z-rotation &
                             &not specified")
            call mpi_barrier(SUmb_comm_world, ierr)
@@ -481,7 +482,7 @@
          if(degreeFourXRot >= 0 .and. &
             .not. allocated(cosCoefFourXRot)) then
            if(myID == 0)                        &
-             call returnFail("checkInputParam", &
+             call terminate("checkInputParam", &
                             "Fourier cosine coefficients x-rotation &
                             &not specified")
            call mpi_barrier(SUmb_comm_world, ierr)
@@ -490,7 +491,7 @@
          if(degreeFourXRot >= 1 .and. &
             .not. allocated(sinCoefFourXRot)) then
            if(myID == 0)                        &
-             call returnFail("checkInputParam", &
+             call terminate("checkInputParam", &
                             "Fourier sine coefficients x-rotation &
                             &not specified")
            call mpi_barrier(SUmb_comm_world, ierr)
@@ -499,7 +500,7 @@
          if(degreeFourYRot >= 0 .and. &
             .not. allocated(cosCoefFourYRot)) then
            if(myID == 0)                        &
-             call returnFail("checkInputParam", &
+             call terminate("checkInputParam", &
                             "Fourier cosine coefficients y-rotation &
                             &not specified")
            call mpi_barrier(SUmb_comm_world, ierr)
@@ -508,7 +509,7 @@
          if(degreeFourYRot >= 1 .and. &
             .not. allocated(sinCoefFourYRot)) then
            if(myID == 0)                        &
-             call returnFail("checkInputParam", &
+             call terminate("checkInputParam", &
                             "Fourier sine coefficients y-rotation &
                             &not specified")
            call mpi_barrier(SUmb_comm_world, ierr)
@@ -517,7 +518,7 @@
          if(degreeFourZRot >= 0 .and. &
             .not. allocated(cosCoefFourZRot)) then
            if(myID == 0)                        &
-             call returnFail("checkInputParam", &
+             call terminate("checkInputParam", &
                             "Fourier cosine coefficients z-rotation &
                             &not specified")
            call mpi_barrier(SUmb_comm_world, ierr)
@@ -526,7 +527,7 @@
          if(degreeFourZRot >= 1 .and. &
             .not. allocated(sinCoefFourZRot)) then
            if(myID == 0)                        &
-             call returnFail("checkInputParam", &
+             call terminate("checkInputParam", &
                             "Fourier sine coefficients z-rotation &
                             &not specified")
            call mpi_barrier(SUmb_comm_world, ierr)
@@ -822,7 +823,7 @@
            if( allocated(coefTime)) deallocate(coefTime)
              allocate(coefTime(0:nOldLevels), stat=ierr)
            if(ierr /= 0)                       &
-             call returnFail("checkInputParam", &
+             call terminate("checkInputParam", &
                             "Memory allocation error for coefTime")
 
            ! Determine the accuracy and set ALE parameters accordingly.
@@ -837,20 +838,20 @@
                  nALESteps  = 4
 
               case (thirdOrder)
-                 call returnFail("checkInputParam", &
+                 call terminate("checkInputParam", &
                       "ALE can only use 1st and 2nd order time accuracy")
               end select
 
               if( allocated(coefTimeALE)) deallocate(coefTimeALE)
               allocate(coefTimeALE(1:nALEsteps), stat=ierr)
               if(ierr /= 0)                       &
-                   call returnFail("checkInputParam", &
+                   call terminate("checkInputParam", &
                             "Memory allocation error for coefTimeALE")
 
               if( allocated(coefMeshALE)) deallocate(coefMeshALE)
               allocate(coefMeshALE(1:nALEMeshes,2), stat=ierr)
               if(ierr /= 0)                       &
-                   call returnFail("checkInputParam", &
+                   call terminate("checkInputParam", &
                    "Memory allocation error for coefMeshALE")
            end if
 
@@ -860,10 +861,7 @@
            nOldLevels = 1
            call setStageCoeffExplicitRK
 
-         case (implicitRK)
-           nOldLevels = 1
-           call setStageCoeffImplicitRK
-           
+          
        end select
 
        ! Set the logicals whether or not the old solutions have been
@@ -877,7 +875,7 @@
        if (allocated(oldSolWritten)) deallocate(oldSolWritten)
        allocate(oldSolWritten(oldSolWrittenSize), stat=ierr)
        if(ierr /= 0)                       &
-         call returnFail("checkInputParam", &
+         call terminate("checkInputParam", &
                         "Memory allocation error for oldSolWritten")
 
        do nn=1,oldSolWrittenSize
@@ -904,7 +902,7 @@
        allocate(etaRk(nRKStages), cdisRK(nRKStages), stat=ierr)
        allocate(cdisRKb(nRKStages), stat=ierr)
        if(ierr /= 0) &
-         call returnFail("checkInputParam", &
+         call terminate("checkInputParam", &
                         "Memory allocation error for etaRK and cdisRK")
 
        ! Determine the case we are having here.
@@ -982,7 +980,7 @@
        if(.not. allocated(coefPolXRot) ) then
          allocate(coefPolXRot(0:0), stat=ierr)
          if(ierr /= 0)                         &
-           call returnFail("checkInputParam", &
+           call terminate("checkInputParam", &
                           "Memory allocation failure for coefPolXRot")
          coefPolXRot = zero
        endif
@@ -990,7 +988,7 @@
        if(.not. allocated(coefPolYRot) ) then
          allocate(coefPolYRot(0:0), stat=ierr)
          if(ierr /= 0)                         &
-           call returnFail("checkInputParam", &
+           call terminate("checkInputParam", &
                           "Memory allocation failure for coefPolYRot")
          coefPolYRot = zero
        endif
@@ -998,7 +996,7 @@
        if(.not. allocated(coefPolZRot) ) then
          allocate(coefPolZRot(0:0), stat=ierr)
          if(ierr /= 0)                         &
-           call returnFail("checkInputParam", &
+           call terminate("checkInputParam", &
                           "Memory allocation failure for coefPolZRot")
          coefPolZRot = zero
        endif
@@ -1006,7 +1004,7 @@
        if(.not. allocated(cosCoefFourXRot) ) then
          allocate(cosCoefFourXRot(0:0), stat=ierr)
          if(ierr /= 0)                         &
-           call returnFail("checkInputParam", &
+           call terminate("checkInputParam", &
                           "Memory allocation failure for &
                           &cosCoefFourXRot")
          cosCoefFourXRot = zero
@@ -1015,7 +1013,7 @@
        if(.not. allocated(sinCoefFourXRot) ) then
          allocate(sinCoefFourXRot(1), stat=ierr)
          if(ierr /= 0)                         &
-           call returnFail("checkInputParam", &
+           call terminate("checkInputParam", &
                           "Memory allocation failure for &
                           &sinCoefFourXRot")
          sinCoefFourXRot = zero
@@ -1024,7 +1022,7 @@
        if(.not. allocated(cosCoefFourYRot) ) then
          allocate(cosCoefFourYRot(0:0), stat=ierr)
          if(ierr /= 0)                         &
-           call returnFail("checkInputParam", &
+           call terminate("checkInputParam", &
                           "Memory allocation failure for &
                           &cosCoefFourYRot")
          cosCoefFourYRot = zero
@@ -1033,7 +1031,7 @@
        if(.not. allocated(sinCoefFourYRot) ) then
          allocate(sinCoefFourYRot(1), stat=ierr)
          if(ierr /= 0)                         &
-           call returnFail("checkInputParam", &
+           call terminate("checkInputParam", &
                           "Memory allocation failure for &
                           &sinCoefFourYRot")
          sinCoefFourYRot = zero
@@ -1042,7 +1040,7 @@
        if(.not. allocated(cosCoefFourZRot) ) then
          allocate(cosCoefFourZRot(0:0), stat=ierr)
          if(ierr /= 0)                         &
-           call returnFail("checkInputParam", &
+           call terminate("checkInputParam", &
                           "Memory allocation failure for &
                           &cosCoefFourZRot")
          cosCoefFourZRot = zero
@@ -1051,7 +1049,7 @@
        if(.not. allocated(sinCoefFourZRot) ) then
          allocate(sinCoefFourZRot(1), stat=ierr)
          if(ierr /= 0)                         &
-           call returnFail("checkInputParam", &
+           call terminate("checkInputParam", &
                           "Memory allocation failure for &
                           &sinCoefFourZRot")
          sinCoefFourZRot = zero
