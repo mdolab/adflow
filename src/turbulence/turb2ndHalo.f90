@@ -19,7 +19,6 @@
 !      ******************************************************************
 !
        use blockPointers
-       use BCTypes
        use flowVarRefState
        implicit none
 !

@@ -5,7 +5,6 @@ subroutine initializeOWall(oWall, dualMesh, cluster)
   use overset
   use blockPointers
   use adtAPI
-  use BCTypes
   use kdtree2_module
   implicit none 
 

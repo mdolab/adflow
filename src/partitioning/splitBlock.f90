@@ -26,7 +26,6 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use BCTypes
        use constants
        use inputIteration
        use partitionMod

@@ -1,6 +1,5 @@
 subroutine getHeatFlux(hflux, npts, sps_in)
 
-  use BCTypes
   use blockPointers
   use flowVarRefState
   use inputTimeSpectral
@@ -51,7 +50,6 @@ end subroutine getHeatFlux
 subroutine heatFluxes
 
   use blockPointers
-  use BCTypes
   use flowVarRefState
   use inputPhysics
   use bcroutines

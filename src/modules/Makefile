@@ -62,7 +62,6 @@ FF90_OBJECTS_3 = NKSolverVars.o\
 
 FF90_OBJECTS_4 = ADjointVars.o\
 		 ADjointPETSc.o\
-		 BCTypes.o\
 		 blockPointers.o\
 		 cgnsGrid.o\
 		 cgnsNames.o\

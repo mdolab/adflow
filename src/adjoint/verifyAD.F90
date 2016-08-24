@@ -12,7 +12,6 @@ subroutine verifyAD
  
   !     ******************************************************************
   !
-  use BCTypes
   use blockPointers
   use inputDiscretization 
   use inputTimeSpectral 

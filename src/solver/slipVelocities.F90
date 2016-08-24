@@ -56,7 +56,6 @@ subroutine slipVelocitiesFineLevel_block(useOldCoor, t, sps)
   !      *                                                                *
   !      ******************************************************************
   !
-  use BCTypes
   use inputTimeSpectral
   use blockPointers
   use cgnsGrid
@@ -489,7 +488,6 @@ subroutine slipVelocitiesCoarseLevels(sps)
   !      *                                                                *
   !      ******************************************************************
   !
-  use BCTypes
   use blockPointers
   use iteration
   use utils, only : setPointers

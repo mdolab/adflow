@@ -19,7 +19,6 @@
 !      ******************************************************************
 !
        use blockPointers
-       use BCTypes
        use constants
        use flowVarRefState
        use inputDiscretization
@@ -58,7 +57,6 @@
        interface
          subroutine setBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
                                   rev1, rev2, offset)
-           use BCTypes
            use blockPointers
            use flowVarRefState
            implicit none
@@ -72,7 +70,6 @@
 
          subroutine resetBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
                                   rev1, rev2, offset)
-           use BCTypes
            use blockPointers
            use flowVarRefState
            implicit none
@@ -87,7 +84,6 @@
 
         subroutine setpp3pp4(nn, pp3, pp4)
 
-           use BCTypes
            use blockPointers
            implicit none
 
@@ -97,7 +93,6 @@
 
         subroutine resetpp3pp4(nn, pp3, pp4)
 
-           use BCTypes
            use blockPointers
            implicit none
 
@@ -107,7 +102,6 @@
 
         subroutine setss(nn, ssi, ssj, ssk, ss)
 
-           use BCTypes
            use blockPointers
            implicit none
 
@@ -118,7 +112,6 @@
 
         subroutine resetss(nn, ssi, ssj, ssk, ss)
 
-           use BCTypes
            use blockPointers
            implicit none
 

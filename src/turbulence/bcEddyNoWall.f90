@@ -21,7 +21,6 @@ subroutine bcEddyNoWall(nn)
   !      ******************************************************************
   !
   use blockPointers
-  use BCTypes
   implicit none
   !
   !      Subroutine arguments.

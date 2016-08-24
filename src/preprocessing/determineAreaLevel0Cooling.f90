@@ -24,7 +24,6 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use BCTypes
        use block
        use communication
        use coolingModelLevel0

@@ -4,7 +4,6 @@ subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useSta
 
   ! This is the main matrix-free forward mode computation
   use constants
-  use bcTypes
   use communication
   use costfunctions
   use blockPointers
@@ -241,7 +240,6 @@ end subroutine computeMatrixFreeProductFwd
 subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, fbar, useSpatial, useState, xvbar, &
      extrabar, wbar, spatialSize, extraSize, stateSize, costSize, fSize)
   use constants
-  use bcTypes
   use communication
   use blockPointers
   use inputDiscretization 

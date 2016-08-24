@@ -2,7 +2,6 @@ subroutine makeGapBoundaryStrings(level, sps, master)
 
   use adtAPI
   use blockPointers
-  use bctypes
   use communication
   use overset
   use stringOps

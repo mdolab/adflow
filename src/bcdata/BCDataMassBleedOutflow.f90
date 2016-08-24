@@ -21,7 +21,6 @@
 !
        use bleedFlows
        use blockPointers
-       use BCTypes
        use inputIteration
        use inputTimeSpectral
        use iteration

@@ -18,7 +18,6 @@ subroutine applyallturbbcthisblock_d(secondhalo)
 !      *                                                                *
 !      ******************************************************************
 !
-  use bctypes
   use blockpointers
   use flowvarrefstate
   use inputphysics

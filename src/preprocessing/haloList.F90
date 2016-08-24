@@ -163,7 +163,6 @@
 !        *                                                              *
 !        ****************************************************************
 !
-         use BCTypes
          implicit none
 !
 !        Function arguments.
@@ -364,7 +363,6 @@
 !        *                                                              *
 !        ****************************************************************
 !
-         use BCTypes
          implicit none
 !
 !        Function arguments.

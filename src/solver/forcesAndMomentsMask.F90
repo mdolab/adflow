@@ -23,7 +23,6 @@ subroutine forcesAndMomentsMask(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
   !      ******************************************************************
   !
   use blockPointers
-  use BCTypes
   use flowVarRefState
   use inputPhysics
   use costFunctions

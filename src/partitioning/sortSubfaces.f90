@@ -18,7 +18,6 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use BCTypes
        use partitionMod
        use sorting, only : qsortIntegers, bsearchIntegers
        implicit none

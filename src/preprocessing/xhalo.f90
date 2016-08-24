@@ -21,7 +21,6 @@
 !      ******************************************************************
 !
        use blockPointers
-       use BCTypes
        use communication
        use inputTimeSpectral
        use utils, only : setPointers

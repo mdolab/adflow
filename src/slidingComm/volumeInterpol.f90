@@ -89,7 +89,6 @@
 !        *                                                              *
 !        ****************************************************************
 !
-         use BCTypes
          use block
          use localSubfacesMod
          use thisSlide

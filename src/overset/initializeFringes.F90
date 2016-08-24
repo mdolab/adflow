@@ -6,7 +6,6 @@ subroutine initializeFringes(nn, level, sps)
   use communication
   use blockPointers
   use overset
-  use BCTypes
   use stencils
   use inputOverset
   implicit none

@@ -18,7 +18,6 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use BCTypes
        use blockPointers
        use flowVarRefState
        use inputTimeSpectral

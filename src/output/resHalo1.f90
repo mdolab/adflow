@@ -19,7 +19,6 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use BCTypes
        use blockPointers
        use communication
        use inputTimeSpectral

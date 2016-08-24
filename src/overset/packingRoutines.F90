@@ -526,7 +526,6 @@ subroutine getWallSize(nNodes, nCells, dualMesh)
   ! for the block pointed to by blockPointers. 
 
   use blockPointers
-  use BCTypes
   implicit none
   
   ! Input

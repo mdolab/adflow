@@ -49,7 +49,6 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use BCTypes
        use cgnsGrid
        use intersect
        use tmpSliding

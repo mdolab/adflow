@@ -1,6 +1,5 @@
 subroutine setTNSWall(tnsw, npts, sps_in)
 
-  use BCTypes
   use blockPointers
   use flowVarRefState
   use inputTimeSpectral

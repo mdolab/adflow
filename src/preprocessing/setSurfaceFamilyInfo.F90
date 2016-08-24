@@ -11,7 +11,6 @@ subroutine setSurfaceFamilyInfo
   use inputPhysics
   use inputTimeSpectral
   use surfaceFamilies
-  use bctypes
   use utils, only : setPointers, EChk, pointReduce, terminate, convertToLowerCase
   use sorting, only : qsortStrings, bsearchStrings
   implicit none

@@ -7,7 +7,6 @@ subroutine applyAllBC_block_fast_b(secondHalo)
   use inputDiscretization
   use inputTimeSpectral
   use iteration
-  use bcTypes
   use bcroutines_fast_b
   implicit none
 
@@ -186,7 +185,6 @@ subroutine applyAllBC_block_fast_b(secondHalo)
     !      *                                                                *
     !      ******************************************************************
     !
-    use BCTypes
     use blockPointers
     use flowVarRefState
     use bcroutines_fast_b

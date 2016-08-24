@@ -38,7 +38,6 @@ subroutine setGlobalCellsAndNodes(level)
   !     ******************************************************************
   !
   use ADjointVars 
-  use BCTypes
   use blockpointers
   use communication
   use inputTimeSpectral

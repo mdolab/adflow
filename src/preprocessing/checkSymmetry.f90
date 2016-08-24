@@ -21,7 +21,6 @@
 !      ******************************************************************
 !
        use blockPointers
-       use BCTypes
        use cgnsGrid
        use inputTimeSpectral
        use utils, only : setPointers

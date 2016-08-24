@@ -17,7 +17,6 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use BCTypes
        use blockPointers
        use cgnsGrid
        use communication

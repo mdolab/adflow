@@ -19,7 +19,6 @@
 !      ******************************************************************
 !
        use constants
-       use BCTypes
        use blockPointers, only : flowDoms, dw, il, jl, kl, ie, je, ke, w, &
             p1, p, rev, w1, mgICoarse, mgJCoarse, mgKCoarse, nDom, wr, mgIWeight, &
             mgJWeight, mgKWeight, iblank

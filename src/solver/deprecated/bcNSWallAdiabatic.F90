@@ -20,7 +20,6 @@
 !      ******************************************************************
 !
        use blockPointers
-       use BCTypes
        use constants
        use flowVarRefState
        use iteration

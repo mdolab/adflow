@@ -56,7 +56,6 @@ contains
     use inputDiscretization
     use inputTimeSpectral
     use iteration
-    use bcTypes
     implicit none
 
     ! Subroutine arguments.
@@ -248,7 +247,6 @@ contains
     ! ******************************************************************
     !
     use blockPointers
-    use BCTypes
     use constants
     use flowVarRefState
     use iteration
@@ -298,7 +296,6 @@ contains
   subroutine bcSymm2ndHalo(nn)
 
     use blockPointers
-    use BCTypes
     use constants
     use flowVarRefState
     use iteration
@@ -357,7 +354,6 @@ contains
     !
 
     use blockPointers
-    use BCTypes
     use constants
     use flowVarRefState
     use iteration
@@ -494,7 +490,6 @@ contains
     !      ******************************************************************
     !
     use blockPointers
-    use BCTypes
     use constants
     use flowVarRefState
     use iteration
@@ -597,7 +592,6 @@ contains
     ! ******************************************************************
 
     use blockPointers
-    use BCTypes
     use constants
     use flowVarRefState
     use iteration
@@ -718,7 +712,6 @@ contains
     ! ******************************************************************
     !
     use blockPointers
-    use BCTypes
     use constants
     use flowVarRefState
     use inputPhysics
@@ -831,7 +824,6 @@ contains
     ! ******************************************************************
     !
     use blockPointers
-    use BCTypes
     use constants
     use flowVarRefState
     use inputDiscretization
@@ -1074,7 +1066,6 @@ contains
     ! ******************************************************************
     !
     use blockPointers
-    use BCTypes
     use constants
     use flowVarRefState
     use inputDiscretization
@@ -1302,7 +1293,6 @@ contains
     ! ******************************************************************
     !
     use blockPointers
-    use BCTypes
     use constants
     use couplerParam
     use flowVarRefState
@@ -1683,7 +1673,6 @@ contains
     !      ******************************************************************
     !
     use blockPointers
-    use BCTypes
     use constants
     use flowVarRefState
     use inputPhysics
@@ -1819,7 +1808,6 @@ contains
     ! ******************************************************************
 
     use blockPointers
-    use BCTypes
     use constants
     use flowVarRefState
     use iteration
@@ -1895,7 +1883,6 @@ contains
     ! ******************************************************************
     !
     use blockPointers
-    use BCTypes
     use constants
     use flowVarRefState
     use inputDiscretization
@@ -2290,7 +2277,6 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use BCTypes
     use blockPointers
     use constants
     use flowVarRefState
@@ -2342,7 +2328,6 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use BCTypes
     use blockPointers
     use flowVarRefState
     use inputPhysics
@@ -2831,7 +2816,6 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use BCTypes
     use blockPointers
     use flowVarRefState
     implicit none

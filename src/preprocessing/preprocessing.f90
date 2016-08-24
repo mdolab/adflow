@@ -22,7 +22,6 @@
        use blockPointers
        use cgnsGrid
        use commMixing
-       use BCTypes
        use commSliding
        use communication
        use inputPhysics

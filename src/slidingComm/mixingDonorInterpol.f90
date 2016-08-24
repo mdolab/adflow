@@ -7,7 +7,6 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use BCTypes
        use blockPointers
        use commMixing
        use interfaceGroups

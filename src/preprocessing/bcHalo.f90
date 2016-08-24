@@ -65,7 +65,6 @@
 !        *                                                              *
 !        ****************************************************************
 !
-         use BCTypes
          implicit none
 !
 !        Function arguments.

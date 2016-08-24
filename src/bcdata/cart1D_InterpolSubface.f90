@@ -27,7 +27,6 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use BCTypes
        use blockPointers
        use cgnsGrid
        use utils, only : terminate

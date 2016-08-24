@@ -201,7 +201,6 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use BCTypes
        use cgnsGrid
        use communication
        use inputPhysics
@@ -443,7 +442,6 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use BCTypes
        use cgnsGrid
        use communication
        use partitionMod
@@ -809,7 +807,6 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use BCTypes
        use cgnsGrid
        use communication
        use partitionMod

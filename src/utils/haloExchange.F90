@@ -12,7 +12,6 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use BCTypes
     use blockPointers
     use commSliding
     use communication
@@ -120,7 +119,6 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use BCTypes
     use blockPointers
     use commSliding
     use communication
@@ -2166,7 +2164,6 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use BCTypes
     use blockPointers
     use commSliding
     use communication
@@ -2230,7 +2227,6 @@ contains
     !      *                                                                *
     !      ******************************************************************
     !
-    use BCTypes
     use blockPointers
     use commSliding
     use communication
@@ -3577,7 +3573,6 @@ contains
 !      *                                                                *
 !      ******************************************************************
 !
-       use BCTypes
        use blockPointers
        use communication
        use inputTimeSpectral

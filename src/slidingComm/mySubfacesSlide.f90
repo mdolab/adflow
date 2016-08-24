@@ -17,7 +17,6 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use BCTypes
        use block
        use interfaceGroups
        use localSubfacesMod
@@ -100,7 +99,6 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use BCTypes
        use blockPointers
        use localSubfacesMod
        use utils, only : setPointers, terminate

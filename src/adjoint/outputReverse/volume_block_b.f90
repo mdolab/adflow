@@ -9,7 +9,6 @@ subroutine volume_block_b()
 ! this is copy of metric.f90. it was necessary to copy this file
 ! since there is debugging stuff in the original that is not
 ! necessary for ad.
-  use bctypes
   use blockpointers
   use cgnsgrid
   use communication

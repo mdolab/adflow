@@ -54,7 +54,6 @@ subroutine computeUtau_block
   !      *                                                                *
   !      ******************************************************************
   !
-  use BCTypes
   use blockPointers
   use inputPhysics
   use inputTimeSpectral

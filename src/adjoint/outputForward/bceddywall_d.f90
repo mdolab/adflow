@@ -27,7 +27,6 @@ subroutine bceddywall_d(nn)
 !      ******************************************************************
 !
   use blockpointers
-  use bctypes
   implicit none
 !
 !      subroutine arguments.

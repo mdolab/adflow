@@ -22,7 +22,6 @@ subroutine computeAeroCoef(globalCFVals,sps)
   use communication 
   use inputPhysics   
   use iteration      
-  use BCTypes
   use costFunctions
   use inputTimeSpectral
   use flowVarRefState

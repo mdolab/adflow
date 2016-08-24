@@ -12,7 +12,6 @@ subroutine farFieldDrag(value)
 !   !      ******************************************************************
 !   !
   use blockPointers
-  use BCTypes
   use flowVarRefState
   use inputPhysics
   use inputTimeSpectral

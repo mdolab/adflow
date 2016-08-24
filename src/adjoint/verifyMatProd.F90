@@ -7,7 +7,6 @@ subroutine verifyMatProd
   !     *                                                                *
   !     ******************************************************************
   !
-  use BCTypes
   use blockPointers_b
   use inputDiscretization 
   use inputTimeSpectral 

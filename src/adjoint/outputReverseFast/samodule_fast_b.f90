@@ -1058,7 +1058,6 @@ branch = myIntStack(myIntPtr)
 ! * a diagonal dominant adi-scheme.                                *
 ! *                                                                *
 ! ******************************************************************
-    use bctypes
     use blockpointers
     use inputiteration
     use inputphysics
