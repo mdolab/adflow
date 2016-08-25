@@ -4,6 +4,7 @@ subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, useSpatial, useSta
 
   ! This is the main matrix-free forward mode computation
   use constants
+  use block, only : flowDomsd
   use communication
   use costfunctions
   use blockPointers
@@ -240,6 +241,7 @@ end subroutine computeMatrixFreeProductFwd
 subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, fbar, useSpatial, useState, xvbar, &
      extrabar, wbar, spatialSize, extraSize, stateSize, costSize, fSize)
   use constants
+  use block, only : flowDomsd
   use communication
   use blockPointers
   use inputDiscretization 
@@ -252,7 +254,7 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, fbar, useSpatial, useSta
   use ADjointPETSc, only : x_like, psi_like3
   use adjointvars
   use costfunctions
-  use walldistancedata, only : xSurfVec, xSurfVecd, xSurf, xSurfd, wallScatter
+  use wallDistanceData, only : xSurfVec, xSurfVecd, xSurf, xSurfd, wallScatter
   use utils, only : setPointers, EChk
   implicit none
 
@@ -380,7 +382,6 @@ subroutine computeMatrixFreeProductBwd(dwbar, funcsbar, fbar, useSpatial, useSta
 
         ! And the function value seeds
         funcValuesd = funcsBar
-        
         call BLOCK_RES_B(nn, sps, useSpatial, alpha, alphad, beta, betad, &
              & liftindex, frozenTurbulence)
 
@@ -562,7 +563,7 @@ subroutine computeMatrixFreeProductBwdFast(dwbar, wbar, stateSize)
   ! mode computation. It is intended to compute dRdw^T product
   ! ONLY. The main purpose is for fast matrix-vector products for the
   ! actual adjoint solve. 
-
+  use block, only : flowDomsd
   use blockPointers
   use inputDiscretization
   use inputTimeSpectral 

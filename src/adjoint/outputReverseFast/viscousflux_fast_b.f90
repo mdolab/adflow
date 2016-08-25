@@ -12,16 +12,6 @@
 !   plus diff mem management of: rev:in aa:in wx:in wy:in wz:in
 !                w:in rlv:in qx:in qy:in qz:in ux:in uy:in uz:in
 !                vx:in vy:in vz:in fw:in
-!
-!      ******************************************************************
-!      *                                                                *
-!      * file:          viscousflux.f90                                 *
-!      * author:        edwin van der weide                             *
-!      * starting date: 03-21-2003                                      *
-!      * last modified: 04-18-2005                                      *
-!      *                                                                *
-!      ******************************************************************
-!
 subroutine viscousflux_fast_b()
 !
 !      ******************************************************************
@@ -33,7 +23,7 @@ subroutine viscousflux_fast_b()
 !      *                                                                *
 !      ******************************************************************
 !
-  use myPushPopLib
+  use constants
   use blockpointers
   use flowvarrefstate
   use inputphysics
@@ -119,12 +109,6 @@ subroutine viscousflux_fast_b()
   real(kind=realtype) :: tempd17
   real(kind=realtype) :: tempd16
   real(kind=realtype) :: tempd15
-!
-!      ******************************************************************
-!      *                                                                *
-!      * begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
 ! set rfilv to rfil to indicate that this is the viscous part.
 ! if rfilv == 0 the viscous residuals need not to be computed
 ! and a return can be made.

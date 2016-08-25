@@ -8,6 +8,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use blockPointers
        use interfaceGroups
        use localSubfacesMod

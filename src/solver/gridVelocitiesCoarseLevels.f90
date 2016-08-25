@@ -19,6 +19,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use blockPointers
        use iteration
        use utils, only : setPointers
@@ -276,6 +277,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use block
        use commSliding
        use communication

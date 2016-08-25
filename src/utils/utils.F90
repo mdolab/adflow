@@ -535,8 +535,8 @@ contains
 
     character(len=len_trim(errorMessage)) :: message
     character(len=8) :: integerString
- 
-   !
+
+    !
     ! Copy the errorMessage into message. It is not possible to work
     ! with errorMessage directly, because it is modified in this
     ! routine. Sometimes a constant string is passed to this routine
@@ -898,6 +898,719 @@ contains
     rigidRotAngle = phi
 
   end function rigidRotAngle
+
+  subroutine setBCPointers(nn, spatialPointers)
+    !
+    !      ******************************************************************
+    !      *                                                                *
+    !      * setBCPointers sets the pointers needed for the boundary        *
+    !      * condition treatment on a general face, such that the boundary  *
+    !      * routines are only implemented once instead of 6 times.         *
+    !      *                                                                *
+    !      ******************************************************************
+    !
+    use blockPointers
+    use flowVarRefState
+    use inputPhysics
+    use BCPointers
+    implicit none
+
+    ! Subroutine arguments.
+    integer(kind=intType), intent(in) :: nn
+    logical, intent(in) :: spatialPointers
+
+    ! Determine the sizes of each face and point to just the range we
+    ! need on each face. 
+    iStart = BCData(nn)%icBeg
+    iEnd   = BCData(nn)%icEnd
+    jStart = BCData(nn)%jcBeg
+    jEnd   = BCData(nn)%jcEnd
+
+    ! Set the size of the subface
+    isize = iEnd-iStart + 1
+    jsize = jEnd-jStart + 1
+
+    ! Determine the face id on which the subface is located and set
+    ! the pointers accordinly.
+#if !defined USE_TAPENADE || defined TAPENADE_POINTERS || defined TAPENADE_FORWARD
+    select case (BCFaceID(nn))
+
+       !===============================================================
+    case (iMin)
+
+       ww3 => w(3, 1:, 1:, :)
+       ww2 => w(2, 1:, 1:, :)
+       ww1 => w(1, 1:, 1:, :)
+       ww0 => w(0, 1:, 1:, :)
+
+       pp3 => p(3, 1:, 1:)
+       pp2 => p(2, 1:, 1:)
+       pp1 => p(1, 1:, 1:)
+       pp0 => p(0, 1:, 1:)
+
+       rlv3 => rlv(3, 1:, 1:)
+       rlv2 => rlv(2, 1:, 1:)
+       rlv1 => rlv(1, 1:, 1:)
+       rlv0 => rlv(0, 1:, 1:)
+
+       rev3 => rev(3, 1:, 1:)
+       rev2 => rev(2, 1:, 1:)
+       rev1 => rev(1, 1:, 1:)
+       rev0 => rev(0, 1:, 1:)
+
+       gamma3 => gamma(3, 1:, 1:)
+       gamma2 => gamma(2, 1:, 1:)
+       gamma1 => gamma(1, 1:, 1:)
+       gamma0 => gamma(0, 1:, 1:)
+
+       gcp => globalCell(2, 1:, 1:)
+       !===============================================================
+
+    case (iMax)
+
+       ww3 => w(nx, 1:, 1:, :)
+       ww2 => w(il, 1:, 1:, :)
+       ww1 => w(ie, 1:, 1:, :)
+       ww0 => w(ib, 1:, 1:, :)
+
+       pp3 => p(nx, 1:, 1:)
+       pp2 => p(il, 1:, 1:)
+       pp1 => p(ie, 1:, 1:)
+       pp0 => p(ib, 1:, 1:)
+
+       rlv3 => rlv(nx, 1:, 1:)
+       rlv2 => rlv(il, 1:, 1:)
+       rlv1 => rlv(ie, 1:, 1:)
+       rlv0 => rlv(ib, 1:, 1:)
+
+       rev3 => rev(nx, 1:, 1:)
+       rev2 => rev(il, 1:, 1:)
+       rev1 => rev(ie, 1:, 1:)
+       rev0 => rev(ib, 1:, 1:)
+
+       gamma3 => gamma(nx, 1:, 1:)
+       gamma2 => gamma(il, 1:, 1:)
+       gamma1 => gamma(ie, 1:, 1:)
+       gamma0 => gamma(ib, 1:, 1:)
+
+       gcp => globalCell(il, 1:, 1:)
+       !===============================================================
+
+    case (jMin)
+
+       ww3 => w(1:, 3, 1:, :)
+       ww2 => w(1:, 2, 1:, :)
+       ww1 => w(1:, 1, 1:, :)
+       ww0 => w(1:, 0, 1:, :)
+
+       pp3 => p(1:, 3, 1:)
+       pp2 => p(1:, 2, 1:)
+       pp1 => p(1:, 1, 1:)
+       pp0 => p(1:, 0, 1:)
+
+       rlv3 => rlv(1:, 3, 1:)
+       rlv2 => rlv(1:, 2, 1:)
+       rlv1 => rlv(1:, 1, 1:)
+       rlv0 => rlv(1:, 0, 1:)
+
+       rev3 => rev(1:, 3, 1:)
+       rev2 => rev(1:, 2, 1:)
+       rev1 => rev(1:, 1, 1:)
+       rev0 => rev(1:, 0, 1:)
+
+       gamma3 => gamma(1:, 3, 1:)
+       gamma2 => gamma(1:, 2, 1:)
+       gamma1 => gamma(1:, 1, 1:)
+       gamma0 => gamma(1:, 0, 1:)
+
+       gcp => globalCell(1:, 2, 1:)
+       !===============================================================
+
+    case (jMax)
+
+       ww3 => w(1:, ny, 1:, :)
+       ww2 => w(1:, jl, 1:, :)
+       ww1 => w(1:, je, 1:, :)
+       ww0 => w(1:, jb, 1:, :)
+
+       pp3 => p(1:, ny, 1:)
+       pp2 => p(1:, jl, 1:)
+       pp1 => p(1:, je, 1:)
+       pp0 => p(1:, jb, 1:)
+
+       rlv3 => rlv(1:, ny, 1:)
+       rlv2 => rlv(1:, jl, 1:)
+       rlv1 => rlv(1:, je, 1:)
+       rlv0 => rlv(1:, jb, 1:)
+
+       rev3 => rev(1:, ny, 1:)
+       rev2 => rev(1:, jl, 1:)
+       rev1 => rev(1:, je, 1:)
+       rev0 => rev(1:, jb, 1:)
+
+       gamma3 => gamma(1:, ny, 1:)
+       gamma2 => gamma(1:, jl, 1:)
+       gamma1 => gamma(1:, je, 1:)
+       gamma0 => gamma(1:, jb, 1:)
+
+       gcp => globalCell(1:, jl, 1:)
+       !===============================================================
+
+    case (kMin)
+
+       ww3 => w(1:, 1:, 3, :)
+       ww2 => w(1:, 1:, 2, :)
+       ww1 => w(1:, 1:, 1, :)
+       ww0 => w(1:, 1:, 0, :)
+
+       pp3 => p(1:, 1:, 3)
+       pp2 => p(1:, 1:, 2)
+       pp1 => p(1:, 1:, 1)
+       pp0 => p(1:, 1:, 0)
+
+       rlv3 => rlv(1:, 1:, 3)
+       rlv2 => rlv(1:, 1:, 2)
+       rlv1 => rlv(1:, 1:, 1)
+       rlv0 => rlv(1:, 1:, 0)
+
+       rev3 => rev(1:, 1:, 3)
+       rev2 => rev(1:, 1:, 2)
+       rev1 => rev(1:, 1:, 1)
+       rev0 => rev(1:, 1:, 0)
+
+       gamma3 => gamma(1:, 1:, 3)
+       gamma2 => gamma(1:, 1:, 2)
+       gamma1 => gamma(1:, 1:, 1)
+       gamma0 => gamma(1:, 1:, 0)
+
+       gcp => globalCell(1:, 1:, 2)
+       !===============================================================
+
+    case (kMax)
+
+       ww3 => w(1:, 1:, nz, :)
+       ww2 => w(1:, 1:, kl, :)
+       ww1 => w(1:, 1:, ke, :)
+       ww0 => w(1:, 1:, kb, :)
+
+       pp3 => p(1:, 1:, nz)
+       pp2 => p(1:, 1:, kl)
+       pp1 => p(1:, 1:, ke)
+       pp0 => p(1:, 1:, kb)
+
+       rlv3 => rlv(1:, 1:, nz)
+       rlv2 => rlv(1:, 1:, kl)
+       rlv1 => rlv(1:, 1:, ke)
+       rlv0 => rlv(1:, 1:, kb)
+
+       rev3 => rev(1:, 1:, nz)
+       rev2 => rev(1:, 1:, kl)
+       rev1 => rev(1:, 1:, ke)
+       rev0 => rev(1:, 1:, kb)
+
+       gamma3 => gamma(1:, 1:, nz)
+       gamma2 => gamma(1:, 1:, kl)
+       gamma1 => gamma(1:, 1:, ke)
+       gamma0 => gamma(1:, 1:, kb)
+
+       gcp => globalCell(1:, 1:, kl)
+    end select
+
+    if (spatialPointers) then 
+       select case (BCFaceID(nn))
+       case (iMin)
+          xx => x(1,:,:,:)
+          ssi => si(1,:,:,:)
+          ssj => sj(2,:,:,:)
+          ssk => sk(2,:,:,:)
+          ss  => s (2,:,:,:)
+       case (iMax)
+          xx => x(il,:,:,:)
+          ssi => si(il,:,:,:)
+          ssj => sj(il,:,:,:)
+          ssk => sk(il,:,:,:)
+          ss  =>  s(il,:,:,:)
+       case (jMin)
+          xx => x(:,1,:,:)
+          ssi => sj(:,1,:,:)
+          ssj => si(:,2,:,:)
+          ssk => sk(:,2,:,:)
+          ss   => s(:,2,:,:)
+       case (jMax)
+          xx => x(:,jl,:,:)
+          ssi => sj(:,jl,:,:)
+          ssj => si(:,jl,:,:)
+          ssk => sk(:,jl,:,:)
+          ss  =>  s(:,jl,:,:)
+       case (kMin)
+          xx => x(:,:,1,:)
+          ssi => sk(:,:,1,:)
+          ssj => si(:,:,2,:)
+          ssk => sj(:,:,2,:)
+          ss  =>  s(:,:,2,:)
+       case (kMax)
+          xx => x(:,:,kl,:)
+          ssi => sk(:,:,kl,:)
+          ssj => si(:,:,kl,:)
+          ssk => sj(:,:,kl,:)
+          ss  =>  s(:,:,kl,:)
+       end select
+
+       if(equations == RANSEquations) then
+          select case (BCFaceID(nn))
+          case (iMin)
+             dd2Wall => d2Wall(2,:,:)
+          case (iMax)
+             dd2Wall => d2Wall(il,:,:)
+          case (jMin)
+             dd2Wall => d2Wall(:,2,:)
+          case (jMax)
+             dd2Wall => d2Wall(:,jl,:)
+          case (kMin)
+             dd2Wall => d2Wall(:,:,2)
+          case (kMax)
+             dd2Wall => d2Wall(:,:,kl)
+          end select
+       end if
+    end if
+
+
+
+
+#else
+    select case (BCFaceID(nn))
+
+       !===============================================================
+    case (iMin)
+       ww3(1:je, 1:ke,:) = w(3, 1:je, 1:ke, :)
+       ww2(1:je, 1:ke,:) = w(2, 1:je, 1:ke, :)
+       ww1(1:je, 1:ke,:) = w(1, 1:je, 1:ke, :)
+       ww0(1:je, 1:ke,:) = w(0, 1:je, 1:ke, :)
+
+       pp3(1:je, 1:ke) = p(3, 1:je, 1:ke)
+       pp2(1:je, 1:ke) = p(2, 1:je, 1:ke)
+       pp1(1:je, 1:ke) = p(1, 1:je, 1:ke)
+       pp0(1:je, 1:ke) = p(0, 1:je, 1:ke)
+
+       rlv3(1:je, 1:ke) = rlv(3, 1:je, 1:ke)
+       rlv2(1:je, 1:ke) = rlv(2, 1:je, 1:ke)
+       rlv1(1:je, 1:ke) = rlv(1, 1:je, 1:ke)
+       rlv0(1:je, 1:ke) = rlv(0, 1:je, 1:ke)
+
+       rev3(1:je, 1:ke) = rev(3, 1:je, 1:ke)
+       rev2(1:je, 1:ke) = rev(2, 1:je, 1:ke)
+       rev1(1:je, 1:ke) = rev(1, 1:je, 1:ke)
+       rev0(1:je, 1:ke) = rev(0, 1:je, 1:ke)
+
+       gamma3(1:je, 1:ke) = gamma(3, 1:je, 1:ke)
+       gamma2(1:je, 1:ke) = gamma(2, 1:je, 1:ke)
+       gamma1(1:je, 1:ke) = gamma(1, 1:je, 1:ke)
+       gamma0(1:je, 1:ke) = gamma(0, 1:je, 1:ke)
+
+       gcp(1:je, 1:ke) = globalCell(2, 1:je, 1:ke)
+       !===============================================================
+
+    case (iMax)
+
+       ww3(1:je, 1:ke,:) = w(nx, 1:je, 1:ke, :)
+       ww2(1:je, 1:ke,:) = w(il, 1:je, 1:ke, :)
+       ww1(1:je, 1:ke,:) = w(ie, 1:je, 1:ke, :)
+       ww0(1:je, 1:ke,:) = w(ib, 1:je, 1:ke, :)
+
+       pp3(1:je, 1:ke) = p(nx, 1:je, 1:ke)
+       pp2(1:je, 1:ke) = p(il, 1:je, 1:ke)
+       pp1(1:je, 1:ke) = p(ie, 1:je, 1:ke)
+       pp0(1:je, 1:ke) = p(ib, 1:je, 1:ke)
+
+       rlv3(1:je, 1:ke) = rlv(nx, 1:je, 1:ke)
+       rlv2(1:je, 1:ke) = rlv(il, 1:je, 1:ke)
+       rlv1(1:je, 1:ke) = rlv(ie, 1:je, 1:ke)
+       rlv0(1:je, 1:ke) = rlv(ib, 1:je, 1:ke)
+
+       rev3(1:je, 1:ke) = rev(nx, 1:je, 1:ke)
+       rev2(1:je, 1:ke) = rev(il, 1:je, 1:ke)
+       rev1(1:je, 1:ke) = rev(ie, 1:je, 1:ke)
+       rev0(1:je, 1:ke) = rev(ib, 1:je, 1:ke)
+
+       gamma3(1:je, 1:ke) = gamma(nx, 1:je, 1:ke)
+       gamma2(1:je, 1:ke) = gamma(il, 1:je, 1:ke)
+       gamma1(1:je, 1:ke) = gamma(ie, 1:je, 1:ke)
+       gamma0(1:je, 1:ke) = gamma(ib, 1:je, 1:ke)
+
+       gcp(1:je, 1:ke) = globalCell(il, 1:je, 1:ke)
+       !===============================================================
+
+    case (jMin)
+
+       ww3(1:ie, 1:ke,:) = w(1:ie, 3, 1:ke, :)
+       ww2(1:ie, 1:ke,:) = w(1:ie, 2, 1:ke, :)
+       ww1(1:ie, 1:ke,:) = w(1:ie, 1, 1:ke, :)
+       ww0(1:ie, 1:ke,:) = w(1:ie, 0, 1:ke, :)
+
+       pp3(1:ie, 1:ke) = p(1:ie, 3, 1:ke)
+       pp2(1:ie, 1:ke) = p(1:ie, 2, 1:ke)
+       pp1(1:ie, 1:ke) = p(1:ie, 1, 1:ke)
+       pp0(1:ie, 1:ke) = p(1:ie, 0, 1:ke)
+
+       rlv3(1:ie, 1:ke) = rlv(1:ie, 3, 1:ke)
+       rlv2(1:ie, 1:ke) = rlv(1:ie, 2, 1:ke)
+       rlv1(1:ie, 1:ke) = rlv(1:ie, 1, 1:ke)
+       rlv0(1:ie, 1:ke) = rlv(1:ie, 0, 1:ke)
+
+       rev3(1:ie, 1:ke) = rev(1:ie, 3, 1:ke)
+       rev2(1:ie, 1:ke) = rev(1:ie, 2, 1:ke)
+       rev1(1:ie, 1:ke) = rev(1:ie, 1, 1:ke)
+       rev0(1:ie, 1:ke) = rev(1:ie, 0, 1:ke)
+
+       gamma3(1:ie, 1:ke) = gamma(1:ie, 3, 1:ke)
+       gamma2(1:ie, 1:ke) = gamma(1:ie, 2, 1:ke)
+       gamma1(1:ie, 1:ke) = gamma(1:ie, 1, 1:ke)
+       gamma0(1:ie, 1:ke) = gamma(1:ie, 0, 1:ke)
+
+       gcp(1:ie, 1:ke) = globalCell(1:ie, 2, 1:ke)
+       !===============================================================
+
+    case (jMax)
+
+       ww3(1:ie, 1:ke,:) = w(1:ie, ny, 1:ke, :)
+       ww2(1:ie, 1:ke,:) = w(1:ie, jl, 1:ke, :)
+       ww1(1:ie, 1:ke,:) = w(1:ie, je, 1:ke, :)
+       ww0(1:ie, 1:ke,:) = w(1:ie, jb, 1:ke, :)
+
+       pp3(1:ie, 1:ke) = p(1:ie, ny, 1:ke)
+       pp2(1:ie, 1:ke) = p(1:ie, jl, 1:ke)
+       pp1(1:ie, 1:ke) = p(1:ie, je, 1:ke)
+       pp0(1:ie, 1:ke) = p(1:ie, jb, 1:ke)
+
+       rlv3(1:ie, 1:ke) = rlv(1:ie, ny, 1:ke)
+       rlv2(1:ie, 1:ke) = rlv(1:ie, jl, 1:ke)
+       rlv1(1:ie, 1:ke) = rlv(1:ie, je, 1:ke)
+       rlv0(1:ie, 1:ke) = rlv(1:ie, jb, 1:ke)
+
+       rev3(1:ie, 1:ke) = rev(1:ie, ny, 1:ke)
+       rev2(1:ie, 1:ke) = rev(1:ie, jl, 1:ke)
+       rev1(1:ie, 1:ke) = rev(1:ie, je, 1:ke)
+       rev0(1:ie, 1:ke) = rev(1:ie, jb, 1:ke)
+
+       gamma3(1:ie, 1:ke) = gamma(1:ie, ny, 1:ke)
+       gamma2(1:ie, 1:ke) = gamma(1:ie, jl, 1:ke)
+       gamma1(1:ie, 1:ke) = gamma(1:ie, je, 1:ke)
+       gamma0(1:ie, 1:ke) = gamma(1:ie, jb, 1:ke)
+
+       gcp(1:ie, 1:ke) = globalCell(1:ie, jl, 1:ke)
+       !===============================================================
+
+    case (kMin)
+
+       ww3(1:ie, 1:je,:) = w(1:ie, 1:je, 3, :)
+       ww2(1:ie, 1:je,:) = w(1:ie, 1:je, 2, :)
+       ww1(1:ie, 1:je,:) = w(1:ie, 1:je, 1, :)
+       ww0(1:ie, 1:je,:) = w(1:ie, 1:je, 0, :)
+
+       pp3(1:ie, 1:je) = p(1:ie, 1:je, 3)
+       pp2(1:ie, 1:je) = p(1:ie, 1:je, 2)
+       pp1(1:ie, 1:je) = p(1:ie, 1:je, 1)
+       pp0(1:ie, 1:je) = p(1:ie, 1:je, 0)
+
+       rlv3(1:ie, 1:je) = rlv(1:ie, 1:je, 3)
+       rlv2(1:ie, 1:je) = rlv(1:ie, 1:je, 2)
+       rlv1(1:ie, 1:je) = rlv(1:ie, 1:je, 1)
+       rlv0(1:ie, 1:je) = rlv(1:ie, 1:je, 0)
+
+       rev3(1:ie, 1:je) = rev(1:ie, 1:je, 3)
+       rev2(1:ie, 1:je) = rev(1:ie, 1:je, 2)
+       rev1(1:ie, 1:je) = rev(1:ie, 1:je, 1)
+       rev0(1:ie, 1:je) = rev(1:ie, 1:je, 0)
+
+       gamma3(1:ie, 1:je) = gamma(1:ie, 1:je, 3)
+       gamma2(1:ie, 1:je) = gamma(1:ie, 1:je, 2)
+       gamma1(1:ie, 1:je) = gamma(1:ie, 1:je, 1)
+       gamma0(1:ie, 1:je) = gamma(1:ie, 1:je, 0)
+
+       gcp(1:ie, 1:je) = globalCell(1:ie, 1:je, 2)
+       !===============================================================
+
+    case (kMax)
+
+       ww3(1:ie, 1:je,:) = w(1:ie, 1:je, nz, :)
+       ww2(1:ie, 1:je,:) = w(1:ie, 1:je, kl, :)
+       ww1(1:ie, 1:je,:) = w(1:ie, 1:je, ke, :)
+       ww0(1:ie, 1:je,:) = w(1:ie, 1:je, kb, :)
+
+       pp3(1:ie, 1:je) = p(1:ie, 1:je, nz)
+       pp2(1:ie, 1:je) = p(1:ie, 1:je, kl)
+       pp1(1:ie, 1:je) = p(1:ie, 1:je, ke)
+       pp0(1:ie, 1:je) = p(1:ie, 1:je, kb)
+
+       rlv3(1:ie, 1:je) = rlv(1:ie, 1:je, nz)
+       rlv2(1:ie, 1:je) = rlv(1:ie, 1:je, kl)
+       rlv1(1:ie, 1:je) = rlv(1:ie, 1:je, ke)
+       rlv0(1:ie, 1:je) = rlv(1:ie, 1:je, kb)
+
+       rev3(1:ie, 1:je) = rev(1:ie, 1:je, nz)
+       rev2(1:ie, 1:je) = rev(1:ie, 1:je, kl)
+       rev1(1:ie, 1:je) = rev(1:ie, 1:je, ke)
+       rev0(1:ie, 1:je) = rev(1:ie, 1:je, kb)
+
+       gamma3(1:ie, 1:je) = gamma(1:ie, 1:je, nz)
+       gamma2(1:ie, 1:je) = gamma(1:ie, 1:je, kl)
+       gamma1(1:ie, 1:je) = gamma(1:ie, 1:je, ke)
+       gamma0(1:ie, 1:je) = gamma(1:ie, 1:je, kb)
+
+       gcp(1:ie, 1:je) = globalCell(1:ie, 1:je, 2)
+    end select
+
+    ! These spatial pointers are only required for
+    ! forcesAndMoments. Eulerwall normal moment is is reverse AD'ed.
+    if (spatialPointers) then 
+       select case (BCFaceID(nn))
+       case (iMin)
+
+          xx(1:je+1,1:ke+1,:) = x(1,0:je,0:ke,:)
+          ssi(1:je,1:ke, :)   = si(1,1:je,1:ke,:)
+
+       case (iMax)
+          xx(1:je+1,1:ke+1,:) = x(il,0:je,0:ke,:)
+          ssi(1:je,1:ke,:)    = si(il,1:je,1:ke,:)
+       case (jMin)
+          xx(1:ie+1,1:ke+1,:) = x(0:ie,1,0:ke,:)
+          ssi(1:ie,1:ke,:)    = sj(1:ie,1,1:ke,:)
+       case (jMax)
+          xx(1:ie+1,1:ke+1,:) = x(0:ie,jl,0:ke,:)
+          ssi(1:ie,1:ke,:)    = sj(1:ie,jl,1:ke,:)
+       case (kMin)
+          xx(1:ie+1,1:je+1,:) = x(0:ie,0:je,1,:)
+          ssi(1:ie,1:je,:)    = sk(1:ie,1:je,1,:)
+       case (kMax)
+          xx(1:ie+1,1:je+1,:) = x(0:ie,0:je,kl,:)
+          ssi(1:ie,1:je,:)    = sk(1:ie,1:je,kl,:)
+       end select
+    end if
+#endif
+  end subroutine setBCPointers
+
+  subroutine resetBCPointers(nn, spatialPointers)
+    !
+    !      ******************************************************************
+    !      *                                                                *
+    !      * resetBCPointers nullifyies the boundary pointers. For reverse  *
+    !      * mode AD it copies the values back in to the respective arrays  *
+    !      *                                                                *
+    !      ******************************************************************
+    !
+    use blockPointers
+    use flowVarRefState
+    use BCPointers
+    implicit none
+
+    ! Subroutine arguments.
+    integer(kind=intType), intent(in) :: nn
+    logical, intent(in) :: spatialPointers
+#ifndef TAPENADE_REVERSE
+    ! For forward mode we are using pointers so we just don't do
+    ! anything.
+#else
+    select case (BCFaceID(nn))
+       !===============================================================
+    case (iMin)
+       w(3, 1:je, 1:ke, :) = ww3(1:je, 1:ke,:)
+       w(2, 1:je, 1:ke, :) = ww2(1:je, 1:ke,:)
+       w(1, 1:je, 1:ke, :) = ww1(1:je, 1:ke,:)
+       w(0, 1:je, 1:ke, :) = ww0(1:je, 1:ke,:)
+
+       p(3, 1:je, 1:ke) = pp3(1:je, 1:ke)
+       p(2, 1:je, 1:ke) = pp2(1:je, 1:ke)
+       p(1, 1:je, 1:ke) = pp1(1:je, 1:ke)
+       p(0, 1:je, 1:ke) = pp0(1:je, 1:ke)
+
+       rlv(3, 1:je, 1:ke) = rlv3(1:je, 1:ke)
+       rlv(2, 1:je, 1:ke) = rlv2(1:je, 1:ke)
+       rlv(1, 1:je, 1:ke) = rlv1(1:je, 1:ke)
+       rlv(0, 1:je, 1:ke) = rlv0(1:je, 1:ke)
+
+       rev(3, 1:je, 1:ke) = rev3(1:je, 1:ke)
+       rev(2, 1:je, 1:ke) = rev2(1:je, 1:ke)
+       rev(1, 1:je, 1:ke) = rev1(1:je, 1:ke)
+       rev(0, 1:je, 1:ke) = rev0(1:je, 1:ke)
+
+       gamma(3, 1:je, 1:ke) = gamma3(1:je, 1:ke)
+       gamma(2, 1:je, 1:ke) = gamma2(1:je, 1:ke)
+       gamma(1, 1:je, 1:ke) = gamma1(1:je, 1:ke)
+       gamma(0, 1:je, 1:ke) = gamma0(1:je, 1:ke)
+
+       !===============================================================
+
+    case (iMax)
+       w(nx, 1:je, 1:ke, :) = ww3(1:je, 1:ke,:)
+       w(il, 1:je, 1:ke, :) = ww2(1:je, 1:ke,:)
+       w(ie, 1:je, 1:ke, :) = ww1(1:je, 1:ke,:)
+       w(ib, 1:je, 1:ke, :) = ww0(1:je, 1:ke,:)
+
+       p(nx, 1:je, 1:ke) = pp3(1:je, 1:ke)
+       p(il, 1:je, 1:ke) = pp2(1:je, 1:ke)
+       p(ie, 1:je, 1:ke) = pp1(1:je, 1:ke)
+       p(ib, 1:je, 1:ke) = pp0(1:je, 1:ke)
+
+       rlv(nx, 1:je, 1:ke) = rlv3(1:je, 1:ke)
+       rlv(il, 1:je, 1:ke) = rlv2(1:je, 1:ke)
+       rlv(ie, 1:je, 1:ke) = rlv1(1:je, 1:ke)
+       rlv(ib, 1:je, 1:ke) = rlv0(1:je, 1:ke)
+
+       rev(nx, 1:je, 1:ke) = rev3(1:je, 1:ke)
+       rev(il, 1:je, 1:ke) = rev2(1:je, 1:ke)
+       rev(ie, 1:je, 1:ke) = rev1(1:je, 1:ke)
+       rev(ib, 1:je, 1:ke) = rev0(1:je, 1:ke)
+
+       gamma(nx, 1:je, 1:ke) = gamma3(1:je, 1:ke)
+       gamma(il, 1:je, 1:ke) = gamma2(1:je, 1:ke)
+       gamma(ie, 1:je, 1:ke) = gamma1(1:je, 1:ke)
+       gamma(ib, 1:je, 1:ke) = gamma0(1:je, 1:ke)
+
+       !===============================================================
+
+    case (jMin)
+
+       w(1:ie, 3, 1:ke, :) = ww3(1:ie, 1:ke,:)
+       w(1:ie, 2, 1:ke, :) = ww2(1:ie, 1:ke,:)
+       w(1:ie, 1, 1:ke, :) = ww1(1:ie, 1:ke,:)
+       w(1:ie, 0, 1:ke, :) = ww0(1:ie, 1:ke,:)
+
+       p(1:ie, 3, 1:ke) = pp3(1:ie, 1:ke)
+       p(1:ie, 2, 1:ke) = pp2(1:ie, 1:ke)
+       p(1:ie, 1, 1:ke) = pp1(1:ie, 1:ke)
+       p(1:ie, 0, 1:ke) = pp0(1:ie, 1:ke)
+
+       rlv(1:ie, 3, 1:ke) = rlv3(1:ie, 1:ke)
+       rlv(1:ie, 2, 1:ke) = rlv2(1:ie, 1:ke)
+       rlv(1:ie, 1, 1:ke) = rlv1(1:ie, 1:ke)
+       rlv(1:ie, 0, 1:ke) = rlv0(1:ie, 1:ke)
+
+       rev(1:ie, 3, 1:ke) = rev3(1:ie, 1:ke)
+       rev(1:ie, 2, 1:ke) = rev2(1:ie, 1:ke)
+       rev(1:ie, 1, 1:ke) = rev1(1:ie, 1:ke)
+       rev(1:ie, 0, 1:ke) = rev0(1:ie, 1:ke)
+
+       gamma(1:ie, 3, 1:ke) = gamma3(1:ie, 1:ke)
+       gamma(1:ie, 2, 1:ke) = gamma2(1:ie, 1:ke)
+       gamma(1:ie, 1, 1:ke) = gamma1(1:ie, 1:ke)
+       gamma(1:ie, 0, 1:ke) = gamma0(1:ie, 1:ke)
+
+       !===============================================================
+
+    case (jMax)
+
+       w(1:ie, ny, 1:ke, :) = ww3(1:ie, 1:ke,:)
+       w(1:ie, jl, 1:ke, :) = ww2(1:ie, 1:ke,:)
+       w(1:ie, je, 1:ke, :) = ww1(1:ie, 1:ke,:)
+       w(1:ie, jb, 1:ke, :) = ww0(1:ie, 1:ke,:)
+
+       p(1:ie, ny, 1:ke) = pp3(1:ie, 1:ke)
+       p(1:ie, jl, 1:ke) = pp2(1:ie, 1:ke)
+       p(1:ie, je, 1:ke) = pp1(1:ie, 1:ke)
+       p(1:ie, jb, 1:ke) = pp0(1:ie, 1:ke)
+
+       rlv(1:ie, ny, 1:ke) = rlv3(1:ie, 1:ke)
+       rlv(1:ie, jl, 1:ke) = rlv2(1:ie, 1:ke)
+       rlv(1:ie, je, 1:ke) = rlv1(1:ie, 1:ke)
+       rlv(1:ie, jb, 1:ke) = rlv0(1:ie, 1:ke)
+
+       rev(1:ie, ny, 1:ke) = rev3(1:ie, 1:ke)
+       rev(1:ie, jl, 1:ke) = rev2(1:ie, 1:ke)
+       rev(1:ie, je, 1:ke) = rev1(1:ie, 1:ke)
+       rev(1:ie, jb, 1:ke) = rev0(1:ie, 1:ke)
+
+       gamma(1:ie, ny, 1:ke) = gamma3(1:ie, 1:ke)
+       gamma(1:ie, jl, 1:ke) = gamma2(1:ie, 1:ke)
+       gamma(1:ie, je, 1:ke) = gamma1(1:ie, 1:ke)
+       gamma(1:ie, jb, 1:ke) = gamma0(1:ie, 1:ke)
+
+       !===============================================================
+
+    case (kMin)
+
+       w(1:ie, 1:je, 3, :) = ww3(1:ie, 1:je,:)
+       w(1:ie, 1:je, 2, :) = ww2(1:ie, 1:je,:)
+       w(1:ie, 1:je, 1, :) = ww1(1:ie, 1:je,:)
+       w(1:ie, 1:je, 0, :) = ww0(1:ie, 1:je,:)
+
+       p(1:ie, 1:je, 3) = pp3(1:ie, 1:je)
+       p(1:ie, 1:je, 2) = pp2(1:ie, 1:je)
+       p(1:ie, 1:je, 1) = pp1(1:ie, 1:je)
+       p(1:ie, 1:je, 0) = pp0(1:ie, 1:je)
+
+       rlv(1:ie, 1:je, 3) = rlv3(1:ie, 1:je)
+       rlv(1:ie, 1:je, 2) = rlv2(1:ie, 1:je)
+       rlv(1:ie, 1:je, 1) = rlv1(1:ie, 1:je)
+       rlv(1:ie, 1:je, 0) = rlv0(1:ie, 1:je)
+
+       rev(1:ie, 1:je, 3) = rev3(1:ie, 1:je)
+       rev(1:ie, 1:je, 2) = rev2(1:ie, 1:je)
+       rev(1:ie, 1:je, 1) = rev1(1:ie, 1:je)
+       rev(1:ie, 1:je, 0) = rev0(1:ie, 1:je)
+
+       gamma(1:ie, 1:je, 3) = gamma3(1:ie, 1:je)
+       gamma(1:ie, 1:je, 2) = gamma2(1:ie, 1:je)
+       gamma(1:ie, 1:je, 1) = gamma1(1:ie, 1:je)
+       gamma(1:ie, 1:je, 0) = gamma0(1:ie, 1:je)
+
+       !===============================================================
+
+    case (kMax)
+
+       w(1:ie, 1:je, nz, :) = ww3(1:ie, 1:je,:)
+       w(1:ie, 1:je, kl, :) = ww2(1:ie, 1:je,:)
+       w(1:ie, 1:je, ke, :) = ww1(1:ie, 1:je,:)
+       w(1:ie, 1:je, kb, :) = ww0(1:ie, 1:je,:)
+
+       p(1:ie, 1:je, nz) = pp3(1:ie, 1:je)
+       p(1:ie, 1:je, kl) = pp2(1:ie, 1:je)
+       p(1:ie, 1:je, ke) = pp1(1:ie, 1:je)
+       p(1:ie, 1:je, kb) = pp0(1:ie, 1:je)
+
+       rlv(1:ie, 1:je, nz) = rlv3(1:ie, 1:je)
+       rlv(1:ie, 1:je, kl) = rlv2(1:ie, 1:je)
+       rlv(1:ie, 1:je, ke) = rlv1(1:ie, 1:je)
+       rlv(1:ie, 1:je, kb) = rlv0(1:ie, 1:je)
+
+       rev(1:ie, 1:je, nz) = rev3(1:ie, 1:je)
+       rev(1:ie, 1:je, kl) = rev2(1:ie, 1:je)
+       rev(1:ie, 1:je, ke) = rev1(1:ie, 1:je)
+       rev(1:ie, 1:je, kb) = rev0(1:ie, 1:je)
+
+       gamma(1:ie, 1:je, nz) = gamma3(1:ie, 1:je)
+       gamma(1:ie, 1:je, kl) = gamma2(1:ie, 1:je)
+       gamma(1:ie, 1:je, ke) = gamma1(1:ie, 1:je)
+       gamma(1:ie, 1:je, kb) = gamma0(1:ie, 1:je)
+
+    end select
+
+    ! These spatial pointers are only required for
+    ! forcesAndMoments. Eulerwall normal moment is is reverse AD'ed.
+    if (spatialPointers) then 
+       select case (BCFaceID(nn))
+       case (iMin)
+          x(1,0:je,0:ke,:)  = xx(1:je+1,1:ke+1,:)
+          si(1,1:je,1:ke,:) = ssi(1:je,1:ke, :)
+       case (iMax)
+          x(il,0:je,0:ke,:)  = xx(1:je+1,1:ke+1,:)
+          si(il,1:je,1:ke,:) = ssi(1:je,1:ke,:)
+       case (jMin)
+          x(0:ie,1,0:ke,:)  = xx(1:ie+1,1:ke+1,:)
+          sj(1:ie,1,1:ke,:) = ssi(1:ie,1:ke,:)
+       case (jMax)
+          x(0:ie,jl,0:ke,:)  = xx(1:ie+1,1:ke+1,:)
+          sj(1:ie,jl,1:ke,:) = ssi(1:ie,1:ke,:)
+       case (kMin)
+          x(0:ie,0:je,1,:)  = xx(1:ie+1,1:je+1,:)
+          sk(1:ie,1:je,1,:) = ssi(1:ie,1:je,:)
+       case (kMax)
+          x(0:ie,0:je,kl,:)  = xx(1:ie+1,1:je+1,:)
+          sk(1:ie,1:je,kl,:) = ssi(1:ie,1:je,:)
+       end select
+    end if
+#endif
+
+  end subroutine resetBCPointers
 
   ! ----------------------------------------------------------------------
   !                                                                      |
@@ -3163,12 +3876,6 @@ contains
     deallocate(sections)
     deallocate(myinterfaces)
 
-    ! Destroy wall distance stuff if necessary
-    do l=1,nLevels
-       call destroyWallDistanceData(l)
-    end do
-    deallocate(xSurfVec, xVolumeVec, wallScatter)
-
     ! Destroy the traction force stuff
     do j=1, size(familyExchanges, 2)
        do i=1, size(familyExchanges, 1)
@@ -4175,318 +4882,6 @@ contains
 
   end subroutine deallocateBlock
 
-  subroutine setBCPointers(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
-       rev1, rev2, offset)
-    !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * setBCPointers sets the pointers needed for the boundary        *
-    !      * condition treatment on a general face, such that the boundary  *
-    !      * routines are only implemented once instead of 6 times.         *
-    !      *                                                                *
-    !      ******************************************************************
-    !
-    use blockPointers
-    use flowVarRefState
-    implicit none
-    !
-    !      Subroutine arguments.
-    !
-    integer(kind=intType), intent(in) :: nn, offset
-
-    real(kind=realType), dimension(:,:,:), pointer :: ww1, ww2
-    real(kind=realType), dimension(:,:),   pointer :: pp1, pp2
-    real(kind=realType), dimension(:,:),   pointer :: rlv1, rlv2
-    real(kind=realType), dimension(:,:),   pointer :: rev1, rev2
-    !
-    !      Local variables
-    !
-    integer(kind=intType) :: id, ih
-
-    ! Determine the face id on which the subface is located and set
-    ! the pointers accordinly.
-
-    select case (BCFaceID(nn))
-
-    case (iMin)
-
-       id = 2 + offset;   ih = 1 - offset
-       ww1 => w(ih,1:,1:,:); ww2 => w(id,1:,1:,:)
-       pp1 => p(ih,1:,1:);   pp2 => p(id,1:,1:)
-
-       if( viscous ) then
-          rlv1 => rlv(ih,1:,1:); rlv2 => rlv(id,1:,1:)
-       endif
-
-       if( eddyModel ) then
-          rev1 => rev(ih,1:,1:); rev2 => rev(id,1:,1:)
-       endif
-
-       !===============================================================
-
-    case (iMax)
-
-       id = il - offset;  ih = ie + offset
-       ww1 => w(ih,1:,1:,:); ww2 => w(id,1:,1:,:)
-       pp1 => p(ih,1:,1:);   pp2 => p(id,1:,1:)
-
-       if( viscous ) then
-          rlv1 => rlv(ih,1:,1:); rlv2 => rlv(id,1:,1:)
-       endif
-
-       if( eddyModel ) then
-          rev1 => rev(ih,1:,1:); rev2 => rev(id,1:,1:)
-       endif
-
-       !===============================================================
-
-    case (jMin)
-
-       id = 2 + offset;   ih = 1 - offset
-       ww1 => w(1:,ih,1:,:); ww2 => w(1:,id,1:,:)
-       pp1 => p(1:,ih,1:);   pp2 => p(1:,id,1:)
-
-       if( viscous ) then
-          rlv1 => rlv(1:,ih,1:); rlv2 => rlv(1:,id,1:)
-       endif
-
-       if( eddyModel ) then
-          rev1 => rev(1:,ih,1:); rev2 => rev(1:,id,1:)
-       endif
-
-       !===============================================================
-
-    case (jMax)
-
-       id = jl - offset;  ih = je + offset
-       ww1 => w(1:,ih,1:,:); ww2 => w(1:,id,1:,:)
-       pp1 => p(1:,ih,1:);   pp2 => p(1:,id,1:)
-
-       if( viscous ) then
-          rlv1 => rlv(1:,ih,1:); rlv2 => rlv(1:,id,1:)
-       endif
-
-       if( eddyModel ) then
-          rev1 => rev(1:,ih,1:); rev2 => rev(1:,id,1:)
-       endif
-
-       !===============================================================
-
-    case (kMin)
-
-       id = 2 + offset;   ih = 1 - offset
-       ww1 => w(1:,1:,ih,:); ww2 => w(1:,1:,id,:)
-       pp1 => p(1:,1:,ih);   pp2 => p(1:,1:,id)
-
-       if( viscous ) then
-          rlv1 => rlv(1:,1:,ih); rlv2 => rlv(1:,1:,id)
-       endif
-
-       if( eddyModel ) then
-          rev1 => rev(1:,1:,ih); rev2 => rev(1:,1:,id)
-       endif
-
-       !===============================================================
-
-    case (kMax)
-
-       id = kl - offset;  ih = ke + offset
-       ww1 => w(1:,1:,ih,:); ww2 => w(1:,1:,id,:)
-       pp1 => p(1:,1:,ih);   pp2 => p(1:,1:,id)
-
-       if( viscous ) then
-          rlv1 => rlv(1:,1:,ih); rlv2 => rlv(1:,1:,id)
-       endif
-
-       if( eddyModel ) then
-          rev1 => rev(1:,1:,ih); rev2 => rev(1:,1:,id)
-       endif
-
-    end select
-
-  end subroutine setBCPointers
-
-  subroutine setBCPointersBwd(nn, ww1, ww2, pp1, pp2, rlv1, rlv2, &
-       rev1, rev2, offset)
-    !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * setBCPointers sets the pointers needed for the boundary        *
-    !      * condition treatment on a general face, such that the boundary  *
-    !      * routines are only implemented once instead of 6 times.         *
-    !      *                                                                *
-    !      ******************************************************************
-    !
-    use blockPointers
-    use flowVarRefState
-    implicit none
-    !
-    !      Subroutine arguments.
-    !
-    integer(kind=intType), intent(in) :: nn, offset
-
-    real(kind=realType), dimension(imaxDim,jmaxDim,nw) :: ww1, ww2
-    real(kind=realType), dimension(imaxDim,jmaxDim) :: pp1, pp2
-    real(kind=realType), dimension(imaxDim,jmaxDim) :: rlv1, rlv2
-    real(kind=realType), dimension(imaxDim,jmaxDim) :: rev1, rev2
-    !
-    !      Local variables
-    !
-    integer(kind=intType) :: id, ih, ierr, i, j, k
-
-    ww1 = zero
-    ww2 = zero
-    pp1 = zero
-    pp2 = zero
-    rlv1 = zero
-    rlv2 = zero
-    rev1 = zero
-    rev2 = zero
-    ! Determine the face id on which the subface is located and set
-    ! the pointers accordinly.
-
-    select case (BCFaceID(nn))
-
-    case (iMin)
-
-       id = 2 + offset;   ih = 1 - offset
-       do k = 1,ke
-          do j = 1,je
-             ww1(j,k,:) = w(ih,j,k,:)
-             ww2(j,k,:) = w(id,j,k,:)
-             pp1(j,k)   = p(ih,j,k)
-             pp2(j,k)   = p(id,j,k)
-
-             if( viscous ) then
-                rlv1(j,k) = rlv(ih,j,k)
-                rlv2(j,k) = rlv(id,j,k)
-             endif
-
-             if( eddyModel ) then
-                rev1(j,k) = rev(ih,j,k)
-                rev2(j,k) = rev(id,j,k)
-             endif
-          end do
-       end do
-       !===============================================================
-
-    case (iMax)
-
-       id = il - offset;  ih = ie + offset
-       do k = 1,ke
-          do j = 1,je
-             ww1(j,k,:) = w(ih,j,k,:)
-             ww2(j,k,:) = w(id,j,k,:)
-             pp1(j,k)   = p(ih,j,k)
-             pp2(j,k)   = p(id,j,k)
-
-             if( viscous ) then
-                rlv1(j,k) = rlv(ih,j,k)
-                rlv2(j,k) = rlv(id,j,k)
-             endif
-
-             if( eddyModel ) then
-                rev1(j,k) = rev(ih,j,k)
-                rev2(j,k) = rev(id,j,k)
-             endif
-          end do
-       end do
-       !===============================================================
-
-    case (jMin)
-
-       id = 2 + offset;   ih = 1 - offset
-       do k = 1,ke
-          do i = 1,ie
-             ww1(i,k,:) = w(i,ih,k,:)
-             ww2(i,k,:) = w(i,id,k,:)
-             pp1(i,k)   = p(i,ih,k)
-             pp2(i,k)   = p(i,id,k)
-
-             if( viscous ) then
-                rlv1(i,k) = rlv(i,ih,k)
-                rlv2(i,k) = rlv(i,id,k)
-             endif
-
-             if( eddyModel ) then
-                rev1(i,k) = rev(i,ih,k)
-                rev2(i,k) = rev(i,id,k)
-             endif
-          end do
-       end do
-       !===============================================================
-
-    case (jMax)
-
-       id = jl - offset;  ih = je + offset
-       do k = 1,ke
-          do i = 1,ie
-             ww1(i,k,:) = w(i,ih,k,:)
-             ww2(i,k,:) = w(i,id,k,:)
-             pp1(i,k)   = p(i,ih,k)
-             pp2(i,k)   = p(i,id,k)
-
-             if( viscous ) then
-                rlv1(i,k) = rlv(i,ih,k)
-                rlv2(i,k) = rlv(i,id,k)
-             endif
-
-             if( eddyModel ) then
-                rev1(i,k) = rev(i,ih,k)
-                rev2(i,k) = rev(i,id,k)
-             endif
-          end do
-       end do
-       !===============================================================
-
-    case (kMin)
-
-       id = 2 + offset;   ih = 1 - offset
-       do j = 1,je
-          do i = 1,ie
-             ww1(i,j,:) = w(i,j,ih,:)
-             ww2(i,j,:) = w(i,j,id,:)
-             pp1(i,j)   = p(i,j,ih)
-             pp2(i,j)   = p(i,j,id)
-
-             if( viscous ) then
-                rlv1(i,j) = rlv(i,j,ih)
-                rlv2(i,j) = rlv(i,j,id)
-             endif
-
-             if( eddyModel ) then
-                rev1(i,j) = rev(i,j,ih)
-                rev2(i,j) = rev(i,j,id)
-             endif
-          end do
-       end do
-       !===============================================================
-
-    case (kMax)
-
-       id = kl - offset;  ih = ke + offset
-       do j = 1,je
-          do i = 1,ie
-             ww1(i,j,:) = w(i,j,ih,:)
-             ww2(i,j,:) = w(i,j,id,:)
-             pp1(i,j)   = p(i,j,ih)
-             pp2(i,j)   = p(i,j,id)
-
-             if( viscous ) then
-                rlv1(i,j) = rlv(i,j,ih)
-                rlv2(i,j) = rlv(i,j,id)
-             endif
-
-             if( eddyModel ) then
-                rev1(i,j) = rev(i,j,ih)
-                rev2(i,j) = rev(i,j,id)
-             endif
-          end do
-       end do
-    end select
-
-  end subroutine setBCPointersBwd
-
   integer function setCGNSRealType()
     !
     !      ******************************************************************
@@ -4518,8 +4913,6 @@ contains
 #endif
 
   end function setCGNSRealType
-
-
 
   subroutine returnFail(routineName, errorMessage)
     !
@@ -4711,5 +5104,53 @@ contains
     enddo
 
   end subroutine convertToLowerCase
+  logical function EulerWallsPresent()
+
+    ! eulerWallsPresent determines whether or not inviscid walls are
+    ! present in the whole grid. It first determines if these walls are
+    ! present locally and performs an allReduce afterwards.
+
+    use constants
+    use block, only : nDom, flowDoms
+    use communication, only : sumb_comm_world
+    implicit none
+    !
+    !      Local variables.
+    !
+    integer(kind=intType) :: nn, i
+    integer               :: ierr
+    logical               :: localEulerWalls
+
+    ! Initialize localEulerWalls to .false. and loop over the
+    ! boundary subfaces of the blocks to see if Euler walls are
+    ! present on this processor. As the info is the same for all
+    ! spectral solutions, only the 1st needs to be considered.
+
+    localEulerWalls = .false.
+    do nn=1,nDom
+       do i=1,flowDoms(nn,1,1)%nBocos
+          if(flowDoms(nn,1,1)%BCType(i) == EulerWall) &
+               localEulerWalls = .true.
+       enddo
+    enddo
+
+    ! Set i to 1 if Euler walls are present locally and to 0
+    ! otherwise. Determine the maximum over all processors
+    ! and set EulerWallsPresent accordingly.
+
+    i = 0
+    if( localEulerWalls ) i = 1
+    call mpi_allreduce(i, nn, 1, sumb_integer, mpi_max, &
+         SUmb_comm_world, ierr)
+
+    if(nn == 0) then
+       EulerWallsPresent = .false.
+    else
+       EulerWallsPresent = .true.
+    endif
+
+  end function EulerWallsPresent
+
+
 #endif
 end module utils

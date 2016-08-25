@@ -27,7 +27,6 @@ subroutine computelamviscosity_fast_b()
 !      *                                                                *
 !      ******************************************************************
 !
-  use myPushPopLib
   use blockpointers
   use constants
   use flowvarrefstate

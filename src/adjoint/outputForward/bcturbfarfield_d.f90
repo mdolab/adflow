@@ -31,8 +31,8 @@ subroutine bcturbfarfield_d(nn)
 !      *                                                                *
 !      ******************************************************************
 !
-  use blockpointers
   use constants
+  use blockpointers
   use flowvarrefstate
   implicit none
 !

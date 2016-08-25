@@ -51,7 +51,6 @@ FILES_TO_COMPLEXIFY2 = \
                coorUtilsALE.F90\
 	       DADISmoother.f90\
 	       derivativeRotMatrixRigid.f90\
-	       eulerWallsPresent.f90\
 	       executeMGCycle.f90\
                farFieldDrag.f90\
 	       farFieldInducedDrag.f90\

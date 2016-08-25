@@ -19,6 +19,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use blockPointers
        use communication
        use localSubfacesMod

@@ -21,6 +21,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use block
        use inputTimeSpectral
        use coarse1to1Subface

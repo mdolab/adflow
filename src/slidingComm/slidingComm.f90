@@ -19,6 +19,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use block
        use commSliding
        use communication

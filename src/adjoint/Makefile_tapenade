@@ -49,6 +49,7 @@ ALL_RES_FILES =	$(SRC)/adjoint/residualInput/block_res.F90\
 		$(SRC)/modules/cgnsGrid.f90 \
 		$(SRC)/modules/CpCurveFits.f90\
 		$(SRC)/modules/blockPointers.F90 \
+		$(SRC)/modules/BCPointers.F90 \
 		$(SRC)/modules/flowVarRefState.F90 \
 		$(SRC)/modules/costFunctions.F90\
 		$(SRC)/modules/wallDistanceData.F90\
@@ -100,7 +101,7 @@ ALL_RES_FILES =	$(SRC)/adjoint/residualInput/block_res.F90\
 		$(SRC)/utils/utils.F90\
 		$(SRC)/utils/sorting.F90\
 		$(SRC)/bendingMomentAnalysis/rootBendingMomentAnalysis.f90\
-		$(SRC)/wallDistance/determineDistanceQuickly.F90\
+		$(SRC)/wallDistance/wallDistance.F90\
 		$(SRC)/solver/BCRoutines.F90\
 
 
@@ -197,20 +198,20 @@ ad_reverse_fast:
 	viscousFlux(w, aa, rlv, rev, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz, fw)>(fw, w, rlv, rev, aa) \
 	allNodalGradients(aa, w, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz)>\
 	         (aa, w, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz) \
-	computeSpeedOfSoundSquared(w, p, aa)>(w, p, aa) \
+	flowutils%computeSpeedOfSoundSquared(w, p, aa)>(w, p, aa) \
 	computeLamViscosity(w, p, rlv)>(w, p, rlv) \
-	BCRoutines%bcNSWallAdiabatic(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2)>\
-	                            (ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2) \
-	BCRoutines%bcNSWallIsothermal(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2)>\
-	                             (ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2) \
+	BCRoutines%bcNSWallAdiabatic(ww0, ww1, ww2, pp0, pp1, pp2, rlv1, rlv2, rev0, rev1, rev2)>\
+	                            (ww0, ww1, ww2, pp0, pp1, pp2, rlv1, rlv2, rev0, rev1, rev2) \
+	BCRoutines%bcNSWallIsothermal(ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2)>\
+	                             (ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2) \
 	BCRoutines%bcFarField(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2)>\
 			     (ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2) \
-	BCRoutines%bcSymm1stHalo(ww0, ww1, ww2, ww3, pp0, pp1, pp2, pp3, rlv0, rlv1, rlv2, rlv3, rev0, rev1, rev2, rev3)>\
-			 (ww0, ww1, ww2, ww3, pp0, pp1, pp2, pp3, rlv0, rlv1, rlv2, rlv3, rev0, rev1, rev2, rev3) \
-	BCRoutines%bcSymm2ndHalo(ww0, ww1, ww2, ww3, pp0, pp1, pp2, pp3, rlv0, rlv1, rlv2, rlv3, rev0, rev1, rev2, rev3)>\
-			 (ww0, ww1, ww2, ww3, pp0, pp1, pp2, pp3, rlv0, rlv1, rlv2, rlv3, rev0, rev1, rev2, rev3) \
-	BCRoutines%bcEulerWall(ww0, ww1, ww2, ww3, pp0, pp1, pp2, pp3, rlv0, rlv1, rlv2, rlv3, rev0, rev1, rev2, rev3)>\
-			      (ww0, ww1, ww2, ww3, pp0, pp1, pp2, pp3, rlv0, rlv1, rlv2, rlv3, rev0, rev1, rev2, rev3) \
+	BCRoutines%bcSymm1stHalo(ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2)>\
+			        (ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2) \
+	BCRoutines%bcSymm2ndHalo(ww0, ww3, pp0, pp3, rlv0, rlv3, rev0, rev3)>\
+			 (ww0, ww3, pp0, pp3, rlv0, rlv3, rev0, rev3) \
+	BCRoutines%bcEulerWall(ww1, ww2, pp1, pp2, pp3, rlv1, rlv2, rev1, rev2)>\
+			      (ww1, ww2, pp1, pp2, pp3, rlv1, rlv2, rev1, rev2) \
 	computePressureSimple(w, p)>(w,p) \
 	prodsmag2(w,scratch)>(w, scratch) \
 	prodwmag2(w,scratch)>(w, scratch) \

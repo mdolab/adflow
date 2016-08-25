@@ -1,6 +1,6 @@
 
 subroutine emptyFringe(fringe)
-
+  use constants
   use block
   implicit none
   ! Input/Output
@@ -745,7 +745,7 @@ subroutine wallsOnBlock(wallsPresent)
 end subroutine wallsOnBlock
 
 subroutine flagForcedReceivers(tmp)
-
+  use constants
   use blockPointers
   implicit none
 

@@ -22,21 +22,10 @@ module block
   !      *                                                                *
   !      ******************************************************************
   !
-  use constants
+  use constants, only : realType, intType, porType, maxCGNSNameLen
   implicit none
   save
 
-  ! Parameters used for coarsening definition.
-
-  integer(kind=porType), parameter :: leftStarted  = -1_porType
-  integer(kind=porType), parameter :: regular      =  0_porType
-  integer(kind=porType), parameter :: rightStarted =  1_porType
-
-  ! Parameters used for subsonic inlet bc treatment.
-
-  integer(kind=intType), parameter :: noSubInlet      = 0
-  integer(kind=intType), parameter :: totalConditions = 1
-  integer(kind=intType), parameter :: massFlow        = 2
   !
   !      ******************************************************************
   !      *                                                                *

@@ -19,7 +19,6 @@ SUBDIR_SRC    = src/modules       \
 	        src/slidingComm   \
 	        src/stabilityDerivatives \
 	        src/turbulence    \
-	        src/wallDistance  \
 		src/warping       \
 		src/bendingMomentAnalysis \
                 src/adjoint/ADFirstAidKit \
@@ -75,5 +74,5 @@ sumb:
 			echo; \
 			(cd $$subdir && make) || exit 1; \
 		done
-	(cd lib && make)
+	(cd lib && make)	
 	(cd src/python/f2py && make)

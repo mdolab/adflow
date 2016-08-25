@@ -10,16 +10,6 @@
 !                w:in rlv:in x:in qx:in qy:in qz:in ux:in uy:in
 !                uz:in si:in sj:in sk:in vx:in vy:in vz:in fw:in
 !                viscsubface:in *viscsubface.tau:in
-!
-!      ******************************************************************
-!      *                                                                *
-!      * file:          viscousflux.f90                                 *
-!      * author:        edwin van der weide                             *
-!      * starting date: 03-21-2003                                      *
-!      * last modified: 04-18-2005                                      *
-!      *                                                                *
-!      ******************************************************************
-!
 subroutine viscousflux_d()
 !
 !      ******************************************************************
@@ -31,6 +21,7 @@ subroutine viscousflux_d()
 !      *                                                                *
 !      ******************************************************************
 !
+  use constants
   use blockpointers
   use flowvarrefstate
   use inputphysics
@@ -73,12 +64,6 @@ subroutine viscousflux_d()
   real(kind=realtype) :: result1d
   real(kind=realtype) :: abs0
   integer :: ii1
-!
-!      ******************************************************************
-!      *                                                                *
-!      * begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
 ! set rfilv to rfil to indicate that this is the viscous part.
 ! if rfilv == 0 the viscous residuals need not to be computed
 ! and a return can be made.

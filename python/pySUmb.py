@@ -2554,7 +2554,7 @@ class SUMB(AeroSolver):
             if newGrid is not None:
                 self.sumb.setgrid(newGrid)
             self.sumb.updatecoordinatesalllevels()
-            self.sumb.updatewalldistancealllevels()
+            self.sumb.walldistance.updatewalldistancealllevels()
             self.sumb.updateslidingalllevels()
             self.sumb.updatemetricsalllevels()
             self.sumb.updategridvelocitiesalllevels()

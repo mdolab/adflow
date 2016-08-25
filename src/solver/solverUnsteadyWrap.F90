@@ -42,11 +42,8 @@ subroutine solverUnsteadyWrapBegin
   use section
   use inputMotion
   use inputTimeSpectral
+  use utils, only : eulerWallsPresent
   implicit none
-  !
-  !      Local variables.
-  
-  logical :: EulerWallsPresent
   
   ! If the normal momentum equation should be used to determine
   ! the pressure in the halo for inviscid walls, find out if there
@@ -139,6 +136,7 @@ subroutine initTimeStepWrap
   use flowVarRefState
   use bcdata, only : setbcdataFineGrid, setBCDataCoarseGrid, &
        nonDimBoundData, setInletFreeStreamTurb, bcDataMassBleedOutflow
+  use wallDistance, only : updateWallDistanceAllLevels
 
   implicit none
   !

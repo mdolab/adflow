@@ -41,7 +41,7 @@ FF90_OBJECTS1 =\
 		flowutils_d.o\
 		bcroutines_d.o\
 		samodule_d.o\
-
+		walldistance_d.o\
 
 FF90_OBJECTS2 = allnodalgradients_d.o\
 		viscousflux_d.o \

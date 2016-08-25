@@ -7,6 +7,7 @@ subroutine exchangeCoor_b(level)
   !      *                                                                *
   !      ******************************************************************
   !
+  use constants
   use block
   use communication
   use inputTimeSpectral

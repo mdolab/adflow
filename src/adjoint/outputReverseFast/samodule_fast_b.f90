@@ -5,7 +5,6 @@
 ! model. it is slightly more modularized than the original which makes
 ! performing reverse mode ad simplier. 
 module samodule_fast_b
-  use myPushPopLib
   use constants
   implicit none
   real(kind=realtype) :: cv13, kar2inv, cw36, cb3inv

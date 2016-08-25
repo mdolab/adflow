@@ -3,7 +3,7 @@ subroutine volume_block
   ! This is COPY of metric.f90. It was necessary to copy this file
   ! since there is debugging stuff in the original that is not
   ! necessary for AD.
-
+  use constants
   use blockPointers
   use cgnsGrid
   use communication
@@ -193,7 +193,7 @@ contains
 end subroutine volume_block
 
 subroutine metric_block
-  
+  use constants
   use blockPointers
   implicit none
 
@@ -329,6 +329,7 @@ subroutine boundaryNormals
   ! *                                                            *
   ! **************************************************************
   !
+  use constants
   use blockPointers
   use cgnsGrid
   use communication

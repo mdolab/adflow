@@ -1,21 +1,8 @@
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          constants.F90                                   *
-!      * Author:        Edwin van der Weide, Georgi Kalitzin            *
-!      * Starting date: 12-09-2002                                      *
-!      * Last modified: 07-22-2005                                      *
-!      *                                                                *
-!      ******************************************************************
-!
 module constants
-  !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Definition of the constants used in the code.                  *
-  !      *                                                                *
-  !      ******************************************************************
-  !
+  
+  ! Define all constants used in the code. This is the *only* module 
+  ! that is allowed to be imported without an 'only' qualifier. 
+
   use precision
   implicit none
   save
@@ -90,17 +77,12 @@ module constants
   real(kind=realType), parameter :: fourth = 0.25_realType
   real(kind=realType), parameter :: sixth  = one/six
   real(kind=realType), parameter :: eighth = 0.125_realType
+  real(kind=realType), parameter :: threefourth = 0.75_realType
+  real(kind=realType), parameter :: sqrtthree = 1.7320508075688772_realType
 
   ! String constants
   CHARACTER( * ), PARAMETER :: LOWER_CASE = 'abcdefghijklmnopqrstuvwxyz'
   CHARACTER( * ), PARAMETER :: UPPER_CASE = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 
-
-
-  ! *******************************
-  ! Added by HDN
-  ! *******************************
-  real(kind=realType), parameter :: threefourth = 0.75_realType
-  real(kind=realType), parameter :: sqrtthree = 1.7320508075688772_realType
 
   ! Threshold parameter for real types; the value depends
   ! whether single or double precision is used.
@@ -117,25 +99,24 @@ module constants
   character(len=1), parameter :: retChar = achar(13)
 #endif
 
-
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Definition of some parameters which make the code more         *
-  !      * readable. The actual values of this parameters are arbitrary;  *
-  !      * in the code always the symbolic names are (should be) used.    *
-  !      *                                                                *
-  !      ******************************************************************
-  !
-  integer(kind=intType), parameter :: EulerEquations = 1,  &
+  integer(kind=intType), parameter :: &
+       EulerEquations = 1,  &
        NSEquations    = 2,  &
        RANSEquations  = 3
-  integer(kind=intType), parameter :: steady        = 1,   &
+
+  integer(kind=intType), parameter :: &
+       steady        = 1,   &
        unsteady      = 2,   &
        timeSpectral  = 3
-  integer(kind=intType), parameter :: internalFlow = 1,    &
+
+  integer(kind=intType), parameter :: &
+       internalFlow = 1,    &
        externalFlow = 2
-  integer(kind=intType), parameter :: cpConstant      = 1, &
+
+  integer(kind=intType), parameter :: &
+       cpConstant      = 1, &
        cpTempCurveFits = 2
+
   integer(kind=intType), parameter ::                              &
        spalartAllmaras        =  2,  &
        spalartAllmarasEdwards =  3,  &
@@ -144,133 +125,122 @@ module constants
        ktau                   =  6,  &
        menterSST              =  7,  &
        v2f                    = 10
-  integer(kind=intType), parameter :: strain       = 1,    &
+
+  integer(kind=intType), parameter :: &
+       strain       = 1,    &
        vorticity    = 2,    &
        katoLaunder  = 3
 
-  integer(kind=intType), parameter :: firstOrder  = 1, &
+  integer(kind=intType), parameter :: &
+       firstOrder  = 1, &
        secondOrder = 2, &
        thirdOrder  = 3, &
        fourthOrder = 4, &
        fifthOrder  = 5
 
-  !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Definition of some parameters which make the code more         *
-  !      * readable. The actual values of this parameters are arbitrary;  *
-  !      * in the code always the symbolic names are (should be) used.    *
-  !      *                                                                *
-  !      ******************************************************************
-  !
-  integer(kind=intType), parameter :: dissScalar = 1,  &
+  integer(kind=intType), parameter :: &
+       dissScalar = 1,  &
        dissMatrix = 2,  &
        dissCusp   = 3,  &
        upwind     = 9
-  integer(kind=intType), parameter :: Roe     = 1,     &
+
+  integer(kind=intType), parameter :: &
+       Roe     = 1,     &
        vanLeer = 2,     &
        ausmdv  = 3
-  integer(kind=intType), parameter :: noLimiter  = 2,  &
+
+  integer(kind=intType), parameter :: &
+       noLimiter  = 2,  &
        vanAlbeda  = 3,  &
        minmod     = 4
-  integer(kind=intType), parameter :: noPrecond  = 1,  &
+
+  integer(kind=intType), parameter :: &
+       noPrecond  = 1,  &
        Turkel     = 2,  &
        ChoiMerkle = 3
+
   integer(kind=intType), parameter ::                          &
        constantPressure     = 1, &
        linExtrapolPressure  = 2, &
        quadExtrapolPressure = 3, &
        normalMomentum       = 4
 
-  integer(kind=intType), parameter ::                      &
+  integer(kind=intType), parameter ::  &
        constantExtrapol = 1, &
        linExtrapol      = 2
 
-  integer(kind=intType), parameter :: NonConservative = 1, &
+  integer(kind=intType), parameter :: &
+       NonConservative = 1, &
        Conservative    = 2
 
-  !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Definition of some parameters which make the code more         *
-  !      * readable. The actual values of this parameters are arbitrary;  *
-  !      * in the code always the symbolic names are (should be) used.    *
-  !      *                                                                *
-  !      ******************************************************************
-  !
-  integer(kind=intType), parameter :: precisionSingle = 1, &
+  integer(kind=intType), parameter :: &
+       precisionSingle = 1, &
        precisionDouble = 2
 
   ! Definition of the parameters for the time integration scheme.
-
-  integer(kind=intType), parameter :: BDF        = 1, &
+  integer(kind=intType), parameter :: &
+       BDF        = 1, &
        explicitRK = 2, &
        implicitRK = 3, &
        MD         = 4
+
   ! Line search parameters
-  integer(kind=intType), parameter :: noLineSearch = 0_intType, &
+  integer(kind=intType), parameter :: &
+       noLineSearch = 0_intType, &
        cubicLineSearch = 1_intType, &
        nonMonotoneLineSearch = 2_intType
 
-  !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Definition of some parameters which make the code more         *
-  !      * readable. The actual values of this parameters are arbitrary;  *
-  !      * in the code always the symbolic names are (should be) used.    *
-  !      *                                                                *
-  !      ******************************************************************
-  !
-  integer(kind=intType), parameter :: RungeKutta  = 1,  &
+  integer(kind=intType), parameter :: &
+       RungeKutta  = 1,  &
        DADI        = 2,  &
        nlLusgs     = 3,  &
        nlLusgsLine = 4
-  integer(kind=intType), parameter :: segregated = 1,   &
+
+  integer(kind=intType), parameter :: &
+       segregated = 1,   &
        coupled    = 2
-  integer(kind=intType), parameter :: gmres = 1,        &
+  integer(kind=intType), parameter :: &
+       gmres = 1,        &
        adi   = 2
 
-  integer(kind=intType), parameter :: bcDirichlet0 = 0, &
+  integer(kind=intType), parameter :: &
+       bcDirichlet0 = 0, &
        bcNeumann0    = 1
 
-  integer(kind=intType), parameter ::                           &
+  integer(kind=intType), parameter :: &
        noResAveraging        = 0, &
        alwaysResAveraging    = 1, &
        alternateResAveraging = 2
+
   integer(kind=intType), parameter :: &
        turbRelaxNotDefined = 0,  &
        turbRelaxExplicit   = 1,  &
        turbRelaxImplicit   = 2
 
-  !     ******************************************************************
-  !     *                                                                *
-  !     * Definition of the parameters, which define whether the ADT     *
-  !     * corresponds to surface or volume elements and the parameter,   *
-  !     * which defines the maximum number of coordinates an ADT can     *
-  !     * handle in one interpolation round.                             *
-  !     *                                                                *
-  !     ******************************************************************
+  ! Parameters used for coarsening definition.
+  integer(kind=porType), parameter :: &
+       leftStarted  = -1_porType, &
+       regular      =  0_porType, &
+       rightStarted =  1_porType
+
+  ! Parameters used for subsonic inlet bc treatment.
+  integer(kind=intType), parameter :: &
+       noSubInlet      = 0, &
+       totalConditions = 1, &
+       massFlow        = 2
   !
   integer, parameter :: adtSurfaceADT = 1
   integer, parameter :: adtVolumeADT  = 2
   integer(kind=intType), parameter :: nCoorMaxLowerLimit = 100000
-  !
-  !     ******************************************************************
-  !     *                                                                *
-  !     * Definition of the parameters, which define the supported       *
-  !     * element types. To save memory these parameters and the arrays  *
-  !     * containing the data are of a different integer type.           *
-  !     *                                                                *
-  !     ******************************************************************
-  !
+
   integer(kind=adtElementType), parameter :: adtTriangle      = 1
   integer(kind=adtElementType), parameter :: adtQuadrilateral = 2
   integer(kind=adtElementType), parameter :: adtTetrahedron   = 3
   integer(kind=adtElementType), parameter :: adtPyramid       = 4
   integer(kind=adtElementType), parameter :: adtPrism         = 5
   integer(kind=adtElementType), parameter :: adtHexahedron    = 6
-  !
-
+  
+  ! BCDefinitions
   integer(kind=intType), parameter :: BCNull                =   0
   integer(kind=intType), parameter :: Symm                  =  -1
   integer(kind=intType), parameter :: SymmPolar             =  -2
@@ -304,15 +274,17 @@ module constants
   !      supported
   !
   integer(kind=intType), parameter :: nBCs = 24
-  !
-  !      block faces on which boundary conditions may be imposed
-  !
+
+    !Block faces on which boundary conditions may be imposed
   integer(kind=intType), parameter :: iMin = 1
   integer(kind=intType), parameter :: iMax = 2
   integer(kind=intType), parameter :: jMin = 3
   integer(kind=intType), parameter :: jMax = 4
   integer(kind=intType), parameter :: kMin = 5
   integer(kind=intType), parameter :: kMax = 6
+
+  integer(kind=intType) :: myIntStack(32)
+  integer(kind=intType) :: myIntPtr = 0
 
 
 end module constants

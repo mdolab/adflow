@@ -18,6 +18,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use block
        use section
        implicit none

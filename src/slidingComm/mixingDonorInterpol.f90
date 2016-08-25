@@ -7,6 +7,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use blockPointers
        use commMixing
        use interfaceGroups

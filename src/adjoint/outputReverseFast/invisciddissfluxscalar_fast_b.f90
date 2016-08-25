@@ -29,7 +29,6 @@ subroutine invisciddissfluxscalar_fast_b()
 !      *                                                                *
 !      ******************************************************************
 !
-  use myPushPopLib
   use constants
   use blockpointers, only : nx, ny, nz, il, jl, kl, ie, je, ke, ib, jb&
 & , kb, w, wd, p, pd, pori, porj, pork, fw, fwd, radi, radid, radj, &

@@ -20,6 +20,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use blockPointers
        use communication
        use inputTimeSpectral

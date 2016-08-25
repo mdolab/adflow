@@ -29,6 +29,7 @@ subroutine bcturbinterface_d(nn)
 !      *                                                                *
 !      ******************************************************************
 !
+  use constants
   use blockpointers
   use flowvarrefstate
   implicit none
