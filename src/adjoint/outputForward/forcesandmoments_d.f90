@@ -5,16 +5,15 @@
 !   variations   of useful results: *(*bcdata.fv) *(*bcdata.fp)
 !                *(*bcdata.area) sepsensoravg cfp cfv cmp cmv cavitation
 !                sepsensor
-!   with respect to varying inputs: gammainf pinf pref *p *w *x
-!                *si *sj *sk *(*viscsubface.tau) veldirfreestream
-!                lengthref machcoef pointref *xx *pp1 *pp2 *ssi
-!                *ww2
-!   plus diff mem management of: viscsubface:in *viscsubface.tau:in
-!                bcdata:in *bcdata.fv:in *bcdata.fp:in *bcdata.area:in
-!                xx:in-out rev0:out rev1:out rev2:out rev3:out
-!                pp0:out pp1:in-out pp2:in-out pp3:out rlv0:out
-!                rlv1:out rlv2:out rlv3:out ss:out ssi:in-out ssj:out
-!                ssk:out ww0:out ww1:in-out ww2:in-out ww3:out
+!   with respect to varying inputs: gammainf pinf pref *xx *pp1
+!                *pp2 *ssi *ww2 *p *w *x *si *sj *sk *(*viscsubface.tau)
+!                veldirfreestream lengthref machcoef pointref
+!   plus diff mem management of: xx:in-out rev0:out rev1:out rev2:out
+!                rev3:out pp0:out pp1:in-out pp2:in-out pp3:out
+!                rlv0:out rlv1:out rlv2:out rlv3:out ss:out ssi:in-out
+!                ssj:out ssk:out ww0:out ww1:in-out ww2:in-out
+!                ww3:out viscsubface:in *viscsubface.tau:in bcdata:in
+!                *bcdata.fv:in *bcdata.fp:in *bcdata.area:in
 !
 !      ******************************************************************
 !      *                                                                *
@@ -49,6 +48,8 @@ subroutine forcesandmoments_d(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd&
   use costfunctions
   use surfacefamilies
   use sorting, only : bsearchintegers
+  use utils_d, only : setbcpointers, setbcpointers_d, resetbcpointers
+  use bcpointers_d
   use diffsizes
 !  hint: isize1ofdrfbcdata should be the size of dimension 1 of array *bcdata
   implicit none

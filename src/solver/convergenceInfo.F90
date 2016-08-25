@@ -18,6 +18,7 @@ subroutine convergenceInfo
   !      *                                                                *
   !      ******************************************************************
   !
+  use block, only : nCellGlobal
   use blockPointers
   use communication
   use cgnsNames

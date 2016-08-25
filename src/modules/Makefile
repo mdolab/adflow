@@ -59,6 +59,11 @@ FF90_OBJECTS_3 = NKSolverVars.o\
 		 surfaceFamilies.o\
 		 adtData.o\
 		 kd_tree.o\
+		 BCPointers.o\
+		 BCPointers_b.o\
+		 BCPointers_d.o\
+		 BCPointers_fast_b.o\
+		 wallDistanceData.o\
 
 FF90_OBJECTS_4 = ADjointVars.o\
 		 ADjointPETSc.o\
@@ -79,8 +84,6 @@ FF90_OBJECTS_4 = ADjointVars.o\
 		 section.o\
 		 stencils.o\
 	         diffSizes.o\
-		 wallDistanceData.o\
-		 myPushPopLib.o\
 		 overset.o\
 		 liftDistributionData.o\
 
@@ -99,6 +102,8 @@ FF90_OBJECTS_7 =../utils/haloExchange.o\
 
 FF90_OBJECTS_8 =../utils/haloExchange.o\
 		../ADT/adtAPI.o\
+
+FF90_OBJECTS_9 =../wallDistance/wallDistance.o\
 
 FILES_TO_COMPLEXIFY =  precision.F90\
 		 bleedFlows.f90\
@@ -165,6 +170,7 @@ all:
 	$(PMAKE) src_6
 	$(PMAKE) src_7
 	$(PMAKE) src_8
+	$(PMAKE) src_9
 
 	cp -f *.mod $(SUMB_MODDIR)
 
@@ -205,3 +211,4 @@ src_5:	$(FF90_OBJECTS_5)
 src_6:	$(FF90_OBJECTS_6)
 src_7:	$(FF90_OBJECTS_7)
 src_8:	$(FF90_OBJECTS_8)
+src_9:	$(FF90_OBJECTS_9)

@@ -7,6 +7,7 @@ subroutine exchangeSurfaceIblanks(level, sps, commPattern, internal)
   !      *                                                                *
   !      ******************************************************************
   !
+  use constants
   use blockPointers
   use communication
   use utils, only : setPointers

@@ -6,7 +6,6 @@ subroutine buildClusterWalls(level, sps, useDual, walls)
 
   use adtAPI
   use blockPointers
-  use wallDistanceData
   use communication
   use inputphysics
   use inputTimeSpectral

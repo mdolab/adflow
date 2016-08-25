@@ -3,6 +3,7 @@
 
 subroutine allocDerivativeValues(level)
 
+  use block, only : flowDoms, flowDomsd
   use blockPointers
   use inputtimespectral
   use flowvarrefstate
@@ -13,10 +14,8 @@ subroutine allocDerivativeValues(level)
   use inputADjoint
   use inputDiscretization
   use communication
-  use wallDistanceData
-#ifndef USE_COMPLEX
-  use bcroutines_b
-#endif
+  use wallDistanceData, only : xSurfVec, xSurfVecd, PETSC_DETERMINE
+  use BCPointers_b
   use adjointVars
   use utils, only : EChk, setPointers
   implicit none
@@ -214,7 +213,7 @@ subroutine allocDerivativeValues(level)
      end do
   end do
 
-#ifndef USE_COMPLEX
+
   ! Finally allocate space for the BC pointers
   isizemax = 0
   jsizemax = 0
@@ -253,6 +252,5 @@ subroutine allocDerivativeValues(level)
        stat=ierr)
   call EChk(ierr,__FILE__,__LINE__) 
 
-#endif 
 derivVarsAllocated = .True. 
 end subroutine allocDerivativeValues

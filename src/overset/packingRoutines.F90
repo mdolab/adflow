@@ -524,7 +524,7 @@ end subroutine unpackOFringe
 subroutine getWallSize(nNodes, nCells, dualMesh)
   ! Simple helper routine to return the number of wall nodes and cells
   ! for the block pointed to by blockPointers. 
-
+  use constants
   use blockPointers
   implicit none
   

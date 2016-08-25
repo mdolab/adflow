@@ -26,6 +26,7 @@ subroutine bceddywall_b(nn)
 !      *                                                                *
 !      ******************************************************************
 !
+  use constants
   use blockpointers
   implicit none
 !

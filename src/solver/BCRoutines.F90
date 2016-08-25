@@ -1,61 +1,27 @@
-!      ******************************************************************
-!      *                                                                *
-!      * File:          BCRoutines.F90                                   *
-!      * Author:        Gaetan K. W. Kenway                             *
-!      * Starting date: 01-23-2015                                      *
-!      * Last modified: 01-23-2015                                      *
-!      *                                                                *
-!      ******************************************************************
-!
-!      ******************************************************************
-!      *                                                                *
-!      * This module contains data structures *and* routines used       *
-!      * for applying *all* boundary conditions for Navier Stokes part  *
-!      * of the code. The reason for using a module to contain the      *
-!      * routines is that due to the use of pointers, it eliminates the *
-!      * need for using interfaces. All former bc*.f90 routines are now *
-!      * included in this module.                                       *
-!      *                                                                *
-!      ******************************************************************
-!
+
+! This module contains routines used for applying *all* boundary
+! conditions for Navier Stokes part of the code. Boundary conditions
+! pointers from the BCPointers modules are used. The utilty routines
+! setBCPointers (and resetBCPointers) are employed.
+
 module BCRoutines
 
-  use constants
-  use utils, only : terminate, getCorrectForK
   implicit none
   save
-#if !defined USE_TAPENADE || defined TAPENADE_POINTERS || defined TAPENADE_FORWARD
-  real(kind=realType), dimension(:,:,:), pointer :: ww0, ww1, ww2, ww3
-  real(kind=realType), dimension(:,:),   pointer :: pp0, pp1, pp2, pp3
-  real(kind=realType), dimension(:,:),   pointer :: rlv0, rlv1, rlv2, rlv3
-  real(kind=realType), dimension(:,:),   pointer :: rev0, rev1, rev2, rev3
-  real(kind=realType), dimension(:,:),   pointer :: gamma0, gamma1, gamma2, gamma3
-  real(kind=realType), dimension(:,:,:), pointer :: ssi, ssj, ssk
-  real(kind=realType), dimension(:,:,:), pointer :: ss, xx
-  real(kind=realType), dimension(:,:),   pointer :: dd2wall
-  integer(kind=intType), dimension(:,:), pointer :: gcp
-#else
-  real(kind=realType), dimension(:,:,:), allocatable :: ww0, ww1, ww2, ww3
-  real(kind=realType), dimension(:,:)  , allocatable :: pp0, pp1, pp2, pp3
-  real(kind=realType), dimension(:,:)  , allocatable :: rlv0, rlv1, rlv2, rlv3
-  real(kind=realType), dimension(:,:)  , allocatable :: rev0, rev1, rev2, rev3
-  real(kind=realType), dimension(:,:  ), allocatable :: gamma0, gamma1, gamma2, gamma3
-  real(kind=realType), dimension(:,:,:), allocatable :: ssi, xx
-  integer(kind=intType), dimension(:,:), allocatable :: gcp
-#endif
-  integer(kind=intType) :: iStart, iEnd, iSize
-  integer(kind=intType) :: jStart, jEnd, jSize
+
 contains
 
   subroutine applyAllBC_block(secondHalo)
 
     ! Apply BC's for a single block
-
-    use blockPointers
-    use flowVarRefState
-    use inputDiscretization
-    use inputTimeSpectral
-    use iteration
+    use constants
+    use blockPointers , only : nBocos, BCType, nViscBocos, w, dw, x, vol, il, jl, kl, &
+         sectionID, wOld, volOld, BCData, &
+       si, sj, sk, sfacei, sfacej, sfacek, rlv, gamma, p, rev, &
+       bmtj1, bmtj2, scratch, bmtk2, bmtk1, &
+       fw, aa, d2wall, bmti1, bmti2, s
+    use utils, only : setBCPointers, resetBCPointers, getCorrectForK
+    use BCPointers
     implicit none
 
     ! Subroutine arguments.
@@ -73,21 +39,21 @@ contains
     ! some of them have been AD'ed
 
     ! ------------------------------------
-    !  Symmetry Boundary Condition 
+    !  Symmetry Boundary Condition
     ! ------------------------------------
     !$AD II-LOOP
     do nn=1, nBocos
-       if (bcType(nn) == symm) then 
+       if (BCType(nn) == symm) then
           call setBCPointers(nn, .False.)
           call bcSymm1stHalo(nn)
           call resetBCPointers(nn, .False.)
        end if
     end do
 
-    if (secondHalo) then 
+    if (secondHalo) then
        !$AD II-LOOP
        do nn=1, nBocos
-          if (bcType(nn) == symm) then 
+          if (BCType(nn) == symm) then
              call setBCPointers(nn, .False.)
              call bcSymm2ndHalo(nn)
              call resetBCPointers(nn, .False.)
@@ -96,26 +62,34 @@ contains
     end if
 
     ! ------------------------------------
-    !  Symmetry Polar Boundary Condition 
+    !  Symmetry Polar Boundary Condition
     ! ------------------------------------
     !$AD II-LOOP
     do nn=1, nBocos
-       if (bcType(nn) == symmPolar) then
+       if (BCType(nn) == symmPolar) then
           call setBCPointers(nn, .True.)
-          call bcSymmPolar(nn, .False.)
-          if (secondHalo) then 
-             call bcSymmPolar(nn, secondHalo)
-          end if
+          call bcSymmPolar1stHalo(nn)
           call resetBCPointers(nn, .True.)
        end if
     end do
 
+    if (secondHalo) then
+       !$AD II-LOOP
+       do nn=1, nBocos
+          if (BCType(nn) == symmPolar) then
+             call setBCPointers(nn, .True.)
+             call bcSymmPolar2ndHalo(nn)
+             call resetBCPointers(nn, .True.)
+          end if
+       end do
+    end if
+
     ! ------------------------------------
-    !  Adibatic Wall Boundary Condition 
+    !  Adibatic Wall Boundary Condition
     ! ------------------------------------
     !$AD II-LOOP
     do nn=1, nViscBocos
-       if (bcType(nn) == NSWallAdiabatic) then 
+       if (BCType(nn) == NSWallAdiabatic) then
           call setBCPointers(nn, .False.)
           call bcNSWallAdiabatic(nn, secondHalo, correctForK)
           call resetBCPointers(nn, .False.)
@@ -123,11 +97,11 @@ contains
     end do
 
     ! ------------------------------------
-    !  Isotermal Wall Boundary Condition 
+    !  Isotermal Wall Boundary Condition
     ! ------------------------------------
     !$AD II-LOOP
     do nn=1, nViscBocos
-       if (bcType(nn) == NSWallIsoThermal) then 
+       if (BCType(nn) == NSWallIsoThermal) then
           call setBCPointers(nn, .False.)
           call bcNSWallIsothermal(nn, secondHalo, correctForK)
           call resetBCPointers(nn, .False.)
@@ -135,11 +109,11 @@ contains
     end do
 
     ! ------------------------------------
-    !  Farfield Boundary Condition 
+    !  Farfield Boundary Condition
     ! ------------------------------------
     !$AD II-LOOP
     do nn=1,nBocos
-       if (bcType(nn) == farField) then
+       if (BCType(nn) == farField) then
           call setBCPointers(nn, .False.)
           call bcFarField(nn, secondHalo, correctForK)
           call resetBCPointers(nn, .False.)
@@ -147,11 +121,11 @@ contains
     end do
 
     ! ------------------------------------
-    !  Subsonic Outflow Boundary Condition 
+    !  Subsonic Outflow Boundary Condition
     ! ------------------------------------
     do nn=1,nBocos
-       if (bcType(nn) == subSonicOutFlow .or. &
-            bcType(nn) == MassBleedOutflow) then 
+       if (BCType(nn) == subSonicOutFlow .or. &
+            BCType(nn) == MassBleedOutflow) then
           call setBCPointers(nn, .False.)
           call bcSubSonicOutFlow(nn, secondHalo, correctForK)
           call resetBCPointers(nn, .False.)
@@ -159,10 +133,10 @@ contains
     end do
 
     ! ------------------------------------
-    !  Subsonic Inflow Boundary Condition 
+    !  Subsonic Inflow Boundary Condition
     ! ------------------------------------
     do nn=1,nBocos
-       if (bcType(nn) == subSonicInFlow) then 
+       if (BCType(nn) == subSonicInFlow) then
           call setBCPointers(nn, .False.)
           call bcSubSonicInflow(nn, secondHalo, correctForK)
           call resetBCPointers(nn, .False.)
@@ -170,7 +144,7 @@ contains
     end do
 
     ! ------------------------------------
-    !  Extrapolation Boundary Condition 
+    !  Extrapolation Boundary Condition
     ! ------------------------------------
     ! Extrapolation boundary conditions; this also includes
     ! the supersonic outflow boundary conditions. The difference
@@ -179,8 +153,8 @@ contains
     ! boundaries to physical boundaries. The treatment however
     ! is identical.
     do nn=1,nBocos
-       if (bcType(nn) == extrap .or. &
-            bcType(nn) == SupersonicOutFlow) then 
+       if (BCType(nn) == extrap .or. &
+            BCType(nn) == SupersonicOutFlow) then
           call setBCPointers(nn, .False.)
           call bcExtrap(nn, secondHalo, correctForK)
           call resetBCPointers(nn, .False.)
@@ -188,11 +162,11 @@ contains
     end do
 
     ! ------------------------------------
-    !  Euler Wall Boundary Condition 
+    !  Euler Wall Boundary Condition
     ! ------------------------------------
     !$AD II-LOOP
     do nn=1,nBocos
-       if (bcType(nn) == EulerWall) then
+       if (BCType(nn) == EulerWall) then
           call setBCPointers(nn, .True.)
           call bcEulerWall(nn, secondHalo, correctForK)
           call resetBCPointers(nn, .True.)
@@ -204,11 +178,11 @@ contains
     !  Domain Interface Boundary Condition
     ! ------------------------------------
     do nn=1,nBocos
-       if (bcType(nn) == DomainInterfaceAll .or. & 
+       if (BCType(nn) == DomainInterfaceAll .or. &
             bcTYpe(nn) == DomainInterfaceRhoUVW .or. &
-            bcType(nn) == DomainInterfaceP .or. &
-            bcType(nn) == DomainInterfaceRho .or. &
-            bcType(nn) == DomainInterfaceTotal) then
+            BCType(nn) == DomainInterfaceP .or. &
+            BCType(nn) == DomainInterfaceRho .or. &
+            BCType(nn) == DomainInterfaceTotal) then
           call setBCPointers(nn, .False.)
           call bcDomainInterface(nn, secondHalo, correctForK)
           call resetBCPointers(nn, .False.)
@@ -216,10 +190,10 @@ contains
     end do
 #endif
     ! ------------------------------------
-    !  Supersonic inflow condition 
+    !  Supersonic inflow condition
     ! ------------------------------------
     do nn=1,nBocos
-       if (bcType(nn) == SupersonicInflow) then 
+       if (BCType(nn) == SupersonicInflow) then
           call setBCPointers(nn, .False.)
           call bcSupersonicInflow(nn, secondHalo, correctForK)
           call resetBCPointers(nn, .False.)
@@ -232,24 +206,21 @@ contains
   !   Actual implementation of each of the boundary condition routines
   ! ===================================================================
   subroutine bcSymm1stHalo(nn)
+
+    !  bcSymm1stHalo applies the symmetry boundary conditions to a
+    !  block.  * It is assumed that the pointers in blockPointers are
+    !  already set to the correct block on the correct grid level.
     !
-    ! ******************************************************************
-    ! *                                                                *
-    ! * bcSymm applies the symmetry boundary conditions to a block.    *
-    ! * It is assumed that the pointers in blockPointers are already   *
-    ! * set to the correct block on the correct grid level.            *
-    ! *                                                                *
-    ! * In case also the second halo must be set the loop over the     *
-    ! * boundary subfaces is executed twice. This is the only correct  *
-    ! * way in case the block contains only 1 cell between two         *
-    ! * symmetry planes, i.e. a 2D problem.                            *
-    ! *                                                                *
-    ! ******************************************************************
-    !
-    use blockPointers
+    !  In case also the second halo must be set, a second loop is
+    !  execulted calling bcSymm2ndhalo. This is the only correct way
+    !  in case the block contains only 1 cell between two symmetry
+    !  planes, i.e. a 2D problem.
+
     use constants
-    use flowVarRefState
-    use iteration
+    use blockPointers, only : BCdata
+    use flowVarRefState, only : viscous, eddyModel
+    use BCPointers, only : gamma1, gamma2, ww1, ww2, pp1, pp2, rlv1, rlv2, &
+         iStart, jStart, iSize, jSize, rev1, rev2
     implicit none
 
     ! Subroutine arguments.
@@ -260,32 +231,32 @@ contains
     real(kind=realType) :: vn, nnx, nny, nnz
 
     ! Loop over the generic subface to set the state in the
-    ! 1-st level halos 
+    ! 1-st level halos
 
     !$AD II-LOOP
     do ii=0,isize*jsize-1
        i = mod(ii, isize) + iStart
        j = ii/isize + jStart
-       
+
        ! Determine twice the normal velocity component,
        ! which must be substracted from the donor velocity
        ! to obtain the halo velocity.
-       
+
        vn = two*(ww2(i,j,ivx)*BCData(nn)%norm(i,j,1) + &
             ww2(i,j,ivy)*BCData(nn)%norm(i,j,2) + &
             ww2(i,j,ivz)*BCData(nn)%norm(i,j,3))
-       
+
        ! Determine the flow variables in the halo cell.
-       
+
        ww1(i,j,irho) = ww2(i,j,irho)
        ww1(i,j,ivx) = ww2(i,j,ivx) - vn*BCData(nn)%norm(i,j,1)
        ww1(i,j,ivy) = ww2(i,j,ivy) - vn*BCData(nn)%norm(i,j,2)
        ww1(i,j,ivz) = ww2(i,j,ivz) - vn*BCData(nn)%norm(i,j,3)
        ww1(i,j,irhoE) = ww2(i,j,irhoE)
-       
+
        ! Set the pressure and gamma and possibly the
        ! laminar and eddy viscosity in the halo.
-       
+
        gamma1(i,j) = gamma2(i,j)
        pp1(i,j)    = pp2(i,j)
        if( viscous )   rlv1(i,j) = rlv2(i,j)
@@ -295,39 +266,43 @@ contains
 
   subroutine bcSymm2ndHalo(nn)
 
-    use blockPointers
+    !  bcSymm2ndHalo applies the symmetry boundary conditions to a
+    !  block for the 2nd halo. This routine is separate as it makes
+    !  AD slightly easier.
     use constants
-    use flowVarRefState
-    use iteration
+    use blockPointers, only : BCdata
+    use flowVarRefState, only : viscous, eddyModel
+    use BCPointers, only : gamma0, gamma3, ww0, ww3, pp0, pp3, rlv0, rlv3, &
+         rev0, rev3, iStart, jStart, iSize, jSize
     implicit none
 
     ! Subroutine arguments.
     integer(kind=intType), intent(in) :: nn
-    
+
     ! Local variables.
     integer(kind=intType) :: i, j, l, ii
     real(kind=realType) :: vn, nnx, nny, nnz
 
     ! If we need the second halo, do everything again, but using ww0,
-    ! ww3 etc instead of ww2 and ww1. 
-    
+    ! ww3 etc instead of ww2 and ww1.
+
     !$AD II-LOOP
     do ii=0,isize*jsize-1
        i = mod(ii, isize) + iStart
        j = ii/isize + jStart
-          
+
        vn = two*(ww3(i,j,ivx)*BCData(nn)%norm(i,j,1) + &
             ww3(i,j,ivy)*BCData(nn)%norm(i,j,2) + &
             ww3(i,j,ivz)*BCData(nn)%norm(i,j,3))
-       
+
        ! Determine the flow variables in the halo cell.
        ww0(i,j,irho) = ww3(i,j,irho)
        ww0(i,j,ivx) = ww3(i,j,ivx) - vn*BCData(nn)%norm(i,j,1)
        ww0(i,j,ivy) = ww3(i,j,ivy) - vn*BCData(nn)%norm(i,j,2)
        ww0(i,j,ivz) = ww3(i,j,ivz) - vn*BCData(nn)%norm(i,j,3)
-       
+
        ww0(i,j,irhoE) = ww3(i,j,irhoE)
-       
+
        ! Set the pressure and gamma and possibly the
        ! laminar and eddy viscosity in the halo.
 
@@ -339,28 +314,22 @@ contains
 
   end subroutine bcSymm2ndHalo
 
-  subroutine bcSymmPolar(nn, secondHalo)
-    !
-    ! ******************************************************************
-    ! *                                                                *
-    ! * bcSymmPolar applies the polar symmetry boundary conditions     *
-    ! * to a singular line of a block. It is assumed that the pointers *
-    ! * in blockPointers are already set to the correct block on the   *
-    ! * correct grid level.                                            *
-    ! * The polar symmetry condition is a special case of a degenerate *
-    ! * line, as this line is the axi-symmetric centerline.            *
-    ! *                                                                *
-    ! ******************************************************************
-    !
+  subroutine bcSymmPolar1stHalo(nn)
 
-    use blockPointers
+    ! bcSymmPolar applies the polar symmetry boundary conditions to a
+    ! singular line of a block. It is assumed that the pointers in
+    ! blockPointers are already set to the correct block on the
+    ! correct grid level.  The polar symmetry condition is a special
+    ! case of a degenerate line, as this line is the axi-symmetric
+    ! centerline. This routine does just the 1st level halo.
+
     use constants
-    use flowVarRefState
-    use iteration
+    use BCPointers, only: ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2, &
+         xx, iStart, jStart, iSize, jSize
+    use flowVarRefState, only : viscous, eddyModel
     implicit none
 
     ! Subroutine arguments.
-    logical, intent(in) :: secondHalo
     integer(kind=intType), intent(in) :: nn
 
     ! Local variables.
@@ -368,132 +337,152 @@ contains
     real(kind=realType) :: nnx, nny, nnz, tmp, vtx, vty, vtz
 
     ! Loop over the generic subface to set the state in the
-    ! 1-st level halos 
-    if (.not. secondHalo) then 
-       !$AD II-LOOP
-       do ii=0,isize*jsize-1
-          i = mod(ii, isize) + iStart
-          j = ii/isize + jStart
-          
-          ! Determine the unit vector along the degenerated face.
-          ! However it is not known which is the singular
-          ! direction and therefore determine the direction along
-          ! the diagonal (i,j) -- (i-1,j-1), which is correct for
-          ! both singular i and j-direction. Note that due to the
-          ! usage of the pointer xx there is an offset of +1
-          ! in the indices and therefore (i+1,j+1) - (i,j) must
-          ! be used to determine this vector.
+    ! 1-st level halos
+    !$AD II-LOOP
+    do ii=0,isize*jsize-1
+       i = mod(ii, isize) + iStart
+       j = ii/isize + jStart
 
-          nnx = xx(i+1,j+1,1) - xx(i,j,1)
-          nny = xx(i+1,j+1,2) - xx(i,j,2)
-          nnz = xx(i+1,j+1,3) - xx(i,j,3)
+       ! Determine the unit vector along the degenerated face.
+       ! However it is not known which is the singular
+       ! direction and therefore determine the direction along
+       ! the diagonal (i,j) -- (i-1,j-1), which is correct for
+       ! both singular i and j-direction. Note that due to the
+       ! usage of the pointer xx there is an offset of +1
+       ! in the indices and therefore (i+1,j+1) - (i,j) must
+       ! be used to determine this vector.
 
-          ! Determine the unit vector in this direction.
+       nnx = xx(i+1,j+1,1) - xx(i,j,1)
+       nny = xx(i+1,j+1,2) - xx(i,j,2)
+       nnz = xx(i+1,j+1,3) - xx(i,j,3)
 
-          tmp = one/sqrt(nnx*nnx + nny*nny + nnz*nnz)
-          nnx = nnx*tmp
-          nny = nny*tmp
-          nnz = nnz*tmp
+       ! Determine the unit vector in this direction.
 
-          ! Determine twice the tangential velocity vector of the
-          ! internal cell.
+       tmp = one/sqrt(nnx*nnx + nny*nny + nnz*nnz)
+       nnx = nnx*tmp
+       nny = nny*tmp
+       nnz = nnz*tmp
 
-          tmp = two*(ww2(i,j,ivx)*nnx + ww2(i,j,ivy)*nny &
-               +      ww2(i,j,ivz)*nnz)
-          vtx = tmp*nnx
-          vty = tmp*nny
-          vtz = tmp*nnz
+       ! Determine twice the tangential velocity vector of the
+       ! internal cell.
 
-          ! Determine the flow variables in the halo cell. The
-          ! velocity is constructed such that the average of the
-          ! internal and the halo cell is along the centerline.
-          ! Note that the magnitude of the velocity does not
-          ! change and thus the energy is identical.
+       tmp = two*(ww2(i,j,ivx)*nnx + ww2(i,j,ivy)*nny &
+            +      ww2(i,j,ivz)*nnz)
+       vtx = tmp*nnx
+       vty = tmp*nny
+       vtz = tmp*nnz
 
-          ww1(i,j,irho)  = ww2(i,j,irho)
-          ww1(i,j,ivx)   = vtx - ww2(i,j,ivx)
-          ww1(i,j,ivy)   = vty - ww2(i,j,ivy)
-          ww1(i,j,ivz)   = vtz - ww2(i,j,ivz)
-          ww1(i,j,irhoE) = ww2(i,j,irhoE)
+       ! Determine the flow variables in the halo cell. The
+       ! velocity is constructed such that the average of the
+       ! internal and the halo cell is along the centerline.
+       ! Note that the magnitude of the velocity does not
+       ! change and thus the energy is identical.
 
-          ! Set the pressure and possibly the laminar and
-          ! eddy viscosity in the halo.
+       ww1(i,j,irho)  = ww2(i,j,irho)
+       ww1(i,j,ivx)   = vtx - ww2(i,j,ivx)
+       ww1(i,j,ivy)   = vty - ww2(i,j,ivy)
+       ww1(i,j,ivz)   = vtz - ww2(i,j,ivz)
+       ww1(i,j,irhoE) = ww2(i,j,irhoE)
 
-          pp1(i,j) = pp2(i,j)
-          if( viscous )   rlv1(i,j) = rlv2(i,j)
-          if( eddyModel ) rev1(i,j) = rev2(i,j)
-       end do
-    else
-       !$AD II-LOOP
-       do ii=0,isize*jsize-1
-          i = mod(ii, isize) + iStart
-          j = ii/isize + jStart
+       ! Set the pressure and possibly the laminar and
+       ! eddy viscosity in the halo.
 
-          ! Determine the unit vector along the degenerated face.
-          ! However it is not known which is the singular
-          ! direction and therefore determine the direction along
-          ! the diagonal (i,j) -- (i-1,j-1), which is correct for
-          ! both singular i and j-direction. Note that due to the
-          ! usage of the pointer xx there is an offset of +1
-          ! in the indices and therefore (i+1,j+1) - (i,j) must
-          ! be used to determine this vector.
+       pp1(i,j) = pp2(i,j)
+       if( viscous )   rlv1(i,j) = rlv2(i,j)
+       if( eddyModel ) rev1(i,j) = rev2(i,j)
+    end do
+  end subroutine bcSymmPolar1stHalo
 
-          nnx = xx(i+1,j+1,1) - xx(i,j,1)
-          nny = xx(i+1,j+1,2) - xx(i,j,2)
-          nnz = xx(i+1,j+1,3) - xx(i,j,3)
+  subroutine bcSymmPolar2ndHalo(nn)
 
-          ! Determine the unit vector in this direction.
+    ! bcSymmPolar applies the polar symmetry boundary conditions to a
+    ! singular line of a block. It is assumed that the pointers in
+    ! blockPointers are already set to the correct block on the
+    ! correct grid level.  The polar symmetry condition is a special
+    ! case of a degenerate line, as this line is the axi-symmetric
+    ! centerline. This routine does just the 2nd level halo.
 
-          tmp = one/sqrt(nnx*nnx + nny*nny + nnz*nnz)
-          nnx = nnx*tmp
-          nny = nny*tmp
-          nnz = nnz*tmp
+    use constants
+    use BCPointers, only: ww0, ww3, pp0, pp3, rlv0, rlv3, rev0, rev3, &
+         xx, iStart, jStart, iSize, jSize
+    use flowVarRefState, only : viscous, eddyModel
+    implicit none
 
-          ! Determine twice the tangential velocity vector of the
-          ! internal cell.
+    ! Subroutine arguments.
+    integer(kind=intType), intent(in) :: nn
 
-          tmp = two*(ww3(i,j,ivx)*nnx + ww3(i,j,ivy)*nny &
-               +      ww3(i,j,ivz)*nnz)
-          vtx = tmp*nnx
-          vty = tmp*nny
-          vtz = tmp*nnz
+    ! Local variables.
+    integer(kind=intType) :: i, j, l, ii, mm
+    real(kind=realType) :: nnx, nny, nnz, tmp, vtx, vty, vtz
 
-          ! Determine the flow variables in the halo cell. The
-          ! velocity is constructed such that the average of the
-          ! internal and the halo cell is along the centerline.
-          ! Note that the magnitude of the velocity does not
-          ! change and thus the energy is identical.
+    !$AD II-LOOP
+    do ii=0,isize*jsize-1
+       i = mod(ii, isize) + iStart
+       j = ii/isize + jStart
 
-          ww0(i,j,irho)  = ww3(i,j,irho)
-          ww0(i,j,ivx)   = vtx - ww3(i,j,ivx)
-          ww0(i,j,ivy)   = vty - ww3(i,j,ivy)
-          ww0(i,j,ivz)   = vtz - ww3(i,j,ivz)
-          ww0(i,j,irhoE) = ww3(i,j,irhoE)
+       ! Determine the unit vector along the degenerated face.
+       ! However it is not known which is the singular
+       ! direction and therefore determine the direction along
+       ! the diagonal (i,j) -- (i-1,j-1), which is correct for
+       ! both singular i and j-direction. Note that due to the
+       ! usage of the pointer xx there is an offset of +1
+       ! in the indices and therefore (i+1,j+1) - (i,j) must
+       ! be used to determine this vector.
 
-          ! Set the pressure and possibly the laminar and
-          ! eddy viscosity in the halo.
+       nnx = xx(i+1,j+1,1) - xx(i,j,1)
+       nny = xx(i+1,j+1,2) - xx(i,j,2)
+       nnz = xx(i+1,j+1,3) - xx(i,j,3)
 
-          pp0(i,j) = pp3(i,j)
-          if( viscous )   rlv0(i,j) = rlv3(i,j)
-          if( eddyModel ) rev0(i,j) = rev3(i,j)
-       enddo
-    end if
-  end subroutine bcSymmPolar
+       ! Determine the unit vector in this direction.
+
+       tmp = one/sqrt(nnx*nnx + nny*nny + nnz*nnz)
+       nnx = nnx*tmp
+       nny = nny*tmp
+       nnz = nnz*tmp
+
+       ! Determine twice the tangential velocity vector of the
+       ! internal cell.
+
+       tmp = two*(ww3(i,j,ivx)*nnx + ww3(i,j,ivy)*nny &
+            +      ww3(i,j,ivz)*nnz)
+       vtx = tmp*nnx
+       vty = tmp*nny
+       vtz = tmp*nnz
+
+       ! Determine the flow variables in the halo cell. The
+       ! velocity is constructed such that the average of the
+       ! internal and the halo cell is along the centerline.
+       ! Note that the magnitude of the velocity does not
+       ! change and thus the energy is identical.
+
+       ww0(i,j,irho)  = ww3(i,j,irho)
+       ww0(i,j,ivx)   = vtx - ww3(i,j,ivx)
+       ww0(i,j,ivy)   = vty - ww3(i,j,ivy)
+       ww0(i,j,ivz)   = vtz - ww3(i,j,ivz)
+       ww0(i,j,irhoE) = ww3(i,j,irhoE)
+
+       ! Set the pressure and possibly the laminar and
+       ! eddy viscosity in the halo.
+
+       pp0(i,j) = pp3(i,j)
+       if( viscous )   rlv0(i,j) = rlv3(i,j)
+       if( eddyModel ) rev0(i,j) = rev3(i,j)
+    enddo
+
+  end subroutine bcSymmPolar2ndHalo
 
   subroutine bcNSWallAdiabatic(nn, secondHalo, correctForK)
-    !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * bcNSWallAdiabatic applies the viscous adiabatic wall           *
-    !      * boundary condition the pointers already defined.               *
-    !      *                                                                *
-    !      ******************************************************************
-    !
-    use blockPointers
+
+    ! bcNSWallAdiabatic applies the viscous adiabatic wall boundary
+    ! condition the pointers already defined.
+
     use constants
-    use flowVarRefState
-    use iteration
-    use inputDiscretization !, only : viscWallBCTreatment, constantPressure, linExtrapolPressure
+    use blockPointers, only : BCData
+    use inputDiscretization , only : viscWallBCTreatment
+    use BCPointers, only : ww1, ww2, rlv1, rlv2, pp0, pp1, pp2, pp3, rev1, rev2, &
+         iStart, jStart, iSize, jSize
+    use flowVarRefState, only : viscous, eddyModel
+    use iteration, only : currentLevel, groundLevel
     implicit none
 
     logical, intent(in) :: secondHalo, correctForK
@@ -538,37 +527,28 @@ contains
 
        rlv1(i,j) = rlv2(i,j)
        if( eddyModel ) rev1(i,j) = -rev2(i,j)
-    enddo
+  
+       ! Make sure that on the coarser grids the constant pressure
+       ! boundary condition is used.
+       
+       wallTreatment = viscWallBcTreatment
+       if(currentLevel > groundLevel) wallTreatment = constantPressure
+       
+       BCTreatment: select case (wallTreatment)
+          
+       case (constantPressure)
+          
+          ! Constant pressure. Set the gradient to zero.
+          pp1(i, j) = pp2(i, j) - four*third*rhok
 
-    ! PRESSURE EXTRAPOLATION
-
-    ! Make sure that on the coarser grids the constant pressure
-    ! boundary condition is used.
-
-    wallTreatment = viscWallBcTreatment
-    if(currentLevel > groundLevel) wallTreatment = constantPressure
-
-    BCTreatment: select case (wallTreatment)
-
-    case (constantPressure)
-
-       ! Constant pressure. Set the gradient to zero.
-       pp1 = pp2 - four*third*rhok
-
-    case default
-
-       ! Linear extrapolation. 
-       !$AD II-LOOP
-       do ii=0,isize*jsize-1
-          i = mod(ii, isize) + iStart
-          j = ii/isize + jStart
-
+       case default
+          
           pp1(i,j) = 2*pp2(i,j) - pp3(i,j)
           ! Adjust value if pressure is negative
           if (pp1(i,j) .le. zero) pp1(i,j) = pp2(i,j)
-       end do
-
-    end select BCTreatment
+          
+       end select BCTreatment
+    end do
 
     ! Compute the energy for these halo's.
 
@@ -582,20 +562,18 @@ contains
   end subroutine bcNSWallAdiabatic
 
   subroutine bcNSWallIsoThermal(nn, secondHalo, correctForK)
-    !
-    ! ******************************************************************
-    ! *                                                                *
-    ! * bcNSWallAdiabatic applies the viscous isothermal wall          *
-    ! * boundary condition to a block. It is assumed that the          *
-    ! * BCPointers are already set                                     *
-    ! *                                                                *
-    ! ******************************************************************
 
-    use blockPointers
+    ! bcNSWallAdiabatic applies the viscous isothermal wall boundary
+    ! condition to a block. It is assumed that the BCPointers are
+    ! already set
+
     use constants
-    use flowVarRefState
-    use iteration
-    use inputDiscretization !, only : viscWallBCTreatment, constantPressure, linExtrapolPressure
+    use blockPointers, only : BCData
+    use inputDiscretization , only : viscWallBCTreatment
+    use BCPointers, only : ww1, ww2, rlv1, rlv2, pp1, pp2, pp3, rev1, rev2, &
+         iStart, jStart, iSize, jSize
+    use flowVarRefState, only : viscous, eddyModel, RGas
+    use iteration, only : currentLevel, groundLevel
     implicit none
 
     ! Subroutine arguments.
@@ -653,18 +631,18 @@ contains
        case (constantPressure)
 
           ! Constant pressure. Set the gradient to zero.
-          pp1 = pp2 - four*third*rhok
+          pp1(i,j) = pp2(i,j) - four*third*rhok
 
        case default
 
-          ! Linear extrapolation. 
+          ! Linear extrapolation.
           i = mod(ii, isize) + iStart
           j = ii/isize + jStart
-             
+
           pp1(i,j) = 2*pp2(i,j) - pp3(i,j)
           ! Adjust value if pressure is negative
           if (pp1(i,j) .le. zero) pp1(i,j) = pp2(i,j)
-          
+
        end select BCTreatment
 
        ! Determine the variables in the halo. As the spacing
@@ -698,24 +676,20 @@ contains
   end subroutine bcNSWallIsoThermal
 
   subroutine bcSubsonicOutflow(nn, secondHalo, correctForK)
-    !
-    ! ******************************************************************
-    ! *                                                                *
-    ! * bcSubsonicOutflow applies the subsonic outflow boundary        *
-    ! * condition, static pressure prescribed, to a block. It is       *
-    ! * assumed that the pointers in blockPointers are already set to  *
-    ! * the correct block on the correct grid level.                   *
-    ! * Exactly the same boundary condition is also applied for an     *
-    ! * outflow mass bleed. Therefore the test is for both a subsonic  *
-    ! * outflow and an bleed outflow.                                  *
-    ! *                                                                *
-    ! ******************************************************************
-    !
-    use blockPointers
+
+    !  bcSubsonicOutflow applies the subsonic outflow boundary
+    !  condition, static pressure prescribed, to a block. It is
+    !  assumed that the pointers in blockPointers are already set to
+    !  the correct block on the correct grid level.  Exactly the same
+    !  boundary condition is also applied for an outflow mass
+    !  bleed. Therefore the test is for both a subsonic outflow and an
+    !  bleed outflow.
+
     use constants
-    use flowVarRefState
-    use inputPhysics
-    use iteration
+    use blockPointers, only : BCData
+    use BCPointers, only : gamma2, rev2, rlv2, pp2, ww2, &
+         rlv1, rev1, pp1, ww1, iSize, jSize, iStart, jStart
+    use flowVarRefState, only : eddyModel, viscous
     implicit none
 
     ! Subroutine arguments.
@@ -812,23 +786,19 @@ contains
   end subroutine bcSubsonicOutflow
 
   subroutine bcSubsonicInflow(nn, secondHalo, correctForK)
-    !
-    ! ******************************************************************
-    ! *                                                                *
-    ! * bcSubsonicInflow applies the subsonic outflow boundary         *
-    ! * condition, total pressure, total density and flow direction    *
-    ! * prescribed,  to a block. It is assumed that the pointers in    *
-    ! * blockPointers are already set to the correct block on the      *
-    ! * correct grid level.                                            *
-    ! *                                                                *
-    ! ******************************************************************
-    !
-    use blockPointers
+
+    !  bcSubsonicInflow applies the subsonic outflow boundary
+    !  condition, total pressure, total density and flow direction
+    !  prescribed, to a block. It is assumed that the pointers in
+    !  blockPointers are already set to the correct block on the
+    !  correct grid level.
+
     use constants
-    use flowVarRefState
-    use inputDiscretization
-    use inputPhysics
-    use iteration
+    use blockPointers, only : BCData
+    use flowVarRefState, only : viscous, eddyModel, RGas
+    use inputDiscretization, only : hScalingInlet
+    use BCPointers, only : gamma2, ww2, pp2, rlv1, rlv2, rev1, rev2, &
+         ww1, pp1, iSize, jSize, iStart, jStart
     implicit none
 
     ! Subroutine arguments.
@@ -1056,22 +1026,19 @@ contains
   end subroutine bcSubsonicInflow
 
   subroutine bcEulerWall(nn, secondHalo, correctForK)
-    !
-    ! ******************************************************************
-    ! *                                                                *
-    ! * bcEulerWall applies the inviscid wall boundary condition to    *
-    ! * a block. It is assumed that the bcpointers are                 *
-    ! * already set to the correct block on the correct grid level.    *
-    ! *                                                                *
-    ! ******************************************************************
-    !
-    use blockPointers
+
+    !  bcEulerWall applies the inviscid wall boundary condition to a
+    !  block. It is assumed that the bcpointers are already set to the
+    !  correct block on the correct grid level.
+
     use constants
-    use flowVarRefState
-    use inputDiscretization
-    use inputPhysics
-    use iteration
+    use blockPointers, only : BCData, addGridVelocities
+    use flowVarRefState, only : viscous, eddyModel, RGas
+    use inputDiscretization, only : eulerWallBCTreatment
+    use iteration, only : currentLevel, groundLevel
     use utils, only : myDim
+    use BCPointers, only : ww1, pp1, rlv1, rev1, ww2, pp2, rlv2, rev2, &
+         pp3, ss, ssi, ssj, ssk, iStart, iSize, jStart, jSize, iEnd, jEnd
     implicit none
 
     ! Subroutine arguments.
@@ -1113,7 +1080,7 @@ contains
 
     case (linExtrapolPressure)
 
-       ! Linear extrapolation. 
+       ! Linear extrapolation.
        !$AD II-LOOP
        do ii=0,isize*jsize-1
           j = mod(ii, isize) + iStart
@@ -1283,22 +1250,19 @@ contains
 
 #ifndef USE_TAPENADE
   subroutine bcDomainInterface(nn, secondHalo, correctForK)
-    !
-    ! ******************************************************************
-    ! *                                                                *
-    ! * bcDomainInterface applies the domain-interface boundary        *
-    ! * condition, where necessary flow variables are obtained from    *
-    ! * the coupler. More options can be added in the future.          *
-    ! *                                                                *
-    ! ******************************************************************
-    !
-    use blockPointers
+
+    !  bcDomainInterface applies the domain-interface boundary
+    !  condition, where necessary flow variables are obtained from the
+    !  coupler. More options can be added in the future.
+
     use constants
-    use couplerParam
-    use flowVarRefState
-    use inputDiscretization
-    use inputPhysics
-    use iteration
+    use blockPointers, only : BCData, BCType
+    use flowVarRefState, only : viscous, eddyModel, PinfCorr
+    use inputDiscretization, only : HscalingInlet
+    use BCPointers, only : ww1, pp1, rlv1, rev1, ww2, gamma2, rlv2, rev2, &
+         pp2, ww2, iSize, jSize, iStart, jStart
+    use flowVarRefState, only : viscous, eddyModel, RGas
+    use utils, only : terminate
     implicit none
 
     ! Subroutine arguments.
@@ -1325,7 +1289,7 @@ contains
        ! Flow variables are already prescribed from the coupler
        ! (see the subroutine setInterfaceData).
 
-       ! Loop over the generic subface and copy the density, 
+       ! Loop over the generic subface and copy the density,
        ! velocities, pressure and turbulent variables.
 
        !$AD II-LOOP
@@ -1665,18 +1629,14 @@ contains
 
   subroutine bcFarfield(nn, secondHalo, correctForK)
 
-    !      ******************************************************************
-    !      *                                                                *
-    !      * bcFarfield applies the farfield boundary condition to a block. *
-    !      * It is assumed that the BCPointers are already set              *
-    !      *                                                                *
-    !      ******************************************************************
-    !
-    use blockPointers
+    ! bcFarfield applies the farfield boundary condition to a block.
+    ! It is assumed that the BCPointers are already set *
+
     use constants
-    use flowVarRefState
-    use inputPhysics
-    use iteration
+    use blockPointers, only : BCData
+    use flowVarRefState, only : eddyModel, viscous, gammaInf, wInf, pInfCorr
+    use BCPointers, only : ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, &
+         rev0, rev1, rev2, gamma2, iStart, jStart, iSize, jSize
     implicit none
 
     ! Subroutine arguments.
@@ -1759,7 +1719,7 @@ contains
 
           sf = ww2(i,j,irho)**gamma2(i,j)/pp2(i,j)
 
-       else                          
+       else
           ! Inflow
           uf = u0 + (qnf - qn0)*BCData(nn)%norm(i,j,1)
           vf = v0 + (qnf - qn0)*BCData(nn)%norm(i,j,2)
@@ -1797,20 +1757,17 @@ contains
   end subroutine bcFarfield
 
   subroutine bcSupersonicInflow(nn, secondHalo, correctForK)
-    !
-    ! ******************************************************************
-    ! *                                                                *
-    ! * bcSupersonicInflow applies the supersonic inflow boundary      *
-    ! * conditions, entire state vector is prescribed, to a block. It  *
-    ! * is assumed that the pointers in blockPointers are already set  *
-    ! * to the correct block on the correct grid level.                *
-    ! *                                                                *
-    ! ******************************************************************
 
-    use blockPointers
+    ! bcSupersonicInflow applies the supersonic inflow boundary
+    ! conditions, entire state vector is prescribed, to a block. It is
+    ! assumed that the pointers in blockPointers are already set to
+    ! the correct block on the correct grid level.
+
     use constants
-    use flowVarRefState
-    use iteration
+    use blockPointers, only : BCData
+    use flowVarRefState, only : eddyModel, viscous
+    use BCPointers, only : ww0, ww1, pp0, pp1, rlv0, rlv1, rlv2, &
+         rev0, rev1, rev2, iStart, jStart, iSize, jSize
     implicit none
 
     ! Subroutine arguments.
@@ -1820,7 +1777,6 @@ contains
     ! Local variables.
     integer(kind=intType) :: i, j, l, kk, mm, ii
     integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
-
 
     ! Loop over the generic subface to set the state in the
     ! halo cells.
@@ -1844,7 +1800,7 @@ contains
 
     call computeEtot(ww1, pp1, correctForK)
 
-    if (secondHalo) then 
+    if (secondHalo) then
        !$AD II-LOOP
        do ii=0,isize*jsize-1
           i = mod(ii, isize) + iStart
@@ -1882,12 +1838,13 @@ contains
     ! *                                                                *
     ! ******************************************************************
     !
-    use blockPointers
     use constants
-    use flowVarRefState
-    use inputDiscretization
-    use inputPhysics
-    use iteration
+    use blockPointers, only : BCType
+    use flowVarRefState, only : viscous, eddyModel
+    use inputDiscretization, onlY : outflowTreatment
+    !use inputPhysics
+    use BCPointers, only : ww1, ww2, ww3, pp1, pp2, pp3, &
+         rlv1, rlv2, rev1, rev2, iStart, jStart, iSize, jSize
     implicit none
 
     ! Subroutine arguments.
@@ -1924,7 +1881,7 @@ contains
     endif
 
     ! Loop over the generic subface to set the state in the
-    ! 1-st level halos 
+    ! 1-st level halos
     !$AD II-LOOP
     do ii=0,isize*jsize-1
        i = mod(ii, isize) + iStart
@@ -1965,19 +1922,16 @@ contains
   end subroutine bcExtrap
 
   subroutine pRhoSubsonicInlet(ww, pp, correctForK)
-    !
-    ! ******************************************************************
-    ! *                                                                *
-    ! * pRhoSubsonicInlet computes the pressure and density for the    *
-    ! * given range of the block to which the pointers in              *
-    ! * blockPointers currently point.                                 *
-    ! *                                                                *
-    ! ******************************************************************
-    !
-    use blockPointers
+
+    !  pRhoSubsonicInlet computes the pressure and density for the
+    !  given range of the block to which the pointers in blockPointers
+    !  currently point.
+
+    use constants
     use cpCurveFits
-    use flowVarRefState
-    use inputPhysics
+    use flowVarRefState, only : RGas, Tref
+    use inputPhysics, only : cpModel, gammaConstant
+    use BCPointers, only : iSize, jSize, iStart, jStart
     implicit none
 
     ! Local parameter.
@@ -2116,16 +2070,12 @@ contains
 #ifndef USE_TAPENADAE
   contains
     subroutine cportIntegrant(T, nn, int)
-      !
-      ! ****************************************************************
-      ! *                                                              *
-      ! * cportIntegrant computes the integrant of the function        *
-      ! * cp/(r*t) for the given temperature. It also stores the       *
-      ! * correct curve fit interval, which is needed to determine the *
-      ! * entire integral in the main subroutine.                      *
-      ! *                                                              *
-      ! ****************************************************************
-      !
+
+      ! cportIntegrant computes the integrant of the function cp/(r*t)
+      ! for the given temperature. It also stores the correct curve
+      ! fit interval, which is needed to determine the entire integral
+      ! in the main subroutine.
+
       implicit none
 
       ! Subroutine arguments.
@@ -2216,13 +2166,15 @@ contains
   end subroutine pRhoSubsonicInlet
 
   subroutine computeEtot(ww, pp, correctForK)
+
     ! Simplified total energy computation for boundary conditions.
     ! Only implements the constant cpModel
 
     use constants
-    use flowVarRefState
-    use inputPhysics
-    implicit none 
+    use inputPhysics, only : gammaConstant, cpModel
+    use utils, only :terminate
+    use BCPointers, only : iSize, jSize, iStart, jStart
+    implicit none
 
     real(kind=realType),  dimension(:,:) :: pp
     real(kind=realType),  dimension(:,:,:) :: ww
@@ -2230,7 +2182,7 @@ contains
     integer(kind=intType) :: ii, i, j
     real(kind=realType) :: ovgm1, factK
 
-    select case (cpModel) 
+    select case (cpModel)
 
     case (cpConstant)
 
@@ -2256,7 +2208,7 @@ contains
              ww(i,j, iRhoE) = ovgm1*pp(i,j) &
                   + half*ww(i,j,irho)*(ww(i,j,ivx)**2 &
                   +                    ww(i,j,ivy)**2 &
-                  +                    ww(i,j,ivz)**2) & 
+                  +                    ww(i,j,ivz)**2) &
                   - factK*ww(i,j,irho)*ww(i,j,itu1)
           end if
        enddo
@@ -2268,22 +2220,21 @@ contains
   end subroutine computeEtot
 
   subroutine extrapolate2ndHalo(correctForK)
-    !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * extrapolate2ndHalo determines the states of the second layer   *
-    !      * halo cells for the given subface of the block. It is assumed   *
-    !      * that the appropriate BCPointers are already set
-    !      *                                                                *
-    !      ******************************************************************
-    !
-    use blockPointers
+
+    ! extrapolate2ndHalo determines the states of the second layer
+    ! halo cells for the given subface of the block. It is assumed
+    ! that the appropriate BCPointers are already set
+
     use constants
-    use flowVarRefState
-    use iteration
-    use inputPhysics
+    use BCPointers, only : ww0, ww1, ww2, pp0, pp1, pp2, &
+         rlv0, rlv1, rlv2, rev0, rev1, rev2, iSize, jSize, iStart, jStart
+    use flowVarRefState, only : viscous, eddyModel
     implicit none
+
+    ! Input variables
     logical, intent(in) :: correctForK
+
+    ! Working variables
     real(kind=realType), parameter :: factor = 0.5_realType
     integer(kind=intType) :: i, j, l, ii
 
@@ -2318,714 +2269,4 @@ contains
 
   end subroutine extrapolate2ndHalo
 
-  subroutine setBCPointers(nn, spatialPointers)
-    !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * setBCPointers sets the pointers needed for the boundary        *
-    !      * condition treatment on a general face, such that the boundary  *
-    !      * routines are only implemented once instead of 6 times.         *
-    !      *                                                                *
-    !      ******************************************************************
-    !
-    use blockPointers
-    use flowVarRefState
-    use inputPhysics
-    implicit none
-
-    ! Subroutine arguments.
-    integer(kind=intType), intent(in) :: nn
-    logical, intent(in) :: spatialPointers
-
-    ! Determine the sizes of each face and point to just the range we
-    ! need on each face. 
-    iStart = BCData(nn)%icBeg
-    iEnd   = BCData(nn)%icEnd
-    jStart = BCData(nn)%jcBeg
-    jEnd   = BCData(nn)%jcEnd
-
-    ! Set the size of the subface
-    isize = iEnd-iStart + 1
-    jsize = jEnd-jStart + 1
-
-    ! Determine the face id on which the subface is located and set
-    ! the pointers accordinly.
-#if !defined USE_TAPENADE || defined TAPENADE_POINTERS || defined TAPENADE_FORWARD
-    select case (BCFaceID(nn))
-
-       !===============================================================
-    case (iMin)
-
-       ww3 => w(3, 1:, 1:, :)
-       ww2 => w(2, 1:, 1:, :)
-       ww1 => w(1, 1:, 1:, :)
-       ww0 => w(0, 1:, 1:, :)
-
-       pp3 => p(3, 1:, 1:)
-       pp2 => p(2, 1:, 1:)
-       pp1 => p(1, 1:, 1:)
-       pp0 => p(0, 1:, 1:)
-
-       rlv3 => rlv(3, 1:, 1:)
-       rlv2 => rlv(2, 1:, 1:)
-       rlv1 => rlv(1, 1:, 1:)
-       rlv0 => rlv(0, 1:, 1:)
-
-       rev3 => rev(3, 1:, 1:)
-       rev2 => rev(2, 1:, 1:)
-       rev1 => rev(1, 1:, 1:)
-       rev0 => rev(0, 1:, 1:)
-
-       gamma3 => gamma(3, 1:, 1:)
-       gamma2 => gamma(2, 1:, 1:)
-       gamma1 => gamma(1, 1:, 1:)
-       gamma0 => gamma(0, 1:, 1:)
-
-       gcp => globalCell(2, 1:, 1:)
-       !===============================================================
-
-    case (iMax)
-
-       ww3 => w(nx, 1:, 1:, :)
-       ww2 => w(il, 1:, 1:, :)
-       ww1 => w(ie, 1:, 1:, :)
-       ww0 => w(ib, 1:, 1:, :)
-
-       pp3 => p(nx, 1:, 1:)
-       pp2 => p(il, 1:, 1:)
-       pp1 => p(ie, 1:, 1:)
-       pp0 => p(ib, 1:, 1:)
-
-       rlv3 => rlv(nx, 1:, 1:)
-       rlv2 => rlv(il, 1:, 1:)
-       rlv1 => rlv(ie, 1:, 1:)
-       rlv0 => rlv(ib, 1:, 1:)
-
-       rev3 => rev(nx, 1:, 1:)
-       rev2 => rev(il, 1:, 1:)
-       rev1 => rev(ie, 1:, 1:)
-       rev0 => rev(ib, 1:, 1:)
-
-       gamma3 => gamma(nx, 1:, 1:)
-       gamma2 => gamma(il, 1:, 1:)
-       gamma1 => gamma(ie, 1:, 1:)
-       gamma0 => gamma(ib, 1:, 1:)
-
-       gcp => globalCell(il, 1:, 1:)
-       !===============================================================
-
-    case (jMin)
-
-       ww3 => w(1:, 3, 1:, :)
-       ww2 => w(1:, 2, 1:, :)
-       ww1 => w(1:, 1, 1:, :)
-       ww0 => w(1:, 0, 1:, :)
-
-       pp3 => p(1:, 3, 1:)
-       pp2 => p(1:, 2, 1:)
-       pp1 => p(1:, 1, 1:)
-       pp0 => p(1:, 0, 1:)
-
-       rlv3 => rlv(1:, 3, 1:)
-       rlv2 => rlv(1:, 2, 1:)
-       rlv1 => rlv(1:, 1, 1:)
-       rlv0 => rlv(1:, 0, 1:)
-
-       rev3 => rev(1:, 3, 1:)
-       rev2 => rev(1:, 2, 1:)
-       rev1 => rev(1:, 1, 1:)
-       rev0 => rev(1:, 0, 1:)
-
-       gamma3 => gamma(1:, 3, 1:)
-       gamma2 => gamma(1:, 2, 1:)
-       gamma1 => gamma(1:, 1, 1:)
-       gamma0 => gamma(1:, 0, 1:)
-
-       gcp => globalCell(1:, 2, 1:)
-       !===============================================================
-
-    case (jMax)
-
-       ww3 => w(1:, ny, 1:, :)
-       ww2 => w(1:, jl, 1:, :)
-       ww1 => w(1:, je, 1:, :)
-       ww0 => w(1:, jb, 1:, :)
-
-       pp3 => p(1:, ny, 1:)
-       pp2 => p(1:, jl, 1:)
-       pp1 => p(1:, je, 1:)
-       pp0 => p(1:, jb, 1:)
-
-       rlv3 => rlv(1:, ny, 1:)
-       rlv2 => rlv(1:, jl, 1:)
-       rlv1 => rlv(1:, je, 1:)
-       rlv0 => rlv(1:, jb, 1:)
-
-       rev3 => rev(1:, ny, 1:)
-       rev2 => rev(1:, jl, 1:)
-       rev1 => rev(1:, je, 1:)
-       rev0 => rev(1:, jb, 1:)
-
-       gamma3 => gamma(1:, ny, 1:)
-       gamma2 => gamma(1:, jl, 1:)
-       gamma1 => gamma(1:, je, 1:)
-       gamma0 => gamma(1:, jb, 1:)
-
-       gcp => globalCell(1:, jl, 1:)
-       !===============================================================
-
-    case (kMin)
-
-       ww3 => w(1:, 1:, 3, :)
-       ww2 => w(1:, 1:, 2, :)
-       ww1 => w(1:, 1:, 1, :)
-       ww0 => w(1:, 1:, 0, :)
-
-       pp3 => p(1:, 1:, 3)
-       pp2 => p(1:, 1:, 2)
-       pp1 => p(1:, 1:, 1)
-       pp0 => p(1:, 1:, 0)
-
-       rlv3 => rlv(1:, 1:, 3)
-       rlv2 => rlv(1:, 1:, 2)
-       rlv1 => rlv(1:, 1:, 1)
-       rlv0 => rlv(1:, 1:, 0)
-
-       rev3 => rev(1:, 1:, 3)
-       rev2 => rev(1:, 1:, 2)
-       rev1 => rev(1:, 1:, 1)
-       rev0 => rev(1:, 1:, 0)
-
-       gamma3 => gamma(1:, 1:, 3)
-       gamma2 => gamma(1:, 1:, 2)
-       gamma1 => gamma(1:, 1:, 1)
-       gamma0 => gamma(1:, 1:, 0)
-
-       gcp => globalCell(1:, 1:, 2)
-       !===============================================================
-
-    case (kMax)
-
-       ww3 => w(1:, 1:, nz, :)
-       ww2 => w(1:, 1:, kl, :)
-       ww1 => w(1:, 1:, ke, :)
-       ww0 => w(1:, 1:, kb, :)
-
-       pp3 => p(1:, 1:, nz)
-       pp2 => p(1:, 1:, kl)
-       pp1 => p(1:, 1:, ke)
-       pp0 => p(1:, 1:, kb)
-
-       rlv3 => rlv(1:, 1:, nz)
-       rlv2 => rlv(1:, 1:, kl)
-       rlv1 => rlv(1:, 1:, ke)
-       rlv0 => rlv(1:, 1:, kb)
-
-       rev3 => rev(1:, 1:, nz)
-       rev2 => rev(1:, 1:, kl)
-       rev1 => rev(1:, 1:, ke)
-       rev0 => rev(1:, 1:, kb)
-
-       gamma3 => gamma(1:, 1:, nz)
-       gamma2 => gamma(1:, 1:, kl)
-       gamma1 => gamma(1:, 1:, ke)
-       gamma0 => gamma(1:, 1:, kb)
-
-       gcp => globalCell(1:, 1:, kl)
-    end select
-
-    if (spatialPointers) then 
-       select case (BCFaceID(nn))
-       case (iMin)
-          xx => x(1,:,:,:)
-          ssi => si(1,:,:,:)
-          ssj => sj(2,:,:,:)
-          ssk => sk(2,:,:,:)
-          ss  => s (2,:,:,:)
-       case (iMax)
-          xx => x(il,:,:,:)
-          ssi => si(il,:,:,:)
-          ssj => sj(il,:,:,:)
-          ssk => sk(il,:,:,:)
-          ss  =>  s(il,:,:,:)
-       case (jMin)
-          xx => x(:,1,:,:)
-          ssi => sj(:,1,:,:)
-          ssj => si(:,2,:,:)
-          ssk => sk(:,2,:,:)
-          ss   => s(:,2,:,:)
-       case (jMax)
-          xx => x(:,jl,:,:)
-          ssi => sj(:,jl,:,:)
-          ssj => si(:,jl,:,:)
-          ssk => sk(:,jl,:,:)
-          ss  =>  s(:,jl,:,:)
-       case (kMin)
-          xx => x(:,:,1,:)
-          ssi => sk(:,:,1,:)
-          ssj => si(:,:,2,:)
-          ssk => sj(:,:,2,:)
-          ss  =>  s(:,:,2,:)
-       case (kMax)
-          xx => x(:,:,kl,:)
-          ssi => sk(:,:,kl,:)
-          ssj => si(:,:,kl,:)
-          ssk => sj(:,:,kl,:)
-          ss  =>  s(:,:,kl,:)
-       end select
-
-       if(equations == RANSEquations) then
-          select case (BCFaceID(nn))
-          case (iMin)
-             dd2Wall => d2Wall(2,:,:)
-          case (iMax)
-             dd2Wall => d2Wall(il,:,:)
-          case (jMin)
-             dd2Wall => d2Wall(:,2,:)
-          case (jMax)
-             dd2Wall => d2Wall(:,jl,:)
-          case (kMin)
-             dd2Wall => d2Wall(:,:,2)
-          case (kMax)
-             dd2Wall => d2Wall(:,:,kl)
-          end select
-       end if
-    end if
-
-
-
-
-#else
-    select case (BCFaceID(nn))
-
-       !===============================================================
-    case (iMin)
-       ww3(1:je, 1:ke,:) = w(3, 1:je, 1:ke, :)
-       ww2(1:je, 1:ke,:) = w(2, 1:je, 1:ke, :)
-       ww1(1:je, 1:ke,:) = w(1, 1:je, 1:ke, :)
-       ww0(1:je, 1:ke,:) = w(0, 1:je, 1:ke, :)
-
-       pp3(1:je, 1:ke) = p(3, 1:je, 1:ke)
-       pp2(1:je, 1:ke) = p(2, 1:je, 1:ke)
-       pp1(1:je, 1:ke) = p(1, 1:je, 1:ke)
-       pp0(1:je, 1:ke) = p(0, 1:je, 1:ke)
-
-       rlv3(1:je, 1:ke) = rlv(3, 1:je, 1:ke)
-       rlv2(1:je, 1:ke) = rlv(2, 1:je, 1:ke)
-       rlv1(1:je, 1:ke) = rlv(1, 1:je, 1:ke)
-       rlv0(1:je, 1:ke) = rlv(0, 1:je, 1:ke)
-
-       rev3(1:je, 1:ke) = rev(3, 1:je, 1:ke)
-       rev2(1:je, 1:ke) = rev(2, 1:je, 1:ke)
-       rev1(1:je, 1:ke) = rev(1, 1:je, 1:ke)
-       rev0(1:je, 1:ke) = rev(0, 1:je, 1:ke)
-
-       gamma3(1:je, 1:ke) = gamma(3, 1:je, 1:ke)
-       gamma2(1:je, 1:ke) = gamma(2, 1:je, 1:ke)
-       gamma1(1:je, 1:ke) = gamma(1, 1:je, 1:ke)
-       gamma0(1:je, 1:ke) = gamma(0, 1:je, 1:ke)
-
-       gcp(1:je, 1:ke) = globalCell(2, 1:je, 1:ke)
-       !===============================================================
-
-    case (iMax)
-
-       ww3(1:je, 1:ke,:) = w(nx, 1:je, 1:ke, :)
-       ww2(1:je, 1:ke,:) = w(il, 1:je, 1:ke, :)
-       ww1(1:je, 1:ke,:) = w(ie, 1:je, 1:ke, :)
-       ww0(1:je, 1:ke,:) = w(ib, 1:je, 1:ke, :)
-
-       pp3(1:je, 1:ke) = p(nx, 1:je, 1:ke)
-       pp2(1:je, 1:ke) = p(il, 1:je, 1:ke)
-       pp1(1:je, 1:ke) = p(ie, 1:je, 1:ke)
-       pp0(1:je, 1:ke) = p(ib, 1:je, 1:ke)
-
-       rlv3(1:je, 1:ke) = rlv(nx, 1:je, 1:ke)
-       rlv2(1:je, 1:ke) = rlv(il, 1:je, 1:ke)
-       rlv1(1:je, 1:ke) = rlv(ie, 1:je, 1:ke)
-       rlv0(1:je, 1:ke) = rlv(ib, 1:je, 1:ke)
-
-       rev3(1:je, 1:ke) = rev(nx, 1:je, 1:ke)
-       rev2(1:je, 1:ke) = rev(il, 1:je, 1:ke)
-       rev1(1:je, 1:ke) = rev(ie, 1:je, 1:ke)
-       rev0(1:je, 1:ke) = rev(ib, 1:je, 1:ke)
-
-       gamma3(1:je, 1:ke) = gamma(nx, 1:je, 1:ke)
-       gamma2(1:je, 1:ke) = gamma(il, 1:je, 1:ke)
-       gamma1(1:je, 1:ke) = gamma(ie, 1:je, 1:ke)
-       gamma0(1:je, 1:ke) = gamma(ib, 1:je, 1:ke)
-
-       gcp(1:je, 1:ke) = globalCell(il, 1:je, 1:ke)
-       !===============================================================
-
-    case (jMin)
-
-       ww3(1:ie, 1:ke,:) = w(1:ie, 3, 1:ke, :)
-       ww2(1:ie, 1:ke,:) = w(1:ie, 2, 1:ke, :)
-       ww1(1:ie, 1:ke,:) = w(1:ie, 1, 1:ke, :)
-       ww0(1:ie, 1:ke,:) = w(1:ie, 0, 1:ke, :)
-
-       pp3(1:ie, 1:ke) = p(1:ie, 3, 1:ke)
-       pp2(1:ie, 1:ke) = p(1:ie, 2, 1:ke)
-       pp1(1:ie, 1:ke) = p(1:ie, 1, 1:ke)
-       pp0(1:ie, 1:ke) = p(1:ie, 0, 1:ke)
-
-       rlv3(1:ie, 1:ke) = rlv(1:ie, 3, 1:ke)
-       rlv2(1:ie, 1:ke) = rlv(1:ie, 2, 1:ke)
-       rlv1(1:ie, 1:ke) = rlv(1:ie, 1, 1:ke)
-       rlv0(1:ie, 1:ke) = rlv(1:ie, 0, 1:ke)
-
-       rev3(1:ie, 1:ke) = rev(1:ie, 3, 1:ke)
-       rev2(1:ie, 1:ke) = rev(1:ie, 2, 1:ke)
-       rev1(1:ie, 1:ke) = rev(1:ie, 1, 1:ke)
-       rev0(1:ie, 1:ke) = rev(1:ie, 0, 1:ke)
-
-       gamma3(1:ie, 1:ke) = gamma(1:ie, 3, 1:ke)
-       gamma2(1:ie, 1:ke) = gamma(1:ie, 2, 1:ke)
-       gamma1(1:ie, 1:ke) = gamma(1:ie, 1, 1:ke)
-       gamma0(1:ie, 1:ke) = gamma(1:ie, 0, 1:ke)
-
-       gcp(1:ie, 1:ke) = globalCell(1:ie, 2, 1:ke)
-       !===============================================================
-
-    case (jMax)
-
-       ww3(1:ie, 1:ke,:) = w(1:ie, ny, 1:ke, :)
-       ww2(1:ie, 1:ke,:) = w(1:ie, jl, 1:ke, :)
-       ww1(1:ie, 1:ke,:) = w(1:ie, je, 1:ke, :)
-       ww0(1:ie, 1:ke,:) = w(1:ie, jb, 1:ke, :)
-
-       pp3(1:ie, 1:ke) = p(1:ie, ny, 1:ke)
-       pp2(1:ie, 1:ke) = p(1:ie, jl, 1:ke)
-       pp1(1:ie, 1:ke) = p(1:ie, je, 1:ke)
-       pp0(1:ie, 1:ke) = p(1:ie, jb, 1:ke)
-
-       rlv3(1:ie, 1:ke) = rlv(1:ie, ny, 1:ke)
-       rlv2(1:ie, 1:ke) = rlv(1:ie, jl, 1:ke)
-       rlv1(1:ie, 1:ke) = rlv(1:ie, je, 1:ke)
-       rlv0(1:ie, 1:ke) = rlv(1:ie, jb, 1:ke)
-
-       rev3(1:ie, 1:ke) = rev(1:ie, ny, 1:ke)
-       rev2(1:ie, 1:ke) = rev(1:ie, jl, 1:ke)
-       rev1(1:ie, 1:ke) = rev(1:ie, je, 1:ke)
-       rev0(1:ie, 1:ke) = rev(1:ie, jb, 1:ke)
-
-       gamma3(1:ie, 1:ke) = gamma(1:ie, ny, 1:ke)
-       gamma2(1:ie, 1:ke) = gamma(1:ie, jl, 1:ke)
-       gamma1(1:ie, 1:ke) = gamma(1:ie, je, 1:ke)
-       gamma0(1:ie, 1:ke) = gamma(1:ie, jb, 1:ke)
-
-       gcp(1:ie, 1:ke) = globalCell(1:ie, jl, 1:ke)
-       !===============================================================
-
-    case (kMin)
-
-       ww3(1:ie, 1:je,:) = w(1:ie, 1:je, 3, :)
-       ww2(1:ie, 1:je,:) = w(1:ie, 1:je, 2, :)
-       ww1(1:ie, 1:je,:) = w(1:ie, 1:je, 1, :)
-       ww0(1:ie, 1:je,:) = w(1:ie, 1:je, 0, :)
-
-       pp3(1:ie, 1:je) = p(1:ie, 1:je, 3)
-       pp2(1:ie, 1:je) = p(1:ie, 1:je, 2)
-       pp1(1:ie, 1:je) = p(1:ie, 1:je, 1)
-       pp0(1:ie, 1:je) = p(1:ie, 1:je, 0)
-
-       rlv3(1:ie, 1:je) = rlv(1:ie, 1:je, 3)
-       rlv2(1:ie, 1:je) = rlv(1:ie, 1:je, 2)
-       rlv1(1:ie, 1:je) = rlv(1:ie, 1:je, 1)
-       rlv0(1:ie, 1:je) = rlv(1:ie, 1:je, 0)
-
-       rev3(1:ie, 1:je) = rev(1:ie, 1:je, 3)
-       rev2(1:ie, 1:je) = rev(1:ie, 1:je, 2)
-       rev1(1:ie, 1:je) = rev(1:ie, 1:je, 1)
-       rev0(1:ie, 1:je) = rev(1:ie, 1:je, 0)
-
-       gamma3(1:ie, 1:je) = gamma(1:ie, 1:je, 3)
-       gamma2(1:ie, 1:je) = gamma(1:ie, 1:je, 2)
-       gamma1(1:ie, 1:je) = gamma(1:ie, 1:je, 1)
-       gamma0(1:ie, 1:je) = gamma(1:ie, 1:je, 0)
-
-       gcp(1:ie, 1:je) = globalCell(1:ie, 1:je, 2)
-       !===============================================================
-
-    case (kMax)
-
-       ww3(1:ie, 1:je,:) = w(1:ie, 1:je, nz, :)
-       ww2(1:ie, 1:je,:) = w(1:ie, 1:je, kl, :)
-       ww1(1:ie, 1:je,:) = w(1:ie, 1:je, ke, :)
-       ww0(1:ie, 1:je,:) = w(1:ie, 1:je, kb, :)
-
-       pp3(1:ie, 1:je) = p(1:ie, 1:je, nz)
-       pp2(1:ie, 1:je) = p(1:ie, 1:je, kl)
-       pp1(1:ie, 1:je) = p(1:ie, 1:je, ke)
-       pp0(1:ie, 1:je) = p(1:ie, 1:je, kb)
-
-       rlv3(1:ie, 1:je) = rlv(1:ie, 1:je, nz)
-       rlv2(1:ie, 1:je) = rlv(1:ie, 1:je, kl)
-       rlv1(1:ie, 1:je) = rlv(1:ie, 1:je, ke)
-       rlv0(1:ie, 1:je) = rlv(1:ie, 1:je, kb)
-
-       rev3(1:ie, 1:je) = rev(1:ie, 1:je, nz)
-       rev2(1:ie, 1:je) = rev(1:ie, 1:je, kl)
-       rev1(1:ie, 1:je) = rev(1:ie, 1:je, ke)
-       rev0(1:ie, 1:je) = rev(1:ie, 1:je, kb)
-
-       gamma3(1:ie, 1:je) = gamma(1:ie, 1:je, nz)
-       gamma2(1:ie, 1:je) = gamma(1:ie, 1:je, kl)
-       gamma1(1:ie, 1:je) = gamma(1:ie, 1:je, ke)
-       gamma0(1:ie, 1:je) = gamma(1:ie, 1:je, kb)
-
-       gcp(1:ie, 1:je) = globalCell(1:ie, 1:je, 2)
-    end select
-
-    ! These spatial pointers are only required for
-    ! forcesAndMoments. Eulerwall normal moment is is reverse AD'ed.
-    if (spatialPointers) then 
-       select case (BCFaceID(nn))
-       case (iMin)
-
-          xx(1:je+1,1:ke+1,:) = x(1,0:je,0:ke,:)
-          ssi(1:je,1:ke, :)   = si(1,1:je,1:ke,:)
-
-       case (iMax)
-          xx(1:je+1,1:ke+1,:) = x(il,0:je,0:ke,:)
-          ssi(1:je,1:ke,:)    = si(il,1:je,1:ke,:)
-       case (jMin)
-          xx(1:ie+1,1:ke+1,:) = x(0:ie,1,0:ke,:)
-          ssi(1:ie,1:ke,:)    = sj(1:ie,1,1:ke,:)
-       case (jMax)
-          xx(1:ie+1,1:ke+1,:) = x(0:ie,jl,0:ke,:)
-          ssi(1:ie,1:ke,:)    = sj(1:ie,jl,1:ke,:)
-       case (kMin)
-          xx(1:ie+1,1:je+1,:) = x(0:ie,0:je,1,:)
-          ssi(1:ie,1:je,:)    = sk(1:ie,1:je,1,:)
-       case (kMax)
-          xx(1:ie+1,1:je+1,:) = x(0:ie,0:je,kl,:)
-          ssi(1:ie,1:je,:)    = sk(1:ie,1:je,kl,:)
-       end select
-    end if
-#endif
-  end subroutine setBCPointers
-
-  subroutine resetBCPointers(nn, spatialPointers)
-    !
-    !      ******************************************************************
-    !      *                                                                *
-    !      * resetBCPointers nullifyies the boundary pointers. For reverse  *
-    !      * mode AD it copies the values back in to the respective arrays  *
-    !      *                                                                *
-    !      ******************************************************************
-    !
-    use blockPointers
-    use flowVarRefState
-    implicit none
-
-    ! Subroutine arguments.
-    integer(kind=intType), intent(in) :: nn
-    logical, intent(in) :: spatialPointers
-#ifndef TAPENADE_REVERSE
-    ! For forward mode we are using pointers so we just don't do
-    ! anything.
-#else
-    select case (BCFaceID(nn))
-      !===============================================================
-    case (iMin)
-       w(3, 1:je, 1:ke, :) = ww3(1:je, 1:ke,:)
-       w(2, 1:je, 1:ke, :) = ww2(1:je, 1:ke,:)
-       w(1, 1:je, 1:ke, :) = ww1(1:je, 1:ke,:)
-       w(0, 1:je, 1:ke, :) = ww0(1:je, 1:ke,:)
-
-       p(3, 1:je, 1:ke) = pp3(1:je, 1:ke)
-       p(2, 1:je, 1:ke) = pp2(1:je, 1:ke)
-       p(1, 1:je, 1:ke) = pp1(1:je, 1:ke)
-       p(0, 1:je, 1:ke) = pp0(1:je, 1:ke)
-
-       rlv(3, 1:je, 1:ke) = rlv3(1:je, 1:ke)
-       rlv(2, 1:je, 1:ke) = rlv2(1:je, 1:ke)
-       rlv(1, 1:je, 1:ke) = rlv1(1:je, 1:ke)
-       rlv(0, 1:je, 1:ke) = rlv0(1:je, 1:ke)
-       
-       rev(3, 1:je, 1:ke) = rev3(1:je, 1:ke)
-       rev(2, 1:je, 1:ke) = rev2(1:je, 1:ke)
-       rev(1, 1:je, 1:ke) = rev1(1:je, 1:ke)
-       rev(0, 1:je, 1:ke) = rev0(1:je, 1:ke)
-
-       gamma(3, 1:je, 1:ke) = gamma3(1:je, 1:ke)
-       gamma(2, 1:je, 1:ke) = gamma2(1:je, 1:ke)
-       gamma(1, 1:je, 1:ke) = gamma1(1:je, 1:ke)
-       gamma(0, 1:je, 1:ke) = gamma0(1:je, 1:ke)
-
-       !===============================================================
-
-    case (iMax)
-       w(nx, 1:je, 1:ke, :) = ww3(1:je, 1:ke,:)
-       w(il, 1:je, 1:ke, :) = ww2(1:je, 1:ke,:)
-       w(ie, 1:je, 1:ke, :) = ww1(1:je, 1:ke,:)
-       w(ib, 1:je, 1:ke, :) = ww0(1:je, 1:ke,:)
-
-       p(nx, 1:je, 1:ke) = pp3(1:je, 1:ke)
-       p(il, 1:je, 1:ke) = pp2(1:je, 1:ke)
-       p(ie, 1:je, 1:ke) = pp1(1:je, 1:ke)
-       p(ib, 1:je, 1:ke) = pp0(1:je, 1:ke)
-
-       rlv(nx, 1:je, 1:ke) = rlv3(1:je, 1:ke)
-       rlv(il, 1:je, 1:ke) = rlv2(1:je, 1:ke)
-       rlv(ie, 1:je, 1:ke) = rlv1(1:je, 1:ke)
-       rlv(ib, 1:je, 1:ke) = rlv0(1:je, 1:ke)
-       
-       rev(nx, 1:je, 1:ke) = rev3(1:je, 1:ke)
-       rev(il, 1:je, 1:ke) = rev2(1:je, 1:ke)
-       rev(ie, 1:je, 1:ke) = rev1(1:je, 1:ke)
-       rev(ib, 1:je, 1:ke) = rev0(1:je, 1:ke)
-
-       gamma(nx, 1:je, 1:ke) = gamma3(1:je, 1:ke)
-       gamma(il, 1:je, 1:ke) = gamma2(1:je, 1:ke)
-       gamma(ie, 1:je, 1:ke) = gamma1(1:je, 1:ke)
-       gamma(ib, 1:je, 1:ke) = gamma0(1:je, 1:ke)
-
-       !===============================================================
-
-    case (jMin)
-
-       w(1:ie, 3, 1:ke, :) = ww3(1:ie, 1:ke,:)
-       w(1:ie, 2, 1:ke, :) = ww2(1:ie, 1:ke,:)
-       w(1:ie, 1, 1:ke, :) = ww1(1:ie, 1:ke,:)
-       w(1:ie, 0, 1:ke, :) = ww0(1:ie, 1:ke,:)
-
-       p(1:ie, 3, 1:ke) = pp3(1:ie, 1:ke)
-       p(1:ie, 2, 1:ke) = pp2(1:ie, 1:ke)
-       p(1:ie, 1, 1:ke) = pp1(1:ie, 1:ke)
-       p(1:ie, 0, 1:ke) = pp0(1:ie, 1:ke)
-
-       rlv(1:ie, 3, 1:ke) = rlv3(1:ie, 1:ke)
-       rlv(1:ie, 2, 1:ke) = rlv2(1:ie, 1:ke)
-       rlv(1:ie, 1, 1:ke) = rlv1(1:ie, 1:ke)
-       rlv(1:ie, 0, 1:ke) = rlv0(1:ie, 1:ke)
-
-       rev(1:ie, 3, 1:ke) = rev3(1:ie, 1:ke)
-       rev(1:ie, 2, 1:ke) = rev2(1:ie, 1:ke)
-       rev(1:ie, 1, 1:ke) = rev1(1:ie, 1:ke)
-       rev(1:ie, 0, 1:ke) = rev0(1:ie, 1:ke)
-
-       gamma(1:ie, 3, 1:ke) = gamma3(1:ie, 1:ke)
-       gamma(1:ie, 2, 1:ke) = gamma2(1:ie, 1:ke)
-       gamma(1:ie, 1, 1:ke) = gamma1(1:ie, 1:ke)
-       gamma(1:ie, 0, 1:ke) = gamma0(1:ie, 1:ke)
-
-       !===============================================================
-
-    case (jMax)
-
-       w(1:ie, ny, 1:ke, :) = ww3(1:ie, 1:ke,:)
-       w(1:ie, jl, 1:ke, :) = ww2(1:ie, 1:ke,:)
-       w(1:ie, je, 1:ke, :) = ww1(1:ie, 1:ke,:)
-       w(1:ie, jb, 1:ke, :) = ww0(1:ie, 1:ke,:)
-
-       p(1:ie, ny, 1:ke) = pp3(1:ie, 1:ke)
-       p(1:ie, jl, 1:ke) = pp2(1:ie, 1:ke)
-       p(1:ie, je, 1:ke) = pp1(1:ie, 1:ke)
-       p(1:ie, jb, 1:ke) = pp0(1:ie, 1:ke)
-
-       rlv(1:ie, ny, 1:ke) = rlv3(1:ie, 1:ke)
-       rlv(1:ie, jl, 1:ke) = rlv2(1:ie, 1:ke)
-       rlv(1:ie, je, 1:ke) = rlv1(1:ie, 1:ke)
-       rlv(1:ie, jb, 1:ke) = rlv0(1:ie, 1:ke)
-
-       rev(1:ie, ny, 1:ke) = rev3(1:ie, 1:ke)
-       rev(1:ie, jl, 1:ke) = rev2(1:ie, 1:ke)
-       rev(1:ie, je, 1:ke) = rev1(1:ie, 1:ke)
-       rev(1:ie, jb, 1:ke) = rev0(1:ie, 1:ke)
-
-       gamma(1:ie, ny, 1:ke) = gamma3(1:ie, 1:ke)
-       gamma(1:ie, jl, 1:ke) = gamma2(1:ie, 1:ke)
-       gamma(1:ie, je, 1:ke) = gamma1(1:ie, 1:ke)
-       gamma(1:ie, jb, 1:ke) = gamma0(1:ie, 1:ke)
-
-       !===============================================================
-
-    case (kMin)
-
-       w(1:ie, 1:je, 3, :) = ww3(1:ie, 1:je,:)
-       w(1:ie, 1:je, 2, :) = ww2(1:ie, 1:je,:)
-       w(1:ie, 1:je, 1, :) = ww1(1:ie, 1:je,:)
-       w(1:ie, 1:je, 0, :) = ww0(1:ie, 1:je,:)
-
-       p(1:ie, 1:je, 3) = pp3(1:ie, 1:je)
-       p(1:ie, 1:je, 2) = pp2(1:ie, 1:je)
-       p(1:ie, 1:je, 1) = pp1(1:ie, 1:je)
-       p(1:ie, 1:je, 0) = pp0(1:ie, 1:je)
-
-       rlv(1:ie, 1:je, 3) = rlv3(1:ie, 1:je)
-       rlv(1:ie, 1:je, 2) = rlv2(1:ie, 1:je)
-       rlv(1:ie, 1:je, 1) = rlv1(1:ie, 1:je)
-       rlv(1:ie, 1:je, 0) = rlv0(1:ie, 1:je)
-
-       rev(1:ie, 1:je, 3) = rev3(1:ie, 1:je)
-       rev(1:ie, 1:je, 2) = rev2(1:ie, 1:je)
-       rev(1:ie, 1:je, 1) = rev1(1:ie, 1:je)
-       rev(1:ie, 1:je, 0) = rev0(1:ie, 1:je)
-
-       gamma(1:ie, 1:je, 3) = gamma3(1:ie, 1:je)
-       gamma(1:ie, 1:je, 2) = gamma2(1:ie, 1:je)
-       gamma(1:ie, 1:je, 1) = gamma1(1:ie, 1:je)
-       gamma(1:ie, 1:je, 0) = gamma0(1:ie, 1:je)
-
-       !===============================================================
-
-    case (kMax)
-
-       w(1:ie, 1:je, nz, :) = ww3(1:ie, 1:je,:)
-       w(1:ie, 1:je, kl, :) = ww2(1:ie, 1:je,:)
-       w(1:ie, 1:je, ke, :) = ww1(1:ie, 1:je,:)
-       w(1:ie, 1:je, kb, :) = ww0(1:ie, 1:je,:)
-
-       p(1:ie, 1:je, nz) = pp3(1:ie, 1:je)
-       p(1:ie, 1:je, kl) = pp2(1:ie, 1:je)
-       p(1:ie, 1:je, ke) = pp1(1:ie, 1:je)
-       p(1:ie, 1:je, kb) = pp0(1:ie, 1:je)
-
-       rlv(1:ie, 1:je, nz) = rlv3(1:ie, 1:je)
-       rlv(1:ie, 1:je, kl) = rlv2(1:ie, 1:je)
-       rlv(1:ie, 1:je, ke) = rlv1(1:ie, 1:je)
-       rlv(1:ie, 1:je, kb) = rlv0(1:ie, 1:je)
-
-       rev(1:ie, 1:je, nz) = rev3(1:ie, 1:je)
-       rev(1:ie, 1:je, kl) = rev2(1:ie, 1:je)
-       rev(1:ie, 1:je, ke) = rev1(1:ie, 1:je)
-       rev(1:ie, 1:je, kb) = rev0(1:ie, 1:je)
-
-       gamma(1:ie, 1:je, nz) = gamma3(1:ie, 1:je)
-       gamma(1:ie, 1:je, kl) = gamma2(1:ie, 1:je)
-       gamma(1:ie, 1:je, ke) = gamma1(1:ie, 1:je)
-       gamma(1:ie, 1:je, kb) = gamma0(1:ie, 1:je)
-
-    end select
-
-    ! These spatial pointers are only required for
-    ! forcesAndMoments. Eulerwall normal moment is is reverse AD'ed.
-    if (spatialPointers) then 
-       select case (BCFaceID(nn))
-       case (iMin)
-          x(1,0:je,0:ke,:)  = xx(1:je+1,1:ke+1,:)
-          si(1,1:je,1:ke,:) = ssi(1:je,1:ke, :)
-       case (iMax)
-          x(il,0:je,0:ke,:)  = xx(1:je+1,1:ke+1,:)
-          si(il,1:je,1:ke,:) = ssi(1:je,1:ke,:)
-       case (jMin)
-          x(0:ie,1,0:ke,:)  = xx(1:ie+1,1:ke+1,:)
-          sj(1:ie,1,1:ke,:) = ssi(1:ie,1:ke,:)
-       case (jMax)
-          x(0:ie,jl,0:ke,:)  = xx(1:ie+1,1:ke+1,:)
-          sj(1:ie,jl,1:ke,:) = ssi(1:ie,1:ke,:)
-       case (kMin)
-          x(0:ie,0:je,1,:)  = xx(1:ie+1,1:je+1,:)
-          sk(1:ie,1:je,1,:) = ssi(1:ie,1:je,:)
-       case (kMax)
-          x(0:ie,0:je,kl,:)  = xx(1:ie+1,1:je+1,:)
-          sk(1:ie,1:je,kl,:) = ssi(1:ie,1:je,:)
-       end select
-    end if
-#endif
-
-  end subroutine resetBCPointers
 end module BCRoutines

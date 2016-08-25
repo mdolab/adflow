@@ -28,6 +28,7 @@ subroutine xhalo_block_b()
 !      *                                                                *
 !      ******************************************************************
 !
+  use constants
   use blockpointers
   use communication
   use inputtimespectral

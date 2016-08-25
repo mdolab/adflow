@@ -30,7 +30,6 @@ subroutine timestep_block_fast_b(onlyradii)
 !      *                                                                *
 !      ******************************************************************
 !
-  use myPushPopLib
   use constants
   use blockpointers, only : ie, je, ke, il, jl, kl, w, wd, p, pd, rlv,&
 & rlvd, rev, revd, radi, radid, radj, radjd, radk, radkd, si, sj, sk, &

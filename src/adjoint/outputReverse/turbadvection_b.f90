@@ -41,6 +41,7 @@ subroutine turbadvection_b(madv, nadv, offset, qq)
 !      *                                                                *
 !      ******************************************************************
 !
+  use constants
   use blockpointers
   use turbmod
   implicit none

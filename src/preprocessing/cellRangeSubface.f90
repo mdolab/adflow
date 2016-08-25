@@ -19,6 +19,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use block
        use utils, only : terminate
        implicit none

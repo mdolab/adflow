@@ -19,6 +19,7 @@ subroutine bcEddyWall(nn)
   !      *                                                                *
   !      ******************************************************************
   !
+  use constants
   use blockPointers
   implicit none
   !

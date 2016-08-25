@@ -2,12 +2,13 @@
 
 subroutine zeroADSeeds(nn, level, sps)
 
+  use constants
+  use block, only : flowDomsd, flowDoms
   use blockPointers
   use inputTimeSpectral
   use flowVarRefState
-#ifndef USE_COMPLEX
-  use bcroutines_b
-#endif
+  use BCPointers_b
+
   implicit none
 
   ! Input parameters

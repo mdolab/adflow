@@ -20,6 +20,7 @@ subroutine xhalo_block
   !      *                                                                *
   !      ******************************************************************
   !
+  use constants
   use blockPointers
   use communication
   use inputTimeSpectral

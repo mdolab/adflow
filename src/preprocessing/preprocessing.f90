@@ -1,13 +1,3 @@
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          preprocessing.f90                               *
-!      * Author:        Edwin van der Weide, Steve Repsher              *
-!      * Starting date: 01-20-2003                                      *
-!      * Last modified: 11-30-2007                                      *
-!      *                                                                *
-!      ******************************************************************
-!
        subroutine preprocessing
 !
 !      ******************************************************************
@@ -28,7 +18,9 @@
        use inputTimeSpectral
        use interfaceGroups
        use section
-       use wallDistanceData
+       use wallDistance, only : xVolumeVec, xSurfVec, wallScatter, &
+            wallDistanceDataAllocated, updateWallAssociation, &
+            computeWallDistance
        use overset
        use utils, only : setPointers, EChk, setBufferSizes, terminate
        use bcdata, only : initBCData, allocMemBCData
@@ -40,12 +32,6 @@
 
        integer(kind=intType) :: nLevels, level, nn, mm, nsMin, nsMax, i, iProc
        logical :: local
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
 !
        ! Check that for the unsteady modes the number of periodic slices
        ! is identical for all sections.
@@ -255,7 +241,7 @@
          call determineNcellGlobal(level)
          call setGlobalCellsAndNodes(level)
          call setReferenceVolume(level)
-         call wallDistance(level, .True.)
+         call computeWallDistance(level, .True.)
       end do
 
       ! BC Data must be alloaced (for surface iblank) before we can do

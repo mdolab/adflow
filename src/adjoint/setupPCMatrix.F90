@@ -3,7 +3,7 @@ subroutine setupPCMatrix(useAD,  useTranspose, frozenTurb, level)
   
   ! This routine generates a fortran form of the PCmatrix. It is
   ! currently not used anywhere, but it become useful in the future.
-
+  use block, only : flowDomsd, flowDoms
   use blockPointers
   use inputDiscretization 
   use inputTimeSpectral 

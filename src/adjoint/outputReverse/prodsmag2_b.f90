@@ -28,6 +28,7 @@ subroutine prodsmag2_b()
 !      *                                                                *
 !      ******************************************************************
 !
+  use constants
   use blockpointers
   use turbmod
   implicit none

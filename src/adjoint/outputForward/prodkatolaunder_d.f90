@@ -25,6 +25,7 @@ subroutine prodkatolaunder_d()
 !      *                                                                *
 !      ******************************************************************
 !
+  use constants
   use blockpointers
   use flowvarrefstate
   use section

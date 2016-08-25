@@ -20,6 +20,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use blockPointers
        use cgnsGrid
        use haloList
@@ -518,7 +519,8 @@
 !      * subface, step is set to -1; otherwise it is 1.                 *
 !      *                                                                *
 !      ******************************************************************
-!
+
+       use constants
        use blockPointers
        implicit none
 !

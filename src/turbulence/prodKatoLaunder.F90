@@ -17,6 +17,7 @@ subroutine prodKatoLaunder
   !      *                                                                *
   !      ******************************************************************
   !
+  use constants
   use blockPointers
   use flowVarRefState
   use section

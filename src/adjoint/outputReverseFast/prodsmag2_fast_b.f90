@@ -28,7 +28,7 @@ subroutine prodsmag2_fast_b()
 !      *                                                                *
 !      ******************************************************************
 !
-  use myPushPopLib
+  use constants
   use blockpointers
   use turbmod
   implicit none

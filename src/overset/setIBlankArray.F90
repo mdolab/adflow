@@ -1,7 +1,9 @@
 subroutine setIblankArray(level, sps)
 
+  use constants
   use blockPointers
-  use communication
+  use communication, only : myid, commPatternCell_2nd, internalCell_2nd,&
+       sumb_comm_world
   use utils, only : setPointers, EChk
   use haloExchange, only : whalo1to1IntGeneric
   implicit none
@@ -79,8 +81,9 @@ end subroutine setIblankArray
 
 subroutine dumpIblank(level, sps)
 
-  use blockPointers
-  use communication
+  use constants
+  use blockPointers, only: il, jl, kl, x, nDom, iBlank
+  use communication, only : myID
   use utils, only : setPointers
   implicit none
 

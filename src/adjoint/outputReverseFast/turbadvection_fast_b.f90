@@ -41,7 +41,7 @@ subroutine turbadvection_fast_b(madv, nadv, offset, qq)
 !      *                                                                *
 !      ******************************************************************
 !
-  use myPushPopLib
+  use constants
   use blockpointers
   use turbmod
   implicit none

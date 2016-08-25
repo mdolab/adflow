@@ -27,7 +27,8 @@ module blockPointers
   !      *                                                                *
   !      ******************************************************************
   !
-  use block
+  use constants, only : intType, realType, porType
+  use block, only : fringeType, BCDataType, viscSubFaceType, flowDoms, nDom
   implicit none
   !
   !      ******************************************************************

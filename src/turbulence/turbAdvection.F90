@@ -33,6 +33,7 @@ subroutine turbAdvection(mAdv, nAdv, offset, qq)
   !      *                                                                *
   !      ******************************************************************
   !
+  use constants
   use blockPointers
   use turbMod
   implicit none
