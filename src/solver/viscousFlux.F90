@@ -1,13 +1,3 @@
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          viscousFlux.f90                                 *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 03-21-2003                                      *
-!      * Last modified: 04-18-2005                                      *
-!      *                                                                *
-!      ******************************************************************
-!
 subroutine viscousFlux
   !
   !      ******************************************************************
@@ -19,6 +9,7 @@ subroutine viscousFlux
   !      *                                                                *
   !      ******************************************************************
   !
+  use constants
   use blockPointers
   use flowVarRefState
   use inputPhysics
@@ -43,12 +34,6 @@ subroutine viscousFlux
   real(kind=realType) :: fmx, fmy, fmz, frhoE
   logical :: correctForK, storeWallTensor
 
-  !
-  !      ******************************************************************
-  !      *                                                                *
-  !      * Begin execution                                                *
-  !      *                                                                *
-  !      ******************************************************************
 
   ! Set rFilv to rFil to indicate that this is the viscous part.
   ! If rFilv == 0 the viscous residuals need not to be computed
@@ -753,6 +738,7 @@ subroutine allNodalGradients
   !        *                                                              *
   !        ****************************************************************
   !
+  use constants
   use blockPointers
   implicit none
   !        Local variables.

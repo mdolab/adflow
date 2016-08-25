@@ -13,8 +13,16 @@
 
 subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, &
      frozenTurb)
+  ! Note that we import all the pointers from block res that will be
+  ! used in any routine. Otherwise, tapenade gives warnings about
+  ! saving a hidden variable. 
+  use constants
+  use block, only : flowDoms
   use BCRoutines
-  use blockPointers       
+  use BCPointers
+  use blockPointers , only : w, dw, x, vol, il, jl, kl, sectionID, wOld, volOld, BCData, &
+       si, sj, sk, sfacei, sfacej, sfacek, rlv, gamma, p, rev, bmtj1, bmtj2, scratch, bmtk2, bmtk1, &
+       fw, aa, d2wall, bmti1, bmti2, s
   use flowVarRefState     
   use inputPhysics 
   use inputIteration
@@ -24,7 +32,7 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, &
   use iteration
   use diffSizes
   use costFunctions
-  use wallDistanceData
+  use wallDistance, only : updateWallDistancesQuickly, xsurf
   use inputDiscretization 
   use saModule
   use inputUnsteady

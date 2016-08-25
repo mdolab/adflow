@@ -674,4 +674,1023 @@ contains
       rigidrotangle = phi
     end if
   end function rigidrotangle
+!  differentiation of setbcpointers in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
+!   gradient     of useful results: *xx *rev0 *rev1 *rev2 *rev3
+!                *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3 *ssi
+!                *ww0 *ww1 *ww2 *ww3 *rev *p *w *rlv *x *si *sj
+!                *sk
+!   with respect to varying inputs: *xx *rev0 *rev1 *rev2 *rev3
+!                *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3 *ssi
+!                *ww0 *ww1 *ww2 *ww3 *rev *p *w *rlv *x *si *sj
+!                *sk
+!   plus diff mem management of: xx:in rev0:in rev1:in rev2:in
+!                rev3:in pp0:in pp1:in pp2:in pp3:in rlv0:in rlv1:in
+!                rlv2:in rlv3:in ssi:in ww0:in ww1:in ww2:in ww3:in
+!                rev:in p:in w:in rlv:in x:in si:in sj:in sk:in
+!                bcdata:in
+  subroutine setbcpointers_b(nn, spatialpointers)
+!
+!      ******************************************************************
+!      *                                                                *
+!      * setbcpointers sets the pointers needed for the boundary        *
+!      * condition treatment on a general face, such that the boundary  *
+!      * routines are only implemented once instead of 6 times.         *
+!      *                                                                *
+!      ******************************************************************
+!
+    use blockpointers
+    use flowvarrefstate
+    use inputphysics
+    use bcpointers_b
+    implicit none
+! subroutine arguments.
+    integer(kind=inttype), intent(in) :: nn
+    logical, intent(in) :: spatialpointers
+    integer :: branch
+! determine the sizes of each face and point to just the range we
+! need on each face. 
+! set the size of the subface
+! determine the face id on which the subface is located and set
+! the pointers accordinly.
+    select case  (bcfaceid(nn)) 
+    case (imin) 
+      call pushcontrol3b(1)
+    case (imax) 
+      call pushcontrol3b(2)
+    case (jmin) 
+      call pushcontrol3b(3)
+    case (jmax) 
+      call pushcontrol3b(4)
+    case (kmin) 
+      call pushcontrol3b(5)
+    case (kmax) 
+      call pushcontrol3b(6)
+    case default
+      call pushcontrol3b(0)
+    end select
+! these spatial pointers are only required for
+! forcesandmoments. eulerwall normal moment is is reverse ad'ed.
+    if (spatialpointers) then
+      select case  (bcfaceid(nn)) 
+      case (imin) 
+        sid(1, 1:je, 1:ke, :) = sid(1, 1:je, 1:ke, :) + ssid(1:je, 1:ke&
+&         , :)
+        ssid(1:je, 1:ke, :) = 0.0_8
+        xd(1, 0:je, 0:ke, :) = xd(1, 0:je, 0:ke, :) + xxd(1:je+1, 1:ke+1&
+&         , :)
+        xxd(1:je+1, 1:ke+1, :) = 0.0_8
+      case (imax) 
+        sid(il, 1:je, 1:ke, :) = sid(il, 1:je, 1:ke, :) + ssid(1:je, 1:&
+&         ke, :)
+        ssid(1:je, 1:ke, :) = 0.0_8
+        xd(il, 0:je, 0:ke, :) = xd(il, 0:je, 0:ke, :) + xxd(1:je+1, 1:ke&
+&         +1, :)
+        xxd(1:je+1, 1:ke+1, :) = 0.0_8
+      case (jmin) 
+        sjd(1:ie, 1, 1:ke, :) = sjd(1:ie, 1, 1:ke, :) + ssid(1:ie, 1:ke&
+&         , :)
+        ssid(1:ie, 1:ke, :) = 0.0_8
+        xd(0:ie, 1, 0:ke, :) = xd(0:ie, 1, 0:ke, :) + xxd(1:ie+1, 1:ke+1&
+&         , :)
+        xxd(1:ie+1, 1:ke+1, :) = 0.0_8
+      case (jmax) 
+        sjd(1:ie, jl, 1:ke, :) = sjd(1:ie, jl, 1:ke, :) + ssid(1:ie, 1:&
+&         ke, :)
+        ssid(1:ie, 1:ke, :) = 0.0_8
+        xd(0:ie, jl, 0:ke, :) = xd(0:ie, jl, 0:ke, :) + xxd(1:ie+1, 1:ke&
+&         +1, :)
+        xxd(1:ie+1, 1:ke+1, :) = 0.0_8
+      case (kmin) 
+        skd(1:ie, 1:je, 1, :) = skd(1:ie, 1:je, 1, :) + ssid(1:ie, 1:je&
+&         , :)
+        ssid(1:ie, 1:je, :) = 0.0_8
+        xd(0:ie, 0:je, 1, :) = xd(0:ie, 0:je, 1, :) + xxd(1:ie+1, 1:je+1&
+&         , :)
+        xxd(1:ie+1, 1:je+1, :) = 0.0_8
+      case (kmax) 
+        skd(1:ie, 1:je, kl, :) = skd(1:ie, 1:je, kl, :) + ssid(1:ie, 1:&
+&         je, :)
+        ssid(1:ie, 1:je, :) = 0.0_8
+        xd(0:ie, 0:je, kl, :) = xd(0:ie, 0:je, kl, :) + xxd(1:ie+1, 1:je&
+&         +1, :)
+        xxd(1:ie+1, 1:je+1, :) = 0.0_8
+      end select
+    end if
+    call popcontrol3b(branch)
+    if (branch .lt. 3) then
+      if (branch .ne. 0) then
+        if (branch .eq. 1) then
+          revd(0, 1:je, 1:ke) = revd(0, 1:je, 1:ke) + rev0d(1:je, 1:ke)
+          rev0d(1:je, 1:ke) = 0.0_8
+          revd(1, 1:je, 1:ke) = revd(1, 1:je, 1:ke) + rev1d(1:je, 1:ke)
+          rev1d(1:je, 1:ke) = 0.0_8
+          revd(2, 1:je, 1:ke) = revd(2, 1:je, 1:ke) + rev2d(1:je, 1:ke)
+          rev2d(1:je, 1:ke) = 0.0_8
+          revd(3, 1:je, 1:ke) = revd(3, 1:je, 1:ke) + rev3d(1:je, 1:ke)
+          rev3d(1:je, 1:ke) = 0.0_8
+          rlvd(0, 1:je, 1:ke) = rlvd(0, 1:je, 1:ke) + rlv0d(1:je, 1:ke)
+          rlv0d(1:je, 1:ke) = 0.0_8
+          rlvd(1, 1:je, 1:ke) = rlvd(1, 1:je, 1:ke) + rlv1d(1:je, 1:ke)
+          rlv1d(1:je, 1:ke) = 0.0_8
+          rlvd(2, 1:je, 1:ke) = rlvd(2, 1:je, 1:ke) + rlv2d(1:je, 1:ke)
+          rlv2d(1:je, 1:ke) = 0.0_8
+          rlvd(3, 1:je, 1:ke) = rlvd(3, 1:je, 1:ke) + rlv3d(1:je, 1:ke)
+          rlv3d(1:je, 1:ke) = 0.0_8
+          pd(0, 1:je, 1:ke) = pd(0, 1:je, 1:ke) + pp0d(1:je, 1:ke)
+          pp0d(1:je, 1:ke) = 0.0_8
+          pd(1, 1:je, 1:ke) = pd(1, 1:je, 1:ke) + pp1d(1:je, 1:ke)
+          pp1d(1:je, 1:ke) = 0.0_8
+          pd(2, 1:je, 1:ke) = pd(2, 1:je, 1:ke) + pp2d(1:je, 1:ke)
+          pp2d(1:je, 1:ke) = 0.0_8
+          pd(3, 1:je, 1:ke) = pd(3, 1:je, 1:ke) + pp3d(1:je, 1:ke)
+          pp3d(1:je, 1:ke) = 0.0_8
+          wd(0, 1:je, 1:ke, :) = wd(0, 1:je, 1:ke, :) + ww0d(1:je, 1:ke&
+&           , :)
+          ww0d(1:je, 1:ke, :) = 0.0_8
+          wd(1, 1:je, 1:ke, :) = wd(1, 1:je, 1:ke, :) + ww1d(1:je, 1:ke&
+&           , :)
+          ww1d(1:je, 1:ke, :) = 0.0_8
+          wd(2, 1:je, 1:ke, :) = wd(2, 1:je, 1:ke, :) + ww2d(1:je, 1:ke&
+&           , :)
+          ww2d(1:je, 1:ke, :) = 0.0_8
+          wd(3, 1:je, 1:ke, :) = wd(3, 1:je, 1:ke, :) + ww3d(1:je, 1:ke&
+&           , :)
+          ww3d(1:je, 1:ke, :) = 0.0_8
+        else
+          revd(ib, 1:je, 1:ke) = revd(ib, 1:je, 1:ke) + rev0d(1:je, 1:ke&
+&           )
+          rev0d(1:je, 1:ke) = 0.0_8
+          revd(ie, 1:je, 1:ke) = revd(ie, 1:je, 1:ke) + rev1d(1:je, 1:ke&
+&           )
+          rev1d(1:je, 1:ke) = 0.0_8
+          revd(il, 1:je, 1:ke) = revd(il, 1:je, 1:ke) + rev2d(1:je, 1:ke&
+&           )
+          rev2d(1:je, 1:ke) = 0.0_8
+          revd(nx, 1:je, 1:ke) = revd(nx, 1:je, 1:ke) + rev3d(1:je, 1:ke&
+&           )
+          rev3d(1:je, 1:ke) = 0.0_8
+          rlvd(ib, 1:je, 1:ke) = rlvd(ib, 1:je, 1:ke) + rlv0d(1:je, 1:ke&
+&           )
+          rlv0d(1:je, 1:ke) = 0.0_8
+          rlvd(ie, 1:je, 1:ke) = rlvd(ie, 1:je, 1:ke) + rlv1d(1:je, 1:ke&
+&           )
+          rlv1d(1:je, 1:ke) = 0.0_8
+          rlvd(il, 1:je, 1:ke) = rlvd(il, 1:je, 1:ke) + rlv2d(1:je, 1:ke&
+&           )
+          rlv2d(1:je, 1:ke) = 0.0_8
+          rlvd(nx, 1:je, 1:ke) = rlvd(nx, 1:je, 1:ke) + rlv3d(1:je, 1:ke&
+&           )
+          rlv3d(1:je, 1:ke) = 0.0_8
+          pd(ib, 1:je, 1:ke) = pd(ib, 1:je, 1:ke) + pp0d(1:je, 1:ke)
+          pp0d(1:je, 1:ke) = 0.0_8
+          pd(ie, 1:je, 1:ke) = pd(ie, 1:je, 1:ke) + pp1d(1:je, 1:ke)
+          pp1d(1:je, 1:ke) = 0.0_8
+          pd(il, 1:je, 1:ke) = pd(il, 1:je, 1:ke) + pp2d(1:je, 1:ke)
+          pp2d(1:je, 1:ke) = 0.0_8
+          pd(nx, 1:je, 1:ke) = pd(nx, 1:je, 1:ke) + pp3d(1:je, 1:ke)
+          pp3d(1:je, 1:ke) = 0.0_8
+          wd(ib, 1:je, 1:ke, :) = wd(ib, 1:je, 1:ke, :) + ww0d(1:je, 1:&
+&           ke, :)
+          ww0d(1:je, 1:ke, :) = 0.0_8
+          wd(ie, 1:je, 1:ke, :) = wd(ie, 1:je, 1:ke, :) + ww1d(1:je, 1:&
+&           ke, :)
+          ww1d(1:je, 1:ke, :) = 0.0_8
+          wd(il, 1:je, 1:ke, :) = wd(il, 1:je, 1:ke, :) + ww2d(1:je, 1:&
+&           ke, :)
+          ww2d(1:je, 1:ke, :) = 0.0_8
+          wd(nx, 1:je, 1:ke, :) = wd(nx, 1:je, 1:ke, :) + ww3d(1:je, 1:&
+&           ke, :)
+          ww3d(1:je, 1:ke, :) = 0.0_8
+        end if
+      end if
+    else if (branch .lt. 5) then
+      if (branch .eq. 3) then
+        revd(1:ie, 0, 1:ke) = revd(1:ie, 0, 1:ke) + rev0d(1:ie, 1:ke)
+        rev0d(1:ie, 1:ke) = 0.0_8
+        revd(1:ie, 1, 1:ke) = revd(1:ie, 1, 1:ke) + rev1d(1:ie, 1:ke)
+        rev1d(1:ie, 1:ke) = 0.0_8
+        revd(1:ie, 2, 1:ke) = revd(1:ie, 2, 1:ke) + rev2d(1:ie, 1:ke)
+        rev2d(1:ie, 1:ke) = 0.0_8
+        revd(1:ie, 3, 1:ke) = revd(1:ie, 3, 1:ke) + rev3d(1:ie, 1:ke)
+        rev3d(1:ie, 1:ke) = 0.0_8
+        rlvd(1:ie, 0, 1:ke) = rlvd(1:ie, 0, 1:ke) + rlv0d(1:ie, 1:ke)
+        rlv0d(1:ie, 1:ke) = 0.0_8
+        rlvd(1:ie, 1, 1:ke) = rlvd(1:ie, 1, 1:ke) + rlv1d(1:ie, 1:ke)
+        rlv1d(1:ie, 1:ke) = 0.0_8
+        rlvd(1:ie, 2, 1:ke) = rlvd(1:ie, 2, 1:ke) + rlv2d(1:ie, 1:ke)
+        rlv2d(1:ie, 1:ke) = 0.0_8
+        rlvd(1:ie, 3, 1:ke) = rlvd(1:ie, 3, 1:ke) + rlv3d(1:ie, 1:ke)
+        rlv3d(1:ie, 1:ke) = 0.0_8
+        pd(1:ie, 0, 1:ke) = pd(1:ie, 0, 1:ke) + pp0d(1:ie, 1:ke)
+        pp0d(1:ie, 1:ke) = 0.0_8
+        pd(1:ie, 1, 1:ke) = pd(1:ie, 1, 1:ke) + pp1d(1:ie, 1:ke)
+        pp1d(1:ie, 1:ke) = 0.0_8
+        pd(1:ie, 2, 1:ke) = pd(1:ie, 2, 1:ke) + pp2d(1:ie, 1:ke)
+        pp2d(1:ie, 1:ke) = 0.0_8
+        pd(1:ie, 3, 1:ke) = pd(1:ie, 3, 1:ke) + pp3d(1:ie, 1:ke)
+        pp3d(1:ie, 1:ke) = 0.0_8
+        wd(1:ie, 0, 1:ke, :) = wd(1:ie, 0, 1:ke, :) + ww0d(1:ie, 1:ke, :&
+&         )
+        ww0d(1:ie, 1:ke, :) = 0.0_8
+        wd(1:ie, 1, 1:ke, :) = wd(1:ie, 1, 1:ke, :) + ww1d(1:ie, 1:ke, :&
+&         )
+        ww1d(1:ie, 1:ke, :) = 0.0_8
+        wd(1:ie, 2, 1:ke, :) = wd(1:ie, 2, 1:ke, :) + ww2d(1:ie, 1:ke, :&
+&         )
+        ww2d(1:ie, 1:ke, :) = 0.0_8
+        wd(1:ie, 3, 1:ke, :) = wd(1:ie, 3, 1:ke, :) + ww3d(1:ie, 1:ke, :&
+&         )
+        ww3d(1:ie, 1:ke, :) = 0.0_8
+      else
+        revd(1:ie, jb, 1:ke) = revd(1:ie, jb, 1:ke) + rev0d(1:ie, 1:ke)
+        rev0d(1:ie, 1:ke) = 0.0_8
+        revd(1:ie, je, 1:ke) = revd(1:ie, je, 1:ke) + rev1d(1:ie, 1:ke)
+        rev1d(1:ie, 1:ke) = 0.0_8
+        revd(1:ie, jl, 1:ke) = revd(1:ie, jl, 1:ke) + rev2d(1:ie, 1:ke)
+        rev2d(1:ie, 1:ke) = 0.0_8
+        revd(1:ie, ny, 1:ke) = revd(1:ie, ny, 1:ke) + rev3d(1:ie, 1:ke)
+        rev3d(1:ie, 1:ke) = 0.0_8
+        rlvd(1:ie, jb, 1:ke) = rlvd(1:ie, jb, 1:ke) + rlv0d(1:ie, 1:ke)
+        rlv0d(1:ie, 1:ke) = 0.0_8
+        rlvd(1:ie, je, 1:ke) = rlvd(1:ie, je, 1:ke) + rlv1d(1:ie, 1:ke)
+        rlv1d(1:ie, 1:ke) = 0.0_8
+        rlvd(1:ie, jl, 1:ke) = rlvd(1:ie, jl, 1:ke) + rlv2d(1:ie, 1:ke)
+        rlv2d(1:ie, 1:ke) = 0.0_8
+        rlvd(1:ie, ny, 1:ke) = rlvd(1:ie, ny, 1:ke) + rlv3d(1:ie, 1:ke)
+        rlv3d(1:ie, 1:ke) = 0.0_8
+        pd(1:ie, jb, 1:ke) = pd(1:ie, jb, 1:ke) + pp0d(1:ie, 1:ke)
+        pp0d(1:ie, 1:ke) = 0.0_8
+        pd(1:ie, je, 1:ke) = pd(1:ie, je, 1:ke) + pp1d(1:ie, 1:ke)
+        pp1d(1:ie, 1:ke) = 0.0_8
+        pd(1:ie, jl, 1:ke) = pd(1:ie, jl, 1:ke) + pp2d(1:ie, 1:ke)
+        pp2d(1:ie, 1:ke) = 0.0_8
+        pd(1:ie, ny, 1:ke) = pd(1:ie, ny, 1:ke) + pp3d(1:ie, 1:ke)
+        pp3d(1:ie, 1:ke) = 0.0_8
+        wd(1:ie, jb, 1:ke, :) = wd(1:ie, jb, 1:ke, :) + ww0d(1:ie, 1:ke&
+&         , :)
+        ww0d(1:ie, 1:ke, :) = 0.0_8
+        wd(1:ie, je, 1:ke, :) = wd(1:ie, je, 1:ke, :) + ww1d(1:ie, 1:ke&
+&         , :)
+        ww1d(1:ie, 1:ke, :) = 0.0_8
+        wd(1:ie, jl, 1:ke, :) = wd(1:ie, jl, 1:ke, :) + ww2d(1:ie, 1:ke&
+&         , :)
+        ww2d(1:ie, 1:ke, :) = 0.0_8
+        wd(1:ie, ny, 1:ke, :) = wd(1:ie, ny, 1:ke, :) + ww3d(1:ie, 1:ke&
+&         , :)
+        ww3d(1:ie, 1:ke, :) = 0.0_8
+      end if
+    else if (branch .eq. 5) then
+      revd(1:ie, 1:je, 0) = revd(1:ie, 1:je, 0) + rev0d(1:ie, 1:je)
+      rev0d(1:ie, 1:je) = 0.0_8
+      revd(1:ie, 1:je, 1) = revd(1:ie, 1:je, 1) + rev1d(1:ie, 1:je)
+      rev1d(1:ie, 1:je) = 0.0_8
+      revd(1:ie, 1:je, 2) = revd(1:ie, 1:je, 2) + rev2d(1:ie, 1:je)
+      rev2d(1:ie, 1:je) = 0.0_8
+      revd(1:ie, 1:je, 3) = revd(1:ie, 1:je, 3) + rev3d(1:ie, 1:je)
+      rev3d(1:ie, 1:je) = 0.0_8
+      rlvd(1:ie, 1:je, 0) = rlvd(1:ie, 1:je, 0) + rlv0d(1:ie, 1:je)
+      rlv0d(1:ie, 1:je) = 0.0_8
+      rlvd(1:ie, 1:je, 1) = rlvd(1:ie, 1:je, 1) + rlv1d(1:ie, 1:je)
+      rlv1d(1:ie, 1:je) = 0.0_8
+      rlvd(1:ie, 1:je, 2) = rlvd(1:ie, 1:je, 2) + rlv2d(1:ie, 1:je)
+      rlv2d(1:ie, 1:je) = 0.0_8
+      rlvd(1:ie, 1:je, 3) = rlvd(1:ie, 1:je, 3) + rlv3d(1:ie, 1:je)
+      rlv3d(1:ie, 1:je) = 0.0_8
+      pd(1:ie, 1:je, 0) = pd(1:ie, 1:je, 0) + pp0d(1:ie, 1:je)
+      pp0d(1:ie, 1:je) = 0.0_8
+      pd(1:ie, 1:je, 1) = pd(1:ie, 1:je, 1) + pp1d(1:ie, 1:je)
+      pp1d(1:ie, 1:je) = 0.0_8
+      pd(1:ie, 1:je, 2) = pd(1:ie, 1:je, 2) + pp2d(1:ie, 1:je)
+      pp2d(1:ie, 1:je) = 0.0_8
+      pd(1:ie, 1:je, 3) = pd(1:ie, 1:je, 3) + pp3d(1:ie, 1:je)
+      pp3d(1:ie, 1:je) = 0.0_8
+      wd(1:ie, 1:je, 0, :) = wd(1:ie, 1:je, 0, :) + ww0d(1:ie, 1:je, :)
+      ww0d(1:ie, 1:je, :) = 0.0_8
+      wd(1:ie, 1:je, 1, :) = wd(1:ie, 1:je, 1, :) + ww1d(1:ie, 1:je, :)
+      ww1d(1:ie, 1:je, :) = 0.0_8
+      wd(1:ie, 1:je, 2, :) = wd(1:ie, 1:je, 2, :) + ww2d(1:ie, 1:je, :)
+      ww2d(1:ie, 1:je, :) = 0.0_8
+      wd(1:ie, 1:je, 3, :) = wd(1:ie, 1:je, 3, :) + ww3d(1:ie, 1:je, :)
+      ww3d(1:ie, 1:je, :) = 0.0_8
+    else
+      revd(1:ie, 1:je, kb) = revd(1:ie, 1:je, kb) + rev0d(1:ie, 1:je)
+      rev0d(1:ie, 1:je) = 0.0_8
+      revd(1:ie, 1:je, ke) = revd(1:ie, 1:je, ke) + rev1d(1:ie, 1:je)
+      rev1d(1:ie, 1:je) = 0.0_8
+      revd(1:ie, 1:je, kl) = revd(1:ie, 1:je, kl) + rev2d(1:ie, 1:je)
+      rev2d(1:ie, 1:je) = 0.0_8
+      revd(1:ie, 1:je, nz) = revd(1:ie, 1:je, nz) + rev3d(1:ie, 1:je)
+      rev3d(1:ie, 1:je) = 0.0_8
+      rlvd(1:ie, 1:je, kb) = rlvd(1:ie, 1:je, kb) + rlv0d(1:ie, 1:je)
+      rlv0d(1:ie, 1:je) = 0.0_8
+      rlvd(1:ie, 1:je, ke) = rlvd(1:ie, 1:je, ke) + rlv1d(1:ie, 1:je)
+      rlv1d(1:ie, 1:je) = 0.0_8
+      rlvd(1:ie, 1:je, kl) = rlvd(1:ie, 1:je, kl) + rlv2d(1:ie, 1:je)
+      rlv2d(1:ie, 1:je) = 0.0_8
+      rlvd(1:ie, 1:je, nz) = rlvd(1:ie, 1:je, nz) + rlv3d(1:ie, 1:je)
+      rlv3d(1:ie, 1:je) = 0.0_8
+      pd(1:ie, 1:je, kb) = pd(1:ie, 1:je, kb) + pp0d(1:ie, 1:je)
+      pp0d(1:ie, 1:je) = 0.0_8
+      pd(1:ie, 1:je, ke) = pd(1:ie, 1:je, ke) + pp1d(1:ie, 1:je)
+      pp1d(1:ie, 1:je) = 0.0_8
+      pd(1:ie, 1:je, kl) = pd(1:ie, 1:je, kl) + pp2d(1:ie, 1:je)
+      pp2d(1:ie, 1:je) = 0.0_8
+      pd(1:ie, 1:je, nz) = pd(1:ie, 1:je, nz) + pp3d(1:ie, 1:je)
+      pp3d(1:ie, 1:je) = 0.0_8
+      wd(1:ie, 1:je, kb, :) = wd(1:ie, 1:je, kb, :) + ww0d(1:ie, 1:je, :&
+&       )
+      ww0d(1:ie, 1:je, :) = 0.0_8
+      wd(1:ie, 1:je, ke, :) = wd(1:ie, 1:je, ke, :) + ww1d(1:ie, 1:je, :&
+&       )
+      ww1d(1:ie, 1:je, :) = 0.0_8
+      wd(1:ie, 1:je, kl, :) = wd(1:ie, 1:je, kl, :) + ww2d(1:ie, 1:je, :&
+&       )
+      ww2d(1:ie, 1:je, :) = 0.0_8
+      wd(1:ie, 1:je, nz, :) = wd(1:ie, 1:je, nz, :) + ww3d(1:ie, 1:je, :&
+&       )
+      ww3d(1:ie, 1:je, :) = 0.0_8
+    end if
+  end subroutine setbcpointers_b
+  subroutine setbcpointers(nn, spatialpointers)
+!
+!      ******************************************************************
+!      *                                                                *
+!      * setbcpointers sets the pointers needed for the boundary        *
+!      * condition treatment on a general face, such that the boundary  *
+!      * routines are only implemented once instead of 6 times.         *
+!      *                                                                *
+!      ******************************************************************
+!
+    use blockpointers
+    use flowvarrefstate
+    use inputphysics
+    use bcpointers_b
+    implicit none
+! subroutine arguments.
+    integer(kind=inttype), intent(in) :: nn
+    logical, intent(in) :: spatialpointers
+! determine the sizes of each face and point to just the range we
+! need on each face. 
+    istart = bcdata(nn)%icbeg
+    iend = bcdata(nn)%icend
+    jstart = bcdata(nn)%jcbeg
+    jend = bcdata(nn)%jcend
+! set the size of the subface
+    isize = iend - istart + 1
+    jsize = jend - jstart + 1
+! determine the face id on which the subface is located and set
+! the pointers accordinly.
+    select case  (bcfaceid(nn)) 
+    case (imin) 
+!===============================================================
+      ww3(1:je, 1:ke, :) = w(3, 1:je, 1:ke, :)
+      ww2(1:je, 1:ke, :) = w(2, 1:je, 1:ke, :)
+      ww1(1:je, 1:ke, :) = w(1, 1:je, 1:ke, :)
+      ww0(1:je, 1:ke, :) = w(0, 1:je, 1:ke, :)
+      pp3(1:je, 1:ke) = p(3, 1:je, 1:ke)
+      pp2(1:je, 1:ke) = p(2, 1:je, 1:ke)
+      pp1(1:je, 1:ke) = p(1, 1:je, 1:ke)
+      pp0(1:je, 1:ke) = p(0, 1:je, 1:ke)
+      rlv3(1:je, 1:ke) = rlv(3, 1:je, 1:ke)
+      rlv2(1:je, 1:ke) = rlv(2, 1:je, 1:ke)
+      rlv1(1:je, 1:ke) = rlv(1, 1:je, 1:ke)
+      rlv0(1:je, 1:ke) = rlv(0, 1:je, 1:ke)
+      rev3(1:je, 1:ke) = rev(3, 1:je, 1:ke)
+      rev2(1:je, 1:ke) = rev(2, 1:je, 1:ke)
+      rev1(1:je, 1:ke) = rev(1, 1:je, 1:ke)
+      rev0(1:je, 1:ke) = rev(0, 1:je, 1:ke)
+      gamma3(1:je, 1:ke) = gamma(3, 1:je, 1:ke)
+      gamma2(1:je, 1:ke) = gamma(2, 1:je, 1:ke)
+      gamma1(1:je, 1:ke) = gamma(1, 1:je, 1:ke)
+      gamma0(1:je, 1:ke) = gamma(0, 1:je, 1:ke)
+      gcp(1:je, 1:ke) = globalcell(2, 1:je, 1:ke)
+    case (imax) 
+!===============================================================
+      ww3(1:je, 1:ke, :) = w(nx, 1:je, 1:ke, :)
+      ww2(1:je, 1:ke, :) = w(il, 1:je, 1:ke, :)
+      ww1(1:je, 1:ke, :) = w(ie, 1:je, 1:ke, :)
+      ww0(1:je, 1:ke, :) = w(ib, 1:je, 1:ke, :)
+      pp3(1:je, 1:ke) = p(nx, 1:je, 1:ke)
+      pp2(1:je, 1:ke) = p(il, 1:je, 1:ke)
+      pp1(1:je, 1:ke) = p(ie, 1:je, 1:ke)
+      pp0(1:je, 1:ke) = p(ib, 1:je, 1:ke)
+      rlv3(1:je, 1:ke) = rlv(nx, 1:je, 1:ke)
+      rlv2(1:je, 1:ke) = rlv(il, 1:je, 1:ke)
+      rlv1(1:je, 1:ke) = rlv(ie, 1:je, 1:ke)
+      rlv0(1:je, 1:ke) = rlv(ib, 1:je, 1:ke)
+      rev3(1:je, 1:ke) = rev(nx, 1:je, 1:ke)
+      rev2(1:je, 1:ke) = rev(il, 1:je, 1:ke)
+      rev1(1:je, 1:ke) = rev(ie, 1:je, 1:ke)
+      rev0(1:je, 1:ke) = rev(ib, 1:je, 1:ke)
+      gamma3(1:je, 1:ke) = gamma(nx, 1:je, 1:ke)
+      gamma2(1:je, 1:ke) = gamma(il, 1:je, 1:ke)
+      gamma1(1:je, 1:ke) = gamma(ie, 1:je, 1:ke)
+      gamma0(1:je, 1:ke) = gamma(ib, 1:je, 1:ke)
+      gcp(1:je, 1:ke) = globalcell(il, 1:je, 1:ke)
+    case (jmin) 
+!===============================================================
+      ww3(1:ie, 1:ke, :) = w(1:ie, 3, 1:ke, :)
+      ww2(1:ie, 1:ke, :) = w(1:ie, 2, 1:ke, :)
+      ww1(1:ie, 1:ke, :) = w(1:ie, 1, 1:ke, :)
+      ww0(1:ie, 1:ke, :) = w(1:ie, 0, 1:ke, :)
+      pp3(1:ie, 1:ke) = p(1:ie, 3, 1:ke)
+      pp2(1:ie, 1:ke) = p(1:ie, 2, 1:ke)
+      pp1(1:ie, 1:ke) = p(1:ie, 1, 1:ke)
+      pp0(1:ie, 1:ke) = p(1:ie, 0, 1:ke)
+      rlv3(1:ie, 1:ke) = rlv(1:ie, 3, 1:ke)
+      rlv2(1:ie, 1:ke) = rlv(1:ie, 2, 1:ke)
+      rlv1(1:ie, 1:ke) = rlv(1:ie, 1, 1:ke)
+      rlv0(1:ie, 1:ke) = rlv(1:ie, 0, 1:ke)
+      rev3(1:ie, 1:ke) = rev(1:ie, 3, 1:ke)
+      rev2(1:ie, 1:ke) = rev(1:ie, 2, 1:ke)
+      rev1(1:ie, 1:ke) = rev(1:ie, 1, 1:ke)
+      rev0(1:ie, 1:ke) = rev(1:ie, 0, 1:ke)
+      gamma3(1:ie, 1:ke) = gamma(1:ie, 3, 1:ke)
+      gamma2(1:ie, 1:ke) = gamma(1:ie, 2, 1:ke)
+      gamma1(1:ie, 1:ke) = gamma(1:ie, 1, 1:ke)
+      gamma0(1:ie, 1:ke) = gamma(1:ie, 0, 1:ke)
+      gcp(1:ie, 1:ke) = globalcell(1:ie, 2, 1:ke)
+    case (jmax) 
+!===============================================================
+      ww3(1:ie, 1:ke, :) = w(1:ie, ny, 1:ke, :)
+      ww2(1:ie, 1:ke, :) = w(1:ie, jl, 1:ke, :)
+      ww1(1:ie, 1:ke, :) = w(1:ie, je, 1:ke, :)
+      ww0(1:ie, 1:ke, :) = w(1:ie, jb, 1:ke, :)
+      pp3(1:ie, 1:ke) = p(1:ie, ny, 1:ke)
+      pp2(1:ie, 1:ke) = p(1:ie, jl, 1:ke)
+      pp1(1:ie, 1:ke) = p(1:ie, je, 1:ke)
+      pp0(1:ie, 1:ke) = p(1:ie, jb, 1:ke)
+      rlv3(1:ie, 1:ke) = rlv(1:ie, ny, 1:ke)
+      rlv2(1:ie, 1:ke) = rlv(1:ie, jl, 1:ke)
+      rlv1(1:ie, 1:ke) = rlv(1:ie, je, 1:ke)
+      rlv0(1:ie, 1:ke) = rlv(1:ie, jb, 1:ke)
+      rev3(1:ie, 1:ke) = rev(1:ie, ny, 1:ke)
+      rev2(1:ie, 1:ke) = rev(1:ie, jl, 1:ke)
+      rev1(1:ie, 1:ke) = rev(1:ie, je, 1:ke)
+      rev0(1:ie, 1:ke) = rev(1:ie, jb, 1:ke)
+      gamma3(1:ie, 1:ke) = gamma(1:ie, ny, 1:ke)
+      gamma2(1:ie, 1:ke) = gamma(1:ie, jl, 1:ke)
+      gamma1(1:ie, 1:ke) = gamma(1:ie, je, 1:ke)
+      gamma0(1:ie, 1:ke) = gamma(1:ie, jb, 1:ke)
+      gcp(1:ie, 1:ke) = globalcell(1:ie, jl, 1:ke)
+    case (kmin) 
+!===============================================================
+      ww3(1:ie, 1:je, :) = w(1:ie, 1:je, 3, :)
+      ww2(1:ie, 1:je, :) = w(1:ie, 1:je, 2, :)
+      ww1(1:ie, 1:je, :) = w(1:ie, 1:je, 1, :)
+      ww0(1:ie, 1:je, :) = w(1:ie, 1:je, 0, :)
+      pp3(1:ie, 1:je) = p(1:ie, 1:je, 3)
+      pp2(1:ie, 1:je) = p(1:ie, 1:je, 2)
+      pp1(1:ie, 1:je) = p(1:ie, 1:je, 1)
+      pp0(1:ie, 1:je) = p(1:ie, 1:je, 0)
+      rlv3(1:ie, 1:je) = rlv(1:ie, 1:je, 3)
+      rlv2(1:ie, 1:je) = rlv(1:ie, 1:je, 2)
+      rlv1(1:ie, 1:je) = rlv(1:ie, 1:je, 1)
+      rlv0(1:ie, 1:je) = rlv(1:ie, 1:je, 0)
+      rev3(1:ie, 1:je) = rev(1:ie, 1:je, 3)
+      rev2(1:ie, 1:je) = rev(1:ie, 1:je, 2)
+      rev1(1:ie, 1:je) = rev(1:ie, 1:je, 1)
+      rev0(1:ie, 1:je) = rev(1:ie, 1:je, 0)
+      gamma3(1:ie, 1:je) = gamma(1:ie, 1:je, 3)
+      gamma2(1:ie, 1:je) = gamma(1:ie, 1:je, 2)
+      gamma1(1:ie, 1:je) = gamma(1:ie, 1:je, 1)
+      gamma0(1:ie, 1:je) = gamma(1:ie, 1:je, 0)
+      gcp(1:ie, 1:je) = globalcell(1:ie, 1:je, 2)
+    case (kmax) 
+!===============================================================
+      ww3(1:ie, 1:je, :) = w(1:ie, 1:je, nz, :)
+      ww2(1:ie, 1:je, :) = w(1:ie, 1:je, kl, :)
+      ww1(1:ie, 1:je, :) = w(1:ie, 1:je, ke, :)
+      ww0(1:ie, 1:je, :) = w(1:ie, 1:je, kb, :)
+      pp3(1:ie, 1:je) = p(1:ie, 1:je, nz)
+      pp2(1:ie, 1:je) = p(1:ie, 1:je, kl)
+      pp1(1:ie, 1:je) = p(1:ie, 1:je, ke)
+      pp0(1:ie, 1:je) = p(1:ie, 1:je, kb)
+      rlv3(1:ie, 1:je) = rlv(1:ie, 1:je, nz)
+      rlv2(1:ie, 1:je) = rlv(1:ie, 1:je, kl)
+      rlv1(1:ie, 1:je) = rlv(1:ie, 1:je, ke)
+      rlv0(1:ie, 1:je) = rlv(1:ie, 1:je, kb)
+      rev3(1:ie, 1:je) = rev(1:ie, 1:je, nz)
+      rev2(1:ie, 1:je) = rev(1:ie, 1:je, kl)
+      rev1(1:ie, 1:je) = rev(1:ie, 1:je, ke)
+      rev0(1:ie, 1:je) = rev(1:ie, 1:je, kb)
+      gamma3(1:ie, 1:je) = gamma(1:ie, 1:je, nz)
+      gamma2(1:ie, 1:je) = gamma(1:ie, 1:je, kl)
+      gamma1(1:ie, 1:je) = gamma(1:ie, 1:je, ke)
+      gamma0(1:ie, 1:je) = gamma(1:ie, 1:je, kb)
+      gcp(1:ie, 1:je) = globalcell(1:ie, 1:je, 2)
+    end select
+! these spatial pointers are only required for
+! forcesandmoments. eulerwall normal moment is is reverse ad'ed.
+    if (spatialpointers) then
+      select case  (bcfaceid(nn)) 
+      case (imin) 
+        xx(1:je+1, 1:ke+1, :) = x(1, 0:je, 0:ke, :)
+        ssi(1:je, 1:ke, :) = si(1, 1:je, 1:ke, :)
+      case (imax) 
+        xx(1:je+1, 1:ke+1, :) = x(il, 0:je, 0:ke, :)
+        ssi(1:je, 1:ke, :) = si(il, 1:je, 1:ke, :)
+      case (jmin) 
+        xx(1:ie+1, 1:ke+1, :) = x(0:ie, 1, 0:ke, :)
+        ssi(1:ie, 1:ke, :) = sj(1:ie, 1, 1:ke, :)
+      case (jmax) 
+        xx(1:ie+1, 1:ke+1, :) = x(0:ie, jl, 0:ke, :)
+        ssi(1:ie, 1:ke, :) = sj(1:ie, jl, 1:ke, :)
+      case (kmin) 
+        xx(1:ie+1, 1:je+1, :) = x(0:ie, 0:je, 1, :)
+        ssi(1:ie, 1:je, :) = sk(1:ie, 1:je, 1, :)
+      case (kmax) 
+        xx(1:ie+1, 1:je+1, :) = x(0:ie, 0:je, kl, :)
+        ssi(1:ie, 1:je, :) = sk(1:ie, 1:je, kl, :)
+      end select
+    end if
+  end subroutine setbcpointers
+!  differentiation of resetbcpointers in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
+!   gradient     of useful results: *xx *rev0 *rev1 *rev2 *rev3
+!                *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3 *ssi
+!                *ww0 *ww1 *ww2 *ww3 *rev *p *w *rlv *x *si *sj
+!                *sk
+!   with respect to varying inputs: *xx *rev0 *rev1 *rev2 *rev3
+!                *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3 *ssi
+!                *ww0 *ww1 *ww2 *ww3 *rev *p *w *rlv *x *si *sj
+!                *sk
+!   plus diff mem management of: xx:in rev0:in rev1:in rev2:in
+!                rev3:in pp0:in pp1:in pp2:in pp3:in rlv0:in rlv1:in
+!                rlv2:in rlv3:in ssi:in ww0:in ww1:in ww2:in ww3:in
+!                rev:in p:in w:in rlv:in x:in si:in sj:in sk:in
+  subroutine resetbcpointers_b(nn, spatialpointers)
+!
+!      ******************************************************************
+!      *                                                                *
+!      * resetbcpointers nullifyies the boundary pointers. for reverse  *
+!      * mode ad it copies the values back in to the respective arrays  *
+!      *                                                                *
+!      ******************************************************************
+!
+    use blockpointers
+    use flowvarrefstate
+    use bcpointers_b
+    implicit none
+! subroutine arguments.
+    integer(kind=inttype), intent(in) :: nn
+    logical, intent(in) :: spatialpointers
+    integer :: branch
+    select case  (bcfaceid(nn)) 
+    case (imin) 
+      call pushcontrol3b(1)
+    case (imax) 
+      call pushcontrol3b(2)
+    case (jmin) 
+      call pushcontrol3b(3)
+    case (jmax) 
+      call pushcontrol3b(4)
+    case (kmin) 
+      call pushcontrol3b(5)
+    case (kmax) 
+      call pushcontrol3b(6)
+    case default
+      call pushcontrol3b(0)
+    end select
+! these spatial pointers are only required for
+! forcesandmoments. eulerwall normal moment is is reverse ad'ed.
+    if (spatialpointers) then
+      select case  (bcfaceid(nn)) 
+      case (imin) 
+        ssid(1:je, 1:ke, :) = ssid(1:je, 1:ke, :) + sid(1, 1:je, 1:ke, :&
+&         )
+        sid(1, 1:je, 1:ke, :) = 0.0_8
+        xxd(1:je+1, 1:ke+1, :) = xxd(1:je+1, 1:ke+1, :) + xd(1, 0:je, 0:&
+&         ke, :)
+        xd(1, 0:je, 0:ke, :) = 0.0_8
+      case (imax) 
+        ssid(1:je, 1:ke, :) = ssid(1:je, 1:ke, :) + sid(il, 1:je, 1:ke, &
+&         :)
+        sid(il, 1:je, 1:ke, :) = 0.0_8
+        xxd(1:je+1, 1:ke+1, :) = xxd(1:je+1, 1:ke+1, :) + xd(il, 0:je, 0&
+&         :ke, :)
+        xd(il, 0:je, 0:ke, :) = 0.0_8
+      case (jmin) 
+        ssid(1:ie, 1:ke, :) = ssid(1:ie, 1:ke, :) + sjd(1:ie, 1, 1:ke, :&
+&         )
+        sjd(1:ie, 1, 1:ke, :) = 0.0_8
+        xxd(1:ie+1, 1:ke+1, :) = xxd(1:ie+1, 1:ke+1, :) + xd(0:ie, 1, 0:&
+&         ke, :)
+        xd(0:ie, 1, 0:ke, :) = 0.0_8
+      case (jmax) 
+        ssid(1:ie, 1:ke, :) = ssid(1:ie, 1:ke, :) + sjd(1:ie, jl, 1:ke, &
+&         :)
+        sjd(1:ie, jl, 1:ke, :) = 0.0_8
+        xxd(1:ie+1, 1:ke+1, :) = xxd(1:ie+1, 1:ke+1, :) + xd(0:ie, jl, 0&
+&         :ke, :)
+        xd(0:ie, jl, 0:ke, :) = 0.0_8
+      case (kmin) 
+        ssid(1:ie, 1:je, :) = ssid(1:ie, 1:je, :) + skd(1:ie, 1:je, 1, :&
+&         )
+        skd(1:ie, 1:je, 1, :) = 0.0_8
+        xxd(1:ie+1, 1:je+1, :) = xxd(1:ie+1, 1:je+1, :) + xd(0:ie, 0:je&
+&         , 1, :)
+        xd(0:ie, 0:je, 1, :) = 0.0_8
+      case (kmax) 
+        ssid(1:ie, 1:je, :) = ssid(1:ie, 1:je, :) + skd(1:ie, 1:je, kl, &
+&         :)
+        skd(1:ie, 1:je, kl, :) = 0.0_8
+        xxd(1:ie+1, 1:je+1, :) = xxd(1:ie+1, 1:je+1, :) + xd(0:ie, 0:je&
+&         , kl, :)
+        xd(0:ie, 0:je, kl, :) = 0.0_8
+      end select
+    end if
+    call popcontrol3b(branch)
+    if (branch .lt. 3) then
+      if (branch .ne. 0) then
+        if (branch .eq. 1) then
+          rev0d(1:je, 1:ke) = rev0d(1:je, 1:ke) + revd(0, 1:je, 1:ke)
+          revd(0, 1:je, 1:ke) = 0.0_8
+          rev1d(1:je, 1:ke) = rev1d(1:je, 1:ke) + revd(1, 1:je, 1:ke)
+          revd(1, 1:je, 1:ke) = 0.0_8
+          rev2d(1:je, 1:ke) = rev2d(1:je, 1:ke) + revd(2, 1:je, 1:ke)
+          revd(2, 1:je, 1:ke) = 0.0_8
+          rev3d(1:je, 1:ke) = rev3d(1:je, 1:ke) + revd(3, 1:je, 1:ke)
+          revd(3, 1:je, 1:ke) = 0.0_8
+          rlv0d(1:je, 1:ke) = rlv0d(1:je, 1:ke) + rlvd(0, 1:je, 1:ke)
+          rlvd(0, 1:je, 1:ke) = 0.0_8
+          rlv1d(1:je, 1:ke) = rlv1d(1:je, 1:ke) + rlvd(1, 1:je, 1:ke)
+          rlvd(1, 1:je, 1:ke) = 0.0_8
+          rlv2d(1:je, 1:ke) = rlv2d(1:je, 1:ke) + rlvd(2, 1:je, 1:ke)
+          rlvd(2, 1:je, 1:ke) = 0.0_8
+          rlv3d(1:je, 1:ke) = rlv3d(1:je, 1:ke) + rlvd(3, 1:je, 1:ke)
+          rlvd(3, 1:je, 1:ke) = 0.0_8
+          pp0d(1:je, 1:ke) = pp0d(1:je, 1:ke) + pd(0, 1:je, 1:ke)
+          pd(0, 1:je, 1:ke) = 0.0_8
+          pp1d(1:je, 1:ke) = pp1d(1:je, 1:ke) + pd(1, 1:je, 1:ke)
+          pd(1, 1:je, 1:ke) = 0.0_8
+          pp2d(1:je, 1:ke) = pp2d(1:je, 1:ke) + pd(2, 1:je, 1:ke)
+          pd(2, 1:je, 1:ke) = 0.0_8
+          pp3d(1:je, 1:ke) = pp3d(1:je, 1:ke) + pd(3, 1:je, 1:ke)
+          pd(3, 1:je, 1:ke) = 0.0_8
+          ww0d(1:je, 1:ke, :) = ww0d(1:je, 1:ke, :) + wd(0, 1:je, 1:ke, &
+&           :)
+          wd(0, 1:je, 1:ke, :) = 0.0_8
+          ww1d(1:je, 1:ke, :) = ww1d(1:je, 1:ke, :) + wd(1, 1:je, 1:ke, &
+&           :)
+          wd(1, 1:je, 1:ke, :) = 0.0_8
+          ww2d(1:je, 1:ke, :) = ww2d(1:je, 1:ke, :) + wd(2, 1:je, 1:ke, &
+&           :)
+          wd(2, 1:je, 1:ke, :) = 0.0_8
+          ww3d(1:je, 1:ke, :) = ww3d(1:je, 1:ke, :) + wd(3, 1:je, 1:ke, &
+&           :)
+          wd(3, 1:je, 1:ke, :) = 0.0_8
+        else
+          rev0d(1:je, 1:ke) = rev0d(1:je, 1:ke) + revd(ib, 1:je, 1:ke)
+          revd(ib, 1:je, 1:ke) = 0.0_8
+          rev1d(1:je, 1:ke) = rev1d(1:je, 1:ke) + revd(ie, 1:je, 1:ke)
+          revd(ie, 1:je, 1:ke) = 0.0_8
+          rev2d(1:je, 1:ke) = rev2d(1:je, 1:ke) + revd(il, 1:je, 1:ke)
+          revd(il, 1:je, 1:ke) = 0.0_8
+          rev3d(1:je, 1:ke) = rev3d(1:je, 1:ke) + revd(nx, 1:je, 1:ke)
+          revd(nx, 1:je, 1:ke) = 0.0_8
+          rlv0d(1:je, 1:ke) = rlv0d(1:je, 1:ke) + rlvd(ib, 1:je, 1:ke)
+          rlvd(ib, 1:je, 1:ke) = 0.0_8
+          rlv1d(1:je, 1:ke) = rlv1d(1:je, 1:ke) + rlvd(ie, 1:je, 1:ke)
+          rlvd(ie, 1:je, 1:ke) = 0.0_8
+          rlv2d(1:je, 1:ke) = rlv2d(1:je, 1:ke) + rlvd(il, 1:je, 1:ke)
+          rlvd(il, 1:je, 1:ke) = 0.0_8
+          rlv3d(1:je, 1:ke) = rlv3d(1:je, 1:ke) + rlvd(nx, 1:je, 1:ke)
+          rlvd(nx, 1:je, 1:ke) = 0.0_8
+          pp0d(1:je, 1:ke) = pp0d(1:je, 1:ke) + pd(ib, 1:je, 1:ke)
+          pd(ib, 1:je, 1:ke) = 0.0_8
+          pp1d(1:je, 1:ke) = pp1d(1:je, 1:ke) + pd(ie, 1:je, 1:ke)
+          pd(ie, 1:je, 1:ke) = 0.0_8
+          pp2d(1:je, 1:ke) = pp2d(1:je, 1:ke) + pd(il, 1:je, 1:ke)
+          pd(il, 1:je, 1:ke) = 0.0_8
+          pp3d(1:je, 1:ke) = pp3d(1:je, 1:ke) + pd(nx, 1:je, 1:ke)
+          pd(nx, 1:je, 1:ke) = 0.0_8
+          ww0d(1:je, 1:ke, :) = ww0d(1:je, 1:ke, :) + wd(ib, 1:je, 1:ke&
+&           , :)
+          wd(ib, 1:je, 1:ke, :) = 0.0_8
+          ww1d(1:je, 1:ke, :) = ww1d(1:je, 1:ke, :) + wd(ie, 1:je, 1:ke&
+&           , :)
+          wd(ie, 1:je, 1:ke, :) = 0.0_8
+          ww2d(1:je, 1:ke, :) = ww2d(1:je, 1:ke, :) + wd(il, 1:je, 1:ke&
+&           , :)
+          wd(il, 1:je, 1:ke, :) = 0.0_8
+          ww3d(1:je, 1:ke, :) = ww3d(1:je, 1:ke, :) + wd(nx, 1:je, 1:ke&
+&           , :)
+          wd(nx, 1:je, 1:ke, :) = 0.0_8
+        end if
+      end if
+    else if (branch .lt. 5) then
+      if (branch .eq. 3) then
+        rev0d(1:ie, 1:ke) = rev0d(1:ie, 1:ke) + revd(1:ie, 0, 1:ke)
+        revd(1:ie, 0, 1:ke) = 0.0_8
+        rev1d(1:ie, 1:ke) = rev1d(1:ie, 1:ke) + revd(1:ie, 1, 1:ke)
+        revd(1:ie, 1, 1:ke) = 0.0_8
+        rev2d(1:ie, 1:ke) = rev2d(1:ie, 1:ke) + revd(1:ie, 2, 1:ke)
+        revd(1:ie, 2, 1:ke) = 0.0_8
+        rev3d(1:ie, 1:ke) = rev3d(1:ie, 1:ke) + revd(1:ie, 3, 1:ke)
+        revd(1:ie, 3, 1:ke) = 0.0_8
+        rlv0d(1:ie, 1:ke) = rlv0d(1:ie, 1:ke) + rlvd(1:ie, 0, 1:ke)
+        rlvd(1:ie, 0, 1:ke) = 0.0_8
+        rlv1d(1:ie, 1:ke) = rlv1d(1:ie, 1:ke) + rlvd(1:ie, 1, 1:ke)
+        rlvd(1:ie, 1, 1:ke) = 0.0_8
+        rlv2d(1:ie, 1:ke) = rlv2d(1:ie, 1:ke) + rlvd(1:ie, 2, 1:ke)
+        rlvd(1:ie, 2, 1:ke) = 0.0_8
+        rlv3d(1:ie, 1:ke) = rlv3d(1:ie, 1:ke) + rlvd(1:ie, 3, 1:ke)
+        rlvd(1:ie, 3, 1:ke) = 0.0_8
+        pp0d(1:ie, 1:ke) = pp0d(1:ie, 1:ke) + pd(1:ie, 0, 1:ke)
+        pd(1:ie, 0, 1:ke) = 0.0_8
+        pp1d(1:ie, 1:ke) = pp1d(1:ie, 1:ke) + pd(1:ie, 1, 1:ke)
+        pd(1:ie, 1, 1:ke) = 0.0_8
+        pp2d(1:ie, 1:ke) = pp2d(1:ie, 1:ke) + pd(1:ie, 2, 1:ke)
+        pd(1:ie, 2, 1:ke) = 0.0_8
+        pp3d(1:ie, 1:ke) = pp3d(1:ie, 1:ke) + pd(1:ie, 3, 1:ke)
+        pd(1:ie, 3, 1:ke) = 0.0_8
+        ww0d(1:ie, 1:ke, :) = ww0d(1:ie, 1:ke, :) + wd(1:ie, 0, 1:ke, :)
+        wd(1:ie, 0, 1:ke, :) = 0.0_8
+        ww1d(1:ie, 1:ke, :) = ww1d(1:ie, 1:ke, :) + wd(1:ie, 1, 1:ke, :)
+        wd(1:ie, 1, 1:ke, :) = 0.0_8
+        ww2d(1:ie, 1:ke, :) = ww2d(1:ie, 1:ke, :) + wd(1:ie, 2, 1:ke, :)
+        wd(1:ie, 2, 1:ke, :) = 0.0_8
+        ww3d(1:ie, 1:ke, :) = ww3d(1:ie, 1:ke, :) + wd(1:ie, 3, 1:ke, :)
+        wd(1:ie, 3, 1:ke, :) = 0.0_8
+      else
+        rev0d(1:ie, 1:ke) = rev0d(1:ie, 1:ke) + revd(1:ie, jb, 1:ke)
+        revd(1:ie, jb, 1:ke) = 0.0_8
+        rev1d(1:ie, 1:ke) = rev1d(1:ie, 1:ke) + revd(1:ie, je, 1:ke)
+        revd(1:ie, je, 1:ke) = 0.0_8
+        rev2d(1:ie, 1:ke) = rev2d(1:ie, 1:ke) + revd(1:ie, jl, 1:ke)
+        revd(1:ie, jl, 1:ke) = 0.0_8
+        rev3d(1:ie, 1:ke) = rev3d(1:ie, 1:ke) + revd(1:ie, ny, 1:ke)
+        revd(1:ie, ny, 1:ke) = 0.0_8
+        rlv0d(1:ie, 1:ke) = rlv0d(1:ie, 1:ke) + rlvd(1:ie, jb, 1:ke)
+        rlvd(1:ie, jb, 1:ke) = 0.0_8
+        rlv1d(1:ie, 1:ke) = rlv1d(1:ie, 1:ke) + rlvd(1:ie, je, 1:ke)
+        rlvd(1:ie, je, 1:ke) = 0.0_8
+        rlv2d(1:ie, 1:ke) = rlv2d(1:ie, 1:ke) + rlvd(1:ie, jl, 1:ke)
+        rlvd(1:ie, jl, 1:ke) = 0.0_8
+        rlv3d(1:ie, 1:ke) = rlv3d(1:ie, 1:ke) + rlvd(1:ie, ny, 1:ke)
+        rlvd(1:ie, ny, 1:ke) = 0.0_8
+        pp0d(1:ie, 1:ke) = pp0d(1:ie, 1:ke) + pd(1:ie, jb, 1:ke)
+        pd(1:ie, jb, 1:ke) = 0.0_8
+        pp1d(1:ie, 1:ke) = pp1d(1:ie, 1:ke) + pd(1:ie, je, 1:ke)
+        pd(1:ie, je, 1:ke) = 0.0_8
+        pp2d(1:ie, 1:ke) = pp2d(1:ie, 1:ke) + pd(1:ie, jl, 1:ke)
+        pd(1:ie, jl, 1:ke) = 0.0_8
+        pp3d(1:ie, 1:ke) = pp3d(1:ie, 1:ke) + pd(1:ie, ny, 1:ke)
+        pd(1:ie, ny, 1:ke) = 0.0_8
+        ww0d(1:ie, 1:ke, :) = ww0d(1:ie, 1:ke, :) + wd(1:ie, jb, 1:ke, :&
+&         )
+        wd(1:ie, jb, 1:ke, :) = 0.0_8
+        ww1d(1:ie, 1:ke, :) = ww1d(1:ie, 1:ke, :) + wd(1:ie, je, 1:ke, :&
+&         )
+        wd(1:ie, je, 1:ke, :) = 0.0_8
+        ww2d(1:ie, 1:ke, :) = ww2d(1:ie, 1:ke, :) + wd(1:ie, jl, 1:ke, :&
+&         )
+        wd(1:ie, jl, 1:ke, :) = 0.0_8
+        ww3d(1:ie, 1:ke, :) = ww3d(1:ie, 1:ke, :) + wd(1:ie, ny, 1:ke, :&
+&         )
+        wd(1:ie, ny, 1:ke, :) = 0.0_8
+      end if
+    else if (branch .eq. 5) then
+      rev0d(1:ie, 1:je) = rev0d(1:ie, 1:je) + revd(1:ie, 1:je, 0)
+      revd(1:ie, 1:je, 0) = 0.0_8
+      rev1d(1:ie, 1:je) = rev1d(1:ie, 1:je) + revd(1:ie, 1:je, 1)
+      revd(1:ie, 1:je, 1) = 0.0_8
+      rev2d(1:ie, 1:je) = rev2d(1:ie, 1:je) + revd(1:ie, 1:je, 2)
+      revd(1:ie, 1:je, 2) = 0.0_8
+      rev3d(1:ie, 1:je) = rev3d(1:ie, 1:je) + revd(1:ie, 1:je, 3)
+      revd(1:ie, 1:je, 3) = 0.0_8
+      rlv0d(1:ie, 1:je) = rlv0d(1:ie, 1:je) + rlvd(1:ie, 1:je, 0)
+      rlvd(1:ie, 1:je, 0) = 0.0_8
+      rlv1d(1:ie, 1:je) = rlv1d(1:ie, 1:je) + rlvd(1:ie, 1:je, 1)
+      rlvd(1:ie, 1:je, 1) = 0.0_8
+      rlv2d(1:ie, 1:je) = rlv2d(1:ie, 1:je) + rlvd(1:ie, 1:je, 2)
+      rlvd(1:ie, 1:je, 2) = 0.0_8
+      rlv3d(1:ie, 1:je) = rlv3d(1:ie, 1:je) + rlvd(1:ie, 1:je, 3)
+      rlvd(1:ie, 1:je, 3) = 0.0_8
+      pp0d(1:ie, 1:je) = pp0d(1:ie, 1:je) + pd(1:ie, 1:je, 0)
+      pd(1:ie, 1:je, 0) = 0.0_8
+      pp1d(1:ie, 1:je) = pp1d(1:ie, 1:je) + pd(1:ie, 1:je, 1)
+      pd(1:ie, 1:je, 1) = 0.0_8
+      pp2d(1:ie, 1:je) = pp2d(1:ie, 1:je) + pd(1:ie, 1:je, 2)
+      pd(1:ie, 1:je, 2) = 0.0_8
+      pp3d(1:ie, 1:je) = pp3d(1:ie, 1:je) + pd(1:ie, 1:je, 3)
+      pd(1:ie, 1:je, 3) = 0.0_8
+      ww0d(1:ie, 1:je, :) = ww0d(1:ie, 1:je, :) + wd(1:ie, 1:je, 0, :)
+      wd(1:ie, 1:je, 0, :) = 0.0_8
+      ww1d(1:ie, 1:je, :) = ww1d(1:ie, 1:je, :) + wd(1:ie, 1:je, 1, :)
+      wd(1:ie, 1:je, 1, :) = 0.0_8
+      ww2d(1:ie, 1:je, :) = ww2d(1:ie, 1:je, :) + wd(1:ie, 1:je, 2, :)
+      wd(1:ie, 1:je, 2, :) = 0.0_8
+      ww3d(1:ie, 1:je, :) = ww3d(1:ie, 1:je, :) + wd(1:ie, 1:je, 3, :)
+      wd(1:ie, 1:je, 3, :) = 0.0_8
+    else
+      rev0d(1:ie, 1:je) = rev0d(1:ie, 1:je) + revd(1:ie, 1:je, kb)
+      revd(1:ie, 1:je, kb) = 0.0_8
+      rev1d(1:ie, 1:je) = rev1d(1:ie, 1:je) + revd(1:ie, 1:je, ke)
+      revd(1:ie, 1:je, ke) = 0.0_8
+      rev2d(1:ie, 1:je) = rev2d(1:ie, 1:je) + revd(1:ie, 1:je, kl)
+      revd(1:ie, 1:je, kl) = 0.0_8
+      rev3d(1:ie, 1:je) = rev3d(1:ie, 1:je) + revd(1:ie, 1:je, nz)
+      revd(1:ie, 1:je, nz) = 0.0_8
+      rlv0d(1:ie, 1:je) = rlv0d(1:ie, 1:je) + rlvd(1:ie, 1:je, kb)
+      rlvd(1:ie, 1:je, kb) = 0.0_8
+      rlv1d(1:ie, 1:je) = rlv1d(1:ie, 1:je) + rlvd(1:ie, 1:je, ke)
+      rlvd(1:ie, 1:je, ke) = 0.0_8
+      rlv2d(1:ie, 1:je) = rlv2d(1:ie, 1:je) + rlvd(1:ie, 1:je, kl)
+      rlvd(1:ie, 1:je, kl) = 0.0_8
+      rlv3d(1:ie, 1:je) = rlv3d(1:ie, 1:je) + rlvd(1:ie, 1:je, nz)
+      rlvd(1:ie, 1:je, nz) = 0.0_8
+      pp0d(1:ie, 1:je) = pp0d(1:ie, 1:je) + pd(1:ie, 1:je, kb)
+      pd(1:ie, 1:je, kb) = 0.0_8
+      pp1d(1:ie, 1:je) = pp1d(1:ie, 1:je) + pd(1:ie, 1:je, ke)
+      pd(1:ie, 1:je, ke) = 0.0_8
+      pp2d(1:ie, 1:je) = pp2d(1:ie, 1:je) + pd(1:ie, 1:je, kl)
+      pd(1:ie, 1:je, kl) = 0.0_8
+      pp3d(1:ie, 1:je) = pp3d(1:ie, 1:je) + pd(1:ie, 1:je, nz)
+      pd(1:ie, 1:je, nz) = 0.0_8
+      ww0d(1:ie, 1:je, :) = ww0d(1:ie, 1:je, :) + wd(1:ie, 1:je, kb, :)
+      wd(1:ie, 1:je, kb, :) = 0.0_8
+      ww1d(1:ie, 1:je, :) = ww1d(1:ie, 1:je, :) + wd(1:ie, 1:je, ke, :)
+      wd(1:ie, 1:je, ke, :) = 0.0_8
+      ww2d(1:ie, 1:je, :) = ww2d(1:ie, 1:je, :) + wd(1:ie, 1:je, kl, :)
+      wd(1:ie, 1:je, kl, :) = 0.0_8
+      ww3d(1:ie, 1:je, :) = ww3d(1:ie, 1:je, :) + wd(1:ie, 1:je, nz, :)
+      wd(1:ie, 1:je, nz, :) = 0.0_8
+    end if
+  end subroutine resetbcpointers_b
+  subroutine resetbcpointers(nn, spatialpointers)
+!
+!      ******************************************************************
+!      *                                                                *
+!      * resetbcpointers nullifyies the boundary pointers. for reverse  *
+!      * mode ad it copies the values back in to the respective arrays  *
+!      *                                                                *
+!      ******************************************************************
+!
+    use blockpointers
+    use flowvarrefstate
+    use bcpointers_b
+    implicit none
+! subroutine arguments.
+    integer(kind=inttype), intent(in) :: nn
+    logical, intent(in) :: spatialpointers
+    select case  (bcfaceid(nn)) 
+    case (imin) 
+!===============================================================
+      w(3, 1:je, 1:ke, :) = ww3(1:je, 1:ke, :)
+      w(2, 1:je, 1:ke, :) = ww2(1:je, 1:ke, :)
+      w(1, 1:je, 1:ke, :) = ww1(1:je, 1:ke, :)
+      w(0, 1:je, 1:ke, :) = ww0(1:je, 1:ke, :)
+      p(3, 1:je, 1:ke) = pp3(1:je, 1:ke)
+      p(2, 1:je, 1:ke) = pp2(1:je, 1:ke)
+      p(1, 1:je, 1:ke) = pp1(1:je, 1:ke)
+      p(0, 1:je, 1:ke) = pp0(1:je, 1:ke)
+      rlv(3, 1:je, 1:ke) = rlv3(1:je, 1:ke)
+      rlv(2, 1:je, 1:ke) = rlv2(1:je, 1:ke)
+      rlv(1, 1:je, 1:ke) = rlv1(1:je, 1:ke)
+      rlv(0, 1:je, 1:ke) = rlv0(1:je, 1:ke)
+      rev(3, 1:je, 1:ke) = rev3(1:je, 1:ke)
+      rev(2, 1:je, 1:ke) = rev2(1:je, 1:ke)
+      rev(1, 1:je, 1:ke) = rev1(1:je, 1:ke)
+      rev(0, 1:je, 1:ke) = rev0(1:je, 1:ke)
+      gamma(3, 1:je, 1:ke) = gamma3(1:je, 1:ke)
+      gamma(2, 1:je, 1:ke) = gamma2(1:je, 1:ke)
+      gamma(1, 1:je, 1:ke) = gamma1(1:je, 1:ke)
+      gamma(0, 1:je, 1:ke) = gamma0(1:je, 1:ke)
+    case (imax) 
+!===============================================================
+      w(nx, 1:je, 1:ke, :) = ww3(1:je, 1:ke, :)
+      w(il, 1:je, 1:ke, :) = ww2(1:je, 1:ke, :)
+      w(ie, 1:je, 1:ke, :) = ww1(1:je, 1:ke, :)
+      w(ib, 1:je, 1:ke, :) = ww0(1:je, 1:ke, :)
+      p(nx, 1:je, 1:ke) = pp3(1:je, 1:ke)
+      p(il, 1:je, 1:ke) = pp2(1:je, 1:ke)
+      p(ie, 1:je, 1:ke) = pp1(1:je, 1:ke)
+      p(ib, 1:je, 1:ke) = pp0(1:je, 1:ke)
+      rlv(nx, 1:je, 1:ke) = rlv3(1:je, 1:ke)
+      rlv(il, 1:je, 1:ke) = rlv2(1:je, 1:ke)
+      rlv(ie, 1:je, 1:ke) = rlv1(1:je, 1:ke)
+      rlv(ib, 1:je, 1:ke) = rlv0(1:je, 1:ke)
+      rev(nx, 1:je, 1:ke) = rev3(1:je, 1:ke)
+      rev(il, 1:je, 1:ke) = rev2(1:je, 1:ke)
+      rev(ie, 1:je, 1:ke) = rev1(1:je, 1:ke)
+      rev(ib, 1:je, 1:ke) = rev0(1:je, 1:ke)
+      gamma(nx, 1:je, 1:ke) = gamma3(1:je, 1:ke)
+      gamma(il, 1:je, 1:ke) = gamma2(1:je, 1:ke)
+      gamma(ie, 1:je, 1:ke) = gamma1(1:je, 1:ke)
+      gamma(ib, 1:je, 1:ke) = gamma0(1:je, 1:ke)
+    case (jmin) 
+!===============================================================
+      w(1:ie, 3, 1:ke, :) = ww3(1:ie, 1:ke, :)
+      w(1:ie, 2, 1:ke, :) = ww2(1:ie, 1:ke, :)
+      w(1:ie, 1, 1:ke, :) = ww1(1:ie, 1:ke, :)
+      w(1:ie, 0, 1:ke, :) = ww0(1:ie, 1:ke, :)
+      p(1:ie, 3, 1:ke) = pp3(1:ie, 1:ke)
+      p(1:ie, 2, 1:ke) = pp2(1:ie, 1:ke)
+      p(1:ie, 1, 1:ke) = pp1(1:ie, 1:ke)
+      p(1:ie, 0, 1:ke) = pp0(1:ie, 1:ke)
+      rlv(1:ie, 3, 1:ke) = rlv3(1:ie, 1:ke)
+      rlv(1:ie, 2, 1:ke) = rlv2(1:ie, 1:ke)
+      rlv(1:ie, 1, 1:ke) = rlv1(1:ie, 1:ke)
+      rlv(1:ie, 0, 1:ke) = rlv0(1:ie, 1:ke)
+      rev(1:ie, 3, 1:ke) = rev3(1:ie, 1:ke)
+      rev(1:ie, 2, 1:ke) = rev2(1:ie, 1:ke)
+      rev(1:ie, 1, 1:ke) = rev1(1:ie, 1:ke)
+      rev(1:ie, 0, 1:ke) = rev0(1:ie, 1:ke)
+      gamma(1:ie, 3, 1:ke) = gamma3(1:ie, 1:ke)
+      gamma(1:ie, 2, 1:ke) = gamma2(1:ie, 1:ke)
+      gamma(1:ie, 1, 1:ke) = gamma1(1:ie, 1:ke)
+      gamma(1:ie, 0, 1:ke) = gamma0(1:ie, 1:ke)
+    case (jmax) 
+!===============================================================
+      w(1:ie, ny, 1:ke, :) = ww3(1:ie, 1:ke, :)
+      w(1:ie, jl, 1:ke, :) = ww2(1:ie, 1:ke, :)
+      w(1:ie, je, 1:ke, :) = ww1(1:ie, 1:ke, :)
+      w(1:ie, jb, 1:ke, :) = ww0(1:ie, 1:ke, :)
+      p(1:ie, ny, 1:ke) = pp3(1:ie, 1:ke)
+      p(1:ie, jl, 1:ke) = pp2(1:ie, 1:ke)
+      p(1:ie, je, 1:ke) = pp1(1:ie, 1:ke)
+      p(1:ie, jb, 1:ke) = pp0(1:ie, 1:ke)
+      rlv(1:ie, ny, 1:ke) = rlv3(1:ie, 1:ke)
+      rlv(1:ie, jl, 1:ke) = rlv2(1:ie, 1:ke)
+      rlv(1:ie, je, 1:ke) = rlv1(1:ie, 1:ke)
+      rlv(1:ie, jb, 1:ke) = rlv0(1:ie, 1:ke)
+      rev(1:ie, ny, 1:ke) = rev3(1:ie, 1:ke)
+      rev(1:ie, jl, 1:ke) = rev2(1:ie, 1:ke)
+      rev(1:ie, je, 1:ke) = rev1(1:ie, 1:ke)
+      rev(1:ie, jb, 1:ke) = rev0(1:ie, 1:ke)
+      gamma(1:ie, ny, 1:ke) = gamma3(1:ie, 1:ke)
+      gamma(1:ie, jl, 1:ke) = gamma2(1:ie, 1:ke)
+      gamma(1:ie, je, 1:ke) = gamma1(1:ie, 1:ke)
+      gamma(1:ie, jb, 1:ke) = gamma0(1:ie, 1:ke)
+    case (kmin) 
+!===============================================================
+      w(1:ie, 1:je, 3, :) = ww3(1:ie, 1:je, :)
+      w(1:ie, 1:je, 2, :) = ww2(1:ie, 1:je, :)
+      w(1:ie, 1:je, 1, :) = ww1(1:ie, 1:je, :)
+      w(1:ie, 1:je, 0, :) = ww0(1:ie, 1:je, :)
+      p(1:ie, 1:je, 3) = pp3(1:ie, 1:je)
+      p(1:ie, 1:je, 2) = pp2(1:ie, 1:je)
+      p(1:ie, 1:je, 1) = pp1(1:ie, 1:je)
+      p(1:ie, 1:je, 0) = pp0(1:ie, 1:je)
+      rlv(1:ie, 1:je, 3) = rlv3(1:ie, 1:je)
+      rlv(1:ie, 1:je, 2) = rlv2(1:ie, 1:je)
+      rlv(1:ie, 1:je, 1) = rlv1(1:ie, 1:je)
+      rlv(1:ie, 1:je, 0) = rlv0(1:ie, 1:je)
+      rev(1:ie, 1:je, 3) = rev3(1:ie, 1:je)
+      rev(1:ie, 1:je, 2) = rev2(1:ie, 1:je)
+      rev(1:ie, 1:je, 1) = rev1(1:ie, 1:je)
+      rev(1:ie, 1:je, 0) = rev0(1:ie, 1:je)
+      gamma(1:ie, 1:je, 3) = gamma3(1:ie, 1:je)
+      gamma(1:ie, 1:je, 2) = gamma2(1:ie, 1:je)
+      gamma(1:ie, 1:je, 1) = gamma1(1:ie, 1:je)
+      gamma(1:ie, 1:je, 0) = gamma0(1:ie, 1:je)
+    case (kmax) 
+!===============================================================
+      w(1:ie, 1:je, nz, :) = ww3(1:ie, 1:je, :)
+      w(1:ie, 1:je, kl, :) = ww2(1:ie, 1:je, :)
+      w(1:ie, 1:je, ke, :) = ww1(1:ie, 1:je, :)
+      w(1:ie, 1:je, kb, :) = ww0(1:ie, 1:je, :)
+      p(1:ie, 1:je, nz) = pp3(1:ie, 1:je)
+      p(1:ie, 1:je, kl) = pp2(1:ie, 1:je)
+      p(1:ie, 1:je, ke) = pp1(1:ie, 1:je)
+      p(1:ie, 1:je, kb) = pp0(1:ie, 1:je)
+      rlv(1:ie, 1:je, nz) = rlv3(1:ie, 1:je)
+      rlv(1:ie, 1:je, kl) = rlv2(1:ie, 1:je)
+      rlv(1:ie, 1:je, ke) = rlv1(1:ie, 1:je)
+      rlv(1:ie, 1:je, kb) = rlv0(1:ie, 1:je)
+      rev(1:ie, 1:je, nz) = rev3(1:ie, 1:je)
+      rev(1:ie, 1:je, kl) = rev2(1:ie, 1:je)
+      rev(1:ie, 1:je, ke) = rev1(1:ie, 1:je)
+      rev(1:ie, 1:je, kb) = rev0(1:ie, 1:je)
+      gamma(1:ie, 1:je, nz) = gamma3(1:ie, 1:je)
+      gamma(1:ie, 1:je, kl) = gamma2(1:ie, 1:je)
+      gamma(1:ie, 1:je, ke) = gamma1(1:ie, 1:je)
+      gamma(1:ie, 1:je, kb) = gamma0(1:ie, 1:je)
+    end select
+! these spatial pointers are only required for
+! forcesandmoments. eulerwall normal moment is is reverse ad'ed.
+    if (spatialpointers) then
+      select case  (bcfaceid(nn)) 
+      case (imin) 
+        x(1, 0:je, 0:ke, :) = xx(1:je+1, 1:ke+1, :)
+        si(1, 1:je, 1:ke, :) = ssi(1:je, 1:ke, :)
+      case (imax) 
+        x(il, 0:je, 0:ke, :) = xx(1:je+1, 1:ke+1, :)
+        si(il, 1:je, 1:ke, :) = ssi(1:je, 1:ke, :)
+      case (jmin) 
+        x(0:ie, 1, 0:ke, :) = xx(1:ie+1, 1:ke+1, :)
+        sj(1:ie, 1, 1:ke, :) = ssi(1:ie, 1:ke, :)
+      case (jmax) 
+        x(0:ie, jl, 0:ke, :) = xx(1:ie+1, 1:ke+1, :)
+        sj(1:ie, jl, 1:ke, :) = ssi(1:ie, 1:ke, :)
+      case (kmin) 
+        x(0:ie, 0:je, 1, :) = xx(1:ie+1, 1:je+1, :)
+        sk(1:ie, 1:je, 1, :) = ssi(1:ie, 1:je, :)
+      case (kmax) 
+        x(0:ie, 0:je, kl, :) = xx(1:ie+1, 1:je+1, :)
+        sk(1:ie, 1:je, kl, :) = ssi(1:ie, 1:je, :)
+      end select
+    end if
+  end subroutine resetbcpointers
 end module utils_b

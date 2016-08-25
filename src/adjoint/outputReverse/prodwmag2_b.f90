@@ -29,6 +29,7 @@ subroutine prodwmag2_b()
 !      *                                                                *
 !      ******************************************************************
 !
+  use constants
   use blockpointers
   use flowvarrefstate
   use section

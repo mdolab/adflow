@@ -23,7 +23,7 @@ subroutine allnodalgradients_fast_b()
 !        *                                                              *
 !        ****************************************************************
 !
-  use myPushPopLib
+  use constants
   use blockpointers
   implicit none
 !        local variables.

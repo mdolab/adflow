@@ -6,6 +6,7 @@
 !   with respect to varying inputs: *x
 !   plus diff mem management of: x:in si:in sj:in sk:in
 subroutine metric_block_b()
+  use constants
   use blockpointers
   implicit none
 ! local variables.

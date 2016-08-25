@@ -40,6 +40,7 @@ FF90_OBJECTS1 = utils_b.o\
 		flowutils_b.o\
 		bcroutines_b.o\
 		samodule_b.o\
+		walldistance_b.o\
 
 FF90_OBJECTS2 =  \
 		allnodalgradients_b.o\
@@ -84,7 +85,6 @@ FF90_OBJECTS2 =  \
 		bcturbwall_b.o\
 		bcturbinterface_b.o\
 		bcturbfarfield_b.o\
-		updatewalldistancesquickly_b.o\
 		boundarynormals_b.o\
 		volume_block_b.o\
 #      ******************************************************************

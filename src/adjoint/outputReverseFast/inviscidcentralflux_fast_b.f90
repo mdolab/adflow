@@ -27,7 +27,6 @@ subroutine inviscidcentralflux_fast_b()
 !      *                                                                *
 !      ******************************************************************
 !
-  use myPushPopLib
   use blockpointers
   use cgnsgrid
   use constants

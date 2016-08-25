@@ -17,6 +17,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use block
        use interfaceGroups
        use localSubfacesMod
@@ -99,6 +100,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use blockPointers
        use localSubfacesMod
        use utils, only : setPointers, terminate

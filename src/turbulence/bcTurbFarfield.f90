@@ -21,8 +21,8 @@ subroutine bcTurbFarfield(nn)
   !      *                                                                *
   !      ******************************************************************
   !
-  use blockPointers
   use constants
+  use blockPointers
   use flowVarRefState
   implicit none
   !

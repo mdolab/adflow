@@ -2,24 +2,24 @@
 !  tapenade 3.10 (r5363) -  9 sep 2014 09:53
 !
 !  differentiation of forcesandmoments in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: gammainf pinf pref *w *x *(*bcdata.fv)
+!   gradient     of useful results: gammainf pinf pref *xx *rev0
+!                *rev1 *rev2 *rev3 *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1
+!                *rlv2 *rlv3 *ssi *ww0 *ww1 *ww2 *ww3 *w *x *(*bcdata.fv)
 !                *(*bcdata.fp) *(*bcdata.area) lengthref machcoef
-!                pointref *xx *rev0 *rev1 *rev2 *rev3 *pp0 *pp1
-!                *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3 *ssi *ww0 *ww1
-!                *ww2 *ww3 sepsensoravg cfp cfv cmp cmv cavitation
+!                pointref sepsensoravg cfp cfv cmp cmv cavitation
 !                sepsensor
-!   with respect to varying inputs: gammainf pinf pref *rev *p
-!                *w *rlv *x *si *sj *sk *(*viscsubface.tau) *(*bcdata.fv)
+!   with respect to varying inputs: gammainf pinf pref *xx *rev0
+!                *rev1 *rev2 *rev3 *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1
+!                *rlv2 *rlv3 *ssi *ww0 *ww1 *ww2 *ww3 *rev *p *w
+!                *rlv *x *si *sj *sk *(*viscsubface.tau) *(*bcdata.fv)
 !                *(*bcdata.fp) *(*bcdata.area) veldirfreestream
-!                lengthref machcoef pointref *xx *rev0 *rev1 *rev2
-!                *rev3 *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3
-!                *ssi *ww0 *ww1 *ww2 *ww3
-!   plus diff mem management of: rev:in p:in w:in rlv:in x:in si:in
-!                sj:in sk:in viscsubface:in *viscsubface.tau:in
-!                bcdata:in *bcdata.fv:in *bcdata.fp:in *bcdata.area:in
-!                xx:in rev0:in rev1:in rev2:in rev3:in pp0:in pp1:in
-!                pp2:in pp3:in rlv0:in rlv1:in rlv2:in rlv3:in
-!                ssi:in ww0:in ww1:in ww2:in ww3:in
+!                lengthref machcoef pointref
+!   plus diff mem management of: xx:in rev0:in rev1:in rev2:in
+!                rev3:in pp0:in pp1:in pp2:in pp3:in rlv0:in rlv1:in
+!                rlv2:in rlv3:in ssi:in ww0:in ww1:in ww2:in ww3:in
+!                rev:in p:in w:in rlv:in x:in si:in sj:in sk:in
+!                viscsubface:in *viscsubface.tau:in bcdata:in *bcdata.fv:in
+!                *bcdata.fp:in *bcdata.area:in
 !
 !      ******************************************************************
 !      *                                                                *
@@ -54,6 +54,9 @@ subroutine forcesandmoments_b(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd&
   use costfunctions
   use surfacefamilies
   use sorting, only : bsearchintegers
+  use utils_b, only : setbcpointers, setbcpointers_b, resetbcpointers, &
+& resetbcpointers_b
+  use bcpointers_b
   implicit none
 !
 !      subroutine arguments

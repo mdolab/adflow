@@ -28,7 +28,7 @@ subroutine prodwmag2_fast_b()
 !      *                                                                *
 !      ******************************************************************
 !
-  use myPushPopLib
+  use constants
   use blockpointers
   use flowvarrefstate
   use section

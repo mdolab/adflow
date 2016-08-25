@@ -137,6 +137,7 @@
        use iteration
        use monitor
        use section
+       use wallDistance, only : updateWallDistanceAllLevels
        implicit none
 !
 !      Local variables.
@@ -473,6 +474,7 @@
        use iteration
        use monitor
        use section
+       use wallDistance, only : updateWallDistanceAllLevels
        implicit none
 !
 !      Local variables.

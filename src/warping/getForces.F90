@@ -567,6 +567,7 @@ subroutine getForces_b(forces_b, npts, sps)
   ! forces_b and perfroms the reverse of the nodal averaging procedure
   ! in getForces to compute bcDatad(mm)%Fp, bcDatad(mm)%Fv and
   ! bcDatad(mm)%area.
+  use constants
   use blockPointers
   use inputPhysics
   use surfaceFamilies, only: wallExchange, familyExchange

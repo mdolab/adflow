@@ -9,6 +9,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use blockPointers
        use cgnsGrid
        use communication
@@ -255,6 +256,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use blockPointers
        implicit none
 !

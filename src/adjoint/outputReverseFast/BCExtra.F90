@@ -36,7 +36,7 @@ subroutine applyAllBC_block_fast_b(secondHalo)
     ! ------------------------------------
     DO nn=1,nbocos
        IF (bctype(nn) .EQ. symm) THEN
-          CALL SETBCPOINTERS(nn, .false.)
+          CALL SETBCPOINTERS_fast_b(nn, .false.)
           CALL BCSYMM1stHalo(nn)
        END IF
     END DO
@@ -44,7 +44,7 @@ subroutine applyAllBC_block_fast_b(secondHalo)
     if (secondHalo) then 
        DO nn=1,nbocos
           IF (bctype(nn) .EQ. symm) THEN
-             CALL SETBCPOINTERS(nn, .false.)
+             CALL SETBCPOINTERS_fast_b(nn, .false.)
              CALL BCSYMM2ndHalo(nn)
           END IF
        END DO
@@ -54,7 +54,7 @@ subroutine applyAllBC_block_fast_b(secondHalo)
     ! ------------------------------------
     DO nn=1,nviscbocos
        IF (bctype(nn) .EQ. nswalladiabatic) THEN
-          CALL SETBCPOINTERS(nn, .false.)
+          CALL SETBCPOINTERS_fast_b(nn, .false.)
           CALL BCNSWALLADIABATIC(nn, secondhalo, correctfork)
        END IF
     END DO
@@ -64,7 +64,7 @@ subroutine applyAllBC_block_fast_b(secondHalo)
     ! ------------------------------------
     do nn=1,nBocos
        if (bcType(nn) == farField) then
-          call setBCPointers(nn, .False.)
+          call setBCPointers_fast_B(nn, .False.)
           call bcFarField(nn, secondHalo, correctForK)
        end if
     end do
@@ -187,7 +187,7 @@ subroutine applyAllBC_block_fast_b(secondHalo)
     !
     use blockPointers
     use flowVarRefState
-    use bcroutines_fast_b
+    use BCPointers_fast_b
     implicit none
 
     ! Subroutine arguments.

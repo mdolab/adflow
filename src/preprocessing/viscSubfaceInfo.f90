@@ -24,6 +24,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use blockPointers
        use inputTimeSpectral
        use utils, only : setPointers, terminate

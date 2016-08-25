@@ -37,6 +37,7 @@ subroutine bcturbtreatment_b()
 !      *                                                                *
 !      ******************************************************************
 !
+  use constants
   use blockpointers
   use flowvarrefstate
   implicit none

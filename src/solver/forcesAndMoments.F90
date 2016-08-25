@@ -31,6 +31,8 @@ subroutine forcesAndMoments(cFp, cFv, cMp, cMv, yplusMax, sepSensor, &
   use costFunctions
   use surfaceFamilies
   use sorting, only :bsearchIntegers
+  use utils, only : setBCPointers, resetBCPointers
+  use BCPointers
   implicit none
   !
   !      Subroutine arguments

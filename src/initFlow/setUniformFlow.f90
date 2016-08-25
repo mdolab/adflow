@@ -17,6 +17,7 @@
 !      *                                                                *
 !      ******************************************************************
 !
+       use constants
        use blockPointers
        use communication
        use flowVarRefState
@@ -189,6 +190,7 @@ subroutine velMagnAndDirectionSubface(vmag, dir, BCData, mm)
   !      *                                                                *
   !      ******************************************************************
   !
+  use constants
   use block
   implicit none
   !

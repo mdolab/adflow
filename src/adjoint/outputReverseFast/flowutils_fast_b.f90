@@ -19,7 +19,6 @@ contains
 !      *                                                                *
 !      ******************************************************************
 !
-  use myPushPopLib
     use cpcurvefits
     use flowvarrefstate
     use inputphysics

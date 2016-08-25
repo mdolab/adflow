@@ -19,6 +19,7 @@ subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
   !     *         always the finest level                                *         
   !     ******************************************************************
   !
+  use block, only : flowDomsd
   use blockPointers
   use inputDiscretization 
   use inputTimeSpectral 

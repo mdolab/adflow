@@ -1,13 +1,3 @@
-!
-!      ******************************************************************
-!      *                                                                *
-!      * File:          solver.F90                                      *
-!      * Author:        Edwin van der Weide                             *
-!      * Starting date: 03-12-2003                                      *
-!      * Last modified: 11-21-2007                                      *
-!      *                                                                *
-!      ******************************************************************
-!
        subroutine solver
 !
 !      ******************************************************************
@@ -28,22 +18,12 @@
             groundLevel, nOldSolAvail, t0Solver
        use monitor, only : timeUnsteady
        use section, only : nSections
+       use utils, only : eulerWallsPresent
        implicit none
 !
 !      Local variables.
 !
        real(kind=realType), dimension(nSections) :: dtAdvance
-!
-!      Function definitions.
-!
-       logical :: EulerWallsPresent
-!
-!      ******************************************************************
-!      *                                                                *
-!      * Begin execution                                                *
-!      *                                                                *
-!      ******************************************************************
-!
 
        ! If the normal momentum equation should be used to determine
        ! the pressure in the halo for inviscid walls, find out if there

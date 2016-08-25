@@ -19,6 +19,7 @@ subroutine allnodalgradients_d()
 !        *                                                              *
 !        ****************************************************************
 !
+  use constants
   use blockpointers
   implicit none
 !        local variables.

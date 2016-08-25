@@ -20,7 +20,6 @@ contains
 !      *                                                                *
 !      ******************************************************************
 !
-  use myPushPopLib
     use constants
     use inputphysics, only : equationmode
     implicit none
@@ -675,4 +674,405 @@ contains
       rigidrotangle = phi
     end if
   end function rigidrotangle
+  subroutine setbcpointers(nn, spatialpointers)
+!
+!      ******************************************************************
+!      *                                                                *
+!      * setbcpointers sets the pointers needed for the boundary        *
+!      * condition treatment on a general face, such that the boundary  *
+!      * routines are only implemented once instead of 6 times.         *
+!      *                                                                *
+!      ******************************************************************
+!
+    use blockpointers
+    use flowvarrefstate
+    use inputphysics
+    use bcpointers_fast_b
+    implicit none
+! subroutine arguments.
+    integer(kind=inttype), intent(in) :: nn
+    logical, intent(in) :: spatialpointers
+! determine the sizes of each face and point to just the range we
+! need on each face. 
+    istart = bcdata(nn)%icbeg
+    iend = bcdata(nn)%icend
+    jstart = bcdata(nn)%jcbeg
+    jend = bcdata(nn)%jcend
+! set the size of the subface
+    isize = iend - istart + 1
+    jsize = jend - jstart + 1
+! determine the face id on which the subface is located and set
+! the pointers accordinly.
+    select case  (bcfaceid(nn)) 
+    case (imin) 
+!===============================================================
+      ww3 => w(3, 1:, 1:, :)
+      ww2 => w(2, 1:, 1:, :)
+      ww1 => w(1, 1:, 1:, :)
+      ww0 => w(0, 1:, 1:, :)
+      pp3 => p(3, 1:, 1:)
+      pp2 => p(2, 1:, 1:)
+      pp1 => p(1, 1:, 1:)
+      pp0 => p(0, 1:, 1:)
+      rlv3 => rlv(3, 1:, 1:)
+      rlv2 => rlv(2, 1:, 1:)
+      rlv1 => rlv(1, 1:, 1:)
+      rlv0 => rlv(0, 1:, 1:)
+      rev3 => rev(3, 1:, 1:)
+      rev2 => rev(2, 1:, 1:)
+      rev1 => rev(1, 1:, 1:)
+      rev0 => rev(0, 1:, 1:)
+      gamma3 => gamma(3, 1:, 1:)
+      gamma2 => gamma(2, 1:, 1:)
+      gamma1 => gamma(1, 1:, 1:)
+      gamma0 => gamma(0, 1:, 1:)
+      gcp => globalcell(2, 1:, 1:)
+    case (imax) 
+!===============================================================
+      ww3 => w(nx, 1:, 1:, :)
+      ww2 => w(il, 1:, 1:, :)
+      ww1 => w(ie, 1:, 1:, :)
+      ww0 => w(ib, 1:, 1:, :)
+      pp3 => p(nx, 1:, 1:)
+      pp2 => p(il, 1:, 1:)
+      pp1 => p(ie, 1:, 1:)
+      pp0 => p(ib, 1:, 1:)
+      rlv3 => rlv(nx, 1:, 1:)
+      rlv2 => rlv(il, 1:, 1:)
+      rlv1 => rlv(ie, 1:, 1:)
+      rlv0 => rlv(ib, 1:, 1:)
+      rev3 => rev(nx, 1:, 1:)
+      rev2 => rev(il, 1:, 1:)
+      rev1 => rev(ie, 1:, 1:)
+      rev0 => rev(ib, 1:, 1:)
+      gamma3 => gamma(nx, 1:, 1:)
+      gamma2 => gamma(il, 1:, 1:)
+      gamma1 => gamma(ie, 1:, 1:)
+      gamma0 => gamma(ib, 1:, 1:)
+      gcp => globalcell(il, 1:, 1:)
+    case (jmin) 
+!===============================================================
+      ww3 => w(1:, 3, 1:, :)
+      ww2 => w(1:, 2, 1:, :)
+      ww1 => w(1:, 1, 1:, :)
+      ww0 => w(1:, 0, 1:, :)
+      pp3 => p(1:, 3, 1:)
+      pp2 => p(1:, 2, 1:)
+      pp1 => p(1:, 1, 1:)
+      pp0 => p(1:, 0, 1:)
+      rlv3 => rlv(1:, 3, 1:)
+      rlv2 => rlv(1:, 2, 1:)
+      rlv1 => rlv(1:, 1, 1:)
+      rlv0 => rlv(1:, 0, 1:)
+      rev3 => rev(1:, 3, 1:)
+      rev2 => rev(1:, 2, 1:)
+      rev1 => rev(1:, 1, 1:)
+      rev0 => rev(1:, 0, 1:)
+      gamma3 => gamma(1:, 3, 1:)
+      gamma2 => gamma(1:, 2, 1:)
+      gamma1 => gamma(1:, 1, 1:)
+      gamma0 => gamma(1:, 0, 1:)
+      gcp => globalcell(1:, 2, 1:)
+    case (jmax) 
+!===============================================================
+      ww3 => w(1:, ny, 1:, :)
+      ww2 => w(1:, jl, 1:, :)
+      ww1 => w(1:, je, 1:, :)
+      ww0 => w(1:, jb, 1:, :)
+      pp3 => p(1:, ny, 1:)
+      pp2 => p(1:, jl, 1:)
+      pp1 => p(1:, je, 1:)
+      pp0 => p(1:, jb, 1:)
+      rlv3 => rlv(1:, ny, 1:)
+      rlv2 => rlv(1:, jl, 1:)
+      rlv1 => rlv(1:, je, 1:)
+      rlv0 => rlv(1:, jb, 1:)
+      rev3 => rev(1:, ny, 1:)
+      rev2 => rev(1:, jl, 1:)
+      rev1 => rev(1:, je, 1:)
+      rev0 => rev(1:, jb, 1:)
+      gamma3 => gamma(1:, ny, 1:)
+      gamma2 => gamma(1:, jl, 1:)
+      gamma1 => gamma(1:, je, 1:)
+      gamma0 => gamma(1:, jb, 1:)
+      gcp => globalcell(1:, jl, 1:)
+    case (kmin) 
+!===============================================================
+      ww3 => w(1:, 1:, 3, :)
+      ww2 => w(1:, 1:, 2, :)
+      ww1 => w(1:, 1:, 1, :)
+      ww0 => w(1:, 1:, 0, :)
+      pp3 => p(1:, 1:, 3)
+      pp2 => p(1:, 1:, 2)
+      pp1 => p(1:, 1:, 1)
+      pp0 => p(1:, 1:, 0)
+      rlv3 => rlv(1:, 1:, 3)
+      rlv2 => rlv(1:, 1:, 2)
+      rlv1 => rlv(1:, 1:, 1)
+      rlv0 => rlv(1:, 1:, 0)
+      rev3 => rev(1:, 1:, 3)
+      rev2 => rev(1:, 1:, 2)
+      rev1 => rev(1:, 1:, 1)
+      rev0 => rev(1:, 1:, 0)
+      gamma3 => gamma(1:, 1:, 3)
+      gamma2 => gamma(1:, 1:, 2)
+      gamma1 => gamma(1:, 1:, 1)
+      gamma0 => gamma(1:, 1:, 0)
+      gcp => globalcell(1:, 1:, 2)
+    case (kmax) 
+!===============================================================
+      ww3 => w(1:, 1:, nz, :)
+      ww2 => w(1:, 1:, kl, :)
+      ww1 => w(1:, 1:, ke, :)
+      ww0 => w(1:, 1:, kb, :)
+      pp3 => p(1:, 1:, nz)
+      pp2 => p(1:, 1:, kl)
+      pp1 => p(1:, 1:, ke)
+      pp0 => p(1:, 1:, kb)
+      rlv3 => rlv(1:, 1:, nz)
+      rlv2 => rlv(1:, 1:, kl)
+      rlv1 => rlv(1:, 1:, ke)
+      rlv0 => rlv(1:, 1:, kb)
+      rev3 => rev(1:, 1:, nz)
+      rev2 => rev(1:, 1:, kl)
+      rev1 => rev(1:, 1:, ke)
+      rev0 => rev(1:, 1:, kb)
+      gamma3 => gamma(1:, 1:, nz)
+      gamma2 => gamma(1:, 1:, kl)
+      gamma1 => gamma(1:, 1:, ke)
+      gamma0 => gamma(1:, 1:, kb)
+      gcp => globalcell(1:, 1:, kl)
+    end select
+    if (spatialpointers) then
+      select case  (bcfaceid(nn)) 
+      case (imin) 
+        xx => x(1, :, :, :)
+        ssi => si(1, :, :, :)
+        ssj => sj(2, :, :, :)
+        ssk => sk(2, :, :, :)
+        ss => s(2, :, :, :)
+      case (imax) 
+        xx => x(il, :, :, :)
+        ssi => si(il, :, :, :)
+        ssj => sj(il, :, :, :)
+        ssk => sk(il, :, :, :)
+        ss => s(il, :, :, :)
+      case (jmin) 
+        xx => x(:, 1, :, :)
+        ssi => sj(:, 1, :, :)
+        ssj => si(:, 2, :, :)
+        ssk => sk(:, 2, :, :)
+        ss => s(:, 2, :, :)
+      case (jmax) 
+        xx => x(:, jl, :, :)
+        ssi => sj(:, jl, :, :)
+        ssj => si(:, jl, :, :)
+        ssk => sk(:, jl, :, :)
+        ss => s(:, jl, :, :)
+      case (kmin) 
+        xx => x(:, :, 1, :)
+        ssi => sk(:, :, 1, :)
+        ssj => si(:, :, 2, :)
+        ssk => sj(:, :, 2, :)
+        ss => s(:, :, 2, :)
+      case (kmax) 
+        xx => x(:, :, kl, :)
+        ssi => sk(:, :, kl, :)
+        ssj => si(:, :, kl, :)
+        ssk => sj(:, :, kl, :)
+        ss => s(:, :, kl, :)
+      end select
+      if (equations .eq. ransequations) then
+        select case  (bcfaceid(nn)) 
+        case (imin) 
+          dd2wall => d2wall(2, :, :)
+        case (imax) 
+          dd2wall => d2wall(il, :, :)
+        case (jmin) 
+          dd2wall => d2wall(:, 2, :)
+        case (jmax) 
+          dd2wall => d2wall(:, jl, :)
+        case (kmin) 
+          dd2wall => d2wall(:, :, 2)
+        case (kmax) 
+          dd2wall => d2wall(:, :, kl)
+        end select
+      end if
+    end if
+  end subroutine setbcpointers
+  subroutine resetbcpointers(nn, spatialpointers)
+!
+!      ******************************************************************
+!      *                                                                *
+!      * resetbcpointers nullifyies the boundary pointers. for reverse  *
+!      * mode ad it copies the values back in to the respective arrays  *
+!      *                                                                *
+!      ******************************************************************
+!
+    use blockpointers
+    use flowvarrefstate
+    use bcpointers_fast_b
+    implicit none
+! subroutine arguments.
+    integer(kind=inttype), intent(in) :: nn
+    logical, intent(in) :: spatialpointers
+    select case  (bcfaceid(nn)) 
+    case (imin) 
+!===============================================================
+      w(3, 1:je, 1:ke, :) = ww3(1:je, 1:ke, :)
+      w(2, 1:je, 1:ke, :) = ww2(1:je, 1:ke, :)
+      w(1, 1:je, 1:ke, :) = ww1(1:je, 1:ke, :)
+      w(0, 1:je, 1:ke, :) = ww0(1:je, 1:ke, :)
+      p(3, 1:je, 1:ke) = pp3(1:je, 1:ke)
+      p(2, 1:je, 1:ke) = pp2(1:je, 1:ke)
+      p(1, 1:je, 1:ke) = pp1(1:je, 1:ke)
+      p(0, 1:je, 1:ke) = pp0(1:je, 1:ke)
+      rlv(3, 1:je, 1:ke) = rlv3(1:je, 1:ke)
+      rlv(2, 1:je, 1:ke) = rlv2(1:je, 1:ke)
+      rlv(1, 1:je, 1:ke) = rlv1(1:je, 1:ke)
+      rlv(0, 1:je, 1:ke) = rlv0(1:je, 1:ke)
+      rev(3, 1:je, 1:ke) = rev3(1:je, 1:ke)
+      rev(2, 1:je, 1:ke) = rev2(1:je, 1:ke)
+      rev(1, 1:je, 1:ke) = rev1(1:je, 1:ke)
+      rev(0, 1:je, 1:ke) = rev0(1:je, 1:ke)
+      gamma(3, 1:je, 1:ke) = gamma3(1:je, 1:ke)
+      gamma(2, 1:je, 1:ke) = gamma2(1:je, 1:ke)
+      gamma(1, 1:je, 1:ke) = gamma1(1:je, 1:ke)
+      gamma(0, 1:je, 1:ke) = gamma0(1:je, 1:ke)
+    case (imax) 
+!===============================================================
+      w(nx, 1:je, 1:ke, :) = ww3(1:je, 1:ke, :)
+      w(il, 1:je, 1:ke, :) = ww2(1:je, 1:ke, :)
+      w(ie, 1:je, 1:ke, :) = ww1(1:je, 1:ke, :)
+      w(ib, 1:je, 1:ke, :) = ww0(1:je, 1:ke, :)
+      p(nx, 1:je, 1:ke) = pp3(1:je, 1:ke)
+      p(il, 1:je, 1:ke) = pp2(1:je, 1:ke)
+      p(ie, 1:je, 1:ke) = pp1(1:je, 1:ke)
+      p(ib, 1:je, 1:ke) = pp0(1:je, 1:ke)
+      rlv(nx, 1:je, 1:ke) = rlv3(1:je, 1:ke)
+      rlv(il, 1:je, 1:ke) = rlv2(1:je, 1:ke)
+      rlv(ie, 1:je, 1:ke) = rlv1(1:je, 1:ke)
+      rlv(ib, 1:je, 1:ke) = rlv0(1:je, 1:ke)
+      rev(nx, 1:je, 1:ke) = rev3(1:je, 1:ke)
+      rev(il, 1:je, 1:ke) = rev2(1:je, 1:ke)
+      rev(ie, 1:je, 1:ke) = rev1(1:je, 1:ke)
+      rev(ib, 1:je, 1:ke) = rev0(1:je, 1:ke)
+      gamma(nx, 1:je, 1:ke) = gamma3(1:je, 1:ke)
+      gamma(il, 1:je, 1:ke) = gamma2(1:je, 1:ke)
+      gamma(ie, 1:je, 1:ke) = gamma1(1:je, 1:ke)
+      gamma(ib, 1:je, 1:ke) = gamma0(1:je, 1:ke)
+    case (jmin) 
+!===============================================================
+      w(1:ie, 3, 1:ke, :) = ww3(1:ie, 1:ke, :)
+      w(1:ie, 2, 1:ke, :) = ww2(1:ie, 1:ke, :)
+      w(1:ie, 1, 1:ke, :) = ww1(1:ie, 1:ke, :)
+      w(1:ie, 0, 1:ke, :) = ww0(1:ie, 1:ke, :)
+      p(1:ie, 3, 1:ke) = pp3(1:ie, 1:ke)
+      p(1:ie, 2, 1:ke) = pp2(1:ie, 1:ke)
+      p(1:ie, 1, 1:ke) = pp1(1:ie, 1:ke)
+      p(1:ie, 0, 1:ke) = pp0(1:ie, 1:ke)
+      rlv(1:ie, 3, 1:ke) = rlv3(1:ie, 1:ke)
+      rlv(1:ie, 2, 1:ke) = rlv2(1:ie, 1:ke)
+      rlv(1:ie, 1, 1:ke) = rlv1(1:ie, 1:ke)
+      rlv(1:ie, 0, 1:ke) = rlv0(1:ie, 1:ke)
+      rev(1:ie, 3, 1:ke) = rev3(1:ie, 1:ke)
+      rev(1:ie, 2, 1:ke) = rev2(1:ie, 1:ke)
+      rev(1:ie, 1, 1:ke) = rev1(1:ie, 1:ke)
+      rev(1:ie, 0, 1:ke) = rev0(1:ie, 1:ke)
+      gamma(1:ie, 3, 1:ke) = gamma3(1:ie, 1:ke)
+      gamma(1:ie, 2, 1:ke) = gamma2(1:ie, 1:ke)
+      gamma(1:ie, 1, 1:ke) = gamma1(1:ie, 1:ke)
+      gamma(1:ie, 0, 1:ke) = gamma0(1:ie, 1:ke)
+    case (jmax) 
+!===============================================================
+      w(1:ie, ny, 1:ke, :) = ww3(1:ie, 1:ke, :)
+      w(1:ie, jl, 1:ke, :) = ww2(1:ie, 1:ke, :)
+      w(1:ie, je, 1:ke, :) = ww1(1:ie, 1:ke, :)
+      w(1:ie, jb, 1:ke, :) = ww0(1:ie, 1:ke, :)
+      p(1:ie, ny, 1:ke) = pp3(1:ie, 1:ke)
+      p(1:ie, jl, 1:ke) = pp2(1:ie, 1:ke)
+      p(1:ie, je, 1:ke) = pp1(1:ie, 1:ke)
+      p(1:ie, jb, 1:ke) = pp0(1:ie, 1:ke)
+      rlv(1:ie, ny, 1:ke) = rlv3(1:ie, 1:ke)
+      rlv(1:ie, jl, 1:ke) = rlv2(1:ie, 1:ke)
+      rlv(1:ie, je, 1:ke) = rlv1(1:ie, 1:ke)
+      rlv(1:ie, jb, 1:ke) = rlv0(1:ie, 1:ke)
+      rev(1:ie, ny, 1:ke) = rev3(1:ie, 1:ke)
+      rev(1:ie, jl, 1:ke) = rev2(1:ie, 1:ke)
+      rev(1:ie, je, 1:ke) = rev1(1:ie, 1:ke)
+      rev(1:ie, jb, 1:ke) = rev0(1:ie, 1:ke)
+      gamma(1:ie, ny, 1:ke) = gamma3(1:ie, 1:ke)
+      gamma(1:ie, jl, 1:ke) = gamma2(1:ie, 1:ke)
+      gamma(1:ie, je, 1:ke) = gamma1(1:ie, 1:ke)
+      gamma(1:ie, jb, 1:ke) = gamma0(1:ie, 1:ke)
+    case (kmin) 
+!===============================================================
+      w(1:ie, 1:je, 3, :) = ww3(1:ie, 1:je, :)
+      w(1:ie, 1:je, 2, :) = ww2(1:ie, 1:je, :)
+      w(1:ie, 1:je, 1, :) = ww1(1:ie, 1:je, :)
+      w(1:ie, 1:je, 0, :) = ww0(1:ie, 1:je, :)
+      p(1:ie, 1:je, 3) = pp3(1:ie, 1:je)
+      p(1:ie, 1:je, 2) = pp2(1:ie, 1:je)
+      p(1:ie, 1:je, 1) = pp1(1:ie, 1:je)
+      p(1:ie, 1:je, 0) = pp0(1:ie, 1:je)
+      rlv(1:ie, 1:je, 3) = rlv3(1:ie, 1:je)
+      rlv(1:ie, 1:je, 2) = rlv2(1:ie, 1:je)
+      rlv(1:ie, 1:je, 1) = rlv1(1:ie, 1:je)
+      rlv(1:ie, 1:je, 0) = rlv0(1:ie, 1:je)
+      rev(1:ie, 1:je, 3) = rev3(1:ie, 1:je)
+      rev(1:ie, 1:je, 2) = rev2(1:ie, 1:je)
+      rev(1:ie, 1:je, 1) = rev1(1:ie, 1:je)
+      rev(1:ie, 1:je, 0) = rev0(1:ie, 1:je)
+      gamma(1:ie, 1:je, 3) = gamma3(1:ie, 1:je)
+      gamma(1:ie, 1:je, 2) = gamma2(1:ie, 1:je)
+      gamma(1:ie, 1:je, 1) = gamma1(1:ie, 1:je)
+      gamma(1:ie, 1:je, 0) = gamma0(1:ie, 1:je)
+    case (kmax) 
+!===============================================================
+      w(1:ie, 1:je, nz, :) = ww3(1:ie, 1:je, :)
+      w(1:ie, 1:je, kl, :) = ww2(1:ie, 1:je, :)
+      w(1:ie, 1:je, ke, :) = ww1(1:ie, 1:je, :)
+      w(1:ie, 1:je, kb, :) = ww0(1:ie, 1:je, :)
+      p(1:ie, 1:je, nz) = pp3(1:ie, 1:je)
+      p(1:ie, 1:je, kl) = pp2(1:ie, 1:je)
+      p(1:ie, 1:je, ke) = pp1(1:ie, 1:je)
+      p(1:ie, 1:je, kb) = pp0(1:ie, 1:je)
+      rlv(1:ie, 1:je, nz) = rlv3(1:ie, 1:je)
+      rlv(1:ie, 1:je, kl) = rlv2(1:ie, 1:je)
+      rlv(1:ie, 1:je, ke) = rlv1(1:ie, 1:je)
+      rlv(1:ie, 1:je, kb) = rlv0(1:ie, 1:je)
+      rev(1:ie, 1:je, nz) = rev3(1:ie, 1:je)
+      rev(1:ie, 1:je, kl) = rev2(1:ie, 1:je)
+      rev(1:ie, 1:je, ke) = rev1(1:ie, 1:je)
+      rev(1:ie, 1:je, kb) = rev0(1:ie, 1:je)
+      gamma(1:ie, 1:je, nz) = gamma3(1:ie, 1:je)
+      gamma(1:ie, 1:je, kl) = gamma2(1:ie, 1:je)
+      gamma(1:ie, 1:je, ke) = gamma1(1:ie, 1:je)
+      gamma(1:ie, 1:je, kb) = gamma0(1:ie, 1:je)
+    end select
+! these spatial pointers are only required for
+! forcesandmoments. eulerwall normal moment is is reverse ad'ed.
+    if (spatialpointers) then
+      select case  (bcfaceid(nn)) 
+      case (imin) 
+        x(1, 0:je, 0:ke, :) = xx(1:je+1, 1:ke+1, :)
+        si(1, 1:je, 1:ke, :) = ssi(1:je, 1:ke, :)
+      case (imax) 
+        x(il, 0:je, 0:ke, :) = xx(1:je+1, 1:ke+1, :)
+        si(il, 1:je, 1:ke, :) = ssi(1:je, 1:ke, :)
+      case (jmin) 
+        x(0:ie, 1, 0:ke, :) = xx(1:ie+1, 1:ke+1, :)
+        sj(1:ie, 1, 1:ke, :) = ssi(1:ie, 1:ke, :)
+      case (jmax) 
+        x(0:ie, jl, 0:ke, :) = xx(1:ie+1, 1:ke+1, :)
+        sj(1:ie, jl, 1:ke, :) = ssi(1:ie, 1:ke, :)
+      case (kmin) 
+        x(0:ie, 0:je, 1, :) = xx(1:ie+1, 1:je+1, :)
+        sk(1:ie, 1:je, 1, :) = ssi(1:ie, 1:je, :)
+      case (kmax) 
+        x(0:ie, 0:je, kl, :) = xx(1:ie+1, 1:je+1, :)
+        sk(1:ie, 1:je, kl, :) = ssi(1:ie, 1:je, :)
+      end select
+    end if
+  end subroutine resetbcpointers
 end module utils_fast_b

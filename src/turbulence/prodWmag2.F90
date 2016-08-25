@@ -20,6 +20,7 @@ subroutine prodWmag2
   !      *                                                                *
   !      ******************************************************************
   !
+  use constants
   use blockPointers
   use flowVarRefState
   use section

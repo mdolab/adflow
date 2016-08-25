@@ -336,6 +336,7 @@
        use section
        use BCData, only : setBCDataFineGrid, nonDimBoundData, &
             setSupersonicInletFreeStream, setInletFreeStreamTurb
+       use wallDistance, only : updateWallDistanceAllLevels
        implicit none
 !
 !      Subroutine arguments.

@@ -28,7 +28,12 @@ python module libsumb
          end subroutine getliftdirfromsymmetry
 
        end module utils
-      
+
+       module walldistance
+         subroutine updatewalldistancealllevels ! in :sumb:../../wallDistance/updateWallDistanceAllLevels.f90
+         end subroutine updatewalldistancealllevels
+       end module walldistance
+
        subroutine setdefaultvalues()
        end subroutine setdefaultvalues
 
@@ -184,8 +189,6 @@ python module libsumb
        subroutine writesol ! in :sumb:../../output/writeSol.f90
        end subroutine writesol
 
-       subroutine updatewalldistancealllevels ! in :sumb:../../wallDistance/updateWallDistanceAllLevels.f90
-       end subroutine updatewalldistancealllevels
 
        subroutine updateslidingalllevels ! in :sumb:../../slidingComm/updateSlidingAllLevels.f90
        end subroutine updateslidingalllevels

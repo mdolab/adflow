@@ -2,7 +2,8 @@ subroutine getCurrentResidual(rhoRes,totalRRes)
 
   use constants
   use communication, only : sumb_comm_world 
-  use blockPointers, only : nDom, nCellGlobal
+  use block, only : nCellGlobal
+  use blockPointers, only : nDom
   use inputTimeSpectral, only : nTimeIntervalsSpectral
   use iteration, only : currentLevel
   use monitor, only: monLoc, monGlob, nMonSum

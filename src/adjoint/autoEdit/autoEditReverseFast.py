@@ -32,7 +32,7 @@ print "Directory of input source files  :", DIR_ORI
 print "Directory of output source files :", DIR_MOD
 
 useful_modules = ['samodule_b','bcroutines_b','turbbcroutines_b',
-                  'utils_b', 'flowutils_b']
+                  'utils_b', 'flowutils_b', 'walldistance_b', 'bcpointers_b']
 
 for f in os.listdir(DIR_ORI):
     if f.endswith(EXT):
@@ -78,12 +78,12 @@ for f in os.listdir(DIR_ORI):
             # Just deal with lower case string
             line = line.lower()
 
-            # Replace modules
-            m = patt_modules.match(line)
-            if m:
-                if not addedModule:
-                    file_object_mod.write('  use myPushPopLib\n')
-                    addedModule = True
+            # # Replace modules
+            # m = patt_modules.match(line)
+            # if m:
+            #     if not addedModule:
+            #         file_object_mod.write('  use myPushPopLib\n')
+            #         addedModule = True
 
             # Replace _cb on calls
             if '_cb' in line:
