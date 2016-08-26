@@ -4,15 +4,9 @@
 !  differentiation of turbadvection in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *scratch
 !   with respect to varying inputs: *sfacei *sfacej *sfacek *w
-!                scratch *vol *si *sj 
+!                *scratch *vol *si *sj *sk
 !   plus diff mem management of: sfacei:in sfacej:in sfacek:in
 !                w:in scratch:in vol:in si:in sj:in sk:in
-!
-!       file:          turbadvection.f90                               
-!       author:        georgi kalitzin, edwin van der weide            
-!       starting date: 09-01-2003                                      
-!       last modified: 04-12-2005                                      
-!
 subroutine turbadvection_d(madv, nadv, offset, qq)
 !
 !       turbadvection discretizes the advection part of the turbulent  
@@ -78,9 +72,6 @@ subroutine turbadvection_d(madv, nadv, offset, qq)
   real(kind=realtype) :: abs2
   real(kind=realtype) :: abs1
   real(kind=realtype) :: abs0
-!
-!       begin execution                                                
-!
 ! initialize the grid velocity to zero. this value will be used
 ! if the block is not moving.
   qs = zero

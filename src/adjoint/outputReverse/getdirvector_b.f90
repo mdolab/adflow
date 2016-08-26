@@ -4,12 +4,6 @@
 !  differentiation of getdirvector in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: alpha beta winddirection
 !   with respect to varying inputs: alpha beta
-!
-!      file:          getdirvector.f90                                
-!      author:        andre c. marta                                  
-!      starting date: 10-25-2005                                      
-!      last modified: 10-26-2006                                      
-!
 subroutine getdirvector_b(refdirection, alpha, alphad, beta, betad, &
 & winddirection, winddirectiond, liftindex)
 !(xb,yb,zb,alpha,beta,xw,yw,zw)
@@ -51,8 +45,6 @@ subroutine getdirvector_b(refdirection, alpha, alphad, beta, betad, &
   real(kind=realtype) :: tmpd
   intrinsic sqrt
   integer :: branch
-!      begin execution.                                               
-!
 ! normalize the input vector.
   rnorm = sqrt(refdirection(1)**2 + refdirection(2)**2 + refdirection(3)&
 &   **2)

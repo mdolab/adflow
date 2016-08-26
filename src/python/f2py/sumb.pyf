@@ -27,15 +27,55 @@ python module libsumb
            integer(kind=inttype), intent(out) :: liftdir
          end subroutine getliftdirfromsymmetry
 
-         ! subroutine stabilityderivativedriver
-         ! end subroutine stabilityderivativedriver
-
+         subroutine allocconvarrays(nitertot) ! in :sumb:../../initFlow/allocConvArrays.f90
+           integer(kind=inttype) :: nitertot
+         end subroutine allocconvarrays
+         
+         subroutine alloctimearrays(nitertot) ! in :sumb:../../initFlow/allocTimeArrays.f90
+           integer(kind=inttype) :: ntimetot
+         end subroutine alloctimearrays
+         
        end module utils
 
        module walldistance
+
          subroutine updatewalldistancealllevels ! in :sumb:../../wallDistance/updateWallDistanceAllLevels.f90
          end subroutine updatewalldistancealllevels
+
        end module walldistance
+
+       module initializeflow
+
+         subroutine initflow 
+         end subroutine initflow
+       
+         subroutine initflowrestart
+         end subroutine initflowrestart
+
+         subroutine referencestate
+         end subroutine referencestate
+
+         subroutine setuniformflow
+         end subroutine setuniformflow
+
+         subroutine allocrestartfiles(nfiles) 
+           integer(kind=inttype) :: nfiles
+         end subroutine allocrestartfiles
+
+         subroutine setrestartfiles(filename,i)
+           character*(*) intent(in) :: filename
+           integer(kind=inttype) :: i
+         end subroutine setrestartfiles
+
+       end module initializeflow
+
+       module flowutils 
+
+         subroutine updategamma
+         end subroutine updategamma
+
+       end module flowutils
+
 
        subroutine setdefaultvalues()
        end subroutine setdefaultvalues
@@ -111,16 +151,6 @@ python module libsumb
        subroutine preprocessing ! in :sumb:../../preprocessing/preprocessing.f90
        end subroutine preprocessing
      
-       subroutine initflow ! in :sumb:../../initFlow/initFlow.f90
-       end subroutine initflow
-       
-       subroutine initflowrestart
-       end subroutine initflowrestart
-       module flowutils 
-         subroutine updategamma
-         end subroutine updategamma
-       end module flowutils
-
        subroutine updatecoordinatesalllevels ! in :sumb:../../preprocessing/mdUpdateRoutines.f90
        end subroutine updatecoordinatesalllevels
 
@@ -135,9 +165,6 @@ python module libsumb
 
        subroutine updateflow
        end subroutine updateflow
-
-       subroutine referencestate
-       end subroutine referencestate
 
        subroutine updatereferencepoint
        end subroutine updatereferencepoint
@@ -155,29 +182,6 @@ python module libsumb
          integer(kind=inttype) intent(in) :: liftindex
        end subroutine adjustinflowangle
 
-       subroutine setuniformflow
-       end subroutine setuniformflow
-
-       subroutine initdepvarandhalos(halosread)
-         logical intent(in) :: halosread
-       end subroutine initdepvarandhalos
-
-       subroutine allocconvarrays(nitertot) ! in :sumb:../../initFlow/allocConvArrays.f90
-         integer(kind=inttype) :: nitertot
-       end subroutine allocconvarrays
-
-       subroutine alloctimearrays(nitertot) ! in :sumb:../../initFlow/allocTimeArrays.f90
-         integer(kind=inttype) :: ntimetot
-       end subroutine alloctimearrays
-
-       subroutine allocrestartfiles(nfiles) ! in :sumb:../../initFlow/allocrestartfiles.f90
-         integer(kind=inttype) :: nfiles
-       end subroutine allocrestartfiles
-
-       subroutine setrestartfiles(filename,i) ! in :sumb:../../initFlow/setrestartfiles.f90
-         character*(*) intent(in) :: filename
-         integer(kind=inttype) :: i
-       end subroutine setrestartfiles
 
 
        subroutine solver ! in :sumb:../../solver/solver.F90

@@ -3,29 +3,23 @@
 !
 !  differentiation of forcesandmoments in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: gammainf pinf pref *xx *rev0
-!                rev1 *rev2 *rev3 *pp0 *pp1 *pp2 *pp3 *rlv0 
-!                rlv2 *rlv3 *ssi *ww0 *ww1 *ww2 
+!                *rev1 *rev2 *rev3 *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1
+!                *rlv2 *rlv3 *ssi *ww0 *ww1 *ww2 *ww3 lengthref
 !                machcoef pointref *w *x *(*bcdata.fv) *(*bcdata.fp)
-!                (
+!                *(*bcdata.area) sepsensoravg cfp cfv cmp cmv cavitation
 !                sepsensor
 !   with respect to varying inputs: gammainf pinf pref *xx *rev0
-!                rev1 *rev2 *rev3 *pp0 *pp1 *pp2 *pp3 *rlv0 
-!                rlv2 *rlv3 *ssi *ww0 *ww1 *ww2 
+!                *rev1 *rev2 *rev3 *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1
+!                *rlv2 *rlv3 *ssi *ww0 *ww1 *ww2 *ww3 veldirfreestream
 !                lengthref machcoef pointref *rev *p *w *rlv *x
-!                si *sj *sk *(*viscsubface.tau) *(
-!                (*bcdata.fp) *(
+!                *si *sj *sk *(*viscsubface.tau) *(*bcdata.fv)
+!                *(*bcdata.fp) *(*bcdata.area)
 !   plus diff mem management of: xx:in rev0:in rev1:in rev2:in
 !                rev3:in pp0:in pp1:in pp2:in pp3:in rlv0:in rlv1:in
 !                rlv2:in rlv3:in ssi:in ww0:in ww1:in ww2:in ww3:in
 !                rev:in p:in w:in rlv:in x:in si:in sj:in sk:in
 !                viscsubface:in *viscsubface.tau:in bcdata:in *bcdata.fv:in
-!                bcdata.fp:in 
-!
-!       file:          forcesandmoments.f90                            
-!       author:        edwin van der weide                             
-!       starting date: 04-01-2003                                      
-!       last modified: 06-12-2005                                      
-!
+!                *bcdata.fp:in *bcdata.area:in
 subroutine forcesandmoments_b(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd&
 & , yplusmax, sepsensor, sepsensord, sepsensoravg, sepsensoravgd, &
 & cavitation, cavitationd)
@@ -128,9 +122,6 @@ subroutine forcesandmoments_b(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd&
   real(kind=realtype) :: tempd16
   real(kind=realtype) :: temp4
   real(kind=realtype) :: tempd15
-!
-!       begin execution                                                
-!
 ! set the actual scaling factor such that actual forces are computed
   scaledim = pref/pinf
 ! determine the reference point for the moment computation in

@@ -5,7 +5,7 @@
 !   gradient     of useful results: *rev *w *rlv *x *si *sj *sk
 !                *fw
 !   with respect to varying inputs: *rev *aa *w *rlv *x *si *sj
-!                sk 
+!                *sk *fw
 !   plus diff mem management of: rev:in aa:in w:in rlv:in x:in
 !                si:in sj:in sk:in fw:in
 subroutine viscousfluxapprox_b()

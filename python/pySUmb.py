@@ -217,7 +217,7 @@ class SUMB(AeroSolver):
 
         self.sumb.partitionandreadgrid(False)
         self.sumb.preprocessing()
-        self.sumb.initflow()
+        self.sumb.initializeflow.initflow()
         self.sumb.preprocessingadjoint()
 
         famList = self._processFortranStringArray(
@@ -713,11 +713,11 @@ class SUMB(AeroSolver):
         self.sumb.iteration.itertot = 0
         desiredSize = self.sumb.inputiteration.nsgstartup + \
                       self.sumb.inputiteration.ncycles
-        self.sumb.allocconvarrays(desiredSize)
+        self.sumb.utils.allocconvarrays(desiredSize)
         # --------------------------------------------------------------
 
         if self.getOption('equationMode').lower() == 'unsteady':
-            self.sumb.alloctimearrays(self.getOption('nTimeStepsFine'))
+            self.sumb.utils.alloctimearrays(self.getOption('nTimeStepsFine'))
             self._setUnsteadyFileParameters()
 
         # Mesh warp may have already failed:
@@ -1653,7 +1653,7 @@ class SUMB(AeroSolver):
         self.sumb.iteration.currentlevel = strLvl
         self.sumb.monitor.nitercur = 0
         self.sumb.iteration.itertot = 0
-        self.sumb.setuniformflow()
+        self.sumb.initializeflow.setuniformflow()
         self.sumb.killsignals.routinefailed =  False
         self.sumb.killsignals.fatalfail = False
         self.sumb.nksolvervars.freestreamresset = False
@@ -2134,7 +2134,7 @@ class SUMB(AeroSolver):
             self.sumb.inputmotion.sincoeffouryrot = AP.sinCoefFourier
 
         if not firstCall:
-            self.sumb.referencestate()
+            self.sumb.initializeflow.referencestate()
             self.sumb.iteration.groundlevel = 1
             self.sumb.updateperiodicinfoalllevels()
             self.sumb.updategridvelocitiesalllevels()

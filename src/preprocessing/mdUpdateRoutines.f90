@@ -140,6 +140,7 @@ subroutine updatePeriodicInfoAllLevels
   use inputTimeSpectral
   use inputPhysics
   use communication
+  use initializeFlow, onlY : timeSPectralMatrices
   implicit none
 
   !subroutine variables
@@ -156,11 +157,6 @@ subroutine updatePeriodicInfoAllLevels
   call timePeriodSpectral
   call timeRotMatricesSpectral
   call fineGridSpectralCoor
-
-  !From initFlow.f90
-  ! Determine for the time spectral mode the matrices for the
-  ! time derivatives.
-
   call timeSpectralMatrices
 
 

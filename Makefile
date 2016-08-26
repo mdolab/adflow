@@ -9,7 +9,6 @@
 
 SUBDIR_SRC    = src/modules       \
 	        src/solver        \
-	        src/initFlow      \
 	        src/inputParam    \
 	        src/metis-4.0     \
 	        src/output        \
@@ -73,4 +72,5 @@ sumb:
 			(cd $$subdir && make) || exit 1; \
 		done
 	(cd lib && make)
+#	(cd src/exec && make)
 	(cd src/python/f2py && make)

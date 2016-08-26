@@ -12,12 +12,12 @@ module bcroutines_d
 contains
 !  differentiation of applyallbc_block in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *rev0 *rev1 *pp0 *pp1 *rlv0
-!                rlv1 *ww0 *ww1 *rev *p *w 
+!                *rlv1 *ww0 *ww1 *rev *p *w *rlv
 !   with respect to varying inputs: *xx *rev0 *rev1 *rev2 *rev3
-!                pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3 
-!                ssi *ssj *ssk *ww0 *ww1 *ww2 *ww3 *rev *p 
-!                w *rlv *x *si *sj *sk *(*bcdata.norm) *(
-!                (
+!                *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3 *ss
+!                *ssi *ssj *ssk *ww0 *ww1 *ww2 *ww3 *rev *p *s
+!                *w *rlv *x *si *sj *sk *(*bcdata.norm) *(*bcdata.rface)
+!                *(*bcdata.uslip) (global)gammainf (global)winf[1:10]
 !                (global)pinfcorr (global)rgas
 !   plus diff mem management of: xx:in-out rev0:in-out rev1:in-out
 !                rev2:in-out rev3:in-out pp0:in-out pp1:in-out
@@ -328,7 +328,7 @@ contains
 !  differentiation of bcsymm1sthalo in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *rev1 *pp1 *rlv1 *ww1
 !   with respect to varying inputs: *rev1 *rev2 *pp1 *pp2 *rlv1
-!                rlv2 *ww1 *ww2 *(
+!                *rlv2 *ww1 *ww2 *(*bcdata.norm)
 !   plus diff mem management of: rev1:in rev2:in pp1:in pp2:in
 !                rlv1:in rlv2:in ww1:in ww2:in bcdata:in *bcdata.norm:in
 ! ===================================================================
@@ -454,7 +454,7 @@ contains
 !  differentiation of bcsymm2ndhalo in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *rev0 *pp0 *rlv0 *ww0
 !   with respect to varying inputs: *rev0 *rev3 *pp0 *pp3 *rlv0
-!                rlv3 *ww0 *ww3 *(
+!                *rlv3 *ww0 *ww3 *(*bcdata.norm)
 !   plus diff mem management of: rev0:in rev3:in pp0:in pp3:in
 !                rlv0:in rlv3:in ww0:in ww3:in bcdata:in *bcdata.norm:in
   subroutine bcsymm2ndhalo_d(nn)
@@ -558,7 +558,7 @@ contains
 !  differentiation of bcsymmpolar1sthalo in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *rev1 *pp1 *rlv1 *ww1
 !   with respect to varying inputs: *xx *rev1 *rev2 *pp1 *pp2 *rlv1
-!                rlv2 *ww1 
+!                *rlv2 *ww1 *ww2
 !   plus diff mem management of: xx:in rev1:in rev2:in pp1:in pp2:in
 !                rlv1:in rlv2:in ww1:in ww2:in
   subroutine bcsymmpolar1sthalo_d(nn)
@@ -736,7 +736,7 @@ contains
 !  differentiation of bcsymmpolar2ndhalo in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *rev0 *pp0 *rlv0 *ww0
 !   with respect to varying inputs: *xx *rev0 *rev3 *pp0 *pp3 *rlv0
-!                rlv3 *ww0 
+!                *rlv3 *ww0 *ww3
 !   plus diff mem management of: xx:in rev0:in rev3:in pp0:in pp3:in
 !                rlv0:in rlv3:in ww0:in ww3:in
   subroutine bcsymmpolar2ndhalo_d(nn)
@@ -909,9 +909,9 @@ contains
   end subroutine bcsymmpolar2ndhalo
 !  differentiation of bcnswalladiabatic in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *rev0 *rev1 *pp0 *pp1 *rlv0
-!                rlv1 *ww0 
+!                *rlv1 *ww0 *ww1
 !   with respect to varying inputs: *rev0 *rev1 *rev2 *pp0 *pp1
-!                pp2 *pp3 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2 *(
+!                *pp2 *pp3 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2 *(*bcdata.uslip)
 !   plus diff mem management of: rev0:in rev1:in rev2:in pp0:in
 !                pp1:in pp2:in pp3:in rlv0:in rlv1:in rlv2:in ww0:in
 !                ww1:in ww2:in bcdata:in *bcdata.uslip:in
@@ -1065,10 +1065,10 @@ contains
   end subroutine bcnswalladiabatic
 !  differentiation of bcnswallisothermal in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *rev0 *rev1 *pp0 *pp1 *rlv0
-!                rlv1 *ww0 
+!                *rlv1 *ww0 *ww1
 !   with respect to varying inputs: rgas *rev0 *rev1 *rev2 *pp0
-!                pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *ww0 *ww1 
-!                (
+!                *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2
+!                *(*bcdata.uslip)
 !   plus diff mem management of: rev0:in rev1:in rev2:in pp0:in
 !                pp1:in pp2:in pp3:in rlv0:in rlv1:in rlv2:in ww0:in
 !                ww1:in ww2:in bcdata:in *bcdata.uslip:in
@@ -1274,9 +1274,9 @@ contains
   end subroutine bcnswallisothermal
 !  differentiation of bcsubsonicoutflow in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *rev0 *rev1 *pp0 *pp1 *rlv0
-!                rlv1 *ww0 
+!                *rlv1 *ww0 *ww1
 !   with respect to varying inputs: *rev0 *rev1 *rev2 *pp0 *pp1
-!                pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2 *(
+!                *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2 *(*bcdata.norm)
 !   plus diff mem management of: rev0:in rev1:in rev2:in pp0:in
 !                pp1:in pp2:in rlv0:in rlv1:in rlv2:in ww0:in ww1:in
 !                ww2:in bcdata:in *bcdata.norm:in
@@ -1518,9 +1518,9 @@ contains
   end subroutine bcsubsonicoutflow
 !  differentiation of bcsubsonicinflow in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *rev0 *rev1 *pp0 *pp1 *rlv0
-!                rlv1 *ww0 
+!                *rlv1 *ww0 *ww1
 !   with respect to varying inputs: rgas *rev0 *rev1 *rev2 *pp0
-!                pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2 *(
+!                *pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2 *(*bcdata.norm)
 !   plus diff mem management of: rev0:in rev1:in rev2:in pp0:in
 !                pp1:in pp2:in rlv0:in rlv1:in rlv2:in ww0:in ww1:in
 !                ww2:in bcdata:in *bcdata.norm:in
@@ -2014,14 +2014,14 @@ contains
   end subroutine bcsubsonicinflow
 !  differentiation of bceulerwall in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *rev0 *rev1 *pp0 *pp1 *rlv0
-!                rlv1 *ww0 
+!                *rlv1 *ww0 *ww1
 !   with respect to varying inputs: *rev0 *rev1 *rev2 *pp0 *pp1
-!                pp2 *pp3 *rlv0 *rlv1 *rlv2 *ss *ssi *ssj 
-!                ww0 *ww1 *ww2 *(*bcdata.norm) *(
+!                *pp2 *pp3 *rlv0 *rlv1 *rlv2 *ss *ssi *ssj *ssk
+!                *ww0 *ww1 *ww2 *(*bcdata.norm) *(*bcdata.rface)
 !   plus diff mem management of: rev0:in rev1:in rev2:in pp0:in
 !                pp1:in pp2:in pp3:in rlv0:in rlv1:in rlv2:in ss:in
 !                ssi:in ssj:in ssk:in ww0:in ww1:in ww2:in bcdata:in
-!                bcdata.norm:in 
+!                *bcdata.norm:in *bcdata.rface:in
   subroutine bceulerwall_d(nn, secondhalo, correctfork)
 !  bceulerwall applies the inviscid wall boundary condition to a
 !  block. it is assumed that the bcpointers are already set to the
@@ -2497,10 +2497,10 @@ contains
   end subroutine bceulerwall
 !  differentiation of bcfarfield in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *rev0 *rev1 *pp0 *pp1 *rlv0
-!                rlv1 *ww0 
+!                *rlv1 *ww0 *ww1
 !   with respect to varying inputs: gammainf winf pinfcorr *rev0
-!                rev1 *rev2 *pp0 *pp1 *pp2 *rlv0 *rlv1 *rlv2 
-!                ww1 *ww2 *(
+!                *rev1 *rev2 *pp0 *pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0
+!                *ww1 *ww2 *(*bcdata.norm)
 !   plus diff mem management of: rev0:in rev1:in rev2:in pp0:in
 !                pp1:in pp2:in rlv0:in rlv1:in rlv2:in ww0:in ww1:in
 !                ww2:in bcdata:in *bcdata.norm:in *bcdata.rface:in
@@ -2845,9 +2845,9 @@ contains
   end subroutine bcfarfield
 !  differentiation of bcsupersonicinflow in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *rev0 *rev1 *pp0 *pp1 *rlv0
-!                rlv1 *ww0 
+!                *rlv1 *ww0 *ww1
 !   with respect to varying inputs: *rev0 *rev1 *rev2 *pp0 *pp1
-!                rlv0 *rlv1 *rlv2 *ww0 
+!                *rlv0 *rlv1 *rlv2 *ww0 *ww1
 !   plus diff mem management of: rev0:in rev1:in rev2:in pp0:in
 !                pp1:in rlv0:in rlv1:in rlv2:in ww0:in ww1:in bcdata:in
   subroutine bcsupersonicinflow_d(nn, secondhalo, correctfork)
@@ -2977,9 +2977,9 @@ contains
   end subroutine bcsupersonicinflow
 !  differentiation of bcextrap in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *rev0 *rev1 *pp0 *pp1 *rlv0
-!                rlv1 *ww0 
+!                *rlv1 *ww0 *ww1
 !   with respect to varying inputs: *rev0 *rev1 *rev2 *pp0 *pp1
-!                pp2 *pp3 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2 
+!                *pp2 *pp3 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2 *ww3
 !   plus diff mem management of: rev0:in rev1:in rev2:in pp0:in
 !                pp1:in pp2:in pp3:in rlv0:in rlv1:in rlv2:in ww0:in
 !                ww1:in ww2:in ww3:in
@@ -3418,7 +3418,7 @@ interval:do
 !  differentiation of extrapolate2ndhalo in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *rev0 *pp0 *rlv0 *ww0
 !   with respect to varying inputs: *rev0 *rev1 *pp0 *pp1 *pp2
-!                rlv0 *rlv1 *ww0 *ww1 
+!                *rlv0 *rlv1 *ww0 *ww1 *ww2
 !   plus diff mem management of: rev0:in rev1:in pp0:in pp1:in
 !                pp2:in rlv0:in rlv1:in ww0:in ww1:in ww2:in
   subroutine extrapolate2ndhalo_d(correctfork)

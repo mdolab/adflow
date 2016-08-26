@@ -41,12 +41,12 @@ FF90_OBJECTS1 = utils_b.o\
 		bcroutines_b.o\
 		samodule_b.o\
 		walldistance_b.o\
+		initializeflow_b.o\
 
 FF90_OBJECTS2 =  \
 		allnodalgradients_b.o\
 		adjustinflowangle_b.o\
 		getdirvector_b.o\
-		referencestate_b.o\
 		vectorrotation_b.o\
 		computelamviscosity_b.o\
 		computepressuresimple_b.o\

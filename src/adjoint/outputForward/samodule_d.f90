@@ -17,7 +17,7 @@ contains
 !  differentiation of sa_block in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *dw
 !   with respect to varying inputs: *sfacei *sfacej *sfacek *w
-!                rlv *vol *si *sj 
+!                *rlv *vol *si *sj *sk (global)timeref
 !   plus diff mem management of: bvtj1:in bvtj2:in sfacei:in sfacej:in
 !                sfacek:in dw:in w:in rlv:in scratch:in bvtk1:in
 !                bvtk2:in vol:in si:in sj:in sk:in bvti1:in bvti2:in
@@ -42,8 +42,6 @@ contains
 !      local variables.
 !
     integer(kind=inttype) :: nn, sps
-!
-!       begin execution                                                
 ! set the arrays for the boundary condition treatment.
     call bcturbtreatment()
 ! set model constants
@@ -101,8 +99,6 @@ contains
 !      local variables.
 !
     integer(kind=inttype) :: nn, sps
-!
-!       begin execution                                                
 ! set the arrays for the boundary condition treatment.
     call bcturbtreatment()
 ! set model constants

@@ -3,10 +3,10 @@
 !
 !  differentiation of viscousflux in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *rev *w *rlv *x *si *sj *sk
-!                fw *(
+!                *fw *(*viscsubface.tau)
 !   with respect to varying inputs: *rev *aa *wx *wy *wz *w *rlv
-!                x *qx *qy *qz *ux *uy *uz *si *sj *sk *vx 
-!                vz 
+!                *x *qx *qy *qz *ux *uy *uz *si *sj *sk *vx *vy
+!                *vz *fw
 !   plus diff mem management of: rev:in aa:in wx:in wy:in wz:in
 !                w:in rlv:in x:in qx:in qy:in qz:in ux:in uy:in
 !                uz:in si:in sj:in sk:in vx:in vy:in vz:in fw:in

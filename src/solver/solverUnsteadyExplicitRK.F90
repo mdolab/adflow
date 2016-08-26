@@ -13,6 +13,7 @@
        use killSignals
        use monitor
        use utils, only : setPointers
+       use flowUtils, only : computePressure
        use haloExchange, only : whalo1, whalo2
        use bcdata, only : setSupersonicInletFreeStream
        implicit none

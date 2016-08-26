@@ -553,12 +553,6 @@ intervaltt:do
       end do
     end if
   end subroutine computespeedofsoundsquared
-!
-!       file:          computeetot.f90                                 
-!       author:        edwin van der weide, steve repsher              
-!       starting date: 08-13-2003                                      
-!       last modified: 10-14-2005                                      
-!
   subroutine computeetotblock(istart, iend, jstart, jend, kstart, kend, &
 &   correctfork)
 !
@@ -586,8 +580,6 @@ intervaltt:do
 !
     integer(kind=inttype) :: i, j, k
     real(kind=realtype) :: ovgm1, factk, scale
-!       begin execution                                                
-!
 ! determine the cp model used in the computation.
     select case  (cpmodel) 
     case (cpconstant) 
@@ -790,4 +782,214 @@ intervaltt:do
       end if
     end select
   end subroutine eint
+  subroutine computepressure(ibeg, iend, jbeg, jend, kbeg, kend, &
+&   pointeroffset)
+!
+!       computepressure computes the pressure from the total energy,   
+!       density and velocities in the given cell range of the block to 
+!       which the pointers in blockpointers currently point.           
+!       it is possible to specify a possible pointer offset, because   
+!       this routine is also used when reading a restart file.         
+!
+    use constants
+    use inputphysics, only : cpmodel, gammaconstant
+    use blockpointers, only : w, p
+    use flowvarrefstate, only : kpresent, pinf, rgas, tref
+    use cpcurvefits
+    implicit none
+!
+!      subroutine arguments.
+!
+    integer(kind=inttype), intent(in) :: ibeg, iend, jbeg, jend, kbeg, &
+&   kend
+    integer(kind=inttype), intent(in) :: pointeroffset
+!
+!      local parameters.
+!
+    real(kind=realtype), parameter :: dtstop=0.01_realtype
+    real(kind=realtype), parameter :: twothird=two*third
+!
+!      local variables.
+!
+    integer(kind=inttype) :: i, j, k, ip, jp, kp, nn, ii, start
+    real(kind=realtype) :: gm1, factk, v2, scale, e0, e
+    real(kind=realtype) :: trefinv, t, dt, t2, alp, cv
+    intrinsic max
+    intrinsic log
+    intrinsic abs
+    real(kind=realtype) :: abs0
+! determine the cp model used in the computation.
+    select case  (cpmodel) 
+    case (cpconstant) 
+! constant cp and thus constant gamma. the relation
+! eint = cv*t can be used and consequently the standard
+! relation between pressure and internal energy is valid.
+! abbreviate some constants that occur in the pressure
+! computation.
+      gm1 = gammaconstant - one
+      factk = five*third - gammaconstant
+! loop over the cells. take the possible pointer
+! offset into account and store the pressure in the
+! position w(:,:,:, irhoe).
+      do k=kbeg,kend
+        kp = k + pointeroffset
+        do j=jbeg,jend
+          jp = j + pointeroffset
+          do i=ibeg,iend
+            ip = i + pointeroffset
+            v2 = w(ip, jp, kp, ivx)**2 + w(ip, jp, kp, ivy)**2 + w(ip, &
+&             jp, kp, ivz)**2
+            w(i, j, k, irhoe) = gm1*(w(ip, jp, kp, irhoe)-half*w(ip, jp&
+&             , kp, irho)*v2)
+            if (w(i, j, k, irhoe) .lt. 1.e-5_realtype*pinf) then
+              w(i, j, k, irhoe) = 1.e-5_realtype*pinf
+            else
+              w(i, j, k, irhoe) = w(i, j, k, irhoe)
+            end if
+          end do
+        end do
+      end do
+! correct p if a k-equation is present.
+      if (kpresent) then
+        do k=kbeg,kend
+          kp = k + pointeroffset
+          do j=jbeg,jend
+            jp = j + pointeroffset
+            do i=ibeg,iend
+              ip = i + pointeroffset
+              w(i, j, k, irhoe) = w(i, j, k, irhoe) + factk*w(ip, jp, kp&
+&               , irho)*w(ip, jp, kp, itu1)
+            end do
+          end do
+        end do
+      end if
+    case (cptempcurvefits) 
+!        ================================================================
+! cp as function of the temperature is given via curve fits.
+! store a scale factor when converting the nondimensional
+! energy to the units of cpeint
+      trefinv = one/tref
+      scale = tref/rgas
+! loop over the cells to compute the internal energy per
+! unit mass. this is stored in w(:,:,:,irhoe) for the moment.
+      do k=kbeg,kend
+        kp = k + pointeroffset
+        do j=jbeg,jend
+          jp = j + pointeroffset
+          do i=ibeg,iend
+            ip = i + pointeroffset
+            w(i, j, k, irhoe) = w(ip, jp, kp, irhoe)/w(ip, jp, kp, irho)
+            if (kpresent) w(i, j, k, irhoe) = w(i, j, k, irhoe) - w(ip, &
+&               jp, kp, itu1)
+            v2 = w(ip, jp, kp, ivx)**2 + w(ip, jp, kp, ivy)**2 + w(ip, &
+&             jp, kp, ivz)**2
+            w(i, j, k, irhoe) = w(i, j, k, irhoe) - half*v2
+          end do
+        end do
+      end do
+! newton algorithm to compute the temperature from the known
+! value of the internal energy.
+      do k=kbeg,kend
+        kp = k + pointeroffset
+        do j=jbeg,jend
+          jp = j + pointeroffset
+          do i=ibeg,iend
+            ip = i + pointeroffset
+! store the internal energy in the same dimensional
+! units as cpeint.
+            e0 = scale*w(i, j, k, irhoe)
+! take care of the exceptional cases.
+            if (e0 .le. cpeint(0)) then
+! energy smaller than the lowest value of the curve
+! fit. use extrapolation using constant cv.
+              t = trefinv*(cptrange(0)+(e0-cpeint(0))/cv0)
+            else if (e0 .ge. cpeint(cpnparts)) then
+! energy larger than the largest value of the curve
+! fit. use extrapolation using constant cv.
+              t = trefinv*(cptrange(cpnparts)+(e0-cpeint(cpnparts))/cvn)
+            else
+! the value is in the range of the curve fits.
+! a newton algorithm is used to find the temperature.
+! first find the curve fit interval to be searched.
+              ii = cpnparts
+              start = 1
+     interval:do 
+! next guess for the interval.
+                nn = start + ii/2
+! determine the situation we are having here.
+                if (e0 .gt. cpeint(nn)) then
+! energy is larger than the upper boundary of
+! the current interval. update the lower
+! boundary.
+                  start = nn + 1
+                  ii = ii - 1
+                else if (e0 .ge. cpeint(nn-1)) then
+! nn contains the range in which the newton algorithm
+! must be applied.
+! initial guess of the dimensional temperature.
+                  alp = (cpeint(nn)-e0)/(cpeint(nn)-cpeint(nn-1))
+                  t = alp*cptrange(nn-1) + (one-alp)*cptrange(nn)
+! the actual newton algorithm to compute the
+! temperature.
+           newton:do 
+! compute the internal energy as well as the
+! value of cv/r for the given temperature.
+! cv/r = cp/r - 1.0
+                    cv = -one
+! e = integral of cv,
+                    e = cptempfit(nn)%eint0 - t
+! not of cp.
+                    do ii=1,cptempfit(nn)%nterm
+! update cv.
+                      t2 = t**cptempfit(nn)%exponents(ii)
+                      cv = cv + cptempfit(nn)%constants(ii)*t2
+! update e, for which this contribution must be
+! integrated. take the exceptional case that the
+! exponent == -1 into account.
+                      if (cptempfit(nn)%exponents(ii) .eq. -1_inttype) &
+&                     then
+                        e = e + cptempfit(nn)%constants(ii)*log(t)
+                      else
+                        e = e + cptempfit(nn)%constants(ii)*t2*t/(&
+&                         cptempfit(nn)%exponents(ii)+1)
+                      end if
+                    end do
+! compute the update and the new temperature.
+                    dt = (e0-e)/cv
+                    t = t + dt
+                    if (dt .ge. 0.) then
+                      abs0 = dt
+                    else
+                      abs0 = -dt
+                    end if
+! exit the newton loop if the update is smaller
+! than the threshold value.
+                    if (abs0 .lt. dtstop) then
+! create the nondimensional temperature.
+                      t = t*trefinv
+                      goto 100
+                    end if
+                  end do newton
+                end if
+! this is the correct range. exit the do-loop.
+! modify ii for the next branch to search.
+                ii = ii/2
+              end do interval
+            end if
+! compute the pressure from the known temperature
+! and density. include the correction if a k-equation
+! is present.
+ 100        w(i, j, k, irhoe) = w(ip, jp, kp, irho)*rgas*t
+            if (w(i, j, k, irhoe) .lt. 1.e-5_realtype*pinf) then
+              w(i, j, k, irhoe) = 1.e-5_realtype*pinf
+            else
+              w(i, j, k, irhoe) = w(i, j, k, irhoe)
+            end if
+            if (kpresent) w(i, j, k, irhoe) = w(i, j, k, irhoe) + &
+&               twothird*w(ip, jp, kp, irho)*w(ip, jp, kp, itu1)
+          end do
+        end do
+      end do
+    end select
+  end subroutine computepressure
 end module flowutils_b

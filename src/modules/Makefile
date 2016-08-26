@@ -47,12 +47,12 @@ FF90_OBJECTS_0 =	complexify.o\
 			communication.o\
 			block.o\
 			blockPointers.o\
+			kd_tree.o\
 
-FF90_OBJECTS_3 =	NKSolverVars.o\
+FF90_OBJECTS_1 =	NKSolverVars.o\
 			ANKSolverVars.o\
 			IOModule.o\
 			costFunctions.o\
-			kd_tree.o\
 			surfaceFamilies.o\
 			adtData.o\
 			kd_tree.o\
@@ -82,23 +82,24 @@ FF90_OBJECTS_3 =	NKSolverVars.o\
 			overset.o\
 			liftDistributionData.o\
 
-FF90_OBJECTS_5 = ../utils/utils.o\
-		../utils/myIsNaNC.o\
-		../ADT/adtUtils.o\
+FF90_OBJECTS_1b =	../utils/utils.o\
+			../utils/myIsNaNC.o\
+			../ADT/adtUtils.o\
 
-FF90_OBJECTS_6 =../utils/sorting.o\
+FF90_OBJECTS_2 =../utils/sorting.o\
 		../utils/flowUtils.o\
 		../ADT/adtBuild.o\
 		../ADT/adtLocalSearch.o\
 		../bcdata/BCData.o\
 
-FF90_OBJECTS_7 =../utils/haloExchange.o\
+FF90_OBJECTS_3 =../utils/haloExchange.o\
 		../ADT/adtSearch.o\
 
-FF90_OBJECTS_8 =../utils/haloExchange.o\
+FF90_OBJECTS_4 =../initFlow/variableReading.o\
 		../ADT/adtAPI.o\
 
-FF90_OBJECTS_9 =../wallDistance/wallDistance.o\
+FF90_OBJECTS_5 =../wallDistance/wallDistance.o\
+		../initFlow/initializeFlow.o\
 
 FILES_TO_COMPLEXIFY =  precision.F90\
 		 bleedFlows.f90\
@@ -157,12 +158,12 @@ default: all
 
 all:
 	$(MAKE) src_0
+	$(PMAKE) src_1
+	$(PMAKE) src_1b
+	$(PMAKE) src_2
 	$(PMAKE) src_3
+	$(PMAKE) src_4
 	$(PMAKE) src_5
-	$(PMAKE) src_6
-	$(PMAKE) src_7
-	$(PMAKE) src_8
-	$(PMAKE) src_9
 
 	cp -f *.mod $(SUMB_MODDIR)
 
@@ -195,9 +196,9 @@ complexify:
 #      ******************************************************************
 
 src_0:	$(FF90_OBJECTS_0)
+src_1:	$(FF90_OBJECTS_1)
+src_1b:	$(FF90_OBJECTS_1b)
+src_2:	$(FF90_OBJECTS_2)
 src_3:	$(FF90_OBJECTS_3)
+src_4:	$(FF90_OBJECTS_4)
 src_5:	$(FF90_OBJECTS_5)
-src_6:	$(FF90_OBJECTS_6)
-src_7:	$(FF90_OBJECTS_7)
-src_8:	$(FF90_OBJECTS_8)
-src_9:	$(FF90_OBJECTS_9)

@@ -4,12 +4,6 @@
 !  differentiation of getdirvector in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: winddirection
 !   with respect to varying inputs: alpha beta
-!
-!      file:          getdirvector.f90                                
-!      author:        andre c. marta                                  
-!      starting date: 10-25-2005                                      
-!      last modified: 10-26-2006                                      
-!
 subroutine getdirvector_d(refdirection, alpha, alphad, beta, betad, &
 & winddirection, winddirectiond, liftindex)
 !(xb,yb,zb,alpha,beta,xw,yw,zw)
@@ -51,8 +45,6 @@ subroutine getdirvector_d(refdirection, alpha, alphad, beta, betad, &
   real(kind=realtype) :: tmpd
   intrinsic sqrt
   real(kind=realtype) :: arg1
-!      begin execution.                                               
-!
 ! normalize the input vector.
   arg1 = refdirection(1)**2 + refdirection(2)**2 + refdirection(3)**2
   rnorm = sqrt(arg1)

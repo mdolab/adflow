@@ -6,12 +6,6 @@
 !   with respect to varying inputs: *x
 !   rw status of diff variables: *x:in-out
 !   plus diff mem management of: x:in
-!
-!       file:          xhalo.f90                                       
-!       author:        edwin van der weide,c.a.(sandy) mader            
-!       starting date: 02-23-2003                                      
-!       last modified: 08-12-2009                                      
-!
 subroutine xhalo_block_d()
 !
 !       xhalo determines the coordinates of the nodal halo's.          

@@ -3,10 +3,10 @@
 !
 !  differentiation of residual_block in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: gammainf *rev *p *dw *w *rlv
-!                x *si *sj *sk *(
+!                *x *si *sj *sk *(*viscsubface.tau)
 !   with respect to varying inputs: gammainf timeref rhoinf winf
 !                pinfcorr *rev *p *dw *w *rlv *x *vol *si *sj *sk
-!                radi *radj 
+!                *radi *radj *radk
 !   plus diff mem management of: rev:in aa:in wx:in wy:in wz:in
 !                p:in dw:in w:in rlv:in x:in qx:in qy:in qz:in
 !                ux:in vol:in uy:in uz:in si:in sj:in sk:in vx:in
@@ -189,9 +189,6 @@ subroutine residual_block_b()
   real(kind=realtype) :: tempd16
   real(kind=realtype) :: temp4
   real(kind=realtype) :: tempd15
-!
-!       begin execution                                                
-!
 ! set the value of rfil, which controls the fraction of the old
 ! dissipation residual to be used. this is only for the runge-kutta
 ! schemes; for other smoothers rfil is simply set to 1.0.
