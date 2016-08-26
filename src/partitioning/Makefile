@@ -66,7 +66,6 @@ FILES_TO_COMPLEXIFY = \
 		 initFineGridIblank.f90\
 		 internalBC.f90\
 		 loadBalance.f90\
-		 overwriteWallBCData.f90\
 		 partitionAndReadGrid.f90\
 		 qsortSubblocksOfCGNSType.f90\
 		 qsortSubfaceNonMatchType.f90\

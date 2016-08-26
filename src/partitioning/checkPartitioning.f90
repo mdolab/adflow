@@ -4,12 +4,9 @@ subroutine checkPartitioning(np,load_inbalance,face_inbalance)
   ! to determine what the load balancing will be for a given number of
   ! procs np. The output is load_inbalance and face_inbalance. 
 
-  use communication
-  use blockPointers
-  use cgnsGrid
-  use inputIO
-  use IOModule
-  use partitionMod
+  use constants
+  use communication, only : nProc
+  use partitionMod, only : ubvec
   implicit none
  
   integer(kind=intType),intent(in) ::np

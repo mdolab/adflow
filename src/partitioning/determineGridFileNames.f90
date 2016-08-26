@@ -13,13 +13,15 @@
 !       unsteady mode and some kind of interpolation is used for the   
 !       time spectral method.                                          
 !
-       use communication
-       use inputIO
-       use inputPhysics
-       use inputTimeSpectral
-       use inputUnsteady
-       use iteration
-       use partitionMod
+       use constants
+       use communication, only: myID, sumb_comm_world
+       use inputIO, only : gridFile
+       use inputPhysics, only :equationMode
+       use inputTimeSpectral, only : nTimeIntervalsSpectral
+       use inputUnsteady, only : nOldGridRead
+       use iteration, only : deforming_grid, nOldLevels
+       use partitionMod, only : gridFiles, interpolSpectral, &
+            nGridsRead, fileIDs
        use utils, only : terminate
        implicit none
 !

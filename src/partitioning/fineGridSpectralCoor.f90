@@ -4,14 +4,15 @@
 !       the first spectral solution from the known coordinates of the  
 !       first time instance.                                           
 !
-       use block
-       use inputPhysics
-       use inputTimeSpectral
-       use IOModule
-       use iteration
-       use monitor
-       use section
-       use partitionMod
+       use constants
+       use block, only: flowDoms, nDom
+       use inputPhysics, only : equationMode
+       use inputTimeSpectral, only : nTimeIntervalsSpectral
+       use IOModule, only : IOVar
+       use iteration, only : currentLevel
+       use monitor, only : timeUnsteady
+       use section, only : nSections, sections
+       use partitionMod, only : interpolSpectral, nGridsRead
        use utils, only : terminate
        implicit none
 !

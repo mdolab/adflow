@@ -4,12 +4,13 @@
 !       readZoneInfo reads the general information, like zone type     
 !       and physical dimensions, for the given zone/block.             
 !
-       use cgnsGrid
-       use communication
-       use flowVarRefState
-       use iteration
+       use constants
        use su_cgns
-       use partitionMod
+       use cgnsGrid, only : cgnsDoms, cgnsNDom, cgnsFamilies, cgnsNFamilies
+       use communication, only : sumb_comm_world, myid
+       use flowVarRefState, only : LRefSpecified, LRef
+       use iteration, only : changing_grid
+       use partitionMod, only : nGridsRead, fileIDs, gridFiles
        use utils, only : terminate, siAngle, siLen, siAngle
        use sorting, only: bsearchStrings
        implicit none
@@ -22,12 +23,6 @@
 
        logical, intent(inout) :: noUnits
 
-#ifdef USE_NO_CGNS
-
-       call terminate("readZoneInfo", &
-                      "Routine should not be called if no cgns support &
-                      &is selected.")
-#else
 !
 !      Local variables
 !
@@ -384,6 +379,5 @@
        cgnsDoms(nZone)%rotRate(2) = cgnsDoms(nZone)%rotRate(2)*mult
        cgnsDoms(nZone)%rotRate(3) = cgnsDoms(nZone)%rotRate(3)*mult
 
-#endif
 
        end subroutine readZoneInfo

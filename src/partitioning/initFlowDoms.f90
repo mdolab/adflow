@@ -4,9 +4,10 @@
 !       its pointers to null pointers, such that they do not have      
 !       random targets.                                                
 !
-       use block
-       use inputIteration
-       use inputTimeSpectral
+       use constants
+       use block, only : flowDoms, nDom
+       use inputIteration, only : nMGLevels, mgStartLevel
+       use inputTimeSpectral, only : nTimeIntervalsSpectral
        use utils, only : terminate, nullifyFlowDomPointers
        implicit none
 !

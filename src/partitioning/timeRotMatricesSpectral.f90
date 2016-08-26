@@ -8,9 +8,9 @@ subroutine timeRotMatricesSpectral
   !       for every section.                                             
   !
   use constants
-  use inputPhysics
-  use inputTimeSpectral
-  use section
+  use inputPhysics, only : equationMode
+  use inputTimeSpectral, only : rotMatrixSpectral
+  use section, only : sections, nSections
   use utils, only : terminate
   implicit none
   !

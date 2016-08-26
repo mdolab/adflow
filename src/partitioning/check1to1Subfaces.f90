@@ -7,11 +7,15 @@
 !       e.g. near a wing tip in an H-topology in spanwise direction.   
 !
        use constants
-       use blockPointers
-       use cgnsGrid
-       use communication
+       use blockPointers, only : nDom, nBocos, inBeg, inEnd, jnBeg, &
+            jnEnd, knBeg, knEnd, n1to1, nbkGlobal, neighProc, dinEnd, &
+            dinBeg, djnBeg, djnEnd, dknBeg, dknEnd, x, cgnsSubFace, &
+            neighBlock, l1, l2, l3
+       use cgnsGrid, only : cgnsDoms, cgnsNDom
+       use communication, only : myID, sumb_comm_world, nProc, sendRequests, &
+            recvRequests
        use inputPhysics
-       use inputTimeSpectral
+       use inputTimeSpectral, only : nTimeIntervalsSpectral
        use utils, only : delta, setPointers, terminate
        implicit none
 !

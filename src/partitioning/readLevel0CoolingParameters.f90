@@ -6,11 +6,11 @@
 !       This model has been developed by Pratt and Whitney and should  
 !       not be given to third parties.                                 
 !
-       use block
-       use cgnsGrid
-       use communication
-       use coolingModelLevel0
-       use inputIO
+       use constants
+       use block, only : flowDoms
+       use cgnsGrid, only : cgnsDoms
+       use communication, only : myID, sumb_comm_world
+       !use inputIO
        use inputIteration
        use killSignals
        implicit none

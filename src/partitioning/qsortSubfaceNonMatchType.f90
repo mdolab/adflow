@@ -4,6 +4,7 @@
 !       datatype subfaceNonMatchType in increasing order based on the  
 !       <= operator for this derived data type.                        
 !
+       use constants
        use partitionMod
        use utils, only : terminate
        implicit none

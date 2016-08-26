@@ -5,9 +5,10 @@
 !       zone/block.                                                    
 !
        use constants
-       use cgnsGrid
-       use communication
        use su_cgns
+       use cgnsGrid, only : cgnsDoms, cgnsNDom, cgnsBcDatasetType, &
+            cgnsFamilies, cgnsBcdataArray, cgnsNFamilies
+       use communication, only : myID, sumb_comm_world
        use utils, only: terminate, setcgnsRealType
        use sorting, only: bsearchStrings
        implicit none
@@ -44,13 +45,7 @@
        integer(kind=intType) :: internalBC
        logical               :: checkForDoubleBoundFace
 
-#ifdef USE_NO_CGNS
 
-       call terminate("readBocos", &
-                      "Routine should not be called if no cgns support &
-                      &is selected.")
-
-#else
        ! Read the number of boundary conditions in this zone/block.
        ! Again the reading takes place via an integer.
 
@@ -725,7 +720,6 @@
 
          end subroutine readBCDataArrays
 
-#endif
 
        end subroutine readBocos
 

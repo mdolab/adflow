@@ -3,9 +3,9 @@
 !       checkLoadBalance determines whether or not the load balance    
 !       for the cells and faces is met.                                
 !
-       use communication
        use constants
-       use partitionMod
+       use communication, only : sumb_comm_world, myid, nProc
+       use partitionMod, only : blocks, ubvec, part, nBlocks
        implicit none
 !
 !      Subroutine arguments.

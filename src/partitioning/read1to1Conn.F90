@@ -5,9 +5,9 @@
 !       for the given zone/block.                                      
 !
        use constants
-       use cgnsGrid
-       use communication
        use su_cgns
+       use cgnsGrid, only : cgnsDoms, cgnsNDom
+       use communication, only : sumb_comm_world, myID
        use utils, only : terminate
        implicit none
 !
@@ -23,13 +23,6 @@
        integer, dimension(3,2) :: zoneRange, donorRange
        integer, dimension(3)   :: transform
 
-#ifdef USE_NO_CGNS
-
-       call terminate("read1to1Conn", &
-                      "Routine should not be called if no cgns support &
-                      &is selected.")
-
-#else
        ! Determine the number of 1 to 1 connectivities stored in the
        ! CGNS file for this zone.
 
@@ -89,6 +82,6 @@
 
        enddo
 
-#endif
+
 
        end subroutine read1to1Conn
