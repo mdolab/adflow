@@ -49,9 +49,7 @@ FF90_OBJECTS_0 =	complexify.o\
 			blockPointers.o\
 			kd_tree.o\
 
-FF90_OBJECTS_1 =	NKSolverVars.o\
-			ANKSolverVars.o\
-			IOModule.o\
+FF90_OBJECTS_1 =	IOModule.o\
 			costFunctions.o\
 			surfaceFamilies.o\
 			adtData.o\
@@ -99,6 +97,7 @@ FF90_OBJECTS_3 =../utils/haloExchange.o\
 
 FF90_OBJECTS_4 =../inputParam/inputParamRoutines.o\
 		../ADT/adtAPI.o\
+		../NKSolver/NKSolvers.o\
 
 FF90_OBJECTS_5 =../wallDistance/wallDistance.o\
 		../initFlow/initializeFlow.o\
@@ -110,7 +109,6 @@ FILES_TO_COMPLEXIFY =  precision.F90\
 		 liftDistributionData.F90\
 		 killSignals.f90\
 		 communication.f90\
-		 NKSolverVars.F90\
 		 ANKSolverVars.F90\
 		 block.F90\
 		 IOModule.f90\
