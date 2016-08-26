@@ -1,10 +1,3 @@
-!
-!       File:          ktSolve.f90                                     
-!       Author:        Georgi Kalitzin, Edwin van der Weide,           
-!                      Steve Repsher (blanking)                        
-!       Starting date: 07-08-2003                                      
-!       Last modified: 07-05-2005                                      
-!
        subroutine ktSolve(resOnly)
 !
 !       ktSolve solves the k-tau equations of the k-tau model          

@@ -1,9 +1,3 @@
-!
-!       File:          writeCGNSKtauInfo.F90                           
-!       Author:        Edwin van der Weide                             
-!       Starting date: 04-12-2003                                      
-!       Last modified: 06-29-2005                                      
-!
        subroutine writeCGNSKtauInfo(cgnsInd, cgnsBase)
 !
 !       WriteCGNSKtauInfo writes information about the k-tau           

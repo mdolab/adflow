@@ -1,9 +1,3 @@
-!
-!       File:          defaultSurfaceOut.f90                           
-!       Author:        Edwin van der Weide                             
-!       Starting date: 03-26-2003                                      
-!       Last modified: 03-23-2005                                      
-!
        subroutine defaultSurfaceOut
 !
 !       defaultSurfaceOut sets the default set of surface variables    

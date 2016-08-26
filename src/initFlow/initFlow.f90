@@ -1,9 +1,3 @@
-!
-!       File:          initFlow.f90                                    
-!       Author:        Edwin van der Weide                             
-!       Starting date: 03-06-2003                                      
-!       Last modified: 09-13-2007                                      
-!
        subroutine initFlow
 !
 !       initFlow sets the prescribed boundary data, allocates the      

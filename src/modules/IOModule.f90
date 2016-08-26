@@ -1,9 +1,3 @@
-!
-!       File:          IOModule.f90                                    
-!       Author:        Edwin van der Weide                             
-!       Starting date: 07-02-2005                                      
-!       Last modified: 10-31-2005                                      
-!
        module IOModule
 !
 !       Constants and variables used in the IO routines.               

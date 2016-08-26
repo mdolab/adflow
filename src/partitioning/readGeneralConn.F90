@@ -1,9 +1,3 @@
-!
-!       File:          readGeneralConn.F90                             
-!       Author:        Edwin van der Weide, Steve Repsher              
-!       Starting date: 07-14-2002                                      
-!       Last modified: 11-07-2005                                      
-!
        subroutine readGeneralConn(cgnsInd, cgnsBase, nZone)
 !
 !       readGeneralConn reads and converts the cgns general            

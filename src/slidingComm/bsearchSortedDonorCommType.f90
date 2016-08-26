@@ -1,9 +1,3 @@
-!
-!       File:          bsearchSortedDonorCommType.f90                  
-!       Author:        Edwin van der Weide                             
-!       Starting date: 11-17-2003                                      
-!       Last modified: 03-25-2005                                      
-!
        function bsearchSortedDonorCommType(key, base, nn)
 !
 !       bsearchSortedDonorCommType returns the index in base where     

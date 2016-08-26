@@ -1,10 +1,3 @@
-!
-!       File:          SSTSolve.f90                                    
-!       Author:        Georgi Kalitzin, Edwin van der Weide,           
-!                      Steve Repsher (blanking)                        
-!       Starting date: 07-31-2003                                      
-!       Last modified: 07-05-2005                                      
-!
        subroutine SSTSolve(resOnly)
 !
 !       SSTSolve solves the turbulent transport equations for          

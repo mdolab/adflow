@@ -1,9 +1,3 @@
-!
-!       File:          releaseMemSliding.f90                           
-!       Author:        Edwin van der Weide                             
-!       Starting date: 09-26-2003                                      
-!       Last modified: 03-25-2005                                      
-!
        subroutine releaseMemSliding(level)
 !
 !       releaseMemSliding releases the memory of the sliding mesh      

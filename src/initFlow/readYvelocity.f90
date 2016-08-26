@@ -1,9 +1,3 @@
-!
-!       File:          readYvelocity.f90                               
-!       Author:        Edwin van der Weide                             
-!       Starting date: 04-21-2003                                      
-!       Last modified: 10-07-2005                                      
-!
        subroutine readYvelocity(nTypeMismatch)
 !
 !       readYvelocity reads the y-velocity variable from the given     

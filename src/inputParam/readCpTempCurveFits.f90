@@ -1,9 +1,3 @@
-!
-!       File:          readCpTempCurveFits.f90                         
-!       Author:        Edwin van der Weide                             
-!       Starting date: 09-11-2003                                      
-!       Last modified: 11-09-2005                                      
-!
        subroutine readCpTempCurveFits
 !
 !       readCpTempCurveFits reads the curve fits for the cp as a       

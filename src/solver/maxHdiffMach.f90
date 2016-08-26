@@ -1,9 +1,3 @@
-!
-!       File:          maxHdiffMach.f90                                
-!       Author:        Edwin van der Weide                             
-!       Starting date: 04-01-2003                                      
-!       Last modified: 06-12-2005                                      
-!
        subroutine maxHdiffMach(hdiffMax, MachMax)
 !
 !       maxHdiffMach determines the maximum value of the Mach number   

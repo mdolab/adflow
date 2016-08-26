@@ -1,9 +1,3 @@
-!
-!       File:          residualAveraging.f90                           
-!       Author:        Juan J. Alonso, Steve Repsher (blanking)        
-!       Starting date: 09-17-2004                                      
-!       Last modified: 08-25-2005                                      
-!
        subroutine residualAveraging
 !
 !       Implicit residual smoothing is a simple procedure that         

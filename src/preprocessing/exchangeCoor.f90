@@ -1,9 +1,3 @@
-!
-!       File:          exchangeCoor.F90                                
-!       Author:        Edwin van der Weide                             
-!       Starting date: 02-24-2003                                      
-!       Last modified: 06-12-2005                                      
-!
        subroutine exchangeCoor(level)
 !
 !       ExchangeCoor exchanges the coordinates of the given grid       

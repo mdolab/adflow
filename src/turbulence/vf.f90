@@ -1,9 +1,3 @@
-!
-!       File:          vf.f90                                          
-!       Author:        Georgi Kalitzin                                 
-!       Starting date: 04-14-2004                                      
-!       Last modified: 04-12-2005                                      
-!
        subroutine vf(resOnly)
 !
 !       vf solves the transport equations for the v2-f model           

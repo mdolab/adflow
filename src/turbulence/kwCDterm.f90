@@ -1,9 +1,3 @@
-!
-!       File:          kwCDterm.f90                                    
-!       Author:        Georgi Kalitzin, Edwin van der Weide            
-!       Starting date: 07-09-2003                                      
-!       Last modified: 04-12-2005                                      
-!
        subroutine kwCDterm
 !
 !       kwCDterm computes the cross-diffusion term in the omega-eqn    

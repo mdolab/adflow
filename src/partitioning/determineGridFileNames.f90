@@ -1,9 +1,3 @@
-!
-!       File:          determineGridFileNames.f90                      
-!       Author:        Edwin van der Weide                             
-!       Starting date: 06-21-2005                                      
-!       Last modified: 10-10-2005                                      
-!
        subroutine determineGridFileNames
 !
 !       determineGridFileNames determines the number and names of the  

@@ -1,9 +1,3 @@
-!
-!       File:          defaultIsoOut.f90                               
-!       Author:        Gaetan Kenway                                   
-!       Starting date: 07-21-2013                                      
-!       Last modified: 07-21-2013                                      
-!
        subroutine defaultIsoOut
 !
 !       defaultIsoOut sets the default set of additional            

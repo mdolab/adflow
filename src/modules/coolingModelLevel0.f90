@@ -1,9 +1,3 @@
-!
-!       File:          coolingModelLevel0.f90                          
-!       Author:        Edwin van der Weide                             
-!       Starting date: 04-27-2005                                      
-!       Last modified: 04-29-2005                                      
-!
        module coolingModelLevel0
 !
 !       Module which contains the derived data type as well as the     

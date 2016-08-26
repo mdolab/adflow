@@ -1,9 +1,3 @@
-!
-!       File:          computePressure.f90                             
-!       Author:        Edwin van der Weide                             
-!       Starting date: 03-14-2003                                      
-!       Last modified: 11-19-2007                                      
-!
        subroutine computePressure(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd, &
                                   pointerOffset)
 !

@@ -1,9 +1,3 @@
-!
-!       File:          solverSteady.f90                                
-!       Author:        Edwin van der Weide                             
-!       Starting date: 03-12-2003                                      
-!       Last modified: 03-26-2005                                      
-!
        subroutine solverSteady
 !
 !       solverSteady solves the steady equations for the multigrid     

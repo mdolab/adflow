@@ -1,9 +1,3 @@
-!
-!       File:          allocMemHaloList.f90                            
-!       Author:        Edwin van der Weide                             
-!       Starting date: 02-12-2003                                      
-!       Last modified: 11-29-2007                                      
-!
        subroutine allocMemHaloList(level)
 !
 !       allocMemHaloList allocates the memory for the variables        

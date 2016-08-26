@@ -1,10 +1,3 @@
-!
-!       File:          block.f90                                       
-!       Author:        Edwin van der Weide, Steve Repsher,             
-!                      Seonghyeon Hahn                                 
-!       Starting date: 12-19-2002                                      
-!       Last modified: 11-21-2007                                      
-!
 module block
   !
   !       This module contains the definition of the derived data type   

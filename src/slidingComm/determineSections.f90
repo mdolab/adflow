@@ -1,9 +1,3 @@
-!
-!       File:          determineSections.f90                           
-!       Author:        Edwin van der Weide                             
-!       Starting date: 12-09-2003                                      
-!       Last modified: 06-12-2005                                      
-!
        subroutine determineSections
 !
 !       determineSections determines the number of sections, i.e.      

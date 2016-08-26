@@ -1,9 +1,3 @@
-!
-!       File:          readPressure.f90                                
-!       Author:        Edwin van der Weide                             
-!       Starting date: 04-21-2003                                      
-!       Last modified: 11-20-2007                                      
-!
        subroutine readPressure(nTypeMismatch)
 !
 !       readPressure reads the pressure variable from the given place  

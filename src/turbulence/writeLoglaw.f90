@@ -1,9 +1,3 @@
-!
-!       File:          writeLoglaw.f90                                 
-!       Author:        Georgi Kalitzin                                 
-!       Starting date: 08-24-2004                                      
-!       Last modified: 04-12-2004                                      
-!
        subroutine writeLoglaw
 !
 !       writeLoglaw writes a profile of the velocity and turbulence    

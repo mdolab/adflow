@@ -1,9 +1,3 @@
-!
-!       File:          determinePeriodicFaces.f90                      
-!       Author:        Edwin van der Weide                             
-!       Starting date: 07-10-2003                                      
-!       Last modified: 11-28-2007                                      
-!
        subroutine determinePeriodicFaces
 !
 !       determinePeriodicFaces determines and stores the number of     

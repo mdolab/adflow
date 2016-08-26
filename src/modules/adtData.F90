@@ -1,9 +1,3 @@
-!
-!      File:          adtData.f90                                     
-!      Author:        Edwin van der Weide                             
-!      Starting date: 11-27-2004                                      
-!      Last modified: 02-17-2005                                      
-!
       module adtData
 !
 !      Module, which defines the derived data types and the arrays to 

@@ -1,9 +1,3 @@
-!
-!       File:          shiftCoorAndVolumes.f90                         
-!       Author:        Edwin van der Weide                             
-!       Starting date: 02-03-2004                                      
-!       Last modified: 03-23-2005                                      
-!
        subroutine shiftCoorAndVolumes
 !
 !       shiftCoorAndVolumes shifts the owned coordinates and           

@@ -1,9 +1,3 @@
-!
-!       File:          iteration.f90                                   
-!       Author:        Edwin van der Weide                             
-!       Starting date: 03-13-2003                                      
-!       Last modified: 09-20-2007                                      
-!
        module iteration
 !
 !       This module contains the iteration parameters mainly used in   

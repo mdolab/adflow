@@ -1,9 +1,3 @@
-!
-!       File:          readXmomentum.f90                               
-!       Author:        Edwin van der Weide                             
-!       Starting date: 05-09-2004                                      
-!       Last modified: 09-10-2007                                      
-!
        subroutine readXmomentum(nTypeMismatch)
 !
 !       readXmomentum reads the x-momentum variable from the given     

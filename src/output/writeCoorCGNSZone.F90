@@ -1,9 +1,3 @@
-!
-!       File:          writeCoorCGNSZone.F90                           
-!       Author:        Edwin van der Weide                             
-!       Starting date: 01-20-2004                                      
-!       Last modified: 10-12-2005                                      
-!
        subroutine writeCoorCGNSZone(zone, cgnsZone)
 !
 !       writeCoorCGNSZone writes the coordinates of the given zone     

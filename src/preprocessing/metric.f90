@@ -1,9 +1,3 @@
-!
-!       File:          metric.f90                                      
-!       Author:        Edwin van der Weide                             
-!       Starting date: 02-25-2003                                      
-!       Last modified: 08-23-2005                                      
-!
        module checkVolBlock
 !
 !       Local module, which contains the definition of the derived     

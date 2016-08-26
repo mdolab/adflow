@@ -1,9 +1,3 @@
-!
-!       File:          curveFit.f90                                    
-!       Author:        Georgi Kalitzin, Edwin van der Weide            
-!       Starting date: 03-02-2004                                      
-!       Last modified: 04-12-2005                                      
-!
        function curveUpRe(Re)
 !
 !       curveUpRe determines the value of the nonDimensional           

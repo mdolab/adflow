@@ -1,9 +1,3 @@
-!
-!       File:          readXvelocity.f90                               
-!       Author:        Edwin van der Weide                             
-!       Starting date: 04-21-2003                                      
-!       Last modified: 09-10-2007                                      
-!
        subroutine readXvelocity(nTypeMismatch)
 !
 !       readXvelocity reads the x-velocity variable from the given     

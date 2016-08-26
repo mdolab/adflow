@@ -1,9 +1,3 @@
-!
-!       File:          maxEddyv.f90                                    
-!       Author:        Edwin van der Weide                             
-!       Starting date: 04-25-2003                                      
-!       Last modified: 06-12-2005                                      
-!
        subroutine maxEddyv(eddyvisMax)
 !
 !       maxEddyv determines the maximum value of the eddy viscosity    

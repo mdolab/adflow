@@ -1,9 +1,3 @@
-!
-!      File:          getDirVector.f90                                
-!      Author:        Andre C. Marta                                  
-!      Starting date: 10-25-2005                                      
-!      Last modified: 10-26-2006                                      
-!
       subroutine getDirVector(refDirection, alpha, beta,&
            windDirection,liftIndex)
         !(xb,yb,zb,alpha,beta,xw,yw,zw)

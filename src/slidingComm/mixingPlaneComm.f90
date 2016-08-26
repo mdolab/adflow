@@ -1,9 +1,3 @@
-!
-!       File:          mixingPlaneComm.f90                             
-!       Author:        Edwin van der Weide                             
-!       Starting date: 01-27-2005                                      
-!       Last modified: 03-25-2005                                      
-!
        subroutine mixingPlaneComm(level, color)
 !
 !       mixingPlaneComm determines the communication/interpolation     

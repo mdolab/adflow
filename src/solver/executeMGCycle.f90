@@ -1,9 +1,3 @@
-!
-!       File:          executeMGCycle.f90                              
-!       Author:        Edwin van der Weide                             
-!       Starting date: 03-15-2003                                      
-!       Last modified: 08-25-2005                                      
-!
        subroutine executeMGCycle
 !
 !       executeMGCycle performs a multigrid cycle defined by           

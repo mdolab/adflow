@@ -1,9 +1,3 @@
-!
-!       File:          saNuFromEddyRatio.f90                           
-!       Author:        Edwin van der Weide                             
-!       Starting date: 06-22-2003                                      
-!       Last modified: 04-12-2005                                      
-!
        function saNuKnownEddyRatio(eddyRatio, nuLam)
 !
 !       saNuKnownEddyRatio computes the Spalart-Allmaras transport     

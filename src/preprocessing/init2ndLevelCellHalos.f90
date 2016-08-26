@@ -1,9 +1,3 @@
-!
-!       File:          init2ndLevelCellHalos.f90                       
-!       Author:        Edwin van der Weide                             
-!       Starting date: 02-04-2003                                      
-!       Last modified: 11-29-2007                                      
-!
        subroutine init2ndLevelCellHalos
 !
 !       init2ndLevelCellHalos initializes the 2nd level cell halo      

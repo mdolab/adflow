@@ -1,9 +1,3 @@
-!
-!       File:          prodSmag2.f90                                   
-!       Author:        Georgi Kalitzin, Edwin van der Weide            
-!       Starting date: 08-01-2003                                      
-!       Last modified: 04-12-2005                                      
-!
 subroutine prodSmag2
   !
   !       prodSmag2 computes the term:                                   

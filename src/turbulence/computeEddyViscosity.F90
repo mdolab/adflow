@@ -1,9 +1,3 @@
-!
-!       File:          computeEddyViscosity.f90                        
-!       Author:        Georgi Kalitzin, Edwin van der Weide            
-!       Starting date: 03-10-2003                                      
-!       Last modified: 06-12-2005                                      
-!
        subroutine computeEddyViscosity
 !
 !       computeEddyViscosity computes the eddy viscosity in the        

@@ -1,9 +1,3 @@
-!
-!       File:          solverUnsteadyBDF.F90                           
-!       Author:        Edwin van der Weide                             
-!       Starting date: 03-13-2003                                      
-!       Last modified: 11-21-2007                                      
-  !
   !       solverUnsteadyWrap is a wrapper of solverUnsteady_ALE for      
   !       MD coupling at python level.                                   
   !       The original solver is dismantled to seperate out              

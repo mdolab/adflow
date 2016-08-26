@@ -1,9 +1,3 @@
-!
-!       File:          writeCgnsSurfaceSol.F90                         
-!       Author:        Edwin van der Weide                             
-!       Starting date: 05-15-2003                                      
-!       Last modified: 10-11-2005                                      
-!
        subroutine writeCGNSSurfaceSol
 !
 !       writeCGNSSurfaceSol and its subroutines write the surface      

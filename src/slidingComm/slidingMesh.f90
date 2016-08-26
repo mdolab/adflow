@@ -1,9 +1,3 @@
-!
-!       File:          slidingMesh.f90                                 
-!       Author:        Edwin van der Weide                             
-!       Starting date: 10-02-2003                                      
-!       Last modified: 04-08-2005                                      
-!
        subroutine slidingMesh(level, sps, color)
 !
 !       slidingMesh updates the sliding mesh communication pattern     

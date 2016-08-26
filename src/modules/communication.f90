@@ -1,9 +1,3 @@
-!
-!       File:          communication.F90                               
-!       Author:        Edwin van der Weide, Steve Repsher              
-!       Starting date: 12-10-2002                                      
-!       Last modified: 06-12-2005                                      
-!
        module communication
 !
 !       Contains the variable definition of the processor number,      

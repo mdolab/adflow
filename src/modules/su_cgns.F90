@@ -1,9 +1,3 @@
-!
-!       File:          su_cgns.F90                                     
-!       Author:        Edwin van der Weide                             
-!       Starting date: 02-16-2005                                      
-!       Last modified: 06-12-2005                                      
-!
        module su_cgns
 !
 !       Module that contains the definition of the cgns parameters.    

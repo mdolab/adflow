@@ -1,9 +1,3 @@
-!
-!       File:          viscSubfaceInfo.f90                             
-!       Author:        Edwin van der Weide                             
-!       Starting date: 07-23-2003                                      
-!       Last modified: 06-12-2005                                      
-!
        subroutine viscSubfaceInfo(level)
 !
 !       viscSubfaceInfo allocates the memory for the storage of the    

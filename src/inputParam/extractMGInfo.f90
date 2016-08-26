@@ -1,9 +1,3 @@
-!
-!       File:          extractMGInfo.f90                               
-!       Author:        Edwin van der Weide                             
-!       Starting date: 12-13-2002                                      
-!       Last modified: 11-27-2007                                      
-!
        subroutine extractMGInfo
 !
 !       extractMgInfo creates the integer array cycleStrategy from     

@@ -1,9 +1,3 @@
-!
-!       File:          readDensity.f90                                 
-!       Author:        Edwin van der Weide                             
-!       Starting date: 04-18-2003                                      
-!       Last modified: 09-10-2007                                      
-!
        subroutine readDensity(nTypeMismatch)
 !
 !       readDensity reads the density from the given place in the      

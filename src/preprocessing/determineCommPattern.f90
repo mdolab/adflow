@@ -1,9 +1,3 @@
-!
-!       File:          determineCommPattern.f90                        
-!       Author:        Edwin van der Weide                             
-!       Starting date: 01-20-2003                                      
-!       Last modified: 11-30-2007                                      
-!
        subroutine determineCommPattern(level)
 !
 !       determineCommPattern determines the communication pattern      

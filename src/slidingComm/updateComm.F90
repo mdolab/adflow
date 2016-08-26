@@ -1,9 +1,3 @@
-!
-!       File:          updateComm.f90                                  
-!       Author:        Edwin van der Weide                             
-!       Starting date: 11-14-2003                                      
-!       Last modified: 03-25-2005                                      
-!
        module updateComm
 !
 !       Local module to store the derived data types for the temporary 

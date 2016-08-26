@@ -1,10 +1,3 @@
-!
-!       File:          saSolve.f90                                     
-!       Author:        Georgi Kalitzin, Edwin van der Weide,           
-!                      Steve Repsher (blanking)                        
-!       Starting date: 06-11-2003                                      
-!       Last modified: 07-05-2005                                      
-!
        subroutine saSolve(resOnly)
 !
 !       saSolve solves the turbulent transport equation for the        

@@ -1,9 +1,3 @@
-!
-!       File:          graphPartitioning.f90                           
-!       Author:        Edwin van der Weide, Steve Repsher              
-!       Starting date: 03-22-2004                                      
-!       Last modified: 11-22-2007                                      
-!
        subroutine graphPartitioning(emptyPartitions, commNeglected)
 !
 !       graphPartitioning partitions the corresponding graph of the    

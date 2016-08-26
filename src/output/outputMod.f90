@@ -1,9 +1,3 @@
-!
-!       File:          outputMod.f90                                   
-!       Author:        Edwin van der Weide, Steve Repsher              
-!       Starting date: 08-13-2004                                      
-!       Last modified: 03-29-2006                                      
-!
        module outputMod
 !
 !       This local module contains variables used when writing the     

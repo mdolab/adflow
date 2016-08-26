@@ -1,9 +1,3 @@
-!
-!       File:          updateParamfile.f90                             
-!       Author:        Edwin van der Weide                             
-!       Starting date: 04-11-2003                                      
-!       Last modified: 03-29-2006                                      
-!
        subroutine updateParamfile
 !
 !       updateParamfile updates the parameter file, such that a        

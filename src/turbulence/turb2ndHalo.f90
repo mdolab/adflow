@@ -1,9 +1,3 @@
-!
-!       File:          turb2ndHalo.f90                                 
-!       Author:        Edwin van der Weide                             
-!       Starting date: 06-16-2003                                      
-!       Last modified: 06-12-2005                                      
-!
        subroutine turb2ndHalo(nn)
 !
 !       turb2ndHalo sets the turbulent variables in the second halo    

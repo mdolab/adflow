@@ -1,9 +1,3 @@
-!
-!       File:          setUniformFlow.f90                              
-!       Author:        Edwin van der Weide                             
-!       Starting date: 05-13-2003                                      
-!       Last modified: 06-12-2005                                      
-!
        subroutine setUniformFlow
 !
 !       setUniformFlow set the flow variables of all local blocks on   

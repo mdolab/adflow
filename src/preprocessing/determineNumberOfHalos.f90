@@ -1,9 +1,3 @@
-!
-!       File:          determineCommPattern.f90                        
-!       Author:        Edwin van der Weide                             
-!       Starting date: 01-20-2003                                      
-!       Last modified: 11-28-2007                                      
-!
        subroutine determineNumberOfHalos(level)
 !
 !       determineNumberOfHalos determines the amount of 1st and 2nd    

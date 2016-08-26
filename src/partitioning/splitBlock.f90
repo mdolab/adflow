@@ -1,9 +1,3 @@
-!
-!       File:          splitBlock.f90                                  
-!       Author:        Edwin van der Weide                             
-!       Starting date: 03-23-2004                                      
-!       Last modified: 10-10-2005                                      
-!
        subroutine splitBlock(compBlock, nSub, nCells, ranges)
 !
 !       splitBlock tries to split the given computational block into   

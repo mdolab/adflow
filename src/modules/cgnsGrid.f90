@@ -1,10 +1,3 @@
-!
-!       File:          cgnsGrid.f90                                    
-!       Author:        Edwin van der Weide, Steve Repsher,             
-!                      Seonghyeon Hahn                                 
-!       Starting date: 12-17-2002                                      
-!       Last modified: 10-29-2007                                      
-!
        module cgnsGrid
 !
 !       This module contains the derived data type for storing the     

@@ -1,9 +1,3 @@
-!
-!       File:          setDiffSizes.f90                                
-!       Author:        Peter Zhoujie Lyu	                        
-!       Starting date: 03-27-2013                                      
-!       Last modified: 03-27-2013                                      
-!
 subroutine setDiffSizes
   !
   !       This routine set the sizes for the pointers that will be       

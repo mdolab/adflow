@@ -38,12 +38,6 @@ subroutine timeStep(onlyRadii)
 
 end subroutine timeStep
 #endif
-!
-!       File:          timeStep.f90                                    
-!       Author:        Edwin van der Weide                             
-!       Starting date: 03-17-2003                                      
-!       Last modified: 06-28-2005                                      
-!
 subroutine timeStep_block(onlyRadii)
   !
   !       timeStep computes the time step, or more precisely the time    

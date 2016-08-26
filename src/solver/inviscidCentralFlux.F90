@@ -1,9 +1,3 @@
-!
-!       File:          inviscidCentralFlux.f90                         
-!       Author:        Edwin van der Weide                             
-!       Starting date: 03-24-2003                                      
-!       Last modified: 10-29-2007                                      
-!
 subroutine inviscidCentralFlux
   !
   !       inviscidCentralFlux computes the Euler fluxes using a central  

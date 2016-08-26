@@ -1,9 +1,3 @@
-!
-!       File:          storeOldSolInBuffer.f90                         
-!       Author:        Edwin van der Weide                             
-!       Starting date: 05-08-2004                                      
-!       Last modified: 06-29-2005                                      
-!
        subroutine storeOldSolInBuffer(buffer, ind, wID, &
                                       iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
 !

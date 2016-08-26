@@ -1,9 +1,3 @@
-!
-!       File:          inviscidDissFluxCuspCoarse.f90                  
-!       Author:        Edwin van der Weide                             
-!       Starting date: 03-25-2003                                      
-!       Last modified: 08-25-2005                                      
-!
        subroutine inviscidDissFluxCuspCoarse
 !
 !       inviscidDissFluxCuspCoarse computes the artificial dissipation 

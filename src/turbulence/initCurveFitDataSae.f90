@@ -1,9 +1,3 @@
-!
-!       File:          initCurveFitDataSae.f90                         
-!       Author:        Georgi Kalitzin, Edwin van der Weide            
-!       Starting date: 08-20-2004                                      
-!       Last modified: 04-12-2005                                      
-!
        subroutine initCurveFitDataSae
 !
 !       initCurveFitDataSae contains the curve fit constants for       

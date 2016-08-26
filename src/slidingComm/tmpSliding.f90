@@ -1,9 +1,3 @@
-!
-!       File:          tmpSliding.f90                                  
-!       Author:        Edwin van der Weide                             
-!       Starting date: 09-26-2003                                      
-!       Last modified: 03-25-2005                                      
-!
        module tmpSliding
 !
 !       tmpSliding stores the derived datatype for the temporary       

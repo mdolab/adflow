@@ -415,12 +415,6 @@ contains
     end do orphanLoop
 
   end subroutine orphanAverage
-  !
-  !       File:          whalo1to1.f90                                   
-  !       Author:        Edwin van der Weide                             
-  !       Starting date: 03-07-2003                                      
-  !       Last modified: 09-16-2005                                      
-  !
   subroutine whalo1to1(level, start, end, commPressure,       &
        commVarGamma, commLamVis, commEddyVis, &
        commPattern, internal)
@@ -916,12 +910,6 @@ contains
     deallocate(recvBufInt, sendBufInt)
 
   end subroutine whalo1to1IntGeneric
-  !
-  !       File:          whalo1to1b.f90                                   
-  !       Author:        Gaetan K.W. Kenway                              
-  !       Starting date: 01-22-2015                                      
-  !       Last modified: 01-22-2015                                      
-  !
   subroutine whalo1to1_b(level, start, end, commPressure,       &
        commVarGamma, commLamVis, commEddyVis, &
        commPattern, internal)
@@ -1280,12 +1268,6 @@ contains
 
   end subroutine whalo1to1_d
 
-  !
-  !       File:          whaloMixing.f90                                 
-  !       Author:        Edwin van der Weide                             
-  !       Starting date: 01-26-2005                                      
-  !       Last modified: 09-16-2005                                      
-  !
   subroutine whaloMixing(level, startIn, endIn, commPressure,   &
        commVarGamma, commLamVis, commEddyVis, &
        nLayers)
@@ -2221,12 +2203,6 @@ contains
 
   end subroutine whalo2_d
 
-  !
-  !       File:          wOverset.f90                                    
-  !       Author:        Steve Repsher, Gaetan Kenway                    
-  !       Starting date: 02-04-2005                                      
-  !       Last modified: 10-01-2015                                      
-  !
   subroutine wOverset(level, start, end, commPressure,       &
        commVarGamma, commLamVis, commEddyVis, &
        commPattern, internal, nlev)
@@ -3483,12 +3459,6 @@ contains
 
   end subroutine wOverset_d
 
-  !
-  !       File:          resHalo1.f90                                    
-  !       Author:        Edwin van der Weide                             
-  !       Starting date: 04-15-2003                                      
-  !       Last modified: 06-12-2005                                      
-  !
   subroutine resHalo1(level, start, end)
     !
     !       resHalo1 determines the residuals in the 1st layer of halo     

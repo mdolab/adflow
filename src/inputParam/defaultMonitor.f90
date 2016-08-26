@@ -1,9 +1,3 @@
-!
-!       File:          defaultMonitor.f90                              
-!       Author:        Edwin van der Weide                             
-!       Starting date: 03-25-2003                                      
-!       Last modified: 04-12-2005                                      
-!
        subroutine defaultMonitor
 !
 !       defaultMonitor sets the default set of variables to be         

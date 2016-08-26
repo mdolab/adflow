@@ -1,9 +1,3 @@
-!
-!       File:          killSignals.f90                                
-!       Author:        Edwin van der Weide                             
-!       Starting date: 03-12-2003                                      
-!       Last modified: 08-14-2005                                      
-!
        module killSignals
 !
 !       This module contains the variables used to handle the          

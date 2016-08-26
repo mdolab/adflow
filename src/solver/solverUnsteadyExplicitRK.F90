@@ -1,9 +1,3 @@
-!
-!       File:          solverUnsteadyExplicitRK.F90                    
-!       Author:        Edwin van der Weide                             
-!       Starting date: 08-13-2006                                      
-!       Last modified: 11-28-2007                                      
-!
        subroutine solverUnsteadyExplicitRK
 !
 !       solverUnsteadyExplicitRK solves the unsteady equations using   

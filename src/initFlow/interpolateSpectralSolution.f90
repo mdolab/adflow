@@ -1,9 +1,3 @@
-!
-!       File:          interpolateSpectralSolution.f90                 
-!       Author:        Edwin van der Weide, Arathi K. Gopinath.        
-!       Starting date: 08-08-2004                                      
-!       Last modified: 10-10-2005                                      
-!
        subroutine interpolateSpectralSolution
 !
 !       interpolateSpectralSolution uses a spectral interpolation to   

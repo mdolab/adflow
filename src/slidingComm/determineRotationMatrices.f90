@@ -1,9 +1,3 @@
-!
-!       File:          determineRotationMatrices.f90                   
-!       Author:        Edwin van der Weide                             
-!       Starting date: 11-11-2003                                      
-!       Last modified: 03-25-2005                                      
-!
        subroutine determineRotationMatrices
 !
 !       determineRotationMatrices determines the rotation matrices     

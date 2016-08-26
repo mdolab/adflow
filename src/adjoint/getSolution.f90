@@ -1,9 +1,3 @@
-!
-!      File:          getSolution.f90                                
-!      Authors:       C.A(Sandy) Mader                                
-!      Starting date: 23-07-2008                                      
-!      Last modified: 23-07-2008                                      
-!
 subroutine getSolution(sps)
 
   use costFunctions

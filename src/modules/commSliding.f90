@@ -1,9 +1,3 @@
-!
-!       File:          commSliding.f90                                 
-!       Author:        Edwin van der Weide                             
-!       Starting date: 09-25-2003                                      
-!       Last modified: 03-21-2005                                      
-!
        module commSliding
 !
 !       This module contains the communication pattern, the            

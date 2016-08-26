@@ -1,10 +1,3 @@
-!
-!       File:          kwSolve.f90                                     
-!       Author:        Georgi Kalitzin, Edwin van der Weide,           
-!                      Steve Repsher (blanking)                        
-!       Starting date: 06-27-2003                                      
-!       Last modified: 07-05-2005                                      
-!
        subroutine kwSolve(resOnly)
 !
 !       kwSolve solves the k-omega transport equations of both         

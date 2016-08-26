@@ -1,9 +1,3 @@
-!
-!       File:          calMassFlux.f90                                 
-!       Author:        Eran Arad                                       
-!       Starting date: 30-01-2006                                      
-!       Last modified: 25-01-2007                                               
-!
        subroutine calMassFlux(massFluxG)
 !
 !       Calculate mass flux on        subsonic outflow boundary        

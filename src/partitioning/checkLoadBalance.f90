@@ -1,9 +1,3 @@
-!
-!       File:          checkLoadBalance.f90                            
-!       Author:        Edwin van der Weide                             
-!       Starting date: 02-11-2003                                      
-!       Last modified: 11-22-2007                                      
-!
        subroutine checkLoadBalance(cellsBalanced, facesBalanced)
 !
 !       checkLoadBalance determines whether or not the load balance    

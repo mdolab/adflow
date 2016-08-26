@@ -1,9 +1,3 @@
-!
-!       File:          volumeInterpol.f90                              
-!       Author:        Edwin van der Weide                             
-!       Starting date: 11-13-2003                                      
-!       Last modified: 06-12-2005                                      
-!
        subroutine volumeInterpol(intInfo, realInfo, donorInfo, &
                                  nHalo, level, sps)
 !

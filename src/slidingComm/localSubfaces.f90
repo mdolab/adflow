@@ -1,9 +1,3 @@
-!
-!       File:          localSubfaces.f90                               
-!       Author:        Edwin van der Weide                             
-!       Starting date: 10-17-2003                                      
-!       Last modified: 04-07-2005                                      
-!
        module localSubfacesMod
 !
 !       Local module to store the halo information for the cells as    

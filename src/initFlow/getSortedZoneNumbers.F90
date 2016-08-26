@@ -1,9 +1,3 @@
-!
-!       File:          getSortedZoneNumbers.F90                        
-!       Author:        Edwin van der Weide                             
-!       Starting date: 04-16-2003                                      
-!       Last modified: 10-07-2005                                      
-!
        subroutine getSortedZoneNumbers
 !
 !       getSortedZoneNumbers reads the names of the zones of the       
