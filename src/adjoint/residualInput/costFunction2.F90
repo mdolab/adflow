@@ -11,6 +11,7 @@ subroutine getCostFunction2(force, moment, sepSensor, sepSensorAvg, &
   use inputPhysics
   use flowvarRefState
   use inputTSStabDeriv
+  use utils, only : computeTSDerivatives, computeRootBendingMoment
   implicit none
 
   ! Input 

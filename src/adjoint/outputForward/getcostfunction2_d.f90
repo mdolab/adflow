@@ -20,6 +20,8 @@ subroutine getcostfunction2_d(force, forced, moment, momentd, sepsensor&
   use inputphysics
   use flowvarrefstate
   use inputtsstabderiv
+  use utils_d, only : computetsderivatives, computetsderivatives_d, &
+& computerootbendingmoment, computerootbendingmoment_d
   implicit none
 ! input 
   integer(kind=inttype), intent(in) :: liftindex

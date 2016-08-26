@@ -107,7 +107,6 @@ subroutine residual_block_d()
 !      *                                                                *
 !      ******************************************************************
 !
-! add the source terms from the level 0 cooling model.
 ! set the value of rfil, which controls the fraction of the old
 ! dissipation residual to be used. this is only for the runge-kutta
 ! schemes; for other smoothers rfil is simply set to 1.0.

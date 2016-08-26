@@ -70,9 +70,6 @@ FF90_OBJECTS2 =  \
 		forcesandmoments_b.o\
 		sanuknowneddyratio_b.o\
 		getcostfunction2_b.o\
-		computeleastsquaresregression_b.o\
-		computerootbendingmoment_b.o\
-		computetsderivatives_b.o\
 		invisciddissfluxscalarapprox_b.o\
 		invisciddissfluxmatrix_b.o\
 		inviscidupwindflux_b.o\

@@ -73,8 +73,6 @@ ALL_RES_FILES =	$(SRC)/adjoint/residualInput/block_res.F90\
 		$(SRC)/solver/gridVelocitiesFineLevel.F90\
 		$(SRC)/solver/normalVelocities.F90\
 		$(SRC)/solver/forcesAndMoments.F90\
-		$(SRC)/stabilityDerivatives/computeTSDerivatives.f90\
-		$(SRC)/stabilityDerivatives/computeLeastSquaresRegression.f90\
 		$(SRC)/initFlow/referenceState.F90\
 		$(SRC)/turbulence/computeEddyViscosity.F90\
 		$(SRC)/turbulence/curveFit.f90\
@@ -100,7 +98,6 @@ ALL_RES_FILES =	$(SRC)/adjoint/residualInput/block_res.F90\
 		$(SRC)/utils/flowUtils.F90\
 		$(SRC)/utils/utils.F90\
 		$(SRC)/utils/sorting.F90\
-		$(SRC)/bendingMomentAnalysis/rootBendingMomentAnalysis.f90\
 		$(SRC)/wallDistance/wallDistance.F90\
 		$(SRC)/solver/BCRoutines.F90\
 

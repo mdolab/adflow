@@ -20,6 +20,8 @@ subroutine getcostfunction2_b(force, forced, moment, momentd, sepsensor&
   use inputphysics
   use flowvarrefstate
   use inputtsstabderiv
+  use utils_b, only : computetsderivatives, computetsderivatives_b, &
+& computerootbendingmoment, computerootbendingmoment_b
   implicit none
 ! input 
   integer(kind=inttype), intent(in) :: liftindex
@@ -79,8 +81,8 @@ subroutine getcostfunction2_b(force, forced, moment, momentd, sepsensor&
 ! pre-compute ts stability info if required:
   if (tsstability) then
     call pushinteger4(liftindex)
-    call computetsderivatives(force, moment, liftindex, coef0, &
-&                          dcdalpha, dcdalphadot, dcdq, dcdqdot)
+    call computetsderivatives(force, moment, liftindex, coef0, dcdalpha&
+&                       , dcdalphadot, dcdq, dcdqdot)
     call pushcontrol1b(0)
   else
     call pushcontrol1b(1)
