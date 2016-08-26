@@ -32,9 +32,7 @@
        integer(kind=intType) :: d1, i1, j1, k1, d2, i2, j2, k2
 
        integer(kind=intType), dimension(:,:), pointer :: haloInfo
-!
-!       Begin execution                                                
-!
+
        ! Allocate the memory for donorDoms.
 
        allocate(donorDoms(nDom), stat=ierr)
@@ -219,9 +217,7 @@
 !         on the block face on which the subface is located.           
 !
          implicit none
-!
-!         Begin execution.                                             
-!
+
          select case (BCFaceID(jj))
 
            case (iMin)

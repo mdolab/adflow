@@ -24,9 +24,7 @@
        integer(kind=intType) :: sps, nn, discr
        integer(kind=intType) :: i, j, k, l
        logical :: fineGrid
-!
-!       Begin execution                                                
-!
+
        ! Add the source terms from the level 0 cooling model.
 
        call level0CoolingModel

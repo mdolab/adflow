@@ -28,9 +28,7 @@
 !
        integer(kind=intType) :: i, j, k, ip, jp, kp
        real(kind=realType)   :: rhoi, tmp
-!
-!       Begin execution                                                
-!
+
        ! Loop over the owned cells of the block.
 
        do k=2,kl

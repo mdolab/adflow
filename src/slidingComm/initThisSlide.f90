@@ -45,9 +45,7 @@
 
        character(len=7)            :: integerString
        character(len=maxStringLen) :: errorMessage
-!
-!       Begin execution                                                
-!
+
        ! Set the value of groupColor to the current interface ID if
        ! this processor contributes and to mpi_undefined otherwise.
 

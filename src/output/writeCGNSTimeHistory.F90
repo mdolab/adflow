@@ -31,9 +31,7 @@
        real(kind=8), dimension(:), allocatable :: buf8
 
        character(len=maxCGNSNameLen) :: cgnsName
-!
-!       Begin execution                                                
-!
+
        ! Store the file index and base a bit easier. Note that this info
        ! is only written to the 1st file, because this is an unsteady
        ! computation.

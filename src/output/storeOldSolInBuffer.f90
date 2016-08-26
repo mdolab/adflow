@@ -27,9 +27,7 @@
 !      Local variables.
 !
        integer(kind=intType) :: i, j, k, nOld, nn
-!
-!       Begin execution                                                
-!
+
        ! Store the index in wOld a bit easier.
 
        nOld = ind - 1

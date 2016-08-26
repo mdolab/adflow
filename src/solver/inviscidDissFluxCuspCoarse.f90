@@ -16,9 +16,7 @@
        use inputDiscretization
        use iteration
        implicit none
-!
-!       Begin execution                                                
-!
+
        call returnFail("inviscidDissFluxCuspCoarse", &
                       "not implemented yet")
 

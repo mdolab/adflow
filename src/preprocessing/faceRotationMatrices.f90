@@ -34,9 +34,7 @@
        real(kind=realType), dimension(:,:,:,:), pointer :: rotFace
 
        real(kind=realType), dimension(3) :: axis, vecR1, vecR2, rotCenter
-!
-!       Begin execution                                                
-!
+
        ! If this is not the finest level, return. The matrices are
        ! only needed on the finest grid.
 
@@ -157,9 +155,7 @@
          real(kind=realType) :: r1, r2, rInv, cosTheta, sinTheta
 
          real(kind=realType), dimension(3) :: xF
-!
-!         Begin execution                                              
-!
+
          ! Loop over the face centers.
 
          do j=2,jjl

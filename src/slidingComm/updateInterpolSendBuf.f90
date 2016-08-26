@@ -43,9 +43,7 @@
 !      Function definition.
 !
        integer(kind=intType) :: bsearchSortedDonorCommType
-!
-!       Begin execution                                                
-!
+
        ! Copy the halo info in sortedDonors and sort this array in
        ! increasing order.
 

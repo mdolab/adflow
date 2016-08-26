@@ -34,9 +34,7 @@
 
        character(len=maxCGNSNameLen), &
                                    dimension(:), allocatable :: solNames
-!
-!       Begin execution                                                
-!
+
        ! Determine the number and names of the solution files.
        ! Also set the pointers for IOVar needed for the general
        ! treatment of the IO.

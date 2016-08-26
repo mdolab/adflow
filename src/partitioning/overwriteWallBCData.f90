@@ -34,8 +34,7 @@
        character(len=maxStringLen)   :: keyword, value
        character(len=512)            :: string
        character(len=15)             :: familyTest
-!
-!       Begin execution                                                
+
 
        if (fromPython) return
 

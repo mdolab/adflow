@@ -19,9 +19,7 @@
 !      Local variables.
 !
        integer :: ierr
-!
-!       Begin execution                                                
-!
+
        ! Determine the version of the v2-f model.
 
        select case (rvfN)

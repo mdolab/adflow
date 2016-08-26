@@ -26,9 +26,7 @@ subroutine prodSmag2
   integer(kind=intType) :: i, j, k, ii
   real(kind=realType)   :: uux, uuy, uuz, vvx, vvy, vvz, wwx, wwy, wwz
   real(kind=realType)   :: div2, fact, sxx, syy, szz, sxy, sxz, syz
-  !
-  !       Begin execution                                                
-  !
+
   ! Loop over the cell centers of the given block. It may be more
   ! efficient to loop over the faces and to scatter the gradient,
   ! but in that case the gradients for u, v and w must be stored.

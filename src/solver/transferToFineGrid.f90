@@ -40,9 +40,7 @@
        real(kind=realType), dimension(:,:,:),   pointer :: pp, pp1
 
        logical :: secondHalo, correctForK
-!
-!       Begin execution                                                
-!
+
        ! Store the coarse grid level in coarseLevel.
 
        coarseLevel = currentLevel +1
@@ -351,9 +349,7 @@
 !      Local variables.
 !
        integer(kind=intType) :: i, j, k, l
-!
-!       Begin execution                                                
-!
+
        ! Constant extrapolation in i-direction.
 
        do k=2,kl
@@ -437,9 +433,7 @@
 !      Local variables.
 !
        integer(kind=intType) :: i, j, k
-!
-!       Begin execution                                                
-!
+
        ! Return immediately if this is not a viscous problem.
 
        if(.not. viscous) return

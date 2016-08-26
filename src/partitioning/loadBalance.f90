@@ -36,9 +36,7 @@ subroutine loadBalance
   type(subblocksOfCGNSType), dimension(:), allocatable :: &
        subblocksOfCGNS
 
-  !
-  !       Begin execution                                                
-  !
+
   ! Determine the block distribution over the processors.
 
 

@@ -35,9 +35,7 @@
        integer(kind=intType), dimension(:), allocatable, target :: recvBuf
 
        type(coarse1to1SubfaceType) :: tmpSubface
-!
-!       Begin execution                                                
-!
+
        ! Determine the number of integers sent to every processor.
 
        size2proc = 0

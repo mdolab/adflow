@@ -25,9 +25,7 @@ subroutine volume_block
   real(kind=realType) :: xxp, yyp, zzp
   real(kind=realType), dimension(3) :: v1, v2
 
-  !
-  !       Begin execution                                                
-  !
+
  
   ! Compute the volumes. The hexahedron is split into 6 pyramids
   ! whose volumes are computed. The volume is positive for a
@@ -167,9 +165,7 @@ contains
     !
     real(kind=realType), intent(in) :: xa, ya, za, xb, yb, zb
     real(kind=realType), intent(in) :: xc, yc, zc, xd, yd, zd
-    !
-    !         Begin execution                                              
-    !
+
     volume = (xp - fourth*(xa + xb  + xc + xd))              &
          * ((ya - yc)*(zb - zd) - (za - zc)*(yb - yd))   + &
          (yp - fourth*(ya + yb  + yc + yd))              &

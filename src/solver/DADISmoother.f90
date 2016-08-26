@@ -20,9 +20,7 @@ subroutine DADISmoother
   use iteration
   implicit none
 
-  !
-  !       Begin execution                                                
-  !
+
   if (groundLevel == 1) then 
      do Subit=1,nSubiterations-1
 
@@ -77,9 +75,7 @@ subroutine executeDADIStep
   real(kind=realType) :: v2, ovr, dp, factK, ru, rv, rw
 
   logical :: secondHalo, smoothResidual, correctForK
-  !
-  !       Begin execution                                                
-  !
+
   ! Set the value of secondHalo and the current cfl number,
   ! depending on the situation. On the finest grid in the mg cycle
   ! the second halo is computed, otherwise not.

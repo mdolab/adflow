@@ -41,9 +41,7 @@
 
        type(tmpSlidingType), dimension(cgnsNSliding) :: distrSliding
 
-!
-!       Begin execution                                                
-!
+
        ! Determine the number of sections, i.e. grid parts between
        ! sliding mesh interfaces, in the grid.
 

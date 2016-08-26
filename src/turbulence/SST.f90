@@ -29,9 +29,7 @@
 !      Local variables.
 !
        integer(kind=intType) :: nn, sps
-!
-!       Begin execution                                                
-!
+
        ! Compute the time derivative for the time spectral mode.
 
        call unsteadyTurbSpectral(itu1,itu2)

@@ -34,9 +34,7 @@
 
        character(len=7)            :: integerString
        character(len=maxStringLen) :: tmpName
-!
-!       Begin execution                                                
-!
+
        ! Initialize copySpectral and interpolSpectral to .false.
 
        copySpectral     = .false.
@@ -144,8 +142,7 @@
 !
        integer :: ierr
        integer(kind=intType) :: nn
-!
-!       Begin execution                                                
+
 
        ! The length of the array provided gives the number of nSolsRead.
        nSolsRead = SIZE(restartFiles,1)
@@ -181,8 +178,7 @@
        integer :: ierr
        character(len=maxStringLen) :: errorMessage
        integer(kind=intType) :: nn
-!
-!       Begin execution                                                
+
        do nn=1,nSolsRead
          open(unit=21,file=solFiles(nn),status="old",iostat=ierr)
          if(ierr /= 0) then

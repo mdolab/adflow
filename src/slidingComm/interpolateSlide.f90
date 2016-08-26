@@ -110,9 +110,7 @@
        logical :: lineThetaPiCrossed
 
        type(storeEntityType), dimension(nMySubfaces) :: tmpSubfaces
-!
-!       Begin execution                                                
-!
+
        ! Store the communicator, myID and the number of processors
        ! of this sliding mesh a bit easier.
 

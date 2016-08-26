@@ -18,9 +18,7 @@
 !
        integer(kind=intType) :: i, j, k
        real(kind=realType)   :: kx, ky, kz, tx, ty, tz, cd
-!
-!       Begin execution                                                
-!
+
        ! Loop over the cell centers of the given block. It may be more
        ! efficient to loop over the faces and to scatter the gradient,
        ! but in that case the gradients for k and tau must be stored.

@@ -18,9 +18,7 @@
 !
        character(len=7)  :: integerString
        character(len=12) :: realString
-!
-!       Begin execution                                                
-!
+
        ! Write the time step number to the integer string and the
        ! physical time to the real string.
 

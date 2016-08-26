@@ -42,9 +42,7 @@
        real(kind=realType), dimension(4) :: theta
 
        real(kind=realType), dimension(:,:,:), allocatable :: xFace
-!
-!       Begin execution                                                
-!
+
        ! Easier storage of the vectors which define the local cartesian
        ! coordinate system.
 

@@ -22,9 +22,7 @@
        real(kind=realType)   :: kx, ky, kz, wwx, wwy, wwz
        real(kind=realType)   :: lnwip1, lnwim1, lnwjp1, lnwjm1
        real(kind=realType)   :: lnwkp1, lnwkm1
-!
-!       Begin execution                                                
-!
+
        ! Loop over the cell centers of the given block. It may be more
        ! efficient to loop over the faces and to scatter the gradient,
        ! but in that case the gradients for k and omega must be stored.

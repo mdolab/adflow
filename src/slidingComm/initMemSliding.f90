@@ -21,9 +21,7 @@
 !      Local variables.
 !
        integer(kind=intType) :: sps
-!
-!       Begin execution                                                
-!
+
        ! Loop over the number of spectral solutions.
 
        do sps=1,nTimeIntervalsSpectral
@@ -64,9 +62,7 @@
 !      Local variables.
 !
        integer :: ierr
-!
-!       Begin execution                                                
-!
+
        ! Initialization of the integer data.
 
        commSlidingCell%nProcSend = 0
@@ -105,9 +101,7 @@
 !      Local variables.
 !
        integer :: ierr
-!
-!       Begin execution                                                
-!
+
        ! Initialization of the integer data.
 
        intSlidingCell%nSlidingHalos = 0

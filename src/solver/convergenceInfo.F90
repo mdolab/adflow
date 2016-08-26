@@ -599,9 +599,7 @@ subroutine sumResiduals(nn, mm)
   !      Local variables.
   !
   integer(kind=intType) :: i, j, k
-  !
-  !       Begin execution                                                
-  !
+
   ! Loop over the number of owned cells of this block and
   ! accumulate the residual.
 
@@ -635,8 +633,7 @@ subroutine sumAllResiduals(mm)
   integer(kind=intType) :: i, j, k, l
   real(kind=realType) :: state_sum,ovv
 
-  !       Begin execution                                                
-  !
+
   ! Loop over the number of owned cells of this block and
   ! accumulate the residual.
 

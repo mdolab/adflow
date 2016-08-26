@@ -22,9 +22,7 @@
 !      Local variables.
 !
        integer(kind=intType) :: nn, nLevelsSet
-!
-!       Begin execution                                                
-!
+
        ! Determine which time integrator must be used.
 
        ! Modified by HDN

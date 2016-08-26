@@ -50,9 +50,7 @@
                                                      refNames, tmpNames
 
        logical :: muScalePresent
-!
-!       Begin execution                                                
-!
+
        ! Store the file ID and the base a bit easier. Note that the
        ! reference state only needs to be present in the first file.
 

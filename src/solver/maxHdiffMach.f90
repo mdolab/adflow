@@ -25,9 +25,7 @@
        integer(kind=intType) :: i, j, k
 
        real(kind=realType) :: hdiff, hInf, Mach2
-!
-!       Begin execution                                                
-!
+
        ! Initialize the maximum values to zero.
 
        hdiffMax = zero

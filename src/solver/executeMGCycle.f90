@@ -19,9 +19,7 @@
 !      Local variables.
 !
        integer(kind=intType) :: nn
-!
-!       Begin execution                                                
-!
+
        ! Initialize currentLevel to groundLevel, the ground level
        ! of this multigrid cycle.
 

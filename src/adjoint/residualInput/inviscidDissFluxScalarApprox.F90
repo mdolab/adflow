@@ -33,9 +33,7 @@ subroutine inviscidDissFluxScalarApprox
   real(kind=realType) :: ppor, rrad, dis2
   real(kind=realType) :: dss1, dss2, ddw, fs
 
-  !
-  !       Begin execution                                                
-  !
+
   ! Check if rFil == 0. If so, the dissipative flux needs not to
   ! be computed.
 

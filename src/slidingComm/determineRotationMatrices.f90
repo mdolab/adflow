@@ -27,9 +27,7 @@
        real(kind=realType) :: perAngle, rotAngle, cosAngle, sinAngle
 
        real(kind=realType), dimension(3) :: ax, r1, r2
-!
-!       Begin execution                                                
-!
+
        ! The rotation matrices are only needed for unsteady
        ! computations. Threrefore return directly if a steady
        ! computation is performed.

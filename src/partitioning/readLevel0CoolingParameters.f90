@@ -51,9 +51,7 @@
 !
        integer(kind=intType) :: bsearchStrings
        integer(kind=intType) :: bsearchIntegers
-!
-!       Begin execution                                                
-!
+
 !       Determine for global blockID's/names for the locally stored    
 !       blocks and the corresponding ID's. As it is possible that      
 !       blocks are split also the multiplicity must be taken into      
@@ -358,9 +356,7 @@
 !        Subroutine arguments.
 !
          character(len=512), intent(out) :: stringBuf
-!
-!         Begin execution                                              
-!
+
   99     continue
 
          ! Try to read the next line. Return if it fails.
@@ -416,9 +412,7 @@
 !        Local variables.
 !
          integer(kind=intType) :: i, j
-!
-!         Begin execution                                              
-!
+
          ! Initialize the number of local subfaces to 0.
 
          nLocalSubfacesCoolingSubface = 0
@@ -522,9 +516,7 @@
 !        Local variables.
 !
          integer(kind=intType) :: i, j, jj, cellOffset
-!
-!         Begin execution                                              
-!
+
          ! Check if local blocks are present, which are a subblock of
          ! the global block currently investiged. This is the case if
          ! indZone > 0.

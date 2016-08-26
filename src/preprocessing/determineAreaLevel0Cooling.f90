@@ -38,9 +38,7 @@
        real(kind=realType), dimension(nPlanesLevel0CoolingModel) :: area
 
        real(kind=realType), dimension(:,:,:), pointer :: ss
-!
-!       Begin execution                                                
-!
+
        ! Return immediately if no cooling planes are present.
 
        if(nPlanesLevel0CoolingModel == 0) return

@@ -71,9 +71,7 @@
 
        end subroutine determinePeriodicData
        end interface
-!
-!       Begin execution                                                
-!
+
        ! Determine the number of periodic faces.
 
        call determinePeriodicFaces
@@ -229,9 +227,7 @@
        integer :: ierr
 
        integer(kind=intType) :: i
-!
-!       Begin execution                                                
-!
+
        ! Loop over the number of halo's and deallocate the memory
        ! of the pointer variables, if allocated.
 

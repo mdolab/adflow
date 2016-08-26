@@ -18,9 +18,7 @@
 !      Local variables
 !
        integer :: ierr
-!
-!       Begin execution                                                
-!
+
        ! Release the memory of the allocatable arrays in outputMod.
 
        deallocate(nBlocksCGNSblock, blocksCGNSblock, stat=ierr)

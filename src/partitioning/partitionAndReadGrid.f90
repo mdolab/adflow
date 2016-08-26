@@ -28,9 +28,7 @@
 !      Local variables
 !
        integer :: ierr
-!
-!       Begin execution                                                
-!
+
        ! Determine the number of grid files that must be read,
        ! as well as the corresponding file names.
 

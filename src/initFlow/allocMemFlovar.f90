@@ -30,9 +30,7 @@ subroutine allocMemFlovarPart1(sps,level)
 
   integer(kind=intType) :: nn
   integer(kind=intType) :: il, jl, kl, ie, je, ke, ib, jb, kb
-  !
-  !       Begin execution                                                
-  !
+
   ! Loop over the domains.
 
   domains: do nn=1,nDom
@@ -233,9 +231,7 @@ subroutine allocMemFlovarPart2(sps, level)
 
   integer(kind=intType) :: nn, mm
   integer(kind=intType) :: il, jl, kl, ie, je, ke, ib, jb, kb
-  !
-  !       Begin execution                                                
-  !
+
   ! Loop over the domains.
 
   domains: do nn=1,nDom

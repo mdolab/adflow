@@ -55,9 +55,7 @@
        character, dimension(:), allocatable :: coor
 
        character(len=maxCGNSNameLen), dimension(3) :: coorNames
-!
-!       Begin execution                                                
-!
+
        ! Set the cgns real type depending on the input option.
 
        select case (precisionGrid)
@@ -445,9 +443,7 @@
        integer(kind=intType) :: iStart, iEnd, jStart, jEnd, kStart, kEnd
 
        real(kind=realType) :: LRefInv
-!
-!       Begin execution                                                
-!
+
        ! Compute the multiplication factor to obtain the original
        ! coordinates. Note that LRef is corrected to 1.0 when the
        ! coordinates should be written in meters. This happens when

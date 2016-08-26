@@ -44,9 +44,7 @@
        integer(kind=intType) :: i, j, k, ii, jj, nn
 
        real(kind=realType) :: oneOverDt, tmp
-!
-!       Begin execution                                                
-!
+
        ! Determine the equation mode.
 
        select case (equationMode)

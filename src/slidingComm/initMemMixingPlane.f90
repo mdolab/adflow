@@ -21,9 +21,7 @@
 !      Local variables.
 !
        integer(kind=intType) :: nn, mm
-!
-!       Begin execution                                                
-!
+
        ! Loop over the number of interface groups and number of sides
        ! of an interface.
 

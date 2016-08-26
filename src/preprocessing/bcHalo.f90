@@ -54,9 +54,7 @@
 !        Function arguments.
 !
          type(bcHaloType), intent(in) :: g1, g2
-!
-!         Begin execution                                              
-!
+
          ! First compare the boundary conditions. Note that the sequence
          ! in BCTypes is such that the most important BC has the
          ! highest number.
@@ -106,9 +104,7 @@
          integer(kind=intType) :: i, j
 
          type(bcHaloType) :: a
-!
-!         Begin execution                                              
-!
+
          do j=1,nn
            a = bcHaloArray(j)
            do i=(j-1),1,-1

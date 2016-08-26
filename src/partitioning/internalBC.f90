@@ -29,9 +29,7 @@
                                             ! Because of cgns.
 
        character(len=maxCGNSNameLen), intent(in) :: userDefinedName
-!
-!       Begin execution                                                
-!
+
        ! Determine the CGNS boundary condition type and set
        ! internalBC accordingly.
 

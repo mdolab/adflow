@@ -42,9 +42,7 @@
        integer(kind=intType), dimension(:), pointer :: dfine
 
        logical, dimension(:), pointer :: iCo, jCo, kCo
-!
-!       Begin execution                                                
-!
+
        ! Store the finer grid level in levm1
 
        levm1 = level -1
@@ -803,9 +801,7 @@
        integer(kind=intType) :: nn, mm, il, jl, kl, levm1
 
        logical, dimension(:), pointer :: iCo, jCo, kCo
-!
-!       Begin execution                                                
-!
+
        ! Store the finer grid level in levm1
 
        levm1 = level -1

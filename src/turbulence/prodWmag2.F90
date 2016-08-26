@@ -26,9 +26,7 @@ subroutine prodWmag2
   real(kind=realType) :: uuy, uuz, vvx, vvz, wwx, wwy
   real(kind=realType) :: fact, vortx, vorty, vortz
   real(kind=realType) :: omegax, omegay, omegaz
-  !
-  !       Begin execution                                                
-  !
+
   ! Determine the non-dimensional wheel speed of this block.
 
   omegax = timeRef*sections(sectionID)%rotRate(1)

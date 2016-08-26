@@ -23,9 +23,7 @@
 !      Local variables.
 !
        integer(kind=intType) :: nn, sps
-!
-!       Begin execution                                                
-!
+
        ! Compute the time derivative for the time spectral mode.
        ! Note that the f-equation, itu4, does not have a time derivative
        ! and therefore should not be included.

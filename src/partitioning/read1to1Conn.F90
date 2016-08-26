@@ -28,9 +28,7 @@
 
        integer, dimension(3,2) :: zoneRange, donorRange
        integer, dimension(3)   :: transform
-!
-!       Begin execution                                                
-!
+
 #ifdef USE_NO_CGNS
 
        call terminate("read1to1Conn", &

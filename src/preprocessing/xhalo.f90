@@ -35,8 +35,7 @@
        real(kind=realType), dimension(3) :: v1, v2, norm, tmp, tmp2
        real(kind=realType), parameter :: tolDotmin = 0.99_realType
 
-!       Begin execution                                                
-!
+
        ! Loop over the number of spectral solutions and the local
        ! number of blocks.
 

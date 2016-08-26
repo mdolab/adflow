@@ -29,9 +29,7 @@
        integer(kind=intType) :: il, jl, kl
 
        real(kind=realType), dimension(nSections) :: dt, t
-!
-!       Begin execution                                                
-!
+
        ! This routine is only used for the spectral solutions. Return
        ! immediately if a different mode is solved.
  

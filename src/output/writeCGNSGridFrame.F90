@@ -46,9 +46,7 @@
        character(len=maxStringLen)   :: errorMessage
 
        type(cgnsBcDatasetType), pointer, dimension(:) :: dataSet
-!
-!       Begin execution                                                
-!
+
        ! Open the CGNS file for writing and check if it went okay.
        ! Store the file index afterwards.
 

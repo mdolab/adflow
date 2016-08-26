@@ -23,9 +23,7 @@
 !      Local variables.
 !
        integer(kind=intType) :: iter
-!
-!       Begin execution                                                
-!
+
        ! Determine whether or not a second order discretization for the
        ! advective terms must be used.
 

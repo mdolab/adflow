@@ -27,9 +27,7 @@
        integer :: ierr
 
        integer(kind=intType) :: nn, mm, il, jl, kl
-!
-!       Begin execution                                                
-!
+
        ! Allocate the memory for IOVar.
 
        allocate(IOVar(nDom,nSolsRead), stat=ierr)

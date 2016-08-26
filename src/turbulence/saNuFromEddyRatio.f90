@@ -24,9 +24,7 @@
 !      Local variables.
 !
        real(kind=realType) :: cv13, chi, chi2, chi3, chi4, f, df, dchi
-!
-!       Begin execution                                                
-!
+
        ! Take care of the exceptional cases.
 
        if(eddyRatio <= zero) then

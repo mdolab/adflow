@@ -28,9 +28,7 @@
 
        integer(kind=intType) :: nn, mm
        integer(kind=intType) :: il, jl, kl, ie, je, ke
-!
-!       Begin execution                                                
-!
+
        ! Loop over the local blocks and allocate the memory for the
        ! coordinates.
 

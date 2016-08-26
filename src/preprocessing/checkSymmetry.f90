@@ -35,9 +35,7 @@
 
        real(kind=realType), dimension(3) :: faceNorm
        real(kind=realType), dimension(:,:,:), pointer :: ss
-!
-!       Begin execution                                                
-!
+
        ! Loop over the number of spectral solutions and local domains.
 
        spectral: do sps=1,nTimeIntervalsSpectral

@@ -23,9 +23,7 @@
        integer(kind=intType) :: nLevels, level
        integer(kind=intType) :: nn, mm, il, jl, kl, ie, je, ke
        integer(kind=intType) :: iBeg, jBeg, kBeg, iEnd, jEnd, kEnd
-!
-!       Begin execution                                                
-!
+
        ! Determine the number of grid levels.
 
        nLevels = ubound(flowDoms,2)

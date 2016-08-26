@@ -27,9 +27,7 @@
        character(len=maxStringLen) :: errorMessage
 
        integer(kind=intType) :: i, nn, mm, kk, ll
-!
-!       Begin execution                                                
-!
+
        ! Loop over the number of domains.
 
        domains: do nn=1,nDom

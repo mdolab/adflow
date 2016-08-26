@@ -3517,9 +3517,7 @@ contains
     integer(kind=intType) :: dd1, ii1, jj1, kk1, dd2, ii2, jj2, kk2
 
     real(kind=realType), pointer, dimension(:,:,:) :: ddw1, ddw2
-    !
-    !       Begin execution                                                
-    !
+
     ! Determine the number of variables per cell to be sent.
 
     nVar = max(0_intType,(end - start + 1))

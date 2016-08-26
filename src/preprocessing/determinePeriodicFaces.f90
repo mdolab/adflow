@@ -20,9 +20,7 @@
 !
        integer :: ierr
        integer(kind=intType) :: nn, ii, i
-!
-!       Begin execution                                                
-!
+
        ! Determine the number of periodic faces present in the cgns grid.
 
        nPeriodicGlobal = 0

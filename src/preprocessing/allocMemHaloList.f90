@@ -28,9 +28,7 @@
 
        integer(kind=intType) :: i
        integer(kind=intType) :: ie, je, ke, ib, jb, kb
-!
-!       Begin execution                                                
-!
+
        ! Allocate the memory for the 1st level cell and node halo lists.
 
        allocate(cellHalo1st(nCellHalo1st), &

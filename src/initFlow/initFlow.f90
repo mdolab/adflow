@@ -28,9 +28,7 @@
 
        integer(kind=intType) :: sps, level, nLevels
 
-!
-!       Begin execution                                                
-!
+
        ! Determine the number of multigrid levels.
 
        nLevels = ubound(flowDoms,2)

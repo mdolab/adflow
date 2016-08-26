@@ -48,9 +48,7 @@
        real(kind=realType) :: a, UovA(3), gradP(3)
 
        real(kind=realType), dimension(:,:,:,:), pointer :: wIO
-!
-!       Begin execution                                                
-!
+
        ! Set the pointer to the correct entry of IOVar. I'm cheating a
        ! bit here, because I know that only memory has been allocated
        ! for the first solution ID of IOVar.

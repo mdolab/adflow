@@ -26,9 +26,7 @@
 
        integer(kind=intType) :: nn, mm
        integer(kind=intType) :: slideID
-!
-!       Begin execution                                                
-!
+
        ! Store the slide id a bit easier.
 
        slideID = myInterfaces(color)%globalSlideID
@@ -137,9 +135,7 @@
 
        logical, dimension(:), pointer :: searchQuad, searchNode
        logical, dimension(:), pointer :: storeQuad,  storeDual
-!
-!       Begin execution                                                
-!
+
        ! Store the absolute value of the slide ID.
 
        slideIDAbs = abs(slideID)
@@ -612,9 +608,7 @@
 
          real(kind=realType), dimension(3) :: rotCenter, rotAxis
          real(kind=realType), dimension(3) :: radVec1, radVec2
-!
-!         Begin execution.                                             
-!
+
          ! Some abbreviations to make the code more readable.
 
          scaleFact = myInterfaces(color)%scale
@@ -797,9 +791,7 @@
 
          real(kind=realType), dimension(3) :: rotCenter, rotAxis
          real(kind=realType), dimension(3) :: radVec1, radVec2
-!
-!         Begin execution.                                             
-!
+
          ! Some abbreviations to make the code more readable.
 
          scaleFact = myInterfaces(color)%scale

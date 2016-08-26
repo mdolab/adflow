@@ -28,9 +28,7 @@
 !      Local variables.
 !
        integer :: ierr
-!
-!       Begin execution                                                
-!
+
        ! Determine distribution used as interpolation intervals.
        ! This is done using the grid information of the donor.
 

@@ -38,9 +38,7 @@
        real(kind=realType)   :: coef, dAngle, angle, fact, slicesFact
 
        real(kind=realType), dimension(3,3) :: rotMat, tmp
-!
-!       Begin execution                                                
-!
+
        ! Loop over the number of sections.
 
        sectionLoop: do mm=1,nSections

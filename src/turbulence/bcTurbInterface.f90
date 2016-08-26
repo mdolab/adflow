@@ -24,9 +24,7 @@ subroutine bcTurbInterface(nn)
   !
   integer(kind=intType) :: i, j, l
 
-  !
-  !       Begin execution                                                
-  !
+
   ! Loop over the faces of the subfaces and set the values of
   ! bvt to keep the current value.
 

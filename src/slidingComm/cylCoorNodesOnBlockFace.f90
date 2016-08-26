@@ -36,9 +36,7 @@
        real(kind=realType), dimension(3) :: axis, vec1, vec2
 
        real(kind=realType), dimension(:,:,:), pointer :: xf
-!
-!       Begin execution                                                
-!
+
        ! Easier storage of the vectors which define the local cartesian
        ! coordinate system.
 

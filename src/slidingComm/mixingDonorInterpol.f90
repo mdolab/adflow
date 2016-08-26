@@ -925,9 +925,7 @@
          integer :: ierr
 
          integer(kind=intType) :: i, sizeCopy
-!
-!         Begin execution                                              
-!
+
          ! Determine the number of entities to be copied. This is the
          ! minimum of the currently allocated size and the new size.
          ! Set the new value of nAlloc afterwards.

@@ -78,9 +78,7 @@ subroutine residual_block
   real(kind=realType) :: b1, b2, b3, b4, b5
   real(kind=realType) :: dwo(nwf)
   logical :: fineGrid
-  !
-  !       Begin execution                                                
-  !
+
 
   ! Set the value of rFil, which controls the fraction of the old
   ! dissipation residual to be used. This is only for the runge-kutta

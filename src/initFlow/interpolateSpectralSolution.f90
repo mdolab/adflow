@@ -32,9 +32,7 @@
 
        real(kind=realType), dimension(nSolsRead) :: alpScal
        real(kind=realType), dimension(nSections,nSolsRead,3,3) :: alpMat
-!
-!       Begin execution                                                
-!
+
        ! Loop over the number of spectral solutions to be interpolated.
 
        spectralLoop: do sps=1,nTimeIntervalsSpectral

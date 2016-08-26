@@ -37,9 +37,7 @@
 
        character(len=7)            :: integerString
        character(len=maxStringLen) :: tmpName
-!
-!       Begin execution                                                
-!
+
        ! Initialization of nOldGridRead and interpolSpectral.
 
        nOldGridRead     = 1

@@ -35,9 +35,7 @@
        real(kind=realType) :: tmp, timeUnsteadyOld
 
        character(len=7) :: numberString
-!
-!       Begin execution                                                
-!
+
        ! Set rkStage to 0. This variable is only relevant if Runge-Kutta
        ! smoothers are used as an iterative algorithm, but rkStage needs
        ! to be initialized.
@@ -329,9 +327,7 @@
        real(kind=realType)   :: fact
 
        real(kind=realType), dimension(nSections) :: tNewSec, deltaTSec
-!
-!       Begin execution                                                
-!
+
        ! If the grid is changing a whole lot of geometric
        ! info must be adapted.
 

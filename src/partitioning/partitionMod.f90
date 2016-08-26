@@ -247,9 +247,7 @@
 !        Function arguments.
 !
          type(subblocksOfCGNSType), intent(in) :: g1, g2
-!
-!         Begin execution                                              
-!
+
          ! Comparison of the CGNS block ID. If not equal, set
          ! lessEqualSubblocksOfCGNSType appropriately and return.
 
@@ -302,9 +300,7 @@
 !        Function arguments.
 !
          type(subblocksOfCGNSType), intent(in) :: g1, g2
-!
-!         Begin execution                                              
-!
+
          ! Comparison of the CGNS block ID. If not equal, set
          ! lessSubblocksOfCGNSType appropriately and return.
 
@@ -358,9 +354,7 @@
 !        Function arguments.
 !
          type(subfaceNonMatchType), intent(in) :: g1, g2
-!
-!         Begin execution                                              
-!
+
          ! Comparison of the iBeg value. If different set 
          ! lessEqualSubfaceNonMatchType appropriately and return.
 
@@ -452,9 +446,7 @@
 !        Function arguments.
 !
          type(subfaceNonMatchType), intent(in) :: g1, g2
-!
-!         Begin execution                                              
-!
+
          ! Comparison of the iBeg value. If different set 
          ! lessEqualSubfaceNonMatchType appropriately and return.
 
