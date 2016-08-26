@@ -24,9 +24,13 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use monitor
+       use constants
        use cgnsNames
-       use allInputParam
+       use monitor, only : monNames, monGlob, monLoc, nMonMax, nMonSum, &
+            nMon, monMachOrHMax, monRef
+       use inputPhysics, only : equations, flowType, turbModel, equationMode
+       use inputUnsteady, only : timeIntegrationScheme
+       use allInputParam, only : monDTurb
        use sorting, only :qsortIntegers, bsearchIntegers
        use utils, only : terminate
        implicit none

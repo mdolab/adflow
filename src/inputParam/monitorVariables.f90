@@ -17,10 +17,11 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use communication
+       use constants
        use cgnsNames
-       use monitor
-       use allInputParam
+       use communication, only : myid, sumb_comm_world
+       use monitor, only : monNames, nMOn , nMonMax, nMonSum, showCPU
+       use allInputParam, only : monDturb, monitorSpecified
        use utils, only : convertToLowerCase, terminate
        implicit none
 !

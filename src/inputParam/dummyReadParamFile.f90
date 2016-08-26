@@ -9,9 +9,11 @@
 !      *                                                                *
 !      ******************************************************************
 !
-       use communication
        use constants
-       use allInputParam
+       use inputPhysics, only : cpModel
+       use allInputParam, only : monitorSpecified, surfaceOutSpecified, &
+            volumeOUtSpecified, isoOutSpecified
+
        implicit none
 !
 !      Local variables

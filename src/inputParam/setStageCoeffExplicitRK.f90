@@ -19,7 +19,8 @@
 !      ******************************************************************
 !
        use constants
-       use inputUnsteady
+       use inputUnsteady, only : timeAccuracy, betaRKUnsteady, &
+            gammaRKUnsteady, nRKStagesUnsteady
        use utils, only : terminate
        implicit none
 !

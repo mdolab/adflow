@@ -8,9 +8,10 @@
 !      ******************************************************************
 !
        use constants
-       use flowVarRefState
-       use inputPhysics
        use paramTurb
+       use flowVarRefState, only : nw, nwf, nt1, nt2, nwt, viscous, &
+            eddyModel, kPresent
+       use inputPhysics, only : equations, turbModel, wallFunctions, rvfN
        implicit none
 !
 !      ******************************************************************
