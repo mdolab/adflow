@@ -6,12 +6,6 @@
 !   with respect to varying inputs: *w *vol *si *sj *sk
 !   plus diff mem management of: w:in scratch:in vol:in si:in sj:in
 !                sk:in
-!
-!       file:          prodsmag2.f90                                   
-!       author:        georgi kalitzin, edwin van der weide            
-!       starting date: 08-01-2003                                      
-!       last modified: 04-12-2005                                      
-!
 subroutine prodsmag2_b()
 !
 !       prodsmag2 computes the term:                                   

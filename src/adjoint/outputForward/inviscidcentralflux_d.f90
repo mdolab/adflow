@@ -4,15 +4,9 @@
 !  differentiation of inviscidcentralflux in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *dw
 !   with respect to varying inputs: timeref *p *sfacei *sfacej
-!                sfacek *dw *w *vol *si *sj 
+!                *sfacek *dw *w *vol *si *sj *sk
 !   plus diff mem management of: p:in sfacei:in sfacej:in sfacek:in
 !                dw:in w:in vol:in si:in sj:in sk:in
-!
-!       file:          inviscidcentralflux.f90                         
-!       author:        edwin van der weide                             
-!       starting date: 03-24-2003                                      
-!       last modified: 10-29-2007                                      
-!
 subroutine inviscidcentralflux_d()
 !
 !       inviscidcentralflux computes the euler fluxes using a central  
@@ -37,9 +31,6 @@ subroutine inviscidcentralflux_d()
   real(kind=realtype) :: wwx, wwy, wwz, rvol
   real(kind=realtype) :: wwxd, wwyd, wwzd, rvold
   intrinsic mod
-!
-!       begin execution                                                
-!
 ! initialize sface to zero. this value will be used if the
 ! block is not moving.
   sface = zero

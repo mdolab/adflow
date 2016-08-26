@@ -3,18 +3,11 @@
 !
 !  differentiation of bcturbtreatment in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: winf *bvtj1 *bvtj2 *w *rlv
-!                bvtk1 *bvtk2 *d2wall *bvti1 
+!                *bvtk1 *bvtk2 *d2wall *bvti1 *bvti2
 !   with respect to varying inputs: winf *w *rlv *d2wall
 !   plus diff mem management of: bvtj1:in bvtj2:in w:in rlv:in
 !                bvtk1:in bvtk2:in d2wall:in bvti1:in bvti2:in
 !                bcdata:in
-!
-!       file:          bcturbtreatment.f90                             
-!       author:        georgi kalitzin, edwin van der weide            
-!                      seonghyeon hahn                                 
-!       starting date: 06-13-2003                                      
-!       last modified: 08-12-2005                                      
-!
 subroutine bcturbtreatment_b()
 !
 !       bcturbtreatment sets the arrays bmti1, bvti1, etc, such that   

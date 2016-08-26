@@ -4,12 +4,6 @@
 !  differentiation of getdirangle in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: alpha beta
 !   with respect to varying inputs: freestreamaxis
-!
-!      file:          getdirangle.f90                                 
-!      author:        andre c. marta,c.a.(sandy) mader                
-!      starting date: 10-25-2005                                      
-!      last modified: 06-13-2008                                      
-!
 subroutine getdirangle_d(freestreamaxis, freestreamaxisd, liftaxis, &
 & liftindex, alpha, alphad, beta, betad)
 !
@@ -69,9 +63,6 @@ subroutine getdirangle_d(freestreamaxis, freestreamaxisd, liftaxis, &
   real(kind=realtype) :: abs2
   real(kind=realtype) :: abs1
   real(kind=realtype) :: abs0
-!
-!      begin execution.                                               
-!
 ! assume domoniate flow is x
   flowindex = 1
   if (liftaxis(1) .ge. 0.) then

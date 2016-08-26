@@ -4,12 +4,6 @@
 !  differentiation of vectorrotation in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: xp yp zp
 !   with respect to varying inputs: x y z angle
-!
-!      file:          vectorrotation.f90                              
-!      author:        andre c. marta                                  
-!      starting date: 06-23-2006                                      
-!      last modified: 07-28-2006                                      
-!
 subroutine vectorrotation_d(xp, xpd, yp, ypd, zp, zpd, iaxis, angle, &
 & angled, x, xd, y, yd, z, zd)
 !
@@ -34,9 +28,6 @@ subroutine vectorrotation_d(xp, xpd, yp, ypd, zp, zpd, iaxis, angle, &
   real(kind=realtype), intent(out) :: xpd, ypd, zpd
   intrinsic cos
   intrinsic sin
-!
-!      begin execution                                                
-!
 ! rotation about specified axis by specified angle
   select case  (iaxis) 
   case (1) 

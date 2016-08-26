@@ -6,12 +6,6 @@
 !   with respect to varying inputs: *w *vol *si *sj *sk
 !   plus diff mem management of: w:in scratch:in vol:in si:in sj:in
 !                sk:in
-!
-!       file:          prodsmag2.f90                                   
-!       author:        georgi kalitzin, edwin van der weide            
-!       starting date: 08-01-2003                                      
-!       last modified: 04-12-2005                                      
-!
 subroutine prodsmag2_d()
 !
 !       prodsmag2 computes the term:                                   
@@ -39,9 +33,6 @@ subroutine prodsmag2_d()
   real(kind=realtype) :: div2d, factd, sxxd, syyd, szzd, sxyd, sxzd, &
 & syzd
   scratchd = 0.0_8
-!
-!       begin execution                                                
-!
 ! loop over the cell centers of the given block. it may be more
 ! efficient to loop over the faces and to scatter the gradient,
 ! but in that case the gradients for u, v and w must be stored.

@@ -3,23 +3,17 @@
 !
 !  differentiation of forcesandmoments in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *(*bcdata.fv) *(*bcdata.fp)
-!                (
+!                *(*bcdata.area) sepsensoravg cfp cfv cmp cmv cavitation
 !                sepsensor
 !   with respect to varying inputs: gammainf pinf pref *xx *pp1
-!                pp2 *ssi 
+!                *pp2 *ssi *ww2 veldirfreestream lengthref machcoef
 !                pointref *p *w *x *si *sj *sk *(*viscsubface.tau)
 !   plus diff mem management of: xx:in-out rev0:out rev1:out rev2:out
 !                rev3:out pp0:out pp1:in-out pp2:in-out pp3:out
 !                rlv0:out rlv1:out rlv2:out rlv3:out ss:out ssi:in-out
 !                ssj:out ssk:out ww0:out ww1:in-out ww2:in-out
 !                ww3:out viscsubface:in *viscsubface.tau:in bcdata:in
-!                bcdata.fv:in *bcdata.fp:in 
-!
-!       file:          forcesandmoments.f90                            
-!       author:        edwin van der weide                             
-!       starting date: 04-01-2003                                      
-!       last modified: 06-12-2005                                      
-!
+!                *bcdata.fv:in *bcdata.fp:in *bcdata.area:in
 subroutine forcesandmoments_d(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd&
 & , yplusmax, sepsensor, sepsensord, sepsensoravg, sepsensoravgd, &
 & cavitation, cavitationd)
@@ -93,9 +87,6 @@ subroutine forcesandmoments_d(cfp, cfpd, cfv, cfvd, cmp, cmpd, cmv, cmvd&
   real(kind=realtype) :: arg2
   real(kind=realtype) :: result2
   integer :: ii1
-!
-!       begin execution                                                
-!
 ! set the actual scaling factor such that actual forces are computed
   scaledimd = (prefd*pinf-pref*pinfd)/pinf**2
   scaledim = pref/pinf

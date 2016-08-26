@@ -5,12 +5,6 @@
 !   variations   of useful results: *rlv
 !   with respect to varying inputs: muref tref rgas *p *w
 !   plus diff mem management of: p:in w:in rlv:in
-!
-!       file:          computelamviscosity.f90                         
-!       author:        edwin van der weide                             
-!       starting date: 03-10-2003                                      
-!       last modified: 06-12-2005                                      
-!
 subroutine computelamviscosity_d()
 !
 !       computelamviscosity computes the laminar viscosity ratio in    
@@ -36,9 +30,6 @@ subroutine computelamviscosity_d()
   real(kind=realtype) :: musuth, tsuth, ssuth, t, pp
   real(kind=realtype) :: musuthd, tsuthd, ssuthd, td, ppd
   logical :: correctfork
-!
-!       begin execution                                                
-!
 ! return immediately if no laminar viscosity needs to be computed.
   if (.not.viscous) then
     rlvd = 0.0_8

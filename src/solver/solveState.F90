@@ -19,7 +19,7 @@ subroutine solveState
   use monitor, only : writeGrid, writeSurface, writeVolume
   use nksolvervars, only : NK_switchTol, useNKSolver, NK_CFL, rkREset
   use anksolvervars, only : ANK_switchTol, useANKSolver, ANK_CFL
-
+  use utils, only: allocConvArrays
   implicit none
   !
   !      Local parameter

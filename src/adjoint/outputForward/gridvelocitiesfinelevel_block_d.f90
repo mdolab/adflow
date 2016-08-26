@@ -72,9 +72,6 @@ subroutine gridvelocitiesfinelevel_block_d(useoldcoor, t, sps)
   intrinsic sqrt
   real(kind=realtype) :: arg1
   real(kind=realtype) :: arg1d
-!
-!       begin execution                                                
-!
 ! compute the mesh velocity from the given mesh mach number.
 ! vel{x,y,z}grid0 is the actual velocity you want at the
 ! geometry. 

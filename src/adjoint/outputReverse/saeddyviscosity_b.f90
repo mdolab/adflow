@@ -28,9 +28,6 @@ subroutine saeddyviscosity_b()
   intrinsic mod
   real(kind=realtype) :: tempd
   real(kind=realtype) :: tempd0
-!
-!       begin execution                                                
-!
 ! store the cv1^3; cv1 is a constant of the spalart-allmaras model.
   cv13 = rsacv1**3
   do ii=0,ie*je*ke-1

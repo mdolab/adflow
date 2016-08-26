@@ -5239,5 +5239,83 @@ end subroutine computeTSDerivatives
     endif
 
   end function EulerWallsPresent
+  subroutine allocConvArrays(nIterTot)
+    !
+    !       allocConvArrays allocates the memory for the convergence       
+    !       arrays. The number of iterations allocated, nIterTot, is       
+    !       enough to store the maximum number of iterations specified     
+    !       plus possible earlier iterations read from the restart file.   
+    !       This routine MAY be called with data already inside of         
+    !       convArray and this will be saved.                              
+    !
+    use constants
+    use inputTimeSpectral, only : nTimeIntervalsSpectral
+    use inputIO, only : storeConvInnerIter
+    use monitor, only : convArray, nMon
+    implicit none
+    !
+    !      Subroutine argument.
+    !
+    integer(kind=intType) :: nIterTot
+    !
+    !      Local variables.
+    !
+    integer :: ierr
+
+    ! Return immediately if the convergence history (of the inner
+    ! iterations) does not need to be stored. This logical can
+    ! only be .false. for an unsteady computation.
+    if(.not. storeConvInnerIter) return 
+
+    if (allocated(convArray)) then
+       deallocate(convArray)
+    end if
+
+    allocate(convArray(0:nIterTot, nTimeIntervalsSpectral, nMon))
+
+    ! Zero Array:
+    convArray = zero
+
+  end subroutine allocConvArrays
+
+  subroutine allocTimeArrays(nTimeTot)
+    !
+    !       allocTimeArrays allocates the memory for the arrays to store
+    !       the time history of the unsteady computation. The number of
+    !       time steps specified is enought to store the total number of
+    !       time steps of the current computation plus possible earlier
+    !       computations.
+    !
+    use constants
+    use monitor, only : timeArray, timeDataArray, nMon
+    implicit none
+    !
+    !      Subroutine argument.
+    !
+    integer(kind=intType) :: nTimeTot
+    !
+    !      Local variables.
+    !
+    integer :: ierr
+
+    ! Allocate the memory for both the time array as well as the
+    ! data array.
+
+    if (allocated(timeArray)) then
+       deallocate(timeArray)
+    end if
+    if (allocated(timeDataArray)) then
+       deallocate(timeDataArray)
+    end if
+
+    allocate(timeArray(nTimeTot), &
+         timeDataArray(nTimeTot,nMon), stat=ierr)
+    if(ierr /= 0)                       &
+         call terminate("allocTimeArrays", &
+         "Memory allocation failure for timeArray &
+         &and timeDataArray")
+
+  end subroutine allocTimeArrays
+
 #endif
 end module utils

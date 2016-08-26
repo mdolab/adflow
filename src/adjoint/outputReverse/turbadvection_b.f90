@@ -6,12 +6,6 @@
 !   with respect to varying inputs: *w *scratch *vol *si *sj *sk
 !   plus diff mem management of: w:in scratch:in vol:in si:in sj:in
 !                sk:in
-!
-!       file:          turbadvection.f90                               
-!       author:        georgi kalitzin, edwin van der weide            
-!       starting date: 09-01-2003                                      
-!       last modified: 04-12-2005                                      
-!
 subroutine turbadvection_b(madv, nadv, offset, qq)
 !
 !       turbadvection discretizes the advection part of the turbulent  
@@ -596,9 +590,6 @@ subroutine turbadvection_b(madv, nadv, offset, qq)
   call popinteger4(j)
   call popinteger4(i)
   qsd = 0.0_8
-!
-!       begin execution                                                
-!
 ! initialize the grid velocity to zero. this value will be used
 ! if the block is not moving.
   qs = zero

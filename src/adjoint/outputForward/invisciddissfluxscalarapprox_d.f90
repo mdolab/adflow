@@ -4,15 +4,9 @@
 !  differentiation of invisciddissfluxscalarapprox in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *w *fw
 !   with respect to varying inputs: gammainf rhoinf pinfcorr *p
-!                w *radi *radj 
+!                *w *radi *radj *radk
 !   plus diff mem management of: p:in w:in fw:in radi:in radj:in
 !                radk:in
-!
-!       file:          invisciddissfluxscalar.f90                      
-!       author:        edwin van der weide                             
-!       starting date: 03-24-2003                                      
-!       last modified: 10-29-2007                                      
-!
 subroutine invisciddissfluxscalarapprox_d()
 !
 !       invisciddissfluxscalar computes the scalar artificial          
@@ -78,9 +72,6 @@ subroutine invisciddissfluxscalarapprox_d()
   else
     abs0 = -rfil
   end if
-!
-!       begin execution                                                
-!
 ! check if rfil == 0. if so, the dissipative flux needs not to
 ! be computed.
   if (abs0 .lt. thresholdreal) then

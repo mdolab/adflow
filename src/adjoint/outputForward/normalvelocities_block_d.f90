@@ -4,7 +4,7 @@
 !  differentiation of normalvelocities_block in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *(*bcdata.rface)
 !   with respect to varying inputs: *sfacei *sfacej *sfacek *si
-!                sj 
+!                *sj *sk
 !   plus diff mem management of: sfacei:in sfacej:in sfacek:in
 !                si:in sj:in sk:in bcdata:in *bcdata.rface:in
 subroutine normalvelocities_block_d(sps)

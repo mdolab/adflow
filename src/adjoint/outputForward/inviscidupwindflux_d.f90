@@ -4,7 +4,7 @@
 !  differentiation of inviscidupwindflux in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *fw
 !   with respect to varying inputs: *p *sfacei *sfacej *sfacek
-!                w *si *sj 
+!                *w *si *sj *sk
 !   plus diff mem management of: p:in sfacei:in sfacej:in sfacek:in
 !                w:in si:in sj:in sk:in fw:in
 subroutine inviscidupwindflux_d(finegrid)
@@ -836,9 +836,6 @@ contains
     real(kind=realtype) :: x3d
     real(kind=realtype) :: y1
     real(kind=realtype) :: y1d
-!
-!         begin execution.                                             
-!
 ! check if the velocity components should be transformed to
 ! the cylindrical frame.
     if (rotationalperiodic) then
@@ -1217,9 +1214,6 @@ contains
     real(kind=realtype) :: y3
     real(kind=realtype) :: y2
     real(kind=realtype) :: y1
-!
-!         begin execution.                                             
-!
 ! check if the velocity components should be transformed to
 ! the cylindrical frame.
     if (rotationalperiodic) then
@@ -1504,9 +1498,6 @@ contains
     real(kind=realtype) :: abs2d
     real(kind=realtype) :: abs1
     real(kind=realtype) :: max2
-!
-!         begin execution.                                             
-!
 ! set the porosity for the flux. the default value, 0.5*rfil, is
 ! a scaling factor where an rfil != 1 is taken into account.
     porflux = half*rfil
@@ -1853,9 +1844,6 @@ contains
     real(kind=realtype) :: abs2
     real(kind=realtype) :: abs1
     real(kind=realtype) :: max2
-!
-!         begin execution.                                             
-!
 ! set the porosity for the flux. the default value, 0.5*rfil, is
 ! a scaling factor where an rfil != 1 is taken into account.
     porflux = half*rfil

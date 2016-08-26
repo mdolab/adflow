@@ -32,9 +32,6 @@ subroutine volume_block_d()
   real(kind=realtype) :: xxp, yyp, zzp
   real(kind=realtype), dimension(3) :: v1, v2
   intrinsic abs
-!
-!       begin execution                                                
-!
 ! compute the volumes. the hexahedron is split into 6 pyramids
 ! whose volumes are computed. the volume is positive for a
 ! right handed block.
@@ -200,9 +197,6 @@ contains
     real(kind=realtype), intent(in) :: xad, yad, zad, xbd, ybd, zbd
     real(kind=realtype), intent(in) :: xc, yc, zc, xd, yd, zd
     real(kind=realtype), intent(in) :: xcd, ycd, zcd, xdd, ydd, zdd
-!
-!         begin execution                                              
-!
     volumed = (xpd-fourth*(xad+xbd+xcd+xdd))*((ya-yc)*(zb-zd)-(za-zc)*(&
 &     yb-yd)) + (xp-fourth*(xa+xb+xc+xd))*((yad-ycd)*(zb-zd)+(ya-yc)*(&
 &     zbd-zdd)-(zad-zcd)*(yb-yd)-(za-zc)*(ybd-ydd)) + (ypd-fourth*(yad+&
@@ -237,9 +231,6 @@ contains
 !
     real(kind=realtype), intent(in) :: xa, ya, za, xb, yb, zb
     real(kind=realtype), intent(in) :: xc, yc, zc, xd, yd, zd
-!
-!         begin execution                                              
-!
     volume = (xp-fourth*(xa+xb+xc+xd))*((ya-yc)*(zb-zd)-(za-zc)*(yb-yd))&
 &     + (yp-fourth*(ya+yb+yc+yd))*((za-zc)*(xb-xd)-(xa-xc)*(zb-zd)) + (&
 &     zp-fourth*(za+zb+zc+zd))*((xa-xc)*(yb-yd)-(ya-yc)*(xb-xd))

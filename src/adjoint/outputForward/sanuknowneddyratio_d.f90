@@ -4,12 +4,6 @@
 !  differentiation of sanuknowneddyratio in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: sanuknowneddyratio
 !   with respect to varying inputs: nulam
-!
-!       file:          sanufromeddyratio.f90                           
-!       author:        edwin van der weide                             
-!       starting date: 06-22-2003                                      
-!       last modified: 04-12-2005                                      
-!
 function sanuknowneddyratio_d(eddyratio, nulam, nulamd, &
 & sanuknowneddyratio)
 !
@@ -35,9 +29,6 @@ function sanuknowneddyratio_d(eddyratio, nulam, nulamd, &
   real(kind=realtype) :: cv13, chi, chi2, chi3, chi4, f, df, dchi
   intrinsic abs
   real(kind=realtype) :: abs0
-!
-!       begin execution                                                
-!
 ! take care of the exceptional cases.
   if (eddyratio .le. zero) then
     sanuknowneddyratio = zero

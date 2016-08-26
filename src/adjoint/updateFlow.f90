@@ -9,6 +9,7 @@ subroutine updateFlow
   use inputPhysics  !
   use monitor
   use iteration
+  use initializeFlow, only : referenceState
   implicit none
 
   ! Local Variables

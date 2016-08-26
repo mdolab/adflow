@@ -5,12 +5,6 @@
 !   variations   of useful results: veldirfreestream dragdirection
 !                liftdirection
 !   with respect to varying inputs: alpha beta
-!
-!       file:          adjustinflowangle.f90                           
-!       author:        c.a.(sandy) mader                               
-!       starting date: 07-13-2011                                      
-!       last modified: 07-13-2011                                      
-!
 subroutine adjustinflowangle_d(alpha, alphad, beta, betad, liftindex)
   use constants
   use inputphysics
