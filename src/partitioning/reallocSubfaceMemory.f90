@@ -5,7 +5,8 @@
 !       contains the current number of allocated subfaces, on exit     
 !       this is updated to the new number.                             
 !
-       use partitionMod
+       use constants
+       use partitionmod, only : blocks
        use utils, only : reallocateInteger
        implicit none
 !

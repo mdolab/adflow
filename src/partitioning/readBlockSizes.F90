@@ -7,18 +7,15 @@
 !       is checked that the number of blocks and the block sizes are   
 !       identical.                                                     
 !
-#ifdef USE_NO_CGNS
-       call terminate("readBlockSizes", &
-                      "Routine should not be called if no cgns support &
-                      &is selected.")
-#else
-       use cgnsGrid
-       use communication
        use constants
-       use inputPhysics
-       use iteration
        use su_cgns
-       use partitionMod
+       use cgnsGrid, only : cgnsDoms, cgnsNDom, cgnsFamilies, &
+            cgnsCellDim, cgnsPhysDim, cgnsDomsd, cgnsBaseName, &
+            cgnsNFamilies
+       use communication, only : myid, sumb_comm_world
+       use inputPhysics, only: equations, equationMode
+       use iteration, only : changing_grid, deforming_grid
+       use partitionMod, only: fileIds, gridFiles, nGridsRead
        use utils, only : terminate, nullifyCGNSDomPointers
        use sorting, only : bsearchStrings, qsortStrings
        implicit none
@@ -251,7 +248,7 @@
 
        if(myID == 0 .and. noUnits) then
 
-         if(equations==NSEquations.or.equations==RANSEquations.or.equationMode==unsteady)then
+         if(equations==NSEquations .or. equations==RANSEquations .or. equationMode==unsteady)then
 
            print "(a)", "#"
            print "(a)", "#                      Warning"
@@ -264,6 +261,5 @@
          endif
        endif
 
-#endif
 
        end subroutine readBlockSizes

@@ -4,11 +4,14 @@ subroutine timePeriodSpectral
   !       time spectral method. It is possible that sections have        
   !       different periodic times.                                      
   !
-  use communication
   use constants
-  use inputMotion
-  use inputPhysics
-  use section
+  use communication, only : myID, sumb_comm_world
+  use inputMotion, only : degreeFourXRot, degreeFourYRot, degreeFourZrot, &
+       omegaFourAlpha, omegaFourBeta, omegaFourMach, omegaFourXRot, &
+       omegaFourYRot, omegaFourZRot, degreeFourMach, degreeFourAlpha, &
+       degreeFourBeta
+  use inputPhysics, only : equationMOde, flowType
+  use section, only : sections, nSections
   use utils, only : terminate
   implicit none
   !

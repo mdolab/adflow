@@ -5,8 +5,8 @@
 !       found it is tried to correct this.                             
 !
        use constants
-       use cgnsGrid
-       use communication
+       use cgnsGrid, only : cgnsDoms
+       use communication, only : myID, sumb_comm_world
        use utils, only : delta, terminate
        implicit none
 !

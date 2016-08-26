@@ -4,15 +4,16 @@ subroutine loadBalance
   !       processors. If the user allows so blocks my be split to obtain 
   !       a better load balance.                                         
   !
-  use block
-  use cgnsGrid
-  use communication
-  use inputMotion
-  use inputParallel
-  use inputPhysics
-  use inputTimeSpectral
-  use iteration
-  use partitionMod
+  use constants
+  use block, only : flowDoms, nDom
+  use cgnsGrid, only : cgnsDoms, cgnsNDom
+  use communication, only : sumb_comm_world, nProc, myID
+  use inputMotion, only : gridMotionSpecified
+  use inputParallel, only : partitionLikeNProc
+  use inputPhysics, only : equationMode
+  use inputTimeSpectral, only : nTimeIntervalsSpectral
+  use iteration, only : deforming_Grid
+  use partitionMod, only : subBlocksofCGNSType, blocks, part, nBlocks
   use utils, only : terminate
   implicit none
   !

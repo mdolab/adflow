@@ -4,7 +4,8 @@
 !       such that viscous subfaces are numbered first, followed by     
 !       inviscid, etc.                                                 
 !
-       use partitionMod
+       use constants
+       use partitionMod, only : distributionBlockType
        use sorting, only : qsortIntegers, bsearchIntegers
        implicit none
 !

@@ -5,10 +5,9 @@
 !       boundary condition, including some user defined ones.          
 !
        use constants
-       use cgnsGrid
-       use communication
-       use iteration
        use su_cgns
+       use cgnsGrid, only : cgnsDoms, cgnsNDom, cgnsFamilies, cgnsNFamilies
+       use communication, only : myid, sumb_comm_world
        use utils, only: terminate
        implicit none
 !
@@ -26,13 +25,6 @@
 !
        integer(kind=intType) :: internalBC
 
-#ifdef USE_NO_CGNS
-
-       call terminate("readFamilyInfo", &
-                      "Routine should not be called if no cgns support &
-                      &is selected.")
-
-#else
        ! Determine the number of families in the given base.
 
        call cg_nfamilies_f(cgnsInd, cgnsBase, nn, ierr)
@@ -175,6 +167,5 @@
               &condition",1x,a)
  201   format("Family",1x,a,": More than 1 boundary condition specified")
 
-#endif
 
        end subroutine readFamilyInfo

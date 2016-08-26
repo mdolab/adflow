@@ -8,12 +8,9 @@
 !       distance computation, are performed in the preprocessing       
 !       library.                                                       
 !
-       use communication
-       use blockPointers
-       use cgnsGrid
-       use inputIO
-       use IOModule
-       use partitionMod
+       use constants
+       use IOModule, only : IOVar
+       use partitionMod, only : fileIDs, gridFiles
        use utils, only : terminate
        implicit none
 

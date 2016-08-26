@@ -7,9 +7,9 @@ subroutine readPeriodicSubface(cgnsInd, cgnsBase, zone, conn,  &
   !       given general subface connectivity.                            
   !
   use constants
-  use cgnsGrid
-  use communication
   use su_cgns
+  use cgnsGrid, only : cgnsDoms, cgnsNDom
+  use communication, only : sumb_comm_world, myid
   use utils, only : siAngle, terminate
   implicit none
   !
@@ -23,12 +23,7 @@ subroutine readPeriodicSubface(cgnsInd, cgnsBase, zone, conn,  &
   real(kind=realType), dimension(3), intent(out) :: rotationCenter
   real(kind=realType), dimension(3), intent(out) :: rotationAngles
   real(kind=realType), dimension(3), intent(out) :: translation
-#ifdef USE_NO_CGNS
 
-  call terminate("readPeriodicSubface", &
-       "Routine should not be called if no cgns support &
-       &is selected.")
-#else
   !
   !      Local variables.
   !
@@ -143,7 +138,5 @@ subroutine readPeriodicSubface(cgnsInd, cgnsBase, zone, conn,  &
      translation    = zero
 
   endif testPeriodic
-
-#endif
 
 end subroutine readPeriodicSubface

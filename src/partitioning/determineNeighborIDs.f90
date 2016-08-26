@@ -9,7 +9,8 @@
 !       idea of having a quadratic loop in the code. That's why a      
 !       O(n log(n)) algorithm is used here.                            
 !
-       use cgnsGrid
+       use constants
+       use cgnsGrid, only : cgnsDoms, cgnsNDOm
        use utils, only : terminate
        use sorting, only: qsortstrings, bsearchstrings
        implicit none

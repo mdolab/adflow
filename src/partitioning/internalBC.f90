@@ -7,8 +7,8 @@
 !       inviscid wall.                                                 
 !
        use constants
-       use inputPhysics
        use su_cgns
+       use inputPhysics, only : equations, flowType
        implicit none
 !
 !      Function type.
