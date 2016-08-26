@@ -5,12 +5,6 @@
 !   gradient     of useful results: *rev
 !   with respect to varying inputs: *rev
 !   plus diff mem management of: rev:in bcdata:in
-!
-!       file:          bceddynowall.f90                                
-!       author:        georgi kalitzin, edwin van der weide            
-!       starting date: 06-11-2003                                      
-!       last modified: 04-11-2005                                      
-!
 subroutine bceddynowall_b(nn)
 !
 !       bceddynowall sets the eddy viscosity in the halo cells of      
@@ -36,9 +30,6 @@ subroutine bceddynowall_b(nn)
   real(kind=realtype) :: tmpd
   real(kind=realtype) :: tmpd1
   real(kind=realtype) :: tmpd0
-!
-!       begin execution                                                
-!
 ! determine the face id on which the subface and copy
   select case  (bcfaceid(nn)) 
   case (imin) 

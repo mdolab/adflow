@@ -25,9 +25,6 @@ subroutine saeddyviscosity_d()
   integer(kind=inttype) :: i, j, k, ii
   real(kind=realtype) :: chi, chi3, fv1, rnusa, cv13
   real(kind=realtype) :: chid, chi3d, fv1d, rnusad
-!
-!       begin execution                                                
-!
 ! store the cv1^3; cv1 is a constant of the spalart-allmaras model.
   cv13 = rsacv1**3
   revd = 0.0_8

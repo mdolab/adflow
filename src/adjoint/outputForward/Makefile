@@ -42,6 +42,7 @@ FF90_OBJECTS1 =\
 		bcroutines_d.o\
 		samodule_d.o\
 		walldistance_d.o\
+		initializeflow_d.o\
 
 FF90_OBJECTS2 = allnodalgradients_d.o\
 		viscousflux_d.o \
@@ -64,7 +65,6 @@ FF90_OBJECTS2 = allnodalgradients_d.o\
 		gridvelocitiesfinelevel_block_d.o\
 		normalvelocities_block_d.o\
 		adjustinflowangle_d.o\
-		referencestate_d.o\
 		forcesandmoments_d.o\
 		getdirangle_d.o\
 		getdirvector_d.o\

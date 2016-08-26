@@ -18,7 +18,7 @@ contains
 !   gradient     of useful results: *dw *w *rlv *vol *si *sj *sk
 !                (global)timeref
 !   with respect to varying inputs: *dw *w *rlv *vol *d2wall *si
-!                sj 
+!                *sj *sk (global)timeref
 !   plus diff mem management of: bvtj1:in bvtj2:in dw:in w:in rlv:in
 !                scratch:in bvtk1:in bvtk2:in vol:in d2wall:in
 !                si:in sj:in sk:in bvti1:in bvti2:in bcdata:in
@@ -43,8 +43,6 @@ contains
 !
     integer(kind=inttype) :: nn, sps
     integer :: branch
-!
-!       begin execution                                                
 ! set the arrays for the boundary condition treatment.
     call pushreal8array(bmtj2, size(bmtj2, 1)*size(bmtj2, 2)*size(bmtj2&
 &                 , 3)*size(bmtj2, 4))
@@ -145,8 +143,6 @@ end subroutine sa_block_b
 !      local variables.
 !
     integer(kind=inttype) :: nn, sps
-!
-!       begin execution                                                
 ! set the arrays for the boundary condition treatment.
     call bcturbtreatment()
 ! set model constants

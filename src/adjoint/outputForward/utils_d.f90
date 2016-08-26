@@ -1923,4 +1923,21 @@ contains
     m = (npts*sumxy-sumy*sumx)/(npts*sumx2-sumx**2)
     b = (sumy*sumx2-sumx*sumxy)/(npts*sumx2-sumx**2)
   end subroutine computeleastsquaresregression
+  subroutine stabilityderivativedriver()
+!
+!      runs the time spectral stability derivative routines from the  
+!      main program file                                              
+!
+    use precision
+    implicit none
+!call computetsderivatives(coef0,dcdalpha,dcdalphadot,dcdq,dcdqdot)
+!
+!     local variables.
+! 
+    real(kind=realtype), dimension(8) :: dcdalpha, dcdalphadot, dcdbeta&
+&   , dcdbetadot, dcdmach, dcdmachdot
+    real(kind=realtype), dimension(8) :: dcdp, dcdpdot, dcdq, dcdqdot, &
+&   dcdr, dcdrdot
+    real(kind=realtype), dimension(8) :: coef0, coef0dot
+  end subroutine stabilityderivativedriver
 end module utils_d

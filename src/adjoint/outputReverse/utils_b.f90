@@ -515,12 +515,12 @@ contains
   end function rigidrotangle
 !  differentiation of setbcpointers in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *xx *rev0 *rev1 *rev2 *rev3
-!                pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3 
-!                ww0 *ww1 *ww2 *ww3 *rev *p *w *rlv *x *si 
+!                *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3 *ssi
+!                *ww0 *ww1 *ww2 *ww3 *rev *p *w *rlv *x *si *sj
 !                *sk
 !   with respect to varying inputs: *xx *rev0 *rev1 *rev2 *rev3
-!                pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3 
-!                ww0 *ww1 *ww2 *ww3 *rev *p *w *rlv *x *si 
+!                *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3 *ssi
+!                *ww0 *ww1 *ww2 *ww3 *rev *p *w *rlv *x *si *sj
 !                *sk
 !   plus diff mem management of: xx:in rev0:in rev1:in rev2:in
 !                rev3:in pp0:in pp1:in pp2:in pp3:in rlv0:in rlv1:in
@@ -1050,12 +1050,12 @@ contains
   end subroutine setbcpointers
 !  differentiation of resetbcpointers in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *xx *rev0 *rev1 *rev2 *rev3
-!                pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3 
-!                ww0 *ww1 *ww2 *ww3 *rev *p *w *rlv *x *si 
+!                *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3 *ssi
+!                *ww0 *ww1 *ww2 *ww3 *rev *p *w *rlv *x *si *sj
 !                *sk
 !   with respect to varying inputs: *xx *rev0 *rev1 *rev2 *rev3
-!                pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3 
-!                ww0 *ww1 *ww2 *ww3 *rev *p *w *rlv *x *si 
+!                *pp0 *pp1 *pp2 *pp3 *rlv0 *rlv1 *rlv2 *rlv3 *ssi
+!                *ww0 *ww1 *ww2 *ww3 *rev *p *w *rlv *x *si *sj
 !                *sk
 !   plus diff mem management of: xx:in rev0:in rev1:in rev2:in
 !                rev3:in pp0:in pp1:in pp2:in pp3:in rlv0:in rlv1:in
@@ -2341,4 +2341,21 @@ contains
     m = (npts*sumxy-sumy*sumx)/(npts*sumx2-sumx**2)
     b = (sumy*sumx2-sumx*sumxy)/(npts*sumx2-sumx**2)
   end subroutine computeleastsquaresregression
+  subroutine stabilityderivativedriver()
+!
+!      runs the time spectral stability derivative routines from the  
+!      main program file                                              
+!
+    use precision
+    implicit none
+!call computetsderivatives(coef0,dcdalpha,dcdalphadot,dcdq,dcdqdot)
+!
+!     local variables.
+! 
+    real(kind=realtype), dimension(8) :: dcdalpha, dcdalphadot, dcdbeta&
+&   , dcdbetadot, dcdmach, dcdmachdot
+    real(kind=realtype), dimension(8) :: dcdp, dcdpdot, dcdq, dcdqdot, &
+&   dcdr, dcdrdot
+    real(kind=realtype), dimension(8) :: coef0, coef0dot
+  end subroutine stabilityderivativedriver
 end module utils_b

@@ -5,12 +5,6 @@
 !   gradient     of useful results: rgas *p *w *rlv
 !   with respect to varying inputs: muref tref rgas *p *w
 !   plus diff mem management of: p:in w:in rlv:in
-!
-!       file:          computelamviscosity.f90                         
-!       author:        edwin van der weide                             
-!       starting date: 03-10-2003                                      
-!       last modified: 06-12-2005                                      
-!
 subroutine computelamviscosity_b()
 !
 !       computelamviscosity computes the laminar viscosity ratio in    
@@ -53,9 +47,6 @@ subroutine computelamviscosity_b()
   real(kind=realtype) :: temp6
   real(kind=realtype) :: temp5
   real(kind=realtype) :: temp4
-!
-!       begin execution                                                
-!
 ! return immediately if no laminar viscosity needs to be computed.
   if (.not.viscous) then
     murefd = 0.0_8

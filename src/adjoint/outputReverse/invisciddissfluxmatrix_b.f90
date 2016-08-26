@@ -5,12 +5,6 @@
 !   gradient     of useful results: *p *w *si *sj *sk *fw
 !   with respect to varying inputs: pinfcorr *p *w *si *sj *sk
 !   plus diff mem management of: p:in w:in si:in sj:in sk:in fw:in
-!
-!       file:          invisciddissfluxmatrix.f90                      
-!       author:        edwin van der weide                             
-!       starting date: 03-25-2003                                      
-!       last modified: 10-29-2007                                      
-!
 subroutine invisciddissfluxmatrix_b()
 !
 !       invisciddissfluxmatrix computes the matrix artificial          

@@ -4,7 +4,7 @@
 !  differentiation of applyallturbbcthisblock in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *rev *w
 !   with respect to varying inputs: *rev *bvtj1 *bvtj2 *w *bvtk1
-!                bvtk2 *bvti1 
+!                *bvtk2 *bvti1 *bvti2
 !   plus diff mem management of: rev:in bvtj1:in bvtj2:in w:in
 !                bvtk1:in bvtk2:in bvti1:in bvti2:in bcdata:in
 !      ==================================================================

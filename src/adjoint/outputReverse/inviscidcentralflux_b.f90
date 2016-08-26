@@ -4,15 +4,9 @@
 !  differentiation of inviscidcentralflux in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *p *dw *w *vol *si *sj *sk
 !   with respect to varying inputs: timeref *p *dw *w *vol *si
-!                sj 
+!                *sj *sk
 !   plus diff mem management of: p:in dw:in w:in vol:in si:in sj:in
 !                sk:in
-!
-!       file:          inviscidcentralflux.f90                         
-!       author:        edwin van der weide                             
-!       starting date: 03-24-2003                                      
-!       last modified: 10-29-2007                                      
-!
 subroutine inviscidcentralflux_b()
 !
 !       inviscidcentralflux computes the euler fluxes using a central  
@@ -341,9 +335,6 @@ subroutine inviscidcentralflux_b()
   call popreal8(vnm)
   call popinteger4(j)
   call popinteger4(i)
-!
-!       begin execution                                                
-!
 ! initialize sface to zero. this value will be used if the
 ! block is not moving.
   sface = zero

@@ -5,12 +5,6 @@
 !   variations   of useful results: *rev
 !   with respect to varying inputs: *w *rlv
 !   plus diff mem management of: rev:in w:in rlv:in
-!
-!       file:          computeeddyviscosity.f90                        
-!       author:        georgi kalitzin, edwin van der weide            
-!       starting date: 03-10-2003                                      
-!       last modified: 06-12-2005                                      
-!
 subroutine computeeddyviscosity_d()
 !
 !       computeeddyviscosity computes the eddy viscosity in the        
@@ -28,9 +22,6 @@ subroutine computeeddyviscosity_d()
 !      local variables.
 !
   logical :: returnimmediately
-!
-!       begin execution                                                
-!
 ! check if an immediate return can be made.
   if (eddymodel) then
     if (currentlevel .le. groundlevel) then

@@ -5,12 +5,6 @@
 !   variations   of useful results: *rev
 !   with respect to varying inputs: *rev
 !   plus diff mem management of: rev:in bcdata:in
-!
-!       file:          bceddywall.f90                                  
-!       author:        georgi kalitzin, edwin van der weide            
-!       starting date: 06-11-2003                                      
-!       last modified: 04-11-2005                                      
-!
 subroutine bceddywall_d(nn)
 !
 !       bceddywall sets the eddy viscosity in the halo cells of        
@@ -29,9 +23,6 @@ subroutine bceddywall_d(nn)
 !      local variables.
 !
   integer(kind=inttype) :: i, j
-!
-!       begin execution                                                
-!
 ! determine the face id on which the subface is located and
 ! loop over the faces of the subface and set the eddy viscosity
 ! in the halo cells.

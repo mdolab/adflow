@@ -3,7 +3,7 @@
 !
 !  differentiation of allnodalgradients in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *wx *wy *wz *qx *qy *qz *ux
-!                uy *uz *vx *vy 
+!                *uy *uz *vx *vy *vz
 !   with respect to varying inputs: *aa *w *vol *si *sj *sk
 !   plus diff mem management of: aa:in wx:in wy:in wz:in w:in qx:in
 !                qy:in qz:in ux:in vol:in uy:in uz:in si:in sj:in
@@ -28,9 +28,6 @@ subroutine allnodalgradients_d()
   real(kind=realtype) :: oneovervd, ubard, vbard, wbard, a2d
   real(kind=realtype) :: sx, sx1, sy, sy1, sz, sz1
   real(kind=realtype) :: sxd, syd, szd
-!
-!         begin execution                                              
-!
 ! zero all nodeal gradients:
   uxd = 0.0_8
   ux = zero

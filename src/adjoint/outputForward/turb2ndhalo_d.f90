@@ -5,12 +5,6 @@
 !   variations   of useful results: *rev *w
 !   with respect to varying inputs: *rev *w
 !   plus diff mem management of: rev:in w:in bcdata:in
-!
-!       file:          turb2ndhalo.f90                                 
-!       author:        edwin van der weide                             
-!       starting date: 06-16-2003                                      
-!       last modified: 06-12-2005                                      
-!
 subroutine turb2ndhalo_d(nn)
 !
 !       turb2ndhalo sets the turbulent variables in the second halo    
@@ -29,9 +23,6 @@ subroutine turb2ndhalo_d(nn)
 !      local variables.
 !
   integer(kind=inttype) :: i, j, l
-!
-!       begin execution                                                
-!
 ! determine the face on which this subface is located and set
 ! some pointers accordingly.
 ! loop over the turbulent variables and set the second halo

@@ -4,12 +4,6 @@
 !  differentiation of derivativerotmatrixrigid in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: rotationmatrix
 !   with respect to varying inputs: timeref
-!
-!       file:          derivativerotmatrixrigid.f90                    
-!       author:        edwin van der weide                             
-!       starting date: 06-01-2004                                      
-!       last modified: 06-12-2005                                      
-!
 subroutine derivativerotmatrixrigid_d(rotationmatrix, rotationmatrixd, &
 & rotationpoint, t)
 !

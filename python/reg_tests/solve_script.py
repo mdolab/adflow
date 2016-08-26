@@ -1097,6 +1097,7 @@ if __name__ == '__main__':
         if 'test1' in sys.argv:
             test1()
         if 'test2' in sys.argv:
+            test1()
             test2()
         if 'test3' in sys.argv:
             test3()

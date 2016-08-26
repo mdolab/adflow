@@ -4,12 +4,6 @@
 !  differentiation of sanuknowneddyratio in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: sanuknowneddyratio
 !   with respect to varying inputs: nulam
-!
-!       file:          sanufromeddyratio.f90                           
-!       author:        edwin van der weide                             
-!       starting date: 06-22-2003                                      
-!       last modified: 04-12-2005                                      
-!
 subroutine sanuknowneddyratio_b(eddyratio, nulam, nulamd, &
 & sanuknowneddyratiod)
 !
@@ -35,9 +29,6 @@ subroutine sanuknowneddyratio_b(eddyratio, nulam, nulamd, &
   real(kind=realtype) :: cv13, chi, chi2, chi3, chi4, f, df, dchi
   intrinsic abs
   real(kind=realtype) :: abs0
-!
-!       begin execution                                                
-!
 ! take care of the exceptional cases.
   if (eddyratio .le. zero) then
     nulamd = 0.0_8

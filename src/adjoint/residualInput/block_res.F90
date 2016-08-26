@@ -32,6 +32,7 @@ subroutine block_res(nn, sps, useSpatial, alpha, beta, liftIndex, &
   use iteration
   use diffSizes
   use costFunctions
+  use initializeFlow, only : referenceState
   use wallDistance, only : updateWallDistancesQuickly, xsurf
   use inputDiscretization 
   use saModule

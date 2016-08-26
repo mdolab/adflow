@@ -4,15 +4,9 @@
 !  differentiation of timestep_block in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *radi *radj *radk
 !   with respect to varying inputs: gammainf rhoinf pinfcorr *p
-!                sfacei *sfacej *sfacek *w *si *sj 
+!                *sfacei *sfacej *sfacek *w *si *sj *sk
 !   plus diff mem management of: p:in sfacei:in sfacej:in sfacek:in
 !                w:in si:in sj:in sk:in radi:in radj:in radk:in
-!
-!       file:          timestep.f90                                    
-!       author:        edwin van der weide                             
-!       starting date: 03-17-2003                                      
-!       last modified: 06-28-2005                                      
-!
 subroutine timestep_block_d(onlyradii)
 !
 !       timestep computes the time step, or more precisely the time    
@@ -78,9 +72,6 @@ subroutine timestep_block_d(onlyradii)
   real(kind=realtype) :: abs2d
   real(kind=realtype) :: abs1
   real(kind=realtype) :: abs0
-!
-!       begin execution                                                
-!
 ! determine whether or not the spectral radii are needed for the
 ! flux computation.
   radiineeded = radiineededcoarse

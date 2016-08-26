@@ -4,8 +4,8 @@
 !  differentiation of viscousflux in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *fw *(*viscsubface.tau)
 !   with respect to varying inputs: *rev *aa *wx *wy *wz *w *rlv
-!                x *qx *qy *qz *ux *uy *uz *si *sj *sk *vx 
-!                vz 
+!                *x *qx *qy *qz *ux *uy *uz *si *sj *sk *vx *vy
+!                *vz *fw
 !   plus diff mem management of: rev:in aa:in wx:in wy:in wz:in
 !                w:in rlv:in x:in qx:in qy:in qz:in ux:in uy:in
 !                uz:in si:in sj:in sk:in vx:in vy:in vz:in fw:in

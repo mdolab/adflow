@@ -3,17 +3,11 @@
 !
 !  differentiation of bcturbwall in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *bvtj1 *bvtj2 *bvtk1 *bvtk2
-!                bvti1 
+!                *bvti1 *bvti2
 !   with respect to varying inputs: *bvtj1 *bvtj2 *w *rlv *bvtk1
-!                bvtk2 *bvti1 
+!                *bvtk2 *bvti1 *bvti2
 !   plus diff mem management of: bvtj1:in bvtj2:in w:in rlv:in
 !                bvtk1:in bvtk2:in bvti1:in bvti2:in bcdata:in
-!
-!       file:          bcturbwall.f90                                  
-!       author:        georgi kalitzin, edwin van der weide            
-!       starting date: 06-26-2003                                      
-!       last modified: 06-12-2005                                      
-!
 subroutine bcturbwall_d(nn)
 !
 !       bcturbwall applies the implicit treatment of the viscous       
@@ -56,9 +50,6 @@ subroutine bcturbwall_d(nn)
   integer(kind=inttype) :: y2
   integer(kind=inttype) :: y1
 !        ================================================================
-!
-!       begin execution                                                
-!
 ! determine the turbulence model used and loop over the faces
 ! of the subface and set the values of bmt and bvt for an
 ! implicit treatment.

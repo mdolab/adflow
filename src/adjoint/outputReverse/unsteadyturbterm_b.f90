@@ -5,12 +5,6 @@
 !   gradient     of useful results: timeref *dw *w *scratch
 !   with respect to varying inputs: timeref *dw *w *scratch
 !   plus diff mem management of: dw:in w:in scratch:in
-!
-!       file:          unsteadyturbterm.f90                            
-!       author:        edwin van der weide                             
-!       starting date: 02-09-2004                                      
-!       last modified: 11-27-2007                                      
-!
 subroutine unsteadyturbterm_b(madv, nadv, offset, qq)
 !
 !       unsteadyturbterm discretizes the time derivative of the        
@@ -49,9 +43,6 @@ subroutine unsteadyturbterm_b(madv, nadv, offset, qq)
   integer(kind=inttype) :: i, j, k, ii, jj, nn
   real(kind=realtype) :: oneoverdt, tmp
   real(kind=realtype) :: oneoverdtd, tmpd
-!
-!       begin execution                                                
-!
 ! determine the equation mode.
   select case  (equationmode) 
   case (steady) 

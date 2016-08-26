@@ -73,7 +73,7 @@ ALL_RES_FILES =	$(SRC)/adjoint/residualInput/block_res.F90\
 		$(SRC)/solver/gridVelocitiesFineLevel.F90\
 		$(SRC)/solver/normalVelocities.F90\
 		$(SRC)/solver/forcesAndMoments.F90\
-		$(SRC)/initFlow/referenceState.F90\
+		$(SRC)/initFlow/initializeFlow.F90\
 		$(SRC)/turbulence/computeEddyViscosity.F90\
 		$(SRC)/turbulence/curveFit.f90\
 		$(SRC)/turbulence/turbBCNSWall.f90\
@@ -166,13 +166,9 @@ xhalo_block(x)>(x)" \
 
 # Fix the AD bugs
 	sed -i 's/do ii1=1,size(viscsubfaced(ii1)%tau, 1)/do ii1=1,size(viscsubfaced)/' outputReverse/forcesandmoments_b.f90
-
-
 	sed -i 's/do ii1=1,size(bcdata(ii1)%f, 1)/do ii1=1,size(bcdata)/' outputReverse/block_res_b.f90
 	sed -i 's/do ii1=size(bcdata(ii1)%f, 1),1,-1/do ii1=size(bcdata),1,-1/' outputReverse/block_res_b.f90
-
 	sed -i 's/do ii1=1,size(bcdatad(ii1)%norm, 1)/do ii1=1,size(bcdatad)/' outputReverse/bcroutines_b.f90
-
 	sed -i 's/end subroutine sa_block_b/deallocate(qq)\nend subroutine sa_block_b/' outputReverse/samodule_b.f90
 
 ad_reverse_fast:

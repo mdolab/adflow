@@ -535,12 +535,6 @@ intervaltt:do
       end do
     end if
   end subroutine computespeedofsoundsquared
-!
-!       file:          computeetot.f90                                 
-!       author:        edwin van der weide, steve repsher              
-!       starting date: 08-13-2003                                      
-!       last modified: 10-14-2005                                      
-!
   subroutine computeetotblock(istart, iend, jstart, jend, kstart, kend, &
 &   correctfork)
 !
@@ -568,8 +562,6 @@ intervaltt:do
 !
     integer(kind=inttype) :: i, j, k
     real(kind=realtype) :: ovgm1, factk, scale
-!       begin execution                                                
-!
 ! determine the cp model used in the computation.
     select case  (cpmodel) 
     case (cpconstant) 

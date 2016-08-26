@@ -3,17 +3,11 @@
 !
 !  differentiation of timestep_block in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: gammainf rhoinf pinfcorr *p
-!                w *si *sj *sk *radi *radj 
+!                *w *si *sj *sk *radi *radj *radk
 !   with respect to varying inputs: gammainf rhoinf pinfcorr *p
-!                w *si *sj 
+!                *w *si *sj *sk
 !   plus diff mem management of: p:in w:in si:in sj:in sk:in radi:in
 !                radj:in radk:in
-!
-!       file:          timestep.f90                                    
-!       author:        edwin van der weide                             
-!       starting date: 03-17-2003                                      
-!       last modified: 06-28-2005                                      
-!
 subroutine timestep_block_b(onlyradii)
 !
 !       timestep computes the time step, or more precisely the time    
@@ -89,9 +83,6 @@ subroutine timestep_block_b(onlyradii)
   real(kind=realtype) :: abs1
   real(kind=realtype) :: abs0
   real(kind=realtype) :: temp
-!
-!       begin execution                                                
-!
 ! determine whether or not the spectral radii are needed for the
 ! flux computation.
   radiineeded = radiineededcoarse

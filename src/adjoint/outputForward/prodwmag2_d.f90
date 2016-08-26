@@ -6,12 +6,6 @@
 !   with respect to varying inputs: timeref *w *vol *si *sj *sk
 !   plus diff mem management of: w:in scratch:in vol:in si:in sj:in
 !                sk:in
-!
-!       file:          prodwmag2.f90                                   
-!       author:        georgi kalitzin, edwin van der weide            
-!       starting date: 06-23-2003                                      
-!       last modified: 06-12-2005                                      
-!
 subroutine prodwmag2_d()
 !
 !       prodwmag2 computes the term:                                   
@@ -36,9 +30,6 @@ subroutine prodwmag2_d()
   real(kind=realtype) :: factd, vortxd, vortyd, vortzd
   real(kind=realtype) :: omegax, omegay, omegaz
   real(kind=realtype) :: omegaxd, omegayd, omegazd
-!
-!       begin execution                                                
-!
 ! determine the non-dimensional wheel speed of this block.
   omegaxd = sections(sectionid)%rotrate(1)*timerefd
   omegax = timeref*sections(sectionid)%rotrate(1)
